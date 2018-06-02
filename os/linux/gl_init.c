@@ -3328,7 +3328,6 @@ static void wlanRemove(void)
 #endif
 
 	wlanAdapterStop(prAdapter);
-	DBGLOG(INIT, INFO, "Number of Stalled Packets = %d\n", GLUE_GET_REF_CNT(prGlueInfo->i4TxPendingFrameNum));
 
 	HAL_LP_OWN_SET(prAdapter, &fgResult);
 	DBGLOG(INIT, INFO, "HAL_LP_OWN_SET(%d)\n", (uint32_t) fgResult);
