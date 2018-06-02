@@ -538,19 +538,14 @@ try_again:
 			u2ScoreBand + u2BlackListScore + u2ScoreRSN +
 			u2ScoreSaa;
 
-		DBGLOG(SCN, INFO,
-			"%pM cRSSI[%d] 5G[%d] Score, Total %d ",
+		log_dbg(SCN, INFO,
+			"%pM cRSSI[%d] 5G[%d] Score, Total %d, DE[%d], PR[%d], SM[%d], RSSI[%d], BA[%d] RSN[%d], SAA[%d], BW[%d], CN[%d], ST[%d], CI[%d]\n",
 			prBssDesc->aucBSSID, cRssi,
-			(prBssDesc->eBand == BAND_5G ? 1 : 0), u2ScoreTotal);
-
-		DBGLOG(SCN, INFO,
-			"DE[%d], PR[%d], SM[%d], RSSI[%d], BA[%d] RSN[%d]\n",
+			(prBssDesc->eBand == BAND_5G ? 1 : 0), u2ScoreTotal,
 			u2ScoreDeauth, u2ScoreProbeRsp, u2ScoreScanMiss,
-			u2ScoreRssi, u2BlackListScore, u2ScoreRSN);
-		DBGLOG(SCN, INFO,
-			"SAA[%d], BW[%d], CN[%d], ST[%d], CI[%d]\n",
-			u2ScoreSaa, u2ScoreBandwidth, u2ScoreStaCnt,
-			u2ScoreSTBC, u2ScoreChnlInfo);
+			u2ScoreRssi, u2BlackListScore, u2ScoreRSN, u2ScoreSaa,
+			u2ScoreBandwidth, u2ScoreStaCnt, u2ScoreSTBC,
+			u2ScoreChnlInfo);
 
 		if (!prCandBssDesc ||
 			scanNeedReplaceCandidate(prAdapter, prCandBssDesc,
@@ -579,17 +574,15 @@ try_again:
 				prEssLink->u4NumElem, ucChannel);
 #undef __STR_FMT__
 		else
-			DBGLOG(SCN, INFO,
-				"Selected %pM, cRSSI[%d] 5G[%d] Score %d\n",
+			log_dbg(SCN, INFO,
+				"Selected %pM, cRSSI[%d] 5G[%d] Score %d when find %s, %pM in %d BSSes, fix channel %d.\n",
 				prCandBssDesc->aucBSSID,
 				cRssi = RCPI_TO_dBm(prCandBssDesc->ucRCPI),
 				(prCandBssDesc->eBand == BAND_5G ? 1 : 0),
-				u2CandBssScore);
-			DBGLOG(SCN, INFO,
-				"when find %s, %pM in %d BSSes, fix channel %d.\n",
-				prConnSettings->aucSSID,
+				u2CandBssScore, prConnSettings->aucSSID,
 				prConnSettings->aucBSSID,
 				prEssLink->u4NumElem, ucChannel);
+
 		return prCandBssDesc;
 	} else if (prCandBssDescForLowRssi) {
 #define __STR_FMT__ \
