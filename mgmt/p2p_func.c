@@ -947,7 +947,10 @@ p2pFuncStartGO(IN struct ADAPTER *prAdapter,
 		prCmdRddOnOffCtrl = (struct CMD_RDD_ON_OFF_CTRL *) cnmMemAlloc(prAdapter, RAM_TYPE_MSG,
 						sizeof(*prCmdRddOnOffCtrl));
 
-		ASSERT_BREAK((prCmdRddOnOffCtrl != NULL));
+		if (!prCmdRddOnOffCtrl) {
+			ASSERT(FALSE);
+			break;
+		}
 
 		prCmdRddOnOffCtrl->ucDfsCtrl = RDD_START_TXQ;
 
