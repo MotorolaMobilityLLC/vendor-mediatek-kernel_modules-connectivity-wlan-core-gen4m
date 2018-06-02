@@ -4409,8 +4409,10 @@ wlanoidSetEfusBufferMode(IN P_ADAPTER_T prAdapter, IN PVOID pvSetBuffer, IN UINT
 
 	u4QueryInfoLen = OFFSET_OF(CMD_EFUSE_BUFFER_MODE_T, aBinContent) + u4EfuseContentSize;
 
-	if (u4SetBufferLen < u4QueryInfoLen)
+	if (u4SetBufferLen < u4QueryInfoLen) {
+		kalMemFree(prCmdSetEfuseBufModeInfo, VIR_MEM_TYPE, sizeof(CMD_EFUSE_BUFFER_MODE_T));
 		return WLAN_STATUS_INVALID_LENGTH;
+	}
 
 	*pu4SetInfoLen = u4QueryInfoLen;
 	kalMemCopy(prCmdSetEfuseBufModeInfo->aBinContent, prSetEfuseBufModeInfo->aBinContent,
