@@ -437,10 +437,18 @@ int mtk_p2p_cfg80211_cancel_remain_on_channel(struct wiphy *wiphy, struct wirele
 int mtk_p2p_cfg80211_set_power_mgmt(struct wiphy *wiphy, struct net_device *dev, bool enabled, int timeout);
 
 #if (CFG_SUPPORT_DFS_MASTER == 1)
+
+#if KERNEL_VERSION(3, 15, 0) <= LINUX_VERSION_CODE
 int mtk_p2p_cfg80211_start_radar_detection(struct wiphy *wiphy,
 						struct net_device *dev,
 						struct cfg80211_chan_def *chandef,
 						unsigned int cac_time_ms);
+#else
+int mtk_p2p_cfg80211_start_radar_detection(struct wiphy *wiphy,
+						struct net_device *dev,
+						struct cfg80211_chan_def *chandef);
+#endif
+
 
 int mtk_p2p_cfg80211_channel_switch(struct wiphy *wiphy, struct net_device *dev, struct cfg80211_csa_settings *params);
 #endif
