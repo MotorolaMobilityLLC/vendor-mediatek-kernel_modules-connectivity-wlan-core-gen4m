@@ -4185,10 +4185,6 @@ int mtk_p2p_cfg80211_testmode_get_best_channel(IN struct wiphy *wiphy,
 	struct PARAM_PREFER_CHN_INFO rPreferChannel = { 0, 0xFFFF, 0 };
 	struct PARAM_PREFER_CHN_INFO
 		arChannelDirtyScore_2G[MAX_2G_BAND_CHN_NUM];
-	/* For ACS information print */
-	int8_t acLogChannel[ACS_PRINT_BUFFER_LEN];
-	int8_t acLogAPNum[ACS_PRINT_BUFFER_LEN];
-	int8_t acLogScore[ACS_PRINT_BUFFER_LEN];
 
 	uint32_t rStatus = WLAN_STATUS_SUCCESS;
 
