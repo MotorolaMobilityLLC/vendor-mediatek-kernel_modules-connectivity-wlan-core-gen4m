@@ -2354,6 +2354,15 @@ wlanoidSetAddKey(IN P_ADAPTER_T prAdapter, IN PVOID pvSetBuffer, IN UINT_32 u4Se
 						   &prCmdKey->aucKeyMaterial[24], MIC_KEY_LEN);
 				}
 			}
+		} else {
+#if CFG_SUPPORT_802_11W
+			/* AP PMF */
+			if ((prCmdKey->ucKeyId >= 4 && prCmdKey->ucKeyId <= 5) &&
+				(prCmdKey->ucAlgorithmId == CIPHER_SUITE_BIP)) {
+				DBGLOG(RSN, INFO, "AP mode set BIP\n");
+				prBssInfo->rApPmfCfg.fgBipKeyInstalled = TRUE;
+			}
+#endif
 		}
 	} else {		/* Legacy windows NDIS no cipher info */
 #if 0
@@ -2441,10 +2450,16 @@ wlanoidSetAddKey(IN P_ADAPTER_T prAdapter, IN PVOID pvSetBuffer, IN UINT_32 u4Se
 #endif
 
 #if CFG_SUPPORT_802_11W
+		/* AP PMF */
+		/* 20170519 BIP optional item is not support now */
+		DBGLOG(RSN, INFO, "802.11w BIP optional not support now\n");
+		if ((prNewKey->u4KeyIndex & 0xff) >= 4)
+			return WLAN_STATUS_SUCCESS;
+
 		if (prCmdKey->ucAlgorithmId == CIPHER_SUITE_BIP) {
 			if (prCmdKey->ucIsAuthenticator) {
-				DBGLOG(RSN, ERROR, "Not support 111w AP mode ");
-				ASSERT(FALSE);
+				DBGLOG(RSN, INFO, "Authenticator follow AIS method\n");
+
 			}
 			prCmdKey->ucWlanIndex =
 			    secPrivacySeekForBcEntry(prAdapter,
@@ -2453,6 +2468,7 @@ wlanoidSetAddKey(IN P_ADAPTER_T prAdapter, IN PVOID pvSetBuffer, IN UINT_32 u4Se
 						     prBssInfo->prStaRecOfAP->ucIndex,
 						     prCmdKey->ucAlgorithmId, prCmdKey->ucKeyId);
 
+			DBGLOG(RSN, INFO, "BIP BC wtbl index:%d\n", prCmdKey->ucWlanIndex);
 		} else
 #endif
 		if (1) {
@@ -2466,6 +2482,12 @@ wlanoidSetAddKey(IN P_ADAPTER_T prAdapter, IN PVOID pvSetBuffer, IN UINT_32 u4Se
 					prCmdKey->ucWlanIndex = prStaRec->ucWlanIndex;
 					prStaRec->fgTransmitKeyExist = TRUE;	/* wait for CMD Done ? */
 					kalMemCopy(prCmdKey->aucPeerAddr, prNewKey->arBSSID, MAC_ADDR_LEN);
+#if CFG_SUPPORT_802_11W
+					/* AP PMF */
+					DBGLOG(RSN, INFO, "Assign client PMF flag = %d\n",
+						prStaRec->rPmfCfg.fgApplyPmf);
+					prCmdKey->ucMgmtProtection = prStaRec->rPmfCfg.fgApplyPmf;
+#endif
 				} else {
 					ASSERT(FALSE);
 				}
@@ -2790,7 +2812,7 @@ wlanoidSetDefaultKey(IN P_ADAPTER_T prAdapter,
 	prGlueInfo = prAdapter->prGlueInfo;
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prDefaultKey->ucBssIdx);
 
-	/* DBGLOG(RSN, LOUD, "WlanIdx = %d\n", prBssInfo->wepkeyWlanIdx); */
+	DBGLOG(RSN, INFO, "WlanIdx = %d\n", prBssInfo->wepkeyWlanIdx);
 
 	if (prDefaultKey->ucMulticast) {
 		if (!prBssInfo)

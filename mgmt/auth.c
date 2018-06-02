@@ -798,6 +798,8 @@ authSendDeauthFrame(IN P_ADAPTER_T prAdapter,
 	UINT_8 ucBssIndex = prAdapter->ucHwBssIdNum;
 	UINT_8 aucBMC[] = BC_MAC_ADDR;
 
+	DBGLOG(RSN, INFO, "authSendDeauthFrame\n");
+
 	/* NOTE(Kevin): The best way to reply the Deauth is according to the incoming data
 	 * frame
 	 */
@@ -905,13 +907,23 @@ authSendDeauthFrame(IN P_ADAPTER_T prAdapter,
 					  pucBssid, u2ReasonCode);
 
 #if CFG_SUPPORT_802_11W
+	/* AP PMF */
 	if (rsnCheckBipKeyInstalled(prAdapter, prStaRec)) {
-		P_WLAN_DEAUTH_FRAME_T prDeauthFrame;
+		/* PMF certification 4.3.3.1, 4.3.3.2 send unprotected deauth reason 6/7 */
+		/* if (AP mode & not for PMF reply case) OR (STA PMF) */
+		if (((GET_BSS_INFO_BY_INDEX(prAdapter, prStaRec->ucBssIndex)->eCurrentOPMode ==
+				OP_MODE_ACCESS_POINT) &&
+			(prStaRec->rPmfCfg.fgRxDeauthResp != TRUE)) ||
+			(GET_BSS_INFO_BY_INDEX(prAdapter, prStaRec->ucBssIndex)->eNetworkType ==
+				(UINT_8) NETWORK_TYPE_AIS)) {
 
-		prDeauthFrame =
-		    (P_WLAN_DEAUTH_FRAME_T) (PUINT_8) ((ULONG) (prMsduInfo->prPacket) + MAC_TX_RESERVED_FIELD);
+			P_WLAN_DEAUTH_FRAME_T prDeauthFrame;
 
-		prDeauthFrame->u2FrameCtrl |= MASK_FC_PROTECTED_FRAME;
+			prDeauthFrame = (P_WLAN_DEAUTH_FRAME_T) (PUINT_8) ((ULONG) (prMsduInfo->prPacket) +
+				MAC_TX_RESERVED_FIELD);
+
+			prDeauthFrame->u2FrameCtrl |= MASK_FC_PROTECTED_FRAME;
+		}
 	}
 #endif
 	nicTxSetPktLifeTime(prMsduInfo, 100);
@@ -927,8 +939,17 @@ authSendDeauthFrame(IN P_ADAPTER_T prAdapter,
 		     WLAN_MAC_MGMT_HEADER_LEN + REASON_CODE_FIELD_LEN, pfTxDoneHandler, MSDU_RATE_MODE_AUTO);
 
 #if CFG_SUPPORT_802_11W
-	if (rsnCheckBipKeyInstalled(prAdapter, prStaRec))
-		nicTxConfigPktOption(prMsduInfo, MSDU_OPT_PROTECTED_FRAME, TRUE);
+	/* AP PMF */
+	/* caution: access prStaRec only if true */
+	if (rsnCheckBipKeyInstalled(prAdapter, prStaRec)) {
+		/* 4.3.3.1 send unprotected deauth reason 6/7 */
+		if (prStaRec->rPmfCfg.fgRxDeauthResp != TRUE) {
+			DBGLOG(RSN, INFO, "Deauth Set MSDU_OPT_PROTECTED_FRAME\n");
+			nicTxConfigPktOption(prMsduInfo, MSDU_OPT_PROTECTED_FRAME, TRUE);
+		}
+
+		prStaRec->rPmfCfg.fgRxDeauthResp = FALSE;
+	}
 
 #endif
 
