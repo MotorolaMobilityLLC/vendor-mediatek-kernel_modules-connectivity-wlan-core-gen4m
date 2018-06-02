@@ -624,6 +624,9 @@ TdlsDataFrameSend_SETUP_REQ(struct ADAPTER *prAdapter,
 	prPmProfSetupInfo = &prBssInfo->rPmProfSetupInfo;
 	u4PktLen = 0;
 
+	if (prStaRec == NULL)
+		return TDLS_STATUS_FAIL;
+
 	prMsduInfo = kalPacketAllocWithHeadroom(prGlueInfo, 1600,
 						&pPkt);
 	if (prMsduInfo == NULL)
@@ -865,6 +868,9 @@ TdlsDataFrameSend_SETUP_RSP(struct ADAPTER *prAdapter,
 	prBssInfo = prAdapter->prAisBssInfo;	/* AIS only */
 	prPmProfSetupInfo = &prBssInfo->rPmProfSetupInfo;
 	u4PktLen = 0;
+
+	if (prStaRec == NULL)
+		return TDLS_STATUS_FAIL;
 
 	prMsduInfo = kalPacketAllocWithHeadroom(prGlueInfo, 1600,
 						&pPkt);
@@ -1508,10 +1514,6 @@ TdlsDataFrameSend_DISCOVERY_REQ(struct ADAPTER *prAdapter,
 				pucInitiator = pPeerMac;
 				pucResponder = prBssInfo->aucOwnMacAddr;
 			}
-		} else {
-			/* peer is initiator */
-			pucInitiator = pPeerMac;
-			pucResponder = prBssInfo->aucOwnMacAddr;
 		}
 		break;
 	}
@@ -1795,10 +1797,6 @@ TdlsDataFrameSend_DISCOVERY_RSP(struct ADAPTER *prAdapter,
 				pucInitiator = pPeerMac;
 				pucResponder = prBssInfo->aucOwnMacAddr;
 			}
-		} else {
-			/* peer is initiator */
-			pucInitiator = pPeerMac;
-			pucResponder = prBssInfo->aucOwnMacAddr;
 		}
 		break;
 	}
@@ -1906,17 +1904,20 @@ TdlsDataFrameSend_DISCOVERY_RSP(struct ADAPTER *prAdapter,
 		LR_TDLS_FME_FIELD_FILL(AppendIeLen);
 	}
 
-	prMsduInfoMgmt->ucPacketType = TX_PACKET_TYPE_MGMT;
-	prMsduInfoMgmt->ucStaRecIndex =
+	if (prMsduInfoMgmt != NULL) {
+		prMsduInfoMgmt->ucPacketType = TX_PACKET_TYPE_MGMT;
+		prMsduInfoMgmt->ucStaRecIndex =
 		prBssInfo->prStaRecOfAP->ucIndex;
-	prMsduInfoMgmt->ucBssIndex = prBssInfo->ucBssIndex;
-	prMsduInfoMgmt->ucMacHeaderLength =
-		WLAN_MAC_MGMT_HEADER_LEN;
-	prMsduInfoMgmt->fgIs802_1x = FALSE;
-	prMsduInfoMgmt->fgIs802_11 = TRUE;
-	prMsduInfoMgmt->u2FrameLength = u4PktLen;
-	prMsduInfoMgmt->ucTxSeqNum = nicIncreaseTxSeqNum(prAdapter);
-	prMsduInfoMgmt->pfTxDoneHandler = NULL;
+		prMsduInfoMgmt->ucBssIndex = prBssInfo->ucBssIndex;
+		prMsduInfoMgmt->ucMacHeaderLength =
+				WLAN_MAC_MGMT_HEADER_LEN;
+		prMsduInfoMgmt->fgIs802_1x = FALSE;
+		prMsduInfoMgmt->fgIs802_11 = TRUE;
+		prMsduInfoMgmt->u2FrameLength = u4PktLen;
+		prMsduInfoMgmt->ucTxSeqNum = nicIncreaseTxSeqNum(prAdapter);
+		prMsduInfoMgmt->pfTxDoneHandler = NULL;
+	} else
+		return TDLS_STATUS_RESOURCES;
 
 	/* Send them to HW queue */
 	nicTxEnqueueMsdu(prAdapter, prMsduInfoMgmt);
@@ -1979,7 +1980,7 @@ void TdlsEventTearDown(struct GLUE_INFO *prGlueInfo,
 		       uint8_t *prInBuf, uint32_t u4InBufLen)
 {
 	struct STA_RECORD *prStaRec;
-	uint16_t u2ReasonCode;
+	uint16_t u2ReasonCode = TDLS_REASON_CODE_NONE;
 	uint32_t u4TearDownSubId;
 	uint8_t *pMac, aucZeroMac[6];
 
@@ -1990,14 +1991,12 @@ void TdlsEventTearDown(struct GLUE_INFO *prGlueInfo,
 
 	prStaRec = cnmGetStaRecByIndex(prGlueInfo->prAdapter,
 				       *(prInBuf + 4));
-	if (prStaRec != NULL)
-		pMac = prStaRec->aucMacAddr;
-
-	/* handle */
 
 	/* sanity check */
 	if (prStaRec == NULL)
 		return;
+	else
+		pMac = prStaRec->aucMacAddr;
 
 	if (fgIsPtiTimeoutSkip == TRUE) {
 		/* skip PTI timeout event */
@@ -2064,9 +2063,9 @@ void TdlsBssExtCapParse(struct STA_RECORD *prStaRec,
 	pucIeExtCap = pucIE + 2;
 	pucIeExtCap += 4;	/* shift to the byte we care about */
 
-	if ((*pucIeExtCap) && BIT(38 - 32))
+	if ((*pucIeExtCap) & BIT(38 - 32))
 		prStaRec->fgTdlsIsProhibited = TRUE;
-	if ((*pucIeExtCap) && BIT(39 - 32))
+	if ((*pucIeExtCap) & BIT(39 - 32))
 		prStaRec->fgTdlsIsChSwProhibited = TRUE;
 
 }
