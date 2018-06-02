@@ -218,6 +218,7 @@ struct mt66xx_chip_info mt66xx_chip_info_connac = {
 	.asicCapInit = asicCapInit,
 	.asicEnableFWDownload = asicEnableFWDownload,
 	.fillTxDescAppend = fillTxDescAppendByHostV2,
+	.is_support_hw_amsdu = FALSE,
 };
 
 struct mt66xx_hif_driver_data mt66xx_driver_data_connac = {

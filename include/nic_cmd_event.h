@@ -598,6 +598,7 @@ typedef enum _ENUM_EVENT_ID_T {
 	EVENT_ID_RTT_UPDATE_RANGE = 0x29,	/* 0x29 (Unsoiicited) */
 	EVENT_ID_CHECK_REORDER_BUBBLE = 0x2a,	/* 0x2a (Unsoiicited) */
 	EVENT_ID_BATCH_RESULT = 0x2b,	/* 0x2b (Query) */
+	EVENT_ID_TX_ADDBA = 0x2e,	/* 0x2e (Unsolicited) */
 
 	EVENT_ID_UART_ACK = 0x40,	/* 0x40 (Unsolicited) */
 	EVENT_ID_UART_NAK,	/* 0x41 (Unsolicited) */

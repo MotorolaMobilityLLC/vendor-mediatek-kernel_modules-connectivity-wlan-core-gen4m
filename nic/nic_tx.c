@@ -1603,6 +1603,35 @@ VOID nicTxFreeDescTemplate(IN P_ADAPTER_T prAdapter, IN P_STA_RECORD_T prStaRec)
 
 /*----------------------------------------------------------------------------*/
 /*!
+* @brief In this function, we'll Update H/W AMSDU filed of TxD template.
+*
+* @param prAdapter             Pointer to the Adapter structure.
+* @param prStaRec              Pointer to the StaRec structure.
+* @param ucTid                 Select target Tid template
+* @param ucSet                 Set or clear
+*
+* @retval VOID
+*/
+/*----------------------------------------------------------------------------*/
+VOID nicTxSetHwAmsduDescTemplate(IN P_ADAPTER_T prAdapter,
+	IN P_STA_RECORD_T prStaRec, IN UINT_8 ucTid, IN BOOLEAN fgSet)
+{
+	P_HW_MAC_TX_DESC_T prTxDesc;
+
+	DBGLOG(QM, INFO, "Update HW Amsdu field of TXD template for STA[%u] Tid[%u]\n",
+		prStaRec->ucIndex, ucTid);
+
+	if (prStaRec->aprTxDescTemplate[ucTid]) {
+		prTxDesc = (P_HW_MAC_TX_DESC_T) prStaRec->aprTxDescTemplate[ucTid];
+		if (fgSet)
+			HAL_MAC_TX_DESC_SET_HW_AMSDU(prTxDesc);
+		else
+			HAL_MAC_TX_DESC_UNSET_HW_AMSDU(prTxDesc);
+	}
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
 * \brief Write data to device done
 *
 * \param[in] prGlueInfo         Pointer to the GLUE_INFO_T structure.
