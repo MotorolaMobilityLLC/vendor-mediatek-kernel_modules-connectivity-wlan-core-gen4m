@@ -977,7 +977,9 @@ void scanRemoveBssDescsByPolicy(IN struct ADAPTER *prAdapter,
 					SCN_BSS_DESC_REMOVE_TIMEOUT_SEC))) {
 
 #if 0 /* TODO: Remove this */
-				log_dbg(SCN, TRACE, "Remove TIMEOUT BSS DESC(%#x):MAC: %pM, Current Time = %08lx, Update Time = %08lx\n",
+				log_dbg(SCN, TRACE, "Remove TIMEOUT BSS DESC(%#x):MAC: "
+				MACSTR
+				", Current Time = %08lx, Update Time = %08lx\n",
 					prBssDesc,
 					MAC2STR(prBssDesc->aucBSSID),
 					rCurrentTime, prBssDesc->rUpdateTime));
@@ -1044,7 +1046,9 @@ void scanRemoveBssDescsByPolicy(IN struct ADAPTER *prAdapter,
 
 		if (prBssDescOldest) {
 #if 0 /* TODO: Remove this */
-			log_dbg(SCN, TRACE, "Remove OLDEST HIDDEN BSS DESC(%#x): MAC: %pM, Update Time = %08lx\n",
+			log_dbg(SCN, TRACE, "Remove OLDEST HIDDEN BSS DESC(%#x): MAC: "
+			MACSTR
+			", Update Time = %08lx\n",
 				prBssDescOldest,
 				MAC2STR(prBssDescOldest->aucBSSID),
 				prBssDescOldest->rUpdateTime);
@@ -1126,7 +1130,9 @@ void scanRemoveBssDescsByPolicy(IN struct ADAPTER *prAdapter,
 
 		if (prBssDescWeakest) {
 #if 0 /* TODO: Remove this */
-			log_dbg(SCN, TRACE, "Remove WEAKEST BSS DESC(%#x): MAC: %pM, Update Time = %08lx\n",
+			log_dbg(SCN, TRACE, "Remove WEAKEST BSS DESC(%#x): MAC: "
+			MACSTR
+			", Update Time = %08lx\n",
 				prBssDescOldest,
 				MAC2STR(prBssDescOldest->aucBSSID),
 				prBssDescOldest->rUpdateTime);
@@ -1609,8 +1615,8 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 	}
 
 	if (fgBandMismatch) {
-		log_dbg(SCN, INFO, "%pM Band mismatch, HW band %d, DS chnl %d, HT chnl %d\n",
-		       prWlanBeaconFrame->aucBSSID, eHwBand,
+		log_dbg(SCN, INFO, MACSTR "Band mismatch, HW band %d, DS chnl %d, HT chnl %d\n",
+		       MAC2STR(prWlanBeaconFrame->aucBSSID), eHwBand,
 		       ucIeDsChannelNum, ucIeHtChannelNum);
 		return NULL;
 	}
@@ -1623,10 +1629,11 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 		(uint8_t *) prWlanBeaconFrame->aucSrcAddr,
 		fgIsValidSsid, fgIsValidSsid == TRUE ? &rSsid : NULL);
 
-	log_dbg(SCN, LOUD, "Receive type %u in chnl %u %u %u (%pM) valid(%u) found(%u)\n",
+	log_dbg(SCN, LOUD, "Receive type %u in chnl %u %u %u (" MACSTR
+		") valid(%u) found(%u)\n",
 		ucSubtype, ucIeDsChannelNum, ucIeHtChannelNum,
 		HAL_RX_STATUS_GET_CHNL_NUM(prSwRfb->prRxStatus),
-		(uint8_t *)prWlanBeaconFrame->aucBSSID, fgIsValidSsid,
+		MAC2STR((uint8_t *)prWlanBeaconFrame->aucBSSID), fgIsValidSsid,
 		(prBssDesc != NULL) ? 1 : 0);
 
 	if ((prWlanBeaconFrame->u2FrameCtrl & MASK_FRAME_TYPE)
@@ -1639,8 +1646,10 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 		do {
 			/* check if it is a beacon frame */
 			if (!fgIsProbeResp && !fgIsValidSsid) {
-				log_dbg(SCN, LOUD, "scanAddToBssDescssid is NULL Beacon, don't add hidden BSS(%pM)\n",
-					(uint8_t *)prWlanBeaconFrame->aucBSSID);
+				log_dbg(SCN, LOUD, "scanAddToBssDescssid is NULL Beacon, don't add hidden BSS("
+					MACSTR ")\n",
+					MAC2STR((uint8_t *)
+					prWlanBeaconFrame->aucBSSID));
 				return NULL;
 			}
 			/* 4 <1.2.1> First trial of allocation */
@@ -1673,8 +1682,10 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 			if (prBssDesc)
 				break;
 			/* 4 <1.2.6> no space, should not happen */
-			log_limited_dbg(SCN, WARN, "alloc new BssDesc for %pM failed\n",
-				(uint8_t *)prWlanBeaconFrame->aucBSSID);
+			log_limited_dbg(SCN, WARN, "alloc new BssDesc for "
+				MACSTR " failed\n",
+				MAC2STR((uint8_t *)
+				prWlanBeaconFrame->aucBSSID));
 			return NULL;
 
 		} while (FALSE);
@@ -1745,8 +1756,10 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 
 			prBssDesc = scanAllocateBssDesc(prAdapter);
 			if (!prBssDesc) {
-				log_dbg(SCN, WARN, "Realloc BssDesc for %pM failed\n",
-					(uint8_t *)prWlanBeaconFrame->aucBSSID);
+				log_dbg(SCN, WARN, "Realloc BssDesc for "
+					MACSTR " failed\n",
+					MAC2STR((uint8_t *)
+					prWlanBeaconFrame->aucBSSID));
 				return NULL;
 			}
 
@@ -1767,8 +1780,9 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 
 	/* NOTE: Keep consistency of Scan Record during JOIN process */
 	if (fgIsNewBssDesc == FALSE && prBssDesc->fgIsConnecting) {
-		log_dbg(SCN, TRACE, "we're connecting this BSS(%pM) now, don't update it\n",
-				prBssDesc->aucBSSID);
+		log_dbg(SCN, TRACE, "we're connecting this BSS("
+			MACSTR ") now, don't update it\n",
+			MAC2STR(prBssDesc->aucBSSID));
 		return prBssDesc;
 	}
 	/* 4 <2> Get information from Fixed Fields */
@@ -2473,8 +2487,10 @@ uint32_t scanAddScanResult(IN struct ADAPTER *prAdapter,
 		for (; i < SCN_SSID_MATCH_MAX_NUM; i++) {
 			if (pprPendBssDesc[i])
 				continue;
-			log_dbg(SCN, INFO, "indicate bss[%pM] before wiphy resume, need to indicate again after wiphy resume\n",
-				prBssDesc->aucBSSID);
+			log_dbg(SCN, INFO, "indicate bss["
+				MACSTR
+				"] before wiphy resume, need to indicate again after wiphy resume\n",
+				MAC2STR(prBssDesc->aucBSSID));
 			pprPendBssDesc[i] = prBssDesc;
 			break;
 		}
@@ -2679,10 +2695,11 @@ uint32_t scanProcessBeaconAndProbeResp(IN struct ADAPTER *prAdapter,
 				 * hidden SSID, and would have different
 				 * BSS descriptor
 				 */
-				log_dbg(SCN, TRACE, "DTIMPeriod[%u] Present[%u] BSSID[%pM]\n",
+				log_dbg(SCN, TRACE, "DTIMPeriod[%u] Present[%u] BSSID["
+					MACSTR "]\n",
 				       prAisBssInfo->ucDTIMPeriod,
 				       prAisBssInfo->fgTIMPresent,
-				       prBssDesc->aucBSSID);
+				       MAC2STR(prBssDesc->aucBSSID));
 				if ((!prAisBssInfo->ucDTIMPeriod) &&
 					prAisBssInfo->fgTIMPresent &&
 					EQUAL_MAC_ADDR(prBssDesc->aucBSSID,
@@ -2862,9 +2879,10 @@ struct BSS_DESC *scanSearchBssDescByPolicy(
 		prConnSettings->aucSSID[prConnSettings->ucSSIDLen] = '\0';
 #endif
 
-	log_dbg(SCN, INFO, "SEARCH: Bss Num: %d, Look for SSID: %s, %pM Band=%d, channel=%d\n",
+	log_dbg(SCN, INFO, "SEARCH: Bss Num: %d, Look for SSID: %s, "
+		MACSTR " Band=%d, channel=%d\n",
 		(uint32_t) prBSSDescList->u4NumElem, prConnSettings->aucSSID,
-		(prConnSettings->aucBSSID), eBand, ucChannel);
+		MAC2STR(prConnSettings->aucBSSID), eBand, ucChannel);
 
 	/* 4 <1> The outer loop to search for a candidate. */
 	LINK_FOR_EACH_ENTRY(
@@ -3045,7 +3063,8 @@ struct BSS_DESC *scanSearchBssDescByPolicy(
 					prBssDesc->rUpdateTime,
 					SEC_TO_SYSTIME(
 						u4ScnAdhocBssDescTimeout))) {
-					log_dbg(SCN, LOUD, "SEARCH: Now(%u) Skip old record of BSS Descriptor(%u) - BSSID:[%pM]\n\n",
+					log_dbg(SCN, LOUD, "SEARCH: Now(%u) Skip old record of BSS Descriptor(%u) - BSSID:["
+						MACSTR "]\n",
 						rCurrentTime,
 						prBssDesc->rUpdateTime,
 						MAC2STR(prBssDesc->aucBSSID));
@@ -3056,7 +3075,9 @@ struct BSS_DESC *scanSearchBssDescByPolicy(
 				if (ibssCheckCapabilityForAdHocMode(prAdapter,
 					prBssDesc) == WLAN_STATUS_FAILURE) {
 
-					log_dbg(SCN, INFO, "SEARCH: Ignore BSS DESC MAC: %pM, Capability is not supported for current AdHoc Mode.\n",
+					log_dbg(SCN, INFO, "SEARCH: Ignore BSS DESC MAC: "
+						MACSTR
+						", Capability is not supported for current AdHoc Mode.\n",
 						MAC2STR(prPrimaryBssDesc
 							->aucBSSID));
 
@@ -3072,7 +3093,9 @@ struct BSS_DESC *scanSearchBssDescByPolicy(
 						prBssDesc->fgIsLargerTSF);
 
 					if (!prBssDesc->fgIsLargerTSF) {
-						log_dbg(SCN, INFO, "SEARCH: Ignore BSS DESC MAC: [%pM], Smaller TSF\n",
+						log_dbg(SCN, INFO, "SEARCH: Ignore BSS DESC MAC: ["
+							MACSTR
+							"], Smaller TSF\n",
 							MAC2STR(prBssDesc
 								->aucBSSID));
 						continue;
@@ -3100,7 +3123,8 @@ struct BSS_DESC *scanSearchBssDescByPolicy(
 						SEC_TO_SYSTIME(
 							BSS_DESC_TIMEOUT_SEC)
 						)){
-				log_dbg(SCAN, TRACE, "Skip old record of BSS Descriptor - BSSID:[%pM]\n\n",
+				log_dbg(SCAN, TRACE, "Skip old record of BSS Descriptor - BSSID:["
+					MACSTR "]\n\n",
 					MAC2STR(prBssDesc->aucBSSID));
 				continue;
 			}
@@ -3115,7 +3139,8 @@ struct BSS_DESC *scanSearchBssDescByPolicy(
 			if (CHECK_FOR_TIMEOUT(rCurrentTime,
 					prBssDesc->rUpdateTime,
 					SEC_TO_SYSTIME(BSS_DESC_TIMEOUT_SEC))) {
-				log_dbg(SCAN, TRACE, "Skip old record of BSS Descriptor - BSSID:[%pM]\n\n",
+				log_dbg(SCAN, TRACE, "Skip old record of BSS Descriptor - BSSID:["
+					MACSTR "]\n\n",
 					MAC2STR(prBssDesc->aucBSSID));
 				continue;
 			}
@@ -3132,7 +3157,9 @@ struct BSS_DESC *scanSearchBssDescByPolicy(
 			if (ibssCheckCapabilityForAdHocMode(prAdapter,
 				prPrimaryBssDesc) == WLAN_STATUS_FAILURE) {
 
-				log_dbg(SCAN, TRACE, "Ignore BSS DESC MAC: %pM, Capability is not supported for current AdHoc Mode.\n",
+				log_dbg(SCAN, TRACE, "Ignore BSS DESC MAC: "
+					MACSTR
+					", Capability is not supported for current AdHoc Mode.\n",
 					MAC2STR(prPrimaryBssDesc->aucBSSID));
 
 				continue;
@@ -3156,7 +3183,9 @@ struct BSS_DESC *scanSearchBssDescByPolicy(
 				if (rCurrentTsf.QuadPart
 					> prPrimaryBssDesc
 						->u8TimeStamp.QuadPart) {
-					log_dbg(SCAN, TRACE, "Ignore BSS DESC MAC: [%pM], Current BSSID: [%pM].\n",
+					log_dbg(SCAN, TRACE, "Ignore BSS DESC MAC: ["
+						MACSTR"], Current BSSID: ["
+						MACSTR "].\n",
 						MAC2STR(prPrimaryBssDesc
 							->aucBSSID),
 						MAC2STR(prBssInfo->aucBSSID));
@@ -3238,7 +3267,8 @@ struct BSS_DESC *scanSearchBssDescByPolicy(
 
 				fgIsFindBestRSSI = TRUE;
 
-				log_dbg(SCN, LOUD, "SEARCH: Found BSS by SSID, [%pM], SSID:%s\n",
+				log_dbg(SCN, LOUD, "SEARCH: Found BSS by SSID, ["
+					MACSTR "], SSID:%s\n",
 					MAC2STR(prBssDesc->aucBSSID),
 					prBssDesc->aucSSID);
 			}
@@ -3345,7 +3375,10 @@ struct BSS_DESC *scanSearchBssDescByPolicy(
 				 * value, we should allow some acceptable
 				 * tolerance of some RSSI percentage here.
 				 */
-				log_dbg(SCN, TRACE, "Candidate [%pM]: uint8_t = %d, joinFailCnt=%d, Primary [%pM]: uint8_t = %d, joinFailCnt=%d\n",
+				log_dbg(SCN, TRACE, "Candidate ["
+				MACSTR
+				"]: uint8_t = %d, joinFailCnt=%d, Primary ["
+				MACSTR "]: uint8_t = %d, joinFailCnt=%d\n",
 					MAC2STR(prCandidateBssDesc->aucBSSID),
 					prCandidateBssDesc->ucRCPI,
 					prCandidateBssDesc->ucJoinFailureCount,
@@ -3375,7 +3408,9 @@ SCN_BSS_JOIN_FAIL_RESET_STEP
 							-= __LOCAL_VAR2__;
 #undef __LOCAL_VAR2__
 
-						log_dbg(AIS, INFO, "decrease join fail count for Bss %pM to %u, timeout second %d\n",
+						log_dbg(AIS, INFO, "decrease join fail count for Bss "
+						MACSTR
+						" to %u, timeout second %d\n",
 							MAC2STR(
 							prBssDesc->aucBSSID),
 							prBssDesc
