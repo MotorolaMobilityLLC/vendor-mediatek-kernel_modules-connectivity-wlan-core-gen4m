@@ -394,10 +394,7 @@ static void halDriverOwnTimeout(struct ADAPTER *prAdapter,
 		prAdapter->u4OwnFailedLogCount++;
 		if (prAdapter->u4OwnFailedLogCount >
 		    LP_OWN_BACK_FAILED_RESET_CNT) {
-			halShowPseInfo(prAdapter);
-			halShowPleInfo(prAdapter);
 			halShowHostCsrInfo(prAdapter);
-			halShowPdmaInfo(prAdapter, false);
 #if CFG_CHIP_RESET_SUPPORT
 			/* Trigger RESET */
 			glGetRstReason(RST_DRV_OWN_FAIL);
@@ -563,29 +560,13 @@ void halSetFWOwn(IN struct ADAPTER *prAdapter, IN u_int8_t fgEnableGlobalInt)
 
 void halWakeUpWiFi(IN struct ADAPTER *prAdapter)
 {
-	u_int8_t fgResult;
-
-#if CFG_SUPPORT_PMIC_SPI_CLOCK_SWITCH
-	uint32_t u4Value = 0;
-	/*E1 PMIC clock workaround*/
-	HAL_MCR_RD(prAdapter, TOP_CKGEN2_CR_PMIC_CK_MANUAL, &u4Value);
-
-	if ((TOP_CKGEN2_CR_PMIC_CK_MANUAL_MASK & u4Value) == 0)
-		HAL_MCR_WR(prAdapter, TOP_CKGEN2_CR_PMIC_CK_MANUAL,
-			(TOP_CKGEN2_CR_PMIC_CK_MANUAL_MASK|u4Value));
-	HAL_MCR_RD(prAdapter, TOP_CKGEN2_CR_PMIC_CK_MANUAL, &u4Value);
-	DBGLOG(INIT, INFO, "PMIC SPI clock switch = %s\n",
-		(TOP_CKGEN2_CR_PMIC_CK_MANUAL_MASK&u4Value)?"SUCCESS":"FAIL");
-#endif
+	struct BUS_INFO *prBusInfo;
 
 	ASSERT(prAdapter);
 
-	HAL_LP_OWN_RD(prAdapter, &fgResult);
-
-	if (fgResult)
-		prAdapter->fgIsFwOwn = FALSE;
-	else
-		HAL_LP_OWN_CLR(prAdapter, &fgResult);
+	prBusInfo = prAdapter->chip_info->bus_info;
+	if (prBusInfo->wakeUpWiFi)
+		prBusInfo->wakeUpWiFi(prAdapter);
 }
 
 void halTxCancelSendingCmd(IN struct ADAPTER *prAdapter,

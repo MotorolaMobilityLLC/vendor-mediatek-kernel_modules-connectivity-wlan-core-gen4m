@@ -348,6 +348,33 @@ void mt7668LowPowerOwnClear(IN struct ADAPTER *prAdapter,
 }
 #endif /* _HIF_PCIE */
 
+void mt7668WakeUpWiFi(IN struct ADAPTER *prAdapter)
+{
+	u_int8_t fgResult;
+
+#if CFG_SUPPORT_PMIC_SPI_CLOCK_SWITCH
+	uint32_t u4Value = 0;
+	/*E1 PMIC clock workaround*/
+	HAL_MCR_RD(prAdapter, TOP_CKGEN2_CR_PMIC_CK_MANUAL, &u4Value);
+
+	if ((TOP_CKGEN2_CR_PMIC_CK_MANUAL_MASK & u4Value) == 0)
+		HAL_MCR_WR(prAdapter, TOP_CKGEN2_CR_PMIC_CK_MANUAL,
+			(TOP_CKGEN2_CR_PMIC_CK_MANUAL_MASK|u4Value));
+	HAL_MCR_RD(prAdapter, TOP_CKGEN2_CR_PMIC_CK_MANUAL, &u4Value);
+	DBGLOG(INIT, INFO, "PMIC SPI clock switch = %s\n",
+		(TOP_CKGEN2_CR_PMIC_CK_MANUAL_MASK&u4Value)?"SUCCESS":"FAIL");
+#endif
+
+	ASSERT(prAdapter);
+
+	HAL_LP_OWN_RD(prAdapter, &fgResult);
+
+	if (fgResult)
+		prAdapter->fgIsFwOwn = FALSE;
+	else
+		HAL_LP_OWN_CLR(prAdapter, &fgResult);
+}
+
 struct BUS_INFO mt7668_bus_info = {
 #if defined(_HIF_PCIE)
 	.top_cfg_base = MT7668_TOP_CFG_BASE,
@@ -363,6 +390,8 @@ struct BUS_INFO mt7668_bus_info = {
 	.lowPowerOwnRead = mt7668LowPowerOwnRead,
 	.lowPowerOwnSet = mt7668LowPowerOwnSet,
 	.lowPowerOwnClear = mt7668LowPowerOwnClear,
+	.wakeUpWiFi = mt7668WakeUpWiFi,
+	.isValidRegAccess = NULL,
 	.getMailboxStatus = NULL,
 	.setDummyReg = NULL,
 	.checkDummyReg = NULL,
