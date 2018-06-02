@@ -1713,6 +1713,15 @@ static void wlanCreateWirelessDevice(void)
 	gprWdev = prWdev;
 	kalMemZero(&grRegInfo, sizeof(grRegInfo));
 	glLoadNvram(&grRegInfo);
+
+#if CFG_MTK_ANDROID_WMT
+	if (g_fgNvramAvailable &&
+	    grRegInfo.ucSupport5GBand &&
+	    grRegInfo.ucEnable5GBand)
+		mtk_wmt_set_ext_ldo(1);
+	else
+		mtk_wmt_set_ext_ldo(0);
+#endif
 	DBGLOG(INIT, INFO, "Create wireless device success\n");
 	return;
 

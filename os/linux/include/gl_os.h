@@ -264,6 +264,10 @@ extern int  wifi_fwlog_onoff_status(void);
 extern void wifi_fwlog_event_func_register(wifi_fwlog_event_func_cb pfFwlog);
 #endif
 
+#ifdef CFG_MTK_ANDROID_WMT
+extern void mtk_wmt_set_ext_ldo(uint32_t flag);
+#endif
+
 /*******************************************************************************
  *                              C O N S T A N T S
  *******************************************************************************
