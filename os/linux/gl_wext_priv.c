@@ -2218,6 +2218,7 @@ reqExtSetAcpiDevicePowerState(IN P_GLUE_INFO_T prGlueInfo,
 #define CMD_GET_HIF_INFO	"GET_HIF"
 #define CMD_GET_STA_KEEP_CNT    "KEEPCOUNTER"
 #define CMD_STAT_RESET_CNT      "RESETCOUNTER"
+#define CMD_STAT_NOISE_SEL      "NOISESELECT"
 
 #define CMD_SET_TXPOWER			"SET_TXPOWER"
 #define CMD_COUNTRY				"COUNTRY"
@@ -4119,6 +4120,13 @@ static INT_32 priv_driver_dump_stat_info(P_ADAPTER_T prAdapter, IN char *pcComma
 		RCPI_TO_dBm(prHwWlanInfo->rWtblRxCounter.ucRxRcpi3));
 
 	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+		"%-20s%s%d %d %d %d\n", "NOISE", " = ",
+		RCPI_TO_dBm(prHwWlanInfo->rWtblRxCounter.ucRxCC0),
+		RCPI_TO_dBm(prHwWlanInfo->rWtblRxCounter.ucRxCC1),
+		RCPI_TO_dBm(prHwWlanInfo->rWtblRxCounter.ucRxCC2),
+		RCPI_TO_dBm(prHwWlanInfo->rWtblRxCounter.ucRxCC3));
+
+	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 		"%-20s%s%d\n", "LinkSpeed", " = ", u2LinkSpeed);
 
 	/* Last TX Rate */
@@ -4381,6 +4389,10 @@ static int priv_driver_get_sta_stat(IN struct net_device *prNetDev, IN char *pcC
 		return -1;
 
 	prHwWlanInfo->u4Index = ucWlanIndex;
+	if (strnicmp(apcArgv[1], CMD_STAT_NOISE_SEL, strlen(CMD_STAT_NOISE_SEL)) == 0)
+		prHwWlanInfo->rWtblRxCounter.fgRxCCSel = TRUE;
+	else
+		prHwWlanInfo->rWtblRxCounter.fgRxCCSel = FALSE;
 
 	DBGLOG(REQ, INFO, "MT6632 : index = %d i4TotalLen = %d\n", prHwWlanInfo->u4Index, i4TotalLen);
 
@@ -4738,7 +4750,6 @@ static int priv_driver_get_sta_stat2(IN struct net_device *prNetDev, IN char *pc
 
 	return i4BytesWritten;
 }
-
 
 static int priv_driver_get_drv_mcr(IN struct net_device *prNetDev, IN char *pcCommand, IN int i4TotalLen)
 {
