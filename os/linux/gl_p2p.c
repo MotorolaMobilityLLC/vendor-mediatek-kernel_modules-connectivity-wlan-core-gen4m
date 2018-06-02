@@ -502,11 +502,11 @@ BOOLEAN p2PAllocInfo(IN P_GLUE_INFO_T prGlueInfo, IN UINT_8 ucIdex)
 
 		if (prGlueInfo->prP2PInfo[ucIdex] == NULL) {
 			/*alloc memory for p2p info */
-			prGlueInfo->prP2PDevInfo = kalMemAlloc(sizeof(GL_P2P_DEV_INFO_T), VIR_MEM_TYPE);
 			prGlueInfo->prP2PInfo[ucIdex] = kalMemAlloc(sizeof(GL_P2P_INFO_T), VIR_MEM_TYPE);
 
 			if (ucIdex == 0) {
 				/*printk("[CHECK!]p2PAllocInfo : Alloc Common part only first interface\n");*/
+				prGlueInfo->prP2PDevInfo = kalMemAlloc(sizeof(GL_P2P_DEV_INFO_T), VIR_MEM_TYPE);
 				prAdapter->prP2pInfo = kalMemAlloc(sizeof(P2P_INFO_T), VIR_MEM_TYPE);
 				prWifiVar->prP2pDevFsmInfo = kalMemAlloc(sizeof(P2P_DEV_FSM_INFO_T), VIR_MEM_TYPE);
 			}
@@ -530,8 +530,11 @@ BOOLEAN p2PAllocInfo(IN P_GLUE_INFO_T prGlueInfo, IN UINT_8 ucIdex)
 		}
 		/*MUST set memory to 0 */
 		kalMemZero(prGlueInfo->prP2PInfo[ucIdex], sizeof(GL_P2P_INFO_T));
-		kalMemZero(prGlueInfo->prP2PDevInfo, sizeof(GL_P2P_DEV_INFO_T));
-		kalMemZero(prAdapter->prP2pInfo, sizeof(P2P_INFO_T));
+		if (ucIdex == 0) {
+			kalMemZero(prGlueInfo->prP2PDevInfo, sizeof(GL_P2P_DEV_INFO_T));
+			kalMemZero(prAdapter->prP2pInfo, sizeof(P2P_INFO_T));
+			kalMemZero(prWifiVar->prP2pDevFsmInfo, sizeof(P2P_DEV_FSM_INFO_T));
+		}
 		kalMemZero(prWifiVar->prP2PConnSettings[ucIdex], sizeof(P2P_CONNECTION_SETTINGS_T));
 /* kalMemZero(prWifiVar->prP2pFsmInfo, sizeof(P2P_FSM_INFO_T)); */
 		kalMemZero(prWifiVar->prP2pSpecificBssInfo[ucIdex], sizeof(P2P_SPECIFIC_BSS_INFO_T));
