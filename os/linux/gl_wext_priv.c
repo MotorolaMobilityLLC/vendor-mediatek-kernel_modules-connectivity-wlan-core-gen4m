@@ -770,9 +770,9 @@ priv_set_int(IN struct net_device *prNetDev,
 				     (PVOID)&u4CSUMFlags,
 				     sizeof(UINT_32), FALSE, FALSE, TRUE, &u4BufLen) == WLAN_STATUS_SUCCESS) {
 				if (pu4IntBuf[1] == 1)
-					prNetDev->features |= NETIF_F_HW_CSUM;
+					prNetDev->features |= NETIF_F_IP_CSUM | NETIF_F_IPV6_CSUM | NETIF_F_RXCSUM;
 				else if (pu4IntBuf[1] == 0)
-					prNetDev->features &= ~NETIF_F_HW_CSUM;
+					prNetDev->features &= ~(NETIF_F_IP_CSUM | NETIF_F_IPV6_CSUM | NETIF_F_RXCSUM);
 			}
 		}
 		break;
