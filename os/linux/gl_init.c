@@ -1000,9 +1000,13 @@ static void wlanSetMulticastListWorkQueue(struct work_struct *work)
 		}
 
 		prMCAddrList = kalMemAlloc(MAX_NUM_GROUP_ADDR * ETH_ALEN, VIR_MEM_TYPE);
+		if (!prMCAddrList) {
+			DBGLOG(INIT, WARN, "prMCAddrList memory alloc fail!\n");
+			return;
+		}
 
 		netdev_for_each_mc_addr(ha, prDev) {
-			if ((i < MAX_NUM_GROUP_ADDR) && (ha != NULL)) {
+			if (i < MAX_NUM_GROUP_ADDR) {
 				kalMemCopy((prMCAddrList + i * ETH_ALEN), GET_ADDR(ha), ETH_ALEN);
 				i++;
 			}
@@ -2725,7 +2729,7 @@ static int32_t wlanProbe(void *pvData, void *pvDriverData)
 					   &MacAddr.sa_data, PARAM_MAC_ADDR_LEN, TRUE, TRUE, TRUE, &u4SetInfoLen);
 
 			if (rStatus != WLAN_STATUS_SUCCESS) {
-				DBGLOG(INIT, WARN, "set MAC addr fail 0x%lx\n", rStatus);
+				DBGLOG(INIT, WARN, "set MAC addr fail 0x%x\n", rStatus);
 			} else {
 				kalMemCopy(prGlueInfo->prDevHandler->dev_addr, &MacAddr.sa_data, ETH_ALEN);
 				kalMemCopy(prGlueInfo->prDevHandler->perm_addr,
@@ -2752,7 +2756,7 @@ static int32_t wlanProbe(void *pvData, void *pvDriverData)
 				prGlueInfo->prDevHandler->features = NETIF_F_IP_CSUM | NETIF_F_IPV6_CSUM |
 								     NETIF_F_RXCSUM;
 			} else {
-				DBGLOG(INIT, WARN, "set HW checksum offload fail 0x%lx\n", rStatus);
+				DBGLOG(INIT, WARN, "set HW checksum offload fail 0x%x\n", rStatus);
 				prAdapter->fgIsSupportCsumOffload = FALSE;
 			}
 		}
@@ -3068,7 +3072,7 @@ static void wlanRemove(void)
 	DBGLOG(INIT, INFO, "Number of Stalled Packets = %d\n", GLUE_GET_REF_CNT(prGlueInfo->i4TxPendingFrameNum));
 
 	HAL_LP_OWN_SET(prAdapter, &fgResult);
-	DBGLOG(INIT, INFO, "HAL_LP_OWN_SET(%d)\n", fgResult);
+	DBGLOG(INIT, INFO, "HAL_LP_OWN_SET(%d)\n", (uint32_t) fgResult);
 
 	/* 4 <x> Stopping handling interrupt and free IRQ */
 	glBusFreeIrq(prDev, prGlueInfo);
@@ -3146,6 +3150,8 @@ static int initWlan(void)
 #endif
 
 	wlanCreateWirelessDevice();
+	if (gprWdev == NULL)
+		return -ENOMEM;
 
 	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(gprWdev->wiphy);
 	if (gprWdev) {
