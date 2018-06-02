@@ -970,6 +970,10 @@ void halRxReceiveRFBs(IN struct ADAPTER *prAdapter, uint32_t u4Port)
 			continue;
 		}
 
+		GLUE_RX_SET_PKT_INT_TIME(prSwRfb->pvPacket,
+					 prAdapter->prGlueInfo->u8HifIntTime);
+		GLUE_RX_SET_PKT_RX_TIME(prSwRfb->pvPacket, sched_clock());
+
 		prSwRfb->ucStaRecIdx =
 			secGetStaIdxByWlanIdx(prAdapter,
 				(uint8_t)HAL_RX_STATUS_GET_WLAN_IDX(
@@ -1000,6 +1004,7 @@ void halProcessRxInterrupt(IN struct ADAPTER *prAdapter)
 	union WPDMA_INT_STA_STRUCT rIntrStatus;
 
 	rIntrStatus = (union WPDMA_INT_STA_STRUCT)prHifInfo->u4IntStatus;
+	prAdapter->prGlueInfo->u8HifIntTime = sched_clock();
 
 	if (rIntrStatus.field.rx_done_1)
 		halRxReceiveRFBs(prAdapter, RX_RING_EVT_IDX_1);
