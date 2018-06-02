@@ -2581,6 +2581,14 @@ static void consys_log_event_notification(int cmd, int value)
 	DBGLOG(INIT, INFO, "gPrDev=%p, cmd=%d, value=%d\n",
 		gPrDev, cmd, value);
 
+	if (kalIsHalted()) { /* power-off */
+		u4LogOnOffCache = value;
+		DBGLOG(INIT, INFO,
+			"Power off return, u4LogOnOffCache=%d\n",
+				u4LogOnOffCache);
+		return;
+	}
+
 	prGlueInfo = (prDev != NULL) ?
 		*((struct GLUE_INFO **) netdev_priv(prDev)) : NULL;
 	DBGLOG(INIT, INFO, "prGlueInfo=%p\n", prGlueInfo);
