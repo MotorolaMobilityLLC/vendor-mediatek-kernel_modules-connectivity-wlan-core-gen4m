@@ -188,7 +188,8 @@ do { \
 				if (prBssInfo->eCurrentOPMode == \
 					OP_MODE_INFRASTRUCTURE) \
 					pucMicKey = \
-		&(prAdapter->rWifiVar.rAisSpecificBssInfo.aucRxMicKey[0]); \
+					&(prAdapter->rWifiVar.\
+					rAisSpecificBssInfo.aucRxMicKey[0]); \
 				else { \
 					ASSERT(FALSE); \
 				} \
