@@ -129,6 +129,7 @@ struct MSG_P2P_SWITCH_OP_MODE {
 	struct MSG_HDR rMsgHdr;	/* Must be the first member */
 	enum ENUM_OP_MODE eOpMode;
 	uint8_t ucRoleIdx;
+	enum ENUM_IFTYPE eIftype;
 };
 
 struct MSG_P2P_MGMT_FRAME_REGISTER {
