@@ -776,6 +776,9 @@ static void halResetMsduToken(IN struct ADAPTER *prAdapter)
 				prMemOps->unmapTxBuf(
 					prHifInfo, prToken->rDmaAddr,
 					prToken->u4DmaLength);
+				prToken->rPktDmaAddr = 0;
+				prToken->u4PktDmaLength = 0;
+				prToken->rDmaAddr = 0;
 			}
 
 #if !HIF_TX_PREALLOC_DATA_BUFFER
@@ -785,9 +788,6 @@ static void halResetMsduToken(IN struct ADAPTER *prAdapter)
 		}
 
 		prToken->fgInUsed = FALSE;
-		prToken->rDmaAddr = 0;
-		prToken->rPktDmaAddr = 0;
-		prToken->u4PktDmaLength = 0;
 		prTokenInfo->aprTokenStack[u4Idx] = prToken;
 	}
 	prTokenInfo->i4UsedCnt = 0;
