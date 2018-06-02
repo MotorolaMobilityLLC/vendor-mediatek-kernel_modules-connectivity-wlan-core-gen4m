@@ -238,7 +238,7 @@ static irqreturn_t mtk_axi_interrupt(int irq, void *dev_instance)
 		return IRQ_NONE;
 	}
 
-	DBGLOG(HAL, INFO, "%s INT[0x%08x]\n", __func__, u4RegValue);
+	DBGLOG(HAL, TRACE, "%s INT[0x%08x]\n", __func__, u4RegValue);
 
 	kalSetIntEvent(prGlueInfo);
 
@@ -456,7 +456,7 @@ u_int8_t glBusInit(void *pvData)
 	pdev->dev.dma_mask = &(pdev->dev.coherent_dma_mask);
 	DBGLOG(INIT, INFO, "wifi driver axi pdev->dev=%llx\n", pdev->dev);
 
-	KAL_ARCH_SETUP_DMA_OPS(&pdev->dev, 0, dma_mask, NULL, true);
+	KAL_ARCH_SETUP_DMA_OPS(&pdev->dev, 0, dma_mask, NULL, false);
 	DBGLOG(INIT, INFO, "dma_supported=%d\n",
 		dma_supported(&pdev->dev, dma_mask));
 	dma_ops = get_dma_ops(&pdev->dev);

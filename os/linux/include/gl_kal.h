@@ -871,12 +871,9 @@ do { \
 #endif
 
 #if defined(_HIF_AXI)
-#define KAL_FLUSH_DCACHE() \
-	connectivity_inner_flush_dcache_all()
 #define KAL_ARCH_SETUP_DMA_OPS(_dev, _base, _size, _iommu, _coherent) \
 	connectivity_arch_setup_dma_ops(_dev, _base, _size, _iommu, _coherent)
 #else
-#define KAL_FLUSH_DCACHE()
 #define KAL_ARCH_SETUP_DMA_OPS(_dev, _base, _size, _iommu, _coherent)
 #endif
 
