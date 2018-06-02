@@ -7404,7 +7404,9 @@ wlanPktTxDone(IN struct ADAPTER *prAdapter, IN struct MSDU_INFO *prMsduInfo, IN 
 	if (prMsduInfo->ucPktType >= ENUM_PKT_FLAG_NUM)
 		prMsduInfo->ucPktType = 0;
 
-	if ((prMsduInfo->ucPktType == ENUM_PKT_ARP) || (prMsduInfo->ucPktType == ENUM_PKT_DHCP)) {
+	if (prPktProfile->fgIsValid &&
+		((prMsduInfo->ucPktType == ENUM_PKT_ARP) ||
+		(prMsduInfo->ucPktType == ENUM_PKT_DHCP))) {
 		if (rCurrent - prPktProfile->rHardXmitArrivalTimestamp > 2000) {
 			DBGLOG(TX, INFO, "valid %d; ArriveDrv %u, Enq %u, Deq %u, LeaveDrv %u, TxDone %u\n",
 				prPktProfile->fgIsValid, prPktProfile->rHardXmitArrivalTimestamp,
