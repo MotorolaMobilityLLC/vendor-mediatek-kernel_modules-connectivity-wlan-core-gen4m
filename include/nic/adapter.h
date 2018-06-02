@@ -716,6 +716,11 @@ typedef struct _WIFI_VAR_T {
 	UINT_8 ucP2p5gBandwidth;
 	UINT_8 ucP2p2gBandwidth;
 
+	/* If enable, AP channel bandwidth Channel Center Frequency Segment 0/1 */
+	/* and secondary channel offset will align wifi.cfg */
+	/* Otherwise align cfg80211 */
+	UINT_8 ucApChnlDefFromCfg;
+
 	UINT_8 ucNSS;
 
 	UINT_8 ucRxMaxMpduLen;

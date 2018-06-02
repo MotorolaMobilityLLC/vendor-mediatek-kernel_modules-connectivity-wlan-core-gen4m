@@ -355,9 +355,6 @@ p2pRoleStatePrepare_To_REQING_CHANNEL_STATE(IN P_ADAPTER_T prAdapter,
 					    IN P_P2P_CONNECTION_REQ_INFO_T prConnReqInfo,
 					    OUT P_P2P_CHNL_REQ_INFO_T prChnlReqInfo)
 {
-	ENUM_BAND_T eBand;
-	UINT_8 ucChannel;
-	ENUM_CHNL_EXT_T eSCO;
 	ENUM_BAND_T eBandBackup;
 	UINT_8 ucChannelBackup;
 	ENUM_CHNL_EXT_T eSCOBackup;
@@ -382,12 +379,7 @@ p2pRoleStatePrepare_To_REQING_CHANNEL_STATE(IN P_ADAPTER_T prAdapter,
 		prBssInfo->ucPrimaryChannel = prConnReqInfo->rChannelInfo.ucChannelNum;
 		prBssInfo->eBand = prConnReqInfo->rChannelInfo.eBand;
 
-		if (cnmPreferredChannel(prAdapter, &eBand, &ucChannel, &eSCO) &&
-		    eSCO != CHNL_EXT_SCN && ucChannel == prBssInfo->ucPrimaryChannel && eBand == prBssInfo->eBand) {
-			prBssInfo->eBssSCO = eSCO;
-		} else {
-			prBssInfo->eBssSCO = rlmDecideScoForAP(prAdapter, prBssInfo);
-		}
+		prBssInfo->eBssSCO = rlmGetScoForAP(prAdapter, prBssInfo);
 
 		ASSERT_BREAK((prAdapter != NULL) && (prConnReqInfo != NULL) && (prChnlReqInfo != NULL));
 		prChnlReqInfo->u8Cookie = 0;
@@ -399,14 +391,20 @@ p2pRoleStatePrepare_To_REQING_CHANNEL_STATE(IN P_ADAPTER_T prAdapter,
 
 
 		/*rlmBssInitForAP would decide the real AP bandwidth*/
-		if (prBssInfo->eBand == BAND_5G)
-			prChnlReqInfo->eChannelWidth = CW_80MHZ;
-		else
-			prChnlReqInfo->eChannelWidth = CW_20_40MHZ;
-
-		prChnlReqInfo->ucCenterFreqS1 =
-			nicGetVhtS1(prBssInfo->ucPrimaryChannel, prChnlReqInfo->eChannelWidth);
-		prChnlReqInfo->ucCenterFreqS2 = 0;
+		prBssInfo->ucVhtChannelWidth =
+			cnmGetBssMaxBwToChnlBW(prAdapter, prBssInfo->ucBssIndex);
+		prChnlReqInfo->eChannelWidth = prBssInfo->ucVhtChannelWidth;
+		if (prChnlReqInfo->eChannelWidth == VHT_OP_CHANNEL_WIDTH_80P80) {
+			/* TODO: BW80+80 support */
+			DBGLOG(RLM, WARN, "BW80+80 not support. Fallback  to VHT_OP_CHANNEL_WIDTH_20_40\n");
+			prChnlReqInfo->eChannelWidth = VHT_OP_CHANNEL_WIDTH_20_40;
+			prChnlReqInfo->ucCenterFreqS1 = 0;
+			prChnlReqInfo->ucCenterFreqS2 = 0;
+		} else {
+			prChnlReqInfo->ucCenterFreqS1 =
+			rlmGetVhtS1ForAP(prAdapter, prBssInfo);
+			prChnlReqInfo->ucCenterFreqS2 = 0;
+		}
 
 		/* If the S1 is invalid, force to change bandwidth */
 		if ((prBssInfo->eBand == BAND_5G) &&
@@ -447,12 +445,7 @@ p2pRoleStatePrepare_To_DFS_CAC_STATE(IN P_ADAPTER_T prAdapter,
 		prBssInfo->ucPrimaryChannel = prConnReqInfo->rChannelInfo.ucChannelNum;
 		prBssInfo->eBand = prConnReqInfo->rChannelInfo.eBand;
 
-		if (cnmPreferredChannel(prAdapter, &eBand, &ucChannel, &eSCO) &&
-			eSCO != CHNL_EXT_SCN && ucChannel == prBssInfo->ucPrimaryChannel && eBand == prBssInfo->eBand) {
-			prBssInfo->eBssSCO = eSCO;
-		} else {
-			prBssInfo->eBssSCO = rlmDecideScoForAP(prAdapter, prBssInfo);
-		}
+		prBssInfo->eBssSCO = rlmGetScoForAP(prAdapter, prBssInfo);
 
 		prP2pRoleFsmInfo = P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prAdapter, prBssInfo->u4PrivateData);
 
@@ -465,11 +458,21 @@ p2pRoleStatePrepare_To_DFS_CAC_STATE(IN P_ADAPTER_T prAdapter,
 				prAdapter->prGlueInfo->prP2PInfo[prP2pRoleFsmInfo->ucRoleIndex]->cac_time_ms;
 		prChnlReqInfo->eChnlReqType = CH_REQ_TYPE_DFS_CAC;
 
-		prChnlReqInfo->eChannelWidth = rChannelWidth;
+		prBssInfo->ucVhtChannelWidth =
+			cnmGetBssMaxBwToChnlBW(prAdapter, prBssInfo->ucBssIndex);
+		prChnlReqInfo->eChannelWidth = prBssInfo->ucVhtChannelWidth;
 
-		prChnlReqInfo->ucCenterFreqS1 =
-			nicGetVhtS1(prBssInfo->ucPrimaryChannel, prChnlReqInfo->eChannelWidth);
-		prChnlReqInfo->ucCenterFreqS2 = 0;
+		if (prChnlReqInfo->eChannelWidth == VHT_OP_CHANNEL_WIDTH_80P80) {
+			/* TODO: BW80+80 support */
+			DBGLOG(RLM, WARN, "BW80+80 not support. Fallback  to VHT_OP_CHANNEL_WIDTH_20_40\n");
+			prChnlReqInfo->eChannelWidth = VHT_OP_CHANNEL_WIDTH_20_40;
+			prChnlReqInfo->ucCenterFreqS1 = 0;
+			prChnlReqInfo->ucCenterFreqS2 = 0;
+		} else {
+			prChnlReqInfo->ucCenterFreqS1 =
+				rlmGetVhtS1ForAP(prAdapter, prBssInfo);
+			prChnlReqInfo->ucCenterFreqS2 = 0;
+		}
 
 		DBGLOG(P2P, TRACE, "p2pRoleStatePrepare_To_REQING_CHANNEL_STATE\n");
 
