@@ -2995,8 +2995,10 @@ uint8_t nicTxGetWlanIdx(struct ADAPTER *prAdapter, uint8_t ucBssIdx, uint8_t ucS
 	}
 
 	if (ucWlanIndex >= WTBL_SIZE) {
-		DBGLOG(TX, WARN, "%s: Unexpected WIDX[%u] BSS[%u] STA[%u], set WIDX to default value[%u]\n",
-		       ucWlanIndex, ucBssIdx, ucStaRecIdx, prAdapter->ucTxDefaultWlanIndex);
+		DBGLOG(TX, WARN,
+			"Unexpected WIDX[%u] BSS[%u] STA[%u], set WIDX to default value[%u]\n",
+			ucWlanIndex, ucBssIdx, ucStaRecIdx,
+			prAdapter->ucTxDefaultWlanIndex);
 
 		ucWlanIndex = prAdapter->ucTxDefaultWlanIndex;
 	}
@@ -3721,6 +3723,11 @@ static void nicTxDirectCheckStaPsQ(IN struct ADAPTER *prAdapter, uint8_t ucStaRe
 
 	if (prMsduInfo == NULL) {
 		DBGLOG(TX, INFO, "prMsduInfo empty\n");
+		return;
+	}
+
+	if (prStaRec == NULL) {
+		DBGLOG(TX, INFO, "prStaRec empty\n");
 		return;
 	}
 
