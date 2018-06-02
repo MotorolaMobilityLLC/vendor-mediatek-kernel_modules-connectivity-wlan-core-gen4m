@@ -2940,7 +2940,8 @@ static int32_t wlanProbe(void *pvData, void *pvDriverData)
 					   prGlueInfo->prDevHandler->dev_addr, ETH_ALEN);
 
 #if CFG_SHOW_MACADDR_SOURCE
-				DBGLOG(INIT, INFO, "MAC address: " MACSTR, MAC2STR(&MacAddr.sa_data));
+				DBGLOG(INIT, INFO, "MAC address: " MACSTR,
+				MAC2STR(prAdapter->rWifiVar.aucMacAddress));
 #endif
 			}
 		}
