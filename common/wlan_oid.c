@@ -14522,8 +14522,13 @@ uint32_t wlanoidPktProcessIT(struct ADAPTER *prAdapter, void *pvBuffer,
 	rSwRfb.u2PacketLen = j;
 	rSwRfb.u2HeaderLen = WLAN_MAC_MGMT_HEADER_LEN;
 	rSwRfb.ucStaRecIdx = KAL_NETWORK_TYPE_AIS_INDEX;
-	if (fgBTMReq)
+	if (fgBTMReq) {
+		struct HW_MAC_RX_DESC rRxStatus;
+
+		rSwRfb.prRxStatus = (struct HW_MAC_RX_DESC *)&rRxStatus;
+		rSwRfb.prRxStatus->ucChanFreq = 6;
 		wnmWNMAction(prAdapter, &rSwRfb);
+	}
 	else
 		process_func(prAdapter, &rSwRfb);
 
