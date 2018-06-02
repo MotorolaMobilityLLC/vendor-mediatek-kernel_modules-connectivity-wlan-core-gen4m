@@ -316,11 +316,23 @@ struct TX_DESC_OPS_T mt6632TxDescOps = {
 	.fillTxByteCount = fillTxDescTxByteCountWithCR4,
 };
 
+#if CFG_SUPPORT_QA_TOOL
+struct ATE_OPS_T mt6632AteOps = {
+	.setICapStart = mt6632SetICapStart,
+	.getICapStatus = mt6632GetICapStatus,
+	.getICapIQData = commonGetICapIQData,
+	.getRbistDataDumpEvent = nicExtEventQueryMemDump,
+};
+#endif
+
 /* Litien code refine to support multi chip */
 struct mt66xx_chip_info mt66xx_chip_info_mt6632 = {
 	.bus_info = &mt6632_bus_info,
 	.fw_dl_ops = &mt6632_fw_dl_ops,
 	.prTxDescOps = &mt6632TxDescOps,
+#if CFG_SUPPORT_QA_TOOL
+	.prAteOps = &mt6632AteOps,
+#endif
 
 	.chip_id = MT6632_CHIP_ID,
 	.should_verify_chip_id = TRUE,

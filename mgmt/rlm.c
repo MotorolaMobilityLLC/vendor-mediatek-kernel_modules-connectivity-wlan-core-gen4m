@@ -98,15 +98,7 @@ enum ENUM_OP_NOTIFY_STATE_T {
 *                           P R I V A T E   D A T A
 ********************************************************************************
 */
-u_int8_t g_bCaptureDone = FALSE;
-u_int8_t g_bIcapEnable = FALSE;
-uint16_t g_u2DumpIndex;
 u_int8_t g_fgHasChannelSwitchIE = FALSE;
-
-#if CFG_SUPPORT_QA_TOOL
-uint32_t g_au4Offset[2][2];
-uint32_t g_au4IQData[256];
-#endif
 
 #if CFG_SUPPORT_CAL_RESULT_BACKUP_TO_HOST
 struct RLM_CAL_RESULT_ALL_V2			g_rBackupCalDataAllV2;
@@ -197,9 +189,6 @@ void rlmFsmEventInit(struct ADAPTER *prAdapter)
 #endif
 
 	g_fgHasChannelSwitchIE = FALSE;
-	g_bCaptureDone = FALSE;
-	g_bIcapEnable = FALSE;
-	g_u2DumpIndex = 0;
 }
 
 /*----------------------------------------------------------------------------*/

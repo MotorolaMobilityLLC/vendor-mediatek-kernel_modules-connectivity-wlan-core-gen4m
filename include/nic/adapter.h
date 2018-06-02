@@ -1357,6 +1357,7 @@ struct ADAPTER {
 	uint8_t ucSmartGearWfPathSupport;
 
 	struct PERF_MONITOR_T rPerMonitor;
+	struct ICAP_INFO_T rIcapInfo;
 };				/* end of _ADAPTER_T */
 
 /*******************************************************************************
