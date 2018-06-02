@@ -908,6 +908,9 @@ VOID p2pFuncStopComplete(IN P_ADAPTER_T prAdapter, IN P_BSS_INFO_T prP2pBssInfo)
 
 		/* Reset current OPMode */
 		prP2pBssInfo->eCurrentOPMode = OP_MODE_INFRASTRUCTURE;
+
+		/* Point StaRecOfAP to NULL when GC role stop Complete */
+		prP2pBssInfo->prStaRecOfAP = NULL;
 	} while (FALSE);
 
 }				/* p2pFuncStopComplete */
