@@ -34,6 +34,12 @@ export CONFIG_MTK_COMBO_PLAT_PATH=x86
 ##############################################################
 #/***** Common part ******/
 
+CFG_TX_DIRECT_USB=1
+
+CFG_RX_DIRECT_USB=1
+
+CFG_USB_REQ_TX_DATA_FFA_CNT=10
+
 CFG_USB_REQ_TX_DATA_CNT=2
 
 CFG_USB_REQ_RX_DATA_CNT=2
@@ -49,6 +55,17 @@ CFG_DRIVER_INF_NAME_CHANGE=n
 
 
 #/***** Manage configs into compile options ******/
+ifneq ($(CFG_TX_DIRECT_USB),)
+PLATFORM_FLAGS += -DCFG_TX_DIRECT_USB=$(CFG_TX_DIRECT_USB)
+endif
+
+ifneq ($(CFG_RX_DIRECT_USB),)
+PLATFORM_FLAGS += -DCFG_RX_DIRECT_USB=$(CFG_RX_DIRECT_USB)
+endif
+
+ifneq ($(CFG_USB_REQ_TX_DATA_FFA_CNT),)
+PLATFORM_FLAGS += -DCFG_USB_REQ_TX_DATA_FFA_CNT=$(CFG_USB_REQ_TX_DATA_FFA_CNT)
+endif
 
 ifneq ($(CFG_USB_REQ_TX_DATA_CNT),)
 PLATFORM_FLAGS += -DCFG_USB_REQ_TX_DATA_CNT=$(CFG_USB_REQ_TX_DATA_CNT)

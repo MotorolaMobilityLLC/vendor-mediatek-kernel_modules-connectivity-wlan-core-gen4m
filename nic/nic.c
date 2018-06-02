@@ -1346,7 +1346,10 @@ WLAN_STATUS nicDeactivateNetwork(IN P_ADAPTER_T prAdapter, IN UINT_8 ucBssIndex)
 
 	/* free all correlated station records */
 	cnmStaFreeAllStaByNetwork(prAdapter, ucBssIndex, STA_REC_EXCLUDE_NONE);
-	qmFreeAllByBssIdx(prAdapter, ucBssIndex);
+	if (HAL_IS_TX_DIRECT(prAdapter))
+		nicTxDirectClearBssAbsentQ(prAdapter, ucBssIndex);
+	else
+		qmFreeAllByBssIdx(prAdapter, ucBssIndex);
 	nicFreePendingTxMsduInfoByBssIdx(prAdapter, ucBssIndex);
 	kalClearSecurityFramesByBssIdx(prAdapter->prGlueInfo, ucBssIndex);
 
@@ -1510,7 +1513,10 @@ WLAN_STATUS nicUpdateBss(IN P_ADAPTER_T prAdapter, IN UINT_8 ucBssIndex)
 #endif
 		/* free all correlated station records */
 		cnmStaFreeAllStaByNetwork(prAdapter, ucBssIndex, STA_REC_EXCLUDE_NONE);
-		qmFreeAllByBssIdx(prAdapter, ucBssIndex);
+		if (HAL_IS_TX_DIRECT(prAdapter))
+			nicTxDirectClearBssAbsentQ(prAdapter, ucBssIndex);
+		else
+			qmFreeAllByBssIdx(prAdapter, ucBssIndex);
 		kalClearSecurityFramesByBssIdx(prAdapter->prGlueInfo, ucBssIndex);
 #if CFG_ENABLE_GTK_FRAME_FILTER
 		if (prBssInfo->prIpV4NetAddrList)

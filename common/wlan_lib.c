@@ -1470,78 +1470,82 @@ VOID wlanClearTxCommandDoneQueue(IN P_ADAPTER_T prAdapter)
 /*----------------------------------------------------------------------------*/
 VOID wlanClearDataQueue(IN P_ADAPTER_T prAdapter)
 {
+	if (HAL_IS_TX_DIRECT())
+		nicTxDirectClearHifQ(prAdapter);
+	else {
 #if CFG_FIX_2_TX_PORT
-	QUE_T qDataPort0, qDataPort1;
-	P_QUE_T prDataPort0, prDataPort1;
-	P_MSDU_INFO_T prMsduInfo;
+		QUE_T qDataPort0, qDataPort1;
+		P_QUE_T prDataPort0, prDataPort1;
+		P_MSDU_INFO_T prMsduInfo;
 
-	KAL_SPIN_LOCK_DECLARATION();
+		KAL_SPIN_LOCK_DECLARATION();
 
-	prDataPort0 = &qDataPort0;
-	prDataPort1 = &qDataPort1;
+		prDataPort0 = &qDataPort0;
+		prDataPort1 = &qDataPort1;
 
-	QUEUE_INITIALIZE(prDataPort0);
-	QUEUE_INITIALIZE(prDataPort1);
+		QUEUE_INITIALIZE(prDataPort0);
+		QUEUE_INITIALIZE(prDataPort1);
 
-	/* <1> Move whole list of CMD_INFO to temp queue */
-	KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_PORT_QUE);
-	QUEUE_MOVE_ALL(prDataPort0, &prAdapter->rTxP0Queue);
-	QUEUE_MOVE_ALL(prDataPort1, &prAdapter->rTxP1Queue);
-	KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_PORT_QUE);
+		/* <1> Move whole list of CMD_INFO to temp queue */
+		KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_PORT_QUE);
+		QUEUE_MOVE_ALL(prDataPort0, &prAdapter->rTxP0Queue);
+		QUEUE_MOVE_ALL(prDataPort1, &prAdapter->rTxP1Queue);
+		KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_PORT_QUE);
 
-	/* <2> Release Tx resource */
-	nicTxReleaseMsduResource(prAdapter, (P_MSDU_INFO_T) QUEUE_GET_HEAD(prDataPort0));
-	nicTxReleaseMsduResource(prAdapter, (P_MSDU_INFO_T) QUEUE_GET_HEAD(prDataPort1));
+		/* <2> Release Tx resource */
+		nicTxReleaseMsduResource(prAdapter, (P_MSDU_INFO_T) QUEUE_GET_HEAD(prDataPort0));
+		nicTxReleaseMsduResource(prAdapter, (P_MSDU_INFO_T) QUEUE_GET_HEAD(prDataPort1));
 
-	/* <3> Return sk buffer */
-	nicTxReturnMsduInfo(prAdapter, (P_MSDU_INFO_T) QUEUE_GET_HEAD(prDataPort0));
-	nicTxReturnMsduInfo(prAdapter, (P_MSDU_INFO_T) QUEUE_GET_HEAD(prDataPort1));
+		/* <3> Return sk buffer */
+		nicTxReturnMsduInfo(prAdapter, (P_MSDU_INFO_T) QUEUE_GET_HEAD(prDataPort0));
+		nicTxReturnMsduInfo(prAdapter, (P_MSDU_INFO_T) QUEUE_GET_HEAD(prDataPort1));
 
-	/* <4> Clear pending MSDU info in data done queue */
-	KAL_ACQUIRE_MUTEX(prAdapter, MUTEX_TX_DATA_DONE_QUE);
-	while (QUEUE_IS_NOT_EMPTY(&prAdapter->rTxDataDoneQueue)) {
-		QUEUE_REMOVE_HEAD(&prAdapter->rTxDataDoneQueue, prMsduInfo, P_MSDU_INFO_T);
+		/* <4> Clear pending MSDU info in data done queue */
+		KAL_ACQUIRE_MUTEX(prAdapter, MUTEX_TX_DATA_DONE_QUE);
+		while (QUEUE_IS_NOT_EMPTY(&prAdapter->rTxDataDoneQueue)) {
+			QUEUE_REMOVE_HEAD(&prAdapter->rTxDataDoneQueue, prMsduInfo, P_MSDU_INFO_T);
 
-		nicTxFreePacket(prAdapter, prMsduInfo, FALSE);
-		nicTxReturnMsduInfo(prAdapter, prMsduInfo);
-	}
-	KAL_RELEASE_MUTEX(prAdapter, MUTEX_TX_DATA_DONE_QUE);
+			nicTxFreePacket(prAdapter, prMsduInfo, FALSE);
+			nicTxReturnMsduInfo(prAdapter, prMsduInfo);
+		}
+		KAL_RELEASE_MUTEX(prAdapter, MUTEX_TX_DATA_DONE_QUE);
 #else
 
-	QUE_T qDataPort[TX_PORT_NUM];
-	P_QUE_T prDataPort[TX_PORT_NUM];
-	P_MSDU_INFO_T prMsduInfo;
-	INT_32 i;
+		QUE_T qDataPort[TX_PORT_NUM];
+		P_QUE_T prDataPort[TX_PORT_NUM];
+		P_MSDU_INFO_T prMsduInfo;
+		INT_32 i;
 
-	KAL_SPIN_LOCK_DECLARATION();
+		KAL_SPIN_LOCK_DECLARATION();
 
-	for (i = 0; i < TX_PORT_NUM; i++) {
-		prDataPort[i] = &qDataPort[i];
-		QUEUE_INITIALIZE(prDataPort[i]);
-	}
+		for (i = 0; i < TX_PORT_NUM; i++) {
+			prDataPort[i] = &qDataPort[i];
+			QUEUE_INITIALIZE(prDataPort[i]);
+		}
 
-	/* <1> Move whole list of CMD_INFO to temp queue */
-	KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_PORT_QUE);
-	for (i = 0; i < TX_PORT_NUM; i++)
-		QUEUE_MOVE_ALL(prDataPort[i], &prAdapter->rTxPQueue[i]);
-	KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_PORT_QUE);
+		/* <1> Move whole list of CMD_INFO to temp queue */
+		KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_PORT_QUE);
+		for (i = 0; i < TX_PORT_NUM; i++)
+			QUEUE_MOVE_ALL(prDataPort[i], &prAdapter->rTxPQueue[i]);
+		KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_PORT_QUE);
 
-	/* <2> Return sk buffer */
-	for (i = 0; i < TX_PORT_NUM; i++) {
-		nicTxReleaseMsduResource(prAdapter, (P_MSDU_INFO_T) QUEUE_GET_HEAD(prDataPort[i]));
-		nicTxReturnMsduInfo(prAdapter, (P_MSDU_INFO_T) QUEUE_GET_HEAD(prDataPort[i]));
-	}
+		/* <2> Return sk buffer */
+		for (i = 0; i < TX_PORT_NUM; i++) {
+			nicTxReleaseMsduResource(prAdapter, (P_MSDU_INFO_T) QUEUE_GET_HEAD(prDataPort[i]));
+			nicTxReturnMsduInfo(prAdapter, (P_MSDU_INFO_T) QUEUE_GET_HEAD(prDataPort[i]));
+		}
 
-	/* <3> Clear pending MSDU info in data done queue */
-	KAL_ACQUIRE_MUTEX(prAdapter, MUTEX_TX_DATA_DONE_QUE);
-	while (QUEUE_IS_NOT_EMPTY(&prAdapter->rTxDataDoneQueue)) {
-		QUEUE_REMOVE_HEAD(&prAdapter->rTxDataDoneQueue, prMsduInfo, P_MSDU_INFO_T);
+		/* <3> Clear pending MSDU info in data done queue */
+		KAL_ACQUIRE_MUTEX(prAdapter, MUTEX_TX_DATA_DONE_QUE);
+		while (QUEUE_IS_NOT_EMPTY(&prAdapter->rTxDataDoneQueue)) {
+			QUEUE_REMOVE_HEAD(&prAdapter->rTxDataDoneQueue, prMsduInfo, P_MSDU_INFO_T);
 
-		nicTxFreePacket(prAdapter, prMsduInfo, FALSE);
-		nicTxReturnMsduInfo(prAdapter, prMsduInfo);
-	}
-	KAL_RELEASE_MUTEX(prAdapter, MUTEX_TX_DATA_DONE_QUE);
+			nicTxFreePacket(prAdapter, prMsduInfo, FALSE);
+			nicTxReturnMsduInfo(prAdapter, prMsduInfo);
+		}
+		KAL_RELEASE_MUTEX(prAdapter, MUTEX_TX_DATA_DONE_QUE);
 #endif
+	}
 }
 
 /*----------------------------------------------------------------------------*/

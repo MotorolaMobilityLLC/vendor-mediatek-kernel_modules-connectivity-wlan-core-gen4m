@@ -525,15 +525,21 @@ VOID qmActivateStaRec(IN P_ADAPTER_T prAdapter, IN P_STA_RECORD_T prStaRec)
 VOID qmDeactivateStaRec(IN P_ADAPTER_T prAdapter, IN P_STA_RECORD_T prStaRec)
 {
 	UINT_32 i;
-	P_MSDU_INFO_T prFlushedTxPacketList = NULL;
 
 	if (!prStaRec)
 		return;
 	/* 4 <1> Flush TX queues */
-	prFlushedTxPacketList = qmFlushStaTxQueues(prAdapter, prStaRec->ucIndex);
+	if (HAL_IS_TX_DIRECT(prAdapter)) {
+		nicTxDirectClearStaPsQ(prAdapter, prStaRec->ucIndex);
+	} else {
+		P_MSDU_INFO_T prFlushedTxPacketList = NULL;
 
-	if (prFlushedTxPacketList)
-		wlanProcessQueuedMsduInfo(prAdapter, prFlushedTxPacketList);
+		prFlushedTxPacketList = qmFlushStaTxQueues(prAdapter, prStaRec->ucIndex);
+
+		if (prFlushedTxPacketList)
+			wlanProcessQueuedMsduInfo(prAdapter, prFlushedTxPacketList);
+	}
+
 	/* 4 <2> Flush RX queues and delete RX BA agreements */
 	for (i = 0; i < CFG_RX_MAX_BA_TID_NUM; i++) {
 		/* Delete the RX BA entry with TID = i */
@@ -4795,8 +4801,12 @@ VOID qmHandleEventBssAbsencePresence(IN P_ADAPTER_T prAdapter, IN P_WIFI_EVENT_T
 		QM_DBG_CNT_INC(&(prAdapter->rQM), QM_DBG_CNT_28);
 	}
 	/* From Absent to Present */
-	if ((fgIsNetAbsentOld) && (!prBssInfo->fgIsNetAbsent))
-		kalSetEvent(prAdapter->prGlueInfo);
+	if ((fgIsNetAbsentOld) && (!prBssInfo->fgIsNetAbsent)) {
+		if (HAL_IS_TX_DIRECT(prAdapter))
+			nicTxDirectStartCheckQTimer(prAdapter);
+		else
+			kalSetEvent(prAdapter->prGlueInfo);
+	}
 }
 
 /*----------------------------------------------------------------------------*/
@@ -4835,8 +4845,12 @@ VOID qmHandleEventStaChangePsMode(IN P_ADAPTER_T prAdapter, IN P_WIFI_EVENT_T pr
 		DBGLOG(QM, INFO, "PS=%d,%d\n", prEventStaChangePsMode->ucStaRecIdx, prStaRec->fgIsInPS);
 
 		/* From PS to Awake */
-		if ((fgIsInPSOld) && (!prStaRec->fgIsInPS))
-			kalSetEvent(prAdapter->prGlueInfo);
+		if ((fgIsInPSOld) && (!prStaRec->fgIsInPS)) {
+			if (HAL_IS_TX_DIRECT(prAdapter))
+				nicTxDirectStartCheckQTimer(prAdapter);
+			else
+				kalSetEvent(prAdapter->prGlueInfo);
+		}
 	}
 }
 
