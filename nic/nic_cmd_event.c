@@ -4145,7 +4145,7 @@ void nicEventLayer0ExtMagic(IN struct ADAPTER *prAdapter,
 	uint32_t u4QueryInfoLen = 0;
 	struct CMD_INFO *prCmdInfo = NULL;
 
-	log_dbg(NIC, INFO, "prEvent->ucExtenEID = %x\n", prEvent->ucExtenEID);
+	log_dbg(NIC, TRACE, "prEvent->ucExtenEID = %x\n", prEvent->ucExtenEID);
 
 	switch (prEvent->ucExtenEID) {
 	case EXT_EVENT_ID_CMD_RESULT:
