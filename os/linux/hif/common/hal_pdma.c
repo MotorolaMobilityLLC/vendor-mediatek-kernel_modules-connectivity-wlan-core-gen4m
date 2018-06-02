@@ -165,6 +165,7 @@ uint32_t halRxWaitResponse(IN struct ADAPTER *prAdapter, IN uint8_t ucPortIdx,
 	uint32_t u4Status = WLAN_STATUS_SUCCESS;
 	uint32_t u4Time, u4Current;
 	u_int8_t fgStatus;
+	uint32_t u4Value = 0;
 
 	DEBUGFUNC("nicRxWaitResponse");
 
@@ -186,10 +187,25 @@ uint32_t halRxWaitResponse(IN struct ADAPTER *prAdapter, IN uint8_t ucPortIdx,
 			/* timeout exceeding check */
 			u4Current = (uint32_t) kalGetTimeTick();
 
-			if ((u4Current > u4Time) && ((u4Current - u4Time) > RX_RESPONSE_TIMEOUT))
+			if ((u4Current > u4Time) &&
+			    ((u4Current - u4Time) > RX_RESPONSE_TIMEOUT)) {
+				kalDevRegRead(prAdapter->prGlueInfo,
+					      CONN_HIF_ON_DBGCR01, &u4Value);
+				DBGLOG(HAL, ERROR,
+				       "CONN_HIF_ON_DBGCR01[0x%x]\n",
+				       u4Value);
 				return WLAN_STATUS_FAILURE;
-			else if (u4Current < u4Time && ((u4Current + (0xFFFFFFFF - u4Time)) > RX_RESPONSE_TIMEOUT))
+			} else if (u4Current < u4Time &&
+				   ((u4Current + (0xFFFFFFFF - u4Time)) >
+				    RX_RESPONSE_TIMEOUT)) {
+				kalDevRegRead(prAdapter->prGlueInfo,
+					      CONN_HIF_ON_DBGCR01,
+					      &u4Value);
+				DBGLOG(HAL, ERROR,
+				       "CONN_HIF_ON_DBGCR01[0x%x]\n",
+				       u4Value);
 				return WLAN_STATUS_FAILURE;
+			}
 
 			/* Response packet is not ready */
 			kalUdelay(50);
@@ -1415,6 +1431,7 @@ u_int8_t halWpdmaWriteCmd(IN struct GLUE_INFO *prGlueInfo, IN struct CMD_INFO *p
 	kalMemCopy(pucSrc + prCmdInfo->u4TxdLen, prCmdInfo->pucTxp, prCmdInfo->u4TxpLen);
 
 	spin_lock_irqsave((spinlock_t *)prTxRingLock, flags);
+	KAL_FLUSH_DCACHE();
 
 	kalCheckAndResetTXReg(prGlueInfo, TX_RING_CMD_IDX_2);
 	SwIdx = prTxRing->TxCpuIdx;
@@ -1444,6 +1461,7 @@ u_int8_t halWpdmaWriteCmd(IN struct GLUE_INFO *prGlueInfo, IN struct CMD_INFO *p
 
 	/* Increase TX_CTX_IDX, but write to register later. */
 	INC_RING_INDEX(prTxRing->TxCpuIdx, TX_RING_SIZE);
+	KAL_FLUSH_DCACHE();
 
 	prTxRing->u4UsedCnt++;
 	kalDevRegWrite(prGlueInfo, prTxRing->hw_cidx_addr, prTxRing->TxCpuIdx);
@@ -1529,6 +1547,7 @@ u_int8_t halWpdmaWriteData(IN struct GLUE_INFO *prGlueInfo, IN struct MSDU_INFO 
 
 	/* Update HW Tx DMA ring */
 	spin_lock_irqsave((spinlock_t *)prTxRingLock, flags);
+	KAL_FLUSH_DCACHE();
 
 	prTxRing->u4UsedCnt++;
 	kalDevRegWrite(prGlueInfo, prTxRing->hw_cidx_addr, prTxRing->TxCpuIdx);

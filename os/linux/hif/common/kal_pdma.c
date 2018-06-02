@@ -353,6 +353,7 @@ kalDevPortWrite(IN struct GLUE_INFO *prGlueInfo,
 	prTxRingLock = &prHifInfo->TxRingLock[u2Port];
 
 	spin_lock_irqsave((spinlock_t *)prTxRingLock, flags);
+	KAL_FLUSH_DCACHE();
 
 	kalCheckAndResetTXReg(prGlueInfo, u2Port);
 	SwIdx = prTxRing->TxCpuIdx;
@@ -382,6 +383,7 @@ kalDevPortWrite(IN struct GLUE_INFO *prGlueInfo,
 
 	/* Increase TX_CTX_IDX, but write to register later. */
 	INC_RING_INDEX(prTxRing->TxCpuIdx, TX_RING_SIZE);
+	KAL_FLUSH_DCACHE();
 
 	prTxRing->u4UsedCnt++;
 

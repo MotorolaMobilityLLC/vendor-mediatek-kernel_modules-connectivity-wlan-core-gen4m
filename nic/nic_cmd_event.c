@@ -3118,12 +3118,15 @@ void nicExtEventReCalData(IN struct ADAPTER *prAdapter, IN uint8_t *pucEventBuf)
 		prReCalData->u.ucData[19] = '\0';
 		u4Idx = prReCalInfo->u4Count;
 
-		kstrtoul(&prReCalData->u.ucData[1], 16,
-				 (unsigned long *) &prCalArray[u4Idx].u4CalId);
-		kstrtoul(&prReCalData->u.ucData[11], 16,
-			     (unsigned long *) &prCalArray[u4Idx].u4CalAddr);
-		kstrtoul(&prReCalData->u.ucData[21], 16,
-			     (unsigned long *) &prCalArray[u4Idx].u4CalValue);
+		if (kstrtoul(&prReCalData->u.ucData[1], 16,
+			     (unsigned long *) &prCalArray[u4Idx].u4CalId))
+			DBGLOG(RFTEST, ERROR, "convert fail: ucData[1]\n");
+		if (kstrtoul(&prReCalData->u.ucData[11], 16,
+			     (unsigned long *) &prCalArray[u4Idx].u4CalAddr))
+			DBGLOG(RFTEST, ERROR, "convert fail: ucData[11]\n");
+		if (kstrtoul(&prReCalData->u.ucData[21], 16,
+			     (unsigned long *) &prCalArray[u4Idx].u4CalValue))
+			DBGLOG(RFTEST, ERROR, "convert fail: ucData[21]\n");
 		DBGLOG(RFTEST, TRACE, "[0x%08x][0x%08x][0x%08x]\n",
 					prCalArray[u4Idx].u4CalId,
 					prCalArray[u4Idx].u4CalAddr,
