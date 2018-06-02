@@ -3051,7 +3051,6 @@ static int32_t wlanProbe(void *pvData, void *pvDriverData)
 					       u4LogLevel);
 
 #ifdef CONFIG_MTK_CONNSYS_DEDICATED_LOG_PATH
-		wifi_fwlog_onoff_status();
 		/* sync log status with firmware */
 		if (u4LogOnOffCache != -1) /* -1: connsysD does not set */
 			consys_log_event_notification((int)FW_LOG_CMD_ON_OFF,
