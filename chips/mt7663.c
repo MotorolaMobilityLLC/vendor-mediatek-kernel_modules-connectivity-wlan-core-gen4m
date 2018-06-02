@@ -105,7 +105,7 @@ ECO_INFO_T mt7663_eco_table[] = {
 	{0x00, 0x00, 0x0}	/* End of table */
 };
 
-BUS_INFO bus_info_mt7663 = {
+BUS_INFO mt7663_bus_info = {
 #if defined(_HIF_PCIE)
 	.top_cfg_base = MT7663_TOP_CFG_BASE,
 	.is_pcie_32dw_read = MT7663_IS_PCIE_32DW_READ, /* Litien */
@@ -119,9 +119,18 @@ BUS_INFO bus_info_mt7663 = {
 #endif /* _HIF_USB */
 };
 
+struct firmware_download_operations mt7663_fw_dl_ops = {
+	.tailer_format = HARVARD_TAILER_FORMAT,
+	.constructFirmwarePrio = NULL,
+	.downloadFirmware = wlanConnacFormatDownload,
+	.getFwInfo = wlanGetConnacFwInfo,
+};
+
 /* Litien code refine to support multi chip */
 struct mt66xx_chip_info mt66xx_chip_info_mt7663 = {
-	.bus_info = &bus_info_mt7663,
+	.bus_info = &mt7663_bus_info,
+	.fw_dl_ops = &mt7663_fw_dl_ops,
+
 	.chip_id = MT7663_CHIP_ID,
 	.sw_sync0 = MT7663_SW_SYNC0,
 	.sw_ready_bits = WIFI_FUNC_NO_CR4_READY_BITS,
@@ -131,7 +140,6 @@ struct mt66xx_chip_info mt66xx_chip_info_mt7663 = {
 	.txd_append_size = MT7663_TX_DESC_APPEND_LENGTH,
 	.eco_info = mt7663_eco_table,
 
-	.constructFirmwarePrio = NULL,
 	.asicCapInit = asicCapInit,
 	.asicEnableFWDownload = asicEnableFWDownload,
 	.fillTxDescAppend = fillTxDescAppendByHostV2,
