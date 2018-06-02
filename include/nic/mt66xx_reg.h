@@ -1043,6 +1043,7 @@ struct mt66xx_chip_info {
 	const unsigned int is_support_cr4;	/* support CR4 */
 	const unsigned int txd_append_size;	/* hw mac txd append */
 	const unsigned int isNicCapV1;
+	const unsigned int is_support_efuse; /* efuse support */
 
 	const struct ECO_INFO *eco_info;	/* chip version table */
 	uint8_t eco_ver;	/* chip version */

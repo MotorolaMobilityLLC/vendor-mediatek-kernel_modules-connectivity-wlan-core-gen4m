@@ -1919,6 +1919,16 @@ static int32_t HQA_ReadEEPROM(struct net_device *prNetDev, IN union iwreq_data *
 
 #if  (CFG_EEPROM_PAGE_ACCESS == 1)
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+	if (prGlueInfo &&
+	    prGlueInfo->prAdapter &&
+	    prGlueInfo->prAdapter->chip_info &&
+	    !prGlueInfo->prAdapter->chip_info->is_support_efuse) {
+		rStatus = WLAN_STATUS_NOT_SUPPORTED;
+		log_dbg(RFTEST, WARN, "Efuse not support\n");
+		ResponseToQA(HqaCmdFrame, prIwReqData, 2, rStatus);
+		return rStatus;
+	}
+
 	kalMemSet(&rAccessEfuseInfo, 0, sizeof(struct PARAM_CUSTOM_ACCESS_EFUSE));
 
 
@@ -2236,6 +2246,14 @@ static int32_t HQA_WriteBulkEEPROM(struct net_device *prNetDev,
 			/* EFUSE */
 			/* Read */
 			DBGLOG(INIT, INFO, "QA_AGENT HQA_WriteBulkEEPROM  Read\n");
+			if (prAdapter->chip_info &&
+			    !prAdapter->chip_info->is_support_efuse) {
+				log_dbg(RFTEST, WARN, "Efuse not support\n");
+				rStatus = WLAN_STATUS_NOT_SUPPORTED;
+				ResponseToQA(HqaCmdFrame, prIwReqData,
+					     2, rStatus);
+				return rStatus;
+			}
 			kalMemSet(&rAccessEfuseInfoRead, 0, sizeof(struct PARAM_CUSTOM_ACCESS_EFUSE));
 			rAccessEfuseInfoRead.u4Address = (Offset / EFUSE_BLOCK_SIZE) * EFUSE_BLOCK_SIZE;
 			rStatus = kalIoctl(prGlueInfo,

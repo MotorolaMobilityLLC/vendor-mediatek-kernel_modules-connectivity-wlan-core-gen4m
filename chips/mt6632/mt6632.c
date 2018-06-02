@@ -390,6 +390,7 @@ struct mt66xx_chip_info mt66xx_chip_info_mt6632 = {
 	.txd_append_size = MT6632_TX_DESC_APPEND_LENGTH,
 	.eco_info = mt6632_eco_table,
 	.isNicCapV1 = TRUE,
+	.is_support_efuse = TRUE,
 
 	.u4ChipIpVersion = 0,
 	.u4ChipIPConfig = 0,
