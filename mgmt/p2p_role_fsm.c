@@ -981,7 +981,7 @@ void p2pRoleFsmRunEventStartAP(IN struct ADAPTER *prAdapter, IN struct MSG_HDR *
 #endif
 
 #if CFG_SUPPORT_DBDC
-	kalMemZero(&rDbdcCap, sizeof(CNM_DBDC_CAP_T));
+	kalMemZero(&rDbdcCap, sizeof(struct CNM_DBDC_CAP));
 	cnmDbdcEnableDecision(prAdapter, prP2pBssInfo->ucBssIndex, prP2pConnReqInfo->rChannelInfo.eBand);
 	cnmGetDbdcCapability(prAdapter,
 		prP2pBssInfo->ucBssIndex,
@@ -1234,7 +1234,7 @@ void p2pRoleFsmRunEventDfsCac(IN struct ADAPTER *prAdapter, IN struct MSG_HDR *p
 		prP2pConnReqInfo->eConnRequest = P2P_CONNECTION_TYPE_GO;
 
 #if CFG_SUPPORT_DBDC
-	kalMemZero(&rDbdcCap, sizeof(CNM_DBDC_CAP_T));
+	kalMemZero(&rDbdcCap, sizeof(struct CNM_DBDC_CAP));
 	cnmDbdcEnableDecision(prAdapter, prP2pBssInfo->ucBssIndex, prP2pConnReqInfo->rChannelInfo.eBand);
 	cnmGetDbdcCapability(prAdapter,
 		prP2pBssInfo->ucBssIndex,
@@ -1488,7 +1488,7 @@ void p2pRoleFsmRunEventConnectionRequest(IN struct ADAPTER *prAdapter, IN struct
 			&prChnlReqInfo->ucCenterFreqS1, &prChnlReqInfo->ucReqChnlNum);
 
 #if CFG_SUPPORT_DBDC
-		kalMemZero(&rDbdcCap, sizeof(CNM_DBDC_CAP_T));
+		kalMemZero(&rDbdcCap, sizeof(struct CNM_DBDC_CAP));
 		cnmDbdcEnableDecision(prAdapter, prP2pBssInfo->ucBssIndex, prChnlReqInfo->eBand);
 		cnmGetDbdcCapability(prAdapter,
 			prP2pBssInfo->ucBssIndex,
@@ -2000,7 +2000,7 @@ p2pRoleFsmRunEventScanDone(IN struct ADAPTER *prAdapter, IN struct MSG_HDR *prMs
 				if (!prChnlReqInfo)
 					break;
 #if CFG_SUPPORT_DBDC
-				kalMemZero(&rDbdcCap, sizeof(CNM_DBDC_CAP_T));
+				kalMemZero(&rDbdcCap, sizeof(struct CNM_DBDC_CAP));
 				cnmDbdcEnableDecision(prAdapter,
 									prP2pRoleFsmInfo->ucBssIndex,
 									prChnlReqInfo->eBand);

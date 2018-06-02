@@ -132,7 +132,7 @@ p2pDevStateInit_REQING_CHANNEL(IN struct ADAPTER *prAdapter,
 		}
 
 #if CFG_SUPPORT_DBDC
-		kalMemZero(&rDbdcCap, sizeof(CNM_DBDC_CAP_T));
+		kalMemZero(&rDbdcCap, sizeof(struct CNM_DBDC_CAP));
 
 		cnmGetDbdcCapability(prAdapter,
 			prBssInfo->ucBssIndex,
