@@ -16,3 +16,16 @@ Module.*
 *.xls
 *.d
 *.tmp
+
+# source insight project files
+*.IAB
+*.IAD
+*.IMB
+*.IMD
+*.PFI
+*.PO
+*.PR
+*.PRI
+*.PS
+*.SearchResults
+*.WK3
