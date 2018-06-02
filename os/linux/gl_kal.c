@@ -2967,6 +2967,10 @@ int hif_thread(void *data)
 		}
 		wlanAcquirePowerControl(prGlueInfo->prAdapter);
 
+		/* Check driver own status */
+		if (prGlueInfo->prAdapter->fgIsFwOwn)
+			continue;
+
 		/* Handle Interrupt */
 		if (test_and_clear_bit(GLUE_FLAG_INT_BIT, &prGlueInfo->ulFlag)) {
 			/* the Wi-Fi interrupt is already disabled in mmc thread,
