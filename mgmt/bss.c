@@ -2195,11 +2195,6 @@ void bssInitForAP(IN struct ADAPTER *prAdapter, IN struct BSS_INFO *prBssInfo, I
 	    rNonHTApModeAttributes[prBssInfo->ucConfigAdHocAPMode].ePhyTypeIndex;
 	prBssInfo->u2BSSBasicRateSet = rNonHTApModeAttributes[prBssInfo->ucConfigAdHocAPMode].u2BSSBasicRateSet;
 
-	/* 4 <1.1> Mask CCK 1M For Sco scenario except FDD mode */
-	if (prAdapter->u4FddMode == FALSE)
-		prBssInfo->u2BSSBasicRateSet &= ~RATE_SET_BIT_1M;
-	/* prBssInfo->u2OperationalRateSet &= ~RATE_SET_BIT_1M; */
-
 	prBssInfo->u2OperationalRateSet = rNonHTPhyAttributes[prBssInfo->ucNonHTBasicPhyType].u2SupportedRateSet;
 
 	if (fgIsRateUpdate) {
