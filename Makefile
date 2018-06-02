@@ -229,6 +229,13 @@ MGMT_OBJS := $(MGMT_DIR)ais_fsm.o \
              $(MGMT_DIR)hs20.o \
              $(MGMT_DIR)tdls.o
 
+# ---------------------------------------------------
+# Chips Objects List
+# ---------------------------------------------------
+
+ifeq ($(CONFIG_CONNAC_MAC),y)
+CHIPS_OBJS += $(CHIPS)cmm_asic_connac.o
+endif
 ifneq ($(findstring 6632,$(MTK_COMBO_CHIP)),)
 CHIPS_OBJS += $(CHIPS)mt6632.o
 endif

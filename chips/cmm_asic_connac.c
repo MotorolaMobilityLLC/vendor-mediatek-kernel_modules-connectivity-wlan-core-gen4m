@@ -49,14 +49,14 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  *****************************************************************************/
-/*! \file   mt7663.c
+/*! \file   connac.c
 *    \brief  Internal driver stack will export the required procedures here for GLUE Layer.
 *
 *    This file contains all routines which are exported from MediaTek 802.11 Wireless
 *    LAN driver stack to GLUE Layer.
 */
 
-#ifdef MT7663
+#ifdef CONNAC_MAC
 
 /*******************************************************************************
 *                         C O M P I L E R   F L A G S
@@ -69,67 +69,96 @@
 */
 #include "precomp.h"
 
-#include "mt7663.h"
-
 /*******************************************************************************
 *                              C O N S T A N T S
 ********************************************************************************
 */
+VOID asicEnableFWDownload(IN P_ADAPTER_T prAdapter, IN BOOL fgEnable)
+{
+	P_GLUE_INFO_T prGlueInfo;
 
-/*******************************************************************************
-*                                 M A C R O S
-********************************************************************************
-*/
+	ASSERT(prAdapter);
 
-/*******************************************************************************
-*                   F U N C T I O N   D E C L A R A T I O N S
-********************************************************************************
-*/
+	prGlueInfo = prAdapter->prGlueInfo;
 
-/*******************************************************************************
-*                              F U N C T I O N S
-********************************************************************************
-*/
-
-
-/*******************************************************************************
-*                            P U B L I C   D A T A
-********************************************************************************
-*/
-ECO_INFO_T mt7663_eco_table[] = {
-	/* HW version,  ROM version,    Factory version */
-#if 0 /* TODO: update after receive information */
-	{0x00, 0x00, 0xA},	/* E1 */
-	{0x10, 0x01, 0xB},	/* E2 */
-#endif /* if 0 */
-	{0x00, 0x00, 0x0}	/* End of table */
-};
-
-BUS_INFO bus_info_mt7663 = {
+	switch (prGlueInfo->u4InfType) {
 #if defined(_HIF_PCIE)
-	.top_cfg_base = MT7663_TOP_CFG_BASE,
-	.is_pcie_32dw_read = MT7663_IS_PCIE_32DW_READ, /* Litien */
-	.tx_ring_fwdl_idx = 3,
-	.tx_ring_cmd_idx = 2,
-	.tx_ring_data_idx = 0,
+	case MT_DEV_INF_PCIE:
+	{
+		WPDMA_GLO_CFG_STRUCT GloCfg;
+
+		kalDevRegRead(prGlueInfo, WPDMA_GLO_CFG, &GloCfg.word);
+
+		GloCfg.field_conn.bypass_dmashdl_txring3 = fgEnable;
+
+		kalDevRegWrite(prGlueInfo, WPDMA_GLO_CFG, GloCfg.word);
+	}
+	break;
 #endif /* _HIF_PCIE */
-};
 
-/* Litien code refine to support multi chip */
-struct mt66xx_chip_info mt66xx_chip_info_mt7663 = {
-	.chip_id = MT7663_CHIP_ID,
-	.sw_sync0 = MT7663_SW_SYNC0,
-	.sw_ready_bits = WIFI_FUNC_NO_CR4_READY_BITS,
-	.sw_ready_bit_offset = MT7663_SW_SYNC0_RDY_OFFSET,
-	.patch_addr = MT7663_PATCH_START_ADDR,
-	.eco_info = mt7663_eco_table,
-	.constructFirmwarePrio = NULL,
-	.asicEnableFWDownload = asicEnableFWDownload,
-	.asicDevInit = asicDevInit,
-};
+#if defined(_HIF_USB)
+	case MT_DEV_INF_USB:
+	{
+		UINT_32 u4Value = 0;
 
-struct mt66xx_hif_driver_data mt66xx_driver_data_mt7663 = {
-	.chip_info = &mt66xx_chip_info_mt7663,
-};
+		ASSERT(prAdapter);
 
-#endif /* MT7663 */
+		HAL_MCR_RD(prAdapter, CONNAC_UDMA_TX_QSEL, &u4Value);
+
+		if (fgEnable)
+			u4Value |= FW_DL_EN;
+		else
+			u4Value &= ~FW_DL_EN;
+
+		HAL_MCR_WR(prAdapter, CONNAC_UDMA_TX_QSEL, u4Value);
+	}
+	break;
+#endif /* _HIF_USB */
+
+	default:
+		break;
+	}
+}
+
+VOID asicDevInit(IN P_ADAPTER_T prAdapter)
+{
+	P_GLUE_INFO_T prGlueInfo;
+
+	ASSERT(prAdapter);
+
+	prGlueInfo = prAdapter->prGlueInfo;
+
+	switch (prGlueInfo->u4InfType) {
+#if defined(_HIF_USB)
+	case MT_DEV_INF_USB:
+	{
+		UINT_32 u4Value = 0;
+
+		ASSERT(prAdapter);
+
+		HAL_MCR_RD(prAdapter, CONNAC_UDMA_WLCFG_0, &u4Value);
+
+		/* enable UDMA TX & RX */
+		u4Value = UDMA_WLCFG_0_TX_EN(1) | UDMA_WLCFG_0_RX_EN(1) |
+		    UDMA_WLCFG_0_RX_AGG_EN(1) |
+		    UDMA_WLCFG_0_RX_MPSZ_PAD0(1) |
+		    UDMA_WLCFG_0_RX_AGG_LMT(USB_RX_AGGREGTAION_LIMIT) |
+		    UDMA_WLCFG_0_RX_AGG_TO(USB_RX_AGGREGTAION_TIMEOUT);
+
+		HAL_MCR_WR(prAdapter, CONNAC_UDMA_WLCFG_0, u4Value);
+
+		HAL_MCR_RD(prAdapter, CONNAC_UDMA_WLCFG_1, &u4Value);
+
+		u4Value &= ~UDMA_WLCFG_1_RX_AGG_PKT_LMT_MASK;
+		u4Value |= UDMA_WLCFG_1_RX_AGG_PKT_LMT(USB_RX_AGGREGTAION_PKT_LIMIT);
+
+		HAL_MCR_WR(prAdapter, CONNAC_UDMA_WLCFG_1, u4Value);
+	}
+	break;
+#endif /* _HIF_USB */
+
+	default:
+		break;
+	}
+}
+#endif /* CONNAC_MAC */
