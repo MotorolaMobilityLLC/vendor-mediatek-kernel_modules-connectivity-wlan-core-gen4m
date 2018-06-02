@@ -68,6 +68,8 @@
 #ifndef __HIF_PDMA_H__
 #define __HIF_PDMA_H__
 
+#include <linux/list_sort.h>
+
 /*******************************************************************************
  *                              C O N S T A N T S
  *******************************************************************************
@@ -162,6 +164,11 @@
 
 #define PDMA_DUMMY_RESET_VALUE  0x0F
 #define PDMA_DUMMY_MAGIC_NUM    0x13
+
+#define TXD_DW1_RMVL            BIT(10)
+#define TXD_DW1_VLAN            BIT(11)
+#define TXD_DW1_ETYP            BIT(12)
+#define TXD_DW1_AMSDU_C         BIT(20)
 
 /*******************************************************************************
  *                                 M A C R O S
@@ -331,7 +338,6 @@ struct PCIE_CHIP_CR_MAPPING {
 	uint32_t u4Range;
 };
 
-
 struct MSDU_TOKEN_ENTRY {
 	uint32_t u4Token;
 	u_int8_t fgInUsed;
@@ -350,15 +356,30 @@ struct MSDU_TOKEN_INFO {
 	struct MSDU_TOKEN_ENTRY arToken[HIF_TX_MSDU_TOKEN_NUM];
 };
 
-struct TX_CMD_REQ_T {
+struct TX_CMD_REQ {
 	struct CMD_INFO *prCmdInfo;
 	uint8_t ucTC;
 	struct list_head list;
 };
 
-struct TX_DATA_REQ_T {
+struct TX_DATA_REQ {
 	struct MSDU_INFO *prMsduInfo;
 	struct list_head list;
+};
+
+struct AMSDU_MAC_TX_DESC {
+	uint16_t u2TxByteCount;
+	uint16_t u2DW0;
+	uint32_t u4DW1;
+	uint32_t u4DW2:31;
+	uint32_t u4FR:1;
+	uint32_t u4DW3;
+	uint32_t u4DW4;
+	uint32_t u4DW5_1:9;
+	uint32_t u4TXS:2;
+	uint32_t u4DW5_2:21;
+	uint32_t u4DW6;
+	uint32_t u4DW7;
 };
 
 enum ERR_RECOVERY_STATE {
@@ -402,21 +423,33 @@ struct MSDU_TOKEN_ENTRY *halAcquireMsduToken(IN struct ADAPTER *prAdapter);
 void halReturnMsduToken(IN struct ADAPTER *prAdapter, uint32_t u4TokenNum);
 void halTxUpdateCutThroughDesc(struct GLUE_INFO *prGlueInfo,
 			       struct MSDU_INFO *prMsduInfo,
-			       struct MSDU_TOKEN_ENTRY *prToken);
+			       struct MSDU_TOKEN_ENTRY *prFillToken,
+			       struct MSDU_TOKEN_ENTRY *prDataToken,
+			       uint32_t u4Idx, bool fgIsLast);
 u_int8_t halIsStaticMapBusAddr(IN uint32_t u4Addr);
 u_int8_t halChipToStaticMapBusAddr(IN struct GLUE_INFO *prGlueInfo,
 				   IN uint32_t u4ChipAddr,
 				   OUT uint32_t *pu4BusAddr);
 u_int8_t halGetDynamicMapReg(IN struct GLUE_INFO *prGlueInfo,
-			     IN uint32_t u4ChipAddr, OUT uint32_t *pu4Value);
+			     IN uint32_t u4ChipAddr,
+			     OUT uint32_t *pu4Value);
 u_int8_t halSetDynamicMapReg(IN struct GLUE_INFO *prGlueInfo,
-			     IN uint32_t u4ChipAddr, IN uint32_t u4Value);
+			     IN uint32_t u4ChipAddr,
+			     IN uint32_t u4Value);
 void halConnacWpdmaConfig(struct GLUE_INFO *prGlueInfo, u_int8_t enable);
 void halConnacEnableInterrupt(IN struct ADAPTER *prAdapter);
-u_int8_t halWpdmaWriteCmd(IN struct GLUE_INFO *prGlueInfo,
-			  IN struct CMD_INFO *prCmdInfo, IN uint8_t ucTC);
-u_int8_t halWpdmaWriteData(IN struct GLUE_INFO *prGlueInfo,
-			   IN struct MSDU_INFO *prMsduInfo);
+bool halWpdmaWriteCmd(struct GLUE_INFO *prGlueInfo,
+		      struct CMD_INFO *prCmdInfo,
+		      uint8_t ucTC);
+bool halWpdmaWriteMsdu(struct GLUE_INFO *prGlueInfo,
+		       struct MSDU_INFO *prMsduInfo,
+		       struct list_head *prCurList);
+bool halWpdmaWriteAmsdu(struct GLUE_INFO *prGlueInfo,
+			struct list_head *prList,
+			uint32_t u4Num, uint16_t u2Size);
+void halWpdamFreeMsdu(struct GLUE_INFO *prGlueInfo,
+		      struct MSDU_INFO *prMsduInfo,
+		      bool fgSetEvent);
 void halHwRecoveryFromError(IN struct ADAPTER *prAdapter);
 void halShowPdmaInfo(IN struct ADAPTER *prAdapter,
 		     bool fgTxContent, bool fgRxContent);
@@ -425,9 +458,9 @@ void halShowPleInfo(IN struct ADAPTER *prAdapter);
 bool halShowHostCsrInfo(IN struct ADAPTER *prAdapter);
 void halShowDmaschInfo(IN struct ADAPTER *prAdapter);
 void halDumpHifDebugLog(struct GLUE_INFO *prGlueInfo, bool fgTx, bool fgRx);
-u_int8_t kalDevReadData(IN struct GLUE_INFO *prGlueInfo, IN uint16_t u2Port,
-			IN OUT struct SW_RFB *prSwRfb);
-u_int8_t kalDevKickCmd(IN struct GLUE_INFO *prGlueInfo);
+bool kalDevReadData(struct GLUE_INFO *prGlueInfo, uint16_t u2Port,
+		    struct SW_RFB *prSwRfb);
+bool kalDevKickCmd(struct GLUE_INFO *prGlueInfo);
 void kalDumpTxRing(struct GLUE_INFO *prGlueInfo,
 		   struct RTMP_TX_RING *prTxRing,
 		   uint32_t u4Num, bool fgDumpContent);

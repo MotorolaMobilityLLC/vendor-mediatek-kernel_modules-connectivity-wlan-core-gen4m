@@ -400,6 +400,7 @@ void glSetHifInfo(struct GLUE_INFO *prGlueInfo, unsigned long ulCookie)
 
 	INIT_LIST_HEAD(&prHif->rTxCmdQ);
 	INIT_LIST_HEAD(&prHif->rTxDataQ);
+	prHif->u4TxDataQLen = 0;
 	spin_lock_init(&prHif->rTxCmdQLock);
 	spin_lock_init(&prHif->rTxDataQLock);
 
@@ -439,22 +440,22 @@ void glClearHifInfo(struct GLUE_INFO *prGlueInfo)
 {
 	struct GL_HIF_INFO *prHifInfo = &prGlueInfo->rHifInfo;
 	struct list_head *prCur, *prNext;
-	struct TX_CMD_REQ_T *prTxCmdReq;
-	struct TX_DATA_REQ_T *prTxDataReq;
+	struct TX_CMD_REQ *prTxCmdReq;
+	struct TX_DATA_REQ *prTxDataReq;
 
 	halUninitMsduTokenInfo(prGlueInfo->prAdapter);
 	halWpdmaFreeRing(prGlueInfo);
 
 	list_for_each_safe(prCur, prNext, &prHifInfo->rTxCmdQ) {
-		prTxCmdReq = list_entry(prCur, struct TX_CMD_REQ_T, list);
+		prTxCmdReq = list_entry(prCur, struct TX_CMD_REQ, list);
 		list_del(prCur);
 		kfree(prTxCmdReq);
 	}
 
 	list_for_each_safe(prCur, prNext, &prHifInfo->rTxDataQ) {
-		prTxDataReq = list_entry(prCur, struct TX_DATA_REQ_T, list);
+		prTxDataReq = list_entry(prCur, struct TX_DATA_REQ, list);
 		list_del(prCur);
-		kfree(prTxDataReq);
+		prHifInfo->u4TxDataQLen--;
 	}
 }
 

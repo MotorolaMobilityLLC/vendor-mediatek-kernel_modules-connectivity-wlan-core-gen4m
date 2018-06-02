@@ -260,8 +260,8 @@ struct mt66xx_chip_info mt66xx_chip_info_mt7663 = {
 	.asicGetChipID = NULL,
 	.downloadBufferBin = wlanConnacDownloadBufferBin,
 	.is_support_hw_amsdu = TRUE,
+	.ucMaxSwAmsduNum = 0,
 	.workAround = BIT(WORKAROUND_MT7663_BRINGUP_20171205),
-	.show_debug_ops = &mt7663_debug_ops,
 };
 
 struct mt66xx_hif_driver_data mt66xx_driver_data_mt7663 = {

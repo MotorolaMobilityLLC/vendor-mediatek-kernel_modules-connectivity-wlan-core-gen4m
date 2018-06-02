@@ -1068,6 +1068,7 @@ struct mt66xx_chip_info {
 
 	const uint32_t features;	/* feature bits */
 	u_int8_t is_support_hw_amsdu;
+	uint8_t ucMaxSwAmsduNum;
 	uint32_t workAround;
 };
 

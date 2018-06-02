@@ -439,6 +439,7 @@ struct mt66xx_chip_info mt66xx_chip_info_mt6632 = {
 	.downloadBufferBin = wlanDownloadBufferBin,
 	.features = 0,
 	.is_support_hw_amsdu = FALSE,
+	.ucMaxSwAmsduNum = 0,
 	.workAround = 0,
 };
 
