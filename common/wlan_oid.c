@@ -13786,6 +13786,7 @@ uint32_t wlanoidAbortScan(IN struct ADAPTER *prAdapter,
 	if (prAisFsmInfo->eCurrentState == AIS_STATE_SCAN ||
 			prAisFsmInfo->eCurrentState == AIS_STATE_ONLINE_SCAN) {
 		DBGLOG(OID, INFO,  "wlanoidAbortScan\n");
+		prAisFsmInfo->fgIsScanOidAborted = TRUE;
 		aisFsmStateAbort_SCAN(prAdapter);
 	}
 	return WLAN_STATUS_SUCCESS;
