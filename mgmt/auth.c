@@ -125,7 +125,7 @@ HANDLE_IE_ENTRY_T rxAuthIETable[] = {
 * \return (none)
 */
 /*----------------------------------------------------------------------------*/
-__KAL_INLINE__ VOID
+static __KAL_INLINE__ VOID
 authComposeAuthFrameHeaderAndFF(IN PUINT_8 pucBuffer,
 				IN UINT_8 aucPeerMACAddress[],
 				IN UINT_8 aucMACAddress[],
@@ -725,7 +725,7 @@ WLAN_STATUS authProcessRxAuth2_Auth4Frame(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_
 * @return (none)
 */
 /*----------------------------------------------------------------------------*/
-__KAL_INLINE__ VOID
+static __KAL_INLINE__ VOID
 authComposeDeauthFrameHeaderAndFF(IN PUINT_8 pucBuffer,
 				  IN UINT_8 aucPeerMACAddress[],
 				  IN UINT_8 aucMACAddress[], IN UINT_8 aucBssid[], IN UINT_16 u2ReasonCode)
