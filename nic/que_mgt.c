@@ -1584,6 +1584,14 @@ qmDequeueTxPacketsFromPerStaQueues(IN struct ADAPTER *prAdapter,
 						ucAlwaysResetUsedRes & BIT(0)))
 						fgEndThisRound = TRUE;
 					break;
+				} else if (!prStaRec->fgIsValid) {
+					/* In roaming, if the sta_rec doesn't
+					 * active by event 0x0C, it can't
+					 * dequeue data.
+					 */
+					DBGLOG_LIMITED(QM, WARN,
+						"sta_rec is not valid\n");
+					break;
 				}
 #if CFG_SUPPORT_SOFT_ACM
 				if (fgAcmFlowCtrl) {
