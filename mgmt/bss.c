@@ -2225,7 +2225,7 @@ VOID bssInitForAP(IN P_ADAPTER_T prAdapter, IN P_BSS_INFO_T prBssInfo, IN BOOLEA
 
 	/* 4 <4> Setup Capability - Short Slot Time */
 	prBssInfo->fgUseShortSlotTime = TRUE;
-
+#ifdef CFG_SET_BCN_CAPINFO_BY_DRIVER
 	/* 4 <5> Compoase Capability */
 	prBssInfo->u2CapInfo = CAP_INFO_ESS;
 
@@ -2237,7 +2237,7 @@ VOID bssInitForAP(IN P_ADAPTER_T prAdapter, IN P_BSS_INFO_T prBssInfo, IN BOOLEA
 
 	if (prBssInfo->fgUseShortSlotTime)
 		prBssInfo->u2CapInfo |= CAP_INFO_SHORT_SLOT_TIME;
-
+#endif
 	/* 4 <6> Find Lowest Basic Rate Index for default TX Rate of MMPDU */
 	nicTxUpdateBssDefaultRate(prBssInfo);
 
