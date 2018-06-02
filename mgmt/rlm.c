@@ -2220,7 +2220,14 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter, struct BSS_INFO 
 
 	/*printk("Modify ChannelWidth (%d) and Extend (%d)\n",prBssInfo->eBssSCO,prBssInfo->ucVhtChannelWidth);*/
 
-	if (!rlmDomainIsValidRfSetting(prAdapter, prBssInfo->eBand,
+	/* If prBssInfo->ucPrimaryChannel != ucPrimaryChannel, that means AP
+	 * had changed channel but we didn't disconnect and update primary
+	 * channel information. We will update primary channel while request
+	 * channel to join. So we handle this as invalid information and using
+	 * default capability to sync with firmware.
+	 */
+	if (prBssInfo->ucPrimaryChannel != ucPrimaryChannel ||
+	    !rlmDomainIsValidRfSetting(prAdapter, prBssInfo->eBand,
 				       prBssInfo->ucPrimaryChannel, prBssInfo->eBssSCO,
 				       prBssInfo->ucVhtChannelWidth, prBssInfo->ucVhtChannelFrequencyS1,
 				       prBssInfo->ucVhtChannelFrequencyS2)) {

@@ -1461,7 +1461,7 @@ rlmDomainIsValidRfSetting(struct ADAPTER *prAdapter,
 	} else {
 		if ((eChannelWidth == CW_80MHZ) || (eChannelWidth == CW_80P80MHZ)) {
 			u4PrimaryOffset = CAL_CH_OFFSET_80M(ucPriChannel, ucChannelS1);
-			if (u4PrimaryOffset > 4) {
+			if (u4PrimaryOffset >= 4) {
 				fgValidBW = FALSE;
 				DBGLOG(RLM, WARN, "Rf: PriOffSet=%d, W=%d\n", u4PrimaryOffset, eChannelWidth);
 			}
@@ -1472,7 +1472,7 @@ rlmDomainIsValidRfSetting(struct ADAPTER *prAdapter,
 			}
 		} else if (eChannelWidth == CW_160MHZ) {
 			u4PrimaryOffset = CAL_CH_OFFSET_160M(ucPriChannel, ucCenterChannel);
-			if (u4PrimaryOffset > 8) {
+			if (u4PrimaryOffset >= 8) {
 				fgValidBW = FALSE;
 				DBGLOG(RLM, WARN, "Rf: PriOffSet=%d, W=%d\n", u4PrimaryOffset, eChannelWidth);
 			}
