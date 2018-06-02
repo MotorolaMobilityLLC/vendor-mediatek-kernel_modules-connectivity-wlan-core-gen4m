@@ -1375,7 +1375,12 @@ int mtk_cfg80211_connect(struct wiphy *wiphy, struct net_device *ndev, struct cf
 	}
 
 	rNewSsid.u4CenterFreq = sme->channel ? sme->channel->center_freq : 0;
-	rNewSsid.pucBssid = (uint8_t *)sme->bssid;
+	if (sme->bssid)
+		rNewSsid.pucBssid = (uint8_t *)sme->bssid;
+#if KERNEL_VERSION(3, 15, 0) <= CFG80211_VERSION_CODE
+	else if (sme->bssid_hint)
+		rNewSsid.pucBssid = (uint8_t *)sme->bssid_hint;
+#endif
 	rNewSsid.pucSsid = (uint8_t *)sme->ssid;
 	rNewSsid.u4SsidLen = sme->ssid_len;
 	rStatus = kalIoctl(prGlueInfo, wlanoidSetConnect, (void *)&rNewSsid, sizeof(struct PARAM_CONNECT),
