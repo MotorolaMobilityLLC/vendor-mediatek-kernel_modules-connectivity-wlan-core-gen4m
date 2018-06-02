@@ -393,10 +393,10 @@ static void halDriverOwnTimeout(struct ADAPTER *prAdapter,
 		prAdapter->u4OwnFailedLogCount++;
 		if (prAdapter->u4OwnFailedLogCount >
 		    LP_OWN_BACK_FAILED_RESET_CNT) {
-			hal_chip_show_pse_info(prAdapter);
-			hal_chip_show_ple_info(prAdapter);
-			hal_chip_show_host_csr_info(prAdapter);
-			hal_chip_show_pdma_info(prAdapter);
+			halShowPseInfo(prAdapter);
+			halShowPleInfo(prAdapter);
+			halShowHostCsrInfo(prAdapter);
+			halShowPdmaInfo(prAdapter, false);
 #if CFG_CHIP_RESET_SUPPORT
 			/* Trigger RESET */
 			glGetRstReason(RST_DRV_OWN_FAIL);
@@ -1101,7 +1101,7 @@ static void *halWpdmaAllocRxPacketBuff(struct GL_HIF_INFO *prHifInfo,
 
 	*vir_addr = (void *)pkt->data;
 	*phy_addr = KAL_DMA_MAP_SINGLE(prHifInfo->prDmaDev, *vir_addr,
-				       u4Len, KAL_DMA_TO_DEVICE);
+				       u4Len, KAL_DMA_FROM_DEVICE);
 	if (KAL_DMA_MAPPING_ERROR(prHifInfo->prDmaDev, *phy_addr))
 		goto mapping_fail;
 
@@ -1349,7 +1349,7 @@ void halWpdmaFreeRing(struct GLUE_INFO *prGlueInfo)
 				KAL_DMA_UNMAP_SINGLE(prHifInfo->prDmaDev,
 					dma_cb->DmaBuf.AllocPa,
 					dma_cb->DmaBuf.AllocSize,
-					KAL_DMA_TO_DEVICE);
+					KAL_DMA_FROM_DEVICE);
 
 				if (!prHifInfo->fgIsPreAllocMem)
 					kalPacketFree(prGlueInfo,
@@ -2243,8 +2243,6 @@ uint32_t halHifPowerOffWifi(IN struct ADAPTER *prAdapter)
 	/* Power off Wi-Fi */
 	wlanSendNicPowerCtrlCmd(prAdapter, TRUE);
 
-	wlanClearPendingInterrupt(prAdapter);
-
 	/* prAdapter->fgWiFiInSleepyState = TRUE; */
 	RECLAIM_POWER_CONTROL_TO_PM(prAdapter, FALSE);
 
@@ -2272,7 +2270,7 @@ uint32_t halGetHifTxPageSize(IN struct ADAPTER *prAdapter)
 	return HIF_TX_PAGE_SIZE;
 }
 
-void hal_chip_show_pdma_info(IN struct ADAPTER *prAdapter)
+void halShowPdmaInfo(IN struct ADAPTER *prAdapter, bool fgDumpContent)
 {
 	uint32_t i = 0, u4Value = 0;
 	uint32_t Base[6], Base_Ext[6], Cnt[6], Cidx[6], Didx[6];
@@ -2360,18 +2358,22 @@ void hal_chip_show_pdma_info(IN struct ADAPTER *prAdapter)
 	for (i = 0; i < 3; i++) {
 		prTxRing = &prHifInfo->TxRing[i];
 		SwIdx = Didx[i];
-		kalDumpTxRing(prAdapter->prGlueInfo, prTxRing, SwIdx);
+		kalDumpTxRing(prAdapter->prGlueInfo, prTxRing,
+			      SwIdx, fgDumpContent);
 		SwIdx = Didx[i] == 0 ? Cnt[i] - 1 : Didx[i] - 1;
-		kalDumpTxRing(prAdapter->prGlueInfo, prTxRing, SwIdx);
+		kalDumpTxRing(prAdapter->prGlueInfo, prTxRing,
+			      SwIdx, fgDumpContent);
 	}
 
 	DBGLOG(HAL, INFO, "Dump PDMA Rx Ring Information\n");
 	for (i = 0; i < 2; i++) {
 		prRxRing = &prHifInfo->RxRing[i];
 		SwIdx = Didx[i+3];
-		kalDumpRxRing(prAdapter->prGlueInfo, prRxRing, SwIdx);
+		kalDumpRxRing(prAdapter->prGlueInfo, prRxRing,
+			      SwIdx, fgDumpContent);
 		SwIdx = Didx[i+3] == 0 ? Cnt[i+3] - 1 : Didx[i+3] - 1;
-		kalDumpRxRing(prAdapter->prGlueInfo, prRxRing, SwIdx);
+		kalDumpRxRing(prAdapter->prGlueInfo, prRxRing,
+			      SwIdx, fgDumpContent);
 	}
 
 	/* PDMA Busy Status */
@@ -2392,7 +2394,7 @@ void hal_chip_show_pdma_info(IN struct ADAPTER *prAdapter)
 	}
 }
 
-void hal_chip_show_pse_info(IN struct ADAPTER *prAdapter)
+void halShowPseInfo(IN struct ADAPTER *prAdapter)
 {
 	uint32_t pse_buf_ctrl, pg_sz, pg_num;
 	uint32_t pse_stat, pg_flow_ctrl[16] = {0};
@@ -2656,7 +2658,7 @@ static struct EMPTY_QUEUE_INFO Queue_Empty_info[] = {
 	{"RLS2 Q",  ENUM_PLE_CTRL_PSE_PORT_3, ENUM_UMAC_PLE_CTRL_P3_Q_0X1F}
 };
 
-void hal_chip_show_ple_info(IN struct ADAPTER *prAdapter)
+void halShowPleInfo(IN struct ADAPTER *prAdapter)
 {
 	uint32_t ple_buf_ctrl[3] = {0}, pg_sz, pg_num, bit_field_1, bit_field_2;
 	uint32_t ple_stat[17] = {0}, pg_flow_ctrl[6] = {0};
@@ -2891,7 +2893,7 @@ void hal_chip_show_ple_info(IN struct ADAPTER *prAdapter)
 	}
 }
 
-void hal_chip_show_host_csr_info(IN struct ADAPTER *prAdapter)
+void halShowHostCsrInfo(IN struct ADAPTER *prAdapter)
 {
 	uint32_t i = 0, u4Value = 0;
 
@@ -2977,7 +2979,7 @@ void hal_chip_show_host_csr_info(IN struct ADAPTER *prAdapter)
 		CONN_CFG_ON_CONN_ON_MISC_ADDR, u4Value);
 }
 
-void hal_chip_show_dmasch_info(IN struct ADAPTER *prAdapter)
+void halShowDmaschInfo(IN struct ADAPTER *prAdapter)
 {
 	uint32_t value;
 	uint32_t ple_pkt_max_sz;

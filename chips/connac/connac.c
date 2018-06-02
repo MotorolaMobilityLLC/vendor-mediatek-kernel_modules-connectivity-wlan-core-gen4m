@@ -248,12 +248,20 @@ struct ATE_OPS_T connacAteOps = {
 };
 #endif
 
-struct SHOW_DBG_OPS connac_debug_ops = {
-	.hal_chip_show_pdma_info = hal_chip_show_pdma_info,
-	.hal_chip_show_pse_info = hal_chip_show_pse_info,
-	.hal_chip_show_ple_info = hal_chip_show_ple_info,
-	.hal_chip_show_csr_info = hal_chip_show_host_csr_info,
-	.hal_chip_show_dmasch_info = hal_chip_show_dmasch_info,
+struct CHIP_DBG_OPS connac_debug_ops = {
+#if defined(_HIF_PCIE) || defined(_HIF_AXI)
+	.showPdmaInfo = halShowPdmaInfo,
+	.showPseInfo = halShowPseInfo,
+	.showPleInfo = halShowPleInfo,
+	.showCsrInfo = halShowHostCsrInfo,
+	.showDmaschInfo = halShowDmaschInfo,
+#else
+	.showPdmaInfo = NULL,
+	.showPseInfo = NULL,
+	.showPleInfo = NULL,
+	.showCsrInfo = NULL,
+	.showDmaschInfo = NULL,
+#endif
 };
 
 struct mt66xx_chip_info mt66xx_chip_info_connac = {
@@ -263,6 +271,7 @@ struct mt66xx_chip_info mt66xx_chip_info_connac = {
 #if CFG_SUPPORT_QA_TOOL
 	.prAteOps = &connacAteOps,
 #endif
+	.prDebugOps = &connac_debug_ops,
 
 	.chip_id = CONNAC_CHIP_ID,
 	.should_verify_chip_id = FALSE,
@@ -280,7 +289,6 @@ struct mt66xx_chip_info mt66xx_chip_info_connac = {
 	.downloadBufferBin = NULL,
 	.is_support_hw_amsdu = FALSE,
 	.workAround = 0,
-	.show_debug_ops = &connac_debug_ops,
 };
 
 struct mt66xx_hif_driver_data mt66xx_driver_data_connac = {

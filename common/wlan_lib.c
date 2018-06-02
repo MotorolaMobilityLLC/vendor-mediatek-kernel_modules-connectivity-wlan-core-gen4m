@@ -704,15 +704,15 @@ uint32_t wlanAdapterStart(IN struct ADAPTER *prAdapter, IN struct REG_INFO *prRe
 		nicEnableInterrupt(prAdapter);
 
 	} else {
+		struct CHIP_DBG_OPS *prOps;
+
 		halPrintHifDbgInfo(prAdapter);
 		DBGLOG(INIT, WARN, "Fail reason: %d\n", eFailReason);
-		if (prAdapter->chip_info &&
-				prAdapter->chip_info->show_debug_ops &&
-				prAdapter->chip_info->show_debug_ops->
-				hal_chip_show_csr_info) {
-			prAdapter->chip_info->show_debug_ops->
-				hal_chip_show_csr_info(prAdapter);
-		}
+
+		prOps = prAdapter->chip_info->prDebugOps;
+		if (prOps->showCsrInfo)
+			prOps->showCsrInfo(prAdapter);
+
 		/* release allocated memory */
 		switch (eFailReason) {
 		case WAIT_FIRMWARE_READY_FAIL:

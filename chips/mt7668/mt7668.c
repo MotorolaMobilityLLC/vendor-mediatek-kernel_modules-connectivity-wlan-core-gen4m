@@ -407,12 +407,12 @@ struct ATE_OPS_T mt7668AteOps = {
 };
 #endif
 
-struct SHOW_DBG_OPS mt7668_debug_ops = {
-	.hal_chip_show_pdma_info = NULL,
-	.hal_chip_show_pse_info = NULL,
-	.hal_chip_show_ple_info = NULL,
-	.hal_chip_show_csr_info = NULL,
-	.hal_chip_show_dmasch_info = NULL,
+struct CHIP_DBG_OPS mt7668_debug_ops = {
+	.showPdmaInfo = NULL,
+	.showPseInfo = NULL,
+	.showPleInfo = NULL,
+	.showCsrInfo = NULL,
+	.showDmaschInfo = NULL,
 };
 
 /* Litien code refine to support multi chip */
@@ -423,6 +423,7 @@ struct mt66xx_chip_info mt66xx_chip_info_mt7668 = {
 #if CFG_SUPPORT_QA_TOOL
 	.prAteOps = &mt7668AteOps,
 #endif
+	.prDebugOps = &mt7668_debug_ops,
 
 	.chip_id = MT7668_CHIP_ID,
 	.should_verify_chip_id = TRUE,

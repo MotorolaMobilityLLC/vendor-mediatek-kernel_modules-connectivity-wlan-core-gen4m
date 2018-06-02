@@ -417,6 +417,11 @@ u_int8_t halWpdmaWriteCmd(IN struct GLUE_INFO *prGlueInfo,
 u_int8_t halWpdmaWriteData(IN struct GLUE_INFO *prGlueInfo,
 			   IN struct MSDU_INFO *prMsduInfo);
 void halHwRecoveryFromError(IN struct ADAPTER *prAdapter);
+void halShowPdmaInfo(IN struct ADAPTER *prAdapter, bool fgDumpContent);
+void halShowPseInfo(IN struct ADAPTER *prAdapter);
+void halShowPleInfo(IN struct ADAPTER *prAdapter);
+void halShowHostCsrInfo(IN struct ADAPTER *prAdapter);
+void halShowDmaschInfo(IN struct ADAPTER *prAdapter);
 
 void kalPciUnmapToDev(IN struct GLUE_INFO *prGlueInfo, IN dma_addr_t rDmaAddr,
 		      IN uint32_t u4Length);
@@ -424,9 +429,11 @@ u_int8_t kalDevReadData(IN struct GLUE_INFO *prGlueInfo, IN uint16_t u2Port,
 			IN OUT struct SW_RFB *prSwRfb);
 u_int8_t kalDevKickCmd(IN struct GLUE_INFO *prGlueInfo);
 void kalDumpTxRing(struct GLUE_INFO *prGlueInfo,
-		   struct RTMP_TX_RING *prTxRing, uint32_t u4Num);
+		   struct RTMP_TX_RING *prTxRing,
+		   uint32_t u4Num, bool fgDumpContent);
 void kalDumpRxRing(struct GLUE_INFO *prGlueInfo,
-		   struct RTMP_RX_RING *prRxRing, uint32_t u4Num);
+		   struct RTMP_RX_RING *prRxRing,
+		   uint32_t u4Num, bool fgDumpContent);
 void kalDumpRxRingDebugLog(struct GLUE_INFO *prGlueInfo,
 			   struct RTMP_RX_RING *prRxRing,
 			   uint32_t u4RingSize);

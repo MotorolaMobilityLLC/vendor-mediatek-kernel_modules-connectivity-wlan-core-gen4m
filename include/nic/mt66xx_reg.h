@@ -1032,6 +1032,7 @@ struct mt66xx_chip_info {
 #if CFG_SUPPORT_QA_TOOL
 	struct ATE_OPS_T *prAteOps;
 #endif
+	struct CHIP_DBG_OPS *prDebugOps;
 
 	const unsigned int chip_id;	/* chip id */
 	const unsigned int should_verify_chip_id;	/* verify chip id */
@@ -1063,7 +1064,6 @@ struct mt66xx_chip_info {
 	const uint32_t features;	/* feature bits */
 	u_int8_t is_support_hw_amsdu;
 	uint32_t workAround;
-	struct SHOW_DBG_OPS *show_debug_ops;
 };
 
 struct mt66xx_hif_driver_data {

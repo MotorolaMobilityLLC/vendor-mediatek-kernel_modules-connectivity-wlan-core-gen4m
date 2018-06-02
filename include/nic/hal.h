@@ -1140,9 +1140,4 @@ void halUpdateTxDonePendingCount(IN struct ADAPTER *prAdapter,
 	IN u_int8_t isIncr, IN uint8_t ucTc, IN uint32_t u4Len);
 void halTxReturnFreeResource_v1(IN struct ADAPTER *prAdapter,
 	IN uint16_t *au2TxDoneCnt);
-void hal_chip_show_pdma_info(IN struct ADAPTER *prAdapter);
-void hal_chip_show_pse_info(IN struct ADAPTER *prAdapter);
-void hal_chip_show_ple_info(IN struct ADAPTER *prAdapter);
-void hal_chip_show_host_csr_info(IN struct ADAPTER *prAdapter);
-void hal_chip_show_dmasch_info(IN struct ADAPTER *prAdapter);
 #endif /* _HAL_H */

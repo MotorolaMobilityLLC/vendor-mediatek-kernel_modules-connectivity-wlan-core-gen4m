@@ -333,12 +333,12 @@ struct ATE_OPS_T mt6632AteOps = {
 };
 #endif
 
-struct SHOW_DBG_OPS mt6632_debug_ops = {
-	.hal_chip_show_pdma_info = NULL,
-	.hal_chip_show_pse_info = NULL,
-	.hal_chip_show_ple_info = NULL,
-	.hal_chip_show_csr_info = NULL,
-	.hal_chip_show_dmasch_info = NULL,
+struct CHIP_DBG_OPS mt6632_debug_ops = {
+	.showPdmaInfo = NULL,
+	.showPseInfo = NULL,
+	.showPleInfo = NULL,
+	.showCsrInfo = NULL,
+	.showDmaschInfo = NULL,
 };
 
 /* Litien code refine to support multi chip */
@@ -349,6 +349,7 @@ struct mt66xx_chip_info mt66xx_chip_info_mt6632 = {
 #if CFG_SUPPORT_QA_TOOL
 	.prAteOps = &mt6632AteOps,
 #endif
+	.prDebugOps = &mt6632_debug_ops,
 
 	.chip_id = MT6632_CHIP_ID,
 	.should_verify_chip_id = TRUE,
@@ -367,7 +368,6 @@ struct mt66xx_chip_info mt66xx_chip_info_mt6632 = {
 	.features = 0,
 	.is_support_hw_amsdu = FALSE,
 	.workAround = 0,
-	.show_debug_ops = &mt6632_debug_ops,
 };
 
 struct mt66xx_hif_driver_data mt66xx_driver_data_mt6632 = {
