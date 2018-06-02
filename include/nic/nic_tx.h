@@ -217,6 +217,9 @@
 
 #define NIC_TX_CRITICAL_DATA_TID                7
 
+/*Customization: sk_buff mark for special packet that need raise priority */
+#define NIC_TX_SKB_SPECIAL_MARK			0x5a
+
 #define HW_MAC_TX_DESC_APPEND_T_LENGTH          44
 #define NIC_TX_HEAD_ROOM \
 	(NIC_TX_DESC_LONG_FORMAT_LENGTH + NIC_TX_DESC_PADDING_LENGTH \
