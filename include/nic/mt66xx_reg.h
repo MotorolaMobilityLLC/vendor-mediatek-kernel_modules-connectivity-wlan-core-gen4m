@@ -1023,6 +1023,7 @@ struct mt66xx_chip_info {
 	const uint32_t features;	/* feature bits */
 	u_int8_t is_support_hw_amsdu;
 	uint32_t workAround;
+	struct SHOW_DBG_OPS *show_debug_ops;
 };
 
 struct mt66xx_hif_driver_data {

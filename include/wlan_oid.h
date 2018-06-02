@@ -3301,6 +3301,29 @@ wlanoidAbortScan(IN struct ADAPTER *prAdapter,
 			OUT void *pvQueryBuffer, IN uint32_t u4QueryBufferLen,
 			OUT uint32_t *pu4QueryInfoLen);
 
+/* Show Consys debug information*/
+uint32_t
+wlanoidShowPdmaInfo(IN struct ADAPTER *prAdapter,
+		    IN void *pvSetBuffer, IN uint32_t u4SetBufferLen,
+		    OUT uint32_t *pu4SetInfoLen);
+uint32_t
+wlanoidShowPseInfo(IN struct ADAPTER *prAdapter,
+		   IN void *pvSetBuffer, IN uint32_t u4SetBufferLen,
+		   OUT uint32_t *pu4SetInfoLen);
+uint32_t
+wlanoidShowPleInfo(IN struct ADAPTER *prAdapter,
+		   IN void *pvSetBuffer, IN uint32_t u4SetBufferLen,
+		   OUT uint32_t *pu4SetInfoLen);
+uint32_t
+wlanoidShowCsrInfo(IN struct ADAPTER *prAdapter,
+		   IN void *pvSetBuffer, IN uint32_t u4SetBufferLen,
+		   OUT uint32_t *pu4SetInfoLen);
+uint32_t
+wlanoidShowDmaschInfo(IN struct ADAPTER *prAdapter,
+		      IN void *pvSetBuffer, IN uint32_t u4SetBufferLen,
+		      OUT uint32_t *pu4SetInfoLen);
+/* end Show Consys debug information*/
+
 #if (CFG_SUPPORT_TXPOWER_INFO == 1)
 uint32_t
 wlanoidQueryTxPowerInfo(IN struct ADAPTER *prAdapter, IN void *pvSetBuffer, IN uint32_t u4SetBufferLen,

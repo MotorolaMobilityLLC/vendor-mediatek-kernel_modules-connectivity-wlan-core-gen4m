@@ -13914,3 +13914,57 @@ wlanoidSetWifiLogLevel(IN struct ADAPTER *prAdapter,
 	return WLAN_STATUS_SUCCESS;
 }
 
+uint32_t
+wlanoidShowPdmaInfo(IN struct ADAPTER *prAdapter,
+		    IN void *pvSetBuffer, IN uint32_t u4SetBufferLen,
+		    OUT uint32_t *pu4SetInfoLen)
+{
+	if (prAdapter->chip_info->show_debug_ops->hal_chip_show_pdma_info)
+		prAdapter->chip_info->show_debug_ops->
+			hal_chip_show_pdma_info(prAdapter);
+	return 0;
+}
+
+uint32_t
+wlanoidShowPseInfo(IN struct ADAPTER *prAdapter,
+		   IN void *pvSetBuffer, IN uint32_t u4SetBufferLen,
+		   OUT uint32_t *pu4SetInfoLen)
+{
+	if (prAdapter->chip_info->show_debug_ops->hal_chip_show_pse_info)
+		prAdapter->chip_info->show_debug_ops->
+			hal_chip_show_pse_info(prAdapter);
+	return 0;
+}
+
+uint32_t
+wlanoidShowPleInfo(IN struct ADAPTER *prAdapter,
+		   IN void *pvSetBuffer, IN uint32_t u4SetBufferLen,
+		   OUT uint32_t *pu4SetInfoLen)
+{
+	if (prAdapter->chip_info->show_debug_ops->hal_chip_show_ple_info)
+		prAdapter->chip_info->show_debug_ops->
+			hal_chip_show_ple_info(prAdapter);
+	return 0;
+}
+
+uint32_t
+wlanoidShowCsrInfo(IN struct ADAPTER *prAdapter,
+		   IN void *pvSetBuffer, IN uint32_t u4SetBufferLen,
+		   OUT uint32_t *pu4SetInfoLen)
+{
+	if (prAdapter->chip_info->show_debug_ops->hal_chip_show_csr_info)
+		prAdapter->chip_info->show_debug_ops->
+			hal_chip_show_csr_info(prAdapter);
+	return 0;
+}
+
+uint32_t
+wlanoidShowDmaschInfo(IN struct ADAPTER *prAdapter,
+		      IN void *pvSetBuffer, IN uint32_t u4SetBufferLen,
+		      OUT uint32_t *pu4SetInfoLen)
+{
+	if (prAdapter->chip_info->show_debug_ops->hal_chip_show_dmasch_info)
+		prAdapter->chip_info->show_debug_ops->
+			hal_chip_show_dmasch_info(prAdapter);
+	return 0;
+}

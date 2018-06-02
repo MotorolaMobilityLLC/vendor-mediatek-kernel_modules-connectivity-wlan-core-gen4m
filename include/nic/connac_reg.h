@@ -172,6 +172,15 @@
 #define PDMA_TX_IDLE_WAIT_COUNT                 30
 #endif /* _HIF_USB */
 
+#if defined(_HIF_PCIE) || defined(_HIF_AXI)
+#define PDMA_DEBUG_EN                           0x50000124
+#define PDMA_DEBUG_STATUS                       0x50000128
+#define PDMA_DEBUG_HIF_BUSY_STATUS              0x50000138
+#define PDMA_DEBUG_BUSY_STATUS                  0x50000168
+#define PDMA_DEBUG_REFill                       0X5000A010
+#endif /* _HIF_PCIE */
+
+
 #define PLE_PKT_MAX_SIZE_MASK (0xfff << 0)
 #define PLE_PKT_MAX_SIZE_NUM(p) (((p) & 0xfff) << 0)
 #define GET_PLE_PKT_MAX_SIZE_NUM(p) (((p) & PLE_PKT_MAX_SIZE_MASK) >> 0)

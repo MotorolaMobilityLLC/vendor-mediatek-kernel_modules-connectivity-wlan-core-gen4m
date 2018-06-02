@@ -284,7 +284,13 @@ static void mtk_wifi_trigger_reset(struct work_struct *work)
 u_int8_t glResetTrigger(struct ADAPTER *prAdapter, uint32_t u4RstFlag, const uint8_t *pucFile, uint32_t u4Line)
 {
 	u_int8_t fgResult = TRUE;
-
+	if (prAdapter->chip_info &&
+		prAdapter->chip_info->show_debug_ops &&
+		prAdapter->chip_info->show_debug_ops->
+			hal_chip_show_csr_info) {
+		prAdapter->chip_info->show_debug_ops->
+			hal_chip_show_csr_info(prAdapter);
+	}
 	if (kalIsResetting() || fgResetTriggered) {
 		DBGLOG(INIT, ERROR,
 		       "Skip trigger chip reset in %s line %u, during resetting! Chip[%04X E%u]\n",

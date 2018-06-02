@@ -365,4 +365,11 @@ struct ERR_RECOVERY_CTRL_T {
 	uint32_t u4Status;
 };
 
+void kalDumpTxRing(struct GLUE_INFO *prGlueInfo,
+		struct RTMP_TX_RING *prTxRing, uint32_t u4Num);
+void kalDumpRxRing(struct GLUE_INFO *prGlueInfo,
+		       struct RTMP_RX_RING *prRxRing, uint32_t u4Num);
+void kalDumpRxRingDebugLog(struct GLUE_INFO *prGlueInfo,
+				  struct RTMP_RX_RING *prRxRing,
+				  uint32_t u4RingSize);
 #endif /* HIF_PDMA_H__ */
