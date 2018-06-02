@@ -78,6 +78,11 @@ APPEND_VAR_IE_ENTRY_T txProbeRspIETable[] = {
 
 };
 
+#if (CFG_SUPPORT_DFS_MASTER == 1)
+BOOLEAN g_fgManualCac = FALSE;
+UINT_32 g_u4ManualCacTime;
+#endif
+
 static VOID
 p2pFuncParseBeaconVenderId(IN P_ADAPTER_T prAdapter, IN PUINT_8 pucIE,
 			   IN P_P2P_SPECIFIC_BSS_INFO_T prP2pSpecificBssInfo, IN UINT_8 ucRoleIndex);
@@ -1409,19 +1414,43 @@ BOOLEAN p2pFuncCheckWeatherRadarBand(IN P_P2P_CHNL_REQ_INFO_T prChnlReqInfo)
 	eChannelWidth = prChnlReqInfo->eChannelWidth;
 	eChnlSco = prChnlReqInfo->eChnlSco;
 
-	if (eChannelWidth == VHT_OP_CHANNEL_WIDTH_80) {
-		if (ucCenterFreqS1 >= 120 && ucCenterFreqS1 <= 128)
-			return TRUE;
-	} else {
-		if ((ucReqChnlNum >= 120 && ucReqChnlNum <= 128))
-			return TRUE;
-		else if (ucReqChnlNum == 116 && eChnlSco == CHNL_EXT_SCA) /* ch116, 120 BW40 */
-			return TRUE;
+	if (rlmDomainGetDfsRegion() == NL80211_DFS_ETSI) {
+		if (eChannelWidth == VHT_OP_CHANNEL_WIDTH_80) {
+			if (ucCenterFreqS1 >= 120 && ucCenterFreqS1 <= 128)
+				return TRUE;
+		} else {
+			if ((ucReqChnlNum >= 120 && ucReqChnlNum <= 128))
+				return TRUE;
+			else if (ucReqChnlNum == 116 && eChnlSco == CHNL_EXT_SCA) /* ch116, 120 BW40 */
+				return TRUE;
+		}
 	}
 
 	return FALSE;
 }
 
+INT_32 p2pFuncSetManualCacTime(IN UINT_32 u4ManualCacTime)
+{
+	WLAN_STATUS i4Status = WLAN_STATUS_SUCCESS;
+
+	g_fgManualCac = TRUE;
+
+	g_u4ManualCacTime = u4ManualCacTime * 1000;
+
+	DBGLOG(P2P, INFO, "p2pFuncSetManualCacTime: g_u4ManualCacTime = %dsec\n", g_u4ManualCacTime/1000);
+
+	return i4Status;
+}
+
+UINT_32 p2pFuncGetManualCacTime(VOID)
+{
+	return g_u4ManualCacTime;
+}
+
+BOOLEAN p2pFuncIsManualCac(VOID)
+{
+	return g_fgManualCac;
+}
 #endif
 
 #if 0
