@@ -193,89 +193,21 @@ VOID scnFsmSteps(IN P_ADAPTER_T prAdapter, IN ENUM_SCAN_STATE_T eNextState)
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief        Generate CMD_ID_SCAN_REQ command
-*
-* \param[in]
-*
-* \return none
-*/
+ * \brief        Generate CMD_ID_SCAN_REQ command
+ *
+ * Because CMD_ID_SCAN_REQ is deprecated,
+ * wrap this command to CMD_ID_SCAN_REQ_V2
+ *
+ * \param[in] prAdapter   adapter
+ *
+ * \return none
+ */
 /*----------------------------------------------------------------------------*/
 VOID scnSendScanReq(IN P_ADAPTER_T prAdapter)
 {
-	P_SCAN_INFO_T prScanInfo;
-	P_SCAN_PARAM_T prScanParam;
-	/* CMD_SCAN_REQ rCmdScanReq; */
-	P_CMD_SCAN_REQ prCmdScanReq;
-	UINT_32 i;
-
-	ASSERT(prAdapter);
-
-	prScanInfo = &(prAdapter->rWifiVar.rScanInfo);
-	prScanParam = &prScanInfo->rScanParam;
-
-	prCmdScanReq = kalMemAlloc(sizeof(CMD_SCAN_REQ), VIR_MEM_TYPE);
-	if (!prCmdScanReq) {
-		DBGLOG(SCN, ERROR, "alloc CmdScanReq V1 fail\n");
-		return;
-	}
-	/* send command packet for scan */
-	kalMemZero(prCmdScanReq, sizeof(CMD_SCAN_REQ));
-
-	prCmdScanReq->ucSeqNum = prScanParam->ucSeqNum;
-	prCmdScanReq->ucBssIndex = prScanParam->ucBssIndex;
-	prCmdScanReq->ucScanType = (UINT_8) prScanParam->eScanType;
-	prCmdScanReq->ucSSIDType = prScanParam->ucSSIDType;
-
-	if (prScanParam->ucSSIDNum == 1) {
-		COPY_SSID(prCmdScanReq->aucSSID,
-			  prCmdScanReq->ucSSIDLength,
-			  prScanParam->aucSpecifiedSSID[0], prScanParam->ucSpecifiedSSIDLen[0]);
-	}
-
-	prCmdScanReq->ucChannelType = (UINT_8) prScanParam->eScanChannel;
-
-	if (prScanParam->eScanChannel == SCAN_CHANNEL_SPECIFIED) {
-		/* P2P would use:
-		 * 1. Specified Listen Channel of passive scan for LISTEN state.
-		 * 2. Specified Listen Channel of Target Device of active scan for SEARCH state. (Target != NULL)
-		 */
-		prCmdScanReq->ucChannelListNum = prScanParam->ucChannelListNum;
-
-		for (i = 0; i < prCmdScanReq->ucChannelListNum; i++) {
-			prCmdScanReq->arChannelList[i].ucBand = (UINT_8) prScanParam->arChnlInfoList[i].eBand;
-
-			prCmdScanReq->arChannelList[i].ucChannelNum =
-			    (UINT_8) prScanParam->arChnlInfoList[i].ucChannelNum;
-		}
-	}
-
-	prCmdScanReq->u2ChannelDwellTime = prScanParam->u2ChannelDwellTime;
-	prCmdScanReq->u2TimeoutValue = prScanParam->u2TimeoutValue;
-
-	if (prScanParam->u2IELen <= MAX_IE_LENGTH)
-		prCmdScanReq->u2IELen = prScanParam->u2IELen;
-	else
-		prCmdScanReq->u2IELen = MAX_IE_LENGTH;
-
-	if (prScanParam->u2IELen)
-		kalMemCopy(prCmdScanReq->aucIE, prScanParam->aucIE, sizeof(UINT_8) * prCmdScanReq->u2IELen);
-
-	DBGLOG(SCN, INFO, "ScanReqV1: ScanType=%d, SSIDType=%d, Num=%d, ChannelType=%d, Num=%d",
-		prCmdScanReq->ucScanType, prCmdScanReq->ucSSIDType, prScanParam->ucSSIDNum,
-		prCmdScanReq->ucChannelType, prCmdScanReq->ucChannelListNum);
-
-	wlanSendSetQueryCmd(prAdapter,
-			    CMD_ID_SCAN_REQ,
-			    TRUE,
-			    FALSE,
-			    FALSE,
-			    NULL,
-			    NULL,
-			    OFFSET_OF(CMD_SCAN_REQ, aucIE) + prCmdScanReq->u2IELen,
-			    (PUINT_8)prCmdScanReq, NULL, 0);
-
-	kalMemFree(prCmdScanReq, VIR_MEM_TYPE, sizeof(CMD_SCAN_REQ));
-
+	DBGLOG(SCN, WARN,
+		"CMD_ID_SCAN_REQ is deprecated, use CMD_ID_SCAN_REQ_V2\n");
+	scnSendScanReqV2(prAdapter);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -587,7 +519,7 @@ VOID scnFsmHandleScanMsgV2(IN P_ADAPTER_T prAdapter, IN P_MSG_SCN_SCAN_REQ_V2 pr
 	prScanParam->u2TimeoutValue = prScanReqMsg->u2TimeoutValue;
 	prScanParam->ucSeqNum = prScanReqMsg->ucSeqNum;
 
-	if (prScanReqMsg->rMsgHdr.eMsgId == MID_RLM_SCN_SCAN_REQ)
+	if (prScanReqMsg->rMsgHdr.eMsgId == MID_RLM_SCN_SCAN_REQ_V2)
 		prScanParam->fgIsObssScan = TRUE;
 	else
 		prScanParam->fgIsObssScan = FALSE;
