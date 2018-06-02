@@ -2474,9 +2474,10 @@ uint32_t nicTxCmd(IN struct ADAPTER *prAdapter,
 		HAL_WRITE_TX_CMD(prAdapter, prCmdInfo, ucTC);
 
 		DBGLOG(INIT, INFO,
-		       "TX CMD: ID[0x%02X] SEQ[%u] SET[%u] LEN[%u]\n",
+		       "CMD: ID[0x%02X] SEQ[%u] SET[%u] LEN[%u], EXTID[%u]\n",
 		       prWifiCmd->ucCID, prWifiCmd->ucSeqNum,
-		       prWifiCmd->ucSetQuery, prWifiCmd->u2Length);
+		       prWifiCmd->ucSetQuery, prWifiCmd->u2Length,
+		       prWifiCmd->ucExtenCID);
 	}
 
 	return WLAN_STATUS_SUCCESS;
