@@ -434,7 +434,9 @@ static int mtk_axi_remove(IN struct platform_device *pdev)
 	axiFreeHifMem(pdev);
 #endif
 
-#if !CFG_MTK_ANDROID_WMT
+#if CFG_MTK_ANDROID_WMT
+	mtk_wcn_wmt_wlan_unreg();
+#else
 	hifAxiRemove();
 #endif
 	return 0;
