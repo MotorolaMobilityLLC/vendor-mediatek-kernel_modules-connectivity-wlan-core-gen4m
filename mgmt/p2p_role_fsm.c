@@ -2361,9 +2361,12 @@ VOID p2pRoleFsmRunEventBeaconUpdate(IN P_ADAPTER_T prAdapter, IN P_MSG_HDR_T prM
 		DBGLOG(P2P, TRACE, "p2pRoleFsmRunEventBeaconUpdate\n");
 
 		prBcnUpdateMsg = (P_MSG_P2P_BEACON_UPDATE_T) prMsgHdr;
+		if (prBcnUpdateMsg->ucRoleIndex >= BSS_P2P_NUM)
+			break;
 
 		prRoleP2pFsmInfo = P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prAdapter, prBcnUpdateMsg->ucRoleIndex);
-
+		if (!prRoleP2pFsmInfo)
+			break;
 
 		prP2pBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prRoleP2pFsmInfo->ucBssIndex);
 
@@ -2376,6 +2379,18 @@ VOID p2pRoleFsmRunEventBeaconUpdate(IN P_ADAPTER_T prAdapter, IN P_MSG_HDR_T prM
 				    prBcnUpdateMsg->u4BcnHdrLen,
 				    prBcnUpdateMsg->pucBcnBody, prBcnUpdateMsg->u4BcnBodyLen);
 
+		if (prBcnUpdateMsg->pucAssocRespIE != NULL && prBcnUpdateMsg->u4AssocRespLen > 0) {
+			DBGLOG(P2P, TRACE, "Copy extra IEs for assoc resp (Length= %d)\n",
+								prBcnUpdateMsg->u4AssocRespLen);
+			DBGLOG_MEM8(P2P, INFO, prBcnUpdateMsg->pucAssocRespIE, prBcnUpdateMsg->u4AssocRespLen);
+
+			if (p2pFuncAssocRespUpdate(prAdapter,
+				prP2pBssInfo,
+				prBcnUpdateMsg->pucAssocRespIE,
+				prBcnUpdateMsg->u4AssocRespLen) == WLAN_STATUS_FAILURE)
+				DBGLOG(P2P, ERROR, "Update extra IEs for asso resp fail!\n");
+
+		}
 
 
 		if ((prP2pBssInfo->eCurrentOPMode == OP_MODE_ACCESS_POINT) &&
