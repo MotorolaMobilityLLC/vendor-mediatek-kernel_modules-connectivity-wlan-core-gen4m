@@ -1639,7 +1639,7 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 		do {
 			/* check if it is a beacon frame */
 			if (!fgIsProbeResp && !fgIsValidSsid) {
-				log_dbg(SCN, TRACE, "scanAddToBssDescssid is NULL Beacon, don't add hidden BSS(%pM)\n",
+				log_dbg(SCN, LOUD, "scanAddToBssDescssid is NULL Beacon, don't add hidden BSS(%pM)\n",
 					(uint8_t *)prWlanBeaconFrame->aucBSSID);
 				return NULL;
 			}
@@ -1767,7 +1767,7 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 
 	/* NOTE: Keep consistency of Scan Record during JOIN process */
 	if (fgIsNewBssDesc == FALSE && prBssDesc->fgIsConnecting) {
-		log_dbg(SCN, INFO, "we're connecting this BSS(%pM) now, don't update it\n",
+		log_dbg(SCN, TRACE, "we're connecting this BSS(%pM) now, don't update it\n",
 				prBssDesc->aucBSSID);
 		return prBssDesc;
 	}
