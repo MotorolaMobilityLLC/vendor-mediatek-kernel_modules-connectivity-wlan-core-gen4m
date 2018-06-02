@@ -50,33 +50,34 @@
  *
  *****************************************************************************/
 /*
-** Id: //Department/DaVinci/BRANCHES/MT6620_WIFI_DRIVER_V2_3/include/typedef.h#1
-*/
+ ** Id: include/typedef.h
+ */
 
 /*! \file   typedef.h
-*    \brief  Declaration of data type and return values of internal protocol stack.
-*
-*    In this file we declare the data type and return values which will be exported
-*    to the GLUE Layer.
-*/
+ *  \brief  Declaration of data type and return values of
+ *          internal protocol stack.
+ *
+ *    In this file we declare the data type and return values
+ *    which will be exported to the GLUE Layer.
+ */
 
 #ifndef _TYPEDEF_H
 #define _TYPEDEF_H
 
 /*******************************************************************************
-*                         C O M P I L E R   F L A G S
-********************************************************************************
-*/
+ *                         C O M P I L E R   F L A G S
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                    E X T E R N A L   R E F E R E N C E S
-********************************************************************************
-*/
+ *                    E X T E R N A L   R E F E R E N C E S
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                              C O N S T A N T S
-********************************************************************************
-*/
+ *                              C O N S T A N T S
+ *******************************************************************************
+ */
 
 /* ieee80211.h of linux has duplicated definitions */
 #if defined(WLAN_STATUS_SUCCESS)
@@ -118,9 +119,9 @@
 #define ADAPTER_FLAG_HW_ERR                     0x00400000
 
 /*******************************************************************************
-*                             D A T A   T Y P E S
-********************************************************************************
-*/
+ *                             D A T A   T Y P E S
+ *******************************************************************************
+ */
 /* Type definition for GLUE_INFO structure */
 struct GLUE_INFO;	/* declare GLUE_INFO_T */
 
@@ -144,21 +145,25 @@ struct WLAN_CFG_REC;	/* declare WLAN_CFG_REC_T */
 struct WLAN_CFG_ENTRY;	/* declare WLAN_CFG_ENTRY_T */
 
 /* Type definition for WLAN configuration callback */
-typedef uint32_t(*WLAN_CFG_SET_CB) (struct ADAPTER *prAdapter,
-				       uint8_t *pucKey, uint8_t *pucValue, void *pPrivate, uint32_t u4Flags);
+typedef uint32_t(*WLAN_CFG_SET_CB) (struct ADAPTER
+				    *prAdapter,
+				    uint8_t *pucKey,
+					uint8_t *pucValue,
+					void *pPrivate,
+				    uint32_t u4Flags);
 
-/* Type definition for STA_RECORD_T structure to handle the connectivity and packet reception
- * for a particular STA.
+/* Type definition for STA_RECORD_T structure to handle the connectivity
+ * and packet reception for a particular STA.
  */
 struct STA_RECORD;	/* declare STA_RECORD_T */
 
-/* CMD_INFO_T is used by Glue Layer to send a cluster of Command(OID) information to
- * the TX Path to reduce the parameters of a function call.
+/* CMD_INFO_T is used by Glue Layer to send a cluster of Command(OID)
+ * information to the TX Path to reduce the parameters of a function call.
  */
 struct CMD_INFO;	/* declare CMD_INFO_T */
 
-/* Following typedef should be removed later, because Glue Layer should not
- * be aware of following data type.
+/* Following typedef should be removed later, because Glue Layer
+ * should not be aware of following data type.
  */
 struct SW_RFB;	/* declare SW_RFB_T */
 
@@ -173,27 +178,27 @@ typedef void(*IST_EVENT_FUNCTION) (struct ADAPTER *);
 typedef void(*PFN_TIMER_CALLBACK) (IN struct GLUE_INFO *);
 
 /*******************************************************************************
-*                            P U B L I C   D A T A
-********************************************************************************
-*/
+ *                            P U B L I C   D A T A
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                           P R I V A T E   D A T A
-********************************************************************************
-*/
+ *                           P R I V A T E   D A T A
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                                 M A C R O S
-********************************************************************************
-*/
+ *                                 M A C R O S
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                  F U N C T I O N   D E C L A R A T I O N S
-********************************************************************************
-*/
+ *                  F U N C T I O N   D E C L A R A T I O N S
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                              F U N C T I O N S
-********************************************************************************
-*/
+ *                              F U N C T I O N S
+ *******************************************************************************
+ */
 #endif /* _TYPEDEF_H */
