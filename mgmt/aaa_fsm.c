@@ -308,10 +308,15 @@ void aaaFsmRunEventRxAuth(IN struct ADAPTER *prAdapter,
 	struct WLAN_AUTH_FRAME *prAuthFrame = (struct WLAN_AUTH_FRAME *) NULL;
 
 	ASSERT(prAdapter);
-	DBGLOG(AAA, INFO, "aaaFsmRunEventRxAuth\n");
 
 	do {
 		prAuthFrame = (struct WLAN_AUTH_FRAME *) prSwRfb->pvHeader;
+
+		DBGLOG(AAA, INFO,
+			"SA: " MACSTR ", bssid: " MACSTR ", sta idx: %d\n",
+			MAC2STR(prAuthFrame->aucSrcAddr),
+			MAC2STR(prAuthFrame->aucBSSID),
+			prSwRfb->ucStaRecIdx);
 
 #if CFG_ENABLE_WIFI_DIRECT
 		prBssInfo = p2pFuncBSSIDFindBssInfo(prAdapter,
@@ -534,11 +539,21 @@ uint32_t aaaFsmRunEventRxAssoc(IN struct ADAPTER *prAdapter,
 	uint16_t u2StatusCode = STATUS_CODE_RESERVED;
 	u_int8_t fgReplyAssocResp = FALSE;
 	u_int8_t fgSendSAQ = FALSE;
+	struct WLAN_ASSOC_REQ_FRAME *prAssocReqFrame =
+			(struct WLAN_ASSOC_REQ_FRAME *) NULL;
 
 	ASSERT(prAdapter);
-	DBGLOG(AAA, INFO, "aaaFsmRunEventRxAssoc\n");
+	ASSERT(prSwRfb);
 
 	do {
+		prAssocReqFrame =
+			(struct WLAN_ASSOC_REQ_FRAME *) prSwRfb->pvHeader;
+
+		DBGLOG(AAA, INFO,
+			"SA: " MACSTR ", bssid: " MACSTR ", sta idx: %d\n",
+			MAC2STR(prAssocReqFrame->aucSrcAddr),
+			MAC2STR(prAssocReqFrame->aucBSSID),
+			prSwRfb->ucStaRecIdx);
 
 		/* 4 <1> Check if we have the STA_RECORD_T
 		 * for incoming Assoc Req
@@ -547,14 +562,27 @@ uint32_t aaaFsmRunEventRxAssoc(IN struct ADAPTER *prAdapter,
 
 		/* We should have the corresponding Sta Record. */
 		if ((!prStaRec) || (!prStaRec->fgIsInUse)) {
+			uint16_t i;
+
 			/* Not to reply association response
 			 * with failure code due to lack of STA_REC
 			 */
+			DBGLOG(AAA, ERROR,
+				"get sta fail, wlan idx: %d, sta index: %d\n",
+				prSwRfb->ucWlanIdx,
+				prSwRfb->ucStaRecIdx);
+
+			for (i = 0; i < CFG_STA_REC_NUM; i++)
+				cnmDumpStaRec(prAdapter, i);
 			break;
 		}
 
-		if (!IS_CLIENT_STA(prStaRec))
+		if (!IS_CLIENT_STA(prStaRec)) {
+			DBGLOG(AAA, ERROR,
+				"error sta type, skip process rx assoc\n");
+			cnmDumpStaRec(prAdapter, prSwRfb->ucStaRecIdx);
 			break;
+		}
 
 		DBGLOG(AAA, TRACE,
 			"RxAssoc enter ucStaState:%d, eAuthassocState:%d\n",
@@ -854,12 +882,12 @@ aaaFsmRunEventTxDone(IN struct ADAPTER *prAdapter,
 	ASSERT(prAdapter);
 	ASSERT(prMsduInfo);
 
-	if (rTxDoneStatus)
-		DBGLOG(AAA, INFO,
-			"EVENT-TX DONE [status: %d][seq: %d]: Current Time = %d\n",
-				rTxDoneStatus,
-				prMsduInfo->ucTxSeqNum,
-				kalGetTimeTick());
+
+	DBGLOG(AAA, INFO,
+		"EVENT-TX DONE [status: %d][seq: %d]: Current Time = %d\n",
+		rTxDoneStatus,
+		prMsduInfo->ucTxSeqNum,
+		kalGetTimeTick());
 
 	prStaRec = cnmGetStaRecByIndex(prAdapter, prMsduInfo->ucStaRecIndex);
 
@@ -871,7 +899,7 @@ aaaFsmRunEventTxDone(IN struct ADAPTER *prAdapter,
 
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prStaRec->ucBssIndex);
 
-	DBGLOG(AAA, LOUD, "TxDone ucStaState:%d, eAuthAssocState:%d\n",
+	DBGLOG(AAA, TRACE, "TxDone ucStaState:%d, eAuthAssocState:%d\n",
 		prStaRec->ucStaState, prStaRec->eAuthAssocState);
 
 	/* Trigger statistics log if Auth/Assoc Tx failed */
@@ -1023,7 +1051,7 @@ aaaFsmRunEventTxDone(IN struct ADAPTER *prAdapter,
 		break;		/* Ignore other cases */
 	}
 
-	DBGLOG(AAA, LOUD, "TxDone end ucStaState:%d, eAuthAssocState:%d\n",
+	DBGLOG(AAA, TRACE, "TxDone end ucStaState:%d, eAuthAssocState:%d\n",
 		prStaRec->ucStaState, prStaRec->eAuthAssocState);
 
 	return WLAN_STATUS_SUCCESS;
