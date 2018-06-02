@@ -141,6 +141,8 @@ mtk_cfg80211_change_iface(struct wiphy *wiphy,
 	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wiphy);
 	ASSERT(prGlueInfo);
 
+	DBGLOG(REQ, INFO, "mtk_cfg80211_change_iface\n");
+
 	if (type == NL80211_IFTYPE_STATION)
 		eOpMode = NET_TYPE_INFRA;
 	else if (type == NL80211_IFTYPE_ADHOC)
@@ -198,8 +200,8 @@ mtk_cfg80211_add_key(struct wiphy *wiphy,
 	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wiphy);
 	ASSERT(prGlueInfo);
 
-#if DBG
 	DBGLOG(RSN, INFO, "mtk_cfg80211_add_key\n");
+#if DBG
 	if (mac_addr) {
 		DBGLOG(RSN, INFO,
 		       "keyIdx = %d pairwise = %d mac = " MACSTR "\n", key_index, pairwise, MAC2STR(mac_addr));
@@ -337,8 +339,8 @@ int mtk_cfg80211_del_key(struct wiphy *wiphy, struct net_device *ndev, u8 key_in
 	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wiphy);
 	ASSERT(prGlueInfo);
 
-#if DBG
 	DBGLOG(RSN, TRACE, "mtk_cfg80211_del_key\n");
+#if DBG
 	if (mac_addr) {
 		DBGLOG(RSN, TRACE,
 		       "keyIdx = %d pairwise = %d mac = " MACSTR "\n", key_index, pairwise, MAC2STR(mac_addr));
@@ -395,8 +397,8 @@ mtk_cfg80211_set_default_key(struct wiphy *wiphy, struct net_device *ndev, u8 ke
 	ASSERT(prGlueInfo);
 
 	/* For STA, should wep set the default key !! */
-#if DBG
 	DBGLOG(RSN, INFO, "mtk_cfg80211_set_default_key\n");
+#if DBG
 	DBGLOG(RSN, INFO, "keyIdx = %d unicast = %d multicast = %d\n", key_index, unicast, multicast);
 #endif
 
@@ -448,6 +450,7 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy, struct net_device *ndev, const
 	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wiphy);
 	ASSERT(prGlueInfo);
 
+	DBGLOG(REQ, INFO, "mtk_cfg80211_get_station\n");
 	kalMemZero(arBssid, MAC_ADDR_LEN);
 	wlanQueryInformation(prGlueInfo->prAdapter, wlanoidQueryBssid, &arBssid[0], sizeof(arBssid), &u4BufLen);
 
@@ -581,6 +584,7 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy, struct net_device *ndev, u8 *m
 
 	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wiphy);
 	ASSERT(prGlueInfo);
+	DBGLOG(REQ, INFO, "mtk_cfg80211_get_station\n");
 
 	kalMemZero(arBssid, MAC_ADDR_LEN);
 	wlanQueryInformation(prGlueInfo->prAdapter, wlanoidQueryBssid, &arBssid[0], sizeof(arBssid), &u4BufLen);
@@ -786,6 +790,8 @@ int mtk_cfg80211_scan(struct wiphy *wiphy, struct cfg80211_scan_request *request
 	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wiphy);
 	ASSERT(prGlueInfo);
 
+	DBGLOG(REQ, INFO, "mtk_cfg80211_scan\n");
+
 	/* check if there is any pending scan/sched_scan not yet finished */
 	if (prGlueInfo->prScanRequest != NULL)
 		return -EBUSY;
@@ -850,6 +856,8 @@ void mtk_cfg80211_abort_scan(struct wiphy *wiphy, struct wireless_dev *wdev)
 
 	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wiphy);
 	ASSERT(prGlueInfo);
+
+	DBGLOG(REQ, INFO, "mtk_cfg80211_abort_scan\n");
 
 	rStatus = kalIoctl(prGlueInfo,
 					   wlanoidAbortScan,
@@ -1298,6 +1306,8 @@ int mtk_cfg80211_disconnect(struct wiphy *wiphy, struct net_device *ndev, u16 re
 	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wiphy);
 	ASSERT(prGlueInfo);
 
+	DBGLOG(REQ, INFO, "mtk_cfg80211_disconnect\n");
+
 	rStatus = kalIoctl(prGlueInfo, wlanoidSetDisassociate, NULL, 0, FALSE, FALSE, TRUE, &u4BufLen);
 
 	if (rStatus != WLAN_STATUS_SUCCESS) {
@@ -1328,6 +1338,8 @@ int mtk_cfg80211_join_ibss(struct wiphy *wiphy, struct net_device *ndev, struct 
 
 	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wiphy);
 	ASSERT(prGlueInfo);
+
+	DBGLOG(REQ, INFO, "mtk_cfg80211_join_ibss\n");
 
 	/* set channel */
 	if (params->channel_fixed) {
@@ -1374,6 +1386,7 @@ int mtk_cfg80211_leave_ibss(struct wiphy *wiphy, struct net_device *ndev)
 	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wiphy);
 	ASSERT(prGlueInfo);
 
+	DBGLOG(REQ, INFO, "%s\n", __func__);
 	rStatus = kalIoctl(prGlueInfo, wlanoidSetDisassociate, NULL, 0, FALSE, FALSE, TRUE, &u4BufLen);
 
 	if (rStatus != WLAN_STATUS_SUCCESS) {
@@ -1408,6 +1421,9 @@ int mtk_cfg80211_set_power_mgmt(struct wiphy *wiphy, struct net_device *ndev, bo
 
 	if (!prGlueInfo->prAdapter->prAisBssInfo)
 		return -EFAULT;
+
+	DBGLOG(REQ, INFO, "%s: enabled=%d, timeout=%d\n", __func__,
+		enabled, timeout);
 
 	if (enabled) {
 		if (timeout == -1)
@@ -1454,6 +1470,8 @@ int mtk_cfg80211_set_pmksa(struct wiphy *wiphy, struct net_device *ndev, struct 
 	ASSERT(prGlueInfo);
 
 	prPmkid = (struct PARAM_PMKID *) kalMemAlloc(8 + sizeof(struct PARAM_BSSID_INFO), VIR_MEM_TYPE);
+	DBGLOG(REQ, INFO, "mtk_cfg80211_set_pmksa\n");
+
 	if (!prPmkid) {
 		DBGLOG(INIT, INFO, "Can not alloc memory for IW_PMKSA_ADD\n");
 		return -ENOMEM;
@@ -1486,7 +1504,7 @@ int mtk_cfg80211_set_pmksa(struct wiphy *wiphy, struct net_device *ndev, struct 
 /*----------------------------------------------------------------------------*/
 int mtk_cfg80211_del_pmksa(struct wiphy *wiphy, struct net_device *ndev, struct cfg80211_pmksa *pmksa)
 {
-
+	DBGLOG(REQ, INFO, "not support now\n");
 	return 0;
 }
 
@@ -1512,6 +1530,9 @@ int mtk_cfg80211_flush_pmksa(struct wiphy *wiphy, struct net_device *ndev)
 	ASSERT(prGlueInfo);
 
 	prPmkid = (struct PARAM_PMKID *) kalMemAlloc(8, VIR_MEM_TYPE);
+
+	DBGLOG(P2P, INFO, "mtk_cfg80211_flush_pmksa\n");
+
 	if (!prPmkid) {
 		DBGLOG(INIT, INFO, "Can not alloc memory for IW_PMKSA_FLUSH\n");
 		return -ENOMEM;
@@ -1786,6 +1807,8 @@ int mtk_cfg80211_cancel_remain_on_channel(struct wiphy *wiphy, struct wireless_d
 		prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wiphy);
 		ASSERT(prGlueInfo);
 
+		DBGLOG(REQ, INFO, "mtk_cfg80211_cancel_remain_on_channel\n");
+
 		prMsgChnlAbort =
 		    cnmMemAlloc(prGlueInfo->prAdapter, RAM_TYPE_MSG, sizeof(struct MSG_CANCEL_REMAIN_ON_CHANNEL));
 
@@ -1834,6 +1857,8 @@ int mtk_cfg80211_mgmt_tx(struct wiphy *wiphy,
 
 		prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wiphy);
 		ASSERT(prGlueInfo);
+
+		DBGLOG(REQ, INFO, "mtk_cfg80211_mgmt_tx\n");
 
 		*cookie = prGlueInfo->u8Cookie++;
 
@@ -1904,6 +1929,8 @@ int mtk_cfg80211_mgmt_tx(struct wiphy *wiphy,
 
 		prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wiphy);
 		ASSERT(prGlueInfo);
+
+		DBGLOG(REQ, INFO, "mtk_cfg80211_mgmt_tx\n");
 
 		*cookie = prGlueInfo->u8Cookie++;
 
@@ -2886,6 +2913,8 @@ int mtk_cfg80211_assoc(struct wiphy *wiphy, struct net_device *ndev, struct cfg8
 	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wiphy);
 	ASSERT(prGlueInfo);
 
+	DBGLOG(REQ, INFO, "mtk_cfg80211_assoc\n");
+
 	kalMemZero(arBssid, MAC_ADDR_LEN);
 	wlanQueryInformation(prGlueInfo->prAdapter, wlanoidQueryBssid, &arBssid[0], sizeof(arBssid), &u4BufLen);
 
@@ -3036,6 +3065,7 @@ mtk_cfg80211_change_station(struct wiphy *wiphy, struct net_device *ndev, const 
 	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wiphy);
 	ASSERT(prGlueInfo);
 
+	DBGLOG(REQ, INFO, "mtk_cfg80211_change_station\n");
 	/* make up command */
 
 	prAdapter = prGlueInfo->prAdapter;
@@ -3139,6 +3169,7 @@ mtk_cfg80211_change_station(struct wiphy *wiphy, struct net_device *ndev, u8 *ma
 	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wiphy);
 	ASSERT(prGlueInfo);
 
+	DBGLOG(REQ, INFO, "mtk_cfg80211_change_station\n");
 	/* make up command */
 
 	prAdapter = prGlueInfo->prAdapter;
@@ -3250,6 +3281,7 @@ int mtk_cfg80211_add_station(struct wiphy *wiphy, struct net_device *ndev,
 
 	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wiphy);
 	ASSERT(prGlueInfo);
+	DBGLOG(REQ, INFO, "mtk_cfg80211_add_station\n");
 
 	/* make up command */
 
@@ -3286,6 +3318,7 @@ int mtk_cfg80211_add_station(struct wiphy *wiphy, struct net_device *ndev, u8 *m
 
 	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wiphy);
 	ASSERT(prGlueInfo);
+	DBGLOG(REQ, INFO, "mtk_cfg80211_add_station\n");
 
 	/* make up command */
 
@@ -3341,6 +3374,8 @@ int mtk_cfg80211_del_station(struct wiphy *wiphy, struct net_device *ndev, struc
 	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wiphy);
 	ASSERT(prGlueInfo);
 
+	DBGLOG(REQ, INFO, "mtk_cfg80211_del_station\n");
+
 	prAdapter = prGlueInfo->prAdapter;
 
 	/* For kernel 3.18 modification, we trasfer to local buff to query sta */
@@ -3370,6 +3405,8 @@ int mtk_cfg80211_del_station(struct wiphy *wiphy, struct net_device *ndev, const
 	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wiphy);
 	ASSERT(prGlueInfo);
 
+	DBGLOG(REQ, INFO, "mtk_cfg80211_del_station\n");
+
 	prAdapter = prGlueInfo->prAdapter;
 
 	/* For kernel 3.18 modification, we trasfer to local buff to query sta */
@@ -3398,6 +3435,8 @@ int mtk_cfg80211_del_station(struct wiphy *wiphy, struct net_device *ndev, u8 *m
 
 	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wiphy);
 	ASSERT(prGlueInfo);
+
+	DBGLOG(REQ, INFO, "mtk_cfg80211_del_station\n");
 
 	prAdapter = prGlueInfo->prAdapter;
 
@@ -3434,6 +3473,8 @@ mtk_cfg80211_tdls_mgmt(struct wiphy *wiphy, struct net_device *dev,
 	struct TDLS_CMD_LINK_MGT rCmdMgt;
 	uint32_t u4BufLen;
 
+	DBGLOG(REQ, INFO, "mtk_cfg80211_tdls_mgmt\n");
+
 	/* sanity check */
 	if ((wiphy == NULL) || (peer == NULL) || (buf == NULL))
 		return -EINVAL;
@@ -3468,6 +3509,8 @@ mtk_cfg80211_tdls_mgmt(struct wiphy *wiphy, struct net_device *dev,
 	struct TDLS_CMD_LINK_MGT rCmdMgt;
 	uint32_t u4BufLen;
 
+	DBGLOG(REQ, INFO, "mtk_cfg80211_tdls_mgmt\n");
+
 	/* sanity check */
 	if ((wiphy == NULL) || (peer == NULL) || (buf == NULL))
 		return -EINVAL;
@@ -3501,6 +3544,8 @@ mtk_cfg80211_tdls_mgmt(struct wiphy *wiphy, struct net_device *dev,
 	struct GLUE_INFO *prGlueInfo;
 	struct TDLS_CMD_LINK_MGT rCmdMgt;
 	uint32_t u4BufLen;
+
+	DBGLOG(REQ, INFO, "mtk_cfg80211_tdls_mgmt\n");
 
 	/* sanity check */
 	if ((wiphy == NULL) || (peer == NULL) || (buf == NULL))
@@ -3553,6 +3598,9 @@ int mtk_cfg80211_tdls_oper(struct wiphy *wiphy, struct net_device *dev,
 	struct TDLS_CMD_LINK_OPER rCmdOper;
 
 	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wiphy);
+
+	DBGLOG(REQ, INFO, "mtk_cfg80211_tdls_oper\n");
+
 	ASSERT(prGlueInfo);
 	prAdapter = prGlueInfo->prAdapter;
 
@@ -3576,6 +3624,9 @@ int mtk_cfg80211_tdls_oper(struct wiphy *wiphy, struct net_device *dev, u8 *peer
 
 	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wiphy);
 	ASSERT(prGlueInfo);
+
+	DBGLOG(REQ, INFO, "mtk_cfg80211_tdls_oper\n");
+
 	prAdapter = prGlueInfo->prAdapter;
 
 	kalMemZero(&rCmdOper, sizeof(rCmdOper));
@@ -3933,6 +3984,8 @@ int mtk_cfg80211_suspend(struct wiphy *wiphy, struct cfg80211_wowlan *wow)
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
 
+	DBGLOG(REQ, INFO, "mtk_cfg80211_suspend\n");
+
 	if (kalHaltTryLock())
 		return 0;
 
@@ -3967,6 +4020,8 @@ int mtk_cfg80211_resume(struct wiphy *wiphy)
 	struct BSS_DESC **pprBssDesc = NULL;
 	struct ADAPTER *prAdapter = NULL;
 	uint8_t i = 0;
+
+	DBGLOG(REQ, INFO, "mtk_cfg80211_resume\n");
 
 	if (kalHaltTryLock())
 		return 0;
@@ -4037,8 +4092,6 @@ int mtk_IsP2PNetDevice(struct GLUE_INFO *prGlueInfo, struct net_device *ndev)
 	else if (iftype == NL80211_IFTYPE_ADHOC)
 		ret = 0;
 
-	DBGLOG(REQ, INFO, "cfg path select = %d\n", ret);
-
 	return ret;
 }
 
@@ -4061,15 +4114,16 @@ int mtk_init_sta_role(struct ADAPTER *prAdapter, struct net_device *ndev)
 	if ((prAdapter == NULL) || (ndev == NULL))
 		return -1;
 
-	/* uninit AIS FSM */
+	/* init AIS FSM */
 	aisFsmInit(prAdapter);
 
 #if CFG_SUPPORT_ROAMING
-	/* Roaming Module - unintiailization */
+	/* Roaming Module - intiailization */
 	roamingFsmInit(prAdapter);
 #endif /* CFG_SUPPORT_ROAMING */
 
 	ndev->netdev_ops = wlanGetNdevOps();
+	ndev->ieee80211_ptr->iftype = NL80211_IFTYPE_STATION;
 
 	/* set the ndev's ucBssIdx to the AIS BSS index */
 	prNdevPriv = (struct NETDEV_PRIVATE_GLUE_INFO *) netdev_priv(ndev);
@@ -4147,7 +4201,11 @@ int mtk_init_ap_role(struct GLUE_INFO *prGlueInfo, struct net_device *ndev)
 
 	/* reference from the glRegisterP2P() */
 	gprP2pRoleWdev[u4Idx] = ndev->ieee80211_ptr;
-	glSetupP2P(prGlueInfo, gprP2pRoleWdev[u4Idx], ndev, u4Idx, TRUE);
+	if (glSetupP2P(prGlueInfo, gprP2pRoleWdev[u4Idx], ndev, u4Idx, TRUE)) {
+		gprP2pRoleWdev[u4Idx] = NULL;
+		return -EFAULT;
+	}
+
 	prGlueInfo->prAdapter->prP2pInfo->u4DeviceNum++;
 
 	/* reference from p2pNetRegister() */
@@ -4254,6 +4312,8 @@ int mtk_cfg_change_iface(struct wiphy *wiphy, struct net_device *ndev,
 	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wiphy);
 	ASSERT(prGlueInfo);
 
+	DBGLOG(P2P, INFO, "ndev=%p, new type=%d\n", ndev, type);
+
 	if ((!prGlueInfo) || (prGlueInfo->u4ReadyFlag == 0)) {
 		DBGLOG(REQ, WARN, "driver is not ready\n");
 		return -EFAULT;
@@ -4283,7 +4343,11 @@ int mtk_cfg_change_iface(struct wiphy *wiphy, struct net_device *ndev,
 	}
 
 	netif_carrier_off(ndev);
-	netif_tx_stop_all_queues(ndev);
+	/* stop ap will stop all queue, and kalIndicateStatusAndComplete only do
+	 * netif_carrier_on. So that, the following STA can't send 4-way M2 to
+	 * AP.
+	 */
+	netif_tx_start_all_queues(ndev);
 
 	/* flush scan */
 	GLUE_ACQUIRE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
@@ -5027,13 +5091,13 @@ int mtk_cfg_testmode_cmd(struct wiphy *wiphy, void *data, int len)
 	}
 
 	if (mtk_IsP2PNetDevice(prGlueInfo, wdev->netdev) > 0) {
-		DBGLOG(REQ, WARN, "P2P/AP don't support this function\n");
-		return -EFAULT;
+		return mtk_p2p_cfg80211_testmode_cmd(wiphy, wdev, data, len);
 	}
 
 	return mtk_cfg80211_testmode_cmd(wiphy, wdev, data, len);
 #else
 	/* XXX: no information can to check the mtk_IsP2PNetDevice */
+	/* return mtk_p2p_cfg80211_testmode_cmd(wiphy, data, len); */
 	return mtk_cfg80211_testmode_cmd(wiphy, data, len);
 #endif
 }
