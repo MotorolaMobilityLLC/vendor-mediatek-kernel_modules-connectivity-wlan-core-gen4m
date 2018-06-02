@@ -549,11 +549,13 @@ VOID scanAddToRoamBssDesc(IN P_ADAPTER_T prAdapter, IN P_BSS_DESC_T prBssDesc)
 			u4RemoveTime = u4RemoveTime / 2;
 		} while (u4RemoveTime > 0);
 
-		COPY_SSID(prRoamBssDesc->aucSSID, prRoamBssDesc->ucSSIDLen,
-				prBssDesc->aucSSID, prBssDesc->ucSSIDLen);
+		if (prRoamBssDesc != NULL)
+			COPY_SSID(prRoamBssDesc->aucSSID, prRoamBssDesc->ucSSIDLen,
+					prBssDesc->aucSSID, prBssDesc->ucSSIDLen);
 	}
 
-	GET_CURRENT_SYSTIME(&prRoamBssDesc->rUpdateTime);
+	if (prRoamBssDesc != NULL)
+		GET_CURRENT_SYSTIME(&prRoamBssDesc->rUpdateTime);
 }
 
 
@@ -632,68 +634,64 @@ scanSearchExistingBssDescWithSsid(IN P_ADAPTER_T prAdapter,
 	switch (eBSSType) {
 	case BSS_TYPE_P2P_DEVICE:
 		fgCheckSsid = FALSE;
+		/* fall through */
 	case BSS_TYPE_INFRASTRUCTURE:
 #if CFG_SUPPORT_ROAMING_SKIP_ONE_AP
 		scanSearchBssDescOfRoamSsid(prAdapter);
+		/* fall through */
 #endif
 	case BSS_TYPE_BOW_DEVICE:
-		{
-			prBssDesc = scanSearchBssDescByBssidAndSsid(prAdapter, aucBSSID, fgCheckSsid, prSsid);
+		prBssDesc = scanSearchBssDescByBssidAndSsid(prAdapter, aucBSSID, fgCheckSsid, prSsid);
 
-			/* if (eBSSType == prBssDesc->eBSSType) */
+		/* if (eBSSType == prBssDesc->eBSSType) */
 
-			return prBssDesc;
-		}
-
+		return prBssDesc;
 	case BSS_TYPE_IBSS:
-		{
-			prIBSSBssDesc = scanSearchBssDescByBssidAndSsid(prAdapter, aucBSSID, fgCheckSsid, prSsid);
-			prBssDesc = scanSearchBssDescByTAAndSsid(prAdapter, aucSrcAddr, fgCheckSsid, prSsid);
+		prIBSSBssDesc = scanSearchBssDescByBssidAndSsid(prAdapter, aucBSSID, fgCheckSsid, prSsid);
+		prBssDesc = scanSearchBssDescByTAAndSsid(prAdapter, aucSrcAddr, fgCheckSsid, prSsid);
 
-			/* NOTE(Kevin):
-			 * Rules to maintain the SCAN Result:
-			 * For AdHoc -
-			 *    CASE I    We have TA1(BSSID1), but it change its BSSID to BSSID2
-			 *              -> Update TA1 entry's BSSID.
-			 *    CASE II   We have TA1(BSSID1), and get TA1(BSSID1) again
-			 *              -> Update TA1 entry's contain.
-			 *    CASE III  We have a SCAN result TA1(BSSID1), and TA2(BSSID2). Sooner or
-			 *               later, TA2 merge into TA1, we get TA2(BSSID1)
-			 *              -> Remove TA2 first and then replace TA1 entry's TA with TA2,
-			 *                 Still have only one entry of BSSID.
-			 *    CASE IV   We have a SCAN result TA1(BSSID1), and another TA2 also merge into BSSID1.
-			 *              -> Replace TA1 entry's TA with TA2, Still have only one entry.
-			 *    CASE V    New IBSS
-			 *              -> Add this one to SCAN result.
-			 */
-			if (prBssDesc) {
-				if ((!prIBSSBssDesc) ||	/* CASE I */
-				    (prBssDesc == prIBSSBssDesc)) {	/* CASE II */
+		/* NOTE(Kevin):
+		 * Rules to maintain the SCAN Result:
+		 * For AdHoc -
+		 *    CASE I    We have TA1(BSSID1), but it change its BSSID to BSSID2
+		 *              -> Update TA1 entry's BSSID.
+		 *    CASE II   We have TA1(BSSID1), and get TA1(BSSID1) again
+		 *              -> Update TA1 entry's contain.
+		 *    CASE III  We have a SCAN result TA1(BSSID1), and TA2(BSSID2). Sooner or
+		 *               later, TA2 merge into TA1, we get TA2(BSSID1)
+		 *              -> Remove TA2 first and then replace TA1 entry's TA with TA2,
+		 *                 Still have only one entry of BSSID.
+		 *    CASE IV   We have a SCAN result TA1(BSSID1), and another TA2 also merge into BSSID1.
+		 *              -> Replace TA1 entry's TA with TA2, Still have only one entry.
+		 *    CASE V    New IBSS
+		 *              -> Add this one to SCAN result.
+		 */
+		if (prBssDesc) {
+			if ((!prIBSSBssDesc) ||	/* CASE I */
+			    (prBssDesc == prIBSSBssDesc)) {	/* CASE II */
 
-					return prBssDesc;
-				}
-
-
-				prBSSDescList = &prScanInfo->rBSSDescList;
-				prFreeBSSDescList = &prScanInfo->rFreeBSSDescList;
-
-				/* Remove this BSS Desc from the BSS Desc list */
-				LINK_REMOVE_KNOWN_ENTRY(prBSSDescList, prBssDesc);
-
-				/* Return this BSS Desc to the free BSS Desc list. */
-				LINK_INSERT_TAIL(prFreeBSSDescList, &prBssDesc->rLinkEntry);
-
-				return prIBSSBssDesc;
+				return prBssDesc;
 			}
 
-			if (prIBSSBssDesc) {	/* CASE IV */
 
-				return prIBSSBssDesc;
-			}
-			/* CASE V */
-			break;	/* Return NULL; */
+			prBSSDescList = &prScanInfo->rBSSDescList;
+			prFreeBSSDescList = &prScanInfo->rFreeBSSDescList;
+
+			/* Remove this BSS Desc from the BSS Desc list */
+			LINK_REMOVE_KNOWN_ENTRY(prBSSDescList, prBssDesc);
+
+			/* Return this BSS Desc to the free BSS Desc list. */
+			LINK_INSERT_TAIL(prFreeBSSDescList, &prBssDesc->rLinkEntry);
+
+			return prIBSSBssDesc;
 		}
 
+		if (prIBSSBssDesc) {	/* CASE IV */
+
+			return prIBSSBssDesc;
+		}
+		/* CASE V */
+		break;	/* Return NULL; */
 	default:
 		break;
 	}
@@ -1862,7 +1860,7 @@ WLAN_STATUS scanProcessBeaconAndProbeResp(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_
 	prBssDesc = scanAddToBssDesc(prAdapter, prSwRfb);
 
 	if (prBssDesc) {
-
+#if CFG_SUPPORT_BEACON_CHANGE_DETECTION
 		/* 4 <1.1> Beacon Change Detection for Connected BSS */
 		if (prAisBssInfo->eConnectionState == PARAM_MEDIA_STATE_CONNECTED &&
 		    ((prBssDesc->eBSSType == BSS_TYPE_INFRASTRUCTURE && prConnSettings->eOPMode != NET_TYPE_IBSS)
@@ -1872,16 +1870,15 @@ WLAN_STATUS scanProcessBeaconAndProbeResp(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_
 				  prAisBssInfo->ucSSIDLen)) {
 			BOOLEAN fgNeedDisconnect = FALSE;
 
-#if CFG_SUPPORT_BEACON_CHANGE_DETECTION
 			/* <1.1.2> check if supported rate differs */
 			if (prAisBssInfo->u2OperationalRateSet != prBssDesc->u2OperationalRateSet)
 				fgNeedDisconnect = TRUE;
-#endif
 
 			/* <1.1.3> beacon content change detected, disconnect immediately */
 			if (fgNeedDisconnect == TRUE)
 				aisBssBeaconTimeout(prAdapter);
 		}
+#endif
 		/* 4 <1.1> Update AIS_BSS_INFO */
 		if (((prBssDesc->eBSSType == BSS_TYPE_INFRASTRUCTURE && prConnSettings->eOPMode != NET_TYPE_IBSS)
 		     || (prBssDesc->eBSSType == BSS_TYPE_IBSS && prConnSettings->eOPMode != NET_TYPE_INFRA))) {
