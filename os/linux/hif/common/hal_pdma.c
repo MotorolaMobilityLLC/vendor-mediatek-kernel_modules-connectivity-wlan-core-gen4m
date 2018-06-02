@@ -1042,7 +1042,8 @@ void halRxReceiveRFBs(IN struct ADAPTER *prAdapter, uint32_t u4Port)
 			HAL_RX_STATUS_GET_PKT_TYPE(prRxStatus);
 		DBGLOG(RX, TRACE, "ucPacketType = %u, ucSecMode = %u\n",
 				  prSwRfb->ucPacketType,
-				  HAL_RX_STATUS_GET_SEC_MODE(prRxStatus));
+				  (uint8_t)HAL_RX_STATUS_GET_SEC_MODE(
+					prRxStatus));
 
 		if (prSwRfb->ucPacketType == RX_PKT_TYPE_MSDU_REPORT) {
 			nicRxProcessMsduReport(prAdapter, prSwRfb);
