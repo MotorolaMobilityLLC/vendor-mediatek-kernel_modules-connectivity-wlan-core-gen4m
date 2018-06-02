@@ -496,6 +496,10 @@ int mtk_cfg_del_key(struct wiphy *wiphy,
 int mtk_cfg_set_default_key(struct wiphy *wiphy,
 			    struct net_device *ndev,
 			    u8 key_index, bool unicast, bool multicast);
+
+int mtk_cfg_set_default_mgmt_key(struct wiphy *wiphy,
+		struct net_device *ndev, u8 key_index);
+
 #if KERNEL_VERSION(3, 16, 0) <= CFG80211_VERSION_CODE
 int mtk_cfg_get_station(struct wiphy *wiphy,
 			struct net_device *ndev,
