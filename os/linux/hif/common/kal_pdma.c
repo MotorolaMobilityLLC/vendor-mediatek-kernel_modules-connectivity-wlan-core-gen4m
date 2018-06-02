@@ -184,7 +184,12 @@ static bool kalCheckSpecRegWrite(struct GLUE_INFO *prGlueInfo,
 				 uint32_t u4BusAddr, uint32_t u4Value)
 {
 	uint32_t au4Regs[] = { WPDMA_GLO_CFG,
-			       0x4414,
+			       WPDMA_TX_RING0_CTRL1,
+			       WPDMA_TX_RING0_CTRL1 + MT_RINGREG_DIFF,
+			       WPDMA_TX_RING0_CTRL1 + MT_RINGREG_DIFF * 3,
+			       WPDMA_TX_RING0_CTRL1 + MT_RINGREG_DIFF * 15,
+			       WPDMA_RX_RING0_CTRL1,
+			       WPDMA_RX_RING0_CTRL1 + MT_RINGREG_DIFF,
 			       PSE_PG_CPU_GROUP,
 			       PSE_PG_LMAC2_GROUP };
 	uint32_t u4Idx, u4Size = sizeof(au4Regs) / sizeof(uint32_t);

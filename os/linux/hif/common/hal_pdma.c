@@ -2094,14 +2094,20 @@ void halHwRecoveryFromError(IN struct ADAPTER *prAdapter)
 
 	case ERR_RECOV_STOP_PDMA0:
 		if (u4Status & ERROR_DETECT_RESET_DONE) {
+			uint32_t u4Num;
+
 			DBGLOG(HAL, INFO, "SER(L) Host re-initialize PDMA\n");
-			halWpdmaInitTxRing(prGlueInfo);
-			halWpdmaInitRxRing(prGlueInfo);
+			/* reset TXD & RXD */
+			for (u4Num = 0; u4Num < NUM_OF_TX_RING; u4Num++)
+				kalMemZero(prHifInfo->TxDescRing[u4Num].AllocVa,
+					   TX_RING_SIZE * TXD_SIZE);
+			kalMemZero(prHifInfo->RxDescRing[0].AllocVa,
+				   RX_RING0_SIZE * RXD_SIZE);
+			kalMemZero(prHifInfo->RxDescRing[1].AllocVa,
+				   RX_RING1_SIZE * RXD_SIZE);
 
 			DBGLOG(HAL, INFO, "SER(M) Host enable PDMA\n");
-			prBusInfo->pdmaSetup(prGlueInfo, TRUE);
-			halWpdmaWaitIdle(prGlueInfo, 100, 1000);
-			kalDevRegWrite(prGlueInfo, WPDMA_RST_PTR, 0xFFFFFFFF);
+			halWpdmaInitRing(prGlueInfo);
 			kalDevRegWrite(prGlueInfo, WPDMA_PAUSE_TX_Q, 0);
 
 			DBGLOG(HAL, INFO,
@@ -2312,7 +2318,7 @@ void halShowPdmaInfo(IN struct ADAPTER *prAdapter,
 	HAL_MCR_RD(prAdapter, WPDMA_RX_RING0_CTRL2 + MT_RINGREG_DIFF, &Cidx[4]);
 	HAL_MCR_RD(prAdapter, WPDMA_RX_RING0_CTRL3 + MT_RINGREG_DIFF, &Didx[4]);
 	kalSprintf(buf, "%10d  0x%08x  0x%016llx%10d%10d%10d",
-		1, WPDMA_RX_RING0_CTRL0,
+		1, WPDMA_RX_RING0_CTRL0 + MT_RINGREG_DIFF,
 		(Base[4] + ((uint64_t)Base_Ext[4] << 32)),
 		Cnt[4], Cidx[4], Didx[4]);
 	DBGLOG(HAL, INFO, "%s\n", buf);
@@ -3043,7 +3049,6 @@ void halShowDmaschInfo(IN struct ADAPTER *prAdapter)
 		"DMASHDL ReFill Control(0x5000A010): 0x%08x\n", value);
 
 	for (groupidx = 0; groupidx < 16; groupidx++) {
-		idx = 0;
 		DBGLOG(HAL, INFO, "Group %d info:", groupidx);
 		HAL_MCR_RD(prAdapter, status_addr, &value);
 		rsv_cnt = (value & DMASHDL_RSV_CNT_MASK) >>
@@ -3091,7 +3096,6 @@ void halShowDmaschInfo(IN struct ADAPTER *prAdapter)
 			is_mismatch = TRUE;
 		}
 
-		DBGLOG(HAL, INFO, "\n");
 		/* Group15 is for PSE */
 		if (groupidx == 15 && Group_Mapping_Q[groupidx] == 0) {
 			pse_src_cnt = src_cnt;
@@ -3099,17 +3103,9 @@ void halShowDmaschInfo(IN struct ADAPTER *prAdapter)
 			break;
 		}
 
-		DBGLOG(HAL, INFO, "\tMapping Qidx:");
+		DBGLOG(HAL, INFO, "\tMapping Qidx: 0x%x",
+		       Group_Mapping_Q[groupidx]);
 
-		while (Group_Mapping_Q[groupidx] != 0) {
-			if (Group_Mapping_Q[groupidx] & 0x1)
-				DBGLOG(HAL, INFO, "Q%d ", idx);
-
-			Group_Mapping_Q[groupidx] >>= 1;
-			idx++;
-		}
-
-		DBGLOG(HAL, INFO, "\n");
 		total_src_cnt += src_cnt;
 		total_rsv_cnt += rsv_cnt;
 		status_addr = status_addr + 4;
