@@ -2476,7 +2476,8 @@ void nicCmdEventQueryMibInfo(IN struct ADAPTER *prAdapter, IN struct CMD_INFO *p
 }
 #endif
 
-uint32_t nicEventQueryTxResourceEntry(IN struct ADAPTER *prAdapter, IN uint8_t *pucEventBuf)
+uint32_t nicEventQueryTxResourceEntry(IN struct ADAPTER *prAdapter,
+				      IN uint8_t *pucEventBuf)
 {
 	struct NIC_TX_RESOURCE *prTxResource;
 	uint32_t version = *((uint32_t *)pucEventBuf);
@@ -2508,9 +2509,11 @@ uint32_t nicEventQueryTxResourceEntry(IN struct ADAPTER *prAdapter, IN uint8_t *
 	return WLAN_STATUS_SUCCESS;
 }
 
-uint32_t nicCmdEventQueryNicEfuseAddr(IN struct ADAPTER *prAdapter, IN uint8_t *pucEventBuf)
+uint32_t nicCmdEventQueryNicEfuseAddr(IN struct ADAPTER *prAdapter,
+				      IN uint8_t *pucEventBuf)
 {
-	struct NIC_EFUSE_ADDRESS *prTxResource = (struct NIC_EFUSE_ADDRESS *)pucEventBuf;
+	struct NIC_EFUSE_ADDRESS *prTxResource =
+		(struct NIC_EFUSE_ADDRESS *)pucEventBuf;
 
 	prAdapter->u4EfuseStartAddress = prTxResource->u4EfuseStartAddress;
 	prAdapter->u4EfuseEndAddress = prTxResource->u4EfuseEndAddress;
@@ -2523,9 +2526,11 @@ uint32_t nicCmdEventQueryNicEfuseAddr(IN struct ADAPTER *prAdapter, IN uint8_t *
 	return WLAN_STATUS_SUCCESS;
 }
 
-uint32_t nicCmdEventQueryNicCoexFeature(IN struct ADAPTER *prAdapter, IN uint8_t *pucEventBuf)
+uint32_t nicCmdEventQueryNicCoexFeature(IN struct ADAPTER *prAdapter,
+					IN uint8_t *pucEventBuf)
 {
-	struct NIC_COEX_FEATURE *prCoexFeature = (struct NIC_COEX_FEATURE *)pucEventBuf;
+	struct NIC_COEX_FEATURE *prCoexFeature =
+		(struct NIC_COEX_FEATURE *)pucEventBuf;
 
 	prAdapter->u4FddMode = prCoexFeature->u4FddMode;
 
@@ -2536,7 +2541,8 @@ uint32_t nicCmdEventQueryNicCoexFeature(IN struct ADAPTER *prAdapter, IN uint8_t
 }
 
 #if CFG_TCP_IP_CHKSUM_OFFLOAD
-uint32_t nicCmdEventQueryNicCsumOffload(IN struct ADAPTER *prAdapter, IN uint8_t *pucEventBuf)
+uint32_t nicCmdEventQueryNicCsumOffload(IN struct ADAPTER *prAdapter,
+					IN uint8_t *pucEventBuf)
 {
 	struct NIC_CSUM_OFFLOAD *prChecksumOffload = (struct NIC_CSUM_OFFLOAD *)pucEventBuf;
 
@@ -2549,18 +2555,22 @@ uint32_t nicCmdEventQueryNicCsumOffload(IN struct ADAPTER *prAdapter, IN uint8_t
 }
 #endif
 
-uint32_t nicCfgChipCapHwVersion(IN struct ADAPTER *prAdapter, IN uint8_t *pucEventBuf)
+uint32_t nicCfgChipCapHwVersion(IN struct ADAPTER *prAdapter,
+				IN uint8_t *pucEventBuf)
 {
-	struct CAP_HW_VERSION_T *prHwVer = (struct CAP_HW_VERSION_T *)pucEventBuf;
+	struct CAP_HW_VERSION *prHwVer =
+		(struct CAP_HW_VERSION *)pucEventBuf;
 
 	prAdapter->rVerInfo.u2FwProductID = prHwVer->u2ProductID;
 
 	return WLAN_STATUS_SUCCESS;
 }
 
-uint32_t nicCfgChipCapSwVersion(IN struct ADAPTER *prAdapter, IN uint8_t *pucEventBuf)
+uint32_t nicCfgChipCapSwVersion(IN struct ADAPTER *prAdapter,
+				IN uint8_t *pucEventBuf)
 {
-	struct CAP_SW_VERSION_T *prSwVer = (struct CAP_SW_VERSION_T *)pucEventBuf;
+	struct CAP_SW_VERSION *prSwVer =
+		(struct CAP_SW_VERSION *)pucEventBuf;
 
 	prAdapter->rVerInfo.u2FwOwnVersion = prSwVer->u2FwVersion;
 	prAdapter->rVerInfo.ucFwBuildNumber = prSwVer->u2FwBuildNumber;
@@ -2572,7 +2582,7 @@ return WLAN_STATUS_SUCCESS;
 
 uint32_t nicCfgChipCapMacAddr(IN struct ADAPTER *prAdapter, IN uint8_t *pucEventBuf)
 {
-	struct CAP_MAC_ADDR_T *prMacAddr = (struct CAP_MAC_ADDR_T *)pucEventBuf;
+	struct CAP_MAC_ADDR *prMacAddr = (struct CAP_MAC_ADDR *)pucEventBuf;
 	uint8_t aucZeroMacAddr[] = NULL_MAC_ADDR;
 
 	COPY_MAC_ADDR(prAdapter->rWifiVar.aucPermanentAddress, prMacAddr->aucMacAddr);
@@ -2585,7 +2595,7 @@ uint32_t nicCfgChipCapMacAddr(IN struct ADAPTER *prAdapter, IN uint8_t *pucEvent
 
 uint32_t nicCfgChipCapPhyCap(IN struct ADAPTER *prAdapter, IN uint8_t *pucEventBuf)
 {
-	struct CAP_PHY_CAP_T *prPhyCap = (struct CAP_PHY_CAP_T *)pucEventBuf;
+	struct CAP_PHY_CAP *prPhyCap = (struct CAP_PHY_CAP *)pucEventBuf;
 
 	prAdapter->rWifiVar.ucStaVht &= prPhyCap->ucVht;
 	prAdapter->rWifiVar.ucApVht &= prPhyCap->ucVht;
@@ -2597,13 +2607,17 @@ uint32_t nicCfgChipCapPhyCap(IN struct ADAPTER *prAdapter, IN uint8_t *pucEventB
 	if (!prPhyCap->ucDbdc)
 		prAdapter->rWifiVar.eDbdcMode = ENUM_DBDC_MODE_DISABLED;
 #endif
+	prAdapter->rWifiVar.ucTxLdpc &= prPhyCap->ucTxLdpc;
+	prAdapter->rWifiVar.ucRxLdpc &= prPhyCap->ucRxLdpc;
+	prAdapter->rWifiVar.ucTxStbc &= prPhyCap->ucTxStbc;
+	prAdapter->rWifiVar.ucRxStbc &= prPhyCap->ucRxStbc;
 
 	return WLAN_STATUS_SUCCESS;
 }
 
 uint32_t nicCfgChipCapMacCap(IN struct ADAPTER *prAdapter, IN uint8_t *pucEventBuf)
 {
-	struct CAP_MAC_CAP_T *prMacCap = (struct CAP_MAC_CAP_T *)pucEventBuf;
+	struct CAP_MAC_CAP *prMacCap = (struct CAP_MAC_CAP *)pucEventBuf;
 
 	if (prMacCap->ucHwBssIdNum > 0 && prMacCap->ucHwBssIdNum <= MAX_BSSID_NUM) {
 		prAdapter->ucHwBssIdNum = prMacCap->ucHwBssIdNum;
@@ -2621,31 +2635,27 @@ uint32_t nicCfgChipCapMacCap(IN struct ADAPTER *prAdapter, IN uint8_t *pucEventB
 	return WLAN_STATUS_SUCCESS;
 }
 
-uint32_t nicCfgChipCapFrameBufCap(IN struct ADAPTER *prAdapter, IN uint8_t *pucEventBuf)
+uint32_t nicCfgChipCapFrameBufCap(IN struct ADAPTER *prAdapter,
+				  IN uint8_t *pucEventBuf)
 {
-	/* struct CAP_FRAME_BUF_CAP_T *prFrameBuf = (struct CAP_FRAME_BUF_CAP_T *)pucEventBuf; */
-
 	return WLAN_STATUS_SUCCESS;
 }
 
-uint32_t nicCfgChipCapBeamformCap(IN struct ADAPTER *prAdapter, IN uint8_t *pucEventBuf)
+uint32_t nicCfgChipCapBeamformCap(IN struct ADAPTER *prAdapter,
+				  IN uint8_t *pucEventBuf)
 {
-	/* struct CAP_BEAMFORM_CAP_T *prBeamform = (struct CAP_BEAMFORM_CAP_T *)pucEventBuf; */
-
 	return WLAN_STATUS_SUCCESS;
 }
 
-uint32_t nicCfgChipCapLocationCap(IN struct ADAPTER *prAdapter, IN uint8_t *pucEventBuf)
+uint32_t nicCfgChipCapLocationCap(IN struct ADAPTER *prAdapter,
+				  IN uint8_t *pucEventBuf)
 {
-	/* struct CAP_LOCATION_CAP_T *prLocation = (struct CAP_LOCATION_CAP_T *)pucEventBuf; */
-
 	return WLAN_STATUS_SUCCESS;
 }
 
-uint32_t nicCfgChipCapMuMimoCap(IN struct ADAPTER *prAdapter, IN uint8_t *pucEventBuf)
+uint32_t nicCfgChipCapMuMimoCap(IN struct ADAPTER *prAdapter,
+				IN uint8_t *pucEventBuf)
 {
-	/* struct CAP_MUMIMO_CAP_T *prMuMimo = (struct CAP_HW_VERSION_T *)pucEventBuf; */
-
 	return WLAN_STATUS_SUCCESS;
 }
 
@@ -2708,7 +2718,8 @@ uint32_t nicEventQueryTxResource_v1(IN struct ADAPTER *prAdapter, IN uint8_t *pu
 	return WLAN_STATUS_SUCCESS;
 }
 
-void nicCmdEventQueryNicCapabilityV2(IN struct ADAPTER *prAdapter, IN uint8_t *pucEventBuf)
+void nicCmdEventQueryNicCapabilityV2(IN struct ADAPTER *prAdapter,
+				     IN uint8_t *pucEventBuf)
 {
 	struct EVENT_NIC_CAPABILITY_V2 *prEventNicV2 = (struct EVENT_NIC_CAPABILITY_V2 *)pucEventBuf;
 	struct NIC_CAPABILITY_V2_ELEMENT *prElement;
@@ -2739,7 +2750,9 @@ void nicCmdEventQueryNicCapabilityV2(IN struct ADAPTER *prAdapter, IN uint8_t *p
 }
 
 #if (CFG_SUPPORT_TXPOWER_INFO == 1)
-void nicCmdEventQueryTxPowerInfo(IN struct ADAPTER *prAdapter, IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf)
+void nicCmdEventQueryTxPowerInfo(IN struct ADAPTER *prAdapter,
+				 IN struct CMD_INFO *prCmdInfo,
+				 IN uint8_t *pucEventBuf)
 {
 	struct EXT_EVENT_TXPOWER_ALL_RATE_POWER_INFO_T *prEvent = NULL;
 	struct PARAM_TXPOWER_ALL_RATE_POWER_INFO_T *prTxPowerInfo = NULL;
@@ -2845,7 +2858,9 @@ void nicEventLinkQuality(IN struct ADAPTER *prAdapter, IN struct WIFI_EVENT *prE
 #endif
 }
 
-uint32_t nicExtTsfRawData2IqFmt(struct EXT_EVENT_RBIST_DUMP_DATA_T *prEventDumpMem, struct ICAP_INFO_T *prIcap)
+uint32_t nicExtTsfRawData2IqFmt(
+	struct EXT_EVENT_RBIST_DUMP_DATA_T *prEventDumpMem,
+	struct ICAP_INFO_T *prIcap)
 {
 	static uint8_t aucPathWF0[40];	/* the path for iq data dump out */
 	static uint8_t aucPathWF1[40];	/* the path for iq data dump out */
