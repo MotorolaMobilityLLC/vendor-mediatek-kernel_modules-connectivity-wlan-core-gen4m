@@ -71,6 +71,41 @@
 *                              C O N S T A N T S
 ********************************************************************************
 */
+VOID asicCapInit(IN P_ADAPTER_T prAdapter)
+{
+	P_GLUE_INFO_T prGlueInfo;
+	struct mt66xx_chip_info *prChipInfo;
+
+	ASSERT(prAdapter);
+
+	prGlueInfo = prAdapter->prGlueInfo;
+	prChipInfo = prAdapter->chip_info;
+
+	prChipInfo->u2HifTxdSize = 0;
+	prChipInfo->u2TxInitCmdPort = 0;
+	prChipInfo->u2TxFwDlPort = 0;
+	prChipInfo->fillHifTxDesc = NULL;
+
+	switch (prGlueInfo->u4InfType) {
+#if defined(_HIF_PCIE)
+	case MT_DEV_INF_PCIE:
+		prChipInfo->u2TxInitCmdPort = TX_RING_FWDL_IDX_3;
+		prChipInfo->u2TxFwDlPort = TX_RING_FWDL_IDX_3;
+		break;
+#endif /* _HIF_PCIE */
+#if defined(_HIF_USB)
+	case MT_DEV_INF_USB:
+		prChipInfo->u2HifTxdSize = USB_HIF_TXD_LEN;
+		prChipInfo->fillHifTxDesc = fillUsbHifTxDesc;
+		prChipInfo->u2TxInitCmdPort = USB_DATA_BULK_OUT_EP8;
+		prChipInfo->u2TxFwDlPort = USB_DATA_BULK_OUT_EP4;
+		break;
+#endif /* _HIF_USB */
+	default:
+		break;
+	}
+}
+
 VOID asicEnableFWDownload(IN P_ADAPTER_T prAdapter, IN BOOL fgEnable)
 {
 	P_GLUE_INFO_T prGlueInfo;
@@ -118,48 +153,6 @@ VOID asicEnableFWDownload(IN P_ADAPTER_T prAdapter, IN BOOL fgEnable)
 	}
 }
 
-VOID asicDevInit(IN P_ADAPTER_T prAdapter)
-{
-	P_GLUE_INFO_T prGlueInfo;
-
-	ASSERT(prAdapter);
-
-	prGlueInfo = prAdapter->prGlueInfo;
-
-	switch (prGlueInfo->u4InfType) {
-#if defined(_HIF_USB)
-	case MT_DEV_INF_USB:
-	{
-		UINT_32 u4Value = 0;
-
-		ASSERT(prAdapter);
-
-		HAL_MCR_RD(prAdapter, CONNAC_UDMA_WLCFG_0, &u4Value);
-
-		/* enable UDMA TX & RX */
-		u4Value = UDMA_WLCFG_0_TX_EN(1) | UDMA_WLCFG_0_RX_EN(1) |
-		    UDMA_WLCFG_0_RX_AGG_EN(1) |
-		    UDMA_WLCFG_0_RX_MPSZ_PAD0(1) |
-		    UDMA_WLCFG_0_RX_AGG_LMT(USB_RX_AGGREGTAION_LIMIT) |
-		    UDMA_WLCFG_0_RX_AGG_TO(USB_RX_AGGREGTAION_TIMEOUT);
-
-		HAL_MCR_WR(prAdapter, CONNAC_UDMA_WLCFG_0, u4Value);
-
-		HAL_MCR_RD(prAdapter, CONNAC_UDMA_WLCFG_1, &u4Value);
-
-		u4Value &= ~UDMA_WLCFG_1_RX_AGG_PKT_LMT_MASK;
-		u4Value |= UDMA_WLCFG_1_RX_AGG_PKT_LMT(USB_RX_AGGREGTAION_PKT_LIMIT);
-
-		HAL_MCR_WR(prAdapter, CONNAC_UDMA_WLCFG_1, u4Value);
-	}
-	break;
-#endif /* _HIF_USB */
-
-	default:
-		break;
-	}
-}
-
 VOID fillTxDescAppendByHost(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduInfo, IN UINT_16 u4MsduId,
 			    IN dma_addr_t rDmaAddr, OUT PUINT_8 pucBuffer)
 {
@@ -194,3 +187,12 @@ VOID fillTxDescAppendByCR4(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduInfo
 	prHwTxDescAppend->CR4_APPEND.au4BufPtr[0] = rDmaAddr;
 	prHwTxDescAppend->CR4_APPEND.au2BufLen[0] = prMsduInfo->u2FrameLength;
 }
+
+#if defined(_HIF_USB)
+VOID fillUsbHifTxDesc(IN PUINT_8 * pDest, IN PUINT_16 pInfoBufLen)
+{
+	/*USB TX Descriptor (4 bytes)*/
+	/*BIT[15:0] - TX Bytes Count (Not including USB TX Descriptor and 4-bytes zero padding.*/
+	kalMemCopy((PVOID)*pDest, (PVOID) pInfoBufLen, sizeof(UINT_16));
+}
+#endif /* _HIF_USB */

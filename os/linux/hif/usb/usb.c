@@ -595,8 +595,10 @@ VOID glUnregisterBus(remove_card pfRemove)
 VOID glUdmaTxRxEnable(P_GLUE_INFO_T prGlueInfo, BOOLEAN enable)
 {
 	UINT_32 u4Value = 0;
+	P_BUS_INFO prBusInfo;
 
-	kalDevRegRead(prGlueInfo, UDMA_WLCFG_0, &u4Value);
+	prBusInfo = prGlueInfo->prAdapter->chip_info->bus_info;
+	kalDevRegRead(prGlueInfo, prBusInfo->u4UdmaWlCfg_0_Addr, &u4Value);
 
 	/* enable UDMA TX & RX */
 	if (enable)
@@ -604,15 +606,17 @@ VOID glUdmaTxRxEnable(P_GLUE_INFO_T prGlueInfo, BOOLEAN enable)
 	else
 		u4Value &= ~(UDMA_WLCFG_0_TX_EN(1) | UDMA_WLCFG_0_RX_EN(1));
 
-	kalDevRegWrite(prGlueInfo, UDMA_WLCFG_0, u4Value);
+	kalDevRegWrite(prGlueInfo, prBusInfo->u4UdmaWlCfg_0_Addr, u4Value);
 }
 
 VOID glUdmaRxAggEnable(P_GLUE_INFO_T prGlueInfo, BOOLEAN enable)
 {
 	UINT_32 u4Value = 0;
+	P_BUS_INFO prBusInfo;
 
+	prBusInfo = prGlueInfo->prAdapter->chip_info->bus_info;
 	if (enable) {
-		kalDevRegRead(prGlueInfo, UDMA_WLCFG_0, &u4Value);
+		kalDevRegRead(prGlueInfo, prBusInfo->u4UdmaWlCfg_0_Addr, &u4Value);
 		/* enable UDMA TX & RX */
 		u4Value &= ~(UDMA_WLCFG_0_RX_AGG_EN_MASK |
 		    UDMA_WLCFG_0_RX_AGG_LMT_MASK |
@@ -620,16 +624,16 @@ VOID glUdmaRxAggEnable(P_GLUE_INFO_T prGlueInfo, BOOLEAN enable)
 		u4Value |= UDMA_WLCFG_0_RX_AGG_EN(1) |
 		    UDMA_WLCFG_0_RX_AGG_LMT(USB_RX_AGGREGTAION_LIMIT) |
 		    UDMA_WLCFG_0_RX_AGG_TO(USB_RX_AGGREGTAION_TIMEOUT);
-		kalDevRegWrite(prGlueInfo, UDMA_WLCFG_0, u4Value);
+		kalDevRegWrite(prGlueInfo, prBusInfo->u4UdmaWlCfg_0_Addr, u4Value);
 
-		kalDevRegRead(prGlueInfo, UDMA_WLCFG_1, &u4Value);
+		kalDevRegRead(prGlueInfo, prBusInfo->u4UdmaWlCfg_1_Addr, &u4Value);
 		u4Value &= ~UDMA_WLCFG_1_RX_AGG_PKT_LMT_MASK;
 		u4Value |= UDMA_WLCFG_1_RX_AGG_PKT_LMT(USB_RX_AGGREGTAION_PKT_LIMIT);
-		kalDevRegWrite(prGlueInfo, UDMA_WLCFG_1, u4Value);
+		kalDevRegWrite(prGlueInfo, prBusInfo->u4UdmaWlCfg_1_Addr, u4Value);
 	} else {
-		kalDevRegRead(prGlueInfo, UDMA_WLCFG_0, &u4Value);
+		kalDevRegRead(prGlueInfo, prBusInfo->u4UdmaWlCfg_0_Addr, &u4Value);
 		u4Value &= ~UDMA_WLCFG_0_RX_AGG_EN(1);
-		kalDevRegWrite(prGlueInfo, UDMA_WLCFG_0, u4Value);
+		kalDevRegWrite(prGlueInfo, prBusInfo->u4UdmaWlCfg_0_Addr, u4Value);
 	}
 }
 
