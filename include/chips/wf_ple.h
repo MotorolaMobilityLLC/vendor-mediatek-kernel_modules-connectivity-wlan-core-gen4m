@@ -56,6 +56,10 @@
 #define SET_BCN1_RLS_QID(p)  (((p) & BCNx_RLS_QID_MASK) << 24)
 #define SET_BCN1_RLS_PID(p)  (((p) & BCNx_RLS_PID_MASK) << 30)
 
+#define PLE_GC				(PLE_BASE)
+#define PLE_INT_STS			(PLE_BASE + 0x24)
+#define PLE_INT_ERR_STS			(PLE_BASE + 0x28)
+
 /* HIF Report Control */
 #define PLE_HIF_REPORT				(PLE_BASE + 0x34)
 

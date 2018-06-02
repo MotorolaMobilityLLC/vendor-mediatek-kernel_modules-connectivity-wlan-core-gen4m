@@ -369,6 +369,38 @@ static void halDriverOwnTimeout(struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Check special register value != 0
+ *
+ * \param[in] pvAdapter Pointer to the Adapter structure.
+ */
+/*----------------------------------------------------------------------------*/
+static void halCheckConnsysStatus(struct ADAPTER *prAdapter)
+{
+	uint32_t au4Regs[] = { WPDMA_GLO_CFG,
+			       WPDMA_TX_RING0_CTRL1,
+			       WPDMA_TX_RING0_CTRL1 + MT_RINGREG_DIFF,
+			       WPDMA_TX_RING0_CTRL1 + MT_RINGREG_DIFF * 3,
+			       WPDMA_TX_RING0_CTRL1 + MT_RINGREG_DIFF * 15,
+			       WPDMA_RX_RING0_CTRL1,
+			       WPDMA_RX_RING0_CTRL1 + MT_RINGREG_DIFF,
+			       PSE_PG_CPU_GROUP,
+			       PSE_PG_LMAC2_GROUP };
+	uint32_t u4Value, u4Idx, u4Size = sizeof(au4Regs) / sizeof(uint32_t);
+
+	for (u4Idx = 0; u4Idx < u4Size; u4Idx++) {
+		HAL_MCR_RD(prAdapter, au4Regs[u4Idx], &u4Value);
+		if (u4Value == 0) {
+			DBGLOG(HAL, ERROR,
+			       "check status error CR[0x%08x] value[0x%08x]\n",
+			       au4Regs[u4Idx], u4Value);
+			GL_RESET_TRIGGER(prAdapter, RST_FLAG_CHIP_RESET);
+			return;
+		}
+	}
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief This routine is used to process the POWER OFF procedure.
  *
  * \param[in] pvAdapter Pointer to the Adapter structure.
@@ -462,6 +494,9 @@ u_int8_t halSetDriverOwn(IN struct ADAPTER *prAdapter)
 	/* Check consys enter sleep mode DummyReg(0x0F) */
 	if (prBusInfo->checkDummyReg)
 		prBusInfo->checkDummyReg(prAdapter->prGlueInfo);
+
+	if (prAdapter->fgIsFwDownloaded)
+		halCheckConnsysStatus(prAdapter);
 
 	KAL_REC_TIME_END();
 	DBGLOG(INIT, INFO,
@@ -752,7 +787,7 @@ bool halHifSwInfoInit(IN struct ADAPTER *prAdapter)
 {
 	asicPcieDmaShdlInit(prAdapter);
 
-	if (!halWpdmaAllocRing(prAdapter->prGlueInfo))
+	if (!halWpdmaAllocRing(prAdapter->prGlueInfo, false))
 		return false;
 
 	halWpdmaInitRing(prAdapter->prGlueInfo);
@@ -1075,7 +1110,7 @@ alloc_fail:
 }
 
 bool halWpdmaAllocTxRing(struct GLUE_INFO *prGlueInfo, uint32_t u4Num,
-			 uint32_t u4Size, uint32_t u4DescSize)
+			 uint32_t u4Size, uint32_t u4DescSize, bool fgIsReAlloc)
 {
 	struct GL_HIF_INFO *prHifInfo;
 	struct RTMP_TX_RING *pTxRing;
@@ -1088,8 +1123,10 @@ bool halWpdmaAllocTxRing(struct GLUE_INFO *prGlueInfo, uint32_t u4Num,
 	ASSERT(prGlueInfo);
 	prHifInfo = &prGlueInfo->rHifInfo;
 
-	halWpdmaAllocRingDesc(prGlueInfo, &prHifInfo->TxDescRing[u4Num],
-			      u4Size * u4DescSize, true, u4Num);
+	/* Don't re-alloc memory when second time call alloc ring */
+	if (!fgIsReAlloc)
+		halWpdmaAllocRingDesc(prGlueInfo, &prHifInfo->TxDescRing[u4Num],
+				      u4Size * u4DescSize, true, u4Num);
 	if (prHifInfo->TxDescRing[u4Num].AllocVa == NULL) {
 		DBGLOG(HAL, ERROR, "TxDescRing[%d] allocation failed\n", u4Num);
 		return false;
@@ -1128,14 +1165,13 @@ bool halWpdmaAllocTxRing(struct GLUE_INFO *prGlueInfo, uint32_t u4Num,
 
 bool halWpdmaAllocRxRing(struct GLUE_INFO *prGlueInfo, uint32_t u4Num,
 			 uint32_t u4Size, uint32_t u4DescSize,
-			 uint32_t u4BufSize)
+			 uint32_t u4BufSize, bool fgIsReAlloc)
 {
 	struct GL_HIF_INFO *prHifInfo;
 	struct RXD_STRUCT *pRxD;
 	struct RTMP_DMABUF *pDmaBuf;
 	struct RTMP_DMACB *dma_cb;
 	dma_addr_t RingBasePa;
-	void *pPacket;
 	void *RingBaseVa;
 	int32_t index;
 
@@ -1143,8 +1179,10 @@ bool halWpdmaAllocRxRing(struct GLUE_INFO *prGlueInfo, uint32_t u4Num,
 	prHifInfo = &prGlueInfo->rHifInfo;
 
 	/* Alloc RxRingDesc memory except Tx ring allocated eariler */
-	halWpdmaAllocRingDesc(prGlueInfo, &prHifInfo->RxDescRing[u4Num],
-			      u4Size * u4DescSize, false, u4Num);
+	/* Don't re-alloc memory when second time call alloc ring */
+	if (!fgIsReAlloc)
+		halWpdmaAllocRingDesc(prGlueInfo, &prHifInfo->RxDescRing[u4Num],
+				      u4Size * u4DescSize, false, u4Num);
 	if (prHifInfo->RxDescRing[u4Num].AllocVa == NULL) {
 		DBGLOG(HAL, ERROR, "\n\n\nRxDescRing allocation failed!!\n\n\n");
 		return false;
@@ -1176,14 +1214,12 @@ bool halWpdmaAllocRxRing(struct GLUE_INFO *prGlueInfo, uint32_t u4Num,
 		/* Setup Rx associated Buffer size & allocate share memory */
 		pDmaBuf = &dma_cb->DmaBuf;
 		pDmaBuf->AllocSize = u4BufSize;
-		pPacket = halWpdmaAllocRxPacketBuff(prHifInfo,
-						    pDmaBuf->AllocSize,
-						    u4Num, index,
-						    &pDmaBuf->AllocVa,
-						    &pDmaBuf->AllocPa);
-
-		/* keep allocated rx packet */
-		dma_cb->pPacket = pPacket;
+		if (!fgIsReAlloc) {
+			/* keep allocated rx packet */
+			dma_cb->pPacket = halWpdmaAllocRxPacketBuff(
+				prHifInfo, pDmaBuf->AllocSize, u4Num, index,
+				&pDmaBuf->AllocVa, &pDmaBuf->AllocPa);
+		}
 		if (pDmaBuf->AllocVa == NULL) {
 			log_dbg(HAL, ERROR, "\n\n\nFailed to allocate RxRing buffer index[%u]\n\n\n",
 				index);
@@ -1212,7 +1248,7 @@ void halHifRst(struct GLUE_INFO *prGlueInfo)
 	kalDevRegWrite(prGlueInfo, CONN_HIF_RST, 0x00000030);
 }
 
-bool halWpdmaAllocRing(struct GLUE_INFO *prGlueInfo)
+bool halWpdmaAllocRing(struct GLUE_INFO *prGlueInfo, bool fgIsReAlloc)
 {
 	struct GL_HIF_INFO *prHifInfo;
 	int32_t u4Num, u4Index;
@@ -1226,8 +1262,8 @@ bool halWpdmaAllocRing(struct GLUE_INFO *prGlueInfo)
 	 *   issue, I intentional set them all to 64 bytes
 	 */
 	for (u4Num = 0; u4Num < NUM_OF_TX_RING; u4Num++) {
-		if (!halWpdmaAllocTxRing(prGlueInfo, u4Num,
-					TX_RING_SIZE, TXD_SIZE)) {
+		if (!halWpdmaAllocTxRing(prGlueInfo, u4Num, TX_RING_SIZE,
+					 TXD_SIZE, fgIsReAlloc)) {
 			DBGLOG(HAL, ERROR, "AllocTxRing[%d] fail\n", u4Num);
 			return false;
 		}
@@ -1235,15 +1271,15 @@ bool halWpdmaAllocRing(struct GLUE_INFO *prGlueInfo)
 
 	/* Data Rx path */
 	if (!halWpdmaAllocRxRing(prGlueInfo, RX_RING_DATA_IDX_0,
-				RX_RING0_SIZE, RXD_SIZE,
-				CFG_RX_MAX_PKT_SIZE)) {
+				 RX_RING0_SIZE, RXD_SIZE,
+				 CFG_RX_MAX_PKT_SIZE, fgIsReAlloc)) {
 		DBGLOG(HAL, ERROR, "AllocRxRing[0] fail\n");
 		return false;
 	}
 	/* Event Rx path */
 	if (!halWpdmaAllocRxRing(prGlueInfo, RX_RING_EVT_IDX_1,
-				RX_RING1_SIZE, RXD_SIZE,
-				RX_BUFFER_AGGRESIZE)) {
+				 RX_RING1_SIZE, RXD_SIZE,
+				 RX_BUFFER_AGGRESIZE, fgIsReAlloc)) {
 		DBGLOG(HAL, ERROR, "AllocRxRing[1] fail\n");
 		return false;
 	}
@@ -2094,17 +2130,9 @@ void halHwRecoveryFromError(IN struct ADAPTER *prAdapter)
 
 	case ERR_RECOV_STOP_PDMA0:
 		if (u4Status & ERROR_DETECT_RESET_DONE) {
-			uint32_t u4Num;
-
 			DBGLOG(HAL, INFO, "SER(L) Host re-initialize PDMA\n");
-			/* reset TXD & RXD */
-			for (u4Num = 0; u4Num < NUM_OF_TX_RING; u4Num++)
-				kalMemZero(prHifInfo->TxDescRing[u4Num].AllocVa,
-					   TX_RING_SIZE * TXD_SIZE);
-			kalMemZero(prHifInfo->RxDescRing[0].AllocVa,
-				   RX_RING0_SIZE * RXD_SIZE);
-			kalMemZero(prHifInfo->RxDescRing[1].AllocVa,
-				   RX_RING1_SIZE * RXD_SIZE);
+			/* only reset TXD & RXD */
+			halWpdmaAllocRing(prAdapter->prGlueInfo, true);
 
 			DBGLOG(HAL, INFO, "SER(M) Host enable PDMA\n");
 			halWpdmaInitRing(prGlueInfo);
@@ -2372,7 +2400,7 @@ void halShowPseInfo(IN struct ADAPTER *prAdapter)
 	uint32_t pse_stat, pg_flow_ctrl[16] = {0};
 	uint32_t fpg_cnt, ffa_cnt, fpg_head, fpg_tail;
 	uint32_t max_q, min_q, rsv_pg, used_pg;
-	uint32_t i, page_offset;
+	uint32_t i, page_offset, value;
 
 	HAL_MCR_RD(prAdapter, PSE_PBUF_CTRL, &pse_buf_ctrl);
 	HAL_MCR_RD(prAdapter, PSE_QUEUE_EMPTY, &pse_stat);
@@ -2395,6 +2423,13 @@ void halShowPseInfo(IN struct ADAPTER *prAdapter)
 
 	/* Configuration Info */
 	DBGLOG(HAL, INFO, "PSE Configuration Info:\n");
+
+	HAL_MCR_RD(prAdapter, PSE_GC, &value);
+	DBGLOG(HAL, INFO, "\tGC(0x82068000): 0x%08x\n", value);
+	HAL_MCR_RD(prAdapter, PSE_INT_STS, &value);
+	DBGLOG(HAL, INFO, "\tINT_STS(0x82068024): 0x%08x\n", value);
+	HAL_MCR_RD(prAdapter, PSE_INT_ERR_STS, &value);
+	DBGLOG(HAL, INFO, "\tINT_ERR_STS(0x82068028): 0x%08x\n", value);
 
 	DBGLOG(HAL, INFO, "\tPacket Buffer Control(0x82068014): 0x%08x\n",
 		pse_buf_ctrl);
@@ -2508,10 +2543,10 @@ void halShowPseInfo(IN struct ADAPTER *prAdapter)
 		used_pg, rsv_pg);
 	DBGLOG(HAL, INFO,
 		"\tReserved page counter of LMAC2 group(0x82068180): 0x%08x\n",
-		pg_flow_ctrl[11]);
+		pg_flow_ctrl[12]);
 	DBGLOG(HAL, INFO,
 		"\tLMAC2 group page status(0x82068184): 0x%08x\n",
-		pg_flow_ctrl[12]);
+		pg_flow_ctrl[13]);
 	min_q = pg_flow_ctrl[12] & 0xfff;
 	max_q = (pg_flow_ctrl[12] & (0xfff << 16)) >> 16;
 	DBGLOG(HAL, INFO,
@@ -2637,7 +2672,7 @@ void halShowPleInfo(IN struct ADAPTER *prAdapter)
 	uint32_t sta_pause[4] = {0}, dis_sta_map[4] = {0};
 	uint32_t fpg_cnt, ffa_cnt, fpg_head, fpg_tail, hif_max_q, hif_min_q;
 	uint32_t rpg_hif, upg_hif, cpu_max_q, cpu_min_q, rpg_cpu, upg_cpu;
-	uint32_t i, j;
+	uint32_t i, j, value;
 
 	HAL_MCR_RD(prAdapter, PLE_PBUF_CTRL, &ple_buf_ctrl[0]);
 	HAL_MCR_RD(prAdapter, PLE_RELEASE_CTRL, &ple_buf_ctrl[1]);
@@ -2675,6 +2710,14 @@ void halShowPleInfo(IN struct ADAPTER *prAdapter)
 	HAL_MCR_RD(prAdapter, STATION_PAUSE3, &sta_pause[3]);
 	/* Configuration Info */
 	DBGLOG(HAL, INFO, "PLE Configuration Info:\n");
+
+	HAL_MCR_RD(prAdapter, PLE_GC, &value);
+	DBGLOG(HAL, INFO, "\tGC(0x82060000): 0x%08x\n", value);
+	HAL_MCR_RD(prAdapter, PLE_INT_STS, &value);
+	DBGLOG(HAL, INFO, "\tINT_STS(0x82060024): 0x%08x\n", value);
+	HAL_MCR_RD(prAdapter, PLE_INT_ERR_STS, &value);
+	DBGLOG(HAL, INFO, "\tINT_ERR_STS(0x82060028): 0x%08x\n", value);
+
 	DBGLOG(HAL, INFO,
 		"\tPacket Buffer Control(0x82060014): 0x%08x\n",
 		ple_buf_ctrl[0]);

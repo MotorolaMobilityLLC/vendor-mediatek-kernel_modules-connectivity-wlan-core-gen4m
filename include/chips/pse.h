@@ -49,6 +49,10 @@
 #define PSE_PBUF_OFFSET_MASK (0xf << 20)
 #define GET_PSE_PBUF_OFFSET(p) (((p) & PSE_PBUF_OFFSET_MASK) >> 20)
 
+#define PSE_GC				(PSE_BASE)
+#define PSE_INT_STS			(PSE_BASE + 0x24)
+#define PSE_INT_ERR_STS			(PSE_BASE + 0x28)
+
 /* Queue Empty */
 #define PSE_QUEUE_EMPTY			(PSE_BASE + 0xb0)
 
