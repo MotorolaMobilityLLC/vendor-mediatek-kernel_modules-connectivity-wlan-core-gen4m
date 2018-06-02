@@ -1630,10 +1630,14 @@ uint32_t wlanGetConnacTailerInfo(IN struct ADAPTER
 			   prRegTailer, sizeof(struct TAILER_REGION_FORMAT_T));
 
 		/* Dump image information */
-		DBGLOG(INIT, INFO, "Region[%d]: addr[0x%08X] feature[0x%02X] size[%u]\n",
-		       u4SecIdx, prRegTailer->u4Addr, prRegTailer->ucFeatureSet, prRegTailer->u4Len);
-		DBGLOG(INIT, INFO, "uncompress_crc[0x%08X] uncompress_size[0x%08X] block_size[0x%08X]\n",
-		       prRegTailer->u4CRC, prRegTailer->u4RealSize, prRegTailer->u4BlockSize);
+		DBGLOG(INIT, TRACE,
+		       "Region[%d]: addr[0x%08X] feature[0x%02X] size[%u]\n",
+		       u4SecIdx, prRegTailer->u4Addr,
+		       prRegTailer->ucFeatureSet, prRegTailer->u4Len);
+		DBGLOG(INIT, TRACE,
+		       "uncompress_crc[0x%08X] uncompress_size[0x%08X] block_size[0x%08X]\n",
+		       prRegTailer->u4CRC, prRegTailer->u4RealSize,
+		       prRegTailer->u4BlockSize);
 		pucImgPtr += prRegTailer->u4Len;
 		pucStartPtr += sizeof(struct TAILER_REGION_FORMAT_T);
 	}
