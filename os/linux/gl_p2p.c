@@ -1437,11 +1437,11 @@ static int p2pOpen(IN struct net_device *prDev)
 	/*DFS todo 20161220_DFS*/
 #if (CFG_SUPPORT_DFS_MASTER == 1)
 	if (prDev->ieee80211_ptr->iftype != NL80211_IFTYPE_AP) {
-		netif_carrier_on(prDev);
+		/*netif_carrier_on(prDev);*/
 		netif_tx_start_all_queues(prDev);
 	}
 #else
-	netif_carrier_on(prDev);
+	/*netif_carrier_on(prDev);*/
 	netif_tx_start_all_queues(prDev);
 #endif
 
