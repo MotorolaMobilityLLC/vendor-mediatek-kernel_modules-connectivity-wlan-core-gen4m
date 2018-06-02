@@ -13794,3 +13794,30 @@ wlanoidSetDrvRoamingPolicy(IN struct ADAPTER *prAdapter,
 
 	return WLAN_STATUS_SUCCESS;
 }
+
+#if CFG_SUPPORT_OSHARE
+uint32_t
+wlanoidSetOshareMode(IN struct ADAPTER *prAdapter,
+		IN void *pvSetBuffer,
+		IN uint32_t u4SetBufferLen,
+		OUT uint32_t *pu4SetInfoLen)
+{
+	if (!prAdapter || !pvSetBuffer)
+		return WLAN_STATUS_INVALID_DATA;
+
+	DBGLOG(OID, TRACE, "wlanoidSetOshareMode\n");
+
+	return wlanSendSetQueryCmd(prAdapter, /* prAdapter */
+				   CMD_ID_SET_OSHARE_MODE, /* ucCID */
+				   TRUE, /* fgSetQuery */
+				   FALSE, /* fgNeedResp */
+				   TRUE, /* fgIsOid */
+				   nicCmdEventSetCommon, /* pfCmdDoneHandler*/
+				   nicOidCmdTimeoutCommon, /* pfCmdTimeoutHandler */
+				   u4SetBufferLen, /* u4SetQueryInfoLen */
+				   (uint8_t *) pvSetBuffer,/* pucInfoBuffer */
+				   NULL, /* pvSetQueryBuffer */
+				   0); /* u4SetQueryBufferLen */
+}
+#endif
+
