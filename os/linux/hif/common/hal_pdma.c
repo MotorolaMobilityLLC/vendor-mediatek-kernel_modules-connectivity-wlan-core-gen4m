@@ -1706,12 +1706,15 @@ uint32_t halWpdmaGetRxDmaDoneCnt(IN struct GLUE_INFO *prGlueInfo,
 	kalDevRegRead(prGlueInfo, prRxRing->hw_cidx_addr, &u4CpuIdx);
 	kalDevRegRead(prGlueInfo, prRxRing->hw_didx_addr, &u4DmaIdx);
 
-	u4RxPktCnt = u4MaxCnt;
+	if (u4MaxCnt == 0)
+		return 0;
 
 	if (u4CpuIdx > u4DmaIdx)
 		u4RxPktCnt = u4MaxCnt + u4DmaIdx - u4CpuIdx - 1;
 	else if (u4CpuIdx < u4DmaIdx)
 		u4RxPktCnt = u4DmaIdx - u4CpuIdx - 1;
+	else
+		u4RxPktCnt = u4MaxCnt - 1;
 
 	return u4RxPktCnt;
 }
