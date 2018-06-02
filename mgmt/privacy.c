@@ -1098,7 +1098,7 @@ void secPrivacyDumpWTBL(IN P_ADAPTER_T prAdapter)
 
 	DBGLOG(RSN, INFO, "The Wlan index\n");
 
-	for (i = 0; i <= WTBL_SIZE; i++) {
+	for (i = 0; i < WTBL_SIZE; i++) {
 		if (prWtbl[i].ucUsed)
 			DBGLOG(RSN, INFO,
 				"#%d Used=%d  BSSIdx=%d keyid=%d P=%d STA=%d Addr=" MACSTR "\n", i,
