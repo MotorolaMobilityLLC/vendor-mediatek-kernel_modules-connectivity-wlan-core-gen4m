@@ -565,6 +565,8 @@ uint32_t nicTxAcquireResource(IN struct ADAPTER *prAdapter,
 #endif
 			cmdBufDumpCmdQueue(&prAdapter->rPendingCmdQueue,
 					   "waiting response CMD queue");
+
+			u4CurrTick = 0;
 		}
 	}
 

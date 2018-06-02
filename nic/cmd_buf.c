@@ -154,7 +154,7 @@ void cmdBufDumpCmdQueue(struct QUE *prQueue,
 	struct CMD_INFO *prCmdInfo = (struct CMD_INFO *)
 				     QUEUE_GET_HEAD(prQueue);
 
-	DBGLOG(NIC, INFO, "Dump CMD info for %s, Elem number:%u\n",
+	DBGLOG_LIMITED(NIC, INFO, "Dump CMD info for %s, Elem number:%u\n",
 	       queName, prQueue->u4NumElem);
 	while (prCmdInfo) {
 		struct CMD_INFO *prCmdInfo1, *prCmdInfo2, *prCmdInfo3;
@@ -162,14 +162,15 @@ void cmdBufDumpCmdQueue(struct QUE *prQueue,
 		prCmdInfo1 = (struct CMD_INFO *)QUEUE_GET_NEXT_ENTRY((
 					struct QUE_ENTRY *)prCmdInfo);
 		if (!prCmdInfo1) {
-			DBGLOG(NIC, INFO, "CID:%d SEQ:%d\n", prCmdInfo->ucCID,
-			       prCmdInfo->ucCmdSeqNum);
+			DBGLOG_LIMITED(NIC, INFO, "CID:%d SEQ:%d\n",
+			    prCmdInfo->ucCID, prCmdInfo->ucCmdSeqNum);
 			break;
 		}
 		prCmdInfo2 = (struct CMD_INFO *)QUEUE_GET_NEXT_ENTRY((
 					struct QUE_ENTRY *)prCmdInfo1);
 		if (!prCmdInfo2) {
-			DBGLOG(NIC, INFO, "CID:%d, SEQ:%d; CID:%d, SEQ:%d\n",
+			DBGLOG_LIMITED(NIC, INFO,
+				   "CID:%d, SEQ:%d; CID:%d, SEQ:%d\n",
 			       prCmdInfo->ucCID,
 			       prCmdInfo->ucCmdSeqNum, prCmdInfo1->ucCID,
 			       prCmdInfo1->ucCmdSeqNum);
@@ -178,7 +179,7 @@ void cmdBufDumpCmdQueue(struct QUE *prQueue,
 		prCmdInfo3 = (struct CMD_INFO *)QUEUE_GET_NEXT_ENTRY((
 					struct QUE_ENTRY *)prCmdInfo2);
 		if (!prCmdInfo3) {
-			DBGLOG(NIC, INFO,
+			DBGLOG_LIMITED(NIC, INFO,
 			       "CID:%d, SEQ:%d; CID:%d, SEQ:%d; CID:%d, SEQ:%d\n",
 			       prCmdInfo->ucCID,
 			       prCmdInfo->ucCmdSeqNum, prCmdInfo1->ucCID,
@@ -186,7 +187,7 @@ void cmdBufDumpCmdQueue(struct QUE *prQueue,
 			       prCmdInfo2->ucCID, prCmdInfo2->ucCmdSeqNum);
 			break;
 		}
-		DBGLOG(NIC, INFO,
+		DBGLOG_LIMITED(NIC, INFO,
 		       "CID:%d, SEQ:%d; CID:%d, SEQ:%d; CID:%d, SEQ:%d; CID:%d, SEQ:%d\n",
 		       prCmdInfo->ucCID, prCmdInfo->ucCmdSeqNum,
 		       prCmdInfo1->ucCID, prCmdInfo1->ucCmdSeqNum,
