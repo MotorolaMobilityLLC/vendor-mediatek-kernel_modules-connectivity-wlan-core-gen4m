@@ -285,12 +285,20 @@ kalDevPortRead(IN struct GLUE_INFO *prGlueInfo,
 	pRxCell = &prRxRing->Cell[u4CpuIdx];
 	pRxD = (struct RXD_STRUCT *)pRxCell->AllocVa;
 
-	if (!kalWaitRxDmaDone(prGlueInfo, prRxRing, pRxD, u2Port)) {
-		spin_unlock_irqrestore(pRxRingLock, flags);
-		if (!prRxRing->fgIsDumpLog)
-			kalDumpRxRingDebugLog(prGlueInfo);
-		prRxRing->fgIsDumpLog = true;
-		return FALSE;
+	if (pRxD->DMADONE == 0) {
+		/* Don't wait rx dma done when fw download (polling mode) */
+		if (!prGlueInfo->prAdapter->fgIsFwDownloaded) {
+			spin_unlock_irqrestore(pRxRingLock, flags);
+			return FALSE;
+		}
+
+		if (!kalWaitRxDmaDone(prGlueInfo, prRxRing, pRxD, u2Port)) {
+			spin_unlock_irqrestore(pRxRingLock, flags);
+			if (!prRxRing->fgIsDumpLog)
+				halDumpHifDebugLog(prGlueInfo, false, true);
+			prRxRing->fgIsDumpLog = true;
+			return FALSE;
+		}
 	}
 
 	prDmaBuf = &pRxCell->DmaBuf;
@@ -639,7 +647,7 @@ u_int8_t kalDevReadData(IN struct GLUE_INFO *prGlueInfo,
 	if (!kalWaitRxDmaDone(prGlueInfo, prRxRing, pRxD, u2Port)) {
 		spin_unlock_irqrestore(pRxRingLock, flags);
 		if (!prRxRing->fgIsDumpLog)
-			kalDumpRxRingDebugLog(prGlueInfo);
+			halDumpHifDebugLog(prGlueInfo, false, true);
 		prRxRing->fgIsDumpLog = true;
 		return FALSE;
 	}
@@ -809,12 +817,4 @@ void kalDumpRxRing(struct GLUE_INFO *prGlueInfo,
 					       KAL_DMA_FROM_DEVICE);
 	if (KAL_DMA_MAPPING_ERROR(prHifInfo->prDmaDev, prDmaBuf->AllocPa))
 		DBGLOG(HAL, ERROR, "KAL_DMA_MAP_SINGLE() error!\n");
-}
-
-void kalDumpRxRingDebugLog(struct GLUE_INFO *prGlueInfo)
-{
-	halShowPseInfo(prGlueInfo->prAdapter);
-	halShowPleInfo(prGlueInfo->prAdapter);
-	halShowHostCsrInfo(prGlueInfo->prAdapter);
-	halShowPdmaInfo(prGlueInfo->prAdapter, false, true);
 }

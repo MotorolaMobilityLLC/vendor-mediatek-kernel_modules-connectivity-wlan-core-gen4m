@@ -2201,9 +2201,22 @@ uint32_t halHifPowerOffWifi(IN struct ADAPTER *prAdapter)
 	return rStatus;
 }
 
+
+void halDumpHifDebugLog(struct GLUE_INFO *prGlueInfo,
+			bool fgTxContent, bool fgRxContent)
+{
+	halShowHostCsrInfo(prGlueInfo->prAdapter);
+	halShowPseInfo(prGlueInfo->prAdapter);
+	halShowPleInfo(prGlueInfo->prAdapter);
+	halShowPdmaInfo(prGlueInfo->prAdapter, fgTxContent, fgRxContent);
+}
+
 void halPrintHifDbgInfo(IN struct ADAPTER *prAdapter)
 {
-
+	if (prAdapter->fgEnHifDbgInfo) {
+		halDumpHifDebugLog(prAdapter->prGlueInfo, false, false);
+		prAdapter->fgEnHifDbgInfo = false;
+	}
 }
 
 u_int8_t halIsTxResourceControlEn(IN struct ADAPTER *prAdapter)

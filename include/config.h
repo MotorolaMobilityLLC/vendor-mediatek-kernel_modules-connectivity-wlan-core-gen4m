@@ -438,6 +438,8 @@
 #define CFG_RESPONSE_POLLING_TIMEOUT            1000
 #define CFG_RESPONSE_POLLING_DELAY              5
 
+#define CFG_POWER_CTRL_ACQUIRE_RES_TIMEOUT      3000
+
 /*------------------------------------------------------------------------------
  * Flags and Parameters for Protocol Stack
  *------------------------------------------------------------------------------
