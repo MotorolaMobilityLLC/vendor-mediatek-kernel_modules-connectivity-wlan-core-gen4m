@@ -170,6 +170,8 @@ mtk_p2p_cfg80211func_channel_format_switch(IN struct cfg80211_chan_def *channel_
 		if (channel == NULL)
 			break;
 
+		DBGLOG(P2P, INFO, "switch channel band: %d, freq: %d\n", channel->band, channel->center_freq);
+
 		if (prRfChnlInfo) {
 			prRfChnlInfo->ucChannelNum = nicFreq2ChannelNum(channel->center_freq * 1000);
 
