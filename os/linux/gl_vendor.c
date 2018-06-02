@@ -746,7 +746,7 @@ int mtk_cfg80211_vendor_set_rssi_monitoring(
 		}
 	}
 
-	DBGLOG(REQ, INFO, "mMax_rssi=%d, mMin_rssi=%d enable=%d\r\n",
+	DBGLOG(REQ, TRACE, "mMax_rssi=%d, mMin_rssi=%d enable=%d\r\n",
 	       rRSSIMonitor.max_rssi_value, rRSSIMonitor.min_rssi_value,
 	       rRSSIMonitor.enable);
 

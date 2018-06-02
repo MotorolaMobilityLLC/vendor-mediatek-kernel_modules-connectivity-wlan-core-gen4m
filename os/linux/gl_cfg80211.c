@@ -450,7 +450,7 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy, struct net_device *ndev, const
 	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wiphy);
 	ASSERT(prGlueInfo);
 
-	DBGLOG(REQ, INFO, "mtk_cfg80211_get_station\n");
+	DBGLOG(REQ, TRACE, "mtk_cfg80211_get_station\n");
 	kalMemZero(arBssid, MAC_ADDR_LEN);
 	wlanQueryInformation(prGlueInfo->prAdapter, wlanoidQueryBssid, &arBssid[0], sizeof(arBssid), &u4BufLen);
 
@@ -480,21 +480,15 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy, struct net_device *ndev, const
 	sinfo->filled |= STATION_INFO_TX_BITRATE;
 #endif
 	if ((rStatus != WLAN_STATUS_SUCCESS) || (u4Rate == 0)) {
-		/*
-		 *  DBGLOG(REQ, WARN, "unable to retrieve link speed\n"));
-		 */
+		/* unable to retrieve link speed */
 		DBGLOG(REQ, WARN, "last link speed\n");
 		sinfo->txrate.legacy = prGlueInfo->u4LinkSpeedCache;
 	} else {
-		/*
-		 *  sinfo->filled |= STATION_INFO_TX_BITRATE;
-		 */
 		sinfo->txrate.legacy = u4Rate / 1000;	/* convert from 100bps to 100kbps */
 		prGlueInfo->u4LinkSpeedCache = u4Rate / 1000;
 	}
 
 	/* 3. fill RSSI */
-
 	rStatus = kalIoctl(prGlueInfo,
 			   wlanoidQueryRssi, &i4Rssi, sizeof(i4Rssi), TRUE, FALSE, FALSE, &u4BufLen);
 
@@ -515,7 +509,6 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy, struct net_device *ndev, const
 
 	/* Get statistics from net_dev */
 	prDevStats = (struct net_device_stats *)kalGetStats(ndev);
-
 	if (prDevStats) {
 		/* 4. fill RX_PACKETS */
 #if KERNEL_VERSION(4, 0, 0) <= CFG80211_VERSION_CODE
@@ -549,13 +542,18 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy, struct net_device *ndev, const
 				   &rQueryStaStatistics, sizeof(rQueryStaStatistics), TRUE, FALSE, TRUE, &u4BufLen);
 
 		if (rStatus != WLAN_STATUS_SUCCESS) {
-			DBGLOG(REQ, WARN, "unable to retrieve link speed,status code = %d\n", rStatus);
+			DBGLOG(REQ, WARN,
+			       "link speed=%u, rssi=%d, unable to retrieve link speed, status=%u\n",
+			       sinfo->txrate.legacy, sinfo->signal, rStatus);
 		} else {
 			DBGLOG(REQ, INFO,
-				"BSSID: [" MACSTR "] TxFail:%u TxTimeOut:%u, TxOK:%u RxOK:%u\n",
-				MAC2STR(arBssid), rQueryStaStatistics.u4TxFailCount,
-				rQueryStaStatistics.u4TxLifeTimeoutCount,
-				sinfo->tx_packets, sinfo->rx_packets);
+			       "link speed=%u, rssi=%d, BSSID:[" MACSTR
+			       "], TxFail=%u, TxTimeOut=%u, TxOK=%u, RxOK=%u\n",
+			       sinfo->txrate.legacy, sinfo->signal,
+			       MAC2STR(arBssid),
+			       rQueryStaStatistics.u4TxFailCount,
+			       rQueryStaStatistics.u4TxLifeTimeoutCount,
+			       sinfo->tx_packets, sinfo->rx_packets);
 
 			u4TotalError = rQueryStaStatistics.u4TxFailCount + rQueryStaStatistics.u4TxLifeTimeoutCount;
 			prDevStats->tx_errors += u4TotalError;
@@ -584,7 +582,7 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy, struct net_device *ndev, u8 *m
 
 	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wiphy);
 	ASSERT(prGlueInfo);
-	DBGLOG(REQ, INFO, "mtk_cfg80211_get_station\n");
+	DBGLOG(REQ, TRACE, "mtk_cfg80211_get_station\n");
 
 	kalMemZero(arBssid, MAC_ADDR_LEN);
 	wlanQueryInformation(prGlueInfo->prAdapter, wlanoidQueryBssid, &arBssid[0], sizeof(arBssid), &u4BufLen);
@@ -609,15 +607,10 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy, struct net_device *ndev, u8 *m
 		sinfo->filled |= STATION_INFO_TX_BITRATE;
 
 		if ((rStatus != WLAN_STATUS_SUCCESS) || (u4Rate == 0)) {
-			/*
-			 *  DBGLOG(REQ, WARN, "unable to retrieve link speed\n"));
-			 */
+			/* unable to retrieve link speed */
 			DBGLOG(REQ, WARN, "last link speed\n");
 			sinfo->txrate.legacy = prGlueInfo->u4LinkSpeedCache;
 		} else {
-			/*
-			 *  sinfo->filled |= STATION_INFO_TX_BITRATE;
-			 */
 			sinfo->txrate.legacy = u4Rate / 1000;	/* convert from 100bps to 100kbps */
 			prGlueInfo->u4LinkSpeedCache = u4Rate / 1000;
 		}
@@ -645,7 +638,6 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy, struct net_device *ndev, u8 *m
 
 	/* Get statistics from net_dev */
 	prDevStats = (struct net_device_stats *)kalGetStats(ndev);
-
 	if (prDevStats) {
 		/* 4. fill RX_PACKETS */
 		sinfo->filled |= STATION_INFO_RX_PACKETS;
@@ -665,10 +657,16 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy, struct net_device *ndev, u8 *m
 				   &rQueryStaStatistics, sizeof(rQueryStaStatistics), TRUE, FALSE, TRUE, &u4BufLen);
 
 		if (rStatus != WLAN_STATUS_SUCCESS) {
-			DBGLOG(REQ, WARN, "unable to get sta statistics: status[0x%x]\n", rStatus);
+			DBGLOG(REQ, WARN,
+			       "link speed=%u, rssi=%d, unable to get sta statistics: status=%u\n",
+			       sinfo->txrate.legacy, sinfo->signal, rStatus);
 		} else {
-			DBGLOG(REQ, INFO, "BSSID: [" MACSTR "] TxFailCount %d LifeTimeOut %d\n",
-			       MAC2STR(arBssid), rQueryStaStatistics.u4TxFailCount,
+			DBGLOG(REQ, INFO,
+			       "link speed=%u, rssi=%d, BSSID=[" MACSTR
+			       "], TxFailCount=%d, LifeTimeOut=%d\n",
+			       sinfo->txrate.legacy, sinfo->signal,
+			       MAC2STR(arBssid),
+			       rQueryStaStatistics.u4TxFailCount,
 			       rQueryStaStatistics.u4TxLifeTimeoutCount);
 
 			u4TotalError = rQueryStaStatistics.u4TxFailCount + rQueryStaStatistics.u4TxLifeTimeoutCount;

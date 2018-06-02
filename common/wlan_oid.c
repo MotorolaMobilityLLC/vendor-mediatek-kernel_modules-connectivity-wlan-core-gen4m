@@ -2240,7 +2240,7 @@ wlanoidSetAddKey(IN struct ADAPTER *prAdapter, IN void *pvSetBuffer, IN uint32_t
 	ASSERT(pvSetBuffer);
 	ASSERT(pu4SetInfoLen);
 
-	DBGLOG(RSN, INFO, "wlanoidSetAddKey\n");
+	DBGLOG(RSN, TRACE, "wlanoidSetAddKey\n");
 
 	if (prAdapter->rAcpiState == ACPI_STATE_D3) {
 		DBGLOG(RSN, WARN, "Fail in set add key! (Adapter not ready). ACPI=D%d, Radio=%d\n",
@@ -2293,13 +2293,14 @@ wlanoidSetAddKey(IN struct ADAPTER *prAdapter, IN void *pvSetBuffer, IN uint32_t
 	*pu4SetInfoLen = u4SetBufferLen;
 
 	/* Dump PARAM_KEY content. */
-	DBGLOG(RSN, INFO, "Set: Dump PARAM_KEY content, Len: 0x%08x, BSSID: "
+	DBGLOG(RSN, TRACE, "Set: Dump PARAM_KEY content, Len: 0x%08x, BSSID: "
 		MACSTR
 		", KeyIdx: 0x%08x, KeyLen: 0x%08x, Cipher: %d, Material:\n",
 		prNewKey->u4Length, MAC2STR(prNewKey->arBSSID),
 		prNewKey->u4KeyIndex, prNewKey->u4KeyLength,
 		prNewKey->ucCipher);
-	DBGLOG_MEM8(RSN, INFO, prNewKey->aucKeyMaterial, prNewKey->u4KeyLength);
+	DBGLOG_MEM8(RSN, TRACE, prNewKey->aucKeyMaterial,
+		    prNewKey->u4KeyLength);
 	DBGLOG(RSN, TRACE, "Key RSC:\n");
 	DBGLOG_MEM8(RSN, TRACE, &prNewKey->rKeyRSC, sizeof(uint64_t));
 
@@ -7527,6 +7528,8 @@ wlanoidRssiMonitor(IN struct ADAPTER *prAdapter,
 		   OUT uint32_t *pu4QueryInfoLen)
 {
 	struct PARAM_RSSI_MONITOR_T rRssi;
+	int8_t orig_max_rssi_value;
+	int8_t orig_min_rssi_value;
 
 	ASSERT(prAdapter);
 	ASSERT(pu4QueryInfoLen);
@@ -7547,6 +7550,9 @@ wlanoidRssiMonitor(IN struct ADAPTER *prAdapter,
 		PARAM_MEDIA_STATE_DISCONNECTED)
 		return WLAN_STATUS_ADAPTER_NOT_READY;
 
+	orig_max_rssi_value = rRssi.max_rssi_value;
+	orig_min_rssi_value = rRssi.min_rssi_value;
+
 	kalMemCopy(&rRssi, pvQueryBuffer, sizeof(struct PARAM_RSSI_MONITOR_T));
 	if (rRssi.enable) {
 		if (rRssi.max_rssi_value > PARAM_WHQL_RSSI_MAX_DBM)
@@ -7558,8 +7564,10 @@ wlanoidRssiMonitor(IN struct ADAPTER *prAdapter,
 		rRssi.min_rssi_value = 0;
 	}
 
-	DBGLOG(OID, INFO, "enable=%d, max_rssi_value=%d, min_rssi_value=%d\n",
-		rRssi.enable, rRssi.max_rssi_value, rRssi.min_rssi_value);
+	DBGLOG(OID, INFO,
+	       "enable=%d, max_rssi_value=%d, min_rssi_value=%d, orig_max_rssi_value=%d, orig_min_rssi_value=%d\n",
+	       rRssi.enable, rRssi.max_rssi_value, rRssi.min_rssi_value,
+	       orig_max_rssi_value, orig_min_rssi_value);
 
 	return wlanSendSetQueryCmd(prAdapter,
 			   CMD_ID_RSSI_MONITOR,
