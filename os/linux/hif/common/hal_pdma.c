@@ -775,6 +775,45 @@ struct MSDU_TOKEN_ENTRY *halAcquireMsduToken(IN struct ADAPTER *prAdapter)
 	return prToken;
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * @brief Reset all msdu token. Return used msdu & re-init token.
+ *
+ * @param prAdapter      a pointer to adapter private data structure.
+ *
+ */
+/*----------------------------------------------------------------------------*/
+
+static void halResetMsduToken(IN struct ADAPTER *prAdapter)
+{
+	struct MSDU_TOKEN_INFO *prTokenInfo =
+		&prAdapter->prGlueInfo->rHifInfo.rTokenInfo;
+	struct MSDU_TOKEN_ENTRY *prToken;
+	uint32_t u4Idx = 0;
+
+	for (u4Idx = 0; u4Idx < HIF_TX_MSDU_TOKEN_NUM; u4Idx++) {
+		prToken = &prTokenInfo->arToken[u4Idx];
+		if (prToken->fgInUsed) {
+			kalPciUnmapToDev(prAdapter->prGlueInfo,
+				prToken->rPktDmaAddr, prToken->u4PktDmaLength);
+			kalPciUnmapToDev(prAdapter->prGlueInfo,
+				prToken->rDmaAddr, prToken->u4DmaLength);
+
+#if !HIF_TX_PREALLOC_DATA_BUFFER
+			nicTxFreePacket(prAdapter, prToken->prMsduInfo, FALSE);
+			nicTxReturnMsduInfo(prAdapter, prToken->prMsduInfo);
+#endif
+		}
+
+		prToken->fgInUsed = FALSE;
+		prToken->rDmaAddr = 0;
+		prToken->rPktDmaAddr = 0;
+		prToken->u4PktDmaLength = 0;
+		prTokenInfo->aprTokenStack[u4Idx] = prToken;
+	}
+	prTokenInfo->i4UsedCnt = 0;
+}
+
 void halReturnMsduToken(IN struct ADAPTER *prAdapter, uint32_t u4TokenNum)
 {
 	struct MSDU_TOKEN_INFO *prTokenInfo =
@@ -2183,6 +2222,7 @@ void halHwRecoveryFromError(IN struct ADAPTER *prAdapter)
 			DBGLOG(HAL, INFO, "SER(L) Host re-initialize PDMA\n");
 			/* only reset TXD & RXD */
 			halWpdmaAllocRing(prAdapter->prGlueInfo, false);
+			halResetMsduToken(prAdapter);
 
 			DBGLOG(HAL, INFO, "SER(M) Host enable PDMA\n");
 			halWpdmaInitRing(prGlueInfo);
@@ -2228,6 +2268,8 @@ void halHwRecoveryFromError(IN struct ADAPTER *prAdapter)
 
 			kalDevKickCmd(prAdapter->prGlueInfo);
 			kalDevKickData(prAdapter->prGlueInfo);
+			halRxReceiveRFBs(prAdapter, RX_RING_EVT_IDX_1);
+			halRxReceiveRFBs(prAdapter, RX_RING_DATA_IDX_0);
 			prHifInfo->fgIsErrRecovery = FALSE;
 			nicSerStartTxRx(prAdapter);
 			prErrRecoveryCtrl->eErrRecovState = ERR_RECOV_STOP_IDLE;
