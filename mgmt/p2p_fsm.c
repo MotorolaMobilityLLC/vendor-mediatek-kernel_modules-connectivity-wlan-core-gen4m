@@ -300,8 +300,7 @@ VOID p2pFsmRunEventScanDone(IN P_ADAPTER_T prAdapter, IN P_MSG_HDR_T prMsgHdr)
 	if (prAdapter->fgIsP2PRegistered == FALSE) {
 		DBGLOG(P2P, TRACE, "P2P BSS Info is removed, break p2pFsmRunEventScanDone\n");
 
-		if (prMsgHdr)
-			cnmMemFree(prAdapter, prMsgHdr);
+		cnmMemFree(prAdapter, prMsgHdr);
 		return;
 	}
 
