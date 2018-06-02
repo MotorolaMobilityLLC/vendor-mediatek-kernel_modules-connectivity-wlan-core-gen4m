@@ -137,7 +137,6 @@ static struct platform_driver mtk_axi_driver = {
 static struct GLUE_INFO *g_prGlueInfo;
 static uint8_t *CSRBaseAddress;
 static u_int8_t g_fgDriverProbed = FALSE;
-static uint32_t g_u4DmaMask = 32;
 
 dma_addr_t g_prTxDescPa[NUM_OF_TX_RING];
 void *g_prTxDescVa[NUM_OF_TX_RING];
@@ -173,7 +172,6 @@ static void axiUpdateRxPacket(struct sk_buff *prSkb,
 
 static int hifAxiProbe(void)
 {
-	struct mt66xx_chip_info *prChipInfo;
 	int ret = 0;
 
 	ASSERT(prPlatDev);
@@ -196,11 +194,7 @@ static int hifAxiProbe(void)
 		ret = -1;
 		goto out;
 	}
-
-	prChipInfo = ((struct mt66xx_hif_driver_data *)
-		mtk_axi_ids[0].driver_data)->chip_info;
 	g_fgDriverProbed = TRUE;
-	g_u4DmaMask = prChipInfo->bus_info->u4DmaMask;
 out:
 	DBGLOG(INIT, INFO, "hifAxiProbe() done(%d)\n", ret);
 
@@ -254,15 +248,21 @@ static int hifAxiSetMpuProtect(bool enable)
 
 static void axiDmaSetup(struct platform_device *pdev)
 {
+	struct mt66xx_chip_info *prChipInfo;
 	const struct dma_map_ops *dma_ops = NULL;
-	u64 required_mask, dma_mask = DMA_BIT_MASK(g_u4DmaMask);
+	u64 required_mask, dma_mask;
 	int ret = 0;
 
+	prChipInfo = ((struct mt66xx_hif_driver_data *)
+		mtk_axi_ids[0].driver_data)->chip_info;
+
+	dma_mask = DMA_BIT_MASK(prChipInfo->bus_info->u4DmaMask);
 	required_mask = dma_get_required_mask(&pdev->dev);
 	DBGLOG(INIT, INFO,
 	       "pdev=%p, pdev->dev=%p, name=%s, dma_mask=%llx required_mask=%llx, dma_addr_t=%zu\n",
 	       pdev, pdev->dev, pdev->id_entry->name, dma_mask,
 	       required_mask, sizeof(dma_addr_t));
+
 	pdev->dev.coherent_dma_mask = dma_mask;
 	pdev->dev.dma_mask = &(pdev->dev.coherent_dma_mask);
 
