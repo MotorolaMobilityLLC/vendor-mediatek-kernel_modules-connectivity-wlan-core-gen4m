@@ -69,6 +69,7 @@
 *                    E X T E R N A L   R E F E R E N C E S
 ********************************************************************************
 */
+#include "precomp.h"
 #include "gl_os.h"
 #include "gl_kal.h"
 #include "debug.h"
@@ -93,6 +94,7 @@
 #define PROC_DBG_LEVEL_NAME                     "dbg_level"
 #define PROC_DRIVER_CMD                         "driver"
 #define PROC_CFG                                "cfg"
+#define PROC_EFUSE_DUMP                         "efuse_dump"
 
 
 
@@ -182,6 +184,76 @@ static ssize_t procDbgLevelRead(struct file *filp, char __user *buf, size_t coun
 
 #if WLAN_INCLUDE_PROC
 #if	CFG_SUPPORT_EASY_DEBUG
+
+static void *procEfuseDump_start(struct seq_file *s, loff_t *pos)
+{
+	static unsigned long counter;
+
+	if (*pos == 0)
+		counter = *pos; /* read file init */
+
+	if (counter >= EFUSE_ADDR_MAX)
+		return NULL;
+	return &counter;
+}
+static void *procEfuseDump_next(struct seq_file *s, void *v, loff_t *pos)
+{
+	unsigned long *tmp_v = (unsigned long *)v;
+
+	(*tmp_v) += EFUSE_BLOCK_SIZE;
+
+	if (*tmp_v >= EFUSE_ADDR_MAX)
+		return NULL;
+	return tmp_v;
+}
+static void procEfuseDump_stop(struct seq_file *s, void *v)
+{
+	/* nothing to do, we use a static value in start() */
+}
+static int procEfuseDump_show(struct seq_file *s, void *v)
+{
+	WLAN_STATUS rStatus = WLAN_STATUS_SUCCESS;
+	UINT_32 u4BufLen = 0;
+	P_GLUE_INFO_T prGlueInfo;
+	UINT_32 idx_addr, idx_value;
+	PARAM_CUSTOM_ACCESS_EFUSE_T rAccessEfuseInfo = {};
+
+	prGlueInfo = g_prGlueInfo_proc;
+
+#if  (CFG_EEPROM_PAGE_ACCESS == 1)
+	idx_addr = *(loff_t *)v;
+	rAccessEfuseInfo.u4Address = (idx_addr / EFUSE_BLOCK_SIZE) * EFUSE_BLOCK_SIZE;
+
+	rStatus = kalIoctl(prGlueInfo,
+		wlanoidQueryProcessAccessEfuseRead,
+		&rAccessEfuseInfo,
+		sizeof(PARAM_CUSTOM_ACCESS_EFUSE_T), TRUE, TRUE, TRUE, &u4BufLen);
+	if (rStatus != WLAN_STATUS_SUCCESS) {
+		seq_printf(s, "efuse read fail (0x%03X)\n", rAccessEfuseInfo.u4Address);
+		return 0;
+	}
+
+	for (idx_value = 0; idx_value < EFUSE_BLOCK_SIZE; idx_value++)
+		seq_printf(s, "0x%03X=0x%02X\n"
+					, rAccessEfuseInfo.u4Address+idx_value
+					, prGlueInfo->prAdapter->aucEepromVaule[idx_value]);
+	return 0;
+#else
+	seq_puts(s, "efuse ops is invalid\n");
+	return -EPERM; /* return negative value to stop read process */
+#endif
+}
+static int procEfuseDumpOpen(struct inode *inode, struct file *file)
+{
+	static const struct seq_operations procEfuseDump_ops = {
+		.start = procEfuseDump_start,
+		.next  = procEfuseDump_next,
+		.stop  = procEfuseDump_stop,
+		.show  = procEfuseDump_show
+	};
+
+	return seq_open(file, &procEfuseDump_ops);
+}
 
 
 static ssize_t procCfgRead(struct file *filp, char __user *buf, size_t count, loff_t *f_pos)
@@ -424,6 +496,14 @@ static const struct file_operations dbglevel_ops = {
 
 #if WLAN_INCLUDE_PROC
 #if	CFG_SUPPORT_EASY_DEBUG
+
+static const struct file_operations efusedump_ops = {
+	.owner	 = THIS_MODULE,
+	.open	 = procEfuseDumpOpen,
+	.read	 = seq_read,
+	.llseek  = seq_lseek,
+	.release = seq_release,
+};
 
 static const struct file_operations drivercmd_ops = {
 	.owner = THIS_MODULE,
@@ -746,6 +826,7 @@ INT_32 procRemoveProcfs(VOID)
 	remove_proc_entry(PROC_DRIVER_CMD, gprProcRoot);
 	remove_proc_entry(PROC_DBG_LEVEL_NAME, gprProcRoot);
 	remove_proc_entry(PROC_CFG, gprProcRoot);
+	remove_proc_entry(PROC_EFUSE_DUMP, gprProcRoot);
 
 #if CFG_SUPPORT_DEBUG_FS
 	remove_proc_entry(PROC_ROAM_PARAM, gprProcRoot);
@@ -790,6 +871,12 @@ INT_32 procCreateFsEntry(P_GLUE_INFO_T prGlueInfo)
 	prEntry = proc_create(PROC_CFG, 0664, gprProcRoot, &cfg_ops);
 	if (prEntry == NULL) {
 		pr_err("Unable to create /proc entry for driver command\n\r");
+		return -1;
+	}
+
+	prEntry = proc_create(PROC_EFUSE_DUMP, 0664, gprProcRoot, &efusedump_ops);
+	if (prEntry == NULL) {
+		pr_err("Unable to create /proc entry efuse\n\r");
 		return -1;
 	}
 #endif
