@@ -2548,24 +2548,29 @@ wlanoidSetAddKey(IN struct ADAPTER *prAdapter, IN void *pvSetBuffer, IN uint32_t
 
 #if CFG_SUPPORT_802_11W
 		/* AP PMF */
-		/* 20170519 BIP optional item is not support now */
-		DBGLOG(RSN, INFO, "802.11w BIP optional not support now\n");
-		if ((prNewKey->u4KeyIndex & 0xff) >= 4)
-			return WLAN_STATUS_SUCCESS;
-
 		if (prCmdKey->ucAlgorithmId == CIPHER_SUITE_BIP) {
 			if (prCmdKey->ucIsAuthenticator) {
-				DBGLOG(RSN, INFO, "Authenticator follow AIS method\n");
+				DBGLOG(RSN, INFO,
+					"Authenticator BIP bssid:%d\n",
+					prBssInfo->ucBssIndex);
 
+				prCmdKey->ucWlanIndex =
+					secPrivacySeekForBcEntry(prAdapter,
+						prBssInfo->ucBssIndex,
+						prBssInfo->aucOwnMacAddr,
+						STA_REC_INDEX_NOT_FOUND,
+						prCmdKey->ucAlgorithmId,
+						prCmdKey->ucKeyId);
+			} else {
+				prCmdKey->ucWlanIndex =
+				    secPrivacySeekForBcEntry(prAdapter,
+					  prBssInfo->ucBssIndex,
+					  prBssInfo->prStaRecOfAP->aucMacAddr,
+					  prBssInfo->prStaRecOfAP->ucIndex,
+					  prCmdKey->ucAlgorithmId,
+					  prCmdKey->ucKeyId);
 			}
-			prCmdKey->ucWlanIndex =
-			    secPrivacySeekForBcEntry(prAdapter,
-						     prBssInfo->ucBssIndex,
-						     prBssInfo->prStaRecOfAP->aucMacAddr,
-						     prBssInfo->prStaRecOfAP->ucIndex,
-						     prCmdKey->ucAlgorithmId, prCmdKey->ucKeyId);
 
-			DBGLOG(RSN, INFO, "BIP BC wtbl index:%d\n", prCmdKey->ucWlanIndex);
 		} else
 #endif
 		if (1) {
@@ -2590,25 +2595,31 @@ wlanoidSetAddKey(IN struct ADAPTER *prAdapter, IN void *pvSetBuffer, IN uint32_t
 				}
 			} else {	/* Overwrite the old one for AP and STA WEP */
 				if (prBssInfo->prStaRecOfAP) {
+					DBGLOG(RSN, INFO, "AP REC\n");
 					prCmdKey->ucWlanIndex =
-					    secPrivacySeekForBcEntry(prAdapter,
-								     prBssInfo->ucBssIndex,
-								     prBssInfo->prStaRecOfAP->aucMacAddr,
-								     prBssInfo->prStaRecOfAP->ucIndex,
-								     prCmdKey->ucAlgorithmId, prCmdKey->ucKeyId);
+					secPrivacySeekForBcEntry(prAdapter,
+					  prBssInfo->ucBssIndex,
+					  prBssInfo->prStaRecOfAP->aucMacAddr,
+					  prBssInfo->prStaRecOfAP->ucIndex,
+					  prCmdKey->ucAlgorithmId,
+					  prCmdKey->ucKeyId);
 
 					kalMemCopy(prCmdKey->aucPeerAddr,
-						   prBssInfo->prStaRecOfAP->aucMacAddr, MAC_ADDR_LEN);
+					  prBssInfo->prStaRecOfAP->aucMacAddr,
+					  MAC_ADDR_LEN);
 				} else {
-			prCmdKey->ucWlanIndex =
-					secPrivacySeekForBcEntry(prAdapter,
-					prBssInfo->ucBssIndex,
-					prBssInfo->aucOwnMacAddr,	/* Should replace by BSSID later */
-					STA_REC_INDEX_NOT_FOUND,
-					prCmdKey->ucAlgorithmId,
-					prCmdKey->ucKeyId);
-			kalMemCopy(prCmdKey->aucPeerAddr, prBssInfo->aucOwnMacAddr, MAC_ADDR_LEN);
-
+					DBGLOG(RSN, INFO, "!AP && !STA REC\n");
+					prCmdKey->ucWlanIndex =
+					  secPrivacySeekForBcEntry(prAdapter,
+					  prBssInfo->ucBssIndex,
+					  prBssInfo->aucOwnMacAddr,
+					  /* Should replace by BSSID later */
+					  STA_REC_INDEX_NOT_FOUND,
+					  prCmdKey->ucAlgorithmId,
+					  prCmdKey->ucKeyId);
+					kalMemCopy(prCmdKey->aucPeerAddr,
+						prBssInfo->aucOwnMacAddr,
+						MAC_ADDR_LEN);
 				}
 				if (prCmdKey->ucKeyId >= MAX_KEY_NUM) {
 					DBGLOG(RSN, ERROR, "prCmdKey->ucKeyId [%u] overrun\n", prCmdKey->ucKeyId);
