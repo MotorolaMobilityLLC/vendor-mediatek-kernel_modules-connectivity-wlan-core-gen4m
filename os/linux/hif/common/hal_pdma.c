@@ -1100,6 +1100,8 @@ static void *halWpdmaAllocRxPacketBuff(struct GL_HIF_INFO *prHifInfo,
 		goto alloc_fail;
 
 	*vir_addr = (void *)pkt->data;
+	kalMemZero(*vir_addr, u4Len);
+
 	*phy_addr = KAL_DMA_MAP_SINGLE(prHifInfo->prDmaDev, *vir_addr,
 				       u4Len, KAL_DMA_FROM_DEVICE);
 	if (KAL_DMA_MAPPING_ERROR(prHifInfo->prDmaDev, *phy_addr))
@@ -1235,9 +1237,6 @@ bool halWpdmaAllocRxRing(struct GLUE_INFO *prGlueInfo, uint32_t u4Num,
 				index);
 			return false;
 		}
-
-		/* Zero init this memory block */
-		kalMemZero(pDmaBuf->AllocVa, pDmaBuf->AllocSize);
 
 		/* Write RxD buffer address & allocated buffer length */
 		pRxD = (struct RXD_STRUCT *) dma_cb->AllocVa;
