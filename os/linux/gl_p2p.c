@@ -739,6 +739,7 @@ BOOLEAN p2pNetUnregister(P_GLUE_INFO_T prGlueInfo, BOOLEAN fgIsRtnlLockAcquired)
 {
 	BOOLEAN fgDoUnregister = FALSE;
 	BOOLEAN fgRollbackRtnlLock = FALSE;
+	UINT_8 ucRoleIdx;
 
 	GLUE_SPIN_LOCK_DECLARATION();
 
@@ -780,20 +781,23 @@ BOOLEAN p2pNetUnregister(P_GLUE_INFO_T prGlueInfo, BOOLEAN fgIsRtnlLockAcquired)
 	DBGLOG(INIT, INFO, "unregister p2pdev\n");
 	unregister_netdev(prGlueInfo->prP2PInfo[0]->prDevHandler);
 
-	if (prGlueInfo->prAdapter->prP2pInfo->u4DeviceNum == RUNNING_DUAL_AP_MODE) {
-		/* prepare for removal */
-		if (netif_carrier_ok(prGlueInfo->prP2PInfo[1]->prDevHandler))
-			netif_carrier_off(prGlueInfo->prP2PInfo[1]->prDevHandler);
+	/* unregister the netdev and index > 0 */
+	if (prGlueInfo->prAdapter->prP2pInfo->u4DeviceNum >= 2) {
+		for (ucRoleIdx = 1; ucRoleIdx < BSS_P2P_NUM; ucRoleIdx++) {
+			/* prepare for removal */
+			if (netif_carrier_ok(prGlueInfo->prP2PInfo[ucRoleIdx]->prDevHandler))
+				netif_carrier_off(prGlueInfo->prP2PInfo[ucRoleIdx]->prDevHandler);
 
-		netif_tx_stop_all_queues(prGlueInfo->prP2PInfo[1]->prDevHandler);
+			netif_tx_stop_all_queues(prGlueInfo->prP2PInfo[ucRoleIdx]->prDevHandler);
 
-		if (fgIsRtnlLockAcquired && rtnl_is_locked()) {
-			fgRollbackRtnlLock = TRUE;
-			rtnl_unlock();
+			if (fgIsRtnlLockAcquired && rtnl_is_locked()) {
+				fgRollbackRtnlLock = TRUE;
+				rtnl_unlock();
+			}
+			/* Here are functions which need rtnl_lock */
+
+			unregister_netdev(prGlueInfo->prP2PInfo[ucRoleIdx]->prDevHandler);
 		}
-		/* Here are functions which need rtnl_lock */
-
-		unregister_netdev(prGlueInfo->prP2PInfo[1]->prDevHandler);
 	}
 
 	if (fgRollbackRtnlLock)
@@ -1142,14 +1146,19 @@ void glP2pDestroyWirelessDevice(void)
 	kfree(gprP2pWdev);
 
 	for (i = 0; i < KAL_P2P_NUM; i++) {
-		if (gprP2pRoleWdev[i] && (gprP2pWdev != gprP2pRoleWdev[i])) {
 
-			DBGLOG(INIT, INFO, "glP2pDestroyWirelessDevice (%x)\n", gprP2pRoleWdev[i]->wiphy);
+		if (gprP2pRoleWdev[i] == NULL)
+			continue;
+
+		if (i != 0) { /* The P2P is always in index 0 and shares Wiphy with P2PWdev */
+			DBGLOG(INIT, INFO, "glP2pDestroyWirelessDevice (%p)\n", gprP2pRoleWdev[i]->wiphy);
+			set_wiphy_dev(gprP2pRoleWdev[i]->wiphy, NULL);
 			wiphy_unregister(gprP2pRoleWdev[i]->wiphy);
 			wiphy_free(gprP2pRoleWdev[i]->wiphy);
-			kfree(gprP2pRoleWdev[i]);
-			gprP2pRoleWdev[i] = NULL;
 		}
+		if (gprP2pRoleWdev[i] && (gprP2pWdev != gprP2pRoleWdev[i]))
+			kfree(gprP2pRoleWdev[i]);
+		gprP2pRoleWdev[i] = NULL;
 	}
 
 	gprP2pWdev = NULL;
@@ -1170,6 +1179,7 @@ BOOLEAN glUnregisterP2P(P_GLUE_INFO_T prGlueInfo)
 {
 	UINT_8 ucRoleIdx;
 	P_ADAPTER_T prAdapter;
+	P_GL_P2P_INFO_T prP2PInfo;
 
 	ASSERT(prGlueInfo);
 
@@ -1186,13 +1196,29 @@ BOOLEAN glUnregisterP2P(P_GLUE_INFO_T prGlueInfo)
 	}
 
 	/* 4 <3> Free Wiphy & netdev */
-	if (prGlueInfo->prP2PInfo[0]->prDevHandler != prGlueInfo->prP2PInfo[0]->aprRoleHandler) {
-		free_netdev(prGlueInfo->prP2PInfo[0]->aprRoleHandler);
-		prGlueInfo->prP2PInfo[0]->aprRoleHandler = NULL;
-	}
+	for (ucRoleIdx = 0; ucRoleIdx < BSS_P2P_NUM; ucRoleIdx++) {
+		prP2PInfo = prGlueInfo->prP2PInfo[ucRoleIdx];
 
-	free_netdev(prGlueInfo->prP2PInfo[0]->prDevHandler);
-	prGlueInfo->prP2PInfo[0]->prDevHandler = NULL;
+		if (prP2PInfo == NULL)
+			continue;
+		/* For P2P interfaces, prDevHandler points to the net_device of p2p0 interface.            */
+		/* And aprRoleHandler points to the net_device of p2p virtual interface (i.e., p2p1)       */
+		/* when it was created. And when p2p virtual interface is deleted, aprRoleHandler will     */
+		/* change to point to prDevHandler. Hence, when aprRoleHandler & prDevHandler are pointing */
+		/* to different addresses, it means vif p2p1 exists. Otherwise it means p2p1 was           */
+		/* already deleted. */
+		if ((prP2PInfo->aprRoleHandler != NULL) &&
+			(prP2PInfo->aprRoleHandler != prP2PInfo->prDevHandler)) {
+			/* This device is added by the P2P, and use ndev->destructor to free. */
+			prP2PInfo->aprRoleHandler = NULL;
+			DBGLOG(P2P, INFO, "aprRoleHandler idx %d set NULL\n", ucRoleIdx);
+		}
+
+		if (prP2PInfo->prDevHandler) {
+			free_netdev(prP2PInfo->prDevHandler);
+			prP2PInfo->prDevHandler = NULL;
+		}
+	}
 
 	/* 4 <4> Free P2P internal memory */
 	if (!p2PFreeInfo(prGlueInfo)) {

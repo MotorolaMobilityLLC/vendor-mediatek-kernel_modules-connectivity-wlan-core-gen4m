@@ -260,6 +260,29 @@ INT_32 mtk_Netdev_To_RoleIdx(P_GLUE_INFO_T prGlueInfo, struct net_device *ndev, 
 
 }				/* mtk_Netdev_To_RoleIdx */
 
+static void mtk_vif_destructor(struct net_device *dev)
+{
+	struct wireless_dev *prWdev = ERR_PTR(-ENOMEM);
+	UINT_32 u4Idx = 0;
+
+	DBGLOG(P2P, INFO, "mtk_newInf_destructor\n");
+	if (dev) {
+		prWdev = dev->ieee80211_ptr;
+		free_netdev(dev);
+		if (prWdev) {
+			/* Role[i] and Dev share the same wireless dev by default */
+			for (u4Idx = 0; u4Idx < KAL_P2P_NUM; u4Idx++) {
+				if ((prWdev == gprP2pRoleWdev[u4Idx]) &&
+					(gprP2pRoleWdev[u4Idx] != gprP2pWdev)) {
+					DBGLOG(P2P, INFO, "mtk_newInf_destructor remove added Wd\n");
+					gprP2pRoleWdev[u4Idx] = gprP2pWdev;
+				}
+			}
+			kfree(prWdev);
+		}
+	}
+}
+
 #if KERNEL_VERSION(4, 1, 0) <= CFG80211_VERSION_CODE
 struct wireless_dev *mtk_p2p_cfg80211_add_iface(struct wiphy *wiphy,
 						const char *name, unsigned char name_assign_type,
@@ -355,7 +378,7 @@ struct wireless_dev *mtk_p2p_cfg80211_add_iface(struct wiphy *wiphy,
 		if (prNewNetDevice->ieee80211_ptr)
 			prNewNetDevice->ieee80211_ptr->iftype = type;
 		/* register destructor function for virtual interface */
-		prNewNetDevice->destructor = free_netdev;
+		prNewNetDevice->destructor = mtk_vif_destructor;
 
 		gprP2pRoleWdev[u4Idx] = prWdev;
 		/*prP2pInfo->prRoleWdev[0] = prWdev;*//* TH3 multiple P2P */
@@ -547,8 +570,6 @@ int mtk_p2p_cfg80211_del_iface(struct wiphy *wiphy, struct wireless_dev *wdev)
 	unregister_netdevice(UnregRoleHander);
 	/* free is called at destructor */
 	/* free_netdev(UnregRoleHander); */
-	/* Role[0] and Dev share the same wireless dev */
-	gprP2pRoleWdev[0] = gprP2pWdev;
 
 	KAL_RELEASE_MUTEX(prAdapter, MUTEX_DEL_INF);
 
