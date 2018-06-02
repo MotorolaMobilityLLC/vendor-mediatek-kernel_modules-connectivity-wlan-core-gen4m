@@ -254,8 +254,8 @@ DOMAIN_INFO_ENTRY arSupportedRegDomains[] = {
 	  {125, BAND_NULL, 0, 0, 0, FALSE}
 	  ,			/* CH_SET_UNII_UPPER_NA */
 	  {0, BAND_NULL, 0, 0, 0, FALSE}
-	  }
 	 }
+	}
 	,
 	{
 	 (PUINT_16) g_u2CountryGroup1, sizeof(g_u2CountryGroup1) / 2,
@@ -272,8 +272,8 @@ DOMAIN_INFO_ENTRY arSupportedRegDomains[] = {
 	  {125, BAND_5G, CHNL_SPAN_20, 149, 5, FALSE}
 	  ,			/* CH_SET_UNII_UPPER_149_165 */
 	  {0, BAND_NULL, 0, 0, 0, FALSE}
-	  }
 	 }
+	}
 	,
 	{
 	 (PUINT_16) g_u2CountryGroup2, sizeof(g_u2CountryGroup2) / 2,
@@ -290,8 +290,8 @@ DOMAIN_INFO_ENTRY arSupportedRegDomains[] = {
 	  {125, BAND_5G, CHNL_SPAN_20, 149, 5, FALSE}
 	  ,			/* CH_SET_UNII_UPPER_149_165 */
 	  {0, BAND_NULL, 0, 0, 0, FALSE}
-	  }
 	 }
+	}
 	,
 	{
 	 (PUINT_16) g_u2CountryGroup3, sizeof(g_u2CountryGroup3) / 2,
@@ -308,8 +308,8 @@ DOMAIN_INFO_ENTRY arSupportedRegDomains[] = {
 	  {125, BAND_5G, CHNL_SPAN_20, 149, 4, FALSE}
 	  ,			/* CH_SET_UNII_UPPER_149_161 */
 	  {0, BAND_NULL, 0, 0, 0, FALSE}
-	  }
 	 }
+	}
 	,
 	{
 	 (PUINT_16) g_u2CountryGroup4, sizeof(g_u2CountryGroup4) / 2,
@@ -326,8 +326,8 @@ DOMAIN_INFO_ENTRY arSupportedRegDomains[] = {
 	  {125, BAND_NULL, 0, 0, 0, FALSE}
 	  ,			/* CH_SET_UNII_UPPER_NA */
 	  {0, BAND_NULL, 0, 0, 0, FALSE}
-	  }
 	 }
+	}
 	,
 	{
 	 (PUINT_16) g_u2CountryGroup5, sizeof(g_u2CountryGroup5) / 2,
@@ -344,8 +344,8 @@ DOMAIN_INFO_ENTRY arSupportedRegDomains[] = {
 	  {125, BAND_NULL, 0, 0, 0, FALSE}
 	  ,			/* CH_SET_UNII_UPPER_NA */
 	  {0, BAND_NULL, 0, 0, 0, FALSE}
-	  }
 	 }
+	}
 	,
 	{
 	 (PUINT_16) g_u2CountryGroup6, sizeof(g_u2CountryGroup6) / 2,
@@ -362,8 +362,8 @@ DOMAIN_INFO_ENTRY arSupportedRegDomains[] = {
 	  ,			/* CH_SET_UNII_WW_100_140 */
 	  {125, BAND_NULL, 0, 0, 0, FALSE}
 	  ,			/* CH_SET_UNII_UPPER_NA */
-	  }
 	 }
+	}
 	,
 	{
 	 (PUINT_16) g_u2CountryGroup7, sizeof(g_u2CountryGroup7) / 2,
@@ -380,8 +380,8 @@ DOMAIN_INFO_ENTRY arSupportedRegDomains[] = {
 	  {125, BAND_NULL, 0, 0, 0, FALSE}
 	  ,			/* CH_SET_UNII_UPPER_NA */
 	  {0, BAND_NULL, 0, 0, 0, FALSE}
-	  }
 	 }
+	}
 	,
 	{
 	 (PUINT_16) g_u2CountryGroup8, sizeof(g_u2CountryGroup8) / 2,
@@ -398,8 +398,8 @@ DOMAIN_INFO_ENTRY arSupportedRegDomains[] = {
 	  {125, BAND_5G, CHNL_SPAN_20, 149, 4, FALSE}
 	  ,			/* CH_SET_UNII_UPPER_149_161 */
 	  {0, BAND_NULL, 0, 0, 0, FALSE}
-	  }
 	 }
+	}
 	,
 	{
 	 (PUINT_16) g_u2CountryGroup9, sizeof(g_u2CountryGroup9) / 2,
@@ -416,8 +416,8 @@ DOMAIN_INFO_ENTRY arSupportedRegDomains[] = {
 	  {125, BAND_NULL, 0, 0, 0, FALSE}
 	  ,			/* CH_SET_UNII_UPPER_NA */
 	  {0, BAND_NULL, 0, 0, 0, FALSE}
-	  }
 	 }
+	}
 	,
 	{
 	 (PUINT_16) g_u2CountryGroup10, sizeof(g_u2CountryGroup10) / 2,
@@ -434,8 +434,8 @@ DOMAIN_INFO_ENTRY arSupportedRegDomains[] = {
 	  {125, BAND_5G, CHNL_SPAN_20, 149, 5, FALSE}
 	  ,			/* CH_SET_UNII_UPPER_149_165 */
 	  {0, BAND_NULL, 0, 0, 0, FALSE}
-	  }
 	 }
+	}
 	,
 	{
 	 (PUINT_16) g_u2CountryGroup11, sizeof(g_u2CountryGroup11) / 2,
@@ -452,8 +452,8 @@ DOMAIN_INFO_ENTRY arSupportedRegDomains[] = {
 	  {125, BAND_5G, CHNL_SPAN_20, 149, 5, FALSE}
 	  ,			/* CH_SET_UNII_UPPER_149_165 */
 	  {0, BAND_NULL, 0, 0, 0, FALSE}
-	  }
 	 }
+	}
 	,
 	{
 	 (PUINT_16) g_u2CountryGroup12, sizeof(g_u2CountryGroup12) / 2,
@@ -470,8 +470,8 @@ DOMAIN_INFO_ENTRY arSupportedRegDomains[] = {
 	  {125, BAND_5G, CHNL_SPAN_20, 149, 5, FALSE}
 	  ,			/* CH_SET_UNII_UPPER_149_165 */
 	  {0, BAND_NULL, 0, 0, 0, FALSE}
-	  }
 	 }
+	}
 	,
 	{
 	 (PUINT_16) g_u2CountryGroup13, sizeof(g_u2CountryGroup13) / 2,
@@ -488,8 +488,8 @@ DOMAIN_INFO_ENTRY arSupportedRegDomains[] = {
 	  {125, BAND_5G, CHNL_SPAN_20, 149, 4, FALSE}
 	  ,			/* CH_SET_UNII_UPPER_149_161 */
 	  {0, BAND_NULL, 0, 0, 0, FALSE}
-	  }
 	 }
+	}
 	,
 	{
 	 (PUINT_16) g_u2CountryGroup14, sizeof(g_u2CountryGroup14) / 2,
@@ -524,8 +524,8 @@ DOMAIN_INFO_ENTRY arSupportedRegDomains[] = {
 	  {125, BAND_5G, CHNL_SPAN_20, 149, 5, FALSE}
 	  ,			/* CH_SET_UNII_UPPER_149_165 */
 	  {0, BAND_NULL, 0, 0, 0, FALSE}
-	  }
 	 }
+	}
 	,
 	{
 	 (PUINT_16) g_u2CountryGroup16, sizeof(g_u2CountryGroup16) / 2,
@@ -542,8 +542,8 @@ DOMAIN_INFO_ENTRY arSupportedRegDomains[] = {
 	  {125, BAND_5G, CHNL_SPAN_20, 149, 5, FALSE}
 	  ,			/* CH_SET_UNII_UPPER_149_165 */
 	  {0, BAND_NULL, 0, 0, 0, FALSE}
-	  }
 	 }
+	}
 	,
 	{
 	 (PUINT_16) g_u2CountryGroup17, sizeof(g_u2CountryGroup17) / 2,
@@ -560,8 +560,8 @@ DOMAIN_INFO_ENTRY arSupportedRegDomains[] = {
 	  {125, BAND_5G, CHNL_SPAN_20, 149, 5, FALSE}
 	  ,			/* CH_SET_UNII_UPPER_149_165 */
 	  {0, BAND_NULL, 0, 0, 0, FALSE}
-	  }
 	 }
+	}
 	,
 	{
 	 (PUINT_16) g_u2CountryGroup18, sizeof(g_u2CountryGroup18) / 2,
@@ -578,8 +578,8 @@ DOMAIN_INFO_ENTRY arSupportedRegDomains[] = {
 	  {125, BAND_5G, CHNL_SPAN_20, 149, 5, FALSE}
 	  ,			/* CH_SET_UNII_UPPER_149_165 */
 	  {0, BAND_NULL, 0, 0, 0, FALSE}
-	  }
 	 }
+	}
 	,
 	{
 	 (PUINT_16) g_u2CountryGroup19, sizeof(g_u2CountryGroup19) / 2,
@@ -615,8 +615,8 @@ DOMAIN_INFO_ENTRY arSupportedRegDomains[] = {
 	  {125, BAND_5G, CHNL_SPAN_20, 149, 5, FALSE}
 	  ,			/* CH_SET_UNII_UPPER_149_165 */
 	  {0, BAND_NULL, 0, 0, 0, FALSE}
-	  }
 	 }
+	}
 	,
 	{
 	 /* Note: Default group if no matched country code */
@@ -634,11 +634,9 @@ DOMAIN_INFO_ENTRY arSupportedRegDomains[] = {
 	  {125, BAND_5G, CHNL_SPAN_20, 149, 5, FALSE}
 	  ,			/* CH_SET_UNII_UPPER_149_165 */
 	  {0, BAND_NULL, 0, 0, 0, FALSE}
-	  }
 	 }
+	}
 };
-
-#define REG_DOMAIN_PASSIVE_DEF_IDX	1
 
 static const UINT_16 g_u2CountryGroup0_Passive[] = {
 	COUNTRY_CODE_TW
@@ -648,48 +646,42 @@ DOMAIN_INFO_ENTRY arSupportedRegDomains_Passive[] = {
 	{
 	 (PUINT_16) g_u2CountryGroup0_Passive, sizeof(g_u2CountryGroup0_Passive) / 2,
 	 {
-	  {81, BAND_2G4, CHNL_SPAN_5, 1, 0, 0}
+	  {81, BAND_2G4, CHNL_SPAN_5, 1, 0, FALSE}
 	  ,			/* CH_SET_2G4_1_14_NA */
-	  {82, BAND_2G4, CHNL_SPAN_5, 14, 0, 0}
+	  {82, BAND_2G4, CHNL_SPAN_5, 14, 0, FALSE}
 	  ,
 
-	  {115, BAND_5G, CHNL_SPAN_20, 36, 4, 0}
-	  ,			/* CH_SET_UNII_LOW_36_48 */
-	  {118, BAND_5G, CHNL_SPAN_20, 52, 4, 0}
-	  ,			/* CH_SET_UNII_MID_52_64 */
-	  {121, BAND_5G, CHNL_SPAN_20, 100, 11, 0}
-	  ,			/* CH_SET_UNII_WW_100_140 */
-	  {125, BAND_5G, CHNL_SPAN_20, 149, 0, 0}
-	  ,			/* CH_SET_UNII_UPPER_NA */
-	  }
-	 }
-	,
-
-	{
-	 /* default passive channel table is empty */
-	 COUNTRY_CODE_NULL, 0,
-	 {
-	  {81, BAND_2G4, CHNL_SPAN_5, 1, 0, 0}
-	  ,			/* CH_SET_2G4_1_14_NA */
-	  {82, BAND_2G4, CHNL_SPAN_5, 14, 0, 0}
-	  ,
-
-	  {115, BAND_5G, CHNL_SPAN_20, 36, 0, 0}
+	  {115, BAND_5G, CHNL_SPAN_20, 36, 0, FALSE}
 	  ,			/* CH_SET_UNII_LOW_NA */
-	  {118, BAND_5G, CHNL_SPAN_20, 52, 4, 0}
+	  {118, BAND_5G, CHNL_SPAN_20, 52, 4, TRUE}
 	  ,			/* CH_SET_UNII_MID_52_64 */
-	  {121, BAND_5G, CHNL_SPAN_20, 100, 12, 0}
-	  ,			/* CH_SET_UNII_WW_100_144 */
-	  {125, BAND_5G, CHNL_SPAN_20, 149, 0, 0}
+	  {121, BAND_5G, CHNL_SPAN_20, 100, 11, TRUE}
+	  ,			/* CH_SET_UNII_WW_100_140 */
+	  {125, BAND_5G, CHNL_SPAN_20, 149, 0, FALSE}
 	  ,			/* CH_SET_UNII_UPPER_NA */
-	  }
 	 }
+	}
+	,
+	{
+	 /* Default passive scan channel table: ch52~64, ch100~144 */
+	 NULL, 0,
+	 {
+	  {81, BAND_2G4, CHNL_SPAN_5, 1, 0, FALSE}
+	  ,			/* CH_SET_2G4_1_14_NA */
+	  {82, BAND_2G4, CHNL_SPAN_5, 14, 0, FALSE}
+	  ,
 
+	  {115, BAND_5G, CHNL_SPAN_20, 36, 0, FALSE}
+	  ,			/* CH_SET_UNII_LOW_NA */
+	  {118, BAND_5G, CHNL_SPAN_20, 52, 4, TRUE}
+	  ,			/* CH_SET_UNII_MID_52_64 */
+	  {121, BAND_5G, CHNL_SPAN_20, 100, 12, TRUE}
+	  ,			/* CH_SET_UNII_WW_100_144 */
+	  {125, BAND_5G, CHNL_SPAN_20, 149, 0, FALSE}
+	  ,			/* CH_SET_UNII_UPPER_NA */
+	 }
+	}
 };
-
-#define REG_DOMAIN_PASSIVE_GROUP_NUM \
-		(sizeof(arSupportedRegDomains_Passive) / sizeof(DOMAIN_INFO_ENTRY))
-
 
 SUBBAND_CHANNEL_T g_rRlmSubBand[] = {
 
@@ -701,8 +693,8 @@ SUBBAND_CHANNEL_T g_rRlmSubBand[] = {
 	,			/* ch52,54,56,..,64 */
 	{UNII2C_LOWER_BOUND, UNII2C_UPPER_BOUND, 2, 0}
 	,			/* ch100,102,104,...,144 */
-	{UNII3_LOWER_BOUND, UNII3_UPPER_BOUND, 2, 0}	/* ch149,151,153,....,173 */
-
+	{UNII3_LOWER_BOUND, UNII3_UPPER_BOUND, 2, 0}
+				/* ch149,151,153,....,165 */
 };
 
 /*******************************************************************************
@@ -930,20 +922,26 @@ rlmDomainGetChnlList(P_ADAPTER_T prAdapter,
 * @return (none)
 */
 /*----------------------------------------------------------------------------*/
-VOID rlmDomainSendCmd(P_ADAPTER_T prAdapter, BOOLEAN fgIsOid)
+VOID rlmDomainSendCmd(P_ADAPTER_T prAdapter)
 {
 	if (!regd_is_single_sku_en())
-		rlmDomainSendPassiveScanInfoCmd(prAdapter, fgIsOid);
-	rlmDomainSendDomainInfoCmd(prAdapter, fgIsOid);
+		rlmDomainSendPassiveScanInfoCmd(prAdapter);
+	rlmDomainSendDomainInfoCmd(prAdapter);
 #if CFG_SUPPORT_PWR_LIMIT_COUNTRY
 	rlmDomainSendPwrLimitCmd(prAdapter);
 #endif
-
-
 }
 
-
-VOID rlmDomainSendDomainInfoCmd_V2(P_ADAPTER_T prAdapter, BOOLEAN fgIsOid)
+/*----------------------------------------------------------------------------*/
+/*!
+* @brief
+*
+* @param[in]
+*
+* @return (none)
+*/
+/*----------------------------------------------------------------------------*/
+VOID rlmDomainSendDomainInfoCmd_V2(P_ADAPTER_T prAdapter)
 {
 #if (CFG_SUPPORT_SINGLE_SKU == 1)
 	u8 max_channel_count;
@@ -991,24 +989,32 @@ VOID rlmDomainSendDomainInfoCmd_V2(P_ADAPTER_T prAdapter, BOOLEAN fgIsOid)
 
 	/* Set domain info to chip */
 	wlanSendSetQueryCmd(prAdapter, /* prAdapter */
-				      CMD_ID_SET_DOMAIN_INFO, /* ucCID */
-				      TRUE,	/* fgSetQuery */
-				      FALSE, /* fgNeedResp */
-				      fgIsOid, /* fgIsOid */
-				      NULL, /* pfCmdDoneHandler */
-				      NULL, /* pfCmdTimeoutHandler */
-					  buff_valid_size,
-				      (PUINT_8) prCmd, /* pucInfoBuffer */
-				      NULL,	/* pvSetQueryBuffer */
-				      0	/* u4SetQueryBufferLen */
+			    CMD_ID_SET_DOMAIN_INFO, /* ucCID */
+			    TRUE,  /* fgSetQuery */
+			    FALSE, /* fgNeedResp */
+			    FALSE, /* fgIsOid */
+			    NULL,  /* pfCmdDoneHandler */
+			    NULL,  /* pfCmdTimeoutHandler */
+			    buff_valid_size,
+			    (PUINT_8) prCmd, /* pucInfoBuffer */
+			    NULL,  /* pvSetQueryBuffer */
+			    0      /* u4SetQueryBufferLen */
 	    );
 
 	cnmMemFree(prAdapter, prCmd);
 #endif
 }
 
-
-VOID rlmDomainSendDomainInfoCmd(P_ADAPTER_T prAdapter, BOOLEAN fgIsOid)
+/*----------------------------------------------------------------------------*/
+/*!
+* @brief
+*
+* @param[in]
+*
+* @return (none)
+*/
+/*----------------------------------------------------------------------------*/
+VOID rlmDomainSendDomainInfoCmd(P_ADAPTER_T prAdapter)
 {
 	P_DOMAIN_INFO_ENTRY prDomainInfo;
 	P_CMD_SET_DOMAIN_INFO_T prCmd;
@@ -1016,7 +1022,7 @@ VOID rlmDomainSendDomainInfoCmd(P_ADAPTER_T prAdapter, BOOLEAN fgIsOid)
 	UINT_8 i;
 
 	if (regd_is_single_sku_en())
-		return rlmDomainSendDomainInfoCmd_V2(prAdapter, fgIsOid);
+		return rlmDomainSendDomainInfoCmd_V2(prAdapter);
 
 
 	prDomainInfo = rlmDomainGetDomainInfo(prAdapter);
@@ -1051,16 +1057,16 @@ VOID rlmDomainSendDomainInfoCmd(P_ADAPTER_T prAdapter, BOOLEAN fgIsOid)
 
 	/* Set domain info to chip */
 	wlanSendSetQueryCmd(prAdapter, /* prAdapter */
-				      CMD_ID_SET_DOMAIN_INFO, /* ucCID */
-				      TRUE,	/* fgSetQuery */
-				      FALSE, /* fgNeedResp */
-				      fgIsOid, /* fgIsOid */
-				      NULL, /* pfCmdDoneHandler */
-				      NULL, /* pfCmdTimeoutHandler */
-				      sizeof(CMD_SET_DOMAIN_INFO_T), /* u4SetQueryInfoLen */
-				      (PUINT_8) prCmd, /* pucInfoBuffer */
-				      NULL,	/* pvSetQueryBuffer */
-				      0	/* u4SetQueryBufferLen */
+			    CMD_ID_SET_DOMAIN_INFO, /* ucCID */
+			    TRUE,  /* fgSetQuery */
+			    FALSE, /* fgNeedResp */
+			    FALSE, /* fgIsOid */
+			    NULL,  /* pfCmdDoneHandler */
+			    NULL,  /* pfCmdTimeoutHandler */
+			    sizeof(CMD_SET_DOMAIN_INFO_T), /* u4SetQueryInfoLen */
+			    (PUINT_8) prCmd, /* pucInfoBuffer */
+			    NULL,  /* pvSetQueryBuffer */
+			    0      /* u4SetQueryBufferLen */
 	    );
 
 	cnmMemFree(prAdapter, prCmd);
@@ -1075,11 +1081,14 @@ VOID rlmDomainSendDomainInfoCmd(P_ADAPTER_T prAdapter, BOOLEAN fgIsOid)
 * @return (none)
 */
 /*----------------------------------------------------------------------------*/
-VOID rlmDomainSendPassiveScanInfoCmd(P_ADAPTER_T prAdapter, BOOLEAN fgIsOid)
+VOID rlmDomainSendPassiveScanInfoCmd(P_ADAPTER_T prAdapter)
 {
+#define REG_DOMAIN_PASSIVE_DEF_IDX	1
+#define REG_DOMAIN_PASSIVE_GROUP_NUM \
+	(sizeof(arSupportedRegDomains_Passive) / sizeof(DOMAIN_INFO_ENTRY))
+
 	P_DOMAIN_INFO_ENTRY prDomainInfo;
 	P_CMD_SET_DOMAIN_INFO_T prCmd;
-	WLAN_STATUS rStatus;
 	P_DOMAIN_SUBBAND_INFO prSubBand;
 	UINT_16 u2TargetCountryCode;
 	UINT_8 i, j;
@@ -1130,20 +1139,18 @@ VOID rlmDomainSendPassiveScanInfoCmd(P_ADAPTER_T prAdapter, BOOLEAN fgIsOid)
 	}
 
 	/* Set passive scan channel info to chip */
-	rStatus = wlanSendSetQueryCmd(prAdapter, /* prAdapter */
-				      CMD_ID_SET_DOMAIN_INFO, /* ucCID */
-				      TRUE,	/* fgSetQuery */
-				      FALSE, /* fgNeedResp */
-				      fgIsOid, /* fgIsOid */
-				      NULL, /* pfCmdDoneHandler */
-				      NULL, /* pfCmdTimeoutHandler */
-				      sizeof(CMD_SET_DOMAIN_INFO_T), /* u4SetQueryInfoLen */
-				      (PUINT_8) prCmd, /* pucInfoBuffer */
-				      NULL,	/* pvSetQueryBuffer */
-				      0	/* u4SetQueryBufferLen */
+	wlanSendSetQueryCmd(prAdapter, /* prAdapter */
+			    CMD_ID_SET_DOMAIN_INFO, /* ucCID */
+			    TRUE,  /* fgSetQuery */
+			    FALSE, /* fgNeedResp */
+			    FALSE, /* fgIsOid */
+			    NULL,  /* pfCmdDoneHandler */
+			    NULL,  /* pfCmdTimeoutHandler */
+			    sizeof(CMD_SET_DOMAIN_INFO_T), /* u4SetQueryInfoLen */
+			    (PUINT_8) prCmd, /* pucInfoBuffer */
+			    NULL,  /* pvSetQueryBuffer */
+			    0      /* u4SetQueryBufferLen */
 	    );
-
-	ASSERT(rStatus == WLAN_STATUS_PENDING);
 
 	cnmMemFree(prAdapter, prCmd);
 }
