@@ -846,6 +846,17 @@ void halRxProcessMsduReport(IN struct ADAPTER *prAdapter,
 				prMsduReport->au4MsduToken[u4Idx].
 				rFormatV2.u2MsduID;
 
+		if (u4Token >= HIF_TX_MSDU_TOKEN_NUM) {
+			DBGLOG(HAL, ERROR, "Error MSDU report[%u]\n", u4Token);
+			DBGLOG_MEM32(HAL, ERROR, prMsduReport,
+				     sizeof(struct HW_MAC_MSDU_REPORT));
+			halDumpHifDebugLog(prAdapter->prGlueInfo, false, false);
+#if CFG_CHIP_RESET_SUPPORT
+			GL_RESET_TRIGGER(prAdapter, RST_FLAG_CHIP_RESET);
+#endif
+			return;
+		}
+
 		prTokenEntry = halGetMsduTokenEntry(prAdapter, u4Token);
 
 #if HIF_TX_PREALLOC_DATA_BUFFER
