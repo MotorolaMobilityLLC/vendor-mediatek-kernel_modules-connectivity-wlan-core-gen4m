@@ -301,7 +301,19 @@ p2pDevFsmStateTransition(IN P_ADAPTER_T prAdapter,
 {
 	BOOLEAN fgIsLeaveState = (BOOLEAN) FALSE;
 
+	ASSERT(prP2pDevFsmInfo);
+	if (!prP2pDevFsmInfo) {
+		DBGLOG(P2P, ERROR, "prP2pDevFsmInfo is NULL!\n");
+		return;
+	}
+
 	ASSERT(prP2pDevFsmInfo->ucBssIndex == prAdapter->ucP2PDevBssIdx);
+	if (prP2pDevFsmInfo->ucBssIndex != prAdapter->ucP2PDevBssIdx) {
+		DBGLOG(P2P, ERROR,
+			"prP2pDevFsmInfo->ucBssIndex %s should be prAdapter->ucP2PDevBssIdx(%d)!\n",
+			prP2pDevFsmInfo->ucBssIndex, prAdapter->ucP2PDevBssIdx);
+		return;
+	}
 
 	do {
 		if (!IS_BSS_ACTIVE(prAdapter->aprBssInfo[prP2pDevFsmInfo->ucBssIndex])) {
