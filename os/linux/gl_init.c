@@ -2523,7 +2523,7 @@ static INT_32 wlanProbe(PVOID pvData, PVOID pvDriverData)
 		wlanRegisterNotifier();
 
 		/* 4 <6> Initialize /proc filesystem */
-#ifdef WLAN_INCLUDE_PROC
+#if WLAN_INCLUDE_PROC
 		i4Status = procCreateFsEntry(prGlueInfo);
 		if (i4Status < 0) {
 			DBGLOG(INIT, ERROR, "wlanProbe: init procfs failed\n");
