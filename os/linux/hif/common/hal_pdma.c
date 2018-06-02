@@ -1193,7 +1193,7 @@ bool halWpdmaAllocRxRing(struct GLUE_INFO *prGlueInfo, uint32_t u4Num,
 		return false;
 	}
 
-	DBGLOG(HAL, INFO, "RxDescRing[%p]: total %d bytes allocated\n",
+	DBGLOG(HAL, TRACE, "RxDescRing[%p]: total %d bytes allocated\n",
 		prHifInfo->RxDescRing[u4Num].AllocVa,
 		(int32_t) prHifInfo->RxDescRing[u4Num].AllocSize);
 

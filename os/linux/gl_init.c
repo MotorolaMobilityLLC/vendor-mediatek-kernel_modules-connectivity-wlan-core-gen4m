@@ -1018,7 +1018,7 @@ struct net_device *gPrDev;
 static void wlanSetMulticastList(struct net_device *prDev)
 {
 	/* Allow to receive all multicast for WOW */
-	DBGLOG(INIT, INFO, "wlanSetMulticastList\n");
+	DBGLOG(INIT, TRACE, "wlanSetMulticastList\n");
 	prDev->flags |= (IFF_MULTICAST | IFF_ALLMULTI);
 	gPrDev = prDev;
 	schedule_delayed_work(&workq, 0);
@@ -2591,7 +2591,7 @@ static void consys_log_event_notification(int cmd, int value)
 
 	prGlueInfo = (prDev != NULL) ?
 		*((struct GLUE_INFO **) netdev_priv(prDev)) : NULL;
-	DBGLOG(INIT, INFO, "prGlueInfo=%p\n", prGlueInfo);
+	DBGLOG(INIT, TRACE, "prGlueInfo=%p\n", prGlueInfo);
 	if (!prGlueInfo) {
 		u4LogOnOffCache = value;
 		DBGLOG(INIT, INFO,
@@ -2600,7 +2600,7 @@ static void consys_log_event_notification(int cmd, int value)
 		return;
 	}
 	prAdapter = prGlueInfo->prAdapter;
-	DBGLOG(INIT, INFO, "prAdapter=%p\n", prAdapter);
+	DBGLOG(INIT, TRACE, "prAdapter=%p\n", prAdapter);
 	if (!prAdapter) {
 		u4LogOnOffCache = value;
 		DBGLOG(INIT, INFO,
@@ -2614,7 +2614,7 @@ static void consys_log_event_notification(int cmd, int value)
 		/*EvtDrvnLogEn 0/1*/
 		uint8_t onoff[1] = {'0'};
 
-		DBGLOG(INIT, INFO, "FW_LOG_CMD_ON_OFF\n");
+		DBGLOG(INIT, TRACE, "FW_LOG_CMD_ON_OFF\n");
 
 		rCmdV1Header.cmdType = CMD_TYPE_SET;
 		rCmdV1Header.cmdVersion = CMD_VER_1;

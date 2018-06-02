@@ -7636,7 +7636,7 @@ wlanoidSetCurrentPacketFilter(IN struct ADAPTER *prAdapter,
 	/* Set the new packet filter. */
 	u4NewPacketFilter = *(uint32_t *) pvSetBuffer;
 
-	DBGLOG(REQ, INFO, "New packet filter: %#08x\n", u4NewPacketFilter);
+	DBGLOG(REQ, TRACE, "New packet filter: %#08x\n", u4NewPacketFilter);
 
 	if (prAdapter->rAcpiState == ACPI_STATE_D3) {
 		DBGLOG(REQ, WARN,
