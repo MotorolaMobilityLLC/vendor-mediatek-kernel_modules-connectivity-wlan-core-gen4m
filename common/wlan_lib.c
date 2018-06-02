@@ -407,10 +407,12 @@ uint32_t wlanAdapterStart(IN struct ADAPTER *prAdapter, IN struct REG_INFO *prRe
 		/* 4 <2.2> Initialize Feature Options */
 		wlanInitFeatureOption(prAdapter);
 #if CFG_SUPPORT_MTK_SYNERGY
+#if 0 /* u2FeatureReserved is 0 on cervino */
 		if (kalIsConfigurationExist(prAdapter->prGlueInfo) == TRUE) {
 			if (prRegInfo->prNvramSettings->u2FeatureReserved & BIT(MTK_FEATURE_2G_256QAM_DISABLED))
 				prAdapter->rWifiVar.aucMtkFeature[0] &= ~(MTK_SYNERGY_CAP_SUPPORT_24G_MCS89);
 		}
+#endif
 #endif
 
 		/* 4 <2.3> Overwrite debug level settings */
@@ -3701,9 +3703,12 @@ uint32_t wlanLoadManufactureData(IN struct ADAPTER *prAdapter, IN struct REG_INF
 #if CFG_SUPPORT_RDD_TEST_MODE
 	struct CMD_RDD_CH rRddParam;
 #endif
-	struct CMD_NVRAM_SETTING rCmdNvramSettings;
+	struct CMD_NVRAM_SETTING *prCmdNvramSettings;
 
 	ASSERT(prAdapter);
+	prCmdNvramSettings = (struct CMD_NVRAM_SETTING *)kalMemAlloc(
+			      sizeof(struct CMD_NVRAM_SETTING),
+			      VIR_MEM_TYPE);
 
 	/* 1. Version Check */
 	if (prAdapter->prGlueInfo->fgNvramAvailable == TRUE) {
@@ -3711,21 +3716,25 @@ uint32_t wlanLoadManufactureData(IN struct ADAPTER *prAdapter, IN struct REG_INF
 			prRegInfo->prNvramSettings->u2Part1OwnVersion;
 		prAdapter->rVerInfo.u2Part1CfgPeerVersion =
 			prRegInfo->prNvramSettings->u2Part1PeerVersion;
-		prAdapter->rVerInfo.u2Part2CfgOwnVersion =
-			prRegInfo->prNvramSettings->u2Part2OwnVersion;
-		prAdapter->rVerInfo.u2Part2CfgPeerVersion =
-			prRegInfo->prNvramSettings->u2Part2PeerVersion;
+		prAdapter->rVerInfo.u2Part2CfgOwnVersion = 0;
+			/* prRegInfo->prNvramSettings->u2Part2OwnVersion; */
+		prAdapter->rVerInfo.u2Part2CfgPeerVersion = 0;
+			/* prRegInfo->prNvramSettings->u2Part2PeerVersion; */
 	}
 
+#if 0 /* Cervino will redefine version */
 #if (CFG_SW_NVRAM_VERSION_CHECK == 1)
 	if (prAdapter->rVerInfo.u2Part1CfgPeerVersion > CFG_DRV_OWN_VERSION
 	    || prAdapter->rVerInfo.u2Part2CfgPeerVersion > CFG_DRV_OWN_VERSION
 	    || prAdapter->rVerInfo.u2Part1CfgOwnVersion < CFG_DRV_PEER_VERSION
 	    || prAdapter->rVerInfo.u2Part2CfgOwnVersion < CFG_DRV_PEER_VERSION) {
+		log_dbg(INIT, INFO, "NVRAM version check fail\n");
 		return WLAN_STATUS_FAILURE;
 	}
 #endif
+#endif
 
+#if 0 /* Cervino removed */
 	/* MT6620 E1/E2 would be ignored directly */
 	if (prAdapter->rVerInfo.u2Part1CfgOwnVersion == 0x0001) {
 		prRegInfo->ucTxPwrValid = 1;
@@ -3737,10 +3746,13 @@ uint32_t wlanLoadManufactureData(IN struct ADAPTER *prAdapter, IN struct REG_INF
 			nicUpdateTxPower(prAdapter, (struct CMD_TX_PWR *) (&(prRegInfo->rTxPwr)));
 		}
 	}
+#endif
 
 	/* Todo : Temp Open 20150806 Sam */
+#if 0	/* Cervino read setting from nvram */
 	prRegInfo->ucEnable5GBand = 1;
 	prRegInfo->ucSupport5GBand = 1;
+#endif
 
 	/* 3. Check if needs to support 5GHz */
 	if (prRegInfo->ucEnable5GBand) {
@@ -3755,6 +3767,7 @@ uint32_t wlanLoadManufactureData(IN struct ADAPTER *prAdapter, IN struct REG_INF
 	} else
 		prAdapter->fgEnable5GBand = FALSE;
 
+#if 0 /* Cervino removed */
 	/* 4. Send EFUSE data */
 #if CFG_SUPPORT_NVRAM_5G
 	/* If NvRAM read failed, this pointer will be NULL */
@@ -3812,6 +3825,7 @@ uint32_t wlanLoadManufactureData(IN struct ADAPTER *prAdapter, IN struct REG_INF
 	prAdapter->ucRddStatus = 0;
 	nicUpdateRddTestMode(prAdapter, (struct CMD_RDD_CH *) (&rRddParam));
 #endif
+#endif /* if 0 */
 
 	/* 5. Get 16-bits Country Code and Bandwidth */
 	prAdapter->rWifiVar.rConnSettings.u2CountryCode =
@@ -3833,6 +3847,7 @@ uint32_t wlanLoadManufactureData(IN struct ADAPTER *prAdapter, IN struct REG_INF
 	wlanUpdateChannelTable(prAdapter->prGlueInfo);
 
 
+#if 0 /* Cervino removed */
 	/* 7. set band edge tx power if available */
 	if (prRegInfo->fg2G4BandEdgePwrUsed) {
 		struct CMD_EDGE_TXPWR_LIMIT rCmdEdgeTxPwrLimit;
@@ -3864,16 +3879,22 @@ uint32_t wlanLoadManufactureData(IN struct ADAPTER *prAdapter, IN struct REG_INF
 				    FALSE, FALSE, NULL, NULL, sizeof(struct CMD_TX_AC_PWR), (uint8_t *) &rCmdAcPwr, NULL, 0);
 		/* dumpMemory8(&rCmdAcPwr,9); */
 	}
-	/* 9. Send the full Parameters of NVRAM to FW */
+#endif /* if 0 */
 
-	kalMemCopy(&rCmdNvramSettings.rNvramSettings,
-		   &prRegInfo->prNvramSettings->u2Part1OwnVersion, sizeof(struct WIFI_CFG_PARAM_STRUCT));
-	ASSERT(sizeof(struct WIFI_CFG_PARAM_STRUCT) == 512);
+	/* 9. Send the full Parameters of NVRAM to FW */
+	kalMemCopy(&prCmdNvramSettings->rNvramSettings,
+			   &prRegInfo->prNvramSettings->u2Part1OwnVersion,
+			   sizeof(struct WIFI_CFG_PARAM_STRUCT));
+	ASSERT(sizeof(struct WIFI_CFG_PARAM_STRUCT) == 2048);
 	wlanSendSetQueryCmd(prAdapter,
 			    CMD_ID_SET_NVRAM_SETTINGS,
 			    TRUE,
 			    FALSE,
-			    FALSE, NULL, NULL, sizeof(rCmdNvramSettings), (uint8_t *) &rCmdNvramSettings, NULL, 0);
+			    FALSE, NULL, NULL, sizeof(*prCmdNvramSettings),
+			    (uint8_t *) prCmdNvramSettings, NULL, 0);
+
+	kalMemFree(prCmdNvramSettings, VIR_MEM_TYPE,
+			   sizeof(struct CMD_NVRAM_SETTING));
 
 	return WLAN_STATUS_SUCCESS;
 }
