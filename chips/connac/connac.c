@@ -194,7 +194,7 @@ BUS_INFO connac_bus_info = {
 #endif /* _HIF_USB */
 };
 
-struct firmware_download_operations connac_fw_dl_ops = {
+struct FWDL_OPS_T connac_fw_dl_ops = {
 	.tailer_format = CONNAC_TAILER_FORMAT,
 	.constructFirmwarePrio = connacConstructFirmwarePrio,
 	.downloadFirmware = wlanConnacFormatDownload,
