@@ -187,7 +187,7 @@ VOID rlmFsmEventUninit(P_ADAPTER_T prAdapter)
 
 	ASSERT(prAdapter);
 
-	for (i = 0; i < BSS_INFO_NUM; i++) {
+	for (i = 0; i < prAdapter->ucHwBssIdNum; i++) {
 		prBssInfo = prAdapter->aprBssInfo[i];
 
 		/* Note: all RLM timers will also be stopped.
@@ -2559,7 +2559,7 @@ VOID rlmProcessBcn(P_ADAPTER_T prAdapter, P_SW_RFB_T prSwRfb, PUINT_8 pucIE, UIN
 	 * Note2: If we are GO, concurrent AIS AP should detect it and reflect
 	 *        action in its Beacon, so AIS STA just follows Beacon from AP.
 	 */
-	for (i = 0; i < BSS_INFO_NUM; i++) {
+	for (i = 0; i < prAdapter->ucHwBssIdNum; i++) {
 		prBssInfo = prAdapter->aprBssInfo[i];
 
 		if (IS_BSS_BOW(prBssInfo))
@@ -2935,7 +2935,7 @@ VOID rlmProcessAssocReq(P_ADAPTER_T prAdapter, P_SW_RFB_T prSwRfb, PUINT_8 pucIE
 	prStaRec = cnmGetStaRecByIndex(prAdapter, prSwRfb->ucStaRecIdx);
 	if (!prStaRec)
 		return;
-	ASSERT(prStaRec->ucBssIndex <= MAX_BSS_INDEX);
+	ASSERT(prStaRec->ucBssIndex <= prAdapter->ucHwBssIdNum);
 
 	prBssInfo = prAdapter->aprBssInfo[prStaRec->ucBssIndex];
 
@@ -3572,7 +3572,7 @@ VOID rlmProcessSpecMgtAction(P_ADAPTER_T prAdapter, P_SW_RFB_T prSwRfb)
 	if (!prStaRec)
 		return;
 
-	if (prStaRec->ucBssIndex > MAX_BSS_INDEX)
+	if (prStaRec->ucBssIndex > prAdapter->ucHwBssIdNum)
 		return;
 
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prStaRec->ucBssIndex);
@@ -3906,10 +3906,12 @@ BOOLEAN rlmChangeOperationMode(P_ADAPTER_T prAdapter, UINT_8 ucBssIndex, UINT_8 
 	/*BOOLEAN fgIsSuccess = FALSE;*/
 	BOOLEAN fgIsChangeVhtBw = TRUE, fgIsChangeHtBw = TRUE;
 
+	ASSERT(prAdapter);
+
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
 
 	/* No need to change BSS 4 rlm parameter */
-	if (ucBssIndex >= HW_BSSID_NUM)
+	if (ucBssIndex >= prAdapter->ucHwBssIdNum)
 		return FALSE;
 
 	if (!prBssInfo)

@@ -668,7 +668,7 @@ VOID cnmStaFreeAllStaByNetwork(P_ADAPTER_T prAdapter, UINT_8 ucBssIndex, UINT_8 
 	P_STA_RECORD_T prStaRec;
 	UINT_16 i;
 
-	if (ucBssIndex > MAX_BSS_INDEX)
+	if (ucBssIndex > prAdapter->ucHwBssIdNum)
 		return;
 
 	for (i = 0; i < CFG_STA_REC_NUM; i++) {

@@ -130,7 +130,7 @@ typedef struct _WLAN_INFO_T {
 	PARAM_RATES eDesiredRates;
 	CMD_LINK_ATTRIB eLinkAttr;
 /* CMD_PS_PROFILE_T         ePowerSaveMode; */
-	CMD_PS_PROFILE_T arPowerSaveMode[BSS_INFO_NUM];
+	CMD_PS_PROFILE_T arPowerSaveMode[MAX_BSSID_NUM];
 
 	/* trigger parameter */
 	ENUM_RSSI_TRIGGER_TYPE eRssiTriggerType;
@@ -581,9 +581,9 @@ typedef struct _WIFI_VAR_T {
 
 	AIS_FSM_INFO_T rAisFsmInfo;
 
-	ENUM_PWR_STATE_T aePwrState[BSS_INFO_NUM];
+	ENUM_PWR_STATE_T aePwrState[MAX_BSSID_NUM];
 
-	BSS_INFO_T arBssInfoPool[BSS_INFO_NUM];
+	BSS_INFO_T arBssInfoPool[MAX_BSSID_NUM];
 
 	P2P_DEV_INFO_T rP2pDevInfo;
 
@@ -907,15 +907,17 @@ struct _ADAPTER_T {
 	UINT_32 u4OsPacketFilter;	/* packet filter used by OS */
 	BOOLEAN fgAllMulicastFilter;	/* mDNS filter used by OS */
 
-	P_BSS_INFO_T aprBssInfo[HW_BSSID_NUM + 1];
+	P_BSS_INFO_T aprBssInfo[MAX_BSSID_NUM + 1];
 	P_BSS_INFO_T prAisBssInfo;
+	UINT_8 ucHwBssIdNum;
+	UINT_8 ucP2PDevBssIdx;
 
 #if CFG_TCP_IP_CHKSUM_OFFLOAD
 	BOOLEAN fgIsSupportCsumOffload; /* Does FW support Checksum Offload feature */
 	UINT_32 u4CSUMFlags;
 #endif				/* CFG_TCP_IP_CHKSUM_OFFLOAD */
 
-	ENUM_BAND_T aePreferBand[BSS_INFO_NUM];
+	ENUM_BAND_T aePreferBand[MAX_BSSID_NUM];
 
 	/* ADAPTER flags */
 	UINT_32 u4Flags;
