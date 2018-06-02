@@ -1461,6 +1461,9 @@ void aisFsmSteps(IN struct ADAPTER *prAdapter, enum ENUM_AIS_STATE eNextState)
 			prScanReqMsg->u2ChannelDwellTime = 0;
 			prScanReqMsg->u2ChannelMinDwellTime = 0;
 			prScanReqMsg->u2TimeoutValue = 0;
+			kalMemCopy(prScanReqMsg->aucRandomMac,
+				prAisFsmInfo->aucRandomMac, MAC_ADDR_LEN);
+			kalMemZero(prAisFsmInfo->aucRandomMac, MAC_ADDR_LEN);
 
 			/* check if tethering is running and need to fix on specific channel */
 			if (cnmAisInfraChannelFixed(prAdapter, &eBand, &ucChannel) == TRUE) {
@@ -2055,7 +2058,8 @@ void aisFsmRunEventScanDone(IN struct ADAPTER *prAdapter, IN struct MSG_HDR *prM
 				     prParam->arSSID, prParam->eScanType,
 				     prParam->aucScanIEBuf, prParam->u4IELen,
 				     prParam->u4ScanChannelNum,
-				     &prParam->arChannel[0]);
+				     &prParam->arChannel[0],
+				     prParam->aucRandomMac);
 	/* Radio Measurement is on-going, schedule to next Measurement
 	** Element
 	*/
@@ -3944,7 +3948,8 @@ aisFsmScanRequestAdv(IN struct ADAPTER *prAdapter, IN uint8_t ucSsidNum,
 		IN struct PARAM_SSID *prSsid,
 		IN enum ENUM_SCAN_TYPE eScanType,
 		IN uint8_t *pucIe, IN uint32_t u4IeLength,
-		IN uint8_t u4ChannelNum, IN struct RF_CHANNEL_INFO *prChannel)
+		IN uint8_t u4ChannelNum, IN struct RF_CHANNEL_INFO *prChannel,
+		IN uint8_t *pucRandomMac)
 {
 	uint32_t i;
 	struct CONNECTION_SETTINGS *prConnSettings;
@@ -3985,6 +3990,8 @@ aisFsmScanRequestAdv(IN struct ADAPTER *prAdapter, IN uint8_t ucSsidNum,
 		prAisFsmInfo->u4ScanChannelNum = u4ChannelNum;
 		kalMemCopy(&prAisFsmInfo->arChannel[0], prChannel,
 			sizeof(struct RF_CHANNEL_INFO) * u4ChannelNum);
+		kalMemCopy(prAisFsmInfo->aucRandomMac, pucRandomMac,
+			MAC_ADDR_LEN);
 
 		if (u4IeLength > 0 && u4IeLength <= MAX_IE_LENGTH) {
 			prAisFsmInfo->u4ScanIELength = u4IeLength;
@@ -4047,6 +4054,8 @@ aisFsmScanRequestAdv(IN struct ADAPTER *prAdapter, IN uint8_t ucSsidNum,
 		prNormalScan->u4ScanChannelNum = u4ChannelNum;
 		kalMemCopy(&prNormalScan->arChannel[0], prChannel,
 			sizeof(struct RF_CHANNEL_INFO) * u4ChannelNum);
+		kalMemCopy(prNormalScan->aucRandomMac, pucRandomMac,
+			MAC_ADDR_LEN);
 
 		cnmTimerStopTimer(prAdapter, &prAisFsmInfo->rScanDoneTimer);
 		DBGLOG(AIS, INFO,

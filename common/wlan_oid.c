@@ -791,9 +791,10 @@ wlanoidSetBssidListScanAdv(IN struct ADAPTER *prAdapter,
 			if (kalGetMediaStateIndicated(prAdapter->prGlueInfo)
 					!= PARAM_MEDIA_STATE_CONNECTED) {
 				aisFsmScanRequestAdv(prAdapter, ucSsidNum,
-				rSsid, eScanType, pucIe, u4IeLength,
-				prScanRequest->u4ChannelNum,
-				&prScanRequest->arChannel[0]);
+					rSsid, eScanType, pucIe, u4IeLength,
+					prScanRequest->u4ChannelNum,
+					&prScanRequest->arChannel[0],
+					prScanRequest->aucRandomMac);
 			} else
 				return WLAN_STATUS_FAILURE;
 		} else
@@ -803,15 +804,17 @@ wlanoidSetBssidListScanAdv(IN struct ADAPTER *prAdapter,
 	{
 		if (prAdapter->fgEnOnlineScan == TRUE) {
 			aisFsmScanRequestAdv(prAdapter, ucSsidNum, rSsid,
-						eScanType, pucIe, u4IeLength,
-						prScanRequest->u4ChannelNum,
-						&prScanRequest->arChannel[0]);
+					eScanType, pucIe, u4IeLength,
+					prScanRequest->u4ChannelNum,
+					&prScanRequest->arChannel[0],
+					prScanRequest->aucRandomMac);
 		} else if (kalGetMediaStateIndicated(prAdapter->prGlueInfo)
 				!= PARAM_MEDIA_STATE_CONNECTED) {
 			aisFsmScanRequestAdv(prAdapter, ucSsidNum, rSsid,
-						eScanType, pucIe, u4IeLength,
-						prScanRequest->u4ChannelNum,
-						&prScanRequest->arChannel[0]);
+					eScanType, pucIe, u4IeLength,
+					prScanRequest->u4ChannelNum,
+					&prScanRequest->arChannel[0],
+					prScanRequest->aucRandomMac);
 		} else
 			return WLAN_STATUS_FAILURE;
 	}
@@ -10808,6 +10811,23 @@ wlanoidSetCountryCode(IN struct ADAPTER *prAdapter,
 
 	/* Update supported channel list in channel table based on current country domain */
 	wlanUpdateChannelTable(prAdapter->prGlueInfo);
+
+	return WLAN_STATUS_SUCCESS;
+}
+
+uint32_t
+wlanoidSetScanMacOui(IN struct ADAPTER *prAdapter,
+		IN void *pvSetBuffer, IN uint32_t u4SetBufferLen,
+		OUT uint32_t *pu4SetInfoLen)
+{
+	ASSERT(prAdapter);
+	ASSERT(prAdapter->prGlueInfo);
+	ASSERT(pvSetBuffer);
+	ASSERT(u4SetBufferLen == MAC_OUI_LEN);
+
+	kalMemCopy(prAdapter->prGlueInfo->ucScanOui, pvSetBuffer, MAC_OUI_LEN);
+	prAdapter->prGlueInfo->fgIsScanOuiSet = TRUE;
+	*pu4SetInfoLen = MAC_OUI_LEN;
 
 	return WLAN_STATUS_SUCCESS;
 }

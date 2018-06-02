@@ -290,6 +290,7 @@ struct NORMAL_SCAN_PARAMS {
 	uint32_t u4ScanChannelNum;
 	struct RF_CHANNEL_INFO
 		arChannel[MAXIMUM_OPERATION_CHANNEL_LIST];
+	uint8_t aucRandomMac[MAC_ADDR_LEN];
 	u_int8_t fgExist;
 };
 
