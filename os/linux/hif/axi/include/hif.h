@@ -50,10 +50,10 @@
  *
  *****************************************************************************/
 /*! \file   "hif.h"
-*    \brief  Functions for the driver to register bus and setup the IRQ
-*
-*    Functions for the driver to register bus and setup the IRQ
-*/
+ *  \brief  Functions for the driver to register bus and setup the IRQ
+ *
+ *  Functions for the driver to register bus and setup the IRQ
+ */
 
 #ifndef _HIF_H
 #define _HIF_H
@@ -68,23 +68,24 @@
 #endif
 
 /*******************************************************************************
-*                         C O M P I L E R   F L A G S
-********************************************************************************
-*/
+ *                         C O M P I L E R   F L A G S
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                    E X T E R N A L   R E F E R E N C E S
-********************************************************************************
-*/
+ *                    E X T E R N A L   R E F E R E N C E S
+ *******************************************************************************
+ */
 #if CFG_MTK_ANDROID_WMT
 struct MTK_WCN_WMT_WLAN_CB_INFO;
-extern int mtk_wcn_wmt_wlan_reg(struct MTK_WCN_WMT_WLAN_CB_INFO *pWmtWlanCbInfo);
+extern int mtk_wcn_wmt_wlan_reg(
+	struct MTK_WCN_WMT_WLAN_CB_INFO *pWmtWlanCbInfo);
 #endif
 
 /*******************************************************************************
-*                              C O N S T A N T S
-********************************************************************************
-*/
+ *                              C O N S T A N T S
+ *******************************************************************************
+ */
 #define AXI_CFG_PREALLOC_MEMORY_BUFFER    1
 
 #define AXI_TX_MAX_SIZE_PER_FRAME         (NIC_TX_MAX_SIZE_PER_FRAME +      \
@@ -93,12 +94,12 @@ extern int mtk_wcn_wmt_wlan_reg(struct MTK_WCN_WMT_WLAN_CB_INFO *pWmtWlanCbInfo)
 #define AXI_WLAN_IRQ_NUMBER               16
 
 /*******************************************************************************
-*                             D A T A   T Y P E S
-********************************************************************************
-*/
+ *                             D A T A   T Y P E S
+ *******************************************************************************
+ */
 
 /* host interface's private data structure, which is attached to os glue
-** layer info structure.
+ ** layer info structure.
  */
 struct GL_HIF_INFO {
 	struct platform_device *pdev;
@@ -106,16 +107,19 @@ struct GL_HIF_INFO {
 	uint32_t u4IrqId;
 	int32_t u4HifCnt;
 
-	uint8_t *CSRBaseAddress;	/* AXI MMIO Base Address, all access will use */
+	/* AXI MMIO Base Address, all access will use */
+	uint8_t *CSRBaseAddress;
 
 	/* Shared memory of all 1st pre-allocated
 	 * TxBuf associated with each TXD
 	 */
-	struct RTMP_DMABUF TxDescRing[NUM_OF_TX_RING];	/* Shared memory for Tx descriptors */
+	/* Shared memory for Tx descriptors */
+	struct RTMP_DMABUF TxDescRing[NUM_OF_TX_RING];
 	struct RTMP_TX_RING TxRing[NUM_OF_TX_RING];	/* AC0~3 + HCCA */
 	spinlock_t TxRingLock[NUM_OF_TX_RING];	/* Rx Ring spinlock */
 
-	struct RTMP_DMABUF RxDescRing[NUM_OF_RX_RING];	/* Shared memory for RX descriptors */
+	/* Shared memory for RX descriptors */
+	struct RTMP_DMABUF RxDescRing[NUM_OF_RX_RING];
 	struct RTMP_RX_RING RxRing[NUM_OF_RX_RING];
 	spinlock_t RxRingLock[NUM_OF_RX_RING];	/* Rx Ring spinlock */
 
@@ -162,7 +166,8 @@ struct BUS_INFO {
 	void (*enableInterrupt)(struct ADAPTER *prAdapter);
 	void (*lowPowerOwnRead)(struct ADAPTER *prAdapter, u_int8_t *pfgResult);
 	void (*lowPowerOwnSet)(struct ADAPTER *prAdapter, u_int8_t *pfgResult);
-	void (*lowPowerOwnClear)(struct ADAPTER *prAdapter, u_int8_t *pfgResult);
+	void (*lowPowerOwnClear)(struct ADAPTER *prAdapter,
+		u_int8_t *pfgResult);
 	void (*getMailboxStatus)(struct ADAPTER *prAdapter, uint32_t *pu4Val);
 	void (*setDummyReg)(struct GLUE_INFO *prGlueInfo);
 	void (*checkDummyReg)(struct GLUE_INFO *prGlueInfo);
@@ -178,19 +183,19 @@ struct MTK_WCN_WMT_WLAN_CB_INFO {
 #endif
 
 /*******************************************************************************
-*                            P U B L I C   D A T A
-********************************************************************************
-*/
+ *                            P U B L I C   D A T A
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                           P R I V A T E   D A T A
-********************************************************************************
-*/
+ *                           P R I V A T E   D A T A
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                                 M A C R O S
-********************************************************************************
-*/
+ *                                 M A C R O S
+ *******************************************************************************
+ */
 
 #define axi_enable_device(d)      (0)
 #define axi_disable_device(d)
@@ -199,9 +204,9 @@ struct MTK_WCN_WMT_WLAN_CB_INFO {
 #define axi_name(d)               ("AXI-BUS")
 
 /*******************************************************************************
-*                   F U N C T I O N   D E C L A R A T I O N S
-********************************************************************************
-*/
+ *                   F U N C T I O N   D E C L A R A T I O N S
+ *******************************************************************************
+ */
 
 uint32_t glRegisterBus(probe_card pfProbe, remove_card pfRemove);
 
@@ -226,7 +231,7 @@ void glGetDev(void *ctx, struct device **dev);
 void glGetHifDev(struct GL_HIF_INFO *prHif, struct device **dev);
 
 /*******************************************************************************
-*                              F U N C T I O N S
-********************************************************************************
-*/
+ *                              F U N C T I O N S
+ *******************************************************************************
+ */
 #endif /* _HIF_H */

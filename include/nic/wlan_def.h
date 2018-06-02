@@ -1,5 +1,5 @@
 /******************************************************************************
- *
+*
  * This file is provided under a dual license.  When you use or
  * distribute this software, you may choose to be licensed under
  * version 2 of the GNU General Public License ("GPLv2 License")
