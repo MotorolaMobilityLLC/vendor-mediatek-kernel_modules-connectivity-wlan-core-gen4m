@@ -3467,7 +3467,6 @@ static int32_t HQA_DoCalibrationTestItem(struct net_device *prNetDev,
 	kalMemSet((void *)&prAdapter->rReCalInfo,
 			  0,
 			  sizeof(struct RECAL_INFO_T));
-	DBGLOG(RFTEST, INFO, "%08x", prAdapter->rReCalInfo.prCalArray);
 	i4Status = kalIoctl(prGlueInfo,	/* prGlueInfo */
 			    wlanoidRftestSetAutoTest,	/* pfnOidHandler */
 			    &rRfATInfo,	/* pvInfoBuf */

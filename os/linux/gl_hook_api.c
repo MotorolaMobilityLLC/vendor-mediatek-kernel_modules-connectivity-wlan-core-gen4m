@@ -1559,7 +1559,7 @@ int32_t MT_ATEGetDumpRXV(struct net_device *prNetDev,
 			u4RespLen += sizeof(u4Value);
 		} else {
 			DBGLOG(RFTEST, ERROR,
-				"Error getting index[%d]'s RXV dump data!!\n");
+			      "Error getting index[%d]'s RXV dump data!!\n", i);
 			return -EFAULT;
 		}
 	}

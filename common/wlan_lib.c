@@ -7520,8 +7520,7 @@ wlanGetStaAddrByWlanIdx(IN struct ADAPTER *prAdapter, IN uint8_t ucIndex)
 {
 	struct WLAN_TABLE *prWtbl;
 
-	if (!prAdapter)
-		ASSERT(FALSE);
+	ASSERT(prAdapter);
 	prWtbl = prAdapter->rWifiVar.arWtbl;
 	if (ucIndex < WTBL_SIZE) {
 		if (prWtbl[ucIndex].ucUsed && prWtbl[ucIndex].ucPairwise)
@@ -7584,9 +7583,7 @@ wlanGetStaIdxByWlanIdx(IN struct ADAPTER *prAdapter, IN uint8_t ucIndex, OUT uin
 {
 	struct WLAN_TABLE *prWtbl;
 
-	if (!prAdapter)
-		ASSERT(FALSE);
-
+	ASSERT(prAdapter);
 	prWtbl = prAdapter->rWifiVar.arWtbl;
 
 	if (ucIndex < WTBL_SIZE) {

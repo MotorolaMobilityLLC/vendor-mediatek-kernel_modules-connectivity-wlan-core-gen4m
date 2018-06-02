@@ -1120,7 +1120,7 @@ kalIndicateStatusAndComplete(IN struct GLUE_INFO *prGlueInfo, IN uint32_t eStatu
 				prBssDesc = ((struct AIS_FSM_INFO *)
 					     (&(prGlueInfo->prAdapter->rWifiVar.rAisFsmInfo)))->prTargetBssDesc;
 
-				if (prBssDesc != NULL) {
+				if (prBssDesc != NULL && prChannel != NULL) {
 #if KERNEL_VERSION(3, 18, 0) <= CFG80211_VERSION_CODE
 					bss = cfg80211_inform_bss(priv_to_wiphy(prGlueInfo),
 								prChannel,
@@ -1213,7 +1213,7 @@ kalIndicateStatusAndComplete(IN struct GLUE_INFO *prGlueInfo, IN uint32_t eStatu
 		}
 
 		if (prGlueInfo->fgIsRegistered == TRUE) {
-			struct BSS_INFO *prBssInfo = prGlueInfo->prAdapter->prAisBssInfo;
+			struct BSS_INFO *prBssInfo = prAdapter->prAisBssInfo;
 			uint16_t u2DeauthReason = 0;
 #if CFG_WPS_DISCONNECT || (KERNEL_VERSION(4, 4, 0) <= CFG80211_VERSION_CODE)
 
