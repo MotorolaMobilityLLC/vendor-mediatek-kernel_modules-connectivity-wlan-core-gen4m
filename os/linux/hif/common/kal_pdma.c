@@ -741,6 +741,7 @@ static void kalDumpRxD(struct GLUE_INFO *prGlueInfo,
 	struct RTMP_DMACB *pRxCell;
 	struct RXD_STRUCT *pRxD;
 	struct RTMP_DMABUF *prDmaBuf;
+	uint32_t u4DumpLen = 64;
 
 	ASSERT(prGlueInfo);
 	prHifInfo = &prGlueInfo->rHifInfo;
@@ -757,8 +758,10 @@ static void kalDumpRxD(struct GLUE_INFO *prGlueInfo,
 			     prDmaBuf->AllocSize, KAL_DMA_FROM_DEVICE);
 
 	DBGLOG(HAL, INFO, "Rx Event\n");
+	if (u4DumpLen > pRxD->SDLen0)
+		u4DumpLen = pRxD->SDLen0;
 	DBGLOG_MEM32(HAL, INFO, ((struct sk_buff *)pRxCell->pPacket)->data,
-		     pRxD->SDLen0);
+		     u4DumpLen);
 	DBGLOG(HAL, INFO, "\n\n");
 
 	prDmaBuf->AllocVa = ((struct sk_buff *)pRxCell->pPacket)->data;
