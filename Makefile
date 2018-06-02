@@ -173,6 +173,7 @@ ccflags-y += -I$(src)/include -I$(src)/include/nic -I$(src)/include/mgmt -I$(src
 ccflags-y += -I$(KERNEL_DIR)/drivers/misc/mediatek/base/power/include/
 #ccflags-y += -I$(KERNEL_DIR)/drivers/misc/mediatek/base/power/spm/$(MTK_PLATFORM)/
 ccflags-y += -I$(KERNEL_DIR)/drivers/misc/mediatek/include/mt-plat/
+ccflags-y += -I$(KERNEL_DIR)/drivers/misc/mediatek/performance/include/
 ccflags-y += -I$(KERNEL_DIR)/drivers/misc/mediatek/emi/$(MTK_PLATFORM)
 ccflags-y += -I$(KERNEL_DIR)/drivers/misc/mediatek/emi/submodule
 ccflags-y += -I$(KERNEL_DIR)/drivers/devfreq/
