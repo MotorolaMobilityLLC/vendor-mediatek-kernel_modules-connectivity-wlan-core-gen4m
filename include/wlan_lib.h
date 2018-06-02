@@ -200,7 +200,6 @@
 #define ED_STRING_SITE		0
 #define ED_VALUE_SITE		1
 
-
 #else
 #define ED_ITEMTYPE_SITE	0
 #define ED_STRING_SITE		1
@@ -215,12 +214,10 @@
 #define ACS_DIRTINESS_LEVEL_LOW		32
 #endif
 
-
 enum CMD_VER {
 	CMD_VER_1,	/* Type[2]+String[32]+Value[32] */
-	CMD_VER_2	/* for furtur define. */
+	CMD_VER_1_EXT
 };
-
 
 #if 0
 enum ENUM_AIS_REQUEST_TYPE {
@@ -236,7 +233,6 @@ enum CMD_TYPE {
 	CMD_TYPE_QUERY,
 	CMD_TYPE_SET
 };
-
 
 #define ITEM_TYPE_DEC	1
 #define ITEM_TYPE_HEX	2
@@ -1474,3 +1470,8 @@ uint8_t wlanGetSupportNss(IN struct ADAPTER *prAdapter, IN uint8_t ucBssIndex);
 #if CFG_SUPPORT_LOWLATENCY_MODE
 uint32_t wlanAdapterStartForLowLatency(IN struct ADAPTER *prAdapter);
 #endif /* CFG_SUPPORT_LOWLATENCY_MODE */
+
+#if CFG_SUPPORT_EASY_DEBUG
+uint32_t wlanFwCfgParse(IN struct ADAPTER *prAdapter, uint8_t *pucConfigBuf);
+#endif /* CFG_SUPPORT_EASY_DEBUG */
+

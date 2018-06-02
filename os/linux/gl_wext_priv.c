@@ -2813,6 +2813,10 @@ reqExtSetAcpiDevicePowerState(IN struct GLUE_INFO
 #define CMD_DBG_SHOW_CSR_INFO			"show-csr"
 #define CMD_DBG_SHOW_DMASCH_INFO		"show-dmasch"
 
+#if CFG_SUPPORT_EASY_DEBUG
+#define CMD_FW_PARAM				"set_fw_param"
+#endif /* CFG_SUPPORT_EASY_DEBUG */
+
 static uint8_t g_ucMiracastMode = MIRACAST_MODE_OFF;
 
 struct cmd_tlv {
@@ -11550,6 +11554,7 @@ int32_t priv_driver_cmds(IN struct net_device *prNetDev, IN int8_t *pcCommand,
 
 	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
 		return -1;
+
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 
 	if (i4CmdFound == 0) {
@@ -12017,6 +12022,14 @@ int32_t priv_driver_cmds(IN struct net_device *prNetDev, IN int8_t *pcCommand,
 				 wlanoidShowDmaschInfo,
 				 (void *) pcCommand, i4TotalLen,
 				 FALSE, FALSE, TRUE, &i4BytesWritten);
+#if CFG_SUPPORT_EASY_DEBUG
+		} else if (strnicmp(pcCommand, CMD_FW_PARAM,
+				strlen(CMD_FW_PARAM)) == 0) {
+			kalIoctl(prGlueInfo, wlanoidSetFwParam,
+				 (void *)(pcCommand + 13),
+				 i4TotalLen - 13, FALSE, FALSE, FALSE,
+				 &i4BytesWritten);
+#endif /* CFG_SUPPORT_EASY_DEBUG */
 		} else
 			i4CmdFound = 0;
 	}
@@ -13451,6 +13464,7 @@ int priv_driver_set_ncho_band(IN struct net_device *prNetDev,
 	}
 	return i4Ret;
 }
+
 int priv_driver_get_ncho_band(IN struct net_device *prNetDev,
 			      IN char *pcCommand, IN int i4TotalLen)
 {
@@ -13534,6 +13548,7 @@ int priv_driver_set_ncho_dfs_scn_mode(IN struct net_device *prNetDev,
 	}
 	return i4Ret;
 }
+
 int
 priv_driver_get_ncho_dfs_scn_mode(IN struct net_device *prNetDev,
 				  IN char *pcCommand, IN int i4TotalLen)
@@ -13694,6 +13709,7 @@ priv_driver_disable_ncho(IN struct net_device *prNetDev, IN char *pcCommand,
 
 	return i4BytesWritten;
 }
+
 /*Check NCHO is enable or not.*/
 u_int8_t
 priv_driver_auto_enable_ncho(IN struct net_device *prNetDev)
