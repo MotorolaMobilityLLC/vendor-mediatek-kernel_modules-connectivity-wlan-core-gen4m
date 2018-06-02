@@ -227,7 +227,7 @@ VOID nicTxInitialize(IN P_ADAPTER_T prAdapter)
 	/* enable/disable TX resource control */
 	prTxCtrl->fgIsTxResourceCtrl = NIC_TX_RESOURCE_CTRL;
 
-	qmInit(prAdapter);
+	qmInit(prAdapter, halIsTxResourceControlEn(prAdapter));
 
 	TX_RESET_ALL_CNTS(prTxCtrl);
 
