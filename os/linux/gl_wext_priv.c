@@ -2293,6 +2293,11 @@ reqExtSetAcpiDevicePowerState(IN P_GLUE_INFO_T prGlueInfo,
 #define CMD_GET_STA_STAT        "STAT"
 #define CMD_GET_STA_STAT2       "STAT2"
 #define CMD_GET_STA_RX_STAT		"RX_STAT"
+#define CMD_SET_ACL_POLICY      "SET_ACL_POLICY"
+#define CMD_ADD_ACL_ENTRY       "ADD_ACL_ENTRY"
+#define CMD_DEL_ACL_ENTRY       "DEL_ACL_ENTRY"
+#define CMD_SHOW_ACL_ENTRY      "SHOW_ACL_ENTRY"
+#define CMD_CLEAR_ACL_ENTRY     "CLEAR_ACL_ENTRY"
 
 #if CFG_WOW_SUPPORT
 #define CMD_SET_WOW_ENABLE		"SET_WOW_ENABLE"
@@ -5154,6 +5159,368 @@ static int priv_driver_show_rx_stat(IN struct net_device *prNetDev, IN char *pcC
 	return i4BytesWritten;
 }
 
+/*----------------------------------------------------------------------------*/
+/*
+* @ The function will set policy of ACL.
+*  0: disable ACL
+*  1: enable accept list
+*  2: enable deny list
+* example: iwpriv p2p0 driver "set_acl_policy 1"
+*/
+/*----------------------------------------------------------------------------*/
+static int priv_driver_set_acl_policy(IN struct net_device *prNetDev, IN char *pcCommand, IN int i4TotalLen)
+{
+	P_GLUE_INFO_T prGlueInfo = NULL;
+	P_ADAPTER_T prAdapter = NULL;
+	P_BSS_INFO_T prBssInfo = NULL;
+	PCHAR apcArgv[WLAN_CFG_ARGV_MAX];
+	INT_32 i4Argc = 0, i4BytesWritten = 0, i4Ret = 0, i4Policy = 0;
+	UINT_8 ucRoleIdx = 0, ucBssIdx = 0;
+
+	ASSERT(prNetDev);
+	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
+		return -1;
+	prGlueInfo = *((P_GLUE_INFO_T *) netdev_priv(prNetDev));
+	prAdapter = prGlueInfo->prAdapter;
+
+	/* get Bss Index from ndev */
+	if (mtk_Netdev_To_RoleIdx(prGlueInfo, prNetDev, &ucRoleIdx) != 0)
+		return -1;
+	if (p2pFuncRoleToBssIdx(prGlueInfo->prAdapter, ucRoleIdx, &ucBssIdx) !=
+		WLAN_STATUS_SUCCESS)
+		return -1;
+
+	prBssInfo = prAdapter->aprBssInfo[ucBssIdx];
+
+	DBGLOG(REQ, LOUD, "ucRoleIdx %hhu ucBssIdx %hhu\n", ucRoleIdx, ucBssIdx);
+	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+	DBGLOG(REQ, LOUD, "argc is %i\n", i4Argc);
+
+	if (i4Argc < 2)
+		return -1;
+
+	i4Ret = kalkStrtou32(apcArgv[1], 0, &i4Policy);
+	if (i4Ret) {
+		DBGLOG(REQ, ERROR, "integer format error i4Ret=%d\n", i4Ret);
+		return -1;
+	}
+
+	switch (i4Policy) {
+	case PARAM_CUSTOM_ACL_POLICY_DISABLE:
+	case PARAM_CUSTOM_ACL_POLICY_ACCEPT:
+	case PARAM_CUSTOM_ACL_POLICY_DENY:
+		prBssInfo->rACL.ePolicy = i4Policy;
+		break;
+	default: /*Invalid argument */
+		DBGLOG(REQ, ERROR, "Invalid ACL Policy=%d\n", i4Policy);
+		return -1;
+	}
+
+	DBGLOG(REQ, TRACE, "ucBssIdx[%hhu] ACL Policy=%d\n", ucBssIdx, prBssInfo->rACL.ePolicy);
+
+	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+		"ucBssIdx[%hhu] ACL Policy=%d\n", ucBssIdx, prBssInfo->rACL.ePolicy);
+
+	/* check if the change in ACL affects any existent association */
+	p2pRoleUpdateACLEntry(prAdapter, ucBssIdx);
+
+	DBGLOG(REQ, INFO, "%s: command result is %s\n", __func__, pcCommand);
+
+	return i4BytesWritten;
+} /* priv_driver_set_acl_policy */
+
+static INT_32 priv_driver_inspect_mac_addr(IN char *pcMacAddr)
+{
+	INT_32 i = 0;
+
+	if (pcMacAddr == NULL)
+		return -1;
+
+	for (i = 0; i < 17; i++) {
+		if ((i % 3 != 2) && (!kalIsXdigit(pcMacAddr[i]))) {
+			DBGLOG(REQ, ERROR, "[%c] is not hex digit\n", pcMacAddr[i]);
+			return -1;
+		}
+		if ((i % 3 == 2) && (pcMacAddr[i] != ':')) {
+			DBGLOG(REQ, ERROR, "[%c]separate symbol is error\n", pcMacAddr[i]);
+			return -1;
+		}
+	}
+
+	if (pcMacAddr[17] != '\0') {
+		DBGLOG(REQ, ERROR, "no null-terminated character\n");
+		return -1;
+	}
+
+	return 0;
+}
+
+/*----------------------------------------------------------------------------*/
+/*
+* @ The function will add entry to ACL for accept or deny list.
+*  example: iwpriv p2p0 driver "add_acl_entry 01:02:03:04:05:06"
+*/
+/*----------------------------------------------------------------------------*/
+static int priv_driver_add_acl_entry(IN struct net_device *prNetDev, IN char *pcCommand, IN int i4TotalLen)
+{
+	P_GLUE_INFO_T prGlueInfo = NULL;
+	P_ADAPTER_T prAdapter = NULL;
+	P_BSS_INFO_T prBssInfo = NULL;
+	PCHAR apcArgv[WLAN_CFG_ARGV_MAX];
+	UINT_8 aucMacAddr[MAC_ADDR_LEN] = {0};
+	INT_32 i = 0, i4Argc = 0, i4BytesWritten = 0, i4Ret = 0;
+	UINT_8 ucRoleIdx = 0, ucBssIdx = 0;
+
+	ASSERT(prNetDev);
+	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
+		return -1;
+	prGlueInfo = *((P_GLUE_INFO_T *) netdev_priv(prNetDev));
+	prAdapter = prGlueInfo->prAdapter;
+
+	/* get Bss Index from ndev */
+	if (mtk_Netdev_To_RoleIdx(prGlueInfo, prNetDev, &ucRoleIdx) != 0)
+		return -1;
+	if (p2pFuncRoleToBssIdx(prGlueInfo->prAdapter, ucRoleIdx, &ucBssIdx) !=
+		WLAN_STATUS_SUCCESS)
+		return -1;
+
+	prBssInfo = prAdapter->aprBssInfo[ucBssIdx];
+
+	DBGLOG(REQ, LOUD, "ucRoleIdx %hhu ucBssIdx %hhu\n", ucRoleIdx, ucBssIdx);
+	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+	DBGLOG(REQ, LOUD, "argc is %i\n", i4Argc);
+
+	if (i4Argc < 2)
+		return -1;
+
+	i4Ret = priv_driver_inspect_mac_addr(apcArgv[1]);
+	if (i4Ret) {
+		DBGLOG(REQ, ERROR, "inspect mac format error u4Ret=%d\n", i4Ret);
+		return -1;
+	}
+
+	i4Ret = sscanf(apcArgv[1], "%hhx:%hhx:%hhx:%hhx:%hhx:%hhx",
+		&aucMacAddr[0], &aucMacAddr[1], &aucMacAddr[2],
+		&aucMacAddr[3], &aucMacAddr[4], &aucMacAddr[5]);
+
+	if (i4Ret != MAC_ADDR_LEN) {
+		DBGLOG(REQ, ERROR, "sscanf mac format fail u4Ret=%d\n", i4Ret);
+		return -1;
+	}
+
+	for (i = 0; i <= prBssInfo->rACL.u4Num; i++) {
+		if (memcmp(prBssInfo->rACL.rEntry[i].aucAddr, &aucMacAddr, MAC_ADDR_LEN) == 0) {
+			DBGLOG(REQ, ERROR, "add this mac [" MACSTR "] is duplicate.\n", MAC2STR(aucMacAddr));
+			return -1;
+		}
+	}
+
+	if ((i < 1) || (i > MAX_NUMBER_OF_ACL)) {
+		DBGLOG(REQ, ERROR, "idx[%d] error or ACL is full.\n", i);
+		return -1;
+	}
+
+	memcpy(prBssInfo->rACL.rEntry[i-1].aucAddr, &aucMacAddr, MAC_ADDR_LEN);
+	prBssInfo->rACL.u4Num = i;
+	DBGLOG(REQ, TRACE, "add mac addr [" MACSTR "] to ACL(%d).\n",
+		MAC2STR(prBssInfo->rACL.rEntry[i-1].aucAddr), i);
+
+	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+		"add mac addr [" MACSTR "] to ACL(%d)\n", MAC2STR(prBssInfo->rACL.rEntry[i-1].aucAddr), i);
+
+	/* Check if the change in ACL affects any existent association. */
+	p2pRoleUpdateACLEntry(prAdapter, ucBssIdx);
+
+	DBGLOG(REQ, INFO, "%s: command result is %s\n", __func__, pcCommand);
+
+	return i4BytesWritten;
+} /* priv_driver_add_acl_entry */
+
+/*----------------------------------------------------------------------------*/
+/*
+* @ The function will delete entry to ACL for accept or deny list.
+*  example: iwpriv p2p0 driver "add_del_entry 01:02:03:04:05:06"
+*/
+/*----------------------------------------------------------------------------*/
+static int priv_driver_del_acl_entry(IN struct net_device *prNetDev, IN char *pcCommand, IN int i4TotalLen)
+{
+	P_GLUE_INFO_T prGlueInfo = NULL;
+	P_ADAPTER_T prAdapter = NULL;
+	P_BSS_INFO_T prBssInfo = NULL;
+	PCHAR apcArgv[WLAN_CFG_ARGV_MAX];
+	UINT_8 aucMacAddr[MAC_ADDR_LEN] = {0};
+	INT_32 i = 0, j = 0, i4Argc = 0, i4BytesWritten = 0, i4Ret = 0;
+	UINT_8 ucRoleIdx = 0, ucBssIdx = 0;
+
+	ASSERT(prNetDev);
+	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
+		return -1;
+	prGlueInfo = *((P_GLUE_INFO_T *) netdev_priv(prNetDev));
+	prAdapter = prGlueInfo->prAdapter;
+
+	/* get Bss Index from ndev */
+	if (mtk_Netdev_To_RoleIdx(prGlueInfo, prNetDev, &ucRoleIdx) != 0)
+		return -1;
+	if (p2pFuncRoleToBssIdx(prGlueInfo->prAdapter, ucRoleIdx, &ucBssIdx) !=
+		WLAN_STATUS_SUCCESS)
+		return -1;
+
+	prBssInfo = prAdapter->aprBssInfo[ucBssIdx];
+
+	DBGLOG(REQ, LOUD, "ucRoleIdx %hhu ucBssIdx %hhu\n", ucRoleIdx, ucBssIdx);
+	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+	DBGLOG(REQ, LOUD, "argc is %i\n", i4Argc);
+
+	if (i4Argc < 2)
+		return -1;
+
+	i4Ret = priv_driver_inspect_mac_addr(apcArgv[1]);
+	if (i4Ret) {
+		DBGLOG(REQ, ERROR, "inspect mac format error u4Ret=%d\n", i4Ret);
+		return -1;
+	}
+
+	i4Ret = sscanf(apcArgv[1], "%hhx:%hhx:%hhx:%hhx:%hhx:%hhx",
+		&aucMacAddr[0], &aucMacAddr[1], &aucMacAddr[2],
+		&aucMacAddr[3], &aucMacAddr[4], &aucMacAddr[5]);
+
+	if (i4Ret != MAC_ADDR_LEN) {
+		DBGLOG(REQ, ERROR, "sscanf mac format fail u4Ret=%d\n", i4Ret);
+		return -1;
+	}
+
+	for (i = 0; i < prBssInfo->rACL.u4Num; i++) {
+		if (memcmp(prBssInfo->rACL.rEntry[i].aucAddr, &aucMacAddr, MAC_ADDR_LEN) == 0) {
+			memset(&prBssInfo->rACL.rEntry[i], 0x00, sizeof(PARAM_CUSTOM_ACL_ENTRY));
+			DBGLOG(REQ, TRACE, "delete this mac [" MACSTR "]\n", MAC2STR(aucMacAddr));
+
+			i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+				"delete this mac [" MACSTR "] from ACL(%d)\n", MAC2STR(aucMacAddr), i+1);
+			break;
+		}
+	}
+
+	if ((prBssInfo->rACL.u4Num == 0) || (i == MAX_NUMBER_OF_ACL)) {
+		DBGLOG(REQ, ERROR, "delete entry fail, num of entries=%d\n", i);
+		return -1;
+	}
+
+	for (j = i+1; j < prBssInfo->rACL.u4Num; j++)
+		memcpy(prBssInfo->rACL.rEntry[j-1].aucAddr, prBssInfo->rACL.rEntry[j].aucAddr, MAC_ADDR_LEN);
+
+	prBssInfo->rACL.u4Num = j-1;
+	memset(prBssInfo->rACL.rEntry[j-1].aucAddr, 0x00, MAC_ADDR_LEN);
+
+	/* check if the change in ACL affects any existent association */
+	p2pRoleUpdateACLEntry(prAdapter, ucBssIdx);
+
+	DBGLOG(REQ, INFO, "%s: command result is %s\n", __func__, pcCommand);
+
+	return i4BytesWritten;
+} /* priv_driver_del_acl_entry */
+
+/*----------------------------------------------------------------------------*/
+/*
+* @ The function will show all entries to ACL for accept or deny list.
+*  example: iwpriv p2p0 driver "show_acl_entry"
+*/
+/*----------------------------------------------------------------------------*/
+static int priv_driver_show_acl_entry(IN struct net_device *prNetDev, IN char *pcCommand, IN int i4TotalLen)
+{
+	P_GLUE_INFO_T prGlueInfo = NULL;
+	P_ADAPTER_T prAdapter = NULL;
+	P_BSS_INFO_T prBssInfo = NULL;
+	PCHAR apcArgv[WLAN_CFG_ARGV_MAX];
+	INT_32 i = 0, i4Argc = 0, i4BytesWritten = 0;
+	UINT_8 ucRoleIdx = 0, ucBssIdx = 0;
+
+	ASSERT(prNetDev);
+	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
+		return -1;
+	prGlueInfo = *((P_GLUE_INFO_T *) netdev_priv(prNetDev));
+	prAdapter = prGlueInfo->prAdapter;
+
+	/* get Bss Index from ndev */
+	if (mtk_Netdev_To_RoleIdx(prGlueInfo, prNetDev, &ucRoleIdx) != 0)
+		return -1;
+	if (p2pFuncRoleToBssIdx(prGlueInfo->prAdapter, ucRoleIdx, &ucBssIdx) !=
+		WLAN_STATUS_SUCCESS)
+		return -1;
+
+	prBssInfo = prAdapter->aprBssInfo[ucBssIdx];
+
+	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+	DBGLOG(REQ, LOUD, "argc is %i\n", i4Argc);
+	DBGLOG(REQ, TRACE, "ACL Policy = %d\n", prBssInfo->rACL.ePolicy);
+	DBGLOG(REQ, TRACE, "Total ACLs = %d\n", prBssInfo->rACL.u4Num);
+
+	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+		"ACL Policy = %d, Total ACLs = %d\n", prBssInfo->rACL.ePolicy, prBssInfo->rACL.u4Num);
+
+	for (i = 0; i < prBssInfo->rACL.u4Num; i++) {
+		DBGLOG(REQ, TRACE, "ACL(%d): [" MACSTR "]\n", i+1, MAC2STR(prBssInfo->rACL.rEntry[i].aucAddr));
+
+		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+			"ACL(%d): [" MACSTR "]\n", i+1, MAC2STR(prBssInfo->rACL.rEntry[i].aucAddr));
+	}
+
+	return i4BytesWritten;
+} /* priv_driver_show_acl_entry */
+
+/*----------------------------------------------------------------------------*/
+/*
+* @ The function will clear all entries to ACL for accept or deny list.
+*  example: iwpriv p2p0 driver "clear_acl_entry"
+*/
+/*----------------------------------------------------------------------------*/
+static int priv_driver_clear_acl_entry(IN struct net_device *prNetDev, IN char *pcCommand, IN int i4TotalLen)
+{
+	P_GLUE_INFO_T prGlueInfo = NULL;
+	P_ADAPTER_T prAdapter = NULL;
+	P_BSS_INFO_T prBssInfo = NULL;
+	PCHAR apcArgv[WLAN_CFG_ARGV_MAX];
+	INT_32 i4Argc = 0, i4BytesWritten = 0;
+	UINT_8 ucRoleIdx = 0, ucBssIdx = 0;
+
+	ASSERT(prNetDev);
+	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
+		return -1;
+	prGlueInfo = *((P_GLUE_INFO_T *) netdev_priv(prNetDev));
+	prAdapter = prGlueInfo->prAdapter;
+
+	/* get Bss Index from ndev */
+	if (mtk_Netdev_To_RoleIdx(prGlueInfo, prNetDev, &ucRoleIdx) != 0)
+		return -1;
+	if (p2pFuncRoleToBssIdx(prGlueInfo->prAdapter, ucRoleIdx, &ucBssIdx) !=
+		WLAN_STATUS_SUCCESS)
+		return -1;
+
+	prBssInfo = prAdapter->aprBssInfo[ucBssIdx];
+
+	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+	DBGLOG(REQ, LOUD, "argc is %i\n", i4Argc);
+
+	if (prBssInfo->rACL.u4Num) {
+		memset(&prBssInfo->rACL.rEntry[0], 0x00, sizeof(PARAM_CUSTOM_ACL_ENTRY)*MAC_ADDR_LEN);
+		prBssInfo->rACL.u4Num = 0;
+	}
+
+	DBGLOG(REQ, TRACE, "ACL Policy = %d\n", prBssInfo->rACL.ePolicy);
+	DBGLOG(REQ, TRACE, "Total ACLs = %d\n", prBssInfo->rACL.u4Num);
+
+	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+		"ACL Policy = %d, Total ACLs = %d\n", prBssInfo->rACL.ePolicy, prBssInfo->rACL.u4Num);
+
+	/* check if the change in ACL affects any existent association */
+	p2pRoleUpdateACLEntry(prAdapter, ucBssIdx);
+
+	return i4BytesWritten;
+} /* priv_driver_clear_acl_entry */
 
 static int priv_driver_get_drv_mcr(IN struct net_device *prNetDev, IN char *pcCommand, IN int i4TotalLen)
 {
@@ -7420,6 +7787,16 @@ INT_32 priv_driver_cmds(IN struct net_device *prNetDev, IN PCHAR pcCommand, IN I
 			i4BytesWritten = priv_driver_get_sta_stat(prNetDev, pcCommand, i4TotalLen);
 		} else if (strnicmp(pcCommand, CMD_GET_STA_RX_STAT, strlen(CMD_GET_STA_RX_STAT)) == 0) {
 			i4BytesWritten = priv_driver_show_rx_stat(prNetDev, pcCommand, i4TotalLen);
+		} else if (strnicmp(pcCommand, CMD_SET_ACL_POLICY, strlen(CMD_SET_ACL_POLICY)) == 0) {
+			i4BytesWritten = priv_driver_set_acl_policy(prNetDev, pcCommand, i4TotalLen);
+		} else if (strnicmp(pcCommand, CMD_ADD_ACL_ENTRY, strlen(CMD_ADD_ACL_ENTRY)) == 0) {
+			i4BytesWritten = priv_driver_add_acl_entry(prNetDev, pcCommand, i4TotalLen);
+		} else if (strnicmp(pcCommand, CMD_DEL_ACL_ENTRY, strlen(CMD_DEL_ACL_ENTRY)) == 0) {
+			i4BytesWritten = priv_driver_del_acl_entry(prNetDev, pcCommand, i4TotalLen);
+		} else if (strnicmp(pcCommand, CMD_SHOW_ACL_ENTRY, strlen(CMD_SHOW_ACL_ENTRY)) == 0) {
+			i4BytesWritten = priv_driver_show_acl_entry(prNetDev, pcCommand, i4TotalLen);
+		} else if (strnicmp(pcCommand, CMD_CLEAR_ACL_ENTRY, strlen(CMD_CLEAR_ACL_ENTRY)) == 0) {
+			i4BytesWritten = priv_driver_clear_acl_entry(prNetDev, pcCommand, i4TotalLen);
 		}
 #if CFG_SUPPORT_CAL_RESULT_BACKUP_TO_HOST
 		else if (strnicmp(pcCommand,
