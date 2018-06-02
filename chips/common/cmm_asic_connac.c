@@ -660,6 +660,9 @@ bool asicIsValidRegAccess(IN struct ADAPTER *prAdapter, IN uint32_t u4Register)
 	uint32_t au4ExcludeRegs[] = { CONN_HIF_ON_LPCTL };
 	uint32_t u4Idx, u4Size = sizeof(au4ExcludeRegs) / sizeof(uint32_t);
 
+	if (wlanIsChipNoAck(prAdapter))
+		return false;
+
 	/* driver can access all consys registers on driver own */
 	if (!prAdapter->fgIsFwOwn)
 		return true;
