@@ -1291,6 +1291,10 @@ VOID aisFsmSteps(IN P_ADAPTER_T prAdapter, ENUM_AIS_STATE_T eNextState)
 			prMsgChReq->ucRfCenterFreqSeg1 = prAisFsmInfo->prTargetBssDesc->ucCenterFreqS1;
 			prMsgChReq->ucRfCenterFreqSeg2 = prAisFsmInfo->prTargetBssDesc->ucCenterFreqS2;
 
+			rlmReviseMaxBw(prAdapter, prAisBssInfo->ucBssIndex, &prMsgChReq->eRfSco,
+					(P_ENUM_CHANNEL_WIDTH_P)&prMsgChReq->eRfChannelWidth,
+				&prMsgChReq->ucRfCenterFreqSeg1, &prMsgChReq->ucPrimaryChannel);
+
 			mboxSendMsg(prAdapter, MBOX_ID_0, (P_MSG_HDR_T) prMsgChReq, MSG_SEND_METHOD_BUF);
 
 			prAisFsmInfo->fgIsChannelRequested = TRUE;
