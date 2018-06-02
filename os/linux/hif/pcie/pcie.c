@@ -146,8 +146,8 @@ static struct pci_driver mtk_pci_driver = {
 	.remove = NULL,
 };
 
-static BOOLEAN g_fgDriverProbed = FALSE;
-static UINT_32 g_u4DmaMask = 32;
+static u_int8_t g_fgDriverProbed = FALSE;
+static uint32_t g_u4DmaMask = 32;
 /*******************************************************************************
 *                                 M A C R O S
 ********************************************************************************
@@ -157,8 +157,8 @@ static UINT_32 g_u4DmaMask = 32;
 *                   F U N C T I O N   D E C L A R A T I O N S
 ********************************************************************************
 */
-static BOOL kalDevWriteCmdByQueue(IN P_GLUE_INFO_T prGlueInfo, IN P_CMD_INFO_T prCmdInfo, IN UINT_8 ucTC);
-static BOOL kalDevWriteDataByQueue(IN P_GLUE_INFO_T prGlueInfo, IN P_MSDU_INFO_T prMsduInfo);
+static u_int8_t kalDevWriteCmdByQueue(IN struct GLUE_INFO *prGlueInfo, IN struct CMD_INFO *prCmdInfo, IN uint8_t ucTC);
+static u_int8_t kalDevWriteDataByQueue(IN struct GLUE_INFO *prGlueInfo, IN struct MSDU_INFO *prMsduInfo);
 
 /*******************************************************************************
 *                              F U N C T I O N S
@@ -174,14 +174,14 @@ static BOOL kalDevWriteDataByQueue(IN P_GLUE_INFO_T prGlueInfo, IN P_MSDU_INFO_T
 * \return void
 */
 /*----------------------------------------------------------------------------*/
-static PUCHAR CSRBaseAddress;
+static uint8_t *CSRBaseAddress;
 
 static irqreturn_t mtk_pci_interrupt(int irq, void *dev_instance)
 {
-	P_GLUE_INFO_T prGlueInfo = NULL;
-	UINT_32 u4RegValue;
+	struct GLUE_INFO *prGlueInfo = NULL;
+	uint32_t u4RegValue;
 
-	prGlueInfo = (P_GLUE_INFO_T) dev_instance;
+	prGlueInfo = (struct GLUE_INFO *) dev_instance;
 	if (!prGlueInfo) {
 		DBGLOG(HAL, INFO, "No glue info in mtk_pci_interrupt()\n");
 		return IRQ_NONE;
@@ -231,7 +231,7 @@ static int mtk_pci_probe(struct pci_dev *pdev, const struct pci_device_id *id)
 
 	DBGLOG(INIT, INFO, "pci_enable_device done!\n");
 
-	if (pfWlanProbe((PVOID) pdev, (PVOID) id->driver_data) != WLAN_STATUS_SUCCESS) {
+	if (pfWlanProbe((void *) pdev, (void *) id->driver_data) != WLAN_STATUS_SUCCESS) {
 		DBGLOG(INIT, INFO, "pfWlanProbe fail!call pfWlanRemove()\n");
 		pfWlanRemove();
 		ret = -1;
@@ -286,7 +286,7 @@ int mtk_pci_resume(struct pci_dev *pdev)
 * \return The result of registering pci bus
 */
 /*----------------------------------------------------------------------------*/
-WLAN_STATUS glRegisterBus(probe_card pfProbe, remove_card pfRemove)
+uint32_t glRegisterBus(probe_card pfProbe, remove_card pfRemove)
 {
 	int ret = 0;
 
@@ -319,7 +319,7 @@ WLAN_STATUS glRegisterBus(probe_card pfProbe, remove_card pfRemove)
 * \return (none)
 */
 /*----------------------------------------------------------------------------*/
-VOID glUnregisterBus(remove_card pfRemove)
+void glUnregisterBus(remove_card pfRemove)
 {
 	if (g_fgDriverProbed) {
 		pfRemove();
@@ -338,9 +338,9 @@ VOID glUnregisterBus(remove_card pfRemove)
 * \return (none)
 */
 /*----------------------------------------------------------------------------*/
-VOID glSetHifInfo(P_GLUE_INFO_T prGlueInfo, ULONG ulCookie)
+void glSetHifInfo(struct GLUE_INFO *prGlueInfo, unsigned long ulCookie)
 {
-	P_GL_HIF_INFO_T prHif = NULL;
+	struct GL_HIF_INFO *prHif = NULL;
 
 	prHif = &prGlueInfo->rHifInfo;
 
@@ -376,9 +376,9 @@ VOID glSetHifInfo(P_GLUE_INFO_T prGlueInfo, ULONG ulCookie)
 * \return (none)
 */
 /*----------------------------------------------------------------------------*/
-VOID glClearHifInfo(P_GLUE_INFO_T prGlueInfo)
+void glClearHifInfo(struct GLUE_INFO *prGlueInfo)
 {
-	P_GL_HIF_INFO_T prHifInfo = &prGlueInfo->rHifInfo;
+	struct GL_HIF_INFO *prHifInfo = &prGlueInfo->rHifInfo;
 	struct list_head *prCur, *prNext;
 	struct TX_CMD_REQ_T *prTxCmdReq;
 	struct TX_DATA_REQ_T *prTxDataReq;
@@ -411,7 +411,7 @@ VOID glClearHifInfo(P_GLUE_INFO_T prGlueInfo)
 * \return (none)
 */
 /*----------------------------------------------------------------------------*/
-BOOL glBusInit(PVOID pvData)
+u_int8_t glBusInit(void *pvData)
 {
 	int ret = 0;
 	struct pci_dev *pdev = NULL;
@@ -432,12 +432,12 @@ BOOL glBusInit(PVOID pvData)
 	}
 
 	/* map physical address to virtual address for accessing register */
-	CSRBaseAddress = (PUCHAR) ioremap(pci_resource_start(pdev, 0), pci_resource_len(pdev, 0));
+	CSRBaseAddress = (uint8_t *) ioremap(pci_resource_start(pdev, 0), pci_resource_len(pdev, 0));
 	DBGLOG(INIT, INFO, "ioremap for device %s, region 0x%lX @ 0x%lX\n",
-		pci_name(pdev), (ULONG) pci_resource_len(pdev, 0), (ULONG) pci_resource_start(pdev, 0));
+		pci_name(pdev), (unsigned long) pci_resource_len(pdev, 0), (unsigned long) pci_resource_start(pdev, 0));
 	if (!CSRBaseAddress) {
 		DBGLOG(INIT, INFO, "ioremap failed for device %s, region 0x%lX @ 0x%lX\n",
-			pci_name(pdev), (ULONG) pci_resource_len(pdev, 0), (ULONG) pci_resource_start(pdev, 0));
+			pci_name(pdev), (unsigned long) pci_resource_len(pdev, 0), (unsigned long) pci_resource_start(pdev, 0));
 		goto err_out_free_res;
 	}
 
@@ -463,7 +463,7 @@ err_out_free_res:
 * \return (none)
 */
 /*----------------------------------------------------------------------------*/
-VOID glBusRelease(PVOID pvData)
+void glBusRelease(void *pvData)
 {
 }
 
@@ -479,14 +479,14 @@ VOID glBusRelease(PVOID pvData)
 *         NEGATIVE_VALUE   if fail
 */
 /*----------------------------------------------------------------------------*/
-INT_32 glBusSetIrq(PVOID pvData, PVOID pfnIsr, PVOID pvCookie)
+int32_t glBusSetIrq(void *pvData, void *pfnIsr, void *pvCookie)
 {
 	int ret = 0;
 
-	P_BUS_INFO prBusInfo;
+	struct BUS_INFO *prBusInfo;
 	struct net_device *prNetDevice = NULL;
-	P_GLUE_INFO_T prGlueInfo = NULL;
-	P_GL_HIF_INFO_T prHifInfo = NULL;
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct GL_HIF_INFO *prHifInfo = NULL;
 	struct pci_dev *pdev = NULL;
 
 	ASSERT(pvData);
@@ -494,7 +494,7 @@ INT_32 glBusSetIrq(PVOID pvData, PVOID pfnIsr, PVOID pvCookie)
 		return -1;
 
 	prNetDevice = (struct net_device *)pvData;
-	prGlueInfo = (P_GLUE_INFO_T) pvCookie;
+	prGlueInfo = (struct GLUE_INFO *) pvCookie;
 	ASSERT(prGlueInfo);
 	if (!prGlueInfo)
 		return -1;
@@ -529,11 +529,11 @@ INT_32 glBusSetIrq(PVOID pvData, PVOID pfnIsr, PVOID pvCookie)
 * \return (none)
 */
 /*----------------------------------------------------------------------------*/
-VOID glBusFreeIrq(PVOID pvData, PVOID pvCookie)
+void glBusFreeIrq(void *pvData, void *pvCookie)
 {
 	struct net_device *prNetDevice = NULL;
-	P_GLUE_INFO_T prGlueInfo = NULL;
-	P_GL_HIF_INFO_T prHifInfo = NULL;
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct GL_HIF_INFO *prHifInfo = NULL;
 	struct pci_dev *pdev = NULL;
 
 	ASSERT(pvData);
@@ -542,7 +542,7 @@ VOID glBusFreeIrq(PVOID pvData, PVOID pvCookie)
 		return;
 	}
 	prNetDevice = (struct net_device *)pvData;
-	prGlueInfo = (P_GLUE_INFO_T) pvCookie;
+	prGlueInfo = (struct GLUE_INFO *) pvCookie;
 	ASSERT(prGlueInfo);
 	if (!prGlueInfo) {
 		DBGLOG(INIT, INFO, "%s no glue info\n", __func__);
@@ -556,7 +556,7 @@ VOID glBusFreeIrq(PVOID pvData, PVOID pvCookie)
 	free_irq(pdev->irq, prGlueInfo);
 }
 
-BOOLEAN glIsReadClearReg(UINT_32 u4Address)
+u_int8_t glIsReadClearReg(uint32_t u4Address)
 {
 	return TRUE;
 }
@@ -573,12 +573,12 @@ BOOLEAN glIsReadClearReg(UINT_32 u4Address)
 * \retval FALSE         operation fail
 */
 /*----------------------------------------------------------------------------*/
-BOOL kalDevRegRead(IN P_GLUE_INFO_T prGlueInfo, IN UINT_32 u4Register, OUT PUINT_32 pu4Value)
+u_int8_t kalDevRegRead(IN struct GLUE_INFO *prGlueInfo, IN uint32_t u4Register, OUT uint32_t *pu4Value)
 {
-	P_BUS_INFO prBusInfo = NULL;
-	P_GL_HIF_INFO_T prHifInfo = NULL;
-	UINT_32 u4BusAddr = u4Register;
-	BOOLEAN fgResult = TRUE;
+	struct BUS_INFO *prBusInfo = NULL;
+	struct GL_HIF_INFO *prHifInfo = NULL;
+	uint32_t u4BusAddr = u4Register;
+	u_int8_t fgResult = TRUE;
 
 	ASSERT(prGlueInfo);
 	ASSERT(pu4Value);
@@ -612,12 +612,12 @@ BOOL kalDevRegRead(IN P_GLUE_INFO_T prGlueInfo, IN UINT_32 u4Register, OUT PUINT
 * \retval FALSE         operation fail
 */
 /*----------------------------------------------------------------------------*/
-BOOL kalDevRegWrite(IN P_GLUE_INFO_T prGlueInfo, IN UINT_32 u4Register, IN UINT_32 u4Value)
+u_int8_t kalDevRegWrite(IN struct GLUE_INFO *prGlueInfo, IN uint32_t u4Register, IN uint32_t u4Value)
 {
-	P_BUS_INFO prBusInfo = NULL;
-	P_GL_HIF_INFO_T prHifInfo = NULL;
-	UINT_32 u4BusAddr = u4Register;
-	BOOLEAN fgResult = TRUE;
+	struct BUS_INFO *prBusInfo = NULL;
+	struct GL_HIF_INFO *prHifInfo = NULL;
+	uint32_t u4BusAddr = u4Register;
+	u_int8_t fgResult = TRUE;
 
 	ASSERT(prGlueInfo);
 
@@ -652,21 +652,21 @@ BOOL kalDevRegWrite(IN P_GLUE_INFO_T prGlueInfo, IN UINT_32 u4Register, IN UINT_
 * \retval FALSE         operation fail
 */
 /*----------------------------------------------------------------------------*/
-BOOL
-kalDevPortRead(IN P_GLUE_INFO_T prGlueInfo, IN UINT_16 u2Port, IN UINT_32 u4Len,
-	OUT PUINT_8 pucBuf, IN UINT_32 u4ValidOutBufSize)
+u_int8_t
+kalDevPortRead(IN struct GLUE_INFO *prGlueInfo, IN uint16_t u2Port, IN uint32_t u4Len,
+	OUT uint8_t *pucBuf, IN uint32_t u4ValidOutBufSize)
 {
-	P_GL_HIF_INFO_T prHifInfo = NULL;
-	PUINT_8 pucDst = NULL;
-	RXD_STRUCT *pRxD;
-	P_RTMP_RX_RING prRxRing;
+	struct GL_HIF_INFO *prHifInfo = NULL;
+	uint8_t *pucDst = NULL;
+	struct RXD_STRUCT *pRxD;
+	struct RTMP_RX_RING *prRxRing;
 	spinlock_t *pRxRingLock;
-	PVOID pRxPacket = NULL;
-	RTMP_DMACB *pRxCell;
+	void *pRxPacket = NULL;
+	struct RTMP_DMACB *pRxCell;
 	struct pci_dev *pdev = NULL;
-	BOOL fgRet = TRUE;
-	ULONG flags = 0;
-	PRTMP_DMABUF prDmaBuf;
+	u_int8_t fgRet = TRUE;
+	unsigned long flags = 0;
+	struct RTMP_DMABUF *prDmaBuf;
 
 	ASSERT(prGlueInfo);
 	prHifInfo = &prGlueInfo->rHifInfo;
@@ -687,7 +687,7 @@ kalDevPortRead(IN P_GLUE_INFO_T prGlueInfo, IN UINT_16 u2Port, IN UINT_32 u4Len,
 	pRxCell = &prRxRing->Cell[prRxRing->RxSwReadIdx];
 
 	/* Point to Rx indexed rx ring descriptor */
-	pRxD = (RXD_STRUCT *) pRxCell->AllocVa;
+	pRxD = (struct RXD_STRUCT *) pRxCell->AllocVa;
 
 	if (pRxD->DMADONE == 0) {
 		/* Get how may packets had been received */
@@ -721,7 +721,7 @@ kalDevPortRead(IN P_GLUE_INFO_T prGlueInfo, IN UINT_16 u2Port, IN UINT_32 u4Len,
 	if (pRxD->SDLen0 <= u4Len) {
 		pRxPacket = pRxCell->pPacket;
 		ASSERT(pRxPacket);
-		kalMemCopy(pucDst, ((UCHAR *) ((struct sk_buff *)(pRxPacket))->data), pRxD->SDLen0);
+		kalMemCopy(pucDst, ((uint8_t *) ((struct sk_buff *)(pRxPacket))->data), pRxD->SDLen0);
 	} else
 		DBGLOG(HAL, WARN, "Skip Rx packet, SDL0[%u] > SwRfb max len[%u]\n", pRxD->SDLen0, u4Len);
 
@@ -735,7 +735,7 @@ kalDevPortRead(IN P_GLUE_INFO_T prGlueInfo, IN UINT_16 u2Port, IN UINT_32 u4Len,
 	}
 
 	pRxD->SDPtr0 = prDmaBuf->AllocPa & DMA_LOWER_32BITS_MASK;
-	pRxD->SDPtr1 = ((UINT_64)prDmaBuf->AllocPa >> DMA_BITS_OFFSET) & DMA_HIGHER_4BITS_MASK;
+	pRxD->SDPtr1 = ((uint64_t)prDmaBuf->AllocPa >> DMA_BITS_OFFSET) & DMA_HIGHER_4BITS_MASK;
 skip:
 	pRxD->SDLen0 = prRxRing->u4BufSize;
 	pRxD->DMADONE = 0;
@@ -764,18 +764,18 @@ done:
 * \retval FALSE         operation fail
 */
 /*----------------------------------------------------------------------------*/
-BOOL
-kalDevPortWrite(IN P_GLUE_INFO_T prGlueInfo,
-		IN UINT_16 u2Port, IN UINT_32 u4Len, IN PUINT_8 pucBuf, IN UINT_32 u4ValidInBufSize)
+u_int8_t
+kalDevPortWrite(IN struct GLUE_INFO *prGlueInfo,
+		IN uint16_t u2Port, IN uint32_t u4Len, IN uint8_t *pucBuf, IN uint32_t u4ValidInBufSize)
 {
-	P_GL_HIF_INFO_T prHifInfo = NULL;
-	PUINT_8 pucSrc = NULL;
-	UINT_32 u4SrcLen = u4Len;
-	ULONG flags = 0;
-	UINT_32 SwIdx = 0;
-	P_RTMP_TX_RING prTxRing;
+	struct GL_HIF_INFO *prHifInfo = NULL;
+	uint8_t *pucSrc = NULL;
+	uint32_t u4SrcLen = u4Len;
+	unsigned long flags = 0;
+	uint32_t SwIdx = 0;
+	struct RTMP_TX_RING *prTxRing;
 	spinlock_t *prTxRingLock;
-	TXD_STRUCT *pTxD;
+	struct TXD_STRUCT *pTxD;
 	struct pci_dev *pdev = NULL;
 
 	ASSERT(prGlueInfo);
@@ -798,7 +798,7 @@ kalDevPortWrite(IN P_GLUE_INFO_T prGlueInfo,
 
 	kalCheckAndResetTXReg(prGlueInfo, u2Port);
 	SwIdx = prTxRing->TxCpuIdx;
-	pTxD = (TXD_STRUCT *) prTxRing->Cell[SwIdx].AllocVa;
+	pTxD = (struct TXD_STRUCT *) prTxRing->Cell[SwIdx].AllocVa;
 
 	prTxRing->Cell[SwIdx].pPacket = NULL;
 	prTxRing->Cell[SwIdx].pBuffer = pucSrc;
@@ -816,7 +816,7 @@ kalDevPortWrite(IN P_GLUE_INFO_T prGlueInfo,
 	pTxD->SDLen0 = u4SrcLen;
 	pTxD->SDLen1 = 0;
 	pTxD->SDPtr0 = prTxRing->Cell[SwIdx].PacketPa & DMA_LOWER_32BITS_MASK;
-	pTxD->SDPtr0Ext = ((UINT_64)prTxRing->Cell[SwIdx].PacketPa >> DMA_BITS_OFFSET) & DMA_HIGHER_4BITS_MASK;
+	pTxD->SDPtr0Ext = ((uint64_t)prTxRing->Cell[SwIdx].PacketPa >> DMA_BITS_OFFSET) & DMA_HIGHER_4BITS_MASK;
 	pTxD->SDPtr1 = 0;
 	pTxD->Burst = 0;
 	pTxD->DMADONE = 0;
@@ -833,10 +833,10 @@ kalDevPortWrite(IN P_GLUE_INFO_T prGlueInfo,
 	return TRUE;
 }
 
-VOID kalDevReadIntStatus(IN P_ADAPTER_T prAdapter, OUT PUINT_32 pu4IntStatus)
+void kalDevReadIntStatus(IN struct ADAPTER *prAdapter, OUT uint32_t *pu4IntStatus)
 {
-	UINT_32 u4RegValue;
-	P_GL_HIF_INFO_T prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
+	uint32_t u4RegValue;
+	struct GL_HIF_INFO *prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
 
 	*pu4IntStatus = 0;
 
@@ -858,9 +858,9 @@ VOID kalDevReadIntStatus(IN P_ADAPTER_T prAdapter, OUT PUINT_32 pu4IntStatus)
 
 }
 
-BOOL kalDevWriteCmd(IN P_GLUE_INFO_T prGlueInfo, IN P_CMD_INFO_T prCmdInfo, IN UINT_8 ucTC)
+u_int8_t kalDevWriteCmd(IN struct GLUE_INFO *prGlueInfo, IN struct CMD_INFO *prCmdInfo, IN uint8_t ucTC)
 {
-	P_GL_HIF_INFO_T prHifInfo = NULL;
+	struct GL_HIF_INFO *prHifInfo = NULL;
 
 	ASSERT(prGlueInfo);
 	prHifInfo = &prGlueInfo->rHifInfo;
@@ -871,10 +871,10 @@ BOOL kalDevWriteCmd(IN P_GLUE_INFO_T prGlueInfo, IN P_CMD_INFO_T prCmdInfo, IN U
 	return halWpdmaWriteCmd(prGlueInfo, prCmdInfo, ucTC);
 }
 
-static BOOL kalDevWriteCmdByQueue(IN P_GLUE_INFO_T prGlueInfo, IN P_CMD_INFO_T prCmdInfo, IN UINT_8 ucTC)
+static u_int8_t kalDevWriteCmdByQueue(IN struct GLUE_INFO *prGlueInfo, IN struct CMD_INFO *prCmdInfo, IN uint8_t ucTC)
 {
-	P_GL_HIF_INFO_T prHifInfo = NULL;
-	ULONG flags = 0;
+	struct GL_HIF_INFO *prHifInfo = NULL;
+	unsigned long flags = 0;
 	struct TX_CMD_REQ_T *prTxReq;
 
 	ASSERT(prGlueInfo);
@@ -897,10 +897,10 @@ error:
 	return TRUE;
 }
 
-BOOL kalDevKickCmd(IN P_GLUE_INFO_T prGlueInfo)
+u_int8_t kalDevKickCmd(IN struct GLUE_INFO *prGlueInfo)
 {
-	P_GL_HIF_INFO_T prHifInfo = NULL;
-	ULONG flags = 0;
+	struct GL_HIF_INFO *prHifInfo = NULL;
+	unsigned long flags = 0;
 	struct list_head *prCur, *prNext;
 	struct TX_CMD_REQ_T *prTxReq;
 
@@ -922,10 +922,10 @@ BOOL kalDevKickCmd(IN P_GLUE_INFO_T prGlueInfo)
 	return TRUE;
 }
 
-BOOL kalDevWriteData(IN P_GLUE_INFO_T prGlueInfo, IN P_MSDU_INFO_T prMsduInfo)
+u_int8_t kalDevWriteData(IN struct GLUE_INFO *prGlueInfo, IN struct MSDU_INFO *prMsduInfo)
 {
-	P_GL_HIF_INFO_T prHifInfo = NULL;
-	P_BUS_INFO prBusInfo = NULL;
+	struct GL_HIF_INFO *prHifInfo = NULL;
+	struct BUS_INFO *prBusInfo = NULL;
 
 	ASSERT(prGlueInfo);
 	prHifInfo = &prGlueInfo->rHifInfo;
@@ -937,10 +937,10 @@ BOOL kalDevWriteData(IN P_GLUE_INFO_T prGlueInfo, IN P_MSDU_INFO_T prMsduInfo)
 	return halWpdmaWriteData(prGlueInfo, prMsduInfo);
 }
 
-static BOOL kalDevWriteDataByQueue(IN P_GLUE_INFO_T prGlueInfo, IN P_MSDU_INFO_T prMsduInfo)
+static u_int8_t kalDevWriteDataByQueue(IN struct GLUE_INFO *prGlueInfo, IN struct MSDU_INFO *prMsduInfo)
 {
-	P_GL_HIF_INFO_T prHifInfo = NULL;
-	ULONG flags = 0;
+	struct GL_HIF_INFO *prHifInfo = NULL;
+	unsigned long flags = 0;
 	struct TX_DATA_REQ_T *prTxReq;
 
 	ASSERT(prGlueInfo);
@@ -972,10 +972,10 @@ error:
 * \retval FALSE         operation fail
 */
 /*----------------------------------------------------------------------------*/
-BOOL kalDevKickData(IN P_GLUE_INFO_T prGlueInfo)
+u_int8_t kalDevKickData(IN struct GLUE_INFO *prGlueInfo)
 {
-	P_GL_HIF_INFO_T prHifInfo = NULL;
-	ULONG flags = 0;
+	struct GL_HIF_INFO *prHifInfo = NULL;
+	unsigned long flags = 0;
 	struct list_head *prCur, *prNext;
 	struct TX_DATA_REQ_T *prTxReq;
 
@@ -997,18 +997,18 @@ BOOL kalDevKickData(IN P_GLUE_INFO_T prGlueInfo)
 	return TRUE;
 }
 
-BOOL kalDevReadData(IN P_GLUE_INFO_T prGlueInfo, IN UINT_16 u2Port, IN OUT P_SW_RFB_T prSwRfb)
+u_int8_t kalDevReadData(IN struct GLUE_INFO *prGlueInfo, IN uint16_t u2Port, IN OUT struct SW_RFB *prSwRfb)
 {
-	P_GL_HIF_INFO_T prHifInfo = NULL;
-	RXD_STRUCT *pRxD;
-	P_RTMP_RX_RING prRxRing;
+	struct GL_HIF_INFO *prHifInfo = NULL;
+	struct RXD_STRUCT *pRxD;
+	struct RTMP_RX_RING *prRxRing;
 	spinlock_t *pRxRingLock;
-	PVOID pRxPacket = NULL;
-	RTMP_DMACB *pRxCell;
+	void *pRxPacket = NULL;
+	struct RTMP_DMACB *pRxCell;
 	struct pci_dev *pdev = NULL;
-	BOOL fgRet = TRUE;
-	ULONG flags = 0;
-	PRTMP_DMABUF prDmaBuf;
+	u_int8_t fgRet = TRUE;
+	unsigned long flags = 0;
+	struct RTMP_DMABUF *prDmaBuf;
 
 	ASSERT(prGlueInfo);
 	prHifInfo = &prGlueInfo->rHifInfo;
@@ -1024,7 +1024,7 @@ BOOL kalDevReadData(IN P_GLUE_INFO_T prGlueInfo, IN UINT_16 u2Port, IN OUT P_SW_
 	pRxCell = &prRxRing->Cell[prRxRing->RxSwReadIdx];
 
 	/* Point to Rx indexed rx ring descriptor */
-	pRxD = (RXD_STRUCT *) pRxCell->AllocVa;
+	pRxD = (struct RXD_STRUCT *) pRxCell->AllocVa;
 
 	if (pRxD->DMADONE == 0) {
 		/* Get how may packets had been received */
@@ -1062,7 +1062,7 @@ BOOL kalDevReadData(IN P_GLUE_INFO_T prGlueInfo, IN UINT_16 u2Port, IN OUT P_SW_
 	pci_unmap_single(pdev, prDmaBuf->AllocPa, prDmaBuf->AllocSize, PCI_DMA_FROMDEVICE);
 	prSwRfb->pvPacket = pRxPacket;
 	prSwRfb->pucRecvBuff = ((struct sk_buff *)pRxPacket)->data;
-	prSwRfb->prRxStatus = (P_HW_MAC_RX_DESC_T)prSwRfb->pucRecvBuff;
+	prSwRfb->prRxStatus = (struct HW_MAC_RX_DESC *)prSwRfb->pucRecvBuff;
 
 #if CFG_TCP_IP_CHKSUM_OFFLOAD
 	prSwRfb->u4TcpUdpIpCksStatus = pRxD->RXINFO;
@@ -1079,7 +1079,7 @@ BOOL kalDevReadData(IN P_GLUE_INFO_T prGlueInfo, IN UINT_16 u2Port, IN OUT P_SW_
 	}
 
 	pRxD->SDPtr0 = prDmaBuf->AllocPa & DMA_LOWER_32BITS_MASK;
-	pRxD->SDPtr1 = ((UINT_64)prDmaBuf->AllocPa >> DMA_BITS_OFFSET) & DMA_HIGHER_4BITS_MASK;
+	pRxD->SDPtr1 = ((uint64_t)prDmaBuf->AllocPa >> DMA_BITS_OFFSET) & DMA_HIGHER_4BITS_MASK;
 skip:
 	pRxD->SDLen0 = prRxRing->u4BufSize;
 	pRxD->DMADONE = 0;
@@ -1095,9 +1095,9 @@ done:
 }
 
 
-VOID kalPciUnmapToDev(IN P_GLUE_INFO_T prGlueInfo, IN dma_addr_t rDmaAddr, IN UINT_32 u4Length)
+void kalPciUnmapToDev(IN struct GLUE_INFO *prGlueInfo, IN dma_addr_t rDmaAddr, IN uint32_t u4Length)
 {
-	P_GL_HIF_INFO_T prHifInfo = NULL;
+	struct GL_HIF_INFO *prHifInfo = NULL;
 	struct pci_dev *pdev = NULL;
 
 	prHifInfo = &prGlueInfo->rHifInfo;
@@ -1115,11 +1115,11 @@ VOID kalPciUnmapToDev(IN P_GLUE_INFO_T prGlueInfo, IN dma_addr_t rDmaAddr, IN UI
 *
 */
 /*----------------------------------------------------------------------------*/
-VOID kalCheckAndResetTXReg(IN P_GLUE_INFO_T prGlueInfo, IN UINT_16 u2Port)
+void kalCheckAndResetTXReg(IN struct GLUE_INFO *prGlueInfo, IN uint16_t u2Port)
 {
-	P_GL_HIF_INFO_T prHifInfo = NULL;
-	P_RTMP_TX_RING prTxRing = NULL;
-	UINT_32 u4CpuIdx = 0;
+	struct GL_HIF_INFO *prHifInfo = NULL;
+	struct RTMP_TX_RING *prTxRing = NULL;
+	uint32_t u4CpuIdx = 0;
 
 	ASSERT(prGlueInfo);
 	prHifInfo = &prGlueInfo->rHifInfo;
@@ -1143,11 +1143,11 @@ VOID kalCheckAndResetTXReg(IN P_GLUE_INFO_T prGlueInfo, IN UINT_16 u2Port)
 *
 */
 /*----------------------------------------------------------------------------*/
-VOID kalCheckAndResetRXReg(IN P_GLUE_INFO_T prGlueInfo, IN UINT_16 u2Port)
+void kalCheckAndResetRXReg(IN struct GLUE_INFO *prGlueInfo, IN uint16_t u2Port)
 {
-	P_GL_HIF_INFO_T prHifInfo = NULL;
-	P_RTMP_RX_RING prRxRing = NULL;
-	UINT_32 u4CpuIdx = 0;
+	struct GL_HIF_INFO *prHifInfo = NULL;
+	struct RTMP_RX_RING *prRxRing = NULL;
+	uint32_t u4CpuIdx = 0;
 
 	ASSERT(prGlueInfo);
 	prHifInfo = &prGlueInfo->rHifInfo;
@@ -1161,16 +1161,16 @@ VOID kalCheckAndResetRXReg(IN P_GLUE_INFO_T prGlueInfo, IN UINT_16 u2Port)
 		halWpdmaInitRxRing(prGlueInfo);
 }
 
-VOID glSetPowerState(IN P_GLUE_INFO_T prGlueInfo, IN UINT_32 ePowerMode)
+void glSetPowerState(IN struct GLUE_INFO *prGlueInfo, IN uint32_t ePowerMode)
 {
 }
 
-void glGetDev(PVOID ctx, struct device **dev)
+void glGetDev(void *ctx, struct device **dev)
 {
 	*dev = &((struct pci_dev *)ctx)->dev;
 }
 
-void glGetHifDev(P_GL_HIF_INFO_T prHif, struct device **dev)
+void glGetHifDev(struct GL_HIF_INFO *prHif, struct device **dev)
 {
 	*dev = &(prHif->pdev->dev);
 }

@@ -103,18 +103,18 @@
 
 #define ELEM_ID_WAPI                    68	/* WAPI IE */
 
-#define WAPI_IE(fp)                     ((P_WAPI_INFO_ELEM_T) fp)
+#define WAPI_IE(fp)                     ((struct WAPI_INFO_ELEM *) fp)
 
 /*******************************************************************************
 *                  F U N C T I O N   D E C L A R A T I O N S
 ********************************************************************************
 */
 
-VOID wapiGenerateWAPIIE(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduInfo);
+void wapiGenerateWAPIIE(IN struct ADAPTER *prAdapter, IN struct MSDU_INFO *prMsduInfo);
 
-BOOLEAN wapiParseWapiIE(IN P_WAPI_INFO_ELEM_T prInfoElem, OUT P_WAPI_INFO_T prWapiInfo);
+u_int8_t wapiParseWapiIE(IN struct WAPI_INFO_ELEM *prInfoElem, OUT struct WAPI_INFO *prWapiInfo);
 
-BOOLEAN wapiPerformPolicySelection(IN P_ADAPTER_T prAdapter, IN P_BSS_DESC_T prBss);
+u_int8_t wapiPerformPolicySelection(IN struct ADAPTER *prAdapter, IN struct BSS_DESC *prBss);
 
 /* BOOLEAN */
 /* wapiUpdateTxKeyIdx ( */

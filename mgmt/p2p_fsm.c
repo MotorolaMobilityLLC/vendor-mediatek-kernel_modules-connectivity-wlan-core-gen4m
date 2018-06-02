@@ -108,16 +108,16 @@
  ********************************************************************************
  */
 
-VOID p2pFsmRunEventScanRequest(IN P_ADAPTER_T prAdapter, IN P_MSG_HDR_T prMsgHdr)
+void p2pFsmRunEventScanRequest(IN struct ADAPTER *prAdapter, IN struct MSG_HDR *prMsgHdr)
 {
-	P_MSG_P2P_SCAN_REQUEST_T prP2pScanReqMsg = (P_MSG_P2P_SCAN_REQUEST_T) NULL;
+	struct MSG_P2P_SCAN_REQUEST *prP2pScanReqMsg = (struct MSG_P2P_SCAN_REQUEST *) NULL;
 
 	do {
 		ASSERT_BREAK((prAdapter != NULL) && (prMsgHdr != NULL));
 		if ((prAdapter == NULL) || (prMsgHdr == NULL))
 			break;
 
-		prP2pScanReqMsg = (P_MSG_P2P_SCAN_REQUEST_T) prMsgHdr;
+		prP2pScanReqMsg = (struct MSG_P2P_SCAN_REQUEST *) prMsgHdr;
 
 		prAdapter->prP2pInfo->eConnState = P2P_CNN_NORMAL;
 
@@ -145,15 +145,15 @@ VOID p2pFsmRunEventScanRequest(IN P_ADAPTER_T prAdapter, IN P_MSG_HDR_T prMsgHdr
  * \return none
  */
 /*----------------------------------------------------------------------------*/
-VOID p2pFsmRunEventChGrant(IN P_ADAPTER_T prAdapter, IN P_MSG_HDR_T prMsgHdr)
+void p2pFsmRunEventChGrant(IN struct ADAPTER *prAdapter, IN struct MSG_HDR *prMsgHdr)
 {
-	P_MSG_CH_GRANT_T prMsgChGrant = (P_MSG_CH_GRANT_T) NULL;
-	P_BSS_INFO_T prP2pBssInfo = (P_BSS_INFO_T) NULL;
+	struct MSG_CH_GRANT *prMsgChGrant = (struct MSG_CH_GRANT *) NULL;
+	struct BSS_INFO *prP2pBssInfo = (struct BSS_INFO *) NULL;
 
 	do {
 		ASSERT_BREAK((prAdapter != NULL) && (prMsgHdr != NULL));
 
-		prMsgChGrant = (P_MSG_CH_GRANT_T) prMsgHdr;
+		prMsgChGrant = (struct MSG_CH_GRANT *) prMsgHdr;
 
 		prP2pBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prMsgChGrant->ucBssIndex);
 
@@ -185,13 +185,13 @@ VOID p2pFsmRunEventChGrant(IN P_ADAPTER_T prAdapter, IN P_MSG_HDR_T prMsgHdr)
 	} while (FALSE);
 }				/* p2pFsmRunEventChGrant */
 
-VOID p2pFsmRunEventNetDeviceRegister(IN P_ADAPTER_T prAdapter, IN P_MSG_HDR_T prMsgHdr)
+void p2pFsmRunEventNetDeviceRegister(IN struct ADAPTER *prAdapter, IN struct MSG_HDR *prMsgHdr)
 {
-	P_MSG_P2P_NETDEV_REGISTER_T prNetDevRegisterMsg = (P_MSG_P2P_NETDEV_REGISTER_T) NULL;
+	struct MSG_P2P_NETDEV_REGISTER *prNetDevRegisterMsg = (struct MSG_P2P_NETDEV_REGISTER *) NULL;
 
 	DBGLOG(P2P, TRACE, "p2pFsmRunEventNetDeviceRegister\n");
 
-	prNetDevRegisterMsg = (P_MSG_P2P_NETDEV_REGISTER_T) prMsgHdr;
+	prNetDevRegisterMsg = (struct MSG_P2P_NETDEV_REGISTER *) prMsgHdr;
 
 	if (prNetDevRegisterMsg->fgIsEnable) {
 		p2pSetMode((prNetDevRegisterMsg->ucMode == 1) ? TRUE : FALSE);
@@ -205,13 +205,13 @@ VOID p2pFsmRunEventNetDeviceRegister(IN P_ADAPTER_T prAdapter, IN P_MSG_HDR_T pr
 	cnmMemFree(prAdapter, prMsgHdr);
 }				/* p2pFsmRunEventNetDeviceRegister */
 
-VOID p2pFsmRunEventUpdateMgmtFrame(IN P_ADAPTER_T prAdapter, IN P_MSG_HDR_T prMsgHdr)
+void p2pFsmRunEventUpdateMgmtFrame(IN struct ADAPTER *prAdapter, IN struct MSG_HDR *prMsgHdr)
 {
-	P_MSG_P2P_MGMT_FRAME_UPDATE_T prP2pMgmtFrameUpdateMsg = (P_MSG_P2P_MGMT_FRAME_UPDATE_T) NULL;
+	struct MSG_P2P_MGMT_FRAME_UPDATE *prP2pMgmtFrameUpdateMsg = (struct MSG_P2P_MGMT_FRAME_UPDATE *) NULL;
 
 	DBGLOG(P2P, TRACE, "p2pFsmRunEventUpdateMgmtFrame\n");
 
-	prP2pMgmtFrameUpdateMsg = (P_MSG_P2P_MGMT_FRAME_UPDATE_T) prMsgHdr;
+	prP2pMgmtFrameUpdateMsg = (struct MSG_P2P_MGMT_FRAME_UPDATE *) prMsgHdr;
 
 	switch (prP2pMgmtFrameUpdateMsg->eBufferType) {
 	case ENUM_FRAME_TYPE_EXTRA_IE_BEACON:
@@ -232,11 +232,11 @@ VOID p2pFsmRunEventUpdateMgmtFrame(IN P_ADAPTER_T prAdapter, IN P_MSG_HDR_T prMs
 }				/* p2pFsmRunEventUpdateMgmtFrame */
 
 #if CFG_SUPPORT_WFD
-VOID p2pFsmRunEventWfdSettingUpdate(IN P_ADAPTER_T prAdapter, IN P_MSG_HDR_T prMsgHdr)
+void p2pFsmRunEventWfdSettingUpdate(IN struct ADAPTER *prAdapter, IN struct MSG_HDR *prMsgHdr)
 {
-	P_WFD_CFG_SETTINGS_T prWfdCfgSettings = (P_WFD_CFG_SETTINGS_T) NULL;
-	P_MSG_WFD_CONFIG_SETTINGS_CHANGED_T prMsgWfdCfgSettings = (P_MSG_WFD_CONFIG_SETTINGS_CHANGED_T) NULL;
-	UINT_32 i;
+	struct WFD_CFG_SETTINGS *prWfdCfgSettings = (struct WFD_CFG_SETTINGS *) NULL;
+	struct MSG_WFD_CONFIG_SETTINGS_CHANGED *prMsgWfdCfgSettings = (struct MSG_WFD_CONFIG_SETTINGS_CHANGED *) NULL;
+	uint32_t i;
 
 	/* WLAN_STATUS rStatus =  WLAN_STATUS_SUCCESS; */
 
@@ -246,7 +246,7 @@ VOID p2pFsmRunEventWfdSettingUpdate(IN P_ADAPTER_T prAdapter, IN P_MSG_HDR_T prM
 		ASSERT_BREAK((prAdapter != NULL));
 
 		if (prMsgHdr != NULL) {
-			prMsgWfdCfgSettings = (P_MSG_WFD_CONFIG_SETTINGS_CHANGED_T) prMsgHdr;
+			prMsgWfdCfgSettings = (struct MSG_WFD_CONFIG_SETTINGS_CHANGED *) prMsgHdr;
 			prWfdCfgSettings = prMsgWfdCfgSettings->prWfdCfgSettings;
 		} else {
 			prWfdCfgSettings = &prAdapter->rWifiVar.rWfdConfigureSettings;
@@ -255,8 +255,8 @@ VOID p2pFsmRunEventWfdSettingUpdate(IN P_ADAPTER_T prAdapter, IN P_MSG_HDR_T prM
 		DBGLOG(P2P, INFO, "WFD Enalbe %x info %x state %x flag %x adv %x\n",
 		       prWfdCfgSettings->ucWfdEnable,
 		       prWfdCfgSettings->u2WfdDevInfo,
-		       (UINT_32) prWfdCfgSettings->u4WfdState,
-		       (UINT_32) prWfdCfgSettings->u4WfdFlag, (UINT_32) prWfdCfgSettings->u4WfdAdvancedFlag);
+		       (uint32_t) prWfdCfgSettings->u4WfdState,
+		       (uint32_t) prWfdCfgSettings->u4WfdFlag, (uint32_t) prWfdCfgSettings->u4WfdAdvancedFlag);
 
 		if (prWfdCfgSettings->ucWfdEnable == 0)
 			for (i = 0; i < KAL_P2P_NUM; i++) {
@@ -283,12 +283,12 @@ VOID p2pFsmRunEventWfdSettingUpdate(IN P_ADAPTER_T prAdapter, IN P_MSG_HDR_T prM
  * \return none
  */
 /*----------------------------------------------------------------------------*/
-VOID p2pFsmRunEventScanDone(IN P_ADAPTER_T prAdapter, IN P_MSG_HDR_T prMsgHdr)
+void p2pFsmRunEventScanDone(IN struct ADAPTER *prAdapter, IN struct MSG_HDR *prMsgHdr)
 {
-	P_MSG_SCN_SCAN_DONE prScanDoneMsg = (P_MSG_SCN_SCAN_DONE) NULL;
-	P_BSS_INFO_T prP2pBssInfo = (P_BSS_INFO_T) NULL;
+	struct MSG_SCN_SCAN_DONE *prScanDoneMsg = (struct MSG_SCN_SCAN_DONE *) NULL;
+	struct BSS_INFO *prP2pBssInfo = (struct BSS_INFO *) NULL;
 
-	prScanDoneMsg = (P_MSG_SCN_SCAN_DONE) prMsgHdr;
+	prScanDoneMsg = (struct MSG_SCN_SCAN_DONE *) prMsgHdr;
 
 	prP2pBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prScanDoneMsg->ucBssIndex);
 

@@ -119,14 +119,14 @@
 *      Called by: Handle Rx mgmt request
 */
 /*----------------------------------------------------------------------------*/
-VOID wnmWNMAction(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T prSwRfb)
+void wnmWNMAction(IN struct ADAPTER *prAdapter, IN struct SW_RFB *prSwRfb)
 {
-	P_WLAN_ACTION_FRAME prRxFrame;
+	struct WLAN_ACTION_FRAME *prRxFrame;
 
 	ASSERT(prAdapter);
 	ASSERT(prSwRfb);
 
-	prRxFrame = (P_WLAN_ACTION_FRAME) prSwRfb->pvHeader;
+	prRxFrame = (struct WLAN_ACTION_FRAME *) prSwRfb->pvHeader;
 
 	switch (prRxFrame->ucAction) {
 #if CFG_SUPPORT_802_11V_TIMING_MEASUREMENT
@@ -152,9 +152,9 @@ VOID wnmWNMAction(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T prSwRfb)
 *
 */
 /*----------------------------------------------------------------------------*/
-VOID wnmReportTimingMeas(IN P_ADAPTER_T prAdapter, IN UINT_8 ucStaRecIndex, IN UINT_32 u4ToD, IN UINT_32 u4ToA)
+void wnmReportTimingMeas(IN struct ADAPTER *prAdapter, IN uint8_t ucStaRecIndex, IN uint32_t u4ToD, IN uint32_t u4ToA)
 {
-	P_STA_RECORD_T prStaRec;
+	struct STA_RECORD *prStaRec;
 
 	prStaRec = cnmGetStaRecByIndex(prAdapter, ucStaRecIndex);
 
@@ -181,11 +181,11 @@ VOID wnmReportTimingMeas(IN P_ADAPTER_T prAdapter, IN UINT_8 ucStaRecIndex, IN U
 * @retval WLAN_STATUS_SUCCESS
 */
 /*----------------------------------------------------------------------------*/
-static WLAN_STATUS
-wnmRunEventTimgingMeasTxDone(IN P_ADAPTER_T prAdapter,
-			     IN P_MSDU_INFO_T prMsduInfo, IN ENUM_TX_RESULT_CODE_T rTxDoneStatus)
+static uint32_t
+wnmRunEventTimgingMeasTxDone(IN struct ADAPTER *prAdapter,
+			     IN struct MSDU_INFO *prMsduInfo, IN enum ENUM_TX_RESULT_CODE rTxDoneStatus)
 {
-	P_STA_RECORD_T prStaRec;
+	struct STA_RECORD *prStaRec;
 
 	ASSERT(prAdapter);
 	ASSERT(prMsduInfo);
@@ -222,24 +222,24 @@ wnmRunEventTimgingMeasTxDone(IN P_ADAPTER_T prAdapter,
 * @return (none)
 */
 /*----------------------------------------------------------------------------*/
-static VOID
-wnmComposeTimingMeasFrame(IN P_ADAPTER_T prAdapter, IN P_STA_RECORD_T prStaRec, IN PFN_TX_DONE_HANDLER pfTxDoneHandler)
+static void
+wnmComposeTimingMeasFrame(IN struct ADAPTER *prAdapter, IN struct STA_RECORD *prStaRec, IN PFN_TX_DONE_HANDLER pfTxDoneHandler)
 {
-	P_MSDU_INFO_T prMsduInfo;
-	P_BSS_INFO_T prBssInfo;
-	P_ACTION_UNPROTECTED_WNM_TIMING_MEAS_FRAME prTxFrame;
-	UINT_16 u2PayloadLen;
+	struct MSDU_INFO *prMsduInfo;
+	struct BSS_INFO *prBssInfo;
+	struct ACTION_UNPROTECTED_WNM_TIMING_MEAS_FRAME *prTxFrame;
+	uint16_t u2PayloadLen;
 
 	prBssInfo = &prAdapter->rWifiVar.arBssInfo[prStaRec->ucNetTypeIndex];
 	ASSERT(prBssInfo);
 
-	prMsduInfo = (P_MSDU_INFO_T) cnmMgtPktAlloc(prAdapter, MAC_TX_RESERVED_FIELD + PUBLIC_ACTION_MAX_LEN);
+	prMsduInfo = (struct MSDU_INFO *) cnmMgtPktAlloc(prAdapter, MAC_TX_RESERVED_FIELD + PUBLIC_ACTION_MAX_LEN);
 
 	if (!prMsduInfo)
 		return;
 
-	prTxFrame = (P_ACTION_UNPROTECTED_WNM_TIMING_MEAS_FRAME)
-	    ((UINT_32) (prMsduInfo->prPacket) + MAC_TX_RESERVED_FIELD);
+	prTxFrame = (struct ACTION_UNPROTECTED_WNM_TIMING_MEAS_FRAME *)
+	    ((uint32_t) (prMsduInfo->prPacket) + MAC_TX_RESERVED_FIELD);
 
 	prTxFrame->u2FrameCtrl = MAC_FRAME_ACTION;
 
@@ -289,12 +289,12 @@ wnmComposeTimingMeasFrame(IN P_ADAPTER_T prAdapter, IN P_STA_RECORD_T prStaRec, 
 *      Handle Rx mgmt request
 */
 /*----------------------------------------------------------------------------*/
-static VOID wnmTimingMeasRequest(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T prSwRfb)
+static void wnmTimingMeasRequest(IN struct ADAPTER *prAdapter, IN struct SW_RFB *prSwRfb)
 {
-	P_ACTION_WNM_TIMING_MEAS_REQ_FRAME prRxFrame = NULL;
-	P_STA_RECORD_T prStaRec;
+	struct ACTION_WNM_TIMING_MEAS_REQ_FRAME *prRxFrame = NULL;
+	struct STA_RECORD *prStaRec;
 
-	prRxFrame = (P_ACTION_WNM_TIMING_MEAS_REQ_FRAME) prSwRfb->pvHeader;
+	prRxFrame = (struct ACTION_WNM_TIMING_MEAS_REQ_FRAME *) prSwRfb->pvHeader;
 	if (!prRxFrame)
 		return;
 
@@ -315,9 +315,9 @@ static VOID wnmTimingMeasRequest(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T prSwRfb
 }
 
 #if WNM_UNIT_TEST
-VOID wnmTimingMeasUnitTest1(P_ADAPTER_T prAdapter, UINT_8 ucStaRecIndex)
+void wnmTimingMeasUnitTest1(struct ADAPTER *prAdapter, uint8_t ucStaRecIndex)
 {
-	P_STA_RECORD_T prStaRec;
+	struct STA_RECORD *prStaRec;
 
 	prStaRec = cnmGetStaRecByIndex(prAdapter, ucStaRecIndex);
 	if ((!prStaRec) || (!prStaRec->fgIsInUse))

@@ -83,9 +83,9 @@
 #define HIF_TX_BUFF_COUNT_TC4               2
 #endif
 
-#define TX_HDR_SIZE                         sizeof(HIF_TX_HEADER_T)
+#define TX_HDR_SIZE                         sizeof(struct HIF_TX_HEADER)
 
-#define CMD_HDR_SIZE                        sizeof(WIFI_CMD_T)
+#define CMD_HDR_SIZE                        sizeof(struct WIFI_CMD)
 
 #define CMD_PKT_SIZE_FOR_IMAGE              2048	/* !< 2048 Bytes CMD payload buffer */
 
@@ -108,32 +108,32 @@
 *                         D A T A   T Y P E S
 ********************************************************************************
 */
-typedef struct _HIF_HW_TX_HEADER_T {
-	UINT_16 u2TxByteCount;
-	UINT_8 ucEtherTypeOffset;
-	UINT_8 ucCSflags;
-	UINT_8 aucBuffer[0];
-} HIF_HW_TX_HEADER_T, *P_HIF_HW_TX_HEADER_T;
+struct HIF_HW_TX_HEADER {
+	uint16_t u2TxByteCount;
+	uint8_t ucEtherTypeOffset;
+	uint8_t ucCSflags;
+	uint8_t aucBuffer[0];
+};
 
-typedef struct _HIF_TX_HEADER_T {
-	UINT_16 u2TxByteCount_UserPriority;
-	UINT_8 ucEtherTypeOffset;
-	UINT_8 ucResource_PktType_CSflags;
-	UINT_8 ucWlanHeaderLength;
-	UINT_8 ucPktFormtId_Flags;
-	UINT_16 u2LLH;		/* for BOW */
-	UINT_16 u2SeqNo;	/* for BOW */
-	UINT_8 ucStaRecIdx;
-	UINT_8 ucForwardingType_SessionID_Reserved;
-	UINT_8 ucPacketSeqNo;
-	UINT_8 ucAck_BIP_BasicRate;
-	UINT_8 aucReserved[2];
-} HIF_TX_HEADER_T, *P_HIF_TX_HEADER_T;
+struct HIF_TX_HEADER {
+	uint16_t u2TxByteCount_UserPriority;
+	uint8_t ucEtherTypeOffset;
+	uint8_t ucResource_PktType_CSflags;
+	uint8_t ucWlanHeaderLength;
+	uint8_t ucPktFormtId_Flags;
+	uint16_t u2LLH;		/* for BOW */
+	uint16_t u2SeqNo;	/* for BOW */
+	uint8_t ucStaRecIdx;
+	uint8_t ucForwardingType_SessionID_Reserved;
+	uint8_t ucPacketSeqNo;
+	uint8_t ucAck_BIP_BasicRate;
+	uint8_t aucReserved[2];
+};
 
-typedef enum _ENUM_HIF_OOB_CTRL_PKT_TYPE_T {
+enum ENUM_HIF_OOB_CTRL_PKT_TYPE {
 	HIF_OOB_CTRL_PKT_TYPE_LOOPBACK = 1,
 	HIF_OOB_CTRL_PKT_TYP_NUM
-} ENUM_HIF_OOB_CTRL_PKT_TYPE_T, *P_ENUM_HIF_OOB_CTRL_PKT_TYPE_T;
+};
 
 /*******************************************************************************
 *                            P U B L I C   D A T A
@@ -158,11 +158,11 @@ typedef enum _ENUM_HIF_OOB_CTRL_PKT_TYPE_T {
 /* Kevin: we don't have to call following function to inspect the data structure.
  * It will check automatically while at compile time.
  */
-static __KAL_INLINE__ VOID hif_txDataTypeCheck(VOID);
+static __KAL_INLINE__ void hif_txDataTypeCheck(void);
 
-static __KAL_INLINE__ VOID hif_txDataTypeCheck(VOID)
+static __KAL_INLINE__ void hif_txDataTypeCheck(void)
 {
-	DATA_STRUCT_INSPECTING_ASSERT(sizeof(HIF_TX_HEADER_T) == 16);
+	DATA_STRUCT_INSPECTING_ASSERT(sizeof(struct HIF_TX_HEADER) == 16);
 }
 
 #endif /*_HIF_TX_H */

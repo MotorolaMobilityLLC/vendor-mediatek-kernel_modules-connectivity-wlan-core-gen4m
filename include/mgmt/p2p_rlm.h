@@ -98,29 +98,29 @@
  ********************************************************************************
  */
 
-VOID rlmBssInitForAP(P_ADAPTER_T prAdapter, P_BSS_INFO_T prBssInfo);
+void rlmBssInitForAP(struct ADAPTER *prAdapter, struct BSS_INFO *prBssInfo);
 
-BOOLEAN rlmUpdateBwByChListForAP(P_ADAPTER_T prAdapter, P_BSS_INFO_T prBssInfo);
+u_int8_t rlmUpdateBwByChListForAP(struct ADAPTER *prAdapter, struct BSS_INFO *prBssInfo);
 
-VOID rlmUpdateParamsForAP(P_ADAPTER_T prAdapter, P_BSS_INFO_T prBssInfo, BOOLEAN fgUpdateBeacon);
+void rlmUpdateParamsForAP(struct ADAPTER *prAdapter, struct BSS_INFO *prBssInfo, u_int8_t fgUpdateBeacon);
 
-VOID rlmFuncInitialChannelList(IN P_ADAPTER_T prAdapter);
+void rlmFuncInitialChannelList(IN struct ADAPTER *prAdapter);
 
-VOID
-rlmFuncCommonChannelList(IN P_ADAPTER_T prAdapter, IN P_CHANNEL_ENTRY_FIELD_T prChannelEntryII, IN UINT_8
+void
+rlmFuncCommonChannelList(IN struct ADAPTER *prAdapter, IN struct CHANNEL_ENTRY_FIELD *prChannelEntryII, IN uint8_t
 			 ucChannelListSize);
 
-UINT_8 rlmFuncFindOperatingClass(IN P_ADAPTER_T prAdapter, IN UINT_8 ucChannelNum);
+uint8_t rlmFuncFindOperatingClass(IN struct ADAPTER *prAdapter, IN uint8_t ucChannelNum);
 
-BOOLEAN
-rlmFuncFindAvailableChannel(IN P_ADAPTER_T prAdapter, IN UINT_8 ucCheckChnl, IN PUINT_8 pucSuggestChannel, IN BOOLEAN
-			    fgIsSocialChannel, IN BOOLEAN fgIsDefaultChannel);
+u_int8_t
+rlmFuncFindAvailableChannel(IN struct ADAPTER *prAdapter, IN uint8_t ucCheckChnl, IN uint8_t *pucSuggestChannel, IN u_int8_t
+			    fgIsSocialChannel, IN u_int8_t fgIsDefaultChannel);
 
-ENUM_CHNL_EXT_T rlmDecideScoForAP(P_ADAPTER_T prAdapter, P_BSS_INFO_T prBssInfo);
+enum ENUM_CHNL_EXT rlmDecideScoForAP(struct ADAPTER *prAdapter, struct BSS_INFO *prBssInfo);
 
-ENUM_CHNL_EXT_T rlmGetScoForAP(P_ADAPTER_T prAdapter, P_BSS_INFO_T prBssInfo);
+enum ENUM_CHNL_EXT rlmGetScoForAP(struct ADAPTER *prAdapter, struct BSS_INFO *prBssInfo);
 
-UINT_8 rlmGetVhtS1ForAP(P_ADAPTER_T prAdapter, P_BSS_INFO_T prBssInfo);
+uint8_t rlmGetVhtS1ForAP(struct ADAPTER *prAdapter, struct BSS_INFO *prBssInfo);
 
 
 #endif

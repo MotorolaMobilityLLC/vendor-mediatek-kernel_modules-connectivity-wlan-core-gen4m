@@ -98,7 +98,7 @@
 
 PFN_TX_DATA_DONE_CB g_pfTxDataDoneCb = nicTxMsduDoneCb;
 
-static const TX_RESOURCE_CONTROL_T arTcResourceControl[TC_NUM] = {
+static const struct TX_RESOURCE_CONTROL arTcResourceControl[TC_NUM] = {
 	/* dest port index, dest queue index,   HIF TX queue index */
 	/* First HW queue */
 	{PORT_INDEX_LMAC, MAC_TXQ_AC0_INDEX, HIF_TX_AC0_INDEX},
@@ -118,7 +118,7 @@ static const TX_RESOURCE_CONTROL_T arTcResourceControl[TC_NUM] = {
 };
 
 /* Traffic settings per TC */
-static const TX_TC_TRAFFIC_SETTING_T arTcTrafficSettings[NET_TC_NUM] = {
+static const struct TX_TC_TRAFFIC_SETTING arTcTrafficSettings[NET_TC_NUM] = {
 	/* Tx desc template format,                    Remaining Tx time,                               Retry count */
 	/* For Data frame with StaRec, set Long Format to enable the following settings */
 	{NIC_TX_DESC_LONG_FORMAT_LENGTH, NIC_TX_AC_BE_REMAINING_TX_TIME,
@@ -144,43 +144,43 @@ static const TX_TC_TRAFFIC_SETTING_T arTcTrafficSettings[NET_TC_NUM] = {
 ********************************************************************************
 */
 
-static PUINT_8 apucTxResultStr[TX_RESULT_NUM] = {
-	(PUINT_8) DISP_STRING("SUCCESS"),		/* success */
-	(PUINT_8) DISP_STRING("LIFE_TO"),		/* life timeout */
-	(PUINT_8) DISP_STRING("RTS_ER"),		/* RTS error */
-	(PUINT_8) DISP_STRING("MPDU_ER"),		/* MPDU error */
-	(PUINT_8) DISP_STRING("AGE_TO"),		/* aging timeout */
-	(PUINT_8) DISP_STRING("FLUSHED"),		/* flushed */
-	(PUINT_8) DISP_STRING("BIP_ER"),		/* BIP error */
-	(PUINT_8) DISP_STRING("UNSPEC_ER"),		/* unspecified error */
-	(PUINT_8) NULL,
-	(PUINT_8) NULL,
-	(PUINT_8) NULL,
-	(PUINT_8) NULL,
-	(PUINT_8) NULL,
-	(PUINT_8) NULL,
-	(PUINT_8) NULL,
-	(PUINT_8) NULL,
-	(PUINT_8) NULL,
-	(PUINT_8) NULL,
-	(PUINT_8) NULL,
-	(PUINT_8) NULL,
-	(PUINT_8) NULL,
-	(PUINT_8) NULL,
-	(PUINT_8) NULL,
-	(PUINT_8) NULL,
-	(PUINT_8) NULL,
-	(PUINT_8) NULL,
-	(PUINT_8) NULL,
-	(PUINT_8) NULL,
-	(PUINT_8) NULL,
-	(PUINT_8) NULL,
-	(PUINT_8) NULL,
-	(PUINT_8) NULL,
-	(PUINT_8) DISP_STRING("DP_IN_DRV"),		/* drop in driver */
-	(PUINT_8) DISP_STRING("DP_IN_FW"),		/* drop in FW */
-	(PUINT_8) DISP_STRING("QUE_CLR"),		/* queue clearance */
-	(PUINT_8) DISP_STRING("INACT_BSS")		/* inactive BSS */
+static uint8_t *apucTxResultStr[TX_RESULT_NUM] = {
+	(uint8_t *) DISP_STRING("SUCCESS"),		/* success */
+	(uint8_t *) DISP_STRING("LIFE_TO"),		/* life timeout */
+	(uint8_t *) DISP_STRING("RTS_ER"),		/* RTS error */
+	(uint8_t *) DISP_STRING("MPDU_ER"),		/* MPDU error */
+	(uint8_t *) DISP_STRING("AGE_TO"),		/* aging timeout */
+	(uint8_t *) DISP_STRING("FLUSHED"),		/* flushed */
+	(uint8_t *) DISP_STRING("BIP_ER"),		/* BIP error */
+	(uint8_t *) DISP_STRING("UNSPEC_ER"),		/* unspecified error */
+	(uint8_t *) NULL,
+	(uint8_t *) NULL,
+	(uint8_t *) NULL,
+	(uint8_t *) NULL,
+	(uint8_t *) NULL,
+	(uint8_t *) NULL,
+	(uint8_t *) NULL,
+	(uint8_t *) NULL,
+	(uint8_t *) NULL,
+	(uint8_t *) NULL,
+	(uint8_t *) NULL,
+	(uint8_t *) NULL,
+	(uint8_t *) NULL,
+	(uint8_t *) NULL,
+	(uint8_t *) NULL,
+	(uint8_t *) NULL,
+	(uint8_t *) NULL,
+	(uint8_t *) NULL,
+	(uint8_t *) NULL,
+	(uint8_t *) NULL,
+	(uint8_t *) NULL,
+	(uint8_t *) NULL,
+	(uint8_t *) NULL,
+	(uint8_t *) NULL,
+	(uint8_t *) DISP_STRING("DP_IN_DRV"),		/* drop in driver */
+	(uint8_t *) DISP_STRING("DP_IN_FW"),		/* drop in FW */
+	(uint8_t *) DISP_STRING("QUE_CLR"),		/* queue clearance */
+	(uint8_t *) DISP_STRING("INACT_BSS")		/* inactive BSS */
 };
 
 /*******************************************************************************
@@ -207,12 +207,12 @@ static PUINT_8 apucTxResultStr[TX_RESULT_NUM] = {
 * @return (none)
 */
 /*----------------------------------------------------------------------------*/
-VOID nicTxInitialize(IN P_ADAPTER_T prAdapter)
+void nicTxInitialize(IN struct ADAPTER *prAdapter)
 {
-	P_TX_CTRL_T prTxCtrl;
-	PUINT_8 pucMemHandle;
-	P_MSDU_INFO_T prMsduInfo;
-	UINT_32 i;
+	struct TX_CTRL *prTxCtrl;
+	uint8_t *pucMemHandle;
+	struct MSDU_INFO *prMsduInfo;
+	uint32_t i;
 
 	KAL_SPIN_LOCK_DECLARATION();
 
@@ -233,19 +233,19 @@ VOID nicTxInitialize(IN P_ADAPTER_T prAdapter)
 
 	pucMemHandle = prTxCtrl->pucTxCached;
 	for (i = 0; i < CFG_TX_MAX_PKT_NUM; i++) {
-		prMsduInfo = (P_MSDU_INFO_T) pucMemHandle;
-		kalMemZero(prMsduInfo, sizeof(MSDU_INFO_T));
+		prMsduInfo = (struct MSDU_INFO *) pucMemHandle;
+		kalMemZero(prMsduInfo, sizeof(struct MSDU_INFO));
 
 		KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_MSDU_INFO_LIST);
-		QUEUE_INSERT_TAIL(&prTxCtrl->rFreeMsduInfoList, (P_QUE_ENTRY_T) prMsduInfo);
+		QUEUE_INSERT_TAIL(&prTxCtrl->rFreeMsduInfoList, (struct QUE_ENTRY *) prMsduInfo);
 		KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_MSDU_INFO_LIST);
 
-		pucMemHandle += ALIGN_4(sizeof(MSDU_INFO_T));
+		pucMemHandle += ALIGN_4(sizeof(struct MSDU_INFO));
 	}
 
 	ASSERT(prTxCtrl->rFreeMsduInfoList.u4NumElem == CFG_TX_MAX_PKT_NUM);
 	/* Check if the memory allocation consist with this initialization function */
-	ASSERT((UINT_32) (pucMemHandle - prTxCtrl->pucTxCached) == prTxCtrl->u4TxCachedSize);
+	ASSERT((uint32_t) (pucMemHandle - prTxCtrl->pucTxCached) == prTxCtrl->u4TxCachedSize);
 
 	QUEUE_INITIALIZE(&prTxCtrl->rTxMgmtTxingQueue);
 	prTxCtrl->i4TxMgmtPendingNum = 0;
@@ -273,13 +273,13 @@ VOID nicTxInitialize(IN P_ADAPTER_T prAdapter)
 
 }				/* end of nicTxInitialize() */
 
-BOOLEAN nicTxSanityCheckResource(IN P_ADAPTER_T prAdapter)
+u_int8_t nicTxSanityCheckResource(IN struct ADAPTER *prAdapter)
 {
-	P_TX_CTRL_T prTxCtrl;
-	UINT_8 ucTC;
-	UINT_32 ucTotalMaxResource = 0;
-	UINT_32 ucTotalFreeResource = 0;
-	BOOLEAN fgError = FALSE;
+	struct TX_CTRL *prTxCtrl;
+	uint8_t ucTC;
+	uint32_t ucTotalMaxResource = 0;
+	uint32_t ucTotalFreeResource = 0;
+	u_int8_t fgError = FALSE;
 
 	if (prAdapter->rWifiVar.ucTxDbg & BIT(0)) {
 		prTxCtrl = &prAdapter->rTxCtrl;
@@ -340,10 +340,10 @@ BOOLEAN nicTxSanityCheckResource(IN P_ADAPTER_T prAdapter)
 */
 /*----------------------------------------------------------------------------*/
 
-BOOLEAN nicTxResourceIsPleCtrlNeeded(IN P_ADAPTER_T prAdapter, IN UINT_8 ucTC)
+u_int8_t nicTxResourceIsPleCtrlNeeded(IN struct ADAPTER *prAdapter, IN uint8_t ucTC)
 {
-	P_TX_CTRL_T prTxCtrl;
-	P_TX_TCQ_STATUS_T prTc;
+	struct TX_CTRL *prTxCtrl;
+	struct TX_TCQ_STATUS *prTc;
 
 	ASSERT(prAdapter);
 
@@ -366,10 +366,10 @@ BOOLEAN nicTxResourceIsPleCtrlNeeded(IN P_ADAPTER_T prAdapter, IN UINT_8 ucTC)
 }
 
 
-UINT_32 nicTxResourceGetPleFreeCount(IN P_ADAPTER_T prAdapter, IN UINT_8 ucTC)
+uint32_t nicTxResourceGetPleFreeCount(IN struct ADAPTER *prAdapter, IN uint8_t ucTC)
 {
-	P_TX_CTRL_T prTxCtrl;
-	P_TX_TCQ_STATUS_T prTc;
+	struct TX_CTRL *prTxCtrl;
+	struct TX_TCQ_STATUS *prTc;
 
 	ASSERT(prAdapter);
 
@@ -398,10 +398,10 @@ UINT_32 nicTxResourceGetPleFreeCount(IN P_ADAPTER_T prAdapter, IN UINT_8 ucTC)
 */
 /*----------------------------------------------------------------------------*/
 
-WLAN_STATUS nicTxAcquireResourcePLE(IN P_ADAPTER_T prAdapter, IN UINT_8 ucTC)
+uint32_t nicTxAcquireResourcePLE(IN struct ADAPTER *prAdapter, IN uint8_t ucTC)
 {
-	P_TX_CTRL_T prTxCtrl;
-	P_TX_TCQ_STATUS_T prTc;
+	struct TX_CTRL *prTxCtrl;
+	struct TX_TCQ_STATUS *prTc;
 
 	ASSERT(prAdapter);
 
@@ -445,17 +445,17 @@ WLAN_STATUS nicTxAcquireResourcePLE(IN P_ADAPTER_T prAdapter, IN UINT_8 ucTC)
 * \retval WLAN_STATUS_RESOURCES Resource is not available.
 */
 /*----------------------------------------------------------------------------*/
-UINT_32 u4CurrTick;
-WLAN_STATUS nicTxAcquireResource(IN P_ADAPTER_T prAdapter, IN UINT_8 ucTC, IN UINT_32 u4PageCount,
-	IN BOOLEAN fgReqLock)
+uint32_t u4CurrTick;
+uint32_t nicTxAcquireResource(IN struct ADAPTER *prAdapter, IN uint8_t ucTC, IN uint32_t u4PageCount,
+	IN u_int8_t fgReqLock)
 {
 #define TC4_NO_RESOURCE_DELAY_MS      5    /* exponential of 5s */
 
-	P_TX_CTRL_T prTxCtrl;
-	P_TX_TCQ_STATUS_T prTc;
-	WLAN_STATUS u4Status = WLAN_STATUS_RESOURCES;
-	UINT_32 u4MaxPageCntPerFrame = prAdapter->rTxCtrl.u4MaxPageCntPerFrame;
-	P_QUE_MGT_T prQM;
+	struct TX_CTRL *prTxCtrl;
+	struct TX_TCQ_STATUS *prTc;
+	uint32_t u4Status = WLAN_STATUS_RESOURCES;
+	uint32_t u4MaxPageCntPerFrame = prAdapter->rTxCtrl.u4MaxPageCntPerFrame;
+	struct QUE_MGT *prQM;
 
 	KAL_SPIN_LOCK_DECLARATION();
 
@@ -527,11 +527,11 @@ WLAN_STATUS nicTxAcquireResource(IN P_ADAPTER_T prAdapter, IN UINT_8 ucTC, IN UI
 * @retval WLAN_STATUS_FAILURE   Resource is not available.
 */
 /*----------------------------------------------------------------------------*/
-WLAN_STATUS nicTxPollingResource(IN P_ADAPTER_T prAdapter, IN UINT_8 ucTC)
+uint32_t nicTxPollingResource(IN struct ADAPTER *prAdapter, IN uint8_t ucTC)
 {
-	P_TX_CTRL_T prTxCtrl;
-	WLAN_STATUS u4Status = WLAN_STATUS_FAILURE;
-	INT_32 i = NIC_TX_RESOURCE_POLLING_TIMEOUT;
+	struct TX_CTRL *prTxCtrl;
+	uint32_t u4Status = WLAN_STATUS_FAILURE;
+	int32_t i = NIC_TX_RESOURCE_POLLING_TIMEOUT;
 	/*UINT_32 au4WTSR[8];*/
 
 	ASSERT(prAdapter);
@@ -556,7 +556,7 @@ WLAN_STATUS nicTxPollingResource(IN P_ADAPTER_T prAdapter, IN UINT_8 ucTC)
 		if (kalIsCardRemoved(prAdapter->prGlueInfo) == TRUE || fgIsBusAccessFailed == TRUE) {
 			u4Status = WLAN_STATUS_FAILURE;
 			break;
-		} else if (halTxReleaseResource(prAdapter, (PUINT_16) au4WTSR)) {
+		} else if (halTxReleaseResource(prAdapter, (uint16_t *) au4WTSR)) {
 			if (prTxCtrl->rTc.au4FreeBufferCount[ucTC] > 0) {
 				u4Status = WLAN_STATUS_SUCCESS;
 				break;
@@ -570,7 +570,7 @@ WLAN_STATUS nicTxPollingResource(IN P_ADAPTER_T prAdapter, IN UINT_8 ucTC)
 
 #if DBG
 	{
-		INT_32 i4Times = NIC_TX_RESOURCE_POLLING_TIMEOUT - (i + 1);
+		int32_t i4Times = NIC_TX_RESOURCE_POLLING_TIMEOUT - (i + 1);
 
 		if (i4Times) {
 			DBGLOG(TX, TRACE, "Polling MCR_WTSR delay %ld times, %ld msec\n",
@@ -592,13 +592,13 @@ WLAN_STATUS nicTxPollingResource(IN P_ADAPTER_T prAdapter, IN UINT_8 ucTC)
 * @return (none)
 */
 /*----------------------------------------------------------------------------*/
-BOOLEAN nicTxReleaseResource(IN P_ADAPTER_T prAdapter, IN UINT_8 ucTc, IN UINT_32 u4PageCount,
-	IN BOOLEAN fgReqLock, IN BOOLEAN fgPLE)
+u_int8_t nicTxReleaseResource(IN struct ADAPTER *prAdapter, IN uint8_t ucTc, IN uint32_t u4PageCount,
+	IN u_int8_t fgReqLock, IN u_int8_t fgPLE)
 {
-	P_TX_TCQ_STATUS_T prTcqStatus;
-	BOOLEAN bStatus = FALSE;
-	UINT_32 u4MaxPageCntPerFrame = prAdapter->rTxCtrl.u4MaxPageCntPerFrame;
-	P_QUE_MGT_T prQM = NULL;
+	struct TX_TCQ_STATUS *prTcqStatus;
+	u_int8_t bStatus = FALSE;
+	uint32_t u4MaxPageCntPerFrame = prAdapter->rTxCtrl.u4MaxPageCntPerFrame;
+	struct QUE_MGT *prQM = NULL;
 
 	KAL_SPIN_LOCK_DECLARATION();
 
@@ -650,16 +650,16 @@ BOOLEAN nicTxReleaseResource(IN P_ADAPTER_T prAdapter, IN UINT_8 ucTc, IN UINT_3
 * @return (none)
 */
 /*----------------------------------------------------------------------------*/
-VOID nicTxReleaseMsduResource(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduInfoListHead)
+void nicTxReleaseMsduResource(IN struct ADAPTER *prAdapter, IN struct MSDU_INFO *prMsduInfoListHead)
 {
-	P_MSDU_INFO_T prMsduInfo = prMsduInfoListHead, prNextMsduInfo;
+	struct MSDU_INFO *prMsduInfo = prMsduInfoListHead, *prNextMsduInfo;
 
 	KAL_SPIN_LOCK_DECLARATION();
 
 	KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_RESOURCE);
 
 	while (prMsduInfo) {
-		prNextMsduInfo = (P_MSDU_INFO_T) QUEUE_GET_NEXT_ENTRY((P_QUE_ENTRY_T) prMsduInfo);
+		prNextMsduInfo = (struct MSDU_INFO *) QUEUE_GET_NEXT_ENTRY((struct QUE_ENTRY *) prMsduInfo);
 
 		nicTxReleaseResource_PSE(prAdapter, prMsduInfo->ucTC,
 			nicTxGetPageCount(prAdapter, prMsduInfo->u2FrameLength, FALSE), FALSE);
@@ -682,10 +682,10 @@ VOID nicTxReleaseMsduResource(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduI
 * @return WLAN_STATUS_SUCCESS
 */
 /*----------------------------------------------------------------------------*/
-WLAN_STATUS nicTxResetResource(IN P_ADAPTER_T prAdapter)
+uint32_t nicTxResetResource(IN struct ADAPTER *prAdapter)
 {
-	P_TX_CTRL_T prTxCtrl;
-	UINT_8 ucIdx;
+	struct TX_CTRL *prTxCtrl;
+	uint8_t ucIdx;
 
 	KAL_SPIN_LOCK_DECLARATION();
 
@@ -843,14 +843,14 @@ WLAN_STATUS nicTxResetResource(IN P_ADAPTER_T prAdapter)
 }
 
 #if QM_FAST_TC_RESOURCE_CTRL
-UINT_32
-nicTxGetAdjustableResourceCnt(IN P_ADAPTER_T prAdapter)
+uint32_t
+nicTxGetAdjustableResourceCnt(IN struct ADAPTER *prAdapter)
 {
-	P_TX_CTRL_T prTxCtrl;
-	UINT_8 ucIdx;
-	UINT_32 u4TotAdjCnt = 0;
-	UINT_32 u4AdjCnt;
-	P_QUE_MGT_T prQM = NULL;
+	struct TX_CTRL *prTxCtrl;
+	uint8_t ucIdx;
+	uint32_t u4TotAdjCnt = 0;
+	uint32_t u4AdjCnt;
+	struct QUE_MGT *prQM = NULL;
 
 	prQM = &prAdapter->rQM;
 	prTxCtrl = &prAdapter->rTxCtrl;
@@ -882,9 +882,9 @@ nicTxGetAdjustableResourceCnt(IN P_ADAPTER_T prAdapter)
 * @retval UINT_8        The number of corresponding TC number
 */
 /*----------------------------------------------------------------------------*/
-UINT_16 nicTxGetResource(IN P_ADAPTER_T prAdapter, IN UINT_8 ucTC)
+uint16_t nicTxGetResource(IN struct ADAPTER *prAdapter, IN uint8_t ucTC)
 {
-	P_TX_CTRL_T prTxCtrl;
+	struct TX_CTRL *prTxCtrl;
 
 	ASSERT(prAdapter);
 	prTxCtrl = &prAdapter->rTxCtrl;
@@ -897,9 +897,9 @@ UINT_16 nicTxGetResource(IN P_ADAPTER_T prAdapter, IN UINT_8 ucTC)
 		return prTxCtrl->rTc.au4FreePageCount[ucTC];
 }
 
-UINT_8 nicTxGetFrameResourceType(IN UINT_8 eFrameType, IN P_MSDU_INFO_T prMsduInfo)
+uint8_t nicTxGetFrameResourceType(IN uint8_t eFrameType, IN struct MSDU_INFO *prMsduInfo)
 {
-	UINT_8 ucTC;
+	uint8_t ucTC;
 
 	switch (eFrameType) {
 	case FRAME_TYPE_802_1X:
@@ -922,9 +922,9 @@ UINT_8 nicTxGetFrameResourceType(IN UINT_8 eFrameType, IN P_MSDU_INFO_T prMsduIn
 	return ucTC;
 }
 
-UINT_8 nicTxGetCmdResourceType(IN P_CMD_INFO_T prCmdInfo)
+uint8_t nicTxGetCmdResourceType(IN struct CMD_INFO *prCmdInfo)
 {
-	UINT_8 ucTC;
+	uint8_t ucTC;
 
 	switch (prCmdInfo->eCmdType) {
 	case COMMAND_TYPE_NETWORK_IOCTL:
@@ -949,7 +949,7 @@ UINT_8 nicTxGetCmdResourceType(IN P_CMD_INFO_T prCmdInfo)
 	return ucTC;
 }
 
-UINT_8 nicTxGetTxQByTc(IN P_ADAPTER_T prAdapter, IN UINT_8 ucTc)
+uint8_t nicTxGetTxQByTc(IN struct ADAPTER *prAdapter, IN uint8_t ucTc)
 {
 	return arTcResourceControl[ucTc].ucHifTxQIndex;
 }
@@ -966,12 +966,12 @@ UINT_8 nicTxGetTxQByTc(IN P_ADAPTER_T prAdapter, IN UINT_8 ucTc)
 * @retval WLAN_STATUS_FAILURE   Bus access fail.
 */
 /*----------------------------------------------------------------------------*/
-WLAN_STATUS nicTxMsduInfoList(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduInfoListHead)
+uint32_t nicTxMsduInfoList(IN struct ADAPTER *prAdapter, IN struct MSDU_INFO *prMsduInfoListHead)
 {
-	P_MSDU_INFO_T prMsduInfo, prNextMsduInfo;
-	QUE_T qDataPort0, qDataPort1;
-	P_QUE_T prDataPort0, prDataPort1;
-	WLAN_STATUS status;
+	struct MSDU_INFO *prMsduInfo, *prNextMsduInfo;
+	struct QUE qDataPort0, qDataPort1;
+	struct QUE *prDataPort0, *prDataPort1;
+	uint32_t status;
 
 	ASSERT(prAdapter);
 	ASSERT(prMsduInfoListHead);
@@ -986,15 +986,15 @@ WLAN_STATUS nicTxMsduInfoList(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduI
 
 	/* Separate MSDU_INFO_T lists into 2 categories: for Port#0 & Port#1 */
 	while (prMsduInfo) {
-		prNextMsduInfo = (P_MSDU_INFO_T) QUEUE_GET_NEXT_ENTRY((P_QUE_ENTRY_T) prMsduInfo);
+		prNextMsduInfo = (struct MSDU_INFO *) QUEUE_GET_NEXT_ENTRY((struct QUE_ENTRY *) prMsduInfo);
 
 		switch (prMsduInfo->ucTC) {
 		case TC0_INDEX:
 		case TC1_INDEX:
 		case TC2_INDEX:
 		case TC3_INDEX:
-			QUEUE_GET_NEXT_ENTRY((P_QUE_ENTRY_T) prMsduInfo) = NULL;
-			QUEUE_INSERT_TAIL(prDataPort0, (P_QUE_ENTRY_T) prMsduInfo);
+			QUEUE_GET_NEXT_ENTRY((struct QUE_ENTRY *) prMsduInfo) = NULL;
+			QUEUE_INSERT_TAIL(prDataPort0, (struct QUE_ENTRY *) prMsduInfo);
 			status = nicTxAcquireResource(prAdapter, prMsduInfo->ucTC,
 				nicTxGetPageCount(prAdapter, prMsduInfo->u2FrameLength, FALSE), TRUE);
 			ASSERT(status == WLAN_STATUS_SUCCESS);
@@ -1002,8 +1002,8 @@ WLAN_STATUS nicTxMsduInfoList(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduI
 			break;
 
 		case TC4_INDEX:	/* Management packets */
-			QUEUE_GET_NEXT_ENTRY((P_QUE_ENTRY_T) prMsduInfo) = NULL;
-			QUEUE_INSERT_TAIL(prDataPort1, (P_QUE_ENTRY_T) prMsduInfo);
+			QUEUE_GET_NEXT_ENTRY((struct QUE_ENTRY *) prMsduInfo) = NULL;
+			QUEUE_INSERT_TAIL(prDataPort1, (struct QUE_ENTRY *) prMsduInfo);
 
 			status = nicTxAcquireResource(prAdapter, prMsduInfo->ucTC,
 				nicTxGetPageCount(prAdapter, prMsduInfo->u2FrameLength, FALSE), TRUE);
@@ -1041,12 +1041,12 @@ WLAN_STATUS nicTxMsduInfoList(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduI
 * @retval WLAN_STATUS_FAILURE   Bus access fail.
 */
 /*----------------------------------------------------------------------------*/
-WLAN_STATUS nicTxMsduInfoListMthread(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduInfoListHead)
+uint32_t nicTxMsduInfoListMthread(IN struct ADAPTER *prAdapter, IN struct MSDU_INFO *prMsduInfoListHead)
 {
 #if CFG_FIX_2_TX_PORT
-	P_MSDU_INFO_T prMsduInfo, prNextMsduInfo;
-	QUE_T qDataPort0, qDataPort1;
-	P_QUE_T prDataPort0, prDataPort1;
+	struct MSDU_INFO *prMsduInfo, *prNextMsduInfo;
+	struct QUE qDataPort0, qDataPort1;
+	struct QUE *prDataPort0, *prDataPort1;
 
 	KAL_SPIN_LOCK_DECLARATION();
 
@@ -1063,20 +1063,20 @@ WLAN_STATUS nicTxMsduInfoListMthread(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T 
 
 	/* Separate MSDU_INFO_T lists into 2 categories: for Port#0 & Port#1 */
 	while (prMsduInfo) {
-		prNextMsduInfo = (P_MSDU_INFO_T) QUEUE_GET_NEXT_ENTRY((P_QUE_ENTRY_T) prMsduInfo);
+		prNextMsduInfo = (struct MSDU_INFO *) QUEUE_GET_NEXT_ENTRY((struct QUE_ENTRY *) prMsduInfo);
 
 		switch (prMsduInfo->ucTC) {
 		case TC0_INDEX:
 		case TC1_INDEX:
 		case TC2_INDEX:
 		case TC3_INDEX:
-			QUEUE_GET_NEXT_ENTRY((P_QUE_ENTRY_T) prMsduInfo) = NULL;
-			QUEUE_INSERT_TAIL(prDataPort0, (P_QUE_ENTRY_T) prMsduInfo);
+			QUEUE_GET_NEXT_ENTRY((struct QUE_ENTRY *) prMsduInfo) = NULL;
+			QUEUE_INSERT_TAIL(prDataPort0, (struct QUE_ENTRY *) prMsduInfo);
 			break;
 
 		case TC4_INDEX:	/* Management packets */
-			QUEUE_GET_NEXT_ENTRY((P_QUE_ENTRY_T) prMsduInfo) = NULL;
-			QUEUE_INSERT_TAIL(prDataPort1, (P_QUE_ENTRY_T) prMsduInfo);
+			QUEUE_GET_NEXT_ENTRY((struct QUE_ENTRY *) prMsduInfo) = NULL;
+			QUEUE_INSERT_TAIL(prDataPort1, (struct QUE_ENTRY *) prMsduInfo);
 			break;
 
 		default:
@@ -1100,11 +1100,11 @@ WLAN_STATUS nicTxMsduInfoListMthread(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T 
 	}
 #else
 
-	P_MSDU_INFO_T prMsduInfo, prNextMsduInfo;
-	QUE_T qDataPort[TX_PORT_NUM];
-	P_QUE_T prDataPort[TX_PORT_NUM];
-	INT_32 i;
-	BOOLEAN fgSetTx2Hif = FALSE;
+	struct MSDU_INFO *prMsduInfo, *prNextMsduInfo;
+	struct QUE qDataPort[TX_PORT_NUM];
+	struct QUE *prDataPort[TX_PORT_NUM];
+	int32_t i;
+	u_int8_t fgSetTx2Hif = FALSE;
 
 	KAL_SPIN_LOCK_DECLARATION();
 
@@ -1122,16 +1122,16 @@ WLAN_STATUS nicTxMsduInfoListMthread(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T 
 	while (prMsduInfo) {
 
 		fgSetTx2Hif = TRUE;
-		prNextMsduInfo = (P_MSDU_INFO_T) QUEUE_GET_NEXT_ENTRY((P_QUE_ENTRY_T) prMsduInfo);
+		prNextMsduInfo = (struct MSDU_INFO *) QUEUE_GET_NEXT_ENTRY((struct QUE_ENTRY *) prMsduInfo);
 
 		if (prMsduInfo->ucWmmQueSet == DBDC_2G_WMM_INDEX) {
-			QUEUE_GET_NEXT_ENTRY((P_QUE_ENTRY_T) prMsduInfo) = NULL;
-			QUEUE_INSERT_TAIL(prDataPort[TX_2G_WMM_PORT_NUM], (P_QUE_ENTRY_T) prMsduInfo);
+			QUEUE_GET_NEXT_ENTRY((struct QUE_ENTRY *) prMsduInfo) = NULL;
+			QUEUE_INSERT_TAIL(prDataPort[TX_2G_WMM_PORT_NUM], (struct QUE_ENTRY *) prMsduInfo);
 		} else {
 			if (prMsduInfo->ucTC >= 0 &&
 				prMsduInfo->ucTC < TC_NUM) {
-				QUEUE_GET_NEXT_ENTRY((P_QUE_ENTRY_T) prMsduInfo) = NULL;
-				QUEUE_INSERT_TAIL(prDataPort[prMsduInfo->ucTC], (P_QUE_ENTRY_T) prMsduInfo);
+				QUEUE_GET_NEXT_ENTRY((struct QUE_ENTRY *) prMsduInfo) = NULL;
+				QUEUE_INSERT_TAIL(prDataPort[prMsduInfo->ucTC], (struct QUE_ENTRY *) prMsduInfo);
 			} else
 				ASSERT(0);
 		}
@@ -1162,12 +1162,12 @@ WLAN_STATUS nicTxMsduInfoListMthread(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T 
 * @retval WLAN_STATUS_FAILURE   Bus access fail.
 */
 /*----------------------------------------------------------------------------*/
-UINT_32 nicTxMsduQueueMthread(IN P_ADAPTER_T prAdapter)
+uint32_t nicTxMsduQueueMthread(IN struct ADAPTER *prAdapter)
 {
 #if CFG_FIX_2_TX_PORT
-	QUE_T qDataPort0, qDataPort1;
-	P_QUE_T prDataPort0, prDataPort1;
-	UINT_32 u4TxLoopCount;
+	struct QUE qDataPort0, qDataPort1;
+	struct QUE *prDataPort0, *prDataPort1;
+	uint32_t u4TxLoopCount;
 
 	KAL_SPIN_LOCK_DECLARATION();
 
@@ -1214,10 +1214,10 @@ UINT_32 nicTxMsduQueueMthread(IN P_ADAPTER_T prAdapter)
 	}
 #else
 
-	UINT_32 u4TxLoopCount;
-	QUE_T qDataPort[TX_PORT_NUM];
-	P_QUE_T prDataPort[TX_PORT_NUM];
-	INT_32 i;
+	uint32_t u4TxLoopCount;
+	struct QUE qDataPort[TX_PORT_NUM];
+	struct QUE *prDataPort[TX_PORT_NUM];
+	int32_t i;
 
 	KAL_SPIN_LOCK_DECLARATION();
 
@@ -1251,13 +1251,13 @@ UINT_32 nicTxMsduQueueMthread(IN P_ADAPTER_T prAdapter)
 	return WLAN_STATUS_SUCCESS;
 }
 
-UINT_32 nicTxGetMsduPendingCnt(IN P_ADAPTER_T prAdapter)
+uint32_t nicTxGetMsduPendingCnt(IN struct ADAPTER *prAdapter)
 {
 #if CFG_FIX_2_TX_PORT
 	return (prAdapter->rTxP0Queue.u4NumElem + prAdapter->rTxP1Queue.u4NumElem);
 #else
-	INT_32 i;
-	UINT_32 retValue = 0;
+	int32_t i;
+	uint32_t retValue = 0;
 
 	for (i = 0; i < TX_PORT_NUM; i++)
 		retValue += prAdapter->rTxPQueue[i].u4NumElem;
@@ -1267,8 +1267,8 @@ UINT_32 nicTxGetMsduPendingCnt(IN P_ADAPTER_T prAdapter)
 
 #endif
 
-VOID nicTxComposeDescAppend(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduInfo,
-	OUT PUINT_8 prTxDescBuffer)
+void nicTxComposeDescAppend(IN struct ADAPTER *prAdapter, IN struct MSDU_INFO *prMsduInfo,
+	OUT uint8_t *prTxDescBuffer)
 {
 	struct mt66xx_chip_info *prChipInfo = prAdapter->chip_info;
 
@@ -1287,19 +1287,19 @@ VOID nicTxComposeDescAppend(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduInf
 * @retval VOID
 */
 /*----------------------------------------------------------------------------*/
-VOID
-nicTxComposeDesc(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduInfo,
-	IN UINT_32 u4TxDescLength, IN BOOLEAN fgIsTemplate, OUT PUINT_8 prTxDescBuffer)
+void
+nicTxComposeDesc(IN struct ADAPTER *prAdapter, IN struct MSDU_INFO *prMsduInfo,
+	IN uint32_t u4TxDescLength, IN u_int8_t fgIsTemplate, OUT uint8_t *prTxDescBuffer)
 {
-	P_HW_MAC_TX_DESC_T prTxDesc;
-	P_STA_RECORD_T prStaRec;
-	P_BSS_INFO_T prBssInfo;
-	UINT_8 ucEtherTypeOffsetInWord;
-	UINT_32 u4TxDescAndPaddingLength;
-	UINT_8 ucTarPort, ucTarQueue;
+	struct HW_MAC_TX_DESC *prTxDesc;
+	struct STA_RECORD *prStaRec;
+	struct BSS_INFO *prBssInfo;
+	uint8_t ucEtherTypeOffsetInWord;
+	uint32_t u4TxDescAndPaddingLength;
+	uint8_t ucTarPort, ucTarQueue;
 	struct mt66xx_chip_info *prChipInfo;
 
-	prTxDesc = (P_HW_MAC_TX_DESC_T) prTxDescBuffer;
+	prTxDesc = (struct HW_MAC_TX_DESC *) prTxDescBuffer;
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prMsduInfo->ucBssIndex);
 	prStaRec = cnmGetStaRecByIndex(prAdapter, prMsduInfo->ucStaRecIndex);
 
@@ -1403,8 +1403,8 @@ nicTxComposeDesc(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduInfo,
 
 	/* Type */
 	if (prMsduInfo->fgIs802_11) {
-		P_WLAN_MAC_HEADER_T prWlanHeader =
-		    (P_WLAN_MAC_HEADER_T) ((ULONG) (prMsduInfo->prPacket) + MAC_TX_RESERVED_FIELD);
+		struct WLAN_MAC_HEADER *prWlanHeader =
+		    (struct WLAN_MAC_HEADER *) ((unsigned long) (prMsduInfo->prPacket) + MAC_TX_RESERVED_FIELD);
 
 		HAL_MAC_TX_DESC_SET_TYPE(prTxDesc, (prWlanHeader->u2FrameCtrl & MASK_FC_TYPE) >> 2);
 		HAL_MAC_TX_DESC_SET_SUB_TYPE(prTxDesc,
@@ -1465,19 +1465,19 @@ nicTxComposeDesc(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduInfo,
 
 }
 
-VOID
-nicTxComposeSecurityFrameDesc(IN P_ADAPTER_T prAdapter,
-			      IN P_CMD_INFO_T prCmdInfo, OUT PUINT_8 prTxDescBuffer, OUT PUINT_8 pucTxDescLength)
+void
+nicTxComposeSecurityFrameDesc(IN struct ADAPTER *prAdapter,
+			      IN struct CMD_INFO *prCmdInfo, OUT uint8_t *prTxDescBuffer, OUT uint8_t *pucTxDescLength)
 {
-	P_HW_MAC_TX_DESC_T prTxDesc = (P_HW_MAC_TX_DESC_T) prTxDescBuffer;
-	UINT_8 ucTxDescAndPaddingLength = NIC_TX_DESC_LONG_FORMAT_LENGTH + NIC_TX_DESC_PADDING_LENGTH;
+	struct HW_MAC_TX_DESC *prTxDesc = (struct HW_MAC_TX_DESC *) prTxDescBuffer;
+	uint8_t ucTxDescAndPaddingLength = NIC_TX_DESC_LONG_FORMAT_LENGTH + NIC_TX_DESC_PADDING_LENGTH;
 	/* P_STA_RECORD_T prStaRec = cnmGetStaRecByIndex(prAdapter, prCmdInfo->ucStaRecIndex); */
-	P_BSS_INFO_T prBssInfo;
-	UINT_8 ucTid = 0;
-	UINT_8 ucTempTC = TC4_INDEX;
-	P_NATIVE_PACKET prNativePacket;
-	UINT_8 ucEtherTypeOffsetInWord;
-	P_MSDU_INFO_T prMsduInfo;
+	struct BSS_INFO *prBssInfo;
+	uint8_t ucTid = 0;
+	uint8_t ucTempTC = TC4_INDEX;
+	void *prNativePacket;
+	uint8_t ucEtherTypeOffsetInWord;
+	struct MSDU_INFO *prMsduInfo;
 
 	prMsduInfo = prCmdInfo->prMsduInfo;
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prMsduInfo->ucBssIndex);
@@ -1553,7 +1553,7 @@ nicTxComposeSecurityFrameDesc(IN P_ADAPTER_T prAdapter,
 		*pucTxDescLength = ucTxDescAndPaddingLength;
 }
 
-BOOLEAN nicTxIsTXDTemplateAllowed(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduInfo, IN P_STA_RECORD_T prStaRec)
+u_int8_t nicTxIsTXDTemplateAllowed(IN struct ADAPTER *prAdapter, IN struct MSDU_INFO *prMsduInfo, IN struct STA_RECORD *prStaRec)
 {
 	if (prMsduInfo->fgIsTXDTemplateValid) {
 		if (prMsduInfo->fgIs802_1x)
@@ -1590,17 +1590,17 @@ BOOLEAN nicTxIsTXDTemplateAllowed(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prM
 * @retval VOID
 */
 /*----------------------------------------------------------------------------*/
-VOID
-nicTxFillDesc(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduInfo,
-	OUT PUINT_8 prTxDescBuffer, OUT PUINT_32 pu4TxDescLength)
+void
+nicTxFillDesc(IN struct ADAPTER *prAdapter, IN struct MSDU_INFO *prMsduInfo,
+	OUT uint8_t *prTxDescBuffer, OUT uint32_t *pu4TxDescLength)
 {
 	struct mt66xx_chip_info *prChipInfo = prAdapter->chip_info;
-	P_HW_MAC_TX_DESC_T prTxDesc = (P_HW_MAC_TX_DESC_T) prTxDescBuffer;
-	P_HW_MAC_TX_DESC_T prTxDescTemplate = NULL;
-	P_STA_RECORD_T prStaRec = cnmGetStaRecByIndex(prAdapter, prMsduInfo->ucStaRecIndex);
-	UINT_32 u4TxDescLength;
+	struct HW_MAC_TX_DESC *prTxDesc = (struct HW_MAC_TX_DESC *) prTxDescBuffer;
+	struct HW_MAC_TX_DESC *prTxDescTemplate = NULL;
+	struct STA_RECORD *prStaRec = cnmGetStaRecByIndex(prAdapter, prMsduInfo->ucStaRecIndex);
+	uint32_t u4TxDescLength;
 #if CFG_TCP_IP_CHKSUM_OFFLOAD
-	UINT_8 ucChksumFlag = 0;
+	uint8_t ucChksumFlag = 0;
 #endif
 
 /*
@@ -1672,10 +1672,10 @@ nicTxFillDesc(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduInfo,
 		*pu4TxDescLength = u4TxDescLength;
 }
 
-VOID
-nicTxFillDataDesc(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduInfo)
+void
+nicTxFillDataDesc(IN struct ADAPTER *prAdapter, IN struct MSDU_INFO *prMsduInfo)
 {
-	PUINT_8 pucOutputBuf;
+	uint8_t *pucOutputBuf;
 	struct mt66xx_chip_info *prChipInfo = prAdapter->chip_info;
 
 	pucOutputBuf = skb_push((struct sk_buff *)prMsduInfo->prPacket,
@@ -1684,12 +1684,12 @@ nicTxFillDataDesc(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduInfo)
 	nicTxFillDesc(prAdapter, prMsduInfo, pucOutputBuf, NULL);
 }
 
-VOID
-nicTxCopyDesc(IN P_ADAPTER_T prAdapter, IN PUINT_8 pucTarTxDesc, IN PUINT_8 pucSrcTxDesc, OUT PUINT_8 pucTxDescLength)
+void
+nicTxCopyDesc(IN struct ADAPTER *prAdapter, IN uint8_t *pucTarTxDesc, IN uint8_t *pucSrcTxDesc, OUT uint8_t *pucTxDescLength)
 {
-	UINT_8 ucTxDescLength;
+	uint8_t ucTxDescLength;
 
-	if (HAL_MAC_TX_DESC_IS_LONG_FORMAT((P_HW_MAC_TX_DESC_T) pucSrcTxDesc))
+	if (HAL_MAC_TX_DESC_IS_LONG_FORMAT((struct HW_MAC_TX_DESC *) pucSrcTxDesc))
 		ucTxDescLength = NIC_TX_DESC_LONG_FORMAT_LENGTH;
 	else
 		ucTxDescLength = NIC_TX_DESC_SHORT_FORMAT_LENGTH;
@@ -1710,14 +1710,14 @@ nicTxCopyDesc(IN P_ADAPTER_T prAdapter, IN PUINT_8 pucTarTxDesc, IN PUINT_8 pucS
 * @retval VOID
 */
 /*----------------------------------------------------------------------------*/
-WLAN_STATUS nicTxGenerateDescTemplate(IN P_ADAPTER_T prAdapter, IN P_STA_RECORD_T prStaRec)
+uint32_t nicTxGenerateDescTemplate(IN struct ADAPTER *prAdapter, IN struct STA_RECORD *prStaRec)
 {
-	UINT_8 ucTid;
-	UINT_8 ucTc;
-	UINT_32 u4TxDescSize, u4TxDescAppendSize;
-	P_HW_MAC_TX_DESC_T prTxDesc;
-	P_MSDU_INFO_T prMsduInfo;
-	WLAN_STATUS rStatus = WLAN_STATUS_SUCCESS;
+	uint8_t ucTid;
+	uint8_t ucTc;
+	uint32_t u4TxDescSize, u4TxDescAppendSize;
+	struct HW_MAC_TX_DESC *prTxDesc;
+	struct MSDU_INFO *prMsduInfo;
+	uint32_t rStatus = WLAN_STATUS_SUCCESS;
 	struct mt66xx_chip_info *prChipInfo;
 
 	ASSERT(prAdapter);
@@ -1782,10 +1782,10 @@ WLAN_STATUS nicTxGenerateDescTemplate(IN P_ADAPTER_T prAdapter, IN P_STA_RECORD_
 			prMsduInfo->ucTC = ucTc;
 
 			/* Compose Tx desc template */
-			nicTxComposeDesc(prAdapter, prMsduInfo, u4TxDescSize, TRUE, (PUINT_8) prTxDesc);
+			nicTxComposeDesc(prAdapter, prMsduInfo, u4TxDescSize, TRUE, (uint8_t *) prTxDesc);
 
 			/* Fill TxD append */
-			nicTxComposeDescAppend(prAdapter, prMsduInfo, ((PUINT_8)prTxDesc + u4TxDescSize));
+			nicTxComposeDescAppend(prAdapter, prMsduInfo, ((uint8_t *)prTxDesc + u4TxDescSize));
 
 			prStaRec->aprTxDescTemplate[ucTid] = prTxDesc;
 		}
@@ -1810,14 +1810,14 @@ WLAN_STATUS nicTxGenerateDescTemplate(IN P_ADAPTER_T prAdapter, IN P_STA_RECORD_
 			prMsduInfo->ucTC = ucTc;
 
 			/* Compose Tx desc template */
-			nicTxComposeDesc(prAdapter, prMsduInfo, u4TxDescSize, TRUE, (PUINT_8) prTxDesc);
+			nicTxComposeDesc(prAdapter, prMsduInfo, u4TxDescSize, TRUE, (uint8_t *) prTxDesc);
 
 			/* Fill TxD append */
-			nicTxComposeDescAppend(prAdapter, prMsduInfo, ((PUINT_8)prTxDesc + u4TxDescSize));
+			nicTxComposeDescAppend(prAdapter, prMsduInfo, ((uint8_t *)prTxDesc + u4TxDescSize));
 
 			for (ucTid = 0; ucTid < TX_DESC_TID_NUM; ucTid++) {
 				prStaRec->aprTxDescTemplate[ucTid] = prTxDesc;
-				DBGLOG(QM, TRACE, "TXD template: TID[%u] Ptr[0x%x]\n", ucTid, (ULONG) prTxDesc);
+				DBGLOG(QM, TRACE, "TXD template: TID[%u] Ptr[0x%x]\n", ucTid, (unsigned long) prTxDesc);
 			}
 		} while (FALSE);
 	}
@@ -1837,17 +1837,17 @@ WLAN_STATUS nicTxGenerateDescTemplate(IN P_ADAPTER_T prAdapter, IN P_STA_RECORD_
 * @retval VOID
 */
 /*----------------------------------------------------------------------------*/
-VOID nicTxFreeDescTemplate(IN P_ADAPTER_T prAdapter, IN P_STA_RECORD_T prStaRec)
+void nicTxFreeDescTemplate(IN struct ADAPTER *prAdapter, IN struct STA_RECORD *prStaRec)
 {
-	UINT_8 ucTid;
-	UINT_8 ucTxDescSize;
-	P_HW_MAC_TX_DESC_T prTxDesc;
+	uint8_t ucTid;
+	uint8_t ucTxDescSize;
+	struct HW_MAC_TX_DESC *prTxDesc;
 
 	DBGLOG(QM, INFO, "Free TXD template for STA[%u] QoS[%u]\n", prStaRec->ucIndex, prStaRec->fgIsQoS);
 
 	if (prStaRec->fgIsQoS) {
 		for (ucTid = 0; ucTid < TX_DESC_TID_NUM; ucTid++) {
-			prTxDesc = (P_HW_MAC_TX_DESC_T) prStaRec->aprTxDescTemplate[ucTid];
+			prTxDesc = (struct HW_MAC_TX_DESC *) prStaRec->aprTxDescTemplate[ucTid];
 
 			if (prTxDesc) {
 				if (HAL_MAC_TX_DESC_IS_LONG_FORMAT(prTxDesc))
@@ -1861,7 +1861,7 @@ VOID nicTxFreeDescTemplate(IN P_ADAPTER_T prAdapter, IN P_STA_RECORD_T prStaRec)
 			}
 		}
 	} else {
-		prTxDesc = (P_HW_MAC_TX_DESC_T) prStaRec->aprTxDescTemplate[0];
+		prTxDesc = (struct HW_MAC_TX_DESC *) prStaRec->aprTxDescTemplate[0];
 		if (prTxDesc) {
 			if (HAL_MAC_TX_DESC_IS_LONG_FORMAT(prTxDesc))
 				ucTxDescSize = NIC_TX_DESC_LONG_FORMAT_LENGTH;
@@ -1888,16 +1888,16 @@ VOID nicTxFreeDescTemplate(IN P_ADAPTER_T prAdapter, IN P_STA_RECORD_T prStaRec)
 * @retval VOID
 */
 /*----------------------------------------------------------------------------*/
-VOID nicTxSetHwAmsduDescTemplate(IN P_ADAPTER_T prAdapter,
-	IN P_STA_RECORD_T prStaRec, IN UINT_8 ucTid, IN BOOLEAN fgSet)
+void nicTxSetHwAmsduDescTemplate(IN struct ADAPTER *prAdapter,
+	IN struct STA_RECORD *prStaRec, IN uint8_t ucTid, IN u_int8_t fgSet)
 {
-	P_HW_MAC_TX_DESC_T prTxDesc;
+	struct HW_MAC_TX_DESC *prTxDesc;
 
 	DBGLOG(QM, INFO, "Update HW Amsdu field of TXD template for STA[%u] Tid[%u]\n",
 		prStaRec->ucIndex, ucTid);
 
 	if (prStaRec->aprTxDescTemplate[ucTid]) {
-		prTxDesc = (P_HW_MAC_TX_DESC_T) prStaRec->aprTxDescTemplate[ucTid];
+		prTxDesc = (struct HW_MAC_TX_DESC *) prStaRec->aprTxDescTemplate[ucTid];
 		if (fgSet)
 			HAL_MAC_TX_DESC_SET_HW_AMSDU(prTxDesc);
 		else
@@ -1916,14 +1916,14 @@ VOID nicTxSetHwAmsduDescTemplate(IN P_ADAPTER_T prAdapter,
 * \retval FALSE         operation fail
 */
 /*----------------------------------------------------------------------------*/
-void nicTxMsduDoneCb(IN P_GLUE_INFO_T prGlueInfo, IN P_QUE_T prQue)
+void nicTxMsduDoneCb(IN struct GLUE_INFO *prGlueInfo, IN struct QUE *prQue)
 {
-	P_MSDU_INFO_T prMsduInfo, prNextMsduInfo;
-	QUE_T rFreeQueue;
-	P_QUE_T prFreeQueue;
+	struct MSDU_INFO *prMsduInfo, *prNextMsduInfo;
+	struct QUE rFreeQueue;
+	struct QUE *prFreeQueue;
 	/* P_NATIVE_PACKET prNativePacket;*/
-	P_TX_CTRL_T prTxCtrl;
-	P_ADAPTER_T prAdapter = prGlueInfo->prAdapter;
+	struct TX_CTRL *prTxCtrl;
+	struct ADAPTER *prAdapter = prGlueInfo->prAdapter;
 
 	ASSERT(prAdapter);
 	prTxCtrl = &prAdapter->rTxCtrl;
@@ -1933,10 +1933,10 @@ void nicTxMsduDoneCb(IN P_GLUE_INFO_T prGlueInfo, IN P_QUE_T prQue)
 	QUEUE_INITIALIZE(prFreeQueue);
 
 	if (prQue && prQue->u4NumElem > 0) {
-		prMsduInfo = (P_MSDU_INFO_T) QUEUE_GET_HEAD(prQue);
+		prMsduInfo = (struct MSDU_INFO *) QUEUE_GET_HEAD(prQue);
 
 		while (prMsduInfo) {
-			prNextMsduInfo = (P_MSDU_INFO_T) QUEUE_GET_NEXT_ENTRY(&prMsduInfo->rQueEntry);
+			prNextMsduInfo = (struct MSDU_INFO *) QUEUE_GET_NEXT_ENTRY(&prMsduInfo->rQueEntry);
 
 #if 1
 			nicTxFreePacket(prAdapter, prMsduInfo, FALSE);
@@ -1954,15 +1954,15 @@ void nicTxMsduDoneCb(IN P_GLUE_INFO_T prGlueInfo, IN P_QUE_T prQue)
 #endif
 
 			if (!prMsduInfo->pfTxDoneHandler)
-				QUEUE_INSERT_TAIL(prFreeQueue, (P_QUE_ENTRY_T) prMsduInfo);
+				QUEUE_INSERT_TAIL(prFreeQueue, (struct QUE_ENTRY *) prMsduInfo);
 
 			prMsduInfo = prNextMsduInfo;
 		}
 
-		wlanTxProfilingTagMsdu(prAdapter, (P_MSDU_INFO_T) QUEUE_GET_HEAD(&rFreeQueue),
+		wlanTxProfilingTagMsdu(prAdapter, (struct MSDU_INFO *) QUEUE_GET_HEAD(&rFreeQueue),
 			TX_PROF_TAG_DRV_FREE_MSDU);
 
-		nicTxReturnMsduInfo(prAdapter, (P_MSDU_INFO_T) QUEUE_GET_HEAD(&rFreeQueue));
+		nicTxReturnMsduInfo(prAdapter, (struct MSDU_INFO *) QUEUE_GET_HEAD(&rFreeQueue));
 	}
 }
 
@@ -1978,11 +1978,11 @@ void nicTxMsduDoneCb(IN P_GLUE_INFO_T prGlueInfo, IN P_QUE_T prQue)
 * @retval WLAN_STATUS_FAILURE   Bus access fail.
 */
 /*----------------------------------------------------------------------------*/
-WLAN_STATUS nicTxMsduQueue(IN P_ADAPTER_T prAdapter, UINT_8 ucPortIdx, P_QUE_T prQue)
+uint32_t nicTxMsduQueue(IN struct ADAPTER *prAdapter, uint8_t ucPortIdx, struct QUE *prQue)
 {
-	P_MSDU_INFO_T prMsduInfo;
-	P_TX_CTRL_T prTxCtrl;
-	P_NATIVE_PACKET prNativePacket;
+	struct MSDU_INFO *prMsduInfo;
+	struct TX_CTRL *prTxCtrl;
+	void *prNativePacket;
 
 	ASSERT(prAdapter);
 	ASSERT(prQue);
@@ -1995,10 +1995,10 @@ WLAN_STATUS nicTxMsduQueue(IN P_ADAPTER_T prAdapter, UINT_8 ucPortIdx, P_QUE_T p
 #endif
 
 	while (QUEUE_IS_NOT_EMPTY(prQue)) {
-		QUEUE_REMOVE_HEAD(prQue, prMsduInfo, P_MSDU_INFO_T);
+		QUEUE_REMOVE_HEAD(prQue, prMsduInfo, struct MSDU_INFO *);
 
 		if (!halTxIsDataBufEnough(prAdapter, prMsduInfo)) {
-			QUEUE_INSERT_HEAD(prQue, (P_QUE_ENTRY_T) prMsduInfo);
+			QUEUE_INSERT_HEAD(prQue, (struct QUE_ENTRY *) prMsduInfo);
 			break;
 		}
 
@@ -2019,7 +2019,7 @@ WLAN_STATUS nicTxMsduQueue(IN P_ADAPTER_T prAdapter, UINT_8 ucPortIdx, P_QUE_T p
 			WLAN_GET_FIELD_32(&prMsduInfo->prPacket, &prMsduInfo->u4TxDoneTag);
 
 			KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_TXING_MGMT_LIST);
-			QUEUE_INSERT_TAIL(&(prTxCtrl->rTxMgmtTxingQueue), (P_QUE_ENTRY_T) prMsduInfo);
+			QUEUE_INSERT_TAIL(&(prTxCtrl->rTxMgmtTxingQueue), (struct QUE_ENTRY *) prMsduInfo);
 			KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_TXING_MGMT_LIST);
 		} else
 			wlanTxLifetimeTagPacket(prAdapter, prMsduInfo, TX_PROF_TAG_DRV_TX_DONE);
@@ -2046,11 +2046,11 @@ WLAN_STATUS nicTxMsduQueue(IN P_ADAPTER_T prAdapter, UINT_8 ucPortIdx, P_QUE_T p
 * @retval WLAN_STATUS_FAILURE   Bus access fail.
 */
 /*----------------------------------------------------------------------------*/
-WLAN_STATUS nicTxCmd(IN P_ADAPTER_T prAdapter, IN P_CMD_INFO_T prCmdInfo, IN UINT_8 ucTC)
+uint32_t nicTxCmd(IN struct ADAPTER *prAdapter, IN struct CMD_INFO *prCmdInfo, IN uint8_t ucTC)
 {
-	P_WIFI_CMD_T prWifiCmd;
-	P_MSDU_INFO_T prMsduInfo;
-	P_TX_CTRL_T prTxCtrl;
+	struct WIFI_CMD *prWifiCmd;
+	struct MSDU_INFO *prMsduInfo;
+	struct TX_CTRL *prTxCtrl;
 	struct sk_buff *skb;
 
 	KAL_SPIN_LOCK_DECLARATION();
@@ -2067,7 +2067,7 @@ WLAN_STATUS nicTxCmd(IN P_ADAPTER_T prAdapter, IN P_CMD_INFO_T prCmdInfo, IN UIN
 		prMsduInfo = prCmdInfo->prMsduInfo;
 
 		prCmdInfo->pucTxd = prMsduInfo->aucTxDescBuffer;
-		if (HAL_MAC_TX_DESC_IS_LONG_FORMAT((P_HW_MAC_TX_DESC_T) prMsduInfo->aucTxDescBuffer))
+		if (HAL_MAC_TX_DESC_IS_LONG_FORMAT((struct HW_MAC_TX_DESC *) prMsduInfo->aucTxDescBuffer))
 			prCmdInfo->u4TxdLen = NIC_TX_DESC_LONG_FORMAT_LENGTH;
 		else
 			prCmdInfo->u4TxdLen = NIC_TX_DESC_SHORT_FORMAT_LENGTH;
@@ -2083,7 +2083,7 @@ WLAN_STATUS nicTxCmd(IN P_ADAPTER_T prAdapter, IN P_CMD_INFO_T prCmdInfo, IN UIN
 		if (prMsduInfo->pfTxDoneHandler) {
 			/* DBGLOG(INIT, TRACE,("Wait Cmd TxSeqNum:%d\n", prMsduInfo->ucTxSeqNum)); */
 			KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_TXING_MGMT_LIST);
-			QUEUE_INSERT_TAIL(&(prTxCtrl->rTxMgmtTxingQueue), (P_QUE_ENTRY_T) prMsduInfo);
+			QUEUE_INSERT_TAIL(&(prTxCtrl->rTxMgmtTxingQueue), (struct QUE_ENTRY *) prMsduInfo);
 			KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_TXING_MGMT_LIST);
 		} else {
 			/* Only return MSDU_INFO */
@@ -2098,7 +2098,7 @@ WLAN_STATUS nicTxCmd(IN P_ADAPTER_T prAdapter, IN P_CMD_INFO_T prCmdInfo, IN UIN
 		ASSERT(prMsduInfo->eSrc == TX_PACKET_MGMT);
 
 		prCmdInfo->pucTxd = prMsduInfo->aucTxDescBuffer;
-		if (HAL_MAC_TX_DESC_IS_LONG_FORMAT((P_HW_MAC_TX_DESC_T) prMsduInfo->aucTxDescBuffer))
+		if (HAL_MAC_TX_DESC_IS_LONG_FORMAT((struct HW_MAC_TX_DESC *) prMsduInfo->aucTxDescBuffer))
 			prCmdInfo->u4TxdLen = NIC_TX_DESC_LONG_FORMAT_LENGTH;
 		else
 			prCmdInfo->u4TxdLen = NIC_TX_DESC_SHORT_FORMAT_LENGTH;
@@ -2117,25 +2117,25 @@ WLAN_STATUS nicTxCmd(IN P_ADAPTER_T prAdapter, IN P_CMD_INFO_T prCmdInfo, IN UIN
 		if (prMsduInfo->pfTxDoneHandler) {
 			/* DBGLOG(INIT, TRACE,("Wait Cmd TxSeqNum:%d\n", prMsduInfo->ucTxSeqNum)); */
 			KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_TXING_MGMT_LIST);
-			QUEUE_INSERT_TAIL(&(prTxCtrl->rTxMgmtTxingQueue), (P_QUE_ENTRY_T) prMsduInfo);
+			QUEUE_INSERT_TAIL(&(prTxCtrl->rTxMgmtTxingQueue), (struct QUE_ENTRY *) prMsduInfo);
 			KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_TXING_MGMT_LIST);
 		} else {
 			cnmMgtPktFree(prAdapter, prMsduInfo);
 		}
 
 	} else {
-		P_PSE_CMD_HDR_T prPseCmdHdr;
+		struct PSE_CMD_HDR *prPseCmdHdr;
 
-		prWifiCmd = (P_WIFI_CMD_T) prCmdInfo->pucInfoBuffer;
+		prWifiCmd = (struct WIFI_CMD *) prCmdInfo->pucInfoBuffer;
 
-		prPseCmdHdr = (P_PSE_CMD_HDR_T) (prCmdInfo->pucInfoBuffer);
+		prPseCmdHdr = (struct PSE_CMD_HDR *) (prCmdInfo->pucInfoBuffer);
 		prPseCmdHdr->u2Qidx = TXD_Q_IDX_MCU_RQ0;
 		prPseCmdHdr->u2Pidx = TXD_P_IDX_MCU;
 		prPseCmdHdr->u2Hf = TXD_HF_CMD;
 		prPseCmdHdr->u2Ft = TXD_FT_LONG_FORMAT;
 		prPseCmdHdr->u2PktFt = TXD_PKT_FT_CMD;
 
-		prWifiCmd->u2Length = prWifiCmd->u2TxByteCount - sizeof(PSE_CMD_HDR_T);
+		prWifiCmd->u2Length = prWifiCmd->u2TxByteCount - sizeof(struct PSE_CMD_HDR);
 
 #if (CFG_UMAC_GENERATION >= 0x20)
 		/* TODO ? */
@@ -2143,7 +2143,7 @@ WLAN_STATUS nicTxCmd(IN P_ADAPTER_T prAdapter, IN P_CMD_INFO_T prCmdInfo, IN UIN
 		/* prWifiCmd->u2TxByteCount = u2OverallBufferLength - sizeof(PSE_CMD_HDR_T); */
 #else
 		prWifiCmd->u2TxByteCount =
-		    TFCB_FRAME_PAD_TO_DW((prCmdInfo->u2InfoBufLen) & (UINT_16) HIF_TX_HDR_TX_BYTE_COUNT_MASK);
+		    TFCB_FRAME_PAD_TO_DW((prCmdInfo->u2InfoBufLen) & (uint16_t) HIF_TX_HDR_TX_BYTE_COUNT_MASK);
 #endif
 		prWifiCmd->u2PQ_ID = CMD_PQ_ID;
 		prWifiCmd->ucPktTypeID = CMD_PACKET_TYPE_ID;
@@ -2172,10 +2172,10 @@ WLAN_STATUS nicTxCmd(IN P_ADAPTER_T prAdapter, IN P_CMD_INFO_T prCmdInfo, IN UIN
 * @return (none)
 */
 /*----------------------------------------------------------------------------*/
-VOID nicTxRelease(IN P_ADAPTER_T prAdapter, IN BOOLEAN fgProcTxDoneHandler)
+void nicTxRelease(IN struct ADAPTER *prAdapter, IN u_int8_t fgProcTxDoneHandler)
 {
-	P_TX_CTRL_T prTxCtrl;
-	P_MSDU_INFO_T prMsduInfo;
+	struct TX_CTRL *prTxCtrl;
+	struct MSDU_INFO *prMsduInfo;
 
 	KAL_SPIN_LOCK_DECLARATION();
 
@@ -2188,7 +2188,7 @@ VOID nicTxRelease(IN P_ADAPTER_T prAdapter, IN BOOLEAN fgProcTxDoneHandler)
 	/* free MSDU_INFO_T from rTxMgmtMsduInfoList */
 	do {
 		KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_TXING_MGMT_LIST);
-		QUEUE_REMOVE_HEAD(&prTxCtrl->rTxMgmtTxingQueue, prMsduInfo, P_MSDU_INFO_T);
+		QUEUE_REMOVE_HEAD(&prTxCtrl->rTxMgmtTxingQueue, prMsduInfo, struct MSDU_INFO *);
 		KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_TXING_MGMT_LIST);
 
 		if (prMsduInfo) {
@@ -2218,9 +2218,9 @@ VOID nicTxRelease(IN P_ADAPTER_T prAdapter, IN BOOLEAN fgProcTxDoneHandler)
 * @return (none)
 */
 /*----------------------------------------------------------------------------*/
-VOID nicProcessTxInterrupt(IN P_ADAPTER_T prAdapter)
+void nicProcessTxInterrupt(IN struct ADAPTER *prAdapter)
 {
-	P_WIFI_VAR_T prWifiVar = &prAdapter->rWifiVar;
+	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
 
 	prAdapter->prGlueInfo->IsrTxCnt++;
 	halProcessTxInterrupt(prAdapter);
@@ -2244,11 +2244,11 @@ VOID nicProcessTxInterrupt(IN P_ADAPTER_T prAdapter)
 		nicTxMsduQueueMthread(prAdapter);
 } /* end of nicProcessTxInterrupt() */
 
-VOID nicTxFreePacket(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduInfo, IN BOOLEAN fgDrop)
+void nicTxFreePacket(IN struct ADAPTER *prAdapter, IN struct MSDU_INFO *prMsduInfo, IN u_int8_t fgDrop)
 {
-	P_NATIVE_PACKET prNativePacket;
-	P_TX_CTRL_T prTxCtrl;
-	WLAN_STATUS rStatus = WLAN_STATUS_SUCCESS;
+	void *prNativePacket;
+	struct TX_CTRL *prTxCtrl;
+	uint32_t rStatus = WLAN_STATUS_SUCCESS;
 
 	ASSERT(prAdapter);
 
@@ -2284,11 +2284,11 @@ VOID nicTxFreePacket(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduInfo, IN B
 * @return (none)
 */
 /*----------------------------------------------------------------------------*/
-VOID nicTxFreeMsduInfoPacket(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduInfoListHead)
+void nicTxFreeMsduInfoPacket(IN struct ADAPTER *prAdapter, IN struct MSDU_INFO *prMsduInfoListHead)
 {
-	P_NATIVE_PACKET prNativePacket;
-	P_MSDU_INFO_T prMsduInfo = prMsduInfoListHead;
-	P_TX_CTRL_T prTxCtrl;
+	void *prNativePacket;
+	struct MSDU_INFO *prMsduInfo = prMsduInfoListHead;
+	struct TX_CTRL *prTxCtrl;
 
 	ASSERT(prAdapter);
 	ASSERT(prMsduInfoListHead);
@@ -2315,7 +2315,7 @@ VOID nicTxFreeMsduInfoPacket(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduIn
 			GLUE_DEC_REF_CNT(prTxCtrl->i4PendingFwdFrameCount);
 		}
 #endif
-		prMsduInfo = (P_MSDU_INFO_T) QUEUE_GET_NEXT_ENTRY((P_QUE_ENTRY_T) prMsduInfo);
+		prMsduInfo = (struct MSDU_INFO *) QUEUE_GET_NEXT_ENTRY((struct QUE_ENTRY *) prMsduInfo);
 	}
 
 }
@@ -2330,10 +2330,10 @@ VOID nicTxFreeMsduInfoPacket(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduIn
 * @return (none)
 */
 /*----------------------------------------------------------------------------*/
-VOID nicTxReturnMsduInfo(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduInfoListHead)
+void nicTxReturnMsduInfo(IN struct ADAPTER *prAdapter, IN struct MSDU_INFO *prMsduInfoListHead)
 {
-	P_TX_CTRL_T prTxCtrl;
-	P_MSDU_INFO_T prMsduInfo = prMsduInfoListHead, prNextMsduInfo;
+	struct TX_CTRL *prTxCtrl;
+	struct MSDU_INFO *prMsduInfo = prMsduInfoListHead, *prNextMsduInfo;
 
 	KAL_SPIN_LOCK_DECLARATION();
 
@@ -2343,7 +2343,7 @@ VOID nicTxReturnMsduInfo(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduInfoLi
 	ASSERT(prTxCtrl);
 
 	while (prMsduInfo) {
-		prNextMsduInfo = (P_MSDU_INFO_T) QUEUE_GET_NEXT_ENTRY((P_QUE_ENTRY_T) prMsduInfo);
+		prNextMsduInfo = (struct MSDU_INFO *) QUEUE_GET_NEXT_ENTRY((struct QUE_ENTRY *) prMsduInfo);
 
 		switch (prMsduInfo->eSrc) {
 		case TX_PACKET_FORWARDING:
@@ -2357,10 +2357,10 @@ VOID nicTxReturnMsduInfo(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduInfoLi
 		}
 
 		/* Reset MSDU_INFO fields */
-		kalMemZero(prMsduInfo, sizeof(MSDU_INFO_T));
+		kalMemZero(prMsduInfo, sizeof(struct MSDU_INFO));
 
 		KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_MSDU_INFO_LIST);
-		QUEUE_INSERT_TAIL(&prTxCtrl->rFreeMsduInfoList, (P_QUE_ENTRY_T) prMsduInfo);
+		QUEUE_INSERT_TAIL(&prTxCtrl->rFreeMsduInfoList, (struct QUE_ENTRY *) prMsduInfo);
 		KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_MSDU_INFO_LIST);
 		prMsduInfo = prNextMsduInfo;
 	};
@@ -2379,13 +2379,13 @@ VOID nicTxReturnMsduInfo(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduInfoLi
 * @retval FALSE     Fail to extract correct information
 */
 /*----------------------------------------------------------------------------*/
-BOOLEAN nicTxFillMsduInfo(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduInfo, IN P_NATIVE_PACKET prPacket)
+u_int8_t nicTxFillMsduInfo(IN struct ADAPTER *prAdapter, IN struct MSDU_INFO *prMsduInfo, IN void *prPacket)
 {
-	P_GLUE_INFO_T prGlueInfo;
+	struct GLUE_INFO *prGlueInfo;
 
 	ASSERT(prAdapter);
 
-	kalMemZero(prMsduInfo, sizeof(MSDU_INFO_T));
+	kalMemZero(prMsduInfo, sizeof(struct MSDU_INFO));
 
 	prGlueInfo = prAdapter->prGlueInfo;
 	ASSERT(prGlueInfo);
@@ -2396,7 +2396,7 @@ BOOLEAN nicTxFillMsduInfo(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduInfo,
 	prMsduInfo->ucBssIndex = GLUE_GET_PKT_BSS_IDX(prPacket);
 	prMsduInfo->ucUserPriority = GLUE_GET_PKT_TID(prPacket);
 	prMsduInfo->ucMacHeaderLength = GLUE_GET_PKT_HEADER_LEN(prPacket);
-	prMsduInfo->u2FrameLength = (UINT_16) GLUE_GET_PKT_FRAME_LEN(prPacket);
+	prMsduInfo->u2FrameLength = (uint16_t) GLUE_GET_PKT_FRAME_LEN(prPacket);
 	prMsduInfo->u4PageCount = nicTxGetPageCount(prAdapter, prMsduInfo->u2FrameLength, FALSE);
 
 	if (GLUE_IS_PKT_FLAG_SET(prPacket)) {
@@ -2454,11 +2454,11 @@ BOOLEAN nicTxFillMsduInfo(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduInfo,
 * @retval WLAN_STATUS_SUCCESS   Updated successfully
 */
 /*----------------------------------------------------------------------------*/
-WLAN_STATUS nicTxAdjustTcq(IN P_ADAPTER_T prAdapter)
+uint32_t nicTxAdjustTcq(IN struct ADAPTER *prAdapter)
 {
 #if CFG_SUPPORT_MULTITHREAD
-	TX_TCQ_ADJUST_T rTcqAdjust;
-	P_TX_CTRL_T prTxCtrl;
+	struct TX_TCQ_ADJUST rTcqAdjust;
+	struct TX_CTRL *prTxCtrl;
 
 	ASSERT(prAdapter);
 
@@ -2469,10 +2469,10 @@ WLAN_STATUS nicTxAdjustTcq(IN P_ADAPTER_T prAdapter)
 
 #else
 
-	UINT_32 u4Num;
-	TX_TCQ_ADJUST_T rTcqAdjust;
-	P_TX_CTRL_T prTxCtrl;
-	P_TX_TCQ_STATUS_T prTcqStatus;
+	uint32_t u4Num;
+	struct TX_TCQ_ADJUST rTcqAdjust;
+	struct TX_CTRL *prTxCtrl;
+	struct TX_TCQ_STATUS *prTcqStatus;
 
 	KAL_SPIN_LOCK_DECLARATION();
 
@@ -2545,9 +2545,9 @@ WLAN_STATUS nicTxAdjustTcq(IN P_ADAPTER_T prAdapter)
 */
 /*----------------------------------------------------------------------------*/
 
-WLAN_STATUS nicTxFlush(IN P_ADAPTER_T prAdapter)
+uint32_t nicTxFlush(IN struct ADAPTER *prAdapter)
 {
-	P_MSDU_INFO_T prMsduInfo;
+	struct MSDU_INFO *prMsduInfo;
 
 	KAL_SPIN_LOCK_DECLARATION();
 
@@ -2586,11 +2586,11 @@ WLAN_STATUS nicTxFlush(IN P_ADAPTER_T prAdapter)
 * @retval WLAN_STATUS_FAILURE   Bus access fail.
 */
 /*----------------------------------------------------------------------------*/
-WLAN_STATUS nicTxInitCmd(IN P_ADAPTER_T prAdapter, IN P_CMD_INFO_T prCmdInfo, IN UINT_16 u2Port)
+uint32_t nicTxInitCmd(IN struct ADAPTER *prAdapter, IN struct CMD_INFO *prCmdInfo, IN uint16_t u2Port)
 {
-	UINT_16 u2OverallBufferLength;
-	PUINT_8 pucOutputBuf = (PUINT_8) NULL;	/* Pointer to Transmit Data Structure Frame */
-	P_TX_CTRL_T prTxCtrl;
+	uint16_t u2OverallBufferLength;
+	uint8_t *pucOutputBuf = (uint8_t *) NULL;	/* Pointer to Transmit Data Structure Frame */
+	struct TX_CTRL *prTxCtrl;
 	struct mt66xx_chip_info *prChipInfo;
 
 	ASSERT(prAdapter);
@@ -2599,22 +2599,22 @@ WLAN_STATUS nicTxInitCmd(IN P_ADAPTER_T prAdapter, IN P_CMD_INFO_T prCmdInfo, IN
 	prChipInfo = prAdapter->chip_info;
 	prTxCtrl = &prAdapter->rTxCtrl;
 	pucOutputBuf = prTxCtrl->pucTxCoalescingBufPtr;
-	u2OverallBufferLength = TFCB_FRAME_PAD_TO_DW((prCmdInfo->u2InfoBufLen+prChipInfo->u2HifTxdSize) & (UINT_16)
+	u2OverallBufferLength = TFCB_FRAME_PAD_TO_DW((prCmdInfo->u2InfoBufLen+prChipInfo->u2HifTxdSize) & (uint16_t)
 						     HIF_TX_HDR_TX_BYTE_COUNT_MASK);
 
 	/* <0> Copy HIF TXD if need */
 	HAL_WRITE_HIF_TXD(prChipInfo, pucOutputBuf, prCmdInfo->u2InfoBufLen);
 
 	/* <1> Copy CMD Header to command buffer (by using pucCoalescingBufCached) */
-	kalMemCopy((PVOID)&pucOutputBuf[prChipInfo->u2HifTxdSize],
-		(PVOID) prCmdInfo->pucInfoBuffer, prCmdInfo->u2InfoBufLen);
+	kalMemCopy((void *)&pucOutputBuf[prChipInfo->u2HifTxdSize],
+		(void *) prCmdInfo->pucInfoBuffer, prCmdInfo->u2InfoBufLen);
 
 	ASSERT(u2OverallBufferLength <= prAdapter->u4CoalescingBufCachedSize);
 
 	/* <2> Write frame to data port */
 	HAL_WRITE_TX_PORT(prAdapter, u2Port/*NIC_TX_INIT_CMD_PORT*/,
-			  (UINT_32) u2OverallBufferLength,
-			  (PUINT_8) pucOutputBuf, (UINT_32) prAdapter->u4CoalescingBufCachedSize);
+			  (uint32_t) u2OverallBufferLength,
+			  (uint8_t *) pucOutputBuf, (uint32_t) prAdapter->u4CoalescingBufCachedSize);
 
 	return WLAN_STATUS_SUCCESS;
 }
@@ -2629,11 +2629,11 @@ WLAN_STATUS nicTxInitCmd(IN P_ADAPTER_T prAdapter, IN P_CMD_INFO_T prCmdInfo, IN
 * @retval WLAN_STATUS_SUCCESS   Reset is done successfully.
 */
 /*----------------------------------------------------------------------------*/
-WLAN_STATUS nicTxInitResetResource(IN P_ADAPTER_T prAdapter)
+uint32_t nicTxInitResetResource(IN struct ADAPTER *prAdapter)
 {
-	P_TX_CTRL_T prTxCtrl;
-	UINT_8 ucIdx;
-	UINT_32 u4MaxPageCntPerFrame = prAdapter->rTxCtrl.u4MaxPageCntPerFrame;
+	struct TX_CTRL *prTxCtrl;
+	uint8_t ucIdx;
+	uint32_t u4MaxPageCntPerFrame = prAdapter->rTxCtrl.u4MaxPageCntPerFrame;
 
 	DEBUGFUNC("nicTxInitResetResource");
 
@@ -2676,13 +2676,13 @@ WLAN_STATUS nicTxInitResetResource(IN P_ADAPTER_T prAdapter)
 
 #endif
 
-BOOLEAN nicTxProcessMngPacket(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduInfo)
+u_int8_t nicTxProcessMngPacket(IN struct ADAPTER *prAdapter, IN struct MSDU_INFO *prMsduInfo)
 {
 #if 0
-	UINT_16 u2RateCode;
+	uint16_t u2RateCode;
 #endif
-	P_BSS_INFO_T prBssInfo;
-	P_STA_RECORD_T prStaRec;
+	struct BSS_INFO *prBssInfo;
+	struct STA_RECORD *prStaRec;
 
 	if (prMsduInfo->eSrc != TX_PACKET_MGMT)
 		return FALSE;
@@ -2728,13 +2728,13 @@ BOOLEAN nicTxProcessMngPacket(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduI
 	return TRUE;
 }
 
-VOID nicTxProcessTxDoneEvent(IN P_ADAPTER_T prAdapter, IN P_WIFI_EVENT_T prEvent)
+void nicTxProcessTxDoneEvent(IN struct ADAPTER *prAdapter, IN struct WIFI_EVENT *prEvent)
 {
-	P_EVENT_TX_DONE_T prTxDone;
-	P_MSDU_INFO_T prMsduInfo;
-	PUINT_8 apucBandwidt[4] = {(PUINT_8)"20", (PUINT_8)"40", (PUINT_8)"80", (PUINT_8)"160/80+80"};
+	struct EVENT_TX_DONE *prTxDone;
+	struct MSDU_INFO *prMsduInfo;
+	uint8_t *apucBandwidt[4] = {(uint8_t *)"20", (uint8_t *)"40", (uint8_t *)"80", (uint8_t *)"160/80+80"};
 
-	prTxDone = (P_EVENT_TX_DONE_T) (prEvent->aucBuffer);
+	prTxDone = (struct EVENT_TX_DONE *) (prEvent->aucBuffer);
 
 	if (prTxDone->ucFlag & BIT(TXS_WITH_ADVANCED_INFO)) {
 		/* Tx Done with advanced info */
@@ -2745,9 +2745,9 @@ VOID nicTxProcessTxDoneEvent(IN P_ADAPTER_T prAdapter, IN P_WIFI_EVENT_T prEvent
 			prTxDone->ucTxCount, prTxDone->ucFlushReason);
 
 		if (prTxDone->ucFlag & BIT(TXS_IS_EXIST)) {
-			UINT_8 ucNss, ucStbc;
-			INT_8 icTxPwr;
-			PUINT_32 pu4RawTxs = (PUINT_32)&prTxDone->aucRawTxS[0];
+			uint8_t ucNss, ucStbc;
+			int8_t icTxPwr;
+			uint32_t *pu4RawTxs = (uint32_t *)&prTxDone->aucRawTxS[0];
 
 			ucNss = (prTxDone->u2TxRate & TX_DESC_NSTS_MASK) >> TX_DESC_NSTS_OFFSET;
 			ucNss += 1;
@@ -2760,7 +2760,7 @@ VOID nicTxProcessTxDoneEvent(IN P_ADAPTER_T prAdapter, IN P_WIFI_EVENT_T prEvent
 				prTxDone->u2TxRate, apucBandwidt[prTxDone->ucBandwidth], ucNss,
 				prTxDone->ucRateTableIdx, prTxDone->ucRspRate);
 
-			icTxPwr = (INT_8)prTxDone->ucTxPower;
+			icTxPwr = (int8_t)prTxDone->ucTxPower;
 			if (icTxPwr & BIT(6))
 				icTxPwr |= BIT(7);
 
@@ -2795,7 +2795,7 @@ VOID nicTxProcessTxDoneEvent(IN P_ADAPTER_T prAdapter, IN P_WIFI_EVENT_T prEvent
 #endif
 
 	if (prMsduInfo) {
-		prMsduInfo->pfTxDoneHandler(prAdapter, prMsduInfo, (ENUM_TX_RESULT_CODE_T) (prTxDone->ucStatus));
+		prMsduInfo->pfTxDoneHandler(prAdapter, prMsduInfo, (enum ENUM_TX_RESULT_CODE) (prTxDone->ucStatus));
 
 		if (prMsduInfo->eSrc == TX_PACKET_MGMT)
 			cnmMgtPktFree(prAdapter, prMsduInfo);
@@ -2821,14 +2821,14 @@ VOID nicTxProcessTxDoneEvent(IN P_ADAPTER_T prAdapter, IN P_WIFI_EVENT_T prEvent
 * @retval WLAN_STATUS_SUCCESS   Reset is done successfully.
 */
 /*----------------------------------------------------------------------------*/
-WLAN_STATUS nicTxEnqueueMsdu(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduInfo)
+uint32_t nicTxEnqueueMsdu(IN struct ADAPTER *prAdapter, IN struct MSDU_INFO *prMsduInfo)
 {
-	P_TX_CTRL_T prTxCtrl;
-	P_MSDU_INFO_T prNextMsduInfo, prRetMsduInfo, prMsduInfoHead;
-	QUE_T qDataPort0, qDataPort1;
-	P_QUE_T prDataPort0, prDataPort1;
-	P_CMD_INFO_T prCmdInfo;
-	WLAN_STATUS u4Status = WLAN_STATUS_SUCCESS;
+	struct TX_CTRL *prTxCtrl;
+	struct MSDU_INFO *prNextMsduInfo, *prRetMsduInfo, *prMsduInfoHead;
+	struct QUE qDataPort0, qDataPort1;
+	struct QUE *prDataPort0, *prDataPort1;
+	struct CMD_INFO *prCmdInfo;
+	uint32_t u4Status = WLAN_STATUS_SUCCESS;
 
 	KAL_SPIN_LOCK_DECLARATION();
 
@@ -2846,14 +2846,14 @@ WLAN_STATUS nicTxEnqueueMsdu(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduIn
 
 	/* check how many management frame are being queued */
 	while (prMsduInfo) {
-		prNextMsduInfo = (P_MSDU_INFO_T) QUEUE_GET_NEXT_ENTRY((P_QUE_ENTRY_T) prMsduInfo);
+		prNextMsduInfo = (struct MSDU_INFO *) QUEUE_GET_NEXT_ENTRY((struct QUE_ENTRY *) prMsduInfo);
 
-		QUEUE_GET_NEXT_ENTRY((P_QUE_ENTRY_T) prMsduInfo) = NULL;
+		QUEUE_GET_NEXT_ENTRY((struct QUE_ENTRY *) prMsduInfo) = NULL;
 
 		if (prMsduInfo->eSrc == TX_PACKET_MGMT) {
 			if (nicTxProcessMngPacket(prAdapter, prMsduInfo)) {
 				/* Valid MGMT */
-				QUEUE_INSERT_TAIL(prDataPort1, (P_QUE_ENTRY_T) prMsduInfo);
+				QUEUE_INSERT_TAIL(prDataPort1, (struct QUE_ENTRY *) prMsduInfo);
 			} else {
 				/* Invalid MGMT */
 				DBGLOG(TX, WARN, "Invalid MGMT[0x%p] BSS[%u] STA[%u],free it\n",
@@ -2862,7 +2862,7 @@ WLAN_STATUS nicTxEnqueueMsdu(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduIn
 				cnmMgtPktFree(prAdapter, prMsduInfo);
 			}
 		} else {
-			QUEUE_INSERT_TAIL(prDataPort0, (P_QUE_ENTRY_T) prMsduInfo);
+			QUEUE_INSERT_TAIL(prDataPort0, (struct QUE_ENTRY *) prMsduInfo);
 		}
 
 		prMsduInfo = prNextMsduInfo;
@@ -2872,7 +2872,7 @@ WLAN_STATUS nicTxEnqueueMsdu(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduIn
 		/* send to QM */
 		KAL_SPIN_LOCK_DECLARATION();
 		KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_QM_TX_QUEUE);
-		prRetMsduInfo = qmEnqueueTxPackets(prAdapter, (P_MSDU_INFO_T) QUEUE_GET_HEAD(prDataPort0));
+		prRetMsduInfo = qmEnqueueTxPackets(prAdapter, (struct MSDU_INFO *) QUEUE_GET_HEAD(prDataPort0));
 		KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_QM_TX_QUEUE);
 
 		/* post-process for dropped packets */
@@ -2883,7 +2883,7 @@ WLAN_STATUS nicTxEnqueueMsdu(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduIn
 	}
 
 	if (prDataPort1->u4NumElem) {
-		prMsduInfoHead = (P_MSDU_INFO_T) QUEUE_GET_HEAD(prDataPort1);
+		prMsduInfoHead = (struct MSDU_INFO *) QUEUE_GET_HEAD(prDataPort1);
 
 		if (nicTxGetFreeCmdCount(prAdapter) < NIC_TX_CMD_INFO_RESERVED_COUNT) {
 			/* not enough descriptors for sending */
@@ -2891,7 +2891,7 @@ WLAN_STATUS nicTxEnqueueMsdu(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduIn
 
 			/* free all MSDUs */
 			while (prMsduInfoHead) {
-				prNextMsduInfo = (P_MSDU_INFO_T) QUEUE_GET_NEXT_ENTRY(&prMsduInfoHead->rQueEntry);
+				prNextMsduInfo = (struct MSDU_INFO *) QUEUE_GET_NEXT_ENTRY(&prMsduInfoHead->rQueEntry);
 
 				if (prMsduInfoHead->pfTxDoneHandler != NULL) {
 					prMsduInfoHead->pfTxDoneHandler(prAdapter, prMsduInfoHead,
@@ -2905,16 +2905,16 @@ WLAN_STATUS nicTxEnqueueMsdu(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduIn
 		} else {
 			/* send to command queue */
 			while (prMsduInfoHead) {
-				prNextMsduInfo = (P_MSDU_INFO_T) QUEUE_GET_NEXT_ENTRY(&prMsduInfoHead->rQueEntry);
+				prNextMsduInfo = (struct MSDU_INFO *) QUEUE_GET_NEXT_ENTRY(&prMsduInfoHead->rQueEntry);
 
 				KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_CMD_RESOURCE);
-				QUEUE_REMOVE_HEAD(&prAdapter->rFreeCmdList, prCmdInfo, P_CMD_INFO_T);
+				QUEUE_REMOVE_HEAD(&prAdapter->rFreeCmdList, prCmdInfo, struct CMD_INFO *);
 				KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_CMD_RESOURCE);
 
 				if (prCmdInfo) {
 					GLUE_INC_REF_CNT(prTxCtrl->i4TxMgmtPendingNum);
 
-					kalMemZero(prCmdInfo, sizeof(CMD_INFO_T));
+					kalMemZero(prCmdInfo, sizeof(struct CMD_INFO));
 
 #if CFG_ENABLE_PKT_LIFETIME_PROFILE
 					/* Tag MGMT enqueue time */
@@ -2936,7 +2936,7 @@ WLAN_STATUS nicTxEnqueueMsdu(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduIn
 					       prMsduInfoHead->ucTxSeqNum, prMsduInfoHead->ucBssIndex,
 					       prMsduInfoHead->ucStaRecIndex);
 
-					kalEnqueueCommand(prAdapter->prGlueInfo, (P_QUE_ENTRY_T) prCmdInfo);
+					kalEnqueueCommand(prAdapter->prGlueInfo, (struct QUE_ENTRY *) prCmdInfo);
 				} else {
 					/* Cmd free count is larger than expected, but allocation fail. */
 					u4Status = WLAN_STATUS_FAILURE;
@@ -2971,11 +2971,11 @@ WLAN_STATUS nicTxEnqueueMsdu(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduIn
 * @retval
 */
 /*----------------------------------------------------------------------------*/
-UINT_8 nicTxGetWlanIdx(P_ADAPTER_T prAdapter, UINT_8 ucBssIdx, UINT_8 ucStaRecIdx)
+uint8_t nicTxGetWlanIdx(struct ADAPTER *prAdapter, uint8_t ucBssIdx, uint8_t ucStaRecIdx)
 {
-	P_STA_RECORD_T prStaRec;
-	P_BSS_INFO_T prBssInfo;
-	UINT_8 ucWlanIndex = prAdapter->ucTxDefaultWlanIndex;
+	struct STA_RECORD *prStaRec;
+	struct BSS_INFO *prBssInfo;
+	uint8_t ucWlanIndex = prAdapter->ucTxDefaultWlanIndex;
 
 	prStaRec = cnmGetStaRecByIndex(prAdapter, ucStaRecIdx);
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIdx);
@@ -3012,7 +3012,7 @@ UINT_8 nicTxGetWlanIdx(P_ADAPTER_T prAdapter, UINT_8 ucBssIdx, UINT_8 ucStaRecId
 * @retval
 */
 /*----------------------------------------------------------------------------*/
-BOOLEAN nicTxIsMgmtResourceEnough(IN P_ADAPTER_T prAdapter)
+u_int8_t nicTxIsMgmtResourceEnough(IN struct ADAPTER *prAdapter)
 {
 	if (nicTxGetFreeCmdCount(prAdapter) > (CFG_TX_MAX_CMD_PKT_NUM / 2))
 		return TRUE;
@@ -3029,7 +3029,7 @@ BOOLEAN nicTxIsMgmtResourceEnough(IN P_ADAPTER_T prAdapter)
 * @retval
 */
 /*----------------------------------------------------------------------------*/
-UINT_32 nicTxGetFreeCmdCount(IN P_ADAPTER_T prAdapter)
+uint32_t nicTxGetFreeCmdCount(IN struct ADAPTER *prAdapter)
 {
 	ASSERT(prAdapter);
 
@@ -3046,14 +3046,14 @@ UINT_32 nicTxGetFreeCmdCount(IN P_ADAPTER_T prAdapter)
 * @retval page count of this frame
 */
 /*----------------------------------------------------------------------------*/
-UINT_32 nicTxGetPageCount(IN P_ADAPTER_T prAdapter, IN UINT_32 u4FrameLength, IN BOOLEAN fgIncludeDesc)
+uint32_t nicTxGetPageCount(IN struct ADAPTER *prAdapter, IN uint32_t u4FrameLength, IN u_int8_t fgIncludeDesc)
 {
 	return halTxGetPageCount(prAdapter, u4FrameLength, fgIncludeDesc);
 }
 
-UINT_32 nicTxGetCmdPageCount(IN P_ADAPTER_T prAdapter, IN P_CMD_INFO_T prCmdInfo)
+uint32_t nicTxGetCmdPageCount(IN struct ADAPTER *prAdapter, IN struct CMD_INFO *prCmdInfo)
 {
-	UINT_32 u4PageCount;
+	uint32_t u4PageCount;
 
 	switch (prCmdInfo->eCmdType) {
 	case COMMAND_TYPE_NETWORK_IOCTL:
@@ -3077,9 +3077,9 @@ UINT_32 nicTxGetCmdPageCount(IN P_ADAPTER_T prAdapter, IN P_CMD_INFO_T prCmdInfo
 	return u4PageCount;
 }
 
-VOID nicTxSetMngPacket(P_ADAPTER_T prAdapter, P_MSDU_INFO_T prMsduInfo,
-		       UINT_8 ucBssIndex, UINT_8 ucStaRecIndex, UINT_8 ucMacHeaderLength,
-		       UINT_16 u2FrameLength, PFN_TX_DONE_HANDLER pfTxDoneHandler, UINT_8 ucRateMode)
+void nicTxSetMngPacket(struct ADAPTER *prAdapter, struct MSDU_INFO *prMsduInfo,
+		       uint8_t ucBssIndex, uint8_t ucStaRecIndex, uint8_t ucMacHeaderLength,
+		       uint16_t u2FrameLength, PFN_TX_DONE_HANDLER pfTxDoneHandler, uint8_t ucRateMode)
 {
 	ASSERT(prMsduInfo);
 
@@ -3104,11 +3104,11 @@ VOID nicTxSetMngPacket(P_ADAPTER_T prAdapter, P_MSDU_INFO_T prMsduInfo,
 	prMsduInfo->eSrc = TX_PACKET_MGMT;
 }
 
-VOID nicTxSetDataPacket(P_ADAPTER_T prAdapter, P_MSDU_INFO_T prMsduInfo,
-			UINT_8 ucBssIndex, UINT_8 ucStaRecIndex, UINT_8 ucMacHeaderLength,
-			UINT_16 u2FrameLength, PFN_TX_DONE_HANDLER pfTxDoneHandler,
-			UINT_8 ucRateMode, ENUM_TX_PACKET_SRC_T eSrc, UINT_8 ucTID,
-			BOOLEAN fgIs802_11Frame, BOOLEAN fgIs1xFrame)
+void nicTxSetDataPacket(struct ADAPTER *prAdapter, struct MSDU_INFO *prMsduInfo,
+			uint8_t ucBssIndex, uint8_t ucStaRecIndex, uint8_t ucMacHeaderLength,
+			uint16_t u2FrameLength, PFN_TX_DONE_HANDLER pfTxDoneHandler,
+			uint8_t ucRateMode, enum ENUM_TX_PACKET_SRC eSrc, uint8_t ucTID,
+			u_int8_t fgIs802_11Frame, u_int8_t fgIs1xFrame)
 {
 	ASSERT(prMsduInfo);
 
@@ -3132,11 +3132,11 @@ VOID nicTxSetDataPacket(P_ADAPTER_T prAdapter, P_MSDU_INFO_T prMsduInfo,
 	prMsduInfo->ucPacketType = TX_PACKET_TYPE_DATA;
 }
 
-VOID nicTxFillDescByPktOption(P_MSDU_INFO_T prMsduInfo, P_HW_MAC_TX_DESC_T prTxDesc)
+void nicTxFillDescByPktOption(struct MSDU_INFO *prMsduInfo, struct HW_MAC_TX_DESC *prTxDesc)
 {
-	UINT_32 u4PktOption = prMsduInfo->u4Option;
-	BOOLEAN fgIsLongFormat;
-	BOOLEAN fgProtected = FALSE;
+	uint32_t u4PktOption = prMsduInfo->u4Option;
+	u_int8_t fgIsLongFormat;
+	u_int8_t fgProtected = FALSE;
 
 	/* Skip this function if no options is set */
 	if (!u4PktOption)
@@ -3176,8 +3176,8 @@ VOID nicTxFillDescByPktOption(P_MSDU_INFO_T prMsduInfo, P_HW_MAC_TX_DESC_T prTxD
 
 	case HEADER_FORMAT_802_11_NORMAL_MODE:
 		if (fgProtected && prMsduInfo->prPacket) {
-			P_WLAN_MAC_HEADER_T prWlanHeader =
-			    (P_WLAN_MAC_HEADER_T) ((ULONG) (prMsduInfo->prPacket) + MAC_TX_RESERVED_FIELD);
+			struct WLAN_MAC_HEADER *prWlanHeader =
+			    (struct WLAN_MAC_HEADER *) ((unsigned long) (prMsduInfo->prPacket) + MAC_TX_RESERVED_FIELD);
 
 			prWlanHeader->u2FrameCtrl |= MASK_FC_PROTECTED_FRAME;
 		}
@@ -3239,7 +3239,7 @@ VOID nicTxFillDescByPktOption(P_MSDU_INFO_T prMsduInfo, P_HW_MAC_TX_DESC_T prTxD
 * @retval
 */
 /*----------------------------------------------------------------------------*/
-VOID nicTxConfigPktOption(P_MSDU_INFO_T prMsduInfo, UINT_32 u4OptionMask, BOOLEAN fgSetOption)
+void nicTxConfigPktOption(struct MSDU_INFO *prMsduInfo, uint32_t u4OptionMask, u_int8_t fgSetOption)
 {
 	if (fgSetOption)
 		prMsduInfo->u4Option |= u4OptionMask;
@@ -3247,10 +3247,10 @@ VOID nicTxConfigPktOption(P_MSDU_INFO_T prMsduInfo, UINT_32 u4OptionMask, BOOLEA
 		prMsduInfo->u4Option &= ~u4OptionMask;
 }
 
-VOID nicTxFillDescByPktControl(P_MSDU_INFO_T prMsduInfo, P_HW_MAC_TX_DESC_T prTxDesc)
+void nicTxFillDescByPktControl(struct MSDU_INFO *prMsduInfo, struct HW_MAC_TX_DESC *prTxDesc)
 {
-	UINT_8 ucPktControl = prMsduInfo->ucControlFlag;
-	UINT_8 ucSwReserved;
+	uint8_t ucPktControl = prMsduInfo->ucControlFlag;
+	uint8_t ucSwReserved;
 
 	/* Skip this function if no options is set */
 	if (!ucPktControl)
@@ -3266,7 +3266,7 @@ VOID nicTxFillDescByPktControl(P_MSDU_INFO_T prMsduInfo, P_HW_MAC_TX_DESC_T prTx
 	}
 }
 
-VOID nicTxConfigPktControlFlag(P_MSDU_INFO_T prMsduInfo, UINT_8 ucControlFlagMask, BOOLEAN fgSetFlag)
+void nicTxConfigPktControlFlag(struct MSDU_INFO *prMsduInfo, uint8_t ucControlFlagMask, u_int8_t fgSetFlag)
 {
 	/* Set control flag */
 	if (fgSetFlag)
@@ -3275,33 +3275,33 @@ VOID nicTxConfigPktControlFlag(P_MSDU_INFO_T prMsduInfo, UINT_8 ucControlFlagMas
 		prMsduInfo->ucControlFlag &= ~ucControlFlagMask;	/* Clear control flag */
 }
 
-VOID nicTxSetPktLifeTime(P_MSDU_INFO_T prMsduInfo, UINT_32 u4TxLifeTimeInMs)
+void nicTxSetPktLifeTime(struct MSDU_INFO *prMsduInfo, uint32_t u4TxLifeTimeInMs)
 {
 	prMsduInfo->u4RemainingLifetime = u4TxLifeTimeInMs;
 	prMsduInfo->u4Option |= MSDU_OPT_MANUAL_LIFE_TIME;
 }
 
-VOID nicTxSetPktRetryLimit(P_MSDU_INFO_T prMsduInfo, UINT_8 ucRetryLimit)
+void nicTxSetPktRetryLimit(struct MSDU_INFO *prMsduInfo, uint8_t ucRetryLimit)
 {
 	prMsduInfo->ucRetryLimit = ucRetryLimit;
 	prMsduInfo->u4Option |= MSDU_OPT_MANUAL_RETRY_LIMIT;
 }
 
-VOID nicTxSetPktPowerOffset(P_MSDU_INFO_T prMsduInfo, INT_8 cPowerOffset)
+void nicTxSetPktPowerOffset(struct MSDU_INFO *prMsduInfo, int8_t cPowerOffset)
 {
 	prMsduInfo->cPowerOffset = cPowerOffset;
 	prMsduInfo->u4Option |= MSDU_OPT_MANUAL_POWER_OFFSET;
 }
 
-VOID nicTxSetPktSequenceNumber(P_MSDU_INFO_T prMsduInfo, UINT_16 u2SN)
+void nicTxSetPktSequenceNumber(struct MSDU_INFO *prMsduInfo, uint16_t u2SN)
 {
 	prMsduInfo->u2SwSN = u2SN;
 	prMsduInfo->u4Option |= MSDU_OPT_MANUAL_SN;
 }
 
-VOID nicTxSetPktMacTxQue(P_MSDU_INFO_T prMsduInfo, UINT_8 ucMacTxQue)
+void nicTxSetPktMacTxQue(struct MSDU_INFO *prMsduInfo, uint8_t ucMacTxQue)
 {
-	UINT_8 ucTcIdx;
+	uint8_t ucTcIdx;
 
 	for (ucTcIdx = TC0_INDEX; ucTcIdx < TC_NUM; ucTcIdx++) {
 		if (arTcResourceControl[ucTcIdx].ucDestQueueIndex == ucMacTxQue)
@@ -3314,15 +3314,15 @@ VOID nicTxSetPktMacTxQue(P_MSDU_INFO_T prMsduInfo, UINT_8 ucMacTxQue)
 	}
 }
 
-VOID nicTxSetPktFixedRateOptionFull(P_MSDU_INFO_T prMsduInfo,
-				    UINT_16 u2RateCode,
-				    UINT_8 ucBandwidth,
-				    BOOLEAN fgShortGI,
-				    BOOLEAN fgLDPC,
-				    BOOLEAN fgDynamicBwRts, BOOLEAN fgBeamforming, UINT_8 ucAntennaIndex)
+void nicTxSetPktFixedRateOptionFull(struct MSDU_INFO *prMsduInfo,
+				    uint16_t u2RateCode,
+				    uint8_t ucBandwidth,
+				    u_int8_t fgShortGI,
+				    u_int8_t fgLDPC,
+				    u_int8_t fgDynamicBwRts, u_int8_t fgBeamforming, uint8_t ucAntennaIndex)
 {
-	HW_MAC_TX_DESC_T rTxDesc;
-	P_HW_MAC_TX_DESC_T prTxDesc = &rTxDesc;
+	struct HW_MAC_TX_DESC rTxDesc;
+	struct HW_MAC_TX_DESC *prTxDesc = &rTxDesc;
 
 	kalMemZero(prTxDesc, NIC_TX_DESC_LONG_FORMAT_LENGTH);
 
@@ -3353,11 +3353,11 @@ VOID nicTxSetPktFixedRateOptionFull(P_MSDU_INFO_T prMsduInfo,
 
 }
 
-VOID nicTxSetPktFixedRateOption(P_MSDU_INFO_T prMsduInfo,
-				UINT_16 u2RateCode, UINT_8 ucBandwidth, BOOLEAN fgShortGI, BOOLEAN fgDynamicBwRts)
+void nicTxSetPktFixedRateOption(struct MSDU_INFO *prMsduInfo,
+				uint16_t u2RateCode, uint8_t ucBandwidth, u_int8_t fgShortGI, u_int8_t fgDynamicBwRts)
 {
-	HW_MAC_TX_DESC_T rTxDesc;
-	P_HW_MAC_TX_DESC_T prTxDesc = &rTxDesc;
+	struct HW_MAC_TX_DESC rTxDesc;
+	struct HW_MAC_TX_DESC *prTxDesc = &rTxDesc;
 
 	kalMemZero(prTxDesc, NIC_TX_DESC_LONG_FORMAT_LENGTH);
 
@@ -3380,13 +3380,13 @@ VOID nicTxSetPktFixedRateOption(P_MSDU_INFO_T prMsduInfo,
 
 }
 
-VOID nicTxSetPktLowestFixedRate(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduInfo)
+void nicTxSetPktLowestFixedRate(IN struct ADAPTER *prAdapter, IN struct MSDU_INFO *prMsduInfo)
 {
-	P_BSS_INFO_T prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prMsduInfo->ucBssIndex);
-	P_STA_RECORD_T prStaRec = cnmGetStaRecByIndex(prAdapter, prMsduInfo->ucStaRecIndex);
-	UINT_8 ucRateSwIndex, ucRateIndex, ucRatePreamble;
-	UINT_16 u2RateCode, u2RateCodeLimit, u2OperationalRateSet;
-	UINT_32 u4CurrentPhyRate, u4Status;
+	struct BSS_INFO *prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prMsduInfo->ucBssIndex);
+	struct STA_RECORD *prStaRec = cnmGetStaRecByIndex(prAdapter, prMsduInfo->ucStaRecIndex);
+	uint8_t ucRateSwIndex, ucRateIndex, ucRatePreamble;
+	uint16_t u2RateCode, u2RateCodeLimit, u2OperationalRateSet;
+	uint32_t u4CurrentPhyRate, u4Status;
 
 	/* Not to use TxD template for fixed rate */
 	prMsduInfo->fgIsTXDTemplateValid = FALSE;
@@ -3426,13 +3426,13 @@ VOID nicTxSetPktLowestFixedRate(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsd
 	nicTxSetPktFixedRateOption(prMsduInfo, u2RateCode, FIX_BW_NO_FIXED, FALSE, FALSE);
 }
 
-VOID nicTxSetPktMoreData(P_MSDU_INFO_T prCurrentMsduInfo, BOOLEAN fgSetMoreDataBit)
+void nicTxSetPktMoreData(struct MSDU_INFO *prCurrentMsduInfo, u_int8_t fgSetMoreDataBit)
 {
-	P_WLAN_MAC_HEADER_T prWlanMacHeader = NULL;
+	struct WLAN_MAC_HEADER *prWlanMacHeader = NULL;
 
 	if (prCurrentMsduInfo->fgIs802_11) {
 		prWlanMacHeader =
-		    (P_WLAN_MAC_HEADER_T) (((PUINT_8) (prCurrentMsduInfo->prPacket)) + MAC_TX_RESERVED_FIELD);
+		    (struct WLAN_MAC_HEADER *) (((uint8_t *) (prCurrentMsduInfo->prPacket)) + MAC_TX_RESERVED_FIELD);
 	}
 
 	if (fgSetMoreDataBit) {
@@ -3448,10 +3448,10 @@ VOID nicTxSetPktMoreData(P_MSDU_INFO_T prCurrentMsduInfo, BOOLEAN fgSetMoreDataB
 	}
 }
 
-UINT_8 nicTxAssignPID(IN P_ADAPTER_T prAdapter, IN UINT_8 ucWlanIndex)
+uint8_t nicTxAssignPID(IN struct ADAPTER *prAdapter, IN uint8_t ucWlanIndex)
 {
-	UINT_8 ucRetval;
-	PUINT_8 pucPidPool;
+	uint8_t ucRetval;
+	uint8_t *pucPidPool;
 
 	ASSERT(prAdapter);
 
@@ -3468,14 +3468,14 @@ UINT_8 nicTxAssignPID(IN P_ADAPTER_T prAdapter, IN UINT_8 ucWlanIndex)
 	return ucRetval;
 }
 
-VOID nicTxSetPktEOSP(P_MSDU_INFO_T prCurrentMsduInfo, BOOLEAN fgSetEOSPBit)
+void nicTxSetPktEOSP(struct MSDU_INFO *prCurrentMsduInfo, u_int8_t fgSetEOSPBit)
 {
-	P_WLAN_MAC_HEADER_QOS_T prWlanMacHeader = NULL;
-	BOOLEAN fgWriteToDesc = TRUE;
+	struct WLAN_MAC_HEADER_QOS *prWlanMacHeader = NULL;
+	u_int8_t fgWriteToDesc = TRUE;
 
 	if (prCurrentMsduInfo->fgIs802_11) {
 		prWlanMacHeader =
-		    (P_WLAN_MAC_HEADER_QOS_T) (((PUINT_8) (prCurrentMsduInfo->prPacket)) + MAC_TX_RESERVED_FIELD);
+		    (struct WLAN_MAC_HEADER_QOS *) (((uint8_t *) (prCurrentMsduInfo->prPacket)) + MAC_TX_RESERVED_FIELD);
 		fgWriteToDesc = FALSE;
 	}
 
@@ -3492,8 +3492,8 @@ VOID nicTxSetPktEOSP(P_MSDU_INFO_T prCurrentMsduInfo, BOOLEAN fgSetEOSPBit)
 	}
 }
 
-WLAN_STATUS
-nicTxDummyTxDone(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduInfo, IN ENUM_TX_RESULT_CODE_T rTxDoneStatus)
+uint32_t
+nicTxDummyTxDone(IN struct ADAPTER *prAdapter, IN struct MSDU_INFO *prMsduInfo, IN enum ENUM_TX_RESULT_CODE rTxDoneStatus)
 {
 	DBGLOG(TX, TRACE, "Msdu WIDX:PID[%u:%u] SEQ[%u] Tx Status[%u]\n",
 	       prMsduInfo->ucWlanIndex, prMsduInfo->ucPID, prMsduInfo->ucTxSeqNum, rTxDoneStatus);
@@ -3510,9 +3510,9 @@ nicTxDummyTxDone(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduInfo, IN ENUM_
 * @return (none)
 */
 /*----------------------------------------------------------------------------*/
-VOID nicTxUpdateBssDefaultRate(P_BSS_INFO_T prBssInfo)
+void nicTxUpdateBssDefaultRate(struct BSS_INFO *prBssInfo)
 {
-	UINT_8 ucLowestBasicRateIndex;
+	uint8_t ucLowestBasicRateIndex;
 
 	prBssInfo->u2HwDefaultFixedRateCode = RATE_OFDM_6M;
 
@@ -3543,9 +3543,9 @@ VOID nicTxUpdateBssDefaultRate(P_BSS_INFO_T prBssInfo)
 * @return (none)
 */
 /*----------------------------------------------------------------------------*/
-VOID nicTxUpdateStaRecDefaultRate(P_STA_RECORD_T prStaRec)
+void nicTxUpdateStaRecDefaultRate(struct STA_RECORD *prStaRec)
 {
-	UINT_8 ucLowestBasicRateIndex;
+	uint8_t ucLowestBasicRateIndex;
 
 	prStaRec->u2HwDefaultFixedRateCode = RATE_OFDM_6M;
 
@@ -3565,14 +3565,14 @@ VOID nicTxUpdateStaRecDefaultRate(P_STA_RECORD_T prStaRec)
 	}
 }
 
-VOID nicTxCancelSendingCmd(IN P_ADAPTER_T prAdapter, IN P_CMD_INFO_T prCmdInfo)
+void nicTxCancelSendingCmd(IN struct ADAPTER *prAdapter, IN struct CMD_INFO *prCmdInfo)
 {
 	halTxCancelSendingCmd(prAdapter, prCmdInfo);
 }
 
-UINT_32 nicTxGetMaxPageCntPerFrame(IN P_ADAPTER_T prAdapter)
+uint32_t nicTxGetMaxPageCntPerFrame(IN struct ADAPTER *prAdapter)
 {
-	UINT_32 page_size = halGetHifTxPageSize(prAdapter);
+	uint32_t page_size = halGetHifTxPageSize(prAdapter);
 
 	/*
 	 * want to replace
@@ -3597,14 +3597,14 @@ UINT_32 nicTxGetMaxPageCntPerFrame(IN P_ADAPTER_T prAdapter)
 * \retval none
 */
 /*----------------------------------------------------------------------------*/
-VOID nicTxDirectStartCheckQTimer(IN P_ADAPTER_T prAdapter)
+void nicTxDirectStartCheckQTimer(IN struct ADAPTER *prAdapter)
 {
 	mod_timer(&prAdapter->rTxDirectHifTimer, jiffies + 1);
 }
 
-VOID nicTxDirectClearSkbQ(IN P_ADAPTER_T prAdapter)
+void nicTxDirectClearSkbQ(IN struct ADAPTER *prAdapter)
 {
-	P_GLUE_INFO_T prGlueInfo = prAdapter->prGlueInfo;
+	struct GLUE_INFO *prGlueInfo = prAdapter->prGlueInfo;
 	struct sk_buff *prSkb;
 
 	while (TRUE) {
@@ -3618,12 +3618,12 @@ VOID nicTxDirectClearSkbQ(IN P_ADAPTER_T prAdapter)
 	}
 }
 
-VOID nicTxDirectClearHifQ(IN P_ADAPTER_T prAdapter)
+void nicTxDirectClearHifQ(IN struct ADAPTER *prAdapter)
 {
-	P_GLUE_INFO_T prGlueInfo = prAdapter->prGlueInfo;
-	UINT_8 ucHifTc = 0;
-	QUE_T rNeedToFreeQue;
-	P_QUE_T prNeedToFreeQue = &rNeedToFreeQue;
+	struct GLUE_INFO *prGlueInfo = prAdapter->prGlueInfo;
+	uint8_t ucHifTc = 0;
+	struct QUE rNeedToFreeQue;
+	struct QUE *prNeedToFreeQue = &rNeedToFreeQue;
 
 	QUEUE_INITIALIZE(prNeedToFreeQue);
 
@@ -3633,16 +3633,16 @@ VOID nicTxDirectClearHifQ(IN P_ADAPTER_T prAdapter)
 			QUEUE_MOVE_ALL(prNeedToFreeQue, &prAdapter->rTxDirectHifQueue[ucHifTc]);
 			spin_unlock_bh(&prGlueInfo->rSpinLock[SPIN_LOCK_TX_DIRECT]);
 
-			wlanProcessQueuedMsduInfo(prAdapter, (P_MSDU_INFO_T) QUEUE_GET_HEAD(prNeedToFreeQue));
+			wlanProcessQueuedMsduInfo(prAdapter, (struct MSDU_INFO *) QUEUE_GET_HEAD(prNeedToFreeQue));
 		}
 	}
 }
 
-VOID nicTxDirectClearStaPsQ(IN P_ADAPTER_T prAdapter, UINT_8 ucStaRecIndex)
+void nicTxDirectClearStaPsQ(IN struct ADAPTER *prAdapter, uint8_t ucStaRecIndex)
 {
-	P_GLUE_INFO_T prGlueInfo = prAdapter->prGlueInfo;
-	QUE_T rNeedToFreeQue;
-	P_QUE_T prNeedToFreeQue = &rNeedToFreeQue;
+	struct GLUE_INFO *prGlueInfo = prAdapter->prGlueInfo;
+	struct QUE rNeedToFreeQue;
+	struct QUE *prNeedToFreeQue = &rNeedToFreeQue;
 
 	QUEUE_INITIALIZE(prNeedToFreeQue);
 
@@ -3651,15 +3651,15 @@ VOID nicTxDirectClearStaPsQ(IN P_ADAPTER_T prAdapter, UINT_8 ucStaRecIndex)
 		QUEUE_MOVE_ALL(prNeedToFreeQue, &prAdapter->rStaPsQueue[ucStaRecIndex]);
 		spin_unlock_bh(&prGlueInfo->rSpinLock[SPIN_LOCK_TX_DIRECT]);
 
-		wlanProcessQueuedMsduInfo(prAdapter, (P_MSDU_INFO_T) QUEUE_GET_HEAD(prNeedToFreeQue));
+		wlanProcessQueuedMsduInfo(prAdapter, (struct MSDU_INFO *) QUEUE_GET_HEAD(prNeedToFreeQue));
 	}
 }
 
-VOID nicTxDirectClearBssAbsentQ(IN P_ADAPTER_T prAdapter, UINT_8 ucBssIndex)
+void nicTxDirectClearBssAbsentQ(IN struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 {
-	P_GLUE_INFO_T prGlueInfo = prAdapter->prGlueInfo;
-	QUE_T rNeedToFreeQue;
-	P_QUE_T prNeedToFreeQue = &rNeedToFreeQue;
+	struct GLUE_INFO *prGlueInfo = prAdapter->prGlueInfo;
+	struct QUE rNeedToFreeQue;
+	struct QUE *prNeedToFreeQue = &rNeedToFreeQue;
 
 	QUEUE_INITIALIZE(prNeedToFreeQue);
 
@@ -3668,14 +3668,14 @@ VOID nicTxDirectClearBssAbsentQ(IN P_ADAPTER_T prAdapter, UINT_8 ucBssIndex)
 		QUEUE_MOVE_ALL(prNeedToFreeQue, &prAdapter->rBssAbsentQueue[ucBssIndex]);
 		spin_unlock_bh(&prGlueInfo->rSpinLock[SPIN_LOCK_TX_DIRECT]);
 
-		wlanProcessQueuedMsduInfo(prAdapter, (P_MSDU_INFO_T) QUEUE_GET_HEAD(prNeedToFreeQue));
+		wlanProcessQueuedMsduInfo(prAdapter, (struct MSDU_INFO *) QUEUE_GET_HEAD(prNeedToFreeQue));
 	}
 }
 
-VOID nicTxDirectClearAllStaPsQ(IN P_ADAPTER_T prAdapter)
+void nicTxDirectClearAllStaPsQ(IN struct ADAPTER *prAdapter)
 {
-	UINT_8 ucStaRecIndex;
-	UINT_32 u4StaPsBitmap;
+	uint8_t ucStaRecIndex;
+	uint32_t u4StaPsBitmap;
 
 	u4StaPsBitmap = prAdapter->u4StaPsBitmap;
 
@@ -3702,12 +3702,12 @@ VOID nicTxDirectClearAllStaPsQ(IN P_ADAPTER_T prAdapter)
 * \retval none
 */
 /*----------------------------------------------------------------------------*/
-static VOID nicTxDirectCheckStaPsQ(IN P_ADAPTER_T prAdapter, UINT_8 ucStaRecIndex, P_QUE_T prQue)
+static void nicTxDirectCheckStaPsQ(IN struct ADAPTER *prAdapter, uint8_t ucStaRecIndex, struct QUE *prQue)
 {
-	P_STA_RECORD_T prStaRec;	/* The current focused STA */
-	P_MSDU_INFO_T prMsduInfo;
-	P_QUE_ENTRY_T prQueueEntry = (P_QUE_ENTRY_T) NULL;
-	BOOLEAN fgReturnStaPsQ = FALSE;
+	struct STA_RECORD *prStaRec;	/* The current focused STA */
+	struct MSDU_INFO *prMsduInfo;
+	struct QUE_ENTRY *prQueueEntry = (struct QUE_ENTRY *) NULL;
+	u_int8_t fgReturnStaPsQ = FALSE;
 
 	if (ucStaRecIndex >= CFG_STA_REC_NUM)
 		return;
@@ -3715,8 +3715,8 @@ static VOID nicTxDirectCheckStaPsQ(IN P_ADAPTER_T prAdapter, UINT_8 ucStaRecInde
 	prStaRec = cnmGetStaRecByIndex(prAdapter, ucStaRecIndex);
 
 	QUEUE_CONCATENATE_QUEUES(&prAdapter->rStaPsQueue[ucStaRecIndex], prQue);
-	QUEUE_REMOVE_HEAD(&prAdapter->rStaPsQueue[ucStaRecIndex], prQueueEntry, P_QUE_ENTRY_T);
-	prMsduInfo = (P_MSDU_INFO_T) prQueueEntry;
+	QUEUE_REMOVE_HEAD(&prAdapter->rStaPsQueue[ucStaRecIndex], prQueueEntry, struct QUE_ENTRY *);
+	prMsduInfo = (struct MSDU_INFO *) prQueueEntry;
 
 	if (prMsduInfo == NULL) {
 		DBGLOG(TX, INFO, "prMsduInfo empty\n");
@@ -3733,7 +3733,7 @@ static VOID nicTxDirectCheckStaPsQ(IN P_ADAPTER_T prAdapter, UINT_8 ucStaRecInde
 				(prStaRec->ucBmpTriggerAC & BIT(prMsduInfo->ucTC))) {
 				if (prStaRec->ucFreeQuotaForDelivery > 0) {
 					prStaRec->ucFreeQuotaForDelivery--;
-					QUEUE_INSERT_TAIL(prQue, (P_QUE_ENTRY_T) prMsduInfo);
+					QUEUE_INSERT_TAIL(prQue, (struct QUE_ENTRY *) prMsduInfo);
 				} else {
 					fgReturnStaPsQ = TRUE;
 					break;
@@ -3741,27 +3741,27 @@ static VOID nicTxDirectCheckStaPsQ(IN P_ADAPTER_T prAdapter, UINT_8 ucStaRecInde
 			} else {
 				if (prStaRec->ucFreeQuotaForNonDelivery > 0) {
 					prStaRec->ucFreeQuotaForNonDelivery--;
-					QUEUE_INSERT_TAIL(prQue, (P_QUE_ENTRY_T) prMsduInfo);
+					QUEUE_INSERT_TAIL(prQue, (struct QUE_ENTRY *) prMsduInfo);
 				} else {
 					fgReturnStaPsQ = TRUE;
 					break;
 				}
 			}
 			if (QUEUE_IS_NOT_EMPTY(&prAdapter->rStaPsQueue[ucStaRecIndex])) {
-				QUEUE_REMOVE_HEAD(&prAdapter->rStaPsQueue[ucStaRecIndex], prQueueEntry, P_QUE_ENTRY_T);
-				prMsduInfo = (P_MSDU_INFO_T) prQueueEntry;
+				QUEUE_REMOVE_HEAD(&prAdapter->rStaPsQueue[ucStaRecIndex], prQueueEntry, struct QUE_ENTRY *);
+				prMsduInfo = (struct MSDU_INFO *) prQueueEntry;
 			} else {
 				break;
 			}
 		}
 		KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_RESOURCE);
 		if (fgReturnStaPsQ) {
-			QUEUE_INSERT_HEAD(&prAdapter->rStaPsQueue[ucStaRecIndex], (P_QUE_ENTRY_T) prMsduInfo);
+			QUEUE_INSERT_HEAD(&prAdapter->rStaPsQueue[ucStaRecIndex], (struct QUE_ENTRY *) prMsduInfo);
 			prAdapter->u4StaPsBitmap |= BIT(ucStaRecIndex);
 			return;
 		}
 	} else {
-		QUEUE_INSERT_TAIL(prQue, (P_QUE_ENTRY_T) prMsduInfo);
+		QUEUE_INSERT_TAIL(prQue, (struct QUE_ENTRY *) prMsduInfo);
 		if (QUEUE_IS_NOT_EMPTY(&prAdapter->rStaPsQueue[ucStaRecIndex]))
 			QUEUE_CONCATENATE_QUEUES(prQue, &prAdapter->rStaPsQueue[ucStaRecIndex]);
 	}
@@ -3780,18 +3780,18 @@ static VOID nicTxDirectCheckStaPsQ(IN P_ADAPTER_T prAdapter, UINT_8 ucStaRecInde
 * \retval none
 */
 /*----------------------------------------------------------------------------*/
-static VOID nicTxDirectCheckBssAbsentQ(IN P_ADAPTER_T prAdapter, UINT_8 ucBssIndex, P_QUE_T prQue)
+static void nicTxDirectCheckBssAbsentQ(IN struct ADAPTER *prAdapter, uint8_t ucBssIndex, struct QUE *prQue)
 {
-	P_BSS_INFO_T prBssInfo;
-	P_MSDU_INFO_T prMsduInfo;
-	P_QUE_ENTRY_T prQueueEntry = (P_QUE_ENTRY_T) NULL;
-	BOOLEAN fgReturnBssAbsentQ = FALSE;
+	struct BSS_INFO *prBssInfo;
+	struct MSDU_INFO *prMsduInfo;
+	struct QUE_ENTRY *prQueueEntry = (struct QUE_ENTRY *) NULL;
+	u_int8_t fgReturnBssAbsentQ = FALSE;
 
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
 
 	QUEUE_CONCATENATE_QUEUES(&prAdapter->rBssAbsentQueue[ucBssIndex], prQue);
-	QUEUE_REMOVE_HEAD(&prAdapter->rBssAbsentQueue[ucBssIndex], prQueueEntry, P_QUE_ENTRY_T);
-	prMsduInfo = (P_MSDU_INFO_T) prQueueEntry;
+	QUEUE_REMOVE_HEAD(&prAdapter->rBssAbsentQueue[ucBssIndex], prQueueEntry, struct QUE_ENTRY *);
+	prMsduInfo = (struct MSDU_INFO *) prQueueEntry;
 
 	if (prMsduInfo == NULL) {
 		DBGLOG(TX, INFO, "prMsduInfo empty\n");
@@ -3806,7 +3806,7 @@ static VOID nicTxDirectCheckBssAbsentQ(IN P_ADAPTER_T prAdapter, UINT_8 ucBssInd
 		while (1) {
 			if (prBssInfo->ucBssFreeQuota > 0) {
 				prBssInfo->ucBssFreeQuota--;
-				QUEUE_INSERT_TAIL(prQue, (P_QUE_ENTRY_T) prMsduInfo);
+				QUEUE_INSERT_TAIL(prQue, (struct QUE_ENTRY *) prMsduInfo);
 				DBGLOG(TX, INFO, "fgIsNetAbsent Quota Availalbe\n");
 			} else {
 				fgReturnBssAbsentQ = TRUE;
@@ -3815,22 +3815,22 @@ static VOID nicTxDirectCheckBssAbsentQ(IN P_ADAPTER_T prAdapter, UINT_8 ucBssInd
 			}
 			if (QUEUE_IS_NOT_EMPTY(&prAdapter->rBssAbsentQueue[ucBssIndex])) {
 				QUEUE_REMOVE_HEAD(&prAdapter->rBssAbsentQueue[ucBssIndex],
-						  prQueueEntry, P_QUE_ENTRY_T);
-				prMsduInfo = (P_MSDU_INFO_T) prQueueEntry;
+						  prQueueEntry, struct QUE_ENTRY *);
+				prMsduInfo = (struct MSDU_INFO *) prQueueEntry;
 			} else {
 				break;
 			}
 		}
 		KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_RESOURCE);
 		if (fgReturnBssAbsentQ) {
-			QUEUE_INSERT_HEAD(&prAdapter->rBssAbsentQueue[ucBssIndex], (P_QUE_ENTRY_T) prMsduInfo);
+			QUEUE_INSERT_HEAD(&prAdapter->rBssAbsentQueue[ucBssIndex], (struct QUE_ENTRY *) prMsduInfo);
 			prAdapter->u4BssAbsentBitmap |= BIT(ucBssIndex);
 			return;
 		}
 	} else {
 		if (prAdapter->u4BssAbsentBitmap)
 			DBGLOG(TX, INFO, "fgIsNetAbsent END!\n");
-		QUEUE_INSERT_TAIL(prQue, (P_QUE_ENTRY_T) prMsduInfo);
+		QUEUE_INSERT_TAIL(prQue, (struct QUE_ENTRY *) prMsduInfo);
 		if (QUEUE_IS_NOT_EMPTY(&prAdapter->rBssAbsentQueue[prMsduInfo->ucStaRecIndex]))
 			QUEUE_CONCATENATE_QUEUES(prQue, &prAdapter->rBssAbsentQueue[ucBssIndex]);
 	}
@@ -3846,9 +3846,9 @@ static VOID nicTxDirectCheckBssAbsentQ(IN P_ADAPTER_T prAdapter, UINT_8 ucBssInd
 * \retval Tc which maps to hif port.
 */
 /*----------------------------------------------------------------------------*/
-static UINT_8 nicTxDirectGetHifTc(P_MSDU_INFO_T prMsduInfo)
+static uint8_t nicTxDirectGetHifTc(struct MSDU_INFO *prMsduInfo)
 {
-	UINT_8 ucHifTc = 0;
+	uint8_t ucHifTc = 0;
 
 	if (prMsduInfo->ucWmmQueSet == DBDC_2G_WMM_INDEX) {
 		ucHifTc = TX_2G_WMM_PORT_NUM;
@@ -3876,17 +3876,17 @@ static UINT_8 nicTxDirectGetHifTc(P_MSDU_INFO_T prMsduInfo)
 * \retval WLAN_STATUS
 */
 /*----------------------------------------------------------------------------*/
-static WLAN_STATUS nicTxDirectStartXmitMain(struct sk_buff *prSkb, P_MSDU_INFO_T prMsduInfo, P_ADAPTER_T prAdapter,
-					  UINT_8 ucCheckTc, UINT_8 ucStaRecIndex, UINT_8 ucBssIndex)
+static uint32_t nicTxDirectStartXmitMain(struct sk_buff *prSkb, struct MSDU_INFO *prMsduInfo, struct ADAPTER *prAdapter,
+					  uint8_t ucCheckTc, uint8_t ucStaRecIndex, uint8_t ucBssIndex)
 {
-	P_STA_RECORD_T prStaRec;	/* The current focused STA */
-	P_BSS_INFO_T prBssInfo;
-	UINT_8 ucTC = 0, ucHifTc = 0;
-	P_QUE_T prTxQue;
-	BOOLEAN fgDropPacket = FALSE;
-	P_QUE_ENTRY_T prQueueEntry = (P_QUE_ENTRY_T) NULL;
-	QUE_T rProcessingQue;
-	P_QUE_T prProcessingQue = &rProcessingQue;
+	struct STA_RECORD *prStaRec;	/* The current focused STA */
+	struct BSS_INFO *prBssInfo;
+	uint8_t ucTC = 0, ucHifTc = 0;
+	struct QUE *prTxQue;
+	u_int8_t fgDropPacket = FALSE;
+	struct QUE_ENTRY *prQueueEntry = (struct QUE_ENTRY *) NULL;
+	struct QUE rProcessingQue;
+	struct QUE *prProcessingQue = &rProcessingQue;
 
 	QUEUE_INITIALIZE(prProcessingQue);
 
@@ -3974,7 +3974,7 @@ static WLAN_STATUS nicTxDirectStartXmitMain(struct sk_buff *prSkb, P_MSDU_INFO_T
 
 		prStaRec = cnmGetStaRecByIndex(prAdapter, prMsduInfo->ucStaRecIndex);
 
-		QUEUE_INSERT_TAIL(prProcessingQue, (P_QUE_ENTRY_T) prMsduInfo);
+		QUEUE_INSERT_TAIL(prProcessingQue, (struct QUE_ENTRY *) prMsduInfo);
 
 		/* Power-save STA handling */
 		nicTxDirectCheckStaPsQ(prAdapter, prMsduInfo->ucStaRecIndex, prProcessingQue);
@@ -3987,25 +3987,25 @@ static WLAN_STATUS nicTxDirectStartXmitMain(struct sk_buff *prSkb, P_MSDU_INFO_T
 
 		if (prProcessingQue->u4NumElem != 1) {
 			while (1) {
-				QUEUE_REMOVE_HEAD(prProcessingQue, prQueueEntry, P_QUE_ENTRY_T);
+				QUEUE_REMOVE_HEAD(prProcessingQue, prQueueEntry, struct QUE_ENTRY *);
 				if (prQueueEntry == NULL)
 					break;
-				prMsduInfo = (P_MSDU_INFO_T) prQueueEntry;
+				prMsduInfo = (struct MSDU_INFO *) prQueueEntry;
 				ucHifTc = nicTxDirectGetHifTc(prMsduInfo);
-				QUEUE_INSERT_TAIL(&prAdapter->rTxDirectHifQueue[ucHifTc], (P_QUE_ENTRY_T) prMsduInfo);
+				QUEUE_INSERT_TAIL(&prAdapter->rTxDirectHifQueue[ucHifTc], (struct QUE_ENTRY *) prMsduInfo);
 			}
 			nicTxDirectStartCheckQTimer(prAdapter);
 			return WLAN_STATUS_SUCCESS;
 		}
 
-		QUEUE_REMOVE_HEAD(prProcessingQue, prQueueEntry, P_QUE_ENTRY_T);
-		prMsduInfo = (P_MSDU_INFO_T) prQueueEntry;
+		QUEUE_REMOVE_HEAD(prProcessingQue, prQueueEntry, struct QUE_ENTRY *);
+		prMsduInfo = (struct MSDU_INFO *) prQueueEntry;
 		ucHifTc = nicTxDirectGetHifTc(prMsduInfo);
 
 		if (QUEUE_IS_NOT_EMPTY(&prAdapter->rTxDirectHifQueue[ucHifTc])) {
-			QUEUE_INSERT_TAIL(&prAdapter->rTxDirectHifQueue[ucHifTc], (P_QUE_ENTRY_T) prMsduInfo);
-			QUEUE_REMOVE_HEAD(&prAdapter->rTxDirectHifQueue[ucHifTc], prQueueEntry, P_QUE_ENTRY_T);
-			prMsduInfo = (P_MSDU_INFO_T) prQueueEntry;
+			QUEUE_INSERT_TAIL(&prAdapter->rTxDirectHifQueue[ucHifTc], (struct QUE_ENTRY *) prMsduInfo);
+			QUEUE_REMOVE_HEAD(&prAdapter->rTxDirectHifQueue[ucHifTc], prQueueEntry, struct QUE_ENTRY *);
+			prMsduInfo = (struct MSDU_INFO *) prQueueEntry;
 		}
 	} else {
 		if (ucStaRecIndex != 0xff || ucBssIndex != 0xff) {
@@ -4022,20 +4022,20 @@ static WLAN_STATUS nicTxDirectStartXmitMain(struct sk_buff *prSkb, P_MSDU_INFO_T
 
 			if (prProcessingQue->u4NumElem != 1) {
 				while (1) {
-					QUEUE_REMOVE_HEAD(prProcessingQue, prQueueEntry, P_QUE_ENTRY_T);
+					QUEUE_REMOVE_HEAD(prProcessingQue, prQueueEntry, struct QUE_ENTRY *);
 					if (prQueueEntry == NULL)
 						break;
-					prMsduInfo = (P_MSDU_INFO_T) prQueueEntry;
+					prMsduInfo = (struct MSDU_INFO *) prQueueEntry;
 					ucHifTc = nicTxDirectGetHifTc(prMsduInfo);
 					QUEUE_INSERT_TAIL(&prAdapter->rTxDirectHifQueue[ucHifTc],
-							  (P_QUE_ENTRY_T) prMsduInfo);
+							  (struct QUE_ENTRY *) prMsduInfo);
 				}
 				nicTxDirectStartCheckQTimer(prAdapter);
 				return WLAN_STATUS_SUCCESS;
 			}
 
-			QUEUE_REMOVE_HEAD(prProcessingQue, prQueueEntry, P_QUE_ENTRY_T);
-			prMsduInfo = (P_MSDU_INFO_T) prQueueEntry;
+			QUEUE_REMOVE_HEAD(prProcessingQue, prQueueEntry, struct QUE_ENTRY *);
+			prMsduInfo = (struct MSDU_INFO *) prQueueEntry;
 			ucHifTc = nicTxDirectGetHifTc(prMsduInfo);
 		} else {
 			if (ucCheckTc != 0xff)
@@ -4045,15 +4045,15 @@ static WLAN_STATUS nicTxDirectStartXmitMain(struct sk_buff *prSkb, P_MSDU_INFO_T
 				DBGLOG(TX, INFO, "ERROR: no rTxDirectHifQueue (%u)\n", ucHifTc);
 				return WLAN_STATUS_FAILURE;
 			}
-			QUEUE_REMOVE_HEAD(&prAdapter->rTxDirectHifQueue[ucHifTc], prQueueEntry, P_QUE_ENTRY_T);
-			prMsduInfo = (P_MSDU_INFO_T) prQueueEntry;
+			QUEUE_REMOVE_HEAD(&prAdapter->rTxDirectHifQueue[ucHifTc], prQueueEntry, struct QUE_ENTRY *);
+			prMsduInfo = (struct MSDU_INFO *) prQueueEntry;
 		}
 	}
 
 	while (1) {
 		if (!halTxIsDataBufEnough(prAdapter, prMsduInfo)) {
 			QUEUE_INSERT_HEAD(&prAdapter->rTxDirectHifQueue[ucHifTc],
-					  (P_QUE_ENTRY_T) prMsduInfo);
+					  (struct QUE_ENTRY *) prMsduInfo);
 			mod_timer(&prAdapter->rTxDirectHifTimer, jiffies + TX_DIRECT_CHECK_INTERVAL);
 
 			return WLAN_STATUS_SUCCESS;
@@ -4066,14 +4066,14 @@ static WLAN_STATUS nicTxDirectStartXmitMain(struct sk_buff *prSkb, P_MSDU_INFO_T
 			WLAN_GET_FIELD_32(&prMsduInfo->prPacket, &prMsduInfo->u4TxDoneTag);
 
 			KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_TXING_MGMT_LIST);
-			QUEUE_INSERT_TAIL(&(prAdapter->rTxCtrl.rTxMgmtTxingQueue), (P_QUE_ENTRY_T) prMsduInfo);
+			QUEUE_INSERT_TAIL(&(prAdapter->rTxCtrl.rTxMgmtTxingQueue), (struct QUE_ENTRY *) prMsduInfo);
 			KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_TXING_MGMT_LIST);
 		}
 		HAL_WRITE_TX_DATA(prAdapter, prMsduInfo);
 
 		if (QUEUE_IS_NOT_EMPTY(&prAdapter->rTxDirectHifQueue[ucHifTc])) {
-			QUEUE_REMOVE_HEAD(&prAdapter->rTxDirectHifQueue[ucHifTc], prQueueEntry, P_QUE_ENTRY_T);
-			prMsduInfo = (P_MSDU_INFO_T) prQueueEntry;
+			QUEUE_REMOVE_HEAD(&prAdapter->rTxDirectHifQueue[ucHifTc], prQueueEntry, struct QUE_ENTRY *);
+			prMsduInfo = (struct MSDU_INFO *) prQueueEntry;
 		} else {
 			break;
 		}
@@ -4094,8 +4094,8 @@ static WLAN_STATUS nicTxDirectStartXmitMain(struct sk_buff *prSkb, P_MSDU_INFO_T
 /*----------------------------------------------------------------------------*/
 void nicTxDirectTimerCheckSkbQ(unsigned long data)
 {
-	P_GLUE_INFO_T prGlueInfo = (P_GLUE_INFO_T)data;
-	P_ADAPTER_T prAdapter = prGlueInfo->prAdapter;
+	struct GLUE_INFO *prGlueInfo = (struct GLUE_INFO *)data;
+	struct ADAPTER *prAdapter = prGlueInfo->prAdapter;
 
 	if (skb_queue_len(&prAdapter->rTxDirectSkbQueue))
 		nicTxDirectStartXmit(NULL, prGlueInfo);
@@ -4115,11 +4115,11 @@ void nicTxDirectTimerCheckSkbQ(unsigned long data)
 /*----------------------------------------------------------------------------*/
 void nicTxDirectTimerCheckHifQ(unsigned long data)
 {
-	P_GLUE_INFO_T prGlueInfo = (P_GLUE_INFO_T)data;
-	P_ADAPTER_T prAdapter = prGlueInfo->prAdapter;
-	UINT_8 ucHifTc = 0;
-	UINT_32 u4StaPsBitmap, u4BssAbsentBitmap;
-	UINT_8 ucStaRecIndex, ucBssIndex;
+	struct GLUE_INFO *prGlueInfo = (struct GLUE_INFO *)data;
+	struct ADAPTER *prAdapter = prGlueInfo->prAdapter;
+	uint8_t ucHifTc = 0;
+	uint32_t u4StaPsBitmap, u4BssAbsentBitmap;
+	uint8_t ucStaRecIndex, ucBssIndex;
 
 	spin_lock_bh(&prGlueInfo->rSpinLock[SPIN_LOCK_TX_DIRECT]);
 
@@ -4169,11 +4169,11 @@ void nicTxDirectTimerCheckHifQ(unsigned long data)
 * \retval WLAN_STATUS
 */
 /*----------------------------------------------------------------------------*/
-WLAN_STATUS nicTxDirectStartXmit(struct sk_buff *prSkb, P_GLUE_INFO_T prGlueInfo)
+uint32_t nicTxDirectStartXmit(struct sk_buff *prSkb, struct GLUE_INFO *prGlueInfo)
 {
-	P_ADAPTER_T prAdapter = prGlueInfo->prAdapter;
-	P_MSDU_INFO_T prMsduInfo;
-	WLAN_STATUS ret = WLAN_STATUS_SUCCESS;
+	struct ADAPTER *prAdapter = prGlueInfo->prAdapter;
+	struct MSDU_INFO *prMsduInfo;
+	uint32_t ret = WLAN_STATUS_SUCCESS;
 
 	spin_lock_bh(&prGlueInfo->rSpinLock[SPIN_LOCK_TX_DIRECT]);
 
@@ -4240,14 +4240,14 @@ end:
 */
 /*----------------------------------------------------------------------------*/
 
-VOID nicTxResourceUpdate_v1(IN P_ADAPTER_T prAdapter)
+void nicTxResourceUpdate_v1(IN struct ADAPTER *prAdapter)
 {
-	UINT_8 string[128], idx, i, tc_num;
-	UINT_32 u4share, u4remains;
-	P_WIFI_VAR_T prWifiVar = &prAdapter->rWifiVar;
-	UINT_32 *pau4TcPageCount;
+	uint8_t string[128], idx, i, tc_num;
+	uint32_t u4share, u4remains;
+	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
+	uint32_t *pau4TcPageCount;
 #if QM_ADAPTIVE_TC_RESOURCE_CTRL
-	P_QUE_MGT_T prQM = &prAdapter->rQM;
+	struct QUE_MGT *prQM = &prAdapter->rQM;
 #endif
 
 
@@ -4315,12 +4315,12 @@ VOID nicTxResourceUpdate_v1(IN P_ADAPTER_T prAdapter)
 	for (idx = 0; idx < TC_NUM; idx++) {
 
 		/* construct prefix: Tc0Page, Tc1Page... */
-		memset(string, 0, sizeof(string)/sizeof(UINT_8));
-		snprintf(string, sizeof(string)/sizeof(UINT_8), "Tc%xPage", idx);
+		memset(string, 0, sizeof(string)/sizeof(uint8_t));
+		snprintf(string, sizeof(string)/sizeof(uint8_t), "Tc%xPage", idx);
 
 		/* update the final value */
 		prWifiVar->au4TcPageCount[idx] =
-								(UINT_32) wlanCfgGetUint32(prAdapter,
+								(uint32_t) wlanCfgGetUint32(prAdapter,
 								string, prWifiVar->au4TcPageCount[idx]);
 	}
 
@@ -4329,12 +4329,12 @@ VOID nicTxResourceUpdate_v1(IN P_ADAPTER_T prAdapter)
 	for (idx = 0; idx < TC_NUM; idx++) {
 
 		/* construct prefix: Tc0Grt, Tc1Grt... */
-		memset(string, 0, sizeof(string)/sizeof(UINT_8));
-		snprintf(string, sizeof(string)/sizeof(UINT_8), "Tc%xGrt", idx);
+		memset(string, 0, sizeof(string)/sizeof(uint8_t));
+		snprintf(string, sizeof(string)/sizeof(uint8_t), "Tc%xGrt", idx);
 
 		/* update the final value */
 		prQM->au4GuaranteedTcResource[idx] =
-									(UINT_32) wlanCfgGetUint32(prAdapter,
+									(uint32_t) wlanCfgGetUint32(prAdapter,
 									string, prQM->au4GuaranteedTcResource[idx]);
 	}
 #endif /* end of #if QM_ADAPTIVE_TC_RESOURCE_CTRL */
@@ -4349,7 +4349,7 @@ VOID nicTxResourceUpdate_v1(IN P_ADAPTER_T prAdapter)
 	 *    Reference to arNetwork2TcResource[], AC_BE uses TC1_INDEX.
 	 */
 	if (prAdapter->rWifiVar.ucTpTestMode == ENUM_TP_TEST_MODE_THROUGHPUT) {
-		UINT_32 u4psePageCnt, u4plePageCnt, u4pseRemain, u4pleRemain;
+		uint32_t u4psePageCnt, u4plePageCnt, u4pseRemain, u4pleRemain;
 		#define DEFAULT_PACKET_NUM 5
 
 

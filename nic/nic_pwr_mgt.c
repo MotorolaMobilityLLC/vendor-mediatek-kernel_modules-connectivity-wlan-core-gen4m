@@ -108,7 +108,7 @@
 ********************************************************************************
 */
 
-VOID nicpmWakeUpWiFi(IN P_ADAPTER_T prAdapter)
+void nicpmWakeUpWiFi(IN struct ADAPTER *prAdapter)
 {
 	if (!nicVerifyChipID(prAdapter)) {
 		DBGLOG(INIT, ERROR, "Chip id verify error!\n");
@@ -126,7 +126,7 @@ VOID nicpmWakeUpWiFi(IN P_ADAPTER_T prAdapter)
 * \return (none)
 */
 /*----------------------------------------------------------------------------*/
-VOID nicpmSetFWOwn(IN P_ADAPTER_T prAdapter, IN BOOLEAN fgEnableGlobalInt)
+void nicpmSetFWOwn(IN struct ADAPTER *prAdapter, IN u_int8_t fgEnableGlobalInt)
 {
 	halSetFWOwn(prAdapter, fgEnableGlobalInt);
 }
@@ -140,7 +140,7 @@ VOID nicpmSetFWOwn(IN P_ADAPTER_T prAdapter, IN BOOLEAN fgEnableGlobalInt)
 * \return (none)
 */
 /*----------------------------------------------------------------------------*/
-BOOLEAN nicpmSetDriverOwn(IN P_ADAPTER_T prAdapter)
+u_int8_t nicpmSetDriverOwn(IN struct ADAPTER *prAdapter)
 {
 	return halSetDriverOwn(prAdapter);
 }
@@ -154,22 +154,22 @@ BOOLEAN nicpmSetDriverOwn(IN P_ADAPTER_T prAdapter)
 * \return (none)
 */
 /*----------------------------------------------------------------------------*/
-BOOLEAN nicpmSetAcpiPowerD0(IN P_ADAPTER_T prAdapter)
+u_int8_t nicpmSetAcpiPowerD0(IN struct ADAPTER *prAdapter)
 {
 
 #if 0
-	WLAN_STATUS u4Status = WLAN_STATUS_SUCCESS;
-	UINT_32 u4Value = 0, u4WHISR = 0;
-	UINT_16 au2TxCount[16];
-	UINT_32 i;
+	uint32_t u4Status = WLAN_STATUS_SUCCESS;
+	uint32_t u4Value = 0, u4WHISR = 0;
+	uint16_t au2TxCount[16];
+	uint32_t i;
 #if CFG_ENABLE_FW_DOWNLOAD
-	UINT_32 u4FwImgLength, u4FwLoadAddr, u4Cr4FwImgLength;
-	PVOID prFwMappingHandle;
-	PVOID pvFwImageMapFile = NULL;
-	PVOID pvCr4FwImageMapFile = NULL;
+	uint32_t u4FwImgLength, u4FwLoadAddr, u4Cr4FwImgLength;
+	void *prFwMappingHandle;
+	void *pvFwImageMapFile = NULL;
+	void *pvCr4FwImageMapFile = NULL;
 #if CFG_ENABLE_FW_DIVIDED_DOWNLOAD
-	P_FIRMWARE_DIVIDED_DOWNLOAD_T prFwHead;
-	BOOLEAN fgValidHead = TRUE;
+	struct FIRMWARE_DIVIDED_DOWNLOAD *prFwHead;
+	u_int8_t fgValidHead = TRUE;
 	/* const UINT_32 u4CRCOffset = offsetof(FIRMWARE_DIVIDED_DOWNLOAD_T, u4NumOfEntries); */
 #endif
 #endif
@@ -223,11 +223,11 @@ BOOLEAN nicpmSetAcpiPowerD0(IN P_ADAPTER_T prAdapter)
 #if CFG_ENABLE_FW_DIVIDED_DOWNLOAD
 			/* 3a. parse file header for decision of divided firmware download or not */
 			prFwHead =
-			    (P_FIRMWARE_DIVIDED_DOWNLOAD_T) ((PUINT_8) pvFwImageMapFile + u4FwImgLength -
-							     (2 * sizeof(FWDL_SECTION_INFO_T)));
+			    (struct FIRMWARE_DIVIDED_DOWNLOAD *) ((uint8_t *) pvFwImageMapFile + u4FwImgLength -
+							     (2 * sizeof(struct FWDL_SECTION_INFO)));
 #if 0
 			if (prFwHead->u4Signature == MTK_WIFI_SIGNATURE &&
-			    prFwHead->u4CRC == wlanCRC32((PUINT_8) pvFwImageMapFile + u4CRCOffset,
+			    prFwHead->u4CRC == wlanCRC32((uint8_t *) pvFwImageMapFile + u4CRCOffset,
 							 u4FwImgLength - u4CRCOffset)) {
 				fgValidHead = TRUE;
 			} else {
@@ -304,7 +304,7 @@ BOOLEAN nicpmSetAcpiPowerD0(IN P_ADAPTER_T prAdapter)
 
 		if (u4Status == WLAN_STATUS_SUCCESS) {
 			/* 6.1 reset interrupt status */
-			HAL_READ_INTR_STATUS(prAdapter, 4, (PUINT_8)&u4WHISR);
+			HAL_READ_INTR_STATUS(prAdapter, 4, (uint8_t *)&u4WHISR);
 			if (HAL_IS_TX_DONE_INTR(u4WHISR))
 				HAL_READ_TX_RELEASED_COUNT(prAdapter, au2TxCount);
 
@@ -349,7 +349,7 @@ BOOLEAN nicpmSetAcpiPowerD0(IN P_ADAPTER_T prAdapter)
 * @return (none)
 */
 /*----------------------------------------------------------------------------*/
-BOOLEAN nicpmSetAcpiPowerD3(IN P_ADAPTER_T prAdapter)
+u_int8_t nicpmSetAcpiPowerD3(IN struct ADAPTER *prAdapter)
 {
 /*	UINT_32 i; */
 

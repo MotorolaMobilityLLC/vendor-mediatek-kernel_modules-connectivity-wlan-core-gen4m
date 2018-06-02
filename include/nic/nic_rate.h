@@ -101,53 +101,53 @@
 *                  F U N C T I O N   D E C L A R A T I O N S
 ********************************************************************************
 */
-UINT_32
+uint32_t
 nicGetPhyRateByMcsRate(
-	IN UINT_8 ucIdx,
-	IN UINT_8 ucBw,
-	IN UINT_8 ucGI
+	IN uint8_t ucIdx,
+	IN uint8_t ucBw,
+	IN uint8_t ucGI
 	);
 
-UINT_32
+uint32_t
 nicGetHwRateByPhyRate(
-	IN UINT_8 ucIdx
+	IN uint8_t ucIdx
 	);
 
-WLAN_STATUS
+uint32_t
 nicSwIndex2RateIndex(
-	IN UINT_8 ucRateSwIndex,
-	OUT PUINT_8 pucRateIndex,
-	OUT PUINT_8 pucPreambleOption
+	IN uint8_t ucRateSwIndex,
+	OUT uint8_t *pucRateIndex,
+	OUT uint8_t *pucPreambleOption
 	);
 
-WLAN_STATUS
+uint32_t
 nicRateIndex2RateCode(
-	IN UINT_8 ucPreambleOption,
-	IN UINT_8 ucRateIndex,
-	OUT PUINT_16 pu2RateCode
+	IN uint8_t ucPreambleOption,
+	IN uint8_t ucRateIndex,
+	OUT uint16_t *pu2RateCode
 	);
 
-UINT_32
+uint32_t
 nicRateCode2PhyRate(
-	IN UINT_16 u2RateCode,
-	IN UINT_8 ucBandwidth,
-	IN UINT_8 ucGI,
-	IN UINT_8 ucRateNss
+	IN uint16_t u2RateCode,
+	IN uint8_t ucBandwidth,
+	IN uint8_t ucGI,
+	IN uint8_t ucRateNss
 	);
 
-UINT_32
+uint32_t
 nicRateCode2DataRate(
-	IN UINT_16 u2RateCode,
-	IN UINT_8 ucBandwidth,
-	IN UINT_8 ucGI
+	IN uint16_t u2RateCode,
+	IN uint8_t ucBandwidth,
+	IN uint8_t ucGI
 	);
 
-BOOLEAN
+u_int8_t
 nicGetRateIndexFromRateSetWithLimit(
-	IN UINT_16 u2RateSet,
-	IN UINT_32 u4PhyRateLimit,
-	IN BOOLEAN fgGetLowest,
-	OUT PUINT_8 pucRateSwIndex
+	IN uint16_t u2RateSet,
+	IN uint32_t u4PhyRateLimit,
+	IN u_int8_t fgGetLowest,
+	OUT uint8_t *pucRateSwIndex
 	);
 
 /*******************************************************************************

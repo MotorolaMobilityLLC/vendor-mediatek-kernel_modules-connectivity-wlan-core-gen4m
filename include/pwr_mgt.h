@@ -100,14 +100,14 @@
 *                             D A T A   T Y P E S
 ********************************************************************************
 */
-typedef struct _PM_PROFILE_SETUP_INFO_T {
+struct PM_PROFILE_SETUP_INFO {
 	/* Profile setup */
-	UINT_8 ucBmpDeliveryAC;	/* 0: AC_BE, 1: AC_BK, 2: AC_VI, 3: AC_VO */
-	UINT_8 ucBmpTriggerAC;	/* 0: AC_BE, 1: AC_BK, 2: AC_VI, 3: AC_VO */
+	uint8_t ucBmpDeliveryAC;	/* 0: AC_BE, 1: AC_BK, 2: AC_VI, 3: AC_VO */
+	uint8_t ucBmpTriggerAC;	/* 0: AC_BE, 1: AC_BK, 2: AC_VI, 3: AC_VO */
 
-	UINT_8 ucUapsdSp;	/* Number of triggered packets in UAPSD */
+	uint8_t ucUapsdSp;	/* Number of triggered packets in UAPSD */
 
-} PM_PROFILE_SETUP_INFO_T, *P_PM_PROFILE_SETUP_INFO_T;
+};
 
 /*******************************************************************************
 *                            P U B L I C   D A T A

@@ -81,7 +81,7 @@
 */
 
 /* Interface Type */
-typedef enum _MT_INF_TYPE_T {
+enum MT_INF_TYPE {
 	MT_DEV_INF_UNKNOWN = 0,
 	MT_DEV_INF_PCI = 1,
 	MT_DEV_INF_USB = 2,
@@ -89,7 +89,7 @@ typedef enum _MT_INF_TYPE_T {
 	MT_DEV_INF_PCIE = 5,
 	MT_DEV_INF_SDIO = 6,
 	MT_DEV_INF_EHPI = 7,
-} MT_INF_TYPE_T;
+};
 
 /*******************************************************************************
 *                            P U B L I C   D A T A
@@ -112,8 +112,8 @@ typedef enum _MT_INF_TYPE_T {
 
 #define HAL_WRITE_HIF_TXD(_prChipInfo, _pucOutputBuf, _u2InfoBufLen) \
 { \
-	UINT_16 _u2DataLen = (UINT_16)(_u2InfoBufLen); \
-	PUINT_8 _prBuf = (_pucOutputBuf); \
+	uint16_t _u2DataLen = (uint16_t)(_u2InfoBufLen); \
+	uint8_t *_prBuf = (_pucOutputBuf); \
 	if (_prChipInfo->fillHifTxDesc) \
 		_prChipInfo->fillHifTxDesc(&_prBuf, &_u2DataLen); \
 }

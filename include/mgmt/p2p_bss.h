@@ -102,6 +102,6 @@
 ********************************************************************************
 */
 
-UINT_32 p2pGetTxProbRspIeTableSize(VOID);
+uint32_t p2pGetTxProbRspIeTableSize(void);
 
 #endif
