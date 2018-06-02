@@ -86,7 +86,6 @@
 #endif
 
 #include "linux/kallsyms.h"
-/*#include <linux/ftrace_event.h>*/
 
 #if DBG
 extern int allocatedMemSize;
