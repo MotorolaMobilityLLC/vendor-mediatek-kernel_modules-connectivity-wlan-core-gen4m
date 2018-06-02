@@ -54,7 +54,7 @@
 
 /*
  * definition for AP selection algrithm
-*/
+ */
 #define BSS_FULL_SCORE                          (100)
 #define CHNL_BSS_NUM_THRESOLD                   100
 #define BSS_STA_CNT_THRESOLD                    30
@@ -138,7 +138,7 @@ static uint16_t scanCalculateScoreByChnlInfo(
 			/* the channel utilization max value is 255.
 			 *great utilization means little weight value.
 			 * the step of weight value is 2.6
-			*/
+			 */
 			u2Score = WEIGHT_IDX_CHNL_UTIL *
 				(BSS_FULL_SCORE -
 				(prEssChnlInfo[i].ucUtilization * 10 / 26));
@@ -147,7 +147,7 @@ static uint16_t scanCalculateScoreByChnlInfo(
 			 * the weight will be 0.
 			 * otherwise, the weight value decrease 1
 			 * if AP number increase 1
-			*/
+			 */
 			if (prEssChnlInfo[i].ucApNum <= CHNL_BSS_NUM_THRESOLD)
 				u2Score += WEIGHT_IDX_AP_NUM * (BSS_FULL_SCORE -
 					prEssChnlInfo[i].ucApNum *
@@ -208,9 +208,9 @@ static u_int8_t scanNeedReplaceCandidate(struct ADAPTER *prAdapter,
 	uint16_t u2CurrMiss = u4UpdateIdx - prCurrBss->u4UpdateIdx;
 
 	/* 1. No need check score case
-	  * 1.1 Scan missing count of CurrBss is too more,
-	  * but Candidate is suitable, don't replace
-	  */
+	 * 1.1 Scan missing count of CurrBss is too more,
+	 * but Candidate is suitable, don't replace
+	 */
 	if (u2CurrMiss > 2 && u2CurrMiss > u2CandMiss) {
 #define __STR_FMT__ "Scan Miss count of CurrBss > 2, and Candidate <= 2\n"
 		DBGLOG(SCN, INFO, __STR_FMT__);
@@ -219,7 +219,7 @@ static u_int8_t scanNeedReplaceCandidate(struct ADAPTER *prAdapter,
 	}
 	/* 1.2 Scan missing count of Candidate is too more,
 	 * but CurrBss is suitable, replace
-	*/
+	 */
 	if (u2CandMiss > 2 && u2CandMiss > u2CurrMiss) {
 #define __STR_FMT__ "Scan Miss count of Candidate > 2, and CurrBss <= 2\n"
 		DBGLOG(SCN, INFO, __STR_FMT__);
@@ -239,7 +239,7 @@ static u_int8_t scanNeedReplaceCandidate(struct ADAPTER *prAdapter,
 		if (prCurrBss->eBand == BAND_5G) {
 			/* Current AP is 5G, replace candidate
 			 * AP of current AP is good.
-			*/
+			 */
 			if (cCurrRssi >= HIGH_RSSI_FOR_5G_BAND ||
 				(cCandRssi < HIGH_RSSI_FOR_5G_BAND &&
 				cCurrRssi > LOW_RSSI_FOR_5G_BAND))
@@ -250,7 +250,7 @@ static u_int8_t scanNeedReplaceCandidate(struct ADAPTER *prAdapter,
 		} else {
 			/* Candidate AP is 5G, don't replace it
 			 * if it's good enough.
-			*/
+			 */
 			if (cCandRssi >= HIGH_RSSI_FOR_5G_BAND ||
 				(cCurrRssi < HIGH_RSSI_FOR_5G_BAND &&
 				cCandRssi > LOW_RSSI_FOR_5G_BAND))
@@ -262,10 +262,10 @@ static u_int8_t scanNeedReplaceCandidate(struct ADAPTER *prAdapter,
 	}
 
 	/* 1.5 RSSI of Current Bss is lower than Candidate, don't replace
-	** If the lower Rssi is greater than -59dbm,
-	** then no need check the difference
-	** Otherwise, if difference is greater than 10dbm, select the good RSSI
-	*/
+	 * If the lower Rssi is greater than -59dbm,
+	 * then no need check the difference
+	 * Otherwise, if difference is greater than 10dbm, select the good RSSI
+	 */
 	if (cCandRssi - cCurrRssi >= RSSI_DIFF_BETWEEN_BSS)
 		return FALSE;
 	/* RSSI of Candidate Bss is lower than Current, replace */
@@ -392,27 +392,27 @@ static uint16_t scanCalculateScoreBySaa(struct ADAPTER *prAdapter,
 }
 
 
-/*****
-* Bss Characteristics to be taken into account when calculate Score:
-* Channel Loading Group:
-* 1. Client Count (in BSS Load IE).
-* 2. AP number on the Channel.
-*
-* RF Group:
-* 1. Channel utilization.
-* 2. SNR.
-* 3. RSSI.
-*
-* Misc Group:
-* 1. Deauth Last time.
-* 2. Scan Missing Count.
-* 3. Has probe response in scan result.
-*
-* Capability Group:
-* 1. Prefer 5G band.
-* 2. Bandwidth.
-* 3. STBC and Multi Anttena.
-*/
+/*
+ * Bss Characteristics to be taken into account when calculate Score:
+ * Channel Loading Group:
+ * 1. Client Count (in BSS Load IE).
+ * 2. AP number on the Channel.
+ *
+ * RF Group:
+ * 1. Channel utilization.
+ * 2. SNR.
+ * 3. RSSI.
+ *
+ * Misc Group:
+ * 1. Deauth Last time.
+ * 2. Scan Missing Count.
+ * 3. Has probe response in scan result.
+ *
+ * Capability Group:
+ * 1. Prefer 5G band.
+ * 2. Bandwidth.
+ * 3. STBC and Multi Anttena.
+ */
 struct BSS_DESC *scanSearchBssDescByScoreForAis(struct ADAPTER *prAdapter)
 {
 	struct AIS_SPECIFIC_BSS_INFO *prAisSpecificBssInfo = NULL;
@@ -492,7 +492,7 @@ try_again:
 		else {
 			/* never search FWK blacklist even
 			 * if we are trying blacklist
-			*/
+			 */
 			if (prBssDesc->prBlack->fgIsInFWKBlacklist == TRUE) {
 #define __STR_FMT__ \
 	"Although trying blacklist, %s(%pM) is in FWK blacklist, skip it\n"
