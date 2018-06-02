@@ -148,7 +148,7 @@ typedef enum _ENUM_USB_END_POINT_T {
 
 #define USB_TX_CMD_BUF_SIZE             (1600)
 #if CFG_USB_TX_AGG
-#define USB_TX_DATA_BUFF_SIZE           (32768/4)
+#define USB_TX_DATA_BUFF_SIZE           (32*1024)
 #else
 #define USB_TX_DATA_BUF_SIZE            (NIC_TX_DESC_AND_PADDING_LENGTH + NIC_TX_DESC_HEADER_PADDING_LENGTH + \
 					 NIC_TX_MAX_SIZE_PER_FRAME + LEN_USB_UDMA_TX_TERMINATOR)
@@ -166,8 +166,8 @@ typedef enum _ENUM_USB_END_POINT_T {
 
 #define DEVICE_VENDOR_REQUEST_IN        (0xc0)
 #define DEVICE_VENDOR_REQUEST_OUT       (0x40)
-#define VENDOR_TIMEOUT_MS               (2000)
-#define BULK_TIMEOUT_MS                 (15000)
+#define VENDOR_TIMEOUT_MS               (1000)
+#define BULK_TIMEOUT_MS                 (1500)
 #define INTERRUPT_TIMEOUT_MS            (1000)
 #define SW_RFB_TIMEOUT_MS				(3000)
 
@@ -319,6 +319,10 @@ INT_32 glBusSetIrq(PVOID pvData, PVOID pfnIsr, PVOID pvCookie);
 VOID glBusFreeIrq(PVOID pvData, PVOID pvCookie);
 
 VOID glSetPowerState(IN P_GLUE_INFO_T prGlueInfo, IN UINT_32 ePowerMode);
+
+VOID glUdmaTxRxEnable(P_GLUE_INFO_T prGlueInfo, BOOLEAN enable);
+
+VOID glUdmaRxAggEnable(P_GLUE_INFO_T prGlueInfo, BOOLEAN enable);
 
 BOOL mtk_usb_vendor_request(IN P_GLUE_INFO_T prGlueInfo, IN UCHAR uEndpointAddress, IN UCHAR RequestType,
 			    IN UCHAR Request, IN UINT_16 Value, IN UINT_16 Index, IN PVOID TransferBuffer,
