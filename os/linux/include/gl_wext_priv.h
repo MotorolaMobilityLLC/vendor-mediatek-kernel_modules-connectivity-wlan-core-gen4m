@@ -67,6 +67,13 @@
 /* If it is set to 1, iwpriv will support register read/write */
 #define CFG_SUPPORT_PRIV_MCR_RW         1
 
+/* Stat CMD will have different format due to different algorithm support */
+#if (defined(MT6632) || defined(MT7668))
+#define CFG_SUPPORT_RA_GEN			0
+#else
+#define CFG_SUPPORT_RA_GEN			1
+#endif
+
 /*******************************************************************************
 *                    E X T E R N A L   R E F E R E N C E S
 ********************************************************************************
