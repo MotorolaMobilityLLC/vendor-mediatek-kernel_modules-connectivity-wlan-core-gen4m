@@ -194,8 +194,10 @@ scanP2pProcessBeaconAndProbeResp(IN struct ADAPTER *prAdapter,
 				 */
 				if (fgIsSkipThisBeacon) {
 					DBGLOG(P2P, TRACE,
-						"Skip beacon [%pM][%s][ch %d]",
-						prWlanBeaconFrame->aucBSSID,
+						"Skip beacon [" MACSTR
+						"][%s][ch %d]",
+						MAC2STR(
+						prWlanBeaconFrame->aucBSSID),
 						prBssDesc->aucSSID,
 						prBssDesc->ucChannelNum);
 					break;
@@ -210,8 +212,9 @@ scanP2pProcessBeaconAndProbeResp(IN struct ADAPTER *prAdapter,
 				&&
 				prP2pDevFsmInfo->rScanReqInfo.fgIsScanRequest)
 				DBGLOG(P2P, INFO,
-					"indicate [%pM][%s][%s][ch %d][r %d] update time %u\n",
-					prWlanBeaconFrame->aucBSSID,
+					"indicate [" MACSTR
+					"][%s][%s][ch %d][r %d][t %u]\n",
+					MAC2STR(prWlanBeaconFrame->aucBSSID),
 					ieee80211_is_beacon(
 						prWlanBeaconFrame->u2FrameCtrl)
 					? "Beacon" : "Probe Response",
