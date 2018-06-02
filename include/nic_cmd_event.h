@@ -3549,6 +3549,10 @@ uint32_t nicEventQueryTxResource(IN struct ADAPTER *prAdapter, IN uint8_t *pucEv
 
 void nicCmdEventQueryCnmInfo(IN struct ADAPTER *prAdapter, IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf);
 void nicEventCnmInfo(IN struct ADAPTER *prAdapter, IN struct WIFI_EVENT *prEvent);
+#if CFG_SUPPORT_REPLAY_DETECTION
+void nicCmdEventSetAddKey(IN struct ADAPTER *prAdapter, IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf);
+void nicOidCmdTimeoutSetAddKey(IN struct ADAPTER *prAdapter, IN struct CMD_INFO *prCmdInfo);
+#endif
 /*******************************************************************************
 *                              F U N C T I O N S
 ********************************************************************************

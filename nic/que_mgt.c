@@ -2377,6 +2377,10 @@ struct SW_RFB *qmHandleRxPackets(IN struct ADAPTER *prAdapter, IN struct SW_RFB 
 	uint8_t *pucEthDestAddr;
 	u_int8_t fgIsBMC, fgIsHTran;
 	u_int8_t fgMicErr;
+#if CFG_SUPPORT_REPLAY_DETECTION
+	u_int8_t ucBssIndexRly = 0;
+	struct BSS_INFO *prBssInfoRly = NULL;
+#endif
 
 	DEBUGFUNC("qmHandleRxPackets");
 
@@ -2595,6 +2599,29 @@ struct SW_RFB *qmHandleRxPackets(IN struct ADAPTER *prAdapter, IN struct SW_RFB 
 
 
 		/* Todo:: Move the data class error check here */
+
+#if CFG_SUPPORT_REPLAY_DETECTION
+		if (prCurrSwRfb->prStaRec) {
+			ucBssIndexRly = prCurrSwRfb->prStaRec->ucBssIndex;
+			prBssInfoRly = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndexRly);
+			if (prBssInfoRly && !IS_BSS_ACTIVE(prBssInfoRly)) {
+				DBGLOG(QM, INFO,
+					"Mark NULL the Packet for inactive Bss %u\n",
+					ucBssIndexRly);
+				prCurrSwRfb->eDst = RX_PKT_DESTINATION_NULL;
+				QUEUE_INSERT_TAIL(prReturnedQue, (struct QUE_ENTRY *) prCurrSwRfb);
+				continue;
+			}
+		}
+		if (fgIsBMC
+			&& prBssInfoRly
+			&& IS_BSS_AIS(prBssInfoRly)
+			&& qmHandleRxReplay(prAdapter, prCurrSwRfb)) {
+			prCurrSwRfb->eDst = RX_PKT_DESTINATION_NULL;
+			QUEUE_INSERT_TAIL(prReturnedQue, (struct QUE_ENTRY *) prCurrSwRfb);
+			continue;
+		}
+#endif
 
 		if (prCurrSwRfb->fgReorderBuffer && !fgIsBMC && fgIsHTran) {
 			/* If this packet should dropped or indicated to the host immediately,
@@ -6331,5 +6358,128 @@ void qmResetTcControlResource(IN struct ADAPTER *prAdapter)
 
 	prQM->u4ResidualTcResource = u4TotalTcResource - u4TotalGurantedTcResource;
 
+}
+#endif
+
+#ifdef CFG_SUPPORT_REPLAY_DETECTION
+/* To change PN number to UINT64 */
+#define CCMPTSCPNNUM	6
+u_int8_t qmRxPNtoU64(uint8_t *pucPN, uint8_t uPNNum, uint64_t *pu8Rets)
+{
+	uint8_t ucCount = 0;
+	uint64_t u8Data = 0;
+
+	if (!pu8Rets) {
+		DBGLOG(QM, ERROR, "Please input valid pu8Rets\n");
+		return FALSE;
+	}
+
+	if (uPNNum > CCMPTSCPNNUM) {
+		DBGLOG(QM, ERROR, "Please input valid uPNNum:%d\n", uPNNum);
+		return FALSE;
+	}
+
+	*pu8Rets = 0;
+	for (; ucCount < uPNNum; ucCount++) {
+		u8Data = pucPN[ucCount] << 8*ucCount;
+		*pu8Rets +=  u8Data;
+	}
+	return TRUE;
+}
+
+/* To check PN/TSC between RxStatus and local record. return TRUE if PNS is not bigger than PNT */
+u_int8_t qmRxDetectReplay(uint8_t *pucPNS, uint8_t *pucPNT)
+{
+	uint64_t u8RxNum = 0;
+	uint64_t u8LocalRec = 0;
+
+	if (!pucPNS || !pucPNT) {
+		DBGLOG(QM, ERROR, "Please input valid PNS:%p and PNT:%p\n", pucPNS, pucPNT);
+		return TRUE;
+	}
+
+	if (!qmRxPNtoU64(pucPNS, CCMPTSCPNNUM, &u8RxNum)
+		|| !qmRxPNtoU64(pucPNT, CCMPTSCPNNUM, &u8LocalRec)) {
+		DBGLOG(QM, ERROR, "PN2U64 failed\n");
+		return TRUE;
+	}
+	/* PN overflow ? */
+	return !(u8RxNum > u8LocalRec);
+}
+
+/* TO filter broadcast and multicast data packet replay issue. */
+u_int8_t qmHandleRxReplay(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb)
+{
+	uint8_t *pucPN = NULL;
+	uint8_t ucKeyID = 0;				/* 0~4 */
+	uint8_t ucSecMode = CIPHER_SUITE_NONE;		/* CIPHER_SUITE_NONE~CIPHER_SUITE_GCMP */
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct GL_WPA_INFO *prWpaInfo = NULL;
+	struct GL_DETECT_REPLAY_INFO *prDetRplyInfo = NULL;
+	struct HW_MAC_RX_DESC *prRxStatus = NULL;
+
+	if (!prAdapter)
+		return TRUE;
+	if (prSwRfb->u2PacketLen <= ETHER_HEADER_LEN)
+		return TRUE;
+
+	if (!(prSwRfb->ucGroupVLD & BIT(RX_GROUP_VLD_1))) {
+		DBGLOG_LIMITED(QM, TRACE, "Group 1 invalid\n");
+		return FALSE;
+	}
+
+	/* BMC only need check CCMP and TKIP Cipher suite */
+	prRxStatus = prSwRfb->prRxStatus;
+	ucSecMode = HAL_RX_STATUS_GET_SEC_MODE(prRxStatus);
+
+	prGlueInfo = prAdapter->prGlueInfo;
+	prWpaInfo = &prGlueInfo->rWpaInfo;
+
+	if (ucSecMode != CIPHER_SUITE_CCMP && ucSecMode != CIPHER_SUITE_TKIP) {
+		DBGLOG_LIMITED(QM, TRACE, "SecMode: %d and CipherGroup: %d, no need check replay\n",
+				ucSecMode, prWpaInfo->u4CipherGroup);
+		return FALSE;
+	}
+
+	ucKeyID = HAL_RX_STATUS_GET_KEY_ID(prRxStatus);
+	if (ucKeyID >= MAX_KEY_NUM) {
+		DBGLOG(QM, ERROR, "KeyID: %d error\n", ucKeyID);
+		return TRUE;
+	}
+
+	prDetRplyInfo = &prGlueInfo->prDetRplyInfo;
+	/* TODO : Need check fw rekey while fw rekey event. */
+	if (ucKeyID != prDetRplyInfo->ucCurKeyId) {
+		DBGLOG(QM, TRACE,
+			"use last keyID while detect replay information.(0x%x->0x%x)\n",
+			prDetRplyInfo->ucCurKeyId, ucKeyID);
+		ucKeyID = prDetRplyInfo->ucCurKeyId;
+	}
+
+	if (prDetRplyInfo->arReplayPNInfo[ucKeyID].fgFirstPkt) {
+		prDetRplyInfo->arReplayPNInfo[ucKeyID].fgFirstPkt = FALSE;
+		HAL_RX_STATUS_GET_PN(prSwRfb->prRxStatusGroup1, prDetRplyInfo->arReplayPNInfo[ucKeyID].auPN);
+		DBGLOG(QM, INFO,
+			"First check packet. Key ID:0x%x\n", ucKeyID);
+		return FALSE;
+	}
+
+	pucPN = prSwRfb->prRxStatusGroup1->aucPN;
+	DBGLOG_LIMITED(QM, TRACE,
+			"BC packet 0x%x:0x%x:0x%x:0x%x:0x%x:0x%x--0x%x:0x%x:0x%x:0x%x:0x%x:0x%x\n",
+			pucPN[0], pucPN[1], pucPN[2], pucPN[3], pucPN[4], pucPN[5],
+			prDetRplyInfo->arReplayPNInfo[ucKeyID].auPN[0],
+			prDetRplyInfo->arReplayPNInfo[ucKeyID].auPN[1],
+			prDetRplyInfo->arReplayPNInfo[ucKeyID].auPN[2],
+			prDetRplyInfo->arReplayPNInfo[ucKeyID].auPN[3],
+			prDetRplyInfo->arReplayPNInfo[ucKeyID].auPN[4],
+			prDetRplyInfo->arReplayPNInfo[ucKeyID].auPN[5]);
+	if (qmRxDetectReplay(pucPN, prDetRplyInfo->arReplayPNInfo[ucKeyID].auPN)) {
+		DBGLOG_LIMITED(QM, WARN, "Drop BC replay packet!\n");
+		return TRUE;
+	}
+
+	HAL_RX_STATUS_GET_PN(prSwRfb->prRxStatusGroup1, prDetRplyInfo->arReplayPNInfo[ucKeyID].auPN);
+	return FALSE;
 }
 #endif
