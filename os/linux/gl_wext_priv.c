@@ -4344,7 +4344,7 @@ static int priv_driver_get_sta_stat(IN struct net_device *prNetDev, IN char *pcC
 	P_PARAM_HW_WLAN_INFO_T prHwWlanInfo;
 	P_PARAM_GET_STA_STATISTICS prQueryStaStatistics;
 	BOOLEAN fgResetCnt = FALSE;
-
+	BOOLEAN fgRxCCSel = FALSE;
 
 	ASSERT(prNetDev);
 	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
@@ -4381,6 +4381,8 @@ static int priv_driver_get_sta_stat(IN struct net_device *prNetDev, IN char *pcC
 		if (i4Argc == 2) {
 			if (strnicmp(apcArgv[1], CMD_STAT_RESET_CNT, strlen(CMD_STAT_RESET_CNT)) == 0)
 				fgResetCnt = TRUE;
+			else if (strnicmp(apcArgv[1], CMD_STAT_NOISE_SEL, strlen(CMD_STAT_NOISE_SEL)) == 0)
+				fgRxCCSel = TRUE;
 		}
 	}
 
@@ -4389,7 +4391,7 @@ static int priv_driver_get_sta_stat(IN struct net_device *prNetDev, IN char *pcC
 		return -1;
 
 	prHwWlanInfo->u4Index = ucWlanIndex;
-	if (strnicmp(apcArgv[1], CMD_STAT_NOISE_SEL, strlen(CMD_STAT_NOISE_SEL)) == 0)
+	if (fgRxCCSel == TRUE)
 		prHwWlanInfo->rWtblRxCounter.fgRxCCSel = TRUE;
 	else
 		prHwWlanInfo->rWtblRxCounter.fgRxCCSel = FALSE;
