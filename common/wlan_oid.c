@@ -2654,12 +2654,15 @@ wlanoidSetAddKey(IN struct ADAPTER *prAdapter, IN void *pvSetBuffer, IN uint32_t
 		prCmdKey->ucKeyType, prCmdKey->ucIsAuthenticator,
 		prCmdKey->ucAlgorithmId, prCmdKey->ucKeyId,
 		prCmdKey->ucKeyLen);
-
-	DBGLOG(RSN, INFO, "wepkey(%d, %d), BMCWlan(%d, %d)\n",
-		prBssInfo->wepkeyUsed[prCmdKey->ucKeyId],
-		prBssInfo->wepkeyWlanIdx,
-		prBssInfo->ucBMCWlanIndexSUsed[prCmdKey->ucKeyId],
-		prBssInfo->ucBMCWlanIndexS[prCmdKey->ucKeyId]);
+	if (prCmdKey->ucKeyId < MAX_KEY_NUM)
+		DBGLOG(RSN, INFO, "wepkey(%d, %d), BMCWlan(%d, %d)\n",
+		       prBssInfo->wepkeyUsed[prCmdKey->ucKeyId],
+		       prBssInfo->wepkeyWlanIdx,
+		       prBssInfo->ucBMCWlanIndexSUsed[prCmdKey->ucKeyId],
+		       prBssInfo->ucBMCWlanIndexS[prCmdKey->ucKeyId]);
+	else
+		DBGLOG(RSN, WARN, "invalid prCmdKey->ucKeyId(%d)\n",
+		       prCmdKey->ucKeyId);
 	DBGLOG_MEM8(RSN, INFO, prCmdKey->aucKeyMaterial, prCmdKey->ucKeyLen);
 #endif
 
