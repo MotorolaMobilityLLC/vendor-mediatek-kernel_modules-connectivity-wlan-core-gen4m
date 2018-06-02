@@ -473,7 +473,7 @@ VOID nicTxReleaseMsduResource(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduI
 		prNextMsduInfo = (P_MSDU_INFO_T) QUEUE_GET_NEXT_ENTRY((P_QUE_ENTRY_T) prMsduInfo);
 
 		nicTxReleaseResource(prAdapter, prMsduInfo->ucTC,
-			nicTxGetPageCount(prMsduInfo->u2FrameLength, FALSE), FALSE);
+			nicTxGetPageCount(prAdapter, prMsduInfo->u2FrameLength, FALSE), FALSE);
 
 		prMsduInfo = prNextMsduInfo;
 	};
@@ -703,7 +703,7 @@ WLAN_STATUS nicTxMsduInfoList(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduI
 			QUEUE_GET_NEXT_ENTRY((P_QUE_ENTRY_T) prMsduInfo) = NULL;
 			QUEUE_INSERT_TAIL(prDataPort0, (P_QUE_ENTRY_T) prMsduInfo);
 			status = nicTxAcquireResource(prAdapter, prMsduInfo->ucTC,
-				nicTxGetPageCount(prMsduInfo->u2FrameLength, FALSE), TRUE);
+				nicTxGetPageCount(prAdapter, prMsduInfo->u2FrameLength, FALSE), TRUE);
 			ASSERT(status == WLAN_STATUS_SUCCESS);
 
 			break;
@@ -713,7 +713,7 @@ WLAN_STATUS nicTxMsduInfoList(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduI
 			QUEUE_INSERT_TAIL(prDataPort1, (P_QUE_ENTRY_T) prMsduInfo);
 
 			status = nicTxAcquireResource(prAdapter, prMsduInfo->ucTC,
-				nicTxGetPageCount(prMsduInfo->u2FrameLength, FALSE), TRUE);
+				nicTxGetPageCount(prAdapter, prMsduInfo->u2FrameLength, FALSE), TRUE);
 			ASSERT(status == WLAN_STATUS_SUCCESS);
 
 			break;
@@ -979,12 +979,15 @@ VOID nicTxComposeDescAppend(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduInf
 	OUT PUINT_8 prTxDescBuffer)
 {
 	P_HW_MAC_TX_DESC_APPEND_T prHwTxDescAppend;
+	struct mt66xx_chip_info *prChipInfo = prAdapter->chip_info;
 
 	/* Fill TxD append */
 	prHwTxDescAppend = (P_HW_MAC_TX_DESC_APPEND_T)prTxDescBuffer;
-	kalMemZero(prHwTxDescAppend, HW_MAC_TX_DESC_APPEND_T_LENGTH);
-	prHwTxDescAppend->u2PktFlags = HIT_PKT_FLAGS_CT_WITH_TXD;
-	prHwTxDescAppend->ucBssIndex = prMsduInfo->ucBssIndex;
+	kalMemZero(prHwTxDescAppend, prChipInfo->txd_append_size);
+	if (prChipInfo->is_support_cr4) {
+		prHwTxDescAppend->CR4_APPEND.u2PktFlags = HIT_PKT_FLAGS_CT_WITH_TXD;
+		prHwTxDescAppend->CR4_APPEND.ucBssIndex = prMsduInfo->ucBssIndex;
+	}
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1305,6 +1308,7 @@ nicTxFillDesc(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduInfo,
 	P_HW_MAC_TX_DESC_T prTxDescTemplate = NULL;
 	P_STA_RECORD_T prStaRec = cnmGetStaRecByIndex(prAdapter, prMsduInfo->ucStaRecIndex);
 	UINT_32 u4TxDescLength, u4TxDescAppendLength;
+	struct mt66xx_chip_info *prChipInfo = prAdapter->chip_info;
 #if CFG_TCP_IP_CHKSUM_OFFLOAD
 	UINT_8 ucChksumFlag = 0;
 #endif
@@ -1316,21 +1320,14 @@ nicTxFillDesc(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduInfo,
 */
 	/* Decide TxD append length */
 	if (prMsduInfo->ucPacketType == TX_PACKET_TYPE_DATA)
-		u4TxDescAppendLength = HW_MAC_TX_DESC_APPEND_T_LENGTH;
+		u4TxDescAppendLength = prChipInfo->txd_append_size;
 	else
 		u4TxDescAppendLength = 0;
 
 	/* Get TXD from pre-allocated template */
 	if (nicTxIsTXDTemplateAllowed(prAdapter, prMsduInfo, prStaRec)) {
 		prTxDescTemplate = prStaRec->aprTxDescTemplate[prMsduInfo->ucUserPriority];
-#if 1
 		u4TxDescLength = NIC_TX_DESC_LONG_FORMAT_LENGTH;
-#else
-		if (HAL_MAC_TX_DESC_IS_LONG_FORMAT(prTxDescTemplate))
-			u4TxDescLength = NIC_TX_DESC_LONG_FORMAT_LENGTH;
-		else
-			u4TxDescLength = NIC_TX_DESC_SHORT_FORMAT_LENGTH;
-#endif
 
 		kalMemCopy(prTxDesc, prTxDescTemplate, u4TxDescLength + u4TxDescAppendLength);
 
@@ -1353,7 +1350,11 @@ nicTxFillDesc(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduInfo,
 *------------------------------------------------------------------------------
 */
 	/* Calculate Tx byte count */
-	HAL_MAC_TX_DESC_SET_TX_BYTE_COUNT(prTxDesc, u4TxDescLength + u4TxDescAppendLength + prMsduInfo->u2FrameLength);
+	if (prChipInfo->is_support_cr4)
+		HAL_MAC_TX_DESC_SET_TX_BYTE_COUNT(prTxDesc,
+			u4TxDescLength + u4TxDescAppendLength + prMsduInfo->u2FrameLength);
+	else
+		HAL_MAC_TX_DESC_SET_TX_BYTE_COUNT(prTxDesc, u4TxDescLength + prMsduInfo->u2FrameLength);
 
 	/* Checksum offload */
 #if CFG_TCP_IP_CHKSUM_OFFLOAD
@@ -1386,8 +1387,10 @@ VOID
 nicTxFillDataDesc(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduInfo)
 {
 	PUINT_8 pucOutputBuf;
+	struct mt66xx_chip_info *prChipInfo = prAdapter->chip_info;
 
-	pucOutputBuf = skb_push((struct sk_buff *)prMsduInfo->prPacket, NIC_TX_HEAD_ROOM);
+	pucOutputBuf = skb_push((struct sk_buff *)prMsduInfo->prPacket,
+				NIC_TX_DESC_AND_PADDING_LENGTH + prChipInfo->txd_append_size);
 
 	nicTxFillDesc(prAdapter, prMsduInfo, pucOutputBuf, NULL);
 }
@@ -1426,6 +1429,7 @@ WLAN_STATUS nicTxGenerateDescTemplate(IN P_ADAPTER_T prAdapter, IN P_STA_RECORD_
 	P_HW_MAC_TX_DESC_T prTxDesc;
 	P_MSDU_INFO_T prMsduInfo;
 	WLAN_STATUS rStatus = WLAN_STATUS_SUCCESS;
+	struct mt66xx_chip_info *prChipInfo;
 
 	ASSERT(prAdapter);
 
@@ -1438,6 +1442,8 @@ WLAN_STATUS nicTxGenerateDescTemplate(IN P_ADAPTER_T prAdapter, IN P_STA_RECORD_
 
 	if (!prMsduInfo)
 		return WLAN_STATUS_RESOURCES;
+
+	prChipInfo = prAdapter->chip_info;
 
 	/* Fill up MsduInfo template */
 	prMsduInfo->eSrc = TX_PACKET_OS;
@@ -1458,7 +1464,7 @@ WLAN_STATUS nicTxGenerateDescTemplate(IN P_ADAPTER_T prAdapter, IN P_STA_RECORD_
 	prMsduInfo->ucPID = NIC_TX_DESC_PID_RESERVED;
 
 	u4TxDescSize = NIC_TX_DESC_LONG_FORMAT_LENGTH;
-	u4TxDescAppendSize = HW_MAC_TX_DESC_APPEND_T_LENGTH;
+	u4TxDescAppendSize = prChipInfo->txd_append_size;
 
 	DBGLOG(QM, INFO, "Generate TXD template for STA[%u] QoS[%u]\n", prStaRec->ucIndex, prStaRec->fgIsQoS);
 
@@ -2054,7 +2060,7 @@ BOOLEAN nicTxFillMsduInfo(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduInfo,
 	prMsduInfo->ucUserPriority = GLUE_GET_PKT_TID(prPacket);
 	prMsduInfo->ucMacHeaderLength = GLUE_GET_PKT_HEADER_LEN(prPacket);
 	prMsduInfo->u2FrameLength = (UINT_16) GLUE_GET_PKT_FRAME_LEN(prPacket);
-	prMsduInfo->u4PageCount = nicTxGetPageCount(prMsduInfo->u2FrameLength, FALSE);
+	prMsduInfo->u4PageCount = nicTxGetPageCount(prAdapter, prMsduInfo->u2FrameLength, FALSE);
 
 	if (GLUE_IS_PKT_FLAG_SET(prPacket)) {
 		prMsduInfo->fgIs802_1x = GLUE_TEST_PKT_FLAG(prPacket, ENUM_PKT_1X) ? TRUE:FALSE;
@@ -2666,35 +2672,37 @@ UINT_32 nicTxGetFreeCmdCount(IN P_ADAPTER_T prAdapter)
 /*!
 * \brief this function returns page count of frame
 *
+* @param prAdapter      Pointer to the Adapter structure.
 * @param u4FrameLength      frame length
 *
 * @retval page count of this frame
 */
 /*----------------------------------------------------------------------------*/
-UINT_32 nicTxGetPageCount(IN UINT_32 u4FrameLength, IN BOOLEAN fgIncludeDesc)
+UINT_32 nicTxGetPageCount(IN P_ADAPTER_T prAdapter, IN UINT_32 u4FrameLength, IN BOOLEAN fgIncludeDesc)
 {
-	return halTxGetPageCount(u4FrameLength, fgIncludeDesc);
+	return halTxGetPageCount(prAdapter, u4FrameLength, fgIncludeDesc);
 }
 
-UINT_32 nicTxGetCmdPageCount(IN P_CMD_INFO_T prCmdInfo)
+UINT_32 nicTxGetCmdPageCount(IN P_ADAPTER_T prAdapter, IN P_CMD_INFO_T prCmdInfo)
 {
 	UINT_32 u4PageCount;
 
 	switch (prCmdInfo->eCmdType) {
 	case COMMAND_TYPE_NETWORK_IOCTL:
 	case COMMAND_TYPE_GENERAL_IOCTL:
-		u4PageCount = nicTxGetPageCount(prCmdInfo->u2InfoBufLen, TRUE);
+		u4PageCount = nicTxGetPageCount(prAdapter, prCmdInfo->u2InfoBufLen, TRUE);
 		break;
 
 	case COMMAND_TYPE_SECURITY_FRAME:
 	case COMMAND_TYPE_MANAGEMENT_FRAME:
 		/* No TxD append field for management packet */
-		u4PageCount = nicTxGetPageCount(prCmdInfo->u2InfoBufLen + NIC_TX_DESC_LONG_FORMAT_LENGTH, TRUE);
+		u4PageCount = nicTxGetPageCount(prAdapter,
+				prCmdInfo->u2InfoBufLen + NIC_TX_DESC_LONG_FORMAT_LENGTH, TRUE);
 		break;
 
 	default:
 		DBGLOG(INIT, WARN, "Undefined CMD Type(%u)\n", prCmdInfo->eCmdType);
-		u4PageCount = nicTxGetPageCount(prCmdInfo->u2InfoBufLen, FALSE);
+		u4PageCount = nicTxGetPageCount(prAdapter, prCmdInfo->u2InfoBufLen, FALSE);
 		break;
 	}
 

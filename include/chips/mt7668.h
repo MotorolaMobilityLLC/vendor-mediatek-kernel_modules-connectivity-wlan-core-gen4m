@@ -80,6 +80,7 @@
 #define MT7668_PATCH_START_ADDR			(0x000C8000)
 #define MT7668_TOP_CFG_BASE			(0x0000)
 #define MT7668_IS_PCIE_32DW_READ		(0)
+#define MT7668_TX_DESC_APPEND_LENGTH            44
 
 /*******************************************************************************
 *                         D A T A   T Y P E S
