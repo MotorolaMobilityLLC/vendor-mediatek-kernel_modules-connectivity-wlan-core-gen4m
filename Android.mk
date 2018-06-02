@@ -153,11 +153,10 @@ LOCAL_MODULE_PATH := $(ALPS_OUT)/vendor/lib/modules
 else
 LOCAL_MODULE_PATH := $(TARGET_OUT_VENDOR)/lib/modules
 endif
-LOCAL_SRC_FILES := $(patsubst $(LOCAL_PATH)/%,%,$(shell find $(LOCAL_PATH) -type f -name '*.[cho]')) Makefile Makefile.alps
+LOCAL_SRC_FILES := $(patsubst $(LOCAL_PATH)/%,%,$(shell find $(LOCAL_PATH) -type f -name '*.[cho]')) Makefile
 LOCAL_REQUIRED_MODULES := wmt_chrdev_wifi.ko
 include $(BUILD_SYSTEM)/base_rules.mk
 
-LOCAL_MAKEFILE := $(abspath $(intermediates))/Makefile.alps
 WIFI_NAME := wlan_drv_gen4m
 WIFI_OPTS := CONFIG_MTK_COMBO_WIFI_HIF=$(WIFI_HIF) MODULE_NAME=$(WIFI_NAME) MTK_COMBO_CHIP=$(WIFI_CHIP) MTK_ANDROID_WMT=$(WIFI_WMT) MTK_ANDROID_EMI=$(WIFI_EMI) WIFI_ENABLE_GCOV=$(WIFI_ENABLE_GCOV)
 
@@ -183,7 +182,7 @@ $(LOCAL_BUILT_MODULE): $(wildcard $(LINUX_KERNEL_VERSION)/certs/ko_pubk.x509.der
 $(LOCAL_BUILT_MODULE): $(wildcard vendor/mediatek/proprietary/scripts/kernel_tool/rm_ko_sig.py)
 $(LOCAL_BUILT_MODULE): $(LOCAL_GENERATED_SOURCES) $(KERNEL_OUT)/scripts/sign-file $(LOCAL_EXPORT_SYMBOL) $(LOCAL_SRC_EXPORT_SYMBOL) $(AUTO_CONF) $(AUTOCONF_H)
 	@echo $@: $^
-	$(MAKE) -f $(LOCAL_MAKEFILE) -C $(KERNEL_OUT) $(KOPTS) $(WIFI_OPTS)
+	$(MAKE) -C $(KERNEL_OUT) $(KOPTS) $(WIFI_OPTS)
 	$(hide) $(call sign-kernel-module,$(KERNEL_OUT)/scripts/sign-file,$(CERT_PATH)/ko_prvk.pem,$(CERT_PATH)/ko_pubk.x509.der)
 
 endif
