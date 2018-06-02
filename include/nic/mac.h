@@ -1555,7 +1555,9 @@
 
 #define ACTION_UNPROTECTED_WNM_TIM                  0
 #define ACTION_UNPROTECTED_WNM_TIMING_MEASUREMENT   1
-
+#define ACTION_WNM_BSS_TRANSITION_MANAGEMENT_QUERY  6
+#define ACTION_WNM_BSS_TRANSITION_MANAGEMENT_REQ    7
+#define ACTION_WNM_BSS_TRANSITION_MANAGEMENT_RSP    8
 #define ACTION_UNPROTECTED_WNM_TIMING_MEAS_LEN      12
 
 /* 8.5.23.1 VHT Action */
@@ -2858,6 +2860,77 @@ struct IE_MTK_OUI {
 	uint8_t aucOui[3];
 	uint8_t aucCapability[4];
 	uint8_t aucInfoElem[1];
+} __KAL_ATTRIB_PACKED__;
+
+struct SUB_IE_BSS_TERM_DURATION_T {
+	uint8_t ucSubId;
+	uint8_t ucLength;
+	uint8_t aucTermTsf[8];
+	uint16_t u2Duration;
+} __KAL_ATTRIB_PACKED__;
+
+struct SUB_IE_BSS_CAND_PREFERENCE_T {
+	uint8_t ucSubId;
+	uint8_t ucLength;
+	uint8_t ucPreference;
+} __KAL_ATTRIB_PACKED__;
+
+struct ACTION_BTM_QUERY_FRAME_T {
+	/* MAC header */
+	uint16_t u2FrameCtrl;	/* Frame Control */
+	uint16_t u2Duration; /* Duration */
+	uint8_t aucDestAddr[MAC_ADDR_LEN];	/* DA */
+	uint8_t aucSrcAddr[MAC_ADDR_LEN];	/* SA */
+	uint8_t aucBSSID[MAC_ADDR_LEN];	/* BSSID */
+	uint16_t u2SeqCtrl;	/* Sequence Control */
+	/* BSS Coexistence Management frame body */
+	uint8_t ucCategory;	/* Category */
+	uint8_t ucAction;	/* Action Value */
+
+	uint8_t ucDialogToken;
+	uint8_t ucQueryReason;
+	uint8_t *pucNeighborBss;
+} __KAL_ATTRIB_PACKED__;
+
+struct ACTION_BTM_REQ_FRAME_T {
+	/* MAC header */
+	uint16_t u2FrameCtrl;	/* Frame Control */
+	uint16_t u2Duration; /* Duration */
+	uint8_t aucDestAddr[MAC_ADDR_LEN];	/* DA */
+	uint8_t aucSrcAddr[MAC_ADDR_LEN];	/* SA */
+	uint8_t aucBSSID[MAC_ADDR_LEN];	/* BSSID */
+	uint16_t u2SeqCtrl;	/* Sequence Control */
+	/* BSS Coexistence Management frame body */
+	uint8_t ucCategory;	/* Category */
+	uint8_t ucAction;	/* Action Value */
+
+	uint8_t ucDialogToken;
+	uint8_t ucRequestMode;
+	uint16_t u2DisassocTimer;
+	uint8_t ucValidityInterval;
+	uint8_t aucOptInfo[0];
+	/* Optional: Bss Termination Duration(0~12 bytes),
+	** Session Information URL, Bss Transition Candidate List
+	*/
+} __KAL_ATTRIB_PACKED__;
+
+struct ACTION_BTM_RSP_FRAME_T {
+	/* MAC header */
+	uint16_t u2FrameCtrl;	/* Frame Control */
+	uint16_t u2Duration; /* Duration */
+	uint8_t aucDestAddr[MAC_ADDR_LEN];	/* DA */
+	uint8_t aucSrcAddr[MAC_ADDR_LEN];	/* SA */
+	uint8_t aucBSSID[MAC_ADDR_LEN];	/* BSSID */
+	uint16_t u2SeqCtrl;	/* Sequence Control */
+	/* BSS Coexistence Management frame body */
+	uint8_t ucCategory;	/* Category */
+	uint8_t ucAction;	/* Action Value */
+
+	uint8_t ucDialogToken;
+	uint8_t ucStatusCode;
+	uint8_t ucBssTermDelay;
+	uint8_t aucOptInfo[0];
+	/* Optional Target BSSID and Transition Candidate Entry list */
 } __KAL_ATTRIB_PACKED__;
 
 #if defined(WINDOWS_DDK) || defined(WINDOWS_CE)

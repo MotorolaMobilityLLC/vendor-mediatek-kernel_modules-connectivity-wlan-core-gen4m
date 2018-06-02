@@ -160,6 +160,8 @@ enum ENUM_DBG_MODULE {
 	DBG_PF_IDX,		/* 0x1D *//* PF */
 	DBG_OID_IDX,
 	DBG_NIC_IDX,
+	DBG_WNM_IDX,
+	DBG_WMM_IDX,
 	DBG_MODULE_NUM		/* Notice the XLOG check */
 };
 enum ENUM_DBG_ASSERT_CTRL_LEVEL {
