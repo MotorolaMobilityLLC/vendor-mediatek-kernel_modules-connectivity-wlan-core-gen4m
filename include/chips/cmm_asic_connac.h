@@ -65,6 +65,9 @@
  *                              C O N S T A N T S
  *******************************************************************************
  */
+#define CONNAC_CHIP_IP_VERSION			(0x10020300)
+#define CONNAC_CHIP_IP_CONFIG			(0x1)
+#define CONNAC_CHIP_ADIE_INFO			(0x31)
 #define USB_HIF_TXD_LEN    4
 
 /*******************************************************************************
@@ -85,15 +88,15 @@ void fillNicTxDescAppendWithCR4(IN struct ADAPTER *prAdapter,
 	OUT uint8_t *prTxDescBuffer);
 void fillTxDescAppendByHost(IN struct ADAPTER *prAdapter,
 	IN struct MSDU_INFO *prMsduInfo, IN uint16_t u4MsduId,
-	IN dma_addr_t rDmaAddr, IN uint32_t u4Idx, IN u_int8_t fgIsLast,
+	IN phys_addr_t rDmaAddr, IN uint32_t u4Idx, IN u_int8_t fgIsLast,
 	OUT uint8_t *pucBuffer);
 void fillTxDescAppendByHostV2(IN struct ADAPTER *prAdapter,
 	IN struct MSDU_INFO *prMsduInfo, IN uint16_t u4MsduId,
-	IN dma_addr_t rDmaAddr, IN uint32_t u4Idx, IN u_int8_t fgIsLast,
+	IN phys_addr_t rDmaAddr, IN uint32_t u4Idx, IN u_int8_t fgIsLast,
 	OUT uint8_t *pucBuffer);
 void fillTxDescAppendByCR4(IN struct ADAPTER *prAdapter,
 	IN struct MSDU_INFO *prMsduInfo, IN uint16_t u4MsduId,
-	IN dma_addr_t rDmaAddr, IN uint32_t u4Idx, IN u_int8_t fgIsLast,
+	IN phys_addr_t rDmaAddr, IN uint32_t u4Idx, IN u_int8_t fgIsLast,
 	OUT uint8_t *pucBuffer);
 void fillTxDescTxByteCount(IN struct ADAPTER *prAdapter,
 	IN struct MSDU_INFO *prMsduInfo,

@@ -83,6 +83,9 @@ extern int mtk_wcn_wmt_wlan_reg(
 extern int mtk_wcn_wmt_wlan_unreg(void);
 #endif
 
+extern phys_addr_t gWifiRsvMemPhyBase;
+extern unsigned long long gWifiRsvMemSize;
+
 /*******************************************************************************
  *                              C O N S T A N T S
  *******************************************************************************
@@ -92,6 +95,8 @@ extern int mtk_wcn_wmt_wlan_unreg(void);
 #define AXI_TX_MAX_SIZE_PER_FRAME         (NIC_TX_MAX_SIZE_PER_FRAME +      \
 					   NIC_TX_DESC_AND_PADDING_LENGTH + \
 					   CONNAC_TX_DESC_APPEND_LENGTH)
+
+#define AXI_TX_CMD_BUFF_SIZE              4096
 #define AXI_WLAN_IRQ_NUMBER               16
 
 /*******************************************************************************
@@ -99,12 +104,68 @@ extern int mtk_wcn_wmt_wlan_unreg(void);
  *******************************************************************************
  */
 
+struct GL_HIF_INFO;
+
+struct HIF_MEM_OPS {
+	void (*allocTxDesc)(struct GL_HIF_INFO *prHifInfo,
+			    struct RTMP_DMABUF *prDescRing,
+			    uint32_t u4Num);
+	void (*allocRxDesc)(struct GL_HIF_INFO *prHifInfo,
+			    struct RTMP_DMABUF *prDescRing,
+			    uint32_t u4Num);
+	void (*allocTxCmdBuf)(struct RTMP_DMABUF *prDmaBuf,
+			      uint32_t u4Num, uint32_t u4Idx);
+	void (*allocTxDataBuf)(struct MSDU_TOKEN_ENTRY *prToken,
+			       uint32_t u4Idx);
+	void *(*allocRxBuf)(struct GL_HIF_INFO *prHifInfo,
+			    struct RTMP_DMABUF *prDmaBuf,
+			    uint32_t u4Num, uint32_t u4Idx);
+	void *(*allocRuntimeMem)(uint32_t u4SrcLen);
+	bool (*copyCmd)(struct GL_HIF_INFO *prHifInfo,
+			struct RTMP_DMACB *prTxCell, void *pucBuf,
+			void *pucSrc1, uint32_t u4SrcLen1,
+			void *pucSrc2, uint32_t u4SrcLen2);
+	bool (*copyEvent)(struct GL_HIF_INFO *prHifInfo,
+			  struct RTMP_DMACB *pRxCell,
+			  struct RXD_STRUCT *pRxD,
+			  struct RTMP_DMABUF *prDmaBuf,
+			  uint8_t *pucDst, uint32_t u4Len);
+	bool (*copyTxData)(struct MSDU_TOKEN_ENTRY *prToken,
+			   void *pucSrc, uint32_t u4Len);
+	bool (*copyRxData)(struct GL_HIF_INFO *prHifInfo,
+			   struct RTMP_DMACB *pRxCell,
+			   struct RTMP_DMABUF *prDmaBuf,
+			   struct SW_RFB *prSwRfb);
+	void (*flushCache)(struct GL_HIF_INFO *prHifInfo,
+			   void *pucSrc, uint32_t u4Len);
+	phys_addr_t (*mapTxBuf)(struct GL_HIF_INFO *prHifInfo,
+			  void *pucBuf, uint32_t u4Offset, uint32_t u4Len);
+	phys_addr_t (*mapRxBuf)(struct GL_HIF_INFO *prHifInfo,
+			  void *pucBuf, uint32_t u4Offset, uint32_t u4Len);
+	void (*unmapTxBuf)(struct GL_HIF_INFO *prHifInfo,
+			   phys_addr_t rDmaAddr, uint32_t u4Len);
+	void (*unmapRxBuf)(struct GL_HIF_INFO *prHifInfo,
+			   phys_addr_t rDmaAddr, uint32_t u4Len);
+	void (*freeDesc)(struct GL_HIF_INFO *prHifInfo,
+			 struct RTMP_DMABUF *prDescRing);
+	void (*freeBuf)(void *pucSrc, uint32_t u4Len);
+	void (*freePacket)(void *pvPacket);
+	void (*dumpTx)(struct GL_HIF_INFO *prHifInfo,
+		       struct RTMP_TX_RING *prTxRing,
+		       uint32_t u4Idx, uint32_t u4DumpLen);
+	void (*dumpRx)(struct GL_HIF_INFO *prHifInfo,
+		       struct RTMP_RX_RING *prRxRing,
+		       uint32_t u4Idx, uint32_t u4DumpLen);
+};
+
 /* host interface's private data structure, which is attached to os glue
  ** layer info structure.
  */
 struct GL_HIF_INFO {
 	struct platform_device *pdev;
 	struct device *prDmaDev;
+	struct HIF_MEM_OPS rMemOps;
+
 	uint32_t u4IrqId;
 	int32_t u4HifCnt;
 
@@ -142,17 +203,8 @@ struct GL_HIF_INFO {
 	spinlock_t rTxCmdQLock;
 	spinlock_t rTxDataQLock;
 
-	bool fgIsPreAllocMem;
 	bool fgIsPowerOff;
 	bool fgIsDumpLog;
-
-	void *(*allocDmaCoherent)(size_t size, dma_addr_t *dma_handle,
-				  bool fgIsTx, uint32_t u4Num);
-	struct sk_buff *(*allocRxPacket)(uint32_t u4Len, uint32_t u4Num,
-					 uint32_t u4Idx);
-	struct sk_buff *(*allocMsduBuf)(uint32_t u4Len, uint32_t u4Idx);
-	void (*updateRxPacket)(struct sk_buff *prSkb,
-			       uint32_t u4Num, uint32_t u4Idx);
 };
 
 struct BUS_INFO {
@@ -178,6 +230,25 @@ struct BUS_INFO {
 	void (*getMailboxStatus)(struct ADAPTER *prAdapter, uint32_t *pu4Val);
 	void (*setDummyReg)(struct GLUE_INFO *prGlueInfo);
 	void (*checkDummyReg)(struct GLUE_INFO *prGlueInfo);
+};
+
+struct HIF_MEM {
+	phys_addr_t pa;
+	void *va;
+};
+
+struct HIF_PREALLOC_MEM {
+	struct HIF_MEM rTxDesc[NUM_OF_TX_RING];
+	struct HIF_MEM rRxDesc[NUM_OF_RX_RING];
+	struct HIF_MEM rTxCmdBuf[TX_RING_SIZE];
+	struct HIF_MEM rRxDataBuf[RX_RING0_SIZE];
+	struct HIF_MEM rRxEventBuf[RX_RING1_SIZE];
+#if HIF_TX_PREALLOC_DATA_BUFFER
+	struct HIF_MEM rMsduBuf[HIF_TX_MSDU_TOKEN_NUM];
+#endif
+	phys_addr_t pucRsvMemBase;
+	uint64_t u4RsvMemSize;
+	uint32_t u4Offset;
 };
 
 #if CFG_MTK_ANDROID_WMT

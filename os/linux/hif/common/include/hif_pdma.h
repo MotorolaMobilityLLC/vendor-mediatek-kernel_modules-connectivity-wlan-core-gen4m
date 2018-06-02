@@ -273,7 +273,7 @@ struct RXD_STRUCT {
 struct RTMP_DMABUF {
 	unsigned long AllocSize;
 	void *AllocVa;		/* TxBuf virtual address */
-	dma_addr_t AllocPa;	/* TxBuf physical address */
+	phys_addr_t AllocPa;		/* TxBuf physical address */
 };
 
 /*
@@ -288,11 +288,11 @@ struct RTMP_DMABUF {
  */
 struct RTMP_DMACB {
 	unsigned long AllocSize;	/* Control block size */
-	void *AllocVa;		/* Control block virtual address */
-	dma_addr_t AllocPa;	/* Control block physical address */
+	void *AllocVa;			/* Control block virtual address */
+	phys_addr_t AllocPa;	        /* Control block physical address */
 	void *pPacket;
 	void *pBuffer;
-	dma_addr_t PacketPa;
+	phys_addr_t PacketPa;
 	struct RTMP_DMABUF DmaBuf;	/* Associated DMA buffer structure */
 };
 
@@ -300,6 +300,7 @@ struct RTMP_TX_RING {
 	struct RTMP_DMACB Cell[TX_RING_SIZE];
 	uint32_t TxCpuIdx;
 	uint32_t TxDmaIdx;
+	uint32_t u4BufSize;
 	uint32_t TxSwUsedIdx;
 	uint32_t u4UsedCnt;
 	uint32_t hw_desc_base;
@@ -336,9 +337,9 @@ struct MSDU_TOKEN_ENTRY {
 	u_int8_t fgInUsed;
 	struct MSDU_INFO *prMsduInfo;
 	void *prPacket;
-	dma_addr_t rDmaAddr;
+	phys_addr_t rDmaAddr;
 	uint32_t u4DmaLength;
-	dma_addr_t rPktDmaAddr;
+	phys_addr_t rPktDmaAddr;
 	uint32_t u4PktDmaLength;
 };
 
@@ -424,9 +425,6 @@ void halShowPleInfo(IN struct ADAPTER *prAdapter);
 bool halShowHostCsrInfo(IN struct ADAPTER *prAdapter);
 void halShowDmaschInfo(IN struct ADAPTER *prAdapter);
 void halDumpHifDebugLog(struct GLUE_INFO *prGlueInfo, bool fgTx, bool fgRx);
-
-void kalPciUnmapToDev(IN struct GLUE_INFO *prGlueInfo, IN dma_addr_t rDmaAddr,
-		      IN uint32_t u4Length);
 u_int8_t kalDevReadData(IN struct GLUE_INFO *prGlueInfo, IN uint16_t u2Port,
 			IN OUT struct SW_RFB *prSwRfb);
 u_int8_t kalDevKickCmd(IN struct GLUE_INFO *prGlueInfo);

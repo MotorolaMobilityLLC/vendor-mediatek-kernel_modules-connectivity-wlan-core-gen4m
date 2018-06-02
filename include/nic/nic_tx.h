@@ -1006,8 +1006,8 @@ struct TX_DESC_OPS_T {
 		OUT uint8_t *prTxDescBuffer);
 	void (*fillHifAppend)(IN struct ADAPTER *prAdapter,
 		IN struct MSDU_INFO *prMsduInfo, IN uint16_t u4MsduId,
-		IN dma_addr_t rDmaAddr, IN uint32_t u4Idx, IN u_int8_t fgIsLast,
-		OUT uint8_t *pucBuffer);
+		IN phys_addr_t rDmaAddr, IN uint32_t u4Idx,
+		IN u_int8_t fgIsLast, OUT uint8_t *pucBuffer);
 	void (*fillTxByteCount)(IN struct ADAPTER *prAdapter,
 		IN struct MSDU_INFO *prMsduInfo,
 		struct HW_MAC_TX_DESC *prTxDesc);
