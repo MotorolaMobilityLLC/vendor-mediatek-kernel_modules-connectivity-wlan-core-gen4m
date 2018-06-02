@@ -202,6 +202,26 @@ u_int8_t kalDevRegWrite(IN struct GLUE_INFO *prGlueInfo,
 	return TRUE;
 }
 
+static bool kalWaitRxDmaDone(struct GLUE_INFO *prGlueInfo,
+			     struct RTMP_RX_RING *prRxRing,
+			     struct RXD_STRUCT *pRxD,
+			     uint16_t u2Port)
+{
+	uint32_t u4Count = 0;
+
+	for (u4Count = 0; pRxD->DMADONE == 0; u4Count++) {
+		kalDevRegRead(prGlueInfo, prRxRing->hw_didx_addr,
+			      &prRxRing->RxDmaIdx);
+		DBGLOG(HAL, TRACE, "Rx DMA done P[%u] DMA[%u] CPU[%u]\n",
+		       u2Port, prRxRing->RxDmaIdx, prRxRing->RxCpuIdx);
+		if (u4Count > DMA_DONE_WAITING_COUNT)
+			return false;
+
+		kalMdelay(DMA_DONE_WAITING_TIME);
+	}
+	return true;
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Read device I/O port
@@ -231,7 +251,7 @@ kalDevPortRead(IN struct GLUE_INFO *prGlueInfo,
 	unsigned long flags = 0;
 	void *pRxPacket = NULL;
 	uint8_t *pucDst = NULL;
-	uint32_t u4CpuIdx = 0, u4Count = 0;
+	uint32_t u4CpuIdx = 0;
 
 	ASSERT(prGlueInfo);
 	prHifInfo = &prGlueInfo->rHifInfo;
@@ -253,19 +273,13 @@ kalDevPortRead(IN struct GLUE_INFO *prGlueInfo,
 	pRxCell = &prRxRing->Cell[u4CpuIdx];
 	pRxD = (struct RXD_STRUCT *)pRxCell->AllocVa;
 
-	for (u4Count = 0; pRxD->DMADONE == 0; u4Count++) {
-		kalDevRegRead(prGlueInfo, prRxRing->hw_didx_addr,
-			      &prRxRing->RxDmaIdx);
-		DBGLOG(HAL, TRACE, "Rx DMA done P[%u] DMA[%u] CPU[%u]\n",
-		       u2Port, prRxRing->RxDmaIdx, prRxRing->RxCpuIdx);
-		if (u4Count > DMA_DONE_WAITING_COUNT) {
-			spin_unlock_irqrestore(pRxRingLock, flags);
+	if (!kalWaitRxDmaDone(prGlueInfo, prRxRing, pRxD, u2Port)) {
+		spin_unlock_irqrestore(pRxRingLock, flags);
+		if (!prRxRing->fgIsDumpLog)
 			kalDumpRxRingDebugLog(prGlueInfo, prRxRing,
 					      prRxRing->u4RingSize);
-			return FALSE;
-		}
-
-		kalMdelay(DMA_DONE_WAITING_TIME);
+		prRxRing->fgIsDumpLog = true;
+		return FALSE;
 	}
 
 	prDmaBuf = &pRxCell->DmaBuf;
@@ -323,6 +337,7 @@ skip:
 
 	prRxRing->RxCpuIdx = u4CpuIdx;
 	kalDevRegWrite(prGlueInfo, prRxRing->hw_cidx_addr, prRxRing->RxCpuIdx);
+	prRxRing->fgIsDumpLog = false;
 
 	spin_unlock_irqrestore(pRxRingLock, flags);
 
@@ -597,7 +612,7 @@ u_int8_t kalDevReadData(IN struct GLUE_INFO *prGlueInfo,
 	void *pRxPacket = NULL;
 	u_int8_t fgRet = TRUE;
 	unsigned long flags = 0;
-	uint32_t u4CpuIdx = 0, u4Count = 0;
+	uint32_t u4CpuIdx = 0;
 
 	ASSERT(prGlueInfo);
 	prHifInfo = &prGlueInfo->rHifInfo;
@@ -614,19 +629,13 @@ u_int8_t kalDevReadData(IN struct GLUE_INFO *prGlueInfo,
 	pRxCell = &prRxRing->Cell[u4CpuIdx];
 	pRxD = (struct RXD_STRUCT *)pRxCell->AllocVa;
 
-	for (u4Count = 0; pRxD->DMADONE == 0; u4Count++) {
-		kalDevRegRead(prGlueInfo, prRxRing->hw_didx_addr,
-			      &prRxRing->RxDmaIdx);
-		DBGLOG(HAL, TRACE, "Rx DMA done P[%u] DMA[%u] CPU[%u]\n",
-		       u2Port, prRxRing->RxDmaIdx, prRxRing->RxCpuIdx);
-		if (u4Count > DMA_DONE_WAITING_COUNT) {
-			spin_unlock_irqrestore(pRxRingLock, flags);
+	if (!kalWaitRxDmaDone(prGlueInfo, prRxRing, pRxD, u2Port)) {
+		spin_unlock_irqrestore(pRxRingLock, flags);
+		if (!prRxRing->fgIsDumpLog)
 			kalDumpRxRingDebugLog(prGlueInfo, prRxRing,
 					      prRxRing->u4RingSize);
-			return FALSE;
-		}
-
-		kalMdelay(DMA_DONE_WAITING_TIME);
+		prRxRing->fgIsDumpLog = true;
+		return FALSE;
 	}
 
 	if (pRxD->LastSec0 == 0 || prRxRing->fgRxSegPkt) {
@@ -686,6 +695,7 @@ skip:
 
 	prRxRing->RxCpuIdx = u4CpuIdx;
 	kalDevRegWrite(prGlueInfo, prRxRing->hw_cidx_addr, prRxRing->RxCpuIdx);
+	prRxRing->fgIsDumpLog = false;
 
 	spin_unlock_irqrestore(pRxRingLock, flags);
 
