@@ -300,6 +300,12 @@ u_int8_t rsnCheckSecurityModeChanged(struct ADAPTER
 				     *prAdapter, struct BSS_INFO *prBssInfo,
 				     struct BSS_DESC *prBssDesc);
 
+uint32_t rsnCalculateFTIELen(struct ADAPTER *prAdapter, uint8_t ucBssIdx,
+			     struct STA_RECORD *prStaRec);
+
+void rsnGenerateFTIE(IN struct ADAPTER *prAdapter,
+		     IN OUT struct MSDU_INFO *prMsduInfo);
+
 /*******************************************************************************
  *                              F U N C T I O N S
  *******************************************************************************

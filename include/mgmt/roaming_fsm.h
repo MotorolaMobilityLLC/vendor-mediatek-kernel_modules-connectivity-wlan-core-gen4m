@@ -144,6 +144,7 @@ enum ENUM_ROAMING_STATE {
 	ROAMING_STATE_IDLE = 0,
 	ROAMING_STATE_DECISION,
 	ROAMING_STATE_DISCOVERY,
+	ROAMING_STATE_REQ_CAND_LIST,
 	ROAMING_STATE_ROAM,
 	ROAMING_STATE_NUM
 };
@@ -156,6 +157,7 @@ struct ROAMING_INFO {
 	OS_SYSTIME rRoamingDiscoveryUpdateTime;
 
 	u_int8_t fgDrvRoamingAllow;
+	struct TIMER rWaitCandidateTimer;
 };
 
 /*******************************************************************************

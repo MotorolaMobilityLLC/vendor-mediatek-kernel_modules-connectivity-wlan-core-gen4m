@@ -1470,3 +1470,7 @@ uint32_t wlanAdapterStartForLowLatency(IN struct ADAPTER *prAdapter);
 uint32_t wlanFwCfgParse(IN struct ADAPTER *prAdapter, uint8_t *pucConfigBuf);
 #endif /* CFG_SUPPORT_EASY_DEBUG */
 
+void wlanReleasePendingCmdById(struct ADAPTER *prAdapter, uint8_t ucCid);
+
+uint32_t wlanDecimalStr2Hexadecimals(uint8_t *pucDecimalStr, uint16_t *pu2Out);
+

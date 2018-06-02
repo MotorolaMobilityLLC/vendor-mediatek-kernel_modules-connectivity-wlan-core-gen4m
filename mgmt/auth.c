@@ -84,8 +84,12 @@
 *                            P U B L I C   D A T A
 ********************************************************************************
 */
-struct APPEND_IE_ENTRY txAuthIETable[] = {
-	{(ELEM_HDR_LEN + ELEM_MAX_LEN_CHALLENGE_TEXT), authAddIEChallengeText}
+struct APPEND_VAR_IE_ENTRY txAuthIETable[] = {
+	{(ELEM_HDR_LEN + ELEM_MAX_LEN_CHALLENGE_TEXT), NULL,
+	 authAddIEChallengeText},
+	{0, authCalculateRSNIELen, authAddRSNIE}, /* Element ID: 48 */
+	{(ELEM_HDR_LEN + 1), NULL, authAddMDIE}, /* Element ID: 54 */
+	{0, rsnCalculateFTIELen, rsnGenerateFTIE}, /* Element ID: 55 */
 };
 
 struct HANDLE_IE_ENTRY rxAuthIETable[] = {
@@ -271,8 +275,20 @@ uint32_t authSendAuthFrame(IN struct ADAPTER *prAdapter, IN struct STA_RECORD *p
 	/* + Extra IE Length */
 	u2EstimatedExtraIELen = 0;
 
-	for (i = 0; i < sizeof(txAuthIETable) / sizeof(struct APPEND_IE_ENTRY); i++)
-		u2EstimatedExtraIELen += txAuthIETable[i].u2EstimatedIELen;
+	for (i = 0;
+	     i < sizeof(txAuthIETable) / sizeof(struct APPEND_VAR_IE_ENTRY);
+	     i++) {
+		if (txAssocRespIETable[i].u2EstimatedFixedIELen != 0)
+			u2EstimatedExtraIELen +=
+				txAssocRespIETable[i].u2EstimatedFixedIELen;
+		else if (txAssocRespIETable[i].pfnCalculateVariableIELen !=
+			 NULL)
+			u2EstimatedExtraIELen +=
+				(uint16_t)txAssocRespIETable[i]
+					.pfnCalculateVariableIELen(
+						prAdapter, prStaRec->ucBssIndex,
+						prStaRec);
+	}
 
 	u2EstimatedFrameLen += u2EstimatedExtraIELen;
 
@@ -362,8 +378,17 @@ authSendAuthFrame(IN struct ADAPTER *prAdapter,
 	/* + Extra IE Length */
 	u2EstimatedExtraIELen = 0;
 
-	for (i = 0; i < sizeof(txAuthIETable) / sizeof(struct APPEND_IE_ENTRY); i++)
-		u2EstimatedExtraIELen += txAuthIETable[i].u2EstimatedIELen;
+	for (i = 0;
+	     i < sizeof(txAuthIETable) / sizeof(struct APPEND_VAR_IE_ENTRY);
+	     i++) {
+		if (txAuthIETable[i].u2EstimatedFixedIELen != 0)
+			u2EstimatedExtraIELen +=
+				txAuthIETable[i].u2EstimatedFixedIELen;
+		else
+			u2EstimatedExtraIELen +=
+				txAuthIETable[i].pfnCalculateVariableIELen(
+					prAdapter, ucBssIndex, prStaRec);
+	}
 
 	u2EstimatedFrameLen += u2EstimatedExtraIELen;
 
@@ -433,10 +458,11 @@ authSendAuthFrame(IN struct ADAPTER *prAdapter,
 	if ((ucAuthAlgNum == AUTH_ALGORITHM_NUM_SHARED_KEY) && (u2TransactionSeqNum == AUTH_TRANSACTION_SEQ_3))
 		nicTxConfigPktOption(prMsduInfo, MSDU_OPT_PROTECTED_FRAME, TRUE);
 	/* 4 <4> Compose IEs in MSDU_INFO_T */
-	for (i = 0; i < sizeof(txAuthIETable) / sizeof(struct APPEND_IE_ENTRY); i++) {
+	for (i = 0;
+	     i < sizeof(txAuthIETable) / sizeof(struct APPEND_VAR_IE_ENTRY);
+	     i++) {
 		if (txAuthIETable[i].pfnAppendIE)
 			txAuthIETable[i].pfnAppendIE(prAdapter, prMsduInfo);
-
 	}
 
 	/* TODO(Kevin): Also release the unused tail room of the composed MMPDU */
@@ -732,6 +758,19 @@ uint32_t authProcessRxAuth2_Auth4Frame(IN struct ADAPTER *prAdapter, IN struct S
 		for (i = 0; i < (sizeof(rxAuthIETable) / sizeof(struct HANDLE_IE_ENTRY)); i++) {
 			if ((ucIEID == rxAuthIETable[i].ucElemID) && (rxAuthIETable[i].pfnHandleIE != NULL))
 				rxAuthIETable[i].pfnHandleIE(prAdapter, prSwRfb, (struct IE_HDR *) pucIEsBuffer);
+		}
+	}
+	if (prAuthFrame->u2AuthAlgNum ==
+	    AUTH_ALGORITHM_NUM_FAST_BSS_TRANSITION) {
+		if (prAuthFrame->u2AuthTransSeqNo == AUTH_TRANSACTION_SEQ_4) {
+			/* todo: check MIC, if mic error, return
+			** WLAN_STATUS_FAILURE
+			*/
+		} else if (prAuthFrame->u2AuthTransSeqNo ==
+			   AUTH_TRANSACTION_SEQ_2) {
+			prAdapter->prGlueInfo->rFtEventParam.ies =
+				&prAuthFrame->aucInfoElem[0];
+			prAdapter->prGlueInfo->rFtEventParam.ies_len = u2IEsLen;
 		}
 	}
 
@@ -1109,3 +1148,59 @@ authProcessRxAuth1Frame(IN struct ADAPTER *prAdapter,
 	return WLAN_STATUS_SUCCESS;
 
 }				/* end of authProcessRxAuth1Frame() */
+
+/* ToDo: authAddRicIE, authHandleFtIEs, authAddTimeoutIE */
+
+void authAddMDIE(IN struct ADAPTER *prAdapter,
+		 IN OUT struct MSDU_INFO *prMsduInfo)
+{
+	struct FT_IES *prFtIEs = &prAdapter->prGlueInfo->rFtIeForTx;
+	uint8_t *pucBuffer =
+		(uint8_t *)prMsduInfo->prPacket + prMsduInfo->u2FrameLength;
+	uint8_t ucBssIdx = prMsduInfo->ucBssIndex;
+
+	if (!IS_BSS_INDEX_VALID(ucBssIdx) ||
+	    !IS_BSS_AIS(GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIdx)) ||
+	    !prFtIEs->prMDIE)
+		return;
+	prMsduInfo->u2FrameLength +=
+		5; /* IE size for MD IE is fixed, it is 5 */
+	kalMemCopy(pucBuffer, prFtIEs->prMDIE, 5);
+}
+
+uint32_t authCalculateRSNIELen(struct ADAPTER *prAdapter, uint8_t ucBssIdx,
+			       struct STA_RECORD *prStaRec)
+{
+	enum ENUM_PARAM_AUTH_MODE eAuthMode =
+		prAdapter->rWifiVar.rConnSettings.eAuthMode;
+	struct FT_IES *prFtIEs = &prAdapter->prGlueInfo->rFtIeForTx;
+
+	if (!IS_BSS_INDEX_VALID(ucBssIdx) ||
+	    !IS_BSS_AIS(GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIdx)) ||
+	    !prFtIEs->prRsnIE || (eAuthMode != AUTH_MODE_WPA2_FT &&
+				  eAuthMode != AUTH_MODE_WPA2_FT_PSK))
+		return 0;
+	return IE_SIZE(prFtIEs->prRsnIE);
+}
+
+void authAddRSNIE(IN struct ADAPTER *prAdapter,
+		  IN OUT struct MSDU_INFO *prMsduInfo)
+{
+	enum ENUM_PARAM_AUTH_MODE eAuthMode =
+		prAdapter->rWifiVar.rConnSettings.eAuthMode;
+	struct FT_IES *prFtIEs = &prAdapter->prGlueInfo->rFtIeForTx;
+	uint8_t *pucBuffer =
+		(uint8_t *)prMsduInfo->prPacket + prMsduInfo->u2FrameLength;
+	uint32_t ucRSNIeSize = 0;
+	uint8_t ucBssIdx = prMsduInfo->ucBssIndex;
+
+	if (!IS_BSS_INDEX_VALID(ucBssIdx) ||
+	    !IS_BSS_AIS(GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIdx)) ||
+	    !prFtIEs->prRsnIE || (eAuthMode != AUTH_MODE_WPA2_FT &&
+				  eAuthMode != AUTH_MODE_WPA2_FT_PSK))
+		return;
+	ucRSNIeSize = IE_SIZE(prFtIEs->prRsnIE);
+	prMsduInfo->u2FrameLength += ucRSNIeSize;
+	kalMemCopy(pucBuffer, prFtIEs->prRsnIE, ucRSNIeSize);
+}
+

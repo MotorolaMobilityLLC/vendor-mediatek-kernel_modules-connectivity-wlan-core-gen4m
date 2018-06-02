@@ -150,12 +150,18 @@
 #define BITS_OF_UINT                            (32)
 #define BITS_OF_BYTE                            (8)
 
+/* dwell time setting, should align FW setting */
+#define SCAN_CHANNEL_DWELL_TIME_MIN_MSEC         (42)
+
 /*----------------------------------------------------------------------------*/
 /* MSG_SCN_SCAN_REQ                                                           */
 /*----------------------------------------------------------------------------*/
 #define SCAN_REQ_SSID_WILDCARD			BIT(0)
 #define SCAN_REQ_SSID_P2P_WILDCARD		BIT(1)
-#define SCAN_REQ_SSID_SPECIFIED			BIT(2)
+#define SCAN_REQ_SSID_SPECIFIED                                                \
+	BIT(2) /* two probe req will be sent, wildcard and specified */
+#define SCAN_REQ_SSID_SPECIFIED_ONLY                                           \
+	BIT(3) /* only a specified ssid probe request will be sent */
 
 /*----------------------------------------------------------------------------*/
 /* Support Multiple SSID SCAN                                                 */
@@ -408,6 +414,8 @@ struct BSS_DESC {
 	u_int8_t fgIsRSNSuitableBss;
 #endif
 	/* end Support AP Selection */
+	int8_t cPowerLimit;
+	uint8_t aucRrmCap[5];
 };
 
 #if CFG_SUPPORT_ROAMING_SKIP_ONE_AP
@@ -446,7 +454,10 @@ struct SCAN_PARAM {	/* Used by SCAN FSM */
 #endif	/* CFG_ENABLE_WIFI_DIRECT */
 
 	uint16_t u2ChannelDwellTime;
+	uint16_t u2ChannelMinDwellTime;
 	uint16_t u2TimeoutValue;
+
+	uint8_t aucBSSID[MAC_ADDR_LEN];
 
 	u_int8_t fgIsObssScan;
 	u_int8_t fgIsScanV2;
@@ -560,7 +571,10 @@ struct MSG_SCN_SCAN_REQ_V2 {
 	struct PARAM_SSID *prSsid;
 	uint16_t u2ProbeDelay;
 	uint16_t u2ChannelDwellTime;	/* In TU. 1024us. */
+	uint16_t u2ChannelMinDwellTime;	/* In TU. 1024us. */
 	uint16_t u2TimeoutValue;	/* ms unit */
+
+	uint8_t aucBSSID[MAC_ADDR_LEN];
 	enum ENUM_SCAN_CHANNEL eScanChannel;
 	uint8_t ucChannelListNum;
 	struct RF_CHANNEL_INFO arChnlInfoList[MAXIMUM_OPERATION_CHANNEL_LIST];
@@ -610,7 +624,6 @@ struct AGPS_AP_LIST {
 	struct AGPS_AP_INFO arApInfo[SCN_AGPS_AP_LIST_MAX_NUM];
 };
 #endif
-
 /*******************************************************************************
  *                            P U B L I C   D A T A
  *******************************************************************************
@@ -830,5 +843,4 @@ void scnSetSchedScanPlan(IN struct ADAPTER *prAdapter,
 
 void scanLogEssResult(struct ADAPTER *prAdapter);
 void scanInitEssResult(struct ADAPTER *prAdapter);
-
 #endif /* _SCAN_H */

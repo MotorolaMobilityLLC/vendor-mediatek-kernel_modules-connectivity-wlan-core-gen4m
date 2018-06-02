@@ -183,6 +183,34 @@ struct CHIP_DBG_OPS {
 	void (*showDmaschInfo)(IN struct ADAPTER *prAdapter);
 };
 
+enum PKT_PHASE {
+	PHASE_XMIT_RCV,
+	PHASE_ENQ_QM,
+	PHASE_HIF_TX,
+};
+
+struct WLAN_DEBUG_INFO {
+	u_int8_t fgVoE5_7Test:1;
+	u_int8_t fgReserved:7;
+};
+
+enum DRV_STATUS_T {
+	SND_BTM_QUERY,
+	SND_NEI_REQ,
+	SND_BTM_QUERY_TIMEOUT,
+	UNSOL_BTM_REQ,
+	SOL_BTM_REQ,
+	NEIGHBOR_AP_REP,
+	SND_BTM_RSP,
+	CONNECT_AP,
+	JOIN_FAIL,
+	DISCONNECT_AP,
+	BEACON_TIMEOUT,
+	RCV_FW_ROAMING,
+	ROAMING_SCAN_START,
+	ROAMING_SCAN_DONE,
+};
+
 #if MTK_WCN_HIF_SDIO
 #define DBG_ASSERT_PATH_DEFAULT DBG_ASSERT_PATH_WMT
 #else
@@ -437,6 +465,8 @@ void wlanDriverDbgLevelSync(void);
 u_int8_t wlanDbgGetGlobalLogLevel(uint32_t u4Module, uint32_t *pu4Level);
 u_int8_t wlanDbgSetGlobalLogLevel(uint32_t u4Module, uint32_t u4Level);
 
+void wlanFillTimestamp(struct ADAPTER *prAdapter, void *pvPacket,
+		       uint8_t ucPhase);
 /*******************************************************************************
  *                              F U N C T I O N S
  *******************************************************************************

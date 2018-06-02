@@ -85,15 +85,27 @@
 ********************************************************************************
 */
 struct APPEND_VAR_IE_ENTRY txAssocReqIETable[] = {
+#if CFG_SUPPORT_802_11K
+	{(ELEM_HDR_LEN + 2), NULL, rlmGeneratePowerCapIE}, /* Element ID: 33 */
+#endif
+
 	{(ELEM_HDR_LEN + ELEM_MAX_LEN_HT_CAP), NULL, rlmReqGenerateHtCapIE}
 	,			/* 45 */
 #if CFG_SUPPORT_WPS2
 	{(ELEM_HDR_LEN + ELEM_MAX_LEN_WSC), NULL, rsnGenerateWSCIE}
 	,			/* 221 */
 #endif
+#if CFG_SUPPORT_802_11R
+	{(ELEM_HDR_LEN + 1), NULL, assocGenerateMDIE}, /* Element ID: 54 */
+	{0, rsnCalculateFTIELen, rsnGenerateFTIE}, /* Element ID: 55 */
+#endif
 #if CFG_SUPPORT_WAPI
 	{(ELEM_HDR_LEN + ELEM_MAX_LEN_WAPI), NULL, wapiGenerateWAPIIE}
 	,			/* 68 */
+#endif
+#if CFG_SUPPORT_802_11K
+	{(ELEM_HDR_LEN + 5), NULL,
+	 rlmGenerateRRMEnabledCapIE}, /* Element ID: 70 */
 #endif
 #if CFG_SUPPORT_PASSPOINT
 	{(ELEM_HDR_LEN + ELEM_MAX_LEN_INTERWORKING), NULL, hs20GenerateInterworkingIE}
@@ -208,6 +220,9 @@ uint16_t assocBuildCapabilityInfo(IN struct ADAPTER *prAdapter, IN struct STA_RE
 	/* Set up our requested capabilities. */
 	u2CapInfo = CAP_INFO_ESS;
 	u2CapInfo |= CAP_CF_STA_NOT_POLLABLE;
+#if CFG_SUPPORT_802_11K
+	u2CapInfo |= CAP_INFO_RADIO_MEASUREMENT;
+#endif
 
 	if (prStaRec->u2CapInfo & CAP_INFO_PRIVACY)
 		u2CapInfo |= CAP_INFO_PRIVACY;
@@ -1608,4 +1623,43 @@ uint32_t assocSendReAssocRespFrame(IN struct ADAPTER *prAdapter, IN struct STA_R
 
 }				/* end of assocSendReAssocRespFrame() */
 
+void assocGenerateMDIE(IN struct ADAPTER *prAdapter,
+		       IN OUT struct MSDU_INFO *prMsduInfo)
+{
+	struct FT_IES *prFtIEs = &prAdapter->prGlueInfo->rFtIeForTx;
+	uint8_t *pucBuffer =
+		(uint8_t *)prMsduInfo->prPacket + prMsduInfo->u2FrameLength;
+	enum ENUM_PARAM_AUTH_MODE eAuthMode =
+		prAdapter->rWifiVar.rConnSettings.eAuthMode;
+
+	/* don't include MDIE in assoc request frame if auth mode is not FT
+	** related
+	*/
+	if (eAuthMode != AUTH_MODE_NON_RSN_FT &&
+	    eAuthMode != AUTH_MODE_WPA2_FT &&
+		eAuthMode != AUTH_MODE_WPA2_FT_PSK)
+		return;
+
+	if (!prFtIEs->prMDIE) {
+		struct BSS_DESC *prBssDesc =
+			prAdapter->rWifiVar.rAisFsmInfo.prTargetBssDesc;
+		uint8_t *pucIE = &prBssDesc->aucIEBuf[0];
+		uint16_t u2IeLen = prBssDesc->u2IELength;
+		uint16_t u2IeOffSet = 0;
+
+		IE_FOR_EACH(pucIE, u2IeLen, u2IeOffSet)
+		{
+			if (IE_ID(pucIE) == ELEM_ID_MOBILITY_DOMAIN) {
+				/* IE size for MD IE is fixed, it is 5 */
+				prMsduInfo->u2FrameLength += 5;
+				kalMemCopy(pucBuffer, pucIE, 5);
+				break;
+			}
+		}
+		return;
+	}
+	prMsduInfo->u2FrameLength +=
+		5; /* IE size for MD IE is fixed, it is 5 */
+	kalMemCopy(pucBuffer, prFtIEs->prMDIE, 5);
+}
 #endif /* CFG_SUPPORT_AAA */

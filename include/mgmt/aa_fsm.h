@@ -209,6 +209,9 @@ saaSendDisconnectMsgHandler(IN struct ADAPTER *prAdapter,
 			    IN struct BSS_INFO *prAisBssInfo,
 			    IN enum ENUM_AA_FRM_TYPE eFrmType);
 
+void saaFsmRunEventFTContinue(IN struct ADAPTER *prAdapter,
+			      IN struct MSG_HDR *prMsgHdr);
+
 /*----------------------------------------------------------------------------*/
 /* Routines in aaa_fsm.c                                                      */
 /*----------------------------------------------------------------------------*/

@@ -135,7 +135,8 @@ static uint8_t aucDbModuleName[][PROC_DBG_LEVEL_MAX_DISPLAY_STR_LEN] = {
 	"INIT", "HAL", "INTR", "REQ", "TX", "RX", "RFTEST", "EMU",
 	"SW1", "SW2", "SW3", "SW4", "HEM", "AIS", "RLM", "MEM",
 	"CNM", "RSN", "BSS", "SCN", "SAA", "AAA", "P2P", "QM",
-	"SEC", "BOW", "WAPI", "ROAMING", "TDLS", "PF", "OID", "NIC"
+	"SEC", "BOW", "WAPI", "ROAMING", "TDLS", "PF", "OID", "NIC",
+	"WNM", "WMM"
 };
 
 /* This buffer could be overwrite by any proc commands */

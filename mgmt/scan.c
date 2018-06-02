@@ -44,7 +44,6 @@
  *                           P R I V A T E   D A T A
  *******************************************************************************
  */
-
 /*******************************************************************************
  *                                 M A C R O S
  *******************************************************************************
@@ -1490,6 +1489,8 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 	u_int8_t fgBandMismatch = FALSE;
 	uint8_t ucSubtype;
 	u_int8_t fgIsProbeResp = FALSE;
+	u_int8_t ucPowerConstraint = 0;
+	struct IE_COUNTRY *prCountryIE = NULL;
 
 	ASSERT(prAdapter);
 	ASSERT(prSwRfb);
@@ -1925,11 +1926,9 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 			}
 			break;
 
-#if 0	/* CFG_SUPPORT_802_11D */
 		case ELEM_ID_COUNTRY_INFO:
-			prBssDesc->prIECountry = (struct IE_COUNTRY *) pucIE;
+			prCountryIE = (struct IE_COUNTRY *) pucIE;
 			break;
-#endif
 
 		case ELEM_ID_ERP_INFO:
 			if (IE_LEN(pucIE) == ELEM_MAX_LEN_ERP)
@@ -2112,7 +2111,24 @@ VHT_CAP_INFO_NUMBER_OF_SOUNDING_DIMENSIONS_OFFSET
 #endif /* CFG_ENABLE_WIFI_DIRECT */
 			}
 			break;
+		case ELEM_ID_PWR_CONSTRAINT:
+		{
+			struct IE_POWER_CONSTRAINT *prPwrConstraint =
+				(struct IE_POWER_CONSTRAINT *)pucIE;
 
+			if (IE_LEN(pucIE) != 1)
+				break;
+			ucPowerConstraint =
+				prPwrConstraint->ucLocalPowerConstraint;
+			break;
+		}
+		case ELEM_ID_RRM_ENABLED_CAP:
+			/* RRM Capability IE is always in length 5 bytes */
+			kalMemZero(prBssDesc->aucRrmCap,
+				   sizeof(prBssDesc->aucRrmCap));
+			kalMemCopy(prBssDesc->aucRrmCap, pucIE + 2,
+				   sizeof(prBssDesc->aucRrmCap));
+			break;
 			/* no default */
 		}
 	}
@@ -2227,6 +2243,63 @@ VHT_CAP_INFO_NUMBER_OF_SOUNDING_DIMENSIONS_OFFSET
 		prBssDesc->ucCenterFreqS2 = 0;
 		prBssDesc->eSco = CHNL_EXT_SCN;
 	}
+#if CFG_SUPPORT_802_11K
+	if (prCountryIE) {
+		uint8_t ucRemainLen = prCountryIE->ucLength - 3;
+		struct COUNTRY_INFO_SUBBAND_TRIPLET *prSubBand =
+			&prCountryIE->arCountryStr[0];
+		const uint8_t ucSubBandSize =
+			(uint8_t)sizeof(struct COUNTRY_INFO_SUBBAND_TRIPLET);
+		int8_t cNewPwrLimit = RLM_INVALID_POWER_LIMIT;
+
+		/* Try to find a country subband base on our channel */
+		while (ucRemainLen >= ucSubBandSize) {
+			if (prSubBand->ucFirstChnlNum < 201 &&
+			    prBssDesc->ucChannelNum >=
+				    prSubBand->ucFirstChnlNum &&
+			    prBssDesc->ucChannelNum <=
+				    (prSubBand->ucFirstChnlNum +
+				     prSubBand->ucNumOfChnl - 1))
+				break;
+			ucRemainLen -= ucSubBandSize;
+			prSubBand++;
+		}
+		/* Found a right country band */
+		if (ucRemainLen >= ucSubBandSize) {
+			cNewPwrLimit =
+				prSubBand->cMaxTxPwrLv - ucPowerConstraint;
+			/* Limit Tx power changed */
+			if (prBssDesc->cPowerLimit != cNewPwrLimit) {
+				prBssDesc->cPowerLimit = cNewPwrLimit;
+				DBGLOG(SCN, TRACE,
+				       "LM: Old TxPwrLimit %d,New: CountryMax %d, Constraint %d\n",
+				       prBssDesc->cPowerLimit,
+				       prSubBand->cMaxTxPwrLv,
+				       ucPowerConstraint);
+				/* should tell firmware to restrict tx power if
+				** connected a BSS
+				*/
+				if (prBssDesc->fgIsConnected) {
+					if (prBssDesc->cPowerLimit !=
+					    RLM_INVALID_POWER_LIMIT)
+						rlmSetMaxTxPwrLimit(
+							prAdapter,
+							prBssDesc->cPowerLimit,
+							1);
+					else
+						rlmSetMaxTxPwrLimit(prAdapter,
+								    0, 0);
+				}
+			}
+		} else if (prBssDesc->cPowerLimit != RLM_INVALID_POWER_LIMIT) {
+			prBssDesc->cPowerLimit = RLM_INVALID_POWER_LIMIT;
+			rlmSetMaxTxPwrLimit(prAdapter, 0, 0);
+		}
+	} else if (prBssDesc->cPowerLimit != RLM_INVALID_POWER_LIMIT) {
+		prBssDesc->cPowerLimit = RLM_INVALID_POWER_LIMIT;
+		rlmSetMaxTxPwrLimit(prAdapter, 0, 0);
+	}
+#endif
 
 	/* 4 <6> PHY type setting */
 	prBssDesc->ucPhyTypeSet = 0;
@@ -2289,6 +2362,11 @@ VHT_CAP_INFO_NUMBER_OF_SOUNDING_DIMENSIONS_OFFSET
 	/* 4 <7> Update BSS_DESC_T's Last Update TimeStamp. */
 	if (fgIsProbeResp || fgIsValidSsid)
 		GET_CURRENT_SYSTIME(&prBssDesc->rUpdateTime);
+
+#if CFG_SUPPORT_802_11K
+	if (prBssDesc->fgIsConnected)
+		rlmUpdateBssTimeTsf(prAdapter, prBssDesc);
+#endif
 
 	return prBssDesc;
 }
@@ -2573,6 +2651,14 @@ uint32_t scanProcessBeaconAndProbeResp(IN struct ADAPTER *prAdapter,
 
 	ASSERT(prAdapter);
 	ASSERT(prSwRfb);
+
+#if CFG_SUPPORT_802_11K
+	/* if beacon request measurement is on-going,  collect Beacon Report */
+	if (rlmBcnRmRunning(prAdapter)) {
+		rlmProcessBeaconAndProbeResp(prAdapter, prSwRfb);
+		return WLAN_STATUS_SUCCESS;
+	}
+#endif
 
 	prScanInfo = &(prAdapter->rWifiVar.rScanInfo);
 

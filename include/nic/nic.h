@@ -364,7 +364,7 @@ uint32_t nicEnterCtiaModeOfFIFOFullNoAck(IN struct ADAPTER
 /*----------------------------------------------------------------------------*/
 /* Scan Result Processing                                                     */
 /*----------------------------------------------------------------------------*/
-void
+uint32_t
 nicAddScanResult(IN struct ADAPTER *prAdapter,
 		 IN uint8_t rMacAddr[PARAM_MAC_ADDR_LEN],
 		 IN struct PARAM_SSID *prSsid,

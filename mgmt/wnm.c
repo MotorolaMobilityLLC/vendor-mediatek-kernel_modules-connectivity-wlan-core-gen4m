@@ -69,8 +69,6 @@
 */
 #include "precomp.h"
 
-#if (CFG_SUPPORT_802_11V || CFG_SUPPORT_PPR2)
-
 /*******************************************************************************
 *                              C O N S T A N T S
 ********************************************************************************
@@ -143,8 +141,10 @@ void wnmWNMAction(IN struct ADAPTER *prAdapter, IN struct SW_RFB *prSwRfb)
 	ASSERT(prSwRfb);
 
 	prRxFrame = (struct WLAN_ACTION_FRAME *)prSwRfb->pvHeader;
+
 	DBGLOG(WNM, TRACE, "WNM action frame: %d from " MACSTR "\n",
 	       prRxFrame->ucAction, MAC2STR(prRxFrame->aucSrcAddr));
+
 	switch (prRxFrame->ucAction) {
 #if CFG_SUPPORT_802_11V_TIMING_MEASUREMENT
 	case ACTION_WNM_TIMING_MEASUREMENT_REQUEST:
@@ -157,8 +157,8 @@ void wnmWNMAction(IN struct ADAPTER *prAdapter, IN struct SW_RFB *prSwRfb)
 	case ACTION_WNM_NOTIFICATION_REQUEST:
 	default:
 		DBGLOG(RX, INFO,
-			"WNM action frame: %d, try to send to supplicant\n",
-			prRxFrame->ucAction);
+		       "WNM: action frame %d, try to send to supplicant\n",
+		       prRxFrame->ucAction);
 		if (prSwRfb->ucStaRecIdx == KAL_NETWORK_TYPE_AIS_INDEX)
 			aisFuncValidateRxActionFrame(prAdapter, prSwRfb);
 		break;
@@ -183,7 +183,8 @@ void wnmReportTimingMeas(IN struct ADAPTER *prAdapter, IN uint8_t ucStaRecIndex,
 	if ((!prStaRec) || (!prStaRec->fgIsInUse))
 		return;
 
-	DBGLOG(WNM, TRACE, "wnmReportTimingMeas: u4ToD %x u4ToA %x", u4ToD, u4ToA);
+	DBGLOG(WNM, TRACE, "WNM: wnmReportTimingMeas: u4ToD %x u4ToA %x", u4ToD,
+	       u4ToA);
 
 	if (!prStaRec->rWNMTimingMsmt.ucTrigger)
 		return;
@@ -213,7 +214,8 @@ wnmRunEventTimgingMeasTxDone(IN struct ADAPTER *prAdapter,
 	ASSERT(prAdapter);
 	ASSERT(prMsduInfo);
 
-	DBGLOG(WNM, LOUD, "EVENT-TX DONE: Current Time = %ld\n", kalGetTimeTick());
+	DBGLOG(WNM, LOUD, "WNM: EVENT-TX DONE: Current Time = %ld\n",
+	       kalGetTimeTick());
 
 	prStaRec = cnmGetStaRecByIndex(prAdapter, prMsduInfo->ucStaRecIndex);
 
@@ -221,7 +223,7 @@ wnmRunEventTimgingMeasTxDone(IN struct ADAPTER *prAdapter,
 		return WLAN_STATUS_SUCCESS;	/* For the case of replying ERROR STATUS CODE */
 
 	DBGLOG(WNM, TRACE,
-	       "wnmRunEventTimgingMeasTxDone: ucDialog %d ucFollowUp %d u4ToD %x u4ToA %x",
+	       "WNM: wnmRunEventTimgingMeasTxDone: ucDialog %d ucFollowUp %d u4ToD %x u4ToA %x",
 	       prStaRec->rWNMTimingMsmt.ucDialogToken,
 	       prStaRec->rWNMTimingMsmt.ucFollowUpDialogToken, prStaRec->rWNMTimingMsmt.u4ToD,
 	       prStaRec->rWNMTimingMsmt.u4ToA);
@@ -294,8 +296,9 @@ wnmComposeTimingMeasFrame(IN struct ADAPTER *prAdapter,
 		     WLAN_MAC_MGMT_HEADER_LEN + u2PayloadLen, pfTxDoneHandler, MSDU_RATE_MODE_AUTO);
 
 	DBGLOG(WNM, TRACE,
-	       "wnmComposeTimingMeasFrame: ucDialogToken %d ucFollowUpDialogToken %d u4ToD %x u4ToA %x\n",
-	       prTxFrame->ucDialogToken, prTxFrame->ucFollowUpDialogToken, prTxFrame->u4ToD, prTxFrame->u4ToA);
+	       "WNM: wnmComposeTimingMeasFrame: ucDialogToken %d ucFollowUpDialogToken %d u4ToD %x u4ToA %x\n",
+	       prTxFrame->ucDialogToken, prTxFrame->ucFollowUpDialogToken,
+	       prTxFrame->u4ToD, prTxFrame->u4ToA);
 
 	/* 4 Enqueue the frame to send this action frame. */
 	nicTxEnqueueMsdu(prAdapter, prMsduInfo);
@@ -328,8 +331,10 @@ static void wnmTimingMeasRequest(IN struct ADAPTER *prAdapter,
 	if ((!prStaRec) || (!prStaRec->fgIsInUse))
 		return;
 
-	DBGLOG(WNM, TRACE, "IEEE 802.11: Received Timing Measuremen Request from "
-	       MACSTR "\n", MAC2STR(prStaRec->aucMacAddr));
+	DBGLOG(WNM, TRACE,
+	       "WNM: Received Timing Measuremen Request from " MACSTR
+	       "\n", MAC2STR(prStaRec->aucMacAddr));
+
 	/* reset timing msmt */
 	prStaRec->rWNMTimingMsmt.fgInitiator = TRUE;
 	prStaRec->rWNMTimingMsmt.ucTrigger = prRxFrame->ucTrigger;
@@ -348,7 +353,7 @@ void wnmTimingMeasUnitTest1(struct ADAPTER *prAdapter, uint8_t ucStaRecIndex)
 	prStaRec = cnmGetStaRecByIndex(prAdapter, ucStaRecIndex);
 	if ((!prStaRec) || (!prStaRec->fgIsInUse))
 		return;
-	DBGLOG(WNM, INFO, "IEEE 802.11v: Test Timing Measuremen Request from "
+	DBGLOG(WNM, INFO, "WNM: Test Timing Measuremen Request from "
 	       MACSTR "\n", MAC2STR(prStaRec->aucMacAddr));
 	prStaRec->rWNMTimingMsmt.fgInitiator = TRUE;
 	prStaRec->rWNMTimingMsmt.ucTrigger = 1;
@@ -370,7 +375,8 @@ wnmBTMQueryTxDone(IN struct ADAPTER *prAdapter,
 			IN struct MSDU_INFO *prMsduInfo,
 			IN enum ENUM_TX_RESULT_CODE rTxDoneStatus)
 {
-	DBGLOG(WNM, INFO, "Bss Transition Management Query Frame Tx Done\n");
+	DBGLOG(WNM, INFO, "BTM: Query Frame Tx Done, Status %d\n",
+	       rTxDoneStatus);
 	return WLAN_STATUS_SUCCESS;
 }
 
@@ -379,7 +385,17 @@ wnmBTMResponseTxDone(IN struct ADAPTER *prAdapter,
 			IN struct MSDU_INFO *prMsduInfo,
 			IN enum ENUM_TX_RESULT_CODE rTxDoneStatus)
 {
-	DBGLOG(WNM, INFO, "Bss Transition Management Response Frame Tx Done\n");
+	struct BSS_TRANSITION_MGT_PARAM_T *prBtm =
+		&prAdapter->rWifiVar.rAisSpecificBssInfo.rBTMParam;
+	struct AIS_FSM_INFO *prAisFsmInfo = &prAdapter->rWifiVar.rAisFsmInfo;
+
+	DBGLOG(WNM, INFO, "BTM: Response Frame Tx Done Status %d\n",
+	       rTxDoneStatus);
+	if (prBtm->fgPendingResponse &&
+	    prAisFsmInfo->eCurrentState == AIS_STATE_SEARCH) {
+		prBtm->fgPendingResponse = FALSE;
+		aisFsmSteps(prAdapter, AIS_STATE_REQ_CHANNEL_JOIN);
+	}
 	return WLAN_STATUS_SUCCESS;
 }
 
@@ -406,7 +422,7 @@ wnmSendBTMResponseFrame(IN struct ADAPTER *prAdapter,
 	uint8_t *pucOptInfo = NULL;
 
 	if (!prStaRec) {
-		DBGLOG(WNM, INFO, "No station record found\n");
+		DBGLOG(WNM, INFO, "BTM: No station record found\n");
 		return;
 	}
 
@@ -443,8 +459,11 @@ wnmSendBTMResponseFrame(IN struct ADAPTER *prAdapter,
 		u2PayloadLen += MAC_ADDR_LEN;
 	}
 	if (prBtmParam->u2OurNeighborBssLen > 0) {
-		kalMemCopy(pucOptInfo, prBtmParam->aucOurNeighborBss,
-				prBtmParam->u2OurNeighborBssLen);
+		kalMemCopy(pucOptInfo, prBtmParam->pucOurNeighborBss,
+			   prBtmParam->u2OurNeighborBssLen);
+		kalMemFree(prBtmParam->pucOurNeighborBss, VIR_MEM_TYPE,
+			   prBtmParam->u2OurNeighborBssLen);
+		prBtmParam->u2OurNeighborBssLen = 0;
 		u2PayloadLen += prBtmParam->u2OurNeighborBssLen;
 	}
 
@@ -504,10 +523,14 @@ wnmSendBTMQueryFrame(IN struct ADAPTER *prAdapter,
 	/* 3 Compose the frame body's frame. */
 	prTxFrame->ucDialogToken = prBtmParam->ucDialogToken;
 	prTxFrame->ucQueryReason = prBtmParam->ucQueryReason;
-	if (prBtmParam->u2OurNeighborBssLen > 0)
+	if (prBtmParam->u2OurNeighborBssLen > 0) {
 		kalMemCopy(prTxFrame->pucNeighborBss,
-			prBtmParam->aucOurNeighborBss,
-			prBtmParam->u2OurNeighborBssLen);
+			   prBtmParam->pucOurNeighborBss,
+			   prBtmParam->u2OurNeighborBssLen);
+		kalMemFree(prBtmParam->pucOurNeighborBss, VIR_MEM_TYPE,
+			   prBtmParam->u2OurNeighborBssLen);
+		prBtmParam->u2OurNeighborBssLen = 0;
+	}
 
 	/* 4 Update information of MSDU_INFO_T */
 	TX_SET_MMPDU(prAdapter,
@@ -549,28 +572,26 @@ void wnmRecvBTMRequest(IN struct ADAPTER *prAdapter, IN struct SW_RFB *prSwRfb)
 	if (prSwRfb->u2PacketLen <
 		OFFSET_OF(struct ACTION_BTM_REQ_FRAME_T, aucOptInfo)) {
 		DBGLOG(WNM, WARN,
-			"BTM request frame length is less than a standard BTM frame\n");
+		       "BTM: Request frame length is less than a standard BTM frame\n");
 		return;
 	}
 	prMsg = (struct MSG_AIS_BSS_TRANSITION_T *)
 			cnmMemAlloc(prAdapter, RAM_TYPE_MSG,
 				sizeof(struct MSG_AIS_BSS_TRANSITION_T));
 	if (!prMsg) {
-		DBGLOG(WNM, WARN, "Msg Hdr is NULL\n");
+		DBGLOG(WNM, WARN, "BTM: Msg Hdr is NULL\n");
 		return;
 	}
-
+	kalMemZero(prMsg, sizeof(*prMsg));
 	prBtmParam->ucRequestMode = prRxFrame->ucRequestMode;
-	prBtmParam->ucValidityInterval = prRxFrame->ucValidityInterval;
+	prMsg->ucToken = prRxFrame->ucDialogToken;
 	prBtmParam->u2DisassocTimer = prRxFrame->u2DisassocTimer;
 	prBtmParam->ucDialogToken = prRxFrame->ucDialogToken;
 	pucOptInfo = &prRxFrame->aucOptInfo[0];
-	if (!pucOptInfo) {
-		DBGLOG(WNM, WARN, "pucOptInfo == NULL\n");
-		return;
-	}
 	ucRequestMode = prBtmParam->ucRequestMode;
 	u2TmpLen = OFFSET_OF(struct ACTION_BTM_REQ_FRAME_T, aucOptInfo);
+	if (ucRequestMode & BTM_REQ_MODE_DISC_IMM)
+		eTransType = BSS_TRANSITION_REQ_ROAMING;
 	if (ucRequestMode & BTM_REQ_MODE_BSS_TERM_INCLUDE) {
 		struct SUB_IE_BSS_TERM_DURATION_T *prBssTermDuration =
 			(struct SUB_IE_BSS_TERM_DURATION_T *)pucOptInfo;
@@ -580,34 +601,33 @@ void wnmRecvBTMRequest(IN struct ADAPTER *prAdapter, IN struct SW_RFB *prSwRfb)
 			prBssTermDuration->aucTermTsf, 8);
 		pucOptInfo += sizeof(*prBssTermDuration);
 		u2TmpLen += sizeof(*prBssTermDuration);
+		eTransType = BSS_TRANSITION_REQ_ROAMING;
 	}
 	if (ucRequestMode & BTM_REQ_MODE_ESS_DISC_IMM) {
 		kalMemCopy(prBtmParam->aucSessionURL, &pucOptInfo[1],
 			pucOptInfo[0]);
 		prBtmParam->ucSessionURLLen = pucOptInfo[0];
 		u2TmpLen += pucOptInfo[0];
-	}
-	if (ucRequestMode & BTM_REQ_MODE_DISC_IMM)
+		pucOptInfo += pucOptInfo[0] + 1;
 		eTransType = BSS_TRANSITION_DISASSOC;
-
+	}
 	if (ucRequestMode & BTM_REQ_MODE_CAND_INCLUDED_BIT) {
+		if (!(ucRequestMode & BTM_REQ_MODE_ESS_DISC_IMM))
+			eTransType = BSS_TRANSITION_REQ_ROAMING;
 		if (prSwRfb->u2PacketLen > u2TmpLen) {
-			prBtmParam->u2PeerNeighborBssLen =
-				prSwRfb->u2PacketLen - u2TmpLen;
-			prBtmParam->pucPeerNeighborBss =
-			kalMemAlloc(prBtmParam->u2PeerNeighborBssLen,
-			VIR_MEM_TYPE);
+			prMsg->u2CandListLen = prSwRfb->u2PacketLen - u2TmpLen;
+			prMsg->pucCandList = pucOptInfo;
+			prMsg->ucValidityInterval =
+				prRxFrame->ucValidityInterval;
 		} else
 			DBGLOG(WNM, WARN,
-				"Candidate Include bit is set, but no candidate list\n");
+			       "BTM: Candidate Include bit is set, but no candidate list\n");
 	}
 
 	DBGLOG(WNM, INFO,
-			"BTM param: Req %d, VInt %d, DiscTimer %d, Token %d, TransType %d\n",
-			prBtmParam->ucRequestMode,
-			prBtmParam->ucValidityInterval,
-			prBtmParam->u2DisassocTimer,
-			prBtmParam->ucDialogToken, eTransType);
+	       "BTM: Req %d, VInt %d, DiscTimer %d, Token %d, TransType %d\n",
+	       prBtmParam->ucRequestMode, prRxFrame->ucValidityInterval,
+	       prBtmParam->u2DisassocTimer, prMsg->ucToken, eTransType);
 
 	prMsg->eTransitionType = eTransType;
 	prMsg->rMsgHdr.eMsgId = MID_WNM_AIS_BSS_TRANSITION;
@@ -621,4 +641,3 @@ void wnmRecvBTMRequest(IN struct ADAPTER *prAdapter, IN struct SW_RFB *prSwRfb)
 			MSG_SEND_METHOD_BUF);
 }
 
-#endif /* CFG_SUPPORT_802_11V */
