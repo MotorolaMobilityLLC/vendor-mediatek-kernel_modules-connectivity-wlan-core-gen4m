@@ -1025,12 +1025,18 @@ kalIndicateStatusAndComplete(IN struct GLUE_INFO *prGlueInfo, IN uint32_t eStatu
 	struct cfg80211_bss *bss;
 	uint8_t ucChannelNum;
 	struct BSS_DESC *prBssDesc = NULL;
+	OS_SYSTIME rCurrentTime;
+	u_int8_t fgIsNeedUpdateBss = FALSE;
+	struct ADAPTER *prAdapter = NULL;
 
 	GLUE_SPIN_LOCK_DECLARATION();
 
 	kalMemZero(arBssid, MAC_ADDR_LEN);
+	GET_CURRENT_SYSTIME(&rCurrentTime);
 
 	ASSERT(prGlueInfo);
+	prAdapter = prGlueInfo->prAdapter;
+	ASSERT(prAdapter);
 
 	pStatus = (struct PARAM_STATUS_INDICATION *) pvBuf;
 
@@ -1090,7 +1096,23 @@ kalIndicateStatusAndComplete(IN struct GLUE_INFO *prGlueInfo, IN uint32_t eStatu
 			bss = cfg80211_get_bss(priv_to_wiphy(prGlueInfo), prChannel, arBssid,
 					       ssid.aucSsid, ssid.u4SsidLen, WLAN_CAPABILITY_ESS, WLAN_CAPABILITY_ESS);
 #endif
-			if (bss == NULL) {
+
+			prBssDesc =
+				prAdapter->rWifiVar.rAisFsmInfo.prTargetBssDesc;
+
+			if (prBssDesc != NULL) {
+				/* cfg80211 bss expire time is 7s. if bss in */
+				/* driver older then 5s, update again. */
+				if (CHECK_FOR_TIMEOUT(rCurrentTime,
+						      prBssDesc->rUpdateTime,
+						      SEC_TO_SYSTIME(5))) {
+					fgIsNeedUpdateBss = TRUE;
+					log_dbg(SCN, INFO,
+						"Bss age > 5s, update bss\n");
+				}
+			}
+
+			if ((bss == NULL) || (fgIsNeedUpdateBss == TRUE)) {
 				/* create BSS on-the-fly */
 				prBssDesc = ((struct AIS_FSM_INFO *)
 					     (&(prGlueInfo->prAdapter->rWifiVar.rAisFsmInfo)))->prTargetBssDesc;
