@@ -2548,6 +2548,114 @@ label_exit:
 	return retWlanStat;
 }
 
+#ifdef CONFIG_MTK_CONNSYS_DEDICATED_LOG_PATH
+
+#define FW_LOG_CMD_ON_OFF        0
+#define FW_LOG_CMD_SET_LEVEL     1
+static uint32_t u4LogOnOffCache = -1;
+
+static void consys_log_event_notification(int cmd, int value)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct ADAPTER *prAdapter = NULL;
+	struct net_device *prDev = gPrDev;
+	uint32_t rStatus = WLAN_STATUS_FAILURE;
+	struct CMD_HEADER rCmdV1Header;
+	struct CMD_FORMAT_V1 rCmd_v1;
+
+	DBGLOG(INIT, INFO, "gPrDev=%x, cmd=%d, value=%d\n",
+		gPrDev, cmd, value);
+
+	prGlueInfo = (prDev != NULL) ?
+		*((struct GLUE_INFO **) netdev_priv(prDev)) : NULL;
+	DBGLOG(INIT, INFO, "prGlueInfo=%x\n", prGlueInfo);
+	if (!prGlueInfo) {
+		u4LogOnOffCache = value;
+		DBGLOG(INIT, INFO,
+			"prGlueInfo == NULL return, u4LogOnOffCache=%d\n",
+				u4LogOnOffCache);
+		return;
+	}
+	prAdapter = prGlueInfo->prAdapter;
+	DBGLOG(INIT, INFO, "prAdapter=%x\n", prAdapter);
+	if (!prAdapter) {
+		u4LogOnOffCache = value;
+		DBGLOG(INIT, INFO,
+			"prAdapter == NULL return, u4LogOnOffCache=%d\n",
+				u4LogOnOffCache);
+		return;
+	}
+
+	if (cmd == FW_LOG_CMD_ON_OFF) {
+
+		/*EvtDrvnLogEn 0/1*/
+		uint8_t onoff[1] = {'0'};
+
+		DBGLOG(INIT, INFO, "FW_LOG_CMD_ON_OFF\n");
+
+		rCmdV1Header.cmdType = CMD_TYPE_SET;
+		rCmdV1Header.cmdVersion = CMD_VER_1;
+		rCmdV1Header.cmdBufferLen = 0;
+		rCmdV1Header.itemNum = 0;
+
+		kalMemSet(rCmdV1Header.buffer, 0, MAX_CMD_BUFFER_LENGTH);
+		kalMemSet(&rCmd_v1, 0, sizeof(struct CMD_FORMAT_V1));
+
+		rCmd_v1.itemType = ITEM_TYPE_STR;
+
+		/*send string format to firmware */
+		rCmd_v1.itemStringLength = kalStrLen("EnableDbgLog");
+		kalMemZero(rCmd_v1.itemString, MAX_CMD_NAME_MAX_LENGTH);
+		kalMemCopy(rCmd_v1.itemString, "EnableDbgLog",
+			rCmd_v1.itemStringLength);
+
+		if (value == 1) /* other cases, send 'OFF=0' */
+			onoff[0] = '1';
+		rCmd_v1.itemValueLength = 1;
+		kalMemZero(rCmd_v1.itemValue, MAX_CMD_VALUE_MAX_LENGTH);
+		kalMemCopy(rCmd_v1.itemValue, &onoff, 1);
+
+		DBGLOG(INIT, INFO, "Send key word (%s) WITH (%s) to firmware\n",
+				rCmd_v1.itemString, rCmd_v1.itemValue);
+
+		kalMemCopy(((struct CMD_FORMAT_V1 *)rCmdV1Header.buffer),
+				&rCmd_v1,  sizeof(struct CMD_FORMAT_V1));
+
+		rCmdV1Header.cmdBufferLen += sizeof(struct CMD_FORMAT_V1);
+		rCmdV1Header.itemNum = 1;
+
+		rStatus = wlanSendSetQueryCmd(
+				prAdapter, /* prAdapter */
+				CMD_ID_GET_SET_CUSTOMER_CFG, /* 0x70 */
+				TRUE,  /* fgSetQuery */
+				FALSE, /* fgNeedResp */
+				FALSE, /* fgIsOid */
+				NULL,  /* pfCmdDoneHandler*/
+				NULL,  /* pfCmdTimeoutHandler */
+				sizeof(struct CMD_HEADER),
+				(uint8_t *)&rCmdV1Header, /* pucInfoBuffer */
+				NULL,  /* pvSetQueryBuffer */
+				0      /* u4SetQueryBufferLen */
+			);
+
+		if (rStatus == WLAN_STATUS_FAILURE)
+			DBGLOG(INIT, INFO,
+				"[Fail]kalIoctl wifiSefCFG fail 0x%x\n",
+					rStatus);
+
+		/* keep in cache */
+		u4LogOnOffCache = value;
+	} else if (cmd == FW_LOG_CMD_SET_LEVEL) {
+		/*ENG_LOAD_OFFSET 1*/
+		/*USERDEBUG_LOAD_OFFSET 2 */
+		/*USER_LOAD_OFFSET 3 */
+		DBGLOG(INIT, INFO, "FW_LOG_CMD_SET_LEVEL\n");
+	} else {
+		DBGLOG(INIT, INFO, "command can not parse\n");
+	}
+}
+#endif
+
 /*----------------------------------------------------------------------------*/
 /*!
 * \brief Wlan probe function. This function probes and initializes the device.
@@ -2927,6 +3035,14 @@ static int32_t wlanProbe(void *pvData, void *pvDriverData)
 					       ENUM_WIFI_LOG_LEVEL_VERSION_V1,
 					       ENUM_WIFI_LOG_MODULE_FW,
 					       u4LogLevel);
+
+#ifdef CONFIG_MTK_CONNSYS_DEDICATED_LOG_PATH
+		wifi_fwlog_onoff_status();
+		/* sync log status with firmware */
+		if (u4LogOnOffCache != -1) /* -1: connsysD does not set */
+			consys_log_event_notification((int)FW_LOG_CMD_ON_OFF,
+				u4LogOnOffCache);
+#endif
 		DBGLOG(INIT, INFO, "wlanProbe: probe success\n");
 	} else {
 		DBGLOG(INIT, ERROR, "wlanProbe: probe failed, reason:%d\n", eFailReason);
@@ -3156,6 +3272,8 @@ static void wlanRemove(void)
 	/* 4 <7> Destroy the device */
 	wlanNetDestroy(prDev->ieee80211_ptr);
 	prDev = NULL;
+	DBGLOG(INIT, INFO, "gPrDev(%x)\n", gPrDev);
+	gPrDev = NULL;
 
 	tasklet_kill(&prGlueInfo->rTxCompleteTask);
 	tasklet_kill(&prGlueInfo->rRxTask);
@@ -3235,6 +3353,11 @@ static int initWlan(void)
 	glResetInit();
 #endif
 	kalFbNotifierReg((struct GLUE_INFO *) wiphy_priv(gprWdev->wiphy));
+
+#ifdef CONFIG_MTK_CONNSYS_DEDICATED_LOG_PATH
+	wifi_fwlog_event_func_register(consys_log_event_notification);
+#endif
+
 #ifdef CONFIG_MTK_EMI
 	/* Set WIFI EMI protection to consys permitted on system boot up */
 	kalSetEmiMpuProtection(gConEmiPhyBase, WIFI_EMI_MEM_OFFSET,
