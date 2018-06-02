@@ -371,10 +371,17 @@ do { \
 #define HAL_WIFI_FUNC_GET_STATUS(_prAdapter, _u4Result) \
 do { \
 	struct mt66xx_chip_info *prChipInfo; \
-	if (!_prAdapter->chip_info) \
+	P_BUS_INFO prBusInfo; \
+	UINT_32 u4Value; \
+	if (!_prAdapter->chip_info || !_prAdapter->chip_info->bus_info) \
 		ASSERT(0); \
 	prChipInfo = _prAdapter->chip_info; \
+	prBusInfo = prChipInfo->bus_info; \
 	HAL_MCR_RD(_prAdapter, prChipInfo->sw_sync0, &_u4Result); \
+	if (prBusInfo->getMailboxStatus) {	\
+		prBusInfo->getMailboxStatus(_prAdapter, &u4Value);	\
+		DBGLOG(INIT, INFO, "Mailbox: 0x%x\n", u4Value); \
+	} \
 } while (0)
 
 #define HAL_INTR_DISABLE(_prAdapter)
