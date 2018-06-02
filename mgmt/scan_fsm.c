@@ -1120,7 +1120,7 @@ scnFsmSchedScanRequest(IN struct ADAPTER *prAdapter,
 	prSchedScanCmd = (struct CMD_SCHED_SCAN_REQ *) cnmMemAlloc(prAdapter,
 		RAM_TYPE_BUF, sizeof(struct CMD_SCHED_SCAN_REQ) + u2IeLen);
 	if (!prSchedScanCmd) {
-		DBGLOG(SCN, ERROR, "alloc CMD_SCHED_SCAN_REQ (%d+%d) fail\n",
+		DBGLOG(SCN, ERROR, "alloc CMD_SCHED_SCAN_REQ (%zu+%u) fail\n",
 			sizeof(struct CMD_SCHED_SCAN_REQ), u2IeLen);
 		return FALSE;
 	}
@@ -1202,7 +1202,7 @@ scnFsmSchedScanRequest(IN struct ADAPTER *prAdapter,
 	scnSetSchedScanPlan(prAdapter, prSchedScanCmd);
 
 #define __STR_FMT__ \
-"V(%u)seq(%u)sz(%u)chT(%u)chN(%u)ssid(%u)match(%u)IE(%u=>%u)MSP(%u)\n"
+"V(%u)seq(%u)sz(%zu)chT(%u)chN(%u)ssid(%u)match(%u)IE(%u=>%u)MSP(%u)\n"
 
 	DBGLOG(SCN, INFO, __STR_FMT__, prSchedScanCmd->ucVersion,
 		prSchedScanCmd->ucSeqNum, sizeof(struct CMD_SCHED_SCAN_REQ),
