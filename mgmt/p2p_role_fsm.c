@@ -2889,6 +2889,9 @@ p2pRoleFsmRunEventAAAComplete(IN struct ADAPTER *prAdapter,
 		if (eOriMediaState != prP2pBssInfo->eConnectionState)
 			nicUpdateBss(prAdapter, prP2pBssInfo->ucBssIndex);
 
+		/* reset add key action */
+		prP2pBssInfo->eKeyAction = SEC_TX_KEY_COMMAND;
+
 	} while (FALSE);
 
 	return rStatus;
