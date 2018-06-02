@@ -104,6 +104,7 @@ struct GL_HIF_INFO {
 	struct platform_device *pdev;
 	struct device *prDmaDev;
 	uint32_t u4IrqId;
+	int32_t u4HifCnt;
 
 	uint8_t *CSRBaseAddress;	/* AXI MMIO Base Address, all access will use */
 

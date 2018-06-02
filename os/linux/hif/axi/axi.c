@@ -134,10 +134,10 @@ static struct platform_driver mtk_axi_driver = {
 	.remove = NULL,
 };
 
+static struct GLUE_INFO *g_prGlueInfo;
 static uint8_t *CSRBaseAddress;
 static u_int8_t g_fgDriverProbed = FALSE;
 static uint32_t g_u4DmaMask = 32;
-
 
 dma_addr_t g_prTxDescPa[NUM_OF_TX_RING];
 void *g_prTxDescVa[NUM_OF_TX_RING];
@@ -223,6 +223,24 @@ static int hifAxiRemove(void)
 	DBGLOG(INIT, INFO, "hifAxiRemove() done\n");
 	return 0;
 }
+
+#if CFG_MTK_ANDROID_WMT
+static int hifAxiGetBusCnt(void)
+{
+	if (!g_prGlueInfo)
+		return 0;
+
+	return g_prGlueInfo->rHifInfo.u4HifCnt;
+}
+
+static int hifAxiClrBusCnt(void)
+{
+	if (g_prGlueInfo)
+		g_prGlueInfo->rHifInfo.u4HifCnt = 0;
+
+	return 0;
+}
+#endif /* CFG_MTK_ANDROID_WMT */
 
 static void axiDmaSetup(struct platform_device *pdev)
 {
@@ -397,6 +415,8 @@ static int mtk_axi_probe(IN struct platform_device *pdev)
 #if CFG_MTK_ANDROID_WMT
 	rWmtCb.wlan_probe_cb = hifAxiProbe;
 	rWmtCb.wlan_remove_cb = hifAxiRemove;
+	rWmtCb.wlan_bus_cnt_get_cb = hifAxiGetBusCnt;
+	rWmtCb.wlan_bus_cnt_clr_cb = hifAxiClrBusCnt;
 	mtk_wcn_wmt_wlan_reg(&rWmtCb);
 #else
 	hifAxiProbe();
@@ -501,6 +521,7 @@ void glSetHifInfo(struct GLUE_INFO *prGlueInfo, unsigned long ulCookie)
 {
 	struct GL_HIF_INFO *prHif = NULL;
 
+	g_prGlueInfo = prGlueInfo;
 	prHif = &prGlueInfo->rHifInfo;
 
 	prHif->pdev = (struct platform_device *)ulCookie;
