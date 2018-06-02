@@ -2304,6 +2304,8 @@ reqExtSetAcpiDevicePowerState(IN P_GLUE_INFO_T prGlueInfo,
 #define CMD_SET_CALBACKUP_TEST_DRV_FW		"SET_CALBACKUP_TEST_DRV_FW"
 #endif
 
+#define CMD_GET_CNM_INFO		"GET_CNM"
+
 static UINT_8 g_ucMiracastMode = MIRACAST_MODE_OFF;
 
 typedef struct cmd_tlv {
@@ -6843,6 +6845,91 @@ static int priv_driver_get_hif_info(IN struct net_device *prNetDev, IN char *pcC
 	return halDumpHifStatus(prGlueInfo->prAdapter, pcCommand, i4TotalLen);
 }
 
+static int priv_driver_get_cnm_info(IN struct net_device *prNetDev, IN char *pcCommand, IN int i4TotalLen)
+{
+	P_GLUE_INFO_T prGlueInfo = NULL;
+	WLAN_STATUS rStatus = WLAN_STATUS_SUCCESS;
+	UINT_32 u4BufLen = 0;
+	INT_32 i4BytesWritten = 0;
+	INT_32 i4Argc = 0;
+	PCHAR apcArgv[WLAN_CFG_ARGV_MAX];
+	CNM_STATUS_T rCnmStatus;
+	PUINT_32 pu4Ptr;
+	P_CNM_CH_LIST_T prChList;
+	UINT_32 u4Offset = 0;
+	PARAM_CUSTOM_SW_CTRL_STRUCT_T rSwCtrlInfo;
+
+	ASSERT(prNetDev);
+
+	prGlueInfo = *((P_GLUE_INFO_T *) netdev_priv(prNetDev));
+
+	ASSERT(prNetDev);
+	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
+		return -1;
+	prGlueInfo = *((P_GLUE_INFO_T *) netdev_priv(prNetDev));
+
+	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+
+	rSwCtrlInfo.u4Data = 0;
+	rSwCtrlInfo.u4Id = 0xb0000000;
+
+	rStatus = kalIoctl(prGlueInfo,
+			   wlanoidQuerySwCtrlRead,
+			   &rSwCtrlInfo, sizeof(rSwCtrlInfo), TRUE, TRUE, TRUE, &u4BufLen);
+
+	DBGLOG(REQ, LOUD, "rStatus %u\n", rStatus);
+	if (rStatus != WLAN_STATUS_SUCCESS)
+		return -1;
+
+	pu4Ptr = (PUINT_32)&rCnmStatus;
+	*pu4Ptr = rSwCtrlInfo.u4Data;
+
+	u4Offset += snprintf(pcCommand + u4Offset, i4TotalLen - u4Offset,
+				"DBDC is %s, %u CHs in BAND0, %u CHs in BAND1\n",
+				rCnmStatus.fgDbDcModeEn?"ON":"OFF", rCnmStatus.ucChNumB0, rCnmStatus.ucChNumB1);
+
+	if (rCnmStatus.ucChNumB0 > 0) {
+		rSwCtrlInfo.u4Id = 0xb0010000;
+
+		rStatus = kalIoctl(prGlueInfo,
+				   wlanoidQuerySwCtrlRead,
+				   &rSwCtrlInfo, sizeof(rSwCtrlInfo), TRUE, TRUE, TRUE, &u4BufLen);
+
+		DBGLOG(REQ, LOUD, "rStatus %u\n", rStatus);
+		if (rStatus != WLAN_STATUS_SUCCESS)
+			return -1;
+
+		prChList = (P_CNM_CH_LIST_T)&rSwCtrlInfo.u4Data;
+
+		u4Offset += snprintf(pcCommand + u4Offset, i4TotalLen - u4Offset,
+					"BAND0 channels : %u %u %u\n",
+					prChList->ucChNum[0], prChList->ucChNum[1], prChList->ucChNum[2]);
+	}
+	if (rCnmStatus.ucChNumB1 > 0) {
+		rSwCtrlInfo.u4Id = 0xb0010001;
+
+		rStatus = kalIoctl(prGlueInfo,
+				   wlanoidQuerySwCtrlRead,
+				   &rSwCtrlInfo, sizeof(rSwCtrlInfo), TRUE, TRUE, TRUE, &u4BufLen);
+
+		DBGLOG(REQ, LOUD, "rStatus %u\n", rStatus);
+		if (rStatus != WLAN_STATUS_SUCCESS)
+			return -1;
+
+		prChList = (P_CNM_CH_LIST_T)&rSwCtrlInfo.u4Data;
+
+		u4Offset += snprintf(pcCommand + u4Offset, i4TotalLen - u4Offset,
+					"BAND1 channels : %u %u %u\n",
+					prChList->ucChNum[0], prChList->ucChNum[1], prChList->ucChNum[2]);
+	}
+
+	i4BytesWritten = (INT_32)u4Offset;
+
+	return i4BytesWritten;
+
+}				/* priv_driver_get_sw_ctrl */
+
 #if CFG_AUTO_CHANNEL_SEL_SUPPORT
 static int priv_driver_get_ch_rank_list(IN struct net_device *prNetDev, IN char *pcCommand, IN int i4TotalLen)
 {
@@ -7052,6 +7139,8 @@ INT_32 priv_driver_cmds(IN struct net_device *prNetDev, IN PCHAR pcCommand, IN I
 			i4BytesWritten = priv_driver_get_mem_info(prNetDev, pcCommand, i4TotalLen);
 		else if (strnicmp(pcCommand, CMD_GET_HIF_INFO, strlen(CMD_GET_HIF_INFO)) == 0)
 			i4BytesWritten = priv_driver_get_hif_info(prNetDev, pcCommand, i4TotalLen);
+		else if (strnicmp(pcCommand, CMD_GET_CNM_INFO, strlen(CMD_GET_CNM_INFO)) == 0)
+			i4BytesWritten = priv_driver_get_cnm_info(prNetDev, pcCommand, i4TotalLen);
 #if CFG_AUTO_CHANNEL_SEL_SUPPORT
 		else if (strnicmp(pcCommand, CMD_GET_CH_RANK_LIST, strlen(CMD_GET_CH_RANK_LIST)) == 0)
 			i4BytesWritten = priv_driver_get_ch_rank_list(prNetDev, pcCommand, i4TotalLen);
