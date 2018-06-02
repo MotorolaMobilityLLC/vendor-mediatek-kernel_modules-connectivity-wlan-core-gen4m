@@ -26,13 +26,11 @@ ccflags-y += -DLINUX
 ifneq ($(findstring 6632,$(MTK_COMBO_CHIP)),)
 ccflags-y:=$(filter-out -UMT6632,$(ccflags-y))
 ccflags-y += -DMT6632
-CONFIG_CR4=y
 endif
 
 ifneq ($(findstring 7668,$(MTK_COMBO_CHIP)),)
 ccflags-y:=$(filter-out -UMT7668,$(ccflags-y))
 ccflags-y += -DMT7668
-CONFIG_CR4=y
 endif
 
 ifneq ($(findstring 7663,$(MTK_COMBO_CHIP)),)
@@ -45,14 +43,6 @@ ifneq ($(findstring CONNAC,$(MTK_COMBO_CHIP)),)
 ccflags-y:=$(filter-out -UCONNAC,$(ccflags-y))
 ccflags-y += -DCONNAC
 CONFIG_CONNAC_MAC=y
-endif
-
-ifeq ($(CONFIG_CONNAC_MAC),y)
-ccflags-y += -DCONNAC_MAC
-endif
-
-ifeq ($(CONFIG_CR4),y)
-ccflags-y += -DCR4_SUPPORT
 endif
 
 CONFIG_MTK_WIFI_MCC_SUPPORT=y

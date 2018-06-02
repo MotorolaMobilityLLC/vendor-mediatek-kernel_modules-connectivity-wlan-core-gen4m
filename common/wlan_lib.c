@@ -3522,6 +3522,42 @@ UINT_32 wlanCRC32(PUINT_8 buf, UINT_32 len)
 }
 #endif
 
+WLAN_STATUS wlanDownloadCR4FW(IN P_ADAPTER_T prAdapter, PVOID prFwBuffer)
+{
+	UINT_32 u4FwSize = 0;
+	WLAN_STATUS rDlStatus = 0;
+	WLAN_STATUS rCfgStatus = 0;
+#if CFG_SUPPORT_COMPRESSION_FW_OPTION
+	BOOLEAN fgIsCompressed = FALSE;
+	INIT_CMD_WIFI_DECOMPRESSION_START rFwImageInFo;
+#endif /* CFG_SUPPORT_COMPRESSION_FW_OPTION */
+
+	/* CR4 bin */
+	kalFirmwareImageMapping(prAdapter->prGlueInfo, &prFwBuffer, &u4FwSize, IMG_DL_IDX_CR4_FW);
+	if (prFwBuffer == NULL) {
+		DBGLOG(INIT, WARN, "FW[%u] load error!\n", IMG_DL_IDX_CR4_FW);
+		return WLAN_STATUS_FAILURE;
+	}
+#if CFG_SUPPORT_COMPRESSION_FW_OPTION
+	rDlStatus = wlanImageSectionDownloadStage(prAdapter, prFwBuffer,
+			u4FwSize, CR4_FWDL_SECTION_NUM, IMG_DL_IDX_CR4_FW, &fgIsCompressed, &rFwImageInFo);
+	prAdapter->fgIsCr4FwDownloaded = TRUE;
+	if (fgIsCompressed == TRUE)
+		rCfgStatus = wlanCompressedFWConfigWifiFunc(prAdapter, FALSE, 0, PDA_CR4, &rFwImageInFo);
+	else
+		rCfgStatus = wlanConfigWifiFunc(prAdapter, FALSE, 0, PDA_CR4);
+
+#else /* CFG_SUPPORT_COMPRESSION_FW_OPTION */
+	rDlStatus = wlanImageSectionDownloadStage(prAdapter, prFwBuffer,
+		u4FwSize, CR4_FWDL_SECTION_NUM, IMG_DL_IDX_CR4_FW);
+	prAdapter->fgIsCr4FwDownloaded = TRUE;
+	rCfgStatus = wlanConfigWifiFunc(prAdapter, FALSE, 0, PDA_CR4);
+#endif /* !CFG_SUPPORT_COMPRESSION_FW_OPTION */
+	kalFirmwareImageUnmapping(prAdapter->prGlueInfo, NULL, prFwBuffer);
+
+	return rDlStatus;
+}
+
 WLAN_STATUS wlanDownloadFW(IN P_ADAPTER_T prAdapter)
 {
 	UINT_32 u4FwSize = 0;
@@ -3588,30 +3624,7 @@ WLAN_STATUS wlanDownloadFW(IN P_ADAPTER_T prAdapter)
 
 		if (prChipInfo->is_support_cr4) {
 			/* CR4 bin */
-			kalFirmwareImageMapping(prAdapter->prGlueInfo, &prFwBuffer, &u4FwSize, IMG_DL_IDX_CR4_FW);
-			if (prFwBuffer == NULL) {
-				DBGLOG(INIT, WARN, "FW[%u] load error!\n", IMG_DL_IDX_CR4_FW);
-				break;
-			}
-#if CFG_SUPPORT_COMPRESSION_FW_OPTION
-			rDlStatus = wlanImageSectionDownloadStage(prAdapter, prFwBuffer, u4FwSize,
-				CR4_FWDL_SECTION_NUM, IMG_DL_IDX_CR4_FW, &fgIsCompressed, &rFwImageInFo);
-			prAdapter->fgIsCr4FwDownloaded = TRUE;
-			if (fgIsCompressed == TRUE)
-				rCfgStatus = wlanCompressedFWConfigWifiFunc(prAdapter, FALSE, 0, PDA_CR4,
-						&rFwImageInFo);
-			else
-				rCfgStatus = wlanConfigWifiFunc(prAdapter, FALSE, 0, PDA_CR4);
-#else
-			rDlStatus = wlanImageSectionDownloadStage(prAdapter, prFwBuffer,
-				u4FwSize, CR4_FWDL_SECTION_NUM, IMG_DL_IDX_CR4_FW);
-			prAdapter->fgIsCr4FwDownloaded = TRUE;
-			rCfgStatus = wlanConfigWifiFunc(prAdapter, FALSE, 0, PDA_CR4);
-#endif
-			kalFirmwareImageUnmapping(prAdapter->prGlueInfo, NULL, prFwBuffer);
-
-			if ((rDlStatus != WLAN_STATUS_SUCCESS) || (rCfgStatus != WLAN_STATUS_SUCCESS))
-				break;
+			wlanDownloadCR4FW(prAdapter, prFwBuffer);
 		}
 	} while (0);
 	DBGLOG(INIT, INFO, "FW download End\n");
