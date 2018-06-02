@@ -982,6 +982,11 @@ enum enum_mt66xx_chip {
 	MT66XX_CHIP_NUM
 };
 
+enum enum_workAround {
+	WORKAROUND_MT7663_BRINGUP_20171205 = 0,
+	WORKAROUND_NUM
+};
+
 struct mt66xx_chip_info {
 	P_BUS_INFO bus_info;
 	struct FWDL_OPS_T *fw_dl_ops;
@@ -1014,6 +1019,7 @@ struct mt66xx_chip_info {
 
 	const UINT_32 features;	/* feature bits */
 	BOOLEAN is_support_hw_amsdu;
+	UINT_32 workAround;
 };
 
 struct mt66xx_hif_driver_data {
