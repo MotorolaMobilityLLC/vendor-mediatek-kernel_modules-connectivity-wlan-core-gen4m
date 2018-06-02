@@ -970,6 +970,7 @@ struct mt66xx_chip_info {
 	const unsigned int patch_addr;	/* patch download start address */
 	const unsigned int is_support_cr4;	/* support CR4 */
 	const unsigned int txd_append_size;	/* hw mac txd append */
+	const unsigned int isNicCapV1;
 
 	const P_ECO_INFO_T eco_info;	/* chip version table */
 	UINT_8 eco_ver;	/* chip version */

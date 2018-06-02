@@ -221,6 +221,7 @@ struct mt66xx_chip_info mt66xx_chip_info_connac = {
 	.is_support_cr4 = FALSE,
 	.txd_append_size = CONNAC_TX_DESC_APPEND_LENGTH,
 	.eco_info = connac_eco_table,
+	.isNicCapV1 = FALSE,
 
 	.asicCapInit = asicCapInit,
 	.asicEnableFWDownload = asicEnableFWDownload,

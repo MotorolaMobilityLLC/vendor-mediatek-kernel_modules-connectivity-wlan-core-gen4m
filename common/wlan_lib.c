@@ -474,7 +474,8 @@ WLAN_STATUS wlanAdapterStart(IN P_ADAPTER_T prAdapter, IN P_REG_INFO_T prRegInfo
 			wlanSendDummyCmd(prAdapter, TRUE);
 
 			/* 3. query for NIC capability */
-			wlanQueryNicCapability(prAdapter);
+			if (prAdapter->chip_info->isNicCapV1)
+				wlanQueryNicCapability(prAdapter);
 
 			/* 4. query for NIC capability V2 */
 			wlanQueryNicCapabilityV2(prAdapter);
@@ -4714,29 +4715,24 @@ wlanoidQueryStaStatistics(IN P_ADAPTER_T prAdapter,
 		rResult = WLAN_STATUS_SUCCESS;
 
 		/* 4 6. Ensure FW supports get station link status */
-		if (prAdapter->u4FwCompileFlag0 & COMPILE_FLAG0_GET_STA_LINK_STATUS) {
+		rQueryCmdStaStatistics.ucIndex = prStaRec->ucIndex;
+		COPY_MAC_ADDR(rQueryCmdStaStatistics.aucMacAddr, prQueryStaStatistics->aucMacAddr);
+		rQueryCmdStaStatistics.ucReadClear = prQueryStaStatistics->ucReadClear;
+		rQueryCmdStaStatistics.ucLlsReadClear = prQueryStaStatistics->ucLlsReadClear;
+		rQueryCmdStaStatistics.ucResetCounter = prQueryStaStatistics->ucResetCounter;
 
-			rQueryCmdStaStatistics.ucIndex = prStaRec->ucIndex;
-			COPY_MAC_ADDR(rQueryCmdStaStatistics.aucMacAddr, prQueryStaStatistics->aucMacAddr);
-			rQueryCmdStaStatistics.ucReadClear = prQueryStaStatistics->ucReadClear;
-			rQueryCmdStaStatistics.ucLlsReadClear = prQueryStaStatistics->ucLlsReadClear;
-			rQueryCmdStaStatistics.ucResetCounter = prQueryStaStatistics->ucResetCounter;
+		rResult = wlanSendSetQueryCmd(prAdapter,
+					      CMD_ID_GET_STA_STATISTICS,
+					      FALSE,
+					      TRUE,
+					      TRUE,
+					      nicCmdEventQueryStaStatistics,
+					      nicOidCmdTimeoutCommon,
+					      sizeof(CMD_GET_STA_STATISTICS_T),
+					      (PUINT_8)&rQueryCmdStaStatistics,
+					      pvQueryBuffer, u4QueryBufferLen);
 
-			rResult = wlanSendSetQueryCmd(prAdapter,
-						      CMD_ID_GET_STA_STATISTICS,
-						      FALSE,
-						      TRUE,
-						      TRUE,
-						      nicCmdEventQueryStaStatistics,
-						      nicOidCmdTimeoutCommon,
-						      sizeof(CMD_GET_STA_STATISTICS_T),
-						      (PUINT_8) &rQueryCmdStaStatistics,
-						      pvQueryBuffer, u4QueryBufferLen);
-
-			prQueryStaStatistics->u4Flag |= BIT(1);
-		} else {
-			rResult = WLAN_STATUS_NOT_SUPPORTED;
-		}
+		prQueryStaStatistics->u4Flag |= BIT(1);
 
 	} while (FALSE);
 
@@ -4792,7 +4788,7 @@ WLAN_STATUS wlanQueryNicCapabilityV2(IN P_ADAPTER_T prAdapter)
 	ASSERT(prAdapter);
 
 	/* Get Nic resource information from FW */
-	if (prAdapter->u4FwFeatureFlag0 & FEATURE_FLAG0_NIC_CAPABILITY_V2) {
+	if (!prChipInfo->isNicCapV1 || (prAdapter->u4FwFeatureFlag0 & FEATURE_FLAG0_NIC_CAPABILITY_V2)) {
 
 		DBGLOG(INIT, INFO, "Support NIC_CAPABILITY_V2 feature\n");
 
