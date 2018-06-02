@@ -640,7 +640,7 @@ wlanoidSetP2pPowerSaveProfile(IN struct ADAPTER *prAdapter,
 
 	*pu4SetInfoLen = sizeof(enum PARAM_POWER_MODE);
 	if (u4SetBufferLen < sizeof(enum PARAM_POWER_MODE)) {
-		DBGLOG(REQ, WARN, "Invalid length %ld\n", u4SetBufferLen);
+		DBGLOG(REQ, WARN, "Invalid length %u\n", u4SetBufferLen);
 		return WLAN_STATUS_INVALID_LENGTH;
 	} else if (*(enum PARAM_POWER_MODE *) pvSetBuffer >= Param_PowerModeMax) {
 		DBGLOG(REQ, WARN, "Invalid power mode %d\n", *(enum PARAM_POWER_MODE *) pvSetBuffer);
@@ -748,7 +748,7 @@ wlanoidSetP2pSetNetworkAddress(IN struct ADAPTER *prAdapter,
 		prCmdNetworkAddressList->ucAddressCount = (uint8_t) u4IpAddressCount;
 		prNetworkAddress = prNetworkAddressList->arAddress;
 
-		DBGLOG(INIT, INFO, "u4IpAddressCount (%ld)\n", (int32_t) u4IpAddressCount);
+		DBGLOG(INIT, INFO, "u4IpAddressCount (%u)\n", (int32_t) u4IpAddressCount);
 		for (i = 0, j = 0; i < prNetworkAddressList->u4AddressCount; i++) {
 			if (prNetworkAddress->u2AddressType == PARAM_PROTOCOL_ID_TCP_IP &&
 			    prNetworkAddress->u2AddressLength == sizeof(struct PARAM_NETWORK_ADDRESS_IP)) {
@@ -816,7 +816,7 @@ wlanoidSetP2PMulticastList(IN struct ADAPTER *prAdapter,
 
 	/* The data must be a multiple of the Ethernet address size. */
 	if ((u4SetBufferLen % MAC_ADDR_LEN)) {
-		DBGLOG(REQ, WARN, "Invalid MC list length %ld\n", u4SetBufferLen);
+		DBGLOG(REQ, WARN, "Invalid MC list length %u\n", u4SetBufferLen);
 
 		*pu4SetInfoLen = (((u4SetBufferLen + MAC_ADDR_LEN) - 1) / MAC_ADDR_LEN) * MAC_ADDR_LEN;
 
