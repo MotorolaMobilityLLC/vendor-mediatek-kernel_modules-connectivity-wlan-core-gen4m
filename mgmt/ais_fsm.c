@@ -647,6 +647,12 @@ u_int8_t aisFsmStateInit_RetryJOIN(IN struct ADAPTER *prAdapter, struct STA_RECO
 	if (!prAisFsmInfo->ucAvailableAuthTypes)
 		return FALSE;
 
+	if (prStaRec->u2StatusCode
+			!= STATUS_CODE_AUTH_ALGORITHM_NOT_SUPPORTED) {
+		prAisFsmInfo->ucAvailableAuthTypes = 0;
+		return FALSE;
+	}
+
 	if (prAisFsmInfo->ucAvailableAuthTypes & (uint8_t) AUTH_TYPE_OPEN_SYSTEM) {
 
 		DBGLOG(AIS, INFO, "RETRY JOIN INIT: Retry Authentication with AuthType == OPEN_SYSTEM.\n");
