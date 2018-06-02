@@ -792,6 +792,11 @@ struct _MSDU_INFO_T {
 #define TXD_MSDU_ID_VLD         BIT(15)     /* MSDU valid */
 #define TXD_LEN_AL              BIT(15)     /* A-MSDU last */
 #define TXD_LEN_ML              BIT(14)     /* MSDU last */
+#define TXD_LEN_ML_V2           BIT(15)     /* MSDU last */
+#define TXD_LEN_MASK_V2         BITS(0, 11)
+#define TXD_ADDR2_MASK          BITS(12, 14)
+#define TXD_ADDR2_OFFSET        20
+
 
 typedef struct _TXD_PTR_LEN_T {
 	UINT_32 u4Ptr0;
