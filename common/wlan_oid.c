@@ -12184,10 +12184,10 @@ wlanoidQuerySetRadarDetectMode(IN P_ADAPTER_T prAdapter, IN PVOID pvSetBuffer, I
 
 	prCmdRddOnOffCtrl->ucDfsCtrl = RDD_DET_MODE;
 
-	prCmdRddOnOffCtrl->ucRadarDetectMode = prSetRadarDetectMode->ucRadarDetectMode;
+	prCmdRddOnOffCtrl->ucSetVal = prSetRadarDetectMode->ucRadarDetectMode;
 
 	DBGLOG(INIT, INFO, "MT6632 : wlanoidQuerySetRadarDetectMode -  DFS ctrl: %.d, Radar Detect Mode: %d\n",
-	prCmdRddOnOffCtrl->ucDfsCtrl, prCmdRddOnOffCtrl->ucRadarDetectMode);
+	prCmdRddOnOffCtrl->ucDfsCtrl, prCmdRddOnOffCtrl->ucSetVal);
 
 	rWlanStatus = wlanSendSetQueryCmd(prAdapter,
 					CMD_ID_RDD_ON_OFF_CTRL,
