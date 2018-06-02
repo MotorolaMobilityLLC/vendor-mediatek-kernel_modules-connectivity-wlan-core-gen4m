@@ -162,6 +162,7 @@ struct BUS_INFO mt7663_bus_info = {
 
 	.pdmaSetup = asicPdmaConfig,
 	.enableInterrupt = asicEnableInterrupt,
+	.disableInterrupt = asicDisableInterrupt,
 	.lowPowerOwnRead = asicLowPowerOwnRead,
 	.lowPowerOwnSet = asicLowPowerOwnSet,
 	.lowPowerOwnClear = asicLowPowerOwnClear,

@@ -235,43 +235,9 @@ uint32_t halRxWaitResponse(IN struct ADAPTER *prAdapter, IN uint8_t ucPortIdx,
  * @return (none)
  */
 /*----------------------------------------------------------------------------*/
-void halDefaultEnableInterrupt(IN struct ADAPTER *prAdapter)
-{
-	struct BUS_INFO *prBusInfo = prAdapter->chip_info->bus_info;
-	union WPDMA_INT_MASK IntMask;
-
-	prAdapter->fgIsIntEnable = TRUE;
-
-	HAL_MCR_RD(prAdapter, WPDMA_INT_MSK, &IntMask.word);
-
-	IntMask.field.rx_done_0 = 1;
-	IntMask.field.rx_done_1 = 1;
-	IntMask.field.tx_done = BIT(prBusInfo->tx_ring_fwdl_idx) |
-		BIT(prBusInfo->tx_ring_cmd_idx) |
-		BIT(prBusInfo->tx_ring_data_idx);
-	IntMask.field.tx_coherent = 0;
-	IntMask.field.rx_coherent = 0;
-	IntMask.field.tx_dly_int = 0;
-	IntMask.field.rx_dly_int = 0;
-	IntMask.field.fw_clr_own = 1;
-
-	HAL_MCR_WR(prAdapter, WPDMA_INT_MSK, IntMask.word);
-
-	DBGLOG(HAL, TRACE, "%s [0x%08x]\n", __func__, IntMask.word);
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * @brief enable global interrupt
- *
- * @param prAdapter pointer to the Adapter handler
- *
- * @return (none)
- */
-/*----------------------------------------------------------------------------*/
 void halEnableInterrupt(IN struct ADAPTER *prAdapter)
 {
-	struct BUS_INFO *prBusInfo;
+	struct BUS_INFO *prBusInfo = NULL;
 
 	ASSERT(prAdapter);
 
@@ -279,9 +245,9 @@ void halEnableInterrupt(IN struct ADAPTER *prAdapter)
 
 	if (prBusInfo->enableInterrupt)
 		prBusInfo->enableInterrupt(prAdapter);
-	else
-		halDefaultEnableInterrupt(prAdapter);
-}	/* end of nicEnableInterrupt() */
+
+	prAdapter->fgIsIntEnable = TRUE;
+}
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -294,22 +260,16 @@ void halEnableInterrupt(IN struct ADAPTER *prAdapter)
 /*----------------------------------------------------------------------------*/
 void halDisableInterrupt(IN struct ADAPTER *prAdapter)
 {
-	struct GLUE_INFO *prGlueInfo = NULL;
-	union WPDMA_INT_MASK IntMask;
+	struct BUS_INFO *prBusInfo;
 
 	ASSERT(prAdapter);
 
-	prGlueInfo = prAdapter->prGlueInfo;
+	prBusInfo = prAdapter->chip_info->bus_info;
 
-	IntMask.word = 0;
-
-	HAL_MCR_WR(prAdapter, WPDMA_INT_MSK, IntMask.word);
-	HAL_MCR_RD(prAdapter, WPDMA_INT_MSK, &IntMask.word);
+	if (prBusInfo->disableInterrupt)
+		prBusInfo->disableInterrupt(prAdapter);
 
 	prAdapter->fgIsIntEnable = FALSE;
-
-	DBGLOG(HAL, TRACE, "%s\n", __func__);
-
 }
 
 static u_int8_t halDriverOwnCheckCR4(struct ADAPTER *prAdapter)
@@ -2947,26 +2907,6 @@ void halShowHostCsrInfo(IN struct ADAPTER *prAdapter)
 	HAL_MCR_RD(prAdapter, HOST_CSR_DRIVER_OWN_INFO, &u4Value);
 	DBGLOG(HAL, INFO, "Bit[17]/[16], Get HCLK info: 0x%08x = 0x%08x\n",
 		HOST_CSR_DRIVER_OWN_INFO, u4Value);
-
-	HAL_MCR_RD(prAdapter, HOST_CSR_IRQ_STA, &u4Value);
-	DBGLOG(HAL, INFO, "Get conn_cfg_on IRQ Status: 0x%08x = 0x%08x\n",
-		HOST_CSR_IRQ_STA, u4Value);
-
-	HAL_MCR_RD(prAdapter, HOST_CSR_IRQ_ENA, &u4Value);
-	DBGLOG(HAL, INFO, "Get conn_cfg_on IRQ ENA: 0x%08x = 0x%08x\n",
-		HOST_CSR_IRQ_ENA, u4Value);
-
-	DBGLOG(HAL, INFO, "Get mcu_cfg PC programming Counter log CTL:\n");
-	for (i = 0; i < 32; i++) {
-		HAL_MCR_RD(prAdapter, HOST_CSR_MCU_PROG_COUNT  + i*4, &u4Value);
-		DBGLOG(HAL, INFO, "0x%08x = 0x%08x\n",
-			HOST_CSR_MCU_PROG_COUNT + i*4, u4Value);
-		mdelay(1);
-	}
-
-	HAL_MCR_RD(prAdapter, CONN_CFG_ON_CONN_ON_MISC_ADDR, &u4Value);
-	DBGLOG(HAL, INFO, "DRV_FW_STAT_SYNC: 0x%08x = 0x%08x\n",
-		CONN_CFG_ON_CONN_ON_MISC_ADDR, u4Value);
 }
 
 void halShowDmaschInfo(IN struct ADAPTER *prAdapter)
