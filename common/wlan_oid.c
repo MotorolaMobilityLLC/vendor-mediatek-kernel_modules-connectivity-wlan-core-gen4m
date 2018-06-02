@@ -6200,10 +6200,28 @@ wlanoidSetSwCtrlWrite(IN P_ADAPTER_T prAdapter,
 		ucChannelWidth = (UINT_8)((u4Data & BITS(4, 7)) >> 4);
 		ucBssIndex = (UINT_8) u2SubId;
 
-		/* ucChannelWidth 0:20MHz, 1:40MHz, 2:80MHz, 3:160MHz 4:80+80MHz */
-		DBGLOG(REQ, INFO, "Change BSS[%d] OpMode to BW[%d] Nss[%d]\n",
-			ucBssIndex, ucChannelWidth, ucNss);
-		rlmChangeOperationMode(prAdapter, ucBssIndex, ucChannelWidth, ucNss);
+		if ((u2SubId & BITS(8, 15)) != 0) { /* Debug OP change parameters */
+			DBGLOG(RLM, INFO,
+				"[UT_OP] BSS[%d] IsBwChange[%d] BW[%d] IsNssChange[%d] Nss[%d]\n",
+				ucBssIndex,
+				prAdapter->aprBssInfo[ucBssIndex]->fgIsOpChangeChannelWidth,
+				prAdapter->aprBssInfo[ucBssIndex]->ucOpChangeChannelWidth,
+				prAdapter->aprBssInfo[ucBssIndex]->fgIsOpChangeNss,
+				prAdapter->aprBssInfo[ucBssIndex]->ucOpChangeNss);
+
+			DBGLOG(RLM, INFO,
+				"[UT_OP] current OP mode: w[%d] s1[%d] s2[%d] sco[%d] Nss[%d]\n",
+				prAdapter->aprBssInfo[ucBssIndex]->ucVhtChannelWidth,
+				prAdapter->aprBssInfo[ucBssIndex]->ucVhtChannelFrequencyS1,
+				prAdapter->aprBssInfo[ucBssIndex]->ucVhtChannelFrequencyS2,
+				prAdapter->aprBssInfo[ucBssIndex]->eBssSCO,
+				prAdapter->aprBssInfo[ucBssIndex]->ucNss);
+		} else {
+			/* ucChannelWidth 0:20MHz, 1:40MHz, 2:80MHz, 3:160MHz 4:80+80MHz */
+			DBGLOG(RLM, INFO, "[UT_OP] Change BSS[%d] OpMode to BW[%d] Nss[%d]\n",
+				ucBssIndex, ucChannelWidth, ucNss);
+			rlmChangeOperationMode(prAdapter, ucBssIndex, ucChannelWidth, ucNss, rlmDummyChangeOpHandler);
+		}
 		break;
 
 	case 0x1000:
@@ -11979,7 +11997,7 @@ wlanoidQueryCnm(
 	IN UINT_32 u4QueryBufferLen,
 	OUT PUINT_32 pu4QueryInfoLen)
 {
-	struct _PARAM_GET_CNM_T *prCnmInfo = NULL;
+	struct PARAM_GET_CNM_T *prCnmInfo = NULL;
 
 	DEBUGFUNC("wlanoidQueryLinkSpeed");
 
@@ -11991,12 +12009,12 @@ wlanoidQueryCnm(
 	if (prAdapter->fgIsEnableLpdvt)
 		return WLAN_STATUS_NOT_SUPPORTED;
 
-	*pu4QueryInfoLen = sizeof(struct _PARAM_GET_CNM_T);
+	*pu4QueryInfoLen = sizeof(struct PARAM_GET_CNM_T);
 
-	if (u4QueryBufferLen < sizeof(struct _PARAM_GET_CNM_T))
+	if (u4QueryBufferLen < sizeof(struct PARAM_GET_CNM_T))
 		return WLAN_STATUS_BUFFER_TOO_SHORT;
 
-	prCnmInfo = (struct _PARAM_GET_CNM_T *)pvQueryBuffer;
+	prCnmInfo = (struct PARAM_GET_CNM_T *)pvQueryBuffer;
 
 	return wlanSendSetQueryCmd(prAdapter,
 				   CMD_ID_GET_CNM,
@@ -12005,7 +12023,7 @@ wlanoidQueryCnm(
 				   TRUE,
 				   nicCmdEventQueryCnmInfo,
 				   nicOidCmdTimeoutCommon,
-				   sizeof(struct _PARAM_GET_CNM_T), (P_UINT_8)prCnmInfo,
+				   sizeof(struct PARAM_GET_CNM_T), (P_UINT_8)prCnmInfo,
 				   pvQueryBuffer, u4QueryBufferLen);
 }
 #if CFG_SUPPORT_DBDC

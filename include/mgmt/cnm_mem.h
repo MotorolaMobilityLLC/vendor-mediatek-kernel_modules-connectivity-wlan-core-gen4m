@@ -347,6 +347,22 @@ struct _STA_RECORD_T {
 	UINT_16 u2VhtTxHighestSupportedDataRate;
 	UINT_8 ucVhtOpMode;
 #endif
+	/*------------------------------------------------------------------------------------------*/
+	/* 802.11ac  HT operation info when (prStaRec->ucPhyTypeSet & PHY_TYPE_BIT_HT) is true */
+	/* They have the same definition with fields of information element */
+	/*------------------------------------------------------------------------------------------*/
+	UINT_8 ucHtPeerOpInfo1; /*Backup peer HT OP Info*/
+
+	/*------------------------------------------------------------------------------------------*/
+	/* 802.11ac  VHT operation info when (prStaRec->ucPhyTypeSet & PHY_TYPE_BIT_VHT) is true */
+	/* They have the same definition with fields of information element */
+	/*------------------------------------------------------------------------------------------*/
+	/* Backup peer VHT Op Info */
+	UINT_8 ucVhtOpChannelWidth;
+	UINT_8 ucVhtOpChannelFrequencyS1;
+	UINT_8 ucVhtOpChannelFrequencyS2;
+
+
 	UINT_8 ucRCPI;		/* RCPI of peer */
 
 	UINT_8 ucDTIMPeriod;	/* Target BSS's DTIM Period, we use this
