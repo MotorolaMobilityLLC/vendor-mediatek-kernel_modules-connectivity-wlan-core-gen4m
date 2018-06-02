@@ -464,7 +464,8 @@ u_int8_t halSetDriverOwn(IN struct ADAPTER *prAdapter)
 		prBusInfo->checkDummyReg(prAdapter->prGlueInfo);
 
 	KAL_REC_TIME_END();
-	DBGLOG(INIT, INFO, "DRIVER OWN Done[%u us]\n", KAL_GET_TIME_INTERVAL());
+	DBGLOG(INIT, INFO,
+		"DRIVER OWN Done[%lu us]\n", KAL_GET_TIME_INTERVAL());
 
 	return fgStatus;
 }
