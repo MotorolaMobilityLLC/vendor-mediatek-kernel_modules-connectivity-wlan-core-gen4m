@@ -1132,7 +1132,7 @@ struct PERF_MONITOR_T {
 	unsigned long ulLastRxBytes;
 	unsigned long ulP2PLastRxBytes;
 	unsigned long ulP2PLastTxBytes;
-	unsigned long ulThroughput; /* in bps */
+	uint64_t ulThroughput; /* in bps */
 	unsigned long ulWlanTxTp; /* in Bps */
 	unsigned long ulWlanRxTp; /* in Bps */
 	unsigned long ulP2PTxTp; /* in Bps */

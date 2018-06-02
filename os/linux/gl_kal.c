@@ -74,6 +74,7 @@
 #include "gl_kal.h"
 #include "gl_wext.h"
 #include "precomp.h"
+#include <asm/div64.h>
 #if CFG_SUPPORT_AGPS_ASSIST
 #include <net/netlink.h>
 #endif
@@ -5849,7 +5850,8 @@ void kalPerMonHandler(IN struct ADAPTER *prAdapter, unsigned long ulParam)
 		}
 		prPerMonitor->ulThroughput = txDiffBytes + rxDiffBytes + p2pTxDiffBytes + p2pRxDiffBytes;
 		prPerMonitor->ulThroughput *= MSEC_PER_SEC;
-		prPerMonitor->ulThroughput /= prPerMonitor->u4UpdatePeriod;
+		do_div(prPerMonitor->ulThroughput,
+		       prPerMonitor->u4UpdatePeriod);
 		prPerMonitor->ulThroughput <<= 3;
 
 		if (txDiffBytes)
@@ -5865,7 +5867,7 @@ void kalPerMonHandler(IN struct ADAPTER *prAdapter, unsigned long ulParam)
 			prPerMonitor->ulP2PRxTp = (p2pRxDiffBytes * MSEC_PER_SEC) / prPerMonitor->u4UpdatePeriod;
 
 		DBGLOG(SW4, INFO,
-			"Tput: %ld > [%ld][%ld] [%ld][%ld], Pending[%d], Used[%d] PER[%ld %ld]\n",
+			"Tput: %llu > [%ld][%ld] [%ld][%ld], Pending[%d], Used[%d] PER[%ld %ld]\n",
 			prPerMonitor->ulThroughput,
 			txDiffBytes, rxDiffBytes,
 			p2pTxDiffBytes, p2pRxDiffBytes,
