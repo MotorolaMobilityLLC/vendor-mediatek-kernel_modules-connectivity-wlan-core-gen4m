@@ -109,6 +109,13 @@ UINT_8 p2pRoleFsmInit(IN P_ADAPTER_T prAdapter, IN UINT_8 ucRoleIdx)
 				  &(prP2pRoleFsmInfo->rP2pRoleFsmTimeoutTimer),
 				  (PFN_MGMT_TIMEOUT_FUNC) p2pRoleFsmRunEventTimeout, (ULONG) prP2pRoleFsmInfo);
 
+#if (CFG_SUPPORT_DFS_MASTER == 1)
+		cnmTimerInitTimer(prAdapter,
+				  &(prP2pRoleFsmInfo->rDfsShutDownTimer),
+				  (PFN_MGMT_TIMEOUT_FUNC) p2pRoleFsmRunEventDfsShutDownTimeout,
+				  (ULONG) prP2pRoleFsmInfo);
+#endif
+
 		prP2pBssInfo = cnmGetBssInfoAndInit(prAdapter, NETWORK_TYPE_P2P, FALSE);
 
 		if (!prP2pBssInfo) {
@@ -247,6 +254,10 @@ VOID p2pRoleFsmUninit(IN P_ADAPTER_T prAdapter, IN UINT_8 ucRoleIdx)
 
 		/* ensure the timer be stopped */
 		cnmTimerStopTimer(prAdapter, &(prP2pRoleFsmInfo->rP2pRoleFsmTimeoutTimer));
+
+#if (CFG_SUPPORT_DFS_MASTER == 1)
+		cnmTimerStopTimer(prAdapter, &(prP2pRoleFsmInfo->rDfsShutDownTimer));
+#endif
 
 		if (prP2pRoleFsmInfo)
 			kalMemFree(prP2pRoleFsmInfo, VIR_MEM_TYPE, sizeof(P2P_ROLE_FSM_INFO_T));
@@ -447,6 +458,7 @@ VOID p2pRoleFsmRunEventTimeout(IN P_ADAPTER_T prAdapter, IN ULONG ulParamPtr)
 			p2pRoleFsmStateTransition(prAdapter, prP2pRoleFsmInfo, P2P_ROLE_STATE_IDLE);
 			kalP2PCacFinishedUpdate(prAdapter->prGlueInfo, prP2pRoleFsmInfo->ucRoleIndex);
 			p2pFuncSetDfsState(DFS_STATE_ACTIVE);
+			cnmTimerStartTimer(prAdapter, &(prP2pRoleFsmInfo->rDfsShutDownTimer), 5000);
 			break;
 #endif
 		default:
@@ -890,6 +902,13 @@ VOID p2pRoleFsmRunEventStartAP(IN P_ADAPTER_T prAdapter, IN P_MSG_HDR_T prMsgHdr
 			cnmTimerStopTimer(prAdapter, &(prP2pRoleFsmInfo->rP2pRoleFsmTimeoutTimer));
 		}
 
+#if (CFG_SUPPORT_DFS_MASTER == 1)
+		if (timerPendingTimer(&(prP2pRoleFsmInfo->rDfsShutDownTimer))) {
+			DBGLOG(P2P, INFO, "p2pRoleFsmRunEventStartAP: Stop DFS shut down timer.\n");
+			cnmTimerStopTimer(prAdapter, &(prP2pRoleFsmInfo->rDfsShutDownTimer));
+		}
+#endif
+
 #if CFG_SUPPORT_DBDC
 		cnmDbdcEnableDecision(prAdapter, prP2pBssInfo->ucBssIndex, prP2pConnReqInfo->rChannelInfo.eBand);
 		cnmGetDbdcCapability(prAdapter,
@@ -1141,6 +1160,11 @@ VOID p2pRoleFsmRunEventDfsCac(IN P_ADAPTER_T prAdapter, IN P_MSG_HDR_T prMsgHdr)
 			break;
 		}
 
+		if (timerPendingTimer(&(prP2pRoleFsmInfo->rDfsShutDownTimer))) {
+			DBGLOG(P2P, INFO, "p2pRoleFsmRunEventDfsCac: Stop DFS shut down timer.\n");
+			cnmTimerStopTimer(prAdapter, &(prP2pRoleFsmInfo->rDfsShutDownTimer));
+		}
+
 		prP2pBssInfo = prAdapter->aprBssInfo[prP2pRoleFsmInfo->ucBssIndex];
 
 		prP2pConnReqInfo = &(prP2pRoleFsmInfo->rConnReqInfo);
@@ -1237,6 +1261,8 @@ VOID p2pRoleFsmRunEventRadarDet(IN P_ADAPTER_T prAdapter, IN P_MSG_HDR_T prMsgHd
 
 		p2pFuncShowRadarInfo(prAdapter, prMsgP2pRddDetMsg->ucBssIndex);
 
+		cnmTimerStartTimer(prAdapter, &(prP2pRoleFsmInfo->rDfsShutDownTimer), 5000);
+
 	} while (FALSE);
 	if (prMsgHdr)
 		cnmMemFree(prAdapter, prMsgHdr);
@@ -1298,6 +1324,18 @@ VOID p2pRoleFsmRunEventCsaDone(IN P_ADAPTER_T prAdapter, IN P_MSG_HDR_T prMsgHdr
 	if (prMsgHdr)
 		cnmMemFree(prAdapter, prMsgHdr);
 }				/*p2pRoleFsmRunEventCsaDone*/
+
+VOID p2pRoleFsmRunEventDfsShutDownTimeout(IN P_ADAPTER_T prAdapter, IN ULONG ulParamPtr)
+{
+	P_P2P_ROLE_FSM_INFO_T prP2pRoleFsmInfo = (P_P2P_ROLE_FSM_INFO_T) ulParamPtr;
+
+	DBGLOG(P2P, INFO, "p2pRoleFsmRunEventDfsShutDownTimeout: DFS shut down.\n");
+
+	p2pFuncSetDfsState(DFS_STATE_INACTIVE);
+	p2pFuncStopRdd(prAdapter, prP2pRoleFsmInfo->ucBssIndex);
+
+}				/* p2pRoleFsmRunEventDfsShutDownTimeout */
+
 #endif
 
 
