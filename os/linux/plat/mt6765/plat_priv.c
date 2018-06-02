@@ -9,7 +9,7 @@
 * See http://www.gnu.org/licenses/gpl-2.0.html for more details.
 */
 
-#include <legacy_controller.h>
+#include <cpu_ctrl.h>
 #include <linux/pm_qos.h>
 
 #include "precomp.h"
