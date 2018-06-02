@@ -1070,7 +1070,9 @@ VOID p2pRoleFsmRunEventStopAP(IN P_ADAPTER_T prAdapter, IN P_MSG_HDR_T prMsgHdr)
 		if (!prP2pBssInfo)
 			break;
 
-
+#if (CFG_SUPPORT_DFS_MASTER == 1)
+		p2pFuncStopRdd(prAdapter, prP2pBssInfo->ucBssIndex);
+#endif
 
 		if (prP2pRoleFsmInfo->eCurrentState != P2P_ROLE_STATE_REQING_CHANNEL) {
 			p2pFuncStopGO(prAdapter, prP2pBssInfo);
