@@ -1447,6 +1447,10 @@ struct ADAPTER {
 #endif /* CFG_SUPPORT_LOWLATENCY_MODE */
 
 	bool fgEnHifDbgInfo;
+
+#if CFG_SUPPORT_OSHARE
+	bool fgEnOshareMode;
+#endif
 };				/* end of _ADAPTER_T */
 
 /*******************************************************************************
