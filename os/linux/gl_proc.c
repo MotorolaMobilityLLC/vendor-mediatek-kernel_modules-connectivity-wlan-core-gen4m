@@ -130,6 +130,7 @@
  */
 static struct GLUE_INFO *g_prGlueInfo_proc;
 static uint32_t u4McrOffset;
+static struct proc_dir_entry *gprProcNetRoot;
 static struct proc_dir_entry *gprProcRoot;
 static uint8_t aucDbModuleName[][PROC_DBG_LEVEL_MAX_DISPLAY_STR_LEN] = {
 	"INIT", "HAL", "INTR", "REQ", "TX", "RX", "RFTEST", "EMU",
@@ -146,6 +147,13 @@ static uint8_t g_aucProcBuf[3000];
  * should not be used by other function
  */
 static uint32_t g_u4NextDriverReadLen;
+
+#define DRV_STATUS_BUF_LEN 2048
+static wait_queue_head_t waitqDrvStatus;
+static struct mutex drvStatusLock;
+static uint8_t aucDrvStatus[DRV_STATUS_BUF_LEN];
+static int64_t i8WrStatusPos;
+static u_int8_t fgDrvStatus;
 /*******************************************************************************
  *                                 M A C R O S
  *******************************************************************************
@@ -1173,6 +1181,354 @@ static const struct file_operations auto_perf_ops = {
 	.write = procAutoPerfCfgWrite,
 };
 
+void glWriteStatus(uint8_t **ppucWrPos, uint32_t *pu4RemainLen, uint8_t *pucFwt,
+		   ...)
+{
+#define TEMP_BUF_LEN 280
+	uint8_t *pucTemp = NULL;
+	int32_t i4BufUsed = 0;
+	int32_t i4TimeUsed = 0;
+	va_list ap;
+	struct timeval tval;
+	struct rtc_time tm;
+	static uint8_t aucBuf[TEMP_BUF_LEN];
+
+	pucTemp = &aucBuf[0];
+	do_gettimeofday(&tval);
+	tval.tv_sec -= sys_tz.tz_minuteswest * 60;
+	rtc_time_to_tm(tval.tv_sec, &tm);
+	i4TimeUsed = kalSnprintf(
+		pucTemp, TEMP_BUF_LEN, "%04d-%02d-%02d %02d:%02d:%02d.%03d ",
+		tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour,
+		tm.tm_min, tm.tm_sec, (int32_t)(tval.tv_usec / USEC_PER_MSEC));
+	if (i4TimeUsed < 0) {
+		DBGLOG(INIT, INFO, "error to sprintf time\n");
+		return;
+	}
+	va_start(ap, pucFwt);
+	i4BufUsed = vsnprintf(pucTemp + i4TimeUsed, TEMP_BUF_LEN - i4TimeUsed,
+			      pucFwt, ap);
+	va_end(ap);
+	if (i4BufUsed < 0) {
+		DBGLOG(INIT, INFO, "error to sprintf %s\n", pucFwt);
+		return;
+	}
+	i4BufUsed += i4TimeUsed;
+
+	if (i4BufUsed > *pu4RemainLen) {
+		kalMemCopy(*ppucWrPos, pucTemp, *pu4RemainLen);
+		pucTemp += *pu4RemainLen;
+		i4BufUsed -= *pu4RemainLen;
+		i8WrStatusPos += (int64_t)*pu4RemainLen;
+		*pu4RemainLen = DRV_STATUS_BUF_LEN;
+		*ppucWrPos = &aucDrvStatus[0];
+	}
+	kalMemCopy(*ppucWrPos, pucTemp, i4BufUsed);
+	*ppucWrPos += i4BufUsed;
+	*pu4RemainLen -= i4BufUsed;
+	i8WrStatusPos += (int64_t)i4BufUsed;
+}
+
+/* Provide a real-time monitor mechanism to end-user to monitor wlan status */
+void glNotifyDrvStatus(enum DRV_STATUS_T eDrvStatus, void *pvInfo)
+{
+	uint32_t u4WrLen = i8WrStatusPos % DRV_STATUS_BUF_LEN;
+	uint32_t u4RemainLen = DRV_STATUS_BUF_LEN - u4WrLen;
+	uint8_t *pucRealWrPos = &aucDrvStatus[u4WrLen];
+#define WRITE_STATUS(_fmt, ...)\
+	glWriteStatus(&pucRealWrPos, &u4RemainLen, _fmt, ##__VA_ARGS__)
+
+	if (!fgDrvStatus)
+		return;
+
+	mutex_lock(&drvStatusLock);
+	switch (eDrvStatus) {
+	case SND_BTM_QUERY:
+		WRITE_STATUS("Send BTM query to %pM\n", (uint8_t *)pvInfo);
+		break;
+	case SND_NEI_REQ:
+		WRITE_STATUS("Send Neighbor req to %pM\n", (uint8_t *)pvInfo);
+		break;
+	case SND_NEI_REQ_TIMEOUT:
+		WRITE_STATUS("Neighbor req is timeout.(100ms)\n");
+		break;
+	case UNSOL_BTM_REQ:
+	case SOL_BTM_REQ:
+	{
+		struct AIS_SPECIFIC_BSS_INFO *prAisSpecBssInfo =
+			(struct AIS_SPECIFIC_BSS_INFO *)pvInfo;
+		struct LINK *prApList =
+			&prAisSpecBssInfo->rNeighborApList.rUsingLink;
+		struct NEIGHBOR_AP_T *prNeighborAP = NULL;
+
+		if (!prAisSpecBssInfo) {
+			DBGLOG(INIT, ERROR, "prAisSpecBssInfo is NULL\n");
+			break;
+		}
+		WRITE_STATUS("Receive %s Btm Req with Mode:%d\n",
+			     eDrvStatus == SOL_BTM_REQ ? "solicited"
+						       : "unsolicited",
+			     prAisSpecBssInfo->rBTMParam.ucRequestMode);
+		if (!(prAisSpecBssInfo->rBTMParam.ucRequestMode &
+		      BTM_REQ_MODE_CAND_INCLUDED_BIT))
+			break;
+		WRITE_STATUS(
+			"Candidate List(Total %u), Bssid/PrefPre/Pref/Ch\n",
+			prApList->u4NumElem);
+		LINK_FOR_EACH_ENTRY(prNeighborAP, prApList, rLinkEntry,
+				    struct NEIGHBOR_AP_T)
+		{
+			WRITE_STATUS("%pM/%d/%d/%d\n", prNeighborAP->aucBssid,
+				     prNeighborAP->fgPrefPresence,
+				     prNeighborAP->ucPreference,
+				     prNeighborAP->ucChannel);
+		}
+		break;
+	}
+	case NEIGHBOR_AP_REP:
+	{
+		struct AIS_SPECIFIC_BSS_INFO *prAisSpecBssInfo =
+			(struct AIS_SPECIFIC_BSS_INFO *)pvInfo;
+		struct LINK *prApList =
+			&prAisSpecBssInfo->rNeighborApList.rUsingLink;
+		struct NEIGHBOR_AP_T *prNeighborAP = NULL;
+
+		if (!prAisSpecBssInfo) {
+			DBGLOG(INIT, ERROR, "prAisSpecBssInfo is NULL\n");
+			break;
+		}
+		WRITE_STATUS(
+			"Receive Neighbor Report\nList(Total %u), Bssid/PrefPre/Pref/Ch\n",
+			     prApList->u4NumElem);
+		LINK_FOR_EACH_ENTRY(prNeighborAP, prApList, rLinkEntry,
+				    struct NEIGHBOR_AP_T)
+		{
+			WRITE_STATUS("%pM/%d/%d/%d\n", prNeighborAP->aucBssid,
+				     prNeighborAP->fgPrefPresence,
+				     prNeighborAP->ucPreference,
+				     prNeighborAP->ucChannel);
+		}
+		break;
+	}
+	case SND_BTM_RSP:
+	{
+		struct BSS_TRANSITION_MGT_PARAM_T *prBtm =
+			(struct BSS_TRANSITION_MGT_PARAM_T *)pvInfo;
+
+		if (!prBtm) {
+			DBGLOG(INIT, ERROR, "prBtm is NULL\n");
+			break;
+		}
+		if (prBtm->ucStatusCode == BSS_TRANSITION_MGT_STATUS_ACCEPT)
+			WRITE_STATUS("Send Btm Response, Roaming Target:%pM\n",
+				     prBtm->aucTargetBssid);
+		else
+			WRITE_STATUS("Send Btm Response, Reject reason:%d\n",
+				     prBtm->ucStatusCode);
+		break;
+	}
+	case CONNECT_AP:
+		WRITE_STATUS("Connect to %pM\n", (uint8_t *)pvInfo);
+		break;
+	case JOIN_FAIL:
+	{
+		struct STA_RECORD *prStaRec = (struct STA_RECORD *)pvInfo;
+
+		if (!prStaRec) {
+			DBGLOG(INIT, ERROR, "prStaRec is NULL\n");
+			break;
+		}
+		WRITE_STATUS("Connect with %pM was rejected %d\n",
+			     prStaRec->aucMacAddr, prStaRec->u2StatusCode);
+		break;
+	}
+	case DISCONNECT_AP:
+	{
+		struct BSS_INFO *prBssInfo = (struct BSS_INFO *)pvInfo;
+
+		if (!prBssInfo)
+			WRITE_STATUS("Disconnected reason: unknown\n");
+		else
+			WRITE_STATUS("Disconnected reason: %d, bssid %pM\n",
+				     prBssInfo->u2DeauthReason,
+				     prBssInfo->aucBSSID);
+		break;
+	}
+	case BEACON_TIMEOUT:
+		WRITE_STATUS("Beacon timeout with %pM\n", (uint8_t *)pvInfo);
+		break;
+	case RCV_FW_ROAMING:
+		WRITE_STATUS("%s\n", "Receive FW roaming event");
+		break;
+	case ROAMING_SCAN_START:
+	{
+		struct MSG_SCN_SCAN_REQ_V2 *prMsg =
+			(struct MSG_SCN_SCAN_REQ_V2 *)pvInfo;
+
+		if (!prMsg) {
+			DBGLOG(INIT, ERROR, "prMsg is NULL\n");
+			break;
+		}
+		WRITE_STATUS(
+			"Roaming Scan Start, eScanChannel=%d(0:FULL,1:2.4G,2:5G,3:P2P_SOCIAL,4:SPECIFIED), ChannelListNum:%d, ChannelDwellTime=%d\n",
+			prMsg->eScanChannel, prMsg->ucChannelListNum,
+			prMsg->u2ChannelDwellTime);
+		if (prMsg->eScanChannel == SCAN_CHANNEL_SPECIFIED) {
+			if (prMsg->u2ChannelDwellTime > 0)
+				WRITE_STATUS(
+					"Roaming Scan channel num:%d, dwell time %d\n",
+					prMsg->ucChannelListNum,
+					prMsg->u2ChannelDwellTime);
+			else
+				WRITE_STATUS(
+					"Roaming Scan channel num:%d, default dwell time\n",
+					     prMsg->ucChannelListNum);
+		} else
+			WRITE_STATUS(
+				"Roaming Full Scan, excluded channel num:%d\n",
+				prMsg->ucChannelListNum);
+		break;
+	}
+	case ROAMING_SCAN_DONE:
+		WRITE_STATUS("Roaming Scan done\n");
+		break;
+	default:
+		break;
+	}
+	mutex_unlock(&drvStatusLock);
+	/* Wake up all readers if at least one is waiting */
+	if (!list_empty(&waitqDrvStatus.task_list))
+		wake_up_interruptible(&waitqDrvStatus);
+}
+
+/* Read callback function
+** *f_pos: read position of current reader, max size: 4G * 4G bytes
+** i8WrStatusPos: writing position of writer, max size: 4G * 4G bytes
+*/
+static ssize_t procReadDrvStatus(struct file *filp, char __user *buf,
+				 size_t count, loff_t *f_pos)
+{
+#define NOT_ENABLE "Driver Status is not enabled"
+#define TO_ENABLE "echo enable > /proc/wlan/status to enable"
+#define TO_DISABLE "echo disable > /proc/wlan/status to disable\n"
+	uint8_t *pucRdPos = NULL;
+	uint32_t u4CopySize = 0;
+	int32_t ret = -1;
+
+	while (ret) {
+		ret = wait_event_interruptible(
+			waitqDrvStatus,
+			(!fgDrvStatus || i8WrStatusPos != *f_pos));
+		if (ret == -ERESTARTSYS) {
+			DBGLOG(INIT, INFO,
+			       "May be pending signal, return and let user space handle it\n");
+			return 1;
+		}
+	}
+
+	if (!fgDrvStatus) {
+		uint8_t *pucErrMsg = NOT_ENABLE"\n"TO_ENABLE"\n"TO_DISABLE;
+		uint32_t u4Len = kalStrLen(pucErrMsg);
+
+		if (*f_pos == u4Len)
+			return 0;
+		if (copy_to_user(buf, pucErrMsg, u4Len)) {
+			DBGLOG(INIT, WARN, "copy_to_user error\n");
+			return -EFAULT;
+		}
+		*f_pos = u4Len;
+		return u4Len;
+	}
+
+	if (i8WrStatusPos < *f_pos) {
+		DBGLOG(INIT, INFO, "exit WR:%lld, RD:%lld\n", i8WrStatusPos,
+		       *f_pos);
+		return 0;
+	}
+	mutex_lock(&drvStatusLock);
+	if (*f_pos > 0) {/* Read again */
+		if (i8WrStatusPos - *f_pos > DRV_STATUS_BUF_LEN) {
+			u4CopySize =
+				(uint32_t)(i8WrStatusPos % DRV_STATUS_BUF_LEN);
+			pucRdPos = &aucDrvStatus[u4CopySize];
+			u4CopySize = DRV_STATUS_BUF_LEN - u4CopySize;
+			DBGLOG(INIT, INFO,
+			       "Status Info Lost %lld bytes, WR:%lld, RD:%lld, MaxRd:%u bytes\n",
+			       (i8WrStatusPos - *f_pos - DRV_STATUS_BUF_LEN),
+			       i8WrStatusPos, *f_pos, u4CopySize);
+			*f_pos = i8WrStatusPos - DRV_STATUS_BUF_LEN;
+		} else {
+			u4CopySize = (uint32_t)(*f_pos % DRV_STATUS_BUF_LEN);
+			pucRdPos = &aucDrvStatus[u4CopySize];
+			if (i8WrStatusPos - *f_pos >
+			    DRV_STATUS_BUF_LEN - u4CopySize)
+				u4CopySize = DRV_STATUS_BUF_LEN - u4CopySize;
+			else
+				u4CopySize = i8WrStatusPos - *f_pos;
+			DBGLOG(INIT, INFO,
+			       "Continue to read, WR:%lld, RD:%lld, MaxRd:%u bytes\n",
+			       i8WrStatusPos, *f_pos, u4CopySize);
+		}
+	} else {/* The first time t read for current reader */
+		if (i8WrStatusPos > DRV_STATUS_BUF_LEN) {
+			u4CopySize =
+				(uint32_t)(i8WrStatusPos % DRV_STATUS_BUF_LEN);
+			pucRdPos = &aucDrvStatus[u4CopySize];
+			u4CopySize = DRV_STATUS_BUF_LEN - u4CopySize;
+			*f_pos = i8WrStatusPos - DRV_STATUS_BUF_LEN;
+		} else {
+			pucRdPos = &aucDrvStatus[0];
+			u4CopySize = (uint32_t)i8WrStatusPos;
+		}
+		DBGLOG(INIT, INFO,
+		       "First time to read, WR:%lld, RD:%lld, MaxRd:%u bytes\n",
+		       i8WrStatusPos, *f_pos, u4CopySize);
+	}
+	mutex_unlock(&drvStatusLock);
+
+	if (u4CopySize > count)
+		u4CopySize = count;
+	DBGLOG(INIT, TRACE, "Read %u bytes\n", u4CopySize);
+	if (copy_to_user(buf, pucRdPos, u4CopySize)) {
+		DBGLOG(INIT, WARN, "copy_to_user error\n");
+		return -EFAULT;
+	}
+	*f_pos += u4CopySize;
+	return (ssize_t)u4CopySize;
+}
+
+static ssize_t procDrvStatusCfg(struct file *file, const char *buffer,
+				size_t count, loff_t *data)
+{
+	if (count >= sizeof(g_aucProcBuf))
+		count = sizeof(g_aucProcBuf) - 1;
+
+	kalMemSet(g_aucProcBuf, 0, sizeof(g_aucProcBuf));
+
+	if (copy_from_user(g_aucProcBuf, buffer, count)) {
+		DBGLOG(INIT, WARN, "copy_from_user error\n");
+		return -EFAULT;
+	}
+
+	g_aucProcBuf[count] = '\0';
+
+	if (!kalStrnCmp(g_aucProcBuf, "enable", 6)) {
+		fgDrvStatus = TRUE;
+		i8WrStatusPos = 0;
+		return 6;
+	} else if (!kalStrnCmp(g_aucProcBuf, "disable", 7)) {
+		fgDrvStatus = FALSE;
+		wake_up_interruptible(&waitqDrvStatus);
+		return 7;
+	}
+	return -EINVAL;
+}
+
+static const struct file_operations drv_status_ops = {
+	.owner = THIS_MODULE,
+	.read = procReadDrvStatus,
+	.write = procDrvStatusCfg,
+};
 
 int32_t procInitFs(void)
 {
@@ -1180,25 +1536,32 @@ int32_t procInitFs(void)
 
 	g_u4NextDriverReadLen = 0;
 
+	/* Create folder /proc/wlan/ to avoid dump by other processes,
+	** like netdiag
+	*/
+	gprProcRoot = proc_mkdir(PROC_ROOT_NAME, NULL);
+	if (!gprProcRoot) {
+		pr_err("gprProcRoot == NULL\n");
+		return -ENOENT;
+	}
+
 	if (init_net.proc_net == (struct proc_dir_entry *)NULL) {
 		pr_err("init proc fs fail: proc_net == NULL\n");
 		return -ENOENT;
 	}
 
-	/*
-	 * Directory: Root (/proc/net/wlan0)
-	 */
-
-	gprProcRoot = proc_mkdir(PROC_ROOT_NAME, init_net.proc_net);
-	if (!gprProcRoot) {
-		pr_err("gprProcRoot == NULL\n");
+	/* Create folder /proc/net/wlan */
+	gprProcNetRoot = proc_mkdir(PROC_ROOT_NAME, init_net.proc_net);
+	if (!gprProcNetRoot) {
+		pr_err("gprProcNetRoot == NULL\n");
 		return -ENOENT;
 	}
-	proc_set_user(gprProcRoot, KUIDT_INIT(PROC_UID_SHELL),
+	proc_set_user(gprProcNetRoot, KUIDT_INIT(PROC_UID_SHELL),
 		      KGIDT_INIT(PROC_GID_WIFI));
 
 	prEntry =
-	    proc_create(PROC_DBG_LEVEL_NAME, 0664, gprProcRoot, &dbglevel_ops);
+	    proc_create(PROC_DBG_LEVEL_NAME, 0664, gprProcNetRoot,
+		&dbglevel_ops);
 	if (prEntry == NULL) {
 		pr_err("Unable to create /proc entry dbgLevel\n\r");
 		return -1;
@@ -1207,7 +1570,8 @@ int32_t procInitFs(void)
 		      KGIDT_INIT(PROC_GID_WIFI));
 
 	prEntry =
-	    proc_create(PROC_AUTO_PERF_CFG, 0664, gprProcRoot, &auto_perf_ops);
+	    proc_create(PROC_AUTO_PERF_CFG, 0664, gprProcNetRoot,
+		&auto_perf_ops);
 	if (prEntry == NULL) {
 		DBGLOG(INIT, ERROR, "Unable to create /proc entry %s/n",
 		       PROC_AUTO_PERF_CFG);
@@ -1216,14 +1580,27 @@ int32_t procInitFs(void)
 	proc_set_user(prEntry, KUIDT_INIT(PROC_UID_SHELL),
 		      KGIDT_INIT(PROC_GID_WIFI));
 
+	init_waitqueue_head(&waitqDrvStatus);
+	mutex_init(&drvStatusLock);
+	fgDrvStatus = FALSE;
+	prEntry =
+	    proc_create(PROC_DRV_STATUS, 0664, gprProcRoot, &drv_status_ops);
+	if (!prEntry) {
+		DBGLOG(INIT, ERROR, "Unable to create /proc entry %s/n",
+		       PROC_DRV_STATUS);
+		return -1;
+	}
+	proc_set_user(prEntry, KUIDT_INIT(PROC_UID_SHELL),
+		      KGIDT_INIT(PROC_GID_WIFI));
 	return 0;
 }				/* end of procInitProcfs() */
 
 int32_t procUninitProcFs(void)
 {
 #if KERNEL_VERSION(3, 9, 0) <= LINUX_VERSION_CODE
-	remove_proc_subtree(PROC_AUTO_PERF_CFG, gprProcRoot);
-	remove_proc_subtree(PROC_DBG_LEVEL_NAME, gprProcRoot);
+	remove_proc_subtree(PROC_AUTO_PERF_CFG, gprProcNetRoot);
+	remove_proc_subtree(PROC_DBG_LEVEL_NAME, gprProcNetRoot);
+	remove_proc_subtree(PROC_DRV_STATUS, gprProcRoot);
 
 	/*
 	 * move PROC_ROOT_NAME to last since it's root directory of the others
@@ -1231,9 +1608,9 @@ int32_t procUninitProcFs(void)
 	 */
 	remove_proc_subtree(PROC_ROOT_NAME, init_net.proc_net);
 #else
-	remove_proc_entry(PROC_AUTO_PERF_CFG, gprProcRoot);
-	remove_proc_entry(PROC_DBG_LEVEL_NAME, gprProcRoot);
-
+	remove_proc_entry(PROC_AUTO_PERF_CFG, gprProcNetRoot);
+	remove_proc_entry(PROC_DBG_LEVEL_NAME, gprProcNetRoot);
+	remove_proc_entry(PROC_DRV_STATUS, gprProcRoot);
 	/*
 	 * move PROC_ROOT_NAME to last since it's root directory of the others
 	 * incorrect sequence would cause use-after-free error
@@ -1256,18 +1633,18 @@ int32_t procUninitProcFs(void)
 /*----------------------------------------------------------------------------*/
 int32_t procRemoveProcfs(void)
 {
-	remove_proc_entry(PROC_MCR_ACCESS, gprProcRoot);
-	remove_proc_entry(PROC_DRIVER_CMD, gprProcRoot);
-	remove_proc_entry(PROC_CFG, gprProcRoot);
-	remove_proc_entry(PROC_EFUSE_DUMP, gprProcRoot);
+	remove_proc_entry(PROC_MCR_ACCESS, gprProcNetRoot);
+	remove_proc_entry(PROC_DRIVER_CMD, gprProcNetRoot);
+	remove_proc_entry(PROC_CFG, gprProcNetRoot);
+	remove_proc_entry(PROC_EFUSE_DUMP, gprProcNetRoot);
 
-	remove_proc_entry(PROC_PKT_DELAY_DBG, gprProcRoot);
+	remove_proc_entry(PROC_PKT_DELAY_DBG, gprProcNetRoot);
 #if CFG_SUPPORT_SET_CAM_BY_PROC
-	remove_proc_entry(PROC_SET_CAM, gprProcRoot);
+	remove_proc_entry(PROC_SET_CAM, gprProcNetRoot);
 #endif
 #if CFG_SUPPORT_DEBUG_FS
-	remove_proc_entry(PROC_ROAM_PARAM, gprProcRoot);
-	remove_proc_entry(PROC_COUNTRY, gprProcRoot);
+	remove_proc_entry(PROC_ROAM_PARAM, gprProcNetRoot);
+	remove_proc_entry(PROC_COUNTRY, gprProcNetRoot);
 #endif
 
 	return 0;
@@ -1280,14 +1657,14 @@ int32_t procCreateFsEntry(struct GLUE_INFO *prGlueInfo)
 	DBGLOG(INIT, INFO, "[%s]\n", __func__);
 	g_prGlueInfo_proc = prGlueInfo;
 
-	prEntry = proc_create(PROC_MCR_ACCESS, 0664, gprProcRoot, &mcr_ops);
+	prEntry = proc_create(PROC_MCR_ACCESS, 0664, gprProcNetRoot, &mcr_ops);
 	if (prEntry == NULL) {
 		DBGLOG(INIT, ERROR, "Unable to create /proc entry mcr\n\r");
 		return -1;
 	}
 
 	prEntry =
-	    proc_create(PROC_PKT_DELAY_DBG, 0664, gprProcRoot,
+	    proc_create(PROC_PKT_DELAY_DBG, 0664, gprProcNetRoot,
 			&proc_pkt_delay_dbg_ops);
 	if (prEntry == NULL) {
 		DBGLOG(INIT, ERROR,
@@ -1299,7 +1676,7 @@ int32_t procCreateFsEntry(struct GLUE_INFO *prGlueInfo)
 
 #if CFG_SUPPORT_SET_CAM_BY_PROC
 	prEntry =
-	    proc_create(PROC_SET_CAM, 0664, gprProcRoot, &proc_set_cam_ops);
+	    proc_create(PROC_SET_CAM, 0664, gprProcNetRoot, &proc_set_cam_ops);
 	if (prEntry == NULL) {
 		DBGLOG(INIT, ERROR, "Unable to create /proc entry SetCAM\n\r");
 		return -1;
@@ -1308,13 +1685,13 @@ int32_t procCreateFsEntry(struct GLUE_INFO *prGlueInfo)
 		      KGIDT_INIT(PROC_GID_WIFI));
 #endif
 #if CFG_SUPPORT_DEBUG_FS
-	prEntry = proc_create(PROC_ROAM_PARAM, 0664, gprProcRoot, &roam_ops);
+	prEntry = proc_create(PROC_ROAM_PARAM, 0664, gprProcNetRoot, &roam_ops);
 	if (prEntry == NULL) {
 		DBGLOG(INIT, ERROR,
 		       "Unable to create /proc entry roam_param\n\r");
 		return -1;
 	}
-	prEntry = proc_create(PROC_COUNTRY, 0664, gprProcRoot, &country_ops);
+	prEntry = proc_create(PROC_COUNTRY, 0664, gprProcNetRoot, &country_ops);
 	if (prEntry == NULL) {
 		DBGLOG(INIT, ERROR, "Unable to create /proc entry country\n\r");
 		return -1;
@@ -1323,20 +1700,22 @@ int32_t procCreateFsEntry(struct GLUE_INFO *prGlueInfo)
 #if	CFG_SUPPORT_EASY_DEBUG
 
 	prEntry =
-		proc_create(PROC_DRIVER_CMD, 0664, gprProcRoot, &drivercmd_ops);
+		proc_create(PROC_DRIVER_CMD, 0664, gprProcNetRoot,
+			&drivercmd_ops);
 	if (prEntry == NULL) {
 		pr_err("Unable to create /proc entry for driver command\n\r");
 		return -1;
 	}
 
-	prEntry = proc_create(PROC_CFG, 0664, gprProcRoot, &cfg_ops);
+	prEntry = proc_create(PROC_CFG, 0664, gprProcNetRoot, &cfg_ops);
 	if (prEntry == NULL) {
 		pr_err("Unable to create /proc entry for driver cfg\n\r");
 		return -1;
 	}
 
 	prEntry =
-		proc_create(PROC_EFUSE_DUMP, 0664, gprProcRoot, &efusedump_ops);
+		proc_create(PROC_EFUSE_DUMP, 0664, gprProcNetRoot,
+			&efusedump_ops);
 	if (prEntry == NULL) {
 		pr_err("Unable to create /proc entry efuse\n\r");
 		return -1;
@@ -1696,7 +2075,7 @@ static const struct file_operations fwcfg_ops = {
 
 int32_t cfgRemoveProcEntry(void)
 {
-	remove_proc_entry(PROC_CFG_NAME, gprProcRoot);
+	remove_proc_entry(PROC_CFG_NAME, gprProcNetRoot);
 	return 0;
 }
 
@@ -1704,10 +2083,10 @@ int32_t cfgCreateProcEntry(struct GLUE_INFO *prGlueInfo)
 {
 	struct proc_dir_entry *prEntry;
 
-	prGlueInfo->pProcRoot = gprProcRoot;
+	prGlueInfo->pProcRoot = gprProcNetRoot;
 	gprGlueInfo = prGlueInfo;
 
-	prEntry = proc_create(PROC_CFG_NAME, 0664, gprProcRoot, &fwcfg_ops);
+	prEntry = proc_create(PROC_CFG_NAME, 0664, gprProcNetRoot, &fwcfg_ops);
 	if (prEntry == NULL) {
 		DBGLOG(INIT, ERROR, "Unable to create /proc entry cfg\n\r");
 		return -1;

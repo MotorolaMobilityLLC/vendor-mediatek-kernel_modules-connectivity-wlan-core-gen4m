@@ -447,8 +447,8 @@ struct GL_SCAN_CACHE_INFO {
 
 struct FT_IES {
 	uint16_t u2MDID;
-	struct IE_MOBILITY_DOMAIN_T *prMDIE;
-	struct IE_FAST_TRANSITION_T *prFTIE;
+	struct IE_MOBILITY_DOMAIN *prMDIE;
+	struct IE_FAST_TRANSITION *prFTIE;
 	struct IE_TIMEOUT_INTERVAL *prTIE;
 	struct RSN_INFO_ELEM *prRsnIE;
 	uint8_t *pucIEBuf;

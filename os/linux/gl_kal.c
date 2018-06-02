@@ -1228,8 +1228,11 @@ kalIndicateStatusAndComplete(IN struct GLUE_INFO *prGlueInfo, IN uint32_t eStatu
 			uint16_t u2DeauthReason = 0;
 #if CFG_WPS_DISCONNECT || (KERNEL_VERSION(4, 4, 0) <= CFG80211_VERSION_CODE)
 
-			if (prBssInfo)
+			if (prBssInfo) {
 				u2DeauthReason = prBssInfo->u2DeauthReason;
+				glNotifyDrvStatus(DISCONNECT_AP,
+						  (void *)prBssInfo);
+			}
 			/* CFG80211 Indication */
 			DBGLOG(INIT, INFO, "[wifi]Indicate disconnection: Reason=%d Locally[%d]\n", u2DeauthReason,
 						(eStatus == WLAN_STATUS_MEDIA_DISCONNECT_LOCALLY));

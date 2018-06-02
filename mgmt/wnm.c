@@ -415,7 +415,7 @@ wnmSendBTMResponseFrame(IN struct ADAPTER *prAdapter,
 {
 	struct MSDU_INFO *prMsduInfo = NULL;
 	struct BSS_INFO *prBssInfo = NULL;
-	struct ACTION_BTM_RSP_FRAME_T *prTxFrame = NULL;
+	struct ACTION_BTM_RSP_FRAME *prTxFrame = NULL;
 	uint16_t u2PayloadLen = 0;
 	struct BSS_TRANSITION_MGT_PARAM_T *prBtmParam =
 		&prAdapter->rWifiVar.rAisSpecificBssInfo.rBTMParam;
@@ -434,7 +434,7 @@ wnmSendBTMResponseFrame(IN struct ADAPTER *prAdapter,
 				MAC_TX_RESERVED_FIELD + PUBLIC_ACTION_MAX_LEN);
 	if (!prMsduInfo)
 		return;
-	prTxFrame = (struct ACTION_BTM_RSP_FRAME_T *)
+	prTxFrame = (struct ACTION_BTM_RSP_FRAME *)
 	    ((unsigned long) (prMsduInfo->prPacket) + MAC_TX_RESERVED_FIELD);
 
 	/* 2 Compose The Mac Header. */
@@ -466,6 +466,7 @@ wnmSendBTMResponseFrame(IN struct ADAPTER *prAdapter,
 		prBtmParam->u2OurNeighborBssLen = 0;
 		u2PayloadLen += prBtmParam->u2OurNeighborBssLen;
 	}
+	glNotifyDrvStatus(SND_BTM_RSP, (void *)prBtmParam);
 
 	/* 4 Update information of MSDU_INFO_T */
 	TX_SET_MMPDU(prAdapter,
@@ -473,7 +474,7 @@ wnmSendBTMResponseFrame(IN struct ADAPTER *prAdapter,
 			prStaRec->ucBssIndex,
 			prStaRec->ucIndex,
 			WLAN_MAC_MGMT_HEADER_LEN,
-			OFFSET_OF(struct ACTION_BTM_RSP_FRAME_T, aucOptInfo) +
+			OFFSET_OF(struct ACTION_BTM_RSP_FRAME, aucOptInfo) +
 				u2PayloadLen,
 			wnmBTMResponseTxDone, MSDU_RATE_MODE_AUTO);
 
@@ -497,7 +498,7 @@ wnmSendBTMQueryFrame(IN struct ADAPTER *prAdapter,
 {
 	struct MSDU_INFO *prMsduInfo = NULL;
 	struct BSS_INFO *prBssInfo = NULL;
-	struct ACTION_BTM_QUERY_FRAME_T *prTxFrame = NULL;
+	struct ACTION_BTM_QUERY_FRAME *prTxFrame = NULL;
 	struct BSS_TRANSITION_MGT_PARAM_T *prBtmParam =
 			&prAdapter->rWifiVar.rAisSpecificBssInfo.rBTMParam;
 
@@ -509,7 +510,7 @@ wnmSendBTMQueryFrame(IN struct ADAPTER *prAdapter,
 			MAC_TX_RESERVED_FIELD + PUBLIC_ACTION_MAX_LEN);
 	if (!prMsduInfo)
 		return;
-	prTxFrame = (struct ACTION_BTM_QUERY_FRAME_T *)
+	prTxFrame = (struct ACTION_BTM_QUERY_FRAME *)
 	    ((unsigned long) (prMsduInfo->prPacket) + MAC_TX_RESERVED_FIELD);
 
 	/* 2 Compose The Mac Header. */
@@ -543,6 +544,8 @@ wnmSendBTMQueryFrame(IN struct ADAPTER *prAdapter,
 
 	/* 5 Enqueue the frame to send this action frame. */
 	nicTxEnqueueMsdu(prAdapter, prMsduInfo);
+
+	glNotifyDrvStatus(SND_BTM_QUERY, (void *)prStaRec->aucMacAddr);
 }				/* end of wnmComposeBTMQueryFrame() */
 
 /*----------------------------------------------------------------------------*/
@@ -557,7 +560,7 @@ wnmSendBTMQueryFrame(IN struct ADAPTER *prAdapter,
 /*----------------------------------------------------------------------------*/
 void wnmRecvBTMRequest(IN struct ADAPTER *prAdapter, IN struct SW_RFB *prSwRfb)
 {
-	struct ACTION_BTM_REQ_FRAME_T *prRxFrame = NULL;
+	struct ACTION_BTM_REQ_FRAME *prRxFrame = NULL;
 	struct BSS_TRANSITION_MGT_PARAM_T *prBtmParam =
 			&prAdapter->rWifiVar.rAisSpecificBssInfo.rBTMParam;
 	uint8_t *pucOptInfo = NULL;
@@ -566,11 +569,11 @@ void wnmRecvBTMRequest(IN struct ADAPTER *prAdapter, IN struct SW_RFB *prSwRfb)
 	struct MSG_AIS_BSS_TRANSITION_T *prMsg = NULL;
 	enum WNM_AIS_BSS_TRANSITION eTransType = BSS_TRANSITION_NO_MORE_ACTION;
 
-	prRxFrame = (struct ACTION_BTM_REQ_FRAME_T *) prSwRfb->pvHeader;
+	prRxFrame = (struct ACTION_BTM_REQ_FRAME *) prSwRfb->pvHeader;
 	if (!prRxFrame)
 		return;
 	if (prSwRfb->u2PacketLen <
-		OFFSET_OF(struct ACTION_BTM_REQ_FRAME_T, aucOptInfo)) {
+		OFFSET_OF(struct ACTION_BTM_REQ_FRAME, aucOptInfo)) {
 		DBGLOG(WNM, WARN,
 		       "BTM: Request frame length is less than a standard BTM frame\n");
 		return;
@@ -589,12 +592,12 @@ void wnmRecvBTMRequest(IN struct ADAPTER *prAdapter, IN struct SW_RFB *prSwRfb)
 	prBtmParam->ucDialogToken = prRxFrame->ucDialogToken;
 	pucOptInfo = &prRxFrame->aucOptInfo[0];
 	ucRequestMode = prBtmParam->ucRequestMode;
-	u2TmpLen = OFFSET_OF(struct ACTION_BTM_REQ_FRAME_T, aucOptInfo);
+	u2TmpLen = OFFSET_OF(struct ACTION_BTM_REQ_FRAME, aucOptInfo);
 	if (ucRequestMode & BTM_REQ_MODE_DISC_IMM)
 		eTransType = BSS_TRANSITION_REQ_ROAMING;
 	if (ucRequestMode & BTM_REQ_MODE_BSS_TERM_INCLUDE) {
-		struct SUB_IE_BSS_TERM_DURATION_T *prBssTermDuration =
-			(struct SUB_IE_BSS_TERM_DURATION_T *)pucOptInfo;
+		struct SUB_IE_BSS_TERM_DURATION *prBssTermDuration =
+			(struct SUB_IE_BSS_TERM_DURATION *)pucOptInfo;
 
 		prBtmParam->u2TermDuration = prBssTermDuration->u2Duration;
 		kalMemCopy(prBtmParam->aucTermTsf,

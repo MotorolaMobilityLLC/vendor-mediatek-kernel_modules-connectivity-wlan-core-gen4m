@@ -1641,6 +1641,12 @@ void aisFsmSteps(IN struct ADAPTER *prAdapter, enum ENUM_AIS_STATE eNextState)
 
 			/* Support AP Selection */
 			prAisFsmInfo->ucJoinFailCntAfterScan = 0;
+			if (prAisFsmInfo->eCurrentState ==
+				    AIS_STATE_LOOKING_FOR &&
+			    prAisBssInfo->eConnectionState ==
+				    PARAM_MEDIA_STATE_CONNECTED)
+				glNotifyDrvStatus(ROAMING_SCAN_START,
+						  prScanReqMsg);
 			break;
 
 		case AIS_STATE_REQ_CHANNEL_JOIN:
@@ -2006,6 +2012,9 @@ void aisFsmRunEventScanDone(IN struct ADAPTER *prAdapter, IN struct MSG_HDR *prM
 
 		case AIS_STATE_LOOKING_FOR:
 #if CFG_SUPPORT_ROAMING
+			if (prAdapter->rWifiVar.rRoamingInfo.eCurrentState ==
+			    ROAMING_STATE_DISCOVERY)
+				glNotifyDrvStatus(ROAMING_SCAN_DONE, NULL);
 			eNextState = aisFsmRoamingScanResultsUpdate(prAdapter);
 #else
 			eNextState = AIS_STATE_SEARCH;
@@ -2467,6 +2476,9 @@ enum ENUM_AIS_STATE aisFsmJoinCompleteAction(IN struct ADAPTER *prAdapter, IN st
 			prAisFsmInfo->ucJoinFailCntAfterScan = 0;
 			/* end Support AP Selection */
 
+			glNotifyDrvStatus(CONNECT_AP,
+					  (void *)prStaRec->aucMacAddr);
+
 #if CFG_SUPPORT_802_11K
 			aisResetNeighborApList(prAdapter);
 			if (prAisFsmInfo->prTargetBssDesc->aucRrmCap[0] &
@@ -2524,6 +2536,7 @@ enum ENUM_AIS_STATE aisFsmJoinCompleteAction(IN struct ADAPTER *prAdapter, IN st
 
 				/* ASSERT(prBssDesc); */
 				/* ASSERT(prBssDesc->fgIsConnecting); */
+				glNotifyDrvStatus(JOIN_FAIL, (void *)prStaRec);
 				prBssDesc->u2JoinStatus = prStaRec->u2StatusCode;
 				prBssDesc->ucJoinFailureCount++;
 				if (prBssDesc->ucJoinFailureCount >=
@@ -4204,6 +4217,7 @@ void aisBssBeaconTimeout(IN struct ADAPTER *prAdapter)
 	prAisBssInfo = prAdapter->prAisBssInfo;
 	prConnSettings = &(prAdapter->rWifiVar.rConnSettings);
 
+	glNotifyDrvStatus(BEACON_TIMEOUT, (void *)prAisBssInfo->aucBSSID);
 	/* 4 <0> Report upper layer that signal is bad, then do retry */
 	mtk_cfg80211_vendor_event_rssi_beyond_range(
 			priv_to_wiphy(prAdapter->prGlueInfo),
@@ -5276,6 +5290,8 @@ void aisFsmRunEventBssTransition(IN struct ADAPTER *prAdapter,
 
 		switch (prAdapter->rWifiVar.rRoamingInfo.eCurrentState) {
 		case ROAMING_STATE_REQ_CAND_LIST:
+			glNotifyDrvStatus(SOL_BTM_REQ,
+					  (void *)prAisSpecificBssInfo);
 			roamingFsmSteps(prAdapter, ROAMING_STATE_DISCOVERY);
 			return;
 		case ROAMING_STATE_DISCOVERY:
@@ -5290,6 +5306,7 @@ void aisFsmRunEventBssTransition(IN struct ADAPTER *prAdapter,
 			break;
 		}
 	}
+	glNotifyDrvStatus(UNSOL_BTM_REQ, (void *)prAisSpecificBssInfo);
 	prBtmParam->fgUnsolicitedReq = TRUE;
 	/* Unsolicited BTM request */
 	switch (eTransType) {
@@ -5367,6 +5384,9 @@ void aisSendNeighborRequest(struct ADAPTER *prAdapter)
 		prBssInfo->aucSSID, prBssInfo->ucSSIDLen);
 	rlmTxNeighborReportRequest(prAdapter, prBssInfo->prStaRecOfAP,
 				   prSSIDIE);
+	if (prBssInfo->prStaRecOfAP)
+		glNotifyDrvStatus(SND_NEI_REQ,
+			(void *)prBssInfo->prStaRecOfAP->aucMacAddr);
 }
 
 static u_int8_t aisCandPrefIEIsExist(uint8_t *pucSubIe, uint8_t ucLength)
