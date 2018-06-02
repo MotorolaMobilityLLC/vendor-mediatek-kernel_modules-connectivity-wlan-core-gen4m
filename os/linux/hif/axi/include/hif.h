@@ -164,6 +164,8 @@ struct BUS_INFO {
 	void (*lowPowerOwnSet)(struct ADAPTER *prAdapter, u_int8_t *pfgResult);
 	void (*lowPowerOwnClear)(struct ADAPTER *prAdapter, u_int8_t *pfgResult);
 	void (*getMailboxStatus)(struct ADAPTER *prAdapter, uint32_t *pu4Val);
+	void (*setDummyReg)(struct GLUE_INFO *prGlueInfo);
+	void (*checkDummyReg)(struct GLUE_INFO *prGlueInfo);
 };
 
 #if CFG_MTK_ANDROID_WMT
@@ -222,42 +224,6 @@ void glSetPowerState(IN struct GLUE_INFO *prGlueInfo, IN uint32_t ePowerMode);
 void glGetDev(void *ctx, struct device **dev);
 
 void glGetHifDev(struct GL_HIF_INFO *prHif, struct device **dev);
-
-void halHifRst(struct GLUE_INFO *prGlueInfo);
-bool halWpdmaAllocRing(struct GLUE_INFO *prGlueInfo);
-void halWpdmaFreeRing(struct GLUE_INFO *prGlueInfo);
-void halWpdmaInitRing(struct GLUE_INFO *prGlueInfo);
-void halWpdmaInitTxRing(IN struct GLUE_INFO *prGlueInfo);
-void halWpdmaInitRxRing(IN struct GLUE_INFO *prGlueInfo);
-void halWpdmaProcessCmdDmaDone(IN struct GLUE_INFO *prGlueInfo, IN uint16_t u2Port);
-void halWpdmaProcessDataDmaDone(IN struct GLUE_INFO *prGlueInfo, IN uint16_t u2Port);
-uint32_t halWpdmaGetRxDmaDoneCnt(IN struct GLUE_INFO *prGlueInfo, IN uint8_t ucRingNum);
-void kalPciUnmapToDev(IN struct GLUE_INFO *prGlueInfo, IN dma_addr_t rDmaAddr, IN uint32_t u4Length);
-
-void halInitMsduTokenInfo(IN struct ADAPTER *prAdapter);
-void halUninitMsduTokenInfo(IN struct ADAPTER *prAdapter);
-uint32_t halGetMsduTokenFreeCnt(IN struct ADAPTER *prAdapter);
-struct MSDU_TOKEN_ENTRY *halGetMsduTokenEntry(IN struct ADAPTER *prAdapter, uint32_t u4TokenNum);
-struct MSDU_TOKEN_ENTRY *halAcquireMsduToken(IN struct ADAPTER *prAdapter);
-void halReturnMsduToken(IN struct ADAPTER *prAdapter, uint32_t u4TokenNum);
-
-void halTxUpdateCutThroughDesc(struct GLUE_INFO *prGlueInfo, struct MSDU_INFO *prMsduInfo,
-	struct MSDU_TOKEN_ENTRY *prToken);
-u_int8_t halIsStaticMapBusAddr(IN uint32_t u4Addr);
-u_int8_t halChipToStaticMapBusAddr(IN struct BUS_INFO *prBusInfo, IN uint32_t u4ChipAddr, OUT uint32_t *pu4BusAddr);
-u_int8_t halGetDynamicMapReg(IN struct GLUE_INFO *prGlueInfo, IN uint32_t u4ChipAddr, OUT uint32_t *pu4Value);
-u_int8_t halSetDynamicMapReg(IN struct GLUE_INFO *prGlueInfo, IN uint32_t u4ChipAddr, IN uint32_t u4Value);
-void halConnacWpdmaConfig(struct GLUE_INFO *prGlueInfo, u_int8_t enable);
-void halConnacEnableInterrupt(IN struct ADAPTER *prAdapter);
-
-u_int8_t halWpdmaWriteCmd(IN struct GLUE_INFO *prGlueInfo, IN struct CMD_INFO *prCmdInfo, IN uint8_t ucTC);
-u_int8_t halWpdmaWriteData(IN struct GLUE_INFO *prGlueInfo, IN struct MSDU_INFO *prMsduInfo);
-void halHwRecoveryFromError(IN struct ADAPTER *prAdapter);
-
-void kalCheckAndResetTXReg(IN struct GLUE_INFO *prGlueInfo, IN uint16_t u2Port);
-void kalCheckAndResetRXReg(IN struct GLUE_INFO *prGlueInfo, IN uint16_t u2Port);
-u_int8_t kalDevReadData(IN struct GLUE_INFO *prGlueInfo, IN uint16_t u2Port, IN OUT struct SW_RFB *prSwRfb);
-u_int8_t kalDevKickCmd(IN struct GLUE_INFO *prGlueInfo);
 
 /*******************************************************************************
 *                              F U N C T I O N S

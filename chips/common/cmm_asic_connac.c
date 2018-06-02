@@ -560,6 +560,31 @@ void asicGetMailboxStatus(IN struct ADAPTER *prAdapter, OUT uint32_t *pu4Val)
 	HAL_MCR_RD(prAdapter, CONN_MCU_CONFG_ON_HOST_MAILBOX_WF_ADDR, &u4RegValue);
 	*pu4Val = u4RegValue;
 }
+
+void asicSetDummyReg(struct GLUE_INFO *prGlueInfo)
+{
+	kalDevRegWrite(prGlueInfo, CONN_DUMMY_CR, PDMA_DUMMY_MAGIC_NUM);
+}
+
+void asicCheckDummyReg(struct GLUE_INFO *prGlueInfo)
+{
+	struct GL_HIF_INFO *prHifInfo;
+	uint32_t u4Value = 0;
+	uint32_t u4Idx;
+
+	prHifInfo = &prGlueInfo->rHifInfo;
+	kalDevRegRead(prGlueInfo, CONN_DUMMY_CR, &u4Value);
+	DBGLOG(HAL, TRACE, "Check sleep mode DummyReg[0x%x]\n", u4Value);
+	if (u4Value != PDMA_DUMMY_RESET_VALUE)
+		return;
+
+	for (u4Idx = 0; u4Idx < NUM_OF_TX_RING; u4Idx++)
+		prHifInfo->TxRing[u4Idx].TxSwUsedIdx = 0;
+	DBGLOG(HAL, INFO, "Weakup from sleep mode\n");
+
+	/* Write sleep mode magic num to dummy reg */
+	asicSetDummyReg(prGlueInfo);
+}
 #endif /* _HIF_PCIE */
 
 #if defined(_HIF_USB)
