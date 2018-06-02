@@ -1578,6 +1578,7 @@ kalHardStartXmit(struct sk_buff *prOrgSkb, IN struct net_device *prDev, struct G
 	struct sk_buff *prSkb = NULL;
 	struct mt66xx_chip_info *prChipInfo;
 	uint32_t u4TxHeadRoomSize = 0;
+	uint32_t u4SkbLen = 0;
 
 	GLUE_SPIN_LOCK_DECLARATION();
 
@@ -1632,6 +1633,7 @@ kalHardStartXmit(struct sk_buff *prOrgSkb, IN struct net_device *prDev, struct G
 
 	/* Handle normal data frame */
 	u2QueueIdx = skb_get_queue_mapping(prSkb);
+	u4SkbLen = prSkb->len;
 
 	if (u2QueueIdx >= CFG_MAX_TXQ_NUM) {
 		DBGLOG(INIT, INFO, "Incorrect queue index, skip this frame\n");
@@ -1652,19 +1654,19 @@ kalHardStartXmit(struct sk_buff *prOrgSkb, IN struct net_device *prDev, struct G
 
 		DBGLOG(TX, INFO,
 		       "Stop subqueue for BSS[%u] QIDX[%u] PKT_LEN[%u] TOT_CNT[%d] PER-Q_CNT[%d]\n",
-		       ucBssIndex, u2QueueIdx, prSkb->len,
+		       ucBssIndex, u2QueueIdx, u4SkbLen,
 		       GLUE_GET_REF_CNT(prGlueInfo->i4TxPendingFrameNum),
 		       GLUE_GET_REF_CNT(prGlueInfo->ai4TxPendingFrameNumPerQueue[ucBssIndex]
 					[u2QueueIdx]));
 	}
 
 	/* Update NetDev statisitcs */
-	prDev->stats.tx_bytes += prSkb->len;
+	prDev->stats.tx_bytes += u4SkbLen;
 	prDev->stats.tx_packets++;
 
 	DBGLOG(TX, LOUD,
 	       "Enqueue frame for BSS[%u] QIDX[%u] PKT_LEN[%u] TOT_CNT[%d] PER-Q_CNT[%d]\n",
-	       ucBssIndex, u2QueueIdx, prSkb->len,
+	       ucBssIndex, u2QueueIdx, u4SkbLen,
 	       GLUE_GET_REF_CNT(prGlueInfo->i4TxPendingFrameNum),
 	       GLUE_GET_REF_CNT(prGlueInfo->ai4TxPendingFrameNumPerQueue[ucBssIndex][u2QueueIdx]));
 
