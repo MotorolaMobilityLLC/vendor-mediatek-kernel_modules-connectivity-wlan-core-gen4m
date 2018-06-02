@@ -7271,6 +7271,9 @@ void qmDetectArpNoResponse(struct ADAPTER *prAdapter,
 	uint16_t u2EtherType = 0;
 	int arpOpCode = 0;
 
+	if (!prAdapter)
+		return;
+
 	prStaRec = QM_GET_STA_REC_PTR_FROM_INDEX(
 		prAdapter, prMsduInfo->ucStaRecIndex);
 	if (!prStaRec || !IS_STA_IN_AIS(prStaRec))
@@ -7309,7 +7312,7 @@ void qmDetectArpNoResponse(struct ADAPTER *prAdapter,
 		if (arpMoniter > 20) {
 			DBGLOG(INIT, WARN,
 				"IOT Critical issue, arp no resp, check AP!\n");
-			if (prAdapter && prAdapter->prAisBssInfo)
+			if (prAdapter->prAisBssInfo)
 				prAdapter->prAisBssInfo->u2DeauthReason =
 					BEACON_TIMEOUT_DUE_2_APR_NO_RESPONSE;
 			aisBssBeaconTimeout(prAdapter);
