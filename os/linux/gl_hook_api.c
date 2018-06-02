@@ -2646,11 +2646,11 @@ int32_t MT_ATEWriteEfuse(struct net_device *prNetDev, uint16_t u2Offset, uint16_
 	uint8_t  u4Index = 0, u4Loop = 0;
 
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+	ASSERT(prGlueInfo);
 	kalMemSet(&rAccessEfuseInfoRead, 0, sizeof(struct PARAM_CUSTOM_ACCESS_EFUSE));
 	kalMemSet(&rAccessEfuseInfoWrite, 0, sizeof(struct PARAM_CUSTOM_ACCESS_EFUSE));
 
-	if (prGlueInfo &&
-	    prGlueInfo->prAdapter &&
+	if (prGlueInfo->prAdapter &&
 	    prGlueInfo->prAdapter->chip_info &&
 	    !prGlueInfo->prAdapter->chip_info->is_support_efuse) {
 		log_dbg(RFTEST, WARN, "Efuse not support\n");
