@@ -448,19 +448,22 @@ u_int8_t glBusInit(void *pvData)
 	ASSERT(pvData);
 
 	pdev = (struct platform_device *)pvData;
+
 	required_mask = dma_get_required_mask(&pdev->dev);
 	DBGLOG(INIT, INFO, "pdev=%x, name=%s, mask=%ld, dma_addr_t=%d\n",
 	       pdev, pdev->id_entry->name, required_mask, sizeof(dma_addr_t));
-	pdev->dev.dma_mask = &dma_mask;
+	pdev->dev.coherent_dma_mask = dma_mask;
+	pdev->dev.dma_mask = &(pdev->dev.coherent_dma_mask);
+	DBGLOG(INIT, INFO, "wifi driver axi pdev->dev=%llx\n", pdev->dev);
 
 	KAL_ARCH_SETUP_DMA_OPS(&pdev->dev, 0, dma_mask, NULL, true);
 	DBGLOG(INIT, INFO, "dma_supported=%d\n",
-		dma_supported(&pdev->dev, DMA_BIT_MASK(g_u4DmaMask)));
+		dma_supported(&pdev->dev, dma_mask));
 	dma_ops = get_dma_ops(&pdev->dev);
 	DBGLOG(INIT, INFO, "dma_ops->set_dma_mask=%x\n",
 		dma_ops->set_dma_mask);
 
-	ret = dma_set_mask_and_coherent(&pdev->dev, DMA_BIT_MASK(g_u4DmaMask));
+	ret = dma_set_mask_and_coherent(&pdev->dev, dma_mask);
 	if (ret)
 		DBGLOG(INIT, INFO, "set DMA mask failed! errno=%d\n", ret);
 #ifdef CONFIG_OF

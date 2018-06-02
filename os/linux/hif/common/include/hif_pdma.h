@@ -76,7 +76,8 @@
 #define NUM_OF_TX_RING				4
 #define NUM_OF_RX_RING				2
 
-#define TX_RING_SIZE				4095
+/* TODO: temp change tx ring size from 4095 to 256 */
+#define TX_RING_SIZE				256
 #define RX_RING_SIZE				256	/* Max Rx ring size */
 
 #define RX_RING0_SIZE				256	/* Data Rx ring */
