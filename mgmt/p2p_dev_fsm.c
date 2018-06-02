@@ -1178,5 +1178,33 @@ void p2pDevFsmRunEventActiveDevBss(IN struct ADAPTER *prAdapter,
 		cnmMemFree(prAdapter, prMsgHdr);
 }				/* p2pDevFsmRunEventActiveDevBss */
 
+void
+p2pDevFsmNotifyP2pRx(IN struct ADAPTER *prAdapter, uint8_t p2pFrameType)
+{
+	struct P2P_DEV_FSM_INFO *prP2pDevFsmInfo =
+		(struct P2P_DEV_FSM_INFO *) NULL;
+
+	prP2pDevFsmInfo = prAdapter->rWifiVar.prP2pDevFsmInfo;
+	if (prP2pDevFsmInfo->eCurrentState != P2P_DEV_STATE_CHNL_ON_HAND)
+		return;
+
+	if (prAdapter->prP2pInfo->eConnState != P2P_CNN_NORMAL)
+		return;
+
+	switch (p2pFrameType) {
+	case P2P_GO_NEG_REQ:
+	case P2P_GO_NEG_RESP:
+	case P2P_INVITATION_REQ:
+	case P2P_DEV_DISC_REQ:
+	case P2P_PROV_DISC_REQ:
+		DBGLOG(P2P, INFO,
+				"Extend channel duration, p2pFrameType: %d.\n",
+				p2pFrameType);
+		prAdapter->prP2pInfo->eConnState = p2pFrameType + 1;
+		break;
+	default:
+		break;
+	}
+}
 
 #endif /* RunEventWfdSettingUpdate */
