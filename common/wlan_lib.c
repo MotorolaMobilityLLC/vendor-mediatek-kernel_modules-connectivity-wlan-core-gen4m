@@ -5390,6 +5390,11 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 	prWifiVar->u4MaxTxDeQLimit = (uint32_t) wlanCfgGetUint32(prAdapter, "MaxTxDeQLimit", 0x0);
 	prWifiVar->ucAlwaysResetUsedRes = (uint32_t) wlanCfgGetUint32(prAdapter, "AlwaysResetUsedRes", 0x0);
 
+	prWifiVar->u4BeaconTimoutFilterDurationMs =
+		wlanCfgGetUint32(prAdapter,
+			"BeaconTimoutFilterDurationMs",
+			CFG_BEACON_TIMEOUT_FILTER_DURATION_DEFAULT_VALUE);
+
 #if CFG_SUPPORT_MTK_SYNERGY
 	prWifiVar->ucMtkOui = (uint8_t) wlanCfgGetUint32(prAdapter, "MtkOui", FEATURE_ENABLED);
 	prWifiVar->u4MtkOuiCap = (uint32_t) wlanCfgGetUint32(prAdapter, "MtkOuiCap", 0);

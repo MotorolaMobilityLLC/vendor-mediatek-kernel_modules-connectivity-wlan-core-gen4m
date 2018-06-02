@@ -703,6 +703,9 @@ struct TX_CTRL {
 	u_int8_t fgIsTxResourceCtrl;
 	/* page counts for a wifi frame */
 	uint32_t u4MaxPageCntPerFrame;
+
+	/* Store SysTime of Last TxDone successfully */
+	uint32_t u4LastTxTime;
 };
 
 enum ENUM_TX_PACKET_TYPE {

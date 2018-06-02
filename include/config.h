@@ -865,6 +865,18 @@
 #define CFG_SCAN_FULL2PARTIAL_PERIOD       (60)
 
 /*------------------------------------------------------------------------------
+ * Default value: the duration in ms to check TRX
+ *                      while the beacon timeout event comes.
+ * This is the default value for
+ *                      prAdapter->rWifiVar.u4BeaconTimoutFilterDurationMs
+ * can customize
+ *        1. by project's requirement in this default value
+ *        2. or by define in wifi.cfg directly (BeaconTimoutFilterDurationMs)
+ *------------------------------------------------------------------------------
+ */
+#define CFG_BEACON_TIMEOUT_FILTER_DURATION_DEFAULT_VALUE	2000
+
+/*------------------------------------------------------------------------------
  * Flags of Sniffer SUPPORT
  *------------------------------------------------------------------------------
  */
