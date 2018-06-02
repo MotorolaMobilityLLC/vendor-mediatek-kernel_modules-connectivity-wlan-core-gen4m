@@ -2578,12 +2578,12 @@ static void consys_log_event_notification(int cmd, int value)
 	struct CMD_HEADER rCmdV1Header;
 	struct CMD_FORMAT_V1 rCmd_v1;
 
-	DBGLOG(INIT, INFO, "gPrDev=%x, cmd=%d, value=%d\n",
+	DBGLOG(INIT, INFO, "gPrDev=%p, cmd=%d, value=%d\n",
 		gPrDev, cmd, value);
 
 	prGlueInfo = (prDev != NULL) ?
 		*((struct GLUE_INFO **) netdev_priv(prDev)) : NULL;
-	DBGLOG(INIT, INFO, "prGlueInfo=%x\n", prGlueInfo);
+	DBGLOG(INIT, INFO, "prGlueInfo=%p\n", prGlueInfo);
 	if (!prGlueInfo) {
 		u4LogOnOffCache = value;
 		DBGLOG(INIT, INFO,
@@ -2592,7 +2592,7 @@ static void consys_log_event_notification(int cmd, int value)
 		return;
 	}
 	prAdapter = prGlueInfo->prAdapter;
-	DBGLOG(INIT, INFO, "prAdapter=%x\n", prAdapter);
+	DBGLOG(INIT, INFO, "prAdapter=%p\n", prAdapter);
 	if (!prAdapter) {
 		u4LogOnOffCache = value;
 		DBGLOG(INIT, INFO,
