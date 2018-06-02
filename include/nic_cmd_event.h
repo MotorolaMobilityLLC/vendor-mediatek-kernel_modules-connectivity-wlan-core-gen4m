@@ -1631,7 +1631,7 @@ typedef enum _ENUM_REG_DOMAIN_T {
 typedef struct _CMD_RDD_ON_OFF_CTRL_T {
 	UINT_8 ucDfsCtrl;
 	UINT_8 ucRddIdx;
-	UINT_8 ucRddInSel;
+	UINT_8 ucRddRxSel;
 	UINT_8 ucRegDomain;
 	UINT_8 ucRadarDetectMode;
 } CMD_RDD_ON_OFF_CTRL_T, *P_CMD_RDD_ON_OFF_CTRL_T;
