@@ -694,7 +694,7 @@ BOOL secPrivacySeekForEntry(IN P_ADAPTER_T prAdapter, IN P_STA_RECORD_T prSta)
 	prWtbl = prAdapter->rWifiVar.arWtbl;
 
 	ucStartIDX = 0;
-	ucMaxIDX = NIC_TX_DEFAULT_WLAN_INDEX - 1;
+	ucMaxIDX = prAdapter->ucTxDefaultWlanIndex - 1;
 
 	DBGLOG(RSN, INFO, "secPrivacySeekForEntry\n");
 
@@ -718,7 +718,7 @@ BOOL secPrivacySeekForEntry(IN P_ADAPTER_T prAdapter, IN P_STA_RECORD_T prSta)
 	}
 
 	/* Save to the driver maintain table */
-	if (ucEntry < NIC_TX_DEFAULT_WLAN_INDEX) {
+	if (ucEntry < prAdapter->ucTxDefaultWlanIndex) {
 
 		prWtbl[ucEntry].ucUsed = TRUE;
 		prWtbl[ucEntry].ucBssIndex = prSta->ucBssIndex;
@@ -928,7 +928,7 @@ secPrivacySeekForBcEntry(IN P_ADAPTER_T prAdapter,
 		fgCheckKeyId = FALSE;
 
 	ucStartIDX = 0;
-	ucMaxIDX = NIC_TX_DEFAULT_WLAN_INDEX - 1;
+	ucMaxIDX = prAdapter->ucTxDefaultWlanIndex - 1;
 
 	DBGLOG(INIT, INFO, "secPrivacySeekForBcEntry\n");
 
@@ -960,7 +960,7 @@ secPrivacySeekForBcEntry(IN P_ADAPTER_T prAdapter,
 		}
 	}
 
-	if (ucEntry < NIC_TX_DEFAULT_WLAN_INDEX) {
+	if (ucEntry < prAdapter->ucTxDefaultWlanIndex) {
 		if (ucAlg != CIPHER_SUITE_BIP) {
 			prWtbl[ucEntry].ucUsed = TRUE;
 			prWtbl[ucEntry].ucKeyId = ucKeyId;
