@@ -109,6 +109,9 @@ int32_t MT_ATESetiBFEnable(struct net_device *prNetDev, uint32_t u4iBF);
 int32_t MT_ATESeteBFEnable(struct net_device *prNetDev, uint32_t u4eBF);
 int32_t MT_ATESetMACAddress(struct net_device *prNetDev, uint32_t u4Type, uint8_t ucAddr[]);
 int32_t MT_ATELogOnOff(struct net_device *prNetDev, uint32_t u4Type, uint32_t u4On_off, uint32_t u4Size);
+int32_t MT_ATEGetDumpRXV(struct net_device *prNetDev,
+			 uint8_t *pData,
+			 int32_t *pCount);
 int32_t MT_ATEResetTXRXCounter(struct net_device *prNetDev);
 int32_t MT_ATESetDBDCBandIndex(struct net_device *prNetDev, uint32_t u4BandIdx);
 int32_t MT_ATESetBand(struct net_device *prNetDev, int32_t i4Band);

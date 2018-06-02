@@ -3078,7 +3078,68 @@ uint32_t nicExtTsfRawData2IqFmt(struct EXT_EVENT_RBIST_DUMP_DATA_T *prEventDumpM
 	return 0;
 }
 
-void nicExtEventICapIQData(IN struct ADAPTER *prAdapter, IN uint8_t *pucEventBuf)
+void nicExtEventReCalData(IN struct ADAPTER *prAdapter, IN uint8_t *pucEventBuf)
+{
+	struct EXT_EVENT_RECAL_DATA_T *prReCalData = NULL;
+	struct RECAL_INFO_T *prReCalInfo = NULL;
+	struct RECAL_DATA_T *prCalArray = NULL;
+	uint32_t u4Idx = 0;
+
+	ASSERT(pucEventBuf);
+	ASSERT(prAdapter);
+	prReCalInfo = &prAdapter->rReCalInfo;
+	if (prReCalInfo->prCalArray == NULL) {
+		prCalArray = (struct RECAL_DATA_T *)kalMemAlloc(
+			  2048 * sizeof(struct RECAL_DATA_T), VIR_MEM_TYPE);
+
+		if (prCalArray == NULL) {
+			DBGLOG(RFTEST, ERROR,
+				"Unable to alloc memory for recal data\n");
+			return;
+		}
+		prReCalInfo->prCalArray = prCalArray;
+	}
+
+	if (prReCalInfo->u4Count >= 2048) {
+		DBGLOG(RFTEST, ERROR,
+			"Too many Recal packet, maximum packets will be 2048, ignore\n");
+		return;
+	}
+
+	prCalArray = prReCalInfo->prCalArray;
+	DBGLOG(RFTEST, INFO, "prCalArray[%d] address [0x%08x]\n",
+			     prReCalInfo->u4Count,
+			     &prCalArray[prReCalInfo->u4Count]);
+
+	prReCalData = (struct EXT_EVENT_RECAL_DATA_T *)pucEventBuf;
+	switch (prReCalData->u4Type) {
+	case 0:
+		prReCalData->u.ucData[9] = '\0';
+		prReCalData->u.ucData[19] = '\0';
+		u4Idx = prReCalInfo->u4Count;
+
+		kstrtoul(&prReCalData->u.ucData[1], 16,
+				 (unsigned long *) &prCalArray[u4Idx].u4CalId);
+		kstrtoul(&prReCalData->u.ucData[11], 16,
+			     (unsigned long *) &prCalArray[u4Idx].u4CalAddr);
+		kstrtoul(&prReCalData->u.ucData[21], 16,
+			     (unsigned long *) &prCalArray[u4Idx].u4CalValue);
+		DBGLOG(RFTEST, TRACE, "[0x%08x][0x%08x][0x%08x]\n",
+					prCalArray[u4Idx].u4CalId,
+					prCalArray[u4Idx].u4CalAddr,
+					prCalArray[u4Idx].u4CalValue);
+		prReCalInfo->u4Count++;
+		break;
+	case 1:
+		/* Todo: for extension to handle int */
+		/*       data directly come from FW */
+		break;
+	}
+}
+
+
+void nicExtEventICapIQData(IN struct ADAPTER *prAdapter,
+			     IN uint8_t *pucEventBuf)
 {
 	struct EXT_EVENT_RBIST_DUMP_DATA_T *prICapEvent;
 	uint32_t Idxi = 0, Idxj = 0, Idxk = 0;
@@ -3258,6 +3319,10 @@ uint32_t nicRfTestEventHandler(IN struct ADAPTER *prAdapter, IN struct WIFI_EVEN
 	case GET_ICAP_RAW_DATA:
 		if (prAteOps->getRbistDataDumpEvent)
 			prAteOps->getRbistDataDumpEvent(prAdapter, prEvent->aucBuffer);
+		break;
+
+	case RE_CALIBRATION:
+		nicExtEventReCalData(prAdapter, prEvent->aucBuffer);
 		break;
 
 	default:
@@ -3809,6 +3874,35 @@ void nicEventDebugMsg(IN struct ADAPTER *prAdapter, IN struct WIFI_EVENT *prEven
 	ucMsgType = prEventDebugMsg->ucMsgType;
 	u2MsgSize = prEventDebugMsg->u2MsgSize;
 	pucMsg = prEventDebugMsg->aucMsg;
+
+#if CFG_SUPPORT_QA_TOOL
+	if (ucMsgType == DEBUG_MSG_TYPE_ASCII) {
+		if (kalStrnCmp("[RECAL DUMP START]", pucMsg, 18) == 0) {
+			prAdapter->rReCalInfo.fgDumped = TRUE;
+			return;
+		} else if (kalStrnCmp("[RECAL DUMP END]", pucMsg, 16) == 0) {
+			prAdapter->rReCalInfo.fgDumped = TRUE;
+			return;
+		} else if (prAdapter->rReCalInfo.fgDumped &&
+				  kalStrnCmp("[Recal]", pucMsg, 7) == 0) {
+			struct WIFI_EVENT *prEvent;
+			struct EXT_EVENT_RECAL_DATA_T *prCalData;
+			uint32_t u4Size = sizeof(struct WIFI_EVENT) +
+					  sizeof(struct EXT_EVENT_RECAL_DATA_T);
+
+			prEvent = (struct WIFI_EVENT *)
+				kalMemAlloc(u4Size, VIR_MEM_TYPE);
+
+			prCalData = (struct EXT_EVENT_RECAL_DATA_T *)
+						    prEvent->aucBuffer;
+			prCalData->u4FuncIndex = RE_CALIBRATION;
+			prCalData->u4Type = 0;
+			/* format: [XXXXXXXX][YYYYYYYY]ZZZZZZZZ */
+			kalMemCopy(prCalData->u.ucData, pucMsg + 7, 28);
+			nicRfTestEventHandler(prAdapter, prEvent);
+		}
+	}
+#endif
 
 	wlanPrintFwLog(pucMsg, u2MsgSize, ucMsgType, NULL);
 }

@@ -1358,6 +1358,7 @@ struct ADAPTER {
 
 	struct PERF_MONITOR_T rPerMonitor;
 	struct ICAP_INFO_T rIcapInfo;
+	struct RECAL_INFO_T rReCalInfo;
 };				/* end of _ADAPTER_T */
 
 /*******************************************************************************
