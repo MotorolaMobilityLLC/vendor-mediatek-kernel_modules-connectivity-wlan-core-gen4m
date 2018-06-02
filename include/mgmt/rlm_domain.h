@@ -753,6 +753,7 @@ extern void mtk_reg_notify(IN struct wiphy *pWiphy,
 void rlmDomainOidSetCountry(IN P_ADAPTER_T prAdapter, char *country, u8 size_of_country);
 u32 rlmDomainGetCountryCode(void);
 u32 rlmDomainGetTempCountryCode(void);
+void rlmDomianAssert(BOOLEAN cond);
 
 /*******************************************************************************
 *                              F U N C T I O N S
