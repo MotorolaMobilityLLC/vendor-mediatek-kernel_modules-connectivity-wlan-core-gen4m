@@ -253,7 +253,7 @@ static void mtk_pci_remove(struct pci_dev *pdev)
 	iounmap(CSRBaseAddress);
 
 	/* release memory region */
-	release_mem_region(pci_resource_start(pdev, 0), pci_resource_len(pdev, 0));
+	pci_release_regions(pdev);
 
 	pci_disable_device(pdev);
 	DBGLOG(INIT, INFO, "mtk_pci_remove() done\n");
@@ -415,11 +415,7 @@ BOOL glBusInit(PVOID pvData)
 	pci_set_master(pdev);
 
 	return TRUE;
-#if 0
-err_out_iounmap:
-	iounmap((void *)(CSRBaseAddress));
-	release_mem_region(pci_resource_start(pdev, 0), pci_resource_len(pdev, 0));
-#endif
+
 err_out_free_res:
 	pci_release_regions(pdev);
 
