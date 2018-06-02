@@ -28,7 +28,9 @@ ifeq ($(MTK_COMBO_CHIP),)
 MTK_COMBO_CHIP = MT6632
 endif
 
+ifeq ($(WLAN_CHIP_ID),)
 WLAN_CHIP_ID=$(word 1, $(MTK_COMBO_CHIP))
+endif
 
 ccflags-y += -DCFG_SUPPORT_DEBUG_FS=0
 ccflags-y += -DWLAN_INCLUDE_PROC
@@ -177,6 +179,8 @@ ccflags-y += -DDBG=0
 ccflags-y += -I$(src)/os -I$(src)/os/linux/include
 ccflags-y += -I$(src)/include -I$(src)/include/nic -I$(src)/include/mgmt -I$(src)/include/chips
 ccflags-y += -I$(KERNEL_DIR)/drivers/misc/mediatek/base/power/include/
+ccflags-y += -I$(KERNEL_DIR)/drivers/misc/mediatek/include/mt-plat/
+ccflags-y += -I$(KERNEL_DIR)/drivers/devfreq/
 
 ifeq ($(CONFIG_MTK_COMBO_WIFI_HIF), sdio)
 ccflags-y += -I$(src)/os/linux/hif/sdio/include
@@ -189,6 +193,7 @@ ccflags-y += -I$(src)/os/linux/hif/axi/include
 else ifeq ($(CONFIG_MTK_COMBO_WIFI_HIF), usb)
 ccflags-y += -I$(src)/os/linux/hif/usb/include
 endif
+
 
 ifneq ($(PLATFORM_FLAGS), )
     ccflags-y += $(PLATFORM_FLAGS)
@@ -223,6 +228,9 @@ CHIPS       := chips/
 CHIPS_CMM   := $(CHIPS)common/
 ifeq ($(MTK_PLATFORM), mt6799)
 PLAT_DIR    := os/linux/plat/$(MTK_PLATFORM)/
+endif
+ifeq ($(WLAN_CHIP_ID), CONNAC)
+PLAT_DIR    := os/linux/plat/$(shell echo $(strip $(WLAN_CHIP_ID)) | tr A-Z a-z)/
 endif
 
 # ---------------------------------------------------
@@ -363,6 +371,11 @@ endif
 # Platform Objects List
 # ---------------------------------------------------
 ifeq ($(MTK_PLATFORM), mt6799)
+PLAT_OBJS := $(PLAT_DIR)plat_priv.o
+$(MODULE_NAME)-objs  += $(PLAT_OBJS)
+endif
+
+ifeq ($(WLAN_CHIP_ID), CONNAC)
 PLAT_OBJS := $(PLAT_DIR)plat_priv.o
 $(MODULE_NAME)-objs  += $(PLAT_OBJS)
 endif
