@@ -6175,7 +6175,7 @@ WLAN_STATUS wlanQueryNicCapabilityV2(IN P_ADAPTER_T prAdapter)
 	P_CMD_INFO_T prCmdInfo;
 	P_WIFI_CMD_T prWifiCmd;
 	UINT_32 u4RxPktLength;
-	UINT_8 aucBuffer[512];
+	P_UINT_8 prEventBuff;
 	P_HW_MAC_RX_DESC_T prRxStatus;
 	P_WIFI_EVENT_T prEvent;
 	struct mt66xx_chip_info *prChipInfo;
@@ -6235,22 +6235,49 @@ WLAN_STATUS wlanQueryNicCapabilityV2(IN P_ADAPTER_T prAdapter)
 		 * receive nic_capability_v2 event
 		 */
 
-		if (nicRxWaitResponse(prAdapter,
-					  1,
-					  aucBuffer,
-					  sizeof(aucBuffer),
-					  &u4RxPktLength) != WLAN_STATUS_SUCCESS) {
+
+		/* allocate event buffer */
+		prEventBuff = cnmMemAlloc(prAdapter, RAM_TYPE_BUF, CFG_RX_MAX_PKT_SIZE);
+		if (!prEventBuff) {
+			DBGLOG(INIT, WARN, "%s: event buffer alloc failed!\n", __func__);
 			return WLAN_STATUS_FAILURE;
 		}
 
-		/* header checking .. */
-		prRxStatus = (P_HW_MAC_RX_DESC_T) aucBuffer;
-		if (prRxStatus->u2PktTYpe != RXM_RXD_PKT_TYPE_SW_EVENT)
-			return WLAN_STATUS_FAILURE;
+		/* get event */
+		while (TRUE) {
+			if (nicRxWaitResponse(prAdapter,
+						  1,
+						  prEventBuff,
+						  CFG_RX_MAX_PKT_SIZE,
+						  &u4RxPktLength) != WLAN_STATUS_SUCCESS) {
+				DBGLOG(INIT, WARN, "%s: wait for event failed!\n", __func__);
 
-		prEvent = (P_WIFI_EVENT_T) aucBuffer;
-		if (prEvent->ucEID != EVENT_ID_NIC_CAPABILITY_V2)
-			return WLAN_STATUS_FAILURE;
+				/* free event buffer */
+				cnmMemFree(prAdapter, prEventBuff);
+
+				return WLAN_STATUS_FAILURE;
+			}
+
+			/* header checking .. */
+			prRxStatus = (P_HW_MAC_RX_DESC_T) prEventBuff;
+			if ((prRxStatus->u2PktTYpe & RXM_RXD_PKT_TYPE_SW_BITMAP) != RXM_RXD_PKT_TYPE_SW_EVENT) {
+
+				DBGLOG(INIT, WARN, "%s: skip unexpected Rx pkt type[0x%04x]\n", __func__,
+					prRxStatus->u2PktTYpe);
+
+				continue;
+			}
+
+			prEvent = (P_WIFI_EVENT_T) prEventBuff;
+			if (prEvent->ucEID != EVENT_ID_NIC_CAPABILITY_V2) {
+				DBGLOG(INIT, WARN, "%s: skip unexpected event ID[0x%02x]\n", __func__, prEvent->ucEID);
+
+				continue;
+			} else {
+				/* hit */
+				break;
+			}
+		}
 
 		/*
 		 * parsing elemens
@@ -6258,6 +6285,10 @@ WLAN_STATUS wlanQueryNicCapabilityV2(IN P_ADAPTER_T prAdapter)
 
 		nicCmdEventQueryNicCapabilityV2(prAdapter, prEvent->aucBuffer);
 
+		/*
+		 * free event buffer
+		 */
+		cnmMemFree(prAdapter, prEventBuff);
 	}
 
 	/* Fill capability for different Chip version */
