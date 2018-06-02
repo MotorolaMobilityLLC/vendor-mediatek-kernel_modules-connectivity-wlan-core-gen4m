@@ -4702,7 +4702,7 @@ void kalSchedScanStopped(IN struct GLUE_INFO *prGlueInfo, u_int8_t fgDriverTrigg
 uint32_t __weak slp_get_wake_reason(void)
 {
 	DBGLOG(INIT, WARN, "SPM didn't define slp_get_wake_reason()!\n");
-	return WR_NONE;
+	return 0; /* WR_NONE */
 }
 /* if SPM is not implement this function, we will use this default one */
 uint32_t __weak spm_get_last_wakeup_src(void)
