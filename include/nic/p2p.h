@@ -112,6 +112,10 @@
 #define P2P_AP_CHNL_HOLD_TIME_MS 5000	/* 1000 is too short , the deauth would block in the queue */
 #define P2P_DEFAULT_LISTEN_CHANNEL                   1
 
+#if (CFG_SUPPORT_DFS_MASTER == 1)
+#define P2P_AP_CAC_WEATHER_CHNL_HOLD_TIME_MS (600*1000)
+#endif
+
 #define P2P_DEAUTH_TIMEOUT_TIME_MS 1000
 
 /*******************************************************************************
