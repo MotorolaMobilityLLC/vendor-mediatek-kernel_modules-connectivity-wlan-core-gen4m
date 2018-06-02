@@ -1321,52 +1321,51 @@ VOID p2pFuncStartRdd(IN P_ADAPTER_T prAdapter, IN UINT_8 ucBssIdx)
 
 	DEBUGFUNC("p2pFuncStartRdd()");
 
-	do {
-		ASSERT_BREAK((prAdapter != NULL));
 
-		prP2pRoleFsmInfo = P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prAdapter,
-				prAdapter->aprBssInfo[ucBssIdx]->u4PrivateData);
+	prP2pRoleFsmInfo = P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prAdapter,
+			prAdapter->aprBssInfo[ucBssIdx]->u4PrivateData);
 
-		ucReqChnlNum = prP2pRoleFsmInfo->rChnlReqInfo.ucReqChnlNum;
+	ucReqChnlNum = prP2pRoleFsmInfo->rChnlReqInfo.ucReqChnlNum;
 
-		prCmdRddOnOffCtrl = (P_CMD_RDD_ON_OFF_CTRL_T) cnmMemAlloc(prAdapter, RAM_TYPE_MSG,
-					sizeof(*prCmdRddOnOffCtrl));
+	prCmdRddOnOffCtrl = (P_CMD_RDD_ON_OFF_CTRL_T) cnmMemAlloc(prAdapter, RAM_TYPE_MSG,
+				sizeof(*prCmdRddOnOffCtrl));
 
-		ASSERT_BREAK((prCmdRddOnOffCtrl != NULL));
+	if (!prCmdRddOnOffCtrl) {
+		DBGLOG(P2P, ERROR, "cnmMemAlloc for prCmdRddOnOffCtrl failed!\n");
+		return;
+	}
 
-		prCmdRddOnOffCtrl->ucDfsCtrl = RDD_START;
+	prCmdRddOnOffCtrl->ucDfsCtrl = RDD_START;
 
-		prCmdRddOnOffCtrl->ucRddIdx = prAdapter->aprBssInfo[ucBssIdx]->eDBDCBand;
+	prCmdRddOnOffCtrl->ucRddIdx = prAdapter->aprBssInfo[ucBssIdx]->eDBDCBand;
 
-		if (rlmDomainGetDfsRegion() == NL80211_DFS_JP) {
-			if (ucReqChnlNum >= 52 && ucReqChnlNum <= 64)
-				prCmdRddOnOffCtrl->ucRegDomain = REG_JP_53;
-			else if (ucReqChnlNum >= 100 && ucReqChnlNum <= 140)
-				prCmdRddOnOffCtrl->ucRegDomain = REG_JP_56;
-		} else {
-			prCmdRddOnOffCtrl->ucRegDomain = REG_DEFAULT;
-		}
+	if (rlmDomainGetDfsRegion() == NL80211_DFS_JP) {
+		if (ucReqChnlNum >= 52 && ucReqChnlNum <= 64)
+			prCmdRddOnOffCtrl->ucRegDomain = REG_JP_53;
+		else if (ucReqChnlNum >= 100 && ucReqChnlNum <= 140)
+			prCmdRddOnOffCtrl->ucRegDomain = REG_JP_56;
+	} else {
+		prCmdRddOnOffCtrl->ucRegDomain = REG_DEFAULT;
+	}
 
-		if (prCmdRddOnOffCtrl->ucRddIdx)
-			prCmdRddOnOffCtrl->ucRddInSel = RDD_IN_SEL_1;
-		else
-			prCmdRddOnOffCtrl->ucRddInSel = RDD_IN_SEL_0;
+	if (prCmdRddOnOffCtrl->ucRddIdx)
+		prCmdRddOnOffCtrl->ucRddInSel = RDD_IN_SEL_1;
+	else
+		prCmdRddOnOffCtrl->ucRddInSel = RDD_IN_SEL_0;
 
-		DBGLOG(P2P, INFO, "p2pFuncStartRdd: Start Radar detection - DFS ctrl: %d, RDD index: %d\n",
-				prCmdRddOnOffCtrl->ucDfsCtrl, prCmdRddOnOffCtrl->ucRddIdx);
+	DBGLOG(P2P, INFO, "p2pFuncStartRdd: Start Radar detection - DFS ctrl: %d, RDD index: %d\n",
+			prCmdRddOnOffCtrl->ucDfsCtrl, prCmdRddOnOffCtrl->ucRddIdx);
 
-		wlanSendSetQueryCmd(prAdapter,
-					CMD_ID_RDD_ON_OFF_CTRL,
-					TRUE,
-					FALSE,
-					FALSE,
-					NULL,
-					NULL,
-					sizeof(*prCmdRddOnOffCtrl), (PUINT_8) prCmdRddOnOffCtrl, NULL, 0);
+	wlanSendSetQueryCmd(prAdapter,
+				CMD_ID_RDD_ON_OFF_CTRL,
+				TRUE,
+				FALSE,
+				FALSE,
+				NULL,
+				NULL,
+				sizeof(*prCmdRddOnOffCtrl), (PUINT_8) prCmdRddOnOffCtrl, NULL, 0);
 
-		cnmMemFree(prAdapter, prCmdRddOnOffCtrl);
-
-	} while (FALSE);
+	cnmMemFree(prAdapter, prCmdRddOnOffCtrl);
 }				/* p2pFuncStartRdd */
 
 VOID p2pFuncStopRdd(IN P_ADAPTER_T prAdapter, IN UINT_8 ucBssIdx)
@@ -1375,38 +1374,37 @@ VOID p2pFuncStopRdd(IN P_ADAPTER_T prAdapter, IN UINT_8 ucBssIdx)
 
 	DEBUGFUNC("p2pFuncStopRdd()");
 
-	do {
-		ASSERT_BREAK((prAdapter != NULL));
+	prCmdRddOnOffCtrl = (P_CMD_RDD_ON_OFF_CTRL_T) cnmMemAlloc(prAdapter, RAM_TYPE_MSG,
+				sizeof(*prCmdRddOnOffCtrl));
 
-		prCmdRddOnOffCtrl = (P_CMD_RDD_ON_OFF_CTRL_T) cnmMemAlloc(prAdapter, RAM_TYPE_MSG,
-					sizeof(*prCmdRddOnOffCtrl));
+	if (!prCmdRddOnOffCtrl) {
+		DBGLOG(P2P, ERROR, "cnmMemAlloc for prCmdRddOnOffCtrl failed!\n");
+		return;
+	}
 
-		ASSERT_BREAK((prCmdRddOnOffCtrl != NULL));
+	prCmdRddOnOffCtrl->ucDfsCtrl = RDD_STOP;
 
-		prCmdRddOnOffCtrl->ucDfsCtrl = RDD_STOP;
+	prCmdRddOnOffCtrl->ucRddIdx = prAdapter->aprBssInfo[ucBssIdx]->eDBDCBand;
 
-		prCmdRddOnOffCtrl->ucRddIdx = prAdapter->aprBssInfo[ucBssIdx]->eDBDCBand;
+	if (prCmdRddOnOffCtrl->ucRddIdx)
+		prCmdRddOnOffCtrl->ucRddInSel = RDD_IN_SEL_1;
+	else
+		prCmdRddOnOffCtrl->ucRddInSel = RDD_IN_SEL_0;
 
-		if (prCmdRddOnOffCtrl->ucRddIdx)
-			prCmdRddOnOffCtrl->ucRddInSel = RDD_IN_SEL_1;
-		else
-			prCmdRddOnOffCtrl->ucRddInSel = RDD_IN_SEL_0;
+	DBGLOG(P2P, INFO, "p2pFuncStopRdd: Stop Radar detection - DFS ctrl: %d, RDD index: %d\n",
+			prCmdRddOnOffCtrl->ucDfsCtrl, prCmdRddOnOffCtrl->ucRddIdx);
 
-		DBGLOG(P2P, INFO, "p2pFuncStopRdd: Stop Radar detection - DFS ctrl: %d, RDD index: %d\n",
-				prCmdRddOnOffCtrl->ucDfsCtrl, prCmdRddOnOffCtrl->ucRddIdx);
+	wlanSendSetQueryCmd(prAdapter,
+				CMD_ID_RDD_ON_OFF_CTRL,
+				TRUE,
+				FALSE,
+				FALSE,
+				NULL,
+				NULL,
+				sizeof(*prCmdRddOnOffCtrl), (PUINT_8) prCmdRddOnOffCtrl, NULL, 0);
 
-		wlanSendSetQueryCmd(prAdapter,
-					CMD_ID_RDD_ON_OFF_CTRL,
-					TRUE,
-					FALSE,
-					FALSE,
-					NULL,
-					NULL,
-					sizeof(*prCmdRddOnOffCtrl), (PUINT_8) prCmdRddOnOffCtrl, NULL, 0);
+	cnmMemFree(prAdapter, prCmdRddOnOffCtrl);
 
-		cnmMemFree(prAdapter, prCmdRddOnOffCtrl);
-
-	} while (FALSE);
 }				/* p2pFuncStopRdd */
 
 VOID p2pFuncDfsSwitchCh(IN P_ADAPTER_T prAdapter, IN P_BSS_INFO_T prBssInfo, IN P2P_CHNL_REQ_INFO_T rP2pChnlReqInfo)
@@ -1418,65 +1416,68 @@ VOID p2pFuncDfsSwitchCh(IN P_ADAPTER_T prAdapter, IN P_BSS_INFO_T prBssInfo, IN 
 
 	DEBUGFUNC("p2pFuncDfsSwitchCh()");
 
-	do {
-		ASSERT_BREAK((prAdapter != NULL) && (prBssInfo != NULL));
+	if (!prBssInfo) {
+		DBGLOG(P2P, ERROR, "prBssInfo shouldn't be NULL!\n");
+		return;
+	}
 
-		/*  Setup Channel, Band */
-		prBssInfo->ucPrimaryChannel = rP2pChnlReqInfo.ucReqChnlNum;
-		prBssInfo->eBand = rP2pChnlReqInfo.eBand;
-		prBssInfo->eBssSCO = rP2pChnlReqInfo.eChnlSco;
+	/*  Setup Channel, Band */
+	prBssInfo->ucPrimaryChannel = rP2pChnlReqInfo.ucReqChnlNum;
+	prBssInfo->eBand = rP2pChnlReqInfo.eBand;
+	prBssInfo->eBssSCO = rP2pChnlReqInfo.eChnlSco;
 
-		/* Setup channel and bandwidth */
-		rlmBssInitForAPandIbss(prAdapter, prBssInfo);
+	/* Setup channel and bandwidth */
+	rlmBssInitForAPandIbss(prAdapter, prBssInfo);
 
-		/* Update Beacon again for network phy type confirmed. */
-		bssUpdateBeaconContent(prAdapter, prBssInfo->ucBssIndex);
+	/* Update Beacon again for network phy type confirmed. */
+	bssUpdateBeaconContent(prAdapter, prBssInfo->ucBssIndex);
 
-		/* Reset HW TSF Update Mode and Beacon Mode */
-		nicUpdateBss(prAdapter, prBssInfo->ucBssIndex);
+	/* Reset HW TSF Update Mode and Beacon Mode */
+	nicUpdateBss(prAdapter, prBssInfo->ucBssIndex);
 
-		prCmdRddOnOffCtrl = (P_CMD_RDD_ON_OFF_CTRL_T) cnmMemAlloc(prAdapter, RAM_TYPE_MSG,
-						sizeof(*prCmdRddOnOffCtrl));
+	prCmdRddOnOffCtrl = (P_CMD_RDD_ON_OFF_CTRL_T) cnmMemAlloc(prAdapter, RAM_TYPE_MSG,
+					sizeof(*prCmdRddOnOffCtrl));
 
-		ASSERT_BREAK((prCmdRddOnOffCtrl != NULL));
+	if (!prCmdRddOnOffCtrl) {
+		DBGLOG(P2P, ERROR, "cnmMemAlloc for prCmdRddOnOffCtrl failed!\n");
+		return;
+	}
 
-		prCmdRddOnOffCtrl->ucDfsCtrl = RDD_START_TXQ;
+	prCmdRddOnOffCtrl->ucDfsCtrl = RDD_START_TXQ;
 
-		DBGLOG(P2P, INFO, "p2pFuncDfsSwitchCh: Start TXQ - DFS ctrl: %.d\n", prCmdRddOnOffCtrl->ucDfsCtrl);
+	DBGLOG(P2P, INFO, "p2pFuncDfsSwitchCh: Start TXQ - DFS ctrl: %.d\n", prCmdRddOnOffCtrl->ucDfsCtrl);
 
-		wlanSendSetQueryCmd(prAdapter,
-					CMD_ID_RDD_ON_OFF_CTRL,
-					TRUE,
-					FALSE,
-					FALSE,
-					NULL,
-					NULL,
-					sizeof(*prCmdRddOnOffCtrl), (PUINT_8) prCmdRddOnOffCtrl, NULL, 0);
+	wlanSendSetQueryCmd(prAdapter,
+				CMD_ID_RDD_ON_OFF_CTRL,
+				TRUE,
+				FALSE,
+				FALSE,
+				NULL,
+				NULL,
+				sizeof(*prCmdRddOnOffCtrl), (PUINT_8) prCmdRddOnOffCtrl, NULL, 0);
 
-		cnmMemFree(prAdapter, prCmdRddOnOffCtrl);
+	cnmMemFree(prAdapter, prCmdRddOnOffCtrl);
 
-		prP2pRoleFsmInfo = P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prAdapter, prBssInfo->u4PrivateData);
+	prP2pRoleFsmInfo = P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prAdapter, prBssInfo->u4PrivateData);
 
-		prGlueInfo = prAdapter->prGlueInfo;
+	prGlueInfo = prAdapter->prGlueInfo;
 
-		DBGLOG(P2P, INFO, "p2pFuncDfsSwitchCh: Update to OS\n");
-		cfg80211_ch_switch_notify(prGlueInfo->prP2PInfo[prP2pRoleFsmInfo->ucRoleIndex]->prDevHandler,
-						prGlueInfo->prP2PInfo[prP2pRoleFsmInfo->ucRoleIndex]->chandef);
-		DBGLOG(P2P, INFO, "p2pFuncDfsSwitchCh: Update to OS Done\n");
+	DBGLOG(P2P, INFO, "p2pFuncDfsSwitchCh: Update to OS\n");
+	cfg80211_ch_switch_notify(prGlueInfo->prP2PInfo[prP2pRoleFsmInfo->ucRoleIndex]->prDevHandler,
+					prGlueInfo->prP2PInfo[prP2pRoleFsmInfo->ucRoleIndex]->chandef);
+	DBGLOG(P2P, INFO, "p2pFuncDfsSwitchCh: Update to OS Done\n");
 
-		if (prGlueInfo->prP2PInfo[prP2pRoleFsmInfo->ucRoleIndex]->chandef->chan)
-			cnmMemFree(prGlueInfo->prAdapter,
-				prGlueInfo->prP2PInfo[prP2pRoleFsmInfo->ucRoleIndex]->chandef->chan);
+	if (prGlueInfo->prP2PInfo[prP2pRoleFsmInfo->ucRoleIndex]->chandef->chan)
+		cnmMemFree(prGlueInfo->prAdapter,
+			prGlueInfo->prP2PInfo[prP2pRoleFsmInfo->ucRoleIndex]->chandef->chan);
 
-		prGlueInfo->prP2PInfo[prP2pRoleFsmInfo->ucRoleIndex]->chandef->chan = NULL;
+	prGlueInfo->prP2PInfo[prP2pRoleFsmInfo->ucRoleIndex]->chandef->chan = NULL;
 
-		if (prGlueInfo->prP2PInfo[prP2pRoleFsmInfo->ucRoleIndex]->chandef)
-			cnmMemFree(prGlueInfo->prAdapter,
-				prGlueInfo->prP2PInfo[prP2pRoleFsmInfo->ucRoleIndex]->chandef);
+	if (prGlueInfo->prP2PInfo[prP2pRoleFsmInfo->ucRoleIndex]->chandef)
+		cnmMemFree(prGlueInfo->prAdapter,
+			prGlueInfo->prP2PInfo[prP2pRoleFsmInfo->ucRoleIndex]->chandef);
 
-		prGlueInfo->prP2PInfo[prP2pRoleFsmInfo->ucRoleIndex]->chandef = NULL;
-
-	} while (FALSE);
+	prGlueInfo->prP2PInfo[prP2pRoleFsmInfo->ucRoleIndex]->chandef = NULL;
 }				/* p2pFuncDfsSwitchCh */
 
 BOOLEAN p2pFuncCheckWeatherRadarBand(IN P_P2P_CHNL_REQ_INFO_T prChnlReqInfo)
@@ -3887,31 +3888,30 @@ VOID p2pFuncGenerateP2p_IEForAssocRsp(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T
 {
 	P_STA_RECORD_T prStaRec = (P_STA_RECORD_T) NULL;
 
-	do {
-		ASSERT_BREAK((prAdapter != NULL) && (prMsduInfo != NULL));
 
-		prStaRec = cnmGetStaRecByIndex(prAdapter, prMsduInfo->ucStaRecIndex);
+	prStaRec = cnmGetStaRecByIndex(prAdapter, prMsduInfo->ucStaRecIndex);
 
-		if (IS_STA_IN_P2P(prStaRec)) {
-			DBGLOG(P2P, TRACE, "Generate NULL P2P IE for Assoc Rsp.\n");
+	if (!prStaRec) {
+		DBGLOG(P2P, ERROR, "prStaRec of ucStaRecIndex %d is NULL!\n",
+			prMsduInfo->ucStaRecIndex);
+		return;
+	}
 
-			p2pFuncGenerateP2P_IE(prAdapter,
-					      prMsduInfo->ucBssIndex,
-					      TRUE,
-					      &prMsduInfo->u2FrameLength,
-					      prMsduInfo->prPacket,
-					      1500,
-					      txAssocRspAttributesTable,
-					      sizeof(txAssocRspAttributesTable) / sizeof(APPEND_VAR_ATTRI_ENTRY_T));
-		} else {
+	if (IS_STA_IN_P2P(prStaRec)) {
+		DBGLOG(P2P, TRACE, "Generate NULL P2P IE for Assoc Rsp.\n");
 
-			DBGLOG(P2P, TRACE, "Legacy device, no P2P IE.\n");
-		}
+		p2pFuncGenerateP2P_IE(prAdapter,
+				      prMsduInfo->ucBssIndex,
+				      TRUE,
+				      &prMsduInfo->u2FrameLength,
+				      prMsduInfo->prPacket,
+				      1500,
+				      txAssocRspAttributesTable,
+				      sizeof(txAssocRspAttributesTable) / sizeof(APPEND_VAR_ATTRI_ENTRY_T));
+	} else {
 
-	} while (FALSE);
-
-	return;
-
+		DBGLOG(P2P, TRACE, "Legacy device, no P2P IE.\n");
+	}
 }				/* p2pFuncGenerateP2p_IEForAssocRsp */
 
 UINT_32
