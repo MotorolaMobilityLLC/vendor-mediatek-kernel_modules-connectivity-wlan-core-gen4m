@@ -3062,7 +3062,8 @@ wext_set_encode_ext(IN struct net_device *prNetDev,
 		}
 
 		/* PN */
-		memcpy(&prWpiKey->aucPN[0], &prIWEncExt->tx_seq[0], IW_ENCODE_SEQ_MAX_SIZE * 2);
+		memcpy(&prWpiKey->aucPN[0], &prIWEncExt->tx_seq[0], IW_ENCODE_SEQ_MAX_SIZE);
+		memcpy(&prWpiKey->aucPN[IW_ENCODE_SEQ_MAX_SIZE], &prIWEncExt->rx_seq[0], IW_ENCODE_SEQ_MAX_SIZE);
 
 		/* BSSID */
 		memcpy(prWpiKey->aucAddrIndex, prIWEncExt->addr.sa_data, 6);

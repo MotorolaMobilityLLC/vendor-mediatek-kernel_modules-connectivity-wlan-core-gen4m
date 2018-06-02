@@ -1743,7 +1743,7 @@ static int32_t HQA_MACBbpRegBulkRead(struct net_device *prNetDev,
 	memcpy(&u2Len, HqaCmdFrame->Data + 4, 2);
 	u2Len = ntohs(u2Len);
 
-	DBGLOG(RFTEST, INFO, "Offset = 0x%08x, Len = 0x%08x\n", u4Offset);
+	DBGLOG(RFTEST, INFO, "Offset = 0x%08x, Len = 0x%08x\n", u4Offset, u2Len);
 
 	for (u4Index = 0; u4Index < u2Len; u4Index++) {
 		rMcrInfo.u4McrOffset = u4Offset + u4Index * 4;
