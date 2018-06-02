@@ -480,6 +480,15 @@ void scnFsmMsgAbort(IN struct ADAPTER *prAdapter, IN struct MSG_HDR *prMsgHdr)
 				NULL,
 				0);
 
+			/* Full2Partial: ignore this statistics */
+			if (prScanInfo->fgIsScanForFull2Partial) {
+				prScanInfo->fgIsScanForFull2Partial = FALSE;
+				prScanInfo->u4LastFullScanTime = 0;
+				DBGLOG(SCN, INFO,
+					"Full2Partial: scan canceled(%u)\n",
+					prScanParam->ucSeqNum);
+			}
+
 			/* generate scan-done event for caller */
 			scnFsmGenerateScanDoneMsg(prAdapter,
 				prScanParam->ucSeqNum,
@@ -895,6 +904,16 @@ void scnEventScanDone(IN struct ADAPTER *prAdapter,
 		} else {
 			prScanInfo->fgIsSparseChannelValid = FALSE;
 		}
+	}
+
+	/* Full2Partial */
+	if (prScanInfo->fgIsScanForFull2Partial &&
+		prScanInfo->ucFull2PartialSeq == prScanDone->ucSeqNum) {
+		DBGLOG(SCN, INFO, "Full2Partial: scan done(%u) chnl(%u)\n",
+			prScanDone->ucSeqNum,
+			scanCountBits(prScanInfo->au4ChannelBitMap,
+			sizeof(prScanInfo->au4ChannelBitMap)));
+		prScanInfo->fgIsScanForFull2Partial = FALSE;
 	}
 
 	if (prScanInfo->eCurrentState == SCAN_STATE_SCANNING

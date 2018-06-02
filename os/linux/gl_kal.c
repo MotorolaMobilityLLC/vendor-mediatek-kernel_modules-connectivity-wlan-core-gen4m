@@ -1178,6 +1178,15 @@ kalIndicateStatusAndComplete(IN struct GLUE_INFO *prGlueInfo, IN uint32_t eStatu
 #endif
 
 		netif_carrier_off(prGlueInfo->prDevHandler);
+
+		/* Full2Partial: reset */
+		if (prGlueInfo->prAdapter) {
+			struct SCAN_INFO *prScanInfo =
+				&(prGlueInfo->prAdapter->rWifiVar.rScanInfo);
+			prScanInfo->fgIsScanForFull2Partial = FALSE;
+			prScanInfo->u4LastFullScanTime = 0;
+		}
+
 		if (prGlueInfo->fgIsRegistered == TRUE) {
 			struct BSS_INFO *prBssInfo = prGlueInfo->prAdapter->prAisBssInfo;
 			uint16_t u2DeauthReason = 0;
