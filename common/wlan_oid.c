@@ -1135,11 +1135,15 @@ wlanoidSetConnect(IN P_ADAPTER_T prAdapter, IN PVOID pvSetBuffer, IN UINT_32 u4S
 		if (pParamConn->u4SsidLen == ELEM_MAX_LEN_SSID) {
 			fgIsValidSsid = FALSE;
 
-			for (i = 0; i < ELEM_MAX_LEN_SSID; i++) {
-				if (!((pParamConn->pucSsid[i] > 0) && (pParamConn->pucSsid[i] <= 0x1F))) {
-					fgIsValidSsid = TRUE;
-					break;
+			if (pParamConn->pucSsid) {
+				for (i = 0; i < ELEM_MAX_LEN_SSID; i++) {
+					if (!((pParamConn->pucSsid[i] > 0) && (pParamConn->pucSsid[i] <= 0x1F))) {
+						fgIsValidSsid = TRUE;
+						break;
+					}
 				}
+			} else {
+				DBGLOG(INIT, ERROR, "pParamConn->pucSsid is NULL\n");
 			}
 		}
 	}
@@ -2330,11 +2334,13 @@ wlanoidSetAddKey(IN P_ADAPTER_T prAdapter, IN PVOID pvSetBuffer, IN UINT_32 u4Se
 		prCmdKey->ucAlgorithmId = prNewKey->ucCipher;
 		if (IS_BSS_AIS(prBssInfo)) {
 #if CFG_SUPPORT_802_11W
-			if ((prCmdKey->ucKeyId >= 4) && prCmdKey->ucAlgorithmId == CIPHER_SUITE_BIP) {
-				P_AIS_SPECIFIC_BSS_INFO_T prAisSpecBssInfo;
+			if (prCmdKey->ucAlgorithmId == CIPHER_SUITE_BIP) {
+				if (prCmdKey->ucKeyId >= 4) {
+					P_AIS_SPECIFIC_BSS_INFO_T prAisSpecBssInfo;
 
-				prAisSpecBssInfo = &prAdapter->rWifiVar.rAisSpecificBssInfo;
-				prAisSpecBssInfo->fgBipKeyInstalled = TRUE;
+					prAisSpecBssInfo = &prAdapter->rWifiVar.rAisSpecificBssInfo;
+					prAisSpecBssInfo->fgBipKeyInstalled = TRUE;
+				}
 			}
 #endif
 			if ((prCmdKey->ucAlgorithmId == CIPHER_SUITE_CCMP) && rsnCheckPmkidCandicate(prAdapter)) {
@@ -3114,6 +3120,8 @@ wlanoidSetTest(IN P_ADAPTER_T prAdapter, IN PVOID pvSetBuffer, IN UINT_32 u4SetB
 		pvTestData = (PVOID) &prTest->u.AuthenticationEvent;
 		pvStatusBuffer = (PVOID) prAdapter->aucIndicationEventBuffer;
 		u4StatusBufferSize = prTest->u4Length - 8;
+		if (u4StatusBufferSize > sizeof(prTest->u.AuthenticationEvent))
+			return WLAN_STATUS_INVALID_LENGTH;
 		break;
 
 	case 2:		/* Type 2: generate an RSSI status indication */
@@ -3125,10 +3133,6 @@ wlanoidSetTest(IN P_ADAPTER_T prAdapter, IN PVOID pvSetBuffer, IN UINT_32 u4SetB
 	default:
 		return WLAN_STATUS_INVALID_DATA;
 	}
-
-	ASSERT(u4StatusBufferSize <= 180);
-	if (u4StatusBufferSize > 180)
-		return WLAN_STATUS_INVALID_LENGTH;
 
 	/* Get the contents of the StatusBuffer from the test structure. */
 	kalMemCopy(pvStatusBuffer, pvTestData, u4StatusBufferSize);
@@ -6501,7 +6505,7 @@ wlanLoadDefaultCustomerSetting(IN P_ADAPTER_T prAdapter) {
 
 
 	ucItemNum = (sizeof(g_rDefaulteSetting) / sizeof(PARAM_CUSTOM_KEY_CFG_STRUCT_T));
-	DBGLOG(INIT, INFO, "[wlanLoadDefaultCustomerSetting] default firmware setting %d item\n");
+	DBGLOG(INIT, INFO, "[wlanLoadDefaultCustomerSetting] default firmware setting %d item\n", ucItemNum);
 
 
 	for (i = 0; i < ucItemNum; i++) {
@@ -7183,7 +7187,7 @@ wlanoidSetMulticastList(IN P_ADAPTER_T prAdapter,
 	*pu4SetInfoLen = u4SetBufferLen;
 
 	/* Verify if we can support so many multicast addresses. */
-	if ((u4SetBufferLen / MAC_ADDR_LEN) > MAX_NUM_GROUP_ADDR) {
+	if (u4SetBufferLen > MAX_NUM_GROUP_ADDR * MAC_ADDR_LEN) {
 		DBGLOG(REQ, WARN, "Too many MC addresses\n");
 
 		return WLAN_STATUS_MULTICAST_FULL;
@@ -9193,11 +9197,7 @@ wlanoidSetWapiKey(IN P_ADAPTER_T prAdapter, IN PVOID pvSetBuffer, IN UINT_32 u4S
 	/* Todo:: WAPI AP mode !!!!! */
 	prBssInfo = prAdapter->prAisBssInfo;
 
-	/* Exception check */
-	if (prNewKey->ucKeyID != 0x1 || prNewKey->ucKeyID != 0x0) {
-		prNewKey->ucKeyID = prNewKey->ucKeyID & BIT(0);
-		/* DBGLOG(SEC, INFO, ("Invalid WAPI key ID (%d)\r\n", prNewKey->ucKeyID)); */
-	}
+	prNewKey->ucKeyID = prNewKey->ucKeyID & BIT(0);
 
 	/* Dump P_PARAM_WPI_KEY_T content. */
 	DBGLOG(REQ, TRACE, "Set: Dump P_PARAM_WPI_KEY_T content\r\n");
@@ -11994,7 +11994,11 @@ wlanoidQuerySetRddReport(IN P_ADAPTER_T prAdapter, IN PVOID pvSetBuffer, IN UINT
 	prCmdRddOnOffCtrl = (P_CMD_RDD_ON_OFF_CTRL_T) cnmMemAlloc(prAdapter, RAM_TYPE_MSG,
 					sizeof(*prCmdRddOnOffCtrl));
 
-	ASSERT_BREAK((prCmdRddOnOffCtrl != NULL));
+	ASSERT(prCmdRddOnOffCtrl);
+	if (prCmdRddOnOffCtrl == NULL) {
+		DBGLOG(INIT, ERROR, "prCmdRddOnOffCtrl is NULL");
+		return WLAN_STATUS_FAILURE;
+	}
 
 	prCmdRddOnOffCtrl->ucDfsCtrl = RDD_RADAR_EMULATE;
 
@@ -12062,7 +12066,11 @@ wlanoidQuerySetRadarDetectMode(IN P_ADAPTER_T prAdapter, IN PVOID pvSetBuffer, I
 	prCmdRddOnOffCtrl = (P_CMD_RDD_ON_OFF_CTRL_T) cnmMemAlloc(prAdapter, RAM_TYPE_MSG,
 					sizeof(*prCmdRddOnOffCtrl));
 
-	ASSERT_BREAK((prCmdRddOnOffCtrl != NULL));
+	ASSERT(prCmdRddOnOffCtrl);
+	if (prCmdRddOnOffCtrl == NULL) {
+		DBGLOG(INIT, ERROR, "prCmdRddOnOffCtrl is NULL");
+		return WLAN_STATUS_FAILURE;
+	}
 
 	prCmdRddOnOffCtrl->ucDfsCtrl = RDD_DET_MODE;
 
