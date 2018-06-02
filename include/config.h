@@ -877,6 +877,14 @@
 #define CFG_BEACON_TIMEOUT_FILTER_DURATION_DEFAULT_VALUE	2000
 
 /*------------------------------------------------------------------------------
+ * Value of scan cache result
+ *------------------------------------------------------------------------------
+ */
+#define CFG_SUPPORT_SCAN_CACHE_RESULT      (1)
+#define CFG_SCAN_CACHE_RESULT_PERIOD       (7)  /* in sec */
+#define CFG_SCAN_CACHE_MIN_CHANNEL_NUM     (10)
+
+/*------------------------------------------------------------------------------
  * Flags of Sniffer SUPPORT
  *------------------------------------------------------------------------------
  */

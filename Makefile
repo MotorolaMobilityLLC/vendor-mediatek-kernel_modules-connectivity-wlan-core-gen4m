@@ -177,6 +177,7 @@ ccflags-y += -I$(KERNEL_DIR)/drivers/misc/mediatek/performance/include/
 ccflags-y += -I$(KERNEL_DIR)/drivers/misc/mediatek/emi/$(MTK_PLATFORM)
 ccflags-y += -I$(KERNEL_DIR)/drivers/misc/mediatek/emi/submodule
 ccflags-y += -I$(KERNEL_DIR)/drivers/devfreq/
+ccflags-y += -I$(KERNEL_DIR)/net
 
 ifeq ($(CONFIG_MTK_COMBO_WIFI_HIF), sdio)
 ccflags-y += -I$(src)/os/linux/hif/sdio/include
