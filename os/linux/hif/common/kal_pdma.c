@@ -170,60 +170,6 @@ u_int8_t kalDevRegRead(IN struct GLUE_INFO *prGlueInfo,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Check special register write
- *
- * \param[in] prGlueInfo pointer to the GLUE_INFO_T structure.
- * \param[in] u4BusAddr  register mapping bus address
- * \param[in] u4Value    value to be written
- *
- * \retval TRUE          valid access
- * \retval FALSE         invalid access
- */
-/*----------------------------------------------------------------------------*/
-static bool kalCheckSpecRegWrite(struct GLUE_INFO *prGlueInfo,
-				 uint32_t u4BusAddr, uint32_t u4Value)
-{
-	uint32_t au4Regs[] = { WPDMA_GLO_CFG,
-			       WPDMA_TX_RING0_CTRL0,
-			       WPDMA_TX_RING0_CTRL0 + MT_RINGREG_DIFF,
-			       WPDMA_TX_RING0_CTRL0 + MT_RINGREG_DIFF * 3,
-			       WPDMA_TX_RING0_CTRL0 + MT_RINGREG_DIFF * 15,
-			       WPDMA_RX_RING0_CTRL0,
-			       WPDMA_RX_RING0_CTRL0 + MT_RINGREG_DIFF,
-			       WPDMA_TX_RING0_CTRL1,
-			       WPDMA_TX_RING0_CTRL1 + MT_RINGREG_DIFF,
-			       WPDMA_TX_RING0_CTRL1 + MT_RINGREG_DIFF * 3,
-			       WPDMA_TX_RING0_CTRL1 + MT_RINGREG_DIFF * 15,
-			       WPDMA_RX_RING0_CTRL1,
-			       WPDMA_RX_RING0_CTRL1 + MT_RINGREG_DIFF,
-			       PSE_PG_CPU_GROUP,
-			       PSE_PG_LMAC2_GROUP };
-	uint32_t u4Idx, u4Size = sizeof(au4Regs) / sizeof(uint32_t);
-
-	/* only check write 0 to reg */
-	if (u4Value)
-		return true;
-
-	for (u4Idx = 0; u4Idx < u4Size; u4Idx++) {
-		if (u4BusAddr == au4Regs[u4Idx]) {
-			DBGLOG(HAL, ERROR,
-			       "Invalid access! Set CR[0x%08x] value[0x%08x]\n",
-			       u4BusAddr, u4Value);
-			DBGLOG(HAL, ERROR, "main_thread stack:\n");
-			kal_show_stack(prGlueInfo->main_thread, NULL);
-			DBGLOG(HAL, ERROR, "hif_thread stack:\n");
-			kal_show_stack(prGlueInfo->hif_thread, NULL);
-			GL_RESET_TRIGGER(prGlueInfo->prAdapter,
-					 RST_FLAG_CHIP_RESET);
-			return false;
-		}
-	}
-
-	return true;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief Write a 32-bit device register
  *
  * \param[in] prGlueInfo Pointer to the GLUE_INFO_T structure.
@@ -256,10 +202,6 @@ u_int8_t kalDevRegWrite(IN struct GLUE_INFO *prGlueInfo,
 
 	/* Static mapping */
 	if (halChipToStaticMapBusAddr(prGlueInfo, u4Register, &u4BusAddr)) {
-		/* for debug */
-		if (!kalCheckSpecRegWrite(prGlueInfo, u4BusAddr, u4Value))
-			return FALSE;
-
 		RTMP_IO_WRITE32(prHifInfo, u4BusAddr, u4Value);
 	} else {
 		DBGLOG(HAL, ERROR, "Not exist CR write[0x%08x] value[0x%08x]\n",
