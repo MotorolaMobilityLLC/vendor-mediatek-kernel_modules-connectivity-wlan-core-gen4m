@@ -2326,7 +2326,7 @@ reqExtSetAcpiDevicePowerState(IN P_GLUE_INFO_T prGlueInfo,
 #define CMD_SET_CALBACKUP_TEST_DRV_FW		"SET_CALBACKUP_TEST_DRV_FW"
 #endif
 
-#define CMD_GET_CNM_INFO		"GET_CNM"
+#define CMD_GET_CNM		"GET_CNM"
 
 #if CFG_SUPPORT_ADVANCE_CONTROL
 #define CMD_SW_DBGCTL_ADVCTL_SET_ID 0xa1260000
@@ -8313,7 +8313,7 @@ static int priv_driver_get_hif_info(IN struct net_device *prNetDev, IN char *pcC
 	return halDumpHifStatus(prGlueInfo->prAdapter, pcCommand, i4TotalLen);
 }
 
-static int priv_driver_get_cnm_info(IN struct net_device *prNetDev, IN char *pcCommand, IN int i4TotalLen)
+static int priv_driver_get_cnm(IN struct net_device *prNetDev, IN char *pcCommand, IN int i4TotalLen)
 {
 	P_GLUE_INFO_T prGlueInfo = NULL;
 	WLAN_STATUS rStatus = WLAN_STATUS_SUCCESS;
@@ -8321,81 +8321,131 @@ static int priv_driver_get_cnm_info(IN struct net_device *prNetDev, IN char *pcC
 	INT_32 i4BytesWritten = 0;
 	INT_32 i4Argc = 0;
 	PCHAR apcArgv[WLAN_CFG_ARGV_MAX];
-	CNM_STATUS_T rCnmStatus;
-	PUINT_32 pu4Ptr;
-	P_CNM_CH_LIST_T prChList;
-	UINT_32 u4Offset = 0;
-	PARAM_CUSTOM_SW_CTRL_STRUCT_T rSwCtrlInfo;
+	struct _PARAM_GET_CNM_T *prCnmInfo = NULL;
 
-	ASSERT(prNetDev);
-
-	prGlueInfo = *((P_GLUE_INFO_T *) netdev_priv(prNetDev));
+	ENUM_DBDC_BN_T	eDbdcIdx, eDbdcIdxMax;
+	UINT_8			ucBssIdx;
+	P_BSS_INFO_T	prBssInfo;
+	UINT_8 ucNetworkType;
+	UINT_8 ucNss;
 
 	ASSERT(prNetDev);
 	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
 		return -1;
+
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+
 	prGlueInfo = *((P_GLUE_INFO_T *) netdev_priv(prNetDev));
 
 	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
-	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
 
-	rSwCtrlInfo.u4Data = 0;
-	rSwCtrlInfo.u4Id = 0xb0000000;
+	prCnmInfo = (struct _PARAM_GET_CNM_T *)kalMemAlloc(sizeof(struct _PARAM_GET_CNM_T), VIR_MEM_TYPE);
+	if (prCnmInfo == NULL)
+		return -1;
+
+	kalMemZero(prCnmInfo, sizeof(struct _PARAM_GET_CNM_T));
 
 	rStatus = kalIoctl(prGlueInfo,
-			   wlanoidQuerySwCtrlRead,
-			   &rSwCtrlInfo, sizeof(rSwCtrlInfo), TRUE, TRUE, TRUE, &u4BufLen);
+					wlanoidQueryCnm,
+					prCnmInfo,
+					sizeof(struct _PARAM_GET_CNM_T),
+					TRUE,
+					TRUE,
+					TRUE,
+					&u4BufLen);
 
-	DBGLOG(REQ, LOUD, "rStatus %u\n", rStatus);
+	DBGLOG(REQ, INFO, "%s: command result is %s\n", __func__, pcCommand);
 	if (rStatus != WLAN_STATUS_SUCCESS)
 		return -1;
 
-	pu4Ptr = (PUINT_32)&rCnmStatus;
-	*pu4Ptr = rSwCtrlInfo.u4Data;
+	i4BytesWritten += snprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+								"\n[CNM Info]\n");
+	i4BytesWritten += snprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+								"DBDC Mode : %s\n\n",
+								(prCnmInfo->fgIsDbdcEnable)?"Enable":"Disable");
 
-	u4Offset += snprintf(pcCommand + u4Offset, i4TotalLen - u4Offset,
-				"DBDC is %s, %u CHs in BAND0, %u CHs in BAND1\n",
-				rCnmStatus.fgDbDcModeEn?"ON":"OFF", rCnmStatus.ucChNumB0, rCnmStatus.ucChNumB1);
-
-	if (rCnmStatus.ucChNumB0 > 0) {
-		rSwCtrlInfo.u4Id = 0xb0010000;
-
-		rStatus = kalIoctl(prGlueInfo,
-				   wlanoidQuerySwCtrlRead,
-				   &rSwCtrlInfo, sizeof(rSwCtrlInfo), TRUE, TRUE, TRUE, &u4BufLen);
-
-		DBGLOG(REQ, LOUD, "rStatus %u\n", rStatus);
-		if (rStatus != WLAN_STATUS_SUCCESS)
-			return -1;
-
-		prChList = (P_CNM_CH_LIST_T)&rSwCtrlInfo.u4Data;
-
-		u4Offset += snprintf(pcCommand + u4Offset, i4TotalLen - u4Offset,
-					"BAND0 channels : %u %u %u\n",
-					prChList->ucChNum[0], prChList->ucChNum[1], prChList->ucChNum[2]);
+	eDbdcIdxMax = (prCnmInfo->fgIsDbdcEnable)?ENUM_BAND_NUM:ENUM_BAND_1;
+	for (eDbdcIdx = ENUM_BAND_0; eDbdcIdx < eDbdcIdxMax; eDbdcIdx++) {
+		/* Do not clean history information */
+		/* if argc is bigger than 1 */
+		if (i4Argc < 2) {
+			if (prCnmInfo->ucOpChNum[eDbdcIdx] < 3)
+				prCnmInfo->ucChList[eDbdcIdx][2] = 0;
+			if (prCnmInfo->ucOpChNum[eDbdcIdx] < 2)
+				prCnmInfo->ucChList[eDbdcIdx][1] = 0;
+			if (prCnmInfo->ucOpChNum[eDbdcIdx] < 1)
+				prCnmInfo->ucChList[eDbdcIdx][0] = 0;
+		}
+		i4BytesWritten += snprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+								"Band %u OPCH %d [%u, %u, %u]\n",
+								eDbdcIdx,
+								prCnmInfo->ucOpChNum[eDbdcIdx],
+								prCnmInfo->ucChList[eDbdcIdx][0],
+								prCnmInfo->ucChList[eDbdcIdx][1],
+								prCnmInfo->ucChList[eDbdcIdx][2]);
 	}
-	if (rCnmStatus.ucChNumB1 > 0) {
-		rSwCtrlInfo.u4Id = 0xb0010001;
+	i4BytesWritten += snprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+								"\n");
 
-		rStatus = kalIoctl(prGlueInfo,
-				   wlanoidQuerySwCtrlRead,
-				   &rSwCtrlInfo, sizeof(rSwCtrlInfo), TRUE, TRUE, TRUE, &u4BufLen);
+	for (ucBssIdx = BSSID_0; ucBssIdx < (BSSID_NUM+1); ucBssIdx++) {
 
-		DBGLOG(REQ, LOUD, "rStatus %u\n", rStatus);
-		if (rStatus != WLAN_STATUS_SUCCESS)
-			return -1;
+		prBssInfo = prGlueInfo->prAdapter->aprBssInfo[ucBssIdx];
+		if (!prBssInfo)
+			continue;
 
-		prChList = (P_CNM_CH_LIST_T)&rSwCtrlInfo.u4Data;
+		ucNetworkType = cnmGetBssNetworkType(prBssInfo);
+		if (prCnmInfo->ucInuse[ucBssIdx] &&
+			prCnmInfo->ucActive[ucBssIdx] &&
+			((ucNetworkType == ENUM_CNM_NETWORK_TYPE_P2P_GO) ||
+			 ((ucNetworkType == ENUM_CNM_NETWORK_TYPE_AIS ||
+			   ucNetworkType == ENUM_CNM_NETWORK_TYPE_P2P_GC) &&
+			   (prCnmInfo->ucConnectState[ucBssIdx] == PARAM_MEDIA_STATE_CONNECTED)))) {
+			if (ucNetworkType == ENUM_CNM_NETWORK_TYPE_P2P_GO) {
+				P_STA_RECORD_T prCurrStaRec = (P_STA_RECORD_T) NULL;
 
-		u4Offset += snprintf(pcCommand + u4Offset, i4TotalLen - u4Offset,
-					"BAND1 channels : %u %u %u\n",
-					prChList->ucChNum[0], prChList->ucChNum[1], prChList->ucChNum[2]);
+				prCurrStaRec = LINK_PEEK_HEAD(&prBssInfo->rStaRecOfClientList, STA_RECORD_T,
+					rLinkEntry);
+
+				if (prCurrStaRec != NULL &&
+					IS_CONNECTION_NSS2(prBssInfo, prCurrStaRec)) {
+					ucNss = 2;
+				} else
+					ucNss = 1;
+			} else if (prBssInfo->prStaRecOfAP != NULL &&
+						IS_CONNECTION_NSS2(prBssInfo, prBssInfo->prStaRecOfAP)) {
+				ucNss = 2;
+			} else
+				ucNss = 1;
+
+		} else {
+			ucNetworkType = ENUM_CNM_NETWORK_TYPE_OTHER;
+			ucNss = prBssInfo->ucNss;
+			/* Do not show history information */
+			/* if argc is 1 */
+			if (i4Argc < 2)
+				continue;
+		}
+
+		i4BytesWritten += snprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+								"BSS%u Inuse%u Act%u ConnStat%u [NetType%u][CH%3u][DBDC b%u][WMM%u b%u][OMAC%u b%u][BW%3u][NSS%u]\n",
+								ucBssIdx,
+								prCnmInfo->ucInuse[ucBssIdx],
+								prCnmInfo->ucActive[ucBssIdx],
+								prCnmInfo->ucConnectState[ucBssIdx],
+								ucNetworkType,
+								prCnmInfo->ucBssCh[ucBssIdx],
+								prCnmInfo->ucBssDBDCBand[ucBssIdx],
+								prCnmInfo->ucBssWmmSet[ucBssIdx],
+								prCnmInfo->ucBssWmmDBDCBand[ucBssIdx],
+								prCnmInfo->ucBssOMACSet[ucBssIdx],
+								prCnmInfo->ucBssOMACDBDCBand[ucBssIdx],
+								20 * (0x01 << rlmGetBssOpBwByVhtAndHtOpInfo(prBssInfo)),
+								ucNss
+								);
 	}
 
-	i4BytesWritten = (INT_32)u4Offset;
-
+	kalMemFree(prCnmInfo, VIR_MEM_TYPE, sizeof(struct _PARAM_GET_CNM_T));
 	return i4BytesWritten;
-
 }				/* priv_driver_get_sw_ctrl */
 
 #if CFG_AUTO_CHANNEL_SEL_SUPPORT
@@ -9177,8 +9227,8 @@ INT_32 priv_driver_cmds(IN struct net_device *prNetDev, IN PCHAR pcCommand, IN I
 			i4BytesWritten = priv_driver_get_mem_info(prNetDev, pcCommand, i4TotalLen);
 		else if (strnicmp(pcCommand, CMD_GET_HIF_INFO, strlen(CMD_GET_HIF_INFO)) == 0)
 			i4BytesWritten = priv_driver_get_hif_info(prNetDev, pcCommand, i4TotalLen);
-		else if (strnicmp(pcCommand, CMD_GET_CNM_INFO, strlen(CMD_GET_CNM_INFO)) == 0)
-			i4BytesWritten = priv_driver_get_cnm_info(prNetDev, pcCommand, i4TotalLen);
+		else if (strnicmp(pcCommand, CMD_GET_CNM, strlen(CMD_GET_CNM)) == 0)
+			i4BytesWritten = priv_driver_get_cnm(prNetDev, pcCommand, i4TotalLen);
 #if CFG_AUTO_CHANNEL_SEL_SUPPORT
 		else if (strnicmp(pcCommand, CMD_GET_CH_RANK_LIST, strlen(CMD_GET_CH_RANK_LIST)) == 0)
 			i4BytesWritten = priv_driver_get_ch_rank_list(prNetDev, pcCommand, i4TotalLen);
