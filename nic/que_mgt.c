@@ -7690,18 +7690,27 @@ u_int8_t qmHandleRxReplay(struct ADAPTER *prAdapter,
 		return FALSE;
 	}
 
+	prGlueInfo = prAdapter->prGlueInfo;
+	prWpaInfo = &prGlueInfo->rWpaInfo;
+
 	/* BMC only need check CCMP and TKIP Cipher suite */
 	prRxStatus = prSwRfb->prRxStatus;
 	ucSecMode = HAL_RX_STATUS_GET_SEC_MODE(prRxStatus);
-
-	prGlueInfo = prAdapter->prGlueInfo;
-	prWpaInfo = &prGlueInfo->rWpaInfo;
+	DBGLOG(QM, TRACE, "ucSecMode = [%u], ChiperGroup = [%u]\n",
+			ucSecMode, prWpaInfo->u4CipherGroup);
 
 	if (ucSecMode != CIPHER_SUITE_CCMP
 	    && ucSecMode != CIPHER_SUITE_TKIP) {
 		DBGLOG_LIMITED(QM, TRACE,
 			"SecMode: %d and CipherGroup: %d, no need check replay\n",
 			ucSecMode, prWpaInfo->u4CipherGroup);
+		return FALSE;
+	}
+
+	if (prWpaInfo->u4CipherGroup != IW_AUTH_CIPHER_TKIP &&
+	    prWpaInfo->u4CipherGroup != IW_AUTH_CIPHER_CCMP) {
+		DBGLOG(QM, ERROR,
+			"RX status Chipher mode doens't match AP's setting\n");
 		return FALSE;
 	}
 
