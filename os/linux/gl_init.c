@@ -89,6 +89,9 @@
 struct semaphore g_halt_sem;
 int g_u4HaltFlag;
 
+u_int8_t g_fgNvramAvailable;
+struct REG_INFO grRegInfo;
+
 struct wireless_dev *gprWdev;
 /*******************************************************************************
 *                             D A T A   T Y P E S
@@ -728,18 +731,14 @@ u16 wlanSelectQueue(struct net_device *dev, struct sk_buff *skb)
 * \return (none)
 */
 /*----------------------------------------------------------------------------*/
-static void glLoadNvram(IN struct GLUE_INFO *prGlueInfo,
-				OUT struct REG_INFO *prRegInfo)
+static void glLoadNvram(OUT struct REG_INFO *prRegInfo)
 {
-	ASSERT(prGlueInfo);
 	ASSERT(prRegInfo);
-	DBGLOG(INIT, INFO, "glLoadNvram start\n");
-	if ((!prGlueInfo) || (!prRegInfo))
-		return;
+	log_dbg(INIT, INFO, "start\n");
 
 	/* load full NVRAM */
-	prGlueInfo->fgNvramAvailable = FALSE;
-	if (kalCfgDataRead(prGlueInfo, 0, sizeof(prRegInfo->aucNvram),
+	g_fgNvramAvailable = FALSE;
+	if (kalCfgDataRead(0, sizeof(prRegInfo->aucNvram),
 		(uint16_t *)prRegInfo->aucNvram) == TRUE) {
 
 		struct WIFI_CFG_PARAM_STRUCT *prNvramSettings;
@@ -853,11 +852,10 @@ static void glLoadNvram(IN struct GLUE_INFO *prGlueInfo,
 				sizeof(struct RSSI_PATH_COMPASATION));
 #endif
 
-		prGlueInfo->fgNvramAvailable = TRUE;
+		g_fgNvramAvailable = TRUE;
 		log_dbg(INIT, INFO, "u2Part1OwnVersion = %08x, u2Part1PeerVersion = %08x\n",
 					 prNvramSettings->u2Part1OwnVersion,
 					 prNvramSettings->u2Part1PeerVersion);
-		log_dbg(INIT, INFO, "glLoadNvram end\n");
 	} else {
 		log_dbg(INIT, INFO, "glLoadNvram fail\n");
 	}
@@ -1713,6 +1711,8 @@ static void wlanCreateWirelessDevice(void)
 	}
 	prWdev->wiphy = prWiphy;
 	gprWdev = prWdev;
+	kalMemZero(&grRegInfo, sizeof(grRegInfo));
+	glLoadNvram(&grRegInfo);
 	DBGLOG(INIT, INFO, "Create wireless device success\n");
 	return;
 
@@ -1807,6 +1807,7 @@ static void wlanDestroyAllWdev(void)
 		kfree(gprWdev);
 		gprWdev = NULL;
 	}
+	kalMemZero(&grRegInfo, sizeof(grRegInfo));
 
 #if CFG_ENABLE_UNIFY_WIPHY
 	/* unregister & free wiphy */
@@ -2783,18 +2784,17 @@ static int32_t wlanProbe(void *pvData, void *pvDriverData)
 			       prAdapter->rWifiFemCfg.u2WifiPath);
 #endif
 		/* 4 <5> Start Device */
-		prRegInfo = &prGlueInfo->rRegInfo;
+		prRegInfo = prGlueInfo->prRegInfo = &grRegInfo;
+		prGlueInfo->fgNvramAvailable = g_fgNvramAvailable;
+		log_dbg(INIT, TRACE, "prGlueInfo->fgNvramAvailable = %d\n",
+			prGlueInfo->fgNvramAvailable);
 
 		/* P_REG_INFO_T prRegInfo = (P_REG_INFO_T) kmalloc(sizeof(REG_INFO_T), GFP_KERNEL); */
-		kalMemSet(prRegInfo, 0, sizeof(struct REG_INFO));
 
 		/* Trigger the action of switching Pwr state to drv_own */
 		prAdapter->fgIsFwOwn = TRUE;
 
 		nicpmWakeUpWiFi(prAdapter);
-
-		/* Load NVRAM content to REG_INFO_T */
-		glLoadNvram(prGlueInfo, prRegInfo);
 
 		/* kalMemCopy(&prGlueInfo->rRegInfo, prRegInfo, sizeof(REG_INFO_T)); */
 

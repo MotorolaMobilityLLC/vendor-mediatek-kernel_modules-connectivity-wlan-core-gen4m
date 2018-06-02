@@ -467,7 +467,7 @@ static int nvram_write(char *filename, char *buf, ssize_t len, int offset)
 *           FALSE
 */
 /*----------------------------------------------------------------------------*/
-u_int8_t kalCfgDataRead(IN struct GLUE_INFO *prGlueInfo, IN uint32_t u4Offset,
+u_int8_t kalCfgDataRead(IN uint32_t u4Offset,
 			IN ssize_t len, OUT uint16_t *pu2Data)
 {
 	if (pu2Data == NULL)

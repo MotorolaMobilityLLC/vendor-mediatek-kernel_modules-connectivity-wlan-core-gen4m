@@ -1221,8 +1221,7 @@ u_int8_t kalIsConfigurationExist(IN struct GLUE_INFO
 struct REG_INFO *kalGetConfiguration(IN struct GLUE_INFO
 				     *prGlueInfo);
 
-u_int8_t kalCfgDataRead(IN struct GLUE_INFO *prGlueInfo,
-			IN uint32_t u4Offset,
+u_int8_t kalCfgDataRead(IN uint32_t u4Offset,
 			IN ssize_t len, OUT uint16_t *pu2Data);
 
 u_int8_t kalCfgDataRead16(IN struct GLUE_INFO *prGlueInfo,
