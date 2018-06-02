@@ -1061,6 +1061,7 @@ VOID halRxProcessMsduReport(IN P_ADAPTER_T prAdapter, IN OUT P_SW_RFB_T prSwRfb)
 UINT_32 halTxGetPageCount(IN P_ADAPTER_T prAdapter, IN UINT_32 u4FrameLength, IN BOOLEAN fgIncludeDesc);
 UINT_32 halDumpHifStatus(IN P_ADAPTER_T prAdapter, IN PUINT_8 pucBuf, IN UINT_32 u4Max);
 BOOLEAN halIsPendingRx(IN P_ADAPTER_T prAdapter);
+UINT_32 halGetValidCoalescingBufSize(IN P_ADAPTER_T prAdapter);
 WLAN_STATUS halAllocateIOBuffer(IN P_ADAPTER_T prAdapter);
 WLAN_STATUS halReleaseIOBuffer(IN P_ADAPTER_T prAdapter);
 VOID halDeAggRxPktWorker(struct work_struct *work);
