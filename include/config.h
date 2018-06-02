@@ -960,6 +960,18 @@
  */
 #define CFG_FORCE_ENABLE_PERF_MONITOR 0
 
+/*------------------------------------------------------------------------------
+ * Flags of Network Controlled HandOver(NCHO) support
+ * TC10 only: To improve the voice quality during handover,
+ *		the NCHO is required to precisely control scanning parameters
+ * CFG_SUPPORT_NCHO: 1: support, 0: not support
+ * CFG_SUPPORT_NCHO_AUTO_ENABLE: sub-feature depends with CFG_SUPPORT_NCHO
+ *------------------------------------------------------------------------------
+ */
+#define CFG_SUPPORT_NCHO		0
+#define CFG_SUPPORT_NCHO_AUTO_ENABLE	0
+
+
 /*******************************************************************************
 *                             D A T A   T Y P E S
 ********************************************************************************
