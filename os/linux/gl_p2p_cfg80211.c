@@ -1423,7 +1423,7 @@ int mtk_p2p_cfg80211_get_txpower(struct wiphy *wiphy,
 
 	ASSERT(wiphy);
 
-	DBGLOG(P2P, INFO, "%s: not support now\n", __func__);
+	DBGLOG(P2P, TRACE, "%s: not support now\n", __func__);
 	P2P_WIPHY_PRIV(wiphy, prGlueInfo);
 
 	/* not implemented yet */

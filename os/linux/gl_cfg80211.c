@@ -2735,7 +2735,7 @@ int mtk_cfg80211_testmode_sw_cmd(IN struct wiphy *wiphy, IN void *data, IN int l
 
 	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wiphy);
 
-#if 1
+#if 0
 	DBGLOG(INIT, INFO, "--> %s()\n", __func__);
 #endif
 
@@ -2763,7 +2763,6 @@ static int mtk_wlan_cfg_testmode_cmd(struct wiphy *wiphy, void *data, int len)
 	int32_t i4Status;
 
 	ASSERT(wiphy);
-	DBGLOG(INIT, INFO, "-->%s()\n", __func__);
 
 	if (!data || !len) {
 		DBGLOG(REQ, ERROR, "mtk_cfg80211_testmode_cmd null data\n");
@@ -2780,6 +2779,7 @@ static int mtk_wlan_cfg_testmode_cmd(struct wiphy *wiphy, void *data, int len)
 
 	/* Clear the version byte */
 	prParams->index = prParams->index & ~BITS(24, 31);
+	DBGLOG(INIT, INFO, "params index=%x\n", prParams->index);
 
 	switch (prParams->index) {
 	case TESTMODE_CMD_ID_SW_CMD:	/* SW cmd */
@@ -5536,12 +5536,13 @@ int mtk_cfg_get_txpower(struct wiphy *wiphy, struct wireless_dev *wdev,
 	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wiphy);
 
 	if ((!prGlueInfo) || (prGlueInfo->u4ReadyFlag == 0)) {
-		DBGLOG(REQ, WARN, "driver is not ready\n");
+		DBGLOG_LIMITED(REQ, WARN, "driver is not ready\n");
 		return -EFAULT;
 	}
 
 	if (mtk_IsP2PNetDevice(prGlueInfo, wdev->netdev) <= 0) {
-		DBGLOG(REQ, WARN, "STA doesn't support this function\n");
+		DBGLOG_LIMITED(REQ, WARN,
+			"STA doesn't support this function\n");
 		return -EFAULT;
 	}
 
