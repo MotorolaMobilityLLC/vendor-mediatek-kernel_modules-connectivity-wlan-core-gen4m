@@ -5376,6 +5376,11 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 	prWifiVar->aucMtkFeature[2] = 0xff;
 	prWifiVar->aucMtkFeature[3] = 0xff;
 	prWifiVar->ucGbandProbe256QAM = (uint8_t) wlanCfgGetUint32(prAdapter, "Probe256QAM", 0);
+	prWifiVar->ucDisable24GG256QAM = (u_int8_t) wlanCfgGetUint32(prAdapter,
+						"Disable24GG256QAM", 0);
+	if (prWifiVar->ucDisable24GG256QAM)
+		prWifiVar->aucMtkFeature[0] &=
+			~(MTK_SYNERGY_CAP_SUPPORT_24G_MCS89);
 #endif
 
 	prWifiVar->ucCmdRsvResource = (uint8_t) wlanCfgGetUint32(prAdapter, "TxCmdRsv", QM_CMD_RESERVED_THRESHOLD);
