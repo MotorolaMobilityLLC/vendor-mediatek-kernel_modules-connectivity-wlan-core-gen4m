@@ -2014,6 +2014,13 @@ typedef struct _IE_EXT_CAP_T {
 	UINT_8 aucCapabilities[1];
 } __KAL_ATTRIB_PACKED__ IE_EXT_CAP_T, *P_EXT_CAP_T;
 
+/* 7.3.2.27 hs20 Extended Capabilities element */
+struct IE_HS20_EXT_CAP_T {
+	UINT_8 ucId;
+	UINT_8 ucLength;
+	UINT_8 aucCapabilities[6];
+};
+
 /* 7.3.2.27 Extended Capabilities element */
 typedef struct _IE_RRM_ENABLED_CAP_T {
 	UINT_8 ucId;
@@ -2518,6 +2525,16 @@ typedef struct _ACTION_UNPROTECTED_WNM_TIMING_MEAS_FRAME {
 	UINT_8 ucMaxToDErr;	/* Maximum of ToD Error [10ns] */
 	UINT_8 ucMaxToAErr;	/* Maximum of ToA Error [10ns] */
 } __KAL_ATTRIB_PACKED__ ACTION_UNPROTECTED_WNM_TIMING_MEAS_FRAME, *P_ACTION_UNPROTECTED_WNM_TIMING_MEAS_FRAME;
+
+struct IE_WFA_OSEN {
+	UINT_8 ucId;
+	UINT_8 ucLength;
+	UINT_8 aucOui[3];
+	UINT_8 ucOuiType;
+	UINT_32 u4GroupKeyCipherSuite;
+	UINT_16 u2PairwiseKeyCipherSuiteCount;
+	UINT_8 aucPairwiseKeyCipherSuite1[4];
+};
 
 /* 8.5.23.4 Operating Mode Notification frame format */
 typedef struct _ACTION_OP_MODE_NOTIFICATION_FRAME {
