@@ -3217,16 +3217,12 @@ p2pRoleFsmGetStaStatistics(IN struct ADAPTER *prAdapter,
 			}
 			LINK_FOR_EACH_ENTRY(prCurrStaRec,
 				prClientList, rLinkEntry, struct STA_RECORD) {
-				if (prCurrStaRec) {
-					COPY_MAC_ADDR(
+				COPY_MAC_ADDR(
 					prQueryStaStatistics->aucMacAddr,
 					prCurrStaRec->aucMacAddr);
 					/* break for LINK_FOR_EACH_ENTRY */
 					break;
-				}
 			}
-			if (!prCurrStaRec)
-				return;
 		}
 
 		prQueryStaStatistics->ucReadClear = TRUE;
