@@ -135,7 +135,9 @@ static struct platform_driver mtk_axi_driver = {
 };
 
 static struct GLUE_INFO *g_prGlueInfo;
-static uint8_t *CSRBaseAddress;
+static void *CSRBaseAddress;
+static u64 g_u8CsrOffset;
+static u32 g_u4CsrSize;
 static u_int8_t g_fgDriverProbed = FALSE;
 
 #if AXI_CFG_PREALLOC_MEMORY_BUFFER
@@ -219,14 +221,7 @@ static int hifAxiProbe(void)
 
 	ASSERT(prPlatDev);
 
-	ret = axi_enable_device(prPlatDev);
-	if (ret) {
-		DBGLOG(INIT, INFO, "axi_enable_device failed!\n");
-		goto out;
-	}
-
-	DBGLOG(INIT, INFO, "axi_enable_device done! driver.name = %s\n",
-	       prPlatDev->id_entry->name);
+	DBGLOG(INIT, INFO, "driver.name = %s\n", prPlatDev->id_entry->name);
 
 	if (pfWlanProbe((void *)prPlatDev,
 			(void *)prPlatDev->id_entry->driver_data) !=
@@ -250,15 +245,6 @@ static int hifAxiRemove(void)
 	if (g_fgDriverProbed)
 		pfWlanRemove();
 	DBGLOG(INIT, INFO, "pfWlanRemove done\n");
-
-	/* Unmap CSR base address */
-	iounmap(CSRBaseAddress);
-
-	/* release memory region */
-	release_mem_region(axi_resource_start(prPlatDev, 0),
-			   axi_resource_len(prPlatDev, 0));
-
-	axi_disable_device(prPlatDev);
 	DBGLOG(INIT, INFO, "hifAxiRemove() done\n");
 	return 0;
 }
@@ -316,6 +302,72 @@ static void axiDmaSetup(struct platform_device *pdev)
 	ret = dma_set_mask_and_coherent(&pdev->dev, dma_mask);
 	if (ret)
 		DBGLOG(INIT, INFO, "set DMA mask failed! errno=%d\n", ret);
+}
+
+static bool axiCsrIoremap(struct platform_device *pdev)
+{
+
+#ifdef CONFIG_OF
+	struct device_node *node = NULL;
+	struct resource res;
+
+	node = of_find_compatible_node(NULL, NULL, "mediatek,wifi");
+	if (!node) {
+		DBGLOG(INIT, ERROR, "WIFI-OF: get wifi device node fail\n");
+		return false;
+	}
+
+	if (of_address_to_resource(node, 0, &res)) {
+		DBGLOG(INIT, ERROR, "WIFI-OF: of_address_to_resource fail\n");
+		return false;
+	}
+
+	g_u8CsrOffset = (u64)res.start;
+	g_u4CsrSize = resource_size(&res);
+#else
+	g_u8CsrOffset = axi_resource_start(pdev, 0);
+	g_u4CsrSize = axi_resource_len(pdev, 0);
+#endif
+	if (CSRBaseAddress) {
+		DBGLOG(INIT, ERROR, "CSRBaseAddress not iounmap!\n");
+		return false;
+	}
+
+	request_mem_region(g_u8CsrOffset, g_u4CsrSize, axi_name(pdev));
+
+	/* map physical address to virtual address for accessing register */
+#ifdef CONFIG_OF
+	CSRBaseAddress = of_iomap(node, 0);
+#else
+	CSRBaseAddress = ioremap(g_u8CsrOffset, g_u4CsrSize);
+#endif
+
+	if (!CSRBaseAddress) {
+		DBGLOG(INIT, INFO,
+			"ioremap failed for device %s, region 0x%X @ 0x%lX\n",
+			axi_name(pdev), g_u4CsrSize, g_u8CsrOffset);
+		release_mem_region(g_u8CsrOffset, g_u4CsrSize);
+		return false;
+	}
+
+	DBGLOG(INIT, INFO, "CSRBaseAddress:0x%lX ioremap region 0x%X @ 0x%lX\n",
+	       CSRBaseAddress, g_u4CsrSize, g_u8CsrOffset);
+
+	return true;
+}
+
+static void axiCsrIounmap(struct platform_device *pdev)
+{
+	if (!CSRBaseAddress)
+		return;
+
+	/* Unmap CSR base address */
+	iounmap(CSRBaseAddress);
+	release_mem_region(g_u8CsrOffset, g_u4CsrSize);
+
+	CSRBaseAddress = NULL;
+	g_u8CsrOffset = 0;
+	g_u4CsrSize = 0;
 }
 
 #if AXI_CFG_PREALLOC_MEMORY_BUFFER
@@ -475,6 +527,7 @@ static int mtk_axi_probe(IN struct platform_device *pdev)
 #endif
 
 	axiDmaSetup(pdev);
+	axiCsrIoremap(pdev);
 
 #if AXI_CFG_PREALLOC_MEMORY_BUFFER
 	axiAllocHifMem(pdev);
@@ -497,6 +550,8 @@ static int mtk_axi_probe(IN struct platform_device *pdev)
 
 static int mtk_axi_remove(IN struct platform_device *pdev)
 {
+	axiCsrIounmap(pdev);
+
 #if AXI_CFG_PREALLOC_MEMORY_BUFFER
 	axiFreeHifMem(pdev);
 #endif
@@ -719,55 +774,9 @@ void glClearHifInfo(struct GLUE_INFO *prGlueInfo)
 /*----------------------------------------------------------------------------*/
 u_int8_t glBusInit(void *pvData)
 {
-	struct platform_device *pdev = NULL;
-#ifdef CONFIG_OF
-	struct device_node *node = NULL;
-	u32 u4OffsetLow = 0, u4OffsetHigh = 0;
-#endif
-	u64 u8Offset = 0;
-	u32 u4Size = 0;
-
 	ASSERT(pvData);
 
-	pdev = (struct platform_device *)pvData;
-
-#ifdef CONFIG_OF
-	node = of_find_compatible_node(NULL, NULL, "mediatek,wifi");
-	if (node) {
-		if (of_property_read_u32_index(node, "reg", 0, &u4OffsetHigh) ||
-		    of_property_read_u32_index(node, "reg", 1, &u4OffsetLow) ||
-		    of_property_read_u32_index(node, "reg", 3, &u4Size))
-			DBGLOG(INIT, ERROR, "Failed to get base addr\n");
-		u8Offset = (((u64)u4OffsetHigh << 16) << 16) | (u64)u4OffsetLow;
-	} else
-		DBGLOG(INIT, ERROR, "WIFI-OF: get wifi device node fail\n");
-#else
-	u8Offset = axi_resource_start(pdev, 0);
-	u4Size = axi_resource_len(pdev, 0);
-#endif
-
-	request_mem_region(u8Offset, u4Size, axi_name(pdev));
-	/* map physical address to virtual address for accessing register */
-	CSRBaseAddress = (uint8_t *)ioremap_nocache(u8Offset, u4Size);
-	DBGLOG(INIT, INFO,
-	       "CSRBaseAddress:0x%lX ioremap region 0x%X @ 0x%lX\n",
-	       CSRBaseAddress, u4Size, u8Offset);
-	if (!CSRBaseAddress) {
-		DBGLOG(INIT, INFO,
-			"ioremap failed for device %s, region 0x%X @ 0x%lX\n",
-			axi_name(pdev), u4Size, u8Offset);
-		goto err_out_free_res;
-	}
-
 	return TRUE;
-
-err_out_free_res:
-	release_mem_region(axi_resource_start(pdev, 0),
-		axi_resource_len(pdev, 0));
-
-	axi_disable_device(pdev);
-
-	return FALSE;
 }
 
 /*----------------------------------------------------------------------------*/

@@ -170,7 +170,7 @@ struct GL_HIF_INFO {
 	int32_t u4HifCnt;
 
 	/* AXI MMIO Base Address, all access will use */
-	uint8_t *CSRBaseAddress;
+	void *CSRBaseAddress;
 
 	/* Shared memory of all 1st pre-allocated
 	 * TxBuf associated with each TXD
@@ -277,8 +277,6 @@ struct MTK_WCN_WMT_WLAN_CB_INFO {
  *******************************************************************************
  */
 
-#define axi_enable_device(d)      (0)
-#define axi_disable_device(d)
 #define axi_resource_start(d, v)  (0x18000000)
 #define axi_resource_len(d, v)    (0x100000)
 #define axi_name(d)               ("AXI-BUS")

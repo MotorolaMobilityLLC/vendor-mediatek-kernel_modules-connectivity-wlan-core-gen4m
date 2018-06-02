@@ -152,7 +152,7 @@ struct GL_HIF_INFO {
 	int32_t u4HifCnt;
 
 	/* PCI MMIO Base Address, all access will use */
-	uint8_t *CSRBaseAddress;
+	void *CSRBaseAddress;
 
 	/* Shared memory of all 1st pre-allocated
 	 * TxBuf associated with each TXD
