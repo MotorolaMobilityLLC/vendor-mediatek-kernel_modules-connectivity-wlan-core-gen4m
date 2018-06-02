@@ -270,7 +270,6 @@ static void mtk_wifi_trigger_reset(struct work_struct *work)
 	u_int8_t fgResult = FALSE;
 	struct RESET_STRUCT *rst = container_of(work, struct RESET_STRUCT, rst_trigger_work);
 
-	fgResetTriggered = TRUE;
 	/* Set the power off flag to FALSE in WMT to prevent chip power off after
 	** wlanProbe return failure, because we need to do core dump afterward.
 	*/
@@ -319,6 +318,7 @@ u_int8_t glResetTrigger(struct ADAPTER *prAdapter, uint32_t u4RstFlag, const uin
 		       (uint16_t)(u2FwPeerVersion >> 8),
 		       (uint16_t)(u2FwPeerVersion & BITS(0, 7)));
 
+		fgResetTriggered = TRUE;
 		prAdapter->fgEnHifDbgInfo = true;
 		halPrintHifDbgInfo(prAdapter);
 
