@@ -432,18 +432,12 @@ p2pRoleStatePrepare_To_DFS_CAC_STATE(IN P_ADAPTER_T prAdapter,
 	UINT_8 ucChannelBackup;
 	ENUM_CHNL_EXT_T eSCOBackup;
 	P_P2P_ROLE_FSM_INFO_T prP2pRoleFsmInfo = (P_P2P_ROLE_FSM_INFO_T) NULL;
-	UINT_16 u2CountryCode;
-	UINT_8 ucCountryChar[2];
 
 	do {
 
 		eBandBackup = prBssInfo->eBand;
 		ucChannelBackup = prBssInfo->ucPrimaryChannel;
 		eSCOBackup = prBssInfo->eBssSCO;
-
-		ucCountryChar[0] = (UINT_8) prAdapter->rWifiVar.rConnSettings.u2CountryCode;
-		ucCountryChar[1] = (UINT_8) (prAdapter->rWifiVar.rConnSettings.u2CountryCode >> 8);
-		u2CountryCode = (((UINT_16) ucCountryChar[0]) << 8) | ((UINT_16) ucCountryChar[1]);
 
 		prBssInfo->ucPrimaryChannel = prConnReqInfo->rChannelInfo.ucChannelNum;
 		prBssInfo->eBand = prConnReqInfo->rChannelInfo.eBand;

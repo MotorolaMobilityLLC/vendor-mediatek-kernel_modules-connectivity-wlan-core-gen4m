@@ -2268,6 +2268,15 @@ void rlmDomainSetCountryCode(char *alpha2, u8 size_of_alpha2)
 		g_mtk_regd_control.alpha2 |= (alpha2[idx] << (idx * 8));
 
 }
+void rlmDomainSetDfsRegion(enum nl80211_dfs_regions dfs_region)
+{
+	g_mtk_regd_control.dfs_region = dfs_region;
+}
+
+enum nl80211_dfs_regions rlmDomainGetDfsRegion(void)
+{
+	return g_mtk_regd_control.dfs_region;
+}
 
 void rlmDomainSetTempCountryCode(char *alpha2, u8 size_of_alpha2)
 {
