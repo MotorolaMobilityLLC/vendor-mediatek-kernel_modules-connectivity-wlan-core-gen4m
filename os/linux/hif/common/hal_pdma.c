@@ -2202,13 +2202,14 @@ uint32_t halHifPowerOffWifi(IN struct ADAPTER *prAdapter)
 }
 
 
-void halDumpHifDebugLog(struct GLUE_INFO *prGlueInfo,
-			bool fgTxContent, bool fgRxContent)
+void halDumpHifDebugLog(struct GLUE_INFO *prGlueInfo, bool fgTx, bool fgRx)
 {
-	halShowHostCsrInfo(prGlueInfo->prAdapter);
-	halShowPseInfo(prGlueInfo->prAdapter);
-	halShowPleInfo(prGlueInfo->prAdapter);
-	halShowPdmaInfo(prGlueInfo->prAdapter, fgTxContent, fgRxContent);
+	if (halShowHostCsrInfo(prGlueInfo->prAdapter)) {
+		halShowPseInfo(prGlueInfo->prAdapter);
+		halShowPleInfo(prGlueInfo->prAdapter);
+		halShowPdmaInfo(prGlueInfo->prAdapter, fgTx, fgRx);
+		halShowDmaschInfo(prGlueInfo->prAdapter);
+	}
 }
 
 void halPrintHifDbgInfo(IN struct ADAPTER *prAdapter)
@@ -2857,9 +2858,11 @@ void halShowPleInfo(IN struct ADAPTER *prAdapter)
 	}
 }
 
-void halShowHostCsrInfo(IN struct ADAPTER *prAdapter)
+bool halShowHostCsrInfo(IN struct ADAPTER *prAdapter)
 {
 	uint32_t i = 0, u4Value = 0;
+	bool fgIsDriverOwn = false;
+	bool fgEnClock = false;
 
 	DBGLOG(HAL, INFO, "Host CSR Configuration Info:\n\n");
 
@@ -2870,6 +2873,7 @@ void halShowHostCsrInfo(IN struct ADAPTER *prAdapter)
 	HAL_MCR_RD(prAdapter, HOST_CSR_DRIVER_OWN_INFO, &u4Value);
 	DBGLOG(HAL, INFO, "Driver own info: 0x%08x = 0x%08x\n",
 		HOST_CSR_BASE, u4Value);
+	fgIsDriverOwn = (u4Value & PCIE_LPCR_HOST_SET_OWN) == 0;
 
 	for (i = 0; i < 5; i++) {
 		HAL_MCR_RD(prAdapter, HOST_CSR_MCU_PORG_COUNT, &u4Value);
@@ -2921,6 +2925,11 @@ void halShowHostCsrInfo(IN struct ADAPTER *prAdapter)
 	HAL_MCR_RD(prAdapter, HOST_CSR_DRIVER_OWN_INFO, &u4Value);
 	DBGLOG(HAL, INFO, "Bit[17]/[16], Get HCLK info: 0x%08x = 0x%08x\n",
 		HOST_CSR_DRIVER_OWN_INFO, u4Value);
+
+	/* check clock is enabled */
+	fgEnClock = ((u4Value & BIT(17)) != 0) && ((u4Value & BIT(16)) != 0);
+
+	return fgIsDriverOwn && fgEnClock;
 }
 
 void halShowDmaschInfo(IN struct ADAPTER *prAdapter)
