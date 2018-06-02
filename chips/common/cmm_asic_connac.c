@@ -360,7 +360,7 @@ void fillTxDescAppendByHostV2(IN struct ADAPTER *prAdapter,
 {
 	union HW_MAC_TX_DESC_APPEND *prHwTxDescAppend;
 	struct TXD_PTR_LEN *prPtrLen;
-	uint64_t u8Addr = *((uint64_t *)&rDmaAddr);
+	uint64_t u8Addr = (uint64_t)rDmaAddr;
 
 	prHwTxDescAppend = (union HW_MAC_TX_DESC_APPEND *)
 		(pucBuffer + NIC_TX_DESC_LONG_FORMAT_LENGTH);
