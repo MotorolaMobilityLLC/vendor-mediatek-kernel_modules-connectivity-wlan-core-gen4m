@@ -1114,4 +1114,7 @@ int set_p2p_mode_handler(struct net_device *netdev, struct PARAM_CUSTOM_P2P_SET_
 #if CFG_ENABLE_UNIFY_WIPHY
 const struct net_device_ops *wlanGetNdevOps(void);
 #endif
+
+extern void connectivity_inner_flush_dcache_all(void);
+
 #endif /* _GL_OS_H */

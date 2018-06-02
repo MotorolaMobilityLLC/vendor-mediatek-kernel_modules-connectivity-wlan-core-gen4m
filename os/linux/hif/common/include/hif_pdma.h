@@ -62,11 +62,16 @@
  ***************************************************************************
 
  Module Name:
- hif_pci.h
+ hif_pdma.h
  */
 
-#ifndef __HIF_PCI_H__
-#define __HIF_PCI_H__
+#ifndef __HIF_PDMA_H__
+#define __HIF_PDMA_H__
+
+/*******************************************************************************
+*                              C O N S T A N T S
+********************************************************************************
+*/
 
 #define NUM_OF_TX_RING				4
 #define NUM_OF_RX_RING				2
@@ -84,20 +89,42 @@
 #define RX_BUFFER_NORMSIZE			3840
 #define TX_BUFFER_NORMSIZE			3840
 
-#define INC_RING_INDEX(_idx, _RingSize) \
-{ \
-	(_idx) = (_idx+1) % (_RingSize); \
-}
 
-#define RTMP_IO_READ32(_A, _R, _pV) \
-{ \
-	(*(_pV) = readl((void *)((_A)->CSRBaseAddress + (_R)))); \
-}
+#define HIF_TX_PREALLOC_DATA_BUFFER			1
 
-#define RTMP_IO_WRITE32(_A, _R, _V) \
-{ \
-	writel(_V, (void *)((_A)->CSRBaseAddress + (_R))); \
-}
+#define HIF_NUM_OF_QM_RX_PKT_NUM			4096
+#define HIF_IST_LOOP_COUNT					32
+#define HIF_IST_TX_THRESHOLD				1 /* Min msdu count to trigger Tx during INT polling state */
+
+#define HIF_TX_BUFF_COUNT_TC0				4096
+#define HIF_TX_BUFF_COUNT_TC1				4096
+#define HIF_TX_BUFF_COUNT_TC2				4096
+#define HIF_TX_BUFF_COUNT_TC3				4096
+#define HIF_TX_BUFF_COUNT_TC4				(TX_RING_SIZE - 1)
+#define HIF_TX_BUFF_COUNT_TC5				4096
+
+#define HIF_TX_RESOURCE_CTRL                1 /* enable/disable TX resource control */
+#define HIF_TX_RESOURCE_CTRL_PLE            0 /* enable/disable TX resource control PLE */
+
+
+#define HIF_TX_PAGE_SIZE_IN_POWER_OF_2		11
+#define HIF_TX_PAGE_SIZE					2048	/* in unit of bytes */
+
+#define HIF_EXTRA_IO_BUFFER_SIZE			0
+
+#define HIF_TX_COALESCING_BUFFER_SIZE		(TX_BUFFER_NORMSIZE)
+#define HIF_RX_COALESCING_BUFFER_SIZE		(RX_BUFFER_AGGRESIZE)
+
+#define HIF_CR4_FWDL_SECTION_NUM			1
+#define HIF_IMG_DL_STATUS_PORT_IDX			1
+
+#define HIF_TX_INIT_CMD_PORT				TX_RING_FWDL_IDX_3
+
+#define HIF_TX_MSDU_TOKEN_NUM				8192
+
+#define HIF_TX_PAYLOAD_LENGTH				72
+
+#define HIF_SER_TIMEOUT				10000
 
 #define MAX_PCIE_BUS_STATIC_MAP_ADDR		0x00040000
 
@@ -122,6 +149,31 @@
 
 #define MT_TX_RING_BASE_EXT WPDMA_TX_RING0_BASE_PTR_EXT
 #define MT_RX_RING_BASE_EXT WPDMA_RX_RING0_BASE_PTR_EXT
+
+/*******************************************************************************
+*                                 M A C R O S
+********************************************************************************
+*/
+
+#define INC_RING_INDEX(_idx, _RingSize)		\
+{ \
+	(_idx) = (_idx+1) % (_RingSize); \
+}
+
+#define RTMP_IO_READ32(_A, _R, _pV) \
+{ \
+	(*(_pV) = readl((void *)((_A)->CSRBaseAddress + (_R)))); \
+}
+
+#define RTMP_IO_WRITE32(_A, _R, _V) \
+{ \
+	writel(_V, (void *)((_A)->CSRBaseAddress + (_R))); \
+}
+
+/*******************************************************************************
+*                             D A T A   T Y P E S
+********************************************************************************
+*/
 
 enum ENUM_TX_RING_IDX {
 	TX_RING_DATA0_IDX_0 = 0,
@@ -236,7 +288,7 @@ struct RTMP_TX_RING {
 	uint32_t TxSwUsedIdx;
 	uint32_t u4UsedCnt;
 	uint32_t hw_desc_base;
-	uint32_t	hw_desc_base_ext;
+	uint32_t hw_desc_base_ext;
 	uint32_t hw_cidx_addr;
 	uint32_t hw_didx_addr;
 	uint32_t hw_cnt_addr;
@@ -264,4 +316,49 @@ struct PCIE_CHIP_CR_MAPPING {
 	uint32_t u4Range;
 };
 
-#endif /* HIF_PCI_H__ */
+
+struct MSDU_TOKEN_ENTRY {
+	uint32_t u4Token;
+	u_int8_t fgInUsed;
+	struct MSDU_INFO *prMsduInfo;
+	void *prPacket;
+	dma_addr_t rDmaAddr;
+	uint32_t u4DmaLength;
+	dma_addr_t rPktDmaAddr;
+	uint32_t u4PktDmaLength;
+};
+
+struct MSDU_TOKEN_INFO {
+	int32_t i4UsedCnt;
+	struct MSDU_TOKEN_ENTRY *aprTokenStack[HIF_TX_MSDU_TOKEN_NUM];
+	spinlock_t rTokenLock;
+	struct MSDU_TOKEN_ENTRY arToken[HIF_TX_MSDU_TOKEN_NUM];
+};
+
+struct TX_CMD_REQ_T {
+	struct CMD_INFO *prCmdInfo;
+	uint8_t ucTC;
+	struct list_head list;
+};
+
+struct TX_DATA_REQ_T {
+	struct MSDU_INFO *prMsduInfo;
+	struct list_head list;
+};
+
+enum ERR_RECOVERY_STATE {
+	ERR_RECOV_STOP_IDLE = 0,
+	ERR_RECOV_STOP_PDMA0,
+	ERR_RECOV_RESET_PDMA0,
+	ERR_RECOV_STOP_IDLE_DONE,
+	ERR_RECOV_WAIT_N9_NORMAL,
+	ERR_RECOV_EVENT_REENTRY,
+	ERR_RECOV_STATE_NUM
+};
+
+struct ERR_RECOVERY_CTRL_T {
+	enum ERR_RECOVERY_STATE eErrRecovState;
+	uint32_t u4Status;
+};
+
+#endif /* HIF_PDMA_H__ */
