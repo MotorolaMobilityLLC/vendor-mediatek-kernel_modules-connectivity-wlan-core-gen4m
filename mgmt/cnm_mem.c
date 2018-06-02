@@ -1557,9 +1557,13 @@ cnmPeerUpdate(struct ADAPTER *prAdapter, void *pvSetBuffer,
 	prCmd = (struct CMD_PEER_UPDATE *) pvSetBuffer;
 
 	prAisBssInfo = prAdapter->prAisBssInfo;
-
+	if (prAisBssInfo == NULL) {
+		DBGLOG(MEM, ERROR, "%s: prAisBssInfo is NULL!\n"
+				, __func__);
+		return TDLS_STATUS_FAIL;
+	}
 	prStaRec = cnmGetStaRecByAddress(prAdapter,
-		(uint8_t) prAdapter->prAisBssInfo->ucBssIndex,
+		(uint8_t) prAisBssInfo->ucBssIndex,
 		prCmd->aucPeerMac);
 
 	if ((!prStaRec) || !(prStaRec->fgIsInUse))
