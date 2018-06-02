@@ -554,7 +554,7 @@ void asicPdmaConfig(struct GLUE_INFO *prGlueInfo, u_int8_t fgEnable)
 		GloCfg.field_conn.pdma_addr_ext_en =
 			(prBusInfo->u4DmaMask > 32) ? 1 : 0;
 		GloCfg.field_conn.tx_wb_ddone = 1;
-		GloCfg.field_conn.multi_dma_en = 3;
+		GloCfg.field_conn.multi_dma_en = 2;
 		GloCfg.field_conn.fifo_little_endian = 1;
 		GloCfg.field_conn.clk_gate_dis = 1;
 
