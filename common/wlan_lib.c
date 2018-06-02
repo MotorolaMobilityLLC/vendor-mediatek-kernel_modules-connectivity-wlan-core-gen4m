@@ -5259,19 +5259,19 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 
 	prWifiVar->ucStaHt = (uint8_t) wlanCfgGetUint32(prAdapter, "StaHT", FEATURE_ENABLED);
 	prWifiVar->ucStaVht = (uint8_t) wlanCfgGetUint32(prAdapter,
-				"StaVHT", FEATURE_DISABLED);
+				"StaVHT", FEATURE_ENABLED);
 
 	prWifiVar->ucApHt = (uint8_t) wlanCfgGetUint32(prAdapter, "ApHT", FEATURE_ENABLED);
 	prWifiVar->ucApVht = (uint8_t) wlanCfgGetUint32(prAdapter,
-				"ApVHT", FEATURE_DISABLED);
+				"ApVHT", FEATURE_ENABLED);
 
 	prWifiVar->ucP2pGoHt = (uint8_t) wlanCfgGetUint32(prAdapter, "P2pGoHT", FEATURE_ENABLED);
 	prWifiVar->ucP2pGoVht = (uint8_t) wlanCfgGetUint32(prAdapter,
-				"P2pGoVHT", FEATURE_DISABLED);
+				"P2pGoVHT", FEATURE_ENABLED);
 
 	prWifiVar->ucP2pGcHt = (uint8_t) wlanCfgGetUint32(prAdapter, "P2pGcHT", FEATURE_ENABLED);
 	prWifiVar->ucP2pGcVht = (uint8_t) wlanCfgGetUint32(prAdapter,
-				"P2pGcVHT", FEATURE_DISABLED);
+				"P2pGcVHT", FEATURE_ENABLED);
 
 	prWifiVar->ucAmpduRx = (uint8_t) wlanCfgGetUint32(prAdapter, "AmpduRx", FEATURE_ENABLED);
 	prWifiVar->ucAmpduTx = (uint8_t) wlanCfgGetUint32(prAdapter, "AmpduTx", FEATURE_ENABLED);
@@ -5296,9 +5296,9 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 	prWifiVar->ucRxShortGI = (uint8_t) wlanCfgGetUint32(prAdapter, "SgiRx", FEATURE_ENABLED);
 
 	prWifiVar->ucTxLdpc = (uint8_t) wlanCfgGetUint32(prAdapter,
-				"LdpcTx", FEATURE_DISABLED);
+				"LdpcTx", FEATURE_ENABLED);
 	prWifiVar->ucRxLdpc = (uint8_t) wlanCfgGetUint32(prAdapter,
-				"LdpcRx", FEATURE_DISABLED);
+				"LdpcRx", FEATURE_ENABLED);
 
 	prWifiVar->ucTxStbc = (uint8_t) wlanCfgGetUint32(prAdapter, "StbcTx", FEATURE_ENABLED);
 	prWifiVar->ucRxStbc = (uint8_t) wlanCfgGetUint32(prAdapter, "StbcRx", FEATURE_ENABLED);
@@ -5313,9 +5313,9 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 
 	prWifiVar->ucStaHtBfee = (uint8_t) wlanCfgGetUint32(prAdapter, "StaHTBfee", FEATURE_DISABLED);
 	prWifiVar->ucStaVhtBfee = (uint8_t) wlanCfgGetUint32(prAdapter,
-				"StaVHTBfee", FEATURE_DISABLED);
+				"StaVHTBfee", FEATURE_ENABLED);
 	prWifiVar->ucStaVhtMuBfee = (uint8_t)wlanCfgGetUint32(prAdapter,
-				"StaVHTMuBfee", FEATURE_DISABLED);
+				"StaVHTMuBfee", FEATURE_ENABLED);
 	prWifiVar->ucStaHtBfer = (uint8_t) wlanCfgGetUint32(prAdapter, "StaHTBfer", FEATURE_DISABLED);
 	prWifiVar->ucStaVhtBfer = (uint8_t) wlanCfgGetUint32(prAdapter, "StaVHTBfer", FEATURE_DISABLED);
 
@@ -5362,16 +5362,16 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 	prWifiVar->ucStaBandwidth = (uint8_t) wlanCfgGetUint32(prAdapter, "StaBw", MAX_BW_160MHZ);
 	prWifiVar->ucSta2gBandwidth = (uint8_t) wlanCfgGetUint32(prAdapter, "Sta2gBw", MAX_BW_20MHZ);
 	prWifiVar->ucSta5gBandwidth = (uint8_t) wlanCfgGetUint32(
-				prAdapter, "Sta5gBw", MAX_BW_40MHZ);
+				prAdapter, "Sta5gBw", MAX_BW_80MHZ);
 	/* GC,GO */
 	prWifiVar->ucP2p2gBandwidth = (uint8_t) wlanCfgGetUint32(
 				prAdapter, "P2p2gBw", MAX_BW_20MHZ);
 	prWifiVar->ucP2p5gBandwidth = (uint8_t) wlanCfgGetUint32(
-				prAdapter, "P2p5gBw", MAX_BW_40MHZ);
+				prAdapter, "P2p5gBw", MAX_BW_80MHZ);
 	prWifiVar->ucApBandwidth = (uint8_t) wlanCfgGetUint32(prAdapter, "ApBw", MAX_BW_160MHZ);
 	prWifiVar->ucAp2gBandwidth = (uint8_t) wlanCfgGetUint32(prAdapter, "Ap2gBw", MAX_BW_20MHZ);
 	prWifiVar->ucAp5gBandwidth = (uint8_t) wlanCfgGetUint32(
-				prAdapter, "Ap5gBw", MAX_BW_40MHZ);
+				prAdapter, "Ap5gBw", MAX_BW_80MHZ);
 	prWifiVar->ucApChnlDefFromCfg = (uint8_t) wlanCfgGetUint32(prAdapter, "ApChnlDefFromCfg", FEATURE_ENABLED);
 
 	prWifiVar->ucNSS = (uint8_t) wlanCfgGetUint32(prAdapter, "Nss", 2);
@@ -5404,7 +5404,7 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 	prWifiVar->aucMtkFeature[3] = 0xff;
 	prWifiVar->ucGbandProbe256QAM = (uint8_t) wlanCfgGetUint32(prAdapter, "Probe256QAM", 0);
 	prWifiVar->ucEn256QAM = (u_int8_t) wlanCfgGetUint32(prAdapter,
-				"En256QAM", FEATURE_DISABLED);
+				"En256QAM", FEATURE_ENABLED);
 	if (IS_FEATURE_DISABLED(prWifiVar->ucEn256QAM))
 		prWifiVar->aucMtkFeature[0] &=
 			~(MTK_SYNERGY_CAP_SUPPORT_24G_MCS89);
