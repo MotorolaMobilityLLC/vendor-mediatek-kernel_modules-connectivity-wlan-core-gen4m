@@ -1024,12 +1024,14 @@ typedef struct _CMD_GTK_REKEY_DATA_T {
 	UINT_8 aucReplayCtr[8];
 } CMD_GTK_REKEY_DATA_T, *P_CMD_GTK_REKEY_DATA_T;
 
-/* CMD_BASIC_CONFIG */
+#if CFG_TCP_IP_CHKSUM_OFFLOAD
 typedef struct _CMD_CSUM_OFFLOAD_T {
 	UINT_16 u2RxChecksum;	/* bit0: IP, bit1: UDP, bit2: TCP */
 	UINT_16 u2TxChecksum;	/* bit0: IP, bit1: UDP, bit2: TCP */
 } CMD_CSUM_OFFLOAD_T, *P_CMD_CSUM_OFFLOAD_T;
+#endif
 
+/* CMD_BASIC_CONFIG */
 typedef struct _CMD_BASIC_CONFIG_T {
 	UINT_8 ucNative80211;
 	UINT_8 ucCtrlFlagAssertPath;
@@ -1159,8 +1161,17 @@ typedef enum _NIC_CAPABILITY_V2_TAG_T {
 	TAG_CAP_TX_EFUSEADDRESS = 0x1,
 	TAG_CAP_COEX_FEATURE = 0x2,
 	TAG_CAP_SINGLE_SKU = 0x3,
+#if CFG_TCP_IP_CHKSUM_OFFLOAD
+	TAG_CAP_CSUM_OFFLOAD = 0x4,
+#endif
 	TAG_CAP_TOTAL
 } NIC_CAPABILITY_V2_TAG_T;
+
+#if CFG_TCP_IP_CHKSUM_OFFLOAD
+typedef struct _NIC_CSUM_OFFLOAD_T {
+	UINT_8 ucIsSupportCsumOffload;  /* 1: Support, 0: Not Support */
+} NIC_CSUM_OFFLOAD_T, *P_NIC_CSUM_OFFLOAD_T;
+#endif
 
 typedef struct _NIC_COEX_FEATURE_T {
 	UINT_32 u4FddMode;  /* TRUE for COEX FDD mode */
@@ -2856,6 +2867,10 @@ WLAN_STATUS nicCmdEventQueryNicTxResource(IN P_ADAPTER_T prAdapter, IN PUINT_8 p
 WLAN_STATUS nicCmdEventQueryNicEfuseAddr(IN P_ADAPTER_T prAdapter, IN PUINT_8 pucEventBuf);
 
 WLAN_STATUS nicCmdEventQueryNicCoexFeature(IN P_ADAPTER_T prAdapter, IN PUINT_8 pucEventBuf);
+
+#if CFG_TCP_IP_CHKSUM_OFFLOAD
+WLAN_STATUS nicCmdEventQueryNicCsumOffload(IN P_ADAPTER_T prAdapter, IN PUINT_8 pucEventBuf);
+#endif
 
 VOID nicEventLinkQuality(IN P_ADAPTER_T prAdapter, IN P_WIFI_EVENT_T prEvent);
 VOID nicEventLayer0ExtMagic(IN P_ADAPTER_T prAdapter, IN P_WIFI_EVENT_T prEvent);
