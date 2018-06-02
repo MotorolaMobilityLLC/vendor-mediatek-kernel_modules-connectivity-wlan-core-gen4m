@@ -364,7 +364,7 @@ endif
 # Platform Objects List
 # ---------------------------------------------------
 ifneq ($(MTK_PLATFORM),)
-ifneq ($(wildcard $(PLAT_DIR)plat_priv.c),)
+ifneq ($(wildcard $(src)/$(PLAT_DIR)plat_priv.c),)
 PLAT_OBJS := $(PLAT_DIR)plat_priv.o
 $(MODULE_NAME)-objs  += $(PLAT_OBJS)
 endif
