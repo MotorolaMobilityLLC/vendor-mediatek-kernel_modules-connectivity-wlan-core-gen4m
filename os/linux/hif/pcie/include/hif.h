@@ -174,6 +174,9 @@ typedef struct _BUS_INFO {
 	const unsigned int tx_ring_data_idx;
 
 	VOID (*pdmaSetup)(P_GLUE_INFO_T prGlueInfo, BOOLEAN enable);
+	VOID (*lowPowerOwnRead)(P_ADAPTER_T prAdapter, PBOOLEAN pfgResult);
+	VOID (*lowPowerOwnSet)(P_ADAPTER_T prAdapter, PBOOLEAN pfgResult);
+	VOID (*lowPowerOwnClear)(P_ADAPTER_T prAdapter, PBOOLEAN pfgResult);
 } BUS_INFO, *P_BUS_INFO;
 
 /*******************************************************************************

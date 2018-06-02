@@ -398,7 +398,6 @@ BOOL glBusInit(PVOID pvData)
 	ret = pci_request_regions(pdev, pci_name(pdev));
 	if (ret != 0) {
 		DBGLOG(INIT, INFO, "Request PCI resource failed, errno=%d!\n", ret);
-		goto err_out;
 	}
 
 	/* map physical address to virtual address for accessing register */
@@ -423,7 +422,6 @@ err_out_iounmap:
 err_out_free_res:
 	pci_release_regions(pdev);
 
-err_out:
 	pci_disable_device(pdev);
 
 	return FALSE;
