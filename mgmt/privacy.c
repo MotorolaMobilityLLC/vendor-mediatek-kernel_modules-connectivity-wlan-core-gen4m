@@ -1150,3 +1150,76 @@ void secPostUpdateAddr(IN P_ADAPTER_T prAdapter, IN P_BSS_INFO_T prBssInfo)
 		}
 	}
 }
+
+enum ENUM_EAPOL_KEY_TYPE_T secGetEapolKeyType(PUINT_8 pucPkt)
+{
+	PUINT_8 pucEthBody = NULL;
+	UINT_8 ucEapolType;
+	UINT_16 u2EtherTypeLen;
+	UINT_8 ucEthTypeLenOffset = ETHER_HEADER_LEN - ETHER_TYPE_LEN;
+	UINT_16 u2KeyInfo = 0;
+
+	do {
+		ASSERT_BREAK(pucPkt != NULL);
+		WLAN_GET_FIELD_BE16(&pucPkt[ucEthTypeLenOffset], &u2EtherTypeLen);
+		if (u2EtherTypeLen == ETH_P_VLAN) {
+			ucEthTypeLenOffset += ETH_802_1Q_HEADER_LEN;
+			WLAN_GET_FIELD_BE16(&pucPkt[ucEthTypeLenOffset], &u2EtherTypeLen);
+		}
+		if (u2EtherTypeLen != ETH_P_1X)
+			break;
+		pucEthBody = &pucPkt[ucEthTypeLenOffset + ETHER_TYPE_LEN];
+		ucEapolType = pucEthBody[1];
+		if (ucEapolType != 3) /* eapol key type */
+			break;
+		u2KeyInfo = *((PUINT_16)(&pucEthBody[5]));
+		switch (u2KeyInfo) {
+		case 0x8a00:
+			return EAPOL_KEY_1_OF_4;
+		case 0x0a01:
+			return EAPOL_KEY_2_OF_4;
+		case 0xca13:
+			return EAPOL_KEY_3_OF_4;
+		case 0x0a03:
+			return EAPOL_KEY_4_OF_4;
+		}
+	} while (FALSE);
+
+	return EAPOL_KEY_NOT_KEY;
+}
+
+VOID secHandleRxEapolPacket(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T prRetSwRfb,
+		IN P_STA_RECORD_T prStaRec)
+{
+	P_BSS_INFO_T prBssInfo = (P_BSS_INFO_T) NULL;
+
+	do {
+		if (!prStaRec)
+			break;
+		if (prRetSwRfb->u2PacketLen <= ETHER_HEADER_LEN)
+			break;
+		prBssInfo = prAdapter->aprBssInfo[prStaRec->ucBssIndex];
+		if (secGetEapolKeyType((PUINT_8) prRetSwRfb->pvHeader) != EAPOL_KEY_3_OF_4)
+			break;
+		prBssInfo->eKeyAction = SEC_QUEUE_KEY_COMMAND;
+	} while (FALSE);
+}
+
+VOID secHandleEapolTxStatus(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduInfo,
+		IN ENUM_TX_RESULT_CODE_T rTxDoneStatus)
+{
+	P_BSS_INFO_T prBssInfo = (P_BSS_INFO_T) NULL;
+
+	do {
+		prBssInfo = prAdapter->aprBssInfo[prMsduInfo->ucBssIndex];
+		if (!prBssInfo)
+			break;
+		if (prMsduInfo->eEapolKeyType != EAPOL_KEY_4_OF_4)
+			break;
+		if (rTxDoneStatus == TX_RESULT_SUCCESS)
+			prBssInfo->eKeyAction = SEC_TX_KEY_COMMAND;
+		else
+			prBssInfo->eKeyAction = SEC_DROP_KEY_COMMAND;
+		kalSetEvent(prAdapter->prGlueInfo);
+	} while (FALSE);
+}
