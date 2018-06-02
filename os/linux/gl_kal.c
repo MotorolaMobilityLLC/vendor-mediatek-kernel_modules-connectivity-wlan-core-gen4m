@@ -1120,18 +1120,17 @@ kalIndicateStatusAndComplete(IN struct GLUE_INFO *prGlueInfo, IN uint32_t eStatu
 				if (prBssDesc != NULL && prChannel != NULL) {
 #if KERNEL_VERSION(3, 18, 0) <= CFG80211_VERSION_CODE
 					bss = cfg80211_inform_bss(priv_to_wiphy(prGlueInfo),
-						prChannel,
-						CFG80211_BSS_FTYPE_UNKNOWN,
-						arBssid,
-						0,
-						WLAN_CAPABILITY_ESS,
-						prBssDesc->u2BeaconInterval,
-						prBssDesc->aucIEBuf,
-						prBssDesc->u2IELength,
-						RCPI_TO_dBm(prBssDesc->ucRCPI)
-									* 100,
-						GFP_KERNEL);
-#els
+					prChannel,
+					CFG80211_BSS_FTYPE_PRESP,
+					arBssid,
+					0,	/* TSF */
+					WLAN_CAPABILITY_ESS,
+					prBssDesc->u2BeaconInterval,
+					prBssDesc->aucIEBuf,	/* IE */
+					prBssDesc->u2IELength,	/* IE Length */
+					RCPI_TO_dBm(prBssDesc->ucRCPI) * 100,
+					GFP_KERNEL);
+#else
 					bss = cfg80211_inform_bss(priv_to_wiphy(prGlueInfo), prChannel,
 								  arBssid, 0,	/* TSF */
 								  WLAN_CAPABILITY_ESS,
