@@ -4390,21 +4390,19 @@ VOID mqmProcessScanResult(IN P_ADAPTER_T prAdapter, IN P_BSS_DESC_T prScanResult
 				case VENDOR_OUI_SUBTYPE_WMM_PARAM:
 					if (IE_LEN(pucIE) != 24)
 						break;	/* WMM Param IE with a wrong length */
-
-						prStaRec->fgIsWmmSupported = TRUE;
-						prStaRec->fgIsUapsdSupported =
-						    (((((P_IE_WMM_PARAM_T) pucIE)->ucQosInfo) & WMM_QOS_INFO_UAPSD) ?
-						     TRUE : FALSE);
+					prStaRec->fgIsWmmSupported = TRUE;
+					prStaRec->fgIsUapsdSupported =
+						(((((P_IE_WMM_PARAM_T) pucIE)->ucQosInfo) &
+						  WMM_QOS_INFO_UAPSD) ? TRUE : FALSE);
 					break;
 
 				case VENDOR_OUI_SUBTYPE_WMM_INFO:
 					if (IE_LEN(pucIE) != 7)
 						break;	/* WMM Info IE with a wrong length */
-
-						prStaRec->fgIsWmmSupported = TRUE;
-						prStaRec->fgIsUapsdSupported =
-						    (((((P_IE_WMM_INFO_T) pucIE)->ucQosInfo) & WMM_QOS_INFO_UAPSD) ?
-						     TRUE : FALSE);
+					prStaRec->fgIsWmmSupported = TRUE;
+					prStaRec->fgIsUapsdSupported =
+						(((((P_IE_WMM_INFO_T) pucIE)->ucQosInfo) &
+						  WMM_QOS_INFO_UAPSD) ? TRUE : FALSE);
 					break;
 
 				default:
