@@ -882,7 +882,8 @@ VOID p2pRoleFsmRunEventStartAP(IN P_ADAPTER_T prAdapter, IN P_MSG_HDR_T prMsgHdr
 			prP2pConnReqInfo->eConnRequest = P2P_CONNECTION_TYPE_PURE_AP;
 
 			/* Overwrite AP channel */
-			if (prAdapter->rWifiVar.ucApChannel) {
+			if (prAdapter->rWifiVar.ucApChannel &&
+				prAdapter->rWifiVar.ucApChnlDefFromCfg) {
 				prP2pConnReqInfo->rChannelInfo.ucChannelNum = prAdapter->rWifiVar.ucApChannel;
 
 				if (prAdapter->rWifiVar.ucApChannel <= 14)
