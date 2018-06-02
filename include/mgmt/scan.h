@@ -624,6 +624,7 @@ struct AGPS_AP_LIST {
 	struct AGPS_AP_INFO arApInfo[SCN_AGPS_AP_LIST_MAX_NUM];
 };
 #endif
+
 /*******************************************************************************
  *                            P U B L I C   D A T A
  *******************************************************************************
@@ -843,4 +844,12 @@ void scnSetSchedScanPlan(IN struct ADAPTER *prAdapter,
 
 void scanLogEssResult(struct ADAPTER *prAdapter);
 void scanInitEssResult(struct ADAPTER *prAdapter);
+
+#if CFG_SUPPORT_SCAN_CACHE_RESULT
+/*----------------------------------------------------------------------------*/
+/* Routines in scan_cache.c                                                   */
+/*----------------------------------------------------------------------------*/
+u_int8_t isScanCacheDone(struct GL_SCAN_CACHE_INFO *prScanCache);
+#endif /* CFG_SUPPORT_SCAN_CACHE_RESULT */
+
 #endif /* _SCAN_H */
