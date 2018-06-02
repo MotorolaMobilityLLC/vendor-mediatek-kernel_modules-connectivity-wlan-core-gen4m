@@ -91,6 +91,10 @@
 #define PSE_SPARE_DUMMY_CR3			(PSE_BASE +  0x2e8)
 #define PSE_SPARE_DUMMY_CR4			(PSE_BASE +  0x2ec)
 
+#define PSE_PEEK_CR_0				(PSE_BASE +  0x3d0)
+#define PSE_PEEK_CR_OFFSET			0x4
+#define PSE_PEEK_CR_NUM				9
+
 /* CPU Interface Get First Frame ID Control Regitser */
 #define C_GFF (PSE_BASE + 0x24)
 #define GET_FIRST_FID_MASK (0xfff)

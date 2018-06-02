@@ -887,8 +887,7 @@ void halRxProcessMsduReport(IN struct ADAPTER *prAdapter,
 
 		if (u4Token >= HIF_TX_MSDU_TOKEN_NUM) {
 			DBGLOG(HAL, ERROR, "Error MSDU report[%u]\n", u4Token);
-			DBGLOG_MEM32(HAL, ERROR, prMsduReport,
-				     sizeof(struct HW_MAC_MSDU_REPORT));
+			DBGLOG_MEM32(HAL, ERROR, prMsduReport, 64);
 			halDumpHifDebugLog(prAdapter->prGlueInfo, false, false);
 #if CFG_CHIP_RESET_SUPPORT
 			GL_RESET_TRIGGER(prAdapter, RST_FLAG_CHIP_RESET);
@@ -2507,7 +2506,7 @@ void halShowPseInfo(IN struct ADAPTER *prAdapter)
 	uint32_t pse_stat, pg_flow_ctrl[16] = {0};
 	uint32_t fpg_cnt, ffa_cnt, fpg_head, fpg_tail;
 	uint32_t max_q, min_q, rsv_pg, used_pg;
-	uint32_t i, page_offset, value;
+	uint32_t i, page_offset, addr, value;
 
 	HAL_MCR_RD(prAdapter, PSE_PBUF_CTRL, &pse_buf_ctrl);
 	HAL_MCR_RD(prAdapter, PSE_QUEUE_EMPTY, &pse_stat);
@@ -2743,6 +2742,13 @@ void halShowPseInfo(IN struct ADAPTER *prAdapter)
 				tfid, hfid, pktcnt);
 		}
 	}
+
+	for (i = 0; i < PSE_PEEK_CR_NUM; i++) {
+		addr = PSE_PEEK_CR_0 + PSE_PEEK_CR_OFFSET * i;
+		HAL_MCR_RD(prAdapter, addr, &value);
+		DBGLOG(HAL, INFO, "PSE_PEEK_CR_%u[0x%08x/0x%08x]\n",
+		       i, addr, value);
+	}
 }
 
 #define UMAC_FID_FAULT	0xFFF
@@ -2779,7 +2785,7 @@ void halShowPleInfo(IN struct ADAPTER *prAdapter)
 	uint32_t sta_pause[4] = {0}, dis_sta_map[4] = {0};
 	uint32_t fpg_cnt, ffa_cnt, fpg_head, fpg_tail, hif_max_q, hif_min_q;
 	uint32_t rpg_hif, upg_hif, cpu_max_q, cpu_min_q, rpg_cpu, upg_cpu;
-	uint32_t i, j, value;
+	uint32_t i, j, addr, value;
 
 	HAL_MCR_RD(prAdapter, PLE_PBUF_CTRL, &ple_buf_ctrl[0]);
 	HAL_MCR_RD(prAdapter, PLE_RELEASE_CTRL, &ple_buf_ctrl[1]);
@@ -3012,6 +3018,13 @@ void halShowPleInfo(IN struct ADAPTER *prAdapter)
 					sta_ctrl_reg[ctrl]);
 			}
 		}
+	}
+
+	for (i = 0; i < PLE_PEEK_CR_NUM; i++) {
+		addr = PLE_PEEK_CR_0 + PLE_PEEK_CR_OFFSET * i;
+		HAL_MCR_RD(prAdapter, addr, &value);
+		DBGLOG(HAL, INFO, "PLE_PEEK_CR_%u[0x%08x/0x%08x]\n",
+		       i, addr, value);
 	}
 }
 
