@@ -82,6 +82,9 @@
 *                              C O N S T A N T S
 ********************************************************************************
 */
+extern struct semaphore g_halt_sem;
+extern int g_u4HaltFlag;
+
 #ifdef CONFIG_NL80211_TESTMODE
 #define NL80211_DRIVER_TESTMODE_VERSION 2
 #endif
@@ -366,6 +369,8 @@ void mtk_reg_notify(IN struct wiphy *pWiphy, IN struct regulatory_request *pRequ
 void cfg80211_regd_set_wiphy(IN struct wiphy *pWiphy);
 
 int mtk_cfg80211_suspend(struct wiphy *wiphy, struct cfg80211_wowlan *wow);
+
+int mtk_cfg80211_resume(struct wiphy *wiphy);
 
 /*******************************************************************************
 *                              F U N C T I O N S
