@@ -1218,10 +1218,14 @@ VOID p2pRoleFsmRunEventRadarDet(IN P_ADAPTER_T prAdapter, IN P_MSG_HDR_T prMsgHd
 				prP2pRoleFsmInfo->eCurrentState != P2P_ROLE_STATE_IDLE)
 			ASSERT(FALSE);
 
+		if (p2pFuncGetRadarDetectMode())
+			DBGLOG(P2P, INFO, "p2pRoleFsmRunEventRadarDet: Ignore radar event\n");
+		else {
 		if (prP2pRoleFsmInfo->eCurrentState == P2P_ROLE_STATE_DFS_CAC)
 			p2pRoleFsmStateTransition(prAdapter, prP2pRoleFsmInfo, P2P_ROLE_STATE_IDLE);
 
 		kalP2PRddDetectUpdate(prAdapter->prGlueInfo, prP2pRoleFsmInfo->ucRoleIndex);
+		}
 
 		p2pFuncShowRadarInfo(prAdapter, prMsgP2pRddDetMsg->ucBssIndex);
 

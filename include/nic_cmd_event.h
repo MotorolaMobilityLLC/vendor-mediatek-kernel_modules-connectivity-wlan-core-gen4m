@@ -1586,6 +1586,7 @@ typedef struct _CMD_RDD_ON_OFF_CTRL_T {
 	UINT_8 ucRddIdx;
 	UINT_8 ucRddInSel;
 	UINT_8 ucRegDomain;
+	UINT_8 ucRadarDetectMode;
 } CMD_RDD_ON_OFF_CTRL_T, *P_CMD_RDD_ON_OFF_CTRL_T;
 #endif
 
@@ -2291,7 +2292,7 @@ typedef struct _EVENT_RDD_REPORT_T {
 	UINT_8 ucPRICountM1TH;
 	UINT_8 ucPRICountM2;
 	UINT_8 ucPRICountM2TH;
-	UINT_32 u4PRI1st;
+	UINT_32 u4PRI1stUs;
 	LONG_PULSE_BUFFER_T arLpbContent[32];
 	PERIODIC_PULSE_BUFFER_T arPpbContent[32];
 } EVENT_RDD_REPORT_T, *P_EVENT_RDD_REPORT_T;

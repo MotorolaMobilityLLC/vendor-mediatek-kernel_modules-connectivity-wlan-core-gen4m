@@ -81,6 +81,7 @@ APPEND_VAR_IE_ENTRY_T txProbeRspIETable[] = {
 #if (CFG_SUPPORT_DFS_MASTER == 1)
 BOOLEAN g_fgManualCac = FALSE;
 UINT_32 g_u4ManualCacTime;
+UINT_8 g_ucRadarDetectMode;
 P2P_RADAR_INFO_T g_rP2pRadarInfo;
 PUINT_8 apucW53RadarType[3] = {
 	(PUINT_8) DISP_STRING("Unknown Type"),
@@ -1474,7 +1475,10 @@ BOOLEAN p2pFuncIsManualCac(VOID)
 
 VOID p2pFuncRadarInfoInit(VOID)
 {
-	UINT_8 ucCnt;
+
+	kalMemZero(&g_rP2pRadarInfo, sizeof(g_rP2pRadarInfo));
+
+/*	UINT_8 ucCnt;
 
 	g_rP2pRadarInfo.ucRadarReportMode = 0;
 	g_rP2pRadarInfo.ucRddIdx = 0;
@@ -1488,7 +1492,7 @@ VOID p2pFuncRadarInfoInit(VOID)
 	g_rP2pRadarInfo.ucPRICountM1TH = 0;
 	g_rP2pRadarInfo.ucPRICountM2 = 0;
 	g_rP2pRadarInfo.ucPRICountM2TH = 0;
-	g_rP2pRadarInfo.u4PRI1st = 0;
+	g_rP2pRadarInfo.u4PRI1stUs = 0;
 
 	for (ucCnt = 0; ucCnt < 32; ucCnt++) {
 		g_rP2pRadarInfo.arPpbContent[ucCnt].u4PeriodicStartTime = 0;
@@ -1498,6 +1502,7 @@ VOID p2pFuncRadarInfoInit(VOID)
 		g_rP2pRadarInfo.arLpbContent[ucCnt].u4LongStartTime = 0;
 		g_rP2pRadarInfo.arLpbContent[ucCnt].u2LongPulseWidth = 0;
 	}
+*/
 
 }
 
@@ -1541,24 +1546,24 @@ VOID p2pFuncShowRadarInfo(IN P_ADAPTER_T prAdapter, IN UINT_8 ucBssIdx)
 		DBGLOG(P2P, INFO, "start time	pulse width	PRI\n");
 
 		if (g_rP2pRadarInfo.ucPeriodicDetected) {
-			DBGLOG(P2P, INFO, "%d		%d		-\n"
+			DBGLOG(P2P, INFO, "%-10d    %-11d    -\n"
 				, g_rP2pRadarInfo.arPpbContent[ucCnt].u4PeriodicStartTime
 				, g_rP2pRadarInfo.arPpbContent[ucCnt].u2PeriodicPulseWidth);
 
 			for (ucCnt = 1; ucCnt < g_rP2pRadarInfo.ucPPBNum; ucCnt++) {
-				DBGLOG(P2P, INFO, "%d		%d		%d\n"
+				DBGLOG(P2P, INFO, "%-10d    %-11d    %d\n"
 					, g_rP2pRadarInfo.arPpbContent[ucCnt].u4PeriodicStartTime
 					, g_rP2pRadarInfo.arPpbContent[ucCnt].u2PeriodicPulseWidth
 					, (g_rP2pRadarInfo.arPpbContent[ucCnt].u4PeriodicStartTime
 						- g_rP2pRadarInfo.arPpbContent[ucCnt-1].u4PeriodicStartTime) * 2 / 5);
 			}
 		} else if (g_rP2pRadarInfo.ucLongDetected) {
-			DBGLOG(P2P, INFO, "%d		%d		-\n"
+			DBGLOG(P2P, INFO, "%-10d    %-11d    -\n"
 				, g_rP2pRadarInfo.arLpbContent[ucCnt].u4LongStartTime
 				, g_rP2pRadarInfo.arLpbContent[ucCnt].u2LongPulseWidth);
 
 			for (ucCnt = 1; ucCnt < g_rP2pRadarInfo.ucLPBNum; ucCnt++) {
-				DBGLOG(P2P, INFO, "%d		%d		%d\n"
+				DBGLOG(P2P, INFO, "%-10d    %-11d    %d\n"
 					, g_rP2pRadarInfo.arLpbContent[ucCnt].u4LongStartTime
 					, g_rP2pRadarInfo.arLpbContent[ucCnt].u2LongPulseWidth
 					, (g_rP2pRadarInfo.arLpbContent[ucCnt].u4LongStartTime
@@ -1573,15 +1578,15 @@ PUINT_8 p2pFuncJpW53RadarType(VOID)
 	UINT_32 u4Type1Diff;
 	UINT_32 u4Type2Diff;
 
-	if (g_rP2pRadarInfo.u4PRI1st >= 1428)
-		u4Type1Diff = g_rP2pRadarInfo.u4PRI1st - 1428;
+	if (g_rP2pRadarInfo.u4PRI1stUs >= 1428)
+		u4Type1Diff = g_rP2pRadarInfo.u4PRI1stUs - 1428;
 	else
-		u4Type1Diff = 1428 - g_rP2pRadarInfo.u4PRI1st;
+		u4Type1Diff = 1428 - g_rP2pRadarInfo.u4PRI1stUs;
 
-	if (g_rP2pRadarInfo.u4PRI1st >= 3846)
-		u4Type2Diff = g_rP2pRadarInfo.u4PRI1st - 3846;
+	if (g_rP2pRadarInfo.u4PRI1stUs >= 3846)
+		u4Type2Diff = g_rP2pRadarInfo.u4PRI1stUs - 3846;
 	else
-		u4Type2Diff = 3846 - g_rP2pRadarInfo.u4PRI1st;
+		u4Type2Diff = 3846 - g_rP2pRadarInfo.u4PRI1stUs;
 
 	if (u4Type1Diff < u4Type2Diff)
 		return apucW53RadarType[1];
@@ -1597,20 +1602,20 @@ PUINT_8 p2pFuncJpW56RadarType(VOID)
 	if (g_rP2pRadarInfo.ucLongDetected)
 		return apucW56RadarType[7];
 
-	if (g_rP2pRadarInfo.u4PRI1st >= 3980 && g_rP2pRadarInfo.u4PRI1st <= 4020)
+	if (g_rP2pRadarInfo.u4PRI1stUs >= 3980 && g_rP2pRadarInfo.u4PRI1stUs <= 4020)
 		return apucW56RadarType[3];
 
-	if (g_rP2pRadarInfo.u4PRI1st >= 1368 && g_rP2pRadarInfo.u4PRI1st <= 1448) {
+	if (g_rP2pRadarInfo.u4PRI1stUs >= 1368 && g_rP2pRadarInfo.u4PRI1stUs <= 1448) {
 
-		if (g_rP2pRadarInfo.u4PRI1st >= 1388)
-			u4Type1Diff = g_rP2pRadarInfo.u4PRI1st - 1388;
+		if (g_rP2pRadarInfo.u4PRI1stUs >= 1388)
+			u4Type1Diff = g_rP2pRadarInfo.u4PRI1stUs - 1388;
 		else
-			u4Type1Diff = 1388 - g_rP2pRadarInfo.u4PRI1st;
+			u4Type1Diff = 1388 - g_rP2pRadarInfo.u4PRI1stUs;
 
-		if (g_rP2pRadarInfo.u4PRI1st >= 1428)
-			u4Type2Diff = g_rP2pRadarInfo.u4PRI1st - 1428;
+		if (g_rP2pRadarInfo.u4PRI1stUs >= 1428)
+			u4Type2Diff = g_rP2pRadarInfo.u4PRI1stUs - 1428;
 		else
-			u4Type2Diff = 1428 - g_rP2pRadarInfo.u4PRI1st;
+			u4Type2Diff = 1428 - g_rP2pRadarInfo.u4PRI1stUs;
 
 		if (u4Type1Diff < u4Type2Diff)
 			return apucW56RadarType[1];
@@ -1619,21 +1624,33 @@ PUINT_8 p2pFuncJpW56RadarType(VOID)
 
 	}
 
-	if (g_rP2pRadarInfo.u4PRI1st >= 130 && g_rP2pRadarInfo.u4PRI1st < 200)
+	if (g_rP2pRadarInfo.u4PRI1stUs >= 130 && g_rP2pRadarInfo.u4PRI1stUs < 200)
 		return apucW56RadarType[4];
 
-	if (g_rP2pRadarInfo.u4PRI1st >= 200 && g_rP2pRadarInfo.u4PRI1st <= 520) {
+	if (g_rP2pRadarInfo.u4PRI1stUs >= 200 && g_rP2pRadarInfo.u4PRI1stUs <= 520) {
 
-		if (g_rP2pRadarInfo.u4PRI1st <= 230)
+		if (g_rP2pRadarInfo.u4PRI1stUs <= 230)
 		return apucW56RadarType[9];
 
-		if (g_rP2pRadarInfo.u4PRI1st >= 323 && g_rP2pRadarInfo.u4PRI1st <= 343)
+		if (g_rP2pRadarInfo.u4PRI1stUs >= 323 && g_rP2pRadarInfo.u4PRI1stUs <= 343)
 			return apucW56RadarType[10];
 
 		return apucW56RadarType[11];
 	}
 
 	return apucW56RadarType[0];
+}
+
+VOID p2pFuncSetRadarDetectMode(IN UINT_8 ucRadarDetectMode)
+{
+	g_ucRadarDetectMode = ucRadarDetectMode;
+
+	DBGLOG(P2P, INFO, "p2pFuncSetRadarDetectMode: g_ucRadarDetectMode: %d\n", g_ucRadarDetectMode);
+}
+
+UINT_8 p2pFuncGetRadarDetectMode(VOID)
+{
+	return g_ucRadarDetectMode;
 }
 #endif
 

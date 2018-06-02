@@ -11990,6 +11990,65 @@ wlanoidQuerySetRddReport(IN P_ADAPTER_T prAdapter, IN PVOID pvSetBuffer, IN UINT
 
 	return rWlanStatus;
 }
+
+/*----------------------------------------------------------------------------*/
+/*!
+* \brief This routine is called to set rdd report.
+*
+* \param[in] pvAdapter Pointer to the Adapter structure.
+* \param[out] pvQueryBuf A pointer to the buffer that holds the result of
+*                           the query.
+* \param[in] u4QueryBufLen The length of the query buffer.
+* \param[out] pu4QueryInfoLen If the call is successful, returns the number of
+*                            bytes written into the query buffer. If the call
+*                            failed due to invalid length of the query buffer,
+*                            returns the amount of storage needed.
+*
+* \retval WLAN_STATUS_SUCCESS
+* \retval WLAN_STATUS_INVALID_LENGTH
+*/
+/*----------------------------------------------------------------------------*/
+WLAN_STATUS
+wlanoidQuerySetRadarDetectMode(IN P_ADAPTER_T prAdapter, IN PVOID pvSetBuffer, IN UINT_32 u4SetBufferLen,
+			 OUT PUINT_32 pu4SetInfoLen)
+{
+	P_PARAM_CUSTOM_SET_RADAR_DETECT_MODE_T prSetRadarDetectMode;
+	P_CMD_RDD_ON_OFF_CTRL_T prCmdRddOnOffCtrl;
+	WLAN_STATUS rWlanStatus = WLAN_STATUS_SUCCESS;
+
+	DEBUGFUNC("wlanoidQuerySetRadarDetectMode");
+
+	ASSERT(prAdapter);
+	ASSERT(pu4SetInfoLen);
+
+	*pu4SetInfoLen = sizeof(P_PARAM_CUSTOM_SET_RADAR_DETECT_MODE_T);
+
+	ASSERT(pvSetBuffer);
+
+	prSetRadarDetectMode = (P_PARAM_CUSTOM_SET_RADAR_DETECT_MODE_T) pvSetBuffer;
+
+	prCmdRddOnOffCtrl = (P_CMD_RDD_ON_OFF_CTRL_T) cnmMemAlloc(prAdapter, RAM_TYPE_MSG,
+					sizeof(P_CMD_RDD_ON_OFF_CTRL_T));
+
+	prCmdRddOnOffCtrl->ucDfsCtrl = RDD_DET_MODE;
+
+	prCmdRddOnOffCtrl->ucRadarDetectMode = prSetRadarDetectMode->ucRadarDetectMode;
+
+	DBGLOG(INIT, INFO, "MT6632 : wlanoidQuerySetRadarDetectMode -  DFS ctrl: %.d, Radar Detect Mode: %d\n",
+	prCmdRddOnOffCtrl->ucDfsCtrl, prCmdRddOnOffCtrl->ucRadarDetectMode);
+
+	rWlanStatus = wlanSendSetQueryCmd(prAdapter,
+					CMD_ID_RDD_ON_OFF_CTRL,
+					TRUE,   /* fgSetQuery Bit:  True->write  False->read*/
+					FALSE,   /* fgNeedResp */
+					TRUE,   /* fgIsOid*/
+					nicCmdEventSetCommon, /* REF: wlanoidSetDbdcEnable */
+					nicOidCmdTimeoutCommon,
+					sizeof(CMD_RDD_ON_OFF_CTRL_T),
+					(PUINT_8) (prCmdRddOnOffCtrl), pvSetBuffer, u4SetBufferLen);
+
+	return rWlanStatus;
+}
 #endif
 
 /*----------------------------------------------------------------------------*/
