@@ -2042,7 +2042,8 @@ static int32_t HQA_ReadBulkEEPROM(struct net_device *prNetDev,
 {
 	int32_t i4Ret = 0;
 	uint16_t Offset;
-	uint16_t Len;
+	uint16_t Len = 0;
+
 #if  (CFG_EEPROM_PAGE_ACCESS == 1)
 	struct PARAM_CUSTOM_ACCESS_EFUSE rAccessEfuseInfo;
 	uint32_t u4BufLen = 0;
@@ -6734,11 +6735,8 @@ int32_t connacSetICapStart(struct GLUE_INFO *prGlueInfo, uint32_t u4Trigger, uin
 		(uint32_t) (gConEmiPhyBase & 0xFFFFFFFF);
 	prICapInfo->u4EmiEndAddress =
 		(uint32_t) ((gConEmiPhyBase + gConEmiSize) & 0xFFFFFFFF);
-	if (sizeof(gConEmiPhyBase) > 4)
-		prICapInfo->u4EmiMsbAddress =
-			(uint32_t) ((gConEmiPhyBase >> 32) & 0xFFFFFFFF);
-	else
-		prICapInfo->u4EmiMsbAddress = 0;
+	prICapInfo->u4EmiMsbAddress =
+		(uint32_t) ((((uint64_t) gConEmiPhyBase) >> 32) & 0xFFFFFFFF);
 
 	DBGLOG(RFTEST, INFO,
 		"startAddr = 0x%08x, endAddress = 0x%08x, MsbAddr = 0x%08x\n",
