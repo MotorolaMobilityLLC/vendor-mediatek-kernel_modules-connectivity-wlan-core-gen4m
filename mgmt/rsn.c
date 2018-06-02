@@ -1102,12 +1102,6 @@ u_int8_t rsnPerformPolicySelection(IN struct ADAPTER
 	       (uint8_t) ((u4AkmSuite >> 24) & 0x000000FF));
 
 #if CFG_SUPPORT_802_11W
-	DBGLOG(RSN, INFO,
-		"[MFP] MFP setting=%d, u2RsnCap=%d, fgRsnCapPresent=%d\n",
-		kalGetMfpSetting(prAdapter->prGlueInfo),
-		prBssRsnInfo->u2RsnCap,
-		prBssRsnInfo->fgRsnCapPresent);
-
 	if (kalGetMfpSetting(prAdapter->prGlueInfo) ==
 	    RSN_AUTH_MFP_REQUIRED) {
 		if (!prBssRsnInfo->fgRsnCapPresent) {
@@ -1138,8 +1132,12 @@ u_int8_t rsnPerformPolicySelection(IN struct ADAPTER
 			}
 		}
 	}
-	DBGLOG(RSN, INFO, "[MFP] fgMgmtProtection = %d\n ",
-	       prAdapter->rWifiVar.rAisSpecificBssInfo.fgMgmtProtection);
+	DBGLOG(RSN, INFO,
+		"setting=%d, Cap=%d, CapPresent=%d, MgmtProtection = %d\n",
+		kalGetMfpSetting(prAdapter->prGlueInfo),
+		prBssRsnInfo->u2RsnCap,
+		prBssRsnInfo->fgRsnCapPresent,
+		prAdapter->rWifiVar.rAisSpecificBssInfo.fgMgmtProtection);
 #endif
 
 	if (GET_SELECTOR_TYPE(u4GroupCipher) == CIPHER_SUITE_CCMP) {
