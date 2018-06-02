@@ -367,14 +367,17 @@ int mtk_cfg80211_vendor_get_roaming_capabilities(struct wiphy *wiphy,
 		"Get roaming capabilities: max black/whitelist=%d/%d",
 		maxNumOfList[0], maxNumOfList[1]);
 
-	skb = cfg80211_vendor_cmd_alloc_reply_skb(wiphy, sizeof(maxNumOfList));
+	skb = cfg80211_vendor_cmd_alloc_reply_skb(wiphy, sizeof(uint32_t) * 2);
 	if (!skb) {
 		DBGLOG(REQ, ERROR, "Allocate skb failed\n");
 		return -ENOMEM;
 	}
 
 	if (unlikely(nla_put(skb, WIFI_ATTRIBUTE_ROAMING_CAPABILITIES,
-				sizeof(maxNumOfList), maxNumOfList) < 0))
+				sizeof(uint32_t), &maxNumOfList[0]) < 0))
+		goto nla_put_failure;
+	if (unlikely(nla_put(skb, WIFI_ATTRIBUTE_ROAMING_CAPABILITIES,
+				sizeof(uint32_t), &maxNumOfList[1]) < 0))
 		goto nla_put_failure;
 
 	return cfg80211_vendor_cmd_reply(skb);
