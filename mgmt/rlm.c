@@ -5529,7 +5529,7 @@ u_int8_t rlmFillScanMsg(struct ADAPTER *prAdapter,
 	prMsg->u2IELen = 0;
 	/* if mandatory bit is set, we should do */
 	if (prCurrReq->ucRequestMode & RM_REQ_MODE_DURATION_MANDATORY_BIT)
-		prMsg->u2ChannelMinDwellTime = prMsg->u2ChannelMinDwellTime;
+		prMsg->u2ChannelMinDwellTime = prMsg->u2ChannelDwellTime;
 	else
 		prMsg->u2ChannelMinDwellTime =
 			(prMsg->u2ChannelDwellTime * 2) / 3;

@@ -1437,10 +1437,6 @@ void aisFsmSteps(IN struct ADAPTER *prAdapter, enum ENUM_AIS_STATE eNextState)
 					prScanReqMsg->ucSSIDNum = ucScanSSIDNum;
 					prScanReqMsg->prSsid = prAisFsmInfo->arScanSSID;
 				}
-				prScanReqMsg->u2ChannelDwellTime = 50;
-				prScanReqMsg->u2ChannelMinDwellTime =
-					SCAN_CHANNEL_DWELL_TIME_MIN_MSEC;
-
 			} else {
 				prScanReqMsg->eScanType = SCAN_TYPE_ACTIVE_SCAN;
 
@@ -1452,14 +1448,13 @@ void aisFsmSteps(IN struct ADAPTER *prAdapter, enum ENUM_AIS_STATE eNextState)
 				prScanReqMsg->ucSSIDType = SCAN_REQ_SSID_SPECIFIED;
 				prScanReqMsg->ucSSIDNum = 1;
 				prScanReqMsg->prSsid = &(prAisFsmInfo->rRoamingSSID);
-				prScanReqMsg->u2ChannelDwellTime = 80;
-				prScanReqMsg->u2ChannelMinDwellTime =
-					SCAN_CHANNEL_DWELL_TIME_MIN_MSEC;
 			}
 #endif
 
 			/* using default channel dwell time/timeout value */
 			prScanReqMsg->u2ProbeDelay = 0;
+			prScanReqMsg->u2ChannelDwellTime = 0;
+			prScanReqMsg->u2ChannelMinDwellTime = 0;
 			prScanReqMsg->u2TimeoutValue = 0;
 
 			/* check if tethering is running and need to fix on specific channel */

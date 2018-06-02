@@ -236,7 +236,8 @@ void p2pFuncRequestScan(IN struct ADAPTER *prAdapter,
 
 		prScanReqV2->u2ChannelDwellTime =
 			prScanReqInfo->u2PassiveDewellTime;
-
+		prScanReqV2->u2ChannelMinDwellTime =
+			SCAN_CHANNEL_DWELL_TIME_MIN_MSEC;
 		COPY_MAC_ADDR(prScanReqV2->aucBSSID,
 			      "\xff\xff\xff\xff\xff\xff");
 
