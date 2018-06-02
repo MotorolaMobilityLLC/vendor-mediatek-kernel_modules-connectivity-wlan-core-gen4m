@@ -446,6 +446,7 @@ VOID p2pRoleFsmRunEventTimeout(IN P_ADAPTER_T prAdapter, IN ULONG ulParamPtr)
 		case P2P_ROLE_STATE_DFS_CAC:
 			p2pRoleFsmStateTransition(prAdapter, prP2pRoleFsmInfo, P2P_ROLE_STATE_IDLE);
 			kalP2PCacFinishedUpdate(prAdapter->prGlueInfo, prP2pRoleFsmInfo->ucRoleIndex);
+			p2pFuncSetDfsState(DFS_STATE_ACTIVE);
 			break;
 #endif
 		default:
@@ -1071,6 +1072,7 @@ VOID p2pRoleFsmRunEventStopAP(IN P_ADAPTER_T prAdapter, IN P_MSG_HDR_T prMsgHdr)
 			break;
 
 #if (CFG_SUPPORT_DFS_MASTER == 1)
+		p2pFuncSetDfsState(DFS_STATE_INACTIVE);
 		p2pFuncStopRdd(prAdapter, prP2pBssInfo->ucBssIndex);
 #endif
 
@@ -1220,13 +1222,17 @@ VOID p2pRoleFsmRunEventRadarDet(IN P_ADAPTER_T prAdapter, IN P_MSG_HDR_T prMsgHd
 				prP2pRoleFsmInfo->eCurrentState != P2P_ROLE_STATE_IDLE)
 			ASSERT(FALSE);
 
-		if (p2pFuncGetRadarDetectMode())
+		if (p2pFuncGetRadarDetectMode()) {
 			DBGLOG(P2P, INFO, "p2pRoleFsmRunEventRadarDet: Ignore radar event\n");
-		else {
-		if (prP2pRoleFsmInfo->eCurrentState == P2P_ROLE_STATE_DFS_CAC)
-			p2pRoleFsmStateTransition(prAdapter, prP2pRoleFsmInfo, P2P_ROLE_STATE_IDLE);
+			if (prP2pRoleFsmInfo->eCurrentState == P2P_ROLE_STATE_DFS_CAC)
+				p2pFuncSetDfsState(DFS_STATE_CHECKING);
+			else
+				p2pFuncSetDfsState(DFS_STATE_ACTIVE);
+		} else {
+			if (prP2pRoleFsmInfo->eCurrentState == P2P_ROLE_STATE_DFS_CAC)
+				p2pRoleFsmStateTransition(prAdapter, prP2pRoleFsmInfo, P2P_ROLE_STATE_IDLE);
 
-		kalP2PRddDetectUpdate(prAdapter->prGlueInfo, prP2pRoleFsmInfo->ucRoleIndex);
+			kalP2PRddDetectUpdate(prAdapter->prGlueInfo, prP2pRoleFsmInfo->ucRoleIndex);
 		}
 
 		p2pFuncShowRadarInfo(prAdapter, prMsgP2pRddDetMsg->ucBssIndex);
@@ -1943,7 +1949,7 @@ p2pRoleFsmRunEventChnlGrant(IN P_ADAPTER_T prAdapter,
 	P_MSG_CH_GRANT_T prMsgChGrant = (P_MSG_CH_GRANT_T) NULL;
 #if (CFG_SUPPORT_DFS_MASTER == 1)
 	P_BSS_INFO_T prP2pBssInfo = (P_BSS_INFO_T) NULL;
-	UINT_32 u4CacTime;
+	UINT_32 u4CacTimeMs;
 #endif
 	UINT_8 ucTokenID = 0;
 
@@ -1995,18 +2001,24 @@ p2pRoleFsmRunEventChnlGrant(IN P_ADAPTER_T prAdapter,
 				p2pFuncStartRdd(prAdapter, prMsgChGrant->ucBssIndex);
 
 				if (p2pFuncCheckWeatherRadarBand(prChnlReqInfo))
-					u4CacTime = P2P_AP_CAC_WEATHER_CHNL_HOLD_TIME_MS;
+					u4CacTimeMs = P2P_AP_CAC_WEATHER_CHNL_HOLD_TIME_MS;
 				else
-					u4CacTime = prP2pRoleFsmInfo->rChnlReqInfo.u4MaxInterval;
+					u4CacTimeMs = prP2pRoleFsmInfo->rChnlReqInfo.u4MaxInterval;
 
 				if (p2pFuncIsManualCac())
-					u4CacTime = p2pFuncGetManualCacTime();
+					u4CacTimeMs = p2pFuncGetDriverCacTime() * 1000;
+				else
+					p2pFuncSetDriverCacTime(u4CacTimeMs/1000);
 
 				cnmTimerStartTimer(prAdapter, &(prP2pRoleFsmInfo->rP2pRoleFsmTimeoutTimer),
-					u4CacTime);
+					u4CacTimeMs);
+
+				p2pFuncRecordCacStartBootTime();
+
+				p2pFuncSetDfsState(DFS_STATE_CHECKING);
 
 				DBGLOG(P2P, INFO, "p2pRoleFsmRunEventChnlGrant: CAC time = %ds\n",
-					u4CacTime/1000);
+					u4CacTimeMs/1000);
 				break;
 			case P2P_ROLE_STATE_SWITCH_CHANNEL:
 				p2pFuncDfsSwitchCh(prAdapter, prP2pBssInfo, prP2pRoleFsmInfo->rChnlReqInfo);

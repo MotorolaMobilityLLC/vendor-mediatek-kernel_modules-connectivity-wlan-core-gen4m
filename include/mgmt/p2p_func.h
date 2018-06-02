@@ -58,6 +58,14 @@
 
 #if (CFG_SUPPORT_DFS_MASTER == 1)
 extern P2P_RADAR_INFO_T g_rP2pRadarInfo;
+
+enum _ENUM_DFS_STATE_T {
+	DFS_STATE_INACTIVE = 0,
+	DFS_STATE_CHECKING,
+	DFS_STATE_ACTIVE,
+	DFS_STATE_DETECTED,
+	DFS_STATE_NUM
+};
 #endif
 
 /*******************************************************************************
@@ -151,15 +159,19 @@ VOID p2pFuncDfsSwitchCh(IN P_ADAPTER_T prAdapter, IN P_BSS_INFO_T prBssInfo, IN 
 
 BOOLEAN p2pFuncCheckWeatherRadarBand(IN P_P2P_CHNL_REQ_INFO_T prChnlReqInfo);
 
-INT_32 p2pFuncSetManualCacTime(IN UINT_32 u4ManualCacTime);
+INT_32 p2pFuncSetDriverCacTime(IN UINT_32 u4CacTime);
 
-UINT_32 p2pFuncGetManualCacTime(VOID);
+VOID p2pFuncEnableManualCac(VOID);
+
+UINT_32 p2pFuncGetDriverCacTime(VOID);
 
 BOOLEAN p2pFuncIsManualCac(VOID);
 
 VOID p2pFuncRadarInfoInit(VOID);
 
 VOID p2pFuncShowRadarInfo(IN P_ADAPTER_T prAdapter, IN UINT_8 ucBssIdx);
+
+VOID p2pFuncGetRadarInfo(IN P_P2P_RADAR_INFO_T prP2pRadarInfo);
 
 PUINT_8 p2pFuncJpW53RadarType(VOID);
 
@@ -168,6 +180,16 @@ PUINT_8 p2pFuncJpW56RadarType(VOID);
 VOID p2pFuncSetRadarDetectMode(IN UINT_8 ucRadarDetectMode);
 
 UINT_8 p2pFuncGetRadarDetectMode(VOID);
+
+VOID p2pFuncSetDfsState(IN UINT_8 ucDfsState);
+
+UINT_8 p2pFuncGetDfsState(VOID);
+
+PUINT_8 p2pFuncShowDfsState(VOID);
+
+VOID p2pFuncRecordCacStartBootTime(VOID);
+
+UINT_32 p2pFuncGetCacRemainingTime(VOID);
 #endif
 
 VOID p2pFuncSetChannel(IN P_ADAPTER_T prAdapter, IN UINT_8 ucRoleIdx, IN P_RF_CHANNEL_INFO_T prRfChannelInfo);
