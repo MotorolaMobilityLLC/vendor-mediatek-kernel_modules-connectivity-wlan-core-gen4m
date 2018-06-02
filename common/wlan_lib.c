@@ -316,6 +316,7 @@ uint32_t wlanAdapterStart(IN struct ADAPTER *prAdapter, IN struct REG_INFO *prRe
 		ALLOC_ADAPTER_MEM_FAIL,
 		DRIVER_OWN_FAIL,
 		INIT_ADAPTER_FAIL,
+		INIT_HIFINFO_FAIL,
 		RAM_CODE_DOWNLOAD_FAIL,
 		WAIT_FIRMWARE_READY_FAIL,
 		FAIL_REASON_MAX
@@ -426,7 +427,7 @@ uint32_t wlanAdapterStart(IN struct ADAPTER *prAdapter, IN struct REG_INFO *prRe
 		if (!halHifSwInfoInit(prAdapter)) {
 			DBGLOG(INIT, ERROR, "halHifSwInfoInit failed!\n");
 			u4Status = WLAN_STATUS_FAILURE;
-			eFailReason = INIT_ADAPTER_FAIL;
+			eFailReason = INIT_HIFINFO_FAIL;
 			break;
 		}
 
@@ -707,6 +708,7 @@ uint32_t wlanAdapterStart(IN struct ADAPTER *prAdapter, IN struct REG_INFO *prRe
 		switch (eFailReason) {
 		case WAIT_FIRMWARE_READY_FAIL:
 		case RAM_CODE_DOWNLOAD_FAIL:
+		case INIT_HIFINFO_FAIL:
 			nicRxUninitialize(prAdapter);
 			nicTxRelease(prAdapter, FALSE);
 			/* System Service Uninitialization */
