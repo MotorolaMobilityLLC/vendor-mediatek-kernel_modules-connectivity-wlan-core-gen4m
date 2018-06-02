@@ -259,8 +259,8 @@ static void axiDmaSetup(struct platform_device *pdev)
 	dma_mask = DMA_BIT_MASK(prChipInfo->bus_info->u4DmaMask);
 	required_mask = dma_get_required_mask(&pdev->dev);
 	DBGLOG(INIT, INFO,
-	       "pdev=%p, pdev->dev=%p, name=%s, dma_mask=%llx required_mask=%llx, dma_addr_t=%zu\n",
-	       pdev, pdev->dev, pdev->id_entry->name, dma_mask,
+	       "pdev=%p, pdev->dev=%p, name=%s, required_mask=%llx, dma_addr_t=%zu\n",
+	       pdev, &pdev->dev, pdev->id_entry->name,
 	       required_mask, sizeof(dma_addr_t));
 
 	pdev->dev.coherent_dma_mask = dma_mask;
