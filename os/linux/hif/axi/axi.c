@@ -260,8 +260,8 @@ static void axiDmaSetup(struct platform_device *pdev)
 
 	required_mask = dma_get_required_mask(&pdev->dev);
 	DBGLOG(INIT, INFO,
-	       "pdev=%p, pdev->dev=%p, name=%s, mask=%llx, dma_addr_t=%d\n",
-	       pdev, pdev->dev, pdev->id_entry->name,
+	       "pdev=%p, pdev->dev=%p, name=%s, dma_mask=%llx required_mask=%llx, dma_addr_t=%zu\n",
+	       pdev, pdev->dev, pdev->id_entry->name, dma_mask,
 	       required_mask, sizeof(dma_addr_t));
 	pdev->dev.coherent_dma_mask = dma_mask;
 	pdev->dev.dma_mask = &(pdev->dev.coherent_dma_mask);
