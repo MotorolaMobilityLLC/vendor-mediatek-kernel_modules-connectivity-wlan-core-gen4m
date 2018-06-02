@@ -216,6 +216,35 @@ uint32_t asicGetFwDlInfo(struct ADAPTER *prAdapter,
 	return u4Offset;
 }
 
+uint32_t asicGetChipID(struct ADAPTER *prAdapter)
+{
+	struct mt66xx_chip_info *prChipInfo;
+	uint32_t u4ChipID = 0;
+
+	ASSERT(prAdapter);
+	prChipInfo = prAdapter->chip_info;
+	ASSERT(prChipInfo);
+
+	/* Compose chipID from chip ip version
+	 *
+	 * BIT(30, 31) : Coding type, 00: compact, 01: index table
+	 * BIT(24, 29) : IP config (6 bits)
+	 * BIT(8, 23)  : IP version
+	 * BIT(0, 7)   : A die info
+	 */
+
+	u4ChipID = (0x0 << 30) |
+		   ((prChipInfo->u4ChipIpConfig & 0x3F) << 24) |
+		   ((prChipInfo->u4ChipIpVersion & 0xF0000000) >>  8) |
+		   ((prChipInfo->u4ChipIpVersion & 0x000F0000) >>  0) |
+		   ((prChipInfo->u4ChipIpVersion & 0x00000F00) <<  4) |
+		   ((prChipInfo->u4ChipIpVersion & 0x0000000F) <<  8) |
+		   CONNAC_CHIP_ADIE_INFO;
+
+	log_dbg(HAL, INFO, "ChipID = [0x%08x]\n", u4ChipID);
+	return u4ChipID;
+}
+
 void asicEnableFWDownload(IN struct ADAPTER *prAdapter,
 			  IN u_int8_t fgEnable)
 {

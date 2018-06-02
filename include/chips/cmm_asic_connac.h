@@ -76,6 +76,7 @@ uint32_t asicGetFwDlInfo(struct ADAPTER *prAdapter,
 	char *pcBuf, int i4TotalLen);
 void asicEnableFWDownload(IN struct ADAPTER *prAdapter,
 	IN u_int8_t fgEnable);
+uint32_t asicGetChipID(struct ADAPTER *prAdapter);
 void fillNicTxDescAppend(IN struct ADAPTER *prAdapter,
 	IN struct MSDU_INFO *prMsduInfo,
 	OUT uint8_t *prTxDescBuffer);

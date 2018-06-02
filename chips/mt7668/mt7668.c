@@ -465,8 +465,11 @@ struct mt66xx_chip_info mt66xx_chip_info_mt7668 = {
 	.eco_info = mt7668_eco_table,
 	.isNicCapV1 = TRUE,
 
+	.u4ChipIpVersion = 0,
+	.u4ChipIPConfig = 0,
 	.asicCapInit = mt7668CapInit,
 	.asicEnableFWDownload = NULL,
+	.asicGetChipID = NULL,
 	.downloadBufferBin = wlanDownloadBufferBin,
 	.features = 0,
 	.is_support_hw_amsdu = FALSE,

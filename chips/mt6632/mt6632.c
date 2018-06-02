@@ -391,8 +391,11 @@ struct mt66xx_chip_info mt66xx_chip_info_mt6632 = {
 	.eco_info = mt6632_eco_table,
 	.isNicCapV1 = TRUE,
 
+	.u4ChipIpVersion = 0,
+	.u4ChipIPConfig = 0,
 	.asicCapInit = mt6632CapInit,
 	.asicEnableFWDownload = NULL,
+	.asicGetChipID = NULL,
 	.downloadBufferBin = wlanDownloadBufferBin,
 	.features = 0,
 	.is_support_hw_amsdu = FALSE,

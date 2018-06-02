@@ -251,8 +251,11 @@ struct mt66xx_chip_info mt66xx_chip_info_mt7663 = {
 	.eco_info = mt7663_eco_table,
 	.isNicCapV1 = FALSE,
 
+	.u4ChipIpVersion = 0,
+	.u4ChipIPConfig = 0,
 	.asicCapInit = asicCapInit,
 	.asicEnableFWDownload = asicEnableFWDownload,
+	.asicGetChipID = NULL,
 	.downloadBufferBin = wlanConnacDownloadBufferBin,
 	.is_support_hw_amsdu = TRUE,
 	.workAround = BIT(WORKAROUND_MT7663_BRINGUP_20171205),
