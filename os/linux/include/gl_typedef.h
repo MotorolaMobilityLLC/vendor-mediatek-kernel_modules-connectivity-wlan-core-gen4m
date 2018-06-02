@@ -1,4 +1,4 @@
-/******************************************************************************
+/*******************************************************************************
  *
  * This file is provided under a dual license.  When you use or
  * distribute this software, you may choose to be licensed under
@@ -48,16 +48,17 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *****************************************************************************/
+ ******************************************************************************/
 /*
-** Id: //Department/DaVinci/BRANCHES/MT6620_WIFI_DRIVER_V2_3/os/linux/include/gl_typedef.h#1
-*/
+ * Id: //Department/DaVinci/BRANCHES/MT6620_WIFI_DRIVER_V2_3/os/linux/include
+ *     /gl_typedef.h#1
+ */
 
 /*! \file   gl_typedef.h
-*    \brief  Definition of basic data type(os dependent).
-*
-*    In this file we define the basic data type.
-*/
+ *    \brief  Definition of basic data type(os dependent).
+ *
+ *    In this file we define the basic data type.
+ */
 
 
 #ifndef _GL_TYPEDEF_H
@@ -68,19 +69,19 @@
 #endif
 
 /*******************************************************************************
-*                         C O M P I L E R   F L A G S
-********************************************************************************
-*/
+ *                         C O M P I L E R   F L A G S
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                    E X T E R N A L   R E F E R E N C E S
-********************************************************************************
-*/
+ *                    E X T E R N A L   R E F E R E N C E S
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                              C O N S T A N T S
-********************************************************************************
-*/
+ *                              C O N S T A N T S
+ *******************************************************************************
+ */
 /* Define HZ of timer tick for function kalGetTimeTick() */
 #define KAL_HZ                  (1000)
 
@@ -99,14 +100,16 @@
 #endif
 
 #if CFG_ENABLE_EARLY_SUSPEND
-typedef void (*early_suspend_callback) (struct early_suspend *h);
-typedef void (*late_resume_callback) (struct early_suspend *h);
+typedef void (*early_suspend_callback) (struct early_suspend
+					*h);
+typedef void (*late_resume_callback) (struct early_suspend
+				      *h);
 #endif
 
 /*******************************************************************************
-*                             D A T A   T Y P E S
-********************************************************************************
-*/
+ *                             D A T A   T Y P E S
+ *******************************************************************************
+ */
 /* Type definition for void */
 
 /* Type definition for Boolean */
@@ -119,7 +122,8 @@ typedef void (*late_resume_callback) (struct early_suspend *h);
 #define OS_SYSTIME uint32_t
 
 /* Type definition of large integer (64bits) union to be comptaible with
- * Windows definition, so we won't apply our own coding style to these data types.
+ * Windows definition, so we won't apply our own coding style to these data
+ * types.
  * NOTE: LARGE_INTEGER must NOT be floating variable.
  * <TODO>: Check for big-endian compatibility.
  */
@@ -139,23 +143,24 @@ union ULARGE_INTEGER {
 	uint64_t QuadPart;
 };
 
-typedef int32_t(*probe_card) (void *pvData, void *pvDriverData);
+typedef int32_t(*probe_card) (void *pvData,
+			      void *pvDriverData);
 typedef void(*remove_card) (void);
 
 /*******************************************************************************
-*                            P U B L I C   D A T A
-********************************************************************************
-*/
+ *                            P U B L I C   D A T A
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                           P R I V A T E   D A T A
-********************************************************************************
-*/
+ *                           P R I V A T E   D A T A
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                                 M A C R O S
-********************************************************************************
-*/
+ *                                 M A C R O S
+ *******************************************************************************
+ */
 #define IN			/* volatile */
 #define OUT			/* volatile */
 
@@ -176,10 +181,10 @@ typedef void(*remove_card) (void);
 #endif /* BIT */
 
 /* This macro returns the byte offset of a named field in a known structure
-*   type.
-*   _type - structure name,
-*   _field - field name of the structure
-*/
+ *   type.
+ *   _type - structure name,
+ *   _field - field name of the structure
+ */
 #ifndef OFFSET_OF
 #define OFFSET_OF(_type, _field)    ((unsigned long)&(((_type *)0)->_field))
 #endif /* OFFSET_OF */
@@ -193,7 +198,8 @@ typedef void(*remove_card) (void);
  */
 #ifndef ENTRY_OF
 #define ENTRY_OF(_addrOfField, _type, _field) \
-	((_type *)((int8_t *)(_addrOfField) - (int8_t *)OFFSET_OF(_type, _field)))
+	((_type *)((int8_t *)(_addrOfField) - \
+	(int8_t *)OFFSET_OF(_type, _field)))
 #endif /* ENTRY_OF */
 
 /* This macro align the input value to the DW boundary.
@@ -254,13 +260,13 @@ typedef void(*remove_card) (void);
 #endif
 
 /*******************************************************************************
-*                  F U N C T I O N   D E C L A R A T I O N S
-********************************************************************************
-*/
+ *                  F U N C T I O N   D E C L A R A T I O N S
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                              F U N C T I O N S
-********************************************************************************
-*/
+ *                              F U N C T I O N S
+ *******************************************************************************
+ */
 
 #endif /* _GL_TYPEDEF_H */
