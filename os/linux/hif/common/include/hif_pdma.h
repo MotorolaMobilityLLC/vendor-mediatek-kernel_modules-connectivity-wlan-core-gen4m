@@ -417,7 +417,8 @@ u_int8_t halWpdmaWriteCmd(IN struct GLUE_INFO *prGlueInfo,
 u_int8_t halWpdmaWriteData(IN struct GLUE_INFO *prGlueInfo,
 			   IN struct MSDU_INFO *prMsduInfo);
 void halHwRecoveryFromError(IN struct ADAPTER *prAdapter);
-void halShowPdmaInfo(IN struct ADAPTER *prAdapter, bool fgDumpContent);
+void halShowPdmaInfo(IN struct ADAPTER *prAdapter,
+		     bool fgTxContent, bool fgRxContent);
 void halShowPseInfo(IN struct ADAPTER *prAdapter);
 void halShowPleInfo(IN struct ADAPTER *prAdapter);
 void halShowHostCsrInfo(IN struct ADAPTER *prAdapter);
@@ -434,7 +435,5 @@ void kalDumpTxRing(struct GLUE_INFO *prGlueInfo,
 void kalDumpRxRing(struct GLUE_INFO *prGlueInfo,
 		   struct RTMP_RX_RING *prRxRing,
 		   uint32_t u4Num, bool fgDumpContent);
-void kalDumpRxRingDebugLog(struct GLUE_INFO *prGlueInfo,
-			   struct RTMP_RX_RING *prRxRing,
-			   uint32_t u4RingSize);
+void kalDumpRxRingDebugLog(struct GLUE_INFO *prGlueInfo);
 #endif /* HIF_PDMA_H__ */

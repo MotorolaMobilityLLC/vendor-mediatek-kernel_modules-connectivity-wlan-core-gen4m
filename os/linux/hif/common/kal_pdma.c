@@ -222,10 +222,12 @@ static bool kalWaitRxDmaDone(struct GLUE_INFO *prGlueInfo,
 	for (u4Count = 0; pRxD->DMADONE == 0; u4Count++) {
 		kalDevRegRead(prGlueInfo, prRxRing->hw_didx_addr,
 			      &prRxRing->RxDmaIdx);
-		DBGLOG(HAL, TRACE, "Rx DMA done P[%u] DMA[%u] CPU[%u]\n",
-		       u2Port, prRxRing->RxDmaIdx, prRxRing->RxCpuIdx);
-		if (u4Count > DMA_DONE_WAITING_COUNT)
+		if (u4Count > DMA_DONE_WAITING_COUNT) {
+			DBGLOG(HAL, INFO,
+			       "Rx DMA done P[%u] DMA[%u] CPU[%u]\n",
+			       u2Port, prRxRing->RxDmaIdx, prRxRing->RxCpuIdx);
 			return false;
+		}
 
 		kalMdelay(DMA_DONE_WAITING_TIME);
 	}
@@ -286,8 +288,7 @@ kalDevPortRead(IN struct GLUE_INFO *prGlueInfo,
 	if (!kalWaitRxDmaDone(prGlueInfo, prRxRing, pRxD, u2Port)) {
 		spin_unlock_irqrestore(pRxRingLock, flags);
 		if (!prRxRing->fgIsDumpLog)
-			kalDumpRxRingDebugLog(prGlueInfo, prRxRing,
-					      prRxRing->u4RingSize);
+			kalDumpRxRingDebugLog(prGlueInfo);
 		prRxRing->fgIsDumpLog = true;
 		return FALSE;
 	}
@@ -638,8 +639,7 @@ u_int8_t kalDevReadData(IN struct GLUE_INFO *prGlueInfo,
 	if (!kalWaitRxDmaDone(prGlueInfo, prRxRing, pRxD, u2Port)) {
 		spin_unlock_irqrestore(pRxRingLock, flags);
 		if (!prRxRing->fgIsDumpLog)
-			kalDumpRxRingDebugLog(prGlueInfo, prRxRing,
-					      prRxRing->u4RingSize);
+			kalDumpRxRingDebugLog(prGlueInfo);
 		prRxRing->fgIsDumpLog = true;
 		return FALSE;
 	}
@@ -811,35 +811,10 @@ void kalDumpRxRing(struct GLUE_INFO *prGlueInfo,
 		DBGLOG(HAL, ERROR, "KAL_DMA_MAP_SINGLE() error!\n");
 }
 
-void kalDumpRxRingDebugLog(struct GLUE_INFO *prGlueInfo,
-			   struct RTMP_RX_RING *prRxRing,
-			   uint32_t u4RingSize)
+void kalDumpRxRingDebugLog(struct GLUE_INFO *prGlueInfo)
 {
-	uint32_t u4Index = 0;
-	uint32_t u4Value = 0;
-
 	halShowPseInfo(prGlueInfo->prAdapter);
 	halShowPleInfo(prGlueInfo->prAdapter);
 	halShowHostCsrInfo(prGlueInfo->prAdapter);
-	halShowPdmaInfo(prGlueInfo->prAdapter, false);
-
-	for (u4Index = 0; u4Index < u4RingSize; u4Index++)
-		kalDumpRxRing(prGlueInfo, prRxRing, u4Index, true);
-
-	kalDevRegRead(prGlueInfo, 0x0000C024, &u4Value);
-	DBGLOG(HAL, INFO, "0x1800C024 = 0x%08x\n", u4Value);
-	kalDevRegRead(prGlueInfo, 0x0000C028, &u4Value);
-	DBGLOG(HAL, INFO, "0x1800C028 = 0x%08x\n", u4Value);
-	kalDevRegRead(prGlueInfo, 0x0000C0B0, &u4Value);
-	DBGLOG(HAL, INFO, "0x1800C0B0 = 0x%08x\n", u4Value);
-	kalDevRegRead(prGlueInfo, 0x0000C1F0, &u4Value);
-	DBGLOG(HAL, INFO, "0x1800C1F0 = 0x%08x\n", u4Value);
-	kalDevRegRead(prGlueInfo, 0x0000C1F4, &u4Value);
-	DBGLOG(HAL, INFO, "0x1800C1F4 = 0x%08x\n", u4Value);
-	kalDevRegRead(prGlueInfo, 0x0000C1F8, &u4Value);
-	DBGLOG(HAL, INFO, "0x1800C1F8 = 0x%08x\n", u4Value);
-	kalDevRegRead(prGlueInfo, 0x000C1100, &u4Value);
-	DBGLOG(HAL, INFO, "0x180C1100 = 0x%08x\n", u4Value);
-	kalDevRegRead(prGlueInfo, 0x00002150, &u4Value);
-	DBGLOG(HAL, INFO, "0x18002150 = 0x%08x\n", u4Value);
+	halShowPdmaInfo(prGlueInfo->prAdapter, false, true);
 }
