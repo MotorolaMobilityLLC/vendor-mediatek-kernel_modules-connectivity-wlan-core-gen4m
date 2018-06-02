@@ -2644,7 +2644,13 @@ static int initWlan(void)
 	wlanDebugInit();
 
 	/* memory pre-allocation */
-	kalInitIOBuffer();
+#if CFG_PRE_ALLOCATION_IO_BUFFER
+	kalInitIOBuffer(TRUE);
+#else
+	kalInitIOBuffer(FALSE);
+#endif
+
+
 #if WLAN_INCLUDE_PROC
 	procInitFs();
 #endif
