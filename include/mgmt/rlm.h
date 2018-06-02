@@ -50,31 +50,39 @@
  *
  *****************************************************************************/
 /*
-** Id: //Department/DaVinci/BRANCHES/MT6620_WIFI_DRIVER_V2_3/include/mgmt/rlm.h#2
-*/
+ * Id: //Department/DaVinci/BRANCHES/MT6620_WIFI_DRIVER_V2_3/
+ *							include/mgmt/rlm.h#2
+ */
 
 /*! \file   "rlm.h"
-*    \brief
-*/
+ *    \brief
+ */
 
 
 #ifndef _RLM_H
 #define _RLM_H
 
 /*******************************************************************************
-*                         C O M P I L E R   F L A G S
-********************************************************************************
-*/
+ *                         C O M P I L E R   F L A G S
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                    E X T E R N A L   R E F E R E N C E S
-********************************************************************************
-*/
+ *                    E X T E R N A L   R E F E R E N C E S
+ *******************************************************************************
+ */
+extern u_int8_t g_bIcapEnable;
+extern u_int8_t g_bCaptureDone;
+extern uint16_t g_u2DumpIndex;
+#if CFG_SUPPORT_QA_TOOL
+extern uint32_t g_au4Offset[2][2];
+extern uint32_t g_au4IQData[256];
+#endif
 
 /*******************************************************************************
-*                              C O N S T A N T S
-********************************************************************************
-*/
+ *                              C O N S T A N T S
+ *******************************************************************************
+ */
 #define ELEM_EXT_CAP_DEFAULT_VAL \
 	(ELEM_EXT_CAP_20_40_COEXIST_SUPPORT /*| ELEM_EXT_CAP_PSMP_CAP*/)
 
@@ -99,7 +107,8 @@
 #endif
 
 #define HT_CAP_INFO_DEFAULT_VAL \
-	(HT_CAP_INFO_SUP_CHNL_WIDTH | HT_CAP_INFO_DSSS_CCK_IN_40M | HT_CAP_INFO_SM_POWER_SAVE)
+	(HT_CAP_INFO_SUP_CHNL_WIDTH | HT_CAP_INFO_DSSS_CCK_IN_40M \
+		| HT_CAP_INFO_SM_POWER_SAVE)
 
 #define AMPDU_PARAM_DEFAULT_VAL \
 	(AMPDU_PARAM_MAX_AMPDU_LEN_64K | AMPDU_PARAM_MSS_NO_RESTRICIT)
@@ -167,7 +176,7 @@
 #endif
 
 #if CFG_SUPPORT_BFER
-    #define FIELD_VHT_CAP_INFO_BFER \
+#define FIELD_VHT_CAP_INFO_BFER \
 		(VHT_CAP_INFO_SU_BEAMFORMER_CAPABLE| \
 		VHT_CAP_INFO_NUMBER_OF_SOUNDING_DIMENSIONS_2_SUPPORTED)
 #else
@@ -176,14 +185,15 @@
 
 #define VHT_CAP_INFO_DEFAULT_VAL \
 	(VHT_CAP_INFO_MAX_MPDU_LEN_3K | \
-	 (AMPDU_PARAM_MAX_AMPDU_LEN_1024K << VHT_CAP_INFO_MAX_AMPDU_LENGTH_OFFSET))
+	 (AMPDU_PARAM_MAX_AMPDU_LEN_1024K \
+		 << VHT_CAP_INFO_MAX_AMPDU_LENGTH_OFFSET))
 
 #define VHT_CAP_INFO_DEFAULT_HIGHEST_DATA_RATE			0
 #endif
 /*******************************************************************************
-*                             D A T A   T Y P E S
-********************************************************************************
-*/
+ *                             D A T A   T Y P E S
+ *******************************************************************************
+ */
 #if CFG_SUPPORT_CAL_RESULT_BACKUP_TO_HOST
 struct RLM_CAL_RESULT_ALL_V2 {
 	/* Used for checking the Cal Data is damaged */
@@ -210,7 +220,8 @@ struct RLM_CAL_RESULT_ALL_V2 {
 extern struct RLM_CAL_RESULT_ALL_V2 g_rBackupCalDataAllV2;
 #endif
 
-typedef void (*PFN_OPMODE_NOTIFY_DONE_FUNC)(struct ADAPTER *, uint8_t, u_int8_t);
+typedef void (*PFN_OPMODE_NOTIFY_DONE_FUNC)(
+	struct ADAPTER *, uint8_t, u_int8_t);
 
 enum ENUM_OP_NOTIFY_TYPE_T {
 	OP_NOTIFY_TYPE_VHT_NSS_BW = 0,
@@ -221,26 +232,29 @@ enum ENUM_OP_NOTIFY_TYPE_T {
 
 enum ENUM_OP_CHANGE_STATUS_T {
 	OP_CHANGE_STATUS_INVALID = 0, /* input invalid */
-	OP_CHANGE_STATUS_VALID_NO_CHANGE, /* input valid, but no need to change */
-	OP_CHANGE_STATUS_VALID_CHANGE_CALLBACK_DONE, /* process callback done before function return */
-	OP_CHANGE_STATUS_VALID_CHANGE_CALLBACK_WAIT, /* wait next INT to call callback */
+	/* input valid, but no need to change */
+	OP_CHANGE_STATUS_VALID_NO_CHANGE,
+	/* process callback done before function return */
+	OP_CHANGE_STATUS_VALID_CHANGE_CALLBACK_DONE,
+	/* wait next INT to call callback */
+	OP_CHANGE_STATUS_VALID_CHANGE_CALLBACK_WAIT,
 	OP_CHANGE_STATUS_NUM
 };
 
 /*******************************************************************************
-*                            P U B L I C   D A T A
-********************************************************************************
-*/
+ *                            P U B L I C   D A T A
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                           P R I V A T E   D A T A
-********************************************************************************
-*/
+ *                           P R I V A T E   D A T A
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                                 M A C R O S
-********************************************************************************
-*/
+ *                                 M A C R O S
+ *******************************************************************************
+ */
 
 /* It is used for RLM module to judge if specific network is valid
  * Note: Ad-hoc mode of AIS is not included now. (TBD)
@@ -275,75 +289,105 @@ enum ENUM_OP_CHANGE_STATUS_T {
 	== CONFIG_BW_20_40M))
 
 /*******************************************************************************
-*                   F U N C T I O N   D E C L A R A T I O N S
-********************************************************************************
-*/
+ *                   F U N C T I O N   D E C L A R A T I O N S
+ *******************************************************************************
+ */
 void rlmFsmEventInit(struct ADAPTER *prAdapter);
 
 void rlmFsmEventUninit(struct ADAPTER *prAdapter);
 
-void rlmReqGenerateHtCapIE(struct ADAPTER *prAdapter, struct MSDU_INFO *prMsduInfo);
+void rlmReqGenerateHtCapIE(struct ADAPTER *prAdapter,
+			   struct MSDU_INFO *prMsduInfo);
 
-void rlmReqGenerateExtCapIE(struct ADAPTER *prAdapter, struct MSDU_INFO *prMsduInfo);
+void rlmReqGenerateExtCapIE(struct ADAPTER *prAdapter,
+			    struct MSDU_INFO *prMsduInfo);
 
-void rlmRspGenerateHtCapIE(struct ADAPTER *prAdapter, struct MSDU_INFO *prMsduInfo);
+void rlmRspGenerateHtCapIE(struct ADAPTER *prAdapter,
+			   struct MSDU_INFO *prMsduInfo);
 
-void rlmRspGenerateExtCapIE(struct ADAPTER *prAdapter, struct MSDU_INFO *prMsduInfo);
+void rlmRspGenerateExtCapIE(struct ADAPTER *prAdapter,
+			    struct MSDU_INFO *prMsduInfo);
 
-void rlmRspGenerateHtOpIE(struct ADAPTER *prAdapter, struct MSDU_INFO *prMsduInfo);
+void rlmRspGenerateHtOpIE(struct ADAPTER *prAdapter,
+			  struct MSDU_INFO *prMsduInfo);
 
-void rlmRspGenerateErpIE(struct ADAPTER *prAdapter, struct MSDU_INFO *prMsduInfo);
+void rlmRspGenerateErpIE(struct ADAPTER *prAdapter,
+			 struct MSDU_INFO *prMsduInfo);
 
-void rlmGenerateMTKOuiIE(struct ADAPTER *prAdapter, struct MSDU_INFO *prMsduInfo);
+void rlmGenerateMTKOuiIE(struct ADAPTER *prAdapter,
+			 struct MSDU_INFO *prMsduInfo);
 
-u_int8_t rlmParseCheckMTKOuiIE(IN struct ADAPTER *prAdapter, IN uint8_t *pucBuf, IN uint32_t *pu4Cap);
+u_int8_t rlmParseCheckMTKOuiIE(IN struct ADAPTER *prAdapter,
+			       IN uint8_t *pucBuf, IN uint32_t *pu4Cap);
 
-void rlmGenerateCsaIE(struct ADAPTER *prAdapter, struct MSDU_INFO *prMsduInfo);
+void rlmGenerateCsaIE(struct ADAPTER *prAdapter,
+		      struct MSDU_INFO *prMsduInfo);
 
-void rlmProcessBcn(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb, uint8_t *pucIE, uint16_t u2IELength);
+void rlmProcessBcn(struct ADAPTER *prAdapter,
+		   struct SW_RFB *prSwRfb, uint8_t *pucIE,
+		   uint16_t u2IELength);
 
-void rlmProcessAssocRsp(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb, uint8_t *pucIE, uint16_t u2IELength);
+void rlmProcessAssocRsp(struct ADAPTER *prAdapter,
+			struct SW_RFB *prSwRfb, uint8_t *pucIE,
+			uint16_t u2IELength);
 
-void rlmProcessHtAction(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb);
+void rlmProcessHtAction(struct ADAPTER *prAdapter,
+			struct SW_RFB *prSwRfb);
 
 #if CFG_SUPPORT_802_11AC
-void rlmProcessVhtAction(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb);
+void rlmProcessVhtAction(struct ADAPTER *prAdapter,
+			 struct SW_RFB *prSwRfb);
 #endif
 
-void rlmFillSyncCmdParam(struct CMD_SET_BSS_RLM_PARAM *prCmdBody, struct BSS_INFO *prBssInfo);
+void rlmFillSyncCmdParam(struct CMD_SET_BSS_RLM_PARAM
+			 *prCmdBody, struct BSS_INFO *prBssInfo);
 
-void rlmSyncOperationParams(struct ADAPTER *prAdapter, struct BSS_INFO *prBssInfo);
+void rlmSyncOperationParams(struct ADAPTER *prAdapter,
+			    struct BSS_INFO *prBssInfo);
 
-void rlmBssInitForAPandIbss(struct ADAPTER *prAdapter, struct BSS_INFO *prBssInfo);
+void rlmBssInitForAPandIbss(struct ADAPTER *prAdapter,
+			    struct BSS_INFO *prBssInfo);
 
-void rlmProcessAssocReq(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb, uint8_t *pucIE, uint16_t u2IELength);
+void rlmProcessAssocReq(struct ADAPTER *prAdapter,
+			struct SW_RFB *prSwRfb, uint8_t *pucIE,
+			uint16_t u2IELength);
 
-void rlmBssAborted(struct ADAPTER *prAdapter, struct BSS_INFO *prBssInfo);
+void rlmBssAborted(struct ADAPTER *prAdapter,
+		   struct BSS_INFO *prBssInfo);
 
 #if CFG_SUPPORT_TDLS
 uint32_t
 rlmFillHtCapIEByParams(u_int8_t fg40mAllowed,
 		       u_int8_t fgShortGIDisabled,
 		       uint8_t u8SupportRxSgi20,
-		       uint8_t u8SupportRxSgi40, uint8_t u8SupportRxGf, enum ENUM_OP_MODE eCurrentOPMode, uint8_t *pOutBuf);
+		       uint8_t u8SupportRxSgi40, uint8_t u8SupportRxGf,
+		       enum ENUM_OP_MODE eCurrentOPMode, uint8_t *pOutBuf);
 
-uint32_t rlmFillHtCapIEByAdapter(struct ADAPTER *prAdapter, struct BSS_INFO *prBssInfo, uint8_t *pOutBuf);
+uint32_t rlmFillHtCapIEByAdapter(struct ADAPTER *prAdapter,
+				 struct BSS_INFO *prBssInfo, uint8_t *pOutBuf);
 
-uint32_t rlmFillVhtCapIEByAdapter(struct ADAPTER *prAdapter, struct BSS_INFO *prBssInfo, uint8_t *pOutBuf);
+uint32_t rlmFillVhtCapIEByAdapter(struct ADAPTER *prAdapter,
+				  struct BSS_INFO *prBssInfo, uint8_t *pOutBuf);
 
 #endif
 
 #if CFG_SUPPORT_802_11AC
-void rlmReqGenerateVhtCapIE(struct ADAPTER *prAdapter, struct MSDU_INFO *prMsduInfo);
+void rlmReqGenerateVhtCapIE(struct ADAPTER *prAdapter,
+			    struct MSDU_INFO *prMsduInfo);
 
-void rlmRspGenerateVhtCapIE(struct ADAPTER *prAdapter, struct MSDU_INFO *prMsduInfo);
+void rlmRspGenerateVhtCapIE(struct ADAPTER *prAdapter,
+			    struct MSDU_INFO *prMsduInfo);
 
-void rlmRspGenerateVhtOpIE(struct ADAPTER *prAdapter, struct MSDU_INFO *prMsduInfo);
+void rlmRspGenerateVhtOpIE(struct ADAPTER *prAdapter,
+			   struct MSDU_INFO *prMsduInfo);
 
-void rlmFillVhtOpIE(struct ADAPTER *prAdapter, struct BSS_INFO *prBssInfo, struct MSDU_INFO *prMsduInfo);
+void rlmFillVhtOpIE(struct ADAPTER *prAdapter,
+		    struct BSS_INFO *prBssInfo, struct MSDU_INFO *prMsduInfo);
 
-void rlmRspGenerateVhtOpNotificationIE(struct ADAPTER *prAdapter, struct MSDU_INFO *prMsduInfo);
-void rlmReqGenerateVhtOpNotificationIE(struct ADAPTER *prAdapter, struct MSDU_INFO *prMsduInfo);
+void rlmRspGenerateVhtOpNotificationIE(struct ADAPTER
+			       *prAdapter, struct MSDU_INFO *prMsduInfo);
+void rlmReqGenerateVhtOpNotificationIE(struct ADAPTER
+			       *prAdapter, struct MSDU_INFO *prMsduInfo);
 
 
 
@@ -351,23 +395,33 @@ void rlmReqGenerateVhtOpNotificationIE(struct ADAPTER *prAdapter, struct MSDU_IN
 #endif
 
 #if CFG_SUPPORT_DFS
-void rlmProcessSpecMgtAction(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb);
+void rlmProcessSpecMgtAction(struct ADAPTER *prAdapter,
+			     struct SW_RFB *prSwRfb);
 #endif
 
 void
-rlmSendOpModeNotificationFrame(struct ADAPTER *prAdapter, struct STA_RECORD *prStaRec, uint8_t ucChannelWidth, uint8_t ucNss);
+rlmSendOpModeNotificationFrame(struct ADAPTER *prAdapter,
+			       struct STA_RECORD *prStaRec,
+			       uint8_t ucChannelWidth, uint8_t ucNss);
 
 void
-rlmSendSmPowerSaveFrame(struct ADAPTER *prAdapter, struct STA_RECORD *prStaRec, uint8_t ucNss);
+rlmSendSmPowerSaveFrame(struct ADAPTER *prAdapter,
+			struct STA_RECORD *prStaRec, uint8_t ucNss);
 
 uint32_t
-rlmNotifyVhtOpModeTxDone(struct ADAPTER *prAdapter, struct MSDU_INFO *prMsduInfo, enum ENUM_TX_RESULT_CODE rTxDoneStatus);
+rlmNotifyVhtOpModeTxDone(struct ADAPTER *prAdapter,
+			 struct MSDU_INFO *prMsduInfo,
+			 enum ENUM_TX_RESULT_CODE rTxDoneStatus);
 
 uint32_t
-rlmSmPowerSaveTxDone(struct ADAPTER *prAdapter, struct MSDU_INFO *prMsduInfo, enum ENUM_TX_RESULT_CODE rTxDoneStatus);
+rlmSmPowerSaveTxDone(struct ADAPTER *prAdapter,
+		     struct MSDU_INFO *prMsduInfo,
+		     enum ENUM_TX_RESULT_CODE rTxDoneStatus);
 
 uint32_t
-rlmNotifyChannelWidthtTxDone(struct ADAPTER *prAdapter, struct MSDU_INFO *prMsduInfo, enum ENUM_TX_RESULT_CODE rTxDoneStatus);
+rlmNotifyChannelWidthtTxDone(struct ADAPTER *prAdapter,
+			     struct MSDU_INFO *prMsduInfo,
+			     enum ENUM_TX_RESULT_CODE rTxDoneStatus);
 
 uint8_t
 rlmGetBssOpBwByVhtAndHtOpInfo(struct BSS_INFO *prBssInfo);
@@ -376,7 +430,8 @@ uint8_t
 rlmGetVhtOpBwByBssOpBw(uint8_t ucBssOpBw);
 
 void
-rlmFillVhtOpInfoByBssOpBw(struct BSS_INFO *prBssInfo, uint8_t ucChannelWidth);
+rlmFillVhtOpInfoByBssOpBw(struct BSS_INFO *prBssInfo,
+			  uint8_t ucChannelWidth);
 
 enum ENUM_OP_CHANGE_STATUS_T
 rlmChangeOperationMode(
@@ -385,10 +440,11 @@ rlmChangeOperationMode(
 	uint8_t ucChannelWidth,
 	uint8_t ucNss,
 	PFN_OPMODE_NOTIFY_DONE_FUNC pfOpChangeHandler
-	);
+);
 
 void
-rlmDummyChangeOpHandler(struct ADAPTER *prAdapter, uint8_t ucBssIndex, u_int8_t fgIsChangeSuccess);
+rlmDummyChangeOpHandler(struct ADAPTER *prAdapter,
+			uint8_t ucBssIndex, u_int8_t fgIsChangeSuccess);
 
 
 #if CFG_SUPPORT_CAL_RESULT_BACKUP_TO_HOST
@@ -397,15 +453,17 @@ uint32_t rlmCalBackup(
 	uint8_t		ucReason,
 	uint8_t		ucAction,
 	uint8_t		ucRomRam
-	);
+);
 
 uint32_t rlmTriggerCalBackup(
 	struct ADAPTER *prAdapter,
 	u_int8_t		fgIsCalDataBackuped
-	);
+);
 #endif
 
-void rlmModifyVhtBwPara(uint8_t *pucVhtChannelFrequencyS1, uint8_t *pucVhtChannelFrequencyS2, uint8_t *pucVhtChannelWidth);
+void rlmModifyVhtBwPara(uint8_t *pucVhtChannelFrequencyS1,
+			uint8_t *pucVhtChannelFrequencyS2,
+			uint8_t *pucVhtChannelWidth);
 
 void rlmReviseMaxBw(
 	struct ADAPTER *prAdapter,
@@ -416,9 +474,9 @@ void rlmReviseMaxBw(
 	uint8_t *pucPrimaryCh);
 
 /*******************************************************************************
-*                              F U N C T I O N S
-********************************************************************************
-*/
+ *                              F U N C T I O N S
+ *******************************************************************************
+ */
 
 #ifndef _lint
 static __KAL_INLINE__ void rlmDataTypeCheck(void)
