@@ -709,8 +709,15 @@ typedef struct _PARAM_GET_STA_STATISTICS {
 	UINT_8 ucRateEntryIdxPrev;
 	UINT_8 ucTxSgiDetectPassCnt;
 	UINT_8 ucAvePer;
+#if (CFG_SUPPORT_RA_GEN == 0)
 	UINT_8 aucArRatePer[AR_RATE_TABLE_ENTRY_MAX];
 	UINT_8 aucRateEntryIndex[AUTO_RATE_NUM];
+#else
+	UINT_32 u4AggRangeCtrl_0;
+	UINT_32 u4AggRangeCtrl_1;
+	UINT_8 ucRangeType;
+	UINT_8 aucReserved5[24];
+#endif
 	UINT_8 ucArStateCurr;
 	UINT_8 ucArStatePrev;
 	UINT_8 ucArActionType;
@@ -725,7 +732,9 @@ typedef struct _PARAM_GET_STA_STATISTICS {
 	UINT_8 ucResetCounter;
 	BOOLEAN fgIsForceTxStream;
 	BOOLEAN fgIsForceSeOff;
-
+#if (CFG_SUPPORT_RA_GEN == 0)
+	UINT_8 aucReserved6[17];
+#else
 	UINT_16 u2RaRunningCnt;
 	UINT_8 ucRaStatus;
 	UINT_8 ucFlag;
@@ -739,7 +748,7 @@ typedef struct _PARAM_GET_STA_STATISTICS {
 	UINT_8 ucDynamicBWState;
 	UINT_8 ucDynamicGband256QAMState;
 	UINT_8 ucVhtNonSpRateState;
-
+#endif
 	/* Reserved fields */
 	UINT_8 au4Reserved[3];
 } PARAM_GET_STA_STA_STATISTICS, *P_PARAM_GET_STA_STATISTICS;
