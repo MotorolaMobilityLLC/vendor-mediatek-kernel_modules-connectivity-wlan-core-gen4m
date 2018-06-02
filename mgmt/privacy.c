@@ -921,10 +921,14 @@ void secRemoveBssBcEntry(IN struct ADAPTER *prAdapter,
 					secPrivacyFreeForEntry(prAdapter,
 						prBssInfo->ucBMCWlanIndexS
 						[i]);
+#if 0
+				/* move to cfg delete cb function for sync. */
 				prBssInfo->ucBMCWlanIndexSUsed[i] = FALSE;
 				prBssInfo->ucBMCWlanIndexS[i] =
 				    WTBL_RESERVED_ENTRY;
+#endif
 			}
+
 			prBssInfo->fgBcDefaultKeyExist = FALSE;
 			prBssInfo->ucBcDefaultKeyIdx = 0xff;
 		}
@@ -937,8 +941,11 @@ void secRemoveBssBcEntry(IN struct ADAPTER *prAdapter,
 				secPrivacyFreeForEntry(prAdapter,
 					prBssInfo->ucBMCWlanIndexS
 					[i]);
+#if 0
+			/* move to cfg delete cb function for sync. */
 			prBssInfo->ucBMCWlanIndexSUsed[i] = FALSE;
 			prBssInfo->ucBMCWlanIndexS[i] = WTBL_RESERVED_ENTRY;
+#endif
 		}
 		for (i = 0; i < MAX_KEY_NUM; i++) {
 			if (prBssInfo->wepkeyUsed[i])
