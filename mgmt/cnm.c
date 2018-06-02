@@ -409,6 +409,60 @@ VOID cnmChMngrHandleChEvent(P_ADAPTER_T prAdapter, P_WIFI_EVENT_T prEvent)
 	prCnmInfo->fgChGranted = TRUE;
 }
 
+#if (CFG_SUPPORT_DFS_MASTER == 1)
+VOID cnmRadarDetectEvent(IN P_ADAPTER_T prAdapter, IN P_WIFI_EVENT_T prEvent)
+{
+	P_BSS_INFO_T prBssInfo;
+	P_MSG_P2P_RADAR_DETECT_T prP2pRddDetMsg;
+	UINT_8 ucBssIndex;
+
+	DBGLOG(CNM, INFO, "cnmRadarDetectEvent.\n");
+
+	prP2pRddDetMsg = (P_MSG_P2P_RADAR_DETECT_T) cnmMemAlloc(prAdapter,
+					RAM_TYPE_MSG, sizeof(P_MSG_P2P_RADAR_DETECT_T));
+
+	prP2pRddDetMsg->rMsgHdr.eMsgId = MID_CNM_P2P_RADAR_DETECT;
+
+	for (ucBssIndex = 0; ucBssIndex < BSS_INFO_NUM; ucBssIndex++) {
+		prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
+
+		if (prBssInfo && prBssInfo->fgIsDfsActive) {
+			prP2pRddDetMsg->ucBssIndex = ucBssIndex;
+			break;
+		}
+	}
+
+	mboxSendMsg(prAdapter, MBOX_ID_0, (P_MSG_HDR_T)prP2pRddDetMsg, MSG_SEND_METHOD_BUF);
+}
+
+VOID cnmCsaDoneEvent(IN P_ADAPTER_T prAdapter, IN P_WIFI_EVENT_T prEvent)
+{
+	P_BSS_INFO_T prBssInfo;
+	P_MSG_P2P_CSA_DONE_T prP2pCsaDoneMsg;
+	UINT_8 ucBssIndex;
+
+	DBGLOG(CNM, INFO, "cnmCsaDoneEvent.\n");
+
+	prP2pCsaDoneMsg = (P_MSG_P2P_CSA_DONE_T) cnmMemAlloc(prAdapter,
+					RAM_TYPE_MSG, sizeof(P_MSG_P2P_CSA_DONE_T));
+
+	prAdapter->rWifiVar.fgCsaInProgress = FALSE;
+
+	prP2pCsaDoneMsg->rMsgHdr.eMsgId = MID_CNM_P2P_CSA_DONE;
+
+	for (ucBssIndex = 0; ucBssIndex < BSS_INFO_NUM; ucBssIndex++) {
+		prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
+
+		if (prBssInfo && prBssInfo->fgIsDfsActive) {
+			prP2pCsaDoneMsg->ucBssIndex = ucBssIndex;
+			break;
+		}
+	}
+
+	mboxSendMsg(prAdapter, MBOX_ID_0, (P_MSG_HDR_T)prP2pCsaDoneMsg, MSG_SEND_METHOD_BUF);
+}
+#endif
+
 /*----------------------------------------------------------------------------*/
 /*!
 * @brief This function is invoked for P2P or BOW networks

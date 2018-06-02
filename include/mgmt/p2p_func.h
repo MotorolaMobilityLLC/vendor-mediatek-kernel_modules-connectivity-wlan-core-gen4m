@@ -136,6 +136,12 @@ p2pFuncSwitchOPMode(IN P_ADAPTER_T prAdapter, IN P_BSS_INFO_T prP2pBssInfo, IN E
 
 VOID p2pFuncReleaseCh(IN P_ADAPTER_T prAdapter, IN UINT_8 ucBssIdx, IN P_P2P_CHNL_REQ_INFO_T prChnlReqInfo);
 
+#if (CFG_SUPPORT_DFS_MASTER == 1)
+VOID p2pFuncStartRdd(IN P_ADAPTER_T prAdapter, IN UINT_8 ucBssIdx);
+
+VOID p2pFuncDfsSwitchCh(IN P_ADAPTER_T prAdapter, IN P_BSS_INFO_T prBssInfo, IN P2P_CHNL_REQ_INFO_T rP2pChnlReqInfo);
+#endif
+
 VOID p2pFuncSetChannel(IN P_ADAPTER_T prAdapter, IN UINT_8 ucRoleIdx, IN P_RF_CHANNEL_INFO_T prRfChannelInfo);
 
 BOOLEAN p2pFuncRetryJOIN(IN P_ADAPTER_T prAdapter, IN P_STA_RECORD_T prStaRec, IN P_P2P_JOIN_INFO_T prJoinInfo);
