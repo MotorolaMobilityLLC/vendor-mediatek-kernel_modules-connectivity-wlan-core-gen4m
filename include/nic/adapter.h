@@ -886,6 +886,7 @@ struct WIFI_VAR {
 	enum PARAM_POWER_MODE ePowerMode;
 
 	u_int8_t fgNvramCheckEn; /* nvram checking in scan result*/
+	u_int8_t fgForceUse20BW; /* Force using BW20 if BSS is 2.4G */
 };
 
 /* cnm_timer module */
