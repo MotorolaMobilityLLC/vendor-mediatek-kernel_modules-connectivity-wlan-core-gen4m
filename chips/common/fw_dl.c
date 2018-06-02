@@ -240,7 +240,7 @@ uint32_t wlanDownloadSection(IN struct ADAPTER *prAdapter, IN uint32_t u4Addr, I
 uint32_t wlanDownloadEMISection(IN struct ADAPTER *prAdapter, IN uint32_t u4DestAddr,
 				IN uint32_t u4Len, IN uint8_t *pucStartPtr)
 {
-#if CFG_MTK_ANDROID_EMI
+#ifdef CONFIG_MTK_EMI
 	uint8_t __iomem *pucEmiBaseAddr = NULL;
 	uint32_t u4Offset = u4DestAddr & WIFI_EMI_ADDR_MASK;
 
@@ -253,6 +253,8 @@ uint32_t wlanDownloadEMISection(IN struct ADAPTER *prAdapter, IN uint32_t u4Dest
 	}
 
 	request_mem_region(gConEmiPhyBase, gConEmiSize, "WIFI-EMI");
+	kalSetEmiMpuProtection(gConEmiPhyBase, WIFI_EMI_MEM_OFFSET,
+			       WIFI_EMI_MEM_SIZE, false);
 	pucEmiBaseAddr = ioremap_nocache(gConEmiPhyBase, gConEmiSize);
 	DBGLOG(INIT, INFO, "ioremap for device %s, region 0x%lX @ 0x%lX\n",
 	       "WIFI-EMI", gConEmiSize, pucEmiBaseAddr);
@@ -262,9 +264,12 @@ uint32_t wlanDownloadEMISection(IN struct ADAPTER *prAdapter, IN uint32_t u4Dest
 	}
 
 	kalMemCopy((pucEmiBaseAddr + u4Offset), pucStartPtr, u4Len);
+
+	kalSetEmiMpuProtection(gConEmiPhyBase, WIFI_EMI_MEM_OFFSET,
+			       WIFI_EMI_MEM_SIZE, true);
 	iounmap(pucEmiBaseAddr);
 	release_mem_region(gConEmiPhyBase, gConEmiSize);
-#endif
+#endif /* CONFIG_MTK_EMI */
 	return WLAN_STATUS_SUCCESS;
 }
 

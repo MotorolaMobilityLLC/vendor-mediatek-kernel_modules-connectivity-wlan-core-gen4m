@@ -6749,7 +6749,7 @@ int32_t connacSetICapStart(struct GLUE_INFO *prGlueInfo, uint32_t u4Trigger, uin
 	prICapInfo->u4EnBitWidth = 0;
 	prICapInfo->u4Architech = 1;
 	prICapInfo->u4PhyIdx = 0;
-#if CFG_MTK_ANDROID_EMI
+#ifdef CONFIG_MTK_EMI
 	prICapInfo->u4EmiStartAddress =
 		(uint32_t) (gConEmiPhyBase & 0xFFFFFFFF);
 	prICapInfo->u4EmiEndAddress =
