@@ -597,8 +597,6 @@ void asicEnableInterrupt(IN struct ADAPTER *prAdapter)
 
 	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
 	enable_irq(prHifInfo->u4IrqId);
-
-	DBGLOG(HAL, TRACE, "%s\n", __func__);
 }
 
 void asicDisableInterrupt(IN struct ADAPTER *prAdapter)
@@ -609,8 +607,6 @@ void asicDisableInterrupt(IN struct ADAPTER *prAdapter)
 
 	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
 	disable_irq_nosync(prHifInfo->u4IrqId);
-
-	DBGLOG(HAL, TRACE, "%s\n", __func__);
 }
 
 void asicLowPowerOwnRead(IN struct ADAPTER *prAdapter,

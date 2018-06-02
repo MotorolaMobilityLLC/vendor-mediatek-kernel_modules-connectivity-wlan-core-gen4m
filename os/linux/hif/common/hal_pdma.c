@@ -1842,8 +1842,6 @@ u_int8_t halWpdmaWriteData(IN struct GLUE_INFO *prGlueInfo,
 	       prTxRing->TxCpuIdx, prTxRing->u4UsedCnt,
 	       (prMsduInfo->pfTxDoneHandler ? TRUE : FALSE));
 
-	DBGLOG_MEM32(HAL, TRACE, pucSrc, pTxD->SDLen0);
-
 	nicTxReleaseResource_PSE(prGlueInfo->prAdapter, prMsduInfo->ucTC,
 		nicTxGetPageCount(prGlueInfo->prAdapter,
 		prMsduInfo->u2FrameLength, TRUE), TRUE);
