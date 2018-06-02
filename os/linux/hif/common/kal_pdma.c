@@ -142,7 +142,6 @@ u_int8_t kalDevRegRead(IN struct GLUE_INFO *prGlueInfo,
 	struct GL_HIF_INFO *prHifInfo = NULL;
 	struct BUS_INFO *prBusInfo = NULL;
 	uint32_t u4BusAddr = u4Register;
-	u_int8_t fgResult = TRUE;
 
 	ASSERT(prGlueInfo);
 	ASSERT(pu4Value);
@@ -150,7 +149,7 @@ u_int8_t kalDevRegRead(IN struct GLUE_INFO *prGlueInfo,
 	prHifInfo = &prGlueInfo->rHifInfo;
 	prBusInfo = prGlueInfo->prAdapter->chip_info->bus_info;
 
-	if (prBusInfo->isValidRegAccess &&
+	if (!prHifInfo->fgIsDumpLog && prBusInfo->isValidRegAccess &&
 	    !prBusInfo->isValidRegAccess(prGlueInfo->prAdapter, u4Register)) {
 		DBGLOG(HAL, ERROR,
 		       "Invalid access! Get CR[0x%08x/0x%08x] value[0x%08x]\n",
@@ -159,12 +158,11 @@ u_int8_t kalDevRegRead(IN struct GLUE_INFO *prGlueInfo,
 		return FALSE;
 	}
 
+	/* Static mapping */
 	if (halChipToStaticMapBusAddr(prGlueInfo, u4Register, &u4BusAddr)) {
-		/* Static mapping */
 		RTMP_IO_READ32(prHifInfo, u4BusAddr, pu4Value);
 	} else {
-		/* Dynamic mapping */
-		fgResult = halGetDynamicMapReg(prGlueInfo, u4BusAddr, pu4Value);
+		DBGLOG(HAL, ERROR, "Not exist CR read[0x%08x]\n", u4Register);
 	}
 
 	return TRUE;
@@ -186,6 +184,12 @@ static bool kalCheckSpecRegWrite(struct GLUE_INFO *prGlueInfo,
 				 uint32_t u4BusAddr, uint32_t u4Value)
 {
 	uint32_t au4Regs[] = { WPDMA_GLO_CFG,
+			       WPDMA_TX_RING0_CTRL0,
+			       WPDMA_TX_RING0_CTRL0 + MT_RINGREG_DIFF,
+			       WPDMA_TX_RING0_CTRL0 + MT_RINGREG_DIFF * 3,
+			       WPDMA_TX_RING0_CTRL0 + MT_RINGREG_DIFF * 15,
+			       WPDMA_RX_RING0_CTRL0,
+			       WPDMA_RX_RING0_CTRL0 + MT_RINGREG_DIFF,
 			       WPDMA_TX_RING0_CTRL1,
 			       WPDMA_TX_RING0_CTRL1 + MT_RINGREG_DIFF,
 			       WPDMA_TX_RING0_CTRL1 + MT_RINGREG_DIFF * 3,
@@ -236,14 +240,13 @@ u_int8_t kalDevRegWrite(IN struct GLUE_INFO *prGlueInfo,
 	struct GL_HIF_INFO *prHifInfo = NULL;
 	struct BUS_INFO *prBusInfo = NULL;
 	uint32_t u4BusAddr = u4Register;
-	u_int8_t fgResult = TRUE;
 
 	ASSERT(prGlueInfo);
 
 	prHifInfo = &prGlueInfo->rHifInfo;
 	prBusInfo = prGlueInfo->prAdapter->chip_info->bus_info;
 
-	if (prBusInfo->isValidRegAccess &&
+	if (!prHifInfo->fgIsDumpLog && prBusInfo->isValidRegAccess &&
 	    !prBusInfo->isValidRegAccess(prGlueInfo->prAdapter, u4Register)) {
 		DBGLOG(HAL, ERROR,
 		       "Invalid access! Set CR[0x%08x/0x%08x] value[0x%08x]\n",
@@ -251,15 +254,16 @@ u_int8_t kalDevRegWrite(IN struct GLUE_INFO *prGlueInfo,
 		return FALSE;
 	}
 
+	/* Static mapping */
 	if (halChipToStaticMapBusAddr(prGlueInfo, u4Register, &u4BusAddr)) {
-		/* Static mapping */
 		/* for debug */
 		if (!kalCheckSpecRegWrite(prGlueInfo, u4BusAddr, u4Value))
 			return FALSE;
+
 		RTMP_IO_WRITE32(prHifInfo, u4BusAddr, u4Value);
 	} else {
-		/* Dynamic mapping */
-		fgResult = halSetDynamicMapReg(prGlueInfo, u4BusAddr, u4Value);
+		DBGLOG(HAL, ERROR, "Not exist CR write[0x%08x] value[0x%08x]\n",
+		       u4Register, u4Value);
 	}
 
 	prHifInfo->u4HifCnt++;
