@@ -543,7 +543,7 @@ do { \
  */
 #define HAL_MCR_RD_AND_WAIT(_pAdapter, _offset, _pReadValue, _waitCondition, _waitDelay, _waitCount, _status) \
 	{ \
-		uint32_t count; \
+		uint32_t count = 0; \
 		(_status) = FALSE; \
 		for (count = 0; count < (_waitCount); count++) { \
 			HAL_MCR_RD((_pAdapter), (_offset), (_pReadValue)); \
@@ -560,7 +560,7 @@ do { \
  */
 #define HAL_MCR_WR_AND_WAIT(_pAdapter, _offset, _writeValue, _busyMask, _waitDelay, _waitCount, _status) \
 	{ \
-		uint32_t u4Temp; \
+		uint32_t u4Temp = 0; \
 		uint32_t u4Count = _waitCount; \
 		(_status) = FALSE; \
 		HAL_MCR_WR((_pAdapter), (_offset), (_writeValue)); \
@@ -629,7 +629,7 @@ do { \
 
 #define HAL_LP_OWN_RD(_prAdapter, _pfgResult) \
 { \
-	uint32_t u4RegValue; \
+	uint32_t u4RegValue = 0; \
 	*_pfgResult = FALSE; \
 	HAL_MCR_RD(_prAdapter, MCR_WHLPCR, &u4RegValue); \
 	if (u4RegValue & WHLPCR_IS_DRIVER_OWN) { \
@@ -639,7 +639,7 @@ do { \
 
 #define HAL_LP_OWN_SET(_prAdapter, _pfgResult) \
 { \
-	uint32_t u4RegValue; \
+	uint32_t u4RegValue = 0; \
 	*_pfgResult = FALSE; \
 	HAL_MCR_WR(_prAdapter, \
 		MCR_WHLPCR, \
@@ -652,7 +652,7 @@ do { \
 
 #define HAL_LP_OWN_CLR(_prAdapter, _pfgResult) \
 { \
-	uint32_t u4RegValue; \
+	uint32_t u4RegValue = 0; \
 	*_pfgResult = FALSE; \
 	/* Software get LP ownership */ \
 	HAL_MCR_WR(_prAdapter, \
