@@ -183,52 +183,39 @@ void secInit(IN struct ADAPTER *prAdapter, IN uint8_t ucBssIndex)
 	    = RSN_CIPHER_SUITE_GROUP_NOT_USED;
 
 	for (i = 0; i < MAX_NUM_SUPPORTED_CIPHER_SUITES; i++)
-		prAdapter->rMib.
-		    dot11RSNAConfigPairwiseCiphersTable
+		prAdapter->rMib.dot11RSNAConfigPairwiseCiphersTable
 		    [i].dot11RSNAConfigPairwiseCipherEnabled = FALSE;
 
-	prAdapter->rMib.
-	    dot11RSNAConfigAuthenticationSuitesTable
+	prAdapter->rMib.dot11RSNAConfigAuthenticationSuitesTable
 	    [0].dot11RSNAConfigAuthenticationSuite = WPA_AKM_SUITE_NONE;
-	prAdapter->rMib.
-	    dot11RSNAConfigAuthenticationSuitesTable
+	prAdapter->rMib.dot11RSNAConfigAuthenticationSuitesTable
 	    [1].dot11RSNAConfigAuthenticationSuite = WPA_AKM_SUITE_802_1X;
-	prAdapter->rMib.
-	    dot11RSNAConfigAuthenticationSuitesTable
+	prAdapter->rMib.dot11RSNAConfigAuthenticationSuitesTable
 	    [2].dot11RSNAConfigAuthenticationSuite = WPA_AKM_SUITE_PSK;
-	prAdapter->rMib.
-	    dot11RSNAConfigAuthenticationSuitesTable
+	prAdapter->rMib.dot11RSNAConfigAuthenticationSuitesTable
 	    [3].dot11RSNAConfigAuthenticationSuite = RSN_AKM_SUITE_NONE;
-	prAdapter->rMib.
-	    dot11RSNAConfigAuthenticationSuitesTable
+	prAdapter->rMib.dot11RSNAConfigAuthenticationSuitesTable
 	    [4].dot11RSNAConfigAuthenticationSuite = RSN_AKM_SUITE_802_1X;
-	prAdapter->rMib.
-	    dot11RSNAConfigAuthenticationSuitesTable
+	prAdapter->rMib.dot11RSNAConfigAuthenticationSuitesTable
 	    [5].dot11RSNAConfigAuthenticationSuite = RSN_AKM_SUITE_PSK;
 
-	prAdapter->rMib.
-	    dot11RSNAConfigAuthenticationSuitesTable
+	prAdapter->rMib.dot11RSNAConfigAuthenticationSuitesTable
 	    [6].dot11RSNAConfigAuthenticationSuite = RSN_AKM_SUITE_FT_802_1X;
-	prAdapter->rMib.
-	    dot11RSNAConfigAuthenticationSuitesTable
+	prAdapter->rMib.dot11RSNAConfigAuthenticationSuitesTable
 	    [7].dot11RSNAConfigAuthenticationSuite = RSN_AKM_SUITE_FT_PSK;
-	prAdapter->rMib.
-	    dot11RSNAConfigAuthenticationSuitesTable
+	prAdapter->rMib.dot11RSNAConfigAuthenticationSuitesTable
 	    [8].dot11RSNAConfigAuthenticationSuite = WFA_AKM_SUITE_OSEN;
 
 #if CFG_SUPPORT_802_11W
-	prAdapter->rMib.
-	    dot11RSNAConfigAuthenticationSuitesTable
+	prAdapter->rMib.dot11RSNAConfigAuthenticationSuitesTable
 	    [9].dot11RSNAConfigAuthenticationSuite =
 	    RSN_AKM_SUITE_802_1X_SHA256;
-	prAdapter->rMib.
-	    dot11RSNAConfigAuthenticationSuitesTable
+	prAdapter->rMib.dot11RSNAConfigAuthenticationSuitesTable
 	    [10].dot11RSNAConfigAuthenticationSuite = RSN_AKM_SUITE_PSK_SHA256;
 #endif
 
 	for (i = 0; i < MAX_NUM_SUPPORTED_AKM_SUITES; i++) {
-		prAdapter->rMib.
-		    dot11RSNAConfigAuthenticationSuitesTable
+		prAdapter->rMib.dot11RSNAConfigAuthenticationSuitesTable
 		    [i].dot11RSNAConfigAuthenticationSuiteEnabled = FALSE;
 	}
 
@@ -463,8 +450,7 @@ void secSetCipherSuite(IN struct ADAPTER *prAdapter,
 	if (u4CipherSuitesFlags == CIPHER_FLAG_NONE) {
 		/* Disable all the pairwise cipher suites. */
 		for (i = 0; i < MAX_NUM_SUPPORTED_CIPHER_SUITES; i++)
-			prMib->
-			    dot11RSNAConfigPairwiseCiphersTable
+			prMib->dot11RSNAConfigPairwiseCiphersTable
 			    [i].dot11RSNAConfigPairwiseCipherEnabled = FALSE;
 
 		/* Update the group cipher suite. */
@@ -712,8 +698,9 @@ u_int8_t secIsWepBss(IN struct ADAPTER *prAdapter,
  * \note
  */
 /*----------------------------------------------------------------------------*/
-u_int8_t secPrivacySeekForEntry(IN struct ADAPTER
-				*prAdapter, IN struct STA_RECORD *prSta)
+u_int8_t secPrivacySeekForEntry(
+				IN struct ADAPTER *prAdapter,
+				IN struct STA_RECORD *prSta)
 {
 	struct BSS_INFO *prP2pBssInfo;
 	uint8_t ucEntry = WTBL_RESERVED_ENTRY;
@@ -744,7 +731,7 @@ u_int8_t secPrivacySeekForEntry(IN struct ADAPTER
 		    /* This function for ucPairwise only */) {
 			ucEntry = i;
 			DBGLOG(RSN, TRACE,
-				"[Wlan index]: Reuse entry #%d\n", i);
+			       "[Wlan index]: Reuse entry #%d\n", i);
 			break;
 		}
 	}
@@ -754,7 +741,7 @@ u_int8_t secPrivacySeekForEntry(IN struct ADAPTER
 			if (prWtbl[i].ucUsed == FALSE) {
 				ucEntry = i;
 				DBGLOG(RSN, TRACE,
-					"[Wlan index]: Assign entry #%d\n", i);
+				       "[Wlan index]: Assign entry #%d\n", i);
 				break;
 			}
 		}
@@ -919,8 +906,7 @@ void secRemoveBssBcEntry(IN struct ADAPTER *prAdapter,
 			for (i = 0; i < MAX_KEY_NUM; i++) {
 				if (prBssInfo->ucBMCWlanIndexSUsed[i])
 					secPrivacyFreeForEntry(prAdapter,
-						prBssInfo->ucBMCWlanIndexS
-						[i]);
+						prBssInfo->ucBMCWlanIndexS[i]);
 #if 0
 				/* move to cfg delete cb function for sync. */
 				prBssInfo->ucBMCWlanIndexSUsed[i] = FALSE;
@@ -939,8 +925,7 @@ void secRemoveBssBcEntry(IN struct ADAPTER *prAdapter,
 		for (i = 0; i < MAX_KEY_NUM; i++) {
 			if (prBssInfo->ucBMCWlanIndexSUsed[i])
 				secPrivacyFreeForEntry(prAdapter,
-					prBssInfo->ucBMCWlanIndexS
-					[i]);
+					prBssInfo->ucBMCWlanIndexS[i]);
 #if 0
 			/* move to cfg delete cb function for sync. */
 			prBssInfo->ucBMCWlanIndexSUsed[i] = FALSE;
@@ -1013,8 +998,8 @@ secPrivacySeekForBcEntry(IN struct ADAPTER *prAdapter,
 
 	DBGLOG(INIT, TRACE, "secPrivacySeekForBcEntry\n");
 	DBGLOG(INIT, INFO, "OpMode:%d, NetworkType:%d, CheckKeyId:%d\n",
-		prBSSInfo->eCurrentOPMode, prBSSInfo->eNetworkType,
-		fgCheckKeyId);
+	       prBSSInfo->eCurrentOPMode, prBSSInfo->eNetworkType,
+	       fgCheckKeyId);
 
 	for (i = ucStartIDX; i <= ucMaxIDX; i++) {
 
@@ -1177,8 +1162,8 @@ uint8_t secGetBssIdxByWlanIdx(struct ADAPTER *prAdapter, uint8_t ucWlanIdx)
  * \return The STA record index, 0xff for invalid sta index
  */
 /*----------------------------------------------------------------------------*/
-uint8_t secLookupStaRecIndexFromTA(struct ADAPTER
-				   *prAdapter, uint8_t *pucMacAddress)
+uint8_t secLookupStaRecIndexFromTA(
+			struct ADAPTER *prAdapter, uint8_t *pucMacAddress)
 {
 	int i;
 	struct WLAN_TABLE *prWtbl;
@@ -1266,8 +1251,7 @@ void secPostUpdateAddr(IN struct ADAPTER *prAdapter,
 
 				/* Update the wlan table of the prStaRecOfAP */
 				prWtbl =
-				    &prAdapter->rWifiVar.
-				    arWtbl
+				    &prAdapter->rWifiVar.arWtbl
 				    [prBssInfo->prStaRecOfAP->ucWlanIndex];
 				prWtbl->ucKeyId = prBssInfo->ucBcDefaultKeyIdx;
 				prBssInfo->prStaRecOfAP->fgTransmitKeyExist =
