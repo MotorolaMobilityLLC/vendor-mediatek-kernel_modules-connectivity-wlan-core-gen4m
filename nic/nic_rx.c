@@ -416,11 +416,21 @@ VOID nicRxFillRFB(IN P_ADAPTER_T prAdapter, IN OUT P_SW_RFB_T prSwRfb)
 *
 */
 /*----------------------------------------------------------------------------*/
-VOID nicRxFillChksumStatus(IN P_ADAPTER_T prAdapter, IN OUT P_SW_RFB_T prSwRfb, IN UINT_32 u4TcpUdpIpCksStatus)
+VOID nicRxFillChksumStatus(IN P_ADAPTER_T prAdapter, IN OUT P_SW_RFB_T prSwRfb)
 {
+	struct RX_CSO_REPORT_T *rReport;
+	UINT_32 u4TcpUdpIpCksStatus;
 
 	ASSERT(prAdapter);
 	ASSERT(prSwRfb);
+
+	u4TcpUdpIpCksStatus = prSwRfb->u4TcpUdpIpCksStatus;
+	rReport = (struct RX_CSO_REPORT_T *) &u4TcpUdpIpCksStatus;
+	DBGLOG(RX, TRACE, "RX_IPV4_STATUS=%d, RX_TCP_STATUS=%d, RX_UDP_STATUS=%d\n",
+	       rReport->u4IpV4CksStatus, rReport->u4TcpCksStatus, rReport->u4UdpCksStatus);
+	DBGLOG(RX, TRACE, "RX_IPV4_TYPE=%d, RX_IPV6_TYPE=%d, RX_TCP_TYPE=%d, RX_UDP_TYPE=%d\n",
+	       rReport->u4IpV4CksType, rReport->u4IpV6CksType,
+	       rReport->u4TcpCksType, rReport->u4UdpCksType);
 
 	if (prAdapter->u4CSUMFlags != CSUM_NOT_SUPPORTED) {
 		if (u4TcpUdpIpCksStatus & RX_CS_TYPE_IPv4) {	/* IPv4 packet */
@@ -1452,14 +1462,8 @@ VOID nicRxProcessDataPacket(IN P_ADAPTER_T prAdapter, IN OUT P_SW_RFB_T prSwRfb)
 #endif
 
 #if CFG_TCP_IP_CHKSUM_OFFLOAD || CFG_TCP_IP_CHKSUM_OFFLOAD_NDIS_60
-	if (prAdapter->fgIsSupportCsumOffload && fgDrop == FALSE) {
-		UINT_32 u4TcpUdpIpCksStatus;
-		PUINT_32 pu4Temp;
-
-		pu4Temp = (PUINT_32) prRxStatus;
-		u4TcpUdpIpCksStatus = *(pu4Temp + (ALIGN_4(prRxStatus->u2RxByteCount) >> 2));
-		nicRxFillChksumStatus(prAdapter, prSwRfb, u4TcpUdpIpCksStatus);
-	}
+	if (prAdapter->fgIsSupportCsumOffload && fgDrop == FALSE)
+		nicRxFillChksumStatus(prAdapter, prSwRfb);
 #endif /* CFG_TCP_IP_CHKSUM_OFFLOAD */
 
 	/* if(secCheckClassError(prAdapter, prSwRfb, prStaRec) == TRUE && */
