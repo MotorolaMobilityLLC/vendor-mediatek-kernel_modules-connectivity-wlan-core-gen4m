@@ -59,6 +59,7 @@
 #define _HIF_H
 
 #include "hif_pdma.h"
+#include "connac.h"
 
 #if defined(_HIF_AXI)
 #define HIF_NAME "AXI"
@@ -84,8 +85,12 @@ extern int mtk_wcn_wmt_wlan_reg(struct MTK_WCN_WMT_WLAN_CB_INFO *pWmtWlanCbInfo)
 *                              C O N S T A N T S
 ********************************************************************************
 */
+#define AXI_CFG_PREALLOC_MEMORY_BUFFER    1
 
-#define AXI_WLAN_IRQ_NUMBER    16
+#define AXI_TX_MAX_SIZE_PER_FRAME         (NIC_TX_MAX_SIZE_PER_FRAME +      \
+					   NIC_TX_DESC_AND_PADDING_LENGTH + \
+					   CONNAC_TX_DESC_APPEND_LENGTH)
+#define AXI_WLAN_IRQ_NUMBER               16
 
 /*******************************************************************************
 *                             D A T A   T Y P E S
@@ -130,6 +135,16 @@ struct GL_HIF_INFO {
 	struct list_head rTxDataQ;
 	spinlock_t rTxCmdQLock;
 	spinlock_t rTxDataQLock;
+
+	bool fgIsPreAllocMem;
+
+	void *(*allocDmaCoherent)(size_t size, dma_addr_t *dma_handle,
+				  bool fgIsTx, uint32_t u4Num);
+	struct sk_buff *(*allocRxPacket)(uint32_t u4Len, uint32_t u4Num,
+					 uint32_t u4Idx);
+	struct sk_buff *(*allocMsduBuf)(uint32_t u4Len, uint32_t u4Idx);
+	void (*updateRxPacket)(struct sk_buff *prSkb,
+			       uint32_t u4Num, uint32_t u4Idx);
 };
 
 struct BUS_INFO {
@@ -206,6 +221,7 @@ void glSetPowerState(IN struct GLUE_INFO *prGlueInfo, IN uint32_t ePowerMode);
 void glGetDev(void *ctx, struct device **dev);
 
 void glGetHifDev(struct GL_HIF_INFO *prHif, struct device **dev);
+
 void halHifRst(struct GLUE_INFO *prGlueInfo);
 bool halWpdmaAllocRing(struct GLUE_INFO *prGlueInfo);
 void halWpdmaFreeRing(struct GLUE_INFO *prGlueInfo);

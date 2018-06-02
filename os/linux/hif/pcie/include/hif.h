@@ -123,6 +123,16 @@ struct GL_HIF_INFO {
 	struct list_head rTxDataQ;
 	spinlock_t rTxCmdQLock;
 	spinlock_t rTxDataQLock;
+
+	bool fgIsPreAllocMem;
+
+	void *(*allocDmaCoherent)(size_t size, dma_addr_t *dma_handle,
+				bool fgIsTx, uint32_t u4Num);
+	struct sk_buff *(*allocRxPacket)(uint32_t u4Len, uint32_t u4Num,
+					 uint32_t u4Idx);
+	struct sk_buff *(*allocMsduBuf)(uint32_t u4Len, uint32_t u4Idx);
+	void (*updateRxPacket)(struct sk_buff *prSkb,
+			       uint32_t u4Num, uint32_t u4Idx);
 };
 
 struct BUS_INFO {
@@ -185,6 +195,7 @@ void glSetPowerState(IN struct GLUE_INFO *prGlueInfo, IN uint32_t ePowerMode);
 void glGetDev(void *ctx, struct device **dev);
 
 void glGetHifDev(struct GL_HIF_INFO *prHif, struct device **dev);
+
 void halHifRst(struct GLUE_INFO *prGlueInfo);
 bool halWpdmaAllocRing(struct GLUE_INFO *prGlueInfo);
 void halWpdmaFreeRing(struct GLUE_INFO *prGlueInfo);

@@ -361,6 +361,12 @@ void glSetHifInfo(struct GLUE_INFO *prGlueInfo, unsigned long ulCookie)
 	INIT_LIST_HEAD(&prHif->rTxDataQ);
 	spin_lock_init(&prHif->rTxCmdQLock);
 	spin_lock_init(&prHif->rTxDataQLock);
+
+	prHif->fgIsPreAllocMem = false;
+	prHif->allocDmaCoherent = NULL;
+	prHif->allocRxPacket = NULL;
+	prHif->allocMsduBuf = NULL;
+	prHif->updateRxPacket = NULL;
 }
 
 /*----------------------------------------------------------------------------*/
