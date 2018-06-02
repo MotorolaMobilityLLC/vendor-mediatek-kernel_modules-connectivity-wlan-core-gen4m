@@ -2749,7 +2749,7 @@ typedef struct _EVENT_STA_STATISTICS_T {
 
 	UINT_16 u2RaRunningCnt;
 	UINT_8 ucRaStatus;
-	UINT_8 ucMaxAmpduFactor;
+	UINT_8 ucFlag;
 	UINT_8 aucTxQuality[MAX_TX_QUALITY_INDEX];
 	UINT_8 ucTxRateUpPenalty;
 	UINT_8 ucLowTrafficMode;

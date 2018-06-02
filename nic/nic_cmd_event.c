@@ -2215,7 +2215,7 @@ VOID nicCmdEventQueryStaStatistics(IN P_ADAPTER_T prAdapter, IN P_CMD_INFO_T prC
 
 			prStaStatistics->u2RaRunningCnt = prEvent->u2RaRunningCnt;
 			prStaStatistics->ucRaStatus = prEvent->ucRaStatus;
-			prStaStatistics->ucMaxAmpduFactor = prEvent->ucMaxAmpduFactor;
+			prStaStatistics->ucFlag = prEvent->ucFlag;
 			kalMemCopy(&prStaStatistics->aucTxQuality, &prEvent->aucTxQuality,
 				sizeof(prEvent->aucTxQuality));
 			prStaStatistics->ucTxRateUpPenalty = prEvent->ucTxRateUpPenalty;
