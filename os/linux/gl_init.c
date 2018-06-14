@@ -1743,17 +1743,6 @@ static void wlanCreateWirelessDevice(void)
 	}
 	prWdev->wiphy = prWiphy;
 	gprWdev = prWdev;
-	kalMemZero(&grRegInfo, sizeof(grRegInfo));
-	glLoadNvram(&grRegInfo);
-
-#if CFG_MTK_ANDROID_WMT
-	if (g_fgNvramAvailable &&
-	    grRegInfo.ucSupport5GBand &&
-	    grRegInfo.ucEnable5GBand)
-		mtk_wmt_set_ext_ldo(1);
-	else
-		mtk_wmt_set_ext_ldo(0);
-#endif
 
 	register_file_buf_handler(wlanNvramBufHandler, (void *)NULL,
 			ENUM_BUF_TYPE_NVRAM);
@@ -2851,18 +2840,8 @@ static int32_t wlanProbe(void *pvData, void *pvDriverData)
 		/* 4 <5> Start Device */
 		prRegInfo = prGlueInfo->prRegInfo = &grRegInfo;
 		prGlueInfo->fgNvramAvailable = g_fgNvramAvailable;
-		log_dbg(INIT, TRACE, "prGlueInfo->fgNvramAvailable = %d\n",
-			prGlueInfo->fgNvramAvailable);
-
-		if (prGlueInfo->fgNvramAvailable == FALSE) {
-		/* struct REG_INFO *prRegInfo = (struct REG_INFO *)
-		 * kmalloc(sizeof(struct REG_INFO), GFP_KERNEL);
-		 */
-			DBGLOG(INIT, WARN, "glLoadNvram Again\n");
-			kalMemSet(prRegInfo, 0, sizeof(grRegInfo));
-			glLoadNvram(prRegInfo);
-			prGlueInfo->fgNvramAvailable = g_fgNvramAvailable;
-		}
+		kalMemSet(prRegInfo, 0, sizeof(grRegInfo));
+		glLoadNvram(prRegInfo);
 
 		/* Trigger the action of switching Pwr state to drv_own */
 		prAdapter->fgIsFwOwn = TRUE;
