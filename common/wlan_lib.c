@@ -5832,13 +5832,11 @@ struct WLAN_CFG_ENTRY *wlanCfgGetEntry(IN struct ADAPTER *prAdapter, const int8_
 			prWlanCfgEntry = &prWlanCfg->arWlanCfgBuf[i];
 
 		if (prWlanCfgEntry->aucKey[0] != '\0') {
-			DBGLOG(INIT, LOUD, "compare key %s saved key %s\n", pucKey, prWlanCfgEntry->aucKey);
 			if (kalStrnCmp(pucKey, prWlanCfgEntry->aucKey, WLAN_CFG_KEY_LEN_MAX - 1) == 0)
 				return prWlanCfgEntry;
 		}
 	}
 
-	DBGLOG(INIT, TRACE, "wifi config there is no entry \'%s\'\n", pucKey);
 	return NULL;
 
 }
@@ -6052,8 +6050,6 @@ uint32_t wlanCfgSet(IN struct ADAPTER *prAdapter, const int8_t *pucKey, int8_t *
 	}
 	/* prWlanCfgEntry */
 	if (prWlanCfgEntry) {
-		DBGLOG(INIT, LOUD, "Set wifi config exist %u \'%s\' \'%s\'\n",
-		       ucExist, prWlanCfgEntry->aucKey, prWlanCfgEntry->aucValue);
 		return WLAN_STATUS_SUCCESS;
 	}
 		if (pucKey)
