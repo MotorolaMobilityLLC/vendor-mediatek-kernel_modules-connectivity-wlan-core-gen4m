@@ -596,8 +596,6 @@ struct REG_INFO {
 	/* NVRAM - Functional Data -END- */
 
 	struct NEW_EFUSE_MAPPING2NVRAM *prOldEfuseMapping;
-
-	uint8_t aucNvram[CFG_FILE_WIFI_REC_SIZE];
 	struct WIFI_CFG_PARAM_STRUCT *prNvramSettings;
 };
 

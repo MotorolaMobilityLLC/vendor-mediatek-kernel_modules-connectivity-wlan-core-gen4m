@@ -91,6 +91,7 @@ int g_u4HaltFlag;
 u_int8_t g_fgNvramAvailable;
 
 struct REG_INFO grRegInfo;
+uint8_t g_aucNvram[CFG_FILE_WIFI_REC_SIZE];
 
 struct wireless_dev *gprWdev;
 /*******************************************************************************
@@ -756,11 +757,11 @@ static void glLoadNvram(OUT struct REG_INFO *prRegInfo)
 	}
 
 	if (sizeof(struct WIFI_CFG_PARAM_STRUCT) >
-					sizeof(prRegInfo->aucNvram)) {
+					sizeof(g_aucNvram)) {
 		DBGLOG(INIT, ERROR,
 		"Size WIFI_CFG_PARAM_STRUCT %zu > size aucNvram %zu\n"
 		, sizeof(struct WIFI_CFG_PARAM_STRUCT),
-		sizeof(prRegInfo->aucNvram));
+		sizeof(g_aucNvram));
 		return;
 	}
 #if CFG_SUPPORT_NVRAM_5G
@@ -775,7 +776,7 @@ static void glLoadNvram(OUT struct REG_INFO *prRegInfo)
 #endif
 
 	prRegInfo->prNvramSettings =
-		(struct WIFI_CFG_PARAM_STRUCT *)&prRegInfo->aucNvram;
+		(struct WIFI_CFG_PARAM_STRUCT *)&g_aucNvram[0];
 	prNvramSettings = prRegInfo->prNvramSettings;
 
 #if CFG_SUPPORT_NVRAM_5G
@@ -1606,10 +1607,10 @@ static uint8_t wlanNvramBufHandler(void *ctx,
 			uint16_t length)
 {
 	DBGLOG(INIT, INFO, "buf = %p, length = %u\n", buf, length);
-	if (buf == NULL || length <= 0 || length != sizeof(grRegInfo.aucNvram))
+	if (buf == NULL || length <= 0 || length != sizeof(g_aucNvram))
 		return -EFAULT;
 
-	if (copy_from_user(grRegInfo.aucNvram, buf, length)) {
+	if (copy_from_user(g_aucNvram, buf, length)) {
 		DBGLOG(INIT, ERROR, "copy nvram fail\n");
 		g_fgNvramAvailable = FALSE;
 		return -EINVAL;
@@ -1743,7 +1744,6 @@ static void wlanCreateWirelessDevice(void)
 	}
 	prWdev->wiphy = prWiphy;
 	gprWdev = prWdev;
-
 	register_file_buf_handler(wlanNvramBufHandler, (void *)NULL,
 			ENUM_BUF_TYPE_NVRAM);
 	DBGLOG(INIT, INFO, "Create wireless device success\n");
