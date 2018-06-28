@@ -342,6 +342,8 @@ uint32_t wlanAdapterStart(IN struct ADAPTER *prAdapter, IN struct REG_INFO *prRe
 	prAdapter->ucTxDefaultWlanIndex = prAdapter->ucWtblEntryNum - 1;
 
 	prAdapter->fgEnHifDbgInfo = true;
+	prAdapter->u4HifDbgFlag = 0;
+	prAdapter->u4HifChkFlag = 0;
 
 	QUEUE_INITIALIZE(&(prAdapter->rPendingCmdQueue));
 #if CFG_SUPPORT_MULTITHREAD
@@ -716,6 +718,7 @@ uint32_t wlanAdapterStart(IN struct ADAPTER *prAdapter, IN struct REG_INFO *prRe
 		nicEnableInterrupt(prAdapter);
 
 	} else {
+		prAdapter->u4HifDbgFlag |= DEG_HIF_DEFAULT_DUMP;
 		halPrintHifDbgInfo(prAdapter);
 		DBGLOG(INIT, WARN, "Fail reason: %d\n", eFailReason);
 
@@ -1072,7 +1075,8 @@ uint32_t wlanProcessCommandQueue(IN struct ADAPTER *prAdapter, IN struct QUE *pr
 				DBGLOG(INIT, WARN, "NO Res CMD TYPE[%u] ID[0x%02X] SEQ[%u]\n",
 				       prCmdInfo->eCmdType, prCmdInfo->ucCID, prCmdInfo->ucCmdSeqNum);
 
-				set_bit(GLUE_FLAG_HIF_PRT_HIF_DBG_INFO_BIT, &(prAdapter->prGlueInfo->ulFlag));
+				prAdapter->u4HifDbgFlag |= DEG_HIF_ALL;
+				kalSetHifDbgEvent(prAdapter->prGlueInfo);
 
 				QUEUE_INSERT_TAIL(prMergeCmdQue, prQueueEntry);
 
@@ -1791,7 +1795,8 @@ void wlanReleasePendingOid(IN struct ADAPTER *prAdapter, IN unsigned long ulPara
 
 					prAdapter->fgIsChipNoAck = TRUE;
 			}
-			set_bit(GLUE_FLAG_HIF_PRT_HIF_DBG_INFO_BIT, &(prAdapter->prGlueInfo->ulFlag));
+			prAdapter->u4HifDbgFlag |= DEG_HIF_ALL;
+			kalSetHifDbgEvent(prAdapter->prGlueInfo);
 		}
 	} while (FALSE);
 

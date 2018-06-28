@@ -121,6 +121,23 @@ extern int get_logtoomuch_enable(void) __attribute__((weak));
 #define DBG_PRINTF_64BIT_DEC    "I64d"
 #endif
 #define DBG_ALL_MODULE_IDX      0xFFFFFFFF
+
+#define DEG_HIF_ALL             BIT(0)
+#define DEG_HIF_HOST_CSR        BIT(1)
+#define DEG_HIF_PDMA            BIT(2)
+#define DEG_HIF_DMASCH          BIT(3)
+#define DEG_HIF_PSE             BIT(4)
+#define DEG_HIF_PLE             BIT(5)
+#define DEG_HIF_MAC             BIT(6)
+#define DEG_HIF_PHY             BIT(7)
+
+#define DEG_HIF_DEFAULT_DUMP					\
+	(DEG_HIF_HOST_CSR | DEG_HIF_PDMA | DEG_HIF_DMASCH |	\
+	 DEG_HIF_PSE | DEG_HIF_PLE)
+
+#define HIF_CHK_TX_HANG         BIT(1)
+#define HIF_DRV_SER             BIT(2)
+
 /*******************************************************************************
  *                             D A T A   T Y P E S
  *******************************************************************************
@@ -174,8 +191,7 @@ enum ENUM_DBG_ASSERT_PATH {
 };
 
 struct CHIP_DBG_OPS {
-	void (*showPdmaInfo)(IN struct ADAPTER *prAdapter,
-			     bool fgTxContent, bool fgRxContent);
+	void (*showPdmaInfo)(IN struct ADAPTER *prAdapter);
 	void (*showPseInfo)(IN struct ADAPTER *prAdapter);
 	void (*showPleInfo)(IN struct ADAPTER *prAdapter);
 	bool (*showCsrInfo)(IN struct ADAPTER *prAdapter);
