@@ -3801,7 +3801,8 @@ void kalScanDone(IN struct GLUE_INFO *prGlueInfo, IN enum ENUM_KAL_NETWORK_TYPE_
 	uint8_t fgAborted = (status != WLAN_STATUS_SUCCESS) ? TRUE : FALSE;
 	ASSERT(prGlueInfo);
 
-	scanLogEssResult(prGlueInfo->prAdapter);
+	if (eNetTypeIdx == KAL_NETWORK_TYPE_AIS_INDEX)
+		scanLogEssResult(prGlueInfo->prAdapter);
 
 	scanReportBss2Cfg80211(prGlueInfo->prAdapter, BSS_TYPE_INFRASTRUCTURE, NULL);
 
