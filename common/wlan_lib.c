@@ -6124,10 +6124,14 @@ struct WLAN_CFG_PARSE_STATE_S {
 	uint32_t maxSize;
 };
 
+#define IS_CFG_IGNORE_CHARACTER(c) (c == ' ' || c == ',' \
+				 || c == '\t' || c == '\r')
+#define IS_CFG_SPACE_CHARACTER(c) (c == ' ' || c == '\t')
+
 int32_t wlanCfgFindNextToken(struct WLAN_CFG_PARSE_STATE_S *state)
 {
-	int8_t *x = state->ptr;
-	int8_t *s;
+	int8_t *chr = state->ptr;
+	int8_t *text = NULL;
 
 	if (state->nexttoken) {
 		int32_t t = state->nexttoken;
@@ -6136,113 +6140,97 @@ int32_t wlanCfgFindNextToken(struct WLAN_CFG_PARSE_STATE_S *state)
 		return t;
 	}
 
-	for (;;) {
-		switch (*x) {
-		case 0:
-			state->ptr = x;
-			return STATE_EOF;
-		case '\n':
-			x++;
-			state->ptr = x;
-			return STATE_NEWLINE;
-		case ' ':
-		case ',':
-		/*case ':':  should not including : , mac addr would be fail*/
-		case '\t':
-		case '\r':
-			x++;
-			continue;
-		case '#':
-			while (*x && (*x != '\n'))
-				x++;
-			if (*x == '\n') {
-				state->ptr = x + 1;
+	while (TRUE) {
+		if (*chr == '#') {
+			while (*chr && (*chr != '\n'))
+				chr++;
+			if (*chr == '\n') {
+				state->ptr = chr + 1;
 				return STATE_NEWLINE;
 			}
-				state->ptr = x;
-				return STATE_EOF;
-
-		default:
-			goto text;
+			state->ptr = chr;
+			return STATE_EOF;
+		} else if (IS_CFG_IGNORE_CHARACTER(*chr)) {
+			chr++;
+			continue;
+		} else if (*chr == 0) {
+			state->ptr = chr;
+			return STATE_EOF;
+		} else if (*chr == '\n') {
+			chr++;
+			state->ptr = chr;
+			return STATE_NEWLINE;
 		}
+		goto text_handle;
 	}
 
-textdone:
-	state->ptr = x;
-	*s = 0;
+text_done:
+	state->ptr = chr;
+	*text = 0;
 	return STATE_TEXT;
-text:
-	state->text = s = x;
-textresume:
-	for (;;) {
-		switch (*x) {
-		case 0:
-			goto textdone;
-		case ' ':
-		case ',':
-		/*case ':':
-		*/
-		case '\t':
-		case '\r':
-			x++;
-			goto textdone;
-		case '\n':
-			state->nexttoken = STATE_NEWLINE;
-			x++;
-			goto textdone;
-		case '"':
-			x++;
-			for (;;) {
-				switch (*x) {
-				case 0:
-					/* unterminated quoted thing */
-					state->ptr = x;
-					return STATE_EOF;
-				case '"':
-					x++;
-					goto textresume;
-				default:
-					*s++ = *x++;
-				}
-			}
-			break;
-		case '\\':
-			x++;
-			switch (*x) {
-			case 0:
-				goto textdone;
-			case 'n':
-				*s++ = '\n';
-				break;
-			case 'r':
-				*s++ = '\r';
-				break;
-			case 't':
-				*s++ = '\t';
-				break;
-			case '\\':
-				*s++ = '\\';
-				break;
-			case '\r':
-				/* \ <cr> <lf> -> line continuation */
-				if (x[1] != '\n') {
-					x++;
+text_handle:
+	state->text = text = chr;
+	while (TRUE) {
+		if (IS_CFG_IGNORE_CHARACTER(*chr)) {
+			chr++;
+			goto text_done;
+		} else if (*chr == '\\') {
+			chr++;
+			if (*chr == 'n')
+				*text = '\n';
+			else if (*chr == 'r')
+				*text = '\r';
+			else if (*chr == '\r') {
+				if (*(chr + 1) != '\n') {
+					chr++;
 					continue;
 				}
-			case '\n':
-				/* \ <lf> -> line continuation */
-				x++;
-				/* eat any extra whitespace */
-				while ((*x == ' ') || (*x == '\t'))
-					x++;
+				chr++;
+				while (IS_CFG_SPACE_CHARACTER(*chr))
+					chr++;
 				continue;
-			default:
-				/* unknown escape -- just copy */
-				*s++ = *x++;
+			} else if (*chr == '\n') {
+				chr++;
+				while (IS_CFG_SPACE_CHARACTER(*chr))
+					chr++;
+				continue;
+			} else if (*chr == 't')
+				*text = '\t';
+			else if (*chr == '\\')
+				*text = '\\';
+			else if (*chr == 0)
+				goto text_done;
+			else
+				*text = *chr++;
+		} else if (*chr == '\n') {
+			state->nexttoken = STATE_NEWLINE;
+			chr++;
+			goto text_done;
+		} else if (*chr == '\r') {
+			chr++;
+			goto text_done;
+		} else if (*chr == '"') {
+			u_int8_t fgResume = FALSE;
+
+			chr++;
+			while (TRUE) {
+				if (*chr == 0) {
+					state->ptr = chr;
+					return STATE_EOF;
+				} else if (*chr == '"') {
+					chr++;
+					fgResume = TRUE;
+					break;
+				}
+				*text++ = *chr++;
 			}
-			continue;
-		default:
-			*s++ = *x++;
+
+			if (fgResume)
+				continue;
+		} else if (*chr == 0)
+			goto text_done;
+		else {
+			*text++ = *chr++;
 #if CFG_SUPPORT_EASY_DEBUG
 			state->textsize++;
 #endif
