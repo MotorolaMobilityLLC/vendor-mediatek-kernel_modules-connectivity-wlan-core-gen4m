@@ -4072,10 +4072,10 @@ void qmPopOutDueToFallAhead(IN struct ADAPTER *prAdapter,
 				prNext)->prPrev = NULL;
 			}
 			prReorderQue->u4NumElem--;
-			DBGLOG(QM, TRACE, "QM: [%d] %d (%d)\n",
-				prReorderQueParm->ucTid,
-				prReorderedSwRfb->u2PacketLen,
-				prReorderedSwRfb->u2SSN);
+			DBGLOG_LIMITED(QM, TRACE, "QM: [%d] %d (%d)\n",
+				       prReorderQueParm->ucTid,
+				       prReorderedSwRfb->u2PacketLen,
+				       prReorderedSwRfb->u2SSN);
 
 			qmPopOutReorderPkt(prAdapter, prReorderedSwRfb,
 				prReturnedQue, RX_DATA_REORDER_AHEAD_COUNT);
