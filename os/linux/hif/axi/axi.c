@@ -400,8 +400,8 @@ static void axiAllocHifMem(struct platform_device *pdev)
 	grMem.u4RsvMemSize = (uint64_t)gWifiRsvMemSize;
 	grMem.u4Offset = 0;
 	DBGLOG(INIT, INFO,
-	       "gWifiRsvMemPhyBase[0x%p], gWifiRsvMemSize[0x%llx]\n",
-	       grMem.pucRsvMemBase, grMem.u4RsvMemSize);
+	       "gWifiRsvMemPhyBase[%pa], gWifiRsvMemSize[0x%llx]\n",
+	       &grMem.pucRsvMemBase, grMem.u4RsvMemSize);
 
 	for (u4Idx = 0; u4Idx < NUM_OF_TX_RING; u4Idx++) {
 		if (!axiAllocRsvMem(TX_RING_SIZE * TXD_SIZE,
