@@ -392,7 +392,7 @@ void scnSendScanReqV2(IN struct ADAPTER *prAdapter)
 		prCmdScanReq->ucScnFuncMask,
 		prCmdScanReq->aucRandomMac);
 
-	scanLogCacheFlushBSS(&(prScanInfo->rScanLogCache.rBSSListFW),
+	scanLogCacheFlushAll(&(prScanInfo->rScanLogCache),
 		LOG_SCAN_REQ_D2F, SCAN_LOG_MSG_MAX_LEN);
 	scanReqLog(prCmdScanReq);
 	if (prCmdScanReq->ucBssIndex == KAL_NETWORK_TYPE_AIS_INDEX)
