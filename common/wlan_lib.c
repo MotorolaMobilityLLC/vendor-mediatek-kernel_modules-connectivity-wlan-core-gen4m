@@ -6402,6 +6402,12 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 	 */
 	prWifiVar->fgForceSTSNum = (uint8_t)wlanCfgGetUint32(
 					   prAdapter, "ForceSTSNum", 0);
+#if CFG_SUPPORT_IDC_CH_SWITCH
+	prWifiVar->ucChannelSwtichColdownTime = (uint8_t) wlanCfgGetUint32(
+			prAdapter, "CSACdTime", 60);/*Second*/
+	prWifiVar->fgCrossBandSwitchEn = (uint8_t) wlanCfgGetUint32(
+			prAdapter, "CrossBandSwitchEn", 1);
+#endif
 
 #if CFG_SUPPORT_LOWLATENCY_MODE
 	prWifiVar->ucLowLatencyModeScan = (uint32_t) wlanCfgGetUint32(
