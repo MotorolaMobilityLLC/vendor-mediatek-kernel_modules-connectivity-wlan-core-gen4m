@@ -12535,6 +12535,8 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers[] = {
 	{CMD_GETBAND, NULL /*wl_android_get_band*/},
 	{CMD_SET_TXPOWER, priv_driver_set_txpower},
 	{CMD_COUNTRY, priv_driver_set_country},
+	{CMD_CSA, priv_driver_set_csa},
+	{CMD_GET_COUNTRY, priv_driver_get_country},
 	{CMD_GET_CHANNELS, priv_driver_get_channels},
 	{CMD_MIRACAST, priv_driver_set_miracast},
 	/* Mediatek private command */
