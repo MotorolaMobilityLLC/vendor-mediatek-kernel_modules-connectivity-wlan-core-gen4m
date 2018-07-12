@@ -51,15 +51,17 @@
  *****************************************************************************/
 /*
  ** Id: //Department/DaVinci/BRANCHES/
- *			MT6620_WIFI_DRIVER_V2_3/include/chips/mt6632.h#1
+ *			MT6620_WIFI_DRIVER_V2_3/include/chips/connac.h#1
  */
 
-/*! \file  mt6632.h
- *    \brief This file contains the info of MT6632
+/*! \file  connac.h
+ *    \brief This file contains the info of CONNAC
  */
 
-#ifndef _MT6632_H
-#define _MT6632_H
+#ifdef CONNAC2X2
+
+#ifndef _CONNAC2X2_H
+#define _CONNAC2X2_H
 
 /*******************************************************************************
  *                         C O M P I L E R   F L A G S
@@ -70,20 +72,26 @@
  *                    E X T E R N A L   R E F E R E N C E S
  *******************************************************************************
  */
+#include "linux/sched.h"
+#if CFG_MTK_ANDROID_WMT
+extern void connectivity_export_show_stack(struct task_struct *tsk,
+					   unsigned long *sp);
+#endif
 
 /*******************************************************************************
  *                              C O N S T A N T S
  *******************************************************************************
  */
-#define MT6632_CHIP_ID					(0x6632)
-#define MT6632_SW_SYNC0					WIFI_CFG_SW_SYNC0
-#define MT6632_SW_SYNC0_RDY_OFFSET		WIFI_CFG_SYNC0_RDY_OFFSET
-#define MT6632_PATCH_START_ADDR			(0x000B4000)
-#define MT6632_TOP_CFG_BASE			(0x0000)
-#define MT6632_TX_DESC_APPEND_LENGTH            44
-#define MT6632_RX_DESC_LENGTH                   16
-#define MT6632_RX_INIT_EVENT_LENGTH             8
-#define MT6632_RX_EVENT_HDR_LENGTH              12
+#define CONNAC2X2_CHIP_ID                          (0x0001)
+#define CONNAC2X2_SW_SYNC0                         CONN_CFG_ON_CONN_ON_MISC_ADDR
+#define CONNAC2X2_SW_SYNC0_RDY_OFFSET \
+	CONN_CFG_ON_CONN_ON_MISC_DRV_FM_STAT_SYNC_SHFT
+#define CONNAC2X2_PATCH_START_ADDR                 (0x0001C000)
+#define CONNAC2X2_TOP_CFG_BASE			CONN_CFG_BASE
+#define CONNAC2X2_TX_DESC_APPEND_LENGTH            32
+#define CONNAC2X2_RX_DESC_LENGTH                   20
+#define CONNAC2X2_RX_INIT_EVENT_LENGTH             8
+#define CONNAC2X2_RX_EVENT_HDR_LENGTH              12
 
 /*******************************************************************************
  *                         D A T A   T Y P E S
@@ -115,4 +123,7 @@
  *******************************************************************************
  */
 
-#endif /* _MT6632_H */
+#endif /* _CONNAC2X2_H */
+
+#endif /* CONNAC2X2 */
+

@@ -660,7 +660,7 @@ static void *pcieAllocRxBuf(struct GL_HIF_INFO *prHifInfo,
 	dma_addr_t rAddr;
 
 	if (!pkt) {
-		DBGLOG(HAL, ERROR, "can't allocate rx %u size packet\n",
+		DBGLOG(HAL, ERROR, "can't allocate rx %lu size packet\n",
 		       prDmaBuf->AllocSize);
 		prDmaBuf->AllocPa = NULL;
 		prDmaBuf->AllocVa = NULL;

@@ -49,15 +49,15 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  *****************************************************************************/
-/*! \file   mt7663.c
+/*! \file   connac.c
  *  \brief  Internal driver stack will export the required procedures here
  *          for GLUE Layer.
  *
- *    This file contains all routines which are exported from MediaTek 802.11
- *    Wireless LAN driver stack to GLUE Layer.
+ *  This file contains all routines which are exported from MediaTek 802.11
+ *  Wireless LAN driver stack to GLUE Layer.
  */
 
-#ifdef MT7663
+#ifdef CONNAC2X2
 
 /*******************************************************************************
  *                         C O M P I L E R   F L A G S
@@ -70,41 +70,25 @@
  */
 #include "precomp.h"
 
-#include "mt7663.h"
+#include "connac2x2.h"
 
 /*******************************************************************************
  *                              C O N S T A N T S
  *******************************************************************************
  */
-
-/*******************************************************************************
- *                                 M A C R O S
- *******************************************************************************
- */
-
-/*******************************************************************************
- *                   F U N C T I O N   D E C L A R A T I O N S
- *******************************************************************************
- */
-
-/*******************************************************************************
- *                              F U N C T I O N S
- *******************************************************************************
- */
-
-
-/*******************************************************************************
- *                            P U B L I C   D A T A
- *******************************************************************************
- */
-struct ECO_INFO mt7663_eco_table[] = {
-	/* HW version,  ROM version,    Factory version */
-	{0x00, 0x00, 0x0A, 0x01},	/* E1 */
-	{0x00, 0x00, 0x00, 0x00}	/* End of table */
+uint8_t *apucConnac2x2FwName[] = {
+	(uint8_t *) CFG_FW_FILENAME "_soc2_0",
+	NULL
 };
 
-#if defined(_HIF_PCIE)
-struct PCIE_CHIP_CR_MAPPING mt7663_bus2chip_cr_mapping[] = {
+struct ECO_INFO connac2x2_eco_table[] = {
+	/* HW version,  ROM version,    Factory version */
+	{0x00, 0x00, 0xA, 0x1}, /* E1 */
+	{0x00, 0x00, 0x0, 0x0}	/* End of table */
+};
+
+#if defined(_HIF_PCIE) || defined(_HIF_AXI)
+struct PCIE_CHIP_CR_MAPPING connac2x2_bus2chip_cr_mapping[] = {
 	/* chip addr, bus addr, range */
 	{0x80000000, 0x00002000, 0x00001000}, /* MCU_CFG */
 
@@ -143,21 +127,79 @@ struct PCIE_CHIP_CR_MAPPING mt7663_bus2chip_cr_mapping[] = {
 
 	{0x80020000, 0x000B0000, 0x00010000}, /* CONN_TOP_MISC_OFF */
 	{0x81020000, 0x000C0000, 0x00010000}, /* CONN_TOP_MISC_ON */
-	{0x7c030000, 0x000F0000, 0x00010000}, /* CONN_TOP_MISC_ON */
 
 	{0x0, 0x0, 0x0}
 };
-#endif /* _HIF_PCIE */
+#endif /* _HIF_PCIE || _HIF_AXI */
 
-struct BUS_INFO mt7663_bus_info = {
-#if defined(_HIF_PCIE)
-	.top_cfg_base = MT7663_TOP_CFG_BASE,
-	.bus2chip = mt7663_bus2chip_cr_mapping,
+int connac2x2GetIpSetVersion(struct GLUE_INFO *prGlueInfo)
+{
+	return 1;
+}
+
+void connac2x2ConstructFirmwarePrio(struct GLUE_INFO *prGlueInfo,
+	uint8_t **apucNameTable, uint8_t **apucName,
+	uint8_t *pucNameIdx, uint8_t ucMaxNameIdx)
+{
+	uint8_t ucIdx = 0;
+
+	for (ucIdx = 0; apucConnac2x2FwName[ucIdx]; ucIdx++) {
+		if ((*pucNameIdx + 3) < ucMaxNameIdx) {
+			/* Type 1. WIFI_RAM_CODE_soc1_0_1_1 */
+			snprintf(*(apucName + (*pucNameIdx)),
+					CFG_FW_NAME_MAX_LEN, "%s_%u_%u",
+					apucConnac2x2FwName[ucIdx],
+					connac2x2GetIpSetVersion(prGlueInfo),
+					wlanGetEcoVersion(
+						prGlueInfo->prAdapter));
+			(*pucNameIdx) += 1;
+
+			/* Type 2. WIFI_RAM_CODE_soc1_0_1_1.bin */
+			snprintf(*(apucName + (*pucNameIdx)),
+					CFG_FW_NAME_MAX_LEN, "%s_%u_%u.bin",
+					apucConnac2x2FwName[ucIdx],
+					connac2x2GetIpSetVersion(prGlueInfo),
+					wlanGetEcoVersion(
+						prGlueInfo->prAdapter));
+			(*pucNameIdx) += 1;
+
+			/* Type 3. WIFI_RAM_CODE_soc1_0 */
+			snprintf(*(apucName + (*pucNameIdx)),
+					CFG_FW_NAME_MAX_LEN, "%s",
+					apucConnac2x2FwName[ucIdx]);
+			(*pucNameIdx) += 1;
+
+			/* Type 4. WIFI_RAM_CODE_soc1_0.bin */
+			snprintf(*(apucName + (*pucNameIdx)),
+					CFG_FW_NAME_MAX_LEN, "%s.bin",
+					apucConnac2x2FwName[ucIdx]);
+			(*pucNameIdx) += 1;
+		} else {
+			/* the table is not large enough */
+			DBGLOG(INIT, ERROR,
+				"kalFirmwareImageMapping >> file name array is not enough.\n");
+			ASSERT(0);
+		}
+	}
+}
+
+void connac2x2ConstructPatchName(struct GLUE_INFO *prGlueInfo,
+	uint8_t **apucName, uint8_t *pucNameIdx)
+{
+	snprintf(apucName[(*pucNameIdx)],
+		CFG_FW_NAME_MAX_LEN, "mtsoc1_0_patch_e%x_hdr.bin",
+		wlanGetEcoVersion(prGlueInfo->prAdapter));
+}
+
+struct BUS_INFO connac2x2_bus_info = {
+#if defined(_HIF_PCIE) || defined(_HIF_AXI)
+	.top_cfg_base = CONNAC2X2_TOP_CFG_BASE,
+	.bus2chip = connac2x2_bus2chip_cr_mapping,
 	.tx_ring_fwdl_idx = 3,
 	.tx_ring_cmd_idx = 15,
 	.tx_ring_data_idx = 0,
 	.fgCheckDriverOwnInt = FALSE,
-	.fgInitPCIeInt = TRUE,
+	.fgInitPCIeInt = FALSE,
 	.u4DmaMask = 36,
 
 	.pdmaSetup = asicPdmaConfig,
@@ -167,11 +209,11 @@ struct BUS_INFO mt7663_bus_info = {
 	.lowPowerOwnSet = asicLowPowerOwnSet,
 	.lowPowerOwnClear = asicLowPowerOwnClear,
 	.wakeUpWiFi = asicWakeUpWiFi,
-	.isValidRegAccess = NULL,
+	.isValidRegAccess = asicIsValidRegAccess,
 	.getMailboxStatus = asicGetMailboxStatus,
 	.setDummyReg = asicSetDummyReg,
 	.checkDummyReg = asicCheckDummyReg,
-#endif /* _HIF_PCIE */
+#endif /* _HIF_PCIE || _HIF_AXI */
 #if defined(_HIF_USB)
 	.u4UdmaWlCfg_0_Addr = CONNAC_UDMA_WLCFG_0,
 	.u4UdmaWlCfg_1_Addr = CONNAC_UDMA_WLCFG_1,
@@ -180,34 +222,28 @@ struct BUS_INFO mt7663_bus_info = {
 		UDMA_WLCFG_0_RX_EN(1) |
 		UDMA_WLCFG_0_RX_MPSZ_PAD0(1) |
 		UDMA_WLCFG_0_1US_TIMER_EN(1)),
-	.u4UdmaTxTimeout = UDMA_TX_TIMEOUT_LIMIT,
-	.asicUsbSuspend = asicUsbSuspend,
-	.asicUsbEventEpDetected = asicUsbEventEpDetected,
 #endif /* _HIF_USB */
-#if defined(_HIF_SDIO)
-	.halTxGetFreeResource = halTxGetFreeResource_v1,
-	.halTxReturnFreeResource = halTxReturnFreeResource_v1,
-	.halRestoreTxResource = halRestoreTxResource_v1,
-	.halUpdateTxDonePendingCount = halUpdateTxDonePendingCount_v1,
-#endif /* _HIF_SDIO */
 };
 
-struct FWDL_OPS_T mt7663_fw_dl_ops = {
-	.constructFirmwarePrio = NULL,
+struct FWDL_OPS_T connac2x2_fw_dl_ops = {
+	.constructFirmwarePrio = connac2x2ConstructFirmwarePrio,
+	.constructPatchName = connac2x2ConstructPatchName,
+#if !CFG_MTK_ANDROID_WMT
 	.downloadPatch = wlanDownloadPatch,
+#endif
 	.downloadFirmware = wlanConnacFormatDownload,
 	.getFwInfo = wlanGetConnacFwInfo,
 	.getFwDlInfo = asicGetFwDlInfo,
 };
 
-struct TX_DESC_OPS_T mt7663TxDescOps = {
+struct TX_DESC_OPS_T connac2x2TxDescOps = {
 	.fillNicAppend = fillNicTxDescAppend,
 	.fillHifAppend = fillTxDescAppendByHostV2,
 	.fillTxByteCount = fillTxDescTxByteCount,
 };
 
 #if CFG_SUPPORT_QA_TOOL
-struct ATE_OPS_T mt7663AteOps = {
+struct ATE_OPS_T connac2x2AteOps = {
 	.setICapStart = connacSetICapStart,
 	.getICapStatus = connacGetICapStatus,
 	.getICapIQData = connacGetICapIQData,
@@ -215,7 +251,7 @@ struct ATE_OPS_T mt7663AteOps = {
 };
 #endif
 
-struct CHIP_DBG_OPS mt7663_debug_ops = {
+struct CHIP_DBG_OPS connac2x2_debug_ops = {
 #if defined(_HIF_PCIE) || defined(_HIF_AXI)
 	.showPdmaInfo = halShowPdmaInfo,
 	.showPseInfo = halShowPseInfo,
@@ -231,44 +267,49 @@ struct CHIP_DBG_OPS mt7663_debug_ops = {
 #endif
 };
 
-/* Litien code refine to support multi chip */
-struct mt66xx_chip_info mt66xx_chip_info_mt7663 = {
-	.bus_info = &mt7663_bus_info,
-	.fw_dl_ops = &mt7663_fw_dl_ops,
-	.prTxDescOps = &mt7663TxDescOps,
+struct mt66xx_chip_info mt66xx_chip_info_connac2x2 = {
+	.bus_info = &connac2x2_bus_info,
+	.fw_dl_ops = &connac2x2_fw_dl_ops,
+	.prTxDescOps = &connac2x2TxDescOps,
 #if CFG_SUPPORT_QA_TOOL
-	.prAteOps = &mt7663AteOps,
+	.prAteOps = &connac2x2AteOps,
 #endif
-	.prDebugOps = &mt7663_debug_ops,
+	.prDebugOps = &connac2x2_debug_ops,
 
-	.chip_id = MT7663_CHIP_ID,
+	.chip_id = CONNAC2X2_CHIP_ID,
 	.should_verify_chip_id = FALSE,
-	.sw_sync0 = MT7663_SW_SYNC0,
+	.sw_sync0 = CONNAC2X2_SW_SYNC0,
 	.sw_ready_bits = WIFI_FUNC_NO_CR4_READY_BITS,
-	.sw_ready_bit_offset = MT7663_SW_SYNC0_RDY_OFFSET,
-	.patch_addr = MT7663_PATCH_START_ADDR,
+	.sw_ready_bit_offset = CONNAC2X2_SW_SYNC0_RDY_OFFSET,
+	.patch_addr = CONNAC2X2_PATCH_START_ADDR,
 	.is_support_cr4 = FALSE,
-	.txd_append_size = MT7663_TX_DESC_APPEND_LENGTH,
-	.rxd_size = MT7663_RX_DESC_LENGTH,
-	.init_event_size = MT7663_RX_INIT_EVENT_LENGTH,
-	.event_hdr_size = MT7663_RX_EVENT_HDR_LENGTH,
-	.eco_info = mt7663_eco_table,
+	.txd_append_size = CONNAC2X2_TX_DESC_APPEND_LENGTH,
+	.rxd_size = CONNAC2X2_RX_DESC_LENGTH,
+	.init_event_size = CONNAC2X2_RX_INIT_EVENT_LENGTH,
+	.event_hdr_size = CONNAC2X2_RX_EVENT_HDR_LENGTH,
+	.eco_info = connac2x2_eco_table,
 	.isNicCapV1 = FALSE,
-	.is_support_efuse = TRUE,
+	.is_support_efuse = FALSE,
 
-	.u4ChipIpVersion = 0,
-	.u4ChipIPConfig = 0,
+	/* IP info, should be overwrite by getNicCapabalityV2 */
+	.u4ChipIpVersion = CONNAC_CHIP_IP_VERSION,
+	.u4ChipIpConfig = CONNAC_CHIP_IP_CONFIG,
 	.asicCapInit = asicCapInit,
 	.asicEnableFWDownload = asicEnableFWDownload,
-	.asicGetChipID = NULL,
-	.downloadBufferBin = wlanConnacDownloadBufferBin,
+	.asicGetChipID = asicGetChipID,
+	.downloadBufferBin = NULL,
+#if CFG_MTK_ANDROID_WMT
+	.showTaskStack = connectivity_export_show_stack,
+#else
+	.showTaskStack = NULL,
+#endif
 	.is_support_hw_amsdu = TRUE,
 	.ucMaxSwAmsduNum = 0,
-	.workAround = BIT(WORKAROUND_MT7663_BRINGUP_20171205),
+	.workAround = 0,
 };
 
-struct mt66xx_hif_driver_data mt66xx_driver_data_mt7663 = {
-	.chip_info = &mt66xx_chip_info_mt7663,
+struct mt66xx_hif_driver_data mt66xx_driver_data_connac2x2 = {
+	.chip_info = &mt66xx_chip_info_connac2x2,
 };
 
-#endif /* MT7663 */
+#endif /* CONNAC2X2 */
