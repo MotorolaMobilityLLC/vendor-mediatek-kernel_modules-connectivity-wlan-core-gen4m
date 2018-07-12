@@ -831,7 +831,8 @@ static void rlmFillExtCapIE(struct ADAPTER *prAdapter,
 	fgAppendVhtCap = FALSE;
 
 	/* Check append rule */
-	if (prAdapter->rWifiVar.ucAvailablePhyTypeSet & PHY_TYPE_SET_802_11AC) {
+	if (prAdapter->rWifiVar.ucAvailablePhyTypeSet
+		& PHY_TYPE_SET_802_11AC) {
 		/* Note: For AIS connecting state,
 		 * structure in BSS_INFO will not be inited
 		 *	 So, we check StaRec instead of BssInfo
@@ -905,7 +906,8 @@ static void rlmFillExtCapIE(struct ADAPTER *prAdapter,
 	fgAppendVhtCap = FALSE;
 
 	/* Check append rule */
-	if (prAdapter->rWifiVar.ucAvailablePhyTypeSet & PHY_TYPE_SET_802_11AC) {
+	if (prAdapter->rWifiVar.ucAvailablePhyTypeSet
+		& PHY_TYPE_SET_802_11AC) {
 		/* Note: For AIS connecting state,
 		 * structure in BSS_INFO will not be inited
 		 *       So, we check StaRec instead of BssInfo
