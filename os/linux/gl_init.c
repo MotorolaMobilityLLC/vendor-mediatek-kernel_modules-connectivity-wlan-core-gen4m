@@ -94,6 +94,8 @@ struct REG_INFO grRegInfo;
 uint8_t g_aucNvram[CFG_FILE_WIFI_REC_SIZE];
 
 struct wireless_dev *gprWdev;
+/* Support QoS */
+struct pm_qos_request wifibw_qos_request;
 /*******************************************************************************
 *                             D A T A   T Y P E S
 ********************************************************************************
@@ -3116,6 +3118,12 @@ static int32_t wlanProbe(void *pvData, void *pvDriverData)
 	*/
 		wlanFeatureToFw(prGlueInfo->prAdapter);
 #endif
+
+		/* Support QoS */
+		pm_qos_add_request(&wifibw_qos_request,
+			PM_QOS_GPU_MEMORY_BANDWIDTH,
+			PM_QOS_DEFAULT_VALUE);
+
 		wlanCfgSetSwCtrl(prGlueInfo->prAdapter);
 		wlanCfgSetChip(prGlueInfo->prAdapter);
 		wlanCfgSetCountryCode(prGlueInfo->prAdapter);
@@ -3261,6 +3269,9 @@ static void wlanRemove(void)
 
 	prAdapter = prGlueInfo->prAdapter;
 	kalPerMonDestroy(prGlueInfo);
+
+	/* Support QoS */
+	pm_qos_remove_request(&wifibw_qos_request);
 
 	/* complete possible pending oid, which may block wlanRemove some time and then whole chip reset may failed */
 	if (kalIsResetting())

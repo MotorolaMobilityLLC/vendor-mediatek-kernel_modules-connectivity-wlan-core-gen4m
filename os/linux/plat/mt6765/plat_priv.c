@@ -11,10 +11,11 @@
 
 #include <cpu_ctrl.h>
 #include <topo_ctrl.h>
+#ifdef WLAN_FORCE_DDR_OPP
 #include <linux/pm_qos.h>
+#endif
 
 #include "precomp.h"
-#include <helio-dvfsrc-opp.h>
 
 #ifdef CONFIG_MTK_EMI
 #include <mt_emi_api.h>
@@ -30,8 +31,10 @@ int32_t kalBoostCpu(IN struct ADAPTER *prAdapter,
 {
 	struct ppm_limit_data freq_to_set[MAX_CLUSTER_NUM];
 	int32_t i = 0, i4Freq = -1;
+#ifdef WLAN_FORCE_DDR_OPP
 	static struct pm_qos_request wifi_qos_request;
 	static u_int8_t fgRequested;
+#endif
 	uint32_t u4ClusterNum = topo_ctrl_get_nr_clusters();
 
 	ASSERT(u4ClusterNum <= MAX_CLUSTER_NUM);
@@ -44,6 +47,7 @@ int32_t kalBoostCpu(IN struct ADAPTER *prAdapter,
 
 	update_userlimit_cpu_freq(CPU_KIR_WIFI, u4ClusterNum, freq_to_set);
 
+#ifdef WLAN_FORCE_DDR_OPP
 	if (u4TarPerfLevel >= u4BoostCpuTh) {
 		if (!fgRequested) {
 			fgRequested = 1;
@@ -57,6 +61,7 @@ int32_t kalBoostCpu(IN struct ADAPTER *prAdapter,
 		pm_qos_remove_request(&wifi_qos_request);
 		fgRequested = 0;
 	}
+#endif
 	return 0;
 }
 
