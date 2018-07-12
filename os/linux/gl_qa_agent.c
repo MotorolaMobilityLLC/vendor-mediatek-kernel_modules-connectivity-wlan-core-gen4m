@@ -2250,6 +2250,7 @@ static int32_t HQA_WriteBulkEEPROM(struct net_device *prNetDev,
 			    !prAdapter->chip_info->is_support_efuse) {
 				log_dbg(RFTEST, WARN, "Efuse not support\n");
 				rStatus = WLAN_STATUS_NOT_SUPPORTED;
+				kfree(Buffer);
 				ResponseToQA(HqaCmdFrame, prIwReqData,
 					     2, rStatus);
 				return rStatus;
