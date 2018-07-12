@@ -80,6 +80,47 @@
 *                              C O N S T A N T S
 ********************************************************************************
 */
+/* These values must sync from Wifi HAL
+ * /frameworks/base/wifi/java/android/net/wifi/WifiManager.java
+ */
+#define WIFI_FEATURE_INFRA	      (0x0001) /* Basic infrastructure mode */
+#define WIFI_FEATURE_INFRA_5G         (0x0002) /* Support for 5 GHz Band */
+#define WIFI_FEATURE_PASSPOINT        (0x0004) /* Support for GAS/ANQP */
+#define WIFI_FEATURE_P2P              (0x0008) /* Wifi-Direct */
+#define WIFI_FEATURE_MOBILE_HOTSPOT   (0x0010) /* Soft AP */
+#define WIFI_FEATURE_SCANNER          (0x0020) /* WifiScanner APIs */
+#define WIFI_FEATURE_AWARE            (0x0040) /* Wi-Fi AWare networking */
+#define WIFI_FEATURE_D2D_RTT          (0x0080) /* Device-to-device RTT */
+#define WIFI_FEATURE_D2AP_RTT         (0x0100) /* Device-to-AP RTT */
+#define WIFI_FEATURE_BATCH_SCAN       (0x0200) /* Batched Scan (deprecated) */
+#define WIFI_FEATURE_PNO              (0x0400) /* Preferred network offload */
+#define WIFI_FEATURE_ADDITIONAL_STA   (0x0800) /* Support for two STAs */
+#define WIFI_FEATURE_TDLS             (0x1000) /* Tunnel directed link setup */
+#define WIFI_FEATURE_TDLS_OFFCHANNEL  (0x2000) /* Support for TDLS off channel*/
+#define WIFI_FEATURE_EPR              (0x4000) /* Enhanced power reporting */
+#define WIFI_FEATURE_AP_STA           (0x8000) /* AP STA Concurrency */
+#define WIFI_FEATURE_LINK_LAYER_STATS (0x10000) /* Link layer stats collection*/
+#define WIFI_FEATURE_LOGGER           (0x20000) /* WiFi Logger */
+#define WIFI_FEATURE_HAL_EPNO         (0x40000) /* Enhanced PNO */
+#define WIFI_FEATURE_RSSI_MONITOR     (0x80000) /* RSSI Monitor */
+#define WIFI_FEATURE_MKEEP_ALIVE      (0x100000) /* mkeep_alive */
+#define WIFI_FEATURE_CONFIG_NDO       (0x200000) /* ND offload */
+#define WIFI_FEATURE_TRANSMIT_POWER   (0x400000) /* Capture transmit power */
+#define WIFI_FEATURE_CONTROL_ROAMING  (0x800000) /* Control firmware roaming */
+#define WIFI_FEATURE_IE_WHITELIST     (0x1000000) /* Probe IE white listing */
+#define WIFI_FEATURE_SCAN_RAND        (0x2000000) /* Random MAC & Probe seq */
+#define WIFI_FEATURE_TX_POWER_LIMIT   (0x4000000) /* Set Tx power limit */
+
+#define WIFI_HAL_FEATURE_SET (WIFI_FEATURE_INFRA |\
+			      WIFI_FEATURE_INFRA_5G |\
+			      WIFI_FEATURE_P2P |\
+			      WIFI_FEATURE_MOBILE_HOTSPOT |\
+			      WIFI_FEATURE_SCANNER |\
+			      WIFI_FEATURE_PNO |\
+			      WIFI_FEATURE_TDLS |\
+			      WIFI_FEATURE_RSSI_MONITOR |\
+			      WIFI_FEATURE_CONTROL_ROAMING\
+			      )
 
 /*******************************************************************************
 *                             D A T A   T Y P E S
@@ -1136,4 +1177,49 @@ nla_put_failure:
 	kfree_skb(skb);
 	return -ENOMEM;
 }
-#endif
+
+int mtk_cfg80211_vendor_get_supported_feature_set(struct wiphy *wiphy,
+		struct wireless_dev *wdev, const void *data, int data_len)
+{
+	uint32_t u4FeatureSet = WIFI_HAL_FEATURE_SET;
+	struct GLUE_INFO *prGlueInfo;
+	struct REG_INFO *prRegInfo;
+	struct sk_buff *skb;
+
+	ASSERT(wiphy);
+	ASSERT(wdev);
+	if (wdev->iftype == NL80211_IFTYPE_AP)
+		prGlueInfo = *((struct GLUE_INFO **) wiphy_priv(wiphy));
+	else
+		prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wiphy);
+	if (!prGlueInfo)
+		return -EFAULT;
+	prRegInfo = prGlueInfo->prRegInfo;
+	if (!prRegInfo)
+		return -EFAULT;
+
+	if (prRegInfo->ucSupport5GBand)
+		u4FeatureSet |= WIFI_FEATURE_INFRA_5G;
+
+	skb = cfg80211_vendor_cmd_alloc_reply_skb(wiphy, sizeof(u4FeatureSet));
+	if (!skb) {
+		DBGLOG(REQ, ERROR, "Allocate skb failed\n");
+		return -ENOMEM;
+	}
+
+	if (unlikely(
+	    nla_put_nohdr(skb, sizeof(u4FeatureSet), &u4FeatureSet) < 0)) {
+		DBGLOG(REQ, ERROR, "nla_put_nohdr failed\n");
+		goto nla_put_failure;
+	}
+
+	DBGLOG(REQ, INFO, "supported feature set=0x%x\n", u4FeatureSet);
+
+	return cfg80211_vendor_cmd_reply(skb);
+
+nla_put_failure:
+	kfree_skb(skb);
+	return -EFAULT;
+}
+
+#endif /* LINUX_VERSION_CODE >= KERNEL_VERSION(3, 18, 0) */
