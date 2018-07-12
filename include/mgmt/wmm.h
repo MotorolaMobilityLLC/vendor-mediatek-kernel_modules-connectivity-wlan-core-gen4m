@@ -1,21 +1,21 @@
 /*
-* Copyright (C) 2016 MediaTek Inc.
-*
-* This program is free software: you can redistribute it and/or modify it under
-* the terms of the
-* GNU General Public License version 2 as published by the Free Software
-* Foundation.
-*
-* This program is distributed in the hope that it will be useful, but WITHOUT
-* ANY WARRANTY;
-* without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
-* PARTICULAR PURPOSE.
-* See the GNU General Public License for more details.
-*
-* You should have received a copy of the GNU General Public License along with
-* this program.
-* If not, see <http://www.gnu.org/licenses/>.
-*/
+ * Copyright (C) 2016 MediaTek Inc.
+ *
+ * This program is free software: you can redistribute it and/or modify it under
+ * the terms of the
+ * GNU General Public License version 2 as published by the Free Software
+ * Foundation.
+ *
+ * This program is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY;
+ * without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+ * PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along with
+ * this program.
+ * If not, see <http://www.gnu.org/licenses/>.
+ */
 
 #ifndef WMM_HDR_H
 #define WMM_HDR_H
@@ -37,13 +37,13 @@
 
 #define CFG_SUPPORT_SOFT_ACM 1 /* do Admission Control in driver */
 /*
-** In WMM, TSs are identified with TIDs values 0 through 7. Any TID may map onto
-** any UP and thus onto any AC, however for each AC used between an RA and TA,
-** only the following combinations are valid:
-** No TS, One uplink TS, one Download link TS, one uplink and one uplink TS, one
-** bi-directional TS.
-** so maximum 8 TSs are allowed in a RA & TA context.
-*/
+ * In WMM, TSs are identified with TIDs values 0 through 7. Any TID may
+ * map onto any UP and thus onto any AC, however for each AC used between
+ * an RA and TA, only the following combinations are valid:
+ * No TS, One uplink TS, one Download link TS, one uplink and one uplink
+ * TS, one bi-directional TS.
+ * so maximum 8 TSs are allowed in a RA & TA context.
+ */
 #define WMM_TSPEC_ID_NUM 8
 
 /*WMM-2.2.11 WMM TSPEC IE*/
@@ -126,9 +126,9 @@ struct SOFT_ACM_CTRL {
 
 struct WMM_INFO {
 	/* A TS is identified uniquely by its TID value within the context of
-	** the RA and TA
-	** the index is TID for this array
-	*/
+	 ** the RA and TA
+	 ** the index is TID for this array
+	 */
 	struct TSPEC_INFO arTsInfo[WMM_TSPEC_ID_NUM];
 	struct LINK rActiveTsmReq;
 	OS_SYSTIME rTriggeredTsmRptTime;
