@@ -272,7 +272,8 @@ int mtk_cfg80211_vendor_get_channel_list(struct wiphy *wiphy,
 			"Can not alloc memory for rf channel info\n");
 		return -ENOMEM;
 	}
-	kalMemZero(aucChannelList, sizeof(struct RF_CHANNEL_INFO));
+	kalMemZero(aucChannelList,
+		sizeof(struct RF_CHANNEL_INFO)*MAX_CHN_NUM);
 
 	switch (band) {
 	case 1: /* 2.4G band */
