@@ -98,6 +98,204 @@
 				sizeof(struct WLAN_REQ_ENTRY))
 #define	CMD_OID_BUF_LENGTH	4096
 
+#define CMD_START		"START"
+#define CMD_STOP		"STOP"
+#define CMD_SCAN_ACTIVE		"SCAN-ACTIVE"
+#define CMD_SCAN_PASSIVE	"SCAN-PASSIVE"
+#define CMD_RSSI		"RSSI"
+#define CMD_LINKSPEED		"LINKSPEED"
+#define CMD_RXFILTER_START	"RXFILTER-START"
+#define CMD_RXFILTER_STOP	"RXFILTER-STOP"
+#define CMD_RXFILTER_ADD	"RXFILTER-ADD"
+#define CMD_RXFILTER_REMOVE	"RXFILTER-REMOVE"
+#define CMD_BTCOEXSCAN_START	"BTCOEXSCAN-START"
+#define CMD_BTCOEXSCAN_STOP	"BTCOEXSCAN-STOP"
+#define CMD_BTCOEXMODE		"BTCOEXMODE"
+#define CMD_SETSUSPENDOPT	"SETSUSPENDOPT"
+#define CMD_SETSUSPENDMODE	"SETSUSPENDMODE"
+#define CMD_P2P_DEV_ADDR	"P2P_DEV_ADDR"
+#define CMD_SETFWPATH		"SETFWPATH"
+#define CMD_SETBAND		"SETBAND"
+#define CMD_GETBAND		"GETBAND"
+#define CMD_AP_START		"AP_START"
+
+#if CFG_SUPPORT_QA_TOOL
+#define CMD_GET_RX_STATISTICS	"GET_RX_STATISTICS"
+#endif
+#define CMD_GET_STAT		"GET_STAT"
+#define CMD_GET_BSS_STATISTICS	"GET_BSS_STATISTICS"
+#define CMD_GET_STA_STATISTICS	"GET_STA_STATISTICS"
+#define CMD_GET_WTBL_INFO	"GET_WTBL"
+#define CMD_GET_MIB_INFO	"GET_MIB"
+#define CMD_GET_STA_INFO	"GET_STA"
+#define CMD_SET_FW_LOG		"SET_FWLOG"
+#define CMD_GET_QUE_INFO	"GET_QUE"
+#define CMD_GET_MEM_INFO	"GET_MEM"
+#define CMD_GET_HIF_INFO	"GET_HIF"
+#define CMD_GET_TP_INFO		"GET_TP"
+#define CMD_GET_STA_KEEP_CNT    "KEEPCOUNTER"
+#define CMD_STAT_RESET_CNT      "RESETCOUNTER"
+#define CMD_STAT_NOISE_SEL      "NOISESELECT"
+#define CMD_STAT_GROUP_SEL      "GROUP"
+
+#define CMD_SET_TXPOWER			"SET_TXPOWER"
+#define CMD_COUNTRY			"COUNTRY"
+#define CMD_GET_COUNTRY			"GET_COUNTRY"
+#define CMD_GET_CHANNELS		"GET_CHANNELS"
+#define CMD_P2P_SET_NOA			"P2P_SET_NOA"
+#define CMD_P2P_GET_NOA			"P2P_GET_NOA"
+#define CMD_P2P_SET_PS			"P2P_SET_PS"
+#define CMD_SET_AP_WPS_P2P_IE		"SET_AP_WPS_P2P_IE"
+#define CMD_SETROAMMODE			"SETROAMMODE"
+#define CMD_MIRACAST			"MIRACAST"
+
+#if (CFG_SUPPORT_DFS_MASTER == 1)
+#define CMD_SHOW_DFS_STATE		"SHOW_DFS_STATE"
+#define CMD_SHOW_DFS_RADAR_PARAM	"SHOW_DFS_RADAR_PARAM"
+#define CMD_SHOW_DFS_HELP		"SHOW_DFS_HELP"
+#define CMD_SHOW_DFS_CAC_TIME		"SHOW_DFS_CAC_TIME"
+#endif
+
+#define CMD_PNOSSIDCLR_SET	"PNOSSIDCLR"
+#define CMD_PNOSETUP_SET	"PNOSETUP "
+#define CMD_PNOENABLE_SET	"PNOFORCE"
+#define CMD_PNODEBUG_SET	"PNODEBUG"
+#define CMD_WLS_BATCHING	"WLS_BATCHING"
+
+#define CMD_OKC_SET_PMK		"SET_PMK"
+#define CMD_OKC_ENABLE		"OKC_ENABLE"
+
+#define CMD_SETMONITOR		"MONITOR"
+#define CMD_SETBUFMODE		"BUFFER_MODE"
+
+#if CFG_AUTO_CHANNEL_SEL_SUPPORT
+#define CMD_GET_CH_RANK_LIST	"GET_CH_RANK_LIST"
+#define CMD_GET_CH_DIRTINESS	"GET_CH_DIRTINESS"
+#endif
+
+#define CMD_EFUSE		"EFUSE"
+
+/* miracast related definition */
+#define MIRACAST_MODE_OFF	0
+#define MIRACAST_MODE_SOURCE	1
+#define MIRACAST_MODE_SINK	2
+
+#ifndef MIRACAST_AMPDU_SIZE
+#define MIRACAST_AMPDU_SIZE	8
+#endif
+
+#ifndef MIRACAST_MCHAN_ALGO
+#define MIRACAST_MCHAN_ALGO     1
+#endif
+
+#ifndef MIRACAST_MCHAN_BW
+#define MIRACAST_MCHAN_BW       25
+#endif
+
+#define	CMD_BAND_AUTO	0
+#define	CMD_BAND_5G		1
+#define	CMD_BAND_2G		2
+#define	CMD_BAND_ALL	3
+
+/* Mediatek private command */
+#define CMD_SET_MCR		"SET_MCR"
+#define CMD_GET_MCR		"GET_MCR"
+#define CMD_SET_DRV_MCR		"SET_DRV_MCR"
+#define CMD_GET_DRV_MCR		"GET_DRV_MCR"
+#define CMD_SET_SW_CTRL	        "SET_SW_CTRL"
+#define CMD_GET_SW_CTRL         "GET_SW_CTRL"
+#define CMD_SET_CFG             "SET_CFG"
+#define CMD_GET_CFG             "GET_CFG"
+#define CMD_SET_CHIP            "SET_CHIP"
+#define CMD_GET_CHIP            "GET_CHIP"
+#define CMD_SET_DBG_LEVEL       "SET_DBG_LEVEL"
+#define CMD_GET_DBG_LEVEL       "GET_DBG_LEVEL"
+#define CMD_ADD_TS		"addts"
+#define CMD_DEL_TS		"delts"
+#define CMD_DUMP_TS		"dumpts"
+#define CMD_RM_IT		"RM-IT"
+#define CMD_DUMP_UAPSD		"dumpuapsd"
+#define CMD_FW_EVENT		"FW-EVENT "
+#define CMD_SET_FCC_CERT        "SET_FCC_CHANNEL"
+#define PRIV_CMD_SIZE 512
+#define CMD_SET_FIXED_RATE      "FixedRate"
+#define CMD_GET_VERSION         "VER"
+#define CMD_SET_TEST_MODE	"SET_TEST_MODE"
+#define CMD_SET_TEST_CMD	"SET_TEST_CMD"
+#define CMD_GET_TEST_RESULT	"GET_TEST_RESULT"
+#define CMD_GET_STA_STAT        "STAT"
+#define CMD_GET_STA_STAT2       "STAT2"
+#define CMD_GET_STA_RX_STAT	"RX_STAT"
+#define CMD_SET_ACL_POLICY      "SET_ACL_POLICY"
+#define CMD_ADD_ACL_ENTRY       "ADD_ACL_ENTRY"
+#define CMD_DEL_ACL_ENTRY       "DEL_ACL_ENTRY"
+#define CMD_SHOW_ACL_ENTRY      "SHOW_ACL_ENTRY"
+#define CMD_CLEAR_ACL_ENTRY     "CLEAR_ACL_ENTRY"
+#define CMD_SET_RA_DBG		"RADEBUG"
+#define CMD_SET_FIXED_FALLBACK	"FIXEDRATEFALLBACK"
+#define CMD_GET_STA_IDX         "GET_STA_IDX"
+#define CMD_GET_TX_POWER_INFO   "TxPowerInfo"
+
+#if CFG_WOW_SUPPORT
+#define CMD_WOW_START		"WOW_START"
+#define CMD_SET_WOW_ENABLE	"SET_WOW_ENABLE"
+#define CMD_SET_WOW_PAR		"SET_WOW_PAR"
+#define CMD_SET_WOW_UDP		"SET_WOW_UDP"
+#define CMD_SET_WOW_TCP		"SET_WOW_TCP"
+#define CMD_GET_WOW_PORT	"GET_WOW_PORT"
+#endif
+#define CMD_SET_ADV_PWS		"SET_ADV_PWS"
+#define CMD_SET_MDTIM		"SET_MDTIM"
+
+#define CMD_SET_DBDC		"SET_DBDC"
+
+#if CFG_SUPPORT_CAL_RESULT_BACKUP_TO_HOST
+#define CMD_SET_CALBACKUP_TEST_DRV_FW		"SET_CALBACKUP_TEST_DRV_FW"
+#endif
+
+#define CMD_GET_CNM		"GET_CNM"
+
+#if CFG_SUPPORT_ADVANCE_CONTROL
+#define CMD_SW_DBGCTL_ADVCTL_SET_ID 0xa1260000
+#define CMD_SW_DBGCTL_ADVCTL_GET_ID 0xb1260000
+#define CMD_SET_NOISE		"SET_NOISE"
+#define CMD_GET_NOISE           "GET_NOISE"
+#define CMD_SET_POP		"SET_POP"
+#define CMD_SET_ED		"SET_ED"
+#define CMD_SET_PD		"SET_PD"
+#define CMD_SET_MAX_RFGAIN	"SET_MAX_RFGAIN"
+#endif
+
+#define CMD_SET_SW_AMSDU_NUM      "SET_SW_AMSDU_NUM"
+#define CMD_SET_SW_AMSDU_SIZE      "SET_SW_AMSDU_SIZE"
+
+#define CMD_SET_DRV_SER           "SET_DRV_SER"
+
+/* Debug for consys */
+#define CMD_DBG_SHOW_TR_INFO			"show-tr"
+#define CMD_DBG_SHOW_PLE_INFO			"show-ple"
+#define CMD_DBG_SHOW_PSE_INFO			"show-pse"
+#define CMD_DBG_SHOW_CSR_INFO			"show-csr"
+#define CMD_DBG_SHOW_DMASCH_INFO		"show-dmasch"
+
+#if CFG_SUPPORT_EASY_DEBUG
+#define CMD_FW_PARAM				"set_fw_param"
+#endif /* CFG_SUPPORT_EASY_DEBUG */
+
+static uint8_t g_ucMiracastMode = MIRACAST_MODE_OFF;
+
+struct cmd_tlv {
+	char prefix;
+	char version;
+	char subver;
+	char reserved;
+};
+
+struct priv_driver_cmd_s {
+	char buf[PRIV_CMD_SIZE];
+	int used_len;
+	int total_len;
+};
 
 /*******************************************************************************
  *                  F U N C T I O N   D E C L A R A T I O N S
@@ -1764,6 +1962,160 @@ priv_set_struct(IN struct net_device *prNetDev,
 		status = priv_set_ndis(prNetDev, prNdisReq, &u4BufLen);
 		break;
 
+#if CFG_SUPPORT_TX_POWER_BACK_OFF
+	case PRIV_CMD_SET_TX_POWER:
+		{
+			enum ENUM_TX_POWER_CTRL_TYPE eCtrlType;
+			struct PARAM_MTK_WIFI_TEST_STRUCT *prTestStruct;
+			uint32_t u4CmdLen = 0;
+			uint32_t u4SetInfoLen = 0;
+			uint8_t cStartTxBackOff = 0;
+			bool bFgForceExecution = FALSE;
+			/* TxPwrBackOffParam's 0th byte:
+			 *     contains enable/disable TxPowerBackOff for 2G
+			 * TxPwrBackOffParam's 1st byte:
+			 *     contains default TxPowerBackOff value for 2G
+			 * TxPwrBackOffParam's 2nd byte:
+			 *     contains enable/disable TxPowerBackOff for 5G
+			 * TxPwrBackOffParam's 3rd byte:
+			 *     contains default TxPowerBackOff value for 5G
+			 */
+			uint32_t TxPwrBackOffParam = 0;
+
+			prTestStruct = (struct PARAM_MTK_WIFI_TEST_STRUCT *)
+								&aucOidBuf[0];
+			u4CmdLen = prIwReqData->data.length;
+			if (u4CmdLen > sizeof(aucOidBuf)) {
+				DBGLOG(REQ, ERROR,
+				"SET_TX_POWER: Input data length is invalid %u\n",
+				u4CmdLen);
+				return -EINVAL;
+			}
+
+			if (copy_from_user(prTestStruct,
+			    prIwReqData->data.pointer, u4CmdLen)) {
+				DBGLOG(REQ, INFO,
+				       "SET_TX_POWER: copy from user failed\n"
+				       );
+				return -EFAULT;
+			}
+
+			DBGLOG(REQ, INFO,
+				"SET_TX_POWER: FuncIndex=%u, FuncData=%u[0x%x], FuncData2=%u[0x%x], Enable2G=%d, MaxPower2G=%u, Enable5G=%d, MaxPower5G=%u\n",
+				prTestStruct->u4FuncIndex,
+				prTestStruct->u4FuncData,
+				prTestStruct->u4FuncData,
+				prTestStruct->u4FuncData2,
+				prTestStruct->u4FuncData2,
+				g_bTxPowerLimitEnable2G,
+				g_cTxBackOffMaxPower2G,
+				g_bTxPowerLimitEnable5G,
+				g_cTxBackOffMaxPower5G);
+
+			/* u4FuncData: start or stop */
+			cStartTxBackOff = prTestStruct->u4FuncData;
+
+			/* u4FuncData2: used in dynamiclly set back off
+			 *    from ioctl with a specific power value.
+			 *    if u4FuncData2 is not 0, driver will force
+			 *    to send cmd to firmware.
+			 */
+			if (prTestStruct->u4FuncData2 != 0)
+				bFgForceExecution = TRUE;
+
+			if ((g_bTxPowerLimitEnable2G == TRUE)
+				|| (g_bTxPowerLimitEnable5G == TRUE)
+				|| bFgForceExecution) {
+				if (cStartTxBackOff == TRUE) {
+					uint8_t ucTxBackOffMaxPower =
+						prTestStruct->u4FuncData2 * 2;
+
+					if (ucTxBackOffMaxPower != 0) {
+						g_cTxBackOffMaxPower2G =
+							ucTxBackOffMaxPower;
+						g_bTxPowerLimitEnable2G = 1;
+					}
+					TxPwrBackOffParam |=
+						g_bTxPowerLimitEnable2G;
+					TxPwrBackOffParam |=
+						g_cTxBackOffMaxPower2G << 8;
+					if (ucTxBackOffMaxPower != 0) {
+						g_cTxBackOffMaxPower5G =
+							ucTxBackOffMaxPower;
+						g_bTxPowerLimitEnable5G = 1;
+					}
+					TxPwrBackOffParam |=
+						g_bTxPowerLimitEnable5G << 16;
+					TxPwrBackOffParam |= (unsigned long)
+						g_cTxBackOffMaxPower5G << 24;
+					DBGLOG(REQ, INFO,
+					       "SET_TX_POWER: Start BackOff, TxPwrBackOffParam=0x%lx\n",
+					       TxPwrBackOffParam);
+				} else {
+					/* First byte is start/stop */
+					TxPwrBackOffParam = 0;
+					DBGLOG(REQ, INFO,
+					       "SET_TX_POWER: Stop BackOff, TxPwrBackOffParam=0x%lx\n",
+					       TxPwrBackOffParam);
+				}
+
+				kalMemCopy(&g_TxPwrBackOffParam,
+					   &TxPwrBackOffParam, 4);
+				eCtrlType = (TxPwrBackOffParam == 0) ?
+					PWR_CTRL_TYPE_DISABLE_SAR_IOCTL :
+					PWR_CTRL_TYPE_ENABLE_SAR_IOCTL;
+
+				status = kalIoctl(prGlueInfo,
+						wlanoidTxPowerControl,
+						&eCtrlType,
+						sizeof(enum
+						       ENUM_TX_POWER_CTRL_TYPE
+						       *),
+						FALSE,
+						FALSE,
+						TRUE,
+						&u4SetInfoLen);
+			}
+		}
+		break;
+#endif
+
+#if CFG_SUPPORT_FCC_POWER_BACK_OFF
+	case PRIV_CMD_SET_FCC:
+		{
+			struct PARAM_MTK_WIFI_TEST_STRUCT *prTestStruct;
+			int32_t i4TotalLen = strlen(CMD_SET_FCC_CERT) + 2;
+			char *pCommand = NULL;
+
+			u4CmdLen = prIwReqData->data.length;
+			if (u4CmdLen > CMD_OID_BUF_LENGTH)
+				return -EINVAL;
+
+			if (copy_from_user(&aucOidBuf[0],
+					   prIwReqData->data.pointer,
+					   u4CmdLen)) {
+				status = -EFAULT;
+				break;
+			}
+
+			prTestStruct = (struct PARAM_MTK_WIFI_TEST_STRUCT *)
+								&aucOidBuf[0];
+			pCommand = kalMemAlloc(strlen(CMD_SET_FCC_CERT) + 2,
+					       VIR_MEM_TYPE);
+			if (pCommand == NULL) {
+				DBGLOG(REQ, INFO, "alloc fail\n");
+				return -EINVAL;
+			}
+			kalMemZero(pCommand, i4TotalLen);
+			kalSprintf(pCommand, "%s %s", CMD_SET_FCC_CERT,
+				((prTestStruct->u4FuncData == 1) ? "0" : "-1"));
+
+			priv_driver_cmds(prNetDev, pCommand, i4TotalLen);
+			kalMemFree(pCommand, VIR_MEM_TYPE, i4TotalLen);
+		}
+		break;
+#endif /* CFG_SUPPORT_FCC_POWER_BACK_OFF */
+
 	default:
 		return -EOPNOTSUPP;
 	}
@@ -2657,205 +3009,6 @@ reqExtSetAcpiDevicePowerState(IN struct GLUE_INFO
 	/* pu4SetInfoLen); */
 	return rStatus;
 }
-
-#define CMD_START		"START"
-#define CMD_STOP		"STOP"
-#define CMD_SCAN_ACTIVE		"SCAN-ACTIVE"
-#define CMD_SCAN_PASSIVE	"SCAN-PASSIVE"
-#define CMD_RSSI		"RSSI"
-#define CMD_LINKSPEED		"LINKSPEED"
-#define CMD_RXFILTER_START	"RXFILTER-START"
-#define CMD_RXFILTER_STOP	"RXFILTER-STOP"
-#define CMD_RXFILTER_ADD	"RXFILTER-ADD"
-#define CMD_RXFILTER_REMOVE	"RXFILTER-REMOVE"
-#define CMD_BTCOEXSCAN_START	"BTCOEXSCAN-START"
-#define CMD_BTCOEXSCAN_STOP	"BTCOEXSCAN-STOP"
-#define CMD_BTCOEXMODE		"BTCOEXMODE"
-#define CMD_SETSUSPENDOPT	"SETSUSPENDOPT"
-#define CMD_SETSUSPENDMODE	"SETSUSPENDMODE"
-#define CMD_P2P_DEV_ADDR	"P2P_DEV_ADDR"
-#define CMD_SETFWPATH		"SETFWPATH"
-#define CMD_SETBAND		"SETBAND"
-#define CMD_GETBAND		"GETBAND"
-#define CMD_AP_START		"AP_START"
-
-#if CFG_SUPPORT_QA_TOOL
-#define CMD_GET_RX_STATISTICS	"GET_RX_STATISTICS"
-#endif
-#define CMD_GET_STAT		"GET_STAT"
-#define CMD_GET_BSS_STATISTICS	"GET_BSS_STATISTICS"
-#define CMD_GET_STA_STATISTICS	"GET_STA_STATISTICS"
-#define CMD_GET_WTBL_INFO	"GET_WTBL"
-#define CMD_GET_MIB_INFO	"GET_MIB"
-#define CMD_GET_STA_INFO	"GET_STA"
-#define CMD_SET_FW_LOG		"SET_FWLOG"
-#define CMD_GET_QUE_INFO	"GET_QUE"
-#define CMD_GET_MEM_INFO	"GET_MEM"
-#define CMD_GET_HIF_INFO	"GET_HIF"
-#define CMD_GET_TP_INFO		"GET_TP"
-#define CMD_GET_STA_KEEP_CNT    "KEEPCOUNTER"
-#define CMD_STAT_RESET_CNT      "RESETCOUNTER"
-#define CMD_STAT_NOISE_SEL      "NOISESELECT"
-#define CMD_STAT_GROUP_SEL      "GROUP"
-
-#define CMD_SET_TXPOWER			"SET_TXPOWER"
-#define CMD_COUNTRY			"COUNTRY"
-#define CMD_GET_COUNTRY			"GET_COUNTRY"
-#define CMD_GET_CHANNELS		"GET_CHANNELS"
-#define CMD_P2P_SET_NOA			"P2P_SET_NOA"
-#define CMD_P2P_GET_NOA			"P2P_GET_NOA"
-#define CMD_P2P_SET_PS			"P2P_SET_PS"
-#define CMD_SET_AP_WPS_P2P_IE		"SET_AP_WPS_P2P_IE"
-#define CMD_SETROAMMODE			"SETROAMMODE"
-#define CMD_MIRACAST			"MIRACAST"
-
-#if (CFG_SUPPORT_DFS_MASTER == 1)
-#define CMD_SHOW_DFS_STATE		"SHOW_DFS_STATE"
-#define CMD_SHOW_DFS_RADAR_PARAM	"SHOW_DFS_RADAR_PARAM"
-#define CMD_SHOW_DFS_HELP		"SHOW_DFS_HELP"
-#define CMD_SHOW_DFS_CAC_TIME		"SHOW_DFS_CAC_TIME"
-#endif
-
-#define CMD_PNOSSIDCLR_SET	"PNOSSIDCLR"
-#define CMD_PNOSETUP_SET	"PNOSETUP "
-#define CMD_PNOENABLE_SET	"PNOFORCE"
-#define CMD_PNODEBUG_SET	"PNODEBUG"
-#define CMD_WLS_BATCHING	"WLS_BATCHING"
-
-#define CMD_OKC_SET_PMK		"SET_PMK"
-#define CMD_OKC_ENABLE		"OKC_ENABLE"
-
-#define CMD_SETMONITOR		"MONITOR"
-#define CMD_SETBUFMODE		"BUFFER_MODE"
-
-#if CFG_AUTO_CHANNEL_SEL_SUPPORT
-#define CMD_GET_CH_RANK_LIST	"GET_CH_RANK_LIST"
-#define CMD_GET_CH_DIRTINESS	"GET_CH_DIRTINESS"
-#endif
-
-#define CMD_EFUSE		"EFUSE"
-
-/* miracast related definition */
-#define MIRACAST_MODE_OFF	0
-#define MIRACAST_MODE_SOURCE	1
-#define MIRACAST_MODE_SINK	2
-
-#ifndef MIRACAST_AMPDU_SIZE
-#define MIRACAST_AMPDU_SIZE	8
-#endif
-
-#ifndef MIRACAST_MCHAN_ALGO
-#define MIRACAST_MCHAN_ALGO     1
-#endif
-
-#ifndef MIRACAST_MCHAN_BW
-#define MIRACAST_MCHAN_BW       25
-#endif
-
-#define	CMD_BAND_AUTO	0
-#define	CMD_BAND_5G		1
-#define	CMD_BAND_2G		2
-#define	CMD_BAND_ALL	3
-
-/* Mediatek private command */
-#define CMD_SET_MCR		"SET_MCR"
-#define CMD_GET_MCR		"GET_MCR"
-#define CMD_SET_DRV_MCR		"SET_DRV_MCR"
-#define CMD_GET_DRV_MCR		"GET_DRV_MCR"
-#define CMD_SET_SW_CTRL	        "SET_SW_CTRL"
-#define CMD_GET_SW_CTRL         "GET_SW_CTRL"
-#define CMD_SET_CFG             "SET_CFG"
-#define CMD_GET_CFG             "GET_CFG"
-#define CMD_SET_CHIP            "SET_CHIP"
-#define CMD_GET_CHIP            "GET_CHIP"
-#define CMD_SET_DBG_LEVEL       "SET_DBG_LEVEL"
-#define CMD_GET_DBG_LEVEL       "GET_DBG_LEVEL"
-#define CMD_ADD_TS		"addts"
-#define CMD_DEL_TS		"delts"
-#define CMD_DUMP_TS		"dumpts"
-#define CMD_RM_IT		"RM-IT"
-#define CMD_DUMP_UAPSD		"dumpuapsd"
-#define CMD_FW_EVENT		"FW-EVENT "
-#define PRIV_CMD_SIZE 512
-#define CMD_SET_FIXED_RATE      "FixedRate"
-#define CMD_GET_VERSION         "VER"
-#define CMD_SET_TEST_MODE	"SET_TEST_MODE"
-#define CMD_SET_TEST_CMD	"SET_TEST_CMD"
-#define CMD_GET_TEST_RESULT	"GET_TEST_RESULT"
-#define CMD_GET_STA_STAT        "STAT"
-#define CMD_GET_STA_STAT2       "STAT2"
-#define CMD_GET_STA_RX_STAT	"RX_STAT"
-#define CMD_SET_ACL_POLICY      "SET_ACL_POLICY"
-#define CMD_ADD_ACL_ENTRY       "ADD_ACL_ENTRY"
-#define CMD_DEL_ACL_ENTRY       "DEL_ACL_ENTRY"
-#define CMD_SHOW_ACL_ENTRY      "SHOW_ACL_ENTRY"
-#define CMD_CLEAR_ACL_ENTRY     "CLEAR_ACL_ENTRY"
-#define CMD_SET_RA_DBG		"RADEBUG"
-#define CMD_SET_FIXED_FALLBACK	"FIXEDRATEFALLBACK"
-#define CMD_GET_STA_IDX         "GET_STA_IDX"
-#define CMD_GET_TX_POWER_INFO   "TxPowerInfo"
-
-#if CFG_WOW_SUPPORT
-#define CMD_WOW_START		"WOW_START"
-#define CMD_SET_WOW_ENABLE	"SET_WOW_ENABLE"
-#define CMD_SET_WOW_PAR		"SET_WOW_PAR"
-#define CMD_SET_WOW_UDP		"SET_WOW_UDP"
-#define CMD_SET_WOW_TCP		"SET_WOW_TCP"
-#define CMD_GET_WOW_PORT	"GET_WOW_PORT"
-#endif
-#define CMD_SET_ADV_PWS		"SET_ADV_PWS"
-#define CMD_SET_MDTIM		"SET_MDTIM"
-
-#define CMD_SET_DBDC		"SET_DBDC"
-
-#if CFG_SUPPORT_CAL_RESULT_BACKUP_TO_HOST
-#define CMD_SET_CALBACKUP_TEST_DRV_FW		"SET_CALBACKUP_TEST_DRV_FW"
-#endif
-
-#define CMD_GET_CNM		"GET_CNM"
-
-#if CFG_SUPPORT_ADVANCE_CONTROL
-#define CMD_SW_DBGCTL_ADVCTL_SET_ID 0xa1260000
-#define CMD_SW_DBGCTL_ADVCTL_GET_ID 0xb1260000
-#define CMD_SET_NOISE		"SET_NOISE"
-#define CMD_GET_NOISE           "GET_NOISE"
-#define CMD_SET_POP		"SET_POP"
-#define CMD_SET_ED		"SET_ED"
-#define CMD_SET_PD		"SET_PD"
-#define CMD_SET_MAX_RFGAIN	"SET_MAX_RFGAIN"
-#endif
-
-#define CMD_SET_SW_AMSDU_NUM      "SET_SW_AMSDU_NUM"
-#define CMD_SET_SW_AMSDU_SIZE      "SET_SW_AMSDU_SIZE"
-
-#define CMD_SET_DRV_SER           "SET_DRV_SER"
-
-/* Debug for consys */
-#define CMD_DBG_SHOW_TR_INFO			"show-tr"
-#define CMD_DBG_SHOW_PLE_INFO			"show-ple"
-#define CMD_DBG_SHOW_PSE_INFO			"show-pse"
-#define CMD_DBG_SHOW_CSR_INFO			"show-csr"
-#define CMD_DBG_SHOW_DMASCH_INFO		"show-dmasch"
-
-#if CFG_SUPPORT_EASY_DEBUG
-#define CMD_FW_PARAM				"set_fw_param"
-#endif /* CFG_SUPPORT_EASY_DEBUG */
-
-static uint8_t g_ucMiracastMode = MIRACAST_MODE_OFF;
-
-struct cmd_tlv {
-	char prefix;
-	char version;
-	char subver;
-	char reserved;
-};
-
-struct priv_driver_cmd_s {
-	char buf[PRIV_CMD_SIZE];
-	int used_len;
-	int total_len;
-};
-
 
 int priv_driver_get_dbg_level(IN struct net_device
 			      *prNetDev, IN char *pcCommand, IN int i4TotalLen)
@@ -12719,6 +12872,100 @@ int32_t priv_driver_cmds(IN struct net_device *prNetDev, IN int8_t *pcCommand,
 			kalIoctl(prGlueInfo, wlanoidDumpUapsdSetting,
 				 (void *)pcCommand, i4TotalLen, FALSE, FALSE,
 				 FALSE, &i4BytesWritten);
+
+#if CFG_SUPPORT_FCC_POWER_BACK_OFF
+		} else if (strnicmp(pcCommand, CMD_SET_FCC_CERT,
+			   strlen(CMD_SET_FCC_CERT)) == 0) {
+			enum ENUM_TX_POWER_CTRL_TYPE eCtrlType;
+			struct FCC_TX_PWR_ADJUST rFccTxPwrAdjust;
+			uint32_t rStatus = WLAN_STATUS_FAILURE;
+
+			if (g_rFccTxPwrAdjust.fgFccTxPwrAdjust == 0)
+				DBGLOG(RLM, INFO,
+				       "SET_FCC_CHANNEL is disabled: %d\n",
+				       g_rFccTxPwrAdjust.fgFccTxPwrAdjust);
+			else {
+				pcCommand += (strlen(CMD_SET_FCC_CERT) + 1);
+				if ((strnicmp(pcCommand, "-1", strlen("-1"))
+				    != 0) && (*pcCommand != '0'))
+					DBGLOG(RLM, INFO,
+					       "SET_FCC_CHANNEL: parameter(%s) is not correct(0 or -1)\n",
+					       pcCommand);
+				else {
+					kalMemSet(&rFccTxPwrAdjust, 0,
+						sizeof(struct
+							FCC_TX_PWR_ADJUST));
+#if 0
+					/* drop 7dB */
+					rFccTxPwrAdjust.uOffsetCCK = 14;
+					/* drop 8dB */
+					rFccTxPwrAdjust.uOffsetHT20 = 16;
+					/* drop 7dB */
+					rFccTxPwrAdjust.uOffsetHT40 = 14;
+					/* start channel */
+					rFccTxPwrAdjust.aucChannelCCK[0] = 12;
+					/* end channel */
+					rFccTxPwrAdjust.aucChannelCCK[1] = 13;
+					/* start channel */
+					rFccTxPwrAdjust.aucChannelHT20[0] = 12;
+					/* end channel */
+					rFccTxPwrAdjust.aucChannelHT20[1] = 13;
+					/* start channel:
+					 *     primiary channel 12, HT40,
+					 *     center channel (10) -2
+					 */
+					rFccTxPwrAdjust.aucChannelHT40[0] = 8;
+					/* end channel:
+					 *     primiary channel 12, HT40,
+					 *     center channel (11) -2
+					 */
+					rFccTxPwrAdjust.aucChannelHT40[1] = 9;
+					/* set special bandedge*/
+					rFccTxPwrAdjust.aucChannelBandedge[0] =
+									11;
+					rFccTxPwrAdjust.aucChannelBandedge[1] =
+									13;
+#else
+					kalMemCopy(&rFccTxPwrAdjust,
+						&g_rFccTxPwrAdjust,
+						sizeof(struct
+							FCC_TX_PWR_ADJUST));
+					/* set special channel band edge */
+					/* kalMemCopy(
+					 *   &rFccTxPwrAdjust.Channel_Bandedge,
+					 *   &prGlueInfo->rRegInfo.
+					 *        aucChannelBandEdge,
+					 *    sizeof(UINT_8)*2);
+					 */
+#endif
+					rFccTxPwrAdjust.fgFccTxPwrAdjust =
+						(*pcCommand == '0') ? 1 : 0;
+					eCtrlType = (*pcCommand == '0') ?
+						PWR_CTRL_TYPE_ENABLE_FCC_IOCTL :
+						PWR_CTRL_TYPE_DISABLE_FCC_IOCTL;
+
+					DBGLOG(RLM, INFO,
+					       "SET_FCC_CHANNEL: (%d)\n",
+					       rFccTxPwrAdjust.
+					       fgFccTxPwrAdjust);
+
+					rStatus = kalIoctl(prGlueInfo,
+						wlanoidTxPowerControl,
+						&eCtrlType,
+						sizeof(enum
+						       ENUM_TX_POWER_CTRL_TYPE
+						       *),
+						FALSE,
+						FALSE,
+						TRUE,
+						&i4TotalLen);
+
+					if (rStatus == WLAN_STATUS_SUCCESS)
+						i4BytesWritten = i4TotalLen;
+				}
+			}
+#endif /* CFG_SUPPORT_FCC_POWER_BACK_OFF */
+
 		} else
 			i4CmdFound = 0;
 	}

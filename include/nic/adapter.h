@@ -1494,6 +1494,10 @@ struct ADAPTER {
 #endif
 
 	struct WLAN_DEBUG_INFO rDebugInfo;
+
+	/* tx power control */
+	uint32_t fgTxPwrLimitMask;
+
 };				/* end of _ADAPTER_T */
 
 /*******************************************************************************
