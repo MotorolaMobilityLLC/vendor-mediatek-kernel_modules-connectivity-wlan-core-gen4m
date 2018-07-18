@@ -143,7 +143,6 @@
 /* note: WIFI_FEATURE_GSCAN be enabled just for ACTS test item: scanner */
 #define WIFI_HAL_FEATURE_SET ((WIFI_FEATURE_P2P) |\
 			      (WIFI_FEATURE_SOFT_AP) |\
-			      (WIFI_FEATURE_GSCAN) |\
 			      (WIFI_FEATURE_PNO) |\
 			      (WIFI_FEATURE_TDLS) |\
 			      (WIFI_FEATURE_RSSI_MONITOR) |\
