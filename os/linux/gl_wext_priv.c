@@ -218,6 +218,7 @@
 #define CMD_DUMP_UAPSD		"dumpuapsd"
 #define CMD_FW_EVENT		"FW-EVENT "
 #define CMD_SET_FCC_CERT        "SET_FCC_CHANNEL"
+#define CMD_SET_3STEPS_BACKOFF	"SET_3STEPS_BACKOFF"
 #define PRIV_CMD_SIZE 512
 #define CMD_SET_FIXED_RATE      "FixedRate"
 #define CMD_GET_VERSION         "VER"
@@ -2143,6 +2144,41 @@ priv_set_struct(IN struct net_device *prNetDev,
 		}
 		break;
 #endif /* CFG_SUPPORT_FCC_POWER_BACK_OFF */
+
+	case PRIV_CMD_SET_3STEPS_BACKOFF:
+		{
+			struct PARAM_MTK_WIFI_TEST_STRUCT *prTestStruct;
+			int32_t i4TotalLen = strlen(CMD_SET_3STEPS_BACKOFF) + 2;
+			char *pCommand = NULL;
+
+			u4CmdLen = prIwReqData->data.length;
+			if (u4CmdLen > CMD_OID_BUF_LENGTH)
+				return -EINVAL;
+
+			if (copy_from_user(&aucOidBuf[0],
+					   prIwReqData->data.pointer,
+					   u4CmdLen)) {
+				status = -EFAULT;
+				break;
+			}
+
+			prTestStruct = (struct PARAM_MTK_WIFI_TEST_STRUCT *)
+								&aucOidBuf[0];
+			pCommand = kalMemAlloc(
+					strlen(CMD_SET_3STEPS_BACKOFF) + 2,
+					VIR_MEM_TYPE);
+			if (pCommand == NULL) {
+				DBGLOG(REQ, INFO, "alloc fail\n");
+				return -EINVAL;
+			}
+			kalMemZero(pCommand, i4TotalLen);
+			kalSprintf(pCommand, "%s %d",
+				   CMD_SET_3STEPS_BACKOFF,
+				   prTestStruct->u4FuncData);
+			priv_driver_cmds(prNetDev, pCommand, i4TotalLen);
+			kalMemFree(pCommand, VIR_MEM_TYPE, i4TotalLen);
+		}
+		break;
 
 	default:
 		return -EOPNOTSUPP;
@@ -12406,7 +12442,6 @@ static int priv_driver_set_amsdu_size(IN struct net_device *prNetDev,
 	}
 
 	return i4BytesWritten;
-
 }
 
 #if CFG_SUPPORT_FCC_POWER_BACK_OFF
@@ -12509,6 +12544,49 @@ static int priv_driver_set_fcc_cert(IN struct net_device *prNetDev,
 	return i4BytesWritten;
 }
 #endif /* CFG_SUPPORT_FCC_POWER_BACK_OFF */
+
+static int priv_driver_set_3steps_backoff(IN struct net_device *prNetDev,
+				      IN char *pcCommand, IN int i4TotalLen)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	enum ENUM_TX_POWER_CTRL_TYPE eCtrlType;
+	struct FCC_TX_PWR_ADJUST rFccTxPwrAdjust;
+	uint32_t rStatus = WLAN_STATUS_FAILURE;
+	int32_t i4BytesWritten = 0;
+
+	ASSERT(prNetDev);
+	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
+		return -1;
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+
+	pcCommand += (strlen(CMD_SET_3STEPS_BACKOFF) + 1);
+	if (*pcCommand == '0') {
+		g_i3StepsBackOffIdx = 0;
+		eCtrlType = PWR_CTRL_TYPE_DISABLE_3STEPS_BACKOFF;
+	} else {
+		if (*pcCommand == '1')
+			g_i3StepsBackOffIdx = 1;
+		else if (*pcCommand == '2')
+			g_i3StepsBackOffIdx = 2;
+		else if (*pcCommand == '3')
+			g_i3StepsBackOffIdx = 3;
+		else {
+			DBGLOG(RLM, ERROR, "invalid index:%c\n", *pcCommand);
+			return -1;
+		}
+		eCtrlType = PWR_CTRL_TYPE_ENABLE_3STEPS_BACKOFF;
+	}
+
+	DBGLOG(RLM, INFO, "SET_3STEPS_BACKOFF: (%d)\n", g_i3StepsBackOffIdx);
+
+	rStatus = kalIoctl(prGlueInfo, wlanoidTxPowerControl, &eCtrlType,
+			   sizeof(enum ENUM_TX_POWER_CTRL_TYPE *),
+			   FALSE, FALSE, TRUE, &i4TotalLen);
+	if (rStatus == WLAN_STATUS_SUCCESS)
+		i4BytesWritten = i4TotalLen;
+
+	return i4BytesWritten;
+}
 
 #if CFG_ENABLE_WIFI_DIRECT
 static int priv_driver_set_p2p_ps(IN struct net_device *prNetDev,
@@ -12800,6 +12878,7 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers[] = {
 	{CMD_P2P_SET_PS, priv_driver_set_p2p_ps},
 	{CMD_P2P_SET_NOA, priv_driver_set_p2p_noa},
 #endif
+	{CMD_SET_3STEPS_BACKOFF, priv_driver_set_3steps_backoff},
 };
 
 int32_t priv_driver_cmds(IN struct net_device *prNetDev, IN int8_t *pcCommand,
