@@ -12639,8 +12639,8 @@ wlanoidSetP2pMode(IN struct ADAPTER *prAdapter,
 
 	prSetP2P = (struct PARAM_CUSTOM_P2P_SET_STRUCT *) pvSetBuffer;
 
-	DBGLOG(P2P, TRACE, "Set P2P enable[%d] mode[%d]\n",
-	       prSetP2P->u4Enable, prSetP2P->u4Mode);
+	DBGLOG(P2P, INFO, "Set P2P(%u) enable[%u] mode[%u]\n",
+		KAL_P2P_NUM, prSetP2P->u4Enable, prSetP2P->u4Mode);
 
 	/*
 	 *    enable = 1, mode = 0  => init P2P network
@@ -12650,14 +12650,9 @@ wlanoidSetP2pMode(IN struct ADAPTER *prAdapter,
 	 *    enable = 1, mode = 3  => init AP+P2P network
 	 */
 
-
-	DBGLOG(P2P, INFO, "P2P Compile as (%d)p2p-like interface\n",
-	       KAL_P2P_NUM);
-
 	if (prSetP2P->u4Mode >= RUNNING_P2P_MODE_NUM) {
-		DBGLOG(P2P, ERROR, "P2P interface mode(%d) is wrong\n",
-		       prSetP2P->u4Mode);
-		ASSERT(0);
+		DBGLOG(P2P, ERROR, "P2P interface mode(%u) is wrong\n",
+			prSetP2P->u4Mode);
 	}
 
 	if (prSetP2P->u4Enable) {
