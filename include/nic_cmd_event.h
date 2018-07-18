@@ -527,6 +527,7 @@ enum ENUM_CMD_ID {
 	CMD_ID_GET_SET_CUSTOMER_CFG = 0x70, /* 0x70(Set) */
 	CMD_ID_TDLS_PS = 0x75,		/* 0x75 (Set) */
 	CMD_ID_GET_CNM = 0x79,
+	CMD_ID_FRM_IND_FROM_HOST = 0x7D,
 	CMD_ID_GET_NIC_CAPABILITY = 0x80,	/* 0x80 (Query) */
 	CMD_ID_GET_LINK_QUALITY,	/* 0x81 (Query) */
 	CMD_ID_GET_STATISTICS,	/* 0x82 (Query) */
@@ -3499,6 +3500,54 @@ struct CMD_EVENT_LOG_UI_INFO {
 struct EXT_EVENT_MAX_AMSDU_LENGTH_UPDATE {
 	uint8_t ucWlanIdx;
 	uint8_t ucAmsduLen;
+};
+
+enum ENUM_TRANSMIT_TYPE {
+	TRANSMIT_TYPE_TX            = 0x00,
+	TRANSMIT_TYPE_RX            = 0x01,
+};
+
+enum ENUM_PROTOCOL_TYPE {
+	PROTOCOL_TYPE_NON_SPECIFIC  = 0x00,
+	PROTOCOL_TYPE_EAP           = 0x01,
+	PROTOCOL_TYPE_DHCP          = 0x02,
+	PROTOCOL_TYPE_MAX           = 0xFF,
+};
+
+enum ENUM_FRAME_EAP_TYPE {
+	FRAME_EAP_TYPE_NON_SPECIFIC = 0x00,
+	FRAME_EAP_TYPE_EAP_4WAY_1   = 0x01,
+	FRAME_EAP_TYPE_EAP_4WAY_2   = 0x02,
+	FRAME_EAP_TYPE_EAP_4WAY_3   = 0x03,
+	FRAME_EAP_TYPE_EAP_4WAY_4   = 0x04,
+	FRAME_EAP_TYPE_EAP_MAX      = 0xFF,
+};
+
+enum ENUM_FRAME_DHCP_TYPE {
+	FRAME_DHCP_TYPE_NON_SPECIFIC     = 0x00,
+	FRAME_DHCP_TYPE_DHCP_DISCOVER    = 0x01,
+	FRAME_DHCP_TYPE_DHCP_OFFER       = 0x02,
+	FRAME_DHCP_TYPE_DHCP_REQUEST     = 0x03,
+	FRAME_DHCP_TYPE_DHCP_ACK         = 0x04,
+	FRAME_DHCP_TYPE_DHCP_MAX         = 0xFF,
+};
+
+struct CMD_INDICATE_CONNECTION_FRAME {
+	uint8_t ucCmdVer;
+	uint8_t aucPadding0[1];
+	uint16_t u2CmdLen;
+	uint8_t ucStaIdx;
+	uint8_t ucBssIdx;
+	uint8_t	ucTransmitType; /* TX/RX/TXS(future used) */
+	uint8_t	ucProtocolType;
+	uint8_t	ucProtocolSubType;
+	uint8_t	ucRateValid;
+	uint8_t uacPadding1[2];
+	uint32_t u4Rate; /* TX Rate, Rx Rate, TxS Rate */
+	uint32_t u4Len;
+	uint8_t TxS; /* Only TXS type  value in txS*/
+	uint8_t	aucPadding3[3];
+	uint8_t	aucPadding4[64];
 };
 
 /*******************************************************************************

@@ -4539,3 +4539,98 @@ void nicSerReInitBeaconFrame(IN struct ADAPTER *prAdapter)
 		DBGLOG(NIC, INFO, "SER beacon frame is updated\n");
 	}
 }
+
+void nicIndicateConnectionTxFrame(IN struct ADAPTER *prAdapter,
+	IN struct MSDU_INFO *prMsduInfo)
+{
+	struct CMD_INDICATE_CONNECTION_FRAME rCmdConnectionParms;
+
+	ASSERT(prAdapter);
+	if (!prMsduInfo || !prMsduInfo->prPacket)
+		return;
+
+	kalMemZero(&rCmdConnectionParms,
+		sizeof(struct CMD_INDICATE_CONNECTION_FRAME));
+	rCmdConnectionParms.ucCmdVer = 1;
+	rCmdConnectionParms.u2CmdLen =
+		sizeof(struct CMD_INDICATE_CONNECTION_FRAME);
+	rCmdConnectionParms.ucTransmitType = TRANSMIT_TYPE_TX;
+	rCmdConnectionParms.ucStaIdx = prMsduInfo->ucStaRecIndex;
+	rCmdConnectionParms.ucBssIdx = prMsduInfo->ucBssIndex;
+
+	if (prMsduInfo->ucPktType == ENUM_PKT_DHCP) {
+		rCmdConnectionParms.ucProtocolType = PROTOCOL_TYPE_DHCP;
+		rCmdConnectionParms.ucProtocolSubType =
+			secGetDHCPType(((struct sk_buff *)
+				prMsduInfo->prPacket)->data);
+	} else if (prMsduInfo->ucPktType == ENUM_PKT_1X &&
+			prMsduInfo->eEapolKeyType != EAPOL_KEY_NOT_KEY) {
+		rCmdConnectionParms.ucProtocolType = PROTOCOL_TYPE_EAP;
+		rCmdConnectionParms.ucProtocolSubType =
+			prMsduInfo->eEapolKeyType;
+	}
+
+	DBGLOG(NIC, TRACE, "ucProtocolType=%d, ucProtocolSubType=%d\n",
+		rCmdConnectionParms.ucProtocolType,
+		rCmdConnectionParms.ucProtocolSubType);
+
+	wlanSendSetQueryCmd(prAdapter,
+			      CMD_ID_FRM_IND_FROM_HOST,
+			      TRUE,
+			      FALSE,
+			      FALSE,
+			      NULL, NULL,
+			      sizeof(struct CMD_INDICATE_CONNECTION_FRAME),
+			      (uint8_t *) &rCmdConnectionParms, NULL, 0);
+}
+
+void nicIndicateConnectionRxFrame(IN struct ADAPTER *prAdapter,
+	IN struct SW_RFB *prRetSwRfb) {
+
+	struct CMD_INDICATE_CONNECTION_FRAME rCmdConnectionParms;
+	uint8_t ucFrameType = 0;
+
+	ASSERT(prAdapter);
+
+	if (prRetSwRfb->u2PacketLen <= ETHER_HEADER_LEN)
+		return;
+
+	kalMemZero(&rCmdConnectionParms,
+		sizeof(struct CMD_INDICATE_CONNECTION_FRAME));
+	rCmdConnectionParms.ucCmdVer = 1;
+	rCmdConnectionParms.u2CmdLen =
+		sizeof(struct CMD_INDICATE_CONNECTION_FRAME);
+	rCmdConnectionParms.ucTransmitType = TRANSMIT_TYPE_RX;
+	rCmdConnectionParms.ucProtocolType = PROTOCOL_TYPE_NON_SPECIFIC;
+
+	ucFrameType = secGetDHCPType((uint8_t *) prRetSwRfb->pvHeader);
+	if (ucFrameType != 0) {
+		rCmdConnectionParms.ucProtocolType = PROTOCOL_TYPE_DHCP;
+		ucFrameType = ucFrameType == 5 ? 4 : ucFrameType;
+		rCmdConnectionParms.ucProtocolSubType = ucFrameType;
+	}
+
+	ucFrameType = secGetEapolKeyType((uint8_t *) prRetSwRfb->pvHeader);
+	if (ucFrameType != 0) {
+		rCmdConnectionParms.ucProtocolType = PROTOCOL_TYPE_EAP;
+		rCmdConnectionParms.ucProtocolSubType = ucFrameType;
+	}
+
+	if (rCmdConnectionParms.ucProtocolType ==
+		PROTOCOL_TYPE_NON_SPECIFIC)
+		return;
+
+	DBGLOG(NIC, TRACE, "ucProtocolType=%d, ucProtocolSubType=%d\n",
+		rCmdConnectionParms.ucProtocolType,
+		rCmdConnectionParms.ucProtocolSubType);
+
+	wlanSendSetQueryCmd(prAdapter,
+			      CMD_ID_FRM_IND_FROM_HOST,
+			      TRUE,
+			      FALSE,
+			      FALSE,
+			      NULL, NULL,
+			      sizeof(struct CMD_INDICATE_CONNECTION_FRAME),
+			      (uint8_t *) &rCmdConnectionParms, NULL, 0);
+}
+

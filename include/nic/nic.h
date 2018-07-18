@@ -458,4 +458,9 @@ u_int8_t nicSerIsTxStop(IN struct ADAPTER *prAdapter);
 u_int8_t nicSerIsRxStop(IN struct ADAPTER *prAdapter);
 void nicSerReInitBeaconFrame(IN struct ADAPTER *prAdapter);
 
+void nicIndicateConnectionRxFrame(IN struct ADAPTER *prAdapter,
+	IN struct SW_RFB *prRetSwRfb);
+void nicIndicateConnectionTxFrame(IN struct ADAPTER *prAdapter,
+	IN struct MSDU_INFO *prMsduInfo);
+
 #endif /* _NIC_H */
