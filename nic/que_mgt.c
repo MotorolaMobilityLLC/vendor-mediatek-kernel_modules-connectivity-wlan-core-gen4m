@@ -184,8 +184,7 @@ do { \
 				ASSERT(ucBssIndex < prAdapter->ucHwBssIdNum); \
 				prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, \
 					ucBssIndex); \
-				ASSERT(prBssInfo); \
-				if (prBssInfo->eCurrentOPMode == \
+				if (prBssInfo && prBssInfo->eCurrentOPMode == \
 					OP_MODE_INFRASTRUCTURE) \
 					pucMicKey = \
 					&(prAdapter->rWifiVar.\
