@@ -987,6 +987,10 @@ struct WIFI_VAR {
 
 	/* WMMAC */
 	struct WMM_INFO rWmmInfo;
+
+#if ARP_MONITER_ENABLE
+		uint32_t uArpMonitorNumber;
+#endif /* ARP_MONITER_ENABLE */
 };
 
 /* cnm_timer module */

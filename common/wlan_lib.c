@@ -6417,6 +6417,11 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 	prWifiVar->ucLowLatencyModePower = (uint32_t) wlanCfgGetUint32(
 			prAdapter, "LowLatencyModePower", FEATURE_ENABLED);
 #endif /* CFG_SUPPORT_LOWLATENCY_MODE */
+
+#if ARP_MONITER_ENABLE
+	prWifiVar->uArpMonitorNumber = (uint32_t) wlanCfgGetUint32(
+			prAdapter, "ArpMonitorNumber", 20);
+#endif /* ARP_MONITER_ENABLE */
 }
 
 void wlanCfgSetSwCtrl(IN struct ADAPTER *prAdapter)

@@ -7368,6 +7368,8 @@ void qmDetectArpNoResponse(struct ADAPTER *prAdapter,
 	uint8_t *pucData = NULL;
 	uint16_t u2EtherType = 0;
 	int arpOpCode = 0;
+	struct WIFI_VAR *prWifiVar = NULL;
+	uint32_t uArpMonitorNumber;
 
 	if (!prAdapter)
 		return;
@@ -7395,6 +7397,11 @@ void qmDetectArpNoResponse(struct ADAPTER *prAdapter,
 	if (u2EtherType != ETH_P_ARP)
 		return;
 
+	prWifiVar = &prAdapter->rWifiVar;
+	uArpMonitorNumber = prWifiVar->uArpMonitorNumber;
+	if (uArpMonitorNumber == 0)
+		return;
+
 	/* If ARP req is neither to apIp nor to gatewayIp, ignore detection */
 	if (kalMemCmp(apIp, &pucData[ETH_TYPE_LEN_OFFSET + 26],
 		sizeof(apIp)) &&
@@ -7406,9 +7413,10 @@ void qmDetectArpNoResponse(struct ADAPTER *prAdapter,
 		(pucData[ETH_TYPE_LEN_OFFSET + 8 + 1]);
 	if (arpOpCode == ARP_PRO_REQ) {
 		arpMoniter++;
-		if (arpMoniter > 20) {
+		if (arpMoniter > uArpMonitorNumber) {
 			DBGLOG(INIT, WARN,
-				"IOT Critical issue, arp no resp, check AP!\n");
+				"IOT Critical issue, arp no resp: %d, check AP!\n",
+				uArpMonitorNumber);
 			if (prAdapter->prAisBssInfo)
 				prAdapter->prAisBssInfo->u2DeauthReason =
 					BEACON_TIMEOUT_DUE_2_APR_NO_RESPONSE;
