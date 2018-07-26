@@ -2952,8 +2952,6 @@ wlanoidSetRemoveKey(IN struct ADAPTER *prAdapter,
 	ASSERT(prAdapter);
 	ASSERT(pu4SetInfoLen);
 
-	DBGLOG(RSN, INFO, "wlanoidSetRemoveKey\n");
-
 	*pu4SetInfoLen = sizeof(struct PARAM_REMOVE_KEY);
 
 	if (u4SetBufferLen < sizeof(struct PARAM_REMOVE_KEY))
@@ -2969,13 +2967,6 @@ wlanoidSetRemoveKey(IN struct ADAPTER *prAdapter,
 	ASSERT(pvSetBuffer);
 	prRemovedKey = (struct PARAM_REMOVE_KEY *) pvSetBuffer;
 	u4KeyIndex = prRemovedKey->u4KeyIndex & 0x000000FF;
-
-	/* Dump PARAM_REMOVE_KEY content. */
-	DBGLOG(RSN, INFO, "PARAM_REMOVE_KEY: BSSID(" MACSTR
-		"), BSS_INDEX (%d), Length(0x%08x), Key Index(0x%08x, %d)\n",
-		MAC2STR(prRemovedKey->arBSSID),
-		prRemovedKey->ucBssIdx,
-		prRemovedKey->u4Length, prRemovedKey->u4KeyIndex, u4KeyIndex);
 
 	prGlueInfo = prAdapter->prGlueInfo;
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prRemovedKey->ucBssIdx);
@@ -3040,12 +3031,17 @@ wlanoidSetRemoveKey(IN struct ADAPTER *prAdapter,
 			}
 		}
 
-		DBGLOG(RSN, INFO, "ucRemoveBCKeyAtIdx = %d",
-		       ucRemoveBCKeyAtIdx);
-
 		if (ucRemoveBCKeyAtIdx >= WTBL_SIZE)
 			return WLAN_STATUS_SUCCESS;
 	}
+
+	/* Dump PARAM_REMOVE_KEY content. */
+	DBGLOG(RSN, INFO, "PARAM_REMOVE_KEY: BSSID(" MACSTR
+		"), BSS_INDEX (%d), Length(0x%08x), Key Index(0x%08x, %d) ucRemoveBCKeyAtIdx = %d\n",
+		MAC2STR(prRemovedKey->arBSSID),
+		prRemovedKey->ucBssIdx,
+		prRemovedKey->u4Length, prRemovedKey->u4KeyIndex, u4KeyIndex,
+		ucRemoveBCKeyAtIdx);
 
 	prCmdInfo = cmdBufAllocateCmdInfo(prAdapter,
 			  (CMD_HDR_SIZE + sizeof(struct CMD_802_11_KEY)));
