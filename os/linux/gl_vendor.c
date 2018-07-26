@@ -1317,7 +1317,7 @@ int mtk_cfg80211_vendor_set_tx_power_scenario(struct wiphy *wiphy,
 		wdev->iftype);
 
 	rStatus = kalIoctl(prGlueInfo, wlanoidTxPowerControl, &eCtrlType,
-			   sizeof(enum ENUM_TX_POWER_CTRL_TYPE *),
+			   sizeof(enum ENUM_TX_POWER_CTRL_TYPE),
 			   FALSE, FALSE, TRUE, &u4SetInfoLen);
 
 	skb = cfg80211_vendor_cmd_alloc_reply_skb(wiphy, sizeof(rStatus));

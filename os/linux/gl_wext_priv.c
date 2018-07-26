@@ -2099,7 +2099,7 @@ priv_set_struct(IN struct net_device *prNetDev,
 						&eCtrlType,
 						sizeof(enum
 						       ENUM_TX_POWER_CTRL_TYPE
-						       *),
+						       ),
 						FALSE,
 						FALSE,
 						TRUE,
@@ -12531,7 +12531,7 @@ static int priv_driver_set_fcc_cert(IN struct net_device *prNetDev,
 				&eCtrlType,
 				sizeof(enum
 				       ENUM_TX_POWER_CTRL_TYPE
-				       *),
+				       ),
 				FALSE,
 				FALSE,
 				TRUE,
@@ -12579,7 +12579,7 @@ static int priv_driver_set_3steps_backoff(IN struct net_device *prNetDev,
 	DBGLOG(RLM, INFO, "SET_3STEPS_BACKOFF: (%d)\n", g_i3StepsBackOffIdx);
 
 	rStatus = kalIoctl(prGlueInfo, wlanoidTxPowerControl, &eCtrlType,
-			   sizeof(enum ENUM_TX_POWER_CTRL_TYPE *),
+			   sizeof(enum ENUM_TX_POWER_CTRL_TYPE),
 			   FALSE, FALSE, TRUE, &i4TotalLen);
 	if (rStatus == WLAN_STATUS_SUCCESS)
 		i4BytesWritten = i4TotalLen;
