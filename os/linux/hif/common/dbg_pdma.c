@@ -1483,7 +1483,7 @@ void haldumpPhyInfo(struct ADAPTER *prAdapter)
 void haldumpMacInfo(struct ADAPTER *prAdapter)
 {
 	uint32_t i = 0, j = 0;
-	uint32_t value = 0, index = 0, flag = 0;
+	uint32_t value = 0, index = 0, flag = 0, queue = 0;
 
 	DBGLOG(HAL, INFO, "Print 0x820F3190 5*20 times\n");
 	for (i = 0; i < 5; i++) {
@@ -1542,9 +1542,31 @@ void haldumpMacInfo(struct ADAPTER *prAdapter)
 	}
 
 	DBGLOG(HAL, INFO, "Dump ARB\n");
+	HAL_MCR_RD(prAdapter, 0x802f3190, &value);
+	DBGLOG(HAL, INFO, "0x802f3190: 0x%08x\n", value);
+	HAL_MCR_RD(prAdapter, 0x80060220, &value);
+	DBGLOG(HAL, INFO, "0x80060220: 0x%08x\n", value);
+
+	HAL_MCR_WR(prAdapter, 0x820f082C, 0xf);
+	HAL_MCR_WR(prAdapter, 0x80025100, 0x1f);
 	HAL_MCR_WR(prAdapter, 0x80025104, 0x04040404);
+
+	queue = 0;
 	flag = 0x01010000;
-	for (i = 0; i < 64; i++) {
+	for (i = 0; i < 25; i++) {
+		HAL_MCR_WR(prAdapter, 0x820f3060, queue);
+		for (j = 0; j < 15; j++) {
+			HAL_MCR_RD(prAdapter, 0x820f0024, &value);
+			DBGLOG(HAL, INFO,
+			       "write queue = 0x%08x flag = 0x%08x, 0x820f0024: 0x%08x\n",
+			       queue, flag, value);
+			flag += 0x02020202;
+		}
+		queue += 0x01010101;
+	}
+
+	flag = 0x01010000;
+	for (i = 0; i < 128; i++) {
 		HAL_MCR_WR(prAdapter, 0x80025104, flag);
 		HAL_MCR_RD(prAdapter, 0x820f0024, &value);
 		DBGLOG(HAL, INFO, "write flag = 0x%08x, 0x820f0024: 0x%08x\n",
