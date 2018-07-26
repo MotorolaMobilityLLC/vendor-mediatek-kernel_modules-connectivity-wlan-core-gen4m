@@ -940,7 +940,7 @@ struct QUE *qmDetermineStaTxQueue(IN struct ADAPTER *prAdapter,
 
 		if (prAdapter->rWifiVar.ucTcRestrict < TC_NUM) {
 			ucTC = prAdapter->rWifiVar.ucTcRestrict;
-			ucQueIdx = ucTC;
+			ucQueIdx = prAdapter->rWifiVar.ucTcRestrict;
 		}
 
 	} while (fgCheckACMAgain);
