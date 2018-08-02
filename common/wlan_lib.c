@@ -3093,8 +3093,7 @@ uint32_t wlanUpdateNetworkAddress(IN struct ADAPTER *prAdapter)
 
 	ASSERT(prAdapter);
 
-	if (kalRetrieveNetworkAddress(prAdapter->prGlueInfo,
-				      (uint8_t **)&rMacAddr) == FALSE
+	if (kalRetrieveNetworkAddress(prAdapter->prGlueInfo, rMacAddr) == FALSE
 	    || IS_BMCAST_MAC_ADDR(rMacAddr)
 	    || EQUAL_MAC_ADDR(aucZeroMacAddr, rMacAddr)) {
 		/* eFUSE has a valid address, don't do anything */
