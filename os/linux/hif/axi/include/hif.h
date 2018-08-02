@@ -59,7 +59,6 @@
 #define _HIF_H
 
 #include "hif_pdma.h"
-#include "connac.h"
 
 #if defined(_HIF_AXI)
 #define HIF_NAME "AXI"
