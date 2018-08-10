@@ -10296,7 +10296,6 @@ priv_set_ap(IN struct net_device *prNetDev,
 {
 	uint32_t u4SubCmd = 0;
 	uint16_t u2Cmd = 0;
-	int32_t i4TotalLen = 0;
 	int32_t i4TotalFixLen = 1024;
 	int32_t i4CmdFound = 0;
 
@@ -10329,12 +10328,10 @@ priv_set_ap(IN struct net_device *prNetDev,
 	DBGLOG(REQ, INFO, "prIwReqData->data.length %u\n",
 		prIwReqData->data.length);
 
-	i4TotalLen = prIwReqData->data.length;
-
 	ASSERT(IW_IS_GET(u2Cmd));
-	if (i4TotalLen != 0) {
+	if (prIwReqData->data.length != 0) {
 		if (!access_ok(VERIFY_READ, prIwReqData->data.pointer,
-			i4TotalLen)) {
+			prIwReqData->data.length)) {
 			DBGLOG(REQ, INFO,
 				"%s access_ok Read fail written = %d\n",
 				__func__, i4BytesWritten);
@@ -10342,13 +10339,15 @@ priv_set_ap(IN struct net_device *prNetDev,
 		}
 		if (copy_from_user(pcExtra,
 			prIwReqData->data.pointer,
-			i4TotalLen)) {
+			prIwReqData->data.length)) {
 			DBGLOG(REQ, INFO,
 				"%s copy_form_user fail written = %d\n",
-				__func__, i4TotalLen);
+				__func__,
+				prIwReqData->data.length);
 				return -EFAULT;
 		}
-		pcExtra[i4TotalLen - 1] = '\0';
+		/* prIwReqData->data.length include the terminate '\0' */
+		pcExtra[prIwReqData->data.length - 1] = 0;
 	}
 
 	DBGLOG(REQ, INFO, "%s pcExtra %s\n", __func__, pcExtra);
