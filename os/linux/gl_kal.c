@@ -84,9 +84,6 @@
 /* #include <pcm_def.h> */
 #include <mtk_sleep.h>
 #endif
-#if CFG_TC1_FEATURE
-#include <tc1_partition.h>
-#endif
 /*******************************************************************************
  *                              C O N S T A N T S
  *******************************************************************************
@@ -3890,19 +3887,12 @@ u_int8_t kalRetrieveNetworkAddress(IN struct GLUE_INFO *prGlueInfo,
 			return FALSE;
 		}
 #else
-#if CFG_TC1_FEATURE
-		/*LGE_FacReadWifiMacAddr(prMacAddr);*/
-		TC1_FAC_NAME(FacReadWifiMacAddr)(prMacAddr);
-		DBGLOG(INIT, INFO,
-			"MAC address: " MACSTR, MAC2STR(prMacAddr));
-#else
 		if (prGlueInfo->fgNvramAvailable == FALSE) {
 			DBGLOG(INIT, INFO, "glLoadNvram fail\n");
 			return FALSE;
 		}
 		kalMemCopy(prMacAddr, prGlueInfo->prRegInfo->aucMacAddr,
 			   PARAM_MAC_ADDR_LEN * sizeof(uint8_t));
-#endif
 		return TRUE;
 #endif
 	} else {
