@@ -615,7 +615,10 @@ static inline void kalCfg80211ScanDone(struct cfg80211_scan_request *request,
 #define kalMemAlloc(u4Size, eMemType) ({    \
 	void *pvAddr; \
 	if (eMemType == PHY_MEM_TYPE) { \
-		pvAddr = kmalloc(u4Size, GFP_KERNEL);   \
+		if (in_interrupt()) \
+			pvAddr = kmalloc(u4Size, GFP_ATOMIC);   \
+		else \
+			pvAddr = kmalloc(u4Size, GFP_KERNEL);   \
 	} \
 	else { \
 		pvAddr = vmalloc(u4Size);   \
@@ -631,7 +634,10 @@ static inline void kalCfg80211ScanDone(struct cfg80211_scan_request *request,
 #define kalMemAlloc(u4Size, eMemType) ({    \
 	void *pvAddr; \
 	if (eMemType == PHY_MEM_TYPE) { \
-		pvAddr = kmalloc(u4Size, GFP_KERNEL);   \
+		if (in_interrupt()) \
+			pvAddr = kmalloc(u4Size, GFP_ATOMIC);   \
+		else \
+			pvAddr = kmalloc(u4Size, GFP_KERNEL);   \
 	} \
 	else { \
 		pvAddr = vmalloc(u4Size);   \
