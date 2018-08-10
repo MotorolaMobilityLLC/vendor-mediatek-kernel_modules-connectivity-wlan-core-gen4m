@@ -1156,32 +1156,22 @@ int mtk_cfg80211_connect(struct wiphy *wiphy,
 
 	/* after set operation mode, key table are cleared */
 
-	/* reset wpa info */
-	prGlueInfo->rWpaInfo.u4WpaVersion = IW_AUTH_WPA_VERSION_DISABLED;
-	prGlueInfo->rWpaInfo.u4KeyMgmt = 0;
-	prGlueInfo->rWpaInfo.u4CipherGroup = IW_AUTH_CIPHER_NONE;
-	prGlueInfo->rWpaInfo.u4CipherPairwise = IW_AUTH_CIPHER_NONE;
-	prGlueInfo->rWpaInfo.u4AuthAlg = IW_AUTH_ALG_OPEN_SYSTEM;
 #if CFG_SUPPORT_REPLAY_DETECTION
 	/* reset Detect replay information */
 	prDetRplyInfo = &prGlueInfo->prDetRplyInfo;
 	kalMemZero(prDetRplyInfo, sizeof(struct GL_DETECT_REPLAY_INFO));
 #endif
 
+	/* <1> Reset WPA info */
+	prGlueInfo->rWpaInfo.u4WpaVersion = IW_AUTH_WPA_VERSION_DISABLED;
+	prGlueInfo->rWpaInfo.u4KeyMgmt = 0;
+	prGlueInfo->rWpaInfo.u4CipherGroup = IW_AUTH_CIPHER_NONE;
+	prGlueInfo->rWpaInfo.u4CipherPairwise = IW_AUTH_CIPHER_NONE;
+	prGlueInfo->rWpaInfo.u4AuthAlg = IW_AUTH_ALG_OPEN_SYSTEM;
+	prGlueInfo->rWpaInfo.fgPrivacyInvoke = FALSE;
 #if CFG_SUPPORT_802_11W
 	prGlueInfo->rWpaInfo.u4Mfp = IW_AUTH_MFP_DISABLED;
-	switch (sme->mfp) {
-	case NL80211_MFP_NO:
-		prGlueInfo->rWpaInfo.u4Mfp = IW_AUTH_MFP_DISABLED;
-		break;
-	case NL80211_MFP_REQUIRED:
-		prGlueInfo->rWpaInfo.u4Mfp = IW_AUTH_MFP_REQUIRED;
-		break;
-	default:
-		prGlueInfo->rWpaInfo.u4Mfp = IW_AUTH_MFP_DISABLED;
-		break;
-	}
-	/* DBGLOG(SCN, INFO, ("MFP=%d\n", prGlueInfo->rWpaInfo.u4Mfp)); */
+	prGlueInfo->rWpaInfo.ucRSNMfpCap = RSN_AUTH_MFP_DISABLED;
 #endif
 
 	if (sme->crypto.wpa_versions & NL80211_WPA_VERSION_1)
@@ -1443,6 +1433,7 @@ int mtk_cfg80211_connect(struct wiphy *wiphy,
 
 			if (rsnParseRsnIE(prGlueInfo->prAdapter,
 			    (struct RSN_INFO_ELEM *)prDesiredIE, &rRsnInfo)) {
+#if CFG_SUPPORT_802_11W
 				if (rRsnInfo.u2RsnCap & ELEM_WPA_CAP_MFPC) {
 					prGlueInfo->rWpaInfo.ucRSNMfpCap =
 							RSN_AUTH_MFP_OPTIONAL;
@@ -1452,7 +1443,9 @@ int mtk_cfg80211_connect(struct wiphy *wiphy,
 						.ucRSNMfpCap =
 							RSN_AUTH_MFP_REQUIRED;
 				} else
-					prGlueInfo->rWpaInfo.ucRSNMfpCap = 0;
+					prGlueInfo->rWpaInfo.ucRSNMfpCap =
+							RSN_AUTH_MFP_DISABLED;
+#endif
 			}
 		}
 
@@ -1493,6 +1486,36 @@ int mtk_cfg80211_connect(struct wiphy *wiphy,
 		kalMemZero(&prGlueInfo->aucWSCAssocInfoIE, 200);
 		prGlueInfo->u2WSCAssocInfoIELen = 0;
 	}
+
+	/* Fill WPA info - mfp setting */
+	/* Must put after paring RSNE from upper layer
+	* for prGlueInfo->rWpaInfo.ucRSNMfpCap assignment
+	*/
+#if CFG_SUPPORT_802_11W
+	switch (sme->mfp) {
+	case NL80211_MFP_NO:
+		prGlueInfo->rWpaInfo.u4Mfp = IW_AUTH_MFP_DISABLED;
+		/* Change Mfp parameter from DISABLED to OPTIONAL
+		* if upper layer set MFPC = 1 in RSNE
+		* since upper layer can't bring MFP OPTIONAL information
+		* to driver by sme->mfp
+		*/
+		if (prGlueInfo->rWpaInfo.ucRSNMfpCap == RSN_AUTH_MFP_OPTIONAL)
+			prGlueInfo->rWpaInfo.u4Mfp = IW_AUTH_MFP_OPTIONAL;
+		else if (prGlueInfo->rWpaInfo.ucRSNMfpCap ==
+					RSN_AUTH_MFP_REQUIRED)
+			DBGLOG(REQ, WARN,
+				"mfp parameter(DISABLED) conflict with mfp cap(REQUIRED)\n");
+		break;
+	case NL80211_MFP_REQUIRED:
+		prGlueInfo->rWpaInfo.u4Mfp = IW_AUTH_MFP_REQUIRED;
+		break;
+	default:
+		prGlueInfo->rWpaInfo.u4Mfp = IW_AUTH_MFP_DISABLED;
+		break;
+	}
+	/* DBGLOG(REQ, INFO, ("MFP=%d\n", prGlueInfo->rWpaInfo.u4Mfp)); */
+#endif
 
 	rStatus = kalIoctl(prGlueInfo, wlanoidSetAuthMode, &eAuthMode,
 			sizeof(eAuthMode), FALSE, FALSE, FALSE, &u4BufLen);
