@@ -132,11 +132,6 @@ struct PCIE_CHIP_CR_MAPPING connac_bus2chip_cr_mapping[] = {
 };
 #endif /* _HIF_PCIE || _HIF_AXI */
 
-int connacGetIpSetVersion(struct GLUE_INFO *prGlueInfo)
-{
-	return 1;
-}
-
 void connacConstructFirmwarePrio(struct GLUE_INFO *prGlueInfo,
 	uint8_t **apucNameTable, uint8_t **apucName,
 	uint8_t *pucNameIdx, uint8_t ucMaxNameIdx)
@@ -149,7 +144,7 @@ void connacConstructFirmwarePrio(struct GLUE_INFO *prGlueInfo,
 			snprintf(*(apucName + (*pucNameIdx)),
 					CFG_FW_NAME_MAX_LEN, "%s_%u_%u",
 					apucConnacFwName[ucIdx],
-					connacGetIpSetVersion(prGlueInfo),
+					CFG_WIFI_IP_SET,
 					wlanGetEcoVersion(
 						prGlueInfo->prAdapter));
 			(*pucNameIdx) += 1;
@@ -158,7 +153,7 @@ void connacConstructFirmwarePrio(struct GLUE_INFO *prGlueInfo,
 			snprintf(*(apucName + (*pucNameIdx)),
 					CFG_FW_NAME_MAX_LEN, "%s_%u_%u.bin",
 					apucConnacFwName[ucIdx],
-					connacGetIpSetVersion(prGlueInfo),
+					CFG_WIFI_IP_SET,
 					wlanGetEcoVersion(
 						prGlueInfo->prAdapter));
 			(*pucNameIdx) += 1;
