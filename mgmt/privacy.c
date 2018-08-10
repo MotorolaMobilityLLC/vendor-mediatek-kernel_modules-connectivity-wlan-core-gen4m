@@ -996,10 +996,10 @@ secPrivacySeekForBcEntry(IN struct ADAPTER *prAdapter,
 	ucStartIDX = 0;
 	ucMaxIDX = prAdapter->ucTxDefaultWlanIndex - 1;
 
-	DBGLOG(INIT, TRACE, "secPrivacySeekForBcEntry\n");
+	DBGLOG(INIT, INFO, "secPrivacySeekForBcEntry\n");
 	DBGLOG(INIT, INFO, "OpMode:%d, NetworkType:%d, CheckKeyId:%d\n",
-	       prBSSInfo->eCurrentOPMode, prBSSInfo->eNetworkType,
-	       fgCheckKeyId);
+		prBSSInfo->eCurrentOPMode, prBSSInfo->eNetworkType,
+		fgCheckKeyId);
 
 	for (i = ucStartIDX; i <= ucMaxIDX; i++) {
 
@@ -1055,13 +1055,13 @@ secPrivacySeekForBcEntry(IN struct ADAPTER *prAdapter,
 		       "\n", ucBssIndex, ucKeyId, prWtbl[ucEntry].ucPairwise,
 		       ucEntry, ucStaIdx, MAC2STR(pucAddr));
 
-#if 1				/* DBG */
+		/* DBG */
 		secCheckWTBLAssign(prAdapter);
-#endif
+
 	} else {
 		secCheckWTBLAssign(prAdapter);
 		DBGLOG(RSN, ERROR,
-		       "[Wlan index] No more wlan entry available!!!!\n");
+			"[Wlan index] No more wlan entry available!!!!\n");
 	}
 
 	return ucEntry;
