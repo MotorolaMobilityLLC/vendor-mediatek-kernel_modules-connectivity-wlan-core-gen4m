@@ -4596,15 +4596,29 @@ mtk_reg_notify(IN struct wiphy *pWiphy,
 {
 	struct GLUE_INFO *prGlueInfo;
 	struct ADAPTER *prAdapter;
-	u8 send_cmd_request = 0;
 	enum regd_state old_state;
 
-
-	if (!pWiphy) {
-		DBGLOG(RLM, ERROR, "%s(): pWiphy = NULL.\n", __func__);
+	if (g_u4HaltFlag) {
+		DBGLOG(RLM, WARN, "wlan is halt, skip reg callback\n");
 		return;
 	}
 
+	if (!pWiphy) {
+		DBGLOG(RLM, ERROR, "pWiphy = NULL!\n");
+		return;
+	}
+
+	/*
+	 * Awlays use wlan0's base wiphy pointer to update reg notifier.
+	 * Because only one reg state machine is handled.
+	 */
+	if (gprWdev && (pWiphy != gprWdev->wiphy)) {
+		pWiphy = gprWdev->wiphy;
+		DBGLOG(RLM, ERROR, "Use base wiphy to update (p=0x%x)\n",
+			   gprWdev->wiphy);
+	}
+
+	old_state = rlmDomainGetCtrlState();
 
 	old_state = rlmDomainGetCtrlState();
 
@@ -4630,9 +4644,6 @@ mtk_reg_notify(IN struct wiphy *pWiphy,
 		} else if ((old_state == REGD_STATE_SET_WW_CORE) ||
 			   (old_state == REGD_STATE_SET_COUNTRY_USER) ||
 			   (old_state == REGD_STATE_SET_COUNTRY_DRIVER)) {
-
-			send_cmd_request = 1;
-
 			goto DOMAIN_SEND_CMD;
 		} else {
 			DBGLOG(RLM, ERROR,
@@ -4661,7 +4672,6 @@ mtk_reg_notify(IN struct wiphy *pWiphy,
 	       "request->alpha2=%s, initiator=%x, intersect=%d\n",
 	       pRequest->alpha2, pRequest->initiator, pRequest->intersect);
 
-	old_state = rlmDomainGetCtrlState();
 	regd_state_machine(pRequest);
 
 	if (rlmDomainGetCtrlState() == old_state) {
@@ -4678,7 +4688,7 @@ mtk_reg_notify(IN struct wiphy *pWiphy,
 		       "\n%s():\n---> WARNING. Transit to invalid state.\n",
 		       __func__);
 		DBGLOG(RLM, ERROR, "---> WARNING.\n ");
-		rlmDomianAssert(0);
+		rlmDomainAssert(0);
 	}
 
 	/*
@@ -4739,7 +4749,7 @@ DOMAIN_SEND_CMD:
 			       "%s(): Error, Cannot find the correct RegDomain. country = %u\n",
 			       __func__, rlmDomainGetCountryCode());
 
-			rlmDomianAssert(0);
+			rlmDomainAssert(0);
 			return;
 		}
 
@@ -4749,41 +4759,29 @@ DOMAIN_SEND_CMD:
 	/*
 	 * Parsing channels
 	 */
-	if (send_cmd_request)
-		rlmDomainParsingChannel(rlmDomainGetRefWiphy());
-	else
-		rlmDomainParsingChannel(pWiphy);/*real regd update*/
-
+	rlmDomainParsingChannel(pWiphy); /*real regd update*/
 
 	/*
-	 * Always use the wlan GlueInfo as parameter,
-	 * because P2P stores it as a different way
-	 * and I do not want to make a detection about
-	 * which wiphy, wlan wiphy or p2p wiphy is.
-	 */
-
-	prGlueInfo = rlmDomainGetGlueInfo();
-
-
-	/*
-	 * Prepare to send channel information to firmware
-	 */
-	if (!prGlueInfo)
-		return; /*interface is not up yet.*/
-
-	prAdapter = prGlueInfo->prAdapter;
-	if (!prAdapter)
-		return; /*interface is not up yet.*/
-
-
-	/*
-	 * Check if firmawre support single sku
-	 * no need to send information to firmware due to
-	 * firmware is not supported
+	 * Check if firmawre support single sku.
+	 * no need to send information to FW due to FW is not supported.
 	 */
 	if (!regd_is_single_sku_en())
 		return;
 
+	/*
+	 * Always use the wlan GlueInfo as parameter.
+	 */
+	prGlueInfo = rlmDomainGetGlueInfo();
+	if (!prGlueInfo) {
+		DBGLOG(RLM, ERROR, "prGlueInfo is NULL!\n");
+		return; /*interface is not up yet.*/
+	}
+
+	prAdapter = prGlueInfo->prAdapter;
+	if (!prAdapter) {
+		DBGLOG(RLM, ERROR, "prAdapter is NULL!\n");
+		return; /*interface is not up yet.*/
+	}
 
 	/*
 	 * Send commands to firmware
