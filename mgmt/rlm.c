@@ -1371,13 +1371,11 @@ static void rlmFillVhtCapIE(struct ADAPTER *prAdapter,
 		if (IS_FEATURE_ENABLED(prAdapter->rWifiVar.ucStaVhtMuBfee))
 			prVhtCap->u4VhtCapInfo |=
 				VHT_CAP_INFO_MU_BEAMFOMEE_CAPABLE;
-	}
-
-	if (IS_FEATURE_ENABLED(prAdapter->rWifiVar.ucStaVhtBfer))
-		prVhtCap->u4VhtCapInfo |= FIELD_VHT_CAP_INFO_BFER;
+		}
 
 		if (IS_FEATURE_ENABLED(prAdapter->rWifiVar.ucStaVhtBfer))
 			prVhtCap->u4VhtCapInfo |= FIELD_VHT_CAP_INFO_BFER;
+
 #if CFG_SUPPORT_VHT_IE_IN_2G
 	}
 #endif
