@@ -16500,15 +16500,15 @@ uint32_t wlanoidGetWifiType(IN struct ADAPTER *prAdapter,
 
 	ucPhyType = prBssInfo->ucPhyTypeSet;
 	if (ucPhyType & PHY_TYPE_SET_802_11AC)
-		kalStrCpy(pNameBuf, "11AC");
+		kalStrnCpy(pNameBuf, "11AC", 4);
 	else if (ucPhyType & PHY_TYPE_SET_802_11N)
-		kalStrCpy(pNameBuf, "11N");
+		kalStrnCpy(pNameBuf, "11N", 3);
 	else if (ucPhyType & PHY_TYPE_SET_802_11B)
-		kalStrCpy(pNameBuf, "11B");
+		kalStrnCpy(pNameBuf, "11B", 3);
 	else if (ucPhyType & PHY_TYPE_SET_802_11G)
-		kalStrCpy(pNameBuf, "11G");
+		kalStrnCpy(pNameBuf, "11G", 3);
 	else if (ucPhyType & PHY_TYPE_SET_802_11A)
-		kalStrCpy(pNameBuf, "11A");
+		kalStrnCpy(pNameBuf, "11A", 3);
 	else
 		DBGLOG(OID, INFO,
 		       "unknown wifi type, prBssInfo->ucPhyTypeSet: %u\n",
