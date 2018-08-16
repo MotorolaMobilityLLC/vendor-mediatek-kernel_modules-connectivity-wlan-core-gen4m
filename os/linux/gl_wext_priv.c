@@ -2190,9 +2190,9 @@ priv_set_struct(IN struct net_device *prNetDev,
 			int32_t i4ResultLen;
 
 			u4CmdLen = prIwReqData->data.length;
-			if (u4CmdLen > CMD_OID_BUF_LENGTH) {
+			if (u4CmdLen >= CMD_OID_BUF_LENGTH) {
 				DBGLOG(REQ, ERROR,
-				       "u4CmdLen:%u > CMD_OID_BUF_LENGTH:%d\n",
+				       "u4CmdLen:%u >= CMD_OID_BUF_LENGTH:%d\n",
 				       u4CmdLen, CMD_OID_BUF_LENGTH);
 				return -EINVAL;
 			}
@@ -2204,6 +2204,7 @@ priv_set_struct(IN struct net_device *prNetDev,
 				return -EFAULT;
 			}
 
+			aucOidBuf[u4CmdLen] = 0;
 			i4ResultLen = priv_driver_cmds(prNetDev, aucOidBuf,
 						       u4CmdLen);
 			if (i4ResultLen > 1) {
@@ -2213,9 +2214,13 @@ priv_set_struct(IN struct net_device *prNetDev,
 					       "copy_to_user fail\n");
 					return -EFAULT;
 				}
+				prIwReqData->data.length = i4ResultLen;
+			} else {
+				DBGLOG(REQ, ERROR,
+				       "i4ResultLen:%d <= 1\n", i4ResultLen);
+				return -EFAULT;
 			}
 
-			prIwReqData->data.length = i4ResultLen;
 		}
 		break;
 
