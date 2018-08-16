@@ -1314,6 +1314,7 @@ struct ADAPTER {
 	struct WLAN_INFO rWlanInfo;
 
 #if CFG_ENABLE_WIFI_DIRECT
+	uint8_t u4Mode;
 	u_int8_t fgIsP2PRegistered;
 	/* flag to report all networks in p2p scan */
 	u_int8_t p2p_scan_report_all_bss;

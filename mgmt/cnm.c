@@ -1481,7 +1481,8 @@ u_int8_t cnmAisInfraChannelFixed(struct ADAPTER
 			continue;
 
 #if CFG_ENABLE_WIFI_DIRECT
-		if (prBssInfo->eNetworkType == NETWORK_TYPE_P2P) {
+		if (prBssInfo->eNetworkType == NETWORK_TYPE_P2P
+			&& !cnmSapIsConcurrent(prAdapter)) {
 			u_int8_t fgFixedChannel =
 				p2pFuncIsAPMode(
 					prAdapter->rWifiVar.prP2PConnSettings[
@@ -3264,3 +3265,42 @@ enum ENUM_CNM_NETWORK_TYPE_T cnmGetBssNetworkType(
 	}
 	return ENUM_CNM_NETWORK_TYPE_OTHER;
 }
+
+u_int8_t cnmSapIsConcurrent(IN struct ADAPTER *prAdapter)
+{
+	if (prAdapter)
+		return (prAdapter->u4Mode == RUNNING_P2P_AP_MODE);
+	else
+		return FALSE;
+}
+
+u_int8_t cnmSapIsActive(IN struct ADAPTER *prAdapter)
+{
+	return (cnmGetSapBssInfo(prAdapter) != NULL);
+}
+
+struct BSS_INFO *cnmGetSapBssInfo(IN struct ADAPTER *prAdapter)
+{
+	struct BSS_INFO *prBssInfo;
+	uint8_t i;
+
+	if (!prAdapter)
+		return NULL;
+
+	for (i = 0; i < prAdapter->ucHwBssIdNum; i++) {
+		prBssInfo = prAdapter->aprBssInfo[i];
+
+		if (prBssInfo &&
+			IS_BSS_ACTIVE(prBssInfo) &&
+			IS_NET_ACTIVE(prAdapter,
+			prBssInfo->ucBssIndex) &&
+			IS_BSS_P2P(prBssInfo) &&
+			p2pFuncIsAPMode(
+			prAdapter->rWifiVar.prP2PConnSettings
+			[prBssInfo->u4PrivateData]))
+			return prBssInfo;
+	}
+
+	return NULL;
+}
+
