@@ -80,10 +80,7 @@
 #if CFG_SUPPORT_AGPS_ASSIST
 #include <net/netlink.h>
 #endif
-#if CFG_SUPPORT_WAKEUP_REASON_DEBUG
-/* #include <pcm_def.h> */
-#include <mtk_sleep.h>
-#endif
+
 /*******************************************************************************
  *                              C O N S T A N T S
  *******************************************************************************
@@ -3590,6 +3587,9 @@ int main_thread(void *data)
 	       KAL_GET_CURRENT_THREAD_NAME(), KAL_GET_CURRENT_THREAD_ID());
 
 	while (TRUE) {
+#ifdef UT_TEST_MODE
+		testThreadBegin(prGlueInfo->prAdapter);
+#endif
 
 #if CFG_ENABLE_WIFI_DIRECT
 		/*run p2p multicast list work. */
@@ -3717,7 +3717,9 @@ int main_thread(void *data)
 		}
 #endif
 		/* transfer ioctl to OID request */
-
+#ifdef UT_TEST_MODE
+		testProcessOid(prGlueInfo->prAdapter);
+#endif
 		do {
 			if (test_and_clear_bit(GLUE_FLAG_OID_BIT,
 					       &prGlueInfo->ulFlag)) {
@@ -3766,11 +3768,18 @@ int main_thread(void *data)
 		 *
 		 */
 
+#ifdef UT_TEST_MODE
+		testProcessTxReq(prGlueInfo->prAdapter);
+#endif
+
 		if (test_and_clear_bit(GLUE_FLAG_TXREQ_BIT,
 				       &prGlueInfo->ulFlag))
 			kalProcessTxReq(prGlueInfo, &fgNeedHwAccess);
 #if CFG_SUPPORT_MULTITHREAD
 		/* Process RX */
+#ifdef UT_TEST_MODE
+		testProcessRFBs(prGlueInfo->prAdapter);
+#endif
 		if (test_and_clear_bit(GLUE_FLAG_RX_BIT,
 				       &prGlueInfo->ulFlag))
 			nicRxProcessRFBs(prGlueInfo->prAdapter);
@@ -3792,12 +3801,18 @@ int main_thread(void *data)
 			wlanReleasePowerControl(prGlueInfo->prAdapter);
 #endif
 		/* handle cnmTimer time out */
+#ifdef UT_TEST_MODE
+		testTimeoutCheck(prGlueInfo->prAdapter);
+#endif
 		if (test_and_clear_bit(GLUE_FLAG_TIMEOUT_BIT,
 				       &prGlueInfo->ulFlag))
 			wlanTimerTimeoutCheck(prGlueInfo->prAdapter);
 #if CFG_SUPPORT_SDIO_READ_WRITE_PATTERN
 		if (prGlueInfo->fgEnSdioTestPattern == TRUE)
 			kalSetEvent(prGlueInfo);
+#endif
+#ifdef UT_TEST_MODE
+		testThreadEnd(prGlueInfo->prAdapter);
 #endif
 	}
 
