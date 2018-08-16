@@ -143,8 +143,9 @@ void scnInit(IN struct ADAPTER *prAdapter)
 
 		prBSSDesc = (struct BSS_DESC *) pucBSSBuff;
 
-		LINK_INSERT_TAIL(&prScanInfo->rFreeBSSDescList,
-			&prBSSDesc->rLinkEntry);
+		scanInsertBssDescToList(&prScanInfo->rFreeBSSDescList,
+			prBSSDesc,
+			FALSE);
 
 		pucBSSBuff += ALIGN_4(sizeof(struct BSS_DESC));
 	}
@@ -924,11 +925,14 @@ scanSearchExistingBssDescWithSsid(IN struct ADAPTER *prAdapter,
 			prFreeBSSDescList = &prScanInfo->rFreeBSSDescList;
 
 			/* Remove this BSS Desc from the BSS Desc list */
-			LINK_REMOVE_KNOWN_ENTRY(prBSSDescList, prBssDesc);
+			scanRemoveBssDescFromList(prBSSDescList,
+				prBssDesc,
+				prAdapter);
 
 			/* Return this BSS Desc to the free BSS Desc list. */
-			LINK_INSERT_TAIL(prFreeBSSDescList,
-				&prBssDesc->rLinkEntry);
+			scanInsertBssDescToList(prFreeBSSDescList,
+				prBssDesc,
+				FALSE);
 
 			return prIBSSBssDesc;
 		}
@@ -965,8 +969,6 @@ void scanRemoveBssDescsByPolicy(IN struct ADAPTER *prAdapter,
 	struct LINK *prBSSDescList;
 	struct LINK *prFreeBSSDescList;
 	struct BSS_DESC *prBssDesc;
-	/* Support AP Selection*/
-	struct LINK *prEssList;
 
 	ASSERT(prAdapter);
 
@@ -974,8 +976,6 @@ void scanRemoveBssDescsByPolicy(IN struct ADAPTER *prAdapter,
 	prScanInfo = &(prAdapter->rWifiVar.rScanInfo);
 	prBSSDescList = &prScanInfo->rBSSDescList;
 	prFreeBSSDescList = &prScanInfo->rFreeBSSDescList;
-	/* Support AP Selection*/
-	prEssList = &prAdapter->rWifiVar.rAisSpecificBssInfo.rCurEssLink;
 
 #if 0 /* TODO: Remove this */
 	log_dbg(SCN, TRACE, ("Before Remove - Number Of SCAN Result = %ld\n",
@@ -1014,34 +1014,16 @@ void scanRemoveBssDescsByPolicy(IN struct ADAPTER *prAdapter,
 					MAC2STR(prBssDesc->aucBSSID),
 					rCurrentTime, prBssDesc->rUpdateTime));
 #endif
-				/* Support AP Selection */
-				if (!prBssDesc->prBlack)
-					aisQueryBlackList(prAdapter, prBssDesc);
-				if (prBssDesc->prBlack)
-					prBssDesc->prBlack->u4DisapperTime =
-						(uint32_t)kalGetBootTime();
-				/* end Support AP Selection */
-
-				/* Remove this BSS Desc from
-				 * the BSS Desc list
-				 */
-				LINK_REMOVE_KNOWN_ENTRY(prBSSDescList,
-					prBssDesc);
-
-				/* Support AP Selection */
-				/* Remove this BSS Desc from the Ess Desc List
-				 */
-				if (LINK_ENTRY_IS_VALID
-					(&prBssDesc->rLinkEntryEss))
-					LINK_REMOVE_KNOWN_ENTRY(prEssList,
-						&prBssDesc->rLinkEntryEss);
-				/* end Support AP Selection */
+				scanRemoveBssDescFromList(prBSSDescList,
+					prBssDesc,
+					prAdapter);
 
 				/* Return this BSS Desc to the
 				 * free BSS Desc list.
 				 */
-				LINK_INSERT_TAIL(prFreeBSSDescList,
-					&prBssDesc->rLinkEntry);
+				scanInsertBssDescToList(prFreeBSSDescList,
+					prBssDesc,
+					FALSE);
 			}
 		}
 	}
@@ -1083,28 +1065,14 @@ void scanRemoveBssDescsByPolicy(IN struct ADAPTER *prAdapter,
 				MAC2STR(prBssDescOldest->aucBSSID),
 				prBssDescOldest->rUpdateTime);
 #endif
-			/* Support AP Selection */
-			if (!prBssDescOldest->prBlack)
-				aisQueryBlackList(prAdapter, prBssDescOldest);
-			if (prBssDescOldest->prBlack)
-				prBssDescOldest->prBlack->u4DisapperTime =
-				(uint32_t)kalGetBootTime();
-			/* end Support AP Selection */
-
-			/* Remove this BSS Desc from the BSS Desc list */
-			LINK_REMOVE_KNOWN_ENTRY(prBSSDescList, prBssDescOldest);
-
-			/* Support AP Selection */
-			/* Remove this BSS Desc from the Ess Desc List */
-			if (LINK_ENTRY_IS_VALID
-				(&prBssDescOldest->rLinkEntryEss))
-				LINK_REMOVE_KNOWN_ENTRY(prEssList,
-					&prBssDescOldest->rLinkEntryEss);
-			/* end Support AP Selection */
+			scanRemoveBssDescFromList(prBSSDescList,
+				prBssDescOldest,
+				prAdapter);
 
 			/* Return this BSS Desc to the free BSS Desc list. */
-			LINK_INSERT_TAIL(prFreeBSSDescList,
-				&prBssDescOldest->rLinkEntry);
+			scanInsertBssDescToList(prFreeBSSDescList,
+				prBssDescOldest,
+				FALSE);
 		}
 	}
 	if (u4RemovePolicy & SCN_RM_POLICY_SMART_WEAKEST) {
@@ -1168,35 +1136,18 @@ void scanRemoveBssDescsByPolicy(IN struct ADAPTER *prAdapter,
 				prBssDescOldest->rUpdateTime);
 #endif
 
-			/* Support AP Selection */
-			if (!prBssDescWeakest->prBlack)
-				aisQueryBlackList(prAdapter, prBssDescWeakest);
-			if (prBssDescWeakest->prBlack)
-				prBssDescWeakest->prBlack->u4DisapperTime =
-				(uint32_t)kalGetBootTime();
-			/* end Support AP Selection */
-
-			/* Remove this BSS Desc from the BSS Desc list */
-			LINK_REMOVE_KNOWN_ENTRY(prBSSDescList,
-				prBssDescWeakest);
-
-			/* Support AP Selection */
-			/* Remove this BSS Desc from the Ess Desc List */
-			if (LINK_ENTRY_IS_VALID
-				(&prBssDescWeakest->rLinkEntryEss))
-				LINK_REMOVE_KNOWN_ENTRY(prEssList,
-					&prBssDescWeakest->rLinkEntryEss);
-			/* end Support AP Selection */
+			scanRemoveBssDescFromList(prBSSDescList,
+				prBssDescWeakest,
+				prAdapter);
 
 			/* Return this BSS Desc to the free BSS Desc list. */
-			LINK_INSERT_TAIL(prFreeBSSDescList,
-				&prBssDescWeakest->rLinkEntry);
+			scanInsertBssDescToList(prFreeBSSDescList,
+				prBssDescWeakest,
+				FALSE);
 		}
 	}
 	if (u4RemovePolicy & SCN_RM_POLICY_ENTIRE) {
 		struct BSS_DESC *prBSSDescNext;
-		/* Support AP Selection */
-		uint32_t u4Current = (uint32_t)kalGetBootTime();
 
 		LINK_FOR_EACH_ENTRY_SAFE(prBssDesc, prBSSDescNext,
 			prBSSDescList, rLinkEntry, struct BSS_DESC) {
@@ -1209,26 +1160,15 @@ void scanRemoveBssDescsByPolicy(IN struct ADAPTER *prAdapter,
 				 */
 				continue;
 			}
-			/* Support AP Selection */
-			if (!prBssDesc->prBlack)
-				aisQueryBlackList(prAdapter, prBssDesc);
-			if (prBssDesc->prBlack)
-				prBssDesc->prBlack->u4DisapperTime = u4Current;
-			/* end Support AP Selection */
 
-			/* Remove this BSS Desc from the BSS Desc list */
-			LINK_REMOVE_KNOWN_ENTRY(prBSSDescList, prBssDesc);
-
-			/* Support AP Selection */
-			/* Remove this BSS Desc from the Ess Desc List */
-			if (LINK_ENTRY_IS_VALID(&prBssDesc->rLinkEntryEss))
-				LINK_REMOVE_KNOWN_ENTRY(prEssList,
-				&prBssDesc->rLinkEntryEss);
-			/* end Support AP Selection */
+			scanRemoveBssDescFromList(prBSSDescList,
+				prBssDesc,
+				prAdapter);
 
 			/* Return this BSS Desc to the free BSS Desc list. */
-			LINK_INSERT_TAIL(prFreeBSSDescList,
-				&prBssDesc->rLinkEntry);
+			scanInsertBssDescToList(prFreeBSSDescList,
+				prBssDesc,
+				FALSE);
 		}
 
 	}
@@ -1252,8 +1192,6 @@ void scanRemoveBssDescByBssid(IN struct ADAPTER *prAdapter,
 	struct LINK *prFreeBSSDescList;
 	struct BSS_DESC *prBssDesc = (struct BSS_DESC *) NULL;
 	struct BSS_DESC *prBSSDescNext;
-	/* Support AP Selection */
-	struct LINK *prEssList = NULL;
 
 	ASSERT(prAdapter);
 	ASSERT(aucBSSID);
@@ -1261,32 +1199,20 @@ void scanRemoveBssDescByBssid(IN struct ADAPTER *prAdapter,
 	prScanInfo = &(prAdapter->rWifiVar.rScanInfo);
 	prBSSDescList = &prScanInfo->rBSSDescList;
 	prFreeBSSDescList = &prScanInfo->rFreeBSSDescList;
-	/* Support AP Selection */
-	prEssList = &prAdapter->rWifiVar.rAisSpecificBssInfo.rCurEssLink;
 
 	/* Check if such BSS Descriptor exists in a valid list */
 	LINK_FOR_EACH_ENTRY_SAFE(prBssDesc, prBSSDescNext, prBSSDescList,
 		rLinkEntry, struct BSS_DESC) {
 
 		if (EQUAL_MAC_ADDR(prBssDesc->aucBSSID, aucBSSID)) {
-			/* Support AP Selection */
-			if (!prBssDesc->prBlack)
-				aisQueryBlackList(prAdapter, prBssDesc);
-			if (prBssDesc->prBlack)
-				prBssDesc->prBlack->u4DisapperTime =
-				(uint32_t)kalGetBootTime();
-
-			/* Remove this BSS Desc from the BSS Desc list */
-			LINK_REMOVE_KNOWN_ENTRY(prBSSDescList, prBssDesc);
-
-			/* Remove this BSS Desc from the Ess Desc List */
-			if (LINK_ENTRY_IS_VALID(&prBssDesc->rLinkEntryEss))
-				LINK_REMOVE_KNOWN_ENTRY(prEssList,
-					&prBssDesc->rLinkEntryEss);
+			scanRemoveBssDescFromList(prBSSDescList,
+				prBssDesc,
+				prAdapter);
 
 			/* Return this BSS Desc to the free BSS Desc list. */
-			LINK_INSERT_TAIL(prFreeBSSDescList,
-				&prBssDesc->rLinkEntry);
+			scanInsertBssDescToList(prFreeBSSDescList,
+				prBssDesc,
+				FALSE);
 
 			/* BSSID is not unique, so need to traverse
 			 * whols link-list
@@ -1366,28 +1292,14 @@ void scanRemoveBssDescByBandAndNetwork(IN struct ADAPTER *prAdapter,
 		}
 
 		if (fgToRemove == TRUE) {
-			/* Support AP Selection */
-			struct LINK *prEssList =
-				&prAdapter->rWifiVar.
-				rAisSpecificBssInfo.rCurEssLink;
-
-			if (!prBssDesc->prBlack)
-				aisQueryBlackList(prAdapter, prBssDesc);
-			if (prBssDesc->prBlack)
-				prBssDesc->prBlack->u4DisapperTime =
-					(uint32_t)kalGetBootTime();
-
-			/* Remove this BSS Desc from the BSS Desc list */
-			LINK_REMOVE_KNOWN_ENTRY(prBSSDescList, prBssDesc);
-
-			/* Remove this BSS Desc from the Ess Desc List */
-			if (LINK_ENTRY_IS_VALID(&prBssDesc->rLinkEntryEss))
-				LINK_REMOVE_KNOWN_ENTRY(prEssList,
-					&prBssDesc->rLinkEntryEss);
+			scanRemoveBssDescFromList(prBSSDescList,
+				prBssDesc,
+				prAdapter);
 
 			/* Return this BSS Desc to the free BSS Desc list. */
-			LINK_INSERT_TAIL(prFreeBSSDescList,
-				&prBssDesc->rLinkEntry);
+			scanInsertBssDescToList(prFreeBSSDescList,
+				prBssDesc,
+				FALSE);
 		}
 	}
 }	/* end of scanRemoveBssDescByBand() */
@@ -1455,24 +1367,19 @@ struct BSS_DESC *scanAllocateBssDesc(IN struct ADAPTER *prAdapter)
 	if (prBssDesc) {
 		struct LINK *prBSSDescList;
 
-		kalMemZero(prBssDesc, sizeof(struct BSS_DESC));
-
-#if CFG_ENABLE_WIFI_DIRECT
-		LINK_INITIALIZE(&(prBssDesc->rP2pDeviceList));
-		prBssDesc->fgIsP2PPresent = FALSE;
-#endif /* CFG_ENABLE_WIFI_DIRECT */
-
 		prBSSDescList = &prScanInfo->rBSSDescList;
 
 		/* NOTE(Kevin): In current design, this new empty
 		 * struct BSS_DESC will be inserted to BSSDescList immediately.
 		 */
-		LINK_INSERT_TAIL(prBSSDescList, &prBssDesc->rLinkEntry);
+		scanInsertBssDescToList(prBSSDescList,
+			prBssDesc,
+			TRUE);
 	}
 
 	return prBssDesc;
 
-}				/* end of scanAllocateBssDesc() */
+}	/* end of scanAllocateBssDesc() */
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -1777,8 +1684,18 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 		 * DESC 'cause AP should have reset itself
 		 */
 		if (prBssDesc->eBSSType == BSS_TYPE_INFRASTRUCTURE
-			&& u8Timestamp < prBssDesc->u8TimeStamp.QuadPart) {
+			&& u8Timestamp < prBssDesc->u8TimeStamp.QuadPart
+			&& prBssDesc->fgIsConnecting == FALSE) {
 			u_int8_t fgIsConnected, fgIsConnecting;
+
+			if (prAdapter->rWifiVar.rAisFsmInfo.prTargetBssDesc
+				== prBssDesc) {
+				log_dbg(SCN, TRACE, "Timestamap reset. Reset prTargetBssDesc BSS:"
+					MACSTR " connected:%x connecting:%x",
+					MAC2STR(prBssDesc->aucBSSID),
+					prBssDesc->fgIsConnected,
+					prBssDesc->fgIsConnecting);
+			}
 
 			/* set flag for indicating this is a new BSS-DESC */
 			fgIsNewBssDesc = TRUE;
@@ -1788,17 +1705,13 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 			 */
 			fgIsConnected = prBssDesc->fgIsConnected;
 			fgIsConnecting = prBssDesc->fgIsConnecting;
-			scanRemoveBssDescByBssid(prAdapter,
-				prBssDesc->aucBSSID);
 
-			prBssDesc = scanAllocateBssDesc(prAdapter);
-			if (!prBssDesc) {
-				log_dbg(SCN, WARN, "Realloc BssDesc for "
-					MACSTR " failed\n",
-					MAC2STR((uint8_t *)
-					prWlanBeaconFrame->aucBSSID));
-				return NULL;
-			}
+			/* Connected BSS descriptor still be used by other
+			 * functions. Thus, we should re-initialize the BSS_DESC
+			 * structure instead of re-allocating the BSS_DESC
+			 * structure.
+			 */
+			scanResetBssDesc(prAdapter, prBssDesc);
 
 			/* restore */
 			prBssDesc->fgIsConnected = fgIsConnected;
@@ -4273,3 +4186,97 @@ void scanLogCacheFlushAll(struct SCAN_LOG_CACHE *prScanLogCache,
 	scanLogCacheFlushBSS(&(prScanLogCache->rBSSListCFG),
 		prefix, logBufLen);
 }
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * @brief Remove and clean BSS Descriptors from the list.
+ *
+ * @param[in] prBSSDescList Pointer to the LINK structure.
+ * @param[in] prBssDesc     Pointer to the BSS_DESC structure.
+ * @param[in] prAdapter     Pointer to the Adapter structure.
+ *
+ * @return (none)
+ */
+/*----------------------------------------------------------------------------*/
+void scanRemoveBssDescFromList(IN struct LINK *prBSSDescList,
+			       IN struct BSS_DESC *prBssDesc,
+			       IN struct ADAPTER *prAdapter)
+{
+	if (prAdapter != NULL && prBssDesc != NULL) {
+		struct LINK *prEssList =
+			&prAdapter->rWifiVar.rAisSpecificBssInfo.rCurEssLink;
+
+		/* Support AP Selection */
+		if (!prBssDesc->prBlack)
+			aisQueryBlackList(prAdapter, prBssDesc);
+		if (prBssDesc->prBlack)
+			prBssDesc->prBlack->u4DisapperTime =
+				(uint32_t)kalGetBootTime();
+
+		/* Remove this BSS Desc from the Ess Desc List */
+		if (LINK_ENTRY_IS_VALID(&prBssDesc->rLinkEntryEss))
+			LINK_REMOVE_KNOWN_ENTRY(prEssList,
+				&prBssDesc->rLinkEntryEss);
+		/* end Support AP Selection */
+
+		/* Remove this BSS Desc from the BSS Desc list */
+		if (prBSSDescList != NULL)
+			LINK_REMOVE_KNOWN_ENTRY(prBSSDescList, prBssDesc);
+	}
+}	/* end of scanRemoveBssDescFromList() */
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * @brief Insert and initialize the BSS Descriptors to the list.
+ *
+ * @param[in] prBSSDescList Pointer to the LINK structure.
+ * @param[in] prBssDesc     Pointer to the BSS_DESC structure.
+ * @param[in] init          TRUE for initializing the BSS_DESC.
+ *
+ * @return (none)
+ */
+/*----------------------------------------------------------------------------*/
+void scanInsertBssDescToList(IN struct LINK *prBSSDescList,
+			     IN struct BSS_DESC *prBssDesc,
+			     IN u_int8_t init)
+{
+	if (prBssDesc != NULL) {
+		if (init == TRUE) {
+			/* This will reset the link relationship */
+			kalMemZero(prBssDesc, sizeof(struct BSS_DESC));
+
+#if CFG_ENABLE_WIFI_DIRECT
+			LINK_INITIALIZE(&(prBssDesc->rP2pDeviceList));
+			prBssDesc->fgIsP2PPresent = FALSE;
+#endif /* CFG_ENABLE_WIFI_DIRECT */
+		}
+
+		/* Insert this BSS Desc to the BSS Desc list */
+		if (prBSSDescList != NULL)
+			LINK_INSERT_TAIL(prBSSDescList, &prBssDesc->rLinkEntry);
+	}
+}	/* end of scanInsertBssDescToList() */
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * @brief Reset the BSS Descriptors.
+ *
+ * @param[in] prAdapter  Pointer to the Adapter structure.
+ * @param[in] prBssDesc  Pointer to the BSS_DESC structure.
+ *
+ * @return (none)
+ */
+/*----------------------------------------------------------------------------*/
+void scanResetBssDesc(IN struct ADAPTER *prAdapter,
+		      IN struct BSS_DESC *prBssDesc)
+{
+	struct LINK *prBSSDescList =
+		&prAdapter->rWifiVar.rScanInfo.rBSSDescList;
+
+	scanRemoveBssDescFromList(prBSSDescList,
+		prBssDesc,
+		prAdapter);
+	scanInsertBssDescToList(prBSSDescList,
+		prBssDesc,
+		TRUE);
+}	/* end of scanResetBssDesc() */
