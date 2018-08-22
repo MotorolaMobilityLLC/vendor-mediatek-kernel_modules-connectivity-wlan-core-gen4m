@@ -4563,11 +4563,13 @@ void nicIndicateConnectionTxFrame(IN struct ADAPTER *prAdapter,
 		rCmdConnectionParms.ucProtocolSubType =
 			secGetDHCPType(((struct sk_buff *)
 				prMsduInfo->prPacket)->data);
+		prAdapter->u4DhcpState = rCmdConnectionParms.ucProtocolSubType;
 	} else if (prMsduInfo->ucPktType == ENUM_PKT_1X &&
 			prMsduInfo->eEapolKeyType != EAPOL_KEY_NOT_KEY) {
 		rCmdConnectionParms.ucProtocolType = PROTOCOL_TYPE_EAP;
 		rCmdConnectionParms.ucProtocolSubType =
 			prMsduInfo->eEapolKeyType;
+		prAdapter->u4EapolState = rCmdConnectionParms.ucProtocolSubType;
 	}
 
 	DBGLOG(NIC, TRACE, "ucProtocolType=%d, ucProtocolSubType=%d\n",
@@ -4608,12 +4610,18 @@ void nicIndicateConnectionRxFrame(IN struct ADAPTER *prAdapter,
 		rCmdConnectionParms.ucProtocolType = PROTOCOL_TYPE_DHCP;
 		ucFrameType = ucFrameType == 5 ? 4 : ucFrameType;
 		rCmdConnectionParms.ucProtocolSubType = ucFrameType;
+		if (prAdapter->u4DhcpState == ucFrameType)
+			return;
+		prAdapter->u4DhcpState = ucFrameType;
 	}
 
 	ucFrameType = secGetEapolKeyType((uint8_t *) prRetSwRfb->pvHeader);
 	if (ucFrameType != 0) {
 		rCmdConnectionParms.ucProtocolType = PROTOCOL_TYPE_EAP;
 		rCmdConnectionParms.ucProtocolSubType = ucFrameType;
+		if (prAdapter->u4EapolState == ucFrameType)
+			return;
+		prAdapter->u4EapolState = ucFrameType;
 	}
 
 	if (rCmdConnectionParms.ucProtocolType ==
