@@ -2807,6 +2807,15 @@ struct SW_RFB *qmHandleRxPackets(IN struct ADAPTER *prAdapter,
 		prNextSwRfb = QM_RX_GET_NEXT_SW_RFB(prCurrSwRfb);
 
 		prRxStatus = prCurrSwRfb->prRxStatus;
+		if (prRxStatus->u2RxByteCount > CFG_RX_MAX_PKT_SIZE) {
+			prCurrSwRfb->eDst = RX_PKT_DESTINATION_NULL;
+			QUEUE_INSERT_TAIL(prReturnedQue,
+				(struct QUE_ENTRY *) prCurrSwRfb);
+			DBGLOG(QM, ERROR,
+				"Drop packet when packet length is larger than CFG_RX_MAX_PKT_SIZE. Packet length=%d\n",
+				prRxStatus->u2RxByteCount);
+			continue;
+		}
 		/* TODO: (Tehuang) Check if relaying */
 		prCurrSwRfb->eDst = RX_PKT_DESTINATION_HOST;
 
