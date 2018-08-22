@@ -10219,7 +10219,7 @@ error:
 }
 
 int priv_driver_set_ap_get_sta_list(IN struct net_device *prNetDev,
-		IN char *pcCommand, IN int i4TotalLen)
+		IN char *pcCommand, IN int i4TotalLen, IN OUT char *pcExtra)
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct ADAPTER *prAdapter = NULL;
@@ -10264,7 +10264,7 @@ int priv_driver_set_ap_get_sta_list(IN struct net_device *prNetDev,
 			prCurrStaRec->ucIndex,
 			MAC2STR(prCurrStaRec->aucMacAddr));
 		i4BytesWritten += kalSnprintf(
-			pcCommand + i4BytesWritten,
+			pcExtra + i4BytesWritten,
 			i4TotalLen - i4BytesWritten,
 			"MAC[%d]=" MACSTR "\n",
 			i++,
@@ -10383,7 +10383,7 @@ priv_set_ap(IN struct net_device *prNetDev,
 				__func__, i4BytesWritten);
 			return -EFAULT;
 		}
-		if (copy_from_user(pcExtra,
+		if (copy_from_user(&aucOidBuf[0],
 			prIwReqData->data.pointer,
 			prIwReqData->data.length)) {
 			DBGLOG(REQ, INFO,
@@ -10392,11 +10392,9 @@ priv_set_ap(IN struct net_device *prNetDev,
 				prIwReqData->data.length);
 				return -EFAULT;
 		}
-		/* prIwReqData->data.length include the terminate '\0' */
-		pcExtra[prIwReqData->data.length - 1] = 0;
 	}
 
-	DBGLOG(REQ, INFO, "%s pcExtra %s\n", __func__, pcExtra);
+	DBGLOG(REQ, INFO, "%s pcExtra %s\n", __func__, aucOidBuf);
 
 	if (!pcExtra)
 		goto exit;
@@ -10407,28 +10405,29 @@ priv_set_ap(IN struct net_device *prNetDev,
 	i4BytesWritten =
 		priv_driver_set_ap_get_sta_list(
 		prNetDev,
-		pcExtra,
-		i4TotalFixLen);
+		aucOidBuf,
+		i4TotalFixLen,
+		pcExtra);
 		break;
 	case IOC_AP_SET_MAC_FLTR:
 	i4BytesWritten =
 		priv_driver_set_ap_set_mac_acl(
 		prNetDev,
-		pcExtra,
+		aucOidBuf,
 		i4TotalFixLen);
 	  break;
 	case IOC_AP_SET_CFG:
 	i4BytesWritten =
 		priv_driver_set_ap_set_cfg(
 		prNetDev,
-		pcExtra,
+		aucOidBuf,
 		i4TotalFixLen);
 	  break;
 	case IOC_AP_STA_DISASSOC:
 	i4BytesWritten =
 		priv_driver_set_ap_sta_disassoc(
 		prNetDev,
-		pcExtra,
+		aucOidBuf,
 		i4TotalFixLen);
 	  break;
 	default:
@@ -10438,8 +10437,7 @@ priv_set_ap(IN struct net_device *prNetDev,
 
 	if (i4CmdFound == 0)
 		DBGLOG(REQ, INFO,
-			"Unknown driver command %s - ignored\n",
-			pcExtra);
+			"Unknown driver command\n");
 
 	if (i4BytesWritten >= 0) {
 		if ((i4BytesWritten == 0) && (i4TotalFixLen > 0)) {
