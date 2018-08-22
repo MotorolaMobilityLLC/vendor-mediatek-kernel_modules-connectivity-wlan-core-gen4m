@@ -3532,12 +3532,25 @@ void nicRxProcessRFBs(IN struct ADAPTER *prAdapter)
 							prSwRfb);
 					}
 					/* case HIF_RX_PKT_TYPE_MANAGEMENT: */
-					else if ((prSwRfb->prRxStatus->u2PktTYpe
+					else if (((prSwRfb->prRxStatus->
+								u2PktTYpe
 						& RXM_RXD_PKT_TYPE_SW_BITMAP) ==
-						 RXM_RXD_PKT_TYPE_SW_FRAME) {
+						RXM_RXD_PKT_TYPE_SW_FRAME)
+						&& (HAL_RX_STATUS_GET_OFLD(
+						  prSwRfb->prRxStatus))) {
+						/* OFLD pkts should go data flow
+						 * 1: EAPOL
+						 * 2: ARP / NS
+						 * 3: TDLS
+						 */
+						nicRxProcessDataPacket(
+							prAdapter, prSwRfb);
+					} else if ((prSwRfb->prRxStatus->
+								u2PktTYpe
+						& RXM_RXD_PKT_TYPE_SW_BITMAP) ==
+						RXM_RXD_PKT_TYPE_SW_FRAME) {
 						nicRxProcessMgmtPacket(
-							prAdapter,
-							prSwRfb);
+							prAdapter, prSwRfb);
 					} else {
 						DBGLOG(RX, ERROR,
 							"u2PktTYpe(0x%04X) is OUT OF DEF.!!!\n",
