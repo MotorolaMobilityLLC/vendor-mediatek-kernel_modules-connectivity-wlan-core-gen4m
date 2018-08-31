@@ -1738,6 +1738,9 @@ uint32_t nicTxMsduInfoListMthread(IN struct ADAPTER *prAdapter,
 
 uint32_t nicTxMsduQueueMthread(IN struct ADAPTER *prAdapter);
 
+void nicTxMsduQueueByPrio(struct ADAPTER *prAdapter);
+void nicTxMsduQueueByRR(struct ADAPTER *prAdapter);
+
 uint32_t nicTxGetMsduPendingCnt(IN struct ADAPTER *prAdapter);
 #endif
 
