@@ -1715,6 +1715,11 @@ struct PARAM_LINUX_NETDEV_STATISTICS {
 struct PARAM_MTK_WIFI_TEST_STRUCT {
 	uint32_t u4FuncIndex;
 	uint32_t u4FuncData;
+};
+
+struct PARAM_MTK_WIFI_TEST_STRUCT_2 {
+	uint32_t u4FuncIndex;
+	uint32_t u4FuncData;
 	uint32_t u4FuncData2; /*FW don't support*/
 };
 
