@@ -1118,13 +1118,11 @@ uint8_t cnmDecideSapNewChannel(
 uint8_t cnmIdcCsaReq(IN struct ADAPTER *prAdapter,
 	IN uint8_t ch_num, IN uint8_t ucRoleIdx)
 {
-	struct GLUE_INFO *prGlueInfo = prAdapter->prGlueInfo;
 	struct BSS_INFO *prBssInfo = NULL;
 	uint8_t ucBssIdx = 0;
 	struct RF_CHANNEL_INFO rRfChnlInfo;
 
 	ASSERT(ch_num);
-	ASSERT(prGlueInfo);
 
 	if (p2pFuncRoleToBssIdx(
 		prAdapter, ucRoleIdx, &ucBssIdx) !=
