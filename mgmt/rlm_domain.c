@@ -925,6 +925,44 @@ rlmDomainGetChnlList_V2(struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Check if Channel supported by HW
+ *
+ * \param[in/out] eBand:          BAND_2G4, BAND_5G or BAND_NULL
+ *                                (both 2.4G and 5G)
+ *                ucNumOfChannel: channel number
+ *
+ * \return TRUE/FALSE
+ */
+/*----------------------------------------------------------------------------*/
+u_int8_t rlmIsValidChnl(struct ADAPTER *prAdapter, uint8_t ucNumOfChannel,
+			enum ENUM_BAND eBand)
+{
+	struct ieee80211_supported_band *channelList;
+	int i, chSize;
+	struct GLUE_INFO *prGlueInfo;
+	struct wiphy *prWiphy;
+
+	prGlueInfo = prAdapter->prGlueInfo;
+	prWiphy = priv_to_wiphy(prGlueInfo);
+
+	if (eBand == BAND_5G) {
+		channelList = prWiphy->bands[KAL_BAND_5GHZ];
+		chSize = channelList->n_channels;
+	} else if (eBand == BAND_2G4) {
+		channelList = prWiphy->bands[KAL_BAND_2GHZ];
+		chSize = channelList->n_channels;
+	} else
+		return FALSE;
+
+	for (i = 0; i < chSize; i++) {
+		if ((channelList->channels[i]).hw_value == ucNumOfChannel)
+			return TRUE;
+	}
+	return FALSE;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Retrieve the supported channel list of specified band
  *
  * \param[in/out] eSpecificBand:   BAND_2G4, BAND_5G or BAND_NULL
@@ -943,7 +981,7 @@ rlmDomainGetChnlList(struct ADAPTER *prAdapter,
 		     uint8_t ucMaxChannelNum, uint8_t *pucNumOfChannel,
 		     struct RF_CHANNEL_INFO *paucChannelList)
 {
-	uint8_t i, j, ucNum;
+	uint8_t i, j, ucNum, ch;
 	struct DOMAIN_SUBBAND_INFO *prSubband;
 	struct DOMAIN_INFO_ENTRY *prDomainInfo;
 
@@ -982,11 +1020,18 @@ rlmDomainGetChnlList(struct ADAPTER *prAdapter,
 			for (j = 0; j < prSubband->ucNumChannels; j++) {
 				if (ucNum >= ucMaxChannelNum)
 					break;
+
+				ch = prSubband->ucFirstChannelNum +
+				     j * prSubband->ucChannelSpan;
+				if (!rlmIsValidChnl(prAdapter, ch,
+						prSubband->ucBand)) {
+					DBGLOG(RLM, INFO,
+					       "Not support ch%d!\n", ch);
+					continue;
+				}
 				paucChannelList[ucNum].eBand =
 							prSubband->ucBand;
-				paucChannelList[ucNum].ucChannelNum =
-				    prSubband->ucFirstChannelNum +
-				    j * prSubband->ucChannelSpan;
+				paucChannelList[ucNum].ucChannelNum = ch;
 				paucChannelList[ucNum].eDFS = prSubband->fgDfs;
 				ucNum++;
 			}
@@ -1011,7 +1056,7 @@ void rlmDomainGetDfsChnls(struct ADAPTER *prAdapter,
 			  uint8_t ucMaxChannelNum, uint8_t *pucNumOfChannel,
 			  struct RF_CHANNEL_INFO *paucChannelList)
 {
-	uint8_t i, j, ucNum;
+	uint8_t i, j, ucNum, ch;
 	struct DOMAIN_SUBBAND_INFO *prSubband;
 	struct DOMAIN_INFO_ENTRY *prDomainInfo;
 
@@ -1034,11 +1079,20 @@ void rlmDomainGetDfsChnls(struct ADAPTER *prAdapter,
 				for (j = 0; j < prSubband->ucNumChannels; j++) {
 					if (ucNum >= ucMaxChannelNum)
 						break;
+
+					ch = prSubband->ucFirstChannelNum +
+					     j * prSubband->ucChannelSpan;
+					if (!rlmIsValidChnl(prAdapter, ch,
+							prSubband->ucBand)) {
+						DBGLOG(RLM, INFO,
+					       "Not support ch%d!\n", ch);
+						continue;
+					}
+
 					paucChannelList[ucNum].eBand =
 					    prSubband->ucBand;
 					paucChannelList[ucNum].ucChannelNum =
-					    prSubband->ucFirstChannelNum + j *
-					    prSubband->ucChannelSpan;
+					    ch;
 					ucNum++;
 				}
 			}
@@ -1376,7 +1430,16 @@ u_int8_t rlmDomainIsLegalChannel(struct ADAPTER *prAdapter,
 			for (j = 0; j < prSubband->ucNumChannels; j++) {
 				if ((prSubband->ucFirstChannelNum + j *
 				    prSubband->ucChannelSpan) == ucChannel) {
-					return TRUE;
+					if (!rlmIsValidChnl(prAdapter,
+						    ucChannel,
+						    prSubband->ucBand)) {
+						DBGLOG(RLM, INFO,
+						       "Not support ch%d!\n",
+						       ucChannel);
+						return FALSE;
+					} else
+						return TRUE;
+
 				}
 			}
 		}
