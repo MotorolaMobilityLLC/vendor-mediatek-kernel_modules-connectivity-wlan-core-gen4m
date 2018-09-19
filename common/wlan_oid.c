@@ -5462,7 +5462,7 @@ wlanoidQueryRxStatistics(IN struct ADAPTER *prAdapter,
 	prCmdAccessRxStat = &rCmdAccessRxStat;
 
 	DEBUGFUNC("wlanoidQueryRxStatistics");
-	DBGLOG(INIT, INFO, "pu4QueryInfoLen = %d\n", pu4QueryInfoLen);
+	DBGLOG(INIT, INFO, "pu4QueryInfoLen = %ld\n", u4QueryBufferLen);
 
 	prRxStatistics = (struct PARAM_CUSTOM_ACCESS_RX_STAT *) pvQueryBuffer;
 
