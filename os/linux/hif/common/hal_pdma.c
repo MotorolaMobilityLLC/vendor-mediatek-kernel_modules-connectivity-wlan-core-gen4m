@@ -1937,11 +1937,12 @@ bool halWpdmaWriteMsdu(struct GLUE_INFO *prGlueInfo,
 		return false;
 	}
 
+	prToken->prMsduInfo = prMsduInfo;
+
 #if HIF_TX_PREALLOC_DATA_BUFFER
 	if (prMemOps->copyTxData)
 		prMemOps->copyTxData(prToken, pucSrc, u4TotalLen);
 #else
-	prToken->prMsduInfo = prMsduInfo;
 	prToken->prPacket = pucSrc;
 	prToken->u4DmaLength = u4TotalLen;
 	prMsduInfo->prToken = prToken;
@@ -2009,11 +2010,13 @@ bool halWpdmaWriteAmsdu(struct GLUE_INFO *prGlueInfo,
 			DBGLOG(HAL, ERROR, "Write AMSDU acquire token fail\n");
 			return false;
 		}
+
+		prToken->prMsduInfo = prMsduInfo;
+
 #if HIF_TX_PREALLOC_DATA_BUFFER
 		if (prMemOps->copyTxData)
 			prMemOps->copyTxData(prToken, pucSrc, u4TotalLen);
 #else
-		prToken->prMsduInfo = prMsduInfo;
 		prToken->prPacket = pucSrc;
 		prToken->u4DmaLength = u4TotalLen;
 		prMsduInfo->prToken = prToken;
