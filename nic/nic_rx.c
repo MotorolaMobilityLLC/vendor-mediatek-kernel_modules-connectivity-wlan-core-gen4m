@@ -1709,7 +1709,8 @@ void nicRxProcessDataPacket(IN struct ADAPTER *prAdapter,
 			GET_CURRENT_SYSTIME(&prRxCtrl->u4LastRxTime);
 			do {
 #if CFG_SUPPORT_MSP
-				if (prRetSwRfb->ucGroupVLD
+				if (prRetSwRfb->ucStaRecIdx < CFG_STA_REC_NUM &&
+					prRetSwRfb->ucGroupVLD
 					& BIT(RX_GROUP_VLD_3)) {
 					prAdapter->arStaRec[
 					prRetSwRfb->ucStaRecIdx].
