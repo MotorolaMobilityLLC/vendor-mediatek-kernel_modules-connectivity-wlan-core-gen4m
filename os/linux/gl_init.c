@@ -1475,7 +1475,7 @@ static int wlanSetMacAddress(struct net_device *ndev, void *addr)
 	if (wdev->ssid_len > 0 || (wdev->current_bss)) {
 		DBGLOG(INIT, ERROR,
 		       "Reject macaddr change due to ssid_len(%d) & bss(%d)\n",
-		       wdev->ssid_len, wdev->current_bss);
+		       wdev->ssid_len, (wdev->current_bss == NULL) ? 0 : 1);
 		return WLAN_STATUS_NOT_ACCEPTED;
 	}
 
