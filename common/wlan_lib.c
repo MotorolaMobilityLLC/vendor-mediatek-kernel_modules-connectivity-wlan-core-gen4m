@@ -6432,6 +6432,8 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 	prWifiVar->uArpMonitorNumber = (uint32_t) wlanCfgGetUint32(
 			prAdapter, "ArpMonitorNumber", 20);
 #endif /* ARP_MONITER_ENABLE */
+
+	prWifiVar->u4MTU = wlanCfgGetUint32(prAdapter, "MTU", 0);
 }
 
 void wlanCfgSetSwCtrl(IN struct ADAPTER *prAdapter)

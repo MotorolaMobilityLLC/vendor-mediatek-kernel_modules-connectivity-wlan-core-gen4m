@@ -999,6 +999,8 @@ struct WIFI_VAR {
 #if ARP_MONITER_ENABLE
 		uint32_t uArpMonitorNumber;
 #endif /* ARP_MONITER_ENABLE */
+
+	uint32_t u4MTU; /* net device maximum transmission unit */
 };
 
 /* cnm_timer module */
