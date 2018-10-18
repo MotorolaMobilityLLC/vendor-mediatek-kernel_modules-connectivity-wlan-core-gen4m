@@ -611,42 +611,87 @@
 
 #if CFG_SUPPORT_PWR_LIMIT_COUNTRY
 
-/* tx power control: 3-steps power back off */
-/* 0:reset, 1,2,3:back off index */
-extern int32_t g_i3StepsBackOffIdx;
+/* Define Tx Power Control Channel Type */
+#define MAX_TX_PWR_CTRL_ELEMENT_NAME_SIZE	16
+#define PWR_CTRL_CHNL_TYPE_KEY_ALL		"ALL"
+#define PWR_CTRL_CHNL_TYPE_KEY_2G4		"2G4"
+#define PWR_CTRL_CHNL_TYPE_KEY_5G		"5G"
+#define PWR_CTRL_CHNL_TYPE_KEY_BANDEDGE_2G4	"BANDEDGE2G4"
+#define PWR_CTRL_CHNL_TYPE_KEY_BANDEDGE_5G	"BANDEDGE5G"
+#define PWR_CTRL_CHNL_TYPE_KEY_5G_BAND1		"5GBAND1"
+#define PWR_CTRL_CHNL_TYPE_KEY_5G_BAND2		"5GBAND2"
+#define PWR_CTRL_CHNL_TYPE_KEY_5G_BAND3		"5GBAND3"
+#define PWR_CTRL_CHNL_TYPE_KEY_5G_BAND4		"5GBAND4"
 
-/* tx power control: set tx power scenario */
-/* -1:reset, >=0:scenario index */
-extern int32_t g_iTxPwrScenarioIdx;
-
-/* Define Tx Power Control Mask */
-enum ENUM_TX_POWER_CTRL_MASK {
-	PWR_CRTL_MASK_NONE = (0x0000),
-	PWR_CRTL_MASK_DOMAIN = (0x0001),
-	PWR_CRTL_MASK_BANDEDGE_2G4 = (0x0002),
-	PWR_CRTL_MASK_BANDEDGE_5G = (0x0004),
-	PWR_CRTL_MASK_FCC_WIFION = (0x0008),
-	PWR_CRTL_MASK_FCC_IOCTL = (0x00010),
-	PWR_CRTL_MASK_SAR_IOCTL = (0x00020),
-	PWR_CRTL_MASK_TXPWR_SCENARIO = (0x00040),
-	PWR_CRTL_MASK_3STEPS_BACKOFF = (0x00080),
+enum ENUM_TX_POWER_CTRL_LIST_TYPE {
+	PWR_CTRL_TYPE_DEFAULT_LIST = 0,
+	PWR_CTRL_TYPE_DYNAMIC_LIST,
+	PWR_CTRL_TYPE_ALL_LIST,
 };
 
-/* Define Tx Power Control Type */
+enum ENUM_TX_POWER_CTRL_APPLIED_WAY {
+	PWR_CTRL_TYPE_APPLIED_WAY_WIFION = 1,
+	PWR_CTRL_TYPE_APPLIED_WAY_IOCTL,
+};
+
+enum ENUM_TX_POWER_CTRL_OPERATION {
+	PWR_CTRL_TYPE_OPERATION_POWER_LEVEL = 1,
+	PWR_CTRL_TYPE_OPERATION_POWER_OFFSET,
+};
+
 enum ENUM_TX_POWER_CTRL_TYPE {
-	PWR_CTRL_TYPE_DOMAIN = 0,
-	PWR_CTRL_TYPE_BANDEDGE_2G,
-	PWR_CTRL_TYPE_BANDEDGE_5G,
-	PWR_CTRL_TYPE_FCC_WIFION,
-	PWR_CTRL_TYPE_ENABLE_FCC_IOCTL,
-	PWR_CTRL_TYPE_DISABLE_FCC_IOCTL,
-	PWR_CTRL_TYPE_ENABLE_SAR_IOCTL,
-	PWR_CTRL_TYPE_DISABLE_SAR_IOCTL,
-	PWR_CTRL_TYPE_ENABLE_TXPWR_SCENARIO,
-	PWR_CTRL_TYPE_DISABLE_TXPWR_SCENARIO,
-	PWR_CTRL_TYPE_ENABLE_3STEPS_BACKOFF,
-	PWR_CTRL_TYPE_DISABLE_3STEPS_BACKOFF,
-	PWR_CTRL_TYPE_NUM
+	PWR_CTRL_TYPE_WIFION_POWER_LEVEL = 1,
+	PWR_CTRL_TYPE_WIFION_POWER_OFFSET,
+	PWR_CTRL_TYPE_IOCTL_POWER_LEVEL,
+	PWR_CTRL_TYPE_IOCTL_POWER_OFFSET,
+};
+
+enum ENUM_TX_POWER_CTRL_VALUE_SIGN {
+	PWR_CTRL_TYPE_NO_ACTION = 0,
+	PWR_CTRL_TYPE_POSITIVE,
+	PWR_CTRL_TYPE_NEGATIVE,
+};
+
+enum ENUM_TX_POWER_CTRL_CHANNEL_TYPE {
+	PWR_CTRL_CHNL_TYPE_NORMAL = 0,
+	PWR_CTRL_CHNL_TYPE_ALL,
+	PWR_CTRL_CHNL_TYPE_RANGE,
+	PWR_CTRL_CHNL_TYPE_2G4,
+	PWR_CTRL_CHNL_TYPE_5G,
+	PWR_CTRL_CHNL_TYPE_BANDEDGE_2G4,
+	PWR_CTRL_CHNL_TYPE_BANDEDGE_5G,
+	PWR_CTRL_CHNL_TYPE_5G_BAND1,
+	PWR_CTRL_CHNL_TYPE_5G_BAND2,
+	PWR_CTRL_CHNL_TYPE_5G_BAND3,
+	PWR_CTRL_CHNL_TYPE_5G_BAND4,
+};
+
+struct TX_PWR_CTRL_CHANNEL_SETTING {
+	enum ENUM_TX_POWER_CTRL_CHANNEL_TYPE eChnlType;
+	uint8_t channelParam[2];
+
+	/* 0: CCK
+	 * 1: 20L, MCS0~4
+	 * 2: 20H, MCS5~8
+	 * 3: 40L, MCS0~4
+	 * 4: 40H, MCS5~9
+	 * 5: 80L, MCS0~4
+	 * 6: 80H, MCS5~9
+	 * 7: 160L, MCS0~4
+	 * 8: 160H, MCS5~9
+	 */
+	enum ENUM_TX_POWER_CTRL_VALUE_SIGN op[9];
+	int8_t i8PwrLimit[9];
+};
+
+struct TX_PWR_CTRL_ELEMENT {
+	struct list_head node;
+	u_int8_t fgApplied;
+	char name[MAX_TX_PWR_CTRL_ELEMENT_NAME_SIZE]; /* scenario name */
+	uint8_t index; /* scenario index */
+	enum ENUM_TX_POWER_CTRL_TYPE eCtrlType;
+	uint8_t settingCount;
+	struct TX_PWR_CTRL_CHANNEL_SETTING rChlSettingList[1];
 };
 
 enum ENUM_POWER_LIMIT {
@@ -660,6 +705,13 @@ enum ENUM_POWER_LIMIT {
 	PWR_LIMIT_160M_L = 7,
 	PWR_LIMIT_160M_H = 8,
 	PWR_LIMIT_NUM
+};
+
+struct PARAM_TX_PWR_CTRL_IOCTL {
+	u_int8_t fgApplied;
+	uint8_t *name;
+	uint8_t index;
+	uint8_t *newSetting;
 };
 
 #endif
@@ -688,23 +740,6 @@ enum ENUM_CHNL_BW {
 	CHNL_BW_10,
 	CHNL_BW_5
 };
-
-#if (CFG_SUPPORT_FCC_DYNAMIC_TX_PWR_ADJUST || CFG_SUPPORT_FCC_POWER_BACK_OFF)
-/* TX Power Adjust For FCC/CE Certification */
-struct FCC_TX_PWR_ADJUST {
-	uint8_t fgFccTxPwrAdjust;
-	uint8_t uOffsetCCK;			/* Offset for CH 11~14 */
-	uint8_t uOffsetHT20;		/* Offset for CH 11~14 */
-	uint8_t uOffsetHT40;		/* Offset for CH 11~14 */
-	uint8_t aucChannelCCK[2];	/* [0] for start channel */
-					/* [1] for ending channel */
-	uint8_t aucChannelHT20[2];	/* [0] for start channel */
-					/* [1] for ending channel */
-	uint8_t aucChannelHT40[2];	/* [0] for start channel */
-					/* [1] for ending channel */
-	uint8_t aucChannelBandedge[2];  /* Special bandedge */
-};
-#endif
 
 #if 0
 /* If channel width is CHNL_BW_20_40, the first channel will be SCA and
@@ -1041,8 +1076,8 @@ void rlmDomainCheckCountryPowerLimitTable(
 uint16_t rlmDomainPwrLimitDefaultTableDecision(
 	struct ADAPTER *prAdapter, uint16_t u2CountryCode);
 
-uint32_t rlmDomainSendPwrLimitCmd(struct ADAPTER *prAdapter,
-				  enum ENUM_TX_POWER_CTRL_TYPE eCtrlType);
+void rlmDomainSendPwrLimitCmd(struct ADAPTER *prAdapter);
+
 #endif
 
 #if (CFG_SUPPORT_SINGLE_SKU == 1)
@@ -1107,6 +1142,27 @@ void rlmDomainOidSetCountry(IN struct ADAPTER *prAdapter,
 u32 rlmDomainGetCountryCode(void);
 u32 rlmDomainGetTempCountryCode(void);
 void rlmDomainAssert(u_int8_t cond);
+
+/* dynamic tx power control */
+void txPwrCtrlInit(struct ADAPTER *prAdapter);
+void txPwrCtrlLoadConfig(struct ADAPTER *prAdapter);
+void txPwrCtrlUninit(struct ADAPTER *prAdapter);
+void txPwrCtrlShowList(struct ADAPTER *prAdapter,
+				uint8_t filterType,
+				char *message);
+void txPwrCtrlDeleteElement(struct ADAPTER *prAdapter,
+				uint8_t *name, uint32_t index,
+				enum ENUM_TX_POWER_CTRL_LIST_TYPE eListType);
+struct TX_PWR_CTRL_ELEMENT *txPwrCtrlStringToStruct(char *pcContent,
+				u_int8_t fgSkipHeader);
+struct TX_PWR_CTRL_ELEMENT *txPwrCtrlFindElement(
+				struct ADAPTER *prAdapter,
+				uint8_t *name,
+				uint32_t index,
+				u_int8_t fgCheckIsApplied,
+				enum ENUM_TX_POWER_CTRL_LIST_TYPE eListType);
+void txPwrCtrlAddElement(struct ADAPTER *prAdapter,
+				struct TX_PWR_CTRL_ELEMENT *prElement);
 
 /*******************************************************************************
  *   F U N C T I O N S
