@@ -2942,7 +2942,7 @@ skipLabel:
 		if ((prTmpSetting->op[0] == PWR_CTRL_TYPE_POSITIVE) &&
 		    (ucOperation == PWR_CTRL_TYPE_OPERATION_POWER_OFFSET)) {
 			DBGLOG(RLM, ERROR,
-				"parse CCK error, Power_Offset value cannot be positive: %u%s\n",
+				"parse CCK error, Power_Offset value cannot be positive: %u\n",
 				value);
 			goto clearLabel;
 		}
@@ -2967,7 +2967,7 @@ skipLabel:
 		if ((prTmpSetting->op[1] == PWR_CTRL_TYPE_POSITIVE) &&
 		    (ucOperation == PWR_CTRL_TYPE_OPERATION_POWER_OFFSET)) {
 			DBGLOG(RLM, ERROR,
-				"parse HT20L error, Power_Offset value cannot be positive: %u%s\n",
+				"parse HT20L error, Power_Offset value cannot be positive: %u\n",
 				value);
 			goto clearLabel;
 		}
@@ -2984,7 +2984,7 @@ skipLabel:
 		if ((prTmpSetting->op[2] == PWR_CTRL_TYPE_POSITIVE) &&
 		    (ucOperation == PWR_CTRL_TYPE_OPERATION_POWER_OFFSET)) {
 			DBGLOG(RLM, ERROR,
-				"parse HT20H error, Power_Offset value cannot be positive: %u%s\n",
+				"parse HT20H error, Power_Offset value cannot be positive: %u\n",
 				value);
 			goto clearLabel;
 		}
@@ -3001,7 +3001,7 @@ skipLabel:
 		if ((prTmpSetting->op[3] == PWR_CTRL_TYPE_POSITIVE) &&
 		    (ucOperation == PWR_CTRL_TYPE_OPERATION_POWER_OFFSET)) {
 			DBGLOG(RLM, ERROR,
-				"parse HT40L error, Power_Offset value cannot be positive: %u%s\n",
+				"parse HT40L error, Power_Offset value cannot be positive: %u\n",
 				value);
 			goto clearLabel;
 		}
@@ -3018,7 +3018,7 @@ skipLabel:
 		if ((prTmpSetting->op[4] == PWR_CTRL_TYPE_POSITIVE) &&
 		    (ucOperation == PWR_CTRL_TYPE_OPERATION_POWER_OFFSET)) {
 			DBGLOG(RLM, ERROR,
-				"parse HT40H error, Power_Offset value cannot be positive: %u%s\n",
+				"parse HT40H error, Power_Offset value cannot be positive: %u\n",
 				value);
 			goto clearLabel;
 		}
@@ -3036,7 +3036,7 @@ skipLabel:
 		if ((prTmpSetting->op[5] == PWR_CTRL_TYPE_POSITIVE) &&
 		    (ucOperation == PWR_CTRL_TYPE_OPERATION_POWER_OFFSET)) {
 			DBGLOG(RLM, ERROR,
-				"parse HT80L error, Power_Offset value cannot be positive: %u%s\n",
+				"parse HT80L error, Power_Offset value cannot be positive: %u\n",
 				value);
 			goto clearLabel;
 		}
@@ -3054,7 +3054,7 @@ skipLabel:
 		if ((prTmpSetting->op[6] == PWR_CTRL_TYPE_POSITIVE) &&
 		    (ucOperation == PWR_CTRL_TYPE_OPERATION_POWER_OFFSET)) {
 			DBGLOG(RLM, ERROR,
-				"parse HT80H error, Power_Offset value cannot be positive: %u%s\n",
+				"parse HT80H error, Power_Offset value cannot be positive: %u\n",
 				value);
 			goto clearLabel;
 		}
@@ -3072,7 +3072,7 @@ skipLabel:
 		if ((prTmpSetting->op[7] == PWR_CTRL_TYPE_POSITIVE) &&
 		    (ucOperation == PWR_CTRL_TYPE_OPERATION_POWER_OFFSET)) {
 			DBGLOG(RLM, ERROR,
-				"parse HT160L error, Power_Offset value cannot be positive: %u%s\n",
+				"parse HT160L error, Power_Offset value cannot be positive: %u\n",
 				value);
 			goto clearLabel;
 		}
@@ -3090,7 +3090,7 @@ skipLabel:
 		if ((prTmpSetting->op[8] == PWR_CTRL_TYPE_POSITIVE) &&
 		    (ucOperation == PWR_CTRL_TYPE_OPERATION_POWER_OFFSET)) {
 			DBGLOG(RLM, ERROR,
-				"parse HT160H error, Power_Offset value cannot be positive: %u%s\n",
+				"parse HT160H error, Power_Offset value cannot be positive: %u\n",
 				value);
 			goto clearLabel;
 		}
