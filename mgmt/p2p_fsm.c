@@ -136,7 +136,7 @@ void p2pFsmRunEventScanRequest(IN struct ADAPTER *prAdapter,
 		 */
 	} while (FALSE);
 
-	if (prMsgHdr != NULL)
+	if (prAdapter && prMsgHdr)
 		cnmMemFree(prAdapter, prMsgHdr);
 }				/* p2pDevFsmRunEventScanRequest */
 

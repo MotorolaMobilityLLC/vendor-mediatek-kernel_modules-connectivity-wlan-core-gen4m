@@ -380,11 +380,6 @@ p2pDevStateInit_OFF_CHNL_TX(IN struct ADAPTER *prAdapter,
 					prP2pDevFsmInfo->ucBssIndex,
 					prChnlReqInfo);
 			} else {
-				LINK_REMOVE_HEAD(
-					&(prP2pMgmtTxInfo->rP2pTxReqLink),
-					prP2pOffChnlTxPkt,
-					struct P2P_OFF_CHNL_TX_REQ_INFO *);
-
 				p2pFuncTxMgmtFrame(prAdapter,
 					prP2pDevFsmInfo->ucBssIndex,
 					prP2pOffChnlTxPkt->prMgmtTxMsdu,
@@ -394,6 +389,11 @@ p2pDevStateInit_OFF_CHNL_TX(IN struct ADAPTER *prAdapter,
 					prP2pOffChnlTxPkt->prMgmtTxMsdu;
 				prP2pMgmtTxInfo->fgIsWaitRsp =
 					prP2pOffChnlTxPkt->fgIsWaitRsp;
+
+				LINK_REMOVE_HEAD(
+					&(prP2pMgmtTxInfo->rP2pTxReqLink),
+					prP2pOffChnlTxPkt,
+					struct P2P_OFF_CHNL_TX_REQ_INFO *);
 			}
 		} else {
 			/* Link is empty, return back to IDLE. */
