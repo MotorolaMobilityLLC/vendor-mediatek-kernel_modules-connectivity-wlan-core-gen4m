@@ -905,8 +905,7 @@ void halRxProcessMsduReport(IN struct ADAPTER *prAdapter,
 #endif
 	struct QUE rFreeQueue;
 	struct QUE *prFreeQueue;
-	uint16_t u2TokenCnt;
-	uint32_t u4Idx, u4Token;
+	uint32_t u4TokenCnt, u4Idx, u4Token;
 
 	ASSERT(prAdapter);
 	ASSERT(prAdapter->prGlueInfo);
@@ -919,9 +918,9 @@ void halRxProcessMsduReport(IN struct ADAPTER *prAdapter,
 	QUEUE_INITIALIZE(prFreeQueue);
 
 	prMsduReport = (struct HW_MAC_MSDU_REPORT *)prSwRfb->pucRecvBuff;
-	u2TokenCnt = prMsduReport->u2MsduCount;
+	u4TokenCnt = (uint32_t)prMsduReport->u2MsduCount;
 
-	for (u4Idx = 0; u4Idx < u2TokenCnt; u4Idx++) {
+	for (u4Idx = 0; u4Idx < u4TokenCnt; u4Idx++) {
 		if (prMsduReport->u4Ver == 0)
 			u4Token = prMsduReport->au4MsduToken[u4Idx >> 1].
 				rFormatV1.u2MsduID[u4Idx & 1];
@@ -942,7 +941,7 @@ void halRxProcessMsduReport(IN struct ADAPTER *prAdapter,
 #if HIF_TX_PREALLOC_DATA_BUFFER
 		DBGLOG_LIMITED(HAL, TRACE,
 			       "MsduRpt: Cnt[%u] Tok[%u] Free[%u]\n",
-			       u2TokenCnt, u4Token,
+			       u4TokenCnt, u4Token,
 			       halGetMsduTokenFreeCnt(prAdapter));
 #else
 		prMsduInfo = prTokenEntry->prMsduInfo;
@@ -953,7 +952,7 @@ void halRxProcessMsduReport(IN struct ADAPTER *prAdapter,
 
 		DBGLOG_LIMITED(HAL, TRACE,
 			       "MsduRpt: Cnt[%u] Tok[%u] Msdu[0x%p] TxDone[%u] Free[%u]\n",
-			       u2TokenCnt, u4Token, prMsduInfo,
+			       u4TokenCnt, u4Token, prMsduInfo,
 			       (prMsduInfo->pfTxDoneHandler ? TRUE : FALSE),
 			       halGetMsduTokenFreeCnt(prAdapter));
 #endif

@@ -1452,9 +1452,11 @@ void nicTxMsduQueueByRR(struct ADAPTER *prAdapter)
 				QUEUE_REMOVE_HEAD(
 					prTxQue, prMsduInfo,
 					struct MSDU_INFO *);
+				if (prMsduInfo == NULL)
+					continue;
 				QUEUE_INSERT_TAIL(
 					prDataPort,
-					(struct QUE_ENTRY *) prMsduInfo);
+					(struct QUE_ENTRY *)prMsduInfo);
 				fgIsAllQueneEmpty = false;
 			}
 		}
@@ -2342,7 +2344,6 @@ uint32_t nicTxMsduQueue(IN struct ADAPTER *prAdapter,
 {
 	struct MSDU_INFO *prMsduInfo;
 	struct TX_CTRL *prTxCtrl;
-	void *prNativePacket;
 
 	ASSERT(prAdapter);
 	ASSERT(prQue);
@@ -2362,8 +2363,6 @@ uint32_t nicTxMsduQueue(IN struct ADAPTER *prAdapter,
 				(struct QUE_ENTRY *) prMsduInfo);
 			break;
 		}
-
-		prNativePacket = prMsduInfo->prPacket;
 
 #if !CFG_SUPPORT_MULTITHREAD
 		nicTxFillDataDesc(prAdapter, prMsduInfo);
