@@ -2208,6 +2208,15 @@ void rsnIndicatePmkidCand(IN struct ADAPTER *prAdapter,
 {
 	DBGLOG(RSN, EVENT, "Security - Time to indicate the PMKID cand.\n");
 
+	if (!prAdapter) {
+		DBGLOG(RSN, ERROR, "prAdapter is NULL, return!\n");
+		return;
+	}
+	if (prAdapter->prAisBssInfo == NULL) {
+		DBGLOG(RSN, ERROR, "prAisBssInfo is NULL, return!\n");
+		return;
+	}
+
 	/* If the authentication mode is WPA2 and indication PMKID flag
 	 *  is available, then we indicate the PMKID candidate list to NDIS and
 	 *  clear the flag, indicatePMKID
@@ -2383,6 +2392,11 @@ void rsnGenerateWSCIE(IN struct ADAPTER *prAdapter,
 	ASSERT(prAdapter);
 	ASSERT(prMsduInfo);
 
+	if (prAdapter->prAisBssInfo == NULL) {
+		DBGLOG(RSN, ERROR, "prAisBssInfo is NULL, return!\n");
+		return;
+	}
+
 	if (prMsduInfo->ucBssIndex != prAdapter->prAisBssInfo->ucBssIndex)
 		return;
 
@@ -2475,7 +2489,9 @@ uint8_t rsnCheckSaQueryTimeout(IN struct ADAPTER *prAdapter)
 		prBssSpecInfo->u4SaQueryCount = 0;
 		cnmTimerStopTimer(prAdapter, &prBssSpecInfo->rSaQueryTimer);
 #if 1
-		if (prAdapter->prAisBssInfo->eConnectionState ==
+		if (prAdapter->prAisBssInfo == NULL) {
+			DBGLOG(RSN, ERROR, "prAisBssInfo is NULL");
+		} else if (prAdapter->prAisBssInfo->eConnectionState ==
 		    PARAM_MEDIA_STATE_CONNECTED) {
 			struct MSG_AIS_ABORT *prAisAbortMsg;
 
