@@ -4213,6 +4213,7 @@ mtk_cfg80211_tdls_mgmt(struct wiphy *wiphy,
 	struct GLUE_INFO *prGlueInfo;
 	struct TDLS_CMD_LINK_MGT rCmdMgt;
 	uint32_t u4BufLen;
+	uint32_t rStatus = WLAN_STATUS_SUCCESS;
 
 	DBGLOG(REQ, INFO, "mtk_cfg80211_tdls_mgmt\n");
 
@@ -4233,12 +4234,16 @@ mtk_cfg80211_tdls_mgmt(struct wiphy *wiphy,
 	kalMemCopy(&(rCmdMgt.aucPeer), peer, 6);
 	kalMemCopy(&(rCmdMgt.aucSecBuf), buf, len);
 
-	kalIoctl(prGlueInfo, TdlsexLinkMgt, &rCmdMgt,
-		 sizeof(struct TDLS_CMD_LINK_MGT), FALSE, FALSE, FALSE,
-		 /* FALSE,    //6628 -> 6630  fgIsP2pOid-> x */
+	rStatus = kalIoctl(prGlueInfo, TdlsexLinkOper, &rCmdMgt,
+		 sizeof(struct TDLS_CMD_LINK_OPER), FALSE, FALSE, FALSE,
 		 &u4BufLen);
-	return 0;
 
+	DBGLOG(REQ, INFO, "rStatus: %x", rStatus);
+
+	if (rStatus == WLAN_STATUS_SUCCESS)
+		return 0;
+	else
+		return -EINVAL;
 }
 #elif KERNEL_VERSION(3, 16, 0) <= CFG80211_VERSION_CODE
 int
@@ -4344,6 +4349,7 @@ int mtk_cfg80211_tdls_oper(struct wiphy *wiphy,
 	uint32_t u4BufLen;
 	struct ADAPTER *prAdapter;
 	struct TDLS_CMD_LINK_OPER rCmdOper;
+	uint32_t rStatus = WLAN_STATUS_SUCCESS;
 
 	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wiphy);
 
@@ -4379,10 +4385,16 @@ int mtk_cfg80211_tdls_oper(struct wiphy *wiphy,
 		kalMsleep(20);
 	}
 
-	kalIoctl(prGlueInfo, TdlsexLinkOper, &rCmdOper,
+	rStatus = kalIoctl(prGlueInfo, TdlsexLinkOper, &rCmdOper,
 			sizeof(struct TDLS_CMD_LINK_OPER), FALSE, FALSE, FALSE,
 			&u4BufLen);
-	return 0;
+
+	DBGLOG(REQ, INFO, "rStatus: %x", rStatus);
+
+	if (rStatus == WLAN_STATUS_SUCCESS)
+		return 0;
+	else
+		return -EINVAL;
 }
 #else
 int mtk_cfg80211_tdls_oper(struct wiphy *wiphy,
