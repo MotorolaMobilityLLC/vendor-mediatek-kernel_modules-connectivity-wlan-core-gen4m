@@ -4222,6 +4222,11 @@ static int priv_driver_get_sta_info(IN struct net_device *prNetDev,
 
 	prHwWlanInfo = (struct PARAM_HW_WLAN_INFO *)kalMemAlloc(
 			sizeof(struct PARAM_HW_WLAN_INFO), VIR_MEM_TYPE);
+	if (prHwWlanInfo == NULL) {
+		DBGLOG(REQ, INFO, "prHwWlanInfo is null\n");
+		return -1;
+	}
+
 	prHwWlanInfo->u4Index = ucWlanIndex;
 
 	DBGLOG(REQ, INFO, "MT6632 : index = %d i4TotalLen = %d\n",
