@@ -682,6 +682,9 @@ uint32_t assocSendReAssocReqFrame(IN struct ADAPTER *prAdapter,
 					       prBssInfo->aucOwnMacAddr,
 					       &u2PayloadLen);
 
+	DBGLOG(SAA, INFO, "SetPktSeqNo = %d\n", prStaRec->ucAuthAssocReqSeqNum);
+	nicTxSetPktSequenceNumber(prMsduInfo, prStaRec->ucAuthAssocReqSeqNum);
+
 	/* 4 <3> Update information of MSDU_INFO_T */
 	TX_SET_MMPDU(prAdapter,
 		     prMsduInfo,
