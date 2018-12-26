@@ -1645,7 +1645,7 @@ __priv_get_int(IN struct net_device *prNetDev,
 				prAdapter->rVerInfo.aucReleaseManifest);
 			DBGLOG(REQ, INFO,
 				"Get FW manifest version: %d\n", u2Len);
-			if (prIwReqData->data.length <= u2Len) {
+			if (prIwReqData->data.length < u2Len) {
 				DBGLOG(REQ, INFO,
 				       "buffer too small: %u, %u\n",
 				       prIwReqData->data.length, u2Len);
@@ -1893,7 +1893,7 @@ __priv_get_ints(IN struct net_device *prNetDev,
 			sizeof(struct RF_CHANNEL_INFO)*ucMaxChannelNum);
 
 		u4CopySize = NumOfChannel * sizeof(int32_t);
-		if (prIwReqData->data.length <= u4CopySize) {
+		if (prIwReqData->data.length < u4CopySize) {
 			DBGLOG(REQ, INFO,
 			       "buffer too small: %u, %u\n",
 			       prIwReqData->data.length, u4CopySize);
@@ -2287,7 +2287,7 @@ __priv_get_struct(IN struct net_device *prNetDev,
 			u4CopySize = u4BufLen +
 				sizeof(struct NDIS_TRANSPORT_STRUCT) -
 				sizeof(prNdisReq->ndisOidContent);
-			if (prIwReqData->data.length <= u4CopySize) {
+			if (prIwReqData->data.length < u4CopySize) {
 				DBGLOG(REQ, INFO,
 				       "buffer too small: %u, %u\n",
 				       prIwReqData->data.length, u4CopySize);
