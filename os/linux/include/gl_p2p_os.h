@@ -102,6 +102,7 @@ extern const struct net_device_ops p2p_netdev_ops;
 #define MAX_P2P_IE_SIZE	5
 
 #define P2P_MAXIMUM_CLIENT_COUNT                    16
+#define P2P_DEFAULT_CLIENT_COUNT 4
 
 /******************************************************************************
  *                             D A T A   T Y P E S

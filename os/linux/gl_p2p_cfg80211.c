@@ -3732,7 +3732,9 @@ int mtk_p2p_cfg80211_testmode_hotspot_config_cmd(IN struct wiphy *wiphy,
 	switch (index) {
 	case 1:		/* Max Clients */
 		for (i = 0; i < KAL_P2P_NUM; i++)
-			kalP2PSetMaxClients(prGlueInfo, value, i);
+			if (p2pFuncIsAPMode(prGlueInfo->prAdapter
+				->rWifiVar.prP2PConnSettings[i]))
+				kalP2PSetMaxClients(prGlueInfo, value, i);
 		break;
 	default:
 		break;
@@ -4089,7 +4091,9 @@ int mtk_p2p_cfg80211_testmode_p2p_sigma_cmd(IN struct wiphy *wiphy,
 	case 109:		/* Max Clients */
 #if CFG_SUPPORT_HOTSPOT_WPS_MANAGER
 		for (i = 0; i < KAL_P2P_NUM; i++)
-			kalP2PSetMaxClients(prGlueInfo, value, i);
+			if (p2pFuncIsAPMode(prGlueInfo->prAdapter
+				->rWifiVar.prP2PConnSettings[i]))
+				kalP2PSetMaxClients(prGlueInfo, value, i);
 #endif
 		break;
 	case 110:		/* Hotspot WPS mode */
