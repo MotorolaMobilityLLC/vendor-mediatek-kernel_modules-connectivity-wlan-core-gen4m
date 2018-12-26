@@ -407,9 +407,13 @@ void p2pFuncGCJoin(IN struct ADAPTER *prAdapter,
 
 		/* 2 <2> Setup corresponding STA_RECORD_T */
 		prStaRec = bssCreateStaRecFromBssDesc(prAdapter,
+#if CFG_P2P_CONNECT_ALL_BSS
+			(STA_TYPE_P2P_GO),
+#else
 			(prBssDesc->fgIsP2PPresent
 			? (STA_TYPE_P2P_GO)
 			: (STA_TYPE_LEGACY_AP)),
+#endif
 			prP2pBssInfo->ucBssIndex, prBssDesc);
 
 		if (prStaRec == NULL) {
