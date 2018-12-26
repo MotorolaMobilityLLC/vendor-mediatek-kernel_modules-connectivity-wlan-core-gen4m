@@ -1027,7 +1027,7 @@ int glSetupP2P(struct GLUE_INFO *prGlueInfo, struct wireless_dev *prP2pWdev,
 	struct NETDEV_PRIVATE_GLUE_INFO *prNetDevPriv = NULL;
 	struct mt66xx_chip_info *prChipInfo = NULL;
 
-	DBGLOG(INIT, INFO, "setup the p2p dev\n");
+	DBGLOG(INIT, TRACE, "setup the p2p dev\n");
 
 	if ((prGlueInfo == NULL) ||
 	    (prP2pWdev == NULL) ||
