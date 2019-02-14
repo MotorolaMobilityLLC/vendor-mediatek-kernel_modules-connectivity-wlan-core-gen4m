@@ -3523,6 +3523,11 @@ void rlmDomainSendPwrLimitCmd(struct ADAPTER *prAdapter)
 	uint32_t u4SetQueryInfoLen;
 	struct CMD_CHANNEL_POWER_LIMIT *prCmdPwrLimit;	/* for print usage */
 	uint8_t bandedgeParam[4] = { 0, 0, 0, 0 };
+	/* TODO : 5G band edge */
+	bandedgeParam[0] = prAdapter->prDomainInfo->
+	    rSubBand[0].ucFirstChannelNum;
+	bandedgeParam[1] = bandedgeParam[0] +
+	    prAdapter->prDomainInfo->rSubBand[0].ucNumChannels - 1;
 
 	if (regd_is_single_sku_en())
 		return rlmDomainSendPwrLimitCmd_V2(prAdapter);
@@ -3575,7 +3580,6 @@ void rlmDomainSendPwrLimitCmd(struct ADAPTER *prAdapter)
 	 */
 	prCmdPwrLimit = &prCmd->rChannelPowerLimit[0];
 	for (i = 0; i < prCmd->ucNum; i++) {
-		uint8_t curChl = prCmdPwrLimit->ucCentralCh;
 
 		DBGLOG(RLM, TRACE,
 		       "Old Domain: Idx=%d,Ch=%d,Limit=%d,%d,%d,%d,%d,%d,%d,%d,%d,Fg=%d\n",
@@ -3590,24 +3594,6 @@ void rlmDomainSendPwrLimitCmd(struct ADAPTER *prAdapter)
 		       prCmdPwrLimit->cPwrLimit160L,
 		       prCmdPwrLimit->cPwrLimit160H,
 		       prCmdPwrLimit->ucFlag);
-
-		if (curChl <= 14) { /* decide 2.4G band edge infomration */
-			if ((bandedgeParam[0] == 0) ||
-			    (curChl < bandedgeParam[0]))
-				bandedgeParam[0] = curChl;
-
-			if ((bandedgeParam[1] == 0) ||
-			    (curChl > bandedgeParam[1]))
-				bandedgeParam[1] = curChl;
-		} else { /* decide 5 band edge infomration */
-			if ((bandedgeParam[2] == 0) ||
-			    (curChl < bandedgeParam[2]))
-				bandedgeParam[2] = curChl;
-
-			if ((bandedgeParam[3] == 0) ||
-			    (curChl > bandedgeParam[3]))
-				bandedgeParam[3] = curChl;
-		}
 
 		prCmdPwrLimit++;
 	}
