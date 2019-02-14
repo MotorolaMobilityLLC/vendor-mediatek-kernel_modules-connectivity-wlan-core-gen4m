@@ -2257,6 +2257,18 @@ void rsnCheckPmkidCache(IN struct ADAPTER *prAdapter, IN struct BSS_DESC *prBss)
 	prAisBssInfo = prAdapter->prAisBssInfo;
 	prAisSpecBssInfo = &prAdapter->rWifiVar.rAisSpecificBssInfo;
 
+	if (!prConnSettings) {
+		DBGLOG(RSN, ERROR, "prConnSettings is NULL, return!\n");
+		return;
+	}
+	if (!prAisBssInfo) {
+		DBGLOG(RSN, ERROR, "prAisBssInfo is NULL, return!\n");
+		return;
+	}
+	if (!prAisSpecBssInfo) {
+		DBGLOG(RSN, ERROR, "prAisSpecBssInfo is NULL, return!\n");
+		return;
+	}
 	if ((prAisBssInfo->eConnectionState ==
 	     PARAM_MEDIA_STATE_CONNECTED) &&
 	    (prConnSettings->eAuthMode == AUTH_MODE_WPA2)) {
