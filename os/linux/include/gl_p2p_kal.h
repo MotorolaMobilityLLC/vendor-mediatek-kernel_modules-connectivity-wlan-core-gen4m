@@ -230,7 +230,7 @@ kalP2PIndicateChannelExpired(IN P_GLUE_INFO_T prGlueInfo,
 			     IN UINT_64 u8SeqNum,
 			     IN UINT_32 u4ChannelNum, IN ENUM_BAND_T eBand, IN ENUM_CHNL_EXT_T eSco);
 
-#if CFG_WPS_DISCONNECT  || (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 4, 0))
+#if CFG_WPS_DISCONNECT  || (KERNEL_VERSION(4, 4, 0) <= CFG80211_VERSION_CODE)
 VOID
 kalP2PGCIndicateConnectionStatus(IN P_GLUE_INFO_T prGlueInfo,
 				 IN UINT_8 ucRoleIndex,
