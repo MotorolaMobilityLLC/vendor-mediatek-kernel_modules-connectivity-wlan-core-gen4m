@@ -1628,6 +1628,9 @@ void nicRxProcessRXV(IN struct ADAPTER *prAdapter,
 	ASSERT(prAdapter);
 	ASSERT(prSwRfb);
 
+	if (ucBssIndex >= BSSID_NUM)
+		return;
+
 	/* can't parse radiotap info if no rx vector */
 	if (((prSwRfb->ucGroupVLD & BIT(RX_GROUP_VLD_2)) == 0)
 		|| ((prSwRfb->ucGroupVLD & BIT(RX_GROUP_VLD_3)) == 0)) {
