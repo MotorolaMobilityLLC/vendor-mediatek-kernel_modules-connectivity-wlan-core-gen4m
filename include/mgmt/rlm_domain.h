@@ -696,6 +696,10 @@ rlmDomainGetChnlList(struct ADAPTER *prAdapter,
 		     uint8_t ucMaxChannelNum, uint8_t *pucNumOfChannel,
 		     struct RF_CHANNEL_INFO *paucChannelList);
 
+void rlmDomainGetDfsChnls(struct ADAPTER *prAdapter,
+			  uint8_t ucMaxChannelNum, uint8_t *pucNumOfChannel,
+			  struct RF_CHANNEL_INFO *paucChannelList);
+
 void rlmDomainSendCmd(struct ADAPTER *prAdapter);
 
 void rlmDomainSendDomainInfoCmd(struct ADAPTER *prAdapter);
