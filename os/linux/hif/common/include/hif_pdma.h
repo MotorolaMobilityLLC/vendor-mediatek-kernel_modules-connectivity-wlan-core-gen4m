@@ -381,7 +381,7 @@ struct ERR_RECOVERY_CTRL_T {
 */
 
 void halHifRst(struct GLUE_INFO *prGlueInfo);
-bool halWpdmaAllocRing(struct GLUE_INFO *prGlueInfo);
+bool halWpdmaAllocRing(struct GLUE_INFO *prGlueInfo, bool fgIsReAlloc);
 void halWpdmaFreeRing(struct GLUE_INFO *prGlueInfo);
 void halWpdmaInitRing(struct GLUE_INFO *prGlueInfo);
 void halWpdmaInitTxRing(IN struct GLUE_INFO *prGlueInfo);
