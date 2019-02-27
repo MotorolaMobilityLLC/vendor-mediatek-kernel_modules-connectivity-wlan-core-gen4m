@@ -10091,6 +10091,10 @@ uint32_t wlanLinkQualityMonitor(struct GLUE_INFO *prGlueInfo, bool bFgIsOid)
 
 	prLinkQualityInfo = &(prAdapter->rLinkQualityInfo);
 
+#if CFG_SUPPORT_DATA_STALL
+	wlanCustomMonitorFunction(prAdapter, prLinkQualityInfo);
+#endif
+
 	DBGLOG(SW4, INFO,
 	       "Link Quality: Tx(rate:%u total:%u, retry:%u, fail:%u, rts_fail:%u, ack_fail:%u), Rx(rate:%u, total:%u, dup:%u, fcs_fail:%u), PER(%u), Congestion(%u)\n",
 	       prLinkQualityInfo->u4CurTxRate, /* current tx link speed */
@@ -10173,3 +10177,24 @@ void wlanFinishCollectingLinkQuality(struct GLUE_INFO *prGlueInfo)
 					prLinkQualityInfo->u4IdleSlotCount;
 }
 #endif /* CFG_SUPPORT_LINK_QUALITY_MONITOR */
+
+#if CFG_SUPPORT_DATA_STALL
+void wlanCustomMonitorFunction(struct ADAPTER *prAdapter,
+	 struct WIFI_LINK_QUALITY_INFO *prLinkQualityInfo)
+{
+	/* Add custom monitor here */
+	if (prLinkQualityInfo->u4CurTxRate <
+		prAdapter->rWifiVar.ucTxLowRateThreshole)
+		KAL_REPORT_ERROR_EVENT(prAdapter,
+			EVENT_TX_LOW_RATE, (uint16_t)sizeof(u_int8_t));
+	else if (prLinkQualityInfo->u4CurRxRate <
+		prAdapter->rWifiVar.ucRxLowRateThreshole)
+		KAL_REPORT_ERROR_EVENT(prAdapter,
+			EVENT_RX_LOW_RATE, (uint16_t)sizeof(u_int8_t));
+	else if (prLinkQualityInfo->u4CurTxPer >
+		prAdapter->rWifiVar.ucPerHighThreshole)
+		KAL_REPORT_ERROR_EVENT(prAdapter,
+			EVENT_PER_HIGH, (uint16_t)sizeof(u_int8_t));
+}
+#endif
+

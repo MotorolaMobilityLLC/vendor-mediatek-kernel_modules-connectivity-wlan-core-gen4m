@@ -7392,15 +7392,11 @@ void qmDetectArpNoResponse(struct ADAPTER *prAdapter,
 			if (prAdapter->prAisBssInfo)
 				prAdapter->prAisBssInfo->u2DeauthReason =
 					BEACON_TIMEOUT_DUE_2_APR_NO_RESPONSE;
-#if CFG_SUPPORT_DATA_STALL
-			KAL_REPORT_ERROR_EVENT(prAdapter,
-				EVENT_ARP_NO_RESPONSE,
-				(uint16_t)sizeof(u_int8_t));
-#endif
-			aisBssBeaconTimeout(prAdapter);
+			prAdapter->fgArpNoResponse = TRUE;
 			arpMoniter = 0;
 			kalMemZero(apIp, sizeof(apIp));
-		}
+		} else
+			prAdapter->fgArpNoResponse = FALSE;
 	}
 }
 

@@ -1609,6 +1609,8 @@ struct ADAPTER {
 	uint32_t u4BufLen;
 #endif /* CFG_SUPPORT_LINK_QUALITY_MONITOR */
 
+	u_int8_t fgArpNoResponse;
+
 };				/* end of _ADAPTER_T */
 
 /*******************************************************************************

@@ -1643,4 +1643,8 @@ uint32_t wlanGetSupportedFeatureSet(IN struct GLUE_INFO *prGlueInfo);
 uint32_t wlanLinkQualityMonitor(struct GLUE_INFO *prGlueInfo, bool bFgIsOid);
 void wlanFinishCollectingLinkQuality(struct GLUE_INFO *prGlueInfo);
 #endif /* CFG_SUPPORT_LINK_QUALITY_MONITOR */
+#if CFG_SUPPORT_DATA_STALL
+void wlanCustomMonitorFunction(struct ADAPTER *prAdapter,
+	struct WIFI_LINK_QUALITY_INFO *prLinkQualityInfo);
+#endif /* CFG_SUPPORT_DATA_STALL */
 

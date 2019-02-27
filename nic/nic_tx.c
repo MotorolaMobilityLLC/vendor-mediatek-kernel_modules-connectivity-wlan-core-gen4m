@@ -3537,7 +3537,17 @@ uint32_t nicTxEnqueueMsdu(IN struct ADAPTER *prAdapter,
 		prRetMsduInfo = qmEnqueueTxPackets(prAdapter,
 			(struct MSDU_INFO *) QUEUE_GET_HEAD(prDataPort0));
 		KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_QM_TX_QUEUE);
-
+#if ARP_MONITER_ENABLE
+		if (prAdapter->fgArpNoResponse) {
+			prAdapter->fgArpNoResponse = FALSE;
+			aisBssBeaconTimeout(prAdapter);
+#if CFG_SUPPORT_DATA_STALL
+			KAL_REPORT_ERROR_EVENT(prAdapter,
+				EVENT_ARP_NO_RESPONSE,
+				(uint16_t)sizeof(u_int8_t));
+#endif /* CFG_SUPPORT_DATA_STALL */
+		}
+#endif /* ARP_MONITER_ENABLE */
 		/* post-process for dropped packets */
 		if (prRetMsduInfo) {	/* unable to enqueue */
 			nicTxFreeMsduInfoPacket(prAdapter, prRetMsduInfo);

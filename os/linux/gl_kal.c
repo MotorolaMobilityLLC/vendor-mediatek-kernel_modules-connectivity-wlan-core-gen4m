@@ -6821,6 +6821,9 @@ void kalPerMonHandler(IN struct ADAPTER *prAdapter,
 	signed long p2pLatestTxBytes, p2pLatestRxBytes,
 	       p2pTxDiffBytes, p2pRxDiffBytes;
 	struct GLUE_INFO *prGlueInfo = prAdapter->prGlueInfo;
+#if CFG_SUPPORT_DATA_STALL
+	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
+#endif
 
 	if ((prGlueInfo->ulFlag & GLUE_FLAG_HALT)
 	    || (!prAdapter->fgIsP2PRegistered))
@@ -6934,7 +6937,7 @@ void kalPerMonHandler(IN struct ADAPTER *prAdapter,
 			prPerMonitor->ulTotalTxFailCount);
 #if CFG_SUPPORT_DATA_STALL
 		/* test mode event */
-		if (prAdapter->tmReportinterval == -1)
+		if (prWifiVar->ucReportEventInterval == 0)
 			KAL_REPORT_ERROR_EVENT(prAdapter,
 				EVENT_TEST_MODE, (uint16_t)sizeof(u_int8_t));
 #endif
