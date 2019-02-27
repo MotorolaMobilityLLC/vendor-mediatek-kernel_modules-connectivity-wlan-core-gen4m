@@ -3688,12 +3688,10 @@ void nicRxReturnRFB(IN struct ADAPTER *prAdapter,
 	}
 	KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_RX_FREE_QUE);
 
-#if CFG_USB_RX_HANDLE_IN_HIF_THREAD
 	/* Trigger Rx if there are free SwRfb */
 	if (halIsPendingRx(prAdapter)
 	    && (prRxCtrl->rFreeSwRfbList.u4NumElem > 0))
 		kalSetIntEvent(prAdapter->prGlueInfo);
-#endif
 }				/* end of nicRxReturnRFB() */
 
 /*----------------------------------------------------------------------------*/
