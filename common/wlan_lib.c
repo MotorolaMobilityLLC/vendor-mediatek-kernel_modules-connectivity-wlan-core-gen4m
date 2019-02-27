@@ -9454,8 +9454,9 @@ wlanGetSupportNss(IN struct ADAPTER *prAdapter,
 		ucRetValNss = 1;
 	DBGLOG(INIT, INFO, "Nss=%d,G=%d,B=%d,Bss=%d\n",
 	       ucRetValNss, prBssInfo->fgIsGranted, eBand, ucBssIndex);
-#endif
+
 	return ucRetValNss;
+#endif
 }
 
 #if CFG_SUPPORT_LOWLATENCY_MODE
