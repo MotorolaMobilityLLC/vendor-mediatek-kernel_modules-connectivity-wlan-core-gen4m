@@ -1914,6 +1914,9 @@ void nicTxMsduDoneCb(IN P_GLUE_INFO_T prGlueInfo, IN P_QUE_T prQue)
 			prMsduInfo = prNextMsduInfo;
 		}
 
+		wlanTxProfilingTagMsdu(prAdapter, (P_MSDU_INFO_T) QUEUE_GET_HEAD(&rFreeQueue),
+			TX_PROF_TAG_DRV_FREE_MSDU);
+
 		nicTxReturnMsduInfo(prAdapter, (P_MSDU_INFO_T) QUEUE_GET_HEAD(&rFreeQueue));
 	}
 }
@@ -1961,7 +1964,7 @@ WLAN_STATUS nicTxMsduQueue(IN P_ADAPTER_T prAdapter, UINT_8 ucPortIdx, P_QUE_T p
 #endif
 
 		if (prMsduInfo->eSrc == TX_PACKET_OS) {
-			wlanTxProfilingTagMsdu(prAdapter, prMsduInfo, TX_PROF_TAG_DRV_DEQUE);
+			wlanTxProfilingTagMsdu(prAdapter, prMsduInfo, TX_PROF_TAG_DRV_TX_DONE);
 		}
 
 		if (prMsduInfo->pfTxDoneHandler) {
