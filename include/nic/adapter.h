@@ -999,6 +999,10 @@ struct WIFI_VAR {
 #if ARP_MONITER_ENABLE
 		uint32_t uArpMonitorNumber;
 #endif /* ARP_MONITER_ENABLE */
+
+#if CFG_SUPPORT_SPE_IDX_CONTROL
+	u_int8_t ucSpeIdxCtrl;	/* 0: WF0, 1: WF1, 2: duplicate */
+#endif
 };
 
 /* cnm_timer module */
