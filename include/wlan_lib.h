@@ -1099,7 +1099,7 @@ enum ENUM_WLAN_IOT_AP_FLAG_T {
 	WLAN_IOT_AP_FG_BSSID,
 	WLAN_IOT_AP_FG_BSSID_MASK,
 	WLAN_IOT_AP_FG_NSS,
-	WLAN_IOT_AP_FG_BW,
+	WLAN_IOT_AP_FG_HT,
 	WLAN_IOT_AP_FG_BAND,
 	WLAN_IOT_AP_FG_ACTION,
 	WLAN_IOT_AP_FG_MAX
@@ -1122,7 +1122,7 @@ struct WLAN_IOT_AP_RULE_T {
 	uint8_t  aBssid[MAC_ADDR_LEN];
 	uint8_t  aBssidMask[MAC_ADDR_LEN];
 	uint8_t  ucNss;
-	uint8_t  ucBandWidth;
+	uint8_t  ucHtType;
 	uint8_t  ucBand;
 	uint8_t  ucAction;
 };

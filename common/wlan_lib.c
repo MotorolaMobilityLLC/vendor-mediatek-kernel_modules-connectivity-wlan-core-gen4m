@@ -5852,9 +5852,9 @@ void wlanCfgDumpIotApRule(IN struct ADAPTER *prAdapter)
 		DBGLOG(INIT, TRACE, "IOTAP%d aBssid:"MACSTR" Mask:"MACSTR"\n",
 			ucRuleIdx, MAC2STR(prIotApRule->aBssid),
 			MAC2STR(prIotApRule->aBssidMask));
-		DBGLOG(INIT, TRACE, "IOTAP%d NSS:%X BW:%X Band:%X Act:%X\n",
+		DBGLOG(INIT, TRACE, "IOTAP%d NSS:%X HT:%X Band:%X Act:%X\n",
 			ucRuleIdx, prIotApRule->ucNss,
-			prIotApRule->ucBandWidth,
+			prIotApRule->ucHtType,
 			prIotApRule->ucBand,
 			prIotApRule->ucAction);
 	}
@@ -5880,7 +5880,7 @@ void wlanCfgLoadIotApRule(IN struct ADAPTER *prAdapter)
 		sizeof(prIotApRule->aBssid),
 		sizeof(prIotApRule->aBssidMask),
 		sizeof(prIotApRule->ucNss),
-		sizeof(prIotApRule->ucBandWidth),
+		sizeof(prIotApRule->ucHtType),
 		sizeof(prIotApRule->ucBand),
 		sizeof(prIotApRule->ucAction)
 		};

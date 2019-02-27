@@ -2378,6 +2378,39 @@ void bssDumpBssInfo(IN struct ADAPTER *prAdapter, IN uint8_t ucBssIndex)
 }
 
 #if CFG_SUPPORT_IOT_AP_BLACKLIST
+int8_t bssGetRxNss(IN struct ADAPTER *prAdapter,
+	IN struct BSS_DESC *prBssDesc)
+{
+	uint8_t  ucIeByte = 0;
+	int8_t   ucBssNss = 0;
+	uint8_t  *pucRxMcsBitMaskIe;
+	const uint8_t *pucIe;
+
+	if (!prAdapter || !prBssDesc) {
+		DBGLOG(BSS, INFO, "GetRxNss Param Error!\n");
+		return -EINVAL;
+	}
+
+
+	pucIe = cfg80211_find_ie(
+		WLAN_EID_HT_CAPABILITY,
+		&prBssDesc->aucIEBuf[0], prBssDesc->u2IELength);
+	if (!pucIe)
+		return 1;
+
+	pucRxMcsBitMaskIe =
+		&((struct IE_HT_CAP *)pucIe)->
+		rSupMcsSet.aucRxMcsBitmask[0];
+	do {
+		ucIeByte = pucRxMcsBitMaskIe[ucBssNss];
+		if (ucIeByte)
+			ucBssNss++;
+		if (ucBssNss == 8)
+			return ucBssNss;
+	} while (ucIeByte != 0);
+
+	return ucBssNss;
+}
 /*----------------------------------------------------------------------------*/
 /*!
  * @brief get IOT AP handle action.
@@ -2391,16 +2424,17 @@ uint32_t bssGetIotApAction(IN struct ADAPTER *prAdapter,
 	IN struct BSS_DESC *prBssDesc)
 {
 	uint8_t  ucCnt = 0;
-	uint8_t  ucByteMask;
+	int8_t   ucBssNss;
 	uint8_t  *pucMask;
 	uint16_t u2MatchFlag;
 	const  uint8_t *pucIes;
 	const  uint8_t *pucIe;
 	struct WLAN_IOT_AP_RULE_T *prIotApRule;
 
-	ASSERT(prAdapter);
-	ASSERT(prBssDesc);
-	ASSERT(prBssDesc->aucIEBuf);
+	if (!prAdapter || !prBssDesc) {
+		DBGLOG(BSS, INFO, "GetIotApAction Param Error!\n");
+		return -EINVAL;
+	}
 
 	pucIes = &prBssDesc->aucIEBuf[0];
 	for (ucCnt = 0; ucCnt < CFG_IOT_AP_RULE_MAX_CNT; ucCnt++) {
@@ -2456,28 +2490,29 @@ uint32_t bssGetIotApAction(IN struct ADAPTER *prAdapter,
 			/*Match!, Fall through*/
 		}
 
-		/*Match Rx STBC NSS rule*/
+		/*Match Rx NSS rule*/
 		if (u2MatchFlag & BIT(WLAN_IOT_AP_FG_NSS)) {
-			ucByteMask = BITS(0, 1);
-			pucIe = mtk_cfg80211_find_ie_match_mask(
-				WLAN_EID_HT_CAPABILITY,
-				pucIes, prBssDesc->u2IELength,
-				&prIotApRule->ucNss,
-				1, 2, &ucByteMask);
-			if (!pucIe) {
-				/*Non HT AP, Only Has 1SS*/
-				if (prIotApRule->ucNss != 1)
-					continue;
-			} else/*HT AP, Get AP Rx NSS*/
-					continue;
+			ucBssNss = bssGetRxNss(prAdapter, prBssDesc);
+			if (ucBssNss < 0)
+				DBGLOG(BSS, TRACE,
+					"IOTAP Nss=%d invalid", ucBssNss);
+			if (ucBssNss != prIotApRule->ucNss)
+				continue;
 			/*Match!, Fall through*/
 		}
 
-		/*Match Bandwidth rule*/
-		if (u2MatchFlag & BIT(WLAN_IOT_AP_FG_BW)) {
-			if (prBssDesc->eChannelWidth
-				!= prIotApRule->ucBandWidth)
-				continue;
+		/*Match HT type rule*/
+		if (u2MatchFlag & BIT(WLAN_IOT_AP_FG_HT)) {
+			if (prBssDesc->fgIsVHTPresent) {
+				if (prIotApRule->ucHtType != 2)
+					continue;
+			} else if (prBssDesc->fgIsHTPresent) {
+				if (prIotApRule->ucHtType != 1)
+					continue;
+			} else {
+				if (prIotApRule->ucHtType != 0)
+					continue;
+			}
 			/*Matched, Fall through*/
 		}
 
