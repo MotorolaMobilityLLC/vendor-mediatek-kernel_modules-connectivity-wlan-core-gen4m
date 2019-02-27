@@ -3276,7 +3276,7 @@ void qmProcessPktWithReordering(IN struct ADAPTER *prAdapter,
 	prRxStatus = prSwRfb->prRxStatus;
 
 	if (prSwRfb->ucTid >= CFG_RX_MAX_BA_TID_NUM) {
-		DBGLOG(QM, WARN, "TID from RXD = %d, out of range!!\n",
+		DBGLOG_LIMITED(QM, WARN, "TID from RXD = %d, out of range!!\n",
 			prSwRfb->ucTid);
 		DBGLOG_MEM8(QM, ERROR, prSwRfb->pucRecvBuff,
 			HAL_RX_STATUS_GET_RX_BYTE_CNT(prRxStatus));
@@ -3290,7 +3290,7 @@ void qmProcessPktWithReordering(IN struct ADAPTER *prAdapter,
 	prReorderQueParm = ((
 		prStaRec->aprRxReorderParamRefTbl)[prSwRfb->ucTid]);
 	if (!prReorderQueParm || !(prReorderQueParm->fgIsValid)) {
-		DBGLOG(QM, ERROR,
+		DBGLOG_LIMITED(QM, ERROR,
 			"Reordering but no BA agreement for STA[%d] TID[%d]\n",
 			prStaRec->ucIndex, prSwRfb->ucTid);
 		QUEUE_INSERT_TAIL(prReturnedQue,
