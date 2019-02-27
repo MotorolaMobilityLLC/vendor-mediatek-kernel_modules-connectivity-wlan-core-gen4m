@@ -940,6 +940,12 @@ struct WIFI_VAR {
 	enum PARAM_POWER_MODE ePowerMode;
 
 	u_int8_t fgNvramCheckEn; /* nvram checking in scan result*/
+
+#if CFG_SUPPORT_LOWLATENCY_MODE
+	uint8_t ucLowLatencyModeScan;
+	uint8_t ucLowLatencyModeReOrder;
+	uint8_t ucLowLatencyModePower;
+#endif /* CFG_SUPPORT_LOWLATENCY_MODE */
 };
 
 /* cnm_timer module */
