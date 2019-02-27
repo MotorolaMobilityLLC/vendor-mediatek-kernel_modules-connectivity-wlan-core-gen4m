@@ -3471,6 +3471,10 @@ void p2pFuncValidateRxActionFrame(IN struct ADAPTER *prAdapter,
 				prActPubVenFrame->ucPubSubType);
 			if (prActPubVenFrame->ucPubSubType == P2P_GO_NEG_REQ)
 				p2pFunAbortOngoingScan(prAdapter);
+			if (fgIsDevInterface) {
+				p2pDevFsmNotifyP2pRx(prAdapter,
+						prActPubVenFrame->ucPubSubType);
+			}
 		default:
 			break;
 		}
