@@ -1367,6 +1367,10 @@ uint32_t kalPerMonGetInfo(IN struct ADAPTER *prAdapter, IN uint8_t *pucBuf,
 	IN uint32_t u4Max);
 int32_t kalBoostCpu(IN struct ADAPTER *prAdapter, IN uint32_t u4TarPerfLevel,
 	IN uint32_t u4BoostCpuTh);
+#ifdef CONFIG_MTK_EMI
+void kalSetEmiMpuProtection(phys_addr_t emiPhyBase, uint32_t offset,
+			    uint32_t size, bool enable);
+#endif
 int32_t kalSetCpuNumFreq(uint32_t u4CoreNum, uint32_t u4Freq);
 int32_t kalPerMonSetForceEnableFlag(uint8_t uFlag);
 int32_t kalFbNotifierReg(IN struct GLUE_INFO *prGlueInfo);

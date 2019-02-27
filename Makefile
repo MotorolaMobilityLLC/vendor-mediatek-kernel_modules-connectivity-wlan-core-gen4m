@@ -23,6 +23,9 @@ ifeq ($(MTK_COMBO_CHIP),)
 MTK_COMBO_CHIP = MT6632
 endif
 
+$(info $$MTK_PLATFORM is [${MTK_PLATFORM}])
+$(info $$WLAN_CHIP_ID is [${WLAN_CHIP_ID}])
+
 ifeq ($(WLAN_CHIP_ID),)
 WLAN_CHIP_ID=$(word 1, $(MTK_COMBO_CHIP))
 endif
@@ -67,12 +70,6 @@ else ifneq ($(findstring 6632,$(MTK_COMBO_CHIP)),)
     ccflags-y += -DCFG_MTK_ANDROID_WMT=1
 else
     ccflags-y += -DCFG_MTK_ANDROID_WMT=0
-endif
-
-ifeq ($(MTK_ANDROID_EMI), y)
-    ccflags-y += -DCFG_MTK_ANDROID_EMI=1
-else
-    ccflags-y += -DCFG_MTK_ANDROID_EMI=0
 endif
 
 ifneq ($(filter MTK_WCN_REMOVE_KERNEL_MODULE,$(KBUILD_SUBDIR_CCFLAGS)),)
@@ -175,6 +172,8 @@ ccflags-y += -I$(src)/os -I$(src)/os/linux/include
 ccflags-y += -I$(src)/include -I$(src)/include/nic -I$(src)/include/mgmt -I$(src)/include/chips
 ccflags-y += -I$(KERNEL_DIR)/drivers/misc/mediatek/base/power/include/
 ccflags-y += -I$(KERNEL_DIR)/drivers/misc/mediatek/include/mt-plat/
+ccflags-y += -I$(KERNEL_DIR)/drivers/misc/mediatek/emi/$(MTK_PLATFORM)
+ccflags-y += -I$(KERNEL_DIR)/drivers/misc/mediatek/emi/submodule
 ccflags-y += -I$(KERNEL_DIR)/drivers/devfreq/
 
 ifeq ($(CONFIG_MTK_COMBO_WIFI_HIF), sdio)
@@ -221,11 +220,9 @@ NIC_DIR     := nic/
 MGMT_DIR    := mgmt/
 CHIPS       := chips/
 CHIPS_CMM   := $(CHIPS)common/
-ifeq ($(MTK_PLATFORM), mt6799)
+
+ifneq ($(MTK_PLATFORM),)
 PLAT_DIR    := os/linux/plat/$(MTK_PLATFORM)/
-endif
-ifeq ($(WLAN_CHIP_ID), CONNAC)
-PLAT_DIR    := os/linux/plat/$(shell echo $(strip $(WLAN_CHIP_ID)) | tr A-Z a-z)/
 endif
 
 # ---------------------------------------------------
@@ -365,12 +362,7 @@ endif
 # ---------------------------------------------------
 # Platform Objects List
 # ---------------------------------------------------
-ifeq ($(MTK_PLATFORM), mt6799)
-PLAT_OBJS := $(PLAT_DIR)plat_priv.o
-$(MODULE_NAME)-objs  += $(PLAT_OBJS)
-endif
-
-ifeq ($(WLAN_CHIP_ID), CONNAC)
+ifneq ($(MTK_PLATFORM),)
 PLAT_OBJS := $(PLAT_DIR)plat_priv.o
 $(MODULE_NAME)-objs  += $(PLAT_OBJS)
 endif

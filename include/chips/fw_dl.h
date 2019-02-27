@@ -84,8 +84,10 @@
 
 #define RELEASE_INFO_SEPARATOR_LEN  16
 
-#if CFG_MTK_ANDROID_EMI
+#ifdef CONFIG_MTK_EMI
 #define WIFI_EMI_ADDR_MASK     0xFFFFFF
+#define WIFI_EMI_MEM_OFFSET    0x140000
+#define WIFI_EMI_MEM_SIZE      0xD7000
 extern phys_addr_t gConEmiPhyBase;
 extern unsigned long long gConEmiSize;
 #endif

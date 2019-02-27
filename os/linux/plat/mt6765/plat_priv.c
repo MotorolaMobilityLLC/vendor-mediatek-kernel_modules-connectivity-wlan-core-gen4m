@@ -15,6 +15,10 @@
 #include "precomp.h"
 #include <helio-dvfsrc-opp.h>
 
+#ifdef CONFIG_MTK_EMI
+#include <mt_emi_api.h>
+#endif
+
 #define MAX_CPU_FREQ (3 * 1024 * 1024) /* in kHZ */
 #define CLUSTER_NUM  2       /* 2 clusters */
 
@@ -49,3 +53,22 @@ int32_t kalBoostCpu(IN struct ADAPTER *prAdapter,
 	}
 	return 0;
 }
+
+#ifdef CONFIG_MTK_EMI
+void kalSetEmiMpuProtection(phys_addr_t emiPhyBase, uint32_t offset,
+			    uint32_t size, bool enable)
+{
+	struct emi_region_info_t region_info;
+
+	/*set MPU for EMI share Memory */
+	region_info.start = emiPhyBase + offset;
+	region_info.end = emiPhyBase + offset + size - 1;
+	region_info.region = 24;
+	SET_ACCESS_PERMISSION(region_info.apc, UNLOCK, FORBIDDEN, FORBIDDEN,
+			      FORBIDDEN, FORBIDDEN, FORBIDDEN, FORBIDDEN,
+			      FORBIDDEN, FORBIDDEN, FORBIDDEN, FORBIDDEN,
+			      FORBIDDEN, FORBIDDEN, FORBIDDEN, NO_PROTECTION,
+			      FORBIDDEN, enable ? FORBIDDEN:NO_PROTECTION);
+	emi_mpu_set_protection(&region_info);
+}
+#endif

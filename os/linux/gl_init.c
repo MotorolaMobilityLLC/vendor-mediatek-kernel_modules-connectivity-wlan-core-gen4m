@@ -3235,6 +3235,11 @@ static int initWlan(void)
 	glResetInit();
 #endif
 	kalFbNotifierReg((struct GLUE_INFO *) wiphy_priv(gprWdev->wiphy));
+#ifdef CONFIG_MTK_EMI
+	/* Set WIFI EMI protection to consys permitted on system boot up */
+	kalSetEmiMpuProtection(gConEmiPhyBase, WIFI_EMI_MEM_OFFSET,
+			       WIFI_EMI_MEM_SIZE, true);
+#endif
 	return ret;
 }				/* end of initWlan() */
 

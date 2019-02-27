@@ -67,7 +67,7 @@
 *                    E X T E R N A L   R E F E R E N C E S
 ********************************************************************************
 */
-#if CFG_MTK_ANDROID_EMI
+#ifdef CONFIG_MTK_EMI
 extern phys_addr_t gConEmiPhyBase;
 extern unsigned long long gConEmiSize;
 #endif
