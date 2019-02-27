@@ -3320,8 +3320,13 @@ uint32_t nicRfTestEventHandler(IN struct ADAPTER *prAdapter, IN struct WIFI_EVEN
 		break;
 
 	case GET_ICAP_RAW_DATA:
-		if (prAteOps->getRbistDataDumpEvent)
+		if (prAteOps->getRbistDataDumpEvent) {
 			prAteOps->getRbistDataDumpEvent(prAdapter, prEvent->aucBuffer);
+			if (!prAdapter->rIcapInfo.fgCaptureDone)
+				wlanoidRfTestICapRawDataProc(prAdapter,
+				0 /*prCapStatus->u4CapStartAddr*/,
+				0 /*prCapStatus->u4TotalBufferSize*/);
+		}
 		break;
 
 	case RE_CALIBRATION:
