@@ -6112,9 +6112,14 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 		prWifiVar->aucMtkFeature[0] &=
 			~(MTK_SYNERGY_CAP_SUPPORT_24G_MCS89);
 #endif
+
 	prWifiVar->ucCmdRsvResource = (uint8_t) wlanCfgGetUint32(
 					prAdapter, "TxCmdRsv",
 					QM_CMD_RESERVED_THRESHOLD);
+#if CFG_SUPPORT_VHT_IE_IN_2G
+	prWifiVar->ucVhtIeIn2g =
+	    (uint8_t) wlanCfgGetUint32(prAdapter, "VhtIeIn2G", FEATURE_ENABLED);
+#endif
 	prWifiVar->u4MgmtQueueDelayTimeout =
 		(uint32_t) wlanCfgGetUint32(prAdapter, "TxMgmtQueTO",
 					QM_MGMT_QUEUED_TIMEOUT); /* ms */
