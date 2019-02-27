@@ -1575,12 +1575,17 @@ typedef struct _CMD_BT_OVER_WIFI {
 } CMD_BT_OVER_WIFI, *P_CMD_BT_OVER_WIFI;
 
 #if (CFG_SUPPORT_DFS_MASTER == 1)
+typedef enum _ENUM_REG_DOMAIN_T {
+	REG_DEFAULT = 0,
+	REG_JP_53,
+	REG_JP_56
+} ENUM_REG_DOMAIN_T, *P_ENUM_REG_DOMAIN_T;
+
 typedef struct _CMD_RDD_ON_OFF_CTRL_T {
 	UINT_8 ucDfsCtrl;
 	UINT_8 ucRddIdx;
-	UINT_16 u2CountryCode;
 	UINT_8 ucRddInSel;
-	UINT_8 ucReserve[3];
+	UINT_8 ucRegDomain;
 } CMD_RDD_ON_OFF_CTRL_T, *P_CMD_RDD_ON_OFF_CTRL_T;
 #endif
 
@@ -2260,6 +2265,34 @@ typedef struct _EVENT_CH_PRIVILEGE_T {
 	UINT_32 u4GrantInterval;	/* In unit of ms */
 	UINT_8 aucReserved2[8];
 } EVENT_CH_PRIVILEGE_T, *P_EVENT_CH_PRIVILEGE_T;
+
+typedef struct _LONG_PULSE_BUFFER_T {
+	UINT_32 u4LongStartTime;
+	UINT_16 u2LongPulseWidth;
+} LONG_PULSE_BUFFER_T, *PLONG_PULSE_BUFFER_T;
+
+typedef struct _PERIODIC_PULSE_BUFFER_T {
+	UINT_32 u4PeriodicStartTime;
+	UINT_16 u2PeriodicPulseWidth;
+	INT_16 i2PeriodicPulsePower;
+} PERIODIC_PULSE_BUFFER_T, *PPERIODIC_PULSE_BUFFER_T;
+
+typedef struct _EVENT_RDD_REPORT_T {
+	UINT_8 ucRadarReportMode; /*0: Only report radar detected;   1:  Add parameter reports*/
+	UINT_8 ucRddIdx;
+	UINT_8 ucLongDetected;
+	UINT_8 ucPeriodicDetected;
+	UINT_8 ucLPBNum;
+	UINT_8 ucPPBNum;
+	UINT_8 ucLPBPeriodValid;
+	UINT_8 ucLPBWidthValid;
+	UINT_8 ucPRICountM1;
+	UINT_8 ucPRICountM1TH;
+	UINT_8 ucPRICountM2;
+	UINT_8 ucPRICountM2TH;
+	LONG_PULSE_BUFFER_T arLpbContent[32];
+	PERIODIC_PULSE_BUFFER_T arPpbContent[32];
+} EVENT_RDD_REPORT_T, *P_EVENT_RDD_REPORT_T;
 
 typedef struct _EVENT_BSS_BEACON_TIMEOUT_T {
 	UINT_8 ucBssIndex;
