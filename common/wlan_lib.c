@@ -6738,6 +6738,42 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 	prWifiVar->u4AaaTxAssocTimeout = (uint32_t) wlanCfgGetUint32(
 			prAdapter, "AaaTxAssocTimeout",
 			TX_ASSOCIATE_TIMEOUT_TU);
+
+	prWifiVar->aucAifsN[WMM_AC_BE_INDEX] =
+		(uint8_t) wlanCfgGetUint32(prAdapter, "BeAifsN", 3);
+	prWifiVar->aucAifsN[WMM_AC_BK_INDEX] =
+		(uint8_t) wlanCfgGetUint32(prAdapter, "BkAifsN", 7);
+	prWifiVar->aucAifsN[WMM_AC_VI_INDEX] =
+		(uint8_t) wlanCfgGetUint32(prAdapter, "ViAifsN", 1);
+	prWifiVar->aucAifsN[WMM_AC_VO_INDEX] =
+		(uint8_t) wlanCfgGetUint32(prAdapter, "VoAifsN", 1);
+
+	prWifiVar->aucCwMin[WMM_AC_BE_INDEX] =
+		(uint8_t) wlanCfgGetUint32(prAdapter, "BeCwMin", 4);
+	prWifiVar->aucCwMin[WMM_AC_BK_INDEX] =
+		(uint8_t) wlanCfgGetUint32(prAdapter, "BkCwMin", 4);
+	prWifiVar->aucCwMin[WMM_AC_VI_INDEX] =
+		(uint8_t) wlanCfgGetUint32(prAdapter, "ViCwMin", 3);
+	prWifiVar->aucCwMin[WMM_AC_VO_INDEX] =
+		(uint8_t) wlanCfgGetUint32(prAdapter, "VoCwMin", 2);
+
+	prWifiVar->au2CwMax[WMM_AC_BE_INDEX] =
+		(uint8_t) wlanCfgGetUint32(prAdapter, "BeCwMax", 6);
+	prWifiVar->au2CwMax[WMM_AC_BK_INDEX] =
+		(uint8_t) wlanCfgGetUint32(prAdapter, "BkCwMax", 10);
+	prWifiVar->au2CwMax[WMM_AC_VI_INDEX] =
+		(uint8_t) wlanCfgGetUint32(prAdapter, "ViCwMax", 4);
+	prWifiVar->au2CwMax[WMM_AC_VO_INDEX] =
+		(uint8_t) wlanCfgGetUint32(prAdapter, "VoCwMax", 3);
+
+	prWifiVar->au2TxOp[WMM_AC_BE_INDEX] =
+		(uint8_t) wlanCfgGetUint32(prAdapter, "BeTxOp", 0);
+	prWifiVar->au2TxOp[WMM_AC_BK_INDEX] =
+		(uint8_t) wlanCfgGetUint32(prAdapter, "BkTxOp", 0);
+	prWifiVar->au2TxOp[WMM_AC_VI_INDEX] =
+		(uint8_t) wlanCfgGetUint32(prAdapter, "ViTxOp", 94);
+	prWifiVar->au2TxOp[WMM_AC_VO_INDEX] =
+		(uint8_t) wlanCfgGetUint32(prAdapter, "VoTxOp", 47);
 }
 
 void wlanCfgSetSwCtrl(IN struct ADAPTER *prAdapter)

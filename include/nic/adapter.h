@@ -1039,6 +1039,11 @@ struct WIFI_VAR {
 	uint32_t ucGROEnableTput;
 
 	uint32_t u4AaaTxAssocTimeout;
+
+	uint8_t aucAifsN[WMM_AC_INDEX_NUM];
+	uint8_t aucCwMin[WMM_AC_INDEX_NUM];
+	uint8_t au2CwMax[WMM_AC_INDEX_NUM];
+	uint8_t au2TxOp[WMM_AC_INDEX_NUM];
 };
 
 /* cnm_timer module */
