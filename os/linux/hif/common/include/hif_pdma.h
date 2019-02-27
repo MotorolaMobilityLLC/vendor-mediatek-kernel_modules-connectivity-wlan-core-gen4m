@@ -68,11 +68,21 @@
 #define NUM_OF_RX_RING				2
 
 /* TODO: temp change tx ring size from 4095 to 256 */
+#ifdef CONNAC2X2
+#define TX_RING_SIZE				512
+#define RX_RING_SIZE				512	/* Max Rx ring size */
+#else
 #define TX_RING_SIZE				256
 #define RX_RING_SIZE				256	/* Max Rx ring size */
+#endif
 
 /* Data Rx ring */
+#ifdef CONNAC2X2
+#define RX_RING0_SIZE				512
+#else
 #define RX_RING0_SIZE				256
+#endif
+
 /* Event/MSDU_report Rx ring */
 #define RX_RING1_SIZE				16
 

@@ -6701,6 +6701,11 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 			prAdapter, "ReportEventInterval",
 			REPORT_EVENT_INTERVAL);
 #endif
+	prWifiVar->ucGroup0PLESize = (uint32_t) wlanCfgGetUint32(
+			prAdapter, "Group0PLESize", -1);
+
+	prWifiVar->ucGroup1PLESize = (uint32_t) wlanCfgGetUint32(
+			prAdapter, "Group1PLESize", -1);
 }
 
 void wlanCfgSetSwCtrl(IN struct ADAPTER *prAdapter)

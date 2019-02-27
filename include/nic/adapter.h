@@ -1027,6 +1027,8 @@ struct WIFI_VAR {
 	uint32_t ucRxLowRateThreshole;
 	uint32_t ucReportEventInterval;
 #endif
+	uint32_t ucGroup0PLESize;
+	uint32_t ucGroup1PLESize;
 };
 
 /* cnm_timer module */
