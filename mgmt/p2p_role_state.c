@@ -638,7 +638,7 @@ p2pRoleStateInit_OFF_CHNL_TX(IN struct ADAPTER *prAdapter,
 
 	if (LINK_IS_EMPTY(&(prP2pMgmtTxInfo->rTxReqLink))) {
 		p2pFuncReleaseCh(prAdapter,
-			prAdapter->ucP2PDevBssIdx,
+			prP2pRoleFsmInfo->ucBssIndex,
 			prChnlReqInfo);
 		/* Link is empty, return back to IDLE. */
 		*peNextState = P2P_ROLE_STATE_IDLE;
@@ -671,6 +671,12 @@ p2pRoleStateInit_OFF_CHNL_TX(IN struct ADAPTER *prAdapter,
 			prOffChnlTxPkt->rChannelInfo.ucChannelNum;
 		prChnlReqInfo->eChnlSco = prOffChnlTxPkt->eChnlExt;
 		prChnlReqInfo->u4MaxInterval = prOffChnlTxPkt->u4Duration;
+		prChnlReqInfo->eChannelWidth =
+				prOffChnlTxPkt->rChannelInfo.ucChnlBw;
+		prChnlReqInfo->ucCenterFreqS1 =
+				prOffChnlTxPkt->rChannelInfo.u4CenterFreq1;
+		prChnlReqInfo->ucCenterFreqS2 =
+				prOffChnlTxPkt->rChannelInfo.u4CenterFreq2;
 
 		p2pFuncAcquireCh(prAdapter,
 				prP2pRoleFsmInfo->ucBssIndex,
