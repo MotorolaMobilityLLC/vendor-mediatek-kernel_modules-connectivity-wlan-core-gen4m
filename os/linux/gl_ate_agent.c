@@ -2043,6 +2043,16 @@ int SetRddReport(struct net_device *prNetDev, UINT_8 *prInBuf)
 	DBGLOG(REQ, INFO, "MT6632 : ATE_AGENT iwpriv Set RDD Report, prInBuf: %s\n", prInBuf);
 	DBGLOG(INIT, ERROR, "MT6632 : ATE_AGENT iwpriv Set RDD Report : Band %d\n", dbdcIdx);
 
+	if (p2pFuncGetDfsState() == DFS_STATE_INACTIVE || p2pFuncGetDfsState() == DFS_STATE_DETECTED) {
+		DBGLOG(REQ, ERROR, "RDD Report is not supported in this DFS state (inactive or deteted)\n");
+		return WLAN_STATUS_NOT_SUPPORTED;
+	}
+
+	if (dbdcIdx != 0 && dbdcIdx != 1) {
+		DBGLOG(REQ, ERROR, "RDD index is not \"0\" or \"1\", Invalid data\n");
+		return WLAN_STATUS_INVALID_DATA;
+	}
+
 	ucDbdcIdx = (UINT_8) dbdcIdx;
 
 	if (rv == 0)
@@ -2080,10 +2090,17 @@ int SetByPassCac(struct net_device *prNetDev, UINT_8 *prInBuf)
 	DBGLOG(REQ, INFO, "MT6632 : ATE_AGENT iwpriv Set By Pass Cac, prInBuf: %s\n", prInBuf);
 	DBGLOG(INIT, ERROR, "MT6632 : ATE_AGENT iwpriv Set By Pass Cac : %dsec\n", i4ByPassCacTime);
 
+	if (i4ByPassCacTime < 0) {
+		DBGLOG(REQ, ERROR, "Cac time < 0, Invalid data\n");
+		return WLAN_STATUS_INVALID_DATA;
+	}
+
 	u4ByPassCacTime = (UINT_32) i4ByPassCacTime;
 
+	p2pFuncEnableManualCac();
+
 	if (rv == 0)
-		i4Status = p2pFuncSetManualCacTime(u4ByPassCacTime);
+		i4Status = p2pFuncSetDriverCacTime(u4ByPassCacTime);
 	else
 		return -EINVAL;
 
@@ -2116,12 +2133,17 @@ int SetRadarDetectMode(struct net_device *prNetDev, UINT_8 *prInBuf)
 	DBGLOG(REQ, INFO, "MT6632 : ATE_AGENT iwpriv Set Radar Detect Mode, prInBuf: %s\n", prInBuf);
 	DBGLOG(INIT, ERROR, "MT6632 : ATE_AGENT iwpriv Set Radar Detect Mode : %d\n", radarDetectMode);
 
-	ucRadarDetectMode = (UINT_8) radarDetectMode;
+	if (p2pFuncGetDfsState() == DFS_STATE_INACTIVE || p2pFuncGetDfsState() == DFS_STATE_DETECTED) {
+		DBGLOG(REQ, ERROR, "RDD Report is not supported in this DFS state (inactive or deteted)\n");
+		return WLAN_STATUS_NOT_SUPPORTED;
+	}
 
-	if (ucRadarDetectMode > 1) {
-		DBGLOG(REQ, ERROR, "Radar Detect Mode > 1, Invalid data\n");
+	if (radarDetectMode != 0 && radarDetectMode != 1) {
+		DBGLOG(REQ, ERROR, "Radar Detect Mode is not \"0\" or \"1\", Invalid data\n");
 		return WLAN_STATUS_INVALID_DATA;
 	}
+
+	ucRadarDetectMode = (UINT_8) radarDetectMode;
 
 	p2pFuncSetRadarDetectMode(ucRadarDetectMode);
 

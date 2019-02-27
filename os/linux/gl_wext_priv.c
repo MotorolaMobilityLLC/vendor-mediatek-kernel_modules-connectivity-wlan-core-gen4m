@@ -2231,6 +2231,13 @@ reqExtSetAcpiDevicePowerState(IN P_GLUE_INFO_T prGlueInfo,
 #define CMD_SETROAMMODE	"SETROAMMODE"
 #define CMD_MIRACAST		"MIRACAST"
 
+#if (CFG_SUPPORT_DFS_MASTER == 1)
+#define CMD_SHOW_DFS_STATE			"SHOW_DFS_STATE"
+#define CMD_SHOW_DFS_RADAR_PARAM	"SHOW_DFS_RADAR_PARAM"
+#define CMD_SHOW_DFS_HELP			"SHOW_DFS_HELP"
+#define CMD_SHOW_DFS_CAC_TIME		"SHOW_DFS_CAC_TIME"
+#endif
+
 #define CMD_PNOSSIDCLR_SET	"PNOSSIDCLR"
 #define CMD_PNOSETUP_SET	"PNOSETUP "
 #define CMD_PNOENABLE_SET	"PNOFORCE"
@@ -6605,7 +6612,173 @@ int priv_driver_get_channels(IN struct net_device *prNetDev, IN char *pcCommand,
 	return i4BytesWritten;
 }
 
+#if (CFG_SUPPORT_DFS_MASTER == 1)
+int priv_driver_show_dfs_state(IN struct net_device *prNetDev, IN char *pcCommand, IN int i4TotalLen)
+{
+	INT_32 i4Argc = 0;
+	PCHAR apcArgv[WLAN_CFG_ARGV_MAX];
+	INT_32 i4BytesWritten = 0;
 
+	ASSERT(prNetDev);
+	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
+		return -1;
+
+	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+	DBGLOG(REQ, LOUD, "argc is %i\n", i4Argc);
+
+	LOGBUF(pcCommand, i4TotalLen, i4BytesWritten, "\nDFS State: \"%s\"",
+			p2pFuncShowDfsState());
+
+	return	i4BytesWritten;
+}
+
+int priv_driver_show_dfs_radar_param(IN struct net_device *prNetDev, IN char *pcCommand, IN int i4TotalLen)
+{
+	P_GLUE_INFO_T prGlueInfo = NULL;
+	INT_32 i4Argc = 0;
+	PCHAR apcArgv[WLAN_CFG_ARGV_MAX];
+	INT_32 i4BytesWritten = 0;
+	UINT_8 ucCnt = 0;
+	P_P2P_RADAR_INFO_T prP2pRadarInfo = (P_P2P_RADAR_INFO_T) NULL;
+
+	ASSERT(prNetDev);
+	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
+		return -1;
+	prGlueInfo = *((P_GLUE_INFO_T *) netdev_priv(prNetDev));
+
+	prP2pRadarInfo = (P_P2P_RADAR_INFO_T) cnmMemAlloc(prGlueInfo->prAdapter,
+		RAM_TYPE_MSG, sizeof(*prP2pRadarInfo));
+
+	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+	DBGLOG(REQ, LOUD, "argc is %i\n", i4Argc);
+
+	p2pFuncGetRadarInfo(prP2pRadarInfo);
+
+	LOGBUF(pcCommand, i4TotalLen, i4BytesWritten, "\nRDD idx: %d\n",
+			prP2pRadarInfo->ucRddIdx);
+	LOGBUF(pcCommand, i4TotalLen, i4BytesWritten, "\nLong Pulse detected: %d\n",
+			prP2pRadarInfo->ucLongDetected);
+	LOGBUF(pcCommand, i4TotalLen, i4BytesWritten, "\nPeriodic Pulse detected: %d\n",
+			prP2pRadarInfo->ucPeriodicDetected);
+	LOGBUF(pcCommand, i4TotalLen, i4BytesWritten, "\nLPB Num: %d\n",
+			prP2pRadarInfo->ucLPBNum);
+	LOGBUF(pcCommand, i4TotalLen, i4BytesWritten, "\nPPB Num: %d\n",
+			prP2pRadarInfo->ucPPBNum);
+
+	LOGBUF(pcCommand, i4TotalLen, i4BytesWritten, "\n===========================");
+	LOGBUF(pcCommand, i4TotalLen, i4BytesWritten, "\nLong Pulse Buffer Contents:\n");
+	LOGBUF(pcCommand, i4TotalLen, i4BytesWritten, "\npulse_time    pulse_width    PRI\n");
+	LOGBUF(pcCommand, i4TotalLen, i4BytesWritten, "\n%-10d    %-11d    -\n"
+		, prP2pRadarInfo->arLpbContent[ucCnt].u4LongStartTime
+		, prP2pRadarInfo->arLpbContent[ucCnt].u2LongPulseWidth);
+	for (ucCnt = 1; ucCnt < prP2pRadarInfo->ucLPBNum; ucCnt++) {
+		LOGBUF(pcCommand, i4TotalLen, i4BytesWritten, "\n%-10d    %-11d    %d\n"
+			, prP2pRadarInfo->arLpbContent[ucCnt].u4LongStartTime
+			, prP2pRadarInfo->arLpbContent[ucCnt].u2LongPulseWidth
+			, (prP2pRadarInfo->arLpbContent[ucCnt].u4LongStartTime
+				- prP2pRadarInfo->arLpbContent[ucCnt-1].u4LongStartTime) * 2 / 5);
+	}
+	LOGBUF(pcCommand, i4TotalLen, i4BytesWritten, "\nLPB Period Valid: %d",
+			prP2pRadarInfo->ucLPBPeriodValid);
+	LOGBUF(pcCommand, i4TotalLen, i4BytesWritten, "\nLPB Period Valid: %d\n",
+			prP2pRadarInfo->ucLPBWidthValid);
+
+	ucCnt = 0;
+	LOGBUF(pcCommand, i4TotalLen, i4BytesWritten, "\n===========================");
+	LOGBUF(pcCommand, i4TotalLen, i4BytesWritten, "\nPeriod Pulse Buffer Contents:\n");
+	LOGBUF(pcCommand, i4TotalLen, i4BytesWritten, "\npulse_time    pulse_width    PRI\n");
+	LOGBUF(pcCommand, i4TotalLen, i4BytesWritten, "\n%-10d    %-11d    -\n"
+		, prP2pRadarInfo->arPpbContent[ucCnt].u4PeriodicStartTime
+		, prP2pRadarInfo->arPpbContent[ucCnt].u2PeriodicPulseWidth);
+	for (ucCnt = 1; ucCnt < prP2pRadarInfo->ucPPBNum; ucCnt++) {
+		LOGBUF(pcCommand, i4TotalLen, i4BytesWritten, "\n%-10d    %-11d    %d\n"
+			, prP2pRadarInfo->arPpbContent[ucCnt].u4PeriodicStartTime
+			, prP2pRadarInfo->arPpbContent[ucCnt].u2PeriodicPulseWidth
+			, (prP2pRadarInfo->arPpbContent[ucCnt].u4PeriodicStartTime
+				- prP2pRadarInfo->arPpbContent[ucCnt-1].u4PeriodicStartTime) * 2 / 5);
+	}
+	LOGBUF(pcCommand, i4TotalLen, i4BytesWritten, "\nPRI Count M1 TH: %d; PRI Count M1: %d",
+			prP2pRadarInfo->ucPRICountM1TH, prP2pRadarInfo->ucPRICountM1);
+	LOGBUF(pcCommand, i4TotalLen, i4BytesWritten, "\nPRI Count M2 TH: %d; PRI Count M2: %d",
+			prP2pRadarInfo->ucPRICountM2TH, prP2pRadarInfo->ucPRICountM2);
+
+
+	cnmMemFree(prGlueInfo->prAdapter, prP2pRadarInfo);
+
+	return	i4BytesWritten;
+}
+
+int priv_driver_show_dfs_help(IN struct net_device *prNetDev, IN char *pcCommand, IN int i4TotalLen)
+{
+	INT_32 i4Argc = 0;
+	PCHAR apcArgv[WLAN_CFG_ARGV_MAX];
+	INT_32 i4BytesWritten = 0;
+
+	ASSERT(prNetDev);
+	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
+		return -1;
+
+	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+	DBGLOG(REQ, LOUD, "argc is %i\n", i4Argc);
+
+
+	LOGBUF(pcCommand, i4TotalLen, i4BytesWritten, "\n--iwpriv wlanX driver \"show_dfs_state\"\n");
+	LOGBUF(pcCommand, i4TotalLen, i4BytesWritten, "\nINACTIVE: RDD disable or temporary RDD disable");
+	LOGBUF(pcCommand, i4TotalLen, i4BytesWritten, "\nCHECKING: During CAC time");
+	LOGBUF(pcCommand, i4TotalLen, i4BytesWritten, "\nACTIVE  : In-serive monitoring");
+	LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
+		"\nDETECTED: Has detected radar but hasn't moved to new channel\n");
+
+	LOGBUF(pcCommand, i4TotalLen, i4BytesWritten, "\n--iwpriv wlanX driver \"show_dfs_radar_param\"\n");
+	LOGBUF(pcCommand, i4TotalLen, i4BytesWritten, "\nShow the latest pulse information\n");
+
+	LOGBUF(pcCommand, i4TotalLen, i4BytesWritten, "\n--iwpriv wlanX driver \"show_dfs_cac_time\"\n");
+	LOGBUF(pcCommand, i4TotalLen, i4BytesWritten, "\nShow the remaining time of CAC\n");
+
+	LOGBUF(pcCommand, i4TotalLen, i4BytesWritten, "\n--iwpriv wlanX set ByPassCac=yy\n");
+	LOGBUF(pcCommand, i4TotalLen, i4BytesWritten, "\nValue yy: set the time of CAC\n");
+
+	LOGBUF(pcCommand, i4TotalLen, i4BytesWritten, "\n--iwpriv wlanX set RDDReport=yy\n");
+	LOGBUF(pcCommand, i4TotalLen, i4BytesWritten, "\nValue yy is \"0\" or \"1\"");
+	LOGBUF(pcCommand, i4TotalLen, i4BytesWritten, "\n\"0\": Emulate RDD0 manual radar event");
+	LOGBUF(pcCommand, i4TotalLen, i4BytesWritten, "\n\"1\": Emulate RDD1 manual radar event\n");
+
+	LOGBUF(pcCommand, i4TotalLen, i4BytesWritten, "\n--iwpriv wlanX set RadarDetectMode=yy\n");
+	LOGBUF(pcCommand, i4TotalLen, i4BytesWritten, "\nValue yy is \"0\" or \"1\"");
+	LOGBUF(pcCommand, i4TotalLen, i4BytesWritten, "\n\"0\": Switch channel when radar detected (default)");
+	LOGBUF(pcCommand, i4TotalLen, i4BytesWritten, "\n\"1\": Do not switch channel when radar detected");
+
+	return	i4BytesWritten;
+}
+
+int priv_driver_show_dfs_cac_time(IN struct net_device *prNetDev, IN char *pcCommand, IN int i4TotalLen)
+{
+	INT_32 i4Argc = 0;
+	PCHAR apcArgv[WLAN_CFG_ARGV_MAX];
+	INT_32 i4BytesWritten = 0;
+
+	ASSERT(prNetDev);
+	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
+		return -1;
+
+	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+	DBGLOG(REQ, LOUD, "argc is %i\n", i4Argc);
+
+	if (p2pFuncGetDfsState() != DFS_STATE_CHECKING) {
+		LOGBUF(pcCommand, i4TotalLen, i4BytesWritten, "\nNot in CAC period");
+		return i4BytesWritten;
+	}
+
+	LOGBUF(pcCommand, i4TotalLen, i4BytesWritten, "\nRemaining time of CAC: %dsec", p2pFuncGetCacRemainingTime());
+
+	return	i4BytesWritten;
+}
+
+#endif
 int priv_driver_set_miracast(IN struct net_device *prNetDev, IN char *pcCommand, IN int i4TotalLen)
 {
 
@@ -8217,6 +8390,17 @@ INT_32 priv_driver_cmds(IN struct net_device *prNetDev, IN PCHAR pcCommand, IN I
 		} else if (strnicmp(pcCommand, CMD_CLEAR_ACL_ENTRY, strlen(CMD_CLEAR_ACL_ENTRY)) == 0) {
 			i4BytesWritten = priv_driver_clear_acl_entry(prNetDev, pcCommand, i4TotalLen);
 		}
+#if (CFG_SUPPORT_DFS_MASTER == 1)
+		else if (strnicmp(pcCommand, CMD_SHOW_DFS_STATE, strlen(CMD_SHOW_DFS_STATE)) == 0) {
+			i4BytesWritten = priv_driver_show_dfs_state(prNetDev, pcCommand, i4TotalLen);
+		} else if (strnicmp(pcCommand, CMD_SHOW_DFS_RADAR_PARAM, strlen(CMD_SHOW_DFS_RADAR_PARAM)) == 0) {
+			i4BytesWritten = priv_driver_show_dfs_radar_param(prNetDev, pcCommand, i4TotalLen);
+		} else if (strnicmp(pcCommand, CMD_SHOW_DFS_HELP, strlen(CMD_SHOW_DFS_HELP)) == 0) {
+			i4BytesWritten = priv_driver_show_dfs_help(prNetDev, pcCommand, i4TotalLen);
+		} else if (strnicmp(pcCommand, CMD_SHOW_DFS_CAC_TIME, strlen(CMD_SHOW_DFS_CAC_TIME)) == 0) {
+			i4BytesWritten = priv_driver_show_dfs_cac_time(prNetDev, pcCommand, i4TotalLen);
+		}
+#endif
 #if CFG_SUPPORT_CAL_RESULT_BACKUP_TO_HOST
 		else if (strnicmp(pcCommand,
 			CMD_SET_CALBACKUP_TEST_DRV_FW, strlen(CMD_SET_CALBACKUP_TEST_DRV_FW)) == 0)
