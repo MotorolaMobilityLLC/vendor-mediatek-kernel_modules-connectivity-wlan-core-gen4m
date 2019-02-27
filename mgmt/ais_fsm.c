@@ -1133,7 +1133,11 @@ void aisFsmSteps(IN struct ADAPTER *prAdapter, enum ENUM_AIS_STATE eNextState)
 					SET_NET_PWR_STATE_IDLE(prAdapter,
 					prAdapter->prAisBssInfo->ucBssIndex);
 
-					if (!prAdapter->rWifiVar.rScanInfo.
+					if (IS_NET_ACTIVE
+					    (prAdapter,
+					     prAdapter->
+					     prAisBssInfo->ucBssIndex) &&
+					    !prAdapter->rWifiVar.rScanInfo.
 						fgSchedScanning) {
 						UNSET_NET_ACTIVE(prAdapter,
 						prAdapter->prAisBssInfo->
