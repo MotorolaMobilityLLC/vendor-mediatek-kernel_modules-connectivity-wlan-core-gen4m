@@ -238,6 +238,7 @@ BUS_INFO mt7668_bus_info = {
 	.tx_ring_data_idx = 0,
 	.fgCheckDriverOwnInt = FALSE,
 	.fgInitPCIeInt = FALSE,
+	.u4DmaMask = 32,
 
 	.pdmaSetup = halEnhancedWpdmaConfig,
 	.lowPowerOwnRead = mt7668LowPowerOwnRead,

@@ -104,6 +104,7 @@
 #define MAX_PCIE_BUS_STATIC_MAP_ADDR		0x00040000
 
 #define MT_RINGREG_DIFF		0x10
+#define MT_RINGREG_EXT_DIFF	0x04
 
 #define MT_TX_RING_BASE		WPDMA_TX_RING0_CTRL0
 #define MT_TX_RING_PTR		WPDMA_TX_RING0_CTRL0
@@ -116,6 +117,13 @@
 #define MT_RX_RING_CNT		WPDMA_RX_RING0_CTRL1
 #define MT_RX_RING_CIDX		WPDMA_RX_RING0_CTRL2
 #define MT_RX_RING_DIDX		WPDMA_RX_RING0_CTRL3
+
+#define DMA_LOWER_32BITS_MASK   0x00000000FFFFFFFF
+#define DMA_HIGHER_4BITS_MASK   0x0000000F
+#define DMA_BITS_OFFSET		32
+
+#define MT_TX_RING_BASE_EXT WPDMA_TX_RING0_BASE_PTR_EXT
+#define MT_RX_RING_BASE_EXT WPDMA_RX_RING0_BASE_PTR_EXT
 
 typedef enum _ENUM_TX_RING_IDX_T {
 	TX_RING_DATA0_IDX_0 = 0,
@@ -164,8 +172,13 @@ typedef struct _TXD_STRUCT {
 	UINT_32 SDLen0:14;
 	UINT_32 LastSec0:1;
 	UINT_32 DMADONE:1;
+
 	/*Word2 */
 	UINT_32 SDPtr1;
+
+	/*Word3 */
+	UINT_16 SDPtr0Ext;
+	UINT_16 SDPtr1Ext;
 } TXD_STRUCT;
 
 /*
@@ -225,6 +238,7 @@ typedef struct _RTMP_TX_RING {
 	UINT_32 TxSwUsedIdx;
 	UINT_32 u4UsedCnt;
 	UINT_32 hw_desc_base;
+	UINT_32	hw_desc_base_ext;
 	UINT_32 hw_cidx_addr;
 	UINT_32 hw_didx_addr;
 	UINT_32 hw_cnt_addr;
@@ -240,6 +254,7 @@ typedef struct _RTMP_RX_RING {
 	BOOLEAN fgRxSegPkt;
 
 	UINT_32 hw_desc_base;
+	UINT_32	hw_desc_base_ext;
 	UINT_32 hw_cidx_addr;
 	UINT_32 hw_didx_addr;
 	UINT_32 hw_cnt_addr;
