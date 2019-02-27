@@ -6830,9 +6830,9 @@ static int priv_driver_get_ch_rank_list(IN struct net_device *prNetDev, IN char 
 				prChannelList[ucIdx2].ucChannelNum) {
 				pcCommand[i4BytesWritten++] =
 					prChnLoadInfo->rChnRankList[ucIdx].ucChannel;
-				DBGLOG(SCN, TRACE, "ch %u, dirtyness %d\n",
+				DBGLOG(SCN, TRACE, "ch %u, dirtiness %d\n",
 					prChnLoadInfo->rChnRankList[ucIdx].ucChannel,
-					prChnLoadInfo->rChnRankList[ucIdx].u4Dirtyness);
+					prChnLoadInfo->rChnRankList[ucIdx].u4Dirtiness);
 				break;
 			}
 		}
