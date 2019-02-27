@@ -410,6 +410,7 @@ typedef struct _NLO_PARAM_T {	/* Used by SCAN FSM */
 
 	/* Match SSID */
 	UINT_8 ucMatchSSIDNum;
+	P_BSS_DESC_T aprPendingBssDescToInd[SCN_SSID_MATCH_MAX_NUM];
 	UINT_8 ucMatchSSIDLen[SCN_SSID_MATCH_MAX_NUM];
 	UINT_8 aucMatchSSID[SCN_SSID_MATCH_MAX_NUM][ELEM_MAX_LEN_SSID];
 

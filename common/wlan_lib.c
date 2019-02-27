@@ -363,7 +363,7 @@ WLAN_STATUS wlanAdapterStart(IN P_ADAPTER_T prAdapter, IN P_REG_INFO_T prRegInfo
 
 	/* 4 <0.1> reset fgIsBusAccessFailed */
 	fgIsBusAccessFailed = FALSE;
-
+	prAdapter->ulSuspendFlag = 0;
 	do {
 		u4Status = nicAllocateAdapterMemory(prAdapter);
 		if (u4Status != WLAN_STATUS_SUCCESS) {
@@ -375,9 +375,9 @@ WLAN_STATUS wlanAdapterStart(IN P_ADAPTER_T prAdapter, IN P_REG_INFO_T prRegInfo
 
 		prAdapter->u4OsPacketFilter = PARAM_PACKET_FILTER_SUPPORTED;
 
-		DBGLOG(INIT, INFO, "wlanAdapterStart(): Acquiring LP-OWN\n");
+		DBGLOG(INIT, TRACE, "wlanAdapterStart(): Acquiring LP-OWN\n");
 		ACQUIRE_POWER_CONTROL_FROM_PM(prAdapter);
-		DBGLOG(INIT, INFO, "wlanAdapterStart(): Acquiring LP-OWN-end\n");
+		DBGLOG(INIT, TRACE, "wlanAdapterStart(): Acquiring LP-OWN-end\n");
 
 #if (CFG_ENABLE_FULL_PM == 0)
 		nicpmSetDriverOwn(prAdapter);
@@ -1716,9 +1716,13 @@ VOID wlanReleasePendingOid(IN P_ADAPTER_T prAdapter, IN ULONG ulParamPtr)
 					DBGLOG(INIT, WARN,
 					       "No response from chip for %u times, set NoAck flag!\n",
 					       prAdapter->ucOidTimeoutCount);
+#if 0
+					glGetRstReason(RST_OID_TIMEOUT);
+					GL_RESET_TRIGGER(prAdapter, RST_FLAG_DO_CORE_DUMP);
+#endif
 				}
 
-					prAdapter->fgIsChipNoAck = TRUE;
+				prAdapter->fgIsChipNoAck = TRUE;
 			}
 			set_bit(GLUE_FLAG_HIF_PRT_HIF_DBG_INFO_BIT, &(prAdapter->prGlueInfo->ulFlag));
 		}
@@ -6960,9 +6964,11 @@ BOOLEAN wlanIsChipNoAck(IN P_ADAPTER_T prAdapter)
 	BOOLEAN fgIsNoAck;
 
 	fgIsNoAck = prAdapter->fgIsChipNoAck
+
 #if CFG_CHIP_RESET_SUPPORT
 	    || kalIsResetting()
 #endif
+
 	    || fgIsBusAccessFailed;
 
 	return fgIsNoAck;
