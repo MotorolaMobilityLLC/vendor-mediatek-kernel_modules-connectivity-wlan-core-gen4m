@@ -118,17 +118,6 @@ static const struct TX_RESOURCE_CONTROL
 #endif
 };
 
-static const uint32_t au4TxHifResCtl[MAX_TX_HIF_RES_CTL_NUM] = {
-	/* 1 resource for TC_NUM & MGMT */
-	TC_NUM, TC4_INDEX,
-	/* 4 resource for AC_VO */
-	TC3_INDEX, TC3_INDEX, TC3_INDEX, TC3_INDEX,
-	/* 2 resource for AC_VI */
-	TC2_INDEX, TC2_INDEX,
-	/* 1 resource for AC_BE, AC_BK */
-	TC1_INDEX, TC0_INDEX,
-};
-
 /* Traffic settings per TC */
 static const struct TX_TC_TRAFFIC_SETTING
 	arTcTrafficSettings[NET_TC_NUM] = {
@@ -1502,6 +1491,8 @@ void nicTxMsduQueueByRR(struct ADAPTER *prAdapter)
 	struct MSDU_INFO *prMsduInfo;
 	uint32_t u4Idx, u4IsNotAllQueneEmpty;
 	uint8_t ucPortIdx;
+	uint32_t au4TxCnt[TX_PORT_NUM], u4Offset = 0;
+	char aucLogBuf[512];
 
 	KAL_SPIN_LOCK_DECLARATION();
 
@@ -1510,9 +1501,12 @@ void nicTxMsduQueueByRR(struct ADAPTER *prAdapter)
 	prDataPort1 = &qDataPort1;
 	QUEUE_INITIALIZE(prDataPort0);
 	QUEUE_INITIALIZE(prDataPort1);
+	kalMemZero(aucLogBuf, 512);
 
-	for (u4Idx = 0; u4Idx < TX_PORT_NUM; u4Idx++)
+	for (u4Idx = 0; u4Idx < TX_PORT_NUM; u4Idx++) {
 		QUEUE_INITIALIZE(&arTempQue[u4Idx]);
+		au4TxCnt[u4Idx] = 0;
+	}
 
 	KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_PORT_QUE);
 
@@ -1526,7 +1520,7 @@ void nicTxMsduQueueByRR(struct ADAPTER *prAdapter)
 	/* Check each TCQ is empty or not */
 	u4IsNotAllQueneEmpty = BITS(0, TC_NUM);
 	while (u4IsNotAllQueneEmpty) {
-		u4Idx = au4TxHifResCtl[prAdapter->u4TxHifResCtlIdx++];
+		u4Idx = prAdapter->u4TxHifResCtlIdx;
 		prTxQue = &(prAdapter->rTxPQueue[u4Idx]);
 		if (QUEUE_IS_NOT_EMPTY(prTxQue)) {
 			QUEUE_REMOVE_HEAD(prTxQue, prMsduInfo,
@@ -1536,11 +1530,18 @@ void nicTxMsduQueueByRR(struct ADAPTER *prAdapter)
 				prDataPort1 : prDataPort0;
 			QUEUE_INSERT_TAIL(prDataPort,
 					  (struct QUE_ENTRY *) prMsduInfo);
+			au4TxCnt[u4Idx]++;
 		} else {
 			/* unset empty queue */
 			u4IsNotAllQueneEmpty &= ~BIT(u4Idx);
 		}
-		prAdapter->u4TxHifResCtlIdx %= MAX_TX_HIF_RES_CTL_NUM;
+		prAdapter->u4TxHifResCtlNum++;
+		if (prAdapter->u4TxHifResCtlNum >=
+		    prAdapter->au4TxHifResCtl[u4Idx]) {
+			prAdapter->u4TxHifResCtlIdx++;
+			prAdapter->u4TxHifResCtlIdx %= TX_PORT_NUM;
+			prAdapter->u4TxHifResCtlNum = 0;
+		}
 	}
 
 	KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_PORT_QUE);
@@ -1561,7 +1562,6 @@ void nicTxMsduQueueByRR(struct ADAPTER *prAdapter)
 		QUEUE_INSERT_HEAD(&arTempQue[prMsduInfo->ucTC],
 			(struct QUE_ENTRY *) prMsduInfo);
 	}
-
 	for (u4Idx = 0; u4Idx < TX_PORT_NUM; u4Idx++) {
 		while (QUEUE_IS_NOT_EMPTY(&arTempQue[u4Idx])) {
 			QUEUE_REMOVE_HEAD(&arTempQue[u4Idx], prMsduInfo,
@@ -1571,6 +1571,13 @@ void nicTxMsduQueueByRR(struct ADAPTER *prAdapter)
 		}
 	}
 	KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_PORT_QUE);
+
+	for (u4Idx = 0; u4Idx < TX_PORT_NUM; u4Idx++) {
+		u4Offset += snprintf(
+			aucLogBuf + u4Offset, 512 - u4Offset,
+			"TC[%u]:%u ", u4Idx, au4TxCnt[u4Idx]);
+	}
+	DBGLOG_LIMITED(NIC, LOUD, "%s\n", aucLogBuf);
 }
 
 uint32_t nicTxGetMsduPendingCnt(IN struct ADAPTER
