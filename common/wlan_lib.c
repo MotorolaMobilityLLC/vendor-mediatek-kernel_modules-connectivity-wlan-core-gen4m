@@ -1046,7 +1046,7 @@ uint32_t wlanCheckWifiFunc(IN struct ADAPTER *prAdapter, IN u_int8_t fgRdyChk)
 #endif
 
 	while (TRUE) {
-		DBGLOG(INIT, INFO, "Check ready_bits(=0x%x)\n", ready_bits);
+		DBGLOG(INIT, TRACE, "Check ready_bits(=0x%x)\n", ready_bits);
 		if (fgRdyChk)
 			HAL_WIFI_FUNC_READY_CHECK(prAdapter,
 					ready_bits /* WIFI_FUNC_READY_BITS */,
