@@ -1395,7 +1395,7 @@ uint32_t nicActivateNetwork(IN struct ADAPTER *prAdapter,
 		   sizeof(rCmdActivateCtrl.ucReserved));
 
 #if 1				/* DBG */
-	DBGLOG(RSN, INFO,
+	DBGLOG_LIMITED(RSN, INFO,
 	       "[wlan index]=%d OwnMac=" MACSTR " BSSID=" MACSTR
 	       " BMCIndex = %d NetType=%d\n",
 	       ucBssIndex,
@@ -1453,7 +1453,7 @@ uint32_t nicDeactivateNetwork(IN struct ADAPTER *prAdapter,
 	 * assertion if BMCWlan index is invalid.
 	 */
 	if (prBssInfo->ucBMCWlanIndex == WTBL_RESERVED_ENTRY) {
-		DBGLOG(RSN, WARN,
+		DBGLOG_LIMITED(RSN, WARN,
 		       "Network may be deactivated already, ignore\n");
 		return WLAN_STATUS_NOT_ACCEPTED;
 	}
@@ -1470,7 +1470,7 @@ uint32_t nicDeactivateNetwork(IN struct ADAPTER *prAdapter,
 	rCmdActivateCtrl.ucBMCWlanIndex =
 		prBssInfo->ucBMCWlanIndex;
 
-	DBGLOG(RSN, INFO,
+	DBGLOG_LIMITED(RSN, INFO,
 	       "[wlan index]=%d OwnMac=" MACSTR " BSSID=" MACSTR
 	       " BMCIndex = %d NetType=%d\n",
 	       ucBssIndex,

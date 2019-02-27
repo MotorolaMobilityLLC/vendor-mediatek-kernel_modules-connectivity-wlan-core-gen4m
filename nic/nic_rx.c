@@ -1741,7 +1741,7 @@ void nicRxProcessDataPacket(IN struct ADAPTER *prAdapter,
 
 	} else {
 		fgDrop = TRUE;
-		DBGLOG(RSN, TRACE,
+		DBGLOG_LIMITED(RSN, TRACE,
 			"fgDrop = TRUE, u2RxByteCount: %d, u2PktTYpe: %d, prRxStatus: %d, wlanIdx: %d, Bssid: %d\n",
 			prRxStatus->u2RxByteCount, prRxStatus->u2PktTYpe,
 			prRxStatus->u2StatusFlag, prRxStatus->ucWlanIdx,
@@ -1908,7 +1908,7 @@ void nicRxProcessDataPacket(IN struct ADAPTER *prAdapter,
 				prRetSwRfb = prNextSwRfb;
 			} while (prRetSwRfb);
 		} else {
-			DBGLOG(RX, TRACE,
+			DBGLOG_LIMITED(RX, TRACE,
 				"Packet drop! total error drop:%d\n",
 				RX_GET_CNT(prRxCtrl, RX_DROP_TOTAL_COUNT));
 		}
@@ -1916,7 +1916,7 @@ void nicRxProcessDataPacket(IN struct ADAPTER *prAdapter,
 		nicRxReturnRFB(prAdapter, prSwRfb);
 		RX_INC_CNT(prRxCtrl, RX_CLASS_ERR_DROP_COUNT);
 		RX_INC_CNT(prRxCtrl, RX_DROP_TOTAL_COUNT);
-		DBGLOG(RX, TRACE,
+		DBGLOG_LIMITED(RX, TRACE,
 			"Packet drop! class error drop:%d, total error drop:%d\n",
 			RX_GET_CNT(prRxCtrl, RX_CLASS_ERR_DROP_COUNT),
 			RX_GET_CNT(prRxCtrl, RX_DROP_TOTAL_COUNT));
