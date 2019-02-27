@@ -222,7 +222,7 @@ BUS_INFO mt6632_bus_info = {
 #endif /* _HIF_SDIO */
 };
 
-struct firmware_download_operations mt6632_fw_dl_ops = {
+struct FWDL_OPS_T mt6632_fw_dl_ops = {
 	.tailer_format = HARVARD_TAILER_FORMAT,
 	.constructFirmwarePrio = NULL,
 	.downloadFirmware = wlanHarvardFormatDownload,

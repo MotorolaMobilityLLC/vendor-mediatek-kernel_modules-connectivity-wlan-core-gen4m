@@ -188,7 +188,7 @@ BUS_INFO mt7663_bus_info = {
 #endif /* _HIF_SDIO */
 };
 
-struct firmware_download_operations mt7663_fw_dl_ops = {
+struct FWDL_OPS_T mt7663_fw_dl_ops = {
 	.tailer_format = CONNAC_TAILER_FORMAT,
 	.constructFirmwarePrio = NULL,
 	.downloadFirmware = wlanConnacFormatDownload,
