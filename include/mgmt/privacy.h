@@ -279,6 +279,7 @@ void secHandleEapolTxStatus(IN struct ADAPTER *prAdapter,
 			    IN struct MSDU_INFO *prMsduInfo,
 			    IN enum ENUM_TX_RESULT_CODE rTxDoneStatus);
 
+uint8_t secGetDHCPType(uint8_t *pucPkt);
 /*******************************************************************************
  *                              F U N C T I O N S
  *******************************************************************************

@@ -2769,14 +2769,16 @@ u_int8_t nicTxFillMsduInfo(IN struct ADAPTER *prAdapter,
 			struct sk_buff *)prPacket)->data);
 
 		if (GLUE_TEST_PKT_FLAG(prPacket, ENUM_PKT_DHCP)
-		    && prAdapter->rWifiVar.ucDhcpTxDone)
+		    && prAdapter->rWifiVar.ucDhcpTxDone) {
 			prMsduInfo->ucPktType = ENUM_PKT_DHCP;
-		else if (GLUE_TEST_PKT_FLAG(prPacket, ENUM_PKT_ARP)
-			 && prAdapter->rWifiVar.ucArpTxDone)
+			nicIndicateConnectionTxFrame(prAdapter, prMsduInfo);
+		} else if (GLUE_TEST_PKT_FLAG(prPacket, ENUM_PKT_ARP)
+			&& prAdapter->rWifiVar.ucArpTxDone)
 			prMsduInfo->ucPktType = ENUM_PKT_ARP;
-		else if (GLUE_TEST_PKT_FLAG(prPacket, ENUM_PKT_1X))
+		else if (GLUE_TEST_PKT_FLAG(prPacket, ENUM_PKT_1X)) {
 			prMsduInfo->ucPktType = ENUM_PKT_1X;
-		else if (GLUE_TEST_PKT_FLAG(prPacket, ENUM_PKT_ICMP))
+			nicIndicateConnectionTxFrame(prAdapter, prMsduInfo);
+		} else if (GLUE_TEST_PKT_FLAG(prPacket, ENUM_PKT_ICMP))
 			prMsduInfo->ucPktType = ENUM_PKT_ICMP;
 		else if (GLUE_TEST_PKT_FLAG(prPacket, ENUM_PKT_TDLS))
 			prMsduInfo->ucPktType = ENUM_PKT_TDLS;

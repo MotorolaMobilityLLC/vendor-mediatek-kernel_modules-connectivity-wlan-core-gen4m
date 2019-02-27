@@ -1354,3 +1354,39 @@ void secHandleEapolTxStatus(IN struct ADAPTER *prAdapter,
 		kalSetEvent(prAdapter->prGlueInfo);
 	} while (FALSE);
 }
+
+uint8_t secGetDHCPType(uint8_t *pucPkt)
+{
+	uint16_t u2EtherType =
+		(pucPkt[ETH_TYPE_LEN_OFFSET] << 8) |
+		(pucPkt[ETH_TYPE_LEN_OFFSET + 1]);
+	uint8_t *pucEthBody = &pucPkt[ETH_HLEN];
+
+	if (u2EtherType == ETH_P_IPV4) {
+		if (pucEthBody[IPV4_HDR_IP_PROTOCOL_OFFSET] == IP_PRO_UDP) {
+			uint8_t *pucUdp;
+			uint32_t u4DhcpMagicCode = 0;
+			struct BOOTP_PROTOCOL *prBootp;
+
+			pucUdp = &pucEthBody[IPV4_HDR_LEN];
+			prBootp = (struct BOOTP_PROTOCOL *)
+				&pucUdp[UDP_HDR_LEN];
+			WLAN_GET_FIELD_BE32(&prBootp->aucOptions[0],
+				&u4DhcpMagicCode);
+
+			if (u4DhcpMagicCode == DHCP_MAGIC_NUMBER) {
+				uint16_t u2UdpDstPort;
+				uint16_t u2UdpSrcPort;
+
+				u2UdpDstPort = (pucUdp[2] << 8) | pucUdp[3];
+				u2UdpSrcPort = (pucUdp[0] << 8) | pucUdp[1];
+				if (((u2UdpDstPort == UDP_PORT_DHCPS) ||
+					(u2UdpDstPort == UDP_PORT_DHCPC)) &&
+					prBootp->aucOptions[4] == 53) {
+					return prBootp->aucOptions[6];
+				}
+			}
+		}
+	}
+	return 0;
+}
