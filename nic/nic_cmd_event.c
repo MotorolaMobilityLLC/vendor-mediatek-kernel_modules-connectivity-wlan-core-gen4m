@@ -5335,8 +5335,10 @@ void nicCmdEventReportMisc(IN struct ADAPTER *prAdapter,
 	prReportMisc = &(prAdapter->rReportMiscSet.reportMisc);
 
 	/* 1. get RSSI */
-	i4Rssi = prAisFsmInfo->prTargetBssDesc->ucRCPI;
-	i4Rssi = RCPI_TO_dBm(i4Rssi);
+	if (prAisFsmInfo->prTargetBssDesc) {
+		i4Rssi = prAisFsmInfo->prTargetBssDesc->ucRCPI;
+		i4Rssi = RCPI_TO_dBm(i4Rssi);
+	}
 
 	/* 2. get MIB info */
 	u4RxMpduCnt = prEvent->rHwMibCnt.u4RxMpduCnt;
