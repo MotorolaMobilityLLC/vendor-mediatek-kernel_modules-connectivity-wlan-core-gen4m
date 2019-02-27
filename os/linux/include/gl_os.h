@@ -256,7 +256,7 @@ extern const int32_t mtk_iface_combinations_sta_num;
 extern const struct ieee80211_iface_combination
 	*p_mtk_iface_combinations_p2p;
 extern const int32_t mtk_iface_combinations_p2p_num;
-extern struct REG_INFO grRegInfo;
+extern uint8_t g_aucNvram[];
 
 #ifdef CONFIG_MTK_CONNSYS_DEDICATED_LOG_PATH
 typedef void (*wifi_fwlog_event_func_cb)(int, int);
