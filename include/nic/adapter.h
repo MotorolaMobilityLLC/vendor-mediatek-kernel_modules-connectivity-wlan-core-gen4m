@@ -766,6 +766,7 @@ typedef struct _WIFI_VAR_T {
 	UINT_32 u4TxIntThCount;
 
 	UINT_32 au4TcPageCount[TC_NUM];
+	UINT_32 au4TcPageCountPle[TC_NUM];
 	UINT_8 ucExtraTxDone;
 	UINT_8 ucTxDbg;
 
@@ -1180,7 +1181,7 @@ struct _ADAPTER_T {
 #endif
 	/* Tx resource information */
 	BOOLEAN fgIsNicTxReousrceValid;
-	NIC_TX_RESOURCE_T nicTxReousrce;
+	struct tx_resource_info nicTxReousrce;
 
     /* Efuse Start and End address */
 	UINT_32 u4EfuseStartAddress;

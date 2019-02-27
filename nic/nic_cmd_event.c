@@ -78,7 +78,7 @@
 ********************************************************************************
 */
 const NIC_CAPABILITY_V2_REF_TABLE_T gNicCapabilityV2InfoTable[] = {
-	{TAG_CAP_TX_RESOURCE, nicCmdEventQueryNicTxResource},
+	{TAG_CAP_TX_RESOURCE, nicEventQueryTxResourceEntry},
 	{TAG_CAP_TX_EFUSEADDRESS, nicCmdEventQueryNicEfuseAddr},
 	{TAG_CAP_COEX_FEATURE, nicCmdEventQueryNicCoexFeature},
 	{TAG_CAP_SINGLE_SKU, rlmDomainExtractSingleSkuInfoFromFirmware},
@@ -2461,11 +2461,21 @@ WLAN_STATUS nicCmdEventQueryNicEfuseAddr(IN P_ADAPTER_T prAdapter, IN PUINT_8 pu
 	return WLAN_STATUS_SUCCESS;
 }
 
-WLAN_STATUS nicCmdEventQueryNicTxResource(IN P_ADAPTER_T prAdapter, IN PUINT_8 pucEventBuf)
+WLAN_STATUS nicEventQueryTxResourceEntry(IN P_ADAPTER_T prAdapter, IN PUINT_8 pucEventBuf)
 {
-	P_NIC_TX_RESOURCE_T prTxResource = (P_NIC_TX_RESOURCE_T)pucEventBuf;
+	P_NIC_TX_RESOURCE_T prTxResource;
+	UINT32 version = *((UINT32 *)pucEventBuf);
+
 
 	prAdapter->fgIsNicTxReousrceValid = TRUE;
+
+	if (version & NIC_TX_RESOURCE_REPORT_VERSION_PREFIX)
+		return nicEventQueryTxResource(prAdapter, pucEventBuf);
+
+	/* 6632, 7668 ways */
+	prAdapter->nicTxReousrce.txResourceInit = NULL;
+
+	prTxResource = (P_NIC_TX_RESOURCE_T)pucEventBuf;
 	prAdapter->nicTxReousrce.u4CmdTotalResource = prTxResource->u4CmdTotalResource;
 	prAdapter->nicTxReousrce.u4CmdResourceUnit = prTxResource->u4CmdResourceUnit;
 	prAdapter->nicTxReousrce.u4DataTotalResource = prTxResource->u4DataTotalResource;
@@ -2480,6 +2490,65 @@ WLAN_STATUS nicCmdEventQueryNicTxResource(IN P_ADAPTER_T prAdapter, IN PUINT_8 p
 	DBGLOG(INIT, INFO, "nicCmdEventQueryNicTxResource: u4DataResourceUnit = %x\n",
 						prAdapter->nicTxReousrce.u4DataResourceUnit);
 
+	return WLAN_STATUS_SUCCESS;
+}
+
+struct nicTxRsrcEvtHdlr nicTxRsrcEvtHdlrTbl[] = {
+	{NIC_TX_RESOURCE_REPORT_VERSION_1, nicEventQueryTxResource_v1, nicTxResourceUpdate_v1},
+};
+
+WLAN_STATUS nicEventQueryTxResource(IN P_ADAPTER_T prAdapter, IN PUINT_8 pucEventBuf)
+{
+	UINT32 i, i_max;
+	UINT32 version = *((UINT32 *)(pucEventBuf));
+
+	i_max = sizeof(nicTxRsrcEvtHdlrTbl)/sizeof(struct nicTxRsrcEvtHdlr);
+	for (i = 0; i < i_max; i++) {
+		if (version == nicTxRsrcEvtHdlrTbl[i].u4Version) {
+			/* assign callback to do the resource init. */
+			prAdapter->nicTxReousrce.txResourceInit = nicTxRsrcEvtHdlrTbl[i].nicTxResourceInit;
+
+			return nicTxRsrcEvtHdlrTbl[i].nicEventTxResource(prAdapter, pucEventBuf);
+		}
+
+		/* move to next index*/
+		i++;
+	}
+
+	/* invalid version, cannot find the handler */
+	DBGLOG(INIT, ERROR, "nicEventQueryTxResource(): Invaalid version.\n");
+	prAdapter->nicTxReousrce.txResourceInit = NULL;
+
+	return WLAN_STATUS_NOT_SUPPORTED;
+}
+
+WLAN_STATUS nicEventQueryTxResource_v1(IN P_ADAPTER_T prAdapter, IN PUINT_8 pucEventBuf)
+{
+	struct tx_resource_report_v1 *pV1 = (struct tx_resource_report_v1 *)pucEventBuf;
+	UINT_16 page_size;
+
+	/* PSE */
+	page_size = pV1->u4PlePsePageSize & 0xFFFF;
+	prAdapter->nicTxReousrce.u4CmdTotalResource = pV1->u4HifCmdPsePageQuota;
+	prAdapter->nicTxReousrce.u4CmdResourceUnit = page_size;
+	prAdapter->nicTxReousrce.u4DataTotalResource = pV1->u4HifDataPsePageQuota;
+	prAdapter->nicTxReousrce.u4DataResourceUnit = page_size;
+
+	/* PLE */
+	page_size = (pV1->u4PlePsePageSize >> 16) & 0xFFFF;
+	prAdapter->nicTxReousrce.u4CmdTotalResourcePle = pV1->u4HifCmdPlePageQuota;
+	prAdapter->nicTxReousrce.u4CmdResourceUnitPle = page_size;
+	prAdapter->nicTxReousrce.u4DataTotalResourcePle = pV1->u4HifDataPlePageQuota;
+	prAdapter->nicTxReousrce.u4DataResourceUnitPle = page_size;
+
+	/* PpTxAddCnt */
+	prAdapter->nicTxReousrce.ucPpTxAddCnt = pV1->ucPpTxAddCnt;
+
+	/* enable PLE resource control flag */
+	if (!prAdapter->nicTxReousrce.u4DataTotalResourcePle)
+		prAdapter->rTxCtrl.rTc.fgNeedPleCtrl = FALSE;
+	else
+		prAdapter->rTxCtrl.rTc.fgNeedPleCtrl = TRUE;
 	return WLAN_STATUS_SUCCESS;
 }
 
