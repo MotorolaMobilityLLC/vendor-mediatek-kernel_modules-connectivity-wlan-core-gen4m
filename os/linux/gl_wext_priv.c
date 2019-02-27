@@ -12964,6 +12964,11 @@ int32_t priv_driver_cmds(IN struct net_device *prNetDev, IN int8_t *pcCommand,
 	int32_t i4CmdFound = 0;
 	int i;
 
+	if (g_u4HaltFlag) {
+		DBGLOG(REQ, WARN, "wlan is halt, skip priv_driver_cmds\n");
+		return -1;
+	}
+
 	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
 		return -1;
 
