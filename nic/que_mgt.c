@@ -1473,7 +1473,7 @@ qmDequeueTxPacketsFromPerStaQueues(IN struct ADAPTER *prAdapter,
 	ucLoop = 0;
 	u4CurStaForwardFrameCount = 0;
 
-	DBGLOG(QM, LOUD,
+	DBGLOG(QM, TEMP,
 		"(Fairness) TC[%u] Init Head STA[%u] Resource[%u]\n",
 		ucTC, u4CurStaIndex, u4AvaliableResource);
 
@@ -1680,7 +1680,7 @@ skip_dequeue:
 	prQM->au4ResourceUsedCount[ucTC] = u4CurStaUsedResource;
 #endif
 
-	DBGLOG(QM, LOUD,
+	DBGLOG(QM, TEMP,
 		"(Fairness) TC[%u] Scheduled Head STA[%u] Left Resource[%u]\n",
 		ucTC, u4CurStaIndex, u4AvaliableResource);
 
@@ -1713,7 +1713,7 @@ qmDequeueTxPacketsFromPerTypeQueues(IN struct ADAPTER *prAdapter,
 	u_int8_t fgGlobalQueFirst = TRUE;
 	uint32_t u4AvailableResourcePLE;
 
-	DBGLOG(QM, LOUD, "Enter %s (TC = %d, quota = %u)\n",
+	DBGLOG(QM, TEMP, "Enter %s (TC = %d, quota = %u)\n",
 		__func__, ucTC, u4CurrentQuota);
 
 	/* Broadcast/Multicast data packets */
@@ -1804,7 +1804,7 @@ qmDequeueTxPacketsFromGlobalQueue(IN struct ADAPTER *prAdapter,
 	struct QUE_MGT *prQM;
 	uint32_t u4AvailableResourcePLE;
 
-	DBGLOG(QM, LOUD, "Enter %s (TC = %d, quota = %u)\n",
+	DBGLOG(QM, TEMP, "Enter %s (TC = %d, quota = %u)\n",
 		__func__, ucTC, u4CurrentQuota);
 
 	/* Broadcast/Multicast data packets */
@@ -1895,7 +1895,7 @@ struct MSDU_INFO *qmDequeueTxPackets(IN struct ADAPTER *prAdapter,
 	struct QUE rReturnedQue;
 	uint32_t u4MaxQuotaLimit;
 
-	DBGLOG(QM, LOUD, "Enter qmDequeueTxPackets\n");
+	DBGLOG(QM, TEMP, "Enter qmDequeueTxPackets\n");
 
 	QUEUE_INITIALIZE(&rReturnedQue);
 
@@ -1903,7 +1903,7 @@ struct MSDU_INFO *qmDequeueTxPackets(IN struct ADAPTER *prAdapter,
 
 	/* TC0 to TC3: AC0~AC3 (commands packets are not handled by QM) */
 	for (i = TC3_INDEX; i >= TC0_INDEX; i--) {
-		DBGLOG(QM, LOUD, "Dequeue packets from Per-STA queue[%u]\n", i);
+		DBGLOG(QM, TEMP, "Dequeue packets from Per-STA queue[%u]\n", i);
 
 		/* If only one STA is Tx allowed,
 		 * no need to restrict Max quota
@@ -1929,7 +1929,7 @@ struct MSDU_INFO *qmDequeueTxPackets(IN struct ADAPTER *prAdapter,
 				u4MaxQuotaLimit);
 
 		/* The aggregate number of dequeued packets */
-		DBGLOG(QM, LOUD, "DQA)[%u](%u)\n", i,
+		DBGLOG(QM, TEMP, "DQA)[%u](%u)\n", i,
 			rReturnedQue.u4NumElem);
 	}
 
