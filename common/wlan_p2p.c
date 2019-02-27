@@ -1513,3 +1513,18 @@ wlanoidQueryP2pRssi(IN P_ADAPTER_T prAdapter,
 #endif
 }				/* wlanoidQueryP2pRssi */
 #endif
+
+WLAN_STATUS
+wlanoidAbortP2pScan(IN P_ADAPTER_T prAdapter,
+			OUT PVOID pvQueryBuffer, IN UINT_32 u4QueryBufferLen,
+			OUT PUINT_32 pu4QueryInfoLen) {
+
+	DBGLOG(P2P, INFO, "wlanoidAbortP2pScan\n");
+
+	ASSERT(prAdapter);
+
+	p2pDevFsmRunEventScanAbort(prAdapter, NULL);
+
+	return WLAN_STATUS_SUCCESS;
+}
+
