@@ -150,8 +150,12 @@ static inline bool kalIsChipDead(struct GLUE_INFO *prGlueInfo,
 	if (*pu4Value != HIF_DEADFEED_VALUE)
 		return false;
 
-	halChipToStaticMapBusAddr(prGlueInfo, CONN_CFG_CHIP_ID_ADDR,
-				  &u4BusAddr);
+	if (!halChipToStaticMapBusAddr(prGlueInfo, CONN_CFG_CHIP_ID_ADDR,
+				       &u4BusAddr)) {
+		DBGLOG(HAL, ERROR, "Not exist CR read[0x%08x]\n", u4Register);
+		return false;
+	}
+
 	RTMP_IO_READ32(prHifInfo, u4BusAddr, &u4Value);
 
 	return u4Value == HIF_DEADFEED_VALUE;
