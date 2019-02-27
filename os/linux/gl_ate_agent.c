@@ -2063,7 +2063,7 @@ int Set_MUSetGID_UP(struct net_device *prNetDev, uint8_t *prInBuf)
 	ASSERT(prNetDev);
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 
-	if (sscanf(prInBuf, "%x:%x:%x:%x:%x:%x",
+	if (sscanf(prInBuf, "%d:%d:%d:%d:%d:%d",
 		   &rMuMimoActionInfo.unMuMimoParam.rMuSetGidUp.au4Gid[0],
 		   &rMuMimoActionInfo.unMuMimoParam.rMuSetGidUp.au4Gid[1],
 		   &rMuMimoActionInfo.unMuMimoParam.rMuSetGidUp.au4Up[0],
