@@ -1092,9 +1092,7 @@ nicTxComposeDesc(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduInfo,
 	}
 #if (UNIFIED_MAC_TX_FORMAT == 1)
 	/* Packet Format */
-	if (prMsduInfo->eSrc == TX_PACKET_MGMT)
-		HAL_MAC_TX_DESC_SET_PKT_FORMAT(prTxDesc, TXD_PKT_FORMAT_COMMAND);
-
+	HAL_MAC_TX_DESC_SET_PKT_FORMAT(prTxDesc, prMsduInfo->ucPacketFormat);
 #endif
 
 	/* Own MAC */
@@ -1308,6 +1306,7 @@ nicTxFillDesc(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduInfo,
 	P_HW_MAC_TX_DESC_T prTxDescTemplate = NULL;
 	P_STA_RECORD_T prStaRec = cnmGetStaRecByIndex(prAdapter, prMsduInfo->ucStaRecIndex);
 	UINT_32 u4TxDescLength, u4TxDescAppendLength;
+	UINT_32 u4ExtraTxDLen;
 	struct mt66xx_chip_info *prChipInfo = prAdapter->chip_info;
 #if CFG_TCP_IP_CHKSUM_OFFLOAD
 	UINT_8 ucChksumFlag = 0;
@@ -1319,10 +1318,13 @@ nicTxFillDesc(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduInfo,
 *------------------------------------------------------------------------------
 */
 	/* Decide TxD append length */
-	if (prMsduInfo->ucPacketType == TX_PACKET_TYPE_DATA)
+	if (prMsduInfo->ucPacketType == TX_PACKET_TYPE_DATA) {
 		u4TxDescAppendLength = prChipInfo->txd_append_size;
-	else
+		u4ExtraTxDLen = prChipInfo->u2ExtraTxByteCount;
+	} else {
 		u4TxDescAppendLength = 0;
+		u4ExtraTxDLen = 0;
+	}
 
 	/* Get TXD from pre-allocated template */
 	if (nicTxIsTXDTemplateAllowed(prAdapter, prMsduInfo, prStaRec)) {
@@ -1337,6 +1339,12 @@ nicTxFillDesc(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduInfo,
 	/* Compose TXD by Msdu info */
 	else {
 		u4TxDescLength = NIC_TX_DESC_LONG_FORMAT_LENGTH;
+#if (UNIFIED_MAC_TX_FORMAT == 1)
+		if (prMsduInfo->eSrc == TX_PACKET_MGMT)
+			prMsduInfo->ucPacketFormat = TXD_PKT_FORMAT_COMMAND;
+		else
+			prMsduInfo->ucPacketFormat = prChipInfo->ucPacketFormat;
+#endif /* UNIFIED_MAC_TX_FORMAT == 1 */
 		nicTxComposeDesc(prAdapter, prMsduInfo, u4TxDescLength, FALSE, prTxDescBuffer);
 
 		/* Compose TxD append */
@@ -1354,7 +1362,8 @@ nicTxFillDesc(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduInfo,
 		HAL_MAC_TX_DESC_SET_TX_BYTE_COUNT(prTxDesc,
 			u4TxDescLength + u4TxDescAppendLength + prMsduInfo->u2FrameLength);
 	else
-		HAL_MAC_TX_DESC_SET_TX_BYTE_COUNT(prTxDesc, u4TxDescLength + prMsduInfo->u2FrameLength);
+		HAL_MAC_TX_DESC_SET_TX_BYTE_COUNT(prTxDesc,
+			u4TxDescLength + u4ExtraTxDLen + prMsduInfo->u2FrameLength);
 
 	/* Checksum offload */
 #if CFG_TCP_IP_CHKSUM_OFFLOAD
@@ -1460,6 +1469,7 @@ WLAN_STATUS nicTxGenerateDescTemplate(IN P_ADAPTER_T prAdapter, IN P_STA_RECORD_
 	prMsduInfo->ucRateMode = MSDU_RATE_MODE_AUTO;
 	prMsduInfo->ucBssIndex = prStaRec->ucBssIndex;
 	prMsduInfo->ucPacketType = TX_PACKET_TYPE_DATA;
+	prMsduInfo->ucPacketFormat = prChipInfo->ucPacketFormat;
 	prMsduInfo->ucStaRecIndex = prStaRec->ucIndex;
 	prMsduInfo->ucPID = NIC_TX_DESC_PID_RESERVED;
 
