@@ -3539,9 +3539,6 @@ UINT_8 nicGetChipEcoVer(IN P_ADAPTER_T prAdapter)
 		if ((prEcoInfo->ucRomVer == ucCurSwVer) &&
 			(prEcoInfo->ucHwVer == ucCurHwVer) &&
 			(prEcoInfo->ucFactoryVer == ucCurFactoryVer)) {
-
-			ucEcoVer++;
-
 			break;
 		}
 
@@ -3551,9 +3548,9 @@ UINT_8 nicGetChipEcoVer(IN P_ADAPTER_T prAdapter)
 #if 0
 	DBGLOG(INIT, INFO,
 	       "Cannot get ECO version for SwVer[0x%02x]HwVer[0x%02x]FactoryVer[0x%1x],recognize as latest version[E%u]\n",
-	       ucCurSwVer, ucCurHwVer, ucCurFactoryVer, ucEcoVer);
+	       ucCurSwVer, ucCurHwVer, ucCurFactoryVer, prAdapter->chip_info->eco_info[ucEcoVer].ucEcoVer);
 #endif
-	return ucEcoVer;
+	return prAdapter->chip_info->eco_info[ucEcoVer].ucEcoVer;
 }
 
 BOOLEAN nicIsEcoVerEqualTo(IN P_ADAPTER_T prAdapter, UINT_8 ucEcoVer)
