@@ -3478,7 +3478,7 @@ void qmInsertReorderPkt(IN struct ADAPTER *prAdapter,
 	u4WinEnd = (uint32_t) (prReorderQueParm->u2WinEnd);
 
 	/* Debug */
-	DBGLOG(QM, TRACE, "QM:(R)[%u](%u){%u,%u}\n", prSwRfb->ucTid,
+	DBGLOG_LIMITED(QM, LOUD, "QM:(R)[%u](%u){%u,%u}\n", prSwRfb->ucTid,
 		u4SeqNo, u4WinStart, u4WinEnd);
 
 	/* Case 1: Fall within */

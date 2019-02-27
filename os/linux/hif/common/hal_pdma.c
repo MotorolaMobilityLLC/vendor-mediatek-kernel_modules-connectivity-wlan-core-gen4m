@@ -1101,7 +1101,7 @@ void halRxReceiveRFBs(IN struct ADAPTER *prAdapter, uint32_t u4Port)
 
 		prSwRfb->ucPacketType = (uint8_t)
 			HAL_RX_STATUS_GET_PKT_TYPE(prRxStatus);
-		DBGLOG(RX, TRACE, "ucPacketType = %u, ucSecMode = %u\n",
+		DBGLOG_LIMITED(RX, LOUD, "ucPacketType = %u, ucSecMode = %u\n",
 				  prSwRfb->ucPacketType,
 				  (uint8_t)HAL_RX_STATUS_GET_SEC_MODE(
 					prRxStatus));
