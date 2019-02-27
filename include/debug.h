@@ -205,10 +205,15 @@ struct CHIP_DBG_OPS {
 #define OS_SYSTIME_DBG_FORMAT               "0x%08x"
 /* Debug print argument for the OS system time */
 #define OS_SYSTIME_DBG_ARGUMENT(systime)    (systime)
+#if CFG_SHOW_FULL_MACADDR
 /* Debug print format string for the MAC Address */
 #define MACSTR		"%pM"
 /* Debug print argument for the MAC Address */
 #define MAC2STR(a)	a
+#else
+#define MACSTR          "%02x:%02x:**:**:**:%02x"
+#define MAC2STR(a)   ((uint8_t *)a)[0], ((uint8_t *)a)[1], ((uint8_t *)a)[5]
+#endif
 /* Debug print format string for the IPv4 Address */
 #define IPV4STR		"%pI4"
 /* Debug print argument for the IPv4 Address */

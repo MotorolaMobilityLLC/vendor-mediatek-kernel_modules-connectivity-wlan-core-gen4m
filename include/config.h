@@ -744,6 +744,8 @@
 
 #define CFG_SHOW_MACADDR_SOURCE     1
 
+#define CFG_SHOW_FULL_MACADDR     1
+
 /* Support 802.11v Wireless Network Management */
 #define CFG_SUPPORT_802_11V     1
 #define CFG_SUPPORT_802_11V_BSS_TRANSITION_MGT  1

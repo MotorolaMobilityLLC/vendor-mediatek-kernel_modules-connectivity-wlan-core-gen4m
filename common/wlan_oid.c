@@ -3507,11 +3507,13 @@ wlanoidSetPmkid(IN struct ADAPTER *prAdapter, IN void *pvSetBuffer, IN uint32_t 
 				prAisSpecBssInfo->arPmkidCache[0].fgPmkidExist = TRUE;
 			}
 			pucPmkID = prAisSpecBssInfo->arPmkidCache[j].rBssidInfo.arPMKID;
-			DBGLOG(RSN, INFO,
-				"%pM OKC PMKID %02x%02x%02x%02x%02x%02x%02x%02x...\n",
-				prAisSpecBssInfo->arPmkidCache[j].rBssidInfo.arBSSID,
-				pucPmkID[0], pucPmkID[1], pucPmkID[2], pucPmkID[3],
-				pucPmkID[4], pucPmkID[5], pucPmkID[6], pucPmkID[7]);
+			log_dbg(RSN, INFO, MACSTR " OKC PMKID %02x%02x%02x%02x%02x%02x%02x%02x...\n",
+				MAC2STR(prAisSpecBssInfo->
+				arPmkidCache[j].rBssidInfo.arBSSID),
+				pucPmkID[0], pucPmkID[1],
+				pucPmkID[2], pucPmkID[3],
+				pucPmkID[4], pucPmkID[5],
+				pucPmkID[6], pucPmkID[7]);
 		}
 		aisFsmRunEventSetOkcPmk(prAdapter);
 	}

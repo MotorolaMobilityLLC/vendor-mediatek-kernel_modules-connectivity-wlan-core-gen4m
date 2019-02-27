@@ -2224,8 +2224,12 @@ int mtk_cfg80211_testmode_hs20_cmd(IN struct wiphy *wiphy, IN void *data, IN int
 				prParams->hs20_set_bssid_pool.fgBssidPoolIsEnable,
 				prParams->hs20_set_bssid_pool.ucNumBssidPool);
 			for (i = 0; i < prParams->hs20_set_bssid_pool.ucNumBssidPool; i++) {
-				DBGLOG(REQ, TRACE, "[%d][ %pM ]\n", i,
-					(prParams->hs20_set_bssid_pool.arBssidPool[i]));
+				DBGLOG(REQ, TRACE,
+					"[%d][ " MACSTR " ]\n",
+					i,
+					MAC2STR(prParams->
+					hs20_set_bssid_pool.
+					arBssidPool[i]));
 			}
 			rstatus = kalIoctl(prGlueInfo,
 					(PFN_OID_HANDLER_FUNC) wlanoidSetHS20BssidPool,
