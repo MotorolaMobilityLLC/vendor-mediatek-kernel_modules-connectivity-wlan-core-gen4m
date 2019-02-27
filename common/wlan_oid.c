@@ -2779,6 +2779,8 @@ wlanoidSetAddKey(IN struct ADAPTER *prAdapter, IN void *pvSetBuffer,
 					  prCmdKey->ucKeyId);
 			}
 
+			DBGLOG(RSN, INFO, "BIP BC wtbl index:%d\n",
+				prCmdKey->ucWlanIndex);
 		} else
 #endif
 		if (1) {
@@ -2827,13 +2829,13 @@ wlanoidSetAddKey(IN struct ADAPTER *prAdapter, IN void *pvSetBuffer,
 				} else {
 					DBGLOG(RSN, INFO, "!AP && !STA REC\n");
 					prCmdKey->ucWlanIndex =
-					  secPrivacySeekForBcEntry(prAdapter,
-					  prBssInfo->ucBssIndex,
-					  prBssInfo->aucOwnMacAddr,
-					  /* Should replace by BSSID later */
-					  STA_REC_INDEX_NOT_FOUND,
-					  prCmdKey->ucAlgorithmId,
-					  prCmdKey->ucKeyId);
+						secPrivacySeekForBcEntry(
+						prAdapter,
+						prBssInfo->ucBssIndex,
+						prBssInfo->aucOwnMacAddr,
+						STA_REC_INDEX_NOT_FOUND,
+						prCmdKey->ucAlgorithmId,
+						prCmdKey->ucKeyId);
 					kalMemCopy(prCmdKey->aucPeerAddr,
 						prBssInfo->aucOwnMacAddr,
 						MAC_ADDR_LEN);
