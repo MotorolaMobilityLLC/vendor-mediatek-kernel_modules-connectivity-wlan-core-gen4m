@@ -1403,6 +1403,14 @@ uint32_t nicActivateNetwork(IN struct ADAPTER *prAdapter,
 	       prBssInfo->ucBMCWlanIndex, prBssInfo->eNetworkType);
 #endif
 
+	/* Free the pending msdu in rTxMgmtTxingQueue.
+	 * Move this action from "deactive" to "active" to avoid the KE issue.
+	 * Deactive remove pending msdu but HIF thread use it after deactive.
+	 */
+	nicFreePendingTxMsduInfoByBssIdx(prAdapter, ucBssIndex);
+	kalClearSecurityFramesByBssIdx(prAdapter->prGlueInfo,
+				       ucBssIndex);
+
 	return wlanSendSetQueryCmd(prAdapter,
 				   CMD_ID_BSS_ACTIVATE_CTRL,
 				   TRUE,
@@ -1475,9 +1483,6 @@ uint32_t nicDeactivateNetwork(IN struct ADAPTER *prAdapter,
 		nicTxDirectClearBssAbsentQ(prAdapter, ucBssIndex);
 	else
 		qmFreeAllByBssIdx(prAdapter, ucBssIndex);
-	nicFreePendingTxMsduInfoByBssIdx(prAdapter, ucBssIndex);
-	kalClearSecurityFramesByBssIdx(prAdapter->prGlueInfo,
-				       ucBssIndex);
 
 	return u4Status;
 }
