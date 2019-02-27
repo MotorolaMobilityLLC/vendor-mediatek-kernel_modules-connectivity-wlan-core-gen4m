@@ -1,13 +1,13 @@
 /*
-* This program is free software; you can redistribute it and/or modify
-* it under the terms of the GNU General Public License version 2 as
-* published by the Free Software Foundation.
-*
-* This program is distributed in the hope that it will be useful,
-* but WITHOUT ANY WARRANTY; without even the implied warranty of
-* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-* See http://www.gnu.org/licenses/gpl-2.0.html for more details.
-*/
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 as
+ * published by the Free Software Foundation.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See http://www.gnu.org/licenses/gpl-2.0.html for more details.
+ */
 
 
 /*******************************************************************************
@@ -318,17 +318,17 @@ uint32_t scanCountBits(IN uint32_t bitMap[], IN uint32_t bitMapSize)
 
 /*----------------------------------------------------------------------------*/
 /*!
-* @brief Set scan channel to scanReqMsg.
-*
-* @param[in]  prAdapter           Pointer to the Adapter structure.
-* @param[in]  u4ScanChannelNum    number of input channels
-* @param[in]  arChannel           channel list
-* @param[in]  fgIsOnlineScan      online scan or not
-* @param[out] prScanReqMsg        scan request msg. Set channel number and
-*                                 channel list for output
-*
-* @return
-*/
+ * @brief Set scan channel to scanReqMsg.
+ *
+ * @param[in]  prAdapter           Pointer to the Adapter structure.
+ * @param[in]  u4ScanChannelNum    number of input channels
+ * @param[in]  arChannel           channel list
+ * @param[in]  fgIsOnlineScan      online scan or not
+ * @param[out] prScanReqMsg        scan request msg. Set channel number and
+ *                                 channel list for output
+ *
+ * @return
+ */
 /*----------------------------------------------------------------------------*/
 void scanSetRequestChannel(IN struct ADAPTER *prAdapter,
 		IN uint32_t u4ScanChannelNum,
@@ -1006,7 +1006,7 @@ void scanRemoveBssDescsByPolicy(IN struct ADAPTER *prAdapter,
 
 				/* Support AP Selection */
 				/* Remove this BSS Desc from the Ess Desc List
-				*/
+				 */
 				if (LINK_ENTRY_IS_VALID
 					(&prBssDesc->rLinkEntryEss))
 					LINK_REMOVE_KNOWN_ENTRY(prEssList,
@@ -1498,12 +1498,15 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 	/* PUINT_8 pucDumpIE; */
 	enum ENUM_BAND eHwBand = BAND_NULL;
 	u_int8_t fgBandMismatch = FALSE;
+	uint8_t ucSubtype;
 
 	ASSERT(prAdapter);
 	ASSERT(prSwRfb);
 
 	eHwBand = HAL_RX_STATUS_GET_RF_BAND(prSwRfb->prRxStatus);
 	prWlanBeaconFrame = (struct WLAN_BEACON_FRAME *) prSwRfb->pvHeader;
+	ucSubtype = (*(uint8_t *) (prSwRfb->pvHeader) &
+			MASK_FC_SUBTYPE) >> OFFSET_OF_FC_SUBTYPE;
 
 	WLAN_GET_FIELD_16(&prWlanBeaconFrame->u2CapInfo, &u2CapInfo);
 	WLAN_GET_FIELD_64(&prWlanBeaconFrame->au4Timestamp[0], &u8Timestamp);
@@ -1627,14 +1630,11 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 		       ucIeDsChannelNum, ucIeHtChannelNum);
 #undef __STR_FMT__
 		return NULL;
-	} else {
-		uint8_t ucSubtype = (*(uint8_t *) (prSwRfb->pvHeader) &
-				MASK_FC_SUBTYPE) >> OFFSET_OF_FC_SUBTYPE;
-
-		DBGLOG(SCN, LOUD, "Receive type %u in chnl %u %u %u\n",
-			ucSubtype, ucIeDsChannelNum, ucIeHtChannelNum,
-			HAL_RX_STATUS_GET_CHNL_NUM(prSwRfb->prRxStatus));
 	}
+
+	DBGLOG(SCN, LOUD, "Receive type %u in chnl %u %u %u\n",
+		ucSubtype, ucIeDsChannelNum, ucIeHtChannelNum,
+		HAL_RX_STATUS_GET_CHNL_NUM(prSwRfb->prRxStatus));
 
 	/* 4 <1.2> Replace existing BSS_DESC structure or allocate a new one */
 	prBssDesc = scanSearchExistingBssDescWithSsid(
