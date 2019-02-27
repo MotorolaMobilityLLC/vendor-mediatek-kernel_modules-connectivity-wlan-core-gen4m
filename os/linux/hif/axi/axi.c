@@ -281,8 +281,7 @@ static int hifAxiClrBusCnt(void)
 
 static int hifAxiSetMpuProtect(bool enable)
 {
-	kalSetEmiMpuProtection(gConEmiPhyBase, WIFI_EMI_MEM_OFFSET,
-			       WIFI_EMI_MEM_SIZE, enable);
+	kalSetEmiMpuProtection(gConEmiPhyBase, enable);
 	return 0;
 }
 

@@ -19,6 +19,8 @@
 
 #ifdef CONFIG_MTK_EMI
 #include <mt_emi_api.h>
+#define WIFI_EMI_MEM_OFFSET    0x236000
+#define WIFI_EMI_MEM_SIZE      0xD2000
 #endif
 
 
@@ -73,16 +75,16 @@ int32_t kalBoostCpu(IN struct ADAPTER *prAdapter,
 }
 
 #ifdef CONFIG_MTK_EMI
-#if 0
-void kalSetEmiMpuProtection(phys_addr_t emiPhyBase, uint32_t offset,
-			    uint32_t size, bool enable)
+void kalSetEmiMpuProtection(phys_addr_t emiPhyBase, bool enable)
 {
 	struct emi_region_info_t region_info;
 
 	/*set MPU for EMI share Memory */
-	region_info.start = emiPhyBase + offset;
-	region_info.end = emiPhyBase + offset + size - 1;
+	region_info.start = emiPhyBase + WIFI_EMI_MEM_OFFSET;
+	region_info.end = emiPhyBase + WIFI_EMI_MEM_OFFSET
+		+ WIFI_EMI_MEM_SIZE - 1;
 	region_info.region = 26;
+
 	SET_ACCESS_PERMISSION(region_info.apc, enable ? LOCK : UNLOCK,
 			      FORBIDDEN, FORBIDDEN,
 			      FORBIDDEN, FORBIDDEN, FORBIDDEN, FORBIDDEN,
@@ -91,7 +93,6 @@ void kalSetEmiMpuProtection(phys_addr_t emiPhyBase, uint32_t offset,
 			      FORBIDDEN, enable ? FORBIDDEN : NO_PROTECTION);
 	emi_mpu_set_protection(&region_info);
 }
-#endif
 
 void kalSetDrvEmiMpuProtection(phys_addr_t emiPhyBase, uint32_t offset,
 			       uint32_t size)

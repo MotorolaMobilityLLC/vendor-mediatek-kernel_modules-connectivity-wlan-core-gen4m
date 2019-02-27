@@ -4315,8 +4315,7 @@ static int initWlan(void)
 
 #ifdef CONFIG_MTK_EMI
 	/* Set WIFI EMI protection to consys permitted on system boot up */
-	kalSetEmiMpuProtection(gConEmiPhyBase, WIFI_EMI_MEM_OFFSET,
-			       WIFI_EMI_MEM_SIZE, true);
+	kalSetEmiMpuProtection(gConEmiPhyBase, true);
 #endif
 	return ret;
 }				/* end of initWlan() */
