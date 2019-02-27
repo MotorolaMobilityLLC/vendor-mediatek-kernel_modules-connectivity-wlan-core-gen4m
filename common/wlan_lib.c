@@ -482,7 +482,6 @@ uint32_t wlanAdapterStart(IN struct ADAPTER *prAdapter, IN struct REG_INFO *prRe
 #if (CFG_SUPPORT_NIC_CAPABILITY == 1)
 
 			/* 2.9 Workaround for Capability CMD packet lost issue */
-			DBGLOG(INIT, WARN, "Send a Dummy CMD as workaround\n");
 			wlanSendDummyCmd(prAdapter, TRUE);
 
 			/* 3. query for NIC capability */
