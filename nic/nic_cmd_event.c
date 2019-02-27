@@ -4229,7 +4229,12 @@ void nicEventLayer0ExtMagic(IN struct ADAPTER *prAdapter,
 
 		ucStaRecIndex = secGetStaIdxByWlanIdx(
 			prAdapter, prEventAmsdu->ucWlanIdx);
+		if (ucStaRecIndex == STA_REC_INDEX_NOT_FOUND)
+			break;
+
 		prStaRec = cnmGetStaRecByIndex(prAdapter, ucStaRecIndex);
+		if (!prStaRec)
+			break;
 
 		if (prStaRec->ucMaxMpduCount == 0 ||
 		    prStaRec->ucMaxMpduCount > prEventAmsdu->ucAmsduLen)
