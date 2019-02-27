@@ -119,6 +119,8 @@ extern unsigned long long gConEmiSize;
 #endif
 #define MAX_EEPROM_BUFFER_SIZE	1200
 
+#define INFRA_FREQ_ADJUST_ADDR 0x1000123C
+
 /*******************************************************************************
  *                    E X T E R N A L   R E F E R E N C E S
  *******************************************************************************
