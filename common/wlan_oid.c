@@ -15768,6 +15768,11 @@ uint32_t wlanoidSetLowLatencyMode(
 		return WLAN_STATUS_INVALID_LENGTH;
 	}
 	ASSERT(pu4SetInfoLen);
+	if (!prAdapter->prAisBssInfo) {
+		DBGLOG(OID, ERROR, "prAdapter->prAisBssInfo = NULL\n");
+		*pu4SetInfoLen = 0;
+		return WLAN_STATUS_FAILURE;
+	}
 
 	/* Initialize */
 	prWifiVar = &prAdapter->rWifiVar;
