@@ -244,8 +244,9 @@ uint32_t wlanDownloadEMISection(IN struct ADAPTER *prAdapter, IN uint32_t u4Dest
 	uint8_t __iomem *pucEmiBaseAddr = NULL;
 	uint32_t u4Offset = u4DestAddr & WIFI_EMI_ADDR_MASK;
 
-	DBGLOG(INIT, INFO, "Start EMI Download, EmiPhyBase:0x%x offset:0x%x\n",
-	       gConEmiPhyBase, u4Offset);
+	DBGLOG(INIT, INFO,
+	       "Start EMI Download, EmiPhyBase:0x%llx offset:0x%x\n",
+	       (uint64_t)gConEmiPhyBase, u4Offset);
 	if (!gConEmiPhyBase) {
 		DBGLOG(INIT, ERROR,
 			"Consys emi memory address gConEmiPhyBase invalid\n");
@@ -1644,12 +1645,14 @@ uint32_t fwDlGetFwdlInfo(struct ADAPTER *prAdapter, char *pcBuf, int i4TotalLen)
 	kalStrnCpy(aucBuf, prVerInfo->aucFwBranchInfo, 4);
 	kalMemZero(aucDate, 32);
 	kalStrnCpy(aucDate, prVerInfo->aucFwDateCode, 16);
-	u4Offset += snprintf(pcBuf + u4Offset, i4TotalLen - u4Offset,
-			     "\nN9 FW version %s-%u.%u.%u[DEC] (%s)\n",
-			     aucBuf,
-			     (uint32_t)(prVerInfo->u2FwOwnVersion >> 8),
-			     (prVerInfo->u2FwOwnVersion & BITS(0, 7)),
-			     prVerInfo->ucFwBuildNumber, aucDate);
+
+	u4Offset += snprintf(pcBuf + u4Offset,
+			i4TotalLen - u4Offset,
+			"\nN9 FW version %s-%u.%u.%u[DEC] (%s)\n",
+			aucBuf,
+			(uint32_t)(prVerInfo->u2FwOwnVersion >> 8),
+			(uint32_t)(prVerInfo->u2FwOwnVersion & BITS(0, 7)),
+			prVerInfo->ucFwBuildNumber, aucDate);
 
 	if (prFwDlOps->getFwDlInfo)
 		u4Offset += prFwDlOps->getFwDlInfo(prAdapter, pcBuf + u4Offset, i4TotalLen - u4Offset);
@@ -1669,9 +1672,9 @@ uint32_t fwDlGetFwdlInfo(struct ADAPTER *prAdapter, char *pcBuf, int i4TotalLen)
 			     aucBuf, prVerInfo->rPatchHeader.u4PatchVersion, aucDate);
 
 	u4Offset += snprintf(pcBuf + u4Offset, i4TotalLen - u4Offset,
-			     "Drv version %u.%u[DEC]\n",
-			     (uint32_t)(prVerInfo->u2FwPeerVersion >> 8),
-			     (prVerInfo->u2FwPeerVersion & BITS(0, 7)));
+			"Drv version %u.%u[DEC]\n",
+			(uint32_t)(prVerInfo->u2FwPeerVersion >> 8),
+			(uint32_t)(prVerInfo->u2FwPeerVersion & BITS(0, 7)));
 	return u4Offset;
 }
 
