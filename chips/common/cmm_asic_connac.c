@@ -326,7 +326,7 @@ void fillNicTxDescAppendWithCR4(IN struct ADAPTER
 
 void fillTxDescAppendByHost(IN struct ADAPTER *prAdapter,
 	IN struct MSDU_INFO *prMsduInfo, IN uint16_t u4MsduId,
-	IN dma_addr_t rDmaAddr, IN uint32_t u4Idx,
+	IN phys_addr_t rDmaAddr, IN uint32_t u4Idx,
 	IN u_int8_t fgIsLast,
 	OUT uint8_t *pucBuffer)
 {
@@ -354,12 +354,13 @@ void fillTxDescAppendByHost(IN struct ADAPTER *prAdapter,
 
 void fillTxDescAppendByHostV2(IN struct ADAPTER *prAdapter,
 	IN struct MSDU_INFO *prMsduInfo, IN uint16_t u4MsduId,
-	IN dma_addr_t rDmaAddr, IN uint32_t u4Idx,
+	IN phys_addr_t rDmaAddr, IN uint32_t u4Idx,
 	IN u_int8_t fgIsLast,
 	OUT uint8_t *pucBuffer)
 {
 	union HW_MAC_TX_DESC_APPEND *prHwTxDescAppend;
 	struct TXD_PTR_LEN *prPtrLen;
+	uint64_t u4Addr = *((uint64_t *)&rDmaAddr);
 
 	prHwTxDescAppend = (union HW_MAC_TX_DESC_APPEND *)
 		(pucBuffer + NIC_TX_DESC_LONG_FORMAT_LENGTH);
@@ -367,17 +368,17 @@ void fillTxDescAppendByHostV2(IN struct ADAPTER *prAdapter,
 			| TXD_MSDU_ID_VLD;
 	prPtrLen = &prHwTxDescAppend->CONNAC_APPEND.arPtrLen[u4Idx >> 1];
 	if ((u4Idx & 1) == 0) {
-		prPtrLen->u4Ptr0 = rDmaAddr;
-		prPtrLen->u2Len0 = (prMsduInfo->u2FrameLength &
-			TXD_LEN_MASK_V2)
-			| ((rDmaAddr >> TXD_ADDR2_OFFSET) & TXD_ADDR2_MASK);
+		prPtrLen->u4Ptr0 = (uint32_t)u4Addr;
+		prPtrLen->u2Len0 =
+			(prMsduInfo->u2FrameLength & TXD_LEN_MASK_V2) |
+			((u4Addr >> TXD_ADDR2_OFFSET) & TXD_ADDR2_MASK);
 		if (fgIsLast)
 			prPtrLen->u2Len0 |= TXD_LEN_ML_V2;
 	} else {
-		prPtrLen->u4Ptr1 = rDmaAddr;
-		prPtrLen->u2Len1 = (prMsduInfo->u2FrameLength &
-			TXD_LEN_MASK_V2)
-			| ((rDmaAddr >> TXD_ADDR2_OFFSET) & TXD_ADDR2_MASK);
+		prPtrLen->u4Ptr1 = (uint32_t)u4Addr;
+		prPtrLen->u2Len1 =
+			(prMsduInfo->u2FrameLength & TXD_LEN_MASK_V2) |
+			((u4Addr >> TXD_ADDR2_OFFSET) & TXD_ADDR2_MASK);
 		if (fgIsLast)
 			prPtrLen->u2Len1 |= TXD_LEN_ML_V2;
 	}
@@ -385,7 +386,7 @@ void fillTxDescAppendByHostV2(IN struct ADAPTER *prAdapter,
 
 void fillTxDescAppendByCR4(IN struct ADAPTER *prAdapter,
 	IN struct MSDU_INFO *prMsduInfo, IN uint16_t u4MsduId,
-	IN dma_addr_t rDmaAddr, IN uint32_t u4Idx,
+	IN phys_addr_t rDmaAddr, IN uint32_t u4Idx,
 	IN u_int8_t fgIsLast,
 	OUT uint8_t *pucBuffer)
 {

@@ -249,12 +249,12 @@ static bool kalWaitRxDmaDone(struct GLUE_INFO *prGlueInfo,
  * \retval FALSE         operation fail
  */
 /*----------------------------------------------------------------------------*/
-u_int8_t
-kalDevPortRead(IN struct GLUE_INFO *prGlueInfo,
+u_int8_t kalDevPortRead(IN struct GLUE_INFO *prGlueInfo,
 	IN uint16_t u2Port, IN uint32_t u4Len,
 	OUT uint8_t *pucBuf, IN uint32_t u4ValidOutBufSize)
 {
 	struct GL_HIF_INFO *prHifInfo = NULL;
+	struct HIF_MEM_OPS *prMemOps;
 	struct RTMP_RX_RING *prRxRing;
 	struct RTMP_DMACB *pRxCell;
 	struct RXD_STRUCT *pRxD;
@@ -262,18 +262,14 @@ kalDevPortRead(IN struct GLUE_INFO *prGlueInfo,
 	spinlock_t *pRxRingLock;
 	u_int8_t fgRet = TRUE;
 	unsigned long flags = 0;
-	void *pRxPacket = NULL;
-	uint8_t *pucDst = NULL;
 	uint32_t u4CpuIdx = 0;
 
 	ASSERT(prGlueInfo);
-	prHifInfo = &prGlueInfo->rHifInfo;
-
 	ASSERT(pucBuf);
-	pucDst = pucBuf;
-
 	ASSERT(u4Len <= u4ValidOutBufSize);
 
+	prHifInfo = &prGlueInfo->rHifInfo;
+	prMemOps = &prHifInfo->rMemOps;
 	prRxRing = &prHifInfo->RxRing[u2Port];
 	pRxRingLock = &prHifInfo->RxRingLock[u2Port];
 
@@ -296,8 +292,6 @@ kalDevPortRead(IN struct GLUE_INFO *prGlueInfo,
 
 	spin_lock_irqsave(pRxRingLock, flags);
 
-	prDmaBuf = &pRxCell->DmaBuf;
-
 	if (pRxD->LastSec0 == 0 || prRxRing->fgRxSegPkt) {
 		/* Rx segmented packet */
 		DBGLOG(HAL, WARN,
@@ -315,32 +309,25 @@ kalDevPortRead(IN struct GLUE_INFO *prGlueInfo,
 		goto skip;
 	}
 
-	KAL_DMA_UNMAP_SINGLE(prHifInfo->prDmaDev, prDmaBuf->AllocPa,
-		prDmaBuf->AllocSize, KAL_DMA_FROM_DEVICE);
-
-	if (pRxD->SDLen0 <= u4Len) {
-		pRxPacket = pRxCell->pPacket;
-		ASSERT(pRxPacket);
-		kalMemCopy(pucDst, ((uint8_t *)
-			((struct sk_buff *)(pRxPacket))->data), pRxD->SDLen0);
-	} else
+	if (pRxD->SDLen0 > u4Len) {
 		DBGLOG(HAL, WARN,
 			"Skip Rx packet, SDL0[%u] > SwRfb max len[%u]\n",
 			pRxD->SDLen0, u4Len);
+		goto skip;
+	}
 
-	prDmaBuf->AllocVa = ((struct sk_buff *)pRxCell->pPacket)->data;
-	prDmaBuf->AllocPa = KAL_DMA_MAP_SINGLE(prHifInfo->prDmaDev,
-		prDmaBuf->AllocVa, prDmaBuf->AllocSize, KAL_DMA_FROM_DEVICE);
-	if (KAL_DMA_MAPPING_ERROR(prHifInfo->prDmaDev, prDmaBuf->AllocPa)) {
-		DBGLOG(HAL, ERROR, "KAL_DMA_MAP_SINGLE() error!\n");
+	prDmaBuf = &pRxCell->DmaBuf;
+	if (prMemOps->copyEvent &&
+	    !prMemOps->copyEvent(prHifInfo, pRxCell, pRxD,
+				 prDmaBuf, pucBuf, u4Len)) {
 		spin_unlock_irqrestore(pRxRingLock, flags);
 		ASSERT(0);
 		return FALSE;
 	}
 
-	pRxD->SDPtr0 = prDmaBuf->AllocPa & DMA_LOWER_32BITS_MASK;
-	pRxD->SDPtr1 = ((uint64_t)prDmaBuf->AllocPa >>
-		DMA_BITS_OFFSET) & DMA_HIGHER_4BITS_MASK;
+	pRxD->SDPtr0 = (uint64_t)prDmaBuf->AllocPa & DMA_LOWER_32BITS_MASK;
+	pRxD->SDPtr1 = ((uint64_t)prDmaBuf->AllocPa >> DMA_BITS_OFFSET) &
+		DMA_HIGHER_4BITS_MASK;
 skip:
 	pRxD->SDLen0 = prRxRing->u4BufSize;
 	pRxD->DMADONE = 0;
@@ -374,35 +361,33 @@ kalDevPortWrite(IN struct GLUE_INFO *prGlueInfo,
 	IN uint32_t u4ValidInBufSize)
 {
 	struct GL_HIF_INFO *prHifInfo = NULL;
+	struct HIF_MEM_OPS *prMemOps;
 	struct RTMP_TX_RING *prTxRing;
 	struct RTMP_DMACB *pTxCell;
 	struct TXD_STRUCT *pTxD;
-	uint8_t *pucSrc = NULL;
-	uint32_t u4SrcLen = u4Len;
+	void *pucDst = NULL;
 	unsigned long flags = 0;
 	spinlock_t *prTxRingLock;
 
 	ASSERT(prGlueInfo);
-	prHifInfo = &prGlueInfo->rHifInfo;
-
 	ASSERT(pucBuf);
-
 	ASSERT(u4Len <= u4ValidInBufSize);
 
-	pucSrc = kalMemAlloc(u4SrcLen, PHY_MEM_TYPE);
-	ASSERT(pucSrc);
-
-	kalMemCopy(pucSrc, pucBuf, u4SrcLen);
-
+	prHifInfo = &prGlueInfo->rHifInfo;
+	prMemOps = &prHifInfo->rMemOps;
 	prTxRing = &prHifInfo->TxRing[u2Port];
 	prTxRingLock = &prHifInfo->TxRingLock[u2Port];
+
+	if (prMemOps->allocRuntimeMem)
+		pucDst = prMemOps->allocRuntimeMem(u4Len);
 
 	spin_lock_irqsave((spinlock_t *)prTxRingLock, flags);
 
 	kalDevRegRead(prGlueInfo, prTxRing->hw_cidx_addr, &prTxRing->TxCpuIdx);
 	if (prTxRing->TxCpuIdx >= TX_RING_SIZE) {
 		DBGLOG(HAL, ERROR, "Error TxCpuIdx[%u]\n", prTxRing->TxCpuIdx);
-		kalMemFree(pucSrc, PHY_MEM_TYPE, u4SrcLen);
+		if (prMemOps->freeBuf)
+			prMemOps->freeBuf(pucDst, u4Len);
 		spin_unlock_irqrestore((spinlock_t *)prTxRingLock, flags);
 		return FALSE;
 	}
@@ -411,13 +396,13 @@ kalDevPortWrite(IN struct GLUE_INFO *prGlueInfo,
 	pTxD = (struct TXD_STRUCT *)pTxCell->AllocVa;
 
 	pTxCell->pPacket = NULL;
-	pTxCell->pBuffer = pucSrc;
-	pTxCell->PacketPa = KAL_DMA_MAP_SINGLE(prHifInfo->prDmaDev,
-					       pucSrc, u4SrcLen,
-					       KAL_DMA_TO_DEVICE);
-	if (KAL_DMA_MAPPING_ERROR(prHifInfo->prDmaDev, pTxCell->PacketPa)) {
-		DBGLOG(HAL, ERROR, "KAL_DMA_MAP_SINGLE() error!\n");
-		kalMemFree(pucSrc, PHY_MEM_TYPE, u4SrcLen);
+	pTxCell->pBuffer = pucDst;
+
+	if (prMemOps->copyCmd &&
+	    !prMemOps->copyCmd(prHifInfo, pTxCell, pucDst,
+			       pucBuf, u4Len, NULL, 0)) {
+		if (prMemOps->freeBuf)
+			prMemOps->freeBuf(pucDst, u4Len);
 		spin_unlock_irqrestore((spinlock_t *)prTxRingLock, flags);
 		ASSERT(0);
 		return FALSE;
@@ -425,9 +410,9 @@ kalDevPortWrite(IN struct GLUE_INFO *prGlueInfo,
 
 	pTxD->LastSec0 = 1;
 	pTxD->LastSec1 = 0;
-	pTxD->SDLen0 = u4SrcLen;
+	pTxD->SDLen0 = u4Len;
 	pTxD->SDLen1 = 0;
-	pTxD->SDPtr0 = pTxCell->PacketPa & DMA_LOWER_32BITS_MASK;
+	pTxD->SDPtr0 = (uint64_t)pTxCell->PacketPa & DMA_LOWER_32BITS_MASK;
 	pTxD->SDPtr0Ext = ((uint64_t)pTxCell->PacketPa >> DMA_BITS_OFFSET) &
 		DMA_HIGHER_4BITS_MASK;
 	pTxD->SDPtr1 = 0;
@@ -620,19 +605,20 @@ u_int8_t kalDevReadData(IN struct GLUE_INFO *prGlueInfo,
 	IN uint16_t u2Port, IN OUT struct SW_RFB *prSwRfb)
 {
 	struct GL_HIF_INFO *prHifInfo = NULL;
+	struct HIF_MEM_OPS *prMemOps;
 	struct RXD_STRUCT *pRxD;
 	struct RTMP_RX_RING *prRxRing;
 	struct RTMP_DMACB *pRxCell;
 	struct RTMP_DMABUF *prDmaBuf;
 	spinlock_t *pRxRingLock;
-	void *pRxPacket = NULL;
 	u_int8_t fgRet = TRUE;
 	unsigned long flags = 0;
 	uint32_t u4CpuIdx = 0;
 
 	ASSERT(prGlueInfo);
-	prHifInfo = &prGlueInfo->rHifInfo;
 
+	prHifInfo = &prGlueInfo->rHifInfo;
+	prMemOps = &prHifInfo->rMemOps;
 	prRxRing = &prHifInfo->RxRing[u2Port];
 	pRxRingLock = &prHifInfo->RxRingLock[u2Port];
 
@@ -672,36 +658,26 @@ u_int8_t kalDevReadData(IN struct GLUE_INFO *prGlueInfo,
 		goto skip;
 	}
 
-	pRxPacket = pRxCell->pPacket;
-	ASSERT(pRxPacket);
-
 	prDmaBuf = &pRxCell->DmaBuf;
 
-	pRxCell->pPacket = prSwRfb->pvPacket;
-	if (prHifInfo->fgIsPreAllocMem)
-		prHifInfo->updateRxPacket(pRxCell->pPacket, u2Port, u4CpuIdx);
+	if (prMemOps->flushCache)
+		prMemOps->flushCache(prHifInfo, prDmaBuf->AllocVa,
+				     pRxD->SDLen0);
 
-	KAL_DMA_UNMAP_SINGLE(prHifInfo->prDmaDev, prDmaBuf->AllocPa,
-		prDmaBuf->AllocSize, KAL_DMA_FROM_DEVICE);
-	prSwRfb->pvPacket = pRxPacket;
-	prSwRfb->pucRecvBuff = ((struct sk_buff *)pRxPacket)->data;
+	if (prMemOps->copyRxData &&
+	    !prMemOps->copyRxData(prHifInfo, pRxCell, prDmaBuf, prSwRfb)) {
+		spin_unlock_irqrestore(pRxRingLock, flags);
+		return FALSE;
+	}
+
+	prSwRfb->pucRecvBuff = ((struct sk_buff *)prSwRfb->pvPacket)->data;
 	prSwRfb->prRxStatus = (struct HW_MAC_RX_DESC *)prSwRfb->pucRecvBuff;
 
 #if CFG_TCP_IP_CHKSUM_OFFLOAD
 	prSwRfb->u4TcpUdpIpCksStatus = pRxD->RXINFO;
 #endif /* CFG_TCP_IP_CHKSUM_OFFLOAD */
 
-	prDmaBuf->AllocVa = ((struct sk_buff *)pRxCell->pPacket)->data;
-	prDmaBuf->AllocPa = KAL_DMA_MAP_SINGLE(prHifInfo->prDmaDev,
-		prDmaBuf->AllocVa, prDmaBuf->AllocSize, KAL_DMA_FROM_DEVICE);
-	if (KAL_DMA_MAPPING_ERROR(prHifInfo->prDmaDev, prDmaBuf->AllocPa)) {
-		DBGLOG(HAL, ERROR, "KAL_DMA_MAP_SINGLE() error!\n");
-		spin_unlock_irqrestore(pRxRingLock, flags);
-		ASSERT(0);
-		return FALSE;
-	}
-
-	pRxD->SDPtr0 = prDmaBuf->AllocPa & DMA_LOWER_32BITS_MASK;
+	pRxD->SDPtr0 = (uint64_t)prDmaBuf->AllocPa & DMA_LOWER_32BITS_MASK;
 	pRxD->SDPtr1 = ((uint64_t)prDmaBuf->AllocPa >>
 		DMA_BITS_OFFSET) & DMA_HIGHER_4BITS_MASK;
 skip:
@@ -722,29 +698,19 @@ skip:
 	return fgRet;
 }
 
-
-void kalPciUnmapToDev(IN struct GLUE_INFO *prGlueInfo,
-	IN dma_addr_t rDmaAddr, IN uint32_t u4Length)
-{
-	struct GL_HIF_INFO *prHifInfo = NULL;
-
-	prHifInfo = &prGlueInfo->rHifInfo;
-	KAL_DMA_UNMAP_SINGLE(prHifInfo->prDmaDev,
-		rDmaAddr, u4Length, KAL_DMA_TO_DEVICE);
-}
-
 void kalDumpTxRing(struct GLUE_INFO *prGlueInfo,
 		   struct RTMP_TX_RING *prTxRing,
 		   uint32_t u4Num, bool fgDumpContent)
 {
 	struct GL_HIF_INFO *prHifInfo = NULL;
+	struct HIF_MEM_OPS *prMemOps;
 	struct RTMP_DMACB *pTxCell;
 	struct TXD_STRUCT *pTxD;
-	struct RTMP_DMABUF *prDmaBuf;
 	uint32_t u4DumpLen = 64;
 
 	ASSERT(prGlueInfo);
 	prHifInfo = &prGlueInfo->rHifInfo;
+	prMemOps = &prHifInfo->rMemOps;
 
 	if (u4Num >= TX_RING_SIZE)
 		return;
@@ -752,31 +718,19 @@ void kalDumpTxRing(struct GLUE_INFO *prGlueInfo,
 	pTxCell = &prTxRing->Cell[u4Num];
 	pTxD = (struct TXD_STRUCT *) pTxCell->AllocVa;
 
-	prDmaBuf = &pTxCell->DmaBuf;
-
 	DBGLOG(HAL, INFO, "Tx Dese Num[%u]\n", u4Num);
 	DBGLOG_MEM32(HAL, INFO, pTxD, sizeof(struct TXD_STRUCT));
 
-	if (!fgDumpContent || !prDmaBuf->AllocPa)
+	if (!fgDumpContent)
 		return;
 
-	KAL_DMA_UNMAP_SINGLE(prHifInfo->prDmaDev, prDmaBuf->AllocPa,
-			     prDmaBuf->AllocSize, KAL_DMA_TO_DEVICE);
-
-	DBGLOG(HAL, INFO, "Tx Contents\n");
 	if (u4DumpLen > pTxD->SDLen0)
 		u4DumpLen = pTxD->SDLen0;
-	DBGLOG_MEM32(HAL, INFO, ((struct sk_buff *)pTxCell->pPacket)->data,
-		     u4DumpLen);
-	DBGLOG(HAL, INFO, "\n\n");
 
-	prDmaBuf->AllocVa = ((struct sk_buff *)pTxCell->pPacket)->data;
-	prDmaBuf->AllocPa = KAL_DMA_MAP_SINGLE(prHifInfo->prDmaDev,
-					       prDmaBuf->AllocVa,
-					       prDmaBuf->AllocSize,
-					       KAL_DMA_TO_DEVICE);
-	if (KAL_DMA_MAPPING_ERROR(prHifInfo->prDmaDev, prDmaBuf->AllocPa))
-		DBGLOG(HAL, ERROR, "KAL_DMA_MAP_SINGLE() error!\n");
+	DBGLOG(HAL, INFO, "Tx Contents\n");
+	if (prMemOps->dumpTx)
+		prMemOps->dumpTx(prHifInfo, prTxRing, u4Num, u4DumpLen);
+	DBGLOG(HAL, INFO, "\n\n");
 }
 
 void kalDumpRxRing(struct GLUE_INFO *prGlueInfo,
@@ -784,13 +738,14 @@ void kalDumpRxRing(struct GLUE_INFO *prGlueInfo,
 		   uint32_t u4Num, bool fgDumpContent)
 {
 	struct GL_HIF_INFO *prHifInfo = NULL;
+	struct HIF_MEM_OPS *prMemOps;
 	struct RTMP_DMACB *pRxCell;
 	struct RXD_STRUCT *pRxD;
-	struct RTMP_DMABUF *prDmaBuf;
 	uint32_t u4DumpLen = 64;
 
 	ASSERT(prGlueInfo);
 	prHifInfo = &prGlueInfo->rHifInfo;
+	prMemOps = &prHifInfo->rMemOps;
 
 	if (u4Num >= prRxRing->u4RingSize)
 		return;
@@ -798,29 +753,17 @@ void kalDumpRxRing(struct GLUE_INFO *prGlueInfo,
 	pRxCell = &prRxRing->Cell[u4Num];
 	pRxD = (struct RXD_STRUCT *) pRxCell->AllocVa;
 
-	prDmaBuf = &pRxCell->DmaBuf;
-
 	DBGLOG(HAL, INFO, "Rx Dese Num[%u]\n", u4Num);
 	DBGLOG_MEM32(HAL, INFO, pRxD, sizeof(struct RXD_STRUCT));
 
-	if (!fgDumpContent || !prDmaBuf->AllocPa)
+	if (!fgDumpContent)
 		return;
 
-	KAL_DMA_UNMAP_SINGLE(prHifInfo->prDmaDev, prDmaBuf->AllocPa,
-			     prDmaBuf->AllocSize, KAL_DMA_FROM_DEVICE);
-
-	DBGLOG(HAL, INFO, "Rx Contents\n");
 	if (u4DumpLen > pRxD->SDLen0)
 		u4DumpLen = pRxD->SDLen0;
-	DBGLOG_MEM32(HAL, INFO, ((struct sk_buff *)pRxCell->pPacket)->data,
-		     u4DumpLen);
-	DBGLOG(HAL, INFO, "\n\n");
 
-	prDmaBuf->AllocVa = ((struct sk_buff *)pRxCell->pPacket)->data;
-	prDmaBuf->AllocPa = KAL_DMA_MAP_SINGLE(prHifInfo->prDmaDev,
-					       prDmaBuf->AllocVa,
-					       prDmaBuf->AllocSize,
-					       KAL_DMA_FROM_DEVICE);
-	if (KAL_DMA_MAPPING_ERROR(prHifInfo->prDmaDev, prDmaBuf->AllocPa))
-		DBGLOG(HAL, ERROR, "KAL_DMA_MAP_SINGLE() error!\n");
+	DBGLOG(HAL, INFO, "Rx Contents\n");
+	if (prMemOps->dumpRx)
+		prMemOps->dumpRx(prHifInfo, prRxRing, u4Num, u4DumpLen);
+	DBGLOG(HAL, INFO, "\n\n");
 }

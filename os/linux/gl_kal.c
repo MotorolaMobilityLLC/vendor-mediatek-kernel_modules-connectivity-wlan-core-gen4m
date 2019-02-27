@@ -5935,6 +5935,12 @@ void __weak kalSetEmiMpuProtection(phys_addr_t emiPhyBase, uint32_t offset,
 	DBGLOG(SW4, WARN, "EMI MPU function is not defined\n");
 }
 
+void __weak kalSetDrvEmiMpuProtection(phys_addr_t emiPhyBase, uint32_t offset,
+				      uint32_t size)
+{
+	DBGLOG(SW4, WARN, "EMI MPU function is not defined\n");
+}
+
 int32_t kalPerMonSetForceEnableFlag(uint8_t uFlag)
 {
 	struct GLUE_INFO *prGlueInfo = (struct GLUE_INFO *)wlan_fb_notifier_priv_data;
