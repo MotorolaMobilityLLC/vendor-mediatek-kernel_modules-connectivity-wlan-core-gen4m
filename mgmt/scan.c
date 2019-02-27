@@ -1529,7 +1529,7 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 
 	if (u2IELength > CFG_IE_BUFFER_SIZE)
 		u2IELength = CFG_IE_BUFFER_SIZE;
-
+	kalMemZero(&rSsid, sizeof(rSsid));
 	IE_FOR_EACH(pucIE, u2IELength, u2Offset) {
 		switch (IE_ID(pucIE)) {
 		case ELEM_ID_SSID:
@@ -1614,10 +1614,6 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 		return NULL;
 	}
 
-	log_dbg(SCN, LOUD, "Receive type %u in chnl %u %u %u\n",
-		ucSubtype, ucIeDsChannelNum, ucIeHtChannelNum,
-		HAL_RX_STATUS_GET_CHNL_NUM(prSwRfb->prRxStatus));
-
 	/* 4 <1.2> Replace existing BSS_DESC structure or allocate a new one */
 	prBssDesc = scanSearchExistingBssDescWithSsid(
 		prAdapter,
@@ -1625,6 +1621,12 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 		(uint8_t *) prWlanBeaconFrame->aucBSSID,
 		(uint8_t *) prWlanBeaconFrame->aucSrcAddr,
 		fgIsValidSsid, fgIsValidSsid == TRUE ? &rSsid : NULL);
+
+	log_dbg(SCN, LOUD, "Receive type %u in chnl %u %u %u (%pM) valid(%u) found(%u)\n",
+		ucSubtype, ucIeDsChannelNum, ucIeHtChannelNum,
+		HAL_RX_STATUS_GET_CHNL_NUM(prSwRfb->prRxStatus),
+		(uint8_t *)prWlanBeaconFrame->aucBSSID, fgIsValidSsid,
+		(prBssDesc != NULL) ? 1 : 0);
 
 	if (prBssDesc == (struct BSS_DESC *) NULL) {
 		fgIsNewBssDesc = TRUE;
@@ -1667,7 +1669,8 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 			if (prBssDesc)
 				break;
 			/* 4 <1.2.6> no space, should not happen */
-			/* ASSERT(0); // still no space available ? */
+			log_limited_dbg(SCN, WARN, "alloc new BssDesc for %pM failed\n",
+				(uint8_t *)prWlanBeaconFrame->aucBSSID);
 			return NULL;
 
 		} while (FALSE);
@@ -1693,22 +1696,29 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 			prBssDesc->ucChannelNum
 			&& prBssDesc->ucRCPI
 			> nicRxGetRcpiValueFromRxv(RCPI_MODE_MAX, prSwRfb)) {
+			uint8_t ucRcpi = 0;
 
 			/* for signal strength is too much weaker and
 			 * previous beacon is not stale
 			 */
 			ASSERT(prSwRfb->prRxStatusGroup3);
-			if ((prBssDesc->ucRCPI -
-			    nicRxGetRcpiValueFromRxv(RCPI_MODE_MAX, prSwRfb))
+			ucRcpi = nicRxGetRcpiValueFromRxv(RCPI_MODE_MAX,
+				prSwRfb);
+			if ((prBssDesc->ucRCPI - ucRcpi)
 			    >= REPLICATED_BEACON_STRENGTH_THRESHOLD
 			    && rCurrentTime - prBssDesc->rUpdateTime
 			    <= REPLICATED_BEACON_FRESH_PERIOD) {
+				log_dbg(SCN, TRACE, "rssi(%u) is too much weaker and previous one(%u) is fresh\n",
+					ucRcpi, prBssDesc->ucRCPI);
 				return prBssDesc;
 			}
 			/* for received beacons too close in time domain */
 			else if (rCurrentTime - prBssDesc->rUpdateTime
-				<= REPLICATED_BEACON_TIME_THRESHOLD)
+				<= REPLICATED_BEACON_TIME_THRESHOLD) {
+				log_dbg(SCN, TRACE, "receive beacon/probe responses too soon(%u:%u)\n",
+					prBssDesc->rUpdateTime, rCurrentTime);
 				return prBssDesc;
+			}
 		}
 
 		/* if Timestamp has been reset, re-generate BSS
@@ -1730,8 +1740,11 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 				prBssDesc->aucBSSID);
 
 			prBssDesc = scanAllocateBssDesc(prAdapter);
-			if (!prBssDesc)
+			if (!prBssDesc) {
+				log_dbg(SCN, WARN, "Realloc BssDesc for %pM failed\n",
+					(uint8_t *)prWlanBeaconFrame->aucBSSID);
 				return NULL;
+			}
 
 			/* restore */
 			prBssDesc->fgIsConnected = fgIsConnected;
@@ -1750,8 +1763,11 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 #endif
 
 	/* NOTE: Keep consistency of Scan Record during JOIN process */
-	if (fgIsNewBssDesc == FALSE && prBssDesc->fgIsConnecting)
+	if (fgIsNewBssDesc == FALSE && prBssDesc->fgIsConnecting) {
+		log_dbg(SCN, INFO, "we're connecting this BSS(%pM) now, don't update it\n",
+				prBssDesc->aucBSSID);
 		return prBssDesc;
+	}
 	/* 4 <2> Get information from Fixed Fields */
 	/* Update the latest BSS type information. */
 	prBssDesc->eBSSType = eBSSType;
