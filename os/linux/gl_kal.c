@@ -6184,7 +6184,7 @@ u_int8_t kalSchedScanParseRandomMac(const struct net_device *ndev,
 		pucRandomMacMask, pucRandomMac);
 }
 #else /* if (KERNEL_VERSION(3, 19, 0) <= CFG80211_VERSION_CODE) */
-u_int8_t kalScanParseRandomMac(
+u_int8_t kalScanParseRandomMac(const struct net_device *ndev,
 	const struct cfg80211_scan_request *request, uint8_t *pucRandomMac)
 {
 	return FALSE;
