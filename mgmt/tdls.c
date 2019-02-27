@@ -302,7 +302,7 @@ uint32_t TdlsexLinkOper(struct ADAPTER *prAdapter,
 
 	switch (prCmd->oper) {
 
-	case TDLS_ENABLE_LINK:
+	case NL80211_TDLS_ENABLE_LINK:
 
 		for (i = 0; i < MAXNUM_TDLS_PEER; i++) {
 			if (!g_arTdlsLink[i]) {
@@ -318,7 +318,7 @@ uint32_t TdlsexLinkOper(struct ADAPTER *prAdapter,
 
 		/* printk("TDLS_ENABLE_LINK %d\n", i); */
 		break;
-	case TDLS_DISABLE_LINK:
+	case NL80211_TDLS_DISABLE_LINK:
 
 		prStaRec = cnmGetTdlsPeerByAddress(prAdapter,
 				prAdapter->prAisBssInfo->ucBssIndex,

@@ -233,18 +233,10 @@ struct PARAM_CUSTOM_TDLS_CMD_STRUCT {
 
 };
 
-enum ENUM_TDLS_LINK_OPER {
-	TDLS_DISCOVERY_REQ,
-	TDLS_SETUP,
-	TDLS_TEARDOWN,
-	TDLS_ENABLE_LINK,
-	TDLS_DISABLE_LINK
-};
-
 struct TDLS_CMD_LINK_OPER {
 
 	uint8_t aucPeerMac[6];
-	enum ENUM_TDLS_LINK_OPER oper;
+	enum nl80211_tdls_operation oper;
 };
 
 struct TDLS_CMD_LINK_MGT {
