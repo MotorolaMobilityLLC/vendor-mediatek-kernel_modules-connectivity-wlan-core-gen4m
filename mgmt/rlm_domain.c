@@ -2921,9 +2921,9 @@ uint32_t rlmDomainSendPwrLimitCmd(struct ADAPTER *prAdapter,
 	    (fgMask & PWR_CRTL_MASK_3STEPS_BACKOFF)) {
 		int8_t iPwrOffset;
 
-		if ((g_i3StepsBackOffIdx >= 1) && (g_i3StepsBackOffIdx < 3)) {
+		if ((g_i3StepsBackOffIdx >= 1) && (g_i3StepsBackOffIdx <= 3)) {
 			iPwrOffset = g_ac3StepsPoewrOffset[
-					g_iTxPwrScenarioIdx - 1];
+					g_i3StepsBackOffIdx - 1];
 			DBGLOG(RLM, INFO,
 			       "set 3-steps power back off, idx=%d, offset=%d\n",
 			       g_i3StepsBackOffIdx, iPwrOffset);
