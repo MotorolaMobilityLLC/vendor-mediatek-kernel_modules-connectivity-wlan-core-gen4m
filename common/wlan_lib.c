@@ -347,6 +347,7 @@ uint32_t wlanAdapterStart(IN struct ADAPTER *prAdapter,
 	prAdapter->u4OwnFailedCount = 0;
 	prAdapter->u4OwnFailedLogCount = 0;
 	prAdapter->ucHwBssIdNum = BSS_DEFAULT_NUM;
+	prAdapter->ucWmmSetNum = BSS_DEFAULT_NUM;
 	prAdapter->ucP2PDevBssIdx = BSS_DEFAULT_NUM;
 	prAdapter->ucWtblEntryNum = WTBL_SIZE;
 	prAdapter->ucTxDefaultWlanIndex = prAdapter->ucWtblEntryNum - 1;
@@ -3901,6 +3902,11 @@ uint32_t wlanQueryNicCapability(IN struct ADAPTER *prAdapter)
 	    prEventNicCapability->ucHwBssIdNum <= MAX_BSSID_NUM) {
 		prAdapter->ucHwBssIdNum = prEventNicCapability->ucHwBssIdNum;
 		prAdapter->ucP2PDevBssIdx = prAdapter->ucHwBssIdNum;
+		/* v1 event does not report WmmSetNum,
+		 * Assume it is the same as HwBssNum
+		 */
+		prAdapter->ucWmmSetNum =
+			prEventNicCapability->ucHwBssIdNum;
 		prAdapter->aprBssInfo[prAdapter->ucP2PDevBssIdx] =
 					&prAdapter->rWifiVar.rP2pDevInfo;
 	}

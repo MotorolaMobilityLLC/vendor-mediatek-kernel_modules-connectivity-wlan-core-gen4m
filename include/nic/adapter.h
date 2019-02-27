@@ -1200,6 +1200,7 @@ struct ADAPTER {
 	struct BSS_INFO *aprBssInfo[MAX_BSSID_NUM + 1];
 	struct BSS_INFO *prAisBssInfo;
 	uint8_t ucHwBssIdNum;
+	uint8_t ucWmmSetNum;
 	uint8_t ucWtblEntryNum;
 	uint8_t ucTxDefaultWlanIndex;
 	uint8_t ucP2PDevBssIdx;
