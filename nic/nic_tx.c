@@ -119,12 +119,14 @@ static const struct TX_RESOURCE_CONTROL
 };
 
 static const uint32_t au4TxHifResCtl[MAX_TX_HIF_RES_CTL_NUM] = {
-	/* 4 resource for TC0 */
-	TC0_INDEX, TC0_INDEX, TC0_INDEX, TC0_INDEX,
-	/* 2 resource for TC1 */
-	TC1_INDEX, TC1_INDEX,
-	/* 1 resource for others */
-	TC2_INDEX, TC3_INDEX, TC4_INDEX, TC_NUM,
+	/* 1 resource for TC_NUM & MGMT */
+	TC_NUM, TC4_INDEX,
+	/* 4 resource for AC_VO */
+	TC3_INDEX, TC3_INDEX, TC3_INDEX, TC3_INDEX,
+	/* 2 resource for AC_VI */
+	TC2_INDEX, TC2_INDEX,
+	/* 1 resource for AC_BE, AC_BK */
+	TC1_INDEX, TC0_INDEX,
 };
 
 /* Traffic settings per TC */
