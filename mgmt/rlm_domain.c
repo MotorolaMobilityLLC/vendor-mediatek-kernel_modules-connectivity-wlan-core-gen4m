@@ -3523,11 +3523,15 @@ void rlmDomainSendPwrLimitCmd(struct ADAPTER *prAdapter)
 	uint32_t u4SetQueryInfoLen;
 	struct CMD_CHANNEL_POWER_LIMIT *prCmdPwrLimit;	/* for print usage */
 	uint8_t bandedgeParam[4] = { 0, 0, 0, 0 };
+	struct DOMAIN_INFO_ENTRY *prDomainInfo;
+
 	/* TODO : 5G band edge */
-	bandedgeParam[0] = prAdapter->prDomainInfo->
-	    rSubBand[0].ucFirstChannelNum;
-	bandedgeParam[1] = bandedgeParam[0] +
-	    prAdapter->prDomainInfo->rSubBand[0].ucNumChannels - 1;
+	prDomainInfo = rlmDomainGetDomainInfo(prAdapter);
+	if (prDomainInfo) {
+		bandedgeParam[0] = prDomainInfo->rSubBand[0].ucFirstChannelNum;
+		bandedgeParam[1] = bandedgeParam[0] +
+		prDomainInfo->rSubBand[0].ucNumChannels - 1;
+	}
 
 	if (regd_is_single_sku_en())
 		return rlmDomainSendPwrLimitCmd_V2(prAdapter);
