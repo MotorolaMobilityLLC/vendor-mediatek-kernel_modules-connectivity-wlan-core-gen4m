@@ -428,9 +428,6 @@ p2pRoleStatePrepare_To_DFS_CAC_STATE(IN P_ADAPTER_T prAdapter,
 					IN P_P2P_CONNECTION_REQ_INFO_T prConnReqInfo,
 					OUT P_P2P_CHNL_REQ_INFO_T prChnlReqInfo)
 {
-	ENUM_BAND_T eBand;
-	UINT_8 ucChannel;
-	ENUM_CHNL_EXT_T eSCO;
 	ENUM_BAND_T eBandBackup;
 	UINT_8 ucChannelBackup;
 	ENUM_CHNL_EXT_T eSCOBackup;
