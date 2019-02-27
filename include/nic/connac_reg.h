@@ -115,8 +115,10 @@
 #define CONN_HIF_ON_LPCTL                       (CONN_HIF_BASE)
 #define CONN_HIF_ON_IRQ_STAT                    (CONN_HIF_BASE + 0x4)
 #define CONN_HIF_ON_IRQ_ENA                     (CONN_HIF_BASE + 0x8)
+#define CONN_HIF_ON_DBGCR01                     (CONN_HIF_BASE + 0x104)
 
 #if defined(_HIF_PCIE) || defined(_HIF_AXI)
+
 /* MCU Interrupt Event */
 #define HOST2MCU_SW_INT_SET			(PCIE_HIF_BASE + 0x0108)
 
