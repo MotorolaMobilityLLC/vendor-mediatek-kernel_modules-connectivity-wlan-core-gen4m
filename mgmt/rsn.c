@@ -930,7 +930,7 @@ u_int8_t rsnPerformPolicySelection(IN struct ADAPTER
 		fgSuiteSupported = FALSE;
 
 		DBGLOG(RSN, TRACE,
-		       "eEncStatus %d %lu 0x%lx\n",
+		       "eEncStatus %d %d 0x%08x\n",
 		       prAdapter->rWifiVar.rConnSettings.eEncStatus,
 		       prBssRsnInfo->u4PairwiseKeyCipherSuiteCount,
 		       prBssRsnInfo->au4PairwiseKeyCipherSuite[0]);
@@ -1000,7 +1000,7 @@ u_int8_t rsnPerformPolicySelection(IN struct ADAPTER
 	/*   BSS, do not check the supported AKM suites. */
 	if (u4PairwiseCipher == 0 || u4GroupCipher == 0) {
 		DBGLOG(RSN, TRACE,
-		       "Failed to select pairwise/group cipher (0x%08lx/0x%08lx)\n",
+		       "Failed to select pairwise/group cipher (0x%08x/0x%08x)\n",
 		       u4PairwiseCipher, u4GroupCipher);
 		return FALSE;
 	}
@@ -1012,7 +1012,7 @@ u_int8_t rsnPerformPolicySelection(IN struct ADAPTER
 		    u4GroupCipher != RSN_CIPHER_SUITE_CCMP
 		    || u4AkmSuite != RSN_AKM_SUITE_PSK) {
 			DBGLOG(RSN, TRACE,
-			       "Failed to select pairwise/group cipher for P2P network (0x%08lx/0x%08lx)\n",
+			       "Failed to select pairwise/group cipher for P2P network (0x%08x/0x%08x)\n",
 			       u4PairwiseCipher, u4GroupCipher);
 			return FALSE;
 		}
@@ -1026,7 +1026,7 @@ u_int8_t rsnPerformPolicySelection(IN struct ADAPTER
 		    u4GroupCipher != RSN_CIPHER_SUITE_CCMP
 		    || u4AkmSuite != RSN_AKM_SUITE_PSK) {
 			DBGLOG(RSN, TRACE,
-			       "Failed to select pairwise/group cipher for BT over Wi-Fi network (0x%08lx/0x%08lx)\n",
+			       "Failed to select pairwise/group cipher for BT over Wi-Fi network (0x%08x/0x%08x)\n",
 			       u4PairwiseCipher, u4GroupCipher);
 			return FALSE;
 		}
@@ -1044,7 +1044,7 @@ u_int8_t rsnPerformPolicySelection(IN struct ADAPTER
 
 	if (!fgSuiteSupported) {
 		DBGLOG(RSN, TRACE,
-		       "Failed to support selected pairwise/group cipher (0x%08lx/0x%08lx)\n",
+		       "Failed to support selected pairwise/group cipher (0x%08x/0x%08x)\n",
 		       u4PairwiseCipher, u4GroupCipher);
 		return FALSE;
 	}
@@ -1092,7 +1092,7 @@ u_int8_t rsnPerformPolicySelection(IN struct ADAPTER
 	       (uint8_t) ((u4AkmSuite >> 24) & 0x000000FF));
 
 #if CFG_SUPPORT_802_11W
-	DBGLOG(RSN, TRACE, "[MFP] MFP setting = %lu\n ",
+	DBGLOG(RSN, TRACE, "[MFP] MFP setting = %d\n ",
 	       kalGetMfpSetting(prAdapter->prGlueInfo));
 
 	if (kalGetMfpSetting(prAdapter->prGlueInfo) ==
@@ -1232,7 +1232,8 @@ void rsnGenerateWpaNoneIE(IN struct ADAPTER *prAdapter,
 	WLAN_SET_FIELD_32(cp, u4Suite);
 	u2SuiteCount++;
 	ucExpendedLen += 4;
-	cp += 4;
+
+	cp = pucBuffer + sizeof(struct WPA_INFO_ELEM);
 
 	/* Fill the Group Key Cipher Suite field as the same in pair-wise key. */
 	WLAN_SET_FIELD_32(&prWpaIE->u4GroupKeyCipherSuite, u4Suite);
@@ -1380,7 +1381,8 @@ void rsnGenerateWPAIE(IN struct ADAPTER *prAdapter,
 #endif
 			WLAN_SET_FIELD_32(cp,
 					  prAdapter->prAisBssInfo->u4RsnSelectedPairwiseCipher);
-		cp += 4;
+
+		cp = pucBuffer + sizeof(struct WPA_INFO_ELEM);
 
 		WLAN_SET_FIELD_16(cp, 1);
 		cp += 2;
@@ -1475,8 +1477,10 @@ void rsnGenerateRSNIE(IN struct ADAPTER *prAdapter,
 		WLAN_SET_FIELD_16(&RSN_IE(
 					  pucBuffer)->u2PairwiseKeyCipherSuiteCount, 1);
 		WLAN_SET_FIELD_32(cp, GET_BSS_INFO_BY_INDEX(prAdapter,
-				  ucBssIndex)->u4RsnSelectedPairwiseCipher);
-		cp += 4;
+					  ucBssIndex)->u4RsnSelectedPairwiseCipher);
+
+		cp = pucBuffer + sizeof(struct RSN_INFO_ELEM);
+
 		WLAN_SET_FIELD_16(cp, 1);	/* AKM suite count */
 		cp += 2;
 		/* AKM suite */
@@ -1534,7 +1538,7 @@ void rsnGenerateRSNIE(IN struct ADAPTER *prAdapter,
 				WLAN_SET_FIELD_16(cp, 1);	/* PMKID count */
 				cp += 2;
 				DBGLOG(RSN, TRACE,
-				       "BSSID " MACSTR " ind=%lu\n", MAC2STR(prStaRec->aucMacAddr),
+				       "BSSID " MACSTR " ind=%d\n", MAC2STR(prStaRec->aucMacAddr),
 				       u4Entry);
 				DBGLOG(RSN, TRACE,
 				       "use PMKID " MACSTR "\n",
@@ -2217,7 +2221,7 @@ void rsnGeneratePmkidIndication(IN struct ADAPTER
 			prPmkidEvent->arCandidateList[count].u4Flags =
 				prAisSpecificBssInfo->arPmkidCandicate[i].u4PreAuthFlags;
 			DBGLOG(RSN, TRACE,
-			       MACSTR " %lu\n",
+			       MACSTR " %x\n",
 			       MAC2STR(prPmkidEvent->arCandidateList[count].arBSSID),
 			       prPmkidEvent->arCandidateList[count].u4Flags);
 			count++;
@@ -2227,7 +2231,7 @@ void rsnGeneratePmkidIndication(IN struct ADAPTER
 	/* PMKID Candidate List */
 	prPmkidEvent->u4Version = 1;
 	prPmkidEvent->u4NumCandidates = count;
-	DBGLOG(RSN, TRACE, "rsnGeneratePmkidIndication #%lu\n",
+	DBGLOG(RSN, TRACE, "rsnGeneratePmkidIndication #%d\n",
 	       prPmkidEvent->u4NumCandidates);
 	u4LenOfUsedBuffer = sizeof(enum ENUM_STATUS_TYPE) +
 			    (2 * sizeof(uint32_t)) +
@@ -2418,7 +2422,7 @@ void rsnStartSaQueryTimer(IN struct ADAPTER *prAdapter,
 
 	if (prBssSpecInfo->u4SaQueryCount > 0
 	    && rsnCheckSaQueryTimeout(prAdapter)) {
-		DBGLOG(RSN, INFO, "MFP: u4SaQueryCount count =%lu\n",
+		DBGLOG(RSN, INFO, "MFP: u4SaQueryCount count =%d\n",
 		       prBssSpecInfo->u4SaQueryCount);
 		return;
 	}
@@ -2522,7 +2526,7 @@ void rsnStartSaQueryTimer(IN struct ADAPTER *prAdapter,
 	/* 4 Enqueue the frame to send this action frame. */
 	nicTxEnqueueMsdu(prAdapter, prMsduInfo);
 
-	DBGLOG(RSN, INFO, "Set SA Query timer %lu (%d Tu)\n",
+	DBGLOG(RSN, INFO, "Set SA Query timer %d (%d Tu)\n",
 	       prBssSpecInfo->u4SaQueryCount, 201);
 
 	cnmTimerStartTimer(prAdapter, &prBssSpecInfo->rSaQueryTimer,
@@ -3076,7 +3080,7 @@ void rsnApStartSaQueryTimer(IN struct ADAPTER *prAdapter,
 	if (prStaRec->rPmfCfg.u4SAQueryCount > 0
 	    && rsnApCheckSaQueryTimeout(prAdapter, prStaRec)) {
 		DBGLOG(RSN, INFO,
-		       "MFP: retry max timeout, u4SaQueryCount count =%lu\n",
+		       "MFP: retry max timeout, u4SaQueryCount count =%d\n",
 		       prStaRec->rPmfCfg.u4SAQueryCount);
 		return;
 	}
@@ -3143,7 +3147,7 @@ void rsnApStartSaQueryTimer(IN struct ADAPTER *prAdapter,
 	/* 4 Enqueue the frame to send this action frame. */
 	nicTxEnqueueMsdu(prAdapter, prMsduInfo);
 
-	DBGLOG(RSN, INFO, "AP Set SA Query timer %lu (%d Tu)\n",
+	DBGLOG(RSN, INFO, "AP Set SA Query timer %d (%d Tu)\n",
 	       prStaRec->rPmfCfg.u4SAQueryCount, 201);
 
 	cnmTimerStartTimer(prAdapter,
@@ -3338,6 +3342,11 @@ void rsnApSaQueryAction(IN struct ADAPTER *prAdapter,
 		    prSwRfb->pvHeader;
 	prStaRec = cnmGetStaRecByIndex(prAdapter,
 				       prSwRfb->ucStaRecIdx);
+
+	if (prStaRec == NULL) {
+		DBGLOG(RSN, INFO, "rsnApSaQueryAction: prStaRec is NULL");
+		return;
+	}
 
 	DBGLOG(RSN, TRACE,
 	       "AP PMF SAQ action enter from " MACSTR "\n",
