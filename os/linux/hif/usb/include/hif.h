@@ -280,6 +280,10 @@ typedef struct _USB_REQ_T {
 	QUE_T rSendingDataMsduInfoList;
 } USB_REQ_T, *P_USB_REQ_T;
 
+typedef struct _BUS_INFO {
+
+} BUS_INFO, *P_BUS_INFO;
+
 /*******************************************************************************
 *                            P U B L I C   D A T A
 ********************************************************************************
