@@ -81,6 +81,9 @@ UINT_8 p2pRoleFsmInit(IN P_ADAPTER_T prAdapter, IN UINT_8 ucRoleIdx)
 	P_P2P_ROLE_FSM_INFO_T prP2pRoleFsmInfo = (P_P2P_ROLE_FSM_INFO_T) NULL;
 	P_BSS_INFO_T prP2pBssInfo = (P_BSS_INFO_T) NULL;
 	P_P2P_CHNL_REQ_INFO_T prP2pChnlReqInfo = (P_P2P_CHNL_REQ_INFO_T) NULL;
+#if CFG_ENABLE_UNIFY_WIPHY
+	P_GL_P2P_INFO_T prP2PInfo = NULL;
+#endif
 
 	do {
 		ASSERT_BREAK(prAdapter != NULL);
@@ -129,10 +132,17 @@ UINT_8 p2pRoleFsmInit(IN P_ADAPTER_T prAdapter, IN UINT_8 ucRoleIdx)
 		/* For state identify, not really used. */
 		prP2pBssInfo->eIntendOPMode = OP_MODE_P2P_DEVICE;
 
+#if CFG_ENABLE_UNIFY_WIPHY
+		/* glRegisterP2P has setup the mac address */
+		prP2PInfo = prAdapter->prGlueInfo->prP2PInfo[ucRoleIdx];
+		COPY_MAC_ADDR(prP2pBssInfo->aucOwnMacAddr,
+			      prP2PInfo->prDevHandler->dev_addr);
+#else
 		COPY_MAC_ADDR(prP2pBssInfo->aucOwnMacAddr, prAdapter->rMyMacAddr);
 		/*prP2pBssInfo->aucOwnMacAddr[0] ^= 0x2;*/	/* change to local administrated address */
 		prP2pBssInfo->aucOwnMacAddr[0] |= 0x2;
 		prP2pBssInfo->aucOwnMacAddr[0] ^= ucRoleIdx << 2;	/* change to local administrated address */
+#endif
 
 		/* For BSS_INFO back trace to P2P Role & get Role FSM. */
 		prP2pBssInfo->u4PrivateData = ucRoleIdx;

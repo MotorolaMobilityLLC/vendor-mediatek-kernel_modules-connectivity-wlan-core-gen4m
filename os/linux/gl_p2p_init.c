@@ -218,7 +218,9 @@ BOOLEAN p2pRemove(P_GLUE_INFO_T prGlueInfo)
 
 	DBGLOG(P2P, INFO, "fgIsP2PRegistered FALSE\n");
 	prGlueInfo->prAdapter->fgIsP2PRegistered = FALSE;
-	glUnregisterP2P(prGlueInfo);
+
+	glUnregisterP2P(prGlueInfo, 0xff);
+
 	return TRUE;
 }
 

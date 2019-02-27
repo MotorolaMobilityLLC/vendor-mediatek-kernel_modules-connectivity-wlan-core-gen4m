@@ -80,6 +80,7 @@
 #include <net/cfg80211.h>
 #include "gl_cfg80211.h"
 #include "gl_vendor.h"
+#include "gl_p2p_os.h"
 
 /*******************************************************************************
 *                              C O N S T A N T S
@@ -163,6 +164,8 @@ mtk_cfg80211_change_iface(struct wiphy *wiphy,
 	prGlueInfo->rWpaInfo.u4Mfp = IW_AUTH_MFP_DISABLED;
 	prGlueInfo->rWpaInfo.ucRSNMfpCap = 0;
 #endif
+
+	ndev->ieee80211_ptr->iftype = type;
 
 	return 0;
 }
@@ -3232,9 +3235,11 @@ int mtk_cfg80211_del_station(struct wiphy *wiphy, struct net_device *ndev, struc
 	STA_RECORD_T *prStaRec;
 	u8 deleteMac[MAC_ADDR_LEN];
 
-	prAdapter = prGlueInfo->prAdapter;
 	prGlueInfo = (P_GLUE_INFO_T) wiphy_priv(wiphy);
 	ASSERT(prGlueInfo);
+
+	prAdapter = prGlueInfo->prAdapter;
+
 	/* For kernel 3.18 modification, we trasfer to local buff to query sta */
 	memset(deleteMac, 0, MAC_ADDR_LEN);
 	memcpy(deleteMac, mac, MAC_ADDR_LEN);
@@ -3259,9 +3264,11 @@ int mtk_cfg80211_del_station(struct wiphy *wiphy, struct net_device *ndev, const
 	STA_RECORD_T *prStaRec;
 	u8 deleteMac[MAC_ADDR_LEN];
 
-	prAdapter = prGlueInfo->prAdapter;
 	prGlueInfo = (P_GLUE_INFO_T) wiphy_priv(wiphy);
 	ASSERT(prGlueInfo);
+
+	prAdapter = prGlueInfo->prAdapter;
+
 	/* For kernel 3.18 modification, we trasfer to local buff to query sta */
 	memset(deleteMac, 0, MAC_ADDR_LEN);
 	memcpy(deleteMac, mac, MAC_ADDR_LEN);
@@ -3809,7 +3816,7 @@ cfg80211_regd_set_wiphy(IN struct wiphy *prWiphy)
 	/*
 	 * Initialize regd control information
 	 */
-	rlmDomainResetCtrlInfo();
+	rlmDomainResetCtrlInfo(FALSE);
 }
 
 #else
@@ -3892,4 +3899,1214 @@ end:
 
 	return 0;
 }
+
+#if CFG_ENABLE_UNIFY_WIPHY
+/*----------------------------------------------------------------------------*/
+/*!
+ * @brief Check the net device is P2P net device (P2P GO/GC, AP), or not.
+ *
+ * @param prGlueInfo : the driver private data
+ *        ndev       : the net device
+ *
+ * @retval 0:  AIS device (STA/IBSS)
+ *         1:  P2P GO/GC, AP
+ */
+/*----------------------------------------------------------------------------*/
+int mtk_IsP2PNetDevice(P_GLUE_INFO_T prGlueInfo, struct net_device *ndev)
+{
+	P_NETDEV_PRIVATE_GLUE_INFO prNetDevPrivate = NULL;
+	int iftype = 0;
+	int ret = 1;
+
+	if (ndev == NULL) {
+		DBGLOG(REQ, WARN, "ndev is NULL\n");
+		return -1;
+	}
+
+	prNetDevPrivate = (P_NETDEV_PRIVATE_GLUE_INFO) netdev_priv(ndev);
+	iftype = ndev->ieee80211_ptr->iftype;
+
+	/* P2P device/GO/GC always return 1 */
+	if (prNetDevPrivate->ucIsP2p == TRUE)
+		ret = 1;
+	else if (iftype == NL80211_IFTYPE_STATION)
+		ret = 0;
+	else if (iftype == NL80211_IFTYPE_ADHOC)
+		ret = 0;
+
+	DBGLOG(REQ, INFO, "cfg path select = %d\n", ret);
+
+	return ret;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * @brief Initialize the AIS related FSM and data.
+ *
+ * @param prGlueInfo : the driver private data
+ *        ndev       : the net device
+ *        ucBssIdx   : the AIS BSS index adssigned by the driver (wlanProbe)
+ *
+ * @retval 0
+ *
+ */
+/*----------------------------------------------------------------------------*/
+int mtk_init_sta_role(P_ADAPTER_T prAdapter, struct net_device *ndev)
+{
+	P_NETDEV_PRIVATE_GLUE_INFO prNdevPriv = NULL;
+
+	if ((prAdapter == NULL) || (ndev == NULL))
+		return -1;
+
+	/* uninit AIS FSM */
+	aisFsmInit(prAdapter);
+
+#if CFG_SUPPORT_ROAMING
+	/* Roaming Module - unintiailization */
+	roamingFsmInit(prAdapter);
+#endif /* CFG_SUPPORT_ROAMING */
+
+	ndev->netdev_ops = wlanGetNdevOps();
+
+	/* set the ndev's ucBssIdx to the AIS BSS index */
+	prNdevPriv = (P_NETDEV_PRIVATE_GLUE_INFO) netdev_priv(ndev);
+	prNdevPriv->ucBssIdx = prAdapter->prAisBssInfo->ucBssIndex;
+
+	return 0;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * @brief Uninitialize the AIS related FSM and data.
+ *
+ * @param prAdapter : the driver private data
+ *
+ * @retval 0
+ *
+ */
+/*----------------------------------------------------------------------------*/
+int mtk_uninit_sta_role(P_ADAPTER_T prAdapter, struct net_device *ndev)
+{
+	P_NETDEV_PRIVATE_GLUE_INFO prNdevPriv = NULL;
+
+	if ((prAdapter == NULL) || (ndev == NULL))
+		return -1;
+
+#if CFG_SUPPORT_ROAMING
+	/* Roaming Module - unintiailization */
+	roamingFsmUninit(prAdapter);
+#endif /* CFG_SUPPORT_ROAMING */
+
+	/* uninit AIS FSM */
+	aisFsmUninit(prAdapter);
+
+	/* set the ucBssIdx to the illegal value */
+	prNdevPriv = (P_NETDEV_PRIVATE_GLUE_INFO) netdev_priv(ndev);
+	prNdevPriv->ucBssIdx = 0xff;
+
+	return 0;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * @brief Initialize the AP (P2P) related FSM and data.
+ *
+ * @param prGlueInfo : the driver private data
+ *        ndev       : net device
+ *
+ * @retval 0      : success
+ *         others : can't alloc and setup the AP FSM & data
+ *
+ */
+/*----------------------------------------------------------------------------*/
+int mtk_init_ap_role(P_GLUE_INFO_T prGlueInfo, struct net_device *ndev)
+{
+	int u4Idx = 0;
+	P_ADAPTER_T prAdapter = prGlueInfo->prAdapter;
+
+	for (u4Idx = 0; u4Idx < KAL_P2P_NUM; u4Idx++) {
+		if (gprP2pRoleWdev[u4Idx] == NULL)
+			break;
+	}
+
+	if (u4Idx >= KAL_P2P_NUM) {
+		DBGLOG(INIT, ERROR, "There is no free gprP2pRoleWdev.\n");
+		return -ENOMEM;
+	}
+
+	if ((u4Idx == 0) ||
+	    (prAdapter == NULL) ||
+	    (prAdapter->rP2PNetRegState != ENUM_NET_REG_STATE_REGISTERED)) {
+		DBGLOG(INIT, ERROR, "The wlan0 can't set to AP without p2p0\n");
+		/* System will crash, if p2p0 isn't existing. */
+		return -EFAULT;
+	}
+
+	/* reference from the glRegisterP2P() */
+	gprP2pRoleWdev[u4Idx] = ndev->ieee80211_ptr;
+	glSetupP2P(prGlueInfo, gprP2pRoleWdev[u4Idx], ndev, u4Idx, TRUE);
+	prGlueInfo->prAdapter->prP2pInfo->u4DeviceNum++;
+
+	/* reference from p2pNetRegister() */
+	/* The ndev doesn't need register_netdev, only reassign the gPrP2pDev.*/
+	gPrP2pDev[u4Idx] = ndev;
+
+	return 0;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * @brief Unnitialize the AP (P2P) related FSM and data.
+ *
+ * @param prGlueInfo : the driver private data
+ *        ndev       : net device
+ *
+ * @retval 0      : success
+ *         others : can't find the AP information by the ndev
+ *
+ */
+/*----------------------------------------------------------------------------*/
+int mtk_uninit_ap_role(P_GLUE_INFO_T prGlueInfo, struct net_device *ndev)
+{
+	unsigned char u4Idx;
+
+	if (mtk_Netdev_To_RoleIdx(prGlueInfo, ndev, &u4Idx) != 0) {
+		DBGLOG(INIT, WARN, "can't find the matched dev to uninit AP\n");
+		return -EFAULT;
+	}
+
+	glUnregisterP2P(prGlueInfo, u4Idx);
+
+	gPrP2pDev[u4Idx] = NULL;
+	gprP2pRoleWdev[u4Idx] = NULL;
+
+	return 0;
+}
+
+#if KERNEL_VERSION(4, 1, 0) <= CFG80211_VERSION_CODE
+struct wireless_dev *mtk_cfg_add_iface(struct wiphy *wiphy, const char *name,
+		unsigned char name_assign_type, enum nl80211_iftype type,
+		u32 *flags, struct vif_params *params)
+#else
+struct wireless_dev *mtk_cfg_add_iface(struct wiphy *wiphy, const char *name,
+		enum nl80211_iftype type, u32 *flags, struct vif_params *params)
+#endif
+{
+	P_GLUE_INFO_T prGlueInfo = NULL;
+
+	prGlueInfo = (P_GLUE_INFO_T) wiphy_priv(wiphy);
+
+	if ((!prGlueInfo) || (prGlueInfo->u4ReadyFlag == 0)) {
+		DBGLOG(REQ, WARN, "driver is not ready\n");
+		return ERR_PTR(-EFAULT);
+	}
+
+	/* TODO: error handele for the non-P2P interface */
+
+#if (CFG_ENABLE_WIFI_DIRECT_CFG_80211 == 0)
+	DBGLOG(REQ, WARN, "P2P is not supported\n");
+	return ERR_PTR(-EINVAL);
+#else	/* CFG_ENABLE_WIFI_DIRECT_CFG_80211 */
+#if KERNEL_VERSION(4, 1, 0) <= CFG80211_VERSION_CODE
+	return mtk_p2p_cfg80211_add_iface(wiphy, name, name_assign_type, type,
+					flags, params);
+#else	/* KERNEL_VERSION > (4, 1, 0) */
+	return mtk_p2p_cfg80211_add_iface(wiphy, name, type, flags, params);
+#endif	/* KERNEL_VERSION */
+#endif  /* CFG_ENABLE_WIFI_DIRECT_CFG_80211 */
+}
+
+int mtk_cfg_del_iface(struct wiphy *wiphy, struct wireless_dev *wdev)
+{
+	P_GLUE_INFO_T prGlueInfo = NULL;
+
+	prGlueInfo = (P_GLUE_INFO_T) wiphy_priv(wiphy);
+
+	if ((!prGlueInfo) || (prGlueInfo->u4ReadyFlag == 0)) {
+		DBGLOG(REQ, WARN, "driver is not ready\n");
+		return -EFAULT;
+	}
+
+	/* TODO: error handele for the non-P2P interface */
+#if (CFG_ENABLE_WIFI_DIRECT_CFG_80211 == 0)
+	DBGLOG(REQ, WARN, "P2P is not supported\n");
+	return -EINVAL;
+#else	/* CFG_ENABLE_WIFI_DIRECT_CFG_80211 */
+	return mtk_p2p_cfg80211_del_iface(wiphy, wdev);
+#endif  /* CFG_ENABLE_WIFI_DIRECT_CFG_80211 */
+}
+
+int mtk_cfg_change_iface(struct wiphy *wiphy, struct net_device *ndev,
+			 enum nl80211_iftype type, u32 *flags,
+			 struct vif_params *params)
+{
+	P_GLUE_INFO_T prGlueInfo = NULL;
+	P_ADAPTER_T prAdapter = NULL;
+	P_NETDEV_PRIVATE_GLUE_INFO prNetdevPriv = NULL;
+	P_P2P_INFO_T prP2pInfo = NULL;
+	struct cfg80211_scan_request *prScanRequest = NULL;
+
+	GLUE_SPIN_LOCK_DECLARATION();
+
+	prGlueInfo = (P_GLUE_INFO_T) wiphy_priv(wiphy);
+	ASSERT(prGlueInfo);
+
+	if ((!prGlueInfo) || (prGlueInfo->u4ReadyFlag == 0)) {
+		DBGLOG(REQ, WARN, "driver is not ready\n");
+		return -EFAULT;
+	}
+
+	prNetdevPriv = (P_NETDEV_PRIVATE_GLUE_INFO) netdev_priv(ndev);
+
+#if (CFG_ENABLE_WIFI_DIRECT_CFG_80211)
+	/* P2P Interfcace */
+	if (prNetdevPriv->ucIsP2p == TRUE) {
+		return mtk_p2p_cfg80211_change_iface(wiphy, ndev, type,
+						flags, params);
+	}
+#endif /* CFG_ENABLE_WIFI_DIRECT_CFG_80211 */
+
+	prAdapter = prGlueInfo->prAdapter;
+
+	/* mtk_cfg_change_iface is only for wlan0 to set type as STA or AP. */
+	if (!ndev || (ndev != prGlueInfo->prDevHandler)) {
+		DBGLOG(REQ, WARN, "ndev is not correct\n");
+		return -EINVAL;
+	}
+
+	if (ndev->ieee80211_ptr->iftype == type) {
+		DBGLOG(REQ, INFO, "ndev type is not changed (%d)\n", type);
+		return 0;
+	}
+
+	netif_carrier_off(ndev);
+	netif_tx_stop_all_queues(ndev);
+
+	/* flush scan */
+	GLUE_ACQUIRE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
+	if ((prGlueInfo->prScanRequest != NULL) &&
+	    (prGlueInfo->prScanRequest->wdev == ndev->ieee80211_ptr)) {
+		prScanRequest = prGlueInfo->prScanRequest;
+		prGlueInfo->prScanRequest = NULL;
+	}
+	GLUE_RELEASE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
+
+	if (prScanRequest)
+		kalCfg80211ScanDone(prScanRequest, TRUE);
+
+	/* expect that only AP & STA will be handled here (excluding IBSS) */
+
+	if (type == NL80211_IFTYPE_AP) {
+		/* STA mode change to AP mode */
+		prP2pInfo = prAdapter->prP2pInfo;
+
+		if (prP2pInfo == NULL) {
+			DBGLOG(INIT, ERROR, "prP2pInfo is NULL\n");
+			return -EFAULT;
+		}
+
+		if (prP2pInfo->u4DeviceNum >= KAL_P2P_NUM) {
+			DBGLOG(INIT, ERROR, "resource invalid, u4DeviceNum=%d\n"
+				, prP2pInfo->u4DeviceNum);
+			return -EFAULT;
+		}
+
+		mtk_uninit_sta_role(prAdapter, ndev);
+
+		if (mtk_init_ap_role(prGlueInfo, ndev) != 0) {
+			DBGLOG(INIT, ERROR, "mtk_init_ap_role FAILED\n");
+
+			/* Only AP/P2P resource has the failure case.	*/
+			/* So, just re-init AIS.			*/
+			mtk_init_sta_role(prAdapter, ndev);
+			return -EFAULT;
+		}
+	} else {
+		/* AP mode change to STA mode */
+		if (mtk_uninit_ap_role(prGlueInfo, ndev) != 0) {
+			DBGLOG(INIT, ERROR, "mtk_uninit_ap_role FAILED\n");
+			return -EFAULT;
+		}
+
+		mtk_init_sta_role(prAdapter, ndev);
+
+		/* continue the mtk_cfg80211_change_iface() process */
+		mtk_cfg80211_change_iface(wiphy, ndev, type, flags, params);
+	}
+
+	return 0;
+}
+
+int mtk_cfg_add_key(struct wiphy *wiphy, struct net_device *ndev, u8 key_index,
+		   bool pairwise, const u8 *mac_addr, struct key_params *params)
+{
+	P_GLUE_INFO_T prGlueInfo = NULL;
+
+	prGlueInfo = (P_GLUE_INFO_T) wiphy_priv(wiphy);
+
+	if ((!prGlueInfo) || (prGlueInfo->u4ReadyFlag == 0)) {
+		DBGLOG(REQ, WARN, "driver is not ready\n");
+		return -EFAULT;
+	}
+
+	if (mtk_IsP2PNetDevice(prGlueInfo, ndev) > 0) {
+		return mtk_p2p_cfg80211_add_key(wiphy, ndev, key_index,
+						pairwise, mac_addr, params);
+	}
+	/* STA Mode */
+	return mtk_cfg80211_add_key(wiphy, ndev, key_index, pairwise,
+					mac_addr, params);
+}
+
+int mtk_cfg_get_key(struct wiphy *wiphy, struct net_device *ndev, u8 key_index,
+		    bool pairwise, const u8 *mac_addr, void *cookie,
+		    void (*callback)(void *cookie, struct key_params *))
+{
+	P_GLUE_INFO_T prGlueInfo = NULL;
+
+	prGlueInfo = (P_GLUE_INFO_T) wiphy_priv(wiphy);
+
+	if ((!prGlueInfo) || (prGlueInfo->u4ReadyFlag == 0)) {
+		DBGLOG(REQ, WARN, "driver is not ready\n");
+		return -EFAULT;
+	}
+
+	if (mtk_IsP2PNetDevice(prGlueInfo, ndev) > 0) {
+		return mtk_p2p_cfg80211_get_key(wiphy, ndev, key_index,
+					pairwise, mac_addr, cookie, callback);
+	}
+	/* STA Mode */
+	return mtk_cfg80211_get_key(wiphy, ndev, key_index,
+				pairwise, mac_addr, cookie, callback);
+}
+
+int mtk_cfg_del_key(struct wiphy *wiphy, struct net_device *ndev, u8 key_index,
+		    bool pairwise, const u8 *mac_addr)
+{
+	P_GLUE_INFO_T prGlueInfo = NULL;
+
+	prGlueInfo = (P_GLUE_INFO_T) wiphy_priv(wiphy);
+
+	if ((!prGlueInfo) || (prGlueInfo->u4ReadyFlag == 0)) {
+		DBGLOG(REQ, WARN, "driver is not ready\n");
+		return -EFAULT;
+	}
+
+	if (mtk_IsP2PNetDevice(prGlueInfo, ndev) > 0) {
+		return mtk_p2p_cfg80211_del_key(wiphy, ndev, key_index,
+					pairwise, mac_addr);
+	}
+	/* STA Mode */
+	return mtk_cfg80211_del_key(wiphy, ndev, key_index, pairwise, mac_addr);
+}
+
+int mtk_cfg_set_default_key(struct wiphy *wiphy, struct net_device *ndev,
+			    u8 key_index, bool unicast, bool multicast)
+{
+	P_GLUE_INFO_T prGlueInfo = NULL;
+
+	prGlueInfo = (P_GLUE_INFO_T) wiphy_priv(wiphy);
+
+	if ((!prGlueInfo) || (prGlueInfo->u4ReadyFlag == 0)) {
+		DBGLOG(REQ, WARN, "driver is not ready\n");
+		return -EFAULT;
+	}
+
+	if (mtk_IsP2PNetDevice(prGlueInfo, ndev) > 0) {
+		return mtk_p2p_cfg80211_set_default_key(wiphy, ndev,
+						key_index, unicast, multicast);
+	}
+	/* STA Mode */
+	return mtk_cfg80211_set_default_key(wiphy, ndev,
+					key_index, unicast, multicast);
+}
+
+#if KERNEL_VERSION(3, 16, 0) <= CFG80211_VERSION_CODE
+int mtk_cfg_get_station(struct wiphy *wiphy, struct net_device *ndev,
+			const u8 *mac, struct station_info *sinfo)
+#else
+int mtk_cfg_get_station(struct wiphy *wiphy, struct net_device *ndev,
+			u8 *mac, struct station_info *sinfo)
+#endif
+{
+	P_GLUE_INFO_T prGlueInfo = NULL;
+
+	prGlueInfo = (P_GLUE_INFO_T) wiphy_priv(wiphy);
+
+	if ((!prGlueInfo) || (prGlueInfo->u4ReadyFlag == 0)) {
+		DBGLOG(REQ, WARN, "driver is not ready\n");
+		return -EFAULT;
+	}
+
+	if (mtk_IsP2PNetDevice(prGlueInfo, ndev) > 0)
+		return mtk_p2p_cfg80211_get_station(wiphy, ndev, mac, sinfo);
+	/* STA Mode */
+	return mtk_cfg80211_get_station(wiphy, ndev, mac, sinfo);
+}
+
+#if CFG_SUPPORT_TDLS
+#if KERNEL_VERSION(3, 16, 0) <= CFG80211_VERSION_CODE
+int mtk_cfg_change_station(struct wiphy *wiphy, struct net_device *ndev,
+			   const u8 *mac, struct station_parameters *params)
+#else
+int mtk_cfg_change_station(struct wiphy *wiphy, struct net_device *ndev,
+			   u8 *mac, struct station_parameters *params)
+#endif
+{
+	P_GLUE_INFO_T prGlueInfo = NULL;
+
+	prGlueInfo = (P_GLUE_INFO_T) wiphy_priv(wiphy);
+
+	if ((!prGlueInfo) || (prGlueInfo->u4ReadyFlag == 0)) {
+		DBGLOG(REQ, WARN, "driver is not ready\n");
+		return -EFAULT;
+	}
+
+	if (mtk_IsP2PNetDevice(prGlueInfo, ndev) > 0) {
+		DBGLOG(REQ, WARN, "P2P/AP don't support this function\n");
+		return -EFAULT;
+	}
+	/* STA Mode */
+	return mtk_cfg80211_change_station(wiphy, ndev, mac, params);
+}
+
+#if KERNEL_VERSION(3, 16, 0) <= CFG80211_VERSION_CODE
+int mtk_cfg_add_station(struct wiphy *wiphy, struct net_device *ndev,
+			const u8 *mac, struct station_parameters *params)
+#else
+int mtk_cfg_add_station(struct wiphy *wiphy, struct net_device *ndev,
+			u8 *mac, struct station_parameters *params)
+#endif
+{
+	P_GLUE_INFO_T prGlueInfo = NULL;
+
+	prGlueInfo = (P_GLUE_INFO_T) wiphy_priv(wiphy);
+
+	if ((!prGlueInfo) || (prGlueInfo->u4ReadyFlag == 0)) {
+		DBGLOG(REQ, WARN, "driver is not ready\n");
+		return -EFAULT;
+	}
+
+	if (mtk_IsP2PNetDevice(prGlueInfo, ndev) > 0) {
+		DBGLOG(REQ, WARN, "P2P/AP don't support this function\n");
+		return -EFAULT;
+	}
+	/* STA Mode */
+	return mtk_cfg80211_add_station(wiphy, ndev, mac, params);
+}
+
+#if KERNEL_VERSION(3, 16, 0) <= CFG80211_VERSION_CODE
+int mtk_cfg_tdls_oper(struct wiphy *wiphy, struct net_device *ndev,
+		      const u8 *peer, enum nl80211_tdls_operation oper)
+#else
+int mtk_cfg_tdls_oper(struct wiphy *wiphy, struct net_device *ndev,
+		      u8 *peer, enum nl80211_tdls_operation oper)
+#endif
+{
+	P_GLUE_INFO_T prGlueInfo = NULL;
+
+	prGlueInfo = (P_GLUE_INFO_T) wiphy_priv(wiphy);
+
+	if ((!prGlueInfo) || (prGlueInfo->u4ReadyFlag == 0)) {
+		DBGLOG(REQ, WARN, "driver is not ready\n");
+		return -EFAULT;
+	}
+
+	if (mtk_IsP2PNetDevice(prGlueInfo, ndev) > 0) {
+		DBGLOG(REQ, WARN, "P2P/AP don't support this function\n");
+		return -EFAULT;
+	}
+	/* STA Mode */
+	return mtk_cfg80211_tdls_oper(wiphy, ndev, peer, oper);
+}
+
+#if KERNEL_VERSION(3, 18, 0) <= CFG80211_VERSION_CODE
+int mtk_cfg_tdls_mgmt(struct wiphy *wiphy, struct net_device *dev,
+		      const u8 *peer, u8 action_code, u8 dialog_token,
+		      u16 status_code, u32 peer_capability,
+		      bool initiator, const u8 *buf, size_t len)
+#elif KERNEL_VERSION(3, 16, 0) <= CFG80211_VERSION_CODE
+int mtk_cfg_tdls_mgmt(struct wiphy *wiphy, struct net_device *dev,
+		      const u8 *peer, u8 action_code, u8 dialog_token,
+		      u16 status_code, u32 peer_capability,
+		      const u8 *buf, size_t len)
+#else
+int mtk_cfg_tdls_mgmt(struct wiphy *wiphy, struct net_device *dev,
+		      u8 *peer, u8 action_code, u8 dialog_token,
+		      u16 status_code,
+		      const u8 *buf, size_t len)
+#endif
+{
+	GLUE_INFO_T *prGlueInfo;
+
+	prGlueInfo = (P_GLUE_INFO_T) wiphy_priv(wiphy);
+
+	if ((!prGlueInfo) || (prGlueInfo->u4ReadyFlag == 0)) {
+		DBGLOG(REQ, WARN, "driver is not ready\n");
+		return -EFAULT;
+	}
+
+	if (mtk_IsP2PNetDevice(prGlueInfo, dev) > 0) {
+		DBGLOG(REQ, WARN, "P2P/AP don't support this function\n");
+		return -EFAULT;
+	}
+
+#if KERNEL_VERSION(3, 18, 0) <= CFG80211_VERSION_CODE
+	return mtk_cfg80211_tdls_mgmt(wiphy, dev, peer, action_code,
+			dialog_token, status_code, peer_capability,
+			initiator, buf, len);
+#elif KERNEL_VERSION(3, 16, 0) <= CFG80211_VERSION_CODE
+	return mtk_cfg80211_tdls_mgmt(wiphy, dev, peer, action_code,
+			dialog_token, status_code, peer_capability,
+			buf, len);
+#else
+	return mtk_cfg80211_tdls_mgmt(wiphy, dev, peer, action_code,
+			dialog_token, status_code,
+			buf, len);
+#endif
+}
+#endif /* CFG_SUPPORT_TDLS */
+
+#if KERNEL_VERSION(3, 19, 0) <= CFG80211_VERSION_CODE
+int mtk_cfg_del_station(struct wiphy *wiphy, struct net_device *ndev,
+			struct station_del_parameters *params)
+#elif KERNEL_VERSION(3, 16, 0) <= CFG80211_VERSION_CODE
+int mtk_cfg_del_station(struct wiphy *wiphy, struct net_device *ndev,
+			const u8 *mac)
+#else
+int mtk_cfg_del_station(struct wiphy *wiphy, struct net_device *ndev, u8 *mac)
+#endif
+{
+	P_GLUE_INFO_T prGlueInfo = NULL;
+
+	prGlueInfo = (P_GLUE_INFO_T) wiphy_priv(wiphy);
+
+	if ((!prGlueInfo) || (prGlueInfo->u4ReadyFlag == 0)) {
+		DBGLOG(REQ, WARN, "driver is not ready\n");
+		return -EFAULT;
+	}
+
+	if (mtk_IsP2PNetDevice(prGlueInfo, ndev) > 0) {
+#if KERNEL_VERSION(3, 19, 0) <= CFG80211_VERSION_CODE
+		return mtk_p2p_cfg80211_del_station(wiphy, ndev, params);
+#else
+		return mtk_p2p_cfg80211_del_station(wiphy, ndev, mac);
+#endif
+	}
+	/* STA Mode */
+#if CFG_SUPPORT_TDLS
+#if KERNEL_VERSION(3, 19, 0) <= CFG80211_VERSION_CODE
+	return mtk_cfg80211_del_station(wiphy, ndev, params);
+#else	/* CFG80211_VERSION_CODE > KERNEL_VERSION(3, 19, 0) */
+	return mtk_cfg80211_del_station(wiphy, ndev, mac);
+#endif	/* CFG80211_VERSION_CODE */
+#else	/* CFG_SUPPORT_TDLS == 0 */
+	/* AIS only support this function when CFG_SUPPORT_TDLS */
+	return -EFAULT;
+#endif	/* CFG_SUPPORT_TDLS */
+}
+
+int mtk_cfg_scan(struct wiphy *wiphy, struct cfg80211_scan_request *request)
+{
+	P_GLUE_INFO_T prGlueInfo = NULL;
+
+	prGlueInfo = (P_GLUE_INFO_T) wiphy_priv(wiphy);
+
+	if ((!prGlueInfo) || (prGlueInfo->u4ReadyFlag == 0)) {
+		DBGLOG(REQ, WARN, "driver is not ready\n");
+		return -EFAULT;
+	}
+
+	if (mtk_IsP2PNetDevice(prGlueInfo, request->wdev->netdev) > 0)
+		return mtk_p2p_cfg80211_scan(wiphy, request);
+	/* STA Mode */
+	return mtk_cfg80211_scan(wiphy, request);
+}
+
+#if KERNEL_VERSION(4, 5, 0) <= CFG80211_VERSION_CODE
+void mtk_cfg_abort_scan(struct wiphy *wiphy, struct wireless_dev *wdev)
+{
+	P_GLUE_INFO_T prGlueInfo = NULL;
+
+	prGlueInfo = (P_GLUE_INFO_T) wiphy_priv(wiphy);
+
+	if ((!prGlueInfo) || (prGlueInfo->u4ReadyFlag == 0)) {
+		DBGLOG(REQ, WARN, "driver is not ready\n");
+		return -EFAULT;
+	}
+
+	if (mtk_IsP2PNetDevice(prGlueInfo, wdev->netdev) > 0)
+		mtk_p2p_cfg80211_abort_scan(wiphy, wdev);
+	/* STA Mode */
+	mtk_cfg80211_abort_scan(wiphy, wdev);
+}
+#endif
+
+int mtk_cfg_connect(struct wiphy *wiphy, struct net_device *ndev,
+		    struct cfg80211_connect_params *sme)
+{
+	P_GLUE_INFO_T prGlueInfo = NULL;
+
+	prGlueInfo = (P_GLUE_INFO_T) wiphy_priv(wiphy);
+
+	if ((!prGlueInfo) || (prGlueInfo->u4ReadyFlag == 0)) {
+		DBGLOG(REQ, WARN, "driver is not ready\n");
+		return -EFAULT;
+	}
+
+	if (mtk_IsP2PNetDevice(prGlueInfo, ndev) > 0)
+		return mtk_p2p_cfg80211_connect(wiphy, ndev, sme);
+	/* STA Mode */
+	return mtk_cfg80211_connect(wiphy, ndev, sme);
+}
+
+int mtk_cfg_disconnect(struct wiphy *wiphy, struct net_device *ndev,
+		       u16 reason_code)
+{
+	P_GLUE_INFO_T prGlueInfo = NULL;
+
+	prGlueInfo = (P_GLUE_INFO_T) wiphy_priv(wiphy);
+
+	if ((!prGlueInfo) || (prGlueInfo->u4ReadyFlag == 0)) {
+		DBGLOG(REQ, WARN, "driver is not ready\n");
+		return -EFAULT;
+	}
+
+	if (mtk_IsP2PNetDevice(prGlueInfo, ndev) > 0)
+		return mtk_p2p_cfg80211_disconnect(wiphy, ndev, reason_code);
+	/* STA Mode */
+	return mtk_cfg80211_disconnect(wiphy, ndev, reason_code);
+}
+
+int mtk_cfg_join_ibss(struct wiphy *wiphy, struct net_device *ndev,
+		      struct cfg80211_ibss_params *params)
+{
+	P_GLUE_INFO_T prGlueInfo = NULL;
+
+	prGlueInfo = (P_GLUE_INFO_T) wiphy_priv(wiphy);
+
+	if ((!prGlueInfo) || (prGlueInfo->u4ReadyFlag == 0)) {
+		DBGLOG(REQ, WARN, "driver is not ready\n");
+		return -EFAULT;
+	}
+
+	if (mtk_IsP2PNetDevice(prGlueInfo, ndev) > 0)
+		return mtk_p2p_cfg80211_join_ibss(wiphy, ndev, params);
+	/* STA Mode */
+	return mtk_cfg80211_join_ibss(wiphy, ndev, params);
+}
+
+int mtk_cfg_leave_ibss(struct wiphy *wiphy, struct net_device *ndev)
+{
+	P_GLUE_INFO_T prGlueInfo = NULL;
+
+	prGlueInfo = (P_GLUE_INFO_T) wiphy_priv(wiphy);
+
+	if ((!prGlueInfo) || (prGlueInfo->u4ReadyFlag == 0)) {
+		DBGLOG(REQ, WARN, "driver is not ready\n");
+		return -EFAULT;
+	}
+
+	if (mtk_IsP2PNetDevice(prGlueInfo, ndev) > 0)
+		return mtk_p2p_cfg80211_leave_ibss(wiphy, ndev);
+	/* STA Mode */
+	return mtk_cfg80211_leave_ibss(wiphy, ndev);
+}
+
+int mtk_cfg_set_power_mgmt(struct wiphy *wiphy, struct net_device *ndev,
+			   bool enabled, int timeout)
+{
+	P_GLUE_INFO_T prGlueInfo = NULL;
+
+	prGlueInfo = (P_GLUE_INFO_T) wiphy_priv(wiphy);
+
+	if ((!prGlueInfo) || (prGlueInfo->u4ReadyFlag == 0)) {
+		DBGLOG(REQ, WARN, "driver is not ready\n");
+		return -EFAULT;
+	}
+
+	if (mtk_IsP2PNetDevice(prGlueInfo, ndev) > 0) {
+		return mtk_p2p_cfg80211_set_power_mgmt(wiphy, ndev,
+						enabled, timeout);
+	}
+	/* STA Mode */
+	return mtk_cfg80211_set_power_mgmt(wiphy, ndev, enabled, timeout);
+}
+
+int mtk_cfg_set_pmksa(struct wiphy *wiphy, struct net_device *ndev,
+		      struct cfg80211_pmksa *pmksa)
+{
+	P_GLUE_INFO_T prGlueInfo = NULL;
+
+	prGlueInfo = (P_GLUE_INFO_T) wiphy_priv(wiphy);
+
+	if ((!prGlueInfo) || (prGlueInfo->u4ReadyFlag == 0)) {
+		DBGLOG(REQ, WARN, "driver is not ready\n");
+		return -EFAULT;
+	}
+
+	if (mtk_IsP2PNetDevice(prGlueInfo, ndev) > 0) {
+		DBGLOG(REQ, WARN, "P2P/AP don't support this function\n");
+		return -EFAULT;
+	}
+
+	return mtk_cfg80211_set_pmksa(wiphy, ndev, pmksa);
+}
+
+int mtk_cfg_del_pmksa(struct wiphy *wiphy, struct net_device *ndev,
+		      struct cfg80211_pmksa *pmksa)
+{
+	P_GLUE_INFO_T prGlueInfo = NULL;
+
+	prGlueInfo = (P_GLUE_INFO_T) wiphy_priv(wiphy);
+
+	if ((!prGlueInfo) || (prGlueInfo->u4ReadyFlag == 0)) {
+		DBGLOG(REQ, WARN, "driver is not ready\n");
+		return -EFAULT;
+	}
+
+	if (mtk_IsP2PNetDevice(prGlueInfo, ndev) > 0) {
+		DBGLOG(REQ, WARN, "P2P/AP don't support this function\n");
+		return -EFAULT;
+	}
+
+	return mtk_cfg80211_del_pmksa(wiphy, ndev, pmksa);
+}
+
+int mtk_cfg_flush_pmksa(struct wiphy *wiphy, struct net_device *ndev)
+{
+	P_GLUE_INFO_T prGlueInfo = NULL;
+
+	prGlueInfo = (P_GLUE_INFO_T) wiphy_priv(wiphy);
+
+	if ((!prGlueInfo) || (prGlueInfo->u4ReadyFlag == 0)) {
+		DBGLOG(REQ, WARN, "driver is not ready\n");
+		return -EFAULT;
+	}
+
+	if (mtk_IsP2PNetDevice(prGlueInfo, ndev) > 0) {
+		DBGLOG(REQ, WARN, "P2P/AP don't support this function\n");
+		return -EFAULT;
+	}
+
+	return mtk_cfg80211_flush_pmksa(wiphy, ndev);
+}
+
+#if CONFIG_SUPPORT_GTK_REKEY
+int mtk_cfg_set_rekey_data(struct wiphy *wiphy, struct net_device *dev,
+			   struct cfg80211_gtk_rekey_data *data)
+{
+	P_GLUE_INFO_T prGlueInfo = NULL;
+
+	prGlueInfo = (P_GLUE_INFO_T) wiphy_priv(wiphy);
+
+	if ((!prGlueInfo) || (prGlueInfo->u4ReadyFlag == 0)) {
+		DBGLOG(REQ, WARN, "driver is not ready\n");
+		return -EFAULT;
+	}
+
+	if (mtk_IsP2PNetDevice(prGlueInfo, dev) > 0) {
+		DBGLOG(REQ, WARN, "P2P/AP don't support this function\n");
+		return -EFAULT;
+	}
+
+	return mtk_cfg80211_set_rekey_data(wiphy, dev, data);
+}
+#endif /* CONFIG_SUPPORT_GTK_REKEY */
+
+int mtk_cfg_suspend(struct wiphy *wiphy, struct cfg80211_wowlan *wow)
+{
+	P_GLUE_INFO_T prGlueInfo = NULL;
+
+	prGlueInfo = (P_GLUE_INFO_T) wiphy_priv(wiphy);
+
+	if ((!prGlueInfo) || (prGlueInfo->u4ReadyFlag == 0)) {
+		DBGLOG(REQ, WARN, "driver is not ready\n");
+		return -EFAULT;
+	}
+
+	/* TODO: AP/P2P do not support this function, should take that case. */
+	return mtk_cfg80211_suspend(wiphy, wow);
+}
+
+int mtk_cfg_resume(struct wiphy *wiphy)
+{
+	P_GLUE_INFO_T prGlueInfo = NULL;
+
+	prGlueInfo = (P_GLUE_INFO_T) wiphy_priv(wiphy);
+
+	if ((!prGlueInfo) || (prGlueInfo->u4ReadyFlag == 0)) {
+		DBGLOG(REQ, WARN, "driver is not ready\n");
+		return -EFAULT;
+	}
+
+	/* TODO: AP/P2P do not support this function, should take that case. */
+	return mtk_cfg80211_resume(wiphy);
+}
+
+int mtk_cfg_assoc(struct wiphy *wiphy, struct net_device *ndev,
+		  struct cfg80211_assoc_request *req)
+{
+	P_GLUE_INFO_T prGlueInfo = NULL;
+
+	prGlueInfo = (P_GLUE_INFO_T) wiphy_priv(wiphy);
+
+	if ((!prGlueInfo) || (prGlueInfo->u4ReadyFlag == 0)) {
+		DBGLOG(REQ, WARN, "driver is not ready\n");
+		return -EFAULT;
+	}
+
+	if (mtk_IsP2PNetDevice(prGlueInfo, ndev) > 0) {
+		DBGLOG(REQ, WARN, "P2P/AP don't support this function\n");
+		return -EFAULT;
+	}
+	/* STA Mode */
+	return mtk_cfg80211_assoc(wiphy, ndev, req);
+}
+
+int mtk_cfg_remain_on_channel(struct wiphy *wiphy, struct wireless_dev *wdev,
+			      struct ieee80211_channel *chan,
+			      unsigned int duration, u64 *cookie)
+{
+	P_GLUE_INFO_T prGlueInfo = NULL;
+
+	prGlueInfo = (P_GLUE_INFO_T) wiphy_priv(wiphy);
+
+	if ((!prGlueInfo) || (prGlueInfo->u4ReadyFlag == 0)) {
+		DBGLOG(REQ, WARN, "driver is not ready\n");
+		return -EFAULT;
+	}
+
+	if (mtk_IsP2PNetDevice(prGlueInfo, wdev->netdev) > 0) {
+		return mtk_p2p_cfg80211_remain_on_channel(wiphy, wdev, chan,
+							duration, cookie);
+	}
+	/* STA Mode */
+	return mtk_cfg80211_remain_on_channel(wiphy, wdev, chan,
+						duration, cookie);
+}
+
+int mtk_cfg_cancel_remain_on_channel(struct wiphy *wiphy,
+				     struct wireless_dev *wdev, u64 cookie)
+{
+	P_GLUE_INFO_T prGlueInfo = NULL;
+
+	prGlueInfo = (P_GLUE_INFO_T) wiphy_priv(wiphy);
+
+	if ((!prGlueInfo) || (prGlueInfo->u4ReadyFlag == 0)) {
+		DBGLOG(REQ, WARN, "driver is not ready\n");
+		return -EFAULT;
+	}
+
+	if (mtk_IsP2PNetDevice(prGlueInfo, wdev->netdev) > 0) {
+		return mtk_p2p_cfg80211_cancel_remain_on_channel(wiphy, wdev,
+								cookie);
+	}
+	/* STA Mode */
+	return mtk_cfg80211_cancel_remain_on_channel(wiphy, wdev, cookie);
+}
+
+#if KERNEL_VERSION(3, 14, 0) <= CFG80211_VERSION_CODE
+int mtk_cfg_mgmt_tx(struct wiphy *wiphy, struct wireless_dev *wdev,
+		    struct cfg80211_mgmt_tx_params *params, u64 *cookie)
+#else
+int mtk_cfg_mgmt_tx(struct wiphy *wiphy, struct wireless_dev *wdev,
+		    struct ieee80211_channel *channel, bool offscan,
+		    unsigned int wait, const u8 *buf, size_t len, bool no_cck,
+		    bool dont_wait_for_ack, u64 *cookie)
+#endif
+{
+	P_GLUE_INFO_T prGlueInfo = NULL;
+
+	prGlueInfo = (P_GLUE_INFO_T) wiphy_priv(wiphy);
+
+	if ((!prGlueInfo) || (prGlueInfo->u4ReadyFlag == 0)) {
+		DBGLOG(REQ, WARN, "driver is not ready\n");
+		return -EFAULT;
+	}
+
+#if KERNEL_VERSION(3, 14, 0) <= CFG80211_VERSION_CODE
+	if (mtk_IsP2PNetDevice(prGlueInfo, wdev->netdev) > 0)
+		return mtk_p2p_cfg80211_mgmt_tx(wiphy, wdev, params, cookie);
+	/* STA Mode */
+	return mtk_cfg80211_mgmt_tx(wiphy, wdev, params, cookie);
+#else /* KERNEL_VERSION(3, 14, 0) > CFG80211_VERSION_CODE */
+	if (mtk_IsP2PNetDevice(prGlueInfo, wdev->netdev) > 0) {
+		return mtk_p2p_cfg80211_mgmt_tx(wiphy, wdev, channel, offscan,
+			wait, buf, len, no_cck, dont_wait_for_ack, cookie);
+	}
+	/* STA Mode */
+	return mtk_cfg80211_mgmt_tx(wiphy, wdev, channel, offscan, wait,
+				buf, len, no_cck, dont_wait_for_ack, cookie);
+#endif
+}
+
+void mtk_cfg_mgmt_frame_register(struct wiphy *wiphy, struct wireless_dev *wdev,
+				 u16 frame_type, bool reg)
+{
+	P_GLUE_INFO_T prGlueInfo = NULL;
+
+	prGlueInfo = (P_GLUE_INFO_T) wiphy_priv(wiphy);
+
+	if ((!prGlueInfo) || (prGlueInfo->u4ReadyFlag == 0)) {
+		DBGLOG(REQ, WARN, "driver is not ready\n");
+		return;
+	}
+
+	if (mtk_IsP2PNetDevice(prGlueInfo, wdev->netdev) > 0) {
+		mtk_p2p_cfg80211_mgmt_frame_register(wiphy, wdev, frame_type,
+						reg);
+	} else {
+		mtk_cfg80211_mgmt_frame_register(wiphy, wdev, frame_type, reg);
+	}
+}
+
+#ifdef CONFIG_NL80211_TESTMODE
+#if KERNEL_VERSION(3, 12, 0) <= CFG80211_VERSION_CODE
+int mtk_cfg_testmode_cmd(struct wiphy *wiphy, struct wireless_dev *wdev,
+			 void *data, int len)
+#else
+int mtk_cfg_testmode_cmd(struct wiphy *wiphy, void *data, int len)
+#endif
+{
+#if KERNEL_VERSION(3, 12, 0) <= CFG80211_VERSION_CODE
+	P_GLUE_INFO_T prGlueInfo = NULL;
+
+	prGlueInfo = (P_GLUE_INFO_T) wiphy_priv(wiphy);
+
+	if ((!prGlueInfo) || (prGlueInfo->u4ReadyFlag == 0)) {
+		DBGLOG(REQ, WARN, "driver is not ready\n");
+		return -EFAULT;
+	}
+
+	if (mtk_IsP2PNetDevice(prGlueInfo, wdev->netdev) > 0) {
+		DBGLOG(REQ, WARN, "P2P/AP don't support this function\n");
+		return -EFAULT;
+	}
+
+	return mtk_cfg80211_testmode_cmd(wiphy, wdev, data, len);
+#else
+	/* XXX: no information can to check the mtk_IsP2PNetDevice */
+	return mtk_cfg80211_testmode_cmd(wiphy, data, len);
+#endif
+}
+#endif	/* CONFIG_NL80211_TESTMODE */
+
+#if (CFG_ENABLE_WIFI_DIRECT_CFG_80211 != 0)
+int mtk_cfg_change_bss(struct wiphy *wiphy, struct net_device *dev,
+		       struct bss_parameters *params)
+{
+	P_GLUE_INFO_T prGlueInfo = NULL;
+
+	prGlueInfo = (P_GLUE_INFO_T) wiphy_priv(wiphy);
+
+	if ((!prGlueInfo) || (prGlueInfo->u4ReadyFlag == 0)) {
+		DBGLOG(REQ, WARN, "driver is not ready\n");
+		return -EFAULT;
+	}
+
+	if (mtk_IsP2PNetDevice(prGlueInfo, dev) <= 0) {
+		DBGLOG(REQ, WARN, "STA doesn't support this function\n");
+		return -EFAULT;
+	}
+
+	return mtk_p2p_cfg80211_change_bss(wiphy, dev, params);
+}
+
+int mtk_cfg_mgmt_tx_cancel_wait(struct wiphy *wiphy, struct wireless_dev *wdev,
+				u64 cookie)
+{
+	P_GLUE_INFO_T prGlueInfo = NULL;
+
+	prGlueInfo = (P_GLUE_INFO_T) wiphy_priv(wiphy);
+
+	if ((!prGlueInfo) || (prGlueInfo->u4ReadyFlag == 0)) {
+		DBGLOG(REQ, WARN, "driver is not ready\n");
+		return -EFAULT;
+	}
+
+	if (mtk_IsP2PNetDevice(prGlueInfo, wdev->netdev) <= 0) {
+		DBGLOG(REQ, WARN, "STA doesn't support this function\n");
+		return -EFAULT;
+	}
+
+	return mtk_p2p_cfg80211_mgmt_tx_cancel_wait(wiphy, wdev, cookie);
+}
+
+int mtk_cfg_deauth(struct wiphy *wiphy, struct net_device *dev,
+		   struct cfg80211_deauth_request *req)
+{
+	P_GLUE_INFO_T prGlueInfo = NULL;
+
+	prGlueInfo = (P_GLUE_INFO_T) wiphy_priv(wiphy);
+
+	if ((!prGlueInfo) || (prGlueInfo->u4ReadyFlag == 0)) {
+		DBGLOG(REQ, WARN, "driver is not ready\n");
+		return -EFAULT;
+	}
+
+	if (mtk_IsP2PNetDevice(prGlueInfo, dev) <= 0) {
+		DBGLOG(REQ, WARN, "STA doesn't support this function\n");
+		return -EFAULT;
+	}
+
+	return mtk_p2p_cfg80211_deauth(wiphy, dev, req);
+}
+
+int mtk_cfg_disassoc(struct wiphy *wiphy, struct net_device *dev,
+		     struct cfg80211_disassoc_request *req)
+{
+	P_GLUE_INFO_T prGlueInfo = NULL;
+
+	prGlueInfo = (P_GLUE_INFO_T) wiphy_priv(wiphy);
+
+	if ((!prGlueInfo) || (prGlueInfo->u4ReadyFlag == 0)) {
+		DBGLOG(REQ, WARN, "driver is not ready\n");
+		return -EFAULT;
+	}
+
+	if (mtk_IsP2PNetDevice(prGlueInfo, dev) <= 0) {
+		DBGLOG(REQ, WARN, "STA doesn't support this function\n");
+		return -EFAULT;
+	}
+
+	return mtk_p2p_cfg80211_disassoc(wiphy, dev, req);
+}
+
+int mtk_cfg_start_ap(struct wiphy *wiphy, struct net_device *dev,
+		     struct cfg80211_ap_settings *settings)
+{
+	P_GLUE_INFO_T prGlueInfo = NULL;
+
+	prGlueInfo = (P_GLUE_INFO_T) wiphy_priv(wiphy);
+
+	if ((!prGlueInfo) || (prGlueInfo->u4ReadyFlag == 0)) {
+		DBGLOG(REQ, WARN, "driver is not ready\n");
+		return -EFAULT;
+	}
+
+	if (mtk_IsP2PNetDevice(prGlueInfo, dev) <= 0) {
+		DBGLOG(REQ, WARN, "STA doesn't support this function\n");
+		return -EFAULT;
+	}
+
+	return mtk_p2p_cfg80211_start_ap(wiphy, dev, settings);
+}
+
+int mtk_cfg_change_beacon(struct wiphy *wiphy, struct net_device *dev,
+			  struct cfg80211_beacon_data *info)
+{
+	P_GLUE_INFO_T prGlueInfo = NULL;
+
+	prGlueInfo = (P_GLUE_INFO_T) wiphy_priv(wiphy);
+
+	if ((!prGlueInfo) || (prGlueInfo->u4ReadyFlag == 0)) {
+		DBGLOG(REQ, WARN, "driver is not ready\n");
+		return -EFAULT;
+	}
+
+	if (mtk_IsP2PNetDevice(prGlueInfo, dev) <= 0) {
+		DBGLOG(REQ, WARN, "STA doesn't support this function\n");
+		return -EFAULT;
+	}
+
+	return mtk_p2p_cfg80211_change_beacon(wiphy, dev, info);
+}
+
+int mtk_cfg_stop_ap(struct wiphy *wiphy, struct net_device *dev)
+{
+	P_GLUE_INFO_T prGlueInfo = NULL;
+
+	prGlueInfo = (P_GLUE_INFO_T) wiphy_priv(wiphy);
+
+	if ((!prGlueInfo) || (prGlueInfo->u4ReadyFlag == 0)) {
+		DBGLOG(REQ, WARN, "driver is not ready\n");
+		return -EFAULT;
+	}
+
+	if (mtk_IsP2PNetDevice(prGlueInfo, dev) <= 0) {
+		DBGLOG(REQ, WARN, "STA doesn't support this function\n");
+		return -EFAULT;
+	}
+
+	return mtk_p2p_cfg80211_stop_ap(wiphy, dev);
+}
+
+int mtk_cfg_set_wiphy_params(struct wiphy *wiphy, u32 changed)
+{
+	P_GLUE_INFO_T prGlueInfo = NULL;
+
+	prGlueInfo = (P_GLUE_INFO_T) wiphy_priv(wiphy);
+
+	if ((!prGlueInfo) || (prGlueInfo->u4ReadyFlag == 0)) {
+		DBGLOG(REQ, WARN, "driver is not ready\n");
+		return -EFAULT;
+	}
+
+	/* TODO: AIS not support this function */
+	return mtk_p2p_cfg80211_set_wiphy_params(wiphy, changed);
+}
+
+int mtk_cfg_set_bitrate_mask(struct wiphy *wiphy, struct net_device *dev,
+			     const u8 *peer,
+			     const struct cfg80211_bitrate_mask *mask)
+{
+	P_GLUE_INFO_T prGlueInfo = NULL;
+
+	prGlueInfo = (P_GLUE_INFO_T) wiphy_priv(wiphy);
+
+	if ((!prGlueInfo) || (prGlueInfo->u4ReadyFlag == 0)) {
+		DBGLOG(REQ, WARN, "driver is not ready\n");
+		return -EFAULT;
+	}
+
+	if (mtk_IsP2PNetDevice(prGlueInfo, dev) <= 0) {
+		DBGLOG(REQ, WARN, "STA doesn't support this function\n");
+		return -EFAULT;
+	}
+
+	return mtk_p2p_cfg80211_set_bitrate_mask(wiphy, dev, peer, mask);
+}
+
+int mtk_cfg_set_txpower(struct wiphy *wiphy, struct wireless_dev *wdev,
+			enum nl80211_tx_power_setting type, int mbm)
+{
+	P_GLUE_INFO_T prGlueInfo = NULL;
+
+	prGlueInfo = (P_GLUE_INFO_T) wiphy_priv(wiphy);
+
+	if ((!prGlueInfo) || (prGlueInfo->u4ReadyFlag == 0)) {
+		DBGLOG(REQ, WARN, "driver is not ready\n");
+		return -EFAULT;
+	}
+
+	if (mtk_IsP2PNetDevice(prGlueInfo, wdev->netdev) <= 0) {
+		DBGLOG(REQ, WARN, "STA doesn't support this function\n");
+		return -EFAULT;
+	}
+
+	return mtk_p2p_cfg80211_set_txpower(wiphy, wdev, type, mbm);
+}
+
+int mtk_cfg_get_txpower(struct wiphy *wiphy, struct wireless_dev *wdev,
+			int *dbm)
+{
+	P_GLUE_INFO_T prGlueInfo = NULL;
+
+	prGlueInfo = (P_GLUE_INFO_T) wiphy_priv(wiphy);
+
+	if ((!prGlueInfo) || (prGlueInfo->u4ReadyFlag == 0)) {
+		DBGLOG(REQ, WARN, "driver is not ready\n");
+		return -EFAULT;
+	}
+
+	if (mtk_IsP2PNetDevice(prGlueInfo, wdev->netdev) <= 0) {
+		DBGLOG(REQ, WARN, "STA doesn't support this function\n");
+		return -EFAULT;
+	}
+
+	return mtk_p2p_cfg80211_get_txpower(wiphy, wdev, dbm);
+}
+#endif /* (CFG_ENABLE_WIFI_DIRECT_CFG_80211 != 0) */
+#endif	/* CFG_ENABLE_UNIFY_WIPHY */
 

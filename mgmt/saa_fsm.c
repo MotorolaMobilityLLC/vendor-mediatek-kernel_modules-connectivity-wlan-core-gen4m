@@ -339,21 +339,49 @@ saaFsmSendEventJoinComplete(IN P_ADAPTER_T prAdapter,
 		DBGLOG(SAA, ERROR, "[%s]prAdapter is NULL\n", __func__);
 		return WLAN_STATUS_INVALID_PACKET;
 	}
-	if (!prAdapter->prAisBssInfo) {
-		DBGLOG(SAA, ERROR, "[%s]prAdapter->prAisBssInfo is NULL\n", __func__);
-		return WLAN_STATUS_INVALID_PACKET;
-	}
 
 	/* Store limitation about 40Mhz bandwidth capability during association */
 	if (prStaRec->ucBssIndex < prAdapter->ucHwBssIdNum) {
 		prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prStaRec->ucBssIndex);
 
-		if (rJoinStatus == WLAN_STATUS_SUCCESS) {
-			prBssInfo->fg40mBwAllowed = prBssInfo->fgAssoc40mBwAllowed;
-			/* reset add key action */
-			prBssInfo->eKeyAction = SEC_TX_KEY_COMMAND;
+		if (prBssInfo != NULL) {
+			if (rJoinStatus == WLAN_STATUS_SUCCESS) {
+				prBssInfo->fg40mBwAllowed =
+						prBssInfo->fgAssoc40mBwAllowed;
+				/* reset add key action */
+				prBssInfo->eKeyAction = SEC_TX_KEY_COMMAND;
+			}
+			prBssInfo->fgAssoc40mBwAllowed = FALSE;
 		}
-		prBssInfo->fgAssoc40mBwAllowed = FALSE;
+	}
+
+	/* For wlan0 (AP) + p2p0, don't check the prAisBssInfo for the P2P. */
+#if CFG_ENABLE_WIFI_DIRECT
+	if ((prAdapter->fgIsP2PRegistered) && (IS_STA_IN_P2P(prStaRec))) {
+		P_MSG_SAA_FSM_COMP_T prSaaFsmCompMsg;
+
+		prSaaFsmCompMsg = cnmMemAlloc(prAdapter, RAM_TYPE_MSG,
+						sizeof(MSG_SAA_FSM_COMP_T));
+		if (!prSaaFsmCompMsg)
+			return WLAN_STATUS_RESOURCES;
+
+		prSaaFsmCompMsg->rMsgHdr.eMsgId = MID_SAA_P2P_JOIN_COMPLETE;
+		prSaaFsmCompMsg->ucSeqNum = prStaRec->ucAuthAssocReqSeqNum;
+		prSaaFsmCompMsg->rJoinStatus = rJoinStatus;
+		prSaaFsmCompMsg->prStaRec = prStaRec;
+		prSaaFsmCompMsg->prSwRfb = prSwRfb;
+
+		/* NOTE(Kevin): Set to UNBUF for immediately JOIN complete */
+		mboxSendMsg(prAdapter, MBOX_ID_0, (P_MSG_HDR_T) prSaaFsmCompMsg,
+				MSG_SEND_METHOD_UNBUF);
+
+		return WLAN_STATUS_SUCCESS;
+	}
+#endif /* CFG_ENABLE_WIFI_DIRECT */
+
+	if (!prAdapter->prAisBssInfo) {
+		DBGLOG(SAA, ERROR, "prAdapter->prAisBssInfo is NULL\n");
+		return WLAN_STATUS_INVALID_PACKET;
 	}
 
 	if (prStaRec->ucBssIndex == prAdapter->prAisBssInfo->ucBssIndex) {
@@ -374,26 +402,6 @@ saaFsmSendEventJoinComplete(IN P_ADAPTER_T prAdapter,
 
 		return WLAN_STATUS_SUCCESS;
 	}
-#if CFG_ENABLE_WIFI_DIRECT
-	else if ((prAdapter->fgIsP2PRegistered) && (IS_STA_IN_P2P(prStaRec))) {
-		P_MSG_SAA_FSM_COMP_T prSaaFsmCompMsg;
-
-		prSaaFsmCompMsg = cnmMemAlloc(prAdapter, RAM_TYPE_MSG, sizeof(MSG_SAA_FSM_COMP_T));
-		if (!prSaaFsmCompMsg)
-			return WLAN_STATUS_RESOURCES;
-
-		prSaaFsmCompMsg->rMsgHdr.eMsgId = MID_SAA_P2P_JOIN_COMPLETE;
-		prSaaFsmCompMsg->ucSeqNum = prStaRec->ucAuthAssocReqSeqNum;
-		prSaaFsmCompMsg->rJoinStatus = rJoinStatus;
-		prSaaFsmCompMsg->prStaRec = prStaRec;
-		prSaaFsmCompMsg->prSwRfb = prSwRfb;
-
-		/* NOTE(Kevin): Set to UNBUF for immediately JOIN complete */
-		mboxSendMsg(prAdapter, MBOX_ID_0, (P_MSG_HDR_T) prSaaFsmCompMsg, MSG_SEND_METHOD_UNBUF);
-
-		return WLAN_STATUS_SUCCESS;
-	}
-#endif
 #if CFG_ENABLE_BT_OVER_WIFI
 	else if (IS_STA_BOW_TYPE(prStaRec)) {
 		/* @TODO: BOW handler */

@@ -3126,8 +3126,11 @@ VOID nicEventBeaconTimeout(IN P_ADAPTER_T prAdapter, IN P_WIFI_EVENT_T prEvent)
 
 		prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prEventBssBeaconTimeout->ucBssIndex);
 
-		if (prEventBssBeaconTimeout->ucBssIndex == prAdapter->prAisBssInfo->ucBssIndex)
+		if ((prAdapter->prAisBssInfo != NULL) &&
+		    (prEventBssBeaconTimeout->ucBssIndex ==
+		     prAdapter->prAisBssInfo->ucBssIndex)) {
 			aisBssBeaconTimeout(prAdapter);
+		}
 #if CFG_ENABLE_WIFI_DIRECT
 		else if (prBssInfo->eNetworkType == NETWORK_TYPE_P2P)
 			p2pRoleFsmRunEventBeaconTimeout(prAdapter, prBssInfo);
