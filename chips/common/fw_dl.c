@@ -274,7 +274,6 @@ uint32_t wlanDownloadEMISection(IN struct ADAPTER
 				*prAdapter, IN uint32_t u4DestAddr,
 				IN uint32_t u4Len, IN uint8_t *pucStartPtr)
 {
-#ifdef CONFIG_MTK_EMI
 	uint8_t __iomem *pucEmiBaseAddr = NULL;
 	uint32_t u4Offset = u4DestAddr & WIFI_EMI_ADDR_MASK;
 
@@ -304,7 +303,7 @@ uint32_t wlanDownloadEMISection(IN struct ADAPTER
 			       WIFI_EMI_MEM_SIZE, true);
 	iounmap(pucEmiBaseAddr);
 	release_mem_region(gConEmiPhyBase, gConEmiSize);
-#endif /* CONFIG_MTK_EMI */
+
 	return WLAN_STATUS_SUCCESS;
 }
 
