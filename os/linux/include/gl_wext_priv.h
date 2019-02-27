@@ -236,6 +236,9 @@
 #define OID_802_11_WSC_ASSOC_INFO                       0xFFA0CB00
 #endif
 
+#define OID_IPC_WIFI_LOG_UI                             0xFFA0CC01
+#define OID_IPC_WIFI_LOG_LEVEL                          0xFFA0CC02
+
 #if CFG_SUPPORT_NCHO
 #define CMD_NCHO_COMP_TIMEOUT			1500	/* ms */
 #define CMD_NCHO_AF_DATA_LENGTH			1040

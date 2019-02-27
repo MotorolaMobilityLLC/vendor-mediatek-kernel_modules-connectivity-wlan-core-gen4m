@@ -163,6 +163,7 @@ static ssize_t procDbgLevelRead(struct file *filp, char __user *buf,
 	uint16_t i;
 	uint16_t u2ModuleNum = 0;
 	uint32_t u4StrLen = 0;
+	uint32_t u4Level1, u4Level2;
 
 	/* if *f_ops>0, we should return 0 to make cat command exit */
 	if (*f_pos > 0 || buf == NULL)
@@ -179,20 +180,26 @@ static ssize_t procDbgLevelRead(struct file *filp, char __user *buf,
 	u2ModuleNum =
 	    (sizeof(aucDbModuleName) /
 	     PROC_DBG_LEVEL_MAX_DISPLAY_STR_LEN) & 0xfe;
-	for (i = 0; i < u2ModuleNum; i += 2)
+
+	for (i = 0; i < u2ModuleNum; i += 2) {
+		wlanGetDriverDbgLevel(i, &u4Level1);
+		wlanGetDriverDbgLevel(i + 1, &u4Level2);
 		SNPRINTF(temp, g_aucProcBuf,
 			("DBG_%s_IDX\t(0x%02x):\t0x%02x\t"
 			 "DBG_%s_IDX\t(0x%02x):\t0x%02x\n",
-			 &aucDbModuleName[i][0], i, aucDebugModule[i],
+			 &aucDbModuleName[i][0], i, (uint8_t) u4Level1,
 			 &aucDbModuleName[i + 1][0], i + 1,
-			 aucDebugModule[i + 1]));
+			 (uint8_t) u4Level2));
+	}
 
 	if ((sizeof(aucDbModuleName) /
-	     PROC_DBG_LEVEL_MAX_DISPLAY_STR_LEN) & 0x1)
+	     PROC_DBG_LEVEL_MAX_DISPLAY_STR_LEN) & 0x1) {
+		wlanGetDriverDbgLevel(u2ModuleNum, &u4Level1);
 		SNPRINTF(temp, g_aucProcBuf,
 			 ("DBG_%s_IDX\t(0x%02x):\t0x%02x\n",
 			  &aucDbModuleName[u2ModuleNum][0], u2ModuleNum,
-			  aucDebugModule[u2ModuleNum]));
+			  (uint8_t) u4Level1));
+	}
 
 	u4CopySize = kalStrLen(g_aucProcBuf);
 	if (u4CopySize > count)
@@ -320,32 +327,6 @@ static ssize_t procCfgRead(struct file *filp, char __user *buf, size_t count,
 	if (*f_pos > 0 || buf == NULL)
 		return 0;
 
-#if 0
-	str = "\nERROR|WARN|STATE|EVENT|TRACE|INFO|LOUD|TEMP\n"
-		"bit0 |bit1|bit2 |bit3 |bit4 |bit5|bit6|bit7\n\n"
-		"Debug Module\tIndex\tLevel\tDebug Module\tIndex\tLevel\n\n";
-	u4StrLen = kalStrLen(str);
-	kalStrnCpy(temp, str, u4StrLen + 1);
-	temp += kalStrLen(temp);
-
-	u2ModuleNum =
-		(sizeof(aucDbModuleName) /
-		PROC_DBG_LEVEL_MAX_DISPLAY_STR_LEN) & 0xfe;
-	for (i = 0; i < u2ModuleNum; i += 2)
-		SNPRINTF(temp, g_aucProcBuf,
-			("DBG_%s_IDX\t(0x%02x):\t0x%02x\t"
-			 "DBG_%s_IDX\t(0x%02x):\t0x%02x\n",
-			 &aucDbModuleName[i][0], i, aucDebugModule[i],
-			 &aucDbModuleName[i + 1][0], i + 1,
-			 aucDebugModule[i + 1]));
-
-	if ((sizeof(aucDbModuleName) /
-	     PROC_DBG_LEVEL_MAX_DISPLAY_STR_LEN) & 0x1)
-		SNPRINTF(temp, g_aucProcBuf,
-			("DBG_%s_IDX\t(0x%02x):\t0x%02x\n",
-			&aucDbModuleName[u2ModuleNum][0], u2ModuleNum,
-			aucDebugModule[u2ModuleNum]));
-#endif
 	str = "\nDUMP CONFIGURATION :\n"
 	    "<KEY|VALUE> OR <D:KEY|VALUE>\n"
 	    "'D': driver part current setting\n"
@@ -533,12 +514,8 @@ static ssize_t procDbgLevelWrite(struct file *file, const char __user *buffer,
 			break;
 		}
 		if (u4NewDbgModule == 0xFF) {
-			uint8_t i = 0;
-
-			for (; i < DBG_MODULE_NUM; i++)
-				aucDebugModule[i] =
-				    u4NewDbgLevel & DBG_CLASS_MASK;
-
+			wlanSetDriverDbgLevel(DBG_ALL_MODULE_IDX,
+					(u4NewDbgLevel & DBG_CLASS_MASK));
 			break;
 		}
 		if (u4NewDbgModule >= DBG_MODULE_NUM) {
@@ -546,7 +523,8 @@ static ssize_t procDbgLevelWrite(struct file *file, const char __user *buffer,
 				DBG_MODULE_NUM);
 			break;
 		}
-		aucDebugModule[u4NewDbgModule] = u4NewDbgLevel & DBG_CLASS_MASK;
+		wlanSetDriverDbgLevel(u4NewDbgModule,
+				(u4NewDbgLevel & DBG_CLASS_MASK));
 		temp = kalStrChr(temp, ',');
 		if (!temp)
 			break;

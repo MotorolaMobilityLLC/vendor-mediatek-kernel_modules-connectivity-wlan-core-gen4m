@@ -80,6 +80,10 @@
 #include "gl_typedef.h"
 
 extern uint8_t aucDebugModule[];
+extern uint32_t au4LogLevel[];
+
+extern void set_logtoomuch_enable(int value) __attribute__((weak));
+extern int get_logtoomuch_enable(void) __attribute__((weak));
 
 /*******************************************************************************
  *                              C O N S T A N T S
@@ -97,6 +101,20 @@ extern uint8_t aucDebugModule[];
 #define DBG_CLASS_LOUD          BIT(6)
 #define DBG_CLASS_TEMP          BIT(7)
 #define DBG_CLASS_MASK          BITS(0, 7)
+
+#define DBG_LOG_LEVEL_DEFAULT \
+	(DBG_CLASS_ERROR | \
+	DBG_CLASS_WARN | \
+	DBG_CLASS_STATE | \
+	DBG_CLASS_EVENT | \
+	DBG_CLASS_INFO)
+#define DBG_LOG_LEVEL_MORE \
+	(DBG_LOG_LEVEL_DEFAULT | \
+	DBG_CLASS_TRACE)
+#define DBG_LOG_LEVEL_EXTREME \
+	(DBG_LOG_LEVEL_MORE | \
+	DBG_CLASS_LOUD | \
+	DBG_CLASS_TEMP)
 
 #if defined(LINUX)
 #define DBG_PRINTF_64BIT_DEC    "lld"
@@ -183,9 +201,9 @@ enum ENUM_DBG_ASSERT_PATH {
 #define IPV4STR		"%pI4"
 /* Debug print argument for the IPv4 Address */
 #define IPV4TOSTR(a)	a
-/* Debug print format string for the MAC Address */
+/* Debug print format string for the IPv6 Address */
 #define IPV6STR		"%pI6"
-/* Debug print argument for the MAC Address */
+/* Debug print argument for the IPv6 Address */
 #define IPV6TOSTR(a)	a
 /* The pre-defined format to dump the varaible value with its name shown. */
 #define DUMPVAR(variable, format)   (#variable " = " format "\n", variable)
@@ -389,6 +407,19 @@ void dumpMemory32(IN uint32_t *pu4StartAddr,
 void wlanPrintFwLog(uint8_t *pucLogContent,
 		    uint16_t u2MsgSize, uint8_t ucMsgType,
 		    const uint8_t *pucFmt, ...);
+
+void wlanDbgLogLevelInit(void);
+void wlanDbgLogLevelUninit(void);
+uint32_t wlanDbgLevelUiSupport(IN struct ADAPTER *prAdapter,
+		uint32_t u4Version, uint32_t ucModule);
+uint32_t wlanDbgGetLogLevelImpl(IN struct ADAPTER *prAdapter,
+		uint32_t u4Version, uint32_t ucModule);
+void wlanDbgSetLogLevelImpl(IN struct ADAPTER *prAdapter,
+		uint32_t u4Version, uint32_t u4Module, uint32_t u4level);
+void wlanDriverDbgLevelSync(void);
+u_int8_t wlanDbgGetGlobalLogLevel(uint32_t u4Module, uint32_t *pu4Level);
+u_int8_t wlanDbgSetGlobalLogLevel(uint32_t u4Module, uint32_t u4Level);
+
 /*******************************************************************************
  *                              F U N C T I O N S
  *******************************************************************************
