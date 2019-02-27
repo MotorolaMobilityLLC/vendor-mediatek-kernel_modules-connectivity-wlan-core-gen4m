@@ -1727,6 +1727,7 @@ bool halWpdmaWriteCmd(IN struct GLUE_INFO *prGlueInfo,
 	       __func__, prCmdInfo, prCmdInfo->pucTxd, prCmdInfo->u4TxdLen,
 	       prCmdInfo->pucTxp, prCmdInfo->u4TxpLen,
 	       prTxRing->TxCpuIdx, prTxRing->u4UsedCnt);
+	DBGLOG_MEM32(HAL, TRACE, prCmdInfo->pucTxd, prCmdInfo->u4TxdLen);
 
 	return TRUE;
 }
