@@ -981,6 +981,13 @@ VOID halWpdmaAllocRxRing(P_GLUE_INFO_T prGlueInfo, UINT_32 u4Num, UINT_32 u4Size
 	DBGLOG(HAL, TRACE, "Rx[%d] Ring: total %d entry allocated\n", u4Num, index);
 }
 
+VOID halHifRst(P_GLUE_INFO_T prGlueInfo)
+{
+	/* Reset dmashdl and wpdma */
+	kalDevRegWrite(prGlueInfo, CONN_HIF_RST, 0x00000000);
+	kalDevRegWrite(prGlueInfo, CONN_HIF_RST, 0x00000030);
+}
+
 VOID halWpdmaAllocRing(P_GLUE_INFO_T prGlueInfo)
 {
 	dma_addr_t RingBasePa;
