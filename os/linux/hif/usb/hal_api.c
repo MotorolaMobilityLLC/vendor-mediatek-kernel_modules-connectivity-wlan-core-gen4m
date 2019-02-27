@@ -1089,12 +1089,16 @@ VOID halWakeUpWiFi(IN P_ADAPTER_T prAdapter)
 VOID halEnableFWDownload(IN P_ADAPTER_T prAdapter, IN BOOL fgEnable)
 {
 #if (CFG_UMAC_GENERATION >= 0x20)
-
-	UINT_32 u4Value = 0;
+	struct mt66xx_chip_info *prChipInfo;
 
 	ASSERT(prAdapter);
 
-	{
+	prChipInfo = prAdapter->chip_info;
+	if (prChipInfo->asicEnableFWDownload) {
+		prChipInfo->asicEnableFWDownload(prAdapter, fgEnable);
+	} else {
+		UINT_32 u4Value = 0;
+
 		HAL_MCR_RD(prAdapter, UDMA_TX_QSEL, &u4Value);
 
 		if (fgEnable)
@@ -1109,13 +1113,33 @@ VOID halEnableFWDownload(IN P_ADAPTER_T prAdapter, IN BOOL fgEnable)
 
 VOID halDevInit(IN P_ADAPTER_T prAdapter)
 {
-	P_GLUE_INFO_T prGlueInfo;
+	UINT_32 u4Value = 0;
+	struct mt66xx_chip_info *prChipInfo;
 
 	ASSERT(prAdapter);
-	prGlueInfo = prAdapter->prGlueInfo;
 
-	glUdmaRxAggEnable(prGlueInfo, FALSE);
-	glUdmaTxRxEnable(prGlueInfo, TRUE);
+	prChipInfo = prAdapter->chip_info;
+	if (prChipInfo->asicDevInit) {
+		prChipInfo->asicDevInit(prAdapter);
+	} else	{
+		HAL_MCR_RD(prAdapter, UDMA_WLCFG_0, &u4Value);
+
+		/* enable UDMA TX & RX */
+		u4Value = UDMA_WLCFG_0_TX_EN(1) | UDMA_WLCFG_0_RX_EN(1) |
+		    UDMA_WLCFG_0_RX_AGG_EN(1) |
+		    UDMA_WLCFG_0_RX_MPSZ_PAD0(1) |
+		    UDMA_WLCFG_0_RX_AGG_LMT(USB_RX_AGGREGTAION_LIMIT) |
+		    UDMA_WLCFG_0_RX_AGG_TO(USB_RX_AGGREGTAION_TIMEOUT);
+
+		HAL_MCR_WR(prAdapter, UDMA_WLCFG_0, u4Value);
+
+		HAL_MCR_RD(prAdapter, UDMA_WLCFG_1, &u4Value);
+
+		u4Value &= ~UDMA_WLCFG_1_RX_AGG_PKT_LMT_MASK;
+		u4Value |= UDMA_WLCFG_1_RX_AGG_PKT_LMT(USB_RX_AGGREGTAION_PKT_LIMIT);
+
+		HAL_MCR_WR(prAdapter, UDMA_WLCFG_1, u4Value);
+	}
 }
 
 BOOLEAN halTxIsDataBufEnough(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduInfo)

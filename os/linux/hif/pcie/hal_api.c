@@ -1261,10 +1261,14 @@ VOID halWpdmaConfig(P_GLUE_INFO_T prGlueInfo, BOOLEAN enable)
 /*----------------------------------------------------------------------------*/
 VOID halEnableFWDownload(IN P_ADAPTER_T prAdapter, IN BOOL fgEnable)
 {
-	P_BUS_INFO prBusInfo = prAdapter->chip_info->bus_info;
+	struct mt66xx_chip_info *prChipInfo;
 
-	if (prBusInfo->enableFWDownload)
-		prBusInfo->enableFWDownload(prAdapter, fgEnable);
+	ASSERT(prAdapter);
+
+	prChipInfo = prAdapter->chip_info;
+
+	if (prChipInfo->asicEnableFWDownload)
+		prChipInfo->asicEnableFWDownload(prAdapter, fgEnable);
 }
 
 static BOOLEAN halWpdmaWaitIdle(P_GLUE_INFO_T prGlueInfo, INT_32 round, INT_32 wait_us)

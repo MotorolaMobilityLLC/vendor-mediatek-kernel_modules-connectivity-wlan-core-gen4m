@@ -597,6 +597,7 @@ struct _GLUE_INFO_T {
 	INT_32 i4RssiCache;
 	UINT_32 u4LinkSpeedCache;
 
+	UINT_32 u4InfType;
 };
 
 typedef irqreturn_t(*PFN_WLANISR) (int irq, void *dev_id, struct pt_regs *regs);
