@@ -4269,7 +4269,7 @@ mtk_cfg80211_tdls_mgmt(struct wiphy *wiphy,
 	kalMemCopy(&(rCmdMgt.aucSecBuf), buf, len);
 
 	rStatus = kalIoctl(prGlueInfo, TdlsexLinkMgt, &rCmdMgt,
-		 sizeof(struct TDLS_CMD_LINK_MGT), FALSE, FALSE, FALSE,
+		 sizeof(struct TDLS_CMD_LINK_MGT), FALSE, TRUE, FALSE,
 		 &u4BufLen);
 
 	DBGLOG(REQ, INFO, "rStatus: %x", rStatus);
