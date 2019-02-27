@@ -6854,14 +6854,14 @@ void kalPerMonHandler(IN struct ADAPTER *prAdapter,
 #if CFG_SUPPORT_PERF_IND
 	if (prWifiVar->fgPerfIndicatorEn)
 		kalSetPerfReport(prAdapter);
-		for (a = 0; a < BSS_DEFAULT_NUM; a++) {
-			u4CurrentTp +=
-				(prAdapter->prGlueInfo->
-				PerfIndCache.u4CurTxBytes[a] +
-				prAdapter->prGlueInfo->
-				PerfIndCache.u4CurRxBytes[a]);
-		}
-		kalPerfIndReset(prAdapter);
+	for (a = 0; a < BSS_DEFAULT_NUM; a++) {
+		u4CurrentTp +=
+			(prAdapter->prGlueInfo->
+			PerfIndCache.u4CurTxBytes[a] +
+			prAdapter->prGlueInfo->
+			PerfIndCache.u4CurRxBytes[a]);
+	}
+	kalPerfIndReset(prAdapter);
 #endif
 
 	latestTxBytes = prGlueInfo->prDevHandler->stats.tx_bytes;
