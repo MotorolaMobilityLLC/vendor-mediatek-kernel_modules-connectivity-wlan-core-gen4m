@@ -2280,17 +2280,15 @@ wlanoidSetAddKey(IN struct ADAPTER *prAdapter, IN void *pvSetBuffer, IN uint32_t
 	*pu4SetInfoLen = u4SetBufferLen;
 
 	/* Dump PARAM_KEY content. */
-	DBGLOG(RSN, INFO, "Set: Dump PARAM_KEY content\n");
-	DBGLOG(RSN, INFO, "Length    : 0x%08x\n", prNewKey->u4Length);
-	DBGLOG(RSN, INFO, "Key Index : 0x%08x\n", prNewKey->u4KeyIndex);
-	DBGLOG(RSN, INFO, "Key Length: 0x%08x\n", prNewKey->u4KeyLength);
-	DBGLOG(RSN, INFO, "BSSID:\n");
-	DBGLOG(RSN, INFO, MACSTR "\n", MAC2STR(prNewKey->arBSSID));
-	DBGLOG(RSN, INFO, "Cipher    : %d\n", prNewKey->ucCipher);
+	DBGLOG(RSN, INFO, "Set: Dump PARAM_KEY content, Len: 0x%08x, BSSID: "
+		MACSTR
+		", KeyIdx: 0x%08x, KeyLen: 0x%08x, Cipher: %d, Material:\n",
+		prNewKey->u4Length, MAC2STR(prNewKey->arBSSID),
+		prNewKey->u4KeyIndex, prNewKey->u4KeyLength,
+		prNewKey->ucCipher);
+	DBGLOG_MEM8(RSN, INFO, prNewKey->aucKeyMaterial, prNewKey->u4KeyLength);
 	DBGLOG(RSN, TRACE, "Key RSC:\n");
 	DBGLOG_MEM8(RSN, TRACE, &prNewKey->rKeyRSC, sizeof(uint64_t));
-	DBGLOG(RSN, INFO, "Key Material:\n");
-	DBGLOG_MEM8(RSN, INFO, prNewKey->aucKeyMaterial, prNewKey->u4KeyLength);
 
 	prGlueInfo = prAdapter->prGlueInfo;
 	prAisSpecBssInfo = &prAdapter->rWifiVar.rAisSpecificBssInfo;
@@ -2624,18 +2622,20 @@ wlanoidSetAddKey(IN struct ADAPTER *prAdapter, IN void *pvSetBuffer, IN uint32_t
 	}
 
 #if 1
-	DBGLOG(RSN, INFO, "Add key cmd to wlan index %d:", prCmdKey->ucWlanIndex);
-	DBGLOG(RSN, INFO, "(BSS = %d) " MACSTR "\n", prCmdKey->ucBssIdx, MAC2STR(prCmdKey->aucPeerAddr));
-	DBGLOG(RSN, INFO, "Tx = %d type = %d Auth = %d\n", prCmdKey->ucTxKey, prCmdKey->ucKeyType,
-	       prCmdKey->ucIsAuthenticator);
-	DBGLOG(RSN, INFO, "cipher = %d keyid = %d keylen = %d\n", prCmdKey->ucAlgorithmId, prCmdKey->ucKeyId,
-	       prCmdKey->ucKeyLen);
-	DBGLOG_MEM8(RSN, INFO, prCmdKey->aucKeyMaterial, prCmdKey->ucKeyLen);
+	DBGLOG(RSN, INFO, "AddKey cmd to wlan index %d: (BSS = %d) " MACSTR
+		" Tx(%d) type(%d) Auth(%d) cipher(%d) keyid(%d) keylen(%d)",
+		prCmdKey->ucWlanIndex, prCmdKey->ucBssIdx,
+		MAC2STR(prCmdKey->aucPeerAddr), prCmdKey->ucTxKey,
+		prCmdKey->ucKeyType, prCmdKey->ucIsAuthenticator,
+		prCmdKey->ucAlgorithmId, prCmdKey->ucKeyId,
+		prCmdKey->ucKeyLen);
 
-	DBGLOG(RSN, INFO, "wepkeyUsed = %d\n", prBssInfo->wepkeyUsed[prCmdKey->ucKeyId]);
-	DBGLOG(RSN, INFO, "wepkeyWlanIdx = %d:", prBssInfo->wepkeyWlanIdx);
-	DBGLOG(RSN, INFO, "ucBMCWlanIndexSUsed = %d\n", prBssInfo->ucBMCWlanIndexSUsed[prCmdKey->ucKeyId]);
-	DBGLOG(RSN, INFO, "ucBMCWlanIndexS = %d:", prBssInfo->ucBMCWlanIndexS[prCmdKey->ucKeyId]);
+	DBGLOG(RSN, INFO, "wepkey(%d, %d), BMCWlan(%d, %d)\n",
+		prBssInfo->wepkeyUsed[prCmdKey->ucKeyId],
+		prBssInfo->wepkeyWlanIdx,
+		prBssInfo->ucBMCWlanIndexSUsed[prCmdKey->ucKeyId],
+		prBssInfo->ucBMCWlanIndexS[prCmdKey->ucKeyId]);
+	DBGLOG_MEM8(RSN, INFO, prCmdKey->aucKeyMaterial, prCmdKey->ucKeyLen);
 #endif
 
 	prAdapter->rWifiVar.rAisSpecificBssInfo.ucKeyAlgorithmId = prCmdKey->ucAlgorithmId;
@@ -2707,20 +2707,19 @@ wlanoidSetRemoveKey(IN struct ADAPTER *prAdapter,
 
 	ASSERT(pvSetBuffer);
 	prRemovedKey = (struct PARAM_REMOVE_KEY *) pvSetBuffer;
+	u4KeyIndex = prRemovedKey->u4KeyIndex & 0x000000FF;
 
 	/* Dump PARAM_REMOVE_KEY content. */
-	DBGLOG(RSN, INFO, "Set: Dump PARAM_REMOVE_KEY content\n");
-	DBGLOG(RSN, INFO, "Length    : 0x%08x\n", prRemovedKey->u4Length);
-	DBGLOG(RSN, INFO, "Key Index : 0x%08x\n", prRemovedKey->u4KeyIndex);
-	DBGLOG(RSN, INFO, "BSS_INDEX : %d\n", prRemovedKey->ucBssIdx);
-	DBGLOG(RSN, INFO, "BSSID:\n");
-	DBGLOG_MEM8(RSN, INFO, prRemovedKey->arBSSID, MAC_ADDR_LEN);
+	DBGLOG(RSN, INFO, "PARAM_REMOVE_KEY: BSSID(" MACSTR
+		"), BSS_INDEX (%d), Length(0x%08x), Key Index(0x%08x, %d)\n",
+		MAC2STR(prRemovedKey->arBSSID),
+		prRemovedKey->ucBssIdx,
+		prRemovedKey->u4Length, prRemovedKey->u4KeyIndex, u4KeyIndex);
 
 	prGlueInfo = prAdapter->prGlueInfo;
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prRemovedKey->ucBssIdx);
 	ASSERT(prBssInfo);
 
-	u4KeyIndex = prRemovedKey->u4KeyIndex & 0x000000FF;
 #if CFG_SUPPORT_802_11W
 	ASSERT(u4KeyIndex < MAX_KEY_NUM + 2);
 #else
@@ -2747,7 +2746,6 @@ wlanoidSetRemoveKey(IN struct ADAPTER *prAdapter,
 			fgRemoveWepKey = TRUE;
 
 		if (fgRemoveWepKey) {
-			DBGLOG(RSN, INFO, "Remove wep key id = %d", u4KeyIndex);
 			prBssInfo->wepkeyUsed[u4KeyIndex] = FALSE;
 			if (prBssInfo->fgBcDefaultKeyExist &&
 			    prBssInfo->ucBcDefaultKeyIdx == u4KeyIndex) {
@@ -2757,7 +2755,6 @@ wlanoidSetRemoveKey(IN struct ADAPTER *prAdapter,
 			ASSERT(prBssInfo->wepkeyWlanIdx < WTBL_SIZE);
 			ucRemoveBCKeyAtIdx = prBssInfo->wepkeyWlanIdx;
 		} else {
-			DBGLOG(RSN, INFO, "Remove group key id = %d", u4KeyIndex);
 
 			if (prBssInfo->ucBMCWlanIndexSUsed[u4KeyIndex]) {
 
