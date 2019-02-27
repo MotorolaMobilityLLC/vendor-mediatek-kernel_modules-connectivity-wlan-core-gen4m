@@ -1033,6 +1033,8 @@ struct WIFI_VAR {
 	int32_t iGroup1PLESize;
 	uint32_t ucGROFlushTimeout;
 	uint32_t ucGROEnableTput;
+
+	uint32_t u4AaaTxAssocTimeout;
 };
 
 /* cnm_timer module */

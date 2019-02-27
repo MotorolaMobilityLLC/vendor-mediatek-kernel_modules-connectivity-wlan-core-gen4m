@@ -6732,6 +6732,10 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 			prAdapter, "GROFlushTimeout", 1);
 	prWifiVar->ucGROEnableTput = (uint32_t) wlanCfgGetUint32(
 			prAdapter, "GROEnableTput", 6250000);
+
+	prWifiVar->u4AaaTxAssocTimeout = (uint32_t) wlanCfgGetUint32(
+			prAdapter, "AaaTxAssocTimeout",
+			TX_ASSOCIATE_TIMEOUT_TU);
 }
 
 void wlanCfgSetSwCtrl(IN struct ADAPTER *prAdapter)

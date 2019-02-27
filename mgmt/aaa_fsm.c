@@ -937,6 +937,10 @@ aaaFsmRunEventTxDone(IN struct ADAPTER *prAdapter,
 
 		if (prStaRec->u2StatusCode == STATUS_CODE_SUCCESSFUL) {
 			if (rTxDoneStatus == TX_RESULT_SUCCESS) {
+				uint32_t timeout = 0;
+
+				timeout =
+					prAdapter->rWifiVar.u4AaaTxAssocTimeout;
 
 				/* NOTE(Kevin):
 				 * Change to STATE_2 at TX Done
@@ -948,7 +952,7 @@ aaaFsmRunEventTxDone(IN struct ADAPTER *prAdapter,
 				 */
 				cnmTimerStartTimer(prAdapter,
 					&prStaRec->rTxReqDoneOrRxRespTimer,
-					TU_TO_MSEC(TX_ASSOCIATE_TIMEOUT_TU));
+					TU_TO_MSEC(timeout));
 			} else {
 
 				prStaRec->eAuthAssocState =
