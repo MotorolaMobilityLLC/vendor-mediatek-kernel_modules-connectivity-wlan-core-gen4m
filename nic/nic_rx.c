@@ -1573,6 +1573,7 @@ void nicRxProcessMonitorPacket(IN struct ADAPTER *prAdapter,
 	prRxCtrl->ucNumIndPacket++;
 #endif
 
+	prSwRfb->pvPacket = NULL;
 	/* Return RFB */
 	if (nicRxSetupRFB(prAdapter, prSwRfb)) {
 		DBGLOG(RX, WARN,
