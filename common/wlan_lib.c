@@ -3282,27 +3282,14 @@ VOID wlanEnableATGO(IN P_ADAPTER_T prAdapter)
 
 VOID wlanPrintVersion(IN P_ADAPTER_T prAdapter)
 {
-	P_WIFI_VER_INFO_T prVerInfo = &prAdapter->rVerInfo;
-	UINT_8 aucBuf[32], aucDate[32];
+	UINT_8 aucBuf[256];
 
-	kalMemZero(aucBuf, 32);
-	kalMemCopy(aucBuf, prVerInfo->aucFwBranchInfo, 4);
-	DBGLOG(SW4, INFO, "N9 FW version %s-%u.%u.%u[DEC] (%s)\n",
-		aucBuf, (prVerInfo->u2FwOwnVersion >> 8), (prVerInfo->u2FwOwnVersion & BITS(0, 7)),
-		prVerInfo->ucFwBuildNumber, prVerInfo->aucFwDateCode);
+	kalMemZero(aucBuf, 256);
 
 #if CFG_ENABLE_FW_DOWNLOAD
-	wlanPrintFwdlInfo(prAdapter);
+	fwDlGetFwdlInfo(prAdapter, aucBuf, 256);
 #endif
-
-	kalMemZero(aucBuf, 32);
-	kalStrnCpy(aucBuf, prVerInfo->rPatchHeader.aucPlatform, 4);
-	kalStrnCpy(aucDate, prVerInfo->rPatchHeader.aucBuildDate, 16);
-	DBGLOG(SW4, INFO, "Patch platform %s version 0x%04X %s\n",
-		aucBuf, prVerInfo->rPatchHeader.u4PatchVersion, aucDate);
-
-	DBGLOG(SW4, INFO, "Drv version %u.%u[DEC]\n",
-		(prVerInfo->u2FwPeerVersion >> 8), (prVerInfo->u2FwPeerVersion & BITS(0, 7)));
+	DBGLOG(SW4, INFO, "%s", aucBuf);
 }
 
 /*----------------------------------------------------------------------------*/

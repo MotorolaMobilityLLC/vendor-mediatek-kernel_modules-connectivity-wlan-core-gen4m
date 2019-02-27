@@ -88,22 +88,17 @@ enum ENUM_IMG_DL_IDX_T {
 	IMG_DL_IDX_PATCH
 };
 
-enum FWDL_TAILER_FORMAT_T {
-	HARVARD_TAILER_FORMAT,
-	CONNAC_TAILER_FORMAT,
-};
-
 struct FWDL_OPS_T {
-	const unsigned int tailer_format;	/* FW download tailer format */
-
 	void (*constructFirmwarePrio)(P_GLUE_INFO_T prGlueInfo, PPUINT_8 apucNameTable, PPUINT_8 apucName,
 				      PUINT_8 pucNameIdx, UINT_8 ucMaxNameIdx); /* load firmware bin priority */
 	void (*constructPatchName)(P_GLUE_INFO_T prGlueInfo, PPUINT_8 apucName, PUINT_8 pucNameIdx);
 
+	WLAN_STATUS (*downloadPatch)(IN P_ADAPTER_T prAdapter);
 	WLAN_STATUS (*downloadFirmware)(IN P_ADAPTER_T prAdapter, IN enum ENUM_IMG_DL_IDX_T eDlIdx);
 	void (*getFwInfo)(IN P_ADAPTER_T prAdapter, IN UINT_8 u4SecIdx, IN enum ENUM_IMG_DL_IDX_T eDlIdx,
 			  OUT PUINT_32 pu4Addr, OUT PUINT_32 pu4Len,
 			  OUT PUINT_32 pu4DataMode, OUT PBOOLEAN pfgIsEMIDownload);
+	unsigned int (*getFwDlInfo)(P_ADAPTER_T prAdapter, char *pcBuf, int i4TotalLen);
 };
 
 #if (CFG_UMAC_GENERATION >= 0x20)
@@ -246,7 +241,7 @@ WLAN_STATUS wlanConnacFormatDownload(IN P_ADAPTER_T prAdapter, IN enum ENUM_IMG_
 
 WLAN_STATUS wlanGetPatchInfo(IN P_ADAPTER_T prAdapter);
 
-VOID wlanPrintFwdlInfo(IN P_ADAPTER_T prAdapter);
+UINT_32 fwDlGetFwdlInfo(P_ADAPTER_T prAdapter, char *pcBuf, int i4TotalLen);
 
 #endif
 

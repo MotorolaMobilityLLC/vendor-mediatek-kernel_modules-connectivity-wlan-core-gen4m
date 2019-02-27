@@ -71,6 +71,7 @@
 ********************************************************************************
 */
 VOID asicCapInit(IN P_ADAPTER_T prAdapter);
+UINT_32 asicGetFwDlInfo(P_ADAPTER_T prAdapter, char *pcBuf, int i4TotalLen);
 VOID asicEnableFWDownload(IN P_ADAPTER_T prAdapter, IN BOOL fgEnable);
 VOID fillNicTxDescAppend(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduInfo,
 			 OUT PUINT_8 prTxDescBuffer);
@@ -99,6 +100,7 @@ VOID asicEnableInterrupt(IN P_ADAPTER_T prAdapter);
 VOID asicLowPowerOwnRead(IN P_ADAPTER_T prAdapter, OUT PBOOLEAN pfgResult);
 VOID asicLowPowerOwnSet(IN P_ADAPTER_T prAdapter, OUT PBOOLEAN pfgResult);
 VOID asicLowPowerOwnClear(IN P_ADAPTER_T prAdapter, OUT PBOOLEAN pfgResult);
+VOID asicGetMailboxStatus(IN P_ADAPTER_T prAdapter, OUT PUINT_32 pu4Val);
 #endif /* _HIF_PCIE */
 
 #if defined(_HIF_USB)
