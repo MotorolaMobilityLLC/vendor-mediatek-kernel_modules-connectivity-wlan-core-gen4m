@@ -1520,7 +1520,8 @@ void aisFsmSteps(IN struct ADAPTER *prAdapter, enum ENUM_AIS_STATE eNextState)
 					struct RF_CHANNEL_INFO *prChnlInfo =
 						&prScanReqMsg
 							 ->arChnlInfoList[0];
-					uint8_t ucChnlNum = 0;
+					uint8_t ucChnlNum =
+						prScanReqMsg->ucChannelListNum;
 					uint8_t i = 0;
 
 					LINK_FOR_EACH_ENTRY(
@@ -1536,13 +1537,17 @@ void aisFsmSteps(IN struct ADAPTER *prAdapter, enum ENUM_AIS_STATE eNextState)
 						prAdapter, eBand,
 						ucChannel))
 						continue;
-					for (i = 0;
-					i < ucChnlNum &&
-					ucChannel !=
-					prChnlInfo[i]
-					.ucChannelNum;
-					i++)
-						;
+
+					/* Append channel(s) provided by
+					* neighbor report into channel
+					* list of current ESS in scan msg.
+					*/
+					for (i = 0; i < ucChnlNum; i++) {
+					if (ucChannel ==
+					prChnlInfo[i].ucChannelNum)
+						break;
+					}
+
 					if (i != ucChnlNum)
 						continue;
 					prChnlInfo[ucChnlNum].eBand =
@@ -1555,12 +1560,12 @@ void aisFsmSteps(IN struct ADAPTER *prAdapter, enum ENUM_AIS_STATE eNextState)
 					MAXIMUM_OPERATION_CHANNEL_LIST)
 						break;
 					}
-					prScanReqMsg->ucChannelListNum +=
-						ucChnlNum;
 					DBGLOG(AIS, INFO,
-						"[Roaming] Target Scan: Total number of scan channel(s)=%d and %d channel(s) are provided by neighbor report\n",
-					       prScanReqMsg->ucChannelListNum,
-					       ucChnlNum);
+						"[Roaming] Target Scan: Total number of scan channel(s)=%d and %d channel(s) provided by neighbor report\n",
+						ucChnlNum, ucChnlNum -
+						prScanReqMsg->ucChannelListNum);
+					prScanReqMsg->ucChannelListNum =
+						ucChnlNum;
 				}
 #endif
 #if CFG_SUPPORT_NCHO
