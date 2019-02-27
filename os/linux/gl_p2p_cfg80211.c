@@ -2767,7 +2767,7 @@ int mtk_p2p_cfg80211_del_station(struct wiphy *wiphy,
 
 		DBGLOG(P2P, INFO,
 			"mtk_p2p_cfg80211_del_station " MACSTR ". reason: %d\n",
-			mac, params->reason_code);
+			MAC2STR(mac), params->reason_code);
 
 		P2P_WIPHY_PRIV(wiphy, prGlueInfo);
 
@@ -2825,7 +2825,8 @@ int mtk_p2p_cfg80211_del_station(struct wiphy *wiphy,
 			mac = aucBcMac;
 
 		DBGLOG(P2P, INFO,
-			"mtk_p2p_cfg80211_del_station " MACSTR ".\n", mac);
+			"mtk_p2p_cfg80211_del_station " MACSTR ".\n",
+			MAC2STR(mac));
 
 		P2P_WIPHY_PRIV(wiphy, prGlueInfo);
 
@@ -2884,7 +2885,8 @@ int mtk_p2p_cfg80211_del_station(struct wiphy *wiphy,
 			mac = aucBcMac;
 
 		DBGLOG(P2P, INFO,
-			"mtk_p2p_cfg80211_del_station " MACSTR ".\n", mac);
+			"mtk_p2p_cfg80211_del_station " MACSTR ".\n",
+			MAC2STR(mac));
 
 		P2P_WIPHY_PRIV(wiphy, prGlueInfo);
 
