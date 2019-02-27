@@ -130,7 +130,7 @@ struct PCIE_CHIP_CR_MAPPING connac_bus2chip_cr_mapping[] = {
 
 	{0x0, 0x0, 0x0}
 };
-#endif /* _HIF_PCIE */
+#endif /* _HIF_PCIE || _HIF_AXI */
 
 int connacGetIpSetVersion(struct GLUE_INFO *prGlueInfo)
 {
@@ -204,6 +204,7 @@ struct BUS_INFO connac_bus_info = {
 
 	.pdmaSetup = asicPdmaConfig,
 	.enableInterrupt = asicEnableInterrupt,
+	.disableInterrupt = asicDisableInterrupt,
 	.lowPowerOwnRead = asicLowPowerOwnRead,
 	.lowPowerOwnSet = asicLowPowerOwnSet,
 	.lowPowerOwnClear = asicLowPowerOwnClear,
@@ -212,7 +213,7 @@ struct BUS_INFO connac_bus_info = {
 	.getMailboxStatus = asicGetMailboxStatus,
 	.setDummyReg = asicSetDummyReg,
 	.checkDummyReg = asicCheckDummyReg,
-#endif /* _HIF_PCIE */
+#endif /* _HIF_PCIE || _HIF_AXI */
 #if defined(_HIF_USB)
 	.u4UdmaWlCfg_0_Addr = CONNAC_UDMA_WLCFG_0,
 	.u4UdmaWlCfg_1_Addr = CONNAC_UDMA_WLCFG_1,

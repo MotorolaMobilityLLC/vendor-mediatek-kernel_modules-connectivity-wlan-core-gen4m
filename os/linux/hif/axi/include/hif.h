@@ -165,6 +165,7 @@ struct BUS_INFO {
 
 	void (*pdmaSetup)(struct GLUE_INFO *prGlueInfo, u_int8_t enable);
 	void (*enableInterrupt)(struct ADAPTER *prAdapter);
+	void (*disableInterrupt)(struct ADAPTER *prAdapter);
 	void (*lowPowerOwnRead)(struct ADAPTER *prAdapter, u_int8_t *pfgResult);
 	void (*lowPowerOwnSet)(struct ADAPTER *prAdapter, u_int8_t *pfgResult);
 	void (*lowPowerOwnClear)(struct ADAPTER *prAdapter,

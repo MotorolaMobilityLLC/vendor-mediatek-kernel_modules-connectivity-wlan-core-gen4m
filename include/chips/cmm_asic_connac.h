@@ -108,6 +108,7 @@ void asicPcieDmaShdlInit(IN struct ADAPTER *prAdapter);
 void asicPdmaLoopBackConfig(struct GLUE_INFO *prGlueInfo, u_int8_t fgEnable);
 void asicPdmaConfig(struct GLUE_INFO *prGlueInfo, u_int8_t fgEnable);
 void asicEnableInterrupt(IN struct ADAPTER *prAdapter);
+void asicDisableInterrupt(IN struct ADAPTER *prAdapter);
 void asicLowPowerOwnRead(IN struct ADAPTER *prAdapter, OUT u_int8_t *pfgResult);
 void asicLowPowerOwnSet(IN struct ADAPTER *prAdapter, OUT u_int8_t *pfgResult);
 void asicLowPowerOwnClear(IN struct ADAPTER *prAdapter,

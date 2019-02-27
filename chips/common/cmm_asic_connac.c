@@ -457,39 +457,25 @@ void asicPcieDmaShdlInit(IN struct ADAPTER *prAdapter)
 		   CONN_HIF_DMASHDL_PACKET_MAX_SIZE(u4BaseAddr), &u4MacVal);
 	u4MacVal &= ~(PLE_PKT_MAX_SIZE_MASK | PSE_PKT_MAX_SIZE_MASK);
 	u4MacVal |= PLE_PKT_MAX_SIZE_NUM(0x1);
-	u4MacVal |= PSE_PKT_MAX_SIZE_NUM(0x8);
+	u4MacVal |= PSE_PKT_MAX_SIZE_NUM(0x18); /* 0x18 * 128 = 3K */
 	HAL_MCR_WR(prAdapter,
 		   CONN_HIF_DMASHDL_PACKET_MAX_SIZE(u4BaseAddr), u4MacVal);
 
 	u4MacVal =
-	(CONN_HIF_DMASHDL_TOP_REFILL_CONTROL_GROUP1_REFILL_DISABLE_MASK
-	 |
-	 CONN_HIF_DMASHDL_TOP_REFILL_CONTROL_GROUP2_REFILL_DISABLE_MASK
-	 |
-	 CONN_HIF_DMASHDL_TOP_REFILL_CONTROL_GROUP3_REFILL_DISABLE_MASK
-	 |
-	 CONN_HIF_DMASHDL_TOP_REFILL_CONTROL_GROUP4_REFILL_DISABLE_MASK
-	 |
-	 CONN_HIF_DMASHDL_TOP_REFILL_CONTROL_GROUP5_REFILL_DISABLE_MASK
-	 |
-	 CONN_HIF_DMASHDL_TOP_REFILL_CONTROL_GROUP6_REFILL_DISABLE_MASK
-	 |
-	 CONN_HIF_DMASHDL_TOP_REFILL_CONTROL_GROUP7_REFILL_DISABLE_MASK
-	 |
-	 CONN_HIF_DMASHDL_TOP_REFILL_CONTROL_GROUP8_REFILL_DISABLE_MASK
-	 |
-	 CONN_HIF_DMASHDL_TOP_REFILL_CONTROL_GROUP9_REFILL_DISABLE_MASK
-	 |
-	 CONN_HIF_DMASHDL_TOP_REFILL_CONTROL_GROUP10_REFILL_DISABLE_MASK
-	 |
-	 CONN_HIF_DMASHDL_TOP_REFILL_CONTROL_GROUP11_REFILL_DISABLE_MASK
-	 |
-	 CONN_HIF_DMASHDL_TOP_REFILL_CONTROL_GROUP12_REFILL_DISABLE_MASK
-	 |
-	 CONN_HIF_DMASHDL_TOP_REFILL_CONTROL_GROUP13_REFILL_DISABLE_MASK
-	 |
-	 CONN_HIF_DMASHDL_TOP_REFILL_CONTROL_GROUP14_REFILL_DISABLE_MASK
-	 |
+	(CONN_HIF_DMASHDL_TOP_REFILL_CONTROL_GROUP1_REFILL_DISABLE_MASK |
+	 CONN_HIF_DMASHDL_TOP_REFILL_CONTROL_GROUP2_REFILL_DISABLE_MASK |
+	 CONN_HIF_DMASHDL_TOP_REFILL_CONTROL_GROUP3_REFILL_DISABLE_MASK |
+	 CONN_HIF_DMASHDL_TOP_REFILL_CONTROL_GROUP4_REFILL_DISABLE_MASK |
+	 CONN_HIF_DMASHDL_TOP_REFILL_CONTROL_GROUP5_REFILL_DISABLE_MASK |
+	 CONN_HIF_DMASHDL_TOP_REFILL_CONTROL_GROUP6_REFILL_DISABLE_MASK |
+	 CONN_HIF_DMASHDL_TOP_REFILL_CONTROL_GROUP7_REFILL_DISABLE_MASK |
+	 CONN_HIF_DMASHDL_TOP_REFILL_CONTROL_GROUP8_REFILL_DISABLE_MASK |
+	 CONN_HIF_DMASHDL_TOP_REFILL_CONTROL_GROUP9_REFILL_DISABLE_MASK |
+	 CONN_HIF_DMASHDL_TOP_REFILL_CONTROL_GROUP10_REFILL_DISABLE_MASK |
+	 CONN_HIF_DMASHDL_TOP_REFILL_CONTROL_GROUP11_REFILL_DISABLE_MASK |
+	 CONN_HIF_DMASHDL_TOP_REFILL_CONTROL_GROUP12_REFILL_DISABLE_MASK |
+	 CONN_HIF_DMASHDL_TOP_REFILL_CONTROL_GROUP13_REFILL_DISABLE_MASK |
+	 CONN_HIF_DMASHDL_TOP_REFILL_CONTROL_GROUP14_REFILL_DISABLE_MASK |
 	 CONN_HIF_DMASHDL_TOP_REFILL_CONTROL_GROUP15_REFILL_DISABLE_MASK);
 	HAL_MCR_WR(prAdapter,
 		   CONN_HIF_DMASHDL_REFILL_CONTROL(u4BaseAddr), u4MacVal);
@@ -530,8 +516,7 @@ void asicPcieDmaShdlInit(IN struct ADAPTER *prAdapter)
 		   CONN_HIF_DMASHDL_GROUP14_CTRL(u4BaseAddr), u4MacVal);
 }
 
-void asicPdmaLoopBackConfig(struct GLUE_INFO *prGlueInfo,
-			    u_int8_t fgEnable)
+void asicPdmaLoopBackConfig(struct GLUE_INFO *prGlueInfo, u_int8_t fgEnable)
 {
 	union WPDMA_GLO_CFG_STRUCT GloCfg;
 	uint32_t word = 1;
@@ -552,8 +537,7 @@ void asicPdmaLoopBackConfig(struct GLUE_INFO *prGlueInfo,
 	kalDevRegWrite(prGlueInfo, WPDMA_GLO_CFG, GloCfg.word);
 }
 
-void asicPdmaConfig(struct GLUE_INFO *prGlueInfo,
-		    u_int8_t fgEnable)
+void asicPdmaConfig(struct GLUE_INFO *prGlueInfo, u_int8_t fgEnable)
 {
 	struct BUS_INFO *prBusInfo =
 			prGlueInfo->prAdapter->chip_info->bus_info;
@@ -567,8 +551,8 @@ void asicPdmaConfig(struct GLUE_INFO *prGlueInfo,
 		GloCfg.field_conn.tx_dma_en = 1;
 		GloCfg.field_conn.rx_dma_en = 1;
 		GloCfg.field_conn.pdma_bt_size = 3;
-		GloCfg.field_conn.pdma_addr_ext_en = (prBusInfo->u4DmaMask >
-						      32) ? 1 : 0;
+		GloCfg.field_conn.pdma_addr_ext_en =
+			(prBusInfo->u4DmaMask > 32) ? 1 : 0;
 		GloCfg.field_conn.tx_wb_ddone = 1;
 		GloCfg.field_conn.multi_dma_en = 3;
 		GloCfg.field_conn.fifo_little_endian = 1;
@@ -576,10 +560,14 @@ void asicPdmaConfig(struct GLUE_INFO *prGlueInfo,
 
 		IntMask.field.rx_done_0 = 1;
 		IntMask.field.rx_done_1 = 1;
-		IntMask.field.tx_done = BIT(prBusInfo->tx_ring_fwdl_idx) |
-					BIT(prBusInfo->tx_ring_cmd_idx) | BIT(
-						prBusInfo->tx_ring_data_idx);
-		IntMask.field.tx_dly_int = 0;
+		IntMask.field.tx_done =
+			BIT(prBusInfo->tx_ring_fwdl_idx) |
+			BIT(prBusInfo->tx_ring_cmd_idx) |
+			BIT(prBusInfo->tx_ring_data_idx);
+		IntMask.field_conn.tx_coherent = 0;
+		IntMask.field_conn.rx_coherent = 0;
+		IntMask.field_conn.tx_dly_int = 0;
+		IntMask.field_conn.rx_dly_int = 0;
 		IntMask.field_conn.mcu2host_sw_int_ena = 1;
 	} else {
 		GloCfg.field_conn.tx_dma_en = 0;
@@ -588,7 +576,10 @@ void asicPdmaConfig(struct GLUE_INFO *prGlueInfo,
 		IntMask.field_conn.rx_done_0 = 0;
 		IntMask.field_conn.rx_done_1 = 0;
 		IntMask.field_conn.tx_done = 0;
+		IntMask.field_conn.tx_coherent = 0;
+		IntMask.field_conn.rx_coherent = 0;
 		IntMask.field_conn.tx_dly_int = 0;
+		IntMask.field_conn.rx_dly_int = 0;
 		IntMask.field_conn.mcu2host_sw_int_ena = 0;
 	}
 
@@ -600,28 +591,26 @@ void asicPdmaConfig(struct GLUE_INFO *prGlueInfo,
 
 void asicEnableInterrupt(IN struct ADAPTER *prAdapter)
 {
-	struct BUS_INFO *prBusInfo = prAdapter->chip_info->bus_info;
-	union WPDMA_INT_MASK IntMask;
+	struct GL_HIF_INFO *prHifInfo = NULL;
 
-	prAdapter->fgIsIntEnable = TRUE;
+	ASSERT(prAdapter);
 
-	HAL_MCR_RD(prAdapter, WPDMA_INT_MSK, &IntMask.word);
+	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
+	enable_irq(prHifInfo->u4IrqId);
 
-	IntMask.field_conn.rx_done_0 = 1;
-	IntMask.field_conn.rx_done_1 = 1;
-	IntMask.field_conn.tx_done =
-		BIT(prBusInfo->tx_ring_fwdl_idx) |
-		BIT(prBusInfo->tx_ring_cmd_idx) |
-		BIT(prBusInfo->tx_ring_data_idx);
-	IntMask.field_conn.tx_coherent = 0;
-	IntMask.field_conn.rx_coherent = 0;
-	IntMask.field_conn.tx_dly_int = 0;
-	IntMask.field_conn.rx_dly_int = 0;
-	IntMask.field_conn.mcu2host_sw_int_ena = 1;
+	DBGLOG(HAL, TRACE, "%s\n", __func__);
+}
 
-	HAL_MCR_WR(prAdapter, WPDMA_INT_MSK, IntMask.word);
+void asicDisableInterrupt(IN struct ADAPTER *prAdapter)
+{
+	struct GL_HIF_INFO *prHifInfo = NULL;
 
-	DBGLOG(HAL, TRACE, "%s [0x%08x]\n", __func__, IntMask.word);
+	ASSERT(prAdapter);
+
+	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
+	disable_irq_nosync(prHifInfo->u4IrqId);
+
+	DBGLOG(HAL, TRACE, "%s\n", __func__);
 }
 
 void asicLowPowerOwnRead(IN struct ADAPTER *prAdapter,
@@ -672,16 +661,14 @@ void asicWakeUpWiFi(IN struct ADAPTER *prAdapter)
 
 bool asicIsValidRegAccess(IN struct ADAPTER *prAdapter, IN uint32_t u4Register)
 {
-	uint32_t au4ExcludeRegs[] = {
-		CONN_HIF_ON_LPCTL,
-		WPDMA_INT_STA,
-		WPDMA_INT_MSK
-	};
+	uint32_t au4ExcludeRegs[] = { CONN_HIF_ON_LPCTL };
 	uint32_t u4Idx, u4Size = sizeof(au4ExcludeRegs) / sizeof(uint32_t);
 
+	/* driver can access all consys registers on driver own */
 	if (!prAdapter->fgIsFwOwn)
 		return true;
 
+	/* only own control register can be accessed on fw own */
 	for (u4Idx = 0; u4Idx < u4Size; u4Idx++) {
 		if (u4Register == au4ExcludeRegs[u4Idx])
 			return true;
@@ -724,7 +711,7 @@ void asicCheckDummyReg(struct GLUE_INFO *prGlueInfo)
 	/* Write sleep mode magic num to dummy reg */
 	asicSetDummyReg(prGlueInfo);
 }
-#endif /* _HIF_PCIE */
+#endif /* _HIF_PCIE || _HIF_AXI */
 
 #if defined(_HIF_USB)
 /* DMS Scheduler Init */

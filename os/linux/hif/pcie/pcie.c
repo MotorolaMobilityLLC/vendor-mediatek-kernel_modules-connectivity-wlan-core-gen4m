@@ -177,7 +177,6 @@ static uint8_t *CSRBaseAddress;
 static irqreturn_t mtk_pci_interrupt(int irq, void *dev_instance)
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
-	uint32_t u4RegValue;
 
 	prGlueInfo = (struct GLUE_INFO *) dev_instance;
 	if (!prGlueInfo) {
@@ -185,18 +184,12 @@ static irqreturn_t mtk_pci_interrupt(int irq, void *dev_instance)
 		return IRQ_NONE;
 	}
 
-	HAL_MCR_RD(prGlueInfo->prAdapter, WPDMA_INT_STA, &u4RegValue);
-	if (!u4RegValue)
-		return IRQ_HANDLED;
-
 	halDisableInterrupt(prGlueInfo->prAdapter);
 
 	if (prGlueInfo->ulFlag & GLUE_FLAG_HALT) {
 		DBGLOG(HAL, INFO, "GLUE_FLAG_HALT skip INT\n");
 		return IRQ_NONE;
 	}
-
-	DBGLOG(HAL, TRACE, "%s INT[0x%08x]\n", __func__, u4RegValue);
 
 	kalSetIntEvent(prGlueInfo);
 
@@ -390,7 +383,6 @@ void glClearHifInfo(struct GLUE_INFO *prGlueInfo)
 
 	halUninitMsduTokenInfo(prGlueInfo->prAdapter);
 	halWpdmaFreeRing(prGlueInfo);
-	halHifRst(prGlueInfo);
 
 	list_for_each_safe(prCur, prNext, &prHifInfo->rTxCmdQ) {
 		prTxCmdReq = list_entry(prCur, struct TX_CMD_REQ_T, list);
@@ -515,7 +507,8 @@ int32_t glBusSetIrq(void *pvData, void *pfnIsr, void *pvCookie)
 	prHifInfo = &prGlueInfo->rHifInfo;
 	pdev = prHifInfo->pdev;
 
-	ret = request_irq(pdev->irq, mtk_pci_interrupt,
+	prHifInfo->u4IrqId = pdev->irq;
+	ret = request_irq(prHifInfo->u4IrqId, mtk_pci_interrupt,
 		IRQF_SHARED, prNetDevice->name, prGlueInfo);
 	if (ret != 0)
 		DBGLOG(INIT, INFO,

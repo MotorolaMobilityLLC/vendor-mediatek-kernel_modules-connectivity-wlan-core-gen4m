@@ -272,7 +272,43 @@ void mt6632LowPowerOwnClear(IN struct ADAPTER *prAdapter,
 	HAL_MCR_RD(prAdapter, CFG_PCIE_LPCR_HOST, &u4RegValue);
 	*pfgResult = (u4RegValue == 0);
 }
-#endif /* _HIF_PCIE */
+
+void mt6632EnableInterrupt(IN struct ADAPTER *prAdapter)
+{
+	struct BUS_INFO *prBusInfo = prAdapter->chip_info->bus_info;
+	union WPDMA_INT_MASK IntMask;
+
+	HAL_MCR_RD(prAdapter, WPDMA_INT_MSK, &IntMask.word);
+
+	IntMask.field.rx_done_0 = 1;
+	IntMask.field.rx_done_1 = 1;
+	IntMask.field.tx_done = BIT(prBusInfo->tx_ring_fwdl_idx) |
+		BIT(prBusInfo->tx_ring_cmd_idx) |
+		BIT(prBusInfo->tx_ring_data_idx);
+	IntMask.field.tx_coherent = 0;
+	IntMask.field.rx_coherent = 0;
+	IntMask.field.tx_dly_int = 0;
+	IntMask.field.rx_dly_int = 0;
+	IntMask.field.fw_clr_own = 1;
+
+	HAL_MCR_WR(prAdapter, WPDMA_INT_MSK, IntMask.word);
+
+	DBGLOG(HAL, TRACE, "%s [0x%08x]\n", __func__, IntMask.word);
+}
+
+void mt6632DisableInterrupt(IN struct ADAPTER *prAdapter)
+{
+	union WPDMA_INT_MASK IntMask;
+
+	ASSERT(prAdapter);
+
+	IntMask.word = 0;
+
+	HAL_MCR_WR(prAdapter, WPDMA_INT_MSK, IntMask.word);
+	HAL_MCR_RD(prAdapter, WPDMA_INT_MSK, &IntMask.word);
+
+	DBGLOG(HAL, TRACE, "%s\n", __func__);
+}
 
 void mt6632WakeUpWiFi(IN struct ADAPTER *prAdapter)
 {
@@ -300,6 +336,7 @@ void mt6632WakeUpWiFi(IN struct ADAPTER *prAdapter)
 	else
 		HAL_LP_OWN_CLR(prAdapter, &fgResult);
 }
+#endif /* _HIF_PCIE */
 
 struct BUS_INFO mt6632_bus_info = {
 #if defined(_HIF_PCIE)
@@ -313,6 +350,8 @@ struct BUS_INFO mt6632_bus_info = {
 	.u4DmaMask = 32,
 
 	.pdmaSetup = mt6632PdmaConfig,
+	.enableInterrupt = mt6632EnableInterrupt,
+	.disableInterrupt = mt6632DisableInterrupt,
 	.lowPowerOwnRead = mt6632LowPowerOwnRead,
 	.lowPowerOwnSet = mt6632LowPowerOwnSet,
 	.lowPowerOwnClear = mt6632LowPowerOwnClear,
