@@ -4989,8 +4989,6 @@ int32_t kalReadToFile(const uint8_t *pucPath,
 	int32_t ret = -1;
 	uint32_t u4ReadSize = 0;
 
-	DBGLOG(INIT, INFO, "kalReadToFile() path %s\n", pucPath);
-
 	file = kalFileOpen(pucPath, O_RDONLY, 0);
 
 	if ((file != NULL) && !IS_ERR(file)) {
@@ -4999,6 +4997,7 @@ int32_t kalReadToFile(const uint8_t *pucPath,
 		if (pu4ReadSize)
 			*pu4ReadSize = u4ReadSize;
 		ret = 0;
+		DBGLOG(INIT, INFO, "path %s, size=%u\n", pucPath, u4ReadSize);
 	}
 	return ret;
 }

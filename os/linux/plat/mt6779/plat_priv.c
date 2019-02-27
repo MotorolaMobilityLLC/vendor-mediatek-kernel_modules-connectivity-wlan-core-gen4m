@@ -31,7 +31,7 @@
 
 uint32_t kalGetCpuBoostThreshold(void)
 {
-	DBGLOG(SW4, INFO, "enter kalGetCpuBoostThreshold\n");
+	DBGLOG(SW4, TRACE, "enter kalGetCpuBoostThreshold\n");
 	/*  8, stands for 450Mbps */
 	return 8;
 }

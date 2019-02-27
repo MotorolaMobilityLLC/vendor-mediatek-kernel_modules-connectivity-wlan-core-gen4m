@@ -6489,7 +6489,7 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 				       prAdapter, "MacOverride", 0);
 	if (wlanCfgGet(prAdapter, "MacAddr", prWifiVar->aucMacAddrStr,
 	    "00:0c:e7:66:32:e1", 0))
-		DBGLOG(INIT, ERROR, "get MacAddr fail, use defaul\n");
+		DBGLOG(INIT, TRACE, "get MacAddr fail, use defaul\n");
 
 	prWifiVar->ucCtiaMode = (uint8_t) wlanCfgGetUint32(
 					prAdapter, "CtiaMode", 0);
@@ -7762,7 +7762,7 @@ void wlanFeatureToFw(IN struct ADAPTER *prAdapter)
 					       "[Fail]kalIoctl wifiSefCFG fail 0x%x\n",
 					       rStatus);
 
-				DBGLOG(INIT, INFO,
+				DBGLOG(INIT, TRACE,
 				       "kalIoctl wifiSefCFG num:%d\n", ucTimes);
 				kalMemSet(rCmdV1Header.buffer, 0,
 					  MAX_CMD_BUFFER_LENGTH);

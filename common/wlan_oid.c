@@ -7985,7 +7985,7 @@ uint32_t wlanoidSetPacketFilter(struct ADAPTER *prAdapter,
 			~(PARAM_PACKET_FILTER_MULTICAST |
 			  PARAM_PACKET_FILTER_ALL_MULTICAST);
 #endif
-	DBGLOG_LIMITED(OID, INFO,
+	DBGLOG(OID, TRACE,
 			"[MC debug] u4PacketFilter=%x, IsSuspend=%d\n",
 			prSetRxPacketFilter->u4RxPacketFilter,
 			prAdapter->prGlueInfo->fgIsInSuspendMode);
