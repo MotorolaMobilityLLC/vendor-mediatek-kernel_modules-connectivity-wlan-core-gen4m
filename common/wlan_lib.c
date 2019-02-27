@@ -6674,6 +6674,8 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 			prAdapter, "LowLatencyModeReOrder", FEATURE_ENABLED);
 	prWifiVar->ucLowLatencyModePower = (uint32_t) wlanCfgGetUint32(
 			prAdapter, "LowLatencyModePower", FEATURE_ENABLED);
+	prWifiVar->ucLowLatencyPacketPriority = (uint32_t) wlanCfgGetUint32(
+			prAdapter, "LowLatencyPacketPriority", BITS(0, 1));
 #endif /* CFG_SUPPORT_LOWLATENCY_MODE */
 
 #if ARP_MONITER_ENABLE

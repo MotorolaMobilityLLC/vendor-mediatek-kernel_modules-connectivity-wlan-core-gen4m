@@ -118,6 +118,15 @@ static const struct TX_RESOURCE_CONTROL
 #endif
 };
 
+static const uint32_t au4TxHifResCtl[MAX_TX_HIF_RES_CTL_NUM] = {
+	/* 4 resource for TC0 */
+	TC0_INDEX, TC0_INDEX, TC0_INDEX, TC0_INDEX,
+	/* 2 resource for TC1 */
+	TC1_INDEX, TC1_INDEX,
+	/* 1 resource for others */
+	TC2_INDEX, TC3_INDEX, TC4_INDEX, TC_NUM,
+};
+
 /* Traffic settings per TC */
 static const struct TX_TC_TRAFFIC_SETTING
 	arTcTrafficSettings[NET_TC_NUM] = {
@@ -1419,6 +1428,61 @@ void nicTxMsduQueueByPrio(struct ADAPTER *prAdapter)
 	}
 }
 
+#if CFG_SUPPORT_LOWLATENCY_MODE
+/*----------------------------------------------------------------------------*/
+/*!
+ * @brief In this function, we'll pick high priority packet to data queue
+ *
+ *
+ * @param prAdapter              Pointer to the Adapter structure.
+ * @param prDataPort             Pointer to data queue
+ *
+ */
+/*----------------------------------------------------------------------------*/
+static void nicTxMsduPickHighPrioPkt(struct ADAPTER *prAdapter,
+				     struct QUE *prDataPort0,
+				     struct QUE *prDataPort1)
+{
+	struct QUE *prDataPort, *prTxQue;
+	struct MSDU_INFO *prMsduInfo;
+	struct sk_buff *prSkb;
+	int32_t i4TcIdx;
+	uint32_t u4QSize, u4Idx;
+	uint8_t ucPortIdx;
+
+	for (i4TcIdx = TC_NUM; i4TcIdx >= 0; i4TcIdx--) {
+		prTxQue = &(prAdapter->rTxPQueue[i4TcIdx]);
+		u4QSize = prTxQue->u4NumElem;
+		for (u4Idx = 0; u4Idx < u4QSize; u4Idx++) {
+			QUEUE_REMOVE_HEAD(prTxQue, prMsduInfo,
+					  struct MSDU_INFO *);
+			if (!prMsduInfo || !prMsduInfo->prPacket) {
+				QUEUE_INSERT_TAIL(
+					prTxQue,
+					(struct QUE_ENTRY *)prMsduInfo);
+				continue;
+			}
+
+			ucPortIdx = halTxRingDataSelect(prAdapter, prMsduInfo);
+			prDataPort = (ucPortIdx == TX_RING_DATA1_IDX_1) ?
+				prDataPort1 : prDataPort0;
+
+			prSkb = prMsduInfo->prPacket;
+			if (prSkb->mark == NIC_TX_SKB_PRIORITY_MARK1 ||
+			    prSkb->mark == NIC_TX_SKB_PRIORITY_MARK2) {
+				QUEUE_INSERT_TAIL(
+					prDataPort,
+					(struct QUE_ENTRY *)prMsduInfo);
+			} else {
+				QUEUE_INSERT_TAIL(
+					prTxQue,
+					(struct QUE_ENTRY *)prMsduInfo);
+			}
+		}
+	}
+}
+#endif /* CFG_SUPPORT_LOWLATENCY_MODE */
+
 /*----------------------------------------------------------------------------*/
 /*!
  * @brief In this function, we'll write MSDU into HIF by Round-Robin
@@ -1430,47 +1494,53 @@ void nicTxMsduQueueByPrio(struct ADAPTER *prAdapter)
 /*----------------------------------------------------------------------------*/
 void nicTxMsduQueueByRR(struct ADAPTER *prAdapter)
 {
+	struct WIFI_VAR *prWifiVar;
 	struct QUE qDataPort0, qDataPort1, arTempQue[TX_PORT_NUM];
 	struct QUE *prDataPort0, *prDataPort1, *prDataPort, *prTxQue;
 	struct MSDU_INFO *prMsduInfo;
-	bool fgIsAllQueneEmpty = false;
-	int32_t i;
+	uint32_t u4Idx, u4IsNotAllQueneEmpty;
+	uint8_t ucPortIdx;
 
 	KAL_SPIN_LOCK_DECLARATION();
 
+	prWifiVar = &prAdapter->rWifiVar;
 	prDataPort0 = &qDataPort0;
 	prDataPort1 = &qDataPort1;
 	QUEUE_INITIALIZE(prDataPort0);
 	QUEUE_INITIALIZE(prDataPort1);
 
-	for (i = 0; i < TX_PORT_NUM; i++)
-		QUEUE_INITIALIZE(&arTempQue[i]);
+	for (u4Idx = 0; u4Idx < TX_PORT_NUM; u4Idx++)
+		QUEUE_INITIALIZE(&arTempQue[u4Idx]);
 
 	KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_PORT_QUE);
-	/* Dequeue each TCQ to dataQ by round-robin  */
+
+#if CFG_SUPPORT_LOWLATENCY_MODE
+	/* Dequeue each TCQ to dataQ, high priority packet first */
+	if (prWifiVar->ucLowLatencyPacketPriority & BIT(1))
+		nicTxMsduPickHighPrioPkt(prAdapter, prDataPort0, prDataPort1);
+#endif /* CFG_SUPPORT_LOWLATENCY_MODE */
+
+	/* Dequeue each TCQ to dataQ by round-robin with resource control */
 	/* Check each TCQ is empty or not */
-	while (!fgIsAllQueneEmpty) {
-		fgIsAllQueneEmpty = true;
-		for (i = TC_NUM; i >= 0; i--) {
-			prTxQue = &(prAdapter->rTxPQueue[i]);
-			if (QUEUE_IS_NOT_EMPTY(prTxQue)) {
-				QUEUE_REMOVE_HEAD(
-					prTxQue, prMsduInfo,
-					struct MSDU_INFO *);
-
-				if (halTxRingDataSelect(prAdapter, prMsduInfo)
-					== TX_RING_DATA1_IDX_1)
-					prDataPort = prDataPort1;
-				else
-					prDataPort = prDataPort0;
-
-				QUEUE_INSERT_TAIL(
-					prDataPort,
-					(struct QUE_ENTRY *) prMsduInfo);
-				fgIsAllQueneEmpty = false;
-			}
+	u4IsNotAllQueneEmpty = BITS(0, TC_NUM);
+	while (u4IsNotAllQueneEmpty) {
+		u4Idx = au4TxHifResCtl[prAdapter->u4TxHifResCtlIdx++];
+		prTxQue = &(prAdapter->rTxPQueue[u4Idx]);
+		if (QUEUE_IS_NOT_EMPTY(prTxQue)) {
+			QUEUE_REMOVE_HEAD(prTxQue, prMsduInfo,
+					  struct MSDU_INFO *);
+			ucPortIdx = halTxRingDataSelect(prAdapter, prMsduInfo);
+			prDataPort = (ucPortIdx == TX_RING_DATA1_IDX_1) ?
+				prDataPort1 : prDataPort0;
+			QUEUE_INSERT_TAIL(prDataPort,
+					  (struct QUE_ENTRY *) prMsduInfo);
+		} else {
+			/* unset empty queue */
+			u4IsNotAllQueneEmpty &= ~BIT(u4Idx);
 		}
+		prAdapter->u4TxHifResCtlIdx %= MAX_TX_HIF_RES_CTL_NUM;
 	}
+
 	KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_PORT_QUE);
 
 	nicTxMsduQueue(prAdapter, 0, prDataPort0);
@@ -1490,11 +1560,11 @@ void nicTxMsduQueueByRR(struct ADAPTER *prAdapter)
 			(struct QUE_ENTRY *) prMsduInfo);
 	}
 
-	for (i = 0; i < TX_PORT_NUM; i++) {
-		while (QUEUE_IS_NOT_EMPTY(&arTempQue[i])) {
-			QUEUE_REMOVE_HEAD(&arTempQue[i], prMsduInfo,
+	for (u4Idx = 0; u4Idx < TX_PORT_NUM; u4Idx++) {
+		while (QUEUE_IS_NOT_EMPTY(&arTempQue[u4Idx])) {
+			QUEUE_REMOVE_HEAD(&arTempQue[u4Idx], prMsduInfo,
 					  struct MSDU_INFO *);
-			QUEUE_INSERT_HEAD(&prAdapter->rTxPQueue[i],
+			QUEUE_INSERT_HEAD(&prAdapter->rTxPQueue[u4Idx],
 					  (struct QUE_ENTRY *) prMsduInfo);
 		}
 	}

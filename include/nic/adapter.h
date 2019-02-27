@@ -991,6 +991,7 @@ struct WIFI_VAR {
 	uint8_t ucLowLatencyModeScan;
 	uint8_t ucLowLatencyModeReOrder;
 	uint8_t ucLowLatencyModePower;
+	uint8_t ucLowLatencyPacketPriority;
 #endif /* CFG_SUPPORT_LOWLATENCY_MODE */
 #if CFG_SUPPORT_IDC_CH_SWITCH
 	uint8_t ucChannelSwtichColdownTime;
@@ -1554,11 +1555,15 @@ struct ADAPTER {
 	u_int8_t fgEnCfg80211Scan;
 #endif /* CFG_SUPPORT_LOWLATENCY_MODE */
 
+	/* HIF debug flags */
 	bool fgEnHifDbgInfo;
 	uint32_t u4HifDbgFlag;
 	uint32_t u4HifChkFlag;
 	uint32_t u4TxHangFlag;
 	uint32_t u4NoMoreRfb;
+
+	/* TX HIF Control falgs */
+	uint32_t u4TxHifResCtlIdx;
 
 #if CFG_SUPPORT_OSHARE
 	bool fgEnOshareMode;

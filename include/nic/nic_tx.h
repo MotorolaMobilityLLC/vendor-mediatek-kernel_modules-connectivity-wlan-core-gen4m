@@ -530,6 +530,8 @@ enum ENUM_TRAFFIC_CLASS_INDEX {
 
 #define BMC_TC_INDEX TC1_INDEX
 
+#define MAX_TX_HIF_RES_CTL_NUM		10
+
 /* per-Network Tc Resource index */
 enum ENUM_NETWORK_TC_RESOURCE_INDEX {
 	/* QoS Data frame, WMM AC index */
