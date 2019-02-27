@@ -1568,7 +1568,7 @@ static VOID rlmRevisePreferBandwidthNss(
 	}
 }
 
-static VOID rlmReviseMaxBw(
+VOID rlmReviseMaxBw(
 	P_ADAPTER_T prAdapter,
 	UINT_8 ucBssIndex,
 	P_ENUM_CHNL_EXT_T peExtend,
