@@ -81,45 +81,74 @@
 ********************************************************************************
 */
 /* These values must sync from Wifi HAL
- * /frameworks/base/wifi/java/android/net/wifi/WifiManager.java
+ * /hardware/libhardware_legacy/include/hardware_legacy/wifi_hal.h
  */
-#define WIFI_FEATURE_INFRA	      (0x0001) /* Basic infrastructure mode */
-#define WIFI_FEATURE_INFRA_5G         (0x0002) /* Support for 5 GHz Band */
-#define WIFI_FEATURE_PASSPOINT        (0x0004) /* Support for GAS/ANQP */
-#define WIFI_FEATURE_P2P              (0x0008) /* Wifi-Direct */
-#define WIFI_FEATURE_MOBILE_HOTSPOT   (0x0010) /* Soft AP */
-#define WIFI_FEATURE_SCANNER          (0x0020) /* WifiScanner APIs */
-#define WIFI_FEATURE_AWARE            (0x0040) /* Wi-Fi AWare networking */
-#define WIFI_FEATURE_D2D_RTT          (0x0080) /* Device-to-device RTT */
-#define WIFI_FEATURE_D2AP_RTT         (0x0100) /* Device-to-AP RTT */
-#define WIFI_FEATURE_BATCH_SCAN       (0x0200) /* Batched Scan (deprecated) */
-#define WIFI_FEATURE_PNO              (0x0400) /* Preferred network offload */
-#define WIFI_FEATURE_ADDITIONAL_STA   (0x0800) /* Support for two STAs */
-#define WIFI_FEATURE_TDLS             (0x1000) /* Tunnel directed link setup */
-#define WIFI_FEATURE_TDLS_OFFCHANNEL  (0x2000) /* Support for TDLS off channel*/
-#define WIFI_FEATURE_EPR              (0x4000) /* Enhanced power reporting */
-#define WIFI_FEATURE_AP_STA           (0x8000) /* AP STA Concurrency */
-#define WIFI_FEATURE_LINK_LAYER_STATS (0x10000) /* Link layer stats collection*/
-#define WIFI_FEATURE_LOGGER           (0x20000) /* WiFi Logger */
-#define WIFI_FEATURE_HAL_EPNO         (0x40000) /* Enhanced PNO */
-#define WIFI_FEATURE_RSSI_MONITOR     (0x80000) /* RSSI Monitor */
-#define WIFI_FEATURE_MKEEP_ALIVE      (0x100000) /* mkeep_alive */
-#define WIFI_FEATURE_CONFIG_NDO       (0x200000) /* ND offload */
-#define WIFI_FEATURE_TRANSMIT_POWER   (0x400000) /* Capture transmit power */
-#define WIFI_FEATURE_CONTROL_ROAMING  (0x800000) /* Control firmware roaming */
-#define WIFI_FEATURE_IE_WHITELIST     (0x1000000) /* Probe IE white listing */
-#define WIFI_FEATURE_SCAN_RAND        (0x2000000) /* Random MAC & Probe seq */
-#define WIFI_FEATURE_TX_POWER_LIMIT   (0x4000000) /* Set Tx power limit */
+/* Basic infrastructure mode */
+#define WIFI_FEATURE_INFRA              (0x0001)
+/* Support for 5 GHz Band */
+#define WIFI_FEATURE_INFRA_5G           (0x0002)
+/* Support for GAS/ANQP */
+#define WIFI_FEATURE_HOTSPOT            (0x0004)
+/* Wifi-Direct */
+#define WIFI_FEATURE_P2P                (0x0008)
+/* Soft AP */
+#define WIFI_FEATURE_SOFT_AP            (0x0010)
+/* Google-Scan APIs */
+#define WIFI_FEATURE_GSCAN              (0x0020)
+/* Neighbor Awareness Networking */
+#define WIFI_FEATURE_NAN                (0x0040)
+/* Device-to-device RTT */
+#define WIFI_FEATURE_D2D_RTT            (0x0080)
+/* Device-to-AP RTT */
+#define WIFI_FEATURE_D2AP_RTT           (0x0100)
+/* Batched Scan (legacy) */
+#define WIFI_FEATURE_BATCH_SCAN         (0x0200)
+/* Preferred network offload */
+#define WIFI_FEATURE_PNO                (0x0400)
+/* Support for two STAs */
+#define WIFI_FEATURE_ADDITIONAL_STA     (0x0800)
+/* Tunnel directed link setup */
+#define WIFI_FEATURE_TDLS               (0x1000)
+/* Support for TDLS off channel */
+#define WIFI_FEATURE_TDLS_OFFCHANNEL    (0x2000)
+/* Enhanced power reporting */
+#define WIFI_FEATURE_EPR                (0x4000)
+/* Support for AP STA Concurrency */
+#define WIFI_FEATURE_AP_STA             (0x8000)
+/* Link layer stats collection */
+#define WIFI_FEATURE_LINK_LAYER_STATS   (0x10000)
+/* WiFi Logger */
+#define WIFI_FEATURE_LOGGER             (0x20000)
+/* WiFi PNO enhanced */
+#define WIFI_FEATURE_HAL_EPNO           (0x40000)
+/* RSSI Monitor */
+#define WIFI_FEATURE_RSSI_MONITOR       (0x80000)
+/* WiFi mkeep_alive */
+#define WIFI_FEATURE_MKEEP_ALIVE        (0x100000)
+/* ND offload configure */
+#define WIFI_FEATURE_CONFIG_NDO         (0x200000)
+/* Capture Tx transmit power levels */
+#define WIFI_FEATURE_TX_TRANSMIT_POWER  (0x400000)
+/* Enable/Disable firmware roaming */
+#define WIFI_FEATURE_CONTROL_ROAMING    (0x800000)
+/* Support Probe IE white listing */
+#define WIFI_FEATURE_IE_WHITELIST       (0x1000000)
+/* Support MAC & Probe Sequence Number randomization */
+#define WIFI_FEATURE_SCAN_RAND          (0x2000000)
+/* Support Tx Power Limit setting */
+#define WIFI_FEATURE_SET_TX_POWER_LIMIT (0x4000000)
+/* Support Using Body/Head Proximity for SAR */
+#define WIFI_FEATURE_USE_BODY_HEAD_SAR  (0x8000000)
 
-#define WIFI_HAL_FEATURE_SET (WIFI_FEATURE_INFRA |\
-			      WIFI_FEATURE_INFRA_5G |\
-			      WIFI_FEATURE_P2P |\
-			      WIFI_FEATURE_MOBILE_HOTSPOT |\
-			      WIFI_FEATURE_SCANNER |\
-			      WIFI_FEATURE_PNO |\
-			      WIFI_FEATURE_TDLS |\
-			      WIFI_FEATURE_RSSI_MONITOR |\
-			      WIFI_FEATURE_CONTROL_ROAMING\
+/* note: WIFI_FEATURE_GSCAN be enabled just for ACTS test item: scanner */
+#define WIFI_HAL_FEATURE_SET ((WIFI_FEATURE_P2P) |\
+			      (WIFI_FEATURE_SOFT_AP) |\
+			      (WIFI_FEATURE_GSCAN) |\
+			      (WIFI_FEATURE_PNO) |\
+			      (WIFI_FEATURE_TDLS) |\
+			      (WIFI_FEATURE_RSSI_MONITOR) |\
+			      (WIFI_FEATURE_CONTROL_ROAMING) |\
+			      (WIFI_FEATURE_SET_TX_POWER_LIMIT)\
 			      )
 
 /*******************************************************************************
