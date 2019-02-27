@@ -1555,8 +1555,10 @@ struct ADAPTER {
 
 	struct WLAN_DEBUG_INFO rDebugInfo;
 
-	/* tx power control */
-	uint32_t fgTxPwrLimitMask;
+	/* dynamic tx power control */
+	struct list_head rTxPwr_DefaultList;
+	struct list_head rTxPwr_DynamicList;
+
 	/* indicate critical frame */
 	uint32_t u4DhcpState;
 	uint32_t u4EapolState;

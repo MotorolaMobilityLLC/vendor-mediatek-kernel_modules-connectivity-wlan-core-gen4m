@@ -443,7 +443,7 @@ uint32_t wlanAdapterStart(IN struct ADAPTER *prAdapter,
 		/* 4 <2.2> Initialize Feature Options */
 		wlanInitFeatureOption(prAdapter);
 #if CFG_SUPPORT_MTK_SYNERGY
-#if 0 /* u2FeatureReserved is 0 on cervino */
+#if 0 /* u2FeatureReserved is 0 */
 		if (kalIsConfigurationExist(prAdapter->prGlueInfo) == TRUE) {
 			if (prRegInfo->prNvramSettings->u2FeatureReserved &
 			    BIT(MTK_FEATURE_2G_256QAM_DISABLED))
@@ -731,6 +731,10 @@ uint32_t wlanAdapterStart(IN struct ADAPTER *prAdapter,
 #endif
 #endif
 
+		/* Tx Power Control Initialization */
+		/* note: call this API before loading NVRAM */
+		txPwrCtrlInit(prAdapter);
+
 		/* Enable 5G band by default */
 		prAdapter->fgEnable5GBand = TRUE;
 
@@ -757,6 +761,11 @@ uint32_t wlanAdapterStart(IN struct ADAPTER *prAdapter,
 #if CFG_SUPPORT_LOWLATENCY_MODE
 		wlanAdapterStartForLowLatency(prAdapter);
 #endif /* CFG_SUPPORT_LOWLATENCY_MODE */
+
+		/* Tx Power Control load configuration */
+		/* note: call this API after loading NVRAM */
+		txPwrCtrlLoadConfig(prAdapter);
+
 	} while (FALSE);
 
 	if (u4Status == WLAN_STATUS_SUCCESS) {
@@ -843,6 +852,9 @@ uint32_t wlanAdapterStop(IN struct ADAPTER *prAdapter)
 
 	/* System Service Uninitialization */
 	nicUninitSystemService(prAdapter);
+
+	/* tx power control uninitialization */
+	txPwrCtrlUninit(prAdapter);
 
 	nicReleaseAdapterMemory(prAdapter);
 
@@ -4056,7 +4068,26 @@ uint32_t wlanLoadManufactureData_5G(IN struct ADAPTER
 
 	/* 1. set band edge tx power if available */
 	if (pr5GBandEdge->uc5GBandEdgePwrUsed != 0) {
-		rlmDomainSendPwrLimitCmd(prAdapter, PWR_CTRL_TYPE_BANDEDGE_5G);
+		struct CMD_EDGE_TXPWR_LIMIT rCmdEdgeTxPwrLimit;
+
+		rCmdEdgeTxPwrLimit.cBandEdgeMaxPwrCCK = 0;
+		rCmdEdgeTxPwrLimit.cBandEdgeMaxPwrOFDM20 =
+			pr5GBandEdge->c5GBandEdgeMaxPwrOFDM20;
+		rCmdEdgeTxPwrLimit.cBandEdgeMaxPwrOFDM40 =
+			pr5GBandEdge->c5GBandEdgeMaxPwrOFDM40;
+		rCmdEdgeTxPwrLimit.cBandEdgeMaxPwrOFDM80 =
+			pr5GBandEdge->c5GBandEdgeMaxPwrOFDM80;
+
+		wlanSendSetQueryCmd(prAdapter,
+				    CMD_ID_SET_EDGE_TXPWR_LIMIT_5G,
+				    TRUE,
+				    FALSE,
+				    FALSE,
+				    NULL,
+				    NULL, sizeof(struct CMD_EDGE_TXPWR_LIMIT),
+				    (uint8_t *) &rCmdEdgeTxPwrLimit, NULL, 0);
+
+		/* dumpMemory8(&rCmdEdgeTxPwrLimit,4); */
 	}
 
 	/* 2.set channel offset for 8 sub-band */
@@ -4135,7 +4166,7 @@ uint32_t wlanLoadManufactureData(IN struct ADAPTER
 			/* prRegInfo->prNvramSettings->u2Part2PeerVersion; */
 	}
 
-#if 0 /* Cervino will redefine version */
+#if 0 /* will redefine version */
 #if (CFG_SW_NVRAM_VERSION_CHECK == 1)
 	if (prAdapter->rVerInfo.u2Part1CfgPeerVersion >
 	    CFG_DRV_OWN_VERSION
@@ -4151,7 +4182,7 @@ uint32_t wlanLoadManufactureData(IN struct ADAPTER
 #endif
 #endif
 
-#if 0 /* Cervino removed */
+#if 0 /* removed */
 	/* MT6620 E1/E2 would be ignored directly */
 	if (prAdapter->rVerInfo.u2Part1CfgOwnVersion == 0x0001) {
 		prRegInfo->ucTxPwrValid = 1;
@@ -4167,13 +4198,16 @@ uint32_t wlanLoadManufactureData(IN struct ADAPTER
 #endif
 
 	/* Todo : Temp Open 20150806 Sam */
-#if 0	/* Cervino read setting from nvram */
+#if 0	/* read setting from nvram */
 	prRegInfo->ucEnable5GBand = 1;
 	prRegInfo->ucSupport5GBand = 1;
 #endif
 
 	/* 3. Check if needs to support 5GHz */
 	if (prRegInfo->ucEnable5GBand) {
+#if CFG_SUPPORT_NVRAM_5G
+		wlanLoadManufactureData_5G(prAdapter, prRegInfo);
+#endif
 		/* check if it is disabled by hardware */
 		if (prAdapter->fgIsHw5GBandDisabled
 		    || prRegInfo->ucSupport5GBand == 0)
@@ -4183,7 +4217,7 @@ uint32_t wlanLoadManufactureData(IN struct ADAPTER
 	} else
 		prAdapter->fgEnable5GBand = FALSE;
 
-#if 0 /* Cervino removed */
+#if 0 /* removed */
 	/* 4. Send EFUSE data */
 #if CFG_SUPPORT_NVRAM_5G
 	/* If NvRAM read failed, this pointer will be NULL */
@@ -4273,12 +4307,27 @@ uint32_t wlanLoadManufactureData(IN struct ADAPTER
 	/* Update supported channel list in channel table */
 	wlanUpdateChannelTable(prAdapter->prGlueInfo);
 
+#if 0 /* removed */
 	/* 7. set band edge tx power if available */
 	if (prRegInfo->fg2G4BandEdgePwrUsed) {
-		rlmDomainSendPwrLimitCmd(prAdapter, PWR_CTRL_TYPE_BANDEDGE_2G);
-	}
+		struct CMD_EDGE_TXPWR_LIMIT rCmdEdgeTxPwrLimit;
 
-#if 0 /* gen4m removed */
+		rCmdEdgeTxPwrLimit.cBandEdgeMaxPwrCCK =
+			prRegInfo->cBandEdgeMaxPwrCCK;
+		rCmdEdgeTxPwrLimit.cBandEdgeMaxPwrOFDM20 =
+			prRegInfo->cBandEdgeMaxPwrOFDM20;
+		rCmdEdgeTxPwrLimit.cBandEdgeMaxPwrOFDM40 =
+			prRegInfo->cBandEdgeMaxPwrOFDM40;
+
+		wlanSendSetQueryCmd(prAdapter,
+				    CMD_ID_SET_EDGE_TXPWR_LIMIT,
+				    TRUE,
+				    FALSE,
+				    FALSE,
+				    NULL,
+				    NULL, sizeof(struct CMD_EDGE_TXPWR_LIMIT),
+				    (uint8_t *) &rCmdEdgeTxPwrLimit, NULL, 0);
+	}
 	/*8. Set 2.4G AC power */
 	if (prRegInfo->prOldEfuseMapping
 	    && prRegInfo->prOldEfuseMapping->uc11AcTxPwrValid2G) {
@@ -4298,20 +4347,7 @@ uint32_t wlanLoadManufactureData(IN struct ADAPTER
 	}
 #endif /* if 0 */
 
-	/* 9. set 5G band edge tx power if available */
-#if CFG_SUPPORT_NVRAM_5G
-	if (prRegInfo->ucEnable5GBand)
-		wlanLoadManufactureData_5G(prAdapter, prRegInfo);
-#endif
-
-#if CFG_SUPPORT_FCC_DYNAMIC_TX_PWR_ADJUST
-	/* 10. Tx Power Adjust for FCC/CE Certification */
-	if (g_rFccTxPwrAdjust.fgFccTxPwrAdjust) { /* 1:enable; 0:disable */
-		rlmDomainSendPwrLimitCmd(prAdapter, PWR_CTRL_TYPE_FCC_WIFION);
-	}
-#endif
-
-	/* 11. Send the full Parameters of NVRAM to FW */
+	/* 9. Send the full Parameters of NVRAM to FW */
 	kalMemCopy(&prCmdNvramSettings->rNvramSettings,
 			   &prRegInfo->prNvramSettings->u2Part1OwnVersion,
 			   sizeof(struct WIFI_CFG_PARAM_STRUCT));

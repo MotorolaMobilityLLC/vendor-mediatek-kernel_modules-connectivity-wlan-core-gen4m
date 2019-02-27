@@ -218,9 +218,8 @@
 #define CMD_RM_IT		"RM-IT"
 #define CMD_DUMP_UAPSD		"dumpuapsd"
 #define CMD_FW_EVENT		"FW-EVENT "
-#define CMD_SET_FCC_CERT        "SET_FCC_CHANNEL"
-#define CMD_SET_3STEPS_BACKOFF	"SET_3STEPS_BACKOFF"
 #define CMD_GET_WIFI_TYPE	"GET_WIFI_TYPE"
+#define CMD_SET_PWR_CTRL        "SET_PWR_CTRL"
 #define PRIV_CMD_SIZE 512
 #define CMD_SET_FIXED_RATE      "FixedRate"
 #define CMD_GET_VERSION         "VER"
@@ -367,6 +366,10 @@ reqExtSetAcpiDevicePowerState(IN struct GLUE_INFO
 			      IN void *pvSetBuffer, IN uint32_t u4SetBufferLen,
 			      OUT uint32_t *pu4SetInfoLen);
 
+/* dynamic tx power control */
+static int priv_driver_set_power_control(IN struct net_device *prNetDev,
+			      IN char *pcCommand,
+			      IN int i4TotalLen);
 
 /*******************************************************************************
  *                       P R I V A T E   D A T A
@@ -2109,195 +2112,6 @@ __priv_set_struct(IN struct net_device *prNetDev,
 		status = priv_set_ndis(prNetDev, prNdisReq, &u4BufLen);
 		break;
 
-#if CFG_SUPPORT_TX_POWER_BACK_OFF
-	case PRIV_CMD_SET_TX_POWER:
-		{
-			enum ENUM_TX_POWER_CTRL_TYPE eCtrlType;
-			struct PARAM_MTK_WIFI_TEST_STRUCT_2 *prTestStruct;
-			uint32_t u4CmdLen = 0;
-			uint32_t u4SetInfoLen = 0;
-			uint8_t cStartTxBackOff = 0;
-			bool bFgForceExecution = FALSE;
-			/* TxPwrBackOffParam's 0th byte:
-			 *     contains enable/disable TxPowerBackOff for 2G
-			 * TxPwrBackOffParam's 1st byte:
-			 *     contains default TxPowerBackOff value for 2G
-			 * TxPwrBackOffParam's 2nd byte:
-			 *     contains enable/disable TxPowerBackOff for 5G
-			 * TxPwrBackOffParam's 3rd byte:
-			 *     contains default TxPowerBackOff value for 5G
-			 */
-			uint32_t TxPwrBackOffParam = 0;
-
-			prTestStruct = (struct PARAM_MTK_WIFI_TEST_STRUCT_2 *)
-								&aucOidBuf[0];
-			u4CmdLen = prIwReqData->data.length;
-			if (u4CmdLen > sizeof(aucOidBuf)) {
-				DBGLOG(REQ, ERROR,
-				"SET_TX_POWER: Input data length is invalid %u\n",
-				u4CmdLen);
-				return -EINVAL;
-			}
-
-			if (copy_from_user(prTestStruct,
-			    prIwReqData->data.pointer, u4CmdLen)) {
-				DBGLOG(REQ, INFO,
-				       "SET_TX_POWER: copy from user failed\n"
-				       );
-				return -EFAULT;
-			}
-
-			DBGLOG(REQ, INFO,
-				"SET_TX_POWER: FuncIndex=%u, FuncData=%u[0x%x], FuncData2=%u[0x%x], Enable2G=%d, MaxPower2G=%u, Enable5G=%d, MaxPower5G=%u\n",
-				prTestStruct->u4FuncIndex,
-				prTestStruct->u4FuncData,
-				prTestStruct->u4FuncData,
-				prTestStruct->u4FuncData2,
-				prTestStruct->u4FuncData2,
-				g_bTxPowerLimitEnable2G,
-				g_cTxBackOffMaxPower2G,
-				g_bTxPowerLimitEnable5G,
-				g_cTxBackOffMaxPower5G);
-
-			/* u4FuncData: start or stop */
-			cStartTxBackOff = prTestStruct->u4FuncData;
-
-			/* u4FuncData2: used in dynamiclly set back off
-			 *    from ioctl with a specific power value.
-			 *    if u4FuncData2 is not 0, driver will force
-			 *    to send cmd to firmware.
-			 */
-			if (prTestStruct->u4FuncData2 != 0)
-				bFgForceExecution = TRUE;
-
-			if ((g_bTxPowerLimitEnable2G == TRUE)
-				|| (g_bTxPowerLimitEnable5G == TRUE)
-				|| bFgForceExecution) {
-				if (cStartTxBackOff == TRUE) {
-					uint8_t ucTxBackOffMaxPower =
-						prTestStruct->u4FuncData2 * 2;
-
-					if (ucTxBackOffMaxPower != 0) {
-						g_cTxBackOffMaxPower2G =
-							ucTxBackOffMaxPower;
-						g_bTxPowerLimitEnable2G = 1;
-					}
-					TxPwrBackOffParam |=
-						g_bTxPowerLimitEnable2G;
-					TxPwrBackOffParam |=
-						g_cTxBackOffMaxPower2G << 8;
-					if (ucTxBackOffMaxPower != 0) {
-						g_cTxBackOffMaxPower5G =
-							ucTxBackOffMaxPower;
-						g_bTxPowerLimitEnable5G = 1;
-					}
-					TxPwrBackOffParam |=
-						g_bTxPowerLimitEnable5G << 16;
-					TxPwrBackOffParam |= (unsigned long)
-						g_cTxBackOffMaxPower5G << 24;
-					DBGLOG(REQ, INFO,
-					       "SET_TX_POWER: Start BackOff, TxPwrBackOffParam=0x%lx\n",
-					       TxPwrBackOffParam);
-				} else {
-					/* First byte is start/stop */
-					TxPwrBackOffParam = 0;
-					DBGLOG(REQ, INFO,
-					       "SET_TX_POWER: Stop BackOff, TxPwrBackOffParam=0x%lx\n",
-					       TxPwrBackOffParam);
-				}
-
-				kalMemCopy(&g_TxPwrBackOffParam,
-					   &TxPwrBackOffParam, 4);
-				eCtrlType = (TxPwrBackOffParam == 0) ?
-					PWR_CTRL_TYPE_DISABLE_SAR_IOCTL :
-					PWR_CTRL_TYPE_ENABLE_SAR_IOCTL;
-
-				status = kalIoctl(prGlueInfo,
-						wlanoidTxPowerControl,
-						&eCtrlType,
-						sizeof(enum
-						       ENUM_TX_POWER_CTRL_TYPE
-						       ),
-						FALSE,
-						FALSE,
-						TRUE,
-						&u4SetInfoLen);
-			}
-		}
-		break;
-#endif
-
-#if CFG_SUPPORT_FCC_POWER_BACK_OFF
-	case PRIV_CMD_SET_FCC:
-		{
-			struct PARAM_MTK_WIFI_TEST_STRUCT *prTestStruct;
-			int32_t i4TotalLen = strlen(CMD_SET_FCC_CERT) + 2;
-			char *pCommand = NULL;
-
-			u4CmdLen = prIwReqData->data.length;
-			if (u4CmdLen > CMD_OID_BUF_LENGTH)
-				return -EINVAL;
-
-			if (copy_from_user(&aucOidBuf[0],
-					   prIwReqData->data.pointer,
-					   u4CmdLen)) {
-				status = -EFAULT;
-				break;
-			}
-
-			prTestStruct = (struct PARAM_MTK_WIFI_TEST_STRUCT *)
-								&aucOidBuf[0];
-			pCommand = kalMemAlloc(strlen(CMD_SET_FCC_CERT) + 2,
-					       VIR_MEM_TYPE);
-			if (pCommand == NULL) {
-				DBGLOG(REQ, INFO, "alloc fail\n");
-				return -EINVAL;
-			}
-			kalMemZero(pCommand, i4TotalLen);
-			kalSprintf(pCommand, "%s %s", CMD_SET_FCC_CERT,
-				((prTestStruct->u4FuncData == 1) ? "0" : "-1"));
-
-			priv_driver_cmds(prNetDev, pCommand, i4TotalLen);
-			kalMemFree(pCommand, VIR_MEM_TYPE, i4TotalLen);
-		}
-		break;
-#endif /* CFG_SUPPORT_FCC_POWER_BACK_OFF */
-
-	case PRIV_CMD_SET_3STEPS_BACKOFF:
-		{
-			struct PARAM_MTK_WIFI_TEST_STRUCT *prTestStruct;
-			int32_t i4TotalLen = strlen(CMD_SET_3STEPS_BACKOFF) + 2;
-			char *pCommand = NULL;
-
-			u4CmdLen = prIwReqData->data.length;
-			if (u4CmdLen > CMD_OID_BUF_LENGTH)
-				return -EINVAL;
-
-			if (copy_from_user(&aucOidBuf[0],
-					   prIwReqData->data.pointer,
-					   u4CmdLen)) {
-				status = -EFAULT;
-				break;
-			}
-
-			prTestStruct = (struct PARAM_MTK_WIFI_TEST_STRUCT *)
-								&aucOidBuf[0];
-			pCommand = kalMemAlloc(
-					strlen(CMD_SET_3STEPS_BACKOFF) + 2,
-					VIR_MEM_TYPE);
-			if (pCommand == NULL) {
-				DBGLOG(REQ, INFO, "alloc fail\n");
-				return -EINVAL;
-			}
-			kalMemZero(pCommand, i4TotalLen);
-			kalSprintf(pCommand, "%s %d",
-				   CMD_SET_3STEPS_BACKOFF,
-				   prTestStruct->u4FuncData);
-			priv_driver_cmds(prNetDev, pCommand, i4TotalLen);
-			kalMemFree(pCommand, VIR_MEM_TYPE, i4TotalLen);
-		}
-		break;
-
 	case PRIV_CMD_GET_WIFI_TYPE:
 		{
 			int32_t i4ResultLen;
@@ -2334,6 +2148,35 @@ __priv_set_struct(IN struct net_device *prNetDev,
 				return -EFAULT;
 			}
 
+		}
+		break;
+
+	/* dynamic tx power control */
+	case PRIV_CMD_SET_PWR_CTRL:
+		{
+			char *pCommand = NULL;
+
+			u4CmdLen = prIwReqData->data.length;
+			if (u4CmdLen > CMD_OID_BUF_LENGTH)
+				return -EINVAL;
+
+			if (copy_from_user(&aucOidBuf[0],
+					   prIwReqData->data.pointer,
+					   u4CmdLen)) {
+				status = -EFAULT;
+				break;
+			}
+
+			pCommand = kalMemAlloc(u4CmdLen + 1, VIR_MEM_TYPE);
+			if (pCommand == NULL) {
+				DBGLOG(REQ, INFO, "alloc fail\n");
+				return -EINVAL;
+			}
+			kalMemZero(pCommand, u4CmdLen + 1);
+			kalMemCopy(pCommand, aucOidBuf, u4CmdLen);
+
+			priv_driver_cmds(prNetDev, pCommand, u4CmdLen);
+			kalMemFree(pCommand, VIR_MEM_TYPE, i4TotalLen);
 		}
 		break;
 
@@ -12983,149 +12826,6 @@ static int priv_driver_set_amsdu_size(IN struct net_device *prNetDev,
 	return i4BytesWritten;
 }
 
-#if CFG_SUPPORT_FCC_POWER_BACK_OFF
-static int priv_driver_set_fcc_cert(IN struct net_device *prNetDev,
-				      IN char *pcCommand, IN int i4TotalLen)
-{
-	struct GLUE_INFO *prGlueInfo = NULL;
-	enum ENUM_TX_POWER_CTRL_TYPE eCtrlType;
-	struct FCC_TX_PWR_ADJUST rFccTxPwrAdjust;
-	uint32_t rStatus = WLAN_STATUS_FAILURE;
-	int32_t i4BytesWritten = 0;
-
-	ASSERT(prNetDev);
-	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
-		return -1;
-	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
-
-	if (g_rFccTxPwrAdjust.fgFccTxPwrAdjust == 0)
-		DBGLOG(RLM, INFO,
-				"SET_FCC_CHANNEL is disabled: %d\n",
-				g_rFccTxPwrAdjust.fgFccTxPwrAdjust);
-	else {
-		pcCommand += (strlen(CMD_SET_FCC_CERT) + 1);
-		if ((strnicmp(pcCommand, "-1", strlen("-1"))
-				    != 0) && (*pcCommand != '0'))
-			DBGLOG(RLM, INFO,
-					"SET_FCC_CHANNEL: parameter(%s) is not correct(0 or -1)\n",
-					pcCommand);
-		else {
-			kalMemSet(&rFccTxPwrAdjust, 0,
-					sizeof(struct FCC_TX_PWR_ADJUST));
-#if 0
-			/* drop 7dB */
-			rFccTxPwrAdjust.uOffsetCCK = 14;
-			/* drop 8dB */
-			rFccTxPwrAdjust.uOffsetHT20 = 16;
-			/* drop 7dB */
-			rFccTxPwrAdjust.uOffsetHT40 = 14;
-			/* start channel */
-			rFccTxPwrAdjust.aucChannelCCK[0] = 12;
-			/* end channel */
-			rFccTxPwrAdjust.aucChannelCCK[1] = 13;
-			/* start channel */
-			rFccTxPwrAdjust.aucChannelHT20[0] = 12;
-			/* end channel */
-			rFccTxPwrAdjust.aucChannelHT20[1] = 13;
-			/* start channel:
-			 *     primiary channel 12, HT40,
-			 *     center channel (10) -2
-			 */
-			rFccTxPwrAdjust.aucChannelHT40[0] = 8;
-			/* end channel:
-			 *     primiary channel 12, HT40,
-			 *     center channel (11) -2
-			 */
-			rFccTxPwrAdjust.aucChannelHT40[1] = 9;
-			/* set special bandedge*/
-			rFccTxPwrAdjust.aucChannelBandedge[0] =
-							11;
-			rFccTxPwrAdjust.aucChannelBandedge[1] =
-							13;
-#else
-			kalMemCopy(&rFccTxPwrAdjust,
-				&g_rFccTxPwrAdjust,
-				sizeof(struct FCC_TX_PWR_ADJUST));
-			/* set special channel band edge */
-			/* kalMemCopy(
-			 *   &rFccTxPwrAdjust.Channel_Bandedge,
-			 *   &prGlueInfo->rRegInfo.
-			 *        aucChannelBandEdge,
-			 *    sizeof(UINT_8)*2);
-			 */
-#endif
-			rFccTxPwrAdjust.fgFccTxPwrAdjust =
-				(*pcCommand == '0') ? 1 : 0;
-			eCtrlType = (*pcCommand == '0') ?
-				PWR_CTRL_TYPE_ENABLE_FCC_IOCTL :
-				PWR_CTRL_TYPE_DISABLE_FCC_IOCTL;
-
-			DBGLOG(RLM, INFO,
-			       "SET_FCC_CHANNEL: (%d)\n",
-			       rFccTxPwrAdjust.
-			       fgFccTxPwrAdjust);
-
-			rStatus = kalIoctl(prGlueInfo,
-				wlanoidTxPowerControl,
-				&eCtrlType,
-				sizeof(enum
-				       ENUM_TX_POWER_CTRL_TYPE
-				       ),
-				FALSE,
-				FALSE,
-				TRUE,
-				&i4TotalLen);
-
-			if (rStatus == WLAN_STATUS_SUCCESS)
-				i4BytesWritten = i4TotalLen;
-		}
-	}
-	return i4BytesWritten;
-}
-#endif /* CFG_SUPPORT_FCC_POWER_BACK_OFF */
-
-static int priv_driver_set_3steps_backoff(IN struct net_device *prNetDev,
-				      IN char *pcCommand, IN int i4TotalLen)
-{
-	struct GLUE_INFO *prGlueInfo = NULL;
-	enum ENUM_TX_POWER_CTRL_TYPE eCtrlType;
-	uint32_t rStatus = WLAN_STATUS_FAILURE;
-	int32_t i4BytesWritten = 0;
-
-	ASSERT(prNetDev);
-	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
-		return -1;
-	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
-
-	pcCommand += (strlen(CMD_SET_3STEPS_BACKOFF) + 1);
-	if (*pcCommand == '0') {
-		g_i3StepsBackOffIdx = 0;
-		eCtrlType = PWR_CTRL_TYPE_DISABLE_3STEPS_BACKOFF;
-	} else {
-		if (*pcCommand == '1')
-			g_i3StepsBackOffIdx = 1;
-		else if (*pcCommand == '2')
-			g_i3StepsBackOffIdx = 2;
-		else if (*pcCommand == '3')
-			g_i3StepsBackOffIdx = 3;
-		else {
-			DBGLOG(RLM, ERROR, "invalid index:%c\n", *pcCommand);
-			return -1;
-		}
-		eCtrlType = PWR_CTRL_TYPE_ENABLE_3STEPS_BACKOFF;
-	}
-
-	DBGLOG(RLM, INFO, "SET_3STEPS_BACKOFF: (%d)\n", g_i3StepsBackOffIdx);
-
-	rStatus = kalIoctl(prGlueInfo, wlanoidTxPowerControl, &eCtrlType,
-			   sizeof(enum ENUM_TX_POWER_CTRL_TYPE),
-			   FALSE, FALSE, TRUE, &i4TotalLen);
-	if (rStatus == WLAN_STATUS_SUCCESS)
-		i4BytesWritten = i4TotalLen;
-
-	return i4BytesWritten;
-}
-
 static int priv_driver_get_wifi_type(IN struct net_device *prNetDev,
 				     IN char *pcCommand, IN int i4TotalLen)
 {
@@ -13456,16 +13156,12 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers[] = {
 	{CMD_SET_DRV_SER, priv_driver_set_drv_ser},
 	{CMD_SET_SW_AMSDU_NUM, priv_driver_set_amsdu_num},
 	{CMD_SET_SW_AMSDU_SIZE, priv_driver_set_amsdu_size},
-#if CFG_SUPPORT_FCC_POWER_BACK_OFF
-	{CMD_SET_FCC_CERT, priv_driver_set_fcc_cert},
-#endif
 #if CFG_ENABLE_WIFI_DIRECT
 	{CMD_P2P_SET_PS, priv_driver_set_p2p_ps},
 	{CMD_P2P_SET_NOA, priv_driver_set_p2p_noa},
 #endif
-	{CMD_SET_3STEPS_BACKOFF, priv_driver_set_3steps_backoff},
 	{CMD_GET_WIFI_TYPE, priv_driver_get_wifi_type},
-	{CMD_GET_MU_RX_PKTCNT, priv_driver_show_rx_stat},
+	{CMD_SET_PWR_CTRL, priv_driver_set_power_control},
 };
 
 int32_t priv_driver_cmds(IN struct net_device *prNetDev, IN int8_t *pcCommand,
@@ -15402,4 +15098,67 @@ priv_driver_auto_enable_ncho(IN struct net_device *prNetDev)
 	return TRUE;
 }
 
-#endif
+#endif /* CFG_SUPPORT_NCHO */
+
+/* dynamic tx power control */
+static int priv_driver_set_power_control(IN struct net_device *prNetDev,
+				  IN char *pcCommand, IN int i4TotalLen)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct PARAM_TX_PWR_CTRL_IOCTL rPwrCtrlParam = { 0 };
+	u_int8_t fgIndex = FALSE;
+	char *ptr = pcCommand, *ptr2 = NULL;
+	char *str = NULL, *cmd = NULL, *name = NULL, *setting = NULL;
+	uint8_t index = 0;
+	uint32_t u4SetInfoLen = 0;
+
+	while ((str = strsep(&ptr, " ")) != NULL) {
+		if (kalStrLen(str) <= 0)
+			continue;
+		if (cmd == NULL)
+			cmd = str;
+		else if (name == NULL)
+			name = str;
+		else if (fgIndex == FALSE) {
+			ptr2 = str;
+			if (kalkStrtou8(str, 0, &index) != 0) {
+				DBGLOG(REQ, INFO,
+				       "index is wrong: %s\n", ptr2);
+				return -1;
+			}
+			fgIndex = TRUE;
+		} else if (setting == NULL) {
+			setting = str;
+			break;
+		}
+	}
+
+	if ((name == NULL) || (fgIndex == FALSE)) {
+		DBGLOG(REQ, INFO, "name(%s) or fgIndex(%d) is wrong\n",
+		       name, fgIndex);
+		return -1;
+	}
+
+	rPwrCtrlParam.fgApplied = (index == 0) ? FALSE : TRUE;
+	rPwrCtrlParam.name = name;
+	rPwrCtrlParam.index = index;
+	rPwrCtrlParam.newSetting = setting;
+
+	DBGLOG(REQ, INFO, "applied=[%d], name=[%s], index=[%u], setting=[%s]\n",
+	       rPwrCtrlParam.fgApplied,
+	       rPwrCtrlParam.name,
+	       rPwrCtrlParam.index,
+	       rPwrCtrlParam.newSetting);
+
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+	kalIoctl(prGlueInfo,
+		 wlanoidTxPowerControl,
+		 (void *)&rPwrCtrlParam,
+		 sizeof(struct PARAM_TX_PWR_CTRL_IOCTL),
+		 FALSE,
+		 FALSE,
+		 TRUE,
+		 &u4SetInfoLen);
+
+	return 0;
+}

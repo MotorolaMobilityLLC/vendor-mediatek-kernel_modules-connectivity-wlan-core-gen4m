@@ -1317,13 +1317,15 @@ nla_put_failure:
 int mtk_cfg80211_vendor_set_tx_power_scenario(struct wiphy *wiphy,
 		struct wireless_dev *wdev, const void *data, int data_len)
 {
-	enum ENUM_TX_POWER_CTRL_TYPE eCtrlType;
+	struct PARAM_TX_PWR_CTRL_IOCTL rPwrCtrlParam = { 0 };
 	struct GLUE_INFO *prGlueInfo;
 	struct nlattr *attr;
+	struct sk_buff *skb;
 	uint32_t u4Scenario;
 	uint32_t rStatus = WLAN_STATUS_SUCCESS;
 	uint32_t u4SetInfoLen = 0;
-	struct sk_buff *skb;
+	uint8_t index = 0;
+	char name[] = { "_G_Scenario" };
 
 	ASSERT(wiphy);
 	ASSERT(wdev);
@@ -1347,24 +1349,35 @@ int mtk_cfg80211_vendor_set_tx_power_scenario(struct wiphy *wiphy,
 		return -EINVAL;
 
 	if (u4Scenario == UINT_MAX) {
-		g_iTxPwrScenarioIdx = -1;
-		eCtrlType = PWR_CTRL_TYPE_DISABLE_TXPWR_SCENARIO;
+		index = 0;
 	} else if ((u4Scenario >= 0) && (u4Scenario <= 4)) {
-		g_iTxPwrScenarioIdx = u4Scenario;
-		eCtrlType = PWR_CTRL_TYPE_ENABLE_TXPWR_SCENARIO;
+		index = u4Scenario + 1;
 	} else {
 		DBGLOG(REQ, ERROR, "invalid scenario index: %u\n", u4Scenario);
 		return -EINVAL;
 	}
 
-	DBGLOG(REQ, INFO,
-		"g_iTxPwrScenarioIdx=%d, u4Scenario=%u, UINT_MAX=%u, iftype=%d\n",
-		g_iTxPwrScenarioIdx, u4Scenario, UINT_MAX,
-		wdev->iftype);
+	rPwrCtrlParam.fgApplied = (index == 0) ? FALSE : TRUE;
+	rPwrCtrlParam.name = name;
+	rPwrCtrlParam.index = index;
 
-	rStatus = kalIoctl(prGlueInfo, wlanoidTxPowerControl, &eCtrlType,
-			   sizeof(enum ENUM_TX_POWER_CTRL_TYPE),
-			   FALSE, FALSE, TRUE, &u4SetInfoLen);
+	DBGLOG(REQ, INFO,
+	       "applied=[%d], name=[%s], index=[%u], setting=[%s], UINT_MAX=[%u], iftype=[%d]\n",
+	       rPwrCtrlParam.fgApplied,
+	       rPwrCtrlParam.name,
+	       rPwrCtrlParam.index,
+	       rPwrCtrlParam.newSetting,
+	       UINT_MAX,
+	       wdev->iftype);
+
+	rStatus = kalIoctl(prGlueInfo,
+		 wlanoidTxPowerControl,
+		 (void *)&rPwrCtrlParam,
+		 sizeof(struct PARAM_TX_PWR_CTRL_IOCTL),
+		 FALSE,
+		 FALSE,
+		 TRUE,
+		 &u4SetInfoLen);
 
 	skb = cfg80211_vendor_cmd_alloc_reply_skb(wiphy, sizeof(rStatus));
 	if (!skb) {

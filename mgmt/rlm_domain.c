@@ -75,21 +75,29 @@
  *                              C O N S T A N T S
  *******************************************************************************
  */
-/* Tx Power Control Labels */
-char *g_ENUM_TX_POWER_CTRL_TYPE_LABEL[] = {
-	"PWR_CTRL_TYPE_DOMAIN",
-	"PWR_CTRL_TYPE_BANDEDGE_2G",
-	"PWR_CTRL_TYPE_BANDEDGE_5G",
-	"PWR_CTRL_TYPE_FCC_WIFION",
-	"PWR_CTRL_TYPE_ENABLE_FCC_IOCTL",
-	"PWR_CTRL_TYPE_DISABLE_FCC_IOCTL",
-	"PWR_CTRL_TYPE_ENABLE_SAR_IOCTL",
-	"PWR_CTRL_TYPE_DISABLE_SAR_IOCTL",
-	"PWR_CTRL_TYPE_ENABLE_TXPWR_SCENARIO",
-	"PWR_CTRL_TYPE_DISABLE_TXPWR_SCENARIO",
-	"PWR_CTRL_TYPE_ENABLE_3STEPS_BACKOFF",
-	"PWR_CTRL_TYPE_DISABLE_3STEPS_BACKOFF",
-	"PWR_CTRL_TYPE_NUM"
+/* dynamic tx power control */
+char *g_ENUM_TX_POWER_CTRL_CHANNEL_TYPE[] = {
+	"NORMAL",
+	"ALL",
+	"RANGE",
+	"2G4",
+	"5G",
+	"BANDEDGE_2G4",
+	"BANDEDGE_5G",
+	"5GBAND1",
+	"5GBAND2",
+	"5GBAND3",
+	"5GBAND4",
+};
+
+char *g_paryWayLabel[] = {
+	"wifi on",
+	"ioctl"
+};
+
+char *g_paryOpLabel[] = {
+	"power level",
+	"power offset"
 };
 
 /*******************************************************************************
@@ -101,55 +109,16 @@ char *g_ENUM_TX_POWER_CTRL_TYPE_LABEL[] = {
  *                            P U B L I C   D A T A
  *******************************************************************************
  */
-/* Tx Power Control Setting for Bandedge */
-uint8_t g_aucBandEdge5G[2] = {48, 138};
-
-#if (CFG_SUPPORT_FCC_POWER_BACK_OFF || CFG_SUPPORT_FCC_DYNAMIC_TX_PWR_ADJUST)
-/* Tx Power Control Setting for FCC */
-struct FCC_TX_PWR_ADJUST g_rFccTxPwrAdjust = {
-	1,  /* 1:enable; 0:disable */
-	14, /* Offset_CCK: drop 7dB */
-	16, /* Offset_HT20: drop 8dB */
-	14, /* Offset_HT40: drop 7dB */
-	{12, 13}, /* Channel_CCK[0]: start channel */
-		  /* Channel_CCK[1]: end channel */
-	{12, 13}, /* Channel_HT20[0]: start channel */
-		  /* Channel_HT20[1]: end channel */
-	{8, 9} /* Channel_HT40[0]: start channel,
-		*     primiary channel 12, HT40, center channel (10) -2
-		* Channel_HT40[1]: end channel, primiary channel 12,
-		*     HT40,  center channel (11) -2
-		*/
+/* dynamic tx power control */
+char *g_rTxPowerCtrlDefaultSetting[] = {
+	"_SAR_PwrLevel;1;2;1;[2G4,,,,,,,,,][5G,,,,,,,,,]",
+	"_SAR_PwrOffset;1;2;2;[2G4,,,,,,,,,][5G,,,,,,,,,]",
+	"_G_Scenario;1;2;1;[ALL,,,,,,,,,]",
+	"_G_Scenario;2;2;1;[ALL,,,,,,,,,]",
+	"_G_Scenario;3;2;1;[ALL,,,,,,,,,]",
+	"_G_Scenario;4;2;1;[ALL,,,,,,,,,]",
+	"_G_Scenario;5;2;1;[ALL,,,,,,,,,]",
 };
-#endif /* (CFG_SUPPORT_FCC_POWER_BACK_OFF ||
-	*  CFG_SUPPORT_FCC_DYNAMIC_TX_PWR_ADJUST)
-	*/
-
-#if CFG_SUPPORT_TX_POWER_BACK_OFF
-/* Tx Power Control Setting for SAR */
-bool g_bTxPowerLimitEnable2G = TRUE;
-uint8_t g_cTxBackOffMaxPower2G = 10;
-bool g_bTxPowerLimitEnable5G = TRUE;
-uint8_t g_cTxBackOffMaxPower5G = 10;
-
-/* TxPwrBackOffParam's 0th byte contains enable/disable TxPowerBackOff for 2G */
-/* TxPwrBackOffParam's 1st byte contains default TxPowerBackOff value for 2G */
-/* TxPwrBackOffParam's 2nd byte contains enable/disable TxPowerBackOff for 5G */
-/* TxPwrBackOffParam's 3rd byte contains default TxPowerBackOff value for 5G */
-uint32_t g_TxPwrBackOffParam;
-
-/* set tx power scenario */
-int32_t g_iTxPwrScenarioIdx = -1; /* -1:reset, >=0:scenario index */
-bool g_bTxPwrScenarioEnable2G = TRUE;
-uint8_t g_acTxPwrScenarioMaxPower2G[5] = { 10, 12, 14, 16, 18 };
-bool g_bTxPwrScenarioEnable5G = TRUE;
-uint8_t g_acTxPwrScenarioMaxPower5G[5] = { 20, 22, 24, 26, 28 };
-
-/* 3 steps Wi-Fi power back-off */
-int32_t g_i3StepsBackOffIdx = -1; /* 0:reset, 1:-2db, 2:-4db, 3:-6db */
-int8_t g_ac3StepsPoewrOffset[] = { -2, -4, -6 };
-
-#endif /* CFG_SUPPORT_TX_POWER_BACK_OFF */
 
 /* The following country or domain shall be set from host driver.
  * And host driver should pass specified DOMAIN_INFO_ENTRY to MT6620 as
@@ -1117,7 +1086,7 @@ void rlmDomainSendCmd(struct ADAPTER *prAdapter)
 		rlmDomainSendPassiveScanInfoCmd(prAdapter);
 	rlmDomainSendDomainInfoCmd(prAdapter);
 #if CFG_SUPPORT_PWR_LIMIT_COUNTRY
-	rlmDomainSendPwrLimitCmd(prAdapter, PWR_CTRL_TYPE_DOMAIN);
+	rlmDomainSendPwrLimitCmd(prAdapter);
 #endif
 }
 
@@ -2353,18 +2322,17 @@ void rlmDomainBuildCmdByConfigTable(struct ADAPTER *prAdapter,
  * @return (none)
  */
 /*----------------------------------------------------------------------------*/
-uint32_t rlmDomainSendPwrLimitCmd_V2(struct ADAPTER *prAdapter)
+void rlmDomainSendPwrLimitCmd_V2(struct ADAPTER *prAdapter)
 {
-	uint32_t rStatus = WLAN_STATUS_SUCCESS;
-
 #if (CFG_SUPPORT_SINGLE_SKU == 1)
 	uint8_t i;
+	uint32_t rStatus;
 	uint32_t u4SetQueryInfoLen;
 	uint32_t ch_cnt;
 	struct wiphy *wiphy;
 	u8 band_idx, ch_idx;
-	struct CMD_SET_COUNTRY_CHANNEL_POWER_LIMIT_V2 *prCmd[KAL_NUM_BANDS]
-								= {NULL};
+	struct CMD_SET_COUNTRY_CHANNEL_POWER_LIMIT_V2
+		*prCmd[KAL_NUM_BANDS] = {NULL};
 	uint32_t u4SetCmdTableMaxSize[KAL_NUM_BANDS] = {0};
 
 	DBGLOG(RLM, INFO, "rlmDomainSendPwrLimitCmd_V2()\n");
@@ -2387,24 +2355,24 @@ uint32_t rlmDomainSendPwrLimitCmd_V2(struct ADAPTER *prAdapter)
 			ch_cnt * sizeof(struct CMD_CHANNEL_POWER_LIMIT_V2);
 
 		prCmd[band_idx] = cnmMemAlloc(prAdapter, RAM_TYPE_BUF,
-					      u4SetCmdTableMaxSize[band_idx]);
+						u4SetCmdTableMaxSize[band_idx]);
 
 		if (!prCmd[band_idx]) {
 			DBGLOG(RLM, ERROR, "Domain: no buf to send cmd\n");
-			return WLAN_STATUS_RESOURCES;
+			return;
 		}
 
 		/*initialize tw pwr table*/
 		kalMemSet(prCmd[band_idx], MAX_TX_POWER,
-			  u4SetCmdTableMaxSize[band_idx]);
+			 u4SetCmdTableMaxSize[band_idx]);
 
 		prCmd[band_idx]->ucNum = ch_cnt;
 		prCmd[band_idx]->eband = (band_idx == KAL_BAND_2GHZ) ?
-					 BAND_2G4 : BAND_5G;
+						BAND_2G4 : BAND_5G;
 		prCmd[band_idx]->countryCode = rlmDomainGetCountryCode();
 
-		DBGLOG(RLM, INFO, "%s, active n_channels=%d, band=%d\n",
-		       __func__, ch_cnt, prCmd[band_idx]->eband);
+		DBGLOG(RLM, INFO, "active n_channels=%d, band=%d\n",
+				ch_cnt, prCmd[band_idx]->eband);
 
 		i = 0;
 		for (ch_idx = 0; ch_idx < sband->n_channels; ch_idx++) {
@@ -2413,7 +2381,7 @@ uint32_t rlmDomainSendPwrLimitCmd_V2(struct ADAPTER *prAdapter)
 				continue;
 
 			prCmd[band_idx]->rChannelPowerLimit[i].ucCentralCh =
-								chan->hw_value;
+				chan->hw_value;
 
 			i++; /*point to the next entry*/
 			if (i == ch_cnt)
@@ -2438,102 +2406,1157 @@ uint32_t rlmDomainSendPwrLimitCmd_V2(struct ADAPTER *prAdapter)
 		u4SetQueryInfoLen = u4SetCmdTableMaxSize[band_idx];
 
 		/* Update tx max. power info to chip */
-		rStatus = wlanSendSetQueryCmd(prAdapter, /* prAdapter */
-				CMD_ID_SET_COUNTRY_POWER_LIMIT, /* ucCID */
-				TRUE, /* fgSetQuery */
-				FALSE, /* fgNeedResp */
-				FALSE, /* fgIsOid */
-				NULL, /* pfCmdDoneHandler */
-				NULL, /* pfCmdTimeoutHandler */
-				u4SetQueryInfoLen, /* u4SetQueryInfoLen */
+		rStatus = wlanSendSetQueryCmd(prAdapter,	/* prAdapter */
+				CMD_ID_SET_COUNTRY_POWER_LIMIT,	/* ucCID */
+				TRUE,	/* fgSetQuery */
+				FALSE,	/* fgNeedResp */
+				FALSE,	/* fgIsOid */
+				NULL,	/* pfCmdDoneHandler */
+				NULL,	/* pfCmdTimeoutHandler */
+				u4SetQueryInfoLen,	/* u4SetQueryInfoLen */
 				(uint8_t *) prCmd[band_idx], /* pucInfoBuffer */
-				NULL, /* pvSetQueryBuffer */
-				0 /* u4SetQueryBufferLen */
+				NULL,	/* pvSetQueryBuffer */
+				0	/* u4SetQueryBufferLen */
 				);
 
 		cnmMemFree(prAdapter, prCmd[band_idx]);
 	}
 #endif
-
-	return rStatus;
 }
 
-uint32_t rlmDomainSendPwrLimitCmd(struct ADAPTER *prAdapter,
-				  enum ENUM_TX_POWER_CTRL_TYPE eCtrlType)
+/* dynamic tx power control: begin ********************************************/
+uint32_t txPwrParseNumber(char **pcContent, char *delim, uint8_t *op,
+			  int8_t *value) {
+	u_int8_t fgIsNegtive = FALSE;
+	char *pcTmp = NULL;
+	char *result = NULL;
+
+	if (*pcContent == NULL)
+		return -1;
+
+	if (**pcContent == '-') {
+		fgIsNegtive = TRUE;
+		*pcContent = *pcContent + 1;
+	}
+	pcTmp = *pcContent;
+
+	result = kalStrSep(pcContent, delim);
+	if ((pcContent == NULL) || (result == NULL)) {
+		return -1;
+	} else if ((result != NULL) && (kalStrLen(result) == 0)) {
+		if (fgIsNegtive)
+			return -1;
+		*value = 0;
+		*op = 0;
+	} else {
+		if (kalkStrtou8(pcTmp, 0, value) != 0) {
+			DBGLOG(RLM, ERROR,
+			       "parse number error: invalid number [%s]\n",
+			       pcTmp);
+			return -1;
+		}
+		if (fgIsNegtive)
+			*op = 2;
+		else
+			*op = 1;
+	}
+
+	return 0;
+}
+
+void txPwrOperate(enum ENUM_TX_POWER_CTRL_TYPE eCtrlType,
+		  int8_t *operand1, int8_t *operand2)
+{
+	switch (eCtrlType) {
+	case PWR_CTRL_TYPE_WIFION_POWER_LEVEL:
+	case PWR_CTRL_TYPE_IOCTL_POWER_LEVEL:
+		if (*operand1 > *operand2)
+			*operand1 = *operand2;
+		break;
+	case PWR_CTRL_TYPE_WIFION_POWER_OFFSET:
+	case PWR_CTRL_TYPE_IOCTL_POWER_OFFSET:
+		*operand1 += *operand2;
+		break;
+	default:
+		break;
+	}
+
+	if (*operand1 > MAX_TX_POWER)
+		*operand1 = MAX_TX_POWER;
+	else if (*operand1 < MIN_TX_POWER)
+		*operand1 = MIN_TX_POWER;
+}
+
+uint32_t txPwrArbitrator(enum ENUM_TX_POWER_CTRL_TYPE eCtrlType,
+			 struct CMD_CHANNEL_POWER_LIMIT *prCmdPwrLimit,
+			 struct TX_PWR_CTRL_CHANNEL_SETTING *prChlSetting)
+{
+	if (prChlSetting->op[0] != PWR_CTRL_TYPE_NO_ACTION) {
+		txPwrOperate(eCtrlType, &prCmdPwrLimit->cPwrLimitCCK,
+			     &prChlSetting->i8PwrLimit[0]);
+	}
+	if (prChlSetting->op[1] != PWR_CTRL_TYPE_NO_ACTION) {
+		txPwrOperate(eCtrlType, &prCmdPwrLimit->cPwrLimit20L,
+			     &prChlSetting->i8PwrLimit[1]);
+	}
+	if (prChlSetting->op[2] != PWR_CTRL_TYPE_NO_ACTION) {
+		txPwrOperate(eCtrlType, &prCmdPwrLimit->cPwrLimit20H,
+			     &prChlSetting->i8PwrLimit[2]);
+	}
+	if (prChlSetting->op[3] != PWR_CTRL_TYPE_NO_ACTION) {
+		txPwrOperate(eCtrlType, &prCmdPwrLimit->cPwrLimit40L,
+			     &prChlSetting->i8PwrLimit[3]);
+	}
+	if (prChlSetting->op[4] != PWR_CTRL_TYPE_NO_ACTION) {
+		txPwrOperate(eCtrlType, &prCmdPwrLimit->cPwrLimit40H,
+			     &prChlSetting->i8PwrLimit[4]);
+	}
+	if (prChlSetting->op[5] != PWR_CTRL_TYPE_NO_ACTION) {
+		txPwrOperate(eCtrlType, &prCmdPwrLimit->cPwrLimit80L,
+			     &prChlSetting->i8PwrLimit[5]);
+	}
+	if (prChlSetting->op[6] != PWR_CTRL_TYPE_NO_ACTION) {
+		txPwrOperate(eCtrlType, &prCmdPwrLimit->cPwrLimit80H,
+			     &prChlSetting->i8PwrLimit[6]);
+	}
+	if (prChlSetting->op[7] != PWR_CTRL_TYPE_NO_ACTION) {
+		txPwrOperate(eCtrlType, &prCmdPwrLimit->cPwrLimit160L,
+			     &prChlSetting->i8PwrLimit[7]);
+	}
+	if (prChlSetting->op[8] != PWR_CTRL_TYPE_NO_ACTION) {
+		txPwrOperate(eCtrlType, &prCmdPwrLimit->cPwrLimit160H,
+			     &prChlSetting->i8PwrLimit[8]);
+	}
+
+	return 0;
+}
+
+uint32_t txPwrApplyOneSetting(struct CMD_SET_COUNTRY_CHANNEL_POWER_LIMIT *prCmd,
+			      struct TX_PWR_CTRL_ELEMENT *prCurElement,
+			      uint8_t *bandedgeParam)
+{
+	struct CMD_CHANNEL_POWER_LIMIT *prCmdPwrLimit;
+	struct TX_PWR_CTRL_CHANNEL_SETTING *prChlSetting;
+	uint8_t i, j, channel, channel2, channel3;
+	u_int8_t fgDoArbitrator;
+
+	prCmdPwrLimit = &prCmd->rChannelPowerLimit[0];
+	for (i = 0; i < prCmd->ucNum; i++) {
+		channel = prCmdPwrLimit->ucCentralCh;
+		for (j = 0; j < prCurElement->settingCount; j++) {
+			prChlSetting = &prCurElement->rChlSettingList[j];
+			channel2 = prChlSetting->channelParam[0];
+			channel3 = prChlSetting->channelParam[1];
+			fgDoArbitrator = FALSE;
+			switch (prChlSetting->eChnlType) {
+				case PWR_CTRL_CHNL_TYPE_NORMAL: {
+					if (channel == channel2)
+						fgDoArbitrator = TRUE;
+					break;
+				}
+				case PWR_CTRL_CHNL_TYPE_ALL: {
+					fgDoArbitrator = TRUE;
+					break;
+				}
+				case PWR_CTRL_CHNL_TYPE_RANGE: {
+					if ((channel >= channel2) &&
+					    (channel <= channel3))
+						fgDoArbitrator = TRUE;
+					break;
+				}
+				case PWR_CTRL_CHNL_TYPE_2G4: {
+					if (channel <= 14)
+						fgDoArbitrator = TRUE;
+					break;
+				}
+				case PWR_CTRL_CHNL_TYPE_5G: {
+					if (channel > 14)
+						fgDoArbitrator = TRUE;
+					break;
+				}
+				case PWR_CTRL_CHNL_TYPE_BANDEDGE_2G4: {
+					if ((channel == *bandedgeParam) ||
+					    (channel == *(bandedgeParam + 1)))
+						fgDoArbitrator = TRUE;
+					break;
+				}
+				case PWR_CTRL_CHNL_TYPE_BANDEDGE_5G: {
+					if ((channel == *(bandedgeParam + 2)) ||
+					    (channel == *(bandedgeParam + 3)))
+						fgDoArbitrator = TRUE;
+					break;
+				}
+				case PWR_CTRL_CHNL_TYPE_5G_BAND1: {
+					if ((channel >= 30) && (channel <= 50))
+						fgDoArbitrator = TRUE;
+					break;
+				}
+				case PWR_CTRL_CHNL_TYPE_5G_BAND2: {
+					if ((channel >= 51) && (channel <= 70))
+						fgDoArbitrator = TRUE;
+					break;
+				}
+				case PWR_CTRL_CHNL_TYPE_5G_BAND3: {
+					if ((channel >= 71) && (channel <= 145))
+						fgDoArbitrator = TRUE;
+					break;
+				}
+				case PWR_CTRL_CHNL_TYPE_5G_BAND4: {
+					if ((channel >= 146) &&
+					    (channel <= 170))
+						fgDoArbitrator = TRUE;
+					break;
+				}
+			}
+			if (fgDoArbitrator)
+				txPwrArbitrator(prCurElement->eCtrlType,
+						prCmdPwrLimit, prChlSetting);
+		}
+
+		prCmdPwrLimit++;
+	}
+
+	return 0;
+}
+
+uint32_t txPwrCtrlApplySettings(struct ADAPTER *prAdapter,
+			struct CMD_SET_COUNTRY_CHANNEL_POWER_LIMIT *prCmd,
+			uint8_t *bandedgeParam)
+{
+	struct list_head *prCur, *prNext;
+	struct TX_PWR_CTRL_ELEMENT *element = NULL;
+	struct list_head *aryprlist[2] = {
+		&prAdapter->rTxPwr_DefaultList,
+		&prAdapter->rTxPwr_DynamicList
+	};
+	int32_t i;
+
+	/* show the tx power ctrl applied list */
+	txPwrCtrlShowList(prAdapter, 1, "applied list");
+
+	for (i = 0; i < ARRAY_SIZE(aryprlist); i++) {
+		list_for_each_safe(prCur, prNext, aryprlist[i]) {
+			element = list_entry(prCur,
+					struct TX_PWR_CTRL_ELEMENT, node);
+			if (element->fgApplied == TRUE)
+				txPwrApplyOneSetting(
+					prCmd, element, bandedgeParam);
+		}
+	}
+
+	return 0;
+}
+
+char *txPwrGetString(char **pcContent, char *delim)
+{
+	char *result = NULL;
+
+	if (pcContent == NULL)
+		return NULL;
+
+	result = kalStrSep(pcContent, delim);
+	if ((pcContent == NULL) || (result == NULL) ||
+	    ((result != NULL) && (kalStrLen(result) == 0)))
+		return NULL;
+
+	return result;
+}
+
+struct TX_PWR_CTRL_ELEMENT *txPwrCtrlStringToStruct(char *pcContent,
+						    u_int8_t fgSkipHeader)
+{
+	struct TX_PWR_CTRL_ELEMENT *prCurElement = NULL;
+	struct TX_PWR_CTRL_CHANNEL_SETTING *prTmpSetting;
+	char acTmpName[MAX_TX_PWR_CTRL_ELEMENT_NAME_SIZE];
+	char *pcContCur = NULL, *pcContCur2 = NULL, *pcContEnd = NULL;
+	char *pcContTmp = NULL, *pcContNext = NULL, *pcContOld = NULL;
+	char carySeperator[2] = { 0, 0 };
+	uint32_t u4MemSize = sizeof(struct TX_PWR_CTRL_ELEMENT);
+	uint32_t copySize = 0;
+	uint8_t i, j, op, ucSettingCount = 0;
+	uint8_t value, value2, count = 0;
+	uint8_t ucAppliedWay, ucOperation;
+	uint8_t ucCommaCount;
+
+	if (!pcContent) {
+		DBGLOG(RLM, ERROR, "pcContent is null\n");
+		return NULL;
+	}
+
+	pcContCur = pcContent;
+	pcContEnd = pcContent + kalStrLen(pcContent);
+
+	if (fgSkipHeader == TRUE)
+		goto skipLabel;
+
+	/* insert elenemt into prTxPwrCtrlList */
+	/* parse scenario name */
+	kalMemZero(acTmpName, MAX_TX_PWR_CTRL_ELEMENT_NAME_SIZE);
+	pcContOld = pcContCur;
+	pcContTmp = txPwrGetString(&pcContCur, ";");
+	if (!pcContTmp) {
+		DBGLOG(RLM, ERROR, "parse scenario name error: %s\n",
+		       pcContOld);
+		return NULL;
+	}
+	copySize = kalStrLen(pcContTmp);
+	if (copySize >= MAX_TX_PWR_CTRL_ELEMENT_NAME_SIZE)
+		copySize = MAX_TX_PWR_CTRL_ELEMENT_NAME_SIZE - 1;
+	kalMemCopy(acTmpName, pcContTmp, copySize);
+	acTmpName[copySize] = 0;
+
+	/* parese scenario sub index */
+	pcContOld = pcContCur;
+	if (txPwrParseNumber(&pcContCur, ";", &op, &value)) {
+		DBGLOG(RLM, ERROR, "parse scenario sub index error: %s\n",
+		       pcContOld);
+		return NULL;
+	}
+	if ((op != 1) || (value < 0)) {
+		DBGLOG(RLM, ERROR,
+		       "parse scenario sub index error: op=%u, val=%d\n",
+		       op, value);
+		return NULL;
+	}
+
+	/* parese scenario applied way */
+	pcContOld = pcContCur;
+	if (txPwrParseNumber(&pcContCur, ";", &op, &ucAppliedWay)) {
+		DBGLOG(RLM, ERROR, "parse applied way error: %s\n",
+		       pcContOld);
+		return NULL;
+	}
+	if ((ucAppliedWay < PWR_CTRL_TYPE_APPLIED_WAY_WIFION) ||
+	    (ucAppliedWay > PWR_CTRL_TYPE_APPLIED_WAY_IOCTL)) {
+		DBGLOG(RLM, ERROR,
+		       "parse applied way error: value=%u\n",
+		       ucAppliedWay);
+		return NULL;
+	}
+
+	/* parese scenario applied type */
+	pcContOld = pcContCur;
+	if (txPwrParseNumber(&pcContCur, ";", &op, &ucOperation)) {
+		DBGLOG(RLM, ERROR, "parse operation error: %s\n",
+		       pcContOld);
+		return NULL;
+	}
+	if ((ucOperation < PWR_CTRL_TYPE_OPERATION_POWER_LEVEL) ||
+	    (ucOperation > PWR_CTRL_TYPE_OPERATION_POWER_OFFSET)) {
+		DBGLOG(RLM, ERROR,
+		       "parse operation error: value=%u\n",
+		       ucOperation);
+		return NULL;
+	}
+
+	switch (ucAppliedWay) {
+	case PWR_CTRL_TYPE_APPLIED_WAY_WIFION:
+		if (ucOperation == PWR_CTRL_TYPE_OPERATION_POWER_LEVEL)
+			value2 = PWR_CTRL_TYPE_WIFION_POWER_LEVEL;
+		else
+			value2 = PWR_CTRL_TYPE_WIFION_POWER_OFFSET;
+		break;
+	case PWR_CTRL_TYPE_APPLIED_WAY_IOCTL:
+		if (ucOperation == PWR_CTRL_TYPE_OPERATION_POWER_LEVEL)
+			value2 = PWR_CTRL_TYPE_IOCTL_POWER_LEVEL;
+		else
+			value2 = PWR_CTRL_TYPE_IOCTL_POWER_OFFSET;
+		break;
+	}
+
+skipLabel:
+	/* decide how many channel setting */
+	pcContOld = pcContCur;
+	while (pcContCur <= pcContEnd) {
+		if ((*pcContCur) == '[')
+			ucSettingCount++;
+		pcContCur++;
+	}
+
+	if (ucSettingCount == 0) {
+		DBGLOG(RLM, ERROR,
+		       "power ctrl channel setting is empty\n");
+		return NULL;
+	}
+
+	/* allocate memory for control element */
+	u4MemSize += (ucSettingCount == 1) ? 0 : (ucSettingCount - 1) *
+			sizeof(struct TX_PWR_CTRL_CHANNEL_SETTING);
+	prCurElement = (struct TX_PWR_CTRL_ELEMENT *)kalMemAlloc(
+					u4MemSize, VIR_MEM_TYPE);
+	if (!prCurElement) {
+		DBGLOG(RLM, ERROR,
+		       "alloc power ctrl element failed\n");
+		return NULL;
+	}
+
+	/* assign values into control element */
+	kalMemZero(prCurElement, u4MemSize);
+	if (fgSkipHeader == FALSE) {
+		kalMemCopy(prCurElement->name, acTmpName, copySize);
+		prCurElement->index = (uint8_t)value;
+		prCurElement->eCtrlType = (enum ENUM_TX_POWER_CTRL_TYPE)value2;
+		if (prCurElement->eCtrlType <=
+		    PWR_CTRL_TYPE_WIFION_POWER_OFFSET)
+			prCurElement->fgApplied = TRUE;
+	}
+	prCurElement->settingCount = ucSettingCount;
+
+	/* parse channel setting list */
+	pcContCur = pcContOld + 1; /* skip '[' */
+
+	for (i = 0; i < ucSettingCount; i++) {
+		if (pcContCur >= pcContEnd) {
+			DBGLOG(RLM, ERROR,
+			       "parse error: out of bound\n");
+			goto clearLabel;
+		}
+
+		prTmpSetting = &prCurElement->rChlSettingList[i];
+
+		/* verify there is ] symbol */
+		pcContNext = kalStrChr(pcContCur, ']');
+		if (!pcContNext) {
+			DBGLOG(RLM, ERROR,
+			       "parse error: miss symbol ']', %s\n",
+			       pcContCur);
+			goto clearLabel;
+		}
+
+		/* verify this setting has 9 segment */
+		pcContTmp = pcContCur;
+		count = 0;
+		while (pcContTmp < pcContNext) {
+			if (*pcContTmp == ',')
+				count++;
+			pcContTmp++;
+		}
+		if ((count != 9) && (count != 1)) {
+			DBGLOG(RLM, ERROR,
+			       "parse error: not 9 segments, %s\n",
+			       pcContCur);
+			goto clearLabel;
+		} else {
+			ucCommaCount = count;
+			if (ucCommaCount == 9)
+				carySeperator[0] = ',';
+			else
+				carySeperator[0] = ']';
+		}
+
+		/* parse channel setting type */
+		pcContOld = pcContCur;
+		pcContTmp = txPwrGetString(&pcContCur, ",");
+		if (!pcContTmp) {
+			DBGLOG(RLM, ERROR,
+			       "parse channel setting type error, %s\n",
+			       pcContOld);
+			goto clearLabel;
+		/* "ALL" */
+		} else if (kalStrCmp(pcContTmp,
+				     PWR_CTRL_CHNL_TYPE_KEY_ALL) == 0)
+			prTmpSetting->eChnlType =
+				PWR_CTRL_CHNL_TYPE_ALL;
+		/* "2G4" */
+		else if (kalStrCmp(pcContTmp,
+				   PWR_CTRL_CHNL_TYPE_KEY_2G4) == 0)
+			prTmpSetting->eChnlType =
+				PWR_CTRL_CHNL_TYPE_2G4;
+		/* "5G" */
+		else if (kalStrCmp(pcContTmp,
+				   PWR_CTRL_CHNL_TYPE_KEY_5G) == 0)
+			prTmpSetting->eChnlType =
+				PWR_CTRL_CHNL_TYPE_5G;
+		/* "BANDEDGE2G4" */
+		else if (kalStrCmp(pcContTmp,
+				   PWR_CTRL_CHNL_TYPE_KEY_BANDEDGE_2G4) == 0)
+			prTmpSetting->eChnlType =
+				PWR_CTRL_CHNL_TYPE_BANDEDGE_2G4;
+		/* "BANDEDGE5G" */
+		else if (kalStrCmp(pcContTmp,
+				   PWR_CTRL_CHNL_TYPE_KEY_BANDEDGE_5G) == 0)
+			prTmpSetting->eChnlType =
+				PWR_CTRL_CHNL_TYPE_BANDEDGE_5G;
+		/* "5GBAND1" */
+		else if (kalStrCmp(pcContTmp,
+				   PWR_CTRL_CHNL_TYPE_KEY_5G_BAND1) == 0)
+			prTmpSetting->eChnlType =
+				PWR_CTRL_CHNL_TYPE_5G_BAND1;
+		/* "5GBAND2" */
+		else if (kalStrCmp(pcContTmp,
+				   PWR_CTRL_CHNL_TYPE_KEY_5G_BAND2) == 0)
+			prTmpSetting->eChnlType =
+				PWR_CTRL_CHNL_TYPE_5G_BAND2;
+		/* "5GBAND3" */
+		else if (kalStrCmp(pcContTmp,
+				   PWR_CTRL_CHNL_TYPE_KEY_5G_BAND3) == 0)
+			prTmpSetting->eChnlType =
+				PWR_CTRL_CHNL_TYPE_5G_BAND3;
+		/* "5GBAND4" */
+		else if (kalStrCmp(pcContTmp,
+				   PWR_CTRL_CHNL_TYPE_KEY_5G_BAND4) == 0)
+			prTmpSetting->eChnlType =
+				PWR_CTRL_CHNL_TYPE_5G_BAND4;
+		else {
+			pcContCur2 = pcContOld;
+			pcContTmp = txPwrGetString(&pcContCur2, "-");
+			if (pcContCur2 == NULL) { /* case: normal channel */
+				if (kalkStrtou8(pcContOld, 0, &value) != 0) {
+					DBGLOG(RLM, ERROR,
+					       "parse channel error: %s\n",
+					       pcContOld);
+					goto clearLabel;
+				}
+				prTmpSetting->channelParam[0] = value;
+				prTmpSetting->eChnlType =
+						PWR_CTRL_CHNL_TYPE_NORMAL;
+			} else { /* case: channel range */
+				if (kalkStrtou8(pcContTmp, 0, &value) != 0) {
+					DBGLOG(RLM, ERROR,
+					       "parse first channel error, %s\n",
+					       pcContTmp);
+					goto clearLabel;
+				}
+				if (kalkStrtou8(pcContCur2, 0, &value2) != 0) {
+					DBGLOG(RLM, ERROR,
+					       "parse second channel error, %s\n",
+					       pcContCur2);
+					goto clearLabel;
+				}
+				prTmpSetting->channelParam[0] = value;
+				prTmpSetting->channelParam[1] =	value2;
+				prTmpSetting->eChnlType =
+						PWR_CTRL_CHNL_TYPE_RANGE;
+			}
+		}
+
+		/* parse cck setting */
+		pcContOld = pcContCur;
+		if (txPwrParseNumber(&pcContCur, carySeperator, &op, &value)) {
+			DBGLOG(RLM, ERROR, "parse CCK error, %s\n",
+			       pcContOld);
+			goto clearLabel;
+		}
+		prTmpSetting->op[0] = (enum ENUM_TX_POWER_CTRL_VALUE_SIGN)op;
+		prTmpSetting->i8PwrLimit[0] = (op != 2) ? value : (0 - value);
+		if ((prTmpSetting->op[0] == PWR_CTRL_TYPE_POSITIVE) &&
+		    (ucOperation == PWR_CTRL_TYPE_OPERATION_POWER_OFFSET)) {
+			DBGLOG(RLM, ERROR,
+				"parse CCK error, Power_Offset value cannot be positive: %u%s\n",
+				value);
+			goto clearLabel;
+		}
+		if (ucCommaCount == 1) {
+			for (j = 1; j < 9; j++) {
+				prTmpSetting->op[j] = op;
+				prTmpSetting->i8PwrLimit[j] = (op != 2) ?
+							value : (0 - value);
+			}
+			goto skipLabel2;
+		}
+
+		/* parse cPwrLimit20L setting */
+		pcContOld = pcContCur;
+		if (txPwrParseNumber(&pcContCur, ",", &op, &value)) {
+			DBGLOG(RLM, ERROR, "parse HT20L error, %s\n",
+			       pcContOld);
+			goto clearLabel;
+		}
+		prTmpSetting->op[1] = (enum ENUM_TX_POWER_CTRL_VALUE_SIGN)op;
+		prTmpSetting->i8PwrLimit[1] = (op != 2) ? value : (0 - value);
+		if ((prTmpSetting->op[1] == PWR_CTRL_TYPE_POSITIVE) &&
+		    (ucOperation == PWR_CTRL_TYPE_OPERATION_POWER_OFFSET)) {
+			DBGLOG(RLM, ERROR,
+				"parse HT20L error, Power_Offset value cannot be positive: %u%s\n",
+				value);
+			goto clearLabel;
+		}
+
+		/* parse cPwrLimit20H setting */
+		pcContOld = pcContCur;
+		if (txPwrParseNumber(&pcContCur, ",", &op, &value)) {
+			DBGLOG(RLM, ERROR, "parse HT20H error, %s\n",
+			       pcContOld);
+			goto clearLabel;
+		}
+		prTmpSetting->op[2] = (enum ENUM_TX_POWER_CTRL_VALUE_SIGN)op;
+		prTmpSetting->i8PwrLimit[2] = (op != 2) ? value : (0 - value);
+		if ((prTmpSetting->op[2] == PWR_CTRL_TYPE_POSITIVE) &&
+		    (ucOperation == PWR_CTRL_TYPE_OPERATION_POWER_OFFSET)) {
+			DBGLOG(RLM, ERROR,
+				"parse HT20H error, Power_Offset value cannot be positive: %u%s\n",
+				value);
+			goto clearLabel;
+		}
+
+		/* parse cPwrLimit40L setting */
+		pcContOld = pcContCur;
+		if (txPwrParseNumber(&pcContCur, ",", &op, &value)) {
+			DBGLOG(RLM, ERROR, "parse HT40L error, %s\n",
+			       pcContOld);
+			goto clearLabel;
+		}
+		prTmpSetting->op[3] = (enum ENUM_TX_POWER_CTRL_VALUE_SIGN)op;
+		prTmpSetting->i8PwrLimit[3] = (op != 2) ? value : (0 - value);
+		if ((prTmpSetting->op[3] == PWR_CTRL_TYPE_POSITIVE) &&
+		    (ucOperation == PWR_CTRL_TYPE_OPERATION_POWER_OFFSET)) {
+			DBGLOG(RLM, ERROR,
+				"parse HT40L error, Power_Offset value cannot be positive: %u%s\n",
+				value);
+			goto clearLabel;
+		}
+
+		/* parse cPwrLimit40H setting */
+		pcContOld = pcContCur;
+		if (txPwrParseNumber(&pcContCur, ",", &op, &value)) {
+			DBGLOG(RLM, ERROR, "parse HT40H error, %s\n",
+			       pcContOld);
+			goto clearLabel;
+		}
+		prTmpSetting->op[4] = (enum ENUM_TX_POWER_CTRL_VALUE_SIGN)op;
+		prTmpSetting->i8PwrLimit[4] = (op != 2) ? value : (0 - value);
+		if ((prTmpSetting->op[4] == PWR_CTRL_TYPE_POSITIVE) &&
+		    (ucOperation == PWR_CTRL_TYPE_OPERATION_POWER_OFFSET)) {
+			DBGLOG(RLM, ERROR,
+				"parse HT40H error, Power_Offset value cannot be positive: %u%s\n",
+				value);
+			goto clearLabel;
+		}
+
+		/* parse cPwrLimit80L setting */
+		pcContOld = pcContCur;
+		if (txPwrParseNumber(&pcContCur, ",", &op, &value)) {
+			DBGLOG(RLM, ERROR,
+			       "parse HT80L error, %s\n",
+			       pcContOld);
+			goto clearLabel;
+		}
+		prTmpSetting->op[5] = (enum ENUM_TX_POWER_CTRL_VALUE_SIGN)op;
+		prTmpSetting->i8PwrLimit[5] = (op != 2) ? value : (0 - value);
+		if ((prTmpSetting->op[5] == PWR_CTRL_TYPE_POSITIVE) &&
+		    (ucOperation == PWR_CTRL_TYPE_OPERATION_POWER_OFFSET)) {
+			DBGLOG(RLM, ERROR,
+				"parse HT80L error, Power_Offset value cannot be positive: %u%s\n",
+				value);
+			goto clearLabel;
+		}
+
+		/* parse cPwrLimit80H setting */
+		pcContOld = pcContCur;
+		if (txPwrParseNumber(&pcContCur, ",", &op, &value)) {
+			DBGLOG(RLM, ERROR,
+			       "parse HT80H error, %s\n",
+			       pcContOld);
+			goto clearLabel;
+		}
+		prTmpSetting->op[6] = (enum ENUM_TX_POWER_CTRL_VALUE_SIGN)op;
+		prTmpSetting->i8PwrLimit[6] = (op != 2) ? value : (0 - value);
+		if ((prTmpSetting->op[6] == PWR_CTRL_TYPE_POSITIVE) &&
+		    (ucOperation == PWR_CTRL_TYPE_OPERATION_POWER_OFFSET)) {
+			DBGLOG(RLM, ERROR,
+				"parse HT80H error, Power_Offset value cannot be positive: %u%s\n",
+				value);
+			goto clearLabel;
+		}
+
+		/* parse cPwrLimit160L setting */
+		pcContOld = pcContCur;
+		if (txPwrParseNumber(&pcContCur, ",", &op, &value)) {
+			DBGLOG(RLM, ERROR,
+			       "parse HT160L error, %s\n",
+			       pcContOld);
+			goto clearLabel;
+		}
+		prTmpSetting->op[7] = (enum ENUM_TX_POWER_CTRL_VALUE_SIGN)op;
+		prTmpSetting->i8PwrLimit[7] = (op != 2) ? value : (0 - value);
+		if ((prTmpSetting->op[7] == PWR_CTRL_TYPE_POSITIVE) &&
+		    (ucOperation == PWR_CTRL_TYPE_OPERATION_POWER_OFFSET)) {
+			DBGLOG(RLM, ERROR,
+				"parse HT160L error, Power_Offset value cannot be positive: %u%s\n",
+				value);
+			goto clearLabel;
+		}
+
+		/* parse cPwrLimit160H setting */
+		pcContOld = pcContCur;
+		if (txPwrParseNumber(&pcContCur, "]", &op, &value)) {
+			DBGLOG(RLM, ERROR,
+			       "parse HT160H error, %s\n",
+			       pcContOld);
+			goto clearLabel;
+		}
+		prTmpSetting->op[8] = (enum ENUM_TX_POWER_CTRL_VALUE_SIGN)op;
+		prTmpSetting->i8PwrLimit[8] = (op != 2) ? value : (0 - value);
+		if ((prTmpSetting->op[8] == PWR_CTRL_TYPE_POSITIVE) &&
+		    (ucOperation == PWR_CTRL_TYPE_OPERATION_POWER_OFFSET)) {
+			DBGLOG(RLM, ERROR,
+				"parse HT160H error, Power_Offset value cannot be positive: %u%s\n",
+				value);
+			goto clearLabel;
+		}
+
+skipLabel2:
+		pcContCur = pcContNext + 2;
+	}
+
+	return prCurElement;
+
+clearLabel:
+	if (prCurElement != NULL)
+		kalMemFree(prCurElement, VIR_MEM_TYPE, u4MemSize);
+
+	return NULL;
+}
+
+/* filterType: 0:no filter, 1:fgEnable is TRUE */
+int txPwrCtrlListSize(struct ADAPTER *prAdapter, uint8_t filterType)
+{
+	struct list_head *prCur, *prNext;
+	struct TX_PWR_CTRL_ELEMENT *prCurElement = NULL;
+	struct list_head *aryprlist[2] = {
+		&prAdapter->rTxPwr_DefaultList,
+		&prAdapter->rTxPwr_DynamicList
+	};
+	int i, count = 0;
+
+	for (i = 0; i < ARRAY_SIZE(aryprlist); i++) {
+		list_for_each_safe(prCur, prNext, aryprlist[i]) {
+			prCurElement = list_entry(prCur,
+				struct TX_PWR_CTRL_ELEMENT, node);
+			if ((filterType == 1) &&
+			    (prCurElement->fgApplied != TRUE))
+				continue;
+			count++;
+		}
+	}
+
+	return count;
+}
+
+/* filterType: 0:no filter, 1:fgApplied is TRUE */
+void txPwrCtrlShowList(struct ADAPTER *prAdapter, uint8_t filterType,
+		       char *message)
+{
+	struct list_head *prCur, *prNext;
+	struct TX_PWR_CTRL_ELEMENT *prCurElement = NULL;
+	struct TX_PWR_CTRL_CHANNEL_SETTING *prChlSettingList;
+	struct list_head *aryprlist[2] = {
+		&prAdapter->rTxPwr_DefaultList,
+		&prAdapter->rTxPwr_DynamicList
+	};
+	uint8_t ucAppliedWay, ucOperation;
+	int i, j, count = 0;
+
+	DBGLOG(RLM, INFO, "Tx Power Ctrl List=[%s], Size=[%d]",
+	       message, txPwrCtrlListSize(prAdapter, filterType));
+
+	for (i = 0; i < ARRAY_SIZE(aryprlist); i++) {
+		list_for_each_safe(prCur, prNext, aryprlist[i]) {
+			prCurElement = list_entry(prCur,
+					struct TX_PWR_CTRL_ELEMENT, node);
+			if ((filterType == 1) &&
+			    (prCurElement->fgApplied != TRUE))
+				continue;
+
+			switch (prCurElement->eCtrlType) {
+			case PWR_CTRL_TYPE_WIFION_POWER_LEVEL:
+				ucAppliedWay =
+					PWR_CTRL_TYPE_APPLIED_WAY_WIFION;
+				ucOperation =
+					PWR_CTRL_TYPE_OPERATION_POWER_LEVEL;
+				break;
+			case PWR_CTRL_TYPE_WIFION_POWER_OFFSET:
+				ucAppliedWay =
+					PWR_CTRL_TYPE_APPLIED_WAY_WIFION;
+				ucOperation =
+					PWR_CTRL_TYPE_OPERATION_POWER_OFFSET;
+				break;
+			case PWR_CTRL_TYPE_IOCTL_POWER_LEVEL:
+				ucAppliedWay =
+					PWR_CTRL_TYPE_APPLIED_WAY_IOCTL;
+				ucOperation =
+					PWR_CTRL_TYPE_OPERATION_POWER_LEVEL;
+				break;
+			case PWR_CTRL_TYPE_IOCTL_POWER_OFFSET:
+				ucAppliedWay =
+					PWR_CTRL_TYPE_APPLIED_WAY_IOCTL;
+				ucOperation =
+					PWR_CTRL_TYPE_OPERATION_POWER_OFFSET;
+				break;
+			default:
+				ucAppliedWay = 0;
+				ucOperation = 0;
+				break;
+			}
+
+			DBGLOG(RLM, TRACE,
+			       "Tx Power Ctrl Element-%u: name=[%s], index=[%u], appliedWay=[%u:%s], operation=[%u:%s], ChlSettingCount=[%u]\n",
+			       ++count, prCurElement->name, prCurElement->index,
+			       ucAppliedWay, g_paryWayLabel[ucAppliedWay - 1],
+			       ucOperation, g_paryOpLabel[ucOperation - 1],
+			       prCurElement->settingCount);
+			prChlSettingList = &(prCurElement->rChlSettingList[0]);
+			for (j = 0; j < prCurElement->settingCount; j++) {
+				DBGLOG(RLM, TRACE,
+				       "              Setting-%u:[%s:%u,%u],[%u,%d],[%u,%d],[%u,%d],[%u,%d],[%u,%d],[%u,%d],[%u,%d],[%u,%d],[%u,%d]\n",
+				       (j + 1),
+				       g_ENUM_TX_POWER_CTRL_CHANNEL_TYPE[
+						prChlSettingList->eChnlType],
+				       prChlSettingList->channelParam[0],
+				       prChlSettingList->channelParam[1],
+				       prChlSettingList->op[0],
+				       prChlSettingList->i8PwrLimit[0],
+				       prChlSettingList->op[1],
+				       prChlSettingList->i8PwrLimit[1],
+				       prChlSettingList->op[2],
+				       prChlSettingList->i8PwrLimit[2],
+				       prChlSettingList->op[3],
+				       prChlSettingList->i8PwrLimit[3],
+				       prChlSettingList->op[4],
+				       prChlSettingList->i8PwrLimit[4],
+				       prChlSettingList->op[5],
+				       prChlSettingList->i8PwrLimit[5],
+				       prChlSettingList->op[6],
+				       prChlSettingList->i8PwrLimit[6],
+				       prChlSettingList->op[7],
+				       prChlSettingList->i8PwrLimit[7],
+				       prChlSettingList->op[8],
+				       prChlSettingList->i8PwrLimit[8]
+				);
+				prChlSettingList++;
+			}
+		}
+	}
+}
+
+/* This function used to delete element by specifying name or index
+ * if index is 0, deletion only according name
+ * if index >= 1, deletion according name and index
+ */
+void _txPwrCtrlDeleteElement(struct ADAPTER *prAdapter,
+			     uint8_t *name,
+			     uint32_t index,
+			     struct list_head *prTxPwrCtrlList)
+{
+	struct list_head *prCur, *prNext;
+	struct TX_PWR_CTRL_ELEMENT *prCurElement = NULL;
+	uint32_t u4MemSize = sizeof(struct TX_PWR_CTRL_ELEMENT);
+	uint32_t u4MemSize2;
+	uint32_t u4SettingSize = sizeof(struct TX_PWR_CTRL_CHANNEL_SETTING);
+	uint8_t ucSettingCount;
+	u_int8_t fgFind;
+
+	list_for_each_safe(prCur, prNext, prTxPwrCtrlList) {
+		fgFind = FALSE;
+		prCurElement = list_entry(prCur, struct TX_PWR_CTRL_ELEMENT,
+					  node);
+		if (kalStrCmp(prCurElement->name, name) == 0) {
+			if (index == 0)
+				fgFind = TRUE;
+			else if (prCurElement->index == index)
+				fgFind = TRUE;
+			if (fgFind) {
+				list_del(prCur);
+				if (prCurElement != NULL) {
+					ucSettingCount =
+						prCurElement->settingCount;
+						u4MemSize2 = u4MemSize +
+						((ucSettingCount == 1) ? 0 :
+						(ucSettingCount - 1) *
+						u4SettingSize);
+					kalMemFree(prCurElement, VIR_MEM_TYPE,
+						u4MemSize2);
+				}
+			}
+		}
+	}
+}
+
+void txPwrCtrlDeleteElement(struct ADAPTER *prAdapter,
+			    uint8_t *name,
+			    uint32_t index,
+			    enum ENUM_TX_POWER_CTRL_LIST_TYPE eListType)
+{
+	if ((eListType == PWR_CTRL_TYPE_ALL_LIST) ||
+	    (eListType == PWR_CTRL_TYPE_DEFAULT_LIST))
+		_txPwrCtrlDeleteElement(prAdapter, name, index,
+					&prAdapter->rTxPwr_DefaultList);
+
+	if ((eListType == PWR_CTRL_TYPE_ALL_LIST) ||
+	    (eListType == PWR_CTRL_TYPE_DYNAMIC_LIST))
+		_txPwrCtrlDeleteElement(prAdapter, name, index,
+					&prAdapter->rTxPwr_DynamicList);
+}
+
+struct TX_PWR_CTRL_ELEMENT *_txPwrCtrlFindElement(struct ADAPTER *prAdapter,
+				 uint8_t *name, uint32_t index,
+				 u_int8_t fgCheckIsApplied,
+				 struct list_head *prTxPwrCtrlList)
+{
+	struct list_head *prCur, *prNext;
+	struct TX_PWR_CTRL_ELEMENT *prCurElement = NULL;
+
+	list_for_each_safe(prCur, prNext, prTxPwrCtrlList) {
+		u_int8_t fgFind = FALSE;
+
+		prCurElement = list_entry(
+			prCur, struct TX_PWR_CTRL_ELEMENT, node);
+		if (kalStrCmp(prCurElement->name, name) == 0) {
+			if ((!fgCheckIsApplied) ||
+			    (fgCheckIsApplied &&
+			    (prCurElement->fgApplied == TRUE))) {
+				if (index == 0)
+					fgFind = TRUE;
+				else if (prCurElement->index == index)
+					fgFind = TRUE;
+			}
+			if (fgFind)
+				return prCurElement;
+		}
+	}
+	return NULL;
+}
+
+struct TX_PWR_CTRL_ELEMENT *txPwrCtrlFindElement(struct ADAPTER *prAdapter,
+				 uint8_t *name, uint32_t index,
+				 u_int8_t fgCheckIsApplied,
+				 enum ENUM_TX_POWER_CTRL_LIST_TYPE eListType)
+{
+	struct list_head *prTxPwrCtrlList = NULL;
+
+	if (eListType == PWR_CTRL_TYPE_DEFAULT_LIST)
+		prTxPwrCtrlList = &prAdapter->rTxPwr_DefaultList;
+	if (eListType == PWR_CTRL_TYPE_DYNAMIC_LIST)
+		prTxPwrCtrlList = &prAdapter->rTxPwr_DynamicList;
+	if (prTxPwrCtrlList == NULL)
+		return NULL;
+
+	return _txPwrCtrlFindElement(prAdapter, name, index, fgCheckIsApplied,
+				     prTxPwrCtrlList);
+}
+
+void txPwrCtrlAddElement(struct ADAPTER *prAdapter,
+			 struct TX_PWR_CTRL_ELEMENT *prElement)
+{
+	struct list_head *prNode = &prElement->node;
+
+	switch (prElement->eCtrlType) {
+	case PWR_CTRL_TYPE_WIFION_POWER_LEVEL:
+		list_add(prNode, &prAdapter->rTxPwr_DefaultList);
+		break;
+	case PWR_CTRL_TYPE_WIFION_POWER_OFFSET:
+		list_add_tail(prNode, &prAdapter->rTxPwr_DefaultList);
+		break;
+	case PWR_CTRL_TYPE_IOCTL_POWER_LEVEL:
+		list_add(prNode, &prAdapter->rTxPwr_DynamicList);
+		break;
+	case PWR_CTRL_TYPE_IOCTL_POWER_OFFSET:
+		list_add_tail(prNode, &prAdapter->rTxPwr_DynamicList);
+		break;
+	}
+}
+
+void txPwrCtrlFileBufToList(struct ADAPTER *prAdapter, uint8_t *pucFileBuf)
+{
+	struct TX_PWR_CTRL_ELEMENT *prNewElement;
+	char *oneLine;
+
+	if (pucFileBuf == NULL)
+		return;
+
+	while ((oneLine = kalStrSep((char **)(&pucFileBuf), "\r\n"))
+	       != NULL) {
+		/* skip comment line and empty line */
+		if ((oneLine[0] == '#') || (oneLine[0] == 0))
+			continue;
+
+		prNewElement = txPwrCtrlStringToStruct(oneLine, FALSE);
+		if (prNewElement != NULL) {
+			/* delete duplicated element
+			 * by checking name and index
+			 */
+			txPwrCtrlDeleteElement(prAdapter,
+				prNewElement->name, prNewElement->index,
+				PWR_CTRL_TYPE_ALL_LIST);
+
+			/* append to rTxPwr_List */
+			txPwrCtrlAddElement(prAdapter, prNewElement);
+		}
+	}
+
+	/* show the tx power ctrl list */
+	txPwrCtrlShowList(prAdapter, 0, "config list, after loading cfg file");
+}
+
+void txPwrCtrlGlobalVariableToList(struct ADAPTER *prAdapter)
+{
+	struct TX_PWR_CTRL_ELEMENT *pcElement;
+	char *ptr;
+	int32_t i, u4MemSize;
+
+	for (i = 0; i < ARRAY_SIZE(g_rTxPowerCtrlDefaultSetting); i++) {
+		/* skip empty line */
+		if (g_rTxPowerCtrlDefaultSetting[i][0] == 0)
+			continue;
+
+		u4MemSize = kalStrLen(g_rTxPowerCtrlDefaultSetting[i]) + 1;
+		ptr = (char *)kalMemAlloc(u4MemSize, VIR_MEM_TYPE);
+		if (ptr == NULL) {
+			DBGLOG(RLM, ERROR, "kalMemAlloc fail: %d\n", u4MemSize);
+			continue;
+		}
+
+		kalMemCopy(ptr, g_rTxPowerCtrlDefaultSetting[i], u4MemSize);
+		*(ptr + u4MemSize - 1) = 0;
+		pcElement = txPwrCtrlStringToStruct(ptr, FALSE);
+		kalMemFree(ptr, VIR_MEM_TYPE, u4MemSize);
+		if (pcElement != NULL) {
+			/* delete duplicated element
+			 * by checking name and index
+			 */
+			txPwrCtrlDeleteElement(prAdapter,
+				pcElement->name, pcElement->index,
+				PWR_CTRL_TYPE_ALL_LIST);
+
+			/* append to rTxPwr_List */
+			txPwrCtrlAddElement(prAdapter, pcElement);
+		}
+	}
+
+	/* show the tx power ctrl cfg list */
+	txPwrCtrlShowList(prAdapter, 0,
+			  "config list, after loadding global variables");
+}
+
+void txPwrCtrlCfgFileToList(struct ADAPTER *prAdapter)
+{
+	uint8_t *pucConfigBuf;
+	uint32_t u4ConfigReadLen;
+
+	pucConfigBuf = (uint8_t *)kalMemAlloc(WLAN_CFG_FILE_BUF_SIZE,
+					      VIR_MEM_TYPE);
+	kalMemZero(pucConfigBuf, WLAN_CFG_FILE_BUF_SIZE);
+	if (pucConfigBuf) {
+		if (kalRequestFirmware("txpowerctrl.cfg", pucConfigBuf,
+		    WLAN_CFG_FILE_BUF_SIZE, &u4ConfigReadLen,
+		    prAdapter->prGlueInfo->prDev) == 0) {
+			/* ToDo:: Nothing */
+		} else if (kalReadToFile("/data/misc/wifi/txpowerctrl.cfg",
+			   pucConfigBuf, WLAN_CFG_FILE_BUF_SIZE,
+			   &u4ConfigReadLen) == 0) {
+			/* ToDo:: Nothing */
+		} else if (kalReadToFile("/storage/sdcard0/txpowerctrl.cfg",
+			   pucConfigBuf, WLAN_CFG_FILE_BUF_SIZE,
+			   &u4ConfigReadLen) == 0) {
+			/* ToDo:: Nothing */
+		}
+
+		if (pucConfigBuf[0] != '\0' && u4ConfigReadLen > 0)
+			txPwrCtrlFileBufToList(prAdapter, pucConfigBuf);
+		else
+			DBGLOG(RLM, INFO,
+			       "no txpowerctrl.cfg or file is empty\n");
+
+		kalMemFree(pucConfigBuf, VIR_MEM_TYPE, WLAN_CFG_FILE_BUF_SIZE);
+	}
+}
+
+void txPwrCtrlLoadConfig(struct ADAPTER *prAdapter)
+{
+	/* 1. add records from global tx power ctrl setting into cfg list */
+	txPwrCtrlGlobalVariableToList(prAdapter);
+
+	/* 2. update cfg list by txpowerctrl.cfg */
+	txPwrCtrlCfgFileToList(prAdapter);
+
+#if CFG_SUPPORT_PWR_LIMIT_COUNTRY
+	/* 3. send setting to firmware */
+	rlmDomainSendPwrLimitCmd(prAdapter);
+#endif
+}
+
+void txPwrCtrlInit(struct ADAPTER *prAdapter)
+{
+	INIT_LIST_HEAD(&prAdapter->rTxPwr_DefaultList);
+	INIT_LIST_HEAD(&prAdapter->rTxPwr_DynamicList);
+}
+
+void txPwrCtrlUninit(struct ADAPTER *prAdapter)
+{
+	struct list_head *prCur, *prNext;
+	struct TX_PWR_CTRL_ELEMENT *prCurElement = NULL;
+	struct list_head *aryprlist[2] = {
+		&prAdapter->rTxPwr_DefaultList,
+		&prAdapter->rTxPwr_DynamicList
+	};
+	uint32_t u4MemSize = sizeof(struct TX_PWR_CTRL_ELEMENT);
+	uint32_t u4MemSize2;
+	uint32_t u4SettingSize = sizeof(struct TX_PWR_CTRL_CHANNEL_SETTING);
+	uint8_t ucSettingCount;
+	int32_t i;
+
+	for (i = 0; i < ARRAY_SIZE(aryprlist); i++) {
+		list_for_each_safe(prCur, prNext, aryprlist[i]) {
+			prCurElement = list_entry(prCur,
+					struct TX_PWR_CTRL_ELEMENT, node);
+			list_del(prCur);
+			if (prCurElement) {
+				ucSettingCount = prCurElement->settingCount;
+					u4MemSize2 = u4MemSize +
+					((ucSettingCount <= 1) ? 0 :
+					(ucSettingCount - 1) * u4SettingSize);
+				kalMemFree(prCurElement,
+					VIR_MEM_TYPE, u4MemSize2);
+			}
+		}
+	}
+}
+/* dynamic tx power control: end **********************************************/
+
+void rlmDomainSendPwrLimitCmd(struct ADAPTER *prAdapter)
 {
 	struct CMD_SET_COUNTRY_CHANNEL_POWER_LIMIT *prCmd = NULL;
-	uint32_t fgMask;
-	uint32_t rStatus = WLAN_STATUS_SUCCESS;
+	uint32_t rStatus;
 	uint8_t i;
 	uint16_t u2DefaultTableIndex;
 	uint32_t u4SetCmdTableMaxSize;
 	uint32_t u4SetQueryInfoLen;
 	struct CMD_CHANNEL_POWER_LIMIT *prCmdPwrLimit;	/* for print usage */
-	struct REG_INFO *prRegInfo;
-
-	if (!prAdapter) {
-		DBGLOG(RLM, ERROR, "prAdapter is NULL\n");
-		return WLAN_STATUS_ADAPTER_NOT_READY;
-	}
-
-	fgMask = prAdapter->fgTxPwrLimitMask;
-
-	DBGLOG(RLM, INFO, "tx power control: eCtrlType(%d,%d)=[%s], mask=%u\n",
-		eCtrlType, PWR_CTRL_TYPE_NUM,
-		g_ENUM_TX_POWER_CTRL_TYPE_LABEL[eCtrlType], fgMask);
+	uint8_t bandedgeParam[4] = { 0, 0, 0, 0 };
 
 	if (regd_is_single_sku_en())
 		return rlmDomainSendPwrLimitCmd_V2(prAdapter);
 
-	if (eCtrlType == PWR_CTRL_TYPE_DISABLE_FCC_IOCTL) {
-		if (fgMask & PWR_CRTL_MASK_FCC_IOCTL)
-			fgMask -= PWR_CRTL_MASK_FCC_IOCTL;
-		eCtrlType = PWR_CTRL_TYPE_DOMAIN;
-	} else if (eCtrlType == PWR_CTRL_TYPE_DISABLE_SAR_IOCTL) {
-		if (fgMask & PWR_CRTL_MASK_SAR_IOCTL)
-			fgMask -= PWR_CRTL_MASK_SAR_IOCTL;
-		eCtrlType = PWR_CTRL_TYPE_DOMAIN;
-	} else if (eCtrlType == PWR_CTRL_TYPE_DISABLE_TXPWR_SCENARIO) {
-		if (fgMask & PWR_CRTL_MASK_TXPWR_SCENARIO)
-			fgMask -= PWR_CRTL_MASK_TXPWR_SCENARIO;
-		eCtrlType = PWR_CTRL_TYPE_DOMAIN;
-	} else if (eCtrlType == PWR_CTRL_TYPE_DISABLE_3STEPS_BACKOFF) {
-		if (fgMask & PWR_CRTL_MASK_3STEPS_BACKOFF)
-			fgMask -= PWR_CRTL_MASK_3STEPS_BACKOFF;
-		eCtrlType = PWR_CTRL_TYPE_DOMAIN;
-	}
-
-	/* construct tx power table by domain */
 	u4SetCmdTableMaxSize =
-			sizeof(struct CMD_SET_COUNTRY_CHANNEL_POWER_LIMIT) +
-			MAX_CMD_SUPPORT_CHANNEL_NUM *
-			sizeof(struct CMD_CHANNEL_POWER_LIMIT);
+	    sizeof(struct CMD_SET_COUNTRY_CHANNEL_POWER_LIMIT) +
+	    MAX_CMD_SUPPORT_CHANNEL_NUM *
+	    sizeof(struct CMD_CHANNEL_POWER_LIMIT);
 
 	prCmd = cnmMemAlloc(prAdapter, RAM_TYPE_BUF, u4SetCmdTableMaxSize);
 	if (!prCmd) {
 		DBGLOG(RLM, ERROR, "Domain: Alloc cmd buffer failed\n");
-		return WLAN_STATUS_RESOURCES;
+		return;
 	}
 	kalMemZero(prCmd, u4SetCmdTableMaxSize);
 
+	/* construct power table by domain index */
 	u2DefaultTableIndex =
-			rlmDomainPwrLimitDefaultTableDecision(prAdapter,
-			prAdapter->rWifiVar.rConnSettings.u2CountryCode
-			);
+		rlmDomainPwrLimitDefaultTableDecision(prAdapter,
+		prAdapter->rWifiVar.rConnSettings.u2CountryCode);
 	if (u2DefaultTableIndex != POWER_LIMIT_TABLE_NULL) {
-		WLAN_GET_FIELD_BE16(
-			&g_rRlmPowerLimitDefault[u2DefaultTableIndex].
-				aucCountryCode[0],
-				&prCmd->u2CountryCode);
+
+		WLAN_GET_FIELD_BE16(&g_rRlmPowerLimitDefault[
+				     u2DefaultTableIndex].aucCountryCode[0],
+				    &prCmd->u2CountryCode);
 
 		/* Initialize channel number */
 		prCmd->ucNum = 0;
 
-		/* <1> default table information, fill all subband */
+		/* <1> Command - default table information, fill all subband */
 		rlmDomainBuildCmdByDefaultTable(prCmd, u2DefaultTableIndex);
 
-		/* <2> configuration table information,
-		 *     replace specified channel
+		/* <2> Command - configuration table information, replace
+		 *              specified channel
 		 */
 		rlmDomainBuildCmdByConfigTable(prAdapter, prCmd);
 	}
@@ -2544,13 +3567,19 @@ uint32_t rlmDomainSendPwrLimitCmd(struct ADAPTER *prAdapter,
 	       (prAdapter->rWifiVar.rConnSettings.u2CountryCode & 0xff00) >> 8,
 	       (prAdapter->rWifiVar.rConnSettings.u2CountryCode & 0x00ff),
 	       ((prCmd->u2CountryCode & 0xff00) >> 8),
-	       (prCmd->u2CountryCode & 0x00ff));
+	       (prCmd->u2CountryCode & 0x00ff)
+	);
 
+	/* show the constructed power table and detect the band edge of 2.4G/5G
+	 * under this domain
+	 */
 	prCmdPwrLimit = &prCmd->rChannelPowerLimit[0];
 	for (i = 0; i < prCmd->ucNum; i++) {
+		uint8_t curChl = prCmdPwrLimit->ucCentralCh;
+
 		DBGLOG(RLM, TRACE,
-		       "Original Domain: Ch=%d, Limit=%d,%d,%d,%d,%d,%d,%d,%d,%d, Fg=%d\n",
-		       prCmdPwrLimit->ucCentralCh,
+		       "Old Domain: Idx=%d,Ch=%d,Limit=%d,%d,%d,%d,%d,%d,%d,%d,%d,Fg=%d\n",
+		       i, prCmdPwrLimit->ucCentralCh,
 		       prCmdPwrLimit->cPwrLimitCCK,
 		       prCmdPwrLimit->cPwrLimit20L,
 		       prCmdPwrLimit->cPwrLimit20H,
@@ -2561,541 +3590,77 @@ uint32_t rlmDomainSendPwrLimitCmd(struct ADAPTER *prAdapter,
 		       prCmdPwrLimit->cPwrLimit160L,
 		       prCmdPwrLimit->cPwrLimit160H,
 		       prCmdPwrLimit->ucFlag);
+
+		if (curChl <= 14) { /* decide 2.4G band edge infomration */
+			if ((bandedgeParam[0] == 0) ||
+			    (curChl < bandedgeParam[0]))
+				bandedgeParam[0] = curChl;
+
+			if ((bandedgeParam[1] == 0) ||
+			    (curChl > bandedgeParam[1]))
+				bandedgeParam[1] = curChl;
+		} else { /* decide 5 band edge infomration */
+			if ((bandedgeParam[2] == 0) ||
+			    (curChl < bandedgeParam[2]))
+				bandedgeParam[2] = curChl;
+
+			if ((bandedgeParam[3] == 0) ||
+			    (curChl > bandedgeParam[3]))
+				bandedgeParam[3] = curChl;
+		}
+
 		prCmdPwrLimit++;
 	}
 
-	if (!(prAdapter->prGlueInfo) || !(prAdapter->prGlueInfo->prRegInfo)) {
-		DBGLOG(RLM, ERROR, "prGlueInfo/prRegInfo is NULL\n");
-		rStatus = WLAN_STATUS_ADAPTER_NOT_READY;
-		goto freeMemLabel;
-	}
-	prRegInfo = prAdapter->prGlueInfo->prRegInfo;
+	/* apply each setting into country channel power table */
+	txPwrCtrlApplySettings(prAdapter, prCmd, bandedgeParam);
 
-	/* case 1: set tx power for domain */
-	if (eCtrlType == PWR_CTRL_TYPE_DOMAIN)
-		fgMask |= PWR_CRTL_MASK_DOMAIN;
-
-	/* case 2: set band edge tx power for 2.4G */
-	if (prRegInfo->fg2G4BandEdgePwrUsed &&
-	    ((eCtrlType == PWR_CTRL_TYPE_BANDEDGE_2G) ||
-	     (fgMask & PWR_CRTL_MASK_BANDEDGE_2G4))) {
-		uint8_t ucStartChl = 0;
-		uint8_t ucStopChl = ucStartChl;
-		uint8_t ucStartChlIdx = 0;
-		uint8_t ucStopChlIdx = ucStartChlIdx;
-		uint8_t ucCCK = prRegInfo->cBandEdgeMaxPwrCCK;
-		uint8_t ucOFDM20 = prRegInfo->cBandEdgeMaxPwrOFDM20;
-		uint8_t ucOFDM40 = prRegInfo->cBandEdgeMaxPwrOFDM40;
-
-		prCmdPwrLimit = &prCmd->rChannelPowerLimit[0];
-		for (i = 0; i < prCmd->ucNum; i++, prCmdPwrLimit++) {
-			uint8_t curChl = prCmdPwrLimit->ucCentralCh;
-
-			if (curChl > 14)
-				continue;
-
-			if ((ucStartChl == 0) || (curChl < ucStartChl)) {
-				ucStartChl = curChl;
-				ucStartChlIdx = i;
-			}
-
-			if ((ucStopChl == 0) || (curChl > ucStopChl)) {
-				ucStopChl = curChl;
-				ucStopChlIdx = i;
-			}
-		}
-
-		DBGLOG(RLM, INFO,
-		       "bandedge 2.4G: start chl=%u,%u stop chl=%u,%u ucCCK=%u, ucOFDM20=%u, ucOFDM40=%u\n",
-		       ucStartChl, ucStartChlIdx, ucStopChl, ucStopChlIdx,
-		       ucCCK, ucOFDM20, ucOFDM40);
-
-		if ((ucStartChl != 0) && (ucStopChl != 0)) {
-			for (i = 0; i < 2; i++) {
-				uint8_t idx = (i == 0) ?
-						ucStartChlIdx : ucStopChlIdx;
-				prCmdPwrLimit = &prCmd->rChannelPowerLimit[idx];
-				if (ucCCK < prCmdPwrLimit->cPwrLimitCCK)
-					prCmdPwrLimit->cPwrLimitCCK = ucCCK;
-				if (ucOFDM20 < prCmdPwrLimit->cPwrLimit20L)
-					prCmdPwrLimit->cPwrLimit20L = ucOFDM20;
-				if (ucOFDM20 < prCmdPwrLimit->cPwrLimit20H)
-					prCmdPwrLimit->cPwrLimit20H = ucOFDM20;
-				if (ucOFDM40 < prCmdPwrLimit->cPwrLimit40L)
-					prCmdPwrLimit->cPwrLimit40L = ucOFDM40;
-				if (ucOFDM40 < prCmdPwrLimit->cPwrLimit40H)
-					prCmdPwrLimit->cPwrLimit40H = ucOFDM40;
-			}
-		}
-		fgMask |= PWR_CRTL_MASK_BANDEDGE_2G4;
-	}
-
-#if CFG_SUPPORT_NVRAM_5G
-	/* case 3: set band edge tx power for 5G */
-	if (prRegInfo->ucEnable5GBand) {
-		struct BANDEDGE_5G *pr5GBandEdge =
-				&prRegInfo->prOldEfuseMapping->r5GBandEdgePwr;
-
-		if (pr5GBandEdge->uc5GBandEdgePwrUsed &&
-		    ((eCtrlType == PWR_CTRL_TYPE_BANDEDGE_5G) ||
-		     (fgMask & PWR_CRTL_MASK_BANDEDGE_5G))) {
-			struct BANDEDGE_5G *pr5GBandEdge =
-				&prAdapter->prGlueInfo->prRegInfo->
-					prOldEfuseMapping->r5GBandEdgePwr;
-			uint8_t ucOFDM20 =
-				pr5GBandEdge->c5GBandEdgeMaxPwrOFDM20;
-			uint8_t ucOFDM40 =
-				pr5GBandEdge->c5GBandEdgeMaxPwrOFDM40;
-			uint8_t ucOFDM80 =
-				pr5GBandEdge->c5GBandEdgeMaxPwrOFDM80;
-
-			DBGLOG(RLM, INFO,
-			       "bandedge 5G: start chl=%u stop chl=%u ucOFDM20=%u, ucOFDM40=%u, ucOFDM80=%u\n",
-			       g_aucBandEdge5G[0], g_aucBandEdge5G[1],
-			       ucOFDM20, ucOFDM40, ucOFDM80);
-
-			prCmdPwrLimit = &prCmd->rChannelPowerLimit[0];
-			for (i = 0; i < prCmd->ucNum; i++, prCmdPwrLimit++) {
-				uint8_t curChl = prCmdPwrLimit->ucCentralCh;
-
-				if ((curChl > 14) &&
-				    ((curChl <= g_aucBandEdge5G[0]) ||
-				     (curChl >= g_aucBandEdge5G[1]))) {
-					prCmdPwrLimit->cPwrLimitCCK = 0;
-					if (ucOFDM20 <
-					    prCmdPwrLimit->cPwrLimit20L)
-						prCmdPwrLimit->cPwrLimit20L =
-								ucOFDM20;
-					if (ucOFDM20 <
-					    prCmdPwrLimit->cPwrLimit20H)
-						prCmdPwrLimit->cPwrLimit20H =
-								ucOFDM20;
-					if (ucOFDM40 <
-					    prCmdPwrLimit->cPwrLimit40L)
-						prCmdPwrLimit->cPwrLimit40L =
-								ucOFDM40;
-					if (ucOFDM40 <
-					    prCmdPwrLimit->cPwrLimit40H)
-						prCmdPwrLimit->cPwrLimit40H =
-								ucOFDM40;
-					if (ucOFDM80 <
-					    prCmdPwrLimit->cPwrLimit80L)
-						prCmdPwrLimit->cPwrLimit80L =
-								ucOFDM80;
-					if (ucOFDM80 <
-					    prCmdPwrLimit->cPwrLimit80H)
-						prCmdPwrLimit->cPwrLimit80H =
-								ucOFDM80;
-				}
-			}
-			fgMask |= PWR_CRTL_MASK_BANDEDGE_5G;
-		}
-	}
-#endif /* #if CFG_SUPPORT_NVRAM_5G */
-
-#if CFG_SUPPORT_FCC_DYNAMIC_TX_PWR_ADJUST
-	/* case 4: set tx power for FCC at wifi on */
-	if (g_rFccTxPwrAdjust.fgFccTxPwrAdjust &&
-	    ((eCtrlType == PWR_CTRL_TYPE_FCC_WIFION) ||
-	     (fgMask & PWR_CRTL_MASK_FCC_WIFION))) {
-		struct FCC_TX_PWR_ADJUST *prFccTxPwrAdjust =
-			(struct FCC_TX_PWR_ADJUST *)&g_rFccTxPwrAdjust;
-		uint8_t uOffsetCCK = prFccTxPwrAdjust->uOffsetCCK;
-		uint8_t uOffsetHT20 = prFccTxPwrAdjust->uOffsetHT20;
-		uint8_t uOffsetHT40 = prFccTxPwrAdjust->uOffsetHT40;
-		uint8_t uStartCCKChl =
-				(uint8_t)prFccTxPwrAdjust->aucChannelCCK[0];
-		uint8_t uStopCCKChl =
-				(uint8_t)prFccTxPwrAdjust->aucChannelCCK[1];
-		uint8_t uStartHT20Chl =
-				(uint8_t)prFccTxPwrAdjust->aucChannelHT20[0];
-		uint8_t uStopHT20Chl =
-				(uint8_t)prFccTxPwrAdjust->aucChannelHT20[1];
-		uint8_t uStartHT40Chl =
-				(uint8_t)prFccTxPwrAdjust->aucChannelHT40[0];
-		uint8_t uStopHT40Chl =
-				(uint8_t)prFccTxPwrAdjust->aucChannelHT40[1];
-
-		DBGLOG(RLM, INFO,
-		       "FCC wifion: uOffsetCCK=%u(%u,%u) uOffsetHT20=%u(%u,%u), uOffsetHT40=%u(%u,%u)\n",
-		       uOffsetCCK, uStartCCKChl, uStopCCKChl,
-		       uOffsetHT20, uStartHT20Chl, uStopHT20Chl,
-		       uOffsetHT40, uStartHT40Chl, uStopHT40Chl);
-
-		prCmdPwrLimit = &prCmd->rChannelPowerLimit[0];
-		for (i = 0; i < prCmd->ucNum; i++, prCmdPwrLimit++) {
-			uint8_t curChl = prCmdPwrLimit->ucCentralCh;
-
-			if ((curChl >= uStartCCKChl) &&
-			    (curChl <= uStopCCKChl)) {
-				if (prCmdPwrLimit->cPwrLimitCCK > uOffsetCCK)
-					prCmdPwrLimit->cPwrLimitCCK -=
-								uOffsetCCK;
-				else
-					prCmdPwrLimit->cPwrLimitCCK = 0;
-			}
-			if ((curChl >= uStartHT20Chl) &&
-			    (curChl <= uStopHT20Chl)) {
-				if (prCmdPwrLimit->cPwrLimit20L > uOffsetHT20)
-					prCmdPwrLimit->cPwrLimit20L -=
-								uOffsetHT20;
-				else
-					prCmdPwrLimit->cPwrLimit20L = 0;
-				if (prCmdPwrLimit->cPwrLimit20H > uOffsetHT20)
-					prCmdPwrLimit->cPwrLimit20H -=
-								uOffsetHT20;
-				else
-					prCmdPwrLimit->cPwrLimit20H = 0;
-			}
-			if ((curChl >= uStartHT40Chl) &&
-			    (curChl <= uStopHT40Chl)) {
-				if (prCmdPwrLimit->cPwrLimit40L > uOffsetHT40)
-					prCmdPwrLimit->cPwrLimit40L -=
-								uOffsetHT40;
-				else
-					prCmdPwrLimit->cPwrLimit40L -= 0;
-				if (prCmdPwrLimit->cPwrLimit40H > uOffsetHT40)
-					prCmdPwrLimit->cPwrLimit40H -=
-								uOffsetHT40;
-				else
-					prCmdPwrLimit->cPwrLimit40H = 0;
-			}
-		}
-		fgMask |= PWR_CRTL_MASK_FCC_WIFION;
-	}
-#endif /* CFG_SUPPORT_FCC_DYNAMIC_TX_PWR_ADJUST */
-
-#if CFG_SUPPORT_FCC_POWER_BACK_OFF
-	/* case 5: set tx power for FCC from ioctl */
-	if (g_rFccTxPwrAdjust.fgFccTxPwrAdjust &&
-	    ((eCtrlType == PWR_CTRL_TYPE_ENABLE_FCC_IOCTL) ||
-	     (fgMask & PWR_CRTL_MASK_FCC_IOCTL))) {
-		struct FCC_TX_PWR_ADJUST *prFccTxPwrAdjust =
-			(struct FCC_TX_PWR_ADJUST *)&g_rFccTxPwrAdjust;
-		uint8_t uOffsetCCK = prFccTxPwrAdjust->uOffsetCCK;
-		uint8_t uOffsetHT20 = prFccTxPwrAdjust->uOffsetHT20;
-		uint8_t uOffsetHT40 = prFccTxPwrAdjust->uOffsetHT40;
-		uint8_t uStartCCKChl =
-				(uint8_t)prFccTxPwrAdjust->aucChannelCCK[0];
-		uint8_t uStopCCKChl =
-				(uint8_t)prFccTxPwrAdjust->aucChannelCCK[1];
-		uint8_t uStartHT20Chl =
-				(uint8_t)prFccTxPwrAdjust->aucChannelHT20[0];
-		uint8_t uStopHT20Chl =
-				(uint8_t)prFccTxPwrAdjust->aucChannelHT20[1];
-		uint8_t uStartHT40Chl =
-				(uint8_t)prFccTxPwrAdjust->aucChannelHT40[0];
-		uint8_t uStopHT40Chl =
-				(uint8_t)prFccTxPwrAdjust->aucChannelHT40[1];
-
-		DBGLOG(RLM, INFO,
-		       "FCC ioctl: uOffsetCCK=%u(%u,%u) uOffsetHT20=%u(%u,%u), uOffsetHT40=%u(%u,%u)\n",
-		       uOffsetCCK, uStartCCKChl, uStopCCKChl,
-		       uOffsetHT20, uStartHT20Chl, uStopHT20Chl,
-		       uOffsetHT40, uStartHT40Chl, uStopHT40Chl);
-
-		prCmdPwrLimit = &prCmd->rChannelPowerLimit[0];
-		for (i = 0; i < prCmd->ucNum; i++, prCmdPwrLimit++) {
-			uint8_t curChl = prCmdPwrLimit->ucCentralCh;
-
-			if ((curChl >= uStartCCKChl) &&
-			    (curChl <= uStopCCKChl)) {
-				if (prCmdPwrLimit->cPwrLimitCCK > uOffsetCCK)
-					prCmdPwrLimit->cPwrLimitCCK -=
-								uOffsetCCK;
-				else
-					prCmdPwrLimit->cPwrLimitCCK = 0;
-			}
-			if ((curChl >= uStartHT20Chl) &&
-			    (curChl <= uStopHT20Chl)) {
-				if (prCmdPwrLimit->cPwrLimit20L > uOffsetHT20)
-					prCmdPwrLimit->cPwrLimit20L -=
-								uOffsetHT20;
-				else
-					prCmdPwrLimit->cPwrLimit20L = 0;
-				if (prCmdPwrLimit->cPwrLimit20H > uOffsetHT20)
-					prCmdPwrLimit->cPwrLimit20H -=
-								uOffsetHT20;
-				else
-					prCmdPwrLimit->cPwrLimit20H = 0;
-			}
-			if ((curChl >= uStartHT40Chl) &&
-			    (curChl <= uStopHT40Chl)) {
-				if (prCmdPwrLimit->cPwrLimit40L > uOffsetHT40)
-					prCmdPwrLimit->cPwrLimit40L -=
-								uOffsetHT40;
-				else
-					prCmdPwrLimit->cPwrLimit40L = 0;
-				if (prCmdPwrLimit->cPwrLimit40H > uOffsetHT40)
-					prCmdPwrLimit->cPwrLimit40H -=
-								uOffsetHT40;
-				else
-					prCmdPwrLimit->cPwrLimit40H = 0;
-			}
-		}
-		fgMask |= PWR_CRTL_MASK_FCC_IOCTL;
-	}
-#endif /* CFG_SUPPORT_FCC_POWER_BACK_OFF */
-
-#if CFG_SUPPORT_TX_POWER_BACK_OFF
-	/* case 6: set tx power for SAR at ioctl */
-	if ((eCtrlType == PWR_CTRL_TYPE_ENABLE_SAR_IOCTL) ||
-	    (fgMask & PWR_CRTL_MASK_SAR_IOCTL)) {
-		uint8_t aucParam[4];
-
-		kalMemCopy(&aucParam, &g_TxPwrBackOffParam, 4);
-
-		DBGLOG(RLM, INFO,
-		       "SAR ioctl: 2.4G(enable:%u, pwr=%u), 5G(enable:%u, pwr=%u)\n",
-		       aucParam[0], aucParam[1], aucParam[2], aucParam[3]);
-
-		if (aucParam[0] != 0) {
-			prCmdPwrLimit = &prCmd->rChannelPowerLimit[0];
-			for (i = 0; i < prCmd->ucNum; i++, prCmdPwrLimit++) {
-				if (prCmdPwrLimit->ucCentralCh > 14)
-					continue;
-				if (prCmdPwrLimit->cPwrLimitCCK > aucParam[1])
-					prCmdPwrLimit->cPwrLimitCCK =
-								aucParam[1];
-				if (prCmdPwrLimit->cPwrLimit20L > aucParam[1])
-					prCmdPwrLimit->cPwrLimit20L =
-								aucParam[1];
-				if (prCmdPwrLimit->cPwrLimit20H > aucParam[1])
-					prCmdPwrLimit->cPwrLimit20H =
-								aucParam[1];
-				if (prCmdPwrLimit->cPwrLimit40L > aucParam[1])
-					prCmdPwrLimit->cPwrLimit40L =
-								aucParam[1];
-				if (prCmdPwrLimit->cPwrLimit40H > aucParam[1])
-					prCmdPwrLimit->cPwrLimit40H =
-								aucParam[1];
-				if (prCmdPwrLimit->cPwrLimit80L > aucParam[1])
-					prCmdPwrLimit->cPwrLimit80L =
-								aucParam[1];
-				if (prCmdPwrLimit->cPwrLimit80H > aucParam[1])
-					prCmdPwrLimit->cPwrLimit80H =
-								aucParam[1];
-				if (prCmdPwrLimit->cPwrLimit160L > aucParam[1])
-					prCmdPwrLimit->cPwrLimit160L =
-								aucParam[1];
-				if (prCmdPwrLimit->cPwrLimit160H > aucParam[1])
-					prCmdPwrLimit->cPwrLimit160H =
-								aucParam[1];
-			}
-		}
-
-		if (aucParam[2] != 0) {
-			prCmdPwrLimit = &prCmd->rChannelPowerLimit[0];
-			for (i = 0; i < prCmd->ucNum; i++, prCmdPwrLimit++) {
-				if (prCmdPwrLimit->ucCentralCh <= 14)
-					continue;
-				if (prCmdPwrLimit->cPwrLimitCCK > aucParam[3])
-					prCmdPwrLimit->cPwrLimitCCK =
-								aucParam[3];
-				if (prCmdPwrLimit->cPwrLimit20L > aucParam[3])
-					prCmdPwrLimit->cPwrLimit20L =
-								aucParam[3];
-				if (prCmdPwrLimit->cPwrLimit20H > aucParam[3])
-					prCmdPwrLimit->cPwrLimit20H =
-								aucParam[3];
-				if (prCmdPwrLimit->cPwrLimit40L > aucParam[3])
-					prCmdPwrLimit->cPwrLimit40L =
-								aucParam[3];
-				if (prCmdPwrLimit->cPwrLimit40H > aucParam[3])
-					prCmdPwrLimit->cPwrLimit40H =
-								aucParam[3];
-				if (prCmdPwrLimit->cPwrLimit80L > aucParam[3])
-					prCmdPwrLimit->cPwrLimit80L =
-								aucParam[3];
-				if (prCmdPwrLimit->cPwrLimit80H > aucParam[3])
-					prCmdPwrLimit->cPwrLimit80H =
-								aucParam[3];
-				if (prCmdPwrLimit->cPwrLimit160L > aucParam[3])
-					prCmdPwrLimit->cPwrLimit160L =
-								aucParam[3];
-				if (prCmdPwrLimit->cPwrLimit160H > aucParam[3])
-					prCmdPwrLimit->cPwrLimit160H =
-								aucParam[3];
-			}
-		}
-		fgMask |= PWR_CRTL_MASK_SAR_IOCTL;
-	}
-
-	/* case 7: set tx power scenario */
-	if ((eCtrlType == PWR_CTRL_TYPE_ENABLE_TXPWR_SCENARIO) ||
-	    (fgMask & PWR_CRTL_MASK_TXPWR_SCENARIO)) {
-		uint8_t u2G4Power, u5GPower;
-
-		if ((g_iTxPwrScenarioIdx >= 0) && (g_iTxPwrScenarioIdx < 5))
-			DBGLOG(RLM, INFO,
-			       "set tx power scenario=%d, 2.4G(enable:%u, pwr=%u), 5G(enable:%u, pwr=%u)\n",
-			       g_iTxPwrScenarioIdx,
-			       g_bTxPwrScenarioEnable2G,
-			       g_acTxPwrScenarioMaxPower2G[g_iTxPwrScenarioIdx],
-			       g_bTxPwrScenarioEnable5G,
-			       g_acTxPwrScenarioMaxPower5G[g_iTxPwrScenarioIdx]
-			      );
-		else {
-			rStatus = WLAN_STATUS_INVALID_DATA;
-			goto freeMemLabel;
-		}
-
-		if (g_bTxPwrScenarioEnable2G) {
-			u2G4Power = g_acTxPwrScenarioMaxPower2G[
-							g_iTxPwrScenarioIdx];
-			prCmdPwrLimit = &prCmd->rChannelPowerLimit[0];
-			for (i = 0; i < prCmd->ucNum; i++, prCmdPwrLimit++) {
-				if (prCmdPwrLimit->ucCentralCh > 14)
-					continue;
-				if (prCmdPwrLimit->cPwrLimitCCK > u2G4Power)
-					prCmdPwrLimit->cPwrLimitCCK = u2G4Power;
-				if (prCmdPwrLimit->cPwrLimit20L > u2G4Power)
-					prCmdPwrLimit->cPwrLimit20L = u2G4Power;
-				if (prCmdPwrLimit->cPwrLimit20H > u2G4Power)
-					prCmdPwrLimit->cPwrLimit20H = u2G4Power;
-				if (prCmdPwrLimit->cPwrLimit40L > u2G4Power)
-					prCmdPwrLimit->cPwrLimit40L = u2G4Power;
-				if (prCmdPwrLimit->cPwrLimit40H > u2G4Power)
-					prCmdPwrLimit->cPwrLimit40H = u2G4Power;
-				if (prCmdPwrLimit->cPwrLimit80L > u2G4Power)
-					prCmdPwrLimit->cPwrLimit80L = u2G4Power;
-				if (prCmdPwrLimit->cPwrLimit80H > u2G4Power)
-					prCmdPwrLimit->cPwrLimit80H = u2G4Power;
-				if (prCmdPwrLimit->cPwrLimit160L > u2G4Power)
-					prCmdPwrLimit->cPwrLimit160L =
-								u2G4Power;
-				if (prCmdPwrLimit->cPwrLimit160H > u2G4Power)
-					prCmdPwrLimit->cPwrLimit160H =
-								u2G4Power;
-			}
-		}
-
-		if (g_bTxPwrScenarioEnable5G) {
-			u5GPower = g_acTxPwrScenarioMaxPower2G[
-							g_iTxPwrScenarioIdx];
-			prCmdPwrLimit = &prCmd->rChannelPowerLimit[0];
-			for (i = 0; i < prCmd->ucNum; i++, prCmdPwrLimit++) {
-				if (prCmdPwrLimit->ucCentralCh <= 14)
-					continue;
-				if (prCmdPwrLimit->cPwrLimitCCK > u5GPower)
-					prCmdPwrLimit->cPwrLimitCCK = u5GPower;
-				if (prCmdPwrLimit->cPwrLimit20L > u5GPower)
-					prCmdPwrLimit->cPwrLimit20L = u5GPower;
-				if (prCmdPwrLimit->cPwrLimit20H > u5GPower)
-					prCmdPwrLimit->cPwrLimit20H = u5GPower;
-				if (prCmdPwrLimit->cPwrLimit40L > u5GPower)
-					prCmdPwrLimit->cPwrLimit40L = u5GPower;
-				if (prCmdPwrLimit->cPwrLimit40H > u5GPower)
-					prCmdPwrLimit->cPwrLimit40H = u5GPower;
-				if (prCmdPwrLimit->cPwrLimit80L > u5GPower)
-					prCmdPwrLimit->cPwrLimit80L = u5GPower;
-				if (prCmdPwrLimit->cPwrLimit80H > u5GPower)
-					prCmdPwrLimit->cPwrLimit80H = u5GPower;
-				if (prCmdPwrLimit->cPwrLimit160L > u5GPower)
-					prCmdPwrLimit->cPwrLimit160L =
-								u5GPower;
-				if (prCmdPwrLimit->cPwrLimit160H > u5GPower)
-					prCmdPwrLimit->cPwrLimit160H =
-								u5GPower;
-			}
-		}
-		fgMask |= PWR_CRTL_MASK_TXPWR_SCENARIO;
-	}
-
-	/* case 8: 3-steps power back off */
-	if ((eCtrlType == PWR_CTRL_TYPE_ENABLE_3STEPS_BACKOFF) ||
-	    (fgMask & PWR_CRTL_MASK_3STEPS_BACKOFF)) {
-		int8_t iPwrOffset;
-
-		if ((g_i3StepsBackOffIdx >= 1) && (g_i3StepsBackOffIdx <= 3)) {
-			iPwrOffset = g_ac3StepsPoewrOffset[
-					g_i3StepsBackOffIdx - 1];
-			DBGLOG(RLM, INFO,
-			       "set 3-steps power back off, idx=%d, offset=%d\n",
-			       g_i3StepsBackOffIdx, iPwrOffset);
-		} else {
-			rStatus = WLAN_STATUS_INVALID_DATA;
-			goto freeMemLabel;
-		}
-
-		prCmdPwrLimit = &prCmd->rChannelPowerLimit[0];
-		for (i = 0; i < prCmd->ucNum; i++, prCmdPwrLimit++) {
-			if ((prCmdPwrLimit->cPwrLimitCCK + iPwrOffset) > 0)
-				prCmdPwrLimit->cPwrLimitCCK += iPwrOffset;
-			if ((prCmdPwrLimit->cPwrLimit20L + iPwrOffset) > 0)
-				prCmdPwrLimit->cPwrLimit20L += iPwrOffset;
-			if ((prCmdPwrLimit->cPwrLimit20H + iPwrOffset) > 0)
-				prCmdPwrLimit->cPwrLimit20H += iPwrOffset;
-			if ((prCmdPwrLimit->cPwrLimit40L + iPwrOffset) > 0)
-				prCmdPwrLimit->cPwrLimit40L += iPwrOffset;
-			if ((prCmdPwrLimit->cPwrLimit40H + iPwrOffset) > 0)
-				prCmdPwrLimit->cPwrLimit40H += iPwrOffset;
-			if ((prCmdPwrLimit->cPwrLimit80L + iPwrOffset) > 0)
-				prCmdPwrLimit->cPwrLimit80L += iPwrOffset;
-			if ((prCmdPwrLimit->cPwrLimit80H + iPwrOffset) > 0)
-				prCmdPwrLimit->cPwrLimit80H += iPwrOffset;
-			if ((prCmdPwrLimit->cPwrLimit160L + iPwrOffset) > 0)
-				prCmdPwrLimit->cPwrLimit160L += iPwrOffset;
-			if ((prCmdPwrLimit->cPwrLimit160H + iPwrOffset) > 0)
-				prCmdPwrLimit->cPwrLimit160H += iPwrOffset;
-		}
-
-		fgMask |= PWR_CRTL_MASK_3STEPS_BACKOFF;
-	}
-#endif /* CFG_SUPPORT_TX_POWER_BACK_OFF */
-
+	/* show tx power table after applying setting */
 	prCmdPwrLimit = &prCmd->rChannelPowerLimit[0];
 	for (i = 0; i < prCmd->ucNum; i++) {
 		DBGLOG(RLM, TRACE,
-			"Modified Domain: Ch=%d, Limit=%d,%d,%d,%d,%d,%d,%d,%d,%d, Fg=%d\n",
-			prCmdPwrLimit->ucCentralCh,
-			prCmdPwrLimit->cPwrLimitCCK,
-			prCmdPwrLimit->cPwrLimit20L,
-			prCmdPwrLimit->cPwrLimit20H,
-			prCmdPwrLimit->cPwrLimit40L,
-			prCmdPwrLimit->cPwrLimit40H,
-			prCmdPwrLimit->cPwrLimit80L,
-			prCmdPwrLimit->cPwrLimit80H,
-			prCmdPwrLimit->cPwrLimit160L,
-			prCmdPwrLimit->cPwrLimit160H,
-			prCmdPwrLimit->ucFlag);
+		       "New Domain: Idx=%d,Ch=%d,Limit=%d,%d,%d,%d,%d,%d,%d,%d,%d,Fg=%d\n",
+		       i, prCmdPwrLimit->ucCentralCh,
+		       prCmdPwrLimit->cPwrLimitCCK,
+		       prCmdPwrLimit->cPwrLimit20L,
+		       prCmdPwrLimit->cPwrLimit20H,
+		       prCmdPwrLimit->cPwrLimit40L,
+		       prCmdPwrLimit->cPwrLimit40H,
+		       prCmdPwrLimit->cPwrLimit80L,
+		       prCmdPwrLimit->cPwrLimit80H,
+		       prCmdPwrLimit->cPwrLimit160L,
+		       prCmdPwrLimit->cPwrLimit160H,
+		       prCmdPwrLimit->ucFlag);
+
 		prCmdPwrLimit++;
 	}
 
 	u4SetQueryInfoLen =
-		(sizeof(struct CMD_SET_COUNTRY_CHANNEL_POWER_LIMIT) +
-		(prCmd->ucNum) * sizeof(struct CMD_CHANNEL_POWER_LIMIT));
+	    (sizeof(struct CMD_SET_COUNTRY_CHANNEL_POWER_LIMIT) +
+	    (prCmd->ucNum) * sizeof(struct CMD_CHANNEL_POWER_LIMIT));
 
 	/* Update domain info to chip */
 	if (prCmd->ucNum <= MAX_CMD_SUPPORT_CHANNEL_NUM) {
-		DBGLOG(RLM, INFO, "send CMD_ID_SET_COUNTRY_POWER_LIMIT\n");
-		wlanSendSetQueryCmd(prAdapter, /* prAdapter */
-			      CMD_ID_SET_COUNTRY_POWER_LIMIT, /* ucCID */
-			      TRUE, /* fgSetQuery */
-			      FALSE, /* fgNeedResp */
-			      FALSE, /* fgIsOid */
-			      NULL, /* pfCmdDoneHandler */
-			      NULL, /* pfCmdTimeoutHandler */
-			      u4SetQueryInfoLen, /* u4SetQueryInfoLen */
-			      (uint8_t *) prCmd, /* pucInfoBuffer */
-			      NULL, /* pvSetQueryBuffer */
-			      0 /* u4SetQueryBufferLen */
+		rStatus = wlanSendSetQueryCmd(prAdapter,	/* prAdapter */
+			      CMD_ID_SET_COUNTRY_POWER_LIMIT,	/* ucCID */
+			      TRUE,	/* fgSetQuery */
+			      FALSE,	/* fgNeedResp */
+			      FALSE,	/* fgIsOid */
+			      NULL,	/* pfCmdDoneHandler */
+			      NULL,	/* pfCmdTimeoutHandler */
+			      u4SetQueryInfoLen,	/* u4SetQueryInfoLen */
+			      (uint8_t *) prCmd,	/* pucInfoBuffer */
+			      NULL,	/* pvSetQueryBuffer */
+			      0	/* u4SetQueryBufferLen */
 		    );
-	} else {
+	} else
 		DBGLOG(RLM, ERROR, "Domain: illegal power limit table\n");
-		rStatus = WLAN_STATUS_FAILURE;
-	}
 
-	prAdapter->fgTxPwrLimitMask = fgMask;
+	/* ASSERT(rStatus == WLAN_STATUS_PENDING); */
 
-	DBGLOG(RLM, INFO, "rStatus=%u, prCmd->ucNum=%u, fgTxPwrLimitMask=%u\n",
-	       rStatus, prCmd->ucNum, prAdapter->fgTxPwrLimitMask);
+	cnmMemFree(prAdapter, prCmd);
 
-freeMemLabel:
-	if (prCmd != NULL)
-		cnmMemFree(prAdapter, prCmd);
-
-	return rStatus;
+	return;
 }
 #endif /* CFG_SUPPORT_PWR_LIMIT_COUNTRY */
 

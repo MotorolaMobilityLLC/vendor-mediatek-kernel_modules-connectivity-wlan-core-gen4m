@@ -62,19 +62,6 @@
 #ifndef _GL_WEXT_PRIV_H
 #define _GL_WEXT_PRIV_H
 
-/* Tx Power Control */
-#if CFG_SUPPORT_FCC_POWER_BACK_OFF
-extern struct FCC_TX_PWR_ADJUST g_rFccTxPwrAdjust;
-#endif /* CFG_SUPPORT_FCC_POWER_BACK_OFF */
-
-#if CFG_SUPPORT_TX_POWER_BACK_OFF
-extern uint32_t g_TxPwrBackOffParam;
-extern bool g_bTxPowerLimitEnable2G;
-extern uint8_t g_cTxBackOffMaxPower2G;
-extern bool g_bTxPowerLimitEnable5G;
-extern uint8_t g_cTxBackOffMaxPower5G;
-#endif /* CFG_SUPPORT_TX_POWER_BACK_OFF */
-
 /*******************************************************************************
  *                         C O M P I L E R   F L A G S
  *******************************************************************************
@@ -197,11 +184,8 @@ extern uint8_t g_cTxBackOffMaxPower5G;
 /* Get FW manifest version */
 #define  PRIV_CMD_GET_FW_VERSION        38
 
-#if CFG_SUPPORT_FCC_POWER_BACK_OFF
-#define  PRIV_CMD_SET_FCC				39
-#endif /* CFG_SUPPORT_FCC_POWER_BACK_OFF */
-
-#define  PRIV_CMD_SET_3STEPS_BACKOFF	40
+/* dynamic tx power control */
+#define PRIV_CMD_SET_PWR_CTRL		40
 
 /* wifi type: 11g, 11n, ... */
 #define  PRIV_CMD_GET_WIFI_TYPE		41
