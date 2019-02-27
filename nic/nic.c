@@ -2619,14 +2619,14 @@ uint32_t nicQmUpdateWmmParms(IN struct ADAPTER *prAdapter,
 
 	ASSERT(prAdapter);
 
-	DBGLOG(QM, INFO, "Update WMM parameters for BSS[%u]\n",
+	DBGLOG(QM, TRACE, "Update WMM parameters for BSS[%u]\n",
 	       ucBssIndex);
 
-	DBGLOG(QM, EVENT, "sizeof(struct AC_QUE_PARMS): %zu\n",
+	DBGLOG(QM, TRACE, "sizeof(struct AC_QUE_PARMS): %zu\n",
 		sizeof(struct AC_QUE_PARMS));
-	DBGLOG(QM, EVENT, "sizeof(CMD_UPDATE_WMM_PARMS): %zu\n",
+	DBGLOG(QM, TRACE, "sizeof(CMD_UPDATE_WMM_PARMS): %zu\n",
 		sizeof(struct CMD_UPDATE_WMM_PARMS));
-	DBGLOG(QM, EVENT, "sizeof(struct WIFI_CMD): %zu\n",
+	DBGLOG(QM, TRACE, "sizeof(struct WIFI_CMD): %zu\n",
 		sizeof(struct WIFI_CMD));
 
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);

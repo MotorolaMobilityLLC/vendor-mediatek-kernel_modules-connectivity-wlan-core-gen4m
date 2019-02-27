@@ -2639,7 +2639,7 @@ void nicCmdEventQueryWlanInfo(IN struct ADAPTER *prAdapter,
 
 	prEventWlanInfo = (struct EVENT_WLAN_INFO *) pucEventBuf;
 
-	DBGLOG(RSN, INFO, "MT6632 : nicCmdEventQueryWlanInfo\n");
+	DBGLOG(RSN, TRACE, "MT6632 : nicCmdEventQueryWlanInfo\n");
 
 	prGlueInfo = prAdapter->prGlueInfo;
 
@@ -2699,7 +2699,7 @@ void nicCmdEventQueryMibInfo(IN struct ADAPTER *prAdapter,
 
 	prEventMibInfo = (struct EVENT_MIB_INFO *) pucEventBuf;
 
-	DBGLOG(RSN, INFO, "MT6632 : nicCmdEventQueryMibInfo\n");
+	DBGLOG(RSN, TRACE, "MT6632 : nicCmdEventQueryMibInfo\n");
 
 	prGlueInfo = prAdapter->prGlueInfo;
 
@@ -2963,8 +2963,6 @@ uint32_t nicCfgChipCapMacCap(IN struct ADAPTER *prAdapter,
 		prAdapter->aprBssInfo[prAdapter->ucP2PDevBssIdx] =
 			&prAdapter->rWifiVar.rP2pDevInfo;
 	}
-	DBGLOG_LIMITED(INIT, INFO, "ucHwBssIdNum: %d.\n",
-	       prMacCap->ucHwBssIdNum);
 
 	if (prMacCap->ucWtblEntryNum > 0
 	    && prMacCap->ucWtblEntryNum <= WTBL_SIZE) {
@@ -2972,13 +2970,13 @@ uint32_t nicCfgChipCapMacCap(IN struct ADAPTER *prAdapter,
 		prAdapter->ucTxDefaultWlanIndex = prAdapter->ucWtblEntryNum
 						  - 1;
 	}
-	DBGLOG_LIMITED(INIT, INFO, "ucWtblEntryNum: %d.\n",
-	       prMacCap->ucWtblEntryNum);
 
 	prAdapter->ucWmmSetNum = prMacCap->ucWmmSet > 0 ?
 		prMacCap->ucWmmSet : 1;
-	DBGLOG_LIMITED(INIT, INFO, "ucWmmSetNum: %d.\n",
-	       prMacCap->ucWmmSet);
+	DBGLOG_LIMITED(INIT, INFO,
+		"ucHwBssIdNum:%d ucWtblEntryNum:%d ucWmmSetNum:%d.\n",
+		prMacCap->ucHwBssIdNum, prMacCap->ucWtblEntryNum,
+		prMacCap->ucWmmSet);
 
 	return WLAN_STATUS_SUCCESS;
 }
@@ -4187,7 +4185,7 @@ void nicEventWlanInfo(IN struct ADAPTER *prAdapter,
 	kalMemCopy(&prAdapter->rEventWlanInfo, prEvent->aucBuffer,
 		   sizeof(struct EVENT_WLAN_INFO));
 
-	DBGLOG(RSN, INFO, "EVENT_ID_WLAN_INFO");
+	DBGLOG(RSN, TRACE, "EVENT_ID_WLAN_INFO");
 	/* command response handling */
 	prCmdInfo = nicGetPendingCmdInfo(prAdapter,
 					 prEvent->ucSeqNum);
@@ -4215,7 +4213,7 @@ void nicEventMibInfo(IN struct ADAPTER *prAdapter,
 	prAdapter->fgIsStatValid = TRUE;
 	prAdapter->rStatUpdateTime = kalGetTimeTick();
 
-	DBGLOG(RSN, INFO, "EVENT_ID_MIB_INFO");
+	DBGLOG(RSN, TRACE, "EVENT_ID_MIB_INFO");
 	/* command response handling */
 	prCmdInfo = nicGetPendingCmdInfo(prAdapter,
 					 prEvent->ucSeqNum);
@@ -4518,7 +4516,7 @@ void nicEventAddPkeyDone(IN struct ADAPTER *prAdapter,
 	prKeyDone = (struct EVENT_ADD_KEY_DONE_INFO *) (
 			    prEvent->aucBuffer);
 
-	DBGLOG(RSN, INFO, "EVENT_ID_ADD_PKEY_DONE BSSIDX=%d " MACSTR
+	DBGLOG(RSN, TRACE, "EVENT_ID_ADD_PKEY_DONE BSSIDX=%d " MACSTR
 	       "\n",
 	       prKeyDone->ucBSSIndex, MAC2STR(prKeyDone->aucStaAddr));
 
@@ -4531,14 +4529,14 @@ void nicEventAddPkeyDone(IN struct ADAPTER *prAdapter,
 			rAisSpecificBssInfo.ucKeyAlgorithmId;
 		if ((ucKeyId == CIPHER_SUITE_WEP40)
 		    || (ucKeyId == CIPHER_SUITE_WEP104)) {
-			DBGLOG(RX, INFO, "WEP, ucKeyAlgorithmId= %d\n",
+			DBGLOG(RX, TRACE, "WEP, ucKeyAlgorithmId= %d\n",
 				ucKeyId);
 			prStaRec = cnmGetStaRecByAddress(prAdapter,
 					prKeyDone->ucBSSIndex,
 					prAdapter->rWifiVar.arBssInfoPool[
 					prKeyDone->ucBSSIndex].aucBSSID);
 			if (!prStaRec) {
-				DBGLOG(RX, INFO,
+				DBGLOG(RX, TRACE,
 					"WEP, AddPKeyDone, ucBSSIndex %d, Addr "
 					MACSTR ", StaRec is NULL\n",
 					prKeyDone->ucBSSIndex,
@@ -4547,7 +4545,7 @@ void nicEventAddPkeyDone(IN struct ADAPTER *prAdapter,
 					ucBSSIndex].aucBSSID));
 			}
 		} else {
-			DBGLOG(RX, INFO,
+			DBGLOG(RX, TRACE,
 			       "AddPKeyDone, ucBSSIndex %d, Addr "
 			       MACSTR ", StaRec is NULL\n",
 			       prKeyDone->ucBSSIndex,
