@@ -343,6 +343,7 @@ struct mt66xx_chip_info mt66xx_chip_info_connac2x2 = {
 #endif
 	.is_support_hw_amsdu = TRUE,
 	.ucMaxSwAmsduNum = 0,
+	.ucMaxSwapAntenna = 0,
 	.workAround = 0,
 };
 

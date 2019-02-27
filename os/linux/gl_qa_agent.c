@@ -1396,6 +1396,7 @@ static int32_t HQA_GetAntSwapCapability(struct net_device *prNetDev,
 	int32_t i4Ret = 0;
 	uint32_t value = 0;
 	struct GLUE_INFO *prGlueInfo = NULL;
+	struct mt66xx_chip_info *prChipInfo = NULL;
 
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 	if (!prGlueInfo || !prGlueInfo->prAdapter) {
@@ -1403,9 +1404,20 @@ static int32_t HQA_GetAntSwapCapability(struct net_device *prNetDev,
 		return -EFAULT;
 	}
 
-	DBGLOG(RFTEST, INFO, "HQA_GetAntSwapCapability\n");
+	prChipInfo = prGlueInfo->prAdapter->chip_info;
+	if (!prChipInfo) {
+		DBGLOG(RFTEST, ERROR, "prChipInfo is NULL\n");
+		return -EFAULT;
+	}
 
-	value = ntohl(prGlueInfo->prAdapter->fgIsSupportAntSwp);
+	DBGLOG(RFTEST, INFO, "HQA_GetAntSwapCapability [%d]\n",
+				prGlueInfo->prAdapter->fgIsSupportAntSwp);
+
+	if (prGlueInfo->prAdapter->fgIsSupportAntSwp)
+		value = ntohl(prChipInfo->ucMaxSwapAntenna);
+	else
+		value = 0;
+
 	memcpy(HqaCmdFrame->Data + 2, &value, sizeof(value));
 	ResponseToQA(HqaCmdFrame, prIwReqData, 2 + sizeof(value), i4Ret);
 	return i4Ret;
@@ -1428,10 +1440,13 @@ static int32_t HQA_SetAntSwap(struct net_device *prNetDev,
 			    struct HQA_CMD_FRAME *HqaCmdFrame)
 {
 	int32_t i4Ret = 0;
-	uint32_t u4Ant = 0;
+	uint32_t u4Ant = 0, u4Band = 0;
 
-	memcpy(&u4Ant, HqaCmdFrame->Data, sizeof(uint32_t));
+	memcpy(&u4Band, HqaCmdFrame->Data, sizeof(uint32_t));
+	memcpy(&u4Ant, HqaCmdFrame->Data +  sizeof(uint32_t), sizeof(uint32_t));
 	u4Ant = ntohl(u4Ant);
+
+	DBGLOG(RFTEST, INFO, "Band = %d, Ant = %d\n", u4Band, u4Ant);
 
 	i4Ret = MT_ATESetAntSwap(prNetDev, u4Ant);
 	if (i4Ret != WLAN_STATUS_SUCCESS)
