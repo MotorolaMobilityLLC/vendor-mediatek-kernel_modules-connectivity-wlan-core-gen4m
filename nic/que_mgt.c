@@ -7704,7 +7704,7 @@ u_int8_t qmHandleRxReplay(struct ADAPTER *prAdapter,
 	/* BMC only need check CCMP and TKIP Cipher suite */
 	prRxStatus = prSwRfb->prRxStatus;
 	ucSecMode = HAL_RX_STATUS_GET_SEC_MODE(prRxStatus);
-	DBGLOG(QM, TRACE, "ucSecMode = [%u], ChiperGroup = [%u]\n",
+	DBGLOG_LIMITED(QM, TRACE, "ucSecMode = [%u], ChiperGroup = [%u]\n",
 			ucSecMode, prWpaInfo->u4CipherGroup);
 
 	if (ucSecMode != CIPHER_SUITE_CCMP
