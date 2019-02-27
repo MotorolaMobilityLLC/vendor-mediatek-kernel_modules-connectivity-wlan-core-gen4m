@@ -433,7 +433,7 @@ BOOLEAN halSetDriverOwn(IN P_ADAPTER_T prAdapter)
 				if (prAdapter->u4OwnFailedLogCount > LP_OWN_BACK_FAILED_RESET_CNT) {
 					/* Trigger RESET */
 #if CFG_CHIP_RESET_SUPPORT
-					glResetTrigger(prAdapter);
+					GL_RESET_TRIGGER(prAdapter, RST_FLAG_CHIP_RESET);
 #endif
 				}
 				GET_CURRENT_SYSTIME(&prAdapter->rLastOwnFailedLogTime);
@@ -503,7 +503,7 @@ BOOLEAN halSetDriverOwn(IN P_ADAPTER_T prAdapter)
 				if (fgTimeout) {
 					/* Trigger RESET */
 #if CFG_CHIP_RESET_SUPPORT
-					glResetTrigger(prAdapter);
+					GL_RESET_TRIGGER(prAdapter, RST_FLAG_CHIP_RESET);
 #endif
 				}
 
@@ -1373,11 +1373,11 @@ VOID halRxSDIOAggReceiveRFBs(IN P_ADAPTER_T prAdapter)
 		u2RxPktNum = (rxNum == 0 ? prEnhDataStr->rRxInfo.u.u2NumValidRx0Len :
 			prEnhDataStr->rRxInfo.u.u2NumValidRx1Len);
 
-		/* if this assertion happened, it is most likely a F/W bug */
-		ASSERT(u2RxPktNum <= HIF_RX_MAX_AGG_NUM);
-
-		if (u2RxPktNum > HIF_RX_MAX_AGG_NUM)
-			continue;
+		if (u2RxPktNum > HIF_RX_MAX_AGG_NUM) {
+			halProcessAbnormalInterrupt(prAdapter);
+			GL_RESET_TRIGGER(prAdapter, RST_FLAG_DO_CORE_DUMP);
+			return;
+		}
 
 		if (u2RxPktNum == 0)
 			continue;
@@ -1423,9 +1423,10 @@ VOID halRxSDIOAggReceiveRFBs(IN P_ADAPTER_T prAdapter)
 				(UINT_32) prEnhDataStr->rRxInfo.u.au2Rx1Len[i]);
 
 			if (!u4RxLength) {
-				ASSERT(0);
 				DBGLOG(RX, ERROR, "[%s] RxLength == 0\n", __func__);
-				break;
+				halProcessAbnormalInterrupt(prAdapter);
+				GL_RESET_TRIGGER(prAdapter, RST_FLAG_DO_CORE_DUMP);
+				return;
 			}
 
 			if (ALIGN_4(u4RxLength + HIF_RX_HW_APPENDED_LEN) < u4RxAvailAggLen) {
@@ -1435,8 +1436,9 @@ VOID halRxSDIOAggReceiveRFBs(IN P_ADAPTER_T prAdapter)
 				/* CFG_RX_COALESCING_BUFFER_SIZE is not large enough */
 				DBGLOG(RX, ERROR, "[%s] Request_len(%d) >= Available_len(%d)\n",
 					__func__, (ALIGN_4(u4RxLength + HIF_RX_HW_APPENDED_LEN)), u4RxAvailAggLen);
-				ASSERT(0);
-				break;
+				halProcessAbnormalInterrupt(prAdapter);
+				GL_RESET_TRIGGER(prAdapter, RST_FLAG_DO_CORE_DUMP);
+				return;
 			}
 		}
 
@@ -1956,19 +1958,44 @@ VOID halPrintIntStatus(IN P_ADAPTER_T prAdapter)
 #endif /* CFG_SDIO_INTR_ENHANCE */
 }
 
+VOID halDumpIntLog(IN P_ADAPTER_T prAdapter)
+{
+	P_GL_HIF_INFO_T prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
+	struct SDIO_INT_LOG_T *prIntLog;
+	P_SDIO_CTRL_T prIntSts;
+	UINT_32 u4Idx;
+
+	for (u4Idx = 0; u4Idx < CFG_SDIO_INT_LOG_CNT; u4Idx++) {
+		prIntLog = &prHifInfo->arIntLog[u4Idx];
+		prIntSts = (P_SDIO_CTRL_T)&prIntLog->aucIntSts[0];
+
+		DBGLOG(INTR, ERROR, "INT IDX[%u] STS[0x%08x] FG[0x%08x] Rx Pkt[%u] Sts0/1[%u:%u]\n",
+			prIntLog->u4Idx, prIntSts->u4WHISR, prIntLog->u4Flag, prIntLog->ucRxPktCnt,
+			prIntSts->rRxInfo.u.u2NumValidRx0Len, prIntSts->rRxInfo.u.u2NumValidRx1Len);
+		DBGLOG_MEM32(INTR, ERROR, &prIntLog->au2RxPktLen[0], sizeof(UINT_16) * HIF_RX_MAX_AGG_NUM);
+		DBGLOG_MEM32(INTR, ERROR, &prIntLog->au4RxPktInfo[0], sizeof(UINT_32) * HIF_RX_MAX_AGG_NUM);
+		DBGLOG_MEM32(INTR, ERROR, prIntSts, sizeof(SDIO_CTRL_T));
+	}
+
+	DBGLOG(INTR, ERROR, "---------------------------------\n");
+}
+
 VOID halProcessAbnormalInterrupt(IN P_ADAPTER_T prAdapter)
 {
-	UINT_32 u4Value;
+	UINT_32 u4Data = 0;
 
-	HAL_MCR_RD(prAdapter, MCR_WASR, &u4Value);
-	DBGLOG(REQ, WARN, "MCR_WASR: 0x%lx\n", u4Value);
-
+	HAL_MCR_RD(prAdapter, MCR_WASR, &u4Data);
+	halPollDbgCr(prAdapter, 5);
 	halPrintIntStatus(prAdapter);
 
-	if (u4Value & (WASR_RX0_UNDER_FLOW | WASR_RX1_UNDER_FLOW)) {
+	if (u4Data & (WASR_RX0_UNDER_FLOW | WASR_RX1_UNDER_FLOW)) {
 		DBGLOG(REQ, WARN, "Skip all SDIO Rx due to Rx underflow error!\n");
 		prAdapter->prGlueInfo->rHifInfo.fgSkipRx = TRUE;
+		halDumpHifStatus(prAdapter, NULL, 0);
+		GL_RESET_TRIGGER(prAdapter, RST_FLAG_DO_CORE_DUMP);
 	}
+
+	halDumpIntLog(prAdapter);
 }
 
 VOID halProcessSoftwareInterrupt(IN P_ADAPTER_T prAdapter)
