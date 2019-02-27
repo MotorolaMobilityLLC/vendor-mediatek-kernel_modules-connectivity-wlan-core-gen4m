@@ -1638,10 +1638,15 @@ void aisFsmSteps(IN struct ADAPTER *prAdapter, enum ENUM_AIS_STATE eNextState)
 			break;
 
 		case AIS_STATE_REMAIN_ON_CHANNEL:
-			SET_NET_ACTIVE(prAdapter, prAdapter->prAisBssInfo->ucBssIndex);
+			if (!IS_NET_ACTIVE(prAdapter,
+				prAdapter->prAisBssInfo->ucBssIndex)) {
+			SET_NET_ACTIVE(prAdapter,
+				prAdapter->prAisBssInfo->ucBssIndex);
 
-			/* sync with firmware */
-			nicActivateNetwork(prAdapter, prAdapter->prAisBssInfo->ucBssIndex);
+				/* sync with firmware */
+				nicActivateNetwork(prAdapter,
+					prAdapter->prAisBssInfo->ucBssIndex);
+			}
 #if CFG_SUPPORT_PNO
 			prAisBssInfo->fgIsNetRequestInActive = FALSE;
 #endif
