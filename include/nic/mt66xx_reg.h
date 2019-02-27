@@ -1054,10 +1054,14 @@ struct mt66xx_chip_info {
 	/* Extra TXD Size for TX Byte Count field (in unit of Byte) */
 	uint32_t u4ExtraTxByteCount;
 	uint32_t u4HifDmaShdlBaseAddr;
+	/* chip ip version from FW */
+	uint32_t u4ChipIpVersion;
+	uint32_t u4ChipIpConfig;
 
 	void (*asicCapInit)(IN struct ADAPTER *prAdapter);
 	void (*asicEnableFWDownload)(IN struct ADAPTER *prAdapter,
 		IN u_int8_t fgEnable);
+	uint32_t (*asicGetChipID)(IN struct ADAPTER *prAdapter);
 	void (*fillHifTxDesc)(IN uint8_t **pDest, IN uint16_t *pInfoBufLen);
 	uint32_t (*downloadBufferBin)(IN struct ADAPTER *prAdapter);
 

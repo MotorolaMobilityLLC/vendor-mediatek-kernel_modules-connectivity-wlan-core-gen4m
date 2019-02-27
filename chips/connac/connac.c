@@ -286,8 +286,12 @@ struct mt66xx_chip_info mt66xx_chip_info_connac = {
 	.eco_info = connac_eco_table,
 	.isNicCapV1 = FALSE,
 
+	/* IP info, should be overwrite by getNicCapabalityV2 */
+	.u4ChipIpVersion = CONNAC_CHIP_IP_VERSION,
+	.u4ChipIpConfig = CONNAC_CHIP_IP_CONFIG,
 	.asicCapInit = asicCapInit,
 	.asicEnableFWDownload = asicEnableFWDownload,
+	.asicGetChipID = asicGetChipID,
 	.downloadBufferBin = NULL,
 	.is_support_hw_amsdu = FALSE,
 	.workAround = 0,
