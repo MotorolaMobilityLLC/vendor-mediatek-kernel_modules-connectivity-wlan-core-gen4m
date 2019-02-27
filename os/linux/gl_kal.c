@@ -2805,7 +2805,8 @@ kalIoctl(IN struct GLUE_INFO *prGlueInfo,
 		DBGLOG(OID, ERROR,
 				"wait main_thread timeout, show backtrace:\n");
 
-		kal_show_stack(prGlueInfo->main_thread, NULL);
+		kal_show_stack(prGlueInfo->prAdapter,
+			prGlueInfo->main_thread, NULL);
 		ret = WLAN_STATUS_FAILURE;
 	}
 
@@ -6270,7 +6271,7 @@ void kalFreeTxMsdu(struct ADAPTER *prAdapter,
 int32_t kalHaltLock(uint32_t waitMs)
 {
 	int32_t i4Ret = 0;
-
+	struct GLUE_INFO *prGlueInfo = NULL;
 	if (waitMs) {
 		i4Ret = down_timeout(&rHaltCtrl.lock,
 				     MSEC_TO_JIFFIES(waitMs));
@@ -6278,20 +6279,23 @@ int32_t kalHaltLock(uint32_t waitMs)
 			goto success;
 		if (i4Ret != -ETIME)
 			return i4Ret;
-		if (rHaltCtrl.fgHeldByKalIoctl) {
-			struct GLUE_INFO *prGlueInfo = wlanGetGlueInfo();
 
+		prGlueInfo = wlanGetGlueInfo();
+		if (rHaltCtrl.fgHeldByKalIoctl) {
 			DBGLOG(INIT, ERROR,
 				"kalIoctl was executed longer than %u ms, show backtrace of tx_thread!\n",
 				kalGetTimeTick() - rHaltCtrl.u4HoldStart);
 			if (prGlueInfo)
-				kal_show_stack(prGlueInfo->main_thread, NULL);
+				kal_show_stack(prGlueInfo->prAdapter,
+					prGlueInfo->main_thread, NULL);
 		} else {
 			DBGLOG(INIT, ERROR,
 			       "halt lock held by %s pid %d longer than %u ms!\n",
 			       rHaltCtrl.owner->comm, rHaltCtrl.owner->pid,
 			       kalGetTimeTick() - rHaltCtrl.u4HoldStart);
-			kal_show_stack(rHaltCtrl.owner, NULL);
+			if (prGlueInfo)
+				kal_show_stack(prGlueInfo->prAdapter,
+					rHaltCtrl.owner, NULL);
 		}
 		return i4Ret;
 	}

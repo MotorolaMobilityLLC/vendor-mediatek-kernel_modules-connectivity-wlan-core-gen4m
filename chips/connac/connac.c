@@ -71,6 +71,11 @@
 #include "precomp.h"
 
 #include "connac.h"
+#include "linux/sched.h"
+#if CFG_MTK_ANDROID_WMT
+extern void connectivity_export_show_stack(struct task_struct *tsk,
+				unsigned long *sp);
+#endif
 
 /*******************************************************************************
  *                              C O N S T A N T S
@@ -293,6 +298,11 @@ struct mt66xx_chip_info mt66xx_chip_info_connac = {
 	.asicEnableFWDownload = asicEnableFWDownload,
 	.asicGetChipID = asicGetChipID,
 	.downloadBufferBin = NULL,
+#if CFG_MTK_ANDROID_WMT
+	.showTaskStack = connectivity_export_show_stack,
+#else
+	.showTaskStack = NULL,
+#endif
 	.is_support_hw_amsdu = FALSE,
 	.ucMaxSwAmsduNum = 4,
 	.workAround = 0,

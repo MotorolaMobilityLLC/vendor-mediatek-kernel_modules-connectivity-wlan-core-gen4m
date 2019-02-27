@@ -10701,7 +10701,12 @@ priv_set_ap(IN struct net_device *prNetDev,
 	IN struct iw_request_info *prIwReqInfo,
 	IN union iwreq_data *prIwReqData, IN OUT char *pcExtra)
 {
-	kal_show_stack(NULL, NULL);
+	struct GLUE_INFO *prGlueInfo = NULL;
+
+	ASSERT(prNetDev);
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+	ASSERT(prGlueInfo);
+	kal_show_stack(prGlueInfo->prAdapter, NULL, NULL);
 #if 0
 	return compat_priv(prNetDev, prIwReqInfo,
 		prIwReqData, pcExtra, __priv_set_ap);

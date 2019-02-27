@@ -905,13 +905,15 @@ do { \
 /*----------------------------------------------------------------------------*/
 /* Macros of show stack operations for using in Driver Layer                  */
 /*----------------------------------------------------------------------------*/
-#if CFG_MTK_ANDROID_WMT
-extern void connectivity_export_show_stack(struct task_struct *tsk,
-				unsigned long *sp);
-#define kal_show_stack(_task, _sp) \
-	connectivity_export_show_stack(_task, _sp)
+#ifdef CONFIG_X86
+#define kal_show_stack(_adapter, _task, _sp)
 #else
-#define kal_show_stack(_task, _sp)
+#define kal_show_stack(_adapter, _task, _sp) \
+{ \
+	if (_adapter->chip_info->showTaskStack) { \
+		_adapter->chip_info->showTaskStack(_task, _sp); \
+	} \
+}
 #endif
 
 /*******************************************************************************
