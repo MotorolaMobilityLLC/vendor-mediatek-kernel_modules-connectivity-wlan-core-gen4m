@@ -324,8 +324,7 @@ void wlanOnPreAllocAdapterMem(IN struct ADAPTER *prAdapter,
 {
 	uint32_t i = 0;
 
-	DBGLOG(INIT, INFO,
-		"wlanOnPreAllocAdapterMem(): start.\n");
+	DBGLOG(INIT, INFO, "start.\n");
 
 	if (!bAtResetFlow) {
 		/* 4 <0> Reset variables in ADAPTER_T */
@@ -388,16 +387,12 @@ void wlanOnPreAllocAdapterMem(IN struct ADAPTER *prAdapter,
 
 	/* 4 <0.1> reset fgIsBusAccessFailed */
 	fgIsBusAccessFailed = FALSE;
-
-	DBGLOG(INIT, INFO,
-		"wlanOnPreAllocAdapterMem(): end.\n");
 }
 
 void wlanOnPostNicInitAdapter(IN struct ADAPTER *prAdapter,
 	IN const u_int8_t bAtResetFlow)
 {
-	DBGLOG(INIT, INFO,
-		"wlanOnPostNicInitAdapter(): start.\n");
+	DBGLOG(INIT, INFO, "start.\n");
 
 	/* 4 <2.1> Initialize System Service (MGMT Memory pool and
 	 *	   STA_REC)
@@ -428,29 +423,23 @@ void wlanOnPostNicInitAdapter(IN struct ADAPTER *prAdapter,
 
 	/* 4 <4> Initialize Rx */
 	nicRxInitialize(prAdapter);
-	DBGLOG(INIT, INFO,
-		"wlanOnPostNicInitAdapter(): end.\n");
 }
 
 void wlanOnPostInitHifInfo(IN struct ADAPTER *prAdapter)
 {
-	DBGLOG(INIT, INFO,
-		"wlanOnPostNicInitAdapter(): start.\n");
+	DBGLOG(INIT, INFO, "start.\n");
 
 	/* 4 <6> Enable HIF cut-through to N9 mode, not visiting CR4 */
 	HAL_ENABLE_FWDL(prAdapter, TRUE);
 
 	/* 4 <7> Get ECO Version */
 	wlanSetChipEcoInfo(prAdapter);
-
-	DBGLOG(INIT, INFO,
-		"wlanOnPostNicInitAdapter(): end.\n");
 }
 
 void wlanOnPostFirmwareReady(IN struct ADAPTER *prAdapter,
 		IN struct REG_INFO *prRegInfo)
 {
-	DBGLOG(INIT, INFO, "wlanOnPostFirmwareReady(): start.\n");
+	DBGLOG(INIT, INFO, "start.\n");
 
 	/* OID timeout timer initialize */
 	cnmTimerInitTimer(prAdapter,
@@ -650,8 +639,6 @@ void wlanOnPostFirmwareReady(IN struct ADAPTER *prAdapter,
 	/* Tx Power Control load configuration */
 	/* note: call this API after loading NVRAM */
 	txPwrCtrlLoadConfig(prAdapter);
-
-	DBGLOG(INIT, INFO, "wlanOnPostFirmwareReady(): end.\n");
 }
 
 
@@ -899,7 +886,7 @@ uint32_t wlanAdapterStart(IN struct ADAPTER *prAdapter,
 
 void wlanOffClearAllQueues(IN struct ADAPTER *prAdapter)
 {
-	DBGLOG(INIT, INFO, "wlanClearQueues(): start.\n");
+	DBGLOG(INIT, INFO, "start.\n");
 	/* Release all CMD/MGMT/SEC frame in command queue */
 	kalClearCommandQueue(prAdapter->prGlueInfo);
 
@@ -915,14 +902,13 @@ void wlanOffClearAllQueues(IN struct ADAPTER *prAdapter)
 	wlanClearRxToOsQueue(prAdapter);
 
 #endif
-	DBGLOG(INIT, INFO, "wlanClearQueues(): end.\n");
 }
 
 
 void wlanOffUninitNicModule(IN struct ADAPTER *prAdapter,
 					IN const u_int8_t bAtResetFlow)
 {
-	DBGLOG(INIT, INFO, "wlanClearQueues(): start.\n");
+	DBGLOG(INIT, INFO, "start.\n");
 	nicRxUninitialize(prAdapter);
 
 	nicTxRelease(prAdapter, FALSE);
@@ -944,7 +930,6 @@ void wlanOffUninitNicModule(IN struct ADAPTER *prAdapter,
 		nicRestoreSpiDefMode(prAdapter);
 #endif
 	}
-	DBGLOG(INIT, INFO, "wlanClearQueues(): end.\n");
 }
 
 /*----------------------------------------------------------------------------*/

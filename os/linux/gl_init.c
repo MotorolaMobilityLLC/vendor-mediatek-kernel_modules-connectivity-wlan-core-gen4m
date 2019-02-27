@@ -3132,7 +3132,7 @@ void wlanOnPreAdapterStart(struct GLUE_INFO *prGlueInfo,
 	struct mt66xx_chip_info **pprChipInfo,
 	const u_int8_t bAtResetFlow)
 {
-	DBGLOG(INIT, INFO, "%s: start.\n", __func__);
+	DBGLOG(INIT, INFO, "start.\n");
 
 	if (!bAtResetFlow) {
 		prGlueInfo->u4ReadyFlag = 0;
@@ -3207,14 +3207,13 @@ void wlanOnPreAdapterStart(struct GLUE_INFO *prGlueInfo,
 				halTxCompleteTasklet,
 				(unsigned long)prGlueInfo);
 	} /* end of bAtResetFlow == FALSE */
-	DBGLOG(INIT, INFO, "%s: end.\n", __func__);
 }
 
 static
 void wlanOnPostAdapterStart(struct ADAPTER *prAdapter,
 	struct GLUE_INFO *prGlueInfo)
 {
-	DBGLOG(INIT, INFO, "wlanOnPostAdapterStart(): start.\n");
+	DBGLOG(INIT, INFO, "start.\n");
 
 	if (HAL_IS_TX_DIRECT(prAdapter)) {
 		if (!prAdapter->fgTxDirectInited) {
@@ -3239,7 +3238,6 @@ void wlanOnPostAdapterStart(struct ADAPTER *prAdapter,
 
 	/* kfree(prRegInfo); */
 
-	DBGLOG(INIT, INFO, "wlanOnPostAdapterStart(): end.\n");
 }
 
 static int32_t wlanOnPreNetRegister(struct GLUE_INFO *prGlueInfo,
@@ -3250,8 +3248,7 @@ static int32_t wlanOnPreNetRegister(struct GLUE_INFO *prGlueInfo,
 	struct wireless_dev *prWdev = gprWdev;
 	struct WIFI_VAR *prWifiVar;
 
-	DBGLOG(INIT, INFO,
-		"wlanOnPreNetRegister(): start.\n");
+	DBGLOG(INIT, INFO, "start.\n");
 
 	if (!bAtResetFlow) {
 		/* change net device mtu from feature option */
@@ -3399,17 +3396,12 @@ static int32_t wlanOnPreNetRegister(struct GLUE_INFO *prGlueInfo,
 					rStatus);
 	}
 #endif
-
-	DBGLOG(INIT, INFO,
-		"wlanOnPreNetRegister(): end.\n");
-
 	return 0;
 }
 
 static void wlanOnPostNetRegister(void)
 {
-	DBGLOG(INIT, INFO,
-		"wlanOnPostNetRegister(): start.\n");
+	DBGLOG(INIT, INFO, "start.\n");
 			/* 4 <4> Register early suspend callback */
 #if CFG_ENABLE_EARLY_SUSPEND
 	glRegisterEarlySuspend(&wlan_early_suspend_desc,
@@ -3418,17 +3410,13 @@ static void wlanOnPostNetRegister(void)
 
 	/* 4 <5> Register Notifier callback */
 	wlanRegisterNotifier();
-
-	DBGLOG(INIT, INFO,
-		"wlanOnPostNetRegister(): end.\n");
 }
 
 static
 void wlanOnPostProcFsCreation(struct GLUE_INFO *prGlueInfo,
 	struct ADAPTER *prAdapter)
 {
-	DBGLOG(INIT, INFO,
-		"wlanOnPostProcFsCreation(): start.\n");
+	DBGLOG(INIT, INFO, "start.\n");
 
 #if CFG_MET_PACKET_TRACE_SUPPORT
 	kalMetInit(prGlueInfo);
@@ -3463,9 +3451,6 @@ void wlanOnPostProcFsCreation(struct GLUE_INFO *prGlueInfo,
 				__func__);
 	}
 #endif
-
-	DBGLOG(INIT, INFO,
-		"wlanOnPostProcFsCreation(): end.\n");
 }
 
 static
@@ -3475,8 +3460,7 @@ int32_t wlanOnWhenProbeSuccess(struct GLUE_INFO *prGlueInfo,
 {
 	int32_t u4LogLevel = ENUM_WIFI_LOG_LEVEL_DEFAULT;
 
-	DBGLOG(INIT, INFO,
-		"wlanOnWhenProbeSuccess(): start.\n");
+	DBGLOG(INIT, INFO, "start.\n");
 
 #if CFG_SUPPORT_EASY_DEBUG
 		/* move before reading file
@@ -3550,14 +3534,12 @@ int32_t wlanOnWhenProbeSuccess(struct GLUE_INFO *prGlueInfo,
 		consys_log_event_notification((int)FW_LOG_CMD_ON_OFF,
 			u4LogOnOffCache);
 #endif
-	DBGLOG(INIT, INFO,
-		"wlanOnWhenProbeSuccess(): end.\n");
 	return 0;
 }
 
 void wlanOffStopWlanThreads(IN struct GLUE_INFO *prGlueInfo)
 {
-	DBGLOG(INIT, INFO, "wlanOffStopWlanThreads(): start.\n");
+	DBGLOG(INIT, INFO, "start.\n");
 
 #if CFG_SUPPORT_MULTITHREAD
 	wake_up_interruptible(&prGlueInfo->waitq_hif);
@@ -3583,7 +3565,6 @@ void wlanOffStopWlanThreads(IN struct GLUE_INFO *prGlueInfo)
 	prGlueInfo->u4TxThreadPid = 0xffffffff;
 	prGlueInfo->u4HifThreadPid = 0xffffffff;
 #endif
-	DBGLOG(INIT, INFO, "wlanOffStopWlanThreads(): end.\n");
 }
 
 
@@ -3816,7 +3797,7 @@ static int32_t wlanOnAtReset(void)
 void
 wlanOffNotifyCfg80211Disconnect(IN struct GLUE_INFO *prGlueInfo)
 {
-	DBGLOG(INIT, INFO, "wlanOffNotifyCfg80211Disconnect(): start.\n");
+	DBGLOG(INIT, INFO, "start.\n");
 	if (prGlueInfo->eParamMediaStateIndicated ==
 	    PARAM_MEDIA_STATE_CONNECTED) {
 
@@ -3829,12 +3810,11 @@ wlanOffNotifyCfg80211Disconnect(IN struct GLUE_INFO *prGlueInfo)
 #endif
 		kalMsleep(500);
 	}
-	DBGLOG(INIT, INFO, "wlanOffNotifyCfg80211Disconnect(): end.\n");
 }
 
 void wlanOffUnregisterP2pDevice(IN struct GLUE_INFO *prGlueInfo)
 {
-	DBGLOG(INIT, INFO, "wlanOffUnregisterP2pDevice(): start.\n");
+	DBGLOG(INIT, INFO, "start.\n");
 
 #if CFG_ENABLE_WIFI_DIRECT
 	if (prGlueInfo->prAdapter->fgIsP2PRegistered) {
@@ -3845,8 +3825,6 @@ void wlanOffUnregisterP2pDevice(IN struct GLUE_INFO *prGlueInfo)
 		p2pRemove(prGlueInfo);
 	}
 #endif
-
-	DBGLOG(INIT, INFO, "wlanOffUnregisterP2pDevice(): end.\n");
 }
 
 /*----------------------------------------------------------------------------*/
