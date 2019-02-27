@@ -408,22 +408,21 @@ nicGetRateIndexFromRateSetWithLimit(
 			u4CurPhyRate =
 				nicRateCode2DataRate(u2CurRateCode, MAC_BW_20, MAC_GI_NORMAL);
 
-			if (u4HighestPhyRate < u4CurPhyRate) {
-				u4HighestPhyRate = u4CurPhyRate;
-				ucHighestPhyRateSwIdx = i;
-			}
-			if (u4LowestPhyRate > u4CurPhyRate) {
-				u4LowestPhyRate = u4CurPhyRate;
-				ucLowestPhyRateSwIdx = i;
-			}
-
 			/* Compare */
 			if (fgGetLowest) {
+				if (u4HighestPhyRate < u4CurPhyRate) {
+					u4HighestPhyRate = u4CurPhyRate;
+					ucHighestPhyRateSwIdx = i;
+				}
 				if ((u4CurPhyRate >= u4PhyRateLimit) && (u4CurPhyRate <= u4TarPhyRate)) {
 					u4TarPhyRate = u4CurPhyRate;
 					ucTarRateSwIndex = i;
 				}
 			} else {
+				if (u4LowestPhyRate > u4CurPhyRate) {
+					u4LowestPhyRate = u4CurPhyRate;
+					ucLowestPhyRateSwIdx = i;
+				}
 				if ((u4CurPhyRate <= u4PhyRateLimit) && (u4CurPhyRate >= u4TarPhyRate)) {
 					u4TarPhyRate = u4CurPhyRate;
 					ucTarRateSwIndex = i;
