@@ -729,6 +729,7 @@ uint32_t halRxUSBEnqueueRFB(IN struct ADAPTER *prAdapter, IN uint8_t *pucBuf, IN
 	IN uint32_t u4MinRfbCnt)
 {
 	struct GLUE_INFO *prGlueInfo = prAdapter->prGlueInfo;
+	struct mt66xx_chip_info *prChipInfo;
 	struct RX_CTRL *prRxCtrl = &prAdapter->rRxCtrl;
 	struct SW_RFB *prSwRfb = (struct SW_RFB *) NULL;
 	struct HW_MAC_RX_DESC *prRxStatus;
@@ -741,6 +742,9 @@ uint32_t halRxUSBEnqueueRFB(IN struct ADAPTER *prAdapter, IN uint8_t *pucBuf, IN
 #endif /* CFG_TCP_IP_CHKSUM_OFFLOAD */
 
 	KAL_SPIN_LOCK_DECLARATION();
+
+	ASSERT(prAdapter);
+	prChipInfo = prAdapter->chip_info;
 
 	pucRxFrame = pucBuf;
 	u4RemainCount = u4Length;
@@ -804,7 +808,8 @@ uint32_t halRxUSBEnqueueRFB(IN struct ADAPTER *prAdapter, IN uint8_t *pucBuf, IN
 		} else {
 			DBGLOG(RX, WARN, "Rx byte count:%u exceeds SW_RFB max length:%u\n!",
 				u2RxByteCount, CFG_RX_MAX_PKT_SIZE);
-			DBGLOG_MEM32(RX, WARN, pucRxFrame, sizeof(struct HW_MAC_RX_DESC));
+			DBGLOG_MEM32(RX, WARN, pucRxFrame,
+				     prChipInfo->rxd_size);
 			break;
 		}
 

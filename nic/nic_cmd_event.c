@@ -3468,12 +3468,14 @@ void nicCmdEventQueryTxPowerInfo(IN struct ADAPTER *prAdapter,
 void nicEventLinkQuality(IN struct ADAPTER *prAdapter,
 			 IN struct WIFI_EVENT *prEvent)
 {
+	struct mt66xx_chip_info *prChipInfo = NULL;
 	struct CMD_INFO *prCmdInfo;
 
 	ASSERT(prAdapter);
+	prChipInfo = prAdapter->chip_info;
 
 #if CFG_ENABLE_WIFI_DIRECT && CFG_SUPPORT_P2P_RSSI_QUERY
-	if (prEvent->u2PacketLen == EVENT_HDR_WITHOUT_RXD_SIZE +
+	if (prEvent->u2PacketLen == prChipInfo->event_hdr_size +
 	    sizeof(struct EVENT_LINK_QUALITY_EX)) {
 		struct EVENT_LINK_QUALITY_EX *prLqEx =
 			(struct EVENT_LINK_QUALITY_EX *) (prEvent->aucBuffer);
@@ -4750,8 +4752,7 @@ void nicEventSendDeauth(IN struct ADAPTER *prAdapter,
 #if DBG
 	struct WLAN_MAC_HEADER *prWlanMacHeader;
 
-	prWlanMacHeader = (struct WLAN_MAC_HEADER *)
-			  &prEvent->aucBuffer[0];
+	prWlanMacHeader = (struct WLAN_MAC_HEADER *)prEvent->aucBuffer;
 	DBGLOG(RX, TRACE, "nicRx: aucAddr1: " MACSTR "\n",
 	       MAC2STR(prWlanMacHeader->aucAddr1));
 	DBGLOG(RX, TRACE, "nicRx: aucAddr2: " MACSTR "\n",
@@ -4759,8 +4760,7 @@ void nicEventSendDeauth(IN struct ADAPTER *prAdapter,
 #endif
 
 	/* receive packets without StaRec */
-	rSwRfb.pvHeader = (struct WLAN_MAC_HEADER *)
-			  &prEvent->aucBuffer[0];
+	rSwRfb.pvHeader = (struct WLAN_MAC_HEADER *)prEvent->aucBuffer;
 	if (authSendDeauthFrame(prAdapter, NULL, NULL, &rSwRfb,
 			REASON_CODE_CLASS_3_ERR,
 			(PFN_TX_DONE_HANDLER) NULL) == WLAN_STATUS_SUCCESS) {
@@ -5044,6 +5044,10 @@ void nicEventDumpMem(IN struct ADAPTER *prAdapter,
 void nicEventAssertDump(IN struct ADAPTER *prAdapter,
 			IN struct WIFI_EVENT *prEvent)
 {
+	struct mt66xx_chip_info *prChipInfo = NULL;
+
+	ASSERT(prAdapter);
+	prChipInfo = prAdapter->chip_info;
 
 	if (wlanIsChipRstRecEnabled(prAdapter))
 		wlanChipRstPreAct(prAdapter);
@@ -5074,11 +5078,11 @@ void nicEventAssertDump(IN struct ADAPTER *prAdapter,
 				prAdapter->fgKeepPrintCoreDump = FALSE;
 
 			if (prAdapter->fgN9CorDumpFileOpend) {
-				if (kalWriteCorDumpFile(prEvent->aucBuffer,
-						prEvent->u2PacketLength -
-						EVENT_HDR_WITHOUT_RXD_SIZE,
-						TRUE) !=
-				    WLAN_STATUS_SUCCESS) {
+				if (kalWriteCorDumpFile(
+					    prEvent->aucBuffer,
+					    prEvent->u2PacketLength -
+					    prChipInfo->event_hdr_size,
+					    TRUE) != WLAN_STATUS_SUCCESS) {
 					DBGLOG(NIC, INFO,
 						"kalWriteN9CorDumpFile fail\n");
 				}
@@ -5109,11 +5113,11 @@ void nicEventAssertDump(IN struct ADAPTER *prAdapter,
 				prAdapter->fgKeepPrintCoreDump = FALSE;
 
 			if (prAdapter->fgCr4CorDumpFileOpend) {
-				if (kalWriteCorDumpFile(prEvent->aucBuffer,
-						prEvent->u2PacketLength -
-						EVENT_HDR_WITHOUT_RXD_SIZE,
-						FALSE) !=
-				    WLAN_STATUS_SUCCESS) {
+				if (kalWriteCorDumpFile(
+					    prEvent->aucBuffer,
+					    prEvent->u2PacketLength -
+					    prChipInfo->event_hdr_size,
+					    FALSE) != WLAN_STATUS_SUCCESS) {
 					DBGLOG(NIC, ERROR,
 						"kalWriteN9CorDumpFile fail\n");
 				}

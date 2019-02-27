@@ -1822,7 +1822,7 @@ static bool halWpdmaFillTxRing(struct GLUE_INFO *prGlueInfo,
 	prTxRing->u4UsedCnt++;
 	kalDevRegWrite(prGlueInfo, prTxRing->hw_cidx_addr, prTxRing->TxCpuIdx);
 
-	DBGLOG_LIMITED(HAL, TRACE, "Tx Data: CPU idx[0x%x] Used[%u]\n",
+	DBGLOG_LIMITED(HAL, TRACE, "Tx Data: CPU idx[%u] Used[%u]\n",
 		       prTxRing->TxCpuIdx, prTxRing->u4UsedCnt);
 
 	return TRUE;
