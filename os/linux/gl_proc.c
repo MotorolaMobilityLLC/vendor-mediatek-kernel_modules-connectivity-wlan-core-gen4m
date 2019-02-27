@@ -87,8 +87,8 @@
 
 #if CFG_SUPPORT_DEBUG_FS
 #define PROC_ROAM_PARAM							"roam_param"
-#define PROC_COUNTRY							"country"
 #endif
+#define PROC_COUNTRY							"country"
 #define PROC_DRV_STATUS                         "status"
 #define PROC_RX_STATISTICS                      "rx_statistics"
 #define PROC_TX_STATISTICS                      "tx_statistics"
@@ -1021,14 +1021,13 @@ static const struct file_operations roam_ops = {
 	.read = procRoamRead,
 	.write = procRoamWrite,
 };
+#endif
 
 static ssize_t procCountryRead(struct file *filp, char __user *buf,
 	size_t count, loff_t *f_pos)
 {
 	uint32_t u4CopySize;
 	uint16_t u2CountryCode = 0;
-	uint32_t u4BufLen;
-	uint32_t rStatus;
 
 	/* if *f_pos > 0, it means has read successed last time,
 	 * don't try again
@@ -1036,12 +1035,11 @@ static ssize_t procCountryRead(struct file *filp, char __user *buf,
 	if (*f_pos > 0 || buf == NULL)
 		return 0;
 
-	rStatus = kalIoctl(g_prGlueInfo_proc, wlanoidGetCountryCode,
-		&u2CountryCode, 2, TRUE, FALSE, TRUE, &u4BufLen);
-	if (rStatus != WLAN_STATUS_SUCCESS) {
-		DBGLOG(INIT, INFO, "failed to get country code\n");
-		return -EINVAL;
+	if (g_prGlueInfo_proc && g_prGlueInfo_proc->prAdapter) {
+		u2CountryCode = g_prGlueInfo_proc->prAdapter->rWifiVar.
+			rConnSettings.u2CountryCode;
 	}
+
 	if (u2CountryCode)
 		kalSprintf(g_aucProcBuf, "Current Country Code: %c%c\n",
 			(u2CountryCode >> 8) & 0xff, u2CountryCode & 0xff);
@@ -1051,7 +1049,7 @@ static ssize_t procCountryRead(struct file *filp, char __user *buf,
 
 	u4CopySize = kalStrLen(g_aucProcBuf);
 	if (copy_to_user(buf, g_aucProcBuf, u4CopySize)) {
-		pr_err("copy to user failed\n");
+		pr_info("copy to user failed\n");
 		return -EFAULT;
 	}
 	*f_pos += u4CopySize;
@@ -1090,7 +1088,6 @@ static const struct file_operations country_ops = {
 	.read = procCountryRead,
 	.write = procCountryWrite,
 };
-#endif
 
 static ssize_t procAutoPerfCfgRead(struct file *filp, char __user *buf,
 	size_t count, loff_t *f_pos)
@@ -1646,8 +1643,8 @@ int32_t procRemoveProcfs(void)
 #endif
 #if CFG_SUPPORT_DEBUG_FS
 	remove_proc_entry(PROC_ROAM_PARAM, gprProcNetRoot);
-	remove_proc_entry(PROC_COUNTRY, gprProcNetRoot);
 #endif
+	remove_proc_entry(PROC_COUNTRY, gprProcNetRoot);
 
 	return 0;
 } /* end of procRemoveProcfs() */
@@ -1693,12 +1690,12 @@ int32_t procCreateFsEntry(struct GLUE_INFO *prGlueInfo)
 		       "Unable to create /proc entry roam_param\n\r");
 		return -1;
 	}
+#endif
 	prEntry = proc_create(PROC_COUNTRY, 0664, gprProcNetRoot, &country_ops);
 	if (prEntry == NULL) {
 		DBGLOG(INIT, ERROR, "Unable to create /proc entry country\n\r");
 		return -1;
 	}
-#endif
 #if	CFG_SUPPORT_EASY_DEBUG
 
 	prEntry =
