@@ -1471,7 +1471,6 @@ void halWpdmaInitRing(struct GLUE_INFO *prGlueInfo)
 {
 	struct GL_HIF_INFO *prHifInfo;
 	struct BUS_INFO *prBusInfo;
-	uint32_t i = 0;
 
 	ASSERT(prGlueInfo);
 
@@ -1488,13 +1487,9 @@ void halWpdmaInitRing(struct GLUE_INFO *prGlueInfo)
 	kalDevRegWrite(prGlueInfo, WPDMA_RST_PTR, 0xFFFFFFFF);
 
 	halWpdmaInitTxRing(prGlueInfo);
-	for (i = 0; i < NUM_OF_TX_RING; i++)
-		spin_lock_init((spinlock_t *) (&prHifInfo->TxRingLock[i]));
 
 	/* Init RX Ring0 Base/Size/Index pointer CSR */
 	halWpdmaInitRxRing(prGlueInfo);
-	for (i = 0; i < NUM_OF_RX_RING; i++)
-		spin_lock_init((spinlock_t *) (&prHifInfo->RxRingLock[i]));
 
 	if (prBusInfo->pdmaSetup)
 		prBusInfo->pdmaSetup(prGlueInfo, TRUE);
@@ -1602,15 +1597,12 @@ void halWpdmaProcessCmdDmaDone(IN struct GLUE_INFO *prGlueInfo,
 	phys_addr_t PacketPa = 0;
 	void *pBuffer = NULL;
 	uint32_t u4SwIdx, u4DmaIdx;
-	unsigned long flags = 0;
 
 	ASSERT(prGlueInfo);
 
 	prHifInfo = &prGlueInfo->rHifInfo;
 	prMemOps = &prHifInfo->rMemOps;
 	prTxRing = &prHifInfo->TxRing[u2Port];
-
-	spin_lock_irqsave(&prHifInfo->TxRingLock[u2Port], flags);
 
 	kalDevRegRead(prGlueInfo, prTxRing->hw_didx_addr, &u4DmaIdx);
 	u4SwIdx = prTxRing->TxSwUsedIdx;
@@ -1648,7 +1640,6 @@ void halWpdmaProcessCmdDmaDone(IN struct GLUE_INFO *prGlueInfo,
 
 	prTxRing->TxSwUsedIdx = u4SwIdx;
 
-	spin_unlock_irqrestore(&prHifInfo->TxRingLock[u2Port], flags);
 }
 
 void halWpdmaProcessDataDmaDone(IN struct GLUE_INFO *prGlueInfo,
@@ -1657,7 +1648,6 @@ void halWpdmaProcessDataDmaDone(IN struct GLUE_INFO *prGlueInfo,
 	struct GL_HIF_INFO *prHifInfo = NULL;
 	uint32_t u4SwIdx, u4DmaIdx;
 	struct RTMP_TX_RING *prTxRing;
-	unsigned long flags = 0;
 
 	ASSERT(prGlueInfo);
 
@@ -1666,8 +1656,6 @@ void halWpdmaProcessDataDmaDone(IN struct GLUE_INFO *prGlueInfo,
 
 	kalDevRegRead(prGlueInfo, prTxRing->hw_didx_addr, &u4DmaIdx);
 	u4SwIdx = prTxRing->TxSwUsedIdx;
-
-	spin_lock_irqsave(&prHifInfo->TxRingLock[u2Port], flags);
 
 	if (u4DmaIdx > u4SwIdx)
 		prTxRing->u4UsedCnt -= u4DmaIdx - u4SwIdx;
@@ -1678,8 +1666,6 @@ void halWpdmaProcessDataDmaDone(IN struct GLUE_INFO *prGlueInfo,
 		if (prTxRing->u4UsedCnt == TX_RING_SIZE)
 			prTxRing->u4UsedCnt = 0;
 	}
-
-	spin_unlock_irqrestore(&prHifInfo->TxRingLock[u2Port], flags);
 
 	DBGLOG(HAL, TRACE,
 		"DMA done: port[%u] dma[%u] idx[%u] used[%u]\n", u2Port,
@@ -1723,8 +1709,6 @@ bool halWpdmaWriteCmd(IN struct GLUE_INFO *prGlueInfo,
 	struct RTMP_TX_RING *prTxRing;
 	struct RTMP_DMACB *pTxCell;
 	struct TXD_STRUCT *pTxD;
-	spinlock_t *prTxRingLock;
-	unsigned long flags = 0;
 	uint16_t u2Port = TX_RING_CMD_IDX_2;
 	uint32_t u4TotalLen;
 	void *pucSrc = NULL;
@@ -1734,20 +1718,16 @@ bool halWpdmaWriteCmd(IN struct GLUE_INFO *prGlueInfo,
 	prHifInfo = &prGlueInfo->rHifInfo;
 	prMemOps = &prHifInfo->rMemOps;
 	prTxRing = &prHifInfo->TxRing[u2Port];
-	prTxRingLock = &prHifInfo->TxRingLock[u2Port];
 
 	u4TotalLen = prCmdInfo->u4TxdLen + prCmdInfo->u4TxpLen;
 	if (prMemOps->allocRuntimeMem)
 		pucSrc = prMemOps->allocRuntimeMem(u4TotalLen);
-
-	spin_lock_irqsave((spinlock_t *)prTxRingLock, flags);
 
 	kalDevRegRead(prGlueInfo, prTxRing->hw_cidx_addr, &prTxRing->TxCpuIdx);
 	if (prTxRing->TxCpuIdx >= TX_RING_SIZE) {
 		DBGLOG(HAL, ERROR, "Error TxCpuIdx[%u]\n", prTxRing->TxCpuIdx);
 		if (prMemOps->freeBuf)
 			prMemOps->freeBuf(pucSrc, u4TotalLen);
-		spin_unlock_irqrestore((spinlock_t *)prTxRingLock, flags);
 		return FALSE;
 	}
 
@@ -1762,7 +1742,6 @@ bool halWpdmaWriteCmd(IN struct GLUE_INFO *prGlueInfo,
 			       prCmdInfo->pucTxp, prCmdInfo->u4TxpLen)) {
 		if (prMemOps->freeBuf)
 			prMemOps->freeBuf(pucSrc, u4TotalLen);
-		spin_unlock_irqrestore((spinlock_t *)prTxRingLock, flags);
 		ASSERT(0);
 		return FALSE;
 	}
@@ -1784,8 +1763,6 @@ bool halWpdmaWriteCmd(IN struct GLUE_INFO *prGlueInfo,
 	prTxRing->u4UsedCnt++;
 	kalDevRegWrite(prGlueInfo, prTxRing->hw_cidx_addr, prTxRing->TxCpuIdx);
 
-	spin_unlock_irqrestore((spinlock_t *)prTxRingLock, flags);
-
 	DBGLOG(HAL, TRACE,
 	       "%s: CmdInfo[0x%p], TxD[0x%p/%u] TxP[0x%p/%u] CPU idx[%u] Used[%u]\n",
 	       __func__, prCmdInfo, prCmdInfo->pucTxd, prCmdInfo->u4TxdLen,
@@ -1804,8 +1781,6 @@ static bool halWpdmaFillTxRing(struct GLUE_INFO *prGlueInfo,
 	struct RTMP_TX_RING *prTxRing;
 	struct RTMP_DMACB *pTxCell;
 	struct TXD_STRUCT *pTxD;
-	spinlock_t *prTxRingLock;
-	unsigned long flags = 0;
 	uint16_t u2Port = TX_RING_DATA0_IDX_0;
 
 	ASSERT(prGlueInfo);
@@ -1813,7 +1788,6 @@ static bool halWpdmaFillTxRing(struct GLUE_INFO *prGlueInfo,
 	prHifInfo = &prGlueInfo->rHifInfo;
 	prChipInfo = prGlueInfo->prAdapter->chip_info;
 	prTxRing = &prHifInfo->TxRing[u2Port];
-	prTxRingLock = &prHifInfo->TxRingLock[u2Port];
 
 	kalDevRegRead(prGlueInfo, prTxRing->hw_cidx_addr, &prTxRing->TxCpuIdx);
 	if (prTxRing->TxCpuIdx >= TX_RING_SIZE) {
@@ -1845,12 +1819,8 @@ static bool halWpdmaFillTxRing(struct GLUE_INFO *prGlueInfo,
 	INC_RING_INDEX(prTxRing->TxCpuIdx, TX_RING_SIZE);
 
 	/* Update HW Tx DMA ring */
-	spin_lock_irqsave((spinlock_t *)prTxRingLock, flags);
-
 	prTxRing->u4UsedCnt++;
 	kalDevRegWrite(prGlueInfo, prTxRing->hw_cidx_addr, prTxRing->TxCpuIdx);
-
-	spin_unlock_irqrestore((spinlock_t *)prTxRingLock, flags);
 
 	DBGLOG_LIMITED(HAL, TRACE, "Tx Data: CPU idx[0x%x] Used[%u]\n",
 		       prTxRing->TxCpuIdx, prTxRing->u4UsedCnt);
@@ -2133,19 +2103,15 @@ u_int8_t halGetDynamicMapReg(IN struct GLUE_INFO *prGlueInfo,
 {
 	struct GL_HIF_INFO *prHifInfo = &prGlueInfo->rHifInfo;
 	uint32_t u4ReMapReg, u4BusAddr;
-	unsigned long flags;
 
 	if (!halChipToStaticMapBusAddr(prGlueInfo, MCU_CFG_PCIE_REMAP2,
 				       &u4ReMapReg))
 		return FALSE;
 
-	spin_lock_irqsave(&prHifInfo->rDynMapRegLock, flags);
 
 	RTMP_IO_WRITE32(prHifInfo, u4ReMapReg, u4ChipAddr & PCIE_REMAP2_MASK);
 	u4BusAddr = PCIE_REMAP2_BUS_ADDR + (u4ChipAddr & ~PCIE_REMAP2_MASK);
 	RTMP_IO_READ32(prHifInfo, u4BusAddr, pu4Value);
-
-	spin_unlock_irqrestore(&prHifInfo->rDynMapRegLock, flags);
 
 	return TRUE;
 }
@@ -2155,19 +2121,14 @@ u_int8_t halSetDynamicMapReg(IN struct GLUE_INFO *prGlueInfo,
 {
 	struct GL_HIF_INFO *prHifInfo = &prGlueInfo->rHifInfo;
 	uint32_t u4ReMapReg, u4BusAddr;
-	unsigned long flags;
 
 	if (!halChipToStaticMapBusAddr(prGlueInfo, MCU_CFG_PCIE_REMAP2,
 				       &u4ReMapReg))
 		return FALSE;
 
-	spin_lock_irqsave(&prHifInfo->rDynMapRegLock, flags);
-
 	RTMP_IO_WRITE32(prHifInfo, u4ReMapReg, u4ChipAddr & PCIE_REMAP2_MASK);
 	u4BusAddr = PCIE_REMAP2_BUS_ADDR + (u4ChipAddr & ~PCIE_REMAP2_MASK);
 	RTMP_IO_WRITE32(prHifInfo, u4BusAddr, u4Value);
-
-	spin_unlock_irqrestore(&prHifInfo->rDynMapRegLock, flags);
 
 	return TRUE;
 }
@@ -2213,7 +2174,6 @@ void halProcessSoftwareInterrupt(IN struct ADAPTER *prAdapter)
 	struct GL_HIF_INFO *prHifInfo;
 	struct ERR_RECOVERY_CTRL_T *prErrRecoveryCtrl;
 	uint32_t u4Status = 0;
-	unsigned long flags;
 
 	if (prAdapter == NULL || prAdapter->prGlueInfo == NULL) {
 		DBGLOG(HAL, ERROR, "prAdapter or prGlueInfo is NULL\n");
@@ -2224,8 +2184,6 @@ void halProcessSoftwareInterrupt(IN struct ADAPTER *prAdapter)
 	prHifInfo = &prGlueInfo->rHifInfo;
 	prErrRecoveryCtrl = &prHifInfo->rErrRecoveryCtl;
 
-	spin_lock_irqsave(&prHifInfo->rSerLock, flags);
-
 	kalDevRegRead(prGlueInfo, MCU2HOST_SW_INT_STA, &u4Status);
 	if (u4Status & ERROR_DETECT_MASK) {
 		prErrRecoveryCtrl->u4Status = u4Status;
@@ -2233,8 +2191,6 @@ void halProcessSoftwareInterrupt(IN struct ADAPTER *prAdapter)
 			ERROR_DETECT_MASK);
 		halHwRecoveryFromError(prAdapter);
 	}
-
-	spin_unlock_irqrestore(&prHifInfo->rSerLock, flags);
 }
 
 static void halHwRecoveryTimeout(unsigned long arg)
