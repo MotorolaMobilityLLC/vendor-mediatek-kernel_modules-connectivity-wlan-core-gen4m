@@ -1517,7 +1517,9 @@ struct ADAPTER {
 
 	/* tx power control */
 	uint32_t fgTxPwrLimitMask;
-
+	/* indicate critical frame */
+	uint32_t u4DhcpState;
+	uint32_t u4EapolState;
 };				/* end of _ADAPTER_T */
 
 /*******************************************************************************
