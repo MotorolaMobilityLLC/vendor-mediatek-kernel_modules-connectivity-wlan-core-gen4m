@@ -2716,7 +2716,7 @@ WLAN_STATUS
 wlanoidQueryLteSafeChannel(IN P_ADAPTER_T prAdapter,
 			   IN PVOID pvQueryBuffer, IN UINT_32 u4QueryBufferLen, OUT PUINT_32 pu4QueryInfoLen);
 WLAN_STATUS
-wlanCalculateChannelDirtyness(IN P_ADAPTER_T prAdapter);
+wlanCalculateAllChannelDirtyness(IN P_ADAPTER_T prAdapter);
 UINT_8
 wlanGetChannelIndex(IN UINT_8 channel);
 VOID
