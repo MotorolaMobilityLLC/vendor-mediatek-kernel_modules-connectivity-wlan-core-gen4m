@@ -970,7 +970,8 @@ struct mt66xx_chip_info {
 	UINT_16 u2TxInitCmdPort;
 	UINT_16 u2TxFwDlPort;
 	UINT_16 u2HifTxdSize;
-	UINT_32 u2ExtraTxByteCount;  /* Extra TXD Size for TX Byte Count field (in unit of Byte) */
+	UINT_32 u4ExtraTxByteCount;  /* Extra TXD Size for TX Byte Count field (in unit of Byte) */
+	UINT_32 u4HifDmaShdlBaseAddr;
 
 	void (*asicCapInit)(IN P_ADAPTER_T prAdapter);
 	void (*asicEnableFWDownload)(IN P_ADAPTER_T prAdapter, IN BOOL fgEnable);

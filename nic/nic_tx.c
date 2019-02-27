@@ -1320,7 +1320,7 @@ nicTxFillDesc(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduInfo,
 	/* Decide TxD append length */
 	if (prMsduInfo->ucPacketType == TX_PACKET_TYPE_DATA) {
 		u4TxDescAppendLength = prChipInfo->txd_append_size;
-		u4ExtraTxDLen = prChipInfo->u2ExtraTxByteCount;
+		u4ExtraTxDLen = prChipInfo->u4ExtraTxByteCount;
 	} else {
 		u4TxDescAppendLength = 0;
 		u4ExtraTxDLen = 0;
