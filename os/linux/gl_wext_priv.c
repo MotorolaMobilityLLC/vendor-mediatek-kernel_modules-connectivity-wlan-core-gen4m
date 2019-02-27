@@ -13384,9 +13384,11 @@ int32_t priv_driver_cmds(IN struct net_device *prNetDev, IN int8_t *pcCommand,
 	}
 
 	/* i4CmdFound */
-	if (i4CmdFound == 0)
+	if (i4CmdFound == 0) {
 		DBGLOG(REQ, INFO, "Unknown driver command %s - ignored\n",
 		       pcCommand);
+		i4BytesWritten = -EOPNOTSUPP;
+	}
 
 	if (i4BytesWritten >= 0) {
 		if ((i4BytesWritten == 0) && (i4TotalLen > 0)) {
@@ -13434,6 +13436,12 @@ int android_private_support_driver_cmd(IN struct net_device *prNetDev,
 	}
 
 	bytes_written = priv_driver_cmds(prNetDev, command, priv_cmd.total_len);
+
+	if (bytes_written == -EOPNOTSUPP) {
+		/* Report positive status */
+		bytes_written = kalSnprintf(command, priv_cmd.total_len,
+					    "%s", "NotSupport");
+	}
 
 	if (bytes_written >= 0) {
 		/* priv_cmd in but no response */
