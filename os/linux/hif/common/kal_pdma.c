@@ -714,7 +714,8 @@ void kalPciUnmapToDev(IN struct GLUE_INFO *prGlueInfo,
 }
 
 void kalDumpTxRing(struct GLUE_INFO *prGlueInfo,
-		       struct RTMP_TX_RING *prTxRing, uint32_t u4Num)
+		   struct RTMP_TX_RING *prTxRing,
+		   uint32_t u4Num, bool fgDumpContent)
 {
 	struct GL_HIF_INFO *prHifInfo = NULL;
 	struct RTMP_DMACB *pTxCell;
@@ -725,6 +726,9 @@ void kalDumpTxRing(struct GLUE_INFO *prGlueInfo,
 	ASSERT(prGlueInfo);
 	prHifInfo = &prGlueInfo->rHifInfo;
 
+	if (u4Num >= TX_RING_SIZE)
+		return;
+
 	pTxCell = &prTxRing->Cell[u4Num];
 	pTxD = (struct TXD_STRUCT *) pTxCell->AllocVa;
 
@@ -733,11 +737,11 @@ void kalDumpTxRing(struct GLUE_INFO *prGlueInfo,
 	DBGLOG(HAL, INFO, "Tx Dese Num[%u]\n", u4Num);
 	DBGLOG_MEM32(HAL, INFO, pTxD, sizeof(struct TXD_STRUCT));
 
-	if (!prDmaBuf->AllocPa)
+	if (!fgDumpContent || !prDmaBuf->AllocPa)
 		return;
 
 	KAL_DMA_UNMAP_SINGLE(prHifInfo->prDmaDev, prDmaBuf->AllocPa,
-			     prDmaBuf->AllocSize, KAL_DMA_FROM_DEVICE);
+			     prDmaBuf->AllocSize, KAL_DMA_TO_DEVICE);
 
 	DBGLOG(HAL, INFO, "Tx Contents\n");
 	if (u4DumpLen > pTxD->SDLen0)
@@ -750,13 +754,14 @@ void kalDumpTxRing(struct GLUE_INFO *prGlueInfo,
 	prDmaBuf->AllocPa = KAL_DMA_MAP_SINGLE(prHifInfo->prDmaDev,
 					       prDmaBuf->AllocVa,
 					       prDmaBuf->AllocSize,
-					       KAL_DMA_FROM_DEVICE);
+					       KAL_DMA_TO_DEVICE);
 	if (KAL_DMA_MAPPING_ERROR(prHifInfo->prDmaDev, prDmaBuf->AllocPa))
 		DBGLOG(HAL, ERROR, "KAL_DMA_MAP_SINGLE() error!\n");
 }
 
 void kalDumpRxRing(struct GLUE_INFO *prGlueInfo,
-		       struct RTMP_RX_RING *prRxRing, uint32_t u4Num)
+		   struct RTMP_RX_RING *prRxRing,
+		   uint32_t u4Num, bool fgDumpContent)
 {
 	struct GL_HIF_INFO *prHifInfo = NULL;
 	struct RTMP_DMACB *pRxCell;
@@ -767,6 +772,9 @@ void kalDumpRxRing(struct GLUE_INFO *prGlueInfo,
 	ASSERT(prGlueInfo);
 	prHifInfo = &prGlueInfo->rHifInfo;
 
+	if (u4Num >= prRxRing->u4RingSize)
+		return;
+
 	pRxCell = &prRxRing->Cell[u4Num];
 	pRxD = (struct RXD_STRUCT *) pRxCell->AllocVa;
 
@@ -774,6 +782,9 @@ void kalDumpRxRing(struct GLUE_INFO *prGlueInfo,
 
 	DBGLOG(HAL, INFO, "Rx Dese Num[%u]\n", u4Num);
 	DBGLOG_MEM32(HAL, INFO, pRxD, sizeof(struct RXD_STRUCT));
+
+	if (!fgDumpContent || !prDmaBuf->AllocPa)
+		return;
 
 	KAL_DMA_UNMAP_SINGLE(prHifInfo->prDmaDev, prDmaBuf->AllocPa,
 			     prDmaBuf->AllocSize, KAL_DMA_FROM_DEVICE);
@@ -795,19 +806,19 @@ void kalDumpRxRing(struct GLUE_INFO *prGlueInfo,
 }
 
 void kalDumpRxRingDebugLog(struct GLUE_INFO *prGlueInfo,
-				  struct RTMP_RX_RING *prRxRing,
-				  uint32_t u4RingSize)
+			   struct RTMP_RX_RING *prRxRing,
+			   uint32_t u4RingSize)
 {
 	uint32_t u4Index = 0;
 	uint32_t u4Value = 0;
 
-	hal_chip_show_pse_info(prGlueInfo->prAdapter);
-	hal_chip_show_ple_info(prGlueInfo->prAdapter);
-	hal_chip_show_host_csr_info(prGlueInfo->prAdapter);
-	hal_chip_show_pdma_info(prGlueInfo->prAdapter);
+	halShowPseInfo(prGlueInfo->prAdapter);
+	halShowPleInfo(prGlueInfo->prAdapter);
+	halShowHostCsrInfo(prGlueInfo->prAdapter);
+	halShowPdmaInfo(prGlueInfo->prAdapter, false);
 
 	for (u4Index = 0; u4Index < u4RingSize; u4Index++)
-		kalDumpRxRing(prGlueInfo, prRxRing, u4Index);
+		kalDumpRxRing(prGlueInfo, prRxRing, u4Index, true);
 
 	kalDevRegRead(prGlueInfo, 0x0000C024, &u4Value);
 	DBGLOG(HAL, INFO, "0x1800C024 = 0x%08x\n", u4Value);

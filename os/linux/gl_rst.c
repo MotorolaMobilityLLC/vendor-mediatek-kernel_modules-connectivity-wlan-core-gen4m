@@ -283,18 +283,16 @@ static void mtk_wifi_trigger_reset(struct work_struct *work)
 
 u_int8_t glResetTrigger(struct ADAPTER *prAdapter, uint32_t u4RstFlag, const uint8_t *pucFile, uint32_t u4Line)
 {
+	struct CHIP_DBG_OPS *prOps;
 	u_int8_t fgResult = TRUE;
 	uint16_t u2FwOwnVersion;
 	uint16_t u2FwPeerVersion;
 
 	ASSERT(prAdapter);
-	if (prAdapter->chip_info &&
-		prAdapter->chip_info->show_debug_ops &&
-		prAdapter->chip_info->show_debug_ops->
-			hal_chip_show_csr_info) {
-		prAdapter->chip_info->show_debug_ops->
-			hal_chip_show_csr_info(prAdapter);
-	}
+
+	prOps = prAdapter->chip_info->prDebugOps;
+	if (prOps->showCsrInfo)
+		prOps->showCsrInfo(prAdapter);
 
 	u2FwOwnVersion = prAdapter->rVerInfo.u2FwOwnVersion;
 	u2FwPeerVersion = prAdapter->rVerInfo.u2FwPeerVersion;

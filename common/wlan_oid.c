@@ -14034,9 +14034,10 @@ wlanoidShowPdmaInfo(IN struct ADAPTER *prAdapter,
 		    IN void *pvSetBuffer, IN uint32_t u4SetBufferLen,
 		    OUT uint32_t *pu4SetInfoLen)
 {
-	if (prAdapter->chip_info->show_debug_ops->hal_chip_show_pdma_info)
-		prAdapter->chip_info->show_debug_ops->
-			hal_chip_show_pdma_info(prAdapter);
+	struct CHIP_DBG_OPS *prOps = prAdapter->chip_info->prDebugOps;
+
+	if (prOps->showPdmaInfo)
+		prOps->showPdmaInfo(prAdapter, true);
 	return 0;
 }
 
@@ -14045,9 +14046,10 @@ wlanoidShowPseInfo(IN struct ADAPTER *prAdapter,
 		   IN void *pvSetBuffer, IN uint32_t u4SetBufferLen,
 		   OUT uint32_t *pu4SetInfoLen)
 {
-	if (prAdapter->chip_info->show_debug_ops->hal_chip_show_pse_info)
-		prAdapter->chip_info->show_debug_ops->
-			hal_chip_show_pse_info(prAdapter);
+	struct CHIP_DBG_OPS *prOps = prAdapter->chip_info->prDebugOps;
+
+	if (prOps->showPseInfo)
+		prOps->showPseInfo(prAdapter);
 	return 0;
 }
 
@@ -14056,9 +14058,10 @@ wlanoidShowPleInfo(IN struct ADAPTER *prAdapter,
 		   IN void *pvSetBuffer, IN uint32_t u4SetBufferLen,
 		   OUT uint32_t *pu4SetInfoLen)
 {
-	if (prAdapter->chip_info->show_debug_ops->hal_chip_show_ple_info)
-		prAdapter->chip_info->show_debug_ops->
-			hal_chip_show_ple_info(prAdapter);
+	struct CHIP_DBG_OPS *prOps = prAdapter->chip_info->prDebugOps;
+
+	if (prOps->showPleInfo)
+		prOps->showPleInfo(prAdapter);
 	return 0;
 }
 
@@ -14067,9 +14070,10 @@ wlanoidShowCsrInfo(IN struct ADAPTER *prAdapter,
 		   IN void *pvSetBuffer, IN uint32_t u4SetBufferLen,
 		   OUT uint32_t *pu4SetInfoLen)
 {
-	if (prAdapter->chip_info->show_debug_ops->hal_chip_show_csr_info)
-		prAdapter->chip_info->show_debug_ops->
-			hal_chip_show_csr_info(prAdapter);
+	struct CHIP_DBG_OPS *prOps = prAdapter->chip_info->prDebugOps;
+
+	if (prOps->showCsrInfo)
+		prOps->showCsrInfo(prAdapter);
 	return 0;
 }
 
@@ -14078,9 +14082,10 @@ wlanoidShowDmaschInfo(IN struct ADAPTER *prAdapter,
 		      IN void *pvSetBuffer, IN uint32_t u4SetBufferLen,
 		      OUT uint32_t *pu4SetInfoLen)
 {
-	if (prAdapter->chip_info->show_debug_ops->hal_chip_show_dmasch_info)
-		prAdapter->chip_info->show_debug_ops->
-			hal_chip_show_dmasch_info(prAdapter);
+	struct CHIP_DBG_OPS *prOps = prAdapter->chip_info->prDebugOps;
+
+	if (prOps->showDmaschInfo)
+		prOps->showDmaschInfo(prAdapter);
 	return 0;
 }
 
