@@ -46,7 +46,7 @@ TARGET = LINUX
 
 ifeq ($(DRIVER_PARTIAL_BUILD),y)
 # *****For driver partial build*****
-LINUX_ROOT ?= $(word 1, $(subst /apollo/,/apollo /, $(shell pwd)))
+LINUX_ROOT ?= $(word 1, $(subst /apollo/,/apollo /, $(shell pwd -L)))
 #    Modify the build parameters below to fit your build
 SYSBUILD_NAME=m-base
 RELEASE_NAME=mediatek/mt5891_eu_64
@@ -65,7 +65,7 @@ else
 # *****For system auto build*****
 LINUX_SRC=$(KERNEL_OBJ_ROOT)/$(KERNEL_VER)/$(KERNEL_CONFIG)_modules
 # 	overwrite $(OUT_STA_KO) for MT53XX platform
-OUT_STA_KO = $(OBJ_ROOT)/third_party/source/wlan/mtk/$(WIFI_TARGET)/drv_wlan/$(MTK_COMBO_CHIP)/wlan/$(MODULE_NAME).ko
+OUT_STA_KO = $(OBJ_ROOT)/third_party/source/wlan/mtk/$(WIFI_TARGET)/$(MODULE_NAME).ko
 endif
 
 include $(LINUX_ROOT)/linux_mts/mak/toolchain.mak
@@ -80,7 +80,7 @@ $(warning wifi driver LINUX_SRC=$(LINUX_SRC))
 $(warning CROSS_COMPILE=$(CROSS_COMPILE))
 $(warning =============================================)
 
-DRIVER_DIR=$(LINUX_ROOT)/third_party/source/wlan/mtk/$(WIFI_TARGET)/drv_wlan/$(MTK_COMBO_CHIP)/wlan
+DRIVER_DIR=$(LINUX_ROOT)/third_party/source/wlan/mtk/$(WIFI_TARGET)
 
 endif
 #- - - - -- - - - - - - - - -
