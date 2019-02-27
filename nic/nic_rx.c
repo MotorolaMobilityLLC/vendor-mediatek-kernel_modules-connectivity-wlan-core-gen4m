@@ -2820,6 +2820,7 @@ VOID nicRxProcessRFBs(IN P_ADAPTER_T prAdapter)
 						  (UINT_32) prRxCtrl->ucNumIndPacket);
 #endif
 #endif
+				kalPerMonStart(prAdapter->prGlueInfo);
 			}
 		}
 	}
