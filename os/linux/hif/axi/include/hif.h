@@ -169,6 +169,9 @@ struct BUS_INFO {
 	void (*lowPowerOwnSet)(struct ADAPTER *prAdapter, u_int8_t *pfgResult);
 	void (*lowPowerOwnClear)(struct ADAPTER *prAdapter,
 		u_int8_t *pfgResult);
+	void (*wakeUpWiFi)(struct ADAPTER *prAdapter);
+	bool (*isValidRegAccess)(struct ADAPTER *prAdapter,
+				 uint32_t u4Register);
 	void (*getMailboxStatus)(struct ADAPTER *prAdapter, uint32_t *pu4Val);
 	void (*setDummyReg)(struct GLUE_INFO *prGlueInfo);
 	void (*checkDummyReg)(struct GLUE_INFO *prGlueInfo);

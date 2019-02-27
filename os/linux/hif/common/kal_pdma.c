@@ -139,6 +139,7 @@ u_int8_t kalDevRegRead(IN struct GLUE_INFO *prGlueInfo,
 	IN uint32_t u4Register, OUT uint32_t *pu4Value)
 {
 	struct GL_HIF_INFO *prHifInfo = NULL;
+	struct BUS_INFO *prBusInfo = NULL;
 	uint32_t u4BusAddr = u4Register;
 	u_int8_t fgResult = TRUE;
 
@@ -146,6 +147,14 @@ u_int8_t kalDevRegRead(IN struct GLUE_INFO *prGlueInfo,
 	ASSERT(pu4Value);
 
 	prHifInfo = &prGlueInfo->rHifInfo;
+	prBusInfo = prGlueInfo->prAdapter->chip_info->bus_info;
+
+	if (prBusInfo->isValidRegAccess &&
+	    !prBusInfo->isValidRegAccess(prGlueInfo->prAdapter, u4Register)) {
+		DBGLOG(HAL, ERROR,
+		       "Invalid access! Get CR[0x%08x/0x%08x] value[0x%08x]\n",
+		       u4Register, u4BusAddr, *pu4Value);
+	}
 
 	if (halChipToStaticMapBusAddr(prGlueInfo, u4Register, &u4BusAddr)) {
 		/* Static mapping */
@@ -154,10 +163,6 @@ u_int8_t kalDevRegRead(IN struct GLUE_INFO *prGlueInfo,
 		/* Dynamic mapping */
 		fgResult = halGetDynamicMapReg(prGlueInfo, u4BusAddr, pu4Value);
 	}
-
-	if ((u4Register & 0xFFFFF000) != PCIE_HIF_BASE)
-		DBGLOG(HAL, TRACE, "Get CR[0x%08x/0x%08x] value[0x%08x]\n",
-		       u4Register, u4BusAddr, *pu4Value);
 
 	return TRUE;
 }
@@ -178,12 +183,21 @@ u_int8_t kalDevRegWrite(IN struct GLUE_INFO *prGlueInfo,
 	IN uint32_t u4Register, IN uint32_t u4Value)
 {
 	struct GL_HIF_INFO *prHifInfo = NULL;
+	struct BUS_INFO *prBusInfo = NULL;
 	uint32_t u4BusAddr = u4Register;
 	u_int8_t fgResult = TRUE;
 
 	ASSERT(prGlueInfo);
 
 	prHifInfo = &prGlueInfo->rHifInfo;
+	prBusInfo = prGlueInfo->prAdapter->chip_info->bus_info;
+
+	if (prBusInfo->isValidRegAccess &&
+	    !prBusInfo->isValidRegAccess(prGlueInfo->prAdapter, u4Register)) {
+		DBGLOG(HAL, ERROR,
+		       "Invalid access! Set CR[0x%08x/0x%08x] value[0x%08x]\n",
+		       u4Register, u4BusAddr, u4Value);
+	}
 
 	if (halChipToStaticMapBusAddr(prGlueInfo, u4Register, &u4BusAddr)) {
 		/* Static mapping */
@@ -192,10 +206,6 @@ u_int8_t kalDevRegWrite(IN struct GLUE_INFO *prGlueInfo,
 		/* Dynamic mapping */
 		fgResult = halSetDynamicMapReg(prGlueInfo, u4BusAddr, u4Value);
 	}
-
-	if ((u4Register & 0xFFFFF000) != PCIE_HIF_BASE)
-		DBGLOG(HAL, TRACE, "Set CR[0x%08x/0x%08x] value[0x%08x]\n",
-		       u4Register, u4BusAddr, u4Value);
 
 	prHifInfo->u4HifCnt++;
 

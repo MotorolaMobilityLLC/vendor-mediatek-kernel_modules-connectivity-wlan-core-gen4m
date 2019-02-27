@@ -627,6 +627,40 @@ void asicLowPowerOwnClear(IN struct ADAPTER *prAdapter,
 	*pfgResult = (u4RegValue & PCIE_LPCR_HOST_SET_OWN) == 0;
 }
 
+void asicWakeUpWiFi(IN struct ADAPTER *prAdapter)
+{
+	u_int8_t fgResult;
+
+	ASSERT(prAdapter);
+
+	HAL_LP_OWN_RD(prAdapter, &fgResult);
+
+	if (fgResult)
+		prAdapter->fgIsFwOwn = FALSE;
+	else
+		HAL_LP_OWN_CLR(prAdapter, &fgResult);
+}
+
+bool asicIsValidRegAccess(IN struct ADAPTER *prAdapter, IN uint32_t u4Register)
+{
+	uint32_t au4ExcludeRegs[] = {
+		CONN_HIF_ON_LPCTL,
+		WPDMA_INT_STA,
+		WPDMA_INT_MSK
+	};
+	uint32_t u4Idx, u4Size = sizeof(au4ExcludeRegs) / sizeof(uint32_t);
+
+	if (!prAdapter->fgIsFwOwn)
+		return true;
+
+	for (u4Idx = 0; u4Idx < u4Size; u4Idx++) {
+		if (u4Register == au4ExcludeRegs[u4Idx])
+			return true;
+	}
+
+	return false;
+}
+
 void asicGetMailboxStatus(IN struct ADAPTER *prAdapter,
 			  OUT uint32_t *pu4Val)
 {
