@@ -1615,7 +1615,7 @@ void nicRxProcessRXV(IN struct ADAPTER *prAdapter,
 	uint8_t ucRxMode;
 	uint8_t ucMcs;
 	uint8_t ucFrMode;
-	uint8_t ucShortGI, ucGroupid, ucMu, ucNsts;
+	uint8_t ucShortGI, ucGroupid, ucMu, ucNsts = 1;
 	uint32_t u4PhyRate;
 	uint8_t ucRCPI0 = 0, ucRCPI1 = 0;
 	/* Rate
