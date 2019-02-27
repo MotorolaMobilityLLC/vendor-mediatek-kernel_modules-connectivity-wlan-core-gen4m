@@ -1138,8 +1138,8 @@ bool halWpdmaAllocTxRing(struct GLUE_INFO *prGlueInfo, uint32_t u4Num,
 		return false;
 	}
 
-	DBGLOG(HAL, TRACE, "TxDescRing[%p]: total %u bytes allocated\n",
-	       prTxDesc->AllocVa, prTxDesc->AllocSize);
+	DBGLOG(HAL, TRACE, "TxDescRing[%p]: total %lu bytes allocated\n",
+	       prTxDesc->AllocVa, (uint64_t)prTxDesc->AllocSize);
 
 	/* Save PA & VA for further operation */
 	RingBasePa = prTxDesc->AllocPa;
@@ -1203,8 +1203,8 @@ bool halWpdmaAllocRxRing(struct GLUE_INFO *prGlueInfo, uint32_t u4Num,
 		return false;
 	}
 
-	DBGLOG(HAL, TRACE, "RxDescRing[%p]: total %u bytes allocated\n",
-		prRxDesc->AllocVa, prRxDesc->AllocSize);
+	DBGLOG(HAL, TRACE, "RxDescRing[%p]: total %lu bytes allocated\n",
+		prRxDesc->AllocVa, (uint64_t)prRxDesc->AllocSize);
 
 	/* Initialize Rx Ring and associated buffer memory */
 	RingBasePa = prRxDesc->AllocPa;
