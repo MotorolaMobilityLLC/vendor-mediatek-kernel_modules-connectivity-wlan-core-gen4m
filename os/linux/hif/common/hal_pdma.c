@@ -1679,6 +1679,12 @@ u_int8_t halWpdmaWriteCmd(IN struct GLUE_INFO *prGlueInfo,
 	spin_lock_irqsave((spinlock_t *)prTxRingLock, flags);
 
 	kalDevRegRead(prGlueInfo, prTxRing->hw_cidx_addr, &prTxRing->TxCpuIdx);
+	if (prTxRing->TxCpuIdx >= TX_RING_SIZE) {
+		DBGLOG(HAL, ERROR, "Error TxCpuIdx[%u]\n", prTxRing->TxCpuIdx);
+		kalMemFree(pucSrc, PHY_MEM_TYPE, u4TotalLen);
+		spin_unlock_irqrestore((spinlock_t *)prTxRingLock, flags);
+		return FALSE;
+	}
 
 	pTxCell = &prTxRing->Cell[prTxRing->TxCpuIdx];
 	pTxD = (struct TXD_STRUCT *)pTxCell->AllocVa;
@@ -1776,6 +1782,11 @@ u_int8_t halWpdmaWriteData(IN struct GLUE_INFO *prGlueInfo,
 	}
 
 	kalDevRegRead(prGlueInfo, prTxRing->hw_cidx_addr, &prTxRing->TxCpuIdx);
+	if (prTxRing->TxCpuIdx >= TX_RING_SIZE) {
+		DBGLOG(HAL, ERROR, "Error TxCpuIdx[%u]\n", prTxRing->TxCpuIdx);
+		halReturnMsduToken(prGlueInfo->prAdapter, prToken->u4Token);
+		return FALSE;
+	}
 
 	pTxCell = &prTxRing->Cell[prTxRing->TxCpuIdx];
 	pTxD = (struct TXD_STRUCT *)pTxCell->AllocVa;
@@ -1836,6 +1847,12 @@ void halDumpTxRing(IN struct GLUE_INFO *prGlueInfo,
 	struct GL_HIF_INFO *prHifInfo = &prGlueInfo->rHifInfo;
 	struct RTMP_TX_RING *prTxRing;
 	struct TXD_STRUCT *pTxD;
+
+	if (u2Port >= NUM_OF_TX_RING || u4Idx >= TX_RING_SIZE) {
+		DBGLOG(HAL, INFO, "Dump fail u2Port[%u] u4Idx[%u]\n",
+		       u2Port, u4Idx);
+		return;
+	}
 
 	prTxRing = &prHifInfo->TxRing[u2Port];
 

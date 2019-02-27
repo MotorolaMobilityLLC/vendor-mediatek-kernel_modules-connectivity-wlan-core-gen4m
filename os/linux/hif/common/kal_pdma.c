@@ -460,6 +460,12 @@ kalDevPortWrite(IN struct GLUE_INFO *prGlueInfo,
 	spin_lock_irqsave((spinlock_t *)prTxRingLock, flags);
 
 	kalDevRegRead(prGlueInfo, prTxRing->hw_cidx_addr, &prTxRing->TxCpuIdx);
+	if (prTxRing->TxCpuIdx >= TX_RING_SIZE) {
+		DBGLOG(HAL, ERROR, "Error TxCpuIdx[%u]\n", prTxRing->TxCpuIdx);
+		kalMemFree(pucSrc, PHY_MEM_TYPE, u4SrcLen);
+		spin_unlock_irqrestore((spinlock_t *)prTxRingLock, flags);
+		return FALSE;
+	}
 
 	pTxCell = &prTxRing->Cell[prTxRing->TxCpuIdx];
 	pTxD = (struct TXD_STRUCT *)pTxCell->AllocVa;
