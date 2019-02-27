@@ -104,26 +104,26 @@
 /*----------------------------------------------------------------------------*/
 /* Routines in assoc.c                                                        */
 /*----------------------------------------------------------------------------*/
-WLAN_STATUS assocSendReAssocReqFrame(IN P_ADAPTER_T prAdapter, IN P_STA_RECORD_T prStaRec);
+uint32_t assocSendReAssocReqFrame(IN struct ADAPTER *prAdapter, IN struct STA_RECORD *prStaRec);
 
-WLAN_STATUS assocCheckTxReAssocReqFrame(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduInfo);
+uint32_t assocCheckTxReAssocReqFrame(IN struct ADAPTER *prAdapter, IN struct MSDU_INFO *prMsduInfo);
 
-WLAN_STATUS assocCheckTxReAssocRespFrame(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduInfo);
+uint32_t assocCheckTxReAssocRespFrame(IN struct ADAPTER *prAdapter, IN struct MSDU_INFO *prMsduInfo);
 
-WLAN_STATUS
-assocCheckRxReAssocRspFrameStatus(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T prSwRfb, OUT PUINT_16 pu2StatusCode);
+uint32_t
+assocCheckRxReAssocRspFrameStatus(IN struct ADAPTER *prAdapter, IN struct SW_RFB *prSwRfb, OUT uint16_t *pu2StatusCode);
 
-WLAN_STATUS assocSendDisAssocFrame(IN P_ADAPTER_T prAdapter, IN P_STA_RECORD_T prStaRec, IN UINT_16 u2ReasonCode);
+uint32_t assocSendDisAssocFrame(IN struct ADAPTER *prAdapter, IN struct STA_RECORD *prStaRec, IN uint16_t u2ReasonCode);
 
-WLAN_STATUS
-assocProcessRxDisassocFrame(IN P_ADAPTER_T prAdapter,
-			    IN P_SW_RFB_T prSwRfb, IN UINT_8 aucBSSID[], OUT PUINT_16 pu2ReasonCode);
+uint32_t
+assocProcessRxDisassocFrame(IN struct ADAPTER *prAdapter,
+			    IN struct SW_RFB *prSwRfb, IN uint8_t aucBSSID[], OUT uint16_t *pu2ReasonCode);
 
-WLAN_STATUS assocProcessRxAssocReqFrame(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T prSwRfb, OUT PUINT_16 pu2StatusCode);
+uint32_t assocProcessRxAssocReqFrame(IN struct ADAPTER *prAdapter, IN struct SW_RFB *prSwRfb, OUT uint16_t *pu2StatusCode);
 
-WLAN_STATUS assocSendReAssocRespFrame(IN P_ADAPTER_T prAdapter, IN P_STA_RECORD_T prStaRec);
+uint32_t assocSendReAssocRespFrame(IN struct ADAPTER *prAdapter, IN struct STA_RECORD *prStaRec);
 
-UINT_16 assocBuildCapabilityInfo(IN P_ADAPTER_T prAdapter, IN P_STA_RECORD_T prStaRec);
+uint16_t assocBuildCapabilityInfo(IN struct ADAPTER *prAdapter, IN struct STA_RECORD *prStaRec);
 
 /*******************************************************************************
 *                              F U N C T I O N S

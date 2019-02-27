@@ -94,7 +94,7 @@
 
 /* Define mapping tables between country code and its channel set
  */
-static const UINT_16 g_u2CountryGroup0[] = {
+static const uint16_t g_u2CountryGroup0[] = {
 	COUNTRY_CODE_AO, COUNTRY_CODE_BZ, COUNTRY_CODE_BJ, COUNTRY_CODE_BT,
 	COUNTRY_CODE_BO, COUNTRY_CODE_BI, COUNTRY_CODE_CM, COUNTRY_CODE_CF,
 	COUNTRY_CODE_TD, COUNTRY_CODE_KM, COUNTRY_CODE_CD, COUNTRY_CODE_CG,
@@ -108,13 +108,13 @@ static const UINT_16 g_u2CountryGroup0[] = {
 	COUNTRY_CODE_VU, COUNTRY_CODE_YE
 };
 
-static const UINT_16 g_u2CountryGroup1[] = {
+static const uint16_t g_u2CountryGroup1[] = {
 	COUNTRY_CODE_AS, COUNTRY_CODE_AI, COUNTRY_CODE_BM, COUNTRY_CODE_KY,
 	COUNTRY_CODE_GU, COUNTRY_CODE_FM, COUNTRY_CODE_PR, COUNTRY_CODE_US,
 	COUNTRY_CODE_VI
 };
 
-static const UINT_16 g_u2CountryGroup2[] = {
+static const uint16_t g_u2CountryGroup2[] = {
 	COUNTRY_CODE_AR, COUNTRY_CODE_AU, COUNTRY_CODE_AZ, COUNTRY_CODE_BW,
 	COUNTRY_CODE_CX, COUNTRY_CODE_CO, COUNTRY_CODE_CR, COUNTRY_CODE_EC,
 	COUNTRY_CODE_GD, COUNTRY_CODE_GT, COUNTRY_CODE_HK, COUNTRY_CODE_KH,
@@ -125,14 +125,14 @@ static const UINT_16 g_u2CountryGroup2[] = {
 	COUNTRY_CODE_TT, COUNTRY_CODE_UY, COUNTRY_CODE_VN
 };
 
-static const UINT_16 g_u2CountryGroup3[] = {
+static const uint16_t g_u2CountryGroup3[] = {
 	COUNTRY_CODE_AW, COUNTRY_CODE_LA, COUNTRY_CODE_SA, COUNTRY_CODE_AE,
 	COUNTRY_CODE_UG
 };
 
-static const UINT_16 g_u2CountryGroup4[] = { COUNTRY_CODE_MM };
+static const uint16_t g_u2CountryGroup4[] = { COUNTRY_CODE_MM };
 
-static const UINT_16 g_u2CountryGroup5[] = {
+static const uint16_t g_u2CountryGroup5[] = {
 	COUNTRY_CODE_AL, COUNTRY_CODE_DZ, COUNTRY_CODE_AD, COUNTRY_CODE_AT,
 	COUNTRY_CODE_BY, COUNTRY_CODE_BE, COUNTRY_CODE_BA, COUNTRY_CODE_VG,
 	COUNTRY_CODE_BG, COUNTRY_CODE_CV, COUNTRY_CODE_HR, COUNTRY_CODE_CY,
@@ -153,50 +153,50 @@ static const UINT_16 g_u2CountryGroup5[] = {
 	COUNTRY_CODE_EU
 };
 
-static const UINT_16 g_u2CountryGroup6[] = { COUNTRY_CODE_JP };
+static const uint16_t g_u2CountryGroup6[] = { COUNTRY_CODE_JP };
 
-static const UINT_16 g_u2CountryGroup7[] = {
+static const uint16_t g_u2CountryGroup7[] = {
 	COUNTRY_CODE_AM, COUNTRY_CODE_IL, COUNTRY_CODE_KW, COUNTRY_CODE_MA,
 	COUNTRY_CODE_NE, COUNTRY_CODE_TN,
 };
 
-static const UINT_16 g_u2CountryGroup8[] = { COUNTRY_CODE_NP };
+static const uint16_t g_u2CountryGroup8[] = { COUNTRY_CODE_NP };
 
-static const UINT_16 g_u2CountryGroup9[] = { COUNTRY_CODE_AF };
+static const uint16_t g_u2CountryGroup9[] = { COUNTRY_CODE_AF };
 
-static const UINT_16 g_u2CountryGroup10[] = {
+static const uint16_t g_u2CountryGroup10[] = {
 	COUNTRY_CODE_AG, COUNTRY_CODE_BS, COUNTRY_CODE_BH, COUNTRY_CODE_BB,
 	COUNTRY_CODE_BN, COUNTRY_CODE_CL, COUNTRY_CODE_CN, COUNTRY_CODE_EG,
 	COUNTRY_CODE_SV, COUNTRY_CODE_IN, COUNTRY_CODE_MY, COUNTRY_CODE_MV,
 	COUNTRY_CODE_PA, COUNTRY_CODE_VE, COUNTRY_CODE_ZM
 };
 
-static const UINT_16 g_u2CountryGroup11[] = { COUNTRY_CODE_JO, COUNTRY_CODE_PG };
+static const uint16_t g_u2CountryGroup11[] = { COUNTRY_CODE_JO, COUNTRY_CODE_PG };
 
-static const UINT_16 g_u2CountryGroup12[] = {
+static const uint16_t g_u2CountryGroup12[] = {
 	COUNTRY_CODE_BF, COUNTRY_CODE_GY, COUNTRY_CODE_HT, COUNTRY_CODE_HN,
 	COUNTRY_CODE_JM, COUNTRY_CODE_MO, COUNTRY_CODE_MW, COUNTRY_CODE_PK,
 	COUNTRY_CODE_QA, COUNTRY_CODE_RW, COUNTRY_CODE_KN, COUNTRY_CODE_TZ
 };
 
-static const UINT_16 g_u2CountryGroup13[] = { COUNTRY_CODE_ID };
+static const uint16_t g_u2CountryGroup13[] = { COUNTRY_CODE_ID };
 
-static const UINT_16 g_u2CountryGroup14[] = { COUNTRY_CODE_NG };
+static const uint16_t g_u2CountryGroup14[] = { COUNTRY_CODE_NG };
 
-static const UINT_16 g_u2CountryGroup15[] = {
+static const uint16_t g_u2CountryGroup15[] = {
 	COUNTRY_CODE_BD, COUNTRY_CODE_BR, COUNTRY_CODE_DM, COUNTRY_CODE_DO,
 	COUNTRY_CODE_FK, COUNTRY_CODE_KZ, COUNTRY_CODE_MX, COUNTRY_CODE_MZ,
 	COUNTRY_CODE_NA, COUNTRY_CODE_RU, COUNTRY_CODE_LC, COUNTRY_CODE_VC,
 	COUNTRY_CODE_UA, COUNTRY_CODE_UZ, COUNTRY_CODE_ZW
 };
 
-static const UINT_16 g_u2CountryGroup16[] = { COUNTRY_CODE_MP };
+static const uint16_t g_u2CountryGroup16[] = { COUNTRY_CODE_MP };
 
-static const UINT_16 g_u2CountryGroup17[] = { COUNTRY_CODE_TW };
+static const uint16_t g_u2CountryGroup17[] = { COUNTRY_CODE_TW };
 
-static const UINT_16 g_u2CountryGroup18[] = { COUNTRY_CODE_CA };
+static const uint16_t g_u2CountryGroup18[] = { COUNTRY_CODE_CA };
 
-static const UINT_16 g_u2CountryGroup19[] = {
+static const uint16_t g_u2CountryGroup19[] = {
 	COUNTRY_CODE_CK, COUNTRY_CODE_CU, COUNTRY_CODE_TL, COUNTRY_CODE_FO,
 	COUNTRY_CODE_GI, COUNTRY_CODE_GG, COUNTRY_CODE_IR, COUNTRY_CODE_IM,
 	COUNTRY_CODE_JE, COUNTRY_CODE_KP, COUNTRY_CODE_MH, COUNTRY_CODE_NU,
@@ -204,7 +204,7 @@ static const UINT_16 g_u2CountryGroup19[] = {
 	COUNTRY_CODE_SS, COUNTRY_CODE_SD, COUNTRY_CODE_SY
 };
 
-static const UINT_16 g_u2CountryGroup20[] = {
+static const uint16_t g_u2CountryGroup20[] = {
 	COUNTRY_CODE_DF
 	/* When country code is not found and no matched NVRAM setting,
 	 * the default group will be used.
@@ -212,7 +212,7 @@ static const UINT_16 g_u2CountryGroup20[] = {
 };
 
 #if (CFG_SUPPORT_SINGLE_SKU == 1)
-mtk_regd_control g_mtk_regd_control = {
+struct mtk_regd_control g_mtk_regd_control = {
 	.en = FALSE,
 	.state = REGD_STATE_UNDEFINED
 };
@@ -236,9 +236,9 @@ const struct ieee80211_regdomain default_regdom_ww = {
 
 #endif
 
-DOMAIN_INFO_ENTRY arSupportedRegDomains[] = {
+struct DOMAIN_INFO_ENTRY arSupportedRegDomains[] = {
 	{
-	 (PUINT_16) g_u2CountryGroup0, sizeof(g_u2CountryGroup0) / 2,
+	 (uint16_t *) g_u2CountryGroup0, sizeof(g_u2CountryGroup0) / 2,
 	 {
 	  {81, BAND_2G4, CHNL_SPAN_5, 1, 13, FALSE}
 	  ,			/* CH_SET_2G4_1_13 */
@@ -256,7 +256,7 @@ DOMAIN_INFO_ENTRY arSupportedRegDomains[] = {
 	}
 	,
 	{
-	 (PUINT_16) g_u2CountryGroup1, sizeof(g_u2CountryGroup1) / 2,
+	 (uint16_t *) g_u2CountryGroup1, sizeof(g_u2CountryGroup1) / 2,
 	 {
 	  {81, BAND_2G4, CHNL_SPAN_5, 1, 11, FALSE}
 	  ,			/* CH_SET_2G4_1_11 */
@@ -274,7 +274,7 @@ DOMAIN_INFO_ENTRY arSupportedRegDomains[] = {
 	}
 	,
 	{
-	 (PUINT_16) g_u2CountryGroup2, sizeof(g_u2CountryGroup2) / 2,
+	 (uint16_t *) g_u2CountryGroup2, sizeof(g_u2CountryGroup2) / 2,
 	 {
 	  {81, BAND_2G4, CHNL_SPAN_5, 1, 13, FALSE}
 	  ,			/* CH_SET_2G4_1_13 */
@@ -292,7 +292,7 @@ DOMAIN_INFO_ENTRY arSupportedRegDomains[] = {
 	}
 	,
 	{
-	 (PUINT_16) g_u2CountryGroup3, sizeof(g_u2CountryGroup3) / 2,
+	 (uint16_t *) g_u2CountryGroup3, sizeof(g_u2CountryGroup3) / 2,
 	 {
 	  {81, BAND_2G4, CHNL_SPAN_5, 1, 13, FALSE}
 	  ,			/* CH_SET_2G4_1_13 */
@@ -310,7 +310,7 @@ DOMAIN_INFO_ENTRY arSupportedRegDomains[] = {
 	}
 	,
 	{
-	 (PUINT_16) g_u2CountryGroup4, sizeof(g_u2CountryGroup4) / 2,
+	 (uint16_t *) g_u2CountryGroup4, sizeof(g_u2CountryGroup4) / 2,
 	 {
 	  {81, BAND_2G4, CHNL_SPAN_5, 1, 13, FALSE}
 	  ,			/* CH_SET_2G4_1_13 */
@@ -328,7 +328,7 @@ DOMAIN_INFO_ENTRY arSupportedRegDomains[] = {
 	}
 	,
 	{
-	 (PUINT_16) g_u2CountryGroup5, sizeof(g_u2CountryGroup5) / 2,
+	 (uint16_t *) g_u2CountryGroup5, sizeof(g_u2CountryGroup5) / 2,
 	 {
 	  {81, BAND_2G4, CHNL_SPAN_5, 1, 13, FALSE}
 	  ,			/* CH_SET_2G4_1_13 */
@@ -346,7 +346,7 @@ DOMAIN_INFO_ENTRY arSupportedRegDomains[] = {
 	}
 	,
 	{
-	 (PUINT_16) g_u2CountryGroup6, sizeof(g_u2CountryGroup6) / 2,
+	 (uint16_t *) g_u2CountryGroup6, sizeof(g_u2CountryGroup6) / 2,
 	 {
 	  {81, BAND_2G4, CHNL_SPAN_5, 1, 13, FALSE}
 	  ,			/* CH_SET_2G4_1_13 */
@@ -364,7 +364,7 @@ DOMAIN_INFO_ENTRY arSupportedRegDomains[] = {
 	}
 	,
 	{
-	 (PUINT_16) g_u2CountryGroup7, sizeof(g_u2CountryGroup7) / 2,
+	 (uint16_t *) g_u2CountryGroup7, sizeof(g_u2CountryGroup7) / 2,
 	 {
 	  {81, BAND_2G4, CHNL_SPAN_5, 1, 13, FALSE}
 	  ,			/* CH_SET_2G4_1_13 */
@@ -382,7 +382,7 @@ DOMAIN_INFO_ENTRY arSupportedRegDomains[] = {
 	}
 	,
 	{
-	 (PUINT_16) g_u2CountryGroup8, sizeof(g_u2CountryGroup8) / 2,
+	 (uint16_t *) g_u2CountryGroup8, sizeof(g_u2CountryGroup8) / 2,
 	 {
 	  {81, BAND_2G4, CHNL_SPAN_5, 1, 13, FALSE}
 	  ,			/* CH_SET_2G4_1_13 */
@@ -400,7 +400,7 @@ DOMAIN_INFO_ENTRY arSupportedRegDomains[] = {
 	}
 	,
 	{
-	 (PUINT_16) g_u2CountryGroup9, sizeof(g_u2CountryGroup9) / 2,
+	 (uint16_t *) g_u2CountryGroup9, sizeof(g_u2CountryGroup9) / 2,
 	 {
 	  {81, BAND_2G4, CHNL_SPAN_5, 1, 13, FALSE}
 	  ,			/* CH_SET_2G4_1_13 */
@@ -418,7 +418,7 @@ DOMAIN_INFO_ENTRY arSupportedRegDomains[] = {
 	}
 	,
 	{
-	 (PUINT_16) g_u2CountryGroup10, sizeof(g_u2CountryGroup10) / 2,
+	 (uint16_t *) g_u2CountryGroup10, sizeof(g_u2CountryGroup10) / 2,
 	 {
 	  {81, BAND_2G4, CHNL_SPAN_5, 1, 13, FALSE}
 	  ,			/* CH_SET_2G4_1_13 */
@@ -436,7 +436,7 @@ DOMAIN_INFO_ENTRY arSupportedRegDomains[] = {
 	}
 	,
 	{
-	 (PUINT_16) g_u2CountryGroup11, sizeof(g_u2CountryGroup11) / 2,
+	 (uint16_t *) g_u2CountryGroup11, sizeof(g_u2CountryGroup11) / 2,
 	 {
 	  {81, BAND_2G4, CHNL_SPAN_5, 1, 13, FALSE}
 	  ,			/* CH_SET_2G4_1_13 */
@@ -454,7 +454,7 @@ DOMAIN_INFO_ENTRY arSupportedRegDomains[] = {
 	}
 	,
 	{
-	 (PUINT_16) g_u2CountryGroup12, sizeof(g_u2CountryGroup12) / 2,
+	 (uint16_t *) g_u2CountryGroup12, sizeof(g_u2CountryGroup12) / 2,
 	 {
 	  {81, BAND_2G4, CHNL_SPAN_5, 1, 13, FALSE}
 	  ,			/* CH_SET_2G4_1_13 */
@@ -472,7 +472,7 @@ DOMAIN_INFO_ENTRY arSupportedRegDomains[] = {
 	}
 	,
 	{
-	 (PUINT_16) g_u2CountryGroup13, sizeof(g_u2CountryGroup13) / 2,
+	 (uint16_t *) g_u2CountryGroup13, sizeof(g_u2CountryGroup13) / 2,
 	 {
 	  {81, BAND_2G4, CHNL_SPAN_5, 1, 13, FALSE}
 	  ,			/* CH_SET_2G4_1_13 */
@@ -490,7 +490,7 @@ DOMAIN_INFO_ENTRY arSupportedRegDomains[] = {
 	}
 	,
 	{
-	 (PUINT_16) g_u2CountryGroup14, sizeof(g_u2CountryGroup14) / 2,
+	 (uint16_t *) g_u2CountryGroup14, sizeof(g_u2CountryGroup14) / 2,
 	 {
 	  {81, BAND_2G4, CHNL_SPAN_5, 1, 13, FALSE}
 	  ,			/* CH_SET_2G4_1_13 */
@@ -508,7 +508,7 @@ DOMAIN_INFO_ENTRY arSupportedRegDomains[] = {
 	}
 	,
 	{
-	 (PUINT_16) g_u2CountryGroup15, sizeof(g_u2CountryGroup15) / 2,
+	 (uint16_t *) g_u2CountryGroup15, sizeof(g_u2CountryGroup15) / 2,
 	 {
 	  {81, BAND_2G4, CHNL_SPAN_5, 1, 13, FALSE}
 	  ,			/* CH_SET_2G4_1_13 */
@@ -526,7 +526,7 @@ DOMAIN_INFO_ENTRY arSupportedRegDomains[] = {
 	}
 	,
 	{
-	 (PUINT_16) g_u2CountryGroup16, sizeof(g_u2CountryGroup16) / 2,
+	 (uint16_t *) g_u2CountryGroup16, sizeof(g_u2CountryGroup16) / 2,
 	 {
 	  {81, BAND_2G4, CHNL_SPAN_5, 1, 11, FALSE}
 	  ,			/* CH_SET_2G4_1_11 */
@@ -544,7 +544,7 @@ DOMAIN_INFO_ENTRY arSupportedRegDomains[] = {
 	}
 	,
 	{
-	 (PUINT_16) g_u2CountryGroup17, sizeof(g_u2CountryGroup17) / 2,
+	 (uint16_t *) g_u2CountryGroup17, sizeof(g_u2CountryGroup17) / 2,
 	 {
 	  {81, BAND_2G4, CHNL_SPAN_5, 1, 11, FALSE}
 	  ,			/* CH_SET_2G4_1_11 */
@@ -562,7 +562,7 @@ DOMAIN_INFO_ENTRY arSupportedRegDomains[] = {
 	}
 	,
 	{
-	 (PUINT_16) g_u2CountryGroup18, sizeof(g_u2CountryGroup18) / 2,
+	 (uint16_t *) g_u2CountryGroup18, sizeof(g_u2CountryGroup18) / 2,
 	 {
 	  {81, BAND_2G4, CHNL_SPAN_5, 1, 11, FALSE}
 	  ,			/* CH_SET_2G4_1_11 */
@@ -581,7 +581,7 @@ DOMAIN_INFO_ENTRY arSupportedRegDomains[] = {
 	}
 	,
 	{
-	 (PUINT_16) g_u2CountryGroup19, sizeof(g_u2CountryGroup19) / 2,
+	 (uint16_t *) g_u2CountryGroup19, sizeof(g_u2CountryGroup19) / 2,
 	 {
 	  {81, BAND_2G4, CHNL_SPAN_5, 1, 13, FALSE}
 	  ,			/* CH_SET_2G4_1_13 */
@@ -600,7 +600,7 @@ DOMAIN_INFO_ENTRY arSupportedRegDomains[] = {
 	,
 	{
 	 /* Note: Default group if no matched country code */
-	 (PUINT_16) g_u2CountryGroup20, sizeof(g_u2CountryGroup20) / 2,
+	 (uint16_t *) g_u2CountryGroup20, sizeof(g_u2CountryGroup20) / 2,
 	 {
 	  {81, BAND_2G4, CHNL_SPAN_5, 1, 13, FALSE}
 	  ,			/* CH_SET_2G4_1_13 */
@@ -618,13 +618,13 @@ DOMAIN_INFO_ENTRY arSupportedRegDomains[] = {
 	}
 };
 
-static const UINT_16 g_u2CountryGroup0_Passive[] = {
+static const uint16_t g_u2CountryGroup0_Passive[] = {
 	COUNTRY_CODE_TW
 };
 
-DOMAIN_INFO_ENTRY arSupportedRegDomains_Passive[] = {
+struct DOMAIN_INFO_ENTRY arSupportedRegDomains_Passive[] = {
 	{
-	 (PUINT_16) g_u2CountryGroup0_Passive, sizeof(g_u2CountryGroup0_Passive) / 2,
+	 (uint16_t *) g_u2CountryGroup0_Passive, sizeof(g_u2CountryGroup0_Passive) / 2,
 	 {
 	  {81, BAND_2G4, CHNL_SPAN_5, 1, 0, FALSE}
 	  ,			/* CH_SET_2G4_1_14_NA */
@@ -663,7 +663,7 @@ DOMAIN_INFO_ENTRY arSupportedRegDomains_Passive[] = {
 	}
 };
 
-SUBBAND_CHANNEL_T g_rRlmSubBand[] = {
+struct SUBBAND_CHANNEL g_rRlmSubBand[] = {
 
 	{BAND_2G4_LOWER_BOUND, BAND_2G4_UPPER_BOUND, 1, 0}
 	,			/* 2.4G */
@@ -706,16 +706,16 @@ SUBBAND_CHANNEL_T g_rRlmSubBand[] = {
 * \return none
 */
 /*----------------------------------------------------------------------------*/
-P_DOMAIN_INFO_ENTRY rlmDomainGetDomainInfo(P_ADAPTER_T prAdapter)
+struct DOMAIN_INFO_ENTRY *rlmDomainGetDomainInfo(struct ADAPTER *prAdapter)
 {
 #define REG_DOMAIN_DEF_IDX             20 /* Default regulatory domain */
 #define REG_DOMAIN_GROUP_NUM \
-	(sizeof(arSupportedRegDomains) / sizeof(DOMAIN_INFO_ENTRY))
+	(sizeof(arSupportedRegDomains) / sizeof(struct DOMAIN_INFO_ENTRY))
 
-	P_DOMAIN_INFO_ENTRY prDomainInfo;
-	P_REG_INFO_T prRegInfo;
-	UINT_16 u2TargetCountryCode;
-	UINT_16 i, j;
+	struct DOMAIN_INFO_ENTRY *prDomainInfo;
+	struct REG_INFO *prRegInfo;
+	uint16_t u2TargetCountryCode;
+	uint16_t i, j;
 
 	ASSERT(prAdapter);
 
@@ -783,14 +783,14 @@ P_DOMAIN_INFO_ENTRY rlmDomainGetDomainInfo(P_ADAPTER_T prAdapter)
 * \return none
 */
 /*----------------------------------------------------------------------------*/
-VOID
-rlmDomainGetChnlList_V2(P_ADAPTER_T prAdapter,
-		     ENUM_BAND_T eSpecificBand, BOOLEAN fgNoDfs,
-		     UINT_8 ucMaxChannelNum, PUINT_8 pucNumOfChannel, P_RF_CHANNEL_INFO_T paucChannelList)
+void
+rlmDomainGetChnlList_V2(struct ADAPTER *prAdapter,
+		     enum ENUM_BAND eSpecificBand, u_int8_t fgNoDfs,
+		     uint8_t ucMaxChannelNum, uint8_t *pucNumOfChannel, struct RF_CHANNEL_INFO *paucChannelList)
 {
 #if (CFG_SUPPORT_SINGLE_SKU == 1)
-	ENUM_BAND_T band;
-	UINT_8 max_count, i, ucNum;
+	enum ENUM_BAND band;
+	uint8_t max_count, i, ucNum;
 	struct channel *prCh;
 
 	if (eSpecificBand == BAND_2G4) {
@@ -844,14 +844,14 @@ rlmDomainGetChnlList_V2(P_ADAPTER_T prAdapter,
 * \return none
 */
 /*----------------------------------------------------------------------------*/
-VOID
-rlmDomainGetChnlList(P_ADAPTER_T prAdapter,
-		     ENUM_BAND_T eSpecificBand, BOOLEAN fgNoDfs,
-		     UINT_8 ucMaxChannelNum, PUINT_8 pucNumOfChannel, P_RF_CHANNEL_INFO_T paucChannelList)
+void
+rlmDomainGetChnlList(struct ADAPTER *prAdapter,
+		     enum ENUM_BAND eSpecificBand, u_int8_t fgNoDfs,
+		     uint8_t ucMaxChannelNum, uint8_t *pucNumOfChannel, struct RF_CHANNEL_INFO *paucChannelList)
 {
-	UINT_8 i, j, ucNum;
-	P_DOMAIN_SUBBAND_INFO prSubband;
-	P_DOMAIN_INFO_ENTRY prDomainInfo;
+	uint8_t i, j, ucNum;
+	struct DOMAIN_SUBBAND_INFO *prSubband;
+	struct DOMAIN_INFO_ENTRY *prDomainInfo;
 
 	ASSERT(prAdapter);
 	ASSERT(paucChannelList);
@@ -902,7 +902,7 @@ rlmDomainGetChnlList(P_ADAPTER_T prAdapter,
 * @return (none)
 */
 /*----------------------------------------------------------------------------*/
-VOID rlmDomainSendCmd(P_ADAPTER_T prAdapter)
+void rlmDomainSendCmd(struct ADAPTER *prAdapter)
 {
 	if (!regd_is_single_sku_en())
 		rlmDomainSendPassiveScanInfoCmd(prAdapter);
@@ -921,12 +921,12 @@ VOID rlmDomainSendCmd(P_ADAPTER_T prAdapter)
 * @return (none)
 */
 /*----------------------------------------------------------------------------*/
-VOID rlmDomainSendDomainInfoCmd_V2(P_ADAPTER_T prAdapter)
+void rlmDomainSendDomainInfoCmd_V2(struct ADAPTER *prAdapter)
 {
 #if (CFG_SUPPORT_SINGLE_SKU == 1)
 	u8 max_channel_count;
 	u32 buff_max_size, buff_valid_size;
-	P_CMD_SET_DOMAIN_INFO_V2_T prCmd;
+	struct CMD_SET_DOMAIN_INFO_V2 *prCmd;
 	struct acctive_channel_list *prChs;
 	struct wiphy *pWiphy;
 
@@ -941,7 +941,7 @@ VOID rlmDomainSendDomainInfoCmd_V2(P_ADAPTER_T prAdapter)
 	}
 
 
-	buff_max_size = sizeof(CMD_SET_DOMAIN_INFO_V2_T) +
+	buff_max_size = sizeof(struct CMD_SET_DOMAIN_INFO_V2) +
 					max_channel_count * sizeof(struct channel);
 
 	prCmd = cnmMemAlloc(prAdapter, RAM_TYPE_BUF, buff_max_size);
@@ -960,7 +960,7 @@ VOID rlmDomainSendDomainInfoCmd_V2(P_ADAPTER_T prAdapter)
 	prCmd->aucReserved[0] = 0;
 	prCmd->aucReserved[1] = 0;
 
-	buff_valid_size = sizeof(CMD_SET_DOMAIN_INFO_V2_T) +
+	buff_valid_size = sizeof(struct CMD_SET_DOMAIN_INFO_V2) +
 					(prChs->n_channels_2g + prChs->n_channels_5g) *
 					sizeof(struct channel);
 
@@ -976,7 +976,7 @@ VOID rlmDomainSendDomainInfoCmd_V2(P_ADAPTER_T prAdapter)
 			    NULL,  /* pfCmdDoneHandler */
 			    NULL,  /* pfCmdTimeoutHandler */
 			    buff_valid_size,
-			    (PUINT_8) prCmd, /* pucInfoBuffer */
+			    (uint8_t *) prCmd, /* pucInfoBuffer */
 			    NULL,  /* pvSetQueryBuffer */
 			    0      /* u4SetQueryBufferLen */
 	    );
@@ -994,12 +994,12 @@ VOID rlmDomainSendDomainInfoCmd_V2(P_ADAPTER_T prAdapter)
 * @return (none)
 */
 /*----------------------------------------------------------------------------*/
-VOID rlmDomainSendDomainInfoCmd(P_ADAPTER_T prAdapter)
+void rlmDomainSendDomainInfoCmd(struct ADAPTER *prAdapter)
 {
-	P_DOMAIN_INFO_ENTRY prDomainInfo;
-	P_CMD_SET_DOMAIN_INFO_T prCmd;
-	P_DOMAIN_SUBBAND_INFO prSubBand;
-	UINT_8 i;
+	struct DOMAIN_INFO_ENTRY *prDomainInfo;
+	struct CMD_SET_DOMAIN_INFO *prCmd;
+	struct DOMAIN_SUBBAND_INFO *prSubBand;
+	uint8_t i;
 
 	if (regd_is_single_sku_en())
 		return rlmDomainSendDomainInfoCmd_V2(prAdapter);
@@ -1008,12 +1008,12 @@ VOID rlmDomainSendDomainInfoCmd(P_ADAPTER_T prAdapter)
 	prDomainInfo = rlmDomainGetDomainInfo(prAdapter);
 	ASSERT(prDomainInfo);
 
-	prCmd = cnmMemAlloc(prAdapter, RAM_TYPE_BUF, sizeof(CMD_SET_DOMAIN_INFO_T));
+	prCmd = cnmMemAlloc(prAdapter, RAM_TYPE_BUF, sizeof(struct CMD_SET_DOMAIN_INFO));
 	if (!prCmd) {
 		DBGLOG(RLM, ERROR, "Alloc cmd buffer failed\n");
 		return;
 	}
-	kalMemZero(prCmd, sizeof(CMD_SET_DOMAIN_INFO_T));
+	kalMemZero(prCmd, sizeof(struct CMD_SET_DOMAIN_INFO));
 
 	prCmd->u2CountryCode = prAdapter->rWifiVar.rConnSettings.u2CountryCode;
 	prCmd->u2IsSetPassiveScan = 0;
@@ -1043,8 +1043,8 @@ VOID rlmDomainSendDomainInfoCmd(P_ADAPTER_T prAdapter)
 			    FALSE, /* fgIsOid */
 			    NULL,  /* pfCmdDoneHandler */
 			    NULL,  /* pfCmdTimeoutHandler */
-			    sizeof(CMD_SET_DOMAIN_INFO_T), /* u4SetQueryInfoLen */
-			    (PUINT_8) prCmd, /* pucInfoBuffer */
+			    sizeof(struct CMD_SET_DOMAIN_INFO), /* u4SetQueryInfoLen */
+			    (uint8_t *) prCmd, /* pucInfoBuffer */
 			    NULL,  /* pvSetQueryBuffer */
 			    0      /* u4SetQueryBufferLen */
 	    );
@@ -1061,24 +1061,24 @@ VOID rlmDomainSendDomainInfoCmd(P_ADAPTER_T prAdapter)
 * @return (none)
 */
 /*----------------------------------------------------------------------------*/
-VOID rlmDomainSendPassiveScanInfoCmd(P_ADAPTER_T prAdapter)
+void rlmDomainSendPassiveScanInfoCmd(struct ADAPTER *prAdapter)
 {
 #define REG_DOMAIN_PASSIVE_DEF_IDX	1
 #define REG_DOMAIN_PASSIVE_GROUP_NUM \
-	(sizeof(arSupportedRegDomains_Passive) / sizeof(DOMAIN_INFO_ENTRY))
+	(sizeof(arSupportedRegDomains_Passive) / sizeof(struct DOMAIN_INFO_ENTRY))
 
-	P_DOMAIN_INFO_ENTRY prDomainInfo;
-	P_CMD_SET_DOMAIN_INFO_T prCmd;
-	P_DOMAIN_SUBBAND_INFO prSubBand;
-	UINT_16 u2TargetCountryCode;
-	UINT_8 i, j;
+	struct DOMAIN_INFO_ENTRY *prDomainInfo;
+	struct CMD_SET_DOMAIN_INFO *prCmd;
+	struct DOMAIN_SUBBAND_INFO *prSubBand;
+	uint16_t u2TargetCountryCode;
+	uint8_t i, j;
 
-	prCmd = cnmMemAlloc(prAdapter, RAM_TYPE_BUF, sizeof(CMD_SET_DOMAIN_INFO_T));
+	prCmd = cnmMemAlloc(prAdapter, RAM_TYPE_BUF, sizeof(struct CMD_SET_DOMAIN_INFO));
 	if (!prCmd) {
 		DBGLOG(RLM, ERROR, "Alloc cmd buffer failed\n");
 		return;
 	}
-	kalMemZero(prCmd, sizeof(CMD_SET_DOMAIN_INFO_T));
+	kalMemZero(prCmd, sizeof(struct CMD_SET_DOMAIN_INFO));
 
 	prCmd->u2CountryCode = prAdapter->rWifiVar.rConnSettings.u2CountryCode;
 	prCmd->u2IsSetPassiveScan = 1;
@@ -1126,8 +1126,8 @@ VOID rlmDomainSendPassiveScanInfoCmd(P_ADAPTER_T prAdapter)
 			    FALSE, /* fgIsOid */
 			    NULL,  /* pfCmdDoneHandler */
 			    NULL,  /* pfCmdTimeoutHandler */
-			    sizeof(CMD_SET_DOMAIN_INFO_T), /* u4SetQueryInfoLen */
-			    (PUINT_8) prCmd, /* pucInfoBuffer */
+			    sizeof(struct CMD_SET_DOMAIN_INFO), /* u4SetQueryInfoLen */
+			    (uint8_t *) prCmd, /* pucInfoBuffer */
 			    NULL,  /* pvSetQueryBuffer */
 			    0      /* u4SetQueryBufferLen */
 	    );
@@ -1145,10 +1145,10 @@ VOID rlmDomainSendPassiveScanInfoCmd(P_ADAPTER_T prAdapter)
 *         FALSE Illegal channel for current regulatory domain
 */
 /*----------------------------------------------------------------------------*/
-BOOLEAN rlmDomainIsLegalChannel_V2(P_ADAPTER_T prAdapter, ENUM_BAND_T eBand, UINT_8 ucChannel)
+u_int8_t rlmDomainIsLegalChannel_V2(struct ADAPTER *prAdapter, enum ENUM_BAND eBand, uint8_t ucChannel)
 {
 #if (CFG_SUPPORT_SINGLE_SKU == 1)
-	UINT_8 idx, start_idx, end_idx;
+	uint8_t idx, start_idx, end_idx;
 	struct channel *prCh;
 
 	if (eBand == BAND_2G4) {
@@ -1173,11 +1173,11 @@ BOOLEAN rlmDomainIsLegalChannel_V2(P_ADAPTER_T prAdapter, ENUM_BAND_T eBand, UIN
 #endif
 }
 
-BOOLEAN rlmDomainIsLegalChannel(P_ADAPTER_T prAdapter, ENUM_BAND_T eBand, UINT_8 ucChannel)
+u_int8_t rlmDomainIsLegalChannel(struct ADAPTER *prAdapter, enum ENUM_BAND eBand, uint8_t ucChannel)
 {
-	UINT_8 i, j;
-	P_DOMAIN_SUBBAND_INFO prSubband;
-	P_DOMAIN_INFO_ENTRY prDomainInfo;
+	uint8_t i, j;
+	struct DOMAIN_SUBBAND_INFO *prSubband;
+	struct DOMAIN_INFO_ENTRY *prDomainInfo;
 
 	if (regd_is_single_sku_en())
 		return rlmDomainIsLegalChannel_V2(prAdapter, eBand, ucChannel);
@@ -1215,13 +1215,13 @@ BOOLEAN rlmDomainIsLegalChannel(P_ADAPTER_T prAdapter, ENUM_BAND_T eBand, UINT_8
 */
 /*----------------------------------------------------------------------------*/
 
-UINT_32 rlmDomainSupOperatingClassIeFill(PUINT_8 pBuf)
+uint32_t rlmDomainSupOperatingClassIeFill(uint8_t *pBuf)
 {
 	/*
 	 *  The Country element should only be included for Status Code 0 (Successful).
 	 */
-	UINT_32 u4IeLen;
-	UINT_8 aucClass[12] = { 0x01, 0x02, 0x03, 0x05, 0x16, 0x17, 0x19, 0x1b,
+	uint32_t u4IeLen;
+	uint8_t aucClass[12] = { 0x01, 0x02, 0x03, 0x05, 0x16, 0x17, 0x19, 0x1b,
 		0x1c, 0x1e, 0x20, 0x21
 	};
 
@@ -1262,11 +1262,11 @@ UINT_32 rlmDomainSupOperatingClassIeFill(PUINT_8 pBuf)
 * @return (fgValid) : 0 -> inValid, 1 -> Valid
 */
 /*----------------------------------------------------------------------------*/
-BOOLEAN rlmDomainCheckChannelEntryValid(P_ADAPTER_T prAdapter, UINT_8 ucCentralCh)
+u_int8_t rlmDomainCheckChannelEntryValid(struct ADAPTER *prAdapter, uint8_t ucCentralCh)
 {
-	BOOLEAN fgValid = FALSE;
-	UINT_8 ucTemp = 0xff;
-	UINT_8 i;
+	u_int8_t fgValid = FALSE;
+	uint8_t ucTemp = 0xff;
+	uint8_t i;
 	/*Check Power limit table channel efficient or not */
 
 	/* CH50 is not located in any FCC subbands but it's a valid central channel for 160C*/
@@ -1295,9 +1295,9 @@ BOOLEAN rlmDomainCheckChannelEntryValid(P_ADAPTER_T prAdapter, UINT_8 ucCentralC
 * \return
 */
 /*----------------------------------------------------------------------------*/
-UINT_8 rlmDomainGetCenterChannel(ENUM_BAND_T eBand, UINT_8 ucPriChannel, ENUM_CHNL_EXT_T eExtend)
+uint8_t rlmDomainGetCenterChannel(enum ENUM_BAND eBand, uint8_t ucPriChannel, enum ENUM_CHNL_EXT eExtend)
 {
-	UINT_8 ucCenterChannel;
+	uint8_t ucCenterChannel;
 
 	if (eExtend == CHNL_EXT_SCA)
 		ucCenterChannel = ucPriChannel + 2;
@@ -1318,22 +1318,22 @@ UINT_8 rlmDomainGetCenterChannel(ENUM_BAND_T eBand, UINT_8 ucPriChannel, ENUM_CH
 * \return
 */
 /*----------------------------------------------------------------------------*/
-BOOLEAN
-rlmDomainIsValidRfSetting(P_ADAPTER_T prAdapter,
-			  ENUM_BAND_T eBand,
-			  UINT_8 ucPriChannel,
-			  ENUM_CHNL_EXT_T eExtend,
-			  ENUM_CHANNEL_WIDTH_T eChannelWidth, UINT_8 ucChannelS1, UINT_8 ucChannelS2)
+u_int8_t
+rlmDomainIsValidRfSetting(struct ADAPTER *prAdapter,
+			  enum ENUM_BAND eBand,
+			  uint8_t ucPriChannel,
+			  enum ENUM_CHNL_EXT eExtend,
+			  enum ENUM_CHANNEL_WIDTH eChannelWidth, uint8_t ucChannelS1, uint8_t ucChannelS2)
 {
-	UINT_8 ucCenterChannel = 0;
-	UINT_8  ucUpperChannel;
-	UINT_8  ucLowerChannel;
-	BOOLEAN fgValidChannel = TRUE;
-	BOOLEAN fgUpperChannel = TRUE;
-	BOOLEAN fgLowerChannel = TRUE;
-	BOOLEAN fgValidBW = TRUE;
-	BOOLEAN fgValidRfSetting = TRUE;
-	UINT_32 u4PrimaryOffset;
+	uint8_t ucCenterChannel = 0;
+	uint8_t  ucUpperChannel;
+	uint8_t  ucLowerChannel;
+	u_int8_t fgValidChannel = TRUE;
+	u_int8_t fgUpperChannel = TRUE;
+	u_int8_t fgLowerChannel = TRUE;
+	u_int8_t fgValidBW = TRUE;
+	u_int8_t fgValidRfSetting = TRUE;
+	uint32_t u4PrimaryOffset;
 
 	/*DBG msg for Channel InValid */
 	if (eChannelWidth == CW_20_40MHZ) {
@@ -1435,25 +1435,25 @@ rlmDomainIsValidRfSetting(P_ADAPTER_T prAdapter,
 }
 
 #if (CFG_SUPPORT_SINGLE_SKU == 1)
-void rlmSetTxPwrLmtCmdValue(struct tx_pwr_element *pEle, P_CMD_CHANNEL_POWER_LIMIT_V2 pCmd)
+void rlmSetTxPwrLmtCmdValue(struct tx_pwr_element *pEle, struct CMD_CHANNEL_POWER_LIMIT_V2 *pCmd)
 {
-	memcpy(pCmd, pEle, sizeof(CMD_CHANNEL_POWER_LIMIT_V2));
+	memcpy(pCmd, pEle, sizeof(struct CMD_CHANNEL_POWER_LIMIT_V2));
 	pCmd->ucCentralCh = pEle->channel_num;
 }
 
-BOOLEAN rlmDomainGetTxPwrLimit(u32 country_code,
-							  P_GLUE_INFO_T prGlueInfo,
-							  P_CMD_SET_COUNTRY_CHANNEL_POWER_LIMIT_V2_T pSetCmd_2g,
-							  P_CMD_SET_COUNTRY_CHANNEL_POWER_LIMIT_V2_T pSetCmd_5g
+u_int8_t rlmDomainGetTxPwrLimit(u32 country_code,
+							  struct GLUE_INFO *prGlueInfo,
+							  struct CMD_SET_COUNTRY_CHANNEL_POWER_LIMIT_V2 *pSetCmd_2g,
+							  struct CMD_SET_COUNTRY_CHANNEL_POWER_LIMIT_V2 *pSetCmd_5g
 							  )
 {
 	int ret;
 	u32 start_offset, ch_idx;
 	const struct firmware *file;
 	struct tx_pwr_element *pEle;
-	P_CMD_SET_COUNTRY_CHANNEL_POWER_LIMIT_V2_T pSetCmd;
-	P_CMD_CHANNEL_POWER_LIMIT_V2 pCmd;
-	BOOLEAN error = FALSE;
+	struct CMD_SET_COUNTRY_CHANNEL_POWER_LIMIT_V2 *pSetCmd;
+	struct CMD_CHANNEL_POWER_LIMIT_V2 *pCmd;
+	u_int8_t error = FALSE;
 
 	#define IS_5GHZ_CH(n) ((n) > 14)
 	#define TX_PWR_LIMIT_FILE "MT_TxPwrLimit.dat"
@@ -1544,14 +1544,14 @@ END:
 * @return (fgValid) : 0 -> inValid, 1 -> Valid
 */
 /*----------------------------------------------------------------------------*/
-BOOLEAN
-rlmDomainCheckPowerLimitValid(P_ADAPTER_T prAdapter,
-			      COUNTRY_POWER_LIMIT_TABLE_CONFIGURATION rPowerLimitTableConfiguration,
-			      UINT_8 ucPwrLimitNum)
+u_int8_t
+rlmDomainCheckPowerLimitValid(struct ADAPTER *prAdapter,
+			      struct COUNTRY_POWER_LIMIT_TABLE_CONFIGURATION rPowerLimitTableConfiguration,
+			      uint8_t ucPwrLimitNum)
 {
-	UINT_8 i;
-	BOOLEAN fgValid = TRUE;
-	PINT_8 prPwrLimit;
+	uint8_t i;
+	u_int8_t fgValid = TRUE;
+	int8_t *prPwrLimit;
 
 	prPwrLimit = &rPowerLimitTableConfiguration.aucPwrLimit[0];
 
@@ -1575,23 +1575,23 @@ rlmDomainCheckPowerLimitValid(P_ADAPTER_T prAdapter,
 * @return (none)
 */
 /*----------------------------------------------------------------------------*/
-VOID rlmDomainCheckCountryPowerLimitTable(P_ADAPTER_T prAdapter)
+void rlmDomainCheckCountryPowerLimitTable(struct ADAPTER *prAdapter)
 {
-	UINT_8 i, j;
-	UINT_16 u2CountryCodeTable, u2CountryCodeCheck;
-	BOOLEAN fgChannelValid = FALSE;
-	BOOLEAN fgPowerLimitValid = FALSE;
-	BOOLEAN fgEntryRepetetion = FALSE;
-	BOOLEAN fgTableValid = TRUE;
+	uint8_t i, j;
+	uint16_t u2CountryCodeTable, u2CountryCodeCheck;
+	u_int8_t fgChannelValid = FALSE;
+	u_int8_t fgPowerLimitValid = FALSE;
+	u_int8_t fgEntryRepetetion = FALSE;
+	u_int8_t fgTableValid = TRUE;
 
 	/*1.Configuration Table Check */
-	for (i = 0; i < sizeof(g_rRlmPowerLimitConfiguration) / sizeof(COUNTRY_POWER_LIMIT_TABLE_CONFIGURATION); i++) {
+	for (i = 0; i < sizeof(g_rRlmPowerLimitConfiguration) / sizeof(struct COUNTRY_POWER_LIMIT_TABLE_CONFIGURATION); i++) {
 		/*Table Country Code */
 		WLAN_GET_FIELD_BE16(&g_rRlmPowerLimitConfiguration[i].aucCountryCode[0], &u2CountryCodeTable);
 
 		/*<1>Repetition Entry Check */
 		for (j = i + 1;
-		     j < sizeof(g_rRlmPowerLimitConfiguration) / sizeof(COUNTRY_POWER_LIMIT_TABLE_CONFIGURATION);
+		     j < sizeof(g_rRlmPowerLimitConfiguration) / sizeof(struct COUNTRY_POWER_LIMIT_TABLE_CONFIGURATION);
 		     j++) {
 
 			WLAN_GET_FIELD_BE16(&g_rRlmPowerLimitConfiguration[j].aucCountryCode[0], &u2CountryCodeCheck);
@@ -1652,11 +1652,11 @@ VOID rlmDomainCheckCountryPowerLimitTable(P_ADAPTER_T prAdapter)
 
 	/*2.Default Table Repetition Entry Check */
 	fgEntryRepetetion = FALSE;
-	for (i = 0; i < sizeof(g_rRlmPowerLimitDefault) / sizeof(COUNTRY_POWER_LIMIT_TABLE_DEFAULT); i++) {
+	for (i = 0; i < sizeof(g_rRlmPowerLimitDefault) / sizeof(struct COUNTRY_POWER_LIMIT_TABLE_DEFAULT); i++) {
 
 		WLAN_GET_FIELD_BE16(&g_rRlmPowerLimitDefault[i].aucCountryCode[0], &u2CountryCodeTable);
 
-		for (j = i + 1; j < sizeof(g_rRlmPowerLimitDefault) / sizeof(COUNTRY_POWER_LIMIT_TABLE_DEFAULT); j++) {
+		for (j = i + 1; j < sizeof(g_rRlmPowerLimitDefault) / sizeof(struct COUNTRY_POWER_LIMIT_TABLE_DEFAULT); j++) {
 			WLAN_GET_FIELD_BE16(&g_rRlmPowerLimitDefault[j].aucCountryCode[0], &u2CountryCodeCheck);
 			if (u2CountryCodeTable == u2CountryCodeCheck) {
 				fgEntryRepetetion = TRUE;
@@ -1680,15 +1680,15 @@ VOID rlmDomainCheckCountryPowerLimitTable(P_ADAPTER_T prAdapter)
 * @return (u2TableIndex) : if  0xFFFF -> No Table Match
 */
 /*----------------------------------------------------------------------------*/
-UINT_16 rlmDomainPwrLimitDefaultTableDecision(P_ADAPTER_T prAdapter, UINT_16 u2CountryCode)
+uint16_t rlmDomainPwrLimitDefaultTableDecision(struct ADAPTER *prAdapter, uint16_t u2CountryCode)
 {
 
-	UINT_16 i;
-	UINT_16 u2CountryCodeTable = COUNTRY_CODE_NULL;
-	UINT_16 u2TableIndex = POWER_LIMIT_TABLE_NULL;	/* No Table Match */
+	uint16_t i;
+	uint16_t u2CountryCodeTable = COUNTRY_CODE_NULL;
+	uint16_t u2TableIndex = POWER_LIMIT_TABLE_NULL;	/* No Table Match */
 
 	/*Default Table Index */
-	for (i = 0; i < sizeof(g_rRlmPowerLimitDefault) / sizeof(COUNTRY_POWER_LIMIT_TABLE_DEFAULT); i++) {
+	for (i = 0; i < sizeof(g_rRlmPowerLimitDefault) / sizeof(struct COUNTRY_POWER_LIMIT_TABLE_DEFAULT); i++) {
 
 		WLAN_GET_FIELD_BE16(&g_rRlmPowerLimitDefault[i].aucCountryCode[0], &u2CountryCodeTable);
 
@@ -1713,11 +1713,11 @@ UINT_16 rlmDomainPwrLimitDefaultTableDecision(P_ADAPTER_T prAdapter, UINT_16 u2C
 * @return (none)
 */
 /*----------------------------------------------------------------------------*/
-VOID rlmDomainBuildCmdByDefaultTable(P_CMD_SET_COUNTRY_CHANNEL_POWER_LIMIT_T prCmd, UINT_16 u2DefaultTableIndex)
+void rlmDomainBuildCmdByDefaultTable(struct CMD_SET_COUNTRY_CHANNEL_POWER_LIMIT *prCmd, uint16_t u2DefaultTableIndex)
 {
-	UINT_8 i, k;
-	P_COUNTRY_POWER_LIMIT_TABLE_DEFAULT prPwrLimitSubBand;
-	P_CMD_CHANNEL_POWER_LIMIT prCmdPwrLimit;
+	uint8_t i, k;
+	struct COUNTRY_POWER_LIMIT_TABLE_DEFAULT *prPwrLimitSubBand;
+	struct CMD_CHANNEL_POWER_LIMIT *prCmdPwrLimit;
 
 	prCmdPwrLimit = &prCmd->rChannelPowerLimit[0];
 	prPwrLimitSubBand = &g_rRlmPowerLimitDefault[u2DefaultTableIndex];
@@ -1792,16 +1792,16 @@ VOID rlmDomainBuildCmdByDefaultTable(P_CMD_SET_COUNTRY_CHANNEL_POWER_LIMIT_T prC
 * @return (none)
 */
 	/*----------------------------------------------------------------------------*/
-VOID rlmDomainBuildCmdByConfigTable(P_ADAPTER_T prAdapter, P_CMD_SET_COUNTRY_CHANNEL_POWER_LIMIT_T prCmd)
+void rlmDomainBuildCmdByConfigTable(struct ADAPTER *prAdapter, struct CMD_SET_COUNTRY_CHANNEL_POWER_LIMIT *prCmd)
 {
-	UINT_8 i, k;
-	UINT_16 u2CountryCodeTable = COUNTRY_CODE_NULL;
-	P_CMD_CHANNEL_POWER_LIMIT prCmdPwrLimit;
-	BOOLEAN fgChannelValid;
+	uint8_t i, k;
+	uint16_t u2CountryCodeTable = COUNTRY_CODE_NULL;
+	struct CMD_CHANNEL_POWER_LIMIT *prCmdPwrLimit;
+	u_int8_t fgChannelValid;
 
 	/*Build power limit cmd by configuration table information */
 
-	for (i = 0; i < sizeof(g_rRlmPowerLimitConfiguration) / sizeof(COUNTRY_POWER_LIMIT_TABLE_CONFIGURATION); i++) {
+	for (i = 0; i < sizeof(g_rRlmPowerLimitConfiguration) / sizeof(struct COUNTRY_POWER_LIMIT_TABLE_CONFIGURATION); i++) {
 
 		WLAN_GET_FIELD_BE16(&g_rRlmPowerLimitConfiguration[i].aucCountryCode[0], &u2CountryCodeTable);
 
@@ -1909,17 +1909,17 @@ VOID rlmDomainBuildCmdByConfigTable(P_ADAPTER_T prAdapter, P_CMD_SET_COUNTRY_CHA
 * @return (none)
 */
 /*----------------------------------------------------------------------------*/
-VOID rlmDomainSendPwrLimitCmd_V2(P_ADAPTER_T prAdapter)
+void rlmDomainSendPwrLimitCmd_V2(struct ADAPTER *prAdapter)
 {
 #if (CFG_SUPPORT_SINGLE_SKU == 1)
-	UINT_8 i;
-	WLAN_STATUS rStatus;
-	UINT_32 u4SetQueryInfoLen;
-	UINT32 ch_cnt;
+	uint8_t i;
+	uint32_t rStatus;
+	uint32_t u4SetQueryInfoLen;
+	uint32_t ch_cnt;
 	struct wiphy *wiphy;
 	u8 band_idx, ch_idx;
-	P_CMD_SET_COUNTRY_CHANNEL_POWER_LIMIT_V2_T prCmd[KAL_NUM_BANDS] = {NULL};
-	UINT_32 u4SetCmdTableMaxSize[KAL_NUM_BANDS] = {0};
+	struct CMD_SET_COUNTRY_CHANNEL_POWER_LIMIT_V2 *prCmd[KAL_NUM_BANDS] = {NULL};
+	uint32_t u4SetCmdTableMaxSize[KAL_NUM_BANDS] = {0};
 
 
 	DBGLOG(RLM, INFO, "rlmDomainSendPwrLimitCmd()\n");
@@ -1938,8 +1938,8 @@ VOID rlmDomainSendPwrLimitCmd_V2(P_ADAPTER_T prAdapter)
 			continue;
 
 		u4SetCmdTableMaxSize[band_idx] =
-			sizeof(CMD_SET_COUNTRY_CHANNEL_POWER_LIMIT_V2_T) +
-			ch_cnt * sizeof(CMD_CHANNEL_POWER_LIMIT_V2);
+			sizeof(struct CMD_SET_COUNTRY_CHANNEL_POWER_LIMIT_V2) +
+			ch_cnt * sizeof(struct CMD_CHANNEL_POWER_LIMIT_V2);
 
 		prCmd[band_idx] = cnmMemAlloc(prAdapter, RAM_TYPE_BUF, u4SetCmdTableMaxSize[band_idx]);
 
@@ -1996,7 +1996,7 @@ VOID rlmDomainSendPwrLimitCmd_V2(P_ADAPTER_T prAdapter)
 					      NULL,	/* pfCmdDoneHandler */
 					      NULL,	/* pfCmdTimeoutHandler */
 					      u4SetQueryInfoLen,	/* u4SetQueryInfoLen */
-					      (PUINT_8) prCmd[band_idx],	/* pucInfoBuffer */
+					      (uint8_t *) prCmd[band_idx],	/* pucInfoBuffer */
 					      NULL,	/* pvSetQueryBuffer */
 					      0	/* u4SetQueryBufferLen */
 						);
@@ -2006,23 +2006,23 @@ VOID rlmDomainSendPwrLimitCmd_V2(P_ADAPTER_T prAdapter)
 #endif
 }
 
-VOID rlmDomainSendPwrLimitCmd(P_ADAPTER_T prAdapter)
+void rlmDomainSendPwrLimitCmd(struct ADAPTER *prAdapter)
 {
-	P_CMD_SET_COUNTRY_CHANNEL_POWER_LIMIT_T prCmd;
-	WLAN_STATUS rStatus;
-	UINT_8 i;
-	UINT_16 u2DefaultTableIndex;
-	UINT_32 u4SetCmdTableMaxSize;
-	UINT_32 u4SetQueryInfoLen;
-	P_CMD_CHANNEL_POWER_LIMIT prCmdPwrLimit;	/* for print usage */
+	struct CMD_SET_COUNTRY_CHANNEL_POWER_LIMIT *prCmd;
+	uint32_t rStatus;
+	uint8_t i;
+	uint16_t u2DefaultTableIndex;
+	uint32_t u4SetCmdTableMaxSize;
+	uint32_t u4SetQueryInfoLen;
+	struct CMD_CHANNEL_POWER_LIMIT *prCmdPwrLimit;	/* for print usage */
 
 	if (regd_is_single_sku_en())
 		return rlmDomainSendPwrLimitCmd_V2(prAdapter);
 
 
 	u4SetCmdTableMaxSize =
-	    sizeof(CMD_SET_COUNTRY_CHANNEL_POWER_LIMIT_T) +
-	    MAX_CMD_SUPPORT_CHANNEL_NUM * sizeof(CMD_CHANNEL_POWER_LIMIT);
+	    sizeof(struct CMD_SET_COUNTRY_CHANNEL_POWER_LIMIT) +
+	    MAX_CMD_SUPPORT_CHANNEL_NUM * sizeof(struct CMD_CHANNEL_POWER_LIMIT);
 
 	prCmd = cnmMemAlloc(prAdapter, RAM_TYPE_BUF, u4SetCmdTableMaxSize);
 	if (!prCmd) {
@@ -2072,7 +2072,7 @@ VOID rlmDomainSendPwrLimitCmd(P_ADAPTER_T prAdapter)
 	}
 
 	u4SetQueryInfoLen =
-	    (sizeof(CMD_SET_COUNTRY_CHANNEL_POWER_LIMIT_T) + (prCmd->ucNum) * sizeof(CMD_CHANNEL_POWER_LIMIT));
+	    (sizeof(struct CMD_SET_COUNTRY_CHANNEL_POWER_LIMIT) + (prCmd->ucNum) * sizeof(struct CMD_CHANNEL_POWER_LIMIT));
 
 	/* Update domain info to chip */
 	if (prCmd->ucNum <= MAX_CMD_SUPPORT_CHANNEL_NUM) {
@@ -2084,7 +2084,7 @@ VOID rlmDomainSendPwrLimitCmd(P_ADAPTER_T prAdapter)
 					      NULL,	/* pfCmdDoneHandler */
 					      NULL,	/* pfCmdTimeoutHandler */
 					      u4SetQueryInfoLen,	/* u4SetQueryInfoLen */
-					      (PUINT_8) prCmd,	/* pucInfoBuffer */
+					      (uint8_t *) prCmd,	/* pucInfoBuffer */
 					      NULL,	/* pvSetQueryBuffer */
 					      0	/* u4SetQueryBufferLen */
 		    );
@@ -2098,7 +2098,7 @@ VOID rlmDomainSendPwrLimitCmd(P_ADAPTER_T prAdapter)
 
 }
 #endif
-BOOLEAN regd_is_single_sku_en(void)
+u_int8_t regd_is_single_sku_en(void)
 {
 #if (CFG_SUPPORT_SINGLE_SKU == 1)
 	return g_mtk_regd_control.en;
@@ -2108,7 +2108,7 @@ BOOLEAN regd_is_single_sku_en(void)
 }
 
 #if (CFG_SUPPORT_SINGLE_SKU == 1)
-BOOLEAN rlmDomainIsCtrlStateEqualTo(enum regd_state state)
+u_int8_t rlmDomainIsCtrlStateEqualTo(enum regd_state state)
 {
 	return (g_mtk_regd_control.state == state) ? TRUE : FALSE;
 }
@@ -2154,11 +2154,11 @@ void rlmDomainSetDefaultCountryCode(void)
 	g_mtk_regd_control.alpha2 = COUNTRY_CODE_WW;
 }
 
-void rlmDomainResetCtrlInfo(BOOLEAN force)
+void rlmDomainResetCtrlInfo(u_int8_t force)
 {
 	if ((g_mtk_regd_control.state == REGD_STATE_UNDEFINED) ||
 	    (force == TRUE)) {
-		memset(&g_mtk_regd_control, 0, sizeof(mtk_regd_control));
+		memset(&g_mtk_regd_control, 0, sizeof(struct mtk_regd_control));
 
 		g_mtk_regd_control.state = REGD_STATE_INIT;
 
@@ -2170,7 +2170,7 @@ void rlmDomainResetCtrlInfo(BOOLEAN force)
 	}
 }
 
-BOOLEAN rlmDomainIsUsingLocalRegDomainDataBase(void)
+u_int8_t rlmDomainIsUsingLocalRegDomainDataBase(void)
 {
 #if (CFG_SUPPORT_SINGLE_SKU_LOCAL_DB == 1)
 	return (g_mtk_regd_control.flag & REGD_CTRL_FLAG_SUPPORT_LOCAL_REGD_DB) ? TRUE : FALSE;
@@ -2313,7 +2313,7 @@ u32 rlmDomainSearchCountrySection(u32 country_code, const struct firmware *file)
 	return 0;
 }
 
-BOOLEAN rlmDomainIsTheEndOfCountrySection(u32 start_offset, const struct firmware *file)
+u_int8_t rlmDomainIsTheEndOfCountrySection(u32 start_offset, const struct firmware *file)
 {
 	struct tx_pwr_section *pSection;
 
@@ -2347,28 +2347,28 @@ struct wiphy *rlmDomainGetRefWiphy(void)
  **/
 void rlmDomainChannelFlagString(u32 flags, char *buf, size_t buf_size)
 {
-	INT_32 buf_written = 0;
+	int32_t buf_written = 0;
 
 	if (!flags || !buf || !buf_size)
 		return;
 
 	if (flags & IEEE80211_CHAN_DISABLED) {
-		LOGBUF(buf, ((INT_32)buf_size), buf_written, "DISABLED ");
+		LOGBUF(buf, ((int32_t)buf_size), buf_written, "DISABLED ");
 		/* If DISABLED, don't need to check other flags */
 		return;
 	}
 	if (flags & IEEE80211_CHAN_PASSIVE_FLAG)
-		LOGBUF(buf, ((INT_32)buf_size), buf_written, IEEE80211_CHAN_PASSIVE_STR " ");
+		LOGBUF(buf, ((int32_t)buf_size), buf_written, IEEE80211_CHAN_PASSIVE_STR " ");
 	if (flags & IEEE80211_CHAN_RADAR)
-		LOGBUF(buf, ((INT_32)buf_size), buf_written, "RADAR ");
+		LOGBUF(buf, ((int32_t)buf_size), buf_written, "RADAR ");
 	if (flags & IEEE80211_CHAN_NO_HT40PLUS)
-		LOGBUF(buf, ((INT_32)buf_size), buf_written, "NO_HT40PLUS ");
+		LOGBUF(buf, ((int32_t)buf_size), buf_written, "NO_HT40PLUS ");
 	if (flags & IEEE80211_CHAN_NO_HT40MINUS)
-		LOGBUF(buf, ((INT_32)buf_size), buf_written, "NO_HT40MINUS ");
+		LOGBUF(buf, ((int32_t)buf_size), buf_written, "NO_HT40MINUS ");
 	if (flags & IEEE80211_CHAN_NO_80MHZ)
-		LOGBUF(buf, ((INT_32)buf_size), buf_written, "NO_80MHZ ");
+		LOGBUF(buf, ((int32_t)buf_size), buf_written, "NO_80MHZ ");
 	if (flags & IEEE80211_CHAN_NO_160MHZ)
-		LOGBUF(buf, ((INT_32)buf_size), buf_written, "NO_160MHZ ");
+		LOGBUF(buf, ((int32_t)buf_size), buf_written, "NO_160MHZ ");
 }
 
 void rlmDomainParsingChannel(IN struct wiphy *pWiphy)
@@ -2495,7 +2495,7 @@ const struct ieee80211_regdomain *rlmDomainGetLocalDefaultRegd(void)
 	return NULL;
 #endif
 }
-P_GLUE_INFO_T rlmDomainGetGlueInfo(void)
+struct GLUE_INFO *rlmDomainGetGlueInfo(void)
 {
 	return g_mtk_regd_control.pGlueInfo;
 }
@@ -2506,10 +2506,10 @@ bool rlmDomainIsEfuseUsed(void)
 }
 #endif
 
-WLAN_STATUS rlmDomainExtractSingleSkuInfoFromFirmware(IN P_ADAPTER_T prAdapter, IN PUINT_8 pucEventBuf)
+uint32_t rlmDomainExtractSingleSkuInfoFromFirmware(IN struct ADAPTER *prAdapter, IN uint8_t *pucEventBuf)
 {
 #if (CFG_SUPPORT_SINGLE_SKU == 1)
-	P_SINGLE_SKU_INFO prSkuInfo = (P_SINGLE_SKU_INFO)pucEventBuf;
+	struct SINGLE_SKU_INFO *prSkuInfo = (struct SINGLE_SKU_INFO *)pucEventBuf;
 
 	g_mtk_regd_control.en = TRUE;
 
@@ -2531,7 +2531,7 @@ WLAN_STATUS rlmDomainExtractSingleSkuInfoFromFirmware(IN P_ADAPTER_T prAdapter, 
 	return WLAN_STATUS_SUCCESS;
 }
 
-void rlmDomainSendInfoToFirmware(IN P_ADAPTER_T prAdapter)
+void rlmDomainSendInfoToFirmware(IN struct ADAPTER *prAdapter)
 {
 #if (CFG_SUPPORT_SINGLE_SKU == 1)
 	struct regulatory_request request;
@@ -2550,7 +2550,7 @@ void rlmDomainSendInfoToFirmware(IN P_ADAPTER_T prAdapter)
 #endif
 }
 
-ENUM_CHNL_EXT_T rlmSelectSecondaryChannelType(P_ADAPTER_T prAdapter, ENUM_BAND_T band, u8 primary_ch)
+enum ENUM_CHNL_EXT rlmSelectSecondaryChannelType(struct ADAPTER *prAdapter, enum ENUM_BAND band, u8 primary_ch)
 {
 #if (CFG_SUPPORT_SINGLE_SKU == 1)
 	u8 below_ch, above_ch;
@@ -2569,7 +2569,7 @@ ENUM_CHNL_EXT_T rlmSelectSecondaryChannelType(P_ADAPTER_T prAdapter, ENUM_BAND_T
 	return CHNL_EXT_SCN;
 }
 
-void rlmDomainOidSetCountry(IN P_ADAPTER_T prAdapter, char *country, u8 size_of_country)
+void rlmDomainOidSetCountry(IN struct ADAPTER *prAdapter, char *country, u8 size_of_country)
 {
 #if (CFG_SUPPORT_SINGLE_SKU == 1)
 	struct regulatory_request request;
@@ -2603,7 +2603,7 @@ u32 rlmDomainGetTempCountryCode(void)
 #endif
 }
 
-void rlmDomianAssert(BOOLEAN cond)
+void rlmDomianAssert(u_int8_t cond)
 {
 	/* bypass this check because single sku is not enable */
 	if (!regd_is_single_sku_en())

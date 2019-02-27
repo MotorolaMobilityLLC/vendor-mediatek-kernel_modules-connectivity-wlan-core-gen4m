@@ -74,8 +74,8 @@
  *                    E X T E R N A L   R E F E R E N C E S
  ********************************************************************************
  */
-extern UINT_8 g_arTdlsLink[MAXNUM_TDLS_PEER];
-extern const PUINT_8 apucACI2Str[4];
+extern uint8_t g_arTdlsLink[MAXNUM_TDLS_PEER];
+extern const uint8_t *apucACI2Str[4];
 /*******************************************************************************
  *                              C O N S T A N T S
  ********************************************************************************
@@ -252,12 +252,12 @@ extern const PUINT_8 apucACI2Str[4];
 #define MQM_CLEAR_FLAG(_Bitmap, _flag)	{ (_Bitmap) &= (~BIT((_flag))); }
 #define MQM_CHECK_FLAG(_Bitmap, _flag)	((_Bitmap) & (BIT((_flag))))
 
-typedef enum _ENUM_BA_RESET_SEL_T {
+enum ENUM_BA_RESET_SEL {
 	MAC_ADDR_TID_MATCH = 0,
 	MAC_ADDR_MATCH,
 	ALWAYS_MATCH,
 	MATCH_NUM
-} ENUM_BA_RESET_SEL_T;
+};
 
 #endif
 
@@ -310,7 +310,7 @@ enum {
 };
 
 /* Used for MAC TX */
-typedef enum _ENUM_MAC_TX_QUEUE_INDEX_T {
+enum ENUM_MAC_TX_QUEUE_INDEX {
 	MAC_TX_QUEUE_AC0_INDEX = 0,
 	MAC_TX_QUEUE_AC1_INDEX,
 	MAC_TX_QUEUE_AC2_INDEX,
@@ -321,29 +321,29 @@ typedef enum _ENUM_MAC_TX_QUEUE_INDEX_T {
 	MAC_TX_QUEUE_BCN_INDEX,
 	MAC_TX_QUEUE_BMC_INDEX,
 	MAC_TX_QUEUE_NUM
-} ENUM_MAC_TX_QUEUE_INDEX_T;
+};
 
-typedef struct _RX_BA_ENTRY_T {
-	BOOLEAN fgIsValid;
-	QUE_T rReOrderQue;
-	UINT_16 u2WinStart;
-	UINT_16 u2WinEnd;
-	UINT_16 u2WinSize;
+struct RX_BA_ENTRY {
+	u_int8_t fgIsValid;
+	struct QUE rReOrderQue;
+	uint16_t u2WinStart;
+	uint16_t u2WinEnd;
+	uint16_t u2WinSize;
 
 	/* For identifying the RX BA agreement */
-	UINT_8 ucStaRecIdx;
-	UINT_8 ucTid;
+	uint8_t ucStaRecIdx;
+	uint8_t ucTid;
 
-	BOOLEAN fgIsWaitingForPktWithSsn;
+	u_int8_t fgIsWaitingForPktWithSsn;
 
-	TIMER_T rReorderBubbleTimer;
-	UINT_16 u2FirstBubbleSn;
-	BOOLEAN fgHasBubble;
+	struct TIMER rReorderBubbleTimer;
+	uint16_t u2FirstBubbleSn;
+	u_int8_t fgHasBubble;
 
 #if CFG_M0VE_BA_TO_DRIVER
-	UINT_8 ucStatus;
-	UINT_8 ucIdleCount;
-	UINT_16 u2SnapShotSN;
+	uint8_t ucStatus;
+	uint8_t ucIdleCount;
+	uint16_t u2SnapShotSN;
 #endif
 	/* UINT_8                  ucTxBufferSize; */
 	/* BOOL                    fgIsAcConstrain; */
@@ -351,337 +351,337 @@ typedef struct _RX_BA_ENTRY_T {
 #if CFG_SUPPORT_RX_AMSDU
 	/* RX reorder for one MSDU in AMSDU issue */
 	/* P_SW_RFB_T prMpduSwRfb; */
-	UINT_32 u4SeqNo; /* for statistic */
-	BOOL fgAmsduNeedLastFrame; /* for statistic */
-	UINT_8 u8LastAmsduSubIdx;
-	BOOL fgIsAmsduDuplicated;
+	uint32_t u4SeqNo; /* for statistic */
+	u_int8_t fgAmsduNeedLastFrame; /* for statistic */
+	uint8_t u8LastAmsduSubIdx;
+	u_int8_t fgIsAmsduDuplicated;
 #endif
-} RX_BA_ENTRY_T, *P_RX_BA_ENTRY_T;
+};
 
-typedef UINT_32(*PFN_DEQUEUE_FUNCTION) (IN P_ADAPTER_T prAdapter, OUT P_QUE_T prQue, IN UINT_8 ucTC, IN UINT_32
-					u4CurrentQuota, IN UINT_32 u4TotalQuota);
+typedef uint32_t(*PFN_DEQUEUE_FUNCTION) (IN struct ADAPTER *prAdapter, OUT struct QUE *prQue, IN uint8_t ucTC, IN uint32_t
+					u4CurrentQuota, IN uint32_t u4TotalQuota);
 
 /* The mailbox message (could be used for Host-To-Device or Device-To-Host Mailbox) */
-typedef struct _MAILBOX_MSG_T {
-	UINT_32 u4Msg[2];	/* [0]: D2HRM0R or H2DRM0R, [1]: D2HRM1R or H2DRM1R */
-} MAILBOX_MSG_T, *P_MAILBOX_MSG_T;
+struct MAILBOX_MSG {
+	uint32_t u4Msg[2];	/* [0]: D2HRM0R or H2DRM0R, [1]: D2HRM1R or H2DRM1R */
+};
 
 /* Used for adaptively adjusting TC resources */
-typedef struct _TC_RESOURCE_CTRL_T {
+struct TC_RESOURCE_CTRL {
 	/* TC0, TC1, TC2, TC3, TC5 */
-	UINT_32 au4AverageQueLen[TC_NUM - 1];
-} TC_RESOURCE_CTRL_T, *P_TC_RESOURCE_CTRL_T;
+	uint32_t au4AverageQueLen[TC_NUM - 1];
+};
 
-typedef struct _QUE_MGT_T {	/* Queue Management Control Info */
+struct QUE_MGT {	/* Queue Management Control Info */
 	/* Per-Type Queues: [0] BMCAST or UNKNOWN-STA packets */
-	QUE_T arTxQueue[NUM_OF_PER_TYPE_TX_QUEUES];
+	struct QUE arTxQueue[NUM_OF_PER_TYPE_TX_QUEUES];
 
 #if 0
 	/* For TX Scheduling */
-	UINT_8 arRemainingTxOppt[NUM_OF_PER_STA_TX_QUEUES];
-	UINT_8 arCurrentTxStaIndex[NUM_OF_PER_STA_TX_QUEUES];
+	uint8_t arRemainingTxOppt[NUM_OF_PER_STA_TX_QUEUES];
+	uint8_t arCurrentTxStaIndex[NUM_OF_PER_STA_TX_QUEUES];
 
 #endif
 
 	/* Reordering Queue Parameters */
-	RX_BA_ENTRY_T arRxBaTable[CFG_NUM_OF_RX_BA_AGREEMENTS];
+	struct RX_BA_ENTRY arRxBaTable[CFG_NUM_OF_RX_BA_AGREEMENTS];
 
 	/* Current number of activated RX BA agreements <= CFG_NUM_OF_RX_BA_AGREEMENTS */
-	UINT_8 ucRxBaCount;
+	uint8_t ucRxBaCount;
 
 #if QM_TEST_MODE
-	UINT_32 u4PktCount;
-	P_ADAPTER_T prAdapter;
+	uint32_t u4PktCount;
+	struct ADAPTER *prAdapter;
 
 #if QM_TEST_FAIR_FORWARDING
-	UINT_32 u4CurrentStaRecIndexToEnqueue;
+	uint32_t u4CurrentStaRecIndexToEnqueue;
 #endif
 
 #endif
 
 #if QM_FORWARDING_FAIRNESS
 	/* The current resource used count for a STA with respect to a TC index */
-	UINT_32 au4ResourceUsedCount[NUM_OF_PER_STA_TX_QUEUES];
+	uint32_t au4ResourceUsedCount[NUM_OF_PER_STA_TX_QUEUES];
 
 	/* The current serving STA with respect to a TC index */
-	UINT_32 au4HeadStaRecIndex[NUM_OF_PER_STA_TX_QUEUES];
+	uint32_t au4HeadStaRecIndex[NUM_OF_PER_STA_TX_QUEUES];
 
 	/* For TC5 only */
-	BOOLEAN fgGlobalQFirst;
-	UINT_32 u4GlobalResourceUsedCount;
+	u_int8_t fgGlobalQFirst;
+	uint32_t u4GlobalResourceUsedCount;
 #endif
 
 #if QM_ADAPTIVE_TC_RESOURCE_CTRL
-	UINT_32 au4AverageQueLen[TC_NUM];
-	UINT_32 au4CurrentTcResource[TC_NUM]; /* unit: frame */
-	UINT_32 au4MinReservedTcResource[TC_NUM];	/* The minimum amount of resource no matter busy or idle */
-	UINT_32 au4GuaranteedTcResource[TC_NUM];	/* The minimum amount of resource when extremely busy */
+	uint32_t au4AverageQueLen[TC_NUM];
+	uint32_t au4CurrentTcResource[TC_NUM]; /* unit: frame */
+	uint32_t au4MinReservedTcResource[TC_NUM];	/* The minimum amount of resource no matter busy or idle */
+	uint32_t au4GuaranteedTcResource[TC_NUM];	/* The minimum amount of resource when extremely busy */
 
-	UINT_32 u4TimeToAdjustTcResource;
-	UINT_32 u4TimeToUpdateQueLen;
+	uint32_t u4TimeToAdjustTcResource;
+	uint32_t u4TimeToUpdateQueLen;
 
-	UINT_32 u4QueLenMovingAverage;
-	UINT_32 u4ExtraReservedTcResource;
-	UINT_32 u4ResidualTcResource;
+	uint32_t u4QueLenMovingAverage;
+	uint32_t u4ExtraReservedTcResource;
+	uint32_t u4ResidualTcResource;
 
 	/* Set to TRUE if the last TC adjustment has not been completely applied (i.e., waiting more TX-Done events */
 	/* to align the TC quotas to the TC resource assignment) */
-	BOOLEAN fgTcResourcePostAnnealing;
+	u_int8_t fgTcResourcePostAnnealing;
 
 #if QM_FAST_TC_RESOURCE_CTRL
-	BOOLEAN fgTcResourceFastReaction;
+	u_int8_t fgTcResourceFastReaction;
 #endif
 
-	BOOLEAN fgForceReassign;
+	u_int8_t fgForceReassign;
 
 #endif
 
 #if QM_DEBUG_COUNTER
-	UINT_32 au4QmDebugCounters[QM_DBG_CNT_NUM];
+	uint32_t au4QmDebugCounters[QM_DBG_CNT_NUM];
 #endif
 
-	UINT_32 u4TxAllowedStaCount;
+	uint32_t u4TxAllowedStaCount;
 
 #if QM_TC_RESOURCE_EMPTY_COUNTER
-	UINT_32 au4QmTcResourceEmptyCounter[MAX_BSSID_NUM][TC_NUM];
-	UINT_32 au4DequeueNoTcResourceCounter[TC_NUM];
+	uint32_t au4QmTcResourceEmptyCounter[MAX_BSSID_NUM][TC_NUM];
+	uint32_t au4DequeueNoTcResourceCounter[TC_NUM];
 	/*
 	 * how many page count back during statistics intervals
 	 */
-	UINT_32 au4QmTcResourceBackCounter[TC_NUM];
+	uint32_t au4QmTcResourceBackCounter[TC_NUM];
 	/*
 	 * how many page count used to TX frame during statistics intervals
 	 */
-	UINT_32 au4QmTcUsedPageCounter[TC_NUM];
-	UINT_32 au4QmTcWantedPageCounter[TC_NUM];
+	uint32_t au4QmTcUsedPageCounter[TC_NUM];
+	uint32_t au4QmTcWantedPageCounter[TC_NUM];
 
-	UINT_32 u4EnqueueCounter;
-	UINT_32 u4DequeueCounter;
+	uint32_t u4EnqueueCounter;
+	uint32_t u4DequeueCounter;
 #endif
 
-	UINT_32 u4MaxForwardBufferCount;
+	uint32_t u4MaxForwardBufferCount;
 
 	OS_SYSTIME rLastTxPktDumpTime;
-	BOOLEAN fgIsTxResrouceControlEn;
-} QUE_MGT_T, *P_QUE_MGT_T;
+	u_int8_t fgIsTxResrouceControlEn;
+};
 
 struct _EVENT_TX_ADDBA_T {
-	UINT_8      ucStaRecIdx;
-	UINT_8      ucTid;
-	UINT_8      ucWinSize;
-	UINT_8      ucAmsduEnBitmap;    /* AMSDU in AMPDU is enabled or not (TID bitmap)*/
+	uint8_t      ucStaRecIdx;
+	uint8_t      ucTid;
+	uint8_t      ucWinSize;
+	uint8_t      ucAmsduEnBitmap;    /* AMSDU in AMPDU is enabled or not (TID bitmap)*/
 
-	UINT_16     u2SSN;
+	uint16_t     u2SSN;
 
     /*
      * AMSDU count/length limits by count *OR* length
      * Count: MPDU count in an AMSDU shall not exceed ucMaxMpduCount
      * Length: AMSDU length shall not exceed u4MaxMpduLen
      */
-	UINT_8      ucMaxMpduCount;     /* Max MPDU count in an AMSDU */
-	UINT_8      aucReserved1[1];
-	UINT_32     u4MaxMpduLen;       /* Max AMSDU length */
+	uint8_t      ucMaxMpduCount;     /* Max MPDU count in an AMSDU */
+	uint8_t      aucReserved1[1];
+	uint32_t     u4MaxMpduLen;       /* Max AMSDU length */
 
 	/*
 	 * Note: If length of a packet < u4MinMpduLen then it shall not be
 	 * aggregated in an AMSDU
 	 */
-	UINT_32     u4MinMpduLen;       /* Min MPDU length to be AMSDU */
-	UINT_8      aucReserved2[16];
+	uint32_t     u4MinMpduLen;       /* Min MPDU length to be AMSDU */
+	uint8_t      aucReserved2[16];
 };
 
-typedef struct _EVENT_RX_ADDBA_T {
+struct EVENT_RX_ADDBA {
 	/* Fields not present in the received ADDBA_REQ */
-	UINT_8 ucStaRecIdx;
+	uint8_t ucStaRecIdx;
 
 	/* Fields that are present in the received ADDBA_REQ */
-	UINT_8 ucDialogToken;	/* Dialog Token chosen by the sender */
-	UINT_16 u2BAParameterSet;	/* BA policy, TID, buffer size */
-	UINT_16 u2BATimeoutValue;
-	UINT_16 u2BAStartSeqCtrl;	/* SSN */
-} EVENT_RX_ADDBA_T, *P_EVENT_RX_ADDBA_T;
+	uint8_t ucDialogToken;	/* Dialog Token chosen by the sender */
+	uint16_t u2BAParameterSet;	/* BA policy, TID, buffer size */
+	uint16_t u2BATimeoutValue;
+	uint16_t u2BAStartSeqCtrl;	/* SSN */
+};
 
-typedef struct _EVENT_RX_DELBA_T {
+struct EVENT_RX_DELBA {
 	/* Fields not present in the received ADDBA_REQ */
-	UINT_8 ucStaRecIdx;
-	UINT_8 ucTid;
-	UINT_8 aucReserved[2];
-} EVENT_RX_DELBA_T, *P_EVENT_RX_DELBA_T;
+	uint8_t ucStaRecIdx;
+	uint8_t ucTid;
+	uint8_t aucReserved[2];
+};
 
-typedef struct _EVENT_BSS_ABSENCE_PRESENCE_T {
+struct EVENT_BSS_ABSENCE_PRESENCE {
 	/* Event Body */
-	UINT_8 ucBssIndex;
-	UINT_8 ucIsAbsent;
-	UINT_8 ucBssFreeQuota;
-	UINT_8 aucReserved[1];
-} EVENT_BSS_ABSENCE_PRESENCE_T, *P_EVENT_BSS_ABSENCE_PRESENCE_T;
+	uint8_t ucBssIndex;
+	uint8_t ucIsAbsent;
+	uint8_t ucBssFreeQuota;
+	uint8_t aucReserved[1];
+};
 
-typedef struct _EVENT_STA_CHANGE_PS_MODE_T {
+struct EVENT_STA_CHANGE_PS_MODE {
 	/* Event Body */
-	UINT_8 ucStaRecIdx;
-	UINT_8 ucIsInPs;
-	UINT_8 ucUpdateMode;
-	UINT_8 ucFreeQuota;
-} EVENT_STA_CHANGE_PS_MODE_T, *P_EVENT_STA_CHANGE_PS_MODE_T;
+	uint8_t ucStaRecIdx;
+	uint8_t ucIsInPs;
+	uint8_t ucUpdateMode;
+	uint8_t ucFreeQuota;
+};
 
 /* The free quota is used by PS only now */
 /* The event may be used by per STA flow conttrol in general */
-typedef struct _EVENT_STA_UPDATE_FREE_QUOTA_T {
+struct EVENT_STA_UPDATE_FREE_QUOTA {
 	/* Event Body */
-	UINT_8 ucStaRecIdx;
-	UINT_8 ucUpdateMode;
-	UINT_8 ucFreeQuota;
-	UINT_8 aucReserved[1];
-} EVENT_STA_UPDATE_FREE_QUOTA_T, *P_EVENT_STA_UPDATE_FREE_QUOTA_T;
+	uint8_t ucStaRecIdx;
+	uint8_t ucUpdateMode;
+	uint8_t ucFreeQuota;
+	uint8_t aucReserved[1];
+};
 
-typedef struct _EVENT_CHECK_REORDER_BUBBLE_T {
+struct EVENT_CHECK_REORDER_BUBBLE {
 	/* Event Body */
-	UINT_8 ucStaRecIdx;
-	UINT_8 ucTid;
-} EVENT_CHECK_REORDER_BUBBLE_T, *P_EVENT_CHECK_REORDER_BUBBLE_T;
+	uint8_t ucStaRecIdx;
+	uint8_t ucTid;
+};
 
 /* WMM-2.2.1 WMM Information Element */
-typedef struct _IE_WMM_INFO_T {
-	UINT_8 ucId;		/* Element ID */
-	UINT_8 ucLength;	/* Length */
-	UINT_8 aucOui[3];	/* OUI */
-	UINT_8 ucOuiType;	/* OUI Type */
-	UINT_8 ucOuiSubtype;	/* OUI Subtype */
-	UINT_8 ucVersion;	/* Version */
-	UINT_8 ucQosInfo;	/* QoS Info field */
-	UINT_8 ucDummy[3];	/* Dummy for pack */
-} IE_WMM_INFO_T, *P_IE_WMM_INFO_T;
+struct IE_WMM_INFO {
+	uint8_t ucId;		/* Element ID */
+	uint8_t ucLength;	/* Length */
+	uint8_t aucOui[3];	/* OUI */
+	uint8_t ucOuiType;	/* OUI Type */
+	uint8_t ucOuiSubtype;	/* OUI Subtype */
+	uint8_t ucVersion;	/* Version */
+	uint8_t ucQosInfo;	/* QoS Info field */
+	uint8_t ucDummy[3];	/* Dummy for pack */
+};
 
-typedef struct _WMM_AC_PARAM_T {
-	UINT_8 ucAciAifsn;
-	UINT_8 ucEcw;
-	UINT_16 u2TxopLimit;
-} WMM_AC_PARAM_T, *P_WMM_AC_PARAM_T;
+struct WMM_AC_PARAM {
+	uint8_t ucAciAifsn;
+	uint8_t ucEcw;
+	uint16_t u2TxopLimit;
+};
 
 /* WMM-2.2.2 WMM Parameter Element */
-typedef struct _IE_WMM_PARAM_T {
-	UINT_8 ucId;		/* Element ID */
-	UINT_8 ucLength;	/* Length */
+struct IE_WMM_PARAM {
+	uint8_t ucId;		/* Element ID */
+	uint8_t ucLength;	/* Length */
 
 	/* IE Body */
-	UINT_8 aucOui[3];	/* OUI */
-	UINT_8 ucOuiType;	/* OUI Type */
-	UINT_8 ucOuiSubtype;	/* OUI Subtype */
-	UINT_8 ucVersion;	/* Version */
+	uint8_t aucOui[3];	/* OUI */
+	uint8_t ucOuiType;	/* OUI Type */
+	uint8_t ucOuiSubtype;	/* OUI Subtype */
+	uint8_t ucVersion;	/* Version */
 
 	/* WMM IE Body */
-	UINT_8 ucQosInfo;	/* QoS Info field */
-	UINT_8 ucReserved;
+	uint8_t ucQosInfo;	/* QoS Info field */
+	uint8_t ucReserved;
 
 	/* AC Parameters */
 #if 1
-	WMM_AC_PARAM_T arAcParam[4];
+	struct WMM_AC_PARAM arAcParam[4];
 #else
-	UINT_8 ucAciAifsn_BE;
-	UINT_8 ucEcw_BE;
-	UINT_8 aucTxopLimit_BE[2];
+	uint8_t ucAciAifsn_BE;
+	uint8_t ucEcw_BE;
+	uint8_t aucTxopLimit_BE[2];
 
-	UINT_8 ucAciAifsn_BG;
-	UINT_8 ucEcw_BG;
-	UINT_8 aucTxopLimit_BG[2];
+	uint8_t ucAciAifsn_BG;
+	uint8_t ucEcw_BG;
+	uint8_t aucTxopLimit_BG[2];
 
-	UINT_8 ucAciAifsn_VI;
-	UINT_8 ucEcw_VI;
-	UINT_8 aucTxopLimit_VI[2];
+	uint8_t ucAciAifsn_VI;
+	uint8_t ucEcw_VI;
+	uint8_t aucTxopLimit_VI[2];
 
-	UINT_8 ucAciAifsn_VO;
-	UINT_8 ucEcw_VO;
-	UINT_8 aucTxopLimit_VO[2];
+	uint8_t ucAciAifsn_VO;
+	uint8_t ucEcw_VO;
+	uint8_t aucTxopLimit_VO[2];
 #endif
-} IE_WMM_PARAM_T, *P_IE_WMM_PARAM_T;
+};
 
-typedef struct _IE_WMM_TSPEC_T {
-	UINT_8 ucId;		/* Element ID */
-	UINT_8 ucLength;	/* Length */
-	UINT_8 aucOui[3];	/* OUI */
-	UINT_8 ucOuiType;	/* OUI Type */
-	UINT_8 ucOuiSubtype;	/* OUI Subtype */
-	UINT_8 ucVersion;	/* Version */
+struct IE_WMM_TSPEC {
+	uint8_t ucId;		/* Element ID */
+	uint8_t ucLength;	/* Length */
+	uint8_t aucOui[3];	/* OUI */
+	uint8_t ucOuiType;	/* OUI Type */
+	uint8_t ucOuiSubtype;	/* OUI Subtype */
+	uint8_t ucVersion;	/* Version */
 	/* WMM TSPEC body */
-	UINT_8 aucTsInfo[3];	/* TS Info */
-	UINT_8 aucTspecBodyPart[1];	/* Note: Utilize PARAM_QOS_TSPEC to fill (memory copy) */
-} IE_WMM_TSPEC_T, *P_IE_WMM_TSPEC_T;
+	uint8_t aucTsInfo[3];	/* TS Info */
+	uint8_t aucTspecBodyPart[1];	/* Note: Utilize PARAM_QOS_TSPEC to fill (memory copy) */
+};
 
-typedef struct _IE_WMM_HDR_T {
-	UINT_8 ucId;		/* Element ID */
-	UINT_8 ucLength;	/* Length */
-	UINT_8 aucOui[3];	/* OUI */
-	UINT_8 ucOuiType;	/* OUI Type */
-	UINT_8 ucOuiSubtype;	/* OUI Subtype */
-	UINT_8 ucVersion;	/* Version */
-	UINT_8 aucBody[1];	/* IE body */
-} IE_WMM_HDR_T, *P_IE_WMM_HDR_T;
+struct IE_WMM_HDR {
+	uint8_t ucId;		/* Element ID */
+	uint8_t ucLength;	/* Length */
+	uint8_t aucOui[3];	/* OUI */
+	uint8_t ucOuiType;	/* OUI Type */
+	uint8_t ucOuiSubtype;	/* OUI Subtype */
+	uint8_t ucVersion;	/* Version */
+	uint8_t aucBody[1];	/* IE body */
+};
 
-typedef struct _AC_QUE_PARMS_T {
-	UINT_16 u2CWmin;	/*!< CWmin */
-	UINT_16 u2CWmax;	/*!< CWmax */
-	UINT_16 u2TxopLimit;	/*!< TXOP limit */
-	UINT_16 u2Aifsn;	/*!< AIFSN */
-	UINT_8 ucGuradTime;	/*!< GuardTime for STOP/FLUSH. */
-	UINT_8 ucIsACMSet;
-} AC_QUE_PARMS_T, *P_AC_QUE_PARMS_T;
+struct AC_QUE_PARMS {
+	uint16_t u2CWmin;	/*!< CWmin */
+	uint16_t u2CWmax;	/*!< CWmax */
+	uint16_t u2TxopLimit;	/*!< TXOP limit */
+	uint16_t u2Aifsn;	/*!< AIFSN */
+	uint8_t ucGuradTime;	/*!< GuardTime for STOP/FLUSH. */
+	uint8_t ucIsACMSet;
+};
 
 /* WMM ACI (AC index) */
-typedef enum _ENUM_WMM_ACI_T {
+enum ENUM_WMM_ACI {
 	WMM_AC_BE_INDEX = 0,
 	WMM_AC_BK_INDEX,
 	WMM_AC_VI_INDEX,
 	WMM_AC_VO_INDEX,
 	WMM_AC_INDEX_NUM
-} ENUM_WMM_ACI_T, *P_ENUM_WMM_ACI_T;
+};
 
 /* Used for CMD Queue Operation */
-typedef enum _ENUM_FRAME_ACTION_T {
+enum ENUM_FRAME_ACTION {
 	FRAME_ACTION_DROP_PKT = 0,
 	FRAME_ACTION_QUEUE_PKT,
 	FRAME_ACTION_TX_PKT,
 	FRAME_ACTION_NUM
-} ENUM_FRAME_ACTION_T;
+};
 
-typedef enum _ENUM_FRAME_TYPE_IN_CMD_Q_T {
+enum ENUM_FRAME_TYPE_IN_CMD_Q {
 	FRAME_TYPE_802_1X = 0,
 	FRAME_TYPE_MMPDU,
 	FRAME_TYPE_NUM
-} ENUM_FRAME_TYPE_IN_CMD_Q_T;
+};
 
-typedef enum _ENUM_FREE_QUOTA_MODET_T {
+enum ENUM_FREE_QUOTA_MODET {
 	FREE_QUOTA_UPDATE_MODE_INIT = 0,
 	FREE_QUOTA_UPDATE_MODE_OVERWRITE,
 	FREE_QUOTA_UPDATE_MODE_INCREASE,
 	FREE_QUOTA_UPDATE_MODE_DECREASE
-} ENUM_FREE_QUOTA_MODET_T, *P_ENUM_FREE_QUOTA_MODET_T;
+};
 
-typedef struct _CMD_UPDATE_WMM_PARMS_T {
-	AC_QUE_PARMS_T arACQueParms[AC_NUM];
-	UINT_8 ucBssIndex;
-	UINT_8 fgIsQBSS;
-	UINT_8 ucWmmSet;
-	UINT_8 aucReserved;
-} CMD_UPDATE_WMM_PARMS_T, *P_CMD_UPDATE_WMM_PARMS_T;
+struct CMD_UPDATE_WMM_PARMS {
+	struct AC_QUE_PARMS arACQueParms[AC_NUM];
+	uint8_t ucBssIndex;
+	uint8_t fgIsQBSS;
+	uint8_t ucWmmSet;
+	uint8_t aucReserved;
+};
 
-typedef struct _CMD_TX_AMPDU_T {
-	BOOLEAN fgEnable;
-	UINT_8 aucReserved[3];
-} CMD_TX_AMPDU_T, *P_CMD_TX_AMPDU_T;
+struct CMD_TX_AMPDU {
+	u_int8_t fgEnable;
+	uint8_t aucReserved[3];
+};
 
-typedef struct _CMD_ADDBA_REJECT {
-	BOOLEAN fgEnable;
-	UINT_8 aucReserved[3];
-} CMD_ADDBA_REJECT_T, *P_CMD_ADDBA_REJECT_T;
+struct CMD_ADDBA_REJECT {
+	u_int8_t fgEnable;
+	uint8_t aucReserved[3];
+};
 
 #if CFG_M0VE_BA_TO_DRIVER
 /* The status of an TX/RX BA entry in FW (NEGO means the negotiation process is in progress) */
-typedef enum _ENUM_BA_ENTRY_STATUS_T {
+enum ENUM_BA_ENTRY_STATUS {
 	BA_ENTRY_STATUS_INVALID = 0,
 	BA_ENTRY_STATUS_NEGO,
 	BA_ENTRY_STATUS_ACTIVE,
 	BA_ENTRY_STATUS_DELETING
-} ENUM_BA_ENTRY_STATUS_T, *P_ENUM_BA_ENTRY_STATUS_T;
+};
 #endif
 
 /*******************************************************************************
@@ -700,19 +700,19 @@ typedef enum _ENUM_BA_ENTRY_STATUS_T {
  */
 
 #define QM_TX_SET_NEXT_MSDU_INFO(_prMsduInfoPreceding, _prMsduInfoNext) \
-	((((_prMsduInfoPreceding)->rQueEntry).prNext) = (P_QUE_ENTRY_T)(_prMsduInfoNext))
+	((((_prMsduInfoPreceding)->rQueEntry).prNext) = (struct QUE_ENTRY *)(_prMsduInfoNext))
 
 #define QM_TX_SET_NEXT_SW_RFB(_prSwRfbPreceding, _prSwRfbNext) \
-	((((_prSwRfbPreceding)->rQueEntry).prNext) = (P_QUE_ENTRY_T)(_prSwRfbNext))
+	((((_prSwRfbPreceding)->rQueEntry).prNext) = (struct QUE_ENTRY *)(_prSwRfbNext))
 
 #define QM_TX_GET_NEXT_MSDU_INFO(_prMsduInfo) \
-	((P_MSDU_INFO_T)(((_prMsduInfo)->rQueEntry).prNext))
+	((struct MSDU_INFO *)(((_prMsduInfo)->rQueEntry).prNext))
 
 #define QM_RX_SET_NEXT_SW_RFB(_prSwRfbPreceding, _prSwRfbNext) \
-	((((_prSwRfbPreceding)->rQueEntry).prNext) = (P_QUE_ENTRY_T)(_prSwRfbNext))
+	((((_prSwRfbPreceding)->rQueEntry).prNext) = (struct QUE_ENTRY *)(_prSwRfbNext))
 
 #define QM_RX_GET_NEXT_SW_RFB(_prSwRfb) \
-	((P_SW_RFB_T)(((_prSwRfb)->rQueEntry).prNext))
+	((struct SW_RFB *)(((_prSwRfb)->rQueEntry).prNext))
 
 #if 0
 #define QM_GET_STA_REC_PTR_FROM_INDEX(_prAdapter, _ucIndex) \
@@ -790,9 +790,9 @@ typedef enum _ENUM_BA_ENTRY_STATUS_T {
 	(((_prAdapter)->rQM.au4AverageQueLen[(_u4QueIdx)] >> (_prAdapter)->rQM.u4QueLenMovingAverage))
 #endif
 
-#define WMM_IE_OUI_TYPE(fp)      (((P_IE_WMM_HDR_T)(fp))->ucOuiType)
-#define WMM_IE_OUI_SUBTYPE(fp)   (((P_IE_WMM_HDR_T)(fp))->ucOuiSubtype)
-#define WMM_IE_OUI(fp)           (((P_IE_WMM_HDR_T)(fp))->aucOui)
+#define WMM_IE_OUI_TYPE(fp)      (((struct IE_WMM_HDR *)(fp))->ucOuiType)
+#define WMM_IE_OUI_SUBTYPE(fp)   (((struct IE_WMM_HDR *)(fp))->ucOuiSubtype)
+#define WMM_IE_OUI(fp)           (((struct IE_WMM_HDR *)(fp))->aucOui)
 
 #if QM_DEBUG_COUNTER
 #define QM_DBG_CNT_INC(_prQM, _index) { (_prQM)->au4QmDebugCounters[(_index)]++; }
@@ -808,207 +808,207 @@ typedef enum _ENUM_BA_ENTRY_STATUS_T {
 /* Queue Management and STA_REC Initialization                                */
 /*----------------------------------------------------------------------------*/
 
-VOID qmInit(IN P_ADAPTER_T prAdapter, IN BOOLEAN isTxResrouceControlEn);
+void qmInit(IN struct ADAPTER *prAdapter, IN u_int8_t isTxResrouceControlEn);
 
 #if QM_TEST_MODE
-VOID qmTestCases(IN P_ADAPTER_T prAdapter);
+void qmTestCases(IN struct ADAPTER *prAdapter);
 #endif
 
-VOID qmActivateStaRec(IN P_ADAPTER_T prAdapter, IN P_STA_RECORD_T prStaRec);
+void qmActivateStaRec(IN struct ADAPTER *prAdapter, IN struct STA_RECORD *prStaRec);
 
-VOID qmDeactivateStaRec(IN P_ADAPTER_T prAdapter, IN P_STA_RECORD_T prStaRec);
+void qmDeactivateStaRec(IN struct ADAPTER *prAdapter, IN struct STA_RECORD *prStaRec);
 
-VOID qmUpdateStaRec(IN P_ADAPTER_T prAdapter, IN P_STA_RECORD_T prStaRec);
+void qmUpdateStaRec(IN struct ADAPTER *prAdapter, IN struct STA_RECORD *prStaRec);
 
 /*----------------------------------------------------------------------------*/
 /* TX-Related Queue Management                                                */
 /*----------------------------------------------------------------------------*/
 
-P_MSDU_INFO_T qmFlushTxQueues(IN P_ADAPTER_T prAdapter);
+struct MSDU_INFO *qmFlushTxQueues(IN struct ADAPTER *prAdapter);
 
-P_MSDU_INFO_T qmFlushStaTxQueues(IN P_ADAPTER_T prAdapter, IN UINT_32 u4StaRecIdx);
+struct MSDU_INFO *qmFlushStaTxQueues(IN struct ADAPTER *prAdapter, IN uint32_t u4StaRecIdx);
 
-P_MSDU_INFO_T qmEnqueueTxPackets(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduInfoListHead);
+struct MSDU_INFO *qmEnqueueTxPackets(IN struct ADAPTER *prAdapter, IN struct MSDU_INFO *prMsduInfoListHead);
 
-P_MSDU_INFO_T qmDequeueTxPackets(IN P_ADAPTER_T prAdapter, IN P_TX_TCQ_STATUS_T prTcqStatus);
+struct MSDU_INFO *qmDequeueTxPackets(IN struct ADAPTER *prAdapter, IN struct TX_TCQ_STATUS *prTcqStatus);
 
 #if CFG_SUPPORT_MULTITHREAD
-P_MSDU_INFO_T qmDequeueTxPacketsMthread(IN P_ADAPTER_T prAdapter, IN P_TX_TCQ_STATUS_T prTcqStatus);
+struct MSDU_INFO *qmDequeueTxPacketsMthread(IN struct ADAPTER *prAdapter, IN struct TX_TCQ_STATUS *prTcqStatus);
 
-BOOLEAN
-qmAdjustTcQuotasMthread(IN P_ADAPTER_T prAdapter, OUT P_TX_TCQ_ADJUST_T prTcqAdjust, IN P_TX_TCQ_STATUS_T prTcqStatus);
+u_int8_t
+qmAdjustTcQuotasMthread(IN struct ADAPTER *prAdapter, OUT struct TX_TCQ_ADJUST *prTcqAdjust, IN struct TX_TCQ_STATUS *prTcqStatus);
 #endif
 
-BOOLEAN qmAdjustTcQuotas(IN P_ADAPTER_T prAdapter, OUT P_TX_TCQ_ADJUST_T prTcqAdjust, IN P_TX_TCQ_STATUS_T prTcqStatus);
+u_int8_t qmAdjustTcQuotas(IN struct ADAPTER *prAdapter, OUT struct TX_TCQ_ADJUST *prTcqAdjust, IN struct TX_TCQ_STATUS *prTcqStatus);
 
 #if QM_ADAPTIVE_TC_RESOURCE_CTRL
-VOID qmReassignTcResource(IN P_ADAPTER_T prAdapter);
+void qmReassignTcResource(IN struct ADAPTER *prAdapter);
 
-VOID qmUpdateAverageTxQueLen(IN P_ADAPTER_T prAdapter);
+void qmUpdateAverageTxQueLen(IN struct ADAPTER *prAdapter);
 
-VOID qmDoAdaptiveTcResourceCtrl(IN P_ADAPTER_T prAdapter);
+void qmDoAdaptiveTcResourceCtrl(IN struct ADAPTER *prAdapter);
 
-VOID qmCheckForFastTcResourceCtrl(IN P_ADAPTER_T prAdapter, IN UINT_8 ucTc);
+void qmCheckForFastTcResourceCtrl(IN struct ADAPTER *prAdapter, IN uint8_t ucTc);
 
 #endif
 
-VOID qmDetermineStaRecIndex(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduInfo);
+void qmDetermineStaRecIndex(IN struct ADAPTER *prAdapter, IN struct MSDU_INFO *prMsduInfo);
 
-UINT_32
-qmDequeueTxPacketsFromPerStaQueues(IN P_ADAPTER_T prAdapter, OUT P_QUE_T prQue, IN UINT_8 ucTC, IN UINT_32
-				   u4CurrentQuota, IN UINT_32 u4TotalQuota);
+uint32_t
+qmDequeueTxPacketsFromPerStaQueues(IN struct ADAPTER *prAdapter, OUT struct QUE *prQue, IN uint8_t ucTC, IN uint32_t
+				   u4CurrentQuota, IN uint32_t u4TotalQuota);
 
-VOID
-qmDequeueTxPacketsFromPerTypeQueues(IN P_ADAPTER_T prAdapter, OUT P_QUE_T prQue, IN UINT_8 ucTC, IN UINT_32
-				    u4CurrentQuota, IN UINT_32 u4TotalQuota);
+void
+qmDequeueTxPacketsFromPerTypeQueues(IN struct ADAPTER *prAdapter, OUT struct QUE *prQue, IN uint8_t ucTC, IN uint32_t
+				    u4CurrentQuota, IN uint32_t u4TotalQuota);
 
-UINT_32
-qmDequeueTxPacketsFromGlobalQueue(IN P_ADAPTER_T prAdapter, OUT P_QUE_T prQue, IN UINT_8 ucTC, IN UINT_32
-				  u4CurrentQuota, IN UINT_32 u4TotalQuota);
+uint32_t
+qmDequeueTxPacketsFromGlobalQueue(IN struct ADAPTER *prAdapter, OUT struct QUE *prQue, IN uint8_t ucTC, IN uint32_t
+				  u4CurrentQuota, IN uint32_t u4TotalQuota);
 
-VOID qmSetStaRecTxAllowed(IN P_ADAPTER_T prAdapter, IN P_STA_RECORD_T prStaRec, IN BOOLEAN fgIsTxAllowed);
+void qmSetStaRecTxAllowed(IN struct ADAPTER *prAdapter, IN struct STA_RECORD *prStaRec, IN u_int8_t fgIsTxAllowed);
 
-UINT_32 gmGetDequeueQuota(
-	IN P_ADAPTER_T prAdapter,
-	IN P_STA_RECORD_T prStaRec,
-	IN P_BSS_INFO_T prBssInfo,
-	IN UINT_32 u4TotalQuota
+uint32_t gmGetDequeueQuota(
+	IN struct ADAPTER *prAdapter,
+	IN struct STA_RECORD *prStaRec,
+	IN struct BSS_INFO *prBssInfo,
+	IN uint32_t u4TotalQuota
 	);
 
 /*----------------------------------------------------------------------------*/
 /* RX-Related Queue Management                                                */
 /*----------------------------------------------------------------------------*/
 
-VOID qmInitRxQueues(IN P_ADAPTER_T prAdapter);
+void qmInitRxQueues(IN struct ADAPTER *prAdapter);
 
-P_SW_RFB_T qmFlushRxQueues(IN P_ADAPTER_T prAdapter);
+struct SW_RFB *qmFlushRxQueues(IN struct ADAPTER *prAdapter);
 
-P_QUE_T qmDetermineStaTxQueue(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduInfo, OUT PUINT_8 pucTC);
+struct QUE *qmDetermineStaTxQueue(IN struct ADAPTER *prAdapter, IN struct MSDU_INFO *prMsduInfo, OUT uint8_t *pucTC);
 
-VOID qmSetTxPacketDescTemplate(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduInfo);
+void qmSetTxPacketDescTemplate(IN struct ADAPTER *prAdapter, IN struct MSDU_INFO *prMsduInfo);
 
-P_SW_RFB_T qmHandleRxPackets(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T prSwRfbListHead);
+struct SW_RFB *qmHandleRxPackets(IN struct ADAPTER *prAdapter, IN struct SW_RFB *prSwRfbListHead);
 
-VOID qmProcessPktWithReordering(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T prSwRfb, OUT P_QUE_T prReturnedQue);
+void qmProcessPktWithReordering(IN struct ADAPTER *prAdapter, IN struct SW_RFB *prSwRfb, OUT struct QUE *prReturnedQue);
 
-VOID qmProcessBarFrame(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T prSwRfb, OUT P_QUE_T prReturnedQue);
+void qmProcessBarFrame(IN struct ADAPTER *prAdapter, IN struct SW_RFB *prSwRfb, OUT struct QUE *prReturnedQue);
 
-VOID qmInsertReorderPkt(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T prSwRfb,
-	IN P_RX_BA_ENTRY_T prReorderQueParm, OUT P_QUE_T prReturnedQue);
+void qmInsertReorderPkt(IN struct ADAPTER *prAdapter, IN struct SW_RFB *prSwRfb,
+	IN struct RX_BA_ENTRY *prReorderQueParm, OUT struct QUE *prReturnedQue);
 
-VOID qmInsertFallWithinReorderPkt(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T prSwRfb,
-	IN P_RX_BA_ENTRY_T prReorderQueParm, OUT P_QUE_T prReturnedQue);
+void qmInsertFallWithinReorderPkt(IN struct ADAPTER *prAdapter, IN struct SW_RFB *prSwRfb,
+	IN struct RX_BA_ENTRY *prReorderQueParm, OUT struct QUE *prReturnedQue);
 
-VOID qmInsertFallAheadReorderPkt(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T prSwRfb,
-	IN P_RX_BA_ENTRY_T prReorderQueParm, OUT P_QUE_T prReturnedQue);
+void qmInsertFallAheadReorderPkt(IN struct ADAPTER *prAdapter, IN struct SW_RFB *prSwRfb,
+	IN struct RX_BA_ENTRY *prReorderQueParm, OUT struct QUE *prReturnedQue);
 
-VOID qmPopOutReorderPkt(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T prSwRfb, OUT P_QUE_T prReturnedQue,
-	IN ENUM_RX_STATISTIC_COUNTER_T eRxCounter);
+void qmPopOutReorderPkt(IN struct ADAPTER *prAdapter, IN struct SW_RFB *prSwRfb, OUT struct QUE *prReturnedQue,
+	IN enum ENUM_RX_STATISTIC_COUNTER eRxCounter);
 
-VOID qmPopOutDueToFallWithin(IN P_ADAPTER_T prAdapter, IN P_RX_BA_ENTRY_T prReorderQueParm, OUT P_QUE_T prReturnedQue);
+void qmPopOutDueToFallWithin(IN struct ADAPTER *prAdapter, IN struct RX_BA_ENTRY *prReorderQueParm, OUT struct QUE *prReturnedQue);
 
-VOID qmPopOutDueToFallAhead(IN P_ADAPTER_T prAdapter, IN P_RX_BA_ENTRY_T prReorderQueParm, OUT P_QUE_T prReturnedQue);
+void qmPopOutDueToFallAhead(IN struct ADAPTER *prAdapter, IN struct RX_BA_ENTRY *prReorderQueParm, OUT struct QUE *prReturnedQue);
 
-VOID qmHandleReorderBubbleTimeout(IN P_ADAPTER_T prAdapter, IN ULONG ulParamPtr);
+void qmHandleReorderBubbleTimeout(IN struct ADAPTER *prAdapter, IN unsigned long ulParamPtr);
 
-VOID qmHandleEventCheckReorderBubble(IN P_ADAPTER_T prAdapter, IN P_WIFI_EVENT_T prEvent);
+void qmHandleEventCheckReorderBubble(IN struct ADAPTER *prAdapter, IN struct WIFI_EVENT *prEvent);
 
-VOID qmHandleMailboxRxMessage(IN MAILBOX_MSG_T prMailboxRxMsg);
+void qmHandleMailboxRxMessage(IN struct MAILBOX_MSG prMailboxRxMsg);
 
-BOOLEAN qmCompareSnIsLessThan(IN UINT_32 u4SnLess, IN UINT_32 u4SnGreater);
+u_int8_t qmCompareSnIsLessThan(IN uint32_t u4SnLess, IN uint32_t u4SnGreater);
 
-VOID qmHandleEventTxAddBa(IN P_ADAPTER_T prAdapter, IN P_WIFI_EVENT_T prEvent);
+void qmHandleEventTxAddBa(IN struct ADAPTER *prAdapter, IN struct WIFI_EVENT *prEvent);
 
-VOID qmHandleEventRxAddBa(IN P_ADAPTER_T prAdapter, IN P_WIFI_EVENT_T prEvent);
+void qmHandleEventRxAddBa(IN struct ADAPTER *prAdapter, IN struct WIFI_EVENT *prEvent);
 
-VOID qmHandleEventRxDelBa(IN P_ADAPTER_T prAdapter, IN P_WIFI_EVENT_T prEvent);
+void qmHandleEventRxDelBa(IN struct ADAPTER *prAdapter, IN struct WIFI_EVENT *prEvent);
 
-P_RX_BA_ENTRY_T qmLookupRxBaEntry(IN P_ADAPTER_T prAdapter, IN UINT_8 ucStaRecIdx, IN UINT_8 ucTid);
+struct RX_BA_ENTRY *qmLookupRxBaEntry(IN struct ADAPTER *prAdapter, IN uint8_t ucStaRecIdx, IN uint8_t ucTid);
 
-BOOL
-qmAddRxBaEntry(IN P_ADAPTER_T prAdapter, IN UINT_8 ucStaRecIdx, IN UINT_8 ucTid, IN UINT_16 u2WinStart, IN UINT_16
+u_int8_t
+qmAddRxBaEntry(IN struct ADAPTER *prAdapter, IN uint8_t ucStaRecIdx, IN uint8_t ucTid, IN uint16_t u2WinStart, IN uint16_t
 	       u2WinSize);
 
-VOID qmDelRxBaEntry(IN P_ADAPTER_T prAdapter, IN UINT_8 ucStaRecIdx, IN UINT_8 ucTid, IN BOOLEAN fgFlushToHost);
+void qmDelRxBaEntry(IN struct ADAPTER *prAdapter, IN uint8_t ucStaRecIdx, IN uint8_t ucTid, IN u_int8_t fgFlushToHost);
 
-VOID mqmProcessAssocRsp(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T prSwRfb, IN PUINT_8 pucIE, IN UINT_16 u2IELength);
+void mqmProcessAssocRsp(IN struct ADAPTER *prAdapter, IN struct SW_RFB *prSwRfb, IN uint8_t *pucIE, IN uint16_t u2IELength);
 
-VOID mqmProcessBcn(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T prSwRfb, IN PUINT_8 pucIE, IN UINT_16 u2IELength);
+void mqmProcessBcn(IN struct ADAPTER *prAdapter, IN struct SW_RFB *prSwRfb, IN uint8_t *pucIE, IN uint16_t u2IELength);
 
-BOOLEAN
-mqmParseEdcaParameters(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T prSwRfb, IN PUINT_8 pucIE, IN UINT_16 u2IELength, IN
-		       BOOLEAN fgForceOverride);
+u_int8_t
+mqmParseEdcaParameters(IN struct ADAPTER *prAdapter, IN struct SW_RFB *prSwRfb, IN uint8_t *pucIE, IN uint16_t u2IELength, IN
+		       u_int8_t fgForceOverride);
 
-BOOLEAN mqmCompareEdcaParameters(IN P_IE_WMM_PARAM_T prIeWmmParam, IN P_BSS_INFO_T prBssInfo);
+u_int8_t mqmCompareEdcaParameters(IN struct IE_WMM_PARAM *prIeWmmParam, IN struct BSS_INFO *prBssInfo);
 
-VOID mqmFillAcQueParam(IN P_IE_WMM_PARAM_T prIeWmmParam, IN UINT_32 u4AcOffset, OUT P_AC_QUE_PARMS_T prAcQueParams);
+void mqmFillAcQueParam(IN struct IE_WMM_PARAM *prIeWmmParam, IN uint32_t u4AcOffset, OUT struct AC_QUE_PARMS *prAcQueParams);
 
-VOID mqmProcessScanResult(IN P_ADAPTER_T prAdapter, IN P_BSS_DESC_T prScanResult, OUT P_STA_RECORD_T prStaRec);
+void mqmProcessScanResult(IN struct ADAPTER *prAdapter, IN struct BSS_DESC *prScanResult, OUT struct STA_RECORD *prStaRec);
 
-UINT_32
-mqmFillWmmInfoIE(P_UINT_8 pucOutBuf, BOOLEAN fgSupportUAPSD, UINT_8 ucBmpDeliveryAC, UINT_8 ucBmpTriggerAC, UINT_8
+uint32_t
+mqmFillWmmInfoIE(uint8_t *pucOutBuf, u_int8_t fgSupportUAPSD, uint8_t ucBmpDeliveryAC, uint8_t ucBmpTriggerAC, uint8_t
 		 ucUapsdSp);
 
-UINT_32
-mqmGenerateWmmInfoIEByStaRec(P_ADAPTER_T prAdapter, P_BSS_INFO_T prBssInfo, P_STA_RECORD_T prStaRec, P_UINT_8
+uint32_t
+mqmGenerateWmmInfoIEByStaRec(struct ADAPTER *prAdapter, struct BSS_INFO *prBssInfo, struct STA_RECORD *prStaRec, uint8_t *
 			     pucOutBuf);
 
-VOID mqmGenerateWmmInfoIE(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduInfo);
+void mqmGenerateWmmInfoIE(IN struct ADAPTER *prAdapter, IN struct MSDU_INFO *prMsduInfo);
 
-VOID mqmGenerateWmmParamIE(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduInfo);
+void mqmGenerateWmmParamIE(IN struct ADAPTER *prAdapter, IN struct MSDU_INFO *prMsduInfo);
 
 #if CFG_SUPPORT_TDLS
 
-UINT_32 mqmGenerateWmmParamIEByParam(P_ADAPTER_T prAdapter, P_BSS_INFO_T prBssInfo, PUINT_8 pOutBuf);
+uint32_t mqmGenerateWmmParamIEByParam(struct ADAPTER *prAdapter, struct BSS_INFO *prBssInfo, uint8_t *pOutBuf);
 #endif
 
-ENUM_FRAME_ACTION_T qmGetFrameAction(IN P_ADAPTER_T prAdapter,
-				     IN UINT_8 ucBssIndex, IN UINT_8 ucStaRecIdx, IN P_MSDU_INFO_T prMsduInfo,
-				     IN ENUM_FRAME_TYPE_IN_CMD_Q_T eFrameType, IN UINT_16 u2FrameLength);
+enum ENUM_FRAME_ACTION qmGetFrameAction(IN struct ADAPTER *prAdapter,
+				     IN uint8_t ucBssIndex, IN uint8_t ucStaRecIdx, IN struct MSDU_INFO *prMsduInfo,
+				     IN enum ENUM_FRAME_TYPE_IN_CMD_Q eFrameType, IN uint16_t u2FrameLength);
 
-VOID qmHandleEventBssAbsencePresence(IN P_ADAPTER_T prAdapter, IN P_WIFI_EVENT_T prEvent);
+void qmHandleEventBssAbsencePresence(IN struct ADAPTER *prAdapter, IN struct WIFI_EVENT *prEvent);
 
-VOID qmHandleEventStaChangePsMode(IN P_ADAPTER_T prAdapter, IN P_WIFI_EVENT_T prEvent);
+void qmHandleEventStaChangePsMode(IN struct ADAPTER *prAdapter, IN struct WIFI_EVENT *prEvent);
 
-VOID mqmProcessAssocReq(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T prSwRfb, IN PUINT_8 pucIE, IN UINT_16 u2IELength);
+void mqmProcessAssocReq(IN struct ADAPTER *prAdapter, IN struct SW_RFB *prSwRfb, IN uint8_t *pucIE, IN uint16_t u2IELength);
 
-VOID qmHandleEventStaUpdateFreeQuota(IN P_ADAPTER_T prAdapter, IN P_WIFI_EVENT_T prEvent);
+void qmHandleEventStaUpdateFreeQuota(IN struct ADAPTER *prAdapter, IN struct WIFI_EVENT *prEvent);
 
-VOID
-qmUpdateFreeQuota(IN P_ADAPTER_T prAdapter, IN P_STA_RECORD_T prStaRec, IN UINT_8 ucUpdateMode, IN UINT_8 ucFreeQuota);
+void
+qmUpdateFreeQuota(IN struct ADAPTER *prAdapter, IN struct STA_RECORD *prStaRec, IN uint8_t ucUpdateMode, IN uint8_t ucFreeQuota);
 
-VOID qmFreeAllByBssIdx(IN P_ADAPTER_T prAdapter, IN UINT_8 ucBssIndex);
+void qmFreeAllByBssIdx(IN struct ADAPTER *prAdapter, IN uint8_t ucBssIndex);
 
-UINT_32 qmGetRxReorderQueuedBufferCount(IN P_ADAPTER_T prAdapter);
+uint32_t qmGetRxReorderQueuedBufferCount(IN struct ADAPTER *prAdapter);
 
-UINT_32 qmDumpQueueStatus(IN P_ADAPTER_T prAdapter, IN PUINT_8 pucBuf, IN UINT_32 u4MaxLen);
+uint32_t qmDumpQueueStatus(IN struct ADAPTER *prAdapter, IN uint8_t *pucBuf, IN uint32_t u4MaxLen);
 
 #if CFG_M0VE_BA_TO_DRIVER
-VOID
-mqmSendDelBaFrame(IN P_ADAPTER_T prAdapter, IN BOOLEAN fgIsInitiator, IN P_STA_RECORD_T prStaRec, IN UINT_32 u4Tid, IN
-		  UINT_32 u4ReasonCode);
+void
+mqmSendDelBaFrame(IN struct ADAPTER *prAdapter, IN u_int8_t fgIsInitiator, IN struct STA_RECORD *prStaRec, IN uint32_t u4Tid, IN
+		  uint32_t u4ReasonCode);
 
-WLAN_STATUS
-mqmCallbackAddBaRspSent(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduInfo, IN ENUM_TX_RESULT_CODE_T rTxDoneStatus);
+uint32_t
+mqmCallbackAddBaRspSent(IN struct ADAPTER *prAdapter, IN struct MSDU_INFO *prMsduInfo, IN enum ENUM_TX_RESULT_CODE rTxDoneStatus);
 
-VOID mqmTimeoutCheckIdleRxBa(IN P_ADAPTER_T prAdapter, IN ULONG ulParamPtr);
+void mqmTimeoutCheckIdleRxBa(IN struct ADAPTER *prAdapter, IN unsigned long ulParamPtr);
 
-VOID
-mqmRxModifyBaEntryStatus(IN P_ADAPTER_T prAdapter, IN P_RX_BA_ENTRY_T prRxBaEntry, IN ENUM_BA_ENTRY_STATUS_T eStatus);
+void
+mqmRxModifyBaEntryStatus(IN struct ADAPTER *prAdapter, IN struct RX_BA_ENTRY *prRxBaEntry, IN enum ENUM_BA_ENTRY_STATUS eStatus);
 
-VOID mqmHandleAddBaReq(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T prSwRfb);
+void mqmHandleAddBaReq(IN struct ADAPTER *prAdapter, IN struct SW_RFB *prSwRfb);
 
-VOID mqmHandleBaActionFrame(P_ADAPTER_T prAdapter, P_SW_RFB_T prSwRfb);
+void mqmHandleBaActionFrame(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb);
 #endif
 
-VOID qmResetTcControlResource(IN P_ADAPTER_T prAdapter);
-VOID qmAdjustTcQuotaPle(IN P_ADAPTER_T prAdapter, OUT P_TX_TCQ_ADJUST_T prTcqAdjust, IN P_TX_TCQ_STATUS_T prTcqStatus);
+void qmResetTcControlResource(IN struct ADAPTER *prAdapter);
+void qmAdjustTcQuotaPle(IN struct ADAPTER *prAdapter, OUT struct TX_TCQ_ADJUST *prTcqAdjust, IN struct TX_TCQ_STATUS *prTcqStatus);
 
 #if ARP_MONITER_ENABLE
-VOID qmDetectArpNoResponse(P_ADAPTER_T prAdapter, P_MSDU_INFO_T prMsduInfo);
-VOID qmResetArpDetect(VOID);
-VOID qmHandleRxArpPackets(P_ADAPTER_T prAdapter, P_SW_RFB_T prSwRfb);
-VOID qmHandleRxDhcpPackets(P_ADAPTER_T prAdapter, P_SW_RFB_T prSwRfb);
+void qmDetectArpNoResponse(struct ADAPTER *prAdapter, struct MSDU_INFO *prMsduInfo);
+void qmResetArpDetect(void);
+void qmHandleRxArpPackets(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb);
+void qmHandleRxDhcpPackets(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb);
 #endif
 /*******************************************************************************
  *                              F U N C T I O N S
@@ -1016,9 +1016,9 @@ VOID qmHandleRxDhcpPackets(P_ADAPTER_T prAdapter, P_SW_RFB_T prSwRfb);
  */
 
 #if QM_TEST_MODE
-extern QUE_MGT_T g_rQM;
+extern struct QUE_MGT g_rQM;
 #endif
-extern const UINT_8 aucTid2ACI[TX_DESC_TID_NUM];
-extern const UINT_8 arNetwork2TcResource[MAX_BSSID_NUM + 1][NET_TC_NUM];
+extern const uint8_t aucTid2ACI[TX_DESC_TID_NUM];
+extern const uint8_t arNetwork2TcResource[MAX_BSSID_NUM + 1][NET_TC_NUM];
 
 #endif /* _QUE_MGT_H */

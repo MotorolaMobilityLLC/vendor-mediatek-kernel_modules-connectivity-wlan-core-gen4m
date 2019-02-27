@@ -105,7 +105,7 @@
 *                             D A T A   T Y P E S
 ********************************************************************************
 */
-typedef enum _ENUM_AA_STATE_T {
+enum ENUM_AA_STATE {
 	AA_STATE_IDLE = 0,
 	SAA_STATE_SEND_AUTH1,
 	SAA_STATE_WAIT_AUTH2,
@@ -118,12 +118,12 @@ typedef enum _ENUM_AA_STATE_T {
 	AAA_STATE_SEND_ASSOC2,
 	AA_STATE_RESOURCE,	/* A state for debugging the case of out of msg buffer. */
 	AA_STATE_NUM
-} ENUM_AA_STATE_T;
+};
 
-typedef enum _ENUM_AA_FRM_TYPE_T {
+enum ENUM_AA_FRM_TYPE {
 	FRM_DISASSOC = 0,
 	FRM_DEAUTH
-} ENUM_AA_FRM_TYPE_T;
+};
 
 /*******************************************************************************
 *                            P U B L I C   D A T A
@@ -147,53 +147,53 @@ typedef enum _ENUM_AA_FRM_TYPE_T {
 /*----------------------------------------------------------------------------*/
 /* Routines in saa_fsm.c                                                      */
 /*----------------------------------------------------------------------------*/
-VOID
-saaFsmSteps(IN P_ADAPTER_T prAdapter,
-	    IN P_STA_RECORD_T prStaRec, IN ENUM_AA_STATE_T eNextState, IN P_SW_RFB_T prRetainedSwRfb);
+void
+saaFsmSteps(IN struct ADAPTER *prAdapter,
+	    IN struct STA_RECORD *prStaRec, IN enum ENUM_AA_STATE eNextState, IN struct SW_RFB *prRetainedSwRfb);
 
-WLAN_STATUS
-saaFsmSendEventJoinComplete(IN P_ADAPTER_T prAdapter,
-			    WLAN_STATUS rJoinStatus, P_STA_RECORD_T prStaRec, P_SW_RFB_T prSwRfb);
+uint32_t
+saaFsmSendEventJoinComplete(IN struct ADAPTER *prAdapter,
+			    uint32_t rJoinStatus, struct STA_RECORD *prStaRec, struct SW_RFB *prSwRfb);
 
-VOID saaFsmRunEventStart(IN P_ADAPTER_T prAdapter, IN P_MSG_HDR_T prMsgHdr);
+void saaFsmRunEventStart(IN struct ADAPTER *prAdapter, IN struct MSG_HDR *prMsgHdr);
 
-WLAN_STATUS
-saaFsmRunEventTxDone(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduInfo, IN ENUM_TX_RESULT_CODE_T rTxDoneStatus);
+uint32_t
+saaFsmRunEventTxDone(IN struct ADAPTER *prAdapter, IN struct MSDU_INFO *prMsduInfo, IN enum ENUM_TX_RESULT_CODE rTxDoneStatus);
 
-VOID saaFsmRunEventTxReqTimeOut(IN P_ADAPTER_T prAdapter, IN ULONG plParamPtr);
+void saaFsmRunEventTxReqTimeOut(IN struct ADAPTER *prAdapter, IN unsigned long plParamPtr);
 
-VOID saaFsmRunEventRxRespTimeOut(IN P_ADAPTER_T prAdapter, IN ULONG ulParamPtr);
+void saaFsmRunEventRxRespTimeOut(IN struct ADAPTER *prAdapter, IN unsigned long ulParamPtr);
 
-VOID saaFsmRunEventRxAuth(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T prSwRfb);
+void saaFsmRunEventRxAuth(IN struct ADAPTER *prAdapter, IN struct SW_RFB *prSwRfb);
 
-WLAN_STATUS saaFsmRunEventRxAssoc(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T prSwRfb);
+uint32_t saaFsmRunEventRxAssoc(IN struct ADAPTER *prAdapter, IN struct SW_RFB *prSwRfb);
 
-WLAN_STATUS saaFsmRunEventRxDeauth(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T prSwRfb);
+uint32_t saaFsmRunEventRxDeauth(IN struct ADAPTER *prAdapter, IN struct SW_RFB *prSwRfb);
 
-WLAN_STATUS saaFsmRunEventRxDisassoc(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T prSwRfb);
+uint32_t saaFsmRunEventRxDisassoc(IN struct ADAPTER *prAdapter, IN struct SW_RFB *prSwRfb);
 
-VOID saaFsmRunEventAbort(IN P_ADAPTER_T prAdapter, IN P_MSG_HDR_T prMsgHdr);
+void saaFsmRunEventAbort(IN struct ADAPTER *prAdapter, IN struct MSG_HDR *prMsgHdr);
 
-VOID saaChkDeauthfrmParamHandler(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T prSwRfb, IN P_STA_RECORD_T prStaRec);
+void saaChkDeauthfrmParamHandler(IN struct ADAPTER *prAdapter, IN struct SW_RFB *prSwRfb, IN struct STA_RECORD *prStaRec);
 
-VOID
-saaChkDisassocfrmParamHandler(IN P_ADAPTER_T prAdapter,
-			      IN P_WLAN_DISASSOC_FRAME_T prDisassocFrame, IN P_STA_RECORD_T prStaRec,
-			      IN P_SW_RFB_T prSwRfb);
+void
+saaChkDisassocfrmParamHandler(IN struct ADAPTER *prAdapter,
+			      IN struct WLAN_DISASSOC_FRAME *prDisassocFrame, IN struct STA_RECORD *prStaRec,
+			      IN struct SW_RFB *prSwRfb);
 
-VOID
-saaSendDisconnectMsgHandler(IN P_ADAPTER_T prAdapter, IN P_STA_RECORD_T prStaRec, IN P_BSS_INFO_T prAisBssInfo,
-			    IN ENUM_AA_FRM_TYPE_T eFrmType);
+void
+saaSendDisconnectMsgHandler(IN struct ADAPTER *prAdapter, IN struct STA_RECORD *prStaRec, IN struct BSS_INFO *prAisBssInfo,
+			    IN enum ENUM_AA_FRM_TYPE eFrmType);
 
 /*----------------------------------------------------------------------------*/
 /* Routines in aaa_fsm.c                                                      */
 /*----------------------------------------------------------------------------*/
-VOID aaaFsmRunEventRxAuth(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T prSwRfb);
+void aaaFsmRunEventRxAuth(IN struct ADAPTER *prAdapter, IN struct SW_RFB *prSwRfb);
 
-WLAN_STATUS aaaFsmRunEventRxAssoc(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T prSwRfb);
+uint32_t aaaFsmRunEventRxAssoc(IN struct ADAPTER *prAdapter, IN struct SW_RFB *prSwRfb);
 
-WLAN_STATUS
-aaaFsmRunEventTxDone(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduInfo, IN ENUM_TX_RESULT_CODE_T rTxDoneStatus);
+uint32_t
+aaaFsmRunEventTxDone(IN struct ADAPTER *prAdapter, IN struct MSDU_INFO *prMsduInfo, IN enum ENUM_TX_RESULT_CODE rTxDoneStatus);
 
 /*******************************************************************************
 *                              F U N C T I O N S

@@ -116,7 +116,7 @@
 * @return none
 */
 /*----------------------------------------------------------------------------*/
-WLAN_STATUS aaaFsmSendEventJoinComplete(WLAN_STATUS rJoinStatus, P_STA_RECORD_T prStaRec, P_SW_RFB_T prSwRfb)
+uint32_t aaaFsmSendEventJoinComplete(uint32_t rJoinStatus, struct STA_RECORD *prStaRec, struct SW_RFB *prSwRfb)
 {
 	P_MSG_SAA_JOIN_COMP_T prJoinCompMsg;
 
@@ -139,7 +139,7 @@ WLAN_STATUS aaaFsmSendEventJoinComplete(WLAN_STATUS rJoinStatus, P_STA_RECORD_T 
 	prJoinCompMsg->prStaRec = prStaRec;
 	prJoinCompMsg->prSwRfb = prSwRfb;
 
-	mboxSendMsg(MBOX_ID_0, (P_MSG_HDR_T) prJoinCompMsg, MSG_SEND_METHOD_BUF);
+	mboxSendMsg(MBOX_ID_0, (struct MSG_HDR *) prJoinCompMsg, MSG_SEND_METHOD_BUF);
 
 	return WLAN_STATUS_SUCCESS;
 
@@ -154,11 +154,11 @@ WLAN_STATUS aaaFsmSendEventJoinComplete(WLAN_STATUS rJoinStatus, P_STA_RECORD_T 
 * @return none
 */
 /*----------------------------------------------------------------------------*/
-VOID aaaFsmRunEventStart(IN P_MSG_HDR_T prMsgHdr)
+void aaaFsmRunEventStart(IN struct MSG_HDR *prMsgHdr)
 {
 	P_MSG_SAA_JOIN_REQ_T prJoinReqMsg;
-	P_STA_RECORD_T prStaRec;
-	P_AIS_BSS_INFO_T prAisBssInfo;
+	struct STA_RECORD *prStaRec;
+	struct BSS_INFO *prAisBssInfo;
 
 	ASSERT(prMsgHdr);
 
@@ -197,7 +197,7 @@ VOID aaaFsmRunEventStart(IN P_MSG_HDR_T prMsgHdr)
 
 	if (prStaRec->prChallengeText) {
 		cnmMemFree(prStaRec->prChallengeText);
-		prStaRec->prChallengeText = (P_IE_CHALLENGE_TEXT_T) NULL;
+		prStaRec->prChallengeText = (struct IE_CHALLENGE_TEXT *) NULL;
 	}
 
 	cnmTimerStopTimer(&prStaRec->rTxReqDoneOrRxRespTimer);
@@ -205,16 +205,16 @@ VOID aaaFsmRunEventStart(IN P_MSG_HDR_T prMsgHdr)
 	prStaRec->ucStaState = STA_STATE_1;
 
 	/* Trigger SAA MODULE */
-	saaFsmSteps(prStaRec, SAA_STATE_SEND_AUTH1, (P_SW_RFB_T) NULL);
+	saaFsmSteps(prStaRec, SAA_STATE_SEND_AUTH1, (struct SW_RFB *) NULL);
 }				/* end of saaFsmRunEventStart() */
 #endif
 
 #if CFG_SUPPORT_AAA
 
-VOID aaaFsmRunEventTxReqTimeOut(IN P_ADAPTER_T prAdapter, IN ULONG plParamPtr)
+void aaaFsmRunEventTxReqTimeOut(IN struct ADAPTER *prAdapter, IN unsigned long plParamPtr)
 {
-	P_STA_RECORD_T prStaRec = (P_STA_RECORD_T) plParamPtr;
-	P_BSS_INFO_T prBssInfo;
+	struct STA_RECORD *prStaRec = (struct STA_RECORD *) plParamPtr;
+	struct BSS_INFO *prBssInfo;
 
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prStaRec->ucBssIndex);
 
@@ -287,18 +287,18 @@ VOID aaaFsmRunEventTxReqTimeOut(IN P_ADAPTER_T prAdapter, IN ULONG plParamPtr)
 * @return (none)
 */
 /*----------------------------------------------------------------------------*/
-VOID aaaFsmRunEventRxAuth(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T prSwRfb)
+void aaaFsmRunEventRxAuth(IN struct ADAPTER *prAdapter, IN struct SW_RFB *prSwRfb)
 {
-	P_BSS_INFO_T prBssInfo = (P_BSS_INFO_T) NULL;
-	P_STA_RECORD_T prStaRec = (P_STA_RECORD_T) NULL;
-	UINT_16 u2StatusCode;
-	BOOLEAN fgReplyAuth = FALSE;
-	P_WLAN_AUTH_FRAME_T prAuthFrame = (P_WLAN_AUTH_FRAME_T) NULL;
+	struct BSS_INFO *prBssInfo = (struct BSS_INFO *) NULL;
+	struct STA_RECORD *prStaRec = (struct STA_RECORD *) NULL;
+	uint16_t u2StatusCode;
+	u_int8_t fgReplyAuth = FALSE;
+	struct WLAN_AUTH_FRAME *prAuthFrame = (struct WLAN_AUTH_FRAME *) NULL;
 
 	ASSERT(prAdapter);
 
 	do {
-		prAuthFrame = (P_WLAN_AUTH_FRAME_T) prSwRfb->pvHeader;
+		prAuthFrame = (struct WLAN_AUTH_FRAME *) prSwRfb->pvHeader;
 
 #if CFG_ENABLE_WIFI_DIRECT
 		prBssInfo = p2pFuncBSSIDFindBssInfo(prAdapter, prAuthFrame->aucBSSID);
@@ -349,7 +349,7 @@ bow_proc:
 		/* 4 <2> Check BOW network conditions */
 #if CFG_ENABLE_BT_OVER_WIFI
 		{
-			P_BOW_FSM_INFO_T prBowFsmInfo = (P_BOW_FSM_INFO_T) NULL;
+			struct BOW_FSM_INFO *prBowFsmInfo = (struct BOW_FSM_INFO *) NULL;
 
 			prBowFsmInfo = &(prAdapter->rWifiVar.rBowFsmInfo);
 			prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prBowFsmInfo->ucBssIndex);
@@ -437,7 +437,7 @@ bow_proc:
 			/*ToDo:Init Timer to check get Auth Txdone avoid sta_rec not clear*/
 			cnmTimerInitTimer(prAdapter,
 					  &prStaRec->rTxReqDoneOrRxRespTimer, (PFN_MGMT_TIMEOUT_FUNC)
-					  aaaFsmRunEventTxReqTimeOut, (ULONG) prStaRec);
+					  aaaFsmRunEventTxReqTimeOut, (unsigned long) prStaRec);
 
 			cnmTimerStartTimer(prAdapter,
 					   &prStaRec->rTxReqDoneOrRxRespTimer,
@@ -461,13 +461,13 @@ bow_proc:
 * @retval WLAN_STATUS_SUCCESS           Always return success
 */
 /*----------------------------------------------------------------------------*/
-WLAN_STATUS aaaFsmRunEventRxAssoc(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T prSwRfb)
+uint32_t aaaFsmRunEventRxAssoc(IN struct ADAPTER *prAdapter, IN struct SW_RFB *prSwRfb)
 {
-	P_BSS_INFO_T prBssInfo;
-	P_STA_RECORD_T prStaRec = (P_STA_RECORD_T) NULL;
-	UINT_16 u2StatusCode = STATUS_CODE_RESERVED;
-	BOOLEAN fgReplyAssocResp = FALSE;
-	BOOLEAN fgSendSAQ = FALSE;
+	struct BSS_INFO *prBssInfo;
+	struct STA_RECORD *prStaRec = (struct STA_RECORD *) NULL;
+	uint16_t u2StatusCode = STATUS_CODE_RESERVED;
+	u_int8_t fgReplyAssocResp = FALSE;
+	u_int8_t fgSendSAQ = FALSE;
 
 	ASSERT(prAdapter);
 	DBGLOG(AAA, INFO, "aaaFsmRunEventRxAssoc\n");
@@ -522,7 +522,7 @@ WLAN_STATUS aaaFsmRunEventRxAssoc(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T prSwRf
 						/* 4 <2.2> Validate Assoc Req  Frame for Network Specific Conditions */
 						fgReplyAssocResp =
 						    p2pFuncValidateAssocReq(prAdapter, prSwRfb,
-									    (PUINT_16)&u2StatusCode);
+									    (uint16_t *)&u2StatusCode);
 					} else {
 						fgReplyAssocResp = TRUE;
 					}
@@ -569,22 +569,22 @@ WLAN_STATUS aaaFsmRunEventRxAssoc(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T prSwRf
 
 	/* 4 <4> Update STA_RECORD_T and reply Assoc Resp Frame */
 	if (fgReplyAssocResp) {
-		UINT_16 u2IELength;
-		PUINT_8 pucIE;
+		uint16_t u2IELength;
+		uint8_t *pucIE;
 
 		cnmTimerStopTimer(prAdapter, &prStaRec->rTxReqDoneOrRxRespTimer);
 
-		if ((((P_WLAN_ASSOC_REQ_FRAME_T) (prSwRfb->pvHeader))->u2FrameCtrl & MASK_FRAME_TYPE) ==
+		if ((((struct WLAN_ASSOC_REQ_FRAME *) (prSwRfb->pvHeader))->u2FrameCtrl & MASK_FRAME_TYPE) ==
 		    MAC_FRAME_REASSOC_REQ) {
 
 			u2IELength = prSwRfb->u2PacketLen -
-			    (UINT_16) OFFSET_OF(WLAN_REASSOC_REQ_FRAME_T, aucInfoElem[0]);
+			    (uint16_t) OFFSET_OF(struct WLAN_REASSOC_REQ_FRAME, aucInfoElem[0]);
 
-			pucIE = ((P_WLAN_REASSOC_REQ_FRAME_T) (prSwRfb->pvHeader))->aucInfoElem;
+			pucIE = ((struct WLAN_REASSOC_REQ_FRAME *) (prSwRfb->pvHeader))->aucInfoElem;
 		} else {
-			u2IELength = prSwRfb->u2PacketLen - (UINT_16) OFFSET_OF(WLAN_ASSOC_REQ_FRAME_T, aucInfoElem[0]);
+			u2IELength = prSwRfb->u2PacketLen - (uint16_t) OFFSET_OF(struct WLAN_ASSOC_REQ_FRAME, aucInfoElem[0]);
 
-			pucIE = ((P_WLAN_ASSOC_REQ_FRAME_T) (prSwRfb->pvHeader))->aucInfoElem;
+			pucIE = ((struct WLAN_ASSOC_REQ_FRAME *) (prSwRfb->pvHeader))->aucInfoElem;
 		}
 
 		rlmProcessAssocReq(prAdapter, prSwRfb, pucIE, u2IELength);
@@ -684,11 +684,11 @@ WLAN_STATUS aaaFsmRunEventRxAssoc(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T prSwRf
 * @retval WLAN_STATUS_SUCCESS
 */
 /*----------------------------------------------------------------------------*/
-WLAN_STATUS
-aaaFsmRunEventTxDone(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduInfo, IN ENUM_TX_RESULT_CODE_T rTxDoneStatus)
+uint32_t
+aaaFsmRunEventTxDone(IN struct ADAPTER *prAdapter, IN struct MSDU_INFO *prMsduInfo, IN enum ENUM_TX_RESULT_CODE rTxDoneStatus)
 {
-	P_STA_RECORD_T prStaRec;
-	P_BSS_INFO_T prBssInfo;
+	struct STA_RECORD *prStaRec;
+	struct BSS_INFO *prBssInfo;
 
 	ASSERT(prAdapter);
 	ASSERT(prMsduInfo);
@@ -837,10 +837,10 @@ aaaFsmRunEventTxDone(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduInfo, IN E
 * \return none
 */
 /*----------------------------------------------------------------------------*/
-VOID saaFsmRunEventAbort(IN P_MSG_HDR_T prMsgHdr)
+void saaFsmRunEventAbort(IN struct MSG_HDR *prMsgHdr)
 {
 	P_JOIN_INFO_T prJoinInfo;
-	P_STA_RECORD_T prStaRec;
+	struct STA_RECORD *prStaRec;
 
 	DEBUGFUNC("joinFsmRunEventAbort");
 
@@ -879,7 +879,7 @@ VOID saaFsmRunEventAbort(IN P_MSG_HDR_T prMsgHdr)
 
 	/* 4 <4> If we are in Roaming, recover the settings of previous BSS. */
 	/* NOTE: JOIN FAIL -
-	 * Restore original setting from current BSS_INFO_T.
+	 * Restore original setting from current struct BSS_INFO.
 	 */
 	if (prAdapter->eConnectionState == MEDIA_STATE_CONNECTED)
 		joinAdoptParametersFromCurrentBss(prAdapter);
@@ -897,10 +897,10 @@ VOID saaFsmRunEventAbort(IN P_MSG_HDR_T prMsgHdr)
 * \retval WLAN_STATUS_FAILURE   Fail because of Join Timeout
 */
 /*----------------------------------------------------------------------------*/
-WLAN_STATUS joinFsmRunEventJoinTimeOut(IN P_ADAPTER_T prAdapter)
+uint32_t joinFsmRunEventJoinTimeOut(IN struct ADAPTER *prAdapter)
 {
 	P_JOIN_INFO_T prJoinInfo;
-	P_STA_RECORD_T prStaRec;
+	struct STA_RECORD *prStaRec;
 
 	DEBUGFUNC("joinFsmRunEventJoinTimeOut");
 
@@ -949,10 +949,10 @@ WLAN_STATUS joinFsmRunEventJoinTimeOut(IN P_ADAPTER_T prAdapter)
 * \return (none)
 */
 /*----------------------------------------------------------------------------*/
-VOID joinAdoptParametersFromPeerBss(IN P_ADAPTER_T prAdapter)
+void joinAdoptParametersFromPeerBss(IN struct ADAPTER *prAdapter)
 {
 	P_JOIN_INFO_T prJoinInfo;
-	P_BSS_DESC_T prBssDesc;
+	struct BSS_DESC *prBssDesc;
 
 	DEBUGFUNC("joinAdoptParametersFromPeerBss");
 
@@ -983,10 +983,10 @@ VOID joinAdoptParametersFromPeerBss(IN P_ADAPTER_T prAdapter)
 * \return (none)
 */
 /*----------------------------------------------------------------------------*/
-VOID joinAdoptParametersFromCurrentBss(IN P_ADAPTER_T prAdapter)
+void joinAdoptParametersFromCurrentBss(IN struct ADAPTER *prAdapter)
 {
 	/* P_JOIN_INFO_T prJoinInfo = &prAdapter->rJoinInfo; */
-	P_BSS_INFO_T prBssInfo;
+	struct BSS_INFO *prBssInfo;
 
 	ASSERT(prAdapter);
 	prBssInfo = &prAdapter->rBssInfo;
@@ -1010,17 +1010,17 @@ VOID joinAdoptParametersFromCurrentBss(IN P_ADAPTER_T prAdapter)
 * \return (none)
 */
 /*----------------------------------------------------------------------------*/
-VOID joinComplete(IN P_ADAPTER_T prAdapter)
+void joinComplete(IN struct ADAPTER *prAdapter)
 {
 	P_JOIN_INFO_T prJoinInfo;
-	P_BSS_DESC_T prBssDesc;
+	struct BSS_DESC *prBssDesc;
 	P_PEER_BSS_INFO_T prPeerBssInfo;
-	P_BSS_INFO_T prBssInfo;
-	P_CONNECTION_SETTINGS_T prConnSettings;
-	P_STA_RECORD_T prStaRec;
-	P_TX_CTRL_T prTxCtrl;
+	struct BSS_INFO *prBssInfo;
+	struct CONNECTION_SETTINGS *prConnSettings;
+	struct STA_RECORD *prStaRec;
+	struct TX_CTRL *prTxCtrl;
 #if CFG_SUPPORT_802_11D
-	P_IE_COUNTRY_T prIECountry;
+	struct IE_COUNTRY *prIECountry;
 #endif
 
 	DEBUGFUNC("joinComplete");
@@ -1109,7 +1109,7 @@ VOID joinComplete(IN P_ADAPTER_T prAdapter)
 #if CFG_SUPPORT_802_11D
 	/* 4 <2.J> Country inforamtion of the associated AP */
 	if (prConnSettings->fgMultiDomainCapabilityEnabled) {
-		DOMAIN_INFO_ENTRY rDomainInfo;
+		struct DOMAIN_INFO_ENTRY rDomainInfo;
 
 		if (domainGetDomainInfoByScanResult(prAdapter, &rDomainInfo)) {
 			if (prBssDesc->prIECountry) {
@@ -1266,7 +1266,7 @@ VOID joinComplete(IN P_ADAPTER_T prAdapter)
 	prStaRec = staRecGetStaRecordByAddr(prAdapter, prBssDesc->aucBSSID);
 
 	if (prStaRec) {
-		UINT_16 u2OperationalRateSet, u2DesiredRateSet;
+		uint16_t u2OperationalRateSet, u2DesiredRateSet;
 
 		/* 4 <4.A> Desired Rate Set */
 		u2OperationalRateSet = (rPhyAttributes[prBssInfo->ePhyType].u2SupportedRateSet &
@@ -1341,7 +1341,7 @@ VOID joinComplete(IN P_ADAPTER_T prAdapter)
 		prTxCtrl->fgBlockTxDuringJoin = FALSE;
 
 #if !CFG_TX_AGGREGATE_HW_FIFO	/* TX FIFO AGGREGATE already do flush once */
-		nicTxFlushStopQueues(prAdapter, (UINT_8) TXQ_DATA_MASK, (UINT_8) NULL);
+		nicTxFlushStopQueues(prAdapter, (uint8_t) TXQ_DATA_MASK, (uint8_t) NULL);
 #endif /* CFG_TX_AGGREGATE_HW_FIFO */
 
 		nicTxRetransmitOfSendWaitQue(prAdapter);
@@ -1365,6 +1365,6 @@ VOID joinComplete(IN P_ADAPTER_T prAdapter)
 	else
 		prAdapter->fgBypassPortCtrlForRoaming = FALSE;
 
-	kalIndicateStatusAndComplete(prAdapter->prGlueInfo, WLAN_STATUS_MEDIA_CONNECT, (PVOID) NULL, 0);
+	kalIndicateStatusAndComplete(prAdapter->prGlueInfo, WLAN_STATUS_MEDIA_CONNECT, (void *) NULL, 0);
 }				/* end of joinComplete() */
 #endif

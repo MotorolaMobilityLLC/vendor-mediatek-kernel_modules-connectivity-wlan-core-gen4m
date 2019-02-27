@@ -78,21 +78,21 @@
 ********************************************************************************
 */
 
-const UINT_16 au2RateCCKLong[CCK_RATE_NUM] = {
+const uint16_t au2RateCCKLong[CCK_RATE_NUM] = {
 	RATE_CCK_1M_LONG,	/* RATE_1M_INDEX = 0 */
 	RATE_CCK_2M_LONG,	/* RATE_2M_INDEX */
 	RATE_CCK_5_5M_LONG,	/* RATE_5_5M_INDEX */
 	RATE_CCK_11M_LONG	/* RATE_11M_INDEX */
 };
 
-const UINT_16 au2RateCCKShort[CCK_RATE_NUM] = {
+const uint16_t au2RateCCKShort[CCK_RATE_NUM] = {
 	RATE_CCK_1M_LONG,	/* RATE_1M_INDEX = 0 */
 	RATE_CCK_2M_SHORT,	/* RATE_2M_INDEX */
 	RATE_CCK_5_5M_SHORT,	/* RATE_5_5M_INDEX */
 	RATE_CCK_11M_SHORT	/* RATE_11M_INDEX */
 };
 
-const UINT_16 au2RateOFDM[OFDM_RATE_NUM] = {
+const uint16_t au2RateOFDM[OFDM_RATE_NUM] = {
 	RATE_OFDM_6M,		/* RATE_6M_INDEX */
 	RATE_OFDM_9M,		/* RATE_9M_INDEX */
 	RATE_OFDM_12M,		/* RATE_12M_INDEX */
@@ -103,7 +103,7 @@ const UINT_16 au2RateOFDM[OFDM_RATE_NUM] = {
 	RATE_OFDM_54M		/* RATE_54M_INDEX */
 };
 
-const UINT_16 au2RateHTMixed[HT_RATE_NUM] = {
+const uint16_t au2RateHTMixed[HT_RATE_NUM] = {
 	RATE_MM_MCS_32,		/* RATE_MCS32_INDEX, */
 	RATE_MM_MCS_0,		/* RATE_MCS0_INDEX, */
 	RATE_MM_MCS_1,		/* RATE_MCS1_INDEX, */
@@ -115,7 +115,7 @@ const UINT_16 au2RateHTMixed[HT_RATE_NUM] = {
 	RATE_MM_MCS_7		/* RATE_MCS7_INDEX, */
 };
 
-const UINT_16 au2RateHTGreenField[HT_RATE_NUM] = {
+const uint16_t au2RateHTGreenField[HT_RATE_NUM] = {
 	RATE_GF_MCS_32,		/* RATE_MCS32_INDEX, */
 	RATE_GF_MCS_0,		/* RATE_MCS0_INDEX, */
 	RATE_GF_MCS_1,		/* RATE_MCS1_INDEX, */
@@ -127,7 +127,7 @@ const UINT_16 au2RateHTGreenField[HT_RATE_NUM] = {
 	RATE_GF_MCS_7,		/* RATE_MCS7_INDEX, */
 };
 
-const UINT_16 au2RateVHT[VHT_RATE_NUM] = {
+const uint16_t au2RateVHT[VHT_RATE_NUM] = {
 	RATE_VHT_MCS_0,		/* RATE_MCS0_INDEX, */
 	RATE_VHT_MCS_1,		/* RATE_MCS1_INDEX, */
 	RATE_VHT_MCS_2,		/* RATE_MCS2_INDEX, */
@@ -141,7 +141,7 @@ const UINT_16 au2RateVHT[VHT_RATE_NUM] = {
 };
 
 /* in unit of 100kb/s */
-const EMU_MAC_RATE_INFO_T arMcsRate2PhyRate[] = {
+const struct EMU_MAC_RATE_INFO arMcsRate2PhyRate[] = {
 	/* Phy Rate Code,           BW20,  BW20 SGI, BW40, BW40 SGI, BW80, BW80 SGI, BW160, BW160 SGI */
 	RATE_INFO(PHY_RATE_MCS0, 65, 72, 135, 150, 293, 325, 585, 650),
 	RATE_INFO(PHY_RATE_MCS1, 130, 144, 270, 300, 585, 650, 1170, 1300),
@@ -157,7 +157,7 @@ const EMU_MAC_RATE_INFO_T arMcsRate2PhyRate[] = {
 };
 
 /* in uint of 500kb/s */
-const UINT_8 aucHwRate2PhyRate[] = {
+const uint8_t aucHwRate2PhyRate[] = {
 	RATE_1M,		/*1M long */
 	RATE_2M,		/*2M long */
 	RATE_5_5M,		/*5.5M long */
@@ -204,27 +204,27 @@ const UINT_8 aucHwRate2PhyRate[] = {
 *                              F U N C T I O N S
 ********************************************************************************
 */
-UINT_32
+uint32_t
 nicGetPhyRateByMcsRate(
-	IN UINT_8 ucIdx,
-	IN UINT_8 ucBw,
-	IN UINT_8 ucGI)
+	IN uint8_t ucIdx,
+	IN uint8_t ucBw,
+	IN uint8_t ucGI)
 {
 	return	arMcsRate2PhyRate[ucIdx].u4PhyRate[ucBw][ucGI];
 }
 
-UINT_32
+uint32_t
 nicGetHwRateByPhyRate(
-	IN UINT_8 ucIdx)
+	IN uint8_t ucIdx)
 {
 	return	aucHwRate2PhyRate[ucIdx]; /* uint : 500 kbps */
 }
 
-WLAN_STATUS
+uint32_t
 nicSwIndex2RateIndex(
-	IN UINT_8 ucRateSwIndex,
-	OUT PUINT_8 pucRateIndex,
-	OUT PUINT_8 pucPreambleOption
+	IN uint8_t ucRateSwIndex,
+	OUT uint8_t *pucRateIndex,
+	OUT uint8_t *pucPreambleOption
 	)
 {
 	ASSERT(pucRateIndex);
@@ -240,7 +240,7 @@ nicSwIndex2RateIndex(
 	return WLAN_STATUS_SUCCESS;
 }
 
-WLAN_STATUS nicRateIndex2RateCode(IN UINT_8 ucPreambleOption, IN UINT_8 ucRateIndex, OUT PUINT_16 pu2RateCode)
+uint32_t nicRateIndex2RateCode(IN uint8_t ucPreambleOption, IN uint8_t ucRateIndex, OUT uint16_t *pu2RateCode)
 {
 	switch (ucPreambleOption) {
 	case PREAMBLE_DEFAULT_LONG_NONE:
@@ -286,16 +286,16 @@ WLAN_STATUS nicRateIndex2RateCode(IN UINT_8 ucPreambleOption, IN UINT_8 ucRateIn
 	return WLAN_STATUS_SUCCESS;
 }
 
-UINT_32
+uint32_t
 nicRateCode2PhyRate(
-	IN UINT_16  u2RateCode,
-	IN UINT_8   ucBandwidth,
-	IN UINT_8   ucGI,
-	IN UINT_8   ucRateNss)
+	IN uint16_t  u2RateCode,
+	IN uint8_t   ucBandwidth,
+	IN uint8_t   ucGI,
+	IN uint8_t   ucRateNss)
 {
-	UINT_8 ucPhyRate;
-	UINT_16 u2TxMode;
-	UINT_32 u4PhyRateBy1SS, u4PhyRateIn100Kbps = 0;
+	uint8_t ucPhyRate;
+	uint16_t u2TxMode;
+	uint32_t u4PhyRateBy1SS, u4PhyRateIn100Kbps = 0;
 
 	ucPhyRate = RATE_CODE_GET_PHY_RATE(u2RateCode);
 	u2TxMode = u2RateCode & RATE_TX_MODE_MASK;
@@ -323,15 +323,15 @@ nicRateCode2PhyRate(
 	return u4PhyRateIn100Kbps;
 }
 
-UINT_32
+uint32_t
 nicRateCode2DataRate(
-	IN UINT_16  u2RateCode,
-	IN UINT_8   ucBandwidth,
-	IN UINT_8   ucGI)
+	IN uint16_t  u2RateCode,
+	IN uint8_t   ucBandwidth,
+	IN uint8_t   ucGI)
 {
-	UINT_8 ucPhyRate, ucIdx, ucBw = 0;
-	UINT_32 u4PhyRateIn100Kbps = 0;
-	UINT_16 u2TxMode;
+	uint8_t ucPhyRate, ucIdx, ucBw = 0;
+	uint32_t u4PhyRateIn100Kbps = 0;
+	uint16_t u2TxMode;
 
 	if ((ucBandwidth == FIX_BW_NO_FIXED) || (ucBandwidth == FIX_BW_20))
 		ucBw = MAC_BW_20;
@@ -368,18 +368,18 @@ nicRateCode2DataRate(
 	return u4PhyRateIn100Kbps;
 }
 
-BOOLEAN
+u_int8_t
 nicGetRateIndexFromRateSetWithLimit(
-	IN UINT_16 u2RateSet,
-	IN UINT_32 u4PhyRateLimit,
-	IN BOOLEAN fgGetLowest,
-	OUT PUINT_8 pucRateSwIndex)
+	IN uint16_t u2RateSet,
+	IN uint32_t u4PhyRateLimit,
+	IN u_int8_t fgGetLowest,
+	OUT uint8_t *pucRateSwIndex)
 {
-	UINT_32 i;
-	UINT_32 u4CurPhyRate, u4TarPhyRate, u4HighestPhyRate, u4LowestPhyRate;
-	UINT_8 ucRateIndex, ucRatePreamble, ucTarRateSwIndex, ucHighestPhyRateSwIdx, ucLowestPhyRateSwIdx;
-	UINT_16 u2CurRateCode;
-	UINT_32 u4Status;
+	uint32_t i;
+	uint32_t u4CurPhyRate, u4TarPhyRate, u4HighestPhyRate, u4LowestPhyRate;
+	uint8_t ucRateIndex, ucRatePreamble, ucTarRateSwIndex, ucHighestPhyRateSwIdx, ucLowestPhyRateSwIdx;
+	uint16_t u2CurRateCode;
+	uint32_t u4Status;
 
 	/* Set init value */
 	if (fgGetLowest) {

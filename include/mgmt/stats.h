@@ -68,26 +68,26 @@
 
 #define STATS_TX_TIME_ARRIVE(__Skb__)										\
 do {														\
-	UINT_64 __SysTime;											\
+	uint64_t __SysTime;											\
 	__SysTime = StatsEnvTimeGet(); /* us */									\
 	GLUE_SET_PKT_XTIME(__Skb__, __SysTime);									\
 } while (FALSE)
 
-UINT_64 StatsEnvTimeGet(VOID);
+uint64_t StatsEnvTimeGet(void);
 
-VOID StatsEnvTxTime2Hif(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduInfo);
+void StatsEnvTxTime2Hif(IN struct ADAPTER *prAdapter, IN struct MSDU_INFO *prMsduInfo);
 
-VOID StatsEnvRxTime2Host(IN P_ADAPTER_T prAdapter, struct sk_buff *prSkb);
+void StatsEnvRxTime2Host(IN struct ADAPTER *prAdapter, struct sk_buff *prSkb);
 
-VOID StatsRxPktInfoDisplay(P_SW_RFB_T prSwRfb);
+void StatsRxPktInfoDisplay(struct SW_RFB *prSwRfb);
 
-VOID StatsTxPktInfoDisplay(UINT_8 *pPkt);
+void StatsTxPktInfoDisplay(uint8_t *pPkt);
 
-VOID StatsResetTxRx(VOID);
+void StatsResetTxRx(void);
 
-VOID StatsEnvSetPktDelay(IN UINT_8 ucTxOrRx, IN UINT_8 ucIpProto, IN UINT_16 u2UdpPort, UINT_32 u4DelayThreshold);
+void StatsEnvSetPktDelay(IN uint8_t ucTxOrRx, IN uint8_t ucIpProto, IN uint16_t u2UdpPort, uint32_t u4DelayThreshold);
 
-VOID StatsEnvGetPktDelay(OUT PUINT_8 pucTxRxFlag, OUT PUINT_8 pucTxIpProto, OUT PUINT_16 pu2TxUdpPort,
-	OUT PUINT_32 pu4TxDelayThreshold, OUT PUINT_8 pucRxIpProto,
-	OUT PUINT_16 pu2RxUdpPort, OUT PUINT_32 pu4RxDelayThreshold);
+void StatsEnvGetPktDelay(OUT uint8_t *pucTxRxFlag, OUT uint8_t *pucTxIpProto, OUT uint16_t *pu2TxUdpPort,
+	OUT uint32_t *pu4TxDelayThreshold, OUT uint8_t *pucRxIpProto,
+	OUT uint16_t *pu2RxUdpPort, OUT uint32_t *pu4RxDelayThreshold);
 /* End of stats.h */

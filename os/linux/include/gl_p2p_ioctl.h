@@ -136,113 +136,113 @@
 /*----------------------------------------------------------------------------*/
 /* Wireless Extension: Private I/O Control                                    */
 /*----------------------------------------------------------------------------*/
-typedef struct iw_p2p_cfg_device_type {
+struct iw_p2p_cfg_device_type {
 	void __user *ssid;
-	UINT_8 ssid_len;
-	UINT_8 pri_device_type[8];
-	UINT_8 snd_device_type[8];
+	uint8_t ssid_len;
+	uint8_t pri_device_type[8];
+	uint8_t snd_device_type[8];
 	void __user *device_name;
-	UINT_8 device_name_len;
-	UINT_8 intend;
-	UINT_8 persistence;
-	UINT_8 sec_mode;
-	UINT_8 ch;
-	UINT_8 ch_width;	/* 0: 20 Mhz  1:20/40 Mhz auto */
-	UINT_8 max_scb;
-} IW_P2P_CFG_DEVICE_TYPE, *P_IW_P2P_CFG_DEVICE_TYPE;
+	uint8_t device_name_len;
+	uint8_t intend;
+	uint8_t persistence;
+	uint8_t sec_mode;
+	uint8_t ch;
+	uint8_t ch_width;	/* 0: 20 Mhz  1:20/40 Mhz auto */
+	uint8_t max_scb;
+};
 
-typedef struct iw_p2p_hostapd_param {
-	UINT_8 cmd;
-	UINT_8 rsv[3];
-	UINT_8 sta_addr[6];
+struct iw_p2p_hostapd_param {
+	uint8_t cmd;
+	uint8_t rsv[3];
+	uint8_t sta_addr[6];
 	void __user *data;
-	UINT_16 len;
-} IW_P2P_HOSTAPD_PARAM, *P_IW_P2P_HOSTAPD_PARAM;
+	uint16_t len;
+};
 
-typedef struct iw_p2p_req_device_type {
-	UINT_8 scan_type;	/* 0: Full scan + Find
+struct iw_p2p_req_device_type {
+	uint8_t scan_type;	/* 0: Full scan + Find
 				 * 1: Full scan
 				 * 2: Scan (Search +Listen)
 				 * 3: Listen
 				 * other : reserved
 				 */
-	UINT_8 pri_device_type[8];
+	uint8_t pri_device_type[8];
 	void __user *probe_req_ie;
-	UINT_16 probe_req_len;
+	uint16_t probe_req_len;
 	void __user *probe_rsp_ie;
-	UINT_16 probe_rsp_len;
-} IW_P2P_REQ_DEVICE_TYPE, *P_IW_P2P_REQ_DEVICE_TYPE;
+	uint16_t probe_rsp_len;
+};
 
-typedef struct iw_p2p_connect_device {
-	UINT_8 sta_addr[6];
-	UINT_8 p2pRole;		/* 0: P2P Device, 1:GC, 2: GO */
-	UINT_8 needProvision;	/* 0: Don't needed provision, 1: doing the wsc provision first */
-	UINT_8 authPeer;	/* 1: auth peer invitation request */
-	UINT_8 intend_config_method;	/* Request Peer Device used config method */
-} IW_P2P_CONNECT_DEVICE, *P_IW_P2P_CONNECT_DEVICE;
+struct iw_p2p_connect_device {
+	uint8_t sta_addr[6];
+	uint8_t p2pRole;		/* 0: P2P Device, 1:GC, 2: GO */
+	uint8_t needProvision;	/* 0: Don't needed provision, 1: doing the wsc provision first */
+	uint8_t authPeer;	/* 1: auth peer invitation request */
+	uint8_t intend_config_method;	/* Request Peer Device used config method */
+};
 
-typedef struct iw_p2p_password_ready {
-	UINT_8 active_config_method;
+struct iw_p2p_password_ready {
+	uint8_t active_config_method;
 	void __user *probe_req_ie;
-	UINT_16 probe_req_len;
+	uint16_t probe_req_len;
 	void __user *probe_rsp_ie;
-	UINT_16 probe_rsp_len;
-} IW_P2P_PASSWORD_READY, *P_IW_P2P_PASSWORD_READY;
+	uint16_t probe_rsp_len;
+};
 
-typedef struct iw_p2p_device_req {
-	UINT_8 name[33];
-	UINT_32 name_len;
-	UINT_8 device_addr[6];
-	UINT_8 device_type;
-	INT_32 config_method;
-	INT_32 active_config_method;
-} IW_P2P_DEVICE_REQ, *P_IW_P2P_DEVICE_REQ;
+struct iw_p2p_device_req {
+	uint8_t name[33];
+	uint32_t name_len;
+	uint8_t device_addr[6];
+	uint8_t device_type;
+	int32_t config_method;
+	int32_t active_config_method;
+};
 
-typedef struct iw_p2p_transport_struct {
-	UINT_32 u4CmdId;
-	UINT_32 inBufferLength;
-	UINT_32 outBufferLength;
-	UINT_8 aucBuffer[16];
-} IW_P2P_TRANSPORT_STRUCT, *P_IW_P2P_TRANSPORT_STRUCT;
+struct iw_p2p_transport_struct {
+	uint32_t u4CmdId;
+	uint32_t inBufferLength;
+	uint32_t outBufferLength;
+	uint8_t aucBuffer[16];
+};
 
 /* For Invitation */
-typedef struct iw_p2p_ioctl_invitation_struct {
-	UINT_8 aucDeviceID[6];
-	UINT_8 aucGroupID[6];	/* BSSID */
-	UINT_8 aucSsid[32];
-	UINT_32 u4SsidLen;
-	UINT_8 ucReinvoke;
-} IW_P2P_IOCTL_INVITATION_STRUCT, *P_IW_P2P_IOCTL_INVITATION_STRUCT;
+struct iw_p2p_ioctl_invitation_struct {
+	uint8_t aucDeviceID[6];
+	uint8_t aucGroupID[6];	/* BSSID */
+	uint8_t aucSsid[32];
+	uint32_t u4SsidLen;
+	uint8_t ucReinvoke;
+};
 
-typedef struct iw_p2p_ioctl_abort_invitation {
-	UINT_8 dev_addr[6];
-} IW_P2P_IOCTL_ABORT_INVITATION, *P_IW_P2P_IOCTL_ABORT_INVITATION;
+struct iw_p2p_ioctl_abort_invitation {
+	uint8_t dev_addr[6];
+};
 
-typedef struct iw_p2p_ioctl_invitation_indicate {
-	UINT_8 dev_addr[6];
-	UINT_8 group_bssid[6];
-	INT_32 config_method;	/* peer device supported config method */
-	UINT_8 dev_name[32];	/* for reinvoke */
-	UINT_32 name_len;
-	UINT_8 operating_channel;	/* for re-invoke, target operating channel */
-	UINT_8 invitation_type;	/* invitation or re-invoke */
-} IW_P2P_IOCTL_INVITATION_INDICATE, *P_IW_P2P_IOCTL_INVITATION_INDICATE;
+struct iw_p2p_ioctl_invitation_indicate {
+	uint8_t dev_addr[6];
+	uint8_t group_bssid[6];
+	int32_t config_method;	/* peer device supported config method */
+	uint8_t dev_name[32];	/* for reinvoke */
+	uint32_t name_len;
+	uint8_t operating_channel;	/* for re-invoke, target operating channel */
+	uint8_t invitation_type;	/* invitation or re-invoke */
+};
 
-typedef struct iw_p2p_ioctl_invitation_status {
-	UINT_32 status_code;
-} IW_P2P_IOCTL_INVITATION_STATUS, *P_IW_P2P_IOCTL_INVITATION_STATUS;
+struct iw_p2p_ioctl_invitation_status {
+	uint32_t status_code;
+};
 
 /* For Formation */
-typedef struct iw_p2p_ioctl_start_formation {
-	UINT_8 dev_addr[6];	/* bssid */
-	UINT_8 role;		/* 0: P2P Device, 1:GC, 2: GO */
-	UINT_8 needProvision;	/* 0: Don't needed provision, 1: doing the wsc provision first */
-	UINT_8 auth;		/* 1: auth peer invitation request */
-	UINT_8 config_method;	/* Request Peer Device used config method */
-} IW_P2P_IOCTL_START_FORMATION, *P_IW_P2P_IOCTL_START_FORMATION;
+struct iw_p2p_ioctl_start_formation {
+	uint8_t dev_addr[6];	/* bssid */
+	uint8_t role;		/* 0: P2P Device, 1:GC, 2: GO */
+	uint8_t needProvision;	/* 0: Don't needed provision, 1: doing the wsc provision first */
+	uint8_t auth;		/* 1: auth peer invitation request */
+	uint8_t config_method;	/* Request Peer Device used config method */
+};
 
 /* SET_STRUCT / GET_STRUCT */
-typedef enum _ENUM_P2P_CMD_ID_T {
+enum ENUM_P2P_CMD_ID {
 	P2P_CMD_ID_SEND_SD_RESPONSE = 0,	/* 0x00 (Set) */
 	P2P_CMD_ID_GET_SD_REQUEST,	/* 0x01 (Get) */
 	P2P_CMD_ID_SEND_SD_REQUEST,	/* 0x02 (Set) */
@@ -259,50 +259,50 @@ typedef enum _ENUM_P2P_CMD_ID_T {
 	P2P_CMD_ID_P2P_VERSION,	/* 0x0B (Set/Get) */
 	P2P_CMD_ID_GET_CH_LIST = 12,	/* 0x0C (Get) */
 	P2P_CMD_ID_GET_OP_CH = 14	/* 0x0E (Get) */
-} ENUM_P2P_CMD_ID_T, *P_ENUM_P2P_CMD_ID_T;
+};
 
 /* Service Discovery */
-typedef struct iw_p2p_cmd_send_sd_response {
-	PARAM_MAC_ADDRESS rReceiverAddr;
-	UINT_8 fgNeedTxDoneIndication;
-	UINT_8 ucSeqNum;
-	UINT_16 u2PacketLength;
-	UINT_8 aucPacketContent[0];	/*native 802.11 */
-} IW_P2P_CMD_SEND_SD_RESPONSE, *P_IW_P2P_CMD_SEND_SD_RESPONSE;
+struct iw_p2p_cmd_send_sd_response {
+	uint8_t rReceiverAddr[PARAM_MAC_ADDR_LEN];
+	uint8_t fgNeedTxDoneIndication;
+	uint8_t ucSeqNum;
+	uint16_t u2PacketLength;
+	uint8_t aucPacketContent[0];	/*native 802.11 */
+};
 
-typedef struct iw_p2p_cmd_get_sd_request {
-	PARAM_MAC_ADDRESS rTransmitterAddr;
-	UINT_16 u2PacketLength;
-	UINT_8 aucPacketContent[0];	/*native 802.11 */
-} IW_P2P_CMD_GET_SD_REQUEST, *P_IW_P2P_CMD_GET_SD_REQUEST;
+struct iw_p2p_cmd_get_sd_request {
+	uint8_t rTransmitterAddr[PARAM_MAC_ADDR_LEN];
+	uint16_t u2PacketLength;
+	uint8_t aucPacketContent[0];	/*native 802.11 */
+};
 
-typedef struct iw_p2p_cmd_send_service_discovery_request {
-	PARAM_MAC_ADDRESS rReceiverAddr;
-	UINT_8 fgNeedTxDoneIndication;
-	UINT_8 ucSeqNum;
-	UINT_16 u2PacketLength;
-	UINT_8 aucPacketContent[0];	/*native 802.11 */
-} IW_P2P_CMD_SEND_SD_REQUEST, *P_IW_P2P_CMD_SEND_SD_REQUEST;
+struct iw_p2p_cmd_send_service_discovery_request {
+	uint8_t rReceiverAddr[PARAM_MAC_ADDR_LEN];
+	uint8_t fgNeedTxDoneIndication;
+	uint8_t ucSeqNum;
+	uint16_t u2PacketLength;
+	uint8_t aucPacketContent[0];	/*native 802.11 */
+};
 
-typedef struct iw_p2p_cmd_get_sd_response {
-	PARAM_MAC_ADDRESS rTransmitterAddr;
-	UINT_16 u2PacketLength;
-	UINT_8 aucPacketContent[0];	/*native 802.11 */
-} IW_P2P_CMD_GET_SD_RESPONSE, *P_IW_P2P_CMD_GET_SD_RESPONSE;
+struct iw_p2p_cmd_get_sd_response {
+	uint8_t rTransmitterAddr[PARAM_MAC_ADDR_LEN];
+	uint16_t u2PacketLength;
+	uint8_t aucPacketContent[0];	/*native 802.11 */
+};
 
-typedef struct iw_p2p_cmd_terminate_sd_phase {
-	PARAM_MAC_ADDRESS rPeerAddr;
-} IW_P2P_CMD_TERMINATE_SD_PHASE, *P_IW_P2P_CMD_TERMINATE_SD_PHASE;
+struct iw_p2p_cmd_terminate_sd_phase {
+	uint8_t rPeerAddr[PARAM_MAC_ADDR_LEN];
+};
 
-typedef struct iw_p2p_version {
-	UINT_32 u4Version;
-} IW_P2P_VERSION, *P_IW_P2P_VERSION;
+struct iw_p2p_version {
+	uint32_t u4Version;
+};
 
 /*----------------------------------------------------------------------------*/
 /* NL80211 TEST MODE                                                          */
 /*----------------------------------------------------------------------------*/
 #if CFG_AUTO_CHANNEL_SEL_SUPPORT
-typedef enum _ENUM_TESTMODE_AVAILABLE_CHAN_ATTR {
+enum ENUM_TESTMODE_AVAILABLE_CHAN_ATTR {
 	__NL80211_TESTMODE_AVAILABLE_CHAN_ATTR_INVALID,
 	NL80211_TESTMODE_AVAILABLE_CHAN_ATTR_2G_BASE_1,
 	NL80211_TESTMODE_AVAILABLE_CHAN_ATTR_5G_BASE_36,
@@ -311,7 +311,7 @@ typedef enum _ENUM_TESTMODE_AVAILABLE_CHAN_ATTR {
 	NL80211_TESTMODE_AVAILABLE_CHAN_ATTR_5G_BASE_149,
 	__NL80211_TESTMODE_AVAILABLE_CHAN_ATTR_AFTER_LAST,
 	NL80211_TESTMODE_AVAILABLE_CHAN_ATTR_MAX = __NL80211_TESTMODE_AVAILABLE_CHAN_ATTR_AFTER_LAST - 1
-} ENUM_TESTMODE_AVAILABLE_CHAN_ATTR;
+};
 #endif
 
 
@@ -322,7 +322,7 @@ typedef enum _ENUM_TESTMODE_AVAILABLE_CHAN_ATTR {
 extern struct ieee80211_supported_band mtk_band_2ghz;
 extern struct ieee80211_supported_band mtk_band_5ghz;
 
-extern const UINT_32 mtk_cipher_suites[6];
+extern const uint32_t mtk_cipher_suites[6];
 
 
 /*******************************************************************************
@@ -684,7 +684,7 @@ int
 mtk_p2p_wext_get_p2p_version(IN struct net_device *prDev,
 			     IN struct iw_request_info *info, IN OUT union iwreq_data *wrqu, IN OUT char *extra);
 
-void mtk_p2p_wext_set_Multicastlist(IN P_GLUE_INFO_T prGlueInfo);
+void mtk_p2p_wext_set_Multicastlist(IN struct GLUE_INFO *prGlueInfo);
 
 #if CFG_SUPPORT_P2P_RSSI_QUERY
 int

@@ -86,16 +86,16 @@
 /* host interface's private data structure, which is attached to os glue
 ** layer info structure.
  */
-typedef struct _GL_HIF_INFO_T {
+struct GL_HIF_INFO {
 	void __iomem *mcr_addr_base;
 	void __iomem *mcr_data_base;
-	BOOLEAN fgIntReadClear;
-	BOOLEAN fgMbxReadClear;
-} GL_HIF_INFO_T, *P_GL_HIF_INFO_T;
+	u_int8_t fgIntReadClear;
+	u_int8_t fgMbxReadClear;
+};
 
-typedef struct _BUS_INFO {
+struct BUS_INFO {
 
-} BUS_INFO, *P_BUS_INFO;
+};
 
 /*******************************************************************************
 *                            P U B L I C   D A T A
@@ -117,23 +117,23 @@ typedef struct _BUS_INFO {
 ********************************************************************************
 */
 
-WLAN_STATUS glRegisterBus(probe_card pfProbe, remove_card pfRemove);
+uint32_t glRegisterBus(probe_card pfProbe, remove_card pfRemove);
 
-VOID glUnregisterBus(remove_card pfRemove);
+void glUnregisterBus(remove_card pfRemove);
 
-VOID glSetHifInfo(P_GLUE_INFO_T prGlueInfo, ULONG ulCookie);
+void glSetHifInfo(struct GLUE_INFO *prGlueInfo, unsigned long ulCookie);
 
-VOID glClearHifInfo(P_GLUE_INFO_T prGlueInfo);
+void glClearHifInfo(struct GLUE_INFO *prGlueInfo);
 
-BOOL glBusInit(PVOID pvData);
+u_int8_t glBusInit(void *pvData);
 
-VOID glBusRelease(PVOID pData);
+void glBusRelease(void *pData);
 
-INT_32 glBusSetIrq(PVOID pvData, PVOID pfnIsr, PVOID pvCookie);
+int32_t glBusSetIrq(void *pvData, void *pfnIsr, void *pvCookie);
 
-VOID glBusFreeIrq(PVOID pvData, PVOID pvCookie);
+void glBusFreeIrq(void *pvData, void *pvCookie);
 
-VOID glSetPowerState(IN P_GLUE_INFO_T prGlueInfo, IN UINT_32 ePowerMode);
+void glSetPowerState(IN struct GLUE_INFO *prGlueInfo, IN uint32_t ePowerMode);
 
 /*******************************************************************************
 *                              F U N C T I O N S

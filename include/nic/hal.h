@@ -116,19 +116,19 @@ do { \
 				HAL_SET_FLAG(_prAdapter, ADAPTER_FLAG_HW_ERR); \
 				fgIsBusAccessFailed = TRUE; \
 				DBGLOG(HAL, ERROR, "HAL_MCR_RD (MAC) access fail! 0x%lx: 0x%lx\n", \
-					(UINT_32) (_u4Offset), *((PUINT_32) (_pu4Value))); \
+					(uint32_t) (_u4Offset), *((uint32_t *) (_pu4Value))); \
 			} \
 		} else { \
 			if (kalDevRegRead(_prAdapter->prGlueInfo, _u4Offset, _pu4Value) == FALSE) {\
 				HAL_SET_FLAG(_prAdapter, ADAPTER_FLAG_HW_ERR); \
 				fgIsBusAccessFailed = TRUE; \
 				DBGLOG(HAL, ERROR, "HAL_MCR_RD (SDIO) access fail! 0x%lx: 0x%lx\n", \
-					(UINT_32) (_u4Offset), *((PUINT_32) (_pu4Value))); \
+					(uint32_t) (_u4Offset), *((uint32_t *) (_pu4Value))); \
 			} \
 		} \
 	} else { \
 		DBGLOG(HAL, WARN, "ignore HAL_MCR_RD access! 0x%lx\n", \
-			(UINT_32) (_u4Offset)); \
+			(uint32_t) (_u4Offset)); \
 	} \
 } while (0)
 
@@ -143,19 +143,19 @@ do { \
 				HAL_SET_FLAG(_prAdapter, ADAPTER_FLAG_HW_ERR); \
 				fgIsBusAccessFailed = TRUE; \
 				DBGLOG(HAL, ERROR, "HAL_MCR_WR (MAC) access fail! 0x%lx: 0x%lx\n", \
-					(UINT_32) (_u4Offset), (UINT_32) (_u4Value)); \
+					(uint32_t) (_u4Offset), (uint32_t) (_u4Value)); \
 			} \
 		} else { \
 			if (kalDevRegWrite(_prAdapter->prGlueInfo, _u4Offset, _u4Value) == FALSE) {\
 				HAL_SET_FLAG(_prAdapter, ADAPTER_FLAG_HW_ERR); \
 				fgIsBusAccessFailed = TRUE; \
 				DBGLOG(HAL, ERROR, "HAL_MCR_WR (SDIO) access fail! 0x%lx: 0x%lx\n", \
-					(UINT_32) (_u4Offset), (UINT_32) (_u4Value)); \
+					(uint32_t) (_u4Offset), (uint32_t) (_u4Value)); \
 			} \
 		} \
 	} else { \
 		DBGLOG(HAL, WARN, "ignore HAL_MCR_WR access! 0x%lx: 0x%lx\n", \
-			(UINT_32) (_u4Offset), (UINT_32) (_u4Value)); \
+			(uint32_t) (_u4Offset), (uint32_t) (_u4Value)); \
 	} \
 } while (0)
 
@@ -170,13 +170,13 @@ do { \
 			HAL_SET_FLAG(_prAdapter, ADAPTER_FLAG_HW_ERR); \
 			fgIsBusAccessFailed = TRUE; \
 			DBGLOG(HAL, ERROR, "HAL_PORT_RD access fail! 0x%lx\n", \
-				(UINT_32) (_u4Port)); \
+				(uint32_t) (_u4Port)); \
 		} \
 		else { \
 			/*fgResult = TRUE;*/ } \
 	} else { \
 		DBGLOG(HAL, WARN, "ignore HAL_PORT_RD access! 0x%lx\n", \
-			(UINT_32) (_u4Port)); \
+			(uint32_t) (_u4Port)); \
 	} \
 }
 
@@ -191,13 +191,13 @@ do { \
 			HAL_SET_FLAG(_prAdapter, ADAPTER_FLAG_HW_ERR); \
 			fgIsBusAccessFailed = TRUE; \
 			DBGLOG(HAL, ERROR, "HAL_PORT_WR access fail! 0x%lx\n", \
-				(UINT_32) (_u4Port)); \
+				(uint32_t) (_u4Port)); \
 		} \
 		else \
 			; /*fgResult = TRUE;*/ \
 	} else { \
 		DBGLOG(HAL, WARN, "ignore HAL_PORT_WR access! 0x%lx\n", \
-			(UINT_32) (_u4Port)); \
+			(uint32_t) (_u4Port)); \
 	} \
 }
 
@@ -211,7 +211,7 @@ do { \
 			HAL_SET_FLAG(_prAdapter, ADAPTER_FLAG_HW_ERR); \
 			fgIsBusAccessFailed = TRUE; \
 			DBGLOG(HAL, ERROR, "HAL_BYTE_WR access fail! 0x%lx\n", \
-				(UINT_32)(_u4Port)); \
+				(uint32_t)(_u4Port)); \
 		} \
 		else { \
 			/* Todo:: Nothing*/ \
@@ -219,13 +219,13 @@ do { \
 	} \
 	else { \
 		DBGLOG(HAL, WARN, "ignore HAL_BYTE_WR access! 0x%lx\n", \
-			(UINT_32) (_u4Port)); \
+			(uint32_t) (_u4Port)); \
 	} \
 }
 
 #define HAL_DRIVER_OWN_BY_SDIO_CMD52(_prAdapter, _pfgDriverIsOwnReady) \
 { \
-	UINT_8 ucBuf = BIT(1); \
+	uint8_t ucBuf = BIT(1); \
 	if (_prAdapter->rAcpiState == ACPI_STATE_D3) { \
 		ASSERT(0); \
 	} \
@@ -278,7 +278,7 @@ do { \
 
 #define HAL_BYTE_WR(_prAdapter, _u4Port, _ucBuf) \
 { \
-	HAL_MCR_WR(_prAdapter, _u4Port, (UINT_32)_ucBuf); \
+	HAL_MCR_WR(_prAdapter, _u4Port, (uint32_t)_ucBuf); \
 }
 
 #endif /* #if defined(_HIF_SDIO) */
@@ -333,7 +333,7 @@ do { \
 
 #define HAL_GET_CHIP_ID_VER(_prAdapter, pu2ChipId, pu2Version) \
 { \
-	UINT_32 u4Value; \
+	uint32_t u4Value; \
 	HAL_MCR_RD(_prAdapter, HIF_SYS_REV, &u4Value); \
 	*pu2ChipId = ((u4Value & PCIE_HIF_SYS_PROJ) >> 16); \
 	*pu2Version = (u4Value & PCIE_HIF_SYS_REV); \
@@ -342,7 +342,7 @@ do { \
 #define HAL_WIFI_FUNC_READY_CHECK(_prAdapter, _checkItem, _pfgResult) \
 do { \
 	struct mt66xx_chip_info *prChipInfo; \
-	UINT_32 u4Value; \
+	uint32_t u4Value; \
 	if (!_prAdapter->chip_info) \
 		ASSERT(0); \
 	*_pfgResult = FALSE; \
@@ -355,7 +355,7 @@ do { \
 
 #define HAL_WIFI_FUNC_OFF_CHECK(_prAdapter, _checkItem, _pfgResult) \
 do { \
-	BOOLEAN fgLpOwnResult; \
+	u_int8_t fgLpOwnResult; \
 	HAL_WIFI_FUNC_READY_CHECK(_prAdapter, _checkItem, _pfgResult); \
 	if (*_pfgResult) { \
 		HAL_LP_OWN_RD(_prAdapter, &fgLpOwnResult); \
@@ -371,8 +371,8 @@ do { \
 #define HAL_WIFI_FUNC_GET_STATUS(_prAdapter, _u4Result) \
 do { \
 	struct mt66xx_chip_info *prChipInfo; \
-	P_BUS_INFO prBusInfo; \
-	UINT_32 u4Value; \
+	struct BUS_INFO *prBusInfo; \
+	uint32_t u4Value; \
 	if (!_prAdapter->chip_info || !_prAdapter->chip_info->bus_info) \
 		ASSERT(0); \
 	prChipInfo = _prAdapter->chip_info; \
@@ -394,7 +394,7 @@ do { \
 #define HAL_LP_OWN_RD(_prAdapter, _pfgResult) \
 do { \
 	struct mt66xx_chip_info *prChipInfo; \
-	P_BUS_INFO prBusInfo; \
+	struct BUS_INFO *prBusInfo; \
 	if (!_prAdapter->chip_info || !_prAdapter->chip_info->bus_info) \
 		ASSERT(0); \
 	prChipInfo = _prAdapter->chip_info; \
@@ -405,7 +405,7 @@ do { \
 #define HAL_LP_OWN_SET(_prAdapter, _pfgResult) \
 do { \
 	struct mt66xx_chip_info *prChipInfo; \
-	P_BUS_INFO prBusInfo; \
+	struct BUS_INFO *prBusInfo; \
 	if (!_prAdapter->chip_info || !_prAdapter->chip_info->bus_info) \
 		ASSERT(0); \
 	prChipInfo = _prAdapter->chip_info; \
@@ -416,7 +416,7 @@ do { \
 #define HAL_LP_OWN_CLR(_prAdapter, _pfgResult) \
 do { \
 	struct mt66xx_chip_info *prChipInfo; \
-	P_BUS_INFO prBusInfo; \
+	struct BUS_INFO *prBusInfo; \
 	if (!_prAdapter->chip_info || !_prAdapter->chip_info->bus_info) \
 		ASSERT(0); \
 	prChipInfo = _prAdapter->chip_info; \
@@ -492,7 +492,7 @@ do { \
 #define HAL_CLEAR_DUMMY_REQ(_prAdapter) \
 { \
 	struct mt66xx_chip_info *prChipInfo; \
-	UINT_32 u4Value; \
+	uint32_t u4Value; \
 	if (!_prAdapter->chip_info) {\
 		ASSERT(0); \
 	} else {\
@@ -527,9 +527,9 @@ do { \
 
 #define HAL_WRITE_TX_PORT(_prAdapter, _u4PortId, _u4Len, _pucBuf, _u4ValidBufSize) \
 { \
-	if ((_u4ValidBufSize - _u4Len) >= sizeof(UINT_32)) { \
+	if ((_u4ValidBufSize - _u4Len) >= sizeof(uint32_t)) { \
 		/* fill with single dword of zero as TX-aggregation termination */ \
-		*(PUINT_32) (&((_pucBuf)[ALIGN_4(_u4Len)])) = 0; \
+		*(uint32_t *) (&((_pucBuf)[ALIGN_4(_u4Len)])) = 0; \
 	} \
 	HAL_PORT_WR(_prAdapter, \
 		MCR_WTDR1, \
@@ -543,7 +543,7 @@ do { \
  */
 #define HAL_MCR_RD_AND_WAIT(_pAdapter, _offset, _pReadValue, _waitCondition, _waitDelay, _waitCount, _status) \
 	{ \
-		UINT_32 count; \
+		uint32_t count; \
 		(_status) = FALSE; \
 		for (count = 0; count < (_waitCount); count++) { \
 			HAL_MCR_RD((_pAdapter), (_offset), (_pReadValue)); \
@@ -560,8 +560,8 @@ do { \
  */
 #define HAL_MCR_WR_AND_WAIT(_pAdapter, _offset, _writeValue, _busyMask, _waitDelay, _waitCount, _status) \
 	{ \
-		UINT_32 u4Temp; \
-		UINT_32 u4Count = _waitCount; \
+		uint32_t u4Temp; \
+		uint32_t u4Count = _waitCount; \
 		(_status) = FALSE; \
 		HAL_MCR_WR((_pAdapter), (_offset), (_writeValue)); \
 		do { \
@@ -577,17 +577,17 @@ do { \
 
 #define HAL_GET_CHIP_ID_VER(_prAdapter, pu2ChipId, pu2Version) \
 { \
-	UINT_32 u4Value; \
+	uint32_t u4Value; \
 	HAL_MCR_RD(_prAdapter, \
 		MCR_WCIR, \
 		&u4Value); \
-	*pu2ChipId = (UINT_16)(u4Value & WCIR_CHIP_ID); \
-	*pu2Version = (UINT_16)(u4Value & WCIR_REVISION_ID) >> 16; \
+	*pu2ChipId = (uint16_t)(u4Value & WCIR_CHIP_ID); \
+	*pu2Version = (uint16_t)(u4Value & WCIR_REVISION_ID) >> 16; \
 }
 
 #define HAL_WIFI_FUNC_READY_CHECK(_prAdapter, _checkItem, _pfgResult) \
 do { \
-	UINT_32 u4Value; \
+	uint32_t u4Value; \
 	*_pfgResult = FALSE; \
 	HAL_MCR_RD(_prAdapter, \
 		MCR_WCIR, \
@@ -599,7 +599,7 @@ do { \
 
 #define HAL_WIFI_FUNC_OFF_CHECK(_prAdapter, _checkItem, _pfgResult) \
 do { \
-	UINT_32 u4Value; \
+	uint32_t u4Value; \
 	*_pfgResult = FALSE; \
 	HAL_MCR_RD(_prAdapter, MCR_WCIR, &u4Value); \
 	if ((u4Value & WCIR_WLAN_READY) == 0) { \
@@ -629,7 +629,7 @@ do { \
 
 #define HAL_LP_OWN_RD(_prAdapter, _pfgResult) \
 { \
-	UINT_32 u4RegValue; \
+	uint32_t u4RegValue; \
 	*_pfgResult = FALSE; \
 	HAL_MCR_RD(_prAdapter, MCR_WHLPCR, &u4RegValue); \
 	if (u4RegValue & WHLPCR_IS_DRIVER_OWN) { \
@@ -639,7 +639,7 @@ do { \
 
 #define HAL_LP_OWN_SET(_prAdapter, _pfgResult) \
 { \
-	UINT_32 u4RegValue; \
+	uint32_t u4RegValue; \
 	*_pfgResult = FALSE; \
 	HAL_MCR_WR(_prAdapter, \
 		MCR_WHLPCR, \
@@ -652,7 +652,7 @@ do { \
 
 #define HAL_LP_OWN_CLR(_prAdapter, _pfgResult) \
 { \
-	UINT_32 u4RegValue; \
+	uint32_t u4RegValue; \
 	*_pfgResult = FALSE; \
 	/* Software get LP ownership */ \
 	HAL_MCR_WR(_prAdapter, \
@@ -673,7 +673,7 @@ do { \
 
 #define HAL_DISABLE_RX_ENHANCE_MODE(_prAdapter) \
 { \
-	UINT_32 u4Value; \
+	uint32_t u4Value; \
 	HAL_MCR_RD(_prAdapter, \
 		MCR_WHCR, \
 		&u4Value); \
@@ -684,7 +684,7 @@ do { \
 
 #define HAL_ENABLE_RX_ENHANCE_MODE(_prAdapter) \
 { \
-	UINT_32 u4Value; \
+	uint32_t u4Value; \
 	HAL_MCR_RD(_prAdapter, \
 		MCR_WHCR, \
 		&u4Value); \
@@ -695,14 +695,14 @@ do { \
 
 #define HAL_CFG_MAX_HIF_RX_LEN_NUM(_prAdapter, _ucNumOfRxLen) \
 { \
-	UINT_32 u4Value, ucNum; \
+	uint32_t u4Value, ucNum; \
 	ucNum = ((_ucNumOfRxLen >= 16) ? 0 : _ucNumOfRxLen); \
 	u4Value = 0; \
 	HAL_MCR_RD(_prAdapter, \
 		MCR_WHCR, \
 		&u4Value); \
 	u4Value &= ~WHCR_MAX_HIF_RX_LEN_NUM; \
-	u4Value |= ((((UINT_32)ucNum) << WHCR_OFFSET_MAX_HIF_RX_LEN_NUM) & WHCR_MAX_HIF_RX_LEN_NUM); \
+	u4Value |= ((((uint32_t)ucNum) << WHCR_OFFSET_MAX_HIF_RX_LEN_NUM) & WHCR_MAX_HIF_RX_LEN_NUM); \
 	HAL_MCR_WR(_prAdapter, \
 		MCR_WHCR, \
 		u4Value); \
@@ -710,7 +710,7 @@ do { \
 
 #define HAL_SET_INTR_STATUS_READ_CLEAR(prAdapter) \
 { \
-	UINT_32 u4Value; \
+	uint32_t u4Value; \
 	HAL_MCR_RD(prAdapter, \
 		MCR_WHCR, \
 		&u4Value); \
@@ -722,7 +722,7 @@ do { \
 
 #define HAL_SET_INTR_STATUS_WRITE_1_CLEAR(prAdapter) \
 { \
-	UINT_32 u4Value; \
+	uint32_t u4Value; \
 	HAL_MCR_RD(prAdapter, \
 		MCR_WHCR, \
 		&u4Value); \
@@ -744,7 +744,7 @@ do { \
 
 #define HAL_READ_TX_RELEASED_COUNT(_prAdapter, au2TxReleaseCount) \
 { \
-	PUINT_32 pu4Value = (PUINT_32)au2TxReleaseCount; \
+	uint32_t *pu4Value = (uint32_t *)au2TxReleaseCount; \
 	HAL_MCR_RD(_prAdapter, \
 		MCR_WTQCR0, \
 		&pu4Value[0]); \
@@ -773,24 +773,24 @@ do { \
 
 #define HAL_READ_RX_LENGTH(prAdapter, pu2Rx0Len, pu2Rx1Len) \
 { \
-	UINT_32 u4Value; \
+	uint32_t u4Value; \
 	u4Value = 0; \
 	HAL_MCR_RD(prAdapter, \
 		MCR_WRPLR, \
 		&u4Value); \
-	*pu2Rx0Len = (UINT_16)u4Value; \
-	*pu2Rx1Len = (UINT_16)(u4Value >> 16); \
+	*pu2Rx0Len = (uint16_t)u4Value; \
+	*pu2Rx1Len = (uint16_t)(u4Value >> 16); \
 }
 
 #define HAL_GET_INTR_STATUS_FROM_ENHANCE_MODE_STRUCT(pvBuf, u2Len, pu4Status) \
 { \
-	PUINT_32 pu4Buf = (PUINT_32)pvBuf; \
+	uint32_t *pu4Buf = (uint32_t *)pvBuf; \
 	*pu4Status = pu4Buf[0]; \
 }
 
 #define HAL_GET_TX_STATUS_FROM_ENHANCE_MODE_STRUCT(pvInBuf, pu4BufOut, u4LenBufOut) \
 { \
-	PUINT_32 pu4Buf = (PUINT_32)pvInBuf; \
+	uint32_t *pu4Buf = (uint32_t *)pvInBuf; \
 	ASSERT(u4LenBufOut >= 8); \
 	pu4BufOut[0] = pu4Buf[1]; \
 	pu4BufOut[1] = pu4Buf[2]; \
@@ -798,20 +798,20 @@ do { \
 
 #define HAL_GET_RX_LENGTH_FROM_ENHANCE_MODE_STRUCT(pvInBuf, pu2Rx0Num, au2Rx0Len, pu2Rx1Num, au2Rx1Len) \
 { \
-	PUINT_32 pu4Buf = (PUINT_32)pvInBuf; \
-	ASSERT((sizeof(au2Rx0Len) / sizeof(UINT_16)) >= 16); \
-	ASSERT((sizeof(au2Rx1Len) / sizeof(UINT_16)) >= 16); \
-	*pu2Rx0Num = (UINT_16)pu4Buf[3]; \
-	*pu2Rx1Num = (UINT_16)(pu4Buf[3] >> 16); \
+	uint32_t *pu4Buf = (uint32_t *)pvInBuf; \
+	ASSERT((sizeof(au2Rx0Len) / sizeof(uint16_t)) >= 16); \
+	ASSERT((sizeof(au2Rx1Len) / sizeof(uint16_t)) >= 16); \
+	*pu2Rx0Num = (uint16_t)pu4Buf[3]; \
+	*pu2Rx1Num = (uint16_t)(pu4Buf[3] >> 16); \
 	kalMemCopy(au2Rx0Len, &pu4Buf[4], 8); \
 	kalMemCopy(au2Rx1Len, &pu4Buf[12], 8); \
 }
 
 #define HAL_GET_MAILBOX_FROM_ENHANCE_MODE_STRUCT(pvInBuf, pu4Mailbox0, pu4Mailbox1) \
 { \
-	PUINT_32 pu4Buf = (PUINT_32)pvInBuf; \
-	*pu4Mailbox0 = (UINT_16)pu4Buf[21]; \
-	*pu4Mailbox1 = (UINT_16)pu4Buf[22]; \
+	uint32_t *pu4Buf = (uint32_t *)pvInBuf; \
+	*pu4Mailbox0 = (uint16_t)pu4Buf[21]; \
+	*pu4Mailbox1 = (uint16_t)pu4Buf[22]; \
 }
 
 #define HAL_IS_TX_DONE_INTR(u4IntrStatus) \
@@ -844,7 +844,7 @@ do { \
 
 #define HAL_SET_MAILBOX_READ_CLEAR(prAdapter, fgEnableReadClear) \
 { \
-	UINT_32 u4Value; \
+	uint32_t u4Value; \
 	HAL_MCR_RD(prAdapter, MCR_WHCR, &u4Value);\
 	HAL_MCR_WR(prAdapter, MCR_WHCR, \
 		    (fgEnableReadClear) ? \
@@ -934,7 +934,7 @@ do { \
 #define HAL_WIFI_FUNC_READY_CHECK(_prAdapter, _checkItem, _pfgResult) \
 do { \
 	struct mt66xx_chip_info *prChipInfo; \
-	UINT_32 u4Value; \
+	uint32_t u4Value; \
 	if (!_prAdapter->chip_info) \
 		ASSERT(0); \
 	*_pfgResult = FALSE; \
@@ -948,7 +948,7 @@ do { \
 #define HAL_WIFI_FUNC_OFF_CHECK(_prAdapter, _checkItem, _pfgResult) \
 do { \
 	struct mt66xx_chip_info *prChipInfo; \
-	UINT_32 u4Value; \
+	uint32_t u4Value; \
 	if (!_prAdapter->chip_info) \
 		ASSERT(0); \
 	*_pfgResult = FALSE; \
@@ -1027,56 +1027,56 @@ do { \
 ********************************************************************************
 */
 
-BOOL halVerifyChipID(IN P_ADAPTER_T prAdapter);
-UINT_32 halGetChipHwVer(IN P_ADAPTER_T prAdapter);
-UINT_32 halGetChipSwVer(IN P_ADAPTER_T prAdapter);
+u_int8_t halVerifyChipID(IN struct ADAPTER *prAdapter);
+uint32_t halGetChipHwVer(IN struct ADAPTER *prAdapter);
+uint32_t halGetChipSwVer(IN struct ADAPTER *prAdapter);
 
-WLAN_STATUS halRxWaitResponse(IN P_ADAPTER_T prAdapter, IN UINT_8 ucPortIdx, OUT PUINT_8 pucRspBuffer,
-	IN UINT_32 u4MaxRespBufferLen, OUT PUINT_32 pu4Length);
+uint32_t halRxWaitResponse(IN struct ADAPTER *prAdapter, IN uint8_t ucPortIdx, OUT uint8_t *pucRspBuffer,
+	IN uint32_t u4MaxRespBufferLen, OUT uint32_t *pu4Length);
 
-VOID halEnableInterrupt(IN P_ADAPTER_T prAdapter);
-VOID halDisableInterrupt(IN P_ADAPTER_T prAdapter);
+void halEnableInterrupt(IN struct ADAPTER *prAdapter);
+void halDisableInterrupt(IN struct ADAPTER *prAdapter);
 
-BOOLEAN halSetDriverOwn(IN P_ADAPTER_T prAdapter);
-VOID halSetFWOwn(IN P_ADAPTER_T prAdapter, IN BOOLEAN fgEnableGlobalInt);
+u_int8_t halSetDriverOwn(IN struct ADAPTER *prAdapter);
+void halSetFWOwn(IN struct ADAPTER *prAdapter, IN u_int8_t fgEnableGlobalInt);
 
-VOID halDevInit(IN P_ADAPTER_T prAdapter);
-VOID halEnableFWDownload(IN P_ADAPTER_T prAdapter, IN BOOL fgEnable);
-VOID halWakeUpWiFi(IN P_ADAPTER_T prAdapter);
-VOID halTxCancelSendingCmd(IN P_ADAPTER_T prAdapter, IN P_CMD_INFO_T prCmdInfo);
-VOID halTxCancelAllSending(IN P_ADAPTER_T prAdapter);
-BOOLEAN halTxIsDataBufEnough(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduInfo);
-VOID halProcessTxInterrupt(IN P_ADAPTER_T prAdapter);
-WLAN_STATUS halTxPollingResource(IN P_ADAPTER_T prAdapter, IN UINT_8 ucTC);
-VOID halSerHifReset(IN P_ADAPTER_T prAdapter);
+void halDevInit(IN struct ADAPTER *prAdapter);
+void halEnableFWDownload(IN struct ADAPTER *prAdapter, IN u_int8_t fgEnable);
+void halWakeUpWiFi(IN struct ADAPTER *prAdapter);
+void halTxCancelSendingCmd(IN struct ADAPTER *prAdapter, IN struct CMD_INFO *prCmdInfo);
+void halTxCancelAllSending(IN struct ADAPTER *prAdapter);
+u_int8_t halTxIsDataBufEnough(IN struct ADAPTER *prAdapter, IN struct MSDU_INFO *prMsduInfo);
+void halProcessTxInterrupt(IN struct ADAPTER *prAdapter);
+uint32_t halTxPollingResource(IN struct ADAPTER *prAdapter, IN uint8_t ucTC);
+void halSerHifReset(IN struct ADAPTER *prAdapter);
 
-VOID halProcessRxInterrupt(IN P_ADAPTER_T prAdapter);
-VOID halProcessAbnormalInterrupt(IN P_ADAPTER_T prAdapter);
-VOID halProcessSoftwareInterrupt(IN P_ADAPTER_T prAdapter);
+void halProcessRxInterrupt(IN struct ADAPTER *prAdapter);
+void halProcessAbnormalInterrupt(IN struct ADAPTER *prAdapter);
+void halProcessSoftwareInterrupt(IN struct ADAPTER *prAdapter);
 /* Hif power off wifi */
-WLAN_STATUS halHifPowerOffWifi(IN P_ADAPTER_T prAdapter);
+uint32_t halHifPowerOffWifi(IN struct ADAPTER *prAdapter);
 
 
-VOID halHifSwInfoInit(IN P_ADAPTER_T prAdapter);
-VOID halRxProcessMsduReport(IN P_ADAPTER_T prAdapter, IN OUT P_SW_RFB_T prSwRfb);
-UINT_32 halTxGetPageCount(IN P_ADAPTER_T prAdapter, IN UINT_32 u4FrameLength, IN BOOLEAN fgIncludeDesc);
-UINT_32 halDumpHifStatus(IN P_ADAPTER_T prAdapter, IN PUINT_8 pucBuf, IN UINT_32 u4Max);
-BOOLEAN halIsPendingRx(IN P_ADAPTER_T prAdapter);
-UINT_32 halGetValidCoalescingBufSize(IN P_ADAPTER_T prAdapter);
-WLAN_STATUS halAllocateIOBuffer(IN P_ADAPTER_T prAdapter);
-WLAN_STATUS halReleaseIOBuffer(IN P_ADAPTER_T prAdapter);
-VOID halDeAggRxPktWorker(struct work_struct *work);
-VOID halRxTasklet(unsigned long data);
-VOID halTxCompleteTasklet(unsigned long data);
-VOID halPrintHifDbgInfo(IN P_ADAPTER_T prAdapter);
-BOOLEAN halIsTxResourceControlEn(IN P_ADAPTER_T prAdapter);
-VOID halTxResourceResetHwTQCounter(IN P_ADAPTER_T prAdapter);
-UINT_32 halGetHifTxPageSize(IN P_ADAPTER_T prAdapter);
-VOID halTxReturnFreeResource(IN P_ADAPTER_T prAdapter, IN PUINT_16 au2TxDoneCnt);
-VOID halTxGetFreeResource(IN P_ADAPTER_T prAdapter, IN PUINT_16 au2TxDoneCnt, IN PUINT_16 au2TxRlsCnt);
-VOID halRestoreTxResource(IN P_ADAPTER_T prAdapter);
-VOID halRestoreTxResource_v1(IN P_ADAPTER_T prAdapter);
-VOID halUpdateTxDonePendingCount_v1(IN P_ADAPTER_T prAdapter, IN BOOLEAN isIncr, IN UINT_8 ucTc, IN UINT_16 u2Cnt);
-VOID halUpdateTxDonePendingCount(IN P_ADAPTER_T prAdapter, IN BOOLEAN isIncr, IN UINT_8 ucTc, IN UINT_32 u4Len);
-VOID halTxReturnFreeResource_v1(IN P_ADAPTER_T prAdapter, IN PUINT_16 au2TxDoneCnt);
+void halHifSwInfoInit(IN struct ADAPTER *prAdapter);
+void halRxProcessMsduReport(IN struct ADAPTER *prAdapter, IN OUT struct SW_RFB *prSwRfb);
+uint32_t halTxGetPageCount(IN struct ADAPTER *prAdapter, IN uint32_t u4FrameLength, IN u_int8_t fgIncludeDesc);
+uint32_t halDumpHifStatus(IN struct ADAPTER *prAdapter, IN uint8_t *pucBuf, IN uint32_t u4Max);
+u_int8_t halIsPendingRx(IN struct ADAPTER *prAdapter);
+uint32_t halGetValidCoalescingBufSize(IN struct ADAPTER *prAdapter);
+uint32_t halAllocateIOBuffer(IN struct ADAPTER *prAdapter);
+uint32_t halReleaseIOBuffer(IN struct ADAPTER *prAdapter);
+void halDeAggRxPktWorker(struct work_struct *work);
+void halRxTasklet(unsigned long data);
+void halTxCompleteTasklet(unsigned long data);
+void halPrintHifDbgInfo(IN struct ADAPTER *prAdapter);
+u_int8_t halIsTxResourceControlEn(IN struct ADAPTER *prAdapter);
+void halTxResourceResetHwTQCounter(IN struct ADAPTER *prAdapter);
+uint32_t halGetHifTxPageSize(IN struct ADAPTER *prAdapter);
+void halTxReturnFreeResource(IN struct ADAPTER *prAdapter, IN uint16_t *au2TxDoneCnt);
+void halTxGetFreeResource(IN struct ADAPTER *prAdapter, IN uint16_t *au2TxDoneCnt, IN uint16_t *au2TxRlsCnt);
+void halRestoreTxResource(IN struct ADAPTER *prAdapter);
+void halRestoreTxResource_v1(IN struct ADAPTER *prAdapter);
+void halUpdateTxDonePendingCount_v1(IN struct ADAPTER *prAdapter, IN u_int8_t isIncr, IN uint8_t ucTc, IN uint16_t u2Cnt);
+void halUpdateTxDonePendingCount(IN struct ADAPTER *prAdapter, IN u_int8_t isIncr, IN uint8_t ucTc, IN uint32_t u4Len);
+void halTxReturnFreeResource_v1(IN struct ADAPTER *prAdapter, IN uint16_t *au2TxDoneCnt);
 #endif /* _HAL_H */

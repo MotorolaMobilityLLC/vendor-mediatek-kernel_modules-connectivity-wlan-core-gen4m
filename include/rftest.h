@@ -109,7 +109,7 @@
 
 #define RF_AT_PARAM_TX_PKTLEN_BYTE_DEFAULT  1024
 #define RF_AT_PARAM_TX_PKTLEN_BYTE_MAX  \
-	((UINT_16)(RF_AT_PARAM_TX_80211HDR_BYTE_MAX + RF_AT_PARAM_TX_80211PAYLOAD_BYTE_MAX))
+	((uint16_t)(RF_AT_PARAM_TX_80211HDR_BYTE_MAX + RF_AT_PARAM_TX_80211PAYLOAD_BYTE_MAX))
 
 /* Packet Count */
 #define RF_AT_PARAM_TX_PKTCNT_DEFAULT    1000
@@ -170,7 +170,7 @@
 ********************************************************************************
 */
 /* Function ID List */
-typedef enum _ENUM_RF_AT_FUNCID_T {
+enum ENUM_RF_AT_FUNCID {
 	RF_AT_FUNCID_VERSION = 0,
 	RF_AT_FUNCID_COMMAND,
 	RF_AT_FUNCID_POWER,
@@ -343,10 +343,10 @@ typedef enum _ENUM_RF_AT_FUNCID_T {
 	RF_AT_FUNCID_SET_MPS_NSS = 133,
 	RF_AT_FUNCID_SET_MPS_PACKAGE_BW = 134
 #endif
-} ENUM_RF_AT_FUNCID_T;
+};
 
 /* Command */
-typedef enum _ENUM_RF_AT_COMMAND_T {
+enum ENUM_RF_AT_COMMAND {
 	RF_AT_COMMAND_STOPTEST = 0,
 	RF_AT_COMMAND_STARTTX,
 	RF_AT_COMMAND_STARTRX,
@@ -365,28 +365,28 @@ typedef enum _ENUM_RF_AT_COMMAND_T {
 	RF_AT_COMMAND_SINGLE_TONE,
 	RF_AT_COMMAND_RDD_OFF,
 	RF_AT_COMMAND_NUM
-} ENUM_RF_AT_COMMAND_T;
+};
 
 /* Preamble */
-typedef enum _ENUM_RF_AT_PREAMBLE_T {
+enum ENUM_RF_AT_PREAMBLE {
 	RF_AT_PREAMBLE_NORMAL = 0,
 	RF_AT_PREAMBLE_CCK_SHORT,
 	RF_AT_PREAMBLE_11N_MM,
 	RF_AT_PREAMBLE_11N_GF,
 	RF_AT_PREAMBLE_11AC,
 	RF_AT_PREAMBLE_NUM
-} ENUM_RF_AT_PREAMBLE_T;
+};
 
 /* Ack Policy */
-typedef enum _ENUM_RF_AT_ACK_POLICY_T {
+enum ENUM_RF_AT_ACK_POLICY {
 	RF_AT_ACK_POLICY_NORMAL = 0,
 	RF_AT_ACK_POLICY_NOACK,
 	RF_AT_ACK_POLICY_NOEXPLICTACK,
 	RF_AT_ACK_POLICY_BLOCKACK,
 	RF_AT_ACK_POLICY_NUM
-} ENUM_RF_AT_ACK_POLICY_T;
+};
 
-typedef enum _ENUM_RF_AUTOTEST_STATE_T {
+enum ENUM_RF_AUTOTEST_STATE {
 	RF_AUTOTEST_STATE_STANDBY = 0,
 	RF_AUTOTEST_STATE_TX,
 	RF_AUTOTEST_STATE_RX,
@@ -395,7 +395,7 @@ typedef enum _ENUM_RF_AUTOTEST_STATE_T {
 	RF_AUTOTEST_STATE_LOCA_FREQUENCY,
 	RF_AUTOTEST_STATE_CARRIER_SUPRRESION,
 	RF_AUTOTEST_STATE_NUM
-} ENUM_RF_AUTOTEST_STATE_T;
+};
 
 /*******************************************************************************
 *                            P U B L I C   D A T A
@@ -417,12 +417,12 @@ typedef enum _ENUM_RF_AUTOTEST_STATE_T {
 ********************************************************************************
 */
 
-WLAN_STATUS rftestSetATInfo(IN P_ADAPTER_T prAdapter, UINT_32 u4FuncIndex, UINT_32 u4FuncData);
+uint32_t rftestSetATInfo(IN struct ADAPTER *prAdapter, uint32_t u4FuncIndex, uint32_t u4FuncData);
 
-WLAN_STATUS
-rftestQueryATInfo(IN P_ADAPTER_T prAdapter,
-		  UINT_32 u4FuncIndex, UINT_32 u4FuncData, OUT PVOID pvQueryBuffer, IN UINT_32 u4QueryBufferLen);
+uint32_t
+rftestQueryATInfo(IN struct ADAPTER *prAdapter,
+		  uint32_t u4FuncIndex, uint32_t u4FuncData, OUT void *pvQueryBuffer, IN uint32_t u4QueryBufferLen);
 
-WLAN_STATUS rftestSetFrequency(IN P_ADAPTER_T prAdapter, IN UINT_32 u4FreqInKHz, IN PUINT_32 pu4SetInfoLen);
+uint32_t rftestSetFrequency(IN struct ADAPTER *prAdapter, IN uint32_t u4FreqInKHz, IN uint32_t *pu4SetInfoLen);
 
 #endif /* _RFTEST_H */

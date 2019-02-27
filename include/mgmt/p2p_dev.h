@@ -49,49 +49,49 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  *****************************************************************************/
-typedef enum _ENUM_P2P_DEV_STATE_T {
+enum ENUM_P2P_DEV_STATE {
 	P2P_DEV_STATE_IDLE = 0,
 	P2P_DEV_STATE_SCAN,
 	P2P_DEV_STATE_REQING_CHANNEL,
 	P2P_DEV_STATE_CHNL_ON_HAND,
 	P2P_DEV_STATE_OFF_CHNL_TX,	/* Requesting Channel to Send Specific Frame. */
 	P2P_DEV_STATE_NUM
-} ENUM_P2P_DEV_STATE_T, *P_ENUM_P2P_DEV_STATE_T;
+};
 
 /*-------------------- EVENT MESSAGE ---------------------*/
-typedef struct _MSG_P2P_SCAN_REQUEST_T {
-	MSG_HDR_T rMsgHdr;	/* Must be the first member */
-	UINT_8 ucBssIdx;
-	ENUM_SCAN_TYPE_T eScanType;
-	P_P2P_SSID_STRUCT_T prSSID;
-	INT_32 i4SsidNum;
-	UINT_32 u4NumChannel;
-	PUINT_8 pucIEBuf;
-	UINT_32 u4IELen;
-	BOOLEAN fgIsAbort;
-	RF_CHANNEL_INFO_T arChannelListInfo[1];
-} MSG_P2P_SCAN_REQUEST_T, *P_MSG_P2P_SCAN_REQUEST_T;
+struct MSG_P2P_SCAN_REQUEST {
+	struct MSG_HDR rMsgHdr;	/* Must be the first member */
+	uint8_t ucBssIdx;
+	enum ENUM_SCAN_TYPE eScanType;
+	struct P2P_SSID_STRUCT *prSSID;
+	int32_t i4SsidNum;
+	uint32_t u4NumChannel;
+	uint8_t *pucIEBuf;
+	uint32_t u4IELen;
+	u_int8_t fgIsAbort;
+	struct RF_CHANNEL_INFO arChannelListInfo[1];
+};
 
-typedef struct _MSG_P2P_CHNL_REQUEST_T {
-	MSG_HDR_T rMsgHdr;	/* Must be the first member */
-	UINT_64 u8Cookie;
-	UINT_32 u4Duration;
-	ENUM_CHNL_EXT_T eChnlSco;
-	RF_CHANNEL_INFO_T rChannelInfo;
-	ENUM_CH_REQ_TYPE_T eChnlReqType;
-} MSG_P2P_CHNL_REQUEST_T, *P_MSG_P2P_CHNL_REQUEST_T;
+struct MSG_P2P_CHNL_REQUEST {
+	struct MSG_HDR rMsgHdr;	/* Must be the first member */
+	uint64_t u8Cookie;
+	uint32_t u4Duration;
+	enum ENUM_CHNL_EXT eChnlSco;
+	struct RF_CHANNEL_INFO rChannelInfo;
+	enum ENUM_CH_REQ_TYPE eChnlReqType;
+};
 
-typedef struct _MSG_P2P_MGMT_TX_REQUEST_T {
-	MSG_HDR_T rMsgHdr;
-	UINT_8 ucBssIdx;
-	P_MSDU_INFO_T prMgmtMsduInfo;
-	UINT_64 u8Cookie;	/* For indication. */
-	BOOLEAN fgNoneCckRate;
-	BOOLEAN fgIsOffChannel;
-	RF_CHANNEL_INFO_T rChannelInfo;	/* Off channel TX. */
-	ENUM_CHNL_EXT_T eChnlExt;
-	BOOLEAN fgIsWaitRsp;
-} MSG_P2P_MGMT_TX_REQUEST_T, *P_MSG_P2P_MGMT_TX_REQUEST_T;
+struct MSG_P2P_MGMT_TX_REQUEST {
+	struct MSG_HDR rMsgHdr;
+	uint8_t ucBssIdx;
+	struct MSDU_INFO *prMgmtMsduInfo;
+	uint64_t u8Cookie;	/* For indication. */
+	u_int8_t fgNoneCckRate;
+	u_int8_t fgIsOffChannel;
+	struct RF_CHANNEL_INFO rChannelInfo;	/* Off channel TX. */
+	enum ENUM_CHNL_EXT eChnlExt;
+	u_int8_t fgIsWaitRsp;
+};
 
 #if CFG_SUPPORT_WFD
 
@@ -100,139 +100,139 @@ typedef struct _MSG_P2P_MGMT_TX_REQUEST_T {
 #define WFD_FLAGS_ASSOC_MAC_VALID        BIT(2)	/* 1. WFD_ASSOC_MAC. */
 #define WFD_FLAGS_EXT_CAPABILITY_VALID  BIT(3)	/* 1. WFD_EXTEND_CAPABILITY. */
 
-struct _WFD_CFG_SETTINGS_T {
-	UINT_32 u4WfdCmdType;
-	UINT_8 ucWfdEnable;
-	UINT_8 ucWfdCoupleSinkStatus;
-	UINT_8 ucWfdSessionAvailable;	/* 0: NA 1:Set 2:Clear */
-	UINT_8 ucWfdSigmaMode;
-	UINT_16 u2WfdDevInfo;
-	UINT_16 u2WfdControlPort;
-	UINT_16 u2WfdMaximumTp;
-	UINT_16 u2WfdExtendCap;
-	UINT_8 aucWfdCoupleSinkAddress[MAC_ADDR_LEN];
-	UINT_8 aucWfdAssociatedBssid[MAC_ADDR_LEN];
-	UINT_8 aucWfdVideoIp[4];
-	UINT_8 aucWfdAudioIp[4];
-	UINT_16 u2WfdVideoPort;
-	UINT_16 u2WfdAudioPort;
-	UINT_32 u4WfdFlag;
-	UINT_32 u4WfdPolicy;
-	UINT_32 u4WfdState;
-	UINT_8 aucWfdSessionInformationIE[24 * 8];
-	UINT_16 u2WfdSessionInformationIELen;
-	UINT_8 aucReserved1[2];
-	UINT_8 aucWfdPrimarySinkMac[MAC_ADDR_LEN];
-	UINT_8 aucWfdSecondarySinkMac[MAC_ADDR_LEN];
-	UINT_32 u4WfdAdvancedFlag;
+struct WFD_CFG_SETTINGS {
+	uint32_t u4WfdCmdType;
+	uint8_t ucWfdEnable;
+	uint8_t ucWfdCoupleSinkStatus;
+	uint8_t ucWfdSessionAvailable;	/* 0: NA 1:Set 2:Clear */
+	uint8_t ucWfdSigmaMode;
+	uint16_t u2WfdDevInfo;
+	uint16_t u2WfdControlPort;
+	uint16_t u2WfdMaximumTp;
+	uint16_t u2WfdExtendCap;
+	uint8_t aucWfdCoupleSinkAddress[MAC_ADDR_LEN];
+	uint8_t aucWfdAssociatedBssid[MAC_ADDR_LEN];
+	uint8_t aucWfdVideoIp[4];
+	uint8_t aucWfdAudioIp[4];
+	uint16_t u2WfdVideoPort;
+	uint16_t u2WfdAudioPort;
+	uint32_t u4WfdFlag;
+	uint32_t u4WfdPolicy;
+	uint32_t u4WfdState;
+	uint8_t aucWfdSessionInformationIE[24 * 8];
+	uint16_t u2WfdSessionInformationIELen;
+	uint8_t aucReserved1[2];
+	uint8_t aucWfdPrimarySinkMac[MAC_ADDR_LEN];
+	uint8_t aucWfdSecondarySinkMac[MAC_ADDR_LEN];
+	uint32_t u4WfdAdvancedFlag;
 	/* Group 1 64 bytes */
-	UINT_8 aucWfdLocalIp[4];
-	UINT_16 u2WfdLifetimeAc2;	/* Unit is 2 TU */
-	UINT_16 u2WfdLifetimeAc3;	/* Unit is 2 TU */
-	UINT_16 u2WfdCounterThreshold;	/* Unit is ms */
-	UINT_8 aucReverved2[54];
+	uint8_t aucWfdLocalIp[4];
+	uint16_t u2WfdLifetimeAc2;	/* Unit is 2 TU */
+	uint16_t u2WfdLifetimeAc3;	/* Unit is 2 TU */
+	uint16_t u2WfdCounterThreshold;	/* Unit is ms */
+	uint8_t aucReverved2[54];
 	/* Group 2 64 bytes */
-	UINT_8 aucReverved3[64];
+	uint8_t aucReverved3[64];
 	/* Group 3 64 bytes */
-	UINT_8 aucReverved4[64];
+	uint8_t aucReverved4[64];
 };
 
 #endif
 
-typedef struct _MSG_P2P_ACTIVE_DEV_BSS_T {
-	MSG_HDR_T rMsgHdr;
-} MSG_P2P_ACTIVE_DEV_BSS_T, *P_MSG_P2P_ACTIVE_DEV_BSS_T;
+struct MSG_P2P_ACTIVE_DEV_BSS {
+	struct MSG_HDR rMsgHdr;
+};
 
 /*-------------------- P2P FSM ACTION STRUCT ---------------------*/
 
-typedef struct _P2P_OFF_CHNL_TX_REQ_INFO_T {
-	LINK_ENTRY_T rLinkEntry;
-	P_MSDU_INFO_T prMgmtTxMsdu;
-	BOOLEAN fgNoneCckRate;
-	RF_CHANNEL_INFO_T rChannelInfo;	/* Off channel TX. */
-	ENUM_CHNL_EXT_T eChnlExt;
-	BOOLEAN fgIsWaitRsp;	/* See if driver should keep at the same channel. */
-} P2P_OFF_CHNL_TX_REQ_INFO_T, *P_P2P_OFF_CHNL_TX_REQ_INFO_T;
-
-typedef struct _P2P_MGMT_TX_REQ_INFO_T {
-	LINK_T rP2pTxReqLink;
-	P_MSDU_INFO_T prMgmtTxMsdu;
-	BOOLEAN fgIsWaitRsp;
-} P2P_MGMT_TX_REQ_INFO_T, *P_P2P_MGMT_TX_REQ_INFO_T;
-
-struct _P2P_DEV_FSM_INFO_T {
-	UINT_8 ucBssIndex;
-	/* State related. */
-	ENUM_P2P_DEV_STATE_T eCurrentState;
-
-	/* Channel related. */
-	P2P_CHNL_REQ_INFO_T rChnlReqInfo;
-
-	/* Scan related. */
-	P2P_SCAN_REQ_INFO_T rScanReqInfo;
-
-	/* Mgmt tx related. */
-	P2P_MGMT_TX_REQ_INFO_T rMgmtTxInfo;
-
-	/* FSM Timer */
-	TIMER_T rP2pFsmTimeoutTimer;
-
-	/* Packet filter for P2P module. */
-	UINT_32 u4P2pPacketFilter;
+struct P2P_OFF_CHNL_TX_REQ_INFO {
+	struct LINK_ENTRY rLinkEntry;
+	struct MSDU_INFO *prMgmtTxMsdu;
+	u_int8_t fgNoneCckRate;
+	struct RF_CHANNEL_INFO rChannelInfo;	/* Off channel TX. */
+	enum ENUM_CHNL_EXT eChnlExt;
+	u_int8_t fgIsWaitRsp;	/* See if driver should keep at the same channel. */
 };
 
-typedef struct _MSG_P2P_NETDEV_REGISTER_T {
-	MSG_HDR_T rMsgHdr;	/* Must be the first member */
-	BOOLEAN fgIsEnable;
-	UINT_8 ucMode;
-} MSG_P2P_NETDEV_REGISTER_T, *P_MSG_P2P_NETDEV_REGISTER_T;
+struct P2P_MGMT_TX_REQ_INFO {
+	struct LINK rP2pTxReqLink;
+	struct MSDU_INFO *prMgmtTxMsdu;
+	u_int8_t fgIsWaitRsp;
+};
+
+struct P2P_DEV_FSM_INFO {
+	uint8_t ucBssIndex;
+	/* State related. */
+	enum ENUM_P2P_DEV_STATE eCurrentState;
+
+	/* Channel related. */
+	struct P2P_CHNL_REQ_INFO rChnlReqInfo;
+
+	/* Scan related. */
+	struct P2P_SCAN_REQ_INFO rScanReqInfo;
+
+	/* Mgmt tx related. */
+	struct P2P_MGMT_TX_REQ_INFO rMgmtTxInfo;
+
+	/* FSM Timer */
+	struct TIMER rP2pFsmTimeoutTimer;
+
+	/* Packet filter for P2P module. */
+	uint32_t u4P2pPacketFilter;
+};
+
+struct MSG_P2P_NETDEV_REGISTER {
+	struct MSG_HDR rMsgHdr;	/* Must be the first member */
+	u_int8_t fgIsEnable;
+	uint8_t ucMode;
+};
 
 #if CFG_SUPPORT_WFD
-typedef struct _MSG_WFD_CONFIG_SETTINGS_CHANGED_T {
-	MSG_HDR_T rMsgHdr;	/* Must be the first member */
-	P_WFD_CFG_SETTINGS_T prWfdCfgSettings;
-} MSG_WFD_CONFIG_SETTINGS_CHANGED_T, *P_MSG_WFD_CONFIG_SETTINGS_CHANGED_T;
+struct MSG_WFD_CONFIG_SETTINGS_CHANGED {
+	struct MSG_HDR rMsgHdr;	/* Must be the first member */
+	struct WFD_CFG_SETTINGS *prWfdCfgSettings;
+};
 #endif
 
 /*========================= Initial ============================*/
 
-UINT_8 p2pDevFsmInit(IN P_ADAPTER_T prAdapter);
+uint8_t p2pDevFsmInit(IN struct ADAPTER *prAdapter);
 
-VOID p2pDevFsmUninit(IN P_ADAPTER_T prAdapter);
+void p2pDevFsmUninit(IN struct ADAPTER *prAdapter);
 
 /*========================= FUNCTIONs ============================*/
 
-VOID
-p2pDevFsmStateTransition(IN P_ADAPTER_T prAdapter, IN P_P2P_DEV_FSM_INFO_T prP2pDevFsmInfo, IN ENUM_P2P_DEV_STATE_T
+void
+p2pDevFsmStateTransition(IN struct ADAPTER *prAdapter, IN struct P2P_DEV_FSM_INFO *prP2pDevFsmInfo, IN enum ENUM_P2P_DEV_STATE
 			 eNextState);
 
-VOID p2pDevFsmRunEventAbort(IN P_ADAPTER_T prAdapter, IN P_P2P_DEV_FSM_INFO_T prP2pDevFsmInfo);
+void p2pDevFsmRunEventAbort(IN struct ADAPTER *prAdapter, IN struct P2P_DEV_FSM_INFO *prP2pDevFsmInfo);
 
-VOID p2pDevFsmRunEventTimeout(IN P_ADAPTER_T prAdapter, IN ULONG ulParamPtr);
+void p2pDevFsmRunEventTimeout(IN struct ADAPTER *prAdapter, IN unsigned long ulParamPtr);
 
 /*================ Message Event =================*/
-VOID p2pDevFsmRunEventScanRequest(IN P_ADAPTER_T prAdapter, IN P_MSG_HDR_T prMsgHdr);
-VOID p2pDevFsmRunEventScanAbort(IN P_ADAPTER_T prAdapter, IN P_MSG_HDR_T prMsgHdr);
+void p2pDevFsmRunEventScanRequest(IN struct ADAPTER *prAdapter, IN struct MSG_HDR *prMsgHdr);
+void p2pDevFsmRunEventScanAbort(IN struct ADAPTER *prAdapter, IN struct MSG_HDR *prMsgHdr);
 
-VOID
-p2pDevFsmRunEventScanDone(IN P_ADAPTER_T prAdapter, IN P_MSG_HDR_T prMsgHdr, IN P_P2P_DEV_FSM_INFO_T prP2pDevFsmInfo);
+void
+p2pDevFsmRunEventScanDone(IN struct ADAPTER *prAdapter, IN struct MSG_HDR *prMsgHdr, IN struct P2P_DEV_FSM_INFO *prP2pDevFsmInfo);
 
-VOID p2pDevFsmRunEventChannelRequest(IN P_ADAPTER_T prAdapter, IN P_MSG_HDR_T prMsgHdr);
+void p2pDevFsmRunEventChannelRequest(IN struct ADAPTER *prAdapter, IN struct MSG_HDR *prMsgHdr);
 
-VOID p2pDevFsmRunEventChannelAbort(IN P_ADAPTER_T prAdapter, IN P_MSG_HDR_T prMsgHdr);
+void p2pDevFsmRunEventChannelAbort(IN struct ADAPTER *prAdapter, IN struct MSG_HDR *prMsgHdr);
 
-VOID
-p2pDevFsmRunEventChnlGrant(IN P_ADAPTER_T prAdapter, IN P_MSG_HDR_T prMsgHdr, IN P_P2P_DEV_FSM_INFO_T prP2pDevFsmInfo);
+void
+p2pDevFsmRunEventChnlGrant(IN struct ADAPTER *prAdapter, IN struct MSG_HDR *prMsgHdr, IN struct P2P_DEV_FSM_INFO *prP2pDevFsmInfo);
 
-VOID p2pDevFsmRunEventMgmtTx(IN P_ADAPTER_T prAdapter, IN P_MSG_HDR_T prMsgHdr);
+void p2pDevFsmRunEventMgmtTx(IN struct ADAPTER *prAdapter, IN struct MSG_HDR *prMsgHdr);
 
-WLAN_STATUS
-p2pDevFsmRunEventMgmtFrameTxDone(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduInfo, IN ENUM_TX_RESULT_CODE_T
+uint32_t
+p2pDevFsmRunEventMgmtFrameTxDone(IN struct ADAPTER *prAdapter, IN struct MSDU_INFO *prMsduInfo, IN enum ENUM_TX_RESULT_CODE
 				 rTxDoneStatus);
 
-VOID p2pDevFsmRunEventMgmtFrameRegister(IN P_ADAPTER_T prAdapter, IN P_MSG_HDR_T prMsgHdr);
+void p2pDevFsmRunEventMgmtFrameRegister(IN struct ADAPTER *prAdapter, IN struct MSG_HDR *prMsgHdr);
 
 /* /////////////////////////////// */
 
-VOID p2pDevFsmRunEventActiveDevBss(IN P_ADAPTER_T prAdapter, IN P_MSG_HDR_T prMsgHdr);
+void p2pDevFsmRunEventActiveDevBss(IN struct ADAPTER *prAdapter, IN struct MSG_HDR *prMsgHdr);
 
