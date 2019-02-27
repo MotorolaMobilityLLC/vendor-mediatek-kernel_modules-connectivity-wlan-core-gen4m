@@ -109,7 +109,7 @@ enum {
 struct ESS_SCAN_RESULT_T {
 	uint8_t aucBSSID[MAC_ADDR_LEN];
 	uint16_t u2SSIDLen;
-	uint8_t aucSSID[32];
+	uint8_t aucSSID[PARAM_MAX_LEN_SSID];
 };
 
 struct WLAN_INFO {
