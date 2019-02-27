@@ -333,7 +333,6 @@ VOID aisFsmInit(IN P_ADAPTER_T prAdapter)
 	prAisBssInfo->ucPrimaryChannel = 1;
 	prAisBssInfo->prStaRecOfAP = (P_STA_RECORD_T) NULL;
 	prAisBssInfo->ucNss = wlanGetSupportNss(prAdapter, prAisBssInfo->ucBssIndex);
-	prAisBssInfo->eDBDCBand = ENUM_BAND_0;
 	prAisBssInfo->ucWmmQueSet = (prAdapter->rWifiVar.eDbdcMode ==
 		ENUM_DBDC_MODE_DISABLED) ? DBDC_5G_WMM_INDEX : DBDC_2G_WMM_INDEX;
 
@@ -3500,10 +3499,6 @@ VOID aisFsmRunEventChGrant(IN P_ADAPTER_T prAdapter, IN P_MSG_HDR_T prMsgHdr)
 
 	ucTokenID = prMsgChGrant->ucTokenID;
 	u4GrantInterval = prMsgChGrant->u4GrantInterval;
-#if CFG_SUPPORT_DBDC
-	if (prAisBssInfo->eDBDCBand == ENUM_BAND_AUTO)
-		prAisBssInfo->eDBDCBand = prMsgChGrant->eDBDCBand;
-#endif
 
 #if CFG_SISO_SW_DEVELOP
 	/* Driver record granted CH in BSS info */
