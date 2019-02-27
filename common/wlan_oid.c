@@ -7745,8 +7745,10 @@ uint32_t wlanoidSetPacketFilter(struct ADAPTER *prAdapter, void *pvPacketFiltr,
 		prSetRxPacketFilter->u4RxPacketFilter &=
 			~(PARAM_PACKET_FILTER_MULTICAST | PARAM_PACKET_FILTER_ALL_MULTICAST);
 #endif
-	DBGLOG(OID, INFO, "[MC debug] u4PacketFilter=%x, IsSuspend=%d\n", prSetRxPacketFilter->u4RxPacketFilter,
-				prAdapter->prGlueInfo->fgIsInSuspendMode);
+	DBGLOG_LIMITED(OID, INFO,
+			"[MC debug] u4PacketFilter=%x, IsSuspend=%d\n",
+			prSetRxPacketFilter->u4RxPacketFilter,
+			prAdapter->prGlueInfo->fgIsInSuspendMode);
 	return wlanSendSetQueryCmd(prAdapter,
 				   CMD_ID_SET_RX_FILTER,
 				   TRUE,

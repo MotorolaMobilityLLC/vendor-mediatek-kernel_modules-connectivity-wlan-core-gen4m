@@ -2835,7 +2835,7 @@ static int mtk_wlan_cfg_testmode_cmd(struct wiphy *wiphy, void *data, int len)
 
 	/* Clear the version byte */
 	prParams->index = prParams->index & ~BITS(24, 31);
-	DBGLOG(INIT, INFO, "params index=%x\n", prParams->index);
+	DBGLOG(INIT, TRACE, "params index=%x\n", prParams->index);
 
 	switch (prParams->index) {
 	case TESTMODE_CMD_ID_SW_CMD:	/* SW cmd */
@@ -5641,12 +5641,12 @@ int mtk_cfg_get_txpower(struct wiphy *wiphy, struct wireless_dev *wdev,
 	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wiphy);
 
 	if ((!prGlueInfo) || (prGlueInfo->u4ReadyFlag == 0)) {
-		DBGLOG_LIMITED(REQ, WARN, "driver is not ready\n");
+		DBGLOG_LIMITED(REQ, TRACE, "driver is not ready\n");
 		return -EFAULT;
 	}
 
 	if (mtk_IsP2PNetDevice(prGlueInfo, wdev->netdev) <= 0) {
-		DBGLOG_LIMITED(REQ, WARN,
+		DBGLOG_LIMITED(REQ, TRACE,
 			"STA doesn't support this function\n");
 		return -EFAULT;
 	}

@@ -1064,7 +1064,8 @@ static void wlanSetMulticastListWorkQueue(struct work_struct *work)
 		return;
 	}
 
-	DBGLOG(INIT, INFO, "wlanSetMulticastListWorkQueue prDev->flags:0x%x\n", prDev->flags);
+	DBGLOG(INIT, TRACE, "wlanSetMulticastListWorkQueue prDev->flags:0x%x\n",
+			    prDev->flags);
 
 	if (prDev->flags & IFF_PROMISC)
 		u4PacketFilter |= PARAM_PACKET_FILTER_PROMISCUOUS;
