@@ -250,10 +250,8 @@
 extern u_int8_t fgIsBusAccessFailed;
 extern const struct ieee80211_iface_combination *p_mtk_iface_combinations_sta;
 extern const int32_t mtk_iface_combinations_sta_num;
-#if CFG_ENABLE_UNIFY_WIPHY
 extern const struct ieee80211_iface_combination *p_mtk_iface_combinations_p2p;
 extern const int32_t mtk_iface_combinations_p2p_num;
-#endif
 
 /*******************************************************************************
 *                              C O N S T A N T S
