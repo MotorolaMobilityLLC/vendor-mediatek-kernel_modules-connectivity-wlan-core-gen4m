@@ -3213,19 +3213,46 @@ uint32_t nicCfgChipCapPhyCap(IN struct ADAPTER *prAdapter,
 	struct CAP_PHY_CAP *prPhyCap = (struct CAP_PHY_CAP *)pucEventBuf;
 
 	prAdapter->rWifiVar.ucStaVht &= prPhyCap->ucVht;
+	wlanCfgSetUint32(prAdapter, "StaVHT", prAdapter->rWifiVar.ucStaVht);
 	prAdapter->rWifiVar.ucApVht &= prPhyCap->ucVht;
+	wlanCfgSetUint32(prAdapter, "ApVHT", prAdapter->rWifiVar.ucStaVht);
 	prAdapter->rWifiVar.ucP2pGoVht &= prPhyCap->ucVht;
+	wlanCfgSetUint32(prAdapter, "P2pGoVHT", prAdapter->rWifiVar.ucStaVht);
 	prAdapter->rWifiVar.ucP2pGcVht &= prPhyCap->ucVht;
+	wlanCfgSetUint32(prAdapter, "P2pGcVHT", prAdapter->rWifiVar.ucStaVht);
 	prAdapter->fgIsHw5GBandDisabled = !prPhyCap->uc5gBand;
 	prAdapter->rWifiVar.ucNSS = prPhyCap->ucNss;
+	wlanCfgSetUint32(prAdapter, "Nss", prAdapter->rWifiVar.ucStaVht);
 #if CFG_SUPPORT_DBDC
-	if (!prPhyCap->ucDbdc)
+	if (!prPhyCap->ucDbdc) {
 		prAdapter->rWifiVar.eDbdcMode = ENUM_DBDC_MODE_DISABLED;
+		wlanCfgSetUint32(prAdapter, "DbdcMode",
+					prAdapter->rWifiVar.eDbdcMode);
+	}
 #endif
 	prAdapter->rWifiVar.ucTxLdpc &= prPhyCap->ucTxLdpc;
+	wlanCfgSetUint32(prAdapter, "LdpcTx", prAdapter->rWifiVar.ucTxLdpc);
 	prAdapter->rWifiVar.ucRxLdpc &= prPhyCap->ucRxLdpc;
+	wlanCfgSetUint32(prAdapter, "LdpcRx", prAdapter->rWifiVar.ucRxLdpc);
 	prAdapter->rWifiVar.ucTxStbc &= prPhyCap->ucTxStbc;
+	wlanCfgSetUint32(prAdapter, "StbcTx", prAdapter->rWifiVar.ucTxStbc);
 	prAdapter->rWifiVar.ucRxStbc &= prPhyCap->ucRxStbc;
+	wlanCfgSetUint32(prAdapter, "StbcRx", prAdapter->rWifiVar.ucRxStbc);
+
+	DBGLOG(INIT, TRACE,
+		"Vht [%u], 5gBand [%d], Nss [%d], Dbdc [%d]\n",
+			prPhyCap->ucVht,
+			prPhyCap->uc5gBand,
+			prPhyCap->ucNss,
+			prPhyCap->ucDbdc);
+
+	DBGLOG(INIT, TRACE,
+		"TxLdpc [%u], RxLdpc [%u], StbcTx [%u], StbcRx [%u]\n",
+			prPhyCap->ucTxLdpc,
+			prPhyCap->ucRxLdpc,
+			prPhyCap->ucTxStbc,
+			prPhyCap->ucRxStbc);
+
 
 	return WLAN_STATUS_SUCCESS;
 }
