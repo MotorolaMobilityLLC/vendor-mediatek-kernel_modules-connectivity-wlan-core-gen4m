@@ -170,6 +170,9 @@
 
 #define PRIV_CMD_SET_SER                37
 
+/* Get FW manifest version */
+#define  PRIV_CMD_GET_FW_VERSION        38
+
 /* 802.3 Objects (Ethernet) */
 #define OID_802_3_CURRENT_ADDRESS           0x01010102
 
