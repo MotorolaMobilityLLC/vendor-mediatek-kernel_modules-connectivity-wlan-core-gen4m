@@ -101,6 +101,8 @@ void asicLowPowerOwnRead(IN struct ADAPTER *prAdapter, OUT u_int8_t *pfgResult);
 void asicLowPowerOwnSet(IN struct ADAPTER *prAdapter, OUT u_int8_t *pfgResult);
 void asicLowPowerOwnClear(IN struct ADAPTER *prAdapter, OUT u_int8_t *pfgResult);
 void asicGetMailboxStatus(IN struct ADAPTER *prAdapter, OUT uint32_t *pu4Val);
+void asicSetDummyReg(struct GLUE_INFO *prGlueInfo);
+void asicCheckDummyReg(struct GLUE_INFO *prGlueInfo);
 #endif /* _HIF_PCIE */
 
 #if defined(_HIF_USB)

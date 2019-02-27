@@ -201,6 +201,8 @@ struct BUS_INFO connac_bus_info = {
 	.lowPowerOwnSet = asicLowPowerOwnSet,
 	.lowPowerOwnClear = asicLowPowerOwnClear,
 	.getMailboxStatus = asicGetMailboxStatus,
+	.setDummyReg = asicSetDummyReg,
+	.checkDummyReg = asicCheckDummyReg,
 #endif /* _HIF_PCIE */
 #if defined(_HIF_USB)
 	.u4UdmaWlCfg_0_Addr = CONNAC_UDMA_WLCFG_0,

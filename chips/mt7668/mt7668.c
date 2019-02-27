@@ -351,6 +351,8 @@ struct BUS_INFO mt7668_bus_info = {
 	.lowPowerOwnSet = mt7668LowPowerOwnSet,
 	.lowPowerOwnClear = mt7668LowPowerOwnClear,
 	.getMailboxStatus = NULL,
+	.setDummyReg = NULL,
+	.checkDummyReg = NULL,
 #endif /* _HIF_PCIE */
 #if defined(_HIF_USB)
 	.u4UdmaWlCfg_0_Addr = UDMA_WLCFG_0,

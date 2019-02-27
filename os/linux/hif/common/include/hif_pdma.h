@@ -148,10 +148,13 @@
 #define DMA_BITS_OFFSET		32
 
 #define DMA_DONE_WAITING_TIME   10
-#define DMA_DONE_WAITING_COUNT  100
+#define DMA_DONE_WAITING_COUNT  200
 
 #define MT_TX_RING_BASE_EXT WPDMA_TX_RING0_BASE_PTR_EXT
 #define MT_RX_RING_BASE_EXT WPDMA_RX_RING0_BASE_PTR_EXT
+
+#define PDMA_DUMMY_RESET_VALUE  0x0F
+#define PDMA_DUMMY_MAGIC_NUM    0x13
 
 /*******************************************************************************
 *                                 M A C R O S
@@ -301,7 +304,6 @@ struct RTMP_RX_RING {
 	struct RTMP_DMACB Cell[RX_RING_SIZE];
 	uint32_t RxCpuIdx;
 	uint32_t RxDmaIdx;
-	int32_t RxSwReadIdx;	/* software next read index */
 	uint32_t u4BufSize;
 	uint32_t u4RingSize;
 	u_int8_t fgRxSegPkt;
@@ -364,11 +366,59 @@ struct ERR_RECOVERY_CTRL_T {
 	uint32_t u4Status;
 };
 
+/*******************************************************************************
+*                   F U N C T I O N   D E C L A R A T I O N S
+********************************************************************************
+*/
+
+void halHifRst(struct GLUE_INFO *prGlueInfo);
+bool halWpdmaAllocRing(struct GLUE_INFO *prGlueInfo);
+void halWpdmaFreeRing(struct GLUE_INFO *prGlueInfo);
+void halWpdmaInitRing(struct GLUE_INFO *prGlueInfo);
+void halWpdmaInitTxRing(IN struct GLUE_INFO *prGlueInfo);
+void halWpdmaInitRxRing(IN struct GLUE_INFO *prGlueInfo);
+void halWpdmaProcessCmdDmaDone(IN struct GLUE_INFO *prGlueInfo,
+			       IN uint16_t u2Port);
+void halWpdmaProcessDataDmaDone(IN struct GLUE_INFO *prGlueInfo,
+				IN uint16_t u2Port);
+uint32_t halWpdmaGetRxDmaDoneCnt(IN struct GLUE_INFO *prGlueInfo,
+				 IN uint8_t ucRingNum);
+void halInitMsduTokenInfo(IN struct ADAPTER *prAdapter);
+void halUninitMsduTokenInfo(IN struct ADAPTER *prAdapter);
+uint32_t halGetMsduTokenFreeCnt(IN struct ADAPTER *prAdapter);
+struct MSDU_TOKEN_ENTRY *halGetMsduTokenEntry(IN struct ADAPTER *prAdapter,
+					      uint32_t u4TokenNum);
+struct MSDU_TOKEN_ENTRY *halAcquireMsduToken(IN struct ADAPTER *prAdapter);
+void halReturnMsduToken(IN struct ADAPTER *prAdapter, uint32_t u4TokenNum);
+void halTxUpdateCutThroughDesc(struct GLUE_INFO *prGlueInfo,
+			       struct MSDU_INFO *prMsduInfo,
+			       struct MSDU_TOKEN_ENTRY *prToken);
+u_int8_t halIsStaticMapBusAddr(IN uint32_t u4Addr);
+u_int8_t halChipToStaticMapBusAddr(IN struct GLUE_INFO *prGlueInfo,
+				   IN uint32_t u4ChipAddr,
+				   OUT uint32_t *pu4BusAddr);
+u_int8_t halGetDynamicMapReg(IN struct GLUE_INFO *prGlueInfo,
+			     IN uint32_t u4ChipAddr, OUT uint32_t *pu4Value);
+u_int8_t halSetDynamicMapReg(IN struct GLUE_INFO *prGlueInfo,
+			     IN uint32_t u4ChipAddr, IN uint32_t u4Value);
+void halConnacWpdmaConfig(struct GLUE_INFO *prGlueInfo, u_int8_t enable);
+void halConnacEnableInterrupt(IN struct ADAPTER *prAdapter);
+u_int8_t halWpdmaWriteCmd(IN struct GLUE_INFO *prGlueInfo,
+			  IN struct CMD_INFO *prCmdInfo, IN uint8_t ucTC);
+u_int8_t halWpdmaWriteData(IN struct GLUE_INFO *prGlueInfo,
+			   IN struct MSDU_INFO *prMsduInfo);
+void halHwRecoveryFromError(IN struct ADAPTER *prAdapter);
+
+void kalPciUnmapToDev(IN struct GLUE_INFO *prGlueInfo, IN dma_addr_t rDmaAddr,
+		      IN uint32_t u4Length);
+u_int8_t kalDevReadData(IN struct GLUE_INFO *prGlueInfo, IN uint16_t u2Port,
+			IN OUT struct SW_RFB *prSwRfb);
+u_int8_t kalDevKickCmd(IN struct GLUE_INFO *prGlueInfo);
 void kalDumpTxRing(struct GLUE_INFO *prGlueInfo,
-		struct RTMP_TX_RING *prTxRing, uint32_t u4Num);
+		   struct RTMP_TX_RING *prTxRing, uint32_t u4Num);
 void kalDumpRxRing(struct GLUE_INFO *prGlueInfo,
-		       struct RTMP_RX_RING *prRxRing, uint32_t u4Num);
+		   struct RTMP_RX_RING *prRxRing, uint32_t u4Num);
 void kalDumpRxRingDebugLog(struct GLUE_INFO *prGlueInfo,
-				  struct RTMP_RX_RING *prRxRing,
-				  uint32_t u4RingSize);
+			   struct RTMP_RX_RING *prRxRing,
+			   uint32_t u4RingSize);
 #endif /* HIF_PDMA_H__ */

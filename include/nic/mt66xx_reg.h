@@ -426,6 +426,9 @@ extern struct mt66xx_hif_driver_data mt66xx_driver_data_connac;
 /* HIF Sys Revision */
 #define HIF_SYS_REV						(PCIE_HIF_BASE + 0x0000)
 
+/* Check Enter Slepp Mode Register */
+#define CONN_DUMMY_CR					(PCIE_HIF_BASE + 0x00A8)
+
 #define CONN_HIF_RST					(PCIE_HIF_BASE + 0x0100)
 
 #define WPDMA_FIFO_TEST_MOD				(PCIE_HIF_BASE + 0x0140)
