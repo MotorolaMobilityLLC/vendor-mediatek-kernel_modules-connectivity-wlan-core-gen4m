@@ -2971,20 +2971,20 @@ struct IE_MTK_OUI {
 	uint8_t aucInfoElem[1];
 } __KAL_ATTRIB_PACKED__;
 
-struct SUB_IE_BSS_TERM_DURATION_T {
+struct SUB_IE_BSS_TERM_DURATION {
 	uint8_t ucSubId;
 	uint8_t ucLength;
 	uint8_t aucTermTsf[8];
 	uint16_t u2Duration;
 } __KAL_ATTRIB_PACKED__;
 
-struct SUB_IE_BSS_CAND_PREFERENCE_T {
+struct SUB_IE_BSS_CAND_PREFERENCE {
 	uint8_t ucSubId;
 	uint8_t ucLength;
 	uint8_t ucPreference;
 } __KAL_ATTRIB_PACKED__;
 
-struct ACTION_BTM_QUERY_FRAME_T {
+struct ACTION_BTM_QUERY_FRAME {
 	/* MAC header */
 	uint16_t u2FrameCtrl;	/* Frame Control */
 	uint16_t u2Duration; /* Duration */
@@ -3001,7 +3001,7 @@ struct ACTION_BTM_QUERY_FRAME_T {
 	uint8_t *pucNeighborBss;
 } __KAL_ATTRIB_PACKED__;
 
-struct ACTION_BTM_REQ_FRAME_T {
+struct ACTION_BTM_REQ_FRAME {
 	/* MAC header */
 	uint16_t u2FrameCtrl;	/* Frame Control */
 	uint16_t u2Duration; /* Duration */
@@ -3023,7 +3023,7 @@ struct ACTION_BTM_REQ_FRAME_T {
 	*/
 } __KAL_ATTRIB_PACKED__;
 
-struct ACTION_BTM_RSP_FRAME_T {
+struct ACTION_BTM_RSP_FRAME {
 	/* MAC header */
 	uint16_t u2FrameCtrl;	/* Frame Control */
 	uint16_t u2Duration; /* Duration */
@@ -3042,7 +3042,7 @@ struct ACTION_BTM_RSP_FRAME_T {
 	/* Optional Target BSSID and Transition Candidate Entry list */
 } __KAL_ATTRIB_PACKED__;
 
-struct IE_MOBILITY_DOMAIN_T {
+struct IE_MOBILITY_DOMAIN {
 	uint8_t ucId; /* Element ID = 54 */
 	uint8_t ucLength; /* Length is 3 */
 	uint16_t u2MDID;
@@ -3052,7 +3052,7 @@ struct IE_MOBILITY_DOMAIN_T {
 	uint8_t ucBitMap;
 } __KAL_ATTRIB_PACKED__;
 
-struct IE_FAST_TRANSITION_T {
+struct IE_FAST_TRANSITION {
 	uint8_t ucId; /* Element ID = 55 */
 	uint8_t ucLength; /* Length is variable */
 	/* Bit 0 ~ Bit 7: reserved; Bit 8 ~ Bit 15: IE count
@@ -3065,14 +3065,14 @@ struct IE_FAST_TRANSITION_T {
 	uint8_t aucOptParam[0];
 } __KAL_ATTRIB_PACKED__;
 
-struct SUB_IE_FAST_TRANSITION_T {
+struct SUB_IE_FAST_TRANSITION {
 	uint8_t ucSubId;  /* 0, 4-255: reserved; 1: R1KH-ID; 2: GTK; 3: R0KH-ID
 			     */
 	uint8_t ucLength; /* bytes, R1KH-ID: 6; GTK: 15-42; R0KH-ID: 1-48 */
 	uint8_t aucData[1];
 } __KAL_ATTRIB_PACKED__;
 
-struct SUB_IE_GTK_T {
+struct SUB_IE_GTK {
 	uint8_t ucSubId; /*  subId=2 */
 	uint8_t ucLength; /*  length is 15-42 */
 	uint16_t u2KeyInfo; /* Bit0-Bit1: Key ID; Bit2-Bit15: reserved */
@@ -3120,20 +3120,20 @@ struct ACTION_LM_REPORT_FRAME {
 	uint8_t aucInfoElem[1];	/* subelements */
 } __KAL_ATTRIB_PACKED__;
 
-struct IE_REQUEST_T {
+struct IE_REQUEST {
 	uint8_t ucId; /* ELEM_ID_REQUEST */
 	uint8_t ucLength; /* 0 to 237 */
 	uint8_t aucReqIds[0];
 } __KAL_ATTRIB_PACKED__;
 
-struct IE_AP_CHNL_REPORT_T {
+struct IE_AP_CHNL_REPORT {
 	uint8_t ucId; /* ELEM_ID_AP_CHANNEL_REPORT */
 	uint8_t ucLength; /* 1 to 237 */
 	uint8_t ucOpClass;
 	uint8_t aucChnlList[0];
 } __KAL_ATTRIB_PACKED__;
 
-struct SUB_IE_REPORTING_DETAIL_T {
+struct SUB_IE_REPORTING_DETAIL {
 	uint8_t ucSubID; /* 2 */
 	uint8_t ucLength;
 	/* 0: No fixed length fields or elemets. 1: all fixed length fields and

@@ -5070,6 +5070,8 @@ void rlmProcessNeighborReportResonse(struct ADAPTER *prAdapter,
 		u2PacketLen - OFFSET_OF(struct ACTION_NEIGHBOR_REPORT_FRAME,
 					aucInfoElem),
 		0);
+	glNotifyDrvStatus(NEIGHBOR_AP_REP,
+			  (void *)&prAdapter->rWifiVar.rAisSpecificBssInfo);
 }
 
 void rlmTxNeighborReportRequest(struct ADAPTER *prAdapter,
@@ -5553,7 +5555,7 @@ u_int8_t rlmFillScanMsg(struct ADAPTER *prAdapter,
 			IE_FOR_EACH(pucIE, u2IELength, u2Offset) {
 				if (IE_ID(pucIE) != ELEM_ID_AP_CHANNEL_REPORT)
 					continue;
-				pucChnl = ((struct IE_AP_CHNL_REPORT_T *)pucIE)
+				pucChnl = ((struct IE_AP_CHNL_REPORT *)pucIE)
 						  ->aucChnlList;
 				ucChnlNum = pucIE[1] - 1;
 				DBGLOG(RLM, INFO,
@@ -5611,8 +5613,8 @@ u_int8_t rlmFillScanMsg(struct ADAPTER *prAdapter,
 			break;
 		case 51: /* AP channel report */
 		{
-			struct IE_AP_CHNL_REPORT_T *prApChnl =
-				(struct IE_AP_CHNL_REPORT_T *)pucSubIE;
+			struct IE_AP_CHNL_REPORT *prApChnl =
+				(struct IE_AP_CHNL_REPORT *)pucSubIE;
 			uint8_t ucChannelCnt = prApChnl->ucLength - 1;
 			uint8_t ucIndex = 0;
 
@@ -6002,7 +6004,7 @@ void rlmSetMaxTxPwrLimit(IN struct ADAPTER *prAdapter, int8_t cLimit,
 			cLimit * 2; /* unit of cMaxTxPwr is 0.5 dBm */
 		rTxPwrLimit.cMinTxPwr = RLM_MIN_TX_PWR * 2;
 	} else
-		DBGLOG(RLM, INFO, "LM: Disable Tx Power Limit\n");
+		DBGLOG(RLM, TRACE, "LM: Disable Tx Power Limit\n");
 	wlanSendSetQueryCmd(prAdapter, CMD_ID_SET_AP_CONSTRAINT_PWR_LIMIT, TRUE,
 			    FALSE, FALSE, nicCmdEventSetCommon,
 			    nicOidCmdTimeoutCommon,
@@ -6179,8 +6181,8 @@ static void rlmCollectBeaconReport(IN struct ADAPTER *prAdapter,
 			break;
 		case 10: /* Request Elements */
 		{
-			struct IE_REQUEST_T *prIe =
-				(struct IE_REQUEST_T *)pucSubIE;
+			struct IE_REQUEST *prIe =
+				(struct IE_REQUEST *)pucSubIE;
 
 			pucReportIeIds = prIe->aucReqIds;
 			ucReportIeIdsLen = prIe->ucLength;

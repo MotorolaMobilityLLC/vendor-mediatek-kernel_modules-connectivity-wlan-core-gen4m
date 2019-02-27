@@ -117,6 +117,7 @@ static uint8_t *apucDebugRoamingState[ROAMING_STATE_NUM] = {
 static void roamingWaitCandidateTimeout(IN struct ADAPTER *prAdapter,
 					unsigned long ulParamPtr)
 {
+	glNotifyDrvStatus(SND_NEI_REQ_TIMEOUT, NULL);
 	DBGLOG(ROAMING, INFO,
 	       "Time out, Waiting for neighbor response");
 
@@ -591,6 +592,7 @@ void roamingFsmRunEventDiscovery(IN struct ADAPTER *prAdapter,
 	    ROAMING_STATE_DECISION)
 		return;
 
+	glNotifyDrvStatus(RCV_FW_ROAMING, NULL);
 	eNextState = ROAMING_STATE_REQ_CAND_LIST;
 	/* DECISION -> DISCOVERY */
 	if (eNextState != prRoamingFsmInfo->eCurrentState) {

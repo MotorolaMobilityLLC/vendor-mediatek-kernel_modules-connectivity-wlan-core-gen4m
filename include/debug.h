@@ -197,7 +197,7 @@ struct WLAN_DEBUG_INFO {
 enum DRV_STATUS_T {
 	SND_BTM_QUERY,
 	SND_NEI_REQ,
-	SND_BTM_QUERY_TIMEOUT,
+	SND_NEI_REQ_TIMEOUT,
 	UNSOL_BTM_REQ,
 	SOL_BTM_REQ,
 	NEIGHBOR_AP_REP,
@@ -467,6 +467,7 @@ u_int8_t wlanDbgSetGlobalLogLevel(uint32_t u4Module, uint32_t u4Level);
 
 void wlanFillTimestamp(struct ADAPTER *prAdapter, void *pvPacket,
 		       uint8_t ucPhase);
+void glNotifyDrvStatus(enum DRV_STATUS_T eDrvStatus, void *pvInfo);
 /*******************************************************************************
  *                              F U N C T I O N S
  *******************************************************************************

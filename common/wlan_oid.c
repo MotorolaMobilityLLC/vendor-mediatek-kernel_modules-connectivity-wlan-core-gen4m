@@ -14081,11 +14081,11 @@ uint32_t wlanoidUpdateFtIes(struct ADAPTER *prAdapter, void *pvSetBuffer,
 		switch (pucIEStart[0]) {
 		case ELEM_ID_MOBILITY_DOMAIN:
 			prFtIes->prMDIE =
-				(struct IE_MOBILITY_DOMAIN_T *)pucIEStart;
+				(struct IE_MOBILITY_DOMAIN *)pucIEStart;
 			break;
 		case ELEM_ID_FAST_TRANSITION:
 			prFtIes->prFTIE =
-				(struct IE_FAST_TRANSITION_T *)pucIEStart;
+				(struct IE_FAST_TRANSITION *)pucIEStart;
 			break;
 		case ELEM_ID_RESOURCE_INFO_CONTAINER:
 			break;
@@ -14593,8 +14593,8 @@ uint32_t wlanoidFwEventIT(struct ADAPTER *prAdapter, void *pvBuffer,
 		GLUE_RELEASE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_CMD_QUE);
 		/* roamingFsmRunEventDiscovery has sent a btm query frame */
 		if (ucFrameType == 2) {
-			struct ACTION_BTM_QUERY_FRAME_T *prBtmQuery =
-				(struct ACTION_BTM_QUERY_FRAME_T *)prAction;
+			struct ACTION_BTM_QUERY_FRAME *prBtmQuery =
+				(struct ACTION_BTM_QUERY_FRAME *)prAction;
 
 			/* IT string may be "Roaming <btm request packet
 			** string>", to reuse btm it function,
@@ -14614,7 +14614,7 @@ uint32_t wlanoidFwEventIT(struct ADAPTER *prAdapter, void *pvBuffer,
 				if (pucCmd[i] == ',')
 					ucRCPI++;
 				if (ucRCPI ==
-				    OFFSET_OF(struct ACTION_BTM_QUERY_FRAME_T,
+				    OFFSET_OF(struct ACTION_BTM_QUERY_FRAME,
 					      ucDialogToken))
 					break;
 			}
