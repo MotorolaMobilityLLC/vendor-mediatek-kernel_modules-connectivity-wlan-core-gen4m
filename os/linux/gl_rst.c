@@ -110,6 +110,19 @@ static void *glResetCallback(ENUM_WMTDRV_TYPE_T eSrcType,
 *                              F U N C T I O N S
 ********************************************************************************
 */
+/* Weak reference for those platform doesn't support wmt functions */
+BOOLEAN __weak mtk_wcn_stp_coredump_start_get(VOID)
+{
+	return FALSE;
+}
+
+
+/*0= f/w assert flag is not set, others=f/w assert flag is set */
+BOOLEAN glIsWmtCodeDump(VOID)
+{
+	return mtk_wcn_stp_coredump_start_get();
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
  * @brief This routine is responsible for
