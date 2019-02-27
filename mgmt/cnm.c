@@ -424,6 +424,11 @@ VOID cnmRadarDetectEvent(IN P_ADAPTER_T prAdapter, IN P_WIFI_EVENT_T prEvent)
 	prP2pRddDetMsg = (P_MSG_P2P_RADAR_DETECT_T) cnmMemAlloc(prAdapter,
 					RAM_TYPE_MSG, sizeof(*prP2pRddDetMsg));
 
+	if (!prP2pRddDetMsg) {
+		DBGLOG(CNM, ERROR, "cnmMemAlloc for prP2pRddDetMsg failed!\n");
+		return;
+	}
+
 	prP2pRddDetMsg->rMsgHdr.eMsgId = MID_CNM_P2P_RADAR_DETECT;
 
 	for (ucBssIndex = 0; ucBssIndex < BSS_DEFAULT_NUM; ucBssIndex++) {
@@ -470,6 +475,11 @@ VOID cnmCsaDoneEvent(IN P_ADAPTER_T prAdapter, IN P_WIFI_EVENT_T prEvent)
 
 	prP2pCsaDoneMsg = (P_MSG_P2P_CSA_DONE_T) cnmMemAlloc(prAdapter,
 					RAM_TYPE_MSG, sizeof(*prP2pCsaDoneMsg));
+
+	if (!prP2pCsaDoneMsg) {
+		DBGLOG(CNM, ERROR, "cnmMemAlloc for prP2pCsaDoneMsg failed!\n");
+		return;
+	}
 
 	prAdapter->rWifiVar.fgCsaInProgress = FALSE;
 
