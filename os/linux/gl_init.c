@@ -2798,7 +2798,15 @@ static int32_t wlanProbe(void *pvData, void *pvDriverData)
 		log_dbg(INIT, TRACE, "prGlueInfo->fgNvramAvailable = %d\n",
 			prGlueInfo->fgNvramAvailable);
 
-		/* P_REG_INFO_T prRegInfo = (P_REG_INFO_T) kmalloc(sizeof(REG_INFO_T), GFP_KERNEL); */
+		if (prGlueInfo->fgNvramAvailable == FALSE) {
+		/* P_REG_INFO_T prRegInfo = (P_REG_INFO_T)
+		 * kmalloc(sizeof(REG_INFO_T), GFP_KERNEL);
+		 */
+			DBGLOG(INIT, WARN, "glLoadNvram Again\n");
+			kalMemSet(prRegInfo, 0, sizeof(grRegInfo));
+			glLoadNvram(prRegInfo);
+			prGlueInfo->fgNvramAvailable = g_fgNvramAvailable;
+		}
 
 		/* Trigger the action of switching Pwr state to drv_own */
 		prAdapter->fgIsFwOwn = TRUE;
