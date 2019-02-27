@@ -185,6 +185,7 @@ struct GL_HIF_INFO {
 	struct timer_list rSerTimer;
 	struct list_head rTxCmdQ;
 	struct list_head rTxDataQ;
+	uint32_t u4TxDataQLen;
 	spinlock_t rTxCmdQLock;
 	spinlock_t rTxDataQLock;
 
@@ -198,8 +199,8 @@ struct BUS_INFO {
 	const unsigned int tx_ring_cmd_idx;
 	const unsigned int tx_ring_fwdl_idx;
 	const unsigned int tx_ring_data_idx;
-	const u_int8_t fgCheckDriverOwnInt;
-	const u_int8_t fgInitPCIeInt;
+	const bool fgCheckDriverOwnInt;
+	const bool fgInitPCIeInt;
 	const uint32_t u4DmaMask;
 
 	void (*pdmaSetup)(struct GLUE_INFO *prGlueInfo, u_int8_t enable);

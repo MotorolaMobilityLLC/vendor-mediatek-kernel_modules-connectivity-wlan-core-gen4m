@@ -341,14 +341,14 @@ void fillTxDescAppendByHost(IN struct ADAPTER *prAdapter,
 			>> 1];
 	if ((u4Idx & 1) == 0) {
 		prPtrLen->u4Ptr0 = rDmaAddr;
-		prPtrLen->u2Len0 = prMsduInfo->u2FrameLength;
+		prPtrLen->u2Len0 = prMsduInfo->u2FrameLength | TXD_LEN_ML;
 		if (fgIsLast)
-			prPtrLen->u2Len0 |= TXD_LEN_AL | TXD_LEN_ML;
+			prPtrLen->u2Len0 |= TXD_LEN_AL;
 	} else {
 		prPtrLen->u4Ptr1 = rDmaAddr;
-		prPtrLen->u2Len1 = prMsduInfo->u2FrameLength;
+		prPtrLen->u2Len1 = prMsduInfo->u2FrameLength | TXD_LEN_ML;
 		if (fgIsLast)
-			prPtrLen->u2Len1 |= TXD_LEN_AL | TXD_LEN_ML;
+			prPtrLen->u2Len1 |= TXD_LEN_AL;
 	}
 }
 
@@ -360,27 +360,26 @@ void fillTxDescAppendByHostV2(IN struct ADAPTER *prAdapter,
 {
 	union HW_MAC_TX_DESC_APPEND *prHwTxDescAppend;
 	struct TXD_PTR_LEN *prPtrLen;
-	uint64_t u4Addr = *((uint64_t *)&rDmaAddr);
+	uint64_t u8Addr = *((uint64_t *)&rDmaAddr);
 
 	prHwTxDescAppend = (union HW_MAC_TX_DESC_APPEND *)
 		(pucBuffer + NIC_TX_DESC_LONG_FORMAT_LENGTH);
-	prHwTxDescAppend->CONNAC_APPEND.au2MsduId[u4Idx] = u4MsduId
-			| TXD_MSDU_ID_VLD;
+	prHwTxDescAppend->CONNAC_APPEND.au2MsduId[u4Idx] =
+		u4MsduId | TXD_MSDU_ID_VLD;
 	prPtrLen = &prHwTxDescAppend->CONNAC_APPEND.arPtrLen[u4Idx >> 1];
+
 	if ((u4Idx & 1) == 0) {
-		prPtrLen->u4Ptr0 = (uint32_t)u4Addr;
+		prPtrLen->u4Ptr0 = (uint32_t)u8Addr;
 		prPtrLen->u2Len0 =
 			(prMsduInfo->u2FrameLength & TXD_LEN_MASK_V2) |
-			((u4Addr >> TXD_ADDR2_OFFSET) & TXD_ADDR2_MASK);
-		if (fgIsLast)
-			prPtrLen->u2Len0 |= TXD_LEN_ML_V2;
+			((u8Addr >> TXD_ADDR2_OFFSET) & TXD_ADDR2_MASK);
+		prPtrLen->u2Len0 |= TXD_LEN_ML_V2;
 	} else {
-		prPtrLen->u4Ptr1 = (uint32_t)u4Addr;
+		prPtrLen->u4Ptr1 = (uint32_t)u8Addr;
 		prPtrLen->u2Len1 =
 			(prMsduInfo->u2FrameLength & TXD_LEN_MASK_V2) |
-			((u4Addr >> TXD_ADDR2_OFFSET) & TXD_ADDR2_MASK);
-		if (fgIsLast)
-			prPtrLen->u2Len1 |= TXD_LEN_ML_V2;
+			((u8Addr >> TXD_ADDR2_OFFSET) & TXD_ADDR2_MASK);
+		prPtrLen->u2Len1 |= TXD_LEN_ML_V2;
 	}
 }
 

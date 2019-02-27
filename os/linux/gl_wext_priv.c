@@ -2806,6 +2806,9 @@ reqExtSetAcpiDevicePowerState(IN struct GLUE_INFO
 #define CMD_SET_MAX_RFGAIN	"SET_MAX_RFGAIN"
 #endif
 
+#define CMD_SET_SW_AMSDU_NUM      "SET_SW_AMSDU_NUM"
+#define CMD_SET_SW_AMSDU_SIZE      "SET_SW_AMSDU_SIZE"
+
 /* Debug for consys */
 #define CMD_DBG_SHOW_TR_INFO			"show-tr"
 #define CMD_DBG_SHOW_PLE_INFO			"show-ple"
@@ -11549,6 +11552,100 @@ static int priv_driver_set_maxrfgain(IN struct net_device *prNetDev,
 
 #endif
 
+static int priv_driver_set_amsdu_num(IN struct net_device *prNetDev,
+				     IN char *pcCommand, IN int i4TotalLen)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	uint32_t rStatus = WLAN_STATUS_SUCCESS;
+	uint32_t u4BufLen = 0;
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = { 0 };
+	int32_t i4Argc = 0;
+	int32_t i4BytesWritten = 0;
+	int32_t u4Ret = 0;
+	uint32_t u4Num = 0;
+
+	ASSERT(prNetDev);
+	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
+		return -1;
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+
+	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+	DBGLOG(REQ, LOUD, "argc is %i\n", i4Argc);
+
+	if (i4Argc <= 1) {
+		DBGLOG(REQ, ERROR, "Argc(%d) ERR: Sw Amsdu Num\n", i4Argc);
+		return -1;
+	}
+
+	u4Ret = kalkStrtou32(apcArgv[1], 0, &u4Num);
+	if (u4Ret)
+		DBGLOG(REQ, ERROR, "parse amsdu num error u4Ret=%d\n", u4Ret);
+
+	rStatus = kalIoctl(prGlueInfo,
+			   wlanoidSetAmsduNum,
+			   (void *)&u4Num, sizeof(uint32_t),
+			   FALSE, FALSE, FALSE, &u4BufLen);
+
+	i4BytesWritten += snprintf(pcCommand, i4TotalLen,
+				   "Set Sw Amsdu Num:%u\n", u4Num);
+
+	if (rStatus != WLAN_STATUS_SUCCESS) {
+		DBGLOG(REQ, ERROR, "ERR: kalIoctl fail (%d)\n", rStatus);
+		return -1;
+	}
+
+	return i4BytesWritten;
+
+}
+
+static int priv_driver_set_amsdu_size(IN struct net_device *prNetDev,
+				      IN char *pcCommand, IN int i4TotalLen)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	uint32_t rStatus = WLAN_STATUS_SUCCESS;
+	uint32_t u4BufLen = 0;
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = { 0 };
+	int32_t i4Argc = 0;
+	int32_t i4BytesWritten = 0;
+	int32_t u4Ret = 0;
+	uint32_t u4Size = 0;
+
+	ASSERT(prNetDev);
+	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
+		return -1;
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+
+	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+	DBGLOG(REQ, LOUD, "argc is %i\n", i4Argc);
+
+	if (i4Argc <= 1) {
+		DBGLOG(REQ, ERROR, "Argc(%d) ERR: Sw Amsdu Max Size\n", i4Argc);
+		return -1;
+	}
+
+	u4Ret = kalkStrtou32(apcArgv[1], 0, &u4Size);
+	if (u4Ret)
+		DBGLOG(REQ, ERROR, "parse amsdu size error u4Ret=%d\n", u4Ret);
+
+	rStatus = kalIoctl(prGlueInfo,
+			   wlanoidSetAmsduSize,
+			   (void *)&u4Size, sizeof(uint32_t),
+			   FALSE, FALSE, FALSE, &u4BufLen);
+
+	i4BytesWritten += snprintf(pcCommand, i4TotalLen,
+				   "Set Sw Amsdu Max Size:%u\n", u4Size);
+
+	if (rStatus != WLAN_STATUS_SUCCESS) {
+		DBGLOG(REQ, ERROR, "ERR: kalIoctl fail (%d)\n", rStatus);
+		return -1;
+	}
+
+	return i4BytesWritten;
+
+}
+
 int32_t priv_driver_cmds(IN struct net_device *prNetDev, IN int8_t *pcCommand,
 			 IN int32_t i4TotalLen)
 {
@@ -11996,6 +12093,14 @@ int32_t priv_driver_cmds(IN struct net_device *prNetDev, IN int8_t *pcCommand,
 			i4BytesWritten = priv_driver_set_maxrfgain(prNetDev,
 							pcCommand, i4TotalLen);
 #endif
+		else if (strnicmp(pcCommand, CMD_SET_SW_AMSDU_NUM,
+				strlen(CMD_SET_SW_AMSDU_NUM)) == 0)
+			i4BytesWritten = priv_driver_set_amsdu_num(
+				prNetDev, pcCommand, i4TotalLen);
+		else if (strnicmp(pcCommand, CMD_SET_SW_AMSDU_SIZE,
+				  strlen(CMD_SET_SW_AMSDU_SIZE)) == 0)
+			i4BytesWritten = priv_driver_set_amsdu_size(
+				prNetDev, pcCommand, i4TotalLen);
 		else if (strnicmp(pcCommand, CMD_DBG_SHOW_TR_INFO,
 				strlen(CMD_DBG_SHOW_TR_INFO)) == 0) {
 			kalIoctl(prGlueInfo,

@@ -114,10 +114,12 @@
  *                   F U N C T I O N   D E C L A R A T I O N S
  *******************************************************************************
  */
-static u_int8_t kalDevWriteCmdByQueue(IN struct GLUE_INFO *prGlueInfo,
-	IN struct CMD_INFO *prCmdInfo, IN uint8_t ucTC);
-static u_int8_t kalDevWriteDataByQueue(IN struct GLUE_INFO *prGlueInfo,
-	IN struct MSDU_INFO *prMsduInfo);
+static bool kalDevWriteCmdByQueue(struct GLUE_INFO *prGlueInfo,
+				  struct CMD_INFO *prCmdInfo, uint8_t ucTC);
+static bool kalDevWriteDataByQueue(struct GLUE_INFO *prGlueInfo,
+				   struct MSDU_INFO *prMsduInfo);
+static bool kalDevKickMsduData(struct GLUE_INFO *prGlueInfo);
+static bool kalDevKickAmsduData(struct GLUE_INFO *prGlueInfo);
 
 /*******************************************************************************
  *                              F U N C T I O N S
@@ -471,39 +473,40 @@ u_int8_t kalDevWriteCmd(IN struct GLUE_INFO *prGlueInfo,
 	return halWpdmaWriteCmd(prGlueInfo, prCmdInfo, ucTC);
 }
 
-static u_int8_t kalDevWriteCmdByQueue(IN struct GLUE_INFO *prGlueInfo,
-	IN struct CMD_INFO *prCmdInfo, IN uint8_t ucTC)
+static bool kalDevWriteCmdByQueue(struct GLUE_INFO *prGlueInfo,
+				  struct CMD_INFO *prCmdInfo, uint8_t ucTC)
 {
 	struct GL_HIF_INFO *prHifInfo = NULL;
+	struct TX_CMD_REQ *prTxReq;
 	unsigned long flags = 0;
-	struct TX_CMD_REQ_T *prTxReq;
 
 	ASSERT(prGlueInfo);
 	prHifInfo = &prGlueInfo->rHifInfo;
+	prTxReq = kalMemAlloc(sizeof(struct TX_CMD_REQ), PHY_MEM_TYPE);
 
 	spin_lock_irqsave(&prHifInfo->rTxCmdQLock, flags);
-
-	prTxReq = kalMemAlloc(sizeof(struct TX_CMD_REQ_T), PHY_MEM_TYPE);
 	if (prTxReq == NULL) {
 		DBGLOG(HAL, ERROR, "kmalloc() TX_CMD_REQ error\n");
 		halWpdmaWriteCmd(prGlueInfo, prCmdInfo, ucTC);
 		goto error;
 	}
+
 	prTxReq->prCmdInfo = prCmdInfo;
 	prTxReq->ucTC = ucTC;
 	list_add_tail(&prTxReq->list, &prHifInfo->rTxCmdQ);
+
 error:
 	spin_unlock_irqrestore(&prHifInfo->rTxCmdQLock, flags);
 
-	return TRUE;
+	return true;
 }
 
-u_int8_t kalDevKickCmd(IN struct GLUE_INFO *prGlueInfo)
+bool kalDevKickCmd(IN struct GLUE_INFO *prGlueInfo)
 {
 	struct GL_HIF_INFO *prHifInfo = NULL;
 	unsigned long flags = 0;
 	struct list_head *prCur, *prNext;
-	struct TX_CMD_REQ_T *prTxReq;
+	struct TX_CMD_REQ *prTxReq;
 
 	ASSERT(prGlueInfo);
 	prHifInfo = &prGlueInfo->rHifInfo;
@@ -511,7 +514,7 @@ u_int8_t kalDevKickCmd(IN struct GLUE_INFO *prGlueInfo)
 	spin_lock_irqsave(&prHifInfo->rTxCmdQLock, flags);
 
 	list_for_each_safe(prCur, prNext, &prHifInfo->rTxCmdQ) {
-		prTxReq = list_entry(prCur, struct TX_CMD_REQ_T, list);
+		prTxReq = list_entry(prCur, struct TX_CMD_REQ, list);
 		if (prTxReq->prCmdInfo)
 			halWpdmaWriteCmd(prGlueInfo,
 				prTxReq->prCmdInfo, prTxReq->ucTC);
@@ -521,49 +524,75 @@ u_int8_t kalDevKickCmd(IN struct GLUE_INFO *prGlueInfo)
 
 	spin_unlock_irqrestore(&prHifInfo->rTxCmdQLock, flags);
 
-	return TRUE;
+	return true;
+}
+
+static uint8_t kalGetSwAmsduNum(struct GLUE_INFO *prGlueInfo,
+				struct MSDU_INFO *prMsduInfo)
+{
+	struct ADAPTER *prAdapter;
+	struct sk_buff *prSkb;
+	struct HW_MAC_TX_DESC *prTxDesc;
+	struct STA_RECORD *prStaRec;
+	uint8_t ucTid, ucStaRecIndex;
+
+	ASSERT(prGlueInfo);
+	ASSERT(prMsduInfo);
+
+	prAdapter = prGlueInfo->prAdapter;
+	prSkb = (struct sk_buff *)prMsduInfo->prPacket;
+	prTxDesc = (struct HW_MAC_TX_DESC *)prSkb->data;
+
+	ucTid = HAL_MAC_TX_DESC_GET_TID(prTxDesc);
+	ucStaRecIndex = prMsduInfo->ucStaRecIndex;
+	if (ucStaRecIndex >= CFG_STA_REC_NUM || ucTid >= TX_DESC_TID_NUM)
+		return 0;
+
+	prStaRec = cnmGetStaRecByIndex(prAdapter, ucStaRecIndex);
+	if (!prStaRec || !(prStaRec->ucAmsduEnBitmap & BIT(ucTid)))
+		return 0;
+
+	return prStaRec->ucMaxMpduCount;
 }
 
 u_int8_t kalDevWriteData(IN struct GLUE_INFO *prGlueInfo,
 	IN struct MSDU_INFO *prMsduInfo)
 {
 	struct GL_HIF_INFO *prHifInfo = NULL;
-	struct BUS_INFO *prBusInfo = NULL;
+	struct mt66xx_chip_info *prChipInfo;
 
 	ASSERT(prGlueInfo);
-	prHifInfo = &prGlueInfo->rHifInfo;
-	prBusInfo = prGlueInfo->prAdapter->chip_info->bus_info;
 
-	if (prHifInfo->fgIsErrRecovery)
+	prHifInfo = &prGlueInfo->rHifInfo;
+	prChipInfo = prGlueInfo->prAdapter->chip_info;
+
+	if (prHifInfo->fgIsErrRecovery ||
+	    (prChipInfo->ucMaxSwAmsduNum > 1 &&
+	     kalGetSwAmsduNum(prGlueInfo, prMsduInfo) > 1))
 		return kalDevWriteDataByQueue(prGlueInfo, prMsduInfo);
 
-	return halWpdmaWriteData(prGlueInfo, prMsduInfo);
+	return halWpdmaWriteMsdu(prGlueInfo, prMsduInfo, NULL);
 }
 
-static u_int8_t kalDevWriteDataByQueue(IN struct GLUE_INFO *prGlueInfo,
-	IN struct MSDU_INFO *prMsduInfo)
+static bool kalDevWriteDataByQueue(IN struct GLUE_INFO *prGlueInfo,
+				   IN struct MSDU_INFO *prMsduInfo)
 {
 	struct GL_HIF_INFO *prHifInfo = NULL;
 	unsigned long flags = 0;
-	struct TX_DATA_REQ_T *prTxReq;
+	struct TX_DATA_REQ *prTxReq;
 
 	ASSERT(prGlueInfo);
 	prHifInfo = &prGlueInfo->rHifInfo;
 
 	spin_lock_irqsave(&prHifInfo->rTxDataQLock, flags);
 
-	prTxReq = kalMemAlloc(sizeof(struct TX_DATA_REQ_T), PHY_MEM_TYPE);
-	if (prTxReq == NULL) {
-		DBGLOG(HAL, ERROR, "kmalloc() TX_DATA_REQ error\n");
-		halWpdmaWriteData(prGlueInfo, prMsduInfo);
-		goto error;
-	}
+	prTxReq = &prMsduInfo->rTxReq;
 	prTxReq->prMsduInfo = prMsduInfo;
 	list_add_tail(&prTxReq->list, &prHifInfo->rTxDataQ);
+	prHifInfo->u4TxDataQLen++;
 
-error:
 	spin_unlock_irqrestore(&prHifInfo->rTxDataQLock, flags);
-	return TRUE;
+	return true;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -578,31 +607,231 @@ error:
 /*----------------------------------------------------------------------------*/
 u_int8_t kalDevKickData(IN struct GLUE_INFO *prGlueInfo)
 {
-	struct GL_HIF_INFO *prHifInfo = NULL;
-	unsigned long flags = 0;
-	struct list_head *prCur, *prNext;
-	struct TX_DATA_REQ_T *prTxReq;
+	struct mt66xx_chip_info *prChipInfo;
 
 	ASSERT(prGlueInfo);
+
+	prChipInfo = prGlueInfo->prAdapter->chip_info;
+
+	if (prChipInfo->ucMaxSwAmsduNum > 1)
+		return kalDevKickAmsduData(prGlueInfo);
+
+	return kalDevKickMsduData(prGlueInfo);
+}
+
+static uint16_t kalGetPaddingSize(uint16_t u2TxByteCount)
+{
+	uint16_t u2Size = 0;
+
+	if (u2TxByteCount & 3)
+		u2Size = 4 - (u2TxByteCount & 3);
+	return u2Size;
+}
+
+static uint16_t kalGetMoreSizeForAmsdu(uint32_t u4TxdDW1)
+{
+	/*
+	 * ETYPE=0/VLAN=0/RMVL=X PLlength = PL length
+	 * ETYPE=0/VLAN=1/RMVL=1 PLlength = PL length - 4
+	 * ETYPE=0/VLAN=1/RMVL=0 PLlength = PL length + 6
+	 * ETYPE=1/VLAN=0/RMVL=X PLlength = PL length + 8
+	 * ETYPE=1/VLAN=1/RMVL=1 PLlength = PL length + 4
+	 * ETYPE=1/VLAN=1/RMVL=0 PLlength = PL length + 14
+	 */
+	uint16_t u2Size = 0;
+
+	if (u4TxdDW1 & TXD_DW1_ETYP)
+		u2Size += 8;
+	if (u4TxdDW1 & TXD_DW1_VLAN) {
+		if (u4TxdDW1 & TXD_DW1_RMVL)
+			u2Size -= 4;
+		else
+			u2Size += 6;
+	}
+	return u2Size;
+}
+
+static bool kalDevKickMsduData(struct GLUE_INFO *prGlueInfo)
+{
+	struct GL_HIF_INFO *prHifInfo = NULL;
+	struct BUS_INFO *prBusInfo = NULL;
+	struct list_head *prCur, *prNext;
+	struct TX_DATA_REQ *prTxReq;
+	struct MSDU_INFO *prMsduInfo;
+	unsigned long flags = 0;
+	bool fgRet = true;
+
+	ASSERT(prGlueInfo);
+
 	prHifInfo = &prGlueInfo->rHifInfo;
+	prBusInfo = prGlueInfo->prAdapter->chip_info->bus_info;
 
 	spin_lock_irqsave(&prHifInfo->rTxDataQLock, flags);
 
 	list_for_each_safe(prCur, prNext, &prHifInfo->rTxDataQ) {
-		prTxReq = list_entry(prCur, struct TX_DATA_REQ_T, list);
-		if (prTxReq->prMsduInfo)
-			halWpdmaWriteData(prGlueInfo, prTxReq->prMsduInfo);
-		list_del(prCur);
-		kfree(prTxReq);
+		prTxReq = list_entry(prCur, struct TX_DATA_REQ, list);
+		prMsduInfo = prTxReq->prMsduInfo;
+		if (!prMsduInfo ||
+		    !halWpdmaWriteMsdu(prGlueInfo, prMsduInfo, prCur)) {
+			fgRet = false;
+			break;
+		}
 	}
 
 	spin_unlock_irqrestore(&prHifInfo->rTxDataQLock, flags);
 
-	return TRUE;
+	return fgRet;
 }
 
-u_int8_t kalDevReadData(IN struct GLUE_INFO *prGlueInfo,
-	IN uint16_t u2Port, IN OUT struct SW_RFB *prSwRfb)
+static int kalAmsduTxDCmp(void *prPriv, struct list_head *prList1,
+			  struct list_head *prList2)
+{
+	struct TX_DATA_REQ *prTxReq1, *prTxReq2;
+	struct sk_buff *prSkb1, *prSkb2;
+	struct AMSDU_MAC_TX_DESC *prTxD1, *prTxD2;
+
+	prTxReq1 = list_entry(prList1, struct TX_DATA_REQ, list);
+	prTxReq2 = list_entry(prList2, struct TX_DATA_REQ, list);
+	prSkb1 = (struct sk_buff *)prTxReq1->prMsduInfo->prPacket;
+	prSkb2 = (struct sk_buff *)prTxReq2->prMsduInfo->prPacket;
+	prTxD1 = (struct AMSDU_MAC_TX_DESC *)prSkb1->data;
+	prTxD2 = (struct AMSDU_MAC_TX_DESC *)prSkb2->data;
+
+	if (prTxD1->u2DW0 != prTxD2->u2DW0)
+		return prTxD2->u2DW0 - prTxD1->u2DW0;
+
+	return prTxD1->u4DW1 - prTxD2->u4DW1;
+}
+
+static bool kalIsAggregatedMsdu(struct GLUE_INFO *prGlueInfo,
+				struct MSDU_INFO *prMsduInfo)
+{
+	struct sk_buff *prSkb;
+	struct AMSDU_MAC_TX_DESC *prTxD;
+
+	prSkb = (struct sk_buff *)prMsduInfo->prPacket;
+	prTxD = (struct AMSDU_MAC_TX_DESC *)prSkb->data;
+
+	if (prTxD->u4FR || prTxD->u4TXS)
+		return false;
+	return true;
+}
+
+static uint32_t kalGetNumOfAmsdu(struct GLUE_INFO *prGlueInfo,
+				 struct list_head *prTarget,
+				 struct list_head *prHead,
+				 uint16_t *pu2Size)
+{
+	struct TX_DATA_REQ *prTxReq;
+	struct MSDU_INFO *prMsduInfo;
+	struct sk_buff *prSkb;
+	struct AMSDU_MAC_TX_DESC *prTxD;
+	struct STA_RECORD *prStaRec;
+	struct list_head *prCur;
+	uint16_t u2TotalSize, u2Size;
+	uint32_t u4Cnt = 1;
+	uint8_t ucStaRecIndex;
+
+	prTxReq = list_entry(prTarget, struct TX_DATA_REQ, list);
+	prMsduInfo = prTxReq->prMsduInfo;
+	prSkb = (struct sk_buff *)prMsduInfo->prPacket;
+	prTxD = (struct AMSDU_MAC_TX_DESC *)prSkb->data;
+
+	ucStaRecIndex = prMsduInfo->ucStaRecIndex;
+	prStaRec = cnmGetStaRecByIndex(prGlueInfo->prAdapter, ucStaRecIndex);
+	if (!prStaRec)
+		return 1;
+
+	u2TotalSize = NIC_TX_DESC_LONG_FORMAT_LENGTH;
+	u2TotalSize += prMsduInfo->u2FrameLength;
+	u2TotalSize += kalGetMoreSizeForAmsdu(prTxD->u4DW1);
+
+	for (prCur = prTarget->next; prCur != prHead; prCur = prCur->next) {
+		if (u4Cnt >= kalGetSwAmsduNum(prGlueInfo, prMsduInfo) ||
+		    kalAmsduTxDCmp((void *)prGlueInfo, prTarget, prCur))
+			break;
+
+		prTxReq = list_entry(prCur, struct TX_DATA_REQ, list);
+		prMsduInfo = prTxReq->prMsduInfo;
+		prSkb = (struct sk_buff *)prMsduInfo->prPacket;
+		prTxD = (struct AMSDU_MAC_TX_DESC *)prSkb->data;
+
+		u2Size = prMsduInfo->u2FrameLength;
+		u2Size += kalGetMoreSizeForAmsdu(prTxD->u4DW1);
+		u2Size += kalGetPaddingSize(u2TotalSize);
+		if ((u2TotalSize + u2Size) > prStaRec->u4MaxMpduLen)
+			break;
+
+		u2TotalSize += u2Size;
+		u4Cnt++;
+	}
+
+	if (u2TotalSize < prStaRec->u4MinMpduLen)
+		return 1;
+
+	*pu2Size = u2TotalSize;
+	return u4Cnt;
+}
+
+static bool kalDevKickAmsduData(struct GLUE_INFO *prGlueInfo)
+{
+	struct GL_HIF_INFO *prHifInfo = NULL;
+	struct BUS_INFO *prBusInfo = NULL;
+	struct list_head *prHead, *prCur, *prNext;
+	struct TX_DATA_REQ *prTxReq;
+	struct MSDU_INFO *prMsduInfo;
+	unsigned long flags = 0;
+	uint32_t u4Num = 0, u4Idx;
+	uint16_t u2Size = 0;
+	bool fgRet = true;
+
+	ASSERT(prGlueInfo);
+
+	prHifInfo = &prGlueInfo->rHifInfo;
+	prBusInfo = prGlueInfo->prAdapter->chip_info->bus_info;
+
+	spin_lock_irqsave(&prHifInfo->rTxDataQLock, flags);
+
+	prHead = &prHifInfo->rTxDataQ;
+	list_for_each_safe(prCur, prNext, prHead) {
+		prTxReq = list_entry(prCur, struct TX_DATA_REQ, list);
+		prMsduInfo = prTxReq->prMsduInfo;
+		if (!kalIsAggregatedMsdu(prGlueInfo, prMsduInfo)) {
+			if (!halWpdmaWriteMsdu(prGlueInfo, prMsduInfo, prCur)) {
+				spin_unlock_irqrestore(&prHifInfo->rTxDataQLock,
+						       flags);
+				return false;
+			}
+		}
+	}
+
+	list_sort((void *)prGlueInfo, prHead, kalAmsduTxDCmp);
+
+	for (prCur = prHead->next; prCur != prHead; prCur = prNext) {
+		u4Num = kalGetNumOfAmsdu(prGlueInfo, prCur, prHead, &u2Size);
+		prNext = prCur->next;
+		if (u4Num > 1) {
+			for (u4Idx = 1; u4Idx < u4Num; u4Idx++)
+				prNext = prNext->next;
+			fgRet = halWpdmaWriteAmsdu(prGlueInfo, prCur,
+						   u4Num, u2Size);
+		} else {
+			prTxReq = list_entry(prCur, struct TX_DATA_REQ, list);
+			prMsduInfo = prTxReq->prMsduInfo;
+			fgRet = halWpdmaWriteMsdu(prGlueInfo, prMsduInfo,
+						  prCur);
+		}
+		if (!fgRet)
+			break;
+	}
+
+	spin_unlock_irqrestore(&prHifInfo->rTxDataQLock, flags);
+
+	return fgRet;
+}
+
+bool kalDevReadData(struct GLUE_INFO *prGlueInfo, uint16_t u2Port,
+		    struct SW_RFB *prSwRfb)
 {
 	struct GL_HIF_INFO *prHifInfo = NULL;
 	struct HIF_MEM_OPS *prMemOps;
@@ -636,7 +865,7 @@ u_int8_t kalDevReadData(IN struct GLUE_INFO *prGlueInfo,
 		if (!prRxRing->fgIsDumpLog)
 			halDumpHifDebugLog(prGlueInfo, false, true);
 		prRxRing->fgIsDumpLog = true;
-		return FALSE;
+		return false;
 	}
 
 	spin_lock_irqsave(pRxRingLock, flags);
@@ -654,7 +883,7 @@ u_int8_t kalDevReadData(IN struct GLUE_INFO *prGlueInfo,
 			prRxRing->fgRxSegPkt = TRUE;
 		}
 
-		fgRet = FALSE;
+		fgRet = false;
 		goto skip;
 	}
 
@@ -691,8 +920,9 @@ skip:
 	spin_unlock_irqrestore(pRxRingLock, flags);
 
 #if CFG_TCP_IP_CHKSUM_OFFLOAD
-	DBGLOG(RX, LOUD, "u4TcpUdpIpCksStatus[0x%02x]\n",
-		prSwRfb->u4TcpUdpIpCksStatus);
+	if (fgRet)
+		DBGLOG(RX, LOUD, "u4TcpUdpIpCksStatus[0x%02x]\n",
+		       prSwRfb->u4TcpUdpIpCksStatus);
 #endif /* CFG_TCP_IP_CHKSUM_OFFLOAD */
 
 	return fgRet;
