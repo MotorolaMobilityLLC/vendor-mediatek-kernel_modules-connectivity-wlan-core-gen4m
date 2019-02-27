@@ -334,6 +334,8 @@ WLAN_STATUS wlanAdapterStart(IN P_ADAPTER_T prAdapter, IN P_REG_INFO_T prRegInfo
 	prAdapter->u4OwnFailedLogCount = 0;
 	prAdapter->ucHwBssIdNum = BSS_DEFAULT_NUM;
 	prAdapter->ucP2PDevBssIdx = BSS_DEFAULT_NUM;
+	prAdapter->ucWtblEntryNum = WTBL_SIZE;
+	prAdapter->ucTxDefaultWlanIndex = prAdapter->ucWtblEntryNum - 1;
 
 	QUEUE_INITIALIZE(&(prAdapter->rPendingCmdQueue));
 #if CFG_SUPPORT_MULTITHREAD
