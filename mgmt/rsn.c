@@ -2136,6 +2136,9 @@ u_int8_t rsnSearchPmkidEntry(IN struct ADAPTER *prAdapter,
 	if (prAisSpecBssInfo->u4PmkidCacheCount > CFG_MAX_PMKID_CACHE)
 		return FALSE;
 
+	if (!pucBssid)
+		return FALSE;
+
 	ASSERT(prAisSpecBssInfo->u4PmkidCacheCount <= CFG_MAX_PMKID_CACHE);
 
 	/* Search for desired BSSID */

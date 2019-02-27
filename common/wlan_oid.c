@@ -3753,6 +3753,8 @@ wlanoidSetPmkid(IN struct ADAPTER *prAdapter,
 	uint32_t i, j;
 	struct PARAM_PMKID *prPmkid;
 	struct AIS_SPECIFIC_BSS_INFO *prAisSpecBssInfo;
+	struct BSS_DESC *prBssDesc =
+				prAdapter->rWifiVar.rAisFsmInfo.prTargetBssDesc;
 
 	DEBUGFUNC("wlanoidSetPmkid");
 
@@ -3792,9 +3794,25 @@ wlanoidSetPmkid(IN struct ADAPTER *prAdapter,
 	}
 	if ((prAisSpecBssInfo->u4PmkidCacheCount +
 	     prPmkid->u4BSSIDInfoCount > CFG_MAX_PMKID_CACHE)) {
-		prAisSpecBssInfo->u4PmkidCacheCount = 0;
-		kalMemZero(prAisSpecBssInfo->arPmkidCache,
-			   sizeof(struct PMKID_ENTRY) * CFG_MAX_PMKID_CACHE);
+		if (prBssDesc && rsnSearchPmkidEntry(prAdapter,
+		    (uint8_t *) prBssDesc->aucBSSID, &j)) {
+			kalMemCopy(&(prAisSpecBssInfo->
+					arPmkidCache[0].rBssidInfo),
+				   &(prAisSpecBssInfo->
+					arPmkidCache[j].rBssidInfo),
+				   sizeof(struct PARAM_BSSID_INFO));
+			prAisSpecBssInfo->u4PmkidCacheCount = 1;
+			kalMemZero(&(prAisSpecBssInfo->arPmkidCache[1]),
+				sizeof(struct PMKID_ENTRY) *
+				       (CFG_MAX_PMKID_CACHE - 1));
+			DBGLOG(REQ, INFO,
+			       "Reset PMKID without " MACSTR "\n");
+		} else {
+			prAisSpecBssInfo->u4PmkidCacheCount = 0;
+			kalMemZero(prAisSpecBssInfo->arPmkidCache,
+				sizeof(struct PMKID_ENTRY) *
+				       CFG_MAX_PMKID_CACHE);
+		}
 	}
 
 	/*
@@ -3812,7 +3830,7 @@ wlanoidSetPmkid(IN struct ADAPTER *prAdapter,
 			 * entry
 			 */
 			if (prAisSpecBssInfo->u4PmkidCacheCount <
-			    CFG_MAX_PMKID_CACHE - 1) {
+			    CFG_MAX_PMKID_CACHE) {
 				j = prAisSpecBssInfo->u4PmkidCacheCount;
 				kalMemCopy(
 					prAisSpecBssInfo->arPmkidCache[j]
@@ -3844,13 +3862,9 @@ wlanoidSetPmkid(IN struct ADAPTER *prAdapter,
 	}
 
 	if (prAdapter->rWifiVar.rConnSettings.fgOkcEnabled) {
-		struct BSS_DESC *prBssDesc =
-				prAdapter->rWifiVar.rAisFsmInfo.prTargetBssDesc;
 		uint8_t *pucPmkID = NULL;
-
-		if ((prPmkid->u4Length & BIT(31)) ||
-		    (prBssDesc && EQUAL_MAC_ADDR(
-		    prPmkid->arBSSIDInfo[0].arBSSID, prBssDesc->aucBSSID))) {
+		if (prBssDesc && EQUAL_MAC_ADDR(
+		    prPmkid->arBSSIDInfo[0].arBSSID, prBssDesc->aucBSSID)) {
 			if (j == CFG_MAX_PMKID_CACHE) {
 				j = 0;
 				kalMemCopy(
