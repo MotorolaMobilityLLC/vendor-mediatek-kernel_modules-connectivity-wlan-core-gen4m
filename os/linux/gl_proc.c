@@ -307,15 +307,6 @@ static int procEfuseDumpOpen(struct inode *inode, struct file *file)
 		.show = procEfuseDump_show
 	};
 
-#if CFG_CHIP_RESET_SUPPORT
-	if (!wlanIsDriverReady(g_prGlueInfo_proc)) {
-		DBGLOG(INIT, WARN,
-		       "driver is not ready: u4ReadyFlag=%u, kalIsResetting()=%d\n",
-		       g_prGlueInfo_proc->u4ReadyFlag, kalIsResetting());
-		return 0;
-	}
-#endif
-
 	return seq_open(file, &procEfuseDump_ops);
 }
 
@@ -335,15 +326,6 @@ static ssize_t procCfgRead(struct file *filp, char __user *buf, size_t count,
 
 	struct WLAN_CFG_ENTRY *prWlanCfgEntry;
 	struct ADAPTER *prAdapter;
-
-#if CFG_CHIP_RESET_SUPPORT
-	if (!wlanIsDriverReady(g_prGlueInfo_proc)) {
-		DBGLOG(INIT, WARN,
-		       "driver is not ready: u4ReadyFlag=%u, kalIsResetting()=%d\n",
-		       g_prGlueInfo_proc->u4ReadyFlag, kalIsResetting());
-		return 0; /* return 0 to make command exit */
-	}
-#endif
 
 	prGlueInfo = *((struct GLUE_INFO **)netdev_priv(gPrDev));
 
@@ -456,8 +438,12 @@ static ssize_t procCfgWrite(struct file *file, const char __user *buffer,
 	uint8_t *pucTmp;
 
 #if CFG_CHIP_RESET_SUPPORT
+	if (!g_prGlueInfo_proc) {
+		DBGLOG(INIT, ERROR, "g_prGlueInfo_proc is null\n");
+		return 0;
+	}
 	if (!wlanIsDriverReady(g_prGlueInfo_proc)) {
-		DBGLOG(INIT, WARN,
+		DBGLOG(INIT, ERROR,
 		       "driver is not ready: u4ReadyFlag=%u, kalIsResetting()=%d\n",
 		       g_prGlueInfo_proc->u4ReadyFlag, kalIsResetting());
 		return 0; /* return 0 to make command exit */
@@ -500,15 +486,6 @@ static ssize_t procDriverCmdRead(struct file *filp, char __user *buf,
 	 */
 	uint32_t u4CopySize = 0;
 
-#if CFG_CHIP_RESET_SUPPORT
-	if (!wlanIsDriverReady(g_prGlueInfo_proc)) {
-		DBGLOG(INIT, WARN,
-		       "driver is not ready: u4ReadyFlag=%u, kalIsResetting()=%d\n",
-		       g_prGlueInfo_proc->u4ReadyFlag, kalIsResetting());
-		return 0; /* return 0 to make command exit */
-	}
-#endif
-
 	/* if *f_ops>0, we should return 0 to make cat command exit */
 	if (*f_pos > 0 || buf == NULL)
 		return 0;
@@ -541,6 +518,10 @@ static ssize_t procDriverCmdWrite(struct file *file, const char __user *buffer,
 	struct GLUE_INFO *prGlueInfo;
 
 #if CFG_CHIP_RESET_SUPPORT
+	if (!g_prGlueInfo_proc) {
+		DBGLOG(INIT, ERROR, "g_prGlueInfo_proc is null\n");
+		return 0;
+	}
 	if (!wlanIsDriverReady(g_prGlueInfo_proc)) {
 		DBGLOG(INIT, WARN,
 		       "driver is not ready: u4ReadyFlag=%u, kalIsResetting()=%d\n",
@@ -675,18 +656,22 @@ static ssize_t procMCRRead(struct file *filp, char __user *buf,
 	uint8_t *temp = &g_aucProcBuf[0];
 	uint32_t rStatus = WLAN_STATUS_SUCCESS;
 
+	/* Kevin: Apply PROC read method 1. */
+	if (*f_pos > 0)
+		return 0;	/* To indicate end of file. */
+
 #if CFG_CHIP_RESET_SUPPORT
+	if (!g_prGlueInfo_proc) {
+		DBGLOG(INIT, ERROR, "g_prGlueInfo_proc is null\n");
+		return 0;
+	}
 	if (!wlanIsDriverReady(g_prGlueInfo_proc)) {
-		DBGLOG(INIT, WARN,
+		DBGLOG(INIT, ERROR,
 		       "driver is not ready: u4ReadyFlag=%u, kalIsResetting()=%d\n",
 		       g_prGlueInfo_proc->u4ReadyFlag, kalIsResetting());
 		return 0; /* return 0 to make command exit */
 	}
 #endif
-
-	/* Kevin: Apply PROC read method 1. */
-	if (*f_pos > 0)
-		return 0;	/* To indicate end of file. */
 
 	prGlueInfo = g_prGlueInfo_proc;
 
@@ -738,8 +723,12 @@ static ssize_t procMCRWrite(struct file *file, const char __user *buffer,
 	int num = 0;
 
 #if CFG_CHIP_RESET_SUPPORT
+	if (!g_prGlueInfo_proc) {
+		DBGLOG(INIT, ERROR, "g_prGlueInfo_proc is null\n");
+		return 0;
+	}
 	if (!wlanIsDriverReady(g_prGlueInfo_proc)) {
-		DBGLOG(INIT, WARN,
+		DBGLOG(INIT, ERROR,
 		       "driver is not ready: u4ReadyFlag=%u, kalIsResetting()=%d\n",
 		       g_prGlueInfo_proc->u4ReadyFlag, kalIsResetting());
 		return 0; /* return 0 to make command exit */
@@ -818,8 +807,12 @@ static ssize_t procSetCamCfgWrite(struct file *file, const char __user *buffer,
 	struct ADAPTER *prAdapter = NULL;
 
 #if CFG_CHIP_RESET_SUPPORT
+	if (!g_prGlueInfo_proc) {
+		DBGLOG(INIT, ERROR, "g_prGlueInfo_proc is null\n");
+		return 0;
+	}
 	if (!wlanIsDriverReady(g_prGlueInfo_proc)) {
-		DBGLOG(INIT, WARN,
+		DBGLOG(INIT, ERROR,
 		       "driver is not ready: u4ReadyFlag=%u, kalIsResetting()=%d\n",
 		       g_prGlueInfo_proc->u4ReadyFlag, kalIsResetting());
 		return 0; /* return 0 to make command exit */
@@ -1020,20 +1013,24 @@ static ssize_t procRoamRead(struct file *filp, char __user *buf,
 	uint32_t rStatus;
 	uint32_t u4BufLen;
 
-#if CFG_CHIP_RESET_SUPPORT
-	if (!wlanIsDriverReady(g_prGlueInfo_proc)) {
-		DBGLOG(INIT, WARN,
-		       "driver is not ready: u4ReadyFlag=%u, kalIsResetting()=%d\n",
-		       g_prGlueInfo_proc->u4ReadyFlag, kalIsResetting());
-		return 0; /* return 0 to make command exit */
-	}
-#endif
-
 	/* if *f_pos > 0, it means has read successed last time,
 	 * don't try again
 	 */
 	if (*f_pos > 0 || buf == NULL)
 		return 0;
+
+#if CFG_CHIP_RESET_SUPPORT
+	if (!g_prGlueInfo_proc) {
+		DBGLOG(INIT, ERROR, "g_prGlueInfo_proc is null\n");
+		return 0;
+	}
+	if (!wlanIsDriverReady(g_prGlueInfo_proc)) {
+		DBGLOG(INIT, ERROR,
+		       "driver is not ready: u4ReadyFlag=%u, kalIsResetting()=%d\n",
+		       g_prGlueInfo_proc->u4ReadyFlag, kalIsResetting());
+		return 0; /* return 0 to make command exit */
+	}
+#endif
 
 	rStatus =
 	    kalIoctl(g_prGlueInfo_proc, wlanoidGetRoamParams, g_aucProcBuf,
@@ -1061,8 +1058,12 @@ static ssize_t procRoamWrite(struct file *file, const char __user *buffer,
 	uint32_t u4CopySize = sizeof(g_aucProcBuf);
 
 #if CFG_CHIP_RESET_SUPPORT
+	if (!g_prGlueInfo_proc) {
+		DBGLOG(INIT, ERROR, "g_prGlueInfo_proc is null\n");
+		return 0;
+	}
 	if (!wlanIsDriverReady(g_prGlueInfo_proc)) {
-		DBGLOG(INIT, WARN,
+		DBGLOG(INIT, ERROR,
 		       "driver is not ready: u4ReadyFlag=%u, kalIsResetting()=%d\n",
 		       g_prGlueInfo_proc->u4ReadyFlag, kalIsResetting());
 		return 0; /* return 0 to make command exit */
@@ -1109,15 +1110,6 @@ static ssize_t procCountryRead(struct file *filp, char __user *buf,
 	uint32_t u4CopySize;
 	uint16_t u2CountryCode = 0;
 
-#if CFG_CHIP_RESET_SUPPORT
-	if (!wlanIsDriverReady(g_prGlueInfo_proc)) {
-		DBGLOG(INIT, WARN,
-		       "driver is not ready: u4ReadyFlag=%u, kalIsResetting()=%d\n",
-		       g_prGlueInfo_proc->u4ReadyFlag, kalIsResetting());
-		return 0; /* return 0 to make command exit */
-	}
-#endif
-
 	/* if *f_pos > 0, it means has read successed last time,
 	 * don't try again
 	 */
@@ -1154,8 +1146,12 @@ static ssize_t procCountryWrite(struct file *file, const char __user *buffer,
 	uint32_t u4CopySize = sizeof(g_aucProcBuf);
 
 #if CFG_CHIP_RESET_SUPPORT
+	if (!g_prGlueInfo_proc) {
+		DBGLOG(INIT, ERROR, "g_prGlueInfo_proc is null\n");
+		return 0;
+	}
 	if (!wlanIsDriverReady(g_prGlueInfo_proc)) {
-		DBGLOG(INIT, WARN,
+		DBGLOG(INIT, ERROR,
 		       "driver is not ready: u4ReadyFlag=%u, kalIsResetting()=%d\n",
 		       g_prGlueInfo_proc->u4ReadyFlag, kalIsResetting());
 		return 0; /* return 0 to make command exit */
@@ -1195,15 +1191,6 @@ static ssize_t procAutoPerfCfgRead(struct file *filp, char __user *buf,
 	uint32_t u4CopySize = 0;
 	uint32_t u4StrLen = 0;
 
-#if CFG_CHIP_RESET_SUPPORT
-	if (!wlanIsDriverReady(g_prGlueInfo_proc)) {
-		DBGLOG(INIT, WARN,
-		       "driver is not ready: u4ReadyFlag=%u, kalIsResetting()=%d\n",
-		       g_prGlueInfo_proc->u4ReadyFlag, kalIsResetting());
-		return 0; /* return 0 to make command exit */
-	}
-#endif
-
 	/* if *f_ops>0, we should return 0 to make cat command exit */
 	if (*f_pos > 0)
 		return 0;
@@ -1241,8 +1228,12 @@ static ssize_t procAutoPerfCfgWrite(struct file *file, const char *buffer,
 	uint8_t aucBuf[32];
 
 #if CFG_CHIP_RESET_SUPPORT
+	if (!g_prGlueInfo_proc) {
+		DBGLOG(INIT, ERROR, "g_prGlueInfo_proc is null\n");
+		return 0;
+	}
 	if (!wlanIsDriverReady(g_prGlueInfo_proc)) {
-		DBGLOG(INIT, WARN,
+		DBGLOG(INIT, ERROR,
 		       "driver is not ready: u4ReadyFlag=%u, kalIsResetting()=%d\n",
 		       g_prGlueInfo_proc->u4ReadyFlag, kalIsResetting());
 		return 0; /* return 0 to make command exit */
@@ -1529,8 +1520,12 @@ static ssize_t procReadDrvStatus(struct file *filp, char __user *buf,
 	int32_t ret = -1;
 
 #if CFG_CHIP_RESET_SUPPORT
+	if (!g_prGlueInfo_proc) {
+		DBGLOG(INIT, ERROR, "g_prGlueInfo_proc is null\n");
+		return 0;
+	}
 	if (!wlanIsDriverReady(g_prGlueInfo_proc)) {
-		DBGLOG(INIT, WARN,
+		DBGLOG(INIT, ERROR,
 		       "driver is not ready: u4ReadyFlag=%u, kalIsResetting()=%d\n",
 		       g_prGlueInfo_proc->u4ReadyFlag, kalIsResetting());
 		return 0; /* return 0 to make command exit */
@@ -1623,8 +1618,12 @@ static ssize_t procDrvStatusCfg(struct file *file, const char *buffer,
 				size_t count, loff_t *data)
 {
 #if CFG_CHIP_RESET_SUPPORT
+	if (!g_prGlueInfo_proc) {
+		DBGLOG(INIT, ERROR, "g_prGlueInfo_proc is null\n");
+		return 0;
+	}
 	if (!wlanIsDriverReady(g_prGlueInfo_proc)) {
-		DBGLOG(INIT, WARN,
+		DBGLOG(INIT, ERROR,
 		       "driver is not ready: u4ReadyFlag=%u, kalIsResetting()=%d\n",
 		       g_prGlueInfo_proc->u4ReadyFlag, kalIsResetting());
 		return 0; /* return 0 to make command exit */
@@ -2117,18 +2116,19 @@ static ssize_t cfgRead(struct file *filp, char __user *buf, size_t count,
 	struct CMD_FORMAT_V1 *pr_cmd_v1 =
 		(struct CMD_FORMAT_V1 *)cmdV1Header.buffer;
 
+	/* if *f_pos >  0, we should return 0 to make cat command exit */
+	if (*f_pos > 0 || gprGlueInfo == NULL)
+		return 0;
+
 #if CFG_CHIP_RESET_SUPPORT
-	if (!wlanIsDriverReady(g_prGlueInfo_proc)) {
-		DBGLOG(INIT, WARN,
+	if (!wlanIsDriverReady(gprGlueInfo)) {
+		DBGLOG(INIT, ERROR,
 		       "driver is not ready: u4ReadyFlag=%u, kalIsResetting()=%d\n",
-		       g_prGlueInfo_proc->u4ReadyFlag, kalIsResetting());
+		       gprGlueInfo->u4ReadyFlag, kalIsResetting());
 		return 0; /* return 0 to make command exit */
 	}
 #endif
 
-	/* if *f_pos >  0, we should return 0 to make cat command exit */
-	if (*f_pos > 0 || gprGlueInfo == NULL)
-		return 0;
 	if (!kalStrLen(aucCfgQueryKey))
 		return 0;
 
@@ -2181,10 +2181,14 @@ static ssize_t cfgWrite(struct file *filp, const char __user *buf,
 	uint8_t token_num = 1;
 
 #if CFG_CHIP_RESET_SUPPORT
-	if (!wlanIsDriverReady(g_prGlueInfo_proc)) {
-		DBGLOG(INIT, WARN,
+	if (!gprGlueInfo) {
+		DBGLOG(INIT, ERROR, "g_prGlueInfo_proc is null\n");
+		return 0;
+	}
+	if (!wlanIsDriverReady(gprGlueInfo)) {
+		DBGLOG(INIT, ERROR,
 		       "driver is not ready: u4ReadyFlag=%u, kalIsResetting()=%d\n",
-		       g_prGlueInfo_proc->u4ReadyFlag, kalIsResetting());
+		       gprGlueInfo->u4ReadyFlag, kalIsResetting());
 		return 0; /* return 0 to make command exit */
 	}
 #endif

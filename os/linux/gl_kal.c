@@ -2816,8 +2816,10 @@ kalIoctl(IN struct GLUE_INFO *prGlueInfo,
 		DBGLOG(OID, ERROR,
 				"wait main_thread timeout, show backtrace:\n");
 
-		kal_show_stack(prGlueInfo->prAdapter,
-			prGlueInfo->main_thread, NULL);
+		if ((prGlueInfo != NULL) && (prGlueInfo->main_thread != NULL))
+			kal_show_stack(prGlueInfo->prAdapter,
+				prGlueInfo->main_thread, NULL);
+
 		ret = WLAN_STATUS_FAILURE;
 	}
 
