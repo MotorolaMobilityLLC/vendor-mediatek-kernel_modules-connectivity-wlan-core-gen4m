@@ -3225,6 +3225,11 @@ wext_set_encode_ext(IN struct net_device *prNetDev,
 				memcpy(((PUINT_8) prKey->aucKeyMaterial) + 16, prIWEncExt->key + 24, 8);
 				memcpy((prKey->aucKeyMaterial) + 24, prIWEncExt->key + 16, 8);
 			} else {
+				if (prIWEncExt->key_len > sizeof(prKey->aucKeyMaterial)) {
+					DBGLOG(REQ, ERROR, "prIWEncExt->key_len: %u is too long!\n",
+						prIWEncExt->key_len);
+					return -EINVAL;
+				}
 				memcpy(prKey->aucKeyMaterial, prIWEncExt->key, prIWEncExt->key_len);
 			}
 
