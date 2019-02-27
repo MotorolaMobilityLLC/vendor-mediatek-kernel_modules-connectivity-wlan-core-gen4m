@@ -1973,6 +1973,16 @@ typedef struct _UMAC_STAT2_GET_T {
 	UINT_16	u2PseFfaNum;
 } UMAC_STAT2_GET_T, *P_UMAC_STAT2_GET_T;
 
+typedef struct _CNM_STATUS_T {
+	UINT_8              fgDbDcModeEn;
+	UINT_8              ucChNumB0;
+	UINT_8              ucChNumB1;
+	UINT_8              usReserved;
+} CNM_STATUS_T, *P_CNM_STATUS_T;
+
+typedef struct _CNM_CH_LIST_T {
+	UINT_8              ucChNum[4];
+} CNM_CH_LIST_T, *P_CNM_CH_LIST_T;
 
 /*******************************************************************************
 *                            P U B L I C   D A T A
