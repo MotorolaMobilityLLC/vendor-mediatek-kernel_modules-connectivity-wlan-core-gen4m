@@ -356,6 +356,7 @@ uint32_t wlanAdapterStart(IN struct ADAPTER *prAdapter,
 	prAdapter->u4HifDbgFlag = 0;
 	prAdapter->u4HifChkFlag = 0;
 	prAdapter->u4TxHangFlag = 0;
+	prAdapter->u4NoMoreRfb = 0;
 
 	QUEUE_INITIALIZE(&(prAdapter->rPendingCmdQueue));
 #if CFG_SUPPORT_MULTITHREAD
