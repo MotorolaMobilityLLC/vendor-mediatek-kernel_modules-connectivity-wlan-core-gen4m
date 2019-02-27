@@ -50,31 +50,30 @@
  *
  *****************************************************************************/
 /*
-** Id: include/mgmt/rsn.h#1
-*/
+ * Id: include/mgmt/rsn.h#1
+ */
 
 /*! \file   rsn.h
-*    \brief  The wpa/rsn related define, macro and structure are described here.
-*/
-
+ *  \brief  The wpa/rsn related define, macro and structure are described here.
+ */
 
 #ifndef _RSN_H
 #define _RSN_H
 
 /*******************************************************************************
-*                         C O M P I L E R   F L A G S
-********************************************************************************
-*/
+ *                         C O M P I L E R   F L A G S
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                    E X T E R N A L   R E F E R E N C E S
-********************************************************************************
-*/
+ *                    E X T E R N A L   R E F E R E N C E S
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                              C O N S T A N T S
-********************************************************************************
-*/
+ *                              C O N S T A N T S
+ *******************************************************************************
+ */
 /* ----- Definitions for Cipher Suite Selectors ----- */
 #define RSN_CIPHER_SUITE_USE_GROUP_KEY  0x00AC0F00
 #define RSN_CIPHER_SUITE_WEP40          0x01AC0F00
@@ -92,7 +91,7 @@
 #define WPA_CIPHER_SUITE_CCMP           0x04F25000
 #define WPA_CIPHER_SUITE_WEP104         0x05F25000
 
-/* ----- Definitions for Authentication and Key Management Suite Selectors ----- */
+/* Definitions for Authentication and Key Management Suite Selectors */
 #define RSN_AKM_SUITE_NONE              0x00AC0F00
 #define RSN_AKM_SUITE_802_1X            0x01AC0F00
 #define RSN_AKM_SUITE_PSK               0x02AC0F00
@@ -110,18 +109,23 @@
 #define WPA_AKM_SUITE_PSK               0x02F25000
 
 #define WFA_AKM_SUITE_OSEN              0x019A6F50
-/* this define should be in ieee80211.h, but kernel didn't update it. so we define here temporary */
+/* this define should be in ieee80211.h, but kernel didn't update it.
+ * so we define here temporary
+ */
 #define WLAN_AKM_SUITE_OSEN             0x506f9a01
 #define WLAN_CIPHER_SUITE_NO_GROUP_ADDR 0x000fac07
 
-#define ELEM_ID_RSN_LEN_FIXED           20	/* The RSN IE len for associate request */
+/* The RSN IE len for associate request */
+#define ELEM_ID_RSN_LEN_FIXED           20
 
-#define ELEM_ID_WPA_LEN_FIXED           22	/* The RSN IE len for associate request */
+/* The WPA IE len for associate request */
+#define ELEM_ID_WPA_LEN_FIXED           22
 
 #define MASK_RSNIE_CAP_PREAUTH          BIT(0)
 
 #define GET_SELECTOR_TYPE(x)           ((uint8_t)(((x) >> 24) & 0x000000FF))
-#define SET_SELECTOR_TYPE(x, y)		(x = (((x) & 0x00FFFFFF) | (((uint32_t)(y) << 24) & 0xFF000000)))
+#define SET_SELECTOR_TYPE(x, y)		(x = (((x) & 0x00FFFFFF) | \
+					(((uint32_t)(y) << 24) & 0xFF000000)))
 
 #define AUTH_CIPHER_CCMP                0x00000008
 
@@ -143,9 +147,9 @@
 #endif
 
 /*******************************************************************************
-*                             D A T A   T Y P E S
-********************************************************************************
-*/
+ *                             D A T A   T Y P E S
+ *******************************************************************************
+ */
 
 /* Flags for PMKID Candidate list structure */
 #define EVENT_PMKID_CANDIDATE_PREAUTH_ENABLED   0x01
@@ -153,19 +157,19 @@
 #define CONTROL_FLAG_UC_MGMT_NO_ENC             BIT(5)
 
 /*******************************************************************************
-*                            P U B L I C   D A T A
-********************************************************************************
-*/
+ *                            P U B L I C   D A T A
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                           P R I V A T E   D A T A
-********************************************************************************
-*/
+ *                           P R I V A T E   D A T A
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                                 M A C R O S
-********************************************************************************
-*/
+ *                                 M A C R O S
+ *******************************************************************************
+ */
 #define RSN_IE(fp)              ((struct RSN_INFO_ELEM *) fp)
 #define WPA_IE(fp)              ((struct WPA_INFO_ELEM *) fp)
 
@@ -173,91 +177,132 @@
 #define ELEM_MAX_LEN_TIMEOUT_IE          (5)
 
 /*******************************************************************************
-*                  F U N C T I O N   D E C L A R A T I O N S
-********************************************************************************
-*/
-u_int8_t rsnParseRsnIE(IN struct ADAPTER *prAdapter, IN struct RSN_INFO_ELEM *prInfoElem, OUT struct RSN_INFO *prRsnInfo);
+ *                  F U N C T I O N   D E C L A R A T I O N S
+ *******************************************************************************
+ */
+u_int8_t rsnParseRsnIE(IN struct ADAPTER *prAdapter,
+		       IN struct RSN_INFO_ELEM *prInfoElem,
+		       OUT struct RSN_INFO *prRsnInfo);
 
-u_int8_t rsnParseWpaIE(IN struct ADAPTER *prAdapter, IN struct WPA_INFO_ELEM *prInfoElem, OUT struct RSN_INFO *prWpaInfo);
+u_int8_t rsnParseWpaIE(IN struct ADAPTER *prAdapter,
+		       IN struct WPA_INFO_ELEM *prInfoElem,
+		       OUT struct RSN_INFO *prWpaInfo);
 
-u_int8_t rsnSearchSupportedCipher(IN struct ADAPTER *prAdapter, IN uint32_t u4Cipher, OUT uint32_t *pu4Index);
+u_int8_t rsnSearchSupportedCipher(IN struct ADAPTER
+				  *prAdapter,
+				  IN uint32_t u4Cipher, OUT uint32_t *pu4Index);
 
-u_int8_t rsnIsSuitableBSS(IN struct ADAPTER *prAdapter, IN struct RSN_INFO *prBssRsnInfo);
+u_int8_t rsnIsSuitableBSS(IN struct ADAPTER *prAdapter,
+			  IN struct RSN_INFO *prBssRsnInfo);
 
-u_int8_t rsnSearchAKMSuite(IN struct ADAPTER *prAdapter, IN uint32_t u4AkmSuite, OUT uint32_t *pu4Index);
+u_int8_t rsnSearchAKMSuite(IN struct ADAPTER *prAdapter,
+			   IN uint32_t u4AkmSuite, OUT uint32_t *pu4Index);
 
-u_int8_t rsnPerformPolicySelection(IN struct ADAPTER *prAdapter, IN struct BSS_DESC *prBss);
+u_int8_t rsnPerformPolicySelection(IN struct ADAPTER
+				   *prAdapter,
+				   IN struct BSS_DESC *prBss);
 
-void rsnGenerateWpaNoneIE(IN struct ADAPTER *prAdapter, IN struct MSDU_INFO *prMsduInfo);
+void rsnGenerateWpaNoneIE(IN struct ADAPTER *prAdapter,
+			  IN struct MSDU_INFO *prMsduInfo);
 
-void rsnGenerateWPAIE(IN struct ADAPTER *prAdapter, IN struct MSDU_INFO *prMsduInfo);
+void rsnGenerateWPAIE(IN struct ADAPTER *prAdapter,
+		      IN struct MSDU_INFO *prMsduInfo);
 
-void rsnGenerateRSNIE(IN struct ADAPTER *prAdapter, IN struct MSDU_INFO *prMsduInfo);
+void rsnGenerateRSNIE(IN struct ADAPTER *prAdapter,
+		      IN struct MSDU_INFO *prMsduInfo);
 
 u_int8_t
 rsnParseCheckForWFAInfoElem(IN struct ADAPTER *prAdapter,
-			    IN uint8_t *pucBuf, OUT uint8_t *pucOuiType, OUT uint16_t *pu2SubTypeVersion);
+			    IN uint8_t *pucBuf, OUT uint8_t *pucOuiType,
+			    OUT uint16_t *pu2SubTypeVersion);
 
 #if CFG_SUPPORT_AAA
-void rsnParserCheckForRSNCCMPPSK(struct ADAPTER *prAdapter, struct RSN_INFO_ELEM *prIe, struct STA_RECORD *prStaRec,
-	uint16_t *pu2StatusCode);
+void rsnParserCheckForRSNCCMPPSK(struct ADAPTER *prAdapter,
+				 struct RSN_INFO_ELEM *prIe,
+				 struct STA_RECORD *prStaRec,
+				 uint16_t *pu2StatusCode);
 #endif
 
-void rsnTkipHandleMICFailure(IN struct ADAPTER *prAdapter, IN struct STA_RECORD *prSta, IN u_int8_t fgErrorKeyType);
+void rsnTkipHandleMICFailure(IN struct ADAPTER *prAdapter,
+			     IN struct STA_RECORD *prSta,
+			     IN u_int8_t fgErrorKeyType);
 
-void rsnSelectPmkidCandidateList(IN struct ADAPTER *prAdapter, IN struct BSS_DESC *prBssDesc);
+void rsnSelectPmkidCandidateList(IN struct ADAPTER
+				 *prAdapter, IN struct BSS_DESC *prBssDesc);
 
-void rsnUpdatePmkidCandidateList(IN struct ADAPTER *prAdapter, IN struct BSS_DESC *prBssDesc);
+void rsnUpdatePmkidCandidateList(IN struct ADAPTER
+				 *prAdapter, IN struct BSS_DESC *prBssDesc);
 
-u_int8_t rsnSearchPmkidEntry(IN struct ADAPTER *prAdapter, IN uint8_t *pucBssid, OUT uint32_t *pu4EntryIndex);
+u_int8_t rsnSearchPmkidEntry(IN struct ADAPTER *prAdapter,
+			     IN uint8_t *pucBssid, OUT uint32_t *pu4EntryIndex);
 
-u_int8_t rsnCheckPmkidCandicate(IN struct ADAPTER *prAdapter);
+u_int8_t rsnCheckPmkidCandicate(IN struct ADAPTER
+				*prAdapter);
 
-void rsnCheckPmkidCache(IN struct ADAPTER *prAdapter, IN struct BSS_DESC *prBss);
+void rsnCheckPmkidCache(IN struct ADAPTER *prAdapter,
+			IN struct BSS_DESC *prBss);
 
-void rsnGeneratePmkidIndication(IN struct ADAPTER *prAdapter);
+void rsnGeneratePmkidIndication(IN struct ADAPTER
+				*prAdapter);
 
-void rsnIndicatePmkidCand(IN struct ADAPTER *prAdapter, IN unsigned long ulParamPtr);
+void rsnIndicatePmkidCand(IN struct ADAPTER *prAdapter,
+			  IN unsigned long ulParamPtr);
 #if CFG_SUPPORT_WPS2
-void rsnGenerateWSCIE(IN struct ADAPTER *prAdapter, IN struct MSDU_INFO *prMsduInfo);
+void rsnGenerateWSCIE(IN struct ADAPTER *prAdapter,
+		      IN struct MSDU_INFO *prMsduInfo);
 #endif
 
 #if CFG_SUPPORT_802_11W
-uint32_t rsnCheckBipKeyInstalled(IN struct ADAPTER *prAdapter, IN struct STA_RECORD *prStaRec);
+uint32_t rsnCheckBipKeyInstalled(IN struct ADAPTER
+				 *prAdapter, IN struct STA_RECORD *prStaRec);
 
-uint8_t rsnCheckSaQueryTimeout(IN struct ADAPTER *prAdapter);
+uint8_t rsnCheckSaQueryTimeout(IN struct ADAPTER
+			       *prAdapter);
 
-void rsnStartSaQueryTimer(IN struct ADAPTER *prAdapter, IN unsigned long ulParamPtr);
+void rsnStartSaQueryTimer(IN struct ADAPTER *prAdapter,
+			  IN unsigned long ulParamPtr);
 
 void rsnStartSaQuery(IN struct ADAPTER *prAdapter);
 
 void rsnStopSaQuery(IN struct ADAPTER *prAdapter);
 
-void rsnSaQueryRequest(IN struct ADAPTER *prAdapter, IN struct SW_RFB *prSwRfb);
+void rsnSaQueryRequest(IN struct ADAPTER *prAdapter,
+		       IN struct SW_RFB *prSwRfb);
 
-void rsnSaQueryAction(IN struct ADAPTER *prAdapter, IN struct SW_RFB *prSwRfb);
+void rsnSaQueryAction(IN struct ADAPTER *prAdapter,
+		      IN struct SW_RFB *prSwRfb);
 
-uint16_t rsnPmfCapableValidation(IN struct ADAPTER *prAdapter, IN struct BSS_INFO *prBssInfo, IN struct STA_RECORD *prStaRec);
+uint16_t rsnPmfCapableValidation(IN struct ADAPTER
+				 *prAdapter, IN struct BSS_INFO *prBssInfo,
+				 IN struct STA_RECORD *prStaRec);
 
-void rsnPmfGenerateTimeoutIE(struct ADAPTER *prAdapter, struct MSDU_INFO *prMsduInfo);
+void rsnPmfGenerateTimeoutIE(struct ADAPTER *prAdapter,
+			     struct MSDU_INFO *prMsduInfo);
 
-void rsnApStartSaQuery(IN struct ADAPTER *prAdapter, IN struct STA_RECORD *prStaRec);
+void rsnApStartSaQuery(IN struct ADAPTER *prAdapter,
+		       IN struct STA_RECORD *prStaRec);
 
-void rsnApSaQueryAction(IN struct ADAPTER *prAdapter, IN struct SW_RFB *prSwRfb);
+void rsnApSaQueryAction(IN struct ADAPTER *prAdapter,
+			IN struct SW_RFB *prSwRfb);
 
 #endif /* CFG_SUPPORT_802_11W */
 
 #if CFG_SUPPORT_AAA
-void rsnGenerateWSCIEForAssocRsp(struct ADAPTER *prAdapter, struct MSDU_INFO *prMsduInfo);
+void rsnGenerateWSCIEForAssocRsp(struct ADAPTER *prAdapter,
+				 struct MSDU_INFO *prMsduInfo);
 #endif
 
-u_int8_t rsnParseOsenIE(struct ADAPTER *prAdapter, struct IE_WFA_OSEN *prInfoElem, struct RSN_INFO *prOsenInfo);
+u_int8_t rsnParseOsenIE(struct ADAPTER *prAdapter,
+			struct IE_WFA_OSEN *prInfoElem,
+			struct RSN_INFO *prOsenInfo);
 
-u_int8_t rsnCheckSecurityModeChanged(struct ADAPTER *prAdapter, struct BSS_INFO *prBssInfo, struct BSS_DESC *prBssDesc);
+u_int8_t rsnCheckSecurityModeChanged(struct ADAPTER
+				     *prAdapter, struct BSS_INFO *prBssInfo,
+				     struct BSS_DESC *prBssDesc);
 
 /*******************************************************************************
-*                              F U N C T I O N S
-********************************************************************************
-*/
+ *                              F U N C T I O N S
+ *******************************************************************************
+ */
 
 #endif /* _RSN_H */
