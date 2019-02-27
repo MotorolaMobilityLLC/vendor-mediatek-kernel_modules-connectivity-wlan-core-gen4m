@@ -1919,8 +1919,8 @@ static int32_t HQA_ReadEEPROM(struct net_device *prNetDev, IN union iwreq_data *
 
 #if  (CFG_EEPROM_PAGE_ACCESS == 1)
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
-	if (prGlueInfo &&
-	    prGlueInfo->prAdapter &&
+	ASSERT(prGlueInfo);
+	if (prGlueInfo->prAdapter &&
 	    prGlueInfo->prAdapter->chip_info &&
 	    !prGlueInfo->prAdapter->chip_info->is_support_efuse) {
 		rStatus = WLAN_STATUS_NOT_SUPPORTED;
