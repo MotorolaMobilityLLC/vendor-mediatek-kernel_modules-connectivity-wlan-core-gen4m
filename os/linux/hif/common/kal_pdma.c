@@ -155,6 +155,8 @@ u_int8_t kalDevRegRead(IN struct GLUE_INFO *prGlueInfo,
 		DBGLOG(HAL, ERROR,
 		       "Invalid access! Get CR[0x%08x/0x%08x] value[0x%08x]\n",
 		       u4Register, u4BusAddr, *pu4Value);
+		*pu4Value = 0xdeadfeed;
+		return FALSE;
 	}
 
 	if (halChipToStaticMapBusAddr(prGlueInfo, u4Register, &u4BusAddr)) {
@@ -246,6 +248,7 @@ u_int8_t kalDevRegWrite(IN struct GLUE_INFO *prGlueInfo,
 		DBGLOG(HAL, ERROR,
 		       "Invalid access! Set CR[0x%08x/0x%08x] value[0x%08x]\n",
 		       u4Register, u4BusAddr, u4Value);
+		return FALSE;
 	}
 
 	if (halChipToStaticMapBusAddr(prGlueInfo, u4Register, &u4BusAddr)) {

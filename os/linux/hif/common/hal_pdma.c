@@ -491,12 +491,14 @@ u_int8_t halSetDriverOwn(IN struct ADAPTER *prAdapter)
 	if (prAdapter->fgIsFwDownloaded && prChipInfo->is_support_cr4)
 		fgStatus &= halDriverOwnCheckCR4(prAdapter);
 
-	/* Check consys enter sleep mode DummyReg(0x0F) */
-	if (prBusInfo->checkDummyReg)
-		prBusInfo->checkDummyReg(prAdapter->prGlueInfo);
+	if (fgStatus) {
+		/* Check consys enter sleep mode DummyReg(0x0F) */
+		if (prBusInfo->checkDummyReg)
+			prBusInfo->checkDummyReg(prAdapter->prGlueInfo);
 
-	if (prAdapter->fgIsFwDownloaded)
-		halCheckConnsysStatus(prAdapter);
+		if (prAdapter->fgIsFwDownloaded)
+			halCheckConnsysStatus(prAdapter);
+	}
 
 	KAL_REC_TIME_END();
 	DBGLOG(INIT, INFO,
@@ -523,6 +525,9 @@ void halSetFWOwn(IN struct ADAPTER *prAdapter, IN u_int8_t fgEnableGlobalInt)
 	ASSERT(prAdapter->u4PwrCtrlBlockCnt != 0);
 
 	prBusInfo = prAdapter->chip_info->bus_info;
+
+	if (prAdapter->fgIsFwDownloaded)
+		halCheckConnsysStatus(prAdapter);
 
 	/* Decrease Block to Enter Low Power Semaphore count */
 	GLUE_DEC_REF_CNT(prAdapter->u4PwrCtrlBlockCnt);
@@ -787,7 +792,7 @@ bool halHifSwInfoInit(IN struct ADAPTER *prAdapter)
 {
 	asicPcieDmaShdlInit(prAdapter);
 
-	if (!halWpdmaAllocRing(prAdapter->prGlueInfo, false))
+	if (!halWpdmaAllocRing(prAdapter->prGlueInfo, true))
 		return false;
 
 	halWpdmaInitRing(prAdapter->prGlueInfo);
@@ -1110,7 +1115,7 @@ alloc_fail:
 }
 
 bool halWpdmaAllocTxRing(struct GLUE_INFO *prGlueInfo, uint32_t u4Num,
-			 uint32_t u4Size, uint32_t u4DescSize, bool fgIsReAlloc)
+			 uint32_t u4Size, uint32_t u4DescSize, bool fgAllocMem)
 {
 	struct GL_HIF_INFO *prHifInfo;
 	struct RTMP_TX_RING *pTxRing;
@@ -1124,7 +1129,7 @@ bool halWpdmaAllocTxRing(struct GLUE_INFO *prGlueInfo, uint32_t u4Num,
 	prHifInfo = &prGlueInfo->rHifInfo;
 
 	/* Don't re-alloc memory when second time call alloc ring */
-	if (!fgIsReAlloc)
+	if (fgAllocMem)
 		halWpdmaAllocRingDesc(prGlueInfo, &prHifInfo->TxDescRing[u4Num],
 				      u4Size * u4DescSize, true, u4Num);
 	if (prHifInfo->TxDescRing[u4Num].AllocVa == NULL) {
@@ -1165,7 +1170,7 @@ bool halWpdmaAllocTxRing(struct GLUE_INFO *prGlueInfo, uint32_t u4Num,
 
 bool halWpdmaAllocRxRing(struct GLUE_INFO *prGlueInfo, uint32_t u4Num,
 			 uint32_t u4Size, uint32_t u4DescSize,
-			 uint32_t u4BufSize, bool fgIsReAlloc)
+			 uint32_t u4BufSize, bool fgAllocMem)
 {
 	struct GL_HIF_INFO *prHifInfo;
 	struct RXD_STRUCT *pRxD;
@@ -1180,7 +1185,7 @@ bool halWpdmaAllocRxRing(struct GLUE_INFO *prGlueInfo, uint32_t u4Num,
 
 	/* Alloc RxRingDesc memory except Tx ring allocated eariler */
 	/* Don't re-alloc memory when second time call alloc ring */
-	if (!fgIsReAlloc)
+	if (fgAllocMem)
 		halWpdmaAllocRingDesc(prGlueInfo, &prHifInfo->RxDescRing[u4Num],
 				      u4Size * u4DescSize, false, u4Num);
 	if (prHifInfo->RxDescRing[u4Num].AllocVa == NULL) {
@@ -1214,7 +1219,7 @@ bool halWpdmaAllocRxRing(struct GLUE_INFO *prGlueInfo, uint32_t u4Num,
 		/* Setup Rx associated Buffer size & allocate share memory */
 		pDmaBuf = &dma_cb->DmaBuf;
 		pDmaBuf->AllocSize = u4BufSize;
-		if (!fgIsReAlloc) {
+		if (fgAllocMem) {
 			/* keep allocated rx packet */
 			dma_cb->pPacket = halWpdmaAllocRxPacketBuff(
 				prHifInfo, pDmaBuf->AllocSize, u4Num, index,
@@ -1248,7 +1253,7 @@ void halHifRst(struct GLUE_INFO *prGlueInfo)
 	kalDevRegWrite(prGlueInfo, CONN_HIF_RST, 0x00000030);
 }
 
-bool halWpdmaAllocRing(struct GLUE_INFO *prGlueInfo, bool fgIsReAlloc)
+bool halWpdmaAllocRing(struct GLUE_INFO *prGlueInfo, bool fgAllocMem)
 {
 	struct GL_HIF_INFO *prHifInfo;
 	int32_t u4Num, u4Index;
@@ -1263,7 +1268,7 @@ bool halWpdmaAllocRing(struct GLUE_INFO *prGlueInfo, bool fgIsReAlloc)
 	 */
 	for (u4Num = 0; u4Num < NUM_OF_TX_RING; u4Num++) {
 		if (!halWpdmaAllocTxRing(prGlueInfo, u4Num, TX_RING_SIZE,
-					 TXD_SIZE, fgIsReAlloc)) {
+					 TXD_SIZE, fgAllocMem)) {
 			DBGLOG(HAL, ERROR, "AllocTxRing[%d] fail\n", u4Num);
 			return false;
 		}
@@ -1272,14 +1277,14 @@ bool halWpdmaAllocRing(struct GLUE_INFO *prGlueInfo, bool fgIsReAlloc)
 	/* Data Rx path */
 	if (!halWpdmaAllocRxRing(prGlueInfo, RX_RING_DATA_IDX_0,
 				 RX_RING0_SIZE, RXD_SIZE,
-				 CFG_RX_MAX_PKT_SIZE, fgIsReAlloc)) {
+				 CFG_RX_MAX_PKT_SIZE, fgAllocMem)) {
 		DBGLOG(HAL, ERROR, "AllocRxRing[0] fail\n");
 		return false;
 	}
 	/* Event Rx path */
 	if (!halWpdmaAllocRxRing(prGlueInfo, RX_RING_EVT_IDX_1,
 				 RX_RING1_SIZE, RXD_SIZE,
-				 RX_BUFFER_AGGRESIZE, fgIsReAlloc)) {
+				 RX_BUFFER_AGGRESIZE, fgAllocMem)) {
 		DBGLOG(HAL, ERROR, "AllocRxRing[1] fail\n");
 		return false;
 	}
@@ -1475,7 +1480,7 @@ void halWpdmaInitTxRing(IN struct GLUE_INFO *prGlueInfo)
 		kalDevRegWrite(prGlueInfo, prTxRing->hw_cnt_addr,
 			TX_RING_SIZE);
 
-		DBGLOG(HAL, INFO, "-->TX_RING_%d[0x%x]: Base=0x%x, Cnt=%d!\n",
+		DBGLOG(HAL, TRACE, "-->TX_RING_%d[0x%x]: Base=0x%x, Cnt=%d!\n",
 			i, prHifInfo->TxRing[i].hw_desc_base,
 			phy_addr, TX_RING_SIZE);
 	}
@@ -1517,7 +1522,7 @@ void halWpdmaInitRxRing(IN struct GLUE_INFO *prGlueInfo)
 
 		prRxRing->fgIsDumpLog = false;
 
-		DBGLOG(HAL, INFO, "-->RX_RING_%d[0x%x]: Base=0x%x, Cnt=%d\n",
+		DBGLOG(HAL, TRACE, "-->RX_RING_%d[0x%x]: Base=0x%x, Cnt=%d\n",
 			i, prRxRing->hw_desc_base,
 			phy_addr, prRxRing->u4RingSize);
 	}
@@ -2132,7 +2137,7 @@ void halHwRecoveryFromError(IN struct ADAPTER *prAdapter)
 		if (u4Status & ERROR_DETECT_RESET_DONE) {
 			DBGLOG(HAL, INFO, "SER(L) Host re-initialize PDMA\n");
 			/* only reset TXD & RXD */
-			halWpdmaAllocRing(prAdapter->prGlueInfo, true);
+			halWpdmaAllocRing(prAdapter->prGlueInfo, false);
 
 			DBGLOG(HAL, INFO, "SER(M) Host enable PDMA\n");
 			halWpdmaInitRing(prGlueInfo);
@@ -2972,6 +2977,7 @@ bool halShowHostCsrInfo(IN struct ADAPTER *prAdapter)
 		HOST_CSR_CONN_CFG_ON, u4Value);
 
 	HAL_MCR_WR(prAdapter, HOST_CSR_DRIVER_OWN_INFO, 0x00030000);
+	kalUdelay(1);
 	HAL_MCR_RD(prAdapter, HOST_CSR_DRIVER_OWN_INFO, &u4Value);
 	DBGLOG(HAL, INFO, "Bit[17]/[16], Get HCLK info: 0x%08x = 0x%08x\n",
 		HOST_CSR_DRIVER_OWN_INFO, u4Value);
