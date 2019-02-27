@@ -3262,7 +3262,9 @@ uint32_t nicCfgChipCapPhyCap(IN struct ADAPTER *prAdapter,
 	prAdapter->rWifiVar.ucP2pGcVht &= prPhyCap->ucVht;
 	wlanCfgSetUint32(prAdapter, "P2pGcVHT", prAdapter->rWifiVar.ucP2pGcVht);
 	prAdapter->fgIsHw5GBandDisabled = !prPhyCap->uc5gBand;
-	prAdapter->rWifiVar.ucNSS = prPhyCap->ucNss;
+	prAdapter->rWifiVar.ucNSS = (prPhyCap->ucNss >
+		prAdapter->rWifiVar.ucNSS) ?
+		(prAdapter->rWifiVar.ucNSS):(prPhyCap->ucNss);
 	wlanCfgSetUint32(prAdapter, "Nss", prAdapter->rWifiVar.ucNSS);
 #if CFG_SUPPORT_DBDC
 	if (!prPhyCap->ucDbdc) {
