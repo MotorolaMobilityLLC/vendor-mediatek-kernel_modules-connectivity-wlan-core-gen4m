@@ -6386,7 +6386,7 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 					QM_CMD_RESERVED_THRESHOLD);
 #if CFG_SUPPORT_VHT_IE_IN_2G
 	prWifiVar->ucVhtIeIn2g = (uint8_t) wlanCfgGetUint32(
-			prAdapter, "VhtIeIn2G", FEATURE_ENABLED);
+			prAdapter, "VhtIeIn2G", FEATURE_DISABLED);
 #endif
 	prWifiVar->u4MgmtQueueDelayTimeout =
 		(uint32_t) wlanCfgGetUint32(prAdapter, "TxMgmtQueTO",
