@@ -1650,6 +1650,11 @@ void nicRxProcessDataPacket(IN struct ADAPTER *prAdapter,
 
 	} else {
 		fgDrop = TRUE;
+		DBGLOG(RSN, TRACE,
+			"fgDrop = TRUE, u2RxByteCount: %d, u2PktTYpe: %d, prRxStatus: %d, wlanIdx: %d, Bssid: %d\n",
+			prRxStatus->u2RxByteCount, prRxStatus->u2PktTYpe,
+			prRxStatus->u2StatusFlag, prRxStatus->ucWlanIdx,
+			prRxStatus->ucBssid);
 		if (!HAL_RX_STATUS_IS_ICV_ERROR(prRxStatus)
 		    && HAL_RX_STATUS_IS_TKIP_MIC_ERROR(prRxStatus)) {
 			struct STA_RECORD *prStaRec;
@@ -1804,11 +1809,19 @@ void nicRxProcessDataPacket(IN struct ADAPTER *prAdapter,
 #endif
 				prRetSwRfb = prNextSwRfb;
 			} while (prRetSwRfb);
+		} else {
+			DBGLOG(RX, TRACE,
+				"Packet drop! total error drop:%d\n",
+				RX_GET_CNT(prRxCtrl, RX_DROP_TOTAL_COUNT));
 		}
 	} else {
 		nicRxReturnRFB(prAdapter, prSwRfb);
 		RX_INC_CNT(prRxCtrl, RX_CLASS_ERR_DROP_COUNT);
 		RX_INC_CNT(prRxCtrl, RX_DROP_TOTAL_COUNT);
+		DBGLOG(RX, TRACE,
+			"Packet drop! class error drop:%d, total error drop:%d\n",
+			RX_GET_CNT(prRxCtrl, RX_CLASS_ERR_DROP_COUNT),
+			RX_GET_CNT(prRxCtrl, RX_DROP_TOTAL_COUNT));
 	}
 }
 
