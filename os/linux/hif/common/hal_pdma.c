@@ -501,7 +501,7 @@ u_int8_t halSetDriverOwn(IN struct ADAPTER *prAdapter)
 	}
 
 	KAL_REC_TIME_END();
-	DBGLOG(INIT, INFO,
+	DBGLOG_LIMITED(INIT, INFO,
 		"DRIVER OWN Done[%lu us]\n", KAL_GET_TIME_INTERVAL());
 
 	return fgStatus;
@@ -552,7 +552,7 @@ void halSetFWOwn(IN struct ADAPTER *prAdapter, IN u_int8_t fgEnableGlobalInt)
 
 		prAdapter->fgIsFwOwn = TRUE;
 
-		DBGLOG(INIT, INFO, "FW OWN:%u\n", fgResult);
+		DBGLOG_LIMITED(INIT, INFO, "FW OWN:%u\n", fgResult);
 	}
 }
 

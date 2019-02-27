@@ -223,7 +223,7 @@ uint32_t kalFirmwareOpen(IN struct GLUE_INFO *prGlueInfo,
 				       prGlueInfo->prDev);
 
 		if (ret) {
-			DBGLOG(INIT, ERROR,
+			DBGLOG_LIMITED(INIT, ERROR,
 			       "Request FW image: %s failed, errno[%d]\n",
 			       apucNameTable[ucNameIdx], fgResult);
 			continue;
@@ -244,7 +244,7 @@ uint32_t kalFirmwareOpen(IN struct GLUE_INFO *prGlueInfo,
 	return WLAN_STATUS_SUCCESS;
 
 error_open:
-	DBGLOG(INIT, ERROR,
+	DBGLOG_LIMITED(INIT, ERROR,
 		"Request FW image failed! Cur ECO Ver[E%u]\n",
 		ucCurEcoVer);
 

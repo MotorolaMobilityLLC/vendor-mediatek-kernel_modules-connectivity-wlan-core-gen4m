@@ -1813,7 +1813,7 @@ uint32_t wlanDownloadFW(IN struct ADAPTER *prAdapter)
 	if (prFwDlOps->downloadPatch)
 		prFwDlOps->downloadPatch(prAdapter);
 
-	DBGLOG(INIT, INFO, "FW download Start\n");
+	DBGLOG_LIMITED(INIT, INFO, "FW download Start\n");
 
 	if (prFwDlOps->downloadFirmware) {
 		rStatus = prFwDlOps->downloadFirmware(prAdapter,
@@ -1825,7 +1825,7 @@ uint32_t wlanDownloadFW(IN struct ADAPTER *prAdapter)
 	} else
 		DBGLOG(INIT, WARN, "Without downlaod firmware Ops\n");
 
-	DBGLOG(INIT, INFO, "FW download End\n");
+	DBGLOG_LIMITED(INIT, INFO, "FW download End\n");
 
 	HAL_ENABLE_FWDL(prAdapter, FALSE);
 
