@@ -447,13 +447,15 @@ void qmUpdateStaRec(IN struct ADAPTER *prAdapter, IN struct STA_RECORD *prStaRec
 
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prStaRec->ucBssIndex);
 
+	ASSERT(prBssInfo);
+
 	/* 4 <1> Ensure STA is valid */
 	if (prStaRec->fgIsValid) {
 		/* 4 <2.1> STA/BSS is protected */
 		if (secIsProtectedBss(prAdapter, prBssInfo)) {
-			if (prStaRec->fgIsTxKeyReady)
+			if (prStaRec->fgIsTxKeyReady || secIsWepBss(prAdapter, prBssInfo))
 				fgIsTxAllowed = TRUE;
-			else	/* whsu test for 1x */
+			else
 				fgIsTxAllowed = FALSE;
 		}
 		/* 4 <2.2> OPEN security */
