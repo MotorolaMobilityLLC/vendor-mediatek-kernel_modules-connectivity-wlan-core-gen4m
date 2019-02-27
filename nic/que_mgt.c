@@ -7425,6 +7425,7 @@ void qmHandleRxDhcpPackets(struct ADAPTER *prAdapter,
 	uint32_t u4DhcpMagicCode = 0;
 	uint8_t dhcpTypeGot = 0;
 	uint8_t dhcpGatewayGot = 0;
+	struct AIS_FSM_INFO *prAisFsmInfo = NULL;
 
 	if (prSwRfb->u2PacketLen <= ETHER_HEADER_LEN)
 		return;
@@ -7500,6 +7501,19 @@ void qmHandleRxDhcpPackets(struct ADAPTER *prAdapter,
 					kalMemZero(gatewayIp,
 						sizeof(gatewayIp));
 				return;
+
+			} else if (prBootp->aucOptions[i + 6] == 0x05) {
+				prAisFsmInfo =
+					&(prAdapter->rWifiVar.rAisFsmInfo);
+				/* Check if join timer is ticking, then release
+				 * channel privilege and stop join timer.
+				 */
+				if (LINK_IS_VALID(&prAisFsmInfo->
+							rJoinTimeoutTimer)) {
+					aisFsmReleaseCh(prAdapter);
+					cnmTimerStopTimer(prAdapter,
+					    &prAisFsmInfo->rJoinTimeoutTimer);
+				}
 			}
 			dhcpTypeGot = 1;
 			break;
