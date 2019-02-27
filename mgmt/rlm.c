@@ -3507,20 +3507,13 @@ void rlmProcessVhtAction(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb)
 			ucVhtOpModeChannelWidth = prRxFrame->ucOperatingMode &
 						  VHT_OP_MODE_CHANNEL_WIDTH;
 			if (prBssInfo->eCurrentOPMode == OP_MODE_ACCESS_POINT) {
-				switch (ucVhtOpModeChannelWidth) {
-				case VHT_OP_MODE_CHANNEL_WIDTH_20:
+				if (ucVhtOpModeChannelWidth ==
+						VHT_OP_MODE_CHANNEL_WIDTH_20)
 					prStaRec->u2HtCapInfo &=
 						~HT_CAP_INFO_SUP_CHNL_WIDTH;
-					break;
-				case VHT_OP_MODE_CHANNEL_WIDTH_40:
-				case VHT_OP_MODE_CHANNEL_WIDTH_80:
-				case VHT_OP_MODE_CHANNEL_WIDTH_160_80P80:
+				else	/* for other 3 VHT cases: 40/80/160 */
 					prStaRec->u2HtCapInfo |=
 						HT_CAP_INFO_SUP_CHNL_WIDTH;
-					break;
-				default:
-					break;
-				}
 			} else if (prBssInfo->eCurrentOPMode ==
 				   OP_MODE_INFRASTRUCTURE)
 				rlmRecOpModeBwForClient(ucVhtOpModeChannelWidth,
