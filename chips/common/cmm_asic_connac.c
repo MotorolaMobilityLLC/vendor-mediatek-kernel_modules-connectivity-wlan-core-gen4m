@@ -449,7 +449,7 @@ void asicPcieDmaShdlInit(IN struct ADAPTER *prAdapter)
 	struct mt66xx_chip_info *prChipInfo;
 	struct BUS_INFO *prBusInfo;
 	uint32_t u4FreePageCnt;
-	uint32_t u4Group0PLESize, u4Group1PLESize;
+	int32_t iGroup0PLESize, iGroup1PLESize;
 	struct WIFI_VAR *prWifiVar;
 
 	ASSERT(prAdapter);
@@ -500,21 +500,21 @@ void asicPcieDmaShdlInit(IN struct ADAPTER *prAdapter)
 		u4FreePageCnt = (u4FreePageCnt & DMASHDL_FREE_PG_CNT_MASK)
 			>> DMASHDL_FREE_PG_CNT_OFFSET;
 
-		if (prWifiVar->ucGroup0PLESize > 0 &&
-			prWifiVar->ucGroup1PLESize > 0) {
-			u4Group0PLESize = prWifiVar->ucGroup0PLESize;
-			u4Group1PLESize = prWifiVar->ucGroup1PLESize;
+		if (prWifiVar->iGroup0PLESize > 0 &&
+			prWifiVar->iGroup1PLESize > 0) {
+			iGroup0PLESize = prWifiVar->iGroup0PLESize;
+			iGroup1PLESize = prWifiVar->iGroup1PLESize;
 		} else {
-			u4Group0PLESize = u4FreePageCnt/2;
-			u4Group1PLESize = u4FreePageCnt/2;
+			iGroup0PLESize = u4FreePageCnt/2;
+			iGroup1PLESize = u4FreePageCnt/2;
 		}
 
 		u4MacVal = DMASHDL_MIN_QUOTA_NUM(0x3);
-		u4MacVal |= DMASHDL_MAX_QUOTA_NUM(u4Group0PLESize);
+		u4MacVal |= DMASHDL_MAX_QUOTA_NUM(iGroup0PLESize);
 		HAL_MCR_WR(prAdapter,
 			CONN_HIF_DMASHDL_GROUP0_CTRL(u4BaseAddr), u4MacVal);
 		u4MacVal = DMASHDL_MIN_QUOTA_NUM(0x3);
-		u4MacVal |= DMASHDL_MAX_QUOTA_NUM(u4Group1PLESize);
+		u4MacVal |= DMASHDL_MAX_QUOTA_NUM(iGroup1PLESize);
 		HAL_MCR_WR(prAdapter,
 			CONN_HIF_DMASHDL_GROUP1_CTRL(u4BaseAddr), u4MacVal);
 		/* Wmm1: group 1, others group 0 */

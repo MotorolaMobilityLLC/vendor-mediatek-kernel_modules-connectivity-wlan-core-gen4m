@@ -177,6 +177,17 @@
 
 #define HIF_DEADFEED_VALUE      0xdeadfeed
 
+#ifdef CONNAC2X2
+/* Config Group0 to 256 for 5G peak tput */
+#define PLE_GROUP0_SIZE	256
+#define PLE_GROUP1_SIZE	32
+#else
+/* Don't config PLE size for 1*1 project */
+#define PLE_GROUP0_SIZE	-1
+#define PLE_GROUP1_SIZE	-1
+#endif
+
+
 /*******************************************************************************
  *                                 M A C R O S
  *******************************************************************************
