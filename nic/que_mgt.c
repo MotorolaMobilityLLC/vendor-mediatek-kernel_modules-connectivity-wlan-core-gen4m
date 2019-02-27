@@ -3581,7 +3581,6 @@ void qmInsertReorderPkt(IN struct ADAPTER *prAdapter,
 	}
 	/* Case 3: Fall behind */
 	else {
-#if CFG_SUPPORT_LOWLATENCY_MODE || CFG_SUPPORT_OSHARE
 		if (qmIsNoDropPacket(prAdapter, prSwRfb)) {
 			DBGLOG(QM, LOUD, "QM: No drop packet:[%d](%d){%d,%d}\n",
 				prSwRfb->ucTid, u4SeqNo, u4WinStart, u4WinEnd);
@@ -3590,7 +3589,6 @@ void qmInsertReorderPkt(IN struct ADAPTER *prAdapter,
 				prReturnedQue, RX_DATA_REORDER_BEHIND_COUNT);
 			return;
 		}
-#endif /* CFG_SUPPORT_LOWLATENCY_MODE */
 
 #if QM_RX_WIN_SSN_AUTO_ADVANCING && QM_RX_INIT_FALL_BEHIND_PASS
 		if (prReorderQueParm->fgIsWaitingForPktWithSsn) {
@@ -4664,6 +4662,23 @@ void qmDelRxBaEntry(IN struct ADAPTER *prAdapter,
 			prRxCtrl->u4QueuedCnt, prRxCtrl->u4DequeuedCnt);
 	}
 #endif
+}
+
+u_int8_t qmIsIndependentPkt(IN struct SW_RFB *prSwRfb)
+{
+	struct sk_buff *skb = NULL;
+
+	if (prSwRfb->u2PacketLen <= ETHER_HEADER_LEN)
+		return FALSE;
+
+	skb = (struct sk_buff *)(prSwRfb->pvPacket);
+	if (!skb)
+		return FALSE;
+
+	if (GLUE_GET_INDEPENDENT_PKT(skb))
+		return TRUE;
+
+	return FALSE;
 }
 
 void mqmParseAssocReqWmmIe(IN struct ADAPTER *prAdapter,
@@ -7715,7 +7730,6 @@ u_int8_t qmHandleRxReplay(struct ADAPTER *prAdapter,
 }
 #endif
 
-#if CFG_SUPPORT_LOWLATENCY_MODE || CFG_SUPPORT_OSHARE
 u_int8_t
 qmIsNoDropPacket(IN struct ADAPTER *prAdapter, IN struct SW_RFB *prSwRfb)
 {
@@ -7747,9 +7761,15 @@ qmIsNoDropPacket(IN struct ADAPTER *prAdapter, IN struct SW_RFB *prSwRfb)
 		if (ucIpProto == IP_PRO_UDP || ucIpProto == IP_PRO_TCP)
 			return TRUE;
 	}
+
+	/* For some special packet, like DNS, DHCP,
+	 * do not drop evan fall behind.
+	 */
+	if (qmIsIndependentPkt(prSwRfb))
+		return TRUE;
+
 	return FALSE;
 }
-#endif /* CFG_SUPPORT_LOWLATENCY_MODE */
 
 void qmMoveStaTxQueue(struct STA_RECORD *prSrcStaRec,
 		      struct STA_RECORD *prDstStaRec)

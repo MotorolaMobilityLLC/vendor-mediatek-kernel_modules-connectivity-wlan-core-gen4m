@@ -1032,6 +1032,8 @@ void qmDelRxBaEntry(IN struct ADAPTER *prAdapter,
 		    IN uint8_t ucStaRecIdx, IN uint8_t ucTid,
 		    IN u_int8_t fgFlushToHost);
 
+u_int8_t qmIsIndependentPkt(IN struct SW_RFB *prSwRfb);
+
 void mqmProcessAssocRsp(IN struct ADAPTER *prAdapter,
 			IN struct SW_RFB *prSwRfb, IN uint8_t *pucIE,
 			IN uint16_t u2IELength);
@@ -1158,10 +1160,8 @@ u_int8_t qmHandleRxReplay(struct ADAPTER *prAdapter,
 			  struct SW_RFB *prSwRfb);
 #endif
 
-#if CFG_SUPPORT_LOWLATENCY_MODE || CFG_SUPPORT_OSHARE
 u_int8_t
 qmIsNoDropPacket(IN struct ADAPTER *prAdapter, IN struct SW_RFB *prSwRfb);
-#endif /* CFG_SUPPORT_LOWLATENCY_MODE */
 
 void qmMoveStaTxQueue(struct STA_RECORD *prSrcStaRec,
 		      struct STA_RECORD *prDstStaRec);
