@@ -1408,6 +1408,67 @@ static void wlanUninit(struct net_device *prDev)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief A method of struct net_device, to set the randomized mac address
+ *
+ * This method is called before Wifi Framework requests a new conenction with
+ * enabled feature "Connected Random Mac".
+ *
+ * \param[in] ndev	Pointer to struct net_device.
+ * \param[in] addr	Randomized Mac address passed from WIFI framework.
+ *
+ * \return int.
+ */
+/*----------------------------------------------------------------------------*/
+static int wlanSetMacAddress(struct net_device *ndev, void *addr)
+{
+	struct ADAPTER *prAdapter = NULL;
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct sockaddr *sa = NULL;
+	struct wireless_dev *wdev = NULL;
+
+	/**********************************************************************
+	 * Check if kernel passes valid data to us                            *
+	 **********************************************************************
+	 */
+	if (!ndev || !addr) {
+		DBGLOG(INIT, ERROR, "Set macaddr with ndev(%d) and addr(%d)\n",
+		       (ndev == NULL) ? 0 : 1, (addr == NULL) ? 0 : 1);
+		return WLAN_STATUS_INVALID_DATA;
+	}
+
+	/**********************************************************************
+	 * Block mac address changing if this setting is not for connection   *
+	 **********************************************************************
+	 */
+	wdev = ndev->ieee80211_ptr;
+	if (wdev->ssid_len > 0 || (wdev->current_bss)) {
+		DBGLOG(INIT, ERROR,
+		       "Reject macaddr change due to ssid_len(%d) & bss(%d)\n",
+		       wdev->ssid_len, wdev->current_bss);
+		return WLAN_STATUS_NOT_ACCEPTED;
+	}
+
+	/**********************************************************************
+	 * 1. Change OwnMacAddr which will be updated to FW through           *
+	 *    rlmActivateNetwork later.                                       *
+	 * 2. Change dev_addr stored in kernel to notify framework that the   *
+	 *    mac addr has been changed and what the new value is.            *
+	 **********************************************************************
+	 */
+	sa = (struct sockaddr *)addr;
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(ndev));
+	prAdapter = prGlueInfo->prAdapter;
+
+	COPY_MAC_ADDR(prAdapter->prAisBssInfo->aucOwnMacAddr, sa->sa_data);
+	COPY_MAC_ADDR(prGlueInfo->prDevHandler->dev_addr, sa->sa_data);
+	DBGLOG(INIT, INFO, "Set connect random macaddr to " MACSTR ".\n",
+	       MAC2STR(prAdapter->prAisBssInfo->aucOwnMacAddr));
+
+	return WLAN_STATUS_SUCCESS;
+}				/* end of wlanSetMacAddr() */
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief A function for prDev->open
  *
  * \param[in] prDev      Pointer to struct net_device.
@@ -1724,6 +1785,7 @@ static const struct net_device_ops wlan_netdev_ops = {
 	.ndo_init = wlanInit,
 	.ndo_uninit = wlanUninit,
 	.ndo_select_queue = wlanSelectQueue,
+	.ndo_set_mac_address = wlanSetMacAddress,
 };
 
 #if CFG_ENABLE_UNIFY_WIPHY
@@ -3813,3 +3875,4 @@ module_init(initWlan);
 module_exit(exitWlan);
 
 #endif
+
