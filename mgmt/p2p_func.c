@@ -4101,7 +4101,6 @@ p2pFuncParseBeaconVenderId(IN struct ADAPTER *prAdapter,
 				IE_SIZE(pucIE);
 			DBGLOG(P2P, TRACE,
 				"Driver unprocessed Vender Specific IE\n");
-			ASSERT(FALSE);
 		}
 	} while (0);
 }
