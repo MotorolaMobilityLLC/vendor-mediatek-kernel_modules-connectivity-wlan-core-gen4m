@@ -1180,8 +1180,10 @@ void aisFsmSteps(IN struct ADAPTER *prAdapter, enum ENUM_AIS_STATE eNextState)
 					  &prAisFsmInfo->rScanDoneTimer);
 			cnmTimerStopTimer(prAdapter,
 					  &prAisFsmInfo->rWaitOkcPMKTimer);
-			aisFunClearAllTxReq(prAdapter,
-					&(prAisFsmInfo->rMgmtTxInfo));
+			if (prAisFsmInfo->ePreviousState ==
+					AIS_STATE_OFF_CHNL_TX)
+				aisFunClearAllTxReq(prAdapter,
+						&(prAisFsmInfo->rMgmtTxInfo));
 
 			if (prAisReq)
 				DBGLOG(AIS, TRACE,
@@ -2156,6 +2158,11 @@ void aisFsmSteps(IN struct ADAPTER *prAdapter, enum ENUM_AIS_STATE eNextState)
 			 */
 			if (timerPendingTimer(&prAisFsmInfo->rJoinTimeoutTimer))
 				break;
+
+			if (prAisFsmInfo->ePreviousState ==
+					AIS_STATE_OFF_CHNL_TX)
+				aisFunClearAllTxReq(prAdapter,
+						&(prAisFsmInfo->rMgmtTxInfo));
 
 			/* 1. Process for pending roaming scan */
 			if (aisFsmIsRequestPending(prAdapter,
@@ -5706,6 +5713,9 @@ aisFunHandleOffchnlTxReq(IN struct ADAPTER *prAdapter,
 
 	prMgmtTxReqInfo = &(prAisFsmInfo->rMgmtTxInfo);
 
+	if (prMgmtTxMsg->u4Duration < MIN_TX_DURATION_TIME_MS)
+		prMgmtTxMsg->u4Duration = MIN_TX_DURATION_TIME_MS;
+
 	if (aisFunAddTxReq2Queue(prAdapter, prMgmtTxReqInfo,
 			prMgmtTxMsg, &prOffChnlTxReq) == FALSE)
 		goto error;
@@ -5714,11 +5724,6 @@ aisFunHandleOffchnlTxReq(IN struct ADAPTER *prAdapter,
 		return;
 
 	switch (prAisFsmInfo->eCurrentState) {
-	case AIS_STATE_IDLE:
-	case AIS_STATE_NORMAL_TR:
-		if (!aisFunChnlReqByOffChnl(prAdapter, prOffChnlTxReq))
-			goto error;
-		break;
 	case AIS_STATE_OFF_CHNL_TX:
 		if (prAisFsmInfo->fgIsChannelGranted &&
 				prAisFsmInfo->rChReqInfo.ucChannelNum ==
@@ -5734,9 +5739,9 @@ aisFunHandleOffchnlTxReq(IN struct ADAPTER *prAdapter,
 		}
 		break;
 	default:
-		DBGLOG(AIS, ERROR, "unknown state: %s for offchannel-tx.\n",
-				apucDebugAisState[prAisFsmInfo->eCurrentState]);
-		goto error;
+		if (!aisFunChnlReqByOffChnl(prAdapter, prOffChnlTxReq))
+			goto error;
+		break;
 	}
 
 	return;
@@ -5747,7 +5752,6 @@ error:
 			&prOffChnlTxReq->rLinkEntry);
 	cnmPktFree(prAdapter, prOffChnlTxReq->prMgmtTxMsdu);
 	cnmMemFree(prAdapter, prOffChnlTxReq);
-	ASSERT(FALSE);
 }
 
 static u_int8_t
