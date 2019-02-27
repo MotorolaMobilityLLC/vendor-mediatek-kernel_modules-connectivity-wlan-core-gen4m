@@ -542,6 +542,7 @@ void aisFsmStateInit_JOIN(IN struct ADAPTER *prAdapter,
 	struct CONNECTION_SETTINGS *prConnSettings;
 	struct STA_RECORD *prStaRec;
 	struct MSG_SAA_FSM_START *prJoinReqMsg;
+	bool fgIsInProcessBeaconTimeout;
 
 	DEBUGFUNC("aisFsmStateInit_JOIN()");
 
@@ -575,8 +576,17 @@ void aisFsmStateInit_JOIN(IN struct ADAPTER *prAdapter,
 	if (prStaRec->ucStaState == STA_STATE_1)
 		cnmStaRecChangeState(prAdapter, prStaRec, STA_STATE_1);
 
+	fgIsInProcessBeaconTimeout = (prAisBssInfo->ucReasonOfDisconnect ==
+		DISCONNECT_REASON_CODE_RADIO_LOST)
+		&& (prAisFsmInfo->u4PostponeIndStartTime > 0)
+		&& !CHECK_FOR_TIMEOUT(
+		kalGetTimeTick(), prAisFsmInfo->u4PostponeIndStartTime,
+		SEC_TO_MSEC(prConnSettings->ucDelayTimeOfDisconnectEvent));
+
 	/* 4 <3> Update ucAvailableAuthTypes which we can choice during SAA */
-	if (prAisBssInfo->eConnectionState == PARAM_MEDIA_STATE_DISCONNECTED) {
+	if (prAisBssInfo->eConnectionState == PARAM_MEDIA_STATE_DISCONNECTED
+		/* Not in case of beacon timeout*/
+		&& !fgIsInProcessBeaconTimeout) {
 
 		prStaRec->fgIsReAssoc = FALSE;
 
