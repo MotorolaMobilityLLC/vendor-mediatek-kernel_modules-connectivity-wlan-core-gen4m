@@ -1667,7 +1667,7 @@ void halWpdmaProcessDataDmaDone(IN struct GLUE_INFO *prGlueInfo,
 			prTxRing->u4UsedCnt = 0;
 	}
 
-	DBGLOG(HAL, TRACE,
+	DBGLOG_LIMITED(HAL, TRACE,
 		"DMA done: port[%u] dma[%u] idx[%u] used[%u]\n", u2Port,
 		u4DmaIdx, u4SwIdx, prTxRing->u4UsedCnt);
 
