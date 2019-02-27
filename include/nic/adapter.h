@@ -550,6 +550,7 @@ struct BSS_INFO {
 #endif
 
 	enum ENUM_KEY_ACTION_TYPE_T eKeyAction;
+	enum ENUM_IFTYPE eIftype;
 };
 
 /* Support AP Selection */

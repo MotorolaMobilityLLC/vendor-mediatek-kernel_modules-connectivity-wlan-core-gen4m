@@ -3509,7 +3509,7 @@ void scanReportBss2Cfg80211(IN struct ADAPTER *prAdapter,
 
 	prBSSDescList = &prScanInfo->rBSSDescList;
 
-	log_dbg(SCN, TRACE, "scanReportBss2Cfg80211\n");
+	log_dbg(SCN, TRACE, "eBSSType: %d\n", eBSSType);
 
 	if (SpecificprBssDesc) {
 		{
@@ -3596,10 +3596,17 @@ void scanReportBss2Cfg80211(IN struct ADAPTER *prAdapter,
 #endif
 			    ) {
 
-				log_dbg(SCN, TRACE, "Report ALL SSID[%s %u] ValidSSID[%u]\n",
-					prBssDesc->aucSSID,
-					prBssDesc->ucChannelNum,
-					prBssDesc->fgIsValidSSID);
+#define TEMP_LOG_TEMPLATE "Report " MACSTR " SSID[%s %u] eBSSType[%d] " \
+		"ValidSSID[%u] u2RawLength[%d] fgIsP2PReport[%d]\n"
+				log_dbg(SCN, TRACE, TEMP_LOG_TEMPLATE,
+						MAC2STR(prBssDesc->aucBSSID),
+						prBssDesc->aucSSID,
+						prBssDesc->ucChannelNum,
+						prBssDesc->eBSSType,
+						prBssDesc->fgIsValidSSID,
+						prBssDesc->u2RawLength,
+						prBssDesc->fgIsP2PReport);
+#undef TEMP_LOG_TEMPLATE
 
 				if (eBSSType == BSS_TYPE_INFRASTRUCTURE) {
 					if (prBssDesc->u2RawLength != 0 &&
