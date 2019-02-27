@@ -845,6 +845,17 @@
 #if CFG_SUPPORT_PNO != CFG_SUPPORT_SCHED_SCAN
 #error Value of CFG_SUPPORT_SCHED_SCAN should equal to value of CFG_SUPPORT_PNO
 #endif
+
+/*------------------------------------------------------------------------------
+ * Full2Partial Scan SUPPORT
+ *------------------------------------------------------------------------------
+ */
+/* During a full2partial scan period, all online full scan requests would be
+ * changed to partial scan. The unit of this value is second
+ */
+#define CFG_SUPPORT_FULL2PARTIAL_SCAN      (1)
+#define CFG_SCAN_FULL2PARTIAL_PERIOD       (60)
+
 /*------------------------------------------------------------------------------
  * Flags of Sniffer SUPPORT
  *------------------------------------------------------------------------------
