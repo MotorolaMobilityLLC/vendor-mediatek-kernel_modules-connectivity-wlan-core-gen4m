@@ -3865,27 +3865,34 @@ void nicExtEventReCalData(IN struct ADAPTER *prAdapter, IN uint8_t *pucEventBuf)
 
 	prReCalData = (struct EXT_EVENT_RECAL_DATA_T *)pucEventBuf;
 	switch (prReCalData->u4Type) {
-	case 0:
+	case 0: {
+		unsigned long ulTmpData;
+
 		prReCalData->u.ucData[9] = '\0';
 		prReCalData->u.ucData[19] = '\0';
 		u4Idx = prReCalInfo->u4Count;
 
-		if (kstrtoul(&prReCalData->u.ucData[1], 16,
-			     (unsigned long *) &prCalArray[u4Idx].u4CalId))
+		if (kstrtoul(&prReCalData->u.ucData[1], 16, &ulTmpData))
 			DBGLOG(RFTEST, ERROR, "convert fail: ucData[1]\n");
-		if (kstrtoul(&prReCalData->u.ucData[11], 16,
-			     (unsigned long *) &prCalArray[u4Idx].u4CalAddr))
+		else
+			prCalArray[u4Idx].u4CalId = (unsigned int)ulTmpData;
+		if (kstrtoul(&prReCalData->u.ucData[11], 16, &ulTmpData))
 			DBGLOG(RFTEST, ERROR, "convert fail: ucData[11]\n");
-		if (kstrtoul(&prReCalData->u.ucData[20], 16,
-			     (unsigned long *) &prCalArray[u4Idx].u4CalValue))
+		else
+			prCalArray[u4Idx].u4CalAddr = (unsigned int)ulTmpData;
+		if (kstrtoul(&prReCalData->u.ucData[20], 16, &ulTmpData))
 			DBGLOG(RFTEST, ERROR, "convert fail: ucData[20] %s\n",
 					       &prReCalData->u.ucData[20]);
+		else
+			prCalArray[u4Idx].u4CalValue = (unsigned int)ulTmpData;
+
 		DBGLOG(RFTEST, TRACE, "[0x%08x][0x%08x][0x%08x]\n",
 					prCalArray[u4Idx].u4CalId,
 					prCalArray[u4Idx].u4CalAddr,
 					prCalArray[u4Idx].u4CalValue);
 		prReCalInfo->u4Count++;
 		break;
+	}
 	case 1:
 		/* Todo: for extension to handle int */
 		/*       data directly come from FW */
