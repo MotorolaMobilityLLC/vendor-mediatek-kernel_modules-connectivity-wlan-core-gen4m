@@ -113,8 +113,7 @@ extern int get_logtoomuch_enable(void) __attribute__((weak));
 	DBG_CLASS_TRACE)
 #define DBG_LOG_LEVEL_EXTREME \
 	(DBG_LOG_LEVEL_MORE | \
-	DBG_CLASS_LOUD | \
-	DBG_CLASS_TEMP)
+	DBG_CLASS_LOUD)
 
 #if defined(LINUX)
 #define DBG_PRINTF_64BIT_DEC    "lld"
