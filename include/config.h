@@ -253,6 +253,8 @@
 
 #define CFG_SUPPORT_LOWLATENCY_MODE	1
 
+#define CFG_SUPPORT_ANT_SWAP		1
+
 /* If skb_buff mark field is 0x5a, change priority to VO (Customer Feature)*/
 #define CFG_CHANGE_PRIORITY_BY_SKB_MARK_FIELD	1
 

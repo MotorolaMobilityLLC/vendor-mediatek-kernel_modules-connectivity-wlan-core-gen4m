@@ -1368,6 +1368,9 @@ enum NIC_CAPABILITY_V2_TAG {
 	TAG_CAP_LOCATION_CAP = 0xc,
 	TAG_CAP_MUMIMO_CAP = 0xd,
 	TAG_CAP_BUFFER_MODE_INFO = 0xe,
+#if CFG_SUPPORT_ANT_SWAP
+	TAG_CAP_ANTSWP = 0x16,
+#endif
 	TAG_CAP_TOTAL
 };
 
@@ -1464,6 +1467,15 @@ struct CAP_MUMIMO_CAP {
 	uint8_t ucMuMimoTx; /* 1:support, 0:not */
 	uint8_t aucReserved[2];
 };
+
+#if CFG_SUPPORT_ANT_SWAP
+struct CAP_ANTSWP {
+	uint8_t  ucVersion;
+	uint8_t  ucRsvd;
+	uint8_t  ucIsSupported;	/* 1:support, 0:not */
+	uint8_t  ucReserved[1];
+};
+#endif
 
 #define EFUSE_SECTION_TABLE_SIZE        (10)   /* It should not be changed. */
 
@@ -3831,6 +3843,10 @@ uint32_t nicCfgChipCapLocationCap(IN struct ADAPTER *prAdapter,
 	IN uint8_t *pucEventBuf);
 uint32_t nicCfgChipCapMuMimoCap(IN struct ADAPTER *prAdapter,
 	IN uint8_t *pucEventBuf);
+#if CFG_SUPPORT_ANT_SWAP
+uint32_t nicCfgChipCapAntSwpCap(IN struct ADAPTER *prAdapter,
+	IN uint8_t *pucEventBuf);
+#endif
 
 void nicExtEventICapIQData(IN struct ADAPTER *prAdapter,
 	IN uint8_t *pucEventBuf);
