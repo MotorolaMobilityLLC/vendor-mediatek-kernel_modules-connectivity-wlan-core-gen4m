@@ -7455,8 +7455,14 @@ wlanPktTxDone(IN struct ADAPTER *prAdapter, IN struct MSDU_INFO *prMsduInfo, IN 
 	       apucPktType[prMsduInfo->ucPktType], prMsduInfo->u4TxDoneTag, prMsduInfo->ucWlanIndex,
 	       prMsduInfo->ucPID, rTxDoneStatus, prMsduInfo->ucTxSeqNum);
 
-	if (prMsduInfo->ucPktType == ENUM_PKT_1X)
-		secHandleEapolTxStatus(prAdapter, prMsduInfo, rTxDoneStatus);
+	if (prMsduInfo->ucPktType == ENUM_PKT_1X) {
+		p2pRoleFsmNotifyEapolTxStatus(prAdapter,
+				prMsduInfo->ucBssIndex,
+				prMsduInfo->eEapolKeyType,
+				rTxDoneStatus);
+		secHandleEapolTxStatus(prAdapter, prMsduInfo,
+				rTxDoneStatus);
+	}
 
 	return WLAN_STATUS_SUCCESS;
 }
