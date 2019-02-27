@@ -363,7 +363,7 @@ VOID halDisableInterrupt(IN P_ADAPTER_T prAdapter)
 BOOLEAN halSetDriverOwn(IN P_ADAPTER_T prAdapter)
 {
 	BOOLEAN fgStatus = TRUE;
-	UINT_32 i, u4CurrTick = 0;
+	UINT_32 i, j, u4CurrTick = 0;
 	BOOLEAN fgTimeout;
 	BOOLEAN fgResult;
 	BOOLEAN fgReady = FALSE;
@@ -380,6 +380,7 @@ BOOLEAN halSetDriverOwn(IN P_ADAPTER_T prAdapter)
 
 	u4CurrTick = kalGetTimeTick();
 	i = 0;
+	j = 0;
 
 	glWakeupSdio(prAdapter->prGlueInfo);
 
@@ -452,7 +453,7 @@ BOOLEAN halSetDriverOwn(IN P_ADAPTER_T prAdapter)
 		}
 
 		/* Delay for LP engine to complete its operation. */
-		kalMsleep(LP_OWN_BACK_LOOP_DELAY_MS);
+		kalUsleep_range(LP_OWN_BACK_LOOP_DELAY_MIN_US, LP_OWN_BACK_LOOP_DELAY_MAX_US);
 		i++;
 	}
 	u4DriverOwnTime = ((kalGetTimeTick() >= u4CurrTick) ?
@@ -509,11 +510,11 @@ BOOLEAN halSetDriverOwn(IN P_ADAPTER_T prAdapter)
 				break;
 			}
 			/* Delay for CR4 to complete its operation. */
-			kalMsleep(LP_OWN_BACK_LOOP_DELAY_MS);
+			kalUsleep_range(LP_OWN_BACK_LOOP_DELAY_MIN_US, LP_OWN_BACK_LOOP_DELAY_MAX_US);
 		}
 
-		HAL_MCR_RD(prAdapter, MCR_D2HRM1R, &i);
-		if (i == 0x77889901) {
+		HAL_MCR_RD(prAdapter, MCR_D2HRM1R, &j);
+		if (j == 0x77889901) {
 			struct mt66xx_chip_info *prChipInfo = prAdapter->chip_info;
 
 			if (halIsPendingTxDone(prAdapter)) {
@@ -532,8 +533,8 @@ BOOLEAN halSetDriverOwn(IN P_ADAPTER_T prAdapter)
 				(kalGetTimeTick() - u4CurrTick) : (kalGetTimeTick() + (~u4CurrTick)));
 	}
 #endif
-	DBGLOG(INIT, INFO, "DRIVER OWN %d, %d, DSLP %s\n",
-		u4DriverOwnTime, u4Cr4ReadyTime, ((i == 0x77889901)?"1":"0"));
+	DBGLOG(NIC, INFO, "DRIVER OWN %d, %d, DSLP %s, count %d\n",
+		u4DriverOwnTime, u4Cr4ReadyTime, ((j == 0x77889901)?"1":"0"), i);
 
 	return fgStatus;
 }
