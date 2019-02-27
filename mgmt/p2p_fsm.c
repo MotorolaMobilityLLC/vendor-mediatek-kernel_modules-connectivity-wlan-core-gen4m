@@ -117,6 +117,8 @@ VOID p2pFsmRunEventScanRequest(IN P_ADAPTER_T prAdapter, IN P_MSG_HDR_T prMsgHdr
 
 		prP2pScanReqMsg = (P_MSG_P2P_SCAN_REQUEST_T) prMsgHdr;
 
+		prAdapter->prP2pInfo->eConnState = P2P_CNN_NORMAL;
+
 		if (prP2pScanReqMsg->ucBssIdx == prAdapter->ucP2PDevBssIdx)
 			p2pDevFsmRunEventScanRequest(prAdapter, prMsgHdr);
 		else
