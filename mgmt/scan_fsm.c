@@ -256,6 +256,11 @@ void scnSendScanReqV2(IN struct ADAPTER *prAdapter)
 	}
 	/* send command packet for scan */
 	kalMemZero(prCmdScanReq, sizeof(struct CMD_SCAN_REQ_V2));
+	/* Modify channelList number from 32 to 54 */
+	COPY_MAC_ADDR(prCmdScanReq->aucBSSID, prScanParam->aucBSSID);
+	if (!EQUAL_MAC_ADDR(prCmdScanReq->aucBSSID, "\xff\xff\xff\xff\xff\xff"))
+		DBGLOG(SCN, INFO, "Include BSSID %pM in probe request\n",
+		       prCmdScanReq->aucBSSID);
 
 	prCmdScanReq->ucSeqNum = prScanParam->ucSeqNum;
 	prCmdScanReq->ucBssIndex = prScanParam->ucBssIndex;
@@ -352,6 +357,8 @@ void scnSendScanReqV2(IN struct ADAPTER *prAdapter)
 	}
 
 	prCmdScanReq->u2ChannelDwellTime = prScanParam->u2ChannelDwellTime;
+	prCmdScanReq->u2ChannelMinDwellTime =
+		prScanParam->u2ChannelMinDwellTime;
 	prCmdScanReq->u2TimeoutValue = prScanParam->u2TimeoutValue;
 
 	if (prScanParam->u2IELen <= MAX_IE_LENGTH)
@@ -363,7 +370,7 @@ void scnSendScanReqV2(IN struct ADAPTER *prAdapter)
 		kalMemCopy(prCmdScanReq->aucIE, prScanParam->aucIE,
 			sizeof(uint8_t) * prCmdScanReq->u2IELen);
 
-	log_dbg(SCN, INFO, "ScanReqV2: ScanType=%d,SSIDType=%d,Num=%u,Ext=%u,ChannelType=%d,Num=%d,Ext=%u,Seq=%u,Ver=%u\n",
+	log_dbg(SCN, INFO, "ScanReqV2: ScanType=%d,SSIDType=%d,Num=%u,Ext=%u,ChannelType=%d,Num=%d,Ext=%u,Seq=%u,Ver=%u,Dw=%u,Min=%u\n",
 		prCmdScanReq->ucScanType,
 		prCmdScanReq->ucSSIDType,
 		prCmdScanReq->ucSSIDNum,
@@ -371,7 +378,9 @@ void scnSendScanReqV2(IN struct ADAPTER *prAdapter)
 		prCmdScanReq->ucChannelType,
 		prCmdScanReq->ucChannelListNum,
 		prCmdScanReq->ucChannelListExtNum,
-		prCmdScanReq->ucSeqNum, prCmdScanReq->auVersion[0]);
+		prCmdScanReq->ucSeqNum, prCmdScanReq->auVersion[0],
+		prCmdScanReq->u2ChannelDwellTime,
+		prCmdScanReq->u2ChannelMinDwellTime);
 
 	wlanSendSetQueryCmd(prAdapter,
 		CMD_ID_SCAN_REQ_V2,
@@ -615,12 +624,23 @@ void scnFsmHandleScanMsgV2(IN struct ADAPTER *prAdapter,
 	prScanParam->ucBssIndex = prScanReqMsg->ucBssIndex;
 	prScanParam->ucSSIDType = prScanReqMsg->ucSSIDType;
 	prScanParam->ucSSIDNum = prScanReqMsg->ucSSIDNum;
+	kalMemCopy(prScanParam->aucBSSID, prScanReqMsg->aucBSSID, MAC_ADDR_LEN);
 
-	for (i = 0; i < prScanReqMsg->ucSSIDNum; i++) {
-		COPY_SSID(prScanParam->aucSpecifiedSSID[i],
-			prScanParam->ucSpecifiedSSIDLen[i],
-			prScanReqMsg->prSsid[i].aucSsid,
-			(uint8_t) prScanReqMsg->prSsid[i].u4SsidLen);
+	if (prScanParam->ucSSIDType & SCAN_REQ_SSID_SPECIFIED_ONLY) {
+		prScanParam->ucSSIDNum = 1;
+		kalMemZero(prScanParam->ucSpecifiedSSIDLen,
+			   sizeof(prScanParam->ucSpecifiedSSIDLen));
+		COPY_SSID(prScanParam->aucSpecifiedSSID[0],
+			  prScanParam->ucSpecifiedSSIDLen[0],
+			  &prScanReqMsg->prSsid[0].aucSsid[0],
+			  prScanReqMsg->prSsid[0].u4SsidLen);
+	} else {
+		for (i = 0; i < prScanReqMsg->ucSSIDNum; i++) {
+			COPY_SSID(prScanParam->aucSpecifiedSSID[i],
+				  prScanParam->ucSpecifiedSSIDLen[i],
+				  prScanReqMsg->prSsid[i].aucSsid,
+				  (uint8_t) prScanReqMsg->prSsid[i].u4SsidLen);
+		}
 	}
 
 	prScanParam->u2ProbeDelayTime = prScanReqMsg->u2ProbeDelay;
@@ -652,6 +672,8 @@ void scnFsmHandleScanMsgV2(IN struct ADAPTER *prAdapter,
 	}
 
 	prScanParam->u2ChannelDwellTime = prScanReqMsg->u2ChannelDwellTime;
+	prScanParam->u2ChannelMinDwellTime =
+		prScanReqMsg->u2ChannelMinDwellTime;
 	prScanParam->u2TimeoutValue = prScanReqMsg->u2TimeoutValue;
 	prScanParam->ucSeqNum = prScanReqMsg->ucSeqNum;
 

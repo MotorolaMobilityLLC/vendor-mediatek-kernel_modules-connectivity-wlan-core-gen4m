@@ -288,6 +288,7 @@ struct AIS_FSM_INFO {
 
 	/* Scan target channel when device roaming */
 	uint8_t fgTargetChnlScanIssued;
+
 };
 
 enum WNM_AIS_BSS_TRANSITION {
@@ -298,8 +299,12 @@ enum WNM_AIS_BSS_TRANSITION {
 };
 struct MSG_AIS_BSS_TRANSITION_T {
 	struct MSG_HDR rMsgHdr;	/* Must be the first member */
+	uint8_t ucToken;
 	u_int8_t fgNeedResponse;
-	enum WNM_AIS_BSS_TRANSITION	eTransitionType;
+	uint8_t ucValidityInterval;
+	enum WNM_AIS_BSS_TRANSITION eTransitionType;
+	uint16_t u2CandListLen;
+	uint8_t *pucCandList;
 };
 
 /*******************************************************************************
@@ -549,6 +554,13 @@ struct AIS_BLACKLIST_ITEM *aisQueryBlackList(struct ADAPTER *prAdapter,
 uint16_t aisCalculateBlackListScore(struct ADAPTER *prAdapter,
 	struct BSS_DESC *prBssDesc);
 /* end Support AP Selection */
+
+/* Support 11K */
+void aisResetNeighborApList(struct ADAPTER *prAdapter);
+void aisCollectNeighborAP(struct ADAPTER *prAdapter, uint8_t *pucApBuf,
+			  uint16_t u2ApBufLen, uint8_t ucValidInterval);
+void aisSendNeighborRequest(struct ADAPTER *prAdapter);
+/* end Support 11K */
 
 /*******************************************************************************
 *                              F U N C T I O N S

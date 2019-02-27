@@ -1259,7 +1259,10 @@ kalIndicateStatusAndComplete(IN struct GLUE_INFO *prGlueInfo, IN uint32_t eStatu
 
 #endif
 		}
-
+		kalMemFree(prGlueInfo->rFtIeForTx.pucIEBuf, VIR_MEM_TYPE,
+			   prGlueInfo->rFtIeForTx.u4IeLength);
+		kalMemZero(&prGlueInfo->rFtIeForTx,
+			   sizeof(prGlueInfo->rFtIeForTx));
 
 		prGlueInfo->eParamMediaStateIndicated = PARAM_MEDIA_STATE_DISCONNECTED;
 
@@ -1354,6 +1357,10 @@ kalIndicateStatusAndComplete(IN struct GLUE_INFO *prGlueInfo, IN uint32_t eStatu
 						prPmkidCand++;
 					}
 				}
+				break;
+			case ENUM_STATUS_TYPE_FT_AUTH_STATUS:
+				cfg80211_ft_event(prGlueInfo->prDevHandler,
+						  &prGlueInfo->rFtEventParam);
 				break;
 
 			default:

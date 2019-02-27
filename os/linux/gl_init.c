@@ -395,6 +395,7 @@ static struct cfg80211_ops mtk_wlan_ops = {
 	.tdls_oper = mtk_cfg80211_tdls_oper,
 	.tdls_mgmt = mtk_cfg80211_tdls_mgmt,
 #endif
+	.update_ft_ies = mtk_cfg80211_update_ft_ies,
 };
 #else /* CFG_ENABLE_UNIFY_WIPHY */
 static struct cfg80211_ops mtk_cfg_ops = {
@@ -462,6 +463,7 @@ static struct cfg80211_ops mtk_cfg_ops = {
 	.set_tx_power = mtk_cfg_set_txpower,
 	.get_tx_power = mtk_cfg_get_txpower,
 #endif
+	.update_ft_ies = mtk_cfg80211_update_ft_ies,
 };
 #endif	/* CFG_ENABLE_UNIFY_WIPHY */
 
@@ -1957,6 +1959,11 @@ static struct wireless_dev *wlanNetCreate(void *pvData, void *pvDriverData)
 		DBGLOG(INIT, ERROR, "Allocating memory to net_device context failed\n");
 		goto netcreate_err;
 	}
+
+	/* Device can help us to save at most 3000 packets, after we stopped
+	** queue
+	*/
+	prGlueInfo->prDevHandler->tx_queue_len = 3000;
 	DBGLOG(INIT, INFO, "net_device prDev(0x%p) allocated\n", prGlueInfo->prDevHandler);
 
 	/* 4 <3.1.1> Initialize net device varaiables */
@@ -2812,8 +2819,8 @@ static int32_t wlanProbe(void *pvData, void *pvDriverData)
 			prGlueInfo->fgNvramAvailable);
 
 		if (prGlueInfo->fgNvramAvailable == FALSE) {
-		/* P_REG_INFO_T prRegInfo = (P_REG_INFO_T)
-		 * kmalloc(sizeof(REG_INFO_T), GFP_KERNEL);
+		/* struct REG_INFO *prRegInfo = (struct REG_INFO *)
+		 * kmalloc(sizeof(struct REG_INFO), GFP_KERNEL);
 		 */
 			DBGLOG(INIT, WARN, "glLoadNvram Again\n");
 			kalMemSet(prRegInfo, 0, sizeof(grRegInfo));
@@ -2957,6 +2964,21 @@ static int32_t wlanProbe(void *pvData, void *pvDriverData)
 			}
 		}
 #endif
+#if CFG_SUPPORT_802_11K
+		{
+			uint32_t rStatus = WLAN_STATUS_FAILURE;
+			uint32_t u4SetInfoLen = 0;
+
+			rStatus = kalIoctl(prGlueInfo,
+					   wlanoidSync11kCapabilities, NULL, 0,
+					   FALSE, FALSE, TRUE, &u4SetInfoLen);
+
+			if (rStatus != WLAN_STATUS_SUCCESS)
+				DBGLOG(INIT, WARN,
+				       "RRM: Set 11k Capabilities fail 0x%x\n",
+				       rStatus);
+		}
+#endif
 
 		/* 4 <3> Register the card */
 		i4DevIdx = wlanNetRegister(prWdev);
@@ -3022,6 +3044,8 @@ static int32_t wlanProbe(void *pvData, void *pvDriverData)
 			break;
 		}
 #endif
+		kalMemZero(&prGlueInfo->rFtIeForTx,
+			   sizeof(prGlueInfo->rFtIeForTx));
 	} while (FALSE);
 
 	if (i4Status == 0) {

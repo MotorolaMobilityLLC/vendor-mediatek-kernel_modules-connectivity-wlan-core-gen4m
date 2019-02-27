@@ -97,20 +97,20 @@ struct BSS_TRANSITION_MGT_PARAM_T {
 	uint8_t ucQueryReason;
 	/* for Request */
 	uint8_t ucRequestMode;
-	uint8_t ucValidityInterval;
 	uint16_t u2DisassocTimer;
 	uint16_t u2TermDuration;
 	uint8_t aucTermTsf[8];
 	uint8_t ucSessionURLLen;
 	uint8_t aucSessionURL[255];
 	/* for Respone */
+	u_int8_t fgPendingResponse:1;
+	u_int8_t fgUnsolicitedReq:1;
+	u_int8_t fgReserved:6;
 	uint8_t ucStatusCode;
 	uint8_t ucTermDelay;
 	uint8_t aucTargetBssid[MAC_ADDR_LEN];
-	uint8_t aucOurNeighborBss[CFG_MAX_NUM_BSS_LIST];
-	uint8_t *pucPeerNeighborBss;
+	uint8_t *pucOurNeighborBss;
 	uint16_t u2OurNeighborBssLen;
-	uint16_t u2PeerNeighborBssLen;
 };
 
 /*******************************************************************************

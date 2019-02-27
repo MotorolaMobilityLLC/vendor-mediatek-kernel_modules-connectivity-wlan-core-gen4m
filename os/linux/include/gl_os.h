@@ -428,6 +428,16 @@ struct GL_BOW_INFO {
 };
 #endif
 
+struct FT_IES {
+	uint16_t u2MDID;
+	struct IE_MOBILITY_DOMAIN_T *prMDIE;
+	struct IE_FAST_TRANSITION_T *prFTIE;
+	struct IE_TIMEOUT_INTERVAL *prTIE;
+	struct RSN_INFO_ELEM *prRsnIE;
+	uint8_t *pucIEBuf;
+	uint32_t u4IeLength;
+};
+
 /*
  * type definition of pointer to p2p structure
  */
@@ -710,6 +720,10 @@ struct GLUE_INFO {
 	/* store the FW roaming enable state which FWK determines */
 	/* if it's = 0, ignore the black/whitelists settings from FWK */
 	uint32_t u4FWRoamingEnable;
+
+	/* 11R */
+	struct FT_IES rFtIeForTx;
+	struct cfg80211_ft_event_params rFtEventParam;
 };
 
 typedef irqreturn_t(*PFN_WLANISR) (int irq, void *dev_id,

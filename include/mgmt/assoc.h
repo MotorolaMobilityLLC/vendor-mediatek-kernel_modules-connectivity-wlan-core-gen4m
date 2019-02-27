@@ -139,5 +139,7 @@ uint32_t assocSendReAssocRespFrame(IN struct ADAPTER
 uint16_t assocBuildCapabilityInfo(IN struct ADAPTER
 				*prAdapter, IN struct STA_RECORD *prStaRec);
 
+void assocGenerateMDIE(IN struct ADAPTER *prAdapter,
+		       IN OUT struct MSDU_INFO *prMsduInfo);
 
 #endif /* _ASSOC_H */
