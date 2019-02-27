@@ -965,6 +965,9 @@ WLAN_STATUS halRxReadBuffer(IN P_ADAPTER_T prAdapter, IN OUT P_SW_RFB_T prSwRfb)
 	BOOL fgResult = TRUE;
 	UINT_32 u4RegValue;
 	UINT_32 rxNum;
+#if CFG_TCP_IP_CHKSUM_OFFLOAD
+	PUINT_32 pu4HwAppendDW;
+#endif /* CFG_TCP_IP_CHKSUM_OFFLOAD */
 
 	DEBUGFUNC("halRxReadBuffer");
 
@@ -1024,6 +1027,13 @@ WLAN_STATUS halRxReadBuffer(IN P_ADAPTER_T prAdapter, IN OUT P_SW_RFB_T prSwRfb)
 
 		prSwRfb->ucPacketType = (UINT_8) HAL_RX_STATUS_GET_PKT_TYPE(prRxStatus);
 		DBGLOG(RX, TRACE, "ucPacketType = %d\n", prSwRfb->ucPacketType);
+
+#if CFG_TCP_IP_CHKSUM_OFFLOAD
+		pu4HwAppendDW = (PUINT_32) prRxStatus;
+		pu4HwAppendDW += (ALIGN_4(prRxStatus->u2RxByteCount) >> 2);
+		prSwRfb->u4TcpUdpIpCksStatus = *pu4HwAppendDW;
+		DBGLOG(RX, TRACE, "u4TcpUdpIpCksStatus[0x%02x]\n", prSwRfb->u4TcpUdpIpCksStatus);
+#endif /* CFG_TCP_IP_CHKSUM_OFFLOAD */
 
 		prSwRfb->ucStaRecIdx =
 		    secGetStaIdxByWlanIdx(prAdapter, (UINT_8) HAL_RX_STATUS_GET_WLAN_IDX(prRxStatus));
@@ -1123,6 +1133,9 @@ halRxEnhanceReadBuffer(IN P_ADAPTER_T prAdapter,
 	UINT_32 u4PktLen = 0;
 	WLAN_STATUS u4Status = WLAN_STATUS_FAILURE;
 	BOOL fgResult = TRUE;
+#if CFG_TCP_IP_CHKSUM_OFFLOAD
+	PUINT_32 pu4HwAppendDW;
+#endif /* CFG_TCP_IP_CHKSUM_OFFLOAD */
 
 	DEBUGFUNC("halRxEnhanceReadBuffer");
 
@@ -1172,6 +1185,13 @@ halRxEnhanceReadBuffer(IN P_ADAPTER_T prAdapter,
 			ASSERT(0);
 			break;
 		}
+
+#if CFG_TCP_IP_CHKSUM_OFFLOAD
+		pu4HwAppendDW = (PUINT_32) prRxStatus;
+		pu4HwAppendDW += (ALIGN_4(prRxStatus->u2RxByteCount) >> 2);
+		prSwRfb->u4TcpUdpIpCksStatus = *pu4HwAppendDW;
+		DBGLOG(RX, TRACE, "u4TcpUdpIpCksStatus[0x%02x]\n", prSwRfb->u4TcpUdpIpCksStatus);
+#endif /* CFG_TCP_IP_CHKSUM_OFFLOAD */
 
 		u4Status = WLAN_STATUS_SUCCESS;
 	} while (FALSE);
@@ -1890,6 +1910,9 @@ VOID halDeAggRxPktWorker(struct work_struct *work)
 	PUINT_8 pucSrcAddr;
 	UINT_16 u2PktLength;
 	BOOLEAN fgReschedule = FALSE;
+#if CFG_TCP_IP_CHKSUM_OFFLOAD
+	PUINT_32 pu4HwAppendDW;
+#endif /* CFG_TCP_IP_CHKSUM_OFFLOAD */
 
 	KAL_SPIN_LOCK_DECLARATION();
 	SDIO_TIME_INTERVAL_DEC();
@@ -1950,6 +1973,13 @@ VOID halDeAggRxPktWorker(struct work_struct *work)
 			kalMemCopy(prSwRfb->pucRecvBuff, pucSrcAddr, ALIGN_4(u2PktLength + HIF_RX_HW_APPENDED_LEN));
 
 			prSwRfb->ucPacketType = (UINT_8)HAL_RX_STATUS_GET_PKT_TYPE(prSwRfb->prRxStatus);
+
+#if CFG_TCP_IP_CHKSUM_OFFLOAD
+			pu4HwAppendDW = (PUINT_32) prSwRfb->prRxStatus;
+			pu4HwAppendDW += (ALIGN_4(prSwRfb->prRxStatus->u2RxByteCount) >> 2);
+			prSwRfb->u4TcpUdpIpCksStatus = *pu4HwAppendDW;
+			DBGLOG(RX, TRACE, "u4TcpUdpIpCksStatus[0x%02x]\n", prSwRfb->u4TcpUdpIpCksStatus);
+#endif /* CFG_TCP_IP_CHKSUM_OFFLOAD */
 
 			QUEUE_INSERT_TAIL(prTempRxRfbList, &prSwRfb->rQueEntry);
 
