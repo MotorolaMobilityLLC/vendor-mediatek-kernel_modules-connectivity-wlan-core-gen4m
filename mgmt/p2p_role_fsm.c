@@ -1411,11 +1411,6 @@ VOID p2pRoleFsmRunEventConnectionRequest(IN P_ADAPTER_T prAdapter, IN P_MSG_HDR_
 	if (prP2pBssInfo->eCurrentOPMode != OP_MODE_INFRASTRUCTURE)
 		goto error;
 
-	if (prP2pBssInfo->eConnectionState == PARAM_MEDIA_STATE_CONNECTED) {
-		DBGLOG(P2P, ERROR, "Request connect while driver is in connected state! ignoring...\n");
-		goto error;
-	}
-
 	SET_NET_PWR_STATE_ACTIVE(prAdapter, prP2pBssInfo->ucBssIndex);
 
 	/* In P2P GC case, the interval of two ASSOC flow could be very short, */
