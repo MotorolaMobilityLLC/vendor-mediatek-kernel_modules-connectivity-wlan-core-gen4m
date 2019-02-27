@@ -328,7 +328,7 @@ static __KAL_INLINE__ VOID assocBuildReAssocReqFrameCommonIEs(IN P_ADAPTER_T prA
 	/* rateGetDataRatesFromRateSet((prBssDesc->u2OperationalRateSet & */
 	/* rPhyAttributes[prBssDesc->ePhyType].u2SupportedRateSet), */
 
-	if (prStaRec->fgHasBasicPhyType) {
+	if (prStaRec->ucDesiredPhyTypeSet) {
 		UINT_32 u4NonHTPhyType;
 
 		u4NonHTPhyType = prStaRec->ucNonHTBasicPhyType;
