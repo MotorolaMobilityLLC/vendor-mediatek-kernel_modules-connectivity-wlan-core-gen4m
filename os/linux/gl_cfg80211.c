@@ -5059,7 +5059,7 @@ int mtk_cfg_suspend(struct wiphy *wiphy, struct cfg80211_wowlan *wow)
 
 	if ((!prGlueInfo) || (prGlueInfo->u4ReadyFlag == 0)) {
 		DBGLOG(REQ, WARN, "driver is not ready\n");
-		return -EFAULT;
+		return 0;
 	}
 
 	/* TODO: AP/P2P do not support this function, should take that case. */
@@ -5074,7 +5074,7 @@ int mtk_cfg_resume(struct wiphy *wiphy)
 
 	if ((!prGlueInfo) || (prGlueInfo->u4ReadyFlag == 0)) {
 		DBGLOG(REQ, WARN, "driver is not ready\n");
-		return -EFAULT;
+		return 0;
 	}
 
 	/* TODO: AP/P2P do not support this function, should take that case. */
