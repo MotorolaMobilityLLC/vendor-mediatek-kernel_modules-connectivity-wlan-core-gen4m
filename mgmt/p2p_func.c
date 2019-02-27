@@ -929,6 +929,9 @@ p2pFuncStartGO(IN P_ADAPTER_T prAdapter,
 	       IN P_BSS_INFO_T prBssInfo,
 	       IN P_P2P_CONNECTION_REQ_INFO_T prP2pConnReqInfo, IN P_P2P_CHNL_REQ_INFO_T prP2pChnlReqInfo)
 {
+#if (CFG_SUPPORT_DFS_MASTER == 1)
+	P_CMD_RDD_ON_OFF_CTRL_T prCmdRddOnOffCtrl;
+#endif
 	do {
 		ASSERT_BREAK((prAdapter != NULL) && (prBssInfo != NULL));
 
@@ -939,6 +942,28 @@ p2pFuncStartGO(IN P_ADAPTER_T prAdapter,
 		}
 
 		DBGLOG(P2P, TRACE, "p2pFuncStartGO:\n");
+
+#if (CFG_SUPPORT_DFS_MASTER == 1)
+		prCmdRddOnOffCtrl = (P_CMD_RDD_ON_OFF_CTRL_T) cnmMemAlloc(prAdapter, RAM_TYPE_MSG,
+						sizeof(*prCmdRddOnOffCtrl));
+
+		ASSERT_BREAK((prCmdRddOnOffCtrl != NULL));
+
+		prCmdRddOnOffCtrl->ucDfsCtrl = RDD_START_TXQ;
+
+		DBGLOG(P2P, INFO, "p2pFuncStartGO: Start TXQ - DFS ctrl: %.d\n", prCmdRddOnOffCtrl->ucDfsCtrl);
+
+		wlanSendSetQueryCmd(prAdapter,
+					CMD_ID_RDD_ON_OFF_CTRL,
+					TRUE,
+					FALSE,
+					FALSE,
+					NULL,
+					NULL,
+					sizeof(*prCmdRddOnOffCtrl), (PUINT_8) prCmdRddOnOffCtrl, NULL, 0);
+
+		cnmMemFree(prAdapter, prCmdRddOnOffCtrl);
+#endif
 
 		/* Re-start AP mode.  */
 		p2pFuncSwitchOPMode(prAdapter, prBssInfo, prBssInfo->eIntendOPMode, FALSE);
