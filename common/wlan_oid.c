@@ -7574,13 +7574,12 @@ wlanoidSetCurrentPacketFilter(IN struct ADAPTER *prAdapter,
 	uint32_t rResult = WLAN_STATUS_FAILURE;
 	struct CMD_RX_PACKET_FILTER rSetRxPacketFilter;
 
-	DBGLOG(REQ, INFO, "wlanoidSetCurrentPacketFilter");
-
 	ASSERT(prAdapter);
 	ASSERT(pu4SetInfoLen);
 
 	if (u4SetBufferLen < sizeof(uint32_t)) {
 		*pu4SetInfoLen = sizeof(uint32_t);
+		DBGLOG(REQ, WARN, "u4SetBufferLen < sizeof(uint32_t)\n");
 		return WLAN_STATUS_INVALID_LENGTH;
 	}
 	ASSERT(pvSetBuffer);

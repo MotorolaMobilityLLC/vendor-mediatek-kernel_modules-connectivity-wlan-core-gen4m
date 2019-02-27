@@ -3445,7 +3445,7 @@ void kalEnqueueCommand(IN struct GLUE_INFO *prGlueInfo, IN struct QUE_ENTRY *prQ
 
 	prCmdInfo = (struct CMD_INFO *) prQueueEntry;
 
-	DBGLOG(INIT, INFO, "EN-Q CMD TYPE[%u] ID[0x%02X] SEQ[%u] to CMD Q\n",
+	DBGLOG(INIT, TRACE, "EN-Q CMD TYPE[%u] ID[0x%02X] SEQ[%u] to CMD Q\n",
 	       prCmdInfo->eCmdType, prCmdInfo->ucCID, prCmdInfo->ucCmdSeqNum);
 
 	GLUE_ACQUIRE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_CMD_QUE);
