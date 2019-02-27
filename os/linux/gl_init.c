@@ -1289,7 +1289,11 @@ void wlanSchedScanStoppedWorkQueue(struct work_struct *work)
 	/* 20150205 change cfg80211_sched_scan_stopped to work queue due to
 	 * sched_scan_mtx dead lock issue
 	 */
+#if KERNEL_VERSION(4, 12, 0) <= CFG80211_VERSION_CODE
+	cfg80211_sched_scan_stopped(priv_to_wiphy(prGlueInfo), 0);
+#else
 	cfg80211_sched_scan_stopped(priv_to_wiphy(prGlueInfo));
+#endif
 	DBGLOG(SCN, INFO,
 	       "cfg80211_sched_scan_stopped event send done WorkQueue thread return from wlanSchedScanStoppedWorkQueue\n");
 	return;
@@ -1936,6 +1940,7 @@ const struct net_device_ops *wlanGetNdevOps(void)
 }
 #endif
 
+#if CFG_MTK_ANDROID_WMT
 static uint8_t wlanNvramBufHandler(void *ctx,
 			const char *buf,
 			uint16_t length)
@@ -1953,6 +1958,7 @@ static uint8_t wlanNvramBufHandler(void *ctx,
 	g_fgNvramAvailable = TRUE;
 	return 0;
 }
+#endif
 
 static void wlanCreateWirelessDevice(void)
 {
@@ -1995,8 +2001,15 @@ static void wlanCreateWirelessDevice(void)
 	prWiphy->max_match_sets           =
 		CFG_SCAN_SSID_MATCH_MAX_NUM;
 	prWiphy->max_sched_scan_ie_len    = CFG_CFG80211_IE_BUF_LEN;
+#if KERNEL_VERSION(4, 12, 0) <= CFG80211_VERSION_CODE
+	/* In kernel 4.12 or newer,
+	 * this is obsoletes - WIPHY_FLAG_SUPPORTS_SCHED_SCAN
+	 */
+	prWiphy->max_sched_scan_reqs = 1;
+#else
 	u4SupportSchedScanFlag            =
 		WIPHY_FLAG_SUPPORTS_SCHED_SCAN;
+#endif
 #endif /* CFG_SUPPORT_SCHED_SCAN */
 	prWiphy->interface_modes = BIT(NL80211_IFTYPE_STATION) |
 				   BIT(NL80211_IFTYPE_ADHOC);
@@ -2097,8 +2110,10 @@ static void wlanCreateWirelessDevice(void)
 	}
 	prWdev->wiphy = prWiphy;
 	gprWdev = prWdev;
+#if CFG_MTK_ANDROID_WMT
 	register_file_buf_handler(wlanNvramBufHandler, (void *)NULL,
 			ENUM_BUF_TYPE_NVRAM);
+#endif
 	DBGLOG(INIT, INFO, "Create wireless device success\n");
 	return;
 

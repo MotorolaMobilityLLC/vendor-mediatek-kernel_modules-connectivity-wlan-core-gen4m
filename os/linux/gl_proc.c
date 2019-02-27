@@ -1501,7 +1501,11 @@ void glNotifyDrvStatus(enum DRV_STATUS_T eDrvStatus, void *pvInfo)
 	}
 	mutex_unlock(&drvStatusLock);
 	/* Wake up all readers if at least one is waiting */
+#if KERNEL_VERSION(4, 13, 0) <= CFG80211_VERSION_CODE
+	if (!list_empty(&waitqDrvStatus.head))
+#else
 	if (!list_empty(&waitqDrvStatus.task_list))
+#endif
 		wake_up_interruptible(&waitqDrvStatus);
 }
 
