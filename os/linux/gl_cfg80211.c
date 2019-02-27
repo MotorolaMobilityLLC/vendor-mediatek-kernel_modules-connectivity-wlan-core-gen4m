@@ -997,12 +997,33 @@ int mtk_cfg80211_connect(struct wiphy *wiphy, struct net_device *ndev, struct cf
 	uint32_t i, u4AkmSuite = 0;
 	struct DOT11_RSNA_CONFIG_AUTHENTICATION_SUITES_ENTRY *prEntry;
 	struct CONNECTION_SETTINGS *prConnSettings = NULL;
+	struct wireless_dev *wdev = NULL;
 #if CFG_SUPPORT_REPLAY_DETECTION
 	struct GL_DETECT_REPLAY_INFO *prDetRplyInfo = NULL;
 #endif
 
 	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wiphy);
 	ASSERT(prGlueInfo);
+
+	if (ndev == NULL) {
+		DBGLOG(REQ, ERROR, "ndev is NULL\n");
+		return -EINVAL;
+	}
+	wdev = ndev->ieee80211_ptr;
+
+	/* Supplicant requests connecting during driver do disconnecting,
+	 * it will cause to install key fail, error is -67(link has been
+	 * servered).
+	 * Because driver disconnected is done, but cfg80211 is disconnecting.
+	 * Reject this request.Supplicant will issue the connecting request
+	 * again.
+	 */
+	if (wdev->current_bss &&
+		kalGetMediaStateIndicated(prGlueInfo)
+			== PARAM_MEDIA_STATE_DISCONNECTED) {
+		DBGLOG(REQ, WARN, "Reject this connecting request\n");
+		return -EALREADY;
+	}
 
 	DBGLOG(REQ, INFO, "[wlan] mtk_cfg80211_connect %p %zu\n", sme->ie, sme->ie_len);
 	prConnSettings = &prGlueInfo->prAdapter->rWifiVar.rConnSettings;
