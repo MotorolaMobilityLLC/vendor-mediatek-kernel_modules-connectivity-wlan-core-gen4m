@@ -73,6 +73,7 @@
  *                              C O N S T A N T S
  *******************************************************************************
  */
+#define PS_SYNC_WITH_FW		BIT(31)
 
 /*******************************************************************************
  *                             D A T A   T Y P E S
@@ -126,6 +127,19 @@ enum ENUM_SER_STATE {
 	SER_REINIT_HIF,      /* Host HIF is reinit */
 
 	SER_STATE_NUM
+};
+
+/* The bit map for the caller to set the power save flag */
+enum POWER_SAVE_CALLER {
+	PS_CALLER_COMMON = 0,
+	PS_CALLER_CTIA,
+	PS_CALLER_SW_WRITE,
+	PS_CALLER_CTIA_CAM,
+	PS_CALLER_P2P,
+	PS_CALLER_CAMCFG,
+	PS_CALLER_GPU,
+	PS_CALLER_TP,
+	PS_CALLER_MAX_NUM = 24
 };
 
 /* Test mode bitmask of disable flag */
@@ -309,10 +323,15 @@ void nicInitMGMT(IN struct ADAPTER *prAdapter,
 
 void nicUninitMGMT(IN struct ADAPTER *prAdapter);
 
+void
+nicPowerSaveInfoMap(IN struct ADAPTER *prAdapter,
+		IN uint8_t ucBssIndex, IN enum PARAM_POWER_MODE ePowerMode,
+		IN enum POWER_SAVE_CALLER ucCaller);
+
 uint32_t
 nicConfigPowerSaveProfile(IN struct ADAPTER *prAdapter,
-		uint8_t ucBssIndex, enum PARAM_POWER_MODE ePwrMode,
-		u_int8_t fgEnCmdEvent);
+		IN uint8_t ucBssIndex, IN enum PARAM_POWER_MODE ePwrMode,
+		IN u_int8_t fgEnCmdEvent, IN enum POWER_SAVE_CALLER ucCaller);
 
 uint32_t
 nicConfigProcSetCamCfgWrite(IN struct ADAPTER *prAdapter,
