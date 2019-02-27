@@ -249,6 +249,10 @@
 #include <linux/time.h>
 #include <linux/fb.h>
 
+/* Support QoS */
+#include <linux/pm_qos.h>
+extern struct pm_qos_request wifibw_qos_request;
+
 extern u_int8_t fgIsBusAccessFailed;
 extern const struct ieee80211_iface_combination
 	*p_mtk_iface_combinations_sta;

@@ -5895,6 +5895,11 @@ void kalPerMonHandler(IN struct ADAPTER *prAdapter, unsigned long ulParam)
 		if (p2pRxDiffBytes)
 			prPerMonitor->ulP2PRxTp = (p2pRxDiffBytes * MSEC_PER_SEC) / prPerMonitor->u4UpdatePeriod;
 
+		/* Unit: MB */
+		pm_qos_update_request(&wifibw_qos_request,
+			(txDiffBytes + rxDiffBytes +
+			p2pTxDiffBytes + p2pRxDiffBytes) >> 20);
+
 		DBGLOG(SW4, INFO,
 			"Tput: %llu > [%ld][%ld] [%ld][%ld], Pending[%d], Used[%d] PER[%ld %ld]\n",
 			prPerMonitor->ulThroughput,
