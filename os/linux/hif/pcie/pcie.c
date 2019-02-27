@@ -543,6 +543,7 @@ BOOLEAN glIsReadClearReg(UINT_32 u4Address)
 /*----------------------------------------------------------------------------*/
 BOOL kalDevRegRead(IN P_GLUE_INFO_T prGlueInfo, IN UINT_32 u4Register, OUT PUINT_32 pu4Value)
 {
+	P_BUS_INFO prBusInfo = NULL;
 	P_GL_HIF_INFO_T prHifInfo = NULL;
 	UINT_32 u4BusAddr = u4Register;
 	BOOLEAN fgResult = TRUE;
@@ -550,14 +551,15 @@ BOOL kalDevRegRead(IN P_GLUE_INFO_T prGlueInfo, IN UINT_32 u4Register, OUT PUINT
 	ASSERT(prGlueInfo);
 	ASSERT(pu4Value);
 
+	prBusInfo = prGlueInfo->prAdapter->chip_info->bus_info;
 	prHifInfo = &prGlueInfo->rHifInfo;
 
-	if (halChipToStaticMapBusAddr(u4Register, &u4BusAddr)) {
+	if (halChipToStaticMapBusAddr(prBusInfo, u4Register, &u4BusAddr)) {
 		/* Static mapping */
 		RTMP_IO_READ32(prHifInfo, u4BusAddr, pu4Value);
 	} else {
 		/* Dynamic mapping */
-		fgResult = halGetDynamicMapReg(prHifInfo, u4BusAddr, pu4Value);
+		fgResult = halGetDynamicMapReg(prGlueInfo, u4BusAddr, pu4Value);
 	}
 
 	if ((u4Register & 0xFFFFF000) != PCIE_HIF_BASE)
@@ -580,20 +582,22 @@ BOOL kalDevRegRead(IN P_GLUE_INFO_T prGlueInfo, IN UINT_32 u4Register, OUT PUINT
 /*----------------------------------------------------------------------------*/
 BOOL kalDevRegWrite(IN P_GLUE_INFO_T prGlueInfo, IN UINT_32 u4Register, IN UINT_32 u4Value)
 {
+	P_BUS_INFO prBusInfo = NULL;
 	P_GL_HIF_INFO_T prHifInfo = NULL;
 	UINT_32 u4BusAddr = u4Register;
 	BOOLEAN fgResult = TRUE;
 
 	ASSERT(prGlueInfo);
 
+	prBusInfo = prGlueInfo->prAdapter->chip_info->bus_info;
 	prHifInfo = &prGlueInfo->rHifInfo;
 
-	if (halChipToStaticMapBusAddr(u4Register, &u4BusAddr)) {
+	if (halChipToStaticMapBusAddr(prBusInfo, u4Register, &u4BusAddr)) {
 		/* Static mapping */
 		RTMP_IO_WRITE32(prHifInfo, u4BusAddr, u4Value);
 	} else {
 		/* Dynamic mapping */
-		fgResult = halSetDynamicMapReg(prHifInfo, u4BusAddr, u4Value);
+		fgResult = halSetDynamicMapReg(prGlueInfo, u4BusAddr, u4Value);
 	}
 
 	if ((u4Register & 0xFFFFF000) != PCIE_HIF_BASE)

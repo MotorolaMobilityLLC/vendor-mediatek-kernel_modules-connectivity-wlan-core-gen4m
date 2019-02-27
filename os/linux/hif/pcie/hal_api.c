@@ -1538,7 +1538,7 @@ BOOLEAN halIsStaticMapBusAddr(IN UINT_32 u4Addr)
 		return FALSE;
 }
 
-BOOLEAN halChipToStaticMapBusAddr(IN UINT_32 u4ChipAddr, OUT PUINT_32 pu4BusAddr)
+BOOLEAN halChipToStaticMapBusAddr(IN P_BUS_INFO prBusInfo, IN UINT_32 u4ChipAddr, OUT PUINT_32 pu4BusAddr)
 {
 	UINT_32 u4StartAddr, u4EndAddr, u4BusAddr;
 	UINT_32 u4Idx = 0;
@@ -1549,8 +1549,8 @@ BOOLEAN halChipToStaticMapBusAddr(IN UINT_32 u4ChipAddr, OUT PUINT_32 pu4BusAddr
 	}
 
 	while (TRUE) {
-		u4StartAddr = arBus2ChipCrMapping[u4Idx].u4ChipAddr;
-		u4EndAddr = arBus2ChipCrMapping[u4Idx].u4ChipAddr + arBus2ChipCrMapping[u4Idx].u4Range;
+		u4StartAddr = prBusInfo->bus2chip[u4Idx].u4ChipAddr;
+		u4EndAddr = prBusInfo->bus2chip[u4Idx].u4ChipAddr + prBusInfo->bus2chip[u4Idx].u4Range;
 
 		/* End of mapping table */
 		if (u4EndAddr == 0x0)
@@ -1558,7 +1558,7 @@ BOOLEAN halChipToStaticMapBusAddr(IN UINT_32 u4ChipAddr, OUT PUINT_32 pu4BusAddr
 
 
 		if ((u4ChipAddr >= u4StartAddr) && (u4ChipAddr <= u4EndAddr)) {
-			u4BusAddr = (u4ChipAddr - u4StartAddr) + arBus2ChipCrMapping[u4Idx].u4BusAddr;
+			u4BusAddr = (u4ChipAddr - u4StartAddr) + prBusInfo->bus2chip[u4Idx].u4BusAddr;
 			break;
 		}
 
@@ -1569,12 +1569,14 @@ BOOLEAN halChipToStaticMapBusAddr(IN UINT_32 u4ChipAddr, OUT PUINT_32 pu4BusAddr
 	return TRUE;
 }
 
-BOOLEAN halGetDynamicMapReg(IN P_GL_HIF_INFO_T prHifInfo, IN UINT_32 u4ChipAddr, OUT PUINT_32 pu4Value)
+BOOLEAN halGetDynamicMapReg(IN P_GLUE_INFO_T prGlueInfo, IN UINT_32 u4ChipAddr, OUT PUINT_32 pu4Value)
 {
+	P_BUS_INFO prBusInfo = prGlueInfo->prAdapter->chip_info->bus_info;
+	P_GL_HIF_INFO_T prHifInfo = &prGlueInfo->rHifInfo;
 	UINT_32 u4ReMapReg, u4BusAddr;
 	ULONG flags;
 
-	if (!halChipToStaticMapBusAddr(MCU_CFG_PCIE_REMAP2, &u4ReMapReg))
+	if (!halChipToStaticMapBusAddr(prBusInfo, MCU_CFG_PCIE_REMAP2, &u4ReMapReg))
 		return FALSE;
 
 	spin_lock_irqsave(&prHifInfo->rDynMapRegLock, flags);
@@ -1588,12 +1590,14 @@ BOOLEAN halGetDynamicMapReg(IN P_GL_HIF_INFO_T prHifInfo, IN UINT_32 u4ChipAddr,
 	return TRUE;
 }
 
-BOOLEAN halSetDynamicMapReg(IN P_GL_HIF_INFO_T prHifInfo, IN UINT_32 u4ChipAddr, IN UINT_32 u4Value)
+BOOLEAN halSetDynamicMapReg(IN P_GLUE_INFO_T prGlueInfo, IN UINT_32 u4ChipAddr, IN UINT_32 u4Value)
 {
+	P_BUS_INFO prBusInfo = prGlueInfo->prAdapter->chip_info->bus_info;
+	P_GL_HIF_INFO_T prHifInfo = &prGlueInfo->rHifInfo;
 	UINT_32 u4ReMapReg, u4BusAddr;
 	ULONG flags;
 
-	if (!halChipToStaticMapBusAddr(MCU_CFG_PCIE_REMAP2, &u4ReMapReg))
+	if (!halChipToStaticMapBusAddr(prBusInfo, MCU_CFG_PCIE_REMAP2, &u4ReMapReg))
 		return FALSE;
 
 	spin_lock_irqsave(&prHifInfo->rDynMapRegLock, flags);
