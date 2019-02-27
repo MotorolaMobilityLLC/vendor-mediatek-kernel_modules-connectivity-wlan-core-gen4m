@@ -427,7 +427,7 @@ u_int8_t wapiPerformPolicySelection(IN struct ADAPTER *prAdapter, IN struct BSS_
 	 *  BSS, do not check the supported AKM suites.
 	 */
 	if (u4PairwiseCipher == 0 || u4GroupCipher == 0) {
-		DBGLOG(SEC, TRACE, "Failed to select pairwise/group cipher (0x%08lx/0x%08lx)\n",
+		DBGLOG(SEC, TRACE, "Failed to select pairwise/group cipher (0x%08x/0x%08x)\n",
 		       u4PairwiseCipher, u4GroupCipher);
 		return FALSE;
 	}
