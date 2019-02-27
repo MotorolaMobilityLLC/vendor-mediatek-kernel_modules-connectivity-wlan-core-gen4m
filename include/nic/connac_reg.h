@@ -75,13 +75,13 @@
  *                              C O N S T A N T S
  *******************************************************************************
  */
-#define CONN_CFG_BASE			0x80020000
+#define CONN_CFG_BASE		0x80020000
 
 #define CONN_CFG_ON_BASE	0x81021000
 
-#define CONN_CFG_ON_CONN_ON_MISC_ADDR		(CONN_CFG_ON_BASE + 0x140)
+#define CONN_CFG_ON_CONN_ON_MISC_ADDR	(CONN_CFG_ON_BASE + 0x140)
 
-#define CONN_MCU_CONFG_ON_BASE					0x81030000
+#define CONN_MCU_CONFG_ON_BASE			0x81030000
 
 #define CONN_MCU_CONFG_ON_HOST_MAILBOX_WF_ADDR \
 	(CONN_MCU_CONFG_ON_BASE + 0x100)

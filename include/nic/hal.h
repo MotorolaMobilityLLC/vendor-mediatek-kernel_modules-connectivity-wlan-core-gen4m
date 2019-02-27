@@ -335,13 +335,13 @@ do { \
 		_u4ValidBufSize/*temp!!*//*4Kbyte*/) \
 }
 
-#define HAL_WRITE_TX_PORT(_prAdapter, _u4PortId, _u4Len, _pucBuf, _u4ValidBufSize) \
+#define HAL_WRITE_TX_PORT(_prAdapter, _u4PortId, _u4Len, _pucBuf, _u4BufSize) \
 { \
 	HAL_PORT_WR(_prAdapter, \
 		_u4PortId, \
 		_u4Len, \
 		_pucBuf, \
-		_u4ValidBufSize/*temp!!*//*4KByte*/) \
+		_u4BufSize/*temp!!*//*4KByte*/) \
 }
 
 #define HAL_MCR_RD_AND_WAIT(_pAdapter, _offset, _pReadValue, \
@@ -558,9 +558,9 @@ do { \
 		_u4ValidBufSize/*temp!!*//*4Kbyte*/) \
 }
 
-#define HAL_WRITE_TX_PORT(_prAdapter, _u4PortId, _u4Len, _pucBuf, _u4ValidBufSize) \
+#define HAL_WRITE_TX_PORT(_prAdapter, _u4PortId, _u4Len, _pucBuf, _u4BufSize) \
 { \
-	if ((_u4ValidBufSize - _u4Len) >= sizeof(uint32_t)) { \
+	if ((_u4BufSize - _u4Len) >= sizeof(uint32_t)) { \
 		/* fill with single dword of zero as TX-aggregation end */ \
 		*(uint32_t *) (&((_pucBuf)[ALIGN_4(_u4Len)])) = 0; \
 	} \
@@ -568,7 +568,7 @@ do { \
 		MCR_WTDR1, \
 		_u4Len, \
 		_pucBuf, \
-		_u4ValidBufSize/*temp!!*//*4KByte*/) \
+		_u4BufSize/*temp!!*//*4KByte*/) \
 }
 
 /* The macro to read the given MCR several times to check if the wait
@@ -1046,13 +1046,13 @@ do { \
 
 #define HAL_LP_OWN_CLR(_prAdapter, _pfgResult)
 
-#define HAL_WRITE_TX_PORT(_prAdapter, _u4PortId, _u4Len, _pucBuf, _u4ValidBufSize) \
+#define HAL_WRITE_TX_PORT(_prAdapter, _u4PortId, _u4Len, _pucBuf, _u4BufSize) \
 { \
 	HAL_PORT_WR(_prAdapter, \
 		_u4PortId, \
 		_u4Len, \
 		_pucBuf, \
-		_u4ValidBufSize/*temp!!*//*4KByte*/) \
+		_u4BufSize/*temp!!*//*4KByte*/) \
 }
 
 #define HAL_IS_TX_DIRECT(_prAdapter) \
