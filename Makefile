@@ -357,9 +357,7 @@ MGMT_OBJS += $(MGMT_DIR)wapi.o
 ifeq ($(CONFIG_MTK_COMBO_WIFI_HIF), sdio)
 HIF_OBJS :=  $(HIF_DIR)arm.o \
              $(HIF_DIR)sdio.o \
-             $(HIF_DIR)hal_api.o \
-             $(HIF_DIR)sdio_test_driver_core.o \
-             $(HIF_DIR)sdio_test_driver_ops.o
+             $(HIF_DIR)hal_api.o
 else ifeq ($(CONFIG_MTK_COMBO_WIFI_HIF), pcie)
 HIF_OBJS :=  $(HIF_COMMON_DIR)hal_pdma.o \
              $(HIF_COMMON_DIR)kal_pdma.o \
