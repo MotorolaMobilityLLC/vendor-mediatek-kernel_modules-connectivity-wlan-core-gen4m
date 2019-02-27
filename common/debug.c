@@ -164,7 +164,7 @@ void wlanDumpTcResAndTxedCmd(uint8_t *pucBuf,
 		}
 	} else {
 		for (; i < TXED_CMD_TRACE_BUF_MAX_NUM / 4; i++) {
-			LOG_FUNC(
+			LOG_FUNC_LIMITED(
 				 "%d: Time %llu, Type %d, Content %08x; %d: Time %llu, Type %d, Content %08x; ",
 				 i * 4, prCmd[i * 4].u8TxTime,
 				 prCmd[i * 4].eCmdType,
@@ -172,7 +172,7 @@ void wlanDumpTcResAndTxedCmd(uint8_t *pucBuf,
 				 i * 4 + 1, prCmd[i * 4 + 1].u8TxTime,
 				 prCmd[i * 4 + 1].eCmdType,
 				 *(uint32_t *)(&prCmd[i * 4 + 1].u.rCmd.ucCID));
-			LOG_FUNC(
+			LOG_FUNC_LIMITED(
 				 "%d: Time %llu, Type %d, Content %08x; %d: Time %llu, Type %d, Content %08x\n",
 				 i * 4 + 2, prCmd[i * 4 + 2].u8TxTime,
 				 prCmd[i * 4 + 2].eCmdType,
@@ -182,7 +182,7 @@ void wlanDumpTcResAndTxedCmd(uint8_t *pucBuf,
 				 *(uint32_t *)(&prCmd[i * 4 + 3].u.rCmd.ucCID));
 		}
 		for (i = 0; i < TC_RELEASE_TRACE_BUF_MAX_NUM / 4; i++) {
-			LOG_FUNC(
+			LOG_FUNC_LIMITED(
 				"%d: Time %llu, Tc4Cnt %d, Free %d, CID %08x; %d: Time %llu, Tc4Cnt %d, Free %d, CID %08x;",
 				i * 4, prTcRel[i * 4].u8RelaseTime,
 				prTcRel[i * 4].u4Tc4RelCnt,
@@ -192,7 +192,7 @@ void wlanDumpTcResAndTxedCmd(uint8_t *pucBuf,
 				prTcRel[i * 4 + 1].u4Tc4RelCnt,
 				prTcRel[i * 4 + 1].u4AvailableTc4,
 				prTcRel[i * 4 + 1].u4RelCID);
-			LOG_FUNC(
+			LOG_FUNC_LIMITED(
 				"%d: Time %llu, Tc4Cnt %d, Free %d, CID %08x; %d: Time %llu, Tc4Cnt %d, Free %d, CID %08x\n",
 				i * 4 + 2, prTcRel[i * 4 + 2].u8RelaseTime,
 				prTcRel[i * 4 + 2].u4Tc4RelCnt,
