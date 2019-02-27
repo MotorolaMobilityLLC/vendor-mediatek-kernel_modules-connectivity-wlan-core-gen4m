@@ -73,6 +73,7 @@ int32_t kalBoostCpu(IN struct ADAPTER *prAdapter,
 }
 
 #ifdef CONFIG_MTK_EMI
+#if 0
 void kalSetEmiMpuProtection(phys_addr_t emiPhyBase, uint32_t offset,
 			    uint32_t size, bool enable)
 {
@@ -90,6 +91,7 @@ void kalSetEmiMpuProtection(phys_addr_t emiPhyBase, uint32_t offset,
 			      FORBIDDEN, enable ? FORBIDDEN : NO_PROTECTION);
 	emi_mpu_set_protection(&region_info);
 }
+#endif
 
 void kalSetDrvEmiMpuProtection(phys_addr_t emiPhyBase, uint32_t offset,
 			       uint32_t size)
