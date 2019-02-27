@@ -5326,7 +5326,7 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 	prWifiVar->u4DataTxRateCode = wlanCfgGetUint32(prAdapter, "DataTxRateCode", 0x0);
 
 	prWifiVar->ucApWpsMode = (uint8_t) wlanCfgGetUint32(prAdapter, "ApWpsMode", 0);
-	DBGLOG(INIT, INFO, "ucApWpsMode = %u\n", prWifiVar->ucApWpsMode);
+	DBGLOG(INIT, TRACE, "ucApWpsMode = %u\n", prWifiVar->ucApWpsMode);
 
 	prWifiVar->ucThreadScheduling = (uint8_t) wlanCfgGetUint32(prAdapter, "ThreadSched", 0);
 	prWifiVar->ucThreadPriority = (uint8_t) wlanCfgGetUint32(prAdapter, "ThreadPriority", WLAN_THREAD_TASK_PRIORITY);
