@@ -50,60 +50,60 @@
  *
  *****************************************************************************/
 /*
-** Id: //Department/DaVinci/TRUNK/MT6620_5931_WiFi_Driver/mgmt/wnm.c#1
-*/
+ ** Id: //Department/DaVinci/TRUNK/MT6620_5931_WiFi_Driver/mgmt/wnm.c#1
+ */
 
 /*! \file   "wnm.c"
-*    \brief  This file includes the 802.11v default vale and functions.
-*/
+ *    \brief  This file includes the 802.11v default vale and functions.
+ */
 
 /*******************************************************************************
-*                         C O M P I L E R   F L A G S
-********************************************************************************
-*/
+ *                         C O M P I L E R   F L A G S
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                    E X T E R N A L   R E F E R E N C E S
-********************************************************************************
-*/
+ *                    E X T E R N A L   R E F E R E N C E S
+ *******************************************************************************
+ */
 #include "precomp.h"
 
 /*******************************************************************************
-*                              C O N S T A N T S
-********************************************************************************
-*/
+ *                              C O N S T A N T S
+ *******************************************************************************
+ */
 
 #define WNM_MAX_TOD_ERROR 0
 #define WNM_MAX_TOA_ERROR 0
 #define MICRO_TO_10NANO(x) ((x)*100)
 /*******************************************************************************
-*                             D A T A   T Y P E S
-********************************************************************************
-*/
+ *                             D A T A   T Y P E S
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                            P U B L I C   D A T A
-********************************************************************************
-*/
+ *                            P U B L I C   D A T A
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                           P R I V A T E   D A T A
-********************************************************************************
-*/
+ *                           P R I V A T E   D A T A
+ *******************************************************************************
+ */
 #if CFG_SUPPORT_802_11V_TIMING_MEASUREMENT
 static uint8_t ucTimingMeasToken;
 #endif
 static uint8_t ucBtmMgtToken = 1;
 
 /*******************************************************************************
-*                                 M A C R O S
-********************************************************************************
-*/
+ *                                 M A C R O S
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                   F U N C T I O N   D E C L A R A T I O N S
-********************************************************************************
-*/
+ *                   F U N C T I O N   D E C L A R A T I O N S
+ *******************************************************************************
+ */
 #if CFG_SUPPORT_802_11V_TIMING_MEASUREMENT
 static uint32_t
 wnmRunEventTimgingMeasTxDone(IN struct ADAPTER *prAdapter,
@@ -118,20 +118,20 @@ static void wnmTimingMeasRequest(IN struct ADAPTER *prAdapter,
 				 IN struct SW_RFB *prSwRfb);
 #endif
 /*******************************************************************************
-*                              F U N C T I O N S
-********************************************************************************
-*/
+ *                              F U N C T I O N S
+ *******************************************************************************
+ */
 
 /*----------------------------------------------------------------------------*/
 /*!
-*
-* \brief This routine is called to process the 802.11v wnm category action
-* frame.
-*
-*
-* \note
-*      Called by: Handle Rx mgmt request
-*/
+ *
+ * \brief This routine is called to process the 802.11v wnm category action
+ * frame.
+ *
+ *
+ * \note
+ *      Called by: Handle Rx mgmt request
+ */
 /*----------------------------------------------------------------------------*/
 void wnmWNMAction(IN struct ADAPTER *prAdapter, IN struct SW_RFB *prSwRfb)
 {
@@ -167,10 +167,10 @@ void wnmWNMAction(IN struct ADAPTER *prAdapter, IN struct SW_RFB *prSwRfb)
 #if CFG_SUPPORT_802_11V_TIMING_MEASUREMENT
 /*----------------------------------------------------------------------------*/
 /*!
-*
-* \brief This routine is called to report timing measurement data.
-*
-*/
+ *
+ * \brief This routine is called to report timing measurement data.
+ *
+ */
 /*----------------------------------------------------------------------------*/
 void wnmReportTimingMeas(IN struct ADAPTER *prAdapter, IN uint8_t ucStaRecIndex,
 			 IN uint32_t u4ToD, IN uint32_t u4ToA)
@@ -194,14 +194,14 @@ void wnmReportTimingMeas(IN struct ADAPTER *prAdapter, IN uint8_t ucStaRecIndex,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* @brief This function will handle TxDone(TimingMeasurement) Event.
-*
-* @param[in] prAdapter      Pointer to the Adapter structure.
-* @param[in] prMsduInfo     Pointer to the MSDU_INFO_T.
-* @param[in] rTxDoneStatus  Return TX status of the Timing Measurement frame.
-*
-* @retval WLAN_STATUS_SUCCESS
-*/
+ * @brief This function will handle TxDone(TimingMeasurement) Event.
+ *
+ * @param[in] prAdapter      Pointer to the Adapter structure.
+ * @param[in] prMsduInfo     Pointer to the MSDU_INFO_T.
+ * @param[in] rTxDoneStatus  Return TX status of the Timing Measurement frame.
+ *
+ * @retval WLAN_STATUS_SUCCESS
+ */
 /*----------------------------------------------------------------------------*/
 static uint32_t
 wnmRunEventTimgingMeasTxDone(IN struct ADAPTER *prAdapter,
@@ -241,13 +241,13 @@ wnmRunEventTimgingMeasTxDone(IN struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* @brief This function will compose the Timing Measurement frame.
-*
-* @param[in] prAdapter              Pointer to the Adapter structure.
-* @param[in] prStaRec               Pointer to the STA_RECORD_T.
-*
-* @return (none)
-*/
+ * @brief This function will compose the Timing Measurement frame.
+ *
+ * @param[in] prAdapter              Pointer to the Adapter structure.
+ * @param[in] prStaRec               Pointer to the STA_RECORD_T.
+ *
+ * @return (none)
+ */
 /*----------------------------------------------------------------------------*/
 static void wnmComposeTimingMeasFrame(IN struct ADAPTER *prAdapter,
 				      IN struct STA_RECORD *prStaRec,
@@ -311,14 +311,14 @@ static void wnmComposeTimingMeasFrame(IN struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
-*
-* \brief This routine is called to process the 802.11v timing measurement
-* request.
-*
-*
-* \note
-*      Handle Rx mgmt request
-*/
+ *
+ * \brief This routine is called to process the 802.11v timing measurement
+ * request.
+ *
+ *
+ * \note
+ *      Handle Rx mgmt request
+ */
 /*----------------------------------------------------------------------------*/
 static void wnmTimingMeasRequest(IN struct ADAPTER *prAdapter,
 				 IN struct SW_RFB *prSwRfb)
@@ -406,13 +406,13 @@ static uint32_t wnmBTMResponseTxDone(IN struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* @brief This function will compose the BTM Response frame.
-*
-* @param[in] prAdapter              Pointer to the Adapter structure.
-* @param[in] prStaRec               Pointer to the STA_RECORD_T.
-*
-* @return (none)
-*/
+ * @brief This function will compose the BTM Response frame.
+ *
+ * @param[in] prAdapter              Pointer to the Adapter structure.
+ * @param[in] prStaRec               Pointer to the STA_RECORD_T.
+ *
+ * @return (none)
+ */
 /*----------------------------------------------------------------------------*/
 void wnmSendBTMResponseFrame(IN struct ADAPTER *prAdapter,
 			     IN struct STA_RECORD *prStaRec)
@@ -486,13 +486,13 @@ void wnmSendBTMResponseFrame(IN struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* @brief This function will compose the BTM Query frame.
-*
-* @param[in] prAdapter              Pointer to the Adapter structure.
-* @param[in] prStaRec               Pointer to the STA_RECORD_T.
-*
-* @return (none)
-*/
+ * @brief This function will compose the BTM Query frame.
+ *
+ * @param[in] prAdapter              Pointer to the Adapter structure.
+ * @param[in] prStaRec               Pointer to the STA_RECORD_T.
+ *
+ * @return (none)
+ */
 /*----------------------------------------------------------------------------*/
 void wnmSendBTMQueryFrame(IN struct ADAPTER *prAdapter,
 			  IN struct STA_RECORD *prStaRec)
@@ -550,13 +550,13 @@ void wnmSendBTMQueryFrame(IN struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
-*
-* \brief This routine is called to process the 802.11v BTM request.
-*
-*
-* \note
-*      Handle Rx mgmt request
-*/
+ *
+ * \brief This routine is called to process the 802.11v BTM request.
+ *
+ *
+ * \note
+ *      Handle Rx mgmt request
+ */
 /*----------------------------------------------------------------------------*/
 void wnmRecvBTMRequest(IN struct ADAPTER *prAdapter, IN struct SW_RFB *prSwRfb)
 {
