@@ -1175,12 +1175,22 @@ int32_t procUninitProcFs(void)
 {
 #if KERNEL_VERSION(3, 9, 0) <= LINUX_VERSION_CODE
 	remove_proc_subtree(PROC_AUTO_PERF_CFG, gprProcRoot);
-	remove_proc_subtree(PROC_ROOT_NAME, init_net.proc_net);
 	remove_proc_subtree(PROC_DBG_LEVEL_NAME, gprProcRoot);
+
+	/*
+	 * move PROC_ROOT_NAME to last since it's root directory of the others
+	 * incorrect sequence would cause use-after-free error
+	 */
+	remove_proc_subtree(PROC_ROOT_NAME, init_net.proc_net);
 #else
 	remove_proc_entry(PROC_AUTO_PERF_CFG, gprProcRoot);
-	remove_proc_entry(PROC_ROOT_NAME, init_net.proc_net);
 	remove_proc_entry(PROC_DBG_LEVEL_NAME, gprProcRoot);
+
+	/*
+	 * move PROC_ROOT_NAME to last since it's root directory of the others
+	 * incorrect sequence would cause use-after-free error
+	 */
+	remove_proc_entry(PROC_ROOT_NAME, init_net.proc_net);
 #endif
 
 	return 0;
