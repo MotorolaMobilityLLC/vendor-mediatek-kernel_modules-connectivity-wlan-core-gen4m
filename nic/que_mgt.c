@@ -7894,6 +7894,10 @@ void qmReleaseCHAtFinishedDhcp(struct ADAPTER *prAdapter,
 	if (!timerPendingTimer(prTimer)) {
 		DBGLOG(QM, ERROR, "No channel occupation\n");
 		return;
+	} else if (prAdapter->rWifiVar.ucChannelSwitchMode) {
+		DBGLOG(QM, INFO, "Let the join timer count down.\n");
+		aisFsmReleaseCh(prAdapter);
+		return;
 	}
 	DBGLOG(QM, INFO, "Earily release channel\n");
 	/* 1. Rlease channel and stop timer */
