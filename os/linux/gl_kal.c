@@ -6011,6 +6011,51 @@ int kalMetRemoveProcfs(void)
 }
 
 #endif
+
+#if CFG_SUPPORT_DATA_STALL
+u_int8_t kalIndicateDriverEvent(struct ADAPTER *prAdapter,
+					enum ENUM_VENDOR_DRIVER_EVENT event,
+					uint16_t dataLen)
+{
+	struct sk_buff *skb = NULL;
+	struct wiphy *wiphy;
+	struct wireless_dev *wdev;
+	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
+
+	wiphy = priv_to_wiphy(prAdapter->prGlueInfo);
+	wdev = ((prAdapter->prGlueInfo)->prDevHandler)->ieee80211_ptr;
+
+	if (!wiphy || !wdev || !prWifiVar)
+		return -EINVAL;
+
+	if (prAdapter->tmReportinterval > 0 &&
+		!CHECK_FOR_TIMEOUT(kalGetTimeTick(),
+		prAdapter->tmReportinterval,
+		prWifiVar->ucReportEventInterval*1000)) {
+		return -ETIME;
+	}
+	GET_CURRENT_SYSTIME(&prAdapter->tmReportinterval);
+
+	skb = cfg80211_vendor_event_alloc(wiphy, wdev, dataLen,
+		WIFI_EVENT_DRIVER_ERROR, GFP_KERNEL);
+	if (!skb) {
+		DBGLOG(REQ, ERROR, "%s allocate skb failed\n", __func__);
+		return -ENOMEM;
+	}
+
+	if (dataLen > 0 &&
+		unlikely(nla_put(skb, WIFI_ATTRIBUTE_ERROR_REASON
+		, dataLen, &event) < 0))
+		goto nla_put_failure;
+
+	cfg80211_vendor_event(skb, GFP_KERNEL);
+	return TRUE;
+nla_put_failure:
+	kfree_skb(skb);
+	return FALSE;
+}
+#endif
+
 #if CFG_SUPPORT_AGPS_ASSIST
 u_int8_t kalIndicateAgpsNotify(struct ADAPTER *prAdapter,
 			       uint8_t cmd, uint8_t *data, uint16_t dataLen)
@@ -6687,6 +6732,12 @@ void kalPerMonHandler(IN struct ADAPTER *prAdapter,
 			GLUE_GET_REF_CNT(prPerMonitor->u4UsedCnt),
 			prPerMonitor->ulTotalTxSuccessCount,
 			prPerMonitor->ulTotalTxFailCount);
+#if CFG_SUPPORT_DATA_STALL
+		/* test mode event */
+		if (prAdapter->tmReportinterval == -1)
+			KAL_REPORT_ERROR_EVENT(prAdapter,
+				EVENT_TEST_MODE, (uint16_t)sizeof(u_int8_t));
+#endif
 	}
 
 	prPerMonitor->ulLastTxBytes = latestTxBytes;

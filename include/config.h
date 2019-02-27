@@ -252,6 +252,8 @@
 /* If skb_buff mark field is 0x5a, change priority to VO (Customer Feature)*/
 #define CFG_CHANGE_PRIORITY_BY_SKB_MARK_FIELD	1
 
+#define CFG_SUPPORT_DATA_STALL			1
+
 /*------------------------------------------------------------------------------
  * Flags of Buffer mode SUPPORT
  *------------------------------------------------------------------------------

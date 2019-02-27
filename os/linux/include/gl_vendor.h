@@ -87,6 +87,9 @@
  */
 #define GOOGLE_OUI 0x001A11
 #define OUI_QCA 0x001374
+#if CFG_SUPPORT_DATA_STALL
+#define OUI_MTK 0x000CE7
+#endif
 
 #define NL80211_VENDOR_SUBCMD_GET_PREFER_FREQ_LIST 103
 #define QCA_NL80211_VENDOR_SUBCMD_SETBAND 105
@@ -266,6 +269,16 @@ enum WIFI_VENDOR_ATTR_PREFERRED_FREQ_LIST {
 
 #define MAX_FW_ROAMING_BLACKLIST_SIZE	16
 #define MAX_FW_ROAMING_WHITELIST_SIZE	8
+
+#if CFG_SUPPORT_DATA_STALL
+enum WIFI_DATA_STALL_EVENT {
+	WIFI_EVENT_DRIVER_ERROR
+};
+
+enum WIFI_DATA_STALL_ATTRIBUTE {
+	WIFI_ATTRIBUTE_ERROR_REASON = 0,
+};
+#endif
 
 /*******************************************************************************
  *                             D A T A   T Y P E S

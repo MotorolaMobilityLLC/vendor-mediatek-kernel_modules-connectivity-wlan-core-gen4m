@@ -6568,6 +6568,21 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 #endif
 
 	prWifiVar->u4MTU = wlanCfgGetUint32(prAdapter, "MTU", 0);
+
+#if CFG_SUPPORT_DATA_STALL
+	prWifiVar->ucPerHighThreshole = (uint32_t) wlanCfgGetUint32(
+			prAdapter, "PerHighThreshole",
+			EVENT_PER_HIGH_THRESHOLD);
+	prWifiVar->ucTxLowRateThreshole = (uint32_t) wlanCfgGetUint32(
+			prAdapter, "TxLowRateThreshole",
+			EVENT_TX_LOW_RATE_THRESHOLD);
+	prWifiVar->ucRxLowRateThreshole = (uint32_t) wlanCfgGetUint32(
+			prAdapter, "RxLowRateThreshole",
+			EVENT_RX_LOW_RATE_THRESHOLD);
+	prWifiVar->ucReportEventInterval = (uint32_t) wlanCfgGetUint32(
+			prAdapter, "ReportEventInterval",
+			REPORT_EVENT_INTERVAL);
+#endif
 }
 
 void wlanCfgSetSwCtrl(IN struct ADAPTER *prAdapter)

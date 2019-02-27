@@ -717,6 +717,10 @@ static const struct nl80211_vendor_cmd_info
 		.vendor_id = GOOGLE_OUI,
 		.subcmd = WIFI_EVENT_RSSI_MONITOR
 	},
+	{
+		.vendor_id = OUI_MTK,
+		.subcmd = WIFI_EVENT_DRIVER_ERROR
+	},
 };
 #endif
 

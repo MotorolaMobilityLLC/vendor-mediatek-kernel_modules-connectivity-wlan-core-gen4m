@@ -199,6 +199,13 @@ extern void wlanWakeupSourceRegister(get_count_handler pf_get_count,
 #define PERF_MON_UPDATE_INTERVAL (1000)
 #define PERF_MON_TP_MAX_THRESHOLD (10)
 
+#if CFG_SUPPORT_DATA_STALL
+#define REPORT_EVENT_INTERVAL		3
+#define EVENT_PER_HIGH_THRESHOLD	50
+#define EVENT_TX_LOW_RATE_THRESHOLD	20
+#define EVENT_RX_LOW_RATE_THRESHOLD	50
+#endif
+
 /*******************************************************************************
  *                             D A T A   T Y P E S
  *******************************************************************************
@@ -431,6 +438,16 @@ struct KAL_THREAD_SCHEDSTATS {
 	/* time spent waiting for I/O (iowait_sum) */
 	unsigned long long iowait;
 };
+
+#if CFG_SUPPORT_DATA_STALL
+enum ENUM_VENDOR_DRIVER_EVENT {
+	EVENT_TEST_MODE,
+	EVENT_ARP_NO_RESPONSE,
+	EVENT_PER_HIGH,
+	EVENT_TX_LOW_RATE,
+	EVENT_RX_LOW_RATE
+};
+#endif
 
 /*******************************************************************************
  *                            P U B L I C   D A T A
@@ -915,6 +932,10 @@ do { \
 #define KAL_ARCH_SETUP_DMA_OPS(_dev, _base, _size, _iommu, _coherent)
 #endif
 
+#if CFG_SUPPORT_DATA_STALL
+#define KAL_REPORT_ERROR_EVENT			kalIndicateDriverEvent
+#endif
+
 /*----------------------------------------------------------------------------*/
 /* Macros of show stack operations for using in Driver Layer                  */
 /*----------------------------------------------------------------------------*/
@@ -1041,6 +1062,11 @@ kalIndicateMgmtTxStatus(IN struct GLUE_INFO *prGlueInfo,
 void kalIndicateRxMgmtFrame(IN struct GLUE_INFO *prGlueInfo,
 			    IN struct SW_RFB *prSwRfb);
 
+#if CFG_SUPPORT_DATA_STALL
+u_int8_t kalIndicateDriverEvent(struct ADAPTER *prAdapter,
+					enum ENUM_VENDOR_DRIVER_EVENT event,
+					uint16_t dataLen);
+#endif
 /*----------------------------------------------------------------------------*/
 /* Routines in interface - ehpi/sdio.c                                        */
 /*----------------------------------------------------------------------------*/
