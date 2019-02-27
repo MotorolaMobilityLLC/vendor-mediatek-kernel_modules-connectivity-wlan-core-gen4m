@@ -151,6 +151,8 @@
 #include <linux/cdev.h>		/* for cdev interface */
 
 #include <linux/firmware.h>	/* for firmware download */
+#include <linux/ctype.h>
+
 
 #if defined(_HIF_USB)
 #include <linux/usb.h>
