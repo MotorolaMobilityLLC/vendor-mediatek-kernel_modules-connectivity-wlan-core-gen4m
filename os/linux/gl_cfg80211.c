@@ -3300,7 +3300,7 @@ mtk_reg_notify(IN struct wiphy *pWiphy,
 		DBGLOG(RLM, ERROR, "\n%s():\n---> ERROR. Transit to invalid state.\n", __func__);
 		DBGLOG(RLM, ERROR, "---> ERROR. Ignore country code updateing.\n");
 		DBGLOG(RLM, ERROR, "---> ERROR.\n ");
-		ASSERT(0);
+		rlmDomianAssert(0);
 		return; /*error state*/
 	}
 
@@ -3349,7 +3349,7 @@ DOMAIN_SEND_CMD:
 			DBGLOG(RLM, ERROR, "%s(): Error, Cannot find the correct RegDomain. country = %s\n",
 				__func__, rlmDomainGetCountryCode());
 
-			ASSERT(0);
+			rlmDomianAssert(0);
 			return;
 		}
 
