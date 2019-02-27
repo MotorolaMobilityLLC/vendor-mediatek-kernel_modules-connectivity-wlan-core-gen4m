@@ -1257,11 +1257,10 @@ VOID p2pRoleFsmRunEventRadarDet(IN P_ADAPTER_T prAdapter, IN P_MSG_HDR_T prMsgHd
 				p2pRoleFsmStateTransition(prAdapter, prP2pRoleFsmInfo, P2P_ROLE_STATE_IDLE);
 
 			kalP2PRddDetectUpdate(prAdapter->prGlueInfo, prP2pRoleFsmInfo->ucRoleIndex);
+			cnmTimerStartTimer(prAdapter, &(prP2pRoleFsmInfo->rDfsShutDownTimer), 5000);
 		}
 
 		p2pFuncShowRadarInfo(prAdapter, prMsgP2pRddDetMsg->ucBssIndex);
-
-		cnmTimerStartTimer(prAdapter, &(prP2pRoleFsmInfo->rDfsShutDownTimer), 5000);
 
 	} while (FALSE);
 	if (prMsgHdr)
