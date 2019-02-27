@@ -3372,6 +3372,20 @@ p2pFuncValidateProbeReq(IN struct ADAPTER *prAdapter,
 
 }				/* end of p2pFuncValidateProbeReq() */
 
+static void
+p2pFunAbortOngoingScan(IN struct ADAPTER *prAdapter)
+{
+	struct SCAN_INFO *prScanInfo;
+
+	prScanInfo = &(prAdapter->rWifiVar.rScanInfo);
+	if (prScanInfo->eCurrentState != SCAN_STATE_SCANNING)
+		return;
+
+	if (prAdapter->prAisBssInfo->ucBssIndex ==
+			prScanInfo->rScanParam.ucBssIndex)
+		aisFsmStateAbort_SCAN(prAdapter);
+}
+
 /*---------------------------------------------------------------------------*/
 /*!
  * @brief This function will validate the Rx Probe Request Frame and then return
@@ -3419,6 +3433,8 @@ void p2pFuncValidateRxActionFrame(IN struct ADAPTER *prAdapter,
 				prActFrame;
 			p2pProcessActionResponse(prAdapter,
 				prActPubVenFrame->ucPubSubType);
+			if (prActPubVenFrame->ucPubSubType == P2P_GO_NEG_REQ)
+				p2pFunAbortOngoingScan(prAdapter);
 		default:
 			break;
 		}
