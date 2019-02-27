@@ -312,6 +312,10 @@ int mtk_cfg80211_remain_on_channel(struct wiphy *wiphy,
 
 int mtk_cfg80211_cancel_remain_on_channel(
 	struct wiphy *wiphy, struct wireless_dev *wdev, u64 cookie);
+
+uint16_t cfg80211_get_non_wfa_vendor_ie(struct GLUE_INFO
+		*prGlueInfo, uint8_t *ies, int32_t len);
+
 #if KERNEL_VERSION(3, 14, 0) <= CFG80211_VERSION_CODE
 int mtk_cfg80211_mgmt_tx(struct wiphy *wiphy,
 			 struct wireless_dev *wdev,

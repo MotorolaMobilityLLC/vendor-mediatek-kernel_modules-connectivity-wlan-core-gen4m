@@ -635,6 +635,9 @@ uint32_t assocSendReAssocReqFrame(IN struct ADAPTER *prAdapter,
 							  prStaRec);
 			}
 		}
+		/* Calculate non-wfa vendor specific ie len */
+		u2EstimatedExtraIELen +=
+			assoc_get_nonwfa_vend_ie_len(prAdapter);
 	}
 #else
 	for (i = 0;
@@ -649,6 +652,8 @@ uint32_t assocSendReAssocReqFrame(IN struct ADAPTER *prAdapter,
 			    (prAdapter, prStaRec->ucBssIndex, prStaRec);
 		}
 	}
+	/* Calculate non-wfa vendor specific ie len */
+	u2EstimatedExtraIELen += assoc_get_nonwfa_vend_ie_len(prAdapter);
 #endif
 
 	ASSERT(prStaRec->ucBssIndex <= prAdapter->ucHwBssIdNum);
@@ -711,6 +716,8 @@ uint32_t assocSendReAssocReqFrame(IN struct ADAPTER *prAdapter,
 								 prMsduInfo);
 
 		}
+		/* Append non-wfa vendor specific ies for AIS mode */
+		assoc_build_nonwfa_vend_ie(prAdapter, prMsduInfo);
 	}
 #else
 	/* Append IE */
@@ -721,6 +728,8 @@ uint32_t assocSendReAssocReqFrame(IN struct ADAPTER *prAdapter,
 			txAssocReqIETable[i].pfnAppendIE(prAdapter, prMsduInfo);
 
 	}
+	/* Append non-wfa vendor specific ies for AIS mode */
+	assoc_build_nonwfa_vend_ie(prAdapter, prMsduInfo);
 #endif
 
 	/* 4 <6> Update the (Re)association request information */
@@ -1952,5 +1961,52 @@ void assocGenerateMDIE(IN struct ADAPTER *prAdapter,
 	prMsduInfo->u2FrameLength += 5;
 	/* IE size for MD IE is fixed, it is 5 */
 	kalMemCopy(pucBuffer, prFtIEs->prMDIE, 5);
+}
+
+/*-----------------------------------------------------------------------*/
+/*!
+* @brief Get the non-wfa vendor ie length that was previously set
+*        by wpa_supplicant for association request frame.
+*
+* @param prAdapter    pointer to driver adapter
+*
+* @retval length of the non-wfa vendor ie
+*/
+/*-----------------------------------------------------------------------*/
+uint16_t assoc_get_nonwfa_vend_ie_len(struct ADAPTER *prAdapter)
+{
+	if (!prAdapter || !prAdapter->prGlueInfo)
+		return 0;
+	return prAdapter->prGlueInfo->non_wfa_vendor_ie_len;
+}
+
+/*-----------------------------------------------------------------------*/
+/*!
+* @brief Builds the non-wfa vendor specific ies into association
+*        request frame.
+*
+* @param prAdapter    pointer to driver adapter
+*        prMsduInfo   pointer to the msdu frame body
+*
+* @retval void
+*/
+/*-----------------------------------------------------------------------*/
+void assoc_build_nonwfa_vend_ie(struct ADAPTER *prAdapter,
+			   struct MSDU_INFO *prMsduInfo)
+{
+	uint8_t *ptr = NULL;
+	uint16_t len = 0;
+
+	if (!prAdapter || !prMsduInfo)
+		return;
+	len = prAdapter->prGlueInfo->non_wfa_vendor_ie_len;
+	if (!len)
+		return;
+
+	ptr = (uint8_t *)prMsduInfo->prPacket +
+		(uint16_t)prMsduInfo->u2FrameLength;
+	kalMemCopy(ptr, prAdapter->prGlueInfo->non_wfa_vendor_ie_buf,
+			   len);
+	prMsduInfo->u2FrameLength += len;
 }
 #endif /* CFG_SUPPORT_AAA */
