@@ -260,7 +260,7 @@ struct mt66xx_chip_info mt66xx_chip_info_connac = {
 
 	.asicCapInit = asicCapInit,
 	.asicEnableFWDownload = asicEnableFWDownload,
-	.downloadBufferBin = wlanConnacDownloadBufferBin,
+	.downloadBufferBin = NULL,
 	.is_support_hw_amsdu = FALSE,
 	.workAround = 0,
 };
