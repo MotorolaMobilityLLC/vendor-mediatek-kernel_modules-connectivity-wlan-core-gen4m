@@ -155,6 +155,10 @@ static const struct sdio_device_id mtk_sdio_ids[] = {
 	{	SDIO_DEVICE(0x037a, 0x7608),
 		.driver_data = (kernel_ulong_t)&mt66xx_driver_data_mt7668},/* Not an SDIO standard class device */
 #endif /* MT7668 */
+#ifdef MT7663
+	{	SDIO_DEVICE(0x037a, 0x7603),
+		.driver_data = (kernel_ulong_t)&mt66xx_driver_data_mt766},
+#endif /* MT7663 */
 	{ /* end: all zeroes */ },
 };
 
@@ -1107,8 +1111,12 @@ kalDevPortRead(IN P_GLUE_INFO_T prGlueInfo,
 #endif
 
 	if (ret) {
-		kalSendAeeWarning(HIF_SDIO_ERR_TITLE_STR, HIF_SDIO_ERR_DESC_STR "sdio_readsb() reports error: %x", ret);
-		DBGLOG(HAL, ERROR, "sdio_readsb() reports error: %x\n", ret);
+		kalSendAeeWarning(HIF_SDIO_ERR_TITLE_STR, HIF_SDIO_ERR_DESC_STR "sdio_readsb() reports error: %d", ret);
+
+		DBGLOG(HAL, ERROR, "\n");
+		DBGLOG(HAL, ERROR, "\nSDIO BUS ERROR: ");
+		DBGLOG(HAL, ERROR, "sdio_readsb() reports error: %d\n", ret);
+		DBGLOG(HAL, ERROR, "\n");
 	}
 
 	return (ret) ? FALSE : TRUE;
@@ -1206,8 +1214,12 @@ kalDevPortWrite(IN P_GLUE_INFO_T prGlueInfo,
 
 	if (ret) {
 		kalSendAeeWarning(HIF_SDIO_ERR_TITLE_STR,
-				  HIF_SDIO_ERR_DESC_STR "sdio_writesb() reports error: %x", ret);
-		DBGLOG(HAL, ERROR, "sdio_writesb() reports error: %x\n", ret);
+				  HIF_SDIO_ERR_DESC_STR "sdio_writesb() reports error: %d", ret);
+
+		DBGLOG(HAL, ERROR, "\n");
+		DBGLOG(HAL, ERROR, "\nSDIO BUS ERROR: ");
+		DBGLOG(HAL, ERROR, "sdio_writesb() reports error: %d\n", ret);
+		DBGLOG(HAL, ERROR, "\n");
 	}
 
 	return (ret) ? FALSE : TRUE;
