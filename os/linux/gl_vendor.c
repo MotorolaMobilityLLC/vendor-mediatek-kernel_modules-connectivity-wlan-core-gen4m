@@ -1439,5 +1439,109 @@ nla_put_failure:
 	return -EFAULT;
 }
 
+int mtk_cfg80211_vendor_driver_memory_dump(struct wiphy *wiphy,
+					   struct wireless_dev *wdev,
+					   const void *data,
+					   int data_len)
+{
+#ifdef CFG_SUPPORT_LINK_QUALITY_MONITOR
+	struct LINK_QUALITY_INFO_OUTPUT_DATA {
+		uint32_t u4CurTxRate;
+		uint32_t u4TxTotalCount;
+		uint32_t u4TxRetryCount;
+		uint32_t u4TxFailCount;
+		uint32_t u4TxRtsFailCount;
+		uint32_t u4TxAckFailCount;
+		uint32_t u4CurRxRate;
+		uint32_t u4RxTotalCount;
+		uint32_t u4RxDupCount;
+		uint32_t u4RxErrCount;
+	} outputData;
+	struct PARAM_GET_LINK_QUALITY_INFO rParam;
+	struct NETDEV_PRIVATE_GLUE_INFO *prNetDevPrivate;
+	struct WIFI_LINK_QUALITY_INFO rLinkQualityInfo;
+	struct GLUE_INFO *prGlueInfo;
+	uint32_t u4BufLen;
+#endif /* CFG_SUPPORT_LINK_QUALITY_MONITOR */
+	struct sk_buff *skb;
+	uint8_t *puBuufer = NULL;
+	int32_t i4Status = -EINVAL;
+	uint16_t u2CopySize = 0;
+
+	ASSERT(wiphy);
+	ASSERT(wdev);
+
+#ifdef CFG_SUPPORT_LINK_QUALITY_MONITOR
+	prNetDevPrivate =
+		(struct NETDEV_PRIVATE_GLUE_INFO *) netdev_priv(wdev->netdev);
+	if (!prNetDevPrivate) {
+		DBGLOG(REQ, ERROR, "Invalid net device private\n");
+		return -EFAULT;
+	}
+	rParam.ucBssIdx = 0; /* prNetDevPrivate->ucBssIdx; */
+	rParam.prLinkQualityInfo = &rLinkQualityInfo;
+
+	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wiphy);
+
+	kalIoctl(prGlueInfo, wlanoidCheckLinkQualityMonitor, NULL,
+		 0, TRUE, FALSE, FALSE, &u4BufLen);
+
+	i4Status = kalIoctl(prGlueInfo, wlanoidGetLinkQualityInfo,
+		 &rParam, sizeof(struct PARAM_GET_LINK_QUALITY_INFO),
+		 TRUE, FALSE, FALSE, &u4BufLen);
+	if (i4Status != WLAN_STATUS_SUCCESS) {
+		DBGLOG(REQ, ERROR, "wlanoidGetLinkQualityInfo error\n");
+		goto err_handle_label;
+	}
+
+	outputData.u4CurTxRate = rLinkQualityInfo.u4CurTxRate;
+	outputData.u4TxTotalCount = rLinkQualityInfo.u4TxTotalCount;
+	outputData.u4TxRetryCount = rLinkQualityInfo.u4TxRetryCount;
+	outputData.u4TxFailCount = rLinkQualityInfo.u4TxFailCount;
+	outputData.u4TxRtsFailCount = rLinkQualityInfo.u4TxRtsFailCount;
+	outputData.u4TxAckFailCount = rLinkQualityInfo.u4TxAckFailCount;
+	outputData.u4CurRxRate = rLinkQualityInfo.u4CurRxRate;
+	outputData.u4RxTotalCount = rLinkQualityInfo.u4RxTotalCount;
+	outputData.u4RxDupCount = rLinkQualityInfo.u4RxDupCount;
+	outputData.u4RxErrCount = rLinkQualityInfo.u4RxErrCount;
+
+	DBGLOG(REQ, INFO,
+	       "content: Tx(rate:%u, total:%u, retry:%u, fail:%u, RTS fail:%u, ACK fail:%u), Rx(rate:%u, total:%u, dup:%u, error:%u)\n",
+	       outputData.u4CurTxRate, /* tx rate, current tx link speed */
+	       outputData.u4TxTotalCount, /* tx total packages */
+	       outputData.u4TxRetryCount, /* tx retry count */
+	       outputData.u4TxFailCount, /* tx fail count */
+	       outputData.u4TxRtsFailCount, /* tx RTS fail count */
+	       outputData.u4TxAckFailCount, /* tx ACK fail count */
+	       outputData.u4CurRxRate, /* current rx rate */
+	       outputData.u4RxTotalCount, /* rx total packages */
+	       outputData.u4RxDupCount, /* rx duplicate package count */
+	       outputData.u4RxErrCount /* rx error count */
+	);
+
+	u2CopySize = sizeof(struct LINK_QUALITY_INFO_OUTPUT_DATA);
+	puBuufer = (uint8_t *)&outputData;
+#endif /* CFG_SUPPORT_LINK_QUALITY_MONITOR */
+
+	skb = cfg80211_vendor_cmd_alloc_reply_skb(wiphy, u2CopySize);
+	if (!skb) {
+		DBGLOG(REQ, ERROR, "allocate skb failed\n");
+		i4Status = -ENOMEM;
+		goto err_handle_label;
+	}
+
+	if (unlikely(nla_put_nohdr(skb, u2CopySize, puBuufer) < 0)) {
+		DBGLOG(REQ, ERROR, "nla_put_nohdr failed: len=%u, ptr=%p\n",
+		       u2CopySize, puBuufer);
+		i4Status = -EINVAL;
+		goto err_handle_label;
+	}
+
+	i4Status = cfg80211_vendor_cmd_reply(skb);
+
+err_handle_label:
+	return i4Status;
+}
+
 #endif /* KERNEL_VERSION(3, 16, 0) <= CFG80211_VERSION_CODE */
 

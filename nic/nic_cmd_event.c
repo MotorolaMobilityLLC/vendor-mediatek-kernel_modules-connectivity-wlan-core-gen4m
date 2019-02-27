@@ -837,18 +837,19 @@ void nicCmdEventQueryLinkSpeed(IN struct ADAPTER *prAdapter,
 
 	prLinkQuality = (struct EVENT_LINK_QUALITY *) pucEventBuf;
 
-	if (prCmdInfo->fgIsOid) {
-		prGlueInfo = prAdapter->prGlueInfo;
-		pu4LinkSpeed = (uint32_t *) (
-				       prCmdInfo->pvInformationBuffer);
+	prGlueInfo = prAdapter->prGlueInfo;
+	pu4LinkSpeed = (uint32_t *) (prCmdInfo->pvInformationBuffer);
+	*pu4LinkSpeed = prLinkQuality->u2LinkSpeed * 5000;
 
-		*pu4LinkSpeed = prLinkQuality->u2LinkSpeed * 5000;
+#ifdef CFG_SUPPORT_LINK_QUALITY_MONITOR
+	prAdapter->rLinkQualityInfo.u4CurTxRate = (*pu4LinkSpeed) / 1000;
+#endif /* CFG_SUPPORT_LINK_QUALITY_MONITOR */
 
-		u4QueryInfoLen = sizeof(uint32_t);
+	u4QueryInfoLen = sizeof(uint32_t);
 
+	if (prCmdInfo->fgIsOid)
 		kalOidComplete(prGlueInfo, prCmdInfo->fgSetQuery,
 			       u4QueryInfoLen, WLAN_STATUS_SUCCESS);
-	}
 }
 
 void nicCmdEventQueryLinkSpeedEx(IN struct ADAPTER *prAdapter,
@@ -2640,43 +2641,48 @@ void nicCmdEventQueryWlanInfo(IN struct ADAPTER *prAdapter,
 
 	DBGLOG(RSN, INFO, "MT6632 : nicCmdEventQueryWlanInfo\n");
 
-	if (prCmdInfo->fgIsOid) {
-		prGlueInfo = prAdapter->prGlueInfo;
+	prGlueInfo = prAdapter->prGlueInfo;
 
-		u4QueryInfoLen = sizeof(struct PARAM_HW_WLAN_INFO);
-		prWlanInfo = (struct PARAM_HW_WLAN_INFO *)
+	u4QueryInfoLen = sizeof(struct PARAM_HW_WLAN_INFO);
+	prWlanInfo = (struct PARAM_HW_WLAN_INFO *)
 			     prCmdInfo->pvInformationBuffer;
 
-		/* prWlanInfo->u4Length = sizeof(PARAM_HW_WLAN_INFO_T); */
-		if (prEventWlanInfo && prWlanInfo) {
-			kalMemCopy(&prWlanInfo->rWtblTxConfig,
+	/* prWlanInfo->u4Length = sizeof(PARAM_HW_WLAN_INFO_T); */
+	if (prEventWlanInfo && prWlanInfo) {
+		kalMemCopy(&prWlanInfo->rWtblTxConfig,
 				   &prEventWlanInfo->rWtblTxConfig,
 				   sizeof(struct PARAM_TX_CONFIG));
-			kalMemCopy(&prWlanInfo->rWtblSecConfig,
+		kalMemCopy(&prWlanInfo->rWtblSecConfig,
 				   &prEventWlanInfo->rWtblSecConfig,
 				   sizeof(struct PARAM_SEC_CONFIG));
-			kalMemCopy(&prWlanInfo->rWtblKeyConfig,
+		kalMemCopy(&prWlanInfo->rWtblKeyConfig,
 				   &prEventWlanInfo->rWtblKeyConfig,
 				   sizeof(struct PARAM_KEY_CONFIG));
-			kalMemCopy(&prWlanInfo->rWtblRateInfo,
+		kalMemCopy(&prWlanInfo->rWtblRateInfo,
 				   &prEventWlanInfo->rWtblRateInfo,
 				   sizeof(struct PARAM_PEER_RATE_INFO));
-			kalMemCopy(&prWlanInfo->rWtblBaConfig,
+		kalMemCopy(&prWlanInfo->rWtblBaConfig,
 				   &prEventWlanInfo->rWtblBaConfig,
 				   sizeof(struct PARAM_PEER_BA_CONFIG));
-			kalMemCopy(&prWlanInfo->rWtblPeerCap,
+		kalMemCopy(&prWlanInfo->rWtblPeerCap,
 				   &prEventWlanInfo->rWtblPeerCap,
 				   sizeof(struct PARAM_PEER_CAP));
-			kalMemCopy(&prWlanInfo->rWtblRxCounter,
+		kalMemCopy(&prWlanInfo->rWtblRxCounter,
 				   &prEventWlanInfo->rWtblRxCounter,
 				   sizeof(struct PARAM_PEER_RX_COUNTER_ALL));
-			kalMemCopy(&prWlanInfo->rWtblTxCounter,
+		kalMemCopy(&prWlanInfo->rWtblTxCounter,
 				   &prEventWlanInfo->rWtblTxCounter,
 				   sizeof(struct PARAM_PEER_TX_COUNTER_ALL));
-		}
+#ifdef CFG_SUPPORT_LINK_QUALITY_MONITOR
+		prAdapter->rLinkQualityInfo.u4TxTotalCount +=
+				(prWlanInfo->rWtblTxCounter.u2CurBwTxCnt +
+				 prWlanInfo->rWtblTxCounter.u2OtherBwTxCnt);
+#endif /* CFG_SUPPORT_LINK_QUALITY_MONITOR */
+	}
+
+	if (prCmdInfo->fgIsOid)
 		kalOidComplete(prGlueInfo, prCmdInfo->fgSetQuery,
 			       u4QueryInfoLen, WLAN_STATUS_SUCCESS);
-	}
 }
 
 
@@ -2695,26 +2701,54 @@ void nicCmdEventQueryMibInfo(IN struct ADAPTER *prAdapter,
 
 	DBGLOG(RSN, INFO, "MT6632 : nicCmdEventQueryMibInfo\n");
 
-	if (prCmdInfo->fgIsOid) {
-		prGlueInfo = prAdapter->prGlueInfo;
+	prGlueInfo = prAdapter->prGlueInfo;
 
-		u4QueryInfoLen = sizeof(struct PARAM_HW_MIB_INFO);
-		prMibInfo = (struct PARAM_HW_MIB_INFO *)
+	u4QueryInfoLen = sizeof(struct PARAM_HW_MIB_INFO);
+	prMibInfo = (struct PARAM_HW_MIB_INFO *)
 			    prCmdInfo->pvInformationBuffer;
-		if (prEventMibInfo && prMibInfo) {
-			kalMemCopy(&prMibInfo->rHwMibCnt,
-				   &prEventMibInfo->rHwMibCnt,
-				   sizeof(struct HW_MIB_COUNTER));
-			kalMemCopy(&prMibInfo->rHwMib2Cnt,
-				   &prEventMibInfo->rHwMib2Cnt,
-				   sizeof(struct HW_MIB2_COUNTER));
-			kalMemCopy(&prMibInfo->rHwTxAmpduMts,
-				   &prEventMibInfo->rHwTxAmpduMts,
-				   sizeof(struct HW_TX_AMPDU_METRICS));
-		}
+	if (prEventMibInfo && prMibInfo) {
+#ifdef CFG_SUPPORT_LINK_QUALITY_MONITOR
+		struct WIFI_LINK_QUALITY_INFO *prLinkQualityInfo;
+		struct HW_MIB2_COUNTER *prMib2Counter;
+#endif /* CFG_SUPPORT_LINK_QUALITY_MONITOR */
+
+		kalMemCopy(&prMibInfo->rHwMibCnt,
+			   &prEventMibInfo->rHwMibCnt,
+			   sizeof(struct HW_MIB_COUNTER));
+		kalMemCopy(&prMibInfo->rHwMib2Cnt,
+			   &prEventMibInfo->rHwMib2Cnt,
+			   sizeof(struct HW_MIB2_COUNTER));
+		kalMemCopy(&prMibInfo->rHwTxAmpduMts,
+			   &prEventMibInfo->rHwTxAmpduMts,
+			   sizeof(struct HW_TX_AMPDU_METRICS));
+
+#ifdef CFG_SUPPORT_LINK_QUALITY_MONITOR
+		prLinkQualityInfo = &(prAdapter->rLinkQualityInfo);
+		prMib2Counter = &prMibInfo->rHwMib2Cnt;
+		/* index 1 is fixed for AIS */
+		prLinkQualityInfo->u4TxRetryCount =
+				prMibInfo->rHwMibCnt.au4FrameRetryCnt[1];
+		/* index 1 is fixed for AIS */
+		prLinkQualityInfo->u4TxRtsFailCount =
+				prMibInfo->rHwMibCnt.au4RtsRetryCnt[1];
+		/* index 1 is fixed for AIS */
+		prLinkQualityInfo->u4TxAckFailCount =
+				prMibInfo->rHwMibCnt.au4AckFailedCnt[1];
+		prLinkQualityInfo->u4TxFailCount =
+				prLinkQualityInfo->u4TxRtsFailCount +
+				prLinkQualityInfo->u4TxAckFailCount;
+		prLinkQualityInfo->u4RxErrCount =
+				prMibInfo->rHwMibCnt.u4RxFcsErrCnt;
+		prLinkQualityInfo->u4IdleSlotCount =
+				prMibInfo->rHwMibCnt.u4ChannelIdleCnt;
+
+		wlanFinishCollectingLinkQuality(prGlueInfo);
+#endif /* CFG_SUPPORT_LINK_QUALITY_MONITOR */
+	}
+
+	if (prCmdInfo->fgIsOid)
 		kalOidComplete(prGlueInfo, prCmdInfo->fgSetQuery,
 			       u4QueryInfoLen, WLAN_STATUS_SUCCESS);
-	}
 }
 #endif
 

@@ -2552,6 +2552,13 @@ enum ENUM_WIFI_LOG_LEVEL_SUPPORT_T {
 	ENUM_WIFI_LOG_LEVEL_SUPPORT_NUM
 };
 
+#ifdef CFG_SUPPORT_LINK_QUALITY_MONITOR
+struct PARAM_GET_LINK_QUALITY_INFO {
+	uint8_t ucBssIdx;
+	struct WIFI_LINK_QUALITY_INFO *prLinkQualityInfo;
+};
+#endif /* CFG_SUPPORT_LINK_QUALITY_MONITOR */
+
 /*******************************************************************************
  *                            P U B L I C   D A T A
  *******************************************************************************
@@ -2872,6 +2879,13 @@ wlanoidQueryLinkSpeed(IN struct ADAPTER *prAdapter,
 		      IN void *pvQueryBuffer,
 		      IN uint32_t u4QueryBufferLen,
 		      OUT uint32_t *pu4QueryInfoLen);
+
+uint32_t
+wlanQueryLinkSpeed(IN struct ADAPTER *prAdapter,
+		       IN void *pvQueryBuffer,
+		       IN uint32_t u4QueryBufferLen,
+		       OUT uint32_t *pu4QueryInfoLen,
+		       IN uint8_t fgIsOid);
 
 uint32_t
 wlanoidQueryLinkSpeedEx(IN struct ADAPTER *prAdapter,
@@ -3478,10 +3492,24 @@ wlanoidQueryWlanInfo(IN struct ADAPTER *prAdapter,
 		     OUT uint32_t *pu4QueryInfoLen);
 
 uint32_t
+wlanQueryWlanInfo(IN struct ADAPTER *prAdapter,
+		     OUT void *pvQueryBuffer,
+		     IN uint32_t u4QueryBufferLen,
+		     OUT uint32_t *pu4QueryInfoLen,
+		     IN uint8_t fgIsOid);
+
+uint32_t
 wlanoidQueryMibInfo(IN struct ADAPTER *prAdapter,
 		    OUT void *pvQueryBuffer,
 		    IN uint32_t u4QueryBufferLen,
 		    OUT uint32_t *pu4QueryInfoLen);
+
+uint32_t
+wlanQueryMibInfo(IN struct ADAPTER *prAdapter,
+		 IN void *pvQueryBuffer,
+		 IN uint32_t u4QueryBufferLen,
+		 OUT uint32_t *pu4QueryInfoLen,
+		 IN uint8_t fgIsOid);
 
 uint32_t
 wlanoidSetFwLog2Host(IN struct ADAPTER *prAdapter,
@@ -4054,5 +4082,17 @@ uint32_t wlanoidTxPowerControl(IN struct ADAPTER *prAdapter,
 			       IN void *pvSetBuffer,
 			       IN uint32_t u4SetBufferLen,
 			       OUT uint32_t *pu4SetInfoLen);
+
+#ifdef CFG_SUPPORT_LINK_QUALITY_MONITOR
+uint32_t wlanoidGetLinkQualityInfo(IN struct ADAPTER *prAdapter,
+				   IN void *pvSetBuffer,
+				   IN uint32_t u4SetBufferLen,
+				   OUT uint32_t *pu4SetInfoLen);
+
+uint32_t wlanoidCheckLinkQualityMonitor(IN struct ADAPTER *prAdapter,
+					IN void *pvQueryBuffer,
+					IN uint32_t u4QueryBufferLen,
+					OUT uint32_t *pu4QueryInfoLen);
+#endif /* CFG_SUPPORT_LINK_QUALITY_MONITOR */
 
 #endif /* _WLAN_OID_H */

@@ -681,6 +681,16 @@ static const struct wiphy_vendor_command
 		.doit = mtk_cfg80211_vendor_get_preferred_freq_list
 	},
 #endif /* CFG_SUPPORT_P2P_PREFERRED_FREQ_LIST */
+	/* Get Driver Memory Dump */
+	{
+		{
+			.vendor_id = GOOGLE_OUI,
+			.subcmd = LOGGER_DRIVER_MEM_DUMP
+		},
+		.flags = WIPHY_VENDOR_CMD_NEED_WDEV |
+				WIPHY_VENDOR_CMD_NEED_NETDEV,
+		.doit = mtk_cfg80211_vendor_driver_memory_dump
+	}
 };
 
 static const struct nl80211_vendor_cmd_info

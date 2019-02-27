@@ -1066,6 +1066,30 @@ struct PARAM_GET_CNM_T {
 	uint8_t	au4Reserved[65]; /*Total 160 byte*/
 };
 
+#ifdef CFG_SUPPORT_LINK_QUALITY_MONITOR
+struct WIFI_LINK_QUALITY_INFO {
+	uint32_t u4CurTxRate;		/* current tx link speed */
+	uint32_t u4TxTotalCount;	/* tx total accumulated count */
+	uint32_t u4TxRetryCount;	/* tx retry count */
+	uint32_t u4TxFailCount;		/* tx fail count */
+	uint32_t u4TxRtsFailCount;	/* tx RTS fail count */
+	uint32_t u4TxAckFailCount;	/* tx ACK fail count */
+
+	uint32_t u4CurRxRate;		/* current rx link speed */
+	uint32_t u4RxTotalCount;	/* rx total packages */
+	uint32_t u4RxDupCount;		/* rx duplicate package count */
+	uint32_t u4RxErrCount;		/* rx fcs fail count */
+
+	uint32_t u4CurTxPer;		/* current Tx PER */
+	uint32_t u4IdleSlotCount;	/* congestion stats: idle slot */
+
+	uint32_t u4DiffIdleSlotCount;
+	uint32_t u4LastTxTotalCount;
+	uint32_t u4LastTxFailCount;
+	uint32_t u4LastIdleSlotCount;
+};
+#endif /* CFG_SUPPORT_LINK_QUALITY_MONITOR */
+
 #if CFG_SUPPORT_IOT_AP_BLACKLIST
 enum ENUM_WLAN_IOT_AP_FLAG_T {
 	WLAN_IOT_AP_FG_VERSION = 0,
@@ -1614,4 +1638,9 @@ void wlanOffUninitNicModule(IN struct ADAPTER *prAdapter,
 void wlanOffClearAllQueues(IN struct ADAPTER *prAdapter);
 
 uint32_t wlanGetSupportedFeatureSet(IN struct GLUE_INFO *prGlueInfo);
+
+#ifdef CFG_SUPPORT_LINK_QUALITY_MONITOR
+uint32_t wlanLinkQualityMonitor(struct GLUE_INFO *prGlueInfo, bool bFgIsOid);
+void wlanFinishCollectingLinkQuality(struct GLUE_INFO *prGlueInfo);
+#endif /* CFG_SUPPORT_LINK_QUALITY_MONITOR */
 

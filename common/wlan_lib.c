@@ -10038,3 +10038,138 @@ uint32_t wlanGetSupportedFeatureSet(IN struct GLUE_INFO *prGlueInfo)
 
 	return u4FeatureSet;
 }
+
+#ifdef CFG_SUPPORT_LINK_QUALITY_MONITOR
+uint32_t wlanLinkQualityMonitor(struct GLUE_INFO *prGlueInfo, bool bFgIsOid)
+{
+	struct ADAPTER *prAdapter;
+	struct WIFI_LINK_QUALITY_INFO *prLinkQualityInfo = NULL;
+	uint8_t ucWlanIdx;
+	uint32_t u4Status = WLAN_STATUS_FAILURE;
+
+	if (prGlueInfo->eParamMediaStateIndicated !=
+	    PARAM_MEDIA_STATE_CONNECTED) {
+		/* not connected */
+		DBGLOG(SW4, ERROR, "not yet connected\n");
+		return u4Status;
+	}
+
+	prAdapter = prGlueInfo->prAdapter;
+	if (prAdapter == NULL) {
+		DBGLOG(SW4, ERROR, "prAdapter is null\n");
+		return u4Status;
+	}
+
+	if (prAdapter->prAisBssInfo->prStaRecOfAP)
+		ucWlanIdx = prAdapter->prAisBssInfo->prStaRecOfAP->ucWlanIndex;
+	else {
+		DBGLOG(SW4, ERROR, "prStaRecOfAP is null\n");
+		return u4Status;
+	}
+
+	/* send cmd to firmware */
+	u4Status = wlanQueryLinkSpeed(prAdapter, &prAdapter->u4Rate,
+			   sizeof(prAdapter->u4Rate),
+			   &(prAdapter->u4BufLen), FALSE);
+#if CFG_SUPPORT_MSP
+	prAdapter->rHwWlanInfo.u4Index = ucWlanIdx;
+	u4Status = wlanQueryWlanInfo(prAdapter, &(prAdapter->rHwWlanInfo),
+			sizeof(struct PARAM_HW_WLAN_INFO),
+			&(prAdapter->u4BufLen),
+			FALSE);
+	u4Status = wlanQueryMibInfo(prAdapter, &(prAdapter->rHwMibInfo),
+			sizeof(struct PARAM_HW_MIB_INFO),
+			&(prAdapter->u4BufLen),
+			bFgIsOid);
+#endif /* CFG_SUPPORT_MSP */
+
+	if (bFgIsOid == FALSE)
+		u4Status = WLAN_STATUS_SUCCESS;
+
+	if ((bFgIsOid == TRUE) || (prAdapter->u4LastLinkQuality <= 0))
+		return u4Status;
+
+	prLinkQualityInfo = &(prAdapter->rLinkQualityInfo);
+
+	DBGLOG(SW4, INFO,
+	       "Link Quality: Tx(rate:%u total:%u, retry:%u, fail:%u, rts_fail:%u, ack_fail:%u), Rx(rate:%u, total:%u, dup:%u, fcs_fail:%u), PER(%u), Congestion(%u)\n",
+	       prLinkQualityInfo->u4CurTxRate, /* current tx link speed */
+	       prLinkQualityInfo->u4TxTotalCount, /* tx total packages */
+	       prLinkQualityInfo->u4TxRetryCount, /* tx retry count */
+	       prLinkQualityInfo->u4TxFailCount, /* tx fail count */
+	       prLinkQualityInfo->u4TxRtsFailCount, /* tx RTS fail count */
+	       prLinkQualityInfo->u4TxAckFailCount, /* tx ACK fail count */
+	       prLinkQualityInfo->u4CurRxRate, /* current rx link speed */
+	       prLinkQualityInfo->u4RxTotalCount, /* rx total packages */
+	       prLinkQualityInfo->u4RxDupCount, /* rx duplicate package count */
+	       prLinkQualityInfo->u4RxErrCount, /* rx fcs fail count */
+	       prLinkQualityInfo->u4CurTxPer, /* current Tx PER */
+	       /* congestion stats */
+	       prLinkQualityInfo->u4DiffIdleSlotCount /* idle slot diff */
+	);
+
+	return u4Status;
+}
+
+void wlanFinishCollectingLinkQuality(struct GLUE_INFO *prGlueInfo)
+{
+	struct ADAPTER *prAdapter;
+	struct WIFI_LINK_QUALITY_INFO *prLinkQualityInfo = NULL;
+	uint32_t u4CurRxRate, u4MaxRxRate;
+	uint32_t u4Numerator, u4Denominator;
+	uint32_t u4McrData;
+
+	prAdapter = prGlueInfo->prAdapter;
+	if (prAdapter == NULL) {
+		DBGLOG(SW4, ERROR, "prAdapter is null\n");
+		return;
+	}
+
+	/* prepare to set/get statistics from BSSInfo's rLinkQualityInfo */
+	prLinkQualityInfo = &(prAdapter->rLinkQualityInfo);
+
+	/* get rx total count from 0x0150 index 1(+4) for AIS */
+	HAL_MCR_RD(prAdapter, (0x820F9000 + 0x0150) + 4, &u4McrData);
+	prLinkQualityInfo->u4RxTotalCount += u4McrData;
+
+	if (prLinkQualityInfo->u4TxTotalCount <
+	    prLinkQualityInfo->u4LastTxTotalCount) {
+		prLinkQualityInfo->u4RxDupCount = 0;
+	}
+
+	if (prLinkQualityInfo->u4TxTotalCount <
+	    prLinkQualityInfo->u4LastTxTotalCount)
+		prLinkQualityInfo->u4LastTxTotalCount = 0;
+
+	if (prLinkQualityInfo->u4TxFailCount <
+	    prLinkQualityInfo->u4LastTxFailCount)
+		prLinkQualityInfo->u4LastTxFailCount = 0;
+
+	u4Numerator = prLinkQualityInfo->u4TxFailCount -
+		      prLinkQualityInfo->u4LastTxFailCount;
+	u4Denominator = (prLinkQualityInfo->u4TxTotalCount +
+			 prLinkQualityInfo->u4TxFailCount) -
+			(prLinkQualityInfo->u4LastTxTotalCount +
+			 prLinkQualityInfo->u4LastTxFailCount);
+	prLinkQualityInfo->u4CurTxPer = (u4Denominator == 0) ? 0 :
+		(uint32_t)((u4Numerator * 100) / u4Denominator);
+	prLinkQualityInfo->u4DiffIdleSlotCount =
+				prLinkQualityInfo->u4IdleSlotCount -
+				prLinkQualityInfo->u4LastIdleSlotCount;
+
+	/* get current rx rate */
+	if (kalGetRxRate(prGlueInfo, &u4CurRxRate, &u4MaxRxRate) < 0)
+		DBGLOG(NIC, ERROR, "kalGetRxRate error\n");
+	else
+		prLinkQualityInfo->u4CurRxRate = u4CurRxRate;
+
+	prAdapter->u4LastLinkQuality = kalGetTimeTick();
+
+	prLinkQualityInfo->u4LastTxTotalCount =
+					prLinkQualityInfo->u4TxTotalCount;
+	prLinkQualityInfo->u4LastTxFailCount =
+					prLinkQualityInfo->u4TxFailCount;
+	prLinkQualityInfo->u4LastIdleSlotCount =
+					prLinkQualityInfo->u4IdleSlotCount;
+}
+#endif /* CFG_SUPPORT_LINK_QUALITY_MONITOR */

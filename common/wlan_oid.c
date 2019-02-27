@@ -4763,6 +4763,17 @@ wlanoidQueryLinkSpeed(IN struct ADAPTER *prAdapter,
 {
 	DEBUGFUNC("wlanoidQueryLinkSpeed");
 
+	return wlanQueryLinkSpeed(prAdapter, pvQueryBuffer, u4QueryBufferLen,
+				pu4QueryInfoLen, TRUE);
+}
+
+uint32_t
+wlanQueryLinkSpeed(IN struct ADAPTER *prAdapter,
+		   IN void *pvQueryBuffer, IN uint32_t u4QueryBufferLen,
+		   OUT uint32_t *pu4QueryInfoLen, IN uint8_t fgIsOid)
+{
+	DEBUGFUNC("wlanQueryLinkSpeed");
+
 	ASSERT(prAdapter);
 	ASSERT(pu4QueryInfoLen);
 	if (u4QueryBufferLen)
@@ -4785,13 +4796,19 @@ wlanoidQueryLinkSpeed(IN struct ADAPTER *prAdapter,
 		*(uint32_t *) pvQueryBuffer =
 			prAdapter->rLinkQuality.u2LinkSpeed *
 			5000;	/* change to unit of 100bps */
+
+#ifdef CFG_SUPPORT_LINK_QUALITY_MONITOR
+		prAdapter->rLinkQualityInfo.u4CurTxRate =
+			(*(uint32_t *) pvQueryBuffer) / 1000;
+#endif /* CFG_SUPPORT_LINK_QUALITY_MONITOR */
+
 		return WLAN_STATUS_SUCCESS;
 	} else {
 		return wlanSendSetQueryCmd(prAdapter,
 					   CMD_ID_GET_LINK_QUALITY,
 					   FALSE,
 					   TRUE,
-					   TRUE,
+					   fgIsOid,
 					   nicCmdEventQueryLinkSpeed,
 					   nicOidCmdTimeoutCommon, 0, NULL,
 					   pvQueryBuffer, u4QueryBufferLen);
@@ -12916,12 +12933,26 @@ wlanoidSetMonitor(IN struct ADAPTER *prAdapter,
 #if CFG_SUPPORT_MSP
 uint32_t
 wlanoidQueryWlanInfo(IN struct ADAPTER *prAdapter,
-		     IN void *pvQueryBuffer, IN uint32_t u4QueryBufferLen,
+		     IN void *pvQueryBuffer,
+		     IN uint32_t u4QueryBufferLen,
 		     OUT uint32_t *pu4QueryInfoLen)
+{
+	DEBUGFUNC("wlanoidQueryWlanInfo");
+
+	return wlanQueryWlanInfo(prAdapter, pvQueryBuffer, u4QueryBufferLen,
+				 pu4QueryInfoLen, TRUE);
+}
+
+uint32_t
+wlanQueryWlanInfo(IN struct ADAPTER *prAdapter,
+		 IN void *pvQueryBuffer,
+		 IN uint32_t u4QueryBufferLen,
+		 OUT uint32_t *pu4QueryInfoLen,
+		 IN uint8_t fgIsOid)
 {
 	struct PARAM_HW_WLAN_INFO *prHwWlanInfo;
 
-	DEBUGFUNC("wlanoidQueryWlanInfo");
+	DEBUGFUNC("wlanQueryWlanInfo");
 	DBGLOG(REQ, LOUD, "\n");
 
 	ASSERT(prAdapter);
@@ -12951,7 +12982,7 @@ wlanoidQueryWlanInfo(IN struct ADAPTER *prAdapter,
 				   CMD_ID_WLAN_INFO,
 				   FALSE,
 				   TRUE,
-				   TRUE,
+				   fgIsOid,
 				   nicCmdEventQueryWlanInfo,
 				   nicOidCmdTimeoutCommon,
 				   sizeof(struct PARAM_HW_WLAN_INFO),
@@ -12960,11 +12991,23 @@ wlanoidQueryWlanInfo(IN struct ADAPTER *prAdapter,
 
 }				/* wlanoidQueryWlanInfo */
 
-
 uint32_t
 wlanoidQueryMibInfo(IN struct ADAPTER *prAdapter,
 		    IN void *pvQueryBuffer, IN uint32_t u4QueryBufferLen,
 		    OUT uint32_t *pu4QueryInfoLen)
+{
+	DEBUGFUNC("wlanoidQueryMibInfo");
+
+	return wlanQueryMibInfo(prAdapter, pvQueryBuffer, u4QueryBufferLen,
+				pu4QueryInfoLen, TRUE);
+}
+
+uint32_t
+wlanQueryMibInfo(IN struct ADAPTER *prAdapter,
+		 IN void *pvQueryBuffer,
+		 IN uint32_t u4QueryBufferLen,
+		 OUT uint32_t *pu4QueryInfoLen,
+		 IN uint8_t fgIsOid)
 {
 	struct PARAM_HW_MIB_INFO *prHwMibInfo;
 
@@ -12998,7 +13041,7 @@ wlanoidQueryMibInfo(IN struct ADAPTER *prAdapter,
 				   CMD_ID_MIB_INFO,
 				   FALSE,
 				   TRUE,
-				   TRUE,
+				   fgIsOid,
 				   nicCmdEventQueryMibInfo,
 				   nicOidCmdTimeoutCommon,
 				   sizeof(struct PARAM_HW_MIB_INFO),
@@ -16022,3 +16065,36 @@ uint32_t wlanoidTxPowerControl(IN struct ADAPTER *prAdapter,
 
 	return WLAN_STATUS_SUCCESS;
 }
+
+#ifdef CFG_SUPPORT_LINK_QUALITY_MONITOR
+uint32_t wlanoidGetLinkQualityInfo(IN struct ADAPTER *prAdapter,
+				   IN void *pvSetBuffer,
+				   IN uint32_t u4SetBufferLen,
+				   OUT uint32_t *pu4SetInfoLen)
+{
+	struct PARAM_GET_LINK_QUALITY_INFO *prParam;
+	struct WIFI_LINK_QUALITY_INFO *prSrcLinkQualityInfo = NULL;
+	struct WIFI_LINK_QUALITY_INFO *prDstLinkQualityInfo = NULL;
+
+	prParam = (struct PARAM_GET_LINK_QUALITY_INFO *)pvSetBuffer;
+	prSrcLinkQualityInfo = &(prAdapter->rLinkQualityInfo);
+	prDstLinkQualityInfo = prParam->prLinkQualityInfo;
+	kalMemCopy(prDstLinkQualityInfo, prSrcLinkQualityInfo,
+		   sizeof(struct WIFI_LINK_QUALITY_INFO));
+
+	return WLAN_STATUS_SUCCESS;
+}
+
+uint32_t wlanoidCheckLinkQualityMonitor(IN struct ADAPTER *prAdapter,
+				 IN void *pvQueryBuffer,
+				 IN uint32_t u4QueryBufferLen,
+				 OUT uint32_t *pu4QueryInfoLen)
+{
+	if ((kalGetTimeTick() - prAdapter->u4LastLinkQuality) >
+	    CFG_LINK_QUALITY_MONITOR_UPDATE_TOLERANT)
+		return wlanLinkQualityMonitor(prAdapter->prGlueInfo, TRUE);
+
+	return WLAN_STATUS_SUCCESS;
+}
+#endif /* CFG_SUPPORT_LINK_QUALITY_MONITOR */
+

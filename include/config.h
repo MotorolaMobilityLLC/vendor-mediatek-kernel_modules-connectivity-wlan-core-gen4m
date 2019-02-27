@@ -1200,6 +1200,18 @@
  */
 /* #define CFG_REPORT_MAX_TX_RATE */
 
+/*------------------------------------------------------------------------------
+ * Link Quality Monitor
+ * Link quality monitor execution period base on performance monitor timer
+ * CFG_LINK_QUALITY_MONITOR_UPDATE_FREQUENCY base on PERF_MON_UPDATE_INTERVAL
+ *------------------------------------------------------------------------------
+ */
+#define CFG_SUPPORT_LINK_QUALITY_MONITOR
+#ifdef CFG_SUPPORT_LINK_QUALITY_MONITOR
+#define CFG_LINK_QUALITY_MONITOR_UPDATE_FREQUENCY	1
+#define CFG_LINK_QUALITY_MONITOR_UPDATE_TOLERANT	1000
+#endif /* CFG_SUPPORT_LINK_QUALITY_MONITOR */
+
  /*-----------------------------------------------------------------------------
  * Flags to support IOT AP blacklist
  *------------------------------------------------------------------------------

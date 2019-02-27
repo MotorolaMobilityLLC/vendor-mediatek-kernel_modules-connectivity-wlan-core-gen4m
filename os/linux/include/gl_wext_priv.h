@@ -436,6 +436,11 @@ int kalSaveStaMaxTxRate(struct ADAPTER *prAdapter, void *prBssPtr,
 			struct STA_RECORD *prStaRec);
 #endif /* CFG_REPORT_MAX_TX_RATE */
 
+#ifdef CFG_SUPPORT_LINK_QUALITY_MONITOR
+int kalGetRxRate(IN struct GLUE_INFO *prGlueInfo,
+		 IN uint32_t *pu4CurRate, IN uint32_t *pu4MaxRate);
+#endif /* CFG_SUPPORT_LINK_QUALITY_MONITOR */
+
 /*******************************************************************************
  *                              F U N C T I O N S
  *******************************************************************************

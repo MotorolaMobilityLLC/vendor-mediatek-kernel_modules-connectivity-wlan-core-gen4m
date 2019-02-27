@@ -1596,6 +1596,19 @@ struct ADAPTER {
 #endif
 	OS_SYSTIME tmGROFlushTimeout;
 
+#ifdef CFG_SUPPORT_LINK_QUALITY_MONITOR
+	uint32_t u4LastLinkQuality;
+	uint32_t u4LinkQualityCounter;
+	struct WIFI_LINK_QUALITY_INFO rLinkQualityInfo;
+	struct PARAM_GET_STA_STATISTICS rQueryStaStatistics;
+#if CFG_SUPPORT_MSP
+	struct PARAM_HW_WLAN_INFO rHwWlanInfo;
+	struct PARAM_HW_MIB_INFO rHwMibInfo;
+#endif /* CFG_SUPPORT_MSP */
+	uint32_t u4Rate;
+	uint32_t u4BufLen;
+#endif /* CFG_SUPPORT_LINK_QUALITY_MONITOR */
+
 };				/* end of _ADAPTER_T */
 
 /*******************************************************************************

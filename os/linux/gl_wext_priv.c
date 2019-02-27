@@ -13316,6 +13316,7 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers[] = {
 	{CMD_P2P_SET_NOA, priv_driver_set_p2p_noa},
 #endif
 	{CMD_GET_WIFI_TYPE, priv_driver_get_wifi_type},
+	{CMD_GET_MU_RX_PKTCNT, priv_driver_show_rx_stat},
 	{CMD_SET_PWR_CTRL, priv_driver_set_power_control},
 };
 
@@ -15389,6 +15390,75 @@ int kalQueryRateByTable(uint32_t txmode, uint32_t rate,
 	*pu4MaxRate = u4MaxRate;
 	return 0;
 }
+
+#ifdef CFG_SUPPORT_LINK_QUALITY_MONITOR
+int kalGetRxRate(IN struct GLUE_INFO *prGlueInfo,
+		 IN uint32_t *pu4CurRate, IN uint32_t *pu4MaxRate)
+{
+	struct ADAPTER *prAdapter;
+	uint32_t rxmode = 0, rate = 0, frmode = 0, sgi = 0, nsts = 0;
+	uint32_t groupid = 0, mu = 0;
+	uint32_t u4RxVector0 = 0, u4RxVector1 = 0;
+	uint8_t ucWlanIdx, ucStaIdx;
+	int rv;
+
+	*pu4CurRate = 0;
+	*pu4MaxRate = 0;
+	prAdapter = prGlueInfo->prAdapter;
+
+	if (prAdapter->prAisBssInfo->prStaRecOfAP) {
+		ucWlanIdx = prAdapter->prAisBssInfo->prStaRecOfAP->ucWlanIndex;
+	} else {
+		DBGLOG(SW4, ERROR, "prStaRecOfAP is null\n");
+		goto errhandle;
+	}
+
+	if (wlanGetStaIdxByWlanIdx(prAdapter, ucWlanIdx, &ucStaIdx) ==
+	    WLAN_STATUS_SUCCESS) {
+		u4RxVector0 = prAdapter->arStaRec[ucStaIdx].u4RxVector0;
+		u4RxVector1 = prAdapter->arStaRec[ucStaIdx].u4RxVector1;
+		if ((u4RxVector0 == 0) || (u4RxVector1 == 0)) {
+			DBGLOG(SW4, ERROR, "u4RxVector0 or u4RxVector1 is 0\n");
+			goto errhandle;
+		}
+	} else {
+		DBGLOG(SW4, ERROR, "wlanGetStaIdxByWlanIdx fail\n");
+		goto errhandle;
+	}
+
+	rxmode = (u4RxVector0 & RX_VT_RX_MODE_MASK) >> RX_VT_RX_MODE_OFFSET;
+	rate = (u4RxVector0 & RX_VT_RX_RATE_MASK) >> RX_VT_RX_RATE_OFFSET;
+	frmode = (u4RxVector0 & RX_VT_FR_MODE_MASK) >> RX_VT_FR_MODE_OFFSET;
+	nsts = ((u4RxVector1 & RX_VT_NSTS_MASK) >> RX_VT_NSTS_OFFSET);
+	sgi = u4RxVector0 & RX_VT_SHORT_GI;
+	groupid = (u4RxVector1 & RX_VT_GROUP_ID_MASK) >> RX_VT_GROUP_ID_OFFSET;
+	if (groupid && groupid != 63) {
+		mu = 1;
+	} else {
+		mu = 0;
+		nsts += 1;
+	}
+	sgi = (sgi == 0) ? 0 : 1;
+	if (frmode >= 4) {
+		DBGLOG(SW4, ERROR, "frmode error: %u\n", frmode);
+		goto errhandle;
+	}
+
+	rv = kalQueryRateByTable(rxmode, rate, frmode, sgi, nsts,
+				 pu4CurRate, pu4MaxRate);
+	if (rv < 0)
+		goto errhandle;
+
+	return 0;
+
+errhandle:
+	DBGLOG(SW4, ERROR,
+	       "u4RxVector0=[%x], u4RxVector1=[%x], rxmode=[%u], rate=[%u], frmode=[%u], sgi=[%u], nsts=[%u]\n",
+	       u4RxVector0, u4RxVector1, rxmode, rate, frmode, sgi, nsts
+	);
+	return -1;
+}
+#endif /* CFG_SUPPORT_LINK_QUALITY_MONITOR */
 
 #ifdef CFG_REPORT_MAX_TX_RATE
 int kalSaveStaMaxTxRate(struct ADAPTER *prAdapter, void *prBssPtr,
