@@ -565,7 +565,8 @@ void halProcessTxInterrupt(IN struct ADAPTER *prAdapter)
 
 void halInitMsduTokenInfo(IN struct ADAPTER *prAdapter)
 {
-	struct MSDU_TOKEN_INFO *prTokenInfo = &prAdapter->prGlueInfo->rHifInfo.rTokenInfo;
+	struct GL_HIF_INFO *prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
+	struct MSDU_TOKEN_INFO *prTokenInfo = &prHifInfo->rTokenInfo;
 	struct MSDU_TOKEN_ENTRY *prToken;
 	struct mt66xx_chip_info *prChipInfo = prAdapter->chip_info;
 	uint32_t u4Idx;
@@ -581,7 +582,12 @@ void halInitMsduTokenInfo(IN struct ADAPTER *prAdapter)
 
 #if HIF_TX_PREALLOC_DATA_BUFFER
 		prToken->u4DmaLength = NIC_TX_MAX_SIZE_PER_FRAME + u4TxHeadRoomSize;
-		prToken->prPacket = kalMemAlloc(prToken->u4DmaLength, PHY_MEM_TYPE);
+		if (prHifInfo->fgIsPreAllocMem)
+			prToken->prPacket = prHifInfo->allocMsduBuf(
+				prToken->u4DmaLength, u4Idx);
+		else
+			prToken->prPacket = kalMemAlloc(prToken->u4DmaLength,
+							PHY_MEM_TYPE);
 		if (prToken->prPacket) {
 			DBGLOG(HAL, TRACE, "Msdu Entry[0x%p] Tok[%u] Buf[0x%p] len[%u]\n", prToken,
 				u4Idx, prToken->prPacket, prToken->u4DmaLength);
@@ -609,7 +615,8 @@ void halInitMsduTokenInfo(IN struct ADAPTER *prAdapter)
 
 void halUninitMsduTokenInfo(IN struct ADAPTER *prAdapter)
 {
-	struct MSDU_TOKEN_INFO *prTokenInfo = &prAdapter->prGlueInfo->rHifInfo.rTokenInfo;
+	struct GL_HIF_INFO *prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
+	struct MSDU_TOKEN_INFO *prTokenInfo = &prHifInfo->rTokenInfo;
 	struct MSDU_TOKEN_ENTRY *prToken;
 	uint32_t u4Idx;
 
@@ -630,7 +637,9 @@ void halUninitMsduTokenInfo(IN struct ADAPTER *prAdapter)
 		}
 
 #if HIF_TX_PREALLOC_DATA_BUFFER
-		kalMemFree(prToken->prPacket, PHY_MEM_TYPE, prToken->u4DmaLength);
+		if (!prHifInfo->fgIsPreAllocMem)
+			kalMemFree(prToken->prPacket, PHY_MEM_TYPE,
+				   prToken->u4DmaLength);
 		prToken->prPacket = NULL;
 #endif
 	}
@@ -906,13 +915,22 @@ void halProcessRxInterrupt(IN struct ADAPTER *prAdapter)
 		halRxReceiveRFBs(prAdapter, RX_RING_DATA_IDX_0);
 }
 
-static int32_t halWpdmaAllocRingDesc(struct GLUE_INFO *prGlueInfo, struct RTMP_DMABUF *pDescRing, int32_t size)
+static int32_t halWpdmaAllocRingDesc(struct GLUE_INFO *prGlueInfo,
+				     struct RTMP_DMABUF *pDescRing,
+				     uint32_t u4Size, bool fgIsTx,
+				     uint32_t u4Num)
 {
 	struct GL_HIF_INFO *prHifInfo = &prGlueInfo->rHifInfo;
 
-	pDescRing->AllocSize = size;
-	pDescRing->AllocVa = (void *)KAL_DMA_ALLOC_COHERENT(prHifInfo->prDmaDev,
-				pDescRing->AllocSize, &pDescRing->AllocPa);
+	pDescRing->AllocSize = u4Size;
+	if (prHifInfo->fgIsPreAllocMem)
+		pDescRing->AllocVa = prHifInfo->allocDmaCoherent(
+			pDescRing->AllocSize, &pDescRing->AllocPa,
+			fgIsTx, u4Num);
+	else
+		pDescRing->AllocVa = (void *)KAL_DMA_ALLOC_COHERENT(
+			prHifInfo->prDmaDev, pDescRing->AllocSize,
+			&pDescRing->AllocPa);
 
 	if (pDescRing->AllocVa == NULL) {
 		DBGLOG(HAL, ERROR, "Failed to allocate a big buffer\n");
@@ -920,7 +938,7 @@ static int32_t halWpdmaAllocRingDesc(struct GLUE_INFO *prGlueInfo, struct RTMP_D
 	}
 
 	/* Zero init this memory block */
-	kalMemZero(pDescRing->AllocVa, size);
+	kalMemZero(pDescRing->AllocVa, u4Size);
 
 	return 0;
 }
@@ -929,7 +947,7 @@ static int32_t halWpdmaFreeRingDesc(struct GLUE_INFO *prGlueInfo, struct RTMP_DM
 {
 	struct GL_HIF_INFO *prHifInfo = &prGlueInfo->rHifInfo;
 
-	if (pDescRing->AllocVa)
+	if (pDescRing->AllocVa && !prHifInfo->fgIsPreAllocMem)
 		KAL_DMA_FREE_COHERENT(prHifInfo->prDmaDev, pDescRing->AllocSize,
 				      pDescRing->AllocVa, pDescRing->AllocPa);
 
@@ -938,26 +956,50 @@ static int32_t halWpdmaFreeRingDesc(struct GLUE_INFO *prGlueInfo, struct RTMP_DM
 	return TRUE;
 }
 
-static void *halWpdmaAllocRxPacketBuff(IN void *pPciDev, IN unsigned long Length,
-	IN u_int8_t Cached, OUT void **VirtualAddress, OUT dma_addr_t *phy_addr)
+struct sk_buff *halAllocRxPacketBuf(uint32_t u4Len, uint32_t u4Num,
+				    uint32_t u4Idx)
 {
-	struct sk_buff *pkt;
+	return dev_alloc_skb(u4Len);
+}
 
-	/* pkt = __dev_alloc_skb(Length, GFP_DMA | GFP_ATOMIC); */
-	pkt = dev_alloc_skb(Length);
+static void *halWpdmaAllocRxPacketBuff(struct GL_HIF_INFO *prHifInfo,
+				       uint32_t u4Len, uint32_t u4Num,
+				       uint32_t u4Idx, void **vir_addr,
+				       dma_addr_t *phy_addr)
+{
+	struct sk_buff *pkt = NULL;
 
-	if (pkt == NULL)
-		DBGLOG(HAL, ERROR, "can't allocate rx %ld size packet\n", Length);
+	if (prHifInfo->fgIsPreAllocMem)
+		pkt = prHifInfo->allocRxPacket(u4Len, u4Num, u4Idx);
 
-	if (pkt) {
-		*VirtualAddress = (void *) pkt->data;
-		*phy_addr = KAL_DMA_MAP_SINGLE(pPciDev, *VirtualAddress, Length, KAL_DMA_TO_DEVICE);
-	} else {
-		*VirtualAddress = (void *) NULL;
-		*phy_addr = (dma_addr_t) 0;
+	if (!pkt) {
+		pkt = halAllocRxPacketBuf(u4Len, u4Num, u4Idx);
+		if (prHifInfo->fgIsPreAllocMem)
+			prHifInfo->updateRxPacket(pkt, u4Num, u4Idx);
 	}
 
-	return (void *) pkt;
+	if (!pkt)
+		goto alloc_fail;
+
+	*vir_addr = (void *)pkt->data;
+	*phy_addr = KAL_DMA_MAP_SINGLE(prHifInfo->prDmaDev, *vir_addr,
+				       u4Len, KAL_DMA_TO_DEVICE);
+	if (KAL_DMA_MAPPING_ERROR(prHifInfo->prDmaDev, *phy_addr))
+		goto mapping_fail;
+
+	return (void *)pkt;
+
+mapping_fail:
+	DBGLOG(HAL, ERROR, "sk_buff dma mapping error!\n");
+	if (!prHifInfo->fgIsPreAllocMem)
+		dev_kfree_skb(pkt);
+
+alloc_fail:
+	DBGLOG(HAL, ERROR, "can't allocate rx %u size packet\n", u4Len);
+	*vir_addr = (void *)NULL;
+	*phy_addr = (dma_addr_t)0;
+
+	return NULL;
 }
 
 bool halWpdmaAllocTxRing(struct GLUE_INFO *prGlueInfo, uint32_t u4Num,
@@ -975,7 +1017,7 @@ bool halWpdmaAllocTxRing(struct GLUE_INFO *prGlueInfo, uint32_t u4Num,
 	prHifInfo = &prGlueInfo->rHifInfo;
 
 	halWpdmaAllocRingDesc(prGlueInfo, &prHifInfo->TxDescRing[u4Num],
-			      u4Size * u4DescSize);
+			      u4Size * u4DescSize, true, u4Num);
 	if (prHifInfo->TxDescRing[u4Num].AllocVa == NULL) {
 		DBGLOG(HAL, ERROR, "TxDescRing[%d] allocation failed\n", u4Num);
 		return false;
@@ -1029,7 +1071,8 @@ bool halWpdmaAllocRxRing(struct GLUE_INFO *prGlueInfo, uint32_t u4Num,
 	prHifInfo = &prGlueInfo->rHifInfo;
 
 	/* Alloc RxRingDesc memory except Tx ring allocated eariler */
-	halWpdmaAllocRingDesc(prGlueInfo, &prHifInfo->RxDescRing[u4Num], u4Size * u4DescSize);
+	halWpdmaAllocRingDesc(prGlueInfo, &prHifInfo->RxDescRing[u4Num],
+			      u4Size * u4DescSize, false, u4Num);
 	if (prHifInfo->RxDescRing[u4Num].AllocVa == NULL) {
 		DBGLOG(HAL, ERROR, "\n\n\nRxDescRing allocation failed!!\n\n\n");
 		return false;
@@ -1060,8 +1103,11 @@ bool halWpdmaAllocRxRing(struct GLUE_INFO *prGlueInfo, uint32_t u4Num,
 		/* Setup Rx associated Buffer size & allocate share memory */
 		pDmaBuf = &dma_cb->DmaBuf;
 		pDmaBuf->AllocSize = u4BufSize;
-		pPacket = halWpdmaAllocRxPacketBuff(prHifInfo->prDmaDev, pDmaBuf->AllocSize,
-			FALSE, &pDmaBuf->AllocVa, &pDmaBuf->AllocPa);
+		pPacket = halWpdmaAllocRxPacketBuff(prHifInfo,
+						    pDmaBuf->AllocSize,
+						    u4Num, index,
+						    &pDmaBuf->AllocVa,
+						    &pDmaBuf->AllocPa);
 
 		/* keep allocated rx packet */
 		dma_cb->pPacket = pPacket;
@@ -1165,7 +1211,7 @@ void halWpdmaFreeRing(struct GLUE_INFO *prGlueInfo)
 
 			pTxRing->Cell[j].pPacket = NULL;
 
-			if (pBuffer)
+			if (pBuffer && !prHifInfo->fgIsPreAllocMem)
 				kalMemFree(pBuffer, PHY_MEM_TYPE, 0);
 
 			pTxRing->Cell[j].pBuffer = NULL;
@@ -1179,7 +1225,9 @@ void halWpdmaFreeRing(struct GLUE_INFO *prGlueInfo)
 				KAL_DMA_UNMAP_SINGLE(prHifInfo->prDmaDev, dma_cb->DmaBuf.AllocPa,
 					dma_cb->DmaBuf.AllocSize, KAL_DMA_TO_DEVICE);
 
-				kalPacketFree(prGlueInfo, dma_cb->pPacket);
+				if (!prHifInfo->fgIsPreAllocMem)
+					kalPacketFree(prGlueInfo,
+						      dma_cb->pPacket);
 			}
 		}
 		kalMemZero(prHifInfo->RxRing[j].Cell, prHifInfo->RxRing[j].u4RingSize * sizeof(struct RTMP_DMACB));

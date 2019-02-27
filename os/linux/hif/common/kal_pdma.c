@@ -627,6 +627,9 @@ u_int8_t kalDevReadData(IN struct GLUE_INFO *prGlueInfo, IN uint16_t u2Port, IN 
 	prDmaBuf = &pRxCell->DmaBuf;
 
 	pRxCell->pPacket = prSwRfb->pvPacket;
+	if (prHifInfo->fgIsPreAllocMem)
+		prHifInfo->updateRxPacket(pRxCell->pPacket, u2Port,
+					  prRxRing->RxSwReadIdx);
 
 	KAL_DMA_UNMAP_SINGLE(prHifInfo->prDmaDev, prDmaBuf->AllocPa, prDmaBuf->AllocSize, KAL_DMA_FROM_DEVICE);
 	prSwRfb->pvPacket = pRxPacket;
