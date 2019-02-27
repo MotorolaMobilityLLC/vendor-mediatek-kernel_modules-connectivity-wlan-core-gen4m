@@ -4086,7 +4086,6 @@ void scanLogCacheAddBSS(struct LINK *prList,
 
 	if (LINK_IS_INVALID(prList)) {
 		LINK_INITIALIZE(prList);
-		scanlog_dbg(prefix, INFO, "Init scan log cache\n");
 	}
 
 	LINK_FOR_EACH_ENTRY(pSavedBss, prList,
@@ -4141,7 +4140,6 @@ void scanLogCacheFlushBSS(struct LINK *prList, enum ENUM_SCAN_LOG_PREFIX prefix,
 
 	if (LINK_IS_INVALID(prList)) {
 		LINK_INITIALIZE(prList);
-		scanlog_dbg(prefix, INFO, "Init scan log cache\n");
 	}
 
 	if (LINK_IS_EMPTY(prList))
