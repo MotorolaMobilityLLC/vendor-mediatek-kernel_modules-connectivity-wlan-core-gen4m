@@ -82,7 +82,6 @@
 /* TODO: assign correct setting for mt7663 after receive correct information @2016/12/20 */
 #define MT7663_PATCH_START_ADDR                 (0x000C8000)
 #define MT7663_TOP_CFG_BASE			CONN_CFG_BASE
-#define MT7663_IS_PCIE_32DW_READ                (0)
 #define MT7663_TX_DESC_APPEND_LENGTH            32
 
 /*******************************************************************************

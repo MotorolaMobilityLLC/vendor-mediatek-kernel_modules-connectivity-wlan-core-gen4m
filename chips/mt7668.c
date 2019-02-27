@@ -202,11 +202,12 @@ VOID mt7668CapInit(IN P_ADAPTER_T prAdapter)
 BUS_INFO mt7668_bus_info = {
 #if defined(_HIF_PCIE)
 	.top_cfg_base = MT7668_TOP_CFG_BASE,
-	.is_pcie_32dw_read = MT7668_IS_PCIE_32DW_READ, /* Litien */
 	.bus2chip = mt7668_bus2chip_cr_mapping,
 	.tx_ring_fwdl_idx = 3,
 	.tx_ring_cmd_idx = 2,
 	.tx_ring_data_idx = 0,
+
+	.pdmaSetup = halEnhancedWpdmaConfig,
 #endif /* _HIF_PCIE */
 #if defined(_HIF_USB)
 	.u4UdmaWlCfg_0_Addr = UDMA_WLCFG_0,
@@ -227,6 +228,7 @@ struct mt66xx_chip_info mt66xx_chip_info_mt7668 = {
 	.fw_dl_ops = &mt7668_fw_dl_ops,
 
 	.chip_id = MT7668_CHIP_ID,
+	.should_verify_chip_id = TRUE,
 	.sw_sync0 = MT7668_SW_SYNC0,
 	.sw_ready_bits = WIFI_FUNC_READY_BITS,
 	.sw_ready_bit_offset = MT7668_SW_SYNC0_RDY_OFFSET,
