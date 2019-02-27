@@ -1156,6 +1156,7 @@ struct _ADAPTER_T {
 	UINT_32 u4FreeBlockNum;
 	UINT_32 u4GetTxPower;
 /*#endif*/
+	BOOLEAN fgIsCr4FwDownloaded;
 	BOOLEAN fgIsFwDownloaded;
 	BOOLEAN fgIsSupportBufferBinSize16Byte;
 	BOOLEAN fgIsSupportDelayCal;
