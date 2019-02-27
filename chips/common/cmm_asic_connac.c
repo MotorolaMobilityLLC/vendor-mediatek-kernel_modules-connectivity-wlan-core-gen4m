@@ -749,7 +749,7 @@ void asicCheckDummyReg(struct GLUE_INFO *prGlueInfo)
 
 	for (u4Idx = 0; u4Idx < NUM_OF_TX_RING; u4Idx++)
 		prHifInfo->TxRing[u4Idx].TxSwUsedIdx = 0;
-	DBGLOG(HAL, INFO, "Weakup from sleep mode\n");
+	DBGLOG(HAL, TRACE, "Weakup from sleep mode\n");
 
 	/* Write sleep mode magic num to dummy reg */
 	asicSetDummyReg(prGlueInfo);
