@@ -999,6 +999,8 @@ uint32_t wlanProcessCommandQueue(IN struct ADAPTER *prAdapter, IN struct QUE *pr
 					break;
 				case SEC_QUEUE_KEY_COMMAND:
 					eFrameAction = FRAME_ACTION_QUEUE_PKT;
+					DBGLOG(INIT, INFO,
+							"Queue add key cmd.\n");
 					break;
 				case SEC_TX_KEY_COMMAND:
 				default:
