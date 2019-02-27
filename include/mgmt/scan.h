@@ -248,6 +248,38 @@ enum ENUM_SCHED_SCAN_ACT {
 	SCHED_SCAN_ACT_DISABLE,
 };
 
+#define SCAN_LOG_PREFIX_MAX_LEN		(16)
+#define SCAN_LOG_MSG_MAX_LEN		(400)
+
+enum ENUM_SCAN_LOG_PREFIX {
+	/* Scan */
+	LOG_SCAN_REQ_K2D = 0,		/* 0 */
+	LOG_SCAN_REQ_D2F,
+	LOG_SCAN_RESULT_F2D,
+	LOG_SCAN_RESULT_D2K,
+	LOG_SCAN_DONE_F2D,
+	LOG_SCAN_DONE_D2K,		/* 5 */
+
+	/* Sched scan */
+	LOG_SCHED_SCAN_REQ_START_K2D,
+	LOG_SCHED_SCAN_REQ_START_D2F,
+	LOG_SCHED_SCAN_REQ_STOP_K2D,
+	LOG_SCHED_SCAN_REQ_STOP_D2F,
+	LOG_SCHED_SCAN_DONE_F2D,	/* 10 */
+	LOG_SCHED_SCAN_DONE_D2K,
+
+	/* Scan abort */
+	LOG_SCAN_ABORT_REQ_K2D,
+	LOG_SCAN_ABORT_REQ_D2F,
+	LOG_SCAN_ABORT_DONE_D2K,
+
+	/* Driver only */
+	LOG_SCAN_D2D,
+
+	/* Last one */
+	LOG_SCAN_MAX
+};
+
 /*----------------------------------------------------------------------------*/
 /* BSS Descriptors                                                            */
 /*----------------------------------------------------------------------------*/
@@ -491,6 +523,18 @@ struct SCHED_SCAN_PARAM {	/* Used by SCAN FSM */
 	struct BSS_DESC *aprPendingBssDescToInd[SCN_SSID_MATCH_MAX_NUM];
 };
 
+struct SCAN_LOG_CACHE {
+	struct LINK rBSSListFW;
+	struct LINK rBSSListCFG;
+};
+
+struct SCAN_LOG_ELEM_BSS {
+	struct LINK_ENTRY rLinkEntry;
+
+	uint8_t aucBSSID[MAC_ADDR_LEN];
+	uint16_t u2SeqCtrl;
+};
+
 struct SCAN_INFO {
 	/* Store the STATE variable of SCAN FSM */
 	enum ENUM_SCAN_STATE eCurrentState;
@@ -539,6 +583,9 @@ struct SCAN_INFO {
 
 	/* Support AP Selection */
 	uint32_t u4ScanUpdateIdx;
+
+	/* Scan log cache */
+	struct SCAN_LOG_CACHE rScanLogCache;
 };
 
 /* Incoming Mailbox Messages */
@@ -636,6 +683,7 @@ struct AGPS_AP_LIST {
  *                            P U B L I C   D A T A
  *******************************************************************************
  */
+extern const char aucScanLogPrefix[][SCAN_LOG_PREFIX_MAX_LEN];
 
 /*******************************************************************************
  *                           P R I V A T E   D A T A
@@ -646,6 +694,20 @@ struct AGPS_AP_LIST {
  *                                 M A C R O S
  *******************************************************************************
  */
+#if DBG_DISABLE_ALL_LOG
+#define scanlog_dbg(prefix, _Clz, _Fmt, ...)
+#else /* DBG_DISABLE_ALL_LOG */
+#define scanlog_dbg(prefix, _Clz, _Fmt, ...) \
+	do { \
+		if ((aucDebugModule[DBG_SCN_IDX] & \
+			DBG_CLASS_##_Clz) == 0) \
+			break; \
+		LOG_FUNC("[%u]SCANLOG:(SCN " #_Clz ") %s " _Fmt, \
+			KAL_GET_CURRENT_THREAD_ID(), \
+			aucScanLogPrefix[prefix], ##__VA_ARGS__); \
+	} while (0)
+#endif /* DBG_DISABLE_ALL_LOG */
+
 
 /*******************************************************************************
  *                   F U N C T I O N   D E C L A R A T I O N S
@@ -858,5 +920,17 @@ void scanInitEssResult(struct ADAPTER *prAdapter);
 /*----------------------------------------------------------------------------*/
 u_int8_t isScanCacheDone(struct GL_SCAN_CACHE_INFO *prScanCache);
 #endif /* CFG_SUPPORT_SCAN_CACHE_RESULT */
+
+void scanReqLog(struct CMD_SCAN_REQ_V2 *prCmdScanReq);
+void scanReqSsidLog(struct CMD_SCAN_REQ_V2 *prCmdScanReq, const int logBufLen);
+void scanReqChannelLog(struct CMD_SCAN_REQ_V2 *prCmdScanReq,
+	const int logBufLen);
+void scanResultLog(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb);
+void scanLogCacheAddBSS(struct LINK *prList, enum ENUM_SCAN_LOG_PREFIX prefix,
+	uint8_t bssId[], uint16_t seq);
+void scanLogCacheFlushBSS(struct LINK *prList, enum ENUM_SCAN_LOG_PREFIX prefix,
+	const int logBufLen);
+void scanLogCacheFlushAll(struct SCAN_LOG_CACHE *prScanLogCache,
+	enum ENUM_SCAN_LOG_PREFIX prefix, const int logBufLen);
 
 #endif /* _SCAN_H */

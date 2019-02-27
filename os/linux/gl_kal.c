@@ -1284,8 +1284,15 @@ kalIndicateStatusAndComplete(IN struct GLUE_INFO *prGlueInfo, IN uint32_t eStatu
 		/* indicate scan complete event */
 		wext_indicate_wext_event(prGlueInfo, SIOCGIWSCAN, NULL, 0);
 
-		log_dbg(SCN, INFO, "Call cfg80211_scan_done (aborted=%u)\n",
-			fgScanAborted);
+		if (fgScanAborted == FALSE) {
+			kalScanLogCacheFlushBSS(prAdapter,
+				SCAN_LOG_MSG_MAX_LEN);
+			scanlog_dbg(LOG_SCAN_DONE_D2K, INFO, "Call cfg80211_scan_done (aborted=%u)\n",
+				fgScanAborted);
+		} else {
+			scanlog_dbg(LOG_SCAN_ABORT_DONE_D2K, INFO, "Call cfg80211_scan_done (aborted=%u)\n",
+				fgScanAborted);
+		}
 
 		/* 1. reset first for newly incoming request */
 		GLUE_ACQUIRE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
@@ -4482,6 +4489,10 @@ kalIndicateBssInfo(IN struct GLUE_INFO *prGlueInfo,
 		prMgmtFrame->u.beacon.timestamp = kalGetBootTime();
 #endif
 
+		kalScanResultLog(prGlueInfo->prAdapter,
+			(struct ieee80211_mgmt *)pucBeaconProbeResp,
+			ucChannelNum, u4FrameLen, i4SignalStrength);
+
 		/* indicate to NL80211 subsystem */
 		bss = cfg80211_inform_bss_frame(wiphy,
 						prChannel,
@@ -4774,6 +4785,8 @@ void kalSchedScanResults(IN struct GLUE_INFO *prGlueInfo)
 	ASSERT(prGlueInfo);
 	scanReportBss2Cfg80211(prGlueInfo->prAdapter,
 			BSS_TYPE_INFRASTRUCTURE, NULL);
+
+	scanlog_dbg(LOG_SCHED_SCAN_DONE_D2K, INFO, "Call cfg80211_sched_scan_results\n");
 	cfg80211_sched_scan_results(priv_to_wiphy(prGlueInfo));
 }
 
@@ -6186,3 +6199,108 @@ u_int8_t kalSchedScanParseRandomMac(const struct net_device *ndev,
 	return FALSE;
 }
 #endif
+
+void kalScanReqLog(struct cfg80211_scan_request *request)
+{
+	scanlog_dbg(LOG_SCAN_REQ_K2D, INFO, "Scan flags=0x%x [mac]addr="
+		MACSTR " mask=" MACSTR,
+		request->flags,
+		MAC2STR(request->mac_addr),
+		MAC2STR(request->mac_addr_mask));
+	kalScanSsidLog(request, SCAN_LOG_MSG_MAX_LEN);
+	kalScanChannelLog(request, SCAN_LOG_MSG_MAX_LEN);
+}
+
+void kalScanChannelLog(struct cfg80211_scan_request *request,
+	const int logBufLen)
+{
+	char logBuf[logBufLen];
+	int idx = 0;
+	int i = 0;
+
+	idx += kalSnprintf(logBuf, 24, "n_channels=%u: ", request->n_channels);
+
+	for (i = 0; i < request->n_channels; ++i) {
+		uint8_t len = 5; /* the decimal value could be 0 ~ 65535 */
+
+		if (len == 0) {
+			continue;
+		} else if (len+1+1 > logBufLen) {
+			scanlog_dbg(LOG_SCAN_REQ_K2D, INFO, "Need buffer size %u for log\n",
+				len+1+1);
+			break;
+		} else if (idx+len+1+1 > logBufLen) {
+			logBuf[idx] = 0;
+			scanlog_dbg(LOG_SCAN_REQ_K2D, INFO, "%s\n",
+				logBuf);
+			idx = 0;
+		}
+
+		/* number + a space */
+		idx += kalSnprintf(logBuf+idx, len+1+1, "%u ",
+			request->channels[i]->hw_value);
+	}
+	if (idx != 0) {
+		logBuf[idx] = 0;
+		scanlog_dbg(LOG_SCAN_REQ_K2D, INFO, "%s\n",
+			logBuf);
+		idx = 0;
+	}
+}
+
+void kalScanSsidLog(struct cfg80211_scan_request *request, const int logBufLen)
+{
+	char logBuf[logBufLen];
+	int idx = 0;
+	int i = 0;
+
+	idx += kalSnprintf(logBuf, 21, "n_ssids=%d: ", request->n_ssids);
+
+	for (i = 0; i < request->n_ssids; ++i) {
+		uint8_t len = request->ssids[i].ssid_len;
+
+		if (len == 0) {
+			continue;
+		} else if (len+1+1 > logBufLen) {
+			scanlog_dbg(LOG_SCAN_REQ_K2D, INFO, "Need buffer size %u for log\n",
+				len+1+1);
+			break;
+		} else if (idx+len+1+1 > logBufLen) {
+			logBuf[idx] = 0;
+			scanlog_dbg(LOG_SCAN_REQ_K2D, INFO, "%s\n",
+				logBuf);
+			idx = 0;
+		}
+
+		/* SSID without terminating null byte */
+		kalStrnCpy(logBuf+idx, request->ssids[i].ssid, len);
+		idx = idx + len;
+
+		kalStrnCpy(logBuf+idx, " ", 1);
+		idx = idx + 1;
+	}
+	if (idx != 0) {
+		logBuf[idx] = 0;
+		scanlog_dbg(LOG_SCAN_REQ_K2D, INFO, "%s\n",
+			logBuf);
+		idx = 0;
+	}
+}
+
+void kalScanResultLog(struct ADAPTER *prAdapter, struct ieee80211_mgmt *mgmt,
+	uint8_t channelNum, int frameLen, int32_t signal)
+{
+	scanLogCacheAddBSS(
+		&(prAdapter->rWifiVar.rScanInfo.rScanLogCache.rBSSListCFG),
+		LOG_SCAN_RESULT_D2K,
+		mgmt->bssid,
+		mgmt->seq_ctrl);
+}
+
+void kalScanLogCacheFlushBSS(struct ADAPTER *prAdapter,
+	const int logBufLen)
+{
+	scanLogCacheFlushBSS(
+		&(prAdapter->rWifiVar.rScanInfo.rScanLogCache.rBSSListCFG),
+		LOG_SCAN_DONE_D2K, logBufLen);
+}

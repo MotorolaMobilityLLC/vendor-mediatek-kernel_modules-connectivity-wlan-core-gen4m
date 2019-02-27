@@ -1473,4 +1473,15 @@ u_int8_t kalScanParseRandomMac(const struct net_device *ndev,
 u_int8_t kalSchedScanParseRandomMac(const struct net_device *ndev,
 	const struct cfg80211_sched_scan_request *request,
 	uint8_t *pucRandomMac, uint8_t *pucRandomMacMask);
+
+void kalScanReqLog(struct cfg80211_scan_request *request);
+void kalScanChannelLog(struct cfg80211_scan_request *request,
+	const int logBufLen);
+void kalScanSsidLog(struct cfg80211_scan_request *request,
+	const int logBufLen);
+void kalScanResultLog(struct ADAPTER *prAdapter, struct ieee80211_mgmt *mgmt,
+	uint8_t channelNum, int frameLen, int32_t signal);
+void kalScanLogCacheFlushBSS(struct ADAPTER *prAdapter,
+	const int logBufLen);
+
 #endif				/* _GL_KAL_H */
