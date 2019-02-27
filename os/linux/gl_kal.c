@@ -2494,8 +2494,9 @@ kalQoSFrameClassifierAndPacketInfo(IN struct GLUE_INFO *prGlueInfo,
 #if CFG_CHANGE_PRIORITY_BY_SKB_MARK_FIELD
 	/* Customer request to raise priority for special packet, */
 	/* will set specific packet mark field to 0x5a */
-	if (prSkb->mark == NIC_TX_SKB_SPECIAL_MARK) {
-		prTxPktInfo->ucPriorityParam = NIC_TX_CRITICAL_DATA_TID;
+	if (prSkb->mark == NIC_TX_SKB_PRIORITY_MARK1 ||
+	    prSkb->mark == NIC_TX_SKB_PRIORITY_MARK2) {
+		prTxPktInfo->ucPriorityParam = NIC_TX_PRIORITY_DATA_TID;
 		DBGLOG_LIMITED(INIT, TRACE,
 				"skb mark field=[%x]", prSkb->mark);
 	}

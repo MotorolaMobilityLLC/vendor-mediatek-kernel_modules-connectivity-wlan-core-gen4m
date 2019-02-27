@@ -215,10 +215,13 @@
 #define NIC_TX_AC_VI_REMAINING_TX_TIME	TX_DESC_TX_TIME_NO_LIMIT
 #define NIC_TX_MGMT_REMAINING_TX_TIME		2000
 
-#define NIC_TX_CRITICAL_DATA_TID                7
+#define NIC_TX_CRITICAL_DATA_TID	7
+#define NIC_TX_PRIORITY_DATA_TID	6 /*802.1d Voice Traffic,use AC_VO */
 
 /*Customization: sk_buff mark for special packet that need raise priority */
-#define NIC_TX_SKB_SPECIAL_MARK			0x5a
+#define NIC_TX_SKB_PRIORITY_MARK1	0x5a
+#define NIC_TX_SKB_PRIORITY_MARK2	0x80000000
+
 
 #define HW_MAC_TX_DESC_APPEND_T_LENGTH          44
 #define NIC_TX_HEAD_ROOM \
