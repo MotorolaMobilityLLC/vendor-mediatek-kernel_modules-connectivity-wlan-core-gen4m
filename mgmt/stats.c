@@ -205,9 +205,14 @@ void StatsEnvTxTime2Hif(IN struct ADAPTER *prAdapter,
 	uint16_t u2IPID = 0;
 	uint16_t u2UdpDstPort = 0;
 	uint16_t u2UdpSrcPort = 0;
+	uint16_t u4TxHeadRoomSize = 0;
+	struct mt66xx_chip_info *prChipInfo;
 
 	u8SysTime = StatsEnvTimeGet();
 	u8SysTimeIn = GLUE_GET_PKT_XTIME(prMsduInfo->prPacket);
+	prChipInfo = prAdapter->chip_info;
+	u4TxHeadRoomSize = NIC_TX_DESC_AND_PADDING_LENGTH +
+		prChipInfo->txd_append_size;
 
 	if ((g_ucTxRxFlag & BIT(0)) == 0)
 		return;
@@ -218,7 +223,7 @@ void StatsEnvTxTime2Hif(IN struct ADAPTER *prAdapter,
 	/* units of u4TimeDiff is micro seconds (us) */
 	if (u4PacketLen < 24 + ETH_HLEN)
 		return;
-	pucAheadBuf = &pucEth[76];
+	pucAheadBuf = &pucEth[u4TxHeadRoomSize];
 	u2EthType = (pucAheadBuf[ETH_TYPE_LEN_OFFSET] << 8)
 		| (pucAheadBuf[ETH_TYPE_LEN_OFFSET + 1]);
 	pucEthBody = &pucAheadBuf[ETH_HLEN];
