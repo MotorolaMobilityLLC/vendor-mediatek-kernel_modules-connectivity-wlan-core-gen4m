@@ -141,6 +141,10 @@
 #define STATION_PAUSE2			(PLE_BASE + 0x368)
 #define STATION_PAUSE3			(PLE_BASE + 0x36c)
 
+#define PLE_PEEK_CR_0				(PLE_BASE +  0x3d0)
+#define PLE_PEEK_CR_OFFSET			0x4
+#define PLE_PEEK_CR_NUM				12
+
 /* VOW Ctrl */
 #define VOW_RESET_DISABLE       (1 << 26)
 #define STA_MAX_DEFICIT_MASK    (0x0000FFFF)
