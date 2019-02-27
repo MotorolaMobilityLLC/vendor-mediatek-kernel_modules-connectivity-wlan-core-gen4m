@@ -197,6 +197,8 @@ u_int8_t kalDevRegWrite(IN struct GLUE_INFO *prGlueInfo, IN uint32_t u4Register,
 		DBGLOG(HAL, TRACE, "Set CR[0x%08x/0x%08x] value[0x%08x]\n",
 		       u4Register, u4BusAddr, u4Value);
 
+	prHifInfo->u4HifCnt++;
+
 	return TRUE;
 }
 

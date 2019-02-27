@@ -93,6 +93,8 @@ struct GL_HIF_INFO {
 	struct pci_dev *pdev;
 	struct pci_dev *prDmaDev;
 
+	int32_t u4HifCnt;
+
 	uint8_t *CSRBaseAddress;	/* PCI MMIO Base Address, all access will use */
 
 	/* Shared memory of all 1st pre-allocated
