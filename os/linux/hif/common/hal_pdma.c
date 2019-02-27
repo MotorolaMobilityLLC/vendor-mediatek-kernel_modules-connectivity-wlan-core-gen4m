@@ -369,49 +369,6 @@ static void halDriverOwnTimeout(struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Check special register value != 0
- *
- * \param[in] pvAdapter Pointer to the Adapter structure.
- */
-/*----------------------------------------------------------------------------*/
-static void halCheckConnsysStatus(struct ADAPTER *prAdapter)
-{
-	uint32_t au4Regs[] = { WPDMA_GLO_CFG,
-			       WPDMA_TX_RING0_CTRL0,
-			       WPDMA_TX_RING0_CTRL0 + MT_RINGREG_DIFF,
-			       WPDMA_TX_RING0_CTRL0 + MT_RINGREG_DIFF * 3,
-			       WPDMA_TX_RING0_CTRL0 + MT_RINGREG_DIFF * 15,
-			       WPDMA_RX_RING0_CTRL0,
-			       WPDMA_RX_RING0_CTRL0 + MT_RINGREG_DIFF,
-			       WPDMA_TX_RING0_CTRL1,
-			       WPDMA_TX_RING0_CTRL1 + MT_RINGREG_DIFF,
-			       WPDMA_TX_RING0_CTRL1 + MT_RINGREG_DIFF * 3,
-			       WPDMA_TX_RING0_CTRL1 + MT_RINGREG_DIFF * 15,
-			       WPDMA_RX_RING0_CTRL1,
-			       WPDMA_RX_RING0_CTRL1 + MT_RINGREG_DIFF,
-			       PSE_PG_CPU_GROUP,
-			       PSE_PG_LMAC2_GROUP };
-	uint32_t u4Value, u4Idx, u4Size = sizeof(au4Regs) / sizeof(uint32_t);
-	struct GL_HIF_INFO *prHifInfo = NULL;
-
-	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
-	if (prHifInfo->fgIsPowerOff)
-		return;
-
-	for (u4Idx = 0; u4Idx < u4Size; u4Idx++) {
-		HAL_MCR_RD(prAdapter, au4Regs[u4Idx], &u4Value);
-		if (u4Value == 0) {
-			DBGLOG(HAL, ERROR,
-			       "check status error CR[0x%08x] value[0x%08x]\n",
-			       au4Regs[u4Idx], u4Value);
-			GL_RESET_TRIGGER(prAdapter, RST_FLAG_CHIP_RESET);
-			return;
-		}
-	}
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief This routine is used to process the POWER OFF procedure.
  *
  * \param[in] pvAdapter Pointer to the Adapter structure.
@@ -506,9 +463,6 @@ u_int8_t halSetDriverOwn(IN struct ADAPTER *prAdapter)
 		/* Check consys enter sleep mode DummyReg(0x0F) */
 		if (prBusInfo->checkDummyReg)
 			prBusInfo->checkDummyReg(prAdapter->prGlueInfo);
-
-		if (prAdapter->fgIsFwDownloaded)
-			halCheckConnsysStatus(prAdapter);
 	}
 
 	KAL_REC_TIME_END();
@@ -536,9 +490,6 @@ void halSetFWOwn(IN struct ADAPTER *prAdapter, IN u_int8_t fgEnableGlobalInt)
 	ASSERT(prAdapter->u4PwrCtrlBlockCnt != 0);
 
 	prBusInfo = prAdapter->chip_info->bus_info;
-
-	if (prAdapter->fgIsFwDownloaded)
-		halCheckConnsysStatus(prAdapter);
 
 	/* Decrease Block to Enter Low Power Semaphore count */
 	GLUE_DEC_REF_CNT(prAdapter->u4PwrCtrlBlockCnt);
