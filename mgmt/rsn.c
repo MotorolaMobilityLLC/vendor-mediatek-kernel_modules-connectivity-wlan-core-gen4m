@@ -3284,14 +3284,17 @@ void rsnApStartSaQuery(IN struct ADAPTER *prAdapter,
 
 	DBGLOG(RSN, INFO, "rsnApStartSaQuery\n");
 
-	if (prStaRec) {
-		cnmTimerStopTimer(prAdapter,
-				  &prStaRec->rPmfCfg.rSAQueryTimer);
-		cnmTimerInitTimer(prAdapter,
-				  &prStaRec->rPmfCfg.rSAQueryTimer,
-				  (PFN_MGMT_TIMEOUT_FUNC)rsnApStartSaQueryTimer,
-				  (unsigned long) prStaRec);
+	if (!prStaRec) {
+		DBGLOG(RSN, WARN, "fail with NULL prStaRec\n");
+		return;
 	}
+
+	cnmTimerStopTimer(prAdapter,
+			  &prStaRec->rPmfCfg.rSAQueryTimer);
+	cnmTimerInitTimer(prAdapter,
+			  &prStaRec->rPmfCfg.rSAQueryTimer,
+			  (PFN_MGMT_TIMEOUT_FUNC)rsnApStartSaQueryTimer,
+			  (unsigned long) prStaRec);
 
 	if (prStaRec->rPmfCfg.u4SAQueryCount == 0)
 		rsnApStartSaQueryTimer(prAdapter, prStaRec,
