@@ -179,7 +179,7 @@ struct CHIP_DBG_OPS {
 			     bool fgTxContent, bool fgRxContent);
 	void (*showPseInfo)(IN struct ADAPTER *prAdapter);
 	void (*showPleInfo)(IN struct ADAPTER *prAdapter);
-	void (*showCsrInfo)(IN struct ADAPTER *prAdapter);
+	bool (*showCsrInfo)(IN struct ADAPTER *prAdapter);
 	void (*showDmaschInfo)(IN struct ADAPTER *prAdapter);
 };
 

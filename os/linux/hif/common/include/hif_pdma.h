@@ -421,10 +421,9 @@ void halShowPdmaInfo(IN struct ADAPTER *prAdapter,
 		     bool fgTxContent, bool fgRxContent);
 void halShowPseInfo(IN struct ADAPTER *prAdapter);
 void halShowPleInfo(IN struct ADAPTER *prAdapter);
-void halShowHostCsrInfo(IN struct ADAPTER *prAdapter);
+bool halShowHostCsrInfo(IN struct ADAPTER *prAdapter);
 void halShowDmaschInfo(IN struct ADAPTER *prAdapter);
-void halDumpHifDebugLog(struct GLUE_INFO *prGlueInfo,
-			bool fgTxContent, bool fgRxContent);
+void halDumpHifDebugLog(struct GLUE_INFO *prGlueInfo, bool fgTx, bool fgRx);
 
 void kalPciUnmapToDev(IN struct GLUE_INFO *prGlueInfo, IN dma_addr_t rDmaAddr,
 		      IN uint32_t u4Length);
