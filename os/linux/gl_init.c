@@ -2101,6 +2101,11 @@ static void wlanNetDestroy(struct wireless_dev *prWdev)
 	 */
 	free_netdev(prWdev->netdev);
 
+	/* gPrDev is assigned by prGlueInfo->prDevHandler,
+	 * set NULL to this global variable.
+	 */
+	gPrDev = NULL;
+
 }				/* end of wlanNetDestroy() */
 
 void wlanSetSuspendMode(struct GLUE_INFO *prGlueInfo, u_int8_t fgEnable)
@@ -3272,8 +3277,6 @@ static void wlanRemove(void)
 	/* 4 <7> Destroy the device */
 	wlanNetDestroy(prDev->ieee80211_ptr);
 	prDev = NULL;
-	DBGLOG(INIT, INFO, "gPrDev(0x%p)\n", gPrDev);
-	gPrDev = NULL;
 
 	tasklet_kill(&prGlueInfo->rTxCompleteTask);
 	tasklet_kill(&prGlueInfo->rRxTask);
