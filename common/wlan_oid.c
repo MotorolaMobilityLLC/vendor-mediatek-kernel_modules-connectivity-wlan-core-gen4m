@@ -16051,7 +16051,7 @@ uint32_t wlanoidTxPowerControl(IN struct ADAPTER *prAdapter,
 				newElement->index = oldElement->index;
 				newElement->eCtrlType = oldElement->eCtrlType;
 				txPwrCtrlDeleteElement(prAdapter,
-				       oldElement->name, oldElement->index,
+				       newElement->name, newElement->index,
 				       PWR_CTRL_TYPE_DYNAMIC_LIST);
 				oldElement = newElement;
 				txPwrCtrlAddElement(prAdapter, oldElement);
