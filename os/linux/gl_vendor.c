@@ -278,10 +278,7 @@ int mtk_cfg80211_vendor_get_channel_list(struct wiphy *wiphy,
 	DBGLOG(REQ, TRACE, "Get channel list for band: %d\n", band);
 
 #if CFG_ENABLE_UNIFY_WIPHY
-	if (wdev->iftype == NL80211_IFTYPE_AP)
-		prGlueInfo = *((struct GLUE_INFO **) wiphy_priv(wiphy));
-	else
-		prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wiphy);
+	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wiphy);
 #else	/* CFG_ENABLE_UNIFY_WIPHY */
 	if (wdev == gprWdev)	/* wlan0 */
 		prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wiphy);
@@ -445,6 +442,7 @@ int mtk_cfg80211_vendor_set_scan_mac_oui(struct wiphy *wiphy,
 	else
 		prGlueInfo = *((struct GLUE_INFO **) wiphy_priv(wiphy));
 #endif	/* CFG_ENABLE_UNIFY_WIPHY */
+
 	if (!prGlueInfo) {
 		log_dbg(REQ, ERROR, "Invalid glue info\n");
 		return -EFAULT;
@@ -1230,10 +1228,16 @@ int mtk_cfg80211_vendor_get_supported_feature_set(struct wiphy *wiphy,
 
 	ASSERT(wiphy);
 	ASSERT(wdev);
-	if (wdev->iftype == NL80211_IFTYPE_AP)
-		prGlueInfo = *((struct GLUE_INFO **) wiphy_priv(wiphy));
-	else
+
+#if CFG_ENABLE_UNIFY_WIPHY
+	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wiphy);
+#else	/* CFG_ENABLE_UNIFY_WIPHY */
+	if (wdev == gprWdev)	/* wlan0 */
 		prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wiphy);
+	else
+		prGlueInfo = *((struct GLUE_INFO **) wiphy_priv(wiphy));
+#endif	/* CFG_ENABLE_UNIFY_WIPHY */
+
 	if (!prGlueInfo)
 		return -EFAULT;
 	prRegInfo = prGlueInfo->prRegInfo;
@@ -1277,10 +1281,16 @@ int mtk_cfg80211_vendor_set_tx_power_scenario(struct wiphy *wiphy,
 
 	ASSERT(wiphy);
 	ASSERT(wdev);
-	if (wdev->iftype == NL80211_IFTYPE_AP)
-		prGlueInfo = *((struct GLUE_INFO **) wiphy_priv(wiphy));
-	else
+
+#if CFG_ENABLE_UNIFY_WIPHY
+	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wiphy);
+#else	/* CFG_ENABLE_UNIFY_WIPHY */
+	if (wdev == gprWdev)	/* wlan0 */
 		prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wiphy);
+	else
+		prGlueInfo = *((struct GLUE_INFO **) wiphy_priv(wiphy));
+#endif	/* CFG_ENABLE_UNIFY_WIPHY */
+
 	if (!prGlueInfo)
 		return -EFAULT;
 
