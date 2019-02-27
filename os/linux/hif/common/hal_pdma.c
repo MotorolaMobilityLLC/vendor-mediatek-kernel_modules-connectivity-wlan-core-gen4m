@@ -1255,9 +1255,7 @@ void halWpdmaInitRing(struct GLUE_INFO *prGlueInfo)
 	for (i = 0; i < NUM_OF_RX_RING; i++)
 		spin_lock_init((spinlock_t *) (&prHifInfo->RxRingLock[i]));
 
-	KAL_FLUSH_DCACHE();
 	prBusInfo->pdmaSetup(prGlueInfo, TRUE);
-	KAL_FLUSH_DCACHE();
 }
 
 void halWpdmaInitTxRing(IN struct GLUE_INFO *prGlueInfo)
@@ -1473,7 +1471,6 @@ u_int8_t halWpdmaWriteCmd(IN struct GLUE_INFO *prGlueInfo, IN struct CMD_INFO *p
 	kalMemCopy(pucSrc + prCmdInfo->u4TxdLen, prCmdInfo->pucTxp, prCmdInfo->u4TxpLen);
 
 	spin_lock_irqsave((spinlock_t *)prTxRingLock, flags);
-	KAL_FLUSH_DCACHE();
 
 	kalCheckAndResetTXReg(prGlueInfo, TX_RING_CMD_IDX_2);
 	SwIdx = prTxRing->TxCpuIdx;
@@ -1503,11 +1500,9 @@ u_int8_t halWpdmaWriteCmd(IN struct GLUE_INFO *prGlueInfo, IN struct CMD_INFO *p
 
 	/* Increase TX_CTX_IDX, but write to register later. */
 	INC_RING_INDEX(prTxRing->TxCpuIdx, TX_RING_SIZE);
-	KAL_FLUSH_DCACHE();
 
 	prTxRing->u4UsedCnt++;
 	kalDevRegWrite(prGlueInfo, prTxRing->hw_cidx_addr, prTxRing->TxCpuIdx);
-	KAL_FLUSH_DCACHE();
 
 	spin_unlock_irqrestore((spinlock_t *)prTxRingLock, flags);
 
@@ -1589,11 +1584,9 @@ u_int8_t halWpdmaWriteData(IN struct GLUE_INFO *prGlueInfo, IN struct MSDU_INFO 
 
 	/* Update HW Tx DMA ring */
 	spin_lock_irqsave((spinlock_t *)prTxRingLock, flags);
-	KAL_FLUSH_DCACHE();
 
 	prTxRing->u4UsedCnt++;
 	kalDevRegWrite(prGlueInfo, prTxRing->hw_cidx_addr, prTxRing->TxCpuIdx);
-	KAL_FLUSH_DCACHE();
 
 	spin_unlock_irqrestore((spinlock_t *)prTxRingLock, flags);
 
