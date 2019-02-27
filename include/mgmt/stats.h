@@ -86,7 +86,7 @@ void StatsEnvTxTime2Hif(IN struct ADAPTER *prAdapter,
 void StatsEnvRxTime2Host(IN struct ADAPTER *prAdapter,
 			 struct sk_buff *prSkb);
 
-void StatsRxPktInfoDisplay(struct SW_RFB *prSwRfb);
+void StatsRxPktInfoDisplay(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb);
 
 void StatsTxPktInfoDisplay(uint8_t *pPkt);
 

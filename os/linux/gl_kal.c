@@ -2144,6 +2144,7 @@ kalIPv4FrameClassifier(IN struct GLUE_INFO *prGlueInfo,
 	uint8_t *pucUdpHdr, *pucIcmp;
 	uint16_t u2DstPort, u2IcmpId, u2IcmpSeq;
 	struct BOOTP_PROTOCOL *prBootp;
+	struct REPORT_MISC_SET *prReportMiscSet;
 	uint32_t u4DhcpMagicCode;
 
 	/* IPv4 version check */
@@ -2156,6 +2157,7 @@ kalIPv4FrameClassifier(IN struct GLUE_INFO *prGlueInfo,
 	}
 
 	ucIpProto = pucIpHdr[IPV4_HDR_IP_PROTOCOL_OFFSET];
+	prReportMiscSet = &(prGlueInfo->prAdapter->rReportMiscSet);
 
 	if (ucIpProto == IP_PRO_UDP) {
 		pucUdpHdr = &pucIpHdr[IPV4_HDR_LEN];
@@ -2190,6 +2192,16 @@ kalIPv4FrameClassifier(IN struct GLUE_INFO *prGlueInfo,
 					prBootp->aucOptions[6], ucSeqNo);
 
 				prTxPktInfo->u2Flag |= BIT(ENUM_PKT_DHCP);
+#if CFG_SUPPORT_REPORT_MISC
+				if (prGlueInfo->prAdapter->rReportMiscSet.
+					eQueryNum != REPORT_DHCP_START) {
+					wlanGetReportMisc(prGlueInfo->
+								prAdapter);
+					prReportMiscSet->i4Rssi = 0;
+					prReportMiscSet->eQueryNum
+						= REPORT_DHCP_START;
+				}
+#endif
 			}
 		} else if (u2DstPort == UDP_PORT_DNS) {
 			uint16_t u2IpId = *(uint16_t *)&pucIpHdr[IPV4_ADDR_LEN];

@@ -1696,6 +1696,15 @@ int mtk_cfg80211_disconnect(struct wiphy *wiphy,
 	rStatus = kalIoctl(prGlueInfo, wlanoidSetDisassociate, NULL,
 			   0, FALSE, FALSE, TRUE, &u4BufLen);
 
+#if CFG_SUPPORT_REPORT_MISC
+	if (prGlueInfo->prAdapter->rReportMiscSet.eQueryNum
+	    == REPORT_4WAYHS_START) {
+		wlanGetReportMisc(prGlueInfo->prAdapter);
+		prGlueInfo->prAdapter->rReportMiscSet.eQueryNum
+					= REPORT_4WAYHS_END;
+	}
+#endif
+
 	if (rStatus != WLAN_STATUS_SUCCESS) {
 		DBGLOG(REQ, WARN, "disassociate error:%x\n", rStatus);
 		return -EFAULT;

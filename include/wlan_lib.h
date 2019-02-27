@@ -1489,3 +1489,6 @@ void wlanReleasePendingCmdById(struct ADAPTER *prAdapter, uint8_t ucCid);
 
 uint32_t wlanDecimalStr2Hexadecimals(uint8_t *pucDecimalStr, uint16_t *pu2Out);
 
+#if CFG_SUPPORT_REPORT_MISC
+void wlanGetReportMisc(IN struct ADAPTER *prAdapter);
+#endif

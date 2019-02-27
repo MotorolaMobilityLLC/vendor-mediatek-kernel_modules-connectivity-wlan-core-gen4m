@@ -9638,3 +9638,33 @@ integer_part:
 	return u4Ret;
 }
 
+#if CFG_SUPPORT_REPORT_MISC
+void wlanGetReportMisc(IN struct ADAPTER *prAdapter)
+{
+	struct PARAM_HW_MIB_INFO *prHwMibInfo;
+	uint32_t rStatus;
+
+	prHwMibInfo = (struct PARAM_HW_MIB_INFO *)kalMemAlloc(
+			sizeof(struct PARAM_HW_MIB_INFO), PHY_MEM_TYPE);
+	if (!prHwMibInfo)
+		return;
+
+	prHwMibInfo->u4Index = 0;
+	rStatus = wlanSendSetQueryCmd(prAdapter,
+			    CMD_ID_MIB_INFO,
+			    FALSE,
+			    TRUE,
+			    FALSE,
+			    nicCmdEventReportMisc,
+			    nicOidCmdTimeoutCommon,
+			    sizeof(struct PARAM_HW_MIB_INFO),
+			    (uint8_t *) prHwMibInfo,
+			    NULL, 0);
+
+	kalMemFree(prHwMibInfo, PHY_MEM_TYPE,
+		   sizeof(struct PARAM_HW_MIB_INFO));
+
+	if (rStatus != WLAN_STATUS_SUCCESS)
+		DBGLOG(REQ, ERROR, "Failed with status %d\n", rStatus);
+}
+#endif

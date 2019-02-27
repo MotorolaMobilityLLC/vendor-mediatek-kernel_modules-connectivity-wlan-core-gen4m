@@ -2037,7 +2037,14 @@ void aisFsmSteps(IN struct ADAPTER *prAdapter, enum ENUM_AIS_STATE eNextState)
 			prAdapter->rWifiVar.rConnSettings.eReConnectLevel =
 			    RECONNECT_LEVEL_MIN;
 			prConnSettings->fgIsDisconnectedByNonRequest = TRUE;
-
+#if CFG_SUPPORT_REPORT_MISC
+			if (prAdapter->rReportMiscSet.eQueryNum
+					== REPORT_AUTHASSOC_START) {
+				wlanGetReportMisc(prAdapter);
+				prAdapter->rReportMiscSet.eQueryNum
+						= REPORT_AUTHASSOC_END;
+			}
+#endif
 			nicMediaJoinFailure(prAdapter,
 					    prAdapter->prAisBssInfo->ucBssIndex,
 					    WLAN_STATUS_JOIN_FAILURE);

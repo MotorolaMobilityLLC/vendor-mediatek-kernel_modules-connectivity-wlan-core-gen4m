@@ -267,8 +267,144 @@ void StatsEnvTxTime2Hif(IN struct ADAPTER *prAdapter,
 	}
 }
 
-static void statsParsePktInfo(uint8_t *pucPkt, struct sk_buff *skb,
-	uint8_t status, uint8_t eventType)
+void statsParseARPInfo(uint8_t *pucEthBody, uint8_t eventType)
+{
+	uint16_t u2OpCode = (pucEthBody[6] << 8) | pucEthBody[7];
+
+	switch (eventType) {
+	case EVENT_RX:
+		if (u2OpCode == ARP_PRO_REQ)
+			DBGLOG_LIMITED(RX, TRACE,
+				"<RX> Arp Req From IP: %d.%d.%d.%d\n",
+				pucEthBody[14], pucEthBody[15],
+				pucEthBody[16], pucEthBody[17]);
+		else if (u2OpCode == ARP_PRO_RSP)
+			DBGLOG_LIMITED(RX, TRACE,
+				"<RX> Arp Rsp from IP: %d.%d.%d.%d\n",
+				pucEthBody[14], pucEthBody[15],
+				pucEthBody[16], pucEthBody[17]);
+		break;
+	case EVENT_TX:
+		if (u2OpCode == ARP_PRO_REQ)
+			DBGLOG_LIMITED(TX, TRACE,
+				"<TX> Arp Req to IP: %d.%d.%d.%d\n",
+				pucEthBody[24], pucEthBody[25],
+				pucEthBody[26], pucEthBody[27]);
+		else if (u2OpCode == ARP_PRO_RSP)
+			DBGLOG_LIMITED(TX, TRACE,
+				"<TX> Arp Rsp to IP: %d.%d.%d.%d\n",
+				pucEthBody[24], pucEthBody[25],
+				pucEthBody[26], pucEthBody[27]);
+		break;
+	}
+}
+
+void statsParseUDPInfo(struct ADAPTER *prAdapter, uint8_t *pucEthBody,
+		       uint8_t eventType, uint16_t u2IpId)
+{
+	/* the number of DHCP packets is seldom so we print log here */
+	uint8_t *pucUdp = &pucEthBody[20];
+	uint8_t *pucBootp = &pucUdp[UDP_HDR_LEN];
+	struct BOOTP_PROTOCOL *prBootp = NULL;
+	uint32_t udpLength = 0;
+	uint32_t i = 0;
+	uint16_t u2UdpDstPort;
+	uint16_t u2UdpSrcPort;
+	uint32_t u4TransID;
+
+	prBootp = (struct BOOTP_PROTOCOL *) &pucUdp[UDP_HDR_LEN];
+	u2UdpDstPort = (pucUdp[2] << 8) | pucUdp[3];
+	u2UdpSrcPort = (pucUdp[0] << 8) | pucUdp[1];
+	if (u2UdpDstPort == UDP_PORT_DHCPS || u2UdpDstPort == UDP_PORT_DHCPC) {
+		WLAN_GET_FIELD_BE32(&prBootp->u4TransId, &u4TransID);
+		switch (eventType) {
+		case EVENT_RX:
+			DBGLOG_LIMITED(RX, INFO,
+				"<RX> DHCP: IPID 0x%02x, MsgType 0x%x, TransID 0x%04x\n",
+				u2IpId, prBootp->aucOptions[6],
+				u4TransID);
+#if CFG_SUPPORT_REPORT_MISC
+			prBootp = (struct BOOTP_PROTOCOL *) pucBootp;
+			udpLength = pucUdp[4] << 8 | pucUdp[5];
+			while (i < udpLength - 248) {
+				if (prBootp->aucOptions[i + 4] == 53 &&
+				    prBootp->aucOptions[i + 6] == 5 &&
+				    prAdapter->rReportMiscSet.eQueryNum
+					== REPORT_DHCP_START) {
+					wlanGetReportMisc(prAdapter);
+					prAdapter->rReportMiscSet.eQueryNum
+							= REPORT_DHCP_END;
+					break;
+				}
+				i += prBootp->aucOptions[i + 5] + 2;
+			}
+#endif
+			break;
+		case EVENT_TX:
+			DBGLOG_LIMITED(TX, INFO,
+				"<TX> DHCP: IPID 0x%02x, MsgType 0x%x, TransID 0x%04x\n",
+				u2IpId, prBootp->aucOptions[6],
+				u4TransID);
+			break;
+		}
+	} else if (u2UdpSrcPort == UDP_PORT_DNS) { /* tx dns */
+		uint16_t u2TransId =
+			(pucBootp[0] << 8) | pucBootp[1];
+			if (eventType == EVENT_RX)
+				DBGLOG_LIMITED(RX, INFO,
+					"<RX> DNS: IPID 0x%02x, TransID 0x%04x\n",
+					u2IpId, u2TransId);
+	}
+}
+
+void statsParseIPV4Info(struct ADAPTER *prAdapter, uint8_t *pucEthBody,
+			uint8_t eventType)
+{
+	/* IP header without options */
+	uint8_t ucIpProto = pucEthBody[9];
+	uint8_t ucIpVersion =
+		(pucEthBody[0] & IPVH_VERSION_MASK)
+			>> IPVH_VERSION_OFFSET;
+	uint16_t u2IpId = *(uint16_t *) &pucEthBody[4];
+
+	if (ucIpVersion != IPVERSION)
+		return;
+	switch (ucIpProto) {
+	case IP_PRO_ICMP:
+	{
+		/* the number of ICMP packets is seldom so we print log here */
+		uint8_t ucIcmpType;
+		uint16_t u2IcmpId, u2IcmpSeq;
+		uint8_t *pucIcmp = &pucEthBody[20];
+
+		ucIcmpType = pucIcmp[0];
+		/* don't log network unreachable packet */
+		if (ucIcmpType == 3)
+			break;
+		u2IcmpId = *(uint16_t *) &pucIcmp[4];
+		u2IcmpSeq = *(uint16_t *) &pucIcmp[6];
+		switch (eventType) {
+		case EVENT_RX:
+			DBGLOG_LIMITED(RX, TRACE,
+				"<RX> ICMP: Type %d, Id BE 0x%04x, Seq BE 0x%04x\n",
+				ucIcmpType, u2IcmpId, u2IcmpSeq);
+			break;
+		case EVENT_TX:
+			DBGLOG_LIMITED(TX, TRACE,
+				"<TX> ICMP: Type %d, Id 0x%04x, Seq BE 0x%04x\n",
+				ucIcmpType, u2IcmpId, u2IcmpSeq);
+			break;
+		}
+		break;
+	}
+	case IP_PRO_UDP:
+		statsParseUDPInfo(prAdapter, pucEthBody, eventType, u2IpId);
+	}
+}
+
+static void statsParsePktInfo(IN struct ADAPTER *prAdapter, uint8_t *pucPkt,
+			      struct sk_buff *skb, uint8_t status,
+			      uint8_t eventType)
 {
 	/* get ethernet protocol */
 	uint16_t u2EtherType =
@@ -278,126 +414,11 @@ static void statsParsePktInfo(uint8_t *pucPkt, struct sk_buff *skb,
 
 	switch (u2EtherType) {
 	case ETH_P_ARP:
-	{
-		uint16_t u2OpCode = (pucEthBody[6] << 8) | pucEthBody[7];
-
-		switch (eventType) {
-		case EVENT_RX:
-			if (u2OpCode == ARP_PRO_REQ)
-				DBGLOG_LIMITED(RX, TRACE,
-					"<RX> Arp Req From IP: %d.%d.%d.%d\n",
-					pucEthBody[14], pucEthBody[15],
-					pucEthBody[16], pucEthBody[17]);
-			else if (u2OpCode == ARP_PRO_RSP)
-				DBGLOG_LIMITED(RX, TRACE,
-					"<RX> Arp Rsp from IP: %d.%d.%d.%d\n",
-					pucEthBody[14], pucEthBody[15],
-					pucEthBody[16], pucEthBody[17]);
-			break;
-		case EVENT_TX:
-			if (u2OpCode == ARP_PRO_REQ)
-				DBGLOG_LIMITED(TX, TRACE,
-					"<TX> Arp Req to IP: %d.%d.%d.%d\n",
-					pucEthBody[24], pucEthBody[25],
-					pucEthBody[26], pucEthBody[27]);
-			else if (u2OpCode == ARP_PRO_RSP)
-				DBGLOG_LIMITED(TX, TRACE,
-					"<TX> Arp Rsp to IP: %d.%d.%d.%d\n",
-					pucEthBody[24], pucEthBody[25],
-					pucEthBody[26], pucEthBody[27]);
-			break;
-		}
+		statsParseARPInfo(pucEthBody, eventType);
 		break;
-	}
 	case ETH_P_IPV4:
-	{
-		/* IP header without options */
-		uint8_t ucIpProto = pucEthBody[9];
-		uint8_t ucIpVersion =
-			(pucEthBody[0] & IPVH_VERSION_MASK)
-				>> IPVH_VERSION_OFFSET;
-		uint16_t u2IpId = *(uint16_t *) &pucEthBody[4];
-
-		if (ucIpVersion != IPVERSION)
-			break;
-		switch (ucIpProto) {
-		case IP_PRO_ICMP:
-		{
-			/* the number of ICMP packets is seldom
-			 * so we print log here
-			 */
-			uint8_t ucIcmpType;
-			uint16_t u2IcmpId, u2IcmpSeq;
-			uint8_t *pucIcmp = &pucEthBody[20];
-
-			ucIcmpType = pucIcmp[0];
-			/* don't log network unreachable packet */
-			if (ucIcmpType == 3)
-				break;
-			u2IcmpId = *(uint16_t *) &pucIcmp[4];
-			u2IcmpSeq = *(uint16_t *) &pucIcmp[6];
-			switch (eventType) {
-			case EVENT_RX:
-				DBGLOG_LIMITED(RX, TRACE,
-					"<RX> ICMP: Type %d, Id BE 0x%04x, Seq BE 0x%04x\n",
-					ucIcmpType, u2IcmpId, u2IcmpSeq);
-				break;
-			case EVENT_TX:
-				DBGLOG_LIMITED(TX, TRACE,
-					"<TX> ICMP: Type %d, Id 0x%04x, Seq BE 0x%04x\n",
-					ucIcmpType, u2IcmpId, u2IcmpSeq);
-				break;
-			}
-			break;
-		}
-		case IP_PRO_UDP:
-		{
-			/* the number of DHCP packets is seldom
-			 * so we print log here
-			 */
-			uint8_t *pucUdp = &pucEthBody[20];
-			uint8_t *pucBootp = &pucUdp[UDP_HDR_LEN];
-			struct BOOTP_PROTOCOL *prBootp;
-			uint16_t u2UdpDstPort;
-			uint16_t u2UdpSrcPort;
-			uint32_t u4TransID;
-			prBootp =
-				(struct BOOTP_PROTOCOL *) &pucUdp[UDP_HDR_LEN];
-
-			u2UdpDstPort = (pucUdp[2] << 8) | pucUdp[3];
-			u2UdpSrcPort = (pucUdp[0] << 8) | pucUdp[1];
-			if ((u2UdpDstPort == UDP_PORT_DHCPS)
-				|| (u2UdpDstPort == UDP_PORT_DHCPC)) {
-				WLAN_GET_FIELD_BE32(
-					&prBootp->u4TransId, &u4TransID);
-				switch (eventType) {
-				case EVENT_RX:
-					DBGLOG_LIMITED(RX, INFO,
-						"<RX> DHCP: IPID 0x%02x, MsgType 0x%x, TransID 0x%04x\n",
-						u2IpId, prBootp->aucOptions[6],
-						u4TransID);
-					break;
-				case EVENT_TX:
-					DBGLOG_LIMITED(TX, INFO,
-						"<TX> DHCP: IPID 0x%02x, MsgType 0x%x, TransID 0x%04x\n",
-						u2IpId, prBootp->aucOptions[6],
-						u4TransID);
-					break;
-				}
-			} else if (u2UdpSrcPort == UDP_PORT_DNS) { /* tx dns */
-				uint16_t u2TransId =
-					(pucBootp[0] << 8) | pucBootp[1];
-
-				if (eventType == EVENT_RX)
-					DBGLOG_LIMITED(RX, INFO,
-						"<RX> DNS: IPID 0x%02x, TransID 0x%04x\n",
-						u2IpId, u2TransId);
-			}
-			break;
-		}
-		}
+		statsParseIPV4Info(prAdapter, pucEthBody, eventType);
 		break;
-	}
 	case ETH_P_IPV6:
 	{
 		/* IPv6 header without options */
@@ -465,6 +486,7 @@ static void statsParsePktInfo(uint8_t *pucPkt, struct sk_buff *skb,
 	{
 		uint8_t *pucEapol = pucEthBody;
 		uint8_t ucEapolType = pucEapol[1];
+		uint16_t u2KeyInfo = 0;
 
 		switch (ucEapolType) {
 		case 0: /* eap packet */
@@ -472,13 +494,13 @@ static void statsParsePktInfo(uint8_t *pucPkt, struct sk_buff *skb,
 			case EVENT_RX:
 				DBGLOG_LIMITED(RX, INFO,
 					"<RX> EAP Packet: code %d, id %d, type %d\n",
-					pucEapol[4], pucEapol[5], pucEapol[7]);
+					pucEapol[4], pucEapol[5], pucEapol[8]);
 				break;
 			case EVENT_TX:
 				DBGLOG_LIMITED(TX, INFO,
 					"<TX> EAP Packet: code %d, id %d, type %d\n",
 					pucEapol[4], pucEapol[5],
-					pucEapol[7]);
+					pucEapol[8]);
 				break;
 			}
 			break;
@@ -498,6 +520,19 @@ static void statsParsePktInfo(uint8_t *pucPkt, struct sk_buff *skb,
 				DBGLOG_LIMITED(RX, INFO,
 					"<RX> EAPOL: key, KeyInfo 0x%04x\n",
 					*((uint16_t *)(&pucEapol[5])));
+#if CFG_SUPPORT_REPORT_MISC
+				WLAN_GET_FIELD_BE16(&pucEapol[5], &u2KeyInfo);
+				if ((u2KeyInfo & 0x388) == 0x88) {
+					/* 1/4 key, init report */
+					if (prAdapter->rReportMiscSet.eQueryNum
+					    != REPORT_4WAYHS_START) {
+						wlanGetReportMisc(prAdapter);
+						prAdapter->rReportMiscSet
+							.eQueryNum =
+							REPORT_4WAYHS_START;
+					}
+				}
+#endif
 				break;
 			case EVENT_TX:
 				DBGLOG_LIMITED(TX, INFO,
@@ -559,7 +594,7 @@ static void statsParsePktInfo(uint8_t *pucPkt, struct sk_buff *skb,
  * \retval None
  */
 /*----------------------------------------------------------------------------*/
-void StatsRxPktInfoDisplay(struct SW_RFB *prSwRfb)
+void StatsRxPktInfoDisplay(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb)
 {
 	uint8_t *pPkt = NULL;
 	struct sk_buff *skb = NULL;
@@ -575,7 +610,7 @@ void StatsRxPktInfoDisplay(struct SW_RFB *prSwRfb)
 	if (!skb)
 		return;
 
-	statsParsePktInfo(pPkt, skb, 0, EVENT_RX);
+	statsParsePktInfo(prAdapter, pPkt, skb, 0, EVENT_RX);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -594,7 +629,7 @@ void StatsTxPktInfoDisplay(uint8_t *pPkt)
 	u2EtherTypeLen =
 		(pPkt[ETH_TYPE_LEN_OFFSET] << 8)
 			| (pPkt[ETH_TYPE_LEN_OFFSET + 1]);
-	statsParsePktInfo(pPkt, NULL, 0, EVENT_TX);
+	statsParsePktInfo(NULL, pPkt, NULL, 0, EVENT_TX);
 }
 
 #endif /* CFG_SUPPORT_STATISTICS */

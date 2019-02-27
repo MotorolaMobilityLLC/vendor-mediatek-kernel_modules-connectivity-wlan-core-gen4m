@@ -5318,3 +5318,85 @@ void nicOidCmdTimeoutSetAddKey(IN struct ADAPTER *prAdapter,
 }
 #endif
 
+#if CFG_SUPPORT_REPORT_MISC
+void nicCmdEventReportMisc(IN struct ADAPTER *prAdapter,
+	IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf)
+{
+	struct AIS_FSM_INFO *prAisFsmInfo;
+	struct EVENT_MIB_INFO *prEvent;
+	struct EVENT_REPORT_MISC *prReportMisc;
+	uint32_t u4RxMpduCnt, u4ChnlIdleCnt, u4MdrdyCnt;
+	int32_t i4Rssi = 0;
+	char *periodStr = NULL;
+	uint64_t now = 0;
+
+	prAisFsmInfo = &(prAdapter->rWifiVar.rAisFsmInfo);
+	prEvent = (struct EVENT_MIB_INFO *)pucEventBuf;
+	prReportMisc = &(prAdapter->rReportMiscSet.reportMisc);
+
+	/* 1. get RSSI */
+	i4Rssi = prAisFsmInfo->prTargetBssDesc->ucRCPI;
+	i4Rssi = RCPI_TO_dBm(i4Rssi);
+
+	/* 2. get MIB info */
+	u4RxMpduCnt = prEvent->rHwMibCnt.u4RxMpduCnt;
+	u4ChnlIdleCnt = prEvent->rHwMibCnt.u4ChannelIdleCnt
+					* SLOT_TIME_SHORT;
+	u4MdrdyCnt = prEvent->rHwMibCnt.u4MdrdyCnt;
+
+	/* 3. Compose prReportMisc */
+	switch (prAdapter->rReportMiscSet.eQueryNum) {
+
+	case REPORT_AUTHASSOC_START:
+	case REPORT_4WAYHS_START:
+	case REPORT_DHCP_START:
+		prReportMisc->u4MdrdyCnt = u4MdrdyCnt;
+		prReportMisc->u4RxMpduCnt = u4RxMpduCnt;
+		prReportMisc->u4ChannelIdleCnt = u4ChnlIdleCnt;
+		prAdapter->rReportMiscSet.u8Ts = sched_clock();
+		DBGLOG(NIC, INFO,
+		       "START=%d,MDRDY=%u,SLOTIDLE=%u,MPDU=%u,RSSI=%d\n",
+		       prAdapter->rReportMiscSet.eQueryNum,
+		       u4MdrdyCnt,
+		       u4ChnlIdleCnt,
+		       u4RxMpduCnt,
+		       i4Rssi);
+		break;
+	case REPORT_AUTHASSOC_END:
+		periodStr = "auth to assoc";
+		goto REPORT_MISC;
+	case REPORT_4WAYHS_END:
+		periodStr = "4-way flow";
+		prAdapter->rReportMiscSet.i4Rssi = i4Rssi;
+		goto REPORT_MISC;
+	case REPORT_DHCP_END:
+		periodStr = "dhcp flow";
+		prAdapter->rReportMiscSet.i4Rssi = i4Rssi;
+		/* don't break here */
+REPORT_MISC:
+		now = sched_clock();
+		DBGLOG(NIC, INFO,
+		       "Ver=%s,Time=%llu,Period=%s,MDRDY=%u,SLOTIDLE=%u,MPDU=%u,RSSI=%d\n",
+		       prAdapter->rVerInfo.aucReleaseManifest,
+		       now - prAdapter->rReportMiscSet.u8Ts,
+		       periodStr,
+		       u4MdrdyCnt - prReportMisc->u4MdrdyCnt,
+		       u4ChnlIdleCnt - prReportMisc->u4ChannelIdleCnt,
+		       u4RxMpduCnt - prReportMisc->u4RxMpduCnt,
+		       i4Rssi);
+		prAdapter->rReportMiscSet.eQueryNum = 0;
+		break;
+	default:
+		DBGLOG(NIC, WARN,
+		       "Report Misc Error, prAdapter->rReportMiscSet.eQueryNum: %d\n",
+		       prAdapter->rReportMiscSet.eQueryNum);
+		break;
+	}
+	if (prCmdInfo->fgIsOid) {
+		DBGLOG(REQ, ERROR, "cmdinfo->flgIsoid\n");
+		kalOidComplete(prAdapter->prGlueInfo, prCmdInfo->fgSetQuery,
+			       sizeof(struct PARAM_HW_MIB_INFO),
+			       WLAN_STATUS_SUCCESS);
+	}
+}
+#endif

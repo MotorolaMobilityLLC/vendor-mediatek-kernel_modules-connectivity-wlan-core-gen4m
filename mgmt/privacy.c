@@ -1337,6 +1337,13 @@ void secHandleRxEapolPacket(IN struct ADAPTER *prAdapter,
 		if (secGetEapolKeyType((uint8_t *) prRetSwRfb->pvHeader) !=
 		    EAPOL_KEY_3_OF_4)
 			break;
+#if CFG_SUPPORT_REPORT_MISC
+		if (prAdapter->rReportMiscSet.eQueryNum
+						== REPORT_4WAYHS_START) {
+			wlanGetReportMisc(prAdapter);
+			prAdapter->rReportMiscSet.eQueryNum = REPORT_4WAYHS_END;
+		}
+#endif
 		prBssInfo->eKeyAction = SEC_QUEUE_KEY_COMMAND;
 	} while (FALSE);
 }

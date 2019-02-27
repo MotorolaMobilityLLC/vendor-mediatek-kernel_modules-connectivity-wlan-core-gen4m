@@ -218,7 +218,14 @@ saaFsmSteps(IN struct ADAPTER *prAdapter,
 				}
 
 			}
-
+#if CFG_SUPPORT_REPORT_MISC
+			if (prAdapter->rReportMiscSet.
+			    eQueryNum == REPORT_AUTHASSOC_START) {
+				wlanGetReportMisc(prAdapter);
+				prAdapter->rReportMiscSet.
+					eQueryNum = REPORT_AUTHASSOC_END;
+			}
+#endif
 			/* Free allocated TCM memory */
 			if (prStaRec->prChallengeText) {
 				cnmMemFree(prAdapter,
@@ -249,6 +256,11 @@ saaFsmSteps(IN struct ADAPTER *prAdapter,
 				cnmStaRecChangeState(prAdapter, prStaRec,
 						     STA_STATE_1);
 
+#if CFG_SUPPORT_REPORT_MISC
+				prAdapter->rReportMiscSet.
+					eQueryNum = REPORT_AUTHASSOC_START;
+				wlanGetReportMisc(prAdapter);
+#endif
 #if !CFG_SUPPORT_AAA
 				rStatus = authSendAuthFrame(prAdapter, prStaRec,
 						AUTH_TRANSACTION_SEQ_1);
@@ -1137,6 +1149,19 @@ uint32_t saaFsmRunEventRxAssoc(IN struct ADAPTER *prAdapter,
 		if (assocCheckRxReAssocRspFrameStatus(prAdapter,
 		    prSwRfb, &u2StatusCode) == WLAN_STATUS_SUCCESS) {
 
+#if CFG_SUPPORT_REPORT_MISC
+			DBGLOG(RX, ERROR,
+			       "reportmisc assocEnd prAdapter->rReportMiscSet.eQueryNum %d\n",
+			       prAdapter->rReportMiscSet.eQueryNum);
+			if (prAdapter->rReportMiscSet.eQueryNum
+						== REPORT_AUTHASSOC_START) {
+				prAdapter->rReportMiscSet.i4Rssi =
+						RCPI_TO_dBm(prStaRec->ucRCPI);
+				wlanGetReportMisc(prAdapter);
+				prAdapter->rReportMiscSet.eQueryNum =
+						REPORT_AUTHASSOC_END;
+			}
+#endif
 			cnmTimerStopTimer(prAdapter,
 					  &prStaRec->rTxReqDoneOrRxRespTimer);
 

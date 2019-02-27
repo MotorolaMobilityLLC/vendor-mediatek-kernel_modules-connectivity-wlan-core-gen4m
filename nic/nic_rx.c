@@ -1703,7 +1703,7 @@ void nicRxProcessDataPacket(IN struct ADAPTER *prAdapter,
 		ucBssIndex = secGetBssIdxByWlanIdx(prAdapter,
 						   prSwRfb->ucWlanIdx);
 		GLUE_SET_PKT_BSS_IDX(prSwRfb->pvPacket, ucBssIndex);
-		STATS_RX_PKT_INFO_DISPLAY(prSwRfb);
+		STATS_RX_PKT_INFO_DISPLAY(prAdapter, prSwRfb);
 
 		prRetSwRfb = qmHandleRxPackets(prAdapter, prSwRfb);
 		if (prRetSwRfb != NULL) {

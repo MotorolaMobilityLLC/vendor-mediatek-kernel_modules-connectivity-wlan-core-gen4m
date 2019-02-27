@@ -1191,6 +1191,15 @@ struct PERF_MONITOR_T {
 	unsigned long ulTotalTxFailCount;
 };
 
+#if CFG_SUPPORT_REPORT_MISC
+struct REPORT_MISC_SET {
+	uint64_t u8Ts;
+	enum ENUM_REPORT_MISC eQueryNum;
+	int32_t i4Rssi;
+	struct EVENT_REPORT_MISC reportMisc;
+};
+#endif
+
 /*
  * Major ADAPTER structure
  * Major data structure for driver operation
@@ -1548,6 +1557,10 @@ struct ADAPTER {
 	/* indicate critical frame */
 	uint32_t u4DhcpState;
 	uint32_t u4EapolState;
+
+#if CFG_SUPPORT_REPORT_MISC
+	struct REPORT_MISC_SET rReportMiscSet;
+#endif
 };				/* end of _ADAPTER_T */
 
 /*******************************************************************************

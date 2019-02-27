@@ -3550,6 +3550,24 @@ enum ENUM_FRAME_DHCP_TYPE {
 	FRAME_DHCP_TYPE_DHCP_MAX         = 0xFF,
 };
 
+#if CFG_SUPPORT_REPORT_MISC
+enum ENUM_REPORT_MISC {
+	REPORT_AUTHASSOC_START = 0x01,
+	REPORT_AUTHASSOC_END,
+	REPORT_4WAYHS_START,
+	REPORT_4WAYHS_END,
+	REPORT_DHCP_START,
+	REPORT_DHCP_END,
+};
+
+struct EVENT_REPORT_MISC {
+	uint32_t u4MdrdyCnt;
+	uint32_t u4RxMpduCnt;
+	uint32_t u4ChannelIdleCnt;
+	int8_t cRssi;
+};
+#endif
+
 struct CMD_INDICATE_CONNECTION_FRAME {
 	uint8_t ucCmdVer;
 	uint8_t aucPadding0[1];
@@ -3892,6 +3910,11 @@ void nicCmdEventSetAddKey(IN struct ADAPTER *prAdapter,
 	IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf);
 void nicOidCmdTimeoutSetAddKey(IN struct ADAPTER *prAdapter,
 	IN struct CMD_INFO *prCmdInfo);
+#endif
+#if CFG_SUPPORT_REPORT_MISC
+void nicCmdEventReportMisc(IN struct ADAPTER *prAdapter,
+			   IN struct CMD_INFO *prCmdInfo,
+			   IN uint8_t *pucEventBuf);
 #endif
 /*******************************************************************************
  *                              F U N C T I O N S
