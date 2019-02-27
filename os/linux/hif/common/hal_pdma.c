@@ -377,6 +377,12 @@ static void halDriverOwnTimeout(struct ADAPTER *prAdapter,
 static void halCheckConnsysStatus(struct ADAPTER *prAdapter)
 {
 	uint32_t au4Regs[] = { WPDMA_GLO_CFG,
+			       WPDMA_TX_RING0_CTRL0,
+			       WPDMA_TX_RING0_CTRL0 + MT_RINGREG_DIFF,
+			       WPDMA_TX_RING0_CTRL0 + MT_RINGREG_DIFF * 3,
+			       WPDMA_TX_RING0_CTRL0 + MT_RINGREG_DIFF * 15,
+			       WPDMA_RX_RING0_CTRL0,
+			       WPDMA_RX_RING0_CTRL0 + MT_RINGREG_DIFF,
 			       WPDMA_TX_RING0_CTRL1,
 			       WPDMA_TX_RING0_CTRL1 + MT_RINGREG_DIFF,
 			       WPDMA_TX_RING0_CTRL1 + MT_RINGREG_DIFF * 3,
@@ -386,6 +392,11 @@ static void halCheckConnsysStatus(struct ADAPTER *prAdapter)
 			       PSE_PG_CPU_GROUP,
 			       PSE_PG_LMAC2_GROUP };
 	uint32_t u4Value, u4Idx, u4Size = sizeof(au4Regs) / sizeof(uint32_t);
+	struct GL_HIF_INFO *prHifInfo = NULL;
+
+	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
+	if (prHifInfo->fgIsPowerOff)
+		return;
 
 	for (u4Idx = 0; u4Idx < u4Size; u4Idx++) {
 		HAL_MCR_RD(prAdapter, au4Regs[u4Idx], &u4Value);
@@ -790,6 +801,10 @@ void halReturnMsduToken(IN struct ADAPTER *prAdapter, uint32_t u4TokenNum)
 
 bool halHifSwInfoInit(IN struct ADAPTER *prAdapter)
 {
+	struct GL_HIF_INFO *prHifInfo = NULL;
+
+	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
+
 	asicPcieDmaShdlInit(prAdapter);
 
 	if (!halWpdmaAllocRing(prAdapter->prGlueInfo, true))
@@ -797,6 +812,8 @@ bool halHifSwInfoInit(IN struct ADAPTER *prAdapter)
 
 	halWpdmaInitRing(prAdapter->prGlueInfo);
 	halInitMsduTokenInfo(prAdapter);
+
+	prHifInfo->fgIsPowerOff = false;
 
 	return true;
 }
@@ -2240,7 +2257,10 @@ void halTxCompleteTasklet(unsigned long data)
 /* Hif power off wifi */
 uint32_t halHifPowerOffWifi(IN struct ADAPTER *prAdapter)
 {
+	struct GL_HIF_INFO *prHifInfo = NULL;
 	uint32_t rStatus = WLAN_STATUS_SUCCESS;
+
+	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
 
 	DBGLOG(INIT, INFO, "Power off Wi-Fi!\n");
 
@@ -2249,6 +2269,8 @@ uint32_t halHifPowerOffWifi(IN struct ADAPTER *prAdapter)
 
 	/* Power off Wi-Fi */
 	wlanSendNicPowerCtrlCmd(prAdapter, TRUE);
+
+	prHifInfo->fgIsPowerOff = true;
 
 	/* prAdapter->fgWiFiInSleepyState = TRUE; */
 	RECLAIM_POWER_CONTROL_TO_PM(prAdapter, FALSE);
@@ -2261,12 +2283,19 @@ uint32_t halHifPowerOffWifi(IN struct ADAPTER *prAdapter)
 
 void halDumpHifDebugLog(struct GLUE_INFO *prGlueInfo, bool fgTx, bool fgRx)
 {
+	struct GL_HIF_INFO *prHifInfo = NULL;
+
+	prHifInfo = &prGlueInfo->rHifInfo;
+	prHifInfo->fgIsDumpLog = true;
+
 	if (halShowHostCsrInfo(prGlueInfo->prAdapter)) {
 		halShowPseInfo(prGlueInfo->prAdapter);
 		halShowPleInfo(prGlueInfo->prAdapter);
 		halShowPdmaInfo(prGlueInfo->prAdapter, fgTx, fgRx);
 		halShowDmaschInfo(prGlueInfo->prAdapter);
 	}
+
+	prHifInfo->fgIsDumpLog = false;
 }
 
 void halPrintHifDbgInfo(IN struct ADAPTER *prAdapter)

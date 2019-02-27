@@ -561,6 +561,8 @@ void glSetHifInfo(struct GLUE_INFO *prGlueInfo, unsigned long ulCookie)
 	prHif->allocRxPacket = axiAllocRxPacketBuf;
 	prHif->allocMsduBuf = axiAllocMsduBuf;
 	prHif->updateRxPacket = axiUpdateRxPacket;
+	prHif->fgIsPowerOff = true;
+	prHif->fgIsDumpLog = false;
 }
 
 /*----------------------------------------------------------------------------*/

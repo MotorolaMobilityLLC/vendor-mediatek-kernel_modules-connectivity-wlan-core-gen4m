@@ -143,6 +143,8 @@ struct GL_HIF_INFO {
 	spinlock_t rTxDataQLock;
 
 	bool fgIsPreAllocMem;
+	bool fgIsPowerOff;
+	bool fgIsDumpLog;
 
 	void *(*allocDmaCoherent)(size_t size, dma_addr_t *dma_handle,
 				  bool fgIsTx, uint32_t u4Num);

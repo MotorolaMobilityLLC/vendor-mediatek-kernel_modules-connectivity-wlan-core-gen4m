@@ -363,6 +363,8 @@ void glSetHifInfo(struct GLUE_INFO *prGlueInfo, unsigned long ulCookie)
 	prHif->allocRxPacket = NULL;
 	prHif->allocMsduBuf = NULL;
 	prHif->updateRxPacket = NULL;
+	prHif->fgIsPowerOff = true;
+	prHif->fgIsDumpLog = false;
 }
 
 /*----------------------------------------------------------------------------*/
