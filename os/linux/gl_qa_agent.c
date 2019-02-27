@@ -6734,8 +6734,12 @@ int32_t connacSetICapStart(struct GLUE_INFO *prGlueInfo, uint32_t u4Trigger, uin
 		(uint32_t) (gConEmiPhyBase & 0xFFFFFFFF);
 	prICapInfo->u4EmiEndAddress =
 		(uint32_t) ((gConEmiPhyBase + gConEmiSize) & 0xFFFFFFFF);
-	prICapInfo->u4EmiMsbAddress =
-		(uint32_t) ((gConEmiPhyBase >> 32) & 0xFFFF);
+	if (sizeof(gConEmiPhyBase) > 4)
+		prICapInfo->u4EmiMsbAddress =
+			(uint32_t) ((gConEmiPhyBase >> 32) & 0xFFFFFFFF);
+	else
+		prICapInfo->u4EmiMsbAddress = 0;
+
 	DBGLOG(RFTEST, INFO,
 		"startAddr = 0x%08x, endAddress = 0x%08x, MsbAddr = 0x%08x\n",
 		  prICapInfo->u4EmiStartAddress,
