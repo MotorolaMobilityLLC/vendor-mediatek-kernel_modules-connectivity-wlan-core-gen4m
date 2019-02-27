@@ -1855,7 +1855,6 @@ uint8_t cnmGetBssMaxBw(struct ADAPTER *prAdapter,
 	struct BSS_INFO *prBssInfo;
 	uint8_t ucMaxBandwidth =
 		MAX_BW_80_80_MHZ; /*chip capability*/
-	struct BSS_DESC *prBssDesc = NULL;
 	enum ENUM_BAND eBand = BAND_NULL;
 	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo =
 		(struct P2P_ROLE_FSM_INFO *) NULL;
