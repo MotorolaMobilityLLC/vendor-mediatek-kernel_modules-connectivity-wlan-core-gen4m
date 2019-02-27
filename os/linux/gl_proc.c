@@ -1607,6 +1607,7 @@ int32_t procUninitProcFs(void)
 	 * incorrect sequence would cause use-after-free error
 	 */
 	remove_proc_subtree(PROC_ROOT_NAME, init_net.proc_net);
+	remove_proc_subtree(PROC_ROOT_NAME, NULL);
 #else
 	remove_proc_entry(PROC_AUTO_PERF_CFG, gprProcNetRoot);
 	remove_proc_entry(PROC_DBG_LEVEL_NAME, gprProcNetRoot);
@@ -1616,6 +1617,7 @@ int32_t procUninitProcFs(void)
 	 * incorrect sequence would cause use-after-free error
 	 */
 	remove_proc_entry(PROC_ROOT_NAME, init_net.proc_net);
+	remove_proc_entry(PROC_ROOT_NAME, NULL);
 #endif
 
 	return 0;
