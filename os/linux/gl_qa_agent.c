@@ -2041,8 +2041,9 @@ static int32_t HQA_ReadBulkEEPROM(struct net_device *prNetDev,
 				 IN union iwreq_data *prIwReqData, struct HQA_CMD_FRAME *HqaCmdFrame)
 {
 	int32_t i4Ret = 0;
-	uint16_t Offset;
 	uint16_t Len = 0;
+#if 0
+	uint16_t Offset;
 
 #if  (CFG_EEPROM_PAGE_ACCESS == 1)
 	struct PARAM_CUSTOM_ACCESS_EFUSE rAccessEfuseInfo;
@@ -2151,6 +2152,7 @@ static int32_t HQA_ReadBulkEEPROM(struct net_device *prNetDev,
 
 		g_BufferDownload = TRUE;
 	}
+#endif
 #endif
 	ResponseToQA(HqaCmdFrame, prIwReqData, 2 + Len, i4Ret);
 
