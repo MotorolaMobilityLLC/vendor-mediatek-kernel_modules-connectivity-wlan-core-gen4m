@@ -427,9 +427,26 @@ enum DRV_STATUS_T {
 	}
 #endif /* WINDOWS_CE */
 #else
-#define ASSERT_NOMEM()
-#define ASSERT(_exp)
-#define ASSERT_REPORT(_exp, _fmt)
+#define ASSERT_NOMEM() \
+{ \
+	LOG_FUNC("alloate memory failed at %s:%d\n", __FILE__, __LINE__); \
+}
+
+#define ASSERT(_exp) \
+	{ \
+		if (!(_exp) && !fgIsBusAccessFailed) { \
+			LOG_FUNC("Assertion failed: %s:%d (%s)\n", \
+				__FILE__, __LINE__, #_exp); \
+		} \
+	}
+#define ASSERT_REPORT(_exp, _fmt) \
+	{ \
+		if (!(_exp) && !fgIsBusAccessFailed) { \
+			LOG_FUNC("Assertion failed: %s:%d (%s)\n", \
+				__FILE__, __LINE__, #_exp); \
+			LOG_FUNC _fmt; \
+		} \
+	}
 #endif /* BUILD_QA_DBG */
 /* LOG function for print to buffer */
 /* If buffer pointer is NULL, redirect to normal DBGLOG */
