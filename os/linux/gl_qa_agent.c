@@ -7428,9 +7428,7 @@ int32_t connacSetICapStart(struct GLUE_INFO *prGlueInfo,
 	struct RBIST_CAP_START_T *prICapInfo = NULL;
 	uint32_t u4BufLen = 0, u4IQArrayLen = 0;
 	uint32_t rStatus = WLAN_STATUS_SUCCESS;
-	uint32_t __iomem *prInfraFreqAddr = NULL;
 
-	DBGLOG(RFTEST, INFO, "Infra Clock value = 0x%x\n", *prInfraFreqAddr);
 	if (u4Trigger) {
 		if (prGlueInfo->prAdapter->rIcapInfo.fgIcapEnable) {
 			log_dbg(RFTEST, ERROR, "Already starting, ignore\n");
@@ -7447,22 +7445,12 @@ int32_t connacSetICapStart(struct GLUE_INFO *prGlueInfo,
 		prGlueInfo->prAdapter->rIcapInfo.u4ICapEventCnt = 0;
 		prGlueInfo->prAdapter->rIcapInfo.prIQArray = NULL;
 		prGlueInfo->prAdapter->rIcapInfo.fgICapStartDump = FALSE;
-		prInfraFreqAddr = ioremap_nocache(INFRA_FREQ_ADJUST_ADDR, 4);
-		*prInfraFreqAddr &= 0xFFEFFFFF;
-		DBGLOG(RFTEST, INFO, "Infra Clock value = 0x%x\n",
-				     *prInfraFreqAddr);
-		iounmap(prInfraFreqAddr);
 		return 0;
 	}
 
 	prICapInfo = &(rRfATInfo.Data.rICapInfo);
 	prICapInfo->u4Trigger = u4Trigger;
 	prICapInfo->u4TriggerEvent = u4Event;
-	prInfraFreqAddr = ioremap_nocache(INFRA_FREQ_ADJUST_ADDR, 4);
-	*prInfraFreqAddr |= BIT(20);
-	DBGLOG(RFTEST, INFO, "Infra Clock value = 0x%x\n",
-			     *prInfraFreqAddr);
-	iounmap(prInfraFreqAddr);
 
 	u4IQArrayLen = MAX_ICAP_IQ_DATA_CNT * sizeof(struct _RBIST_IQ_DATA_T);
 #if 0
