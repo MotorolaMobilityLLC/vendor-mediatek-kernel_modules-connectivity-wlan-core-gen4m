@@ -252,6 +252,7 @@ struct MTK_WCN_WMT_WLAN_CB_INFO {
 	int (*wlan_bus_cnt_get_cb)(void);
 	int (*wlan_bus_cnt_clr_cb)(void);
 	int (*wlan_emi_mpu_set_protection_cb)(bool);
+	int (*wlan_is_wifi_drv_own_cb)(void);
 };
 #endif
 
