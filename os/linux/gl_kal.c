@@ -967,7 +967,7 @@ WLAN_STATUS kalRxIndicateOnePkt(IN P_GLUE_INFO_T prGlueInfo, IN PVOID pvPkt)
 
 		skb_reset_network_header(prSkb);
 		skb_reset_transport_header(prSkb);
-		skb_reset_mac_len(prSkb);
+		kal_skb_reset_mac_len(prSkb);
 	}
 
 	if (!in_interrupt())
