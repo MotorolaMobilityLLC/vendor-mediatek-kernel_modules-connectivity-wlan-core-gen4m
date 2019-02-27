@@ -1282,9 +1282,8 @@ VOID
 p2pFuncDissolve(IN P_ADAPTER_T prAdapter,
 		IN P_BSS_INFO_T prP2pBssInfo, IN BOOLEAN fgSendDeauth, IN UINT_16 u2ReasonCode)
 {
-	P_STA_RECORD_T prCurrStaRec, prExistStaRec;
+	P_STA_RECORD_T prCurrStaRec, prStaRecNext;
 	P_LINK_T prClientList;
-	BOOLEAN fgIsExist;
 
 	DEBUGFUNC("p2pFuncDissolve()");
 
@@ -1331,23 +1330,10 @@ p2pFuncDissolve(IN P_ADAPTER_T prAdapter,
 
 			prClientList = &prP2pBssInfo->rStaRecOfClientList;
 
-			LINK_FOR_EACH_ENTRY(prCurrStaRec, prClientList, rLinkEntry, STA_RECORD_T) {
+			LINK_FOR_EACH_ENTRY_SAFE(prCurrStaRec, prStaRecNext,
+				prClientList, rLinkEntry, STA_RECORD_T) {
 				ASSERT(prCurrStaRec);
 				p2pFuncDisconnect(prAdapter, prP2pBssInfo, prCurrStaRec, TRUE, u2ReasonCode);
-
-				/* The current StaRec may be removed in p2pFuncDisconnect() due to */
-				/* The limited resource, like the Cmd Free list */
-				fgIsExist = FALSE;/* Check the StaRec is not removed */
-				LINK_FOR_EACH_ENTRY(prExistStaRec, prClientList, rLinkEntry, STA_RECORD_T) {
-					if (prCurrStaRec == prExistStaRec) {
-						fgIsExist = TRUE;
-						break;
-					}
-				}
-				if (!fgIsExist)/* This StaRec was be deleted */
-					/* Reset prCurrStaRec to the first element of prClientList */
-					prCurrStaRec =
-						LINK_ENTRY(prClientList->prNext, STA_RECORD_T, rLinkEntry);
 			}
 			break;
 		default:
