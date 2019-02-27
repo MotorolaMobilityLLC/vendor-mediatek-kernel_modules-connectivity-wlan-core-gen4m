@@ -3343,5 +3343,11 @@ VOID nicEventUpdateCoexPhyrate(IN P_ADAPTER_T prAdapter, IN P_WIFI_EVENT_T prEve
 		prAdapter->aprBssInfo[i]->u4CoexPhyRateLimit = prEventUpdateCoexPhyrate->au4PhyRateLimit[i];
 		DBGLOG(NIC, INFO, "Coex:BSS[%d]R:%d\n", i, prAdapter->aprBssInfo[i]->u4CoexPhyRateLimit);
 	}
+
+	prAdapter->ucSmarGearSupportSisoOnly = prEventUpdateCoexPhyrate->ucSupportSisoOnly;
+	prAdapter->ucSmartGearWfPathSupport = prEventUpdateCoexPhyrate->ucWfPathSupport;
+
+	DBGLOG(NIC, INFO, "Smart Gear SISO:%d, WF:%d\n",
+		prAdapter->ucSmarGearSupportSisoOnly, prAdapter->ucSmartGearWfPathSupport);
 }
 
