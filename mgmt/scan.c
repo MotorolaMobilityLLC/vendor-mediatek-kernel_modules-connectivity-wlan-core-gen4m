@@ -1215,10 +1215,11 @@ void scanRemoveBssDescByBssid(IN struct ADAPTER *prAdapter,
 
 		if (EQUAL_MAC_ADDR(prBssDesc->aucBSSID, aucBSSID)) {
 			prChannel = ieee80211_get_channel(
-						priv_to_wiphy(prGlueInfo),
-						ieee80211_channel_to_frequency(
-						prBssDesc->ucChannelNum,
-						prBssDesc->eBand));
+				priv_to_wiphy(prGlueInfo),
+				ieee80211_channel_to_frequency(
+					prBssDesc->ucChannelNum,
+					(prBssDesc->eBand == BAND_2G4) ?
+					KAL_BAND_2GHZ : KAL_BAND_5GHZ));
 
 			scanRemoveBssDescFromList(prBSSDescList,
 				prBssDesc,
