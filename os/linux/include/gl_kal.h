@@ -1559,5 +1559,7 @@ u_int8_t
 kalChannelFormatSwitch(IN struct cfg80211_chan_def *channel_def,
 		IN struct ieee80211_channel *channel,
 		IN struct RF_CHANNEL_INFO *prRfChnlInfo);
+uint32_t kal_is_skb_gro(struct ADAPTER *prAdapter);
+void kal_gro_flush(struct ADAPTER *prAdapter);
 
 #endif /* _GL_KAL_H */

@@ -1029,6 +1029,8 @@ struct WIFI_VAR {
 #endif
 	uint32_t ucGroup0PLESize;
 	uint32_t ucGroup1PLESize;
+	uint32_t ucGROFlushTimeout;
+	uint32_t ucGROEnableTput;
 };
 
 /* cnm_timer module */
@@ -1587,6 +1589,7 @@ struct ADAPTER {
 #if CFG_SUPPORT_DATA_STALL
 	OS_SYSTIME tmReportinterval;
 #endif
+	OS_SYSTIME tmGROFlushTimeout;
 
 };				/* end of _ADAPTER_T */
 

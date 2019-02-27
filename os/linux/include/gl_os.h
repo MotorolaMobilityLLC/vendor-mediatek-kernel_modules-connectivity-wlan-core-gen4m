@@ -499,6 +499,7 @@ struct GLUE_INFO {
 
 	/* Device Index(index of arWlanDevInfo[]) */
 	int32_t i4DevIdx;
+	struct napi_struct napi;
 
 	/* Device statistics */
 	/* struct net_device_stats rNetDevStats; */
@@ -781,6 +782,7 @@ struct GLUE_INFO {
 	/* 11R */
 	struct FT_IES rFtIeForTx;
 	struct cfg80211_ft_event_params rFtEventParam;
+	spinlock_t napi_spinlock;
 };
 
 typedef irqreturn_t(*PFN_WLANISR) (int irq, void *dev_id,

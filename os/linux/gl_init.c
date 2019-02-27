@@ -1423,6 +1423,11 @@ void wlanDebugInit(void)
 
 }
 
+static int kal_napi_poll(struct napi_struct *napi, int budget)
+{
+	return 0;
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief A function for prDev->init
@@ -1451,6 +1456,16 @@ static int wlanInit(struct net_device *prDev)
 #if CFG_WOW_SUPPORT
 	kalWowInit(prGlueInfo);
 #endif
+
+	/* Register GRO function to kernel */
+	prDev->features |= NETIF_F_GRO;
+	prDev->hw_features |= NETIF_F_GRO;
+
+	prGlueInfo->napi.dev = prDev;
+	spin_lock_init(&prGlueInfo->napi_spinlock);
+	netif_napi_add(prGlueInfo->napi.dev,
+		&prGlueInfo->napi, kal_napi_poll, 64);
+	DBGLOG(INIT, INFO, "netif_napi_add success\n");
 
 	return 0;		/* success */
 }				/* end of wlanInit() */

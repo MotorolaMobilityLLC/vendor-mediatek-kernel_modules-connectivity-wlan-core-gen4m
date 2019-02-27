@@ -950,6 +950,19 @@ uint32_t kalRxIndicatePkts(IN struct GLUE_INFO *prGlueInfo,
 	return WLAN_STATUS_SUCCESS;
 }
 
+uint32_t kal_is_skb_gro(struct ADAPTER *prAdapter)
+{
+	struct PERF_MONITOR_T *prPerMonitor;
+	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
+
+	prPerMonitor = &prAdapter->rPerMonitor;
+
+	if (prPerMonitor->ulWlanRxTp > prWifiVar->ucGROEnableTput)
+		return 1;
+
+	return 0;
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief To indicate one received packets is available for higher
@@ -1106,10 +1119,23 @@ uint32_t kalRxIndicateOnePkt(IN struct GLUE_INFO
 		kal_skb_reset_mac_len(prSkb);
 	}
 
-	if (!in_interrupt())
-		netif_rx_ni(prSkb);	/* only in non-interrupt context */
-	else
-		netif_rx(prSkb);
+	if (kal_is_skb_gro(prGlueInfo->prAdapter)) {
+		/* GRO receive function can't be interrupt so it need to
+		 * disable preempt and protect by spin lock
+		 */
+		preempt_disable();
+		spin_lock_bh(&prGlueInfo->napi_spinlock);
+		napi_gro_receive(&prGlueInfo->napi, prSkb);
+		kal_gro_flush(prGlueInfo->prAdapter);
+		spin_unlock_bh(&prGlueInfo->napi_spinlock);
+		preempt_enable();
+		DBGLOG_LIMITED(INIT, INFO, "napi_gro_receive\n");
+	} else {
+		if (!in_interrupt())
+			netif_rx_ni(prSkb);
+		else
+			netif_rx(prSkb);
+	}
 
 	return WLAN_STATUS_SUCCESS;
 }
@@ -3460,6 +3486,18 @@ int hif_thread(void *data)
 	       KAL_GET_CURRENT_THREAD_NAME(), KAL_GET_CURRENT_THREAD_ID());
 
 	return 0;
+}
+
+void kal_gro_flush(struct ADAPTER *prAdapter)
+{
+	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
+
+	if (CHECK_FOR_TIMEOUT(kalGetTimeTick(),
+		prAdapter->tmGROFlushTimeout, prWifiVar->ucGROFlushTimeout)) {
+		napi_gro_flush(&prAdapter->prGlueInfo->napi, false);
+		DBGLOG_LIMITED(INIT, INFO, "napi_gro_flush\n");
+	}
+	GET_CURRENT_SYSTIME(&prAdapter->tmGROFlushTimeout);
 }
 
 int rx_thread(void *data)

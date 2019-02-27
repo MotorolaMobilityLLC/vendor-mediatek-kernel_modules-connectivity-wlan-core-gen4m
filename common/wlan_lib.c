@@ -6707,6 +6707,11 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 
 	prWifiVar->ucGroup1PLESize = (uint32_t) wlanCfgGetUint32(
 			prAdapter, "Group1PLESize", -1);
+
+	prWifiVar->ucGROFlushTimeout = (uint32_t) wlanCfgGetUint32(
+			prAdapter, "GROFlushTimeout", 1);
+	prWifiVar->ucGROEnableTput = (uint32_t) wlanCfgGetUint32(
+			prAdapter, "GROEnableTput", 70000000);
 }
 
 void wlanCfgSetSwCtrl(IN struct ADAPTER *prAdapter)
