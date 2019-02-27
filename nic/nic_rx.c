@@ -1675,7 +1675,7 @@ void nicRxProcessRXV(IN struct ADAPTER *prAdapter,
 		u4PhyRate = nicGetPhyRateByMcsRate(ucMcs, ucFrMode,
 					ucShortGI);
 		u2Rate = u4PhyRate / 5;
-
+/*
 		if (u2Rate > 2000)
 			DBGLOG(SW4, WARN,
 			"ucMcs=%d, ucFrMode=%d, ucShortGI=%d, ucNsts=%d, u4PhyRate=%d, u2Rate=%d\n",
@@ -1685,6 +1685,7 @@ void nicRxProcessRXV(IN struct ADAPTER *prAdapter,
 			ucNsts,
 			u4PhyRate,
 			u2Rate);
+*/
 	}
 
 	/* RCPI */
