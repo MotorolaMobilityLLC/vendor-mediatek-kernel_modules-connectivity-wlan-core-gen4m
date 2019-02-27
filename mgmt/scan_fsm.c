@@ -89,6 +89,7 @@
 UINT_8 g_aucScanChannelNum[SCN_SCAN_DONE_PRINT_BUFFER_LENGTH];
 UINT_8 g_aucScanChannelIdleTime[SCN_SCAN_DONE_PRINT_BUFFER_LENGTH];
 UINT_8 g_aucScanChannelMDRDY[SCN_SCAN_DONE_PRINT_BUFFER_LENGTH];
+UINT_8 g_aucScanChannelBeacon[SCN_SCAN_DONE_PRINT_BUFFER_LENGTH];
 
 /*******************************************************************************
 *                           P R I V A T E   D A T A
@@ -680,6 +681,7 @@ VOID scnEventScanDone(IN P_ADAPTER_T prAdapter, IN P_EVENT_SCAN_DONE prScanDone,
 	kalMemZero(g_aucScanChannelNum, SCN_SCAN_DONE_PRINT_BUFFER_LENGTH);
 	kalMemZero(g_aucScanChannelIdleTime, SCN_SCAN_DONE_PRINT_BUFFER_LENGTH);
 	kalMemZero(g_aucScanChannelMDRDY, SCN_SCAN_DONE_PRINT_BUFFER_LENGTH);
+	kalMemZero(g_aucScanChannelBeacon, SCN_SCAN_DONE_PRINT_BUFFER_LENGTH);
 
 	if (fgIsNewVersion) {
 		DBGLOG(SCN, INFO,
@@ -707,22 +709,28 @@ VOID scnEventScanDone(IN P_ADAPTER_T prAdapter, IN P_EVENT_SCAN_DONE prScanDone,
 			prScanInfo->rSparseChannel.eBand = (ENUM_BAND_T) prScanDone->rSparseChannel.ucBand;
 			prScanInfo->rSparseChannel.ucChannelNum = prScanDone->rSparseChannel.ucChannelNum;
 			prScanInfo->ucSparseChannelArrayValidNum = prScanDone->ucSparseChannelArrayValidNum;
-			DBGLOG(SCN, INFO, "Detected_Channel_Num = %d\n", prScanInfo->ucSparseChannelArrayValidNum);
+			DBGLOG(SCN, INFO, "Country Code = %c%c, Detected_Channel_Num = %d\n",
+				((prAdapter->rWifiVar.rConnSettings.u2CountryCode & 0xff00) >> 8),
+				(prAdapter->rWifiVar.rConnSettings.u2CountryCode & 0x00ff),
+				prScanInfo->ucSparseChannelArrayValidNum);
 
 			for (u4ChCnt = 0; u4ChCnt < prScanInfo->ucSparseChannelArrayValidNum; u4ChCnt++) {
 				prScanInfo->aucChannelNum[u4ChCnt] = prScanDone->aucChannelNum[u4ChCnt];
 				prScanInfo->au2ChannelIdleTime[u4ChCnt] = prScanDone->au2ChannelIdleTime[u4ChCnt];
 				prScanInfo->aucChannelMDRDYCnt[u4ChCnt] = prScanDone->aucChannelMDRDYCnt[u4ChCnt];
+				prScanInfo->aucChannelBAndPCnt[u4ChCnt] = prScanDone->aucChannelBAndPCnt[u4ChCnt];
 
 				if (u4PrintfIdx % 10 == 0 && u4PrintfIdx != 0) {
 					DBGFWLOG(SCN, INFO, "Channel  : %s\n", g_aucScanChannelNum);
 					DBGFWLOG(SCN, INFO, "IdleTime : %s\n", g_aucScanChannelIdleTime);
 					DBGFWLOG(SCN, INFO, "MdrdyCnt : %s\n", g_aucScanChannelMDRDY);
+					DBGFWLOG(SCN, INFO, "BAndPCnt : %s\n", g_aucScanChannelBeacon);
 					DBGFWLOG(SCN, INFO,
 						"==================================================================================\n");
 					kalMemZero(g_aucScanChannelNum, SCN_SCAN_DONE_PRINT_BUFFER_LENGTH);
 					kalMemZero(g_aucScanChannelIdleTime, SCN_SCAN_DONE_PRINT_BUFFER_LENGTH);
 					kalMemZero(g_aucScanChannelMDRDY, SCN_SCAN_DONE_PRINT_BUFFER_LENGTH);
+					kalMemZero(g_aucScanChannelBeacon, SCN_SCAN_DONE_PRINT_BUFFER_LENGTH);
 					u4PrintfIdx = 0;
 				}
 				kalSprintf(g_aucScanChannelNum + u4PrintfIdx*7, "%7d",
@@ -731,12 +739,15 @@ VOID scnEventScanDone(IN P_ADAPTER_T prAdapter, IN P_EVENT_SCAN_DONE prScanDone,
 					prScanInfo->au2ChannelIdleTime[u4ChCnt]);
 				kalSprintf(g_aucScanChannelMDRDY + u4PrintfIdx*7, "%7d",
 					prScanInfo->aucChannelMDRDYCnt[u4ChCnt]);
+				kalSprintf(g_aucScanChannelBeacon + u4PrintfIdx*7, "%7d",
+					prScanInfo->aucChannelBAndPCnt[u4ChCnt]);
 				u4PrintfIdx++;
 			}
 
 			DBGFWLOG(SCN, INFO, "Channel  : %s\n", g_aucScanChannelNum);
 			DBGFWLOG(SCN, INFO, "IdleTime : %s\n", g_aucScanChannelIdleTime);
 			DBGFWLOG(SCN, INFO, "MdrdyCnt : %s\n", g_aucScanChannelMDRDY);
+			DBGFWLOG(SCN, INFO, "BAndPCnt : %s\n", g_aucScanChannelBeacon);
 		} else {
 			prScanInfo->fgIsSparseChannelValid = FALSE;
 		}
