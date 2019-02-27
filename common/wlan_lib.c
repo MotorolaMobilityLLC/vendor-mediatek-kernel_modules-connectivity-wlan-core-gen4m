@@ -6429,6 +6429,7 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 					NIC_TX_PAGE_COUNT_TC4);
 	prWifiVar->ucTxMsduQueue = (uint32_t) wlanCfgGetUint32(
 		prAdapter, "NicTxMsduQueue", 1);
+	prWifiVar->ucTxMsduQueueInit = prWifiVar->ucTxMsduQueue;
 
 	/* 1 resource for AC_BK(TC0_INDEX), AC_BE(TC1_INDEX) */
 	/* 2 resource for AC_VI(TC2_INDEX) */
@@ -6436,6 +6437,7 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 	/* 1 resource for MGMT(TC4_INDEX) & TC_NUM */
 	u4TxHifRes = (uint32_t) wlanCfgGetUint32(
 		prAdapter, "TxHifResCtl", 0x00114211);
+	prWifiVar->u4TxHifRes = u4TxHifRes;
 	for (u4Idx = 0; u4Idx < TX_PORT_NUM && u4TxHifRes; u4Idx++) {
 		prAdapter->au4TxHifResCtl[u4Idx] = u4TxHifRes & BITS(0, 3);
 		u4TxHifRes = u4TxHifRes >> 4;

@@ -1010,6 +1010,8 @@ struct WIFI_VAR {
 
 	/* Tx Msdu Queue method */
 	uint8_t ucTxMsduQueue;
+	uint8_t ucTxMsduQueueInit;
+	uint32_t u4TxHifRes;
 
 #if ARP_MONITER_ENABLE
 		uint32_t uArpMonitorNumber;
