@@ -2739,9 +2739,7 @@ aisIndicationOfMediaStateToHost(IN struct ADAPTER *prAdapter,
 		prAisFsmInfo->eCurrentState, prAisBssInfo->eConnectionStateIndicated);
 
 	if (prAisBssInfo->eConnectionState == PARAM_MEDIA_STATE_DISCONNECTED &&
-		/* if receive DEAUTH in JOIN state, report disconnect*/
-		!(prAisBssInfo->ucReasonOfDisconnect == DISCONNECT_REASON_CODE_DEAUTHENTICATED &&
-		 prAisFsmInfo->eCurrentState == AIS_STATE_JOIN)) {
+		prAisFsmInfo->eCurrentState != AIS_STATE_JOIN) {
 		if (prAisBssInfo->eConnectionStateIndicated == eConnectionState)
 			return;
 	}
