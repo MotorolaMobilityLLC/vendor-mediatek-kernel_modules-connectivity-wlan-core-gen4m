@@ -114,6 +114,8 @@ VOID p2pFsmRunEventScanRequest(IN P_ADAPTER_T prAdapter, IN P_MSG_HDR_T prMsgHdr
 
 	do {
 		ASSERT_BREAK((prAdapter != NULL) && (prMsgHdr != NULL));
+		if ((prAdapter == NULL) || (prMsgHdr == NULL))
+			break;
 
 		prP2pScanReqMsg = (P_MSG_P2P_SCAN_REQUEST_T) prMsgHdr;
 
@@ -123,9 +125,14 @@ VOID p2pFsmRunEventScanRequest(IN P_ADAPTER_T prAdapter, IN P_MSG_HDR_T prMsgHdr
 			p2pDevFsmRunEventScanRequest(prAdapter, prMsgHdr);
 		else
 			p2pRoleFsmRunEventScanRequest(prAdapter, prMsgHdr);
+
+		prMsgHdr = NULL;
+		/* Both p2pDevFsmRunEventScanRequest and p2pRoleFsmRunEventScanRequest
+		 * free prMsgHdr before return, so prMsgHdr is needed to be NULL.
+		 */
 	} while (FALSE);
 
-	if (prP2pScanReqMsg == NULL)
+	if (prMsgHdr != NULL)
 		cnmMemFree(prAdapter, prMsgHdr);
 }				/* p2pDevFsmRunEventScanRequest */
 
