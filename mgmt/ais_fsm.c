@@ -2059,6 +2059,11 @@ enum _ENUM_AIS_STATE_T aisFsmJoinCompleteAction(IN struct _ADAPTER_T *prAdapter,
 			/* 4 <2.1> Redo JOIN process with other Auth Type if possible */
 			if (aisFsmStateInit_RetryJOIN(prAdapter, prStaRec) == FALSE) {
 				struct _BSS_DESC_T *prBssDesc;
+				PARAM_SSID_T rSsid;
+				P_CONNECTION_SETTINGS_T prConnSettings;
+
+				prConnSettings = &(prAdapter->rWifiVar.rConnSettings);
+				prBssDesc = prAisFsmInfo->prTargetBssDesc;
 
 				/* 1. Increase Failure Count */
 				prStaRec->ucJoinFailureCount++;
@@ -2072,7 +2077,16 @@ enum _ENUM_AIS_STATE_T aisFsmJoinCompleteAction(IN struct _ADAPTER_T *prAdapter,
 				/* 3.2 reset local variable */
 				prAisFsmInfo->fgIsInfraChannelFinished = TRUE;
 
-				prBssDesc = prAisFsmInfo->prTargetBssDesc;
+				kalMemZero(&rSsid, sizeof(PARAM_SSID_T));
+				if (prBssDesc)
+					COPY_SSID(rSsid.aucSsid, rSsid.u4SsidLen,
+						prBssDesc->aucSSID, prBssDesc->ucSSIDLen);
+				else
+					COPY_SSID(rSsid.aucSsid, rSsid.u4SsidLen,
+						prConnSettings->aucSSID, prConnSettings->ucSSIDLen);
+
+				prBssDesc = scanSearchBssDescByBssidAndSsid(prAdapter,
+								prStaRec->aucMacAddr, TRUE, &rSsid);
 
 				if (prBssDesc == NULL)
 					break;
@@ -2558,6 +2572,7 @@ VOID aisUpdateBssInfoForJOIN(IN P_ADAPTER_T prAdapter, P_STA_RECORD_T prStaRec, 
 	P_BSS_DESC_T prBssDesc;
 	UINT_16 u2IELength;
 	PUINT_8 pucIE;
+	PARAM_SSID_T rSsid;
 
 	DEBUGFUNC("aisUpdateBssInfoForJOIN()");
 
@@ -2626,6 +2641,14 @@ VOID aisUpdateBssInfoForJOIN(IN P_ADAPTER_T prAdapter, P_STA_RECORD_T prStaRec, 
 
 	/* 3 <4> Update BSS_INFO_T from BSS_DESC_T */
 	prBssDesc = prAisFsmInfo->prTargetBssDesc;
+	if (prBssDesc)
+		COPY_SSID(rSsid.aucSsid, rSsid.u4SsidLen,
+			prBssDesc->aucSSID, prBssDesc->ucSSIDLen);
+	else
+		COPY_SSID(rSsid.aucSsid, rSsid.u4SsidLen,
+			prConnSettings->aucSSID, prConnSettings->ucSSIDLen);
+
+	prBssDesc = scanSearchBssDescByBssidAndSsid(prAdapter, prAssocRspFrame->aucBSSID, TRUE, &rSsid);
 	if (prBssDesc) {
 		prBssDesc->fgIsConnecting = FALSE;
 		prBssDesc->fgIsConnected = TRUE;
