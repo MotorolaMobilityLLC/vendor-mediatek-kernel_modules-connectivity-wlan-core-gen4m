@@ -210,14 +210,11 @@ WLAN_STATUS nicAllocateAdapterMemory(IN P_ADAPTER_T prAdapter)
 		LOCAL_NIC_ALLOCATE_MEMORY(prTxCtrl->pucTxCached, prTxCtrl->u4TxCachedSize, VIR_MEM_TYPE, "MSDU_INFO_T");
 
 		/* 4 <4> Memory for Common Coalescing Buffer */
-		prAdapter->pucCoalescingBufCached = (PUINT_8) NULL;
+
+		/* Get valid buffer size based on config & host capability */
+		prAdapter->u4CoalescingBufCachedSize = halGetValidCoalescingBufSize(prAdapter);
 
 		/* Allocate memory for the common coalescing buffer. */
-		if (HIF_TX_COALESCING_BUFFER_SIZE > HIF_RX_COALESCING_BUFFER_SIZE)
-			prAdapter->u4CoalescingBufCachedSize = HIF_TX_COALESCING_BUFFER_SIZE;
-		else
-			prAdapter->u4CoalescingBufCachedSize = HIF_RX_COALESCING_BUFFER_SIZE;
-
 		prAdapter->pucCoalescingBufCached = kalAllocateIOBuffer(prAdapter->u4CoalescingBufCachedSize);
 
 		if (prAdapter->pucCoalescingBufCached == NULL) {
