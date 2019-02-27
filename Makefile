@@ -118,6 +118,18 @@ else
     ccflags-y += -DCFG_MET_TAG_SUPPORT=0
 endif
 
+ifeq ($(CONFIG_MTK_TC10_FEATURE), y)
+    ccflags-y += -DCFG_TC10_FEATURE=1
+else
+    ccflags-y += -DCFG_TC10_FEATURE=0
+endif
+
+ifeq ($(CONFIG_MTK_TC1_FEATURE), y)
+    ccflags-y += -DCFG_TC1_FEATURE=1
+else
+    ccflags-y += -DCFG_TC1_FEATURE=0
+endif
+
 ifeq ($(MODULE_NAME),)
 	MODULE_NAME := wlan_$(shell echo $(strip $(WLAN_CHIP_ID)) | tr A-Z a-z)_$(CONFIG_MTK_COMBO_WIFI_HIF)
 endif
