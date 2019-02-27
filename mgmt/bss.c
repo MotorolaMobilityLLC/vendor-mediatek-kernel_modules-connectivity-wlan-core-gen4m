@@ -72,6 +72,7 @@
  ******************************************************************************
  */
 #include "precomp.h"
+#include "gl_cfg80211.h"
 
 /******************************************************************************
  *                              C O N S T A N T S
@@ -2375,3 +2376,125 @@ void bssDumpBssInfo(IN struct ADAPTER *prAdapter, IN uint8_t ucBssIndex)
 
 	DBGLOG(SW4, INFO, "============== Dump Done ==============\n");
 }
+
+#if CFG_SUPPORT_IOT_AP_BLACKLIST
+/*----------------------------------------------------------------------------*/
+/*!
+ * @brief get IOT AP handle action.
+ *
+ * @param[in] prBssDesc
+ *
+ * @return ENUM_WLAN_IOT_AP_HANDLE_ACTION
+ */
+/*----------------------------------------------------------------------------*/
+uint32_t bssGetIotApAction(IN struct ADAPTER *prAdapter,
+	IN struct BSS_DESC *prBssDesc)
+{
+	uint8_t  ucCnt = 0;
+	uint8_t  ucByteMask;
+	uint8_t  *pucMask;
+	uint16_t u2MatchFlag;
+	const  uint8_t *pucIes;
+	const  uint8_t *pucIe;
+	struct WLAN_IOT_AP_RULE_T *prIotApRule;
+
+	ASSERT(prAdapter);
+	ASSERT(prBssDesc);
+	ASSERT(prBssDesc->aucIEBuf);
+
+	pucIes = &prBssDesc->aucIEBuf[0];
+	for (ucCnt = 0; ucCnt < CFG_IOT_AP_RULE_MAX_CNT; ucCnt++) {
+		prIotApRule = &prAdapter->rIotApRule[ucCnt];
+		u2MatchFlag = prIotApRule->u2MatchFlag;
+
+		/*No need to match empty rule*/
+		if (prIotApRule->u2MatchFlag == 0)
+			continue;
+
+		/*Check if default rule is allowed*/
+		if (!prAdapter->rWifiVar.fgEnDefaultIotApRule &&
+			(prIotApRule->ucVersion & BIT(7)))
+			continue;
+
+		/*Match Vendor OUI*/
+		if (u2MatchFlag & BIT(WLAN_IOT_AP_FG_OUI)) {
+			pucIe = mtk_cfg80211_find_ie_match_mask(
+				WLAN_EID_VENDOR_SPECIFIC,
+				pucIes, prBssDesc->u2IELength,
+				prIotApRule->aVendorOui,
+				MAC_OUI_LEN, 2, NULL);
+			if (!pucIe)
+				continue;
+			/*Match!, Fall through*/
+		}
+
+		/*Match Vendor Data rule*/
+		if (u2MatchFlag & BIT(WLAN_IOT_AP_FG_DATA)) {
+			pucMask =
+				u2MatchFlag & BIT(WLAN_IOT_AP_FG_DATA_MASK) ?
+				&prIotApRule->aVendorDataMask[0] : NULL;
+			pucIe = mtk_cfg80211_find_ie_match_mask(
+				WLAN_EID_VENDOR_SPECIFIC,
+				pucIes, prBssDesc->u2IELength,
+				prIotApRule->aVendorData,
+				prIotApRule->ucDataLen, 5, pucMask);
+			if (!pucIe)
+				continue;
+			/*Match!, Fall through*/
+		}
+
+		/*Match BSSID rule*/
+		if (u2MatchFlag & BIT(WLAN_IOT_AP_FG_BSSID)) {
+			pucMask =
+				u2MatchFlag & BIT(WLAN_IOT_AP_FG_BSSID_MASK) ?
+				&prIotApRule->aBssidMask[0] : NULL;
+			if (kalMaskMemCmp(&prBssDesc->aucBSSID,
+				&prIotApRule->aBssid,
+				pucMask,
+				MAC_ADDR_LEN))
+				continue;
+			/*Match!, Fall through*/
+		}
+
+		/*Match Rx STBC NSS rule*/
+		if (u2MatchFlag & BIT(WLAN_IOT_AP_FG_NSS)) {
+			ucByteMask = BITS(0, 1);
+			pucIe = mtk_cfg80211_find_ie_match_mask(
+				WLAN_EID_HT_CAPABILITY,
+				pucIes, prBssDesc->u2IELength,
+				&prIotApRule->ucNss,
+				1, 2, &ucByteMask);
+			if (!pucIe) {
+				/*Non HT AP, Only Has 1SS*/
+				if (prIotApRule->ucNss != 1)
+					continue;
+			} else/*HT AP, Get AP Rx NSS*/
+					continue;
+			/*Match!, Fall through*/
+		}
+
+		/*Match Bandwidth rule*/
+		if (u2MatchFlag & BIT(WLAN_IOT_AP_FG_BW)) {
+			if (prBssDesc->eChannelWidth
+				!= prIotApRule->ucBandWidth)
+				continue;
+			/*Matched, Fall through*/
+		}
+
+		/*Match Band Rule*/
+		if (u2MatchFlag & BIT(WLAN_IOT_AP_FG_BAND)) {
+			if (prBssDesc->eBand != prIotApRule->ucBand)
+				continue;
+			/*Matched, Fall through*/
+		}
+
+		/*All MATCH*/
+		DBGLOG(BSS, INFO, MACSTR" is IOTAP:%d Act:%d\n",
+			prBssDesc->aucBSSID, ucCnt, prIotApRule->ucAction);
+		return prIotApRule->ucAction;
+	}
+	DBGLOG(BSS, INFO, MACSTR" is NOT IOTAP\n",
+		prBssDesc->aucBSSID);
+	return WLAN_IOT_AP_VOID;
+}
+#endif

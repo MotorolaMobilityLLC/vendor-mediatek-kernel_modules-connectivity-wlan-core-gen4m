@@ -7220,3 +7220,22 @@ void kalScanLogCacheFlushBSS(struct ADAPTER *prAdapter,
 		&(prAdapter->rWifiVar.rScanInfo.rScanLogCache.rBSSListCFG),
 		LOG_SCAN_DONE_D2K, logBufLen);
 }
+
+int kalMaskMemCmp(const void *cs, const void *ct,
+	const void *mask, size_t count)
+{
+	const uint8_t *su1, *su2, *su3;
+	int res = 0;
+
+	for (su1 = cs, su2 = ct, su3 = mask;
+		count > 0; ++su1, ++su2, ++su3, count--) {
+		if (mask != NULL)
+			res = ((*su1)&(*su3)) - ((*su2)&(*su3));
+		else
+			res = (*su1) - (*su2);
+		if (res != 0)
+			break;
+	}
+	return res;
+}
+

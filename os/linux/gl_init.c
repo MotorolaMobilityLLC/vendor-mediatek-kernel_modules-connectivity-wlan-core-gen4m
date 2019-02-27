@@ -3490,6 +3490,10 @@ int32_t wlanOnWhenProbeSuccess(struct GLUE_INFO *prGlueInfo,
 		kalIndicateAgpsNotify(prAdapter, AGPS_EVENT_WLAN_ON, NULL, 0);
 
 #endif
+#if CFG_SUPPORT_IOT_AP_BLACKLIST
+		wlanCfgLoadIotApRule(prAdapter);
+		wlanCfgDumpIotApRule(prAdapter);
+#endif
 
 		/* Support QoS */
 		pm_qos_add_request(&wifibw_qos_request,

@@ -1017,13 +1017,16 @@ struct WIFI_VAR {
 
 	uint32_t u4MTU; /* net device maximum transmission unit */
 
+#if CFG_SUPPORT_IOT_AP_BLACKLIST
+	uint8_t fgEnDefaultIotApRule;
+#endif
+
 #if CFG_SUPPORT_DATA_STALL
 	uint32_t ucPerHighThreshole;
 	uint32_t ucTxLowRateThreshole;
 	uint32_t ucRxLowRateThreshole;
 	uint32_t ucReportEventInterval;
 #endif
-
 };
 
 /* cnm_timer module */
@@ -1574,6 +1577,10 @@ struct ADAPTER {
 #ifdef CFG_REPORT_MAX_TX_RATE
 	uint32_t u4StaMaxTxRate;
 #endif /* CFG_REPORT_MAX_TX_RATE */
+
+#if CFG_SUPPORT_IOT_AP_BLACKLIST
+	struct WLAN_IOT_AP_RULE_T rIotApRule[CFG_IOT_AP_RULE_MAX_CNT];
+#endif
 
 #if CFG_SUPPORT_DATA_STALL
 	OS_SYSTIME tmReportinterval;
