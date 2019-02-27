@@ -1016,6 +1016,8 @@ struct WIFI_VAR {
 #if CFG_SUPPORT_SPE_IDX_CONTROL
 	u_int8_t ucSpeIdxCtrl;	/* 0: WF0, 1: WF1, 2: duplicate */
 #endif
+
+	uint32_t u4MTU; /* net device maximum transmission unit */
 };
 
 /* cnm_timer module */

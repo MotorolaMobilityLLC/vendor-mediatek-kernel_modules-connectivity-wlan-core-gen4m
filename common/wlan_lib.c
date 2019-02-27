@@ -6443,6 +6443,8 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 	prWifiVar->ucSpeIdxCtrl = (uint8_t) wlanCfgGetUint32(
 					prAdapter, "SpeIdxCtrl", 2);
 #endif
+
+	prWifiVar->u4MTU = wlanCfgGetUint32(prAdapter, "MTU", 0);
 }
 
 void wlanCfgSetSwCtrl(IN struct ADAPTER *prAdapter)
