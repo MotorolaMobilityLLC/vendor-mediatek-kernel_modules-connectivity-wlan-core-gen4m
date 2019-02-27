@@ -1902,6 +1902,10 @@ struct BSS_INFO *cnmGetBssInfoAndInit(struct ADAPTER *prAdapter,
 			prBssInfo->ucBssIndex = ucBssIndex;
 			prBssInfo->eNetworkType = eNetworkType;
 			prBssInfo->ucOwnMacIndex = ucOwnMacIdx;
+#if (CFG_HW_WMM_BY_BSS == 1)
+			prBssInfo->ucWmmQueSet = DEFAULT_HW_WMM_INDEX;
+			prBssInfo->fgIsWmmInited = FALSE;
+#endif
 			break;
 		}
 	}
@@ -2231,8 +2235,40 @@ void cnmUpdateDbdcSetting(IN struct ADAPTER *prAdapter,
 
 	prCmdBody->ucDbdcEn = fgDbdcEn;
 
+		/* Parameter decision */
+#if (CFG_HW_WMM_BY_BSS == 1)
+	if (fgDbdcEn) {
+		u_int8_t ucWmmSetBitmapPerBSS;
+		struct BSS_INFO *prBssInfo;
+		u_int8_t ucBssIndex;
+		/*
+		 * As DBDC enabled, for BSS use 2.4g Band, assign related
+		 * WmmGroupSet bitmask to 1.
+		 * This is used to indicate the WmmGroupSet is associated
+		 * to Band#1 (otherwise, use for band#0)
+		 */
+		for (ucBssIndex = 0; ucBssIndex < prAdapter->ucHwBssIdNum;
+			ucBssIndex++) {
+			prBssInfo = prAdapter->aprBssInfo[ucBssIndex];
+
+			if (!prBssInfo || prBssInfo->fgIsInUse == FALSE)
+				continue;
+
+			if (prBssInfo->eBand == BAND_2G4) {
+				ucWmmSetBitmapPerBSS = prBssInfo->ucWmmQueSet;
+				prCmdBody->ucWmmBandBitmap |=
+					BIT(ucWmmSetBitmapPerBSS);
+			}
+		}
+		/* For P2P Device, we force it to use WMM3 */
+		prBssInfo = prAdapter->aprBssInfo[P2P_DEV_BSS_INDEX];
+		if (prBssInfo->eBand == BAND_2G4)
+			prCmdBody->ucWmmBandBitmap |= BIT(MAX_HW_WMM_INDEX);
+	}
+#else
 	if (fgDbdcEn)
 		prCmdBody->ucWmmBandBitmap |= BIT(DBDC_2G_WMM_INDEX);
+#endif
 
 	rStatus = wlanSendSetQueryCmd(prAdapter,	/* prAdapter */
 				      CMD_ID_SET_DBDC_PARMS,	/* ucCID */
@@ -2804,6 +2840,7 @@ void cnmGetDbdcCapability(
 	/* BSS index */
 	prDbdcCap->ucBssIndex = ucBssIndex;
 
+#if (CFG_HW_WMM_BY_BSS == 0)
 	/* WMM set */
 	if (eRfBand == BAND_5G)
 		prDbdcCap->ucWmmSetIndex = DBDC_5G_WMM_INDEX;
@@ -2812,7 +2849,7 @@ void cnmGetDbdcCapability(
 			(prAdapter->rWifiVar.eDbdcMode ==
 			 ENUM_DBDC_MODE_DISABLED) ?
 			DBDC_5G_WMM_INDEX : DBDC_2G_WMM_INDEX;
-
+#endif
 	/* Nss & band 0/1 */
 	switch (prAdapter->rWifiVar.eDbdcMode) {
 	case ENUM_DBDC_MODE_DISABLED:
@@ -2897,7 +2934,8 @@ void cnmDbdcEnableDecision(
 {
 	log_dbg(CNM, INFO, "[DBDC] BSS %u Rf %u", ucChangedBssIndex, eRfBand);
 
-	if (prAdapter->rWifiVar.eDbdcMode != ENUM_DBDC_MODE_DYNAMIC) {
+	if (prAdapter->rWifiVar.eDbdcMode != ENUM_DBDC_MODE_DYNAMIC &&
+		(prAdapter->rWifiVar.eDbdcMode != ENUM_DBDC_MODE_STATIC)) {
 		log_dbg(CNM, INFO, "[DBDC Debug] DBDC Mode %u Return",
 		       prAdapter->rWifiVar.eDbdcMode);
 		return;
@@ -2915,6 +2953,8 @@ void cnmDbdcEnableDecision(
 					   &g_rDbdcInfo.rDbdcGuardTimer,
 					   DBDC_SWITCH_GUARD_TIME);
 		}
+		/* The DBDC is already ON, so renew WMM band information only */
+		cnmUpdateDbdcSetting(prAdapter, TRUE);
 		return;
 	}
 
@@ -3260,4 +3300,51 @@ error:
 
 	return -1;
 }
+
+#if (CFG_HW_WMM_BY_BSS == 1)
+/*----------------------------------------------------------------------------*/
+/*!
+* @brief    Search available HW WMM index.
+*
+* @param (none)
+*
+* @return
+*/
+/*----------------------------------------------------------------------------*/
+u_int8_t cnmWmmIndexDecision(
+	IN struct ADAPTER *prAdapter,
+	IN struct BSS_INFO *prBssInfo)
+{
+	u_int8_t ucWmmIndex;
+
+	for (ucWmmIndex = 0; ucWmmIndex < HW_WMM_NUM; ucWmmIndex++) {
+		if (prBssInfo && prBssInfo->fgIsInUse &&
+			prBssInfo->fgIsWmmInited == FALSE) {
+			if (!(prAdapter->ucHwWmmEnBit & BIT(ucWmmIndex))) {
+				prAdapter->ucHwWmmEnBit |= BIT(ucWmmIndex);
+				prBssInfo->fgIsWmmInited = TRUE;
+				break;
+			}
+		}
+	}
+	return (ucWmmIndex < HW_WMM_NUM) ? ucWmmIndex : MAX_HW_WMM_INDEX;
+}
+/*----------------------------------------------------------------------------*/
+/*!
+* @brief    Free BSS HW WMM index.
+*
+* @param (none)
+*
+* @return None
+*/
+/*----------------------------------------------------------------------------*/
+void cnmFreeWmmIndex(
+	IN struct ADAPTER *prAdapter,
+	IN struct BSS_INFO *prBssInfo)
+{
+	prAdapter->ucHwWmmEnBit &= (~BIT(prBssInfo->ucWmmQueSet));
+	prBssInfo->ucWmmQueSet = DEFAULT_HW_WMM_INDEX;
+	prBssInfo->fgIsWmmInited = FALSE;
+}
+#endif /* #if (CFG_HW_WMM_BY_BSS == 1) */
 

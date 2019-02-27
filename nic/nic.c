@@ -1482,6 +1482,10 @@ uint32_t nicDeactivateNetwork(IN struct ADAPTER *prAdapter,
 	else
 		qmFreeAllByBssIdx(prAdapter, ucBssIndex);
 
+#if (CFG_HW_WMM_BY_BSS == 1)
+	cnmFreeWmmIndex(prAdapter, prBssInfo);
+#endif
+
 	return u4Status;
 }
 

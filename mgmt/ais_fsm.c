@@ -378,10 +378,11 @@ void aisFsmInit(IN struct ADAPTER *prAdapter)
 	prAisBssInfo->prStaRecOfAP = (struct STA_RECORD *)NULL;
 	prAisBssInfo->ucNss =
 	    wlanGetSupportNss(prAdapter, prAisBssInfo->ucBssIndex);
+#if (CFG_HW_WMM_BY_BSS == 0)
 	prAisBssInfo->ucWmmQueSet =
 	    (prAdapter->rWifiVar.eDbdcMode ==
 	     ENUM_DBDC_MODE_DISABLED) ? DBDC_5G_WMM_INDEX : DBDC_2G_WMM_INDEX;
-
+#endif
 	/* 4 <4> Allocate MSDU_INFO_T for Beacon */
 	prAisBssInfo->prBeacon = cnmMgtPktAlloc(prAdapter,
 		OFFSET_OF(struct WLAN_BEACON_FRAME,
@@ -1287,6 +1288,14 @@ void aisFsmSteps(IN struct ADAPTER *prAdapter, enum ENUM_AIS_STATE eNextState)
 					prBssDesc->u4RsnSelectedPairwiseCipher;
 					prAisBssInfo->u4RsnSelectedAKMSuite =
 					    prBssDesc->u4RsnSelectedAKMSuite;
+#if (CFG_HW_WMM_BY_BSS == 1)
+					prAisBssInfo->eBand = prBssDesc->eBand;
+					if (prAisBssInfo->fgIsWmmInited
+						== FALSE)
+						prAisBssInfo->ucWmmQueSet =
+						cnmWmmIndexDecision(prAdapter,
+						prAisBssInfo);
+#endif
 #if CFG_SUPPORT_DBDC
 					cnmDbdcEnableDecision(prAdapter,
 						prAisBssInfo->ucBssIndex,
@@ -1301,9 +1310,11 @@ void aisFsmSteps(IN struct ADAPTER *prAdapter, enum ENUM_AIS_STATE eNextState)
 					&rDbdcCap);
 
 					prAisBssInfo->ucNss = rDbdcCap.ucNss;
+#if (CFG_HW_WMM_BY_BSS == 0)
 					prAisBssInfo->ucWmmQueSet =
 					    rDbdcCap.ucWmmSetIndex;
-#endif /*CFG_SUPPORT_DBDC */
+#endif
+#endif /*CFG_SUPPORT_DBDC*/
 					/* 4 <B> Do STATE transition and update
 					 * current Operation Mode.
 					 */
