@@ -1251,10 +1251,7 @@ static uint8_t cnmGetAPBwPermitted(struct ADAPTER
 	}
 
 	if (prBssDesc) {
-		if (prAdapter->rWifiVar.fgForceUse20BW &&
-			prBssDesc->eBand == BAND_2G4) {
-			ucAPBandwidth = MAX_BW_20MHZ;
-		} else if (prBssDesc->eChannelWidth == CW_20_40MHZ) {
+		if (prBssDesc->eChannelWidth == CW_20_40MHZ) {
 			if ((prBssDesc->eSco == CHNL_EXT_SCA)
 			    || (prBssDesc->eSco == CHNL_EXT_SCB))
 				ucAPBandwidth = MAX_BW_40MHZ;

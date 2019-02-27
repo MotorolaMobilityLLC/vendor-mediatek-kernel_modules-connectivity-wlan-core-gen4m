@@ -5402,16 +5402,6 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 	prWifiVar->ucTxBaSize = (uint8_t) wlanCfgGetUint32(prAdapter, "TxBaSize", 64);
 	prWifiVar->ucRxHtBaSize = (uint8_t) wlanCfgGetUint32(prAdapter, "RxHtBaSize", 64);
 	prWifiVar->ucRxVhtBaSize = (uint8_t) wlanCfgGetUint32(prAdapter, "RxVhtBaSize", 64);
-#if (CFG_FORCE_USE_20BW == 1)
-	prWifiVar->fgForceUse20BW =
-		(u_int8_t) wlanCfgGetUint32(prAdapter,
-					    "ForceUse20BW", FEATURE_ENABLED);
-#else
-	prWifiVar->fgForceUse20BW =
-		(u_int8_t) wlanCfgGetUint32(prAdapter,
-					    "ForceUse20BW", FEATURE_DISABLED);
-#endif
-	DBGLOG(INIT, INFO, "fgForceUse20BW = %d\n", prWifiVar->fgForceUse20BW);
 
 	/* Tx Buffer Management */
 	prWifiVar->ucExtraTxDone = (uint32_t) wlanCfgGetUint32(prAdapter, "ExtraTxDone", 1);
