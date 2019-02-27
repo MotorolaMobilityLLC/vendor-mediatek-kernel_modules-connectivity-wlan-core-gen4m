@@ -88,7 +88,7 @@
  *                              C O N S T A N T S
  *******************************************************************************
  */
-#define RX_RESPONSE_TIMEOUT (15000)
+#define RX_RESPONSE_TIMEOUT (3000)
 
 
 /*******************************************************************************
@@ -120,6 +120,30 @@
  *                              F U N C T I O N S
  *******************************************************************************
  */
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * @brief check is timeout or not
+ *
+ * @param u4StartTime start time
+ *
+ * @param u4Timeout timeout value
+ *
+ * @return is timeout
+ */
+/*----------------------------------------------------------------------------*/
+static inline bool halIsTimeout(uint32_t u4StartTime, uint32_t u4Timeout)
+{
+	uint32_t u4CurTime = kalGetTimeTick();
+	uint32_t u4Time = 0;
+
+	if (u4CurTime >= u4StartTime)
+		u4Time = u4CurTime - u4StartTime;
+	else
+		u4Time = u4CurTime + (0xFFFFFFFF - u4StartTime);
+
+	return u4Time > u4Timeout;
+}
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -166,64 +190,48 @@ uint32_t halRxWaitResponse(IN struct ADAPTER *prAdapter, IN uint8_t ucPortIdx,
 	OUT uint8_t *pucRspBuffer, IN uint32_t u4MaxRespBufferLen,
 	OUT uint32_t *pu4Length)
 {
-	uint32_t u4PktLen = 0, i = 0;
-	uint32_t u4Status = WLAN_STATUS_SUCCESS;
-	uint32_t u4Time, u4Current;
+	struct GLUE_INFO *prGlueInfo;
+	uint32_t u4PktLen = 0, u4Value = 0, u4Time;
 	u_int8_t fgStatus;
-	uint32_t u4Value = 0;
 
 	DEBUGFUNC("nicRxWaitResponse");
 
 	ASSERT(prAdapter);
+	prGlueInfo = prAdapter->prGlueInfo;
+	ASSERT(prGlueInfo);
 	ASSERT(pucRspBuffer);
 	ASSERT(ucPortIdx < 2);
 
-	ucPortIdx = HIF_IMG_DL_STATUS_PORT_IDX;
-
-	u4Time = (uint32_t) kalGetTimeTick();
-
+	u4Time = kalGetTimeTick();
 	u4PktLen = u4MaxRespBufferLen;
 
 	do {
-		fgStatus = kalDevPortRead(prAdapter->prGlueInfo,
-			ucPortIdx, u4PktLen,
+		if (wlanIsChipNoAck(prAdapter)) {
+			DBGLOG(HAL, ERROR, "Chip No Ack\n");
+			return WLAN_STATUS_FAILURE;
+		}
+
+		fgStatus = kalDevPortRead(
+			prGlueInfo, HIF_IMG_DL_STATUS_PORT_IDX, u4PktLen,
 			pucRspBuffer, HIF_RX_COALESCING_BUFFER_SIZE);
-
-		if (!fgStatus) {
-			/* timeout exceeding check */
-			u4Current = (uint32_t) kalGetTimeTick();
-
-			if ((u4Current > u4Time) &&
-			    ((u4Current - u4Time) > RX_RESPONSE_TIMEOUT)) {
-				kalDevRegRead(prAdapter->prGlueInfo,
-					      CONN_HIF_ON_DBGCR01, &u4Value);
-				DBGLOG(HAL, ERROR,
-				       "CONN_HIF_ON_DBGCR01[0x%x]\n",
-				       u4Value);
-				return WLAN_STATUS_FAILURE;
-			} else if (u4Current < u4Time &&
-				   ((u4Current + (0xFFFFFFFF - u4Time)) >
-				    RX_RESPONSE_TIMEOUT)) {
-				kalDevRegRead(prAdapter->prGlueInfo,
-					      CONN_HIF_ON_DBGCR01,
-					      &u4Value);
-				DBGLOG(HAL, ERROR,
-				       "CONN_HIF_ON_DBGCR01[0x%x]\n",
-				       u4Value);
-				return WLAN_STATUS_FAILURE;
-			}
-
-			/* Response packet is not ready */
-			kalUdelay(50);
-
-			i++;
-		} else {
+		if (fgStatus) {
 			*pu4Length = u4PktLen;
 			break;
 		}
+
+		if (halIsTimeout(u4Time, RX_RESPONSE_TIMEOUT)) {
+			kalDevRegRead(prGlueInfo, CONN_HIF_ON_DBGCR01,
+				      &u4Value);
+			DBGLOG(HAL, ERROR, "CONN_HIF_ON_DBGCR01[0x%x]\n",
+			       u4Value);
+			return WLAN_STATUS_FAILURE;
+		}
+
+		/* Response packet is not ready */
+		kalUdelay(50);
 	} while (TRUE);
 
-	return u4Status;
+	return WLAN_STATUS_SUCCESS;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -280,7 +288,7 @@ static u_int8_t halDriverOwnCheckCR4(struct ADAPTER *prAdapter)
 	u_int8_t fgStatus = TRUE;
 	u_int8_t fgReady = FALSE;
 	u_int8_t fgDummyReq = FALSE;
-	u_int8_t fgTimeout;
+	bool fgTimeout;
 
 	ASSERT(prAdapter);
 
@@ -293,9 +301,8 @@ static u_int8_t halDriverOwnCheckCR4(struct ADAPTER *prAdapter)
 	u4CurrTick = kalGetTimeTick();
 	/* Wait CR4 ready */
 	while (1) {
-		fgTimeout = ((kalGetTimeTick() - u4CurrTick) >
-			     LP_OWN_BACK_TOTAL_DELAY_MS) ? TRUE : FALSE;
-		/* kalMsleep(2); */
+		fgTimeout = halIsTimeout(u4CurrTick,
+					 LP_OWN_BACK_TOTAL_DELAY_MS);
 		HAL_WIFI_FUNC_READY_CHECK(prAdapter, ready_bits, &fgReady);
 
 		if (fgReady) {
