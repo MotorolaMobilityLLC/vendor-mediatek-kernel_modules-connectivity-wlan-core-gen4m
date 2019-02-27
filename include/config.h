@@ -315,6 +315,8 @@
 #define CFG_CHIP_RESET_SUPPORT          0
 #endif
 
+#define HW_BSSID_NUM                4	/* HW BSSID number by chip */
+
 /*------------------------------------------------------------------------------
  * Flags for workaround
  *------------------------------------------------------------------------------
