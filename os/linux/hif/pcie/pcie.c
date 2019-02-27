@@ -215,7 +215,7 @@ static void pcieDumpRx(struct GL_HIF_INFO *prHifInfo,
  * \return void
  */
 /*----------------------------------------------------------------------------*/
-static uint8_t *CSRBaseAddress;
+static void *CSRBaseAddress;
 
 static irqreturn_t mtk_pci_interrupt(int irq, void *dev_instance)
 {
@@ -493,7 +493,7 @@ u_int8_t glBusInit(void *pvData)
 	}
 
 	/* map physical address to virtual address for accessing register */
-	CSRBaseAddress = (uint8_t *) ioremap(pci_resource_start(pdev, 0),
+	CSRBaseAddress = ioremap(pci_resource_start(pdev, 0),
 		pci_resource_len(pdev, 0));
 	DBGLOG(INIT, INFO, "ioremap for device %s, region 0x%lX @ 0x%lX\n",
 		pci_name(pdev), (unsigned long) pci_resource_len(pdev, 0),
