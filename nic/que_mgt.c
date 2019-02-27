@@ -883,7 +883,8 @@ struct QUE *qmDetermineStaTxQueue(IN struct ADAPTER *prAdapter,
 	struct STA_RECORD *prStaRec;
 	enum ENUM_WMM_ACI eAci = WMM_AC_BE_INDEX;
 	u_int8_t fgCheckACMAgain;
-	uint8_t ucTC, ucQueIdx = WMM_AC_BE_INDEX;
+	uint8_t ucTC = WMM_AC_BE_INDEX;
+	uint8_t ucQueIdx = TX_QUEUE_INDEX_AC1;
 	struct BSS_INFO *prBssInfo;
 	/* BEtoBK, na, VItoBE, VOtoVI */
 	uint8_t aucNextUP[WMM_AC_INDEX_NUM] = {1, 1, 0, 4};
