@@ -178,6 +178,12 @@ BUS_INFO mt7663_bus_info = {
 		UDMA_WLCFG_0_1US_TIMER_EN(1)),
 	.u4UdmaTxTimeout = UDMA_TX_TIMEOUT_LIMIT,
 #endif /* _HIF_USB */
+#if defined(_HIF_SDIO)
+	.halTxGetFreeResource = halTxGetFreeResource_v1,
+	.halTxReturnFreeResource = halTxReturnFreeResource_v1,
+	.halRestoreTxResource = halRestoreTxResource_v1,
+	.halUpdateTxDonePendingCount = halUpdateTxDonePendingCount_v1,
+#endif /* _HIF_SDIO */
 };
 
 struct firmware_download_operations mt7663_fw_dl_ops = {

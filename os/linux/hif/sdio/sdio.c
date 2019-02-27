@@ -585,7 +585,7 @@ VOID glSetHifInfo(P_GLUE_INFO_T prGlueInfo, ULONG ulCookie)
 	/* Reset statistic counter */
 	kalMemZero(&prHif->rStatCounter, sizeof(SDIO_STAT_COUNTER_T));
 
-	for (ucIdx = TC0_INDEX; ucIdx < TC_NUM; ucIdx++)
+	for (ucIdx = HIF_TXC_IDX_0; ucIdx < HIF_TXC_IDX_NUM; ucIdx++)
 		prHif->au4PendingTxDoneCount[ucIdx] = 0;
 
 	mutex_init(&prHif->rRxFreeBufQueMutex);
@@ -1394,7 +1394,7 @@ BOOL kalDevWriteData(IN P_GLUE_INFO_T prGlueInfo, IN P_MSDU_INFO_T prMsduInfo)
 	SDIO_ADD_TIME_INTERVAL(prHifInfo->rStatCounter.u4TxDataFreeTime);
 
 	/* Update pending Tx done count */
-	prHifInfo->au4PendingTxDoneCount[ucTC]++;
+	halUpdateTxDonePendingCount(prAdapter, TRUE, ucTC, u4Length);
 
 	prHifInfo->rStatCounter.u4DataPktWriteCnt++;
 
@@ -1474,6 +1474,7 @@ BOOL kalDevWriteCmd(IN P_GLUE_INFO_T prGlueInfo, IN P_CMD_INFO_T prCmdInfo, IN U
 		DBGLOG(HAL, ERROR, "Command TX buffer underflow!\n");
 		return FALSE;
 	}
+
 	if (prCmdInfo->u4TxdLen) {
 		memcpy((pucOutputBuf + u2OverallBufferLength), prCmdInfo->pucTxd, prCmdInfo->u4TxdLen);
 		u2OverallBufferLength += prCmdInfo->u4TxdLen;
@@ -1501,7 +1502,8 @@ BOOL kalDevWriteCmd(IN P_GLUE_INFO_T prGlueInfo, IN P_CMD_INFO_T prCmdInfo, IN U
 	}
 
 	/* Update pending Tx done count */
-	prGlueInfo->rHifInfo.au4PendingTxDoneCount[ucTC]++;
+	halUpdateTxDonePendingCount(prAdapter, TRUE, ucTC,
+				   (prCmdInfo->u4TxdLen + prCmdInfo->u4TxpLen));
 
 	prGlueInfo->rHifInfo.rStatCounter.u4CmdPktWriteCnt++;
 	return TRUE;
