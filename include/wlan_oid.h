@@ -2511,6 +2511,11 @@ struct PARAM_WIFI_LOG_LEVEL {
 	uint32_t u4Level;
 };
 
+struct PARAM_GET_WIFI_TYPE {
+	struct net_device *prNetDev;
+	uint8_t arWifiTypeName[8];
+};
+
 enum ENUM_WIFI_LOG_LEVEL_VERSION_T {
 	ENUM_WIFI_LOG_LEVEL_VERSION_V1 = 1,
 	ENUM_WIFI_LOG_LEVEL_VERSION_NUM
@@ -4025,5 +4030,10 @@ uint32_t wlanoidTxPowerControl(IN struct ADAPTER *prAdapter,
 			       IN void *pvSetBuffer,
 			       IN uint32_t u4SetBufferLen,
 			       OUT uint32_t *pu4SetInfoLen);
+
+uint32_t wlanoidGetWifiType(IN struct ADAPTER *prAdapter,
+			    IN void *pvSetBuffer,
+			    IN uint32_t u4SetBufferLen,
+			    OUT uint32_t *pu4SetInfoLen);
 
 #endif /* _WLAN_OID_H */

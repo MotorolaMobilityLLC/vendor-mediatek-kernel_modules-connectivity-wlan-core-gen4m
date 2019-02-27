@@ -219,6 +219,7 @@
 #define CMD_FW_EVENT		"FW-EVENT "
 #define CMD_SET_FCC_CERT        "SET_FCC_CHANNEL"
 #define CMD_SET_3STEPS_BACKOFF	"SET_3STEPS_BACKOFF"
+#define CMD_GET_WIFI_TYPE	"GET_WIFI_TYPE"
 #define PRIV_CMD_SIZE 512
 #define CMD_SET_FIXED_RATE      "FixedRate"
 #define CMD_GET_VERSION         "VER"
@@ -2177,6 +2178,40 @@ priv_set_struct(IN struct net_device *prNetDev,
 				   prTestStruct->u4FuncData);
 			priv_driver_cmds(prNetDev, pCommand, i4TotalLen);
 			kalMemFree(pCommand, VIR_MEM_TYPE, i4TotalLen);
+		}
+		break;
+
+	case PRIV_CMD_GET_WIFI_TYPE:
+		{
+			int32_t i4ResultLen;
+
+			u4CmdLen = prIwReqData->data.length;
+			if (u4CmdLen > CMD_OID_BUF_LENGTH) {
+				DBGLOG(REQ, ERROR,
+				       "u4CmdLen:%u > CMD_OID_BUF_LENGTH:%d\n",
+				       u4CmdLen, CMD_OID_BUF_LENGTH);
+				return -EINVAL;
+			}
+
+			if (copy_from_user(&aucOidBuf[0],
+					   prIwReqData->data.pointer,
+					   u4CmdLen)) {
+				DBGLOG(REQ, ERROR, "copy_from_user fail\n");
+				return -EFAULT;
+			}
+
+			i4ResultLen = priv_driver_cmds(prNetDev, aucOidBuf,
+						       u4CmdLen);
+			if (i4ResultLen > 1) {
+				if (copy_to_user(prIwReqData->data.pointer,
+						 &aucOidBuf[0], i4ResultLen)) {
+					DBGLOG(REQ, ERROR,
+					       "copy_to_user fail\n");
+					return -EFAULT;
+				}
+			}
+
+			prIwReqData->data.length = i4ResultLen;
 		}
 		break;
 
@@ -12586,6 +12621,47 @@ static int priv_driver_set_3steps_backoff(IN struct net_device *prNetDev,
 	return i4BytesWritten;
 }
 
+static int priv_driver_get_wifi_type(IN struct net_device *prNetDev,
+				     IN char *pcCommand, IN int i4TotalLen)
+{
+	struct PARAM_GET_WIFI_TYPE rParamGetWifiType;
+	struct GLUE_INFO *prGlueInfo = NULL;
+	uint32_t rStatus;
+	uint32_t u4BytesWritten = 0;
+
+	ASSERT(prNetDev);
+	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE) {
+		DBGLOG(REQ, ERROR, "GLUE_CHK_PR2 fail\n");
+		return -1;
+	}
+
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+
+	rParamGetWifiType.prNetDev = prNetDev;
+
+	rStatus = kalIoctl(prGlueInfo,
+			   wlanoidGetWifiType,
+			   (void *)&rParamGetWifiType,
+			   sizeof(void *),
+			   FALSE,
+			   FALSE,
+			   FALSE,
+			   &u4BytesWritten);
+	if (rStatus == WLAN_STATUS_SUCCESS) {
+		if (u4BytesWritten > 0) {
+			if (u4BytesWritten > i4TotalLen)
+				u4BytesWritten = i4TotalLen;
+			kalMemCopy(pcCommand, rParamGetWifiType.arWifiTypeName,
+				   u4BytesWritten);
+		}
+	} else {
+		DBGLOG(REQ, ERROR, "rStatus=%x\n", rStatus);
+		u4BytesWritten = 0;
+	}
+
+	return (int)u4BytesWritten;
+}
+
 #if CFG_ENABLE_WIFI_DIRECT
 static int priv_driver_set_p2p_ps(IN struct net_device *prNetDev,
 				  IN char *pcCommand, IN int i4TotalLen)
@@ -12877,6 +12953,7 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers[] = {
 	{CMD_P2P_SET_NOA, priv_driver_set_p2p_noa},
 #endif
 	{CMD_SET_3STEPS_BACKOFF, priv_driver_set_3steps_backoff},
+	{CMD_GET_WIFI_TYPE, priv_driver_get_wifi_type},
 };
 
 int32_t priv_driver_cmds(IN struct net_device *prNetDev, IN int8_t *pcCommand,
