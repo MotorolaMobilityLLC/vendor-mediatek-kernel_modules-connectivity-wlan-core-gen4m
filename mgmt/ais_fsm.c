@@ -4218,11 +4218,6 @@ void aisBssBeaconTimeout(IN struct ADAPTER *prAdapter)
 	prConnSettings = &(prAdapter->rWifiVar.rConnSettings);
 
 	glNotifyDrvStatus(BEACON_TIMEOUT, (void *)prAisBssInfo->aucBSSID);
-	/* 4 <0> Report upper layer that signal is bad, then do retry */
-	mtk_cfg80211_vendor_event_rssi_beyond_range(
-			priv_to_wiphy(prAdapter->prGlueInfo),
-			prAdapter->prGlueInfo->prDevHandler->ieee80211_ptr,
-			(signed int)-127);
 
 	/* 4 <1> Diagnose Connection for Beacon Timeout Event */
 	if (prAisBssInfo->eConnectionState == PARAM_MEDIA_STATE_CONNECTED) {

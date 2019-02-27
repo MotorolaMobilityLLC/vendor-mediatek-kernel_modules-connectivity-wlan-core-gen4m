@@ -4594,6 +4594,17 @@ void nicEventBeaconTimeout(IN struct ADAPTER *prAdapter,
 		DBGLOG(NIC, INFO, "Reason code: %d\n",
 		       prEventBssBeaconTimeout->ucReasonCode);
 
+		/* WiFi Calling Enhancement */
+		/* When FW sends beaconTimeout to driver, driver always try to
+		 * reconnect and recover the network availability. Therefore,
+		 * driver sends a bad RSSI to imply WFC that it should handover
+		 * to VoLTE and decrease calling voiceless time.
+		 */
+		mtk_cfg80211_vendor_event_rssi_beyond_range(
+			priv_to_wiphy(prAdapter->prGlueInfo),
+			((prAdapter->prGlueInfo)->prDevHandler)->ieee80211_ptr,
+			(int32_t)-127); /* the lowest limit of FWK */
+
 		prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
 			prEventBssBeaconTimeout->ucBssIndex);
 
