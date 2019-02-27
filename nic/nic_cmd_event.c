@@ -758,13 +758,13 @@ VOID nicCmdEventQueryBugReport(IN P_ADAPTER_T prAdapter, IN P_CMD_INFO_T prCmdIn
 
 	prEventStatistics = (struct _EVENT_BUG_REPORT_T *) pucEventBuf;
 
-	if (prCmdInfo->fgIsOid && (prEventStatistics->u4BugReportVersion == BUG_REPORT_VERSION)) {
+	if (prCmdInfo->fgIsOid) {
 		prGlueInfo = prAdapter->prGlueInfo;
-
 		u4QueryInfoLen = sizeof(struct _EVENT_BUG_REPORT_T);
-		prStatistics = (struct _EVENT_BUG_REPORT_T *) prCmdInfo->pvInformationBuffer;
-
-		kalMemCopy(prStatistics, prEventStatistics, u4QueryInfoLen);
+		if (prEventStatistics->u4BugReportVersion == BUG_REPORT_VERSION) {
+			prStatistics = (struct _EVENT_BUG_REPORT_T *) prCmdInfo->pvInformationBuffer;
+			kalMemCopy(prStatistics, prEventStatistics, u4QueryInfoLen);
+		}
 
 		kalOidComplete(prGlueInfo, prCmdInfo->fgSetQuery, u4QueryInfoLen, WLAN_STATUS_SUCCESS);
 	}
