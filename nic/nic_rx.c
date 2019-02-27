@@ -1596,6 +1596,94 @@ void nicRxProcessMonitorPacket(IN struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * @brief Process & Parsing RXV for traffic indicator
+ *
+ * @param prAdapter pointer to the Adapter handler
+ * @param prSWRfb the RFB to receive rx data
+ *
+ * @return (none)
+ *
+ */
+/*----------------------------------------------------------------------------*/
+#if CFG_SUPPORT_PERF_IND
+void nicRxProcessRXV(IN struct ADAPTER *prAdapter,
+			       IN struct SW_RFB *prSwRfb,
+			       IN uint8_t ucBssIndex)
+{
+
+	struct HW_MAC_RX_STS_GROUP_3 *prRxStatusGroup3;
+	uint8_t ucRxRate;
+	uint8_t ucRxMode;
+	uint8_t ucMcs;
+	uint8_t ucFrMode;
+	uint8_t ucShortGI;
+	uint32_t u4PhyRate;
+	uint8_t ucRCPI0 = 0, ucRCPI1 = 0;
+	/* Rate
+	 * Bit Number 2
+	 * Unit 500 Kbps
+	 */
+	uint8_t ucRate = 0;
+
+	ASSERT(prAdapter);
+	ASSERT(prSwRfb);
+
+	/* can't parse radiotap info if no rx vector */
+	if (((prSwRfb->ucGroupVLD & BIT(RX_GROUP_VLD_2)) == 0)
+		|| ((prSwRfb->ucGroupVLD & BIT(RX_GROUP_VLD_3)) == 0)) {
+		return;
+	}
+
+	prRxStatusGroup3 = prSwRfb->prRxStatusGroup3;
+
+	ucRxMode = (((prRxStatusGroup3)->u4RxVector[0] &
+		RX_VT_RX_MODE_MASK) >> RX_VT_RX_MODE_OFFSET);
+
+	/* RATE */
+	if ((ucRxMode == RX_VT_LEGACY_CCK)
+		|| (ucRxMode == RX_VT_LEGACY_OFDM)) {
+		/* Bit[2:0] for Legacy CCK, Bit[3:0] for Legacy OFDM */
+		ucRxRate = ((prRxStatusGroup3)->u4RxVector[0] & BITS(0, 3));
+		ucRate = nicGetHwRateByPhyRate(ucRxRate);
+	} else {
+		ucMcs = ((prRxStatusGroup3)->u4RxVector[0] &
+			RX_VT_RX_RATE_AC_MASK);
+		/* VHTA1 B0-B1 */
+		ucFrMode = (((prRxStatusGroup3)->u4RxVector[0] &
+			RX_VT_FR_MODE_MASK) >> RX_VT_FR_MODE_OFFSET);
+		ucShortGI = ((prRxStatusGroup3)->u4RxVector[0] &
+			RX_VT_SHORT_GI) ? 1 : 0;	/* VHTA2 B0 */
+
+		/* ucRate(500kbs) = u4PhyRate(100kbps) / 5, max ucRate = 0xFF */
+		u4PhyRate = nicGetPhyRateByMcsRate(ucMcs, ucFrMode,
+					ucShortGI);
+		if (u4PhyRate > 1275)
+			ucRate = 0xFF;
+		else
+			ucRate = u4PhyRate / 5;
+	}
+
+	/* RCPI */
+	ucRCPI0 = ((prRxStatusGroup3)->u4RxVector[3] &
+		RX_VT_RCPI0_MASK) >> RX_VT_RCPI0_OFFSET;
+	ucRCPI1 = ((prRxStatusGroup3)->u4RxVector[3] &
+		RX_VT_RCPI1_MASK) >> RX_VT_RCPI1_OFFSET;
+
+	/* Record peak rate to Traffic Indicator*/
+	if ((ucRate != 0xFF) &&
+		(ucRate > prAdapter->prGlueInfo
+		->PerfIndCache.u2CurRxRate[ucBssIndex])) {
+		prAdapter->prGlueInfo->PerfIndCache.
+			u2CurRxRate[ucBssIndex] = (uint16_t)ucRate;
+		prAdapter->prGlueInfo->PerfIndCache.
+			ucCurRxRCPI0[ucBssIndex] = ucRCPI0;
+		prAdapter->prGlueInfo->PerfIndCache.
+			ucCurRxRCPI1[ucBssIndex] = ucRCPI1;
+	}
+}
+#endif
+/*----------------------------------------------------------------------------*/
+/*!
  * @brief Process HIF data packet
  *
  * @param prAdapter pointer to the Adapter handler
@@ -1754,6 +1842,13 @@ void nicRxProcessDataPacket(IN struct ADAPTER *prAdapter,
 							4);
 				}
 #endif
+#if CFG_SUPPORT_PERF_IND
+				nicRxProcessRXV(
+					prAdapter,
+					prRetSwRfb,
+					ucBssIndex);
+#endif
+
 				/* save next first */
 				prNextSwRfb = (struct SW_RFB *)
 					QUEUE_GET_NEXT_ENTRY(

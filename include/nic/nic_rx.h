@@ -1128,6 +1128,11 @@ u_int8_t nicRxIsDuplicateFrame(IN OUT struct SW_RFB *prSwRfb);
 void nicRxProcessMonitorPacket(IN struct ADAPTER *prAdapter,
 	IN OUT struct SW_RFB *prSwRfb);
 #endif
+#if CFG_SUPPORT_PERF_IND
+void nicRxProcessRXV(IN struct ADAPTER *prAdapter,
+	IN struct SW_RFB *prSwRfb,
+	IN uint8_t ucBssIndex);
+#endif
 
 void nicRxProcessDataPacket(IN struct ADAPTER *prAdapter,
 	IN OUT struct SW_RFB *prSwRfb);

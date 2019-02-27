@@ -530,6 +530,7 @@ enum ENUM_CMD_ID {
 	CMD_ID_TDLS_PS = 0x75,		/* 0x75 (Set) */
 	CMD_ID_GET_CNM = 0x79,
 	CMD_ID_FRM_IND_FROM_HOST = 0x7D,
+	CMD_ID_PERF_IND = 0x7E,     /* 0x7E(Set) */
 	CMD_ID_GET_NIC_CAPABILITY = 0x80,	/* 0x80 (Query) */
 	CMD_ID_GET_LINK_QUALITY,	/* 0x81 (Query) */
 	CMD_ID_GET_STATISTICS,	/* 0x82 (Query) */
@@ -2014,6 +2015,22 @@ struct CMD_RDD_ON_OFF_CTRL {
 	uint8_t aucReserve[4];
 };
 #endif
+
+struct CMD_PERF_IND {
+	/* DWORD_0 - Common Part */
+	uint8_t  ucCmdVer;
+	uint8_t  aucPadding0[1];
+	uint16_t u2CmdLen;       /* cmd size including common part and body. */
+	/* DWORD_1 ~ x - Command Body */
+	uint32_t u4VaildPeriod;   /* in ms */
+	/* Current State */
+	uint32_t ulCurTxBytes[4];   /* in Bps */
+	uint32_t ulCurRxBytes[4];   /* in Bps */
+	uint16_t u2CurRxRate[4];     /* Unit 500 Kbps */
+	uint8_t ucCurRxRCPI0[4];
+	uint8_t ucCurRxRCPI1[4];
+	uint32_t au4Reserve[64];
+};
 
 /* EVENT_BT_OVER_WIFI */
 struct EVENT_BT_OVER_WIFI {
