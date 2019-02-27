@@ -130,8 +130,8 @@
 
 /* --------------- WPS Data Element Definitions --------------- */
 /* P2P 4.2.2 - General WSC Attribute */
-#define WSC_ATTRI_HDR_LEN                                   4
 /* ID(2 octet) + Length(2 octets) */
+#define WSC_ATTRI_HDR_LEN                                   4
 #define WSC_ATTRI_MAX_LEN_VERSION                           1
 #define WSC_ATTRI_MAX_LEN_DEVICE_PASSWORD_ID                2
 #define WSC_ATTRI_LEN_CONFIG_METHOD                         2
@@ -291,8 +291,8 @@ struct P2P_PUBLIC_ACTION_FRAME {
 	uint8_t ucAction;	/* Action Value, 0x09 */
 	uint8_t aucOui[3];	/* 0x50, 0x6F, 0x9A */
 	uint8_t ucOuiType;	/* 0x09 */
-	uint8_t ucOuiSubtype;
 	/* GO Nego Req/Rsp/Cfm, P2P Invittion Req/Rsp, */
+	uint8_t ucOuiSubtype;
 	/* Device Discovery Req/Rsp */
 	uint8_t ucDialogToken;	/* Dialog Token. */
 	uint8_t aucInfoElem[1];	/* P2P IE, WSC IE. */
@@ -324,8 +324,8 @@ struct GAS_PUBLIC_ACTION_INITIAL_REQUEST_FRAME {
 	uint8_t aucDestAddr[MAC_ADDR_LEN];	/* DA */
 	uint8_t aucSrcAddr[MAC_ADDR_LEN];	/* SA */
 	uint8_t aucBSSID[MAC_ADDR_LEN];	/* BSSID */
-	uint16_t u2SeqCtrl;	/* Sequence Control */
 	/* P2P Public Action Frame Body */
+	uint16_t u2SeqCtrl;	/* Sequence Control */
 	uint8_t ucCategory;	/* Category, 0x04 */
 	uint8_t ucAction;	/* Action Value, 0x09 */
 	uint8_t ucDialogToken;	/* Dialog Token. */

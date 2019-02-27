@@ -233,9 +233,11 @@ struct P2P_STATION_INFO {
 };
 
 /* 3  --------------- WFA P2P Attributes Handler prototype --------------- */
-typedef uint32_t(*PFN_APPEND_ATTRI_FUNC) (struct ADAPTER *, uint8_t, u_int8_t, uint16_t *, uint8_t *, uint16_t);
+typedef uint32_t(*PFN_APPEND_ATTRI_FUNC) (struct ADAPTER *,
+		uint8_t, u_int8_t, uint16_t *, uint8_t *, uint16_t);
 
-typedef uint32_t(*PFN_CALCULATE_VAR_ATTRI_LEN_FUNC) (struct ADAPTER *, struct STA_RECORD *);
+typedef uint32_t(*PFN_CALCULATE_VAR_ATTRI_LEN_FUNC) (struct ADAPTER *,
+		struct STA_RECORD *);
 
 struct APPEND_VAR_ATTRI_ENTRY {
 	uint16_t u2EstimatedFixedAttriLen;	/* For fixed length */
