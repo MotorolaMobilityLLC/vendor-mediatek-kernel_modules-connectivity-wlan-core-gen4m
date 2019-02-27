@@ -2944,11 +2944,17 @@ static int32_t wlanProbe(void *pvData, void *pvDriverData)
 			wlanAdapterStop(prAdapter);
 			/* fallthrough */
 		case ADAPTER_START_FAIL:
-			glBusFreeIrq(prWdev->netdev, *((struct GLUE_INFO **) netdev_priv(prWdev->netdev)));
+			glBusFreeIrq(prWdev->netdev, *((struct GLUE_INFO **)
+					netdev_priv(prWdev->netdev)));
 			/* fallthrough */
 		case BUS_SET_IRQ_FAIL:
 			wlanWakeLockUninit(prGlueInfo);
 			wlanNetDestroy(prWdev);
+			/* prGlueInfo->prAdapter is
+			 *released in wlanNetDestroy
+			 * Set NULL value for local prAdapter as well
+			 */
+			prAdapter = NULL;
 			break;
 		case NET_CREATE_FAIL:
 			break;
