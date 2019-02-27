@@ -146,6 +146,7 @@
 #define CFG_MAX_NUM_OF_CHNL_INFO				50
 #define CFG_SUPPORT_CHNL_CONFLICT_REVISE	0
 
+#define CFG_FORCE_USE_20BW			1
 
 /*------------------------------------------------------------------------------
  * Driver config
