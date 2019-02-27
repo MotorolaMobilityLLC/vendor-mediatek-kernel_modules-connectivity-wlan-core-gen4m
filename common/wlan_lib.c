@@ -8328,23 +8328,24 @@ int32_t wlanHexToArray(int8_t *hexString, int8_t *hexArray, uint8_t arrayLen)
 
 int32_t wlanHexToArrayR(int8_t *hexString, int8_t *hexArray, uint8_t arrayLen)
 {
-		int8_t converted = 0;
-		int len = min((unsigned long)arrayLen, strlen(hexString)/2);
-		int8_t result;
+	int8_t converted = 0;
+	int len = strlen(hexString)/2;
+	int8_t result;
 
-		if (*(hexString+1) == '\0') {
-			result = wlanHexToNum(*(hexString));
-			if (result != -1) {
-				hexArray[converted] = result;
-				converted++;
-			}
-		} else {
-			for (converted = 0; converted < len; converted++) {
-				result = wlanHexToByte(hexString + converted*2);
-				hexArray[converted] = result;
-			}
+	len = arrayLen < len ? arrayLen : len;
+	if (*(hexString+1) == '\0') {
+		result = wlanHexToNum(*(hexString));
+		if (result != -1) {
+			hexArray[converted] = result;
+			converted++;
 		}
-		return converted;
+	} else {
+		for (converted = 0; converted < len; converted++) {
+			result = wlanHexToByte(hexString + converted*2);
+			hexArray[converted] = result;
+		}
+	}
+	return converted;
 }
 
 
