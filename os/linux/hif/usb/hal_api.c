@@ -1527,3 +1527,7 @@ VOID halTxResourceResetHwTQCounter(IN P_ADAPTER_T prAdapter)
 {
 }
 
+UINT_32 halGetHifTxPageSize(IN P_ADAPTER_T prAdapter)
+{
+	return HIF_TX_PAGE_SIZE;
+}
