@@ -242,7 +242,7 @@ uint32_t wlanDownloadEMISection(IN struct ADAPTER *prAdapter, IN uint32_t u4Dest
 {
 #if CFG_MTK_ANDROID_WMT
 	uint8_t __iomem *pucEmiBaseAddr = NULL;
-	uint32_t u4Offset = u4DestAddr & 0xFFFFF;
+	uint32_t u4Offset = u4DestAddr & WIFI_EMI_ADDR_MASK;
 
 	DBGLOG(INIT, INFO, "Start EMI Download, EmiPhyBase:0x%x offset:0x%x\n",
 	       gConEmiPhyBase, u4Offset);

@@ -83,6 +83,7 @@
 #endif
 
 #if CFG_MTK_ANDROID_WMT
+#define WIFI_EMI_ADDR_MASK     0xFFFFFF
 extern phys_addr_t gConEmiPhyBase;
 extern unsigned long long gConEmiSize;
 #endif
