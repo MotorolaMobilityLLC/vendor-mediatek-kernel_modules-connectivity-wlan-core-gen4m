@@ -6156,7 +6156,7 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 					prAdapter, "Tc4Page",
 					NIC_TX_PAGE_COUNT_TC4);
 	prWifiVar->ucTxMsduQueue = (uint32_t) wlanCfgGetUint32(
-		prAdapter, "NicTxMsduQueue", 0);
+		prAdapter, "NicTxMsduQueue", 1);
 
 #if QM_ADAPTIVE_TC_RESOURCE_CTRL
 	prQM->au4MinReservedTcResource[TC0_INDEX] = (uint32_t) wlanCfgGetUint32(
