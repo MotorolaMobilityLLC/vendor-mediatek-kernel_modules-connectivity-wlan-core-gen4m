@@ -2426,7 +2426,7 @@ u_int8_t nicTxFillMsduInfo(IN struct ADAPTER *prAdapter, IN struct MSDU_INFO *pr
 			prMsduInfo->pfTxDoneHandler = wlanPktTxDone;
 			prMsduInfo->ucTxSeqNum = GLUE_GET_PKT_SEQ_NO(prPacket);
 		}
-
+#if CFG_CHANGE_CRITICAL_PACKET_PRIORITY
 		if (GLUE_TEST_PKT_FLAG(prPacket, ENUM_PKT_DHCP) ||
 			GLUE_TEST_PKT_FLAG(prPacket, ENUM_PKT_ARP) ||
 			GLUE_TEST_PKT_FLAG(prPacket, ENUM_PKT_1X)) {
@@ -2436,6 +2436,7 @@ u_int8_t nicTxFillMsduInfo(IN struct ADAPTER *prAdapter, IN struct MSDU_INFO *pr
 			/* Set higher priority */
 			prMsduInfo->ucUserPriority = NIC_TX_CRITICAL_DATA_TID;
 		}
+#endif
 	}
 
 	/* Add dummy Tx done */
