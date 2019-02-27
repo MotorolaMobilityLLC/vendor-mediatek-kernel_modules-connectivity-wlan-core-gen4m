@@ -288,10 +288,6 @@ u_int8_t glResetTrigger(struct ADAPTER *prAdapter, uint32_t u4RstFlag, const uin
 	uint16_t u2FwPeerVersion;
 
 	ASSERT(prAdapter);
-
-	prAdapter->fgEnHifDbgInfo = true;
-	halPrintHifDbgInfo(prAdapter);
-
 	u2FwOwnVersion = prAdapter->rVerInfo.u2FwOwnVersion;
 	u2FwPeerVersion = prAdapter->rVerInfo.u2FwPeerVersion;
 	if (kalIsResetting() || fgResetTriggered) {
@@ -322,6 +318,9 @@ u_int8_t glResetTrigger(struct ADAPTER *prAdapter, uint32_t u4RstFlag, const uin
 		       (uint16_t)(u2FwOwnVersion & BITS(0, 7)),
 		       (uint16_t)(u2FwPeerVersion >> 8),
 		       (uint16_t)(u2FwPeerVersion & BITS(0, 7)));
+
+		prAdapter->fgEnHifDbgInfo = true;
+		halPrintHifDbgInfo(prAdapter);
 
 		wifi_rst.rst_trigger_flag = u4RstFlag;
 		schedule_work(&(wifi_rst.rst_trigger_work));
