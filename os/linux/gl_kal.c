@@ -741,47 +741,6 @@ PVOID kalPacketAlloc(IN P_GLUE_INFO_T prGlueInfo, IN UINT_32 u4Size, OUT PUINT_8
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief Only handles driver own creating packet (coalescing buffer).
-*
-* \param prGlueInfo   Pointer of GLUE Data Structure
-* \param u4Size       Pointer of Packet Handle
-* \param ppucData     Status Code for OS upper layer
-*
-* \return NULL: Failed to allocate skb, Not NULL get skb
-*/
-/*----------------------------------------------------------------------------*/
-PVOID kalPacketAllocWithHeadroom(IN P_GLUE_INFO_T prGlueInfo, IN UINT_32 u4Size, OUT PUINT_8 *ppucData)
-{
-	struct mt66xx_chip_info *prChipInfo;
-	struct sk_buff *prSkb = dev_alloc_skb(u4Size);
-	UINT_32 u4TxHeadRoomSize;
-
-	prChipInfo = prGlueInfo->prAdapter->chip_info;
-	u4TxHeadRoomSize = NIC_TX_DESC_AND_PADDING_LENGTH + prChipInfo->txd_append_size;
-
-	if (prSkb) {
-		/* Daniel 20151117, add for skb headroom setting */
-		prSkb = skb_realloc_headroom(prSkb, u4TxHeadRoomSize);
-		*ppucData = (PUINT_8) (prSkb->data);
-
-		/* DBGLOG(TDLS, INFO, "kalPacketAllocWithHeadroom, skb head[0x%x] data[0x%x] tail[0x%x] end[0x%x]\n",
-		*	prSkb->head, prSkb->data, prSkb->tail, prSkb->end);
-		*/
-
-		kalResetPacket(prGlueInfo, (P_NATIVE_PACKET) prSkb);
-#if DBG
-		{
-			PUINT_32 pu4Head = (PUINT_32) &prSkb->cb[0];
-			*pu4Head = (UINT_32) prSkb->head;
-			DBGLOG(RX, TRACE, "prSkb->head = %#lx, prSkb->cb = %#lx\n", (UINT_32) prSkb->head, *pu4Head);
-		}
-#endif
-	}
-	return (PVOID) prSkb;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
 * \brief Process the received packet for indicating to OS.
 *
 * \param[in] prGlueInfo     Pointer to the Adapter structure.
