@@ -1518,19 +1518,20 @@ priv_get_int(IN struct net_device *prNetDev,
 
 		DBGLOG(RLM, INFO, "Domain: Query Channel List.\n");
 		aucChannelList = (struct RF_CHANNEL_INFO *)
-			kalMemAlloc(sizeof(struct RF_CHANNEL_INFO)*50,
-				VIR_MEM_TYPE);
+			kalMemAlloc(sizeof(struct RF_CHANNEL_INFO)
+				*ucMaxChannelNum, VIR_MEM_TYPE);
 		if (!aucChannelList) {
 			DBGLOG(REQ, ERROR,
 				"Can not alloc memory for rf channel info\n");
 			return -ENOMEM;
 		}
-		kalMemZero(aucChannelList, sizeof(struct RF_CHANNEL_INFO));
+		kalMemZero(aucChannelList,
+			sizeof(struct RF_CHANNEL_INFO)*ucMaxChannelNum);
 
 		kalGetChannelList(prGlueInfo, BAND_NULL, ucMaxChannelNum,
 				  &NumOfChannel, aucChannelList);
-		if (NumOfChannel > 50)
-			NumOfChannel = 50;
+		if (NumOfChannel > ucMaxChannelNum)
+			NumOfChannel = ucMaxChannelNum;
 
 		if (kalIsAPmode(prGlueInfo)) {
 			for (i = 0; i < NumOfChannel; i++) {
@@ -1549,7 +1550,7 @@ priv_get_int(IN struct net_device *prNetDev,
 				ch[j] = (int32_t)aucChannelList[j].ucChannelNum;
 		}
 		kalMemFree(aucChannelList, VIR_MEM_TYPE,
-			sizeof(struct RF_CHANNEL_INFO)*50);
+			sizeof(struct RF_CHANNEL_INFO)*ucMaxChannelNum);
 
 		prIwReqData->data.length = j;
 		if (copy_to_user(prIwReqData->data.pointer, ch,
@@ -1757,15 +1758,29 @@ priv_get_ints(IN struct net_device *prNetDev,
 		uint16_t i;
 		uint8_t NumOfChannel = 50;
 		uint8_t ucMaxChannelNum = 50;
-		struct RF_CHANNEL_INFO aucChannelList[50];
+		struct RF_CHANNEL_INFO *aucChannelList;
+
+		aucChannelList = (struct RF_CHANNEL_INFO *)
+			kalMemAlloc(sizeof(struct RF_CHANNEL_INFO)
+				*ucMaxChannelNum, VIR_MEM_TYPE);
+		if (!aucChannelList) {
+			DBGLOG(REQ, ERROR,
+				"Can not alloc memory for rf channel info\n");
+			return -ENOMEM;
+		}
+		kalMemZero(aucChannelList,
+			sizeof(struct RF_CHANNEL_INFO)*ucMaxChannelNum);
 
 		kalGetChannelList(prGlueInfo, BAND_NULL, ucMaxChannelNum,
 				  &NumOfChannel, aucChannelList);
-		if (NumOfChannel > 50)
-			NumOfChannel = 50;
+		if (NumOfChannel > ucMaxChannelNum)
+			NumOfChannel = ucMaxChannelNum;
 
 		for (i = 0; i < NumOfChannel; i++)
 			ch[i] = (int32_t) aucChannelList[i].ucChannelNum;
+
+		kalMemFree(aucChannelList, VIR_MEM_TYPE,
+			sizeof(struct RF_CHANNEL_INFO)*ucMaxChannelNum);
 
 		prIwReqData->data.length = NumOfChannel;
 		if (copy_to_user(prIwReqData->data.pointer, ch,
