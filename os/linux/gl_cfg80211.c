@@ -988,9 +988,6 @@ int mtk_cfg80211_scan(struct wiphy *wiphy,
 		DBGLOG(REQ, INFO,
 		       "Channel list %u exceed maximum support.\n",
 		       request->n_channels);
-		kalMemFree(prScanRequest,
-			   sizeof(struct PARAM_SCAN_REQUEST_ADV), VIR_MEM_TYPE);
-		return -EINVAL;
 	} else {
 		j = 0;
 		for (i = 0; i < request->n_channels; i++) {
