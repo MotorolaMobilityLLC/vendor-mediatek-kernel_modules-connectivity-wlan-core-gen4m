@@ -1217,7 +1217,6 @@ BOOLEAN kalIsHalted(VOID);
 
 VOID kalFreeTxMsduWorker(struct work_struct *work);
 VOID kalFreeTxMsdu(P_ADAPTER_T prAdapter, P_MSDU_INFO_T prMsduInfo);
-VOID nicConfigProcSetCamCfgWrite(BOOLEAN enabled);
 
 INT_32 kalPerMonInit(IN P_GLUE_INFO_T prGlueInfo);
 INT_32 kalPerMonDisable(IN P_GLUE_INFO_T prGlueInfo);
