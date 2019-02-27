@@ -111,7 +111,6 @@
 #define HIF_TX_MSDU_TOKEN_NUM				8192
 
 #define HIF_TX_PAYLOAD_LENGTH				72
-#define HIF_TX_DESC_PAYLOAD_LENGTH			(NIC_TX_HEAD_ROOM + HIF_TX_PAYLOAD_LENGTH)
 
 /*******************************************************************************
 *                             D A T A   T Y P E S
