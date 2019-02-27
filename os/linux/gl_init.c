@@ -4040,7 +4040,9 @@ static int32_t wlanProbe(void *pvData, void *pvDriverData)
 
 	if (i4Status == 0) {
 		wlanOnWhenProbeSuccess(prGlueInfo, prAdapter, FALSE);
-		DBGLOG(INIT, INFO, "wlanProbe: probe success\n");
+		DBGLOG(INIT, INFO,
+		       "wlanProbe: probe success, feature set: 0x%x\n",
+		       wlanGetSupportedFeatureSet(prGlueInfo));
 	} else {
 		DBGLOG(INIT, ERROR, "wlanProbe: probe failed, reason:%d\n",
 		       eFailReason);

@@ -10024,3 +10024,15 @@ void wlanGetReportMisc(IN struct ADAPTER *prAdapter)
 		DBGLOG(REQ, ERROR, "Failed with status %d\n", rStatus);
 }
 #endif
+
+uint32_t wlanGetSupportedFeatureSet(IN struct GLUE_INFO *prGlueInfo)
+{
+	uint32_t u4FeatureSet = WIFI_HAL_FEATURE_SET;
+	struct REG_INFO *prRegInfo;
+
+	prRegInfo = prGlueInfo->prRegInfo;
+	if ((prRegInfo != NULL) && (prRegInfo->ucSupport5GBand))
+		u4FeatureSet |= WIFI_FEATURE_INFRA_5G;
+
+	return u4FeatureSet;
+}

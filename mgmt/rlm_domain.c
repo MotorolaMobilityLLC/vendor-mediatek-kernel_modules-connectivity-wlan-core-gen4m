@@ -3147,8 +3147,12 @@ void txPwrCtrlShowList(struct ADAPTER *prAdapter, uint8_t filterType,
 	uint8_t ucAppliedWay, ucOperation;
 	int i, j, count = 0;
 
-	DBGLOG(RLM, INFO, "Tx Power Ctrl List=[%s], Size=[%d]",
-	       message, txPwrCtrlListSize(prAdapter, filterType));
+	if (filterType == 1)
+		DBGLOG(RLM, INFO, "Tx Power Ctrl List=[%s], Size=[%d]",
+		       message, txPwrCtrlListSize(prAdapter, filterType));
+	else
+		DBGLOG(RLM, TRACE, "Tx Power Ctrl List=[%s], Size=[%d]",
+		       message, txPwrCtrlListSize(prAdapter, filterType));
 
 	for (i = 0; i < ARRAY_SIZE(aryprlist); i++) {
 		list_for_each_safe(prCur, prNext, aryprlist[i]) {

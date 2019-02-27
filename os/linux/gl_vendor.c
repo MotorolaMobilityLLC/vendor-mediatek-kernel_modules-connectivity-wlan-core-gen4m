@@ -82,75 +82,6 @@
  *                              C O N S T A N T S
  *******************************************************************************
  */
-/* These values must sync from Wifi HAL
- * /hardware/libhardware_legacy/include/hardware_legacy/wifi_hal.h
- */
-/* Basic infrastructure mode */
-#define WIFI_FEATURE_INFRA              (0x0001)
-/* Support for 5 GHz Band */
-#define WIFI_FEATURE_INFRA_5G           (0x0002)
-/* Support for GAS/ANQP */
-#define WIFI_FEATURE_HOTSPOT            (0x0004)
-/* Wifi-Direct */
-#define WIFI_FEATURE_P2P                (0x0008)
-/* Soft AP */
-#define WIFI_FEATURE_SOFT_AP            (0x0010)
-/* Google-Scan APIs */
-#define WIFI_FEATURE_GSCAN              (0x0020)
-/* Neighbor Awareness Networking */
-#define WIFI_FEATURE_NAN                (0x0040)
-/* Device-to-device RTT */
-#define WIFI_FEATURE_D2D_RTT            (0x0080)
-/* Device-to-AP RTT */
-#define WIFI_FEATURE_D2AP_RTT           (0x0100)
-/* Batched Scan (legacy) */
-#define WIFI_FEATURE_BATCH_SCAN         (0x0200)
-/* Preferred network offload */
-#define WIFI_FEATURE_PNO                (0x0400)
-/* Support for two STAs */
-#define WIFI_FEATURE_ADDITIONAL_STA     (0x0800)
-/* Tunnel directed link setup */
-#define WIFI_FEATURE_TDLS               (0x1000)
-/* Support for TDLS off channel */
-#define WIFI_FEATURE_TDLS_OFFCHANNEL    (0x2000)
-/* Enhanced power reporting */
-#define WIFI_FEATURE_EPR                (0x4000)
-/* Support for AP STA Concurrency */
-#define WIFI_FEATURE_AP_STA             (0x8000)
-/* Link layer stats collection */
-#define WIFI_FEATURE_LINK_LAYER_STATS   (0x10000)
-/* WiFi Logger */
-#define WIFI_FEATURE_LOGGER             (0x20000)
-/* WiFi PNO enhanced */
-#define WIFI_FEATURE_HAL_EPNO           (0x40000)
-/* RSSI Monitor */
-#define WIFI_FEATURE_RSSI_MONITOR       (0x80000)
-/* WiFi mkeep_alive */
-#define WIFI_FEATURE_MKEEP_ALIVE        (0x100000)
-/* ND offload configure */
-#define WIFI_FEATURE_CONFIG_NDO         (0x200000)
-/* Capture Tx transmit power levels */
-#define WIFI_FEATURE_TX_TRANSMIT_POWER  (0x400000)
-/* Enable/Disable firmware roaming */
-#define WIFI_FEATURE_CONTROL_ROAMING    (0x800000)
-/* Support Probe IE white listing */
-#define WIFI_FEATURE_IE_WHITELIST       (0x1000000)
-/* Support MAC & Probe Sequence Number randomization */
-#define WIFI_FEATURE_SCAN_RAND          (0x2000000)
-/* Support Tx Power Limit setting */
-#define WIFI_FEATURE_SET_TX_POWER_LIMIT (0x4000000)
-/* Support Using Body/Head Proximity for SAR */
-#define WIFI_FEATURE_USE_BODY_HEAD_SAR  (0x8000000)
-
-/* note: WIFI_FEATURE_GSCAN be enabled just for ACTS test item: scanner */
-#define WIFI_HAL_FEATURE_SET ((WIFI_FEATURE_P2P) |\
-			      (WIFI_FEATURE_SOFT_AP) |\
-			      (WIFI_FEATURE_PNO) |\
-			      (WIFI_FEATURE_TDLS) |\
-			      (WIFI_FEATURE_RSSI_MONITOR) |\
-			      (WIFI_FEATURE_CONTROL_ROAMING) |\
-			      (WIFI_FEATURE_SET_TX_POWER_LIMIT)\
-			      )
 
 /*******************************************************************************
  *                             D A T A   T Y P E S
@@ -1159,7 +1090,7 @@ int mtk_cfg80211_vendor_get_version(struct wiphy *wiphy,
 					     DRIVER_BUILD_DATE;
 
 		u2Len = kalStrLen(aucDriverVersionStr);
-		DBGLOG(REQ, INFO, "Get driver version len: %d\n", u2Len);
+		DBGLOG(REQ, TRACE, "Get driver version len: %d\n", u2Len);
 		u2CopySize = (u2Len >= 256) ? 255 : u2Len;
 		if (u2CopySize > 0)
 			kalMemCopy(aucVersionBuf, &aucDriverVersionStr[0],
@@ -1173,7 +1104,7 @@ int mtk_cfg80211_vendor_get_version(struct wiphy *wiphy,
 		if (prAdapter) {
 			u2Len = kalStrLen(
 					prAdapter->rVerInfo.aucReleaseManifest);
-			DBGLOG(REQ, INFO,
+			DBGLOG(REQ, TRACE,
 				"Get FW manifest version len: %d\n", u2Len);
 			u2CopySize = (u2Len >= 256) ? 255 : u2Len;
 			if (u2CopySize > 0)
@@ -1183,7 +1114,9 @@ int mtk_cfg80211_vendor_get_version(struct wiphy *wiphy,
 		}
 	}
 
-	if (u2CopySize <= 0)
+	DBGLOG(REQ, TRACE, "Get version(%d)=[%s]\n", u2CopySize, aucVersionBuf);
+
+	if (u2CopySize == 0)
 		return -EFAULT;
 
 	skb = cfg80211_vendor_cmd_alloc_reply_skb(wiphy, u2CopySize);
@@ -1192,7 +1125,6 @@ int mtk_cfg80211_vendor_get_version(struct wiphy *wiphy,
 		return -ENOMEM;
 	}
 
-	DBGLOG(REQ, INFO, "Get version(%d)=[%s]\n", u2CopySize, aucVersionBuf);
 	if (unlikely(nla_put_nohdr(skb, u2CopySize, &aucVersionBuf[0]) < 0))
 		goto nla_put_failure;
 
@@ -1267,9 +1199,8 @@ nla_put_failure:
 int mtk_cfg80211_vendor_get_supported_feature_set(struct wiphy *wiphy,
 		struct wireless_dev *wdev, const void *data, int data_len)
 {
-	uint32_t u4FeatureSet = WIFI_HAL_FEATURE_SET;
+	uint32_t u4FeatureSet;
 	struct GLUE_INFO *prGlueInfo;
-	struct REG_INFO *prRegInfo;
 	struct sk_buff *skb;
 
 	ASSERT(wiphy);
@@ -1286,12 +1217,8 @@ int mtk_cfg80211_vendor_get_supported_feature_set(struct wiphy *wiphy,
 
 	if (!prGlueInfo)
 		return -EFAULT;
-	prRegInfo = prGlueInfo->prRegInfo;
-	if (!prRegInfo)
-		return -EFAULT;
 
-	if (prRegInfo->ucSupport5GBand)
-		u4FeatureSet |= WIFI_FEATURE_INFRA_5G;
+	u4FeatureSet = wlanGetSupportedFeatureSet(prGlueInfo);
 
 	skb = cfg80211_vendor_cmd_alloc_reply_skb(wiphy, sizeof(u4FeatureSet));
 	if (!skb) {
@@ -1305,7 +1232,7 @@ int mtk_cfg80211_vendor_get_supported_feature_set(struct wiphy *wiphy,
 		goto nla_put_failure;
 	}
 
-	DBGLOG(REQ, INFO, "supported feature set=0x%x\n", u4FeatureSet);
+	DBGLOG(REQ, TRACE, "supported feature set=0x%x\n", u4FeatureSet);
 
 	return cfg80211_vendor_cmd_reply(skb);
 
