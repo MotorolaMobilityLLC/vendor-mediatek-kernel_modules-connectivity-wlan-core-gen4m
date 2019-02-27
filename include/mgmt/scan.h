@@ -250,6 +250,8 @@ enum ENUM_SCHED_SCAN_ACT {
 
 #define SCAN_LOG_PREFIX_MAX_LEN		(16)
 #define SCAN_LOG_MSG_MAX_LEN		(400)
+#define SCAN_LOG_BUFF_SIZE		(200)
+#define SCAN_LOG_DYN_ALLOC_MEM		(1)
 
 enum ENUM_SCAN_LOG_PREFIX {
 	/* Scan */
@@ -523,16 +525,19 @@ struct SCHED_SCAN_PARAM {	/* Used by SCAN FSM */
 	struct BSS_DESC *aprPendingBssDescToInd[SCN_SSID_MATCH_MAX_NUM];
 };
 
-struct SCAN_LOG_CACHE {
-	struct LINK rBSSListFW;
-	struct LINK rBSSListCFG;
-};
-
 struct SCAN_LOG_ELEM_BSS {
 	struct LINK_ENTRY rLinkEntry;
 
 	uint8_t aucBSSID[MAC_ADDR_LEN];
 	uint16_t u2SeqCtrl;
+};
+
+struct SCAN_LOG_CACHE {
+	struct LINK rBSSListFW;
+	struct LINK rBSSListCFG;
+
+	struct SCAN_LOG_ELEM_BSS arBSSListBufFW[SCAN_LOG_BUFF_SIZE];
+	struct SCAN_LOG_ELEM_BSS arBSSListBufCFG[SCAN_LOG_BUFF_SIZE];
 };
 
 struct SCAN_INFO {
@@ -922,15 +927,18 @@ u_int8_t isScanCacheDone(struct GL_SCAN_CACHE_INFO *prScanCache);
 #endif /* CFG_SUPPORT_SCAN_CACHE_RESULT */
 
 void scanReqLog(struct CMD_SCAN_REQ_V2 *prCmdScanReq);
-void scanReqSsidLog(struct CMD_SCAN_REQ_V2 *prCmdScanReq, const int logBufLen);
+void scanReqSsidLog(struct CMD_SCAN_REQ_V2 *prCmdScanReq,
+	const uint16_t logBufLen);
 void scanReqChannelLog(struct CMD_SCAN_REQ_V2 *prCmdScanReq,
-	const int logBufLen);
+	const uint16_t logBufLen);
 void scanResultLog(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb);
-void scanLogCacheAddBSS(struct LINK *prList, enum ENUM_SCAN_LOG_PREFIX prefix,
+void scanLogCacheAddBSS(struct LINK *prList,
+	struct SCAN_LOG_ELEM_BSS *prListBuf,
+	enum ENUM_SCAN_LOG_PREFIX prefix,
 	uint8_t bssId[], uint16_t seq);
 void scanLogCacheFlushBSS(struct LINK *prList, enum ENUM_SCAN_LOG_PREFIX prefix,
-	const int logBufLen);
+	const uint16_t logBufLen);
 void scanLogCacheFlushAll(struct SCAN_LOG_CACHE *prScanLogCache,
-	enum ENUM_SCAN_LOG_PREFIX prefix, const int logBufLen);
+	enum ENUM_SCAN_LOG_PREFIX prefix, const uint16_t logBufLen);
 
 #endif /* _SCAN_H */

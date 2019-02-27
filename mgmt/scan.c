@@ -3969,10 +3969,11 @@ void scanReqLog(struct CMD_SCAN_REQ_V2 *prCmdScanReq)
 		scanReqChannelLog(prCmdScanReq, SCAN_LOG_MSG_MAX_LEN);
 }
 
-void scanReqSsidLog(struct CMD_SCAN_REQ_V2 *prCmdScanReq, const int logBufLen)
+void scanReqSsidLog(struct CMD_SCAN_REQ_V2 *prCmdScanReq,
+	const uint16_t logBufLen)
 {
 	char logBuf[logBufLen];
-	int idx = 0;
+	uint32_t idx = 0;
 	int i = 0;
 	u_int8_t ext = FALSE;
 	uint8_t ssidNum = 0;
@@ -3987,7 +3988,7 @@ void scanReqSsidLog(struct CMD_SCAN_REQ_V2 *prCmdScanReq, const int logBufLen)
 			ssid = prCmdScanReq->arSSIDExtend;
 		}
 		for (i = 0; i < ssidNum; ++i) {
-			uint8_t len = ssid[i].u4SsidLen;
+			uint8_t len = (uint8_t) ssid[i].u4SsidLen;
 
 			if (len == 0) {
 				continue;
@@ -3996,7 +3997,7 @@ void scanReqSsidLog(struct CMD_SCAN_REQ_V2 *prCmdScanReq, const int logBufLen)
 					len+1+1);
 				break;
 			} else if (idx+len+1+1 > logBufLen) {
-				logBuf[idx] = 0;
+				logBuf[idx] = 0; /* terminating null byte */
 				if (ext == FALSE) {
 					scanlog_dbg(LOG_SCAN_REQ_D2F, INFO, "Ssid: %s\n",
 						logBuf);
@@ -4014,7 +4015,7 @@ void scanReqSsidLog(struct CMD_SCAN_REQ_V2 *prCmdScanReq, const int logBufLen)
 			idx = idx + 1;
 		}
 		if (idx != 0) {
-			logBuf[idx] = 0;
+			logBuf[idx] = 0; /* terminating null byte */
 			if (ext == FALSE) {
 				scanlog_dbg(LOG_SCAN_REQ_D2F, INFO, "Ssid: %s\n",
 					logBuf);
@@ -4033,14 +4034,17 @@ void scanReqSsidLog(struct CMD_SCAN_REQ_V2 *prCmdScanReq, const int logBufLen)
 }
 
 void scanReqChannelLog(struct CMD_SCAN_REQ_V2 *prCmdScanReq,
-	const int logBufLen)
+	const uint16_t logBufLen)
 {
 	char logBuf[logBufLen];
-	int idx = 0;
+	uint32_t idx = 0;
 	uint32_t i = 0;
 	u_int8_t ext = FALSE;
 	uint8_t chNum = 0;
 	struct CHANNEL_INFO *ch = NULL;
+	/* the decimal value could 0 ~ 255 */
+	const char *fmt = "%u ";
+	const uint8_t dataLen = 4;
 
 	while (1) {
 		if (ext == FALSE) {
@@ -4051,18 +4055,12 @@ void scanReqChannelLog(struct CMD_SCAN_REQ_V2 *prCmdScanReq,
 			ch = prCmdScanReq->arChannelListExtend;
 		}
 		for (i = 0; i < chNum; ++i) {
-			uint8_t len = 3; /* the decimal value could
-					  * be 0 ~ 255
-					  */
-
-			if (len == 0) {
-				continue;
-			} else if (len+1+1 > logBufLen) {
+			if (dataLen+1 > logBufLen) {
 				scanlog_dbg(LOG_SCAN_REQ_D2F, INFO, "Need buffer size %u for log\n",
-					len+1+1);
+					dataLen+1);
 				break;
-			} else if (idx+len+1+1 > logBufLen) {
-				logBuf[idx] = 0;
+			} else if (idx+dataLen+1 > logBufLen) {
+				logBuf[idx] = 0; /* terminating null byte */
 				if (ext == FALSE) {
 					scanlog_dbg(LOG_SCAN_REQ_D2F, INFO, "Ch: %s\n",
 						logBuf);
@@ -4073,12 +4071,12 @@ void scanReqChannelLog(struct CMD_SCAN_REQ_V2 *prCmdScanReq,
 				idx = 0;
 			}
 
-			/* number + a space */
-			idx += kalSnprintf(logBuf+idx, len+1+1, "%u ",
+			/* number + terminating null byte + a space */
+			idx += kalSnprintf(logBuf+idx, dataLen+1, fmt,
 				ch[i].ucChannelNum);
 		}
 		if (idx != 0) {
-			logBuf[idx] = 0;
+			logBuf[idx] = 0; /* terminating null byte */
 			if (ext == FALSE) {
 				scanlog_dbg(LOG_SCAN_REQ_D2F, INFO, "Ch: %s\n",
 					logBuf);
@@ -4103,12 +4101,15 @@ void scanResultLog(struct ADAPTER *prAdapter,
 
 	scanLogCacheAddBSS(
 		&(prAdapter->rWifiVar.rScanInfo.rScanLogCache.rBSSListFW),
+		prAdapter->rWifiVar.rScanInfo.rScanLogCache.arBSSListBufFW,
 		LOG_SCAN_RESULT_F2D,
 		pFrame->aucBSSID,
 		pFrame->u2SeqCtrl);
 }
 
-void scanLogCacheAddBSS(struct LINK *prList, enum ENUM_SCAN_LOG_PREFIX prefix,
+void scanLogCacheAddBSS(struct LINK *prList,
+	struct SCAN_LOG_ELEM_BSS *prListBuf,
+	enum ENUM_SCAN_LOG_PREFIX prefix,
 	uint8_t bssId[], uint16_t seq)
 {
 	struct SCAN_LOG_ELEM_BSS *pSavedBss = NULL;
@@ -4125,7 +4126,26 @@ void scanLogCacheAddBSS(struct LINK *prList, enum ENUM_SCAN_LOG_PREFIX prefix,
 			return;
 	}
 
-	pBss = kalMemAlloc(sizeof(struct SCAN_LOG_ELEM_BSS), VIR_MEM_TYPE);
+	if (prList->u4NumElem < SCAN_LOG_BUFF_SIZE) {
+		if (prListBuf != NULL) {
+			pBss = &(prListBuf[prList->u4NumElem]);
+		} else {
+			scanlog_dbg(prefix, INFO, "Buffer is NULL\n");
+			return;
+		}
+	} else {
+#if SCAN_LOG_DYN_ALLOC_MEM
+		pBss = kalMemAlloc(sizeof(struct SCAN_LOG_ELEM_BSS),
+			VIR_MEM_TYPE);
+		if (pBss == NULL) {
+			scanlog_dbg(prefix, INFO, "Cannot allocate memory for scan log\n");
+			return;
+		}
+#else
+		scanlog_dbg(prefix, INFO, "Need more buffer\n");
+		return;
+#endif
+	}
 	kalMemZero(pBss, sizeof(struct SCAN_LOG_ELEM_BSS));
 
 	COPY_MAC_ADDR(pBss->aucBSSID, bssId);
@@ -4135,39 +4155,51 @@ void scanLogCacheAddBSS(struct LINK *prList, enum ENUM_SCAN_LOG_PREFIX prefix,
 }
 
 void scanLogCacheFlushBSS(struct LINK *prList, enum ENUM_SCAN_LOG_PREFIX prefix,
-	const int logBufLen)
+	const uint16_t logBufLen)
 {
 	char logBuf[logBufLen];
-	int idx = 0;
+	uint32_t idx = 0;
 	struct SCAN_LOG_ELEM_BSS *pBss = NULL;
+#if CFG_SHOW_FULL_MACADDR
+	/* XXXXXXXXXXXX */
+	const char *fmt = "%02x%02x%02x%02x%02x%02x";
+	const uint8_t dataLen = 12;
+#else
+	/* XXXXsumXX */
+	const char *fmt = "%02x%02x%03x%02x";
+	const uint8_t dataLen = 9;
+#endif
 
 	if (LINK_IS_INVALID(prList)) {
 		LINK_INITIALIZE(prList);
 		scanlog_dbg(prefix, INFO, "Init scan log cache\n");
 	}
 
-	if (!LINK_IS_EMPTY(prList))
-		idx += kalSprintf(logBuf, "%u: ", prList->u4NumElem);
+	if (LINK_IS_EMPTY(prList))
+		return;
 
-	while (!LINK_IS_EMPTY(prList)) {
-#if CFG_SHOW_FULL_MACADDR
-		uint8_t len = 12; /* XXXXXXXXXXXX */
-#else
-		uint8_t len = 9; /* XXXXsumXX */
-#endif
-
-		if (len == 0) {
+	/* The maximum characters of uint32_t could be 10. Thus, the
+	 * mininum size should be 10+3 for the format "%u: ".
+	 */
+	if (logBufLen < 13 || dataLen+1 > logBufLen) {
+		scanlog_dbg(prefix, INFO, "Scan log buffer is too small.\n");
+		while (!LINK_IS_EMPTY(prList)) {
 			LINK_REMOVE_HEAD(prList,
 				pBss, struct SCAN_LOG_ELEM_BSS *);
-			kalMemFree(pBss, VIR_MEM_TYPE,
-				sizeof(struct SCAN_LOG_ELEM_BSS));
-			continue;
-		} else if (len+1+1 > logBufLen) {
-			scanlog_dbg(prefix, INFO, "Need more buffer: %u\n",
-				len+1+1);
-			break;
-		} else if (idx+len+1+1 > logBufLen) {
-			logBuf[idx] = 0;
+#if SCAN_LOG_DYN_ALLOC_MEM
+			if (prList->u4NumElem >= SCAN_LOG_BUFF_SIZE) {
+				kalMemFree(pBss, VIR_MEM_TYPE,
+					sizeof(struct SCAN_LOG_ELEM_BSS));
+			}
+#endif
+		}
+		return;
+	}
+	idx += kalSprintf(logBuf, "%u: ", prList->u4NumElem);
+
+	while (!LINK_IS_EMPTY(prList)) {
+		if (idx+dataLen+1 > logBufLen) {
+			logBuf[idx] = 0; /* terminating null byte */
 			scanlog_dbg(prefix, INFO, "%s\n",
 				logBuf);
 			idx = 0;
@@ -4177,8 +4209,8 @@ void scanLogCacheFlushBSS(struct LINK *prList, enum ENUM_SCAN_LOG_PREFIX prefix,
 			pBss, struct SCAN_LOG_ELEM_BSS *);
 
 #if CFG_SHOW_FULL_MACADDR
-		idx += kalSnprintf(logBuf+idx, len+1,
-			"%02x%02x%02x%02x%02x%02x",
+		idx += kalSnprintf(logBuf+idx, dataLen+1,
+			fmt,
 			((uint8_t *)pBss->aucBSSID)[0],
 			((uint8_t *)pBss->aucBSSID)[1],
 			((uint8_t *)pBss->aucBSSID)[2],
@@ -4186,8 +4218,8 @@ void scanLogCacheFlushBSS(struct LINK *prList, enum ENUM_SCAN_LOG_PREFIX prefix,
 			((uint8_t *)pBss->aucBSSID)[4],
 			((uint8_t *)pBss->aucBSSID)[5]);
 #else
-		idx += kalSnprintf(logBuf+idx, len+1,
-			"%02x%02x%03x%02x",
+		idx += kalSnprintf(logBuf+idx, dataLen+1,
+			fmt,
 			((uint8_t *)pBss->aucBSSID)[0],
 			((uint8_t *)pBss->aucBSSID)[1],
 			((uint8_t *)pBss->aucBSSID)[2] +
@@ -4196,11 +4228,15 @@ void scanLogCacheFlushBSS(struct LINK *prList, enum ENUM_SCAN_LOG_PREFIX prefix,
 			((uint8_t *)pBss->aucBSSID)[5]);
 #endif
 
-		kalMemFree(pBss, VIR_MEM_TYPE,
-			sizeof(struct SCAN_LOG_ELEM_BSS));
+#if SCAN_LOG_DYN_ALLOC_MEM
+		if (prList->u4NumElem >= SCAN_LOG_BUFF_SIZE) {
+			kalMemFree(pBss, VIR_MEM_TYPE,
+				sizeof(struct SCAN_LOG_ELEM_BSS));
+		}
+#endif
 	}
 	if (idx != 0) {
-		logBuf[idx] = 0;
+		logBuf[idx] = 0; /* terminating null byte */
 		scanlog_dbg(prefix, INFO, "%s\n",
 			logBuf);
 		idx = 0;
@@ -4208,10 +4244,10 @@ void scanLogCacheFlushBSS(struct LINK *prList, enum ENUM_SCAN_LOG_PREFIX prefix,
 }
 
 void scanLogCacheFlushAll(struct SCAN_LOG_CACHE *prScanLogCache,
-	enum ENUM_SCAN_LOG_PREFIX prefix, const int logBufLen)
+	enum ENUM_SCAN_LOG_PREFIX prefix, const uint16_t logBufLen)
 {
 	scanLogCacheFlushBSS(&(prScanLogCache->rBSSListFW),
-		prefix, SCAN_LOG_MSG_MAX_LEN);
+		prefix, logBufLen);
 	scanLogCacheFlushBSS(&(prScanLogCache->rBSSListCFG),
-		prefix, SCAN_LOG_MSG_MAX_LEN);
+		prefix, logBufLen);
 }
