@@ -369,20 +369,10 @@ extern const uint32_t mtk_cipher_suites[6];
 	.max_power          = 30,                   \
 }
 
-#define CHAN5G(_channel, _flags)                        \
-{                                                   \
-	.band               = KAL_BAND_5GHZ,      \
-	.center_freq        = 5000 + (5 * (_channel)),  \
-	.hw_value           = (_channel),               \
-	.flags              = (_flags),                 \
-	.max_antenna_gain   = 0,                        \
-	.max_power          = 30,                       \
-}
-
-/******************************************************************************
- *                  F U N C T I O N   D E C L A R A T I O N S
- ******************************************************************************
- */
+/*******************************************************************************
+*                  F U N C T I O N   D E C L A R A T I O N S
+********************************************************************************
+*/
 
 #if (CFG_ENABLE_WIFI_DIRECT_CFG_80211 != 0)
 
