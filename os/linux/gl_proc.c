@@ -356,14 +356,14 @@ static ssize_t procCfgRead(struct file *filp, char __user *buf, size_t count,
 
 		if ((temp - g_aucProcBuf) != kalStrLen(g_aucProcBuf)) {
 			DBGLOG(INIT, ERROR,
-			       "Dump configuration error: temp offset=%d, buf length=%d, key[%d]=[%u], val[%d]=[%u]\n",
-			       (temp - g_aucProcBuf),
-			       kalStrLen(g_aucProcBuf),
+			       "Dump configuration error: temp offset=%d, buf length=%u, key[%d]=[%u], val[%d]=[%u]\n",
+			       (int)(temp - g_aucProcBuf),
+			       (unsigned int)kalStrLen(g_aucProcBuf),
 			       WLAN_CFG_VALUE_LEN_MAX,
-			       prWlanCfgEntry->aucKey[
+			       (unsigned int)prWlanCfgEntry->aucKey[
 				WLAN_CFG_VALUE_LEN_MAX - 1],
 			       WLAN_CFG_VALUE_LEN_MAX,
-			       prWlanCfgEntry->aucValue[
+			       (unsigned int)prWlanCfgEntry->aucValue[
 				WLAN_CFG_VALUE_LEN_MAX - 1]);
 			kalMemSet(g_aucProcBuf, ' ', u4StrLen);
 			kalStrnCpy(g_aucProcBuf, str2, kalStrLen(str2));
@@ -388,14 +388,14 @@ static ssize_t procCfgRead(struct file *filp, char __user *buf, size_t count,
 
 		if ((temp - g_aucProcBuf) != kalStrLen(g_aucProcBuf)) {
 			DBGLOG(INIT, ERROR,
-			       "D:Dump configuration error: temp offset=%d, buf length=%d, key[%d]=[%u], val[%d]=[%u]\n",
-			       (temp - g_aucProcBuf),
-			       kalStrLen(g_aucProcBuf),
+			       "D:Dump configuration error: temp offset=%u, buf length=%u, key[%d]=[%u], val[%d]=[%u]\n",
+			       (int)(temp - g_aucProcBuf),
+			       (unsigned int)kalStrLen(g_aucProcBuf),
 			       WLAN_CFG_VALUE_LEN_MAX,
-			       prWlanCfgEntry->aucKey[
+			       (unsigned int)prWlanCfgEntry->aucKey[
 				WLAN_CFG_VALUE_LEN_MAX - 1],
 			       WLAN_CFG_VALUE_LEN_MAX,
-			       prWlanCfgEntry->aucValue[
+			       (unsigned int)prWlanCfgEntry->aucValue[
 				WLAN_CFG_VALUE_LEN_MAX - 1]);
 			kalMemSet(g_aucProcBuf, ' ', u4StrLen);
 			kalStrnCpy(g_aucProcBuf, str2, kalStrLen(str2));
