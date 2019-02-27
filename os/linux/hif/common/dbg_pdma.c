@@ -1705,8 +1705,7 @@ void halGetPleTxdInfo(
 	dumpMemory32(result, 64);
 }
 
-void halDumpTxdInfo(IN struct ADAPTER *prAdapter,
-	uint32_t *tmac_info)
+void halDumpTxdInfo(IN struct ADAPTER *prAdapter, uint32_t *tmac_info)
 {
 	struct TMAC_TXD_S *txd_s;
 	struct TMAC_TXD_0 *txd_0;
@@ -1714,8 +1713,8 @@ void halDumpTxdInfo(IN struct ADAPTER *prAdapter,
 	uint8_t q_idx = 0;
 
 	txd_s = (struct TMAC_TXD_S *)tmac_info;
-	txd_0 = (struct TMAC_TXD_0 *)tmac_info;
-	txd_1 = (struct TMAC_TXD_1 *)(tmac_info + sizeof(struct TMAC_TXD_0));
+	txd_0 = &txd_s->TxD0;
+	txd_1 = &txd_s->TxD1;
 
 	DBGLOG(HAL, INFO, "TMAC_TXD Fields:\n");
 	DBGLOG(HAL, INFO, "\tTMAC_TXD_0:\n");
