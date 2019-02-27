@@ -1226,6 +1226,9 @@ void rlmRspGenerateVhtOpNotificationIE(struct ADAPTER *prAdapter,
 	if (!IS_BSS_ACTIVE(prBssInfo))
 		return;
 
+	if (!prBssInfo->fgIsOpChangeRxNss)
+		return;
+
 	/* Decide PHY type set source */
 	if (prStaRec) {
 		/* Get PHY type set from target STA */
