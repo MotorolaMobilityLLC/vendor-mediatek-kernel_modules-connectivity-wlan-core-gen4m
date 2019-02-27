@@ -104,9 +104,15 @@ struct MSG_P2P_BEACON_UPDATE {
 	uint32_t u4BcnHdrLen;
 	uint32_t u4BcnBodyLen;
 	uint32_t u4AssocRespLen;
+#if CFG_SUPPORT_P2P_GO_OFFLOAD_PROBE_RSP
+	uint32_t u4ProbeRespLen;
+#endif
 	uint8_t *pucBcnHdr;
 	uint8_t *pucBcnBody;
 	uint8_t *pucAssocRespIE;
+#if CFG_SUPPORT_P2P_GO_OFFLOAD_PROBE_RSP
+	uint8_t *pucProbeRespIE;
+#endif
 	uint8_t aucBuffer[1];	/* Header & Body & Extra IEs are put here. */
 };
 
