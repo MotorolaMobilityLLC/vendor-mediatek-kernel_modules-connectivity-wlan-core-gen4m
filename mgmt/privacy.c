@@ -1322,6 +1322,26 @@ enum ENUM_EAPOL_KEY_TYPE_T secGetEapolKeyType(uint8_t *pucPkt)
 	return EAPOL_KEY_NOT_KEY;
 }
 
+void secHandleRxEapolPacket(IN struct ADAPTER *prAdapter,
+			    IN struct SW_RFB *prRetSwRfb,
+			    IN struct STA_RECORD *prStaRec)
+{
+	do {
+		if (prRetSwRfb->u2PacketLen <= ETHER_HEADER_LEN)
+			break;
+		if (secGetEapolKeyType((uint8_t *) prRetSwRfb->pvHeader) !=
+				EAPOL_KEY_3_OF_4)
+			break;
+#if CFG_SUPPORT_REPORT_MISC
+		if (prAdapter->rReportMiscSet.eQueryNum
+						== REPORT_4WAYHS_START) {
+			wlanGetReportMisc(prAdapter);
+			prAdapter->rReportMiscSet.eQueryNum = REPORT_4WAYHS_END;
+		}
+#endif
+	} while (FALSE);
+}
+
 uint8_t secGetDHCPType(uint8_t *pucPkt)
 {
 	uint16_t u2EtherType =

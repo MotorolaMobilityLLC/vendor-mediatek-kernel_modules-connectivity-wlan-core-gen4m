@@ -1769,6 +1769,9 @@ void nicRxProcessDataPacket(IN struct ADAPTER *prAdapter,
 							prRetSwRfb);
 #endif
 					}
+					secHandleRxEapolPacket(
+						prAdapter, prRetSwRfb,
+						prStaRec);
 					nicIndicateConnectionRxFrame(
 						prAdapter, prRetSwRfb);
 					nicRxProcessPktWithoutReorder(
