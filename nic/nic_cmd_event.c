@@ -3397,8 +3397,8 @@ void nicCmdEventQueryTxPowerInfo(IN struct ADAPTER *prAdapter,
 			NULL;
 	struct PARAM_TXPOWER_ALL_RATE_POWER_INFO_T *prTxPowerInfo =
 			NULL;
+	struct GLUE_INFO *prGlueInfo = NULL;
 	uint32_t u4QueryInfoLen;
-	struct GLUE_INFO *prGlueInfo = prAdapter->prGlueInfo;
 
 	if (!prAdapter)
 		return;
@@ -3408,7 +3408,7 @@ void nicCmdEventQueryTxPowerInfo(IN struct ADAPTER *prAdapter,
 		return;
 	if (!(prCmdInfo->pvInformationBuffer))
 		return;
-
+	prGlueInfo = prAdapter->prGlueInfo;
 	if (prCmdInfo->fgIsOid) {
 		prEvent = (struct EXT_EVENT_TXPOWER_ALL_RATE_POWER_INFO_T *)
 			  pucEventBuf;
@@ -3855,7 +3855,7 @@ void nicExtEventReCalData(IN struct ADAPTER *prAdapter, IN uint8_t *pucEventBuf)
 	}
 
 	prCalArray = prReCalInfo->prCalArray;
-	DBGLOG(RFTEST, INFO, "prCalArray[%d] address [0x%08x]\n",
+	DBGLOG(RFTEST, INFO, "prCalArray[%d] address [0x%pM]\n",
 			     prReCalInfo->u4Count,
 			     &prCalArray[prReCalInfo->u4Count]);
 
@@ -4819,6 +4819,7 @@ void nicEventDebugMsg(IN struct ADAPTER *prAdapter,
 			/* format: [XXXXXXXX][YYYYYYYY]ZZZZZZZZ */
 			kalMemCopy(prCalData->u.ucData, pucMsg + 7, 28);
 			nicRfTestEventHandler(prAdapter, prEvent);
+			kalMemFree(prEvent, VIR_MEM_TYPE, u4Size);
 		}
 	}
 #endif
