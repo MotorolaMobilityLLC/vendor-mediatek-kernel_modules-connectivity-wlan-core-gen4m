@@ -1615,6 +1615,7 @@ static struct wireless_dev *wlanNetCreate(PVOID pvData, PVOID pvDriverData)
 
 	if (!prAdapter) {
 		DBGLOG(INIT, ERROR, "Allocating memory to adapter failed\n");
+		glClearHifInfo(prGlueInfo);
 		goto netcreate_err;
 	}
 
