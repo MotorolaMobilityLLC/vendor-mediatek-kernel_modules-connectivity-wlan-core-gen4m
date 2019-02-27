@@ -164,6 +164,46 @@ VOID mt6632CapInit(IN P_ADAPTER_T prAdapter)
 }
 
 #if defined(_HIF_PCIE)
+
+VOID mt6632PdmaConfig(P_GLUE_INFO_T prGlueInfo, BOOLEAN enable)
+{
+	P_BUS_INFO prBusInfo = prGlueInfo->prAdapter->chip_info->bus_info;
+	WPDMA_GLO_CFG_STRUCT GloCfg;
+	WPMDA_INT_MASK IntMask;
+
+	kalDevRegRead(prGlueInfo, WPDMA_GLO_CFG, &GloCfg.word);
+
+	kalDevRegRead(prGlueInfo, WPDMA_INT_MSK, &IntMask.word);
+
+	if (enable == TRUE) {
+		GloCfg.field.EnableTxDMA = 1;
+		GloCfg.field.EnableRxDMA = 1;
+		GloCfg.field.EnTXWriteBackDDONE = 1;
+		GloCfg.field.WPDMABurstSIZE = 3;
+		GloCfg.field.omit_tx_info = 1;
+		GloCfg.field.fifo_little_endian = 1;
+		GloCfg.field.multi_dma_en = 3;
+		GloCfg.field.clk_gate_dis = 1;
+
+		IntMask.field.rx_done_0 = 1;
+		IntMask.field.rx_done_1 = 1;
+		IntMask.field.tx_done = BIT(prBusInfo->tx_ring_fwdl_idx) |
+			BIT(prBusInfo->tx_ring_cmd_idx) | BIT(prBusInfo->tx_ring_data_idx);
+	} else {
+		GloCfg.field.EnableRxDMA = 0;
+		GloCfg.field.EnableTxDMA = 0;
+		GloCfg.field.multi_dma_en = 2;
+
+		IntMask.field.rx_done_0 = 0;
+		IntMask.field.rx_done_1 = 0;
+		IntMask.field.tx_done = 0;
+	}
+
+	kalDevRegWrite(prGlueInfo, WPDMA_INT_MSK, IntMask.word);
+
+	kalDevRegWrite(prGlueInfo, WPDMA_GLO_CFG, GloCfg.word);
+}
+
 VOID mt6632LowPowerOwnRead(IN P_ADAPTER_T prAdapter, OUT PBOOLEAN pfgResult)
 {
 	UINT_32 u4RegValue;
@@ -202,7 +242,7 @@ BUS_INFO mt6632_bus_info = {
 	.fgInitPCIeInt = FALSE,
 	.u4DmaMask = 32,
 
-	.pdmaSetup = halWpdmaConfig,
+	.pdmaSetup = mt6632PdmaConfig,
 	.lowPowerOwnRead = mt6632LowPowerOwnRead,
 	.lowPowerOwnSet = mt6632LowPowerOwnSet,
 	.lowPowerOwnClear = mt6632LowPowerOwnClear,
