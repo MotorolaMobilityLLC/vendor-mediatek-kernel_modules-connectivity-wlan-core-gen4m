@@ -689,8 +689,6 @@ u_int8_t kalDevReadData(IN struct GLUE_INFO *prGlueInfo,
 
 #if CFG_TCP_IP_CHKSUM_OFFLOAD
 	prSwRfb->u4TcpUdpIpCksStatus = pRxD->RXINFO;
-	DBGLOG(RX, TRACE, "u4TcpUdpIpCksStatus[0x%02x]\n",
-		prSwRfb->u4TcpUdpIpCksStatus);
 #endif /* CFG_TCP_IP_CHKSUM_OFFLOAD */
 
 	prDmaBuf->AllocVa = ((struct sk_buff *)pRxCell->pPacket)->data;
@@ -715,6 +713,11 @@ skip:
 	prRxRing->fgIsDumpLog = false;
 
 	spin_unlock_irqrestore(pRxRingLock, flags);
+
+#if CFG_TCP_IP_CHKSUM_OFFLOAD
+	DBGLOG(RX, LOUD, "u4TcpUdpIpCksStatus[0x%02x]\n",
+		prSwRfb->u4TcpUdpIpCksStatus);
+#endif /* CFG_TCP_IP_CHKSUM_OFFLOAD */
 
 	return fgRet;
 }
