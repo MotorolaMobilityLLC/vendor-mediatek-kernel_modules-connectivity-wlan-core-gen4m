@@ -477,7 +477,6 @@
  *------------------------------------------------------------------------------
  */
 #define CFG_SCAN_SSID_MAX_NUM                   (4)
-#define CFG_SCAN_SSID_MATCH_MAX_NUM             (16)
 
 /*------------------------------------------------------------------------------
  * Flags and Parameters for Load Setup Default
@@ -670,7 +669,7 @@
  *------------------------------------------------------------------------------
  */
 
-#define CFG_SUPPORT_PNO             1
+#define CFG_SUPPORT_PNO             0
 #define CFG_SUPPORT_TDLS		1
 
 #define CFG_SUPPORT_QOS             1	/* Enable/disable QoS TX, AMPDU */
@@ -799,9 +798,23 @@
  * Flags of Batch Scan SUPPORT
  *------------------------------------------------------------------------------
  */
-#define CFG_SUPPORT_BATCH_SCAN              1
-#define CFG_BATCH_MAX_MSCAN                 2
+#define CFG_SUPPORT_BATCH_SCAN             (0)
+#define CFG_BATCH_MAX_MSCAN                (2)
 
+/*------------------------------------------------------------------------------
+ * Flags of SCHEDULE SCAN SUPPORT
+ *------------------------------------------------------------------------------
+ */
+#define CFG_SUPPORT_SCHED_SCAN             (0)
+#define PSCAN_VERSION                      (1)
+
+#define CFG_SCAN_HIDDEN_SSID_MAX_NUM       (7)
+#define CFG_SCAN_SSID_MATCH_MAX_NUM        (16)
+#define CFG_SUPPORT_SCHED_SCAN_IE          (0)
+
+#if CFG_SUPPORT_PNO != CFG_SUPPORT_SCHED_SCAN
+#error Value of CFG_SUPPORT_SCHED_SCAN should equal to value of CFG_SUPPORT_PNO
+#endif
 /*------------------------------------------------------------------------------
  * Flags of Sniffer SUPPORT
  *------------------------------------------------------------------------------
@@ -809,7 +822,6 @@
 #define CFG_SUPPORT_SNIFFER                 1
 
 #define WLAN_INCLUDE_PROC                   1
-
 
 /*------------------------------------------------------------------------------
  * Flags of Sniffer SUPPORT

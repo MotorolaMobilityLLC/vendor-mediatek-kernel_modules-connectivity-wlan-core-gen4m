@@ -504,6 +504,14 @@ enum ENUM_CMD_ID {
 #if CFG_WOW_SUPPORT
 	CMD_ID_SET_PF_CAPABILITY = 0x59,	/* 0x59 (Set) */
 #endif
+	CMD_ID_GET_PSCAN_CAPABILITY = 0x60,     /* 0x60 (Get) deprecated */
+	CMD_ID_SET_PSCAN_ENABLE,                /* 0x61 (Set) */
+	CMD_ID_SET_PSCAN_PARAM,                 /* 0x62 (Set) */
+	CMD_ID_SET_GSCAN_ADD_HOTLIST_BSSID,     /* 0x63 (Set) deprecated */
+	CMD_ID_SET_GSCAN_ADD_SWC_BSSID,         /* 0x64 (Set) deprecated */
+	CMD_ID_SET_GSCAN_MAC_ADDR,              /* 0x65 (Set) deprecated */
+	CMD_ID_GET_GSCAN_RESULT,                /* 0x66 (Get) deprecated */
+	CMD_ID_SET_PSCAN_MAC_ADDR,              /* 0x67 (Set) deprecated */
 
 #if CFG_SUPPORT_ROAMING_SKIP_ONE_AP
 	CMD_ID_SET_ROAMING_SKIP = 0x6D,	/* 0x6D (Set) used to setting roaming skip*/
@@ -879,6 +887,12 @@ struct CMD_RX_PACKET_FILTER {
 #if (CFG_SUPPORT_TXPOWER_INFO == 1)
 #define EXT_EVENT_ID_TX_POWER_FEATURE_CTRL  0x58
 #endif
+
+#define NLO_CHANNEL_TYPE_SPECIFIED      (0)
+#define NLO_CHANNEL_TYPE_DUAL_BAND      (1)
+#define NLO_CHANNEL_TYPE_2G4_ONLY       (2)
+#define NLO_CHANNEL_TYPE_5G_ONLY        (3)
+
 /*******************************************************************************
 *                             D A T A   T Y P E S
 ********************************************************************************
@@ -2225,6 +2239,75 @@ struct CMD_SET_WMM_PS_TEST_STRUCT {
 	uint8_t ucIsDisableUcTrigger;	/* not to trigger UC on beacon TIM is matched (under U-APSD) */
 };
 
+struct GSCN_CHANNEL_INFO {
+	uint8_t ucBand;
+	uint8_t ucChannelNumber; /* Channel Number */
+	uint8_t ucPassive;       /* 0:active, 1:passive scan; ignored for DFS */
+	uint8_t aucReserved[1];
+	uint32_t u4DwellTimeMs;  /* dwell time hint */
+};
+
+enum ENUM_WIFI_BAND {
+	WIFI_BAND_UNSPECIFIED,
+	WIFI_BAND_BG = 1,              /* 2.4 GHz */
+	WIFI_BAND_A = 2,               /* 5 GHz without DFS */
+	WIFI_BAND_A_DFS = 4,           /* 5 GHz DFS only */
+	WIFI_BAND_A_WITH_DFS = 6,      /* 5 GHz with DFS */
+	WIFI_BAND_ABG = 3,             /* 2.4 GHz + 5 GHz; no DFS */
+	WIFI_BAND_ABG_WITH_DFS = 7,    /* 2.4 GHz + 5 GHz with DFS */
+};
+
+struct GSCAN_BUCKET {
+	uint16_t u2BucketIndex;  /* bucket index, 0 based */
+	/* desired period, in millisecond;
+	 * if this is too low, the firmware should choose to generate
+	 * results as fast as it can instead of failing the command
+	 */
+	uint8_t ucBucketFreqMultiple;
+	/* report_events semantics -
+	 *  This is a bit field; which defines following bits -
+	 *  REPORT_EVENTS_EACH_SCAN
+	 *      report a scan completion event after scan. If this is not set
+	 *      then scan completion events should be reported if
+	 *      report_threshold_percent or report_threshold_num_scans is
+	 *				    reached.
+	 *  REPORT_EVENTS_FULL_RESULTS
+	 *      forward scan results (beacons/probe responses + IEs)
+	 *      in real time to HAL, in addition to completion events
+	 *      Note: To keep backward compatibility, fire completion
+	 *	events regardless of REPORT_EVENTS_EACH_SCAN.
+	 *  REPORT_EVENTS_NO_BATCH
+	 *      controls if scans for this bucket should be placed in the
+	 *      history buffer
+	 */
+	uint8_t ucReportFlag;
+	uint8_t ucMaxBucketFreqMultiple; /* max_period / base_period */
+	uint8_t ucStepCount;
+	uint8_t ucNumChannels;
+	uint8_t aucReserved[1];
+	enum ENUM_WIFI_BAND eBand; /* when UNSPECIFIED, use channel list */
+	/* channels to scan; these may include DFS channels */
+	struct GSCN_CHANNEL_INFO arChannelList[8];
+};
+
+struct CMD_GSCN_REQ {
+	uint8_t ucFlags;
+	uint8_t ucNumScnToCache;
+	uint8_t aucReserved[2];
+	uint32_t u4BufferThreshold;
+	uint32_t u4BasePeriod; /* base timer period in ms */
+	uint32_t u4NumBuckets;
+	uint32_t u4MaxApPerScan; /* number of APs to store in each scan in the */
+	/* BSSID/RSSI history buffer (keep the highest RSSI APs) */
+	struct GSCAN_BUCKET arBucket[8];
+};
+
+struct CMD_GSCN_SCN_COFIG {
+	uint8_t ucNumApPerScn;       /* GSCAN_ATTRIBUTE_NUM_AP_PER_SCAN */
+	uint32_t u4BufferThreshold;  /* GSCAN_ATTRIBUTE_REPORT_THRESHOLD */
+	uint32_t u4NumScnToCache;    /* GSCAN_ATTRIBUTE_NUM_SCANS_TO_CACHE */
+};
+
 /* Definition for CHANNEL_INFO.ucBand:
  * 0:       Reserved
  * 1:       BAND_2G4
@@ -2329,7 +2412,6 @@ struct EVENT_SCAN_DONE {
 
 };
 
-#if CFG_SUPPORT_BATCH_SCAN
 struct CMD_BATCH_REQ {
 	uint8_t ucSeqNum;
 	uint8_t ucNetTypeIndex;
@@ -2362,7 +2444,6 @@ struct EVENT_BATCH_RESULT {
 	uint8_t aucReserved[3];
 	struct EVENT_BATCH_RESULT_ENTRY arBatchResult[12];	/* Must be the same with SCN_BATCH_STORE_MAX_NUM */
 };
-#endif
 
 struct CMD_CH_PRIVILEGE {
 	uint8_t ucBssIndex;
@@ -2785,27 +2866,57 @@ enum ENUM_NLO_AUTH_ALGORITHM {
 	NLO_AUTH_ALGO_RSNA_PSK = 7,
 };
 
-struct NLO_NETWORK {
-	uint8_t ucNumChannelHint[4];
+struct NLO_SSID_MATCH_SETS {
+	int8_t cRssiThresold;
 	uint8_t ucSSIDLength;
-	uint8_t ucCipherAlgo;
-	uint16_t u2AuthAlgo;
 	uint8_t aucSSID[32];
 };
 
+struct NLO_NETWORK {
+	/* 0: specific channel; 1: dual band; 2: 2.4G; 3: 5G; 3*/
+	uint8_t ucChannelType;
+	uint8_t ucChnlNum;
+	uint8_t aucChannel[94];
+	struct NLO_SSID_MATCH_SETS arMatchSets[16];
+};
+
+#if CFG_SUPPORT_SCHED_SCAN_IE
 struct CMD_NLO_REQ {
 	uint8_t ucSeqNum;
 	uint8_t ucBssIndex;
 	uint8_t fgStopAfterIndication;
-	uint8_t ucFastScanIteration;
-	uint16_t u2FastScanPeriod;
-	uint16_t u2SlowScanPeriod;
-	uint8_t ucEntryNum;
-	uint8_t ucFlag;		/* BIT(0) Check cipher */
+	uint8_t ucFastScanIteration;  /* deprecated */
+	uint16_t u2FastScanPeriod;    /* deprecated */
+	uint16_t u2SlowScanPeriod;    /* deprecated */
+	uint8_t ucEntryNum;           /* BIT(7) new NLO_NETWORK structure */
+	uint8_t ucFlag;		     /* BIT(0) Check cipher */
 	uint16_t u2IELen;
-	struct NLO_NETWORK arNetworkList[16];
-	uint8_t aucIE[0];
+	struct NLO_NETWORK rNLONetwork;
+	/* Multiple scan plan param */
+	u_int8_t fgNLOMspEnable;  /* Flag for NLO/PNO MSP enable indicator */
+	uint8_t ucNLOMspEntryNum; /* indicates the entry num of MSP List */
+	uint16_t au2NLOMspList[10];
+
+	/* keep last */
+	uint8_t aucIE[0];             /* MUST be the last for IE content */
 };
+#else
+struct CMD_NLO_REQ {
+	uint8_t ucSeqNum;
+	uint8_t ucBssIndex;
+	uint8_t fgStopAfterIndication;
+	uint8_t ucFastScanIteration;  /* deprecated */
+	uint16_t u2FastScanPeriod;    /* deprecated */
+	uint16_t u2SlowScanPeriod;    /* deprecated */
+	uint8_t ucEntryNum;           /* BIT(7) new NLO_NETWORK structure */
+	uint8_t ucFlag;		     /* BIT(0) Check cipher */
+	uint16_t u2IELen;             /* always 0 */
+	struct NLO_NETWORK rNLONetwork;
+
+	/* keep last */
+	uint8_t aucIE[0];             /* MUST be last for IE content */
+};
+#endif /* CFG_SUPPORT_SCHED_SCAN_IE */
 
 struct CMD_NLO_CANCEL {
 	uint8_t ucSeqNum;
@@ -3036,9 +3147,7 @@ struct EVENT_ACCESS_EFUSE {
 
 };
 
-
 struct EXT_EVENT_EFUSE_FREE_BLOCK {
-
 	uint16_t  u2FreeBlockNum;
 	uint8_t  aucReserved[2];
 };
@@ -3099,6 +3208,61 @@ struct EXT_EVENT_TXPOWER_ALL_RATE_POWER_INFO_T {
 	uint8_t ucReserved2;
 };
 #endif
+
+/* PScan structure */
+#if CFG_SUPPORT_SCHED_SCAN_IE
+struct CMD_SET_PSCAN_PARAM {
+	uint8_t ucVersion;
+	struct CMD_BATCH_REQ rCmdBatchReq;    /* deprecated */
+	struct CMD_GSCN_REQ rCmdGscnReq; /* deprecated */
+	u_int8_t fgNLOScnEnable;
+	u_int8_t fgBatchScnEnable;        /* deprecated */
+	u_int8_t fgGScnEnable;            /* deprecated */
+	uint32_t u4BasePeriod;            /* deprecated */
+
+	/* keep last */
+	struct CMD_NLO_REQ rCmdNloReq; /* MUST be the last for IE content */
+};
+#else
+struct CMD_SET_PSCAN_PARAM {
+	uint8_t ucVersion;
+	struct CMD_NLO_REQ rCmdNloReq;
+	struct CMD_BATCH_REQ rCmdBatchReq;    /* deprecated */
+	struct CMD_GSCN_REQ rCmdGscnReq; /* deprecated */
+	u_int8_t fgNLOScnEnable;
+	u_int8_t fgBatchScnEnable;        /* deprecated */
+	u_int8_t fgGScnEnable;            /* deprecated */
+	uint32_t u4BasePeriod;            /* deprecated */
+};
+#endif /* CFG_SUPPORT_SCHED_SCAN_IE */
+
+struct CMD_SET_PSCAN_ENABLE {
+	uint8_t ucPscanAct;
+	uint8_t aucReserved[3];
+};
+
+/* deprecated */
+struct CMD_SET_PSCAN_ADD_HOTLIST_BSSID {
+	uint8_t aucMacAddr[6];
+	uint8_t ucFlags;
+	uint8_t aucReserved[5];
+};
+
+/* deprecated */
+struct CMD_SET_PSCAN_ADD_SWC_BSSID {
+	int32_t i4RssiLowThreshold;
+	int32_t i4RssiHighThreshold;
+	uint8_t aucMacAddr[6];
+	uint8_t aucReserved[6];
+};
+
+/* deprecated */
+struct CMD_SET_PSCAN_MAC_ADDR {
+	uint8_t ucVersion;
+	uint8_t ucFlags;
+	uint8_t aucMacAddr[6];
+	uint8_t aucReserved[8];
+};
 
 /*******************************************************************************
 *                            P U B L I C   D A T A

@@ -1280,7 +1280,7 @@ u_int8_t kalSetSdioTestPattern(IN struct GLUE_INFO *prGlueInfo,
 /*----------------------------------------------------------------------------*/
 void kalSchedScanResults(IN struct GLUE_INFO *prGlueInfo);
 
-void kalSchedScanStopped(IN struct GLUE_INFO *prGlueInfo);
+void kalSchedScanStopped(IN struct GLUE_INFO *prGlueInfo, u_int8_t fgDriverTriggerd);
 
 void kalSetFwOwnEvent2Hif(struct GLUE_INFO *pr);
 #if CFG_ASSERT_DUMP
