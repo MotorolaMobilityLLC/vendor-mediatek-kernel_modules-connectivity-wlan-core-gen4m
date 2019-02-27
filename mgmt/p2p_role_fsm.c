@@ -1238,17 +1238,17 @@ void p2pRoleFsmRunEventStartAP(IN struct ADAPTER *prAdapter,
 	}
 #endif
 
-#if (CFG_HW_WMM_BY_BSS == 1)
+	prP2pBssInfo->eBand = prP2pConnReqInfo->rChannelInfo.eBand;
 	if (prP2pBssInfo->fgIsWmmInited == FALSE)
 		prP2pBssInfo->ucWmmQueSet = cnmWmmIndexDecision(prAdapter,
 			prP2pBssInfo);
-	prP2pBssInfo->eBand = prP2pConnReqInfo->rChannelInfo.eBand;
-#endif
 #if CFG_SUPPORT_DBDC
 	kalMemZero(&rDbdcCap, sizeof(struct CNM_DBDC_CAP));
 	cnmDbdcEnableDecision(prAdapter,
 		prP2pBssInfo->ucBssIndex,
-		prP2pConnReqInfo->rChannelInfo.eBand);
+		prP2pConnReqInfo->rChannelInfo.eBand,
+		prP2pConnReqInfo->rChannelInfo.ucChannelNum,
+		prP2pBssInfo->ucWmmQueSet);
 	cnmGetDbdcCapability(prAdapter,
 		prP2pBssInfo->ucBssIndex,
 		prP2pConnReqInfo->rChannelInfo.eBand,
@@ -1262,9 +1262,6 @@ void p2pRoleFsmRunEventStartAP(IN struct ADAPTER *prAdapter,
 	   rDbdcCap.ucNss);
 
 	prP2pBssInfo->ucNss = rDbdcCap.ucNss;
-#if (CFG_HW_WMM_BY_BSS == 0)
-	prP2pBssInfo->ucWmmQueSet = rDbdcCap.ucWmmSetIndex;
-#endif
 #endif /*CFG_SUPPORT_DBDC*/
 	prP2pBssInfo->eHiddenSsidType = prP2pStartAPMsg->ucHiddenSsidType;
 
@@ -1553,17 +1550,19 @@ void p2pRoleFsmRunEventDfsCac(IN struct ADAPTER *prAdapter,
 	else
 		prP2pConnReqInfo->eConnRequest = P2P_CONNECTION_TYPE_GO;
 
-#if (CFG_HW_WMM_BY_BSS == 1)
+	prP2pBssInfo->eBand = prP2pConnReqInfo->rChannelInfo.eBand;
 	if (prP2pBssInfo->fgIsWmmInited == FALSE)
 		prP2pBssInfo->ucWmmQueSet = cnmWmmIndexDecision(prAdapter,
 			prP2pBssInfo);
-	prP2pBssInfo->eBand = prP2pConnReqInfo->rChannelInfo.eBand;
-#endif
+
 #if CFG_SUPPORT_DBDC
 	kalMemZero(&rDbdcCap, sizeof(struct CNM_DBDC_CAP));
 	cnmDbdcEnableDecision(prAdapter,
 		prP2pBssInfo->ucBssIndex,
-		prP2pConnReqInfo->rChannelInfo.eBand);
+		prP2pConnReqInfo->rChannelInfo.eBand,
+		prP2pConnReqInfo->rChannelInfo.ucChannelNum,
+		prP2pBssInfo->ucWmmQueSet
+	);
 	cnmGetDbdcCapability(prAdapter,
 		prP2pBssInfo->ucBssIndex,
 		prP2pConnReqInfo->rChannelInfo.eBand,
@@ -1576,9 +1575,6 @@ void p2pRoleFsmRunEventDfsCac(IN struct ADAPTER *prAdapter,
 		prP2pConnReqInfo->rChannelInfo.ucChannelNum);
 
 	prP2pBssInfo->ucNss = rDbdcCap.ucNss;
-#if (CFG_HW_WMM_BY_BSS == 0)
-	prP2pBssInfo->ucWmmQueSet = rDbdcCap.ucWmmSetIndex;
-#endif
 #endif /*CFG_SUPPORT_DBDC*/
 
 	if (prP2pRoleFsmInfo->eCurrentState != P2P_ROLE_STATE_IDLE) {
@@ -1897,17 +1893,18 @@ void p2pRoleFsmRunEventConnectionRequest(IN struct ADAPTER *prAdapter,
 			&prChnlReqInfo->ucCenterFreqS1,
 			&prChnlReqInfo->ucReqChnlNum);
 
-#if (CFG_HW_WMM_BY_BSS == 1)
+		prP2pBssInfo->eBand = prChnlReqInfo->eBand;
 		if (prP2pBssInfo->fgIsWmmInited == FALSE)
 			prP2pBssInfo->ucWmmQueSet =
 				cnmWmmIndexDecision(prAdapter, prP2pBssInfo);
-		prP2pBssInfo->eBand = prChnlReqInfo->eBand;
-#endif
+
 #if CFG_SUPPORT_DBDC
 		kalMemZero(&rDbdcCap, sizeof(struct CNM_DBDC_CAP));
 		cnmDbdcEnableDecision(prAdapter,
 			prP2pBssInfo->ucBssIndex,
-			prChnlReqInfo->eBand);
+			prChnlReqInfo->eBand,
+			prChnlReqInfo->ucReqChnlNum,
+			prP2pBssInfo->ucWmmQueSet);
 		cnmGetDbdcCapability(prAdapter,
 			prP2pBssInfo->ucBssIndex,
 			prChnlReqInfo->eBand,
@@ -1921,9 +1918,7 @@ void p2pRoleFsmRunEventConnectionRequest(IN struct ADAPTER *prAdapter,
 		   rDbdcCap.ucNss);
 
 		prP2pBssInfo->ucNss = rDbdcCap.ucNss;
-#if (CFG_HW_WMM_BY_BSS == 0)
-		prP2pBssInfo->ucWmmQueSet = rDbdcCap.ucWmmSetIndex;
-#endif
+
 #endif
 
 		/* Decide RF BW by own OP and Peer OP BW */
@@ -2551,19 +2546,20 @@ p2pRoleFsmRunEventScanDone(IN struct ADAPTER *prAdapter,
 					&(prP2pRoleFsmInfo->rChnlReqInfo);
 				if (!prChnlReqInfo)
 					break;
-#if (CFG_HW_WMM_BY_BSS == 1)
+
+				prP2pBssInfo->eBand = prChnlReqInfo->eBand;
 				if (prP2pBssInfo->fgIsWmmInited == FALSE)
 					prP2pBssInfo->ucWmmQueSet =
 						cnmWmmIndexDecision(prAdapter,
 							prP2pBssInfo);
-				prP2pBssInfo->eBand = prChnlReqInfo->eBand;
-#endif
 #if CFG_SUPPORT_DBDC
 				kalMemZero(&rDbdcCap,
 					sizeof(struct CNM_DBDC_CAP));
 				cnmDbdcEnableDecision(prAdapter,
 					prP2pRoleFsmInfo->ucBssIndex,
-					prChnlReqInfo->eBand);
+					prChnlReqInfo->eBand,
+					prChnlReqInfo->ucReqChnlNum,
+					prP2pBssInfo->ucWmmQueSet);
 				cnmGetDbdcCapability(prAdapter,
 					prP2pRoleFsmInfo->ucBssIndex,
 					prChnlReqInfo->eBand,
@@ -2579,10 +2575,6 @@ p2pRoleFsmRunEventScanDone(IN struct ADAPTER *prAdapter,
 
 
 				prP2pBssInfo->ucNss = rDbdcCap.ucNss;
-#if (CFG_HW_WMM_BY_BSS == 0)
-				prP2pBssInfo->ucWmmQueSet =
-					rDbdcCap.ucWmmSetIndex;
-#endif
 #endif
 				/* For GC join. */
 				eNextState = P2P_ROLE_STATE_REQING_CHANNEL;
