@@ -1872,8 +1872,6 @@ struct BSS_INFO *cnmGetBssInfoAndInit(struct ADAPTER *prAdapter,
 		prBssInfo->fgIsPNOEnable = FALSE;
 		prBssInfo->fgIsNetRequestInActive = FALSE;
 #endif
-		/* init add key action */
-		prBssInfo->eKeyAction = SEC_TX_KEY_COMMAND;
 
 		/* initialize wlan id and status for keys */
 		prBssInfo->ucBMCWlanIndex = WTBL_RESERVED_ENTRY;
@@ -1965,8 +1963,6 @@ struct BSS_INFO *cnmGetBssInfoAndInit(struct ADAPTER *prAdapter,
 		prBssInfo->fgIsPNOEnable = FALSE;
 		prBssInfo->fgIsNetRequestInActive = FALSE;
 #endif
-		/* init add key action */
-		prBssInfo->eKeyAction = SEC_TX_KEY_COMMAND;
 
 		/* initialize wlan id and status for keys */
 		prBssInfo->ucBMCWlanIndex = WTBL_RESERVED_ENTRY;
