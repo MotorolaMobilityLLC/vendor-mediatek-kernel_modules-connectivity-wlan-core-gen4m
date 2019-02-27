@@ -687,6 +687,7 @@ struct STA_RECORD {
 #if DSCP_SUPPORT
 	struct _QOS_MAP_SET *qosMapSet;
 #endif
+	u_int8_t fgSupportBTM; /* Indicates whether to support BTM */
 };
 
 #if 0

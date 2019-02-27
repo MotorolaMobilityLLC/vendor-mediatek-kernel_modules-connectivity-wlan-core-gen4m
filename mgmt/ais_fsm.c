@@ -132,6 +132,21 @@ static void aisRemoveDisappearedBlacklist(struct ADAPTER *prAdapter);
 *                              F U N C T I O N S
 ********************************************************************************
 */
+static void aisResetBssTranstionMgtParam(
+		struct AIS_SPECIFIC_BSS_INFO *prSpecificBssInfo)
+{
+	struct BSS_TRANSITION_MGT_PARAM_T *prBtmParam =
+		&prSpecificBssInfo->rBTMParam;
+
+#if !CFG_SUPPORT_802_11V_BSS_TRANSITION_MGT
+	return;
+#endif
+	if (prBtmParam->u2PeerNeighborBssLen > 0)
+		kalMemFree(prBtmParam->pucPeerNeighborBss, VIR_MEM_TYPE,
+			prBtmParam->u2PeerNeighborBssLen);
+	kalMemZero(prBtmParam, sizeof(*prBtmParam));
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
 * @brief the function is used to initialize the value of the connection settings for
@@ -402,6 +417,7 @@ void aisFsmUninit(IN struct ADAPTER *prAdapter)
 {
 	struct AIS_FSM_INFO *prAisFsmInfo;
 	struct BSS_INFO *prAisBssInfo;
+	struct AIS_SPECIFIC_BSS_INFO *prAisSpecificBssInfo;
 
 	DEBUGFUNC("aisFsmUninit()");
 	DBGLOG(SW1, INFO, "->aisFsmUninit()\n");
@@ -412,6 +428,7 @@ void aisFsmUninit(IN struct ADAPTER *prAdapter)
 
 	prAisFsmInfo = &(prAdapter->rWifiVar.rAisFsmInfo);
 	prAisBssInfo = prAdapter->prAisBssInfo;
+	prAisSpecificBssInfo = &(prAdapter->rWifiVar.rAisSpecificBssInfo);
 
 	/* 4 <1> Stop all timers */
 	cnmTimerStopTimer(prAdapter, &prAisFsmInfo->rBGScanTimer);
@@ -423,6 +440,7 @@ void aisFsmUninit(IN struct ADAPTER *prAdapter)
 
 	/* 4 <2> flush pending request */
 	aisFsmFlushRequest(prAdapter);
+	aisResetBssTranstionMgtParam(prAisSpecificBssInfo);
 
 	/* 4 <3> Reset driver-domain BSS-INFO */
 	if (prAisBssInfo) {
@@ -521,6 +539,8 @@ void aisFsmStateInit_JOIN(IN struct ADAPTER *prAdapter, struct BSS_DESC *prBssDe
 		prAisSpecificBssInfo->ucRoamingAuthTypes = prAisFsmInfo->ucAvailableAuthTypes;
 
 		prStaRec->ucTxAuthAssocRetryLimit = TX_AUTH_ASSOCI_RETRY_LIMIT;
+		/* reset BTM Params when do first connection */
+		aisResetBssTranstionMgtParam(prAisSpecificBssInfo);
 
 		/* Update Bss info before join */
 		prAisBssInfo->eBand = prBssDesc->eBand;
@@ -4878,3 +4898,47 @@ uint16_t aisCalculateBlackListScore(struct ADAPTER *prAdapter,
 		return 0;
 	return 100 - prBssDesc->prBlack->ucCount * 10;
 }
+
+void aisFsmRunEventBssTransition(IN struct ADAPTER *prAdapter,
+				IN struct MSG_HDR *prMsgHdr)
+{
+	struct MSG_AIS_BSS_TRANSITION_T *prMsg =
+			(struct MSG_AIS_BSS_TRANSITION_T *)prMsgHdr;
+	struct AIS_SPECIFIC_BSS_INFO *prAisSpecificBssInfo =
+			&prAdapter->rWifiVar.rAisSpecificBssInfo;
+	struct BSS_TRANSITION_MGT_PARAM_T *prBtmParam =
+			&prAisSpecificBssInfo->rBTMParam;
+	enum WNM_AIS_BSS_TRANSITION eTransType = BSS_TRANSITION_MAX_NUM;
+	u_int8_t fgNeedBtmResponse = FALSE;
+
+	if (!prMsg) {
+		DBGLOG(AIS, WARN, "Msg Header is NULL\n");
+		return;
+	}
+	eTransType = prMsg->eTransitionType;
+	fgNeedBtmResponse = prMsg->fgNeedResponse;
+	cnmMemFree(prAdapter, prMsgHdr);
+
+	DBGLOG(AIS, INFO, "Transition Type: %d\n", eTransType);
+
+	switch (eTransType) {
+	case BSS_TRANSITION_DISASSOC:
+		break;
+	case BSS_TRANSITION_REQ_ROAMING:
+		break;
+	default:
+		break;
+	}
+
+	/* always reject roaming request */
+	prBtmParam->ucStatusCode = BSS_TRANSITION_MGT_STATUS_CAND_NO_CANDIDATES;
+	prBtmParam->ucTermDelay = 0;
+	kalMemZero(prBtmParam->aucTargetBssid, MAC_ADDR_LEN);
+	prBtmParam->u2OurNeighborBssLen = 0;
+
+	if (fgNeedBtmResponse && prAdapter->prAisBssInfo &&
+		prAdapter->prAisBssInfo->prStaRecOfAP)
+		wnmSendBTMResponseFrame(prAdapter,
+					prAdapter->prAisBssInfo->prStaRecOfAP);
+}
+

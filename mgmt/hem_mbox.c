@@ -166,8 +166,8 @@ static uint8_t *apucDebugMsg[] = {
 	(uint8_t *) DISP_STRING("MID_SAA_AIS_FSM_ABORT"),
 	(uint8_t *) DISP_STRING("MID_MNY_AIS_REMAIN_ON_CHANNEL"),
 	(uint8_t *) DISP_STRING("MID_MNY_AIS_CANCEL_REMAIN_ON_CHANNEL"),
-	(uint8_t *) DISP_STRING("MID_MNY_AIS_MGMT_TX")
-
+	(uint8_t *) DISP_STRING("MID_MNY_AIS_MGMT_TX"),
+	(uint8_t *) DISP_STRING("MID_WNM_AIS_BSS_TRANSITION")
 };
 
 /*lint -restore */
@@ -286,7 +286,8 @@ static struct MSG_HNDL_ENTRY arMsgMapTable[] = {
 		aisFsmRunEventRemainOnChannel},
 	{MID_MNY_AIS_CANCEL_REMAIN_ON_CHANNEL,
 		aisFsmRunEventCancelRemainOnChannel},
-	{MID_MNY_AIS_MGMT_TX, aisFsmRunEventMgmtFrameTx}
+	{MID_MNY_AIS_MGMT_TX, aisFsmRunEventMgmtFrameTx},
+	{MID_WNM_AIS_BSS_TRANSITION, aisFsmRunEventBssTransition},
 #if CFG_SUPPORT_NCHO
 	{MID_MNY_AIS_NCHO_ACTION_FRAME,
 		aisFsmRunEventNchoActionFrameTx},

@@ -627,6 +627,8 @@ struct AIS_SPECIFIC_BSS_INFO {
 	uint8_t ucCurEssChnlInfoNum;
 	struct LINK rCurEssLink;
 	/* end Support AP Selection */
+
+	struct BSS_TRANSITION_MGT_PARAM_T rBTMParam;
 };
 
 struct BOW_SPECIFIC_BSS_INFO {

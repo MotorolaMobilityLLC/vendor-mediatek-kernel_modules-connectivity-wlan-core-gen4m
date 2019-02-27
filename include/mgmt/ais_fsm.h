@@ -288,6 +288,18 @@ struct AIS_FSM_INFO {
 	uint8_t fgTargetChnlScanIssued;
 };
 
+enum WNM_AIS_BSS_TRANSITION {
+	BSS_TRANSITION_NO_MORE_ACTION,
+	BSS_TRANSITION_REQ_ROAMING,
+	BSS_TRANSITION_DISASSOC,
+	BSS_TRANSITION_MAX_NUM
+};
+struct MSG_AIS_BSS_TRANSITION_T {
+	struct MSG_HDR rMsgHdr;	/* Must be the first member */
+	u_int8_t fgNeedResponse;
+	enum WNM_AIS_BSS_TRANSITION	eTransitionType;
+};
+
 /*******************************************************************************
  *                            P U B L I C   D A T A
  *******************************************************************************
@@ -514,6 +526,9 @@ void aisFuncValidateRxActionFrame(IN struct ADAPTER *prAdapter,
 				IN struct SW_RFB *prSwRfb);
 
 void aisFsmRunEventSetOkcPmk(IN struct ADAPTER *prAdapter);
+
+void aisFsmRunEventBssTransition(IN struct ADAPTER *prAdapter,
+				IN struct MSG_HDR *prMsgHdr);
 
 enum ENUM_AIS_STATE aisFsmStateSearchAction(
 	IN struct ADAPTER *prAdapter, uint8_t ucPhase);
