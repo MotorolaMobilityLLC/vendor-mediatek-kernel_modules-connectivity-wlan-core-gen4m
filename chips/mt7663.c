@@ -177,6 +177,7 @@ BUS_INFO mt7663_bus_info = {
 		UDMA_WLCFG_0_RX_MPSZ_PAD0(1) |
 		UDMA_WLCFG_0_1US_TIMER_EN(1)),
 	.u4UdmaTxTimeout = UDMA_TX_TIMEOUT_LIMIT,
+	.asicUsbSuspend = asicUsbSuspend,
 #endif /* _HIF_USB */
 #if defined(_HIF_SDIO)
 	.halTxGetFreeResource = halTxGetFreeResource_v1,
