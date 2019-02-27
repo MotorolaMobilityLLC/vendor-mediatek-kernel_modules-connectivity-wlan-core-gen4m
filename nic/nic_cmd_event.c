@@ -2213,6 +2213,21 @@ VOID nicCmdEventQueryStaStatistics(IN P_ADAPTER_T prAdapter, IN P_CMD_INFO_T prC
 			prStaStatistics->fgIsForceTxStream = prEvent->fgIsForceTxStream;
 			prStaStatistics->fgIsForceSeOff = prEvent->fgIsForceSeOff;
 
+			prStaStatistics->u2RaRunningCnt = prEvent->u2RaRunningCnt;
+			prStaStatistics->ucRaStatus = prEvent->ucRaStatus;
+			prStaStatistics->ucMaxAmpduFactor = prEvent->ucMaxAmpduFactor;
+			kalMemCopy(&prStaStatistics->aucTxQuality, &prEvent->aucTxQuality,
+				sizeof(prEvent->aucTxQuality));
+			prStaStatistics->ucTxRateUpPenalty = prEvent->ucTxRateUpPenalty;
+			prStaStatistics->ucLowTrafficMode = prEvent->ucLowTrafficMode;
+			prStaStatistics->ucLowTrafficCount = prEvent->ucLowTrafficCount;
+			prStaStatistics->ucLowTrafficDashBoard = prEvent->ucLowTrafficDashBoard;
+			prStaStatistics->ucDynamicSGIState = prEvent->ucDynamicSGIState;
+			prStaStatistics->ucDynamicSGIScore = prEvent->ucDynamicSGIScore;
+			prStaStatistics->ucDynamicBWState = prEvent->ucDynamicBWState;
+			prStaStatistics->ucDynamicGband256QAMState = prEvent->ucDynamicGband256QAMState;
+			prStaStatistics->ucVhtNonSpRateState = prEvent->ucVhtNonSpRateState;
+
 			prStaRec = cnmGetStaRecByIndex(prAdapter, prEvent->ucStaRecIdx);
 
 			if (prStaRec) {
