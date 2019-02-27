@@ -338,6 +338,8 @@ uint32_t wlanAdapterStart(IN struct ADAPTER *prAdapter, IN struct REG_INFO *prRe
 	prAdapter->ucWtblEntryNum = WTBL_SIZE;
 	prAdapter->ucTxDefaultWlanIndex = prAdapter->ucWtblEntryNum - 1;
 
+	prAdapter->fgEnHifDbgInfo = true;
+
 	QUEUE_INITIALIZE(&(prAdapter->rPendingCmdQueue));
 #if CFG_SUPPORT_MULTITHREAD
 	QUEUE_INITIALIZE(&prAdapter->rTxCmdQueue);
@@ -704,14 +706,8 @@ uint32_t wlanAdapterStart(IN struct ADAPTER *prAdapter, IN struct REG_INFO *prRe
 		nicEnableInterrupt(prAdapter);
 
 	} else {
-		struct CHIP_DBG_OPS *prOps;
-
 		halPrintHifDbgInfo(prAdapter);
 		DBGLOG(INIT, WARN, "Fail reason: %d\n", eFailReason);
-
-		prOps = prAdapter->chip_info->prDebugOps;
-		if (prOps->showCsrInfo)
-			prOps->showCsrInfo(prAdapter);
 
 		/* release allocated memory */
 		switch (eFailReason) {
@@ -1074,8 +1070,8 @@ uint32_t wlanProcessCommandQueue(IN struct ADAPTER *prAdapter, IN struct QUE *pr
 				/* Do nothing */
 				/* Do nothing */
 			} else if (rStatus == WLAN_STATUS_SUCCESS) {
-				/* Do nothing */
-				/* Do nothing */
+				/* Enable hif debug log */
+				prAdapter->fgEnHifDbgInfo = true;
 			} else {
 				struct CMD_INFO *prCmdInfo = (struct CMD_INFO *) prQueueEntry;
 
@@ -2248,6 +2244,7 @@ uint32_t wlanSendNicPowerCtrlCmd(IN struct ADAPTER *prAdapter, IN uint8_t ucPowe
 	struct CMD_INFO *prCmdInfo;
 	struct WIFI_CMD *prWifiCmd;
 	uint8_t ucTC, ucCmdSeqNum;
+	uint32_t u4StartTime;
 
 	ASSERT(prAdapter);
 
@@ -2291,29 +2288,39 @@ uint32_t wlanSendNicPowerCtrlCmd(IN struct ADAPTER *prAdapter, IN uint8_t ucPowe
 	/* 3. Issue CMD for entering specific power mode */
 	ucTC = TC4_INDEX;
 
+	u4StartTime = kalGetTimeTick();
 	while (1) {
 		/* 3.0 Removal check */
-		if (kalIsCardRemoved(prAdapter->prGlueInfo) == TRUE || fgIsBusAccessFailed == TRUE) {
+		if (kalIsCardRemoved(prAdapter->prGlueInfo) == TRUE ||
+			fgIsBusAccessFailed == TRUE) {
 			status = WLAN_STATUS_FAILURE;
 			break;
 		}
+
 		/* 3.1 Acquire TX Resource */
-		if (nicTxAcquireResource(prAdapter, ucTC, nicTxGetCmdPageCount(prAdapter, prCmdInfo), TRUE)
-			== WLAN_STATUS_RESOURCES) {
-			if (nicTxPollingResource(prAdapter, ucTC) != WLAN_STATUS_SUCCESS) {
-				DBGLOG(INIT, ERROR, "Fail to get TX resource return within timeout\n");
-				status = WLAN_STATUS_FAILURE;
-				prAdapter->fgIsChipNoAck = TRUE;
-				break;
-			}
-			continue;
+		if (nicTxAcquireResource(prAdapter, ucTC,
+			nicTxGetCmdPageCount(prAdapter, prCmdInfo), TRUE)
+			!= WLAN_STATUS_RESOURCES)
+			break;
+
+		if (nicTxPollingResource(prAdapter, ucTC)
+			!= WLAN_STATUS_SUCCESS) {
+			DBGLOG(INIT, ERROR,
+			       "Fail to get TX resource return within timeout\n");
+			status = WLAN_STATUS_FAILURE;
+			prAdapter->fgIsChipNoAck = TRUE;
+			break;
 		}
-		break;
+
+		if (CHECK_FOR_TIMEOUT(kalGetTimeTick(), u4StartTime,
+				      CFG_POWER_CTRL_ACQUIRE_RES_TIMEOUT))
+			break;
 	};
 
 	/* 3.2 Send CMD Info Packet */
 	if (nicTxCmd(prAdapter, prCmdInfo, ucTC) != WLAN_STATUS_SUCCESS) {
-		DBGLOG(INIT, ERROR, "Fail to transmit CMD_NIC_POWER_CTRL command\n");
+		DBGLOG(INIT, ERROR,
+		       "Fail to transmit CMD_NIC_POWER_CTRL command\n");
 		status = WLAN_STATUS_FAILURE;
 	}
 

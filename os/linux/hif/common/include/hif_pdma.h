@@ -155,7 +155,7 @@
 #define DMA_BITS_OFFSET		32
 
 #define DMA_DONE_WAITING_TIME   10
-#define DMA_DONE_WAITING_COUNT  200
+#define DMA_DONE_WAITING_COUNT  100
 
 #define MT_TX_RING_BASE_EXT WPDMA_TX_RING0_BASE_PTR_EXT
 #define MT_RX_RING_BASE_EXT WPDMA_RX_RING0_BASE_PTR_EXT
@@ -423,6 +423,8 @@ void halShowPseInfo(IN struct ADAPTER *prAdapter);
 void halShowPleInfo(IN struct ADAPTER *prAdapter);
 void halShowHostCsrInfo(IN struct ADAPTER *prAdapter);
 void halShowDmaschInfo(IN struct ADAPTER *prAdapter);
+void halDumpHifDebugLog(struct GLUE_INFO *prGlueInfo,
+			bool fgTxContent, bool fgRxContent);
 
 void kalPciUnmapToDev(IN struct GLUE_INFO *prGlueInfo, IN dma_addr_t rDmaAddr,
 		      IN uint32_t u4Length);
@@ -435,5 +437,4 @@ void kalDumpTxRing(struct GLUE_INFO *prGlueInfo,
 void kalDumpRxRing(struct GLUE_INFO *prGlueInfo,
 		   struct RTMP_RX_RING *prRxRing,
 		   uint32_t u4Num, bool fgDumpContent);
-void kalDumpRxRingDebugLog(struct GLUE_INFO *prGlueInfo);
 #endif /* HIF_PDMA_H__ */
