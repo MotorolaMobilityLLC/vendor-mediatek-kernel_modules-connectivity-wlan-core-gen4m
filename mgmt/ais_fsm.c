@@ -2141,12 +2141,11 @@ void aisFsmSteps(IN struct ADAPTER *prAdapter, enum ENUM_AIS_STATE eNextState)
 #endif /* CFG_SUPPORT_ADHOC */
 
 		case AIS_STATE_NORMAL_TR:
-			if (LINK_IS_VALID(&prAisFsmInfo->rJoinTimeoutTimer)) {
-				/* Don't do anything when rJoinTimeoutTimer
-				 * is still ticking
-				 */
+			/* Don't do anything when rJoinTimeoutTimer
+			 * is still ticking
+			 */
+			if (timerPendingTimer(&prAisFsmInfo->rJoinTimeoutTimer))
 				break;
-			}
 
 			/* 1. Process for pending roaming scan */
 			if (aisFsmIsRequestPending(prAdapter,
@@ -4678,7 +4677,8 @@ void aisFsmScanRequest(IN struct ADAPTER *prAdapter,
 		if (prAisFsmInfo->eCurrentState == AIS_STATE_NORMAL_TR) {
 			if (prAisBssInfo->eCurrentOPMode ==
 			    OP_MODE_INFRASTRUCTURE &&
-			    LINK_IS_VALID(&prAisFsmInfo->rJoinTimeoutTimer)) {
+			    timerPendingTimer(&prAisFsmInfo->
+						rJoinTimeoutTimer)) {
 				/* 802.1x might not finished yet, pend it for
 				 * later handling ..
 				 */
@@ -4763,7 +4763,8 @@ aisFsmScanRequestAdv(IN struct ADAPTER *prAdapter,
 		if (prAisFsmInfo->eCurrentState == AIS_STATE_NORMAL_TR) {
 			if (prAisBssInfo->eCurrentOPMode ==
 			    OP_MODE_INFRASTRUCTURE &&
-			    LINK_IS_VALID(&prAisFsmInfo->rJoinTimeoutTimer)) {
+			    timerPendingTimer(&prAisFsmInfo->
+						rJoinTimeoutTimer)) {
 				/* 802.1x might not finished yet, pend it for
 				 * later handling ..
 				 */
@@ -5186,7 +5187,7 @@ void aisFsmRunEventRoamingDiscovery(IN struct ADAPTER *prAdapter,
 	}
 
 	if (prAisFsmInfo->eCurrentState == AIS_STATE_NORMAL_TR
-	    && !LINK_IS_VALID(&prAisFsmInfo->rJoinTimeoutTimer)) {
+	    && !timerPendingTimer(&prAisFsmInfo->rJoinTimeoutTimer)) {
 		if (eAisRequest == AIS_REQUEST_ROAMING_SEARCH) {
 			prAisFsmInfo->fgTargetChnlScanIssued = TRUE;
 			aisFsmSteps(prAdapter, AIS_STATE_LOOKING_FOR);
@@ -5538,7 +5539,7 @@ void aisFsmRunEventRemainOnChannel(IN struct ADAPTER *prAdapter,
 
 	if ((prAisFsmInfo->eCurrentState == AIS_STATE_IDLE) ||
 	    (prAisFsmInfo->eCurrentState == AIS_STATE_NORMAL_TR
-	     && !LINK_IS_VALID(&prAisFsmInfo->rJoinTimeoutTimer))) {
+	     && !timerPendingTimer(&prAisFsmInfo->rJoinTimeoutTimer))) {
 		/* transit to next state */
 		aisFsmSteps(prAdapter, AIS_STATE_REQ_REMAIN_ON_CHANNEL);
 	} else {

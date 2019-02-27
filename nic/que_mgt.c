@@ -7508,7 +7508,7 @@ void qmHandleRxDhcpPackets(struct ADAPTER *prAdapter,
 				/* Check if join timer is ticking, then release
 				 * channel privilege and stop join timer.
 				 */
-				if (LINK_IS_VALID(&prAisFsmInfo->
+				if (timerPendingTimer(&prAisFsmInfo->
 							rJoinTimeoutTimer)) {
 					aisFsmReleaseCh(prAdapter);
 					cnmTimerStopTimer(prAdapter,
