@@ -2431,7 +2431,7 @@ uint32_t txPwrParseNumber(char **pcContent, char *delim, uint8_t *op,
 	char *pcTmp = NULL;
 	char *result = NULL;
 
-	if (*pcContent == NULL)
+	if ((!pcContent) || (*pcContent == NULL))
 		return -1;
 
 	if (**pcContent == '-') {
@@ -2441,7 +2441,7 @@ uint32_t txPwrParseNumber(char **pcContent, char *delim, uint8_t *op,
 	pcTmp = *pcContent;
 
 	result = kalStrSep(pcContent, delim);
-	if ((pcContent == NULL) || (result == NULL)) {
+	if (result == NULL) {
 		return -1;
 	} else if ((result != NULL) && (kalStrLen(result) == 0)) {
 		if (fgIsNegtive)
