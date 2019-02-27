@@ -3342,6 +3342,7 @@ static int initWlan(void)
 		if (glP2pCreateWirelessDevice(prGlueInfo) == TRUE)
 			gprP2pWdev = gprP2pRoleWdev[0];
 	}
+	gPrDev = NULL;
 
 	ret = ((glRegisterBus(wlanProbe, wlanRemove) == WLAN_STATUS_SUCCESS) ? 0 : -EIO);
 
