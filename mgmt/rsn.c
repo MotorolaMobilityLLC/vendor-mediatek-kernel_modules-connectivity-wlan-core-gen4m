@@ -2881,6 +2881,9 @@ void rsnSaQueryAction(IN struct ADAPTER *prAdapter, IN struct SW_RFB *prSwRfb)
 	    prSwRfb->pvHeader;
 	prStaRec = cnmGetStaRecByIndex(prAdapter, prSwRfb->ucStaRecIdx);
 
+	if (!prStaRec)
+		return;
+
 	if (prSwRfb->u2PacketLen < ACTION_SA_QUERY_TR_ID_LEN) {
 		DBGLOG(RSN, INFO,
 		       "IEEE 802.11: Too short SA Query Action frame (len=%lu)\n",
