@@ -3647,6 +3647,14 @@ void wlanOffStopWlanThreads(IN struct GLUE_INFO *prGlueInfo)
 {
 	DBGLOG(INIT, TRACE, "start.\n");
 
+	if (prGlueInfo->main_thread == NULL &&
+	    prGlueInfo->hif_thread == NULL &&
+	    prGlueInfo->rx_thread == NULL) {
+		DBGLOG(INIT, INFO,
+			"Threads are already NULL, skip stop and free\n");
+		return;
+	}
+
 #if CFG_SUPPORT_MULTITHREAD
 	wake_up_interruptible(&prGlueInfo->waitq_hif);
 	wait_for_completion_interruptible(
@@ -3894,6 +3902,13 @@ static int32_t wlanOnAtReset(void)
 		halPrintHifDbgInfo(prAdapter);
 		DBGLOG(INIT, WARN, "Fail reason: %d\n", eFailReason);
 
+		/* Remove error handling here, leave it to coming wlanRemove
+		 * for full clean.
+		 *
+		 * If WMT being removed in the future, you should invoke
+		 * wlanRemove directly from here
+		 */
+#if 0
 		switch (eFailReason) {
 		case ADAPTER_START_FAIL:
 			glBusFreeIrq(prDev,
@@ -3912,7 +3927,7 @@ static int32_t wlanOnAtReset(void)
 		default:
 			break;
 		}
-
+#endif
 	}
 	return rStatus;
 }
