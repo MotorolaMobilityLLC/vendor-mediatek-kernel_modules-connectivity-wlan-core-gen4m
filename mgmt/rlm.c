@@ -1090,11 +1090,15 @@ void rlmReqGenerateVhtCapIE(struct ADAPTER *prAdapter,
 		rlmFillVhtCapIE(prAdapter, prBssInfo, prMsduInfo);
 #if CFG_SUPPORT_VHT_IE_IN_2G
 	else if ((prBssInfo->eBand == BAND_2G4) &&
-			fgIsVHTPresent &&
 			(prStaRec->ucPhyTypeSet & PHY_TYPE_SET_802_11N) &&
-			(prAdapter->rWifiVar.ucVhtIeIn2g == FEATURE_ENABLED)) {
-		DBGLOG(RLM, TRACE, "Add VHT IE in 2.4G, ucPhyTypeSet=%02x",
-			prStaRec->ucPhyTypeSet);
+			((prAdapter->rWifiVar.ucVhtIeIn2g
+				==  FEATURE_FORCE_ENABLED) ||
+			((prAdapter->rWifiVar.ucVhtIeIn2g
+				== FEATURE_ENABLED) && fgIsVHTPresent))) {
+		DBGLOG(RLM, TRACE,
+			"Add VHT IE in 2.4G, ucPhyTypeSet=%02x, , ucVhtIeIn2g=%02x",
+			prStaRec->ucPhyTypeSet,
+			prAdapter->rWifiVar.ucVhtIeIn2g);
 		rlmFillVhtCapIE(prAdapter, prBssInfo, prMsduInfo);
 	}
 #endif
