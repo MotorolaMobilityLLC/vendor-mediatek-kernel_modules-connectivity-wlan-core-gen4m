@@ -730,7 +730,7 @@ static inline void kalCfg80211ScanDone(struct cfg80211_scan_request *request,
 #define kalGetTimeTick()                            jiffies_to_msecs(jiffies)
 
 #define WLAN_TAG                                    "[wlan]"
-#define kalPrint(_Fmt...)                           printk(WLAN_TAG _Fmt)
+#define kalPrint(_Fmt...)                           pr_debug(WLAN_TAG _Fmt)
 
 #define kalBreakPoint() \
 do { \
