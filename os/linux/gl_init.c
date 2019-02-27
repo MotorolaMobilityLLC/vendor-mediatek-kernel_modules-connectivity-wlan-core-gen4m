@@ -797,24 +797,29 @@ static void glLoadNvram(IN struct GLUE_INFO *prGlueInfo,
 		/* load feature flags */
 		prRegInfo->ucTxPwrValid = prNvramSettings->ucTxPwrValid;
 
-		prRegInfo->ucSupport5GBand = prNvramSettings->ucSupport5GBand;
+		prRegInfo->ucSupport5GBand =
+				prNvramSettings->ucSupport5GBand;
 
-		prRegInfo->uc2G4BwFixed20M = prNvramSettings->uc2G4BwFixed20M;
+		/* prNvramSettings->uc2G4BwFixed20M ; */
+		prRegInfo->uc2G4BwFixed20M = 0;
 
-		prRegInfo->uc5GBwFixed20M = prNvramSettings->uc5GBwFixed20M;
+		/* prNvramSettings->uc5GBwFixed20M; */
+		prRegInfo->uc5GBwFixed20M = 0;
 
 		prRegInfo->ucEnable5GBand = prNvramSettings->ucEnable5GBand;
 
-		prRegInfo->ucRxDiversity = prNvramSettings->ucRxDiversity;
+		/* prNvramSettings->ucRxDiversity; */
+		prRegInfo->ucRxDiversity = 0;
 
-		prRegInfo->ucRssiPathCompasationUsed =
-				prNvramSettings->fgRssiCompensationVaildbit;
+		/*	prNvramSettings->fgRssiCompensationVaildbit; */
+		prRegInfo->ucRssiPathCompasationUsed = 0;
 
-		prRegInfo->ucGpsDesense = prNvramSettings->ucGpsDesense;
+		/* prNvramSettings->ucGpsDesense; */
+		prRegInfo->ucGpsDesense = 0;
 
 		/* load band edge tx power control */
 		prRegInfo->fg2G4BandEdgePwrUsed =
-					prNvramSettings->fg2G4BandEdgePwrUsed;
+				prNvramSettings->fg2G4BandEdgePwrUsed;
 
 		if (prRegInfo->prNvramSettings->fg2G4BandEdgePwrUsed) {
 			prRegInfo->cBandEdgeMaxPwrCCK =
@@ -839,15 +844,20 @@ static void glLoadNvram(IN struct GLUE_INFO *prGlueInfo,
 				MAX_SUBBAND_NUM*sizeof(uint8_t));
 		}
 
+#if 0 /* prRegInfo->rRssiPathCompasation default 0 on on connac */
 		/* load rssiPathCompensation */
 		kalMemCopy(&prRegInfo->rRssiPathCompasation,
 				&prNvramSettings->rRssiPathCompensation,
 				sizeof(struct RSSI_PATH_COMPASATION));
+#endif
 
 		prGlueInfo->fgNvramAvailable = TRUE;
-		DBGLOG(INIT, INFO, "glLoadNvram end\n");
+		log_dbg(INIT, INFO, "u2Part1OwnVersion = %08x, u2Part1PeerVersion = %08x\n",
+					 prNvramSettings->u2Part1OwnVersion,
+					 prNvramSettings->u2Part1PeerVersion);
+		log_dbg(INIT, INFO, "glLoadNvram end\n");
 	} else {
-		DBGLOG(INIT, INFO, "glLoadNvram fail\n");
+		log_dbg(INIT, INFO, "glLoadNvram fail\n");
 	}
 
 }

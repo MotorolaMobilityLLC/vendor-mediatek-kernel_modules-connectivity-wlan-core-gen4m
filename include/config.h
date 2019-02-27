@@ -806,7 +806,7 @@
  * Flags of 5G NVRAM SUPPORT
  *------------------------------------------------------------------------------
  */
-#define CFG_SUPPORT_NVRAM_5G                1
+#define CFG_SUPPORT_NVRAM_5G                0
 
 /*------------------------------------------------------------------------------
  * Flags of Packet Lifetime Profiling Mechanism
