@@ -2367,7 +2367,6 @@ priv_set_driver(IN struct net_device *prNetDev,
 	}
 
 	if (pcExtra) {
-		pcExtra[2000] = '\0';
 		DBGLOG(REQ, INFO, "pcExtra %s\n", pcExtra);
 		/* Please check max length in rIwPrivTable */
 		DBGLOG(REQ, INFO, "%s prIwReqData->data.length = %d\n",
