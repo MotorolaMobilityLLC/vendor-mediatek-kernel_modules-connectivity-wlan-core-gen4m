@@ -737,10 +737,10 @@ struct MSDU_TOKEN_ENTRY *halAcquireMsduToken(IN struct ADAPTER *prAdapter)
 
 	spin_unlock_irqrestore(&prTokenInfo->rTokenLock, flags);
 
-	DBGLOG(HAL, TRACE,
-		"Acquire Entry[0x%p] Tok[%u] Buf[%p] Len[%u]\n",
-		prToken, prToken->u4Token,
-		prToken->prPacket, prToken->u4DmaLength);
+	DBGLOG_LIMITED(HAL, TRACE,
+		       "Acquire Entry[0x%p] Tok[%u] Buf[%p] Len[%u]\n",
+		       prToken, prToken->u4Token,
+		       prToken->prPacket, prToken->u4DmaLength);
 
 	return prToken;
 }
@@ -885,9 +885,10 @@ void halRxProcessMsduReport(IN struct ADAPTER *prAdapter,
 		prTokenEntry = halGetMsduTokenEntry(prAdapter, u4Token);
 
 #if HIF_TX_PREALLOC_DATA_BUFFER
-		DBGLOG(HAL, TRACE,
-			"MsduRpt: Cnt[%u] Tok[%u] Free[%u]\n", u2TokenCnt,
-			u4Token, halGetMsduTokenFreeCnt(prAdapter));
+		DBGLOG_LIMITED(HAL, TRACE,
+			       "MsduRpt: Cnt[%u] Tok[%u] Free[%u]\n",
+			       u2TokenCnt, u4Token,
+			       halGetMsduTokenFreeCnt(prAdapter));
 #else
 		prMsduInfo = prTokenEntry->prMsduInfo;
 		prMsduInfo->prToken = NULL;
@@ -895,11 +896,11 @@ void halRxProcessMsduReport(IN struct ADAPTER *prAdapter,
 			QUEUE_INSERT_TAIL(prFreeQueue,
 				(struct QUE_ENTRY *) prMsduInfo);
 
-		DBGLOG(HAL, TRACE,
-			"MsduRpt: Cnt[%u] Tok[%u] Msdu[0x%p] TxDone[%u] Free[%u]\n",
-			u2TokenCnt, u4Token, prMsduInfo,
-			(prMsduInfo->pfTxDoneHandler ? TRUE : FALSE),
-			halGetMsduTokenFreeCnt(prAdapter));
+		DBGLOG_LIMITED(HAL, TRACE,
+			       "MsduRpt: Cnt[%u] Tok[%u] Msdu[0x%p] TxDone[%u] Free[%u]\n",
+			       u2TokenCnt, u4Token, prMsduInfo,
+			       (prMsduInfo->pfTxDoneHandler ? TRUE : FALSE),
+			       halGetMsduTokenFreeCnt(prAdapter));
 #endif
 		if (prMemOps->unmapTxBuf) {
 			prMemOps->unmapTxBuf(prHifInfo,
@@ -1787,8 +1788,8 @@ static bool halWpdmaFillTxRing(struct GLUE_INFO *prGlueInfo,
 
 	spin_unlock_irqrestore((spinlock_t *)prTxRingLock, flags);
 
-	DBGLOG(HAL, TRACE, "Tx Data: CPU idx[0x%x] Used[%u]\n",
-	       prTxRing->TxCpuIdx, prTxRing->u4UsedCnt);
+	DBGLOG_LIMITED(HAL, TRACE, "Tx Data: CPU idx[0x%x] Used[%u]\n",
+		       prTxRing->TxCpuIdx, prTxRing->u4UsedCnt);
 
 	return TRUE;
 }
