@@ -3795,15 +3795,19 @@ static int32_t wlanOnAtReset(void)
 		DBGLOG(INIT, INFO, "reset success\n");
 
 		/* Send disconnect */
-		rStatus = kalIoctl(prGlueInfo, wlanoidSetDisassociate,
-				(void *)DISCONNECT_REASON_CODE_CHIPRESET,
-				0, FALSE, FALSE, TRUE, &u4BufLen);
+		if (prAdapter->prAisBssInfo->eConnectionState ==
+					PARAM_MEDIA_STATE_CONNECTED) {
+			rStatus = kalIoctl(prGlueInfo, wlanoidSetDisassociate,
+				      (void *) DISCONNECT_REASON_CODE_CHIPRESET,
+				      0, FALSE, FALSE, TRUE, &u4BufLen);
 
-		if (rStatus != WLAN_STATUS_SUCCESS) {
-			DBGLOG(REQ, WARN, "disassociate error:%x\n", rStatus);
-			return -EFAULT;
+			if (rStatus != WLAN_STATUS_SUCCESS) {
+				DBGLOG(REQ, WARN, "disassociate error:%x\n",
+				       rStatus);
+				return -EFAULT;
+			}
+			DBGLOG(INIT, INFO, "inform disconnected\n");
 		}
-		DBGLOG(INIT, INFO, "inform disconnected\n");
 	} else {
 		prAdapter->u4HifDbgFlag |= DEG_HIF_DEFAULT_DUMP;
 		halPrintHifDbgInfo(prAdapter);
