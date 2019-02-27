@@ -5833,7 +5833,7 @@ void wlanCfgDumpIotApRule(IN struct ADAPTER *prAdapter)
 		prIotApRule = &prAdapter->rIotApRule[ucRuleIdx];
 		if (!prIotApRule->u2MatchFlag)
 			continue;
-		DBGLOG(INIT, INFO, "IOTAP%d is valid rule\n", ucRuleIdx);
+		DBGLOG(INIT, TRACE, "IOTAP%d is valid rule\n", ucRuleIdx);
 		DBGLOG(INIT, TRACE, "IOTAP%d Flag:0x%X Ver:0x%X\n",
 			ucRuleIdx, prIotApRule->u2MatchFlag,
 			prIotApRule->ucVersion);
