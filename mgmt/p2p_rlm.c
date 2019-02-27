@@ -117,9 +117,7 @@
 /*----------------------------------------------------------------------------*/
 VOID rlmBssInitForAP(P_ADAPTER_T prAdapter, P_BSS_INFO_T prBssInfo)
 {
-	ENUM_BAND_T eBand;
-	UINT_8 ucChannel, i;
-	ENUM_CHNL_EXT_T eSCO;
+	UINT_8 i;
 
 	ASSERT(prAdapter);
 	ASSERT(prBssInfo);
@@ -139,16 +137,8 @@ VOID rlmBssInitForAP(P_ADAPTER_T prAdapter, P_BSS_INFO_T prBssInfo)
 	 * in order to remain in SCC case
 	 */
 	if (cnmBss40mBwPermitted(prAdapter, prBssInfo->ucBssIndex)) {
-		/* In this case, the first BSS's SCO is 40MHz and known, so AP can
-		 * apply 40MHz bandwidth, but the first BSS's SCO may be changed
-		 * later if its Beacon lost timeout occurs
-		 */
-		if (cnmPreferredChannel(prAdapter, &eBand, &ucChannel, &eSCO) &&
-		    eSCO != CHNL_EXT_SCN && ucChannel == prBssInfo->ucPrimaryChannel && eBand == prBssInfo->eBand) {
-			prBssInfo->eBssSCO = eSCO;
-		} else {
-			prBssInfo->eBssSCO = rlmDecideScoForAP(prAdapter, prBssInfo);
-		}
+
+		prBssInfo->eBssSCO = rlmGetScoForAP(prAdapter, prBssInfo);
 
 		if (prBssInfo->eBssSCO != CHNL_EXT_SCN) {
 			prBssInfo->fg40mBwAllowed = TRUE;
@@ -167,28 +157,19 @@ VOID rlmBssInitForAP(P_ADAPTER_T prAdapter, P_BSS_INFO_T prBssInfo)
 			prBssInfo->u2VhtBasicMcsSet |= BITS(2 * i, (2 * i + 1));
 		prBssInfo->u2VhtBasicMcsSet &= (VHT_CAP_INFO_MCS_MAP_MCS9 << VHT_CAP_INFO_MCS_1SS_OFFSET);
 
-		if (cnmGetBssMaxBw(prAdapter, prBssInfo->ucBssIndex) < MAX_BW_80MHZ || prBssInfo->eBand == BAND_2G4) {
+		prBssInfo->ucVhtChannelWidth = cnmGetBssMaxBwToChnlBW(prAdapter, prBssInfo->ucBssIndex);
+		if (prBssInfo->ucVhtChannelWidth == VHT_OP_CHANNEL_WIDTH_80P80) {
+			/* TODO: BW80+80 support */
+			DBGLOG(RLM, WARN, "BW80+80 not support. Fallback  to VHT_OP_CHANNEL_WIDTH_20_40\n");
 			prBssInfo->ucVhtChannelWidth = VHT_OP_CHANNEL_WIDTH_20_40;
 			prBssInfo->ucVhtChannelFrequencyS1 = 0;
-			prBssInfo->ucVhtChannelFrequencyS2 = 0;
-		} else if (cnmGetBssMaxBw(prAdapter, prBssInfo->ucBssIndex) == MAX_BW_80MHZ) {
-			prBssInfo->ucVhtChannelWidth = VHT_OP_CHANNEL_WIDTH_80;
-			prBssInfo->ucVhtChannelFrequencyS1 =
-				nicGetVhtS1(prBssInfo->ucPrimaryChannel, VHT_OP_CHANNEL_WIDTH_80);
-			prBssInfo->ucVhtChannelFrequencyS2 = 0;
-		} else if (cnmGetBssMaxBw(prAdapter, prBssInfo->ucBssIndex) == MAX_BW_160MHZ) {
-			prBssInfo->ucVhtChannelWidth = VHT_OP_CHANNEL_WIDTH_160;
-			prBssInfo->ucVhtChannelFrequencyS1 =
-				nicGetVhtS1(prBssInfo->ucPrimaryChannel, VHT_OP_CHANNEL_WIDTH_160);
 			prBssInfo->ucVhtChannelFrequencyS2 = 0;
 		} else {
-			/* 4 TODO: / BW80+80 support */
-			DBGLOG(RLM, INFO, "Wrong AP BW parameter setting, back to BW20!!!\n");
-
-			prBssInfo->ucVhtChannelWidth = VHT_OP_CHANNEL_WIDTH_20_40;
-			prBssInfo->ucVhtChannelFrequencyS1 = 0;
+			prBssInfo->ucVhtChannelFrequencyS1 =
+				rlmGetVhtS1ForAP(prAdapter, prBssInfo);
 			prBssInfo->ucVhtChannelFrequencyS2 = 0;
 		}
+
 		/* If the S1 is invalid, force to change bandwidth */
 		if (prBssInfo->ucVhtChannelFrequencyS1 == 0)
 			prBssInfo->ucVhtChannelWidth = VHT_OP_CHANNEL_WIDTH_20_40;
@@ -1033,3 +1014,97 @@ ENUM_CHNL_EXT_T rlmDecideScoForAP(P_ADAPTER_T prAdapter, P_BSS_INFO_T prBssInfo)
 
 	return eSCO;
 }
+
+/*----------------------------------------------------------------------------*/
+/*!
+* \brief: Get AP secondary channel offset from cfg80211 or wifi.cfg
+*
+* \param[in] prAdapter  Pointer of ADAPTER_T, prBssInfo Pointer of BSS_INFO_T,
+*
+* \return ENUM_CHNL_EXT_T AP secondary channel offset
+*/
+/*----------------------------------------------------------------------------*/
+ENUM_CHNL_EXT_T rlmGetScoForAP(P_ADAPTER_T prAdapter, P_BSS_INFO_T prBssInfo)
+{
+	ENUM_BAND_T eBand;
+	UINT_8 ucChannel;
+	ENUM_CHNL_EXT_T eSCO;
+	INT_32 i4DeltaBw;
+	UINT_32 u4AndOneSCO;
+	P_P2P_ROLE_FSM_INFO_T prP2pRoleFsmInfo = (P_P2P_ROLE_FSM_INFO_T) NULL;
+	P_P2P_CONNECTION_REQ_INFO_T prP2pConnReqInfo = (P_P2P_CONNECTION_REQ_INFO_T) NULL;
+
+	prP2pRoleFsmInfo = p2pFuncGetRoleByBssIdx(prAdapter, prBssInfo->ucBssIndex);
+
+	if (!prAdapter->rWifiVar.ucApChnlDefFromCfg && prP2pRoleFsmInfo) {
+		prP2pConnReqInfo = &(prP2pRoleFsmInfo->rConnReqInfo);
+		eSCO = CHNL_EXT_SCN;
+		if (cnmGetBssMaxBw(prAdapter, prBssInfo->ucBssIndex) == MAX_BW_40MHZ) {
+			/* If BW 40, compare S0 and primary channel freq */
+			if (prP2pConnReqInfo->u4CenterFreq1 > prP2pConnReqInfo->u2PriChnlFreq)
+				eSCO = CHNL_EXT_SCA;
+			else
+				eSCO = CHNL_EXT_SCB;
+		} else if (cnmGetBssMaxBw(prAdapter, prBssInfo->ucBssIndex) > MAX_BW_40MHZ) {
+			/* P: PriChnlFreq, A:CHNL_EXT_SCA, B: CHNL_EXT_SCB, -:BW SPAN 5M */
+			/* --|----|--CenterFreq1--|----|-- */
+			/* --|----|--CenterFreq1--B----P-- */
+			/* --|----|--CenterFreq1--P----A-- */
+			i4DeltaBw =  prP2pConnReqInfo->u2PriChnlFreq - prP2pConnReqInfo->u4CenterFreq1;
+			u4AndOneSCO = CHNL_EXT_SCB;
+			eSCO = CHNL_EXT_SCA;
+			if (i4DeltaBw < 0) {
+				/* --|----|--CenterFreq1--|----|-- */
+				/* --P----A--CenterFreq1--|----|-- */
+				/* --B----P--CenterFreq1--|----|-- */
+				u4AndOneSCO = CHNL_EXT_SCA;
+				eSCO = CHNL_EXT_SCB;
+				i4DeltaBw = -i4DeltaBw;
+			}
+			i4DeltaBw = i4DeltaBw - (CHANNEL_SPAN_20 >> 1);
+			if ((i4DeltaBw/CHANNEL_SPAN_20) & 1)
+				eSCO = u4AndOneSCO;
+		}
+	} else {
+		/* In this case, the first BSS's SCO is 40MHz and known, so AP can
+		 * apply 40MHz bandwidth, but the first BSS's SCO may be changed
+		 * later if its Beacon lost timeout occurs
+		 */
+		if (!(cnmPreferredChannel(prAdapter, &eBand, &ucChannel, &eSCO) &&
+		    eSCO != CHNL_EXT_SCN && ucChannel == prBssInfo->ucPrimaryChannel &&
+		    eBand == prBssInfo->eBand))
+			eSCO = rlmDecideScoForAP(prAdapter, prBssInfo);
+	}
+	return eSCO;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+* \brief: Get AP channel number of Channel Center Frequency Segment 0 from cfg80211 or wifi.cfg
+*
+* \param[in] prAdapter  Pointer of ADAPTER_T, prBssInfo Pointer of BSS_INFO_T,
+*
+* \return UINT_8 AP channel number of Channel Center Frequency Segment 0
+*/
+/*----------------------------------------------------------------------------*/
+UINT_8 rlmGetVhtS1ForAP(P_ADAPTER_T prAdapter, P_BSS_INFO_T prBssInfo)
+{
+	UINT_32 ucFreq1Channel;
+	UINT_8 ucPrimaryChannel = prBssInfo->ucPrimaryChannel;
+	P_P2P_ROLE_FSM_INFO_T prP2pRoleFsmInfo = (P_P2P_ROLE_FSM_INFO_T) NULL;
+	P_P2P_CONNECTION_REQ_INFO_T prP2pConnReqInfo = (P_P2P_CONNECTION_REQ_INFO_T) NULL;
+
+	prP2pRoleFsmInfo = p2pFuncGetRoleByBssIdx(prAdapter, prBssInfo->ucBssIndex);
+
+	if (prBssInfo->ucVhtChannelWidth == VHT_OP_CHANNEL_WIDTH_20_40)
+		return 0;
+
+	if (!prAdapter->rWifiVar.ucApChnlDefFromCfg && prP2pRoleFsmInfo) {
+		prP2pConnReqInfo = &(prP2pRoleFsmInfo->rConnReqInfo);
+		ucFreq1Channel = nicFreq2ChannelNum(prP2pConnReqInfo->u4CenterFreq1 * 1000);
+	} else
+		ucFreq1Channel = nicGetVhtS1(ucPrimaryChannel, prBssInfo->ucVhtChannelWidth);
+
+	return ucFreq1Channel;
+}
+
