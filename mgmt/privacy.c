@@ -899,7 +899,7 @@ secPrivacySeekForBcEntry(IN P_ADAPTER_T prAdapter,
 	UINT_8 i;
 	BOOLEAN fgCheckKeyId = TRUE;
 	P_WLAN_TABLE_T prWtbl;
-	/* P_BSS_INFO_T            prBSSInfo = GET_BSS_INFO_BY_INDEX(prAdapter,ucBssIndex); */
+	P_BSS_INFO_T prBSSInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
 
 	prWtbl = prAdapter->rWifiVar.arWtbl;
 	ASSERT(prAdapter);
@@ -911,6 +911,9 @@ secPrivacySeekForBcEntry(IN P_ADAPTER_T prAdapter,
 		fgCheckKeyId = FALSE;
 
 	if (ucKeyId == 0xFF || ucAlg == CIPHER_SUITE_BIP)
+		fgCheckKeyId = FALSE;
+
+	if (prBSSInfo->eCurrentOPMode == OP_MODE_ACCESS_POINT)
 		fgCheckKeyId = FALSE;
 
 	ucStartIDX = 0;
