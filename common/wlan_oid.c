@@ -14794,6 +14794,19 @@ wlanoidSetWifiLogLevel(IN struct ADAPTER *prAdapter,
 	return WLAN_STATUS_SUCCESS;
 }
 
+uint32_t wlanoidSetDrvSer(IN struct ADAPTER *prAdapter,
+			  IN void *pvSetBuffer,
+			  IN uint32_t u4SetBufferLen,
+			  OUT uint32_t *pu4SetInfoLen)
+{
+	ASSERT(prAdapter);
+
+	prAdapter->u4HifChkFlag |= HIF_DRV_SER;
+	kalSetHifDbgEvent(prAdapter->prGlueInfo);
+
+	return 0;
+}
+
 uint32_t wlanoidSetAmsduNum(IN struct ADAPTER *prAdapter,
 			    IN void *pvSetBuffer,
 			    IN uint32_t u4SetBufferLen,
@@ -14839,10 +14852,9 @@ wlanoidShowPdmaInfo(IN struct ADAPTER *prAdapter,
 		    IN void *pvSetBuffer, IN uint32_t u4SetBufferLen,
 		    OUT uint32_t *pu4SetInfoLen)
 {
-	struct CHIP_DBG_OPS *prOps = prAdapter->chip_info->prDebugOps;
+	prAdapter->u4HifDbgFlag |= DEG_HIF_PDMA;
+	kalSetHifDbgEvent(prAdapter->prGlueInfo);
 
-	if (prOps->showPdmaInfo)
-		prOps->showPdmaInfo(prAdapter, true, true);
 	return 0;
 }
 
@@ -14851,10 +14863,9 @@ wlanoidShowPseInfo(IN struct ADAPTER *prAdapter,
 		   IN void *pvSetBuffer, IN uint32_t u4SetBufferLen,
 		   OUT uint32_t *pu4SetInfoLen)
 {
-	struct CHIP_DBG_OPS *prOps = prAdapter->chip_info->prDebugOps;
+	prAdapter->u4HifDbgFlag |= DEG_HIF_PSE;
+	kalSetHifDbgEvent(prAdapter->prGlueInfo);
 
-	if (prOps->showPseInfo)
-		prOps->showPseInfo(prAdapter);
 	return 0;
 }
 
@@ -14863,10 +14874,9 @@ wlanoidShowPleInfo(IN struct ADAPTER *prAdapter,
 		   IN void *pvSetBuffer, IN uint32_t u4SetBufferLen,
 		   OUT uint32_t *pu4SetInfoLen)
 {
-	struct CHIP_DBG_OPS *prOps = prAdapter->chip_info->prDebugOps;
+	prAdapter->u4HifDbgFlag |= DEG_HIF_PLE;
+	kalSetHifDbgEvent(prAdapter->prGlueInfo);
 
-	if (prOps->showPleInfo)
-		prOps->showPleInfo(prAdapter);
 	return 0;
 }
 
@@ -14875,10 +14885,9 @@ wlanoidShowCsrInfo(IN struct ADAPTER *prAdapter,
 		   IN void *pvSetBuffer, IN uint32_t u4SetBufferLen,
 		   OUT uint32_t *pu4SetInfoLen)
 {
-	struct CHIP_DBG_OPS *prOps = prAdapter->chip_info->prDebugOps;
+	prAdapter->u4HifDbgFlag |= DEG_HIF_HOST_CSR;
+	kalSetHifDbgEvent(prAdapter->prGlueInfo);
 
-	if (prOps->showCsrInfo)
-		prOps->showCsrInfo(prAdapter);
 	return 0;
 }
 
@@ -14887,10 +14896,9 @@ wlanoidShowDmaschInfo(IN struct ADAPTER *prAdapter,
 		      IN void *pvSetBuffer, IN uint32_t u4SetBufferLen,
 		      OUT uint32_t *pu4SetInfoLen)
 {
-	struct CHIP_DBG_OPS *prOps = prAdapter->chip_info->prDebugOps;
+	prAdapter->u4HifDbgFlag |= DEG_HIF_DMASCH;
+	kalSetHifDbgEvent(prAdapter->prGlueInfo);
 
-	if (prOps->showDmaschInfo)
-		prOps->showDmaschInfo(prAdapter);
 	return 0;
 }
 

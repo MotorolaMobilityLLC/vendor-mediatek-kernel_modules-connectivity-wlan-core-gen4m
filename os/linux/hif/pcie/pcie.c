@@ -859,20 +859,17 @@ static void pcieDumpTx(struct GL_HIF_INFO *prHifInfo,
 		       uint32_t u4Idx, uint32_t u4DumpLen)
 {
 	struct RTMP_DMACB *prTxCell;
-	struct RTMP_DMABUF *prDmaBuf;
+	void *prAddr = NULL;
 
 	prTxCell = &prTxRing->Cell[u4Idx];
 
-	if (!prTxCell->pPacket)
-		return;
+	if (prTxCell->prToken)
+		prAddr = prTxCell->prToken->prPacket;
+	else
+		prAddr = prTxCell->pBuffer;
 
-	prDmaBuf = &prTxCell->DmaBuf;
-	axiUnmapTxBuf(prHifInfo, prDmaBuf->AllocPa, prDmaBuf->AllocSize);
-
-	DBGLOG_MEM32(HAL, INFO, prTxCell->pPacket, u4DumpLen);
-
-	prDmaBuf->AllocPa = axiMapTxBuf(prHifInfo, prDmaBuf->AllocVa,
-					0, prDmaBuf->AllocSize);
+	if (prAddr)
+		DBGLOG_MEM32(HAL, INFO, prAddr, u4DumpLen);
 }
 
 static void pcieDumpRx(struct GL_HIF_INFO *prHifInfo,

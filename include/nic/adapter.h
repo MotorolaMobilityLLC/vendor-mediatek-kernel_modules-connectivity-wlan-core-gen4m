@@ -1486,6 +1486,8 @@ struct ADAPTER {
 #endif /* CFG_SUPPORT_LOWLATENCY_MODE */
 
 	bool fgEnHifDbgInfo;
+	uint32_t u4HifDbgFlag;
+	uint32_t u4HifChkFlag;
 
 #if CFG_SUPPORT_OSHARE
 	bool fgEnOshareMode;

@@ -303,7 +303,7 @@ u_int8_t glResetTrigger(struct ADAPTER *prAdapter, uint32_t u4RstFlag, const uin
 		       (uint16_t)(u2FwPeerVersion & BITS(0, 7)));
 
 		fgResetTriggered = TRUE;
-		prAdapter->fgEnHifDbgInfo = true;
+		prAdapter->u4HifDbgFlag |= DEG_HIF_DEFAULT_DUMP;
 		halPrintHifDbgInfo(prAdapter);
 
 		wifi_rst.rst_trigger_flag = u4RstFlag;
