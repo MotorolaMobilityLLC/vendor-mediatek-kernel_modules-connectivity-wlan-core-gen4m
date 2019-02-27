@@ -8256,12 +8256,18 @@ wlanoidSet802dot11PowerSaveProfile(IN struct ADAPTER *prAdapter,
 		TRUE, PS_CALLER_COMMON);
 
 	if (prPowerMode->ePowerMode < Param_PowerModeMax) {
-		DBGLOG(INIT, INFO, "Set %s Network BSS(%u) PS mode to %s (%d)\n",
-		       apucNetworkType[prBssInfo->eNetworkType],
-		       prPowerMode->ucBssIdx, apucPsMode[prPowerMode->ePowerMode], prPowerMode->ePowerMode);
+		DBGLOG(INIT, TRACE,
+			"Set %s Network BSS(%u) PS mode to %s (%d)\n",
+			apucNetworkType[prBssInfo->eNetworkType],
+			prPowerMode->ucBssIdx,
+			apucPsMode[prPowerMode->ePowerMode],
+			prPowerMode->ePowerMode);
 	} else {
-		DBGLOG(INIT, INFO, "Invalid PS mode setting (%d) for %s Network BSS(%u)\n",
-		       prPowerMode->ePowerMode, apucNetworkType[prBssInfo->eNetworkType], prPowerMode->ucBssIdx);
+		DBGLOG(INIT, TRACE,
+			"Invalid PS mode setting (%d) for %s Network BSS(%u)\n",
+			prPowerMode->ePowerMode,
+			apucNetworkType[prBssInfo->eNetworkType],
+			prPowerMode->ucBssIdx);
 	}
 
 	return status;
