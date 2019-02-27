@@ -1483,7 +1483,7 @@ u_int8_t rlmDomainGetTxPwrLimit(u32 country_code,
 	/*search country code*/
 	start_offset = rlmDomainSearchCountrySection(country_code, file);
 	if (!start_offset) {
-		DBGLOG(RLM, WARN, "\n===WARNING===\n%s(): Cannot find match country code: %s\n",
+		DBGLOG(RLM, WARN, "\n===WARNING===\n%s(): Cannot find match country code: 0x%x\n",
 			   __func__, country_code);
 		DBGLOG(RLM, WARN, "MaxTxPowerLimit is disable.\n===WARNING===\n");
 
