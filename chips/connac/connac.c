@@ -239,6 +239,14 @@ struct ATE_OPS_T connacAteOps = {
 };
 #endif
 
+struct SHOW_DBG_OPS connac_debug_ops = {
+	.hal_chip_show_pdma_info = hal_chip_show_pdma_info,
+	.hal_chip_show_pse_info = hal_chip_show_pse_info,
+	.hal_chip_show_ple_info = hal_chip_show_ple_info,
+	.hal_chip_show_csr_info = hal_chip_show_host_csr_info,
+	.hal_chip_show_dmasch_info = hal_chip_show_dmasch_info,
+};
+
 struct mt66xx_chip_info mt66xx_chip_info_connac = {
 	.bus_info = &connac_bus_info,
 	.fw_dl_ops = &connac_fw_dl_ops,
@@ -263,6 +271,7 @@ struct mt66xx_chip_info mt66xx_chip_info_connac = {
 	.downloadBufferBin = NULL,
 	.is_support_hw_amsdu = FALSE,
 	.workAround = 0,
+	.show_debug_ops = &connac_debug_ops,
 };
 
 struct mt66xx_hif_driver_data mt66xx_driver_data_connac = {

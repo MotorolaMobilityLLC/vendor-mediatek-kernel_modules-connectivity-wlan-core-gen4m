@@ -209,6 +209,14 @@ struct ATE_OPS_T mt7663AteOps = {
 };
 #endif
 
+struct SHOW_DBG_OPS mt7663_debug_ops = {
+	.hal_chip_show_pdma_info = NULL,
+	.hal_chip_show_pse_info = NULL,
+	.hal_chip_show_ple_info = NULL,
+	.hal_chip_show_csr_info = NULL,
+	.hal_chip_show_dmasch_info = NULL,
+};
+
 /* Litien code refine to support multi chip */
 struct mt66xx_chip_info mt66xx_chip_info_mt7663 = {
 	.bus_info = &mt7663_bus_info,
@@ -234,6 +242,7 @@ struct mt66xx_chip_info mt66xx_chip_info_mt7663 = {
 	.downloadBufferBin = wlanConnacDownloadBufferBin,
 	.is_support_hw_amsdu = TRUE,
 	.workAround = BIT(WORKAROUND_MT7663_BRINGUP_20171205),
+	.show_debug_ops = &mt7663_debug_ops,
 };
 
 struct mt66xx_hif_driver_data mt66xx_driver_data_mt7663 = {

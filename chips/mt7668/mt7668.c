@@ -391,6 +391,14 @@ struct ATE_OPS_T mt7668AteOps = {
 };
 #endif
 
+struct SHOW_DBG_OPS mt7668_debug_ops = {
+	.hal_chip_show_pdma_info = NULL,
+	.hal_chip_show_pse_info = NULL,
+	.hal_chip_show_ple_info = NULL,
+	.hal_chip_show_csr_info = NULL,
+	.hal_chip_show_dmasch_info = NULL,
+};
+
 /* Litien code refine to support multi chip */
 struct mt66xx_chip_info mt66xx_chip_info_mt7668 = {
 	.bus_info = &mt7668_bus_info,
@@ -417,6 +425,7 @@ struct mt66xx_chip_info mt66xx_chip_info_mt7668 = {
 	.features = 0,
 	.is_support_hw_amsdu = FALSE,
 	.workAround = 0,
+	.show_debug_ops = &mt7668_debug_ops,
 };
 
 struct mt66xx_hif_driver_data mt66xx_driver_data_mt7668 = {

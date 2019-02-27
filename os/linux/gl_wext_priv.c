@@ -2405,6 +2405,14 @@ reqExtSetAcpiDevicePowerState(IN struct GLUE_INFO *prGlueInfo,
 #define CMD_SET_PD            "SET_PD"
 #define CMD_SET_MAX_RFGAIN        "SET_MAX_RFGAIN"
 #endif
+
+/* Debug for consys */
+#define CMD_DBG_SHOW_TR_INFO			"show-tr"
+#define CMD_DBG_SHOW_PLE_INFO			"show-ple"
+#define CMD_DBG_SHOW_PSE_INFO			"show-pse"
+#define CMD_DBG_SHOW_CSR_INFO			"show-csr"
+#define CMD_DBG_SHOW_DMASCH_INFO		"show-dmasch"
+
 static uint8_t g_ucMiracastMode = MIRACAST_MODE_OFF;
 
 struct cmd_tlv {
@@ -9827,9 +9835,40 @@ int32_t priv_driver_cmds(IN struct net_device *prNetDev, IN int8_t *pcCommand, I
 		else if (strnicmp(pcCommand, CMD_SET_MAX_RFGAIN, strlen(CMD_SET_MAX_RFGAIN)) == 0)
 			i4BytesWritten = priv_driver_set_maxrfgain(prNetDev, pcCommand, i4TotalLen);
 #endif
-		else
+		else if (strnicmp(pcCommand, CMD_DBG_SHOW_TR_INFO,
+				strlen(CMD_DBG_SHOW_TR_INFO)) == 0) {
+			kalIoctl(prGlueInfo,
+				 wlanoidShowPdmaInfo,
+				 (void *) pcCommand, i4TotalLen,
+				 FALSE, FALSE, TRUE, &i4BytesWritten);
+		} else if (strnicmp(pcCommand, CMD_DBG_SHOW_PLE_INFO,
+				strlen(CMD_DBG_SHOW_PLE_INFO)) == 0) {
+			kalIoctl(prGlueInfo,
+				 wlanoidShowPleInfo,
+				 (void *) pcCommand, i4TotalLen,
+				 FALSE, FALSE, TRUE, &i4BytesWritten);
+		} else if (strnicmp(pcCommand, CMD_DBG_SHOW_PSE_INFO,
+				strlen(CMD_DBG_SHOW_PSE_INFO)) == 0) {
+			kalIoctl(prGlueInfo,
+				 wlanoidShowPseInfo,
+				 (void *) pcCommand, i4TotalLen,
+				 FALSE, FALSE, TRUE, &i4BytesWritten);
+		} else if (strnicmp(pcCommand, CMD_DBG_SHOW_CSR_INFO,
+				strlen(CMD_DBG_SHOW_CSR_INFO)) == 0) {
+			kalIoctl(prGlueInfo,
+				 wlanoidShowCsrInfo,
+				 (void *) pcCommand, i4TotalLen,
+				 FALSE, FALSE, TRUE, &i4BytesWritten);
+		} else if (strnicmp(pcCommand, CMD_DBG_SHOW_DMASCH_INFO,
+				strlen(CMD_DBG_SHOW_DMASCH_INFO)) == 0) {
+			kalIoctl(prGlueInfo,
+				 wlanoidShowDmaschInfo,
+				 (void *) pcCommand, i4TotalLen,
+				 FALSE, FALSE, TRUE, &i4BytesWritten);
+		} else
 			i4CmdFound = 0;
 	}
+
 	/* i4CmdFound */
 	if (i4CmdFound == 0)
 		DBGLOG(REQ, INFO, "Unknown driver command %s - ignored\n", pcCommand);
