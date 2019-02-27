@@ -130,7 +130,9 @@ CFG_DRIVER_INF_NAME_CHANGE=n
 ifeq ($(PLATFORM),MT53XX)
 endif
 
-
+# For wpa_supplicant w/o MTK priv lib
+# y: enable, n: disable
+CFG_ANDROID_AOSP_PRIV_CMD=n
 
 #/***** Manage configs into compile options ******/
 ifneq ($(CFG_NUM_DIFFERENT_CHANNELS_STA),)
@@ -184,6 +186,11 @@ endif
 ifneq ($(CFG_P2P_SCAN_REPORT_ALL_BSS),)
 PLATFORM_FLAGS += -DCFG_P2P_SCAN_REPORT_ALL_BSS=$(CFG_P2P_SCAN_REPORT_ALL_BSS)
 endif
+
+ifeq ($(CFG_ANDROID_AOSP_PRIV_CMD), y)
+PLATFORM_FLAGS += -DCFG_ANDROID_AOSP_PRIV_CMD
+endif
+
 ##############################################################
 # Compile settings
 ##############################################################

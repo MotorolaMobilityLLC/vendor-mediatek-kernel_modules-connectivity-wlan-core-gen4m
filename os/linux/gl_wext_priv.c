@@ -305,6 +305,14 @@ struct priv_driver_cmd_s {
 	int total_len;
 };
 
+#ifdef CFG_ANDROID_AOSP_PRIV_CMD
+struct android_wifi_priv_cmd {
+	char *buf;
+	int used_len;
+	int total_len;
+};
+#endif /* CFG_ANDROID_AOSP_PRIV_CMD */
+
 /*******************************************************************************
  *                  F U N C T I O N   D E C L A R A T I O N S
  *******************************************************************************
@@ -13399,6 +13407,57 @@ int32_t priv_driver_cmds(IN struct net_device *prNetDev, IN int8_t *pcCommand,
 
 	return i4BytesWritten;
 } /* priv_driver_cmds */
+
+#ifdef CFG_ANDROID_AOSP_PRIV_CMD
+int android_private_support_driver_cmd(IN struct net_device *prNetDev,
+	IN OUT struct ifreq *prReq, IN int i4Cmd)
+{
+	struct android_wifi_priv_cmd priv_cmd;
+	char *command = NULL;
+	int ret = 0, bytes_written = 0;
+
+	if (!prReq->ifr_data)
+		return -EINVAL;
+
+	if (copy_from_user(&priv_cmd, prReq->ifr_data, sizeof(priv_cmd)))
+		return -EFAULT;
+
+	command = kzalloc(priv_cmd.total_len, GFP_KERNEL);
+	if (!command) {
+		DBGLOG(REQ, WARN, "%s, alloc mem failed\n", __func__);
+		return -ENOMEM;
+	}
+
+	if (copy_from_user(command, priv_cmd.buf, priv_cmd.total_len)) {
+		ret = -EFAULT;
+		goto FREE;
+	}
+
+	bytes_written = priv_driver_cmds(prNetDev, command, priv_cmd.total_len);
+
+	if (bytes_written >= 0) {
+		/* priv_cmd in but no response */
+		if ((bytes_written == 0) && (priv_cmd.total_len > 0))
+			command[0] = '\0';
+
+		if (bytes_written >= priv_cmd.total_len)
+			bytes_written = priv_cmd.total_len;
+		else
+			bytes_written++;
+
+		priv_cmd.used_len = bytes_written;
+
+		if (copy_to_user(priv_cmd.buf, command, bytes_written))
+			ret = -EFAULT;
+	} else
+		ret = bytes_written;
+
+FREE:
+		kfree(command);
+
+	return ret;
+}
+#endif /* CFG_ANDROID_AOSP_PRIV_CMD */
 
 int priv_support_driver_cmd(IN struct net_device *prNetDev,
 			    IN OUT struct ifreq *prReq, IN int i4Cmd)
