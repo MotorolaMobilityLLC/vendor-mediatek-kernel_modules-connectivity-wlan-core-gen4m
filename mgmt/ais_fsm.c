@@ -2398,6 +2398,7 @@ enum ENUM_AIS_STATE aisFsmJoinCompleteAction(IN struct ADAPTER *prAdapter, IN st
 {
 	struct MSG_SAA_FSM_COMP *prJoinCompMsg;
 	struct AIS_FSM_INFO *prAisFsmInfo;
+	struct ROAMING_INFO *prRoamingFsmInfo;
 	enum ENUM_AIS_STATE eNextState;
 	struct STA_RECORD *prStaRec;
 	struct SW_RFB *prAssocRspSwRfb;
@@ -2418,6 +2419,8 @@ enum ENUM_AIS_STATE aisFsmJoinCompleteAction(IN struct ADAPTER *prAdapter, IN st
 	prAisBssInfo = prAdapter->prAisBssInfo;
 	eNextState = prAisFsmInfo->eCurrentState;
 	prConnSettings = &prAdapter->rWifiVar.rConnSettings;
+	prRoamingFsmInfo = (struct ROAMING_INFO *) &
+			   (prAdapter->rWifiVar.rRoamingInfo);
 
 	do {
 		/* 4 <1> JOIN was successful */
@@ -2479,6 +2482,13 @@ enum ENUM_AIS_STATE aisFsmJoinCompleteAction(IN struct ADAPTER *prAdapter, IN st
 			}
 
 #if CFG_SUPPORT_ROAMING
+			/* if Supplicant uses BTM to establish connection */
+			if (prAdapter->rWifiVar.rConnSettings.eConnectionPolicy
+						== CONNECT_BY_BSSID_HINT &&
+			    prRoamingFsmInfo->eCurrentState
+						>= ROAMING_STATE_DECISION)
+				roamingFsmRunEventAbort(prAdapter);
+
 			/* if user space roaming is enabled, we should disable driver/fw roaming */
 			if ((prAdapter->rWifiVar.rConnSettings.eConnectionPolicy != CONNECT_BY_BSSID)
 				&& prAdapter->rWifiVar.rRoamingInfo.fgDrvRoamingAllow)
