@@ -90,7 +90,11 @@
  *                              C O N S T A N T S
  *******************************************************************************
  */
+#if CFG_TC1_FEATURE
+#define WIFI_NVRAM_FILE_NAME   "/vendor/firmware/WIFI"
+#else
 #define WIFI_NVRAM_FILE_NAME   "/mnt/vendor/nvdata/APCFG/APRDEB/WIFI"
+#endif
 #define WIFI_NVRAM_CUSTOM_NAME "/mnt/vendor/nvdata/APCFG/APRDEB/WIFI_CUSTOM"
 
 /*******************************************************************************
