@@ -749,9 +749,9 @@ int mtk_cfg80211_vendor_get_channel_list(struct wiphy *wiphy, struct wireless_de
 		struct nlattr *attr;
 		UINT_32 band = 0;
 		UINT_8 ucNumOfChannel, i, j;
-		RF_CHANNEL_INFO_T aucChannelList[64];
+		RF_CHANNEL_INFO_T aucChannelList[MAX_CHN_NUM];
 		UINT_32 num_channels;
-		wifi_channel channels[64];
+		wifi_channel channels[MAX_CHN_NUM];
 		struct sk_buff *skb;
 
 		ASSERT(wiphy && wdev);
@@ -772,10 +772,10 @@ int mtk_cfg80211_vendor_get_channel_list(struct wiphy *wiphy, struct wireless_de
 
 		if (band == 0) { /* 2.4G band */
 			rlmDomainGetChnlList(prGlueInfo->prAdapter, BAND_2G4, TRUE,
-					 64, &ucNumOfChannel, aucChannelList);
+					 MAX_CHN_NUM, &ucNumOfChannel, aucChannelList);
 		} else { /* 5G band */
 			rlmDomainGetChnlList(prGlueInfo->prAdapter, BAND_5G, TRUE,
-					 64, &ucNumOfChannel, aucChannelList);
+					 MAX_CHN_NUM, &ucNumOfChannel, aucChannelList);
 		}
 
 		kalMemZero(channels, sizeof(channels));
