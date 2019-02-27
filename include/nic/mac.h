@@ -214,6 +214,8 @@
 	(ETH_HLEN + IP_HEADER_LEN + SOURCE_PORT_LEN)
 
 #endif
+/* DHCP */
+#define NORMAL_DHCP_UDP_LEN                     300
 
 /* Ethernet Frame Field Size, in byte */
 #define ETHER_HEADER_LEN                        14

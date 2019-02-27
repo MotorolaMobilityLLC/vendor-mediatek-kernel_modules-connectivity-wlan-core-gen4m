@@ -330,7 +330,19 @@ void statsParseUDPInfo(struct ADAPTER *prAdapter,  struct sk_buff *skb,
 #if CFG_SUPPORT_REPORT_MISC
 			prBootp = (struct BOOTP_PROTOCOL *) pucBootp;
 			udpLength = pucUdp[4] << 8 | pucUdp[5];
-			while (i < udpLength - 248) {
+			if (udpLength <= 248) {
+				DBGLOG(RX, INFO,
+				       "Length of DHCP less than 248!\n");
+				break;
+			}
+			while (i < (udpLength - 248) &&
+			       i < (NORMAL_DHCP_UDP_LEN - 248)) {
+				/* option end */
+				if (prBootp->aucOptions[i + 4] == 255) {
+					DBGLOG(RX, WARN, "i:%d, udpLength:%d\n",
+					       i, udpLength);
+					break;
+				}
 				if (prBootp->aucOptions[i + 4] == 53 &&
 				    prBootp->aucOptions[i + 6] == 5 &&
 				    prAdapter->rReportMiscSet.eQueryNum
