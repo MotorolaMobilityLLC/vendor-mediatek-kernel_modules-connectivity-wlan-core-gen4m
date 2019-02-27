@@ -128,6 +128,37 @@ static bool kalDevKickAmsduData(struct GLUE_INFO *prGlueInfo);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Check connsys is dead or not
+ *
+ * \param[in] prGlueInfo Pointer to the GLUE_INFO_T structure.
+ * \param[in] u4Register Register address
+ * \param[in] pu4Value   Pointer to read value
+ *
+ * \retval TRUE          connsys is dead
+ * \retval FALSE         connsys is alive
+ */
+/*----------------------------------------------------------------------------*/
+static inline bool kalIsChipDead(struct GLUE_INFO *prGlueInfo,
+				 uint32_t u4Register, uint32_t *pu4Value)
+{
+	struct GL_HIF_INFO *prHifInfo = NULL;
+	uint32_t u4Value;
+	uint32_t u4BusAddr;
+
+	prHifInfo = &prGlueInfo->rHifInfo;
+
+	if (*pu4Value != HIF_DEADFEED_VALUE)
+		return false;
+
+	halChipToStaticMapBusAddr(prGlueInfo, CONN_CFG_CHIP_ID_ADDR,
+				  &u4BusAddr);
+	RTMP_IO_READ32(prHifInfo, u4BusAddr, &u4Value);
+
+	return u4Value == HIF_DEADFEED_VALUE;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Read a 32-bit device register
  *
  * \param[in] prGlueInfo Pointer to the GLUE_INFO_T structure.
@@ -142,6 +173,7 @@ u_int8_t kalDevRegRead(IN struct GLUE_INFO *prGlueInfo,
 	IN uint32_t u4Register, OUT uint32_t *pu4Value)
 {
 	struct GL_HIF_INFO *prHifInfo = NULL;
+	struct ADAPTER *prAdapter = NULL;
 	struct BUS_INFO *prBusInfo = NULL;
 	uint32_t u4BusAddr = u4Register;
 
@@ -149,20 +181,27 @@ u_int8_t kalDevRegRead(IN struct GLUE_INFO *prGlueInfo,
 	ASSERT(pu4Value);
 
 	prHifInfo = &prGlueInfo->rHifInfo;
-	prBusInfo = prGlueInfo->prAdapter->chip_info->bus_info;
+	prAdapter = prGlueInfo->prAdapter;
+	ASSERT(prAdapter);
+	prBusInfo = prAdapter->chip_info->bus_info;
 
 	if (!prHifInfo->fgIsDumpLog && prBusInfo->isValidRegAccess &&
-	    !prBusInfo->isValidRegAccess(prGlueInfo->prAdapter, u4Register)) {
+	    !prBusInfo->isValidRegAccess(prAdapter, u4Register)) {
 		DBGLOG(HAL, ERROR,
 		       "Invalid access! Get CR[0x%08x/0x%08x] value[0x%08x]\n",
 		       u4Register, u4BusAddr, *pu4Value);
-		*pu4Value = 0xdeadfeed;
+		*pu4Value = HIF_DEADFEED_VALUE;
 		return FALSE;
 	}
 
 	/* Static mapping */
 	if (halChipToStaticMapBusAddr(prGlueInfo, u4Register, &u4BusAddr)) {
 		RTMP_IO_READ32(prHifInfo, u4BusAddr, pu4Value);
+		if (kalIsChipDead(prGlueInfo, u4Register, pu4Value)) {
+			DBGLOG(HAL, ERROR, "Read register is deadfeed\n");
+			GL_RESET_TRIGGER(prAdapter, RST_FLAG_CHIP_RESET);
+			return FALSE;
+		}
 	} else {
 		DBGLOG(HAL, ERROR, "Not exist CR read[0x%08x]\n", u4Register);
 	}
@@ -186,16 +225,19 @@ u_int8_t kalDevRegWrite(IN struct GLUE_INFO *prGlueInfo,
 	IN uint32_t u4Register, IN uint32_t u4Value)
 {
 	struct GL_HIF_INFO *prHifInfo = NULL;
+	struct ADAPTER *prAdapter = NULL;
 	struct BUS_INFO *prBusInfo = NULL;
 	uint32_t u4BusAddr = u4Register;
 
 	ASSERT(prGlueInfo);
 
 	prHifInfo = &prGlueInfo->rHifInfo;
-	prBusInfo = prGlueInfo->prAdapter->chip_info->bus_info;
+	prAdapter = prGlueInfo->prAdapter;
+	ASSERT(prAdapter);
+	prBusInfo = prAdapter->chip_info->bus_info;
 
 	if (!prHifInfo->fgIsDumpLog && prBusInfo->isValidRegAccess &&
-	    !prBusInfo->isValidRegAccess(prGlueInfo->prAdapter, u4Register)) {
+	    !prBusInfo->isValidRegAccess(prAdapter, u4Register)) {
 		DBGLOG(HAL, ERROR,
 		       "Invalid access! Set CR[0x%08x/0x%08x] value[0x%08x]\n",
 		       u4Register, u4BusAddr, u4Value);
