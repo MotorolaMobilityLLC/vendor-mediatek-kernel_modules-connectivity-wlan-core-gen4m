@@ -133,7 +133,7 @@
 
 #define HIF_TX_PAYLOAD_LENGTH				72
 
-#define HIF_MSDU_REPORT_DUMP_TIMEOUT		1	/* sec */
+#define HIF_MSDU_REPORT_DUMP_TIMEOUT		2	/* sec */
 #define HIF_MSDU_REPORT_RETURN_TIMEOUT		10	/* sec */
 #define HIF_SER_TIMEOUT				10000	/* msec */
 
