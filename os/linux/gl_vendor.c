@@ -76,6 +76,8 @@
 #include "gl_vendor.h"
 #include "wlan_oid.h"
 
+#if KERNEL_VERSION(3, 16, 0) <= CFG80211_VERSION_CODE
+
 /*******************************************************************************
  *                              C O N S T A N T S
  *******************************************************************************
@@ -215,8 +217,6 @@ static struct nla_policy nla_parse_offloading_policy[
  *                              F U N C T I O N S
  *******************************************************************************
  */
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 18, 0)
-
 int mtk_cfg80211_NLA_PUT(struct sk_buff *skb, int attrtype,
 			 int attrlen, const void *data)
 {
@@ -1381,4 +1381,6 @@ errHandleLabel:
 	kfree_skb(skb);
 	return -EFAULT;
 }
-#endif /* LINUX_VERSION_CODE >= KERNEL_VERSION(3, 18, 0) */
+
+#endif /* KERNEL_VERSION(3, 16, 0) <= CFG80211_VERSION_CODE */
+
