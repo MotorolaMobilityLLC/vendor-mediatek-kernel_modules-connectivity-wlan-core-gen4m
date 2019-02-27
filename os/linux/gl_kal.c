@@ -5466,6 +5466,7 @@ kalGetIPv4Address(IN struct net_device *prDev,
 	return TRUE;
 }
 
+#if IS_ENABLED(CONFIG_IPV6)
 u_int8_t
 kalGetIPv6Address(IN struct net_device *prDev,
 		  IN uint32_t u4MaxNumOfAddr, OUT uint8_t *pucIpv6Addrs,
@@ -5503,6 +5504,7 @@ kalGetIPv6Address(IN struct net_device *prDev,
 
 	return TRUE;
 }
+#endif /* IS_ENABLED(CONFIG_IPV6) */
 
 void
 kalSetNetAddress(IN struct GLUE_INFO *prGlueInfo,
