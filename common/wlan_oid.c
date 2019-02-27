@@ -4268,9 +4268,7 @@ wlanoidQueryBugReport(IN P_ADAPTER_T prAdapter,
 		return WLAN_STATUS_INVALID_LENGTH;
 	}
 
-	return WLAN_STATUS_SUCCESS; /* firmware is not ready */
-
-	/* return wlanSendSetQueryCmd(prAdapter,
+	return wlanSendSetQueryCmd(prAdapter,
 				   CMD_ID_GET_BUG_REPORT,
 				   FALSE,
 				   TRUE,
@@ -4278,7 +4276,6 @@ wlanoidQueryBugReport(IN P_ADAPTER_T prAdapter,
 				   nicCmdEventQueryBugReport,
 				   nicOidCmdTimeoutCommon,
 				   0, NULL, pvQueryBuffer, u4QueryBufferLen);
-	*/
 }				/* wlanoidQueryBugReport */
 
 /*----------------------------------------------------------------------------*/
