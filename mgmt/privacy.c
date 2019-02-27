@@ -779,7 +779,8 @@ u_int8_t secPrivacySeekForEntry(IN struct ADAPTER
 		    && EQUAL_MAC_ADDR(prSta->aucMacAddr, prWtbl[i].aucMacAddr)
 		    && prWtbl[i].ucPairwise /* This function for ucPairwise only */) {
 			ucEntry = i;
-			DBGLOG(RSN, INFO, "[Wlan index]: Reuse entry #%d\n", i);
+			DBGLOG(RSN, TRACE,
+				"[Wlan index]: Reuse entry #%d\n", i);
 			break;
 		}
 	}
@@ -788,7 +789,8 @@ u_int8_t secPrivacySeekForEntry(IN struct ADAPTER
 		for (i = ucStartIDX; i <= ucMaxIDX; i++) {
 			if (prWtbl[i].ucUsed == FALSE) {
 				ucEntry = i;
-				DBGLOG(RSN, INFO, "[Wlan index]: Assign entry #%d\n", i);
+				DBGLOG(RSN, TRACE,
+					"[Wlan index]: Assign entry #%d\n", i);
 				break;
 			}
 		}
@@ -1028,7 +1030,7 @@ secPrivacySeekForBcEntry(IN struct ADAPTER *prAdapter,
 	ucStartIDX = 0;
 	ucMaxIDX = prAdapter->ucTxDefaultWlanIndex - 1;
 
-	DBGLOG(INIT, INFO, "secPrivacySeekForBcEntry\n");
+	DBGLOG(INIT, TRACE, "secPrivacySeekForBcEntry\n");
 
 	for (i = ucStartIDX; i <= ucMaxIDX; i++) {
 
@@ -1037,7 +1039,7 @@ secPrivacySeekForBcEntry(IN struct ADAPTER *prAdapter,
 
 			if (!fgCheckKeyId) {
 				ucEntry = i;
-				DBGLOG(RSN, INFO,
+				DBGLOG(RSN, TRACE,
 				       "[Wlan index]: Reuse entry #%d for open/wep/wpi\n", i);
 				break;
 			}
@@ -1045,7 +1047,8 @@ secPrivacySeekForBcEntry(IN struct ADAPTER *prAdapter,
 			if (fgCheckKeyId && (prWtbl[i].ucKeyId == ucKeyId
 					     || prWtbl[i].ucKeyId == 0xFF)) {
 				ucEntry = i;
-				DBGLOG(RSN, INFO, "[Wlan index]: Reuse entry #%d\n", i);
+				DBGLOG(RSN, TRACE,
+					"[Wlan index]: Reuse entry #%d\n", i);
 				break;
 			}
 		}
@@ -1055,7 +1058,8 @@ secPrivacySeekForBcEntry(IN struct ADAPTER *prAdapter,
 		for (i = ucStartIDX; i <= ucMaxIDX; i++) {
 			if (prWtbl[i].ucUsed == FALSE) {
 				ucEntry = i;
-				DBGLOG(RSN, INFO, "[Wlan index]: Assign entry #%d\n", i);
+				DBGLOG(RSN, TRACE,
+					"[Wlan index]: Assign entry #%d\n", i);
 				break;
 			}
 		}
@@ -1071,7 +1075,7 @@ secPrivacySeekForBcEntry(IN struct ADAPTER *prAdapter,
 				   MAC_ADDR_LEN);
 			prWtbl[ucEntry].ucStaIndex = ucStaIdx;
 		}
-		DBGLOG(RSN, INFO,
+		DBGLOG(RSN, TRACE,
 		       "[Wlan index] BSS#%d keyid#%d P=%d use WlanIndex#%d STAIdx=%d "
 		       MACSTR
 		       "\n", ucBssIndex, ucKeyId, prWtbl[ucEntry].ucPairwise,
@@ -1220,11 +1224,11 @@ void secPrivacyDumpWTBL(IN struct ADAPTER *prAdapter)
 
 	prWtbl = prAdapter->rWifiVar.arWtbl;
 
-	DBGLOG(RSN, INFO, "The Wlan index\n");
+	DBGLOG(RSN, TRACE, "The Wlan index\n");
 
 	for (i = 0; i < WTBL_SIZE; i++) {
 		if (prWtbl[i].ucUsed)
-			DBGLOG(RSN, INFO,
+			DBGLOG(RSN, TRACE,
 			       "#%d Used=%d  BSSIdx=%d keyid=%d P=%d STA=%d Addr=" MACSTR
 			       "\n", i,
 			       prWtbl[i].ucUsed, prWtbl[i].ucBssIndex, prWtbl[i].ucKeyId,
