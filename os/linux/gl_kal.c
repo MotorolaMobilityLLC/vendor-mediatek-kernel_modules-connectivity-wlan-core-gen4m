@@ -6851,6 +6851,19 @@ void kalFbNotifierUnReg(void)
 	wlan_fb_notifier_priv_data = NULL;
 }
 
+void kalInitDevWakeup(struct ADAPTER *prAdapter, struct device *prDev)
+{
+	/*
+	 * The remote wakeup function will be disabled after
+	 * first time resume, we need to call device_init_wakeup()
+	 * to notify usbcore that we support wakeup function,
+	 * so usbcore will re-enable our remote wakeup function
+	 * before entering suspend.
+	 */
+	if (prAdapter->rWifiVar.ucWow)
+		device_init_wakeup(prDev, TRUE);
+}
+
 u_int8_t kalIsOuiMask(const uint8_t pucMacAddrMask[MAC_ADDR_LEN])
 {
 	return (pucMacAddrMask[0] == 0xFF &&

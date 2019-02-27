@@ -1484,6 +1484,8 @@ static inline void kal_skb_reset_mac_len(struct sk_buff
 }
 #endif
 
+void kalInitDevWakeup(struct ADAPTER *prAdapter, struct device *prDev);
+
 u_int8_t kalIsValidMacAddr(const uint8_t *addr);
 
 u_int8_t kalScanParseRandomMac(const struct net_device *ndev,
@@ -1502,4 +1504,4 @@ void kalScanResultLog(struct ADAPTER *prAdapter, struct ieee80211_mgmt *mgmt);
 void kalScanLogCacheFlushBSS(struct ADAPTER *prAdapter,
 	const uint16_t logBufLen);
 
-#endif				/* _GL_KAL_H */
+#endif /* _GL_KAL_H */
