@@ -44,6 +44,7 @@ int32_t kalBoostCpu(IN struct ADAPTER *prAdapter,
 	static struct pm_qos_request wifi_qos_request;
 	static u_int8_t fgRequested;
 #endif
+	struct cpumask rMainCpuMask, rRxCpuMask, rHifCpuMask;
 	uint32_t u4ClusterNum = topo_ctrl_get_nr_clusters();
 
 	ASSERT(u4ClusterNum <= MAX_CLUSTER_NUM);
@@ -56,6 +57,28 @@ int32_t kalBoostCpu(IN struct ADAPTER *prAdapter,
 
 	update_userlimit_cpu_freq(CPU_KIR_WIFI, u4ClusterNum, freq_to_set);
 
+	cpumask_clear(&rMainCpuMask);
+	cpumask_clear(&rRxCpuMask);
+	cpumask_clear(&rHifCpuMask);
+
+	if (u4TarPerfLevel >= 8) {
+		cpumask_set_cpu(6, &rMainCpuMask);
+		cpumask_set_cpu(7, &rMainCpuMask);
+
+		cpumask_set_cpu(6, &rRxCpuMask);
+		cpumask_set_cpu(7, &rRxCpuMask);
+
+		cpumask_set_cpu(6, &rHifCpuMask);
+		cpumask_set_cpu(7, &rHifCpuMask);
+	} else {
+		cpumask_setall(&rMainCpuMask);
+		cpumask_setall(&rRxCpuMask);
+		cpumask_setall(&rHifCpuMask);
+	}
+
+	set_cpus_allowed_ptr(prAdapter->prGlueInfo->main_thread, &rMainCpuMask);
+	set_cpus_allowed_ptr(prAdapter->prGlueInfo->rx_thread, &rRxCpuMask);
+	set_cpus_allowed_ptr(prAdapter->prGlueInfo->hif_thread, &rHifCpuMask);
 #ifdef WLAN_FORCE_DDR_OPP
 	if (u4TarPerfLevel >= u4BoostCpuTh) {
 		if (!fgRequested) {
