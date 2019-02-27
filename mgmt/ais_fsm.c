@@ -292,7 +292,12 @@ void aisFsmInit(IN struct ADAPTER *prAdapter)
 
 	prAdapter->prAisBssInfo = prAisBssInfo =
 	    cnmGetBssInfoAndInit(prAdapter, NETWORK_TYPE_AIS, FALSE);
-	ASSERT(prAisBssInfo);
+	if (!prAisBssInfo) {
+		DBGLOG(AIS, ERROR,
+			"aisFsmInit failed because prAisBssInfo is NULL, return.\n");
+		ASSERT(FALSE);
+		return;
+	}
 
 	/* update MAC address */
 	COPY_MAC_ADDR(prAdapter->prAisBssInfo->aucOwnMacAddr,
@@ -557,6 +562,13 @@ void aisFsmStateInit_JOIN(IN struct ADAPTER *prAdapter,
 					      prAdapter->
 					      prAisBssInfo->ucBssIndex,
 					      prBssDesc);
+
+	if (!prStaRec) {
+		DBGLOG(AIS, ERROR,
+			"aisFsmStateInit_JOIN failed because prStaRec is NULL, return.\n");
+		ASSERT(FALSE);
+		return;
+	}
 
 	prAisFsmInfo->prTargetStaRec = prStaRec;
 
@@ -878,6 +890,13 @@ void aisFsmStateInit_IBSS_MERGE(IN struct ADAPTER *prAdapter,
 					      prAdapter->
 					      prAisBssInfo->ucBssIndex,
 					      prBssDesc);
+
+	if (!prStaRec) {
+		DBGLOG(AIS, ERROR,
+			"aisFsmStateInit_IBSS_MERGE failed because prStaRec is NULL, return.\n");
+		ASSERT(FALSE);
+		return;
+	}
 
 	prStaRec->fgIsMerging = TRUE;
 
