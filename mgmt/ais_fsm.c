@@ -1020,7 +1020,6 @@ VOID aisFsmSteps(IN P_ADAPTER_T prAdapter, ENUM_AIS_STATE_T eNextState)
 						prBssDesc->eBand, prBssDesc->ucChannelNum,
 						wlanGetSupportNss(prAdapter, prAisBssInfo->ucBssIndex), &rDbdcCap);
 
-					prAisBssInfo->eDBDCBand = rDbdcCap.ucDbdcBandIndex;
 					prAisBssInfo->ucNss = rDbdcCap.ucNss;
 					prAisBssInfo->ucWmmQueSet = rDbdcCap.ucWmmSetIndex;
 #endif /*CFG_SUPPORT_DBDC*/
@@ -1309,7 +1308,7 @@ VOID aisFsmSteps(IN P_ADAPTER_T prAdapter, ENUM_AIS_STATE_T eNextState)
 			prMsgChReq->eRfSco = prAisFsmInfo->prTargetBssDesc->eSco;
 			prMsgChReq->eRfBand = prAisFsmInfo->prTargetBssDesc->eBand;
 #if CFG_SUPPORT_DBDC
-			prMsgChReq->eDBDCBand = prAisBssInfo->eDBDCBand;
+			prMsgChReq->eDBDCBand = ENUM_BAND_AUTO;
 #endif /*CFG_SUPPORT_DBDC*/
 			/* To do: check if 80/160MHz bandwidth is needed here */
 			/* Decide RF BW by own OP and Peer OP BW */
@@ -1423,7 +1422,7 @@ VOID aisFsmSteps(IN P_ADAPTER_T prAdapter, ENUM_AIS_STATE_T eNextState)
 			prMsgChReq->eRfSco = prAisFsmInfo->rChReqInfo.eSco;
 			prMsgChReq->eRfBand = prAisFsmInfo->rChReqInfo.eBand;
 #if CFG_SUPPORT_DBDC
-			prMsgChReq->eDBDCBand = prAdapter->prAisBssInfo->eDBDCBand;
+			prMsgChReq->eDBDCBand = ENUM_BAND_AUTO;
 #endif
 			mboxSendMsg(prAdapter, MBOX_ID_0, (P_MSG_HDR_T) prMsgChReq, MSG_SEND_METHOD_BUF);
 
@@ -3492,7 +3491,7 @@ VOID aisFsmReleaseCh(IN P_ADAPTER_T prAdapter)
 		prMsgChAbort->ucBssIndex = prAdapter->prAisBssInfo->ucBssIndex;
 		prMsgChAbort->ucTokenID = prAisFsmInfo->ucSeqNumOfChReq;
 #if CFG_SUPPORT_DBDC
-		prMsgChAbort->eDBDCBand = prAdapter->prAisBssInfo->eDBDCBand;
+		prMsgChAbort->eDBDCBand = ENUM_BAND_AUTO;
 #endif /*CFG_SUPPORT_DBDC*/
 		mboxSendMsg(prAdapter, MBOX_ID_0, (P_MSG_HDR_T) prMsgChAbort, MSG_SEND_METHOD_BUF);
 	}
