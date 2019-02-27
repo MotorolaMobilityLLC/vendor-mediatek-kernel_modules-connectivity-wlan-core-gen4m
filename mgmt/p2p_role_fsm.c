@@ -1241,7 +1241,7 @@ void p2pRoleFsmRunEventStartAP(IN struct ADAPTER *prAdapter,
 			prP2pBssInfo);
 #if CFG_SUPPORT_DBDC
 	/* DBDC decsion.may change OpNss */
-	cnmDbdcEnableDecision(prAdapter,
+	cnmDbdcPreConnectionEnableDecision(prAdapter,
 		prP2pBssInfo->ucBssIndex,
 		prP2pConnReqInfo->rChannelInfo.eBand,
 		prP2pConnReqInfo->rChannelInfo.ucChannelNum,
@@ -1547,7 +1547,7 @@ void p2pRoleFsmRunEventDfsCac(IN struct ADAPTER *prAdapter,
 
 #if CFG_SUPPORT_DBDC
 	/* DBDC decsion.may change OpNss */
-	cnmDbdcEnableDecision(prAdapter,
+	cnmDbdcPreConnectionEnableDecision(prAdapter,
 		prP2pBssInfo->ucBssIndex,
 		prP2pConnReqInfo->rChannelInfo.eBand,
 		prP2pConnReqInfo->rChannelInfo.ucChannelNum,
@@ -1885,7 +1885,7 @@ void p2pRoleFsmRunEventConnectionRequest(IN struct ADAPTER *prAdapter,
 
 #if CFG_SUPPORT_DBDC
 		/* DBDC decsion.may change OpNss */
-		cnmDbdcEnableDecision(prAdapter,
+		cnmDbdcPreConnectionEnableDecision(prAdapter,
 			prP2pBssInfo->ucBssIndex,
 			prChnlReqInfo->eBand,
 			prChnlReqInfo->ucReqChnlNum,
@@ -2533,7 +2533,7 @@ p2pRoleFsmRunEventScanDone(IN struct ADAPTER *prAdapter,
 							prP2pBssInfo);
 #if CFG_SUPPORT_DBDC
 				/* DBDC decsion.may change OpNss */
-				cnmDbdcEnableDecision(prAdapter,
+				cnmDbdcPreConnectionEnableDecision(prAdapter,
 					prP2pRoleFsmInfo->ucBssIndex,
 					prChnlReqInfo->eBand,
 					prChnlReqInfo->ucReqChnlNum,

@@ -1729,7 +1729,7 @@ uint32_t nicUpdateBss(IN struct ADAPTER *prAdapter,
 				prBssInfo->prIpV4NetAddrList);
 #endif
 #if CFG_SUPPORT_DBDC
-		cnmDbdcDisableDecision(prAdapter, ucBssIndex);
+		cnmDbdcRuntimeCheckDecision(prAdapter, ucBssIndex);
 #endif
 	}
 
