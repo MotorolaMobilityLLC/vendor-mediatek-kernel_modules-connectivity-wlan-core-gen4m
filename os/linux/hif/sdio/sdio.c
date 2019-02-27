@@ -780,6 +780,9 @@ INT_32 glBusSetIrq(PVOID pvData, PVOID pfnIsr, PVOID pvCookie)
 
 	prHifInfo->fgIsPendingInt = FALSE;
 
+	prHifInfo->u4IntLogIdx = 0;
+	prHifInfo->ucIntLogEntry = 0;
+
 	return ret;
 }				/* end of glBusSetIrq() */
 
@@ -1304,6 +1307,7 @@ VOID kalDevReadIntStatus(IN P_ADAPTER_T prAdapter, OUT PUINT_32 pu4IntStatus)
 #if CFG_SDIO_INTR_ENHANCE
 	P_SDIO_CTRL_T prSDIOCtrl;
 	P_SDIO_STAT_COUNTER_T prStatCounter;
+	BOOLEAN fgPendingInt = FALSE;
 
 	SDIO_TIME_INTERVAL_DEC();
 
@@ -1318,8 +1322,10 @@ VOID kalDevReadIntStatus(IN P_ADAPTER_T prAdapter, OUT PUINT_32 pu4IntStatus)
 	prStatCounter = &prAdapter->prGlueInfo->rHifInfo.rStatCounter;
 
 	/* There are pending interrupt to be handled */
-	if (prAdapter->prGlueInfo->rHifInfo.fgIsPendingInt)
+	if (prAdapter->prGlueInfo->rHifInfo.fgIsPendingInt) {
 		prAdapter->prGlueInfo->rHifInfo.fgIsPendingInt = FALSE;
+		fgPendingInt = TRUE;
+	}
 	else {
 		SDIO_REC_TIME_START();
 		HAL_PORT_RD(prAdapter, MCR_WHISR, sizeof(ENHANCE_MODE_DATA_STRUCT_T),
@@ -1337,6 +1343,12 @@ VOID kalDevReadIntStatus(IN P_ADAPTER_T prAdapter, OUT PUINT_32 pu4IntStatus)
 	}
 
 	halProcessEnhanceInterruptStatus(prAdapter);
+
+	if (prSDIOCtrl->u4WHISR) {
+		halRecIntLog(prAdapter, prSDIOCtrl);
+		if (fgPendingInt)
+			halTagIntLog(prAdapter, SDIO_INT_RX_ENHANCE);
+	}
 
 	*pu4IntStatus = prSDIOCtrl->u4WHISR;
 #else

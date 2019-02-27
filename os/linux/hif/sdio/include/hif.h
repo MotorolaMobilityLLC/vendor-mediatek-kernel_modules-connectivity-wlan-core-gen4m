@@ -238,6 +238,8 @@ typedef struct _SDIO_RX_COALESCING_BUF_T {
 	UINT_32 u4BufSize;
 	UINT_32 u4PktCount;
 	UINT_32 u4PktTotalLength;
+
+	UINT_32 u4IntLogIdx;
 } SDIO_RX_COALESCING_BUF_T, *P_SDIO_RX_COALESCING_BUF_T;
 
 struct SDIO_INT_LOG_T {
@@ -296,6 +298,12 @@ typedef struct _BUS_INFO {
 	void (*halUpdateTxDonePendingCount)(IN P_ADAPTER_T prAdapter,
 					    IN BOOLEAN isIncr, IN UINT_8 ucTc, IN UINT_16 u2Cnt);
 } BUS_INFO, *P_BUS_INFO;
+
+enum HIF_SDIO_INT_STS {
+	SDIO_INT_RX_ENHANCE = 0,
+	SDIO_INT_DRV_OWN,
+	SDIO_INT_WAKEUP_DSLP
+};
 
 /*******************************************************************************
 *                            P U B L I C   D A T A
@@ -380,7 +388,13 @@ VOID halDeAggRxPkt(P_ADAPTER_T prAdapter, P_SDIO_RX_COALESCING_BUF_T prRxBuf);
 VOID halPrintMailbox(IN P_ADAPTER_T prAdapter);
 VOID halPollDbgCr(IN P_ADAPTER_T prAdapter, IN UINT_32 u4LoopCount);
 void halTxGetFreeResource_v1(IN P_ADAPTER_T prAdapter, IN PUINT_16 au2TxDoneCnt, IN PUINT_16 au2TxRlsCnt);
+
 BOOLEAN halIsPendingTxDone(IN P_ADAPTER_T prAdapter);
+VOID halDumpIntLog(IN P_ADAPTER_T prAdapter);
+VOID halTagIntLog(IN P_ADAPTER_T prAdapter, IN enum HIF_SDIO_INT_STS eTag);
+VOID halRecIntLog(IN P_ADAPTER_T prAdapter, IN P_SDIO_CTRL_T prSDIOCtrl);
+struct SDIO_INT_LOG_T *halGetIntLog(IN P_ADAPTER_T prAdapter, IN UINT_32 u4Idx);
+
 /*******************************************************************************
 *                              F U N C T I O N S
 ********************************************************************************
