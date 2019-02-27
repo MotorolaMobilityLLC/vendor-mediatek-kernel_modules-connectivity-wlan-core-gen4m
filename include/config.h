@@ -295,7 +295,7 @@
 #define CFG_ENABLE_CAL_LOG          1
 #define CFG_REPORT_RFBB_VERSION     1
 
-#define HW_BSSID_NUM                4	/* HW BSSID number by chip */
+#define MAX_BSSID_NUM               4	/* MAX BSSID number */
 
 #if (MTK_WCN_HIF_SDIO)
 #define CFG_CHIP_RESET_SUPPORT          1

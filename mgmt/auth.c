@@ -283,7 +283,7 @@ WLAN_STATUS authSendAuthFrame(IN P_ADAPTER_T prAdapter, IN P_STA_RECORD_T prStaR
 		return WLAN_STATUS_RESOURCES;
 	}
 	/* 4 <2> Compose Authentication Request frame header and fixed fields in MSDU_INfO_T. */
-	ASSERT(prStaRec->ucBssIndex <= MAX_BSS_INDEX);
+	ASSERT(prStaRec->ucBssIndex <= prAdapter->ucHwBssIdNum);
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prStaRec->ucBssIndex)
 
 	    /* Compose Header and some Fixed Fields */
@@ -377,7 +377,7 @@ authSendAuthFrame(IN P_ADAPTER_T prAdapter,
 	}
 	/* 4 <2> Compose Authentication Request frame header and fixed fields in MSDU_INfO_T. */
 	if (prStaRec) {
-		ASSERT(prStaRec->ucBssIndex <= MAX_BSS_INDEX);
+		ASSERT(prStaRec->ucBssIndex <= prAdapter->ucHwBssIdNum);
 		prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prStaRec->ucBssIndex);
 
 		pucTransmitAddr = prBssInfo->aucOwnMacAddr;
@@ -795,7 +795,7 @@ authSendDeauthFrame(IN P_ADAPTER_T prAdapter,
 	OS_SYSTIME rCurrentTime;
 	INT_32 i4NewEntryIndex, i;
 	UINT_8 ucStaRecIdx = STA_REC_INDEX_NOT_FOUND;
-	UINT_8 ucBssIndex = BSS_INFO_NUM;
+	UINT_8 ucBssIndex = prAdapter->ucHwBssIdNum;
 	UINT_8 aucBMC[] = BC_MAC_ADDR;
 
 	/* NOTE(Kevin): The best way to reply the Deauth is according to the incoming data
@@ -817,7 +817,7 @@ authSendDeauthFrame(IN P_ADAPTER_T prAdapter,
 			return WLAN_STATUS_FAILURE;
 
 		/* Check if corresponding BSS is able to send Deauth */
-		for (i = 0; i < BSS_INFO_NUM; i++) {
+		for (i = 0; i < prAdapter->ucHwBssIdNum; i++) {
 			prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, i);
 
 			if (IS_NET_ACTIVE(prAdapter, i) &&
