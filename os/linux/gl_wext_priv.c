@@ -12550,7 +12550,6 @@ static int priv_driver_set_3steps_backoff(IN struct net_device *prNetDev,
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
 	enum ENUM_TX_POWER_CTRL_TYPE eCtrlType;
-	struct FCC_TX_PWR_ADJUST rFccTxPwrAdjust;
 	uint32_t rStatus = WLAN_STATUS_FAILURE;
 	int32_t i4BytesWritten = 0;
 
