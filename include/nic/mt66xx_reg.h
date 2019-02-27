@@ -81,6 +81,9 @@ extern struct mt66xx_hif_driver_data mt66xx_driver_data_mt7663;
 #ifdef CONNAC
 extern struct mt66xx_hif_driver_data mt66xx_driver_data_connac;
 #endif /* CONNAC */
+#ifdef CONNAC2X2
+extern struct mt66xx_hif_driver_data mt66xx_driver_data_connac2x2;
+#endif /* CONNAC2X2 */
 
 /*******************************************************************************
  *                              C O N S T A N T S
