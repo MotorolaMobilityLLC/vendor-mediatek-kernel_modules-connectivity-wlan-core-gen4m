@@ -185,7 +185,7 @@ typedef struct _QUE_T {
 	{ \
 	    ASSERT(prDestQueue); \
 	    ASSERT(prSrcQueue); \
-		if (prSrcQueue->u4NumElem > 0) { \
+		if ((prSrcQueue)->u4NumElem > 0) { \
 			if ((prDestQueue)->prTail) { \
 				((prDestQueue)->prTail)->prNext = (prSrcQueue)->prHead; \
 			} else { \
@@ -201,7 +201,7 @@ typedef struct _QUE_T {
 	{ \
 		ASSERT(prDestQueue); \
 		ASSERT(prSrcQueue); \
-		if (prSrcQueue->u4NumElem > 0) { \
+		if ((prSrcQueue)->u4NumElem > 0) { \
 			((prSrcQueue)->prTail)->prNext = (prDestQueue)->prHead; \
 			(prDestQueue)->prHead = (prSrcQueue)->prHead; \
 			((prDestQueue)->u4NumElem) += ((prSrcQueue)->u4NumElem); \
