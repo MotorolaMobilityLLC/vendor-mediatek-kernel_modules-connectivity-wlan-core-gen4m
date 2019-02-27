@@ -1102,17 +1102,21 @@ u_int8_t rsnPerformPolicySelection(IN struct ADAPTER
 	       (uint8_t) ((u4AkmSuite >> 24) & 0x000000FF));
 
 #if CFG_SUPPORT_802_11W
-	DBGLOG(RSN, TRACE, "[MFP] MFP setting = %d\n ",
-	       kalGetMfpSetting(prAdapter->prGlueInfo));
+	DBGLOG(RSN, INFO,
+		"[MFP] MFP setting=%d, u2RsnCap=%d, fgRsnCapPresent=%d\n",
+		kalGetMfpSetting(prAdapter->prGlueInfo),
+		prBssRsnInfo->u2RsnCap,
+		prBssRsnInfo->fgRsnCapPresent);
 
 	if (kalGetMfpSetting(prAdapter->prGlueInfo) ==
 	    RSN_AUTH_MFP_REQUIRED) {
 		if (!prBssRsnInfo->fgRsnCapPresent) {
-			DBGLOG(RSN, TRACE,
+			DBGLOG(RSN, WARN,
 			       "[MFP] Skip RSN IE, No MFP Required Capability.\n");
 			return FALSE;
 		} else if (!(prBssRsnInfo->u2RsnCap & ELEM_WPA_CAP_MFPC)) {
-			DBGLOG(RSN, TRACE, "[MFP] Skip RSN IE, No MFP Required\n");
+			DBGLOG(RSN, WARN,
+				"[MFP] Skip RSN IE, No MFP Required\n");
 			return FALSE;
 		}
 		prAdapter->rWifiVar.rAisSpecificBssInfo.fgMgmtProtection =
@@ -1124,20 +1128,17 @@ u_int8_t rsnPerformPolicySelection(IN struct ADAPTER
 			prAdapter->rWifiVar.rAisSpecificBssInfo.fgMgmtProtection =
 				TRUE;
 	} else {
-		if (prBssRsnInfo->fgRsnCapPresent) {
-			if ((prBssRsnInfo->u2RsnCap & ELEM_WPA_CAP_MFPC)) {
-				prAdapter->rWifiVar.rAisSpecificBssInfo.fgMgmtProtection =
-					TRUE;
-				prAdapter->prGlueInfo->rWpaInfo.u4Mfp =
-					RSN_AUTH_MFP_OPTIONAL;
-			} else if (prBssRsnInfo->u2RsnCap & ELEM_WPA_CAP_MFPR) {
-				DBGLOG(RSN, INFO,
-				       "[MFP] Skip RSN IE, No MFP Required Capability\n");
+		if (prBssRsnInfo->fgRsnCapPresent
+			&& (prBssRsnInfo->u2RsnCap & ELEM_WPA_CAP_MFPR)) {
+			if (prAdapter->rWifiVar.rAisSpecificBssInfo.
+				fgMgmtProtection == FALSE) {
+				DBGLOG(RSN, WARN,
+					"[MFP] Skip RSN IE, No MFP Required Capability\n");
 				return FALSE;
 			}
 		}
 	}
-	DBGLOG(RSN, TRACE, "[MFP] fgMgmtProtection = %d\n ",
+	DBGLOG(RSN, INFO, "[MFP] fgMgmtProtection = %d\n ",
 	       prAdapter->rWifiVar.rAisSpecificBssInfo.fgMgmtProtection);
 #endif
 
