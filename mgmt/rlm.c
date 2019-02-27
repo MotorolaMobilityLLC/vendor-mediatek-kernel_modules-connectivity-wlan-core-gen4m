@@ -709,7 +709,8 @@ static void rlmFillHtCapIE(struct ADAPTER *prAdapter,
 	if (IS_FEATURE_ENABLED(prAdapter->rWifiVar.ucRxLdpc))
 		prHtCap->u2HtCapInfo |= HT_CAP_INFO_LDPC_CAP;
 
-	if (IS_FEATURE_ENABLED(prAdapter->rWifiVar.ucTxStbc))
+	if (IS_FEATURE_ENABLED(prAdapter->rWifiVar.ucTxStbc) &&
+			prBssInfo->ucOpTxNss >= 2)
 		prHtCap->u2HtCapInfo |= HT_CAP_INFO_TX_STBC;
 
 	if (IS_FEATURE_ENABLED(prAdapter->rWifiVar.ucRxStbc)) {
@@ -1469,7 +1470,8 @@ static void rlmFillVhtCapIE(struct ADAPTER *prAdapter,
 			 VHT_CAP_INFO_RX_STBC_MASK);
 	}
 
-	if (IS_FEATURE_ENABLED(prAdapter->rWifiVar.ucTxStbc))
+	if (IS_FEATURE_ENABLED(prAdapter->rWifiVar.ucTxStbc) &&
+			prBssInfo->ucOpTxNss >= 2)
 		prVhtCap->u4VhtCapInfo |= VHT_CAP_INFO_TX_STBC;
 
 	/*set MCS map */
