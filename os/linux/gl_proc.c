@@ -480,7 +480,7 @@ static ssize_t procDriverCmdRead(struct file *filp, char __user *buf,
 
 	if (u4CopySize > count) {
 		pr_err("count is too small: u4CopySize=%u, count=%u\n",
-		       u4CopySize, count);
+		       u4CopySize, (uint32_t)count);
 		return -EFAULT;
 	}
 
