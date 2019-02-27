@@ -1528,6 +1528,8 @@ void halWpdmaInitRxRing(IN struct GLUE_INFO *prGlueInfo)
 		kalDevRegWrite(prGlueInfo, prRxRing->hw_cnt_addr,
 			prRxRing->u4RingSize);
 
+		prRxRing->fgIsDumpLog = false;
+
 		DBGLOG(HAL, INFO, "-->RX_RING_%d[0x%x]: Base=0x%x, Cnt=%d\n",
 			i, prRxRing->hw_desc_base,
 			phy_addr, prRxRing->u4RingSize);

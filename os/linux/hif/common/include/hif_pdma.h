@@ -316,12 +316,12 @@ struct RTMP_RX_RING {
 	uint32_t u4BufSize;
 	uint32_t u4RingSize;
 	u_int8_t fgRxSegPkt;
-
 	uint32_t hw_desc_base;
 	uint32_t hw_desc_base_ext;
 	uint32_t hw_cidx_addr;
 	uint32_t hw_didx_addr;
 	uint32_t hw_cnt_addr;
+	bool fgIsDumpLog;
 };
 
 struct PCIE_CHIP_CR_MAPPING {
