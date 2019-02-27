@@ -74,24 +74,32 @@ static uint8_t *apucDebugP2pRoleState[P2P_ROLE_STATE_NUM] = {
 
 void
 p2pRoleFsmStateTransition(IN struct ADAPTER *prAdapter,
-			  IN struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo, IN enum ENUM_P2P_ROLE_STATE eNextState);
+		IN struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo,
+		IN enum ENUM_P2P_ROLE_STATE eNextState);
 
-uint8_t p2pRoleFsmInit(IN struct ADAPTER *prAdapter, IN uint8_t ucRoleIdx)
+uint8_t p2pRoleFsmInit(IN struct ADAPTER *prAdapter,
+		IN uint8_t ucRoleIdx)
 {
-	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo = (struct P2P_ROLE_FSM_INFO *) NULL;
+	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo =
+		(struct P2P_ROLE_FSM_INFO *) NULL;
 	struct BSS_INFO *prP2pBssInfo = (struct BSS_INFO *) NULL;
-	struct P2P_CHNL_REQ_INFO *prP2pChnlReqInfo = (struct P2P_CHNL_REQ_INFO *) NULL;
+	struct P2P_CHNL_REQ_INFO *prP2pChnlReqInfo =
+		(struct P2P_CHNL_REQ_INFO *) NULL;
 	struct GL_P2P_INFO *prP2PInfo = NULL;
 
 	do {
 		ASSERT_BREAK(prAdapter != NULL);
 
-		ASSERT_BREAK(P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prAdapter, ucRoleIdx) == NULL);
+		ASSERT_BREAK(
+			P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prAdapter, ucRoleIdx)
+				== NULL);
 
-		prP2pRoleFsmInfo = kalMemAlloc(sizeof(struct P2P_ROLE_FSM_INFO), VIR_MEM_TYPE);
+		prP2pRoleFsmInfo = kalMemAlloc(
+			sizeof(struct P2P_ROLE_FSM_INFO),
+			VIR_MEM_TYPE);
 
-		P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prAdapter, ucRoleIdx) = prP2pRoleFsmInfo;
-
+		P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prAdapter, ucRoleIdx) =
+			prP2pRoleFsmInfo;
 
 		ASSERT_BREAK(prP2pRoleFsmInfo != NULL);
 
@@ -101,26 +109,32 @@ uint8_t p2pRoleFsmInit(IN struct ADAPTER *prAdapter, IN uint8_t ucRoleIdx)
 
 		prP2pRoleFsmInfo->eCurrentState = P2P_ROLE_STATE_IDLE;
 
-		prP2pRoleFsmInfo->u4P2pPacketFilter = PARAM_PACKET_FILTER_SUPPORTED;
+		prP2pRoleFsmInfo->u4P2pPacketFilter =
+			PARAM_PACKET_FILTER_SUPPORTED;
 
 		prP2pChnlReqInfo = &prP2pRoleFsmInfo->rChnlReqInfo;
 		LINK_INITIALIZE(&(prP2pChnlReqInfo->rP2pChnlReqLink));
 
 		cnmTimerInitTimer(prAdapter,
-				  &(prP2pRoleFsmInfo->rP2pRoleFsmTimeoutTimer),
-				  (PFN_MGMT_TIMEOUT_FUNC) p2pRoleFsmRunEventTimeout, (unsigned long) prP2pRoleFsmInfo);
+			&(prP2pRoleFsmInfo->rP2pRoleFsmTimeoutTimer),
+			(PFN_MGMT_TIMEOUT_FUNC) p2pRoleFsmRunEventTimeout,
+			(unsigned long) prP2pRoleFsmInfo);
 
 #if (CFG_SUPPORT_DFS_MASTER == 1)
 		cnmTimerInitTimer(prAdapter,
-				  &(prP2pRoleFsmInfo->rDfsShutDownTimer),
-				  (PFN_MGMT_TIMEOUT_FUNC) p2pRoleFsmRunEventDfsShutDownTimeout,
-				  (unsigned long) prP2pRoleFsmInfo);
+			&(prP2pRoleFsmInfo->rDfsShutDownTimer),
+			(PFN_MGMT_TIMEOUT_FUNC)
+			p2pRoleFsmRunEventDfsShutDownTimeout,
+			(unsigned long) prP2pRoleFsmInfo);
 #endif
 
-		prP2pBssInfo = cnmGetBssInfoAndInit(prAdapter, NETWORK_TYPE_P2P, FALSE);
+		prP2pBssInfo = cnmGetBssInfoAndInit(prAdapter,
+			NETWORK_TYPE_P2P,
+			FALSE);
 
 		if (!prP2pBssInfo) {
-			DBGLOG(P2P, ERROR, "Error allocating BSS Info Structure\n");
+			DBGLOG(P2P, ERROR,
+				"Error allocating BSS Info Structure\n");
 			break;
 		}
 
@@ -144,33 +158,46 @@ uint8_t p2pRoleFsmInit(IN struct ADAPTER *prAdapter, IN uint8_t ucRoleIdx)
 		/* For BSS_INFO back trace to P2P Role & get Role FSM. */
 		prP2pBssInfo->u4PrivateData = ucRoleIdx;
 
-		if (p2pFuncIsAPMode(prAdapter->rWifiVar.prP2PConnSettings[ucRoleIdx])) {
+		if (p2pFuncIsAPMode(
+			prAdapter->rWifiVar.prP2PConnSettings[ucRoleIdx])) {
 			prP2pBssInfo->ucConfigAdHocAPMode = AP_MODE_11G;
-			prP2pBssInfo->u2HwDefaultFixedRateCode = RATE_CCK_1M_LONG;
+			prP2pBssInfo->u2HwDefaultFixedRateCode =
+				RATE_CCK_1M_LONG;
 		} else {
 			prP2pBssInfo->ucConfigAdHocAPMode = AP_MODE_11G_P2P;
 			prP2pBssInfo->u2HwDefaultFixedRateCode = RATE_OFDM_6M;
 		}
 
 		prP2pBssInfo->ucNonHTBasicPhyType = (uint8_t)
-		    rNonHTApModeAttributes[prP2pBssInfo->ucConfigAdHocAPMode].ePhyTypeIndex;
-		prP2pBssInfo->u2BSSBasicRateSet =
-		    rNonHTApModeAttributes[prP2pBssInfo->ucConfigAdHocAPMode].u2BSSBasicRateSet;
+			rNonHTApModeAttributes
+				[prP2pBssInfo->ucConfigAdHocAPMode]
+				.ePhyTypeIndex;
 
+		prP2pBssInfo->u2BSSBasicRateSet =
+			rNonHTApModeAttributes
+				[prP2pBssInfo->ucConfigAdHocAPMode]
+				.u2BSSBasicRateSet;
 		prP2pBssInfo->u2OperationalRateSet =
-		    rNonHTPhyAttributes[prP2pBssInfo->ucNonHTBasicPhyType].u2SupportedRateSet;
+			rNonHTPhyAttributes
+				[prP2pBssInfo->ucNonHTBasicPhyType]
+				.u2SupportedRateSet;
 
 		rateGetDataRatesFromRateSet(prP2pBssInfo->u2OperationalRateSet,
-					    prP2pBssInfo->u2BSSBasicRateSet,
-					    prP2pBssInfo->aucAllSupportedRates, &prP2pBssInfo->ucAllSupportedRatesLen);
+			prP2pBssInfo->u2BSSBasicRateSet,
+			prP2pBssInfo->aucAllSupportedRates,
+			&prP2pBssInfo->ucAllSupportedRatesLen);
 
 		prP2pBssInfo->prBeacon = cnmMgtPktAlloc(prAdapter,
-							OFFSET_OF(struct WLAN_BEACON_FRAME, aucInfoElem[0]) + MAX_IE_LENGTH);
+			OFFSET_OF(struct WLAN_BEACON_FRAME, aucInfoElem[0])
+				+ MAX_IE_LENGTH);
 
 		if (prP2pBssInfo->prBeacon) {
 			prP2pBssInfo->prBeacon->eSrc = TX_PACKET_MGMT;
-			prP2pBssInfo->prBeacon->ucStaRecIndex = STA_REC_INDEX_BMCAST;	/* NULL STA_REC */
-			prP2pBssInfo->prBeacon->ucBssIndex = prP2pBssInfo->ucBssIndex;
+			/* NULL STA_REC */
+			prP2pBssInfo->prBeacon->ucStaRecIndex =
+				STA_REC_INDEX_BMCAST;
+			prP2pBssInfo->prBeacon->ucBssIndex =
+				prP2pBssInfo->ucBssIndex;
 		} else {
 			/* Out of memory. */
 			ASSERT(FALSE);
@@ -182,9 +209,12 @@ uint8_t p2pRoleFsmInit(IN struct ADAPTER *prAdapter, IN uint8_t ucRoleIdx)
 		prP2pBssInfo->ucPrimaryChannel = P2P_DEFAULT_LISTEN_CHANNEL;
 		prP2pBssInfo->eBand = BAND_2G4;
 		prP2pBssInfo->eBssSCO = CHNL_EXT_SCN;
-		prP2pBssInfo->ucNss = wlanGetSupportNss(prAdapter, prP2pBssInfo->ucBssIndex);
+		prP2pBssInfo->ucNss = wlanGetSupportNss(prAdapter,
+			prP2pBssInfo->ucBssIndex);
 		prP2pBssInfo->ucWmmQueSet = (prAdapter->rWifiVar.eDbdcMode ==
-			ENUM_DBDC_MODE_DISABLED) ? DBDC_5G_WMM_INDEX : DBDC_2G_WMM_INDEX;
+			ENUM_DBDC_MODE_DISABLED)
+			? DBDC_5G_WMM_INDEX
+			: DBDC_2G_WMM_INDEX;
 
 		if (IS_FEATURE_ENABLED(prAdapter->rWifiVar.ucQoS))
 			prP2pBssInfo->fgIsQBSS = TRUE;
@@ -195,9 +225,13 @@ uint8_t p2pRoleFsmInit(IN struct ADAPTER *prAdapter, IN uint8_t ucRoleIdx)
 		p2pFuncRadarInfoInit();
 #endif
 
-		/* SET_NET_PWR_STATE_IDLE(prAdapter, prP2pBssInfo->ucBssIndex); */
+		/* SET_NET_PWR_STATE_IDLE(prAdapter,
+		 * prP2pBssInfo->ucBssIndex);
+		 */
 
-		p2pRoleFsmStateTransition(prAdapter, prP2pRoleFsmInfo, P2P_ROLE_STATE_IDLE);
+		p2pRoleFsmStateTransition(prAdapter,
+			prP2pRoleFsmInfo,
+			P2P_ROLE_STATE_IDLE);
 
 	} while (FALSE);
 
@@ -209,7 +243,8 @@ uint8_t p2pRoleFsmInit(IN struct ADAPTER *prAdapter, IN uint8_t ucRoleIdx)
 
 void p2pRoleFsmUninit(IN struct ADAPTER *prAdapter, IN uint8_t ucRoleIdx)
 {
-	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo = (struct P2P_ROLE_FSM_INFO *) NULL;
+	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo =
+		(struct P2P_ROLE_FSM_INFO *) NULL;
 	struct BSS_INFO *prP2pBssInfo = (struct BSS_INFO *) NULL;
 
 	do {
@@ -218,31 +253,41 @@ void p2pRoleFsmUninit(IN struct ADAPTER *prAdapter, IN uint8_t ucRoleIdx)
 		DEBUGFUNC("p2pRoleFsmUninit()");
 		DBGLOG(P2P, INFO, "->p2pRoleFsmUninit()\n");
 
-		prP2pRoleFsmInfo = P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prAdapter, ucRoleIdx);
+		prP2pRoleFsmInfo =
+			P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prAdapter, ucRoleIdx);
 
 		ASSERT_BREAK(prP2pRoleFsmInfo != NULL);
 
 		if (!prP2pRoleFsmInfo)
 			return;
 
-		prP2pBssInfo = prAdapter->aprBssInfo[prP2pRoleFsmInfo->ucBssIndex];
+		prP2pBssInfo =
+			prAdapter->aprBssInfo[prP2pRoleFsmInfo->ucBssIndex];
 
-		p2pFuncDissolve(prAdapter, prP2pBssInfo, TRUE, REASON_CODE_DEAUTH_LEAVING_BSS);
+		p2pFuncDissolve(prAdapter,
+			prP2pBssInfo, TRUE,
+			REASON_CODE_DEAUTH_LEAVING_BSS);
 
 		SET_NET_PWR_STATE_IDLE(prAdapter, prP2pBssInfo->ucBssIndex);
 
 		/* Function Dissolve should already enter IDLE state. */
-		p2pRoleFsmStateTransition(prAdapter, prP2pRoleFsmInfo, P2P_ROLE_STATE_IDLE);
+		p2pRoleFsmStateTransition(prAdapter,
+			prP2pRoleFsmInfo,
+			P2P_ROLE_STATE_IDLE);
 
 		p2pRoleFsmRunEventAbort(prAdapter, prP2pRoleFsmInfo);
 
 		/* Clear CmdQue */
-		kalClearMgmtFramesByBssIdx(prAdapter->prGlueInfo, prP2pBssInfo->ucBssIndex);
-		kalClearSecurityFramesByBssIdx(prAdapter->prGlueInfo, prP2pBssInfo->ucBssIndex);
+		kalClearMgmtFramesByBssIdx(prAdapter->prGlueInfo,
+			prP2pBssInfo->ucBssIndex);
+		kalClearSecurityFramesByBssIdx(prAdapter->prGlueInfo,
+			prP2pBssInfo->ucBssIndex);
 		/* Clear PendingCmdQue */
-		wlanReleasePendingCMDbyBssIdx(prAdapter, prP2pBssInfo->ucBssIndex);
+		wlanReleasePendingCMDbyBssIdx(prAdapter,
+			prP2pBssInfo->ucBssIndex);
 		/* Clear PendingTxMsdu */
-		nicFreePendingTxMsduInfoByBssIdx(prAdapter, prP2pBssInfo->ucBssIndex);
+		nicFreePendingTxMsduInfoByBssIdx(prAdapter,
+			prP2pBssInfo->ucBssIndex);
 
 		/* Deactivate BSS. */
 		UNSET_NET_ACTIVE(prAdapter, prP2pRoleFsmInfo->ucBssIndex);
@@ -259,14 +304,17 @@ void p2pRoleFsmUninit(IN struct ADAPTER *prAdapter, IN uint8_t ucRoleIdx)
 		cnmFreeBssInfo(prAdapter, prP2pBssInfo);
 
 		/* ensure the timer be stopped */
-		cnmTimerStopTimer(prAdapter, &(prP2pRoleFsmInfo->rP2pRoleFsmTimeoutTimer));
+		cnmTimerStopTimer(prAdapter,
+			&(prP2pRoleFsmInfo->rP2pRoleFsmTimeoutTimer));
 
 #if (CFG_SUPPORT_DFS_MASTER == 1)
-		cnmTimerStopTimer(prAdapter, &(prP2pRoleFsmInfo->rDfsShutDownTimer));
+		cnmTimerStopTimer(prAdapter,
+			&(prP2pRoleFsmInfo->rDfsShutDownTimer));
 #endif
 
 		if (prP2pRoleFsmInfo)
-			kalMemFree(prP2pRoleFsmInfo, VIR_MEM_TYPE, sizeof(struct P2P_ROLE_FSM_INFO));
+			kalMemFree(prP2pRoleFsmInfo, VIR_MEM_TYPE,
+				sizeof(struct P2P_ROLE_FSM_INFO));
 
 	} while (FALSE);
 
@@ -282,9 +330,14 @@ void p2pRoleFsmUninit(IN struct ADAPTER *prAdapter, IN uint8_t ucRoleIdx)
 		DBGLOG(P2P, INFO, "->p2pFsmUninit()\n");
 
 		prP2pFsmInfo = prAdapter->rWifiVar.prP2pFsmInfo;
-		prP2pBssInfo = &(prAdapter->rWifiVar.arBssInfo[NETWORK_TYPE_P2P_INDEX]);
+		prP2pBssInfo =
+			&(prAdapter->rWifiVar
+			.arBssInfo[NETWORK_TYPE_P2P_INDEX]);
 
-		p2pFuncSwitchOPMode(prAdapter, prP2pBssInfo, OP_MODE_P2P_DEVICE, TRUE);
+		p2pFuncSwitchOPMode(prAdapter,
+			prP2pBssInfo,
+			OP_MODE_P2P_DEVICE,
+			TRUE);
 
 		p2pFsmRunEventAbort(prAdapter, prP2pFsmInfo);
 
@@ -298,17 +351,20 @@ void p2pRoleFsmUninit(IN struct ADAPTER *prAdapter, IN uint8_t ucRoleIdx)
 		DBGLOG(P2P, TRACE,
 		       "p2pFsmUninit: wlanProcessCommandQueue, num of element:%d\n",
 		       prAdapter->prGlueInfo->rCmdQueue.u4NumElem);
-		wlanProcessCommandQueue(prAdapter, &prAdapter->prGlueInfo->rCmdQueue);
+		wlanProcessCommandQueue(prAdapter,
+			&prAdapter->prGlueInfo->rCmdQueue);
 
 		wlanReleasePowerControl(prAdapter);
 
 		/* Release pending mgmt frame,
 		 * mgmt frame may be pending by CMD without resource.
 		 */
-		kalClearMgmtFramesByBssIdx(prAdapter->prGlueInfo, NETWORK_TYPE_P2P_INDEX);
+		kalClearMgmtFramesByBssIdx(prAdapter->prGlueInfo,
+			NETWORK_TYPE_P2P_INDEX);
 
 		/* Clear PendingCmdQue */
-		wlanReleasePendingCMDbyBssIdx(prAdapter, NETWORK_TYPE_P2P_INDEX);
+		wlanReleasePendingCMDbyBssIdx(prAdapter,
+			NETWORK_TYPE_P2P_INDEX);
 
 		if (prP2pBssInfo->prBeacon) {
 			cnmMgtPktFree(prAdapter, prP2pBssInfo->prBeacon);
@@ -323,12 +379,14 @@ void p2pRoleFsmUninit(IN struct ADAPTER *prAdapter, IN uint8_t ucRoleIdx)
 
 void
 p2pRoleFsmStateTransition(IN struct ADAPTER *prAdapter,
-			  IN struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo, IN enum ENUM_P2P_ROLE_STATE eNextState)
+		IN struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo,
+		IN enum ENUM_P2P_ROLE_STATE eNextState)
 {
 	u_int8_t fgIsTransitionOut = (u_int8_t) FALSE;
 	struct BSS_INFO *prP2pRoleBssInfo = (struct BSS_INFO *) NULL;
 
-	prP2pRoleBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prP2pRoleFsmInfo->ucBssIndex);
+	prP2pRoleBssInfo =
+		GET_BSS_INFO_BY_INDEX(prAdapter, prP2pRoleFsmInfo->ucBssIndex);
 
 	do {
 		if (!IS_BSS_ACTIVE(prP2pRoleBssInfo)) {
@@ -336,17 +394,20 @@ p2pRoleFsmStateTransition(IN struct ADAPTER *prAdapter,
 				return;
 
 			SET_NET_ACTIVE(prAdapter, prP2pRoleBssInfo->ucBssIndex);
-			nicActivateNetwork(prAdapter, prP2pRoleBssInfo->ucBssIndex);
+			nicActivateNetwork(prAdapter,
+				prP2pRoleBssInfo->ucBssIndex);
 		}
 
 		fgIsTransitionOut = fgIsTransitionOut ? FALSE : TRUE;
 
 		if (!fgIsTransitionOut) {
-			DBGLOG(P2P, STATE, "[P2P_ROLE][%d]TRANSITION(Bss%d): [%s] -> [%s]\n",
-			       prP2pRoleFsmInfo->ucRoleIndex,
-			       prP2pRoleFsmInfo->ucBssIndex,
-			       apucDebugP2pRoleState[prP2pRoleFsmInfo->eCurrentState],
-			       apucDebugP2pRoleState[eNextState]);
+			DBGLOG(P2P, STATE,
+				"[P2P_ROLE][%d]TRANSITION(Bss%d): [%s] -> [%s]\n",
+				prP2pRoleFsmInfo->ucRoleIndex,
+				prP2pRoleFsmInfo->ucBssIndex,
+				apucDebugP2pRoleState
+					[prP2pRoleFsmInfo->eCurrentState],
+				apucDebugP2pRoleState[eNextState]);
 
 			/* Transition into current state. */
 			prP2pRoleFsmInfo->eCurrentState = eNextState;
@@ -355,49 +416,60 @@ p2pRoleFsmStateTransition(IN struct ADAPTER *prAdapter,
 		switch (prP2pRoleFsmInfo->eCurrentState) {
 		case P2P_ROLE_STATE_IDLE:
 			if (!fgIsTransitionOut)
-				p2pRoleStateInit_IDLE(prAdapter, prP2pRoleFsmInfo, prP2pRoleBssInfo);
+				p2pRoleStateInit_IDLE(prAdapter,
+					prP2pRoleFsmInfo,
+					prP2pRoleBssInfo);
 			else
-				p2pRoleStateAbort_IDLE(prAdapter, prP2pRoleFsmInfo, &(prP2pRoleFsmInfo->rChnlReqInfo));
+				p2pRoleStateAbort_IDLE(prAdapter,
+					prP2pRoleFsmInfo,
+					&(prP2pRoleFsmInfo->rChnlReqInfo));
 			break;
 		case P2P_ROLE_STATE_SCAN:
 			if (!fgIsTransitionOut) {
-				p2pRoleStateInit_SCAN(prAdapter, prP2pRoleFsmInfo->ucBssIndex,
-						      &(prP2pRoleFsmInfo->rScanReqInfo));
+				p2pRoleStateInit_SCAN(prAdapter,
+					prP2pRoleFsmInfo->ucBssIndex,
+					&(prP2pRoleFsmInfo->rScanReqInfo));
 			} else {
-				p2pRoleStateAbort_SCAN(prAdapter, prP2pRoleFsmInfo);
+				p2pRoleStateAbort_SCAN(prAdapter,
+					prP2pRoleFsmInfo);
 			}
 			break;
 		case P2P_ROLE_STATE_REQING_CHANNEL:
 			if (!fgIsTransitionOut) {
 				p2pRoleStateInit_REQING_CHANNEL(prAdapter,
-								prP2pRoleFsmInfo->ucBssIndex,
-								&(prP2pRoleFsmInfo->rChnlReqInfo));
+					prP2pRoleFsmInfo->ucBssIndex,
+					&(prP2pRoleFsmInfo->rChnlReqInfo));
 			} else {
-				p2pRoleStateAbort_REQING_CHANNEL(prAdapter, prP2pRoleBssInfo,
-								 prP2pRoleFsmInfo, eNextState);
+				p2pRoleStateAbort_REQING_CHANNEL(prAdapter,
+					prP2pRoleBssInfo,
+					prP2pRoleFsmInfo, eNextState);
 			}
 			break;
 		case P2P_ROLE_STATE_AP_CHNL_DETECTION:
 			if (!fgIsTransitionOut) {
 				p2pRoleStateInit_AP_CHNL_DETECTION(prAdapter,
-								   prP2pRoleFsmInfo->ucBssIndex,
-								   &(prP2pRoleFsmInfo->rScanReqInfo),
-								   &(prP2pRoleFsmInfo->rConnReqInfo));
+					prP2pRoleFsmInfo->ucBssIndex,
+					&(prP2pRoleFsmInfo->rScanReqInfo),
+					&(prP2pRoleFsmInfo->rConnReqInfo));
 			} else {
 				p2pRoleStateAbort_AP_CHNL_DETECTION(prAdapter,
-								    prP2pRoleFsmInfo->ucBssIndex,
-								    &(prP2pRoleFsmInfo->rConnReqInfo),
-								    &(prP2pRoleFsmInfo->rChnlReqInfo),
-								    &(prP2pRoleFsmInfo->rScanReqInfo), eNextState);
+					prP2pRoleFsmInfo->ucBssIndex,
+					&(prP2pRoleFsmInfo->rConnReqInfo),
+					&(prP2pRoleFsmInfo->rChnlReqInfo),
+					&(prP2pRoleFsmInfo->rScanReqInfo),
+					eNextState);
 			}
 			break;
 		case P2P_ROLE_STATE_GC_JOIN:
 			if (!fgIsTransitionOut) {
 				p2pRoleStateInit_GC_JOIN(prAdapter,
-							 prP2pRoleFsmInfo, &(prP2pRoleFsmInfo->rChnlReqInfo));
+					prP2pRoleFsmInfo,
+					&(prP2pRoleFsmInfo->rChnlReqInfo));
 			} else {
 				p2pRoleStateAbort_GC_JOIN(prAdapter,
-							  prP2pRoleFsmInfo, &(prP2pRoleFsmInfo->rJoinInfo), eNextState);
+					prP2pRoleFsmInfo,
+					&(prP2pRoleFsmInfo->rJoinInfo),
+					eNextState);
 			}
 			break;
 
@@ -405,21 +477,25 @@ p2pRoleFsmStateTransition(IN struct ADAPTER *prAdapter,
 		case P2P_ROLE_STATE_DFS_CAC:
 			if (!fgIsTransitionOut) {
 				p2pRoleStateInit_DFS_CAC(prAdapter,
-								prP2pRoleFsmInfo->ucBssIndex,
-								&(prP2pRoleFsmInfo->rChnlReqInfo));
+					prP2pRoleFsmInfo->ucBssIndex,
+					&(prP2pRoleFsmInfo->rChnlReqInfo));
 			} else {
-				p2pRoleStateAbort_DFS_CAC(prAdapter, prP2pRoleBssInfo,
-								 prP2pRoleFsmInfo, eNextState);
+				p2pRoleStateAbort_DFS_CAC(prAdapter,
+					prP2pRoleBssInfo,
+					prP2pRoleFsmInfo,
+					eNextState);
 			}
 			break;
 		case P2P_ROLE_STATE_SWITCH_CHANNEL:
 			if (!fgIsTransitionOut) {
 				p2pRoleStateInit_SWITCH_CHANNEL(prAdapter,
-								prP2pRoleFsmInfo->ucBssIndex,
-								&(prP2pRoleFsmInfo->rChnlReqInfo));
+					prP2pRoleFsmInfo->ucBssIndex,
+					&(prP2pRoleFsmInfo->rChnlReqInfo));
 			} else {
-				p2pRoleStateAbort_SWITCH_CHANNEL(prAdapter, prP2pRoleBssInfo,
-								 prP2pRoleFsmInfo, eNextState);
+				p2pRoleStateAbort_SWITCH_CHANNEL(prAdapter,
+					prP2pRoleBssInfo,
+					prP2pRoleFsmInfo,
+					eNextState);
 			}
 			break;
 #endif
@@ -431,10 +507,13 @@ p2pRoleFsmStateTransition(IN struct ADAPTER *prAdapter,
 
 }				/* p2pRoleFsmStateTransition */
 
-void p2pRoleFsmRunEventTimeout(IN struct ADAPTER *prAdapter, IN unsigned long ulParamPtr)
+void p2pRoleFsmRunEventTimeout(IN struct ADAPTER *prAdapter,
+		IN unsigned long ulParamPtr)
 {
-	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo = (struct P2P_ROLE_FSM_INFO *) ulParamPtr;
-	struct P2P_CHNL_REQ_INFO *prP2pChnlReqInfo = (struct P2P_CHNL_REQ_INFO *) NULL;
+	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo =
+		(struct P2P_ROLE_FSM_INFO *) ulParamPtr;
+	struct P2P_CHNL_REQ_INFO *prP2pChnlReqInfo =
+		(struct P2P_CHNL_REQ_INFO *) NULL;
 
 	do {
 		ASSERT_BREAK((prAdapter != NULL) && (prP2pRoleFsmInfo != NULL));
@@ -443,16 +522,24 @@ void p2pRoleFsmRunEventTimeout(IN struct ADAPTER *prAdapter, IN unsigned long ul
 		case P2P_ROLE_STATE_IDLE:
 			prP2pChnlReqInfo = &(prP2pRoleFsmInfo->rChnlReqInfo);
 			if (prP2pChnlReqInfo->fgIsChannelRequested) {
-				p2pFuncReleaseCh(prAdapter, prP2pRoleFsmInfo->ucBssIndex, prP2pChnlReqInfo);
-				if (IS_NET_PWR_STATE_IDLE(prAdapter, prP2pRoleFsmInfo->ucBssIndex))
+				p2pFuncReleaseCh(prAdapter,
+					prP2pRoleFsmInfo->ucBssIndex,
+					prP2pChnlReqInfo);
+				if (IS_NET_PWR_STATE_IDLE(prAdapter,
+					prP2pRoleFsmInfo->ucBssIndex))
 					ASSERT(FALSE);
 			}
 
-			if (IS_NET_PWR_STATE_IDLE(prAdapter, prP2pRoleFsmInfo->ucBssIndex)) {
-				DBGLOG(P2P, TRACE, "Role BSS IDLE, deactive network.\n");
-				UNSET_NET_ACTIVE(prAdapter, prP2pRoleFsmInfo->ucBssIndex);
-				nicDeactivateNetwork(prAdapter, prP2pRoleFsmInfo->ucBssIndex);
-				nicUpdateBss(prAdapter, prP2pRoleFsmInfo->ucBssIndex);
+			if (IS_NET_PWR_STATE_IDLE(prAdapter,
+				prP2pRoleFsmInfo->ucBssIndex)) {
+				DBGLOG(P2P, TRACE,
+					"Role BSS IDLE, deactive network.\n");
+				UNSET_NET_ACTIVE(prAdapter,
+					prP2pRoleFsmInfo->ucBssIndex);
+				nicDeactivateNetwork(prAdapter,
+					prP2pRoleFsmInfo->ucBssIndex);
+				nicUpdateBss(prAdapter,
+					prP2pRoleFsmInfo->ucBssIndex);
 			}
 			break;
 		case P2P_ROLE_STATE_GC_JOIN:
@@ -461,10 +548,15 @@ void p2pRoleFsmRunEventTimeout(IN struct ADAPTER *prAdapter, IN unsigned long ul
 			break;
 #if (CFG_SUPPORT_DFS_MASTER == 1)
 		case P2P_ROLE_STATE_DFS_CAC:
-			p2pRoleFsmStateTransition(prAdapter, prP2pRoleFsmInfo, P2P_ROLE_STATE_IDLE);
-			kalP2PCacFinishedUpdate(prAdapter->prGlueInfo, prP2pRoleFsmInfo->ucRoleIndex);
+			p2pRoleFsmStateTransition(prAdapter,
+				prP2pRoleFsmInfo,
+				P2P_ROLE_STATE_IDLE);
+			kalP2PCacFinishedUpdate(prAdapter->prGlueInfo,
+				prP2pRoleFsmInfo->ucRoleIndex);
 			p2pFuncSetDfsState(DFS_STATE_ACTIVE);
-			cnmTimerStartTimer(prAdapter, &(prP2pRoleFsmInfo->rDfsShutDownTimer), 5000);
+			cnmTimerStartTimer(prAdapter,
+				&(prP2pRoleFsmInfo->rDfsShutDownTimer),
+				5000);
 			break;
 #endif
 		default:
@@ -478,10 +570,12 @@ void p2pRoleFsmRunEventTimeout(IN struct ADAPTER *prAdapter, IN unsigned long ul
 }				/* p2pRoleFsmRunEventTimeout */
 
 static void
-p2pRoleFsmDeauhComplete(IN struct ADAPTER *prAdapter, IN struct STA_RECORD *prStaRec)
+p2pRoleFsmDeauhComplete(IN struct ADAPTER *prAdapter,
+		IN struct STA_RECORD *prStaRec)
 {
 	struct BSS_INFO *prP2pBssInfo = (struct BSS_INFO *) NULL;
-	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo = (struct P2P_ROLE_FSM_INFO *) NULL;
+	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo =
+		(struct P2P_ROLE_FSM_INFO *) NULL;
 	enum ENUM_PARAM_MEDIA_STATE eOriMediaStatus;
 
 	if (!prAdapter) {
@@ -499,19 +593,25 @@ p2pRoleFsmDeauhComplete(IN struct ADAPTER *prAdapter, IN struct STA_RECORD *prSt
 	prP2pBssInfo = prAdapter->aprBssInfo[prStaRec->ucBssIndex];
 	ASSERT_BREAK(prP2pBssInfo != NULL);
 	eOriMediaStatus = prP2pBssInfo->eConnectionState;
-	prP2pRoleFsmInfo = P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prAdapter, prP2pBssInfo->u4PrivateData);
+	prP2pRoleFsmInfo =
+		P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prAdapter,
+			prP2pBssInfo->u4PrivateData);
 
 	/*
-	 * After EAP exchange, GO/GC will disconnect and re-connect in short time.
-	 * GC's new station record will be removed unexpectedly at GO's side if new
-	 * GC's connection happens when previous GO's disconnection flow is
+	 * After EAP exchange, GO/GC will disconnect
+	 * and re-connect in short time.
+	 * GC's new station record will be removed unexpectedly at GO's side
+	 * if new GC's connection happens
+	 * when previous GO's disconnection flow is
 	 * processing. 4-way handshake will NOT be triggered.
 	 */
 	if ((prStaRec->eAuthAssocState == AAA_STATE_SEND_AUTH2 ||
 			prStaRec->eAuthAssocState == AAA_STATE_SEND_ASSOC2) &&
 		(prP2pBssInfo->eCurrentOPMode == OP_MODE_ACCESS_POINT) &&
-		(p2pFuncIsAPMode(prAdapter->rWifiVar.prP2PConnSettings[prP2pBssInfo->u4PrivateData]) == FALSE)) {
-		DBGLOG(P2P, WARN, "Skip deauth tx done since AAA fsm is in progress.\n");
+		(p2pFuncIsAPMode(prAdapter->rWifiVar
+		.prP2PConnSettings[prP2pBssInfo->u4PrivateData]) == FALSE)) {
+		DBGLOG(P2P, WARN,
+			"Skip deauth tx done since AAA fsm is in progress.\n");
 		return;
 	}
 
@@ -532,34 +632,41 @@ p2pRoleFsmDeauhComplete(IN struct ADAPTER *prAdapter, IN struct STA_RECORD *prSt
 	if ((prP2pBssInfo->eCurrentOPMode != OP_MODE_ACCESS_POINT) ||
 		(bssGetClientCount(prAdapter, prP2pBssInfo) == 0)) {
 		if (prP2pBssInfo->eCurrentOPMode == OP_MODE_ACCESS_POINT)
-			DBGLOG(P2P, TRACE, "No More Client, Media Status DISCONNECTED\n");
+			DBGLOG(P2P, TRACE,
+				"No More Client, Media Status DISCONNECTED\n");
 		else
-			DBGLOG(P2P, TRACE, "Deauth done, Media Status DISCONNECTED\n");
-		p2pChangeMediaState(prAdapter, prP2pBssInfo, PARAM_MEDIA_STATE_DISCONNECTED);
+			DBGLOG(P2P, TRACE,
+				"Deauth done, Media Status DISCONNECTED\n");
+		p2pChangeMediaState(prAdapter,
+			prP2pBssInfo,
+			PARAM_MEDIA_STATE_DISCONNECTED);
 	}
 
 	/* STOP BSS if power is IDLE */
 	if (prP2pBssInfo->eCurrentOPMode == OP_MODE_ACCESS_POINT) {
-		if (IS_NET_PWR_STATE_IDLE(prAdapter, prP2pRoleFsmInfo->ucBssIndex) &&
-			(bssGetClientCount(prAdapter, prP2pBssInfo) == 0)) {
+		if (IS_NET_PWR_STATE_IDLE(prAdapter,
+			prP2pRoleFsmInfo->ucBssIndex)
+			&& (bssGetClientCount(prAdapter, prP2pBssInfo) == 0)) {
 			/* All Peer disconnected !! Stop BSS now!! */
 			p2pFuncStopComplete(prAdapter, prP2pBssInfo);
 		} else if (eOriMediaStatus != prP2pBssInfo->eConnectionState)
 			/* Update the Media State if necessary */
 			nicUpdateBss(prAdapter, prP2pBssInfo->ucBssIndex);
-	} else
-		p2pFuncStopComplete(prAdapter, prP2pBssInfo);/* GC : Stop BSS when Deauth done */
+	} else /* GC : Stop BSS when Deauth done */
+		p2pFuncStopComplete(prAdapter, prP2pBssInfo);
 
 }
 
-void p2pRoleFsmDeauthTimeout(IN struct ADAPTER *prAdapter, IN unsigned long ulParamPtr)
+void p2pRoleFsmDeauthTimeout(IN struct ADAPTER *prAdapter,
+		IN unsigned long ulParamPtr)
 {
 	struct STA_RECORD *prStaRec = (struct STA_RECORD *) ulParamPtr;
 
 	p2pRoleFsmDeauhComplete(prAdapter, prStaRec);
 }				/* p2pRoleFsmRunEventTimeout */
 
-void p2pRoleFsmRunEventAbort(IN struct ADAPTER *prAdapter, IN struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo)
+void p2pRoleFsmRunEventAbort(IN struct ADAPTER *prAdapter,
+		IN struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo)
 {
 
 	do {
@@ -567,30 +674,40 @@ void p2pRoleFsmRunEventAbort(IN struct ADAPTER *prAdapter, IN struct P2P_ROLE_FS
 
 		if (prP2pRoleFsmInfo->eCurrentState != P2P_ROLE_STATE_IDLE) {
 			/* Get into IDLE state. */
-			p2pRoleFsmStateTransition(prAdapter, prP2pRoleFsmInfo, P2P_ROLE_STATE_IDLE);
+			p2pRoleFsmStateTransition(prAdapter,
+				prP2pRoleFsmInfo,
+				P2P_ROLE_STATE_IDLE);
 		}
 
 		/* Abort IDLE. */
-		p2pRoleStateAbort_IDLE(prAdapter, prP2pRoleFsmInfo, &(prP2pRoleFsmInfo->rChnlReqInfo));
+		p2pRoleStateAbort_IDLE(prAdapter,
+			prP2pRoleFsmInfo,
+			&(prP2pRoleFsmInfo->rChnlReqInfo));
 
 	} while (FALSE);
 }				/* p2pRoleFsmRunEventAbort */
 
 uint32_t
 p2pRoleFsmRunEventDeauthTxDone(IN struct ADAPTER *prAdapter,
-			       IN struct MSDU_INFO *prMsduInfo, IN enum ENUM_TX_RESULT_CODE rTxDoneStatus)
+		IN struct MSDU_INFO *prMsduInfo,
+		IN enum ENUM_TX_RESULT_CODE rTxDoneStatus)
 {
 	struct STA_RECORD *prStaRec = (struct STA_RECORD *) NULL;
 
 	do {
 		ASSERT_BREAK((prAdapter != NULL) && (prMsduInfo != NULL));
 
-		DBGLOG(P2P, INFO, "Deauth TX Done,rTxDoneStatus = %d\n", rTxDoneStatus);
+		DBGLOG(P2P, INFO,
+			"Deauth TX Done,rTxDoneStatus = %d\n",
+			rTxDoneStatus);
 
-		prStaRec = cnmGetStaRecByIndex(prAdapter, prMsduInfo->ucStaRecIndex);
+		prStaRec = cnmGetStaRecByIndex(prAdapter,
+			prMsduInfo->ucStaRecIndex);
 
 		if (prStaRec == NULL) {
-			DBGLOG(P2P, TRACE, "Station Record NULL, Index:%d\n", prMsduInfo->ucStaRecIndex);
+			DBGLOG(P2P, TRACE,
+				"Station Record NULL, Index:%d\n",
+				prMsduInfo->ucStaRecIndex);
 			break;
 		}
 
@@ -604,17 +721,21 @@ p2pRoleFsmRunEventDeauthTxDone(IN struct ADAPTER *prAdapter,
 
 }				/* p2pRoleFsmRunEventDeauthTxDone */
 
-void p2pRoleFsmRunEventRxDeauthentication(IN struct ADAPTER *prAdapter, IN struct STA_RECORD *prStaRec, IN struct SW_RFB *prSwRfb)
+void p2pRoleFsmRunEventRxDeauthentication(IN struct ADAPTER *prAdapter,
+		IN struct STA_RECORD *prStaRec,
+		IN struct SW_RFB *prSwRfb)
 {
 	struct BSS_INFO *prP2pBssInfo = (struct BSS_INFO *) NULL;
 	uint16_t u2ReasonCode = 0;
-	u_int8_t fgSendDeauth = FALSE; /* flag to send deauth when rx sta disassc/deauth */
+	/* flag to send deauth when rx sta disassc/deauth */
+	u_int8_t fgSendDeauth = FALSE;
 
 	do {
 		ASSERT_BREAK((prAdapter != NULL) && (prSwRfb != NULL));
 
 		if (prStaRec == NULL)
-			prStaRec = cnmGetStaRecByIndex(prAdapter, prSwRfb->ucStaRecIdx);
+			prStaRec = cnmGetStaRecByIndex(prAdapter,
+				prSwRfb->ucStaRecIdx);
 
 		if (!prStaRec)
 			break;
@@ -629,63 +750,91 @@ void p2pRoleFsmRunEventRxDeauthentication(IN struct ADAPTER *prAdapter, IN struc
 		switch (prP2pBssInfo->eCurrentOPMode) {
 		case OP_MODE_INFRASTRUCTURE:
 			if (authProcessRxDeauthFrame(prSwRfb,
-						     prStaRec->aucMacAddr, &u2ReasonCode) == WLAN_STATUS_SUCCESS) {
-				struct WLAN_DEAUTH_FRAME *prDeauthFrame = (struct WLAN_DEAUTH_FRAME *) prSwRfb->pvHeader;
+				prStaRec->aucMacAddr,
+				&u2ReasonCode) == WLAN_STATUS_SUCCESS) {
+				struct WLAN_DEAUTH_FRAME *prDeauthFrame =
+					(struct WLAN_DEAUTH_FRAME *)
+						prSwRfb->pvHeader;
 				uint16_t u2IELength = 0;
 
 				if (prP2pBssInfo->prStaRecOfAP != prStaRec)
 					break;
 
 				prStaRec->u2ReasonCode = u2ReasonCode;
-				u2IELength = prSwRfb->u2PacketLen - (WLAN_MAC_HEADER_LEN + REASON_CODE_FIELD_LEN);
+				u2IELength = prSwRfb->u2PacketLen
+					- (WLAN_MAC_HEADER_LEN
+					+ REASON_CODE_FIELD_LEN);
 
 				ASSERT(prP2pBssInfo->prStaRecOfAP == prStaRec);
 
 
 #if CFG_WPS_DISCONNECT || (KERNEL_VERSION(4, 4, 0) <= CFG80211_VERSION_CODE)
 /* Indicate disconnect to Host. */
-				kalP2PGCIndicateConnectionStatus(prAdapter->prGlueInfo,
-								(uint8_t) prP2pBssInfo->u4PrivateData, NULL,
-								prDeauthFrame->aucInfoElem, u2IELength, u2ReasonCode,
-								WLAN_STATUS_MEDIA_DISCONNECT);
+				kalP2PGCIndicateConnectionStatus(
+					prAdapter->prGlueInfo,
+					(uint8_t) prP2pBssInfo->u4PrivateData,
+					NULL,
+					prDeauthFrame->aucInfoElem,
+					u2IELength,
+					u2ReasonCode,
+					WLAN_STATUS_MEDIA_DISCONNECT);
 
 #else
 /* Indicate disconnect to Host. */
-				kalP2PGCIndicateConnectionStatus(prAdapter->prGlueInfo,
-								(uint8_t) prP2pBssInfo->u4PrivateData, NULL,
-								prDeauthFrame->aucInfoElem, u2IELength, u2ReasonCode);
+				kalP2PGCIndicateConnectionStatus(
+					prAdapter->prGlueInfo,
+					(uint8_t) prP2pBssInfo->u4PrivateData,
+					NULL,
+					prDeauthFrame->aucInfoElem,
+					u2IELength,
+					u2ReasonCode);
 #endif
 
 				prP2pBssInfo->prStaRecOfAP = NULL;
 
-				p2pFuncDisconnect(prAdapter, prP2pBssInfo, prStaRec, FALSE, u2ReasonCode);
+				p2pFuncDisconnect(prAdapter,
+					prP2pBssInfo,
+					prStaRec,
+					FALSE,
+					u2ReasonCode);
 
 				p2pFuncStopComplete(prAdapter, prP2pBssInfo);
 
-				SET_NET_PWR_STATE_IDLE(prAdapter, prP2pBssInfo->ucBssIndex);
+				SET_NET_PWR_STATE_IDLE(prAdapter,
+					prP2pBssInfo->ucBssIndex);
 
 				p2pRoleFsmStateTransition(prAdapter,
-							  P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prAdapter,
-											 prP2pBssInfo->u4PrivateData),
-							  P2P_ROLE_STATE_IDLE);
+					P2P_ROLE_INDEX_2_ROLE_FSM_INFO(
+						prAdapter,
+						prP2pBssInfo->u4PrivateData),
+						P2P_ROLE_STATE_IDLE);
 			}
 			break;
 		case OP_MODE_ACCESS_POINT:
 			/* Delete client from client list. */
 			if (authProcessRxDeauthFrame(prSwRfb,
-						     prP2pBssInfo->aucBSSID, &u2ReasonCode) == WLAN_STATUS_SUCCESS) {
-
+				prP2pBssInfo->aucBSSID,
+				&u2ReasonCode) == WLAN_STATUS_SUCCESS) {
 #if CFG_SUPPORT_802_11W
 				/* AP PMF */
-				if (rsnCheckBipKeyInstalled(prAdapter, prStaRec)) {
-					if (HAL_RX_STATUS_IS_CIPHER_MISMATCH(prSwRfb->prRxStatus) ||
-						HAL_RX_STATUS_IS_CLM_ERROR(prSwRfb->prRxStatus)) {
-						/* if cipher mismatch, or incorrect encrypt, just drop */
-						DBGLOG(P2P, ERROR, "Rx deauth CM/CLM=1\n");
+				if (rsnCheckBipKeyInstalled(prAdapter,
+					prStaRec)) {
+					if (HAL_RX_STATUS_IS_CIPHER_MISMATCH(
+						prSwRfb->prRxStatus) ||
+						HAL_RX_STATUS_IS_CLM_ERROR(
+						prSwRfb->prRxStatus)) {
+						/* if cipher mismatch,
+						 * or incorrect encrypt,
+						 * just drop
+						 */
+						DBGLOG(P2P, ERROR,
+							"Rx deauth CM/CLM=1\n");
 						return;
 					}
 
-					/* 4.3.3.1 send unprotected deauth reason 6/7 */
+					/* 4.3.3.1 send unprotected deauth
+					 * reason 6/7
+					 */
 					DBGLOG(P2P, INFO, "deauth reason=6\n");
 					fgSendDeauth = TRUE;
 					u2ReasonCode = REASON_CODE_CLASS_2_ERR;
@@ -693,22 +842,35 @@ void p2pRoleFsmRunEventRxDeauthentication(IN struct ADAPTER *prAdapter, IN struc
 				}
 #endif
 
-				if (bssRemoveClient(prAdapter, prP2pBssInfo, prStaRec)) {
+				if (bssRemoveClient(prAdapter,
+					prP2pBssInfo, prStaRec)) {
 					/* Indicate disconnect to Host. */
-					p2pFuncDisconnect(prAdapter, prP2pBssInfo, prStaRec, fgSendDeauth,
+					p2pFuncDisconnect(prAdapter,
+						prP2pBssInfo,
+						prStaRec,
+						fgSendDeauth,
 						u2ReasonCode);
-					/* Deactive BSS if PWR is IDLE and no peer */
-					if (IS_NET_PWR_STATE_IDLE(prAdapter, prP2pBssInfo->ucBssIndex) &&
-						(bssGetClientCount(prAdapter, prP2pBssInfo) == 0)) {
-						/* All Peer disconnected !! Stop BSS now!! */
-						p2pFuncStopComplete(prAdapter, prP2pBssInfo);
+					/* Deactive BSS
+					 * if PWR is IDLE and no peer
+					 */
+					if (IS_NET_PWR_STATE_IDLE(prAdapter,
+						prP2pBssInfo->ucBssIndex) &&
+						(bssGetClientCount(prAdapter,
+						prP2pBssInfo) == 0)) {
+						/* All Peer disconnected !!
+						 * Stop BSS now!!
+						 */
+						p2pFuncStopComplete(prAdapter,
+							prP2pBssInfo);
 					}
 				}
 			}
 			break;
 		case OP_MODE_P2P_DEVICE:
 		default:
-			/* Findout why someone sent deauthentication frame to us. */
+			/* Findout why someone
+			 * sent deauthentication frame to us.
+			 */
 			ASSERT(FALSE);
 			break;
 		}
@@ -718,18 +880,22 @@ void p2pRoleFsmRunEventRxDeauthentication(IN struct ADAPTER *prAdapter, IN struc
 	} while (FALSE);
 }				/* p2pRoleFsmRunEventRxDeauthentication */
 
-void p2pRoleFsmRunEventRxDisassociation(IN struct ADAPTER *prAdapter, IN struct STA_RECORD *prStaRec, IN struct SW_RFB *prSwRfb)
+void p2pRoleFsmRunEventRxDisassociation(IN struct ADAPTER *prAdapter,
+		IN struct STA_RECORD *prStaRec,
+		IN struct SW_RFB *prSwRfb)
 {
 	struct BSS_INFO *prP2pBssInfo = (struct BSS_INFO *) NULL;
 	uint16_t u2ReasonCode = 0;
-	u_int8_t fgSendDeauth = FALSE; /* flag to send deauth when rx sta disassc/deauth */
+	/* flag to send deauth when rx sta disassc/deauth */
+	u_int8_t fgSendDeauth = FALSE;
 
 
 	if (prStaRec == NULL)
 		prStaRec = cnmGetStaRecByIndex(prAdapter, prSwRfb->ucStaRecIdx);
 
 	if (!prStaRec) {
-		DBGLOG(P2P, ERROR, "prStaRec of prSwRfb->ucStaRecIdx %d is NULL!\n",
+		DBGLOG(P2P, ERROR,
+			"prStaRec of prSwRfb->ucStaRecIdx %d is NULL!\n",
 			prSwRfb->ucStaRecIdx);
 		return;
 	}
@@ -744,10 +910,13 @@ void p2pRoleFsmRunEventRxDisassociation(IN struct ADAPTER *prAdapter, IN struct 
 	switch (prP2pBssInfo->eCurrentOPMode) {
 	case OP_MODE_INFRASTRUCTURE:
 		if (assocProcessRxDisassocFrame(prAdapter,
-						prSwRfb,
-						prStaRec->aucMacAddr,
-						&prStaRec->u2ReasonCode) == WLAN_STATUS_SUCCESS) {
-			struct WLAN_DISASSOC_FRAME *prDisassocFrame = (struct WLAN_DISASSOC_FRAME *) prSwRfb->pvHeader;
+			prSwRfb,
+			prStaRec->aucMacAddr,
+			&prStaRec->u2ReasonCode) == WLAN_STATUS_SUCCESS) {
+
+			struct WLAN_DISASSOC_FRAME *prDisassocFrame =
+				(struct WLAN_DISASSOC_FRAME *)
+					prSwRfb->pvHeader;
 			uint16_t u2IELength = 0;
 
 			ASSERT(prP2pBssInfo->prStaRecOfAP == prStaRec);
@@ -755,7 +924,8 @@ void p2pRoleFsmRunEventRxDisassociation(IN struct ADAPTER *prAdapter, IN struct 
 			if (prP2pBssInfo->prStaRecOfAP != prStaRec)
 				break;
 
-			u2IELength = prSwRfb->u2PacketLen - (WLAN_MAC_HEADER_LEN + REASON_CODE_FIELD_LEN);
+			u2IELength = prSwRfb->u2PacketLen
+				- (WLAN_MAC_HEADER_LEN + REASON_CODE_FIELD_LEN);
 
 #if CFG_WPS_DISCONNECT || (KERNEL_VERSION(4, 4, 0) <= CFG80211_VERSION_CODE)
 			/* Indicate disconnect to Host. */
@@ -775,35 +945,48 @@ void p2pRoleFsmRunEventRxDisassociation(IN struct ADAPTER *prAdapter, IN struct 
 
 			prP2pBssInfo->prStaRecOfAP = NULL;
 
-			p2pFuncDisconnect(prAdapter, prP2pBssInfo, prStaRec, FALSE, prStaRec->u2ReasonCode);
+			p2pFuncDisconnect(prAdapter,
+				prP2pBssInfo,
+				prStaRec,
+				FALSE,
+				prStaRec->u2ReasonCode);
 
 			p2pFuncStopComplete(prAdapter, prP2pBssInfo);
 
-			SET_NET_PWR_STATE_IDLE(prAdapter, prP2pBssInfo->ucBssIndex);
+			SET_NET_PWR_STATE_IDLE(prAdapter,
+				prP2pBssInfo->ucBssIndex);
 
 			p2pRoleFsmStateTransition(prAdapter,
-						  P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prAdapter,
-										 prP2pBssInfo->u4PrivateData),
-						  P2P_ROLE_STATE_IDLE);
+				P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prAdapter,
+					prP2pBssInfo->u4PrivateData),
+					P2P_ROLE_STATE_IDLE);
 		}
 		break;
 	case OP_MODE_ACCESS_POINT:
 		/* Delete client from client list. */
 		if (assocProcessRxDisassocFrame(prAdapter,
-						prSwRfb,
-						prP2pBssInfo->aucBSSID, &u2ReasonCode) == WLAN_STATUS_SUCCESS) {
+			prSwRfb,
+			prP2pBssInfo->aucBSSID,
+			&u2ReasonCode) == WLAN_STATUS_SUCCESS) {
 
 #if CFG_SUPPORT_802_11W
 			/* AP PMF */
 			if (rsnCheckBipKeyInstalled(prAdapter, prStaRec)) {
-				if (HAL_RX_STATUS_IS_CIPHER_MISMATCH(prSwRfb->prRxStatus) ||
-					HAL_RX_STATUS_IS_CLM_ERROR(prSwRfb->prRxStatus)) {
-					/* if cipher mismatch, or incorrect encrypt, just drop */
-					DBGLOG(P2P, ERROR, "Rx disassoc CM/CLM=1\n");
+				if (HAL_RX_STATUS_IS_CIPHER_MISMATCH(
+					prSwRfb->prRxStatus) ||
+					HAL_RX_STATUS_IS_CLM_ERROR(
+					prSwRfb->prRxStatus)) {
+					/* if cipher mismatch,
+					 * or incorrect encrypt, just drop
+					 */
+					DBGLOG(P2P, ERROR,
+						"Rx disassoc CM/CLM=1\n");
 					return;
 				}
 
-				/* 4.3.3.1 send unprotected deauth reason 6/7 */
+				/* 4.3.3.1 send unprotected deauth
+				 * reason 6/7
+				 */
 				DBGLOG(P2P, INFO, "deauth reason=6\n");
 				fgSendDeauth = TRUE;
 				u2ReasonCode = REASON_CODE_CLASS_2_ERR;
@@ -811,15 +994,24 @@ void p2pRoleFsmRunEventRxDisassociation(IN struct ADAPTER *prAdapter, IN struct 
 			}
 #endif
 
-			if (bssRemoveClient(prAdapter, prP2pBssInfo, prStaRec)) {
+			if (bssRemoveClient(prAdapter,
+				prP2pBssInfo, prStaRec)) {
 				/* Indicate disconnect to Host. */
-				p2pFuncDisconnect(prAdapter, prP2pBssInfo, prStaRec, fgSendDeauth,
+				p2pFuncDisconnect(prAdapter,
+					prP2pBssInfo,
+					prStaRec,
+					fgSendDeauth,
 					u2ReasonCode);
 				/* Deactive BSS if PWR is IDLE and no peer */
-				if (IS_NET_PWR_STATE_IDLE(prAdapter, prP2pBssInfo->ucBssIndex) &&
-					(bssGetClientCount(prAdapter, prP2pBssInfo) == 0)) {
-					/* All Peer disconnected !! Stop BSS now!! */
-					p2pFuncStopComplete(prAdapter, prP2pBssInfo);
+				if (IS_NET_PWR_STATE_IDLE(prAdapter,
+					prP2pBssInfo->ucBssIndex) &&
+					(bssGetClientCount(prAdapter,
+					prP2pBssInfo) == 0)) {
+					/* All Peer disconnected !!
+					 * Stop BSS now!!
+					 */
+					p2pFuncStopComplete(prAdapter,
+						prP2pBssInfo);
 				}
 
 			}
@@ -833,14 +1025,18 @@ void p2pRoleFsmRunEventRxDisassociation(IN struct ADAPTER *prAdapter, IN struct 
 
 }				/* p2pRoleFsmRunEventRxDisassociation */
 
-void p2pRoleFsmRunEventBeaconTimeout(IN struct ADAPTER *prAdapter, IN struct BSS_INFO *prP2pBssInfo)
+void p2pRoleFsmRunEventBeaconTimeout(IN struct ADAPTER *prAdapter,
+		IN struct BSS_INFO *prP2pBssInfo)
 {
-	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo = (struct P2P_ROLE_FSM_INFO *) NULL;
+	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo =
+		(struct P2P_ROLE_FSM_INFO *) NULL;
 
 	do {
 		ASSERT_BREAK((prAdapter != NULL) && (prP2pBssInfo != NULL));
 
-		prP2pRoleFsmInfo = P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prAdapter, prP2pBssInfo->u4PrivateData);
+		prP2pRoleFsmInfo =
+			P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prAdapter,
+				prP2pBssInfo->u4PrivateData);
 
 		/* Only client mode would have beacon lost event. */
 		if (prP2pBssInfo->eCurrentOPMode != OP_MODE_INFRASTRUCTURE) {
@@ -851,15 +1047,18 @@ void p2pRoleFsmRunEventBeaconTimeout(IN struct ADAPTER *prAdapter, IN struct BSS
 		}
 
 		DBGLOG(P2P, TRACE,
-		       "p2pFsmRunEventBeaconTimeout: BSS %d Beacon Timeout\n", prP2pRoleFsmInfo->ucRoleIndex);
+			"p2pFsmRunEventBeaconTimeout: BSS %d Beacon Timeout\n",
+			prP2pRoleFsmInfo->ucRoleIndex);
 
-		if (prP2pBssInfo->eConnectionState == PARAM_MEDIA_STATE_CONNECTED) {
+		if (prP2pBssInfo->eConnectionState
+			== PARAM_MEDIA_STATE_CONNECTED) {
 
 #if CFG_WPS_DISCONNECT || (KERNEL_VERSION(4, 4, 0) <= CFG80211_VERSION_CODE)
 			/* Indicate disconnect to Host. */
 			kalP2PGCIndicateConnectionStatus(prAdapter->prGlueInfo,
 					prP2pRoleFsmInfo->ucRoleIndex,
-					NULL, NULL, 0, REASON_CODE_DISASSOC_INACTIVITY,
+					NULL, NULL, 0,
+					REASON_CODE_DISASSOC_INACTIVITY,
 					WLAN_STATUS_MEDIA_DISCONNECT);
 
 
@@ -867,21 +1066,30 @@ void p2pRoleFsmRunEventBeaconTimeout(IN struct ADAPTER *prAdapter, IN struct BSS
 			/* Indicate disconnect to Host. */
 			kalP2PGCIndicateConnectionStatus(prAdapter->prGlueInfo,
 					prP2pRoleFsmInfo->ucRoleIndex,
-					NULL, NULL, 0, REASON_CODE_DISASSOC_INACTIVITY);
+					NULL, NULL, 0,
+					REASON_CODE_DISASSOC_INACTIVITY);
 #endif
 
 			if (prP2pBssInfo->prStaRecOfAP != NULL) {
-				struct STA_RECORD *prStaRec = prP2pBssInfo->prStaRecOfAP;
+				struct STA_RECORD *prStaRec =
+					prP2pBssInfo->prStaRecOfAP;
 
 				prP2pBssInfo->prStaRecOfAP = NULL;
 
-				p2pFuncDisconnect(prAdapter, prP2pBssInfo, prStaRec, FALSE,
-						  REASON_CODE_DISASSOC_LEAVING_BSS);
+				p2pFuncDisconnect(prAdapter,
+					prP2pBssInfo,
+					prStaRec, FALSE,
+					REASON_CODE_DISASSOC_LEAVING_BSS);
 
-				SET_NET_PWR_STATE_IDLE(prAdapter, prP2pBssInfo->ucBssIndex);
+				SET_NET_PWR_STATE_IDLE(prAdapter,
+					prP2pBssInfo->ucBssIndex);
 				/* 20120830 moved into p2pFuncDisconnect() */
-				/* cnmStaRecFree(prAdapter, prP2pBssInfo->prStaRecOfAP); */
-				p2pRoleFsmStateTransition(prAdapter, prP2pRoleFsmInfo, P2P_ROLE_STATE_IDLE);
+				/* cnmStaRecFree(prAdapter,
+				 * prP2pBssInfo->prStaRecOfAP);
+				 */
+				p2pRoleFsmStateTransition(prAdapter,
+					prP2pRoleFsmInfo,
+					P2P_ROLE_STATE_IDLE);
 
 			}
 		}
@@ -889,13 +1097,18 @@ void p2pRoleFsmRunEventBeaconTimeout(IN struct ADAPTER *prAdapter, IN struct BSS
 }				/* p2pFsmRunEventBeaconTimeout */
 
 /*================== Message Event ==================*/
-void p2pRoleFsmRunEventStartAP(IN struct ADAPTER *prAdapter, IN struct MSG_HDR *prMsgHdr)
+void p2pRoleFsmRunEventStartAP(IN struct ADAPTER *prAdapter,
+		IN struct MSG_HDR *prMsgHdr)
 {
-	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo = (struct P2P_ROLE_FSM_INFO *) NULL;
-	struct MSG_P2P_START_AP *prP2pStartAPMsg = (struct MSG_P2P_START_AP *) NULL;
-	struct P2P_CONNECTION_REQ_INFO *prP2pConnReqInfo = (struct P2P_CONNECTION_REQ_INFO *) NULL;
+	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo =
+		(struct P2P_ROLE_FSM_INFO *) NULL;
+	struct MSG_P2P_START_AP *prP2pStartAPMsg =
+		(struct MSG_P2P_START_AP *) NULL;
+	struct P2P_CONNECTION_REQ_INFO *prP2pConnReqInfo =
+		(struct P2P_CONNECTION_REQ_INFO *) NULL;
 	struct BSS_INFO *prP2pBssInfo = (struct BSS_INFO *) NULL;
-	struct P2P_SPECIFIC_BSS_INFO *prP2pSpecificBssInfo = (struct P2P_SPECIFIC_BSS_INFO *) NULL;
+	struct P2P_SPECIFIC_BSS_INFO *prP2pSpecificBssInfo =
+		(struct P2P_SPECIFIC_BSS_INFO *) NULL;
 #if CFG_SUPPORT_DBDC
 	struct CNM_DBDC_CAP rDbdcCap;
 #endif /*CFG_SUPPORT_DBDC*/
@@ -904,11 +1117,15 @@ void p2pRoleFsmRunEventStartAP(IN struct ADAPTER *prAdapter, IN struct MSG_HDR *
 
 	prP2pStartAPMsg = (struct MSG_P2P_START_AP *) prMsgHdr;
 
-	prP2pRoleFsmInfo = P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prAdapter, prP2pStartAPMsg->ucRoleIdx);
+	prP2pRoleFsmInfo =
+		P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prAdapter,
+			prP2pStartAPMsg->ucRoleIdx);
 
 	prAdapter->prP2pInfo->eConnState = P2P_CNN_NORMAL;
 
-	DBGLOG(P2P, TRACE, "p2pRoleFsmRunEventStartAP with Role(%d)\n", prP2pStartAPMsg->ucRoleIdx);
+	DBGLOG(P2P, TRACE,
+		"p2pRoleFsmRunEventStartAP with Role(%d)\n",
+		prP2pStartAPMsg->ucRoleIdx);
 
 
 	if (!prP2pRoleFsmInfo) {
@@ -919,39 +1136,52 @@ void p2pRoleFsmRunEventStartAP(IN struct ADAPTER *prAdapter, IN struct MSG_HDR *
 	}
 
 	prP2pBssInfo = prAdapter->aprBssInfo[prP2pRoleFsmInfo->ucBssIndex];
-	prP2pSpecificBssInfo = prAdapter->rWifiVar.prP2pSpecificBssInfo[prP2pBssInfo->u4PrivateData];
+	prP2pSpecificBssInfo =
+		prAdapter->rWifiVar
+			.prP2pSpecificBssInfo[prP2pBssInfo->u4PrivateData];
 	prP2pConnReqInfo = &(prP2pRoleFsmInfo->rConnReqInfo);
 
 	if (prP2pStartAPMsg->u4BcnInterval) {
-		DBGLOG(P2P, TRACE, "Beacon interval updated to :%u\n", prP2pStartAPMsg->u4BcnInterval);
-		prP2pBssInfo->u2BeaconInterval = (uint16_t) prP2pStartAPMsg->u4BcnInterval;
+		DBGLOG(P2P, TRACE,
+			"Beacon interval updated to :%u\n",
+			prP2pStartAPMsg->u4BcnInterval);
+		prP2pBssInfo->u2BeaconInterval =
+			(uint16_t) prP2pStartAPMsg->u4BcnInterval;
 	} else if (prP2pBssInfo->u2BeaconInterval == 0) {
 		prP2pBssInfo->u2BeaconInterval = DOT11_BEACON_PERIOD_DEFAULT;
 	}
 
 	if (prP2pStartAPMsg->u4DtimPeriod) {
-		DBGLOG(P2P, TRACE, "DTIM interval updated to :%u\n", prP2pStartAPMsg->u4DtimPeriod);
-		prP2pBssInfo->ucDTIMPeriod = (uint8_t) prP2pStartAPMsg->u4DtimPeriod;
+		DBGLOG(P2P, TRACE,
+			"DTIM interval updated to :%u\n",
+			prP2pStartAPMsg->u4DtimPeriod);
+		prP2pBssInfo->ucDTIMPeriod =
+			(uint8_t) prP2pStartAPMsg->u4DtimPeriod;
 	} else if (prP2pBssInfo->ucDTIMPeriod == 0) {
 		prP2pBssInfo->ucDTIMPeriod = DOT11_DTIM_PERIOD_DEFAULT;
 	}
 
 	if (prP2pStartAPMsg->u2SsidLen != 0) {
-		kalMemCopy(prP2pConnReqInfo->rSsidStruct.aucSsid, prP2pStartAPMsg->aucSsid,
-			   prP2pStartAPMsg->u2SsidLen);
+		kalMemCopy(prP2pConnReqInfo->rSsidStruct.aucSsid,
+			prP2pStartAPMsg->aucSsid,
+			prP2pStartAPMsg->u2SsidLen);
 		prP2pConnReqInfo->rSsidStruct.ucSsidLen =
-		    prP2pSpecificBssInfo->u2GroupSsidLen = prP2pStartAPMsg->u2SsidLen;
-		kalMemCopy(prP2pSpecificBssInfo->aucGroupSsid, prP2pStartAPMsg->aucSsid,
-			   prP2pStartAPMsg->u2SsidLen);
+		    prP2pSpecificBssInfo->u2GroupSsidLen =
+		    prP2pStartAPMsg->u2SsidLen;
+		kalMemCopy(prP2pSpecificBssInfo->aucGroupSsid,
+			prP2pStartAPMsg->aucSsid,
+			prP2pStartAPMsg->u2SsidLen);
 	}
 
-	if (p2pFuncIsAPMode(prAdapter->rWifiVar.prP2PConnSettings[prP2pStartAPMsg->ucRoleIdx])) {
+	if (p2pFuncIsAPMode(prAdapter->rWifiVar
+		.prP2PConnSettings[prP2pStartAPMsg->ucRoleIdx])) {
 		prP2pConnReqInfo->eConnRequest = P2P_CONNECTION_TYPE_PURE_AP;
 
 		/* Overwrite AP channel */
 		if (prAdapter->rWifiVar.ucApChannel &&
 			prAdapter->rWifiVar.ucApChnlDefFromCfg) {
-			prP2pConnReqInfo->rChannelInfo.ucChannelNum = prAdapter->rWifiVar.ucApChannel;
+			prP2pConnReqInfo->rChannelInfo.ucChannelNum =
+				prAdapter->rWifiVar.ucApChannel;
 
 			if (prAdapter->rWifiVar.ucApChannel <= 14)
 				prP2pConnReqInfo->rChannelInfo.eBand = BAND_2G4;
@@ -962,24 +1192,36 @@ void p2pRoleFsmRunEventStartAP(IN struct ADAPTER *prAdapter, IN struct MSG_HDR *
 		prP2pConnReqInfo->eConnRequest = P2P_CONNECTION_TYPE_GO;
 	}
 
-	/* The supplicant may start AP before rP2pRoleFsmTimeoutTimer is time out */
-	/* We need to make sure the BSS was deactivated and all StaRec can be free */
+	/* The supplicant may start AP
+	 * before rP2pRoleFsmTimeoutTimer is time out
+	 */
+	/* We need to make sure the BSS was deactivated
+	 * and all StaRec can be free
+	 */
 	if (timerPendingTimer(&(prP2pRoleFsmInfo->rP2pRoleFsmTimeoutTimer))) {
-		/* call p2pRoleFsmRunEventTimeout() to deactive BSS and free channel */
-		p2pRoleFsmRunEventTimeout(prAdapter, (unsigned long)prP2pRoleFsmInfo);
-		cnmTimerStopTimer(prAdapter, &(prP2pRoleFsmInfo->rP2pRoleFsmTimeoutTimer));
+		/* call p2pRoleFsmRunEventTimeout()
+		 * to deactive BSS and free channel
+		 */
+		p2pRoleFsmRunEventTimeout(prAdapter,
+			(unsigned long)prP2pRoleFsmInfo);
+		cnmTimerStopTimer(prAdapter,
+			&(prP2pRoleFsmInfo->rP2pRoleFsmTimeoutTimer));
 	}
 
 #if (CFG_SUPPORT_DFS_MASTER == 1)
 	if (timerPendingTimer(&(prP2pRoleFsmInfo->rDfsShutDownTimer))) {
-		DBGLOG(P2P, INFO, "p2pRoleFsmRunEventStartAP: Stop DFS shut down timer.\n");
-		cnmTimerStopTimer(prAdapter, &(prP2pRoleFsmInfo->rDfsShutDownTimer));
+		DBGLOG(P2P, INFO,
+			"p2pRoleFsmRunEventStartAP: Stop DFS shut down timer.\n");
+		cnmTimerStopTimer(prAdapter,
+			&(prP2pRoleFsmInfo->rDfsShutDownTimer));
 	}
 #endif
 
 #if CFG_SUPPORT_DBDC
 	kalMemZero(&rDbdcCap, sizeof(struct CNM_DBDC_CAP));
-	cnmDbdcEnableDecision(prAdapter, prP2pBssInfo->ucBssIndex, prP2pConnReqInfo->rChannelInfo.eBand);
+	cnmDbdcEnableDecision(prAdapter,
+		prP2pBssInfo->ucBssIndex,
+		prP2pConnReqInfo->rChannelInfo.eBand);
 	cnmGetDbdcCapability(prAdapter,
 		prP2pBssInfo->ucBssIndex,
 		prP2pConnReqInfo->rChannelInfo.eBand,
@@ -1009,11 +1251,15 @@ void p2pRoleFsmRunEventStartAP(IN struct ADAPTER *prAdapter, IN struct MSG_HDR *
 		 * 2. Not started yet.
 		 */
 
-		if (prP2pRoleFsmInfo->eCurrentState != P2P_ROLE_STATE_AP_CHNL_DETECTION &&
-		    prP2pRoleFsmInfo->eCurrentState != P2P_ROLE_STATE_IDLE) {
+		if (prP2pRoleFsmInfo->eCurrentState
+			!= P2P_ROLE_STATE_AP_CHNL_DETECTION
+			&&
+		    prP2pRoleFsmInfo->eCurrentState
+		    != P2P_ROLE_STATE_IDLE) {
 			/* Make sure the state is in IDLE state. */
 			p2pRoleFsmRunEventAbort(prAdapter, prP2pRoleFsmInfo);
-		} else if (prP2pRoleFsmInfo->eCurrentState == P2P_ROLE_STATE_AP_CHNL_DETECTION) {
+		} else if (prP2pRoleFsmInfo->eCurrentState
+					== P2P_ROLE_STATE_AP_CHNL_DETECTION) {
 			goto error;
 		}
 
@@ -1025,29 +1271,43 @@ void p2pRoleFsmRunEventStartAP(IN struct ADAPTER *prAdapter, IN struct MSG_HDR *
 #if 0
 		prP2pRoleFsmInfo->rConnReqInfo.rChannelInfo.ucChannelNum = 8;
 		prP2pRoleFsmInfo->rConnReqInfo.rChannelInfo.eBand = BAND_2G4;
-		/*prP2pRoleFsmInfo->rConnReqInfo.rChannelInfo.ucBandwidth = 0;*/
-		/*prP2pRoleFsmInfo->rConnReqInfo.rChannelInfo.eSCO= CHNL_EXT_SCN;*/
+		/* prP2pRoleFsmInfo->rConnReqInfo.rChannelInfo.ucBandwidth =
+		 * 0;
+		 */
+		/* prP2pRoleFsmInfo->rConnReqInfo.rChannelInfo.eSCO =
+		 * CHNL_EXT_SCN;
+		 */
 #endif
 
-		if (prP2pRoleFsmInfo->rConnReqInfo.rChannelInfo.ucChannelNum != 0) {
-			DBGLOG(P2P, INFO, "Role(%d) StartAP at CH(%d) NSS = %u\n",
+		if (prP2pRoleFsmInfo->rConnReqInfo
+			.rChannelInfo.ucChannelNum != 0) {
+			DBGLOG(P2P, INFO,
+				"Role(%d) StartAP at CH(%d) NSS = %u\n",
 				prP2pStartAPMsg->ucRoleIdx,
-				prP2pRoleFsmInfo->rConnReqInfo.rChannelInfo.ucChannelNum,
+				prP2pRoleFsmInfo->rConnReqInfo
+					.rChannelInfo.ucChannelNum,
 				rDbdcCap.ucNss);
 
-			p2pRoleStatePrepare_To_REQING_CHANNEL_STATE(prAdapter,
-								    GET_BSS_INFO_BY_INDEX(prAdapter,
-										prP2pRoleFsmInfo->ucBssIndex),
-								    &(prP2pRoleFsmInfo->rConnReqInfo),
-								    &(prP2pRoleFsmInfo->rChnlReqInfo));
-			p2pRoleFsmStateTransition(prAdapter, prP2pRoleFsmInfo, P2P_ROLE_STATE_REQING_CHANNEL);
+			p2pRoleStatePrepare_To_REQING_CHANNEL_STATE(
+				prAdapter,
+				GET_BSS_INFO_BY_INDEX(prAdapter,
+				prP2pRoleFsmInfo->ucBssIndex),
+				&(prP2pRoleFsmInfo->rConnReqInfo),
+				&(prP2pRoleFsmInfo->rChnlReqInfo));
+			p2pRoleFsmStateTransition(prAdapter,
+				prP2pRoleFsmInfo,
+				P2P_ROLE_STATE_REQING_CHANNEL);
 		} else {
-			DBGLOG(P2P, INFO, "Role(%d) StartAP Scan for working channel\n",
+			DBGLOG(P2P, INFO,
+				"Role(%d) StartAP Scan for working channel\n",
 				prP2pStartAPMsg->ucRoleIdx);
 
-			/* For AP/GO mode with specific channel or non-specific channel. */
+			/* For AP/GO mode with specific channel
+			 * or non-specific channel.
+			 */
 			p2pRoleFsmStateTransition(prAdapter,
-						  prP2pRoleFsmInfo, P2P_ROLE_STATE_AP_CHNL_DETECTION);
+				prP2pRoleFsmInfo,
+				P2P_ROLE_STATE_AP_CHNL_DETECTION);
 		}
 	}
 
@@ -1056,11 +1316,14 @@ error:
 }				/* p2pRoleFsmRunEventStartAP */
 
 
-void p2pRoleFsmRunEventDelIface(IN struct ADAPTER *prAdapter, IN struct MSG_HDR *prMsgHdr)
+void p2pRoleFsmRunEventDelIface(IN struct ADAPTER *prAdapter,
+		IN struct MSG_HDR *prMsgHdr)
 {
-	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo = (struct P2P_ROLE_FSM_INFO *) NULL;
+	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo =
+		(struct P2P_ROLE_FSM_INFO *) NULL;
 	struct BSS_INFO *prP2pBssInfo = (struct BSS_INFO *) NULL;
-	struct MSG_P2P_DEL_IFACE *prP2pDelIfaceMsg = (struct MSG_P2P_DEL_IFACE *) NULL;
+	struct MSG_P2P_DEL_IFACE *prP2pDelIfaceMsg =
+		(struct MSG_P2P_DEL_IFACE *) NULL;
 	struct GLUE_INFO *prGlueInfo = (struct GLUE_INFO *) NULL;
 	uint8_t ucRoleIdx;
 	struct GL_P2P_INFO *prP2pInfo = (struct GL_P2P_INFO *) NULL;
@@ -1093,22 +1356,31 @@ void p2pRoleFsmRunEventDelIface(IN struct ADAPTER *prAdapter, IN struct MSG_HDR 
 		IS_NET_ACTIVE(prAdapter, prP2pBssInfo->ucBssIndex)) {
 		DBGLOG(P2P, TRACE, "under deauth procedure, Quit.\n");
 	} else {
-		/*p2pFuncDissolve(prAdapter, prP2pBssInfo, TRUE, REASON_CODE_DEAUTH_LEAVING_BSS);*/
+		/*p2pFuncDissolve(prAdapter,
+		 * prP2pBssInfo, TRUE,
+		 * REASON_CODE_DEAUTH_LEAVING_BSS);
+		 */
 
 		SET_NET_PWR_STATE_IDLE(prAdapter, prP2pBssInfo->ucBssIndex);
 
 		/* Function Dissolve should already enter IDLE state. */
-		p2pRoleFsmStateTransition(prAdapter, prP2pRoleFsmInfo, P2P_ROLE_STATE_IDLE);
+		p2pRoleFsmStateTransition(prAdapter,
+			prP2pRoleFsmInfo,
+			P2P_ROLE_STATE_IDLE);
 
 		p2pRoleFsmRunEventAbort(prAdapter, prP2pRoleFsmInfo);
 
 		/* Clear CmdQue */
-		kalClearMgmtFramesByBssIdx(prAdapter->prGlueInfo, prP2pBssInfo->ucBssIndex);
-		kalClearSecurityFramesByBssIdx(prAdapter->prGlueInfo, prP2pBssInfo->ucBssIndex);
+		kalClearMgmtFramesByBssIdx(prAdapter->prGlueInfo,
+			prP2pBssInfo->ucBssIndex);
+		kalClearSecurityFramesByBssIdx(prAdapter->prGlueInfo,
+			prP2pBssInfo->ucBssIndex);
 		/* Clear PendingCmdQue */
-		wlanReleasePendingCMDbyBssIdx(prAdapter, prP2pBssInfo->ucBssIndex);
+		wlanReleasePendingCMDbyBssIdx(prAdapter,
+			prP2pBssInfo->ucBssIndex);
 		/* Clear PendingTxMsdu */
-		nicFreePendingTxMsduInfoByBssIdx(prAdapter, prP2pBssInfo->ucBssIndex);
+		nicFreePendingTxMsduInfoByBssIdx(prAdapter,
+			prP2pBssInfo->ucBssIndex);
 
 		/* Deactivate BSS. */
 		UNSET_NET_ACTIVE(prAdapter, prP2pRoleFsmInfo->ucBssIndex);
@@ -1122,17 +1394,22 @@ error:
 }				/* p2pRoleFsmRunEventStartAP */
 
 
-void p2pRoleFsmRunEventStopAP(IN struct ADAPTER *prAdapter, IN struct MSG_HDR *prMsgHdr)
+void p2pRoleFsmRunEventStopAP(IN struct ADAPTER *prAdapter,
+		IN struct MSG_HDR *prMsgHdr)
 {
 	struct BSS_INFO *prP2pBssInfo = (struct BSS_INFO *) NULL;
-	struct MSG_P2P_SWITCH_OP_MODE *prP2pSwitchMode = (struct MSG_P2P_SWITCH_OP_MODE *) NULL;
-	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo = (struct P2P_ROLE_FSM_INFO *) NULL;
+	struct MSG_P2P_SWITCH_OP_MODE *prP2pSwitchMode =
+		(struct MSG_P2P_SWITCH_OP_MODE *) NULL;
+	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo =
+		(struct P2P_ROLE_FSM_INFO *) NULL;
 	struct STA_RECORD *prCurrStaRec;
 	struct LINK *prClientList;
 
 	prP2pSwitchMode = (struct MSG_P2P_SWITCH_OP_MODE *) prMsgHdr;
 
-	prP2pRoleFsmInfo = P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prAdapter, prP2pSwitchMode->ucRoleIdx);
+	prP2pRoleFsmInfo =
+		P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prAdapter,
+		prP2pSwitchMode->ucRoleIdx);
 
 	if (!prP2pRoleFsmInfo) {
 		DBGLOG(P2P, ERROR,
@@ -1161,17 +1438,21 @@ void p2pRoleFsmRunEventStopAP(IN struct ADAPTER *prAdapter, IN struct MSG_HDR *p
 		/* Start all Deauth done timer for all client */
 		prClientList = &prP2pBssInfo->rStaRecOfClientList;
 
-		LINK_FOR_EACH_ENTRY(prCurrStaRec, prClientList, rLinkEntry, struct STA_RECORD) {
+		LINK_FOR_EACH_ENTRY(prCurrStaRec,
+			prClientList, rLinkEntry, struct STA_RECORD) {
 			ASSERT(prCurrStaRec);
 			/* Do not restart timer if the timer is pending, */
 			/* (start in p2pRoleFsmRunEventConnectionAbort()) */
-			if (!timerPendingTimer(&(prCurrStaRec->rDeauthTxDoneTimer))) {
+			if (!timerPendingTimer(
+				&(prCurrStaRec->rDeauthTxDoneTimer))) {
 				cnmTimerInitTimer(prAdapter,
-						  &(prCurrStaRec->rDeauthTxDoneTimer),
-						  (PFN_MGMT_TIMEOUT_FUNC) p2pRoleFsmDeauthTimeout,
-						  (unsigned long) prCurrStaRec);
+					&(prCurrStaRec->rDeauthTxDoneTimer),
+					(PFN_MGMT_TIMEOUT_FUNC)
+					p2pRoleFsmDeauthTimeout,
+					(unsigned long) prCurrStaRec);
 
-				cnmTimerStartTimer(prAdapter, &(prCurrStaRec->rDeauthTxDoneTimer),
+				cnmTimerStartTimer(prAdapter,
+					&(prCurrStaRec->rDeauthTxDoneTimer),
 					P2P_DEAUTH_TIMEOUT_TIME_MS);
 			}
 		}
@@ -1179,7 +1460,9 @@ void p2pRoleFsmRunEventStopAP(IN struct ADAPTER *prAdapter, IN struct MSG_HDR *p
 
 	SET_NET_PWR_STATE_IDLE(prAdapter, prP2pBssInfo->ucBssIndex);
 
-	p2pRoleFsmStateTransition(prAdapter, prP2pRoleFsmInfo, P2P_ROLE_STATE_IDLE);
+	p2pRoleFsmStateTransition(prAdapter,
+		prP2pRoleFsmInfo,
+		P2P_ROLE_STATE_IDLE);
 
 error:
 	cnmMemFree(prAdapter, prMsgHdr);
@@ -1187,11 +1470,15 @@ error:
 }				/* p2pRoleFsmRunEventStopAP */
 
 #if (CFG_SUPPORT_DFS_MASTER == 1)
-void p2pRoleFsmRunEventDfsCac(IN struct ADAPTER *prAdapter, IN struct MSG_HDR *prMsgHdr)
+void p2pRoleFsmRunEventDfsCac(IN struct ADAPTER *prAdapter,
+		IN struct MSG_HDR *prMsgHdr)
 {
-	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo = (struct P2P_ROLE_FSM_INFO *) NULL;
-	struct MSG_P2P_DFS_CAC *prP2pDfsCacMsg = (struct MSG_P2P_DFS_CAC *) NULL;
-	struct P2P_CONNECTION_REQ_INFO *prP2pConnReqInfo = (struct P2P_CONNECTION_REQ_INFO *) NULL;
+	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo =
+		(struct P2P_ROLE_FSM_INFO *) NULL;
+	struct MSG_P2P_DFS_CAC *prP2pDfsCacMsg =
+		(struct MSG_P2P_DFS_CAC *) NULL;
+	struct P2P_CONNECTION_REQ_INFO *prP2pConnReqInfo =
+		(struct P2P_CONNECTION_REQ_INFO *) NULL;
 	struct BSS_INFO *prP2pBssInfo = (struct BSS_INFO *) NULL;
 	enum ENUM_CHANNEL_WIDTH rChannelWidth;
 #if CFG_SUPPORT_DBDC
@@ -1205,9 +1492,13 @@ void p2pRoleFsmRunEventDfsCac(IN struct ADAPTER *prAdapter, IN struct MSG_HDR *p
 
 	rChannelWidth = prP2pDfsCacMsg->eChannelWidth;
 
-	prP2pRoleFsmInfo = P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prAdapter, prP2pDfsCacMsg->ucRoleIdx);
+	prP2pRoleFsmInfo =
+		P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prAdapter,
+			prP2pDfsCacMsg->ucRoleIdx);
 
-	DBGLOG(P2P, INFO, "p2pRoleFsmRunEventDfsCac with Role(%d)\n", prP2pDfsCacMsg->ucRoleIdx);
+	DBGLOG(P2P, INFO,
+		"p2pRoleFsmRunEventDfsCac with Role(%d)\n",
+		prP2pDfsCacMsg->ucRoleIdx);
 
 	if (!prP2pRoleFsmInfo) {
 		DBGLOG(P2P, ERROR,
@@ -1217,22 +1508,27 @@ void p2pRoleFsmRunEventDfsCac(IN struct ADAPTER *prAdapter, IN struct MSG_HDR *p
 	}
 
 	if (timerPendingTimer(&(prP2pRoleFsmInfo->rDfsShutDownTimer))) {
-		DBGLOG(P2P, INFO, "p2pRoleFsmRunEventDfsCac: Stop DFS shut down timer.\n");
-		cnmTimerStopTimer(prAdapter, &(prP2pRoleFsmInfo->rDfsShutDownTimer));
+		DBGLOG(P2P, INFO,
+			"p2pRoleFsmRunEventDfsCac: Stop DFS shut down timer.\n");
+		cnmTimerStopTimer(prAdapter,
+			&(prP2pRoleFsmInfo->rDfsShutDownTimer));
 	}
 
 	prP2pBssInfo = prAdapter->aprBssInfo[prP2pRoleFsmInfo->ucBssIndex];
 
 	prP2pConnReqInfo = &(prP2pRoleFsmInfo->rConnReqInfo);
 
-	if (p2pFuncIsAPMode(prAdapter->rWifiVar.prP2PConnSettings[prP2pDfsCacMsg->ucRoleIdx]))
+	if (p2pFuncIsAPMode(prAdapter->rWifiVar
+		.prP2PConnSettings[prP2pDfsCacMsg->ucRoleIdx]))
 		prP2pConnReqInfo->eConnRequest = P2P_CONNECTION_TYPE_PURE_AP;
 	else
 		prP2pConnReqInfo->eConnRequest = P2P_CONNECTION_TYPE_GO;
 
 #if CFG_SUPPORT_DBDC
 	kalMemZero(&rDbdcCap, sizeof(struct CNM_DBDC_CAP));
-	cnmDbdcEnableDecision(prAdapter, prP2pBssInfo->ucBssIndex, prP2pConnReqInfo->rChannelInfo.eBand);
+	cnmDbdcEnableDecision(prAdapter,
+		prP2pBssInfo->ucBssIndex,
+		prP2pConnReqInfo->rChannelInfo.eBand);
 	cnmGetDbdcCapability(prAdapter,
 		prP2pBssInfo->ucBssIndex,
 		prP2pConnReqInfo->rChannelInfo.eBand,
@@ -1262,14 +1558,18 @@ void p2pRoleFsmRunEventDfsCac(IN struct ADAPTER *prAdapter, IN struct MSG_HDR *p
 	if (prP2pRoleFsmInfo->rConnReqInfo.rChannelInfo.ucChannelNum != 0) {
 		DBGLOG(P2P, INFO, "Role(%d) Set channel at CH(%d)\n",
 			prP2pDfsCacMsg->ucRoleIdx,
-			prP2pRoleFsmInfo->rConnReqInfo.rChannelInfo.ucChannelNum);
+			prP2pRoleFsmInfo->rConnReqInfo
+				.rChannelInfo.ucChannelNum);
 
 		p2pRoleStatePrepare_To_DFS_CAC_STATE(prAdapter,
-					GET_BSS_INFO_BY_INDEX(prAdapter, prP2pRoleFsmInfo->ucBssIndex),
-					rChannelWidth,
-					&(prP2pRoleFsmInfo->rConnReqInfo),
-					&(prP2pRoleFsmInfo->rChnlReqInfo));
-		p2pRoleFsmStateTransition(prAdapter, prP2pRoleFsmInfo, P2P_ROLE_STATE_DFS_CAC);
+				GET_BSS_INFO_BY_INDEX(prAdapter,
+				prP2pRoleFsmInfo->ucBssIndex),
+				rChannelWidth,
+				&(prP2pRoleFsmInfo->rConnReqInfo),
+				&(prP2pRoleFsmInfo->rChnlReqInfo));
+		p2pRoleFsmStateTransition(prAdapter,
+			prP2pRoleFsmInfo,
+			P2P_ROLE_STATE_DFS_CAC);
 	} else {
 		DBGLOG(P2P, ERROR,
 			"prP2pRoleFsmInfo->rConnReqInfo.rChannelInfo.ucChannelNum shouldn't be 0\n");
@@ -1279,9 +1579,11 @@ error:
 	cnmMemFree(prAdapter, prMsgHdr);
 }				/*p2pRoleFsmRunEventDfsCac*/
 
-void p2pRoleFsmRunEventRadarDet(IN struct ADAPTER *prAdapter, IN struct MSG_HDR *prMsgHdr)
+void p2pRoleFsmRunEventRadarDet(IN struct ADAPTER *prAdapter,
+		IN struct MSG_HDR *prMsgHdr)
 {
-	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo = (struct P2P_ROLE_FSM_INFO *) NULL;
+	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo =
+		(struct P2P_ROLE_FSM_INFO *) NULL;
 	struct BSS_INFO *prP2pBssInfo = (struct BSS_INFO *) NULL;
 	struct MSG_P2P_RADAR_DETECT *prMsgP2pRddDetMsg;
 
@@ -1290,32 +1592,47 @@ void p2pRoleFsmRunEventRadarDet(IN struct ADAPTER *prAdapter, IN struct MSG_HDR 
 
 	prMsgP2pRddDetMsg = (struct MSG_P2P_RADAR_DETECT *) prMsgHdr;
 
-	prP2pBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prMsgP2pRddDetMsg->ucBssIndex);
+	prP2pBssInfo =
+		GET_BSS_INFO_BY_INDEX(prAdapter,
+			prMsgP2pRddDetMsg->ucBssIndex);
 
-	prP2pRoleFsmInfo = P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prAdapter, prP2pBssInfo->u4PrivateData);
+	prP2pRoleFsmInfo =
+		P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prAdapter,
+			prP2pBssInfo->u4PrivateData);
 
-	DBGLOG(P2P, INFO, "p2pRoleFsmRunEventRadarDet with Role(%d)\n", prP2pRoleFsmInfo->ucRoleIndex);
+	DBGLOG(P2P, INFO,
+		"p2pRoleFsmRunEventRadarDet with Role(%d)\n",
+		prP2pRoleFsmInfo->ucRoleIndex);
 
 	if (prP2pRoleFsmInfo->eCurrentState != P2P_ROLE_STATE_DFS_CAC &&
-			prP2pRoleFsmInfo->eCurrentState != P2P_ROLE_STATE_IDLE) {
-		DBGLOG(P2P, ERROR, "Wrong prP2pRoleFsmInfo->eCurrentState \"%s\"!",
-			(prP2pRoleFsmInfo->eCurrentState < P2P_ROLE_STATE_NUM ?
-				(const char *) apucDebugP2pRoleState[prP2pRoleFsmInfo->eCurrentState] : ""));
+		prP2pRoleFsmInfo->eCurrentState != P2P_ROLE_STATE_IDLE) {
+		DBGLOG(P2P, ERROR,
+			"Wrong prP2pRoleFsmInfo->eCurrentState \"%s\"!",
+			(prP2pRoleFsmInfo->eCurrentState < P2P_ROLE_STATE_NUM
+			? (const char *)
+			apucDebugP2pRoleState[prP2pRoleFsmInfo->eCurrentState]
+			: ""));
 		goto error;
 	}
 
 	if (p2pFuncGetRadarDetectMode()) {
-		DBGLOG(P2P, INFO, "p2pRoleFsmRunEventRadarDet: Ignore radar event\n");
+		DBGLOG(P2P, INFO,
+			"p2pRoleFsmRunEventRadarDet: Ignore radar event\n");
 		if (prP2pRoleFsmInfo->eCurrentState == P2P_ROLE_STATE_DFS_CAC)
 			p2pFuncSetDfsState(DFS_STATE_CHECKING);
 		else
 			p2pFuncSetDfsState(DFS_STATE_ACTIVE);
 	} else {
 		if (prP2pRoleFsmInfo->eCurrentState == P2P_ROLE_STATE_DFS_CAC)
-			p2pRoleFsmStateTransition(prAdapter, prP2pRoleFsmInfo, P2P_ROLE_STATE_IDLE);
+			p2pRoleFsmStateTransition(prAdapter,
+				prP2pRoleFsmInfo,
+				P2P_ROLE_STATE_IDLE);
 
-		kalP2PRddDetectUpdate(prAdapter->prGlueInfo, prP2pRoleFsmInfo->ucRoleIndex);
-		cnmTimerStartTimer(prAdapter, &(prP2pRoleFsmInfo->rDfsShutDownTimer), 5000);
+		kalP2PRddDetectUpdate(prAdapter->prGlueInfo,
+			prP2pRoleFsmInfo->ucRoleIndex);
+		cnmTimerStartTimer(prAdapter,
+			&(prP2pRoleFsmInfo->rDfsShutDownTimer),
+			5000);
 	}
 
 	p2pFuncShowRadarInfo(prAdapter, prMsgP2pRddDetMsg->ucBssIndex);
@@ -1324,9 +1641,11 @@ error:
 	cnmMemFree(prAdapter, prMsgHdr);
 }				/*p2pRoleFsmRunEventRadarDet*/
 
-void p2pRoleFsmRunEventSetNewChannel(IN struct ADAPTER *prAdapter, IN struct MSG_HDR *prMsgHdr)
+void p2pRoleFsmRunEventSetNewChannel(IN struct ADAPTER *prAdapter,
+		IN struct MSG_HDR *prMsgHdr)
 {
-	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo = (struct P2P_ROLE_FSM_INFO *) NULL;
+	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo =
+		(struct P2P_ROLE_FSM_INFO *) NULL;
 	struct BSS_INFO *prP2pBssInfo = (struct BSS_INFO *) NULL;
 	struct MSG_P2P_SET_NEW_CHANNEL *prMsgP2pSetNewChannelMsg;
 
@@ -1335,25 +1654,36 @@ void p2pRoleFsmRunEventSetNewChannel(IN struct ADAPTER *prAdapter, IN struct MSG
 
 	prMsgP2pSetNewChannelMsg = (struct MSG_P2P_SET_NEW_CHANNEL *) prMsgHdr;
 
-	prP2pBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prMsgP2pSetNewChannelMsg->ucBssIndex);
+	prP2pBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
+		prMsgP2pSetNewChannelMsg->ucBssIndex);
 
-	prP2pRoleFsmInfo = P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prAdapter, prMsgP2pSetNewChannelMsg->ucRoleIdx);
+	prP2pRoleFsmInfo =
+		P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prAdapter,
+			prMsgP2pSetNewChannelMsg->ucRoleIdx);
 
-	prP2pRoleFsmInfo->rChnlReqInfo.ucReqChnlNum = prP2pRoleFsmInfo->rConnReqInfo.rChannelInfo.ucChannelNum;
-	prP2pRoleFsmInfo->rChnlReqInfo.eBand = prP2pRoleFsmInfo->rConnReqInfo.rChannelInfo.eBand;
-	prP2pRoleFsmInfo->rChnlReqInfo.eChannelWidth = prMsgP2pSetNewChannelMsg->eChannelWidth;
-	prP2pBssInfo->ucPrimaryChannel = prP2pRoleFsmInfo->rConnReqInfo.rChannelInfo.ucChannelNum;
+	prP2pRoleFsmInfo->rChnlReqInfo.ucReqChnlNum =
+		prP2pRoleFsmInfo->rConnReqInfo.rChannelInfo.ucChannelNum;
+	prP2pRoleFsmInfo->rChnlReqInfo.eBand =
+		prP2pRoleFsmInfo->rConnReqInfo.rChannelInfo.eBand;
+	prP2pRoleFsmInfo->rChnlReqInfo.eChannelWidth =
+		prMsgP2pSetNewChannelMsg->eChannelWidth;
+	prP2pBssInfo->ucPrimaryChannel =
+		prP2pRoleFsmInfo->rConnReqInfo.rChannelInfo.ucChannelNum;
 
 	prP2pRoleFsmInfo->rChnlReqInfo.ucCenterFreqS1 =
-		nicGetVhtS1(prP2pBssInfo->ucPrimaryChannel, prP2pRoleFsmInfo->rChnlReqInfo.eChannelWidth);
+		nicGetVhtS1(prP2pBssInfo->ucPrimaryChannel,
+		prP2pRoleFsmInfo->rChnlReqInfo.eChannelWidth);
+
 	prP2pRoleFsmInfo->rChnlReqInfo.ucCenterFreqS2 = 0;
 
 	cnmMemFree(prAdapter, prMsgHdr);
 }				/*p2pRoleFsmRunEventCsaDone*/
 
-void p2pRoleFsmRunEventCsaDone(IN struct ADAPTER *prAdapter, IN struct MSG_HDR *prMsgHdr)
+void p2pRoleFsmRunEventCsaDone(IN struct ADAPTER *prAdapter,
+		IN struct MSG_HDR *prMsgHdr)
 {
-	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo = (struct P2P_ROLE_FSM_INFO *) NULL;
+	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo =
+		(struct P2P_ROLE_FSM_INFO *) NULL;
 	struct BSS_INFO *prP2pBssInfo = (struct BSS_INFO *) NULL;
 	struct MSG_P2P_CSA_DONE *prMsgP2pCsaDoneMsg;
 
@@ -1362,20 +1692,28 @@ void p2pRoleFsmRunEventCsaDone(IN struct ADAPTER *prAdapter, IN struct MSG_HDR *
 
 	prMsgP2pCsaDoneMsg = (struct MSG_P2P_CSA_DONE *) prMsgHdr;
 
-	prP2pBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prMsgP2pCsaDoneMsg->ucBssIndex);
+	prP2pBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
+		prMsgP2pCsaDoneMsg->ucBssIndex);
 
-	prP2pRoleFsmInfo = P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prAdapter, prP2pBssInfo->u4PrivateData);
+	prP2pRoleFsmInfo =
+		P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prAdapter,
+			prP2pBssInfo->u4PrivateData);
 
-	p2pRoleFsmStateTransition(prAdapter, prP2pRoleFsmInfo, P2P_ROLE_STATE_SWITCH_CHANNEL);
+	p2pRoleFsmStateTransition(prAdapter,
+		prP2pRoleFsmInfo,
+		P2P_ROLE_STATE_SWITCH_CHANNEL);
 
 	cnmMemFree(prAdapter, prMsgHdr);
 }				/*p2pRoleFsmRunEventCsaDone*/
 
-void p2pRoleFsmRunEventDfsShutDownTimeout(IN struct ADAPTER *prAdapter, IN unsigned long ulParamPtr)
+void p2pRoleFsmRunEventDfsShutDownTimeout(IN struct ADAPTER *prAdapter,
+		IN unsigned long ulParamPtr)
 {
-	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo = (struct P2P_ROLE_FSM_INFO *) ulParamPtr;
+	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo =
+		(struct P2P_ROLE_FSM_INFO *) ulParamPtr;
 
-	DBGLOG(P2P, INFO, "p2pRoleFsmRunEventDfsShutDownTimeout: DFS shut down.\n");
+	DBGLOG(P2P, INFO,
+		"p2pRoleFsmRunEventDfsShutDownTimeout: DFS shut down.\n");
 
 	p2pFuncSetDfsState(DFS_STATE_INACTIVE);
 	p2pFuncStopRdd(prAdapter, prP2pRoleFsmInfo->ucBssIndex);
@@ -1385,15 +1723,20 @@ void p2pRoleFsmRunEventDfsShutDownTimeout(IN struct ADAPTER *prAdapter, IN unsig
 #endif
 
 
-void p2pRoleFsmRunEventConnectionRequest(IN struct ADAPTER *prAdapter, IN struct MSG_HDR *prMsgHdr)
+void p2pRoleFsmRunEventConnectionRequest(IN struct ADAPTER *prAdapter,
+		IN struct MSG_HDR *prMsgHdr)
 {
 	struct BSS_INFO *prP2pBssInfo = (struct BSS_INFO *) NULL;
-	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo = (struct P2P_ROLE_FSM_INFO *) NULL;
-	struct MSG_P2P_CONNECTION_REQUEST *prP2pConnReqMsg = (struct MSG_P2P_CONNECTION_REQUEST *) NULL;
+	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo =
+		(struct P2P_ROLE_FSM_INFO *) NULL;
+	struct MSG_P2P_CONNECTION_REQUEST *prP2pConnReqMsg =
+		(struct MSG_P2P_CONNECTION_REQUEST *) NULL;
 	struct STA_RECORD *prStaRec = (struct STA_RECORD *) NULL;
 
-	struct P2P_CONNECTION_REQ_INFO *prConnReqInfo = (struct P2P_CONNECTION_REQ_INFO *) NULL;
-	struct P2P_CHNL_REQ_INFO *prChnlReqInfo = (struct P2P_CHNL_REQ_INFO *) NULL;
+	struct P2P_CONNECTION_REQ_INFO *prConnReqInfo =
+		(struct P2P_CONNECTION_REQ_INFO *) NULL;
+	struct P2P_CHNL_REQ_INFO *prChnlReqInfo =
+		(struct P2P_CHNL_REQ_INFO *) NULL;
 	struct P2P_JOIN_INFO *prJoinInfo = (struct P2P_JOIN_INFO *) NULL;
 #if CFG_SUPPORT_DBDC
 	struct CNM_DBDC_CAP rDbdcCap;
@@ -1402,7 +1745,9 @@ void p2pRoleFsmRunEventConnectionRequest(IN struct ADAPTER *prAdapter, IN struct
 
 	prP2pConnReqMsg = (struct MSG_P2P_CONNECTION_REQUEST *) prMsgHdr;
 
-	prP2pRoleFsmInfo = P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prAdapter, prP2pConnReqMsg->ucRoleIdx);
+	prP2pRoleFsmInfo =
+		P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prAdapter,
+			prP2pConnReqMsg->ucRoleIdx);
 
 	prAdapter->prP2pInfo->eConnState = P2P_CNN_NORMAL;
 
@@ -1434,13 +1779,17 @@ void p2pRoleFsmRunEventConnectionRequest(IN struct ADAPTER *prAdapter, IN struct
 
 	SET_NET_PWR_STATE_ACTIVE(prAdapter, prP2pBssInfo->ucBssIndex);
 
-	/* In P2P GC case, the interval of two ASSOC flow could be very short, */
-	/* we must start to connect directly before Deauth done */
+	/* In P2P GC case, the interval of
+	 * two ASSOC flow could be very short,
+	 * we must start to connect directly before Deauth done
+	 */
 	prStaRec = prP2pBssInfo->prStaRecOfAP;
 	if (prStaRec) {
 		if (timerPendingTimer(&prStaRec->rDeauthTxDoneTimer)) {
-			cnmTimerStopTimer(prAdapter, &(prStaRec->rDeauthTxDoneTimer));
-			p2pRoleFsmDeauhComplete(prAdapter, prStaRec);/* Force to stop */
+			cnmTimerStopTimer(prAdapter,
+				&(prStaRec->rDeauthTxDoneTimer));
+			/* Force to stop */
+			p2pRoleFsmDeauhComplete(prAdapter, prStaRec);
 		}
 	}
 	/* Make sure the state is in IDLE state. */
@@ -1448,45 +1797,65 @@ void p2pRoleFsmRunEventConnectionRequest(IN struct ADAPTER *prAdapter, IN struct
 		p2pRoleFsmRunEventAbort(prAdapter, prP2pRoleFsmInfo);
 	/* Update connection request information. */
 	prConnReqInfo->eConnRequest = P2P_CONNECTION_TYPE_GC;
-	COPY_MAC_ADDR(prConnReqInfo->aucBssid, prP2pConnReqMsg->aucBssid);
-	COPY_MAC_ADDR(prP2pBssInfo->aucOwnMacAddr, prP2pConnReqMsg->aucSrcMacAddr);
-	kalMemCopy(&(prConnReqInfo->rSsidStruct), &(prP2pConnReqMsg->rSsid), sizeof(struct P2P_SSID_STRUCT));
-	kalMemCopy(prConnReqInfo->aucIEBuf, prP2pConnReqMsg->aucIEBuf, prP2pConnReqMsg->u4IELen);
+	COPY_MAC_ADDR(prConnReqInfo->aucBssid,
+		prP2pConnReqMsg->aucBssid);
+	COPY_MAC_ADDR(prP2pBssInfo->aucOwnMacAddr,
+		prP2pConnReqMsg->aucSrcMacAddr);
+	kalMemCopy(&(prConnReqInfo->rSsidStruct),
+		&(prP2pConnReqMsg->rSsid),
+		sizeof(struct P2P_SSID_STRUCT));
+	kalMemCopy(prConnReqInfo->aucIEBuf,
+		prP2pConnReqMsg->aucIEBuf,
+		prP2pConnReqMsg->u4IELen);
 	prConnReqInfo->u4BufLength = prP2pConnReqMsg->u4IELen;
 
 	/* Find BSS Descriptor first. */
-	prJoinInfo->prTargetBssDesc = scanP2pSearchDesc(prAdapter, prConnReqInfo);
+	prJoinInfo->prTargetBssDesc =
+		scanP2pSearchDesc(prAdapter, prConnReqInfo);
 
 	if (prJoinInfo->prTargetBssDesc == NULL) {
 		/* Update scan parameter... to scan target device. */
-		struct P2P_SCAN_REQ_INFO *prScanReqInfo = &(prP2pRoleFsmInfo->rScanReqInfo);
+		struct P2P_SCAN_REQ_INFO *prScanReqInfo =
+			&(prP2pRoleFsmInfo->rScanReqInfo);
 
 		prScanReqInfo->ucNumChannelList = 1;
 		prScanReqInfo->eScanType = SCAN_TYPE_ACTIVE_SCAN;
 		prScanReqInfo->eChannelSet = SCAN_CHANNEL_SPECIFIED;
-		prScanReqInfo->arScanChannelList[0].ucChannelNum = prP2pConnReqMsg->rChannelInfo.ucChannelNum;
+		prScanReqInfo->arScanChannelList[0].ucChannelNum =
+			prP2pConnReqMsg->rChannelInfo.ucChannelNum;
 		prScanReqInfo->ucSsidNum = 1;
-		kalMemCopy(&(prScanReqInfo->arSsidStruct[0]), &(prP2pConnReqMsg->rSsid),
-			   sizeof(struct P2P_SSID_STRUCT));
-		prScanReqInfo->u4BufLength = 0;	/* Prevent other P2P ID in IE. */
+		kalMemCopy(&(prScanReqInfo->arSsidStruct[0]),
+			&(prP2pConnReqMsg->rSsid),
+			sizeof(struct P2P_SSID_STRUCT));
+		/* Prevent other P2P ID in IE. */
+		prScanReqInfo->u4BufLength = 0;
 		prScanReqInfo->fgIsAbort = TRUE;
 
-		p2pRoleFsmStateTransition(prAdapter, prP2pRoleFsmInfo, P2P_ROLE_STATE_SCAN);
+		p2pRoleFsmStateTransition(prAdapter,
+			prP2pRoleFsmInfo,
+			P2P_ROLE_STATE_SCAN);
 	} else {
 		prChnlReqInfo->u8Cookie = 0;
-		prChnlReqInfo->ucReqChnlNum = prP2pConnReqMsg->rChannelInfo.ucChannelNum;
+		prChnlReqInfo->ucReqChnlNum =
+			prP2pConnReqMsg->rChannelInfo.ucChannelNum;
 		prChnlReqInfo->eBand = prP2pConnReqMsg->rChannelInfo.eBand;
 		prChnlReqInfo->eChnlSco = prP2pConnReqMsg->eChnlSco;
 		prChnlReqInfo->u4MaxInterval = AIS_JOIN_CH_REQUEST_INTERVAL;
 		prChnlReqInfo->eChnlReqType = CH_REQ_TYPE_JOIN;
 
-		rlmReviseMaxBw(prAdapter, prP2pBssInfo->ucBssIndex, &prChnlReqInfo->eChnlSco,
-				(enum ENUM_CHANNEL_WIDTH *)&prChnlReqInfo->eChannelWidth,
-			&prChnlReqInfo->ucCenterFreqS1, &prChnlReqInfo->ucReqChnlNum);
+		rlmReviseMaxBw(prAdapter,
+			prP2pBssInfo->ucBssIndex,
+			&prChnlReqInfo->eChnlSco,
+			(enum ENUM_CHANNEL_WIDTH *)
+			&prChnlReqInfo->eChannelWidth,
+			&prChnlReqInfo->ucCenterFreqS1,
+			&prChnlReqInfo->ucReqChnlNum);
 
 #if CFG_SUPPORT_DBDC
 		kalMemZero(&rDbdcCap, sizeof(struct CNM_DBDC_CAP));
-		cnmDbdcEnableDecision(prAdapter, prP2pBssInfo->ucBssIndex, prChnlReqInfo->eBand);
+		cnmDbdcEnableDecision(prAdapter,
+			prP2pBssInfo->ucBssIndex,
+			prChnlReqInfo->eBand);
 		cnmGetDbdcCapability(prAdapter,
 			prP2pBssInfo->ucBssIndex,
 			prChnlReqInfo->eBand,
@@ -1504,37 +1873,48 @@ void p2pRoleFsmRunEventConnectionRequest(IN struct ADAPTER *prAdapter, IN struct
 #endif
 
 		/* Decide RF BW by own OP and Peer OP BW */
-		ucRfBw = cnmGetDbdcBwCapability(prAdapter, prP2pBssInfo->ucBssIndex);
-		ucRfBw = rlmGetVhtOpBwByBssOpBw(ucRfBw); /* Revise to VHT OP BW */
+		ucRfBw = cnmGetDbdcBwCapability(prAdapter,
+			prP2pBssInfo->ucBssIndex);
+		/* Revise to VHT OP BW */
+		ucRfBw = rlmGetVhtOpBwByBssOpBw(ucRfBw);
 		if (ucRfBw > prJoinInfo->prTargetBssDesc->eChannelWidth)
 			ucRfBw = prJoinInfo->prTargetBssDesc->eChannelWidth;
 
 		prChnlReqInfo->eChannelWidth = ucRfBw;
 		/* TODO: BW80+80 support */
 		prChnlReqInfo->ucCenterFreqS1 =
-			nicGetVhtS1(prChnlReqInfo->ucReqChnlNum, prChnlReqInfo->eChannelWidth);
+			nicGetVhtS1(prChnlReqInfo->ucReqChnlNum,
+				prChnlReqInfo->eChannelWidth);
 		prChnlReqInfo->ucCenterFreqS2 = 0;
 
-		p2pRoleFsmStateTransition(prAdapter, prP2pRoleFsmInfo, P2P_ROLE_STATE_REQING_CHANNEL);
+		p2pRoleFsmStateTransition(prAdapter,
+			prP2pRoleFsmInfo,
+			P2P_ROLE_STATE_REQING_CHANNEL);
 	}
 
 error:
 	cnmMemFree(prAdapter, prMsgHdr);
 }				/* p2pRoleFsmRunEventConnectionRequest */
 
-void p2pRoleFsmRunEventConnectionAbort(IN struct ADAPTER *prAdapter, IN struct MSG_HDR *prMsgHdr)
+void p2pRoleFsmRunEventConnectionAbort(IN struct ADAPTER *prAdapter,
+		IN struct MSG_HDR *prMsgHdr)
 {
 	struct BSS_INFO *prP2pBssInfo = (struct BSS_INFO *) NULL;
-	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo = (struct P2P_ROLE_FSM_INFO *) NULL;
-	struct MSG_P2P_CONNECTION_ABORT *prDisconnMsg = (struct MSG_P2P_CONNECTION_ABORT *) NULL;
+	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo =
+		(struct P2P_ROLE_FSM_INFO *) NULL;
+	struct MSG_P2P_CONNECTION_ABORT *prDisconnMsg =
+		(struct MSG_P2P_CONNECTION_ABORT *) NULL;
 	struct STA_RECORD *prStaRec = (struct STA_RECORD *) NULL;
 
 
 	prDisconnMsg = (struct MSG_P2P_CONNECTION_ABORT *) prMsgHdr;
 
-	prP2pRoleFsmInfo = P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prAdapter, prDisconnMsg->ucRoleIdx);
+	prP2pRoleFsmInfo =
+		P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prAdapter,
+			prDisconnMsg->ucRoleIdx);
 
-	DBGLOG(P2P, TRACE, "p2pFsmRunEventConnectionAbort: Connection Abort.\n");
+	DBGLOG(P2P, TRACE,
+		"p2pFsmRunEventConnectionAbort: Connection Abort.\n");
 
 	if (!prP2pRoleFsmInfo) {
 		DBGLOG(P2P, ERROR,
@@ -1561,12 +1941,16 @@ void p2pRoleFsmRunEventConnectionAbort(IN struct ADAPTER *prAdapter, IN struct M
 				DBGLOG(P2P, TRACE, "GO's StaRec is NULL\n");
 				break;
 			}
-			if (UNEQUAL_MAC_ADDR(prP2pBssInfo->prStaRecOfAP->aucMacAddr, prDisconnMsg->aucTargetID)
-			    && UNEQUAL_MAC_ADDR(prDisconnMsg->aucTargetID, aucBCBSSID)) {
+			if (UNEQUAL_MAC_ADDR(
+					prP2pBssInfo->prStaRecOfAP->aucMacAddr,
+					prDisconnMsg->aucTargetID) &&
+			    UNEQUAL_MAC_ADDR(prDisconnMsg->aucTargetID,
+				    aucBCBSSID)) {
 				DBGLOG(P2P, TRACE,
-				       "Unequal MAC ADDR [" MACSTR ":" MACSTR "]\n",
-				       MAC2STR(prP2pBssInfo->prStaRecOfAP->aucMacAddr),
-				       MAC2STR(prDisconnMsg->aucTargetID));
+				"Unequal MAC ADDR [" MACSTR ":" MACSTR "]\n",
+				MAC2STR(
+					prP2pBssInfo->prStaRecOfAP->aucMacAddr),
+				MAC2STR(prDisconnMsg->aucTargetID));
 				break;
 			}
 
@@ -1577,7 +1961,8 @@ void p2pRoleFsmRunEventConnectionAbort(IN struct ADAPTER *prAdapter, IN struct M
 					WLAN_STATUS_MEDIA_DISCONNECT);
 #else
 			kalP2PGCIndicateConnectionStatus(prAdapter->prGlueInfo,
-							 prP2pRoleFsmInfo->ucRoleIndex, NULL, NULL, 0, 0);
+					prP2pRoleFsmInfo->ucRoleIndex,
+					NULL, NULL, 0, 0);
 #endif
 
 			prStaRec = prP2pBssInfo->prStaRecOfAP;
@@ -1586,21 +1971,28 @@ void p2pRoleFsmRunEventConnectionAbort(IN struct ADAPTER *prAdapter, IN struct M
 			/* TODO: If it has. */
 
 			p2pFuncDisconnect(prAdapter, prP2pBssInfo,
-					  prStaRec,
-					  prDisconnMsg->fgSendDeauth, prDisconnMsg->u2ReasonCode);
+				prStaRec,
+				prDisconnMsg->fgSendDeauth,
+				prDisconnMsg->u2ReasonCode);
 
-			cnmTimerStopTimer(prAdapter, &(prStaRec->rDeauthTxDoneTimer));
+			cnmTimerStopTimer(prAdapter,
+				&(prStaRec->rDeauthTxDoneTimer));
 
 			cnmTimerInitTimer(prAdapter,
-					  &(prStaRec->rDeauthTxDoneTimer),
-					  (PFN_MGMT_TIMEOUT_FUNC) p2pRoleFsmDeauthTimeout, (unsigned long) prStaRec);
+				&(prStaRec->rDeauthTxDoneTimer),
+				(PFN_MGMT_TIMEOUT_FUNC) p2pRoleFsmDeauthTimeout,
+				(unsigned long) prStaRec);
 
-			cnmTimerStartTimer(prAdapter, &(prStaRec->rDeauthTxDoneTimer),
+			cnmTimerStartTimer(prAdapter,
+				&(prStaRec->rDeauthTxDoneTimer),
 				P2P_DEAUTH_TIMEOUT_TIME_MS);
 
-			SET_NET_PWR_STATE_IDLE(prAdapter, prP2pBssInfo->ucBssIndex);
+			SET_NET_PWR_STATE_IDLE(prAdapter,
+				prP2pBssInfo->ucBssIndex);
 
-			p2pRoleFsmStateTransition(prAdapter, prP2pRoleFsmInfo, P2P_ROLE_STATE_IDLE);
+			p2pRoleFsmStateTransition(prAdapter,
+				prP2pRoleFsmInfo,
+				P2P_ROLE_STATE_IDLE);
 		}
 		break;
 	case OP_MODE_ACCESS_POINT:
@@ -1608,58 +2000,79 @@ void p2pRoleFsmRunEventConnectionAbort(IN struct ADAPTER *prAdapter, IN struct M
 			/* Search specific client device, and disconnect. */
 			/* 1. Send deauthentication frame. */
 			/* 2. Indication: Device disconnect. */
-			struct STA_RECORD *prCurrStaRec = (struct STA_RECORD *) NULL;
+			struct STA_RECORD *prCurrStaRec =
+				(struct STA_RECORD *) NULL;
 
-			DBGLOG(P2P, TRACE, "Disconnecting with Target ID: " MACSTR "\n",
-			       MAC2STR(prDisconnMsg->aucTargetID));
+			DBGLOG(P2P, TRACE,
+				"Disconnecting with Target ID: " MACSTR "\n",
+				MAC2STR(prDisconnMsg->aucTargetID));
 
-			prCurrStaRec = bssGetClientByMac(prAdapter, prP2pBssInfo, prDisconnMsg->aucTargetID);
+			prCurrStaRec = bssGetClientByMac(prAdapter,
+				prP2pBssInfo,
+				prDisconnMsg->aucTargetID);
 
 			if (prCurrStaRec) {
-				DBGLOG(P2P, TRACE, "Disconnecting: " MACSTR "\n",
-				       MAC2STR(prCurrStaRec->aucMacAddr));
+				DBGLOG(P2P, TRACE,
+					"Disconnecting: " MACSTR "\n",
+					MAC2STR(prCurrStaRec->aucMacAddr));
 
 				/* Glue layer indication. */
-				/* kalP2PGOStationUpdate(prAdapter->prGlueInfo, prCurrStaRec, FALSE); */
+				/* kalP2PGOStationUpdate(prAdapter->prGlueInfo,
+				 * prCurrStaRec, FALSE);
+				 */
 
 				/* Send deauth & do indication. */
-				p2pFuncDisconnect(prAdapter, prP2pBssInfo, prCurrStaRec,
-						  prDisconnMsg->fgSendDeauth, prDisconnMsg->u2ReasonCode);
+				p2pFuncDisconnect(prAdapter,
+					prP2pBssInfo,
+					prCurrStaRec,
+					prDisconnMsg->fgSendDeauth,
+					prDisconnMsg->u2ReasonCode);
 
-				cnmTimerStopTimer(prAdapter, &(prCurrStaRec->rDeauthTxDoneTimer));
+				cnmTimerStopTimer(prAdapter,
+					&(prCurrStaRec->rDeauthTxDoneTimer));
 
 				cnmTimerInitTimer(prAdapter,
-						  &(prCurrStaRec->rDeauthTxDoneTimer),
-						  (PFN_MGMT_TIMEOUT_FUNC) p2pRoleFsmDeauthTimeout,
-						  (unsigned long) prCurrStaRec);
+					&(prCurrStaRec->rDeauthTxDoneTimer),
+					(PFN_MGMT_TIMEOUT_FUNC)
+					p2pRoleFsmDeauthTimeout,
+					(unsigned long) prCurrStaRec);
 
-				cnmTimerStartTimer(prAdapter, &(prCurrStaRec->rDeauthTxDoneTimer),
+				cnmTimerStartTimer(prAdapter,
+					&(prCurrStaRec->rDeauthTxDoneTimer),
 					P2P_DEAUTH_TIMEOUT_TIME_MS);
 			}
 #if 0
 			LINK_FOR_EACH(prLinkEntry, prStaRecOfClientList) {
-				prCurrStaRec = LINK_ENTRY(prLinkEntry, struct STA_RECORD, rLinkEntry);
+				prCurrStaRec = LINK_ENTRY(prLinkEntry,
+					struct STA_RECORD, rLinkEntry);
 
 				ASSERT(prCurrStaRec);
 
-				if (EQUAL_MAC_ADDR(prCurrStaRec->aucMacAddr, prDisconnMsg->aucTargetID)) {
+				if (EQUAL_MAC_ADDR(prCurrStaRec->aucMacAddr,
+					prDisconnMsg->aucTargetID)) {
 
 					DBGLOG(P2P, TRACE,
-					       "Disconnecting: " MACSTR "\n",
-					       MAC2STR(prCurrStaRec->aucMacAddr));
+					"Disconnecting: " MACSTR "\n",
+					MAC2STR(
+					prCurrStaRec->aucMacAddr));
 
 					/* Remove STA from client list. */
-					LINK_REMOVE_KNOWN_ENTRY(prStaRecOfClientList,
-								&prCurrStaRec->rLinkEntry);
+					LINK_REMOVE_KNOWN_ENTRY(
+						prStaRecOfClientList,
+						&prCurrStaRec->rLinkEntry);
 
 					/* Glue layer indication. */
-					/* kalP2PGOStationUpdate(prAdapter->prGlueInfo, prCurrStaRec, FALSE); */
+					/* kalP2PGOStationUpdate(
+					 * prAdapter->prGlueInfo,
+					 * prCurrStaRec, FALSE);
+					 */
 
 					/* Send deauth & do indication. */
-					p2pFuncDisconnect(prAdapter, prP2pBssInfo,
-							  prCurrStaRec,
-							  prDisconnMsg->fgSendDeauth,
-							  prDisconnMsg->u2ReasonCode);
+					p2pFuncDisconnect(prAdapter,
+						prP2pBssInfo,
+						prCurrStaRec,
+						prDisconnMsg->fgSendDeauth,
+						prDisconnMsg->u2ReasonCode);
 
 					/* prTargetStaRec = prCurrStaRec; */
 
@@ -1682,18 +2095,23 @@ error:
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief    This function is called when JOIN complete message event is received from SAA.
-*
-* \param[in] prAdapter  Pointer of ADAPTER_T
-*
-* \return none
-*/
+ * \brief    This function is called when JOIN complete message event
+ *             is received from SAA.
+ *
+ * \param[in] prAdapter  Pointer of ADAPTER_T
+ *
+ * \return none
+ */
 /*----------------------------------------------------------------------------*/
-void p2pRoleFsmRunEventJoinComplete(IN struct ADAPTER *prAdapter, IN struct MSG_HDR *prMsgHdr)
+void p2pRoleFsmRunEventJoinComplete(IN struct ADAPTER *prAdapter,
+		IN struct MSG_HDR *prMsgHdr)
 {
-	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo = (struct P2P_ROLE_FSM_INFO *) NULL;
-	struct P2P_JOIN_INFO *prJoinInfo = (struct P2P_JOIN_INFO *) NULL;
-	struct MSG_SAA_FSM_COMP *prJoinCompMsg = (struct MSG_SAA_FSM_COMP *) NULL;
+	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo =
+		(struct P2P_ROLE_FSM_INFO *) NULL;
+	struct P2P_JOIN_INFO *prJoinInfo =
+		(struct P2P_JOIN_INFO *) NULL;
+	struct MSG_SAA_FSM_COMP *prJoinCompMsg =
+		(struct MSG_SAA_FSM_COMP *) NULL;
 	struct SW_RFB *prAssocRspSwRfb = (struct SW_RFB *) NULL;
 	struct STA_RECORD *prStaRec = (struct STA_RECORD *) NULL;
 	struct BSS_INFO *prP2pBssInfo = (struct BSS_INFO *) NULL;
@@ -1702,41 +2120,51 @@ void p2pRoleFsmRunEventJoinComplete(IN struct ADAPTER *prAdapter, IN struct MSG_
 	prStaRec = prJoinCompMsg->prStaRec;
 	prAssocRspSwRfb = prJoinCompMsg->prSwRfb;
 
-	ASSERT(prStaRec)
+	ASSERT(prStaRec);
 	if (!prStaRec) {
 		DBGLOG(P2P, ERROR, "prJoinCompMsg->prStaRec is NULL!\n");
 		goto error;
 	}
 
-	DBGLOG(P2P, INFO, "P2P BSS %d [" MACSTR "], Join Complete, status: %d\n",
-			prStaRec->ucBssIndex,
-			prStaRec->aucMacAddr,
-			prJoinCompMsg->rJoinStatus);
+	DBGLOG(P2P, INFO,
+		"P2P BSS %d [" MACSTR "], Join Complete, status: %d\n",
+		prStaRec->ucBssIndex,
+		prStaRec->aucMacAddr,
+		prJoinCompMsg->rJoinStatus);
 
 	ASSERT(prStaRec->ucBssIndex < prAdapter->ucP2PDevBssIdx);
 	if (!(prStaRec->ucBssIndex < prAdapter->ucP2PDevBssIdx)) {
-		DBGLOG(P2P, ERROR, "prStaRec->ucBssIndex %d should < prAdapter->ucP2PDevBssIdx(%d)!\n",
+		DBGLOG(P2P, ERROR,
+			"prStaRec->ucBssIndex %d should < prAdapter->ucP2PDevBssIdx(%d)!\n",
 			prStaRec->ucBssIndex, prAdapter->ucP2PDevBssIdx);
 		goto error;
 	}
 
-	prP2pBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prStaRec->ucBssIndex);
+	prP2pBssInfo =
+		GET_BSS_INFO_BY_INDEX(prAdapter,
+			prStaRec->ucBssIndex);
 
 	ASSERT(prP2pBssInfo->eCurrentOPMode == OP_MODE_INFRASTRUCTURE);
 	if (prP2pBssInfo->eCurrentOPMode != OP_MODE_INFRASTRUCTURE) {
-		DBGLOG(P2P, ERROR, "prP2pBssInfo->eCurrentOPMode %d != OP_MODE_INFRASTRUCTURE(%d)!\n",
-			prP2pBssInfo->eCurrentOPMode, OP_MODE_INFRASTRUCTURE);
+		DBGLOG(P2P, ERROR,
+			"prP2pBssInfo->eCurrentOPMode %d != OP_MODE_INFRASTRUCTURE(%d)!\n",
+			prP2pBssInfo->eCurrentOPMode,
+			OP_MODE_INFRASTRUCTURE);
 		goto error;
 	}
 
 	ASSERT(prP2pBssInfo->u4PrivateData < BSS_P2P_NUM);
 	if (!(prP2pBssInfo->u4PrivateData < BSS_P2P_NUM)) {
-		DBGLOG(P2P, ERROR, "prP2pBssInfo->u4PrivateData %d should < BSS_P2P_NUM(%d)!\n",
-			prP2pBssInfo->u4PrivateData, BSS_P2P_NUM);
+		DBGLOG(P2P, ERROR,
+			"prP2pBssInfo->u4PrivateData %d should < BSS_P2P_NUM(%d)!\n",
+			prP2pBssInfo->u4PrivateData,
+			BSS_P2P_NUM);
 		goto error;
 	}
 
-	prP2pRoleFsmInfo = P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prAdapter, prP2pBssInfo->u4PrivateData);
+	prP2pRoleFsmInfo =
+		P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prAdapter,
+			prP2pBssInfo->u4PrivateData);
 
 	prJoinInfo = &(prP2pRoleFsmInfo->rJoinInfo);
 
@@ -1748,59 +2176,72 @@ void p2pRoleFsmRunEventJoinComplete(IN struct ADAPTER *prAdapter, IN struct MSG_
 		if (prJoinCompMsg->rJoinStatus == WLAN_STATUS_SUCCESS) {
 
 			/* 4 <1.1> Change FW's Media State immediately. */
-			p2pChangeMediaState(prAdapter, prP2pBssInfo, PARAM_MEDIA_STATE_CONNECTED);
+			p2pChangeMediaState(prAdapter,
+				prP2pBssInfo,
+				PARAM_MEDIA_STATE_CONNECTED);
 
-			/* 4 <1.2> Deactivate previous AP's STA_RECORD_T in Driver if have. */
-			if ((prP2pBssInfo->prStaRecOfAP) && (prP2pBssInfo->prStaRecOfAP != prStaRec)) {
+			/* 4 <1.2> Deactivate previous AP's STA_RECORD_T
+			 * in Driver if have.
+			 */
+			if ((prP2pBssInfo->prStaRecOfAP)
+				&& (prP2pBssInfo->prStaRecOfAP != prStaRec)) {
 				cnmStaRecChangeState(prAdapter,
-						     prP2pBssInfo->prStaRecOfAP, STA_STATE_1);
+					prP2pBssInfo->prStaRecOfAP,
+					STA_STATE_1);
 
-				cnmStaRecFree(prAdapter, prP2pBssInfo->prStaRecOfAP);
+				cnmStaRecFree(prAdapter,
+					prP2pBssInfo->prStaRecOfAP);
 
 				prP2pBssInfo->prStaRecOfAP = NULL;
 			}
 			/* 4 <1.3> Update BSS_INFO_T */
 			if (prAssocRspSwRfb) {
 				p2pFuncUpdateBssInfoForJOIN(prAdapter,
-							    prJoinInfo->prTargetBssDesc,
-							    prStaRec, prP2pBssInfo, prAssocRspSwRfb);
+				    prJoinInfo->prTargetBssDesc,
+				    prStaRec, prP2pBssInfo, prAssocRspSwRfb);
 			} else {
 				DBGLOG(P2P, INFO,
 					"prAssocRspSwRfb is NULL! Skip p2pFuncUpdateBssInfoForJOIN\n");
 			}
 
-			/* 4 <1.4> Activate current AP's STA_RECORD_T in Driver. */
+			/* 4 <1.4> Activate current AP's STA_RECORD_T
+			 * in Driver.
+			 */
 			cnmStaRecChangeState(prAdapter, prStaRec, STA_STATE_3);
 
 #if CFG_SUPPORT_P2P_RSSI_QUERY
 			/* <1.5> Update RSSI if necessary */
 			nicUpdateRSSI(prAdapter, prP2pBssInfo->ucBssIndex,
-				      (int8_t) (RCPI_TO_dBm(prStaRec->ucRCPI)), 0);
+				(int8_t) (RCPI_TO_dBm(prStaRec->ucRCPI)), 0);
 #endif
 
-			/* 4 <1.6> Indicate Connected Event to Host immediately. */
-			/* Require BSSID, Association ID, Beacon Interval.. from AIS_BSS_INFO_T */
-			/* p2pIndicationOfMediaStateToHost(prAdapter, PARAM_MEDIA_STATE_CONNECTED,
+			/* 4 <1.6> Indicate Connected Event to
+			 * Host immediately.
+			 * Require BSSID, Association ID, Beacon Interval..
+			 * from AIS_BSS_INFO_T
+			 * p2pIndicationOfMediaStateToHost(prAdapter,
+			 * PARAM_MEDIA_STATE_CONNECTED,
 			 * prStaRec->aucMacAddr);
 			 */
 			if (prJoinInfo->prTargetBssDesc)
 				scanReportBss2Cfg80211(prAdapter,
-						       OP_MODE_P2P_DEVICE, prJoinInfo->prTargetBssDesc);
+					OP_MODE_P2P_DEVICE,
+					prJoinInfo->prTargetBssDesc);
 #if CFG_WPS_DISCONNECT || (KERNEL_VERSION(4, 4, 0) <= CFG80211_VERSION_CODE)
 			kalP2PGCIndicateConnectionStatus(prAdapter->prGlueInfo,
-							prP2pRoleFsmInfo->ucRoleIndex,
-							&prP2pRoleFsmInfo->rConnReqInfo,
-							prJoinInfo->aucIEBuf,
-							prJoinInfo->u4BufLength,
-							prStaRec->u2StatusCode,
-							WLAN_STATUS_MEDIA_DISCONNECT);
+				prP2pRoleFsmInfo->ucRoleIndex,
+				&prP2pRoleFsmInfo->rConnReqInfo,
+				prJoinInfo->aucIEBuf,
+				prJoinInfo->u4BufLength,
+				prStaRec->u2StatusCode,
+				WLAN_STATUS_MEDIA_DISCONNECT);
 #else
 			kalP2PGCIndicateConnectionStatus(prAdapter->prGlueInfo,
-							prP2pRoleFsmInfo->ucRoleIndex,
-							&prP2pRoleFsmInfo->rConnReqInfo,
-							prJoinInfo->aucIEBuf,
-							prJoinInfo->u4BufLength,
-							prStaRec->u2StatusCode);
+				prP2pRoleFsmInfo->ucRoleIndex,
+				&prP2pRoleFsmInfo->rConnReqInfo,
+				prJoinInfo->aucIEBuf,
+				prJoinInfo->u4BufLength,
+				prStaRec->u2StatusCode);
 
 #endif
 
@@ -1808,8 +2249,12 @@ void p2pRoleFsmRunEventJoinComplete(IN struct ADAPTER *prAdapter, IN struct MSG_
 
 		} else {
 			/* Join Fail */
-			/* 4 <2.1> Redo JOIN process with other Auth Type if possible */
-			if (p2pFuncRetryJOIN(prAdapter, prStaRec, prJoinInfo) == FALSE) {
+			/* 4 <2.1> Redo JOIN process
+			 * with other Auth Type if possible
+			 */
+			if (p2pFuncRetryJOIN(prAdapter,
+				prStaRec, prJoinInfo) == FALSE) {
+
 				struct BSS_DESC *prBssDesc;
 
 				/* Increase Failure Count */
@@ -1823,20 +2268,22 @@ void p2pRoleFsmRunEventJoinComplete(IN struct ADAPTER *prAdapter, IN struct MSG_
 				prBssDesc->fgIsConnecting = FALSE;
 
 #if CFG_WPS_DISCONNECT || (KERNEL_VERSION(4, 4, 0) <= CFG80211_VERSION_CODE)
-				kalP2PGCIndicateConnectionStatus(prAdapter->prGlueInfo,
-						prP2pRoleFsmInfo->ucRoleIndex,
-						&prP2pRoleFsmInfo->rConnReqInfo,
-						prJoinInfo->aucIEBuf,
-						prJoinInfo->u4BufLength,
-						prStaRec->u2StatusCode,
-						WLAN_STATUS_MEDIA_DISCONNECT);
+				kalP2PGCIndicateConnectionStatus(
+					prAdapter->prGlueInfo,
+					prP2pRoleFsmInfo->ucRoleIndex,
+					&prP2pRoleFsmInfo->rConnReqInfo,
+					prJoinInfo->aucIEBuf,
+					prJoinInfo->u4BufLength,
+					prStaRec->u2StatusCode,
+					WLAN_STATUS_MEDIA_DISCONNECT);
 #else
-				kalP2PGCIndicateConnectionStatus(prAdapter->prGlueInfo,
-						prP2pRoleFsmInfo->ucRoleIndex,
-						&prP2pRoleFsmInfo->rConnReqInfo,
-						prJoinInfo->aucIEBuf,
-						prJoinInfo->u4BufLength,
-						prStaRec->u2StatusCode);
+				kalP2PGCIndicateConnectionStatus(
+					prAdapter->prGlueInfo,
+					prP2pRoleFsmInfo->ucRoleIndex,
+					&prP2pRoleFsmInfo->rConnReqInfo,
+					prJoinInfo->aucIEBuf,
+					prJoinInfo->u4BufLength,
+					prStaRec->u2StatusCode);
 #endif
 
 			}
@@ -1846,7 +2293,9 @@ void p2pRoleFsmRunEventJoinComplete(IN struct ADAPTER *prAdapter, IN struct MSG_
 
 	if (prP2pRoleFsmInfo->eCurrentState == P2P_ROLE_STATE_GC_JOIN) {
 		/* Return to IDLE state. */
-		p2pRoleFsmStateTransition(prAdapter, prP2pRoleFsmInfo, P2P_ROLE_STATE_IDLE);
+		p2pRoleFsmStateTransition(prAdapter,
+			prP2pRoleFsmInfo,
+			P2P_ROLE_STATE_IDLE);
 	}
 
 error:
@@ -1856,13 +2305,18 @@ error:
 	cnmMemFree(prAdapter, prMsgHdr);
 }				/* p2pRoleFsmRunEventJoinComplete */
 
-void p2pRoleFsmRunEventScanRequest(IN struct ADAPTER *prAdapter, IN struct MSG_HDR *prMsgHdr)
+void p2pRoleFsmRunEventScanRequest(IN struct ADAPTER *prAdapter,
+		IN struct MSG_HDR *prMsgHdr)
 {
-	struct MSG_P2P_SCAN_REQUEST *prP2pScanReqMsg = (struct MSG_P2P_SCAN_REQUEST *) NULL;
-	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo = (struct P2P_ROLE_FSM_INFO *) NULL;
-	struct P2P_SCAN_REQ_INFO *prScanReqInfo = (struct P2P_SCAN_REQ_INFO *) NULL;
+	struct MSG_P2P_SCAN_REQUEST *prP2pScanReqMsg =
+		(struct MSG_P2P_SCAN_REQUEST *) NULL;
+	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo =
+		(struct P2P_ROLE_FSM_INFO *) NULL;
+	struct P2P_SCAN_REQ_INFO *prScanReqInfo =
+		(struct P2P_SCAN_REQ_INFO *) NULL;
 	uint32_t u4ChnlListSize = 0;
-	struct P2P_SSID_STRUCT *prP2pSsidStruct = (struct P2P_SSID_STRUCT *) NULL;
+	struct P2P_SSID_STRUCT *prP2pSsidStruct =
+		(struct P2P_SSID_STRUCT *) NULL;
 	struct BSS_INFO *prP2pBssInfo = NULL;
 
 
@@ -1870,7 +2324,9 @@ void p2pRoleFsmRunEventScanRequest(IN struct ADAPTER *prAdapter, IN struct MSG_H
 
 	prP2pBssInfo = prAdapter->aprBssInfo[prP2pScanReqMsg->ucBssIdx];
 
-	prP2pRoleFsmInfo = P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prAdapter, prP2pBssInfo->u4PrivateData);
+	prP2pRoleFsmInfo =
+		P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prAdapter,
+			prP2pBssInfo->u4PrivateData);
 
 	if (!prP2pRoleFsmInfo) {
 		DBGLOG(P2P, ERROR, "prP2pRoleFsmInfo is NULL!");
@@ -1895,15 +2351,22 @@ void p2pRoleFsmRunEventScanRequest(IN struct ADAPTER *prAdapter, IN struct MSG_H
 
 		/* Channel List */
 		prScanReqInfo->ucNumChannelList = prP2pScanReqMsg->u4NumChannel;
-		DBGLOG(P2P, TRACE, "Scan Request Channel List Number: %d\n", prScanReqInfo->ucNumChannelList);
-		if (prScanReqInfo->ucNumChannelList > MAXIMUM_OPERATION_CHANNEL_LIST) {
+		DBGLOG(P2P, TRACE,
+			"Scan Request Channel List Number: %d\n",
+			prScanReqInfo->ucNumChannelList);
+		if (prScanReqInfo->ucNumChannelList
+			> MAXIMUM_OPERATION_CHANNEL_LIST) {
 			DBGLOG(P2P, TRACE,
-			       "Channel List Number Overloaded: %d, change to: %d\n",
-			       prScanReqInfo->ucNumChannelList, MAXIMUM_OPERATION_CHANNEL_LIST);
-			prScanReqInfo->ucNumChannelList = MAXIMUM_OPERATION_CHANNEL_LIST;
+				"Channel List Number Overloaded: %d, change to: %d\n",
+				prScanReqInfo->ucNumChannelList,
+				MAXIMUM_OPERATION_CHANNEL_LIST);
+			prScanReqInfo->ucNumChannelList =
+				MAXIMUM_OPERATION_CHANNEL_LIST;
 		}
 
-		u4ChnlListSize = sizeof(struct RF_CHANNEL_INFO) * prScanReqInfo->ucNumChannelList;
+		u4ChnlListSize =
+			sizeof(struct RF_CHANNEL_INFO)
+			* prScanReqInfo->ucNumChannelList;
 		kalMemCopy(prScanReqInfo->arScanChannelList,
 			   prP2pScanReqMsg->arChannelListInfo, u4ChnlListSize);
 	} else {
@@ -1916,37 +2379,53 @@ void p2pRoleFsmRunEventScanRequest(IN struct ADAPTER *prAdapter, IN struct MSG_H
 	/* SSID */
 	prP2pSsidStruct = prP2pScanReqMsg->prSSID;
 	for (prScanReqInfo->ucSsidNum = 0;
-	     prScanReqInfo->ucSsidNum < prP2pScanReqMsg->i4SsidNum; prScanReqInfo->ucSsidNum++) {
+	     prScanReqInfo->ucSsidNum < prP2pScanReqMsg->i4SsidNum;
+		 prScanReqInfo->ucSsidNum++) {
 
-		kalMemCopy(prScanReqInfo->arSsidStruct[prScanReqInfo->ucSsidNum].aucSsid,
-			   prP2pSsidStruct->aucSsid, prP2pSsidStruct->ucSsidLen);
+		kalMemCopy(
+			prScanReqInfo->arSsidStruct[prScanReqInfo->ucSsidNum]
+				.aucSsid,
+			prP2pSsidStruct->aucSsid, prP2pSsidStruct->ucSsidLen);
 
-		prScanReqInfo->arSsidStruct[prScanReqInfo->ucSsidNum].ucSsidLen = prP2pSsidStruct->ucSsidLen;
+		prScanReqInfo->arSsidStruct[prScanReqInfo->ucSsidNum]
+				.ucSsidLen =
+			prP2pSsidStruct->ucSsidLen;
 
 		prP2pSsidStruct++;
 	}
 
 	/* IE Buffer */
-	kalMemCopy(prScanReqInfo->aucIEBuf, prP2pScanReqMsg->pucIEBuf, prP2pScanReqMsg->u4IELen);
+	kalMemCopy(prScanReqInfo->aucIEBuf,
+		prP2pScanReqMsg->pucIEBuf,
+		prP2pScanReqMsg->u4IELen);
 
 	prScanReqInfo->u4BufLength = prP2pScanReqMsg->u4IELen;
 
-	p2pRoleFsmStateTransition(prAdapter, prP2pRoleFsmInfo, P2P_ROLE_STATE_SCAN);
+	p2pRoleFsmStateTransition(prAdapter,
+		prP2pRoleFsmInfo,
+		P2P_ROLE_STATE_SCAN);
 
 error:
 	cnmMemFree(prAdapter, prMsgHdr);
 }				/* p2pDevFsmRunEventScanRequest */
 
 void
-p2pRoleFsmRunEventScanDone(IN struct ADAPTER *prAdapter, IN struct MSG_HDR *prMsgHdr, IN struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo)
+p2pRoleFsmRunEventScanDone(IN struct ADAPTER *prAdapter,
+	IN struct MSG_HDR *prMsgHdr,
+	IN struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo)
 {
-	struct MSG_SCN_SCAN_DONE *prScanDoneMsg = (struct MSG_SCN_SCAN_DONE *) prMsgHdr;
-	struct P2P_SCAN_REQ_INFO *prScanReqInfo = (struct P2P_SCAN_REQ_INFO *) NULL;
+	struct MSG_SCN_SCAN_DONE *prScanDoneMsg =
+		(struct MSG_SCN_SCAN_DONE *) prMsgHdr;
+	struct P2P_SCAN_REQ_INFO *prScanReqInfo =
+		(struct P2P_SCAN_REQ_INFO *) NULL;
 	enum ENUM_P2P_ROLE_STATE eNextState = P2P_ROLE_STATE_NUM;
-	struct P2P_CONNECTION_REQ_INFO *prConnReqInfo = &(prP2pRoleFsmInfo->rConnReqInfo);
-	struct P2P_JOIN_INFO *prP2pJoinInfo = &(prP2pRoleFsmInfo->rJoinInfo);
+	struct P2P_CONNECTION_REQ_INFO *prConnReqInfo =
+		&(prP2pRoleFsmInfo->rConnReqInfo);
+	struct P2P_JOIN_INFO *prP2pJoinInfo =
+		&(prP2pRoleFsmInfo->rJoinInfo);
 	struct BSS_INFO *prP2pBssInfo = (struct BSS_INFO *) NULL;
-	struct P2P_CHNL_REQ_INFO *prChnlReqInfo = (struct P2P_CHNL_REQ_INFO *) NULL;
+	struct P2P_CHNL_REQ_INFO *prChnlReqInfo =
+		(struct P2P_CHNL_REQ_INFO *) NULL;
 #if CFG_SUPPORT_DBDC
 	struct CNM_DBDC_CAP rDbdcCap;
 #endif /*CFG_SUPPORT_DBDC*/
@@ -1970,7 +2449,8 @@ p2pRoleFsmRunEventScanDone(IN struct ADAPTER *prAdapter, IN struct MSG_HDR *prMs
 		 */
 		DBGLOG(P2P, TRACE,
 		       "P2P Role Scan Don SeqNum Received:%d <-> P2P Role Fsm SCAN Seq Issued:%d\n",
-		       prScanDoneMsg->ucSeqNum, prScanReqInfo->ucSeqNumOfScnMsg);
+		       prScanDoneMsg->ucSeqNum,
+		       prScanReqInfo->ucSeqNumOfScnMsg);
 
 		goto error;
 	}
@@ -1983,29 +2463,35 @@ p2pRoleFsmRunEventScanDone(IN struct ADAPTER *prAdapter, IN struct MSG_HDR *prMs
 
 			prP2pJoinInfo->prTargetBssDesc =
 				p2pFuncKeepOnConnection(prAdapter,
-							prAdapter->aprBssInfo[prP2pRoleFsmInfo->ucBssIndex],
-							prConnReqInfo,
-							&prP2pRoleFsmInfo->rChnlReqInfo,
-							&prP2pRoleFsmInfo->rScanReqInfo);
+					prAdapter->aprBssInfo
+						[prP2pRoleFsmInfo->ucBssIndex],
+					prConnReqInfo,
+					&prP2pRoleFsmInfo->rChnlReqInfo,
+					&prP2pRoleFsmInfo->rScanReqInfo);
 			if ((prP2pJoinInfo->prTargetBssDesc) == NULL) {
 				eNextState = P2P_ROLE_STATE_SCAN;
 			} else {
-				prP2pBssInfo = prAdapter->aprBssInfo[prP2pRoleFsmInfo->ucBssIndex];
+				prP2pBssInfo =
+					prAdapter->aprBssInfo
+						[prP2pRoleFsmInfo->ucBssIndex];
 				if (!prP2pBssInfo)
 					break;
-				prChnlReqInfo = &(prP2pRoleFsmInfo->rChnlReqInfo);
+				prChnlReqInfo =
+					&(prP2pRoleFsmInfo->rChnlReqInfo);
 				if (!prChnlReqInfo)
 					break;
 #if CFG_SUPPORT_DBDC
-				kalMemZero(&rDbdcCap, sizeof(struct CNM_DBDC_CAP));
+				kalMemZero(&rDbdcCap,
+					sizeof(struct CNM_DBDC_CAP));
 				cnmDbdcEnableDecision(prAdapter,
-									prP2pRoleFsmInfo->ucBssIndex,
-									prChnlReqInfo->eBand);
+					prP2pRoleFsmInfo->ucBssIndex,
+					prChnlReqInfo->eBand);
 				cnmGetDbdcCapability(prAdapter,
 					prP2pRoleFsmInfo->ucBssIndex,
 					prChnlReqInfo->eBand,
 					prChnlReqInfo->ucReqChnlNum,
-					wlanGetSupportNss(prAdapter, prP2pRoleFsmInfo->ucBssIndex),
+					wlanGetSupportNss(prAdapter,
+					prP2pRoleFsmInfo->ucBssIndex),
 					&rDbdcCap);
 
 				DBGLOG(P2P, INFO,
@@ -2015,7 +2501,8 @@ p2pRoleFsmRunEventScanDone(IN struct ADAPTER *prAdapter, IN struct MSG_HDR *prMs
 
 
 				prP2pBssInfo->ucNss = rDbdcCap.ucNss;
-				prP2pBssInfo->ucWmmQueSet = rDbdcCap.ucWmmSetIndex;
+				prP2pBssInfo->ucWmmQueSet =
+					rDbdcCap.ucWmmSetIndex;
 
 #endif
 				/* For GC join. */
@@ -2029,7 +2516,9 @@ p2pRoleFsmRunEventScanDone(IN struct ADAPTER *prAdapter, IN struct MSG_HDR *prMs
 		eNextState = P2P_ROLE_STATE_REQING_CHANNEL;
 		break;
 	default:
-		/* Unexpected channel scan done event without being chanceled. */
+		/* Unexpected channel scan done event
+		 * without being chanceled.
+		 */
 		ASSERT(FALSE);
 		break;
 	}
@@ -2045,9 +2534,11 @@ error:
 
 void
 p2pRoleFsmRunEventChnlGrant(IN struct ADAPTER *prAdapter,
-			    IN struct MSG_HDR *prMsgHdr, IN struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo)
+		IN struct MSG_HDR *prMsgHdr,
+		IN struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo)
 {
-	struct P2P_CHNL_REQ_INFO *prChnlReqInfo = (struct P2P_CHNL_REQ_INFO *) NULL;
+	struct P2P_CHNL_REQ_INFO *prChnlReqInfo =
+		(struct P2P_CHNL_REQ_INFO *) NULL;
 	struct MSG_CH_GRANT *prMsgChGrant = (struct MSG_CH_GRANT *) NULL;
 #if (CFG_SUPPORT_DFS_MASTER == 1)
 	struct BSS_INFO *prP2pBssInfo = (struct BSS_INFO *) NULL;
@@ -2068,13 +2559,16 @@ p2pRoleFsmRunEventChnlGrant(IN struct ADAPTER *prAdapter,
 	prChnlReqInfo = &(prP2pRoleFsmInfo->rChnlReqInfo);
 
 #if (CFG_SUPPORT_DFS_MASTER == 1)
-	prP2pBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prMsgChGrant->ucBssIndex);
+	prP2pBssInfo =
+		GET_BSS_INFO_BY_INDEX(prAdapter,
+			prMsgChGrant->ucBssIndex);
 #endif
 	if (prChnlReqInfo->u4MaxInterval != prMsgChGrant->u4GrantInterval) {
 		DBGLOG(P2P, WARN,
-		       "P2P Role:%d Request Channel Interval:%d, Grant Interval:%d\n",
-		       prP2pRoleFsmInfo->ucRoleIndex, prChnlReqInfo->u4MaxInterval,
-		       prMsgChGrant->u4GrantInterval);
+			"P2P Role:%d Request Channel Interval:%d, Grant Interval:%d\n",
+			prP2pRoleFsmInfo->ucRoleIndex,
+			prChnlReqInfo->u4MaxInterval,
+			prMsgChGrant->u4GrantInterval);
 		prChnlReqInfo->u4MaxInterval = prMsgChGrant->u4GrantInterval;
 	}
 
@@ -2098,7 +2592,8 @@ p2pRoleFsmRunEventChnlGrant(IN struct ADAPTER *prAdapter,
 				break;
 			}
 
-			p2pRoleFsmStateTransition(prAdapter, prP2pRoleFsmInfo, eNextState);
+			p2pRoleFsmStateTransition(prAdapter,
+				prP2pRoleFsmInfo, eNextState);
 			break;
 
 #if (CFG_SUPPORT_DFS_MASTER == 1)
@@ -2106,35 +2601,47 @@ p2pRoleFsmRunEventChnlGrant(IN struct ADAPTER *prAdapter,
 			p2pFuncStartRdd(prAdapter, prMsgChGrant->ucBssIndex);
 
 			if (p2pFuncCheckWeatherRadarBand(prChnlReqInfo))
-				u4CacTimeMs = P2P_AP_CAC_WEATHER_CHNL_HOLD_TIME_MS;
+				u4CacTimeMs =
+					P2P_AP_CAC_WEATHER_CHNL_HOLD_TIME_MS;
 			else
-				u4CacTimeMs = prP2pRoleFsmInfo->rChnlReqInfo.u4MaxInterval;
+				u4CacTimeMs =
+					prP2pRoleFsmInfo->rChnlReqInfo
+						.u4MaxInterval;
 
 			if (p2pFuncIsManualCac())
 				u4CacTimeMs = p2pFuncGetDriverCacTime() * 1000;
 			else
 				p2pFuncSetDriverCacTime(u4CacTimeMs/1000);
 
-			cnmTimerStartTimer(prAdapter, &(prP2pRoleFsmInfo->rP2pRoleFsmTimeoutTimer),
+			cnmTimerStartTimer(prAdapter,
+				&(prP2pRoleFsmInfo->rP2pRoleFsmTimeoutTimer),
 				u4CacTimeMs);
 
 			p2pFuncRecordCacStartBootTime();
 
 			p2pFuncSetDfsState(DFS_STATE_CHECKING);
 
-			DBGLOG(P2P, INFO, "p2pRoleFsmRunEventChnlGrant: CAC time = %ds\n",
+			DBGLOG(P2P, INFO,
+				"p2pRoleFsmRunEventChnlGrant: CAC time = %ds\n",
 				u4CacTimeMs/1000);
 			break;
 		case P2P_ROLE_STATE_SWITCH_CHANNEL:
-			p2pFuncDfsSwitchCh(prAdapter, prP2pBssInfo, prP2pRoleFsmInfo->rChnlReqInfo);
-			p2pRoleFsmStateTransition(prAdapter, prP2pRoleFsmInfo, P2P_ROLE_STATE_IDLE);
+			p2pFuncDfsSwitchCh(prAdapter,
+				prP2pBssInfo,
+				prP2pRoleFsmInfo->rChnlReqInfo);
+			p2pRoleFsmStateTransition(prAdapter,
+				prP2pRoleFsmInfo,
+				P2P_ROLE_STATE_IDLE);
 			break;
 #endif
 		default:
 			/* Channel is granted under unexpected state.
-			 * Driver should cancel channel privileagea before leaving the states.
+			 * Driver should cancel channel privileagea
+			 * before leaving the states.
 			 */
-			if (IS_BSS_ACTIVE(prAdapter->aprBssInfo[prP2pRoleFsmInfo->ucBssIndex])) {
+			if (IS_BSS_ACTIVE(
+				prAdapter->aprBssInfo
+					[prP2pRoleFsmInfo->ucBssIndex])) {
 				DBGLOG(P2P, WARN,
 				       "p2pRoleFsmRunEventChnlGrant: Invalid CurrentState:%d\n",
 				       prP2pRoleFsmInfo->eCurrentState);
@@ -2146,7 +2653,8 @@ p2pRoleFsmRunEventChnlGrant(IN struct ADAPTER *prAdapter,
 		/* Channel requsted, but released. */
 		ASSERT(!prChnlReqInfo->fgIsChannelRequested);
 		if (prChnlReqInfo->fgIsChannelRequested)
-			DBGLOG(P2P, ERROR, "Channel was requested, but released!\n");
+			DBGLOG(P2P, ERROR,
+				"Channel was requested, but released!\n");
 	}
 
 error:
@@ -2154,7 +2662,8 @@ error:
 }				/* p2pRoleFsmRunEventChnlGrant */
 
 /* ////////////////////////////////////// */
-void p2pRoleFsmRunEventDissolve(IN struct ADAPTER *prAdapter, IN struct MSG_HDR *prMsgHdr)
+void p2pRoleFsmRunEventDissolve(IN struct ADAPTER *prAdapter,
+		IN struct MSG_HDR *prMsgHdr)
 {
 	/* TODO: */
 
@@ -2164,15 +2673,15 @@ void p2pRoleFsmRunEventDissolve(IN struct ADAPTER *prAdapter, IN struct MSG_HDR 
 
 /*----------------------------------------------------------------------------*/
 /*!
-* @	This routine update the current MAC table based on the current ACL.
-*	If ACL change causing an associated STA become un-authorized. This STA
-*	will be kicked out immediately.
-*
-* @param[in] prAdapter          Pointer to the Adapter structure.
-* @param[in] ucBssIdx            Bss index.
-*
-* @return (none)
-*/
+ * @	This routine update the current MAC table based on the current ACL.
+ *	If ACL change causing an associated STA become un-authorized. This STA
+ *	will be kicked out immediately.
+ *
+ * @param[in] prAdapter          Pointer to the Adapter structure.
+ * @param[in] ucBssIdx            Bss index.
+ *
+ * @return (none)
+ */
 /*----------------------------------------------------------------------------*/
 void p2pRoleUpdateACLEntry(IN struct ADAPTER *prAdapter, IN uint8_t ucBssIdx)
 {
@@ -2196,42 +2705,58 @@ void p2pRoleUpdateACLEntry(IN struct ADAPTER *prAdapter, IN uint8_t ucBssIdx)
 
 	prClientList = &prP2pBssInfo->rStaRecOfClientList;
 
-	LINK_FOR_EACH_ENTRY_SAFE(prCurrStaRec, prNextStaRec, prClientList, rLinkEntry, struct STA_RECORD) {
+	LINK_FOR_EACH_ENTRY_SAFE(prCurrStaRec,
+		prNextStaRec, prClientList, rLinkEntry, struct STA_RECORD) {
 		bMatchACL = FALSE;
 		for (i = 0; i < prP2pBssInfo->rACL.u4Num; i++) {
-			if (EQUAL_MAC_ADDR(prCurrStaRec->aucMacAddr, prP2pBssInfo->rACL.rEntry[i].aucAddr)) {
+			if (EQUAL_MAC_ADDR(prCurrStaRec->aucMacAddr,
+				prP2pBssInfo->rACL.rEntry[i].aucAddr)) {
 				bMatchACL = TRUE;
 				break;
 			}
 		}
 
-		if (((!bMatchACL) && (prP2pBssInfo->rACL.ePolicy == PARAM_CUSTOM_ACL_POLICY_ACCEPT)) ||
-			((bMatchACL) && (prP2pBssInfo->rACL.ePolicy == PARAM_CUSTOM_ACL_POLICY_DENY))) {
+		if (((!bMatchACL) &&
+			(prP2pBssInfo->rACL.ePolicy
+				== PARAM_CUSTOM_ACL_POLICY_ACCEPT))
+			|| ((bMatchACL) &&
+			(prP2pBssInfo->rACL.ePolicy
+				== PARAM_CUSTOM_ACL_POLICY_DENY))) {
 
-			DBGLOG(P2P, TRACE, "ucBssIdx=%d, ACL Policy=%d\n", ucBssIdx, prP2pBssInfo->rACL.ePolicy);
+			DBGLOG(P2P, TRACE,
+				"ucBssIdx=%d, ACL Policy=%d\n",
+				ucBssIdx, prP2pBssInfo->rACL.ePolicy);
 
-			i4Ret = assocSendDisAssocFrame(prAdapter, prCurrStaRec, STATUS_CODE_REQ_DECLINED);
+			i4Ret = assocSendDisAssocFrame(prAdapter,
+				prCurrStaRec,
+				STATUS_CODE_REQ_DECLINED);
 			if (!i4Ret)
-				DBGLOG(P2P, TRACE, "Send DISASSOC to [" MACSTR "], Reason = %d\n",
-					MAC2STR(prCurrStaRec->aucMacAddr), STATUS_CODE_REQ_DECLINED);
-			LINK_REMOVE_KNOWN_ENTRY(prClientList, &prCurrStaRec->rLinkEntry);
+				DBGLOG(P2P, TRACE,
+				"Send DISASSOC to [" MACSTR "], Reason = %d\n",
+				MAC2STR(prCurrStaRec->aucMacAddr),
+				STATUS_CODE_REQ_DECLINED);
+			LINK_REMOVE_KNOWN_ENTRY(prClientList,
+				&prCurrStaRec->rLinkEntry);
 		}
 	}
 } /* p2pRoleUpdateACLEntry */
 
 /*----------------------------------------------------------------------------*/
 /*!
-* @ Check if the specified STA pass the Access Control List inspection.
-*	If fails to pass the checking, then no authentication or association is allowed.
-*
-* @param[in] prAdapter          Pointer to the Adapter structure.
-* @param[in] pMacAddr           Pointer to the mac address.
-* @param[in] ucBssIdx            Bss index.
-*
-* @return TRUE - pass ACL inspection, FALSE - ACL inspection fail
-*/
+ * @ Check if the specified STA pass the Access Control List inspection.
+ *	If fails to pass the checking,
+ *  then no authentication or association is allowed.
+ *
+ * @param[in] prAdapter          Pointer to the Adapter structure.
+ * @param[in] pMacAddr           Pointer to the mac address.
+ * @param[in] ucBssIdx            Bss index.
+ *
+ * @return TRUE - pass ACL inspection, FALSE - ACL inspection fail
+ */
 /*----------------------------------------------------------------------------*/
-u_int8_t p2pRoleProcessACLInspection(IN struct ADAPTER *prAdapter, IN uint8_t *pMacAddr, IN uint8_t ucBssIdx)
+u_int8_t p2pRoleProcessACLInspection(IN struct ADAPTER *prAdapter,
+		IN uint8_t *pMacAddr,
+		IN uint8_t ucBssIdx)
 {
 	u_int8_t bPassACL = TRUE;
 	int32_t i = 0;
@@ -2253,46 +2778,57 @@ u_int8_t p2pRoleProcessACLInspection(IN struct ADAPTER *prAdapter, IN uint8_t *p
 		bPassACL = TRUE;
 
 	for (i = 0; i < prP2pBssInfo->rACL.u4Num; i++) {
-		if (EQUAL_MAC_ADDR(pMacAddr, prP2pBssInfo->rACL.rEntry[i].aucAddr)) {
+		if (EQUAL_MAC_ADDR(pMacAddr,
+			prP2pBssInfo->rACL.rEntry[i].aucAddr)) {
 			bPassACL = !bPassACL;
 			break;
 		}
 	}
 
 	if (bPassACL == FALSE)
-		DBGLOG(P2P, WARN, "this mac [" MACSTR "] is fail to pass ACL inspection.\n", MAC2STR(pMacAddr));
+		DBGLOG(P2P, WARN,
+		"this mac [" MACSTR "] is fail to pass ACL inspection.\n",
+		MAC2STR(pMacAddr));
 
 	return bPassACL;
 } /* p2pRoleProcessACLInspection */
 
 /*----------------------------------------------------------------------------*/
 /*!
-* @brief This function will indicate the Event of Successful Completion of AAA Module.
-*
-* @param[in] prAdapter          Pointer to the Adapter structure.
-* @param[in] prStaRec           Pointer to the STA_RECORD_T
-*
-* @return (none)
-*/
+ * @brief This function will indicate the Event
+ *           of Successful Completion of AAA Module.
+ *
+ * @param[in] prAdapter          Pointer to the Adapter structure.
+ * @param[in] prStaRec           Pointer to the STA_RECORD_T
+ *
+ * @return (none)
+ */
 /*----------------------------------------------------------------------------*/
 uint32_t
-p2pRoleFsmRunEventAAAComplete(IN struct ADAPTER *prAdapter, IN struct STA_RECORD *prStaRec, IN struct BSS_INFO *prP2pBssInfo)
+p2pRoleFsmRunEventAAAComplete(IN struct ADAPTER *prAdapter,
+		IN struct STA_RECORD *prStaRec,
+		IN struct BSS_INFO *prP2pBssInfo)
 {
 	uint32_t rStatus = WLAN_STATUS_SUCCESS;
 	enum ENUM_PARAM_MEDIA_STATE eOriMediaState;
 
 	do {
-		ASSERT_BREAK((prAdapter != NULL) && (prStaRec != NULL) && (prP2pBssInfo != NULL));
+		ASSERT_BREAK((prAdapter != NULL)
+			&& (prStaRec != NULL) && (prP2pBssInfo != NULL));
 
 		eOriMediaState = prP2pBssInfo->eConnectionState;
 
 		bssRemoveClient(prAdapter, prP2pBssInfo, prStaRec);
 
-		if (prP2pBssInfo->rStaRecOfClientList.u4NumElem >= P2P_MAXIMUM_CLIENT_COUNT
-			|| !p2pRoleProcessACLInspection(prAdapter, prStaRec->aucMacAddr, prP2pBssInfo->ucBssIndex)
+		if (prP2pBssInfo->rStaRecOfClientList.u4NumElem
+			>= P2P_MAXIMUM_CLIENT_COUNT
+			|| !p2pRoleProcessACLInspection(prAdapter,
+					prStaRec->aucMacAddr,
+					prP2pBssInfo->ucBssIndex)
 #if CFG_SUPPORT_HOTSPOT_WPS_MANAGER
-			|| kalP2PMaxClients(prAdapter->prGlueInfo, prP2pBssInfo->rStaRecOfClientList.u4NumElem,
-			(uint8_t) prP2pBssInfo->u4PrivateData)
+			|| kalP2PMaxClients(prAdapter->prGlueInfo,
+				prP2pBssInfo->rStaRecOfClientList.u4NumElem,
+				(uint8_t) prP2pBssInfo->u4PrivateData)
 #endif
 		) {
 			rStatus = WLAN_STATUS_RESOURCES;
@@ -2305,7 +2841,9 @@ p2pRoleFsmRunEventAAAComplete(IN struct ADAPTER *prAdapter, IN struct STA_RECORD
 
 		cnmStaRecChangeState(prAdapter, prStaRec, STA_STATE_3);
 
-		p2pChangeMediaState(prAdapter, prP2pBssInfo, PARAM_MEDIA_STATE_CONNECTED);
+		p2pChangeMediaState(prAdapter,
+			prP2pBssInfo,
+			PARAM_MEDIA_STATE_CONNECTED);
 
 		/* Update Connected state to FW. */
 		if (eOriMediaState != prP2pBssInfo->eConnectionState)
@@ -2318,24 +2856,30 @@ p2pRoleFsmRunEventAAAComplete(IN struct ADAPTER *prAdapter, IN struct STA_RECORD
 
 /*----------------------------------------------------------------------------*/
 /*!
-* @brief This function will indicate the Event of Successful Completion of AAA Module.
-*
-* @param[in] prAdapter          Pointer to the Adapter structure.
-* @param[in] prStaRec           Pointer to the STA_RECORD_T
-*
-* @return (none)
-*/
+ * @brief This function will indicate the Event
+ *           of Successful Completion of AAA Module.
+ *
+ * @param[in] prAdapter          Pointer to the Adapter structure.
+ * @param[in] prStaRec           Pointer to the STA_RECORD_T
+ *
+ * @return (none)
+ */
 /*----------------------------------------------------------------------------*/
 uint32_t
-p2pRoleFsmRunEventAAASuccess(IN struct ADAPTER *prAdapter, IN struct STA_RECORD *prStaRec, IN struct BSS_INFO *prP2pBssInfo)
+p2pRoleFsmRunEventAAASuccess(IN struct ADAPTER *prAdapter,
+		IN struct STA_RECORD *prStaRec,
+		IN struct BSS_INFO *prP2pBssInfo)
 {
 	uint32_t rStatus = WLAN_STATUS_SUCCESS;
-	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo = (struct P2P_ROLE_FSM_INFO *) NULL;
+	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo =
+		(struct P2P_ROLE_FSM_INFO *) NULL;
 
 	do {
-		ASSERT_BREAK((prAdapter != NULL) && (prStaRec != NULL) && (prP2pBssInfo != NULL));
+		ASSERT_BREAK((prAdapter != NULL)
+			&& (prStaRec != NULL) && (prP2pBssInfo != NULL));
 
-		if ((prP2pBssInfo->eNetworkType != NETWORK_TYPE_P2P) || (prP2pBssInfo->u4PrivateData >= BSS_P2P_NUM)) {
+		if ((prP2pBssInfo->eNetworkType != NETWORK_TYPE_P2P)
+			|| (prP2pBssInfo->u4PrivateData >= BSS_P2P_NUM)) {
 			ASSERT(FALSE);
 			rStatus = WLAN_STATUS_INVALID_DATA;
 			break;
@@ -2343,10 +2887,13 @@ p2pRoleFsmRunEventAAASuccess(IN struct ADAPTER *prAdapter, IN struct STA_RECORD 
 
 		ASSERT(prP2pBssInfo->ucBssIndex < prAdapter->ucP2PDevBssIdx);
 
-		prP2pRoleFsmInfo = P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prAdapter, prP2pBssInfo->u4PrivateData);
+		prP2pRoleFsmInfo =
+			P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prAdapter,
+				prP2pBssInfo->u4PrivateData);
 
 		/* Glue layer indication. */
-		kalP2PGOStationUpdate(prAdapter->prGlueInfo, prP2pRoleFsmInfo->ucRoleIndex, prStaRec, TRUE);
+		kalP2PGOStationUpdate(prAdapter->prGlueInfo,
+			prP2pRoleFsmInfo->ucRoleIndex, prStaRec, TRUE);
 
 	} while (FALSE);
 
@@ -2355,34 +2902,42 @@ p2pRoleFsmRunEventAAASuccess(IN struct ADAPTER *prAdapter, IN struct STA_RECORD 
 
 /*----------------------------------------------------------------------------*/
 /*!
-* @brief This function will indicate the Event of Tx Fail of AAA Module.
-*
-* @param[in] prAdapter          Pointer to the Adapter structure.
-* @param[in] prStaRec           Pointer to the STA_RECORD_T
-*
-* @return (none)
-*/
+ * @brief This function will indicate the Event
+ *           of Tx Fail of AAA Module.
+ *
+ * @param[in] prAdapter          Pointer to the Adapter structure.
+ * @param[in] prStaRec           Pointer to the STA_RECORD_T
+ *
+ * @return (none)
+ */
 /*----------------------------------------------------------------------------*/
-void p2pRoleFsmRunEventAAATxFail(IN struct ADAPTER *prAdapter, IN struct STA_RECORD *prStaRec, IN struct BSS_INFO *prP2pBssInfo)
+void p2pRoleFsmRunEventAAATxFail(IN struct ADAPTER *prAdapter,
+		IN struct STA_RECORD *prStaRec,
+		IN struct BSS_INFO *prP2pBssInfo)
 {
 	ASSERT(prAdapter);
 	ASSERT(prStaRec);
 
 	bssRemoveClient(prAdapter, prP2pBssInfo, prStaRec);
 
-	p2pFuncDisconnect(prAdapter, prP2pBssInfo, prStaRec, FALSE,
-			  prStaRec->eAuthAssocState == AAA_STATE_SEND_AUTH2 ?
-			  STATUS_CODE_AUTH_TIMEOUT : STATUS_CODE_ASSOC_TIMEOUT);
+	p2pFuncDisconnect(prAdapter,
+		prP2pBssInfo, prStaRec, FALSE,
+		prStaRec->eAuthAssocState == AAA_STATE_SEND_AUTH2
+		? STATUS_CODE_AUTH_TIMEOUT
+		: STATUS_CODE_ASSOC_TIMEOUT);
 
 	/* 20120830 moved into p2puUncDisconnect. */
 	/* cnmStaRecFree(prAdapter, prStaRec); */
 }				/* p2pRoleFsmRunEventAAATxFail */
 
-void p2pRoleFsmRunEventSwitchOPMode(IN struct ADAPTER *prAdapter, IN struct MSG_HDR *prMsgHdr)
+void p2pRoleFsmRunEventSwitchOPMode(IN struct ADAPTER *prAdapter,
+		IN struct MSG_HDR *prMsgHdr)
 {
 	struct BSS_INFO *prP2pBssInfo = (struct BSS_INFO *) NULL;
-	struct MSG_P2P_SWITCH_OP_MODE *prSwitchOpMode = (struct MSG_P2P_SWITCH_OP_MODE *) prMsgHdr;
-	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo = (struct P2P_ROLE_FSM_INFO *) NULL;
+	struct MSG_P2P_SWITCH_OP_MODE *prSwitchOpMode =
+		(struct MSG_P2P_SWITCH_OP_MODE *) prMsgHdr;
+	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo =
+		(struct P2P_ROLE_FSM_INFO *) NULL;
 
 
 	ASSERT(prSwitchOpMode->ucRoleIdx < BSS_P2P_NUM);
@@ -2393,17 +2948,22 @@ void p2pRoleFsmRunEventSwitchOPMode(IN struct ADAPTER *prAdapter, IN struct MSG_
 		goto error;
 	}
 
-	prP2pRoleFsmInfo = prAdapter->rWifiVar.aprP2pRoleFsmInfo[prSwitchOpMode->ucRoleIdx];
+	prP2pRoleFsmInfo =
+		prAdapter->rWifiVar
+			.aprP2pRoleFsmInfo[prSwitchOpMode->ucRoleIdx];
 
 	ASSERT(prP2pRoleFsmInfo->ucBssIndex < prAdapter->ucP2PDevBssIdx);
 	if (!(prP2pRoleFsmInfo->ucBssIndex < prAdapter->ucP2PDevBssIdx)) {
 		DBGLOG(P2P, ERROR,
 			"prP2pRoleFsmInfo->ucBssIndex %d should < prAdapter->ucP2PDevBssIdx(%d)\n",
-			prP2pRoleFsmInfo->ucBssIndex, prAdapter->ucP2PDevBssIdx);
+			prP2pRoleFsmInfo->ucBssIndex,
+			prAdapter->ucP2PDevBssIdx);
 		goto error;
 	}
 
-	prP2pBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prP2pRoleFsmInfo->ucBssIndex);
+	prP2pBssInfo =
+		GET_BSS_INFO_BY_INDEX(prAdapter,
+			prP2pRoleFsmInfo->ucBssIndex);
 
 	if (!(prSwitchOpMode->eOpMode < OP_MODE_NUM)) {
 		DBGLOG(P2P, ERROR,
@@ -2413,20 +2973,27 @@ void p2pRoleFsmRunEventSwitchOPMode(IN struct ADAPTER *prAdapter, IN struct MSG_
 	}
 
 	/* P2P Device / GC. */
-	p2pFuncSwitchOPMode(prAdapter, prP2pBssInfo, prSwitchOpMode->eOpMode, TRUE);
+	p2pFuncSwitchOPMode(prAdapter,
+		prP2pBssInfo,
+		prSwitchOpMode->eOpMode,
+		TRUE);
 
 error:
 	cnmMemFree(prAdapter, prMsgHdr);
 }				/* p2pRoleFsmRunEventSwitchOPMode */
 
-/* /////////////////////////////// TO BE REFINE //////////////////////////////// */
+/* /////////////////////////////// TO BE REFINE //////////////////////////// */
 
-void p2pRoleFsmRunEventBeaconUpdate(IN struct ADAPTER *prAdapter, IN struct MSG_HDR *prMsgHdr)
+void p2pRoleFsmRunEventBeaconUpdate(IN struct ADAPTER *prAdapter,
+		IN struct MSG_HDR *prMsgHdr)
 {
-	struct P2P_ROLE_FSM_INFO *prRoleP2pFsmInfo = (struct P2P_ROLE_FSM_INFO *) NULL;
+	struct P2P_ROLE_FSM_INFO *prRoleP2pFsmInfo =
+		(struct P2P_ROLE_FSM_INFO *) NULL;
 	struct BSS_INFO *prP2pBssInfo = (struct BSS_INFO *) NULL;
-	struct MSG_P2P_BEACON_UPDATE *prBcnUpdateMsg = (struct MSG_P2P_BEACON_UPDATE *) NULL;
-	struct P2P_BEACON_UPDATE_INFO *prBcnUpdateInfo = (struct P2P_BEACON_UPDATE_INFO *) NULL;
+	struct MSG_P2P_BEACON_UPDATE *prBcnUpdateMsg =
+		(struct MSG_P2P_BEACON_UPDATE *) NULL;
+	struct P2P_BEACON_UPDATE_INFO *prBcnUpdateInfo =
+		(struct P2P_BEACON_UPDATE_INFO *) NULL;
 
 
 	DBGLOG(P2P, TRACE, "p2pRoleFsmRunEventBeaconUpdate\n");
@@ -2435,31 +3002,41 @@ void p2pRoleFsmRunEventBeaconUpdate(IN struct ADAPTER *prAdapter, IN struct MSG_
 	if (prBcnUpdateMsg->ucRoleIndex >= BSS_P2P_NUM)
 		goto error;
 
-	prRoleP2pFsmInfo = P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prAdapter, prBcnUpdateMsg->ucRoleIndex);
+	prRoleP2pFsmInfo =
+		P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prAdapter,
+			prBcnUpdateMsg->ucRoleIndex);
 	if (!prRoleP2pFsmInfo)
 		goto error;
 
-	prP2pBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prRoleP2pFsmInfo->ucBssIndex);
+	prP2pBssInfo =
+		GET_BSS_INFO_BY_INDEX(prAdapter,
+			prRoleP2pFsmInfo->ucBssIndex);
 
 	prBcnUpdateInfo = &(prRoleP2pFsmInfo->rBeaconUpdateInfo);
 
 	p2pFuncBeaconUpdate(prAdapter,
-			    prP2pBssInfo,
-			    prBcnUpdateInfo,
-			    prBcnUpdateMsg->pucBcnHdr,
-			    prBcnUpdateMsg->u4BcnHdrLen,
-			    prBcnUpdateMsg->pucBcnBody, prBcnUpdateMsg->u4BcnBodyLen);
+		prP2pBssInfo,
+		prBcnUpdateInfo,
+		prBcnUpdateMsg->pucBcnHdr,
+		prBcnUpdateMsg->u4BcnHdrLen,
+		prBcnUpdateMsg->pucBcnBody,
+		prBcnUpdateMsg->u4BcnBodyLen);
 
-	if (prBcnUpdateMsg->pucAssocRespIE != NULL && prBcnUpdateMsg->u4AssocRespLen > 0) {
-		DBGLOG(P2P, TRACE, "Copy extra IEs for assoc resp (Length= %d)\n",
-							prBcnUpdateMsg->u4AssocRespLen);
-		DBGLOG_MEM8(P2P, INFO, prBcnUpdateMsg->pucAssocRespIE, prBcnUpdateMsg->u4AssocRespLen);
+	if (prBcnUpdateMsg->pucAssocRespIE != NULL
+		&& prBcnUpdateMsg->u4AssocRespLen > 0) {
+		DBGLOG(P2P, TRACE,
+			"Copy extra IEs for assoc resp (Length= %d)\n",
+			prBcnUpdateMsg->u4AssocRespLen);
+		DBGLOG_MEM8(P2P, INFO,
+			prBcnUpdateMsg->pucAssocRespIE,
+			prBcnUpdateMsg->u4AssocRespLen);
 
 		if (p2pFuncAssocRespUpdate(prAdapter,
 			prP2pBssInfo,
 			prBcnUpdateMsg->pucAssocRespIE,
 			prBcnUpdateMsg->u4AssocRespLen) == WLAN_STATUS_FAILURE)
-			DBGLOG(P2P, ERROR, "Update extra IEs for asso resp fail!\n");
+			DBGLOG(P2P, ERROR,
+				"Update extra IEs for asso resp fail!\n");
 	}
 
 
@@ -2469,7 +3046,8 @@ void p2pRoleFsmRunEventBeaconUpdate(IN struct ADAPTER *prAdapter, IN struct MSG_
 		/* nicPmIndicateBssAbort(prAdapter, NETWORK_TYPE_P2P_INDEX); */
 
 
-		DBGLOG(P2P, TRACE, "p2pRoleFsmRunEventBeaconUpdate with Bssidex(%d)\n",
+		DBGLOG(P2P, TRACE,
+			"p2pRoleFsmRunEventBeaconUpdate with Bssidex(%d)\n",
 			prRoleP2pFsmInfo->ucBssIndex);
 
 		bssUpdateBeaconContent(prAdapter, prRoleP2pFsmInfo->ucBssIndex);
@@ -2479,9 +3057,12 @@ void p2pRoleFsmRunEventBeaconUpdate(IN struct ADAPTER *prAdapter, IN struct MSG_
 			prP2pBssInfo,
 			prBcnUpdateMsg->pucProbeRespIE,
 			prBcnUpdateMsg->u4ProbeRespLen) == WLAN_STATUS_FAILURE)
-			DBGLOG(P2P, ERROR, "Update extra IEs for probe resp fail!\n");
+			DBGLOG(P2P, ERROR,
+				"Update extra IEs for probe resp fail!\n");
 #endif
-		/* nicPmIndicateBssCreated(prAdapter, NETWORK_TYPE_P2P_INDEX); */
+		/* nicPmIndicateBssCreated(prAdapter,
+		 * NETWORK_TYPE_P2P_INDEX);
+		 */
 	}
 error:
 	cnmMemFree(prAdapter, prMsgHdr);
@@ -2490,7 +3071,8 @@ error:
 
 void
 p2pProcessEvent_UpdateNOAParam(IN struct ADAPTER *prAdapter,
-			       IN uint8_t ucBssIdx, IN struct EVENT_UPDATE_NOA_PARAMS *prEventUpdateNoaParam)
+		IN uint8_t ucBssIdx,
+		IN struct EVENT_UPDATE_NOA_PARAMS *prEventUpdateNoaParam)
 {
 	struct BSS_INFO *prBssInfo = (struct BSS_INFO *) NULL;
 	struct P2P_SPECIFIC_BSS_INFO *prP2pSpecificBssInfo;
@@ -2498,12 +3080,16 @@ p2pProcessEvent_UpdateNOAParam(IN struct ADAPTER *prAdapter,
 	u_int8_t fgNoaAttrExisted = FALSE;
 
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIdx);
-	prP2pSpecificBssInfo = prAdapter->rWifiVar.prP2pSpecificBssInfo[prBssInfo->u4PrivateData];
+	prP2pSpecificBssInfo =
+		prAdapter->rWifiVar
+			.prP2pSpecificBssInfo[prBssInfo->u4PrivateData];
 
-	prP2pSpecificBssInfo->fgEnableOppPS = prEventUpdateNoaParam->ucEnableOppPS;
+	prP2pSpecificBssInfo->fgEnableOppPS =
+		prEventUpdateNoaParam->ucEnableOppPS;
 	prP2pSpecificBssInfo->u2CTWindow = prEventUpdateNoaParam->u2CTWindow;
 	prP2pSpecificBssInfo->ucNoAIndex = prEventUpdateNoaParam->ucNoAIndex;
-	prP2pSpecificBssInfo->ucNoATimingCount = prEventUpdateNoaParam->ucNoATimingCount;
+	prP2pSpecificBssInfo->ucNoATimingCount =
+		prEventUpdateNoaParam->ucNoATimingCount;
 
 	fgNoaAttrExisted |= prP2pSpecificBssInfo->fgEnableOppPS;
 
@@ -2511,18 +3097,23 @@ p2pProcessEvent_UpdateNOAParam(IN struct ADAPTER *prAdapter,
 
 	for (i = 0; i < prP2pSpecificBssInfo->ucNoATimingCount; i++) {
 		/* in used */
-		prP2pSpecificBssInfo->arNoATiming[i].fgIsInUse = prEventUpdateNoaParam->arEventNoaTiming[i].ucIsInUse;
+		prP2pSpecificBssInfo->arNoATiming[i].fgIsInUse =
+			prEventUpdateNoaParam->arEventNoaTiming[i].ucIsInUse;
 		/* count */
-		prP2pSpecificBssInfo->arNoATiming[i].ucCount = prEventUpdateNoaParam->arEventNoaTiming[i].ucCount;
+		prP2pSpecificBssInfo->arNoATiming[i].ucCount =
+			prEventUpdateNoaParam->arEventNoaTiming[i].ucCount;
 		/* duration */
-		prP2pSpecificBssInfo->arNoATiming[i].u4Duration = prEventUpdateNoaParam->arEventNoaTiming[i].u4Duration;
+		prP2pSpecificBssInfo->arNoATiming[i].u4Duration =
+			prEventUpdateNoaParam->arEventNoaTiming[i].u4Duration;
 		/* interval */
-		prP2pSpecificBssInfo->arNoATiming[i].u4Interval = prEventUpdateNoaParam->arEventNoaTiming[i].u4Interval;
+		prP2pSpecificBssInfo->arNoATiming[i].u4Interval =
+			prEventUpdateNoaParam->arEventNoaTiming[i].u4Interval;
 		/* start time */
 		prP2pSpecificBssInfo->arNoATiming[i].u4StartTime =
 		    prEventUpdateNoaParam->arEventNoaTiming[i].u4StartTime;
 
-		fgNoaAttrExisted |= prP2pSpecificBssInfo->arNoATiming[i].fgIsInUse;
+		fgNoaAttrExisted |=
+			prP2pSpecificBssInfo->arNoATiming[i].fgIsInUse;
 	}
 
 	prP2pSpecificBssInfo->fgIsNoaAttrExisted = fgNoaAttrExisted;
