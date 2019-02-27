@@ -76,8 +76,10 @@
  *******************************************************************************
  */
 #if CFG_SUPPORT_DBDC
-#define DBDC_SWITCH_GUARD_TIME		(4*1000)	/* ms */
+#define DBDC_SWITCH_GUARD_TIME		(1*1000)	/* ms */
 #define DBDC_DISABLE_COUNTDOWN_TIME	(2*1000)	/* ms */
+#define DBDC_TX_QUOTA_POLLING_TIME	(200)		/* ms */
+#define DBDC_TX_RING_NUM			2
 #endif /* CFG_SUPPORT_DBDC */
 
 #if CFG_SUPPORT_IDC_CH_SWITCH
@@ -127,6 +129,10 @@ struct DBDC_INFO_T {
 
 	struct TIMER rDbdcGuardTimer;
 	enum ENUM_DBDC_GUARD_TIMER_T eDdbcGuardTimerType;
+
+	struct TIMER arTxQuotaWaitingTimer[DBDC_TX_RING_NUM];
+	int32_t i4CurMaxTxQuota[DBDC_TX_RING_NUM];
+	int32_t i4DesiredMaxTxQuota[DBDC_TX_RING_NUM];
 
 	uint8_t fgReqPrivelegeLock;
 	struct LINK rPendingMsgList;
@@ -308,6 +314,11 @@ cnmDbdcFsmEntryFunc_WAIT_HW_DISABLE(
 );
 
 static void
+cnmDbdcFsmEntryFunc_ENABLE_IDLE(
+	IN struct ADAPTER *prAdapter
+);
+
+static void
 cnmDbdcFsmEntryFunc_DISABLE_GUARD(
 	IN struct ADAPTER *prAdapter
 );
@@ -365,6 +376,17 @@ cnmDbdcFsmExitFunc_WAIT_HW_ENABLE(
 	IN struct ADAPTER *prAdapter
 );
 
+static void
+cnmDbdcTxQuotaWaitingCallback(
+	IN struct ADAPTER *prAdapter,
+	IN unsigned long plParamPtr
+);
+
+static void
+cnmDbdcUpdateTxQuota(
+	IN struct ADAPTER *prAdapter
+);
+
 /*******************************************************************************
  *                           P R I V A T E   D A T A 2
  *******************************************************************************
@@ -400,7 +422,7 @@ static struct DBDC_FSM_T arDdbcFsmActionTable[] = {
 
 	/* ENUM_DBDC_FSM_STATE_ENABLE_IDLE */
 	{
-		NULL,
+		cnmDbdcFsmEntryFunc_ENABLE_IDLE,
 		cnmDbdcFsmEventHandler_ENABLE_IDLE,
 		NULL
 	},
@@ -479,8 +501,18 @@ void cnmInit(struct ADAPTER *prAdapter)
 /*----------------------------------------------------------------------------*/
 void cnmUninit(struct ADAPTER *prAdapter)
 {
+#if CFG_SUPPORT_DBDC
+	uint16_t u2PortIdx;
+
 	cnmTimerStopTimer(prAdapter,
 		&g_rDbdcInfo.rDbdcGuardTimer);
+	for (u2PortIdx = 0; u2PortIdx < DBDC_TX_RING_NUM; u2PortIdx++) {
+		cnmTimerStopTimer(prAdapter,
+			&(g_rDbdcInfo.arTxQuotaWaitingTimer[u2PortIdx]));
+		/* Reset TxMaxQuota to unlimit never fail. */
+		halUpdateTxMaxQuota(prAdapter, u2PortIdx, 0xFFF);
+	}
+#endif
 }	/* end of cnmUninit()*/
 
 /*----------------------------------------------------------------------------*/
@@ -2000,6 +2032,8 @@ void cnmFreeBssInfo(struct ADAPTER *prAdapter,
 void cnmInitDbdcSetting(IN struct ADAPTER *prAdapter)
 {
 	struct BSS_OPTRX_BW_BY_SOURCE_T *prBssOpSourceCtrl;
+	int32_t  i4MaxQuota;
+	uint16_t u2PortIdx;
 	uint8_t ucBssLoopIndex;
 
 	DBDC_SET_WMMBAND_FW_AUTO_DEFAULT();
@@ -2023,6 +2057,21 @@ void cnmInitDbdcSetting(IN struct ADAPTER *prAdapter)
 			&g_rDbdcInfo.rDbdcGuardTimer,
 			(PFN_MGMT_TIMEOUT_FUNC)cnmDbdcGuardTimerCallback,
 			(unsigned long) NULL);
+
+		for (u2PortIdx = 0; u2PortIdx < DBDC_TX_RING_NUM; u2PortIdx++) {
+			cnmTimerInitTimer(prAdapter,
+				&(g_rDbdcInfo.arTxQuotaWaitingTimer[u2PortIdx]),
+				(PFN_MGMT_TIMEOUT_FUNC)
+				cnmDbdcTxQuotaWaitingCallback,
+				(unsigned long) u2PortIdx);
+
+			/* Assume group_x is always mapping to TxRing_x */
+			i4MaxQuota = (u2PortIdx == 1) ?
+				prAdapter->rWifiVar.iGroup1PLESize :
+				prAdapter->rWifiVar.iGroup0PLESize;
+			g_rDbdcInfo.i4CurMaxTxQuota[u2PortIdx] =
+			g_rDbdcInfo.i4DesiredMaxTxQuota[u2PortIdx] = i4MaxQuota;
+		}
 
 		g_rDbdcInfo.eDdbcGuardTimerType =
 			ENUM_DBDC_GUARD_TIMER_NONE;
@@ -2051,6 +2100,9 @@ void cnmInitDbdcSetting(IN struct ADAPTER *prAdapter)
 			prBssOpSourceCtrl->ucOpTxNss = 1;
 		}
 		cnmUpdateDbdcSetting(prAdapter, TRUE);
+
+		/* Just resue dynamic DBDC FSM handler. */
+		cnmDbdcFsmEntryFunc_ENABLE_IDLE(prAdapter);
 		break;
 
 	default:
@@ -2437,7 +2489,17 @@ cnmDBDCFsmActionReqPeivilegeUnLock(IN struct ADAPTER *prAdapter)
 static void
 cnmDbdcFsmEntryFunc_DISABLE_IDLE(IN struct ADAPTER *prAdapter)
 {
+	int32_t  i4MaxQuota;
+	uint16_t u2PortIdx;
 	cnmDBDCFsmActionReqPeivilegeUnLock(prAdapter);
+
+	for (u2PortIdx = 0; u2PortIdx < DBDC_TX_RING_NUM; u2PortIdx++) {
+		i4MaxQuota = (u2PortIdx == 1) ?
+			prAdapter->rWifiVar.iGroup1PLESize :
+			prAdapter->rWifiVar.iGroup0PLESize;
+		g_rDbdcInfo.i4DesiredMaxTxQuota[u2PortIdx] = i4MaxQuota;
+	}
+	cnmDbdcUpdateTxQuota(prAdapter);
 }
 
 static void
@@ -2470,6 +2532,22 @@ cnmDbdcFsmEntryFunc_ENABLE_GUARD(IN struct ADAPTER *prAdapter)
 	}
 	DBDC_SET_GUARD_TIME(prAdapter);
 }
+
+static void
+cnmDbdcFsmEntryFunc_ENABLE_IDLE(
+	IN struct ADAPTER *prAdapter
+)
+{
+	uint16_t u2PortIdx;
+
+	for (u2PortIdx = 0; u2PortIdx < DBDC_TX_RING_NUM; u2PortIdx++) {
+		g_rDbdcInfo.i4DesiredMaxTxQuota[u2PortIdx] =
+			PLE_GROUP_DBDC_SIZE;
+	}
+
+	cnmDbdcUpdateTxQuota(prAdapter);
+}
+
 
 static void
 cnmDbdcFsmEntryFunc_WAIT_HW_DISABLE(IN struct ADAPTER *prAdapter)
@@ -3153,6 +3231,56 @@ void cnmDbdcGuardTimerCallback(IN struct ADAPTER
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * @brief    DBDC Guard Time/Countdown Callback
+ *
+ * @param (none)
+ *
+ * @return (none)
+ */
+/*----------------------------------------------------------------------------*/
+void cnmDbdcTxQuotaWaitingCallback(IN struct ADAPTER
+			       *prAdapter,
+			       IN unsigned long plParamPtr)
+{
+	uint32_t rStatus;
+	uint16_t u2Port;
+
+	u2Port = (uint16_t)plParamPtr;
+	rStatus = halUpdateTxMaxQuota(
+		prAdapter, u2Port, g_rDbdcInfo.i4DesiredMaxTxQuota[u2Port]);
+
+	/* BE CAREFUL! The hal API pauses the TxRing when returning
+	 * WLAN_STATUS_PENDING.
+	 */
+	if (rStatus == WLAN_STATUS_PENDING) {
+		DBGLOG(CNM, INFO, "Pending for TxQuota[%d] Update!\n", u2Port);
+		if (!timerPendingTimer(
+			&(g_rDbdcInfo.arTxQuotaWaitingTimer[u2Port]))) {
+			cnmTimerStartTimer(prAdapter,
+				&(g_rDbdcInfo.arTxQuotaWaitingTimer[u2Port]),
+				DBDC_TX_QUOTA_POLLING_TIME);
+		}
+	} else {
+		DBGLOG(CNM, INFO, "Update TxQuota[%d]=%d!\n",
+			u2Port, g_rDbdcInfo.i4DesiredMaxTxQuota[u2Port]);
+		g_rDbdcInfo.i4CurMaxTxQuota[u2Port] =
+			g_rDbdcInfo.i4DesiredMaxTxQuota[u2Port];
+	}
+}
+
+void cnmDbdcUpdateTxQuota(IN struct ADAPTER *prAdapter)
+{
+	uint8_t u2PortIdx;
+
+	ASSERT(prAdapter);
+	for (u2PortIdx = 0; u2PortIdx < DBDC_TX_RING_NUM; u2PortIdx++) {
+		cnmDbdcTxQuotaWaitingCallback(
+			prAdapter, (unsigned long)u2PortIdx);
+	}
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * @brief    DBDC HW Switch done event
  *
  * @param (none)
@@ -3187,11 +3315,15 @@ void cnmDbdcEventHwSwitchDone(IN struct ADAPTER
 	if (g_rDbdcInfo.eDbdcFsmCurrState ==
 	    ENUM_DBDC_FSM_STATE_WAIT_HW_ENABLE) {
 		fgDbdcEn = TRUE;
+		g_rDbdcInfo.fgHasSentCmd = FALSE;
 	} else if (g_rDbdcInfo.eDbdcFsmCurrState ==
 		   ENUM_DBDC_FSM_STATE_WAIT_HW_DISABLE) {
 		fgDbdcEn = FALSE;
+		g_rDbdcInfo.fgHasSentCmd = FALSE;
 	} else if (g_rDbdcInfo.fgHasSentCmd == TRUE) {
-		/* The "set_dbdc" test cmd may confuse original FSM */
+		/* The "set_dbdc" test cmd may confuse original FSM.
+		 * Besides, we do not config TxQuota for the testing cmd.
+		 */
 		log_dbg(CNM, INFO,
 				"[DBDC] switch event from cmd happen in state %u\n",
 				g_rDbdcInfo.eDbdcFsmCurrState);

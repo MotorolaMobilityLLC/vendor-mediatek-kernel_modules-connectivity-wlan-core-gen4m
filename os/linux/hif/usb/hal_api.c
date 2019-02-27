@@ -1263,6 +1263,18 @@ u_int8_t halTxIsDataBufEnough(IN struct ADAPTER *prAdapter, IN struct MSDU_INFO 
 	return TRUE;
 }
 
+uint8_t halTxRingDataSelect(IN struct ADAPTER *prAdapter,
+	IN struct MSDU_INFO *prMsduInfo)
+{
+	return TX_RING_DATA0_IDX_0;
+}
+
+uint32_t halUpdateTxMaxQuota(IN struct ADAPTER *prAdapter,
+	IN uint16_t u2Port, IN uint32_t u4MaxQuota)
+{
+	return WLAN_STATUS_SUCCESS;
+}
+
 void halProcessTxInterrupt(IN struct ADAPTER *prAdapter)
 {
 #if CFG_USB_TX_HANDLE_IN_HIF_THREAD

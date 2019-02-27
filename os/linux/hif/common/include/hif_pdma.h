@@ -176,15 +176,18 @@
 #define HIF_DEADFEED_VALUE      0xdeadfeed
 
 #ifdef CONNAC2X2
-/* Config Group0 to 256 for 5G peak tput */
-#define PLE_GROUP0_SIZE	256
-#define PLE_GROUP1_SIZE	32
+/* Group0/Group1 may bot related to 2G/5G depending on WmmQ dispatch mechanism.
+ * To simplify the design, we only change MaxQuotaSize under DBDC mode.
+ */
+#define PLE_GROUP0_SIZE	0xFFF
+#define PLE_GROUP1_SIZE	0xFFF
 #else
 /* Don't config PLE size for 1*1 project */
-#define PLE_GROUP0_SIZE	-1
-#define PLE_GROUP1_SIZE	-1
+#define PLE_GROUP0_SIZE	0xFFF
+#define PLE_GROUP1_SIZE	0xFFF
 #endif
 
+#define PLE_GROUP_DBDC_SIZE 0x90
 
 /*******************************************************************************
  *                                 M A C R O S

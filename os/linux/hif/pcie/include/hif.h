@@ -197,6 +197,8 @@ struct BUS_INFO {
 	const uint32_t u4DmaMask;
 
 	void (*pdmaSetup)(struct GLUE_INFO *prGlueInfo, u_int8_t enable);
+	uint32_t (*updateTxRingMaxQuota)(struct ADAPTER *prAdapter,
+		uint16_t u2Port, uint32_t u4MaxQuota);
 	void (*enableInterrupt)(struct ADAPTER *prAdapter);
 	void (*disableInterrupt)(struct ADAPTER *prAdapter);
 	void (*lowPowerOwnRead)(struct ADAPTER *prAdapter, u_int8_t *pfgResult);

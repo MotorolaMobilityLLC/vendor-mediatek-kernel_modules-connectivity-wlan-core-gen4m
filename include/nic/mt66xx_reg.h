@@ -740,7 +740,6 @@ union DELAY_INT_CFG_STRUCT {
 #define WPDMA_RX_DONE_INT2				BIT(2)
 #define WPDMA_RX_DONE_INT1				BIT(1)
 #define WPDMA_RX_DONE_INT0				BIT(0)
-
 #else
 #define WIFI_CFG_SW_SYNC0			    0
 #define WIFI_CFG_SYNC0_RDY_OFFSET       0

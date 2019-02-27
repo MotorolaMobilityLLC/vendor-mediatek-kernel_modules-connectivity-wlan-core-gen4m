@@ -128,21 +128,18 @@
  * @return TxRingData number
  */
 /*----------------------------------------------------------------------------*/
-static uint8_t halTxRingDataSelect(IN struct GLUE_INFO *prGlueInfo,
+uint8_t halTxRingDataSelect(IN struct ADAPTER *prAdapter,
 	IN struct MSDU_INFO *prMsduInfo)
 {
-	struct GL_HIF_INFO *prHifInfo = NULL;
-	struct mt66xx_chip_info *prChipInfo;
+	struct BUS_INFO *bus_info;
 	uint16_t u2Port = TX_RING_DATA0_IDX_0;
 
-	ASSERT(prGlueInfo);
+	ASSERT(prAdapter);
 
-	prHifInfo = &prGlueInfo->rHifInfo;
-	prChipInfo = prGlueInfo->prAdapter->chip_info;
+	bus_info = prAdapter->chip_info->bus_info;
 
 	/* Wmm1 use TxRing1 if supported */
-	if (prChipInfo->bus_info->tx_ring0_data_idx !=
-	    prChipInfo->bus_info->tx_ring1_data_idx) {
+	if (bus_info->tx_ring0_data_idx != bus_info->tx_ring1_data_idx) {
 		u2Port = prMsduInfo->ucWmmQueSet == 1 ?
 			TX_RING_DATA1_IDX_1 : TX_RING_DATA0_IDX_0;
 	}
@@ -582,7 +579,7 @@ u_int8_t halTxIsDataBufEnough(IN struct ADAPTER *prAdapter,
 	struct RTMP_TX_RING *prTxRing;
 	uint16_t u2Port;
 
-	u2Port = halTxRingDataSelect(prAdapter->prGlueInfo, prMsduInfo);
+	u2Port = halTxRingDataSelect(prAdapter, prMsduInfo);
 	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
 	prTxRing = &prHifInfo->TxRing[u2Port];
 
@@ -1843,7 +1840,8 @@ static bool halWpdmaFillTxRing(struct GLUE_INFO *prGlueInfo,
 	prHifInfo = &prGlueInfo->rHifInfo;
 	prChipInfo = prGlueInfo->prAdapter->chip_info;
 
-	u2Port = halTxRingDataSelect(prGlueInfo, prToken->prMsduInfo);
+	u2Port = halTxRingDataSelect(
+		prGlueInfo->prAdapter, prToken->prMsduInfo);
 	prTxRing = &prHifInfo->TxRing[u2Port];
 
 	kalDevRegRead(prGlueInfo, prTxRing->hw_cidx_addr, &prTxRing->TxCpuIdx);
@@ -2048,7 +2046,8 @@ bool halWpdmaWriteAmsdu(struct GLUE_INFO *prGlueInfo,
 
 	/* Peek head to select TxRing */
 	prTxReq = list_entry(prList, struct TX_DATA_REQ, list);
-	u2Port = halTxRingDataSelect(prGlueInfo, prTxReq->prMsduInfo);
+	u2Port = halTxRingDataSelect(
+		prGlueInfo->prAdapter, prTxReq->prMsduInfo);
 	u4FreeRing = TX_RING_SIZE - prHifInfo->TxRing[u2Port].u4UsedCnt;
 
 	if ((u4FreeToken < u4Num) || (u4FreeRing <= 1)) {
@@ -2472,3 +2471,14 @@ uint32_t halGetHifTxPageSize(IN struct ADAPTER *prAdapter)
 {
 	return HIF_TX_PAGE_SIZE;
 }
+
+uint32_t halUpdateTxMaxQuota(IN struct ADAPTER *prAdapter,
+	IN uint16_t u2Port, IN uint32_t u4MaxQuota)
+{
+	if (prAdapter->chip_info->bus_info->updateTxRingMaxQuota)
+		return  prAdapter->chip_info->bus_info->updateTxRingMaxQuota(
+			prAdapter, u2Port, u4MaxQuota);
+
+	return WLAN_STATUS_SUCCESS;
+}
+

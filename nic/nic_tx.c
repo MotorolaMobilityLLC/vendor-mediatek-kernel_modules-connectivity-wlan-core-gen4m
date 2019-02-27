@@ -1430,16 +1430,18 @@ void nicTxMsduQueueByPrio(struct ADAPTER *prAdapter)
 /*----------------------------------------------------------------------------*/
 void nicTxMsduQueueByRR(struct ADAPTER *prAdapter)
 {
-	struct QUE qDataPort, arTempQue[TX_PORT_NUM];
-	struct QUE *prDataPort, *prTxQue;
+	struct QUE qDataPort0, qDataPort1, arTempQue[TX_PORT_NUM];
+	struct QUE *prDataPort0, *prDataPort1, *prDataPort, *prTxQue;
 	struct MSDU_INFO *prMsduInfo;
 	bool fgIsAllQueneEmpty = false;
 	int32_t i;
 
 	KAL_SPIN_LOCK_DECLARATION();
 
-	prDataPort = &qDataPort;
-	QUEUE_INITIALIZE(prDataPort);
+	prDataPort0 = &qDataPort0;
+	prDataPort1 = &qDataPort1;
+	QUEUE_INITIALIZE(prDataPort0);
+	QUEUE_INITIALIZE(prDataPort1);
 
 	for (i = 0; i < TX_PORT_NUM; i++)
 		QUEUE_INITIALIZE(&arTempQue[i]);
@@ -1455,6 +1457,13 @@ void nicTxMsduQueueByRR(struct ADAPTER *prAdapter)
 				QUEUE_REMOVE_HEAD(
 					prTxQue, prMsduInfo,
 					struct MSDU_INFO *);
+
+				if (halTxRingDataSelect(prAdapter, prMsduInfo)
+					== TX_RING_DATA1_IDX_1)
+					prDataPort = prDataPort1;
+				else
+					prDataPort = prDataPort0;
+
 				QUEUE_INSERT_TAIL(
 					prDataPort,
 					(struct QUE_ENTRY *) prMsduInfo);
@@ -1464,15 +1473,21 @@ void nicTxMsduQueueByRR(struct ADAPTER *prAdapter)
 	}
 	KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_PORT_QUE);
 
-	nicTxMsduQueue(prAdapter, 0, prDataPort);
+	nicTxMsduQueue(prAdapter, 0, prDataPort0);
+	nicTxMsduQueue(prAdapter, 0, prDataPort1);
 
 	KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_PORT_QUE);
 	/* Enque from dataQ to TCQ if TX don't finish */
 	/* Need to reverse dataQ by TC first */
-	while (QUEUE_IS_NOT_EMPTY(prDataPort)) {
-		QUEUE_REMOVE_HEAD(prDataPort, prMsduInfo, struct MSDU_INFO *);
+	while (QUEUE_IS_NOT_EMPTY(prDataPort0)) {
+		QUEUE_REMOVE_HEAD(prDataPort0, prMsduInfo, struct MSDU_INFO *);
 		QUEUE_INSERT_HEAD(&arTempQue[prMsduInfo->ucTC],
-				  (struct QUE_ENTRY *) prMsduInfo);
+			(struct QUE_ENTRY *) prMsduInfo);
+	}
+	while (QUEUE_IS_NOT_EMPTY(prDataPort1)) {
+		QUEUE_REMOVE_HEAD(prDataPort1, prMsduInfo, struct MSDU_INFO *);
+		QUEUE_INSERT_HEAD(&arTempQue[prMsduInfo->ucTC],
+			(struct QUE_ENTRY *) prMsduInfo);
 	}
 
 	for (i = 0; i < TX_PORT_NUM; i++) {
