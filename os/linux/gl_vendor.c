@@ -1,4 +1,4 @@
-/******************************************************************************
+/*******************************************************************************
  *
  * This file is provided under a dual license.  When you use or
  * distribute this software, you may choose to be licensed under
@@ -48,22 +48,22 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *****************************************************************************/
+ ******************************************************************************/
 /*
-** gl_vendor.c
-**
-**
-*/
+ ** gl_vendor.c
+ **
+ **
+ */
 
 /*******************************************************************************
-*                         C O M P I L E R   F L A G S
-********************************************************************************
-*/
+ *                         C O M P I L E R   F L A G S
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                    E X T E R N A L   R E F E R E N C E S
-********************************************************************************
-*/
+ *                    E X T E R N A L   R E F E R E N C E S
+ *******************************************************************************
+ */
 #include "gl_os.h"
 #include "debug.h"
 #include "wlan_lib.h"
@@ -77,9 +77,9 @@
 #include "wlan_oid.h"
 
 /*******************************************************************************
-*                              C O N S T A N T S
-********************************************************************************
-*/
+ *                              C O N S T A N T S
+ *******************************************************************************
+ */
 /* These values must sync from Wifi HAL
  * /hardware/libhardware_legacy/include/hardware_legacy/wifi_hal.h
  */
@@ -151,19 +151,19 @@
 			      )
 
 /*******************************************************************************
-*                             D A T A   T Y P E S
-********************************************************************************
-*/
+ *                             D A T A   T Y P E S
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                            P U B L I C   D A T A
-********************************************************************************
-*/
+ *                            P U B L I C   D A T A
+ *******************************************************************************
+ */
 uint8_t g_GetResultsBufferedCnt;
 uint8_t g_GetResultsCmdCnt;
 
 static struct nla_policy nla_parse_wifi_policy[
-		WIFI_ATTRIBUTE_ROAMING_STATE + 1] = {
+		 WIFI_ATTRIBUTE_ROAMING_STATE + 1] = {
 	[WIFI_ATTRIBUTE_BAND] = {.type = NLA_U32},
 	[WIFI_ATTRIBUTE_NUM_CHANNELS] = {.type = NLA_U32},
 	[WIFI_ATTRIBUTE_CHANNEL_LIST] = {.type = NLA_UNSPEC},
@@ -187,7 +187,7 @@ static struct nla_policy nla_parse_wifi_policy[
 };
 
 static struct nla_policy nla_parse_offloading_policy[
-		MKEEP_ALIVE_ATTRIBUTE_PERIOD_MSEC + 1] = {
+		 MKEEP_ALIVE_ATTRIBUTE_PERIOD_MSEC + 1] = {
 	[MKEEP_ALIVE_ATTRIBUTE_ID] = {.type = NLA_U8},
 	[MKEEP_ALIVE_ATTRIBUTE_IP_PKT] = {.type = NLA_UNSPEC},
 	[MKEEP_ALIVE_ATTRIBUTE_IP_PKT_LEN] = {.type = NLA_U16},
@@ -197,34 +197,37 @@ static struct nla_policy nla_parse_offloading_policy[
 };
 
 /*******************************************************************************
-*                           P R I V A T E   D A T A
-********************************************************************************
-*/
+ *                           P R I V A T E   D A T A
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                                 M A C R O S
-********************************************************************************
-*/
+ *                                 M A C R O S
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                   F U N C T I O N   D E C L A R A T I O N S
-********************************************************************************
-*/
+ *                   F U N C T I O N   D E C L A R A T I O N S
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                              F U N C T I O N S
-********************************************************************************
-*/
+ *                              F U N C T I O N S
+ *******************************************************************************
+ */
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 18, 0)
 
-int mtk_cfg80211_NLA_PUT(struct sk_buff *skb, int attrtype, int attrlen, const void *data)
+int mtk_cfg80211_NLA_PUT(struct sk_buff *skb, int attrtype,
+			 int attrlen, const void *data)
 {
 	if (unlikely(nla_put(skb, attrtype, attrlen, data) < 0))
 		return 0;
 	return 1;
 }
 
-int mtk_cfg80211_nla_put_type(struct sk_buff *skb, enum ENUM_NLA_PUT_DATE_TYPE type, int attrtype, const void *value)
+int mtk_cfg80211_nla_put_type(struct sk_buff *skb,
+			      enum ENUM_NLA_PUT_DATE_TYPE type, int attrtype,
+			      const void *value)
 {
 	u8 u8data = 0;
 	u16 u16data = 0;
@@ -234,16 +237,20 @@ int mtk_cfg80211_nla_put_type(struct sk_buff *skb, enum ENUM_NLA_PUT_DATE_TYPE t
 	switch (type) {
 	case NLA_PUT_DATE_U8:
 		u8data = *(u8 *)value;
-		return mtk_cfg80211_NLA_PUT(skb, attrtype, sizeof(u8), &u8data);
+		return mtk_cfg80211_NLA_PUT(skb, attrtype, sizeof(u8),
+					    &u8data);
 	case NLA_PUT_DATE_U16:
 		u16data = *(u16 *)value;
-		return mtk_cfg80211_NLA_PUT(skb, attrtype, sizeof(u16), &u16data);
+		return mtk_cfg80211_NLA_PUT(skb, attrtype, sizeof(u16),
+					    &u16data);
 	case NLA_PUT_DATE_U32:
 		u32data = *(u32 *)value;
-		return mtk_cfg80211_NLA_PUT(skb, attrtype, sizeof(u32), &u32data);
+		return mtk_cfg80211_NLA_PUT(skb, attrtype, sizeof(u32),
+					    &u32data);
 	case NLA_PUT_DATE_U64:
 		u64data = *(u64 *)value;
-		return mtk_cfg80211_NLA_PUT(skb, attrtype, sizeof(u64), &u64data);
+		return mtk_cfg80211_NLA_PUT(skb, attrtype, sizeof(u64),
+					    &u64data);
 	default:
 		break;
 	}
@@ -358,11 +365,11 @@ int mtk_cfg80211_vendor_get_channel_list(struct wiphy *wiphy,
 	}
 
 	if (unlikely(nla_put_u32(skb, WIFI_ATTRIBUTE_NUM_CHANNELS,
-	    num_channels) < 0))
+				 num_channels) < 0))
 		goto nla_put_failure;
 
 	if (unlikely(nla_put(skb, WIFI_ATTRIBUTE_CHANNEL_LIST,
-		(sizeof(uint32_t) * num_channels), channels) < 0))
+			     (sizeof(uint32_t) * num_channels), channels) < 0))
 		goto nla_put_failure;
 
 	return cfg80211_vendor_cmd_reply(skb);
@@ -372,7 +379,9 @@ nla_put_failure:
 	return -EFAULT;
 }
 
-int mtk_cfg80211_vendor_set_country_code(struct wiphy *wiphy, struct wireless_dev *wdev, const void *data, int data_len)
+int mtk_cfg80211_vendor_set_country_code(struct wiphy
+		*wiphy, struct wireless_dev *wdev, const void *data,
+		int data_len)
 {
 	struct GLUE_INFO *prGlueInfo;
 	uint32_t rStatus;
@@ -384,7 +393,9 @@ int mtk_cfg80211_vendor_set_country_code(struct wiphy *wiphy, struct wireless_de
 	if ((data == NULL) || (data_len == 0))
 		return -EINVAL;
 
-	DBGLOG(REQ, INFO, "vendor command: data_len=%d, iftype=%d\n", data_len, wdev->iftype);
+	DBGLOG(REQ, INFO,
+	       "vendor command: data_len=%d, iftype=%d\n", data_len,
+	       wdev->iftype);
 
 	attr = (struct nlattr *)data;
 	if (attr->nla_type == WIFI_ATTRIBUTE_COUNTRY_CODE) {
@@ -392,7 +403,8 @@ int mtk_cfg80211_vendor_set_country_code(struct wiphy *wiphy, struct wireless_de
 		country[1] = *((uint8_t *)nla_data(attr) + 1);
 	}
 
-	DBGLOG(REQ, INFO, "Set country code: %c%c\n", country[0], country[1]);
+	DBGLOG(REQ, INFO, "Set country code: %c%c\n", country[0],
+	       country[1]);
 
 #if CFG_ENABLE_UNIFY_WIPHY
 	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wiphy);
@@ -406,7 +418,8 @@ int mtk_cfg80211_vendor_set_country_code(struct wiphy *wiphy, struct wireless_de
 	if (!prGlueInfo)
 		return -EFAULT;
 
-	rStatus = kalIoctl(prGlueInfo, wlanoidSetCountryCode, country, 2, FALSE, FALSE, TRUE, &u4BufLen);
+	rStatus = kalIoctl(prGlueInfo, wlanoidSetCountryCode,
+			   country, 2, FALSE, FALSE, TRUE, &u4BufLen);
 	if (rStatus != WLAN_STATUS_SUCCESS) {
 		DBGLOG(REQ, ERROR, "Set country code error: %x\n", rStatus);
 		return -EFAULT;
@@ -442,7 +455,6 @@ int mtk_cfg80211_vendor_set_scan_mac_oui(struct wiphy *wiphy,
 	else
 		prGlueInfo = *((struct GLUE_INFO **) wiphy_priv(wiphy));
 #endif	/* CFG_ENABLE_UNIFY_WIPHY */
-
 	if (!prGlueInfo) {
 		log_dbg(REQ, ERROR, "Invalid glue info\n");
 		return -EFAULT;
@@ -489,22 +501,22 @@ int mtk_cfg80211_vendor_set_scan_mac_oui(struct wiphy *wiphy,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief This routine is to answer FWK that we can support FW Roaming.
-*
-* \param[in] wiphy wiphy for AIS STA.
-*
-* \param[in] wdev (not used here).
-*
-* \param[in] data (not used here).
-*
-* \param[in] data_len (not used here).
-*
-* \retval TRUE Success.
-*
-* \note we use cfg80211_vendor_cmd_reply to send the max number of our
-*       blacklist and whiltlist directly without receiving any data
-*       from the upper layer.
-*/
+ * \brief This routine is to answer FWK that we can support FW Roaming.
+ *
+ * \param[in] wiphy wiphy for AIS STA.
+ *
+ * \param[in] wdev (not used here).
+ *
+ * \param[in] data (not used here).
+ *
+ * \param[in] data_len (not used here).
+ *
+ * \retval TRUE Success.
+ *
+ * \note we use cfg80211_vendor_cmd_reply to send the max number of our
+ *       blacklist and whiltlist directly without receiving any data
+ *       from the upper layer.
+ */
 /*----------------------------------------------------------------------------*/
 int mtk_cfg80211_vendor_get_roaming_capabilities(struct wiphy *wiphy,
 	struct wireless_dev *wdev, const void *data, int data_len)
@@ -539,26 +551,27 @@ nla_put_failure:
 	return -EFAULT;
 }
 
+
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief This routine is to receive the black/whiltelist. from FWK.
-*
-* \param[in] wiphy wiphy for AIS STA.
-*
-* \param[in] wdev (not used here).
-*
-* \param[in] data BSSIDs in the FWK blact&whitelist.
-*
-* \param[in] data_len the byte-length of the FWK blact&whitelist.
-*
-* \retval TRUE Success.
-*
-* \note we iterate each BSSID in 'data' and put it into driver blacklist.
-*       For now, whiltelist doesn't be implemented by the FWK currently.
-*/
+ * \brief This routine is to receive the black/whiltelist. from FWK.
+ *
+ * \param[in] wiphy wiphy for AIS STA.
+ *
+ * \param[in] wdev (not used here).
+ *
+ * \param[in] data BSSIDs in the FWK blact&whitelist.
+ *
+ * \param[in] data_len the byte-length of the FWK blact&whitelist.
+ *
+ * \retval TRUE Success.
+ *
+ * \note we iterate each BSSID in 'data' and put it into driver blacklist.
+ *       For now, whiltelist doesn't be implemented by the FWK currently.
+ */
 /*----------------------------------------------------------------------------*/
 int mtk_cfg80211_vendor_config_roaming(struct wiphy *wiphy,
-	struct wireless_dev *wdev, const void *data, int data_len)
+	       struct wireless_dev *wdev, const void *data, int data_len)
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct nlattr *attrlist;
@@ -580,22 +593,24 @@ int mtk_cfg80211_vendor_config_roaming(struct wiphy *wiphy,
 
 	if (prGlueInfo->u4FWRoamingEnable == 0) {
 		DBGLOG(REQ, INFO,
-			"FWRoaming is disabled (FWRoamingEnable=%d)\n",
-			prGlueInfo->u4FWRoamingEnable);
+		       "FWRoaming is disabled (FWRoamingEnable=%d)\n",
+		       prGlueInfo->u4FWRoamingEnable);
 		return WLAN_STATUS_SUCCESS;
 	}
 
 	attrlist = (struct nlattr *)((uint8_t *) data);
 
 	/* get the number of blacklist and copy those mac addresses from HAL */
-	if (attrlist->nla_type == WIFI_ATTRIBUTE_ROAMING_BLACKLIST_NUM) {
+	if (attrlist->nla_type ==
+	    WIFI_ATTRIBUTE_ROAMING_BLACKLIST_NUM) {
 		numOfList[0] = nla_get_u32(attrlist);
 		len_shift += NLA_ALIGN(attrlist->nla_len);
 	}
 	DBGLOG(REQ, INFO, "Get the number of blacklist=%d data_len=%d\n",
 			   numOfList[0], data_len);
 
-	if (numOfList[0] < 0 || numOfList[0] > MAX_FW_ROAMING_BLACKLIST_SIZE)
+	if (numOfList[0] < 0
+	    || numOfList[0] > MAX_FW_ROAMING_BLACKLIST_SIZE)
 		return -EINVAL;
 
 	/*Refresh all the FWKBlacklist */
@@ -605,13 +620,13 @@ int mtk_cfg80211_vendor_config_roaming(struct wiphy *wiphy,
 	attrlist = (struct nlattr *)((uint8_t *) data + len_shift);
 	for (i = 0; i < numOfList[0]; i++) {
 		if (attrlist->nla_type ==
-				WIFI_ATTRIBUTE_ROAMING_BLACKLIST_BSSID) {
-			prBssDesc = scanSearchBssDescByBssid(
-					prGlueInfo->prAdapter,
-					nla_data(attrlist));
+		    WIFI_ATTRIBUTE_ROAMING_BLACKLIST_BSSID) {
+			prBssDesc =
+				scanSearchBssDescByBssid(prGlueInfo->prAdapter,
+							nla_data(attrlist));
 			len_shift += NLA_ALIGN(attrlist->nla_len);
-			attrlist = (struct nlattr *)((uint8_t *) data
-								+ len_shift);
+			attrlist =
+				(struct nlattr *)((uint8_t *) data + len_shift);
 
 			if (prBssDesc == NULL) {
 				aucBSSID = nla_data(attrlist);
@@ -622,7 +637,7 @@ int mtk_cfg80211_vendor_config_roaming(struct wiphy *wiphy,
 			}
 
 			prBlackList = aisAddBlacklist(prGlueInfo->prAdapter,
-							prBssDesc);
+						      prBssDesc);
 			prBlackList->fgIsInFWKBlacklist = TRUE;
 			DBGLOG(REQ, INFO, "Gets roaming blacklist SSID=%s addr="
 				MACSTR "\n",
@@ -636,24 +651,24 @@ int mtk_cfg80211_vendor_config_roaming(struct wiphy *wiphy,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief This routine is to turn on/off FW Roaming.
-*
-* \param[in] wiphy wiphy for AIS STA.
-*
-* \param[in] wdev (not used here).
-*
-* \param[in] data 1 for ON / 0 for OFF.
-*
-* \param[in] data_len the byte-length of the data.
-*
-* \retval TRUE Success.
-*
-* \note we only receive the data and make the interface available to FWK.
-*       For now, this SUBCMD woundn't be sent from the FWK currently.
-*/
+ * \brief This routine is to turn on/off FW Roaming.
+ *
+ * \param[in] wiphy wiphy for AIS STA.
+ *
+ * \param[in] wdev (not used here).
+ *
+ * \param[in] data 1 for ON / 0 for OFF.
+ *
+ * \param[in] data_len the byte-length of the data.
+ *
+ * \retval TRUE Success.
+ *
+ * \note we only receive the data and make the interface available to FWK.
+ *       For now, this SUBCMD woundn't be sent from the FWK currently.
+ */
 /*----------------------------------------------------------------------------*/
 int mtk_cfg80211_vendor_enable_roaming(struct wiphy *wiphy,
-	struct wireless_dev *wdev, const void *data, int data_len)
+	       struct wireless_dev *wdev, const void *data, int data_len)
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct nlattr *attr;
@@ -670,7 +685,7 @@ int mtk_cfg80211_vendor_enable_roaming(struct wiphy *wiphy,
 		prGlueInfo->u4FWRoamingEnable = nla_get_u32(attr);
 
 	DBGLOG(REQ, INFO, "FWK set FWRoamingEnable = %d\n",
-		prGlueInfo->u4FWRoamingEnable);
+	       prGlueInfo->u4FWRoamingEnable);
 
 	return WLAN_STATUS_SUCCESS;
 }
@@ -691,10 +706,10 @@ int mtk_cfg80211_vendor_get_rtt_capabilities(
 	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wiphy);
 
 	skb = cfg80211_vendor_cmd_alloc_reply_skb(wiphy,
-		sizeof(rRttCapabilities));
+			sizeof(rRttCapabilities));
 	if (!skb) {
 		DBGLOG(REQ, ERROR, "%s allocate skb failed:%x\n",
-			__func__, i4Status);
+		       __func__, i4Status);
 		return -ENOMEM;
 	}
 
@@ -709,7 +724,7 @@ int mtk_cfg80211_vendor_get_rtt_capabilities(
 	rRttCapabilities.bw_support = 0x1c;
 
 	if (unlikely(nla_put(skb, RTT_ATTRIBUTE_CAPABILITIES,
-		sizeof(rRttCapabilities), &rRttCapabilities) < 0))
+			     sizeof(rRttCapabilities), &rRttCapabilities) < 0))
 		goto nla_put_failure;
 
 	i4Status = cfg80211_vendor_cmd_reply(skb);
@@ -725,25 +740,30 @@ int mtk_cfg80211_vendor_llstats_get_info(
 	const void *data, int data_len)
 {
 	int32_t i4Status = -EINVAL;
-	struct WIFI_RADIO_STAT *pRadioStat;
-	struct sk_buff *skb;
+	struct WIFI_RADIO_STAT *pRadioStat = NULL;
+	struct sk_buff *skb = NULL;
 	uint32_t u4BufLen = 0;
 
 	ASSERT(wiphy);
 	ASSERT(wdev);
 
-	u4BufLen = sizeof(struct WIFI_RADIO_STAT) + sizeof(struct WIFI_IFACE_STAT);
+	u4BufLen = sizeof(struct WIFI_RADIO_STAT) + sizeof(
+			   struct WIFI_IFACE_STAT);
 	pRadioStat = kalMemAlloc(u4BufLen, VIR_MEM_TYPE);
 	if (!pRadioStat) {
-		DBGLOG(REQ, ERROR, "%s kalMemAlloc pRadioStat failed\n", __func__);
-		return -ENOMEM;
+		DBGLOG(REQ, ERROR, "%s kalMemAlloc pRadioStat failed\n",
+		       __func__);
+		i4Status = -ENOMEM;
+		goto nla_put_failure;
 	}
 	kalMemZero(pRadioStat, u4BufLen);
 
 	skb = cfg80211_vendor_cmd_alloc_reply_skb(wiphy, u4BufLen);
 	if (!skb) {
-		DBGLOG(REQ, TRACE, "%s allocate skb failed:%x\n", __func__, i4Status);
-		return -ENOMEM;
+		DBGLOG(REQ, TRACE, "%s allocate skb failed:%x\n", __func__,
+		       i4Status);
+		i4Status = -ENOMEM;
+		goto nla_put_failure;
 	}
 
 #if 0
@@ -765,7 +785,7 @@ int mtk_cfg80211_vendor_llstats_get_info(
 
 	/*NLA_PUT(skb, LSTATS_ATTRIBUTE_STATS, u4BufLen, pRadioStat);*/
 	if (unlikely(nla_put(skb, LSTATS_ATTRIBUTE_STATS, u4BufLen,
-							pRadioStat) < 0))
+			     pRadioStat) < 0))
 		goto nla_put_failure;
 
 	i4Status = cfg80211_vendor_cmd_reply(skb);
@@ -774,12 +794,16 @@ int mtk_cfg80211_vendor_llstats_get_info(
 	/* return i4Status; */
 
 nla_put_failure:
-	kfree_skb(skb);
+	if (skb != NULL)
+		kfree_skb(skb);
+	if (pRadioStat != NULL)
+		kalMemFree(pRadioStat, VIR_MEM_TYPE, u4BufLen);
 	return i4Status;
 }
 
-int mtk_cfg80211_vendor_set_band(struct wiphy *wiphy, struct wireless_dev *wdev,
-					const void *data, int data_len)
+int mtk_cfg80211_vendor_set_band(struct wiphy *wiphy,
+				 struct wireless_dev *wdev,
+				 const void *data, int data_len)
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct nlattr *attr;
@@ -794,8 +818,9 @@ int mtk_cfg80211_vendor_set_band(struct wiphy *wiphy, struct wireless_dev *wdev,
 	if ((data == NULL) || !data_len)
 		goto nla_put_failure;
 
-	DBGLOG(REQ, TRACE, "vendor command: data_len=%d, data=0x%x 0x%x\r\n",
-		data_len, *((uint32_t *) data), *((uint32_t *) data + 1));
+	DBGLOG(REQ, TRACE,
+	       "vendor command: data_len=%d, data=0x%x 0x%x\r\n",
+	       data_len, *((uint32_t *) data), *((uint32_t *) data + 1));
 
 	attr = (struct nlattr *)data;
 	setBand = nla_get_u32(attr);
@@ -811,15 +836,17 @@ int mtk_cfg80211_vendor_set_band(struct wiphy *wiphy, struct wireless_dev *wdev,
 	else
 		band = BAND_NULL;
 
-	prGlueInfo->prAdapter->aePreferBand[NETWORK_TYPE_AIS] = band;
+	prGlueInfo->prAdapter->aePreferBand[NETWORK_TYPE_AIS] =
+		band;
 	return 0;
 
 nla_put_failure:
 	return -1;
 }
 
-int mtk_cfg80211_vendor_set_roaming_policy(struct wiphy *wiphy, struct wireless_dev *wdev,
-					const void *data, int data_len)
+int mtk_cfg80211_vendor_set_roaming_policy(
+	struct wiphy *wiphy, struct wireless_dev *wdev,
+	const void *data, int data_len)
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
 	uint32_t rStatus = WLAN_STATUS_SUCCESS;
@@ -839,12 +866,15 @@ int mtk_cfg80211_vendor_set_roaming_policy(struct wiphy *wiphy, struct wireless_
 	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wiphy);
 	ASSERT(prGlueInfo);
 
-	DBGLOG(REQ, INFO, "vendor command: data_len=%d, data=0x%x 0x%x, roaming policy=%d\r\n",
-		data_len, *((uint32_t *) data), *((uint32_t *) data + 1), setRoaming);
+	DBGLOG(REQ, INFO,
+	       "vendor command: data_len=%d, data=0x%x 0x%x, roaming policy=%d\r\n",
+	       data_len, *((uint32_t *) data), *((uint32_t *) data + 1),
+	       setRoaming);
 
 	rStatus = kalIoctl(prGlueInfo,
 			   wlanoidSetDrvRoamingPolicy,
-			   &setRoaming, sizeof(uint32_t), FALSE, FALSE, TRUE, &u4BufLen);
+			   &setRoaming, sizeof(uint32_t), FALSE, FALSE, TRUE,
+			   &u4BufLen);
 
 	return rStatus;
 
@@ -869,22 +899,26 @@ int mtk_cfg80211_vendor_set_rssi_monitoring(
 	ASSERT(wiphy);
 	ASSERT(wdev);
 
-	DBGLOG(REQ, TRACE, "vendor command: data_len=%d\r\n", data_len);
-	kalMemZero(&rRSSIMonitor, sizeof(struct PARAM_RSSI_MONITOR_T));
+	DBGLOG(REQ, TRACE, "vendor command: data_len=%d\r\n",
+	       data_len);
+	kalMemZero(&rRSSIMonitor,
+		   sizeof(struct PARAM_RSSI_MONITOR_T));
 	if ((data == NULL) || !data_len)
 		goto nla_put_failure;
 	kalMemZero(attr, sizeof(struct nlattr *) *
-		(WIFI_ATTRIBUTE_RSSI_MONITOR_START + 1));
+		   (WIFI_ATTRIBUTE_RSSI_MONITOR_START + 1));
 
-	if (nla_parse_nested(attr, WIFI_ATTRIBUTE_RSSI_MONITOR_START,
-		(struct nlattr *)(data - NLA_HDRLEN),
-		nla_parse_wifi_policy) < 0) {
-		DBGLOG(REQ, ERROR, "%s nla_parse_nested failed\n", __func__);
+	if (nla_parse_nested(attr,
+			     WIFI_ATTRIBUTE_RSSI_MONITOR_START,
+			     (struct nlattr *)(data - NLA_HDRLEN),
+			     nla_parse_wifi_policy) < 0) {
+		DBGLOG(REQ, ERROR, "%s nla_parse_nested failed\n",
+		       __func__);
 		goto nla_put_failure;
 	}
 
 	for (i = WIFI_ATTRIBUTE_MAX_RSSI;
-		i <= WIFI_ATTRIBUTE_RSSI_MONITOR_START; i++) {
+	     i <= WIFI_ATTRIBUTE_RSSI_MONITOR_START; i++) {
 		if (attr[i]) {
 			switch (i) {
 			case WIFI_ATTRIBUTE_MAX_RSSI:
@@ -902,7 +936,8 @@ int mtk_cfg80211_vendor_set_rssi_monitoring(
 		}
 	}
 
-	DBGLOG(REQ, TRACE, "mMax_rssi=%d, mMin_rssi=%d enable=%d\r\n",
+	DBGLOG(REQ, TRACE,
+	       "mMax_rssi=%d, mMin_rssi=%d enable=%d\r\n",
 	       rRSSIMonitor.max_rssi_value, rRSSIMonitor.min_rssi_value,
 	       rRSSIMonitor.enable);
 
@@ -938,29 +973,32 @@ int mtk_cfg80211_vendor_packet_keep_alive_start(
 	if ((data == NULL) || !data_len)
 		goto nla_put_failure;
 
-	DBGLOG(REQ, TRACE, "vendor command: data_len=%d\r\n", data_len);
+	DBGLOG(REQ, TRACE, "vendor command: data_len=%d\r\n",
+	       data_len);
 	prPkt = (struct PARAM_PACKET_KEEPALIVE_T *)
 		kalMemAlloc(sizeof(struct PARAM_PACKET_KEEPALIVE_T),
-			VIR_MEM_TYPE);
+			    VIR_MEM_TYPE);
 	if (!prPkt) {
 		DBGLOG(REQ, ERROR,
-		"Can not alloc memory for struct PARAM_PACKET_KEEPALIVE_T\n");
+		       "Can not alloc memory for struct PARAM_PACKET_KEEPALIVE_T\n");
 		return -ENOMEM;
 	}
 	kalMemZero(prPkt, sizeof(struct PARAM_PACKET_KEEPALIVE_T));
 	kalMemZero(attr, sizeof(struct nlattr *)
-		* (MKEEP_ALIVE_ATTRIBUTE_PERIOD_MSEC + 1));
+		   * (MKEEP_ALIVE_ATTRIBUTE_PERIOD_MSEC + 1));
 
 	prPkt->enable = TRUE; /*start packet keep alive*/
-	if (nla_parse_nested(attr, MKEEP_ALIVE_ATTRIBUTE_PERIOD_MSEC,
-		(struct nlattr *)(data - NLA_HDRLEN),
-			nla_parse_offloading_policy) < 0) {
-		DBGLOG(REQ, ERROR, "%s nla_parse_nested failed\n", __func__);
+	if (nla_parse_nested(attr,
+			     MKEEP_ALIVE_ATTRIBUTE_PERIOD_MSEC,
+			     (struct nlattr *)(data - NLA_HDRLEN),
+			     nla_parse_offloading_policy) < 0) {
+		DBGLOG(REQ, ERROR, "%s nla_parse_nested failed\n",
+		       __func__);
 		goto nla_put_failure;
 	}
 
 	for (i = MKEEP_ALIVE_ATTRIBUTE_ID;
-		i <= MKEEP_ALIVE_ATTRIBUTE_PERIOD_MSEC; i++) {
+	     i <= MKEEP_ALIVE_ATTRIBUTE_PERIOD_MSEC; i++) {
 		if (attr[i]) {
 			switch (i) {
 			case MKEEP_ALIVE_ATTRIBUTE_ID:
@@ -970,18 +1008,18 @@ int mtk_cfg80211_vendor_packet_keep_alive_start(
 				prPkt->u2IpPktLen = nla_get_u16(attr[i]);
 				break;
 			case MKEEP_ALIVE_ATTRIBUTE_IP_PKT:
-				u2IpPktLen = prPkt->u2IpPktLen <= 256 ?
-					   prPkt->u2IpPktLen : 256;
+				u2IpPktLen = prPkt->u2IpPktLen <= 256
+					? prPkt->u2IpPktLen : 256;
 				kalMemCopy(prPkt->pIpPkt, nla_data(attr[i]),
-					   u2IpPktLen);
+					u2IpPktLen);
 				break;
 			case MKEEP_ALIVE_ATTRIBUTE_SRC_MAC_ADDR:
 				kalMemCopy(prPkt->ucSrcMacAddr,
-					nla_data(attr[i]), sizeof(uint8_t)*6);
+				   nla_data(attr[i]), sizeof(uint8_t) * 6);
 				break;
 			case MKEEP_ALIVE_ATTRIBUTE_DST_MAC_ADDR:
 				kalMemCopy(prPkt->ucDstMacAddr,
-					nla_data(attr[i]), sizeof(uint8_t)*6);
+				   nla_data(attr[i]), sizeof(uint8_t) * 6);
 				break;
 			case MKEEP_ALIVE_ATTRIBUTE_PERIOD_MSEC:
 				prPkt->u4PeriodMsec = nla_get_u32(attr[i]);
@@ -991,28 +1029,29 @@ int mtk_cfg80211_vendor_packet_keep_alive_start(
 	}
 
 	DBGLOG(REQ, INFO,
-		"enable=%d, index=%d, u2IpPktLen=%d u4PeriodMsec=%d\n",
-		prPkt->enable, prPkt->index,
-		prPkt->u2IpPktLen, prPkt->u4PeriodMsec);
+	       "enable=%d, index=%d, u2IpPktLen=%d u4PeriodMsec=%d\n",
+	       prPkt->enable, prPkt->index,
+	       prPkt->u2IpPktLen, prPkt->u4PeriodMsec);
 	DBGLOG(REQ, TRACE, "prPkt->pIpPkt=0x%02x%02x%02x%02x\n",
-		prPkt->pIpPkt[0], prPkt->pIpPkt[1],
-		prPkt->pIpPkt[2], prPkt->pIpPkt[3]);
+	       prPkt->pIpPkt[0], prPkt->pIpPkt[1],
+	       prPkt->pIpPkt[2], prPkt->pIpPkt[3]);
 	DBGLOG(REQ, TRACE, "%02x%02x%02x%02x, %02x%02x%02x%02x\n",
-		prPkt->pIpPkt[4], prPkt->pIpPkt[5],
-		prPkt->pIpPkt[6], prPkt->pIpPkt[7],
-		prPkt->pIpPkt[8], prPkt->pIpPkt[9],
-		prPkt->pIpPkt[10], prPkt->pIpPkt[11]);
+	       prPkt->pIpPkt[4], prPkt->pIpPkt[5],
+	       prPkt->pIpPkt[6], prPkt->pIpPkt[7],
+	       prPkt->pIpPkt[8], prPkt->pIpPkt[9],
+	       prPkt->pIpPkt[10], prPkt->pIpPkt[11]);
 	DBGLOG(REQ, TRACE, "%02x%02x%02x%02x\n",
-		prPkt->pIpPkt[12], prPkt->pIpPkt[13],
-		prPkt->pIpPkt[14], prPkt->pIpPkt[15]);
-	DBGLOG(REQ, TRACE, "prPkt->srcMAC=%02x:%02x:%02x:%02x:%02x:%02x\n",
-		prPkt->ucSrcMacAddr[0], prPkt->ucSrcMacAddr[1],
-		prPkt->ucSrcMacAddr[2], prPkt->ucSrcMacAddr[3],
-		prPkt->ucSrcMacAddr[4], prPkt->ucSrcMacAddr[5]);
+	       prPkt->pIpPkt[12], prPkt->pIpPkt[13],
+	       prPkt->pIpPkt[14], prPkt->pIpPkt[15]);
+	DBGLOG(REQ, TRACE,
+	       "prPkt->srcMAC=%02x:%02x:%02x:%02x:%02x:%02x\n",
+	       prPkt->ucSrcMacAddr[0], prPkt->ucSrcMacAddr[1],
+	       prPkt->ucSrcMacAddr[2], prPkt->ucSrcMacAddr[3],
+	       prPkt->ucSrcMacAddr[4], prPkt->ucSrcMacAddr[5]);
 	DBGLOG(REQ, TRACE, "dstMAC=%02x:%02x:%02x:%02x:%02x:%02x\n",
-		prPkt->ucDstMacAddr[0], prPkt->ucDstMacAddr[1],
-		prPkt->ucDstMacAddr[2], prPkt->ucDstMacAddr[3],
-		prPkt->ucDstMacAddr[4], prPkt->ucDstMacAddr[5]);
+	       prPkt->ucDstMacAddr[0], prPkt->ucDstMacAddr[1],
+	       prPkt->ucDstMacAddr[2], prPkt->ucDstMacAddr[3],
+	       prPkt->ucDstMacAddr[4], prPkt->ucDstMacAddr[5]);
 
 	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wiphy);
 	ASSERT(prGlueInfo);
@@ -1022,13 +1061,13 @@ int mtk_cfg80211_vendor_packet_keep_alive_start(
 			   prPkt, sizeof(struct PARAM_PACKET_KEEPALIVE_T),
 			   FALSE, FALSE, TRUE, &u4BufLen);
 	kalMemFree(prPkt, VIR_MEM_TYPE,
-		sizeof(struct PARAM_PACKET_KEEPALIVE_T));
+		   sizeof(struct PARAM_PACKET_KEEPALIVE_T));
 	return rStatus;
 
 nla_put_failure:
 	if (prPkt != NULL)
 		kalMemFree(prPkt, VIR_MEM_TYPE,
-			sizeof(struct PARAM_PACKET_KEEPALIVE_T));
+			   sizeof(struct PARAM_PACKET_KEEPALIVE_T));
 	return i4Status;
 }
 
@@ -1049,13 +1088,14 @@ int mtk_cfg80211_vendor_packet_keep_alive_stop(
 	if ((data == NULL) || !data_len)
 		goto nla_put_failure;
 
-	DBGLOG(REQ, TRACE, "vendor command: data_len=%d\r\n", data_len);
+	DBGLOG(REQ, TRACE, "vendor command: data_len=%d\r\n",
+	       data_len);
 	prPkt = (struct PARAM_PACKET_KEEPALIVE_T *)
 		kalMemAlloc(sizeof(struct PARAM_PACKET_KEEPALIVE_T),
-			VIR_MEM_TYPE);
+			    VIR_MEM_TYPE);
 	if (!prPkt) {
 		DBGLOG(REQ, ERROR,
-			"Can not alloc memory for PARAM_PACKET_KEEPALIVE_T\n");
+		       "Can not alloc memory for PARAM_PACKET_KEEPALIVE_T\n");
 		return -ENOMEM;
 	}
 	kalMemZero(prPkt, sizeof(struct PARAM_PACKET_KEEPALIVE_T));
@@ -1066,7 +1106,7 @@ int mtk_cfg80211_vendor_packet_keep_alive_stop(
 		prPkt->index = nla_get_u8(attr);
 
 	DBGLOG(REQ, INFO, "enable=%d, index=%d\r\n",
-		prPkt->enable, prPkt->index);
+	       prPkt->enable, prPkt->index);
 
 	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wiphy);
 	ASSERT(prGlueInfo);
@@ -1076,13 +1116,13 @@ int mtk_cfg80211_vendor_packet_keep_alive_stop(
 			   prPkt, sizeof(struct PARAM_PACKET_KEEPALIVE_T),
 			   FALSE, FALSE, TRUE, &u4BufLen);
 	kalMemFree(prPkt, VIR_MEM_TYPE,
-		sizeof(struct PARAM_PACKET_KEEPALIVE_T));
+		   sizeof(struct PARAM_PACKET_KEEPALIVE_T));
 	return rStatus;
 
 nla_put_failure:
 	if (prPkt != NULL)
 		kalMemFree(prPkt, VIR_MEM_TYPE,
-			sizeof(struct PARAM_PACKET_KEEPALIVE_T));
+			   sizeof(struct PARAM_PACKET_KEEPALIVE_T));
 	return i4Status;
 }
 
@@ -1174,11 +1214,12 @@ int mtk_cfg80211_vendor_event_rssi_beyond_range(
 	ASSERT(prGlueInfo);
 
 	DBGLOG(REQ, TRACE, "vendor command rssi=%d\r\n", rssi);
-	kalMemZero(&rRSSIEvt, sizeof(struct PARAM_RSSI_MONITOR_EVENT));
+	kalMemZero(&rRSSIEvt,
+		   sizeof(struct PARAM_RSSI_MONITOR_EVENT));
 
 	skb = cfg80211_vendor_event_alloc(wiphy, wdev,
-		sizeof(struct PARAM_RSSI_MONITOR_EVENT),
-		WIFI_EVENT_RSSI_MONITOR, GFP_KERNEL);
+				  sizeof(struct PARAM_RSSI_MONITOR_EVENT),
+				  WIFI_EVENT_RSSI_MONITOR, GFP_KERNEL);
 	if (!skb) {
 		DBGLOG(REQ, ERROR, "%s allocate skb failed\n", __func__);
 		return -ENOMEM;
@@ -1188,7 +1229,7 @@ int mtk_cfg80211_vendor_event_rssi_beyond_range(
 	prAisBssInfo =
 		&(prAdapter->rWifiVar.arBssInfoPool[NETWORK_TYPE_AIS]);
 	kalMemCopy(rRSSIEvt.BSSID, prAisBssInfo->aucBSSID,
-		sizeof(uint8_t) * MAC_ADDR_LEN);
+		   sizeof(uint8_t) * MAC_ADDR_LEN);
 
 	rRSSIEvt.version = 1; /* RSSI_MONITOR_EVT_VERSION = 1 */
 	if (rssi > PARAM_WHQL_RSSI_MAX_DBM)
@@ -1197,16 +1238,16 @@ int mtk_cfg80211_vendor_event_rssi_beyond_range(
 		rssi = -127;
 	rRSSIEvt.rssi = (int8_t)rssi;
 	DBGLOG(REQ, INFO,
-		"RSSI Event: version=%d, rssi=%d, BSSID=" MACSTR "\r\n",
-		rRSSIEvt.version, rRSSIEvt.rssi, MAC2STR(rRSSIEvt.BSSID));
+	       "RSSI Event: version=%d, rssi=%d, BSSID=" MACSTR "\r\n",
+	       rRSSIEvt.version, rRSSIEvt.rssi, MAC2STR(rRSSIEvt.BSSID));
 
 	/*NLA_PUT_U32(skb, GOOGLE_RSSI_MONITOR_EVENT, rssi);*/
 	{
 		/* unsigned int __tmp = rssi; */
 
 		if (unlikely(nla_put(skb, WIFI_EVENT_RSSI_MONITOR,
-			sizeof(struct PARAM_RSSI_MONITOR_EVENT),
-				&rRSSIEvt) < 0))
+				     sizeof(struct PARAM_RSSI_MONITOR_EVENT),
+				     &rRSSIEvt) < 0))
 			goto nla_put_failure;
 	}
 
