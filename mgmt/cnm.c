@@ -76,7 +76,8 @@
  *******************************************************************************
  */
 #if CFG_SUPPORT_DBDC
-#define DBDC_SWITCH_GUARD_TIME		(1*1000)	/* ms */
+#define DBDC_ENABLE_GUARD_TIME		(4*1000)	/* ms */
+#define DBDC_DISABLE_GUARD_TIME		(1*1000)	/* ms */
 #define DBDC_DISABLE_COUNTDOWN_TIME	(2*1000)	/* ms */
 #define DBDC_TX_QUOTA_POLLING_TIME	(200)		/* ms */
 #define DBDC_TX_RING_NUM			2
@@ -221,10 +222,10 @@ static struct BSS_OPTRX_BW_CONTROL_T g_arBssOpTRxBwControl[BSS_DEFAULT_NUM];
  */
 
 #if CFG_SUPPORT_DBDC
-#define DBDC_SET_GUARD_TIME(_prAdapter) { \
+#define DBDC_SET_GUARD_TIME(_prAdapter, _u4TimeoutMs) { \
 	cnmTimerStartTimer(_prAdapter, \
 		&g_rDbdcInfo.rDbdcGuardTimer, \
-		DBDC_SWITCH_GUARD_TIME); \
+		_u4TimeoutMs); \
 	g_rDbdcInfo.eDdbcGuardTimerType = \
 		ENUM_DBDC_GUARD_TIMER_SWITCH_GUARD_TIME; \
 }
@@ -2530,7 +2531,7 @@ cnmDbdcFsmEntryFunc_ENABLE_GUARD(IN struct ADAPTER *prAdapter)
 		g_rDbdcInfo.eDdbcGuardTimerType =
 			ENUM_DBDC_GUARD_TIMER_NONE;
 	}
-	DBDC_SET_GUARD_TIME(prAdapter);
+	DBDC_SET_GUARD_TIME(prAdapter, DBDC_ENABLE_GUARD_TIME);
 }
 
 static void
@@ -2572,7 +2573,7 @@ cnmDbdcFsmEntryFunc_DISABLE_GUARD(IN struct ADAPTER *prAdapter)
 		g_rDbdcInfo.eDdbcGuardTimerType =
 			ENUM_DBDC_GUARD_TIMER_NONE;
 	}
-	DBDC_SET_GUARD_TIME(prAdapter);
+	DBDC_SET_GUARD_TIME(prAdapter, DBDC_DISABLE_GUARD_TIME);
 
 	cnmDbdcOpmodeChangeAndWait(prAdapter, FALSE);
 }
@@ -3080,7 +3081,7 @@ void cnmDbdcPreConnectionEnableDecision(
 					  &g_rDbdcInfo.rDbdcGuardTimer);
 			cnmTimerStartTimer(prAdapter,
 					   &g_rDbdcInfo.rDbdcGuardTimer,
-					   DBDC_SWITCH_GUARD_TIME);
+					   DBDC_ENABLE_GUARD_TIME);
 		}
 		/* The DBDC is already ON, so renew WMM band information only */
 		DBDC_SET_WMMBAND_FW_AUTO_BY_CHNL(ucPrimaryChannel, ucWmmQueIdx);
@@ -3142,7 +3143,7 @@ void cnmDbdcRuntimeCheckDecision(IN struct ADAPTER
 	 * If AGConcurrent status changes in ENABLE_GUARD, the FSM
 	 * will go through DISABLE_GUARD state. It could make sure
 	 * the interval of successive OPChange is larger than 4 sec
-	 * (DBDC_SWITCH_GUARD_TIME).
+	 * (DBDC_ENABLE_GUARD_TIME).
 	 */
 	if (timerPendingTimer(&g_rDbdcInfo.rDbdcGuardTimer) &&
 		g_rDbdcInfo.eDdbcGuardTimerType ==
@@ -3157,7 +3158,7 @@ void cnmDbdcRuntimeCheckDecision(IN struct ADAPTER
 					  &g_rDbdcInfo.rDbdcGuardTimer);
 			cnmTimerStartTimer(prAdapter,
 					   &g_rDbdcInfo.rDbdcGuardTimer,
-					   DBDC_SWITCH_GUARD_TIME);
+					   DBDC_ENABLE_GUARD_TIME);
 		} else
 			log_dbg(CNM, INFO,
 				"[DBDC] DBDC guard time, state %d\n",
