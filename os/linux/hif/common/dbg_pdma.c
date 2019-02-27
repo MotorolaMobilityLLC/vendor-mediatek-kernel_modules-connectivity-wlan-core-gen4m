@@ -367,7 +367,7 @@ static bool halIsTxHang(struct ADAPTER *prAdapter)
 	}
 
 	if (fgIsTimeout) {
-		DBGLOG(HAL, INFO, "TokenId[%u] timeout[sec:%u, usec:%u]\n",
+		DBGLOG(HAL, INFO, "TokenId[%u] timeout[sec:%ld, usec:%ld]\n",
 		       u4TokenId, rLongest.tv_sec, rLongest.tv_usec);
 		prToken = &prTokenInfo->arToken[u4TokenId];
 		if (prToken->prPacket)
