@@ -6251,7 +6251,8 @@ uint32_t wlanCfgParseArgument(int8_t *cmdLine, int32_t *argc, int8_t *argv[])
 	int32_t nargs;
 
 	if (cmdLine == NULL || argc == NULL || argv == NULL) {
-		ASSERT(0);
+		DBGLOG(INIT, ERROR, "parameter is NULL: %p, %p, %p\n",
+		       cmdLine, argc, argv);
 		return WLAN_STATUS_FAILURE;
 	}
 	args = argv;
@@ -6264,7 +6265,7 @@ uint32_t wlanCfgParseArgument(int8_t *cmdLine, int32_t *argc, int8_t *argv[])
 #endif
 
 	if (kalStrnLen(cmdLine, 512) >= 512) {
-		ASSERT(0);
+		DBGLOG(INIT, ERROR, "cmdLine >= 512\n");
 		return WLAN_STATUS_FAILURE;
 	}
 
@@ -6294,7 +6295,8 @@ uint32_t wlanCfgParseArgumentLong(int8_t *cmdLine, int32_t *argc, int8_t *argv[]
 	int32_t nargs;
 
 	if (cmdLine == NULL || argc == NULL || argv == NULL) {
-		ASSERT(0);
+		DBGLOG(INIT, ERROR, "parameter is NULL: %p, %p, %p\n",
+		       cmdLine, argc, argv);
 		return WLAN_STATUS_FAILURE;
 	}
 	args = argv;
@@ -6307,7 +6309,7 @@ uint32_t wlanCfgParseArgumentLong(int8_t *cmdLine, int32_t *argc, int8_t *argv[]
 #endif
 
 	if (kalStrnLen(cmdLine, 512) >= 512) {
-		ASSERT(0);
+		DBGLOG(INIT, ERROR, "cmdLine >= 512\n");
 		return WLAN_STATUS_FAILURE;
 	}
 
@@ -6639,11 +6641,11 @@ uint32_t wlanCfgParse(IN struct ADAPTER *prAdapter, uint8_t *pucConfigBuf, uint3
 	kalMemSet(rCmdV1Header.buffer, 0, MAX_CMD_BUFFER_LENGTH);
 
 	if (pucConfigBuf == NULL) {
-		ASSERT(0);
+		DBGLOG(INIT, ERROR, "pucConfigBuf is NULL\n");
 		return WLAN_STATUS_FAILURE;
 	}
 	if (kalStrnLen(pucConfigBuf, 4000) >= 4000) {
-		ASSERT(0);
+		DBGLOG(INIT, ERROR, "pucConfigBuf >= 4000\n");
 		return WLAN_STATUS_FAILURE;
 	}
 	if (u4ConfigBufLen == 0)
@@ -6868,11 +6870,11 @@ uint32_t wlanCfgParse(IN struct ADAPTER *prAdapter, uint8_t *pucConfigBuf, uint3
 	int32_t nargs;
 
 	if (pucConfigBuf == NULL) {
-		ASSERT(0);
+		DBGLOG(INIT, ERROR, "pucConfigBuf is NULL\n");
 		return WLAN_STATUS_FAILURE;
 	}
 	if (kalStrnLen(pucConfigBuf, 4000) >= 4000) {
-		ASSERT(0);
+		DBGLOG(INIT, ERROR, "pucConfigBuf >= 4000\n");
 		return WLAN_STATUS_FAILURE;
 	}
 	if (u4ConfigBufLen == 0)

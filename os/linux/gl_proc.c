@@ -476,6 +476,13 @@ static ssize_t procDriverCmdRead(struct file *filp, char __user *buf,
 
 	if (g_u4NextDriverReadLen > 0)	/* Detect content to show */
 		u4CopySize = g_u4NextDriverReadLen;
+
+	if (u4CopySize > count) {
+		pr_err("count is too small: u4CopySize=%u, count=%u\n",
+		       u4CopySize, count);
+		return -EFAULT;
+	}
+
 	if (copy_to_user(buf, g_aucProcBuf, u4CopySize)) {
 		pr_err("copy to user failed\n");
 		return -EFAULT;
