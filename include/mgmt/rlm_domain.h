@@ -372,6 +372,30 @@
 
 #if CFG_SUPPORT_PWR_LIMIT_COUNTRY
 
+/* Define Tx Power Control Mask */
+enum ENUM_TX_POWER_CTRL_MASK {
+	PWR_CRTL_MASK_NONE = (0x0000),
+	PWR_CRTL_MASK_DOMAIN = (0x0001),
+	PWR_CRTL_MASK_BANDEDGE_2G4 = (0x0002),
+	PWR_CRTL_MASK_BANDEDGE_5G = (0x0004),
+	PWR_CRTL_MASK_FCC_WIFION = (0x0008),
+	PWR_CRTL_MASK_FCC_IOCTL = (0x00016),
+	PWR_CRTL_MASK_SAR_IOCTL = (0x00032),
+};
+
+/* Define Tx Power Control Type */
+enum ENUM_TX_POWER_CTRL_TYPE {
+	PWR_CTRL_TYPE_DOMAIN = 0,
+	PWR_CTRL_TYPE_BANDEDGE_2G,
+	PWR_CTRL_TYPE_BANDEDGE_5G,
+	PWR_CTRL_TYPE_FCC_WIFION,
+	PWR_CTRL_TYPE_ENABLE_FCC_IOCTL,
+	PWR_CTRL_TYPE_DISABLE_FCC_IOCTL,
+	PWR_CTRL_TYPE_ENABLE_SAR_IOCTL,
+	PWR_CTRL_TYPE_DISABLE_SAR_IOCTL,
+	PWR_CTRL_TYPE_NUM
+};
+
 enum ENUM_POWER_LIMIT {
 	PWR_LIMIT_CCK = 0,
 	PWR_LIMIT_20M_L = 1,
@@ -411,6 +435,23 @@ enum ENUM_CHNL_BW {
 	CHNL_BW_10,
 	CHNL_BW_5
 };
+
+#if (CFG_SUPPORT_FCC_DYNAMIC_TX_PWR_ADJUST || CFG_SUPPORT_FCC_POWER_BACK_OFF)
+/* TX Power Adjust For FCC/CE Certification */
+struct FCC_TX_PWR_ADJUST {
+	uint8_t fgFccTxPwrAdjust;
+	uint8_t uOffsetCCK;			/* Offset for CH 11~14 */
+	uint8_t uOffsetHT20;		/* Offset for CH 11~14 */
+	uint8_t uOffsetHT40;		/* Offset for CH 11~14 */
+	uint8_t aucChannelCCK[2];	/* [0] for start channel */
+					/* [1] for ending channel */
+	uint8_t aucChannelHT20[2];	/* [0] for start channel */
+					/* [1] for ending channel */
+	uint8_t aucChannelHT40[2];	/* [0] for start channel */
+					/* [1] for ending channel */
+	uint8_t aucChannelBandedge[2];  /* Special bandedge */
+};
+#endif
 
 #if 0
 /* If channel width is CHNL_BW_20_40, the first channel will be SCA and
@@ -735,7 +776,8 @@ void rlmDomainCheckCountryPowerLimitTable(
 uint16_t rlmDomainPwrLimitDefaultTableDecision(
 	struct ADAPTER *prAdapter, uint16_t u2CountryCode);
 
-void rlmDomainSendPwrLimitCmd(struct ADAPTER *prAdapter);
+uint32_t rlmDomainSendPwrLimitCmd(struct ADAPTER *prAdapter,
+				  enum ENUM_TX_POWER_CTRL_TYPE eCtrlType);
 #endif
 
 #if (CFG_SUPPORT_SINGLE_SKU == 1)

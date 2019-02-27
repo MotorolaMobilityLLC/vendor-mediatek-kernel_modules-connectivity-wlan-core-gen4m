@@ -16443,3 +16443,20 @@ uint32_t wlanoidSetLowLatencyMode(
 	return WLAN_STATUS_SUCCESS;
 }
 #endif /* CFG_SUPPORT_LOWLATENCY_MODE */
+
+uint32_t wlanoidTxPowerControl(IN struct ADAPTER *prAdapter,
+			       IN void *pvSetBuffer,
+			       IN uint32_t u4SetBufferLen,
+			       OUT uint32_t *pu4SetInfoLen)
+{
+	enum ENUM_TX_POWER_CTRL_TYPE eCtrlType;
+
+	if (!pvSetBuffer ||
+	    (u4SetBufferLen < sizeof(enum ENUM_TX_POWER_CTRL_TYPE)))
+		return WLAN_STATUS_INVALID_DATA;
+
+	eCtrlType = *(enum ENUM_TX_POWER_CTRL_TYPE *)pvSetBuffer;
+
+	return rlmDomainSendPwrLimitCmd(prAdapter, eCtrlType);
+}
+

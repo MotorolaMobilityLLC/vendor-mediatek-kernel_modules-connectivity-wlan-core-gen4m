@@ -1703,6 +1703,7 @@ struct PARAM_LINUX_NETDEV_STATISTICS {
 struct PARAM_MTK_WIFI_TEST_STRUCT {
 	uint32_t u4FuncIndex;
 	uint32_t u4FuncData;
+	uint32_t u4FuncData2; /*FW don't support*/
 };
 
 struct _RBIST_IQ_DATA_T {
@@ -4019,5 +4020,10 @@ uint32_t wlanoidTspecOperation(IN struct ADAPTER *prAdapter, IN void *pvBuffer,
 
 uint32_t wlanoidDumpUapsdSetting(struct ADAPTER *prAdapter, void *pvBuffer,
 				 uint32_t u4BufferLen, uint32_t *pu4InfoLen);
+
+uint32_t wlanoidTxPowerControl(IN struct ADAPTER *prAdapter,
+			       IN void *pvSetBuffer,
+			       IN uint32_t u4SetBufferLen,
+			       OUT uint32_t *pu4SetInfoLen);
 
 #endif /* _WLAN_OID_H */
