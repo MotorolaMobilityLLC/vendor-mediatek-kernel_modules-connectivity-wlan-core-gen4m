@@ -6864,8 +6864,12 @@ VOID wlanInitFeatureOption(IN P_ADAPTER_T prAdapter)
 	prWifiVar->ucCalTimingCtrl = (UINT_8) wlanCfgGetUint32(prAdapter, "CalTimingCtrl", 0 /* power on full cal */);
 	prWifiVar->ucWow = (UINT_8) wlanCfgGetUint32(prAdapter, "Wow", FEATURE_DISABLED);
 	prWifiVar->ucOffload = (UINT_8) wlanCfgGetUint32(prAdapter, "Offload", FEATURE_DISABLED);
+	prWifiVar->ucAdvPws = (UINT_8) wlanCfgGetUint32(prAdapter, "AdvPws", FEATURE_ENABLED);
+	prWifiVar->ucWowOnMdtim = (UINT_8) wlanCfgGetUint32(prAdapter, "WowOnMdtim", 1);
+	prWifiVar->ucWowOffMdtim = (UINT_8) wlanCfgGetUint32(prAdapter, "WowOffMdtim", 3);
 
-	prAdapter->rWowCtrl.fgEnable = (UINT_8) wlanCfgGetUint32(prAdapter, "WowEnable", FEATURE_ENABLED);
+#if CFG_WOW_SUPPORT
+	prAdapter->rWowCtrl.fgWowEnable = (UINT_8) wlanCfgGetUint32(prAdapter, "WowEnable", FEATURE_ENABLED);
 	prAdapter->rWowCtrl.ucScenarioId = (UINT_8) wlanCfgGetUint32(prAdapter, "WowScenarioId", 0);
 	prAdapter->rWowCtrl.ucBlockCount = (UINT_8) wlanCfgGetUint32(prAdapter, "WowPinCnt", 1);
 	prAdapter->rWowCtrl.astWakeHif[0].ucWakeupHif =
@@ -6873,6 +6877,7 @@ VOID wlanInitFeatureOption(IN P_ADAPTER_T prAdapter)
 	prAdapter->rWowCtrl.astWakeHif[0].ucGpioPin = (UINT_8) wlanCfgGetUint32(prAdapter, "WowGpioPin", 0xFF);
 	prAdapter->rWowCtrl.astWakeHif[0].ucTriggerLvl = (UINT_8) wlanCfgGetUint32(prAdapter, "WowTriigerLevel", 3);
 	prAdapter->rWowCtrl.astWakeHif[0].u4GpioInterval = wlanCfgGetUint32(prAdapter, "GpioInterval", 0);
+#endif
 
 	/* SW Test Mode: Mainly used for Sigma */
 	prWifiVar->u4SwTestMode = (UINT_8) wlanCfgGetUint32(prAdapter, "Sigma", ENUM_SW_TEST_MODE_NONE);
@@ -8823,6 +8828,26 @@ wlanNotifyFwSuspend(P_GLUE_INFO_T prGlueInfo, struct net_device *prDev, BOOLEAN 
 
 	rSuspendCmd.ucBssIndex = prNetDevPrivate->ucBssIdx;
 	rSuspendCmd.ucEnableSuspendMode = fgSuspend;
+
+	if (prGlueInfo->prAdapter->rWifiVar.ucWow && prGlueInfo->prAdapter->rWowCtrl.fgWowEnable) {
+		/* cfg enable + wow enable => Wow On mdtim*/
+		rSuspendCmd.ucMdtim = prGlueInfo->prAdapter->rWifiVar.ucWowOnMdtim;
+		DBGLOG(REQ, INFO, "mdtim [1]\n");
+	} else if (prGlueInfo->prAdapter->rWifiVar.ucWow && !prGlueInfo->prAdapter->rWowCtrl.fgWowEnable) {
+		if (prGlueInfo->prAdapter->rWifiVar.ucAdvPws) {
+			/* cfg enable + wow disable + adv pws enable => Wow Off mdtim */
+			rSuspendCmd.ucMdtim = prGlueInfo->prAdapter->rWifiVar.ucWowOffMdtim;
+			DBGLOG(REQ, INFO, "mdtim [2]\n");
+		}
+	} else if (!prGlueInfo->prAdapter->rWifiVar.ucWow) {
+		if (prGlueInfo->prAdapter->rWifiVar.ucAdvPws) {
+			/* cfg disable + adv pws enable => MT6632 case => Wow Off mdtim */
+			rSuspendCmd.ucMdtim = prGlueInfo->prAdapter->rWifiVar.ucWowOffMdtim;
+			DBGLOG(REQ, INFO, "mdtim [3]\n");
+		}
+	}
+
+    /* When FW receive command, it check connection state to decide apply setting or not */
 
 	rStatus = kalIoctl(prGlueInfo,
 				wlanoidNotifyFwSuspend,

@@ -2308,12 +2308,15 @@ reqExtSetAcpiDevicePowerState(IN P_GLUE_INFO_T prGlueInfo,
 #define CMD_CLEAR_ACL_ENTRY     "CLEAR_ACL_ENTRY"
 
 #if CFG_WOW_SUPPORT
+#define CMD_WOW_START			"WOW_START"
 #define CMD_SET_WOW_ENABLE		"SET_WOW_ENABLE"
 #define CMD_SET_WOW_PAR			"SET_WOW_PAR"
 #define CMD_SET_WOW_UDP			"SET_WOW_UDP"
 #define CMD_SET_WOW_TCP			"SET_WOW_TCP"
-#define CMD_GET_WOW_PORT			"GET_WOW_PORT"
+#define CMD_GET_WOW_PORT		"GET_WOW_PORT"
 #endif
+#define CMD_SET_ADV_PWS			"SET_ADV_PWS"
+#define CMD_SET_MDTIM			"SET_MDTIM"
 
 #define CMD_SET_DBDC			"SET_DBDC"
 
@@ -7067,7 +7070,7 @@ static int priv_driver_set_calbackup_test_drv_fw(IN struct net_device *prNetDev,
 #endif
 
 #if CFG_WOW_SUPPORT
-static int priv_driver_set_wow_enable(IN struct net_device *prNetDev, IN char *pcCommand, IN int i4TotalLen)
+static int priv_driver_set_wow(IN struct net_device *prNetDev, IN char *pcCommand, IN int i4TotalLen)
 {
 	P_GLUE_INFO_T prGlueInfo = NULL;
 	P_WOW_CTRL_T pWOW_CTRL = NULL;
@@ -7088,16 +7091,42 @@ static int priv_driver_set_wow_enable(IN struct net_device *prNetDev, IN char *p
 	if (u4Ret)
 		DBGLOG(REQ, LOUD, "parse bEnable error u4Ret=%d\n", u4Ret);
 
-	pWOW_CTRL->fgEnable = Enable;
-
-	DBGLOG(INIT, INFO, "CMD set_wow_enable = %d\n", pWOW_CTRL->fgEnable);
+	DBGLOG(INIT, INFO, "CMD set_wow_enable = %d\n", Enable);
 	DBGLOG(INIT, INFO, "Scenario ID %d\n", pWOW_CTRL->ucScenarioId);
 	DBGLOG(INIT, INFO, "ucBlockCount %d\n", pWOW_CTRL->ucBlockCount);
 	DBGLOG(INIT, INFO, "interface %d\n", pWOW_CTRL->astWakeHif[0].ucWakeupHif);
 	DBGLOG(INIT, INFO, "gpio_pin %d\n", pWOW_CTRL->astWakeHif[0].ucGpioPin);
 	DBGLOG(INIT, INFO, "gpio_level 0x%x\n", pWOW_CTRL->astWakeHif[0].ucTriggerLvl);
 	DBGLOG(INIT, INFO, "gpio_timer %d\n", pWOW_CTRL->astWakeHif[0].u4GpioInterval);
-	kalWowProcess(prGlueInfo, pWOW_CTRL->fgEnable);
+	kalWowProcess(prGlueInfo, Enable);
+
+	return 0;
+}
+
+static int priv_driver_set_wow_enable(IN struct net_device *prNetDev, IN char *pcCommand, IN int i4TotalLen)
+{
+	P_GLUE_INFO_T prGlueInfo = NULL;
+	P_WOW_CTRL_T pWOW_CTRL = NULL;
+	INT_32 i4Argc = 0;
+	PCHAR apcArgv[WLAN_CFG_ARGV_MAX] = { 0 };
+	UINT_32 u4Ret = 0;
+	UINT_8 ucEnable = 0;
+
+	prGlueInfo = *((P_GLUE_INFO_T *) netdev_priv(prNetDev));
+	pWOW_CTRL = &prGlueInfo->prAdapter->rWowCtrl;
+
+	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+	DBGLOG(REQ, LOUD, "argc is %i\n", i4Argc);
+
+	u4Ret = kalkStrtou8(apcArgv[1], 0, &ucEnable);
+
+	if (u4Ret)
+		DBGLOG(REQ, LOUD, "parse bEnable error u4Ret=%d\n", u4Ret);
+
+	pWOW_CTRL->fgWowEnable = ucEnable;
+
+	DBGLOG(PF, INFO, "WOW enable %d\n", pWOW_CTRL->fgWowEnable);
 
 	return 0;
 }
@@ -7189,14 +7218,16 @@ static int priv_driver_set_wow_udpport(IN struct net_device *prNetDev, IN char *
 
 		/* Pick Max */
 		ucCount = ((i4Argc - 2) > MAX_TCP_UDP_PORT) ? MAX_TCP_UDP_PORT : (i4Argc - 2);
-		DBGLOG(REQ, WARN, "UDP ucCount=%d\n", ucCount);
+		DBGLOG(PF, INFO, "UDP ucCount=%d\n", ucCount);
 
 		u4Ret = kalkStrtou8(apcPortArgv[1], 0, &ucVer);
-		if (u4Ret)
+		if (u4Ret) {
 			DBGLOG(REQ, LOUD, "parse ucWakeupHif error u4Ret=%d\n", u4Ret);
+			return -1;
+		}
 
 		/* IPv4/IPv6 */
-		DBGLOG(REQ, WARN, "ucVer=%d\n", ucVer);
+		DBGLOG(PF, INFO, "ucVer=%d\n", ucVer);
 		if (ucVer == 0) {
 			pWOW_CTRL->stWowPort.ucIPv4UdpPortCnt = ucCount;
 			pausPortArry = pWOW_CTRL->stWowPort.ausIPv4UdpPort;
@@ -7208,15 +7239,24 @@ static int priv_driver_set_wow_udpport(IN struct net_device *prNetDev, IN char *
 		/* Port */
 		for (ii = 0; ii < ucCount; ii++) {
 			u4Ret = kalkStrtou16(apcPortArgv[ii+2], 0, &u2Port);
-			if (u4Ret)
-				DBGLOG(REQ, ERROR, "parse u2Port error u4Ret=%d\n", u4Ret);
+			if (u4Ret) {
+				DBGLOG(PF, ERROR, "parse u2Port error u4Ret=%d\n", u4Ret);
+				return -1;
+			}
 
 			pausPortArry[ii] = u2Port;
-			DBGLOG(REQ, WARN, "ucPort=%d, idx=%d\n", u2Port, ii);
+			DBGLOG(PF, INFO, "ucPort=%d, idx=%d\n", u2Port, ii);
 		}
 
 		return 0;
 	} else if (i4Argc == 2) {
+
+		u4Ret = kalkStrtou8(apcPortArgv[1], 0, &ucVer);
+		if (u4Ret) {
+			DBGLOG(REQ, LOUD, "parse ucWakeupHif error u4Ret=%d\n", u4Ret);
+			return -1;
+		}
+
 		if (ucVer == 0) {
 			kalMemZero(prGlueInfo->prAdapter->rWowCtrl.stWowPort.ausIPv4UdpPort,
 				sizeof(UINT_16) * MAX_TCP_UDP_PORT);
@@ -7258,14 +7298,16 @@ static int priv_driver_set_wow_tcpport(IN struct net_device *prNetDev, IN char *
 
 		/* Pick Max */
 		ucCount = ((i4Argc - 2) > MAX_TCP_UDP_PORT) ? MAX_TCP_UDP_PORT : (i4Argc - 2);
-		DBGLOG(REQ, WARN, "TCP ucCount=%d\n", ucCount);
+		DBGLOG(PF, INFO, "TCP ucCount=%d\n", ucCount);
 
 		u4Ret = kalkStrtou8(apcPortArgv[1], 0, &ucVer);
-		if (u4Ret)
+		if (u4Ret) {
 			DBGLOG(REQ, LOUD, "parse ucWakeupHif error u4Ret=%d\n", u4Ret);
+			return -1;
+		}
 
 		/* IPv4/IPv6 */
-		DBGLOG(REQ, WARN, "Ver=%d\n", ucVer);
+		DBGLOG(PF, INFO, "Ver=%d\n", ucVer);
 		if (ucVer == 0) {
 			pWOW_CTRL->stWowPort.ucIPv4TcpPortCnt = ucCount;
 			pausPortArry = pWOW_CTRL->stWowPort.ausIPv4TcpPort;
@@ -7277,15 +7319,24 @@ static int priv_driver_set_wow_tcpport(IN struct net_device *prNetDev, IN char *
 		/* Port */
 		for (ii = 0; ii < ucCount; ii++) {
 			u4Ret = kalkStrtou16(apcPortArgv[ii+2], 0, &u2Port);
-			if (u4Ret)
-				DBGLOG(REQ, ERROR, "parse u2Port error u4Ret=%d\n", u4Ret);
+			if (u4Ret) {
+				DBGLOG(PF, ERROR, "parse u2Port error u4Ret=%d\n", u4Ret);
+				return -1;
+			}
 
 			pausPortArry[ii] = u2Port;
-			DBGLOG(REQ, WARN, "ucPort=%d, idx=%d\n", u2Port, ii);
+			DBGLOG(PF, INFO, "ucPort=%d, idx=%d\n", u2Port, ii);
 		}
 
 		return 0;
 	} else if (i4Argc == 2) {
+
+		u4Ret = kalkStrtou8(apcPortArgv[1], 0, &ucVer);
+		if (u4Ret) {
+			DBGLOG(REQ, LOUD, "parse ucWakeupHif error u4Ret=%d\n", u4Ret);
+			return -1;
+		}
+
 		if (ucVer == 0) {
 			kalMemZero(prGlueInfo->prAdapter->rWowCtrl.stWowPort.ausIPv4UdpPort,
 				sizeof(UINT_16) * MAX_TCP_UDP_PORT);
@@ -7368,10 +7419,10 @@ static int priv_driver_get_wow_port(IN struct net_device *prNetDev, IN char *pcC
 
 		/* Dunp Port */
 		for (ii = 0; ii < ucCount; ii++)
-			DBGLOG(REQ, WARN, "ucPort=%d, idx=%d\n", pausPortArry[ii], ii);
+			DBGLOG(PF, INFO, "ucPort=%d, idx=%d\n", pausPortArry[ii], ii);
 
 
-		DBGLOG(REQ, WARN, "[%s/%s] count:%d\n", aucIp[ucVer], aucProto[ucProto], ucCount);
+		DBGLOG(PF, INFO, "[%s/%s] count:%d\n", aucIp[ucVer], aucProto[ucProto], ucCount);
 
 		return 0;
 	} else
@@ -7379,6 +7430,75 @@ static int priv_driver_get_wow_port(IN struct net_device *prNetDev, IN char *pcC
 
 }
 #endif
+
+static int priv_driver_set_adv_pws(IN struct net_device *prNetDev, IN char *pcCommand, IN int i4TotalLen)
+{
+	P_GLUE_INFO_T prGlueInfo = NULL;
+	INT_32 i4Argc = 0;
+	PCHAR apcArgv[WLAN_CFG_ARGV_MAX] = { 0 };
+	UINT_32 u4Ret = 0;
+	UINT_8 ucAdvPws = 0;
+
+	prGlueInfo = *((P_GLUE_INFO_T *) netdev_priv(prNetDev));
+
+	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+	DBGLOG(REQ, LOUD, "argc is %i\n", i4Argc);
+
+	u4Ret = kalkStrtou8(apcArgv[1], 0, &ucAdvPws);
+
+	if (u4Ret)
+		DBGLOG(REQ, LOUD, "parse bEnable error u4Ret=%d\n", u4Ret);
+
+	prGlueInfo->prAdapter->rWifiVar.ucAdvPws = ucAdvPws;
+
+	DBGLOG(INIT, INFO, "AdvPws:%d\n", &prGlueInfo->prAdapter->rWifiVar.ucAdvPws);
+
+	return 0;
+
+}
+
+static int priv_driver_set_mdtim(IN struct net_device *prNetDev, IN char *pcCommand, IN int i4TotalLen)
+{
+	P_GLUE_INFO_T prGlueInfo = NULL;
+	INT_32 i4Argc = 0;
+	PCHAR apcArgv[WLAN_CFG_ARGV_MAX] = { 0 };
+	UINT_32 u4Ret = 0;
+	UINT_8 ucMultiDtim = 0, ucVer;
+
+	prGlueInfo = *((P_GLUE_INFO_T *) netdev_priv(prNetDev));
+
+	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+	DBGLOG(REQ, LOUD, "argc is %i\n", i4Argc);
+
+	/* iwpriv wlan0 driver "set_mdtim 1 3 */
+	if (i4Argc >= 3) {
+
+		u4Ret = kalkStrtou8(apcArgv[1], 0, &ucVer);
+		if (u4Ret) {
+			DBGLOG(REQ, ERROR, "parse apcArgv1 error u4Ret=%d\n", u4Ret);
+			return -1;
+		}
+
+		u4Ret = kalkStrtou8(apcArgv[2], 0, &ucMultiDtim);
+		if (u4Ret) {
+			DBGLOG(REQ, ERROR, "parse apcArgv2 error u4Ret=%d\n", u4Ret);
+			return -1;
+		}
+
+		if (ucVer == 0) {
+			prGlueInfo->prAdapter->rWifiVar.ucWowOnMdtim = ucMultiDtim;
+			DBGLOG(REQ, INFO, "WOW On MDTIM:%d\n", &prGlueInfo->prAdapter->rWifiVar.ucWowOnMdtim);
+		} else {
+			prGlueInfo->prAdapter->rWifiVar.ucWowOffMdtim = ucMultiDtim;
+			DBGLOG(REQ, INFO, "WOW Off MDTIM:%d\n", &prGlueInfo->prAdapter->rWifiVar.ucWowOffMdtim);
+		}
+	}
+
+	return 0;
+
+}
 
 int priv_driver_set_suspend_mode(IN struct net_device *prNetDev, IN char *pcCommand, IN int i4TotalLen)
 {
@@ -8455,6 +8575,8 @@ INT_32 priv_driver_cmds(IN struct net_device *prNetDev, IN PCHAR pcCommand, IN I
 			i4BytesWritten = priv_driver_set_calbackup_test_drv_fw(prNetDev, pcCommand, i4TotalLen);
 #endif
 #if CFG_WOW_SUPPORT
+		else if (strnicmp(pcCommand, CMD_WOW_START, strlen(CMD_WOW_START)) == 0)
+			i4BytesWritten = priv_driver_set_wow(prNetDev, pcCommand, i4TotalLen);
 		else if (strnicmp(pcCommand, CMD_SET_WOW_ENABLE, strlen(CMD_SET_WOW_ENABLE)) == 0)
 			i4BytesWritten = priv_driver_set_wow_enable(prNetDev, pcCommand, i4TotalLen);
 		else if (strnicmp(pcCommand, CMD_SET_WOW_PAR, strlen(CMD_SET_WOW_PAR)) == 0)
@@ -8466,6 +8588,10 @@ INT_32 priv_driver_cmds(IN struct net_device *prNetDev, IN PCHAR pcCommand, IN I
 		else if (strnicmp(pcCommand, CMD_GET_WOW_PORT, strlen(CMD_GET_WOW_PORT)) == 0)
 			i4BytesWritten = priv_driver_get_wow_port(prNetDev, pcCommand, i4TotalLen);
 #endif
+		else if (strnicmp(pcCommand, CMD_SET_ADV_PWS, strlen(CMD_SET_ADV_PWS)) == 0)
+			i4BytesWritten = priv_driver_set_adv_pws(prNetDev, pcCommand, i4TotalLen);
+		else if (strnicmp(pcCommand, CMD_SET_MDTIM, strlen(CMD_SET_MDTIM)) == 0)
+			i4BytesWritten = priv_driver_set_mdtim(prNetDev, pcCommand, i4TotalLen);
 #if CFG_SUPPORT_QA_TOOL
 		else if (strnicmp(pcCommand, CMD_GET_RX_STATISTICS, strlen(CMD_GET_RX_STATISTICS)) == 0)
 			i4BytesWritten = priv_driver_get_rx_statistics(prNetDev, pcCommand, i4TotalLen);
