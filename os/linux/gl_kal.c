@@ -2438,7 +2438,7 @@ kalQoSFrameClassifierAndPacketInfo(IN struct GLUE_INFO *prGlueInfo,
 		if (GLUE_GET_PKT_BSS_IDX(prSkb) != P2P_DEV_BSS_INDEX) {
 			ucUserPriority = getUpFromDscp(prGlueInfo,
 				GLUE_GET_PKT_BSS_IDX(prSkb),
-				aucLookAheadBuf[ETHER_TYPE_LEN + 1] & 0x3F);
+				(pucNextProtocol[1] & 0xFC) >> 2);
 			if (ucUserPriority != 0xFF)
 				prSkb->priority = ucUserPriority;
 		}
