@@ -116,9 +116,6 @@ p2pDevStateInit_REQING_CHANNEL(IN struct ADAPTER *prAdapter,
 	struct MSG_P2P_CHNL_REQUEST *prP2pMsgChnlReq =
 		(struct MSG_P2P_CHNL_REQUEST *) NULL;
 	struct BSS_INFO *prBssInfo = (struct BSS_INFO *) NULL;
-#if CFG_SUPPORT_DBDC
-	struct CNM_DBDC_CAP rDbdcCap;
-#endif /*CFG_SUPPORT_DBDC*/
 
 	do {
 		ASSERT_BREAK((prAdapter != NULL)
@@ -146,19 +143,9 @@ p2pDevStateInit_REQING_CHANNEL(IN struct ADAPTER *prAdapter,
 		if (prBssInfo->fgIsWmmInited == FALSE)
 			prBssInfo->ucWmmQueSet = MAX_HW_WMM_INDEX;
 		prBssInfo->eBand = prP2pMsgChnlReq->rChannelInfo.eBand;
-
-#if CFG_SUPPORT_DBDC
-		kalMemZero(&rDbdcCap, sizeof(struct CNM_DBDC_CAP));
-
-		cnmGetDbdcCapability(prAdapter,
-			prBssInfo->ucBssIndex,
-			prP2pMsgChnlReq->rChannelInfo.eBand,
-			prP2pMsgChnlReq->rChannelInfo.ucChannelNum,
-			wlanGetSupportNss(prAdapter, prBssInfo->ucBssIndex),
-			&rDbdcCap);
-
-		prBssInfo->ucNss = rDbdcCap.ucNss;
-#endif /*CFG_SUPPORT_DBDC*/
+		cnmGetOpTRxNss(
+			prAdapter, prBssInfo->ucBssIndex,
+			&prBssInfo->ucOpRxNss, &prBssInfo->ucOpTxNss);
 		prChnlReqInfo->u4MaxInterval = prP2pMsgChnlReq->u4Duration;
 		prChnlReqInfo->ucReqChnlNum =
 			prP2pMsgChnlReq->rChannelInfo.ucChannelNum;
