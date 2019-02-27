@@ -100,6 +100,17 @@ extern const uint8_t *apucNetworkType[NETWORK_TYPE_NUM];
 #define MAX_BSS_INDEX           HW_BSSID_NUM
 #define P2P_DEV_BSS_INDEX       MAX_BSS_INDEX
 
+#define IS_BSS_ALIVE(_prAdapter, _prBssInfo) \
+	(_prBssInfo->fgIsInUse && \
+	_prBssInfo->fgIsNetActive && \
+	(_prBssInfo->eConnectionState == PARAM_MEDIA_STATE_CONNECTED || \
+	(_prBssInfo->eCurrentOPMode == OP_MODE_ACCESS_POINT && \
+	IS_NET_PWR_STATE_ACTIVE(_prAdapter, \
+	_prBssInfo->ucBssIndex))))
+
+#define IS_BSS_NOT_ALIVE(_prAdapter, _prBssInfo) \
+	(!IS_BSS_ALIVE(_prAdapter, _prBssInfo))
+
 /*******************************************************************************
  *                             D A T A   T Y P E S
  *******************************************************************************

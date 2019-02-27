@@ -192,18 +192,6 @@ OS_SYSTIME g_rLastCsaSysTime;
  */
 
 #if CFG_SUPPORT_DBDC
-#define DBDC_IS_BSS_ALIVE(_prBssInfo) \
-	(_prBssInfo->fgIsInUse && \
-	_prBssInfo->fgIsNetActive && \
-	(_prBssInfo->eConnectionState == PARAM_MEDIA_STATE_CONNECTED || \
-	_prBssInfo->eCurrentOPMode == OP_MODE_ACCESS_POINT))
-
-#define DBDC_IS_BSS_NOT_ALIVE(_prBssInfo) \
-	(!_prBssInfo->fgIsInUse || \
-	!_prBssInfo->fgIsNetActive || \
-	(_prBssInfo->eConnectionState != PARAM_MEDIA_STATE_CONNECTED && \
-	_prBssInfo->eCurrentOPMode != OP_MODE_ACCESS_POINT))
-
 #define DBDC_SET_GUARD_TIME(_prAdapter) { \
 	cnmTimerStartTimer(_prAdapter, \
 		&g_rDbdcInfo.rDbdcGuardTimer, \
@@ -2043,7 +2031,7 @@ static u_int8_t cnmDbdcIsAGConcurrent(
 
 		prBssInfo = prAdapter->aprBssInfo[ucBssIndex];
 
-		if (DBDC_IS_BSS_NOT_ALIVE(prBssInfo))
+		if (IS_BSS_NOT_ALIVE(prAdapter, prBssInfo))
 			continue;
 
 		if (prBssInfo->eBand != BAND_2G4
@@ -2100,7 +2088,7 @@ static enum ENUM_DBDC_PROTOCOL_STATUS_T cnmDbdcOpmodeChangeAndWait(
 	for (ucBssIndex = 0;
 		ucBssIndex <= prAdapter->ucHwBssIdNum; ucBssIndex++) {
 		prBssInfo = prAdapter->aprBssInfo[ucBssIndex];
-		if (DBDC_IS_BSS_ALIVE(prBssInfo)) {
+		if (IS_BSS_ALIVE(prAdapter, prBssInfo)) {
 
 			ucOpBw = rlmGetBssOpBwByVhtAndHtOpInfo(prBssInfo);
 			if (fgDbdcEn && ucOpBw > MAX_BW_80MHZ)
