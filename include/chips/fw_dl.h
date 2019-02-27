@@ -205,8 +205,8 @@ uint32_t wlanImageSectionDownloadStage(IN struct ADAPTER *prAdapter, IN void *pv
 uint32_t wlanDownloadSection(IN struct ADAPTER *prAdapter, IN uint32_t u4Addr, IN uint32_t u4Len,
 				IN uint32_t u4DataMode, IN uint8_t *pucStartPtr, IN enum ENUM_IMG_DL_IDX_T eDlIdx);
 
-uint32_t wlanDownloadEMISection(IN struct ADAPTER *prAdapter, IN uint32_t u4Len,
-				   IN uint32_t u4DestAddr, IN uint8_t *pucStartPtr);
+uint32_t wlanDownloadEMISection(IN struct ADAPTER *prAdapter, IN uint32_t u4DestAddr,
+				IN uint32_t u4Len, IN uint8_t *pucStartPtr);
 
 uint32_t wlanGetHarvardTailerInfo(IN struct ADAPTER *prAdapter, IN void *prFwBuffer, IN uint32_t u4FwSize,
 				     IN uint32_t ucTotSecNum, IN enum ENUM_IMG_DL_IDX_T eDlIdx);

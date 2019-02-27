@@ -158,11 +158,7 @@ LOCAL_REQUIRED_MODULES := wmt_chrdev_wifi.ko
 include $(BUILD_SYSTEM)/base_rules.mk
 
 LOCAL_MAKEFILE := $(abspath $(intermediates))/Makefile.alps
-WIFI_HIF := usb
-WIFI_CHIP:= MT7663
 WIFI_NAME := wlan_drv_gen4m
-WIFI_WMT := y
-WIFI_ENABLE_GCOV := y
 WIFI_OPTS := CONFIG_MTK_COMBO_WIFI_HIF=$(WIFI_HIF) MODULE_NAME=$(WIFI_NAME) MTK_COMBO_CHIP=$(WIFI_CHIP) MTK_ANDROID_WMT=$(WIFI_WMT) WIFI_ENABLE_GCOV=$(WIFI_ENABLE_GCOV)
 
 ### Copy Module.symvers from $(LOCAL_REQUIRED_MODULES) to this module #######

@@ -5678,6 +5678,9 @@ int32_t kalPerMonSetForceEnableFlag(uint8_t uFlag)
 	return 0;
 }
 
+void __weak connectivity_inner_flush_dcache_all(void)
+{
+}
 
 static int wlan_fb_notifier_callback(struct notifier_block *self, unsigned long event, void *data)
 {
