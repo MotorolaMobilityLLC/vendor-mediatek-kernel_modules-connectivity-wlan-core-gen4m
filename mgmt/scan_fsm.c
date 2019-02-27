@@ -267,6 +267,11 @@ void scnSendScanReqV2(IN struct ADAPTER *prAdapter)
 	prCmdScanReq->ucScanType = (uint8_t) prScanParam->eScanType;
 	prCmdScanReq->ucSSIDType = prScanParam->ucSSIDType;
 	prCmdScanReq->auVersion[0] = 1;
+	if (kalIsValidMacAddr(prScanParam->aucRandomMac)) {
+		prCmdScanReq->ucScnFuncMask |= ENUM_SCN_RANDOM_MAC_EN;
+		kalMemCopy(prCmdScanReq->aucRandomMac,
+			prScanParam->aucRandomMac, MAC_ADDR_LEN);
+	}
 
 	/* Set SSID to scan request */
 	if (prScanParam->ucSSIDNum <= SCAN_CMD_SSID_NUM) {
@@ -370,7 +375,8 @@ void scnSendScanReqV2(IN struct ADAPTER *prAdapter)
 		kalMemCopy(prCmdScanReq->aucIE, prScanParam->aucIE,
 			sizeof(uint8_t) * prCmdScanReq->u2IELen);
 
-	log_dbg(SCN, INFO, "ScanReqV2: ScanType=%d,SSIDType=%d,Num=%u,Ext=%u,ChannelType=%d,Num=%d,Ext=%u,Seq=%u,Ver=%u,Dw=%u,Min=%u\n",
+	log_dbg(SCN, INFO, "ScanReqV2: ScanType=%d,SSIDType=%d,Num=%u,Ext=%u,ChannelType=%d,Num=%d,Ext=%u,Seq=%u,Ver=%u,Dw=%u,Min=%u, Mac="
+		MACSTR "\n",
 		prCmdScanReq->ucScanType,
 		prCmdScanReq->ucSSIDType,
 		prCmdScanReq->ucSSIDNum,
@@ -380,7 +386,8 @@ void scnSendScanReqV2(IN struct ADAPTER *prAdapter)
 		prCmdScanReq->ucChannelListExtNum,
 		prCmdScanReq->ucSeqNum, prCmdScanReq->auVersion[0],
 		prCmdScanReq->u2ChannelDwellTime,
-		prCmdScanReq->u2ChannelMinDwellTime);
+		prCmdScanReq->u2ChannelMinDwellTime,
+		prCmdScanReq->aucRandomMac);
 
 	wlanSendSetQueryCmd(prAdapter,
 		CMD_ID_SCAN_REQ_V2,
@@ -631,6 +638,8 @@ void scnFsmHandleScanMsgV2(IN struct ADAPTER *prAdapter,
 	prScanParam->ucSSIDType = prScanReqMsg->ucSSIDType;
 	prScanParam->ucSSIDNum = prScanReqMsg->ucSSIDNum;
 	kalMemCopy(prScanParam->aucBSSID, prScanReqMsg->aucBSSID, MAC_ADDR_LEN);
+	kalMemCopy(prScanParam->aucRandomMac, prScanReqMsg->aucRandomMac,
+		MAC_ADDR_LEN);
 
 	if (prScanParam->ucSSIDType & SCAN_REQ_SSID_SPECIFIED_ONLY) {
 		prScanParam->ucSSIDNum = 1;
@@ -1195,15 +1204,19 @@ scnFsmSchedScanRequest(IN struct ADAPTER *prAdapter,
 				prSchedScanCmd->u2IELen);
 	}
 
+	if (kalIsValidMacAddr(prRequest->aucRandomMac))
+		prSchedScanCmd->ucScnFuncMask |= ENUM_SCN_RANDOM_MAC_EN;
+
 	scnSetSchedScanPlan(prAdapter, prSchedScanCmd);
 
-	log_dbg(SCN, INFO, "V(%u)seq(%u)sz(%zu)chT(%u)chN(%u)ssid(%u)match(%u)IE(%u=>%u)MSP(%u)\n",
+	log_dbg(SCN, INFO, "V(%u)seq(%u)sz(%zu)chT(%u)chN(%u)ssid(%u)match(%u)IE(%u=>%u)MSP(%u)FuncMask(0x%08X)\n",
 		prSchedScanCmd->ucVersion,
 		prSchedScanCmd->ucSeqNum, sizeof(struct CMD_SCHED_SCAN_REQ),
 		prSchedScanCmd->ucChannelType, prSchedScanCmd->ucChnlNum,
 		prSchedScanCmd->ucSsidNum, prSchedScanCmd->ucMatchSsidNum,
 		prRequest->u4IELength, prSchedScanCmd->u2IELen,
-		prSchedScanCmd->ucMspEntryNum);
+		prSchedScanCmd->ucMspEntryNum,
+		prSchedScanCmd->ucScnFuncMask);
 
 	/* 3. send command packet to FW */
 	do {
