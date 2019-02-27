@@ -2915,7 +2915,7 @@ p2pFuncParseBeaconContent(IN struct ADAPTER *prAdapter,
 					       HT_CAP_IE(pucIE)->u2HtCapInfo, HT_CAP_IE(pucIE)->ucAmpduParam);
 
 					DBGLOG(P2P, TRACE,
-					       "HT Extended Cap:%x, TX Beamforming Cap:%lx, Ant Selection Cap:%x\n",
+					       "HT Extended Cap:%x, TX Beamforming Cap:%x, Ant Selection Cap:%x\n",
 					       HT_CAP_IE(pucIE)->u2HtExtendedCap,
 					       HT_CAP_IE(pucIE)->u4TxBeamformingCap, HT_CAP_IE(pucIE)->ucAselCap);
 #else
@@ -3286,7 +3286,7 @@ p2pFuncMgmtFrameRegister(IN struct ADAPTER *prAdapter,
 		prAdapter->u4OsPacketFilter &= ~PARAM_PACKET_FILTER_P2P_MASK;
 		prAdapter->u4OsPacketFilter |= u4NewPacketFilter;
 
-		DBGLOG(P2P, TRACE, "P2P Set PACKET filter:0x%lx\n", prAdapter->u4OsPacketFilter);
+		DBGLOG(P2P, TRACE, "P2P Set PACKET filter:0x%x\n", prAdapter->u4OsPacketFilter);
 
 		rSetRxPacketFilter.u4RxPacketFilter = prAdapter->u4OsPacketFilter;
 		wlanoidSetPacketFilter(prAdapter, &rSetRxPacketFilter,
@@ -3313,7 +3313,7 @@ void p2pFuncUpdateMgmtFrameRegister(IN struct ADAPTER *prAdapter, IN uint32_t u4
 			rSetRxPacketFilter.u4RxPacketFilter = prAdapter->u4OsPacketFilter;
 			wlanoidSetPacketFilter(prAdapter, &rSetRxPacketFilter,
 					FALSE, &u4OsFilter, sizeof(u4OsFilter));
-			DBGLOG(P2P, TRACE, "P2P Set PACKET filter:0x%lx\n", prAdapter->u4OsPacketFilter);
+			DBGLOG(P2P, TRACE, "P2P Set PACKET filter:0x%x\n", prAdapter->u4OsPacketFilter);
 		}
 
 	} while (FALSE);

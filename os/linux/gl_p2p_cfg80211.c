@@ -489,6 +489,7 @@ struct wireless_dev *mtk_p2p_cfg80211_add_iface(struct wiphy *wiphy,
 			switch (type) {
 			case NL80211_IFTYPE_P2P_CLIENT:
 				DBGLOG(P2P, TRACE, "NL80211_IFTYPE_P2P_CLIENT.\n");
+				/* This case need to fall through */
 			case NL80211_IFTYPE_STATION:
 				if (type == NL80211_IFTYPE_STATION)
 					DBGLOG(P2P, TRACE, "NL80211_IFTYPE_STATION.\n");
@@ -498,6 +499,7 @@ struct wireless_dev *mtk_p2p_cfg80211_add_iface(struct wiphy *wiphy,
 			case NL80211_IFTYPE_AP:
 				DBGLOG(P2P, TRACE, "NL80211_IFTYPE_AP.\n");
 				kalP2PSetRole(prGlueInfo, 2, u4Idx);
+				/* This case need to fall through */
 			case NL80211_IFTYPE_P2P_GO:
 				if (type == NL80211_IFTYPE_P2P_GO)
 					DBGLOG(P2P, TRACE, "NL80211_IFTYPE_P2P_GO not AP.\n");
@@ -1509,8 +1511,6 @@ int mtk_p2p_cfg80211_start_ap(struct wiphy *wiphy, struct net_device *dev, struc
 /* int inactivity_timeout; */
 /* }; */
 /* ////////////////// */
-
-	return i4Rslt;
 }				/* mtk_p2p_cfg80211_start_ap */
 
 #if (CFG_SUPPORT_DFS_MASTER == 1)
@@ -1558,8 +1558,7 @@ static int mtk_p2p_cfg80211_start_radar_detection_impl(struct wiphy *wiphy, stru
 			mtk_p2p_cfg80211func_channel_format_switch(chandef, chandef->chan, &rRfChnlInfo);
 
 			p2pFuncSetChannel(prGlueInfo->prAdapter, ucRoleIdx, &rRfChnlInfo);
-		} else
-			break;
+		}
 
 		DBGLOG(P2P, INFO, "mtk_p2p_cfg80211_start_radar_detection.(role %d)\n", ucRoleIdx);
 
@@ -1673,8 +1672,7 @@ int mtk_p2p_cfg80211_channel_switch(struct wiphy *wiphy, struct net_device *dev,
 								params->chandef.chan, &rRfChnlInfo);
 
 			p2pFuncSetChannel(prGlueInfo->prAdapter, ucRoleIdx, &rRfChnlInfo);
-		} else
-			break;
+		}
 
 		DBGLOG(P2P, INFO, "mtk_p2p_cfg80211_channel_switch.(role %d)\n", ucRoleIdx);
 
@@ -2574,7 +2572,7 @@ int mtk_p2p_cfg80211_connect(struct wiphy *wiphy, struct net_device *dev, struct
 		COPY_MAC_ADDR(prConnReqMsg->aucBssid, sme->bssid);
 		COPY_MAC_ADDR(prConnReqMsg->aucSrcMacAddr, dev->dev_addr);
 
-		DBGLOG(P2P, TRACE, "Assoc Req IE Buffer Length:%d\n", sme->ie_len);
+		DBGLOG(P2P, TRACE, "Assoc Req IE Buffer Length:%zu\n", sme->ie_len);
 		kalMemCopy(prConnReqMsg->aucIEBuf, sme->ie, sme->ie_len);
 		prConnReqMsg->u4IELen = sme->ie_len;
 
@@ -2699,6 +2697,7 @@ mtk_p2p_cfg80211_change_iface(IN struct wiphy *wiphy,
 		switch (type) {
 		case NL80211_IFTYPE_P2P_CLIENT:
 			DBGLOG(P2P, TRACE, "NL80211_IFTYPE_P2P_CLIENT.\n");
+			/* This case need to fall through */
 		case NL80211_IFTYPE_STATION:
 			if (type == NL80211_IFTYPE_STATION)
 				DBGLOG(P2P, TRACE, "NL80211_IFTYPE_STATION.\n");
@@ -2708,6 +2707,7 @@ mtk_p2p_cfg80211_change_iface(IN struct wiphy *wiphy,
 		case NL80211_IFTYPE_AP:
 			DBGLOG(P2P, TRACE, "NL80211_IFTYPE_AP.\n");
 			kalP2PSetRole(prGlueInfo, 2, ucRoleIdx);
+			/* This case need to fall through */
 		case NL80211_IFTYPE_P2P_GO:
 			if (type == NL80211_IFTYPE_P2P_GO)
 				DBGLOG(P2P, TRACE, "NL80211_IFTYPE_P2P_GO not AP.\n");
