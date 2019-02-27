@@ -1563,11 +1563,17 @@ kalHardStartXmit(struct sk_buff *prOrgSkb, IN struct net_device *prDev, struct G
 	uint16_t u2QueueIdx = 0;
 	struct sk_buff *prSkbNew = NULL;
 	struct sk_buff *prSkb = NULL;
+	struct mt66xx_chip_info *prChipInfo;
+	uint32_t u4TxHeadRoomSize = 0;
 
 	GLUE_SPIN_LOCK_DECLARATION();
 
 	ASSERT(prOrgSkb);
 	ASSERT(prGlueInfo);
+
+	prChipInfo = prGlueInfo->prAdapter->chip_info;
+	u4TxHeadRoomSize = NIC_TX_DESC_AND_PADDING_LENGTH +
+		prChipInfo->txd_append_size;
 
 	if (prGlueInfo->ulFlag & GLUE_FLAG_HALT) {
 		DBGLOG(INIT, INFO, "GLUE_FLAG_HALT skip tx\n");
@@ -1581,14 +1587,14 @@ kalHardStartXmit(struct sk_buff *prOrgSkb, IN struct net_device *prDev, struct G
 		return WLAN_STATUS_NOT_ACCEPTED;
 	}
 
-	if (skb_headroom(prOrgSkb) < NIC_TX_HEAD_ROOM) {
+	if (skb_headroom(prOrgSkb) < u4TxHeadRoomSize) {
+		prSkbNew = skb_realloc_headroom(prOrgSkb, u4TxHeadRoomSize);
 		/*
 		 * Should not happen
 		 * kernel crash may happen as skb shared info
 		 * channged.
 		 * offer an change for lucky anyway
 		 */
-		prSkbNew = skb_realloc_headroom(prOrgSkb, NIC_TX_HEAD_ROOM);
 		ASSERT(prSkbNew);
 		dev_kfree_skb(prOrgSkb);
 		prSkb = prSkbNew;
