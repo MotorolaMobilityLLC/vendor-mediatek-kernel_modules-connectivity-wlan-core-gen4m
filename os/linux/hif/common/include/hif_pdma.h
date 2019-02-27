@@ -505,5 +505,6 @@ void halGetPleTxdInfo(IN struct ADAPTER *prAdapter,
 void halGetPsePayload(IN struct ADAPTER *prAdapter,
 		      uint32_t fid, uint32_t *result);
 void halDumpTxdInfo(IN struct ADAPTER *prAdapter, uint32_t *tmac_info);
+void halShowLitePleInfo(IN struct ADAPTER *prAdapter);
 
 #endif /* HIF_PDMA_H__ */

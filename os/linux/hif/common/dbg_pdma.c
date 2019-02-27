@@ -131,6 +131,8 @@ static void halCheckHifState(struct ADAPTER *prAdapter)
 			wlanGetDriverDbgLevel(DBG_TX_IDX, &u4DebugLevel);
 			if (u4DebugLevel & DBG_CLASS_TRACE)
 				prAdapter->u4HifDbgFlag |= DEG_HIF_ALL;
+			else
+				halShowLitePleInfo(prAdapter);
 		}
 	}
 
@@ -1856,6 +1858,83 @@ void halDumpTxdInfo(IN struct ADAPTER *prAdapter, uint32_t *tmac_info)
 			DBGLOG(HAL, INFO, "\t\tant_id=%d\n", txd_6->ant_id);
 			DBGLOG(HAL, INFO, "\t\tdyn_bw=%d\n", txd_6->dyn_bw);
 			DBGLOG(HAL, INFO, "\t\tbw=%d\n", txd_6->bw);
+		}
+	}
+}
+
+void halShowLitePleInfo(IN struct ADAPTER *prAdapter)
+{
+	uint32_t pg_flow_ctrl[6] = {0};
+	uint32_t rpg_hif, upg_hif, i, j;
+	uint32_t ple_stat[17] = {0};
+	uint32_t sta_pause[4] = {0};
+	uint32_t dis_sta_map[4] = {0};
+
+	HAL_MCR_RD(prAdapter, PLE_HIF_PG_INFO, &pg_flow_ctrl[3]);
+	rpg_hif = pg_flow_ctrl[3] & 0xfff;
+	upg_hif = (pg_flow_ctrl[3] & (0xfff << 16)) >> 16;
+	DBGLOG(HAL, INFO,
+	  "\t\tThe used/reserved pages of HIF group=0x%03x/0x%03x\n",
+	  upg_hif, rpg_hif);
+
+	HAL_MCR_RD(prAdapter, PLE_QUEUE_EMPTY, &ple_stat[0]);
+	HAL_MCR_RD(prAdapter, PLE_AC0_QUEUE_EMPTY_0, &ple_stat[1]);
+	HAL_MCR_RD(prAdapter, PLE_AC0_QUEUE_EMPTY_1, &ple_stat[2]);
+	HAL_MCR_RD(prAdapter, PLE_AC0_QUEUE_EMPTY_2, &ple_stat[3]);
+	HAL_MCR_RD(prAdapter, PLE_AC0_QUEUE_EMPTY_3, &ple_stat[4]);
+	HAL_MCR_RD(prAdapter, PLE_AC1_QUEUE_EMPTY_0, &ple_stat[5]);
+	HAL_MCR_RD(prAdapter, PLE_AC1_QUEUE_EMPTY_1, &ple_stat[6]);
+	HAL_MCR_RD(prAdapter, PLE_AC1_QUEUE_EMPTY_2, &ple_stat[7]);
+	HAL_MCR_RD(prAdapter, PLE_AC1_QUEUE_EMPTY_3, &ple_stat[8]);
+	HAL_MCR_RD(prAdapter, PLE_AC2_QUEUE_EMPTY_0, &ple_stat[9]);
+	HAL_MCR_RD(prAdapter, PLE_AC2_QUEUE_EMPTY_1, &ple_stat[10]);
+	HAL_MCR_RD(prAdapter, PLE_AC2_QUEUE_EMPTY_2, &ple_stat[11]);
+	HAL_MCR_RD(prAdapter, PLE_AC2_QUEUE_EMPTY_3, &ple_stat[12]);
+	HAL_MCR_RD(prAdapter, PLE_AC3_QUEUE_EMPTY_0, &ple_stat[13]);
+	HAL_MCR_RD(prAdapter, PLE_AC3_QUEUE_EMPTY_1, &ple_stat[14]);
+	HAL_MCR_RD(prAdapter, PLE_AC3_QUEUE_EMPTY_2, &ple_stat[15]);
+	HAL_MCR_RD(prAdapter, PLE_AC3_QUEUE_EMPTY_3, &ple_stat[16]);
+
+	HAL_MCR_RD(prAdapter, STATION_PAUSE0, &sta_pause[0]);
+	HAL_MCR_RD(prAdapter, STATION_PAUSE1, &sta_pause[1]);
+	HAL_MCR_RD(prAdapter, STATION_PAUSE2, &sta_pause[2]);
+	HAL_MCR_RD(prAdapter, STATION_PAUSE3, &sta_pause[3]);
+
+	HAL_MCR_RD(prAdapter, DIS_STA_MAP0, &dis_sta_map[0]);
+	HAL_MCR_RD(prAdapter, DIS_STA_MAP1, &dis_sta_map[1]);
+	HAL_MCR_RD(prAdapter, DIS_STA_MAP2, &dis_sta_map[2]);
+	HAL_MCR_RD(prAdapter, DIS_STA_MAP3, &dis_sta_map[3]);
+
+	for (j = 0; j < 16; j = j + 4) { /* show AC Q info */
+		for (i = 0; i < 32; i++) {
+			if (((ple_stat[j + 1] & (0x1 << i)) >> i) == 0) {
+				uint32_t hfid, tfid, pktcnt,
+					ac_num = j / 4, ctrl = 0;
+				uint32_t sta_num = i + (j % 4) * 32,
+					fl_que_ctrl[3] = {0};
+				fl_que_ctrl[0] |= (0x1 << 31);
+				fl_que_ctrl[0] |= (0x2 << 14);
+				fl_que_ctrl[0] |= (ac_num << 8);
+				fl_que_ctrl[0] |= sta_num;
+				HAL_MCR_WR(prAdapter,
+					PLE_FL_QUE_CTRL_0, fl_que_ctrl[0]);
+				HAL_MCR_RD(prAdapter,
+					PLE_FL_QUE_CTRL_2, &fl_que_ctrl[1]);
+				HAL_MCR_RD(prAdapter,
+					PLE_FL_QUE_CTRL_3, &fl_que_ctrl[2]);
+				hfid = fl_que_ctrl[1] & 0xfff;
+				tfid = (fl_que_ctrl[1] & 0xfff << 16) >> 16;
+				pktcnt = fl_que_ctrl[2] & 0xfff;
+
+				if (((sta_pause[j % 4] & 0x1 << i) >> i) == 1)
+					ctrl = 2;
+				if (((dis_sta_map[j % 4] & 0x1 << i) >> i) == 1)
+					ctrl = 1;
+				DBGLOG(HAL, INFO,
+					"STA%d AC%d: tail/head fid = 0x%03x/0x%03x, pkt cnt = %x  ctrl = %s\n",
+					 sta_num, ac_num, tfid, hfid, pktcnt,
+					 sta_ctrl_reg[ctrl]);
+			}
 		}
 	}
 }
