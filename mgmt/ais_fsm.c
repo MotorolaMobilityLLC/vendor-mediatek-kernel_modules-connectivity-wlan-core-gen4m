@@ -1737,12 +1737,17 @@ void aisFsmSteps(IN struct ADAPTER *prAdapter, enum ENUM_AIS_STATE eNextState)
 				prScanReqMsg->arChnlInfoList[0].eBand = eBand;
 				prScanReqMsg->arChnlInfoList[0].ucChannelNum =
 				    ucChannel;
-			} else if (prAisBssInfo->eConnectionState ==
+			} else if ((prAisBssInfo->eConnectionState ==
 				   PARAM_MEDIA_STATE_CONNECTED
 				   && (prAdapter->rWifiVar.
 				       rRoamingInfo.eCurrentState ==
 				       ROAMING_STATE_DISCOVERY)
-				   && prAisFsmInfo->fgTargetChnlScanIssued) {
+				   && prAisFsmInfo->fgTargetChnlScanIssued)
+				   /* Partial channels collection
+				    * for beacon timeout
+				   */
+				   || aisIsProcessingBeaconTimeout(
+				   prAdapter)) {
 				struct RF_CHANNEL_INFO *prChnlInfo =
 				    &prScanReqMsg->arChnlInfoList[0];
 				uint8_t ucChannelNum = 0;
@@ -6316,3 +6321,54 @@ void aisResetNeighborApList(IN struct ADAPTER *prAdapter)
 	LINK_MERGE_TO_TAIL(&prAPlist->rFreeLink, &prAPlist->rUsingLink);
 }
 #endif
+
+/*----------------------------------------------------------------------------*/
+/*!
+* @brief This function checks if AIS is processing the beacon timeout.
+*
+* \param[in] prAdapter  Pointer of ADAPTER_T
+*
+* @retval FALSE
+* @retval TRUE
+*/
+/*----------------------------------------------------------------------------*/
+u_int8_t aisIsProcessingBeaconTimeout(IN struct ADAPTER *prAdapter)
+{
+	struct BSS_INFO *prAisBssInfo;
+	struct AIS_FSM_INFO *prAisFsmInfo;
+	struct CONNECTION_SETTINGS *prConnSettings;
+	bool fgIsPostponeTimeout;
+	bool fgIsBeaconTimeout;
+
+	ASSERT(prAdapter);
+	prAisFsmInfo = &(prAdapter->rWifiVar.rAisFsmInfo);
+	prAisBssInfo = prAdapter->prAisBssInfo;
+	prConnSettings = &(prAdapter->rWifiVar.rConnSettings);
+
+	fgIsPostponeTimeout = CHECK_FOR_TIMEOUT(
+		kalGetTimeTick(), prAisFsmInfo->u4PostponeIndStartTime,
+		SEC_TO_MSEC(prConnSettings->ucDelayTimeOfDisconnectEvent));
+
+	fgIsBeaconTimeout = prAisBssInfo->ucReasonOfDisconnect ==
+		DISCONNECT_REASON_CODE_RADIO_LOST;
+
+	DBGLOG(AIS, TRACE,
+		"eConnectionState=%d, eCurrentState=%d, u4PostponeIndStartTime=%u, fgIsPostponeTimeout=%d, fgIsBeaconTimeout=%d, ucConnTrialCount=%d\n",
+		prAisBssInfo->eConnectionState,
+		prAisFsmInfo->eCurrentState,
+		prAisFsmInfo->u4PostponeIndStartTime,
+		fgIsPostponeTimeout,
+		fgIsBeaconTimeout,
+		prAisFsmInfo->ucConnTrialCount
+	);
+
+	if (prAisBssInfo->eConnectionState != PARAM_MEDIA_STATE_DISCONNECTED
+		|| prAisFsmInfo->eCurrentState != AIS_STATE_LOOKING_FOR
+		|| prAisFsmInfo->u4PostponeIndStartTime == 0
+		|| fgIsPostponeTimeout
+		|| (fgIsBeaconTimeout && prAisFsmInfo->ucConnTrialCount > 1))
+		return FALSE;
+
+	return TRUE;
+} /* end of aisIsProcessingBeaconTimeout() */
+
