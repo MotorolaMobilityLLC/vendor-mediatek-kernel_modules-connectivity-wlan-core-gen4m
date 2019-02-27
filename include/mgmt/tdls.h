@@ -113,12 +113,14 @@ extern int wlanHardStartXmit(struct sk_buff *prSkb,
  */
 
 /* Status code */
-#define TDLS_STATUS							uint32_t
+#define TDLS_STATUS				uint32_t
 
 #define TDLS_STATUS_SUCCESS			WLAN_STATUS_SUCCESS
 #define TDLS_STATUS_FAIL			WLAN_STATUS_FAILURE
 #define TDLS_STATUS_INVALID_LENGTH		WLAN_STATUS_INVALID_LENGTH
 #define TDLS_STATUS_RESOURCES			WLAN_STATUS_RESOURCES
+#define TDLS_STATUS_PENDING			WLAN_STATUS_PENDING
+
 #define TDLS_FME_MAC_ADDR_LEN			6
 #define TDLS_EX_CAP_PEER_UAPSD			BIT(0)
 #define TDLS_EX_CAP_CHAN_SWITCH			BIT(1)
@@ -474,6 +476,9 @@ uint32_t
 TdlsSendChSwControlCmd(struct ADAPTER *prAdapter,
 		       void *pvSetBuffer, uint32_t u4SetBufferLen,
 		       uint32_t *pu4SetInfoLen);
+
+void TdlsHandleTxDoneStatus(struct ADAPTER *prAdapter,
+			enum ENUM_TX_RESULT_CODE rTxDoneStatus);
 
 /*******************************************************************************
  *                              F U N C T I O N S

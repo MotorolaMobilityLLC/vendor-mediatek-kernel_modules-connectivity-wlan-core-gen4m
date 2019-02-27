@@ -8469,6 +8469,11 @@ wlanPktTxDone(IN struct ADAPTER *prAdapter,
 				prMsduInfo->eEapolKeyType,
 				rTxDoneStatus);
 
+#if CFG_SUPPORT_TDLS
+	if (prMsduInfo->ucPktType == ENUM_PKT_TDLS)
+		TdlsHandleTxDoneStatus(prAdapter, rTxDoneStatus);
+#endif /* CFG_SUPPORT_TDLS */
+
 	return WLAN_STATUS_SUCCESS;
 }
 
