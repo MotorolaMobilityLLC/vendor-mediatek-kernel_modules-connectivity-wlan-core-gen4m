@@ -4216,10 +4216,13 @@ static int32_t HQA_GetChipID(struct net_device *prNetDev,
 	DBGLOG(RFTEST, INFO,
 	       "QA_AGENT HQA_GetChipID IPVer= 0x%08x\n",
 		prChipInfo->u4ChipIpVersion);
+#if 0
 	if (prChipInfo->u4ChipIpVersion == CONNAC_CHIP_IP_VERSION)
 		u4ChipId = 0x00066310;
 	else
 		u4ChipId = 0x00006632;
+#endif
+	u4ChipId = 0x00066310;
 
 	DBGLOG(RFTEST, INFO,
 	       "QA_AGENT HQA_GetChipID ChipId = 0x%08x\n", u4ChipId);
@@ -7489,7 +7492,7 @@ int32_t connacSetICapStart(struct GLUE_INFO *prGlueInfo,
 	prICapInfo->u4EnBitWidth = 0;
 	prICapInfo->u4Architech = 1;
 	prICapInfo->u4PhyIdx = 0;
-#ifdef CONFIG_MTK_EMI
+#if 1
 	prICapInfo->u4EmiStartAddress =
 		(uint32_t) (gConEmiPhyBase & 0xFFFFFFFF);
 	prICapInfo->u4EmiEndAddress =
