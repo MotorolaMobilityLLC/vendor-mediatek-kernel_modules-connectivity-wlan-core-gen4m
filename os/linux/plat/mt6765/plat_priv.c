@@ -10,6 +10,7 @@
 */
 
 #include <cpu_ctrl.h>
+#include <topo_ctrl.h>
 #include <linux/pm_qos.h>
 
 #include "precomp.h"
@@ -19,24 +20,29 @@
 #include <mt_emi_api.h>
 #endif
 
+
 #define MAX_CPU_FREQ (3 * 1024 * 1024) /* in kHZ */
-#define CLUSTER_NUM  2       /* 2 clusters */
+#define MAX_CLUSTER_NUM  3
 
 int32_t kalBoostCpu(IN struct ADAPTER *prAdapter,
 		    IN uint32_t u4TarPerfLevel,
 		    IN uint32_t u4BoostCpuTh)
 {
-	struct ppm_limit_data freq_to_set[CLUSTER_NUM];
+	struct ppm_limit_data freq_to_set[MAX_CLUSTER_NUM];
 	int32_t i = 0, i4Freq = -1;
 	static struct pm_qos_request wifi_qos_request;
 	static u_int8_t fgRequested;
+	uint32_t u4ClusterNum = topo_ctrl_get_nr_clusters();
 
+	ASSERT(u4ClusterNum <= MAX_CLUSTER_NUM);
 	/* ACAO, we dont have to set core number */
 	i4Freq = (u4TarPerfLevel >= u4BoostCpuTh) ? MAX_CPU_FREQ : -1;
-	for (i = 0; i < CLUSTER_NUM; i++)
+	for (i = 0; i < u4ClusterNum; i++) {
 		freq_to_set[i].min = i4Freq;
+		freq_to_set[i].max = i4Freq;
+	}
 
-	update_userlimit_cpu_freq(PPM_KIR_WIFI, CLUSTER_NUM, freq_to_set);
+	update_userlimit_cpu_freq(PPM_KIR_WIFI, u4ClusterNum, freq_to_set);
 
 	if (u4TarPerfLevel >= u4BoostCpuTh) {
 		if (!fgRequested) {
