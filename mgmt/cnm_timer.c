@@ -436,6 +436,9 @@ void cnmTimerDoTimeOutCheck(IN struct ADAPTER *prAdapter)
 		= rCurSysTime + MGMT_MAX_TIMEOUT_INTERVAL;
 
 	LINK_FOR_EACH(prLinkEntry, prTimerList) {
+		if (prLinkEntry == NULL)
+			break;
+
 		prTimer = LINK_ENTRY(prLinkEntry, struct TIMER, rLinkEntry);
 		ASSERT(prTimer);
 		if (prLinkEntry->prNext == NULL)
