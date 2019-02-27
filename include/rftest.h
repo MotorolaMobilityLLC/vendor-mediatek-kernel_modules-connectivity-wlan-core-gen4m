@@ -50,31 +50,31 @@
  *
  *****************************************************************************/
 /*
-** Id: //Department/DaVinci/BRANCHES/MT6620_WIFI_DRIVER_V2_3/include/rftest.h#1
-*/
+ ** Id: include/rftest.h
+ */
 
 /*! \file   "rftest.h"
-*    \brief  definitions for RF Productino test
-*
-*/
+ *  \brief  definitions for RF Productino test
+ *
+ */
 
 #ifndef _RFTEST_H
 #define _RFTEST_H
 
 /*******************************************************************************
-*                         C O M P I L E R   F L A G S
-********************************************************************************
-*/
+ *                         C O M P I L E R   F L A G S
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                    E X T E R N A L   R E F E R E N C E S
-********************************************************************************
-*/
+ *                    E X T E R N A L   R E F E R E N C E S
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                              C O N S T A N T S
-********************************************************************************
-*/
+ *                              C O N S T A N T S
+ *******************************************************************************
+ */
 /* Table Version */
 #define RF_AUTO_TEST_FUNCTION_TABLE_VERSION 0x01000001
 
@@ -109,7 +109,8 @@
 
 #define RF_AT_PARAM_TX_PKTLEN_BYTE_DEFAULT  1024
 #define RF_AT_PARAM_TX_PKTLEN_BYTE_MAX  \
-	((uint16_t)(RF_AT_PARAM_TX_80211HDR_BYTE_MAX + RF_AT_PARAM_TX_80211PAYLOAD_BYTE_MAX))
+	((uint16_t)(RF_AT_PARAM_TX_80211HDR_BYTE_MAX + \
+		RF_AT_PARAM_TX_80211PAYLOAD_BYTE_MAX))
 
 /* Packet Count */
 #define RF_AT_PARAM_TX_PKTCNT_DEFAULT    1000
@@ -166,9 +167,9 @@
 #define RF_AT_PARAM_RIFS_ENABLE     1
 
 /*******************************************************************************
-*                             D A T A   T Y P E S
-********************************************************************************
-*/
+ *                             D A T A   T Y P E S
+ *******************************************************************************
+ */
 /* Function ID List */
 enum ENUM_RF_AT_FUNCID {
 	RF_AT_FUNCID_VERSION = 0,
@@ -352,8 +353,10 @@ enum ENUM_RF_AT_COMMAND {
 	RF_AT_COMMAND_STARTRX,
 	RF_AT_COMMAND_RESET,
 	RF_AT_COMMAND_OUTPUT_POWER,	/* Payload */
-	RF_AT_COMMAND_LO_LEAKAGE,	/* Local freq is renamed to Local leakage */
-	RF_AT_COMMAND_CARRIER_SUPPR,	/* OFDM (LTF/STF), CCK (PI,PI/2) */
+	/* Local freq is renamed to Local leakage */
+	RF_AT_COMMAND_LO_LEAKAGE,
+	/* OFDM (LTF/STF), CCK (PI,PI/2) */
+	RF_AT_COMMAND_CARRIER_SUPPR,
 	RF_AT_COMMAND_TRX_IQ_CAL,
 	RF_AT_COMMAND_TSSI_CAL,
 	RF_AT_COMMAND_DPD_CAL,
@@ -398,31 +401,34 @@ enum ENUM_RF_AUTOTEST_STATE {
 };
 
 /*******************************************************************************
-*                            P U B L I C   D A T A
-********************************************************************************
-*/
+ *                            P U B L I C   D A T A
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                           P R I V A T E   D A T A
-********************************************************************************
-*/
+ *                           P R I V A T E   D A T A
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                                 M A C R O S
-********************************************************************************
-*/
+ *                                 M A C R O S
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                   F U N C T I O N   D E C L A R A T I O N S
-********************************************************************************
-*/
+ *                   F U N C T I O N   D E C L A R A T I O N S
+ *******************************************************************************
+ */
 
-uint32_t rftestSetATInfo(IN struct ADAPTER *prAdapter, uint32_t u4FuncIndex, uint32_t u4FuncData);
+uint32_t rftestSetATInfo(IN struct ADAPTER *prAdapter,
+		uint32_t u4FuncIndex, uint32_t u4FuncData);
 
 uint32_t
 rftestQueryATInfo(IN struct ADAPTER *prAdapter,
-		  uint32_t u4FuncIndex, uint32_t u4FuncData, OUT void *pvQueryBuffer, IN uint32_t u4QueryBufferLen);
+		uint32_t u4FuncIndex, uint32_t u4FuncData,
+		OUT void *pvQueryBuffer, IN uint32_t u4QueryBufferLen);
 
-uint32_t rftestSetFrequency(IN struct ADAPTER *prAdapter, IN uint32_t u4FreqInKHz, IN uint32_t *pu4SetInfoLen);
+uint32_t rftestSetFrequency(IN struct ADAPTER *prAdapter,
+		IN uint32_t u4FreqInKHz, IN uint32_t *pu4SetInfoLen);
 
 #endif /* _RFTEST_H */

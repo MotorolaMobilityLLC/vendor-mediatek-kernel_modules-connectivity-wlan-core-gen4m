@@ -50,99 +50,136 @@
  *
  *****************************************************************************/
 /*
-** Id: //Department/DaVinci/BRANCHES/MT6620_WIFI_DRIVER_V2_3/include/mgmt/hem_mbox.h#3
-*/
+ ** Id: include/mgmt/hem_mbox.h
+ */
 
 /*! \file   hem_mbox.h
-*    \brief
-*
-*/
+ *    \brief
+ *
+ */
 
 #ifndef _HEM_MBOX_H
 #define _HEM_MBOX_H
 
 /*******************************************************************************
-*                         C O M P I L E R   F L A G S
-********************************************************************************
-*/
+ *                         C O M P I L E R   F L A G S
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                    E X T E R N A L   R E F E R E N C E S
-********************************************************************************
-*/
+ *                    E X T E R N A L   R E F E R E N C E S
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                              C O N S T A N T S
-********************************************************************************
-*/
+ *                              C O N S T A N T S
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                             D A T A   T Y P E S
-********************************************************************************
-*/
+ *                             D A T A   T Y P E S
+ *******************************************************************************
+ */
 /* Message IDs */
 enum ENUM_MSG_ID {
-	MID_MNY_CNM_CH_REQ,	/* MANY notify CNM to obtain channel privilege */
-	MID_MNY_CNM_CH_ABORT,	/* MANY notify CNM to abort/release channel privilege */
+	/* MANY notify CNM to obtain channel privilege */
+	MID_MNY_CNM_CH_REQ,
+	/* MANY notify CNM to abort/release channel privilege */
+	MID_MNY_CNM_CH_ABORT,
 
-	MID_CNM_AIS_CH_GRANT,	/* CNM notify AIS for indicating channel granted */
-	MID_CNM_P2P_CH_GRANT,	/* CNM notify P2P for indicating channel granted */
-	MID_CNM_BOW_CH_GRANT,	/* CNM notify BOW for indicating channel granted */
+	/* CNM notify AIS for indicating channel granted */
+	MID_CNM_AIS_CH_GRANT,
+	/* CNM notify P2P for indicating channel granted */
+	MID_CNM_P2P_CH_GRANT,
+	/* CNM notify BOW for indicating channel granted */
+	MID_CNM_BOW_CH_GRANT,
 
 #if (CFG_SUPPORT_DFS_MASTER == 1)
 	MID_CNM_P2P_RADAR_DETECT,
 	MID_CNM_P2P_CSA_DONE,
 #endif
-    /*--------------------------------------------------*/
+	/*--------------------------------------------------*/
 	/* SCN Module Mailbox Messages                      */
-    /*--------------------------------------------------*/
-	MID_AIS_SCN_SCAN_REQ,	/* AIS notify SCN for starting scan */
-	MID_AIS_SCN_SCAN_REQ_V2,	/* AIS notify SCN for starting scan with multiple SSID support */
-	MID_AIS_SCN_SCAN_CANCEL,	/* AIS notify SCN for cancelling scan */
-	MID_P2P_SCN_SCAN_REQ,	/* P2P notify SCN for starting scan */
-	MID_P2P_SCN_SCAN_REQ_V2,	/* P2P notify SCN for starting scan with multiple SSID support */
-	MID_P2P_SCN_SCAN_CANCEL,	/* P2P notify SCN for cancelling scan */
-	MID_BOW_SCN_SCAN_REQ,	/* BOW notify SCN for starting scan */
-	MID_BOW_SCN_SCAN_REQ_V2,	/* BOW notify SCN for starting scan with multiple SSID support */
-	MID_BOW_SCN_SCAN_CANCEL,	/* BOW notify SCN for cancelling scan */
-	MID_RLM_SCN_SCAN_REQ,	/* RLM notify SCN for starting scan (OBSS-SCAN) */
-	MID_RLM_SCN_SCAN_REQ_V2,	/* RLM notify SCN for starting scan (OBSS-SCAN) with multiple SSID support */
-	MID_RLM_SCN_SCAN_CANCEL,	/* RLM notify SCN for cancelling scan (OBSS-SCAN) */
-	MID_SCN_AIS_SCAN_DONE,	/* SCN notify AIS for scan completion */
-	MID_SCN_P2P_SCAN_DONE,	/* SCN notify P2P for scan completion */
-	MID_SCN_BOW_SCAN_DONE,	/* SCN notify BOW for scan completion */
-	MID_SCN_RLM_SCAN_DONE,	/* SCN notify RLM for scan completion (OBSS-SCAN) */
+	/*--------------------------------------------------*/
+	/* AIS notify SCN for starting scan */
+	MID_AIS_SCN_SCAN_REQ,
+	/* AIS notify SCN for starting scan with multiple SSID support */
+	MID_AIS_SCN_SCAN_REQ_V2,
+	/* AIS notify SCN for cancelling scan */
+	MID_AIS_SCN_SCAN_CANCEL,
+	/* P2P notify SCN for starting scan */
+	MID_P2P_SCN_SCAN_REQ,
+	/* P2P notify SCN for starting scan with multiple SSID support */
+	MID_P2P_SCN_SCAN_REQ_V2,
+	/* P2P notify SCN for cancelling scan */
+	MID_P2P_SCN_SCAN_CANCEL,
+	/* BOW notify SCN for starting scan */
+	MID_BOW_SCN_SCAN_REQ,
+	/* BOW notify SCN for starting scan with multiple SSID support */
+	MID_BOW_SCN_SCAN_REQ_V2,
+	/* BOW notify SCN for cancelling scan */
+	MID_BOW_SCN_SCAN_CANCEL,
+	/* RLM notify SCN for starting scan (OBSS-SCAN) */
+	MID_RLM_SCN_SCAN_REQ,
+	/* RLM notify SCN for starting scan (OBSS-SCAN)
+	 * with multiple SSID support
+	 */
+	MID_RLM_SCN_SCAN_REQ_V2,
+	/* RLM notify SCN for cancelling scan (OBSS-SCAN) */
+	MID_RLM_SCN_SCAN_CANCEL,
+	/* SCN notify AIS for scan completion */
+	MID_SCN_AIS_SCAN_DONE,
+	/* SCN notify P2P for scan completion */
+	MID_SCN_P2P_SCAN_DONE,
+	/* SCN notify BOW for scan completion */
+	MID_SCN_BOW_SCAN_DONE,
+	/* SCN notify RLM for scan completion (OBSS-SCAN) */
+	MID_SCN_RLM_SCAN_DONE,
 
-    /*--------------------------------------------------*/
+	/*--------------------------------------------------*/
 	/* AIS Module Mailbox Messages                      */
-    /*--------------------------------------------------*/
-	MID_OID_AIS_FSM_JOIN_REQ,	/* OID/IOCTL notify AIS for join */
-	MID_OID_AIS_FSM_ABORT,	/* OID/IOCTL notify AIS for abort */
-	MID_AIS_SAA_FSM_START,	/* AIS notify SAA for Starting authentication/association fsm */
-	MID_AIS_SAA_FSM_ABORT,	/* AIS notify SAA for Aborting authentication/association fsm */
-	MID_SAA_AIS_JOIN_COMPLETE,	/* SAA notify AIS for indicating join complete */
+	/*--------------------------------------------------*/
+	/* OID/IOCTL notify AIS for join */
+	MID_OID_AIS_FSM_JOIN_REQ,
+	/* OID/IOCTL notify AIS for abort */
+	MID_OID_AIS_FSM_ABORT,
+	/* AIS notify SAA for Starting authentication/association fsm */
+	MID_AIS_SAA_FSM_START,
+	/* AIS notify SAA for Aborting authentication/association fsm */
+	MID_AIS_SAA_FSM_ABORT,
+	/* SAA notify AIS for indicating join complete */
+	MID_SAA_AIS_JOIN_COMPLETE,
 
 #if CFG_ENABLE_BT_OVER_WIFI
-    /*--------------------------------------------------*/
+	/*--------------------------------------------------*/
 	/* BOW Module Mailbox Messages                      */
-    /*--------------------------------------------------*/
-	MID_BOW_SAA_FSM_START,	/* BOW notify SAA for Starting authentication/association fsm */
-	MID_BOW_SAA_FSM_ABORT,	/* BOW notify SAA for Aborting authentication/association fsm */
-	MID_SAA_BOW_JOIN_COMPLETE,	/* SAA notify BOW for indicating join complete */
+	/*--------------------------------------------------*/
+	/* BOW notify SAA for Starting authentication/association fsm */
+	MID_BOW_SAA_FSM_START,
+	/* BOW notify SAA for Aborting authentication/association fsm */
+	MID_BOW_SAA_FSM_ABORT,
+	/* SAA notify BOW for indicating join complete */
+	MID_SAA_BOW_JOIN_COMPLETE,
 #endif
 
 #if CFG_ENABLE_WIFI_DIRECT
-    /*--------------------------------------------------*/
+	/*--------------------------------------------------*/
 	/* P2P Module Mailbox Messages                      */
-    /*--------------------------------------------------*/
-	MID_P2P_SAA_FSM_START,	/* P2P notify SAA for Starting authentication/association fsm */
-	MID_P2P_SAA_FSM_ABORT,	/* P2P notify SAA for Aborting authentication/association fsm */
-	MID_SAA_P2P_JOIN_COMPLETE,	/* SAA notify P2P for indicating join complete */
+	/*--------------------------------------------------*/
+	/* P2P notify SAA for Starting authentication/association fsm */
+	MID_P2P_SAA_FSM_START,
+	/* P2P notify SAA for Aborting authentication/association fsm */
+	MID_P2P_SAA_FSM_ABORT,
+	/* SAA notify P2P for indicating join complete */
+	MID_SAA_P2P_JOIN_COMPLETE,
 
 	MID_MNY_P2P_FUN_SWITCH,	/* Enable P2P FSM. */
-	MID_MNY_P2P_DEVICE_DISCOVERY,	/* Start device discovery. */
-	MID_MNY_P2P_CONNECTION_REQ,	/* Connection request. */
-	MID_MNY_P2P_CONNECTION_ABORT,	/* Abort connection request, P2P FSM return to IDLE. */
+	/* Start device discovery. */
+	MID_MNY_P2P_DEVICE_DISCOVERY,
+	/* Connection request. */
+	MID_MNY_P2P_CONNECTION_REQ,
+	/* Abort connection request, P2P FSM return to IDLE. */
+	MID_MNY_P2P_CONNECTION_ABORT,
 	MID_MNY_P2P_BEACON_UPDATE,
 	MID_MNY_P2P_STOP_AP,
 	MID_MNY_P2P_CHNL_REQ,
@@ -165,14 +202,18 @@ enum ENUM_MSG_ID {
 #endif
 
 #if CFG_SUPPORT_ADHOC
-	MID_SCN_AIS_FOUND_IBSS,	/* SCN notify AIS that an IBSS Peer has been found and can merge into */
+	/* SCN notify AIS that an IBSS Peer has been found
+	 * and can merge into
+	 */
+	MID_SCN_AIS_FOUND_IBSS,
 #endif				/* CFG_SUPPORT_ADHOC */
 
-	MID_SAA_AIS_FSM_ABORT,	/* SAA notify AIS for indicating deauthentication/disassociation */
+	/* SAA notify AIS for indicating deauthentication/disassociation */
+	MID_SAA_AIS_FSM_ABORT,
 
-    /*--------------------------------------------------*/
+	/*--------------------------------------------------*/
 	/* AIS MGMT-TX Support                              */
-    /*--------------------------------------------------*/
+	/*--------------------------------------------------*/
 	MID_MNY_AIS_REMAIN_ON_CHANNEL,
 	MID_MNY_AIS_CANCEL_REMAIN_ON_CHANNEL,
 	MID_MNY_AIS_MGMT_TX,
@@ -188,7 +229,8 @@ struct MSG_HDR {
 	enum ENUM_MSG_ID eMsgId;
 };
 
-typedef void(*PFN_MSG_HNDL_FUNC) (struct ADAPTER *, struct MSG_HDR *);
+typedef void(*PFN_MSG_HNDL_FUNC) (struct ADAPTER *,
+				  struct MSG_HDR *);
 
 struct MSG_HNDL_ENTRY {
 	enum ENUM_MSG_ID eMsgId;
@@ -196,10 +238,12 @@ struct MSG_HNDL_ENTRY {
 };
 
 enum EUNM_MSG_SEND_METHOD {
-	MSG_SEND_METHOD_BUF = 0,	/* Message is put in the queue and will be */
-					/*executed when mailbox is checked. */
-	MSG_SEND_METHOD_UNBUF	/* The handler function is called immediately */
-				/* in the same context of the sender */
+	/* Message is put in the queue and will be */
+	MSG_SEND_METHOD_BUF = 0,
+	/*executed when mailbox is checked. */
+	/* The handler function is called immediately */
+	MSG_SEND_METHOD_UNBUF
+	/* in the same context of the sender */
 };
 
 enum ENUM_MBOX_ID {
@@ -262,41 +306,45 @@ struct MSG_MGMT_TX_REQUEST {
 /* specific message data types */
 
 /*******************************************************************************
-*                            P U B L I C   D A T A
-********************************************************************************
-*/
+ *                            P U B L I C   D A T A
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                           P R I V A T E   D A T A
-********************************************************************************
-*/
+ *                           P R I V A T E   D A T A
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                                 M A C R O S
-********************************************************************************
-*/
+ *                                 M A C R O S
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                  F U N C T I O N   D E C L A R A T I O N S
-********************************************************************************
-*/
-void mboxSetup(IN struct ADAPTER *prAdapter, IN enum ENUM_MBOX_ID eMboxId);
+ *                  F U N C T I O N   D E C L A R A T I O N S
+ *******************************************************************************
+ */
+void mboxSetup(IN struct ADAPTER *prAdapter,
+	       IN enum ENUM_MBOX_ID eMboxId);
 
 void
 mboxSendMsg(IN struct ADAPTER *prAdapter,
-	    IN enum ENUM_MBOX_ID eMboxId, IN struct MSG_HDR *prMsg, IN enum EUNM_MSG_SEND_METHOD eMethod);
+	    IN enum ENUM_MBOX_ID eMboxId, IN struct MSG_HDR *prMsg,
+	    IN enum EUNM_MSG_SEND_METHOD eMethod);
 
-void mboxRcvAllMsg(IN struct ADAPTER *prAdapter, IN enum ENUM_MBOX_ID eMboxId);
+void mboxRcvAllMsg(IN struct ADAPTER *prAdapter,
+		   IN enum ENUM_MBOX_ID eMboxId);
 
 void mboxInitialize(IN struct ADAPTER *prAdapter);
 
 void mboxDestroy(IN struct ADAPTER *prAdapter);
 
-void mboxDummy(IN struct ADAPTER *prAdapter, struct MSG_HDR *prMsgHdr);
+void mboxDummy(IN struct ADAPTER *prAdapter,
+	       struct MSG_HDR *prMsgHdr);
 
 /*******************************************************************************
-*                              F U N C T I O N S
-********************************************************************************
-*/
+ *                              F U N C T I O N S
+ *******************************************************************************
+ */
 
 #endif /* _HEM_MBOX_H */

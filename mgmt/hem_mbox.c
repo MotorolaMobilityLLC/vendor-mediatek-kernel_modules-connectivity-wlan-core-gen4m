@@ -50,45 +50,45 @@
  *
  *****************************************************************************/
 /*
-** Id: //Department/DaVinci/BRANCHES/MT6620_WIFI_DRIVER_V2_3/mgmt/hem_mbox.c#7
-*/
+ ** Id: mgmt/hem_mbox.c
+ */
 
 /*! \file   "hem_mbox.c"
-*    \brief
-*
-*/
+ *    \brief
+ *
+ */
 
 
 /*******************************************************************************
-*                         C O M P I L E R   F L A G S
-********************************************************************************
-*/
+ *                         C O M P I L E R   F L A G S
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                    E X T E R N A L   R E F E R E N C E S
-********************************************************************************
-*/
+ *                    E X T E R N A L   R E F E R E N C E S
+ *******************************************************************************
+ */
 #include "precomp.h"
 
 /*******************************************************************************
-*                              C O N S T A N T S
-********************************************************************************
-*/
+ *                              C O N S T A N T S
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                             D A T A   T Y P E S
-********************************************************************************
-*/
+ *                             D A T A   T Y P E S
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                            P U B L I C   D A T A
-********************************************************************************
-*/
+ *                            P U B L I C   D A T A
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                           P R I V A T E   D A T A
-********************************************************************************
-*/
+ *                           P R I V A T E   D A T A
+ *******************************************************************************
+ */
 #if DBG
 /*lint -save -e64 Type mismatch */
 static uint8_t *apucDebugMsg[] = {
@@ -181,7 +181,8 @@ static struct MSG_HNDL_ENTRY arMsgMapTable[] = {
 	{MID_MNY_CNM_CH_ABORT, cnmChMngrAbortPrivilege},
 	{MID_CNM_AIS_CH_GRANT, aisFsmRunEventChGrant},
 #if CFG_ENABLE_WIFI_DIRECT
-	{MID_CNM_P2P_CH_GRANT, p2pFsmRunEventChGrant},	/*set in gl_p2p_init.c */
+	/*set in gl_p2p_init.c */
+	{MID_CNM_P2P_CH_GRANT, p2pFsmRunEventChGrant},
 #else
 	{MID_CNM_P2P_CH_GRANT, mboxDummy},
 #endif
@@ -197,9 +198,9 @@ static struct MSG_HNDL_ENTRY arMsgMapTable[] = {
 	{MID_CNM_BOW_CH_GRANT, mboxDummy},
 #endif
 
-    /*--------------------------------------------------*/
+	/*--------------------------------------------------*/
 	/* SCN Module Mailbox Messages                      */
-    /*--------------------------------------------------*/
+	/*--------------------------------------------------*/
 	{MID_AIS_SCN_SCAN_REQ, scnFsmMsgStart},
 	{MID_AIS_SCN_SCAN_REQ_V2, scnFsmMsgStart},
 	{MID_AIS_SCN_SCAN_CANCEL, scnFsmMsgAbort},
@@ -214,7 +215,8 @@ static struct MSG_HNDL_ENTRY arMsgMapTable[] = {
 	{MID_RLM_SCN_SCAN_CANCEL, scnFsmMsgAbort},
 	{MID_SCN_AIS_SCAN_DONE, aisFsmRunEventScanDone},
 #if CFG_ENABLE_WIFI_DIRECT
-	{MID_SCN_P2P_SCAN_DONE, p2pFsmRunEventScanDone},	/*set in gl_p2p_init.c */
+	/*set in gl_p2p_init.c */
+	{MID_SCN_P2P_SCAN_DONE, p2pFsmRunEventScanDone},
 #else
 	{MID_SCN_P2P_SCAN_DONE, mboxDummy},
 #endif
@@ -226,9 +228,9 @@ static struct MSG_HNDL_ENTRY arMsgMapTable[] = {
 #endif
 	{MID_SCN_RLM_SCAN_DONE, rlmObssScanDone},
 
-    /*--------------------------------------------------*/
+	/*--------------------------------------------------*/
 	/* AIS Module Mailbox Messages                      */
-    /*--------------------------------------------------*/
+	/*--------------------------------------------------*/
 	{MID_OID_AIS_FSM_JOIN_REQ, aisFsmRunEventAbort},
 	{MID_OID_AIS_FSM_ABORT, aisFsmRunEventAbort},
 	{MID_AIS_SAA_FSM_START, saaFsmRunEventStart},
@@ -236,9 +238,9 @@ static struct MSG_HNDL_ENTRY arMsgMapTable[] = {
 	{MID_SAA_AIS_JOIN_COMPLETE, aisFsmRunEventJoinComplete},
 
 #if CFG_ENABLE_BT_OVER_WIFI
-    /*--------------------------------------------------*/
+	/*--------------------------------------------------*/
 	/* BOW Module Mailbox Messages                      */
-    /*--------------------------------------------------*/
+	/*--------------------------------------------------*/
 	{MID_BOW_SAA_FSM_START, saaFsmRunEventStart},
 	{MID_BOW_SAA_FSM_ABORT, saaFsmRunEventAbort},
 	{MID_SAA_BOW_JOIN_COMPLETE, bowFsmRunEventJoinComplete},
@@ -259,7 +261,8 @@ static struct MSG_HNDL_ENTRY arMsgMapTable[] = {
 	{MID_MNY_P2P_CHNL_ABORT, p2pDevFsmRunEventChannelAbort},	/* V */
 	{MID_MNY_P2P_MGMT_TX, p2pDevFsmRunEventMgmtTx},	/* V */
 	{MID_MNY_P2P_GROUP_DISSOLVE, p2pRoleFsmRunEventDissolve},
-	{MID_MNY_P2P_MGMT_FRAME_REGISTER, p2pDevFsmRunEventMgmtFrameRegister},
+	{MID_MNY_P2P_MGMT_FRAME_REGISTER,
+		p2pDevFsmRunEventMgmtFrameRegister},
 	{MID_MNY_P2P_NET_DEV_REGISTER, p2pFsmRunEventNetDeviceRegister},
 	{MID_MNY_P2P_START_AP, p2pRoleFsmRunEventStartAP},
 	{MID_MNY_P2P_DEL_IFACE, p2pRoleFsmRunEventDelIface},
@@ -279,24 +282,29 @@ static struct MSG_HNDL_ENTRY arMsgMapTable[] = {
 #endif /* CFG_SUPPORT_ADHOC */
 
 	{MID_SAA_AIS_FSM_ABORT, aisFsmRunEventAbort},
-	{MID_MNY_AIS_REMAIN_ON_CHANNEL, aisFsmRunEventRemainOnChannel},
-	{MID_MNY_AIS_CANCEL_REMAIN_ON_CHANNEL, aisFsmRunEventCancelRemainOnChannel},
+	{MID_MNY_AIS_REMAIN_ON_CHANNEL,
+		aisFsmRunEventRemainOnChannel},
+	{MID_MNY_AIS_CANCEL_REMAIN_ON_CHANNEL,
+		aisFsmRunEventCancelRemainOnChannel},
 	{MID_MNY_AIS_MGMT_TX, aisFsmRunEventMgmtFrameTx}
 #if CFG_SUPPORT_NCHO
-	{MID_MNY_AIS_NCHO_ACTION_FRAME, aisFsmRunEventNchoActionFrameTx},
+	{MID_MNY_AIS_NCHO_ACTION_FRAME,
+		aisFsmRunEventNchoActionFrameTx},
 #endif
 };
 
 /*******************************************************************************
-*                                 M A C R O S
-********************************************************************************
-*/
+ *                                 M A C R O S
+ *******************************************************************************
+ */
 
 #if DBG
 #define MBOX_HNDL_MSG(prAdapter, prMsg) do { \
 	ASSERT(arMsgMapTable[prMsg->eMsgId].pfMsgHndl); \
 	if (arMsgMapTable[prMsg->eMsgId].pfMsgHndl) { \
-		DBGLOG(CNM, LOUD, "DO MSG [%d: %s]\n", prMsg->eMsgId, apucDebugMsg[prMsg->eMsgId]); \
+		DBGLOG(CNM, LOUD, \
+		"DO MSG [%d: %s]\n", \
+		prMsg->eMsgId, apucDebugMsg[prMsg->eMsgId]); \
 		arMsgMapTable[prMsg->eMsgId].pfMsgHndl(prAdapter, prMsg); \
 	} \
 	else { \
@@ -318,30 +326,31 @@ static struct MSG_HNDL_ENTRY arMsgMapTable[] = {
 } while (0)
 #endif
 /*******************************************************************************
-*                   F U N C T I O N   D E C L A R A T I O N S
-********************************************************************************
-*/
+ *                   F U N C T I O N   D E C L A R A T I O N S
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                              F U N C T I O N S
-********************************************************************************
-*/
+ *                              F U N C T I O N S
+ *******************************************************************************
+ */
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief
-*
-* \param[in]
-*
-* \return none
-*/
+ * \brief
+ *
+ * \param[in]
+ *
+ * \return none
+ */
 /*----------------------------------------------------------------------------*/
 void mboxInitMsgMap(void)
 {
 	uint32_t i, idx;
 	struct MSG_HNDL_ENTRY rTempEntry;
 
-	ASSERT((sizeof(arMsgMapTable) / sizeof(struct MSG_HNDL_ENTRY)) == MID_TOTAL_NUM);
+	ASSERT((sizeof(arMsgMapTable) / sizeof(struct
+		MSG_HNDL_ENTRY)) == MID_TOTAL_NUM);
 
 	for (i = 0; i < MID_TOTAL_NUM; i++) {
 		if (arMsgMapTable[i].eMsgId == (enum ENUM_MSG_ID) i)
@@ -376,14 +385,15 @@ void mboxInitMsgMap(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief
-*
-* \param[in]
-*
-* \return none
-*/
+ * \brief
+ *
+ * \param[in]
+ *
+ * \return none
+ */
 /*----------------------------------------------------------------------------*/
-void mboxSetup(IN struct ADAPTER *prAdapter, IN enum ENUM_MBOX_ID eMboxId)
+void mboxSetup(IN struct ADAPTER *prAdapter,
+	       IN enum ENUM_MBOX_ID eMboxId)
 {
 	struct MBOX *prMbox;
 
@@ -401,16 +411,17 @@ void mboxSetup(IN struct ADAPTER *prAdapter, IN enum ENUM_MBOX_ID eMboxId)
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief
-*
-* \param[in]
-*
-* \return none
-*/
+ * \brief
+ *
+ * \param[in]
+ *
+ * \return none
+ */
 /*----------------------------------------------------------------------------*/
 void
 mboxSendMsg(IN struct ADAPTER *prAdapter,
-	    IN enum ENUM_MBOX_ID eMboxId, IN struct MSG_HDR *prMsg, IN enum EUNM_MSG_SEND_METHOD eMethod)
+	    IN enum ENUM_MBOX_ID eMboxId, IN struct MSG_HDR *prMsg,
+	    IN enum EUNM_MSG_SEND_METHOD eMethod)
 {
 	struct MBOX *prMbox;
 
@@ -454,14 +465,15 @@ mboxSendMsg(IN struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief
-*
-* \param[in]
-*
-* \return none
-*/
+ * \brief
+ *
+ * \param[in]
+ *
+ * \return none
+ */
 /*----------------------------------------------------------------------------*/
-void mboxRcvAllMsg(IN struct ADAPTER *prAdapter, enum ENUM_MBOX_ID eMboxId)
+void mboxRcvAllMsg(IN struct ADAPTER *prAdapter,
+		   enum ENUM_MBOX_ID eMboxId)
 {
 	struct MBOX *prMbox;
 	struct MSG_HDR *prMsg;
@@ -475,7 +487,8 @@ void mboxRcvAllMsg(IN struct ADAPTER *prAdapter, enum ENUM_MBOX_ID eMboxId)
 
 	while (!LINK_IS_EMPTY(&prMbox->rLinkHead)) {
 		KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_MAILBOX);
-		LINK_REMOVE_HEAD(&prMbox->rLinkHead, prMsg, struct MSG_HDR *);
+		LINK_REMOVE_HEAD(&prMbox->rLinkHead, prMsg,
+				 struct MSG_HDR *);
 		KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_MAILBOX);
 
 		ASSERT(prMsg);
@@ -490,12 +503,12 @@ void mboxRcvAllMsg(IN struct ADAPTER *prAdapter, enum ENUM_MBOX_ID eMboxId)
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief
-*
-* \param[in]
-*
-* \return none
-*/
+ * \brief
+ *
+ * \param[in]
+ *
+ * \return none
+ */
 /*----------------------------------------------------------------------------*/
 void mboxInitialize(IN struct ADAPTER *prAdapter)
 {
@@ -514,12 +527,12 @@ void mboxInitialize(IN struct ADAPTER *prAdapter)
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief
-*
-* \param[in]
-*
-* \return none
-*/
+ * \brief
+ *
+ * \param[in]
+ *
+ * \return none
+ */
 /*----------------------------------------------------------------------------*/
 void mboxDestroy(IN struct ADAPTER *prAdapter)
 {
@@ -536,7 +549,8 @@ void mboxDestroy(IN struct ADAPTER *prAdapter)
 
 		while (!LINK_IS_EMPTY(&prMbox->rLinkHead)) {
 			KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_MAILBOX);
-			LINK_REMOVE_HEAD(&prMbox->rLinkHead, prMsg, struct MSG_HDR *);
+			LINK_REMOVE_HEAD(&prMbox->rLinkHead, prMsg,
+					 struct MSG_HDR *);
 			KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_MAILBOX);
 
 			ASSERT(prMsg);
@@ -547,14 +561,16 @@ void mboxDestroy(IN struct ADAPTER *prAdapter)
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief This is dummy function to prevent empty arMsgMapTable[] for compiling.
-*
-* \param[in]
-*
-* \return none
-*/
+ * \brief This is dummy function to prevent empty arMsgMapTable[]
+ *        for compiling.
+ *
+ * \param[in]
+ *
+ * \return none
+ */
 /*----------------------------------------------------------------------------*/
-void mboxDummy(IN struct ADAPTER *prAdapter, IN struct MSG_HDR *prMsgHdr)
+void mboxDummy(IN struct ADAPTER *prAdapter,
+	       IN struct MSG_HDR *prMsgHdr)
 {
 	ASSERT(prAdapter);
 
