@@ -1830,7 +1830,9 @@ void nicRxProcessDataPacket(IN struct ADAPTER *prAdapter,
 			do {
 #if CFG_SUPPORT_MSP
 				if (prRetSwRfb->ucGroupVLD
-					& BIT(RX_GROUP_VLD_3)) {
+					& BIT(RX_GROUP_VLD_3) &&
+					prRetSwRfb->ucStaRecIdx <
+					CFG_STA_REC_NUM) {
 					prAdapter->arStaRec[
 					prRetSwRfb->ucStaRecIdx].
 						u4RxVector0 =
