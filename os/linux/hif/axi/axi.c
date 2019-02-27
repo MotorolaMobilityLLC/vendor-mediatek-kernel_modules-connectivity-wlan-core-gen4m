@@ -245,6 +245,13 @@ static int hifAxiClrBusCnt(void)
 }
 #endif /* CFG_MTK_ANDROID_WMT */
 
+static int hifAxiSetMpuProtect(bool enable)
+{
+	kalSetEmiMpuProtection(gConEmiPhyBase, WIFI_EMI_MEM_OFFSET,
+			       WIFI_EMI_MEM_SIZE, enable);
+	return 0;
+}
+
 static void axiDmaSetup(struct platform_device *pdev)
 {
 	const struct dma_map_ops *dma_ops = NULL;
@@ -412,6 +419,7 @@ static int mtk_axi_probe(IN struct platform_device *pdev)
 	rWmtCb.wlan_remove_cb = hifAxiRemove;
 	rWmtCb.wlan_bus_cnt_get_cb = hifAxiGetBusCnt;
 	rWmtCb.wlan_bus_cnt_clr_cb = hifAxiClrBusCnt;
+	rWmtCb.wlan_emi_mpu_set_protection_cb = hifAxiSetMpuProtect;
 	mtk_wcn_wmt_wlan_reg(&rWmtCb);
 #else
 	hifAxiProbe();
