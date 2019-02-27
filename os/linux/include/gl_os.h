@@ -319,6 +319,8 @@ extern void mtk_wmt_set_ext_ldo(uint32_t flag);
  *                             D A T A   T Y P E S
  *******************************************************************************
  */
+struct GLUE_INFO;
+
 struct GL_WPA_INFO {
 	uint32_t u4WpaVersion;
 	uint32_t u4KeyMgmt;
@@ -427,6 +429,21 @@ struct GL_BOW_INFO {
 
 };
 #endif
+
+#if CFG_SUPPORT_SCAN_CACHE_RESULT
+struct GL_SCAN_CACHE_INFO {
+	struct GLUE_INFO *prGlueInfo;
+
+	/* for cfg80211 scan done indication */
+	struct cfg80211_scan_request *prRequest;
+
+	/* total number of channels to scan */
+	uint32_t n_channels;
+
+	/* Scan period time */
+	OS_SYSTIME u4LastScanTime;
+};
+#endif /* CFG_SUPPORT_SCAN_CACHE_RESULT */
 
 struct FT_IES {
 	uint16_t u2MDID;
@@ -695,9 +712,9 @@ struct GLUE_INFO {
 	uint8_t *pucScanChannel;
 
 #if CFG_SUPPORT_SCAN_CACHE_RESULT
-	/* Scan period time */
-	OS_SYSTIME u4LastScanTime;
+	struct GL_SCAN_CACHE_INFO scanCache;
 #endif /* CFG_SUPPORT_SCAN_CACHE_RESULT */
+
 	/* Full2Partial */
 	OS_SYSTIME u4LastFullScanTime;
 	/* full scan or partial scan */

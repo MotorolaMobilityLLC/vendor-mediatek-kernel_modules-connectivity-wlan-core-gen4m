@@ -893,7 +893,7 @@
  *------------------------------------------------------------------------------
  */
 #define CFG_SUPPORT_SCAN_CACHE_RESULT      (1)
-#define CFG_SCAN_CACHE_RESULT_PERIOD       (7)  /* in sec */
+#define CFG_SCAN_CACHE_RESULT_PERIOD       (7000)	/* Unit: ms */
 #define CFG_SCAN_CACHE_MIN_CHANNEL_NUM     (10)
 
 /*------------------------------------------------------------------------------
