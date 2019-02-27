@@ -188,6 +188,10 @@ extern uint8_t g_cTxBackOffMaxPower5G;
 #define PRIV_CMD_SET_WOW_PAR			35
 #endif
 
+#ifdef UT_TEST_MODE
+#define PRIV_CMD_UT		36
+#endif /* UT_TEST_MODE */
+
 #define PRIV_CMD_SET_SER                37
 
 /* Get FW manifest version */
@@ -279,6 +283,10 @@ extern uint8_t g_cTxBackOffMaxPower5G;
 #define CMD_NCHO_COMP_TIMEOUT			1500	/* ms */
 #define CMD_NCHO_AF_DATA_LENGTH			1040
 #endif
+
+#ifdef UT_TEST_MODE
+#define OID_UT                                          0xFFA0CD00
+#endif /* UT_TEST_MODE */
 
 /* Define magic key of test mode (Don't change it for future compatibity) */
 #define PRIV_CMD_TEST_MAGIC_KEY                         2011
