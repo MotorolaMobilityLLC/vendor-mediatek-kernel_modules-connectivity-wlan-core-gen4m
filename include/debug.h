@@ -175,7 +175,8 @@ enum ENUM_DBG_ASSERT_PATH {
 };
 
 struct CHIP_DBG_OPS {
-	void (*showPdmaInfo)(IN struct ADAPTER *prAdapter, bool fgDumpContent);
+	void (*showPdmaInfo)(IN struct ADAPTER *prAdapter,
+			     bool fgTxContent, bool fgRxContent);
 	void (*showPseInfo)(IN struct ADAPTER *prAdapter);
 	void (*showPleInfo)(IN struct ADAPTER *prAdapter);
 	void (*showCsrInfo)(IN struct ADAPTER *prAdapter);

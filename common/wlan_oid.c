@@ -14050,7 +14050,7 @@ wlanoidShowPdmaInfo(IN struct ADAPTER *prAdapter,
 	struct CHIP_DBG_OPS *prOps = prAdapter->chip_info->prDebugOps;
 
 	if (prOps->showPdmaInfo)
-		prOps->showPdmaInfo(prAdapter, true);
+		prOps->showPdmaInfo(prAdapter, true, true);
 	return 0;
 }
 

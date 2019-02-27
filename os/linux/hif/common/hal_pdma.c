@@ -2220,7 +2220,8 @@ uint32_t halGetHifTxPageSize(IN struct ADAPTER *prAdapter)
 	return HIF_TX_PAGE_SIZE;
 }
 
-void halShowPdmaInfo(IN struct ADAPTER *prAdapter, bool fgDumpContent)
+void halShowPdmaInfo(IN struct ADAPTER *prAdapter,
+		     bool fgTxContent, bool fgRxContent)
 {
 	uint32_t i = 0, u4Value = 0;
 	uint32_t Base[6], Base_Ext[6], Cnt[6], Cidx[6], Didx[6];
@@ -2302,28 +2303,28 @@ void halShowPdmaInfo(IN struct ADAPTER *prAdapter, bool fgDumpContent)
 	DBGLOG(HAL, INFO, "%s\n", buf);
 
 	/* PDMA Tx/Rx descriptor & packet content */
-	DBGLOG(HAL, INFO, "Dump PDMA Tx Ring Information\n");
 	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
 
 	for (i = 0; i < 3; i++) {
+		DBGLOG(HAL, INFO, "Dump PDMA Tx Ring[%u]\n", i);
 		prTxRing = &prHifInfo->TxRing[i];
 		SwIdx = Didx[i];
 		kalDumpTxRing(prAdapter->prGlueInfo, prTxRing,
-			      SwIdx, fgDumpContent);
+			      SwIdx, fgTxContent);
 		SwIdx = Didx[i] == 0 ? Cnt[i] - 1 : Didx[i] - 1;
 		kalDumpTxRing(prAdapter->prGlueInfo, prTxRing,
-			      SwIdx, fgDumpContent);
+			      SwIdx, fgTxContent);
 	}
 
-	DBGLOG(HAL, INFO, "Dump PDMA Rx Ring Information\n");
 	for (i = 0; i < 2; i++) {
+		DBGLOG(HAL, INFO, "Dump PDMA Rx Ring[%u]\n", i);
 		prRxRing = &prHifInfo->RxRing[i];
 		SwIdx = Didx[i+3];
 		kalDumpRxRing(prAdapter->prGlueInfo, prRxRing,
-			      SwIdx, fgDumpContent);
+			      SwIdx, fgRxContent);
 		SwIdx = Didx[i+3] == 0 ? Cnt[i+3] - 1 : Didx[i+3] - 1;
 		kalDumpRxRing(prAdapter->prGlueInfo, prRxRing,
-			      SwIdx, fgDumpContent);
+			      SwIdx, fgRxContent);
 	}
 
 	/* PDMA Busy Status */
