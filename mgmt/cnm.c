@@ -3585,6 +3585,11 @@ cnmGetOpTRxNssSourcePriority(
 			&prBssOpCtrl->
 			rOpTRxBw[EVENT_OPMODE_CHANGE_REASON_DBDC_SCAN];
 	else if (prBssOpCtrl->
+		rOpTRxBw[EVENT_OPMODE_CHANGE_REASON_SMARTGEAR].fgEnable)
+		prBssOpSourceCtrl =
+			&prBssOpCtrl->
+			rOpTRxBw[EVENT_OPMODE_CHANGE_REASON_SMARTGEAR];
+	else if (prBssOpCtrl->
 		rOpTRxBw[EVENT_OPMODE_CHANGE_REASON_COANT].fgEnable)
 		prBssOpSourceCtrl =
 			&prBssOpCtrl->
