@@ -1025,31 +1025,33 @@ void qmSetStaRecTxAllowed(IN struct ADAPTER *prAdapter,
 	uint8_t ucIdx;
 	struct QUE *prSrcQ, *prDstQ;
 
-	/* Update Tx queue */
-	for (ucIdx = 0; ucIdx < NUM_OF_PER_STA_TX_QUEUES; ucIdx++) {
-		if (fgIsTxAllowed) {
-			prSrcQ = &prStaRec->arPendingTxQueue[ucIdx];
-			prDstQ = &prStaRec->arTxQueue[ucIdx];
-		} else {
-			prSrcQ = &prStaRec->arTxQueue[ucIdx];
-			prDstQ = &prStaRec->arPendingTxQueue[ucIdx];
+	DBGLOG(QM, INFO, "Set Sta[%u] TxAllowed from [%u] to [%u] %s TxQ\n",
+		prStaRec->ucIndex,
+		prStaRec->fgIsTxAllowed,
+		fgIsTxAllowed,
+		fgIsTxAllowed ? "normal" : "pending");
+
+	/* Update Tx queue when allowed state change*/
+	if (prStaRec->fgIsTxAllowed != fgIsTxAllowed) {
+		for (ucIdx = 0; ucIdx < NUM_OF_PER_STA_TX_QUEUES; ucIdx++) {
+			if (fgIsTxAllowed) {
+				prSrcQ = &prStaRec->arPendingTxQueue[ucIdx];
+				prDstQ = &prStaRec->arTxQueue[ucIdx];
+			} else {
+				prSrcQ = &prStaRec->arTxQueue[ucIdx];
+				prDstQ = &prStaRec->arPendingTxQueue[ucIdx];
+			}
+
+			QUEUE_CONCATENATE_QUEUES_HEAD(prDstQ, prSrcQ);
+			prStaRec->aprTargetQueue[ucIdx] = prDstQ;
 		}
 
-		QUEUE_CONCATENATE_QUEUES_HEAD(prDstQ, prSrcQ);
-		prStaRec->aprTargetQueue[ucIdx] = prDstQ;
-	}
-
-	if (prStaRec->fgIsTxAllowed != fgIsTxAllowed) {
 		if (fgIsTxAllowed)
 			prAdapter->rQM.u4TxAllowedStaCount++;
 		else
 			prAdapter->rQM.u4TxAllowedStaCount--;
 	}
 	prStaRec->fgIsTxAllowed = fgIsTxAllowed;
-
-	DBGLOG(QM, INFO, "Set Sta[%u] TxAllowed[%u] %s TxQ\n",
-		prStaRec->ucIndex, fgIsTxAllowed,
-		fgIsTxAllowed ? "normal" : "pending");
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1596,7 +1598,16 @@ qmDequeueTxPacketsFromPerStaQueues(IN struct ADAPTER *prAdapter,
 						ucAlwaysResetUsedRes & BIT(0)))
 						fgEndThisRound = TRUE;
 					break;
+				} else if (!prStaRec->fgIsValid) {
+					/* In roaming, if the sta_rec doesn't
+					 * active by event 0x0C, it can't
+					 * dequeue data.
+					 */
+					DBGLOG_LIMITED(QM, WARN,
+						"sta_rec is not valid\n");
+					break;
 				}
+
 #if CFG_SUPPORT_SOFT_ACM
 				if (fgAcmFlowCtrl) {
 					uint32_t u4PktTxTime = 0;
