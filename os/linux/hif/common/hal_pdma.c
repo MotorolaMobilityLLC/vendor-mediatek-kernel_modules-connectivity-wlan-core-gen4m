@@ -311,6 +311,104 @@ void halDisableInterrupt(IN struct ADAPTER *prAdapter)
 	DBGLOG(HAL, TRACE, "%s\n", __func__);
 
 }
+
+static u_int8_t halDriverOwnCheckCR4(struct ADAPTER *prAdapter)
+{
+	struct mt66xx_chip_info *prChipInfo;
+	uint32_t u4CurrTick;
+	uint32_t ready_bits;
+	u_int8_t fgStatus = TRUE;
+	u_int8_t fgReady = FALSE;
+	u_int8_t fgDummyReq = FALSE;
+	u_int8_t fgTimeout;
+
+	ASSERT(prAdapter);
+
+	prChipInfo = prAdapter->chip_info;
+	ready_bits = prChipInfo->sw_ready_bits;
+
+	HAL_WIFI_FUNC_READY_CHECK(prAdapter,
+				  WIFI_FUNC_DUMMY_REQ, &fgDummyReq);
+
+	u4CurrTick = kalGetTimeTick();
+	/* Wait CR4 ready */
+	while (1) {
+		fgTimeout = ((kalGetTimeTick() - u4CurrTick) >
+			     LP_OWN_BACK_TOTAL_DELAY_MS) ? TRUE : FALSE;
+		/* kalMsleep(2); */
+		HAL_WIFI_FUNC_READY_CHECK(prAdapter, ready_bits, &fgReady);
+
+		if (fgReady) {
+			break;
+		} else if (kalIsCardRemoved(prAdapter->prGlueInfo) ||
+			   fgIsBusAccessFailed || fgTimeout
+			   || wlanIsChipNoAck(prAdapter)) {
+			DBGLOG(INIT, INFO,
+			       "Skip waiting CR4 ready for next %ums\n",
+			       LP_OWN_BACK_FAILED_LOG_SKIP_MS);
+			fgStatus = FALSE;
+#if CFG_CHIP_RESET_SUPPORT
+			glGetRstReason(RST_DRV_OWN_FAIL);
+			GL_RESET_TRIGGER(prAdapter,
+					 RST_FLAG_CHIP_RESET);
+#endif
+			break;
+		}
+		/* Delay for CR4 to complete its operation. */
+		kalMsleep(LP_OWN_BACK_LOOP_DELAY_MS);
+	}
+
+	/* Send dummy cmd and clear flag */
+	if (fgDummyReq) {
+		wlanSendDummyCmd(prAdapter, FALSE);
+		HAL_CLEAR_DUMMY_REQ(prAdapter);
+	}
+
+	return fgStatus;
+}
+
+static void halDriverOwnTimeout(struct ADAPTER *prAdapter,
+				uint32_t u4CurrTick, u_int8_t fgTimeout)
+{
+	if ((prAdapter->u4OwnFailedCount == 0) ||
+	    CHECK_FOR_TIMEOUT(u4CurrTick, prAdapter->rLastOwnFailedLogTime,
+			      MSEC_TO_SYSTIME(LP_OWN_BACK_FAILED_LOG_SKIP_MS))
+		) {
+		DBGLOG(INIT, ERROR,
+		       "LP cannot be own back, Timeout[%u](%ums), BusAccessError[%u]",
+		       fgTimeout,
+		       kalGetTimeTick() - u4CurrTick,
+		       fgIsBusAccessFailed);
+		DBGLOG(INIT, ERROR,
+		       "Resetting[%u], CardRemoved[%u] NoAck[%u] Cnt[%u]\n",
+		       kalIsResetting(),
+		       kalIsCardRemoved(prAdapter->prGlueInfo),
+		       wlanIsChipNoAck(prAdapter),
+		       prAdapter->u4OwnFailedCount);
+
+		DBGLOG(INIT, INFO,
+		       "Skip LP own back failed log for next %ums\n",
+		       LP_OWN_BACK_FAILED_LOG_SKIP_MS);
+
+		prAdapter->u4OwnFailedLogCount++;
+		if (prAdapter->u4OwnFailedLogCount >
+		    LP_OWN_BACK_FAILED_RESET_CNT) {
+			hal_chip_show_pse_info(prAdapter);
+			hal_chip_show_ple_info(prAdapter);
+			hal_chip_show_host_csr_info(prAdapter);
+			hal_chip_show_pdma_info(prAdapter);
+#if CFG_CHIP_RESET_SUPPORT
+			/* Trigger RESET */
+			glGetRstReason(RST_DRV_OWN_FAIL);
+			GL_RESET_TRIGGER(prAdapter, RST_FLAG_CHIP_RESET);
+#endif
+		}
+		GET_CURRENT_SYSTIME(&prAdapter->rLastOwnFailedLogTime);
+	}
+
+	prAdapter->u4OwnFailedCount++;
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief This routine is used to process the POWER OFF procedure.
@@ -322,24 +420,24 @@ void halDisableInterrupt(IN struct ADAPTER *prAdapter)
 /*----------------------------------------------------------------------------*/
 u_int8_t halSetDriverOwn(IN struct ADAPTER *prAdapter)
 {
+	struct mt66xx_chip_info *prChipInfo;
 	struct BUS_INFO *prBusInfo;
 	u_int8_t fgStatus = TRUE;
 	uint32_t i, u4CurrTick, u4WriteTick, u4WriteTickTemp;
 	u_int8_t fgTimeout;
 	u_int8_t fgResult;
-	u_int8_t fgReady = FALSE;
-	u_int8_t fgDummyReq = FALSE;
 
 	ASSERT(prAdapter);
 
-	prBusInfo = prAdapter->chip_info->bus_info;
+	prChipInfo = prAdapter->chip_info;
+	prBusInfo = prChipInfo->bus_info;
 
 	GLUE_INC_REF_CNT(prAdapter->u4PwrCtrlBlockCnt);
 
 	if (prAdapter->fgIsFwOwn == FALSE)
 		return fgStatus;
 
-	DBGLOG(INIT, INFO, "DRIVER OWN\n");
+	DBGLOG(INIT, TRACE, "DRIVER OWN Start\n");
 
 	u4WriteTick = 0;
 	u4CurrTick = kalGetTimeTick();
@@ -350,72 +448,27 @@ u_int8_t halSetDriverOwn(IN struct ADAPTER *prAdapter)
 	fgResult = FALSE;
 
 	while (1) {
-
 		if (!prBusInfo->fgCheckDriverOwnInt ||
-			test_bit(GLUE_FLAG_INT_BIT,
-				&prAdapter->prGlueInfo->ulFlag))
+		    test_bit(GLUE_FLAG_INT_BIT, &prAdapter->prGlueInfo->ulFlag))
 			HAL_LP_OWN_RD(prAdapter, &fgResult);
 
 		fgTimeout = ((kalGetTimeTick() - u4CurrTick) >
-			LP_OWN_BACK_TOTAL_DELAY_MS) ? TRUE : FALSE;
+			     LP_OWN_BACK_TOTAL_DELAY_MS) ? TRUE : FALSE;
 
 		if (fgResult) {
 			/* Check WPDMA FW own interrupt status and clear */
-			HAL_MCR_WR(prAdapter, WPDMA_INT_STA,
-				WPDMA_FW_CLR_OWN_INT);
+			if (prBusInfo->fgCheckDriverOwnInt)
+				HAL_MCR_WR(prAdapter, WPDMA_INT_STA,
+					   WPDMA_FW_CLR_OWN_INT);
 			prAdapter->fgIsFwOwn = FALSE;
 			prAdapter->u4OwnFailedCount = 0;
 			prAdapter->u4OwnFailedLogCount = 0;
 			break;
 		} else if ((i > LP_OWN_BACK_FAILED_RETRY_CNT) &&
-					(kalIsCardRemoved(
-					prAdapter->prGlueInfo) ||
-					fgIsBusAccessFailed || fgTimeout
-			    || wlanIsChipNoAck(prAdapter))) {
-
-			if ((prAdapter->u4OwnFailedCount == 0) ||
-			    CHECK_FOR_TIMEOUT(u4CurrTick,
-						prAdapter->
-						rLastOwnFailedLogTime,
-						MSEC_TO_SYSTIME(
-						LP_OWN_BACK_FAILED_LOG_SKIP_MS
-						))) {
-
-				DBGLOG(INIT, ERROR,
-					"LP cannot be own back, Timeout[%u](%ums), BusAccessError[%u]",
-					fgTimeout,
-					kalGetTimeTick() - u4CurrTick,
-					fgIsBusAccessFailed);
-				DBGLOG(INIT, ERROR,
-					"Resetting[%u], CardRemoved[%u] NoAck[%u] Cnt[%u]\n",
-					kalIsResetting(),
-					kalIsCardRemoved(prAdapter->prGlueInfo),
-					wlanIsChipNoAck(prAdapter),
-					prAdapter->u4OwnFailedCount);
-
-				DBGLOG(INIT, INFO,
-					"Skip LP own back failed log for next %ums\n",
-					LP_OWN_BACK_FAILED_LOG_SKIP_MS);
-
-				prAdapter->u4OwnFailedLogCount++;
-				if (prAdapter->u4OwnFailedLogCount >
-					LP_OWN_BACK_FAILED_RESET_CNT) {
-					hal_chip_show_pse_info(prAdapter);
-					hal_chip_show_ple_info(prAdapter);
-					hal_chip_show_host_csr_info(prAdapter);
-					hal_chip_show_pdma_info(prAdapter);
-#if CFG_CHIP_RESET_SUPPORT
-					/* Trigger RESET */
-					glGetRstReason(RST_DRV_OWN_FAIL);
-					GL_RESET_TRIGGER(prAdapter,
-						RST_FLAG_CHIP_RESET);
-#endif
-				}
-				GET_CURRENT_SYSTIME(
-					&prAdapter->rLastOwnFailedLogTime);
-			}
-
-			prAdapter->u4OwnFailedCount++;
+			   (kalIsCardRemoved(prAdapter->prGlueInfo) ||
+			    fgIsBusAccessFailed || fgTimeout ||
+			    wlanIsChipNoAck(prAdapter))) {
+			halDriverOwnTimeout(prAdapter, u4CurrTick, fgTimeout);
 			fgStatus = FALSE;
 			break;
 		}
@@ -438,52 +491,18 @@ u_int8_t halSetDriverOwn(IN struct ADAPTER *prAdapter)
 	/* For Low power Test */
 	/* 1. Driver need to polling until CR4 ready,
 	 *    then could do normal Tx/Rx
-	 * 2. After CR4 readyy, send a dummy command to change data path
+	 * 2. After CR4 ready, send a dummy command to change data path
 	 *    to store-forward mode
 	 */
-	if (prAdapter->fgIsFwDownloaded) {
-		const uint32_t ready_bits = prAdapter->chip_info->sw_ready_bits;
-
-		HAL_WIFI_FUNC_READY_CHECK(prAdapter,
-			WIFI_FUNC_DUMMY_REQ, &fgDummyReq);
-
-		/* Wait CR4 ready */
-		u4CurrTick = kalGetTimeTick();
-		while (1) {
-			/* kalMsleep(2); */
-			HAL_WIFI_FUNC_READY_CHECK(prAdapter,
-				ready_bits/*WIFI_FUNC_READY_BITS*/, &fgReady);
-
-			if (fgReady) {
-				break;
-			} else if (kalIsCardRemoved(prAdapter->prGlueInfo) ||
-				fgIsBusAccessFailed || fgTimeout
-			    || wlanIsChipNoAck(prAdapter)) {
-				DBGLOG(INIT, INFO,
-					"Skip waiting CR4 ready for next %ums\n",
-					LP_OWN_BACK_FAILED_LOG_SKIP_MS);
-				fgStatus = FALSE;
-#if CFG_CHIP_RESET_SUPPORT
-				glGetRstReason(RST_DRV_OWN_FAIL);
-				GL_RESET_TRIGGER(prAdapter,
-					RST_FLAG_CHIP_RESET);
-#endif
-				break;
-			}
-			/* Delay for CR4 to complete its operation. */
-			kalMsleep(LP_OWN_BACK_LOOP_DELAY_MS);
-		}
-
-		/* Send dummy cmd and clear flag */
-		if (fgDummyReq) {
-			wlanSendDummyCmd(prAdapter, FALSE);
-			HAL_CLEAR_DUMMY_REQ(prAdapter);
-		}
-	}
+	if (prAdapter->fgIsFwDownloaded && prChipInfo->is_support_cr4)
+		fgStatus &= halDriverOwnCheckCR4(prAdapter);
 
 	/* Check consys enter sleep mode DummyReg(0x0F) */
 	if (prBusInfo->checkDummyReg)
 		prBusInfo->checkDummyReg(prAdapter->prGlueInfo);
+
+	DBGLOG(INIT, INFO, "DRIVER OWN Done[%u ms]\n",
+	       kalGetTimeTick() - u4CurrTick);
 
 	return fgStatus;
 }
