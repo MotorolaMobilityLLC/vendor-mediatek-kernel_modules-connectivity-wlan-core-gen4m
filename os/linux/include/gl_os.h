@@ -486,7 +486,7 @@ struct GLUE_INFO {
 	struct GL_IO_REQ OidEntry;
 
 	/* registry info */
-	struct REG_INFO rRegInfo;
+	struct REG_INFO *prRegInfo;
 
 	/* firmware */
 	struct firmware *prFw;

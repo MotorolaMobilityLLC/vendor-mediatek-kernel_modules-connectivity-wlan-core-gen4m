@@ -601,7 +601,7 @@ wlanoidSetBssidListScan(IN struct ADAPTER *prAdapter,
 	}
 
 #if CFG_SUPPORT_RDD_TEST_MODE
-	if (prAdapter->prGlueInfo->rRegInfo.u4RddTestMode) {
+	if (prAdapter->prGlueInfo->prRegInfo->u4RddTestMode) {
 		if ((prAdapter->fgEnOnlineScan == TRUE) && (prAdapter->ucRddStatus)) {
 			if (kalGetMediaStateIndicated(prAdapter->prGlueInfo) != PARAM_MEDIA_STATE_CONNECTED)
 				aisFsmScanRequest(prAdapter, prSsid, NULL, 0);
@@ -687,7 +687,7 @@ wlanoidSetBssidListScanExt(IN struct ADAPTER *prAdapter,
 	}
 
 #if CFG_SUPPORT_RDD_TEST_MODE
-	if (prAdapter->prGlueInfo->rRegInfo.u4RddTestMode) {
+	if (prAdapter->prGlueInfo->prRegInfo->u4RddTestMode) {
 		if ((prAdapter->fgEnOnlineScan == TRUE) && (prAdapter->ucRddStatus)) {
 			if (kalGetMediaStateIndicated(prAdapter->prGlueInfo) != PARAM_MEDIA_STATE_CONNECTED)
 				aisFsmScanRequest(prAdapter, prSsid, pucIe, u4IeLength);
@@ -786,7 +786,7 @@ wlanoidSetBssidListScanAdv(IN struct ADAPTER *prAdapter,
 	u4IeLength = prScanRequest->u4IELength;
 
 #if CFG_SUPPORT_RDD_TEST_MODE
-	if (prAdapter->prGlueInfo->rRegInfo.u4RddTestMode) {
+	if (prAdapter->prGlueInfo->prRegInfo->u4RddTestMode) {
 		if ((prAdapter->fgEnOnlineScan == TRUE) && (prAdapter->ucRddStatus)) {
 			if (kalGetMediaStateIndicated(prAdapter->prGlueInfo)
 					!= PARAM_MEDIA_STATE_CONNECTED) {

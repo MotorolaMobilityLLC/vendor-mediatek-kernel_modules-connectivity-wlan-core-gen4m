@@ -3282,7 +3282,7 @@ u_int8_t kalRetrieveNetworkAddress(IN struct GLUE_INFO *prGlueInfo,
 			DBGLOG(INIT, INFO, "glLoadNvram fail\n");
 			return FALSE;
 		}
-		kalMemCopy(prMacAddr, prGlueInfo->rRegInfo.aucMacAddr,
+		kalMemCopy(prMacAddr, prGlueInfo->prRegInfo->aucMacAddr,
 				PARAM_MAC_ADDR_LEN*sizeof(uint8_t));
 		return TRUE;
 #endif
@@ -3774,7 +3774,7 @@ struct REG_INFO *kalGetConfiguration(IN struct GLUE_INFO *prGlueInfo)
 {
 	ASSERT(prGlueInfo);
 
-	return &(prGlueInfo->rRegInfo);
+	return prGlueInfo->prRegInfo;
 }
 
 /*----------------------------------------------------------------------------*/

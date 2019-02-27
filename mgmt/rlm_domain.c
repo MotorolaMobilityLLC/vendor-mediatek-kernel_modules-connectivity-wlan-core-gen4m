@@ -722,7 +722,7 @@ struct DOMAIN_INFO_ENTRY *rlmDomainGetDomainInfo(struct ADAPTER *prAdapter)
 	if (prAdapter->prDomainInfo)
 		return prAdapter->prDomainInfo;
 
-	prRegInfo = &prAdapter->prGlueInfo->rRegInfo;
+	prRegInfo = prAdapter->prGlueInfo->prRegInfo;
 
 	DBGLOG(RLM, TRACE, "eRegChannelListMap=%d, u2CountryCode=0x%04x\n",
 			   prRegInfo->eRegChannelListMap,
