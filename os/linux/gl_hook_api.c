@@ -3583,5 +3583,39 @@ INT_32 TxBfManualAssoc(struct net_device *prNetDev, UINT_8 aucMac[MAC_ADDR_LEN],
 	return i4Status;
 }
 
+#if CFG_SUPPORT_TX_BF_FPGA
+INT_32 TxBfPseudoTagUpdate(struct net_device *prNetDev, UINT_8 ucLm, UINT_8 ucNr,
+				UINT_8 ucNc, UINT_8 ucBw, UINT_8 ucCodeBook, UINT_8 ucGroup)
+{
+	INT_32 i4Status = 0;
+	P_GLUE_INFO_T prGlueInfo = NULL;
+	UINT_32 u4BufLen = 0;
+	PARAM_CUSTOM_TXBF_ACTION_STRUCT_T rTxBfActionInfo;
+
+	kalMemZero(&rTxBfActionInfo, sizeof(rTxBfActionInfo));
+
+	ASSERT(prNetDev);
+	prGlueInfo = *((P_GLUE_INFO_T *) netdev_priv(prNetDev));
+
+	DBGLOG(RFTEST, ERROR,
+	       "MT6632 TxBfPseudoTagUpdate : ucLm = 0x%08x, ucNr = 0x%08x, ucNc = 0x%08x, ucBw = 0x%08x, ucCodeBook = 0x%08x, ucGroup = 0x%08x\n",
+	       ucLm, ucNr, ucNc, ucBw, ucCodeBook, ucGroup);
+
+	rTxBfActionInfo.rTxBfProfileSwTagWrite.ucTxBfCategory = BF_PFMU_SW_TAG_WRITE;
+	rTxBfActionInfo.rTxBfProfileSwTagWrite.ucLm = ucLm;
+	rTxBfActionInfo.rTxBfProfileSwTagWrite.ucNr = ucNr;
+	rTxBfActionInfo.rTxBfProfileSwTagWrite.ucNc = ucNc;
+	rTxBfActionInfo.rTxBfProfileSwTagWrite.ucBw = ucBw;
+	rTxBfActionInfo.rTxBfProfileSwTagWrite.ucCodebook = ucCodeBook;
+	rTxBfActionInfo.rTxBfProfileSwTagWrite.ucgroup = ucGroup;
+
+	i4Status = kalIoctl(prGlueInfo,
+			    wlanoidTxBfAction,
+			    &rTxBfActionInfo, sizeof(rTxBfActionInfo), FALSE, FALSE, TRUE, &u4BufLen);
+
+	return i4Status;
+}
+#endif
+
 #endif
 #endif /*CFG_SUPPORT_QA_TOOL */

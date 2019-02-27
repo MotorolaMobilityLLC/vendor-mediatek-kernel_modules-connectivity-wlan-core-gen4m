@@ -181,6 +181,8 @@
 /* Enable TX BF Support */
 #define CFG_SUPPORT_TX_BF			1
 
+#define CFG_SUPPORT_TX_BF_FPGA      1
+
 /* Enable MU MIMO Support */
 #define CFG_SUPPORT_MU_MIMO			1
 
