@@ -1336,30 +1336,30 @@ kalIndicateStatusAndComplete(IN struct GLUE_INFO *prGlueInfo, IN uint32_t eStatu
 				break;
 
 			case ENUM_STATUS_TYPE_CANDIDATE_LIST:
-				/*
-				 *  printk(KERN_NOTICE "Param_StatusType_PMKID_CandidateList: Ver(%d) Num(%d)\n",
-				 *  pPmkid->u2Version,
-				 *  pPmkid->u4NumCandidates);
-				 *  if (pPmkid->u4NumCandidates > 0) {
-				 *  printk(KERN_NOTICE "candidate[" MACSTR "] preAuth Flag:%lx\n",
-				 *  MAC2STR(pPmkid->arCandidateList[0].rBSSID),
-				 *  pPmkid->arCandidateList[0].fgFlags);
-				 *  }
-				 */
-				{
-					uint32_t i = 0;
+			  {
+				uint32_t i = 0;
 
-					struct PARAM_PMKID_CANDIDATE *prPmkidCand =
-					    (struct PARAM_PMKID_CANDIDATE *) &pPmkid->arCandidateList[0];
+				struct PARAM_PMKID_CANDIDATE
+					*prPmkidCand =
+					    (struct PARAM_PMKID_CANDIDATE *)
+						&pPmkid->arCandidateList[0];
 
-					for (i = 0; i < pPmkid->u4NumCandidates; i++) {
-						wext_indicate_wext_event(prGlueInfo,
-									 IWEVPMKIDCAND,
-									 (unsigned char *)&pPmkid->arCandidateList[i],
-									 pPmkid->u4NumCandidates);
-						prPmkidCand++;
-					}
+				for (i = 0; i < pPmkid->u4NumCandidates; i++) {
+					cfg80211_pmksa_candidate_notify(
+						prGlueInfo->prDevHandler,
+						1000,
+						prPmkidCand[i].arBSSID,
+						prPmkidCand[i].u4Flags,
+						GFP_KERNEL);
+
+					wext_indicate_wext_event(
+						prGlueInfo,
+						IWEVPMKIDCAND,
+						(unsigned char *)
+						&pPmkid->arCandidateList[i],
+						pPmkid->u4NumCandidates);
 				}
+			  }
 				break;
 			case ENUM_STATUS_TYPE_FT_AUTH_STATUS:
 				cfg80211_ft_event(prGlueInfo->prDevHandler,
