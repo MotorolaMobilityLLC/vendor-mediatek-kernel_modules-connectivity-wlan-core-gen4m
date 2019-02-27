@@ -2366,9 +2366,6 @@ VOID nicEventRddPulseDump(IN P_ADAPTER_T prAdapter, IN PUINT_8 pucEventBuf)
 			);
 	}
 
-	DBGLOG(INIT, INFO, "[RDD]0x%08x %08x[RDD%d]\n", prRddPulseEvent->u4SubBandRssi0
-			, prRddPulseEvent->u4SubBandRssi1, prRddPulseEvent->ucRddIdx);
-
 }
 
 #if CFG_SUPPORT_MSP
