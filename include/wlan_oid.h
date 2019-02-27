@@ -225,6 +225,27 @@
 #define SER_USER_CMD_L3_TX1_DISABLE      (307)
 #define SER_USER_CMD_L3_BF_RECOVER       (308)
 
+#if (CFG_SUPPORT_TXPOWER_INFO == 1)
+#define MODULATION_SYSTEM_CCK_NUM       4       /* 1M, 2M, 5.5M, 11M */
+#define MODULATION_SYSTEM_OFDM_NUM      8       /* 6M, 9M, 12M, 18M, 24M, 36M, 48M, 54M */
+#define MODULATION_SYSTEM_HT20_NUM      8       /* MCS0~7 */
+#define MODULATION_SYSTEM_HT40_NUM      9       /* MCS0~7, MCS32 */
+#define MODULATION_SYSTEM_VHT20_NUM     10      /* MCS0~9 */
+#define MODULATION_SYSTEM_VHT40_NUM     MODULATION_SYSTEM_VHT20_NUM
+#define MODULATION_SYSTEM_VHT80_NUM     MODULATION_SYSTEM_VHT20_NUM
+#define MODULATION_SYSTEM_VHT160_NUM    MODULATION_SYSTEM_VHT20_NUM
+
+#define TXPOWER_RATE_CCK_OFFSET         (0)
+#define TXPOWER_RATE_OFDM_OFFSET        (TXPOWER_RATE_CCK_OFFSET  + MODULATION_SYSTEM_CCK_NUM)
+#define TXPOWER_RATE_HT20_OFFSET        (TXPOWER_RATE_OFDM_OFFSET + MODULATION_SYSTEM_OFDM_NUM)
+#define TXPOWER_RATE_HT40_OFFSET        (TXPOWER_RATE_HT20_OFFSET + MODULATION_SYSTEM_HT20_NUM)
+#define TXPOWER_RATE_VHT20_OFFSET       (TXPOWER_RATE_HT40_OFFSET + MODULATION_SYSTEM_HT40_NUM)
+#define TXPOWER_RATE_VHT40_OFFSET       (TXPOWER_RATE_VHT20_OFFSET + MODULATION_SYSTEM_VHT20_NUM)
+#define TXPOWER_RATE_VHT80_OFFSET       (TXPOWER_RATE_VHT40_OFFSET + MODULATION_SYSTEM_VHT40_NUM)
+#define TXPOWER_RATE_VHT160_OFFSET      (TXPOWER_RATE_VHT80_OFFSET + MODULATION_SYSTEM_VHT80_NUM)
+#define TXPOWER_RATE_NUM                (TXPOWER_RATE_VHT160_OFFSET + MODULATION_SYSTEM_VHT160_NUM)
+#endif
+
 /*******************************************************************************
 *                             D A T A   T Y P E S
 ********************************************************************************
@@ -2088,6 +2109,31 @@ struct EXT_CMD_SER_T {
 	UINT_8 aucReserve[2];
 };
 
+#if (CFG_SUPPORT_TXPOWER_INFO == 1)
+struct HAL_FRAME_POWER_SET_T {
+	INT_8 icFramePowerDbm;
+};
+
+struct FRAME_POWER_CONFIG_INFO_T {
+	struct HAL_FRAME_POWER_SET_T aicFramePowerConfig[TXPOWER_RATE_NUM];
+};
+
+struct PARAM_TXPOWER_ALL_RATE_POWER_INFO_T {
+	UINT_8 ucTxPowerCategory;
+	UINT_8 ucBandIdx;
+	UINT_8 ucChBand;
+	UINT_8 ucReserved;
+
+	/* Rate power info */
+	struct FRAME_POWER_CONFIG_INFO_T rRatePowerInfo;
+
+	/* tx Power Max/Min Limit info */
+	INT_8 icPwrMaxBnd;
+	INT_8 icPwrMinBnd;
+	UINT_8 ucReserved2;
+};
+#endif
+
 /*******************************************************************************
 *                            P U B L I C   D A T A
 ********************************************************************************
@@ -2874,5 +2920,11 @@ WLAN_STATUS
 wlanoidAbortScan(IN P_ADAPTER_T prAdapter,
 			OUT PVOID pvQueryBuffer, IN UINT_32 u4QueryBufferLen,
 			OUT PUINT_32 pu4QueryInfoLen);
+
+#if (CFG_SUPPORT_TXPOWER_INFO == 1)
+WLAN_STATUS
+wlanoidQueryTxPowerInfo(IN P_ADAPTER_T prAdapter, IN PVOID pvSetBuffer, IN UINT_32 u4SetBufferLen,
+				OUT PUINT_32 pu4SetInfoLen);
+#endif
 
 #endif /* _WLAN_OID_H */
