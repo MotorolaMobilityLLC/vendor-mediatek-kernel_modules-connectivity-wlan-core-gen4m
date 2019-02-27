@@ -332,6 +332,15 @@ static const struct ieee80211_iface_limit mtk_p2p_sta_go_limits[] = {
 	},
 };
 
+#if ((CFG_SUPPORT_DFS_MASTER == 1) && (KERNEL_VERSION(3, 17, 0) > LINUX_VERSION_CODE))
+static const struct ieee80211_iface_limit mtk_ap_limits[] = {
+	{
+		.max = 1,
+		.types = BIT(NL80211_IFTYPE_AP),
+	},
+};
+#endif
+
 static const struct ieee80211_iface_combination
 mtk_iface_combinations_sta[] = {
 	{
@@ -360,7 +369,23 @@ mtk_iface_combinations_p2p[] = {
 		.limits = mtk_p2p_sta_go_limits,
 		.n_limits = ARRAY_SIZE(mtk_p2p_sta_go_limits), /* include p2p */
 	},
+#if ((CFG_SUPPORT_DFS_MASTER == 1) && (KERNEL_VERSION(3, 17, 0) > LINUX_VERSION_CODE))
+	/* ONLY for passing checks in cfg80211_can_use_iftype_chan before linux-3.17.0 */
+	{
+		.num_different_channels = 1,
+		.max_interfaces = 1,
+		.limits = mtk_ap_limits,
+		.n_limits = ARRAY_SIZE(mtk_ap_limits),
+		.radar_detect_widths = BIT(NL80211_CHAN_WIDTH_20_NOHT) |
+				       BIT(NL80211_CHAN_WIDTH_20) |
+				       BIT(NL80211_CHAN_WIDTH_40) |
+				       BIT(NL80211_CHAN_WIDTH_80) |
+				       BIT(NL80211_CHAN_WIDTH_80P80),
+	},
+#endif
 };
+
+
 const struct ieee80211_iface_combination *p_mtk_iface_combinations_sta = mtk_iface_combinations_sta;
 const INT_32 mtk_iface_combinations_sta_num = ARRAY_SIZE(mtk_iface_combinations_sta);
 
