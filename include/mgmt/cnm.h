@@ -182,6 +182,14 @@ typedef enum _ENUM_CNM_DBDC_SWITCH_MECHANISM_T { /* When DBDC available in dynam
 } ENUM_CNM_DBDC_SWITCH_MECHANISM_T, *P_ENUM_CNM_DBDC_SWITCH_MECHANISM_T;
 #endif /*CFG_SUPPORT_DBDC*/
 
+enum _ENUM_CNM_NETWORK_TYPE_T {
+	ENUM_CNM_NETWORK_TYPE_OTHER,
+	ENUM_CNM_NETWORK_TYPE_AIS,
+	ENUM_CNM_NETWORK_TYPE_P2P_GC,
+	ENUM_CNM_NETWORK_TYPE_P2P_GO,
+	ENUM_CNM_NETWORK_TYPE_NUM
+};
+
 /*******************************************************************************
 *                            P U B L I C   D A T A
 ********************************************************************************
@@ -199,6 +207,12 @@ typedef enum _ENUM_CNM_DBDC_SWITCH_MECHANISM_T { /* When DBDC available in dynam
 #define CNM_CH_GRANTED_FOR_BSS(_prAdapter, _ucBssIndex) \
 	((_prAdapter)->rCnmInfo.fgChGranted && \
 	 (_prAdapter)->rCnmInfo.ucBssIndex == (_ucBssIndex))
+
+#define IS_CONNECTION_NSS2(prBssInfo, prStaRec) \
+	((((prBssInfo)->ucNss > 1) && ((prStaRec)->aucRxMcsBitmask[1] != 0x00) && \
+	(((prStaRec)->u2HtCapInfo & HT_CAP_INFO_SM_POWER_SAVE) != 0)) || \
+	(((prBssInfo)->ucNss > 1) && ((((prStaRec)->u2VhtRxMcsMap & BITS(2, 3)) >> 2) != BITS(0, 1)) && \
+	((((prStaRec)->ucVhtOpMode & VHT_OP_MODE_RX_NSS) >> VHT_OP_MODE_RX_NSS_OFFSET) > 0)))
 
 /*******************************************************************************
 *                   F U N C T I O N   D E C L A R A T I O N S
@@ -271,6 +285,8 @@ VOID cnmDbdcEnableDecision(
 VOID cnmDbdcDisableDecision(IN P_ADAPTER_T prAdapter,	IN UINT_8 ucChangedBssIndex);
 VOID cnmDbdcDecision(IN P_ADAPTER_T prAdapter, IN ULONG plParamPtr);
 #endif /*CFG_SUPPORT_DBDC*/
+
+UINT_8 cnmGetBssNetworkType(P_BSS_INFO_T prBssInfo);
 
 /*******************************************************************************
 *                              F U N C T I O N S
