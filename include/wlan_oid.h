@@ -98,6 +98,7 @@
 #define PARAM_EEPROM_READ_METHOD_GETSIZE        0
 
 #define PARAM_WHQL_RSSI_MAX_DBM                 (-10)
+#define PARAM_WHQL_RSSI_INITIAL_DBM             (-50)
 #define PARAM_WHQL_RSSI_MIN_DBM                 (-200)
 
 #define PARAM_DEVICE_WAKE_UP_ENABLE                     0x00000001
