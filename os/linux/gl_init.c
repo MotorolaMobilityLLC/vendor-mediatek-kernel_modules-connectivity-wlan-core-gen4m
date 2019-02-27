@@ -2786,6 +2786,9 @@ static int32_t wlanProbe(void *pvData, void *pvDriverData)
 
 		prGlueInfo->u4ReadyFlag = 0;
 
+		/* default set the FW roaming enable state to 'off' */
+		prGlueInfo->u4FWRoamingEnable = 0;
+
 #if CFG_TCP_IP_CHKSUM_OFFLOAD
 		prAdapter->fgIsSupportCsumOffload = FALSE;
 		prAdapter->u4CSUMFlags = CSUM_OFFLOAD_EN_ALL;
