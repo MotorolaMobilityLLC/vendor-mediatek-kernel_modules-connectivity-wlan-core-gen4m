@@ -6452,6 +6452,8 @@ VOID wlanUpdateNicResourceInformation(IN P_ADAPTER_T prAdapter)
 	/* 3 4. Reset QM resource */
 	qmResetTcControlResource(prAdapter);
 #endif
+
+	halTxResourceResetHwTQCounter(prAdapter);
 }
 
 
