@@ -96,7 +96,7 @@
 */
 static PUCHAR ifname = P2P_INF_NAME;
 static PUCHAR ifname2 = P2P_INF_NAME;
-UINT_16 mode = RUNNING_P2P_MODE;
+static UINT_16 mode = RUNNING_P2P_MODE;
 
 
 /*******************************************************************************

@@ -106,7 +106,6 @@ extern const struct net_device_ops p2p_netdev_ops;
 extern struct net_device *g_P2pPrDev;
 extern struct wireless_dev *gprP2pWdev;
 extern struct wireless_dev *gprP2pRoleWdev[KAL_P2P_NUM];
-extern UINT_16 mode;
 
 /*******************************************************************************
 *                           P R I V A T E   D A T A
