@@ -233,8 +233,8 @@ MGMT_DIR    := mgmt/
 CHIPS       := chips/
 CHIPS_CMM   := $(CHIPS)common/
 
-ifneq ($(MTK_PLATFORM),)
-PLAT_DIR    := os/linux/plat/$(MTK_PLATFORM)/
+ifneq ($(WLAN_CHIP_ID),)
+PLAT_DIR    := os/linux/plat/mt$(WLAN_CHIP_ID)/
 endif
 
 # ---------------------------------------------------
@@ -376,7 +376,7 @@ endif
 # ---------------------------------------------------
 # Platform Objects List
 # ---------------------------------------------------
-ifneq ($(MTK_PLATFORM),)
+ifneq ($(WLAN_CHIP_ID),)
 
 PLAT_PRIV_C = $(src)/$(PLAT_DIR)plat_priv.c
 
