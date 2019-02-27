@@ -335,8 +335,6 @@ kalDevPortRead(IN struct GLUE_INFO *prGlueInfo,
 	prRxRing = &prHifInfo->RxRing[u2Port];
 	pRxRingLock = &prHifInfo->RxRingLock[u2Port];
 
-	spin_lock_irqsave(pRxRingLock, flags);
-
 	kalDevRegRead(prGlueInfo, prRxRing->hw_cidx_addr, &prRxRing->RxCpuIdx);
 	u4CpuIdx = prRxRing->RxCpuIdx;
 	INC_RING_INDEX(u4CpuIdx, prRxRing->u4RingSize);
@@ -344,21 +342,17 @@ kalDevPortRead(IN struct GLUE_INFO *prGlueInfo,
 	pRxCell = &prRxRing->Cell[u4CpuIdx];
 	pRxD = (struct RXD_STRUCT *)pRxCell->AllocVa;
 
-	if (pRxD->DMADONE == 0) {
-		/* Don't wait rx dma done when fw download (polling mode) */
-		if (!prGlueInfo->prAdapter->fgIsFwDownloaded) {
-			spin_unlock_irqrestore(pRxRingLock, flags);
-			return FALSE;
-		}
+	if (halWpdmaGetRxDmaDoneCnt(prGlueInfo, u2Port) == 0)
+		return FALSE;
 
-		if (!kalWaitRxDmaDone(prGlueInfo, prRxRing, pRxD, u2Port)) {
-			spin_unlock_irqrestore(pRxRingLock, flags);
-			if (!prRxRing->fgIsDumpLog)
-				halDumpHifDebugLog(prGlueInfo, false, true);
-			prRxRing->fgIsDumpLog = true;
-			return FALSE;
-		}
+	if (!kalWaitRxDmaDone(prGlueInfo, prRxRing, pRxD, u2Port)) {
+		if (!prRxRing->fgIsDumpLog)
+			halDumpHifDebugLog(prGlueInfo, false, true);
+		prRxRing->fgIsDumpLog = true;
+		return FALSE;
 	}
+
+	spin_lock_irqsave(pRxRingLock, flags);
 
 	prDmaBuf = &pRxCell->DmaBuf;
 
@@ -700,8 +694,6 @@ u_int8_t kalDevReadData(IN struct GLUE_INFO *prGlueInfo,
 	prRxRing = &prHifInfo->RxRing[u2Port];
 	pRxRingLock = &prHifInfo->RxRingLock[u2Port];
 
-	spin_lock_irqsave(pRxRingLock, flags);
-
 	kalDevRegRead(prGlueInfo, prRxRing->hw_cidx_addr, &prRxRing->RxCpuIdx);
 	u4CpuIdx = prRxRing->RxCpuIdx;
 	INC_RING_INDEX(u4CpuIdx, prRxRing->u4RingSize);
@@ -709,13 +701,17 @@ u_int8_t kalDevReadData(IN struct GLUE_INFO *prGlueInfo,
 	pRxCell = &prRxRing->Cell[u4CpuIdx];
 	pRxD = (struct RXD_STRUCT *)pRxCell->AllocVa;
 
+	if (halWpdmaGetRxDmaDoneCnt(prGlueInfo, u2Port) == 0)
+		return FALSE;
+
 	if (!kalWaitRxDmaDone(prGlueInfo, prRxRing, pRxD, u2Port)) {
-		spin_unlock_irqrestore(pRxRingLock, flags);
 		if (!prRxRing->fgIsDumpLog)
 			halDumpHifDebugLog(prGlueInfo, false, true);
 		prRxRing->fgIsDumpLog = true;
 		return FALSE;
 	}
+
+	spin_lock_irqsave(pRxRingLock, flags);
 
 	if (pRxD->LastSec0 == 0 || prRxRing->fgRxSegPkt) {
 		/* Rx segmented packet */
