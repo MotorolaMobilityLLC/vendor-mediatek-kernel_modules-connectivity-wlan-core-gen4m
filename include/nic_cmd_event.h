@@ -70,6 +70,7 @@
 *                    E X T E R N A L   R E F E R E N C E S
 ********************************************************************************
 */
+#include "gl_vendor.h"
 
 /*******************************************************************************
 *                              C O N S T A N T S
@@ -543,6 +544,8 @@ enum ENUM_CMD_ID {
 	CMD_ID_CAL_BACKUP_IN_HOST_V2 = 0xAE,	/* 0xAE (Set / Query) */
 #endif
 
+	CMD_ID_WFC_KEEP_ALIVE = 0xA0,	/* 0xa0(Set) */
+	CMD_ID_RSSI_MONITOR = 0xA1,	/* 0xa1(Set) */
 	CMD_ID_ACCESS_REG = 0xc0,	/* 0xc0 (Set / Query) */
 	CMD_ID_MAC_MCAST_ADDR,	/* 0xc1 (Set / Query) */
 	CMD_ID_802_11_PMKID,	/* 0xc2 (Set / Query) */
@@ -656,6 +659,8 @@ enum ENUM_EVENT_ID {
 	EVENT_ID_LOG_UI_INFO = 0x8D,
 
 	EVENT_ID_UPDATE_COEX_PHYRATE = 0x90,	/* 0x90 (Unsolicited) */
+
+	EVENT_ID_RSSI_MONITOR = 0xA1,
 
 #if CFG_SUPPORT_CAL_RESULT_BACKUP_TO_HOST
 	EVENT_ID_CAL_BACKUP_IN_HOST_V2 = 0xAE,	/* 0xAE (Query - CMD_ID_CAL_BACKUP) */
@@ -3564,6 +3569,8 @@ void nicEventCalAllDone(IN struct ADAPTER *prAdapter, IN struct WIFI_EVENT *prEv
 #endif
 void nicEventDebugMsg(IN struct ADAPTER *prAdapter, IN struct WIFI_EVENT *prEvent);
 void nicEventTdls(IN struct ADAPTER *prAdapter, IN struct WIFI_EVENT *prEvent);
+void nicEventRssiMonitor(IN struct ADAPTER *prAdapter,
+	IN struct WIFI_EVENT *prEvent);
 void nicEventDumpMem(IN struct ADAPTER *prAdapter, IN struct WIFI_EVENT *prEvent);
 void nicEventAssertDump(IN struct ADAPTER *prAdapter, IN struct WIFI_EVENT *prEvent);
 void nicEventHifCtrl(IN struct ADAPTER *prAdapter, IN struct WIFI_EVENT *prEvent);
