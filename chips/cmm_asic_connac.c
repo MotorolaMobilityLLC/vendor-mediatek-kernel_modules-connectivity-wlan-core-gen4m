@@ -144,6 +144,9 @@ VOID asicCapInit(IN P_ADAPTER_T prAdapter)
 		prChipInfo->u2TxFwDlPort = TX_RING_FWDL_IDX_3;
 		prChipInfo->ucPacketFormat = TXD_PKT_FORMAT_TXD;
 		prChipInfo->u4HifDmaShdlBaseAddr = PCIE_HIF_DMASHDL_BASE;
+
+		HAL_MCR_WR(prAdapter, CONN_HIF_ON_IRQ_ENA, BIT(0));
+
 		asicPcieDmaShdlInit(prAdapter);
 		break;
 #endif /* _HIF_PCIE */
@@ -340,6 +343,32 @@ VOID asicPcieDmaShdlInit(IN P_ADAPTER_T prAdapter)
 	*/
 	HAL_MCR_WR(prAdapter, CONN_HIF_DMASHDL_SHDL_SET0(u4BaseAddr), 0x6012345f);
 	HAL_MCR_WR(prAdapter, CONN_HIF_DMASHDL_SHDL_SET1(u4BaseAddr), 0xedcba987);
+}
+
+VOID asicLowPowerOwnRead(IN P_ADAPTER_T prAdapter, OUT PBOOLEAN pfgResult)
+{
+	UINT_32 u4RegValue;
+
+	HAL_MCR_RD(prAdapter, CONN_HIF_ON_IRQ_STAT, &u4RegValue);
+	*pfgResult = (u4RegValue == 0) ? TRUE : FALSE;
+}
+
+VOID asicLowPowerOwnSet(IN P_ADAPTER_T prAdapter, OUT PBOOLEAN pfgResult)
+{
+	UINT_32 u4RegValue;
+
+	HAL_MCR_WR(prAdapter, CONN_HIF_ON_LPCTL, PCIE_LPCR_HOST_SET_OWN);
+	HAL_MCR_RD(prAdapter, CONN_HIF_ON_LPCTL, &u4RegValue);
+	*pfgResult = (u4RegValue & PCIE_LPCR_HOST_SET_OWN) == 1;
+}
+
+VOID asicLowPowerOwnClear(IN P_ADAPTER_T prAdapter, OUT PBOOLEAN pfgResult)
+{
+	UINT_32 u4RegValue;
+
+	HAL_MCR_WR(prAdapter, CONN_HIF_ON_LPCTL, PCIE_LPCR_HOST_CLR_OWN);
+	HAL_MCR_RD(prAdapter, CONN_HIF_ON_LPCTL, &u4RegValue);
+	*pfgResult = (u4RegValue & PCIE_LPCR_HOST_SET_OWN) == 0;
 }
 #endif /* _HIF_PCIE */
 

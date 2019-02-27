@@ -177,6 +177,9 @@ BUS_INFO connac_bus_info = {
 	.tx_ring_data_idx = 0,
 
 	.pdmaSetup = halConnacWpdmaConfig,
+	.lowPowerOwnRead = asicLowPowerOwnRead,
+	.lowPowerOwnSet = asicLowPowerOwnSet,
+	.lowPowerOwnClear = asicLowPowerOwnClear,
 #endif /* _HIF_PCIE */
 #if defined(_HIF_USB)
 	.u4UdmaWlCfg_0_Addr = CONNAC_UDMA_WLCFG_0,
