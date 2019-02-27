@@ -89,7 +89,9 @@
 #include "linux/kallsyms.h"
 #include "linux/sched.h"
 
+#if CFG_SUPPORT_SCAN_CACHE_RESULT
 #include "wireless/core.h"
+#endif
 
 #if DBG
 extern int allocatedMemSize;
