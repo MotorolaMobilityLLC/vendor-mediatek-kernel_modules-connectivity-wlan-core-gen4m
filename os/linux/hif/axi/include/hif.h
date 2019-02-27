@@ -77,7 +77,6 @@
 */
 #if CFG_MTK_ANDROID_WMT
 struct MTK_WCN_WMT_WLAN_CB_INFO;
-extern phys_addr_t gConEmiPhyBase;
 extern int mtk_wcn_wmt_wlan_reg(struct MTK_WCN_WMT_WLAN_CB_INFO *pWmtWlanCbInfo);
 #endif
 
