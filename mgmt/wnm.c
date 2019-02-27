@@ -159,8 +159,7 @@ void wnmWNMAction(IN struct ADAPTER *prAdapter, IN struct SW_RFB *prSwRfb)
 		DBGLOG(RX, INFO,
 		       "WNM: action frame %d, try to send to supplicant\n",
 		       prRxFrame->ucAction);
-		if (prSwRfb->ucStaRecIdx == KAL_NETWORK_TYPE_AIS_INDEX)
-			aisFuncValidateRxActionFrame(prAdapter, prSwRfb);
+		aisFuncValidateRxActionFrame(prAdapter, prSwRfb);
 		break;
 	}
 }
