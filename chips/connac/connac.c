@@ -285,6 +285,7 @@ struct mt66xx_chip_info mt66xx_chip_info_connac = {
 	.txd_append_size = CONNAC_TX_DESC_APPEND_LENGTH,
 	.eco_info = connac_eco_table,
 	.isNicCapV1 = FALSE,
+	.is_support_efuse = FALSE,
 
 	/* IP info, should be overwrite by getNicCapabalityV2 */
 	.u4ChipIpVersion = CONNAC_CHIP_IP_VERSION,

@@ -464,6 +464,7 @@ struct mt66xx_chip_info mt66xx_chip_info_mt7668 = {
 	.txd_append_size = MT7668_TX_DESC_APPEND_LENGTH,
 	.eco_info = mt7668_eco_table,
 	.isNicCapV1 = TRUE,
+	.is_support_efuse = TRUE,
 
 	.u4ChipIpVersion = 0,
 	.u4ChipIPConfig = 0,

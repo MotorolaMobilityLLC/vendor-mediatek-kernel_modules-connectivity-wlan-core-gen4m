@@ -11089,10 +11089,21 @@ static int priv_driver_efuse_ops(IN struct net_device *prNetDev,
 	/* Start operation */
 #if  (CFG_EEPROM_PAGE_ACCESS == 1)
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+	if (prGlueInfo &&
+	    prGlueInfo->prAdapter &&
+	    prGlueInfo->prAdapter->chip_info &&
+	    !prGlueInfo->prAdapter->chip_info->is_support_efuse) {
+		u4Offset += snprintf(pcCommand + u4Offset,
+				     i4TotalLen - u4Offset,
+				     "efuse ops is invalid\n");
+		return (int32_t)u4Offset;
+	}
+
 	kalMemSet(&rAccessEfuseInfo, 0,
 		  sizeof(struct PARAM_CUSTOM_ACCESS_EFUSE));
 	rAccessEfuseInfo.u4Address = (u4Efuse_addr / EFUSE_BLOCK_SIZE)
 				     * EFUSE_BLOCK_SIZE;
+
 	u4Index = u4Efuse_addr % EFUSE_BLOCK_SIZE;
 
 	if (ucOpMode == EFUSE_READ) {
