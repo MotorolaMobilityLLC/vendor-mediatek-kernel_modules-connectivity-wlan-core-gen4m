@@ -123,11 +123,14 @@ void halPrintHifDbgInfo(IN struct ADAPTER *prAdapter)
 
 static void halCheckHifState(struct ADAPTER *prAdapter)
 {
+	uint32_t u4DebugLevel = 0;
 	if (prAdapter->u4HifChkFlag & HIF_CHK_TX_HANG) {
 		if (halIsTxHang(prAdapter)) {
 			DBGLOG(HAL, ERROR,
 			       "Tx timeout, set hif debug info flag\n");
-			prAdapter->u4HifDbgFlag |= DEG_HIF_ALL;
+			wlanGetDriverDbgLevel(DBG_TX_IDX, &u4DebugLevel);
+			if (u4DebugLevel & DBG_CLASS_TRACE)
+				prAdapter->u4HifDbgFlag |= DEG_HIF_ALL;
 		}
 	}
 
