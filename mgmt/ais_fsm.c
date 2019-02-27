@@ -4224,6 +4224,7 @@ void aisFsmDisconnect(IN struct ADAPTER *prAdapter,
 		      IN u_int8_t fgDelayIndication)
 {
 	struct BSS_INFO *prAisBssInfo;
+	uint16_t u2ReasonCode = REASON_CODE_UNSPECIFIED;
 
 	ASSERT(prAdapter);
 
@@ -4268,10 +4269,18 @@ void aisFsmDisconnect(IN struct ADAPTER *prAdapter,
 						  FALSE, PS_CALLER_NO_TIM);
 		}
 
+		if (prAisBssInfo->prStaRecOfAP) {
+			u2ReasonCode =
+				prAisBssInfo->prStaRecOfAP->u2ReasonCode;
+		}
 		if (prAisBssInfo->ucReasonOfDisconnect ==
 		    DISCONNECT_REASON_CODE_RADIO_LOST ||
-		    prAisBssInfo->ucReasonOfDisconnect ==
-				DISCONNECT_REASON_CODE_DISASSOCIATED) {
+		    (prAisBssInfo->ucReasonOfDisconnect ==
+			DISCONNECT_REASON_CODE_DEAUTHENTICATED &&
+			u2ReasonCode == REASON_CODE_DEAUTH_LEAVING_BSS) ||
+		    (prAisBssInfo->ucReasonOfDisconnect ==
+			DISCONNECT_REASON_CODE_DISASSOCIATED &&
+			u2ReasonCode == REASON_CODE_DISASSOC_LEAVING_BSS)) {
 			scanRemoveBssDescByBssid(prAdapter,
 						 prAisBssInfo->aucBSSID);
 
