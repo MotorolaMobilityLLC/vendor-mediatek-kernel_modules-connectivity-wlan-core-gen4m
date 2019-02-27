@@ -8848,13 +8848,13 @@ wlanCalculateChannelDirtyness(IN P_ADAPTER_T prAdapter)
 					ucLeftChannel = 1;
 			}
 
-			DBGLOG(SCN, INFO, "Found AP(%02x:%02x:%02x:%02x:%02x:%02x) BW %d, ",
+			DBGLOG(SCN, TRACE, "Found AP(%02x:%02x:%02x:%02x:%02x:%02x) BW %d, ",
 				prBssDesc->aucBSSID[0], prBssDesc->aucBSSID[1],
 				prBssDesc->aucBSSID[2], prBssDesc->aucBSSID[3],
 				prBssDesc->aucBSSID[4], prBssDesc->aucBSSID[5],
 				(ucCoveredRange - 2) * 10);
 
-			DBGLOG(SCN, INFO,
+			DBGLOG(SCN, TRACE,
 				"primary ch %d, center ch %d, covered ch %d to %d\n",
 				prBssDesc->ucChannelNum, ucCentralChannel,
 				ucLeftChannel, ucRightChannel);
@@ -8872,7 +8872,7 @@ wlanCalculateChannelDirtyness(IN P_ADAPTER_T prAdapter)
 				prGetChnLoad->rEachChnLoad[i4Loop].u4Dirtyness +=
 					((ucChannelSpace - (ucCentralDistance)) * ucBwWeight);
 
-				DBGLOG(SCN, INFO, "Add dirtyness %d, to ch %d\n",
+				DBGLOG(SCN, TRACE, "Add dirtyness %d, to ch %d\n",
 					((ucChannelSpace - (ucCentralDistance)) * ucBwWeight),
 					ucCoveredChannel);
 			}
