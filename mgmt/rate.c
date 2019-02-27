@@ -50,32 +50,32 @@
  *
  *****************************************************************************/
 /*
-** Id: //Department/DaVinci/BRANCHES/MT6620_WIFI_DRIVER_V2_3/mgmt/rate.c#1
-*/
+ * Id: //Department/DaVinci/BRANCHES/MT6620_WIFI_DRIVER_V2_3/mgmt/rate.c#1
+ */
 
 /*! \file   "rate.c"
-*    \brief  This file contains the transmission rate handling routines.
-*
-*    This file contains the transmission rate handling routines for setting up
-*    ACK/CTS Rate, Highest Tx Rate, Lowest Tx Rate, Initial Tx Rate and do
-*    conversion between Rate Set and Data Rates.
-*/
+ *    \brief  This file contains the transmission rate handling routines.
+ *
+ *    This file contains the transmission rate handling routines for setting up
+ *    ACK/CTS Rate, Highest Tx Rate, Lowest Tx Rate, Initial Tx Rate and do
+ *    conversion between Rate Set and Data Rates.
+ */
 
 /*******************************************************************************
-*                         C O M P I L E R   F L A G S
-********************************************************************************
-*/
+ *                         C O M P I L E R   F L A G S
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                    E X T E R N A L   R E F E R E N C E S
-********************************************************************************
-*/
+ *                    E X T E R N A L   R E F E R E N C E S
+ *******************************************************************************
+ */
 #include "precomp.h"
 
 /*******************************************************************************
-*                              C O N S T A N T S
-********************************************************************************
-*/
+ *                              C O N S T A N T S
+ *******************************************************************************
+ */
 /* The list of valid data rates. */
 const uint8_t aucDataRate[] = {
 	RATE_1M,		/* RATE_1M_INDEX = 0 */
@@ -131,49 +131,49 @@ const u_int8_t afgIsOFDMRate[RATE_NUM_SW] = {
 };
 
 /*******************************************************************************
-*                             D A T A   T Y P E S
-********************************************************************************
-*/
+ *                             D A T A   T Y P E S
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                            P U B L I C   D A T A
-********************************************************************************
-*/
+ *                            P U B L I C   D A T A
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                           P R I V A T E   D A T A
-********************************************************************************
-*/
+ *                           P R I V A T E   D A T A
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                                 M A C R O S
-********************************************************************************
-*/
+ *                                 M A C R O S
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                   F U N C T I O N   D E C L A R A T I O N S
-********************************************************************************
-*/
+ *                   F U N C T I O N   D E C L A R A T I O N S
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                              F U N C T I O N S
-********************************************************************************
-*/
+ *                              F U N C T I O N S
+ *******************************************************************************
+ */
 /*----------------------------------------------------------------------------*/
 /*!
-* @brief Convert the given Supported Rate & Extended Supported Rate IE to the
-*        Operational Rate Set and Basic Rate Set, and also check if any Basic
-*        Rate Code is unknown by driver.
-*
-* @param[in] prIeSupportedRate          Pointer to the Supported Rate IE
-* @param[in] prIeExtSupportedRate       Pointer to the Ext Supported Rate IE
-* @param[out] pu2OperationalRateSet     Pointer to the Operational Rate Set
-* @param[out] pu2BSSBasicRateSet        Pointer to the Basic Rate Set
-* @param[out] pfgIsUnknownBSSBasicRate  Pointer to a Flag to indicate that Basic
-*                                       Rate Set has unknown Rate Code
-*
-* \return (none)
-*/
+ * @brief Convert the given Supported Rate & Extended Supported Rate IE to the
+ *        Operational Rate Set and Basic Rate Set, and also check if any Basic
+ *        Rate Code is unknown by driver.
+ *
+ * @param[in] prIeSupportedRate          Pointer to the Supported Rate IE
+ * @param[in] prIeExtSupportedRate       Pointer to the Ext Supported Rate IE
+ * @param[out] pu2OperationalRateSet     Pointer to the Operational Rate Set
+ * @param[out] pu2BSSBasicRateSet        Pointer to the Basic Rate Set
+ * @param[out] pfgIsUnknownBSSBasicRate  Pointer to a Flag to indicate that
+ *                                       Basic Rate Set has unknown Rate Code
+ *
+ * \return (none)
+ */
 /*----------------------------------------------------------------------------*/
 void
 rateGetRateSetFromIEs(IN struct IE_SUPPORTED_RATE *prIeSupportedRate,
@@ -274,16 +274,16 @@ rateGetRateSetFromIEs(IN struct IE_SUPPORTED_RATE *prIeSupportedRate,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* @brief Convert the given Operational Rate Set & Basic Rate Set to the Rate
-*        Code Format for used in (Ext)Supportec Rate IE.
-*
-* @param[in] u2OperationalRateSet   Operational Rate Set
-* @param[in] u2BSSBasicRateSet      Basic Rate Set
-* @param[out] pucDataRates          Pointer to the Data Rate Buffer
-* @param[out] pucDataRatesLen       Pointer to the Data Rate Buffer Length
-*
-* @return (none)
-*/
+ * @brief Convert the given Operational Rate Set & Basic Rate Set to the Rate
+ *        Code Format for used in (Ext)Supportec Rate IE.
+ *
+ * @param[in] u2OperationalRateSet   Operational Rate Set
+ * @param[in] u2BSSBasicRateSet      Basic Rate Set
+ * @param[out] pucDataRates          Pointer to the Data Rate Buffer
+ * @param[out] pucDataRatesLen       Pointer to the Data Rate Buffer Length
+ *
+ * @return (none)
+ */
 /*----------------------------------------------------------------------------*/
 void
 rateGetDataRatesFromRateSet(IN uint16_t u2OperationalRateSet,
@@ -318,14 +318,14 @@ rateGetDataRatesFromRateSet(IN uint16_t u2OperationalRateSet,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief Get the highest rate from given Rate Set.
-*
-* \param[in] u2RateSet              Rate Set
-* \param[out] pucHighestRateIndex   Pointer to buffer of the Highest Rate Index
-*
-* \retval TRUE  Highest Rate Index was found
-* \retval FALSE Highest Rate Index was not found
-*/
+ * \brief Get the highest rate from given Rate Set.
+ *
+ * \param[in] u2RateSet              Rate Set
+ * \param[out] pucHighestRateIndex   Pointer to buffer of the Highest Rate Index
+ *
+ * \retval TRUE  Highest Rate Index was found
+ * \retval FALSE Highest Rate Index was not found
+ */
 /*----------------------------------------------------------------------------*/
 u_int8_t rateGetHighestRateIndexFromRateSet(IN uint16_t u2RateSet,
 					    OUT uint8_t *pucHighestRateIndex)
@@ -343,18 +343,18 @@ u_int8_t rateGetHighestRateIndexFromRateSet(IN uint16_t u2RateSet,
 
 	return FALSE;
 
-}				/* end of rateGetHighestRateIndexFromRateSet() */
+}			/* end of rateGetHighestRateIndexFromRateSet() */
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief Get the lowest rate from given Rate Set.
-*
-* \param[in] u2RateSet              Rate Set
-* \param[out] pucLowestRateIndex    Pointer to buffer of the Lowest Rate Index
-*
-* \retval TRUE  Lowest Rate Index was found
-* \retval FALSE Lowest Rate Index was not found
-*/
+ * \brief Get the lowest rate from given Rate Set.
+ *
+ * \param[in] u2RateSet              Rate Set
+ * \param[out] pucLowestRateIndex    Pointer to buffer of the Lowest Rate Index
+ *
+ * \retval TRUE  Lowest Rate Index was found
+ * \retval FALSE Lowest Rate Index was not found
+ */
 /*----------------------------------------------------------------------------*/
 u_int8_t rateGetLowestRateIndexFromRateSet(IN uint16_t u2RateSet,
 					   OUT uint8_t *pucLowestRateIndex)
