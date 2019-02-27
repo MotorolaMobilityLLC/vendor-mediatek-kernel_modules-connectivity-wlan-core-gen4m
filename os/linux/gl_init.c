@@ -182,7 +182,7 @@ int CFG80211_Resume(struct wiphy *wiphy)
 
 #define CHAN2G(_channel, _freq, _flags)         \
 {                                           \
-	.band               = IEEE80211_BAND_2GHZ,  \
+	.band               = KAL_BAND_2GHZ,  \
 	.center_freq        = (_freq),              \
 	.hw_value           = (_channel),           \
 	.flags              = (_flags),             \
@@ -208,7 +208,7 @@ static struct ieee80211_channel mtk_2ghz_channels[] = {
 
 #define CHAN5G(_channel, _flags)                    \
 {                                               \
-	.band               = IEEE80211_BAND_5GHZ,      \
+	.band               = KAL_BAND_5GHZ,      \
 	.center_freq        = 5000 + (5 * (_channel)),  \
 	.hw_value           = (_channel),               \
 	.flags              = (_flags),                 \
@@ -309,7 +309,7 @@ static struct ieee80211_rate mtk_rates[] = {
 
 /* public for both Legacy Wi-Fi / P2P access */
 struct ieee80211_supported_band mtk_band_2ghz = {
-	.band = IEEE80211_BAND_2GHZ,
+	.band = KAL_BAND_2GHZ,
 	.channels = mtk_2ghz_channels,
 	.n_channels = ARRAY_SIZE(mtk_2ghz_channels),
 	.bitrates = mtk_g_rates,
@@ -319,7 +319,7 @@ struct ieee80211_supported_band mtk_band_2ghz = {
 
 /* public for both Legacy Wi-Fi / P2P access */
 struct ieee80211_supported_band mtk_band_5ghz = {
-	.band = IEEE80211_BAND_5GHZ,
+	.band = KAL_BAND_5GHZ,
 	.channels = mtk_5ghz_channels,
 	.n_channels = ARRAY_SIZE(mtk_5ghz_channels),
 	.bitrates = mtk_a_rates,
@@ -1205,7 +1205,8 @@ static int wlanStop(struct net_device *prDev)
 	GLUE_RELEASE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
 
 	if (prScanRequest)
-		cfg80211_scan_done(prScanRequest, TRUE);
+		kalCfg80211ScanDone(prScanRequest, TRUE);
+
 	netif_tx_stop_all_queues(prDev);
 
 	return 0;		/* success */
@@ -1469,11 +1470,11 @@ static void wlanCreateWirelessDevice(void)
 	prWiphy->max_scan_ssids = CFG_SCAN_SSID_MAX_NUM;
 	prWiphy->max_scan_ie_len = 512;
 	prWiphy->interface_modes = BIT(NL80211_IFTYPE_STATION) | BIT(NL80211_IFTYPE_ADHOC);
-	prWiphy->bands[IEEE80211_BAND_2GHZ] = &mtk_band_2ghz;
+	prWiphy->bands[KAL_BAND_2GHZ] = &mtk_band_2ghz;
 	/* always assign 5Ghz bands here, if the chip is not support 5Ghz,
-	 *  bands[IEEE80211_BAND_5GHZ] will be assign to NULL
+	 *  bands[KAL_BAND_5GHZ] will be assign to NULL
 	 */
-	prWiphy->bands[IEEE80211_BAND_5GHZ] = &mtk_band_5ghz;
+	prWiphy->bands[KAL_BAND_5GHZ] = &mtk_band_5ghz;
 	prWiphy->signal_type = CFG80211_SIGNAL_TYPE_MBM;
 	prWiphy->cipher_suites = (const u32 *)mtk_cipher_suites;
 	prWiphy->n_cipher_suites = ARRAY_SIZE(mtk_cipher_suites);
@@ -2302,7 +2303,7 @@ static INT_32 wlanProbe(PVOID pvData, PVOID pvDriverData)
 
 		/* Disable 5G band for AIS */
 		if (prAdapter->fgEnable5GBand == FALSE)
-			prWdev->wiphy->bands[IEEE80211_BAND_5GHZ] = NULL;
+			prWdev->wiphy->bands[KAL_BAND_5GHZ] = NULL;
 
 		g_u4HaltFlag = 0;
 
