@@ -436,6 +436,7 @@ static ssize_t procCfgWrite(struct file *file, const char __user *buffer,
 	uint32_t u4CopySize = sizeof(g_aucProcBuf)-8;
 	struct GLUE_INFO *prGlueInfo;
 	uint8_t *pucTmp;
+	uint32_t i = 0;
 
 #if CFG_CHIP_RESET_SUPPORT
 	if (!g_prGlueInfo_proc) {
@@ -462,6 +463,16 @@ static ssize_t procCfgWrite(struct file *file, const char __user *buffer,
 	}
 	g_aucProcBuf[u4CopySize + 8] = '\0';
 
+	for (i = 8 ; i < u4CopySize+8; i++) {
+		if (!isalnum(g_aucProcBuf[i]) && /* alphanumeric */
+			g_aucProcBuf[i] != 0x20 && /* space */
+			g_aucProcBuf[i] != 0x0a && /* control char */
+			g_aucProcBuf[i] != 0x0d) {
+			DBGLOG(INIT, ERROR, "wrong char[%d] 0x%x\n",
+				i, g_aucProcBuf[i]);
+			return -EFAULT;
+		}
+	}
 
 	prGlueInfo = g_prGlueInfo_proc;
 	/* if g_u4NextDriverReadLen >0,
