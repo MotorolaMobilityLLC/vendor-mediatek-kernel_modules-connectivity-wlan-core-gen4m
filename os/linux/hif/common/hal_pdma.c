@@ -355,7 +355,8 @@ static u_int8_t halDriverOwnCheckCR4(struct ADAPTER *prAdapter)
 			break;
 		}
 		/* Delay for CR4 to complete its operation. */
-		kalMsleep(LP_OWN_BACK_LOOP_DELAY_MS);
+		kalUsleep_range(LP_OWN_BACK_LOOP_DELAY_MIN_US,
+				LP_OWN_BACK_LOOP_DELAY_MAX_US);
 	}
 
 	/* Send dummy cmd and clear flag */
@@ -427,6 +428,8 @@ u_int8_t halSetDriverOwn(IN struct ADAPTER *prAdapter)
 	u_int8_t fgTimeout;
 	u_int8_t fgResult;
 
+	KAL_TIME_INTERVAL_DECLARATION();
+
 	ASSERT(prAdapter);
 
 	prChipInfo = prAdapter->chip_info;
@@ -438,6 +441,7 @@ u_int8_t halSetDriverOwn(IN struct ADAPTER *prAdapter)
 		return fgStatus;
 
 	DBGLOG(INIT, TRACE, "DRIVER OWN Start\n");
+	KAL_REC_TIME_START();
 
 	u4WriteTick = 0;
 	u4CurrTick = kalGetTimeTick();
@@ -484,7 +488,8 @@ u_int8_t halSetDriverOwn(IN struct ADAPTER *prAdapter)
 		}
 
 		/* Delay for LP engine to complete its operation. */
-		kalMsleep(LP_OWN_BACK_LOOP_DELAY_MS);
+		kalUsleep_range(LP_OWN_BACK_LOOP_DELAY_MIN_US,
+				LP_OWN_BACK_LOOP_DELAY_MAX_US);
 		i++;
 	}
 
@@ -501,8 +506,8 @@ u_int8_t halSetDriverOwn(IN struct ADAPTER *prAdapter)
 	if (prBusInfo->checkDummyReg)
 		prBusInfo->checkDummyReg(prAdapter->prGlueInfo);
 
-	DBGLOG(INIT, INFO, "DRIVER OWN Done[%u ms]\n",
-	       kalGetTimeTick() - u4CurrTick);
+	KAL_REC_TIME_END();
+	DBGLOG(INIT, INFO, "DRIVER OWN Done[%u us]\n", KAL_GET_TIME_INTERVAL());
 
 	return fgStatus;
 }
