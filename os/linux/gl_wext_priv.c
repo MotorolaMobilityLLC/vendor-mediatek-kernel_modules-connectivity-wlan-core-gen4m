@@ -10047,7 +10047,9 @@ int parseValueInString(
 				wlanHwAddrToBin(pucValueHead, addr);
 				DBGLOG(REQ, TRACE, "MAC type");
 			} else {
-				kalMemCopy(aucValue, pucValueHead, u4Len);
+				u8 *addr = aucValue;
+
+				kalStrnCpy(addr, pucValueHead, u4Len);
 				*((char *)aucValue + u4Len) = '\0';
 				DBGLOG(REQ, TRACE,
 					"STR type = %s\n", (char *)aucValue);
