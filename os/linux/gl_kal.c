@@ -957,7 +957,8 @@ uint32_t kal_is_skb_gro(struct ADAPTER *prAdapter)
 
 	prPerMonitor = &prAdapter->rPerMonitor;
 
-	if (prPerMonitor->ulWlanRxTp > prWifiVar->ucGROEnableTput)
+	if (prPerMonitor->ulWlanRxTp > prWifiVar->ucGROEnableTput
+		|| prPerMonitor->ulP2PRxTp > prWifiVar->ucGROEnableTput)
 		return 1;
 
 	return 0;
