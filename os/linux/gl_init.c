@@ -2460,7 +2460,8 @@ static void wlanNetDestroy(struct wireless_dev *prWdev)
 	/* Free net_device and private data, which are allocated by
 	 * alloc_netdev().
 	 */
-	free_netdev(prWdev->netdev);
+	if (prWdev->netdev)
+		free_netdev(prWdev->netdev);
 
 	/* gPrDev is assigned by prGlueInfo->prDevHandler,
 	 * set NULL to this global variable.
