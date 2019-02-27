@@ -1566,6 +1566,11 @@ struct ADAPTER {
 #if CFG_SUPPORT_REPORT_MISC
 	struct REPORT_MISC_SET rReportMiscSet;
 #endif
+
+#ifdef CFG_REPORT_MAX_TX_RATE
+	uint32_t u4StaMaxTxRate;
+#endif /* CFG_REPORT_MAX_TX_RATE */
+
 };				/* end of _ADAPTER_T */
 
 /*******************************************************************************
