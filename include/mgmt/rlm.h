@@ -282,15 +282,8 @@ enum RM_REQ_PRIORITY {
 };
 
 struct NORMAL_SCAN_PARAMS {
-	struct PARAM_SSID arSSID[SCN_SSID_MAX_NUM];
+	struct PARAM_SCAN_REQUEST_ADV rScanRequest;
 	uint8_t aucScanIEBuf[MAX_IE_LENGTH];
-	uint32_t u4IELen;
-	uint8_t ucSsidNum;
-	enum ENUM_SCAN_TYPE eScanType;
-	uint32_t u4ScanChannelNum;
-	struct RF_CHANNEL_INFO
-		arChannel[MAXIMUM_OPERATION_CHANNEL_LIST];
-	uint8_t aucRandomMac[MAC_ADDR_LEN];
 	u_int8_t fgExist;
 };
 

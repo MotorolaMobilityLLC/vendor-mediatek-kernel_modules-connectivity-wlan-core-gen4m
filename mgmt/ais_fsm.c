@@ -950,6 +950,7 @@ void aisFsmSteps(IN struct ADAPTER *prAdapter, enum ENUM_AIS_STATE eNextState)
 	struct BSS_DESC *prBssDesc;
 	struct MSG_CH_REQ *prMsgChReq;
 	struct MSG_SCN_SCAN_REQ_V2 *prScanReqMsg;
+	struct PARAM_SCAN_REQUEST_ADV *prScanRequest;
 	struct AIS_REQ_HDR *prAisReq;
 	enum ENUM_BAND eBand;
 	uint8_t ucChannel;
@@ -1368,10 +1369,12 @@ void aisFsmSteps(IN struct ADAPTER *prAdapter, enum ENUM_AIS_STATE eNextState)
 				prAisBssInfo->fgIsNetRequestInActive = FALSE;
 #endif
 			}
+			prScanRequest = &(prAisFsmInfo->rScanRequest);
 
 			/* IE length decision */
-			if (prAisFsmInfo->u4ScanIELength > 0) {
-				u2ScanIELen = (uint16_t) prAisFsmInfo->u4ScanIELength;
+			if (prScanRequest->u4IELength > 0) {
+				u2ScanIELen =
+					(uint16_t) prScanRequest->u4IELength;
 			} else {
 #if CFG_SUPPORT_WPS2
 				u2ScanIELen = prAdapter->prGlueInfo->u2WSCIELen;
@@ -1419,8 +1422,8 @@ void aisFsmSteps(IN struct ADAPTER *prAdapter, enum ENUM_AIS_STATE eNextState)
 				uint8_t ucScanSSIDNum;
 				enum ENUM_SCAN_TYPE eScanType;
 
-				ucScanSSIDNum = prAisFsmInfo->ucScanSSIDNum;
-				eScanType = prAisFsmInfo->eScanType;
+				ucScanSSIDNum = prScanRequest->u4SsidNum;
+				eScanType = prScanRequest->ucScanType;
 
 				if (eScanType == SCAN_TYPE_ACTIVE_SCAN
 					&& ucScanSSIDNum == 0) {
@@ -1440,8 +1443,15 @@ void aisFsmSteps(IN struct ADAPTER *prAdapter, enum ENUM_AIS_STATE eNextState)
 
 					prScanReqMsg->ucSSIDType = SCAN_REQ_SSID_SPECIFIED;
 					prScanReqMsg->ucSSIDNum = ucScanSSIDNum;
-					prScanReqMsg->prSsid = prAisFsmInfo->arScanSSID;
+					prScanReqMsg->prSsid =
+						prScanRequest->rSsid;
 				}
+				kalMemCopy(prScanReqMsg->aucRandomMac,
+					prScanRequest->aucRandomMac,
+					MAC_ADDR_LEN);
+				prScanReqMsg->ucScnFuncMask |=
+					prScanRequest->ucScnFuncMask;
+
 			} else {
 				prScanReqMsg->eScanType = SCAN_TYPE_ACTIVE_SCAN;
 
@@ -1453,6 +1463,10 @@ void aisFsmSteps(IN struct ADAPTER *prAdapter, enum ENUM_AIS_STATE eNextState)
 				prScanReqMsg->ucSSIDType = SCAN_REQ_SSID_SPECIFIED;
 				prScanReqMsg->ucSSIDNum = 1;
 				prScanReqMsg->prSsid = &(prAisFsmInfo->rRoamingSSID);
+#if CFG_SUPPORT_SCAN_RANDOM_MAC
+				prScanReqMsg->ucScnFuncMask |=
+					ENUM_SCN_RANDOM_MAC_EN;
+#endif
 			}
 #endif
 
@@ -1461,10 +1475,6 @@ void aisFsmSteps(IN struct ADAPTER *prAdapter, enum ENUM_AIS_STATE eNextState)
 			prScanReqMsg->u2ChannelDwellTime = 0;
 			prScanReqMsg->u2ChannelMinDwellTime = 0;
 			prScanReqMsg->u2TimeoutValue = 0;
-			kalMemCopy(prScanReqMsg->aucRandomMac,
-				prAisFsmInfo->aucRandomMac, MAC_ADDR_LEN);
-			kalMemZero(prAisFsmInfo->aucRandomMac, MAC_ADDR_LEN);
-
 			/* check if tethering is running and need to fix on specific channel */
 			if (cnmAisInfraChannelFixed(prAdapter, &eBand, &ucChannel) == TRUE) {
 				prScanReqMsg->eScanChannel = SCAN_CHANNEL_SPECIFIED;
@@ -1613,8 +1623,8 @@ void aisFsmSteps(IN struct ADAPTER *prAdapter, enum ENUM_AIS_STATE eNextState)
 			case SCAN_CHANNEL_5G:
 				scanSetRequestChannel(
 					prAdapter,
-					prAisFsmInfo->u4ScanChannelNum,
-					prAisFsmInfo->arChannel,
+					prScanRequest->u4ChannelNum,
+					prScanRequest->arChannel,
 					(prAisFsmInfo->eCurrentState ==
 					AIS_STATE_ONLINE_SCAN),
 					prScanReqMsg);
@@ -1622,13 +1632,9 @@ void aisFsmSteps(IN struct ADAPTER *prAdapter, enum ENUM_AIS_STATE eNextState)
 			default:
 				break;
 			}
-
-			if (prAisFsmInfo->u4ScanIELength > 0) {
-				kalMemCopy(prScanReqMsg->aucIE, prAisFsmInfo->aucScanIEBuf,
-					   prAisFsmInfo->u4ScanIELength);
-				kalMemZero(prAisFsmInfo->aucScanIEBuf,
-					prAisFsmInfo->u4ScanIELength);
-				prAisFsmInfo->u4ScanIELength = 0;
+			if (u2ScanIELen > 0) {
+				kalMemCopy(prScanReqMsg->aucIE,
+					prScanRequest->pucIE, u2ScanIELen);
 			} else {
 #if CFG_SUPPORT_WPS2
 				if (prAdapter->prGlueInfo->u2WSCIELen > 0) {
@@ -1641,11 +1647,17 @@ void aisFsmSteps(IN struct ADAPTER *prAdapter, enum ENUM_AIS_STATE eNextState)
 
 			mboxSendMsg(prAdapter, MBOX_ID_0, (struct MSG_HDR *) prScanReqMsg, MSG_SEND_METHOD_BUF);
 
+			kalMemZero(prAisFsmInfo->aucScanIEBuf,
+					sizeof(prAisFsmInfo->aucScanIEBuf));
+			prScanRequest->u4SsidNum = 0;
+			prScanRequest->ucScanType = 0;
+			prScanRequest->u4IELength = 0;
+			prScanRequest->u4ChannelNum = 0;
+			prScanRequest->ucScnFuncMask = 0;
+			kalMemZero(prScanRequest->aucRandomMac, MAC_ADDR_LEN);
 			prAisFsmInfo->fgTryScan = FALSE;	/* Will enable background sleep for infrastructure */
 			prAisFsmInfo->fgIsScanning = TRUE;
-			prAisFsmInfo->u4ScanChannelNum = 0;
-			kalMemZero(prAisFsmInfo->arChannel,
-				sizeof(prAisFsmInfo->arChannel));
+
 
 			/* Support AP Selection */
 			prAisFsmInfo->ucJoinFailCntAfterScan = 0;
@@ -2059,12 +2071,7 @@ void aisFsmRunEventScanDone(IN struct ADAPTER *prAdapter, IN struct MSG_HDR *prM
 		cnmTimerStartTimer(prAdapter, &prAisFsmInfo->rScanDoneTimer,
 			SEC_TO_MSEC(AIS_SCN_DONE_TIMEOUT_SEC));
 
-		aisFsmScanRequestAdv(prAdapter, prParam->ucSsidNum,
-				     prParam->arSSID, prParam->eScanType,
-				     prParam->aucScanIEBuf, prParam->u4IELen,
-				     prParam->u4ScanChannelNum,
-				     &prParam->arChannel[0],
-				     prParam->aucRandomMac);
+		aisFsmScanRequestAdv(prAdapter, &prParam->rScanRequest);
 	/* Radio Measurement is on-going, schedule to next Measurement
 	** Element
 	*/
@@ -3874,6 +3881,7 @@ void aisFsmScanRequest(IN struct ADAPTER *prAdapter, IN struct PARAM_SSID *prSsi
 	struct CONNECTION_SETTINGS *prConnSettings;
 	struct BSS_INFO *prAisBssInfo;
 	struct AIS_FSM_INFO *prAisFsmInfo;
+	struct PARAM_SCAN_REQUEST_ADV *prScanRequest;
 
 	DEBUGFUNC("aisFsmScanRequest()");
 
@@ -3883,29 +3891,34 @@ void aisFsmScanRequest(IN struct ADAPTER *prAdapter, IN struct PARAM_SSID *prSsi
 	prAisBssInfo = prAdapter->prAisBssInfo;
 	prAisFsmInfo = &(prAdapter->rWifiVar.rAisFsmInfo);
 	prConnSettings = &(prAdapter->rWifiVar.rConnSettings);
+	prScanRequest = &(prAisFsmInfo->rScanRequest);
 
 	DBGLOG(SCN, TRACE, "eCurrentState=%d, fgIsScanReqIssued=%d\n",
 		prAisFsmInfo->eCurrentState, prConnSettings->fgIsScanReqIssued);
 	if (!prConnSettings->fgIsScanReqIssued) {
 		prConnSettings->fgIsScanReqIssued = TRUE;
 		scanInitEssResult(prAdapter);
+		kalMemZero(prScanRequest,
+			sizeof(struct PARAM_SCAN_REQUEST_ADV));
+		prScanRequest->pucIE = prAisFsmInfo->aucScanIEBuf;
 
 		if (prSsid == NULL) {
-			prAisFsmInfo->ucScanSSIDNum = 0;
+			prScanRequest->u4SsidNum = 0;
 		} else {
-			prAisFsmInfo->ucScanSSIDNum = 1;
+			prScanRequest->u4SsidNum = 1;
 
-			COPY_SSID(prAisFsmInfo->arScanSSID[0].aucSsid,
-				  prAisFsmInfo->arScanSSID[0].u4SsidLen, prSsid->aucSsid, prSsid->u4SsidLen);
+			COPY_SSID(prScanRequest->rSsid[0].aucSsid,
+				  prScanRequest->rSsid[0].u4SsidLen,
+				  prSsid->aucSsid, prSsid->u4SsidLen);
 		}
 
 		if (u4IeLength > 0 && u4IeLength <= MAX_IE_LENGTH) {
-			prAisFsmInfo->u4ScanIELength = u4IeLength;
-			kalMemCopy(prAisFsmInfo->aucScanIEBuf, pucIe, u4IeLength);
+			prScanRequest->u4IELength = u4IeLength;
+			kalMemCopy(prScanRequest->pucIE, pucIe, u4IeLength);
 		} else {
-			prAisFsmInfo->u4ScanIELength = 0;
+			prScanRequest->u4IELength = 0;
 		}
-
+		prScanRequest->ucScanType = SCAN_TYPE_ACTIVE_SCAN;
 		if (prAisFsmInfo->eCurrentState == AIS_STATE_NORMAL_TR) {
 			if (prAisBssInfo->eCurrentOPMode == OP_MODE_INFRASTRUCTURE
 			    && prAisFsmInfo->fgIsInfraChannelFinished == FALSE) {
@@ -3940,37 +3953,33 @@ void aisFsmScanRequest(IN struct ADAPTER *prAdapter, IN struct PARAM_SSID *prSsi
 * \brief    This function is used to handle OID_802_11_BSSID_LIST_SCAN
 *
 * \param[in] prAdapter  Pointer of ADAPTER_T
-* \param[in] ucSsidNum  Number of SSID
-* \param[in] prSsid     Pointer to the array of SSID_T if specified
-* \param[in] pucIe      Pointer to buffer of extra information elements to be attached
-* \param[in] u4IeLength Length of information elements
+* \param[in] prRequestIn  scan request
 *
 * \return none
 */
 /*----------------------------------------------------------------------------*/
 void
-aisFsmScanRequestAdv(IN struct ADAPTER *prAdapter, IN uint8_t ucSsidNum,
-		IN struct PARAM_SSID *prSsid,
-		IN enum ENUM_SCAN_TYPE eScanType,
-		IN uint8_t *pucIe, IN uint32_t u4IeLength,
-		IN uint8_t u4ChannelNum, IN struct RF_CHANNEL_INFO *prChannel,
-		IN uint8_t *pucRandomMac)
+aisFsmScanRequestAdv(IN struct ADAPTER *prAdapter,
+	IN struct PARAM_SCAN_REQUEST_ADV *prRequestIn)
 {
-	uint32_t i;
 	struct CONNECTION_SETTINGS *prConnSettings;
 	struct BSS_INFO *prAisBssInfo;
 	struct AIS_FSM_INFO *prAisFsmInfo;
+	struct PARAM_SCAN_REQUEST_ADV *prScanRequest;
 
 	DEBUGFUNC("aisFsmScanRequestAdv()");
 
 	ASSERT(prAdapter);
-	ASSERT(ucSsidNum <= SCN_SSID_MAX_NUM);
-	ASSERT(u4IeLength <= MAX_IE_LENGTH);
-	ASSERT(u4ChannelNum <= MAXIMUM_OPERATION_CHANNEL_LIST);
+	if (!prRequestIn) {
+		log_dbg(SCN, WARN, "Scan request is NULL\n");
+		return;
+	}
 
+	prConnSettings = &(prAdapter->rWifiVar.rConnSettings);
 	prAisBssInfo = prAdapter->prAisBssInfo;
 	prAisFsmInfo = &(prAdapter->rWifiVar.rAisFsmInfo);
-	prConnSettings = &(prAdapter->rWifiVar.rConnSettings);
+	prScanRequest = &(prAisFsmInfo->rScanRequest);
+
 
 	DBGLOG(SCN, TRACE, "eCurrentState=%d, fgIsScanReqIssued=%d\n",
 			prAisFsmInfo->eCurrentState, prConnSettings->fgIsScanReqIssued);
@@ -3979,30 +3988,17 @@ aisFsmScanRequestAdv(IN struct ADAPTER *prAdapter, IN uint8_t ucSsidNum,
 		prConnSettings->fgIsScanReqIssued = TRUE;
 		scanInitEssResult(prAdapter);
 
-		if (ucSsidNum == 0) {
-			prAisFsmInfo->ucScanSSIDNum = 0;
+		kalMemCopy(prScanRequest, prRequestIn,
+			sizeof(struct PARAM_SCAN_REQUEST_ADV));
+		prScanRequest->pucIE = prAisFsmInfo->aucScanIEBuf;
+
+		if (prRequestIn->u4IELength > 0 &&
+			prRequestIn->u4IELength <= MAX_IE_LENGTH) {
+			prScanRequest->u4IELength = prRequestIn->u4IELength;
+			kalMemCopy(prScanRequest->pucIE, prRequestIn->pucIE,
+				prScanRequest->u4IELength);
 		} else {
-			prAisFsmInfo->ucScanSSIDNum = ucSsidNum;
-
-			for (i = 0; i < ucSsidNum; i++) {
-				COPY_SSID(prAisFsmInfo->arScanSSID[i].aucSsid,
-					  prAisFsmInfo->arScanSSID[i].u4SsidLen,
-					  prSsid[i].aucSsid, prSsid[i].u4SsidLen);
-			}
-		}
-		prAisFsmInfo->eScanType = eScanType;
-
-		prAisFsmInfo->u4ScanChannelNum = u4ChannelNum;
-		kalMemCopy(&prAisFsmInfo->arChannel[0], prChannel,
-			sizeof(struct RF_CHANNEL_INFO) * u4ChannelNum);
-		kalMemCopy(prAisFsmInfo->aucRandomMac, pucRandomMac,
-			MAC_ADDR_LEN);
-
-		if (u4IeLength > 0 && u4IeLength <= MAX_IE_LENGTH) {
-			prAisFsmInfo->u4ScanIELength = u4IeLength;
-			kalMemCopy(prAisFsmInfo->aucScanIEBuf, pucIe, u4IeLength);
-		} else {
-			prAisFsmInfo->u4ScanIELength = 0;
+			prScanRequest->u4IELength = 0;
 		}
 
 		if (prAisFsmInfo->eCurrentState == AIS_STATE_NORMAL_TR) {
@@ -4034,33 +4030,18 @@ aisFsmScanRequestAdv(IN struct ADAPTER *prAdapter, IN uint8_t ucSsidNum,
 				 .rNormalScan;
 
 		prNormalScan->fgExist = TRUE;
-		if (ucSsidNum == 0) {
-			prNormalScan->ucSsidNum = 0;
+		kalMemCopy(&(prNormalScan->rScanRequest), prRequestIn,
+			sizeof(struct PARAM_SCAN_REQUEST_ADV));
+		prNormalScan->rScanRequest.pucIE = prNormalScan->aucScanIEBuf;
+		if (prRequestIn->u4IELength > 0 &&
+				prRequestIn->u4IELength <= MAX_IE_LENGTH) {
+			prNormalScan->rScanRequest.u4IELength =
+				prRequestIn->u4IELength;
+			kalMemCopy(prNormalScan->rScanRequest.pucIE,
+				prRequestIn->pucIE, prRequestIn->u4IELength);
 		} else {
-			prNormalScan->ucSsidNum = ucSsidNum;
-
-			for (i = 0; i < ucSsidNum; i++) {
-				COPY_SSID(prNormalScan->arSSID[i].aucSsid,
-					  prNormalScan->arSSID[i].u4SsidLen,
-					  prSsid[i].aucSsid,
-					  prSsid[i].u4SsidLen);
-			}
+			prNormalScan->rScanRequest.u4IELength = 0;
 		}
-
-		if (u4IeLength > 0 && u4IeLength <= MAX_IE_LENGTH) {
-			prNormalScan->u4IELen = u4IeLength;
-			kalMemCopy(prNormalScan->aucScanIEBuf, pucIe,
-				   u4IeLength);
-		} else {
-			prNormalScan->u4IELen = 0;
-		}
-
-		prNormalScan->eScanType = eScanType;
-		prNormalScan->u4ScanChannelNum = u4ChannelNum;
-		kalMemCopy(&prNormalScan->arChannel[0], prChannel,
-			sizeof(struct RF_CHANNEL_INFO) * u4ChannelNum);
-		kalMemCopy(prNormalScan->aucRandomMac, pucRandomMac,
-			MAC_ADDR_LEN);
 
 		cnmTimerStopTimer(prAdapter, &prAisFsmInfo->rScanDoneTimer);
 		DBGLOG(AIS, INFO,
