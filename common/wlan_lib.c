@@ -701,10 +701,10 @@ uint32_t wlanAdapterStart(IN struct ADAPTER *prAdapter,
 					= PARAM_PACKET_FILTER_SUPPORTED;
 		}
 
-		DBGLOG(INIT, INFO,
+		DBGLOG(INIT, TRACE,
 		       "wlanAdapterStart(): Acquiring LP-OWN\n");
 		ACQUIRE_POWER_CONTROL_FROM_PM(prAdapter);
-		DBGLOG(INIT, INFO,
+		DBGLOG(INIT, TRACE,
 		       "wlanAdapterStart(): Acquiring LP-OWN-end\n");
 
 #if (CFG_ENABLE_FULL_PM == 0)
@@ -768,7 +768,7 @@ uint32_t wlanAdapterStart(IN struct ADAPTER *prAdapter,
 		}
 #endif
 
-		DBGLOG(INIT, INFO, "Waiting for Ready bit..\n");
+		DBGLOG(INIT, TRACE, "Waiting for Ready bit..\n");
 
 		/* 4 <9> check Wi-Fi FW asserts ready bit */
 		u4Status = wlanCheckWifiFunc(prAdapter, TRUE);
