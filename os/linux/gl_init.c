@@ -2194,11 +2194,6 @@ static INT_32 wlanProbe(PVOID pvData, PVOID pvDriverData)
 
 		prAdapter = prGlueInfo->prAdapter;
 
-		/* Init Chip Capability */
-		prChipInfo = prAdapter->chip_info;
-		if (prChipInfo->asicCapInit)
-			prChipInfo->asicCapInit(prAdapter);
-
 		prGlueInfo->u4ReadyFlag = 0;
 
 #if CFG_TCP_IP_CHKSUM_OFFLOAD
@@ -2209,6 +2204,13 @@ static INT_32 wlanProbe(PVOID pvData, PVOID pvDriverData)
 #if CFG_SUPPORT_CFG_FILE
 		wlanGetConfig(prAdapter);
 #endif
+
+		/* Init Chip Capability */
+		prChipInfo = prAdapter->chip_info;
+		if (prChipInfo->asicCapInit)
+			prChipInfo->asicCapInit(prAdapter);
+
+
 		/* Default support 2.4/5G MIMO */
 		prAdapter->rWifiFemCfg.u2WifiPath =
 				(WLAN_FLAG_2G4_WF0 | WLAN_FLAG_5G_WF0 | WLAN_FLAG_2G4_WF1 | WLAN_FLAG_5G_WF1);
