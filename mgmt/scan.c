@@ -307,7 +307,7 @@ uint32_t scanCountBits(IN uint32_t bitMap[], IN uint32_t bitMapSize)
 
 	for (i = arrayLen - 1; i >= 0; i--) {
 		value = bitMap[i];
-		DBGLOG(SCN, INFO, "array[%d]:%08X\n", i, value);
+		DBGLOG(SCN, TRACE, "array[%d]:%08X\n", i, value);
 		while (value) {
 			count += (value & 1);
 			value >>= 1;
@@ -443,7 +443,6 @@ void scanSetRequestChannel(IN struct ADAPTER *prAdapter,
 		}
 	}
 
-	DBGLOG(SCN, INFO, "Full2partail:%u\n", fgIsFull2Partial);
 	DBGLOG(SCN, INFO,
 		"channel num(%u=>%u) %08X %08X %08X %08X %08X %08X %08X %08X\n",
 		u4ScanChannelNum, prScanReqMsg->ucChannelListNum,
@@ -1532,6 +1531,7 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 #endif
 
 	default:
+		DBGLOG(SCN, WARN, "Skip unknown bss type(%u)\n", u2CapInfo);
 		return NULL;
 	}
 
@@ -1627,6 +1627,13 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 		       ucIeDsChannelNum, ucIeHtChannelNum);
 #undef __STR_FMT__
 		return NULL;
+	} else {
+		uint8_t ucSubtype = (*(uint8_t *) (prSwRfb->pvHeader) &
+				MASK_FC_SUBTYPE) >> OFFSET_OF_FC_SUBTYPE;
+
+		DBGLOG(SCN, LOUD, "Receive type %u in chnl %u %u %u\n",
+			ucSubtype, ucIeDsChannelNum, ucIeHtChannelNum,
+			HAL_RX_STATUS_GET_CHNL_NUM(prSwRfb->prRxStatus));
 	}
 
 	/* 4 <1.2> Replace existing BSS_DESC structure or allocate a new one */

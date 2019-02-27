@@ -3241,7 +3241,8 @@ static void aisFsmRunEventScanDoneTimeOut(IN struct ADAPTER *prAdapter, unsigned
 	prAisFsmInfo = &(prAdapter->rWifiVar.rAisFsmInfo);
 	prConnSettings = &(prAdapter->rWifiVar.rConnSettings);
 
-	DBGLOG(AIS, STATE, "aisFsmRunEventScanDoneTimeOut Current[%d]\n", prAisFsmInfo->eCurrentState);
+	DBGLOG(AIS, STATE, "aisFsmRunEventScanDoneTimeOut Current[%d] Seq=%u\n",
+		prAisFsmInfo->eCurrentState, prAisFsmInfo->ucSeqNumOfScanReq);
 
 	/* report all scanned frames to upper layer to avoid scanned frame is timeout */
 	/* must be put before kalScanDone */
