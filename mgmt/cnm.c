@@ -1873,12 +1873,7 @@ uint8_t cnmGetBssMaxBw(struct ADAPTER *prAdapter,
 		 *the info might not be trustable before state3
 		 */
 
-		prBssDesc =
-			prAdapter->rWifiVar.rAisFsmInfo.prTargetBssDesc;
-		if (prBssDesc)
-			eBand = prBssDesc->eBand;
-		else
-			eBand = prBssInfo->eBand;
+		eBand = prBssInfo->eBand;
 
 
 		ASSERT(eBand != BAND_NULL);
