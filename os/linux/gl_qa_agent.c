@@ -6460,10 +6460,11 @@ static int32_t HQA_CapWiFiSpectrum(struct net_device *prNetDev,
 			u4SourceAddrMSB = ((aucSourceAddress[4]) | (aucSourceAddress[5] << 8) | (0x1 << 16));
 
 			prGlueInfo->prAdapter->rIcapInfo.u4CapNode = u4Node;
-			prAteOps->setICapStart(prGlueInfo, u4Trigger, u4RingCapEn, u4Event, u4Node,
+			i4Ret = prAteOps->setICapStart(prGlueInfo, u4Trigger,
+					       u4RingCapEn, u4Event, u4Node,
 					       u4Len, u4StopCycle, u4BW, u4MacTriggerEvent,
 					       u4SourceAddrLSB, u4SourceAddrMSB, u4Band);
-			prGlueInfo->prAdapter->fgIcapMode = TRUE;
+			prGlueInfo->prAdapter->fgIcapMode = u4Trigger;
 		} else
 			i4Ret = 1;
 
@@ -6728,20 +6729,44 @@ int32_t connacSetICapStart(struct GLUE_INFO *prGlueInfo, uint32_t u4Trigger, uin
 	uint32_t u4BufLen = 0, u4IQArrayLen = 0;
 	uint32_t rStatus = WLAN_STATUS_SUCCESS;
 
+	if (u4Trigger) {
+		if (prGlueInfo->prAdapter->rIcapInfo.fgIcapEnable) {
+			log_dbg(RFTEST, ERROR, "Already starting, ignore\n");
+			return 1;
+		}
+	} else {
+		log_dbg(RFTEST, INFO, "Shutdown Icap\n");
+		prGlueInfo->prAdapter->rIcapInfo.fgIcapEnable = FALSE;
+		if (prGlueInfo->prAdapter->rIcapInfo.prIQArray != NULL)
+			kalMemFree(prGlueInfo->prAdapter->rIcapInfo.prIQArray,
+				   VIR_MEM_TYPE,
+				   u4IQArrayLen);
+		prGlueInfo->prAdapter->rIcapInfo.u4IQArrayIndex = 0;
+		prGlueInfo->prAdapter->rIcapInfo.u4ICapEventCnt = 0;
+		prGlueInfo->prAdapter->rIcapInfo.prIQArray = NULL;
+		return 0;
+	}
+
 	prICapInfo = &(rRfATInfo.Data.rICapInfo);
 	prICapInfo->u4Trigger = u4Trigger;
 	prICapInfo->u4TriggerEvent = u4Event;
 
 	u4IQArrayLen = MAX_ICAP_IQ_DATA_CNT * sizeof(struct _RBIST_IQ_DATA_T);
+#if 0
 	if (prGlueInfo->prAdapter->rIcapInfo.prIQArray != NULL)
 		kalMemFree(prGlueInfo->prAdapter->rIcapInfo.prIQArray,
 			   VIR_MEM_TYPE,
 			   u4IQArrayLen);
+#endif
 
-	prGlueInfo->prAdapter->rIcapInfo.prIQArray = kalMemAlloc(u4IQArrayLen, VIR_MEM_TYPE);
 	if (!prGlueInfo->prAdapter->rIcapInfo.prIQArray) {
-		DBGLOG(RFTEST, ERROR, "Not enough memory for IQ_Array\n");
-		return 0;
+		prGlueInfo->prAdapter->rIcapInfo.prIQArray =
+				kalMemAlloc(u4IQArrayLen, VIR_MEM_TYPE);
+		if (!prGlueInfo->prAdapter->rIcapInfo.prIQArray) {
+			DBGLOG(RFTEST, ERROR,
+				"Not enough memory for IQ_Array\n");
+			return 0;
+		}
 	}
 
 	prGlueInfo->prAdapter->rIcapInfo.u4IQArrayIndex = 0;

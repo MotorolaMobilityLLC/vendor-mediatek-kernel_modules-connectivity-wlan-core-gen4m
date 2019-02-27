@@ -1681,6 +1681,15 @@ struct CMD_STAREC_UPDATE {
 	uint8_t aucBuffer[0];
 };
 
+struct EXT_EVENT_BF_STATUS_T {
+	uint8_t ucEventCategoryID;
+	uint8_t ucBw;
+	uint16_t u2SubCarrIdx;
+	u_int8_t fgBFer;
+	uint8_t aucReserved[3];
+	uint8_t aucBuf[1000]; /* temp size */
+};
+
 struct EVENT_PFMU_TAG_READ {
 	union PFMU_PROFILE_TAG1 ru4TxBfPFMUTag1;
 	union PFMU_PROFILE_TAG2 ru4TxBfPFMUTag2;

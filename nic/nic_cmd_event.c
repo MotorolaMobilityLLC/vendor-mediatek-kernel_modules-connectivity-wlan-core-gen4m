@@ -239,9 +239,6 @@ void nicCmdEventPfmuDataRead(IN struct ADAPTER *prAdapter,
 		u4QueryInfoLen = sizeof(union PFMU_DATA);
 
 		g_rPfmuData = *prEventPfmuDataRead;
-
-		kalOidComplete(prGlueInfo, prCmdInfo->fgSetQuery,
-			       u4QueryInfoLen, WLAN_STATUS_SUCCESS);
 	}
 
 	DBGLOG(INIT, INFO, "=========== Before ===========\n");
@@ -3862,7 +3859,7 @@ void nicExtEventReCalData(IN struct ADAPTER *prAdapter, IN uint8_t *pucEventBuf)
 	}
 
 	prCalArray = prReCalInfo->prCalArray;
-	DBGLOG(RFTEST, INFO, "prCalArray[%d] address [0x%pM]\n",
+	DBGLOG(RFTEST, INFO, "prCalArray[%d] address [%p]\n",
 			     prReCalInfo->u4Count,
 			     &prCalArray[prReCalInfo->u4Count]);
 
@@ -3879,9 +3876,10 @@ void nicExtEventReCalData(IN struct ADAPTER *prAdapter, IN uint8_t *pucEventBuf)
 		if (kstrtoul(&prReCalData->u.ucData[11], 16,
 			     (unsigned long *) &prCalArray[u4Idx].u4CalAddr))
 			DBGLOG(RFTEST, ERROR, "convert fail: ucData[11]\n");
-		if (kstrtoul(&prReCalData->u.ucData[21], 16,
+		if (kstrtoul(&prReCalData->u.ucData[20], 16,
 			     (unsigned long *) &prCalArray[u4Idx].u4CalValue))
-			DBGLOG(RFTEST, ERROR, "convert fail: ucData[21]\n");
+			DBGLOG(RFTEST, ERROR, "convert fail: ucData[20] %s\n",
+					       &prReCalData->u.ucData[20]);
 		DBGLOG(RFTEST, TRACE, "[0x%08x][0x%08x][0x%08x]\n",
 					prCalArray[u4Idx].u4CalId,
 					prCalArray[u4Idx].u4CalAddr,
@@ -3965,9 +3963,10 @@ void nicExtEventICapIQData(IN struct ADAPTER *prAdapter,
 	}
 
 	/* Print ICap data to console for debugging purpose */
-	for (Idxi = 0; Idxi < ICAP_EVENT_DATA_SAMPLE; Idxi++)
-		DBGLOG(RFTEST, TRACE, "Data[%d] : %x\n", Idxi,
-		       prICapEvent->u4Data[Idxi]);
+	for (Idxi = 0; Idxi < prICapEvent->u4SmplCnt; Idxi++)
+		if (prICapEvent->u4Data[Idxi] == 0)
+			DBGLOG(RFTEST, WARN, "Data[%d] : %x\n", Idxi,
+				prICapEvent->u4Data[Idxi]);
 
 
 	/* Update ICapEventCnt */
@@ -4104,11 +4103,11 @@ uint32_t nicRfTestEventHandler(IN struct ADAPTER *prAdapter,
 
 		DBGLOG(RFTEST, INFO, "prCapStatus->u4CapDone = %d\n",
 		       prCapStatus->u4CapDone);
-		if (prCapStatus->u4CapDone) {
+		if (prCapStatus->u4CapDone &&
+		    !prAdapter->rIcapInfo.fgCaptureDone)
 			wlanoidRfTestICapRawDataProc(prAdapter,
 		     0 /*prCapStatus->u4CapStartAddr*/,
 		     0 /*prCapStatus->u4TotalBufferSize*/);
-		}
 		break;
 
 	case GET_ICAP_RAW_DATA:
@@ -4142,6 +4141,8 @@ void nicEventLayer0ExtMagic(IN struct ADAPTER *prAdapter,
 	struct EXT_EVENT_EFUSE_FREE_BLOCK *prEventGetFreeBlock;
 	struct EXT_EVENT_GET_TX_POWER *prEventGetTXPower;
 
+	log_dbg(RFTEST, INFO, "prEvent->ucExtenEID = %d\n",
+			       prEvent->ucExtenEID);
 	switch (prEvent->ucExtenEID) {
 
 	case EXT_EVENT_ID_CMD_RESULT:
@@ -4190,7 +4191,16 @@ void nicEventLayer0ExtMagic(IN struct ADAPTER *prAdapter,
 		prAdapter->u4FreeBlockNum =
 			prEventGetFreeBlock->u2FreeBlockNum;
 		break;
+	case EXT_EVENT_ID_BF_STATUS_READ:
+		prCmdInfo = nicGetPendingCmdInfo(prAdapter, prEvent->ucSeqNum);
+		if (prCmdInfo != NULL && prCmdInfo->pfCmdDoneHandler) {
+			struct EXT_EVENT_BF_STATUS_T *prExtBfStatus =
+			(struct EXT_EVENT_BF_STATUS_T *)prEvent->aucBuffer;
 
+			prCmdInfo->pfCmdDoneHandler(prAdapter, prCmdInfo,
+						    prExtBfStatus->aucBuf);
+		}
+		break;
 	default:
 		break;
 	}
@@ -4818,6 +4828,7 @@ void nicEventDebugMsg(IN struct ADAPTER *prAdapter,
 
 			prEvent = (struct WIFI_EVENT *)
 				kalMemAlloc(u4Size, VIR_MEM_TYPE);
+			kalMemZero(prEvent, u4Size);
 
 			prCalData = (struct EXT_EVENT_RECAL_DATA_T *)
 						    prEvent->aucBuffer;
