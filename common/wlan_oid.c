@@ -3437,8 +3437,6 @@ wlanoidSetPmkid(IN struct ADAPTER *prAdapter, IN void *pvSetBuffer, IN uint32_t 
 
 	DEBUGFUNC("wlanoidSetPmkid");
 
-	DBGLOG(REQ, INFO, "wlanoidSetPmkid\n");
-
 	ASSERT(prAdapter);
 	ASSERT(pu4SetInfoLen);
 
@@ -3451,14 +3449,15 @@ wlanoidSetPmkid(IN struct ADAPTER *prAdapter, IN void *pvSetBuffer, IN uint32_t 
 	ASSERT(pvSetBuffer);
 	prPmkid = (struct PARAM_PMKID *) pvSetBuffer;
 
+	DBGLOG(REQ, INFO, "Count %u, u4SetBufferLen %u\n",
+				prPmkid->u4BSSIDInfoCount, u4SetBufferLen);
+
 	if (u4SetBufferLen <
 	    ((prPmkid->u4BSSIDInfoCount * sizeof(struct PARAM_BSSID_INFO)) + OFFSET_OF(struct PARAM_PMKID, arBSSIDInfo)))
 		return WLAN_STATUS_INVALID_DATA;
 
 	if (prPmkid->u4BSSIDInfoCount > CFG_MAX_PMKID_CACHE)
 		return WLAN_STATUS_INVALID_DATA;
-
-	DBGLOG(REQ, INFO, "Count %u\n", prPmkid->u4BSSIDInfoCount);
 
 	prAisSpecBssInfo = &prAdapter->rWifiVar.rAisSpecificBssInfo;
 

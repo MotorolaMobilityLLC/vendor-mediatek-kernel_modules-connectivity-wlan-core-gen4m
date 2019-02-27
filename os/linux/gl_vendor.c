@@ -480,9 +480,6 @@ int mtk_cfg80211_vendor_config_roaming(struct wiphy *wiphy,
 	uint8_t *aucBSSID = NULL;
 	int i;
 
-	DBGLOG(REQ, INFO,
-		"Receives roaming blacklist & whitelist with data_len=%d\n",
-		data_len);
 	ASSERT(wiphy);
 	ASSERT(wdev);
 	if ((data == NULL) || (data_len == 0))
@@ -506,7 +503,8 @@ int mtk_cfg80211_vendor_config_roaming(struct wiphy *wiphy,
 		numOfList[0] = nla_get_u32(attrlist);
 		len_shift += NLA_ALIGN(attrlist->nla_len);
 	}
-	DBGLOG(REQ, INFO, "Get the number of blacklist=%d\n", numOfList[0]);
+	DBGLOG(REQ, INFO, "Get the number of blacklist=%d data_len=%d\n",
+			   numOfList[0], data_len);
 
 	if (numOfList[0] < 0 || numOfList[0] > MAX_FW_ROAMING_BLACKLIST_SIZE)
 		return -EINVAL;

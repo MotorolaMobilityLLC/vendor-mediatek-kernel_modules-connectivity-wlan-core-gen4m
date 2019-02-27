@@ -895,7 +895,7 @@ void secRemoveBssBcEntry(IN struct ADAPTER *prAdapter,
 	if (!prBssInfo)
 		return;
 
-	DBGLOG(RSN, INFO, "remove all the key related with BSS!");
+	DBGLOG(RSN, TRACE, "remove all the key related with BSS!");
 
 	if (fgRoam) {
 		if (IS_BSS_AIS(prBssInfo) &&
