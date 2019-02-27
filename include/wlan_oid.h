@@ -141,6 +141,7 @@
 
 #define BT_PROFILE_PARAM_LEN        8
 
+#define EFUSE_ADDR_MAX  0x3BF	/* Based on EEPROM layout 20160120 */
 #if CFG_SUPPORT_BUFFER_MODE
 
 /* For MT7668 */
