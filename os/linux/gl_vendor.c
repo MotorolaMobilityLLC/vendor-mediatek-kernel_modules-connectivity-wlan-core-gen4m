@@ -937,8 +937,8 @@ int mtk_cfg80211_vendor_event_rssi_beyond_range(
 	rRSSIEvt.version = 1; /* RSSI_MONITOR_EVT_VERSION = 1 */
 	if (rssi > PARAM_WHQL_RSSI_MAX_DBM)
 		rssi = PARAM_WHQL_RSSI_MAX_DBM;
-	else if (rssi < -120)
-		rssi = -120;
+	else if (rssi < -127)
+		rssi = -127;
 	rRSSIEvt.rssi = (int8_t)rssi;
 	DBGLOG(REQ, INFO,
 		"RSSI Event: version=%d, rssi=%d, BSSID=" MACSTR "\r\n",
