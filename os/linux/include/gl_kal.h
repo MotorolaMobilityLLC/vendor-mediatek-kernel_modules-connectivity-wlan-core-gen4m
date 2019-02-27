@@ -1462,6 +1462,7 @@ uint32_t kalPerMonGetInfo(IN struct ADAPTER *prAdapter, IN uint8_t *pucBuf,
 	IN uint32_t u4Max);
 int32_t kalBoostCpu(IN struct ADAPTER *prAdapter, IN uint32_t u4TarPerfLevel,
 	IN uint32_t u4BoostCpuTh);
+uint32_t kalGetCpuBoostThreshold(void);
 void kalSetEmiMpuProtection(phys_addr_t emiPhyBase, uint32_t offset,
 			    uint32_t size, bool enable);
 void kalSetDrvEmiMpuProtection(phys_addr_t emiPhyBase, uint32_t offset,

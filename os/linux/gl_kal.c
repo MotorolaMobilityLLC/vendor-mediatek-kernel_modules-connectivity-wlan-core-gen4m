@@ -6766,6 +6766,13 @@ int32_t __weak kalBoostCpu(IN struct ADAPTER *prAdapter,
 	return 0;
 }
 
+uint32_t __weak kalGetCpuBoostThreshold(void)
+{
+	DBGLOG(SW4, WARN, "enter kalGetCpuBoostThreshold\n");
+	/*  1, stands for 20Mbps */
+	return 1;
+}
+
 int32_t __weak kalSetCpuNumFreq(uint32_t u4CoreNum,
 				uint32_t u4Freq)
 {
