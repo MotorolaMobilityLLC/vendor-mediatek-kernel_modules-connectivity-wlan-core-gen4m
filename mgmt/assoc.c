@@ -50,46 +50,48 @@
  *
  *****************************************************************************/
 /*
-** Id: //Department/DaVinci/BRANCHES/MT6620_WIFI_DRIVER_V2_3/mgmt/assoc.c#5
-*/
+ * Id: //Department/DaVinci/BRANCHES/MT6620_WIFI_DRIVER_V2_3/mgmt/assoc.c#5
+ */
 
 /*! \file   "assoc.c"
-*    \brief  This file includes the association-related functions.
-*
-*    This file includes the association-related functions.
-*/
+ *    \brief  This file includes the association-related functions.
+ *
+ *    This file includes the association-related functions.
+ */
 
 /*******************************************************************************
-*                         C O M P I L E R   F L A G S
-********************************************************************************
-*/
+ *                         C O M P I L E R   F L A G S
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                    E X T E R N A L   R E F E R E N C E S
-********************************************************************************
-*/
+ *                    E X T E R N A L   R E F E R E N C E S
+ *******************************************************************************
+ */
 #include "precomp.h"
 
 /*******************************************************************************
-*                              C O N S T A N T S
-********************************************************************************
-*/
+ *                              C O N S T A N T S
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                             D A T A   T Y P E S
-********************************************************************************
-*/
+ *                             D A T A   T Y P E S
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                            P U B L I C   D A T A
-********************************************************************************
-*/
+ *                            P U B L I C   D A T A
+ *******************************************************************************
+ */
 struct APPEND_VAR_IE_ENTRY txAssocReqIETable[] = {
 #if CFG_SUPPORT_802_11K
-	{(ELEM_HDR_LEN + 2), NULL, rlmGeneratePowerCapIE},/* Element ID: 33 */
+	{(ELEM_HDR_LEN + 2), NULL,
+		rlmGeneratePowerCapIE},	/* Element ID: 33 */
 #endif
 
-	{(ELEM_HDR_LEN + ELEM_MAX_LEN_HT_CAP), NULL, rlmReqGenerateHtCapIE}
+	{(ELEM_HDR_LEN + ELEM_MAX_LEN_HT_CAP), NULL,
+		rlmReqGenerateHtCapIE}
 	,			/* 45 */
 #if CFG_SUPPORT_WPS2
 	{(ELEM_HDR_LEN + ELEM_MAX_LEN_WSC), NULL, rsnGenerateWSCIE}
@@ -114,7 +116,8 @@ struct APPEND_VAR_IE_ENTRY txAssocReqIETable[] = {
 	{(ELEM_HDR_LEN + ELEM_MAX_LEN_ROAMING_CONSORTIUM), NULL,
 	 hs20GenerateRoamingConsortiumIE}
 	,			/* 111 */
-	{(ELEM_HDR_LEN + ELEM_MAX_LEN_HS20_INDICATION), NULL, hs20GenerateHS20IE}
+	{(ELEM_HDR_LEN + ELEM_MAX_LEN_HS20_INDICATION), NULL,
+		hs20GenerateHS20IE}
 	,			/* 221 */
 #endif /* CFG_SUPPORT_PASSPOINT */
 	{(ELEM_HDR_LEN + ELEM_MAX_LEN_EXT_CAP), NULL, rlmReqGenerateExtCapIE}
@@ -127,14 +130,15 @@ struct APPEND_VAR_IE_ENTRY txAssocReqIETable[] = {
 	{(ELEM_HDR_LEN + ELEM_MAX_LEN_VHT_CAP), NULL, rlmReqGenerateVhtCapIE}
 	,			/*191 */
 	{(ELEM_HDR_LEN + ELEM_MAX_LEN_VHT_OP_MODE_NOTIFICATION), NULL,
-	 rlmReqGenerateVhtOpNotificationIE}
+		rlmReqGenerateVhtOpNotificationIE}
 	,			/*199 */
 #endif
 #if CFG_SUPPORT_MTK_SYNERGY
 	{(ELEM_HDR_LEN + ELEM_MIN_LEN_MTK_OUI), NULL, rlmGenerateMTKOuiIE}
 	,			/* 221 */
 #endif
-	{(ELEM_HDR_LEN + ELEM_MAX_LEN_WPA), NULL, rsnGenerateWPAIE}	/* 221 */
+	{(ELEM_HDR_LEN + ELEM_MAX_LEN_WPA), NULL,
+		rsnGenerateWPAIE}	/* 221 */
 };
 
 #if CFG_SUPPORT_AAA
@@ -150,7 +154,8 @@ struct APPEND_VAR_IE_ENTRY txAssocRespIETable[] = {
 	{(ELEM_HDR_LEN + ELEM_MAX_LEN_HT_OP), NULL, rlmRspGenerateHtOpIE}
 	,			/* 61 */
 #if CFG_ENABLE_WIFI_DIRECT
-	{(ELEM_HDR_LEN + ELEM_MAX_LEN_OBSS_SCAN), NULL, rlmRspGenerateObssScanIE}
+	{(ELEM_HDR_LEN + ELEM_MAX_LEN_OBSS_SCAN), NULL,
+		rlmRspGenerateObssScanIE}
 	,			/* 74 */
 	{(0), p2pFuncCalculateP2p_IELenForAssocRsp,
 	 p2pFuncGenerateP2p_IEForAssocRsp}
@@ -178,43 +183,45 @@ struct APPEND_VAR_IE_ENTRY txAssocRespIETable[] = {
 	 rsnGenerateWSCIEForAssocRsp}
 	,			/* 221 */
 #if CFG_SUPPORT_MTK_SYNERGY
-	{(ELEM_HDR_LEN + ELEM_MIN_LEN_MTK_OUI), NULL, rlmGenerateMTKOuiIE}	/* 221 */
+	{(ELEM_HDR_LEN + ELEM_MIN_LEN_MTK_OUI), NULL,
+		rlmGenerateMTKOuiIE}	/* 221 */
 #endif
 	,
 #if CFG_SUPPORT_802_11W
-	{(ELEM_HDR_LEN + ELEM_MAX_LEN_TIMEOUT_IE), NULL, rsnPmfGenerateTimeoutIE}	/* 56 */
+	{(ELEM_HDR_LEN + ELEM_MAX_LEN_TIMEOUT_IE), NULL,
+		rsnPmfGenerateTimeoutIE}	/* 56 */
 #endif
 
 };
 #endif /* CFG_SUPPORT_AAA */
 
 /*******************************************************************************
-*                           P R I V A T E   D A T A
-********************************************************************************
-*/
+ *                           P R I V A T E   D A T A
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                                 M A C R O S
-********************************************************************************
-*/
+ *                                 M A C R O S
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                   F U N C T I O N   D E C L A R A T I O N S
-********************************************************************************
-*/
+ *                   F U N C T I O N   D E C L A R A T I O N S
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                              F U N C T I O N S
-********************************************************************************
-*/
+ *                              F U N C T I O N S
+ *******************************************************************************
+ */
 /*----------------------------------------------------------------------------*/
 /*!
-* @brief This function is used to compose the Capability Info Field.
-*
-* @param[in] prStaRec               Pointer to the STA_RECORD_T
-*
-* @retval Capability Info Field
-*/
+ * @brief This function is used to compose the Capability Info Field.
+ *
+ * @param[in] prStaRec               Pointer to the STA_RECORD_T
+ *
+ * @retval Capability Info Field
+ */
 /*----------------------------------------------------------------------------*/
 
 uint16_t assocBuildCapabilityInfo(IN struct ADAPTER *prAdapter,
@@ -247,8 +254,12 @@ uint16_t assocBuildCapabilityInfo(IN struct ADAPTER *prAdapter,
 		     ((prAdapter->rWifiVar.ePreambleType == PREAMBLE_TYPE_AUTO)
 		      && (prStaRec->u2CapInfo & CAP_INFO_SHORT_PREAMBLE)))) {
 
-			/* Case I: Implemented == TRUE and Short Preamble Option Enable == TRUE.
-			 * Case II: Implemented == TRUE and Short Preamble == AUTO (depends on
+			/* Case I:
+			 *  Implemented == TRUE and
+			 *  Short Preamble Option Enable == TRUE.
+			 * Case II:
+			 *  Implemented == TRUE and
+			 *  Short Preamble == AUTO (depends on
 			 *          struct BSS_DESC's capability)
 			 */
 			u2CapInfo |= CAP_INFO_SHORT_PREAMBLE;
@@ -275,17 +286,17 @@ uint16_t assocBuildCapabilityInfo(IN struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* @brief This function is used to compose Common Information Elements for Association
-*        Request Frame.
-*
-* @param[in] prMsduInfo     Pointer to the composed MSDU_INFO_T.
-*
-* @return (none)
-*/
+ * @brief This function is used to compose Common Information Elements for
+ *        Association Request Frame.
+ *
+ * @param[in] prMsduInfo     Pointer to the composed MSDU_INFO_T.
+ *
+ * @return (none)
+ */
 /*----------------------------------------------------------------------------*/
 static __KAL_INLINE__ void assocBuildReAssocReqFrameCommonIEs(
-			IN struct ADAPTER *prAdapter,
-			IN struct MSDU_INFO *prMsduInfo)
+					IN struct ADAPTER *prAdapter,
+					IN struct MSDU_INFO *prMsduInfo)
 {
 	struct CONNECTION_SETTINGS *prConnSettings;
 	struct STA_RECORD *prStaRec;
@@ -316,8 +327,10 @@ static __KAL_INLINE__ void assocBuildReAssocReqFrameCommonIEs(
 		/* Fill the SSID element. */
 		SSID_IE(pucBuffer)->ucId = ELEM_ID_SSID;
 
-		/* NOTE(Kevin): We copy the SSID from CONNECTION_SETTINGS for the case of
-		 * Passive Scan and the target BSS didn't broadcast SSID on its Beacon Frame.
+		/* NOTE(Kevin): We copy the SSID from CONNECTION_SETTINGS
+		 * for the case of
+		 *   Passive Scan and the target BSS didn't broadcast SSID
+		 *   on its Beacon Frame.
 		 */
 
 		COPY_SSID(SSID_IE(pucBuffer)->aucSSID,
@@ -340,8 +353,10 @@ static __KAL_INLINE__ void assocBuildReAssocReqFrameCommonIEs(
 
 		SSID_IE(pucBuffer)->ucId = ELEM_ID_SSID;
 
-		/* NOTE(Kevin): We copy the SSID from CONNECTION_SETTINGS for the case of
-		 * Passive Scan and the target BSS didn't broadcast SSID on its Beacon Frame.
+		/* NOTE(Kevin): We copy the SSID from CONNECTION_SETTINGS for
+		 * the case of
+		 *   Passive Scan and
+		 *   the target BSS didn't broadcast SSID on its Beacon Frame.
 		 */
 
 		COPY_SSID(SSID_IE(pucBuffer)->aucSSID,
@@ -357,7 +372,8 @@ static __KAL_INLINE__ void assocBuildReAssocReqFrameCommonIEs(
 	 * SupportedRates - The set of data rates that are supported by the STA
 	 * that is requesting association.
 	 * Original(Portable Driver): Only send the Rates that we'll support.
-	 * New: Send the Phy Rates if the result of following & operation == NULL.
+	 * New: Send the Phy Rates if the result of following
+	 *      & operation == NULL.
 	 */
 	/* rateGetDataRatesFromRateSet((prBssDesc->u2OperationalRateSet & */
 	/* rPhyAttributes[prBssDesc->ePhyType].u2SupportedRateSet), */
@@ -382,7 +398,10 @@ static __KAL_INLINE__ void assocBuildReAssocReqFrameCommonIEs(
 			    [u4NonHTPhyType].u2SupportedRateSet;
 		}
 
-		/* TODO(Kevin): For P2P, we shouldn't send support rate set which contains 11b rate */
+		/* TODO(Kevin):
+		 * For P2P, we shouldn't send support rate set
+		 * which contains 11b rate
+		 */
 
 		rateGetDataRatesFromRateSet(u2SupportedRateSet, 0,
 					    aucAllSupportedRates,
@@ -423,20 +442,21 @@ static __KAL_INLINE__ void assocBuildReAssocReqFrameCommonIEs(
 			pucBuffer += IE_SIZE(pucBuffer);
 		}
 	}
-}				/* end of assocBuildReAssocReqFrameCommonIEs() */
+}			/* end of assocBuildReAssocReqFrameCommonIEs() */
 
 /*----------------------------------------------------------------------------*/
 /*!
-* @brief This function will compose the (Re)Association Request frame header and
-*        its fixed fields
-*
-* @param[in] prStaRec               Pointer to the STA_RECORD_T
-* @param[in] pucBuffer              Pointer to the frame buffer.
-* @param[in] aucMACAddress          Given Our MAC Address.
-* @param[in out] pu2PayloadLen      Return the length of the composed fixed fields
-*
-* @return (none)
-*/
+ * @brief This function will compose the (Re)Association Request frame header
+ *        and its fixed fields
+ *
+ * @param[in] prStaRec               Pointer to the STA_RECORD_T
+ * @param[in] pucBuffer              Pointer to the frame buffer.
+ * @param[in] aucMACAddress          Given Our MAC Address.
+ * @param[in out] pu2PayloadLen      Return the length of the composed
+ *                                   fixed fields
+ *
+ * @return (none)
+ */
 /*----------------------------------------------------------------------------*/
 void
 assocComposeReAssocReqFrameHeaderAndFF(IN struct ADAPTER *prAdapter,
@@ -460,7 +480,9 @@ assocComposeReAssocReqFrameHeaderAndFF(IN struct ADAPTER *prAdapter,
 	prAssocFrame = (struct WLAN_ASSOC_REQ_FRAME *)pucBuffer;
 	fgIsReAssoc = prStaRec->fgIsReAssoc;
 
-	/* 4 <1> Compose the frame header of the (Re)Association Request  frame. */
+	/* 4 <1> Compose the frame header of the (Re)Association
+	 *       Request frame.
+	 */
 	/* Fill the Frame Control field. */
 	if (fgIsReAssoc)
 		u2FrameCtrl = MAC_FRAME_REASSOC_REQ;
@@ -478,17 +500,21 @@ assocComposeReAssocReqFrameHeaderAndFF(IN struct ADAPTER *prAdapter,
 	/* Fill the BSSID field with Target BSSID. */
 	COPY_MAC_ADDR(prAssocFrame->aucBSSID, prStaRec->aucMacAddr);
 
-	/* Clear the SEQ/FRAG_NO field(HW won't overide the FRAG_NO, so we need to clear it). */
+	/* Clear the SEQ/FRAG_NO field(HW won't overide the FRAG_NO,
+	 * so we need to clear it).
+	 */
 	prAssocFrame->u2SeqCtrl = 0;
 
-	/* 4 <2> Compose the frame body's common fixed field part of the (Re)Association Request  frame. */
+	/* 4 <2> Compose the frame body's common fixed field part of
+	 *       the (Re)Association Request  frame.
+	 */
 	u2CapInfo = assocBuildCapabilityInfo(prAdapter, prStaRec);
 
 	/* Fill the Capability Information field. */
 	WLAN_SET_FIELD_16(&prAssocFrame->u2CapInfo, u2CapInfo);
 
-	/* Calculate the listen interval for the maximum power mode. Currently, we
-	 *  set it to the value 2 times DTIM period.
+	/* Calculate the listen interval for the maximum power mode. Currently,
+	 * we set it to the value 2 times DTIM period.
 	 */
 	if (prStaRec->ucDTIMPeriod) {
 		u2ListenInterval =
@@ -503,7 +529,9 @@ assocComposeReAssocReqFrameHeaderAndFF(IN struct ADAPTER *prAdapter,
 	/* Fill the Listen Interval field. */
 	WLAN_SET_FIELD_16(&prAssocFrame->u2ListenInterval, u2ListenInterval);
 
-	/* 4 <3> Compose the Current AP Address field for ReAssociation Request  frame. */
+	/* 4 <3> Compose the Current AP Address field for ReAssociation
+	 *       Request frame.
+	 */
 	/* Fill the Current AP Address field. */
 	if (prStaRec->fgIsReAssoc) {
 		if (IS_STA_IN_AIS(prStaRec)) {
@@ -515,7 +543,8 @@ assocComposeReAssocReqFrameHeaderAndFF(IN struct ADAPTER *prAdapter,
 			COPY_MAC_ADDR(prReAssocFrame->aucCurrentAPAddr,
 				      prAisBssInfo->aucBSSID);
 		} else {
-			ASSERT(0);	/* We don't support ReAssociation for other network */
+			ASSERT(0);
+			/* We don't support ReAssociation for other network */
 		}
 
 		*pu2PayloadLen =
@@ -529,13 +558,13 @@ assocComposeReAssocReqFrameHeaderAndFF(IN struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* @brief This function will send the (Re)Association Request frame
-*
-* @param[in] prStaRec           Pointer to the STA_RECORD_T
-*
-* @retval WLAN_STATUS_RESOURCES No available resource for frame composing.
-* @retval WLAN_STATUS_SUCCESS   Successfully send frame to TX Module
-*/
+ * @brief This function will send the (Re)Association Request frame
+ *
+ * @param[in] prStaRec           Pointer to the STA_RECORD_T
+ *
+ * @retval WLAN_STATUS_RESOURCES No available resource for frame composing.
+ * @retval WLAN_STATUS_SUCCESS   Successfully send frame to TX Module
+ */
 /*----------------------------------------------------------------------------*/
 uint32_t assocSendReAssocReqFrame(IN struct ADAPTER *prAdapter,
 				  IN struct STA_RECORD *prStaRec)
@@ -554,7 +583,9 @@ uint32_t assocSendReAssocReqFrame(IN struct ADAPTER *prAdapter,
 	/* 4 <1> Allocate a PKT_INFO_T for Authentication Frame */
 	fgIsReAssoc = prStaRec->fgIsReAssoc;
 
-	/* Init with MGMT Header Length + Length of Fixed Fields + Common IE Length */
+	/* Init with MGMT Header Length + Length of Fixed Fields
+	 *   + Common IE Length
+	 */
 	if (fgIsReAssoc) {
 		u2EstimatedFrameLen = MAC_TX_RESERVED_FIELD +
 		    WLAN_MAC_MGMT_HEADER_LEN +
@@ -563,7 +594,7 @@ uint32_t assocSendReAssocReqFrame(IN struct ADAPTER *prAdapter,
 		    CURR_AP_ADDR_FIELD_LEN +
 		    (ELEM_HDR_LEN + ELEM_MAX_LEN_SSID) +
 		    (ELEM_HDR_LEN + ELEM_MAX_LEN_SUP_RATES) + (ELEM_HDR_LEN +
-			       (RATE_NUM_SW - ELEM_MAX_LEN_SUP_RATES));
+				       (RATE_NUM_SW - ELEM_MAX_LEN_SUP_RATES));
 	} else {
 		u2EstimatedFrameLen = MAC_TX_RESERVED_FIELD +
 		    WLAN_MAC_MGMT_HEADER_LEN +
@@ -571,7 +602,7 @@ uint32_t assocSendReAssocReqFrame(IN struct ADAPTER *prAdapter,
 		    LISTEN_INTERVAL_FIELD_LEN +
 		    (ELEM_HDR_LEN + ELEM_MAX_LEN_SSID) +
 		    (ELEM_HDR_LEN + ELEM_MAX_LEN_SUP_RATES) + (ELEM_HDR_LEN +
-			       (RATE_NUM_SW - ELEM_MAX_LEN_SUP_RATES));
+				       (RATE_NUM_SW - ELEM_MAX_LEN_SUP_RATES));
 	}
 
 	/* + Extra IE Length */
@@ -597,8 +628,7 @@ uint32_t assocSendReAssocReqFrame(IN struct ADAPTER *prAdapter,
 				u2EstimatedExtraIELen +=
 				    txAssocReqIETable[i].u2EstimatedFixedIELen;
 			} else {
-				u2EstimatedExtraIELen +=
-				    (uint16_t)
+				u2EstimatedExtraIELen += (uint16_t)
 				    txAssocReqIETable
 				    [i].pfnCalculateVariableIELen(prAdapter,
 							  prStaRec->ucBssIndex,
@@ -614,8 +644,7 @@ uint32_t assocSendReAssocReqFrame(IN struct ADAPTER *prAdapter,
 			u2EstimatedExtraIELen +=
 			    txAssocReqIETable[i].u2EstimatedFixedIELen;
 		} else {
-			u2EstimatedExtraIELen +=
-			    (uint16_t)
+			u2EstimatedExtraIELen += (uint16_t)
 			    txAssocReqIETable[i].pfnCalculateVariableIELen
 			    (prAdapter, prStaRec->ucBssIndex, prStaRec);
 		}
@@ -633,7 +662,9 @@ uint32_t assocSendReAssocReqFrame(IN struct ADAPTER *prAdapter,
 		       "No PKT_INFO_T for sending (Re)Assoc Request.\n");
 		return WLAN_STATUS_RESOURCES;
 	}
-	/* 4 <2> Compose (Re)Association Request frame header and fixed fields in MSDU_INfO_T. */
+	/* 4 <2> Compose (Re)Association Request frame header and fixed fields
+	 *       in MSDU_INfO_T.
+	 */
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prStaRec->ucBssIndex);
 
 	/* Compose Header and Fixed Field */
@@ -655,7 +686,9 @@ uint32_t assocSendReAssocReqFrame(IN struct ADAPTER *prAdapter,
 		     WLAN_MAC_MGMT_HEADER_LEN + u2PayloadLen,
 		     saaFsmRunEventTxDone, MSDU_RATE_MODE_AUTO);
 
-	/* 4 <4> Compose the frame body's IEs of the (Re)Association Request  frame. */
+	/* 4 <4> Compose the frame body's IEs of the (Re)Association Request
+	 * frame.
+	 */
 	assocBuildReAssocReqFrameCommonIEs(prAdapter, prMsduInfo);
 
 	/* 4 <5> Compose IEs in MSDU_INFO_T */
@@ -723,11 +756,13 @@ uint32_t assocSendReAssocReqFrame(IN struct ADAPTER *prAdapter,
 	}
 #endif
 
-	/* TODO(Kevin): Also release the unused tail room of the composed MMPDU */
+	/* TODO(Kevin): Also release the unused tail room of the composed MMPDU
+	 */
 
 	nicTxConfigPktControlFlag(prMsduInfo, MSDU_CONTROL_FLAG_FORCE_TX, TRUE);
 
-	/* 4 <6> Enqueue the frame to send this (Re)Association request frame. */
+	/* 4 <6> Enqueue the frame to send this (Re)Association request frame.
+	 */
 	nicTxEnqueueMsdu(prAdapter, prMsduInfo);
 
 	return WLAN_STATUS_SUCCESS;
@@ -735,14 +770,15 @@ uint32_t assocSendReAssocReqFrame(IN struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* @brief This function will strictly check the TX (Re)Association Request frame for
-*        SAA event handling.
-*
-* @param[in] prMsduInfo         Pointer of MSDU_INFO_T
-*
-* @retval WLAN_STATUS_FAILURE   This is not the frame we should handle at current state.
-* @retval WLAN_STATUS_SUCCESS   This is the frame we should handle.
-*/
+ * @brief This function will strictly check the TX (Re)Association Request
+ *        frame for SAA event handling.
+ *
+ * @param[in] prMsduInfo         Pointer of MSDU_INFO_T
+ *
+ * @retval WLAN_STATUS_FAILURE   This is not the frame we should handle
+ *                               at current state.
+ * @retval WLAN_STATUS_SUCCESS   This is the frame we should handle.
+ */
 /*----------------------------------------------------------------------------*/
 uint32_t assocCheckTxReAssocReqFrame(IN struct ADAPTER *prAdapter,
 				     IN struct MSDU_INFO *prMsduInfo)
@@ -764,7 +800,8 @@ uint32_t assocCheckTxReAssocReqFrame(IN struct ADAPTER *prAdapter,
 		return WLAN_STATUS_INVALID_PACKET;
 
 	/* WLAN_GET_FIELD_16(&prAssocReqFrame->u2FrameCtrl, &u2TxFrameCtrl) */
-	u2TxFrameCtrl = prAssocReqFrame->u2FrameCtrl;	/* NOTE(Kevin): Optimized for ARM */
+	u2TxFrameCtrl = prAssocReqFrame->u2FrameCtrl;
+	/* NOTE(Kevin): Optimized for ARM */
 	u2TxFrameCtrl &= MASK_FRAME_TYPE;
 	if (prStaRec->fgIsReAssoc) {
 		if (u2TxFrameCtrl != MAC_FRAME_REASSOC_REQ)
@@ -782,14 +819,15 @@ uint32_t assocCheckTxReAssocReqFrame(IN struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* @brief This function will strictly check the TX (Re)Association Response frame for
-*        AAA event handling.
-*
-* @param[in] prMsduInfo         Pointer of MSDU_INFO_T
-*
-* @retval WLAN_STATUS_FAILURE   This is not the frame we should handle at current state.
-* @retval WLAN_STATUS_SUCCESS   This is the frame we should handle.
-*/
+ * @brief This function will strictly check the TX (Re)Association Response
+ *        frame for AAA event handling.
+ *
+ * @param[in] prMsduInfo         Pointer of MSDU_INFO_T
+ *
+ * @retval WLAN_STATUS_FAILURE   This is not the frame we should handle
+ *                               at current state.
+ * @retval WLAN_STATUS_SUCCESS   This is the frame we should handle.
+ */
 /*----------------------------------------------------------------------------*/
 uint32_t assocCheckTxReAssocRespFrame(IN struct ADAPTER *prAdapter,
 				      IN struct MSDU_INFO *prMsduInfo)
@@ -811,7 +849,8 @@ uint32_t assocCheckTxReAssocRespFrame(IN struct ADAPTER *prAdapter,
 		return WLAN_STATUS_INVALID_PACKET;
 
 	/* WLAN_GET_FIELD_16(&prAssocFrame->u2FrameCtrl, &u2TxFrameCtrl) */
-	u2TxFrameCtrl = prAssocRspFrame->u2FrameCtrl;	/* NOTE(Kevin): Optimized for ARM */
+	u2TxFrameCtrl = prAssocRspFrame->u2FrameCtrl;
+	/* NOTE(Kevin): Optimized for ARM */
 	u2TxFrameCtrl &= MASK_FRAME_TYPE;
 	if (prStaRec->fgIsReAssoc) {
 		if (u2TxFrameCtrl != MAC_FRAME_REASSOC_RSP)
@@ -829,15 +868,17 @@ uint32_t assocCheckTxReAssocRespFrame(IN struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* @brief This function will validate the incoming (Re)Association Frame and take out
-*        the status code.
-*
-* @param[in] prSwRfb                Pointer to SW RFB data structure.
-* @param[out] pu2StatusCode         Pointer to store the Status Code from Authentication.
-*
-* @retval WLAN_STATUS_FAILURE   This is not the frame we should handle at current state.
-* @retval WLAN_STATUS_SUCCESS   This is the frame we should handle.
-*/
+ * @brief This function will validate the incoming (Re)Association Frame
+ *        and take out the status code.
+ *
+ * @param[in] prSwRfb                Pointer to SW RFB data structure.
+ * @param[out] pu2StatusCode         Pointer to store the Status Code
+ *                                   from Authentication.
+ *
+ * @retval WLAN_STATUS_FAILURE       This is not the frame we should handle
+ *                                   at current state.
+ * @retval WLAN_STATUS_SUCCESS       This is the frame we should handle.
+ */
 /*----------------------------------------------------------------------------*/
 uint32_t
 assocCheckRxReAssocRspFrameStatus(IN struct ADAPTER *prAdapter,
@@ -874,7 +915,8 @@ assocCheckRxReAssocRspFrameStatus(IN struct ADAPTER *prAdapter,
 
 	/* 4 <2> Parse the Header of (Re)Association Resp Frame. */
 	/* WLAN_GET_FIELD_16(&prAssocRspFrame->u2FrameCtrl, &u2RxFrameCtrl); */
-	u2RxFrameCtrl = prAssocRspFrame->u2FrameCtrl;	/* NOTE(Kevin): Optimized for ARM */
+	u2RxFrameCtrl = prAssocRspFrame->u2FrameCtrl;
+	/* NOTE(Kevin): Optimized for ARM */
 	u2RxFrameCtrl &= MASK_FRAME_TYPE;
 	if (prStaRec->fgIsReAssoc) {
 		if (u2RxFrameCtrl != MAC_FRAME_REASSOC_RSP)
@@ -888,21 +930,27 @@ assocCheckRxReAssocRspFrameStatus(IN struct ADAPTER *prAdapter,
 
 	/* 4 <3> Parse the Fixed Fields of (Re)Association Resp Frame Body. */
 	/* WLAN_GET_FIELD_16(&prAssocRspFrame->u2CapInfo, &u2RxCapInfo); */
-	u2RxCapInfo = prAssocRspFrame->u2CapInfo;	/* NOTE(Kevin): Optimized for ARM */
+	u2RxCapInfo = prAssocRspFrame->u2CapInfo;
+	/* NOTE(Kevin): Optimized for ARM */
 
-	/* WLAN_GET_FIELD_16(&prAssocRspFrame->u2StatusCode, &u2RxStatusCode); */
-	u2RxStatusCode = prAssocRspFrame->u2StatusCode;	/* NOTE(Kevin): Optimized for ARM */
+	/* WLAN_GET_FIELD_16(&prAssocRspFrame->u2StatusCode, &u2RxStatusCode);
+	 */
+	u2RxStatusCode = prAssocRspFrame->u2StatusCode;
+	/* NOTE(Kevin): Optimized for ARM */
 
 	/* 4 <4> Check CAP_INFO */
-	/* NOTE(Kevin): CM suggest to add MGMT workaround for those APs didn't check
-	 * the CAP Privacy Bit to overcome a corner case that the Privacy Bit
-	 * of our SCAN result didn't consist with AP's Association Resp.
+	/* NOTE(Kevin): CM suggest to add MGMT workaround for those APs
+	 * didn't check the CAP Privacy Bit to overcome a corner case
+	 * that the Privacy Bit of our SCAN result didn't consist with
+	 * AP's Association Resp.
 	 */
 	if (u2RxStatusCode == STATUS_CODE_SUCCESSFUL) {
 #if CFG_SUPPORT_WAPI
 		if (prAdapter->rWifiVar.rConnSettings.fgWapiMode) {
-			/* WAPI AP allow the customer use WZC to join mode, the privacy bit is 0 */
-			/* even at WAI & WAPI_PSK mode, but the assoc respose set the privacy bit set 1 */
+			/* WAPI AP allow the customer use WZC to join mode,
+			 * the privacy bit is 0 even at WAI & WAPI_PSK mode,
+			 * but the assoc respose set the privacy bit set 1
+			 */
 			DBGLOG(SEC, TRACE,
 			       "Workaround the WAPI AP allow the customer to use WZC to join\n");
 		} else
@@ -916,8 +964,8 @@ assocCheckRxReAssocRspFrameStatus(IN struct ADAPTER *prAdapter,
 		}
 
 #if CFG_STRICT_CHECK_CAPINFO_PRIVACY
-		if ((prStaRec->u2CapInfo & CAP_INFO_PRIVACY) ^ (u2RxCapInfo &
-							CAP_INFO_PRIVACY))
+		if ((prStaRec->u2CapInfo & CAP_INFO_PRIVACY) ^
+			(u2RxCapInfo & CAP_INFO_PRIVACY))
 			u2RxStatusCode = STATUS_CODE_CAP_NOT_SUPPORTED;
 
 #endif
@@ -936,8 +984,11 @@ assocCheckRxReAssocRspFrameStatus(IN struct ADAPTER *prAdapter,
 	if (u2RxStatusCode == STATUS_CODE_SUCCESSFUL) {
 		prStaRec->u2CapInfo = u2RxCapInfo;
 
-		/* WLAN_GET_FIELD_16(&prAssocRspFrame->u2AssocId, &u2RxAssocId); */
-		u2RxAssocId = prAssocRspFrame->u2AssocId;	/* NOTE(Kevin): Optimized for ARM */
+		/* WLAN_GET_FIELD_16(&prAssocRspFrame->u2AssocId,
+		 *       &u2RxAssocId);
+		 */
+		u2RxAssocId = prAssocRspFrame->u2AssocId;
+		/* NOTE(Kevin): Optimized for ARM */
 
 		/*  20110715 Workaround for Kingnet 710 AP (Realtek 8186)
 		 *   This AP raises the bit 6&7 not bit 14&15 in AID field.
@@ -995,7 +1046,9 @@ assocCheckRxReAssocRspFrameStatus(IN struct ADAPTER *prAdapter,
 					    TX_ASSOCIATION_RETRY_TIMEOUT_TU) {
 						DBGLOG(SAA, INFO,
 						       "Update timer based on comeback duration\n");
-						/* ieee80211_reschedule_timer(wpa_s, ms); */
+						/* ieee80211_reschedule_timer(
+						 * wpa_s, ms);
+						 */
 					}
 				}
 				break;
@@ -1011,15 +1064,15 @@ assocCheckRxReAssocRspFrameStatus(IN struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief This function will compose the Disassociation frame
-*
-* @param[in] prStaRec               Pointer to the STA_RECORD_T
-* @param[in] pucBuffer              Pointer to the frame buffer.
-* @param[in] aucMACAddress     Given Our MAC Address.
-* @param[in] u2ReasonCode      The reason code of disassociation
-*
-* \return (none)
-*/
+ * \brief This function will compose the Disassociation frame
+ *
+ * @param[in] prStaRec               Pointer to the STA_RECORD_T
+ * @param[in] pucBuffer              Pointer to the frame buffer.
+ * @param[in] aucMACAddress          Given Our MAC Address.
+ * @param[in] u2ReasonCode           The reason code of disassociation
+ *
+ * \return (none)
+ */
 /*----------------------------------------------------------------------------*/
 static __KAL_INLINE__ void
 assocComposeDisassocFrame(IN struct STA_RECORD *prStaRec,
@@ -1050,24 +1103,28 @@ assocComposeDisassocFrame(IN struct STA_RECORD *prStaRec,
 	/* Fill the BSSID field with Target BSSID. */
 	COPY_MAC_ADDR(prDisAssocFrame->aucBSSID, prStaRec->aucMacAddr);
 
-	/* Clear the SEQ/FRAG_NO field(HW won't overide the FRAG_NO, so we need to clear it). */
+	/* Clear the SEQ/FRAG_NO field(HW won't overide the FRAG_NO,
+	 * so we need to clear it).
+	 */
 	prDisAssocFrame->u2SeqCtrl = 0;
 
-	/* 4 <2> Compose the frame body's fixed field part of the Disassociation frame. */
+	/* 4 <2> Compose the frame body's fixed field part of
+	 * the Disassociation frame.
+	 */
 	/* Fill the Reason Code field. */
 	WLAN_SET_FIELD_16(&prDisAssocFrame->u2ReasonCode, u2ReasonCode);
 }				/* end of assocComposeDisassocFrame() */
 
 /*----------------------------------------------------------------------------*/
 /*!
-* @brief This function will send the Disassociation frame
-*
-* @param[in] prStaRec           Pointer to the STA_RECORD_T
-* @param[in] u2ReasonCode  The reason code of disassociation
-*
-* @retval WLAN_STATUS_RESOURCES No available resource for frame composing.
-* @retval WLAN_STATUS_SUCCESS   Successfully send frame to TX Module
-*/
+ * @brief This function will send the Disassociation frame
+ *
+ * @param[in] prStaRec           Pointer to the STA_RECORD_T
+ * @param[in] u2ReasonCode  The reason code of disassociation
+ *
+ * @retval WLAN_STATUS_RESOURCES No available resource for frame composing.
+ * @retval WLAN_STATUS_SUCCESS   Successfully send frame to TX Module
+ */
 /*----------------------------------------------------------------------------*/
 uint32_t assocSendDisAssocFrame(IN struct ADAPTER *prAdapter,
 				IN struct STA_RECORD *prStaRec,
@@ -1096,7 +1153,9 @@ uint32_t assocSendDisAssocFrame(IN struct ADAPTER *prAdapter,
 		DBGLOG(SAA, WARN, "No PKT_INFO_T for sending DisAssoc.\n");
 		return WLAN_STATUS_RESOURCES;
 	}
-	/* 4 <2> Compose Disassociation  frame header and fixed fields in MSDU_INfO_T. */
+	/* 4 <2> Compose Disassociation  frame header and fixed fields
+	 *       in MSDU_INfO_T.
+	 */
 	pucMacAddress =
 	    GET_BSS_INFO_BY_INDEX(prAdapter,
 				  prStaRec->ucBssIndex)->aucOwnMacAddr;
@@ -1111,7 +1170,9 @@ uint32_t assocSendDisAssocFrame(IN struct ADAPTER *prAdapter,
 #if CFG_SUPPORT_802_11W
 	/* AP PMF */
 	if (rsnCheckBipKeyInstalled(prAdapter, prStaRec)) {
-		/* PMF certification 4.3.3.1, 4.3.3.2 send unprotected deauth reason 6/7 */
+		/* PMF certification 4.3.3.1, 4.3.3.2 send unprotected
+		 * deauth reason 6/7
+		 */
 		if (prStaRec->rPmfCfg.fgRxDeauthResp != TRUE) {
 
 			struct WLAN_DISASSOC_FRAME *prDisassocFrame;
@@ -1155,7 +1216,8 @@ uint32_t assocSendDisAssocFrame(IN struct ADAPTER *prAdapter,
 	DBGLOG(SAA, INFO, "ucTxSeqNum=%d ucStaRecIndex=%d u2ReasonCode=%d\n",
 	       prMsduInfo->ucTxSeqNum, prMsduInfo->ucStaRecIndex, u2ReasonCode);
 
-	/* 4 <4> Enqueue the frame to send this (Re)Association request frame. */
+	/* 4 <4> Enqueue the frame to send this (Re)Association request frame.
+	 */
 	nicTxEnqueueMsdu(prAdapter, prMsduInfo);
 
 	return WLAN_STATUS_SUCCESS;
@@ -1163,16 +1225,18 @@ uint32_t assocSendDisAssocFrame(IN struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* @brief This function will parse and process the incoming Disassociation frame
-*        if the given BSSID is matched.
-*
-* @param[in] prSwRfb            Pointer to SW RFB data structure.
-* @param[in] aucBSSID           Given BSSID
-* @param[out] pu2ReasonCode     Pointer to store the Reason Code from Deauthentication.
-*
-* @retval WLAN_STATUS_FAILURE   This is not the frame we should handle at current state.
-* @retval WLAN_STATUS_SUCCESS   This is the frame we should handle.
-*/
+ * @brief This function will parse and process the incoming Disassociation
+ *        frame if the given BSSID is matched.
+ *
+ * @param[in] prSwRfb            Pointer to SW RFB data structure.
+ * @param[in] aucBSSID           Given BSSID
+ * @param[out] pu2ReasonCode     Pointer to store the Reason Code from
+ *                               Deauthentication.
+ *
+ * @retval WLAN_STATUS_FAILURE   This is not the frame we should handle
+ *                               at current state.
+ * @retval WLAN_STATUS_SUCCESS   This is the frame we should handle.
+ */
 /*----------------------------------------------------------------------------*/
 uint32_t
 assocProcessRxDisassocFrame(IN struct ADAPTER *prAdapter,
@@ -1215,16 +1279,18 @@ assocProcessRxDisassocFrame(IN struct ADAPTER *prAdapter,
 #if CFG_SUPPORT_AAA
 /*----------------------------------------------------------------------------*/
 /*!
-* @brief This function will parse and process the incoming Association Req frame
-*        and return a Status Code.
-*
-* @param[in] prAdapter          Pointer to the Adapter structure.
-* @param[in] prSwRfb            Pointer to SW RFB data structure.
-* @param[out] pu2StatusCode     Pointer to store the Status Code for carried in Association Response.
-*
-* @retval WLAN_STATUS_FAILURE   This is not the frame we should handle at current state.
-* @retval WLAN_STATUS_SUCCESS   This is the frame we should handle.
-*/
+ * @brief This function will parse and process the incoming Association Req
+ *        frame and return a Status Code.
+ *
+ * @param[in] prAdapter          Pointer to the Adapter structure.
+ * @param[in] prSwRfb            Pointer to SW RFB data structure.
+ * @param[out] pu2StatusCode     Pointer to store the Status Code for carried
+ *                               in Association Response.
+ *
+ * @retval WLAN_STATUS_FAILURE   This is not the frame we should handle
+ *                               at current state.
+ * @retval WLAN_STATUS_SUCCESS   This is the frame we should handle.
+ */
 /*----------------------------------------------------------------------------*/
 uint32_t assocProcessRxAssocReqFrame(IN struct ADAPTER *prAdapter,
 				     IN struct SW_RFB *prSwRfb,
@@ -1261,8 +1327,11 @@ uint32_t assocProcessRxAssocReqFrame(IN struct ADAPTER *prAdapter,
 	/* 4 <1> locate the Association Req Frame. */
 	prAssocReqFrame = (struct WLAN_ASSOC_REQ_FRAME *)prSwRfb->pvHeader;
 
-	/* WLAN_GET_FIELD_16(&prAssocReqFrame->u2FrameCtrl, &u2RxFrameCtrl); */
-	u2RxFrameCtrl = prAssocReqFrame->u2FrameCtrl;	/* NOTE(Kevin): Optimized for ARM */
+	/* WLAN_GET_FIELD_16(&prAssocReqFrame->u2FrameCtrl,
+	 *    &u2RxFrameCtrl);
+	 */
+	u2RxFrameCtrl = prAssocReqFrame->u2FrameCtrl;
+	/* NOTE(Kevin): Optimized for ARM */
 	u2RxFrameCtrl &= MASK_FRAME_TYPE;
 
 	/* 4 <2> Parse the Header of Association Req Frame. */
@@ -1274,7 +1343,8 @@ uint32_t assocProcessRxAssocReqFrame(IN struct ADAPTER *prAdapter,
 		ucFixedFieldLength =
 		    CAP_INFO_FIELD_LEN + LISTEN_INTERVAL_FIELD_LEN;
 
-	if ((prSwRfb->u2PacketLen - prSwRfb->u2HeaderLen) <= ucFixedFieldLength) {
+	if ((prSwRfb->u2PacketLen - prSwRfb->u2HeaderLen)
+		<= ucFixedFieldLength) {
 		/* Length of this (re)association req is invalid, ignore it */
 		return WLAN_STATUS_FAILURE;
 	}
@@ -1308,7 +1378,8 @@ uint32_t assocProcessRxAssocReqFrame(IN struct ADAPTER *prAdapter,
 	/* 4 <3> Parse the Fixed Fields of Assoc Req Frame Body. */
 	prStaRec->u2CapInfo = prAssocReqFrame->u2CapInfo;
 
-#if 0				/* CFG_ENABLE_WIFI_DIRECT && CFG_ENABLE_HOTSPOT_PRIVACY_CHECK */
+#if 0
+/* CFG_ENABLE_WIFI_DIRECT && CFG_ENABLE_HOTSPOT_PRIVACY_CHECK */
 	if (prAdapter->fgIsP2PRegistered && IS_STA_P2P_TYPE(prStaRec)) {
 		if (((prStaRec->u2CapInfo & CAP_INFO_PRIVACY)
 		     && !kalP2PGetCipher(prAdapter->prGlueInfo))) {
@@ -1497,11 +1568,14 @@ uint32_t assocProcessRxAssocReqFrame(IN struct ADAPTER *prAdapter,
 				}
 			} else {
 				/* prStaRec->rSecInfo.fgAllowOnly1x = FALSE; */
-				/* if (kalP2PGetCipher(prAdapter->prGlueInfo)) { */
-				/* Only Allow 1x */
-				/* prStaRec->rSecInfo.fgAllowOnly1x = TRUE; */
-				/* break; */
-				/* } */
+				/* if (kalP2PGetCipher(
+				 *	prAdapter->prGlueInfo)) {
+				 *      // Only Allow 1x
+				 *        prStaRec->rSecInfo.fgAllowOnly1x =
+				 *		TRUE;
+				 *        break;
+				 *      }
+				 */
 			}
 		}
 #endif
@@ -1550,14 +1624,14 @@ uint32_t assocProcessRxAssocReqFrame(IN struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* @brief This function is used to compose Common Information Elements for Association
-*        Response Frame.
-*
-* @param[in] prMsduInfo     Pointer to the composed MSDU_INFO_T.
-* @param[in] prBssInfo      Pointer to the BSS_INFO_T.
-*
-* @return (none)
-*/
+ * @brief This function is used to compose Common Information Elements for
+ *        Association Response Frame.
+ *
+ * @param[in] prMsduInfo     Pointer to the composed MSDU_INFO_T.
+ * @param[in] prBssInfo      Pointer to the BSS_INFO_T.
+ *
+ * @return (none)
+ */
 /*----------------------------------------------------------------------------*/
 static __KAL_INLINE__ void
 assocBuildReAssocRespFrameCommonIEs(IN struct ADAPTER *prAdapter,
@@ -1613,20 +1687,21 @@ assocBuildReAssocRespFrameCommonIEs(IN struct ADAPTER *prAdapter,
 
 		prMsduInfo->u2FrameLength += IE_SIZE(pucBuffer);
 	}
-}				/* end of assocBuildReAssocRespFrameCommonIEs() */
+}			/* end of assocBuildReAssocRespFrameCommonIEs() */
 
 /*----------------------------------------------------------------------------*/
 /*!
-* @brief This function will compose the (Re)Association Response frame
-*
-* @param[in] prStaRec               Pointer to the STA_RECORD_T
-* @param[in] pucBuffer              Pointer to the frame buffer.
-* @param[in] aucBssid               Given BSSID.
-* @param[in] u2CapInfo              Capability Field of current BSS.
-* @param[in out] pu2PayloadLen      Return the length of the composed fixed fields
-*
-* @return (none)
-*/
+ * @brief This function will compose the (Re)Association Response frame
+ *
+ * @param[in] prStaRec               Pointer to the STA_RECORD_T
+ * @param[in] pucBuffer              Pointer to the frame buffer.
+ * @param[in] aucBssid               Given BSSID.
+ * @param[in] u2CapInfo              Capability Field of current BSS.
+ * @param[in out] pu2PayloadLen      Return the length of the composed
+ *                                   fixed fields
+ *
+ * @return (none)
+ */
 /*----------------------------------------------------------------------------*/
 static __KAL_INLINE__ void
 assocComposeReAssocRespFrameHeaderAndFF(IN struct STA_RECORD *prStaRec,
@@ -1648,7 +1723,8 @@ assocComposeReAssocRespFrameHeaderAndFF(IN struct STA_RECORD *prStaRec,
 	prAssocRspFrame = (struct WLAN_ASSOC_RSP_FRAME *)pucBuffer;
 	fgIsReAssoc = prStaRec->fgIsReAssoc;
 
-	/* 4 <1> Compose the frame header of the (Re)Association Request  frame. */
+	/* 4 <1> Compose the frame header of the (Re)Association Request frame.
+	 */
 	/* Fill the Frame Control field. */
 	if (fgIsReAssoc)
 		u2FrameCtrl = MAC_FRAME_REASSOC_RSP;
@@ -1656,7 +1732,8 @@ assocComposeReAssocRespFrameHeaderAndFF(IN struct STA_RECORD *prStaRec,
 		u2FrameCtrl = MAC_FRAME_ASSOC_RSP;
 
 	/* WLAN_SET_FIELD_16(&prAssocFrame->u2FrameCtrl, u2FrameCtrl); */
-	prAssocRspFrame->u2FrameCtrl = u2FrameCtrl;	/* NOTE(Kevin): Optimized for ARM */
+	prAssocRspFrame->u2FrameCtrl = u2FrameCtrl;
+	/* NOTE(Kevin): Optimized for ARM */
 
 	/* Fill the DA field with Target MAC Address. */
 	COPY_MAC_ADDR(prAssocRspFrame->aucDestAddr, prStaRec->aucMacAddr);
@@ -1667,35 +1744,45 @@ assocComposeReAssocRespFrameHeaderAndFF(IN struct STA_RECORD *prStaRec,
 	/* Fill the BSSID field with current BSSID. */
 	COPY_MAC_ADDR(prAssocRspFrame->aucBSSID, aucBSSID);
 
-	/* Clear the SEQ/FRAG_NO field(HW won't overide the FRAG_NO, so we need to clear it). */
+	/* Clear the SEQ/FRAG_NO field(HW won't overide the FRAG_NO,
+	 * so we need to clear it).
+	 */
 	prAssocRspFrame->u2SeqCtrl = 0;
 
-	/* 4 <2> Compose the frame body's common fixed field part of the (Re)Association Request  frame. */
+	/* 4 <2> Compose the frame body's common fixed field part of
+	 *       the (Re)Association Request  frame.
+	 */
 	/* Fill the Capability Information field. */
 	/* WLAN_SET_FIELD_16(&prAssocFrame->u2CapInfo, u2CapInfo); */
-	prAssocRspFrame->u2CapInfo = u2CapInfo;	/* NOTE(Kevin): Optimized for ARM */
+	prAssocRspFrame->u2CapInfo = u2CapInfo;
+	/* NOTE(Kevin): Optimized for ARM */
 
-	/* WLAN_SET_FIELD_16(&prAssocFrame->u2StatusCode, prStaRec->u2StatusCode); */
-	prAssocRspFrame->u2StatusCode = prStaRec->u2StatusCode;	/* NOTE(Kevin): Optimized for ARM */
+	/* WLAN_SET_FIELD_16(&prAssocFrame->u2StatusCode,
+	 *	prStaRec->u2StatusCode);
+	 */
+	prAssocRspFrame->u2StatusCode = prStaRec->u2StatusCode;
+	/* NOTE(Kevin): Optimized for ARM */
 
-	/* WLAN_SET_FIELD_16(&prAssocFrame->u2AssocId, ((prStaRec->u2AssocId & AID_MASK) | AID_MSB)); */
+	/* WLAN_SET_FIELD_16(&prAssocFrame->u2AssocId,
+	 *	((prStaRec->u2AssocId & AID_MASK) | AID_MSB));
+	 */
 	/* NOTE(Kevin): Optimized for ARM */
 	prAssocRspFrame->u2AssocId =
 	    ((prStaRec->u2AssocId & AID_MASK) | AID_MSB);
 
 	*pu2PayloadLen =
 	    (CAP_INFO_FIELD_LEN + STATUS_CODE_FIELD_LEN + AID_FIELD_LEN);
-}				/* end of assocComposeReAssocRespFrameHeaderAndFF() */
+}		/* end of assocComposeReAssocRespFrameHeaderAndFF() */
 
 /*----------------------------------------------------------------------------*/
 /*!
-* @brief This function will send the (Re)Association Resp frame
-*
-* @param[in] prStaRec           Pointer to the STA_RECORD_T
-*
-* @retval WLAN_STATUS_RESOURCES No available resource for frame composing.
-* @retval WLAN_STATUS_SUCCESS   Successfully send frame to TX Module
-*/
+ * @brief This function will send the (Re)Association Resp frame
+ *
+ * @param[in] prStaRec           Pointer to the STA_RECORD_T
+ *
+ * @retval WLAN_STATUS_RESOURCES No available resource for frame composing.
+ * @retval WLAN_STATUS_SUCCESS   Successfully send frame to TX Module
+ */
 /*----------------------------------------------------------------------------*/
 uint32_t assocSendReAssocRespFrame(IN struct ADAPTER *prAdapter,
 				   IN struct STA_RECORD *prStaRec)
@@ -1715,7 +1802,9 @@ uint32_t assocSendReAssocRespFrame(IN struct ADAPTER *prAdapter,
 	/* 4 <1> Allocate a PKT_INFO_T for Authentication Frame */
 	fgIsReAssoc = prStaRec->fgIsReAssoc;
 
-	/* Init with MGMT Header Length + Length of Fixed Fields + Common IE Length */
+	/* Init with MGMT Header Length + Length of Fixed Fields
+	 * + Common IE Length
+	 */
 	u2EstimatedFrameLen = MAC_TX_RESERVED_FIELD +
 	    WLAN_MAC_MGMT_HEADER_LEN +
 	    CAP_INFO_FIELD_LEN +
@@ -1736,8 +1825,7 @@ uint32_t assocSendReAssocRespFrame(IN struct ADAPTER *prAdapter,
 			    txAssocRespIETable[i].u2EstimatedFixedIELen;
 		} else if (txAssocRespIETable[i].pfnCalculateVariableIELen !=
 			   NULL) {
-			u2EstimatedExtraIELen +=
-			    (uint16_t)
+			u2EstimatedExtraIELen += (uint16_t)
 			    txAssocRespIETable[i].pfnCalculateVariableIELen
 			    (prAdapter, prStaRec->ucBssIndex, prStaRec);
 		}
@@ -1753,7 +1841,9 @@ uint32_t assocSendReAssocRespFrame(IN struct ADAPTER *prAdapter,
 		       "No PKT_INFO_T for sending (Re)Assoc Response.\n");
 		return WLAN_STATUS_RESOURCES;
 	}
-	/* 4 <2> Compose (Re)Association Request frame header and fixed fields in MSDU_INfO_T. */
+	/* 4 <2> Compose (Re)Association Request frame header and fixed fields
+	 *       in MSDU_INfO_T.
+	 */
 	if (prAdapter->prAisBssInfo != NULL) {
 		ASSERT(prStaRec->ucBssIndex !=
 		       prAdapter->prAisBssInfo->ucBssIndex);
@@ -1763,14 +1853,9 @@ uint32_t assocSendReAssocRespFrame(IN struct ADAPTER *prAdapter,
 
 	/* Compose Header and Fixed Field */
 	assocComposeReAssocRespFrameHeaderAndFF(prStaRec,
-						(uint8_t
-						 *) ((unsigned
-						      long)
-						     (prMsduInfo->prPacket) +
-						     MAC_TX_RESERVED_FIELD),
-						prBssInfo->aucBSSID,
-						prBssInfo->u2CapInfo,
-						&u2PayloadLen);
+		(uint8_t *) ((unsigned long)
+			(prMsduInfo->prPacket) + MAC_TX_RESERVED_FIELD),
+		prBssInfo->aucBSSID, prBssInfo->u2CapInfo, &u2PayloadLen);
 
 	/* 4 <3> Update information of MSDU_INFO_T */
 	TX_SET_MMPDU(prAdapter,
@@ -1781,7 +1866,9 @@ uint32_t assocSendReAssocRespFrame(IN struct ADAPTER *prAdapter,
 		     WLAN_MAC_MGMT_HEADER_LEN + u2PayloadLen,
 		     aaaFsmRunEventTxDone, MSDU_RATE_MODE_AUTO);
 
-	/* 4 <4> Compose the frame body's IEs of the (Re)Association Request  frame. */
+	/* 4 <4> Compose the frame body's IEs of the (Re)Association Request
+	 *       frame.
+	 */
 	assocBuildReAssocRespFrameCommonIEs(prAdapter, prMsduInfo, prBssInfo);
 
 	/* 4 <5> Compose IEs in MSDU_INFO_T */
@@ -1802,11 +1889,13 @@ uint32_t assocSendReAssocRespFrame(IN struct ADAPTER *prAdapter,
 
 #endif
 
-	/* TODO(Kevin): Also release the unused tail room of the composed MMPDU */
+	/* TODO(Kevin): Also release the unused tail room of the composed MMPDU
+	 */
 
 	nicTxConfigPktControlFlag(prMsduInfo, MSDU_CONTROL_FLAG_FORCE_TX, TRUE);
 
-	/* 4 <6> Enqueue the frame to send this (Re)Association request frame. */
+	/* 4 <6> Enqueue the frame to send this (Re)Association request frame.
+	 */
 	nicTxEnqueueMsdu(prAdapter, prMsduInfo);
 
 	DBGLOG(SAA, INFO,

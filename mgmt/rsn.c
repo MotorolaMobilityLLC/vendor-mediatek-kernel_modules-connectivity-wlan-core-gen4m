@@ -2436,12 +2436,13 @@ uint32_t rsnCheckBipKeyInstalled(IN struct ADAPTER
 		    ->eNetworkType == (uint8_t) NETWORK_TYPE_AIS) {
 			return prAdapter->rWifiVar.rAisSpecificBssInfo.
 			    fgBipKeyInstalled;
-		} else
-		    if ((GET_BSS_INFO_BY_INDEX(prAdapter, prStaRec->ucBssIndex)
-			 ->eNetworkType == NETWORK_TYPE_P2P)
-			&&
-			(GET_BSS_INFO_BY_INDEX(prAdapter, prStaRec->ucBssIndex)
-			 ->eCurrentOPMode == OP_MODE_ACCESS_POINT)) {
+		} else if ((GET_BSS_INFO_BY_INDEX(prAdapter,
+				prStaRec->ucBssIndex)
+				->eNetworkType == NETWORK_TYPE_P2P)
+				&&
+			(GET_BSS_INFO_BY_INDEX(prAdapter,
+				prStaRec->ucBssIndex)
+				->eCurrentOPMode == OP_MODE_ACCESS_POINT)) {
 			DBGLOG(RSN, INFO, "AP-STA PMF capable:%d\n",
 			       prStaRec->rPmfCfg.fgApplyPmf);
 			return prStaRec->rPmfCfg.fgApplyPmf;
