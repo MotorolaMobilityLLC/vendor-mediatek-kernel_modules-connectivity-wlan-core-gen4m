@@ -308,6 +308,8 @@ void aisFsmInit(IN struct ADAPTER *prAdapter)
 	/* Support AP Selection */
 	prAisFsmInfo->ucJoinFailCntAfterScan = 0;
 
+	prAisFsmInfo->fgIsScanning = FALSE;
+
 	/* 4 <1.1> Initiate FSM - Timer INIT */
 	cnmTimerInitTimer(prAdapter,
 			  &prAisFsmInfo->rBGScanTimer,
@@ -1500,6 +1502,7 @@ void aisFsmSteps(IN struct ADAPTER *prAdapter, enum ENUM_AIS_STATE eNextState)
 			mboxSendMsg(prAdapter, MBOX_ID_0, (struct MSG_HDR *) prScanReqMsg, MSG_SEND_METHOD_BUF);
 
 			prAisFsmInfo->fgTryScan = FALSE;	/* Will enable background sleep for infrastructure */
+			prAisFsmInfo->fgIsScanning = TRUE;
 			prAisFsmInfo->u4ScanChannelNum = 0;
 			kalMemZero(prAisFsmInfo->arChannel,
 				sizeof(prAisFsmInfo->arChannel));
@@ -1614,7 +1617,19 @@ void aisFsmSteps(IN struct ADAPTER *prAdapter, enum ENUM_AIS_STATE eNextState)
 					    prAisBssInfo,
 					    prAisBssInfo->prStaRecOfAP,
 					    (struct SW_RFB *) NULL, REASON_CODE_DEAUTH_LEAVING_BSS, aisDeauthXmitComplete);
-			cnmTimerStartTimer(prAdapter, &prAisFsmInfo->rDeauthDoneTimer, 100);
+			/* If it is scanning or BSS absent, HW may go away from
+			 * serving channel, which may cause driver be not able
+			 * to TX mgmt frame. So we need to start a longer timer
+			 * to wait HW return to serving channel.
+			 * We set the time out value to 1 second because
+			 * it is long enough to return to serving channel
+			 * in most cases, and disconnection delay is seamless
+			 * to end-user even time out.
+			 */
+			cnmTimerStartTimer(prAdapter,
+				&prAisFsmInfo->rDeauthDoneTimer,
+				(prAisFsmInfo->fgIsScanning
+				 || prAisBssInfo->fgIsNetAbsent) ? 1000 : 100);
 			break;
 
 		case AIS_STATE_REQ_REMAIN_ON_CHANNEL:
@@ -1816,6 +1831,7 @@ void aisFsmRunEventScanDone(IN struct ADAPTER *prAdapter, IN struct MSG_HDR *prM
 			"SEQ NO of AIS SCN DONE MSG is not matched %u %u\n",
 			ucSeqNumOfCompMsg, prAisFsmInfo->ucSeqNumOfScanReq);
 	} else {
+		prAisFsmInfo->fgIsScanning = FALSE;
 		cnmTimerStopTimer(prAdapter, &prAisFsmInfo->rScanDoneTimer);
 		switch (prAisFsmInfo->eCurrentState) {
 		case AIS_STATE_SCAN:
