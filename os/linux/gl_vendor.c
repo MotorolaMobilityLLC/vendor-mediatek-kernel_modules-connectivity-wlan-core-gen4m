@@ -947,7 +947,7 @@ int mtk_cfg80211_vendor_event_rssi_beyond_range(
 
 	skb = cfg80211_vendor_event_alloc(wiphy, wdev,
 		sizeof(struct PARAM_RSSI_MONITOR_EVENT),
-		WIFI_EVENT_RSSI_MONITOR, GFP_KERNEL);
+		WIFI_EVENT_RSSI_MONITOR, GFP_ATOMIC);
 	if (!skb) {
 		DBGLOG(REQ, ERROR, "%s allocate skb failed\n", __func__);
 		return -ENOMEM;
