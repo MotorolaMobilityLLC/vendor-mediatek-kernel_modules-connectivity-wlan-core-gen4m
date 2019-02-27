@@ -9627,6 +9627,9 @@ wlanGetSupportNss(IN struct ADAPTER *prAdapter,
 	struct BSS_INFO *prBssInfo;
 	struct BSS_DESC *prBssDesc;
 	uint8_t ucRetValNss = prAdapter->rWifiVar.ucNSS;
+#if CFG_SISO_SW_DEVELOP
+	enum ENUM_BAND eBand = BAND_NULL;
+#endif
 
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
 	if (IS_BSS_APGO(prBssInfo)) {
@@ -9657,12 +9660,7 @@ wlanGetSupportNss(IN struct ADAPTER *prAdapter,
 	if (ucRetValNss > prAdapter->rWifiVar.ucNSS)
 		ucRetValNss = prAdapter->rWifiVar.ucNSS;
 
-	return ucRetValNss;
-
-#if 0 /* CFG_SISO_SW_DEVELOP */
-	struct BSS_INFO *prBssInfo;
-	enum ENUM_BAND eBand = BAND_NULL;
-
+#if CFG_SISO_SW_DEVELOP
 	if (ucBssIndex > prAdapter->ucHwBssIdNum) {
 		DBGLOG(SW4, INFO, "Invalid BssInfo index[%u], skip dump!\n",
 		       ucBssIndex);
@@ -9684,9 +9682,9 @@ wlanGetSupportNss(IN struct ADAPTER *prAdapter,
 		ucRetValNss = 1;
 	DBGLOG(INIT, INFO, "Nss=%d,G=%d,B=%d,Bss=%d\n",
 	       ucRetValNss, prBssInfo->fgIsGranted, eBand, ucBssIndex);
+#endif
 
 	return ucRetValNss;
-#endif
 }
 
 #if CFG_SUPPORT_LOWLATENCY_MODE

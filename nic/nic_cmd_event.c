@@ -2936,6 +2936,8 @@ uint32_t nicCfgChipCapPhyCap(IN struct ADAPTER *prAdapter,
 	prAdapter->rWifiVar.ucRxStbc &= prPhyCap->ucRxStbc;
 	wlanCfgSetUint32(prAdapter, "StbcRx", prAdapter->rWifiVar.ucRxStbc);
 
+	prAdapter->rWifiFemCfg.u2WifiPath = prPhyCap->ucWifiPath;
+
 	DBGLOG(INIT, TRACE,
 		"Vht [%u], 5gBand [%d], Nss [%d], Dbdc [%d]\n",
 			prPhyCap->ucVht,
@@ -2944,11 +2946,12 @@ uint32_t nicCfgChipCapPhyCap(IN struct ADAPTER *prAdapter,
 			prPhyCap->ucDbdc);
 
 	DBGLOG(INIT, TRACE,
-		"TxLdpc [%u], RxLdpc [%u], StbcTx [%u], StbcRx [%u]\n",
+		"TxLdpc [%u], RxLdpc [%u], StbcTx [%u], StbcRx [%u], WifiPath [%x]\n",
 			prPhyCap->ucTxLdpc,
 			prPhyCap->ucRxLdpc,
 			prPhyCap->ucTxStbc,
-			prPhyCap->ucRxStbc);
+			prPhyCap->ucRxStbc,
+			prPhyCap->ucWifiPath);
 
 
 	return WLAN_STATUS_SUCCESS;
