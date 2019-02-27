@@ -378,6 +378,10 @@ uint32_t wlanAdapterStart(IN struct ADAPTER *prAdapter, IN struct REG_INFO *prRe
 			DBGLOG(INIT, ERROR, "nicAllocateAdapterMemory Error!\n");
 			u4Status = WLAN_STATUS_FAILURE;
 			eFailReason = ALLOC_ADAPTER_MEM_FAIL;
+#if CFG_ENABLE_KEYWORD_EXCEPTION_MECHANISM
+			mtk_wcn_wmt_assert_keyword(WMTDRV_TYPE_WIFI,
+				"[Wi-Fi On] nicAllocateAdapterMemory Error!");
+#endif
 			break;
 		}
 
@@ -395,6 +399,10 @@ uint32_t wlanAdapterStart(IN struct ADAPTER *prAdapter, IN struct REG_INFO *prRe
 			DBGLOG(INIT, ERROR, "nicpmSetDriverOwn() failed!\n");
 			u4Status = WLAN_STATUS_FAILURE;
 			eFailReason = DRIVER_OWN_FAIL;
+#if CFG_ENABLE_KEYWORD_EXCEPTION_MECHANISM
+			mtk_wcn_wmt_assert_keyword(WMTDRV_TYPE_WIFI,
+				"[Wi-Fi On] nicpmSetDriverOwn() failed!");
+#endif
 			break;
 		}
 		/* 4 <1> Initialize the Adapter */
@@ -908,9 +916,14 @@ uint32_t wlanCheckWifiFunc(IN struct ADAPTER *prAdapter, IN u_int8_t fgRdyChk)
 			HAL_WIFI_FUNC_GET_STATUS(prAdapter, u4Result);
 			DBGLOG(INIT, ERROR, "Waiting for %s: Timeout, Status=0x%08x\n",
 				fgRdyChk?"ready bit":"power off", u4Result);
-			GL_RESET_TRIGGER(prAdapter, RST_FLAG_DO_CORE_DUMP | RST_FLAG_PREVENT_POWER_OFF);
+#if CFG_ENABLE_KEYWORD_EXCEPTION_MECHANISM
+			mtk_wcn_wmt_assert_keyword(WMTDRV_TYPE_WIFI,
+				"[Wi-Fi] [Read WCIR_WLAN_READY fail!]");
+#else
+			GL_RESET_TRIGGER(prAdapter, RST_FLAG_DO_CORE_DUMP |
+					RST_FLAG_PREVENT_POWER_OFF);
+#endif
 			u4Status = WLAN_STATUS_FAILURE;
-
 			break;
 		}
 			kalMsleep(CFG_RESPONSE_POLLING_DELAY);
@@ -2258,6 +2271,10 @@ uint32_t wlanSendNicPowerCtrlCmd(IN struct ADAPTER *prAdapter, IN uint8_t ucPowe
 	prCmdInfo = cmdBufAllocateCmdInfo(prAdapter, (CMD_HDR_SIZE + sizeof(struct CMD_NIC_POWER_CTRL)));
 	if (!prCmdInfo) {
 		DBGLOG(INIT, ERROR, "Allocate CMD_INFO_T ==> FAILED.\n");
+#if CFG_ENABLE_KEYWORD_EXCEPTION_MECHANISM
+		mtk_wcn_wmt_assert_keyword(WMTDRV_TYPE_WIFI,
+			"[Wi-Fi Off] Allocate CMD_INFO_T ==> FAILED.");
+#endif
 		return WLAN_STATUS_FAILURE;
 	}
 
@@ -2313,6 +2330,10 @@ uint32_t wlanSendNicPowerCtrlCmd(IN struct ADAPTER *prAdapter, IN uint8_t ucPowe
 			       "Fail to get TX resource return within timeout\n");
 			status = WLAN_STATUS_FAILURE;
 			prAdapter->fgIsChipNoAck = TRUE;
+#if CFG_ENABLE_KEYWORD_EXCEPTION_MECHANISM
+				mtk_wcn_wmt_assert_keyword(WMTDRV_TYPE_WIFI,
+					"[Wi-Fi Off] Fail to get TX resource return within timeout");
+#endif
 			break;
 		}
 
@@ -2325,6 +2346,10 @@ uint32_t wlanSendNicPowerCtrlCmd(IN struct ADAPTER *prAdapter, IN uint8_t ucPowe
 	if (nicTxCmd(prAdapter, prCmdInfo, ucTC) != WLAN_STATUS_SUCCESS) {
 		DBGLOG(INIT, ERROR,
 		       "Fail to transmit CMD_NIC_POWER_CTRL command\n");
+#if CFG_ENABLE_KEYWORD_EXCEPTION_MECHANISM
+			mtk_wcn_wmt_assert_keyword(WMTDRV_TYPE_WIFI,
+				"[Wi-Fi Off] Fail to transmit CMD_NIC_POWER_CTRL command");
+#endif
 		status = WLAN_STATUS_FAILURE;
 	}
 
