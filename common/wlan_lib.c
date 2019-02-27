@@ -3886,6 +3886,9 @@ uint32_t wlanQueryNicCapability(IN struct ADAPTER *prAdapter)
 	prAdapter->rWifiVar.ucP2pGcVht &=
 		(!(prEventNicCapability->ucHwNotSupportAC));
 
+	prAdapter->rWifiVar.ucHwNotSupportAC =
+				prEventNicCapability->ucHwNotSupportAC;
+
 	prAdapter->u4FwCompileFlag0 = prEventNicCapability->u4CompileFlag0;
 	prAdapter->u4FwCompileFlag1 = prEventNicCapability->u4CompileFlag1;
 	prAdapter->u4FwFeatureFlag0 = prEventNicCapability->u4FeatureFlag0;
