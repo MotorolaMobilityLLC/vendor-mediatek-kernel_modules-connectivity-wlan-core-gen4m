@@ -41,8 +41,12 @@ int32_t kalBoostCpu(IN struct ADAPTER *prAdapter,
 		    IN uint32_t u4BoostCpuTh)
 {
 	struct ppm_limit_data freq_to_set[MAX_CLUSTER_NUM];
-	int32_t i = 0, i4Freq = -1, ret = 0;
+	int32_t i = 0, i4Freq = -1;
+
+#if defined(CONFIG_UCLAMP_TASK) && defined(CONFIG_UCLAMP_TASK_GROUP)
+	int32_t ret = 0;
 	struct GLUE_INFO *prGlueInfo;
+#endif /* CONFIG_UCLAMP_TASK & CONFIG_UCLAMP_TASK_GROUP */
 
 #ifdef WLAN_FORCE_DDR_OPP
 	static struct pm_qos_request wifi_qos_request;
@@ -54,6 +58,7 @@ int32_t kalBoostCpu(IN struct ADAPTER *prAdapter,
 	ASSERT(u4ClusterNum <= MAX_CLUSTER_NUM);
 	/* ACAO, we dont have to set core number */
 
+#if defined(CONFIG_UCLAMP_TASK) && defined(CONFIG_UCLAMP_TASK_GROUP)
 	/*  5, stands for 250Mbps */
 	if (u4TarPerfLevel >= 5) {
 		prGlueInfo = prAdapter->prGlueInfo;
@@ -84,7 +89,7 @@ int32_t kalBoostCpu(IN struct ADAPTER *prAdapter,
 		set_task_uclamp(prAdapter->prGlueInfo->u4TxThreadPid, 0);
 		update_eas_uclamp_min(EAS_UCLAMP_KIR_WIFI, CGROUP_TA, 0);
 	}
-
+#endif /* CONFIG_UCLAMP_TASK & CONFIG_UCLAMP_TASK_GROUP */
 	/*  Default u4BoostCpuTh set as 8, stands for 450Mbps */
 	if (u4TarPerfLevel >= u4BoostCpuTh) {
 		/* Boost CPU freq */
