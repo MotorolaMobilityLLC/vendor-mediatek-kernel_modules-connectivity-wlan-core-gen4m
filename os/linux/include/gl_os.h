@@ -658,7 +658,7 @@ struct GLUE_INFO {
 	struct cfg80211_scan_request *prScanRequest;
 
 	/* for cfg80211 scheduled scan */
-	struct cfg80211_sched_scan_request *prSchedScanRequest;
+	struct PARAM_SCHED_SCAN_REQUEST *prSchedScanRequest;
 
 	/* to indicate registered or not */
 	u_int8_t fgIsRegistered;
@@ -1258,7 +1258,6 @@ extern void connectivity_arch_setup_dma_ops(
 	u64 size, struct iommu_ops *iommu,
 	bool coherent);
 #endif
-
 
 typedef uint8_t (*file_buf_handler) (void *ctx,
 			const char __user *buf,

@@ -1197,6 +1197,9 @@ void scanRemoveBssDescByBssid(IN struct ADAPTER *prAdapter,
 	struct LINK *prFreeBSSDescList;
 	struct BSS_DESC *prBssDesc = (struct BSS_DESC *) NULL;
 	struct BSS_DESC *prBSSDescNext;
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct cfg80211_bss *bss = NULL;
+	struct ieee80211_channel *prChannel = NULL;
 
 	ASSERT(prAdapter);
 	ASSERT(aucBSSID);
@@ -1204,12 +1207,19 @@ void scanRemoveBssDescByBssid(IN struct ADAPTER *prAdapter,
 	prScanInfo = &(prAdapter->rWifiVar.rScanInfo);
 	prBSSDescList = &prScanInfo->rBSSDescList;
 	prFreeBSSDescList = &prScanInfo->rFreeBSSDescList;
+	prGlueInfo = prAdapter->prGlueInfo;
 
 	/* Check if such BSS Descriptor exists in a valid list */
 	LINK_FOR_EACH_ENTRY_SAFE(prBssDesc, prBSSDescNext, prBSSDescList,
 		rLinkEntry, struct BSS_DESC) {
 
 		if (EQUAL_MAC_ADDR(prBssDesc->aucBSSID, aucBSSID)) {
+			prChannel = ieee80211_get_channel(
+						priv_to_wiphy(prGlueInfo),
+						ieee80211_channel_to_frequency(
+						prBssDesc->ucChannelNum,
+						prBssDesc->eBand));
+
 			scanRemoveBssDescFromList(prBSSDescList,
 				prBssDesc,
 				prAdapter);
@@ -1224,6 +1234,30 @@ void scanRemoveBssDescByBssid(IN struct ADAPTER *prAdapter,
 			 */
 		}
 	}
+
+#if (KERNEL_VERSION(4, 1, 0) <= CFG80211_VERSION_CODE)
+	bss = cfg80211_get_bss(priv_to_wiphy(prGlueInfo),
+			prChannel, /* channel */
+			aucBSSID,
+			NULL, /* ssid */
+			0, /* ssid length */
+			IEEE80211_BSS_TYPE_ESS,
+			IEEE80211_PRIVACY_ANY);
+#else
+	bss = cfg80211_get_bss(priv_to_wiphy(prGlueInfo),
+			prChannel, /* channel */
+			aucBSSID,
+			NULL, /* ssid */
+			0, /* ssid length */
+			WLAN_CAPABILITY_ESS,
+			WLAN_CAPABILITY_ESS);
+#endif
+
+	if (bss != NULL) {
+		cfg80211_unlink_bss(priv_to_wiphy(prAdapter->prGlueInfo), bss);
+		cfg80211_put_bss(priv_to_wiphy(prAdapter->prGlueInfo), bss);
+	}
+
 }	/* end of scanRemoveBssDescByBssid() */
 
 /*----------------------------------------------------------------------------*/
@@ -2833,12 +2867,12 @@ uint32_t scanProcessBeaconAndProbeResp(IN struct ADAPTER *prAdapter,
 		/* 4 <3> Send SW_RFB_T to HIF when we perform SCAN for HOST */
 		if (prBssDesc->eBSSType == BSS_TYPE_INFRASTRUCTURE
 			|| prBssDesc->eBSSType == BSS_TYPE_IBSS) {
-			u_int8_t fgAddToScanResult = FALSE;
-
 			/* for AIS, send to host */
 			prAdapter->rWlanInfo.u4ScanDbgTimes3++;
 			if (prScanInfo->eCurrentState == SCAN_STATE_SCANNING
 				|| prScanInfo->fgSchedScanning) {
+				u_int8_t fgAddToScanResult = FALSE;
+
 				fgAddToScanResult
 					= scanCheckBssIsLegal(prAdapter,
 						prBssDesc);
@@ -2848,11 +2882,6 @@ uint32_t scanProcessBeaconAndProbeResp(IN struct ADAPTER *prAdapter,
 					rStatus = scanAddScanResult(prAdapter,
 						prBssDesc, prSwRfb);
 				}
-			}
-			if (fgAddToScanResult == FALSE) {
-				kalMemZero(prBssDesc->aucRawBuf,
-					CFG_RAW_BUFFER_SIZE);
-				prBssDesc->u2RawLength = 0;
 			}
 		}
 #if CFG_ENABLE_WIFI_DIRECT

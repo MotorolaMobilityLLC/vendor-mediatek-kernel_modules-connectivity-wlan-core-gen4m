@@ -927,7 +927,6 @@
  * Flags of SCHEDULE SCAN SUPPORT
  *------------------------------------------------------------------------------
  */
-#define CFG_SUPPORT_PNO                    (1)
 #define CFG_SUPPORT_SCHED_SCAN             (1)
 #define SCHED_SCAN_CMD_VERSION             (1)
 
@@ -935,10 +934,6 @@
 #define CFG_SCAN_HIDDEN_SSID_MAX_NUM       (10)
 /* this value should be aligned to auMatchSsid in struct CMD_SCHED_SCAN_REQ */
 #define CFG_SCAN_SSID_MATCH_MAX_NUM        (16)
-
-#if CFG_SUPPORT_PNO != CFG_SUPPORT_SCHED_SCAN
-#error Value of CFG_SUPPORT_SCHED_SCAN and CFG_SUPPORT_PNO should be the same
-#endif
 
 /*------------------------------------------------------------------------------
  * Full2Partial Scan SUPPORT

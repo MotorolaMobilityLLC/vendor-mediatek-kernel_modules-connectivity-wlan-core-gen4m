@@ -1311,6 +1311,9 @@ kalIndicateStatusAndComplete(IN struct GLUE_INFO
 					cfg80211_unlink_bss(
 						priv_to_wiphy(prGlueInfo),
 						bss_others);
+					cfg80211_put_bss(
+						priv_to_wiphy(prGlueInfo),
+						bss_others);
 				} else
 					break;
 			}
@@ -3288,7 +3291,6 @@ void kalProcessTxReq(struct GLUE_INFO *prGlueInfo,
 				break;
 			}
 		}
-
 		if (wlanGetTxPendingFrameCount(prGlueInfo->prAdapter) > 0)
 			wlanTxPendingPackets(prGlueInfo->prAdapter,
 					     pfgNeedHwAccess);
@@ -3335,9 +3337,9 @@ int hif_thread(void *data)
 
 		if (prGlueInfo->ulFlag & GLUE_FLAG_HALT
 #if CFG_CHIP_RESET_SUPPORT
-		    || kalIsResetting()
+			|| kalIsResetting()
 #endif
-		    ) {
+			) {
 			DBGLOG(INIT, INFO, "hif_thread should stop now...\n");
 			break;
 		}
@@ -3388,9 +3390,9 @@ int hif_thread(void *data)
 			prGlueInfo->prAdapter->fgIsIntEnable = FALSE;
 			if (prGlueInfo->ulFlag & GLUE_FLAG_HALT
 #if CFG_CHIP_RESET_SUPPORT
-			    || kalIsResetting()
+				|| kalIsResetting()
 #endif
-			   ) {
+				) {
 				/* Should stop now... skip pending interrupt */
 				DBGLOG(INIT, INFO,
 				       "ignore pending interrupt\n");
@@ -3480,9 +3482,9 @@ int rx_thread(void *data)
 
 		if (prGlueInfo->ulFlag & GLUE_FLAG_HALT
 #if CFG_CHIP_RESET_SUPPORT
-		    || kalIsResetting()
+			|| kalIsResetting()
 #endif
-		   ) {
+			) {
 			DBGLOG(INIT, INFO, "rx_thread should stop now...\n");
 			break;
 		}
@@ -3612,7 +3614,11 @@ int main_thread(void *data)
 			p2pSetMulticastListWorkQueueWrapper(prGlueInfo);
 #endif
 
-		if (prGlueInfo->ulFlag & GLUE_FLAG_HALT) {
+		if (prGlueInfo->ulFlag & GLUE_FLAG_HALT
+#if CFG_CHIP_RESET_SUPPORT
+			|| kalIsResetting()
+#endif
+			) {
 			DBGLOG(INIT, INFO, "%s should stop now...\n",
 			       KAL_GET_CURRENT_THREAD_NAME());
 			break;
@@ -3667,7 +3673,11 @@ int main_thread(void *data)
 				prGlueInfo->u4OsMgmtFrameFilter;
 		}
 
-		if (prGlueInfo->ulFlag & GLUE_FLAG_HALT) {
+		if (prGlueInfo->ulFlag & GLUE_FLAG_HALT
+#if CFG_CHIP_RESET_SUPPORT
+			|| kalIsResetting()
+#endif
+			) {
 			DBGLOG(INIT, INFO, "%s should stop now...\n",
 			       KAL_GET_CURRENT_THREAD_NAME());
 			break;
@@ -3722,7 +3732,11 @@ int main_thread(void *data)
 			prGlueInfo->prAdapter->fgIsIntEnable = FALSE;
 			/* wlanISR(prGlueInfo->prAdapter, TRUE); */
 
-			if (prGlueInfo->ulFlag & GLUE_FLAG_HALT) {
+			if (prGlueInfo->ulFlag & GLUE_FLAG_HALT
+#if CFG_CHIP_RESET_SUPPORT
+				|| kalIsResetting()
+#endif
+				) {
 				/* Should stop now... skip pending interrupt */
 				DBGLOG(INIT, INFO,
 					"ignore pending interrupt\n");

@@ -77,7 +77,6 @@
 #include "nic_init_cmd_event.h"
 #include "fw_dl.h"
 
-
 /*******************************************************************************
  *                              C O N S T A N T S
  *******************************************************************************
@@ -1102,7 +1101,8 @@ wlanSetInformation(IN struct ADAPTER *prAdapter,
 		   OUT uint32_t *pu4SetInfoLen);
 
 uint32_t wlanAdapterStart(IN struct ADAPTER *prAdapter,
-			  IN struct REG_INFO *prRegInfo);
+			  IN struct REG_INFO *prRegInfo,
+			  IN const u_int8_t bAtResetFlow);
 
 uint32_t wlanAdapterStop(IN struct ADAPTER *prAdapter);
 
@@ -1492,3 +1492,9 @@ uint32_t wlanDecimalStr2Hexadecimals(uint8_t *pucDecimalStr, uint16_t *pu2Out);
 #if CFG_SUPPORT_REPORT_MISC
 void wlanGetReportMisc(IN struct ADAPTER *prAdapter);
 #endif
+
+u_int8_t wlanIsDriverReady(IN struct GLUE_INFO *prGlueInfo);
+void wlanOffUninitNicModule(IN struct ADAPTER *prAdapter,
+				IN const u_int8_t bAtResetFlow);
+void wlanOffClearAllQueues(IN struct ADAPTER *prAdapter);
+
