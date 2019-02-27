@@ -314,8 +314,8 @@ kalDevPortRead(IN struct GLUE_INFO *prGlueInfo,
 			"Skip Rx packet, SDL0[%u] > SwRfb max len[%u]\n",
 			pRxD->SDLen0, u4Len);
 
-	DBGLOG(HAL, TRACE, "Rx Event\n");
-	DBGLOG_MEM32(HAL, TRACE, ((struct sk_buff *)pRxCell->pPacket)->data,
+	DBGLOG(HAL, LOUD, "Rx Event\n");
+	DBGLOG_MEM32(HAL, LOUD, ((struct sk_buff *)pRxCell->pPacket)->data,
 		     pRxD->SDLen0);
 
 	prDmaBuf->AllocVa = ((struct sk_buff *)pRxCell->pPacket)->data;
