@@ -2525,7 +2525,6 @@ static int32_t HQA_GetTxPower(struct net_device *prNetDev, IN union iwreq_data *
 					wlanoidQueryGetTxPower,
 					&rGetTxPower,
 					sizeof(struct PARAM_CUSTOM_GET_TX_POWER), TRUE, TRUE, TRUE, &u4BufLen);
-
 		u4TxTargetPower = prGlueInfo->prAdapter->u4GetTxPower;
 		u4TxTargetPower = ntohl(u4TxTargetPower);
 		kalMemCopy(HqaCmdFrame->Data + 6, &u4TxTargetPower, 4);
@@ -6397,7 +6396,7 @@ static int32_t HQA_CapWiFiSpectrum(struct net_device *prNetDev,
 	uint32_t u4Band = 0;
 	uint32_t u4WFNum;
 	uint32_t u4IQ;
-	uint32_t u4DataLen = 0;
+	uint32_t u4DataLen = 0, u4TempLen = 0;
 	int32_t i4Ret = 0;
 
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
@@ -6447,6 +6446,7 @@ static int32_t HQA_CapWiFiSpectrum(struct net_device *prNetDev,
 			prAteOps->setICapStart(prGlueInfo, u4Trigger, u4RingCapEn, u4Event, u4Node,
 					       u4Len, u4StopCycle, u4BW, u4MacTriggerEvent,
 					       u4SourceAddrLSB, u4SourceAddrMSB, u4Band);
+			prGlueInfo->prAdapter->fgIcapMode = TRUE;
 		} else
 			i4Ret = 1;
 
@@ -6468,20 +6468,37 @@ static int32_t HQA_CapWiFiSpectrum(struct net_device *prNetDev,
 			DBGLOG(RFTEST, INFO,
 			       "u4WFNum = %d, u4IQ = %d\n", u4WFNum, u4IQ);
 
-			u4DataLen = prAteOps->getICapIQData(prGlueInfo, HqaCmdFrame->Data + 2 + 4 * 4, u4IQ, u4WFNum);
+			u4DataLen = prAteOps->getICapIQData(
+						prGlueInfo,
+						&HqaCmdFrame->Data[2 + 4 * 4],
+						u4IQ,
+						u4WFNum);
+			u4TempLen = u4DataLen;
 			u4Control = ntohl(u4Control);
-			kalMemCopy(HqaCmdFrame->Data + 2 + 4 * 0, (uint8_t *)&u4Control, sizeof(u4Control));
+			kalMemCopy(HqaCmdFrame->Data + 2 + 4 * 0,
+					   (uint8_t *)&u4Control,
+					   sizeof(u4Control));
 			u4WFNum = ntohl(u4WFNum);
-			kalMemCopy(HqaCmdFrame->Data + 2 + 4 * 1, (uint8_t *)&u4WFNum, sizeof(u4WFNum));
+			kalMemCopy(HqaCmdFrame->Data + 2 + 4 * 1,
+					   (uint8_t *)&u4WFNum,
+					   sizeof(u4WFNum));
 			u4IQ = ntohl(u4IQ);
-			kalMemCopy(HqaCmdFrame->Data + 2 + 4 * 2, (uint8_t *)&u4IQ, sizeof(u4IQ));
-			u4DataLen = ntohl(u4DataLen);
-			kalMemCopy(HqaCmdFrame->Data + 2 + 4 * 3, (uint8_t *)&u4DataLen, sizeof(u4DataLen));
-		} else
-			i4Ret = 0;
+			kalMemCopy(HqaCmdFrame->Data + 2 + 4 * 2,
+					   (uint8_t *)&u4IQ,
+					   sizeof(u4IQ));
+			u4TempLen = ntohl(u4DataLen);
+			kalMemCopy(HqaCmdFrame->Data + 2 + 4 * 3,
+					   (uint8_t *)&u4TempLen,
+					   sizeof(u4DataLen));
 
+		}
+
+		i4Ret = 0;
 		/* Get IQ Data and transmit them to UI DLL */
-		ResponseToQA(HqaCmdFrame, prIwReqData, 2 + 4 * 4 + u4DataLen, i4Ret);
+		ResponseToQA(HqaCmdFrame,
+			     prIwReqData,
+			     2 + 4 * 4 + u4DataLen * sizeof(int32_t),
+			     i4Ret);
 	} else {
 		ResponseToQA(HqaCmdFrame, prIwReqData, 2, i4Ret);
 	}
@@ -6836,7 +6853,7 @@ int32_t connacGetICapIQData(struct GLUE_INFO *prGlueInfo, uint8_t *pData, uint32
 	struct ICAP_INFO_T *prICapInfo = NULL;
 	int32_t i = 0;
 	uint32_t u4MaxTxCount = 0;
-	uint32_t *pu4DumpIndex = NULL;
+	uint32_t u4DumpIndex = 0;
 	uint32_t u4Value, u4RespLen = 0;
 
 	ASSERT(prGlueInfo);
@@ -6845,27 +6862,28 @@ int32_t connacGetICapIQData(struct GLUE_INFO *prGlueInfo, uint8_t *pData, uint32
 	prICapInfo = &prAdapter->rIcapInfo;
 	prIQArray = prICapInfo->prIQArray;
 	ASSERT(prIQArray);
-	pu4DumpIndex = &prICapInfo->au4ICapDumpIndex[u4WFNum][u4IQType];
+	u4DumpIndex = prICapInfo->au4ICapDumpIndex[u4WFNum][u4IQType];
 
 	/* 1. Maximum 1KB = ICAP_EVENT_DATA_SAMPLE (256) slots */
-	u4MaxTxCount = prICapInfo->u4IQArrayIndex - *pu4DumpIndex;
+	u4MaxTxCount = prICapInfo->u4IQArrayIndex - u4DumpIndex;
 	if (u4MaxTxCount > ICAP_EVENT_DATA_SAMPLE)
 		u4MaxTxCount = ICAP_EVENT_DATA_SAMPLE;
 
 	DBGLOG(RFTEST, INFO, "prICapInfo->au4ICapDumpIndex[%d][%c] = %d\n",
 						u4WFNum,
 						(u4IQType == CAP_I_TYPE) ? 'I' : 'Q',
-						*pu4DumpIndex);
+						u4DumpIndex);
 
 	/* 2. Copy to buffer */
 	for (i = 0; i < u4MaxTxCount; i++) {
-		u4Value = ntohl(prIQArray[(*pu4DumpIndex)++].u4IQArray[u4WFNum][u4IQType]);
+		u4Value = prIQArray[u4DumpIndex++].u4IQArray[u4WFNum][u4IQType];
+		u4Value = ntohl(u4Value);
 		kalMemCopy(pData + u4RespLen, (uint8_t *) &u4Value, sizeof(u4Value));
 		u4RespLen += sizeof(u4Value);
 	}
-
+	prICapInfo->au4ICapDumpIndex[u4WFNum][u4IQType] = u4DumpIndex;
 	DBGLOG(RFTEST, INFO, "u4MaxTxCount = %d\n", u4MaxTxCount);
-	return sizeof(int32_t) * u4MaxTxCount;
+	return u4MaxTxCount;
 }
 
 
