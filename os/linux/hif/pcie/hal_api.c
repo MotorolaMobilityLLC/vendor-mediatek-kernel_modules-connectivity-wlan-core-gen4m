@@ -408,13 +408,16 @@ BOOLEAN halSetDriverOwn(IN P_ADAPTER_T prAdapter)
     /* 2. After CR4 readyy, send a dummy command to change data path to store-forward mode */
 #if 1
 	if (prAdapter->fgIsFwDownloaded) {
+		const UINT_32 ready_bits = prAdapter->chip_info->sw_ready_bits;
+
 		HAL_WIFI_FUNC_READY_CHECK(prAdapter, WIFI_FUNC_DUMMY_REQ, &fgDummyReq);
 
 		/* Wait CR4 ready */
 		u4CurrTick = kalGetTimeTick();
 		while (1) {
 			/* kalMsleep(2); */
-			HAL_WIFI_FUNC_READY_CHECK(prAdapter, WIFI_FUNC_READY_BITS, &fgReady);
+			HAL_WIFI_FUNC_READY_CHECK(prAdapter, ready_bits/*WIFI_FUNC_READY_BITS*/, &fgReady);
+
 			if (fgReady) {
 				break;
 			} else if (kalIsCardRemoved(prAdapter->prGlueInfo) || fgIsBusAccessFailed || fgTimeout

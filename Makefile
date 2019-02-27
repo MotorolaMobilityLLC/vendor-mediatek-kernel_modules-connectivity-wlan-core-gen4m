@@ -1,19 +1,49 @@
 # ---------------------------------------------------
 # Compile Options
 # ---------------------------------------------------
-WLAN_CHIP_LIST:=-UMT6620 -UMT6628 -UMT5931 -UMT6630 -UMT6632
+WLAN_CHIP_LIST:=-UMT6620 -UMT6628 -UMT5931 -UMT6630 -UMT6632 -UMT7663
+# '-D' and '-U' options are processed in the order they are given on the command line.
+# All '-imacros file' and '-include file' options are processed after all '-D' and '-U' options.
 ccflags-y += $(WLAN_CHIP_LIST)
 
 #WLAN_CHIP_ID=$(MTK_COMBO_CHIP)
-WLAN_CHIP_ID=MT6632
+#WLAN_CHIP_ID=MT6632
+WLAN_CHIP_ID=$(word 1, $(MTK_COMBO_CHIP))
 
 ccflags-y += -DCFG_SUPPORT_DEBUG_FS=0
 ccflags-y += -DWLAN_INCLUDE_PROC
 ccflags-y += -DCFG_SUPPORT_AGPS_ASSIST=1
 ccflags-y += -DCFG_SUPPORT_TSF_USING_BOOTTIME=1
 ccflags-y += -Werror
-ccflags-y:=$(filter-out -U$(WLAN_CHIP_ID),$(ccflags-y))
-ccflags-y += -DLINUX -D$(WLAN_CHIP_ID)
+#ccflags-y:=$(filter-out -U$(WLAN_CHIP_ID),$(ccflags-y))
+#ccflags-y += -DLINUX -D$(WLAN_CHIP_ID)
+ccflags-y += -DLINUX
+
+ifneq ($(findstring 6632,$(MTK_COMBO_CHIP)),)
+ccflags-y:=$(filter-out -UMT6632,$(ccflags-y))
+ccflags-y += -DMT6632
+CONFIG_CR4=y
+endif
+
+ifneq ($(findstring 7668,$(MTK_COMBO_CHIP)),)
+ccflags-y:=$(filter-out -UMT7668,$(ccflags-y))
+ccflags-y += -DMT7668
+CONFIG_CR4=y
+endif
+
+ifneq ($(findstring 7663,$(MTK_COMBO_CHIP)),)
+ccflags-y:=$(filter-out -UMT7663,$(ccflags-y))
+ccflags-y += -DMT7663
+CONFIG_CONNAC_MAC=y
+endif
+
+ifeq ($(CONFIG_CONNAC_MAC),y)
+ccflags-y += -DCONNAC_MAC
+endif
+
+ifeq ($(CONFIG_CR4),y)
+ccflags-y += -DCR4_SUPPORT
+endif
 
 CONFIG_MTK_WIFI_MCC_SUPPORT=y
 ifeq ($(CONFIG_MTK_WIFI_MCC_SUPPORT), y)
@@ -191,6 +221,11 @@ MGMT_OBJS := $(MGMT_DIR)ais_fsm.o \
 
 CHIPS_OBJS := $(CHIPS)mt6632.o \
 			  $(CHIPS)mt7668.o
+ifneq ($(findstring 7663,$(MTK_COMBO_CHIP)),)
+CHIPS_OBJS += $(CHIPS)mt7663.o
+endif
+
+
 # ---------------------------------------------------
 # P2P Objects List
 # ---------------------------------------------------

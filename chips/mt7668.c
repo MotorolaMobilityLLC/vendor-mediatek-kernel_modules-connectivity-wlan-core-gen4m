@@ -129,6 +129,7 @@ PPUINT_8 apucName, PUINT_8 pucNameIdx, UINT_8 ucMaxNameIdx)
 struct mt66xx_chip_info mt66xx_chip_info_mt7668 = {
 	.chip_id = MT7668_CHIP_ID,
 	.sw_sync0 = MT7668_SW_SYNC0,
+	.sw_ready_bits = WIFI_FUNC_READY_BITS,
 	.sw_ready_bit_offset = MT7668_SW_SYNC0_RDY_OFFSET,
 	.patch_addr = MT7668_PATCH_START_ADDR,
 	.is_pcie_32dw_read = MT7668_IS_PCIE_32DW_READ, /* Litien */

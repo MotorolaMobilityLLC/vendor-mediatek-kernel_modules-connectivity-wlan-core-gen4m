@@ -820,6 +820,7 @@ WLAN_STATUS wlanCheckWifiFunc(IN P_ADAPTER_T prAdapter, IN BOOLEAN fgRdyChk)
 	UINT_8 i;
 	BOOLEAN fgResult, fgTimeout;
 	UINT_32 u4Result, u4Status, u4StartTime, u4CurTime;
+	const UINT_32 ready_bits = prAdapter->chip_info->sw_ready_bits;
 
 	i = 0;
 
@@ -833,9 +834,9 @@ WLAN_STATUS wlanCheckWifiFunc(IN P_ADAPTER_T prAdapter, IN BOOLEAN fgRdyChk)
 
 	while (TRUE) {
 		if (fgRdyChk)
-			HAL_WIFI_FUNC_READY_CHECK(prAdapter, WIFI_FUNC_READY_BITS, &fgResult);
+			HAL_WIFI_FUNC_READY_CHECK(prAdapter, ready_bits/*WIFI_FUNC_READY_BITS*/, &fgResult);
 		else {
-			HAL_WIFI_FUNC_OFF_CHECK(prAdapter, WIFI_FUNC_READY_BITS, &fgResult);
+			HAL_WIFI_FUNC_OFF_CHECK(prAdapter, ready_bits/*WIFI_FUNC_READY_BITS*/, &fgResult);
 
 			if (nicProcessIST(prAdapter) != WLAN_STATUS_NOT_INDICATING)
 				DBGLOG(INIT, INFO, "Handle pending interrupt\n");
@@ -3527,6 +3528,7 @@ WLAN_STATUS wlanDownloadFW(IN P_ADAPTER_T prAdapter)
 	BOOLEAN fgReady;
 	WLAN_STATUS rDlStatus = 0;
 	WLAN_STATUS	rCfgStatus = 0;
+	const UINT_32 ready_bits = prAdapter->chip_info->sw_ready_bits;
 #if CFG_SUPPORT_COMPRESSION_FW_OPTION
 	BOOLEAN fgIsCompressed = FALSE;
 	INIT_CMD_WIFI_DECOMPRESSION_START rFwImageInFo;
@@ -3536,8 +3538,7 @@ WLAN_STATUS wlanDownloadFW(IN P_ADAPTER_T prAdapter)
 	if (!prAdapter)
 		return WLAN_STATUS_FAILURE;
 
-
-	HAL_WIFI_FUNC_READY_CHECK(prAdapter, WIFI_FUNC_READY_BITS, &fgReady);
+	HAL_WIFI_FUNC_READY_CHECK(prAdapter, ready_bits/*WIFI_FUNC_READY_BITS*/, &fgReady);
 
 	if (fgReady) {
 		DBGLOG(INIT, INFO, "Wi-Fi is already ON!, turn off before FW DL!\n");
@@ -3582,6 +3583,7 @@ WLAN_STATUS wlanDownloadFW(IN P_ADAPTER_T prAdapter)
 			break;
 		/* wlanCheckWifiN9Func(prAdapter); */
 
+#ifdef CR4_SUPPORT
 		/* CR4 bin */
 		kalFirmwareImageMapping(prAdapter->prGlueInfo, &prFwBuffer, &u4FwSize, IMG_DL_IDX_CR4_FW);
 		if (prFwBuffer == NULL) {
@@ -3607,7 +3609,7 @@ WLAN_STATUS wlanDownloadFW(IN P_ADAPTER_T prAdapter)
 
 		if ((rDlStatus != WLAN_STATUS_SUCCESS) || (rCfgStatus != WLAN_STATUS_SUCCESS))
 			break;
-
+#endif /* CR4_SUPPORT */
 	} while (0);
 	DBGLOG(INIT, INFO, "FW download End\n");
 
