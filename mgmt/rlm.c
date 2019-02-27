@@ -7153,9 +7153,12 @@ void rlmProcessBeaconAndProbeResp(struct ADAPTER *prAdapter,
 	rRepParams.ucFrameInfo = 0;
 	DBGLOG_MEM8(SW4, INFO, (uint8_t *)prWlanBeacon,
 		    OFFSET_OF(struct WLAN_BEACON_FRAME, aucInfoElem));
-	/* all 12 bytes fixed field are copied*/
-	kalMemCopy(&rRepParams.aucBcnFixedField, prWlanBeacon->au4Timestamp,
-		   sizeof(rRepParams.aucBcnFixedField));
+	WLAN_GET_FIELD_64(&prWlanBeacon->au4Timestamp[0],
+		&rRepParams.aucBcnFixedField);
+	WLAN_GET_FIELD_16(&prWlanBeacon->u2BeaconInterval,
+		&rRepParams.aucBcnFixedField[8]);
+	WLAN_GET_FIELD_16(&prWlanBeacon->u2CapInfo,
+		&rRepParams.aucBcnFixedField[10]);
 	rlmCollectBeaconReport(prAdapter, prWlanBeacon->aucInfoElem, u2IELen,
 			       prWlanBeacon->aucBSSID, &rRepParams);
 }
