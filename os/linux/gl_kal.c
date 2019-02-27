@@ -130,6 +130,13 @@ u_int8_t wlan_perf_monitor_force_enable = FALSE;
 
 static struct notifier_block wlan_fb_notifier;
 void *wlan_fb_notifier_priv_data;
+
+#if CFG_SUPPORT_WAKEUP_REASON_DEBUG
+#if CFG_SUPPORT_WAKEUP_COUNT
+uint32_t wlan_wakeup_count;
+#endif
+#endif
+
 /*******************************************************************************
  *                                 M A C R O S
  *******************************************************************************
@@ -5457,6 +5464,18 @@ u_int8_t kalIsWakeupByWlan(struct ADAPTER *prAdapter)
 	return TRUE;
 #endif
 }
+
+#if CFG_SUPPORT_WAKEUP_COUNT
+void kalWifiClearWakeupSrcCount(void)
+{
+	GLUE_SET_REF_CNT(wlan_wakeup_count, 0);
+}
+
+uint32_t kalWifiGetWakeupSrcCount(void)
+{
+	return (uint32_t) GLUE_GET_REF_CNT(wlan_wakeup_count);
+}
+#endif
 #endif
 
 

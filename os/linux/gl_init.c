@@ -3260,6 +3260,11 @@ static int32_t wlanOnPreNetRegister(struct GLUE_INFO *prGlueInfo,
 
 	INIT_WORK(&prGlueInfo->rTxMsduFreeWork, kalFreeTxMsduWorker);
 
+#if CFG_SUPPORT_WAKEUP_REASON_DEBUG
+#if CFG_SUPPORT_WAKEUP_COUNT
+		kalWifiClearWakeupSrcCount();
+#endif
+#endif
 	prGlueInfo->main_thread = kthread_run(main_thread,
 			prGlueInfo->prDevHandler, "main_thread");
 #if CFG_SUPPORT_MULTITHREAD
@@ -4311,6 +4316,13 @@ static int initWlan(void)
 
 #ifdef CONFIG_MTK_CONNSYS_DEDICATED_LOG_PATH
 	wifi_fwlog_event_func_register(consys_log_event_notification);
+#endif
+
+#if CFG_SUPPORT_WAKEUP_REASON_DEBUG
+#if CFG_SUPPORT_WAKEUP_COUNT
+	wlanWakeupSourceRegister(kalWifiGetWakeupSrcCount,
+		kalWifiClearWakeupSrcCount);
+#endif
 #endif
 
 #ifdef CONFIG_MTK_EMI

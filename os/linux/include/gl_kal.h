@@ -102,6 +102,19 @@ extern int g_u4HaltFlag;
 
 extern struct delayed_work sched_workq;
 
+#if CFG_SUPPORT_WAKEUP_REASON_DEBUG
+#if CFG_SUPPORT_WAKEUP_COUNT
+extern uint32_t wlan_wakeup_count;
+extern uint16_t wifi_wakeup_source;
+extern struct work_struct wakeup_reason_work;
+
+typedef uint32_t (*get_count_handler)(void);
+typedef void (*clear_count_handler)(void);
+extern void wlanWakeupSourceRegister(get_count_handler pf_get_count,
+				clear_count_handler pf_clear_count);
+#endif
+#endif
+
 /*******************************************************************************
  *                              C O N S T A N T S
  *******************************************************************************
@@ -1439,6 +1452,10 @@ uint8_t kalGetEapolKeyType(void *prPacket);
 
 #if CFG_SUPPORT_WAKEUP_REASON_DEBUG
 u_int8_t kalIsWakeupByWlan(struct ADAPTER *prAdapter);
+#if CFG_SUPPORT_WAKEUP_COUNT
+void kalWifiClearWakeupSrcCount(void);
+uint32_t kalWifiGetWakeupSrcCount(void);
+#endif
 #endif
 
 int32_t kalHaltLock(uint32_t waitMs);

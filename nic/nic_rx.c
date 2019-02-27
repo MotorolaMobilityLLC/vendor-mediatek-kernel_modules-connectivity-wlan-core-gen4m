@@ -3310,7 +3310,9 @@ static void nicRxCheckWakeupReason(struct ADAPTER *prAdapter,
 		return;
 
 	prSwRfb->ucGroupVLD = (uint8_t) HAL_RX_STATUS_GET_GROUP_VLD(prRxStatus);
-
+#if CFG_SUPPORT_WAKEUP_COUNT
+	GLUE_INC_REF_CNT(wlan_wakeup_count);
+#endif
 	switch (prSwRfb->ucPacketType) {
 	case RX_PKT_TYPE_RX_DATA:
 	{
@@ -3360,6 +3362,10 @@ static void nicRxCheckWakeupReason(struct ADAPTER *prAdapter,
 				pvHeader[ETH_HLEN + 13],
 				pvHeader[ETH_HLEN + 14],
 				pvHeader[ETH_HLEN + 15], u2Temp);
+#if CFG_SUPPORT_WAKEUP_COUNT
+			wifi_wakeup_source = 0;
+			schedule_work(&wakeup_reason_work);
+#endif
 			break;
 		case ETH_P_ARP:
 			break;
@@ -3376,6 +3382,10 @@ static void nicRxCheckWakeupReason(struct ADAPTER *prAdapter,
 			DBGLOG(RX, INFO,
 				"Data Packet, EthType 0x%04x wakeup host\n",
 				u2Temp);
+#if CFG_SUPPORT_WAKEUP_COUNT
+			wifi_wakeup_source = 0;
+			schedule_work(&wakeup_reason_work);
+#endif
 			break;
 		default:
 			DBGLOG(RX, WARN,
