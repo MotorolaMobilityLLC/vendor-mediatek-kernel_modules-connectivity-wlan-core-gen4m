@@ -284,6 +284,10 @@ static void mtk_wifi_trigger_reset(struct work_struct *work)
 u_int8_t glResetTrigger(struct ADAPTER *prAdapter, uint32_t u4RstFlag, const uint8_t *pucFile, uint32_t u4Line)
 {
 	u_int8_t fgResult = TRUE;
+	uint16_t u2FwOwnVersion;
+	uint16_t u2FwPeerVersion;
+
+	ASSERT(prAdapter);
 	if (prAdapter->chip_info &&
 		prAdapter->chip_info->show_debug_ops &&
 		prAdapter->chip_info->show_debug_ops->
@@ -291,18 +295,23 @@ u_int8_t glResetTrigger(struct ADAPTER *prAdapter, uint32_t u4RstFlag, const uin
 		prAdapter->chip_info->show_debug_ops->
 			hal_chip_show_csr_info(prAdapter);
 	}
+
+	u2FwOwnVersion = prAdapter->rVerInfo.u2FwOwnVersion;
+	u2FwPeerVersion = prAdapter->rVerInfo.u2FwPeerVersion;
 	if (kalIsResetting() || fgResetTriggered) {
+
 		DBGLOG(INIT, ERROR,
 		       "Skip trigger chip reset in %s line %u, during resetting! Chip[%04X E%u]\n",
 		       pucFile, u4Line,
 		       MTK_CHIP_REV, wlanGetEcoVersion(prAdapter));
 		DBGLOG(INIT, ERROR,
 		       "FW Ver DEC[%u.%u] HEX[%x.%x], Driver Ver[%u.%u]\n",
-		       (prAdapter->rVerInfo.u2FwOwnVersion >> 8),
-		       (prAdapter->rVerInfo.u2FwOwnVersion & BITS(0, 7)),
-		       (prAdapter->rVerInfo.u2FwOwnVersion >> 8),
-		       (prAdapter->rVerInfo.u2FwOwnVersion & BITS(0, 7)),
-		       (prAdapter->rVerInfo.u2FwPeerVersion >> 8), (prAdapter->rVerInfo.u2FwPeerVersion & BITS(0, 7)));
+		       (uint16_t)(u2FwOwnVersion >> 8),
+		       (uint16_t)(u2FwOwnVersion & BITS(0, 7)),
+		       (uint16_t)(u2FwOwnVersion >> 8),
+		       (uint16_t)(u2FwOwnVersion & BITS(0, 7)),
+		       (uint16_t)(u2FwPeerVersion >> 8),
+		       (uint16_t)(u2FwPeerVersion & BITS(0, 7)));
 
 		fgResult = TRUE;
 	} else {
@@ -311,11 +320,12 @@ u_int8_t glResetTrigger(struct ADAPTER *prAdapter, uint32_t u4RstFlag, const uin
 		       pucFile, u4Line,
 		       MTK_CHIP_REV,
 		       wlanGetEcoVersion(prAdapter),
-		       (prAdapter->rVerInfo.u2FwOwnVersion >> 8),
-		       (prAdapter->rVerInfo.u2FwOwnVersion & BITS(0, 7)),
-		       (prAdapter->rVerInfo.u2FwOwnVersion >> 8),
-		       (prAdapter->rVerInfo.u2FwOwnVersion & BITS(0, 7)),
-		       (prAdapter->rVerInfo.u2FwPeerVersion >> 8), (prAdapter->rVerInfo.u2FwPeerVersion & BITS(0, 7)));
+		       (uint16_t)(u2FwOwnVersion >> 8),
+		       (uint16_t)(u2FwOwnVersion & BITS(0, 7)),
+		       (uint16_t)(u2FwOwnVersion >> 8),
+		       (uint16_t)(u2FwOwnVersion & BITS(0, 7)),
+		       (uint16_t)(u2FwPeerVersion >> 8),
+		       (uint16_t)(u2FwPeerVersion & BITS(0, 7)));
 
 		wifi_rst.rst_trigger_flag = u4RstFlag;
 		schedule_work(&(wifi_rst.rst_trigger_work));

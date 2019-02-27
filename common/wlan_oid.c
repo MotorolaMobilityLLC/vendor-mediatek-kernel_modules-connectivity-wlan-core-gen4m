@@ -2905,8 +2905,7 @@ wlanoidSetDefaultKey(IN struct ADAPTER *prAdapter,
 	DBGLOG(RSN, INFO, "WlanIdx = %d\n", prBssInfo->wepkeyWlanIdx);
 
 	if (prDefaultKey->ucMulticast) {
-		if (!prBssInfo)
-			ASSERT(FALSE);
+		ASSERT(prBssInfo);
 		if (prBssInfo->prStaRecOfAP) {	/* Actually GC not have wep */
 			if (prBssInfo->wepkeyUsed[prDefaultKey->ucKeyID]) {
 				prBssInfo->ucBcDefaultKeyIdx = prDefaultKey->ucKeyID;

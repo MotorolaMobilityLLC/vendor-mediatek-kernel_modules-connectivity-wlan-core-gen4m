@@ -4755,13 +4755,17 @@ static int32_t priv_driver_dump_stat_info(struct ADAPTER *prAdapter, IN char *pc
 		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 			"%s", "----- RX Reorder (Group 0x10) -----\n");
 		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-			"%-20s%s%d\n", "Rx reorder miss", " = ", RX_GET_CNT(prRxCtrl, RX_DATA_REORDER_MISS_COUNT));
+			"%-20s%s%ld\n", "Rx reorder miss", " = ",
+			RX_GET_CNT(prRxCtrl, RX_DATA_REORDER_MISS_COUNT));
 		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-			"%-20s%s%d\n", "Rx reorder within", " = ", RX_GET_CNT(prRxCtrl, RX_DATA_REORDER_WITHIN_COUNT));
+			"%-20s%s%ld\n", "Rx reorder within", " = ",
+			RX_GET_CNT(prRxCtrl, RX_DATA_REORDER_WITHIN_COUNT));
 		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-			"%-20s%s%d\n", "Rx reorder ahead", " = ", RX_GET_CNT(prRxCtrl, RX_DATA_REORDER_AHEAD_COUNT));
+			"%-20s%s%ld\n", "Rx reorder ahead", " = ",
+			RX_GET_CNT(prRxCtrl, RX_DATA_REORDER_AHEAD_COUNT));
 		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-			"%-20s%s%d\n", "Rx reorder behind", " = ", RX_GET_CNT(prRxCtrl, RX_DATA_REORDER_BEHIND_COUNT));
+			"%-20s%s%ld\n", "Rx reorder behind", " = ",
+			RX_GET_CNT(prRxCtrl, RX_DATA_REORDER_BEHIND_COUNT));
 	}
 
 	/* =========== Group 0x0020 =========== */
@@ -4801,15 +4805,19 @@ static int32_t priv_driver_dump_stat_info(struct ADAPTER *prAdapter, IN char *pc
 				i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 					"%-20s%s%s\n", "Train Up", " = ", "N/A");
 			} else {
+				uint16_t u2TrainDown =
+					prQueryStaStatistics->u2TrainDown;
+				uint16_t u2TrainUp =
+					prQueryStaStatistics->u2TrainUp;
 				i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-					"%-20s%s%d -> %d\n", "Train Down", " = ",
-					(prQueryStaStatistics->u2TrainDown) & BITS(0, 7),
-					((prQueryStaStatistics->u2TrainDown) >> 8) & BITS(0, 7));
+				"%-20s%s%d -> %d\n", "Train Down", " = ",
+				(uint16_t)(u2TrainDown & BITS(0, 7)),
+				(uint16_t)((u2TrainDown >> 8) & BITS(0, 7)));
 
 				i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-					"%-20s%s%d -> %d\n", "Train Up", " = ",
-					(prQueryStaStatistics->u2TrainUp) & BITS(0, 7),
-					((prQueryStaStatistics->u2TrainUp) >> 8) & BITS(0, 7));
+				"%-20s%s%d -> %d\n", "Train Up", " = ",
+				(uint16_t)(u2TrainUp & BITS(0, 7)),
+				(uint16_t)((u2TrainUp >> 8) & BITS(0, 7)));
 			}
 
 			if (prQueryStaStatistics->fgIsForceTxStream == 0)
@@ -5269,6 +5277,7 @@ static int32_t priv_driver_dump_txpower_info(struct ADAPTER *prAdapter, IN char 
 		uint8_t ucTxPwrOfdmRate[MODULATION_SYSTEM_OFDM_NUM] = {6, 9, 12, 18, 24, 36, 48, 54};
 		uint8_t ucTxPwrHt20Rate[MODULATION_SYSTEM_HT20_NUM] = {0, 1, 2, 3, 4, 5, 6, 7};
 		uint8_t ucTxPwrHt40Rate[MODULATION_SYSTEM_HT40_NUM] = {0, 1, 2, 3, 4, 5, 6, 7, 32};
+		uint8_t *pucStr = NULL;
 		uint8_t *POWER_TYPE_STR[] = {"CCK", "*OFDM", "*HT20", "*HT40", "*VHT20", "*VHT40", "*VHT80", "*VHT160"};
 		uint8_t ucPwrIdxLen[] = {MODULATION_SYSTEM_CCK_NUM, MODULATION_SYSTEM_OFDM_NUM,
 					MODULATION_SYSTEM_HT20_NUM, MODULATION_SYSTEM_HT40_NUM,
@@ -5290,10 +5299,13 @@ static int32_t priv_driver_dump_txpower_info(struct ADAPTER *prAdapter, IN char 
 
 		for (ucTxPwrType = 0; ucTxPwrType < sizeof(POWER_TYPE_STR)/sizeof(uint8_t *); ucTxPwrType++) {
 			for (ucTxPwrIdx = 0; ucTxPwrIdx < ucPwrIdxLen[ucTxPwrType]; ucTxPwrIdx++) {
-				if ((POWER_TYPE_STR[ucTxPwrType] == (uint8_t *)"CCK") ||
-					(POWER_TYPE_STR[ucTxPwrType] == (uint8_t *)"OFDM")) {
-					pucTxPwrRate = (POWER_TYPE_STR[ucTxPwrType] == (uint8_t *)"CCK") ?
-										(ucTxPwrCckRate):(ucTxPwrOfdmRate);
+				pucStr = POWER_TYPE_STR[ucTxPwrType];
+				if (kalStrCmp(pucStr, "CCK") == 0 ||
+					kalStrCmp(pucStr, "OFDM") == 0) {
+					if (kalStrCmp(pucStr, "CCK") == 0)
+						pucTxPwrRate = ucTxPwrCckRate;
+					else
+						pucTxPwrRate = ucTxPwrOfdmRate;
 
 					ucIdx = ucTxPwrIdx + ucIdxOffset;
 					rRatePowerInfo = prTxPowerInfo->rRatePowerInfo;
@@ -5306,10 +5318,11 @@ static int32_t priv_driver_dump_txpower_info(struct ADAPTER *prAdapter, IN char 
 						rRatePowerInfo.aicFramePowerConfig[ucIdx].icFramePowerDbm,
 						rRatePowerInfo.aicFramePowerConfig[ucIdx].icFramePowerDbm);
 				} else {
-					if (POWER_TYPE_STR[ucTxPwrType] == (uint8_t *)"HT20") {
+					if (kalStrCmp(pucStr, "HT20") == 0) {
 						pucTxPwrRate = ucTxPwrHt20Rate;
 						fgIsHt = TRUE;
-					} else if (POWER_TYPE_STR[ucTxPwrType] == (uint8_t *)"HT40") {
+					} else if (
+					    kalStrCmp(pucStr, "HT40") == 0) {
 						pucTxPwrRate = ucTxPwrHt40Rate;
 						fgIsHt = TRUE;
 					} else {
@@ -5328,9 +5341,10 @@ static int32_t priv_driver_dump_txpower_info(struct ADAPTER *prAdapter, IN char 
 				}
 			}
 
-			if ((POWER_TYPE_STR[ucTxPwrType] == (uint8_t *)"OFDM") ||
-				(POWER_TYPE_STR[ucTxPwrType] == (uint8_t *)"HT40") ||
-				(POWER_TYPE_STR[ucTxPwrType] == (uint8_t *)"VHT160"))
+			pucStr = POWER_TYPE_STR[ucTxPwrType];
+			if (kalStrCmp(pucStr, "OFDM") == 0 ||
+				kalStrCmp(pucStr, "HT40") == 0 ||
+				kalStrCmp(pucStr, "VHT160") == 0)
 				i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 					"%s", "------\n");
 
@@ -7742,6 +7756,8 @@ int priv_driver_show_dfs_radar_param(IN struct net_device *prNetDev, IN char *pc
 
 	prP2pRadarInfo = (struct P2P_RADAR_INFO *) cnmMemAlloc(prGlueInfo->prAdapter,
 		RAM_TYPE_MSG, sizeof(*prP2pRadarInfo));
+	if (prP2pRadarInfo == NULL)
+		return -1;
 
 	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
 	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);

@@ -2204,7 +2204,7 @@ int mtk_cfg80211_testmode_set_key_ext(IN struct wiphy *wiphy, IN void *data, IN 
 	if (prParams)
 		prIWEncExt = (struct iw_encode_exts *)&prParams->ext;
 
-	if (prIWEncExt->alg == IW_ENCODE_ALG_SMS4) {
+	if (prIWEncExt && prIWEncExt->alg == IW_ENCODE_ALG_SMS4) {
 		/* KeyID */
 		prWpiKey->u4KeyIndex = prParams->key_index;
 		prWpiKey->u4KeyIndex--;
@@ -2274,11 +2274,6 @@ mtk_cfg80211_testmode_get_sta_statistics(IN struct wiphy *wiphy, IN void *data, 
 
 	if (data && len)
 		prParams = (struct NL80211_DRIVER_GET_STA_STATISTICS_PARAMS *) data;
-
-	if (!prParams->aucMacAddr) {
-		DBGLOG(QM, TRACE, "%s MAC Address is NULL\n", __func__);
-		return -EINVAL;
-	}
 
 	skb = cfg80211_testmode_alloc_reply_skb(wiphy, sizeof(struct PARAM_GET_STA_STATISTICS) + 1);
 
