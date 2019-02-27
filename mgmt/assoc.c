@@ -336,10 +336,14 @@ static __KAL_INLINE__ void assocBuildReAssocReqFrameCommonIEs(IN struct ADAPTER 
 		u2SupportedRateSet = (prStaRec->u2OperationalRateSet &
 				      rNonHTPhyAttributes[u4NonHTPhyType].u2SupportedRateSet);
 
-		ASSERT(u2SupportedRateSet);
+		/*ASSERT(u2SupportedRateSet);*/
 
-		if (!u2SupportedRateSet)
+		if (!u2SupportedRateSet) {
+			DBGLOG(SAA, INFO,
+				"RateSet NonHTPhyType=%d OperationalRateSet=%d\n",
+				u4NonHTPhyType, prStaRec->u2OperationalRateSet);
 			u2SupportedRateSet = rNonHTPhyAttributes[u4NonHTPhyType].u2SupportedRateSet;
+		}
 
 		/* TODO(Kevin): For P2P, we shouldn't send support rate set which contains 11b rate */
 
