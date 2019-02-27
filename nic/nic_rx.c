@@ -1906,10 +1906,6 @@ void nicRxProcessDataPacket(IN struct ADAPTER *prAdapter,
 #endif
 				prRetSwRfb = prNextSwRfb;
 			} while (prRetSwRfb);
-		} else {
-			DBGLOG_LIMITED(RX, TRACE,
-				"Packet drop! total error drop:%d\n",
-				RX_GET_CNT(prRxCtrl, RX_DROP_TOTAL_COUNT));
 		}
 	} else {
 		nicRxReturnRFB(prAdapter, prSwRfb);

@@ -3598,9 +3598,11 @@ void qmInsertReorderPkt(IN struct ADAPTER *prAdapter,
 
 		u4MissingCount = u2Delta - (u4BeforeCount -
 			prReorderQueParm->rReOrderQue.u4NumElem);
-
 		RX_ADD_CNT(&prAdapter->rRxCtrl, RX_DATA_REORDER_MISS_COUNT,
 			u4MissingCount);
+		DBGLOG_LIMITED(QM, TRACE, "QM: Miss Count:[%d]\n",
+			RX_GET_CNT(&prAdapter->rRxCtrl,
+			RX_DATA_REORDER_MISS_COUNT));
 	}
 	/* Case 3: Fall behind */
 	else {
