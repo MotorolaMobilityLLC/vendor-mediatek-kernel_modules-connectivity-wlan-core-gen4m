@@ -85,6 +85,10 @@ char *g_ENUM_TX_POWER_CTRL_TYPE_LABEL[] = {
 	"PWR_CTRL_TYPE_DISABLE_FCC_IOCTL",
 	"PWR_CTRL_TYPE_ENABLE_SAR_IOCTL",
 	"PWR_CTRL_TYPE_DISABLE_SAR_IOCTL",
+	"PWR_CTRL_TYPE_ENABLE_TXPWR_SCENARIO",
+	"PWR_CTRL_TYPE_DISABLE_TXPWR_SCENARIO",
+	"PWR_CTRL_TYPE_ENABLE_3STEPS_BACKOFF",
+	"PWR_CTRL_TYPE_DISABLE_3STEPS_BACKOFF",
 	"PWR_CTRL_TYPE_NUM"
 };
 
@@ -133,6 +137,18 @@ uint8_t g_cTxBackOffMaxPower5G = 10;
 /* TxPwrBackOffParam's 2nd byte contains enable/disable TxPowerBackOff for 5G */
 /* TxPwrBackOffParam's 3rd byte contains default TxPowerBackOff value for 5G */
 uint32_t g_TxPwrBackOffParam;
+
+/* set tx power scenario */
+int32_t g_iTxPwrScenarioIdx = -1; /* -1:reset, >=0:scenario index */
+bool g_bTxPwrScenarioEnable2G = TRUE;
+uint8_t g_acTxPwrScenarioMaxPower2G[5] = { 10, 12, 14, 16, 18 };
+bool g_bTxPwrScenarioEnable5G = TRUE;
+uint8_t g_acTxPwrScenarioMaxPower5G[5] = { 20, 22, 24, 26, 28 };
+
+/* 3 steps Wi-Fi power back-off */
+int32_t g_i3StepsBackOffIdx = -1; /* 0:reset, 1:-2db, 2:-4db, 3:-6db */
+int8_t g_ac3StepsPoewrOffset[] = { -2, -4, -6 };
+
 #endif /* CFG_SUPPORT_TX_POWER_BACK_OFF */
 
 /* The following country or domain shall be set from host driver.
@@ -2384,10 +2400,20 @@ uint32_t rlmDomainSendPwrLimitCmd(struct ADAPTER *prAdapter,
 		return rlmDomainSendPwrLimitCmd_V2(prAdapter);
 
 	if (eCtrlType == PWR_CTRL_TYPE_DISABLE_FCC_IOCTL) {
-		fgMask ^= PWR_CRTL_MASK_FCC_IOCTL;
+		if (fgMask & PWR_CRTL_MASK_FCC_IOCTL)
+			fgMask -= PWR_CRTL_MASK_FCC_IOCTL;
 		eCtrlType = PWR_CTRL_TYPE_DOMAIN;
 	} else if (eCtrlType == PWR_CTRL_TYPE_DISABLE_SAR_IOCTL) {
-		fgMask ^= PWR_CRTL_MASK_SAR_IOCTL;
+		if (fgMask & PWR_CRTL_MASK_SAR_IOCTL)
+			fgMask -= PWR_CRTL_MASK_SAR_IOCTL;
+		eCtrlType = PWR_CTRL_TYPE_DOMAIN;
+	} else if (eCtrlType == PWR_CTRL_TYPE_DISABLE_TXPWR_SCENARIO) {
+		if (fgMask & PWR_CRTL_MASK_TXPWR_SCENARIO)
+			fgMask -= PWR_CRTL_MASK_TXPWR_SCENARIO;
+		eCtrlType = PWR_CTRL_TYPE_DOMAIN;
+	} else if (eCtrlType == PWR_CTRL_TYPE_DISABLE_3STEPS_BACKOFF) {
+		if (fgMask & PWR_CRTL_MASK_3STEPS_BACKOFF)
+			fgMask -= PWR_CRTL_MASK_3STEPS_BACKOFF;
 		eCtrlType = PWR_CTRL_TYPE_DOMAIN;
 	}
 
@@ -2454,7 +2480,8 @@ uint32_t rlmDomainSendPwrLimitCmd(struct ADAPTER *prAdapter,
 
 	if (!(prAdapter->prGlueInfo) || !(prAdapter->prGlueInfo->prRegInfo)) {
 		DBGLOG(RLM, ERROR, "prGlueInfo/prRegInfo is NULL\n");
-		return WLAN_STATUS_ADAPTER_NOT_READY;
+		rStatus = WLAN_STATUS_ADAPTER_NOT_READY;
+		goto freeMemLabel;
 	}
 	prRegInfo = prAdapter->prGlueInfo->prRegInfo;
 
@@ -2807,6 +2834,128 @@ uint32_t rlmDomainSendPwrLimitCmd(struct ADAPTER *prAdapter,
 		}
 		fgMask |= PWR_CRTL_MASK_SAR_IOCTL;
 	}
+
+	/* case 7: set tx power scenario */
+	if ((eCtrlType == PWR_CTRL_TYPE_ENABLE_TXPWR_SCENARIO) ||
+	    (fgMask & PWR_CRTL_MASK_TXPWR_SCENARIO)) {
+		uint8_t u2G4Power, u5GPower;
+
+		if ((g_iTxPwrScenarioIdx >= 0) && (g_iTxPwrScenarioIdx < 5))
+			DBGLOG(RLM, INFO,
+			       "set tx power scenario=%d, 2.4G(enable:%u, pwr=%u), 5G(enable:%u, pwr=%u)\n",
+			       g_iTxPwrScenarioIdx,
+			       g_bTxPwrScenarioEnable2G,
+			       g_acTxPwrScenarioMaxPower2G[g_iTxPwrScenarioIdx],
+			       g_bTxPwrScenarioEnable5G,
+			       g_acTxPwrScenarioMaxPower5G[g_iTxPwrScenarioIdx]
+			      );
+		else {
+			rStatus = WLAN_STATUS_INVALID_DATA;
+			goto freeMemLabel;
+		}
+
+		if (g_bTxPwrScenarioEnable2G) {
+			u2G4Power = g_acTxPwrScenarioMaxPower2G[
+							g_iTxPwrScenarioIdx];
+			prCmdPwrLimit = &prCmd->rChannelPowerLimit[0];
+			for (i = 0; i < prCmd->ucNum; i++, prCmdPwrLimit++) {
+				if (prCmdPwrLimit->ucCentralCh > 14)
+					continue;
+				if (prCmdPwrLimit->cPwrLimitCCK > u2G4Power)
+					prCmdPwrLimit->cPwrLimitCCK = u2G4Power;
+				if (prCmdPwrLimit->cPwrLimit20L > u2G4Power)
+					prCmdPwrLimit->cPwrLimit20L = u2G4Power;
+				if (prCmdPwrLimit->cPwrLimit20H > u2G4Power)
+					prCmdPwrLimit->cPwrLimit20H = u2G4Power;
+				if (prCmdPwrLimit->cPwrLimit40L > u2G4Power)
+					prCmdPwrLimit->cPwrLimit40L = u2G4Power;
+				if (prCmdPwrLimit->cPwrLimit40H > u2G4Power)
+					prCmdPwrLimit->cPwrLimit40H = u2G4Power;
+				if (prCmdPwrLimit->cPwrLimit80L > u2G4Power)
+					prCmdPwrLimit->cPwrLimit80L = u2G4Power;
+				if (prCmdPwrLimit->cPwrLimit80H > u2G4Power)
+					prCmdPwrLimit->cPwrLimit80H = u2G4Power;
+				if (prCmdPwrLimit->cPwrLimit160L > u2G4Power)
+					prCmdPwrLimit->cPwrLimit160L =
+								u2G4Power;
+				if (prCmdPwrLimit->cPwrLimit160H > u2G4Power)
+					prCmdPwrLimit->cPwrLimit160H =
+								u2G4Power;
+			}
+		}
+
+		if (g_bTxPwrScenarioEnable5G) {
+			u5GPower = g_acTxPwrScenarioMaxPower2G[
+							g_iTxPwrScenarioIdx];
+			prCmdPwrLimit = &prCmd->rChannelPowerLimit[0];
+			for (i = 0; i < prCmd->ucNum; i++, prCmdPwrLimit++) {
+				if (prCmdPwrLimit->ucCentralCh <= 14)
+					continue;
+				if (prCmdPwrLimit->cPwrLimitCCK > u5GPower)
+					prCmdPwrLimit->cPwrLimitCCK = u5GPower;
+				if (prCmdPwrLimit->cPwrLimit20L > u5GPower)
+					prCmdPwrLimit->cPwrLimit20L = u5GPower;
+				if (prCmdPwrLimit->cPwrLimit20H > u5GPower)
+					prCmdPwrLimit->cPwrLimit20H = u5GPower;
+				if (prCmdPwrLimit->cPwrLimit40L > u5GPower)
+					prCmdPwrLimit->cPwrLimit40L = u5GPower;
+				if (prCmdPwrLimit->cPwrLimit40H > u5GPower)
+					prCmdPwrLimit->cPwrLimit40H = u5GPower;
+				if (prCmdPwrLimit->cPwrLimit80L > u5GPower)
+					prCmdPwrLimit->cPwrLimit80L = u5GPower;
+				if (prCmdPwrLimit->cPwrLimit80H > u5GPower)
+					prCmdPwrLimit->cPwrLimit80H = u5GPower;
+				if (prCmdPwrLimit->cPwrLimit160L > u5GPower)
+					prCmdPwrLimit->cPwrLimit160L =
+								u5GPower;
+				if (prCmdPwrLimit->cPwrLimit160H > u5GPower)
+					prCmdPwrLimit->cPwrLimit160H =
+								u5GPower;
+			}
+		}
+		fgMask |= PWR_CRTL_MASK_TXPWR_SCENARIO;
+	}
+
+	/* case 8: 3-steps power back off */
+	if ((eCtrlType == PWR_CTRL_TYPE_ENABLE_3STEPS_BACKOFF) ||
+	    (fgMask & PWR_CRTL_MASK_3STEPS_BACKOFF)) {
+		int8_t iPwrOffset;
+
+		if ((g_i3StepsBackOffIdx >= 1) && (g_i3StepsBackOffIdx < 3)) {
+			iPwrOffset = g_ac3StepsPoewrOffset[
+					g_iTxPwrScenarioIdx - 1];
+			DBGLOG(RLM, INFO,
+			       "set 3-steps power back off, idx=%d, offset=%d\n",
+			       g_i3StepsBackOffIdx, iPwrOffset);
+		} else {
+			rStatus = WLAN_STATUS_INVALID_DATA;
+			goto freeMemLabel;
+		}
+
+		prCmdPwrLimit = &prCmd->rChannelPowerLimit[0];
+		for (i = 0; i < prCmd->ucNum; i++, prCmdPwrLimit++) {
+			if ((prCmdPwrLimit->cPwrLimitCCK + iPwrOffset) > 0)
+				prCmdPwrLimit->cPwrLimitCCK += iPwrOffset;
+			if ((prCmdPwrLimit->cPwrLimit20L + iPwrOffset) > 0)
+				prCmdPwrLimit->cPwrLimit20L += iPwrOffset;
+			if ((prCmdPwrLimit->cPwrLimit20H + iPwrOffset) > 0)
+				prCmdPwrLimit->cPwrLimit20H += iPwrOffset;
+			if ((prCmdPwrLimit->cPwrLimit40L + iPwrOffset) > 0)
+				prCmdPwrLimit->cPwrLimit40L += iPwrOffset;
+			if ((prCmdPwrLimit->cPwrLimit40H + iPwrOffset) > 0)
+				prCmdPwrLimit->cPwrLimit40H += iPwrOffset;
+			if ((prCmdPwrLimit->cPwrLimit80L + iPwrOffset) > 0)
+				prCmdPwrLimit->cPwrLimit80L += iPwrOffset;
+			if ((prCmdPwrLimit->cPwrLimit80H + iPwrOffset) > 0)
+				prCmdPwrLimit->cPwrLimit80H += iPwrOffset;
+			if ((prCmdPwrLimit->cPwrLimit160L + iPwrOffset) > 0)
+				prCmdPwrLimit->cPwrLimit160L += iPwrOffset;
+			if ((prCmdPwrLimit->cPwrLimit160H + iPwrOffset) > 0)
+				prCmdPwrLimit->cPwrLimit160H += iPwrOffset;
+		}
+
+		fgMask |= PWR_CRTL_MASK_3STEPS_BACKOFF;
+	}
 #endif /* CFG_SUPPORT_TX_POWER_BACK_OFF */
 
 	prCmdPwrLimit = &prCmd->rChannelPowerLimit[0];
@@ -2856,7 +3005,9 @@ uint32_t rlmDomainSendPwrLimitCmd(struct ADAPTER *prAdapter,
 	DBGLOG(RLM, INFO, "rStatus=%u, prCmd->ucNum=%u, fgTxPwrLimitMask=%u\n",
 	       rStatus, prCmd->ucNum, prAdapter->fgTxPwrLimitMask);
 
-	cnmMemFree(prAdapter, prCmd);
+freeMemLabel:
+	if (prCmd != NULL)
+		cnmMemFree(prAdapter, prCmd);
 
 	return rStatus;
 }

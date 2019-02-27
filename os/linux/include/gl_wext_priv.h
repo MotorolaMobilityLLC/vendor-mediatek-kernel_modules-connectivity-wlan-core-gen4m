@@ -197,6 +197,8 @@ extern uint8_t g_cTxBackOffMaxPower5G;
 #define  PRIV_CMD_SET_FCC				39
 #endif /* CFG_SUPPORT_FCC_POWER_BACK_OFF */
 
+#define  PRIV_CMD_SET_3STEPS_BACKOFF	40
+
 /* 802.3 Objects (Ethernet) */
 #define OID_802_3_CURRENT_ADDRESS           0x01010102
 

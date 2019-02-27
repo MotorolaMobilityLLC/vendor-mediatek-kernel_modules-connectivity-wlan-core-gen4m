@@ -1265,4 +1265,70 @@ nla_put_failure:
 	return -EFAULT;
 }
 
+int mtk_cfg80211_vendor_set_tx_power_scenario(struct wiphy *wiphy,
+		struct wireless_dev *wdev, const void *data, int data_len)
+{
+	enum ENUM_TX_POWER_CTRL_TYPE eCtrlType;
+	struct GLUE_INFO *prGlueInfo;
+	struct nlattr *attr;
+	uint32_t u4Scenario;
+	uint32_t rStatus = WLAN_STATUS_SUCCESS;
+	uint32_t u4SetInfoLen = 0;
+	struct sk_buff *skb;
+
+	ASSERT(wiphy);
+	ASSERT(wdev);
+	if (wdev->iftype == NL80211_IFTYPE_AP)
+		prGlueInfo = *((struct GLUE_INFO **) wiphy_priv(wiphy));
+	else
+		prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wiphy);
+	if (!prGlueInfo)
+		return -EFAULT;
+
+	attr = (struct nlattr *)data;
+	if (attr->nla_type == WIFI_ATTRIBUTE_TX_POWER_SCENARIO)
+		u4Scenario = nla_get_u32(attr);
+	else
+		return -EINVAL;
+
+	if (u4Scenario == UINT_MAX) {
+		g_iTxPwrScenarioIdx = -1;
+		eCtrlType = PWR_CTRL_TYPE_DISABLE_TXPWR_SCENARIO;
+	} else if ((u4Scenario >= 0) && (u4Scenario <= 4)) {
+		g_iTxPwrScenarioIdx = u4Scenario;
+		eCtrlType = PWR_CTRL_TYPE_ENABLE_TXPWR_SCENARIO;
+	} else {
+		DBGLOG(REQ, ERROR, "invalid scenario index: %u\n", u4Scenario);
+		return -EINVAL;
+	}
+
+	DBGLOG(REQ, INFO,
+		"g_iTxPwrScenarioIdx=%d, u4Scenario=%u, UINT_MAX=%u, iftype=%d\n",
+		g_iTxPwrScenarioIdx, u4Scenario, UINT_MAX,
+		wdev->iftype);
+
+	rStatus = kalIoctl(prGlueInfo, wlanoidTxPowerControl, &eCtrlType,
+			   sizeof(enum ENUM_TX_POWER_CTRL_TYPE *),
+			   FALSE, FALSE, TRUE, &u4SetInfoLen);
+
+	skb = cfg80211_vendor_cmd_alloc_reply_skb(wiphy, sizeof(rStatus));
+	if (!skb) {
+		DBGLOG(REQ, ERROR, "Allocate skb failed\n");
+		return -ENOMEM;
+	}
+
+	if (unlikely(
+	    nla_put_nohdr(skb, sizeof(rStatus), &rStatus) < 0)) {
+		DBGLOG(REQ, ERROR, "nla_put_nohdr failed\n");
+		goto errHandleLabel;
+	}
+
+	DBGLOG(REQ, INFO, "rStatus=0x%x\n", rStatus);
+
+	return cfg80211_vendor_cmd_reply(skb);
+
+errHandleLabel:
+	kfree_skb(skb);
+	return -EFAULT;
+}
 #endif /* LINUX_VERSION_CODE >= KERNEL_VERSION(3, 18, 0) */
