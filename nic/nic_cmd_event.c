@@ -3070,6 +3070,10 @@ VOID nicEventDumpMem(IN P_ADAPTER_T prAdapter, IN P_WIFI_EVENT_T prEvent)
 
 VOID nicEventAssertDump(IN P_ADAPTER_T prAdapter, IN P_WIFI_EVENT_T prEvent)
 {
+
+	if (wlanIsChipRstRecEnabled(prAdapter))
+		wlanChipRstPreAct(prAdapter);
+
 	if (prEvent->ucS2DIndex == S2D_INDEX_EVENT_N2H) {
 		if (!prAdapter->fgN9AssertDumpOngoing) {
 			DBGLOG(NIC, ERROR, "%s: EVENT_ID_ASSERT_DUMP\n", __func__);
