@@ -57,15 +57,6 @@
 /*! \file tkip_sw.c
  *    \brief This file include the tkip encrypted / decrypted mic function.
  */
-/*******************************************************************************
- * Copyright (c) 2003-2004 Inprocomm, Inc.
- *
- * All rights reserved. Copying, compilation, modification, distribution
- * or any other use whatsoever of this material is strictly prohibited
- * except in accordance with a Software License Agreement with
- * Inprocomm, Inc.
- *******************************************************************************
- */
 
 /*******************************************************************************
  *                     C O M P I L E R   F L A G S
