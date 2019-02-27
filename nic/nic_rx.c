@@ -1615,14 +1615,14 @@ void nicRxProcessRXV(IN struct ADAPTER *prAdapter,
 	uint8_t ucRxMode;
 	uint8_t ucMcs;
 	uint8_t ucFrMode;
-	uint8_t ucShortGI;
+	uint8_t ucShortGI, ucGroupid, ucMu, ucNsts;
 	uint32_t u4PhyRate;
 	uint8_t ucRCPI0 = 0, ucRCPI1 = 0;
 	/* Rate
 	 * Bit Number 2
 	 * Unit 500 Kbps
 	 */
-	uint8_t ucRate = 0;
+	uint16_t u2Rate = 0;
 
 	ASSERT(prAdapter);
 	ASSERT(prSwRfb);
@@ -1641,28 +1641,50 @@ void nicRxProcessRXV(IN struct ADAPTER *prAdapter,
 	ucRxMode = (((prRxStatusGroup3)->u4RxVector[0] &
 		RX_VT_RX_MODE_MASK) >> RX_VT_RX_MODE_OFFSET);
 
-	/* RATE */
+	/* RATE & NSS */
 	if ((ucRxMode == RX_VT_LEGACY_CCK)
 		|| (ucRxMode == RX_VT_LEGACY_OFDM)) {
 		/* Bit[2:0] for Legacy CCK, Bit[3:0] for Legacy OFDM */
 		ucRxRate = ((prRxStatusGroup3)->u4RxVector[0] & BITS(0, 3));
-		ucRate = nicGetHwRateByPhyRate(ucRxRate);
+		u2Rate = nicGetHwRateByPhyRate(ucRxRate);
 	} else {
 		ucMcs = ((prRxStatusGroup3)->u4RxVector[0] &
 			RX_VT_RX_RATE_AC_MASK);
+		ucNsts = (((prRxStatusGroup3)->u4RxVector[1] &
+			RX_VT_NSTS_MASK) >> RX_VT_NSTS_OFFSET);
+		ucGroupid = ((prRxStatusGroup3)->u4RxVector[1] &
+			RX_VT_GROUP_ID_MASK) >> RX_VT_GROUP_ID_OFFSET;
+
+		if (ucNsts == 0)
+			ucNsts = 1;
+
+		if (ucGroupid && ucGroupid != 63)
+			ucMu = 1;
+		else {
+			ucMu = 0;
+			ucNsts += 1;
+		}
+
 		/* VHTA1 B0-B1 */
 		ucFrMode = (((prRxStatusGroup3)->u4RxVector[0] &
 			RX_VT_FR_MODE_MASK) >> RX_VT_FR_MODE_OFFSET);
 		ucShortGI = ((prRxStatusGroup3)->u4RxVector[0] &
 			RX_VT_SHORT_GI) ? 1 : 0;	/* VHTA2 B0 */
 
-		/* ucRate(500kbs) = u4PhyRate(100kbps) / 5, max ucRate = 0xFF */
+		/* ucRate(500kbs) = u4PhyRate(100kbps) */
 		u4PhyRate = nicGetPhyRateByMcsRate(ucMcs, ucFrMode,
 					ucShortGI);
-		if (u4PhyRate > 1275)
-			ucRate = 0xFF;
-		else
-			ucRate = u4PhyRate / 5;
+		u2Rate = u4PhyRate / 5;
+
+		if (u2Rate > 2000)
+			DBGLOG(SW4, WARN,
+			"ucMcs=%d, ucFrMode=%d, ucShortGI=%d, ucNsts=%d, u4PhyRate=%d, u2Rate=%d\n",
+			ucMcs,
+			ucFrMode,
+			ucShortGI,
+			ucNsts,
+			u4PhyRate,
+			u2Rate);
 	}
 
 	/* RCPI */
@@ -1672,11 +1694,12 @@ void nicRxProcessRXV(IN struct ADAPTER *prAdapter,
 		RX_VT_RCPI1_MASK) >> RX_VT_RCPI1_OFFSET;
 
 	/* Record peak rate to Traffic Indicator*/
-	if ((ucRate != 0xFF) &&
-		(ucRate > prAdapter->prGlueInfo
-		->PerfIndCache.u2CurRxRate[ucBssIndex])) {
+	if (u2Rate > prAdapter->prGlueInfo
+		->PerfIndCache.u2CurRxRate[ucBssIndex]) {
 		prAdapter->prGlueInfo->PerfIndCache.
-			u2CurRxRate[ucBssIndex] = (uint16_t)ucRate;
+			u2CurRxRate[ucBssIndex] = u2Rate;
+		prAdapter->prGlueInfo->PerfIndCache.
+			ucCurRxNss[ucBssIndex] = ucNsts;
 		prAdapter->prGlueInfo->PerfIndCache.
 			ucCurRxRCPI0[ucBssIndex] = ucRCPI0;
 		prAdapter->prGlueInfo->PerfIndCache.

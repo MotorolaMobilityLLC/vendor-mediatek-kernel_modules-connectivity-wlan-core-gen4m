@@ -6666,6 +6666,8 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 	prWifiVar->fgCrossBandSwitchEn = (uint8_t) wlanCfgGetUint32(
 			prAdapter, "CrossBandSwitchEn", 1);
 #endif
+	prWifiVar->fgPerfIndicatorEn = (uint8_t) wlanCfgGetUint32(
+			prAdapter, "PerfIndicatorEn", 1);
 
 #if CFG_SUPPORT_LOWLATENCY_MODE
 	prWifiVar->ucLowLatencyModeScan = (uint32_t) wlanCfgGetUint32(

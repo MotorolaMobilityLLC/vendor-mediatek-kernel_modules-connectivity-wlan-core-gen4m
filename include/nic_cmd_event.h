@@ -2029,7 +2029,8 @@ struct CMD_PERF_IND {
 	uint16_t u2CurRxRate[4];     /* Unit 500 Kbps */
 	uint8_t ucCurRxRCPI0[4];
 	uint8_t ucCurRxRCPI1[4];
-	uint32_t au4Reserve[64];
+	uint8_t ucCurRxNss[4];
+	uint32_t au4Reserve[63];
 };
 
 /* EVENT_BT_OVER_WIFI */

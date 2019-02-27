@@ -997,6 +997,7 @@ struct WIFI_VAR {
 	uint8_t ucChannelSwtichColdownTime;
 	u_int8_t fgCrossBandSwitchEn;
 #endif
+	u_int8_t fgPerfIndicatorEn;
 
 	/* 11K */
 	struct RADIO_MEASUREMENT_REQ_PARAMS rRmReqParams;

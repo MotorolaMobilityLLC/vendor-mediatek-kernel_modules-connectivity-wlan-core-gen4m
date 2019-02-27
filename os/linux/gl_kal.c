@@ -122,7 +122,7 @@ static struct KAL_HALT_CTRL_T rHaltCtrl = {
 /* framebuffer callback related variable and status flag */
 u_int8_t wlan_fb_power_down = FALSE;
 
-#if CFG_FORCE_ENABLE_PERF_MONITOR
+#if (CFG_FORCE_ENABLE_PERF_MONITOR == 1) || (CFG_SUPPORT_PERF_IND == 1)
 u_int8_t wlan_perf_monitor_force_enable = TRUE;
 #else
 u_int8_t wlan_perf_monitor_force_enable = FALSE;
@@ -6583,6 +6583,7 @@ void kalSetPerfReport(IN struct ADAPTER *prAdapter)
 {
 	struct CMD_PERF_IND *prCmdPerfReport;
 	uint8_t i;
+	uint32_t u4CurrentTp = 0;
 
 	DEBUGFUNC("kalSetPerfReport()");
 
@@ -6613,39 +6614,44 @@ void kalSetPerfReport(IN struct ADAPTER *prAdapter)
 			prAdapter->prGlueInfo->PerfIndCache.ucCurRxRCPI0[i];
 		prCmdPerfReport->ucCurRxRCPI1[i] =
 			prAdapter->prGlueInfo->PerfIndCache.ucCurRxRCPI1[i];
+		prCmdPerfReport->ucCurRxNss[i] =
+			prAdapter->prGlueInfo->PerfIndCache.ucCurRxNss[i];
+		u4CurrentTp += (prCmdPerfReport->ulCurTxBytes[i] +
+			prCmdPerfReport->ulCurRxBytes[i]);
 	}
+	if (u4CurrentTp != 0) {
+		DBGLOG(SW4, INFO,
+			"Total TP[%d] TX-Byte[%d][%d][%d][%d],RX-Byte[%d][%d][%d][%d]\n",
+			u4CurrentTp,
+			prCmdPerfReport->ulCurTxBytes[0],
+			prCmdPerfReport->ulCurTxBytes[1],
+			prCmdPerfReport->ulCurTxBytes[2],
+			prCmdPerfReport->ulCurTxBytes[3],
+			prCmdPerfReport->ulCurRxBytes[0],
+			prCmdPerfReport->ulCurRxBytes[1],
+			prCmdPerfReport->ulCurRxBytes[2],
+			prCmdPerfReport->ulCurRxBytes[3]);
+		DBGLOG(SW4, INFO,
+			"Rate[%d][%d][%d][%d] RCPI[%d][%d][%d][%d]\n",
+			prCmdPerfReport->u2CurRxRate[0],
+			prCmdPerfReport->u2CurRxRate[1],
+			prCmdPerfReport->u2CurRxRate[2],
+			prCmdPerfReport->u2CurRxRate[3],
+			prCmdPerfReport->ucCurRxRCPI0[0],
+			prCmdPerfReport->ucCurRxRCPI0[1],
+			prCmdPerfReport->ucCurRxRCPI0[2],
+			prCmdPerfReport->ucCurRxRCPI0[3]);
 
-	DBGLOG(SW4, INFO,
-		"TX-Byte[%d][%d][%d][%d],RX-Byte[%d][%d][%d][%d]\n",
-		prCmdPerfReport->ulCurTxBytes[0],
-		prCmdPerfReport->ulCurTxBytes[1],
-		prCmdPerfReport->ulCurTxBytes[2],
-		prCmdPerfReport->ulCurTxBytes[3],
-		prCmdPerfReport->ulCurRxBytes[0],
-		prCmdPerfReport->ulCurRxBytes[1],
-		prCmdPerfReport->ulCurRxBytes[2],
-		prCmdPerfReport->ulCurRxBytes[3]);
-	DBGLOG(SW4, INFO,
-		"Rate[%d][%d][%d][%d] RSSI[%d][%d][%d][%d]\n",
-		prCmdPerfReport->u2CurRxRate[0],
-		prCmdPerfReport->u2CurRxRate[1],
-		prCmdPerfReport->u2CurRxRate[2],
-		prCmdPerfReport->u2CurRxRate[3],
-		prCmdPerfReport->ucCurRxRCPI0[0],
-		prCmdPerfReport->ucCurRxRCPI0[1],
-		prCmdPerfReport->ucCurRxRCPI0[2],
-		prCmdPerfReport->ucCurRxRCPI0[3]);
-
-	wlanSendSetQueryCmd(prAdapter,
-		CMD_ID_PERF_IND,
-		TRUE,
-		FALSE,
-		FALSE,
-		NULL,
-		NULL,
-		sizeof(*prCmdPerfReport),
-		(uint8_t *) prCmdPerfReport, NULL, 0);
-
+		wlanSendSetQueryCmd(prAdapter,
+			CMD_ID_PERF_IND,
+			TRUE,
+			FALSE,
+			FALSE,
+			NULL,
+			NULL,
+			sizeof(*prCmdPerfReport),
+			(uint8_t *) prCmdPerfReport, NULL, 0);
+	}
 	cnmMemFree(prAdapter, prCmdPerfReport);
 }				/* p2pFuncStartRdd */
 
@@ -6725,9 +6731,7 @@ inline int32_t kalPerMonStart(IN struct GLUE_INFO
 
 	if (!wlan_perf_monitor_force_enable &&
 		(wlan_fb_power_down
-#if (CFG_SUPPORT_PERF_IND == 0)
 		|| prGlueInfo->fgIsInSuspendMode
-#endif
 		))
 
 		return 0;
@@ -6817,18 +6821,18 @@ void kalPerMonHandler(IN struct ADAPTER *prAdapter,
 	/*Calculate current throughput*/
 	struct PERF_MONITOR_T *prPerMonitor;
 	struct net_device *prNetDev = NULL;
-	uint32_t u4Idx = 0;
+	uint32_t u4Idx = 0, u4CurrentTp = 0;
 	struct BSS_INFO *prP2pBssInfo = (struct BSS_INFO *) NULL;
 	uint8_t	i =
 		0; /*currently i will always be 0 because we only regist 0*/
-	u_int8_t	fgIsP2PNoneUsed = FALSE;
+	u_int8_t	fgIsP2PNoneUsed = FALSE, a;
 
 	signed long latestTxBytes, latestRxBytes, txDiffBytes,
 	       rxDiffBytes;
 	signed long p2pLatestTxBytes, p2pLatestRxBytes,
 	       p2pTxDiffBytes, p2pRxDiffBytes;
 	struct GLUE_INFO *prGlueInfo = prAdapter->prGlueInfo;
-#if CFG_SUPPORT_DATA_STALL
+#if (CFG_SUPPORT_DATA_STALL) || (CFG_SUPPORT_PERF_IND)
 	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
 #endif
 
@@ -6848,8 +6852,16 @@ void kalPerMonHandler(IN struct ADAPTER *prAdapter,
 	DBGLOG(SW4, TRACE, "enter kalPerMonHandler\n");
 
 #if CFG_SUPPORT_PERF_IND
-	kalSetPerfReport(prAdapter);
-	kalPerfIndReset(prAdapter);
+	if (prWifiVar->fgPerfIndicatorEn)
+		kalSetPerfReport(prAdapter);
+		for (a = 0; a < BSS_DEFAULT_NUM; a++) {
+			u4CurrentTp +=
+				(prAdapter->prGlueInfo->
+				PerfIndCache.u4CurTxBytes[a] +
+				prAdapter->prGlueInfo->
+				PerfIndCache.u4CurRxBytes[a]);
+		}
+		kalPerfIndReset(prAdapter);
 #endif
 
 	latestTxBytes = prGlueInfo->prDevHandler->stats.tx_bytes;
@@ -6967,9 +6979,7 @@ void kalPerMonHandler(IN struct ADAPTER *prAdapter,
 
 	if (!wlan_perf_monitor_force_enable &&
 		(wlan_fb_power_down ||
-#if (CFG_SUPPORT_PERF_IND == 0)
 		prGlueInfo->fgIsInSuspendMode ||
-#endif
 		!(netif_carrier_ok(prNetDev) ||
 		(prP2pBssInfo->eConnectionState ==
 		PARAM_MEDIA_STATE_CONNECTED) ||
@@ -6995,9 +7005,20 @@ void kalPerMonHandler(IN struct ADAPTER *prAdapter,
 		}
 		prPerMonitor->u4UpdatePeriod =
 			prAdapter->rWifiVar.u4PerfMonUpdatePeriod;
+#if CFG_SUPPORT_PERF_IND
+		/* Only routine start timer when Tput exist*/
+		if (u4CurrentTp > 0)
+			cnmTimerStartTimer(prGlueInfo->prAdapter,
+					&prPerMonitor->rPerfMonTimer,
+					prPerMonitor->u4UpdatePeriod);
+		else
+			KAL_CLR_BIT(PERF_MON_RUNNING_BIT,
+				prPerMonitor->ulPerfMonFlag);
+#else
 		cnmTimerStartTimer(prGlueInfo->prAdapter,
-				   &prPerMonitor->rPerfMonTimer,
-				   prPerMonitor->u4UpdatePeriod);
+				&prPerMonitor->rPerfMonTimer,
+				prPerMonitor->u4UpdatePeriod);
+#endif
 	}
 	prPerMonitor->u4CurrPerfLevel =
 		prPerMonitor->u4TarPerfLevel;
