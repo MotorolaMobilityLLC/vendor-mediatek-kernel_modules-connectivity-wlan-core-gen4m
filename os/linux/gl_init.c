@@ -1792,6 +1792,10 @@ void wlanUpdateDfsChannelTable(struct GLUE_INFO *prGlueInfo, uint8_t ucChannel)
 	/* 2. Enable specific channel based on domain channel list */
 	for (i = 0; i < ucNumOfChannel; i++) {
 		for (j = 0; j < ARRAY_SIZE(mtk_5ghz_channels); j++) {
+			if (aucChannelList[i].ucChannelNum !=
+				mtk_5ghz_channels[j].hw_value)
+				continue;
+
 			if (aucChannelList[i].ucChannelNum
 				== ucChannel) {
 				mtk_5ghz_channels[j].dfs_state
