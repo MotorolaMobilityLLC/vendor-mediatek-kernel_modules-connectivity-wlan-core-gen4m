@@ -993,6 +993,9 @@ struct WIFI_VAR {
 	/* WMMAC */
 	struct WMM_INFO rWmmInfo;
 
+	/* Tx Msdu Queue method */
+	uint8_t ucTxMsduQueue;
+
 #if ARP_MONITER_ENABLE
 		uint32_t uArpMonitorNumber;
 #endif /* ARP_MONITER_ENABLE */
