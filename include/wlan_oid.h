@@ -3955,4 +3955,11 @@ wlanoidSetLowLatencyMode(IN struct ADAPTER *prAdapter,
 			 OUT uint32_t *pu4SetInfoLen);
 #endif /* CFG_SUPPORT_LOWLATENCY_MODE */
 
+#if CFG_SUPPORT_EASY_DEBUG
+uint32_t wlanoidSetFwParam(IN struct ADAPTER *prAdapter,
+			   IN void *pvSetBuffer,
+			   IN uint32_t u4SetBufferLen,
+			   OUT uint32_t *pu4SetInfoLen);
+#endif /* CFG_SUPPORT_EASY_DEBUG */
+
 #endif /* _WLAN_OID_H */
