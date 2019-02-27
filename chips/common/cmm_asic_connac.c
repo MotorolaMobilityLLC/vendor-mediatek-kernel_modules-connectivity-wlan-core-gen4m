@@ -158,7 +158,6 @@ void asicCapInit(IN struct ADAPTER *prAdapter)
 		prChipInfo->u4HifDmaShdlBaseAddr = PCIE_HIF_DMASHDL_BASE;
 
 		HAL_MCR_WR(prAdapter, CONN_HIF_ON_IRQ_ENA, BIT(0));
-		asicPcieDmaShdlInit(prAdapter);
 		break;
 #endif /* _HIF_PCIE */
 #if defined(_HIF_USB)

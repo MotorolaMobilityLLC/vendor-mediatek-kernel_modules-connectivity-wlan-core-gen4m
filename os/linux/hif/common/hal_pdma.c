@@ -805,6 +805,8 @@ void halReturnMsduToken(IN struct ADAPTER *prAdapter, uint32_t u4TokenNum)
 
 bool halHifSwInfoInit(IN struct ADAPTER *prAdapter)
 {
+	asicPcieDmaShdlInit(prAdapter);
+
 	if (!halWpdmaAllocRing(prAdapter->prGlueInfo))
 		return false;
 
