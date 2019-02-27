@@ -262,7 +262,7 @@ void glSendResetRequest(void)
 /*----------------------------------------------------------------------------*/
 u_int8_t kalIsResetting(void)
 {
-	return fgIsResetting;
+	return fgIsResetting || fgResetTriggered;
 }
 
 static void mtk_wifi_trigger_reset(struct work_struct *work)
@@ -289,23 +289,7 @@ u_int8_t glResetTrigger(struct ADAPTER *prAdapter, uint32_t u4RstFlag, const uin
 	ASSERT(prAdapter);
 	u2FwOwnVersion = prAdapter->rVerInfo.u2FwOwnVersion;
 	u2FwPeerVersion = prAdapter->rVerInfo.u2FwPeerVersion;
-	if (kalIsResetting() || fgResetTriggered) {
-
-		DBGLOG(INIT, ERROR,
-		       "Skip trigger chip reset in %s line %u, during resetting! Chip[%04X E%u]\n",
-		       pucFile, u4Line,
-		       MTK_CHIP_REV, wlanGetEcoVersion(prAdapter));
-		DBGLOG(INIT, ERROR,
-		       "FW Ver DEC[%u.%u] HEX[%x.%x], Driver Ver[%u.%u]\n",
-		       (uint16_t)(u2FwOwnVersion >> 8),
-		       (uint16_t)(u2FwOwnVersion & BITS(0, 7)),
-		       (uint16_t)(u2FwOwnVersion >> 8),
-		       (uint16_t)(u2FwOwnVersion & BITS(0, 7)),
-		       (uint16_t)(u2FwPeerVersion >> 8),
-		       (uint16_t)(u2FwPeerVersion & BITS(0, 7)));
-
-		fgResult = TRUE;
-	} else {
+	if (!kalIsResetting()) {
 		DBGLOG(INIT, ERROR,
 		       "Trigger chip reset in %s line %u! Chip[%04X E%u] FW Ver DEC[%u.%u] HEX[%x.%x], Driver Ver[%u.%u]\n",
 		       pucFile, u4Line,
