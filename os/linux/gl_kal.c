@@ -165,9 +165,6 @@ static uint8_t *apucCr4FwName[] = {
 	NULL
 };
 
-static uint8_t **appucFwNameTable[] = {
-	apucFwName
-};
 #if CFG_ASSERT_DUMP
 /* Core dump debug usage */
 #if MTK_WCN_HIF_SDIO
@@ -197,7 +194,6 @@ uint32_t kalFirmwareOpen(IN struct GLUE_INFO *prGlueInfo, IN uint8_t **apucNameT
 {
 	uint8_t ucNameIdx;
 	/* PPUINT_8 apucNameTable; */
-	uint8_t ucMaxEcoVer = (sizeof(appucFwNameTable) / sizeof(uint8_t **));
 	uint8_t ucCurEcoVer = wlanGetEcoVersion(prGlueInfo->prAdapter);
 	u_int8_t fgResult = FALSE;
 	int ret;
@@ -231,7 +227,9 @@ uint32_t kalFirmwareOpen(IN struct GLUE_INFO *prGlueInfo, IN uint8_t **apucNameT
 	return WLAN_STATUS_SUCCESS;
 
 error_open:
-	DBGLOG(INIT, ERROR, "Request FW image failed! Cur/Max ECO Ver[E%u/E%u]\n", ucCurEcoVer, ucMaxEcoVer);
+	DBGLOG(INIT, ERROR,
+		"Request FW image failed! Cur ECO Ver[E%u]\n",
+		ucCurEcoVer);
 
 	return WLAN_STATUS_FAILURE;
 }
