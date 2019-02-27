@@ -1931,18 +1931,17 @@ nicTxFillDesc(IN struct ADAPTER *prAdapter,
 				      prStaRec)) {
 		prTxDescTemplate =
 			prStaRec->aprTxDescTemplate[prMsduInfo->ucUserPriority];
-
+	}
+	if (prTxDescTemplate) {
 		if (prMsduInfo->ucPacketType == TX_PACKET_TYPE_DATA)
 			kalMemCopy(prTxDesc, prTxDescTemplate,
 				u4TxDescLength + prChipInfo->txd_append_size);
 		else
 			kalMemCopy(prTxDesc, prTxDescTemplate, u4TxDescLength);
-
 		/* Overwrite fields for EOSP or More data */
 		nicTxFillDescByPktOption(prMsduInfo, prTxDesc);
-	}
-	/* Compose TXD by Msdu info */
-	else {
+	} else { /* Compose TXD by Msdu info */
+		DBGLOG_LIMITED(NIC, INFO, "Compose TXD by Msdu info\n");
 #if (UNIFIED_MAC_TX_FORMAT == 1)
 		if (prMsduInfo->eSrc == TX_PACKET_MGMT)
 			prMsduInfo->ucPacketFormat = TXD_PKT_FORMAT_COMMAND;
@@ -1957,7 +1956,6 @@ nicTxFillDesc(IN struct ADAPTER *prAdapter,
 			nicTxComposeDescAppend(prAdapter, prMsduInfo,
 					       prTxDescBuffer + u4TxDescLength);
 	}
-
 	/*
 	 * --------------------------------------------------------------------
 	 * Fill up remaining parts, per-packet variant fields
