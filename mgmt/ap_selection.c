@@ -107,7 +107,7 @@
 #define WEIGHT_IDX_BAND_WIDTH_PER               1
 #define WEIGHT_IDX_STBC_PER                     1
 #define WEIGHT_IDX_DEAUTH_LAST_PER              1
-#define WEIGHT_IDX_BLACK_LIST_PER               2
+#define WEIGHT_IDX_BLACK_LIST_PER               4
 #define WEIGHT_IDX_SAA_PER                      1
 #define WEIGHT_IDX_CHNL_IDLE_PER                6
 #define WEIGHT_IDX_OPCHNL_PER                   6
@@ -119,9 +119,9 @@ struct weight_config mtk_weight_config[ROAM_TYPE_NUM] = {
 		.scan_miss_cnt_weight = WEIGHT_IDX_SCN_MISS_CNT,
 		.probe_resp_weight = WEIGHT_IDX_PROBE_RSP,
 		.client_cnt_weight = WEIGHT_IDX_CLIENT_CNT,
-		.ap_num_weight = WEIGHT_IDX_CLIENT_CNT,
-		.band_weight = WEIGHT_IDX_AP_NUM,
-		.band_width_weight = WEIGHT_IDX_5G_BAND,
+		.ap_num_weight = WEIGHT_IDX_AP_NUM,
+		.band_weight = WEIGHT_IDX_5G_BAND,
+		.band_width_weight = WEIGHT_IDX_BAND_WIDTH,
 		.stbc_weight = WEIGHT_IDX_STBC,
 		.last_deauth_weight = WEIGHT_IDX_DEAUTH_LAST,
 		.black_list_weight = WEIGHT_IDX_BLACK_LIST,
@@ -135,9 +135,9 @@ struct weight_config mtk_weight_config[ROAM_TYPE_NUM] = {
 		.scan_miss_cnt_weight = WEIGHT_IDX_SCN_MISS_CNT_PER,
 		.probe_resp_weight = WEIGHT_IDX_PROBE_RSP_PER,
 		.client_cnt_weight = WEIGHT_IDX_CLIENT_CNT_PER,
-		.ap_num_weight = WEIGHT_IDX_CLIENT_CNT_PER,
-		.band_weight = WEIGHT_IDX_AP_NUM_PER,
-		.band_width_weight = WEIGHT_IDX_5G_BAND_PER,
+		.ap_num_weight = WEIGHT_IDX_AP_NUM_PER,
+		.band_weight = WEIGHT_IDX_5G_BAND_PER,
+		.band_width_weight = WEIGHT_IDX_BAND_WIDTH_PER,
 		.stbc_weight = WEIGHT_IDX_STBC_PER,
 		.last_deauth_weight = WEIGHT_IDX_DEAUTH_LAST_PER,
 		.black_list_weight = WEIGHT_IDX_BLACK_LIST_PER,
