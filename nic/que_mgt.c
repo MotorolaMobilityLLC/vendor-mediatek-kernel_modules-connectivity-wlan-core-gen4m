@@ -7540,12 +7540,8 @@ void qmHandleRxDhcpPackets(struct ADAPTER *prAdapter,
 				/* Check if join timer is ticking, then release
 				 * channel privilege and stop join timer.
 				 */
-				if (timerPendingTimer(&prAisFsmInfo->
-							rJoinTimeoutTimer)) {
-					aisFsmReleaseCh(prAdapter);
-					cnmTimerStopTimer(prAdapter,
-					    &prAisFsmInfo->rJoinTimeoutTimer);
-				}
+				qmReleaseCHAtFinishedDhcp(prAdapter,
+					&prAisFsmInfo->rJoinTimeoutTimer);
 			}
 			dhcpTypeGot = 1;
 			break;
@@ -7894,4 +7890,39 @@ void qmHandleDelTspec(struct ADAPTER *prAdapter, struct STA_RECORD *prStaRec,
 #endif
 	nicTxAdjustTcq(prAdapter);
 	kalSetEvent(prAdapter->prGlueInfo);
+}
+
+void qmReleaseCHAtFinishedDhcp(struct ADAPTER *prAdapter,
+			       struct TIMER *prTimer)
+{
+	if (!timerPendingTimer(prTimer)) {
+		DBGLOG(QM, ERROR, "No channel occupation\n");
+		return;
+	}
+	DBGLOG(QM, INFO, "Earily release channel\n");
+	/* 1. Rlease channel and stop timer */
+	aisFsmReleaseCh(prAdapter);
+	cnmTimerStopTimer(prAdapter, prTimer);
+	/* 2. process if there is pending scan */
+	if (aisFsmIsRequestPending(prAdapter, AIS_REQUEST_SCAN, TRUE)
+	    == TRUE) {
+		wlanClearScanningResult(prAdapter);
+		aisFsmSteps(prAdapter, AIS_STATE_ONLINE_SCAN);
+	}
+	/* 3. Process for pending roaming scan */
+	else if (aisFsmIsRequestPending(prAdapter,
+					AIS_REQUEST_ROAMING_SEARCH,
+					TRUE) == TRUE)
+		aisFsmSteps(prAdapter, AIS_STATE_LOOKING_FOR);
+	/* 4. Process for pending roaming connect */
+	else if (aisFsmIsRequestPending(prAdapter,
+					AIS_REQUEST_ROAMING_CONNECT,
+					TRUE) == TRUE)
+		aisFsmSteps(prAdapter, AIS_STATE_SEARCH);
+	else if (aisFsmIsRequestPending(prAdapter,
+					AIS_REQUEST_REMAIN_ON_CHANNEL,
+					TRUE) == TRUE)
+		aisFsmSteps(prAdapter, AIS_STATE_REQ_REMAIN_ON_CHANNEL);
+	else
+		DBGLOG(QM, INFO, "No pending request\n");
 }
