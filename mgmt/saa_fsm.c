@@ -1147,9 +1147,6 @@ uint32_t saaFsmRunEventRxAssoc(IN struct ADAPTER *prAdapter,
 		    prSwRfb, &u2StatusCode) == WLAN_STATUS_SUCCESS) {
 
 #if CFG_SUPPORT_REPORT_MISC
-			DBGLOG(RX, ERROR,
-			       "reportmisc assocEnd prAdapter->rReportMiscSet.eQueryNum %d\n",
-			       prAdapter->rReportMiscSet.eQueryNum);
 			if (prAdapter->rReportMiscSet.eQueryNum
 						== REPORT_AUTHASSOC_START) {
 				prAdapter->rReportMiscSet.i4Rssi =

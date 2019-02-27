@@ -5354,8 +5354,8 @@ void nicCmdEventReportMisc(IN struct ADAPTER *prAdapter,
 		prReportMisc->u4RxMpduCnt = u4RxMpduCnt;
 		prReportMisc->u4ChannelIdleCnt = u4ChnlIdleCnt;
 		prAdapter->rReportMiscSet.u8Ts = sched_clock();
-		DBGLOG(NIC, INFO,
-		       "START=%d,MDRDY=%u,SLOTIDLE=%u,MPDU=%u,RSSI=%d\n",
+		DBGLOG(NIC, LOUD,
+		       "QueryNum=%d,MDRDY=%u,SLOTIDLE=%u,MPDU=%u,RSSI=%d\n",
 		       prAdapter->rReportMiscSet.eQueryNum,
 		       u4MdrdyCnt,
 		       u4ChnlIdleCnt,

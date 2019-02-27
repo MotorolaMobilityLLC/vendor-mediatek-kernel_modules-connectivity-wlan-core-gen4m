@@ -9657,7 +9657,7 @@ void wlanGetReportMisc(IN struct ADAPTER *prAdapter)
 	kalMemFree(prHwMibInfo, PHY_MEM_TYPE,
 		   sizeof(struct PARAM_HW_MIB_INFO));
 
-	if (rStatus != WLAN_STATUS_SUCCESS)
+	if (rStatus != WLAN_STATUS_SUCCESS && rStatus != WLAN_STATUS_PENDING)
 		DBGLOG(REQ, ERROR, "Failed with status %d\n", rStatus);
 }
 #endif
