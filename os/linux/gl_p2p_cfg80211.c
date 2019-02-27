@@ -3858,8 +3858,11 @@ int mtk_p2p_cfg80211_testmode_p2p_sigma_cmd(IN struct wiphy *wiphy,
 			prNoaParams->interval;
 		prP2pSpecificBssInfo->rNoaParam.u4NoaDurationMs =
 			prNoaParams->duration;
+		prP2pSpecificBssInfo->rNoaParam.ucBssIdx =
+			ucBssIdx;
 		DBGLOG(P2P, INFO,
-			"SET NOA: %d %d %d\n",
+			"SET NOA[%d]: %d %d %d\n",
+			ucBssIdx,
 			prNoaParams->count,
 			prNoaParams->interval,
 			prNoaParams->duration);
@@ -3926,8 +3929,8 @@ int mtk_p2p_cfg80211_testmode_p2p_sigma_cmd(IN struct wiphy *wiphy,
 		break;
 	case 107:		/* P2P set opps, CTWindowl */
 		prP2pSpecificBssInfo->rOppPsParam.u4CTwindowMs = value;
-
-		DBGLOG(P2P, INFO, "SET OPPS: %d\n", value);
+		prP2pSpecificBssInfo->rOppPsParam.ucBssIdx = ucBssIdx;
+		DBGLOG(P2P, INFO, "SET OPPS[%d]: %d\n", ucBssIdx, value);
 		kalIoctl(prGlueInfo,
 			wlanoidSetOppPsParam,
 			&prP2pSpecificBssInfo->rOppPsParam,
