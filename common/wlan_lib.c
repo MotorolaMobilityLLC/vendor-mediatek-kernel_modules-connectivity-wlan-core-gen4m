@@ -3390,7 +3390,7 @@ WLAN_STATUS wlanQueryNicCapability(IN P_ADAPTER_T prAdapter)
 
 #if CFG_SUPPORT_DBDC
 	if (prEventNicCapability->ucHwNotSupportDBDC)
-		prAdapter->rWifiVar.ucDbdcMode = DBDC_MODE_DISABLED;
+		prAdapter->rWifiVar.eDbdcMode = ENUM_DBDC_MODE_DISABLED;
 #endif
 	if (prEventNicCapability->ucHwBssIdNum > 0 && prEventNicCapability->ucHwBssIdNum <= MAX_BSSID_NUM) {
 		prAdapter->ucHwBssIdNum = prEventNicCapability->ucHwBssIdNum;
@@ -5257,7 +5257,7 @@ VOID wlanInitFeatureOption(IN P_ADAPTER_T prAdapter)
 	prWifiVar->ucStaBandwidth = (UINT_8) wlanCfgGetUint32(prAdapter, "StaBw", MAX_BW_160MHZ);
 	prWifiVar->ucSta2gBandwidth = (UINT_8) wlanCfgGetUint32(prAdapter, "Sta2gBw", MAX_BW_20MHZ);
 	prWifiVar->ucSta5gBandwidth = (UINT_8) wlanCfgGetUint32(prAdapter, "Sta5gBw", MAX_BW_80MHZ);
-	prWifiVar->ucP2p2gBandwidth = (UINT_8) wlanCfgGetUint32(prAdapter, "P2p2gBw", MAX_BW_40MHZ);
+	prWifiVar->ucP2p2gBandwidth = (UINT_8) wlanCfgGetUint32(prAdapter, "P2p2gBw", MAX_BW_40MHZ); /* GC,GO */
 	prWifiVar->ucP2p5gBandwidth = (UINT_8) wlanCfgGetUint32(prAdapter, "P2p5gBw", MAX_BW_80MHZ);
 	prWifiVar->ucApBandwidth = (UINT_8) wlanCfgGetUint32(prAdapter, "ApBw", MAX_BW_160MHZ);
 	prWifiVar->ucAp2gBandwidth = (UINT_8) wlanCfgGetUint32(prAdapter, "Ap2gBw", MAX_BW_20MHZ);
@@ -5385,7 +5385,7 @@ VOID wlanInitFeatureOption(IN P_ADAPTER_T prAdapter)
 #endif
 
 #if CFG_SUPPORT_DBDC
-	prWifiVar->ucDbdcMode = (UINT_8) wlanCfgGetUint32(prAdapter, "DbdcMode", DBDC_MODE_DYNAMIC);
+	prWifiVar->eDbdcMode = (UINT_8) wlanCfgGetUint32(prAdapter, "DbdcMode", ENUM_DBDC_MODE_DYNAMIC);
 #endif /*CFG_SUPPORT_DBDC*/
 #if (CFG_EFUSE_BUFFER_MODE_DELAY_CAL == 1)
 	prWifiVar->ucEfuseBufferModeCal = (UINT_8) wlanCfgGetUint32(prAdapter, "EfuseBufferModeCal", 0);
