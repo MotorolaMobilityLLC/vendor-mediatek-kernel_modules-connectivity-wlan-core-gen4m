@@ -10015,7 +10015,7 @@ int parseValueInString(
 				wlanHwAddrToBin(pucValueHead, addr);
 				DBGLOG(REQ, TRACE, "MAC type");
 			} else {
-				kalStrnCpy(aucValue, pucValueHead, u4Len);
+				kalMemCopy(aucValue, pucValueHead, u4Len);
 				*((char *)aucValue + u4Len) = '\0';
 				DBGLOG(REQ, TRACE,
 					"STR type = %s\n", (char *)aucValue);
@@ -10221,7 +10221,7 @@ error:
 }
 
 int priv_driver_set_ap_get_sta_list(IN struct net_device *prNetDev,
-		IN char *pcCommand, IN int i4TotalLen, IN OUT char *pcExtra)
+		IN char *pcCommand, IN int i4TotalLen)
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct ADAPTER *prAdapter = NULL;
@@ -10266,7 +10266,7 @@ int priv_driver_set_ap_get_sta_list(IN struct net_device *prNetDev,
 			prCurrStaRec->ucIndex,
 			MAC2STR(prCurrStaRec->aucMacAddr));
 		i4BytesWritten += kalSnprintf(
-			pcExtra + i4BytesWritten,
+			pcCommand + i4BytesWritten,
 			i4TotalLen - i4BytesWritten,
 			"MAC[%d]=" MACSTR "\n",
 			i++,
@@ -10385,7 +10385,7 @@ priv_set_ap(IN struct net_device *prNetDev,
 				__func__, i4BytesWritten);
 			return -EFAULT;
 		}
-		if (copy_from_user(&aucOidBuf[0],
+		if (copy_from_user(&pcExtra,
 			prIwReqData->data.pointer,
 			prIwReqData->data.length)) {
 			DBGLOG(REQ, INFO,
@@ -10394,9 +10394,11 @@ priv_set_ap(IN struct net_device *prNetDev,
 				prIwReqData->data.length);
 				return -EFAULT;
 		}
+		/* prIwReqData->data.length include the terminate '\0' */
+		pcExtra[prIwReqData->data.length - 1] = 0;
 	}
 
-	DBGLOG(REQ, INFO, "%s pcExtra %s\n", __func__, aucOidBuf);
+	DBGLOG(REQ, INFO, "%s pcExtra %s\n", __func__, pcExtra);
 
 	if (!pcExtra)
 		goto exit;
@@ -10407,29 +10409,28 @@ priv_set_ap(IN struct net_device *prNetDev,
 	i4BytesWritten =
 		priv_driver_set_ap_get_sta_list(
 		prNetDev,
-		aucOidBuf,
-		i4TotalFixLen,
-		pcExtra);
+		pcExtra,
+		i4TotalFixLen);
 		break;
 	case IOC_AP_SET_MAC_FLTR:
 	i4BytesWritten =
 		priv_driver_set_ap_set_mac_acl(
 		prNetDev,
-		aucOidBuf,
+		pcExtra,
 		i4TotalFixLen);
 	  break;
 	case IOC_AP_SET_CFG:
 	i4BytesWritten =
 		priv_driver_set_ap_set_cfg(
 		prNetDev,
-		aucOidBuf,
+		pcExtra,
 		i4TotalFixLen);
 	  break;
 	case IOC_AP_STA_DISASSOC:
 	i4BytesWritten =
 		priv_driver_set_ap_sta_disassoc(
 		prNetDev,
-		aucOidBuf,
+		pcExtra,
 		i4TotalFixLen);
 	  break;
 	default:
