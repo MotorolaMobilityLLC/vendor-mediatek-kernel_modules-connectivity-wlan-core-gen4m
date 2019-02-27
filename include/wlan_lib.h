@@ -801,9 +801,11 @@ typedef struct _PARAM_GET_STA_STATISTICS {
 	TX_VECTOR_BBP_LATCH_T rTxVector[ENUM_BAND_NUM];
 	MIB_INFO_STAT_T rMibInfo[ENUM_BAND_NUM];
 	UINT_8 ucResetCounter;
+	BOOLEAN fgIsForceTxStream;
+	BOOLEAN fgIsForceSeOff;
 
 	/* Reserved fields */
-	UINT_8 au4Reserved[22];
+	UINT_8 au4Reserved[20];
 } PARAM_GET_STA_STA_STATISTICS, *P_PARAM_GET_STA_STATISTICS;
 
 typedef struct _PARAM_GET_BSS_STATISTICS {
