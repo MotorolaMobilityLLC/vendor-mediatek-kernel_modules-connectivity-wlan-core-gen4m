@@ -3675,6 +3675,7 @@ static int32_t wlanOnAtReset(void)
 
 	DBGLOG(INIT, INFO, "Driver On during Reset\n");
 
+	fgSimplifyResetFlow = FALSE;
 	if (u4WlanDevNum > 0
 		&& u4WlanDevNum <= CFG_MAX_WLAN_DEVICES) {
 		prDev = arWlanDevInfo[u4WlanDevNum - 1].prDev;
@@ -3700,7 +3701,6 @@ static int32_t wlanOnAtReset(void)
 	}
 
 	prGlueInfo->ulFlag = 0;
-	fgSimplifyResetFlow = FALSE;
 	do {
 #if (CFG_SUPPORT_TRACE_TC4 == 1)
 		wlanDebugTC4Init();
