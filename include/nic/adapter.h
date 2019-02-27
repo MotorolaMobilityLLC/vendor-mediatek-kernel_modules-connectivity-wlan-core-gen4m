@@ -850,6 +850,7 @@ struct WIFI_VAR {
 	uint32_t u4MtkOuiCap;
 	uint8_t aucMtkFeature[4];
 	u_int8_t ucGbandProbe256QAM;
+	u_int8_t ucDisable24GG256QAM;
 #endif
 
 	u_int8_t fgCsaInProgress;
