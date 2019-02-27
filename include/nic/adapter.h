@@ -907,6 +907,7 @@ struct _ADAPTER_T {
 	P_BSS_INFO_T prAisBssInfo;
 
 #if CFG_TCP_IP_CHKSUM_OFFLOAD
+	BOOLEAN fgIsSupportCsumOffload; /* Does FW support Checksum Offload feature */
 	UINT_32 u4CSUMFlags;
 #endif				/* CFG_TCP_IP_CHKSUM_OFFLOAD */
 
@@ -1147,6 +1148,7 @@ struct _ADAPTER_T {
 
 	/* COEX feature */
 	UINT_32 u4FddMode;
+
 #if CFG_WOW_SUPPORT
 	WOW_CTRL_T	rWowCtrl;
 #endif

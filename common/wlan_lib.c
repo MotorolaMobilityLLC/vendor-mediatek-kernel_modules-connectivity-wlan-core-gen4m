@@ -4175,23 +4175,25 @@ WLAN_STATUS wlanUpdateBasicConfig(IN P_ADAPTER_T prAdapter)
 	prCmdBasicConfig->ucCtrlFlagDebugLevel = prWifiVar->ucCtrlFlagDebugLevel;
 
 #if CFG_TCP_IP_CHKSUM_OFFLOAD
-	if (prAdapter->u4CSUMFlags & CSUM_OFFLOAD_EN_TX_TCP)
-		prCmdBasicConfig->rCsumOffload.u2TxChecksum |= BIT(2);
+	if (prAdapter->fgIsSupportCsumOffload) {
+		if (prAdapter->u4CSUMFlags & CSUM_OFFLOAD_EN_TX_TCP)
+			prCmdBasicConfig->rCsumOffload.u2TxChecksum |= BIT(2);
 
-	if (prAdapter->u4CSUMFlags & CSUM_OFFLOAD_EN_TX_UDP)
-		prCmdBasicConfig->rCsumOffload.u2TxChecksum |= BIT(1);
+		if (prAdapter->u4CSUMFlags & CSUM_OFFLOAD_EN_TX_UDP)
+			prCmdBasicConfig->rCsumOffload.u2TxChecksum |= BIT(1);
 
-	if (prAdapter->u4CSUMFlags & CSUM_OFFLOAD_EN_TX_IP)
-		prCmdBasicConfig->rCsumOffload.u2TxChecksum |= BIT(0);
+		if (prAdapter->u4CSUMFlags & CSUM_OFFLOAD_EN_TX_IP)
+			prCmdBasicConfig->rCsumOffload.u2TxChecksum |= BIT(0);
 
-	if (prAdapter->u4CSUMFlags & CSUM_OFFLOAD_EN_RX_TCP)
-		prCmdBasicConfig->rCsumOffload.u2RxChecksum |= BIT(2);
+		if (prAdapter->u4CSUMFlags & CSUM_OFFLOAD_EN_RX_TCP)
+			prCmdBasicConfig->rCsumOffload.u2RxChecksum |= BIT(2);
 
-	if (prAdapter->u4CSUMFlags & CSUM_OFFLOAD_EN_RX_UDP)
-		prCmdBasicConfig->rCsumOffload.u2RxChecksum |= BIT(1);
+		if (prAdapter->u4CSUMFlags & CSUM_OFFLOAD_EN_RX_UDP)
+			prCmdBasicConfig->rCsumOffload.u2RxChecksum |= BIT(1);
 
-	if (prAdapter->u4CSUMFlags & (CSUM_OFFLOAD_EN_RX_IPv4 | CSUM_OFFLOAD_EN_RX_IPv6))
-		prCmdBasicConfig->rCsumOffload.u2RxChecksum |= BIT(0);
+		if (prAdapter->u4CSUMFlags & (CSUM_OFFLOAD_EN_RX_IPv4 | CSUM_OFFLOAD_EN_RX_IPv6))
+			prCmdBasicConfig->rCsumOffload.u2RxChecksum |= BIT(0);
+	}
 #endif
 
 	rResult = wlanSendCommand(prAdapter, prCmdInfo);
