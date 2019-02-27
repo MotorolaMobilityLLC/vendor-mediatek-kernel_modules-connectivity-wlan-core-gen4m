@@ -278,6 +278,7 @@ VOID halDisableInterrupt(IN P_ADAPTER_T prAdapter)
 /*----------------------------------------------------------------------------*/
 BOOLEAN halSetDriverOwn(IN P_ADAPTER_T prAdapter)
 {
+	P_BUS_INFO prBusInfo;
 	BOOLEAN fgStatus = TRUE;
 	UINT_32 i, u4CurrTick;
 	BOOLEAN fgTimeout;
@@ -286,6 +287,8 @@ BOOLEAN halSetDriverOwn(IN P_ADAPTER_T prAdapter)
 	BOOLEAN fgDummyReq = FALSE;
 
 	ASSERT(prAdapter);
+
+	prBusInfo = prAdapter->chip_info->bus_info;
 
 	GLUE_INC_REF_CNT(prAdapter->u4PwrCtrlBlockCnt);
 
@@ -303,7 +306,7 @@ BOOLEAN halSetDriverOwn(IN P_ADAPTER_T prAdapter)
 
 	while (1) {
 
-		if (test_bit(GLUE_FLAG_INT_BIT, &prAdapter->prGlueInfo->ulFlag))
+		if (!prBusInfo->fgCheckDriverOwnInt || test_bit(GLUE_FLAG_INT_BIT, &prAdapter->prGlueInfo->ulFlag))
 			HAL_LP_OWN_RD(prAdapter, &fgResult);
 
 		fgTimeout = ((kalGetTimeTick() - u4CurrTick) > LP_OWN_BACK_TOTAL_DELAY_MS) ? TRUE : FALSE;
