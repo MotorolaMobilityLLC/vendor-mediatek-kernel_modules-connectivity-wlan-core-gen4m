@@ -2675,7 +2675,7 @@ struct TX_PWR_CTRL_ELEMENT *txPwrCtrlStringToStruct(char *pcContent,
 	uint32_t copySize = 0;
 	uint8_t i, j, op, ucSettingCount = 0;
 	uint8_t value, value2, count = 0;
-	uint8_t ucAppliedWay, ucOperation;
+	uint8_t ucAppliedWay, ucOperation = 0;
 	uint8_t ucCommaCount;
 
 	if (!pcContent) {
