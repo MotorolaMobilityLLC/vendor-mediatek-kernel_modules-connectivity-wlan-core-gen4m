@@ -2001,7 +2001,7 @@ priv_set_struct(IN struct net_device *prNetDev,
 	case PRIV_CMD_SET_TX_POWER:
 		{
 			enum ENUM_TX_POWER_CTRL_TYPE eCtrlType;
-			struct PARAM_MTK_WIFI_TEST_STRUCT *prTestStruct;
+			struct PARAM_MTK_WIFI_TEST_STRUCT_2 *prTestStruct;
 			uint32_t u4CmdLen = 0;
 			uint32_t u4SetInfoLen = 0;
 			uint8_t cStartTxBackOff = 0;
@@ -2017,7 +2017,7 @@ priv_set_struct(IN struct net_device *prNetDev,
 			 */
 			uint32_t TxPwrBackOffParam = 0;
 
-			prTestStruct = (struct PARAM_MTK_WIFI_TEST_STRUCT *)
+			prTestStruct = (struct PARAM_MTK_WIFI_TEST_STRUCT_2 *)
 								&aucOidBuf[0];
 			u4CmdLen = prIwReqData->data.length;
 			if (u4CmdLen > sizeof(aucOidBuf)) {
