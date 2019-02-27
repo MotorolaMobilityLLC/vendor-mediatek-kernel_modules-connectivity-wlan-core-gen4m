@@ -222,24 +222,38 @@ static struct ieee80211_channel mtk_2ghz_channels[] = {
 	.max_power          = 30,                       \
 }
 static struct ieee80211_channel mtk_5ghz_channels[] = {
-	CHAN5G(36, 0), CHAN5G(40, 0),
-	CHAN5G(44, 0), CHAN5G(48, 0),
-	CHAN5G(52, 0), CHAN5G(56, 0),
-	CHAN5G(60, 0), CHAN5G(64, 0),
-	CHAN5G(100, 0), CHAN5G(104, 0),
-	CHAN5G(108, 0), CHAN5G(112, 0),
-	CHAN5G(116, 0), CHAN5G(120, 0),
-	CHAN5G(124, 0), CHAN5G(128, 0),
-	CHAN5G(132, 0), CHAN5G(136, 0),
-	CHAN5G(140, 0), CHAN5G(144, 0),
-	CHAN5G(149, 0), CHAN5G(153, 0),
-	CHAN5G(157, 0), CHAN5G(161, 0),
-	CHAN5G(165, 0),	CHAN5G(169, 0),
-	CHAN5G(173, 0), CHAN5G(184, 0),
-	CHAN5G(188, 0), CHAN5G(192, 0),
-	CHAN5G(196, 0), CHAN5G(200, 0),
-	CHAN5G(204, 0), CHAN5G(208, 0),
-	CHAN5G(212, 0), CHAN5G(216, 0),
+	/* UNII-1 */
+	CHAN5G(34, 0), CHAN5G(36, 0),
+	CHAN5G(38, 0), CHAN5G(40, 0),
+	CHAN5G(42, 0), CHAN5G(44, 0),
+	CHAN5G(46, 0), CHAN5G(48, 0),
+	/* UNII-2 */
+	CHAN5G(52, IEEE80211_CHAN_RADAR),
+	CHAN5G(56, IEEE80211_CHAN_RADAR),
+	CHAN5G(60, IEEE80211_CHAN_RADAR),
+	CHAN5G(64, IEEE80211_CHAN_RADAR),
+	/* UNII-2e */
+	CHAN5G(100, IEEE80211_CHAN_RADAR),
+	CHAN5G(104, IEEE80211_CHAN_RADAR),
+	CHAN5G(108, IEEE80211_CHAN_RADAR),
+	CHAN5G(112, IEEE80211_CHAN_RADAR),
+	CHAN5G(116, IEEE80211_CHAN_RADAR),
+	CHAN5G(120, IEEE80211_CHAN_RADAR),
+	CHAN5G(124, IEEE80211_CHAN_RADAR),
+	CHAN5G(128, IEEE80211_CHAN_RADAR),
+	CHAN5G(132, IEEE80211_CHAN_RADAR),
+	CHAN5G(136, IEEE80211_CHAN_RADAR),
+	CHAN5G(140, IEEE80211_CHAN_RADAR),
+	/* UNII-3 */
+	CHAN5G(149, 0),
+	CHAN5G(153, 0), CHAN5G(157, 0),
+	CHAN5G(161, 0), CHAN5G(165, 0),
+	CHAN5G(169, 0), CHAN5G(173, 0),
+	CHAN5G(184, 0), CHAN5G(188, 0),
+	CHAN5G(192, 0), CHAN5G(196, 0),
+	CHAN5G(200, 0), CHAN5G(204, 0),
+	CHAN5G(208, 0), CHAN5G(212, 0),
+	CHAN5G(216, 0),
 };
 
 #define RATETAB_ENT(_rate, _rateid, _flags) \
@@ -1478,6 +1492,10 @@ void wlanUpdateChannelTable(struct GLUE_INFO *prGlueInfo)
 				if (mtk_5ghz_channels[j].hw_value == aucChannelList[i].ucChannelNum) {
 					mtk_5ghz_channels[j].flags &= ~IEEE80211_CHAN_DISABLED;
 					mtk_5ghz_channels[j].orig_flags &= ~IEEE80211_CHAN_DISABLED;
+					mtk_5ghz_channels[j].dfs_state =
+					    (aucChannelList[i].eDFS) ?
+					     NL80211_DFS_USABLE :
+					     NL80211_DFS_UNAVAILABLE;
 					break;
 				}
 			}
