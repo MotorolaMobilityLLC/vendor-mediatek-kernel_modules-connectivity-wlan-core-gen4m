@@ -89,6 +89,10 @@ typedef enum _ENUM_MSG_ID_T {
 	MID_CNM_P2P_CH_GRANT,	/* CNM notify P2P for indicating channel granted */
 	MID_CNM_BOW_CH_GRANT,	/* CNM notify BOW for indicating channel granted */
 
+#if (CFG_SUPPORT_DFS_MASTER == 1)
+	MID_CNM_P2P_RADAR_DETECT,
+	MID_CNM_P2P_CSA_DONE,
+#endif
     /*--------------------------------------------------*/
 	/* SCN Module Mailbox Messages                      */
     /*--------------------------------------------------*/
@@ -150,6 +154,10 @@ typedef enum _ENUM_MSG_ID_T {
 	MID_MNY_P2P_START_AP,
 	MID_MNY_P2P_DEL_IFACE,
 	MID_MNY_P2P_MGMT_FRAME_UPDATE,
+#if (CFG_SUPPORT_DFS_MASTER == 1)
+	MID_MNY_P2P_DFS_CAC,
+	MID_MNY_P2P_SET_NEW_CHANNEL,
+#endif
 #if CFG_SUPPORT_WFD
 	MID_MNY_P2P_WFD_CFG_UPDATE,
 #endif

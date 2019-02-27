@@ -271,6 +271,15 @@ static struct ieee80211_rate mtk_rates[] = {
 	.tx_params      = IEEE80211_HT_MCS_TX_DEFINED,      \
 }
 
+#define WLAN_VHT_MCS_INFO                                                   \
+{                                                                           \
+	.rx_mcs_map     = 0xFFFA,                                               \
+	.rx_highest     = cpu_to_le16(867),   \
+	.tx_mcs_map     = 0xFFFA,                                               \
+	.tx_highest     = cpu_to_le16(867),   \
+}
+
+
 #define WLAN_HT_CAP                                   \
 {                                                       \
 	.ht_supported   = true,                             \
@@ -282,6 +291,20 @@ static struct ieee80211_rate mtk_rates[] = {
 	.ampdu_factor   = IEEE80211_HT_MAX_AMPDU_64K,       \
 	.ampdu_density  = IEEE80211_HT_MPDU_DENSITY_NONE,   \
 	.mcs            = WLAN_MCS_INFO,                  \
+}
+
+#define WLAN_VHT_CAP                                    \
+{                                                       \
+	.vht_supported  = true,                             \
+	.cap            = IEEE80211_VHT_CAP_RXLDPC          \
+			| IEEE80211_VHT_CAP_SUPP_CHAN_WIDTH_MASK    \
+			| IEEE80211_VHT_CAP_MAX_MPDU_LENGTH_11454   \
+			| IEEE80211_VHT_CAP_RXLDPC                  \
+			| IEEE80211_VHT_CAP_SHORT_GI_80             \
+			| IEEE80211_VHT_CAP_TXSTBC                  \
+			| IEEE80211_VHT_CAP_SU_BEAMFORMER_CAPABLE   \
+			| IEEE80211_VHT_CAP_SU_BEAMFORMEE_CAPABLE,  \
+	.vht_mcs        = WLAN_VHT_MCS_INFO,                \
 }
 
 /* public for both Legacy Wi-Fi / P2P access */
@@ -302,6 +325,7 @@ struct ieee80211_supported_band mtk_band_5ghz = {
 	.bitrates = mtk_a_rates,
 	.n_bitrates = mtk_a_rates_size,
 	.ht_cap = WLAN_HT_CAP,
+	.vht_cap = WLAN_VHT_CAP,
 };
 
 const UINT_32 mtk_cipher_suites[5] = {
@@ -1456,7 +1480,11 @@ static void wlanCreateWirelessDevice(void)
 #if LINUX_VERSION_CODE < KERNEL_VERSION(3, 14, 0)
 	prWiphy->flags = WIPHY_FLAG_CUSTOM_REGULATORY | WIPHY_FLAG_SUPPORTS_FW_ROAM | WIPHY_FLAG_HAS_REMAIN_ON_CHANNEL;
 #else
+#if (CFG_SUPPORT_DFS_MASTER == 1)
+	prWiphy->flags = WIPHY_FLAG_SUPPORTS_FW_ROAM | WIPHY_FLAG_HAS_REMAIN_ON_CHANNEL | WIPHY_FLAG_HAS_CHANNEL_SWITCH;
+#else
 	prWiphy->flags = WIPHY_FLAG_SUPPORTS_FW_ROAM | WIPHY_FLAG_HAS_REMAIN_ON_CHANNEL;
+#endif
 	prWiphy->regulatory_flags = REGULATORY_CUSTOM_REG;
 #endif
 
