@@ -75,6 +75,7 @@
 #include "wf_ple.h"
 #include "host_csr.h"
 #include "dma_sch.h"
+#include "mt_dmac.h"
 
 /*******************************************************************************
  *                              C O N S T A N T S
@@ -637,6 +638,7 @@ void halShowPseInfo(IN struct ADAPTER *prAdapter)
 	uint32_t fpg_cnt, ffa_cnt, fpg_head, fpg_tail;
 	uint32_t max_q, min_q, rsv_pg, used_pg;
 	uint32_t i, page_offset, addr, value;
+	uint32_t txd_payload_info[16] = {0};
 
 	HAL_MCR_RD(prAdapter, PSE_PBUF_CTRL, &pse_buf_ctrl);
 	HAL_MCR_RD(prAdapter, PSE_QUEUE_EMPTY, &pse_stat);
@@ -870,6 +872,7 @@ void halShowPseInfo(IN struct ADAPTER *prAdapter)
 			DBGLOG(HAL, INFO,
 				"tail/head fid = 0x%03x/0x%03x, pkt cnt = %x\n",
 				tfid, hfid, pktcnt);
+			halGetPsePayload(prAdapter, hfid, txd_payload_info);
 		}
 	}
 
@@ -930,6 +933,7 @@ void halShowPleInfo(IN struct ADAPTER *prAdapter)
 	uint32_t fpg_cnt, ffa_cnt, fpg_head, fpg_tail, hif_max_q, hif_min_q;
 	uint32_t rpg_hif, upg_hif, cpu_max_q, cpu_min_q, rpg_cpu, upg_cpu;
 	uint32_t i, j, addr, value;
+	uint32_t txd_info[16] = {0};
 
 	HAL_MCR_RD(prAdapter, PLE_PBUF_CTRL, &ple_buf_ctrl[0]);
 	HAL_MCR_RD(prAdapter, PLE_RELEASE_CTRL, &ple_buf_ctrl[1]);
@@ -1151,7 +1155,8 @@ void halShowPleInfo(IN struct ADAPTER *prAdapter)
 				DBGLOG(HAL, INFO,
 					"tail/head fid = 0x%03x/0x%03x, pkt cnt = %x",
 					 tfid, hfid, pktcnt);
-
+				halGetPleTxdInfo(prAdapter, hfid, txd_info);
+				halDumpTxdInfo(prAdapter, txd_info);
 				if (((sta_pause[j % 4] & 0x1 << i) >> i) == 1)
 					ctrl = 2;
 
@@ -1648,3 +1653,212 @@ void haldumpMacInfo(struct ADAPTER *prAdapter)
 		DBGLOG(HAL, INFO, "0x%08x: 0x%08x\n", i, value);
 	}
 }
+
+static char *q_idx_mcu_str[] = {"RQ0", "RQ1", "RQ2", "RQ3", "Invalid"};
+static char *pkt_ft_str[] = {"cut_through", "store_forward",
+	"cmd", "PDA_FW_Download"};
+static char *hdr_fmt_str[] = {
+	"Non-80211-Frame",
+	"Command-Frame",
+	"Normal-80211-Frame",
+	"enhanced-80211-Frame",
+};
+static char *p_idx_str[] = {"LMAC", "MCU"};
+static char *q_idx_lmac_str[] = {"WMM0_AC0", "WMM0_AC1", "WMM0_AC2", "WMM0_AC3",
+	"WMM1_AC0", "WMM1_AC1", "WMM1_AC2", "WMM1_AC3",
+	"WMM2_AC0", "WMM2_AC1", "WMM2_AC2", "WMM2_AC3",
+	"WMM3_AC0", "WMM3_AC1", "WMM3_AC2", "WMM3_AC3",
+	"Band0_ALTX", "Band0_BMC", "Band0_BNC", "Band0_PSMP",
+	"Band1_ALTX", "Band1_BMC", "Band1_BNC", "Band1_PSMP",
+	"Invalid"};
+
+void halGetPsePayload(
+	IN struct ADAPTER *prAdapter, uint32_t fid, uint32_t *result) {
+	uint32_t u4Start_txd = 0;
+	uint32_t u4High_txd = 0;
+	uint32_t u4Remap_txd = 0;
+	uint32_t u4Pse_offset = 0;
+	uint32_t i = 0, value = 0;
+
+	HAL_MCR_RD(prAdapter, 0x82060014, &value);
+	u4Pse_offset = (value & 0x3FF0000) << 10;
+	u4High_txd = (u4Pse_offset >> 16);
+	HAL_MCR_WR(prAdapter, 0x0000700C, u4High_txd);
+	u4Start_txd = 0x40000000 + u4Pse_offset + (fid << 7);
+	u4Remap_txd = 0x000D0000 + (u4Start_txd & 0xFFFF);
+	for (i = 0; i < 16; i++)
+		HAL_MCR_RD(prAdapter, u4Remap_txd + (i * 4), &result[i]);
+	DBGLOG(HAL, INFO, "Dump fid=%d PSE payload\n", fid);
+	dumpMemory32(result, 64);
+}
+
+void halGetPleTxdInfo(
+	IN struct ADAPTER *prAdapter, uint32_t fid, uint32_t *result) {
+	uint32_t u4Start_txd = 0;
+	uint32_t u4High_txd = 0;
+	uint32_t u4Remap_txd = 0;
+	uint32_t i = 0;
+
+	u4Start_txd = 0x40000000 + (fid << 6);
+	u4High_txd = (u4Start_txd >> 16);
+	HAL_MCR_WR(prAdapter, 0x0000700C, u4High_txd);
+	u4Remap_txd = 0x000D0000 + (fid << 6);
+	for (i = 0; i < 16; i++) {
+		HAL_MCR_RD(prAdapter,
+			u4Remap_txd + (i * 4), &result[i]);
+	}
+	DBGLOG(HAL, INFO, "Dump fid=%d PLE TXD\n", fid);
+	dumpMemory32(result, 64);
+}
+
+void halDumpTxdInfo(IN struct ADAPTER *prAdapter,
+	uint32_t *tmac_info)
+{
+	struct TMAC_TXD_S *txd_s;
+	struct TMAC_TXD_0 *txd_0;
+	struct TMAC_TXD_1 *txd_1;
+	uint8_t q_idx = 0;
+
+	txd_s = (struct TMAC_TXD_S *)tmac_info;
+	txd_0 = (struct TMAC_TXD_0 *)tmac_info;
+	txd_1 = (struct TMAC_TXD_1 *)(tmac_info + sizeof(struct TMAC_TXD_0));
+
+	DBGLOG(HAL, INFO, "TMAC_TXD Fields:\n");
+	DBGLOG(HAL, INFO, "\tTMAC_TXD_0:\n");
+	DBGLOG(HAL, INFO, "\t\tPortID=%d(%s)\n",
+			txd_0->p_idx, p_idx_str[txd_0->p_idx]);
+
+	if (txd_0->p_idx == P_IDX_LMAC)
+		q_idx = txd_0->q_idx % 0x18;
+	else
+		q_idx = ((txd_0->q_idx == TxQ_IDX_MCU_PDA) ?
+			txd_0->q_idx : (txd_0->q_idx % 0x4));
+
+	DBGLOG(HAL, INFO, "\t\tQueID=0x%x(%s %s)\n", txd_0->q_idx,
+			 (txd_0->p_idx == P_IDX_LMAC ? "LMAC" : "MCU"),
+			 txd_0->p_idx == P_IDX_LMAC ?
+				q_idx_lmac_str[q_idx] : q_idx_mcu_str[q_idx]);
+	DBGLOG(HAL, INFO, "\t\tTxByteCnt=%d\n", txd_0->TxByteCount);
+	DBGLOG(HAL, INFO, "\tTMAC_TXD_1:\n");
+	DBGLOG(HAL, INFO, "\t\twlan_idx=%d\n", txd_1->wlan_idx);
+	DBGLOG(HAL, INFO, "\t\tHdrFmt=%d(%s)\n",
+			 txd_1->hdr_format, hdr_fmt_str[txd_1->hdr_format]);
+	DBGLOG(HAL, INFO, "\t\tHdrInfo=0x%x\n", txd_1->hdr_info);
+
+	switch (txd_1->hdr_format) {
+	case TMI_HDR_FT_NON_80211:
+		DBGLOG(HAL, INFO,
+			"\t\t\tMRD=%d, EOSP=%d, RMVL=%d, VLAN=%d, ETYP=%d\n",
+			txd_1->hdr_info & (1 << TMI_HDR_INFO_0_BIT_MRD),
+			txd_1->hdr_info & (1 << TMI_HDR_INFO_0_BIT_EOSP),
+			txd_1->hdr_info & (1 << TMI_HDR_INFO_0_BIT_RMVL),
+			txd_1->hdr_info & (1 << TMI_HDR_INFO_0_BIT_VLAN),
+			txd_1->hdr_info & (1 << TMI_HDR_INFO_0_BIT_ETYP));
+		break;
+
+	case TMI_HDR_FT_CMD:
+		DBGLOG(HAL, INFO, "\t\t\tRsvd=0x%x\n", txd_1->hdr_info);
+		break;
+
+	case TMI_HDR_FT_NOR_80211:
+		DBGLOG(HAL, INFO, "\t\t\tHeader Len=%d(WORD)\n",
+				 txd_1->hdr_info & TMI_HDR_INFO_2_MASK_LEN);
+		break;
+
+	case TMI_HDR_FT_ENH_80211:
+		DBGLOG(HAL, INFO, "\t\t\tEOSP=%d, AMS=%d\n",
+			txd_1->hdr_info & (1 << TMI_HDR_INFO_3_BIT_EOSP),
+			txd_1->hdr_info & (1 << TMI_HDR_INFO_3_BIT_AMS));
+		break;
+	}
+
+	DBGLOG(HAL, INFO, "\t\tTxDFormatType=%d(%s format)\n", txd_1->ft,
+		(txd_1->ft == TMI_FT_LONG ?
+		"Long - 8 DWORD" : "Short - 3 DWORD"));
+	DBGLOG(HAL, INFO, "\t\ttxd_len=%d page(%d DW)\n",
+		txd_1->txd_len == 0 ? 1 : 2, (txd_1->txd_len + 1) * 16);
+	DBGLOG(HAL, INFO,
+		"\t\tHdrPad=%d(Padding Mode: %s, padding bytes: %d)\n",
+		txd_1->hdr_pad,
+		((txd_1->hdr_pad & (TMI_HDR_PAD_MODE_TAIL << 1)) ?
+		"tail" : "head"), (txd_1->hdr_pad & 0x1 ? 2 : 0));
+	DBGLOG(HAL, INFO, "\t\tUNxV=%d\n", txd_1->UNxV);
+	DBGLOG(HAL, INFO, "\t\tamsdu=%d\n", txd_1->amsdu);
+	DBGLOG(HAL, INFO, "\t\tTID=%d\n", txd_1->tid);
+	DBGLOG(HAL, INFO, "\t\tpkt_ft=%d(%s)\n",
+			 txd_1->pkt_ft, pkt_ft_str[txd_1->pkt_ft]);
+	DBGLOG(HAL, INFO, "\t\town_mac=%d\n", txd_1->OwnMacAddr);
+
+	if (txd_s->TxD1.ft == TMI_FT_LONG) {
+		struct TMAC_TXD_L *txd_l = (struct TMAC_TXD_L *)tmac_info;
+		struct TMAC_TXD_2 *txd_2 = &txd_l->TxD2;
+		struct TMAC_TXD_3 *txd_3 = &txd_l->TxD3;
+		struct TMAC_TXD_4 *txd_4 = &txd_l->TxD4;
+		struct TMAC_TXD_5 *txd_5 = &txd_l->TxD5;
+		struct TMAC_TXD_6 *txd_6 = &txd_l->TxD6;
+
+		DBGLOG(HAL, INFO, "\tTMAC_TXD_2:\n");
+		DBGLOG(HAL, INFO, "\t\tsub_type=%d\n", txd_2->sub_type);
+		DBGLOG(HAL, INFO, "\t\tfrm_type=%d\n", txd_2->frm_type);
+		DBGLOG(HAL, INFO, "\t\tNDP=%d\n", txd_2->ndp);
+		DBGLOG(HAL, INFO, "\t\tNDPA=%d\n", txd_2->ndpa);
+		DBGLOG(HAL, INFO, "\t\tSounding=%d\n", txd_2->sounding);
+		DBGLOG(HAL, INFO, "\t\tRTS=%d\n", txd_2->rts);
+		DBGLOG(HAL, INFO, "\t\tbc_mc_pkt=%d\n", txd_2->bc_mc_pkt);
+		DBGLOG(HAL, INFO, "\t\tBIP=%d\n", txd_2->bip);
+		DBGLOG(HAL, INFO, "\t\tDuration=%d\n", txd_2->duration);
+		DBGLOG(HAL, INFO, "\t\tHE(HTC Exist)=%d\n", txd_2->htc_vld);
+		DBGLOG(HAL, INFO, "\t\tFRAG=%d\n", txd_2->frag);
+		DBGLOG(HAL, INFO, "\t\tReamingLife/MaxTx time=%d\n",
+			txd_2->max_tx_time);
+		DBGLOG(HAL, INFO, "\t\tpwr_offset=%d\n", txd_2->pwr_offset);
+		DBGLOG(HAL, INFO, "\t\tba_disable=%d\n", txd_2->ba_disable);
+		DBGLOG(HAL, INFO, "\t\ttiming_measure=%d\n",
+			txd_2->timing_measure);
+		DBGLOG(HAL, INFO, "\t\tfix_rate=%d\n", txd_2->fix_rate);
+		DBGLOG(HAL, INFO, "\tTMAC_TXD_3:\n");
+		DBGLOG(HAL, INFO, "\t\tNoAck=%d\n", txd_3->no_ack);
+		DBGLOG(HAL, INFO, "\t\tPF=%d\n", txd_3->protect_frm);
+		DBGLOG(HAL, INFO, "\t\ttx_cnt=%d\n", txd_3->tx_cnt);
+		DBGLOG(HAL, INFO, "\t\tremain_tx_cnt=%d\n",
+			txd_3->remain_tx_cnt);
+		DBGLOG(HAL, INFO, "\t\tsn=%d\n", txd_3->sn);
+		DBGLOG(HAL, INFO, "\t\tpn_vld=%d\n", txd_3->pn_vld);
+		DBGLOG(HAL, INFO, "\t\tsn_vld=%d\n", txd_3->sn_vld);
+		DBGLOG(HAL, INFO, "\tTMAC_TXD_4:\n");
+		DBGLOG(HAL, INFO, "\t\tpn_low=0x%x\n", txd_4->pn_low);
+		DBGLOG(HAL, INFO, "\tTMAC_TXD_5:\n");
+		DBGLOG(HAL, INFO, "\t\ttx_status_2_host=%d\n",
+			txd_5->tx_status_2_host);
+		DBGLOG(HAL, INFO, "\t\ttx_status_2_mcu=%d\n",
+			txd_5->tx_status_2_mcu);
+		DBGLOG(HAL, INFO, "\t\ttx_status_fmt=%d\n",
+			txd_5->tx_status_fmt);
+
+		if (txd_5->tx_status_2_host || txd_5->tx_status_2_mcu)
+			DBGLOG(HAL, INFO, "\t\tpid=%d\n", txd_5->pid);
+
+		if (txd_2->fix_rate)
+			DBGLOG(HAL, INFO,
+				"\t\tda_select=%d\n", txd_5->da_select);
+
+		DBGLOG(HAL, INFO, "\t\tpwr_mgmt=0x%x\n", txd_5->pwr_mgmt);
+		DBGLOG(HAL, INFO, "\t\tpn_high=0x%x\n", txd_5->pn_high);
+
+		if (txd_2->fix_rate) {
+			DBGLOG(HAL, INFO, "\tTMAC_TXD_6:\n");
+			DBGLOG(HAL, INFO, "\t\tfix_rate_mode=%d\n",
+				txd_6->fix_rate_mode);
+			DBGLOG(HAL, INFO, "\t\tGI=%d(%s)\n", txd_6->gi,
+				(txd_6->gi == 0 ? "LONG" : "SHORT"));
+			DBGLOG(HAL, INFO, "\t\tldpc=%d(%s)\n", txd_6->ldpc,
+				(txd_6->ldpc == 0 ? "BCC" : "LDPC"));
+			DBGLOG(HAL, INFO, "\t\tTxBF=%d\n", txd_6->TxBF);
+			DBGLOG(HAL, INFO, "\t\ttx_rate=0x%x\n", txd_6->tx_rate);
+			DBGLOG(HAL, INFO, "\t\tant_id=%d\n", txd_6->ant_id);
+			DBGLOG(HAL, INFO, "\t\tdyn_bw=%d\n", txd_6->dyn_bw);
+			DBGLOG(HAL, INFO, "\t\tbw=%d\n", txd_6->bw);
+		}
+	}
+}
+

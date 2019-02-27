@@ -477,5 +477,10 @@ void kalDumpRxRing(struct GLUE_INFO *prGlueInfo,
 		   uint32_t u4Num, bool fgDumpContent);
 void haldumpMacInfo(IN struct ADAPTER *prAdapter);
 void haldumpPhyInfo(struct ADAPTER *prAdapter);
+void halGetPleTxdInfo(IN struct ADAPTER *prAdapter,
+		      uint32_t fid, uint32_t *result);
+void halGetPsePayload(IN struct ADAPTER *prAdapter,
+		      uint32_t fid, uint32_t *result);
+void halDumpTxdInfo(IN struct ADAPTER *prAdapter, uint32_t *tmac_info);
 
 #endif /* HIF_PDMA_H__ */
