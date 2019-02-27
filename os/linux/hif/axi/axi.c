@@ -226,6 +226,10 @@ static int hifAxiProbe(void)
 
 	DBGLOG(INIT, TRACE, "driver.name = %s\n", prPlatDev->id_entry->name);
 
+#ifdef CFG_MTK_ANDROID_WMT
+	mtk_wcn_consys_hw_wifi_paldo_ctrl(1);
+#endif
+
 	if (pfWlanProbe((void *)prPlatDev,
 			(void *)prPlatDev->id_entry->driver_data) !=
 			WLAN_STATUS_SUCCESS) {
@@ -247,6 +251,11 @@ static int hifAxiRemove(void)
 
 	if (g_fgDriverProbed)
 		pfWlanRemove();
+
+#ifdef CFG_MTK_ANDROID_WMT
+	mtk_wcn_consys_hw_wifi_paldo_ctrl(0);
+#endif
+
 	DBGLOG(INIT, TRACE, "pfWlanRemove done\n");
 	DBGLOG(INIT, TRACE, "hifAxiRemove() done\n");
 	return 0;
