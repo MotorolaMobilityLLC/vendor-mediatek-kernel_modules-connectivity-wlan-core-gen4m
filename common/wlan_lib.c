@@ -5890,7 +5890,8 @@ void wlanCfgLoadIotApRule(IN struct ADAPTER *prAdapter)
 		kalMemSet(prIotApRule, '\0', sizeof(struct WLAN_IOT_AP_RULE_T));
 		kalMemSet(aucCfgVal, '\0', WLAN_CFG_VALUE_LEN_MAX);
 		kalMemSet(aucCfgKey, '\0', WLAN_CFG_KEY_LEN_MAX);
-		pOffset = &prIotApRule->ucVersion;
+		pOffset = (uint8_t *)prIotApRule +
+			OFFSET_OF(struct WLAN_IOT_AP_RULE_T, ucVersion);
 		pCurTok = &aucCfgVal[0];
 		pNexTok = &aucCfgVal[0];
 		kalSprintf(aucCfgKey, "IOTAP%d", ucCnt);
