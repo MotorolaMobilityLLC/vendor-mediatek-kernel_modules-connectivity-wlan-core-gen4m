@@ -604,7 +604,7 @@ VOID cnmStaRecFree(P_ADAPTER_T prAdapter, P_STA_RECORD_T prStaRec)
 	if (!prStaRec)
 		return;
 
-	DBGLOG(RSN, INFO, "cnmStaRecFree %d", prStaRec->ucIndex);
+	DBGLOG(RSN, INFO, "cnmStaRecFree %d\n", prStaRec->ucIndex);
 
 	ucStaRecIndex = prStaRec->ucIndex;
 	ucBssIndex = prStaRec->ucBssIndex;
