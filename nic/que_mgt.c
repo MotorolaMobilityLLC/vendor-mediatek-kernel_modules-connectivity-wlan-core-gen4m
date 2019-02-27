@@ -1054,7 +1054,6 @@ struct MSDU_INFO *qmEnqueueTxPackets(IN struct ADAPTER *prAdapter,
 
 	struct QUE *prTxQue;
 	struct QUE rNotEnqueuedQue;
-	struct STA_RECORD *prStaRec;
 	uint8_t ucTC;
 	struct TX_CTRL *prTxCtrl = &prAdapter->rTxCtrl;
 	struct QUE_MGT *prQM = &prAdapter->rQM;
@@ -1146,14 +1145,8 @@ struct MSDU_INFO *qmEnqueueTxPackets(IN struct ADAPTER *prAdapter,
 					QM_DBG_CNT_INC(prQM, QM_DBG_CNT_24);
 				}
 #if ARP_MONITER_ENABLE
-				prStaRec =
-					QM_GET_STA_REC_PTR_FROM_INDEX(prAdapter,
-						prCurrentMsduInfo->
-						ucStaRecIndex);
-				if (prStaRec && IS_STA_IN_AIS(prStaRec) &&
-					prCurrentMsduInfo->eSrc == TX_PACKET_OS)
-					qmDetectArpNoResponse(prAdapter,
-						prCurrentMsduInfo);
+				qmDetectArpNoResponse(prAdapter,
+						      prCurrentMsduInfo);
 #endif
 				break;	/*default */
 			}	/* switch (prCurrentMsduInfo->ucStaRecIndex) */
@@ -7272,10 +7265,20 @@ void mqmHandleBaActionFrame(IN struct ADAPTER *prAdapter,
 void qmDetectArpNoResponse(struct ADAPTER *prAdapter,
 	struct MSDU_INFO *prMsduInfo)
 {
+	struct STA_RECORD *prStaRec;
 	struct sk_buff *prSkb = NULL;
 	uint8_t *pucData = NULL;
 	uint16_t u2EtherType = 0;
 	int arpOpCode = 0;
+
+	prStaRec = QM_GET_STA_REC_PTR_FROM_INDEX(
+		prAdapter, prMsduInfo->ucStaRecIndex);
+	if (!prStaRec || !IS_STA_IN_AIS(prStaRec))
+		return;
+
+	if (prMsduInfo->eSrc != TX_PACKET_OS ||
+	    IS_BMCAST_MAC_ADDR(prMsduInfo->aucEthDestAddr))
+		return;
 
 	prSkb = (struct sk_buff *)prMsduInfo->prPacket;
 
@@ -7285,11 +7288,12 @@ void qmDetectArpNoResponse(struct ADAPTER *prAdapter,
 	pucData = prSkb->data;
 	if (!pucData)
 		return;
+
 	u2EtherType = (pucData[ETH_TYPE_LEN_OFFSET] << 8) |
 		(pucData[ETH_TYPE_LEN_OFFSET + 1]);
-
 	if (u2EtherType != ETH_P_ARP)
 		return;
+
 	if (!((apIp[0] == 0) || (gatewayIp[0] == 0))) {
 		if (kalMemCmp(apIp, &pucData[ETH_TYPE_LEN_OFFSET + 26],
 			sizeof(apIp)) &&
@@ -7297,7 +7301,9 @@ void qmDetectArpNoResponse(struct ADAPTER *prAdapter,
 			sizeof(gatewayIp)))
 			return;
 	}
-	arpOpCode = (pucData[ETH_TYPE_LEN_OFFSET + 8] << 8) | (pucData[ETH_TYPE_LEN_OFFSET + 8 + 1]);
+
+	arpOpCode = (pucData[ETH_TYPE_LEN_OFFSET + 8] << 8) |
+		(pucData[ETH_TYPE_LEN_OFFSET + 8 + 1]);
 	if (arpOpCode == ARP_PRO_REQ) {
 		arpMoniter++;
 		if (arpMoniter > 20) {
