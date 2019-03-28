@@ -3301,6 +3301,10 @@ p2pFuncValidateAuth(IN struct ADAPTER *prAdapter,
 			p2pFuncResetStaRecStatus(prAdapter, prStaRec);
 
 			bssRemoveClient(prAdapter, prP2pBssInfo, prStaRec);
+
+			p2pFuncDisconnect(prAdapter,
+				prP2pBssInfo, prStaRec, FALSE,
+				REASON_CODE_DISASSOC_INACTIVITY);
 		}
 
 	}
