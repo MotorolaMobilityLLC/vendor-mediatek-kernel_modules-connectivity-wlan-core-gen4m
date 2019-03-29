@@ -317,7 +317,6 @@ struct iw_p2p_version {
 /*----------------------------------------------------------------------------*/
 /* NL80211 TEST MODE                                                          */
 /*----------------------------------------------------------------------------*/
-#if CFG_AUTO_CHANNEL_SEL_SUPPORT
 enum ENUM_TESTMODE_AVAILABLE_CHAN_ATTR {
 	__NL80211_TESTMODE_AVAILABLE_CHAN_ATTR_INVALID,
 	NL80211_TESTMODE_AVAILABLE_CHAN_ATTR_2G_BASE_1,
@@ -329,8 +328,6 @@ enum ENUM_TESTMODE_AVAILABLE_CHAN_ATTR {
 	NL80211_TESTMODE_AVAILABLE_CHAN_ATTR_MAX
 		= __NL80211_TESTMODE_AVAILABLE_CHAN_ATTR_AFTER_LAST - 1
 };
-#endif
-
 
 /******************************************************************************
  *                            P U B L I C   D A T A
@@ -619,12 +616,6 @@ int mtk_p2p_cfg80211_testmode_wfd_update_cmd(IN struct wiphy *wiphy,
 int mtk_p2p_cfg80211_testmode_hotspot_block_list_cmd(IN struct wiphy *wiphy,
 		IN void *data,
 		IN int len);
-
-#if CFG_AUTO_CHANNEL_SEL_SUPPORT
-int mtk_p2p_cfg80211_testmode_get_best_channel(IN struct wiphy *wiphy,
-		IN void *data,
-		IN int len);
-#endif
 
 int mtk_p2p_cfg80211_testmode_hotspot_config_cmd(IN struct wiphy *wiphy,
 		IN void *data,

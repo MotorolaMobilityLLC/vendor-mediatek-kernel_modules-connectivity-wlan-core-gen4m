@@ -176,6 +176,7 @@ static uint8_t *apucDebugMsg[] = {
 #if CFG_SUPPORT_NCHO
 	(uint8_t *) DISP_STRING("MID_MNY_AIS_NCHO_ACTION_FRAME")
 #endif
+	(uint8_t *) DISP_STRING("MID_MNY_P2P_ACS"),
 };
 
 /*lint -restore */
@@ -305,6 +306,7 @@ static struct MSG_HNDL_ENTRY arMsgMapTable[] = {
 	{MID_MNY_AIS_NCHO_ACTION_FRAME,
 		aisFsmRunEventNchoActionFrameTx},
 #endif
+	{MID_MNY_P2P_ACS, p2pRoleFsmRunEventAcs},
 };
 
 /*******************************************************************************
