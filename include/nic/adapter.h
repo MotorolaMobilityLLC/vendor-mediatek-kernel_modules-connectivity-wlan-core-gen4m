@@ -1579,10 +1579,6 @@ struct ADAPTER {
 	struct REPORT_MISC_SET rReportMiscSet;
 #endif
 
-#ifdef CFG_REPORT_MAX_TX_RATE
-	uint32_t u4StaMaxTxRate;
-#endif /* CFG_REPORT_MAX_TX_RATE */
-
 #if CFG_SUPPORT_IOT_AP_BLACKLIST
 	struct WLAN_IOT_AP_RULE_T rIotApRule[CFG_IOT_AP_RULE_MAX_CNT];
 #endif

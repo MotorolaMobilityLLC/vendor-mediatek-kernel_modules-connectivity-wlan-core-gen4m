@@ -435,14 +435,15 @@ priv_ate_set(IN struct net_device *prNetDev,
 	     IN union iwreq_data *prIwReqData, IN char *pcExtra);
 #endif
 
-#ifdef CFG_REPORT_MAX_TX_RATE
-int kalSaveStaMaxTxRate(struct ADAPTER *prAdapter, void *prBssPtr,
-			struct STA_RECORD *prStaRec);
+#if defined(CFG_REPORT_MAX_TX_RATE) && (CFG_REPORT_MAX_TX_RATE == 1)
+int kalGetMaxTxRate(IN struct ADAPTER *prAdapter,
+		 IN void *prBssPtr, IN struct STA_RECORD *prStaRec,
+		 OUT uint32_t *pu4CurRate, OUT uint32_t *pu4MaxRate);
 #endif /* CFG_REPORT_MAX_TX_RATE */
 
 #ifdef CFG_SUPPORT_LINK_QUALITY_MONITOR
 int kalGetRxRate(IN struct GLUE_INFO *prGlueInfo,
-		 IN uint32_t *pu4CurRate, IN uint32_t *pu4MaxRate);
+		 OUT uint32_t *pu4CurRate, OUT uint32_t *pu4MaxRate);
 #endif /* CFG_SUPPORT_LINK_QUALITY_MONITOR */
 
 /*******************************************************************************

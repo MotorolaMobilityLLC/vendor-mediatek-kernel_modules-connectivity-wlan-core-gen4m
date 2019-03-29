@@ -3012,10 +3012,6 @@ static void rlmRecAssocRespIeInfoForClient(struct ADAPTER *prAdapter,
 			}
 		}
 	}
-
-#ifdef CFG_REPORT_MAX_TX_RATE
-	kalSaveStaMaxTxRate(prAdapter, prBssInfo, prStaRec);
-#endif /* CFG_REPORT_MAX_TX_RATE */
 }
 
 /*----------------------------------------------------------------------------*/
