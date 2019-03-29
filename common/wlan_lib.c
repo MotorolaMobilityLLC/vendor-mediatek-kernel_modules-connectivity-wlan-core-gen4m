@@ -4919,7 +4919,6 @@ uint32_t wlanCheckSystemConfiguration(IN struct ADAPTER *prAdapter)
 	u_int8_t fgIsConfExist = TRUE;
 	u_int8_t fgGenErrMsg = FALSE;
 	struct REG_INFO *prRegInfo = NULL;
-#if 0
 	const uint8_t aucBCAddr[] = BC_MAC_ADDR;
 	struct WLAN_BEACON_FRAME *prBeacon = NULL;
 	struct IE_SSID *prSsid = NULL;
@@ -4928,7 +4927,6 @@ uint32_t wlanCheckSystemConfiguration(IN struct ADAPTER *prAdapter)
 	struct PARAM_SSID rSsid;
 	struct PARAM_802_11_CONFIG rConfiguration;
 	uint8_t rSupportedRates[PARAM_MAX_LEN_RATES_EX];
-#endif
 #endif
 
 	DEBUGFUNC("wlanCheckSystemConfiguration");
@@ -4983,7 +4981,7 @@ uint32_t wlanCheckSystemConfiguration(IN struct ADAPTER *prAdapter)
 		fgGenErrMsg = TRUE;
 #endif
 #endif
-#if 0/* remove NVRAM WARNING in scan result */
+
 	if (fgGenErrMsg == TRUE) {
 		prBeacon = cnmMemAlloc(prAdapter, RAM_TYPE_BUF,
 				       sizeof(struct WLAN_BEACON_FRAME) +
@@ -4997,7 +4995,7 @@ uint32_t wlanCheckSystemConfiguration(IN struct ADAPTER *prAdapter)
 		prBeacon->u2FrameCtrl = MAC_FRAME_BEACON;
 		COPY_MAC_ADDR(prBeacon->aucDestAddr, aucBCAddr);
 		COPY_MAC_ADDR(prBeacon->aucSrcAddr, aucZeroMacAddr);
-		COPY_MAC_ADDR(prBeacon->aucBSSID, aucZeroMacAddr);
+		COPY_MAC_ADDR(prBeacon->aucBSSID, aucBCAddr);
 		prBeacon->u2BeaconInterval = 100;
 		prBeacon->u2CapInfo = CAP_INFO_ESS;
 
@@ -5115,7 +5113,7 @@ uint32_t wlanCheckSystemConfiguration(IN struct ADAPTER *prAdapter)
 
 	if (fgGenErrMsg == TRUE)
 		cnmMemFree(prAdapter, prBeacon);
-#endif
+
 	return WLAN_STATUS_SUCCESS;
 }
 
