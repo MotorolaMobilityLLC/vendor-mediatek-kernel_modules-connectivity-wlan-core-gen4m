@@ -2049,6 +2049,10 @@ static void wlanCreateWirelessDevice(void)
 	prWiphy->max_num_csa_counters = 2;
 #endif
 
+#if KERNEL_VERSION(3, 14, 0) < CFG80211_VERSION_CODE
+	prWiphy->max_ap_assoc_sta = P2P_MAXIMUM_CLIENT_COUNT;
+#endif
+
 	cfg80211_regd_set_wiphy(prWiphy);
 
 #if (CFG_SUPPORT_TDLS == 1)
