@@ -6185,6 +6185,7 @@ void aisRemoveTimeoutBlacklist(struct ADAPTER *prAdapter)
 	struct AIS_BLACKLIST_ITEM *prNextEntry = NULL;
 	struct LINK *prBlackList = &prConnSettings->rBlackList.rUsingLink;
 	OS_SYSTIME rCurrent;
+	struct BSS_DESC *prBssDesc = NULL;
 
 	GET_CURRENT_SYSTIME(&rCurrent);
 
@@ -6197,6 +6198,13 @@ void aisRemoveTimeoutBlacklist(struct ADAPTER *prAdapter)
 		if (!CHECK_FOR_TIMEOUT(rCurrent, prEntry->rAddTime,
 				       SEC_TO_MSEC(AIS_BLACKLIST_TIMEOUT)))
 			continue;
+		prBssDesc = scanSearchBssDescByBssid(prAdapter,
+						     prEntry->aucBSSID);
+		if (prBssDesc) {
+			prBssDesc->prBlack = NULL;
+			DBGLOG(AIS, INFO, "Remove Timeout %pM from blacklist\n",
+			       prBssDesc->aucBSSID);
+		}
 		LINK_MGMT_RETURN_ENTRY(&prConnSettings->rBlackList, prEntry);
 	}
 }
@@ -6233,6 +6241,11 @@ static void aisRemoveDisappearedBlacklist(struct ADAPTER *prAdapter)
 		if (!fgDisappeared || (u4Current - prEntry->u4DisapperTime) <
 		    600 * USEC_PER_SEC)
 			continue;
+
+		prBssDesc = scanSearchBssDescByBssid(prAdapter,
+						     prEntry->aucBSSID);
+		if (prBssDesc)
+			prBssDesc->prBlack = NULL;
 
 		DBGLOG(AIS, INFO, "Remove disappeared blacklist %s " MACSTR,
 		       prEntry->aucSSID, MAC2STR(prEntry->aucBSSID));
