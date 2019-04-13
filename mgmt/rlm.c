@@ -1620,7 +1620,7 @@ rlmGetSupportRxNssInVhtCap(struct IE_VHT_CAP *prVhtCap)
 			!= VHT_CAP_INFO_MCS_NOT_SUPPORTED)
 			ucRxNss = 8;
 		} else
-			DBGLOG(RLM, WARN, "null prVhtCap, assume RxNss=1\n");
+			DBGLOG(RLM, TRACE, "null prVhtCap, assume RxNss=1\n");
 
 	return ucRxNss;
 }
