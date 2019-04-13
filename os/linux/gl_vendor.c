@@ -1217,7 +1217,7 @@ nla_put_failure:
 int mtk_cfg80211_vendor_get_supported_feature_set(struct wiphy *wiphy,
 		struct wireless_dev *wdev, const void *data, int data_len)
 {
-	uint32_t u4FeatureSet;
+	uint64_t u8FeatureSet;
 	struct GLUE_INFO *prGlueInfo;
 	struct sk_buff *skb;
 
@@ -1236,21 +1236,21 @@ int mtk_cfg80211_vendor_get_supported_feature_set(struct wiphy *wiphy,
 	if (!prGlueInfo)
 		return -EFAULT;
 
-	u4FeatureSet = wlanGetSupportedFeatureSet(prGlueInfo);
+	u8FeatureSet = wlanGetSupportedFeatureSet(prGlueInfo);
 
-	skb = cfg80211_vendor_cmd_alloc_reply_skb(wiphy, sizeof(u4FeatureSet));
+	skb = cfg80211_vendor_cmd_alloc_reply_skb(wiphy, sizeof(u8FeatureSet));
 	if (!skb) {
 		DBGLOG(REQ, ERROR, "Allocate skb failed\n");
 		return -ENOMEM;
 	}
 
 	if (unlikely(
-	    nla_put_nohdr(skb, sizeof(u4FeatureSet), &u4FeatureSet) < 0)) {
+	    nla_put_nohdr(skb, sizeof(u8FeatureSet), &u8FeatureSet) < 0)) {
 		DBGLOG(REQ, ERROR, "nla_put_nohdr failed\n");
 		goto nla_put_failure;
 	}
 
-	DBGLOG(REQ, TRACE, "supported feature set=0x%x\n", u4FeatureSet);
+	DBGLOG(REQ, TRACE, "supported feature set=0x%llx\n", u8FeatureSet);
 
 	return cfg80211_vendor_cmd_reply(skb);
 

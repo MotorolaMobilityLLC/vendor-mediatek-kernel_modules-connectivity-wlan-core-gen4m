@@ -9822,16 +9822,16 @@ void wlanGetReportMisc(IN struct ADAPTER *prAdapter)
 }
 #endif
 
-uint32_t wlanGetSupportedFeatureSet(IN struct GLUE_INFO *prGlueInfo)
+uint64_t wlanGetSupportedFeatureSet(IN struct GLUE_INFO *prGlueInfo)
 {
-	uint32_t u4FeatureSet = WIFI_HAL_FEATURE_SET;
+	uint64_t u8FeatureSet = WIFI_HAL_FEATURE_SET;
 	struct REG_INFO *prRegInfo;
 
 	prRegInfo = prGlueInfo->prRegInfo;
 	if ((prRegInfo != NULL) && (prRegInfo->ucSupport5GBand))
-		u4FeatureSet |= WIFI_FEATURE_INFRA_5G;
+		u8FeatureSet |= WIFI_FEATURE_INFRA_5G;
 
-	return u4FeatureSet;
+	return u8FeatureSet;
 }
 
 #ifdef CFG_SUPPORT_LINK_QUALITY_MONITOR
