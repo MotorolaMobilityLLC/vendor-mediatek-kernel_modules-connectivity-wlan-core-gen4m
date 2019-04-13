@@ -272,6 +272,9 @@
 #define GED_EVENT_DOPT_WIFI_SCAN    (1 << 12)
 #endif /* CFG_SUPPORT_LOWLATENCY_MODE */
 
+#define SET_IOCTL_BSSIDX(_a, _b) ((_a) = (_b))
+#define GET_IOCTL_BSSIDX(_a, _b) ((_a) = (_b))
+
 /*******************************************************************************
  *                             D A T A   T Y P E S
  *******************************************************************************
@@ -366,6 +369,12 @@ struct PARAM_CONNECT {
 	uint8_t *pucBssid;
 	uint8_t *pucBssidHint;
 	uint32_t u4CenterFreq;
+	uint8_t ucBssIdx;
+};
+
+struct PARAM_OP_MODE {
+	enum ENUM_PARAM_OP_MODE eOpMode;
+	uint8_t ucBssIdx;
 };
 
 /* This is enum defined for user to select an AdHoc Mode */
@@ -480,6 +489,7 @@ struct PARAM_AUTH_REQUEST {
 struct PARAM_PMKID {
 	uint8_t arBSSID[PARAM_MAC_ADDR_LEN];
 	uint8_t arPMKID[IW_PMKID_LEN];
+	uint8_t ucBssIdx;
 };
 
 struct PARAM_PMKID_CANDIDATE {
@@ -575,6 +585,7 @@ struct PARAM_WPI_KEY {
 	uint32_t u4LenWPICK;
 	uint8_t aucWPICK[256];
 	uint8_t aucPN[16];
+	uint8_t ucBssIdx;
 };
 #endif
 
@@ -1548,6 +1559,7 @@ struct PARAM_CUSTOM_WMM_PS_TEST_STRUCT {
 					 * matched (under U-APSD)
 					 */
 	uint8_t reserved;
+	uint8_t ucBssIdx;
 };
 
 struct PARAM_CUSTOM_NOA_PARAM_STRUCT {
@@ -2293,6 +2305,7 @@ struct PARAM_SCAN_REQUEST_EXT {
 	struct PARAM_SSID rSsid;
 	uint32_t u4IELength;
 	uint8_t *pucIE;
+	uint8_t ucBssIndex;
 };
 
 struct PARAM_SCAN_REQUEST_ADV {
@@ -2306,6 +2319,7 @@ struct PARAM_SCAN_REQUEST_ADV {
 		arChannel[MAXIMUM_OPERATION_CHANNEL_LIST];
 	uint8_t ucScnFuncMask;
 	uint8_t aucRandomMac[MAC_ADDR_LEN];
+	uint8_t ucBssIndex;
 };
 
 /*--------------------------------------------------------------*/
@@ -2327,6 +2341,7 @@ struct PARAM_SCHED_SCAN_REQUEST {
 	uint16_t u2ScanInterval;	/* in second */
 	uint8_t ucChnlNum;
 	uint8_t *pucChannels;
+	uint8_t ucBssIndex;
 };
 #endif /* CFG_SUPPORT_SCHED_SCAN */
 
@@ -2335,6 +2350,7 @@ struct PARAM_HS20_SET_BSSID_POOL {
 	u_int8_t fgIsEnable;
 	uint8_t ucNumBssidPool;
 	uint8_t arBSSID[8][PARAM_MAC_ADDR_LEN];
+	uint8_t ucBssIndex;
 };
 
 #endif /* CFG_SUPPORT_PASSPOINT */

@@ -31,8 +31,10 @@ struct weight_config {
 };
 
 /* Support AP Selection */
-struct BSS_DESC *scanSearchBssDescByScoreForAis(struct ADAPTER *prAdapter);
-void scanGetCurrentEssChnlList(struct ADAPTER *prAdapter);
+struct BSS_DESC *scanSearchBssDescByScoreForAis(struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex);
+void scanGetCurrentEssChnlList(struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex);
 /* end Support AP Selection */
 
 #endif

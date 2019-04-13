@@ -1229,10 +1229,6 @@ uint32_t wlanAdapterStop(IN struct ADAPTER *prAdapter);
 uint32_t wlanCheckWifiFunc(IN struct ADAPTER *prAdapter,
 			   IN u_int8_t fgRdyChk);
 
-#if CFG_SUPPORT_WAPI
-u_int8_t wlanQueryWapiMode(IN struct ADAPTER *prAdapter);
-#endif
-
 void wlanReturnRxPacket(IN void *pvAdapter, IN void *pvPacket);
 
 void wlanRxSetBroadcast(IN struct ADAPTER *prAdapter,
@@ -1287,7 +1283,8 @@ void wlanSecurityFrameTxTimeout(IN struct ADAPTER *prAdapter,
 /*----------------------------------------------------------------------------*/
 /* OID/IOCTL Handling                                                         */
 /*----------------------------------------------------------------------------*/
-void wlanClearScanningResult(IN struct ADAPTER *prAdapter);
+void wlanClearScanningResult(IN struct ADAPTER *prAdapter,
+	IN uint8_t ucBssIndex);
 
 void wlanClearBssInScanningResult(IN struct ADAPTER *prAdapter,
 				  IN uint8_t *arBSSID);
@@ -1439,7 +1436,6 @@ void *wlanGetNetInterfaceByBssIdx(IN struct GLUE_INFO *prGlueInfo,
 				  IN uint8_t ucBssIndex);
 
 /* for windows as windows glue cannot see through P_ADAPTER_T */
-uint8_t wlanGetAisBssIndex(IN struct ADAPTER *prAdapter);
 
 void wlanInitFeatureOption(IN struct ADAPTER *prAdapter);
 
@@ -1552,6 +1548,15 @@ struct WLAN_CFG_ENTRY *wlanCfgGetEntryByIndex(IN struct ADAPTER *prAdapter,
 
 uint32_t wlanGetStaIdxByWlanIdx(IN struct ADAPTER *prAdapter,
 				IN uint8_t ucIndex, OUT uint8_t *pucStaIdx);
+
+uint8_t wlanGetBssIdx(struct net_device *ndev);
+
+struct net_device *wlanGetNetDev(IN struct GLUE_INFO *prGlueInfo,
+	IN uint8_t ucBssIndex);
+
+struct wiphy *wlanGetWiphy(void);
+
+u_int8_t wlanIsAisDev(struct net_device *prDev);
 
 /*----------------------------------------------------------------------------*/
 /* update per-AC statistics for LLS                */

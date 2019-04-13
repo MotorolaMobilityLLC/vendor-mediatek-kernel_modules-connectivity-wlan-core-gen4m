@@ -3040,6 +3040,7 @@ struct CMD_NVRAM_SETTING {
 #if CFG_SUPPORT_TDLS
 struct CMD_TDLS_CH_SW {
 	u_int8_t fgIsTDLSChSwProhibit;
+	/* uint8_t ucBssIndex; */
 };
 #endif
 
@@ -3722,10 +3723,6 @@ void nicCmdEventQueryRfTestATInfo(IN struct ADAPTER *prAdapter,
 
 void nicCmdEventSetCommon(IN struct ADAPTER *prAdapter,
 	IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf);
-
-void nicCmdEventSetDisassociate(IN struct ADAPTER
-				*prAdapter, IN struct CMD_INFO *prCmdInfo,
-				IN uint8_t *pucEventBuf);
 
 void nicCmdEventSetIpAddress(IN struct ADAPTER *prAdapter,
 	IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf);

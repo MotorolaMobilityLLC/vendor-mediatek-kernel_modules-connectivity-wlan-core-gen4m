@@ -823,6 +823,8 @@ uint32_t wlanAdapterStart(IN struct ADAPTER *prAdapter,
 			wlanUpdateBasicConfig(prAdapter);
 
 			if (!bAtResetFlow) {
+				uint32_t u4Idx = 0;
+
 				/* 7. Override network address */
 				wlanUpdateNetworkAddress(prAdapter);
 
@@ -830,9 +832,12 @@ uint32_t wlanAdapterStart(IN struct ADAPTER *prAdapter,
 				nicApplyNetworkAddress(prAdapter);
 
 				/* 9. indicate disconnection as default status*/
-				kalIndicateStatusAndComplete(
-					prAdapter->prGlueInfo,
-					WLAN_STATUS_MEDIA_DISCONNECT, NULL, 0);
+				for (u4Idx = 0; u4Idx < KAL_AIS_NUM; u4Idx++)
+					kalIndicateStatusAndComplete(
+						prAdapter->prGlueInfo,
+						WLAN_STATUS_MEDIA_DISCONNECT,
+						NULL, 0,
+						u4Idx);
 			}
 			/*10. send regulatory information to firmware */
 			rlmDomainSendInfoToFirmware(prAdapter);
@@ -2356,8 +2361,7 @@ wlanQueryInformation(IN struct ADAPTER *prAdapter,
 	 * mode
 	 */
 	if (prAdapter->u4PsCurrentMeasureEn &&
-	    (prAdapter->prGlueInfo->eParamMediaStateIndicated ==
-	     PARAM_MEDIA_STATE_CONNECTED)) {
+	    aisGetConnectedBssInfo(prAdapter)) {
 		/* note: return WLAN_STATUS_FAILURE or
 		 * WLAN_STATUS_SUCCESS for blocking OIDs during current
 		 * measurement ??
@@ -2423,8 +2427,7 @@ wlanSetInformation(IN struct ADAPTER *prAdapter,
 	 * mode
 	 */
 	if (prAdapter->u4PsCurrentMeasureEn &&
-	    (prAdapter->prGlueInfo->eParamMediaStateIndicated ==
-	     PARAM_MEDIA_STATE_CONNECTED)) {
+	    aisGetConnectedBssInfo(prAdapter)) {
 		/* note: return WLAN_STATUS_FAILURE or WLAN_STATUS_SUCCESS
 		 * for blocking OIDs during current measurement ??
 		 */
@@ -2457,25 +2460,6 @@ wlanSetInformation(IN struct ADAPTER *prAdapter,
 
 	return status;
 }
-
-#if CFG_SUPPORT_WAPI
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief This function is a used to query driver's config wapi mode or not
- *
- * \param[IN] prAdapter     Pointer to the Glue info structure.
- *
- * \retval TRUE for use wapi mode
- *
- */
-/*----------------------------------------------------------------------------*/
-u_int8_t wlanQueryWapiMode(IN struct ADAPTER *prAdapter)
-{
-	ASSERT(prAdapter);
-
-	return prAdapter->rWifiVar.rConnSettings.fgWapiMode;
-}
-#endif
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -3552,7 +3536,9 @@ void wlanSecurityFrameTxDone(IN struct ADAPTER *prAdapter,
 	if (GET_BSS_INFO_BY_INDEX(prAdapter,
 				  prMsduInfo->ucBssIndex)->eNetworkType ==
 	    NETWORK_TYPE_AIS
-	    && prAdapter->rWifiVar.rAisSpecificBssInfo.fgCounterMeasure) {
+	    &&
+	    aisGetAisSpecBssInfo(prAdapter,
+	    prMsduInfo->ucBssIndex)->fgCounterMeasure) {
 		struct STA_RECORD *prSta = cnmGetStaRecByIndex(prAdapter,
 					   prMsduInfo->ucBssIndex);
 
@@ -3610,23 +3596,29 @@ void wlanSecurityFrameTxTimeout(IN struct ADAPTER
  * @return none
  */
 /*----------------------------------------------------------------------------*/
-void wlanClearScanningResult(IN struct ADAPTER *prAdapter)
+void wlanClearScanningResult(IN struct ADAPTER *prAdapter,
+	IN uint8_t ucBssIndex)
 {
 	u_int8_t fgKeepCurrOne = FALSE;
 	uint32_t i;
 	struct WLAN_INFO *prWlanInfo;
+	struct PARAM_BSSID_EX *prCurrBssid;
 
 	ASSERT(prAdapter);
 	prWlanInfo = &(prAdapter->rWlanInfo);
 
+	prCurrBssid = aisGetCurrBssId(prAdapter,
+		ucBssIndex);
+
 	/* clear scanning result */
-	if (kalGetMediaStateIndicated(prAdapter->prGlueInfo) ==
+	if (kalGetMediaStateIndicated(prAdapter->prGlueInfo,
+		ucBssIndex) ==
 	    PARAM_MEDIA_STATE_CONNECTED) {
 
 		for (i = 0; i < prWlanInfo->u4ScanResultNum; i++) {
 
 		if (EQUAL_MAC_ADDR(
-		    prWlanInfo->rCurrBssId.arMacAddress,
+		    prCurrBssid->arMacAddress,
 		    prWlanInfo->arScanResult[i].arMacAddress)) {
 			fgKeepCurrOne = TRUE;
 
@@ -4209,7 +4201,7 @@ uint32_t wlanLoadManufactureData(IN struct ADAPTER
 		prAdapter->fgEnable5GBand = FALSE;
 
 	/* 5. Get 16-bits Country Code and Bandwidth */
-	prAdapter->rWifiVar.rConnSettings.u2CountryCode =
+	prAdapter->rWifiVar.u2CountryCode =
 		(((uint16_t) prRegInfo->au2CountryCode[0]) << 8) | (((
 			uint16_t) prRegInfo->au2CountryCode[1]) & BITS(0, 7));
 
@@ -5776,6 +5768,10 @@ void wlanBindBssIdxToNetInterface(IN struct GLUE_INFO *prGlueInfo,
 		return;
 	}
 
+	DBGLOG(INIT, LOUD,
+		"ucBssIndex = %d, pvNetInterface = %p\n",
+		ucBssIndex, pvNetInterface);
+
 	prNetIfInfo = &prGlueInfo->arNetInterfaceInfo[ucBssIndex];
 
 	prNetIfInfo->ucBssIndex = ucBssIndex;
@@ -5829,22 +5825,6 @@ void *wlanGetNetInterfaceByBssIdx(IN struct GLUE_INFO
 	return prGlueInfo->arNetInterfaceInfo[ucBssIndex].pvNetInterface;
 }
 
-/*----------------------------------------------------------------------------*/
-/*!
- * @brief This function is to get BSS-INDEX for AIS network.
- *
- * @param prAdapter  Pointer of ADAPTER_T
- *
- * @return value, as corresponding index of BSS
- */
-/*----------------------------------------------------------------------------*/
-uint8_t wlanGetAisBssIndex(IN struct ADAPTER *prAdapter)
-{
-	ASSERT(prAdapter);
-	ASSERT(prAdapter->prAisBssInfo);
-
-	return prAdapter->prAisBssInfo->ucBssIndex;
-}
 /*----------------------------------------------------------------------------*/
 /*!
  * @brief This function is to initialize WLAN feature options
@@ -6696,12 +6676,12 @@ void wlanCfgSetCountryCode(IN struct ADAPTER *prAdapter)
 	/* Apply COUNTRY Config */
 	if (wlanCfgGet(prAdapter, "Country", aucValue, "",
 		       0) == WLAN_STATUS_SUCCESS) {
-		prAdapter->rWifiVar.rConnSettings.u2CountryCode =
+		prAdapter->rWifiVar.u2CountryCode =
 			(((uint16_t) aucValue[0]) << 8) |
 			((uint16_t) aucValue[1]);
 
 		DBGLOG(INIT, TRACE, "u2CountryCode=0x%04x\n",
-			   prAdapter->rWifiVar.rConnSettings.u2CountryCode);
+			prAdapter->rWifiVar.u2CountryCode);
 
 		if (regd_is_single_sku_en()) {
 			rlmDomainOidSetCountry(prAdapter, aucValue, 2);
@@ -8231,10 +8211,12 @@ void wlanChipRstPreAct(IN struct ADAPTER *prAdapter)
 
 		if (prBssInfo->eNetworkType == NETWORK_TYPE_AIS) {
 
-			if (prGlueInfo->eParamMediaStateIndicated ==
+			if (kalGetMediaStateIndicated(prGlueInfo,
+				i4BssIdx) ==
 			    PARAM_MEDIA_STATE_CONNECTED)
 				kalIndicateStatusAndComplete(prGlueInfo,
-					WLAN_STATUS_MEDIA_DISCONNECT, NULL, 0);
+					WLAN_STATUS_MEDIA_DISCONNECT, NULL, 0,
+					i4BssIdx);
 		} else if (prBssInfo->eNetworkType == NETWORK_TYPE_P2P) {
 			if (prBssInfo->eCurrentOPMode == OP_MODE_ACCESS_POINT) {
 				u4ClientCount = bssGetClientCount(prAdapter,
@@ -8792,6 +8774,76 @@ wlanGetStaIdxByWlanIdx(IN struct ADAPTER *prAdapter,
 		}
 	}
 	return WLAN_STATUS_FAILURE;
+}
+
+struct wiphy *wlanGetWiphy(void)
+{
+	if (gprWdev[0])
+		return gprWdev[0]->wiphy;
+
+	return NULL;
+}
+
+struct net_device *wlanGetNetDev(IN struct GLUE_INFO *prGlueInfo,
+	IN uint8_t ucBssIndex)
+{
+	if (!prGlueInfo)
+		return NULL;
+
+	/* AIS */
+	if (ucBssIndex < KAL_AIS_NUM && gprWdev[ucBssIndex])
+		return gprWdev[ucBssIndex]->netdev;
+
+	/* P2P */
+	if (ucBssIndex < BSS_DEFAULT_NUM) {
+		struct BSS_INFO *prBssInfo = (struct BSS_INFO *) NULL;
+		struct GL_P2P_INFO *prGlueP2pInfo =
+			(struct GL_P2P_INFO *) NULL;
+
+		prBssInfo =
+			GET_BSS_INFO_BY_INDEX(prGlueInfo->prAdapter,
+			ucBssIndex);
+
+		if (prBssInfo && IS_BSS_P2P(prBssInfo)) {
+			prGlueP2pInfo =
+				prGlueInfo->prP2PInfo[prBssInfo->u4PrivateData];
+			if (prGlueP2pInfo)
+				return prGlueP2pInfo->prDevHandler;
+		}
+	}
+
+	return NULL;
+}
+
+uint8_t wlanGetBssIdx(struct net_device *ndev)
+{
+	if (ndev) {
+		struct NETDEV_PRIVATE_GLUE_INFO *prNetDevPrivate
+			= (struct NETDEV_PRIVATE_GLUE_INFO *)
+			netdev_priv(ndev);
+
+		DBGLOG(REQ, LOUD,
+			"ucBssIndex = %d\n",
+			prNetDevPrivate->ucBssIdx);
+
+		return prNetDevPrivate->ucBssIdx;
+	}
+
+	DBGLOG(REQ, LOUD,
+		"ucBssIndex = 0xff\n");
+
+	return 0xff;
+}
+
+u_int8_t wlanIsAisDev(struct net_device *prDev)
+{
+	uint32_t u4Idx = 0;
+
+	for (u4Idx = 0; u4Idx < KAL_AIS_NUM; u4Idx++)
+		if (prDev == gprWdev[u4Idx]->netdev)
+			return TRUE;
+
+	return FALSE;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -9841,8 +9893,11 @@ uint32_t wlanLinkQualityMonitor(struct GLUE_INFO *prGlueInfo, bool bFgIsOid)
 	struct WIFI_LINK_QUALITY_INFO *prLinkQualityInfo = NULL;
 	uint8_t ucWlanIdx;
 	uint32_t u4Status = WLAN_STATUS_FAILURE;
+	struct BSS_INFO *prAisBssInfo;
+	uint8_t ucBssIndex = AIS_DEFAULT_INDEX;
 
-	if (prGlueInfo->eParamMediaStateIndicated !=
+	if (kalGetMediaStateIndicated(prGlueInfo,
+		ucBssIndex) !=
 	    PARAM_MEDIA_STATE_CONNECTED) {
 		/* not connected */
 		DBGLOG(SW4, ERROR, "not yet connected\n");
@@ -9855,8 +9910,11 @@ uint32_t wlanLinkQualityMonitor(struct GLUE_INFO *prGlueInfo, bool bFgIsOid)
 		return u4Status;
 	}
 
-	if (prAdapter->prAisBssInfo->prStaRecOfAP)
-		ucWlanIdx = prAdapter->prAisBssInfo->prStaRecOfAP->ucWlanIndex;
+	prAisBssInfo =
+		aisGetAisBssInfo(prAdapter, ucBssIndex);
+
+	if (prAisBssInfo->prStaRecOfAP)
+		ucWlanIdx = prAisBssInfo->prStaRecOfAP->ucWlanIndex;
 	else {
 		DBGLOG(SW4, ERROR, "prStaRecOfAP is null\n");
 		return u4Status;

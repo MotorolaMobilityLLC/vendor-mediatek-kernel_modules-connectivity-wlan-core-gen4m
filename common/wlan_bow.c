@@ -1887,7 +1887,8 @@ void bowResponderScanDone(IN struct ADAPTER *prAdapter, IN struct MSG_HDR *prMsg
 	ASSERT(prMsgHdr);
 
 	prBowFsmInfo = &(prAdapter->rWifiVar.rBowFsmInfo);
-	prConnSettings = &(prAdapter->rWifiVar.rConnSettings);
+	prConnSettings =
+		aisGetConnSettings(prAdapter, AIS_DEFAULT_INDEX);
 	prScanDoneMsg = (struct MSG_SCN_SCAN_DONE *) prMsgHdr;
 	eFsmState = bowGetBowTableState(prAdapter, prBowFsmInfo->aucPeerAddress);
 
@@ -2032,7 +2033,7 @@ void bowResponderJoin(IN struct ADAPTER *prAdapter, IN struct BSS_DESC *prBssDes
 
 	prBowFsmInfo = &(prAdapter->rWifiVar.rBowFsmInfo);
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prBowFsmInfo->ucBssIndex);
-	prConnSettings = &(prAdapter->rWifiVar.rConnSettings);
+	prConnSettings = aisGetConnSettings(prAdapter, AIS_DEFAULT_INDEX);
 
 	/* 4 <1> We are going to connect to this BSS. */
 	prBssDesc->fgIsConnecting = TRUE;
@@ -2238,7 +2239,7 @@ bowIndicationOfMediaStateToHost(IN struct ADAPTER *prAdapter,
 	struct BSS_INFO *prBssInfo;
 	struct BOW_FSM_INFO *prBowFsmInfo;
 
-	prConnSettings = &(prAdapter->rWifiVar.rConnSettings);
+	prConnSettings = aisGetConnSettings(prAdapter, AIS_DEFAULT_INDEX);
 
 	prBowFsmInfo = &(prAdapter->rWifiVar.rBowFsmInfo);
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prBowFsmInfo->ucBssIndex);

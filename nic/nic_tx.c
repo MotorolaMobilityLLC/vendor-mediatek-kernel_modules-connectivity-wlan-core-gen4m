@@ -1694,7 +1694,7 @@ nicTxComposeDesc(IN struct ADAPTER *prAdapter,
 	DBGLOG(RSN, INFO,
 	       "Tx WlanIndex = %d eAuthMode = %d\n",
 	       prMsduInfo->ucWlanIndex,
-	       prAdapter->rWifiVar.rConnSettings.eAuthMode);
+	       aisGetAuthMode(prAdapter, prMsduInfo->ucBssIndex));
 #endif
 	HAL_MAC_TX_DESC_SET_WLAN_INDEX(prTxDesc,
 				       prMsduInfo->ucWlanIndex);
@@ -3547,9 +3547,10 @@ uint32_t nicTxEnqueueMsdu(IN struct ADAPTER *prAdapter,
 			(struct MSDU_INFO *) QUEUE_GET_HEAD(prDataPort0));
 		KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_QM_TX_QUEUE);
 #if ARP_MONITER_ENABLE
-		if (prAdapter->fgArpNoResponse) {
+		if (prRetMsduInfo && prAdapter->fgArpNoResponse) {
 			prAdapter->fgArpNoResponse = FALSE;
-			aisBssBeaconTimeout(prAdapter);
+			aisBssBeaconTimeout(prAdapter,
+				prRetMsduInfo->ucBssIndex);
 #if CFG_SUPPORT_DATA_STALL
 			KAL_REPORT_ERROR_EVENT(prAdapter,
 				EVENT_ARP_NO_RESPONSE,
@@ -4749,7 +4750,8 @@ static uint32_t nicTxDirectStartXmitMain(struct sk_buff
 
 	QUEUE_INITIALIZE(prProcessingQue);
 
-	ucActivedTspec = wmmHasActiveTspec(&prAdapter->rWifiVar.rWmmInfo);
+	ucActivedTspec =
+		wmmHasActiveTspec(aisGetWMMInfo(prAdapter, ucBssIndex));
 
 	if (prSkb) {
 		nicTxFillMsduInfo(prAdapter, prMsduInfo, prSkb);

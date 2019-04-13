@@ -774,7 +774,7 @@ struct DOMAIN_INFO_ENTRY *rlmDomainGetDomainInfo(struct ADAPTER *prAdapter)
 
 	DBGLOG(RLM, TRACE, "eRegChannelListMap=%d, u2CountryCode=0x%04x\n",
 			   prRegInfo->eRegChannelListMap,
-			   prAdapter->rWifiVar.rConnSettings.u2CountryCode);
+			   prAdapter->rWifiVar.u2CountryCode);
 
 	/*
 	 * Domain info can be specified by given idx of arSupportedRegDomains
@@ -794,7 +794,7 @@ struct DOMAIN_INFO_ENTRY *rlmDomainGetDomainInfo(struct ADAPTER *prAdapter)
 	} else {
 		/* by country code */
 		u2TargetCountryCode =
-				prAdapter->rWifiVar.rConnSettings.u2CountryCode;
+				prAdapter->rWifiVar.u2CountryCode;
 
 		for (i = 0; i < REG_DOMAIN_GROUP_NUM; i++) {
 			prDomainInfo = &arSupportedRegDomains[i];
@@ -1133,10 +1133,8 @@ void rlmDomainSendDomainInfoCmd_V2(struct ADAPTER *prAdapter)
 	rlmExtractChannelInfo(max_channel_count, prChs);
 
 	prCmd->u4CountryCode = rlmDomainGetCountryCode();
-	prCmd->uc2G4Bandwidth = prAdapter->rWifiVar.rConnSettings.
-							uc2G4BandwidthMode;
-	prCmd->uc5GBandwidth = prAdapter->rWifiVar.rConnSettings.
-							uc5GBandwidthMode;
+	prCmd->uc2G4Bandwidth = prAdapter->rWifiVar.uc2G4BandwidthMode;
+	prCmd->uc5GBandwidth = prAdapter->rWifiVar.uc5GBandwidthMode;
 	prCmd->aucReserved[0] = 0;
 	prCmd->aucReserved[1] = 0;
 
@@ -1198,12 +1196,13 @@ void rlmDomainSendDomainInfoCmd(struct ADAPTER *prAdapter)
 	}
 	kalMemZero(prCmd, sizeof(struct CMD_SET_DOMAIN_INFO));
 
-	prCmd->u2CountryCode = prAdapter->rWifiVar.rConnSettings.u2CountryCode;
+	prCmd->u2CountryCode =
+		prAdapter->rWifiVar.u2CountryCode;
 	prCmd->u2IsSetPassiveScan = 0;
-	prCmd->uc2G4Bandwidth = prAdapter->rWifiVar.rConnSettings.
-							uc2G4BandwidthMode;
-	prCmd->uc5GBandwidth = prAdapter->rWifiVar.rConnSettings.
-							uc5GBandwidthMode;
+	prCmd->uc2G4Bandwidth =
+		prAdapter->rWifiVar.uc2G4BandwidthMode;
+	prCmd->uc5GBandwidth =
+		prAdapter->rWifiVar.uc5GBandwidthMode;
 	prCmd->aucReserved[0] = 0;
 	prCmd->aucReserved[1] = 0;
 
@@ -1271,19 +1270,19 @@ void rlmDomainSendPassiveScanInfoCmd(struct ADAPTER *prAdapter)
 	}
 	kalMemZero(prCmd, sizeof(struct CMD_SET_DOMAIN_INFO));
 
-	prCmd->u2CountryCode = prAdapter->rWifiVar.rConnSettings.u2CountryCode;
+	prCmd->u2CountryCode = prAdapter->rWifiVar.u2CountryCode;
 	prCmd->u2IsSetPassiveScan = 1;
-	prCmd->uc2G4Bandwidth = prAdapter->rWifiVar.rConnSettings.
-							uc2G4BandwidthMode;
-	prCmd->uc5GBandwidth = prAdapter->rWifiVar.rConnSettings.
-							uc5GBandwidthMode;
+	prCmd->uc2G4Bandwidth =
+		prAdapter->rWifiVar.uc2G4BandwidthMode;
+	prCmd->uc5GBandwidth =
+		prAdapter->rWifiVar.uc5GBandwidthMode;
 	prCmd->aucReserved[0] = 0;
 	prCmd->aucReserved[1] = 0;
 
 	DBGLOG(RLM, TRACE, "u2CountryCode=0x%04x\n",
-	       prAdapter->rWifiVar.rConnSettings.u2CountryCode);
+	       prAdapter->rWifiVar.u2CountryCode);
 
-	u2TargetCountryCode = prAdapter->rWifiVar.rConnSettings.u2CountryCode;
+	u2TargetCountryCode = prAdapter->rWifiVar.u2CountryCode;
 
 	for (i = 0; i < REG_DOMAIN_PASSIVE_GROUP_NUM; i++) {
 		prDomainInfo = &arSupportedRegDomains_Passive[i];
@@ -3546,7 +3545,7 @@ void rlmDomainSendPwrLimitCmd(struct ADAPTER *prAdapter)
 	/* construct power table by domain index */
 	u2DefaultTableIndex =
 		rlmDomainPwrLimitDefaultTableDecision(prAdapter,
-		prAdapter->rWifiVar.rConnSettings.u2CountryCode);
+		prAdapter->rWifiVar.u2CountryCode);
 	if (u2DefaultTableIndex != POWER_LIMIT_TABLE_NULL) {
 
 		WLAN_GET_FIELD_BE16(&g_rRlmPowerLimitDefault[
@@ -3568,8 +3567,8 @@ void rlmDomainSendPwrLimitCmd(struct ADAPTER *prAdapter)
 	DBGLOG(RLM, INFO,
 	       "Domain: PwrLimitChNum=%d, ValidCC=%c%c, PwrLimitCC=%c%c\n",
 	       prCmd->ucNum,
-	       (prAdapter->rWifiVar.rConnSettings.u2CountryCode & 0xff00) >> 8,
-	       (prAdapter->rWifiVar.rConnSettings.u2CountryCode & 0x00ff),
+	       (prAdapter->rWifiVar.u2CountryCode & 0xff00) >> 8,
+	       (prAdapter->rWifiVar.u2CountryCode & 0x00ff),
 	       ((prCmd->u2CountryCode & 0xff00) >> 8),
 	       (prCmd->u2CountryCode & 0x00ff)
 	);

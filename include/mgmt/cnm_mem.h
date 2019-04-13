@@ -883,6 +883,7 @@ struct CMD_PEER_ADD {
 
 	uint8_t aucPeerMac[6];
 	enum ENUM_STA_TYPE eStaType;
+	uint8_t ucBssIdx;
 };
 
 struct CMD_PEER_UPDATE_HT_CAP_MCS_INFO {
@@ -941,6 +942,7 @@ struct CMD_PEER_UPDATE {
 
 	u_int8_t fgIsSupHt;
 	enum ENUM_STA_TYPE eStaType;
+	uint8_t ucBssIdx;
 
 	/* TODO */
 	/* So far, TDLS only a few of the parameters, the rest will be added

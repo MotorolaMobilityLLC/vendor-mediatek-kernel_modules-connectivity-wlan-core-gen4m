@@ -247,7 +247,8 @@ int mtk_usb_suspend(struct usb_interface *intf, pm_message_t message)
 
 	/* 1) wifi cfg "Wow" is true, 2) wow is enable 3) WIfI connected => execute WOW flow */
 	if (prGlueInfo->prAdapter->rWifiVar.ucWow && prGlueInfo->prAdapter->rWowCtrl.fgWowEnable) {
-		if (kalGetMediaStateIndicated(prGlueInfo) == PARAM_MEDIA_STATE_CONNECTED) {
+		if (aisGetConnectedBssInfo(
+			prGlueInfo->prAdapter)) {
 			DBGLOG(HAL, EVENT, "enter WOW flow\n");
 			kalWowProcess(prGlueInfo, TRUE);
 		}

@@ -3610,9 +3610,10 @@ p2pFunAbortOngoingScan(IN struct ADAPTER *prAdapter)
 	if (prScanInfo->eCurrentState != SCAN_STATE_SCANNING)
 		return;
 
-	if (prAdapter->prAisBssInfo->ucBssIndex ==
-			prScanInfo->rScanParam.ucBssIndex)
-		aisFsmStateAbort_SCAN(prAdapter);
+	if (IS_BSS_INDEX_AIS(prAdapter,
+		prScanInfo->rScanParam.ucBssIndex))
+		aisFsmStateAbort_SCAN(prAdapter,
+			prScanInfo->rScanParam.ucBssIndex);
 }
 
 static void p2pFunBufferP2pActionFrame(IN struct ADAPTER *prAdapter,
@@ -6192,6 +6193,8 @@ void p2pFuncSwitchSapChannel(
 	u_int8_t fgIsSapDfs = FALSE;
 	struct BSS_INFO *prP2pBssInfo =
 		(struct BSS_INFO *) NULL;
+	struct BSS_INFO *prAisBssInfo =
+		(struct BSS_INFO *) NULL;
 	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo =
 		(struct P2P_ROLE_FSM_INFO *) NULL;
 	uint8_t ucStaChannelNum = 0;
@@ -6204,15 +6207,14 @@ void p2pFuncSwitchSapChannel(
 #endif
 
 	if (!prAdapter
-		|| !prAdapter->prAisBssInfo
 		|| !cnmSapIsConcurrent(prAdapter)
 		|| !fgEnable) {
 		DBGLOG(P2P, WARN, "Not support concurrent STA + SAP\n");
 		goto exit;
 	}
 
-	if (kalGetMediaStateIndicated(prAdapter->prGlueInfo)
-		!= PARAM_MEDIA_STATE_CONNECTED) {
+	prAisBssInfo = aisGetConnectedBssInfo(prAdapter);
+	if (!prAisBssInfo) {
 		ucStaChannelNum = 0;
 #if CFG_SUPPORT_SAP_DFS_CHANNEL
 		wlanUpdateDfsChannelTable(prAdapter->prGlueInfo,
@@ -6220,12 +6222,12 @@ void p2pFuncSwitchSapChannel(
 #endif
 	} else {
 		/* Get current channel info */
-		ucStaChannelNum = prAdapter->prAisBssInfo->ucPrimaryChannel;
+		ucStaChannelNum = prAisBssInfo->ucPrimaryChannel;
 #if CFG_SUPPORT_SAP_DFS_CHANNEL
 		wlanUpdateDfsChannelTable(prAdapter->prGlueInfo,
 			ucStaChannelNum);
 #endif
-		eStaBand = prAdapter->prAisBssInfo->eBand;
+		eStaBand = prAisBssInfo->eBand;
 		if (eStaBand != BAND_2G4 && eStaBand != BAND_5G) {
 			DBGLOG(P2P, WARN, "STA has invalid band\n");
 			goto exit;
@@ -6323,7 +6325,7 @@ p2pFunGetPreferredFreqList(IN struct ADAPTER *prAdapter,
 	uint32_t i;
 	struct RF_CHANNEL_INFO *aucChannelList;
 
-	prAisBssInfo = prAdapter->prAisBssInfo;
+	prAisBssInfo = aisGetConnectedBssInfo(prAdapter);
 
 	aucChannelList = (struct RF_CHANNEL_INFO *) kalMemAlloc(
 			sizeof(struct RF_CHANNEL_INFO) * MAX_CHN_NUM,
@@ -6336,11 +6338,9 @@ p2pFunGetPreferredFreqList(IN struct ADAPTER *prAdapter,
 	kalMemZero(aucChannelList,
 			sizeof(struct RF_CHANNEL_INFO) * MAX_CHN_NUM);
 
-	DBGLOG(P2P, INFO, "iftype: %d, STA connection state: %d\n",
-			eIftype,
-			prAisBssInfo->eConnectionState);
+	DBGLOG(P2P, INFO, "iftype: %d\n", eIftype);
 
-	if (prAisBssInfo->eConnectionState != PARAM_MEDIA_STATE_CONNECTED) {
+	if (!prAisBssInfo) {
 		/* Prefer 5G if STA is NOT connected */
 		rlmDomainGetChnlList(prAdapter, BAND_5G, TRUE,
 				MAX_CHN_NUM, &ucNumOfChannel, aucChannelList);
@@ -6350,9 +6350,11 @@ p2pFunGetPreferredFreqList(IN struct ADAPTER *prAdapter,
 			(*num_freq_list)++;
 		}
 	} else {
-		DBGLOG(P2P, INFO, "STA operating channel: %d, band: %d",
-				prAisBssInfo->ucPrimaryChannel,
-				prAisBssInfo->eBand);
+		DBGLOG(P2P, INFO,
+			"STA operating channel: %d, band: %d, conn state: %d",
+			prAisBssInfo->ucPrimaryChannel,
+			prAisBssInfo->eBand,
+			prAisBssInfo->eConnectionState);
 		if (prAisBssInfo->eBand == BAND_2G4) {
 			/* Prefer 5G if STA is connected at 2G band */
 			rlmDomainGetChnlList(prAdapter, BAND_5G, TRUE,

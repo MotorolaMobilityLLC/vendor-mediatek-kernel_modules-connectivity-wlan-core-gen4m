@@ -1776,11 +1776,17 @@ void nicRxProcessDataPacket(IN struct ADAPTER *prAdapter,
 			prRxStatus->ucBssid);
 		if (!HAL_RX_STATUS_IS_ICV_ERROR(prRxStatus)
 		    && HAL_RX_STATUS_IS_TKIP_MIC_ERROR(prRxStatus)) {
-			struct STA_RECORD *prStaRec;
+			struct STA_RECORD *prStaRec = NULL;
+			struct PARAM_BSSID_EX *prCurrBssid =
+				aisGetCurrBssId(prAdapter,
+				secGetBssIdxByWlanIdx(prAdapter,
+					prSwRfb->ucWlanIdx));
 
-			prStaRec = cnmGetStaRecByAddress(prAdapter,
-				prAdapter->prAisBssInfo->ucBssIndex,
-				prAdapter->rWlanInfo.rCurrBssId.arMacAddress);
+			if (prCurrBssid)
+				prStaRec = cnmGetStaRecByAddress(prAdapter,
+					secGetBssIdxByWlanIdx(prAdapter,
+					prSwRfb->ucWlanIdx),
+				prCurrBssid->arMacAddress);
 			if (prStaRec) {
 				DBGLOG(RSN, EVENT, "MIC_ERR_PKT\n");
 				rsnTkipHandleMICFailure(prAdapter, prStaRec, 0);
@@ -4228,8 +4234,9 @@ uint32_t nicRxProcessActionFrame(IN struct ADAPTER *
 	    GET_BSS_INFO_BY_INDEX(prAdapter,
 				prSwRfb->prStaRec->ucBssIndex)->eNetworkType ==
 	    NETWORK_TYPE_AIS) {
-		prAisSpecBssInfo = &
-				   (prAdapter->rWifiVar.rAisSpecificBssInfo);
+		prAisSpecBssInfo =
+			aisGetAisSpecBssInfo(prAdapter,
+			prSwRfb->prStaRec->ucBssIndex);
 
 		DBGLOG(RSN, INFO,
 		       "[Rx]RobustAction %x %x %x\n",
@@ -4274,17 +4281,14 @@ uint32_t nicRxProcessActionFrame(IN struct ADAPTER *
 #if 0				/* CFG_SUPPORT_802_11W */
 		/* Sigma */
 #else
-		if (prAdapter->prAisBssInfo &&
-		    prSwRfb->prStaRec
-		    && prSwRfb->prStaRec->ucBssIndex ==
-		    prAdapter->prAisBssInfo->ucBssIndex) {
+		if (prBssInfo &&
+		    IS_BSS_AIS(prBssInfo)) {
 			aisFuncValidateRxActionFrame(prAdapter, prSwRfb);
 		}
 #endif
 
-		if (prAdapter->prAisBssInfo
-		    && prAdapter->prAisBssInfo->ucBssIndex ==
-		    KAL_NETWORK_TYPE_AIS_INDEX)
+		if (prBssInfo &&
+		    IS_BSS_AIS(prBssInfo))
 			aisFuncValidateRxActionFrame(prAdapter, prSwRfb);
 #if CFG_ENABLE_WIFI_DIRECT
 		if (prAdapter->fgIsP2PRegistered) {
@@ -4344,7 +4348,8 @@ uint32_t nicRxProcessActionFrame(IN struct ADAPTER *
 				prSwRfb->prStaRec->ucBssIndex);
 			ASSERT(prBssInfo);
 			if ((prBssInfo->eNetworkType == NETWORK_TYPE_AIS) &&
-			    prAdapter->rWifiVar.rAisSpecificBssInfo.
+				aisGetAisSpecBssInfo(prAdapter,
+				prSwRfb->prStaRec->ucBssIndex)->
 			    fgMgmtProtection /* Use MFP */) {
 				/* MFP test plan 5.3.3.4 */
 				rsnSaQueryAction(prAdapter, prSwRfb);
@@ -4402,7 +4407,7 @@ uint32_t nicRxProcessActionFrame(IN struct ADAPTER *
 			break;
 		case RM_ACTION_REIGHBOR_RESPONSE:
 			rlmProcessNeighborReportResonse(prAdapter, prActFrame,
-							prSwRfb->u2PacketLen);
+							prSwRfb);
 			break;
 		}
 		break;

@@ -237,6 +237,7 @@ struct TDLS_CMD_LINK_OPER {
 
 	uint8_t aucPeerMac[6];
 	enum nl80211_tdls_operation oper;
+	uint8_t ucBssIdx;
 };
 
 struct TDLS_CMD_LINK_MGT {
@@ -247,7 +248,7 @@ struct TDLS_CMD_LINK_MGT {
 	uint16_t u2StatusCode;
 	uint32_t u4SecBufLen;
 	uint8_t aucSecBuf[TDLS_SEC_BUF_LENGTH];
-
+	uint8_t ucBssIdx;
 };
 
 struct TDLS_CMD_PEER_ADD {

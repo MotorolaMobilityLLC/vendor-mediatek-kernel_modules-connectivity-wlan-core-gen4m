@@ -243,16 +243,24 @@ void bssDetermineStaRecPhyTypeSet(IN struct ADAPTER *prAdapter,
 
 	/* Decide AIS PHY type set */
 	if (prStaRec->eStaType == STA_TYPE_LEGACY_AP) {
+		struct CONNECTION_SETTINGS *prConnSettings;
+		enum ENUM_WEP_STATUS eEncStatus;
+
+		prConnSettings =
+			aisGetConnSettings(prAdapter, prStaRec->ucBssIndex);
+
+		eEncStatus = prConnSettings->eEncStatus;
+
 		if (!
-		    ((prAdapter->rWifiVar.rConnSettings.eEncStatus ==
+		    ((eEncStatus ==
 		      ENUM_ENCRYPTION3_ENABLED)
-		     || (prAdapter->rWifiVar.rConnSettings.eEncStatus ==
+		     || (eEncStatus ==
 			 ENUM_ENCRYPTION3_KEY_ABSENT)
-		     || (prAdapter->rWifiVar.rConnSettings.eEncStatus ==
+		     || (eEncStatus ==
 			 ENUM_ENCRYPTION_DISABLED)
-		     || (prAdapter->prGlueInfo->u2WSCAssocInfoIELen)
+		     || (prConnSettings->u2WSCAssocInfoIELen)
 #if CFG_SUPPORT_WAPI
-		     || (prAdapter->prGlueInfo->u2WapiAssocInfoIESz)
+		     || (prConnSettings->u2WapiAssocInfoIESz)
 #endif
 )) {
 			DBGLOG(BSS, INFO,
@@ -363,7 +371,7 @@ struct STA_RECORD *bssCreateStaRecFromBssDesc(IN struct ADAPTER *prAdapter,
 
 	ASSERT(prBssDesc);
 
-	prConnSettings = &(prAdapter->rWifiVar.rConnSettings);
+	prConnSettings = aisGetConnSettings(prAdapter, ucBssIndex);
 
 	/* 4 <1> Get a valid STA_RECORD_T */
 	prStaRec =
@@ -400,11 +408,11 @@ struct STA_RECORD *bssCreateStaRecFromBssDesc(IN struct ADAPTER *prAdapter,
 
 	if (IS_STA_IN_AIS(prStaRec)) {
 		if (!
-		    ((prAdapter->rWifiVar.rConnSettings.eEncStatus ==
+		    ((prConnSettings->eEncStatus ==
 		      ENUM_ENCRYPTION3_ENABLED)
-		     || (prAdapter->rWifiVar.rConnSettings.eEncStatus ==
+		     || (prConnSettings->eEncStatus ==
 			 ENUM_ENCRYPTION3_KEY_ABSENT)
-		     || (prAdapter->rWifiVar.rConnSettings.eEncStatus ==
+		     || (prConnSettings->eEncStatus ==
 			 ENUM_ENCRYPTION_DISABLED)
 		     || (prAdapter->prGlueInfo->u2WSCAssocInfoIELen)
 #if CFG_SUPPORT_WAPI
@@ -1713,7 +1721,7 @@ ibssProcessMatchedBeacon(IN struct ADAPTER *prAdapter,
 	/* 4 <2> Get the STA_RECORD_T of TA. */
 	prStaRec =
 	    cnmGetStaRecByAddress(prAdapter,
-				  prAdapter->prAisBssInfo->ucBssIndex,
+				  prBssInfo->ucBssIndex,
 				  prBssDesc->aucSrcAddr);
 
 	fgIsSameBSSID =
@@ -1748,7 +1756,7 @@ ibssProcessMatchedBeacon(IN struct ADAPTER *prAdapter,
 		} else {
 
 			ASSERT((prStaRec->ucBssIndex ==
-				prAdapter->prAisBssInfo->ucBssIndex)
+				prBssInfo->ucBssIndex)
 			       && IS_ADHOC_STA(prStaRec));
 
 			if (prStaRec->ucStaState != STA_STATE_3) {
@@ -1834,7 +1842,9 @@ ibssProcessMatchedBeacon(IN struct ADAPTER *prAdapter,
 			}
 
 			if (ibssCheckCapabilityForAdHocMode
-			    (prAdapter, prBssDesc) == WLAN_STATUS_FAILURE) {
+			    (prAdapter, prBssDesc,
+			    prBssInfo->ucBssIndex)
+			    == WLAN_STATUS_FAILURE) {
 				DBGLOG(BSS, LOUD,
 				       "IBSS MERGE: Ignore Peer MAC: " MACSTR
 				       " - Capability is not matched.\n",
@@ -1893,8 +1903,7 @@ ibssProcessMatchedBeacon(IN struct ADAPTER *prAdapter,
 		/* 4 <2> Setup corresponding STA_RECORD_T */
 		prStaRec = bssCreateStaRecFromBssDesc(prAdapter,
 						      STA_TYPE_ADHOC_PEER,
-						      prAdapter->
-						      prAisBssInfo->ucBssIndex,
+						      prBssInfo->ucBssIndex,
 						      prBssDesc);
 
 		if (!prStaRec) {
@@ -1922,7 +1931,7 @@ ibssProcessMatchedBeacon(IN struct ADAPTER *prAdapter,
 
 		prAisIbssPeerFoundMsg->rMsgHdr.eMsgId = MID_SCN_AIS_FOUND_IBSS;
 		prAisIbssPeerFoundMsg->ucBssIndex =
-		    prAdapter->prAisBssInfo->ucBssIndex;
+		    prBssInfo->ucBssIndex;
 		prAisIbssPeerFoundMsg->prStaRec = prStaRec;
 
 		/* Inform AIS to do STATE TRANSITION
@@ -1961,13 +1970,14 @@ ibssProcessMatchedBeacon(IN struct ADAPTER *prAdapter,
  */
 /*----------------------------------------------------------------------------*/
 uint32_t ibssCheckCapabilityForAdHocMode(IN struct ADAPTER *prAdapter,
-					 IN struct BSS_DESC *prBssDesc)
+					 IN struct BSS_DESC *prBssDesc,
+					 IN uint8_t ucBssIndex)
 {
 	struct CONNECTION_SETTINGS *prConnSettings;
 	uint32_t rStatus = WLAN_STATUS_FAILURE;
 
 	ASSERT(prBssDesc);
-	prConnSettings = &(prAdapter->rWifiVar.rConnSettings);
+	prConnSettings = aisGetConnSettings(prAdapter, ucBssIndex);
 
 	do {
 		/* 4 <1> Check the BSS Basic Rate Set for current AdHoc Mode */
@@ -2000,7 +2010,8 @@ uint32_t ibssCheckCapabilityForAdHocMode(IN struct ADAPTER *prAdapter,
 			break;
 		}
 		/* 4 <4> Check the Security setting. */
-		if (!rsnPerformPolicySelection(prAdapter, prBssDesc))
+		if (!rsnPerformPolicySelection(prAdapter, prBssDesc,
+			ucBssIndex))
 			break;
 
 		rStatus = WLAN_STATUS_SUCCESS;

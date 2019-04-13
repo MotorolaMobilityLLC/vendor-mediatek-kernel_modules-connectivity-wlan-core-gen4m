@@ -1517,8 +1517,8 @@ static uint8_t cnmGetAPBwPermitted(struct ADAPTER
 
 	if (IS_BSS_AIS(prBssInfo)) {
 		/*AIS station mode*/
-		prBssDesc =
-			prAdapter->rWifiVar.rAisFsmInfo.prTargetBssDesc;
+		prBssDesc
+			= aisGetTargetBssDesc(prAdapter, ucBssIndex);
 	} else if (IS_BSS_P2P(prBssInfo)) {
 		/* P2P mode */
 

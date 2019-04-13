@@ -863,6 +863,8 @@ static ssize_t procSetCamCfgWrite(struct file *file, const char __user *buffer,
 	}
 
 	if (fgParamValue) {
+		uint8_t i;
+
 		prGlueInfo = wlanGetGlueInfo();
 		if (!prGlueInfo)
 			return count;
@@ -871,7 +873,11 @@ static ssize_t procSetCamCfgWrite(struct file *file, const char __user *buffer,
 		if (!prAdapter)
 			return count;
 
-		nicConfigProcSetCamCfgWrite(prAdapter, fgSetCamCfg);
+		for (i = 0; i < KAL_AIS_NUM; i++) {
+			nicConfigProcSetCamCfgWrite(prAdapter,
+				fgSetCamCfg,
+				i);
+		}
 	}
 
 	return count;
@@ -1129,7 +1135,7 @@ static ssize_t procCountryRead(struct file *filp, char __user *buf,
 
 	if (g_prGlueInfo_proc && g_prGlueInfo_proc->prAdapter) {
 		u2CountryCode = g_prGlueInfo_proc->prAdapter->rWifiVar.
-			rConnSettings.u2CountryCode;
+			u2CountryCode;
 	}
 
 	if (u2CountryCode)

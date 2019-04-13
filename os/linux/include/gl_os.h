@@ -466,6 +466,9 @@ struct GL_SCAN_CACHE_INFO {
 
 	/* Scan period time */
 	OS_SYSTIME u4LastScanTime;
+
+	/* Bss index */
+	uint8_t ucBssIndex;
 };
 #endif /* CFG_SUPPORT_SCAN_CACHE_RESULT */
 
@@ -563,9 +566,9 @@ struct GLUE_INFO {
 	struct GL_HIF_INFO rHifInfo;
 
 	/*! \brief wext wpa related information */
-	struct GL_WPA_INFO rWpaInfo;
+	struct GL_WPA_INFO rWpaInfo[KAL_AIS_NUM];
 #if CFG_SUPPORT_REPLAY_DETECTION
-	struct GL_DETECT_REPLAY_INFO prDetRplyInfo;
+	struct GL_DETECT_REPLAY_INFO prDetRplyInfo[KAL_AIS_NUM];
 #endif
 
 	/* Pointer to ADAPTER_T - main data structure of internal protocol
@@ -578,7 +581,8 @@ struct GLUE_INFO {
 #endif				/* WLAN_INCLUDE_PROC */
 
 	/* Indicated media state */
-	enum ENUM_PARAM_MEDIA_STATE eParamMediaStateIndicated;
+	enum ENUM_PARAM_MEDIA_STATE
+		eParamMediaStateIndicated[KAL_AIS_NUM];
 
 	/* Device power state D0~D3 */
 	enum PARAM_DEVICE_POWER_STATE ePowerState;
@@ -641,12 +645,6 @@ struct GLUE_INFO {
 	uint32_t u4ExtCfgLength;	/* 0 means data is NOT valid */
 #endif
 
-#if 1				/* CFG_SUPPORT_WAPI */
-	/* Should be large than the PARAM_WAPI_ASSOC_INFO_T */
-	uint8_t aucWapiAssocInfoIEs[42];
-	uint16_t u2WapiAssocInfoIESz;
-#endif
-
 #if CFG_ENABLE_BT_OVER_WIFI
 	struct GL_BOW_INFO rBowInfo;
 #endif
@@ -659,11 +657,6 @@ struct GLUE_INFO {
 	struct iw_statistics rP2pIwStats;
 #endif
 #endif
-	u_int8_t fgWpsActive;
-	uint8_t aucWSCIE[GLUE_INFO_WSCIE_LENGTH];	/*for probe req */
-	uint16_t u2WSCIELen;
-	uint8_t aucWSCAssocInfoIE[200];	/*for Assoc req */
-	uint16_t u2WSCAssocInfoIELen;
 
 	/* NVRAM availability */
 	u_int8_t fgNvramAvailable;
@@ -683,21 +676,6 @@ struct GLUE_INFO {
 	/* to indicate registered or not */
 	u_int8_t fgIsRegistered;
 
-	/* for cfg80211 connected indication */
-	uint32_t u4RspIeLength;
-	uint8_t aucRspIe[CFG_CFG80211_IE_BUF_LEN];
-
-	uint32_t u4ReqIeLength;
-	uint8_t aucReqIe[CFG_CFG80211_IE_BUF_LEN];
-
-	/*
-	 * Buffer to hold non-wfa vendor specific IEs set
-	 * from wpa_supplicant. This is used in sending
-	 * Association Request in AIS mode.
-	 */
-	uint16_t non_wfa_vendor_ie_len;
-	uint8_t non_wfa_vendor_ie_buf[NON_WFA_VENDOR_IE_MAX_LEN];
-
 #if CFG_SUPPORT_SDIO_READ_WRITE_PATTERN
 	u_int8_t fgEnSdioTestPattern;
 	u_int8_t fgSdioReadWriteMode;
@@ -708,11 +686,6 @@ struct GLUE_INFO {
 	u_int8_t fgIsInSuspendMode;
 
 #if CFG_SUPPORT_PASSPOINT
-	uint8_t aucHS20AssocInfoIE[200];	/*for Assoc req */
-	uint16_t u2HS20AssocInfoIELen;
-	uint8_t ucHotspotConfig;
-	u_int8_t fgConnectHS20AP;
-
 	u_int8_t fgIsDad;
 	uint8_t aucDADipv4[4];
 	u_int8_t fgIs6Dad;
@@ -783,9 +756,6 @@ struct GLUE_INFO {
 	/* if it's = 0, ignore the black/whitelists settings from FWK */
 	uint32_t u4FWRoamingEnable;
 
-	/* 11R */
-	struct FT_IES rFtIeForTx;
-	struct cfg80211_ft_event_params rFtEventParam;
 	spinlock_t napi_spinlock;
 };
 
@@ -1232,7 +1202,7 @@ uint32_t wlanConnacDownloadBufferBin(struct ADAPTER
  */
 extern struct net_device *gPrP2pDev[KAL_P2P_NUM];
 extern struct net_device *gPrDev;
-extern struct wireless_dev *gprWdev;
+extern struct wireless_dev *gprWdev[KAL_AIS_NUM];
 
 #ifdef CFG_DRIVER_INF_NAME_CHANGE
 extern char *gprifnameap;
