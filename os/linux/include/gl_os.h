@@ -674,8 +674,6 @@ struct GLUE_INFO {
 	u_int8_t fgIsMacAddrOverride;
 	uint8_t rMacAddrOverride[PARAM_MAC_ADDR_LEN];
 
-	struct SET_TXPWR_CTRL rTxPwr;
-
 	/* for cfg80211 scan done indication */
 	struct cfg80211_scan_request *prScanRequest;
 

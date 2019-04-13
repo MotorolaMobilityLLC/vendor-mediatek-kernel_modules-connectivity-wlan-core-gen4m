@@ -907,33 +907,10 @@ static void glLoadNvram(OUT struct REG_INFO *prRegInfo)
 		sizeof(g_aucNvram));
 		return;
 	}
-#if CFG_SUPPORT_NVRAM_5G
-	if (sizeof(struct NEW_EFUSE_MAPPING2NVRAM) >
-					sizeof(prRegInfo->aucEFUSE)) {
-		DBGLOG(INIT, ERROR,
-		"Size NEW_EFUSE_MAPPING2NVRAM %zu >size aucEFUSE %zu\n"
-		, sizeof(struct NEW_EFUSE_MAPPING2NVRAM),
-		sizeof(prRegInfo->aucEFUSE));
-		return;
-	}
-#endif
 
 	prRegInfo->prNvramSettings =
 		(struct WIFI_CFG_PARAM_STRUCT *)&g_aucNvram[0];
 	prNvramSettings = prRegInfo->prNvramSettings;
-
-#if CFG_SUPPORT_NVRAM_5G
-	/* load EFUSE overriding part */
-	kalMemCopy(prRegInfo->aucEFUSE,
-	prNvramSettings->EfuseMapping.aucEFUSE,
-	sizeof(prRegInfo->aucEFUSE));
-	prRegInfo->prOldEfuseMapping =
-		(struct NEW_EFUSE_MAPPING2NVRAM *)&prRegInfo->aucEFUSE;
-#else
-	/* load EFUSE overriding part */
-	kalMemCopy(prRegInfo->aucEFUSE,
-	prNvramSettings->aucEFUSE, sizeof(prRegInfo->aucEFUSE));
-#endif
 
 	/* load MAC Address */
 	kalMemCopy(prRegInfo->aucMacAddr,
@@ -947,66 +924,20 @@ static void glLoadNvram(OUT struct REG_INFO *prRegInfo)
 	prRegInfo->au2CountryCode[1] =
 			(uint16_t) prNvramSettings->aucCountryCode[1];
 
-	/* load default normal TX power */
-	kalMemCopy(&prRegInfo->rTxPwr,
-		&prNvramSettings->rTxPwr, sizeof(struct TX_PWR_PARAM));
-
-	/* load feature flags */
-	prRegInfo->ucTxPwrValid = prNvramSettings->ucTxPwrValid;
-
 	prRegInfo->ucSupport5GBand =
 			prNvramSettings->ucSupport5GBand;
 
-	/* prNvramSettings->uc2G4BwFixed20M ; */
-	prRegInfo->uc2G4BwFixed20M = 0;
-
-	/* prNvramSettings->uc5GBwFixed20M; */
-	prRegInfo->uc5GBwFixed20M = 0;
-
 	prRegInfo->ucEnable5GBand = prNvramSettings->ucEnable5GBand;
 
-	/* prNvramSettings->ucRxDiversity; */
-	prRegInfo->ucRxDiversity = 0;
-
-	/*	prNvramSettings->fgRssiCompensationVaildbit; */
-	prRegInfo->ucRssiPathCompasationUsed = 0;
-
-	/* prNvramSettings->ucGpsDesense; */
-	prRegInfo->ucGpsDesense = 0;
-
-	/* load band edge tx power control */
-	prRegInfo->fg2G4BandEdgePwrUsed =
-			prNvramSettings->fg2G4BandEdgePwrUsed;
-
-	if (prRegInfo->prNvramSettings->fg2G4BandEdgePwrUsed) {
-		prRegInfo->cBandEdgeMaxPwrCCK =
-				prNvramSettings->cBandEdgeMaxPwrCCK;
-
-		prRegInfo->cBandEdgeMaxPwrOFDM20 =
-				prNvramSettings->cBandEdgeMaxPwrOFDM20;
-
-		prRegInfo->cBandEdgeMaxPwrOFDM40 =
-				prNvramSettings->cBandEdgeMaxPwrOFDM40;
-	}
-
 	/* load regulation subbands */
-	prRegInfo->eRegChannelListMap =
-		(enum ENUM_REG_CH_MAP) prNvramSettings->ucRegChannelListMap;
-	prRegInfo->ucRegChannelListIndex =
-				prNvramSettings->ucRegChannelListIndex;
+	prRegInfo->eRegChannelListMap = 0;
+	prRegInfo->ucRegChannelListIndex = 0;
 
 	if (prRegInfo->eRegChannelListMap == REG_CH_MAP_CUSTOMIZED) {
 		kalMemCopy(prRegInfo->rDomainInfo.rSubBand,
 			prNvramSettings->aucRegSubbandInfo,
 			MAX_SUBBAND_NUM*sizeof(uint8_t));
 	}
-
-#if 0 /* prRegInfo->rRssiPathCompasation default 0 on on connac */
-	/* load rssiPathCompensation */
-	kalMemCopy(&prRegInfo->rRssiPathCompasation,
-				&prNvramSettings->rRssiPathCompensation,
-				sizeof(struct RSSI_PATH_COMPASATION));
-#endif
 
 	log_dbg(INIT, INFO, "u2Part1OwnVersion = %08x, u2Part1PeerVersion = %08x\n",
 				 prNvramSettings->u2Part1OwnVersion,

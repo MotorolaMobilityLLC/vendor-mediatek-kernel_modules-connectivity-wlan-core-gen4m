@@ -417,7 +417,6 @@ void wlanOnPostNicInitAdapter(IN struct ADAPTER *prAdapter,
 
 		/* 4 <3> Initialize Tx */
 		nicTxInitialize(prAdapter);
-		wlanDefTxPowerCfg(prAdapter);
 	} /* end of bAtResetFlow == FALSE */
 
 	/* 4 <4> Initialize Rx */
@@ -4161,81 +4160,6 @@ static int32_t wlanCal6628EfuseForm(IN struct ADAPTER
 
 #endif
 
-#if CFG_SUPPORT_NVRAM_5G
-uint32_t wlanLoadManufactureData_5G(IN struct ADAPTER
-				    *prAdapter, IN struct REG_INFO *prRegInfo)
-{
-
-	struct BANDEDGE_5G *pr5GBandEdge;
-
-	ASSERT(prAdapter);
-
-	pr5GBandEdge =
-		&prRegInfo->prOldEfuseMapping->r5GBandEdgePwr;
-
-	/* 1. set band edge tx power if available */
-	if (pr5GBandEdge->uc5GBandEdgePwrUsed != 0) {
-		struct CMD_EDGE_TXPWR_LIMIT rCmdEdgeTxPwrLimit;
-
-		rCmdEdgeTxPwrLimit.cBandEdgeMaxPwrCCK = 0;
-		rCmdEdgeTxPwrLimit.cBandEdgeMaxPwrOFDM20 =
-			pr5GBandEdge->c5GBandEdgeMaxPwrOFDM20;
-		rCmdEdgeTxPwrLimit.cBandEdgeMaxPwrOFDM40 =
-			pr5GBandEdge->c5GBandEdgeMaxPwrOFDM40;
-		rCmdEdgeTxPwrLimit.cBandEdgeMaxPwrOFDM80 =
-			pr5GBandEdge->c5GBandEdgeMaxPwrOFDM80;
-
-		wlanSendSetQueryCmd(prAdapter,
-				    CMD_ID_SET_EDGE_TXPWR_LIMIT_5G,
-				    TRUE,
-				    FALSE,
-				    FALSE,
-				    NULL,
-				    NULL, sizeof(struct CMD_EDGE_TXPWR_LIMIT),
-				    (uint8_t *) &rCmdEdgeTxPwrLimit, NULL, 0);
-
-		/* dumpMemory8(&rCmdEdgeTxPwrLimit,4); */
-	}
-
-	/* 2.set channel offset for 8 sub-band */
-	if (prRegInfo->prOldEfuseMapping->uc5GChannelOffsetVaild) {
-		struct CMD_POWER_OFFSET rCmdPowerOffset;
-		uint8_t i;
-
-		rCmdPowerOffset.ucBand = BAND_5G;
-		for (i = 0; i < MAX_SUBBAND_NUM_5G; i++)
-			rCmdPowerOffset.ucSubBandOffset[i] =
-				prRegInfo->prOldEfuseMapping->auc5GChOffset[i];
-
-		wlanSendSetQueryCmd(prAdapter,
-				    CMD_ID_SET_CHANNEL_PWR_OFFSET,
-				    TRUE,
-				    FALSE,
-				    FALSE, NULL, NULL, sizeof(rCmdPowerOffset),
-				    (uint8_t *) &rCmdPowerOffset, NULL, 0);
-		/* dumpMemory8(&rCmdPowerOffset,9); */
-	}
-
-	/* 3.set 5G AC power */
-	if (prRegInfo->prOldEfuseMapping->uc11AcTxPwrValid) {
-
-		struct CMD_TX_AC_PWR rCmdAcPwr;
-
-		kalMemCopy(&rCmdAcPwr.rAcPwr,
-			   &prRegInfo->prOldEfuseMapping->r11AcTxPwr,
-			   sizeof(struct AC_PWR_SETTING_STRUCT));
-		rCmdAcPwr.ucBand = BAND_5G;
-
-		wlanSendSetQueryCmd(prAdapter, CMD_ID_SET_80211AC_TX_PWR,
-				    TRUE, FALSE, FALSE, NULL, NULL,
-				    sizeof(struct CMD_TX_AC_PWR),
-				    (uint8_t *) &rCmdAcPwr, NULL, 0);
-		/* dumpMemory8(&rCmdAcPwr,9); */
-	}
-
-	return WLAN_STATUS_SUCCESS;
-}
-#endif
 /*----------------------------------------------------------------------------*/
 /*!
  * @brief This function is called to load manufacture data from NVRAM
@@ -4273,48 +4197,8 @@ uint32_t wlanLoadManufactureData(IN struct ADAPTER
 			/* prRegInfo->prNvramSettings->u2Part2PeerVersion; */
 	}
 
-#if 0 /* will redefine version */
-#if (CFG_SW_NVRAM_VERSION_CHECK == 1)
-	if (prAdapter->rVerInfo.u2Part1CfgPeerVersion >
-	    CFG_DRV_OWN_VERSION
-	    || prAdapter->rVerInfo.u2Part2CfgPeerVersion >
-	    CFG_DRV_OWN_VERSION
-	    || prAdapter->rVerInfo.u2Part1CfgOwnVersion <
-	    CFG_DRV_PEER_VERSION
-	    || prAdapter->rVerInfo.u2Part2CfgOwnVersion <
-	    CFG_DRV_PEER_VERSION) {
-		log_dbg(INIT, INFO, "NVRAM version check fail\n");
-		return WLAN_STATUS_FAILURE;
-	}
-#endif
-#endif
-
-#if 0 /* removed */
-	/* MT6620 E1/E2 would be ignored directly */
-	if (prAdapter->rVerInfo.u2Part1CfgOwnVersion == 0x0001) {
-		prRegInfo->ucTxPwrValid = 1;
-	} else {
-		/* 2. Load TX power gain parameters if valid */
-		if (prRegInfo->ucTxPwrValid != 0) {
-			/* send to F/W */
-
-			nicUpdateTxPower(prAdapter,
-				(struct CMD_TX_PWR *) (&(prRegInfo->rTxPwr)));
-		}
-	}
-#endif
-
-	/* Todo : Temp Open 20150806 Sam */
-#if 0	/* read setting from nvram */
-	prRegInfo->ucEnable5GBand = 1;
-	prRegInfo->ucSupport5GBand = 1;
-#endif
-
 	/* 3. Check if needs to support 5GHz */
 	if (prRegInfo->ucEnable5GBand) {
-#if CFG_SUPPORT_NVRAM_5G
-		wlanLoadManufactureData_5G(prAdapter, prRegInfo);
-#endif
 		/* check if it is disabled by hardware */
 		if (prAdapter->fgIsHw5GBandDisabled
 		    || prRegInfo->ucSupport5GBand == 0)
@@ -4324,135 +4208,16 @@ uint32_t wlanLoadManufactureData(IN struct ADAPTER
 	} else
 		prAdapter->fgEnable5GBand = FALSE;
 
-#if 0 /* removed */
-	/* 4. Send EFUSE data */
-#if CFG_SUPPORT_NVRAM_5G
-	/* If NvRAM read failed, this pointer will be NULL */
-	if (prRegInfo->prOldEfuseMapping) {
-		/*2.set channel offset for 3 sub-band */
-		if (prRegInfo->prOldEfuseMapping->ucChannelOffsetVaild) {
-			struct CMD_POWER_OFFSET rCmdPowerOffset;
-			uint8_t i;
-
-			rCmdPowerOffset.ucBand = BAND_2G4;
-			for (i = 0; i < 3; i++)
-				rCmdPowerOffset.ucSubBandOffset[i] =
-					prRegInfo->prOldEfuseMapping
-					->aucChOffset[i];
-			rCmdPowerOffset.ucSubBandOffset[i] =
-				prRegInfo->prOldEfuseMapping
-				->acAllChannelOffset;
-
-			wlanSendSetQueryCmd(prAdapter,
-					    CMD_ID_SET_CHANNEL_PWR_OFFSET,
-					    TRUE, FALSE, FALSE, NULL, NULL,
-					    sizeof(rCmdPowerOffset),
-					    (uint8_t *) &rCmdPowerOffset, NULL,
-					    0);
-			/* dumpMemory8(&rCmdPowerOffset,9); */
-		}
-	}
-#else
-
-	wlanSendSetQueryCmd(prAdapter,
-			    CMD_ID_SET_PHY_PARAM,
-			    TRUE,
-			    FALSE,
-			    FALSE, NULL, NULL, sizeof(struct CMD_PHY_PARAM),
-			    (uint8_t *) (prRegInfo->aucEFUSE), NULL, 0);
-
-#endif
-	/*RSSI path compasation */
-	if (prRegInfo->ucRssiPathCompasationUsed) {
-		struct CMD_RSSI_PATH_COMPASATION rCmdRssiPathCompasation;
-
-		rCmdRssiPathCompasation.c2GRssiCompensation =
-			prRegInfo->rRssiPathCompasation.c2GRssiCompensation;
-		rCmdRssiPathCompasation.c5GRssiCompensation =
-			prRegInfo->rRssiPathCompasation.c5GRssiCompensation;
-
-		wlanSendSetQueryCmd(prAdapter, CMD_ID_SET_PATH_COMPASATION,
-				    TRUE, FALSE, FALSE, NULL, NULL,
-				    sizeof(rCmdRssiPathCompasation),
-				    (uint8_t *) &rCmdRssiPathCompasation,
-				    NULL, 0);
-	}
-#if CFG_SUPPORT_RDD_TEST_MODE
-	rRddParam.ucRddTestMode = (uint8_t)
-				  prRegInfo->u4RddTestMode;
-	rRddParam.ucRddShutCh = (uint8_t) prRegInfo->u4RddShutFreq;
-	rRddParam.ucRddStartCh = (uint8_t) nicFreq2ChannelNum(
-					 prRegInfo->u4RddStartFreq);
-	rRddParam.ucRddStopCh = (uint8_t) nicFreq2ChannelNum(
-					prRegInfo->u4RddStopFreq);
-	rRddParam.ucRddDfs = (uint8_t) prRegInfo->u4RddDfs;
-	prAdapter->ucRddStatus = 0;
-	nicUpdateRddTestMode(prAdapter,
-			     (struct CMD_RDD_CH *) (&rRddParam));
-#endif
-#endif /* if 0 */
-
 	/* 5. Get 16-bits Country Code and Bandwidth */
 	prAdapter->rWifiVar.rConnSettings.u2CountryCode =
 		(((uint16_t) prRegInfo->au2CountryCode[0]) << 8) | (((
 			uint16_t) prRegInfo->au2CountryCode[1]) & BITS(0, 7));
-
-#if 0	/* Bandwidth control will be controlled by GUI. 20110930
-	 * So ignore the setting from registry/NVRAM
-	 */
-	prAdapter->rWifiVar.rConnSettings.uc2G4BandwidthMode =
-		prRegInfo->uc2G4BwFixed20M ? CONFIG_BW_20M :
-		CONFIG_BW_20_40M;
-	prAdapter->rWifiVar.rConnSettings.uc5GBandwidthMode =
-		prRegInfo->uc5GBwFixed20M ? CONFIG_BW_20M :
-		CONFIG_BW_20_40M;
-#endif
 
 	/* 6. Set domain and channel information to chip */
 	rlmDomainSendCmd(prAdapter);
 
 	/* Update supported channel list in channel table */
 	wlanUpdateChannelTable(prAdapter->prGlueInfo);
-
-#if 0 /* removed */
-	/* 7. set band edge tx power if available */
-	if (prRegInfo->fg2G4BandEdgePwrUsed) {
-		struct CMD_EDGE_TXPWR_LIMIT rCmdEdgeTxPwrLimit;
-
-		rCmdEdgeTxPwrLimit.cBandEdgeMaxPwrCCK =
-			prRegInfo->cBandEdgeMaxPwrCCK;
-		rCmdEdgeTxPwrLimit.cBandEdgeMaxPwrOFDM20 =
-			prRegInfo->cBandEdgeMaxPwrOFDM20;
-		rCmdEdgeTxPwrLimit.cBandEdgeMaxPwrOFDM40 =
-			prRegInfo->cBandEdgeMaxPwrOFDM40;
-
-		wlanSendSetQueryCmd(prAdapter,
-				    CMD_ID_SET_EDGE_TXPWR_LIMIT,
-				    TRUE,
-				    FALSE,
-				    FALSE,
-				    NULL,
-				    NULL, sizeof(struct CMD_EDGE_TXPWR_LIMIT),
-				    (uint8_t *) &rCmdEdgeTxPwrLimit, NULL, 0);
-	}
-	/*8. Set 2.4G AC power */
-	if (prRegInfo->prOldEfuseMapping
-	    && prRegInfo->prOldEfuseMapping->uc11AcTxPwrValid2G) {
-
-		struct CMD_TX_AC_PWR rCmdAcPwr;
-
-		kalMemCopy(&rCmdAcPwr.rAcPwr,
-			   &prRegInfo->prOldEfuseMapping->r11AcTxPwr2G,
-			   sizeof(struct AC_PWR_SETTING_STRUCT));
-		rCmdAcPwr.ucBand = BAND_2G4;
-
-		wlanSendSetQueryCmd(prAdapter, CMD_ID_SET_80211AC_TX_PWR,
-				    TRUE, FALSE, FALSE, NULL, NULL,
-				    sizeof(struct CMD_TX_AC_PWR),
-				    (uint8_t *) &rCmdAcPwr, NULL, 0);
-		/* dumpMemory8(&rCmdAcPwr,9); */
-	}
-#endif /* if 0 */
 
 	/* 9. Send the full Parameters of NVRAM to FW */
 	kalMemCopy(&prCmdNvramSettings->rNvramSettings,
@@ -4802,49 +4567,6 @@ uint8_t wlanGetEcoVersion(IN struct ADAPTER *prAdapter)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * @brief This function is to setting the default Tx Power configuration
- *
- * @param prAdapter      Pointer of Adapter Data Structure
- *
- * @return zero      Unable to retrieve ECO version information
- *         non-zero  ECO version (1-based)
- */
-/*----------------------------------------------------------------------------*/
-void wlanDefTxPowerCfg(IN struct ADAPTER *prAdapter)
-{
-	uint8_t i;
-	struct GLUE_INFO *prGlueInfo = prAdapter->prGlueInfo;
-	struct SET_TXPWR_CTRL *prTxpwr;
-
-	ASSERT(prGlueInfo);
-
-	prTxpwr = &prGlueInfo->rTxPwr;
-
-	prTxpwr->c2GLegacyStaPwrOffset = 0;
-	prTxpwr->c2GHotspotPwrOffset = 0;
-	prTxpwr->c2GP2pPwrOffset = 0;
-	prTxpwr->c2GBowPwrOffset = 0;
-	prTxpwr->c5GLegacyStaPwrOffset = 0;
-	prTxpwr->c5GHotspotPwrOffset = 0;
-	prTxpwr->c5GP2pPwrOffset = 0;
-	prTxpwr->c5GBowPwrOffset = 0;
-	prTxpwr->ucConcurrencePolicy = 0;
-	for (i = 0; i < 3; i++)
-		prTxpwr->acReserved1[i] = 0;
-
-	for (i = 0; i < 14; i++)
-		prTxpwr->acTxPwrLimit2G[i] = 63;
-
-	for (i = 0; i < 4; i++)
-		prTxpwr->acTxPwrLimit5G[i] = 63;
-
-	for (i = 0; i < 2; i++)
-		prTxpwr->acReserved2[i] = 0;
-
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
  * @brief This function is to
  *        set preferred band configuration corresponding to network type
  *
@@ -4958,7 +4680,6 @@ uint32_t wlanCheckSystemConfiguration(IN struct ADAPTER *prAdapter)
 		|| (prAdapter->fgIsEmbbededMacAddrValid == FALSE &&
 		    (IS_BMCAST_MAC_ADDR(prRegInfo->aucMacAddr)
 		     || EQUAL_MAC_ADDR(aucZeroMacAddr, prRegInfo->aucMacAddr)))
-		|| prRegInfo->ucTxPwrValid == 0
 		|| prAdapter->fgIsPowerLimitTableValid == FALSE))
 		fgGenErrMsg = TRUE;
 #else
@@ -4976,7 +4697,7 @@ uint32_t wlanCheckSystemConfiguration(IN struct ADAPTER *prAdapter)
 		|| (prAdapter->fgIsEmbbededMacAddrValid == FALSE &&
 		    (IS_BMCAST_MAC_ADDR(prRegInfo->aucMacAddr)
 		     || EQUAL_MAC_ADDR(aucZeroMacAddr, prRegInfo->aucMacAddr)))
-		|| prRegInfo->ucTxPwrValid == 0))
+		))
 		fgGenErrMsg = TRUE;
 #endif
 #endif
@@ -5066,9 +4787,6 @@ uint32_t wlanCheckSystemConfiguration(IN struct ADAPTER *prAdapter)
 		     || prAdapter->rVerInfo.u2FwOwnVersion <
 		     CFG_DRV_PEER_VERSION))
 			u4ErrCode |= NVRAM_ERROR_VERSION_MISMATCH;
-
-		if (prRegInfo->ucTxPwrValid == 0)
-			u4ErrCode |= NVRAM_ERROR_INVALID_TXPWR;
 
 		if (prAdapter->fgIsEmbbededMacAddrValid == FALSE
 		    && (IS_BMCAST_MAC_ADDR(prRegInfo->aucMacAddr)

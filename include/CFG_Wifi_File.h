@@ -424,39 +424,6 @@ struct PWR_PARAM {
 	uint32_t u4RefValue2;
 };
 
-#if 0
-struct WIFI_CFG_PARAM_STRUCT {
-	/* 256 bytes of MP data */
-	uint16_t u2Part1OwnVersion;
-	uint16_t u2Part1PeerVersion;
-	uint8_t aucMacAddress[6];
-	uint8_t aucCountryCode[2];
-	struct TX_PWR_PARAM rTxPwr;
-	uint8_t aucEFUSE[144];
-	uint8_t ucTxPwrValid;
-	uint8_t ucSupport5GBand;
-	uint8_t fg2G4BandEdgePwrUsed;
-	int8_t cBandEdgeMaxPwrCCK;
-	int8_t cBandEdgeMaxPwrOFDM20;
-	int8_t cBandEdgeMaxPwrOFDM40;
-
-	uint8_t ucRegChannelListMap;
-	uint8_t ucRegChannelListIndex;
-	uint8_t aucRegSubbandInfo[36];
-
-	uint8_t aucReserved2[256 - 240];
-
-	/* 256 bytes of function data */
-	uint16_t u2Part2OwnVersion;
-	uint16_t u2Part2PeerVersion;
-	uint8_t uc2G4BwFixed20M;
-	uint8_t uc5GBwFixed20M;
-	uint8_t ucEnable5GBand;
-	uint8_t aucPreTailReserved;
-	uint8_t aucTailReserved[256 - 8];
-};
-#else
-
 struct AC_PWR_SETTING_STRUCT {
 	uint8_t c11AcTxPwr_BPSK;
 	uint8_t c11AcTxPwr_QPSK;
@@ -515,21 +482,10 @@ struct WIFI_CFG_PARAM_STRUCT {
 	uint16_t u2Part1PeerVersion;
 	uint8_t aucMacAddress[6];
 	uint8_t aucCountryCode[2];
-	struct TX_PWR_PARAM rTxPwr;
-#if CFG_SUPPORT_NVRAM_5G
-	union {
-		struct NEW_EFUSE_MAPPING2NVRAM u;
-		uint8_t aucEFUSE[144];
-	} EfuseMapping;
-#else
-	uint8_t aucEFUSE[144];
-#endif
-	uint8_t ucTxPwrValid;
+	uint8_t aucOldTxPwr0[185];
+
 	uint8_t ucSupport5GBand;
-	uint8_t fg2G4BandEdgePwrUsed;
-	int8_t cBandEdgeMaxPwrCCK;
-	int8_t cBandEdgeMaxPwrOFDM20;
-	int8_t cBandEdgeMaxPwrOFDM40;
+	uint8_t aucOldTxPwr1[4];
 
 	uint8_t ucRegChannelListMap;
 	uint8_t ucRegChannelListIndex;
@@ -569,7 +525,6 @@ struct WIFI_CFG_PARAM_STRUCT {
 	uint8_t aucReserved1[1346];
 };
 
-#endif
 /*******************************************************************************
  *                           P R I V A T E   D A T A
  *******************************************************************************
@@ -608,20 +563,6 @@ static __KAL_INLINE__ void nvramOffsetCheck(void)
 
 	DATA_STRUCT_INSPECTING_ASSERT(
 		sizeof(struct WIFI_CFG_PARAM_STRUCT) == 2048);
-#if 0 /* no longer use in connac */
-#if CFG_SUPPORT_NVRAM_5G
-	DATA_STRUCT_INSPECTING_ASSERT((OFFSET_OF(
-		struct WIFI_CFG_PARAM_STRUCT, EfuseMapping) & 0x0001)
-		== 0);
-#else
-	DATA_STRUCT_INSPECTING_ASSERT((OFFSET_OF(
-		struct WIFI_CFG_PARAM_STRUCT, aucEFUSE) & 0x0001)
-		== 0);
-#endif
-	DATA_STRUCT_INSPECTING_ASSERT((OFFSET_OF(
-		struct WIFI_CFG_PARAM_STRUCT, aucRegSubbandInfo) & 0x0001)
-		== 0);
-#endif
 }
 #endif
 
