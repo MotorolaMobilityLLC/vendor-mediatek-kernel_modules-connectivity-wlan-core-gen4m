@@ -501,7 +501,7 @@ void cnmMemFree(IN struct ADAPTER *prAdapter, IN void *pvMemory)
 #endif
 
 #if CFG_DBG_MGT_BUF
-		prAdapter->u4MemFreeDynamicCount++;
+		GLUE_INC_REF_CNT(prAdapter->u4MemFreeDynamicCount);
 #endif
 		return;
 	}
