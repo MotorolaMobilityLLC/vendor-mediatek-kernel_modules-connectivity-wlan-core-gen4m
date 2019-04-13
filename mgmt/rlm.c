@@ -2542,7 +2542,7 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 			if (prChannelSwitchAnnounceIE->ucChannelSwitchMode ==
 			    1) {
 				if (prChannelSwitchAnnounceIE
-					    ->ucChannelSwitchCount <= 3) {
+					    ->ucChannelSwitchCount <= 5) {
 					DBGLOG(RLM, INFO,
 					       "[Ch] switch channel [%d]->[%d]\n",
 					       prBssInfo->ucPrimaryChannel,
