@@ -985,7 +985,7 @@ p2pDevFsmRunEventChnlGrant(IN struct ADAPTER *prAdapter,
 		}
 	} while (FALSE);
 
-	if (prMsgHdr)
+	if (prAdapter && prMsgHdr)
 		cnmMemFree(prAdapter, prMsgHdr);
 }				/* p2pDevFsmRunEventChnlGrant */
 
