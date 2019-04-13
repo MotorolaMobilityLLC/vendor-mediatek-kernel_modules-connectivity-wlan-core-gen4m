@@ -9099,7 +9099,7 @@ wlanQueryLteSafeChannel(IN struct ADAPTER *prAdapter,
 {
 	uint32_t rResult = WLAN_STATUS_FAILURE;
 	struct CMD_GET_LTE_SAFE_CHN rQuery_LTE_SAFE_CHN;
-	struct PARAM_GET_CHN_INFO rQueryLteChn;
+	struct PARAM_GET_CHN_INFO *prQueryLteChn;
 
 	DBGLOG(P2P, TRACE, "[ACS] Get safe LTE Channels\n");
 
@@ -9107,8 +9107,13 @@ wlanQueryLteSafeChannel(IN struct ADAPTER *prAdapter,
 		if (!prAdapter)
 			break;
 
-		kalMemZero(&rQueryLteChn, sizeof(struct PARAM_GET_CHN_INFO));
-		rQueryLteChn.ucRoleIndex = ucRoleIndex;
+		prQueryLteChn = kalMemAlloc(sizeof(struct PARAM_GET_CHN_INFO),
+				VIR_MEM_TYPE);
+		if (!prQueryLteChn)
+			break;
+
+		kalMemZero(prQueryLteChn, sizeof(struct PARAM_GET_CHN_INFO));
+		prQueryLteChn->ucRoleIndex = ucRoleIndex;
 
 		/* Get LTE safe channel list */
 		wlanSendSetQueryCmd(prAdapter,
@@ -9122,7 +9127,7 @@ wlanQueryLteSafeChannel(IN struct ADAPTER *prAdapter,
 			nicOidCmdTimeoutCommon,
 			sizeof(struct CMD_GET_LTE_SAFE_CHN),
 			(uint8_t *)&rQuery_LTE_SAFE_CHN,
-			&rQueryLteChn,
+			prQueryLteChn,
 			0);
 		rResult = WLAN_STATUS_SUCCESS;
 	} while (FALSE);
