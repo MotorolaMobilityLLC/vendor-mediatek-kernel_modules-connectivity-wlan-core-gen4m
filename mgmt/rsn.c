@@ -132,6 +132,7 @@ u_int8_t rsnParseRsnIE(IN struct ADAPTER *prAdapter,
 	uint16_t u2AuthSuiteCount = 0;
 	uint8_t *pucPairSuite = NULL;
 	uint8_t *pucAuthSuite = NULL;
+	uint16_t u2PmkidCount = 0;
 	uint8_t *cp;
 
 	DEBUGFUNC("rsnParseRsnIE");
@@ -247,6 +248,35 @@ u_int8_t rsnParseRsnIE(IN struct ADAPTER *prAdapter,
 		}
 
 		WLAN_GET_FIELD_16(cp, &u2Cap);
+		cp += 2;
+		u4RemainRsnIeLen -= 2;
+
+		if (u4RemainRsnIeLen == 0)
+			break;
+
+		if (u4RemainRsnIeLen < 2) {
+			DBGLOG(RSN, TRACE,
+				"Fail to parse PMKID count in RSN iE\n");
+			return FALSE;
+		}
+
+		WLAN_GET_FIELD_16(cp, &u2PmkidCount);
+		cp += 2;
+		u4RemainRsnIeLen -= 2;
+
+		if (u2PmkidCount > 4) {
+			DBGLOG(RSN, TRACE,
+				"Bad RSN IE due to PMKID count(%d)\n",
+				u2PmkidCount);
+			return FALSE;
+		}
+
+		if (u2PmkidCount > 0 && u4RemainRsnIeLen < 16 * u2PmkidCount) {
+			DBGLOG(RSN, TRACE,
+				"Fail to parse PMKID in RSN iE, count: %d\n",
+				u2PmkidCount);
+			return FALSE;
+		}
 	} while (FALSE);
 
 	/* Save the RSN information for the BSS. */
