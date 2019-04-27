@@ -296,6 +296,7 @@ enum ENUM_PARAM_AUTH_MODE {
 	AUTH_MODE_WPA2_FT,	/* Fast Bss Transition for 802.1x */
 	AUTH_MODE_WPA2_FT_PSK,	/* Fast Bss Transition for WPA2 PSK */
 	AUTH_MODE_WPA_OSEN,
+	AUTH_MODE_WPA3_SAE,
 	AUTH_MODE_NUM		/*!< Upper bound, not real case */
 };
 
@@ -369,6 +370,12 @@ struct PARAM_CONNECT {
 	uint8_t *pucBssid;
 	uint8_t *pucBssidHint;
 	uint32_t u4CenterFreq;
+	uint8_t ucBssIdx;
+};
+
+struct PARAM_EXTERNAL_AUTH {
+	uint8_t bssid[PARAM_MAC_ADDR_LEN];
+	uint16_t status;
 	uint8_t ucBssIdx;
 };
 
@@ -3371,14 +3378,6 @@ wlanoidSetWapiKey(IN struct ADAPTER *prAdapter,
 		  OUT uint32_t *pu4SetInfoLen);
 #endif
 
-#if CFG_SUPPORT_WPS2
-uint32_t
-wlanoidSetWSCAssocInfo(IN struct ADAPTER *prAdapter,
-		       IN void *pvSetBuffer,
-		       IN uint32_t u4SetBufferLen,
-		       OUT uint32_t *pu4SetInfoLen);
-#endif
-
 #if CFG_ENABLE_WAKEUP_ON_LAN
 uint32_t
 wlanoidSetAddWakeupPattern(IN struct ADAPTER *prAdapter,
@@ -3640,18 +3639,6 @@ wlanoidSetHS20Info(IN struct ADAPTER *prAdapter,
 		   IN void *pvSetBuffer,
 		   IN uint32_t u4SetBufferLen,
 		   OUT uint32_t *pu4SetInfoLen);
-
-uint32_t
-wlanoidSetInterworkingInfo(IN struct ADAPTER *prAdapter,
-			   IN void *pvSetBuffer,
-			   IN uint32_t u4SetBufferLen,
-			   OUT uint32_t *pu4SetInfoLen);
-
-uint32_t
-wlanoidSetRoamingConsortiumIEInfo(IN struct ADAPTER *prAdapter,
-				  IN void *pvSetBuffer,
-				  IN uint32_t u4SetBufferLen,
-				  OUT uint32_t *pu4SetInfoLen);
 
 uint32_t
 wlanoidSetHS20BssidPool(IN struct ADAPTER *prAdapter,
@@ -4073,5 +4060,11 @@ uint32_t wlanoidCheckLinkQualityMonitor(IN struct ADAPTER *prAdapter,
 					IN uint32_t u4QueryBufferLen,
 					OUT uint32_t *pu4QueryInfoLen);
 #endif /* CFG_SUPPORT_LINK_QUALITY_MONITOR */
+
+uint32_t
+wlanoidExternalAuthDone(IN struct ADAPTER *prAdapter,
+			IN void *pvSetBuffer,
+			IN uint32_t u4SetBufferLen,
+			OUT uint32_t *pu4SetInfoLen);
 
 #endif /* _WLAN_OID_H */

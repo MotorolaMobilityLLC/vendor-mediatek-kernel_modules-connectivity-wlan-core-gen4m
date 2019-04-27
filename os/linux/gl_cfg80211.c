@@ -1160,7 +1160,6 @@ int mtk_cfg80211_connect(struct wiphy *wiphy,
 	enum ENUM_PARAM_AUTH_MODE eAuthMode;
 	uint32_t cipher;
 	struct PARAM_CONNECT rNewSsid;
-	u_int8_t fgCarryWPSIE = FALSE;
 	struct PARAM_OP_MODE rOpMode;
 	uint32_t i, u4AkmSuite = 0;
 	struct DOT11_RSNA_CONFIG_AUTHENTICATION_SUITES_ENTRY
@@ -1258,7 +1257,8 @@ int mtk_cfg80211_connect(struct wiphy *wiphy,
 		prWpaInfo->u4WpaVersion =
 			IW_AUTH_WPA_VERSION_DISABLED;
 
-	DBGLOG(REQ, INFO, "sme->auth_type=%x, sme->crypto.wpa_versions=%x",
+	DBGLOG(REQ, INFO,
+	       "sme->auth_type=%x, sme->crypto.wpa_versions=%x",
 		sme->auth_type,	sme->crypto.wpa_versions);
 
 	switch (sme->auth_type) {
@@ -1270,6 +1270,11 @@ int mtk_cfg80211_connect(struct wiphy *wiphy,
 		break;
 	case NL80211_AUTHTYPE_FT:
 		prWpaInfo->u4AuthAlg = IW_AUTH_ALG_FT;
+		break;
+	case NL80211_AUTHTYPE_SAE:
+		prWpaInfo->u4AuthAlg = IW_AUTH_ALG_SAE;
+		eAuthMode = AUTH_MODE_WPA3_SAE;
+		u4AkmSuite = RSN_CIPHER_SUITE_SAE;
 		break;
 	default:
 		prWpaInfo->u4AuthAlg = IW_AUTH_ALG_OPEN_SYSTEM |
@@ -1404,6 +1409,10 @@ int mtk_cfg80211_connect(struct wiphy *wiphy,
 				u4AkmSuite = WFA_AKM_SUITE_OSEN;
 				break;
 #endif
+			case WLAN_AKM_SUITE_OWE:
+				eAuthMode = AUTH_MODE_OPEN;
+				u4AkmSuite = RSN_CIPHER_SUITE_OWE;
+				break;
 			default:
 				DBGLOG(REQ, WARN, "invalid Akm Suite (%d)\n",
 				       sme->crypto.akm_suites[0]);
@@ -1456,21 +1465,6 @@ int mtk_cfg80211_connect(struct wiphy *wiphy,
 				"[wapi] wapi not support due to set wapi assoc info error:%x\n",
 				rStatus);
 #endif
-#if CFG_SUPPORT_WPS2
-		if (wextSrchDesiredWPSIE(pucIEStart, sme->ie_len, 0xDD,
-					 (uint8_t **) &prDesiredIE)) {
-			prConnSettings->fgWpsActive = TRUE;
-			fgCarryWPSIE = TRUE;
-			SET_IOCTL_BSSIDX(u4BufLen, ucBssIndex);
-			rStatus = kalIoctl(prGlueInfo, wlanoidSetWSCAssocInfo,
-					   prDesiredIE, IE_SIZE(prDesiredIE),
-					   FALSE, FALSE, FALSE, &u4BufLen);
-			if (rStatus != WLAN_STATUS_SUCCESS)
-				DBGLOG(SEC, WARN,
-					"[WSC] set WSC assoc info error:%x\n",
-					rStatus);
-		}
-#endif
 #if CFG_SUPPORT_PASSPOINT
 		if (wextSrchDesiredHS20IE(pucIEStart, sme->ie_len,
 					  (uint8_t **) &prDesiredIE)) {
@@ -1483,32 +1477,6 @@ int mtk_cfg80211_connect(struct wiphy *wiphy,
 				DBGLOG(INIT, INFO,
 					"[HS20] set HS20 assoc info error:%x\n",
 					rStatus);
-#endif
-		}
-		if (wextSrchDesiredInterworkingIE(pucIEStart, sme->ie_len,
-						  (uint8_t **) &prDesiredIE)) {
-			rStatus = kalIoctl(prGlueInfo,
-				wlanoidSetInterworkingInfo, prDesiredIE,
-				IE_SIZE(prDesiredIE),
-				FALSE, FALSE, TRUE, &u4BufLen);
-#if 0
-			if (rStatus != WLAN_STATUS_SUCCESS)
-				DBGLOG(INIT, INFO,
-				       "[HS20] set Interworking assoc info error:%x\n"
-				       , rStatus);
-#endif
-		}
-		if (wextSrchDesiredRoamingConsortiumIE(pucIEStart, sme->ie_len,
-		    (uint8_t **) &prDesiredIE)) {
-			rStatus = kalIoctl(prGlueInfo,
-				wlanoidSetRoamingConsortiumIEInfo, prDesiredIE,
-				IE_SIZE(prDesiredIE),
-				FALSE, FALSE, TRUE, &u4BufLen);
-#if 0
-			if (rStatus != WLAN_STATUS_SUCCESS)
-				DBGLOG(INIT, INFO,
-				       "[HS20] set RoamingConsortium assoc info error:%x\n",
-				       rStatus);
 #endif
 		}
 #endif /* CFG_SUPPORT_PASSPOINT */
@@ -1539,12 +1507,6 @@ int mtk_cfg80211_connect(struct wiphy *wiphy,
 			DBGLOG(RSN, INFO, "Found non-wfa vendor ie (len=%u)\n",
 				   prConnSettings->non_wfa_vendor_ie_len);
 		}
-	}
-
-	/* clear WSC Assoc IE buffer in case WPS IE is not detected */
-	if (fgCarryWPSIE == FALSE) {
-		kalMemZero(&prConnSettings->aucWSCAssocInfoIE, 200);
-		prConnSettings->u2WSCAssocInfoIELen = 0;
 	}
 
 	/* Fill WPA info - mfp setting */
@@ -1675,6 +1637,30 @@ int mtk_cfg80211_connect(struct wiphy *wiphy,
 	rNewSsid.pucSsid = (uint8_t *)sme->ssid;
 	rNewSsid.u4SsidLen = sme->ssid_len;
 	rNewSsid.ucBssIdx = ucBssIndex;
+
+	/* Check former assocIE to prevent memory leakage in situations like
+	 * upper layer requests connection without disconnecting first, ...
+	 */
+	if (prConnSettings->assocIeLen > 0) {
+		kalMemFree(prConnSettings->pucAssocIEs, VIR_MEM_TYPE,
+			   prConnSettings->assocIeLen);
+		prConnSettings->assocIeLen = 0;
+	}
+
+	if (sme->ie_len > 0) {
+		prConnSettings->assocIeLen = sme->ie_len;
+		prConnSettings->pucAssocIEs =
+			kalMemAlloc(prConnSettings->assocIeLen, VIR_MEM_TYPE);
+		if (prConnSettings->pucAssocIEs) {
+			kalMemCopy(prConnSettings->pucAssocIEs,
+				   sme->ie, prConnSettings->assocIeLen);
+		} else {
+			DBGLOG(INIT, INFO,
+			       "allocate memory for prConnSettings->pucAssocIEs failed!\n");
+			prConnSettings->assocIeLen = 0;
+		}
+	}
+
 	rStatus = kalIoctl(prGlueInfo, wlanoidSetConnect,
 			   (void *)&rNewSsid, sizeof(struct PARAM_CONNECT),
 			   FALSE, FALSE, TRUE, &u4BufLen);
@@ -1720,6 +1706,31 @@ int mtk_cfg80211_connect(struct wiphy *wiphy,
 		}
 	}
 #endif
+	return 0;
+}
+
+int mtk_cfg80211_external_auth(struct wiphy *wiphy,
+			 struct net_device *ndev,
+			 struct cfg80211_external_auth_params *params)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	uint32_t rStatus = WLAN_STATUS_FAILURE;
+	uint32_t u4BufLen;
+	struct PARAM_EXTERNAL_AUTH auth;
+
+	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wiphy);
+	if (!prGlueInfo)
+		DBGLOG(REQ, WARN,
+		       "SAE-confirm failed with invalid prGlueInfo\n");
+
+	COPY_MAC_ADDR(auth.bssid, params->bssid);
+	auth.status = params->status;
+	auth.ucBssIdx = wlanGetBssIdx(ndev);
+	rStatus = kalIoctl(prGlueInfo, wlanoidExternalAuthDone, (void *)&auth,
+			   sizeof(auth), FALSE, FALSE, FALSE, &u4BufLen);
+	if (rStatus != WLAN_STATUS_SUCCESS)
+		DBGLOG(OID, INFO, "SAE-confirm failed with: %d\n", rStatus);
+
 	return 0;
 }
 
@@ -3786,34 +3797,6 @@ int mtk_cfg80211_assoc(struct wiphy *wiphy,
 				/* DBGLOG(REQ, TRACE,
 				 * ("[HS20] set HS20 assoc info error:%x\n",
 				 * rStatus));
-				 */
-			}
-		}
-
-		if (wextSrchDesiredInterworkingIE((uint8_t *) req->ie,
-		    req->ie_len, (uint8_t **) &prDesiredIE)) {
-			rStatus = kalIoctl(prGlueInfo,
-					wlanoidSetInterworkingInfo, prDesiredIE,
-					IE_SIZE(prDesiredIE),
-					FALSE, FALSE, TRUE, &u4BufLen);
-			if (rStatus != WLAN_STATUS_SUCCESS) {
-				/* DBGLOG(REQ, TRACE,
-				 * ("[HS20] set Interworking assoc info error:
-				 * %x\n", rStatus));
-				 */
-			}
-		}
-
-		if (wextSrchDesiredRoamingConsortiumIE((uint8_t *) req->ie,
-		    req->ie_len, (uint8_t **) &prDesiredIE)) {
-			rStatus = kalIoctl(prGlueInfo,
-					   wlanoidSetRoamingConsortiumIEInfo,
-					   prDesiredIE, IE_SIZE(prDesiredIE),
-					   FALSE, FALSE, TRUE, &u4BufLen);
-			if (rStatus != WLAN_STATUS_SUCCESS) {
-				/* DBGLOG(REQ, TRACE,
-				 *  ("[HS20] set RoamingConsortium assoc info
-				 *   error:%x\n", rStatus));
 				 */
 			}
 		}
@@ -6804,5 +6787,3 @@ const uint8_t *mtk_cfg80211_find_ie_match_mask(uint8_t eid,
 	}
 	return NULL;
 }
-
-

@@ -235,11 +235,7 @@ struct CONNECTION_SETTINGS {
 	uint32_t u4WapiSelectedGroupCipher;
 	uint32_t u4WapiSelectedPairwiseCipher;
 	uint32_t u4WapiSelectedAKMSuite;
-	uint8_t aucWapiAssocInfoIEs[42];
-	uint16_t u2WapiAssocInfoIESz;
 #endif
-	uint8_t aucWSCAssocInfoIE[200];	/*for Assoc req */
-	uint16_t u2WSCAssocInfoIELen;
 
 	/* for cfg80211 connected indication */
 	uint32_t u4RspIeLength;
@@ -276,6 +272,8 @@ struct CONNECTION_SETTINGS {
 
 	u_int8_t fgSecModeChangeStartTimer;
 
+	uint8_t *pucAssocIEs;
+	size_t assocIeLen;
 };
 
 struct BSS_INFO {

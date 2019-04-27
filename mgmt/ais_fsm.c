@@ -653,6 +653,13 @@ void aisFsmStateInit_JOIN(IN struct ADAPTER *prAdapter,
 				       AUTH_TYPE_SHARED_KEY);
 			break;
 
+		case AUTH_MODE_WPA3_SAE:
+			DBGLOG(AIS, LOUD,
+			       "JOIN INIT: eAuthMode == AUTH_MODE_SAE\n");
+			prAisFsmInfo->ucAvailableAuthTypes =
+			    (uint8_t) AUTH_TYPE_SAE;
+			break;
+
 		default:
 			ASSERT(!
 			       (prConnSettings->eAuthMode ==
@@ -696,6 +703,10 @@ void aisFsmStateInit_JOIN(IN struct ADAPTER *prAdapter,
 		case AUTH_MODE_NON_RSN_FT:
 			prAisFsmInfo->ucAvailableAuthTypes =
 			    (uint8_t) AUTH_TYPE_FAST_BSS_TRANSITION;
+			break;
+		case AUTH_MODE_WPA3_SAE:
+			prAisFsmInfo->ucAvailableAuthTypes =
+			    (uint8_t) AUTH_TYPE_SAE;
 			break;
 		default:
 			prAisFsmInfo->ucAvailableAuthTypes =
@@ -742,6 +753,13 @@ void aisFsmStateInit_JOIN(IN struct ADAPTER *prAdapter,
 
 		prStaRec->ucAuthAlgNum =
 		    (uint8_t) AUTH_ALGORITHM_NUM_FAST_BSS_TRANSITION;
+	} else if (prAisFsmInfo->ucAvailableAuthTypes & (uint8_t)
+		   AUTH_TYPE_SAE) {
+		DBGLOG(AIS, LOUD,
+		       "JOIN INIT: Try to do Authentication with AuthType == SAE.\n");
+
+		prStaRec->ucAuthAlgNum =
+		    (uint8_t) AUTH_ALGORITHM_NUM_SAE;
 	} else {
 		ASSERT(0);
 	}
@@ -2082,7 +2100,7 @@ void aisFsmSteps(IN struct ADAPTER *prAdapter,
 			prMsgChReq->ucTokenID = ++prAisFsmInfo->ucSeqNumOfChReq;
 			prMsgChReq->eReqType = CH_REQ_TYPE_JOIN;
 			prMsgChReq->u4MaxInterval =
-			    AIS_JOIN_CH_REQUEST_INTERVAL;
+					AIS_JOIN_CH_REQUEST_INTERVAL;
 			prMsgChReq->ucPrimaryChannel =
 			    prAisFsmInfo->prTargetBssDesc->ucChannelNum;
 			prMsgChReq->eRfSco =

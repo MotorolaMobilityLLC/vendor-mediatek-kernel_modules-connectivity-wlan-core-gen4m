@@ -1566,4 +1566,8 @@ kalChannelFormatSwitch(IN struct cfg80211_chan_def *channel_def,
 uint32_t kal_is_skb_gro(struct ADAPTER *prAdapter);
 void kal_gro_flush(struct ADAPTER *prAdapter);
 
+
+int kalExternalAuthRequest(IN struct ADAPTER *prAdapter,
+			   IN uint8_t uBssIndex);
+
 #endif /* _GL_KAL_H */

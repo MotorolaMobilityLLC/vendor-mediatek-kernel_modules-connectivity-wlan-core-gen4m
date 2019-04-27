@@ -96,6 +96,7 @@ static uint8_t *apucDebugAAState[AA_STATE_NUM] = {
 	(uint8_t *) DISP_STRING("SAA_WAIT_AUTH2"),
 	(uint8_t *) DISP_STRING("SAA_SEND_AUTH3"),
 	(uint8_t *) DISP_STRING("SAA_WAIT_AUTH4"),
+	(uint8_t *) DISP_STRING("SAA_EXTERNAL_AUTH"),
 	(uint8_t *) DISP_STRING("SAA_SEND_ASSOC1"),
 	(uint8_t *) DISP_STRING("SAA_WAIT_ASSOC2"),
 	(uint8_t *) DISP_STRING("AAA_SEND_AUTH2"),
@@ -139,9 +140,13 @@ saaFsmSteps(IN struct ADAPTER *prAdapter,
 	uint32_t rStatus = WLAN_STATUS_FAILURE;
 	enum ENUM_AA_STATE ePreviousState;
 	u_int8_t fgIsTransition;
+	struct AIS_FSM_INFO *prAisFsmInfo = NULL;
 
+	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, prStaRec->ucBssIndex);
 	ASSERT(prStaRec);
 	if (!prStaRec)
+		return;
+	if (!prAisFsmInfo)
 		return;
 
 	do {
@@ -306,6 +311,9 @@ saaFsmSteps(IN struct ADAPTER *prAdapter,
 
 				eNextState = AA_STATE_IDLE;
 				fgIsTransition = TRUE;
+			} else if (prAisFsmInfo->ucAvailableAuthTypes &
+				   (uint8_t) AUTH_TYPE_SAE) {
+				break;
 			} else {
 				prStaRec->ucTxAuthAssocRetryCount++;
 				prStaRec->ucAuthTranNum =
@@ -340,6 +348,10 @@ saaFsmSteps(IN struct ADAPTER *prAdapter,
 			break;
 
 		case SAA_STATE_WAIT_AUTH4:
+			break;
+
+		case SAA_STATE_EXTERNAL_AUTH:
+			kalExternalAuthRequest(prAdapter, prStaRec->ucBssIndex);
 			break;
 
 		case SAA_STATE_SEND_ASSOC1:
@@ -628,10 +640,15 @@ void saaFsmRunEventStart(IN struct ADAPTER *prAdapter,
 		       prBssInfo->fgAssoc40mBwAllowed);
 	}
 	/* 4 <7> Trigger SAA FSM */
-	if (prStaRec->ucStaState == STA_STATE_1)
-		saaFsmSteps(prAdapter, prStaRec, SAA_STATE_SEND_AUTH1,
-			    (struct SW_RFB *) NULL);
-	else if (prStaRec->ucStaState == STA_STATE_2 ||
+	if (prStaRec->ucStaState == STA_STATE_1) {
+		if (prStaRec->ucAuthAlgNum == AUTH_ALGORITHM_NUM_SAE)
+			saaFsmSteps(prAdapter, prStaRec,
+				    SAA_STATE_EXTERNAL_AUTH,
+				    (struct SW_RFB *) NULL);
+		else
+			saaFsmSteps(prAdapter, prStaRec, SAA_STATE_SEND_AUTH1,
+				    (struct SW_RFB *) NULL);
+	} else if (prStaRec->ucStaState == STA_STATE_2 ||
 		 prStaRec->ucStaState == STA_STATE_3)
 		saaFsmSteps(prAdapter, prStaRec,
 			    SAA_STATE_SEND_ASSOC1, (struct SW_RFB *) NULL);
@@ -1093,6 +1110,11 @@ void saaFsmRunEventRxAuth(IN struct ADAPTER *prAdapter,
 			saaFsmSteps(prAdapter, prStaRec,
 				    eNextState, (struct SW_RFB *) NULL);
 		}
+		break;
+
+	case SAA_STATE_EXTERNAL_AUTH:
+		kalIndicateRxMgmtFrame(prAdapter->prGlueInfo, prSwRfb,
+				       prStaRec->ucBssIndex);
 		break;
 
 	default:
@@ -1666,6 +1688,31 @@ void saaFsmRunEventAbort(IN struct ADAPTER *prAdapter,
 	cnmStaRecFree(prAdapter, prStaRec);
 #endif
 }				/* end of saaFsmRunEventAbort() */
+
+void saaFsmRunEventExternalAuthDone(IN struct ADAPTER *prAdapter,
+				    IN struct MSG_HDR *prMsgHdr)
+{
+	struct MSG_SAA_EXTERNAL_AUTH_DONE *prSaaFsmMsg = NULL;
+	struct STA_RECORD *prStaRec;
+	uint16_t status;
+
+	ASSERT(prAdapter);
+	ASSERT(prMsgHdr);
+
+	prSaaFsmMsg = (struct MSG_SAA_EXTERNAL_AUTH_DONE *)prMsgHdr;
+	prStaRec = prSaaFsmMsg->prStaRec;
+	status = prSaaFsmMsg->status;
+
+	if (status != WLAN_STATUS_SUCCESS)
+		saaFsmSteps(prAdapter, prStaRec, AA_STATE_IDLE,
+			    (struct SW_RFB *)NULL);
+	else if (prStaRec->eAuthAssocState != SAA_STATE_EXTERNAL_AUTH)
+		DBGLOG(SAA, WARN,
+		       "Receive External Auth DONE at wrong state\n");
+	else
+		saaFsmSteps(prAdapter, prStaRec, SAA_STATE_SEND_ASSOC1,
+			    (struct SW_RFB *)NULL);
+}				/* end of saaFsmRunEventExternalAuthDone() */
 
 /* TODO(Kevin): following code will be modified and move to AIS FSM */
 #if 0

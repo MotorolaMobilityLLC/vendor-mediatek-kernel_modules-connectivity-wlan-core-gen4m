@@ -434,6 +434,8 @@ static struct cfg80211_ops mtk_wlan_ops = {
 	.tdls_mgmt = mtk_cfg80211_tdls_mgmt,
 #endif
 	.update_ft_ies = mtk_cfg80211_update_ft_ies,
+
+	.external_auth = mtk_cfg80211_external_auth,
 };
 #else /* CFG_ENABLE_UNIFY_WIPHY */
 static struct cfg80211_ops mtk_cfg_ops = {
@@ -510,6 +512,8 @@ static struct cfg80211_ops mtk_cfg_ops = {
 	.get_tx_power = mtk_cfg_get_txpower,
 #endif
 	.update_ft_ies = mtk_cfg80211_update_ft_ies,
+
+	.external_auth = mtk_cfg80211_external_auth,
 };
 #endif	/* CFG_ENABLE_UNIFY_WIPHY */
 
@@ -771,7 +775,8 @@ static const struct ieee80211_txrx_stypes
 	[NL80211_IFTYPE_STATION] = {
 		.tx = 0xffff,
 		.rx = BIT(IEEE80211_STYPE_ACTION >> 4) |
-		      BIT(IEEE80211_STYPE_PROBE_REQ >> 4)
+		      BIT(IEEE80211_STYPE_PROBE_REQ >> 4) |
+		      BIT(IEEE80211_STYPE_AUTH >> 4)
 	},
 	[NL80211_IFTYPE_AP] = {
 		.tx = 0xffff,
@@ -2043,6 +2048,7 @@ static void wlanCreateWirelessDevice(void)
 	prWiphy->features |= NL80211_FEATURE_SCHED_SCAN_RANDOM_MAC_ADDR;
 #endif
 
+	prWiphy->features |= NL80211_FEATURE_SAE;
 #if KERNEL_VERSION(3, 18, 0) <= CFG80211_VERSION_CODE
 	prWiphy->vendor_commands = mtk_wlan_vendor_ops;
 	prWiphy->n_vendor_commands = sizeof(mtk_wlan_vendor_ops) /
@@ -4023,6 +4029,7 @@ void
 wlanOffNotifyCfg80211Disconnect(IN struct GLUE_INFO *prGlueInfo)
 {
 	uint32_t u4Idx = 0;
+	struct CONNECTION_SETTINGS *prConnSettings = NULL;
 
 	DBGLOG(INIT, TRACE, "start.\n");
 
@@ -4045,6 +4052,14 @@ wlanOffNotifyCfg80211Disconnect(IN struct GLUE_INFO *prGlueInfo)
 				prDevHandler, 0, NULL, 0,
 				GFP_KERNEL);
 #endif
+		}
+		/* Prevent memory leakage */
+		prConnSettings = aisGetConnSettings(prGlueInfo->prAdapter,
+						    u4Idx);
+		if (prConnSettings && prConnSettings->assocIeLen > 0) {
+			kalMemFree(prConnSettings->pucAssocIEs, VIR_MEM_TYPE,
+				   prConnSettings->assocIeLen);
+			prConnSettings->assocIeLen = 0;
 		}
 	}
 	kalMsleep(500);

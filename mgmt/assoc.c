@@ -93,39 +93,18 @@ struct APPEND_VAR_IE_ENTRY txAssocReqIETable[] = {
 	{(ELEM_HDR_LEN + ELEM_MAX_LEN_HT_CAP), NULL,
 		rlmReqGenerateHtCapIE}
 	,			/* 45 */
-#if CFG_SUPPORT_WPS2
-	{(ELEM_HDR_LEN + ELEM_MAX_LEN_WSC), NULL, rsnGenerateWSCIE}
-	,			/* 221 */
-#endif
 #if CFG_SUPPORT_802_11R
 	{(ELEM_HDR_LEN + 1), NULL, assocGenerateMDIE},	/* Element ID: 54 */
 	{0, rsnCalculateFTIELen, rsnGenerateFTIE},	/* Element ID: 55 */
-#endif
-#if CFG_SUPPORT_WAPI
-	{(ELEM_HDR_LEN + ELEM_MAX_LEN_WAPI), NULL, wapiGenerateWAPIIE}
-	,			/* 68 */
 #endif
 #if CFG_SUPPORT_802_11K
 	{(ELEM_HDR_LEN + 5), NULL,
 	 rlmGenerateRRMEnabledCapIE},	/* Element ID: 70 */
 #endif
-#if CFG_SUPPORT_PASSPOINT
-	{(ELEM_HDR_LEN + ELEM_MAX_LEN_INTERWORKING), NULL,
-	 hs20GenerateInterworkingIE}
-	,			/* 107 */
-	{(ELEM_HDR_LEN + ELEM_MAX_LEN_ROAMING_CONSORTIUM), NULL,
-	 hs20GenerateRoamingConsortiumIE}
-	,			/* 111 */
-	{(ELEM_HDR_LEN + ELEM_MAX_LEN_HS20_INDICATION), NULL,
-		hs20GenerateHS20IE}
-	,			/* 221 */
-#endif /* CFG_SUPPORT_PASSPOINT */
 	{(ELEM_HDR_LEN + ELEM_MAX_LEN_EXT_CAP), NULL, rlmReqGenerateExtCapIE}
 	,			/* 127 */
 	{(ELEM_HDR_LEN + ELEM_MAX_LEN_WMM_INFO), NULL, mqmGenerateWmmInfoIE}
 	,			/* 221 */
-	{(ELEM_HDR_LEN + ELEM_MAX_LEN_RSN), NULL, rsnGenerateRSNIE}
-	,			/* 48 */
 #if CFG_SUPPORT_802_11AC
 	{(ELEM_HDR_LEN + ELEM_MAX_LEN_VHT_CAP), NULL, rlmReqGenerateVhtCapIE}
 	,			/*191 */
@@ -444,6 +423,15 @@ static __KAL_INLINE__ void assocBuildReAssocReqFrameCommonIEs(
 			pucBuffer += IE_SIZE(pucBuffer);
 		}
 	}
+
+	if (prConnSettings->assocIeLen > 0) {
+		kalMemCopy(pucBuffer, prConnSettings->pucAssocIEs,
+			   prConnSettings->assocIeLen);
+		prMsduInfo->u2FrameLength += prConnSettings->assocIeLen;
+		pucBuffer += prConnSettings->assocIeLen;
+		DBGLOG_MEM8(SAA, INFO, prConnSettings->pucAssocIEs,
+			    prConnSettings->assocIeLen);
+	}
 }			/* end of assocBuildReAssocReqFrameCommonIEs() */
 
 /*----------------------------------------------------------------------------*/
@@ -581,9 +569,12 @@ uint32_t assocSendReAssocReqFrame(IN struct ADAPTER *prAdapter,
 	uint16_t u2EstimatedExtraIELen;
 	u_int8_t fgIsReAssoc;
 	uint32_t i;
+	struct CONNECTION_SETTINGS *prConnSettings;
+	uint16_t txAssocReqIENums;
 
 	ASSERT(prStaRec);
 
+	prConnSettings = aisGetConnSettings(prAdapter, prStaRec->ucBssIndex);
 	/* 4 <1> Allocate a PKT_INFO_T for Authentication Frame */
 	fgIsReAssoc = prStaRec->fgIsReAssoc;
 
@@ -611,6 +602,8 @@ uint32_t assocSendReAssocReqFrame(IN struct ADAPTER *prAdapter,
 
 	/* + Extra IE Length */
 	u2EstimatedExtraIELen = 0;
+	txAssocReqIENums = sizeof(txAssocReqIETable) /
+			   sizeof(struct APPEND_VAR_IE_ENTRY);
 
 #if CFG_ENABLE_WIFI_DIRECT_CFG_80211 && CFG_ENABLE_WIFI_DIRECT
 	if (IS_STA_IN_P2P(prStaRec)) {
@@ -624,10 +617,7 @@ uint32_t assocSendReAssocReqFrame(IN struct ADAPTER *prAdapter,
 			ASSERT(FALSE);
 		}
 	} else {
-		for (i = 0;
-		     i <
-		     sizeof(txAssocReqIETable) /
-		     sizeof(struct APPEND_VAR_IE_ENTRY); i++) {
+		for (i = 0; i < txAssocReqIENums; i++) {
 			if (txAssocReqIETable[i].u2EstimatedFixedIELen != 0) {
 				u2EstimatedExtraIELen +=
 				    txAssocReqIETable[i].u2EstimatedFixedIELen;
@@ -645,9 +635,7 @@ uint32_t assocSendReAssocReqFrame(IN struct ADAPTER *prAdapter,
 			prStaRec->ucBssIndex);
 	}
 #else
-	for (i = 0;
-	     i < sizeof(txAssocReqIETable) / sizeof(struct APPEND_VAR_IE_ENTRY);
-	     i++) {
+	for (i = 0; i < txAssocReqIENums; i++) {
 		if (txAssocReqIETable[i].u2EstimatedFixedIELen != 0) {
 			u2EstimatedExtraIELen +=
 			    txAssocReqIETable[i].u2EstimatedFixedIELen;
@@ -665,6 +653,8 @@ uint32_t assocSendReAssocReqFrame(IN struct ADAPTER *prAdapter,
 	ASSERT(prStaRec->ucBssIndex <= prAdapter->ucHwBssIdNum);
 
 	u2EstimatedFrameLen += u2EstimatedExtraIELen;
+
+	u2EstimatedFrameLen += prConnSettings->assocIeLen;
 
 	/* Allocate a MSDU_INFO_T */
 	prMsduInfo = cnmMgtPktAlloc(prAdapter, u2EstimatedFrameLen);
@@ -713,26 +703,19 @@ uint32_t assocSendReAssocReqFrame(IN struct ADAPTER *prAdapter,
 		}
 	} else {
 		/* Append IE */
-		for (i = 0;
-		     i <
-		     sizeof(txAssocReqIETable) /
-		     sizeof(struct APPEND_VAR_IE_ENTRY); i++) {
+		for (i = 0; i < txAssocReqIENums; i++) {
 			if (txAssocReqIETable[i].pfnAppendIE)
 				txAssocReqIETable[i].pfnAppendIE(prAdapter,
 								 prMsduInfo);
-
-		}
+			}
 		/* Append non-wfa vendor specific ies for AIS mode */
 		assoc_build_nonwfa_vend_ie(prAdapter, prMsduInfo);
 	}
 #else
 	/* Append IE */
-	for (i = 0;
-	     i < sizeof(txAssocReqIETable) / sizeof(struct APPEND_VAR_IE_ENTRY);
-	     i++) {
+	for (i = 0; i < txAssocReqIENums; i++) {
 		if (txAssocReqIETable[i].pfnAppendIE)
 			txAssocReqIETable[i].pfnAppendIE(prAdapter, prMsduInfo);
-
 	}
 	/* Append non-wfa vendor specific ies for AIS mode */
 	assoc_build_nonwfa_vend_ie(prAdapter, prMsduInfo);
@@ -991,10 +974,12 @@ assocCheckRxReAssocRspFrameStatus(IN struct ADAPTER *prAdapter,
 		/* Update the information in the structure used to query and set
 		 *  OID_802_11_ASSOCIATION_INFORMATION.
 		 */
+
 		kalUpdateReAssocRspInfo(prAdapter->prGlueInfo,
 					(uint8_t *) &
 					prAssocRspFrame->u2CapInfo,
-					(uint32_t) (prSwRfb->u2PacketLen),
+					prSwRfb->u2PacketLen -
+						prSwRfb->u2HeaderLen,
 					prStaRec->ucBssIndex);
 	}
 	/* 4 <5> Update CAP_INFO and ASSOC_ID */
