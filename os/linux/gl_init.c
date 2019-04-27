@@ -1881,9 +1881,10 @@ static void wlanNetUnregister(struct wireless_dev *prWdev)
 	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(prWdev->wiphy);
 
 	for (u4Idx = 0; u4Idx < KAL_AIS_NUM; u4Idx++) {
-		if (gprWdev[u4Idx] && gprWdev[u4Idx]->netdev)
+		if (gprWdev[u4Idx] && gprWdev[u4Idx]->netdev) {
 			wlanClearDevIdx(gprWdev[u4Idx]->netdev);
 			unregister_netdev(gprWdev[u4Idx]->netdev);
+		}
 	}
 
 	prGlueInfo->fgIsRegistered = FALSE;

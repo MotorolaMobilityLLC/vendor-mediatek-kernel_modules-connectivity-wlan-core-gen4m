@@ -4268,6 +4268,7 @@ void aisUpdateBssInfoForMergeIBSS(IN struct ADAPTER *prAdapter,
 /*----------------------------------------------------------------------------*/
 u_int8_t aisValidateProbeReq(IN struct ADAPTER *prAdapter,
 			     IN struct SW_RFB *prSwRfb,
+			     IN uint8_t ucBssIndex,
 			     OUT uint32_t *pu4ControlFlags)
 {
 	struct WLAN_MAC_MGMT_HEADER *prMgtHdr;
@@ -4282,10 +4283,10 @@ u_int8_t aisValidateProbeReq(IN struct ADAPTER *prAdapter,
 	ASSERT(pu4ControlFlags);
 
 	prBssInfo = aisGetAisBssInfo(prAdapter,
-		prSwRfb->prStaRec->ucBssIndex);
+		ucBssIndex);
 
 	DBGLOG(AIS, LOUD, "ucBssIndex = %d\n",
-		prBssInfo->ucBssIndex);
+		ucBssIndex);
 
 	/* 4 <1> Parse Probe Req IE and Get IE ptr
 	 * (SSID, Supported Rate IE, ...)

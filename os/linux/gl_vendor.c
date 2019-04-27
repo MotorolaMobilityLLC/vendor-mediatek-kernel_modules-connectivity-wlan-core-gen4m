@@ -1528,15 +1528,7 @@ int mtk_cfg80211_vendor_acs(struct wiphy *wiphy,
 		goto exit;
 	}
 
-#if CFG_ENABLE_UNIFY_WIPHY
-	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wiphy);
-#else	/* CFG_ENABLE_UNIFY_WIPHY */
-	if (wdev == gprWdev)	/* wlan0 */
-		prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wiphy);
-	else
-		prGlueInfo = *((struct GLUE_INFO **) wiphy_priv(wiphy));
-#endif	/* CFG_ENABLE_UNIFY_WIPHY */
-
+	prGlueInfo = wlanGetGlueInfo();
 	if (!prGlueInfo) {
 		DBGLOG(REQ, ERROR, "get glue structure fail.\n");
 		rStatus = -EFAULT;

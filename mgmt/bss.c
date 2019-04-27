@@ -1349,6 +1349,7 @@ uint32_t bssProcessProbeRequest(IN struct ADAPTER *prAdapter,
 #if CFG_SUPPORT_ADHOC
 			fgReplyProbeResp =
 			    aisValidateProbeReq(prAdapter, prSwRfb,
+						ucBssIndex,
 						&u4CtrlFlagsForProbeResp);
 #endif
 		}

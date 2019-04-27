@@ -448,6 +448,7 @@ void aisUpdateBssInfoForMergeIBSS(IN struct ADAPTER *prAdapter,
 
 u_int8_t aisValidateProbeReq(IN struct ADAPTER *prAdapter,
 				IN struct SW_RFB *prSwRfb,
+				IN uint8_t ucBssIndex,
 				OUT uint32_t *pu4ControlFlags);
 
 uint32_t
