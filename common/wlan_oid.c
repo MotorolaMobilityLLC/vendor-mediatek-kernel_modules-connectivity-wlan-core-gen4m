@@ -15180,6 +15180,7 @@ uint32_t wlanoidSync11kCapabilities(struct ADAPTER *prAdapter,
 				    uint32_t *pu4SetInfoLen)
 {
 	uint32_t u4Idx = 0;
+	uint32_t rStatus = WLAN_STATUS_FAILURE;
 
 	for (u4Idx = 0; u4Idx < KAL_AIS_NUM; u4Idx++) {
 		struct CMD_SET_RRM_CAPABILITY rCmdRrmCapa;
@@ -15189,14 +15190,14 @@ uint32_t wlanoidSync11kCapabilities(struct ADAPTER *prAdapter,
 		rCmdRrmCapa.ucRrmEnable = 1;
 		rlmFillRrmCapa(&rCmdRrmCapa.ucCapabilities[0]);
 		rCmdRrmCapa.ucBssIndex = u4Idx;
-		wlanSendSetQueryCmd(
+		rStatus = wlanSendSetQueryCmd(
 		prAdapter, CMD_ID_SET_RRM_CAPABILITY, TRUE, FALSE, TRUE,
 		nicCmdEventSetCommon, nicOidCmdTimeoutCommon,
 		sizeof(struct CMD_SET_RRM_CAPABILITY), (uint8_t *)&rCmdRrmCapa,
 		pvSetBuffer, u4SetBufferLen);
 	}
 
-	return WLAN_STATUS_SUCCESS;
+	return rStatus;
 }
 
 uint32_t wlanoidSendBTMQuery(struct ADAPTER *prAdapter, void *pvSetBuffer,
