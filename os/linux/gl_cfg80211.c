@@ -4004,7 +4004,7 @@ mtk_cfg80211_change_station(struct wiphy *wiphy,
 	if ((params->sta_flags_set & BIT(
 		     NL80211_STA_FLAG_TDLS_PEER)))
 		rCmdUpdate.eStaType = STA_TYPE_DLS_PEER;
-		rCmdUpdate.ucBssIdx = ucBssIndex;
+	rCmdUpdate.ucBssIdx = ucBssIndex;
 	rStatus = kalIoctl(prGlueInfo, cnmPeerUpdate, &rCmdUpdate,
 			   sizeof(struct CMD_PEER_UPDATE), FALSE, FALSE, FALSE,
 			   /* FALSE,    //6628 -> 6630  fgIsP2pOid-> x */
@@ -4131,7 +4131,7 @@ mtk_cfg80211_change_station(struct wiphy *wiphy,
 	if ((params->sta_flags_set & BIT(
 		     NL80211_STA_FLAG_TDLS_PEER)))
 		rCmdUpdate.eStaType = STA_TYPE_DLS_PEER;
-		rCmdUpdate.ucBssIdx = ucBssIndex;
+	rCmdUpdate.ucBssIdx = ucBssIndex;
 	rStatus = kalIoctl(prGlueInfo, cnmPeerUpdate, &rCmdUpdate,
 			   sizeof(struct CMD_PEER_UPDATE), FALSE, FALSE, FALSE,
 			   /* FALSE,    //6628 -> 6630  fgIsP2pOid-> x */
