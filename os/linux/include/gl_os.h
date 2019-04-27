@@ -274,6 +274,7 @@ typedef void (*wifi_fwlog_event_func_cb)(int, int);
 /* adaptor ko */
 extern int  wifi_fwlog_onoff_status(void);
 extern void wifi_fwlog_event_func_register(wifi_fwlog_event_func_cb pfFwlog);
+extern void update_driver_loaded_status(uint8_t loaded);
 #endif
 
 #if defined(CONFIG_UCLAMP_TASK) && defined(CONFIG_UCLAMP_TASK_GROUP)

@@ -3280,6 +3280,7 @@ void wlanOnPreAdapterStart(struct GLUE_INFO *prGlueInfo,
 
 	if (!bAtResetFlow) {
 		prGlueInfo->u4ReadyFlag = 0;
+		update_driver_loaded_status(prGlueInfo->u4ReadyFlag);
 
 		/* default set the FW roaming enable state to 'off' */
 		prGlueInfo->u4FWRoamingEnable = 0;
@@ -3689,6 +3690,7 @@ int32_t wlanOnWhenProbeSuccess(struct GLUE_INFO *prGlueInfo,
 #endif
 	/* card is ready */
 	prGlueInfo->u4ReadyFlag = 1;
+	update_driver_loaded_status(prGlueInfo->u4ReadyFlag);
 	fgSimplifyResetFlow = FALSE;
 
 	if (!bAtResetFlow)
@@ -3797,6 +3799,7 @@ static int32_t wlanOffAtReset(void)
 
 	/* to avoid that wpa_supplicant/hostapd triogger new cfg80211 command */
 	prGlueInfo->u4ReadyFlag = 0;
+	update_driver_loaded_status(prGlueInfo->u4ReadyFlag);
 
 	kalPerMonDestroy(prGlueInfo);
 
@@ -4347,6 +4350,7 @@ static void wlanRemove(void)
 
 	/* to avoid that wpa_supplicant/hostapd triogger new cfg80211 command */
 	prGlueInfo->u4ReadyFlag = 0;
+	update_driver_loaded_status(prGlueInfo->u4ReadyFlag);
 
 	/* Have tried to do scan done here, but the exception occurs for */
 	/* the P2P scan. Keep the original design that scan done in the	 */
