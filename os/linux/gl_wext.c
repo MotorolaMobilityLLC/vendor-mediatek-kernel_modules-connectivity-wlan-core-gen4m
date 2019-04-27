@@ -449,13 +449,8 @@ const struct iw_handler_def wext_handler_def = {
 	.private = rIwPrivHandler,
 	.private_args = rIwPrivTable,
 	.get_wireless_stats = wext_get_wireless_stats,
-#ifdef CONFIG_MACH_MT6768
 	.num_standard = (__u16) sizeof(mtk_std_handler) / sizeof(iw_handler),
 	.standard = (iw_handler *) mtk_std_handler,
-#else
-	.num_standard = 0,
-	.standard = (iw_handler *) NULL,
-#endif
 };
 
 /*******************************************************************************
