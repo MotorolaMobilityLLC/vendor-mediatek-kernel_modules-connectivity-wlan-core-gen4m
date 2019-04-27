@@ -6140,7 +6140,7 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 					prAdapter, "Tc4Page",
 					NIC_TX_PAGE_COUNT_TC4);
 	prWifiVar->ucTxMsduQueue = (uint32_t) wlanCfgGetUint32(
-		prAdapter, "NicTxMsduQueue", 1);
+		prAdapter, "NicTxMsduQueue", 0);
 	prWifiVar->ucTxMsduQueueInit = prWifiVar->ucTxMsduQueue;
 
 	/* 1 resource for AC_BK(TC0_INDEX), AC_BE(TC1_INDEX) */
