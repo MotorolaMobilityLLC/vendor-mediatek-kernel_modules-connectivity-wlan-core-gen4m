@@ -1661,6 +1661,7 @@ uint8_t cnmGetBssMaxBw(struct ADAPTER *prAdapter,
 	struct BSS_INFO *prBssInfo;
 	uint8_t ucMaxBandwidth =
 		MAX_BW_80_80_MHZ; /*chip capability*/
+	struct BSS_DESC *prBssDesc = NULL;
 	enum ENUM_BAND eBand = BAND_NULL;
 	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo =
 		(struct P2P_ROLE_FSM_INFO *) NULL;
@@ -1678,7 +1679,12 @@ uint8_t cnmGetBssMaxBw(struct ADAPTER *prAdapter,
 		 *the info might not be trustable before state3
 		 */
 
-		eBand = prBssInfo->eBand;
+		prBssDesc =
+			aisGetTargetBssDesc(prAdapter, ucBssIndex);
+		if (prBssDesc)
+			eBand = prBssDesc->eBand;
+		else
+			eBand = prBssInfo->eBand;
 
 
 		ASSERT(eBand != BAND_NULL);
