@@ -2805,7 +2805,8 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 	 * channel to join. So we handle this as invalid information and using
 	 * default capability to sync with firmware.
 	 */
-	if (prBssInfo->ucPrimaryChannel != ucPrimaryChannel ||
+	if ((prBssInfo->ucPrimaryChannel != ucPrimaryChannel &&
+			ucPrimaryChannel != 0) ||
 	    !rlmDomainIsValidRfSetting(
 		    prAdapter, prBssInfo->eBand, prBssInfo->ucPrimaryChannel,
 		    prBssInfo->eBssSCO, prBssInfo->ucVhtChannelWidth,
