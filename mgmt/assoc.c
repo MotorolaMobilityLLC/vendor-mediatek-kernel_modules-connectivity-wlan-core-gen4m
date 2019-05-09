@@ -424,7 +424,7 @@ static __KAL_INLINE__ void assocBuildReAssocReqFrameCommonIEs(
 		}
 	}
 
-	if (prConnSettings->assocIeLen > 0) {
+	if (IS_STA_IN_AIS(prStaRec) && prConnSettings->assocIeLen > 0) {
 		kalMemCopy(pucBuffer, prConnSettings->pucAssocIEs,
 			   prConnSettings->assocIeLen);
 		prMsduInfo->u2FrameLength += prConnSettings->assocIeLen;
@@ -574,7 +574,6 @@ uint32_t assocSendReAssocReqFrame(IN struct ADAPTER *prAdapter,
 
 	ASSERT(prStaRec);
 
-	prConnSettings = aisGetConnSettings(prAdapter, prStaRec->ucBssIndex);
 	/* 4 <1> Allocate a PKT_INFO_T for Authentication Frame */
 	fgIsReAssoc = prStaRec->fgIsReAssoc;
 
@@ -654,7 +653,11 @@ uint32_t assocSendReAssocReqFrame(IN struct ADAPTER *prAdapter,
 
 	u2EstimatedFrameLen += u2EstimatedExtraIELen;
 
-	u2EstimatedFrameLen += prConnSettings->assocIeLen;
+	if (IS_STA_IN_AIS(prStaRec)) {
+		prConnSettings = aisGetConnSettings(prAdapter,
+						    prStaRec->ucBssIndex);
+		u2EstimatedFrameLen += prConnSettings->assocIeLen;
+	}
 
 	/* Allocate a MSDU_INFO_T */
 	prMsduInfo = cnmMgtPktAlloc(prAdapter, u2EstimatedFrameLen);

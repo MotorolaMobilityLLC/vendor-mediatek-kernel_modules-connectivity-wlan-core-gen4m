@@ -628,14 +628,13 @@ uint32_t authCheckRxAuthFrameTransSeq(IN struct ADAPTER *prAdapter,
 	}
 
 	prStaRec = cnmGetStaRecByIndex(prAdapter, prSwRfb->ucStaRecIdx);
-	if (!prStaRec) {
-		DBGLOG(SAA, WARN, "Cannot find prStaRec for received auth\n");
-		return WLAN_STATUS_FAILURE;
+	if (prStaRec && IS_STA_IN_AIS(prStaRec)) {
+		if (prStaRec->eAuthAssocState == SAA_STATE_EXTERNAL_AUTH) {
+			saaFsmRunEventRxAuth(prAdapter, prSwRfb);
+			return WLAN_STATUS_SUCCESS;
+		}
 	}
-	if (prStaRec->eAuthAssocState == SAA_STATE_EXTERNAL_AUTH) {
-		saaFsmRunEventRxAuth(prAdapter, prSwRfb);
-		return WLAN_STATUS_SUCCESS;
-	}
+
 	/* 4 <3> Parse the Fixed Fields of Authentication Frame Body. */
 	/* WLAN_GET_FIELD_16(&prAuthFrame->u2AuthTransSeqNo,
 	 *	&u2RxTransactionSeqNum);
@@ -661,6 +660,9 @@ uint32_t authCheckRxAuthFrameTransSeq(IN struct ADAPTER *prAdapter,
 		       "Strange Authentication Packet: Auth Trans Seq No = %d, Error Status Code = %d\n",
 		       u2RxTransactionSeqNum, prAuthFrame->u2StatusCode);
 #if CFG_IGNORE_INVALID_AUTH_TSN
+		prStaRec = cnmGetStaRecByIndex(prAdapter, prSwRfb->ucStaRecIdx);
+		if (!prStaRec)
+			return WLAN_STATUS_SUCCESS;
 		switch (prStaRec->eAuthAssocState) {
 		case SAA_STATE_SEND_AUTH1:
 		case SAA_STATE_WAIT_AUTH2:

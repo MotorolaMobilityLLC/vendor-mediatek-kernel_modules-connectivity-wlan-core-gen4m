@@ -140,13 +140,9 @@ saaFsmSteps(IN struct ADAPTER *prAdapter,
 	uint32_t rStatus = WLAN_STATUS_FAILURE;
 	enum ENUM_AA_STATE ePreviousState;
 	u_int8_t fgIsTransition;
-	struct AIS_FSM_INFO *prAisFsmInfo = NULL;
 
-	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, prStaRec->ucBssIndex);
 	ASSERT(prStaRec);
 	if (!prStaRec)
-		return;
-	if (!prAisFsmInfo)
 		return;
 
 	do {
@@ -311,9 +307,6 @@ saaFsmSteps(IN struct ADAPTER *prAdapter,
 
 				eNextState = AA_STATE_IDLE;
 				fgIsTransition = TRUE;
-			} else if (prAisFsmInfo->ucAvailableAuthTypes &
-				   (uint8_t) AUTH_TYPE_SAE) {
-				break;
 			} else {
 				prStaRec->ucTxAuthAssocRetryCount++;
 				prStaRec->ucAuthTranNum =
