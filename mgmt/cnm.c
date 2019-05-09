@@ -3655,7 +3655,7 @@ void cnmEventOpmodeChange(
 	 * Please add another hook by ucReason!!
 	 */
 	for (ucBssIndex = 0;
-		 ucBssIndex < (prAdapter->ucHwBssIdNum + 1);
+		 ucBssIndex < prAdapter->ucHwBssIdNum;
 		 ucBssIndex++) {
 		if (prOpChangeEvt->ucBssBitmap & BIT(ucBssIndex)) {
 			cnmSetOpTRxNssBw(
