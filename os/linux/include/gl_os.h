@@ -509,7 +509,7 @@ struct GLUE_INFO {
 
 	/* Device Index(index of arWlanDevInfo[]) */
 	int32_t i4DevIdx;
-	struct napi_struct napi;
+	struct napi_struct napi[MAX_BSSID_NUM];
 
 	/* Device statistics */
 	/* struct net_device_stats rNetDevStats; */

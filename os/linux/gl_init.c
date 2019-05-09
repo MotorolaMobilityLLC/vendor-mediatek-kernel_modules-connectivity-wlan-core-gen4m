@@ -1419,6 +1419,18 @@ void wlanDebugInit(void)
 
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief A method of callback function for napi struct
+ *
+ * It just return false because driver indicate Rx packet directly.
+ *
+ * \param[in] napi      Pointer to struct napi_struct.
+ * \param[in] budget    Polling time interval.
+ *
+ * \return false
+ */
+/*----------------------------------------------------------------------------*/
 static int kal_napi_poll(struct napi_struct *napi, int budget)
 {
 	return 0;
@@ -1437,6 +1449,7 @@ static int kal_napi_poll(struct napi_struct *napi, int budget)
 static int wlanInit(struct net_device *prDev)
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
+	uint8_t ucBssIndex;
 
 	if (!prDev)
 		return -ENXIO;
@@ -1454,15 +1467,20 @@ static int wlanInit(struct net_device *prDev)
 #endif
 
 	/* Register GRO function to kernel */
-	prDev->features |= NETIF_F_GRO;
-	prDev->hw_features |= NETIF_F_GRO;
-
-	prGlueInfo->napi.dev = prDev;
 	spin_lock_init(&prGlueInfo->napi_spinlock);
-	netif_napi_add(prGlueInfo->napi.dev,
-		&prGlueInfo->napi, kal_napi_poll, 64);
-	DBGLOG(INIT, INFO, "netif_napi_add success\n");
-
+	ucBssIndex = wlanGetBssIdx(prDev);
+	if (ucBssIndex < MAX_BSSID_NUM) {
+		prDev->features |= NETIF_F_GRO;
+		prDev->hw_features |= NETIF_F_GRO;
+		prGlueInfo->napi[ucBssIndex].dev = prDev;
+		netif_napi_add(prGlueInfo->napi[ucBssIndex].dev,
+			&prGlueInfo->napi[ucBssIndex], kal_napi_poll, 64);
+		DBGLOG(INIT, INFO,
+			"GRO interface add success: %d\n", ucBssIndex);
+	} else {
+		DBGLOG(INIT, ERROR,
+			"invalid BSSID: %d, No GRO interface\n", ucBssIndex);
+	}
 	return 0;		/* success */
 }				/* end of wlanInit() */
 
