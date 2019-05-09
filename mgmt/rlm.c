@@ -6497,8 +6497,7 @@ u_int8_t rlmBcnRmRunning(struct ADAPTER *prAdapter,
 u_int8_t rlmFillScanMsg(struct ADAPTER *prAdapter,
 			struct MSG_SCN_SCAN_REQ_V2 *prMsg)
 {
-	struct RADIO_MEASUREMENT_REQ_PARAMS *prRmReq =
-		aisGetRmReqParam(prAdapter, prMsg->ucBssIndex);
+	struct RADIO_MEASUREMENT_REQ_PARAMS *prRmReq = NULL;
 	struct IE_MEASUREMENT_REQ *prCurrReq = NULL;
 	struct RM_BCN_REQ *prBeaconReq = NULL;
 	uint16_t u2RemainLen = 0;
@@ -6506,7 +6505,13 @@ u_int8_t rlmFillScanMsg(struct ADAPTER *prAdapter,
 
 	static struct PARAM_SSID rBcnReqSsid;
 
-	if (prRmReq->rBcnRmParam.eState != RM_ON_GOING || !prMsg)
+	if (!prMsg)
+		return FALSE;
+
+	prRmReq = aisGetRmReqParam(prAdapter,
+		prMsg->ucBssIndex);
+
+	if (prRmReq->rBcnRmParam.eState != RM_ON_GOING)
 		return FALSE;
 
 	prCurrReq = prRmReq->prCurrMeasElem;
