@@ -214,7 +214,7 @@ static struct DBDC_INFO_T g_rDbdcInfo;
 OS_SYSTIME g_rLastCsaSysTime;
 #endif
 
-static struct BSS_OPTRX_BW_CONTROL_T g_arBssOpTRxBwControl[BSS_DEFAULT_NUM];
+static struct BSS_OPTRX_BW_CONTROL_T g_arBssOpTRxBwControl[BSS_DEFAULT_NUM + 1];
 
 /*******************************************************************************
  *                                 M A C R O S
@@ -482,7 +482,7 @@ void cnmInit(struct ADAPTER *prAdapter)
 
 	prCnmInfo = &prAdapter->rCnmInfo;
 	prCnmInfo->fgChGranted = FALSE;
-	for (i = 0; i < prAdapter->ucHwBssIdNum; i++) {
+	for (i = 0; i <= BSS_DEFAULT_NUM; i++) {
 		for (j = 0; j < OPTRX_CHANGE_REASON_NUM; j++)
 			g_arBssOpTRxBwControl[i].rOpTRxBw[j].fgEnable = false;
 	}
@@ -1968,7 +1968,7 @@ void cnmInitDbdcSetting(IN struct ADAPTER *prAdapter)
 
 	case ENUM_DBDC_MODE_STATIC:
 		for (ucBssLoopIndex = 0;
-		    ucBssLoopIndex < prAdapter->ucHwBssIdNum;
+		    ucBssLoopIndex <= BSS_DEFAULT_NUM;
 		    ucBssLoopIndex++) {
 			prBssOpSourceCtrl =
 				&(g_arBssOpTRxBwControl[ucBssLoopIndex].
