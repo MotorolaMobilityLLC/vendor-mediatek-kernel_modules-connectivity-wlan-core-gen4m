@@ -1833,7 +1833,13 @@ kalHardStartXmit(struct sk_buff *prOrgSkb,
 		 * channged.
 		 * offer an change for lucky anyway
 		 */
-		ASSERT(prSkbNew);
+		if (!prSkbNew) {
+			dev_kfree_skb(prOrgSkb);
+			DBGLOG(INIT, ERROR,
+				"prChipInfo = %pM, u4TxHeadRoomSize: %u\n",
+				prChipInfo, u4TxHeadRoomSize);
+			return WLAN_STATUS_NOT_ACCEPTED;
+		}
 		dev_kfree_skb(prOrgSkb);
 		prSkb = prSkbNew;
 	} else
