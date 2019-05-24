@@ -1273,6 +1273,7 @@ int mtk_cfg80211_connect(struct wiphy *wiphy,
 		break;
 	case NL80211_AUTHTYPE_SAE:
 		prWpaInfo->u4AuthAlg = IW_AUTH_ALG_SAE;
+		/* To prevent FWKs asks connect without AKM Suite */
 		eAuthMode = AUTH_MODE_WPA3_SAE;
 		u4AkmSuite = RSN_CIPHER_SUITE_SAE;
 		break;
@@ -1409,6 +1410,11 @@ int mtk_cfg80211_connect(struct wiphy *wiphy,
 				u4AkmSuite = WFA_AKM_SUITE_OSEN;
 				break;
 #endif
+			case WLAN_AKM_SUITE_SAE:
+				eAuthMode = AUTH_MODE_WPA3_SAE;
+				u4AkmSuite = RSN_CIPHER_SUITE_SAE;
+				break;
+
 			case WLAN_AKM_SUITE_OWE:
 				eAuthMode = AUTH_MODE_OPEN;
 				u4AkmSuite = RSN_CIPHER_SUITE_OWE;
