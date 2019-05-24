@@ -1096,10 +1096,17 @@ p2pFuncTxMgmtFrame(IN struct ADAPTER *prAdapter,
 void p2pFuncStopComplete(IN struct ADAPTER *prAdapter,
 		IN struct BSS_INFO *prP2pBssInfo)
 {
+	struct GL_P2P_INFO *prP2PInfo;
+
 	do {
 		ASSERT_BREAK((prAdapter != NULL) && (prP2pBssInfo != NULL));
 
 		DBGLOG(P2P, TRACE, "p2pFuncStopComplete\n");
+
+		prP2PInfo = prAdapter->prGlueInfo->prP2PInfo[
+			prP2pBssInfo->u4PrivateData];
+		if (!completion_done(&prP2PInfo->rStopApComp))
+			complete(&prP2PInfo->rStopApComp);
 
 		/* GO: It would stop Beacon TX.
 		 * GC: Stop all BSS related PS function.
@@ -2939,16 +2946,6 @@ p2pFuncDissolve(IN struct ADAPTER *prAdapter,
 #if !CFG_SUPPORT_MULTITHREAD
 		wlanReleasePowerControl(prAdapter);
 #endif
-
-		if (p2pFuncIsAPMode(
-			prAdapter->rWifiVar
-			.prP2PConnSettings[prP2pBssInfo->u4PrivateData])
-			&& (bssGetClientCount(prAdapter,
-			prP2pBssInfo) > 0)) {
-			DBGLOG(P2P, TRACE,
-				"Wait 500ms for deauth TX in Hotspot\n");
-			kalMdelay(500);
-		}
 
 		/* Change Connection Status. */
 		/* 20161025, can not set DISCONNECTED if clientcount > 0 */
