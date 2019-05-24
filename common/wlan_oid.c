@@ -467,7 +467,7 @@ wlanoidQueryBssid(IN struct ADAPTER *prAdapter,
 		ASSERT(pvQueryBuffer);
 	ASSERT(pu4QueryInfoLen);
 
-	GET_IOCTL_BSSIDX(ucBssIndex, *pu4QueryInfoLen);
+	ucBssIndex = GET_IOCTL_BSSIDX(prAdapter);
 
 	prCurrBssid = aisGetCurrBssId(prAdapter,
 		ucBssIndex);
@@ -646,7 +646,7 @@ wlanoidSetBssidListScan(IN struct ADAPTER *prAdapter,
 
 	ASSERT(pu4SetInfoLen);
 
-	GET_IOCTL_BSSIDX(ucBssIndex, *pu4SetInfoLen);
+	ucBssIndex = GET_IOCTL_BSSIDX(prAdapter);
 
 	DBGLOG(REQ, LOUD, "ucBssIndex %d\n", ucBssIndex);
 
@@ -918,7 +918,7 @@ wlanoidSetBssid(IN struct ADAPTER *prAdapter,
 	ASSERT(prAdapter);
 	ASSERT(pu4SetInfoLen);
 
-	GET_IOCTL_BSSIDX(ucBssIndex, *pu4SetInfoLen);
+	ucBssIndex = GET_IOCTL_BSSIDX(prAdapter);
 
 	DBGLOG(REQ, LOUD, "ucBssIndex %d\n", ucBssIndex);
 
@@ -1080,7 +1080,7 @@ wlanoidSetSsid(IN struct ADAPTER *prAdapter,
 
 	prGlueInfo = prAdapter->prGlueInfo;
 
-	GET_IOCTL_BSSIDX(ucBssIndex, *pu4SetInfoLen);
+	ucBssIndex = GET_IOCTL_BSSIDX(prAdapter);
 
 	prConnSettings =
 		aisGetConnSettings(prAdapter, ucBssIndex);
@@ -1467,7 +1467,7 @@ wlanoidQuerySsid(IN struct ADAPTER *prAdapter,
 	if (u4QueryBufferLen)
 		ASSERT(pvQueryBuffer);
 
-	GET_IOCTL_BSSIDX(ucBssIndex, *pu4QueryInfoLen);
+	ucBssIndex = GET_IOCTL_BSSIDX(prAdapter);
 
 	*pu4QueryInfoLen = sizeof(struct PARAM_SSID);
 
@@ -1814,7 +1814,7 @@ wlanoidSetAuthMode(IN struct ADAPTER *prAdapter,
 
 	prGlueInfo = prAdapter->prGlueInfo;
 
-	GET_IOCTL_BSSIDX(ucBssIndex, *pu4SetInfoLen);
+	ucBssIndex = GET_IOCTL_BSSIDX(prAdapter);
 
 	DBGLOG(REQ, LOUD, "ucBssIndex %d\n", ucBssIndex);
 
@@ -2309,7 +2309,7 @@ wlanoidSetAddWep(IN struct ADAPTER *prAdapter,
 
 	ASSERT(prAdapter);
 
-	GET_IOCTL_BSSIDX(ucBssIndex, *pu4SetInfoLen);
+	ucBssIndex = GET_IOCTL_BSSIDX(prAdapter);
 
 	DBGLOG(REQ, LOUD, "ucBssIndex %d\n", ucBssIndex);
 
@@ -2447,7 +2447,7 @@ wlanoidSetRemoveWep(IN struct ADAPTER *prAdapter,
 	ASSERT(prAdapter);
 	ASSERT(pu4SetInfoLen);
 
-	GET_IOCTL_BSSIDX(ucBssIndex, *pu4SetInfoLen);
+	ucBssIndex = GET_IOCTL_BSSIDX(prAdapter);
 
 	DBGLOG(REQ, LOUD, "ucBssIndex %d\n", ucBssIndex);
 
@@ -3531,7 +3531,7 @@ wlanoidSetEncryptionStatus(IN struct ADAPTER *prAdapter,
 
 	prGlueInfo = prAdapter->prGlueInfo;
 
-	GET_IOCTL_BSSIDX(ucBssIndex, *pu4SetInfoLen);
+	ucBssIndex = GET_IOCTL_BSSIDX(prAdapter);
 
 	DBGLOG(REQ, LOUD, "ucBssIndex %d\n", ucBssIndex);
 
@@ -3818,7 +3818,7 @@ wlanoidFlushPmkid(IN struct ADAPTER *prAdapter,
 
 	ASSERT(prAdapter);
 
-	GET_IOCTL_BSSIDX(ucBssIndex, *pu4SetInfoLen);
+	ucBssIndex = GET_IOCTL_BSSIDX(prAdapter);
 
 	return rsnFlushPmkid(prAdapter, ucBssIndex);
 } /* wlanoidFlushPmkid */
@@ -7755,7 +7755,7 @@ wlanoidSetMulticastList(IN struct ADAPTER *prAdapter,
 		return WLAN_STATUS_INVALID_LENGTH;
 	}
 
-	GET_IOCTL_BSSIDX(ucBssIndex, *pu4SetInfoLen);
+	ucBssIndex = GET_IOCTL_BSSIDX(prAdapter);
 
 	*pu4SetInfoLen = u4SetBufferLen;
 
@@ -8343,7 +8343,7 @@ wlanoidSetDisassociate(IN struct ADAPTER *prAdapter,
 	ASSERT(prAdapter);
 	ASSERT(pu4SetInfoLen);
 
-	GET_IOCTL_BSSIDX(ucBssIndex, *pu4SetInfoLen);
+	ucBssIndex = GET_IOCTL_BSSIDX(prAdapter);
 
 	*pu4SetInfoLen = 0;
 
@@ -8712,7 +8712,7 @@ wlanoidSetFrequency(IN struct ADAPTER *prAdapter,
 	ASSERT(prAdapter);
 	ASSERT(pu4SetInfoLen);
 
-	GET_IOCTL_BSSIDX(ucBssIndex, *pu4SetInfoLen);
+	ucBssIndex = GET_IOCTL_BSSIDX(prAdapter);
 
 	DBGLOG(REQ, LOUD, "ucBssIndex %d\n", ucBssIndex);
 
@@ -10104,7 +10104,7 @@ wlanoidSetWapiAssocInfo(IN struct ADAPTER *prAdapter,
 
 	DEBUGFUNC("wlanoidSetWapiAssocInfo");
 
-	GET_IOCTL_BSSIDX(ucBssIndex, *pu4SetInfoLen);
+	ucBssIndex = GET_IOCTL_BSSIDX(prAdapter);
 
 	DBGLOG(REQ, LOUD, "ucBssIndex %d\n", ucBssIndex);
 
@@ -12771,7 +12771,7 @@ wlanoidSetHS20Info(IN struct ADAPTER *prAdapter,
 	if (u4SetBufferLen == 0)
 		return WLAN_STATUS_INVALID_LENGTH;
 
-	GET_IOCTL_BSSIDX(ucBssIndex, *pu4SetInfoLen);
+	ucBssIndex = GET_IOCTL_BSSIDX(prAdapter);
 
 	prHS20Info = aisGetHS20Info(prAdapter, ucBssIndex);
 
@@ -12827,7 +12827,7 @@ wlanoidSetHS20BssidPool(IN struct ADAPTER *prAdapter,
 		return WLAN_STATUS_BUFFER_TOO_SHORT;
 	}
 
-	GET_IOCTL_BSSIDX(ucBssIndex, *pu4SetInfoLen);
+	ucBssIndex = GET_IOCTL_BSSIDX(prAdapter);
 
 	DBGLOG(REQ, LOUD, "ucBssIndex %d\n", ucBssIndex);
 
@@ -14601,7 +14601,7 @@ uint32_t wlanoidAbortScan(IN struct ADAPTER *prAdapter,
 	struct AIS_FSM_INFO *prAisFsmInfo = NULL;
 	uint8_t ucBssIndex = 0;
 
-	GET_IOCTL_BSSIDX(ucBssIndex, *pu4QueryInfoLen);
+	ucBssIndex = GET_IOCTL_BSSIDX(prAdapter);
 
 	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
 	if (prAisFsmInfo->eCurrentState == AIS_STATE_SCAN ||
@@ -14619,12 +14619,9 @@ wlanoidDisableTdlsPs(IN struct ADAPTER *prAdapter,
 		     OUT uint32_t *pu4SetInfoLen)
 {
 	struct CMD_TDLS_PS_T rTdlsPs;
-	uint8_t ucBssIndex = 0;
 
 	if (!prAdapter || !pvSetBuffer)
 		return WLAN_STATUS_INVALID_DATA;
-
-	GET_IOCTL_BSSIDX(ucBssIndex, AIS_DEFAULT_INDEX);
 
 	rTdlsPs.ucIsEnablePs = *(uint8_t *)pvSetBuffer - '0';
 	DBGLOG(OID, INFO, "enable tdls ps %d\n", rTdlsPs.ucIsEnablePs);
@@ -14857,7 +14854,7 @@ wlanoidSetDrvRoamingPolicy(IN struct ADAPTER *prAdapter,
 	ASSERT(prAdapter);
 	ASSERT(pvSetBuffer);
 
-	GET_IOCTL_BSSIDX(ucBssIndex, *pu4SetInfoLen);
+	ucBssIndex = GET_IOCTL_BSSIDX(prAdapter);
 
 	u4RoamingPoily = *(uint32_t *)pvSetBuffer;
 
@@ -14912,7 +14909,7 @@ uint32_t wlanoidUpdateFtIes(struct ADAPTER *prAdapter, void *pvSetBuffer,
 		return WLAN_STATUS_INVALID_DATA;
 	}
 
-	GET_IOCTL_BSSIDX(ucBssIndex, *pu4SetInfoLen);
+	ucBssIndex = GET_IOCTL_BSSIDX(prAdapter);
 
 	prStaRec = aisGetTargetStaRec(prAdapter, ucBssIndex);
 	ftie = (struct cfg80211_update_ft_ies_params *)pvSetBuffer;
@@ -15015,7 +15012,7 @@ uint32_t wlanoidSendNeighborRequest(struct ADAPTER *prAdapter,
 	if (!prAdapter)
 		return WLAN_STATUS_INVALID_DATA;
 
-	GET_IOCTL_BSSIDX(ucBssIndex, *pu4SetInfoLen);
+	ucBssIndex = GET_IOCTL_BSSIDX(prAdapter);
 
 	prAisBssInfo = aisGetAisBssInfo(prAdapter, ucBssIndex);
 	if (!prAisBssInfo)
@@ -15081,7 +15078,7 @@ uint32_t wlanoidSendBTMQuery(struct ADAPTER *prAdapter, void *pvSetBuffer,
 	struct BSS_INFO *prAisBssInfo;
 	uint8_t ucBssIndex = 0;
 
-	GET_IOCTL_BSSIDX(ucBssIndex, *pu4SetInfoLen);
+	ucBssIndex = GET_IOCTL_BSSIDX(prAdapter);
 
 	prAisBssInfo = aisGetAisBssInfo(prAdapter, ucBssIndex);
 
@@ -15172,7 +15169,7 @@ uint32_t wlanoidTspecOperation(struct ADAPTER *prAdapter, void *pvBuffer,
 	return WLAN_STATUS_FAILURE;
 #endif
 
-	GET_IOCTL_BSSIDX(ucBssIndex, *pu4InfoLen);
+	ucBssIndex = GET_IOCTL_BSSIDX(prAdapter);
 
 	if (kalStrniCmp(pucCmd, "dumpts", 6) == 0) {
 		*pu4InfoLen = kalSnprintf(pucCmd, u4BufferLen, "%s",
@@ -15360,7 +15357,7 @@ uint32_t wlanoidPktProcessIT(struct ADAPTER *prAdapter, void *pvBuffer,
 			     struct SW_RFB *prSwRfb);
 	uint8_t ucBssIndex = 0;
 
-	GET_IOCTL_BSSIDX(ucBssIndex, *pu4InfoLen);
+	ucBssIndex = GET_IOCTL_BSSIDX(prAdapter);
 
 	if (!pvBuffer) {
 		DBGLOG(OID, ERROR, "pvBuffer is NULL\n");
@@ -15447,7 +15444,7 @@ uint32_t wlanoidFwEventIT(struct ADAPTER *prAdapter, void *pvBuffer,
 	uint8_t *pucCmd = (int8_t *)pvBuffer;
 	uint8_t ucBssIndex = 0;
 
-	GET_IOCTL_BSSIDX(ucBssIndex, *pu4InfoLen);
+	ucBssIndex = GET_IOCTL_BSSIDX(prAdapter);
 
 	/* Firmware roaming Integration Test case */
 	if (!kalStrniCmp(pucCmd, "Roaming", 7)) {
@@ -15577,7 +15574,7 @@ uint32_t wlanoidDumpUapsdSetting(struct ADAPTER *prAdapter, void *pvBuffer,
 		return WLAN_STATUS_FAILURE;
 	}
 
-	GET_IOCTL_BSSIDX(ucBssIndex, *pu4InfoLen);
+	ucBssIndex = GET_IOCTL_BSSIDX(prAdapter);
 
 	prAisBssInfo =
 		aisGetAisBssInfo(prAdapter, ucBssIndex);

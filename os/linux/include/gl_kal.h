@@ -1140,6 +1140,22 @@ kalIoctl(IN struct GLUE_INFO *prGlueInfo,
 	 IN u_int8_t fgWaitResp,
 	 IN u_int8_t fgCmd, OUT uint32_t *pu4QryInfoLen);
 
+uint32_t
+kalIoctlByBssIdx(IN struct GLUE_INFO *prGlueInfo,
+	IN PFN_OID_HANDLER_FUNC pfnOidHandler,
+	IN void *pvInfoBuf,
+	IN uint32_t u4InfoBufLen, IN u_int8_t fgRead,
+	IN u_int8_t fgWaitResp, IN u_int8_t fgCmd,
+	OUT uint32_t *pu4QryInfoLen,
+	IN uint8_t ucBssIndex);
+
+void SET_IOCTL_BSSIDX(
+	IN struct ADAPTER *prAdapter,
+	IN uint8_t ucBssIndex);
+
+uint8_t GET_IOCTL_BSSIDX(
+	IN struct ADAPTER *prAdapter);
+
 void kalHandleAssocInfo(IN struct GLUE_INFO *prGlueInfo,
 			IN struct EVENT_ASSOC_INFO *prAssocInfo);
 

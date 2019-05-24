@@ -425,6 +425,7 @@ struct GL_IO_REQ {
 	uint32_t *pu4QryInfoLen;
 	uint32_t rStatus;
 	uint32_t u4Flag;
+	uint8_t ucBssIndex;
 };
 
 #if CFG_ENABLE_BT_OVER_WIFI

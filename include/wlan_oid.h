@@ -272,9 +272,6 @@
 #define GED_EVENT_DOPT_WIFI_SCAN    (1 << 12)
 #endif /* CFG_SUPPORT_LOWLATENCY_MODE */
 
-#define SET_IOCTL_BSSIDX(_a, _b) ((_a) = (_b))
-#define GET_IOCTL_BSSIDX(_a, _b) ((_a) = (_b))
-
 /*******************************************************************************
  *                             D A T A   T Y P E S
  *******************************************************************************

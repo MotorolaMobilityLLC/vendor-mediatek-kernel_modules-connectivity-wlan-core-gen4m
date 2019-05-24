@@ -1232,10 +1232,10 @@ static void wlanSetMulticastListWorkQueue(
 
 		up(&g_halt_sem);
 
-		SET_IOCTL_BSSIDX(u4SetInfoLen, ucBssIndex);
-		kalIoctl(prGlueInfo,
+		kalIoctlByBssIdx(prGlueInfo,
 			 wlanoidSetMulticastList, prMCAddrList, (i * ETH_ALEN),
-			 FALSE, FALSE, TRUE, &u4SetInfoLen);
+			 FALSE, FALSE, TRUE, &u4SetInfoLen,
+			 ucBssIndex);
 
 		kalMemFree(prMCAddrList, VIR_MEM_TYPE,
 			   MAX_NUM_GROUP_ADDR * ETH_ALEN);
@@ -3991,13 +3991,12 @@ static int32_t wlanOnAtReset(void)
 			/* Send disconnect */
 			if (prAisBssInfo->eConnectionState ==
 				PARAM_MEDIA_STATE_CONNECTED) {
-				SET_IOCTL_BSSIDX(u4BufLen,
-					u4Idx);
-				rStatus = kalIoctl(prGlueInfo,
+				rStatus = kalIoctlByBssIdx(prGlueInfo,
 					wlanoidSetDisassociate,
 					(void *)
 					DISCONNECT_REASON_CODE_CHIPRESET,
-					0, FALSE, FALSE, TRUE, &u4BufLen);
+					0, FALSE, FALSE, TRUE, &u4BufLen,
+					u4Idx);
 
 				if (rStatus != WLAN_STATUS_SUCCESS) {
 					DBGLOG(REQ, WARN,

@@ -1250,7 +1250,7 @@ kalIndicateStatusAndComplete(IN struct GLUE_INFO
 			ucBssIndex);
 
 		/* indicate assoc event */
-		SET_IOCTL_BSSIDX(bufLen, ucBssIndex);
+		SET_IOCTL_BSSIDX(prGlueInfo->prAdapter, ucBssIndex);
 		wlanQueryInformation(prGlueInfo->prAdapter, wlanoidQueryBssid,
 					&arBssid[0], sizeof(arBssid), &bufLen);
 		wext_indicate_wext_event(prGlueInfo, SIOCGIWAP, arBssid,
@@ -1261,7 +1261,7 @@ kalIndicateStatusAndComplete(IN struct GLUE_INFO
 
 		do {
 			/* print message on console */
-			SET_IOCTL_BSSIDX(bufLen, ucBssIndex);
+			SET_IOCTL_BSSIDX(prGlueInfo->prAdapter, ucBssIndex);
 			wlanQueryInformation(prGlueInfo->prAdapter,
 			     wlanoidQuerySsid, &ssid, sizeof(ssid), &bufLen);
 
@@ -2861,6 +2861,44 @@ int32_t kalThreadSchedUnmark(struct task_struct *pThread,
 
 /* static GL_IO_REQ_T OidEntry; */
 
+uint8_t GET_IOCTL_BSSIDX(
+	IN struct ADAPTER *prAdapter)
+{
+	uint8_t ucBssIndex = AIS_DEFAULT_INDEX;
+
+	if (prAdapter) {
+		struct GL_IO_REQ *prIoReq = NULL;
+
+		prIoReq =
+			&(prAdapter->prGlueInfo
+			->OidEntry);
+
+		ucBssIndex = prIoReq->ucBssIndex;
+	}
+
+	DBGLOG(OID, LOUD, "ucBssIndex = %d\n", ucBssIndex);
+
+	return ucBssIndex;
+}
+
+void SET_IOCTL_BSSIDX(
+	IN struct ADAPTER *prAdapter,
+	IN uint8_t ucBssIndex)
+{
+	if (prAdapter) {
+		struct GL_IO_REQ *prIoReq = NULL;
+
+		prIoReq =
+			&(prAdapter->prGlueInfo
+			->OidEntry);
+
+		DBGLOG(OID, LOUD,
+			"ucBssIndex = %d\n", ucBssIndex);
+
+		prIoReq->ucBssIndex = ucBssIndex;
+	}
+}
+
 uint32_t
 kalIoctl(IN struct GLUE_INFO *prGlueInfo,
 	 IN PFN_OID_HANDLER_FUNC pfnOidHandler,
@@ -2868,6 +2906,27 @@ kalIoctl(IN struct GLUE_INFO *prGlueInfo,
 	 IN uint32_t u4InfoBufLen, IN u_int8_t fgRead,
 	 IN u_int8_t fgWaitResp, IN u_int8_t fgCmd,
 	 OUT uint32_t *pu4QryInfoLen)
+{
+	return kalIoctlByBssIdx(
+		prGlueInfo,
+		pfnOidHandler,
+		pvInfoBuf,
+		u4InfoBufLen,
+		fgRead,
+		fgWaitResp,
+		fgCmd,
+		pu4QryInfoLen,
+		AIS_DEFAULT_INDEX);
+}
+
+uint32_t
+kalIoctlByBssIdx(IN struct GLUE_INFO *prGlueInfo,
+	 IN PFN_OID_HANDLER_FUNC pfnOidHandler,
+	 IN void *pvInfoBuf,
+	 IN uint32_t u4InfoBufLen, IN u_int8_t fgRead,
+	 IN u_int8_t fgWaitResp, IN u_int8_t fgCmd,
+	 OUT uint32_t *pu4QryInfoLen,
+	 IN uint8_t ucBssIndex)
 {
 	struct GL_IO_REQ *prIoReq = NULL;
 	struct KAL_THREAD_SCHEDSTATS schedstats;
@@ -2920,6 +2979,9 @@ kalIoctl(IN struct GLUE_INFO *prGlueInfo,
 	prIoReq->fgRead = fgRead;
 	prIoReq->fgWaitResp = fgWaitResp;
 	prIoReq->rStatus = WLAN_STATUS_FAILURE;
+	SET_IOCTL_BSSIDX(
+		prGlueInfo->prAdapter,
+		ucBssIndex);
 
 	/* <5> Reset the status of pending OID */
 	prGlueInfo->rPendStatus = WLAN_STATUS_FAILURE;

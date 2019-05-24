@@ -1858,7 +1858,6 @@ wext_get_scan(IN struct net_device *prNetDev,
 		}
 		prList->NumberOfItems = 0;
 
-		SET_IOCTL_BSSIDX(u4BufLen, ucBssIndex);
 		rStatus = kalIoctl(prGlueInfo, wlanoidQueryBssidList, prList,
 				   u4AllocBufLen,
 				   TRUE, FALSE, FALSE, &u4BufLen);
@@ -2326,7 +2325,6 @@ wext_set_essid(IN struct net_device *prNetDev,
 		eEncStatus = ENUM_ENCRYPTION_DISABLED;
 	}
 
-	SET_IOCTL_BSSIDX(u4BufLen, ucBssIndex);
 	rStatus = kalIoctl(prGlueInfo, wlanoidSetEncryptionStatus, &eEncStatus,
 			   sizeof(eEncStatus),
 			   FALSE, FALSE, FALSE, &u4BufLen);
@@ -2346,7 +2344,6 @@ wext_set_essid(IN struct net_device *prNetDev,
 	 *  rNewSsid.aucSsid[rNewSsid.u4SsidLen] = '\0';
 	 *  printk("set ssid(%u): %s\n", rNewSsid.u4SsidLen, rNewSsid.aucSsid);
 	 */
-	SET_IOCTL_BSSIDX(u4BufLen, ucBssIndex);
 	if (kalIoctl(prGlueInfo,
 		     wlanoidSetSsid,
 		     (void *)&rNewSsid, sizeof(struct PARAM_SSID), FALSE, FALSE,
@@ -2933,7 +2930,6 @@ wext_set_encode(IN struct net_device *prNetDev,
 
 		eEncStatus = ENUM_ENCRYPTION_DISABLED;
 
-		SET_IOCTL_BSSIDX(u4BufLen, ucBssIndex);
 		rStatus = kalIoctl(prGlueInfo, wlanoidSetEncryptionStatus,
 				   &eEncStatus, sizeof(eEncStatus),
 				   FALSE, FALSE, FALSE, &u4BufLen);
@@ -2976,7 +2972,6 @@ wext_set_encode(IN struct net_device *prNetDev,
 						 IW_AUTH_ALG_OPEN_SYSTEM;
 		eAuthMode = AUTH_MODE_AUTO_SWITCH;
 
-		SET_IOCTL_BSSIDX(u4BufLen, ucBssIndex);
 		rStatus = kalIoctl(prGlueInfo, wlanoidSetAuthMode, &eAuthMode,
 				   sizeof(eAuthMode),
 				   FALSE, FALSE, FALSE, &u4BufLen);
@@ -2995,7 +2990,6 @@ wext_set_encode(IN struct net_device *prNetDev,
 
 		eEncStatus = ENUM_WEP_ENABLED;
 
-		SET_IOCTL_BSSIDX(u4BufLen, ucBssIndex);
 		rStatus = kalIoctl(prGlueInfo,
 				   wlanoidSetEncryptionStatus,
 				   &eEncStatus, sizeof(enum ENUM_WEP_STATUS),
@@ -3452,7 +3446,6 @@ wext_set_encode_ext(IN struct net_device *prNetDev,
 			 *	   MAC2STR(prRemoveKey->BSSID));
 			 */
 			prRemoveKey->ucBssIdx = ucBssIndex;
-			SET_IOCTL_BSSIDX(u4BufLen, ucBssIndex);
 			rStatus = kalIoctl(prGlueInfo, wlanoidSetRemoveKey,
 					   prRemoveKey, prRemoveKey->u4Length,
 					   FALSE, FALSE, TRUE, &u4BufLen);
@@ -3496,7 +3489,6 @@ wext_set_encode_ext(IN struct net_device *prNetDev,
 					   prIWEncExt->key,
 					   prIWEncExt->key_len);
 
-				SET_IOCTL_BSSIDX(u4BufLen, ucBssIndex);
 				rStatus = kalIoctl(prGlueInfo,
 						   wlanoidSetAddWep,
 						   prWepKey, prWepKey->u4Length,
@@ -3516,7 +3508,6 @@ wext_set_encode_ext(IN struct net_device *prNetDev,
 							IW_AUTH_ALG_OPEN_SYSTEM;
 				eAuthMode = AUTH_MODE_AUTO_SWITCH;
 
-				SET_IOCTL_BSSIDX(u4BufLen, ucBssIndex);
 				rStatus = kalIoctl(prGlueInfo,
 						   wlanoidSetAuthMode,
 						   &eAuthMode,
@@ -3540,7 +3531,6 @@ wext_set_encode_ext(IN struct net_device *prNetDev,
 
 				eEncStatus = ENUM_WEP_ENABLED;
 
-				SET_IOCTL_BSSIDX(u4BufLen, ucBssIndex);
 				rStatus = kalIoctl(prGlueInfo,
 						   wlanoidSetEncryptionStatus,
 						   &eEncStatus,
@@ -3633,7 +3623,6 @@ wext_set_encode_ext(IN struct net_device *prNetDev,
 		prKey->u4Length = ((unsigned long) &(((struct PARAM_KEY *)
 				0)->aucKeyMaterial)) + prKey->u4KeyLength;
 		prKey->ucBssIdx = ucBssIndex;
-		SET_IOCTL_BSSIDX(u4BufLen, ucBssIndex);
 		rStatus = kalIoctl(prGlueInfo, wlanoidSetAddKey, prKey,
 				   prKey->u4Length,
 				   FALSE, FALSE, TRUE, &u4BufLen);

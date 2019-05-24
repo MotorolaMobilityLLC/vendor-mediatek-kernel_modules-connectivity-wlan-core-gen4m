@@ -3245,7 +3245,7 @@ enum ENUM_AIS_STATE aisFsmJoinCompleteAction(IN struct ADAPTER *prAdapter,
 						 * driver and supplicant will
 						 * be not synchronized.
 						 */
-						SET_IOCTL_BSSIDX(u4InfoBufLen,
+						SET_IOCTL_BSSIDX(prAdapter,
 							ucBssIndex);
 						wlanoidSetDisassociate
 						    (prAdapter, NULL, 0,
