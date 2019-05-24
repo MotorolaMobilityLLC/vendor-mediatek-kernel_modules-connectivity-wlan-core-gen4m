@@ -765,6 +765,9 @@ const uint8_t *mtk_cfg80211_find_ie_match_mask(uint8_t eid,
 int mtk_cfg80211_external_auth(struct wiphy *wiphy, struct net_device *dev,
 			       struct cfg80211_external_auth_params *params);
 
+int mtk_IsP2PNetDevice(struct GLUE_INFO *prGlueInfo,
+			  struct net_device *ndev);
+
 /*******************************************************************************
  *                              F U N C T I O N S
  *******************************************************************************
