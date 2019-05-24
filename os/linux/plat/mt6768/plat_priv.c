@@ -27,6 +27,14 @@
 #define MAX_CPU_FREQ (3 * 1024 * 1024) /* in kHZ */
 #define MAX_CLUSTER_NUM  3
 
+
+uint32_t kalGetCpuBoostThreshold(void)
+{
+	DBGLOG(SW4, TRACE, "enter kalGetCpuBoostThreshold\n");
+	/*  3, stands for 100Mbps */
+	return 3;
+}
+
 int32_t kalBoostCpu(IN struct ADAPTER *prAdapter,
 		    IN uint32_t u4TarPerfLevel,
 		    IN uint32_t u4BoostCpuTh)
