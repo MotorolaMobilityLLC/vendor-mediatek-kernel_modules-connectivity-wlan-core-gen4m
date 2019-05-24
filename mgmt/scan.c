@@ -4062,6 +4062,8 @@ void scanRemoveBssDescFromList(IN struct LINK *prBSSDescList,
 			       IN struct ADAPTER *prAdapter)
 {
 	if (prAdapter != NULL && prBssDesc != NULL) {
+		uint8_t j;
+
 		/* Support AP Selection */
 		if (!prBssDesc->prBlack)
 			aisQueryBlackList(prAdapter, prBssDesc);
@@ -4070,25 +4072,24 @@ void scanRemoveBssDescFromList(IN struct LINK *prBSSDescList,
 				(uint32_t)kalGetBootTime();
 
 		/* Remove this BSS Desc from the Ess Desc List */
-		if (LINK_ENTRY_IS_VALID(&prBssDesc->rLinkEntryEss)) {
-			uint8_t j;
+		for (j = 0; j < KAL_AIS_NUM; j++) {
+			struct AIS_SPECIFIC_BSS_INFO *prSpecBssInfo =
+				aisGetAisSpecBssInfo(
+				prAdapter, j);
+			struct LINK *prEssList;
 
-			for (j = 0; j < KAL_AIS_NUM; j++) {
-				struct AIS_SPECIFIC_BSS_INFO *prSpecBssInfo =
-					aisGetAisSpecBssInfo(
-					prAdapter, j);
-				struct LINK *prEssList;
+			if (!prSpecBssInfo)
+				continue;
+			prEssList =
+				&prSpecBssInfo->rCurEssLink;
+			if (!prEssList)
+				continue;
 
-				if (!prSpecBssInfo)
-					continue;
-				prEssList =
-					&prSpecBssInfo->rCurEssLink;
-				if (!prEssList)
-					continue;
+			if (!LINK_ENTRY_IS_VALID(&prBssDesc->rLinkEntryEss[j]))
+				continue;
 
-				LINK_REMOVE_KNOWN_ENTRY(prEssList,
-					&prBssDesc->rLinkEntryEss);
-			}
+			LINK_REMOVE_KNOWN_ENTRY(prEssList,
+				&prBssDesc->rLinkEntryEss[j]);
 		}
 		/* end Support AP Selection */
 

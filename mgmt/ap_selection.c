@@ -747,7 +747,7 @@ struct BSS_DESC *scanSearchBssDescByScoreForAis(struct ADAPTER *prAdapter,
 		prConnSettings->eConnectionPolicy);
 
 try_again:
-	LINK_FOR_EACH_ENTRY(prBssDesc, prEssLink, rLinkEntryEss,
+	LINK_FOR_EACH_ENTRY(prBssDesc, prEssLink, rLinkEntryEss[ucBssIndex],
 		struct BSS_DESC) {
 		if (prConnSettings->eConnectionPolicy == CONNECT_BY_BSSID &&
 			EQUAL_MAC_ADDR(prBssDesc->aucBSSID,
@@ -938,9 +938,9 @@ void scanGetCurrentEssChnlList(struct ADAPTER *prAdapter,
 	while (!LINK_IS_EMPTY(prCurEssLink)) {
 		prBssDesc =
 LINK_PEEK_HEAD(prCurEssLink,
-	struct BSS_DESC, rLinkEntryEss);
+	struct BSS_DESC, rLinkEntryEss[ucBssIndex]);
 		LINK_REMOVE_KNOWN_ENTRY(prCurEssLink,
-			&prBssDesc->rLinkEntryEss);
+			&prBssDesc->rLinkEntryEss[ucBssIndex]);
 	}
 	LINK_FOR_EACH_ENTRY(prBssDesc, prBSSDescList, rLinkEntry,
 		struct BSS_DESC) {
@@ -958,7 +958,8 @@ LINK_PEEK_HEAD(prCurEssLink,
 			prBssDesc->aucSSID, prBssDesc->ucSSIDLen))
 			continue;
 		/* Record same BSS list */
-		LINK_INSERT_HEAD(prCurEssLink, &prBssDesc->rLinkEntryEss);
+		LINK_INSERT_HEAD(prCurEssLink,
+			&prBssDesc->rLinkEntryEss[ucBssIndex]);
 		ucByteNum = prBssDesc->ucChannelNum / 8;
 		ucBitNum = prBssDesc->ucChannelNum % 8;
 		if (aucChnlBitMap[ucByteNum] & BIT(ucBitNum))

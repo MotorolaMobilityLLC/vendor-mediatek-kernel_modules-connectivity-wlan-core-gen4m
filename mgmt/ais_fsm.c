@@ -7017,7 +7017,7 @@ struct AIS_FSM_INFO *aisGetAisFsmInfo(
 	IN uint8_t ucBssIndex) {
 
 	if (!IS_BSS_INDEX_AIS(prAdapter, ucBssIndex)) {
-		DBGLOG(AIS, WARN,
+		DBGLOG(AIS, LOUD,
 			"Use default, invalid index = %d\n", ucBssIndex);
 		ucBssIndex = AIS_DEFAULT_INDEX;
 	}
@@ -7032,7 +7032,7 @@ struct AIS_SPECIFIC_BSS_INFO *aisGetAisSpecBssInfo(
 	IN uint8_t ucBssIndex) {
 
 	if (!IS_BSS_INDEX_AIS(prAdapter, ucBssIndex)) {
-		DBGLOG(AIS, WARN,
+		DBGLOG(AIS, LOUD,
 			"Use default, invalid index = %d\n", ucBssIndex);
 		ucBssIndex = AIS_DEFAULT_INDEX;
 	}
@@ -7048,7 +7048,7 @@ struct BSS_TRANSITION_MGT_PARAM_T *
 	IN uint8_t ucBssIndex) {
 
 	if (!IS_BSS_INDEX_AIS(prAdapter, ucBssIndex)) {
-		DBGLOG(AIS, WARN,
+		DBGLOG(AIS, LOUD,
 			"Use default, invalid index = %d\n", ucBssIndex);
 		ucBssIndex = AIS_DEFAULT_INDEX;
 	}
@@ -7091,7 +7091,7 @@ struct BSS_INFO *aisGetAisBssInfo(
 	IN uint8_t ucBssIndex) {
 
 	if (!IS_BSS_INDEX_AIS(prAdapter, ucBssIndex)) {
-		DBGLOG(AIS, WARN,
+		DBGLOG(AIS, LOUD,
 			"Use default, invalid index = %d\n", ucBssIndex);
 		ucBssIndex = AIS_DEFAULT_INDEX;
 	}
@@ -7106,7 +7106,7 @@ struct STA_RECORD *aisGetStaRecOfAP(
 	IN uint8_t ucBssIndex) {
 
 	if (!IS_BSS_INDEX_AIS(prAdapter, ucBssIndex)) {
-		DBGLOG(AIS, WARN,
+		DBGLOG(AIS, LOUD,
 			"Use default, invalid index = %d\n", ucBssIndex);
 		ucBssIndex = AIS_DEFAULT_INDEX;
 	}
@@ -7124,7 +7124,7 @@ struct BSS_DESC *aisGetTargetBssDesc(
 	IN uint8_t ucBssIndex) {
 
 	if (!IS_BSS_INDEX_AIS(prAdapter, ucBssIndex)) {
-		DBGLOG(AIS, WARN,
+		DBGLOG(AIS, LOUD,
 			"Use default, invalid index = %d\n", ucBssIndex);
 		ucBssIndex = AIS_DEFAULT_INDEX;
 	}
@@ -7140,7 +7140,7 @@ struct STA_RECORD *aisGetTargetStaRec(
 	IN uint8_t ucBssIndex) {
 
 	if (!IS_BSS_INDEX_AIS(prAdapter, ucBssIndex)) {
-		DBGLOG(AIS, WARN,
+		DBGLOG(AIS, LOUD,
 			"Use default, invalid index = %d\n", ucBssIndex);
 		ucBssIndex = AIS_DEFAULT_INDEX;
 	}
@@ -7155,7 +7155,7 @@ uint8_t aisGetTargetBssDescChannel(
 	IN uint8_t ucBssIndex) {
 
 	if (!IS_BSS_INDEX_AIS(prAdapter, ucBssIndex)) {
-		DBGLOG(AIS, WARN,
+		DBGLOG(AIS, LOUD,
 			"Use default, invalid index = %d\n", ucBssIndex);
 		ucBssIndex = AIS_DEFAULT_INDEX;
 	}
@@ -7171,7 +7171,7 @@ struct TIMER *aisGetSecModeChangeTimer(
 	IN uint8_t ucBssIndex) {
 
 	if (!IS_BSS_INDEX_AIS(prAdapter, ucBssIndex)) {
-		DBGLOG(AIS, WARN,
+		DBGLOG(AIS, LOUD,
 			"Use default, invalid index = %d\n", ucBssIndex);
 		ucBssIndex = AIS_DEFAULT_INDEX;
 	}
@@ -7187,7 +7187,7 @@ struct TIMER *aisGetScanDoneTimer(
 	IN uint8_t ucBssIndex) {
 
 	if (!IS_BSS_INDEX_AIS(prAdapter, ucBssIndex)) {
-		DBGLOG(AIS, WARN,
+		DBGLOG(AIS, LOUD,
 			"Use default, invalid index = %d\n", ucBssIndex);
 		ucBssIndex = AIS_DEFAULT_INDEX;
 	}
@@ -7204,7 +7204,7 @@ enum ENUM_AIS_STATE aisGetCurrState(
 	IN uint8_t ucBssIndex) {
 
 	if (!IS_BSS_INDEX_AIS(prAdapter, ucBssIndex)) {
-		DBGLOG(AIS, WARN,
+		DBGLOG(AIS, LOUD,
 			"Use default, invalid index = %d\n", ucBssIndex);
 		ucBssIndex = AIS_DEFAULT_INDEX;
 	}
@@ -7221,7 +7221,7 @@ struct CONNECTION_SETTINGS *
 	IN uint8_t ucBssIndex) {
 
 	if (!IS_BSS_INDEX_AIS(prAdapter, ucBssIndex)) {
-		DBGLOG(AIS, WARN,
+		DBGLOG(AIS, LOUD,
 			"Use default, invalid index = %d\n", ucBssIndex);
 		ucBssIndex = AIS_DEFAULT_INDEX;
 	}
@@ -7236,7 +7236,7 @@ struct GL_WPA_INFO *aisGetWpaInfo(
 	IN uint8_t ucBssIndex) {
 
 	if (!IS_BSS_INDEX_AIS(prAdapter, ucBssIndex)) {
-		DBGLOG(AIS, WARN,
+		DBGLOG(AIS, LOUD,
 			"Use default, invalid index = %d\n", ucBssIndex);
 		ucBssIndex = AIS_DEFAULT_INDEX;
 	}
@@ -7251,7 +7251,7 @@ u_int8_t aisGetWapiMode(
 	IN uint8_t ucBssIndex) {
 
 	if (!IS_BSS_INDEX_AIS(prAdapter, ucBssIndex)) {
-		DBGLOG(AIS, WARN,
+		DBGLOG(AIS, LOUD,
 			"Use default, invalid index = %d\n", ucBssIndex);
 		ucBssIndex = AIS_DEFAULT_INDEX;
 	}
@@ -7266,7 +7266,7 @@ enum ENUM_PARAM_AUTH_MODE aisGetAuthMode(
 	IN uint8_t ucBssIndex) {
 
 	if (!IS_BSS_INDEX_AIS(prAdapter, ucBssIndex)) {
-		DBGLOG(AIS, WARN,
+		DBGLOG(AIS, LOUD,
 			"Use default, invalid index = %d\n", ucBssIndex);
 		ucBssIndex = AIS_DEFAULT_INDEX;
 	}
@@ -7281,7 +7281,7 @@ enum ENUM_PARAM_OP_MODE aisGetOPMode(
 	IN uint8_t ucBssIndex) {
 
 	if (!IS_BSS_INDEX_AIS(prAdapter, ucBssIndex)) {
-		DBGLOG(AIS, WARN,
+		DBGLOG(AIS, LOUD,
 			"Use default, invalid index = %d\n", ucBssIndex);
 		ucBssIndex = AIS_DEFAULT_INDEX;
 	}
@@ -7296,7 +7296,7 @@ enum ENUM_WEP_STATUS aisGetEncStatus(
 	IN uint8_t ucBssIndex) {
 
 	if (!IS_BSS_INDEX_AIS(prAdapter, ucBssIndex)) {
-		DBGLOG(AIS, WARN,
+		DBGLOG(AIS, LOUD,
 			"Use default, invalid index = %d\n", ucBssIndex);
 		ucBssIndex = AIS_DEFAULT_INDEX;
 	}
@@ -7311,7 +7311,7 @@ struct IEEE_802_11_MIB *aisGetMib(
 	IN uint8_t ucBssIndex) {
 
 	if (!IS_BSS_INDEX_AIS(prAdapter, ucBssIndex)) {
-		DBGLOG(AIS, WARN,
+		DBGLOG(AIS, LOUD,
 			"Use default, invalid index = %d\n", ucBssIndex);
 		ucBssIndex = AIS_DEFAULT_INDEX;
 	}
@@ -7326,7 +7326,7 @@ struct ROAMING_INFO *aisGetRoamingInfo(
 	IN uint8_t ucBssIndex) {
 
 	if (!IS_BSS_INDEX_AIS(prAdapter, ucBssIndex)) {
-		DBGLOG(AIS, WARN,
+		DBGLOG(AIS, LOUD,
 			"Use default, invalid index = %d\n", ucBssIndex);
 		ucBssIndex = AIS_DEFAULT_INDEX;
 	}
@@ -7341,7 +7341,7 @@ struct PARAM_BSSID_EX *aisGetCurrBssId(
 	IN uint8_t ucBssIndex) {
 
 	if (!IS_BSS_INDEX_AIS(prAdapter, ucBssIndex)) {
-		DBGLOG(AIS, WARN,
+		DBGLOG(AIS, LOUD,
 			"Use default, invalid index = %d\n", ucBssIndex);
 		ucBssIndex = AIS_DEFAULT_INDEX;
 	}
@@ -7357,7 +7357,7 @@ struct HS20_INFO *aisGetHS20Info(
 	IN uint8_t ucBssIndex) {
 
 	if (!IS_BSS_INDEX_AIS(prAdapter, ucBssIndex)) {
-		DBGLOG(AIS, WARN,
+		DBGLOG(AIS, LOUD,
 			"Use default, invalid index = %d\n", ucBssIndex);
 		ucBssIndex = AIS_DEFAULT_INDEX;
 	}
@@ -7373,7 +7373,7 @@ struct RADIO_MEASUREMENT_REQ_PARAMS *aisGetRmReqParam(
 	IN uint8_t ucBssIndex) {
 
 	if (!IS_BSS_INDEX_AIS(prAdapter, ucBssIndex)) {
-		DBGLOG(AIS, WARN,
+		DBGLOG(AIS, LOUD,
 			"Use default, invalid index = %d\n", ucBssIndex);
 		ucBssIndex = AIS_DEFAULT_INDEX;
 	}
@@ -7389,7 +7389,7 @@ struct RADIO_MEASUREMENT_REPORT_PARAMS *
 	IN uint8_t ucBssIndex) {
 
 	if (!IS_BSS_INDEX_AIS(prAdapter, ucBssIndex)) {
-		DBGLOG(AIS, WARN,
+		DBGLOG(AIS, LOUD,
 			"Use default, invalid index = %d\n", ucBssIndex);
 		ucBssIndex = AIS_DEFAULT_INDEX;
 	}
@@ -7405,7 +7405,7 @@ struct WMM_INFO *
 	IN uint8_t ucBssIndex) {
 
 	if (!IS_BSS_INDEX_AIS(prAdapter, ucBssIndex)) {
-		DBGLOG(AIS, WARN,
+		DBGLOG(AIS, LOUD,
 			"Use default, invalid index = %d\n", ucBssIndex);
 		ucBssIndex = AIS_DEFAULT_INDEX;
 	}
@@ -7422,7 +7422,7 @@ struct GL_DETECT_REPLAY_INFO *
 	IN uint8_t ucBssIndex) {
 
 	if (!IS_BSS_INDEX_AIS(prAdapter, ucBssIndex)) {
-		DBGLOG(AIS, WARN,
+		DBGLOG(AIS, LOUD,
 			"Use default, invalid index = %d\n", ucBssIndex);
 		ucBssIndex = AIS_DEFAULT_INDEX;
 	}
@@ -7439,7 +7439,7 @@ struct FT_IES *
 	IN uint8_t ucBssIndex) {
 
 	if (!IS_BSS_INDEX_AIS(prAdapter, ucBssIndex)) {
-		DBGLOG(AIS, WARN,
+		DBGLOG(AIS, LOUD,
 			"Use default, invalid index = %d\n", ucBssIndex);
 		ucBssIndex = AIS_DEFAULT_INDEX;
 	}
@@ -7455,7 +7455,7 @@ struct cfg80211_ft_event_params *
 	IN uint8_t ucBssIndex) {
 
 	if (!IS_BSS_INDEX_AIS(prAdapter, ucBssIndex)) {
-		DBGLOG(AIS, WARN,
+		DBGLOG(AIS, LOUD,
 			"Use default, invalid index = %d\n", ucBssIndex);
 		ucBssIndex = AIS_DEFAULT_INDEX;
 	}
