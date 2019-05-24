@@ -1447,6 +1447,9 @@ void wlanCfgSetDebugLevel(IN struct ADAPTER *prAdapter);
 
 void wlanCfgSetCountryCode(IN struct ADAPTER *prAdapter);
 
+struct net_device *wlanGetNetDev(IN struct GLUE_INFO *prGlueInfo,
+				 IN uint8_t ucBssIndex);
+
 struct WLAN_CFG_ENTRY *wlanCfgGetEntry(IN struct ADAPTER *prAdapter,
 				       const int8_t *pucKey,
 				       u_int8_t fgGetCfgRec);
