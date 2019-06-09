@@ -279,6 +279,10 @@ void secHandleRxEapolPacket(IN struct ADAPTER *prAdapter,
 		IN struct STA_RECORD *prStaRec);
 
 uint8_t secGetDHCPType(uint8_t *pucPkt);
+
+void secHandleNoWtbl(IN struct ADAPTER *prAdapter,
+	IN struct SW_RFB *prSwRfb);
+
 /*******************************************************************************
  *                              F U N C T I O N S
  *******************************************************************************

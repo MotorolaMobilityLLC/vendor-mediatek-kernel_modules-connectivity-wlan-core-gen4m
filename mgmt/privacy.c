@@ -1406,3 +1406,27 @@ uint8_t secGetDHCPType(uint8_t *pucPkt)
 	}
 	return 0;
 }
+
+void secHandleNoWtbl(IN struct ADAPTER *prAdapter,
+	IN struct SW_RFB *prSwRfb)
+{
+	/* Wtbl error handling. if no Wtbl */
+	struct WLAN_ACTION_FRAME *prMgmtHdr =
+		(struct WLAN_ACTION_FRAME *)prSwRfb->pvHeader;
+
+	prSwRfb->ucStaRecIdx =
+		secLookupStaRecIndexFromTA(prAdapter, prMgmtHdr->aucSrcAddr);
+
+	prSwRfb->prStaRec =
+		cnmGetStaRecByIndex(prAdapter, prSwRfb->ucStaRecIdx);
+
+	if (prSwRfb->prStaRec) {
+		prSwRfb->ucWlanIdx = prSwRfb->prStaRec->ucWlanIndex;
+		DBGLOG(RX, INFO,
+			"[%d] current wlan index is %d\n",
+			prSwRfb->ucStaRecIdx,
+			prSwRfb->ucWlanIdx);
+	} else
+		DBGLOG(RX, TRACE,
+			"not find station record base on TA\n");
+}
