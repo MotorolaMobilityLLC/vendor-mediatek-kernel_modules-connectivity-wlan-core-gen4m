@@ -1780,12 +1780,12 @@ void nicRxProcessDataPacket(IN struct ADAPTER *prAdapter,
 			struct PARAM_BSSID_EX *prCurrBssid =
 				aisGetCurrBssId(prAdapter,
 				secGetBssIdxByWlanIdx(prAdapter,
-					prSwRfb->ucWlanIdx));
+					prRxStatus->ucWlanIdx));
 
 			if (prCurrBssid)
 				prStaRec = cnmGetStaRecByAddress(prAdapter,
 					secGetBssIdxByWlanIdx(prAdapter,
-					prSwRfb->ucWlanIdx),
+					prRxStatus->ucWlanIdx),
 				prCurrBssid->arMacAddress);
 			if (prStaRec) {
 				DBGLOG(RSN, EVENT, "MIC_ERR_PKT\n");
