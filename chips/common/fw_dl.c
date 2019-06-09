@@ -287,7 +287,7 @@ uint32_t wlanDownloadEMISection(IN struct ADAPTER
 	kalSetEmiMpuProtection(gConEmiPhyBase, false);
 	pucEmiBaseAddr = ioremap_nocache(gConEmiPhyBase, gConEmiSize);
 	DBGLOG(INIT, INFO,
-	       "EmiPhyBase:0x%llx offset:0x%x, ioremap region 0x%lX @ 0x%lX\n",
+	       "EmiPhyBase:0x%llx offset:0x%x, ioremap region 0x%llX @ 0x%lX\n",
 	       (uint64_t)gConEmiPhyBase, u4Offset, gConEmiSize, pucEmiBaseAddr);
 	if (!pucEmiBaseAddr) {
 		DBGLOG(INIT, ERROR, "ioremap failed\n");

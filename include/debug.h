@@ -273,6 +273,13 @@ enum DRV_STATUS_T {
 #define DUMPMACADDR(addr)           (#addr " = " MACSTR "\n", MAC2STR(addr))
 /* Debug print format string for the floating point */
 #define FPSTR		"%u.%u"
+
+#ifdef CONFIG_64BIT
+#define PRIx64 "%lx"
+#else
+#define PRIx64 "%llx"
+#endif
+
 /* Debug print argument for the floating point */
 #define DIV2INT(_dividend, _divisor) \
 		((_divisor) ? (_dividend) / (_divisor) : 0)

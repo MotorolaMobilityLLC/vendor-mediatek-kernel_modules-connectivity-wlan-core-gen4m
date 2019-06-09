@@ -362,15 +362,18 @@ static bool axiCsrIoremap(struct platform_device *pdev)
 #endif
 
 	if (!CSRBaseAddress) {
+#define LOG_TEMP "ioremap failed for device %s, region 0x%X @ 0x" PRIx64 "\n"
 		DBGLOG(INIT, INFO,
-			"ioremap failed for device %s, region 0x%X @ 0x%lX\n",
+			LOG_TEMP,
 			axi_name(pdev), g_u4CsrSize, g_u8CsrOffset);
+#undef LOG_TEMP
 		release_mem_region(g_u8CsrOffset, g_u4CsrSize);
 		return false;
 	}
 
-	DBGLOG(INIT, INFO, "CSRBaseAddress:0x%lX ioremap region 0x%X @ 0x%lX\n",
-	       CSRBaseAddress, g_u4CsrSize, g_u8CsrOffset);
+	DBGLOG(INIT, INFO,
+		"CSRBaseAddress:0x%lX ioremap region 0x%X @ 0x" PRIx64 "\n",
+		CSRBaseAddress, g_u4CsrSize, g_u8CsrOffset);
 
 	return true;
 }
