@@ -1632,6 +1632,9 @@ struct ADAPTER {
 
 	u_int8_t fgArpNoResponse;
 
+#if CFG_DBG_MGT_BUF
+	struct LINK rMemTrackLink;
+#endif
 };				/* end of _ADAPTER_T */
 
 /*******************************************************************************
