@@ -7029,9 +7029,9 @@ void kalPerMonHandler(IN struct ADAPTER *prAdapter,
 {
 	/*Calculate current throughput*/
 	struct PERF_MONITOR_T *prPerMonitor;
-	struct net_device *prNetDev = NULL;
 	uint32_t u4Idx = 0;
 	uint8_t	i =	0;
+	bool keep_alive = FALSE;
 #if CFG_SUPPORT_PERF_IND
 	uint32_t u4CurrentTp = 0;
 	u_int8_t a;
@@ -7049,7 +7049,6 @@ void kalPerMonHandler(IN struct ADAPTER *prAdapter,
 	if ((prGlueInfo->ulFlag & GLUE_FLAG_HALT)
 	    || (!prAdapter->fgIsP2PRegistered))
 		return;
-	prNetDev = prGlueInfo->prDevHandler;
 
 	prPerMonitor = &prAdapter->rPerMonitor;
 	DBGLOG(SW4, TRACE, "enter kalPerMonHandler\n");
@@ -7074,6 +7073,8 @@ void kalPerMonHandler(IN struct ADAPTER *prAdapter,
 		if (IS_BSS_ALIVE(prAdapter, prBssInfo) && prDevHandler) {
 			latestTxBytes[i] = prDevHandler->stats.tx_bytes;
 			latestRxBytes[i] = prDevHandler->stats.rx_bytes;
+
+			keep_alive |= netif_carrier_ok(prDevHandler);
 		} else {
 			latestTxBytes[i] = 0;
 			latestRxBytes[i] = 0;
@@ -7162,7 +7163,7 @@ void kalPerMonHandler(IN struct ADAPTER *prAdapter,
 	if (!wlan_perf_monitor_force_enable &&
 			(wlan_fb_power_down ||
 			prGlueInfo->fgIsInSuspendMode ||
-			!netif_carrier_ok(prNetDev)))
+			!keep_alive))
 		kalPerMonStop(prGlueInfo);
 	else {
 		if ((prPerMonitor->u4TarPerfLevel !=
