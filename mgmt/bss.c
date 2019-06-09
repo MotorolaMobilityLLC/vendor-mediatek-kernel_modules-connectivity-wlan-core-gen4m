@@ -251,6 +251,15 @@ void bssDetermineStaRecPhyTypeSet(IN struct ADAPTER *prAdapter,
 
 		eEncStatus = prConnSettings->eEncStatus;
 
+		if (!(eEncStatus == ENUM_ENCRYPTION3_ENABLED ||
+		      eEncStatus == ENUM_ENCRYPTION3_KEY_ABSENT ||
+		      eEncStatus == ENUM_ENCRYPTION_DISABLED)) {
+			DBGLOG(BSS, INFO,
+			       "Ignore the HT/VHT Bit for TKIP as pairwise cipher configed!\n");
+			prStaRec->ucPhyTypeSet &=
+			    ~(PHY_TYPE_BIT_HT | PHY_TYPE_BIT_VHT);
+		}
+
 		ucHtOption = prWifiVar->ucStaHt;
 		ucVhtOption = prWifiVar->ucStaVht;
 	}
