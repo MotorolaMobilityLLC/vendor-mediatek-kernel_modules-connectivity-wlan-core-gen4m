@@ -1358,8 +1358,12 @@ bool halWpdmaAllocRxRing(struct GLUE_INFO *prGlueInfo, uint32_t u4Num,
 		pRxD = (struct RXD_STRUCT *)prRxCell->AllocVa;
 		pRxD->SDPtr0 = ((uint64_t)pDmaBuf->AllocPa) &
 			DMA_LOWER_32BITS_MASK;
+#ifdef CONFIG_64BIT
 		pRxD->SDPtr1 = (((uint64_t)pDmaBuf->AllocPa >>
 			DMA_BITS_OFFSET) & DMA_HIGHER_4BITS_MASK);
+#else
+		pRxD->SDPtr1 = 0;
+#endif
 		pRxD->SDLen0 = u4BufSize;
 		pRxD->DMADONE = 0;
 	}
@@ -1573,8 +1577,12 @@ void halWpdmaInitTxRing(IN struct GLUE_INFO *prGlueInfo)
 			offset = i * MT_RINGREG_DIFF;
 		phy_addr = ((uint64_t)prTxCell->AllocPa) &
 			DMA_LOWER_32BITS_MASK;
+#ifdef CONFIG_64BIT
 		phy_addr_ext = (((uint64_t)prTxCell->AllocPa >>
 			DMA_BITS_OFFSET) & DMA_HIGHER_4BITS_MASK);
+#else
+		phy_addr_ext = 0;
+#endif
 		ext_offset = i * MT_RINGREG_EXT_DIFF;
 		prTxRing->TxSwUsedIdx = 0;
 		prTxRing->u4UsedCnt = 0;
@@ -1614,8 +1622,12 @@ void halWpdmaInitRxRing(IN struct GLUE_INFO *prGlueInfo)
 		offset = i * MT_RINGREG_DIFF;
 		phy_addr = ((uint64_t)prRxRing->Cell[0].AllocPa &
 			DMA_LOWER_32BITS_MASK);
+#ifdef CONFIG_64BIT
 		phy_addr_ext = (((uint64_t)prRxRing->Cell[0].AllocPa >>
 			DMA_BITS_OFFSET) & DMA_HIGHER_4BITS_MASK);
+#else
+		phy_addr_ext = 0;
+#endif
 		ext_offset = i * MT_RINGREG_EXT_DIFF;
 		prRxRing->RxCpuIdx = prRxRing->u4RingSize - 1;
 		prRxRing->hw_desc_base = MT_RX_RING_BASE + offset;
@@ -1799,8 +1811,12 @@ bool halWpdmaWriteCmd(IN struct GLUE_INFO *prGlueInfo,
 	}
 
 	pTxD->SDPtr0 = (uint64_t)pTxCell->PacketPa & DMA_LOWER_32BITS_MASK;
+#ifdef CONFIG_64BIT
 	pTxD->SDPtr0Ext = ((uint64_t)pTxCell->PacketPa >> DMA_BITS_OFFSET) &
 		DMA_HIGHER_4BITS_MASK;
+#else
+	pTxD->SDPtr0Ext = 0;
+#endif
 	pTxD->SDLen0 = u4TotalLen;
 	pTxD->SDPtr1 = 0;
 	pTxD->SDLen1 = 0;
@@ -1858,8 +1874,12 @@ static bool halWpdmaFillTxRing(struct GLUE_INFO *prGlueInfo,
 
 	pTxD = (struct TXD_STRUCT *)pTxCell->AllocVa;
 	pTxD->SDPtr0 = (uint64_t)prToken->rDmaAddr & DMA_LOWER_32BITS_MASK;
+#ifdef CONFIG_64BIT
 	pTxD->SDPtr0Ext = ((uint64_t)prToken->rDmaAddr >> DMA_BITS_OFFSET) &
 		DMA_HIGHER_4BITS_MASK;
+#else
+	pTxD->SDPtr0Ext = 0;
+#endif
 	pTxD->SDLen0 = NIC_TX_DESC_AND_PADDING_LENGTH +
 		prChipInfo->txd_append_size;
 	if (prChipInfo->is_support_cr4)
