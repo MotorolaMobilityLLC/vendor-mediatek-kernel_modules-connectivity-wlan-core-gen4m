@@ -6773,6 +6773,7 @@ void kalPerMonDump(IN struct GLUE_INFO *prGlueInfo)
 }
 #endif
 
+#if CFG_SUPPORT_PERF_IND
 #define PERF_UPDATE_PERIOD      1000 /* ms */
 void kalPerfIndReset(IN struct ADAPTER *prAdapter)
 {
@@ -6862,7 +6863,7 @@ void kalSetPerfReport(IN struct ADAPTER *prAdapter)
 	}
 	cnmMemFree(prAdapter, prCmdPerfReport);
 }				/* p2pFuncStartRdd */
-
+#endif
 
 
 inline int32_t kalPerMonInit(IN struct GLUE_INFO
@@ -7029,9 +7030,12 @@ void kalPerMonHandler(IN struct ADAPTER *prAdapter,
 	/*Calculate current throughput*/
 	struct PERF_MONITOR_T *prPerMonitor;
 	struct net_device *prNetDev = NULL;
-	uint32_t u4Idx = 0, u4CurrentTp = 0;
+	uint32_t u4Idx = 0;
 	uint8_t	i =	0;
+#if CFG_SUPPORT_PERF_IND
+	uint32_t u4CurrentTp = 0;
 	u_int8_t a;
+#endif
 	signed long latestTxBytes[BSS_DEFAULT_NUM],
 		latestRxBytes[BSS_DEFAULT_NUM],
 		txDiffBytes[BSS_DEFAULT_NUM],

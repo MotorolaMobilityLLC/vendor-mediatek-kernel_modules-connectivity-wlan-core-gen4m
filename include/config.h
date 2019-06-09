@@ -159,7 +159,7 @@
 #endif
 
 #ifndef CFG_SUPPORT_PERF_IND
-#define CFG_SUPPORT_PERF_IND            1
+#define CFG_SUPPORT_PERF_IND            0
 #endif
 
 /* Support AP Selection */
