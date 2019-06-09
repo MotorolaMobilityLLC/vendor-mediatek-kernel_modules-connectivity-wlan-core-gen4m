@@ -110,7 +110,6 @@ static u_int8_t fgIsWaitForTxDone = FALSE;
 
 #define	TDLS_KEY_TIMEOUT_INTERVAL 43200
 
-#define UNREACH_ABLE 25
 #define TDLS_REASON_CODE_UNREACHABLE  25
 #define TDLS_REASON_CODE_UNSPECIFIED  26
 
@@ -547,12 +546,8 @@ TdlsDataFrameSend_TearDown(struct ADAPTER *prAdapter,
 	u4PktLen = u4PktLen + 2;
 
 	if (pAppendIe != NULL) {
-		if ((ucActionCode != TDLS_FRM_ACTION_TEARDOWN) ||
-		    ((ucActionCode == TDLS_FRM_ACTION_TEARDOWN)
-		     && (prStaRec != NULL))) {
-			kalMemCopy(pPkt, pAppendIe, AppendIeLen);
-			LR_TDLS_FME_FIELD_FILL(AppendIeLen);
-		}
+		kalMemCopy(pPkt, pAppendIe, AppendIeLen);
+		LR_TDLS_FME_FIELD_FILL(AppendIeLen);
 	}
 
 	/* 7. Append Supported Operating Classes IE */
@@ -582,10 +577,6 @@ TdlsDataFrameSend_TearDown(struct ADAPTER *prAdapter,
 
 	/* 5. Update packet length */
 	prMsduInfo->len = u4PktLen;
-
-	/* if(u2StatusCode == UNREACH_ABLE ){ */
-	/* g_arTdlsLink[prStaRec->ucTdlsIndex] = FALSE; */
-	/* } */
 
 	/* printk(" TdlsDataFrameSend_TearDown !!\n"); */
 
