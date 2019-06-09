@@ -4452,7 +4452,14 @@ void nicEventRoamingStatus(IN struct ADAPTER *prAdapter,
 	prTransit = (struct CMD_ROAMING_TRANSIT *) (
 			    prEvent->aucBuffer);
 
-	prTransit->ucBssidx = AIS_DEFAULT_INDEX;
+	/* Default path */
+	if (!IS_BSS_INDEX_AIS(prAdapter, prTransit->ucBssidx)) {
+		DBGLOG(NIC, LOUD,
+			"Use default, invalid index = %d\n",
+			prTransit->ucBssidx);
+		prTransit->ucBssidx = AIS_DEFAULT_INDEX;
+	}
+
 	roamingFsmProcessEvent(prAdapter, prTransit);
 #endif /* CFG_SUPPORT_ROAMING */
 }
