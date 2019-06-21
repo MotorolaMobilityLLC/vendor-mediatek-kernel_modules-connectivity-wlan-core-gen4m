@@ -4276,9 +4276,7 @@ bool nicBeaconTimeoutFilterPolicy(IN struct ADAPTER *prAdapter)
 	uint32_t	u4MonitorWindow;
 
 	ASSERT(prAdapter);
-	u4MonitorWindow = prAdapter->rWifiVar.u4BeaconTimoutFilterDurationMs;
-	if (u4MonitorWindow == 0) /* Check if disable the filter */
-		return true;
+	u4MonitorWindow = CFG_BEACON_TIMEOUT_FILTER_DURATION_DEFAULT_VALUE;
 
 	prRxCtrl = &prAdapter->rRxCtrl;
 	ASSERT(prRxCtrl);
@@ -4294,17 +4292,10 @@ bool nicBeaconTimeoutFilterPolicy(IN struct ADAPTER *prAdapter)
 			prRxCtrl->u4LastRxTime, prTxCtrl->u4LastTxTime);
 
 	/* Policy 1, if RX in the past duration (in ms)
-	 * Policy 2, if TX done successfully in the past duration (in ms)
-	 *    if hit, then the beacon timeout event will be ignored
 	 */
 	if (!CHECK_FOR_TIMEOUT(u4CurrentTime, prRxCtrl->u4LastRxTime,
 			      SEC_TO_SYSTIME(MSEC_TO_SEC(u4MonitorWindow)))) {
 		DBGLOG(NIC, INFO, "Policy 1 hit, RX in the past duration");
-		bValid = false;
-	} else if (!CHECK_FOR_TIMEOUT(u4CurrentTime, prTxCtrl->u4LastTxTime,
-			      SEC_TO_SYSTIME(MSEC_TO_SEC(u4MonitorWindow)))) {
-		DBGLOG(NIC, INFO,
-			"Policy 2 hit, TX done successfully in the past duration");
 		bValid = false;
 	}
 
