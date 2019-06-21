@@ -2733,7 +2733,7 @@ u_int8_t rsnCheckSecurityModeChanged(
 	enum ENUM_PARAM_AUTH_MODE eAuthMode;
 	struct GL_WPA_INFO *prWpaInfo;
 
-	if (prBssInfo) {
+	if (!prBssInfo) {
 		DBGLOG(RSN, ERROR, "Empty prBssInfo\n");
 		return FALSE;
 	}
