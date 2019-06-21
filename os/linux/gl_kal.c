@@ -1559,8 +1559,8 @@ kalIndicateStatusAndComplete(IN struct GLUE_INFO
 			kalMemFree(prFtIEs->pucIEBuf,
 				VIR_MEM_TYPE,
 				prFtIEs->u4IeLength);
-			kalMemZero(&prFtIEs,
-				sizeof(prFtIEs));
+			kalMemZero(prFtIEs,
+				sizeof(*prFtIEs));
 		}
 
 		kalSetMediaStateIndicated(prGlueInfo,

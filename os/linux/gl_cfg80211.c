@@ -1925,7 +1925,7 @@ int mtk_cfg80211_set_power_mgmt(struct wiphy *wiphy,
 	if (!IS_BSS_INDEX_VALID(ucBssIndex))
 		return -EINVAL;
 
-	DBGLOG(REQ, INFO, "%d: enabled=%d, timeout=%d %d\n", ucBssIndex,
+	DBGLOG(REQ, INFO, "%d: enabled=%d, timeout=%d\n", ucBssIndex,
 	       enabled, timeout);
 
 	if (enabled) {
