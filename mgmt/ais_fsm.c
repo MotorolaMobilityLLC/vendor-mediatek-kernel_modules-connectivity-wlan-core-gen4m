@@ -4360,6 +4360,7 @@ void aisFsmDisconnect(IN struct ADAPTER *prAdapter,
 {
 	struct BSS_INFO *prAisBssInfo;
 	uint16_t u2ReasonCode = REASON_CODE_UNSPECIFIED;
+	struct BSS_DESC *prBssDesc = NULL;
 
 	ASSERT(prAdapter);
 
@@ -4440,10 +4441,11 @@ void aisFsmDisconnect(IN struct ADAPTER *prAdapter,
 		} else {
 			scanRemoveConnFlagOfBssDescByBssid(prAdapter,
 				prAisBssInfo->aucBSSID);
-			aisGetTargetBssDesc(prAdapter, ucBssIndex)
-				->fgIsConnected = FALSE;
-			aisGetTargetBssDesc(prAdapter, ucBssIndex)
-				->fgIsConnecting = FALSE;
+			prBssDesc = aisGetTargetBssDesc(prAdapter, ucBssIndex);
+			if (prBssDesc) {
+				prBssDesc->fgIsConnected = FALSE;
+				prBssDesc->fgIsConnecting = FALSE;
+			}
 		}
 
 		if (fgDelayIndication) {
