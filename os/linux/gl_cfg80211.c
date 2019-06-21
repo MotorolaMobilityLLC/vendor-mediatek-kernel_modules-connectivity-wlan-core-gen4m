@@ -1415,7 +1415,10 @@ int mtk_cfg80211_connect(struct wiphy *wiphy,
 				break;
 #endif
 			case WLAN_AKM_SUITE_SAE:
-				eAuthMode = AUTH_MODE_WPA3_SAE;
+				if (sme->auth_type == NL80211_AUTHTYPE_SAE)
+					eAuthMode = AUTH_MODE_WPA3_SAE;
+				else
+					eAuthMode = AUTH_MODE_OPEN;
 				u4AkmSuite = RSN_CIPHER_SUITE_SAE;
 				break;
 
