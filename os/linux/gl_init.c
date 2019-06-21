@@ -3973,8 +3973,8 @@ static int32_t wlanOnAtReset(void)
 			struct FT_IES *prFtIEs =
 				aisGetFtIe(prAdapter, u4Idx);
 
-			kalMemZero(&prFtIEs,
-				sizeof(prFtIEs));
+			kalMemZero(prFtIEs,
+				sizeof(*prFtIEs));
 		}
 
 	} while (FALSE);
@@ -4255,8 +4255,8 @@ static int32_t wlanProbe(void *pvData, void *pvDriverData)
 			struct FT_IES *prFtIEs =
 				aisGetFtIe(prAdapter, u4Idx);
 
-			kalMemZero(&prFtIEs,
-				sizeof(prFtIEs));
+			kalMemZero(prFtIEs,
+				sizeof(*prFtIEs));
 		}
 	} while (FALSE);
 
