@@ -4151,6 +4151,7 @@ void aisFsmDisconnect(IN struct ADAPTER *prAdapter,
 		      IN u_int8_t fgDelayIndication)
 {
 	struct BSS_INFO *prAisBssInfo;
+	struct BSS_DESC *prBssDesc = NULL;
 
 	ASSERT(prAdapter);
 
@@ -4215,10 +4216,12 @@ void aisFsmDisconnect(IN struct ADAPTER *prAdapter,
 		} else {
 			scanRemoveConnFlagOfBssDescByBssid(prAdapter,
 				prAisBssInfo->aucBSSID);
-			prAdapter->rWifiVar.rAisFsmInfo.
-			    prTargetBssDesc->fgIsConnected = FALSE;
-			prAdapter->rWifiVar.rAisFsmInfo.
-			    prTargetBssDesc->fgIsConnecting = FALSE;
+			prBssDesc = prAdapter->rWifiVar.rAisFsmInfo.
+					prTargetBssDesc;
+			if (prBssDesc) {
+				prBssDesc->fgIsConnected = FALSE;
+				prBssDesc->fgIsConnecting = FALSE;
+			}
 		}
 
 		if (fgDelayIndication) {
