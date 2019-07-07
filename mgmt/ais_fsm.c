@@ -1270,8 +1270,16 @@ void aisFsmSteps(IN struct ADAPTER *prAdapter,
 				prAisReq->eReqType,
 				prConnSettings->fgIsConnReqIssued,
 				prConnSettings->fgIsDisconnectedByNonRequest);
+
 			if (prAisReq == NULL
 			    || prAisReq->eReqType == AIS_REQUEST_RECONNECT) {
+				if (IS_NET_ACTIVE(prAdapter,
+					  prAisBssInfo->ucBssIndex)) {
+					UNSET_NET_ACTIVE(prAdapter,
+						prAisBssInfo->ucBssIndex);
+					nicDeactivateNetwork(prAdapter,
+						prAisBssInfo->ucBssIndex);
+				}
 				if (prConnSettings->fgIsConnReqIssued == TRUE
 				    &&
 				    prConnSettings->fgIsDisconnectedByNonRequest
@@ -1279,17 +1287,12 @@ void aisFsmSteps(IN struct ADAPTER *prAdapter,
 
 					prAisFsmInfo->fgTryScan = TRUE;
 
-					if (!IS_NET_ACTIVE
-					    (prAdapter,
-					     prAisBssInfo->ucBssIndex)) {
-						SET_NET_ACTIVE(prAdapter,
+					SET_NET_ACTIVE(prAdapter,
 						prAisBssInfo->
 						ucBssIndex);
-						/* sync with firmware */
-						nicActivateNetwork(prAdapter,
-						prAisBssInfo->
-						ucBssIndex);
-					}
+					/* sync with firmware */
+					nicActivateNetwork(prAdapter,
+						prAisBssInfo->ucBssIndex);
 
 					SET_NET_PWR_STATE_ACTIVE(prAdapter,
 					prAisBssInfo->ucBssIndex);
@@ -1303,17 +1306,12 @@ void aisFsmSteps(IN struct ADAPTER *prAdapter,
 					SET_NET_PWR_STATE_IDLE(prAdapter,
 					prAisBssInfo->ucBssIndex);
 
-					if (IS_NET_ACTIVE
-					    (prAdapter,
-					     prAisBssInfo->ucBssIndex) &&
-					    !prAdapter->rWifiVar.rScanInfo.
-						fgSchedScanning) {
-						UNSET_NET_ACTIVE(prAdapter,
-						prAisBssInfo->
-						ucBssIndex);
-						nicDeactivateNetwork(prAdapter,
-						prAisBssInfo->
-						ucBssIndex);
+					if (prAdapter->rWifiVar.
+						rScanInfo.fgSchedScanning) {
+						SET_NET_ACTIVE(prAdapter,
+						prAisBssInfo->ucBssIndex);
+						nicActivateNetwork(prAdapter,
+						prAisBssInfo->ucBssIndex);
 					}
 
 					/* check for other pending request */
