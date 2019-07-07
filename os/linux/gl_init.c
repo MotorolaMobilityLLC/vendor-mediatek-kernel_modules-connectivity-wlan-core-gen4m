@@ -1797,8 +1797,6 @@ static u_int8_t wlanIsAdjacentChnl(struct GL_P2P_INFO *prGlueP2pInfo,
 
 	switch (ucBandWidth) {
 	case VHT_OP_CHANNEL_WIDTH_20_40:
-		if (eBssSCO == CHNL_EXT_SCN)
-			return FALSE;
 		u4BandWidth = 40;
 		break;
 	case VHT_OP_CHANNEL_WIDTH_80:
