@@ -1919,9 +1919,19 @@ void p2pFuncDfsSwitchCh(IN struct ADAPTER *prAdapter,
 	prGlueInfo = prAdapter->prGlueInfo;
 	role_idx = prP2pRoleFsmInfo->ucRoleIndex;
 
+#if CFG_SUPPORT_SAP_DFS_CHANNEL
+	wlanUpdateDfsChannelTable(prGlueInfo,
+		role_idx,
+		prBssInfo->ucPrimaryChannel,
+		prBssInfo->ucVhtChannelWidth,
+		prBssInfo->eBssSCO,
+		nicChannelNum2Freq(prBssInfo->ucVhtChannelFrequencyS1) / 1000);
+#endif
+
 	if (prGlueInfo->prP2PInfo[role_idx]->chandef == NULL) {
 		struct GL_P2P_INFO *prGlueP2pInfo =
 			prGlueInfo->prP2PInfo[role_idx];
+		struct ieee80211_channel *chan;
 		if (!prGlueP2pInfo) {
 			DBGLOG(P2P, WARN, "p2p glue info is not active\n");
 			return;
@@ -1940,6 +1950,10 @@ void p2pFuncDfsSwitchCh(IN struct ADAPTER *prAdapter,
 				"ieee80211_channel alloc fail\n");
 			return;
 		}
+		chan = ieee80211_get_channel(prGlueP2pInfo->prWdev->wiphy,
+			nicChannelNum2Freq(
+				prBssInfo->ucPrimaryChannel) / 1000);
+
 		/* Fill chan def */
 		prGlueP2pInfo->chandef->chan->band
 			= (prBssInfo->eBand == BAND_5G)
@@ -1948,13 +1962,7 @@ void p2pFuncDfsSwitchCh(IN struct ADAPTER *prAdapter,
 			= nicChannelNum2Freq(prBssInfo->ucPrimaryChannel)
 			/ 1000;
 
-		if (rlmDomainIsLegalDfsChannel(prAdapter,
-			prBssInfo->eBand, prBssInfo->ucPrimaryChannel))
-			prGlueP2pInfo->chandef->
-				chan->dfs_state = NL80211_DFS_USABLE;
-		else
-			prGlueP2pInfo->chandef->
-				chan->dfs_state = NL80211_DFS_AVAILABLE;
+		prGlueP2pInfo->chandef->chan->dfs_state = chan->dfs_state;
 
 		switch (prBssInfo->ucVhtChannelWidth) {
 		case VHT_OP_CHANNEL_WIDTH_80P80:
@@ -2017,17 +2025,30 @@ void p2pFuncDfsSwitchCh(IN struct ADAPTER *prAdapter,
 		prAdapter->rWifiVar.ucChannelSwitchMode = 0;
 
 		DBGLOG(P2P, INFO,
-			"role(%d) b=%d f=%d w=%d s1=%d s2=%d\n",
+			"role(%d) b=%d f=%d w=%d s1=%d s2=%d dfs=%d\n",
 			role_idx,
 			prGlueP2pInfo->chandef->chan->band,
 			prGlueP2pInfo->chandef->chan->center_freq,
 			prGlueP2pInfo->chandef->width,
 			prGlueP2pInfo->chandef->center_freq1,
-			prGlueP2pInfo->chandef->center_freq2);
+			prGlueP2pInfo->chandef->center_freq2,
+			prGlueP2pInfo->chandef->chan->dfs_state);
 	}
 
 	/* Ch notify */
 	if (prGlueInfo->prP2PInfo[role_idx]->chandef) {
+		u_int8_t fgRegBeaconRelax = FALSE;
+
+		rtnl_lock();
+		fgRegBeaconRelax = cfg80211_reg_can_beacon_relax(
+			prGlueInfo->prP2PInfo[role_idx]->prWdev->wiphy,
+			prGlueInfo->prP2PInfo[role_idx]->chandef,
+			prGlueInfo->prP2PInfo[role_idx]->prWdev->iftype);
+		rtnl_unlock();
+		if (!fgRegBeaconRelax)
+			DBGLOG(P2P, WARN,
+				"plz check channel info. is correct.\n");
+
 		cfg80211_ch_switch_notify(
 			prGlueInfo->prP2PInfo[role_idx]->prDevHandler,
 			prGlueInfo->prP2PInfo[role_idx]->chandef);
@@ -6224,17 +6245,27 @@ void p2pFuncSwitchSapChannel(
 	if (!prAisBssInfo) {
 		ucStaChannelNum = 0;
 #if CFG_SUPPORT_SAP_DFS_CHANNEL
+		/* restore DFS channels table */
 		wlanUpdateDfsChannelTable(prAdapter->prGlueInfo,
-			0);
+			-1, /* p2p role index */
+			0, /* primary channel */
+			0, /* bandwidth */
+			0, /* sco */
+			0 /* center frequency */);
 #endif
 	} else {
 		/* Get current channel info */
 		ucStaChannelNum = prAisBssInfo->ucPrimaryChannel;
-#if CFG_SUPPORT_SAP_DFS_CHANNEL
-		wlanUpdateDfsChannelTable(prAdapter->prGlueInfo,
-			ucStaChannelNum);
-#endif
 		eStaBand = prAisBssInfo->eBand;
+#if CFG_SUPPORT_SAP_DFS_CHANNEL
+		/* restore DFS channels table */
+		wlanUpdateDfsChannelTable(prAdapter->prGlueInfo,
+			-1, /* p2p role index */
+			ucStaChannelNum, /* primary channel */
+			0, /* bandwidth */
+			0, /* sco */
+			0 /* center frequency */);
+#endif
 		if (eStaBand != BAND_2G4 && eStaBand != BAND_5G) {
 			DBGLOG(P2P, WARN, "STA has invalid band\n");
 			goto exit;
