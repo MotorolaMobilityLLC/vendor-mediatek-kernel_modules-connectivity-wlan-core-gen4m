@@ -711,7 +711,7 @@ struct TX_CTRL {
 	uint32_t u4MaxPageCntPerFrame;
 
 	/* Store SysTime of Last TxDone successfully */
-	uint32_t u4LastTxTime;
+	uint32_t u4LastTxTime[MAX_BSSID_NUM];
 };
 
 enum ENUM_TX_PACKET_TYPE {

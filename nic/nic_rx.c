@@ -1837,7 +1837,6 @@ void nicRxProcessDataPacket(IN struct ADAPTER *prAdapter,
 
 		prRetSwRfb = qmHandleRxPackets(prAdapter, prSwRfb);
 		if (prRetSwRfb != NULL) {
-			GET_CURRENT_SYSTIME(&prRxCtrl->u4LastRxTime);
 			do {
 #if CFG_SUPPORT_MSP
 				if (prRetSwRfb->ucGroupVLD
@@ -1907,6 +1906,12 @@ void nicRxProcessDataPacket(IN struct ADAPTER *prAdapter,
 						qmHandleRxDhcpPackets(prAdapter,
 							prRetSwRfb);
 #endif
+					}
+					if (prStaRec &&
+					prStaRec->ucBssIndex < MAX_BSSID_NUM) {
+						GET_CURRENT_SYSTIME(
+							&prRxCtrl->u4LastRxTime
+							[prStaRec->ucBssIndex]);
 					}
 					secHandleRxEapolPacket(
 						prAdapter, prRetSwRfb,

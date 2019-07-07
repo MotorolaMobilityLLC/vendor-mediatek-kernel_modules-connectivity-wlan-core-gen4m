@@ -3328,9 +3328,6 @@ void nicTxProcessTxDoneEvent(IN struct ADAPTER *prAdapter,
 
 	prTxDone = (struct EVENT_TX_DONE *) (prEvent->aucBuffer);
 
-	if (prTxDone->ucStatus == 0)
-		GET_CURRENT_SYSTIME(&prTxCtrl->u4LastTxTime);
-
 	if (prTxDone->ucFlag & BIT(TXS_WITH_ADVANCED_INFO)) {
 		/* Tx Done with advanced info */
 		if (prTxDone->ucStatus != 0)
@@ -3469,6 +3466,12 @@ void nicTxProcessTxDoneEvent(IN struct ADAPTER *prAdapter,
 			nicTxFreePacket(prAdapter, prMsduInfo, FALSE);
 			nicTxReturnMsduInfo(prAdapter, prMsduInfo);
 		}
+
+		if (prTxDone->ucStatus == 0 &&
+			prMsduInfo->ucBssIndex < MAX_BSSID_NUM)
+			GET_CURRENT_SYSTIME(
+				&prTxCtrl->u4LastTxTime
+				[prMsduInfo->ucBssIndex]);
 	}
 }
 
