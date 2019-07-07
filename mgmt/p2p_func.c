@@ -1953,6 +1953,11 @@ void p2pFuncDfsSwitchCh(IN struct ADAPTER *prAdapter,
 		chan = ieee80211_get_channel(prGlueP2pInfo->prWdev->wiphy,
 			nicChannelNum2Freq(
 				prBssInfo->ucPrimaryChannel) / 1000);
+		if (!chan) {
+			DBGLOG(P2P, WARN,
+				"get channel fail\n");
+			return;
+		}
 
 		/* Fill chan def */
 		prGlueP2pInfo->chandef->chan->band
