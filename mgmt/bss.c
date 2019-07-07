@@ -72,7 +72,6 @@
  ******************************************************************************
  */
 #include "precomp.h"
-#include "gl_cfg80211.h"
 
 /******************************************************************************
  *                              C O N S T A N T S
@@ -2459,7 +2458,7 @@ uint32_t bssGetIotApAction(IN struct ADAPTER *prAdapter,
 
 		/*Match Vendor OUI*/
 		if (u2MatchFlag & BIT(WLAN_IOT_AP_FG_OUI)) {
-			pucIe = mtk_cfg80211_find_ie_match_mask(
+			pucIe = kalFindIeMatchMask(
 				WLAN_EID_VENDOR_SPECIFIC,
 				pucIes, prBssDesc->u2IELength,
 				prIotApRule->aVendorOui,
@@ -2474,7 +2473,7 @@ uint32_t bssGetIotApAction(IN struct ADAPTER *prAdapter,
 			pucMask =
 				u2MatchFlag & BIT(WLAN_IOT_AP_FG_DATA_MASK) ?
 				&prIotApRule->aVendorDataMask[0] : NULL;
-			pucIe = mtk_cfg80211_find_ie_match_mask(
+			pucIe = kalFindIeMatchMask(
 				WLAN_EID_VENDOR_SPECIFIC,
 				pucIes, prBssDesc->u2IELength,
 				prIotApRule->aVendorData,

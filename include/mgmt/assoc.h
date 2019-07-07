@@ -148,4 +148,10 @@ uint16_t assoc_get_nonwfa_vend_ie_len(struct ADAPTER *prAdapter,
 void assoc_build_nonwfa_vend_ie(struct ADAPTER *prAdapter,
 	struct MSDU_INFO *prMsduInfo);
 
+uint32_t assocCalculateConnIELen(struct ADAPTER *prAdapter, uint8_t ucBssIdx,
+			     struct STA_RECORD *prStaRec);
+
+void assocGenerateConnIE(struct ADAPTER *prAdapter,
+			   struct MSDU_INFO *prMsduInfo);
+
 #endif /* _ASSOC_H */

@@ -85,6 +85,8 @@
  *******************************************************************************
  */
 struct APPEND_VAR_IE_ENTRY txAssocReqIETable[] = {
+	{0, assocCalculateConnIELen, assocGenerateConnIE}
+	, /* supplicant connect IE including rsn */
 #if CFG_SUPPORT_802_11K
 	{(ELEM_HDR_LEN + 2), NULL,
 		rlmGeneratePowerCapIE},	/* Element ID: 33 */
@@ -105,6 +107,8 @@ struct APPEND_VAR_IE_ENTRY txAssocReqIETable[] = {
 	,			/* 127 */
 	{(ELEM_HDR_LEN + ELEM_MAX_LEN_WMM_INFO), NULL, mqmGenerateWmmInfoIE}
 	,			/* 221 */
+	{(ELEM_HDR_LEN + ELEM_MAX_LEN_RSN + 4), NULL, rsnGenerateRSNIE}
+	,			/* 48 */
 #if CFG_SUPPORT_802_11AC
 	{(ELEM_HDR_LEN + ELEM_MAX_LEN_VHT_CAP), NULL, rlmReqGenerateVhtCapIE}
 	,			/*191 */
@@ -423,15 +427,6 @@ static __KAL_INLINE__ void assocBuildReAssocReqFrameCommonIEs(
 			pucBuffer += IE_SIZE(pucBuffer);
 		}
 	}
-
-	if (IS_STA_IN_AIS(prStaRec) && prConnSettings->assocIeLen > 0) {
-		kalMemCopy(pucBuffer, prConnSettings->pucAssocIEs,
-			   prConnSettings->assocIeLen);
-		prMsduInfo->u2FrameLength += prConnSettings->assocIeLen;
-		pucBuffer += prConnSettings->assocIeLen;
-		DBGLOG_MEM8(SAA, INFO, prConnSettings->pucAssocIEs,
-			    prConnSettings->assocIeLen);
-	}
 }			/* end of assocBuildReAssocReqFrameCommonIEs() */
 
 /*----------------------------------------------------------------------------*/
@@ -569,7 +564,6 @@ uint32_t assocSendReAssocReqFrame(IN struct ADAPTER *prAdapter,
 	uint16_t u2EstimatedExtraIELen;
 	u_int8_t fgIsReAssoc;
 	uint32_t i;
-	struct CONNECTION_SETTINGS *prConnSettings;
 	uint16_t txAssocReqIENums;
 
 	ASSERT(prStaRec);
@@ -652,12 +646,6 @@ uint32_t assocSendReAssocReqFrame(IN struct ADAPTER *prAdapter,
 	ASSERT(prStaRec->ucBssIndex <= prAdapter->ucHwBssIdNum);
 
 	u2EstimatedFrameLen += u2EstimatedExtraIELen;
-
-	if (IS_STA_IN_AIS(prStaRec)) {
-		prConnSettings = aisGetConnSettings(prAdapter,
-						    prStaRec->ucBssIndex);
-		u2EstimatedFrameLen += prConnSettings->assocIeLen;
-	}
 
 	/* Allocate a MSDU_INFO_T */
 	prMsduInfo = cnmMgtPktAlloc(prAdapter, u2EstimatedFrameLen);
@@ -769,6 +757,85 @@ uint32_t assocSendReAssocReqFrame(IN struct ADAPTER *prAdapter,
 
 	return WLAN_STATUS_SUCCESS;
 }				/* end of assocSendReAssocReqFrame() */
+
+
+uint32_t assocCalculateConnIELen(struct ADAPTER *prAdapter, uint8_t ucBssIdx,
+			     struct STA_RECORD *prStaRec)
+{
+	struct CONNECTION_SETTINGS *prConnSettings;
+	uint8_t ucBssIndex;
+	const uint8_t *rsnConn;
+
+	ucBssIndex = prStaRec->ucBssIndex;
+	prConnSettings = aisGetConnSettings(prAdapter, ucBssIndex);
+
+	if (IS_STA_IN_AIS(prStaRec) && prConnSettings->assocIeLen > 0) {
+		prConnSettings = aisGetConnSettings(prAdapter, ucBssIdx);
+		rsnConn = kalFindIeMatchMask(ELEM_ID_RSN,
+				       prConnSettings->pucAssocIEs,
+				       prConnSettings->assocIeLen,
+				       NULL, 0, 0, NULL);
+		/* cut out RSN IE */
+		if (rsnConn)
+			return prConnSettings->assocIeLen -
+				ELEM_HDR_LEN - RSN_IE(rsnConn)->ucLength;
+		else
+			return prConnSettings->assocIeLen;
+	}
+
+	return 0;
+}
+
+void assocGenerateConnIE(struct ADAPTER *prAdapter,
+			   struct MSDU_INFO *prMsduInfo)
+{
+	struct CONNECTION_SETTINGS *prConnSettings;
+	struct STA_RECORD *prStaRec;
+	uint8_t *pucBuffer, *cp;
+	const uint8_t *rsnConn;
+	uint8_t ucBssIndex;
+	uint32_t len, rsnIeLen;
+
+	prStaRec = cnmGetStaRecByIndex(prAdapter, prMsduInfo->ucStaRecIndex);
+	if (!prStaRec)
+		return;
+
+	pucBuffer = (uint8_t *) ((unsigned long)
+				 prMsduInfo->prPacket + (unsigned long)
+				 prMsduInfo->u2FrameLength);
+	cp = pucBuffer;
+	ucBssIndex = prStaRec->ucBssIndex;
+	prConnSettings = aisGetConnSettings(prAdapter, ucBssIndex);
+
+	if (IS_STA_IN_AIS(prStaRec) && prConnSettings->assocIeLen > 0) {
+		rsnConn = kalFindIeMatchMask(ELEM_ID_RSN,
+				       prConnSettings->pucAssocIEs,
+				       prConnSettings->assocIeLen,
+				       NULL, 0, 0, NULL);
+
+		if (!rsnConn) {
+			kalMemCopy(cp, prConnSettings->pucAssocIEs,
+				   prConnSettings->assocIeLen);
+			cp += prConnSettings->assocIeLen;
+			goto dump;
+		}
+
+		rsnIeLen = ELEM_HDR_LEN + RSN_IE(rsnConn)->ucLength;
+
+		/* Copy data before RSN IE to assoc req */
+		len = rsnConn - prConnSettings->pucAssocIEs;
+		kalMemCopy(cp, prConnSettings->pucAssocIEs, len);
+		cp += len;
+
+		/* jump to the end of RSN IE and copy Remaing IEs*/
+		len = prConnSettings->assocIeLen - len - rsnIeLen;
+		kalMemCopy(cp, rsnConn + rsnIeLen, len);
+		cp += len;
+	}
+dump:
+	prMsduInfo->u2FrameLength += cp - pucBuffer;
+	DBGLOG_MEM8(SAA, INFO, pucBuffer, cp - pucBuffer);
+}
 
 /*----------------------------------------------------------------------------*/
 /*!

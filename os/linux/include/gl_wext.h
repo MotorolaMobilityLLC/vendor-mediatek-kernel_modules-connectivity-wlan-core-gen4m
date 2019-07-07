@@ -380,10 +380,6 @@ u_int8_t wextSrchDesiredWAPIIE(IN uint8_t *pucIEStart,
 			       IN int32_t i4TotalIeLen,
 			       OUT uint8_t **ppucDesiredIE);
 
-u_int8_t wextSrchOkcAndPMKID(IN uint8_t *pucIEStart,
-			     IN int32_t i4TotalIeLen,
-			     OUT uint8_t **ppucPMKID,
-			     OUT uint8_t *okc);
 /*******************************************************************************
  *                              F U N C T I O N S
  *******************************************************************************

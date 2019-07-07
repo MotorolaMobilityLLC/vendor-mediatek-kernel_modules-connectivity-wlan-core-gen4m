@@ -125,8 +125,6 @@ static uint8_t *apucDebugAisState[AIS_STATE_NUM] = {
  */
 static void aisFsmRunEventScanDoneTimeOut(IN struct ADAPTER *prAdapter,
 					  unsigned long ulParam);
-static void aisFsmSetOkcTimeout(IN struct ADAPTER *prAdapter,
-				unsigned long ulParam);
 /* Support AP Selection*/
 static void aisRemoveDisappearedBlacklist(struct ADAPTER *prAdapter);
 
@@ -370,11 +368,6 @@ void aisFsmInit(IN struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 			  (unsigned long)ucBssIndex);
 
 	cnmTimerInitTimer(prAdapter,
-			  &prAisFsmInfo->rWaitOkcPMKTimer,
-			  (PFN_MGMT_TIMEOUT_FUNC) aisFsmSetOkcTimeout,
-			  (unsigned long)ucBssIndex);
-
-	cnmTimerInitTimer(prAdapter,
 			  &prAisFsmInfo->rSecModeChangeTimer,
 			  (PFN_MGMT_TIMEOUT_FUNC)
 			  aisFsmRunEventSecModeChangeTimeout,
@@ -508,7 +501,6 @@ void aisFsmUninit(IN struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 	cnmTimerStopTimer(prAdapter, &prAisFsmInfo->rJoinTimeoutTimer);
 	cnmTimerStopTimer(prAdapter, &prAisFsmInfo->rScanDoneTimer);
 	cnmTimerStopTimer(prAdapter, &prAisFsmInfo->rChannelTimeoutTimer);
-	cnmTimerStopTimer(prAdapter, &prAisFsmInfo->rWaitOkcPMKTimer);
 	cnmTimerStopTimer(prAdapter, &prAisFsmInfo->rSecModeChangeTimer);
 
 	/* 4 <2> flush pending request */
@@ -1277,8 +1269,6 @@ void aisFsmSteps(IN struct ADAPTER *prAdapter,
 			prAisReq = aisFsmGetNextRequest(prAdapter, ucBssIndex);
 			cnmTimerStopTimer(prAdapter,
 					  &prAisFsmInfo->rScanDoneTimer);
-			cnmTimerStopTimer(prAdapter,
-					  &prAisFsmInfo->rWaitOkcPMKTimer);
 			if (prAisFsmInfo->ePreviousState ==
 					AIS_STATE_OFF_CHNL_TX)
 				aisFunClearAllTxReq(prAdapter,
@@ -2825,9 +2815,6 @@ void aisFsmStateAbort(IN struct ADAPTER *prAdapter,
 
 		/* in case roaming is triggered */
 		fgIsCheckConnected = TRUE;
-
-		/* stop okc timeout timer */
-		cnmTimerStopTimer(prAdapter, &prAisFsmInfo->rWaitOkcPMKTimer);
 		break;
 
 	case AIS_STATE_JOIN:
@@ -6225,23 +6212,6 @@ aisFsmRunEventMgmtFrameTxDone(IN struct ADAPTER *prAdapter,
 	return WLAN_STATUS_SUCCESS;
 
 }				/* aisFsmRunEventMgmtFrameTxDone */
-
-static void aisFsmSetOkcTimeout(IN struct ADAPTER *prAdapter,
-				unsigned long ulParam)
-{
-	uint8_t ucBssIndex = (uint8_t) ulParam;
-	struct AIS_FSM_INFO *prAisFsmInfo
-		= aisGetAisFsmInfo(prAdapter, ucBssIndex);
-
-	DBGLOG(AIS, LOUD, "ucBssIndex = %d\n", ucBssIndex);
-
-	DBGLOG(AIS, WARN,
-	       "Wait OKC PMKID timeout, current state[%d],fgIsChannelGranted=%d\n",
-	       prAisFsmInfo->eCurrentState, prAisFsmInfo->fgIsChannelGranted);
-	if (prAisFsmInfo->eCurrentState == AIS_STATE_REQ_CHANNEL_JOIN
-	    && prAisFsmInfo->fgIsChannelGranted)
-		aisFsmSteps(prAdapter, AIS_STATE_JOIN, ucBssIndex);
-}
 
 uint32_t
 aisFuncTxMgmtFrame(IN struct ADAPTER *prAdapter,

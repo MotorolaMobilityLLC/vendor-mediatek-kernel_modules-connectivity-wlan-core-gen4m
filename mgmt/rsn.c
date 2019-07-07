@@ -757,6 +757,25 @@ u_int8_t rsnSearchAKMSuite(IN struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief refer to wpa_supplicant wpa_key_mgmt_wpa
+ */
+
+uint8_t rsnKeyMgmtWpa(IN struct ADAPTER *prAdapter,
+	IN enum ENUM_PARAM_AUTH_MODE eAuthMode,
+	IN uint8_t bssidx)
+{
+	uint32_t i;
+
+	return eAuthMode == AUTH_MODE_WPA2 ||
+	       eAuthMode == AUTH_MODE_WPA2_PSK ||
+	       eAuthMode == AUTH_MODE_WPA2_FT_PSK ||
+	       eAuthMode == AUTH_MODE_WPA2_FT ||
+	       eAuthMode == AUTH_MODE_WPA3_SAE ||
+	       rsnSearchAKMSuite(prAdapter, RSN_CIPHER_SUITE_OWE, &i, bssidx);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief This routine is called to perform RSNA or TSN policy
  *        selection for a given BSS.
  *
@@ -790,7 +809,6 @@ u_int8_t rsnPerformPolicySelection(
 	enum ENUM_PARAM_AUTH_MODE eAuthMode;
 	enum ENUM_PARAM_OP_MODE eOPMode;
 	enum ENUM_WEP_STATUS eEncStatus;
-	struct IEEE_802_11_MIB *prMib;
 
 	DEBUGFUNC("rsnPerformPolicySelection");
 
@@ -811,7 +829,6 @@ u_int8_t rsnPerformPolicySelection(
 	    aisGetOPMode(prAdapter, ucBssIndex);
 	eEncStatus =
 	    aisGetEncStatus(prAdapter, ucBssIndex);
-	prMib = aisGetMib(prAdapter, ucBssIndex);
 
 #if CFG_SUPPORT_WPS
 	fgIsWpsActive = aisGetConnSettings(prAdapter,
@@ -859,11 +876,7 @@ u_int8_t rsnPerformPolicySelection(
 			       "WPA Information Element does not exist.\n");
 			return FALSE;
 		}
-	} else if (eAuthMode == AUTH_MODE_WPA2 ||
-		   eAuthMode == AUTH_MODE_WPA2_PSK ||
-		   eAuthMode == AUTH_MODE_WPA2_FT_PSK ||
-		   eAuthMode == AUTH_MODE_WPA2_FT ||
-		   eAuthMode == AUTH_MODE_WPA3_SAE) {
+	} else if (rsnKeyMgmtWpa(prAdapter, eAuthMode, ucBssIndex)) {
 
 		if (prBss->fgIERSN) {
 			prBssRsnInfo = &prBss->rRSNInfo;
@@ -887,12 +900,6 @@ u_int8_t rsnPerformPolicySelection(
 		}
 #endif
 	} else if (eEncStatus != ENUM_ENCRYPTION1_ENABLED) {
-		if (eAuthMode == AUTH_MODE_OPEN &&
-		    prMib->dot11RSNAConfigAuthenticationSuitesTable
-		    [12].dot11RSNAConfigAuthenticationSuite) {
-			DBGLOG(RSN, INFO, "OWE\n");
-			return TRUE;
-		}
 		/* If the driver is configured to use WEP only,
 		 * ignore this BSS.
 		 */
@@ -1490,7 +1497,8 @@ void rsnGenerateRSNIE(IN struct ADAPTER *prAdapter,
 	uint8_t *cp;
 	/* UINT_8                ucExpendedLen = 0; */
 	uint8_t *pucBuffer;
-	uint8_t ucBssIndex;
+	uint8_t ucBssIndex, isWPA3;
+	uint32_t i;
 	struct BSS_INFO *prBssInfo;
 	struct STA_RECORD *prStaRec;
 	enum ENUM_PARAM_AUTH_MODE eAuthMode;
@@ -1512,12 +1520,13 @@ void rsnGenerateRSNIE(IN struct ADAPTER *prAdapter,
 		aisGetAisSpecBssInfo(prAdapter, ucBssIndex);
 	eAuthMode =
 	    aisGetAuthMode(prAdapter, ucBssIndex);
+	isWPA3 = eAuthMode == AUTH_MODE_WPA3_SAE ||
+	     rsnSearchAKMSuite(prAdapter, RSN_CIPHER_SUITE_OWE, &i, ucBssIndex);
 	/* for Fast Bss Transition,  we reuse the RSN Element composed in
 	 ** userspace
 	 */
 	if ((eAuthMode == AUTH_MODE_WPA2_FT ||
-	     eAuthMode ==
-	     AUTH_MODE_WPA2_FT_PSK) &&
+	     eAuthMode == AUTH_MODE_WPA2_FT_PSK) &&
 	    aisGetFtIe(prAdapter, ucBssIndex)->prRsnIE) {
 		authAddRSNIE(prAdapter, prMsduInfo);
 		return;
@@ -1545,14 +1554,7 @@ void rsnGenerateRSNIE(IN struct ADAPTER *prAdapter,
 		   (GET_BSS_INFO_BY_INDEX(prAdapter,
 					  ucBssIndex)->eNetworkType ==
 		    NETWORK_TYPE_AIS /* prCurrentBss->fgIERSN */  &&
-		    ((eAuthMode ==
-		      AUTH_MODE_WPA2)
-		     || (eAuthMode ==
-			 AUTH_MODE_WPA2_PSK)
-		     || (eAuthMode ==
-			 AUTH_MODE_WPA2_FT_PSK)
-		     || (eAuthMode ==
-			 AUTH_MODE_WPA2_FT)))) {
+		    rsnKeyMgmtWpa(prAdapter, eAuthMode, ucBssIndex))) {
 		/* Construct a RSN IE for association request frame. */
 		RSN_IE(pucBuffer)->ucElemId = ELEM_ID_RSN;
 		RSN_IE(pucBuffer)->ucLength = ELEM_ID_RSN_LEN_FIXED;
