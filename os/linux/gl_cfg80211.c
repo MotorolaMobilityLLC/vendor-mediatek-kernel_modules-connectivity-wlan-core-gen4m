@@ -503,7 +503,7 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy,
 	ASSERT(prGlueInfo);
 
 	ucBssIndex = wlanGetBssIdx(ndev);
-	if (!IS_BSS_INDEX_VALID(ucBssIndex))
+	if (!IS_BSS_INDEX_AIS(prGlueInfo->prAdapter, ucBssIndex))
 		return -EINVAL;
 
 	DBGLOG(REQ, TRACE, "ucBssIndex = %d\n", ucBssIndex);
@@ -678,7 +678,7 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy,
 	ASSERT(prGlueInfo);
 
 	ucBssIndex = wlanGetBssIdx(ndev);
-	if (!IS_BSS_INDEX_VALID(ucBssIndex))
+	if (!IS_BSS_INDEX_AIS(prGlueInfo->prAdapter, ucBssIndex))
 		return -EINVAL;
 
 	DBGLOG(REQ, TRACE, "ucBssIndex = %d\n", ucBssIndex);
@@ -842,7 +842,7 @@ int mtk_cfg80211_get_link_statistics(struct wiphy *wiphy,
 	ASSERT(prGlueInfo);
 
 	ucBssIndex = wlanGetBssIdx(ndev);
-	if (!IS_BSS_INDEX_VALID(ucBssIndex))
+	if (!IS_BSS_INDEX_AIS(prGlueInfo->prAdapter, ucBssIndex))
 		return -EINVAL;
 
 	DBGLOG(REQ, TRACE, "ucBssIndex = %d\n", ucBssIndex);
@@ -948,7 +948,7 @@ int mtk_cfg80211_scan(struct wiphy *wiphy,
 	ASSERT(prGlueInfo);
 
 	ucBssIndex = wlanGetBssIdx(request->wdev->netdev);
-	if (!IS_BSS_INDEX_VALID(ucBssIndex))
+	if (!IS_BSS_INDEX_AIS(prGlueInfo->prAdapter, ucBssIndex))
 		return -EINVAL;
 
 	DBGLOG(REQ, TRACE, "ucBssIndex = %d\n", ucBssIndex);
@@ -1201,7 +1201,7 @@ int mtk_cfg80211_connect(struct wiphy *wiphy,
 	wdev = ndev->ieee80211_ptr;
 
 	ucBssIndex = wlanGetBssIdx(ndev);
-	if (!IS_BSS_INDEX_VALID(ucBssIndex))
+	if (!IS_BSS_INDEX_AIS(prGlueInfo->prAdapter, ucBssIndex))
 		return -EINVAL;
 
 	/* Supplicant requests connecting during driver do disconnecting,
@@ -2108,16 +2108,16 @@ int mtk_cfg80211_set_rekey_data(struct wiphy *wiphy,
 	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wiphy);
 	ASSERT(prGlueInfo);
 
+	ucBssIndex = wlanGetBssIdx(dev);
+	if (!IS_BSS_INDEX_VALID(ucBssIndex))
+		return -EINVAL;
+
 	prGtkData =
 		(struct PARAM_GTK_REKEY_DATA *) kalMemAlloc(sizeof(
 				struct PARAM_GTK_REKEY_DATA), VIR_MEM_TYPE);
 
 	if (!prGtkData)
 		return WLAN_STATUS_SUCCESS;
-
-	ucBssIndex = wlanGetBssIdx(dev);
-	if (!IS_BSS_INDEX_VALID(ucBssIndex))
-		return -EINVAL;
 
 	DBGLOG(RSN, INFO, "ucBssIndex = %d, size(%d)\n",
 		ucBssIndex,
@@ -3529,7 +3529,7 @@ int mtk_cfg80211_sched_scan_start(IN struct wiphy *wiphy,
 	uint8_t ucBssIndex = 0;
 
 	ucBssIndex = wlanGetBssIdx(ndev);
-	if (!IS_BSS_INDEX_VALID(ucBssIndex))
+	if (!IS_BSS_INDEX_AIS(prGlueInfo->prAdapter, ucBssIndex))
 		return -EINVAL;
 
 	DBGLOG(REQ, TRACE, "ucBssIndex = %d\n", ucBssIndex);
@@ -5268,7 +5268,7 @@ int mtk_init_sta_role(struct ADAPTER *prAdapter,
 		return -1;
 
 	ucBssIndex = wlanGetBssIdx(ndev);
-	if (!IS_BSS_INDEX_VALID(ucBssIndex))
+	if (!IS_BSS_INDEX_AIS(prAdapter, ucBssIndex))
 		return -1;
 
 	/* init AIS FSM */
@@ -5310,7 +5310,7 @@ int mtk_uninit_sta_role(struct ADAPTER *prAdapter,
 		return -1;
 
 	ucBssIndex = wlanGetBssIdx(ndev);
-	if (!IS_BSS_INDEX_VALID(ucBssIndex))
+	if (!IS_BSS_INDEX_AIS(prAdapter, ucBssIndex))
 		return -1;
 
 #if CFG_SUPPORT_ROAMING
