@@ -235,6 +235,8 @@ struct GL_P2P_INFO {
 
 	/* indicate caller thread for stop ap complete */
 	struct completion rStopApComp;
+
+	enum ENUM_CHNL_SWITCH_POLICY eChnlSwitchPolicy;
 };
 
 struct GL_P2P_DEV_INFO {

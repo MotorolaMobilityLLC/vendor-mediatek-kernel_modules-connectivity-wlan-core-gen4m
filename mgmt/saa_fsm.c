@@ -1490,8 +1490,9 @@ uint32_t saaFsmRunEventRxDisassoc(IN struct ADAPTER *prAdapter,
 	ucWlanIdx = (uint8_t) HAL_RX_STATUS_GET_WLAN_IDX(prSwRfb->prRxStatus);
 
 	DBGLOG(SAA, INFO,
-	       "Rx Disassoc frame from BSSID[" MACSTR "] DA[" MACSTR
-	       "] ReasonCode[0x%x]\n",
+	       "Rx Disassoc frame from SA[" MACSTR "] BSSID[" MACSTR
+	       "] DA[" MACSTR "] ReasonCode[0x%x]\n",
+	       MAC2STR(prDisassocFrame->aucSrcAddr),
 	       MAC2STR(prDisassocFrame->aucBSSID),
 	       MAC2STR(prDisassocFrame->aucDestAddr),
 	       prDisassocFrame->u2ReasonCode);
