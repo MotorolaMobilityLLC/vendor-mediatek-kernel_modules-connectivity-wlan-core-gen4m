@@ -792,7 +792,10 @@
 #define CFG_SUPPORT_UL_PSMP		0
 
 /* Roaming System */
-#define CFG_SUPPORT_ROAMING         1
+#ifndef CFG_SUPPORT_ROAMING
+#define CFG_SUPPORT_ROAMING		1
+#endif
+
 #if (CFG_SUPPORT_ROAMING == 1)
 
 /* Roaming feature: skip roaming when only one ESSID AP
@@ -802,11 +805,10 @@
  * after skip roaming in one ESSID AP case
  */
 #define CFG_SUPPORT_ROAMING_SKIP_ONE_AP		1
-#if CFG_SUPPORT_ROAMING_SKIP_ONE_AP
-#define CFG_MAX_NUM_ROAM_BSS_LIST		64
-#endif
+#define CFG_SUPPORT_DRIVER_ROAMING		1
 #else
 #define CFG_SUPPORT_ROAMING_SKIP_ONE_AP		0
+#define CFG_SUPPORT_DRIVER_ROAMING		0
 
 #endif /* CFG_SUPPORT_ROAMING */
 
