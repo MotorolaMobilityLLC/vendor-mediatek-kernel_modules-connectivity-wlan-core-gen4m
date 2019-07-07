@@ -4259,13 +4259,15 @@ void nicUpdateRSSI(IN struct ADAPTER *prAdapter,
 			prAdapter->fgIsLinkQualityValid = TRUE;
 			prAdapter->rLinkQualityUpdateTime = kalGetTimeTick();
 
-			prAdapter->rLinkQuality.cRssi = cRssi;
-			prAdapter->rLinkQuality.cLinkQuality = cLinkQuality;
+			prAdapter->rLinkQuality.rLq[ucBssIndex].cRssi = cRssi;
+			prAdapter->rLinkQuality.rLq[ucBssIndex].cLinkQuality =
+					cLinkQuality;
 			/* indicate to glue layer */
 			kalUpdateRSSI(prAdapter->prGlueInfo,
-				      KAL_NETWORK_TYPE_AIS_INDEX,
-				      prAdapter->rLinkQuality.cRssi,
-				      prAdapter->rLinkQuality.cLinkQuality);
+				KAL_NETWORK_TYPE_AIS_INDEX,
+				prAdapter->rLinkQuality.rLq[ucBssIndex].cRssi,
+				prAdapter->rLinkQuality.rLq[ucBssIndex].
+					cLinkQuality);
 		}
 
 		break;
@@ -4317,7 +4319,8 @@ void nicUpdateLinkSpeed(IN struct ADAPTER *prAdapter,
 			prAdapter->fgIsLinkRateValid = TRUE;
 			prAdapter->rLinkRateUpdateTime = kalGetTimeTick();
 
-			prAdapter->rLinkQuality.u2LinkSpeed = u2LinkSpeed;
+			prAdapter->rLinkQuality.rLq[ucBssIndex].u2LinkSpeed =
+					u2LinkSpeed;
 		}
 		break;
 

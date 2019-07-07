@@ -2550,6 +2550,8 @@ wext_get_rate(IN struct net_device *prNetDev,
 	uint32_t rStatus = WLAN_STATUS_SUCCESS;
 	uint32_t u4BufLen = 0;
 	uint32_t u4Rate = 0;
+	uint8_t ucBssIndex;
+	struct PARAM_LINK_SPEED_EX rLinkSpeed;
 
 	ASSERT(prNetDev);
 	ASSERT(prRate);
@@ -2560,12 +2562,16 @@ wext_get_rate(IN struct net_device *prNetDev,
 	if (!netif_carrier_ok(prNetDev))
 		return -ENOTCONN;
 
-	rStatus = kalIoctl(prGlueInfo, wlanoidQueryLinkSpeed,
-			   &u4Rate, sizeof(u4Rate),
-			   TRUE, FALSE, FALSE, &u4BufLen);
+	ucBssIndex = wlanGetBssIdx(prNetDev);
+	rStatus = kalIoctlByBssIdx(prGlueInfo, wlanoidQueryLinkSpeed,
+			   &rLinkSpeed, sizeof(rLinkSpeed),
+			   TRUE, FALSE, FALSE, &u4BufLen, ucBssIndex);
 
 	if (rStatus != WLAN_STATUS_SUCCESS)
 		return -EFAULT;
+
+	if (ucBssIndex < BSSID_NUM)
+		u4Rate = rLinkSpeed.rLq[ucBssIndex].u2LinkSpeed;
 
 	prRate->value = u4Rate *
 			100;	/* u4Rate is in unit of 100bps */
@@ -4595,6 +4601,8 @@ struct iw_statistics *wext_get_wireless_stats(
 	struct iw_statistics *pStats = NULL;
 	int32_t i4Rssi;
 	uint32_t bufLen = 0;
+	uint8_t ucBssIndex;
+	struct PARAM_LINK_SPEED_EX rLinkSpeed;
 
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prDev));
 	ASSERT(prGlueInfo);
@@ -4608,8 +4616,13 @@ struct iw_statistics *wext_get_wireless_stats(
 		goto stat_out;
 	}
 
-	rStatus = kalIoctl(prGlueInfo, wlanoidQueryRssi, &i4Rssi,
-			   sizeof(i4Rssi), TRUE, TRUE, TRUE, &bufLen);
+	ucBssIndex = wlanGetBssIdx(prDev);
+	rStatus = kalIoctlByBssIdx(prGlueInfo, wlanoidQueryRssi, &rLinkSpeed,
+			   sizeof(rLinkSpeed), TRUE, TRUE, TRUE, &bufLen,
+			   ucBssIndex);
+
+	if (ucBssIndex < BSSID_NUM)
+		i4Rssi = rLinkSpeed.rLq[ucBssIndex].cRssi;
 
 stat_out:
 	return pStats;

@@ -4148,8 +4148,11 @@ wlanoidQueryRssi(IN struct ADAPTER *prAdapter,
 		 OUT uint32_t *pu4QueryInfoLen)
 {
 	uint8_t ucBssIndex = AIS_DEFAULT_INDEX;
+	struct PARAM_LINK_SPEED_EX *pu4LinkSpeed;
+	uint32_t i;
 
 	DEBUGFUNC("wlanoidQueryRssi");
+	DBGLOG(REQ, LOUD, "ucBssIndex %d\n", ucBssIndex);
 
 	ASSERT(prAdapter);
 	ASSERT(pu4QueryInfoLen);
@@ -4159,7 +4162,10 @@ wlanoidQueryRssi(IN struct ADAPTER *prAdapter,
 	if (prAdapter->fgIsEnableLpdvt)
 		return WLAN_STATUS_NOT_SUPPORTED;
 
-	*pu4QueryInfoLen = sizeof(int32_t);
+	*pu4QueryInfoLen = sizeof(struct PARAM_LINK_SPEED_EX);
+
+	if (u4QueryBufferLen < sizeof(struct PARAM_LINK_SPEED_EX))
+		return WLAN_STATUS_BUFFER_TOO_SHORT;
 
 	/* Check for query buffer length */
 	if (u4QueryBufferLen < *pu4QueryInfoLen) {
@@ -4168,6 +4174,8 @@ wlanoidQueryRssi(IN struct ADAPTER *prAdapter,
 		return WLAN_STATUS_BUFFER_TOO_SHORT;
 	}
 
+	ucBssIndex = GET_IOCTL_BSSIDX(prAdapter);
+
 	if (kalGetMediaStateIndicated(prAdapter->prGlueInfo,
 		ucBssIndex) ==
 	    PARAM_MEDIA_STATE_DISCONNECTED) {
@@ -4175,17 +4183,26 @@ wlanoidQueryRssi(IN struct ADAPTER *prAdapter,
 	} else if (prAdapter->fgIsLinkQualityValid == TRUE &&
 		   (kalGetTimeTick() - prAdapter->rLinkQualityUpdateTime) <=
 		   CFG_LINK_QUALITY_VALID_PERIOD) {
-		int32_t rRssi;
+		pu4LinkSpeed = (struct PARAM_LINK_SPEED_EX *) (
+					   pvQueryBuffer);
 
-		/* ranged from (-128 ~ 30) in unit of dBm */
-		rRssi = (int32_t) prAdapter->rLinkQuality.cRssi;
+		for (i = 0; i < BSSID_NUM; i++) {
+			/* change to unit of 100bps */
+			pu4LinkSpeed->rLq[i].u2LinkSpeed
+				= prAdapter->rLinkQuality.rLq[i].u2LinkSpeed *
+					5000;
 
-		if (rRssi > PARAM_WHQL_RSSI_MAX_DBM)
-			rRssi = PARAM_WHQL_RSSI_MAX_DBM;
-		else if (rRssi < PARAM_WHQL_RSSI_MIN_DBM)
-			rRssi = PARAM_WHQL_RSSI_MIN_DBM;
+			/* ranged from (-128 ~ 30) in unit of dBm */
+			pu4LinkSpeed->rLq[i].cRssi
+				= prAdapter->rLinkQuality.rLq[i].cRssi;
 
-		kalMemCopy(pvQueryBuffer, &rRssi, sizeof(int32_t));
+			DBGLOG(REQ, TRACE,
+				"ucBssIdx = %d, rate = %u, signal = %d\n",
+				i,
+				pu4LinkSpeed->rLq[i].u2LinkSpeed,
+				pu4LinkSpeed->rLq[i].cRssi);
+		}
+
 		return WLAN_STATUS_SUCCESS;
 	}
 #ifdef LINUX
@@ -4308,7 +4325,7 @@ wlanoidSetRssiTrigger(IN struct ADAPTER *prAdapter,
 	 * that an RSSI status indication event triggers.
 	 */
 	if (rRssiTriggerValue == (int32_t) (
-		    prAdapter->rLinkQuality.cRssi)) {
+		    prAdapter->rLinkQuality.rLq[ucBssIndex].cRssi)) {
 		prAdapter->rWlanInfo.eRssiTriggerType =
 			ENUM_RSSI_TRIGGER_TRIGGERED;
 
@@ -4318,11 +4335,11 @@ wlanoidSetRssiTrigger(IN struct ADAPTER *prAdapter,
 			     sizeof(int32_t),
 			     ucBssIndex);
 	} else if (rRssiTriggerValue < (int32_t) (
-			   prAdapter->rLinkQuality.cRssi))
+			   prAdapter->rLinkQuality.rLq[ucBssIndex].cRssi))
 		prAdapter->rWlanInfo.eRssiTriggerType =
 			ENUM_RSSI_TRIGGER_GREATER;
 	else if (rRssiTriggerValue > (int32_t) (
-			 prAdapter->rLinkQuality.cRssi))
+			 prAdapter->rLinkQuality.rLq[ucBssIndex].cRssi))
 		prAdapter->rWlanInfo.eRssiTriggerType =
 			ENUM_RSSI_TRIGGER_LESS;
 
@@ -4706,20 +4723,27 @@ wlanoidQueryLinkSpeed(IN struct ADAPTER *prAdapter,
 		      IN void *pvQueryBuffer, IN uint32_t u4QueryBufferLen,
 		      OUT uint32_t *pu4QueryInfoLen)
 {
+	uint8_t ucBssIndex = 0;
+
 	DEBUGFUNC("wlanoidQueryLinkSpeed");
 
+	ucBssIndex = GET_IOCTL_BSSIDX(prAdapter);
+
 	return wlanQueryLinkSpeed(prAdapter, pvQueryBuffer, u4QueryBufferLen,
-				pu4QueryInfoLen, TRUE);
+				pu4QueryInfoLen, TRUE, ucBssIndex);
 }
 
 uint32_t
 wlanQueryLinkSpeed(IN struct ADAPTER *prAdapter,
 		   IN void *pvQueryBuffer, IN uint32_t u4QueryBufferLen,
-		   OUT uint32_t *pu4QueryInfoLen, IN uint8_t fgIsOid)
+		   OUT uint32_t *pu4QueryInfoLen, IN uint8_t fgIsOid,
+		   uint8_t ucBssIndex)
 {
-	uint8_t ucBssIndex = AIS_DEFAULT_INDEX;
+	struct PARAM_LINK_SPEED_EX *pu4LinkSpeed;
+	uint32_t i;
 
 	DEBUGFUNC("wlanQueryLinkSpeed");
+	DBGLOG(REQ, LOUD, "ucBssIndex %d\n", ucBssIndex);
 
 	ASSERT(prAdapter);
 	ASSERT(pu4QueryInfoLen);
@@ -4729,9 +4753,9 @@ wlanQueryLinkSpeed(IN struct ADAPTER *prAdapter,
 	if (prAdapter->fgIsEnableLpdvt)
 		return WLAN_STATUS_NOT_SUPPORTED;
 
-	*pu4QueryInfoLen = sizeof(uint32_t);
+	*pu4QueryInfoLen = sizeof(struct PARAM_LINK_SPEED_EX);
 
-	if (u4QueryBufferLen < sizeof(uint32_t))
+	if (u4QueryBufferLen < sizeof(struct PARAM_LINK_SPEED_EX))
 		return WLAN_STATUS_BUFFER_TOO_SHORT;
 
 	if (kalGetMediaStateIndicated(prAdapter->prGlueInfo,
@@ -4741,13 +4765,30 @@ wlanQueryLinkSpeed(IN struct ADAPTER *prAdapter,
 	} else if (prAdapter->fgIsLinkRateValid == TRUE &&
 		   (kalGetTimeTick() - prAdapter->rLinkRateUpdateTime) <=
 		   CFG_LINK_QUALITY_VALID_PERIOD) {
-		*(uint32_t *) pvQueryBuffer =
-			prAdapter->rLinkQuality.u2LinkSpeed *
-			5000;	/* change to unit of 100bps */
+		pu4LinkSpeed = (struct PARAM_LINK_SPEED_EX *) (
+					   pvQueryBuffer);
+
+		for (i = 0; i < BSSID_NUM; i++) {
+			/* change to unit of 100bps */
+			pu4LinkSpeed->rLq[i].u2LinkSpeed
+				= prAdapter->rLinkQuality.rLq[i].u2LinkSpeed *
+					5000;
+
+			/* ranged from (-128 ~ 30) in unit of dBm */
+			pu4LinkSpeed->rLq[i].cRssi
+				= prAdapter->rLinkQuality.rLq[i].cRssi;
+
+			DBGLOG(REQ, TRACE,
+				"ucBssIdx = %d, rate = %u, signal = %d\n",
+				i,
+				pu4LinkSpeed->rLq[i].u2LinkSpeed,
+				pu4LinkSpeed->rLq[i].cRssi);
+		}
 
 #ifdef CFG_SUPPORT_LINK_QUALITY_MONITOR
 		prAdapter->rLinkQualityInfo.u4CurTxRate =
-			(*(uint32_t *) pvQueryBuffer) / 1000;
+			pu4LinkSpeed->rLq[AIS_DEFAULT_INDEX].u2LinkSpeed /
+				1000;
 #endif /* CFG_SUPPORT_LINK_QUALITY_MONITOR */
 
 		return WLAN_STATUS_SUCCESS;

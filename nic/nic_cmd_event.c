@@ -759,36 +759,39 @@ void nicCmdEventQueryLinkQuality(IN struct ADAPTER
 				 *prAdapter, IN struct CMD_INFO *prCmdInfo,
 				 IN uint8_t *pucEventBuf)
 {
-	int32_t rRssi, *prRssi;
-	struct EVENT_LINK_QUALITY *prLinkQuality;
+	struct EVENT_LINK_QUALITY_V2 *prLinkQuality;
+	struct PARAM_LINK_SPEED_EX *pu4LinkSpeed;
 	struct GLUE_INFO *prGlueInfo;
 	uint32_t u4QueryInfoLen;
+	uint32_t i;
 
 	ASSERT(prAdapter);
 	ASSERT(prCmdInfo);
 
-	prLinkQuality = (struct EVENT_LINK_QUALITY *) pucEventBuf;
+	prLinkQuality = (struct EVENT_LINK_QUALITY_V2 *) pucEventBuf;
 
-	/* ranged from (-128 ~ 30) in unit of dBm */
-	rRssi = (int32_t)	prLinkQuality->cRssi;
+	pu4LinkSpeed = (struct PARAM_LINK_SPEED_EX *) (
+				   prCmdInfo->pvInformationBuffer);
 
-	if (aisGetAisBssInfo(prAdapter, AIS_DEFAULT_INDEX)
-		->eConnectionState == PARAM_MEDIA_STATE_CONNECTED) {
-		if (rRssi > PARAM_WHQL_RSSI_MAX_DBM)
-			rRssi = PARAM_WHQL_RSSI_MAX_DBM;
-		else if (rRssi < PARAM_WHQL_RSSI_MIN_DBM)
-			rRssi = PARAM_WHQL_RSSI_MIN_DBM;
-	} else {
-		rRssi = PARAM_WHQL_RSSI_MIN_DBM;
+	for (i = 0; i < BSSID_NUM; i++) {
+		pu4LinkSpeed->rLq[i].u2LinkSpeed
+			= prLinkQuality->rLq[i].u2LinkSpeed * 5000;
+
+		/* ranged from (-128 ~ 30) in unit of dBm */
+		pu4LinkSpeed->rLq[i].cRssi
+			= prLinkQuality->rLq[i].cRssi;
+
+		DBGLOG(REQ, TRACE,
+			"ucBssIdx = %d, rate = %u, signal = %d\n",
+			i,
+			pu4LinkSpeed->rLq[i].u2LinkSpeed,
+			pu4LinkSpeed->rLq[i].cRssi);
 	}
+
+	u4QueryInfoLen = sizeof(struct PARAM_LINK_SPEED_EX);
 
 	if (prCmdInfo->fgIsOid) {
 		prGlueInfo = prAdapter->prGlueInfo;
-		prRssi = (int32_t *) prCmdInfo->pvInformationBuffer;
-
-		kalMemCopy(prRssi, &rRssi, sizeof(int32_t));
-		u4QueryInfoLen = sizeof(int32_t);
-
 		kalOidComplete(prGlueInfo, prCmdInfo->fgSetQuery,
 			       u4QueryInfoLen, WLAN_STATUS_SUCCESS);
 	}
@@ -808,25 +811,42 @@ void nicCmdEventQueryLinkQuality(IN struct ADAPTER
 void nicCmdEventQueryLinkSpeed(IN struct ADAPTER *prAdapter,
 	IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf)
 {
-	struct EVENT_LINK_QUALITY *prLinkQuality;
+	struct EVENT_LINK_QUALITY_V2 *prLinkQuality;
+	struct PARAM_LINK_SPEED_EX *pu4LinkSpeed;
 	struct GLUE_INFO *prGlueInfo;
 	uint32_t u4QueryInfoLen;
-	uint32_t *pu4LinkSpeed;
+	uint32_t i;
 
 	ASSERT(prAdapter);
 	ASSERT(prCmdInfo);
 
-	prLinkQuality = (struct EVENT_LINK_QUALITY *) pucEventBuf;
+	prLinkQuality = (struct EVENT_LINK_QUALITY_V2 *) pucEventBuf;
 
 	prGlueInfo = prAdapter->prGlueInfo;
-	pu4LinkSpeed = (uint32_t *) (prCmdInfo->pvInformationBuffer);
-	*pu4LinkSpeed = prLinkQuality->u2LinkSpeed * 5000;
+	pu4LinkSpeed = (struct PARAM_LINK_SPEED_EX *) (
+				   prCmdInfo->pvInformationBuffer);
+
+	for (i = 0; i < BSSID_NUM; i++) {
+		pu4LinkSpeed->rLq[i].u2LinkSpeed
+			= prLinkQuality->rLq[i].u2LinkSpeed * 5000;
+
+		/* ranged from (-128 ~ 30) in unit of dBm */
+		pu4LinkSpeed->rLq[i].cRssi
+			= prLinkQuality->rLq[i].cRssi;
+
+		DBGLOG(REQ, TRACE,
+			"ucBssIdx = %d, rate = %u, signal = %d\n",
+			i,
+			pu4LinkSpeed->rLq[i].u2LinkSpeed,
+			pu4LinkSpeed->rLq[i].cRssi);
+	}
+
+	u4QueryInfoLen = sizeof(struct PARAM_LINK_SPEED_EX);
 
 #ifdef CFG_SUPPORT_LINK_QUALITY_MONITOR
-	prAdapter->rLinkQualityInfo.u4CurTxRate = (*pu4LinkSpeed) / 1000;
+	prAdapter->rLinkQualityInfo.u4CurTxRate =
+		pu4LinkSpeed->rLq[AIS_DEFAULT_INDEX].u2LinkSpeed / 1000;
 #endif /* CFG_SUPPORT_LINK_QUALITY_MONITOR */
-
-	u4QueryInfoLen = sizeof(uint32_t);
 
 	if (prCmdInfo->fgIsOid)
 		kalOidComplete(prGlueInfo, prCmdInfo->fgSetQuery,
@@ -3261,7 +3281,7 @@ void nicEventLinkQuality(IN struct ADAPTER *prAdapter,
 	if (prAdapter->rWlanInfo.eRssiTriggerType ==
 	    ENUM_RSSI_TRIGGER_GREATER &&
 	    prAdapter->rWlanInfo.rRssiTriggerValue >= (int32_t) (
-		    prAdapter->rLinkQuality.cRssi)) {
+		    prAdapter->rLinkQuality.rLq[ucBssIndex].cRssi)) {
 
 		prAdapter->rWlanInfo.eRssiTriggerType =
 			ENUM_RSSI_TRIGGER_TRIGGERED;
@@ -3274,7 +3294,7 @@ void nicEventLinkQuality(IN struct ADAPTER *prAdapter,
 	} else if (prAdapter->rWlanInfo.eRssiTriggerType ==
 		   ENUM_RSSI_TRIGGER_LESS &&
 		   prAdapter->rWlanInfo.rRssiTriggerValue <= (int32_t) (
-			   prAdapter->rLinkQuality.cRssi)) {
+			   prAdapter->rLinkQuality.rLq[ucBssIndex].cRssi)) {
 
 		prAdapter->rWlanInfo.eRssiTriggerType =
 			ENUM_RSSI_TRIGGER_TRIGGERED;

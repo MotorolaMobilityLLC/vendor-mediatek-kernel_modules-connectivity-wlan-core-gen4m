@@ -4407,7 +4407,8 @@ static void tpcComposeReportFrame(IN struct ADAPTER *prAdapter,
 		sizeof(prTxFrame->ucLinkMargin) + sizeof(prTxFrame->ucTransPwr);
 	prTxFrame->ucTransPwr = prAdapter->u4GetTxPower;
 	prTxFrame->ucLinkMargin =
-		prAdapter->rLinkQuality.cRssi - (0 - MIN_RCV_PWR);
+		prAdapter->rLinkQuality.rLq[prStaRec->ucBssIndex].
+		cRssi - (0 - MIN_RCV_PWR);
 
 	u2PayloadLen = ACTION_SM_TPC_REPORT_LEN;
 

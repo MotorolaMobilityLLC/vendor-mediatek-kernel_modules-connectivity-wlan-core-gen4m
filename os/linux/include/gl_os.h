@@ -708,8 +708,8 @@ struct GLUE_INFO {
 	struct work_struct monWork;
 #endif
 
-	int32_t i4RssiCache;
-	uint32_t u4LinkSpeedCache;
+	int32_t i4RssiCache[KAL_AIS_NUM];
+	uint32_t u4LinkSpeedCache[KAL_AIS_NUM];
 
 
 	uint32_t u4InfType;

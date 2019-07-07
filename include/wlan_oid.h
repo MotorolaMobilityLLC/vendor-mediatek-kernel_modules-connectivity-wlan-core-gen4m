@@ -2883,7 +2883,7 @@ wlanQueryLinkSpeed(IN struct ADAPTER *prAdapter,
 		       IN void *pvQueryBuffer,
 		       IN uint32_t u4QueryBufferLen,
 		       OUT uint32_t *pu4QueryInfoLen,
-		       IN uint8_t fgIsOid);
+		       IN uint8_t fgIsOid, uint8_t ucBssIndex);
 
 uint32_t
 wlanoidQueryLinkSpeedEx(IN struct ADAPTER *prAdapter,

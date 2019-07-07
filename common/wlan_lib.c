@@ -10013,7 +10013,7 @@ uint32_t wlanLinkQualityMonitor(struct GLUE_INFO *prGlueInfo, bool bFgIsOid)
 	/* send cmd to firmware */
 	u4Status = wlanQueryLinkSpeed(prAdapter, &prAdapter->u4Rate,
 			   sizeof(prAdapter->u4Rate),
-			   &(prAdapter->u4BufLen), FALSE);
+			   &(prAdapter->u4BufLen), FALSE, ucBssIndex);
 #if CFG_SUPPORT_MSP
 	prAdapter->rHwWlanInfo.u4Index = ucWlanIdx;
 	u4Status = wlanQueryWlanInfo(prAdapter, &(prAdapter->rHwWlanInfo),

@@ -1025,7 +1025,8 @@ uint8_t scanCheckNeedDriverRoaming(
 	    policy != CONNECT_BY_BSSID &&
 	    roam->eCurrentState == ROAMING_STATE_DECISION &&
 	    ais->eCurrentState == AIS_STATE_ONLINE_SCAN &&
-	    prAdapter->rLinkQuality.cRssi < RSSI_BAD_NEED_ROAM &&
+	    prAdapter->rLinkQuality.rLq[ucBssIndex].cRssi <
+			RSSI_BAD_NEED_ROAM &&
 	    CHECK_FOR_TIMEOUT(roam->rRoamingDiscoveryUpdateTime,
 			      roam->rRoamingLastDecisionTime,
 			      SEC_TO_SYSTIME(STICK_TIMEOUT_SEC))) {

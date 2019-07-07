@@ -491,12 +491,13 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy,
 	struct GLUE_INFO *prGlueInfo = NULL;
 	uint32_t rStatus;
 	uint8_t arBssid[PARAM_MAC_ADDR_LEN];
-	uint32_t u4BufLen, u4Rate;
-	int32_t i4Rssi;
+	uint32_t u4BufLen, u4Rate = 0;
+	int32_t i4Rssi = 0;
 	struct PARAM_GET_STA_STATISTICS rQueryStaStatistics;
 	uint32_t u4TotalError;
 	struct net_device_stats *prDevStats;
 	uint8_t ucBssIndex = 0;
+	struct PARAM_LINK_SPEED_EX rLinkSpeed;
 
 	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wiphy);
 	ASSERT(prGlueInfo);
@@ -538,9 +539,11 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy,
 				sizeof(u4Rate), TRUE, FALSE, FALSE, &u4BufLen);
 #else
 	rStatus = kalIoctlByBssIdx(prGlueInfo,
-				wlanoidQueryLinkSpeed, &u4Rate,
-				sizeof(u4Rate), TRUE, FALSE, FALSE, &u4BufLen,
-				ucBssIndex);
+				wlanoidQueryLinkSpeed, &rLinkSpeed,
+				sizeof(rLinkSpeed), TRUE, FALSE, FALSE,
+				&u4BufLen, ucBssIndex);
+	if (ucBssIndex < BSSID_NUM)
+		u4Rate = rLinkSpeed.rLq[ucBssIndex].u2LinkSpeed;
 #endif /* CFG_REPORT_MAX_TX_RATE */
 
 #if KERNEL_VERSION(4, 0, 0) <= CFG80211_VERSION_CODE
@@ -551,17 +554,19 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy,
 	if ((rStatus != WLAN_STATUS_SUCCESS) || (u4Rate == 0)) {
 		/* unable to retrieve link speed */
 		DBGLOG(REQ, WARN, "last link speed\n");
-		sinfo->txrate.legacy = prGlueInfo->u4LinkSpeedCache;
+		sinfo->txrate.legacy = prGlueInfo->u4LinkSpeedCache[ucBssIndex];
 	} else {
 		/* convert from 100bps to 100kbps */
 		sinfo->txrate.legacy = u4Rate / 1000;
-		prGlueInfo->u4LinkSpeedCache = u4Rate / 1000;
+		prGlueInfo->u4LinkSpeedCache[ucBssIndex] = u4Rate / 1000;
 	}
 
 	/* 3. fill RSSI */
-	rStatus = kalIoctlByBssIdx(prGlueInfo, wlanoidQueryRssi, &i4Rssi,
-				sizeof(i4Rssi), TRUE, FALSE, FALSE, &u4BufLen,
-				ucBssIndex);
+	rStatus = kalIoctlByBssIdx(prGlueInfo, wlanoidQueryRssi, &rLinkSpeed,
+				sizeof(rLinkSpeed), TRUE, FALSE, FALSE,
+				&u4BufLen, ucBssIndex);
+	if (ucBssIndex < BSSID_NUM)
+		i4Rssi = rLinkSpeed.rLq[ucBssIndex].cRssi;
 
 #if KERNEL_VERSION(4, 0, 0) <= CFG80211_VERSION_CODE
 	sinfo->filled |= BIT(NL80211_STA_INFO_SIGNAL);
@@ -572,20 +577,20 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy,
 	if (rStatus != WLAN_STATUS_SUCCESS) {
 		DBGLOG(REQ, WARN,
 			"Query RSSI failed, use last RSSI %d\n",
-			prGlueInfo->i4RssiCache);
-		sinfo->signal = prGlueInfo->i4RssiCache ?
-			prGlueInfo->i4RssiCache :
+			prGlueInfo->i4RssiCache[ucBssIndex]);
+		sinfo->signal = prGlueInfo->i4RssiCache[ucBssIndex] ?
+			prGlueInfo->i4RssiCache[ucBssIndex] :
 			PARAM_WHQL_RSSI_INITIAL_DBM;
 	} else if (i4Rssi == PARAM_WHQL_RSSI_MIN_DBM ||
 			i4Rssi == PARAM_WHQL_RSSI_MAX_DBM) {
 		DBGLOG(REQ, WARN,
 			"RSSI abnormal, use last RSSI %d\n",
-			prGlueInfo->i4RssiCache);
-		sinfo->signal = prGlueInfo->i4RssiCache ?
-			prGlueInfo->i4RssiCache : i4Rssi;
+			prGlueInfo->i4RssiCache[ucBssIndex]);
+		sinfo->signal = prGlueInfo->i4RssiCache[ucBssIndex] ?
+			prGlueInfo->i4RssiCache[ucBssIndex] : i4Rssi;
 	} else {
 		sinfo->signal = i4Rssi;	/* dBm */
-		prGlueInfo->i4RssiCache = i4Rssi;
+		prGlueInfo->i4RssiCache[ucBssIndex] = i4Rssi;
 	}
 
 	/* Get statistics from net_dev */
@@ -661,12 +666,13 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy,
 	struct GLUE_INFO *prGlueInfo = NULL;
 	uint32_t rStatus;
 	uint8_t arBssid[PARAM_MAC_ADDR_LEN];
-	uint32_t u4BufLen, u4Rate;
-	int32_t i4Rssi;
+	uint32_t u4BufLen, u4Rate = 0;
+	int32_t i4Rssi = 0;
 	struct PARAM_GET_STA_STATISTICS rQueryStaStatistics;
 	uint32_t u4TotalError;
 	struct net_device_stats *prDevStats;
 	uint8_t ucBssIndex = 0;
+	struct PARAM_LINK_SPEED_EX rLinkSpeed;
 
 	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wiphy);
 	ASSERT(prGlueInfo);
@@ -705,9 +711,11 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy,
 				&u4BufLen);
 #else
 		rStatus = kalIoctlByBssIdx(prGlueInfo,
-				wlanoidQueryLinkSpeed, &u4Rate,
-				sizeof(u4Rate), TRUE, FALSE, FALSE, &u4BufLen,
-				ucBssIndex);
+				wlanoidQueryLinkSpeed, &rLinkSpeed,
+				sizeof(rLinkSpeed), TRUE, FALSE, FALSE,
+				&u4BufLen, ucBssIndex);
+		if (ucBssIdx < BSSID_NUM)
+			u4Rate = rLinkSpeed.rLq[ucBssIdx].u2LinkSpeed;
 #endif /* CFG_REPORT_MAX_TX_RATE */
 
 		sinfo->filled |= STATION_INFO_TX_BITRATE;
@@ -715,11 +723,12 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy,
 		if ((rStatus != WLAN_STATUS_SUCCESS) || (u4Rate == 0)) {
 			/* unable to retrieve link speed */
 			DBGLOG(REQ, WARN, "last link speed\n");
-			sinfo->txrate.legacy = prGlueInfo->u4LinkSpeedCache;
+			sinfo->txrate.legacy =
+				prGlueInfo->u4LinkSpeedCache[ucBssIdx];
 		} else {
 			/* convert from 100bps to 100kbps */
 			sinfo->txrate.legacy = u4Rate / 1000;
-			prGlueInfo->u4LinkSpeedCache = u4Rate / 1000;
+			prGlueInfo->u4LinkSpeedCache[ucBssIdx] = u4Rate / 1000;
 		}
 	}
 
@@ -730,29 +739,31 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy,
 		DBGLOG(REQ, WARN, "not yet connected\n");
 	} else {
 		rStatus = kalIoctlByBssIdx(prGlueInfo,
-				wlanoidQueryRssi, &i4Rssi,
-				sizeof(i4Rssi), TRUE, FALSE, FALSE, &u4BufLen,
-				ucBssIndex);
+				wlanoidQueryRssi, &rLinkSpeed,
+				sizeof(rLinkSpeed), TRUE, FALSE, FALSE,
+				&u4BufLen, ucBssIndex);
+		if (ucBssIdx < BSSID_NUM)
+			i4Rssi = rLinkSpeed.rLq[ucBssIdx].cRssi;
 
 		sinfo->filled |= STATION_INFO_SIGNAL;
 
 		if (rStatus != WLAN_STATUS_SUCCESS) {
 			DBGLOG(REQ, WARN,
 				"Query RSSI failed, use last RSSI %d\n",
-				prGlueInfo->i4RssiCache);
-			sinfo->signal = prGlueInfo->i4RssiCache ?
-				prGlueInfo->i4RssiCache :
+				prGlueInfo->i4RssiCache[ucBssIdx]);
+			sinfo->signal = prGlueInfo->i4RssiCache[ucBssIdx] ?
+				prGlueInfo->i4RssiCache[ucBssIdx] :
 				PARAM_WHQL_RSSI_INITIAL_DBM;
 		} else if (i4Rssi == PARAM_WHQL_RSSI_MIN_DBM ||
 			i4Rssi == PARAM_WHQL_RSSI_MAX_DBM) {
 			DBGLOG(REQ, WARN,
 				"RSSI abnormal, use last RSSI %d\n",
-				prGlueInfo->i4RssiCache);
-			sinfo->signal = prGlueInfo->i4RssiCache ?
-				prGlueInfo->i4RssiCache : i4Rssi;
+				prGlueInfo->i4RssiCache[ucBssIdx]);
+			sinfo->signal = prGlueInfo->i4RssiCache[ucBssIdx] ?
+				prGlueInfo->i4RssiCache[ucBssIdx] : i4Rssi;
 		} else {
 			sinfo->signal = i4Rssi;	/* dBm */
-			prGlueInfo->i4RssiCache = i4Rssi;
+			prGlueInfo->i4RssiCache[ucBssIdx] = i4Rssi;
 		}
 	}
 

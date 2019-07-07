@@ -1411,7 +1411,7 @@ struct ADAPTER {
 	struct EVENT_WLAN_INFO rEventWlanInfo;
 #endif
 
-	struct EVENT_LINK_QUALITY rLinkQuality;
+	struct EVENT_LINK_QUALITY_V2 rLinkQuality;
 	OS_SYSTIME rLinkQualityUpdateTime;
 	u_int8_t fgIsLinkQualityValid;
 	OS_SYSTIME rLinkRateUpdateTime;

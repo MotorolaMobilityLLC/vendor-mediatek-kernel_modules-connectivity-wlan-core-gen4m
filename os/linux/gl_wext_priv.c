@@ -3608,6 +3608,7 @@ static int priv_driver_get_bss_statistics(
 	struct PARAM_GET_BSS_STATISTICS rQueryBssStatistics;
 	uint8_t ucBssIndex = AIS_DEFAULT_INDEX;
 	int32_t i4BytesWritten = 0;
+	struct PARAM_LINK_SPEED_EX rLinkSpeed;
 #if 0
 	int8_t *apcArgv[WLAN_CFG_ARGV_MAX];
 	int32_t i4Argc = 0;
@@ -3616,6 +3617,8 @@ static int priv_driver_get_bss_statistics(
 
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 	ASSERT(prGlueInfo);
+
+	ucBssIndex = wlanGetBssIdx(prNetDev);
 
 	kalMemZero(arBssid, MAC_ADDR_LEN);
 	wlanQueryInformation(prGlueInfo->prAdapter, wlanoidQueryBssid,
@@ -3634,11 +3637,14 @@ static int priv_driver_get_bss_statistics(
 		DBGLOG(REQ, WARN, "not yet connected\n");
 		return WLAN_STATUS_SUCCESS;
 	}
-	rStatus = kalIoctl(prGlueInfo, wlanoidQueryRssi, &i4Rssi,
-			   sizeof(i4Rssi), TRUE, FALSE, FALSE, &u4BufLen);
+	rStatus = kalIoctlByBssIdx(prGlueInfo, wlanoidQueryRssi, &rLinkSpeed,
+			   sizeof(rLinkSpeed), TRUE, FALSE, FALSE, &u4BufLen,
+			   ucBssIndex);
 	if (rStatus != WLAN_STATUS_SUCCESS)
 		DBGLOG(REQ, WARN, "unable to retrieve rssi\n");
 
+	if (ucBssIndex < BSSID_NUM)
+		i4Rssi = rLinkSpeed.rLq[ucBssIndex].cRssi;
 
 	/* 3 get per-BSS link statistics */
 	if (rStatus == WLAN_STATUS_SUCCESS) {
@@ -5392,7 +5398,8 @@ static int32_t priv_driver_dump_stat_info(struct ADAPTER *prAdapter,
 			IN char *pcCommand, IN int i4TotalLen,
 			struct PARAM_HW_WLAN_INFO *prHwWlanInfo,
 			struct PARAM_GET_STA_STATISTICS *prQueryStaStatistics,
-			u_int8_t fgResetCnt, uint32_t u4StatGroup)
+			u_int8_t fgResetCnt, uint32_t u4StatGroup,
+			uint8_t ucBssIndex)
 {
 	int32_t i4BytesWritten = 0;
 	int32_t rRssi;
@@ -5415,6 +5422,7 @@ static int32_t priv_driver_dump_stat_info(struct ADAPTER *prAdapter,
 	int16_t i2Wf0AvgPwr;
 	int16_t i2Wf1AvgPwr;
 	uint32_t u4BufLen = 0;
+	struct PARAM_LINK_SPEED_EX rLinkSpeed;
 
 	ucSkipAr = prQueryStaStatistics->ucSkipAr;
 	prRxCtrl = &prAdapter->rRxCtrl;
@@ -5479,10 +5487,13 @@ static int32_t priv_driver_dump_stat_info(struct ADAPTER *prAdapter,
 	}
 
 	/* get Beacon RSSI */
-	rStatus = kalIoctl(prAdapter->prGlueInfo, wlanoidQueryRssi, &rRssi,
-			   sizeof(rRssi), TRUE, FALSE, FALSE, &u4BufLen);
+	rStatus = kalIoctl(prAdapter->prGlueInfo, wlanoidQueryRssi,
+				&rLinkSpeed, sizeof(rLinkSpeed), TRUE, FALSE,
+				FALSE, &u4BufLen, ucBssIndex);
 	if (rStatus != WLAN_STATUS_SUCCESS)
 		DBGLOG(REQ, WARN, "unable to retrieve rssi\n");
+	if (ucBssIndex < BSSID_NUM)
+		rRssi = rLinkSpeed.rLq[ucBssIndex].cRssi;
 
 	u2LinkSpeed = (prQueryStaStatistics->u2LinkSpeed == 0) ?
 				0 : prQueryStaStatistics->u2LinkSpeed / 2;
@@ -5884,7 +5895,8 @@ static int32_t priv_driver_dump_stat_info(struct ADAPTER *prAdapter,
 			IN char *pcCommand, IN int i4TotalLen,
 			struct PARAM_HW_WLAN_INFO *prHwWlanInfo,
 			struct PARAM_GET_STA_STATISTICS *prQueryStaStatistics,
-			u_int8_t fgResetCnt, uint32_t u4StatGroup)
+			u_int8_t fgResetCnt, uint32_t u4StatGroup,
+			uint8_t ucBssIndex)
 {
 	int32_t i4BytesWritten = 0;
 	int32_t rRssi;
@@ -5914,6 +5926,7 @@ static int32_t priv_driver_dump_stat_info(struct ADAPTER *prAdapter,
 	uint8_t ucAggRange[AGG_RANGE_SEL_NUM] = {0};
 	uint32_t u4RangeCtrl_0, u4RangeCtrl_1;
 	enum AGG_RANGE_TYPE_T eRangeType = ENUM_AGG_RANGE_TYPE_TX;
+	struct PARAM_LINK_SPEED_EX rLinkSpeed;
 
 	ucSkipAr = prQueryStaStatistics->ucSkipAr;
 	prRxCtrl = &prAdapter->rRxCtrl;
@@ -6090,12 +6103,14 @@ static int32_t priv_driver_dump_stat_info(struct ADAPTER *prAdapter,
 			"%s", "----- Last Rx Info (Group 0x04) -----\n");
 
 		/* get Beacon RSSI */
-		rStatus = kalIoctl(prAdapter->prGlueInfo,
-				   wlanoidQueryRssi, &rRssi,
-				   sizeof(rRssi), TRUE, TRUE, TRUE,
-				   &u4BufLen);
+		rStatus = kalIoctlByBssIdx(prAdapter->prGlueInfo,
+				   wlanoidQueryRssi, &rLinkSpeed,
+				   sizeof(rLinkSpeed), TRUE, TRUE, TRUE,
+				   &u4BufLen, ucBssIndex);
 		if (rStatus != WLAN_STATUS_SUCCESS)
 			DBGLOG(REQ, WARN, "unable to retrieve rssi\n");
+		if (ucBssIndex < BSSID_NUM)
+			rRssi = rLinkSpeed.rLq[ucBssIndex].cRssi;
 
 		rSwCtrlInfo.u4Data = 0;
 		rSwCtrlInfo.u4Id = CMD_SW_DBGCTL_ADVCTL_GET_ID + 1;
@@ -7273,7 +7288,8 @@ static int priv_driver_get_sta_stat(IN struct net_device *prNetDev,
 	if (pucMacAddr) {
 		i4BytesWritten = priv_driver_dump_stat_info(prAdapter,
 			pcCommand, i4TotalLen, prHwWlanInfo,
-			prQueryStaStatistics, fgResetCnt, u4StatGroup);
+			prQueryStaStatistics, fgResetCnt, u4StatGroup,
+			wlanGetBssIdx(prNetDev));
 	}
 	DBGLOG(REQ, INFO, "%s: command result is %s\n", __func__, pcCommand);
 
@@ -9449,6 +9465,8 @@ int priv_driver_get_linkspeed(IN struct net_device *prNetDev,
 	uint32_t u4Rate = 0;
 	uint32_t u4LinkSpeed = 0;
 	int32_t i4BytesWritten = 0;
+	uint8_t ucBssIndex;
+	struct PARAM_LINK_SPEED_EX rLinkSpeed;
 
 	ASSERT(prNetDev);
 	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
@@ -9458,11 +9476,16 @@ int priv_driver_get_linkspeed(IN struct net_device *prNetDev,
 	if (!netif_carrier_ok(prNetDev))
 		return -1;
 
-	rStatus = kalIoctl(prGlueInfo, wlanoidQueryLinkSpeed, &u4Rate,
-			   sizeof(u4Rate), TRUE, TRUE, TRUE, &u4BufLen);
+	ucBssIndex = wlanGetBssIdx(prNetDev);
+	rStatus = kalIoctlByBssIdx(prGlueInfo, wlanoidQueryLinkSpeed,
+				&rLinkSpeed, sizeof(rLinkSpeed), TRUE, TRUE,
+				TRUE, &u4BufLen, ucBssIndex);
 
 	if (rStatus != WLAN_STATUS_SUCCESS)
 		return -1;
+
+	if (ucBssIndex < BSSID_NUM)
+		u4Rate = rLinkSpeed.rLq[ucBssIndex].u2LinkSpeed;
 
 	u4LinkSpeed = u4Rate * 100;
 	i4BytesWritten = snprintf(pcCommand, i4TotalLen, "LinkSpeed %u",
