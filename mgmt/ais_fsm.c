@@ -1711,6 +1711,11 @@ void aisFsmSteps(IN struct ADAPTER *prAdapter,
 					prAisFsmInfo->fgTargetChnlScanIssued =
 					    FALSE;
 					fgIsTransition = TRUE;
+
+					cnmGetOpTRxNss(prAdapter,
+						prAisBssInfo->ucBssIndex,
+						&prAisBssInfo->ucOpRxNss,
+						&prAisBssInfo->ucOpTxNss);
 				}
 			}
 			break;
@@ -2208,6 +2213,12 @@ void aisFsmSteps(IN struct ADAPTER *prAdapter,
 #endif /* CFG_SUPPORT_ADHOC */
 
 		case AIS_STATE_NORMAL_TR:
+			/* Renew op trx nss */
+			cnmGetOpTRxNss(prAdapter,
+				       prAisBssInfo->ucBssIndex,
+				       &prAisBssInfo->ucOpRxNss,
+				       &prAisBssInfo->ucOpTxNss);
+
 			/* Don't do anything when rJoinTimeoutTimer
 			 * is still ticking
 			 */
