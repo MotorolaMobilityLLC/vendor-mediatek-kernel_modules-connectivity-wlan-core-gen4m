@@ -866,6 +866,70 @@ struct MSDU_INFO *nicGetPendingTxMsduInfo(
 	return prMsduInfo;
 }
 
+
+void nicFreePendingTxMsduInfoByWlanIdx(IN struct ADAPTER
+				      *prAdapter, IN uint8_t ucWlanIndex)
+{
+	struct QUE *prTxingQue;
+	struct QUE rTempQue;
+	struct QUE *prTempQue = &rTempQue;
+	struct QUE_ENTRY *prQueueEntry = (struct QUE_ENTRY *) NULL;
+	struct MSDU_INFO *prMsduInfoListHead = (struct MSDU_INFO *)
+					       NULL;
+	struct MSDU_INFO *prMsduInfoListTail = (struct MSDU_INFO *)
+					       NULL;
+	struct MSDU_INFO *prMsduInfo = (struct MSDU_INFO *) NULL;
+
+	GLUE_SPIN_LOCK_DECLARATION();
+
+	ASSERT(prAdapter);
+
+	KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_TXING_MGMT_LIST);
+
+	prTxingQue = &(prAdapter->rTxCtrl.rTxMgmtTxingQueue);
+	QUEUE_MOVE_ALL(prTempQue, prTxingQue);
+
+	QUEUE_REMOVE_HEAD(prTempQue, prQueueEntry,
+			  struct QUE_ENTRY *);
+	while (prQueueEntry) {
+		prMsduInfo = (struct MSDU_INFO *) prQueueEntry;
+
+		if (prMsduInfo->ucWlanIndex == ucWlanIndex) {
+			DBGLOG(TX, TRACE,
+			       "%s: Get Msdu WIDX:PID[%u:%u] SEQ[%u] from Pending Q\n",
+			       __func__, prMsduInfo->ucWlanIndex,
+			       prMsduInfo->ucPID,
+			       prMsduInfo->ucTxSeqNum);
+
+			if (prMsduInfoListHead == NULL) {
+				prMsduInfoListHead =
+					prMsduInfoListTail = prMsduInfo;
+			} else {
+				QM_TX_SET_NEXT_MSDU_INFO(
+					prMsduInfoListTail, prMsduInfo);
+				prMsduInfoListTail = prMsduInfo;
+			}
+		} else {
+			QUEUE_INSERT_TAIL(prTxingQue, prQueueEntry);
+
+			prMsduInfo = NULL;
+		}
+
+		QUEUE_REMOVE_HEAD(prTempQue, prQueueEntry,
+				  struct QUE_ENTRY *);
+	}
+	QUEUE_CONCATENATE_QUEUES(prTxingQue, prTempQue);
+
+	KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_TXING_MGMT_LIST);
+
+	/* free */
+	if (prMsduInfoListHead) {
+		nicTxFreeMsduInfoPacket(prAdapter, prMsduInfoListHead);
+		nicTxReturnMsduInfo(prAdapter, prMsduInfoListHead);
+	}
+
+} /* end of nicFreePendingTxMsduInfoByBssIdx() */
+
 void nicFreePendingTxMsduInfoByBssIdx(IN struct ADAPTER
 				      *prAdapter, IN uint8_t ucBssIndex)
 {

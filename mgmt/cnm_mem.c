@@ -674,6 +674,11 @@ struct STA_RECORD *cnmStaRecAlloc(struct ADAPTER *prAdapter,
 		prStaRec = NULL;
 	}
 
+	/* remove pending msdu when sta_rec alloc */
+	if (prStaRec)
+		nicFreePendingTxMsduInfoByWlanIdx(prAdapter,
+			prStaRec->ucWlanIndex);
+
 	return prStaRec;
 }
 

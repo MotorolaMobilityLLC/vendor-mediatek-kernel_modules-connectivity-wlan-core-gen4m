@@ -233,6 +233,9 @@ struct MSDU_INFO *nicGetPendingTxMsduInfo(
 	IN struct ADAPTER *prAdapter, IN uint8_t ucWlanIndex,
 	IN uint8_t ucSeqNum);
 
+void nicFreePendingTxMsduInfoByWlanIdx(IN struct ADAPTER
+				      *prAdapter, IN uint8_t ucWlanIndex);
+
 void nicFreePendingTxMsduInfoByBssIdx(IN struct ADAPTER
 				      *prAdapter, IN uint8_t ucBssIndex);
 
