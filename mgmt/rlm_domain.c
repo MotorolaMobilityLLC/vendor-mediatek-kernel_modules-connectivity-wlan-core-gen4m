@@ -3260,16 +3260,14 @@ void _txPwrCtrlDeleteElement(struct ADAPTER *prAdapter,
 				fgFind = TRUE;
 			if (fgFind) {
 				list_del(prCur);
-				if (prCurElement != NULL) {
-					ucSettingCount =
-						prCurElement->settingCount;
-						u4MemSize2 = u4MemSize +
-						((ucSettingCount == 1) ? 0 :
-						(ucSettingCount - 1) *
-						u4SettingSize);
-					kalMemFree(prCurElement, VIR_MEM_TYPE,
-						u4MemSize2);
-				}
+				ucSettingCount =
+					prCurElement->settingCount;
+					u4MemSize2 = u4MemSize +
+					((ucSettingCount == 1) ? 0 :
+					(ucSettingCount - 1) *
+					u4SettingSize);
+				kalMemFree(prCurElement, VIR_MEM_TYPE,
+					u4MemSize2);
 			}
 		}
 	}

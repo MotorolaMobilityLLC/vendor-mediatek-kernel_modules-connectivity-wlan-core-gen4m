@@ -375,7 +375,7 @@ static ssize_t procCfgRead(struct file *filp, char __user *buf, size_t count,
 			       (unsigned int)prWlanCfgEntry->aucValue[
 				WLAN_CFG_VALUE_LEN_MAX - 1]);
 			kalMemSet(g_aucProcBuf, ' ', u4StrLen);
-			kalStrnCpy(g_aucProcBuf, str2, kalStrLen(str2));
+			kalStrnCpy(g_aucProcBuf, str2, kalStrLen(str2) + 1);
 			g_aucProcBuf[u4StrLen-1] = '\n';
 			goto procCfgReadLabel;
 		}
@@ -407,7 +407,7 @@ static ssize_t procCfgRead(struct file *filp, char __user *buf, size_t count,
 			       (unsigned int)prWlanCfgEntry->aucValue[
 				WLAN_CFG_VALUE_LEN_MAX - 1]);
 			kalMemSet(g_aucProcBuf, ' ', u4StrLen);
-			kalStrnCpy(g_aucProcBuf, str2, kalStrLen(str2));
+			kalStrnCpy(g_aucProcBuf, str2, kalStrLen(str2) + 1);
 			g_aucProcBuf[u4StrLen-1] = '\n';
 			goto procCfgReadLabel;
 		}
