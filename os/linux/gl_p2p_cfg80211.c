@@ -633,7 +633,6 @@ int mtk_p2p_cfg80211_del_iface(struct wiphy *wiphy, struct wireless_dev *wdev)
 			sizeof(struct MSG_P2P_DEL_IFACE));
 
 	if (prP2pDelIfaceMsg == NULL) {
-		ASSERT(FALSE);
 		DBGLOG(INIT, WARN, "unable to alloc msg\n");
 	} else {
 		prP2pDelIfaceMsg->rMsgHdr.eMsgId = MID_MNY_P2P_DEL_IFACE;
@@ -1104,7 +1103,6 @@ int mtk_p2p_cfg80211_scan(struct wiphy *wiphy,
 			RAM_TYPE_MSG, u4MsgSize);
 
 		if (prMsgScanRequest == NULL) {
-			ASSERT(FALSE);
 			i4RetRslt = -ENOMEM;
 			break;
 		}
@@ -1490,7 +1488,6 @@ int mtk_p2p_cfg80211_start_ap(struct wiphy *wiphy,
 			     ));
 
 		if (prP2pBcnUpdateMsg == NULL) {
-			ASSERT(FALSE);
 			i4Rslt = -ENOMEM;
 			break;
 		}
@@ -1575,7 +1572,6 @@ int mtk_p2p_cfg80211_start_ap(struct wiphy *wiphy,
 				RAM_TYPE_MSG, sizeof(struct MSG_P2P_START_AP));
 
 		if (prP2pStartAPMsg == NULL) {
-			ASSERT(FALSE);
 			i4Rslt = -ENOMEM;
 			break;
 		}
@@ -1720,7 +1716,6 @@ static int mtk_p2p_cfg80211_start_radar_detection_impl(struct wiphy *wiphy,
 				RAM_TYPE_MSG, sizeof(*prP2pDfsCacMsg));
 
 		if (prP2pDfsCacMsg == NULL) {
-			ASSERT(FALSE);
 			i4Rslt = -ENOMEM;
 			break;
 		}
@@ -1872,7 +1867,6 @@ int mtk_p2p_cfg80211_channel_switch(struct wiphy *wiphy,
 			RAM_TYPE_MSG, sizeof(*prP2pSetNewChannelMsg));
 
 		if (prP2pSetNewChannelMsg == NULL) {
-			ASSERT(FALSE);
 			i4Rslt = -ENOMEM;
 			break;
 		}
@@ -1933,7 +1927,6 @@ int mtk_p2p_cfg80211_channel_switch(struct wiphy *wiphy,
 					u4Len);
 
 			if (prP2pBcnUpdateMsg == NULL) {
-				ASSERT(FALSE);
 				i4Rslt = -ENOMEM;
 				break;
 			}
@@ -2050,7 +2043,6 @@ int mtk_p2p_cfg80211_change_beacon(struct wiphy *wiphy,
 					u4Len);
 
 			if (prP2pBcnUpdateMsg == NULL) {
-				ASSERT(FALSE);
 				i4Rslt = -ENOMEM;
 				break;
 			}
@@ -2207,7 +2199,6 @@ int mtk_p2p_cfg80211_stop_ap(struct wiphy *wiphy, struct net_device *dev)
 			RAM_TYPE_MSG, sizeof(struct MSG_P2P_STOP_AP));
 
 		if (prP2pStopApMsg == NULL) {
-			ASSERT(FALSE);
 			i4Rslt = -ENOMEM;
 			break;
 		}
@@ -2308,7 +2299,6 @@ int mtk_p2p_cfg80211_remain_on_channel(struct wiphy *wiphy,
 			RAM_TYPE_MSG, sizeof(struct MSG_P2P_CHNL_REQUEST));
 
 		if (prMsgChnlReq == NULL) {
-			ASSERT(FALSE);
 			i4Rslt = -ENOMEM;
 			break;
 		}
@@ -2361,7 +2351,6 @@ int mtk_p2p_cfg80211_cancel_remain_on_channel(struct wiphy *wiphy,
 			RAM_TYPE_MSG, sizeof(struct MSG_P2P_CHNL_ABORT));
 
 		if (prMsgChnlAbort == NULL) {
-			ASSERT(FALSE);
 			i4Rslt = -ENOMEM;
 			break;
 		}
@@ -2426,7 +2415,6 @@ int _mtk_p2p_cfg80211_mgmt_tx(struct wiphy *wiphy,
 				sizeof(struct MSG_MGMT_TX_REQUEST));
 
 		if (prMsgTxReq == NULL) {
-			ASSERT(FALSE);
 			i4Rslt = -ENOMEM;
 			DBGLOG(P2P, ERROR, "Allocate TX req msg fails.\n");
 			break;
@@ -2590,7 +2578,6 @@ int mtk_p2p_cfg80211_mgmt_tx_cancel_wait(struct wiphy *wiphy,
 				sizeof(struct MSG_CANCEL_TX_WAIT_REQUEST));
 
 		if (prMsgCancelTxWait == NULL) {
-			ASSERT(FALSE);
 			i4Rslt = -ENOMEM;
 			break;
 		}
@@ -2711,7 +2698,6 @@ int mtk_p2p_cfg80211_del_station(struct wiphy *wiphy,
 				sizeof(struct MSG_P2P_CONNECTION_ABORT));
 
 		if (prDisconnectMsg == NULL) {
-			ASSERT(FALSE);
 			i4Rslt = -ENOMEM;
 			break;
 		}
@@ -2770,7 +2756,6 @@ int mtk_p2p_cfg80211_del_station(struct wiphy *wiphy,
 				sizeof(struct MSG_P2P_CONNECTION_ABORT));
 
 		if (prDisconnectMsg == NULL) {
-			ASSERT(FALSE);
 			i4Rslt = -ENOMEM;
 			break;
 		}
@@ -2831,7 +2816,6 @@ int mtk_p2p_cfg80211_del_station(struct wiphy *wiphy,
 				sizeof(struct MSG_P2P_CONNECTION_ABORT));
 
 		if (prDisconnectMsg == NULL) {
-			ASSERT(FALSE);
 			i4Rslt = -ENOMEM;
 			break;
 		}
@@ -2928,7 +2912,6 @@ int mtk_p2p_cfg80211_connect(struct wiphy *wiphy,
 				+ sme->ie_len));
 
 		if (prConnReqMsg == NULL) {
-			ASSERT(FALSE);
 			i4Rslt = -ENOMEM;
 			break;
 		}
@@ -3030,7 +3013,6 @@ int mtk_p2p_cfg80211_disconnect(struct wiphy *wiphy,
 				sizeof(struct MSG_P2P_CONNECTION_ABORT));
 
 		if (prDisconnMsg == NULL) {
-			ASSERT(FALSE);
 			i4Rslt = -ENOMEM;
 			break;
 		}
@@ -3091,7 +3073,6 @@ mtk_p2p_cfg80211_change_iface(IN struct wiphy *wiphy,
 				sizeof(struct MSG_P2P_SWITCH_OP_MODE));
 
 		if (prSwitchModeMsg == NULL) {
-			ASSERT(FALSE);
 			i4Rslt = -ENOMEM;
 			break;
 		}
@@ -4056,7 +4037,6 @@ int mtk_p2p_cfg80211_testmode_wfd_update_cmd(IN struct wiphy *wiphy,
 		sizeof(struct MSG_WFD_CONFIG_SETTINGS_CHANGED));
 
 	if (prMsgWfdCfgUpdate == NULL) {
-		ASSERT(FALSE);
 		return status;
 	}
 

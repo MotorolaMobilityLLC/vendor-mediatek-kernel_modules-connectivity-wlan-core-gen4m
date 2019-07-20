@@ -225,7 +225,6 @@ void aaaFsmRunEventTxReqTimeOut(IN struct ADAPTER *prAdapter,
 
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prStaRec->ucBssIndex);
 
-	ASSERT(prStaRec);
 	if (!prStaRec)
 		return;
 

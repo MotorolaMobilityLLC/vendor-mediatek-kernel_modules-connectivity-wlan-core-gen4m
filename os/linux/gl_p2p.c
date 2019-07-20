@@ -1123,7 +1123,6 @@ int glSetupP2P(struct GLUE_INFO *prGlueInfo, struct wireless_dev *prP2pWdev,
 	/*0. allocate p2pinfo */
 	if (p2PAllocInfo(prGlueInfo, u4Idx) != TRUE) {
 		DBGLOG(INIT, WARN, "Allocate memory for p2p FAILED\n");
-		ASSERT(0);
 		return -1;
 	}
 
@@ -1620,7 +1619,6 @@ u_int8_t glUnregisterP2P(struct GLUE_INFO *prGlueInfo, uint8_t ucIdx)
 		if (!p2PFreeInfo(prGlueInfo, ucRoleIdx)) {
 			/* FALSE: (fgIsP2PRegistered!=FALSE)||(ucRoleIdx err) */
 			DBGLOG(INIT, ERROR, "p2PFreeInfo FAILED\n");
-			ASSERT(0);
 			return FALSE;
 		}
 	}
@@ -1799,8 +1797,6 @@ static void p2pSetMulticastList(IN struct net_device *prDev)
 		? *((struct GLUE_INFO **) netdev_priv(prDev))
 		: NULL;
 
-	ASSERT(prDev);
-	ASSERT(prGlueInfo);
 	if (!prDev || !prGlueInfo) {
 		DBGLOG(INIT, WARN,
 			" abnormal dev or skb: prDev(0x%p), prGlueInfo(0x%p)\n",
@@ -1836,8 +1832,6 @@ void mtk_p2p_wext_set_Multicastlist(struct GLUE_INFO *prGlueInfo)
 		? *((struct GLUE_INFO **) netdev_priv(prDev))
 		: NULL;
 
-	ASSERT(prDev);
-	ASSERT(prGlueInfo);
 	if (!prDev || !prGlueInfo) {
 		DBGLOG(INIT, WARN,
 			" abnormal dev or skb: prDev(0x%p), prGlueInfo(0x%p)\n",

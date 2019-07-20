@@ -366,7 +366,6 @@ void rlmObssTriggerScan(struct ADAPTER *prAdapter, struct BSS_INFO *prBssInfo)
 	prScanReqMsg = (struct MSG_SCN_SCAN_REQ_V2 *)
 	    cnmMemAlloc(prAdapter, RAM_TYPE_MSG,
 			sizeof(struct MSG_SCN_SCAN_REQ_V2));
-	ASSERT(prScanReqMsg);
 
 	if (!prScanReqMsg) {
 		DBGLOG(RLM, WARN, "No buf for OBSS scan (NetIdx=%d)!!\n",

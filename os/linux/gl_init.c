@@ -1291,7 +1291,6 @@ void p2pSetMulticastListWorkQueueWrapper(struct GLUE_INFO
 		*prGlueInfo)
 {
 
-	ASSERT(prGlueInfo);
 
 	if (!prGlueInfo) {
 		DBGLOG(INIT, WARN,
