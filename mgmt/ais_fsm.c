@@ -3095,8 +3095,11 @@ enum ENUM_AIS_STATE aisFsmJoinCompleteAction(IN struct ADAPTER *prAdapter,
 			 * disable driver/fw roaming
 			 */
 			if (prConnSettings->eConnectionPolicy !=
-			     CONNECT_BY_BSSID && roam->fgDrvRoamingAllow)
+			     CONNECT_BY_BSSID && roam->fgDrvRoamingAllow) {
+				prConnSettings->eConnectionPolicy =
+					CONNECT_BY_SSID_BEST_RSSI;
 				roamingFsmRunEventStart(prAdapter, ucBssIndex);
+			}
 #endif /* CFG_SUPPORT_ROAMING */
 			if (aisFsmIsRequestPending
 			    (prAdapter, AIS_REQUEST_ROAMING_CONNECT,
