@@ -141,7 +141,6 @@ saaFsmSteps(IN struct ADAPTER *prAdapter,
 	enum ENUM_AA_STATE ePreviousState;
 	u_int8_t fgIsTransition;
 
-	ASSERT(prStaRec);
 	if (!prStaRec)
 		return;
 
@@ -419,7 +418,6 @@ saaFsmSendEventJoinComplete(IN struct ADAPTER *prAdapter,
 {
 	struct BSS_INFO *prBssInfo;
 
-	ASSERT(prStaRec);
 	if (!prStaRec) {
 		DBGLOG(SAA, ERROR, "[%s]prStaRec is NULL\n", __func__);
 		return WLAN_STATUS_INVALID_PACKET;
@@ -544,9 +542,6 @@ void saaFsmRunEventStart(IN struct ADAPTER *prAdapter,
 	struct STA_RECORD *prStaRec;
 	struct BSS_INFO *prBssInfo;
 
-	ASSERT(prAdapter);
-	ASSERT(prMsgHdr);
-
 	prSaaFsmStartMsg = (struct MSG_SAA_FSM_START *) prMsgHdr;
 	prStaRec = prSaaFsmStartMsg->prStaRec;
 
@@ -554,8 +549,6 @@ void saaFsmRunEventStart(IN struct ADAPTER *prAdapter,
 		cnmMemFree(prAdapter, prMsgHdr);
 		return;
 	}
-
-	ASSERT(prStaRec);
 
 	DBGLOG(SAA, LOUD, "EVENT-START: Trigger SAA FSM.\n");
 
@@ -663,9 +656,6 @@ void saaFsmRunEventFTContinue(IN struct ADAPTER *prAdapter,
 	struct STA_RECORD *prStaRec;
 	u_int8_t fgFtRicRequest = FALSE;
 
-	ASSERT(prAdapter);
-	ASSERT(prMsgHdr);
-
 	prSaaFsmMsg = (struct MSG_SAA_FT_CONTINUE *)prMsgHdr;
 	prStaRec = prSaaFsmMsg->prStaRec;
 	fgFtRicRequest = prSaaFsmMsg->fgFTRicRequest;
@@ -711,14 +701,10 @@ saaFsmRunEventTxDone(IN struct ADAPTER *prAdapter,
 	struct STA_RECORD *prStaRec;
 	enum ENUM_AA_STATE eNextState;
 
-	ASSERT(prMsduInfo);
-
 	prStaRec = cnmGetStaRecByIndex(prAdapter, prMsduInfo->ucStaRecIndex);
 
 	if (!prStaRec)
 		return WLAN_STATUS_INVALID_PACKET;
-
-	ASSERT(prStaRec);
 
 	if (rTxDoneStatus)
 		DBGLOG(SAA, INFO,
@@ -863,7 +849,6 @@ void saaFsmRunEventTxReqTimeOut(IN struct ADAPTER *prAdapter,
 {
 	struct STA_RECORD *prStaRec = (struct STA_RECORD *) plParamPtr;
 
-	ASSERT(prStaRec);
 	if (!prStaRec)
 		return;
 
@@ -904,7 +889,6 @@ void saaFsmRunEventRxRespTimeOut(IN struct ADAPTER *prAdapter,
 	DBGLOG(SAA, LOUD, "EVENT-TIMER: RX RESP TIMEOUT, Current Time = %d\n",
 	       kalGetTimeTick());
 
-	ASSERT(prStaRec);
 	if (!prStaRec)
 		return;
 
@@ -962,7 +946,6 @@ void saaFsmRunEventRxAuth(IN struct ADAPTER *prAdapter,
 	enum ENUM_AA_STATE eNextState;
 	uint8_t ucWlanIdx;
 
-	ASSERT(prSwRfb);
 	prStaRec = cnmGetStaRecByIndex(prAdapter, prSwRfb->ucStaRecIdx);
 	ucWlanIdx = (uint8_t) HAL_RX_STATUS_GET_WLAN_IDX(prSwRfb->prRxStatus);
 
@@ -1136,7 +1119,6 @@ uint32_t saaFsmRunEventRxAssoc(IN struct ADAPTER *prAdapter,
 	uint32_t rStatus = WLAN_STATUS_SUCCESS;
 	uint8_t ucWlanIdx;
 
-	ASSERT(prSwRfb);
 	prStaRec = cnmGetStaRecByIndex(prAdapter, prSwRfb->ucStaRecIdx);
 	ucWlanIdx = (uint8_t) HAL_RX_STATUS_GET_WLAN_IDX(prSwRfb->prRxStatus);
 
@@ -1239,7 +1221,6 @@ uint32_t saaFsmRunEventRxDeauth(IN struct ADAPTER *prAdapter,
 	struct WLAN_DEAUTH_FRAME *prDeauthFrame;
 	uint8_t ucWlanIdx;
 
-	ASSERT(prSwRfb);
 	prStaRec = cnmGetStaRecByIndex(prAdapter, prSwRfb->ucStaRecIdx);
 	prDeauthFrame = (struct WLAN_DEAUTH_FRAME *) prSwRfb->pvHeader;
 	ucWlanIdx = (uint8_t) HAL_RX_STATUS_GET_WLAN_IDX(prSwRfb->prRxStatus);
@@ -1484,7 +1465,6 @@ uint32_t saaFsmRunEventRxDisassoc(IN struct ADAPTER *prAdapter,
 	struct WLAN_DISASSOC_FRAME *prDisassocFrame;
 	uint8_t ucWlanIdx;
 
-	ASSERT(prSwRfb);
 	prStaRec = cnmGetStaRecByIndex(prAdapter, prSwRfb->ucStaRecIdx);
 	prDisassocFrame = (struct WLAN_DISASSOC_FRAME *) prSwRfb->pvHeader;
 	ucWlanIdx = (uint8_t) HAL_RX_STATUS_GET_WLAN_IDX(prSwRfb->prRxStatus);
@@ -1648,12 +1628,9 @@ void saaFsmRunEventAbort(IN struct ADAPTER *prAdapter,
 	struct MSG_SAA_FSM_ABORT *prSaaFsmAbortMsg;
 	struct STA_RECORD *prStaRec;
 
-	ASSERT(prMsgHdr);
-
 	prSaaFsmAbortMsg = (struct MSG_SAA_FSM_ABORT *) prMsgHdr;
 	prStaRec = prSaaFsmAbortMsg->prStaRec;
 
-	ASSERT(prStaRec);
 	if (!prStaRec) {
 		cnmMemFree(prAdapter, prMsgHdr);
 		return;
@@ -1689,9 +1666,6 @@ void saaFsmRunEventExternalAuthDone(IN struct ADAPTER *prAdapter,
 	struct MSG_SAA_EXTERNAL_AUTH_DONE *prSaaFsmMsg = NULL;
 	struct STA_RECORD *prStaRec;
 	uint16_t status;
-
-	ASSERT(prAdapter);
-	ASSERT(prMsgHdr);
 
 	prSaaFsmMsg = (struct MSG_SAA_EXTERNAL_AUTH_DONE *)prMsgHdr;
 	prStaRec = prSaaFsmMsg->prStaRec;

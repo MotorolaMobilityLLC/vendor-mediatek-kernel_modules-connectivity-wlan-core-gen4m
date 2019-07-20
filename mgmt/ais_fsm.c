@@ -297,7 +297,6 @@ void aisFsmInit(IN struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 	if (!prAisBssInfo) {
 		DBGLOG(AIS, ERROR,
 			"aisFsmInit failed because prAisBssInfo is NULL, return.\n");
-		ASSERT(FALSE);
 		return;
 	}
 
@@ -409,8 +408,6 @@ void aisFsmInit(IN struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 		prAisBssInfo->prBeacon->eSrc = TX_PACKET_MGMT;
 		/* NULL STA_REC */
 		prAisBssInfo->prBeacon->ucStaRecIndex = 0xFF;
-	} else {
-		ASSERT(0);
 	}
 
 	prAisBssInfo->ucBMCWlanIndex = WTBL_RESERVED_ENTRY;
@@ -427,7 +424,6 @@ void aisFsmInit(IN struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 #else
 	if (prAdapter->u4UapsdAcBmp == 0) {
 		prAdapter->u4UapsdAcBmp = CFG_INIT_UAPSD_AC_BMP;
-		/* ASSERT(prAdapter->u4UapsdAcBmp); */
 	}
 	prAisBssInfo->rPmProfSetupInfo.ucBmpDeliveryAC =
 	    (uint8_t) prAdapter->u4UapsdAcBmp;
@@ -584,8 +580,6 @@ void aisFsmStateInit_JOIN(IN struct ADAPTER *prAdapter,
 		aisGetAisSpecBssInfo(prAdapter, ucBssIndex);
 	prConnSettings = aisGetConnSettings(prAdapter, ucBssIndex);
 
-	ASSERT(prBssDesc);
-
 	/* 4 <1> We are going to connect to this BSS. */
 	prBssDesc->fgIsConnecting = TRUE;
 
@@ -598,7 +592,6 @@ void aisFsmStateInit_JOIN(IN struct ADAPTER *prAdapter,
 	if (!prStaRec) {
 		DBGLOG(AIS, ERROR,
 			"aisFsmStateInit_JOIN failed because prStaRec is NULL, return.\n");
-		ASSERT(FALSE);
 		return;
 	}
 
@@ -653,9 +646,6 @@ void aisFsmStateInit_JOIN(IN struct ADAPTER *prAdapter,
 			break;
 
 		default:
-			ASSERT(!
-			       (prConnSettings->eAuthMode ==
-				AUTH_MODE_WPA_NONE));
 			DBGLOG(AIS, ERROR,
 			       "JOIN INIT: Auth Algorithm : %d was not supported by JOIN\n",
 			       prConnSettings->eAuthMode);
@@ -678,8 +668,6 @@ void aisFsmStateInit_JOIN(IN struct ADAPTER *prAdapter,
 		prAisBssInfo->ucPrimaryChannel = prBssDesc->ucChannelNum;
 
 	} else {
-		ASSERT(prBssDesc->eBSSType == BSS_TYPE_INFRASTRUCTURE);
-
 		DBGLOG(AIS, LOUD, "JOIN INIT: AUTH TYPE = %d for Roaming\n",
 		       prAisSpecificBssInfo->ucRoamingAuthTypes);
 
@@ -753,7 +741,10 @@ void aisFsmStateInit_JOIN(IN struct ADAPTER *prAdapter,
 		prStaRec->ucAuthAlgNum =
 		    (uint8_t) AUTH_ALGORITHM_NUM_SAE;
 	} else {
-		ASSERT(0);
+		DBGLOG(AIS, ERROR,
+		       "JOIN INIT: Unsupported auth type %d\n",
+		       prAisFsmInfo->ucAvailableAuthTypes);
+		return;
 	}
 
 	/* 4 <5> Overwrite Connection Setting for eConnectionPolicy
@@ -768,8 +759,7 @@ void aisFsmStateInit_JOIN(IN struct ADAPTER *prAdapter,
 						    sizeof(struct
 							   MSG_SAA_FSM_START));
 	if (!prJoinReqMsg) {
-
-		ASSERT(0);	/* Can't trigger SAA FSM */
+		DBGLOG(AIS, ERROR, "Can't trigger SAA FSM\n");
 		return;
 	}
 
@@ -862,8 +852,7 @@ u_int8_t aisFsmStateInit_RetryJOIN(IN struct ADAPTER *prAdapter,
 						    sizeof(struct
 							   MSG_SAA_FSM_START));
 	if (!prJoinReqMsg) {
-
-		ASSERT(0);	/* Can't trigger SAA FSM */
+		DBGLOG(AIS, ERROR, "Can't trigger SAA FSM\n");
 		return FALSE;
 	}
 
@@ -931,8 +920,6 @@ void aisFsmStateInit_IBSS_MERGE(IN struct ADAPTER *prAdapter,
 	struct BSS_INFO *prAisBssInfo;
 	struct STA_RECORD *prStaRec = (struct STA_RECORD *)NULL;
 
-	ASSERT(prBssDesc);
-
 	DBGLOG(AIS, LOUD, "ucBssIndex = %d\n", ucBssIndex);
 
 	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
@@ -952,7 +939,6 @@ void aisFsmStateInit_IBSS_MERGE(IN struct ADAPTER *prAdapter,
 	if (!prStaRec) {
 		DBGLOG(AIS, ERROR,
 			"aisFsmStateInit_IBSS_MERGE failed because prStaRec is NULL, return.\n");
-		ASSERT(FALSE);
 		return;
 	}
 
@@ -994,8 +980,7 @@ void aisFsmStateAbort_JOIN(IN struct ADAPTER *prAdapter,
 						    sizeof(struct
 							   MSG_SAA_FSM_ABORT));
 	if (!prJoinAbortMsg) {
-
-		ASSERT(0);	/* Can't abort SAA FSM */
+		DBGLOG(AIS, ERROR, "Can't abort SAA FSM\n");
 		return;
 	}
 
@@ -1041,8 +1026,7 @@ void aisFsmStateAbort_SCAN(IN struct ADAPTER *prAdapter,
 	    (struct MSG_SCN_SCAN_CANCEL *)cnmMemAlloc(prAdapter, RAM_TYPE_MSG,
 		sizeof(struct MSG_SCN_SCAN_CANCEL));
 	if (!prScanCancelMsg) {
-
-		ASSERT(0);	/* Can't abort SCN FSM */
+		DBGLOG(AIS, ERROR, "Can't abort SCN FSM\n");
 		return;
 	}
 	kalMemZero(prScanCancelMsg, sizeof(struct MSG_SCN_SCAN_CANCEL));
@@ -1074,7 +1058,6 @@ void aisFsmStateAbort_NORMAL_TR(IN struct ADAPTER *prAdapter,
 {
 	struct AIS_FSM_INFO *prAisFsmInfo;
 
-	ASSERT(prAdapter);
 	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
 
 	/* TODO(Kevin): Do abort other MGMT func */
@@ -1155,7 +1138,6 @@ aisState_OFF_CHNL_TX(IN struct ADAPTER *prAdapter,
 		DBGLOG(AIS, ERROR,
 			"Fatal Error, Link not empty but get NULL pointer.\n");
 		aisFsmReleaseCh(prAdapter, ucBssIndex);
-		ASSERT(FALSE);
 		return FALSE;
 	}
 
@@ -1523,7 +1505,6 @@ void aisFsmSteps(IN struct ADAPTER *prAdapter,
 					}
 #endif /* CFG_SUPPORT_ADHOC */
 					else {
-						ASSERT(0);
 						eNextState =
 						AIS_STATE_WAIT_FOR_NEXT_SCAN;
 						fgIsTransition = TRUE;
@@ -1625,13 +1606,6 @@ void aisFsmSteps(IN struct ADAPTER *prAdapter,
 						       (prAisBssInfo->
 						       aucBSSID));
 					}
-#if DBG
-					if ((prBssDesc)
-					    && (prBssDesc->fgIsConnected))
-						ASSERT(EQUAL_MAC_ADDR
-						(prBssDesc->aucBSSID,
-						prAisBssInfo->aucBSSID));
-#endif /* DBG */
 					if (prAisFsmInfo->
 					    fgTargetChnlScanIssued) {
 						/* if target channel scan has
@@ -1766,7 +1740,7 @@ void aisFsmSteps(IN struct ADAPTER *prAdapter,
 					aucIE) +
 					u2ScanIELen);
 			if (!prScanReqMsg) {
-				ASSERT(0);	/* Can't trigger SCAN FSM */
+				DBGLOG(AIS, ERROR, "Can't trigger SCAN FSM\n");
 				return;
 			}
 			kalMemZero(prScanReqMsg, OFFSET_OF
@@ -2024,7 +1998,6 @@ void aisFsmSteps(IN struct ADAPTER *prAdapter,
 				prScanReqMsg->eScanChannel = SCAN_CHANNEL_5G;
 			} else {
 				prScanReqMsg->eScanChannel = SCAN_CHANNEL_FULL;
-				ASSERT(0);
 			}
 
 			switch (prScanReqMsg->eScanChannel) {
@@ -2102,8 +2075,7 @@ void aisFsmSteps(IN struct ADAPTER *prAdapter,
 				RAM_TYPE_MSG,
 				sizeof(struct MSG_CH_REQ));
 			if (!prMsgChReq) {
-				/* Can't indicate CNM for channel acquiring */
-				ASSERT(0);
+				DBGLOG(AIS, ERROR, "Can't indicate CNM\n");
 				return;
 			}
 
@@ -2283,8 +2255,7 @@ void aisFsmSteps(IN struct ADAPTER *prAdapter,
 				RAM_TYPE_MSG,
 				sizeof(struct MSG_CH_REQ));
 			if (!prMsgChReq) {
-				/* Can't indicate CNM for channel acquiring */
-				ASSERT(0);
+				DBGLOG(AIS, ERROR, "Can't indicate CNM\n");
 				return;
 			}
 
@@ -2406,7 +2377,6 @@ enum ENUM_AIS_STATE aisFsmStateSearchAction(IN struct ADAPTER *prAdapter,
 		}
 #endif /* CFG_SUPPORT_ADHOC */
 		else {
-			ASSERT(0);
 			eState = AIS_STATE_WAIT_FOR_NEXT_SCAN;
 		}
 	} else if (ucPhase == AIS_FSM_STATE_SEARCH_ACTION_PHASE_1) {
@@ -2445,17 +2415,9 @@ enum ENUM_AIS_STATE aisFsmStateSearchAction(IN struct ADAPTER *prAdapter,
 			}
 #endif /* CFG_SUPPORT_ADHOC */
 			else {
-				ASSERT(0);
 				eState = AIS_STATE_WAIT_FOR_NEXT_SCAN;
 			}
 		}
-	} else {
-#if DBG
-		if (prAisBssInfo->ucReasonOfDisconnect !=
-		    DISCONNECT_REASON_CODE_REASSOCIATION)
-			ASSERT(UNEQUAL_MAC_ADDR
-			       (prBssDesc->aucBSSID, prAisBssInfo->aucBSSID));
-#endif /* DBG */
 	}
 	return eState;
 }
@@ -2484,9 +2446,6 @@ void aisFsmRunEventScanDone(IN struct ADAPTER *prAdapter,
 	uint8_t ucBssIndex = 0;
 
 	DEBUGFUNC("aisFsmRunEventScanDone()");
-
-	ASSERT(prAdapter);
-	ASSERT(prMsgHdr);
 
 	prScanDoneMsg = (struct MSG_SCN_SCAN_DONE *)prMsgHdr;
 	ucBssIndex = prScanDoneMsg->ucBssIndex;
@@ -2627,9 +2586,6 @@ void aisFsmRunEventAbort(IN struct ADAPTER *prAdapter,
 
 	DEBUGFUNC("aisFsmRunEventAbort()");
 
-	ASSERT(prAdapter);
-	ASSERT(prMsgHdr);
-
 	/* 4 <1> Extract information of Abort Message and then free memory. */
 	prAisAbortMsg = (struct MSG_AIS_ABORT *)prMsgHdr;
 	ucReasonOfDisconnect = prAisAbortMsg->ucReasonOfDisconnect;
@@ -2748,8 +2704,6 @@ void aisFsmStateAbort(IN struct ADAPTER *prAdapter,
 	struct BSS_INFO *prAisBssInfo;
 	struct CONNECTION_SETTINGS *prConnSettings;
 	u_int8_t fgIsCheckConnected;
-
-	ASSERT(prAdapter);
 
 	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
 	prAisBssInfo = aisGetAisBssInfo(prAdapter, ucBssIndex);
@@ -2920,7 +2874,6 @@ void aisFsmRunEventJoinComplete(IN struct ADAPTER *prAdapter,
 	uint8_t ucBssIndex = 0;
 
 	DEBUGFUNC("aisFsmRunEventJoinComplete()");
-	ASSERT(prMsgHdr);
 
 	prJoinCompMsg = (struct MSG_SAA_FSM_COMP *)prMsgHdr;
 	prAssocRspSwRfb = prJoinCompMsg->prSwRfb;
@@ -2974,8 +2927,6 @@ enum ENUM_AIS_STATE aisFsmJoinCompleteAction(IN struct ADAPTER *prAdapter,
 	uint8_t ucBssIndex = 0;
 
 	DEBUGFUNC("aisFsmJoinCompleteAction()");
-
-	ASSERT(prMsgHdr);
 
 	GET_CURRENT_SYSTIME(&rCurrentTime);
 
@@ -3183,8 +3134,6 @@ enum ENUM_AIS_STATE aisFsmJoinCompleteAction(IN struct ADAPTER *prAdapter,
 				       prStaRec->u2ReasonCode,
 				       prAisBssInfo->eConnectionState);
 
-				/* ASSERT(prBssDesc); */
-				/* ASSERT(prBssDesc->fgIsConnecting); */
 				glNotifyDrvStatus(JOIN_FAIL, (void *)prStaRec);
 				prBssDesc->u2JoinStatus =
 				    prStaRec->u2StatusCode;
@@ -3268,7 +3217,6 @@ enum ENUM_AIS_STATE aisFsmJoinCompleteAction(IN struct ADAPTER *prAdapter,
 					     TRUE, &rSsid);
 					prAisFsmInfo->prTargetStaRec =
 					    prAisBssInfo->prStaRecOfAP;
-					ASSERT(prAisFsmInfo->prTargetBssDesc);
 					if (!prAisFsmInfo->prTargetBssDesc)
 						DBGLOG(AIS, ERROR,
 						       "Can't retrieve target bss descriptor\n");
@@ -3317,8 +3265,6 @@ void aisFsmCreateIBSS(IN struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 {
 	struct AIS_FSM_INFO *prAisFsmInfo;
 
-	ASSERT(prAdapter);
-
 	DBGLOG(AIS, LOUD, "ucBssIndex = %d\n", ucBssIndex);
 
 	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
@@ -3349,9 +3295,6 @@ void aisFsmMergeIBSS(IN struct ADAPTER *prAdapter,
 	enum ENUM_AIS_STATE eNextState;
 	struct BSS_INFO *prAisBssInfo;
 	uint8_t ucBssIndex = 0;
-
-	ASSERT(prAdapter);
-	ASSERT(prStaRec);
 
 	ucBssIndex = prStaRec->ucBssIndex;
 
@@ -3462,8 +3405,6 @@ void aisFsmRunEventFoundIBSSPeer(IN struct ADAPTER *prAdapter,
 	u_int8_t fgIsMergeIn;
 	uint8_t ucBssIndex = 0;
 
-	ASSERT(prMsgHdr);
-
 	prAisIbssPeerFoundMsg = (struct MSG_AIS_IBSS_PEER_FOUND *)prMsgHdr;
 	ucBssIndex = prAisIbssPeerFoundMsg->ucBssIndex;
 	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
@@ -3472,7 +3413,6 @@ void aisFsmRunEventFoundIBSSPeer(IN struct ADAPTER *prAdapter,
 	DBGLOG(AIS, LOUD, "ucBssIndex = %d\n", ucBssIndex);
 
 	prStaRec = prAisIbssPeerFoundMsg->prStaRec;
-	ASSERT(prStaRec);
 
 	fgIsMergeIn = prAisIbssPeerFoundMsg->fgIsMergeIn;
 
@@ -3507,11 +3447,6 @@ void aisFsmRunEventFoundIBSSPeer(IN struct ADAPTER *prAdapter,
 				if (prBssDesc != NULL) {
 					prBssDesc->fgIsConnecting = FALSE;
 					prBssDesc->fgIsConnected = TRUE;
-				} else {
-					/* Should be able to find a
-					 * BSS_DESC_T here.
-					 */
-					ASSERT(0);
 				}
 
 				/* 4 <1.4> Activate current Peer's
@@ -3530,11 +3465,6 @@ void aisFsmRunEventFoundIBSSPeer(IN struct ADAPTER *prAdapter,
 				if (prBssDesc != NULL) {
 					prBssDesc->fgIsConnecting = FALSE;
 					prBssDesc->fgIsConnected = TRUE;
-				} else {
-					/* Should be able to find a
-					 * BSS_DESC_T here.
-					 */
-					ASSERT(0);
 				}
 
 				/* 4 <1.4> Activate current Peer's STA_RECORD_T
@@ -3721,8 +3651,6 @@ aisIndicationOfMediaStateToHost(IN struct ADAPTER *prAdapter,
 				rEventConnStatus.u2AID = 0;
 				rEventConnStatus.u2ATIMWindow =
 				    prAisBssInfo->u2ATIMWindow;
-			} else {
-				ASSERT(0);
 			}
 
 			COPY_SSID(rEventConnStatus.aucSsid,
@@ -3755,7 +3683,6 @@ aisIndicationOfMediaStateToHost(IN struct ADAPTER *prAdapter,
 				break;
 
 			default:
-				ASSERT(0);
 				rEventConnStatus.ucNetworkType =
 				    (uint8_t) PARAM_NETWORK_TYPE_DS;
 				break;
@@ -3783,9 +3710,6 @@ aisIndicationOfMediaStateToHost(IN struct ADAPTER *prAdapter,
 			prAisFsmInfo->prTargetStaRec = NULL;
 		}
 	} else {
-		/* NOTE: Only delay the Indication of Disconnect Event */
-		ASSERT(eConnectionState == PARAM_MEDIA_STATE_DISCONNECTED);
-
 		DBGLOG(AIS, INFO,
 		       "Postpone the indication of Disconnect for %d seconds\n",
 		       prConnSettings->ucDelayTimeOfDisconnectEvent);
@@ -3903,9 +3827,6 @@ void aisUpdateBssInfoForJOIN(IN struct ADAPTER *prAdapter,
 
 	DEBUGFUNC("aisUpdateBssInfoForJOIN()");
 
-	ASSERT(prStaRec);
-	ASSERT(prAssocRspSwRfb);
-
 	ucBssIndex = prStaRec->ucBssIndex;
 	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
 	prAisBssInfo = aisGetAisBssInfo(prAdapter, ucBssIndex);
@@ -4000,9 +3921,6 @@ void aisUpdateBssInfoForJOIN(IN struct ADAPTER *prAdapter,
 		aisRemoveBlackList(prAdapter, prBssDesc);
 		/* 4 <4.1> Setup MIB for current BSS */
 		prAisBssInfo->u2BeaconInterval = prBssDesc->u2BeaconInterval;
-	} else {
-		/* should never happen */
-		ASSERT(0);
 	}
 
 	/* NOTE: Defer ucDTIMPeriod updating to when beacon is received
@@ -4158,10 +4076,6 @@ void aisUpdateBssInfoForMergeIBSS(IN struct ADAPTER *prAdapter,
 	struct CONNECTION_SETTINGS *prConnSettings;
 	struct BSS_DESC *prBssDesc;
 	uint8_t ucBssIndex = 0;
-	/* UINT_16 u2IELength; */
-	/* PUINT_8 pucIE; */
-
-	ASSERT(prStaRec);
 
 	ucBssIndex = prStaRec->ucBssIndex;
 
@@ -4250,9 +4164,6 @@ void aisUpdateBssInfoForMergeIBSS(IN struct ADAPTER *prAdapter,
 
 		prAisBssInfo->ucBeaconTimeoutCount =
 		    AIS_BEACON_TIMEOUT_COUNT_ADHOC;
-	} else {
-		/* should never happen */
-		ASSERT(0);
 	}
 
 	/* 3 <5> Set MAC HW */
@@ -4303,9 +4214,6 @@ u_int8_t aisValidateProbeReq(IN struct ADAPTER *prAdapter,
 	uint16_t u2IELength;
 	uint16_t u2Offset = 0;
 	u_int8_t fgReplyProbeResp = FALSE;
-
-	ASSERT(prSwRfb);
-	ASSERT(pu4ControlFlags);
 
 	prBssInfo = aisGetAisBssInfo(prAdapter,
 		ucBssIndex);
@@ -4368,8 +4276,6 @@ void aisFsmDisconnect(IN struct ADAPTER *prAdapter,
 	struct BSS_INFO *prAisBssInfo;
 	uint16_t u2ReasonCode = REASON_CODE_UNSPECIFIED;
 	struct BSS_DESC *prBssDesc = NULL;
-
-	ASSERT(prAdapter);
 
 	DBGLOG(AIS, LOUD, "ucBssIndex = %d\n", ucBssIndex);
 
@@ -4509,8 +4415,6 @@ static void aisFsmRunEventScanDoneTimeOut(IN struct ADAPTER *prAdapter,
 	uint8_t ucBssIndex = (uint8_t) ulParam;
 
 	DEBUGFUNC("aisFsmRunEventScanDoneTimeOut()");
-
-	ASSERT(prAdapter);
 
 	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
 	prConnSettings = aisGetConnSettings(prAdapter, ucBssIndex);
@@ -4783,7 +4687,6 @@ void aisFsmScanRequest(IN struct ADAPTER *prAdapter,
 
 	DEBUGFUNC("aisFsmScanRequest()");
 
-	ASSERT(prAdapter);
 	ASSERT(u4IeLength <= MAX_IE_LENGTH);
 
 	prAisBssInfo = aisGetAisBssInfo(prAdapter, ucBssIndex);
@@ -4880,7 +4783,6 @@ aisFsmScanRequestAdv(IN struct ADAPTER *prAdapter,
 
 	DEBUGFUNC("aisFsmScanRequestAdv()");
 
-	ASSERT(prAdapter);
 	if (!prRequestIn) {
 		log_dbg(SCN, WARN, "Scan request is NULL\n");
 		return;
@@ -4994,9 +4896,6 @@ void aisFsmRunEventChGrant(IN struct ADAPTER *prAdapter,
 	uint32_t u4GrantInterval;
 	uint8_t ucBssIndex = 0;
 
-	ASSERT(prAdapter);
-	ASSERT(prMsgHdr);
-
 	prMsgChGrant = (struct MSG_CH_GRANT *)prMsgHdr;
 
 	ucTokenID = prMsgChGrant->ucTokenID;
@@ -5102,8 +5001,6 @@ void aisFsmReleaseCh(IN struct ADAPTER *prAdapter, IN uint8_t ucBssIndex)
 	struct AIS_FSM_INFO *prAisFsmInfo;
 	struct MSG_CH_ABORT *prMsgChAbort;
 
-	ASSERT(prAdapter);
-
 	DBGLOG(AIS, LOUD, "ucBssIndex = %d\n", ucBssIndex);
 
 	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
@@ -5120,7 +5017,7 @@ void aisFsmReleaseCh(IN struct ADAPTER *prAdapter, IN uint8_t ucBssIndex)
 						       sizeof(struct
 							      MSG_CH_ABORT));
 		if (!prMsgChAbort) {
-			ASSERT(0);	/* Can't release Channel to CNM */
+			DBGLOG(AIS, ERROR, "Can't release Channel to CNM\n");
 			return;
 		}
 
@@ -5152,8 +5049,6 @@ void aisBssBeaconTimeout(IN struct ADAPTER *prAdapter,
 	struct BSS_INFO *prAisBssInfo;
 	u_int8_t fgDoAbortIndication = FALSE;
 	struct CONNECTION_SETTINGS *prConnSettings;
-
-	ASSERT(prAdapter);
 
 	DBGLOG(AIS, LOUD, "ucBssIndex = %d\n", ucBssIndex);
 
@@ -5220,8 +5115,6 @@ void aisBssLinkDown(IN struct ADAPTER *prAdapter,
 	u_int8_t fgDoAbortIndication = FALSE;
 	struct CONNECTION_SETTINGS *prConnSettings;
 
-	ASSERT(prAdapter);
-
 	DBGLOG(AIS, LOUD, "ucBssIndex = %d\n", ucBssIndex);
 
 	prAisBssInfo = aisGetAisBssInfo(prAdapter, ucBssIndex);
@@ -5272,8 +5165,6 @@ aisDeauthXmitCompleteBss(IN struct ADAPTER *prAdapter,
 		      IN enum ENUM_TX_RESULT_CODE rTxDoneStatus)
 {
 	struct AIS_FSM_INFO *prAisFsmInfo;
-
-	ASSERT(prAdapter);
 
 	DBGLOG(AIS, LOUD, "ucBssIndex = %d\n", ucBssIndex);
 
@@ -5438,8 +5329,6 @@ void aisFsmRoamingDisconnectPrevAP(IN struct ADAPTER *prAdapter,
 
 	DBGLOG(AIS, EVENT, "ucBssIndex = %d\n", ucBssIndex);
 
-	ASSERT(prAdapter);
-
 	prAisBssInfo = aisGetAisBssInfo(prAdapter, ucBssIndex);
 	if (prAisBssInfo->prStaRecOfAP != prTargetStaRec)
 		wmmNotifyDisconnected(prAdapter, ucBssIndex);
@@ -5528,8 +5417,6 @@ void aisUpdateBssInfoForRoamingAP(IN struct ADAPTER *prAdapter,
 
 	DBGLOG(AIS, LOUD, "ucBssIndex = %d\n", ucBssIndex);
 
-	ASSERT(prAdapter);
-
 	prAisBssInfo = aisGetAisBssInfo(prAdapter, ucBssIndex);
 
 	/* 4 <1.1> Change FW's Media State immediately. */
@@ -5585,7 +5472,7 @@ u_int8_t aisFsmIsRequestPending(IN struct ADAPTER *prAdapter,
 	struct AIS_FSM_INFO *prAisFsmInfo;
 	struct AIS_REQ_HDR *prPendingReqHdr, *prPendingReqHdrNext;
 
-	ASSERT(prAdapter);
+	DBGLOG(AIS, LOUD, "ucBssIndex = %d\n", ucBssIndex);
 
 	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
 
@@ -5628,8 +5515,6 @@ struct AIS_REQ_HDR *aisFsmGetNextRequest(IN struct ADAPTER *prAdapter,
 	struct AIS_FSM_INFO *prAisFsmInfo;
 	struct AIS_REQ_HDR *prPendingReqHdr;
 
-	ASSERT(prAdapter);
-
 	DBGLOG(AIS, LOUD, "ucBssIndex = %d\n", ucBssIndex);
 
 	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
@@ -5658,8 +5543,6 @@ u_int8_t aisFsmInsertRequest(IN struct ADAPTER *prAdapter,
 	struct AIS_REQ_HDR *prAisReq;
 	struct AIS_FSM_INFO *prAisFsmInfo;
 
-	ASSERT(prAdapter);
-
 	DBGLOG(AIS, LOUD, "ucBssIndex = %d\n", ucBssIndex);
 
 	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
@@ -5669,7 +5552,7 @@ u_int8_t aisFsmInsertRequest(IN struct ADAPTER *prAdapter,
 					      sizeof(struct AIS_REQ_HDR));
 
 	if (!prAisReq) {
-		ASSERT(0);	/* Can't generate new message */
+		DBGLOG(AIS, ERROR, "Can't generate new message\n");
 		return FALSE;
 	}
 
@@ -5699,8 +5582,6 @@ void aisFsmFlushRequest(IN struct ADAPTER *prAdapter, IN uint8_t ucBssIndex)
 	struct AIS_REQ_HDR *prAisReq;
 	struct AIS_FSM_INFO *prAisFsmInfo;
 
-	ASSERT(prAdapter);
-
 	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
 
 	DBGLOG(AIS, INFO, "aisFsmFlushRequest %d\n",
@@ -5719,9 +5600,6 @@ void aisFsmRunEventRemainOnChannel(IN struct ADAPTER *prAdapter,
 	uint8_t ucBssIndex = 0;
 
 	DEBUGFUNC("aisFsmRunEventRemainOnChannel()");
-
-	ASSERT(prAdapter);
-	ASSERT(prMsgHdr);
 
 	prRemainOnChannel = (struct MSG_REMAIN_ON_CHANNEL *)prMsgHdr;
 
@@ -5763,8 +5641,6 @@ void aisFsmRunEventCancelRemainOnChannel(IN struct ADAPTER *prAdapter,
 	struct MSG_CANCEL_REMAIN_ON_CHANNEL *prCancelRemainOnChannel;
 	u_int8_t rReturn = TRUE;
 	uint8_t ucBssIndex = 0;
-
-	ASSERT(prAdapter);
 
 	prCancelRemainOnChannel =
 	    (struct MSG_CANCEL_REMAIN_ON_CHANNEL *)prMsgHdr;
@@ -5835,7 +5711,6 @@ aisFunChnlReqByOffChnl(IN struct ADAPTER *prAdapter,
 			sizeof(struct MSG_REMAIN_ON_CHANNEL));
 	if (prMsgChnlReq == NULL) {
 		DBGLOG(AIS, ERROR, "channel request buffer allocate fails.\n");
-		ASSERT(FALSE);
 		return FALSE;
 	}
 
@@ -5870,7 +5745,6 @@ aisFunAddTxReq2Queue(IN struct ADAPTER *prAdapter,
 
 	if (prTmpOffChnlTxReq == NULL) {
 		DBGLOG(AIS, ERROR, "Allocate TX request buffer fails.\n");
-		ASSERT(FALSE);
 		return FALSE;
 	}
 
@@ -6039,8 +5913,6 @@ void aisFsmRunEventNchoActionFrameTx(IN struct ADAPTER *prAdapter,
 	uint8_t ucBssIndex = 0;
 
 	do {
-		ASSERT_BREAK((prAdapter != NULL) && (prMsgHdr != NULL));
-
 		prMgmtTxMsg = (struct MSG_MGMT_TX_REQUEST *)prMsgHdr;
 
 		ucBssIndex = prMgmtTxMsg->ucBssIdx;
@@ -6061,7 +5933,6 @@ void aisFsmRunEventNchoActionFrameTx(IN struct ADAPTER *prAdapter,
 		    prNchoInfo->rParamActionFrame.i4len + MAC_TX_RESERVED_FIELD;
 		prMgmtFrame = cnmMgtPktAlloc(prAdapter, u2PktLen);
 		if (prMgmtFrame == NULL) {
-			ASSERT(FALSE);
 			DBGLOG(REQ, ERROR,
 			       "NCHO there is no memory for prMgmtFrame\n");
 			break;
@@ -6113,7 +5984,6 @@ void aisFsmRunEventChannelTimeout(IN struct ADAPTER *prAdapter,
 
 	DBGLOG(AIS, LOUD, "ucBssIndex = %d\n", ucBssIndex);
 
-	ASSERT(prAdapter);
 	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
 	prAisBssInfo = aisGetAisBssInfo(prAdapter, ucBssIndex);
 
@@ -6167,8 +6037,6 @@ aisFsmRunEventMgmtFrameTxDone(IN struct ADAPTER *prAdapter,
 	uint8_t ucBssIndex = 0;
 
 	do {
-		ASSERT((prAdapter != NULL) && (prMsduInfo != NULL));
-
 		ucBssIndex = prMsduInfo->ucBssIndex;
 
 		DBGLOG(AIS, LOUD, "ucBssIndex = %d\n", ucBssIndex);
@@ -6228,8 +6096,6 @@ aisFuncTxMgmtFrame(IN struct ADAPTER *prAdapter,
 	struct STA_RECORD *prStaRec = (struct STA_RECORD *)NULL;
 
 	do {
-		ASSERT((prAdapter != NULL) && (prMgmtTxReqInfo != NULL));
-
 		DBGLOG(AIS, LOUD, "ucBssIndex = %d\n", ucBssIndex);
 
 		if (prMgmtTxReqInfo->fgIsMgmtTxRequested) {
@@ -6254,8 +6120,6 @@ aisFuncTxMgmtFrame(IN struct ADAPTER *prAdapter,
 			/* 2. prMgmtTxReqInfo->prMgmtTxMsdu == NULL */
 			/* Packet transmitted, wait tx done. (cookie issue) */
 		}
-
-		ASSERT(prMgmtTxReqInfo->prMgmtTxMsdu == NULL);
 
 		prWlanHdr =
 		    (struct WLAN_MAC_HEADER *)((unsigned long)
@@ -6316,9 +6180,6 @@ void aisFuncValidateRxActionFrame(IN struct ADAPTER *prAdapter,
 	DEBUGFUNC("aisFuncValidateRxActionFrame");
 
 	do {
-
-		ASSERT((prAdapter != NULL) && (prSwRfb != NULL));
-
 		if (prSwRfb->prStaRec)
 			ucBssIndex = prSwRfb->prStaRec->ucBssIndex;
 
@@ -6871,8 +6732,6 @@ u_int8_t aisIsProcessingBeaconTimeout(IN struct ADAPTER *prAdapter,
 	struct CONNECTION_SETTINGS *prConnSettings;
 	bool fgIsPostponeTimeout;
 	bool fgIsBeaconTimeout;
-
-	ASSERT(prAdapter);
 
 	DBGLOG(AIS, LOUD, "ucBssIndex = %d\n", ucBssIndex);
 

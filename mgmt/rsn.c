@@ -137,9 +137,6 @@ u_int8_t rsnParseRsnIE(IN struct ADAPTER *prAdapter,
 
 	DEBUGFUNC("rsnParseRsnIE");
 
-	ASSERT(prInfoElem);
-	ASSERT(prRsnInfo);
-
 	/* Verify the length of the RSN IE. */
 	if (prInfoElem->ucLength < 2) {
 		DBGLOG(RSN, TRACE, "RSN IE length too short (length=%d)\n",
@@ -389,9 +386,6 @@ u_int8_t rsnParseWpaIE(IN struct ADAPTER *prAdapter,
 
 	DEBUGFUNC("rsnParseWpaIE");
 
-	ASSERT(prInfoElem);
-	ASSERT(prWpaInfo);
-
 	/* Verify the length of the WPA IE. */
 	if (prInfoElem->ucLength < 6) {
 		DBGLOG(RSN, TRACE, "WPA IE length too short (length=%d)\n",
@@ -628,8 +622,6 @@ u_int8_t rsnSearchSupportedCipher(IN struct ADAPTER *prAdapter,
 
 	DEBUGFUNC("rsnSearchSupportedCipher");
 
-	ASSERT(pu4Index);
-
 	prMib = aisGetMib(prAdapter, ucBssIndex);
 
 	for (i = 0; i < MAX_NUM_SUPPORTED_CIPHER_SUITES; i++) {
@@ -738,8 +730,6 @@ u_int8_t rsnSearchAKMSuite(IN struct ADAPTER *prAdapter,
 
 	DEBUGFUNC("rsnSearchAKMSuite");
 
-	ASSERT(pu4Index);
-
 	prMib = aisGetMib(prAdapter, ucBssIndex);
 
 	for (i = 0; i < MAX_NUM_SUPPORTED_AKM_SUITES; i++) {
@@ -811,9 +801,6 @@ u_int8_t rsnPerformPolicySelection(
 	enum ENUM_WEP_STATUS eEncStatus;
 
 	DEBUGFUNC("rsnPerformPolicySelection");
-
-	ASSERT(prBss);
-
 	DBGLOG(RSN, TRACE, "ucBssIndex = %d\n", ucBssIndex);
 
 	prBss->u4RsnSelectedPairwiseCipher = 0;
@@ -1233,8 +1220,6 @@ void rsnGenerateWpaNoneIE(IN struct ADAPTER *prAdapter,
 
 	DEBUGFUNC("rsnGenerateWpaNoneIE");
 
-	ASSERT(prMsduInfo);
-
 	ucBssIndex = prMsduInfo->ucBssIndex;
 
 	if (GET_BSS_INFO_BY_INDEX(prAdapter,
@@ -1247,9 +1232,6 @@ void rsnGenerateWpaNoneIE(IN struct ADAPTER *prAdapter,
 	pucBuffer = (uint8_t *) ((unsigned long)
 				 prMsduInfo->prPacket + (unsigned long)
 				 prMsduInfo->u2FrameLength);
-
-	ASSERT(pucBuffer);
-
 	prWpaIE = (struct WPA_INFO_ELEM *)(pucBuffer);
 
 	/* Start to construct a WPA IE. */
@@ -1367,14 +1349,9 @@ void rsnGenerateWPAIE(IN struct ADAPTER *prAdapter,
 
 	DEBUGFUNC("rsnGenerateWPAIE");
 
-	ASSERT(prMsduInfo);
-
 	pucBuffer = (uint8_t *) ((unsigned long)
 				 prMsduInfo->prPacket + (unsigned long)
 				 prMsduInfo->u2FrameLength);
-
-	ASSERT(pucBuffer);
-
 	ucBssIndex = prMsduInfo->ucBssIndex;
 	eAuthMode =
 	    aisGetAuthMode(prAdapter, ucBssIndex);
@@ -1497,8 +1474,7 @@ void rsnGenerateRSNIE(IN struct ADAPTER *prAdapter,
 	uint8_t *cp;
 	/* UINT_8                ucExpendedLen = 0; */
 	uint8_t *pucBuffer;
-	uint8_t ucBssIndex, isWPA3;
-	uint32_t i;
+	uint8_t ucBssIndex;
 	struct BSS_INFO *prBssInfo;
 	struct STA_RECORD *prStaRec;
 	enum ENUM_PARAM_AUTH_MODE eAuthMode;
@@ -1506,22 +1482,14 @@ void rsnGenerateRSNIE(IN struct ADAPTER *prAdapter,
 
 	DEBUGFUNC("rsnGenerateRSNIE");
 
-	ASSERT(prMsduInfo);
-
 	pucBuffer = (uint8_t *) ((unsigned long)
 				 prMsduInfo->prPacket + (unsigned long)
 				 prMsduInfo->u2FrameLength);
-
-	ASSERT(pucBuffer);
-
 	/* Todo:: network id */
 	ucBssIndex = prMsduInfo->ucBssIndex;
-	prAisSpecBssInfo =
-		aisGetAisSpecBssInfo(prAdapter, ucBssIndex);
-	eAuthMode =
-	    aisGetAuthMode(prAdapter, ucBssIndex);
-	isWPA3 = eAuthMode == AUTH_MODE_WPA3_SAE ||
-	     rsnSearchAKMSuite(prAdapter, RSN_CIPHER_SUITE_OWE, &i, ucBssIndex);
+	prAisSpecBssInfo = aisGetAisSpecBssInfo(prAdapter, ucBssIndex);
+	eAuthMode = aisGetAuthMode(prAdapter, ucBssIndex);
+
 	/* for Fast Bss Transition,  we reuse the RSN Element composed in
 	 ** userspace
 	 */
@@ -1532,7 +1500,6 @@ void rsnGenerateRSNIE(IN struct ADAPTER *prAdapter,
 		return;
 	}
 	prBssInfo = prAdapter->aprBssInfo[ucBssIndex];
-	ASSERT(prBssInfo);
 
 	if (
 #if CFG_ENABLE_WIFI_DIRECT
@@ -1708,11 +1675,7 @@ rsnParseCheckForWFAInfoElem(IN struct ADAPTER *prAdapter,
 	uint8_t aucWfaOui[] = VENDOR_OUI_WFA;
 	struct IE_WFA *prWfaIE;
 
-	ASSERT(pucBuf);
-	ASSERT(pucOuiType);
-	ASSERT(pu2SubTypeVersion);
 	prWfaIE = (struct IE_WFA *)pucBuf;
-
 	do {
 		if (IE_LEN(pucBuf) <= ELEM_MIN_LEN_WFA_OUI_TYPE_SUBTYPE) {
 			break;
@@ -1756,11 +1719,6 @@ void rsnParserCheckForRSNCCMPPSK(struct ADAPTER *prAdapter,
 	struct BSS_INFO *prBssInfo;
 	uint8_t i;
 	uint16_t statusCode;
-
-	ASSERT(prAdapter);
-	ASSERT(prIe);
-	ASSERT(prStaRec);
-	ASSERT(pu2StatusCode);
 
 	*pu2StatusCode = STATUS_CODE_INVALID_INFO_ELEMENT;
 
@@ -1903,7 +1861,6 @@ void rsnTkipHandleMICFailure(IN struct ADAPTER *prAdapter,
 
 	DEBUGFUNC("rsnTkipHandleMICFailure");
 
-	ASSERT(prAdapter);
 #if 1
 	rsnGenMicErrorEvent(prAdapter, prSta, fgErrorKeyType);
 
@@ -1967,8 +1924,6 @@ struct PMKID_ENTRY *rsnSearchPmkidEntry(IN struct ADAPTER *prAdapter,
 	struct AIS_SPECIFIC_BSS_INFO *prAisSpecBssInfo;
 	struct PMKID_ENTRY *entry;
 	struct LINK *cache;
-
-	ASSERT(pucBssid);
 
 	prAisSpecBssInfo = aisGetAisSpecBssInfo(prAdapter,
 		ucBssIndex);
@@ -2168,8 +2123,6 @@ void rsnGeneratePmkidIndication(IN struct ADAPTER *prAdapter,
 
 	DEBUGFUNC("rsnGeneratePmkidIndication");
 
-	ASSERT(prAdapter);
-
 	/* Status type: PMKID Candidatelist Event */
 	pmkidEvent.rStatus.eStatusType = ENUM_STATUS_TYPE_CANDIDATE_LIST;
 	kalMemCopy(&pmkidEvent.rCandi, prCandi,
@@ -2243,7 +2196,6 @@ uint8_t rsnCheckSaQueryTimeout(
 
 	prBssSpecInfo =
 		aisGetAisSpecBssInfo(prAdapter, ucBssIdx);
-	ASSERT(prBssSpecInfo);
 	prAisBssInfo =
 		aisGetAisBssInfo(prAdapter, ucBssIdx);
 
@@ -2319,11 +2271,7 @@ void rsnStartSaQueryTimer(IN struct ADAPTER *prAdapter,
 
 	prBssInfo = aisGetAisBssInfo(prAdapter,
 		ucBssIndex);
-	ASSERT(prBssInfo);
-
-	prBssSpecInfo =
-		aisGetAisSpecBssInfo(prAdapter, ucBssIndex);
-	ASSERT(prBssSpecInfo);
+	prBssSpecInfo = aisGetAisSpecBssInfo(prAdapter, ucBssIndex);
 
 	DBGLOG(RSN, INFO, "MFP: Start Sa Query\n");
 
@@ -2458,9 +2406,7 @@ void rsnStartSaQuery(IN struct ADAPTER *prAdapter,
 {
 	struct AIS_SPECIFIC_BSS_INFO *prBssSpecInfo;
 
-	prBssSpecInfo =
-		aisGetAisSpecBssInfo(prAdapter, ucBssIdx);
-	ASSERT(prBssSpecInfo);
+	prBssSpecInfo = aisGetAisSpecBssInfo(prAdapter, ucBssIdx);
 
 	if (prBssSpecInfo->u4SaQueryCount == 0)
 		rsnStartSaQueryTimer(prAdapter, (unsigned long) ucBssIdx);
@@ -2481,9 +2427,7 @@ void rsnStopSaQuery(IN struct ADAPTER *prAdapter,
 {
 	struct AIS_SPECIFIC_BSS_INFO *prBssSpecInfo;
 
-	prBssSpecInfo =
-		aisGetAisSpecBssInfo(prAdapter, ucBssIdx);
-	ASSERT(prBssSpecInfo);
+	prBssSpecInfo = aisGetAisSpecBssInfo(prAdapter, ucBssIdx);
 
 	cnmTimerStopTimer(prAdapter, &prBssSpecInfo->rSaQueryTimer);
 
@@ -2518,10 +2462,7 @@ void rsnSaQueryRequest(IN struct ADAPTER *prAdapter, IN struct SW_RFB *prSwRfb)
 	uint8_t ucBssIndex = secGetBssIdxByRfb(prAdapter,
 		prSwRfb);
 
-	prBssInfo = aisGetAisBssInfo(prAdapter,
-		ucBssIndex);
-	ASSERT(prBssInfo);
-
+	prBssInfo = aisGetAisBssInfo(prAdapter, ucBssIndex);
 	if (!prSwRfb)
 		return;
 
@@ -2632,7 +2573,6 @@ void rsnSaQueryAction(IN struct ADAPTER *prAdapter, IN struct SW_RFB *prSwRfb)
 
 	prBssSpecInfo =
 		aisGetAisSpecBssInfo(prAdapter, ucBssIndex);
-	ASSERT(prBssSpecInfo);
 
 	prRxFrame = (struct ACTION_SA_QUERY_FRAME *)
 	    prSwRfb->pvHeader;
@@ -2808,12 +2748,7 @@ void rsnGenerateWSCIEForAssocRsp(struct ADAPTER *prAdapter,
 	struct BSS_INFO *prP2pBssInfo = (struct BSS_INFO *)NULL;
 	uint16_t u2IELen = 0;
 
-	ASSERT(prAdapter);
-	ASSERT(prMsduInfo);
-	ASSERT(IS_NET_ACTIVE(prAdapter, prMsduInfo->ucBssIndex));
-
 	prWifiVar = &(prAdapter->rWifiVar);
-	ASSERT(prWifiVar);
 
 	DBGLOG(RSN, TRACE, "WPS: Building WPS IE for (Re)Association Response");
 	prP2pBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prMsduInfo->ucBssIndex);
@@ -2899,9 +2834,6 @@ void rsnPmfGenerateTimeoutIE(struct ADAPTER *prAdapter,
 {
 	struct IE_TIMEOUT_INTERVAL *prTimeout;
 	struct STA_RECORD *prStaRec = NULL;
-
-	ASSERT(prAdapter);
-	ASSERT(prMsduInfo);
 
 	prStaRec = cnmGetStaRecByIndex(prAdapter, prMsduInfo->ucStaRecIndex);
 
@@ -3005,8 +2937,6 @@ void rsnApStartSaQueryTimer(IN struct ADAPTER *prAdapter,
 	struct ACTION_SA_QUERY_FRAME *prTxFrame;
 	uint16_t u2PayloadLen;
 
-	ASSERT(prStaRec);
-
 	DBGLOG(RSN, INFO, "MFP: AP Start Sa Query timer\n");
 
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prStaRec->ucBssIndex);
@@ -3102,8 +3032,6 @@ void rsnApStartSaQueryTimer(IN struct ADAPTER *prAdapter,
 void rsnApStartSaQuery(IN struct ADAPTER *prAdapter,
 		       IN struct STA_RECORD *prStaRec)
 {
-	ASSERT(prStaRec);
-
 	DBGLOG(RSN, INFO, "rsnApStartSaQuery\n");
 
 	if (!prStaRec) {
@@ -3135,8 +3063,6 @@ void rsnApStartSaQuery(IN struct ADAPTER *prAdapter,
 void rsnApStopSaQuery(IN struct ADAPTER *prAdapter,
 		      IN struct STA_RECORD *prStaRec)
 {
-	ASSERT(prStaRec);
-
 	cnmTimerStopTimer(prAdapter, &prStaRec->rPmfCfg.rSAQueryTimer);
 	prStaRec->rPmfCfg.u2TransactionID = 0;
 	prStaRec->rPmfCfg.u4SAQueryCount = 0;
@@ -3171,8 +3097,6 @@ void rsnApSaQueryRequest(IN struct ADAPTER *prAdapter,
 		return;
 
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prStaRec->ucBssIndex);
-	ASSERT(prBssInfo);
-
 	prRxFrame = (struct ACTION_SA_QUERY_FRAME *)
 	    prSwRfb->pvHeader;
 	if (!prRxFrame)
@@ -3338,8 +3262,6 @@ u_int8_t rsnParseOsenIE(struct ADAPTER *prAdapter,
 	uint8_t *pucPairSuite = NULL;
 	uint8_t *pucAuthSuite = NULL;
 	uint8_t *cp;
-
-	ASSERT(prOsenInfo);
 
 	cp = ((uint8_t *) prInfoElem) + 6;
 	u4RemainRsnIeLen = (int32_t) prInfoElem->ucLength - 4;

@@ -1590,8 +1590,6 @@ TdlsSendChSwControlCmd(struct ADAPTER *prAdapter,
 	struct CMD_TDLS_CH_SW rCmdTdlsChSwCtrl;
 	struct BSS_INFO *prBssInfo;
 
-	ASSERT(prAdapter);
-
 	prBssInfo =
 		GET_BSS_INFO_BY_INDEX(prAdapter, AIS_DEFAULT_INDEX);
 
