@@ -646,6 +646,7 @@ p2pRoleFsmDeauthComplete(IN struct ADAPTER *prAdapter,
 	prP2pRoleFsmInfo =
 		P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prAdapter,
 			prP2pBssInfo->u4PrivateData);
+	ASSERT_BREAK(prP2pRoleFsmInfo != NULL);
 	prP2PInfo = prAdapter->prGlueInfo->prP2PInfo[
 			prP2pRoleFsmInfo->ucRoleIndex];
 
@@ -671,8 +672,6 @@ p2pRoleFsmDeauthComplete(IN struct ADAPTER *prAdapter,
 			"Skip deauth tx done since SAA fsm is in progress.\n");
 		return;
 	}
-
-	ASSERT_BREAK(prP2pRoleFsmInfo != NULL);
 
 	/* Change station state. */
 	cnmStaRecChangeState(prAdapter, prStaRec, STA_STATE_1);
