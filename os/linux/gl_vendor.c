@@ -1424,7 +1424,7 @@ int mtk_cfg80211_vendor_driver_memory_dump(struct wiphy *wiphy,
 	struct GLUE_INFO *prGlueInfo;
 	uint32_t u4BufLen;
 #endif /* CFG_SUPPORT_LINK_QUALITY_MONITOR */
-	struct sk_buff *skb;
+	struct sk_buff *skb = NULL;
 	uint8_t *puBuufer = NULL;
 	int32_t i4Status = -EINVAL;
 	uint16_t u2CopySize = 0;
@@ -1487,8 +1487,7 @@ int mtk_cfg80211_vendor_driver_memory_dump(struct wiphy *wiphy,
 	skb = cfg80211_vendor_cmd_alloc_reply_skb(wiphy, u2CopySize);
 	if (!skb) {
 		DBGLOG(REQ, ERROR, "allocate skb failed\n");
-		i4Status = -ENOMEM;
-		goto err_handle_label;
+		return -ENOMEM;
 	}
 
 	if (unlikely(nla_put_nohdr(skb, u2CopySize, puBuufer) < 0)) {
@@ -1498,9 +1497,10 @@ int mtk_cfg80211_vendor_driver_memory_dump(struct wiphy *wiphy,
 		goto err_handle_label;
 	}
 
-	i4Status = cfg80211_vendor_cmd_reply(skb);
+	return cfg80211_vendor_cmd_reply(skb);
 
 err_handle_label:
+	kfree_skb(skb);
 	return i4Status;
 }
 
