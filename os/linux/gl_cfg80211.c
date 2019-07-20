@@ -3528,6 +3528,9 @@ int mtk_cfg80211_sched_scan_start(IN struct wiphy *wiphy,
 	uint32_t num = 0;
 	uint8_t ucBssIndex = 0;
 
+	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wiphy);
+	ASSERT(prGlueInfo);
+
 	ucBssIndex = wlanGetBssIdx(ndev);
 	if (!IS_BSS_INDEX_AIS(prGlueInfo->prAdapter, ucBssIndex))
 		return -EINVAL;
@@ -3546,9 +3549,6 @@ int mtk_cfg80211_sched_scan_start(IN struct wiphy *wiphy,
 	} else
 		scanlog_dbg(LOG_SCHED_SCAN_REQ_START_K2D, INFO, "--> %s()\n",
 			__func__);
-
-	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wiphy);
-	ASSERT(prGlueInfo);
 
 	if (prGlueInfo->prAdapter == NULL) {
 		DBGLOG(REQ, ERROR, "prGlueInfo->prAdapter is NULL");
