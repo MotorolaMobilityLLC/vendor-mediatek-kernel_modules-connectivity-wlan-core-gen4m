@@ -1490,15 +1490,10 @@ void rsnGenerateRSNIE(IN struct ADAPTER *prAdapter,
 	prAisSpecBssInfo = aisGetAisSpecBssInfo(prAdapter, ucBssIndex);
 	eAuthMode = aisGetAuthMode(prAdapter, ucBssIndex);
 
-	/* for Fast Bss Transition,  we reuse the RSN Element composed in
-	 ** userspace
-	 */
-	if ((eAuthMode == AUTH_MODE_WPA2_FT ||
-	     eAuthMode == AUTH_MODE_WPA2_FT_PSK) &&
-	    aisGetFtIe(prAdapter, ucBssIndex)->prRsnIE) {
-		authAddRSNIE(prAdapter, prMsduInfo);
+	/* For FT, we reuse the RSN Element composed in userspace */
+	if (authAddRSNIE_impl(prAdapter, prMsduInfo))
 		return;
-	}
+
 	prBssInfo = prAdapter->aprBssInfo[ucBssIndex];
 
 	if (
