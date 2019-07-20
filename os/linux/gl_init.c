@@ -3799,6 +3799,14 @@ int32_t wlanOnWhenProbeSuccess(struct GLUE_INFO *prGlueInfo,
 		consys_log_event_notification((int)FW_LOG_CMD_ON_OFF,
 			u4LogOnOffCache);
 #endif
+
+#if CFG_SUPPORT_LOWLATENCY_MODE
+	/* Query capability from firmware */
+	prAdapter->fgTxDupCertificate = FALSE;
+	wlanoidSetLowLatencyCommand(prAdapter,
+				FALSE, prAdapter->fgEnTxDupDetect, TRUE);
+#endif
+
 	return 0;
 }
 

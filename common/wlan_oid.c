@@ -15836,6 +15836,47 @@ wlanoidShowDmaschInfo(IN struct ADAPTER *prAdapter,
 #if CFG_SUPPORT_LOWLATENCY_MODE
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief This routine is called to set enable/disable low latency mode to FW
+ *
+ * \param[in]  prAdapter       A pointer to the Adapter structure.
+ *
+ * \retval WLAN_STATUS_SUCCESS
+ */
+/*----------------------------------------------------------------------------*/
+uint32_t wlanoidSetLowLatencyCommand(
+	IN struct ADAPTER *prAdapter,
+	IN u_int8_t fgEnLowLatencyMode,
+	IN u_int8_t fgEnTxDupDetect,
+	IN u_int8_t fgTxDupCertQuery)
+{
+	struct CMD_LOW_LATENCY_MODE_HEADER rModeHeader;
+
+	rModeHeader.ucVersion = LOW_LATENCY_MODE_CMD_V2;
+	rModeHeader.ucType = 0;
+	rModeHeader.ucMagicCode = LOW_LATENCY_MODE_MAGIC_CODE;
+	rModeHeader.ucBufferLen = sizeof(struct LOW_LATENCY_MODE_SETTING);
+	rModeHeader.rSetting.fgEnable = fgEnLowLatencyMode;
+	rModeHeader.rSetting.fgTxDupDetect = fgEnTxDupDetect;
+	rModeHeader.rSetting.fgTxDupCertQuery = fgTxDupCertQuery;
+
+	wlanSendSetQueryCmd(prAdapter,	/* prAdapter */
+			    CMD_ID_SET_LOW_LATENCY_MODE,	/* ucCID */
+			    TRUE,	/* fgSetQuery */
+			    FALSE,	/* fgNeedResp */
+			    TRUE,	/* fgIsOid */
+			    NULL,	/* pfCmdDoneHandler */
+			    NULL,	/* pfCmdTimeoutHandler */
+			    sizeof(struct CMD_LOW_LATENCY_MODE_HEADER),
+			    (uint8_t *)&rModeHeader,	/* pucInfoBuffer */
+			    NULL,	/* pvSetQueryBuffer */
+			    0	/* u4SetQueryBufferLen */
+		);
+
+	return WLAN_STATUS_SUCCESS;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief This routine is called to enable/disable low latency mode
  *
  * \param[in]  prAdapter       A pointer to the Adapter structure.
@@ -15856,6 +15897,7 @@ uint32_t wlanoidSetLowLatencyMode(
 	u_int8_t fgEnMode = FALSE; /* Low Latency Mode */
 	u_int8_t fgEnScan = FALSE; /* Scan management */
 	u_int8_t fgEnPM = FALSE; /* Power management */
+	u_int8_t fgEnTxDupDetect = FALSE; /* Tx Dup Detect */
 	uint32_t u4Events;
 	uint32_t u4PowerFlag;
 	struct PARAM_POWER_MODE_ rPowerMode;
@@ -15885,13 +15927,16 @@ uint32_t wlanoidSetLowLatencyMode(
 	prWifiVar = &prAdapter->rWifiVar;
 	kalMemCopy(&u4Events, pvSetBuffer, u4SetBufferLen);
 	DBGLOG(OID, INFO,
-		"LowLatency(gaming) event - gas:0x%x, net:0x%x, whitelist:0x%x, scan=%u, reorder=%u, power=%u\n",
+		"LowLatency(gaming) event - gas:0x%x, net:0x%x, whitelist:0x%x, txdup:0x%x, scan=%u, reorder=%u, power=%u, cmd data=%u\n",
 		(u4Events & GED_EVENT_GAS),
 		(u4Events & GED_EVENT_NETWORK),
 		(u4Events & GED_EVENT_DOPT_WIFI_SCAN),
+		(u4Events & GED_EVENT_TX_DUP_DETECT),
 		(uint32_t)prWifiVar->ucLowLatencyModeScan,
 		(uint32_t)prWifiVar->ucLowLatencyModeReOrder,
-		(uint32_t)prWifiVar->ucLowLatencyModePower);
+		(uint32_t)prWifiVar->ucLowLatencyModePower,
+		(uint32_t)prWifiVar->ucLowLatencyCmdData);
+
 	rPowerMode.ucBssIdx = prAisBssInfo->ucBssIndex;
 	u4PowerFlag = prAdapter->rWlanInfo.u4PowerSaveFlag[rPowerMode.ucBssIdx];
 
@@ -15977,6 +16022,47 @@ uint32_t wlanoidSetLowLatencyMode(
 	}
 
 	*pu4SetInfoLen = 0; /* We do not need to read */
+
+
+	/* Tx Duplicate Detect management:
+	 *
+	 * Disable/enable tx duplicate detect
+	 */
+	if ((u4Events & GED_EVENT_TX_DUP_DETECT) != 0)
+		fgEnTxDupDetect = TRUE;
+
+	DBGLOG(OID, INFO,
+		"EnTxDupDetect: Orig:[%d], New:[%d], CmdData:[%d], Cert:[%d]\n",
+		prAdapter->fgEnTxDupDetect,
+		fgEnTxDupDetect,
+		prAdapter->rWifiVar.ucLowLatencyCmdData,
+		prAdapter->fgTxDupCertificate);
+
+	if (prAdapter->fgEnTxDupDetect != fgEnTxDupDetect) {
+
+		prAdapter->fgEnTxDupDetect = fgEnTxDupDetect;
+
+#if CFG_TCP_IP_CHKSUM_OFFLOAD
+		if (prAdapter->fgIsSupportCsumOffload) {
+			if (prAdapter->fgEnTxDupDetect) {
+				/* Disable csum offload for command data */
+				prAdapter->prGlueInfo->
+					prDevHandler->features &=
+					~(NETIF_F_IP_CSUM | NETIF_F_IPV6_CSUM);
+			} else {
+				/* Enable csum offload for cut-through data */
+				prAdapter->prGlueInfo->
+					prDevHandler->features |=
+					(NETIF_F_IP_CSUM | NETIF_F_IPV6_CSUM);
+			}
+		}
+		DBGLOG(OID, INFO, "Checksum offload: [0x%x]\n",
+			prAdapter->prGlueInfo->prDevHandler->features);
+#endif
+		/* Send command to firmware */
+		wlanoidSetLowLatencyCommand(prAdapter,
+				FALSE, prAdapter->fgEnTxDupDetect, FALSE);
+	}
 
 	return WLAN_STATUS_SUCCESS;
 }

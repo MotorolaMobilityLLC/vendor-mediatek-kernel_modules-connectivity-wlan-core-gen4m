@@ -270,6 +270,10 @@
 #define GED_EVENT_GAS               (1 << 4)
 #define GED_EVENT_NETWORK           (1 << 11)
 #define GED_EVENT_DOPT_WIFI_SCAN    (1 << 12)
+#define GED_EVENT_TX_DUP_DETECT     (1 << 13)
+
+#define LOW_LATENCY_MODE_MAGIC_CODE      0x86
+#define LOW_LATENCY_MODE_CMD_V2          0x2
 #endif /* CFG_SUPPORT_LOWLATENCY_MODE */
 
 /*******************************************************************************
@@ -3982,6 +3986,11 @@ wlanoidSetWifiLogLevel(IN struct ADAPTER *prAdapter,
 		       OUT uint32_t *pu4SetInfoLen);
 
 #if CFG_SUPPORT_LOWLATENCY_MODE
+uint32_t wlanoidSetLowLatencyCommand(IN struct ADAPTER *prAdapter,
+				     IN u_int8_t fgEnLowLatencyMode,
+				     IN u_int8_t fgEnTxDupDetect,
+				     IN u_int8_t fgTxDupCertQuery);
+
 uint32_t
 wlanoidSetLowLatencyMode(IN struct ADAPTER *prAdapter,
 			 IN void *pvSetBuffer,

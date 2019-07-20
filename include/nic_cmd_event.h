@@ -541,6 +541,9 @@ enum ENUM_CMD_ID {
 	CMD_ID_GET_CHN_LOADING = 0x88,	/* 0x88 (Query) */
 	CMD_ID_GET_BUG_REPORT = 0x89,	/* 0x89 (Query) */
 	CMD_ID_GET_NIC_CAPABILITY_V2 = 0x8A,/* 0x8A (Query) */
+#if CFG_SUPPORT_LOWLATENCY_MODE
+	CMD_ID_SET_LOW_LATENCY_MODE = 0x8B, /* 0x8B (Set) */
+#endif
 	CMD_ID_LOG_UI_INFO = 0x8D,	/* 0x8D (Set / Query) */
 
 #if CFG_SUPPORT_OSHARE
@@ -663,6 +666,8 @@ enum ENUM_EVENT_ID {
 	EVENT_ID_MU_GET_QD = 0x53,
 	EVENT_ID_MU_GET_LQ = 0x54,
 #endif
+
+	EVENT_ID_LOW_LATENCY_INFO = 0x5B,	/* 0x5B (Unsolicited) */
 
 #if (CFG_SUPPORT_DFS_MASTER == 1)
 	EVENT_ID_RDD_REPORT = 0x60,
@@ -1856,6 +1861,24 @@ struct CMD_PS_PROFILE {
 	uint8_t ucPsProfile;
 	uint8_t aucReserved[2];
 };
+
+#if CFG_SUPPORT_LOWLATENCY_MODE
+/* CMD_ID_SET_LOW_LATENCY_MODE */
+struct LOW_LATENCY_MODE_SETTING {
+	u_int8_t fgEnable; /* Low Latency mode on/off */
+	u_int8_t fgTxDupDetect; /* Start/stop Tx dup detect */
+	u_int8_t fgTxDupCertQuery; /* Get Tx Dup Certificate */
+	uint8_t aucReserved[5];
+};
+
+struct CMD_LOW_LATENCY_MODE_HEADER {
+	uint8_t ucVersion;
+	uint8_t ucType;
+	uint8_t ucMagicCode;
+	uint8_t ucBufferLen;
+	struct LOW_LATENCY_MODE_SETTING rSetting;
+};
+#endif
 
 /* EVENT_LINK_QUALITY */
 #if 1
@@ -3642,6 +3665,19 @@ struct EVENT_OPMODE_CHANGE {
 	uint8_t  aucPadding2[63];
 };
 
+struct EVENT_LOW_LATENCY_INFO {
+	/* DWORD_0 - Common Part */
+	uint8_t  ucEvtVer;
+	uint8_t  aucPadding0[1];
+	uint16_t u2EvtLen;
+
+	/* DWORD_1 - afterwards */
+	u_int8_t  fgTxDupCert;
+	u_int8_t  fgTxDupEnable;
+	uint8_t  aucPadding1[2];
+	uint8_t  aucPayload[1024];
+};
+
 /*******************************************************************************
  *                            P U B L I C   D A T A
  *******************************************************************************
@@ -3931,6 +3967,10 @@ void nicCmdEventReportMisc(IN struct ADAPTER *prAdapter,
 			   IN struct CMD_INFO *prCmdInfo,
 			   IN uint8_t *pucEventBuf);
 #endif
+
+void nicEventUpdateLowLatencyInfoStatus(IN struct ADAPTER *prAdapter,
+		  IN struct WIFI_EVENT *prEvent);
+
 /*******************************************************************************
  *                              F U N C T I O N S
  *******************************************************************************

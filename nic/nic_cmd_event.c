@@ -5105,3 +5105,61 @@ REPORT_MISC:
 	}
 }
 #endif
+
+void nicEventUpdateLowLatencyInfoStatus(IN struct ADAPTER *prAdapter,
+		  IN struct WIFI_EVENT *prEvent)
+{
+	struct EVENT_LOW_LATENCY_INFO *prEvtLowLatencyInfo;
+	struct rtc_time tm;
+	struct timeval tv = { 0 };
+
+	ASSERT(prAdapter);
+
+	prEvtLowLatencyInfo =
+		(struct EVENT_LOW_LATENCY_INFO *)(prEvent->aucBuffer);
+
+	do_gettimeofday(&tv);
+	rtc_time_to_tm(tv.tv_sec, &tm);
+
+	DBGLOG_LIMITED(NIC, INFO,
+	       "Low Latency Info: drv cert=[%d], evt cert=[%d], evt dup=[%d] drv det=[%d] %02d-%02d %02d:%02d:%02d.%06u\n",
+	       prAdapter->fgTxDupCertificate,
+	       prEvtLowLatencyInfo->fgTxDupCert,
+	       prEvtLowLatencyInfo->fgTxDupEnable,
+	       prAdapter->fgEnTxDupDetect,
+	       tm.tm_mon + 1, tm.tm_mday, tm.tm_hour,
+	       tm.tm_min, tm.tm_sec, (unsigned int)tv.tv_usec);
+
+	if (prAdapter->fgTxDupCertificate != prEvtLowLatencyInfo->fgTxDupCert) {
+
+		prAdapter->fgTxDupCertificate =
+			prEvtLowLatencyInfo->fgTxDupCert;
+
+#if CFG_SUPPORT_DATA_STALL
+		KAL_REPORT_ERROR_EVENT(prAdapter,
+			EVENT_TX_DUP_CERT_CHANGE,
+			(uint16_t)sizeof(u_int8_t),
+			TRUE);
+#endif
+	}
+
+#if CFG_SUPPORT_DATA_STALL
+	if (prAdapter->fgTxDupCertificate) {
+
+		/* Indicate detect result to driver if detect on */
+		if (prAdapter->fgEnTxDupDetect) {
+			if (prEvtLowLatencyInfo->fgTxDupEnable) {
+				KAL_REPORT_ERROR_EVENT(prAdapter,
+					EVENT_TX_DUP_ON,
+					(uint16_t)sizeof(u_int8_t),
+					TRUE);
+			} else {
+				KAL_REPORT_ERROR_EVENT(prAdapter,
+					EVENT_TX_DUP_OFF,
+					(uint16_t)sizeof(u_int8_t),
+					TRUE);
+			}
+		}
+	}
+#endif
+}

@@ -2665,7 +2665,7 @@ kalQoSFrameClassifierAndPacketInfo(IN struct GLUE_INFO *prGlueInfo,
 	/* Customer request to raise priority for special packet, */
 	/* will set specific packet mark field to 0x5a */
 	if (prSkb->mark == NIC_TX_SKB_PRIORITY_MARK1 ||
-	    prSkb->mark == NIC_TX_SKB_PRIORITY_MARK2) {
+	    (prSkb->mark & BIT(NIC_TX_SKB_PRIORITY_MARK_BIT))) {
 		prTxPktInfo->ucPriorityParam = NIC_TX_PRIORITY_DATA_TID;
 		DBGLOG_LIMITED(INIT, TRACE,
 				"skb mark field=[%x]", prSkb->mark);
@@ -3099,7 +3099,8 @@ void kalClearSecurityFrames(IN struct GLUE_INFO *prGlueInfo)
 	while (prQueueEntry) {
 		prCmdInfo = (struct CMD_INFO *) prQueueEntry;
 
-		if (prCmdInfo->eCmdType == COMMAND_TYPE_SECURITY_FRAME) {
+		if (prCmdInfo->eCmdType == COMMAND_TYPE_SECURITY_FRAME ||
+			prCmdInfo->eCmdType == COMMAND_TYPE_DATA_FRAME) {
 			if (prCmdInfo->pfCmdTimeoutHandler)
 				prCmdInfo->pfCmdTimeoutHandler(
 					prGlueInfo->prAdapter, prCmdInfo);
@@ -3164,7 +3165,8 @@ void kalClearSecurityFramesByBssIdx(IN struct GLUE_INFO
 		prMsduInfo = prCmdInfo->prMsduInfo;
 		fgFree = FALSE;
 
-		if (prCmdInfo->eCmdType == COMMAND_TYPE_SECURITY_FRAME
+		if ((prCmdInfo->eCmdType == COMMAND_TYPE_SECURITY_FRAME ||
+			prCmdInfo->eCmdType == COMMAND_TYPE_DATA_FRAME)
 		    && prMsduInfo) {
 			if (prMsduInfo->ucBssIndex == ucBssIndex)
 				fgFree = TRUE;
@@ -3361,6 +3363,64 @@ void kalClearCommandQueue(IN struct GLUE_INFO *prGlueInfo)
 	}
 }
 
+u_int8_t kalIsCommandDataPath(IN struct ADAPTER
+				  *prAdapter, IN void *prPacket)
+{
+	struct sk_buff *skb = (struct sk_buff *)prPacket;
+
+	if (prAdapter->rWifiVar.ucLowLatencyCmdData == 0)
+		return FALSE;
+
+	if (!prAdapter->fgTxDupCertificate)
+		return FALSE;
+
+	if (!prAdapter->fgEnTxDupDetect)
+		return FALSE;
+
+	/* Only detect for special mark packet */
+	if (!prAdapter->rWifiVar.ucLowLatencyCmdDataAllPacket &&
+	    !(skb->mark & BIT(NIC_TX_SKB_DUP_DETECT_MARK_BIT))) {
+		DBGLOG_LIMITED(TX, TRACE,
+			"mark flag=[%x]\n", skb->mark);
+		return FALSE;
+	}
+
+	/* Not send special mark flag packets via command path */
+	if (GLUE_IS_PKT_FLAG_SET(prPacket)) {
+		DBGLOG_LIMITED(TX, TRACE,
+			"Packet flag=[%d]\n", GLUE_IS_PKT_FLAG_SET(prPacket));
+		return FALSE;
+	}
+
+	/* Only handle checksum calculated packets, must not enable
+	 * checksum offload for command data packet. Refer to
+	 * kalQueryTxChksumOffloadParam()
+	 */
+	if (skb->ip_summed != CHECKSUM_NONE) {
+		DBGLOG_LIMITED(TX, TRACE,
+			"Packet checksum not calculated, ip_summed=[%d]",
+			skb->ip_summed);
+		return FALSE;
+	}
+
+	if (prAdapter->tmTxDataInterval > 0 &&
+	    !CHECK_FOR_TIMEOUT(kalGetTimeTick(),
+				prAdapter->tmTxDataInterval, 10)) {
+		DBGLOG_LIMITED(TX, TRACE, "Packet interval too close");
+		return FALSE;
+	}
+	GET_CURRENT_SYSTIME(&prAdapter->tmTxDataInterval);
+
+	DBGLOG_LIMITED(TX, INFO,
+	       "Change data to cmd data frame. Packet flag=[%d], ip_summed=[%d] mark=[%x]\n",
+		GLUE_IS_PKT_FLAG_SET(prPacket),
+		skb->ip_summed,
+		skb->mark);
+
+	return TRUE;
+}
+
+
 uint32_t kalProcessTxPacket(struct GLUE_INFO *prGlueInfo,
 			    struct sk_buff *prSkb)
 {
@@ -3382,7 +3442,17 @@ uint32_t kalProcessTxPacket(struct GLUE_INFO *prGlueInfo,
 		} else {
 			u4Status = WLAN_STATUS_RESOURCES;
 		}
+#if CFG_SUPPORT_LOWLATENCY_MODE
+	/* Data frame use command path */
+	} else if (kalIsCommandDataPath(prGlueInfo->prAdapter,
+						(void *) prSkb)) {
+		u4Status = wlanProcessCmdDataFrame(prGlueInfo->prAdapter,
+					       (void *) prSkb);
+		if (u4Status == WLAN_STATUS_SUCCESS)
+			GLUE_INC_REF_CNT(
+				prGlueInfo->i4TxPendingSecurityFrameNum);
 	}
+#endif
 	/* Handle normal frame */
 	else
 		u4Status = wlanEnqueueTxPacket(prGlueInfo->prAdapter,
@@ -3469,35 +3539,7 @@ void kalProcessTxReq(struct GLUE_INFO *prGlueInfo,
 					      (struct sk_buff *)
 					      GLUE_GET_PKT_DESCRIPTOR(
 					      prQueueEntry));
-#if 0
-				prSkb =	(struct sk_buff *)
-					GLUE_GET_PKT_DESCRIPTOR(prQueueEntry);
-				ASSERT(prSkb);
-				if (prSkb == NULL) {
-					DBGLOG(INIT, WARN,
-					       "prSkb == NULL in tx\n");
-					continue;
-				}
 
-				/* Handle security frame */
-				if (GLUE_GET_PKT_IS_1X(prSkb)) {
-					if (wlanProcessSecurityFrame(
-					    prGlueInfo->prAdapter,
-					    (void *)prSkb)) {
-						u4Status = WLAN_STATUS_SUCCESS;
-						GLUE_INC_REF_CNT(prGlueInfo->
-						i4TxPendingSecurityFrameNum);
-					} else {
-						u4Status =
-							WLAN_STATUS_RESOURCES;
-					}
-				}
-				/* Handle normal frame */
-				else
-					u4Status = wlanEnqueueTxPacket(
-							prGlueInfo->prAdapter,
-							(void *) prSkb);
-#endif
 				/* Enqueue packet back into TxQueue if resource
 				 * is not enough
 				 */
@@ -6338,8 +6380,9 @@ int kalMetRemoveProcfs(void)
 
 #if CFG_SUPPORT_DATA_STALL
 u_int8_t kalIndicateDriverEvent(struct ADAPTER *prAdapter,
-					enum ENUM_VENDOR_DRIVER_EVENT event,
-					uint16_t dataLen)
+				enum ENUM_VENDOR_DRIVER_EVENT event,
+				uint16_t dataLen,
+				u_int8_t fgForceReport)
 {
 	struct sk_buff *skb = NULL;
 	struct wiphy *wiphy;
@@ -6353,13 +6396,15 @@ u_int8_t kalIndicateDriverEvent(struct ADAPTER *prAdapter,
 	if (!wiphy || !wdev || !prWifiVar)
 		return -EINVAL;
 
-	if (prAdapter->tmReportinterval > 0 &&
-		!CHECK_FOR_TIMEOUT(kalGetTimeTick(),
-		prAdapter->tmReportinterval,
-		prWifiVar->u4ReportEventInterval*1000)) {
-		return -ETIME;
+	if (!fgForceReport) {
+		if (prAdapter->tmReportinterval > 0 &&
+			!CHECK_FOR_TIMEOUT(kalGetTimeTick(),
+			prAdapter->tmReportinterval,
+			prWifiVar->u4ReportEventInterval*1000)) {
+			return -ETIME;
+		}
+		GET_CURRENT_SYSTIME(&prAdapter->tmReportinterval);
 	}
-	GET_CURRENT_SYSTIME(&prAdapter->tmReportinterval);
 
 	skb = cfg80211_vendor_event_alloc(wiphy, wdev, dataLen,
 		WIFI_EVENT_DRIVER_ERROR, GFP_KERNEL);
@@ -7160,8 +7205,8 @@ void kalPerMonHandler(IN struct ADAPTER *prAdapter,
 #if CFG_SUPPORT_DATA_STALL
 		/* test mode event */
 		if (prWifiVar->u4ReportEventInterval == 0)
-			KAL_REPORT_ERROR_EVENT(prAdapter,
-				EVENT_TEST_MODE, (uint16_t)sizeof(u_int8_t));
+			KAL_REPORT_ERROR_EVENT(prAdapter, EVENT_TEST_MODE,
+					(uint16_t)sizeof(u_int8_t), FALSE);
 #endif
 
 	prPerMonitor->u4TarPerfLevel = PERF_MON_TP_MAX_THRESHOLD;

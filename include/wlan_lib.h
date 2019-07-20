@@ -1275,12 +1275,19 @@ u_int8_t wlanProcessTxFrame(IN struct ADAPTER *prAdapter,
 u_int8_t wlanProcessSecurityFrame(IN struct ADAPTER *prAdapter,
 				  IN void *prPacket);
 
+uint32_t wlanProcessCmdDataFrame(IN struct ADAPTER
+				  *prAdapter, IN void *prPacket);
+
 void wlanSecurityFrameTxDone(IN struct ADAPTER *prAdapter,
 			     IN struct CMD_INFO *prCmdInfo,
 			     IN uint8_t *pucEventBuf);
 
-void wlanSecurityFrameTxTimeout(IN struct ADAPTER *prAdapter,
+void wlanSecurityAndCmdDataFrameTxTimeout(IN struct ADAPTER *prAdapter,
 				IN struct CMD_INFO *prCmdInfo);
+
+void wlanCmdDataFrameTxDone(IN struct ADAPTER *prAdapter,
+			     IN struct CMD_INFO *prCmdInfo,
+			     IN uint8_t *pucEventBuf);
 
 /*----------------------------------------------------------------------------*/
 /* OID/IOCTL Handling                                                         */

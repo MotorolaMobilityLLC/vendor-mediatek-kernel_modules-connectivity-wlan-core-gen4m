@@ -451,7 +451,10 @@ enum ENUM_VENDOR_DRIVER_EVENT {
 	EVENT_ARP_NO_RESPONSE,
 	EVENT_PER_HIGH,
 	EVENT_TX_LOW_RATE,
-	EVENT_RX_LOW_RATE
+	EVENT_RX_LOW_RATE,
+	EVENT_TX_DUP_OFF = 100,
+	EVENT_TX_DUP_ON = 101,
+	EVENT_TX_DUP_CERT_CHANGE = 102
 };
 #endif
 
@@ -1074,8 +1077,9 @@ void kalIndicateRxMgmtFrame(IN struct GLUE_INFO *prGlueInfo,
 
 #if CFG_SUPPORT_DATA_STALL
 u_int8_t kalIndicateDriverEvent(struct ADAPTER *prAdapter,
-					enum ENUM_VENDOR_DRIVER_EVENT event,
-					uint16_t dataLen);
+				enum ENUM_VENDOR_DRIVER_EVENT event,
+				uint16_t dataLen,
+				u_int8_t fgForceReport);
 #endif
 /*----------------------------------------------------------------------------*/
 /* Routines in interface - ehpi/sdio.c                                        */

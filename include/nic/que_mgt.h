@@ -685,7 +685,7 @@ enum ENUM_FRAME_ACTION {
 };
 
 enum ENUM_FRAME_TYPE_IN_CMD_Q {
-	FRAME_TYPE_802_1X = 0,
+	FRAME_TYPE_802_1X = 0, /* For security and cmd data frame*/
 	FRAME_TYPE_MMPDU,
 	FRAME_TYPE_NUM
 };
