@@ -207,8 +207,9 @@ extern void wlanWakeupSourceRegister(get_count_handler pf_get_count,
 #if CFG_SUPPORT_DATA_STALL
 #define REPORT_EVENT_INTERVAL		30
 #define EVENT_PER_HIGH_THRESHOLD	80
-#define EVENT_TX_LOW_RATE_THRESHOLD	10
-#define EVENT_RX_LOW_RATE_THRESHOLD	10
+#define EVENT_TX_LOW_RATE_THRESHOLD	20
+#define EVENT_RX_LOW_RATE_THRESHOLD	20
+#define TRAFFIC_RHRESHOLD	150
 #endif
 
 /*******************************************************************************

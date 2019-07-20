@@ -6516,18 +6516,21 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 	prWifiVar->u4MTU = wlanCfgGetUint32(prAdapter, "MTU", 0);
 
 #if CFG_SUPPORT_DATA_STALL
-	prWifiVar->ucPerHighThreshole = (uint32_t) wlanCfgGetUint32(
+	prWifiVar->u4PerHighThreshole = (uint32_t) wlanCfgGetUint32(
 			prAdapter, "PerHighThreshole",
 			EVENT_PER_HIGH_THRESHOLD);
-	prWifiVar->ucTxLowRateThreshole = (uint32_t) wlanCfgGetUint32(
+	prWifiVar->u4TxLowRateThreshole = (uint32_t) wlanCfgGetUint32(
 			prAdapter, "TxLowRateThreshole",
 			EVENT_TX_LOW_RATE_THRESHOLD);
-	prWifiVar->ucRxLowRateThreshole = (uint32_t) wlanCfgGetUint32(
+	prWifiVar->u4RxLowRateThreshole = (uint32_t) wlanCfgGetUint32(
 			prAdapter, "RxLowRateThreshole",
 			EVENT_RX_LOW_RATE_THRESHOLD);
-	prWifiVar->ucReportEventInterval = (uint32_t) wlanCfgGetUint32(
+	prWifiVar->u4ReportEventInterval = (uint32_t) wlanCfgGetUint32(
 			prAdapter, "ReportEventInterval",
 			REPORT_EVENT_INTERVAL);
+	prWifiVar->u4TrafficThreshold = (uint32_t) wlanCfgGetUint32(
+			prAdapter, "TrafficThreshold",
+			TRAFFIC_RHRESHOLD);
 #endif
 	prWifiVar->iGroup0PLESize = (uint32_t) wlanCfgGetInt32(
 			prAdapter, "Group0PLESize", PLE_GROUP0_SIZE);
@@ -10131,19 +10134,28 @@ void wlanFinishCollectingLinkQuality(struct GLUE_INFO *prGlueInfo)
 void wlanCustomMonitorFunction(struct ADAPTER *prAdapter,
 	 struct WIFI_LINK_QUALITY_INFO *prLinkQualityInfo)
 {
+	uint64_t u8TxTotalCntDif;
+
+	u8TxTotalCntDif = (prLinkQualityInfo->u4TxTotalCount >
+			   prLinkQualityInfo->u4LastTxTotalCount) ?
+			  (prLinkQualityInfo->u4TxTotalCount -
+			   prLinkQualityInfo->u4LastTxTotalCount) : 0;
+
 	/* Add custom monitor here */
-	if (prLinkQualityInfo->u4CurTxRate <
-		prAdapter->rWifiVar.ucTxLowRateThreshole)
-		KAL_REPORT_ERROR_EVENT(prAdapter,
-			EVENT_TX_LOW_RATE, (uint16_t)sizeof(u_int8_t));
-	else if (prLinkQualityInfo->u4CurRxRate <
-		prAdapter->rWifiVar.ucRxLowRateThreshole)
-		KAL_REPORT_ERROR_EVENT(prAdapter,
-			EVENT_RX_LOW_RATE, (uint16_t)sizeof(u_int8_t));
-	else if (prLinkQualityInfo->u4CurTxPer >
-		prAdapter->rWifiVar.ucPerHighThreshole)
-		KAL_REPORT_ERROR_EVENT(prAdapter,
-			EVENT_PER_HIGH, (uint16_t)sizeof(u_int8_t));
+	if (u8TxTotalCntDif >= prAdapter->rWifiVar.u4TrafficThreshold) {
+		if (prLinkQualityInfo->u4CurTxRate <
+			prAdapter->rWifiVar.u4TxLowRateThreshole)
+			KAL_REPORT_ERROR_EVENT(prAdapter,
+				EVENT_TX_LOW_RATE, (uint16_t)sizeof(u_int8_t));
+		else if (prLinkQualityInfo->u4CurRxRate <
+			prAdapter->rWifiVar.u4RxLowRateThreshole)
+			KAL_REPORT_ERROR_EVENT(prAdapter,
+				EVENT_RX_LOW_RATE, (uint16_t)sizeof(u_int8_t));
+		else if (prLinkQualityInfo->u4CurTxPer >
+			prAdapter->rWifiVar.u4PerHighThreshole)
+			KAL_REPORT_ERROR_EVENT(prAdapter,
+				EVENT_PER_HIGH, (uint16_t)sizeof(u_int8_t));
+	}
 }
 #endif
 

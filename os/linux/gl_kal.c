@@ -6356,7 +6356,7 @@ u_int8_t kalIndicateDriverEvent(struct ADAPTER *prAdapter,
 	if (prAdapter->tmReportinterval > 0 &&
 		!CHECK_FOR_TIMEOUT(kalGetTimeTick(),
 		prAdapter->tmReportinterval,
-		prWifiVar->ucReportEventInterval*1000)) {
+		prWifiVar->u4ReportEventInterval*1000)) {
 		return -ETIME;
 	}
 	GET_CURRENT_SYSTIME(&prAdapter->tmReportinterval);
@@ -7159,7 +7159,7 @@ void kalPerMonHandler(IN struct ADAPTER *prAdapter,
 
 #if CFG_SUPPORT_DATA_STALL
 		/* test mode event */
-		if (prWifiVar->ucReportEventInterval == 0)
+		if (prWifiVar->u4ReportEventInterval == 0)
 			KAL_REPORT_ERROR_EVENT(prAdapter,
 				EVENT_TEST_MODE, (uint16_t)sizeof(u_int8_t));
 #endif
