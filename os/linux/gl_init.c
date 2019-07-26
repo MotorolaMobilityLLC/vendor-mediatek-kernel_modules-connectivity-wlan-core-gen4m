@@ -3287,6 +3287,7 @@ static int32_t wlanProbe(void *pvData, void *pvDriverData)
 		prWifiVar = &prAdapter->rWifiVar;
 
 		prGlueInfo->u4ReadyFlag = 0;
+		update_driver_loaded_status(prGlueInfo->u4ReadyFlag);
 
 		/* default set the FW roaming enable state to 'off' */
 		prGlueInfo->u4FWRoamingEnable = 0;
@@ -3645,6 +3646,7 @@ static int32_t wlanProbe(void *pvData, void *pvDriverData)
 
 		/* card is ready */
 		prGlueInfo->u4ReadyFlag = 1;
+		update_driver_loaded_status(prGlueInfo->u4ReadyFlag);
 
 		kalSetHalted(FALSE);
 		wlanDbgGetGlobalLogLevel(ENUM_WIFI_LOG_MODULE_FW,
@@ -3756,6 +3758,7 @@ static void wlanRemove(void)
 
 	/* to avoid that wpa_supplicant/hostapd triogger new cfg80211 command */
 	prGlueInfo->u4ReadyFlag = 0;
+	update_driver_loaded_status(prGlueInfo->u4ReadyFlag);
 
 	/* Have tried to do scan done here, but the exception occurs for */
 	/* the P2P scan. Keep the original design that scan done in the	 */
