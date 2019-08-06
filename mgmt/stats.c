@@ -516,12 +516,12 @@ static void statsParsePktInfo(IN struct ADAPTER *prAdapter, uint8_t *pucPkt,
 					break;
 				case 547:/*dhcp*/
 				case 546:
-					DBGLOG(RX, INFO,
+					DBGLOG_LIMITED(RX, TRACE,
 						"<RX><IPv6> dhcp packet\n");
 					GLUE_SET_INDEPENDENT_PKT(skb, TRUE);
 					break;
 				case 123:/*ntp port*/
-					DBGLOG(RX, INFO,
+					DBGLOG_LIMITED(RX, TRACE,
 						"<RX><IPv6> ntp packet\n");
 					GLUE_SET_INDEPENDENT_PKT(skb, TRUE);
 					break;
@@ -534,7 +534,8 @@ static void statsParsePktInfo(IN struct ADAPTER *prAdapter, uint8_t *pucPkt,
 			}
 				break;
 			case EVENT_TX:
-				DBGLOG(TX, INFO, "<TX><IPv6> UDP packet\n");
+				DBGLOG_LIMITED(TX, TRACE,
+					"<TX><IPv6> UDP packet\n");
 				break;
 			}
 			break;
@@ -547,11 +548,11 @@ static void statsParsePktInfo(IN struct ADAPTER *prAdapter, uint8_t *pucPkt,
 				/*143 multi listener report v2*/
 				GLUE_SET_INDEPENDENT_PKT(skb, TRUE);
 
-				DBGLOG(RX, INFO,
+				DBGLOG_LIMITED(RX, TRACE,
 					"<RX><IPv6> hop-by-hop packet\n");
 				break;
 			case EVENT_TX:
-				DBGLOG(TX, INFO,
+				DBGLOG_LIMITED(TX, TRACE,
 					"<TX><IPv6> hop-by-hop packet\n");
 				break;
 			}
@@ -569,26 +570,26 @@ static void statsParsePktInfo(IN struct ADAPTER *prAdapter, uint8_t *pucPkt,
 
 				switch (ucICMPv6Type) {
 				case 0x85: /*ICMPV6_TYPE_ROUTER_SOLICITATION*/
-					DBGLOG_LIMITED(RX, INFO,
+					DBGLOG_LIMITED(RX, TRACE,
 				"<RX><IPv6> ICMPV6 Router Solicitation\n");
 					break;
 
 				case 0x86: /*ICMPV6_TYPE_ROUTER_ADVERTISEMENT*/
-					DBGLOG_LIMITED(RX, INFO,
+					DBGLOG_LIMITED(RX, TRACE,
 				"<RX><IPv6> ICMPV6 Router Advertisement\n");
 					break;
 
 				case ICMPV6_TYPE_NEIGHBOR_SOLICITATION:
-					DBGLOG_LIMITED(RX, INFO,
+					DBGLOG_LIMITED(RX, TRACE,
 				"<RX><IPv6> ICMPV6 Neighbor Solicitation\n");
 					break;
 
 				case ICMPV6_TYPE_NEIGHBOR_ADVERTISEMENT:
-					DBGLOG_LIMITED(RX, INFO,
+					DBGLOG_LIMITED(RX, TRACE,
 				"<RX><IPv6> ICMPV6 Neighbor Advertisement\n");
 					break;
 				default:
-					DBGLOG_LIMITED(RX, INFO,
+					DBGLOG_LIMITED(RX, TRACE,
 						"<RX><IPv6> ICMPV6 type=%u\n",
 						ucICMPv6Type);
 					break;
@@ -602,7 +603,7 @@ static void statsParsePktInfo(IN struct ADAPTER *prAdapter, uint8_t *pucPkt,
 			break;
 		default:
 			if (eventType == EVENT_RX)
-				DBGLOG(RX, INFO,
+				DBGLOG_LIMITED(RX, TRACE,
 				"<RX><IPv6> default protocol=%u\n",
 				ucIpv6Proto);
 			break;
@@ -634,10 +635,12 @@ static void statsParsePktInfo(IN struct ADAPTER *prAdapter, uint8_t *pucPkt,
 		case 1: /* eapol start */
 			switch (eventType) {
 			case EVENT_RX:
-				DBGLOG_LIMITED(RX, INFO, "<RX> EAPOL: start\n");
+				DBGLOG_LIMITED(RX, TRACE,
+					"<RX> EAPOL: start\n");
 				break;
 			case EVENT_TX:
-				DBGLOG_LIMITED(TX, INFO, "<TX> EAPOL: start\n");
+				DBGLOG_LIMITED(TX, TRACE,
+					"<TX> EAPOL: start\n");
 				break;
 			}
 			break;
