@@ -333,13 +333,15 @@ static bool halIsTxHang(struct ADAPTER *prAdapter)
 	struct timeval rNowTs, rTime, rLongest, rTimeout;
 	uint32_t u4Idx = 0, u4TokenId = 0;
 	bool fgIsTimeout = false;
+	struct WIFI_VAR *prWifiVar;
 
 	ASSERT(prAdapter);
 	ASSERT(prAdapter->prGlueInfo);
 
 	prTokenInfo = &prAdapter->prGlueInfo->rHifInfo.rTokenInfo;
+	prWifiVar = &prAdapter->rWifiVar;
 
-	rTimeout.tv_sec = HIF_MSDU_REPORT_DUMP_TIMEOUT;
+	rTimeout.tv_sec = prWifiVar->ucMsduReportTimeout;
 	rTimeout.tv_usec = 0;
 	rLongest.tv_sec = 0;
 	rLongest.tv_usec = 0;
@@ -1504,6 +1506,8 @@ void haldumpPhyInfo(struct ADAPTER *prAdapter)
 	for (i = 0; i < 20; i++) {
 		HAL_MCR_RD(prAdapter, 0x82072644, &value);
 		DBGLOG(HAL, INFO, "0x82072644: 0x%08x\n", value);
+		HAL_MCR_RD(prAdapter, 0x82072644, &value);
+		DBGLOG(HAL, INFO, "0x82072654: 0x%08x\n", value);
 		kalMdelay(1);
 	}
 }
@@ -1537,14 +1541,24 @@ void haldumpMacInfo(struct ADAPTER *prAdapter)
 		/* 1: empty, 0: non-empty */
 		HAL_MCR_RD(prAdapter, 0x82060220, &value);
 		DBGLOG(HAL, INFO, "queue empty: 0x82060220: 0x%08x\n", value);
+		HAL_MCR_RD(prAdapter, 0x820603EC, &value);
+		DBGLOG(HAL, INFO,
+			"PLE MACTX CurState: 0x820603EC: 0x%08x\n", value);
 		kalMdelay(1);
 	}
 
 	HAL_MCR_RD(prAdapter, 0x820F4124, &value);
 	DBGLOG(HAL, INFO, "TXV count: 0x820F4124 = %08x\n", value);
 
-	/* TXV1-TXV7 */
+	/* Band 0 TXV1-TXV7 */
 	for (j = 0x820F4130; j < 0x820F4148; j += 4) {
+		HAL_MCR_RD(prAdapter, j, &value);
+		DBGLOG(HAL, INFO, "0x%08x: 0x%08x\n", j, value);
+		kalMdelay(1);
+	}
+
+	/* Band 1 TXV1-TXV7 */
+	for (j = 0x820F414C; j < 0x820F4164; j += 4) {
 		HAL_MCR_RD(prAdapter, j, &value);
 		DBGLOG(HAL, INFO, "0x%08x: 0x%08x\n", j, value);
 		kalMdelay(1);
@@ -1583,18 +1597,30 @@ void haldumpMacInfo(struct ADAPTER *prAdapter)
 	}
 
 	DBGLOG(HAL, INFO, "Dump ARB\n");
-	HAL_MCR_RD(prAdapter, 0x802f3190, &value);
-	DBGLOG(HAL, INFO, "0x802f3190: 0x%08x\n", value);
+	for (i = 0; i < 20; i++) {
+		HAL_MCR_RD(prAdapter, 0x802f3190, &value);
+		DBGLOG(HAL, INFO, "0x802f3190: 0x%08x\n", value);
+	}
 
 	HAL_MCR_WR(prAdapter, 0x820f082C, 0xf);
 	HAL_MCR_WR(prAdapter, 0x80025100, 0x1f);
 	HAL_MCR_WR(prAdapter, 0x80025104, 0x04040404);
 
+	HAL_MCR_WR(prAdapter, 0x80025108, 0x41414040);
+	HAL_MCR_RD(prAdapter, 0x820f0024, &value);
+	DBGLOG(HAL, INFO, "0x820f0024: 0x%08x\n", value);
+	HAL_MCR_RD(prAdapter, 0x820f20d0, &value);
+	DBGLOG(HAL, INFO, "0x820f20d0: 0x%08x\n", value);
+	HAL_MCR_RD(prAdapter, 0x820f20d4, &value);
+	DBGLOG(HAL, INFO, "0x820f20d4: 0x%08x\n", value);
+
 	queue = 0;
-	flag = 0x01010000;
+	flag = 0x00000101;
 	for (i = 0; i < 25; i++) {
 		HAL_MCR_WR(prAdapter, 0x820f3060, queue);
-		for (j = 0; j < 15; j++) {
+		flag = 0x00000101;
+		for (j = 0; j < 8; j++) {
+			HAL_MCR_WR(prAdapter, 0x80025108, flag);
 			HAL_MCR_RD(prAdapter, 0x820f0024, &value);
 			DBGLOG(HAL, INFO,
 			       "write queue = 0x%08x flag = 0x%08x, 0x820f0024: 0x%08x\n",
@@ -1604,9 +1630,21 @@ void haldumpMacInfo(struct ADAPTER *prAdapter)
 		queue += 0x01010101;
 	}
 
-	flag = 0x01010000;
-	for (i = 0; i < 128; i++) {
+	queue = 0x01010000;
+	flag = 0x04040505;
+	HAL_MCR_WR(prAdapter, 0x820f3060, queue);
+	for (i = 0; i < 3; i++) {
 		HAL_MCR_WR(prAdapter, 0x80025104, flag);
+		HAL_MCR_RD(prAdapter, 0x820f0024, &value);
+		DBGLOG(HAL, INFO, "write flag = 0x%08x, 0x820f0024: 0x%08x\n",
+		       flag, value);
+		flag += 0x02020202;
+	}
+
+	flag = 0x00000101;
+	HAL_MCR_WR(prAdapter, 0x820f3060, 0); /* BSSID = 0 */
+	for (i = 0; i < 128; i++) {
+		HAL_MCR_WR(prAdapter, 0x80025108, flag);
 		HAL_MCR_RD(prAdapter, 0x820f0024, &value);
 		DBGLOG(HAL, INFO, "write flag = 0x%08x, 0x820f0024: 0x%08x\n",
 		       flag, value);
@@ -1646,15 +1684,6 @@ void haldumpMacInfo(struct ADAPTER *prAdapter)
 		flag += 0x02020202;
 	}
 
-	DBGLOG(HAL, INFO, "Read TXV\n");
-	for (i = 0x820F4120; i <= 0x820F412C; i += 4) {
-		HAL_MCR_RD(prAdapter, i, &value);
-		DBGLOG(HAL, INFO, "0x%08x: 0x%08x\n", i, value);
-	}
-	for (i = 0x820F4130; i <= 0x820F4148; i += 4) {
-		HAL_MCR_RD(prAdapter, i, &value);
-		DBGLOG(HAL, INFO, "0x%08x: 0x%08x\n", i, value);
-	}
 }
 
 static char *q_idx_mcu_str[] = {"RQ0", "RQ1", "RQ2", "RQ3", "Invalid"};

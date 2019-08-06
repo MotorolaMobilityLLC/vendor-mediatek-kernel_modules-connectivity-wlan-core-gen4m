@@ -6699,6 +6699,10 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 		(uint8_t) wlanCfgGetUint32(prAdapter, "ViTxOp", 94);
 	prWifiVar->au2TxOp[WMM_AC_VO_INDEX] =
 		(uint8_t) wlanCfgGetUint32(prAdapter, "VoTxOp", 47);
+	prWifiVar->ucMsduReportTimeout =
+		(uint8_t) wlanCfgGetUint32(prAdapter,
+		"MsduReportTimeout", HIF_MSDU_REPORT_DUMP_TIMEOUT);
+
 }
 
 void wlanCfgSetSwCtrl(IN struct ADAPTER *prAdapter)

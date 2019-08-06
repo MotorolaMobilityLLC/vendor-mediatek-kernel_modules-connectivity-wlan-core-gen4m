@@ -1061,6 +1061,8 @@ struct WIFI_VAR {
 	uint8_t aucCwMin[WMM_AC_INDEX_NUM];
 	uint8_t au2CwMax[WMM_AC_INDEX_NUM];
 	uint8_t au2TxOp[WMM_AC_INDEX_NUM];
+
+	uint8_t ucMsduReportTimeout;
 };
 
 /* cnm_timer module */
