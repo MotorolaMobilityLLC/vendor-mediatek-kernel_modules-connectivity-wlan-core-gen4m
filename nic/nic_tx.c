@@ -4707,6 +4707,8 @@ static void nicTxDirectCheckStaPsQ(IN struct ADAPTER
 				QUEUE_REMOVE_HEAD(
 					&prAdapter->rStaPsQueue[ucStaRecIndex],
 					prQueueEntry, struct QUE_ENTRY *);
+				if (prQueueEntry == NULL)
+					break;
 				prMsduInfo = (struct MSDU_INFO *) prQueueEntry;
 			} else {
 				break;

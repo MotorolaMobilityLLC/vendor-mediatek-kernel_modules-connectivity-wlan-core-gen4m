@@ -4711,6 +4711,8 @@ void nicEventDebugMsg(IN struct ADAPTER *prAdapter,
 
 			prEvent = (struct WIFI_EVENT *)
 				kalMemAlloc(u4Size, VIR_MEM_TYPE);
+			if (prEvent == NULL)
+				return;
 			kalMemZero(prEvent, u4Size);
 
 			prCalData = (struct EXT_EVENT_RECAL_DATA_T *)
