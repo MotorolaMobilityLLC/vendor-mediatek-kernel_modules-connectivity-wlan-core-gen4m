@@ -10268,19 +10268,19 @@ void wlanCustomMonitorFunction(struct ADAPTER *prAdapter,
 			prAdapter->rWifiVar.u4TxLowRateThreshole)
 			KAL_REPORT_ERROR_EVENT(prAdapter,
 				EVENT_TX_LOW_RATE,
-				(uint16_t)sizeof(u_int8_t),
+				(uint16_t)sizeof(uint32_t),
 				FALSE);
 		else if (prLinkQualityInfo->u4CurRxRate <
 			prAdapter->rWifiVar.u4RxLowRateThreshole)
 			KAL_REPORT_ERROR_EVENT(prAdapter,
 				EVENT_RX_LOW_RATE,
-				(uint16_t)sizeof(u_int8_t),
+				(uint16_t)sizeof(uint32_t),
 				FALSE);
 		else if (prLinkQualityInfo->u4CurTxPer >
 			prAdapter->rWifiVar.u4PerHighThreshole)
 			KAL_REPORT_ERROR_EVENT(prAdapter,
 				EVENT_PER_HIGH,
-				(uint16_t)sizeof(u_int8_t),
+				(uint16_t)sizeof(uint32_t),
 				FALSE);
 	}
 }

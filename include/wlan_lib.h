@@ -1484,6 +1484,7 @@ uint32_t wlanCfgSetCb(IN struct ADAPTER *prAdapter, const int8_t *pucKey,
 		      uint32_t u4Flags);
 
 #if CFG_SUPPORT_EASY_DEBUG
+int8_t atoi(uint8_t ch);
 
 uint32_t wlanCfgParse(IN struct ADAPTER *prAdapter, uint8_t *pucConfigBuf,
 		      uint32_t u4ConfigBufLen, u_int8_t isFwConfig);

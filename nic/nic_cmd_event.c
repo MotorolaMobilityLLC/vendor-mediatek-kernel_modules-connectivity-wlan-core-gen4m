@@ -5112,6 +5112,9 @@ void nicEventUpdateLowLatencyInfoStatus(IN struct ADAPTER *prAdapter,
 	struct EVENT_LOW_LATENCY_INFO *prEvtLowLatencyInfo;
 	struct rtc_time tm;
 	struct timeval tv = { 0 };
+	uint8_t event[12];
+	uint32_t iEventTime;
+	int8_t i;
 
 	ASSERT(prAdapter);
 
@@ -5136,9 +5139,18 @@ void nicEventUpdateLowLatencyInfoStatus(IN struct ADAPTER *prAdapter,
 			prEvtLowLatencyInfo->fgTxDupCert;
 
 #if CFG_SUPPORT_DATA_STALL
-		KAL_REPORT_ERROR_EVENT(prAdapter,
+		sprintf(event, "%03d%02d%06u",
 			EVENT_TX_DUP_CERT_CHANGE,
-			(uint16_t)sizeof(u_int8_t),
+			tm.tm_sec,
+			(unsigned int)tv.tv_usec);
+
+		iEventTime = 0;
+		for (i = 0 ; i < 8 ; i++)
+			iEventTime = iEventTime*10 + atoi(event[i]);
+
+		KAL_REPORT_ERROR_EVENT(prAdapter,
+			iEventTime,
+			(uint16_t)sizeof(uint32_t),
 			TRUE);
 #endif
 	}
@@ -5149,16 +5161,28 @@ void nicEventUpdateLowLatencyInfoStatus(IN struct ADAPTER *prAdapter,
 		/* Indicate detect result to driver if detect on */
 		if (prAdapter->fgEnTxDupDetect) {
 			if (prEvtLowLatencyInfo->fgTxDupEnable) {
-				KAL_REPORT_ERROR_EVENT(prAdapter,
+				sprintf(event, "%03d%02d%06u",
 					EVENT_TX_DUP_ON,
-					(uint16_t)sizeof(u_int8_t),
-					TRUE);
+					tm.tm_sec,
+					(unsigned int)tv.tv_usec);
 			} else {
-				KAL_REPORT_ERROR_EVENT(prAdapter,
+				sprintf(event, "%03d%02d%06u",
 					EVENT_TX_DUP_OFF,
-					(uint16_t)sizeof(u_int8_t),
-					TRUE);
+					tm.tm_sec,
+					(unsigned int)tv.tv_usec);
 			}
+
+			/* Convert 11 byte string like '10121316927' to
+			 * 8 digits uint32 integer 10121316
+			 */
+			iEventTime = 0;
+			for (i = 0 ; i < 8 ; i++)
+				iEventTime = iEventTime*10 + atoi(event[i]);
+
+			KAL_REPORT_ERROR_EVENT(prAdapter,
+				iEventTime,
+				(uint16_t)sizeof(uint32_t),
+				TRUE);
 		}
 	}
 #endif

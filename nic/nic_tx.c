@@ -3669,7 +3669,7 @@ uint32_t nicTxEnqueueMsdu(IN struct ADAPTER *prAdapter,
 #if CFG_SUPPORT_DATA_STALL
 			KAL_REPORT_ERROR_EVENT(prAdapter,
 				EVENT_ARP_NO_RESPONSE,
-				(uint16_t)sizeof(u_int8_t), FALSE);
+				(uint16_t)sizeof(uint32_t), FALSE);
 #endif /* CFG_SUPPORT_DATA_STALL */
 		}
 #endif /* ARP_MONITER_ENABLE */

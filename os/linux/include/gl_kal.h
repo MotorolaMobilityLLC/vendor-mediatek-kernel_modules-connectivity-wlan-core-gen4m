@@ -1081,7 +1081,7 @@ void kalIndicateRxMgmtFrame(IN struct GLUE_INFO *prGlueInfo,
 
 #if CFG_SUPPORT_DATA_STALL
 u_int8_t kalIndicateDriverEvent(struct ADAPTER *prAdapter,
-				enum ENUM_VENDOR_DRIVER_EVENT event,
+				uint32_t event,
 				uint16_t dataLen,
 				u_int8_t fgForceReport);
 #endif

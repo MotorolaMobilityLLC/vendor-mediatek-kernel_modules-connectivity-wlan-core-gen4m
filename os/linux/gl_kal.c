@@ -6382,7 +6382,7 @@ int kalMetRemoveProcfs(void)
 
 #if CFG_SUPPORT_DATA_STALL
 u_int8_t kalIndicateDriverEvent(struct ADAPTER *prAdapter,
-				enum ENUM_VENDOR_DRIVER_EVENT event,
+				uint32_t event,
 				uint16_t dataLen,
 				u_int8_t fgForceReport)
 {
@@ -7208,7 +7208,7 @@ void kalPerMonHandler(IN struct ADAPTER *prAdapter,
 		/* test mode event */
 		if (prWifiVar->u4ReportEventInterval == 0)
 			KAL_REPORT_ERROR_EVENT(prAdapter, EVENT_TEST_MODE,
-					(uint16_t)sizeof(u_int8_t), FALSE);
+					(uint16_t)sizeof(uint32_t), FALSE);
 #endif
 
 	prPerMonitor->u4TarPerfLevel = PERF_MON_TP_MAX_THRESHOLD;
