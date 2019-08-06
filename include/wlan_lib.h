@@ -1674,3 +1674,5 @@ wlanGetChannelNumFromIndex(IN uint8_t ucIdx);
 void
 wlanSortChannel(IN struct ADAPTER *prAdapter);
 
+uint32_t wlanSetForceRTS(IN struct ADAPTER *prAdapter,
+	IN u_int8_t fgEnForceRTS);

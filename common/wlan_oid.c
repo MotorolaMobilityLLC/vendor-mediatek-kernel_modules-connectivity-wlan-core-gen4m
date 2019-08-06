@@ -16055,6 +16055,11 @@ uint32_t wlanoidSetLowLatencyMode(
 
 	*pu4SetInfoLen = 0; /* We do not need to read */
 
+	DBGLOG(OID, INFO,
+		"LowLatency(gaming) fgEnMode=[%d]\n", fgEnMode);
+
+	/* Force RTS to protect game packet */
+	wlanSetForceRTS(prAdapter, fgEnMode);
 
 	/* Tx Duplicate Detect management:
 	 *

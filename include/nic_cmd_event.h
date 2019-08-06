@@ -557,7 +557,7 @@ enum ENUM_CMD_ID {
 #if CFG_SUPPORT_CAL_RESULT_BACKUP_TO_HOST
 	CMD_ID_CAL_BACKUP_IN_HOST_V2 = 0xAE,	/* 0xAE (Set / Query) */
 #endif
-
+	CMD_ID_SET_FORCE_RTS = 0x90,
 	CMD_ID_WFC_KEEP_ALIVE = 0xA0,	/* 0xa0(Set) */
 	CMD_ID_RSSI_MONITOR = 0xA1,	/* 0xa1(Set) */
 	CMD_ID_ACCESS_REG = 0xc0,	/* 0xc0 (Set / Query) */
@@ -3676,6 +3676,12 @@ struct EVENT_LOW_LATENCY_INFO {
 	u_int8_t  fgTxDupEnable;
 	uint8_t  aucPadding1[2];
 	uint8_t  aucPayload[1024];
+};
+
+struct CMD_SET_FORCE_RTS {
+	uint8_t ucForceRtsEn;
+	uint8_t ucRtsPktNum;
+	uint8_t aucReserved[2];
 };
 
 /*******************************************************************************
