@@ -1771,10 +1771,16 @@ __priv_get_int(IN struct net_device *prNetDev,
 				prAdapter->rVerInfo.aucReleaseManifest);
 			DBGLOG(REQ, INFO,
 				"Get FW manifest version: %d\n", u2Len);
+			if (prIwReqData->data.length < u2Len) {
+				DBGLOG(REQ, INFO,
+				       "buffer too small: %u, %u\n",
+				       prIwReqData->data.length, u2Len);
+				return -EFAULT;
+			}
 			prIwReqData->data.length = u2Len;
 			if (copy_to_user(prIwReqData->data.pointer,
 				prAdapter->rVerInfo.aucReleaseManifest,
-				u2Len * sizeof(uint8_t)))
+				u2Len))
 				return -EFAULT;
 			else
 				return status;
@@ -1883,6 +1889,7 @@ __priv_get_ints(IN struct net_device *prNetDev,
 		uint16_t i;
 		uint8_t NumOfChannel = 50;
 		uint8_t ucMaxChannelNum = 50;
+		uint32_t u4CopySize;
 		struct RF_CHANNEL_INFO *aucChannelList;
 
 		aucChannelList = (struct RF_CHANNEL_INFO *)
@@ -1907,9 +1914,15 @@ __priv_get_ints(IN struct net_device *prNetDev,
 		kalMemFree(aucChannelList, VIR_MEM_TYPE,
 			sizeof(struct RF_CHANNEL_INFO)*ucMaxChannelNum);
 
+		u4CopySize = NumOfChannel * sizeof(int32_t);
+		if (prIwReqData->data.length <= u4CopySize) {
+			DBGLOG(REQ, INFO,
+			       "buffer too small: %u, %u\n",
+			       prIwReqData->data.length, u4CopySize);
+			return -EFAULT;
+		}
 		prIwReqData->data.length = NumOfChannel;
-		if (copy_to_user(prIwReqData->data.pointer, ch,
-				 NumOfChannel * sizeof(int32_t)))
+		if (copy_to_user(prIwReqData->data.pointer, ch, u4CopySize))
 			return -EFAULT;
 		else
 			return status;
@@ -2295,11 +2308,20 @@ __priv_get_struct(IN struct net_device *prNetDev,
 		       ndisReq->inNdisOidlength);
 #endif
 		if (priv_get_ndis(prNetDev, prNdisReq, &u4BufLen) == 0) {
+			uint32_t u4CopySize;
+
 			prNdisReq->outNdisOidLength = u4BufLen;
+			u4CopySize = u4BufLen +
+				sizeof(struct NDIS_TRANSPORT_STRUCT) -
+				sizeof(prNdisReq->ndisOidContent);
+			if (prIwReqData->data.length <= u4CopySize) {
+				DBGLOG(REQ, INFO,
+				       "buffer too small: %u, %u\n",
+				       prIwReqData->data.length, u4CopySize);
+				return -EFAULT;
+			}
 			if (copy_to_user(prIwReqData->data.pointer,
-			    &aucOidBuf[0], u4BufLen +
-			    sizeof(struct NDIS_TRANSPORT_STRUCT) -
-			    sizeof(prNdisReq->ndisOidContent))) {
+			    &aucOidBuf[0], u4CopySize)) {
 				DBGLOG(REQ, INFO,
 				       "priv_get_struct() copy_to_user oidBuf fail(1)\n"
 				       );
@@ -4256,6 +4278,11 @@ static int priv_driver_get_sta_info(IN struct net_device *prNetDev,
 
 	prHwWlanInfo = (struct PARAM_HW_WLAN_INFO *)kalMemAlloc(
 			sizeof(struct PARAM_HW_WLAN_INFO), VIR_MEM_TYPE);
+	if (prHwWlanInfo == NULL) {
+		DBGLOG(REQ, INFO, "prHwWlanInfo is null\n");
+		return -1;
+	}
+
 	prHwWlanInfo->u4Index = ucWlanIndex;
 
 	DBGLOG(REQ, INFO, "MT6632 : index = %d i4TotalLen = %d\n",
@@ -11995,7 +12022,11 @@ static int priv_driver_efuse_ops(IN struct net_device *prNetDev,
 	/* Start operation */
 #if  (CFG_EEPROM_PAGE_ACCESS == 1)
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
-	ASSERT(prGlueInfo);
+	if (prGlueInfo == NULL) {
+		DBGLOG(REQ, ERROR, "prGlueInfo is null\n");
+		goto efuse_op_invalid;
+	}
+
 	if (prGlueInfo->prAdapter &&
 	    prGlueInfo->prAdapter->chip_info &&
 	    !prGlueInfo->prAdapter->chip_info->is_support_efuse) {
