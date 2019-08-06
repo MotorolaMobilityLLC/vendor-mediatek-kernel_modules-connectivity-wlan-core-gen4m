@@ -2099,7 +2099,7 @@ void nicRxProcessDataPacket(IN struct ADAPTER *prAdapter,
 		RX_INC_CNT(prRxCtrl, RX_CLASS_ERR_DROP_COUNT);
 		RX_INC_CNT(prRxCtrl, RX_DROP_TOTAL_COUNT);
 		DBGLOG_LIMITED(RX, TRACE,
-			"Packet drop! class error drop:%ld, total error drop:%ld\n",
+			"Packet drop! class error drop:%llu, total error drop:%llu\n",
 			RX_GET_CNT(prRxCtrl, RX_CLASS_ERR_DROP_COUNT),
 			RX_GET_CNT(prRxCtrl, RX_DROP_TOTAL_COUNT));
 	}

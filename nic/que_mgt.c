@@ -3638,7 +3638,7 @@ void qmInsertReorderPkt(IN struct ADAPTER *prAdapter,
 			DBGLOG_LIMITED(QM, INFO,
 				"QM: SSN jump over 1024:[%d]\n", u2Delta);
 		}
-		DBGLOG_LIMITED(QM, TRACE, "QM: Miss Count:[%ld]\n",
+		DBGLOG_LIMITED(QM, TRACE, "QM: Miss Count:[%llu]\n",
 			RX_GET_CNT(&prAdapter->rRxCtrl,
 			RX_DATA_REORDER_MISS_COUNT));
 	}
