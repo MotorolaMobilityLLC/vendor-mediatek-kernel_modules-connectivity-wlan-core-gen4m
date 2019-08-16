@@ -1530,6 +1530,8 @@ void nicTxMsduQueueByRR(struct ADAPTER *prAdapter)
 		if (QUEUE_IS_NOT_EMPTY(prTxQue)) {
 			QUEUE_REMOVE_HEAD(prTxQue, prMsduInfo,
 					  struct MSDU_INFO *);
+			if (prMsduInfo == NULL)
+				continue;
 			ucPortIdx = halTxRingDataSelect(prAdapter, prMsduInfo);
 			prDataPort = (ucPortIdx == TX_RING_DATA1_IDX_1) ?
 				prDataPort1 : prDataPort0;
@@ -2474,6 +2476,9 @@ uint32_t nicTxMsduQueue(IN struct ADAPTER *prAdapter,
 
 	while (QUEUE_IS_NOT_EMPTY(prQue)) {
 		QUEUE_REMOVE_HEAD(prQue, prMsduInfo, struct MSDU_INFO *);
+
+		if (prMsduInfo == NULL)
+			continue;
 
 		if (!halTxIsDataBufEnough(prAdapter, prMsduInfo)) {
 			QUEUE_INSERT_HEAD(prQue,
@@ -5083,33 +5088,34 @@ static uint32_t nicTxDirectStartXmitMain(struct sk_buff
 	}
 
 	while (1) {
-		if (!halTxIsDataBufEnough(prAdapter, prMsduInfo)) {
-			QUEUE_INSERT_HEAD(
-				&prAdapter->rTxDirectHifQueue[ucHifTc],
-				(struct QUE_ENTRY *) prMsduInfo);
-			mod_timer(&prAdapter->rTxDirectHifTimer,
-				  jiffies + TX_DIRECT_CHECK_INTERVAL);
+		if (prMsduInfo != NULL) {
+			if (!halTxIsDataBufEnough(prAdapter, prMsduInfo)) {
+				QUEUE_INSERT_HEAD(
+					&prAdapter->rTxDirectHifQueue[ucHifTc],
+					(struct QUE_ENTRY *) prMsduInfo);
+				mod_timer(&prAdapter->rTxDirectHifTimer,
+					  jiffies + TX_DIRECT_CHECK_INTERVAL);
 
-			return WLAN_STATUS_SUCCESS;
+				return WLAN_STATUS_SUCCESS;
+			}
+
+			if (prMsduInfo->pfTxDoneHandler) {
+				KAL_SPIN_LOCK_DECLARATION();
+
+				/* Record native packet ptr for Tx done log */
+				WLAN_GET_FIELD_32(&prMsduInfo->prPacket,
+						  &prMsduInfo->u4TxDoneTag);
+
+				KAL_ACQUIRE_SPIN_LOCK(prAdapter,
+					SPIN_LOCK_TXING_MGMT_LIST);
+				QUEUE_INSERT_TAIL(
+					&(prAdapter->rTxCtrl.rTxMgmtTxingQueue),
+					(struct QUE_ENTRY *) prMsduInfo);
+				KAL_RELEASE_SPIN_LOCK(prAdapter,
+					SPIN_LOCK_TXING_MGMT_LIST);
+			}
+			HAL_WRITE_TX_DATA(prAdapter, prMsduInfo);
 		}
-
-		if (prMsduInfo->pfTxDoneHandler) {
-			KAL_SPIN_LOCK_DECLARATION();
-
-			/* Record native packet pointer for Tx done log */
-			WLAN_GET_FIELD_32(&prMsduInfo->prPacket,
-					  &prMsduInfo->u4TxDoneTag);
-
-			KAL_ACQUIRE_SPIN_LOCK(prAdapter,
-				SPIN_LOCK_TXING_MGMT_LIST);
-			QUEUE_INSERT_TAIL(
-				&(prAdapter->rTxCtrl.rTxMgmtTxingQueue),
-				(struct QUE_ENTRY *) prMsduInfo);
-			KAL_RELEASE_SPIN_LOCK(prAdapter,
-				SPIN_LOCK_TXING_MGMT_LIST);
-		}
-		HAL_WRITE_TX_DATA(prAdapter, prMsduInfo);
-
 		if (QUEUE_IS_NOT_EMPTY(
 			    &prAdapter->rTxDirectHifQueue[ucHifTc])) {
 			QUEUE_REMOVE_HEAD(
