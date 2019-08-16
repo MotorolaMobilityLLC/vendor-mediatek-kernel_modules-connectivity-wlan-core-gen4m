@@ -79,6 +79,7 @@
  */
 #include "gl_typedef.h"
 
+extern u_int8_t wlan_fb_power_down;
 extern uint8_t aucDebugModule[];
 extern uint32_t au4LogLevel[];
 
@@ -226,6 +227,19 @@ enum DRV_STATUS_T {
 	ROAMING_SCAN_START,
 	ROAMING_SCAN_DONE,
 };
+
+#if (CFG_SUPPORT_STATISTICS == 1)
+enum WAKE_DATA_TYPE {
+	WLAN_WAKE_ARP = 0,
+	WLAN_WAKE_IPV4,
+	WLAN_WAKE_IPV6,
+	WLAN_WAKE_1X,
+	WLAN_WAKE_TDLS,
+	WLAN_WAKE_OTHER,
+	WLAN_WAKE_MAX_NUM
+};
+#endif
+
 
 #if MTK_WCN_HIF_SDIO
 #define DBG_ASSERT_PATH_DEFAULT DBG_ASSERT_PATH_WMT
@@ -509,6 +523,16 @@ u_int8_t wlanDbgSetGlobalLogLevel(uint32_t u4Module, uint32_t u4Level);
 void wlanFillTimestamp(struct ADAPTER *prAdapter, void *pvPacket,
 		       uint8_t ucPhase);
 void glNotifyDrvStatus(enum DRV_STATUS_T eDrvStatus, void *pvInfo);
+
+#if (CFG_SUPPORT_STATISTICS == 1)
+void wlanWakeStaticsInit(void);
+void wlanWakeStaticsUninit(void);
+uint32_t wlanWakeLogCmd(uint8_t ucCmdId);
+uint32_t wlanWakeLogEvent(uint8_t ucEventId);
+void wlanLogTxData(enum WAKE_DATA_TYPE dataType);
+void wlanLogRxData(enum WAKE_DATA_TYPE dataType);
+uint32_t wlanWakeDumpRes(void);
+#endif
 /*******************************************************************************
  *                              F U N C T I O N S
  *******************************************************************************

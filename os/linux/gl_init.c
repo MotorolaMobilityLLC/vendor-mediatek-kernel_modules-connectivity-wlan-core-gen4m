@@ -1361,9 +1361,9 @@ int wlanHardStartXmit(struct sk_buff *prSkb,
 	}
 #endif
 	kalResetPacket(prGlueInfo, (void *) prSkb);
-
+#if (CFG_SUPPORT_STATISTICS == 1)
 	STATS_TX_TIME_ARRIVE(prSkb);
-
+#endif
 	if (kalHardStartXmit(prSkb, prDev, prGlueInfo,
 			     ucBssIndex) == WLAN_STATUS_SUCCESS) {
 		/* Successfully enqueue to Tx queue */
@@ -3989,6 +3989,11 @@ static int32_t wlanOffAtReset(void)
 #if (CFG_SUPPORT_TRACE_TC4 == 1)
 	wlanDebugTC4Uninit();
 #endif
+
+#if (CFG_SUPPORT_STATISTICS == 1)
+	wlanWakeStaticsUninit();
+#endif
+
 	fgSimplifyResetFlow = TRUE;
 
 	return WLAN_STATUS_SUCCESS;
@@ -4054,6 +4059,9 @@ static int32_t wlanOnAtReset(void)
 	do {
 #if (CFG_SUPPORT_TRACE_TC4 == 1)
 		wlanDebugTC4Init();
+#endif
+#if (CFG_SUPPORT_STATISTICS == 1)
+		wlanWakeStaticsInit();
 #endif
 		/* wlanNetCreate partial process */
 		QUEUE_INITIALIZE(&prGlueInfo->rCmdQueue);
@@ -4292,6 +4300,10 @@ static int32_t wlanProbe(void *pvData, void *pvDriverData)
 
 #if (CFG_SUPPORT_TRACE_TC4 == 1)
 		wlanDebugTC4Init();
+#endif
+
+#if (CFG_SUPPORT_STATISTICS == 1)
+		wlanWakeStaticsInit();
 #endif
 		/* Cannot get IO address from interface */
 		if (bRet == FALSE) {
@@ -4607,6 +4619,11 @@ static void wlanRemove(void)
 #if (CFG_SUPPORT_TRACE_TC4 == 1)
 	wlanDebugTC4Uninit();
 #endif
+
+#if (CFG_SUPPORT_STATISTICS == 1)
+	wlanWakeStaticsUninit();
+#endif
+
 	/* 4 <6> Unregister the card */
 	wlanNetUnregister(prDev->ieee80211_ptr);
 

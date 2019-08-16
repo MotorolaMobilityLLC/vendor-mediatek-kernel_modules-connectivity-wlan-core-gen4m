@@ -1978,8 +1978,10 @@ void nicRxProcessDataPacket(IN struct ADAPTER *prAdapter,
 		ucBssIndex = secGetBssIdxByWlanIdx(prAdapter,
 						   prSwRfb->ucWlanIdx);
 		GLUE_SET_PKT_BSS_IDX(prSwRfb->pvPacket, ucBssIndex);
-		STATS_RX_PKT_INFO_DISPLAY(prAdapter, prSwRfb);
 
+#if (CFG_SUPPORT_STATISTICS == 1)
+		STATS_RX_PKT_INFO_DISPLAY(prAdapter, prSwRfb);
+#endif
 		prRetSwRfb = qmHandleRxPackets(prAdapter, prSwRfb);
 		if (prRetSwRfb != NULL) {
 			do {
@@ -2127,7 +2129,9 @@ void nicRxProcessEventPacket(IN struct ADAPTER *prAdapter,
 			prEvent->ucEID, prEvent->ucSeqNum,
 			prEvent->u2PacketLength);
 	}
-
+#if (CFG_SUPPORT_STATISTICS == 1)
+	wlanWakeLogEvent(prEvent->ucEID);
+#endif
 	/* Event handler table */
 	u4Size = sizeof(arEventTable) / sizeof(struct
 					       RX_EVENT_HANDLER);

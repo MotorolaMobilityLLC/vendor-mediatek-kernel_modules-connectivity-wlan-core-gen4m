@@ -468,9 +468,13 @@ static void statsParsePktInfo(IN struct ADAPTER *prAdapter, uint8_t *pucPkt,
 	switch (u2EtherType) {
 	case ETH_P_ARP:
 		statsParseARPInfo(prAdapter, skb, pucEthBody, eventType);
+		if (eventType == EVENT_RX)
+			wlanLogRxData(WLAN_WAKE_ARP);
 		break;
 	case ETH_P_IPV4:
 		statsParseIPV4Info(prAdapter, skb, pucEthBody, eventType);
+		if (eventType == EVENT_RX)
+			wlanLogRxData(WLAN_WAKE_IPV4);
 		break;
 	case ETH_P_IPV6:
 	{
@@ -483,6 +487,10 @@ static void statsParsePktInfo(IN struct ADAPTER *prAdapter, uint8_t *pucPkt,
 
 		if (ucIpVersion != IP_VERSION_6)
 			break;
+
+		if (eventType == EVENT_RX) {
+			wlanLogRxData(WLAN_WAKE_IPV6);
+		}
 
 		switch (ucIpv6Proto) {
 		case 0x06:/*tcp*/
@@ -616,6 +624,10 @@ static void statsParsePktInfo(IN struct ADAPTER *prAdapter, uint8_t *pucPkt,
 		uint8_t ucEapolType = pucEapol[1];
 		uint16_t u2KeyInfo = 0;
 
+		if (eventType == EVENT_RX) {
+			wlanLogRxData(WLAN_WAKE_1X);
+		}
+
 		switch (ucEapolType) {
 		case 0: /* eap packet */
 			switch (eventType) {
@@ -698,8 +710,10 @@ static void statsParsePktInfo(IN struct ADAPTER *prAdapter, uint8_t *pucPkt,
 	}
 #endif
 	case ETH_PRO_TDLS:
+
 		switch (eventType) {
 		case EVENT_RX:
+			wlanLogRxData(WLAN_WAKE_TDLS);
 			DBGLOG_LIMITED(RX, INFO,
 				"<RX> TDLS type %d, category %d, Action %d, Token %d\n",
 				pucEthBody[0], pucEthBody[1],
@@ -712,6 +726,10 @@ static void statsParsePktInfo(IN struct ADAPTER *prAdapter, uint8_t *pucPkt,
 				pucEthBody[2], pucEthBody[3]);
 			break;
 		}
+		break;
+	default:
+		if (eventType == EVENT_RX)
+			wlanLogRxData(WLAN_WAKE_OTHER);
 		break;
 	}
 }
