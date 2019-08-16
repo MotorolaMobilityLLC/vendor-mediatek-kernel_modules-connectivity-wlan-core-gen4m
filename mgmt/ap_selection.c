@@ -480,6 +480,18 @@ static u_int8_t scanSanityCheckBssDesc(struct ADAPTER *prAdapter,
 	struct BSS_DESC *prBssDesc, enum ENUM_BAND eBand, uint8_t ucChannel,
 		u_int8_t fgIsFixedChannel, uint8_t ucBssIndex)
 {
+	if (prBssDesc->fgIsConnected) {
+		struct BSS_DESC *target =
+			aisGetTargetBssDesc(prAdapter, ucBssIndex);
+
+		if (!target || (target && !EQUAL_MAC_ADDR(prBssDesc->aucBSSID,
+			target->aucBSSID))) {
+			log_dbg(SCN, WARN, MACSTR" used by others\n",
+				MAC2STR(prBssDesc->aucBSSID));
+			return FALSE;
+		}
+	}
+
 	if (!(prBssDesc->ucPhyTypeSet &
 		(prAdapter->rWifiVar.ucAvailablePhyTypeSet))) {
 		log_dbg(SCN, WARN,
