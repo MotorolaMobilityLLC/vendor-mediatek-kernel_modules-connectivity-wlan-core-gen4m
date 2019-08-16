@@ -15390,7 +15390,7 @@ int kalGetMaxTxRate(IN struct ADAPTER *prAdapter,
 	       ucTxMode, ucMcsIdx, ucBw, ucSgi, ucNss
 	);
 
-	if (kalQueryRateByTable(ucTxMode, ucMcsIdx, ucAPBwPermitted, ucSgi,
+	if (kalQueryRateByTable(ucTxMode, ucMcsIdx, ucBw, ucSgi,
 				ucNss, pu4CurRate, pu4MaxRate) < 0)
 		goto errhandle;
 
@@ -15399,7 +15399,7 @@ int kalGetMaxTxRate(IN struct ADAPTER *prAdapter,
 errhandle:
 	DBGLOG(SW4, ERROR,
 	       "txmode=[%u], mcs idx=[%u], bandwidth=[%u], sgi=[%u], nsts=[%u]\n",
-	       ucTxMode, ucMcsIdx, ucAPBwPermitted, ucSgi, ucNss);
+	       ucTxMode, ucMcsIdx, ucBw, ucSgi, ucNss);
 	return -1;
 }
 #endif /* CFG_REPORT_MAX_TX_RATE */
