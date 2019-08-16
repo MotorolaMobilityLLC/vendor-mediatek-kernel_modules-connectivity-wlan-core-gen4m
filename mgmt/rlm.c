@@ -2720,6 +2720,10 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 		struct PARAM_SSID rSsid;
 
 		prBssInfo->ucPrimaryChannel = ucChannelAnnouncePri;
+		prBssInfo->eBand =
+			(prBssInfo->ucPrimaryChannel <= 14)
+				? BAND_2G4
+				: BAND_5G;
 		/* Change to BW20 for certification issue due to signal sidelope
 		 * leakage
 		 */
@@ -4679,6 +4683,9 @@ void rlmProcessSpecMgtAction(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb)
 					prBssInfo->ucPrimaryChannel =
 						prChannelSwitchAnnounceIE
 							->ucNewChannelNum;
+					prBssInfo->eBand =
+						(prBssInfo->ucPrimaryChannel
+						<= 14) ? BAND_2G4 : BAND_5G;
 				} else {
 					DBGLOG(RLM, INFO,
 					       "[Mgt Action] ucChannelSwitchMode = 0\n");
