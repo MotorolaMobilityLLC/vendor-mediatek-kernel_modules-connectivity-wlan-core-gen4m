@@ -3986,11 +3986,6 @@ wlanoidSetWifiLogLevel(IN struct ADAPTER *prAdapter,
 		       OUT uint32_t *pu4SetInfoLen);
 
 #if CFG_SUPPORT_LOWLATENCY_MODE
-uint32_t wlanoidSetLowLatencyCommand(IN struct ADAPTER *prAdapter,
-				     IN u_int8_t fgEnLowLatencyMode,
-				     IN u_int8_t fgEnTxDupDetect,
-				     IN u_int8_t fgTxDupCertQuery);
-
 uint32_t
 wlanoidSetLowLatencyMode(IN struct ADAPTER *prAdapter,
 			 IN void *pvSetBuffer,

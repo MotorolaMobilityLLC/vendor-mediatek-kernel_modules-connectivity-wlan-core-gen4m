@@ -3857,10 +3857,7 @@ int32_t wlanOnWhenProbeSuccess(struct GLUE_INFO *prGlueInfo,
 #endif
 
 #if CFG_SUPPORT_LOWLATENCY_MODE
-	/* Query capability from firmware */
-	prAdapter->fgTxDupCertificate = FALSE;
-	wlanoidSetLowLatencyCommand(prAdapter,
-				FALSE, prAdapter->fgEnTxDupDetect, TRUE);
+	wlanProbeSuccessForLowLatency(prAdapter);
 #endif
 
 	return 0;

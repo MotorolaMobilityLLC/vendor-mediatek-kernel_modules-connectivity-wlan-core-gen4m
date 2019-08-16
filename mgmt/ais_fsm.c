@@ -4626,6 +4626,8 @@ void aisFsmRunEventJoinTimeout(IN struct ADAPTER *prAdapter,
 			  TRUE, ucBssIndex) == TRUE)
 			eNextState = AIS_STATE_REQ_REMAIN_ON_CHANNEL;
 
+		/* 5. Check if need to set low latency after connected. */
+		wlanConnectedForLowLatency(prAdapter);
 		break;
 
 	default:

@@ -1276,4 +1276,6 @@ extern const uint8_t *kalFindIeMatchMask(uint8_t eid,
 				int match_len, int match_offset,
 				const uint8_t *match_mask);
 
+/* extern from wifi wmt cdev wifi */
+extern uint32_t get_low_latency_mode(void);
 #endif /* _GL_OS_H */
