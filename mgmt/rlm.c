@@ -99,6 +99,7 @@ enum ENUM_OP_NOTIFY_STATE_T {
  *******************************************************************************
  */
 u_int8_t g_fgHasChannelSwitchIE = FALSE;
+u_int8_t g_fgHasStopTx = FALSE;
 
 #if CFG_SUPPORT_CAL_RESULT_BACKUP_TO_HOST
 struct RLM_CAL_RESULT_ALL_V2 g_rBackupCalDataAllV2;
@@ -2177,6 +2178,7 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 	u_int8_t fgHasWideBandIE = FALSE;
 	u_int8_t fgHasSCOIE = FALSE;
 	u_int8_t fgHasChannelSwitchIE = FALSE;
+	u_int8_t fgNeedSwitchChannel = FALSE;
 	uint8_t ucChannelAnnouncePri;
 	enum ENUM_CHNL_EXT eChannelAnnounceSco;
 	uint8_t ucChannelAnnounceChannelS1 = 0;
@@ -2556,13 +2558,21 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 
 			DBGLOG(RLM, INFO, "[Ch] Count=%d\n",
 			       prChannelSwitchAnnounceIE->ucChannelSwitchCount);
-#if 0
-			qmSetStaRecTxAllowed(prAdapter, prStaRec, FALSE);
-			DBGLOG(RLM, INFO, "[Ch] TxAllowed = %d\n",
-			       prStaRec->fgIsTxAllowed);
-#endif
-			if (prChannelSwitchAnnounceIE->ucChannelSwitchMode ==
-			    1) {
+
+			if (prChannelSwitchAnnounceIE
+						->ucChannelSwitchMode == 1) {
+				/* Need to stop data transmission immediately */
+				fgHasChannelSwitchIE = TRUE;
+				if (!g_fgHasStopTx) {
+					g_fgHasStopTx = TRUE;
+					/* AP */
+					qmSetStaRecTxAllowed(prAdapter,
+								 prStaRec,
+								 FALSE);
+					DBGLOG(RLM, EVENT,
+						"[Ch] TxAllowed = FALSE\n");
+				}
+
 				if (prChannelSwitchAnnounceIE
 					    ->ucChannelSwitchCount <= 5) {
 					DBGLOG(RLM, INFO,
@@ -2573,15 +2583,8 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 					ucChannelAnnouncePri =
 						prChannelSwitchAnnounceIE
 							->ucNewChannelNum;
-					fgHasChannelSwitchIE = TRUE;
+					fgNeedSwitchChannel = TRUE;
 					g_fgHasChannelSwitchIE = TRUE;
-#if 0
-					qmSetStaRecTxAllowed(prAdapter,
-					       prStaRec, TRUE);
-					DBGLOG(RLM, INFO,
-					       "[Ch] After switching , TxAllowed = %d\n",
-					       prStaRec->fgIsTxAllowed);
-#endif
 				}
 				if (RLM_NET_IS_11AC(prBssInfo)) {
 					DBGLOG(RLM, INFO,
@@ -2715,7 +2718,7 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 	 * the highest.
 	 */
 
-	if (fgHasChannelSwitchIE != FALSE) {
+	if (fgNeedSwitchChannel) {
 		struct BSS_DESC *prBssDesc;
 		struct PARAM_SSID rSsid;
 
@@ -2776,6 +2779,14 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 			prBssInfo->eBssSCO = eChannelAnnounceSco;
 	}
 #endif
+
+	if (!fgHasChannelSwitchIE && g_fgHasStopTx) {
+		/* AP */
+		qmSetStaRecTxAllowed(prAdapter, prStaRec, TRUE);
+
+		DBGLOG(RLM, EVENT, "[Ch] TxAllowed = TRUE\n");
+		g_fgHasStopTx = FALSE;
+	}
 
 #if CFG_SUPPORT_DFS
 	/*DFS Certification for Channel Bandwidth 20MHz */
@@ -4675,17 +4686,36 @@ void rlmProcessSpecMgtAction(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb)
 
 				if (prChannelSwitchAnnounceIE
 					    ->ucChannelSwitchMode == 1) {
-					DBGLOG(RLM, INFO,
-					       "[Mgt Action] switch channel [%d]->[%d]\n",
-					       prBssInfo->ucPrimaryChannel,
-					       prChannelSwitchAnnounceIE
-						       ->ucNewChannelNum);
-					prBssInfo->ucPrimaryChannel =
+
+					/* Need to stop data
+					 * transmission immediately
+					 */
+					if (!g_fgHasStopTx) {
+						g_fgHasStopTx = TRUE;
+						/* AP */
+						qmSetStaRecTxAllowed(prAdapter,
+							   prStaRec,
+							   FALSE);
+						DBGLOG(RLM, EVENT,
+							"[Ch] TxAllowed = FALSE\n");
+					}
+
+					if (prChannelSwitchAnnounceIE
+						->ucChannelSwitchCount <= 5) {
+						DBGLOG(RLM, INFO,
+						"[Mgt Action] switch channel [%d]->[%d]\n",
+						prBssInfo->ucPrimaryChannel,
 						prChannelSwitchAnnounceIE
-							->ucNewChannelNum;
-					prBssInfo->eBand =
-						(prBssInfo->ucPrimaryChannel
-						<= 14) ? BAND_2G4 : BAND_5G;
+						    ->ucNewChannelNum);
+						prBssInfo->ucPrimaryChannel =
+						    prChannelSwitchAnnounceIE
+						    ->ucNewChannelNum;
+						prBssInfo->eBand =
+						    (prBssInfo
+						    ->ucPrimaryChannel
+						    <= 14) ? BAND_2G4 :
+						    BAND_5G;
+					}
 				} else {
 					DBGLOG(RLM, INFO,
 					       "[Mgt Action] ucChannelSwitchMode = 0\n");
