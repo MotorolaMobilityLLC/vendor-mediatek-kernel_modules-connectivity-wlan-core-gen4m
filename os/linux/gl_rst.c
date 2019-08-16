@@ -287,13 +287,22 @@ static void mtk_wifi_trigger_reset(struct work_struct *work)
 	if (rst->rst_trigger_flag & RST_FLAG_PREVENT_POWER_OFF)
 		mtk_wcn_set_connsys_power_off_flag(FALSE);
 
-	fgResult = mtk_wcn_wmt_assert_timeout(WMTDRV_TYPE_WIFI, 40, 0);
+	if (rst->rst_keyword == NULL) {
+		DBGLOG(INIT, INFO, "keyword is null\n");
+		fgResult = mtk_wcn_wmt_assert_timeout(WMTDRV_TYPE_WIFI, 40, 0);
+	} else {
+		DBGLOG(INIT, INFO, "reset keyword is %s\n",
+			rst->rst_keyword);
+		fgResult = mtk_wcn_wmt_assert_keyword(
+			WMTDRV_TYPE_WIFI, rst->rst_keyword);
+	}
 	DBGLOG(INIT, INFO, "reset result %d, trigger flag 0x%x\n",
 				fgResult, rst->rst_trigger_flag);
 }
 
 u_int8_t glResetTrigger(struct ADAPTER *prAdapter,
-		uint32_t u4RstFlag, const uint8_t *pucFile, uint32_t u4Line)
+		uint32_t u4RstFlag, const uint8_t *pucFile, uint32_t u4Line,
+		unsigned char *keyword)
 {
 	u_int8_t fgResult = TRUE;
 	uint16_t u2FwOwnVersion;
@@ -316,10 +325,11 @@ u_int8_t glResetTrigger(struct ADAPTER *prAdapter,
 		       (uint16_t)(u2FwPeerVersion & BITS(0, 7)));
 
 		fgResetTriggered = TRUE;
-		prAdapter->u4HifDbgFlag |= DEG_HIF_DEFAULT_DUMP;
+		prAdapter->u4HifDbgFlag |= DEG_HIF_ALL;
 		halPrintHifDbgInfo(prAdapter);
 
 		wifi_rst.rst_trigger_flag = u4RstFlag;
+		wifi_rst.rst_keyword = keyword;
 		schedule_work(&(wifi_rst.rst_trigger_work));
 	}
 

@@ -103,6 +103,7 @@ struct RESET_STRUCT {
 	struct work_struct rst_work;
 	struct work_struct rst_trigger_work;
 	uint32_t rst_trigger_flag;
+	unsigned char *rst_keyword;
 };
 
 /* duplicated from wmt_exp.h for better driver isolation */
@@ -195,9 +196,14 @@ extern int mtk_wcn_wmt_assert_keyword(enum ENUM_WMTDRV_TYPE type,
 #if CFG_CHIP_RESET_SUPPORT
 #define GL_RESET_TRIGGER(_prAdapter, _u4Flags) \
 	glResetTrigger(_prAdapter, (_u4Flags), \
-	(const uint8_t *)__FILE__, __LINE__)
+	(const uint8_t *)__FILE__, __LINE__, NULL)
+#define GL_RESET_TRIGGER_KEYWORD(_prAdapter, _u4Flags, _pucKeyword) \
+	glResetTrigger(_prAdapter, (_u4Flags), \
+	(const uint8_t *)__FILE__, __LINE__, _pucKeyword)
 #else
 #define GL_RESET_TRIGGER(_prAdapter, _u4Flags) \
+	DBGLOG(INIT, INFO, "DO NOT support chip reset\n")
+#define GL_RESET_TRIGGER_KEYWORD(_prAdapter, _u4Flags, _pucKeyword) \
 	DBGLOG(INIT, INFO, "DO NOT support chip reset\n")
 #endif
 
@@ -234,7 +240,7 @@ u_int8_t glIsWmtCodeDump(void);
 
 u_int8_t glResetTrigger(struct ADAPTER *prAdapter,
 			uint32_t u4RstFlag, const uint8_t *pucFile,
-			uint32_t u4Line);
+			uint32_t u4Line, unsigned char *pucKeyword);
 
 void glGetRstReason(enum _ENUM_CHIP_RESET_REASON_TYPE_T
 		    eReason);
