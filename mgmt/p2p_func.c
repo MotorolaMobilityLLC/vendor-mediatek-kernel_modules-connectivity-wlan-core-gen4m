@@ -544,9 +544,6 @@ p2pFuncUpdateBssInfoForJOIN(IN struct ADAPTER *prAdapter,
 		ASSERT_BREAK(prP2pBssInfo->eCurrentOPMode
 			== OP_MODE_INFRASTRUCTURE);
 
-		if (UNEQUAL_MAC_ADDR(prBssDesc->aucBSSID,
-				prAssocRspFrame->aucBSSID))
-			ASSERT(FALSE);
 		/* 4 <1.2> Setup SSID */
 		COPY_SSID(prP2pBssInfo->aucSSID,
 			prP2pBssInfo->ucSSIDLen,
@@ -589,8 +586,15 @@ p2pFuncUpdateBssInfoForJOIN(IN struct ADAPTER *prAdapter,
 		 * (Association Resp Frame)
 		 */
 		/* 4 <3.1> Setup BSSID */
-		COPY_MAC_ADDR(prP2pBssInfo->aucBSSID,
-			prAssocRspFrame->aucBSSID);
+		if (UNEQUAL_MAC_ADDR(prBssDesc->aucBSSID,
+				prAssocRspFrame->aucBSSID)) {
+			DBGLOG(P2P, WARN, "Assoc BSSID " MACSTR "\n",
+				MAC2STR(prAssocRspFrame->aucBSSID));
+			COPY_MAC_ADDR(prP2pBssInfo->aucBSSID,
+				prBssDesc->aucBSSID);
+		} else
+			COPY_MAC_ADDR(prP2pBssInfo->aucBSSID,
+				prAssocRspFrame->aucBSSID);
 
 		u2IELength =
 		    (uint16_t) ((prAssocRspSwRfb->u2PacketLen -
