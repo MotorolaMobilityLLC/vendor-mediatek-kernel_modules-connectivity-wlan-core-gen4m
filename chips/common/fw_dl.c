@@ -518,6 +518,10 @@ uint32_t wlanPatchRecvSemaResp(IN struct ADAPTER *prAdapter,
 	u4EventSize = prChipInfo->rxd_size + prChipInfo->init_event_size +
 		sizeof(struct INIT_EVENT_CMD_RESULT);
 	aucBuffer = kalMemAlloc(u4EventSize, PHY_MEM_TYPE);
+	if (aucBuffer == NULL) {
+		DBGLOG(INIT, ERROR, "Alloc CMD buffer failed\n");
+		return WLAN_STATUS_FAILURE;
+	}
 
 	if (nicRxWaitResponse(prAdapter, 0, aucBuffer, u4EventSize,
 			      &u4RxPktLength) != WLAN_STATUS_SUCCESS) {
@@ -529,6 +533,11 @@ uint32_t wlanPatchRecvSemaResp(IN struct ADAPTER *prAdapter,
 
 	prInitEvent = (struct INIT_WIFI_EVENT *)
 		(aucBuffer + prChipInfo->rxd_size);
+	if (prInitEvent == NULL) {
+		DBGLOG(INIT, ERROR, "prInitEvent is NULL\n");
+		kalMemFree(aucBuffer, PHY_MEM_TYPE, u4EventSize);
+		return WLAN_STATUS_FAILURE;
+	}
 	if (prInitEvent->ucEID != INIT_EVENT_ID_PATCH_SEMA_CTRL) {
 		DBGLOG(INIT, WARN, "Unexpected EVENT ID, get 0x%0x\n",
 		       prInitEvent->ucEID);
@@ -1017,6 +1026,10 @@ uint32_t wlanImageQueryStatus(IN struct ADAPTER *prAdapter)
 	u4EventSize = prChipInfo->rxd_size + prChipInfo->init_event_size +
 		sizeof(struct INIT_EVENT_CMD_RESULT);
 	aucBuffer = kalMemAlloc(u4EventSize, PHY_MEM_TYPE);
+	if (aucBuffer == NULL) {
+		DBGLOG(INIT, ERROR, "Alloc CMD buffer failed\n");
+		return WLAN_STATUS_FAILURE;
+	}
 
 	kalMemZero(prCmdInfo->pucInfoBuffer,
 		   sizeof(struct INIT_HIF_TX_HEADER));
@@ -1091,6 +1104,11 @@ uint32_t wlanImageQueryStatus(IN struct ADAPTER *prAdapter)
 		} else {
 			prInitEvent = (struct INIT_WIFI_EVENT *)
 				(aucBuffer + prChipInfo->rxd_size);
+			if (prInitEvent == NULL) {
+				DBGLOG(INIT, ERROR, "prInitEvent is NULL\n");
+				u4Status = WLAN_STATUS_FAILURE;
+				break;
+			}
 
 			/* EID / SeqNum check */
 			if (prInitEvent->ucEID != INIT_EVENT_ID_PENDING_ERROR)
@@ -1148,6 +1166,10 @@ uint32_t wlanConfigWifiFuncStatus(IN struct ADAPTER
 	u4EventSize = INIT_EVENT_RXD_LEN + prChipInfo->init_event_size +
 		sizeof(struct INIT_EVENT_CMD_RESULT);
 	aucBuffer = kalMemAlloc(u4EventSize, PHY_MEM_TYPE);
+	if (aucBuffer == NULL) {
+		DBGLOG(INIT, ERROR, "Alloc CMD buffer failed\n");
+		return WLAN_STATUS_FAILURE;
+	}
 
 	do {
 		if (kalIsCardRemoved(prAdapter->prGlueInfo) == TRUE
@@ -1839,6 +1861,7 @@ uint32_t wlanDownloadPatch(IN struct ADAPTER *prAdapter)
 {
 	uint32_t u4FwSize = 0;
 	void *prFwBuffer = NULL;
+	uint32_t u4Status;
 #if CFG_SUPPORT_COMPRESSION_FW_OPTION
 	uint8_t ucIsCompressed;
 #endif
@@ -1868,13 +1891,12 @@ uint32_t wlanDownloadPatch(IN struct ADAPTER *prAdapter)
 	/* Patch DL */
 	do {
 #if CFG_SUPPORT_COMPRESSION_FW_OPTION
-		wlanCompressedImageSectionDownloadStage(prAdapter,
-							prFwBuffer, u4FwSize, 1,
-							IMG_DL_IDX_PATCH,
-							&ucIsCompressed, NULL);
+		u4Status = wlanCompressedImageSectionDownloadStage(
+			prAdapter, prFwBuffer, u4FwSize, 1,
+			IMG_DL_IDX_PATCH, &ucIsCompressed, NULL);
 #else
-		wlanImageSectionDownloadStage(prAdapter, prFwBuffer,
-					      u4FwSize, 1, IMG_DL_IDX_PATCH);
+		u4Status = wlanImageSectionDownloadStage(
+			prAdapter, prFwBuffer, u4FwSize, 1, IMG_DL_IDX_PATCH);
 #endif
 		wlanPatchSendComplete(prAdapter);
 		kalFirmwareImageUnmapping(prAdapter->prGlueInfo, NULL,
@@ -1883,9 +1905,9 @@ uint32_t wlanDownloadPatch(IN struct ADAPTER *prAdapter)
 		prAdapter->rVerInfo.fgPatchIsDlByDrv = TRUE;
 	} while (0);
 
-	DBGLOG(INIT, INFO, "Patch download end\n");
+	DBGLOG(INIT, INFO, "Patch download end[%d].\n", u4Status);
 
-	return WLAN_STATUS_SUCCESS;
+	return u4Status;
 }
 
 uint32_t wlanGetPatchInfo(IN struct ADAPTER *prAdapter)
