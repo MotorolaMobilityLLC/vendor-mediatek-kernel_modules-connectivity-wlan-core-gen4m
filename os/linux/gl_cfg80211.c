@@ -1927,6 +1927,7 @@ int mtk_cfg80211_set_power_mgmt(struct wiphy *wiphy,
 	uint32_t u4BufLen;
 	struct PARAM_POWER_MODE_ rPowerMode;
 	uint8_t ucBssIndex = 0;
+	struct BSS_INFO *prBssInfo;
 
 	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wiphy);
 	if (!prGlueInfo)
@@ -1936,10 +1937,21 @@ int mtk_cfg80211_set_power_mgmt(struct wiphy *wiphy,
 	if (!IS_BSS_INDEX_VALID(ucBssIndex))
 		return -EINVAL;
 
-	DBGLOG(REQ, INFO, "%d: enabled=%d, timeout=%d\n", ucBssIndex,
-	       enabled, timeout);
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prGlueInfo->prAdapter,
+		ucBssIndex);
+	if (!prBssInfo)
+		return -EINVAL;
+
+	DBGLOG(REQ, INFO, "%d: enabled=%d, timeout=%d, fgTIMPresend=%d\n",
+	       ucBssIndex, enabled, timeout,
+	       prBssInfo->fgTIMPresent);
 
 	if (enabled) {
+		if (prBssInfo->eConnectionState
+			== PARAM_MEDIA_STATE_CONNECTED &&
+		    !prBssInfo->fgTIMPresent)
+			return -EFAULT;
+
 		if (timeout == -1)
 			rPowerMode.ePowerMode = Param_PowerModeFast_PSP;
 		else
