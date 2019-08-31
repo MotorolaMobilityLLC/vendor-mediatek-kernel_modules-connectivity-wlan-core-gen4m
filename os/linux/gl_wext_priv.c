@@ -3626,6 +3626,8 @@ static int priv_driver_get_bss_statistics(
 	ASSERT(prGlueInfo);
 
 	ucBssIndex = wlanGetBssIdx(prNetDev);
+	if (!IS_BSS_INDEX_AIS(prGlueInfo->prAdapter, ucBssIndex))
+		return -EINVAL;
 
 	kalMemZero(arBssid, MAC_ADDR_LEN);
 	wlanQueryInformation(prGlueInfo->prAdapter, wlanoidQueryBssid,
@@ -9140,8 +9142,9 @@ int priv_driver_set_cfg(IN struct net_device *prNetDev, IN char *pcCommand,
 		/* wlanCfgSet(prAdapter, apcArgv[1], apcArgv[2], 0); */
 		/* Call by  wlanoid because the set_cfg will trigger callback */
 		kalStrnCpy(rKeyCfgInfo.aucKey, apcArgv[1],
-			   WLAN_CFG_KEY_LEN_MAX);
-		kalStrnCpy(rKeyCfgInfo.aucValue, ucTmp, WLAN_CFG_KEY_LEN_MAX);
+			   WLAN_CFG_KEY_LEN_MAX - 1);
+		kalStrnCpy(rKeyCfgInfo.aucValue, ucTmp,
+			   WLAN_CFG_VALUE_LEN_MAX - 1);
 		rStatus = kalIoctl(prGlueInfo, wlanoidSetKeyCfg, &rKeyCfgInfo,
 				   sizeof(rKeyCfgInfo), FALSE, FALSE, TRUE,
 				   &u4BufLen);
