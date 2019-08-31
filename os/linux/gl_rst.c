@@ -243,6 +243,7 @@ static void mtk_wifi_reset(struct work_struct *work)
 
 	/* wlanOnAtReset(); */
 	wifi_reset_end(rst->rst_data);
+	fgSimplifyResetFlow = FALSE;
 }
 
 /*----------------------------------------------------------------------------*/
