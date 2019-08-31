@@ -4511,21 +4511,22 @@ static int priv_driver_get_mib_info(IN struct net_device *prNetDev,
 			"\tRx dupicate drop=%llu\n",
 			RX_GET_CNT(prRxCtrl, RX_DUPICATE_DROP_COUNT));
 		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
-			i4TotalLen - i4BytesWritten, "\tRx MIC err drop=%ld\n",
+			i4TotalLen - i4BytesWritten, "\tRx MIC err drop=%llu\n",
 			RX_GET_CNT(prRxCtrl, RX_MIC_ERROR_DROP_COUNT));
 		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
-			i4TotalLen - i4BytesWritten, "\tRx BAR handle=%ld\n",
+			i4TotalLen - i4BytesWritten, "\tRx BAR handle=%llu\n",
 			RX_GET_CNT(prRxCtrl, RX_BAR_DROP_COUNT));
 		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
 			i4TotalLen - i4BytesWritten,
-			"\tRx non-interest drop=%ld\n", RX_GET_CNT(prRxCtrl,
+			"\tRx non-interest drop=%llu\n", RX_GET_CNT(prRxCtrl,
 			RX_NO_INTEREST_DROP_COUNT));
 		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
-			i4TotalLen - i4BytesWritten, "\tRx type err drop=%ld\n",
+			i4TotalLen - i4BytesWritten,
+			"\tRx type err drop=%llu\n",
 			RX_GET_CNT(prRxCtrl, RX_TYPE_ERR_DROP_COUNT));
 		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
 			i4TotalLen - i4BytesWritten,
-			"\tRx class err drop=%ld\n", RX_GET_CNT(prRxCtrl,
+			"\tRx class err drop=%llu\n", RX_GET_CNT(prRxCtrl,
 			RX_CLASS_ERR_DROP_COUNT));
 		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
 			i4TotalLen - i4BytesWritten,
