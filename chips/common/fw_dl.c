@@ -68,7 +68,8 @@
  *******************************************************************************
  */
 
-
+#define EMI_BUILD_TIME_OFFSET	0x68340
+#define EMI_BUILD_TIME_MAX_LEN	190
 /*******************************************************************************
  *                            P U B L I C   D A T A
  *******************************************************************************
@@ -2012,10 +2013,27 @@ void fwDlGetReleaseManifest(struct ADAPTER *prAdapter,
 			    struct HEADER_RELEASE_INFO *prRelInfo,
 			    uint8_t *pucStartPtr)
 {
+	uint8_t *pucAddr;
+	uint16_t u2Len;
+
 	kalMemZero(&prAdapter->rVerInfo.aucReleaseManifest,
 		   sizeof(prAdapter->rVerInfo.aucReleaseManifest));
 	kalMemCopy(&prAdapter->rVerInfo.aucReleaseManifest,
 		   pucStartPtr, prRelInfo->u2Len);
+
+	if (prRelInfo->u2Len) {
+		pucAddr = ioremap_nocache(
+			(gConEmiPhyBase + EMI_BUILD_TIME_OFFSET),
+			EMI_BUILD_TIME_MAX_LEN);
+		if (pucAddr) {
+			u2Len = prRelInfo->u2Len > EMI_BUILD_TIME_MAX_LEN ?
+				EMI_BUILD_TIME_MAX_LEN : prRelInfo->u2Len;
+			memcpy_toio(pucAddr,
+				&prAdapter->rVerInfo.aucReleaseManifest, u2Len);
+			iounmap(pucAddr);
+		} else
+			 DBGLOG(INIT, WARN, "ioremap_nocache failed.\n");
+	}
 	DBGLOG(INIT, INFO, "Release manifest: %s\n",
 	       prAdapter->rVerInfo.aucReleaseManifest);
 }
