@@ -4455,7 +4455,8 @@ static int priv_driver_get_mib_info(IN struct net_device *prNetDev,
 			"\tRx reorder within=%llu\n",
 			RX_GET_CNT(prRxCtrl, RX_DATA_REORDER_WITHIN_COUNT));
 		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
-			i4TotalLen - i4BytesWritten, "\tRx reorder ahead=%ld\n",
+			i4TotalLen - i4BytesWritten,
+			"\tRx reorder ahead=%llu\n",
 			RX_GET_CNT(prRxCtrl, RX_DATA_REORDER_AHEAD_COUNT));
 		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
 			i4TotalLen - i4BytesWritten,
