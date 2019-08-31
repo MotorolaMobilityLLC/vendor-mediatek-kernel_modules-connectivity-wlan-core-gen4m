@@ -3612,8 +3612,12 @@ p2pFunAbortOngoingScan(IN struct ADAPTER *prAdapter)
 {
 	struct SCAN_INFO *prScanInfo;
 
+	if (!prAdapter)
+		return;
+
 	prScanInfo = &(prAdapter->rWifiVar.rScanInfo);
-	if (prScanInfo->eCurrentState != SCAN_STATE_SCANNING)
+
+	if (!prScanInfo || (prScanInfo->eCurrentState != SCAN_STATE_SCANNING))
 		return;
 
 	if (IS_BSS_INDEX_AIS(prAdapter,
