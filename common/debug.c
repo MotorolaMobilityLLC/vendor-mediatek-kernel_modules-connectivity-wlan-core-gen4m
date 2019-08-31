@@ -305,9 +305,10 @@ void wlanWakeStaticsInit(void)
 		kalMemAlloc(WAKE_MAX_CMD_EVENT_NUM * sizeof(
 				    struct WAKE_INFO_T), PHY_MEM_TYPE);
 
-	kalMemZero(gprWakeInfoStatics,
-		   WAKE_MAX_CMD_EVENT_NUM * sizeof(struct
-				   WAKE_INFO_T));
+	if (gprWakeInfoStatics != NULL)
+		kalMemZero(gprWakeInfoStatics,
+			   WAKE_MAX_CMD_EVENT_NUM * sizeof(struct
+					   WAKE_INFO_T));
 }
 
 void wlanWakeStaticsUninit(void)
