@@ -583,8 +583,6 @@ void aisRemoveBlackList(struct ADAPTER *prAdapter, struct BSS_DESC *prBssDesc);
 void aisRemoveTimeoutBlacklist(struct ADAPTER *prAdapter);
 struct AIS_BLACKLIST_ITEM *aisQueryBlackList(struct ADAPTER *prAdapter,
 	struct BSS_DESC *prBssDesc);
-uint16_t aisCalculateBlackListScore(struct ADAPTER *prAdapter,
-	struct BSS_DESC *prBssDesc);
 /* end Support AP Selection */
 
 /* Support 11K */

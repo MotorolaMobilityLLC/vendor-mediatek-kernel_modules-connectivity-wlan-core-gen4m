@@ -4316,7 +4316,8 @@ bool nicBeaconTimeoutFilterPolicy(IN struct ADAPTER *prAdapter,
 	/* Policy 1, if RX in the past duration (in ms)
 	 */
 	if (!CHECK_FOR_TIMEOUT(u4CurrentTime, prRxCtrl->u4LastRxTime[ucBssIdx],
-			      SEC_TO_SYSTIME(MSEC_TO_SEC(u4MonitorWindow)))) {
+			      SEC_TO_SYSTIME(MSEC_TO_SEC(u4MonitorWindow))) &&
+	    !scanBeaconTimeoutFilterPolicyForAis(prAdapter, ucBssIdx)) {
 		DBGLOG(NIC, INFO, "Policy 1 hit, RX in the past duration");
 		bValid = false;
 	}
