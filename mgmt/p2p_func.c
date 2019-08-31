@@ -6560,6 +6560,8 @@ uint8_t p2pFunGetAcsBestCh(IN struct ADAPTER *prAdapter,
 		uint8_t ucIdx;
 
 		ucIdx = wlanGetChannelIndex(aucChannelList[i].ucChannelNum);
+		if (ucIdx >= MAX_CHN_NUM)
+			continue;
 
 		DBGLOG(P2P, INFO, "idx: %u, ch: %u, d: %d\n",
 				ucIdx,
