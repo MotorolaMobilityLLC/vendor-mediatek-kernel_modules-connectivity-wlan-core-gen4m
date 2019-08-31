@@ -16036,6 +16036,8 @@ uint32_t wlanoidTxPowerControl(IN struct ADAPTER *prAdapter,
 					MAX_TX_PWR_CTRL_ELEMENT_NAME_SIZE);
 				newElement->index = oldElement->index;
 				newElement->eCtrlType = oldElement->eCtrlType;
+				newElement->u2CountryCode =
+					oldElement->u2CountryCode;
 				txPwrCtrlDeleteElement(prAdapter,
 				       newElement->name, newElement->index,
 				       PWR_CTRL_TYPE_DYNAMIC_LIST);

@@ -2607,6 +2607,10 @@ uint32_t txPwrApplyOneSetting(struct CMD_SET_COUNTRY_CHANNEL_POWER_LIMIT *prCmd,
 					break;
 				}
 			}
+			if (prCurElement->u2CountryCode != 0 &&
+				prCurElement->u2CountryCode !=
+				prCmd->u2CountryCode)
+				fgDoArbitrator = FALSE;
 			if (fgDoArbitrator)
 				txPwrArbitrator(prCurElement->eCtrlType,
 						prCmdPwrLimit, prChlSetting);
@@ -2670,6 +2674,7 @@ struct TX_PWR_CTRL_ELEMENT *txPwrCtrlStringToStruct(char *pcContent,
 	char *pcContCur = NULL, *pcContCur2 = NULL, *pcContEnd = NULL;
 	char *pcContTmp = NULL, *pcContNext = NULL, *pcContOld = NULL;
 	char carySeperator[2] = { 0, 0 };
+	uint16_t u2countryCode = 0;
 	uint32_t u4MemSize = sizeof(struct TX_PWR_CTRL_ELEMENT);
 	uint32_t copySize = 0;
 	uint8_t i, j, op, ucSettingCount = 0;
@@ -2740,6 +2745,25 @@ struct TX_PWR_CTRL_ELEMENT *txPwrCtrlStringToStruct(char *pcContent,
 		       pcContOld);
 		return NULL;
 	}
+	/* parse country code */
+	pcContOld = pcContCur;
+	pcContTmp = txPwrGetString(&pcContCur, ";");
+	if (pcContTmp) {
+		copySize = kalStrLen(pcContTmp);
+		if (copySize == 2) {
+			DBGLOG(RLM, TRACE, "%s\n", pcContTmp);
+			u2countryCode =
+				(((uint16_t) pcContTmp[0]) << 8) |
+				(((uint16_t) pcContTmp[1]));
+
+			DBGLOG(RLM, TRACE, "%x\n", u2countryCode);
+		} else
+			DBGLOG(RLM, WARN, "parse country code error: %s",
+					pcContTmp);
+	}
+	if (pcContCur == NULL)
+		pcContCur = pcContOld;
+
 	if ((ucOperation < PWR_CTRL_TYPE_OPERATION_POWER_LEVEL) ||
 	    (ucOperation > PWR_CTRL_TYPE_OPERATION_POWER_OFFSET)) {
 		DBGLOG(RLM, ERROR,
@@ -2800,8 +2824,10 @@ skipLabel:
 			prCurElement->fgApplied = TRUE;
 	}
 	prCurElement->settingCount = ucSettingCount;
-
+	prCurElement->u2CountryCode = u2countryCode;
 	/* parse channel setting list */
+	if (!pcContOld || *(pcContOld) != '[')
+		goto clearLabel;
 	pcContCur = pcContOld + 1; /* skip '[' */
 
 	for (i = 0; i < ucSettingCount; i++) {

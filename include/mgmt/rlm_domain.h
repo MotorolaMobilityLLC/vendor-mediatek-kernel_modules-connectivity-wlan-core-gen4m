@@ -690,6 +690,7 @@ struct TX_PWR_CTRL_ELEMENT {
 	char name[MAX_TX_PWR_CTRL_ELEMENT_NAME_SIZE]; /* scenario name */
 	uint8_t index; /* scenario index */
 	enum ENUM_TX_POWER_CTRL_TYPE eCtrlType;
+	uint16_t u2CountryCode;
 	uint8_t settingCount;
 	struct TX_PWR_CTRL_CHANNEL_SETTING rChlSettingList[1];
 };
