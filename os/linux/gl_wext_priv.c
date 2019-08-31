@@ -4437,29 +4437,29 @@ static int priv_driver_get_mib_info(IN struct net_device *prNetDev,
 			prHwMibInfo->rHwMibCnt.u4RxLenMismatchCnt);
 		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
 			i4TotalLen - i4BytesWritten,
-			"\tRx data indicate total=%ld\n",
+			"\tRx data indicate total=%llu\n",
 			RX_GET_CNT(prRxCtrl, RX_DATA_INDICATION_COUNT));
 		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
 			i4TotalLen - i4BytesWritten,
-			"\tRx data retain total=%ld\n",
+			"\tRx data retain total=%llu\n",
 			RX_GET_CNT(prRxCtrl, RX_DATA_RETAINED_COUNT));
 		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
 			i4TotalLen - i4BytesWritten,
-			"\tRx drop by SW total=%ld\n",
+			"\tRx drop by SW total=%llu\n",
 			RX_GET_CNT(prRxCtrl, RX_DROP_TOTAL_COUNT));
 		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
-			i4TotalLen - i4BytesWritten, "\tRx reorder miss=%ld\n",
+			i4TotalLen - i4BytesWritten, "\tRx reorder miss=%llu\n",
 			RX_GET_CNT(prRxCtrl, RX_DATA_REORDER_MISS_COUNT));
 		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
 			i4TotalLen - i4BytesWritten,
-			"\tRx reorder within=%ld\n",
+			"\tRx reorder within=%llu\n",
 			RX_GET_CNT(prRxCtrl, RX_DATA_REORDER_WITHIN_COUNT));
 		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
 			i4TotalLen - i4BytesWritten, "\tRx reorder ahead=%ld\n",
 			RX_GET_CNT(prRxCtrl, RX_DATA_REORDER_AHEAD_COUNT));
 		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
 			i4TotalLen - i4BytesWritten,
-			"\tRx reorder behind=%ld\n", RX_GET_CNT(prRxCtrl,
+			"\tRx reorder behind=%llu\n", RX_GET_CNT(prRxCtrl,
 			RX_DATA_REORDER_BEHIND_COUNT));
 
 		do {
@@ -4481,33 +4481,34 @@ static int priv_driver_get_mib_info(IN struct net_device *prNetDev,
 
 		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
 			i4TotalLen - i4BytesWritten,
-			"\tRx total MSDU in AMSDU=%ld\n", RX_GET_CNT(prRxCtrl,
+			"\tRx total MSDU in AMSDU=%llu\n", RX_GET_CNT(prRxCtrl,
 			RX_DATA_MSDU_IN_AMSDU_COUNT));
 		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
 			i4TotalLen - i4BytesWritten,
-			"\tRx AMSDU=%ld\n", RX_GET_CNT(prRxCtrl,
+			"\tRx AMSDU=%llu\n", RX_GET_CNT(prRxCtrl,
 			RX_DATA_AMSDU_COUNT));
 		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
-			i4TotalLen - i4BytesWritten, "\tRx AMSDU miss=%ld\n",
+			i4TotalLen - i4BytesWritten, "\tRx AMSDU miss=%llu\n",
 			RX_GET_CNT(prRxCtrl, RX_DATA_AMSDU_MISS_COUNT));
 		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
 			i4TotalLen - i4BytesWritten,
-			"\tRx no StaRec drop=%ld\n",
+			"\tRx no StaRec drop=%llu\n",
 			RX_GET_CNT(prRxCtrl, RX_NO_STA_DROP_COUNT));
 		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
 			i4TotalLen - i4BytesWritten,
-			"\tRx inactive BSS drop=%ld\n",
+			"\tRx inactive BSS drop=%llu\n",
 			RX_GET_CNT(prRxCtrl, RX_INACTIVE_BSS_DROP_COUNT));
 		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
 			i4TotalLen - i4BytesWritten,
-			"\tRx HS20 drop=%ld\n",
+			"\tRx HS20 drop=%llu\n",
 			RX_GET_CNT(prRxCtrl, RX_HS20_DROP_COUNT));
 		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
 			i4TotalLen - i4BytesWritten,
-			"\tRx low SwRfb drop=%ld\n", RX_GET_CNT(prRxCtrl,
+			"\tRx low SwRfb drop=%llu\n", RX_GET_CNT(prRxCtrl,
 			RX_LESS_SW_RFB_DROP_COUNT));
 		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
-			i4TotalLen - i4BytesWritten, "\tRx dupicate drop=%ld\n",
+			i4TotalLen - i4BytesWritten,
+			"\tRx dupicate drop=%llu\n",
 			RX_GET_CNT(prRxCtrl, RX_DUPICATE_DROP_COUNT));
 		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
 			i4TotalLen - i4BytesWritten, "\tRx MIC err drop=%ld\n",
