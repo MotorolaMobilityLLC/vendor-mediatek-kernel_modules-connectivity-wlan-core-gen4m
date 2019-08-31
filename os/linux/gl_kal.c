@@ -6728,7 +6728,8 @@ void kalFreeTxMsduWorker(struct work_struct *work)
 
 	while (QUEUE_IS_NOT_EMPTY(prTmpQue)) {
 		QUEUE_REMOVE_HEAD(prTmpQue, prMsduInfo, struct MSDU_INFO *);
-
+		if (!prMsduInfo)
+			break;
 		wlanTxProfilingTagMsdu(prAdapter, prMsduInfo,
 				       TX_PROF_TAG_DRV_FREE_MSDU);
 
