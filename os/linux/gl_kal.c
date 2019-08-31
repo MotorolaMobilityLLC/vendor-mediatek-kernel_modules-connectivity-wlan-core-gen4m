@@ -2962,11 +2962,13 @@ kalIoctlByBssIdx(IN struct GLUE_INFO *prGlueInfo,
 		return WLAN_STATUS_SUCCESS;
 #endif
 
+	ASSERT(prGlueInfo);
+	ASSERT(prGlueInfo->prAdapter);
+
 	if (wlanIsChipAssert(prGlueInfo->prAdapter))
 		return WLAN_STATUS_SUCCESS;
 
 	/* GLUE_SPIN_LOCK_DECLARATION(); */
-	ASSERT(prGlueInfo);
 
 	/* <1> Check if driver is halt */
 	/* if (prGlueInfo->u4Flag & GLUE_FLAG_HALT) { */
