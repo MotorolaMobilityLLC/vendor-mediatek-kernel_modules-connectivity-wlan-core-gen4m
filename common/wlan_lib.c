@@ -10502,7 +10502,6 @@ void wlanFinishCollectingLinkQuality(struct GLUE_INFO *prGlueInfo)
 	struct WIFI_LINK_QUALITY_INFO *prLinkQualityInfo = NULL;
 	uint32_t u4CurRxRate, u4MaxRxRate;
 	uint32_t u4Numerator, u4Denominator;
-	uint32_t u4McrData;
 
 	prAdapter = prGlueInfo->prAdapter;
 	if (prAdapter == NULL) {
@@ -10512,10 +10511,6 @@ void wlanFinishCollectingLinkQuality(struct GLUE_INFO *prGlueInfo)
 
 	/* prepare to set/get statistics from BSSInfo's rLinkQualityInfo */
 	prLinkQualityInfo = &(prAdapter->rLinkQualityInfo);
-
-	/* get rx total count from 0x0150 index 1(+4) for AIS */
-	HAL_MCR_RD(prAdapter, (0x820F9000 + 0x0150) + 4, &u4McrData);
-	prLinkQualityInfo->u4RxTotalCount += u4McrData;
 
 	if (prLinkQualityInfo->u4TxTotalCount <
 	    prLinkQualityInfo->u4LastTxTotalCount) {

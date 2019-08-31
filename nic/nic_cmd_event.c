@@ -2760,6 +2760,8 @@ void nicCmdEventQueryMibInfo(IN struct ADAPTER *prAdapter,
 		prLinkQualityInfo->u4TxFailCount =
 				prLinkQualityInfo->u4TxRtsFailCount +
 				prLinkQualityInfo->u4TxAckFailCount;
+		prLinkQualityInfo->u4RxTotalCount =
+				prMibInfo->rHwMibCnt.u4RxMpduCnt;
 		prLinkQualityInfo->u4RxErrCount =
 				prMibInfo->rHwMibCnt.u4RxFcsErrCnt;
 		prLinkQualityInfo->u4IdleSlotCount =
