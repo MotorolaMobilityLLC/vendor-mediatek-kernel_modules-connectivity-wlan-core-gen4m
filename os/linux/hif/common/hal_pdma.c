@@ -1659,7 +1659,7 @@ void halWpdmaProcessCmdDmaDone(IN struct GLUE_INFO *prGlueInfo,
 	struct TXD_STRUCT *pTxD;
 	phys_addr_t PacketPa = 0;
 	void *pBuffer = NULL;
-	uint32_t u4SwIdx, u4DmaIdx;
+	uint32_t u4SwIdx, u4DmaIdx = 0;
 
 	ASSERT(prGlueInfo);
 
@@ -1709,7 +1709,7 @@ void halWpdmaProcessDataDmaDone(IN struct GLUE_INFO *prGlueInfo,
 	IN uint16_t u2Port)
 {
 	struct GL_HIF_INFO *prHifInfo = NULL;
-	uint32_t u4SwIdx, u4DmaIdx;
+	uint32_t u4SwIdx, u4DmaIdx = 0;
 	struct RTMP_TX_RING *prTxRing;
 
 	ASSERT(prGlueInfo);
@@ -1742,7 +1742,7 @@ uint32_t halWpdmaGetRxDmaDoneCnt(IN struct GLUE_INFO *prGlueInfo,
 {
 	struct RTMP_RX_RING *prRxRing;
 	struct GL_HIF_INFO *prHifInfo;
-	uint32_t u4MaxCnt, u4CpuIdx, u4DmaIdx, u4RxPktCnt;
+	uint32_t u4MaxCnt = 0, u4CpuIdx = 0, u4DmaIdx = 0, u4RxPktCnt;
 
 	prHifInfo = &prGlueInfo->rHifInfo;
 	prRxRing = &prHifInfo->RxRing[ucRingNum];
