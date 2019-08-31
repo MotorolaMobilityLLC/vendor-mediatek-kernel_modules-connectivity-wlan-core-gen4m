@@ -5736,19 +5736,19 @@ static int32_t priv_driver_dump_stat_info(struct ADAPTER *prAdapter,
 			"%s", "----- RX Reorder (Group 0x10) -----\n");
 		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten,
 			i4TotalLen - i4BytesWritten,
-			"%-20s%s%ld\n", "Rx reorder miss", " = ",
+			"%-20s%s%llu\n", "Rx reorder miss", " = ",
 			RX_GET_CNT(prRxCtrl, RX_DATA_REORDER_MISS_COUNT));
 		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten,
 			i4TotalLen - i4BytesWritten,
-			"%-20s%s%ld\n", "Rx reorder within", " = ",
+			"%-20s%s%llu\n", "Rx reorder within", " = ",
 			RX_GET_CNT(prRxCtrl, RX_DATA_REORDER_WITHIN_COUNT));
 		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten,
 			i4TotalLen - i4BytesWritten,
-			"%-20s%s%ld\n", "Rx reorder ahead", " = ",
+			"%-20s%s%llu\n", "Rx reorder ahead", " = ",
 			RX_GET_CNT(prRxCtrl, RX_DATA_REORDER_AHEAD_COUNT));
 		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten,
 			i4TotalLen - i4BytesWritten,
-			"%-20s%s%ld\n", "Rx reorder behind", " = ",
+			"%-20s%s%llu\n", "Rx reorder behind", " = ",
 			RX_GET_CNT(prRxCtrl, RX_DATA_REORDER_BEHIND_COUNT));
 	}
 
@@ -6243,19 +6243,19 @@ static int32_t priv_driver_dump_stat_info(struct ADAPTER *prAdapter,
 			"%s", "----- RX Reorder (Group 0x10) -----\n");
 		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten,
 			i4TotalLen - i4BytesWritten,
-			"%-20s%s%ld\n", "Rx reorder miss", " = ",
+			"%-20s%s%llu\n", "Rx reorder miss", " = ",
 			RX_GET_CNT(prRxCtrl, RX_DATA_REORDER_MISS_COUNT));
 		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten,
 			i4TotalLen - i4BytesWritten,
-			"%-20s%s%ld\n", "Rx reorder within", " = ",
+			"%-20s%s%llu\n", "Rx reorder within", " = ",
 			RX_GET_CNT(prRxCtrl, RX_DATA_REORDER_WITHIN_COUNT));
 		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten,
 			i4TotalLen - i4BytesWritten,
-			"%-20s%s%ld\n", "Rx reorder ahead", " = ",
+			"%-20s%s%llu\n", "Rx reorder ahead", " = ",
 			RX_GET_CNT(prRxCtrl, RX_DATA_REORDER_AHEAD_COUNT));
 		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten,
 			i4TotalLen - i4BytesWritten,
-			"%-20s%s%ld\n", "Rx reorder behind", " = ",
+			"%-20s%s%llu\n", "Rx reorder behind", " = ",
 			RX_GET_CNT(prRxCtrl, RX_DATA_REORDER_BEHIND_COUNT));
 	}
 
@@ -8023,7 +8023,7 @@ static int32_t priv_driver_dump_rx_stat_info(struct ADAPTER *prAdapter,
 
 		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
 					      i4TotalLen - i4BytesWritten,
-					      "%-20s%s%s\n", "Driver RX Cnt1",
+					      "%-20s%s%d\n", "Driver RX Cnt1",
 					      " = ",
 					     htonl(g_HqaRxStat.DriverRxCount1));
 #endif
@@ -8757,7 +8757,7 @@ static int priv_driver_get_sw_ctrl(IN struct net_device *prNetDev,
 	DBGLOG(REQ, LOUD, "argc is %i\n", i4Argc);
 
 	if (i4Argc >= 2) {
-		/* rSwCtrlInfo.u4Id = kalStrtoul(apcArgv[1], NULL, 0); */
+		rSwCtrlInfo.u4Id = 0;
 		rSwCtrlInfo.u4Data = 0;
 		u4Ret = kalkStrtou32(apcArgv[1], 0, &(rSwCtrlInfo.u4Id));
 		if (u4Ret)
@@ -10962,7 +10962,7 @@ static int priv_driver_set_wow_udpport(IN struct net_device *prNetDev,
 	int8_t *apcPortArgv[WLAN_CFG_ARGV_MAX_LONG] = { 0 }; /* to input 20 port
 							      */
 	int32_t u4Ret = 0, ii;
-	uint8_t	ucVer, ucCount;
+	uint8_t	ucVer = 0, ucCount;
 	uint16_t u2Port = 0;
 	uint16_t *pausPortArry;
 
@@ -11052,7 +11052,7 @@ static int priv_driver_set_wow_tcpport(IN struct net_device *prNetDev,
 	int8_t *apcPortArgv[WLAN_CFG_ARGV_MAX_LONG] = { 0 }; /* to input 20 port
 							      */
 	int32_t u4Ret = 0, ii;
-	uint8_t	ucVer, ucCount;
+	uint8_t	ucVer = 0, ucCount;
 	uint16_t u2Port = 0;
 	uint16_t *pausPortArry;
 
@@ -11259,7 +11259,7 @@ static int priv_driver_set_mdtim(IN struct net_device *prNetDev,
 	int32_t i4Argc = 0;
 	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = { 0 };
 	uint32_t u4Ret = 0;
-	uint8_t ucMultiDtim = 0, ucVer;
+	uint8_t ucMultiDtim = 0, ucVer = 0;
 
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 
@@ -12847,7 +12847,7 @@ static int priv_driver_set_p2p_ps(IN struct net_device *prNetDev,
 	uint32_t u4BufLen = 0;
 	int32_t i4Argc = 0;
 	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = { 0 };
-	uint32_t ucRoleIdx;
+	uint32_t ucRoleIdx = 0;
 	uint8_t ucBssIdx;
 	uint32_t u4CTwindowMs;
 	struct P2P_SPECIFIC_BSS_INFO *prP2pSpecBssInfo = NULL;
@@ -12921,7 +12921,7 @@ static int priv_driver_set_p2p_noa(IN struct net_device *prNetDev,
 	int32_t i4Argc = 0;
 	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = { 0 };
 	uint8_t ucBssIdx;
-	uint32_t ucRoleIdx;
+	uint32_t ucRoleIdx = 0;
 	uint32_t u4NoaDurationMs;
 	uint32_t u4NoaIntervalMs;
 	uint32_t u4NoaCount;
