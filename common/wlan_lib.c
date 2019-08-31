@@ -10076,7 +10076,7 @@ uint32_t wlanSetLowLatencyMode(
 					(NETIF_F_IP_CSUM | NETIF_F_IPV6_CSUM);
 			}
 		}
-		DBGLOG(OID, INFO, "Checksum offload: [0x%x]\n",
+		DBGLOG(OID, INFO, "Checksum offload: [%lu]\n",
 			prAdapter->prGlueInfo->prDevHandler->features);
 #endif
 		/* Send command to firmware */
