@@ -1210,7 +1210,7 @@ kalIndicateStatusAndComplete(IN struct GLUE_INFO
 	uint32_t bufLen;
 	struct PARAM_STATUS_INDICATION *pStatus;
 	uint8_t arBssid[PARAM_MAC_ADDR_LEN];
-	struct PARAM_SSID ssid;
+	struct PARAM_SSID ssid = {0};
 	struct ieee80211_channel *prChannel = NULL;
 	struct cfg80211_bss *bss = NULL;
 	uint8_t ucChannelNum;
