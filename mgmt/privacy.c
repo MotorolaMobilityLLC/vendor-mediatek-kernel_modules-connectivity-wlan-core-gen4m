@@ -700,8 +700,6 @@ u_int8_t secPrivacySeekForEntry(
 	ucStartIDX = 0;
 	ucMaxIDX = prAdapter->ucTxDefaultWlanIndex - 1;
 
-	DBGLOG(RSN, INFO, "secPrivacySeekForEntry\n");
-
 	for (i = ucStartIDX; i <= ucMaxIDX; i++) {
 		if (prWtbl[i].ucUsed
 		    && EQUAL_MAC_ADDR(prSta->aucMacAddr, prWtbl[i].aucMacAddr)
