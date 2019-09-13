@@ -4760,7 +4760,7 @@ static int priv_driver_get_mcr(IN struct net_device *prNetDev,
 	DBGLOG(REQ, LOUD, "argc is %i\n", i4Argc);
 
 	if (i4Argc >= i4ArgNum) {
-
+		rCmdAccessReg.u4Address = 0;
 		u4Ret = kalkStrtou32(apcArgv[1], 0, &(rCmdAccessReg.u4Address));
 		if (u4Ret)
 			DBGLOG(REQ, LOUD,
@@ -4916,7 +4916,7 @@ static int priv_driver_set_test_cmd(IN struct net_device *prNetDev,
 	DBGLOG(REQ, LOUD, "argc is %i\n", i4Argc);
 
 	if (i4Argc >= i4ArgNum) {
-
+		rRfATInfo.u4FuncIndex = 0;
 		u4Ret = kalkStrtou32(apcArgv[1], 0, &(rRfATInfo.u4FuncIndex));
 		if (u4Ret)
 			DBGLOG(REQ, LOUD,
@@ -4968,6 +4968,7 @@ static int priv_driver_get_test_result(IN struct net_device *prNetDev,
 	DBGLOG(REQ, LOUD, "argc is %i\n", i4Argc);
 
 	if (i4Argc >= i4ArgNum) {
+		rRfATInfo.u4FuncIndex = 0;
 		u4Ret = kalkStrtou32(apcArgv[1], 0, &(rRfATInfo.u4FuncIndex));
 		if (u4Ret)
 			DBGLOG(REQ, LOUD,
@@ -4976,8 +4977,7 @@ static int priv_driver_get_test_result(IN struct net_device *prNetDev,
 		u4Ret = kalkStrtou32(apcArgv[2], 0, &(rRfATInfo.u4FuncData));
 		if (u4Ret)
 			DBGLOG(REQ, LOUD,
-			       "Parse Test CMD Data error u4Ret=%d\n",
-			       u4Ret);
+			       "Parse Test CMD Data error u4Ret=%d\n", u4Ret);
 
 		DBGLOG(REQ, LOUD,
 		       "Get Test CMD FuncIndex = %d, FuncData = %d\n",
@@ -8651,7 +8651,7 @@ static int priv_driver_get_drv_mcr(IN struct net_device *prNetDev,
 	DBGLOG(REQ, LOUD, "argc is %i\n", i4Argc);
 
 	if (i4Argc >= i4ArgNum) {
-
+		rCmdAccessReg.u4Address = 0;
 		u4Ret = kalkStrtou32(apcArgv[1], 0, &(rCmdAccessReg.u4Address));
 		if (u4Ret)
 			DBGLOG(REQ, LOUD,
