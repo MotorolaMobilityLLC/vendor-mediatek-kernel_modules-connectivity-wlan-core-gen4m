@@ -2176,6 +2176,7 @@ int mtk_p2p_cfg80211_stop_ap(struct wiphy *wiphy, struct net_device *dev)
 	struct MSG_P2P_STOP_AP *prP2pStopApMsg =
 			(struct MSG_P2P_STOP_AP *) NULL;
 	uint8_t ucRoleIdx = 0;
+	struct GL_P2P_INFO *prP2PInfo;
 
 	do {
 		if (wiphy == NULL)
@@ -2203,6 +2204,9 @@ int mtk_p2p_cfg80211_stop_ap(struct wiphy *wiphy, struct net_device *dev)
 			break;
 		}
 
+		prP2PInfo = prGlueInfo->prP2PInfo[ucRoleIdx];
+		reinit_completion(&prP2PInfo->rStopApComp);
+
 		prP2pStopApMsg->rMsgHdr.eMsgId = MID_MNY_P2P_STOP_AP;
 		prP2pStopApMsg->ucRoleIdx = ucRoleIdx;
 
@@ -2214,10 +2218,7 @@ int mtk_p2p_cfg80211_stop_ap(struct wiphy *wiphy, struct net_device *dev)
 		if (p2pFuncIsAPMode(prGlueInfo->prAdapter->rWifiVar.
 				prP2PConnSettings[ucRoleIdx])) {
 			uint32_t waitRet = 0;
-			struct GL_P2P_INFO *prP2PInfo;
 
-			prP2PInfo = prGlueInfo->prP2PInfo[ucRoleIdx];
-			reinit_completion(&prP2PInfo->rStopApComp);
 			waitRet = wait_for_completion_timeout(
 				&prP2PInfo->rStopApComp,
 				MSEC_TO_JIFFIES(P2P_DEAUTH_TIMEOUT_TIME_MS));
