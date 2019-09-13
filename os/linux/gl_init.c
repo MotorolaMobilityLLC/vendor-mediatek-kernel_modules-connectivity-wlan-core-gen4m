@@ -1125,7 +1125,7 @@ struct net_device *gPrDev;
 static void wlanSetMulticastList(struct net_device *prDev)
 {
 	/* Allow to receive all multicast for WOW */
-	DBGLOG(INIT, TRACE, "wlanSetMulticastList\n");
+	DBGLOG(INIT, TRACE, "flags: 0x%x\n", prDev->flags);
 	prDev->flags |= (IFF_MULTICAST | IFF_ALLMULTI);
 	gPrDev = prDev;
 	schedule_delayed_work(&workq, 0);
@@ -1166,6 +1166,12 @@ static void wlanSetMulticastListWorkQueue(
 		DBGLOG(INIT, WARN,
 		       "abnormal dev or skb: prDev(0x%p), prGlueInfo(0x%p)\n",
 		       prDev, prGlueInfo);
+		up(&g_halt_sem);
+		return;
+	}
+
+	if (!prGlueInfo->u4ReadyFlag) {
+		DBGLOG(REQ, WARN, "driver is not ready\n");
 		up(&g_halt_sem);
 		return;
 	}
@@ -4548,8 +4554,6 @@ static void wlanRemove(void)
 
 	wlanOffNotifyCfg80211Disconnect(prGlueInfo);
 
-	flush_delayed_work(&workq);
-
 	/* 20150205 work queue for sched_scan */
 
 	flush_delayed_work(&sched_workq);
@@ -4627,6 +4631,8 @@ static void wlanRemove(void)
 
 	/* 4 <6> Unregister the card */
 	wlanNetUnregister(prDev->ieee80211_ptr);
+
+	flush_delayed_work(&workq);
 
 	/* 4 <7> Destroy the device */
 	wlanNetDestroy(prDev->ieee80211_ptr);
