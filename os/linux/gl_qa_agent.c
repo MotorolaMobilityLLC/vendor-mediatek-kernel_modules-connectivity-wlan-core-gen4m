@@ -8833,13 +8833,12 @@ int priv_qa_agent(IN struct net_device *prNetDev,
 	struct HQA_CMD_FRAME *HqaCmdFrame;
 	uint32_t u4ATEMagicNum, u4ATEId, u4ATEData;
 
-	HqaCmdFrame = kmalloc(sizeof(*HqaCmdFrame), GFP_KERNEL);
-
 	if (!prIwReqData || prIwReqData->data.length == 0) {
 		i4Status = -EINVAL;
 		goto ERROR0;
 	}
 
+	HqaCmdFrame = kmalloc(sizeof(*HqaCmdFrame), GFP_KERNEL);
 	if (!HqaCmdFrame) {
 		i4Status = -ENOMEM;
 		goto ERROR0;
