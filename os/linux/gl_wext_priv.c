@@ -4922,6 +4922,7 @@ static int priv_driver_set_test_cmd(IN struct net_device *prNetDev,
 			DBGLOG(REQ, LOUD,
 			       "Parse Test CMD Index error u4Ret=%d\n", u4Ret);
 
+		rRfATInfo.u4FuncData = 0;
 		u4Ret = kalkStrtou32(apcArgv[2], 0, &(rRfATInfo.u4FuncData));
 		if (u4Ret)
 			DBGLOG(REQ, LOUD,
@@ -4974,6 +4975,7 @@ static int priv_driver_get_test_result(IN struct net_device *prNetDev,
 			DBGLOG(REQ, LOUD,
 			       "Parse Test CMD Index error u4Ret=%d\n", u4Ret);
 
+		rRfATInfo.u4FuncData = 0;
 		u4Ret = kalkStrtou32(apcArgv[2], 0, &(rRfATInfo.u4FuncData));
 		if (u4Ret)
 			DBGLOG(REQ, LOUD,
