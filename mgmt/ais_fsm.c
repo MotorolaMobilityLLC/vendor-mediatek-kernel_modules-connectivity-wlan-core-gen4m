@@ -622,6 +622,7 @@ void aisFsmStateInit_JOIN(IN struct ADAPTER *prAdapter,
 		case AUTH_MODE_WPA2:
 		case AUTH_MODE_WPA2_PSK:
 		case AUTH_MODE_WPA_OSEN:
+		case AUTH_MODE_WPA3_OWE:
 			prAisFsmInfo->ucAvailableAuthTypes =
 			    (uint8_t) AUTH_TYPE_OPEN_SYSTEM;
 			break;

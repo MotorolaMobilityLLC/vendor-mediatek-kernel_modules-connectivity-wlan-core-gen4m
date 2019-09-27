@@ -1869,6 +1869,7 @@ wlanoidSetAuthMode(IN struct ADAPTER *prAdapter,
 	case AUTH_MODE_WPA2_FT:
 	case AUTH_MODE_WPA2_FT_PSK:
 	case AUTH_MODE_WPA3_SAE:
+	case AUTH_MODE_WPA3_OWE:
 		/* infrastructure mode only */
 		if (prConnSettings->eOPMode != NET_TYPE_INFRA)
 			return WLAN_STATUS_NOT_ACCEPTED;
