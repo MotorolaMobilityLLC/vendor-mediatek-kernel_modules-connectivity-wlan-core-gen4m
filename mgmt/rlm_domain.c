@@ -1123,6 +1123,10 @@ void rlmDomainSendDomainInfoCmd_V2(struct ADAPTER *prAdapter)
 			       max_channel_count * sizeof(struct channel);
 
 	prCmd = cnmMemAlloc(prAdapter, RAM_TYPE_BUF, buff_max_size);
+	if (!prCmd) {
+		DBGLOG(RLM, ERROR, "Alloc cmd buffer failed\n");
+		return;
+	}
 	prChs = &(prCmd->active_chs);
 
 
