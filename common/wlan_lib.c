@@ -4154,7 +4154,8 @@ uint32_t wlanQueryNicCapability(IN struct ADAPTER *prAdapter)
 		}
 		/* header checking .. */
 		prRxStatus = (struct HW_MAC_RX_DESC *) aucBuffer;
-		if (prRxStatus->u2PktTYpe != RXM_RXD_PKT_TYPE_SW_EVENT) {
+		if (prRxStatus &&
+			prRxStatus->u2PktTYpe != RXM_RXD_PKT_TYPE_SW_EVENT) {
 			DBGLOG(INIT, WARN,
 				"skip unexpected Rx pkt type[0x%04x]\n",
 				prRxStatus->u2PktTYpe);
