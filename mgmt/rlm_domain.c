@@ -2681,6 +2681,7 @@ struct TX_PWR_CTRL_ELEMENT *txPwrCtrlStringToStruct(char *pcContent,
 	uint16_t u2countryCode = 0;
 	uint32_t u4MemSize = sizeof(struct TX_PWR_CTRL_ELEMENT);
 	uint32_t copySize = 0;
+	uint32_t copySize2 = 0;
 	uint8_t i, j, op, ucSettingCount = 0;
 	uint8_t value, value2, count = 0;
 	uint8_t ucAppliedWay, ucOperation = 0;
@@ -2753,8 +2754,8 @@ struct TX_PWR_CTRL_ELEMENT *txPwrCtrlStringToStruct(char *pcContent,
 	pcContOld = pcContCur;
 	pcContTmp = txPwrGetString(&pcContCur, ";");
 	if (pcContTmp) {
-		copySize = kalStrLen(pcContTmp);
-		if (copySize == 2) {
+		copySize2 = kalStrLen(pcContTmp);
+		if (copySize2 == 2) {
 			DBGLOG(RLM, TRACE, "%s\n", pcContTmp);
 			u2countryCode =
 				(((uint16_t) pcContTmp[0]) << 8) |
