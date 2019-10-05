@@ -67,7 +67,6 @@
  */
 #define CONNAC_CHIP_IP_VERSION			(0x10020300)
 #define CONNAC_CHIP_IP_CONFIG			(0x1)
-#define CONNAC_CHIP_ADIE_INFO			(0x35)
 #define USB_HIF_TXD_LEN    4
 
 /*******************************************************************************

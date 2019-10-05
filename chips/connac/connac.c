@@ -326,6 +326,7 @@ struct mt66xx_chip_info mt66xx_chip_info_connac = {
 	/* IP info, should be overwrite by getNicCapabalityV2 */
 	.u4ChipIpVersion = CONNAC_CHIP_IP_VERSION,
 	.u4ChipIpConfig = CONNAC_CHIP_IP_CONFIG,
+	.u2ADieChipVersion = CONNAC_CHIP_ADIE_INFO,
 	.asicCapInit = asicCapInit,
 	.asicEnableFWDownload = asicEnableFWDownload,
 	.asicGetChipID = asicGetChipID,

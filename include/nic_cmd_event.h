@@ -1373,6 +1373,7 @@ enum NIC_CAPABILITY_V2_TAG {
 	TAG_CAP_LOCATION_CAP = 0xc,
 	TAG_CAP_MUMIMO_CAP = 0xd,
 	TAG_CAP_BUFFER_MODE_INFO = 0xe,
+	TAG_CAP_HW_ADIE_VERSION = 0x14,
 #if CFG_SUPPORT_ANT_SWAP
 	TAG_CAP_ANTSWP = 0x16,
 #endif
@@ -1403,6 +1404,12 @@ struct CAP_HW_VERSION {
 	uint32_t u4BBIpID; /* Baseband IP version */
 	uint32_t u4TopIpID; /* TOP IP version */
 	uint32_t u4ConfigId;  /* Configuration ID */
+};
+
+struct CAP_HW_ADIE_VERSION {
+	uint16_t u2ProductID; /* CHIP ID */
+	uint16_t u2EcoVersion; /* ECO version */
+	uint32_t aucReserved[4];
 };
 
 struct CAP_SW_VERSION {
@@ -3900,11 +3907,12 @@ uint32_t nicCfgChipCapLocationCap(IN struct ADAPTER *prAdapter,
 	IN uint8_t *pucEventBuf);
 uint32_t nicCfgChipCapMuMimoCap(IN struct ADAPTER *prAdapter,
 	IN uint8_t *pucEventBuf);
+uint32_t nicCfgChipAdieHwVersion(IN struct ADAPTER *prAdapter,
+	IN uint8_t *pucEventBuf);
 #if CFG_SUPPORT_ANT_SWAP
 uint32_t nicCfgChipCapAntSwpCap(IN struct ADAPTER *prAdapter,
 	IN uint8_t *pucEventBuf);
 #endif
-
 void nicExtEventICapIQData(IN struct ADAPTER *prAdapter,
 	IN uint8_t *pucEventBuf);
 void nicExtEventQueryMemDump(IN struct ADAPTER *prAdapter,
