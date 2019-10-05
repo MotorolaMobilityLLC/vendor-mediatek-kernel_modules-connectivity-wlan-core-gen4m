@@ -535,16 +535,18 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy,
 	}
 
 #if defined(CFG_REPORT_MAX_TX_RATE) && (CFG_REPORT_MAX_TX_RATE == 1)
-	rStatus = kalIoctl(prGlueInfo, wlanoidQueryMaxLinkSpeed, &u4Rate,
-				sizeof(u4Rate), TRUE, FALSE, FALSE, &u4BufLen);
+	rStatus = kalIoctlByBssIdx(prGlueInfo,
+				   wlanoidQueryMaxLinkSpeed, &rLinkSpeed,
+				   sizeof(rLinkSpeed), TRUE, FALSE, FALSE,
+				   &u4BufLen, ucBssIndex);
 #else
 	rStatus = kalIoctlByBssIdx(prGlueInfo,
 				wlanoidQueryLinkSpeed, &rLinkSpeed,
 				sizeof(rLinkSpeed), TRUE, FALSE, FALSE,
 				&u4BufLen, ucBssIndex);
+#endif /* CFG_REPORT_MAX_TX_RATE */
 	if (ucBssIndex < BSSID_NUM)
 		u4Rate = rLinkSpeed.rLq[ucBssIndex].u2LinkSpeed;
-#endif /* CFG_REPORT_MAX_TX_RATE */
 
 #if KERNEL_VERSION(4, 0, 0) <= CFG80211_VERSION_CODE
 	sinfo->filled |= BIT(NL80211_STA_INFO_TX_BITRATE);
