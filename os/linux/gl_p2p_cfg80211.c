@@ -4402,6 +4402,55 @@ int mtk_p2p_cfg80211_testmode_get_best_channel(IN struct wiphy *wiphy,
 	rlmDomainGetChnlList(prGlueInfo->prAdapter, BAND_2G4, TRUE,
 		MAX_2G_BAND_CHN_NUM, &ucNumOfChannel, aucChannelList);
 
+        /*
+         * change from MTK CR ALPS04687545 Latin America countries CH:1-11 JP:1-13
+         */
+#if CFG_WIFI_LATAM_HOTSPOT_FCC
+        switch (prGlueInfo->prAdapter->rWifiVar.rConnSettings.u2CountryCode) {
+            case COUNTRY_CODE_BR:
+            case COUNTRY_CODE_MX:
+            case COUNTRY_CODE_GT:
+            case COUNTRY_CODE_NI:
+            case COUNTRY_CODE_CR:
+            case COUNTRY_CODE_PA:
+            case COUNTRY_CODE_CU:
+            case COUNTRY_CODE_HT:
+            case COUNTRY_CODE_DO:
+            case COUNTRY_CODE_JM:
+            case COUNTRY_CODE_TT:
+            case COUNTRY_CODE_SR:
+            case COUNTRY_CODE_VE:
+            case COUNTRY_CODE_HN:
+            case COUNTRY_CODE_SV:
+            case COUNTRY_CODE_CO:
+            case COUNTRY_CODE_BB:
+            case COUNTRY_CODE_GD:
+            case COUNTRY_CODE_LC:
+            case COUNTRY_CODE_VC:
+            case COUNTRY_CODE_BS:
+            case COUNTRY_CODE_GF:
+            case COUNTRY_CODE_GY:
+            case COUNTRY_CODE_EC:
+            case COUNTRY_CODE_PE:
+            case COUNTRY_CODE_KN:
+            case COUNTRY_CODE_BO:
+            case COUNTRY_CODE_CL:
+            case COUNTRY_CODE_AR:
+            case COUNTRY_CODE_PY:
+            case COUNTRY_CODE_UY:
+            case COUNTRY_CODE_BZ:
+            case COUNTRY_CODE_AG:
+                ucNumOfChannel = (ucNumOfChannel > 11) ? 11 : ucNumOfChannel;
+                DBGLOG(P2P, INFO, "u2CountryCode0x%04x,channelNum reduce %d to 11\n", prGlueInfo->prAdapter->rWifiVar.rConnSettings.u2CountryCode,ucNumOfChannel);
+                break;
+            case COUNTRY_CODE_JP:
+                ucNumOfChannel = (ucNumOfChannel > 13) ? 13 : ucNumOfChannel;
+                DBGLOG(P2P, INFO, "u2CountryCode0x%04x,channelNum reduce %d to 13\n", prGlueInfo->prAdapter->rWifiVar.rConnSettings.u2CountryCode,ucNumOfChannel);
+                break;
+            default:
+                break;
+        };
+#endif
 	/*
 	 * 2. Calculate each channel's dirty score
 	 */
