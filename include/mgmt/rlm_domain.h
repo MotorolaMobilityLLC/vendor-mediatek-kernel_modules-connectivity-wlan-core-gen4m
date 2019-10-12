@@ -131,6 +131,10 @@
 #define COUNTRY_CODE_BI (((uint16_t) 'B' << 8) | (uint16_t) 'I')
 /* Benin */
 #define COUNTRY_CODE_BJ (((uint16_t) 'B' << 8) | (uint16_t) 'J')
+/* Saint Barthlemy*/
+#if CFG_WIFI_LATAM_CHANNELS_NEW
+#define COUNTRY_CODE_BL (((uint16_t) 'B' << 8) | (uint16_t) 'L')
+#endif
 /* Bermuda */
 #define COUNTRY_CODE_BM (((uint16_t) 'B' << 8) | (uint16_t) 'M')
 /* Brunei */
@@ -241,6 +245,10 @@
 #define COUNTRY_CODE_GH (((uint16_t) 'G' << 8) | (uint16_t) 'H')
 /* Gibraltar */
 #define COUNTRY_CODE_GI (((uint16_t) 'G' << 8) | (uint16_t) 'I')
+/* GREENLAND */
+#if CFG_WIFI_LATAM_CHANNELS_NEW
+#define COUNTRY_CODE_GL (((uint16_t) 'G' << 8) | (uint16_t) 'L')
+#endif
 /* Gambia */
 #define COUNTRY_CODE_GM (((uint16_t) 'G' << 8) | (uint16_t) 'M')
 /* Guinea */

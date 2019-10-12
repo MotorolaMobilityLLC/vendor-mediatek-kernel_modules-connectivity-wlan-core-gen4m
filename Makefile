@@ -220,6 +220,12 @@ else
     ccflags-y += -DCFG_WIFI_LATAM_HOTSPOT_FCC=0
 endif
 
+ifeq ($(CONFIG_WIFI_LATAM_CHANNELS_NEW), y)
+    ccflags-y += -DCFG_WIFI_LATAM_CHANNELS_NEW=1
+else
+    ccflags-y += -DCFG_WIFI_LATAM_CHANNELS_NEW=0
+endif
+
 ifneq ($(PLATFORM_FLAGS), )
     ccflags-y += $(PLATFORM_FLAGS)
 endif
