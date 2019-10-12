@@ -1541,12 +1541,6 @@ int mtk_cfg80211_vendor_acs(struct wiphy *wiphy,
 		goto exit;
 	}
 
-	if (p2pRoleFsmIsAcsProcessing(prGlueInfo->prAdapter, role_idx)) {
-		DBGLOG(REQ, ERROR, "acs is already in processing.\n");
-		rStatus = -EBUSY;
-		goto exit;
-	}
-
 	if (NLA_PARSE(tb, WIFI_VENDOR_ATTR_ACS_MAX, data, data_len,
 			nla_get_acs_policy)) {
 		DBGLOG(REQ, ERROR, "parse acs attr fail.\n");
