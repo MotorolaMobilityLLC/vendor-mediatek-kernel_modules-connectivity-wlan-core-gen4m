@@ -3181,7 +3181,7 @@ void nicCmdEventQueryTxPowerInfo(IN struct ADAPTER *prAdapter,
 	struct PARAM_TXPOWER_ALL_RATE_POWER_INFO_T *prTxPowerInfo =
 			NULL;
 	struct GLUE_INFO *prGlueInfo = NULL;
-	uint32_t u4QueryInfoLen;
+	uint32_t u4QueryInfoLen = 0;
 
 	if (!prAdapter)
 		return;
