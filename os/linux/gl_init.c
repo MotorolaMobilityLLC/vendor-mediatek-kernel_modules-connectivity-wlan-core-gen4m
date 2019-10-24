@@ -4022,6 +4022,7 @@ static int32_t wlanOnAtReset(void)
 	struct ADAPTER *prAdapter = NULL;
 	uint32_t rStatus = WLAN_STATUS_SUCCESS;
 	uint32_t u4BufLen = 0;
+	uint32_t u4DisconnectReason = DISCONNECT_REASON_CODE_CHIPRESET;
 	uint32_t u4Idx = 0;
 
 	enum ENUM_PROBE_FAIL_REASON {
@@ -4127,31 +4128,21 @@ static int32_t wlanOnAtReset(void)
 		wlanOnWhenProbeSuccess(prGlueInfo, prAdapter, TRUE);
 		DBGLOG(INIT, INFO, "reset success\n");
 
+		/* Send disconnect */
 		for (u4Idx = 0; u4Idx < KAL_AIS_NUM; u4Idx++) {
-			struct BSS_INFO *prAisBssInfo =
-				aisGetAisBssInfo(prAdapter,
+			rStatus = kalIoctlByBssIdx(prGlueInfo,
+				wlanoidSetDisassociate,
+				&u4DisconnectReason,
+				0, FALSE, FALSE, TRUE, &u4BufLen,
 				u4Idx);
 
-			/* Send disconnect */
-			if (prAisBssInfo->eConnectionState ==
-				PARAM_MEDIA_STATE_CONNECTED) {
-				rStatus = kalIoctlByBssIdx(prGlueInfo,
-					wlanoidSetDisassociate,
-					(void *)
-					DISCONNECT_REASON_CODE_CHIPRESET,
-					0, FALSE, FALSE, TRUE, &u4BufLen,
-					u4Idx);
-
-				if (rStatus != WLAN_STATUS_SUCCESS) {
-					DBGLOG(REQ, WARN,
-						"%d disassociate error:%x\n",
-						u4Idx,
-					    rStatus);
-					continue;
-				}
-				DBGLOG(INIT, INFO,
-					"%d inform disconnected\n", u4Idx);
+			if (rStatus != WLAN_STATUS_SUCCESS) {
+				DBGLOG(REQ, WARN,
+					"disassociate error:%x\n", rStatus);
+				continue;
 			}
+			DBGLOG(INIT, INFO,
+				"%d inform disconnected\n", u4Idx);
 		}
 	} else {
 		prAdapter->u4HifDbgFlag |= DEG_HIF_DEFAULT_DUMP;
