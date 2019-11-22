@@ -61,7 +61,7 @@
 #ifdef CONFIG_MTK_EMI
 #include <mt_emi_api.h>
 #define WIFI_EMI_MEM_OFFSET    0x177000
-#define WIFI_EMI_MEM_SIZE      0xBD000
+#define WIFI_EMI_MEM_SIZE      0xF9000
 #endif
 
 
