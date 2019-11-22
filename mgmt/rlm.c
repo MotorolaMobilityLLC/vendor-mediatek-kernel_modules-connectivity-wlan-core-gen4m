@@ -81,13 +81,6 @@
  *                             D A T A   T Y P E S
  *******************************************************************************
  */
-enum ENUM_OP_NOTIFY_STATE_T {
-	OP_NOTIFY_STATE_KEEP = 0, /* Won't change OP mode */
-	OP_NOTIFY_STATE_SENDING,  /* Sending OP notification frame */
-	OP_NOTIFY_STATE_SUCCESS,  /* OP notification Tx success */
-	OP_NOTIFY_STATE_FAIL,     /* OP notification Tx fail(over retry limit)*/
-	OP_NOTIFY_STATE_NUM
-};
 
 /*******************************************************************************
  *                            P U B L I C   D A T A

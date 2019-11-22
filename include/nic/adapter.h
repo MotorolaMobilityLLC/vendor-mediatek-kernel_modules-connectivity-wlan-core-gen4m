@@ -443,7 +443,7 @@ struct BSS_INFO {
 
 	PFN_OPMODE_NOTIFY_DONE_FUNC pfOpChangeHandler;
 
-	uint8_t aucOpModeChangeState[OP_NOTIFY_TYPE_NUM];
+	enum ENUM_OP_NOTIFY_STATE_T aucOpModeChangeState[OP_NOTIFY_TYPE_NUM];
 
 	uint8_t aucOpModeChangeRetryCnt[OP_NOTIFY_TYPE_NUM];
 

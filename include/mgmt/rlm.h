@@ -253,6 +253,14 @@ enum ENUM_OP_NOTIFY_TYPE_T {
 	OP_NOTIFY_TYPE_NUM
 };
 
+enum ENUM_OP_NOTIFY_STATE_T {
+	OP_NOTIFY_STATE_KEEP = 0, /* Won't change OP mode */
+	OP_NOTIFY_STATE_SENDING,  /* Sending OP notification frame */
+	OP_NOTIFY_STATE_SUCCESS,  /* OP notification Tx success */
+	OP_NOTIFY_STATE_FAIL,     /* OP notification Tx fail(over retry limit)*/
+	OP_NOTIFY_STATE_NUM
+};
+
 enum ENUM_OP_CHANGE_STATUS_T {
 	OP_CHANGE_STATUS_INVALID = 0, /* input invalid */
 	/* input valid, but no need to change */
