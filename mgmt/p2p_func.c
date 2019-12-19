@@ -983,6 +983,7 @@ p2pFuncTxMgmtFrame(IN struct ADAPTER *prAdapter,
 	struct BSS_INFO *prBssInfo;
 	uint64_t *pu8GlCookie = (uint64_t *) NULL;
 	uint64_t u8GlCookie;
+	PFN_TX_DONE_HANDLER pfTxDoneHandler = NULL;
 
 	do {
 		ASSERT_BREAK(prAdapter != NULL);
@@ -1049,9 +1050,13 @@ p2pFuncTxMgmtFrame(IN struct ADAPTER *prAdapter,
 			 */
 			*pu8GlCookie = u8GlCookie;
 			ucRetryLimit = 6;
+			if (ucBssIndex == prAdapter->ucP2PDevBssIdx)
+				pfTxDoneHandler =
+					p2pDevFsmRunEventMgmtFrameTxDone;
 			break;
 		default:
 			prMgmtTxMsdu->ucBssIndex = ucBssIndex;
+			pfTxDoneHandler = p2pDevFsmRunEventMgmtFrameTxDone;
 			break;
 		}
 
@@ -1071,7 +1076,7 @@ p2pFuncTxMgmtFrame(IN struct ADAPTER *prAdapter,
 			? (prStaRec->ucIndex) : (STA_REC_INDEX_NOT_FOUND),
 			WLAN_MAC_MGMT_HEADER_LEN,
 			prMgmtTxMsdu->u2FrameLength,
-			p2pDevFsmRunEventMgmtFrameTxDone,
+			pfTxDoneHandler,
 			MSDU_RATE_MODE_AUTO);
 
 		nicTxSetPktRetryLimit(prMgmtTxMsdu, ucRetryLimit);
