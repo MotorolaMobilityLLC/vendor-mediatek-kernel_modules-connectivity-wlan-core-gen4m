@@ -178,17 +178,7 @@ void connac2x2ConstructFirmwarePrio(struct GLUE_INFO *prGlueInfo,
 	for (ucIdx = 0; apucConnac2x2FwName[ucIdx]; ucIdx++) {
 		if ((*pucNameIdx + 3) < ucMaxNameIdx) {
 			if (!u4IsFlavor) {
-				/* Type 1. WIFI_RAM_CODE_soc1_0_1_1 */
-				snprintf(*(apucName + (*pucNameIdx)),
-						CFG_FW_NAME_MAX_LEN,
-						"%s_%u_%u",
-						apucConnac2x2FwName[ucIdx],
-						CFG_WIFI_IP_SET,
-						wlanGetEcoVersion(
-							prGlueInfo->prAdapter));
-				(*pucNameIdx) += 1;
-
-				/* Type 2. WIFI_RAM_CODE_soc1_0_1_1.bin */
+				/* Type 1. WIFI_RAM_CODE_soc1_0_1_1.bin */
 				snprintf(*(apucName + (*pucNameIdx)),
 						CFG_FW_NAME_MAX_LEN,
 						"%s_%u_%u.bin",
@@ -197,11 +187,21 @@ void connac2x2ConstructFirmwarePrio(struct GLUE_INFO *prGlueInfo,
 						wlanGetEcoVersion(
 							prGlueInfo->prAdapter));
 				(*pucNameIdx) += 1;
-			} else {
-				/* Type 1. WIFI_RAM_CODE_soc1_0_1_1 */
+
+				/* Type 2. WIFI_RAM_CODE_soc1_0_1_1 */
 				snprintf(*(apucName + (*pucNameIdx)),
 						CFG_FW_NAME_MAX_LEN,
-						"%s_%u%c_%u",
+						"%s_%u_%u",
+						apucConnac2x2FwName[ucIdx],
+						CFG_WIFI_IP_SET,
+						wlanGetEcoVersion(
+							prGlueInfo->prAdapter));
+				(*pucNameIdx) += 1;
+			} else {
+				/* Type 1. WIFI_RAM_CODE_soc1_0_1a_1.bin */
+				snprintf(*(apucName + (*pucNameIdx)),
+						CFG_FW_NAME_MAX_LEN,
+						"%s_%u%c_%u.bin",
 						apucConnac2x2FwName[ucIdx],
 						CFG_WIFI_IP_SET,
 						ucFlavor,
@@ -209,10 +209,10 @@ void connac2x2ConstructFirmwarePrio(struct GLUE_INFO *prGlueInfo,
 							prGlueInfo->prAdapter));
 				(*pucNameIdx) += 1;
 
-				/* Type 2. WIFI_RAM_CODE_soc1_0_1_1.bin */
+				/* Type 2. WIFI_RAM_CODE_soc1_0_1a_1 */
 				snprintf(*(apucName + (*pucNameIdx)),
 						CFG_FW_NAME_MAX_LEN,
-						"%s_%u%c_%u.bin",
+						"%s_%u%c_%u",
 						apucConnac2x2FwName[ucIdx],
 						CFG_WIFI_IP_SET,
 						ucFlavor,
