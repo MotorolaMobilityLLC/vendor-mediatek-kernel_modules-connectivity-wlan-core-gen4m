@@ -2047,18 +2047,6 @@ void p2pFuncDfsSwitchCh(IN struct ADAPTER *prAdapter,
 
 	/* Ch notify */
 	if (prGlueInfo->prP2PInfo[role_idx]->chandef) {
-		u_int8_t fgRegBeaconRelax = FALSE;
-
-		rtnl_lock();
-		fgRegBeaconRelax = cfg80211_reg_can_beacon_relax(
-			prGlueInfo->prP2PInfo[role_idx]->prWdev->wiphy,
-			prGlueInfo->prP2PInfo[role_idx]->chandef,
-			prGlueInfo->prP2PInfo[role_idx]->prWdev->iftype);
-		rtnl_unlock();
-		if (!fgRegBeaconRelax)
-			DBGLOG(P2P, WARN,
-				"plz check channel info. is correct.\n");
-
 		cfg80211_ch_switch_notify(
 			prGlueInfo->prP2PInfo[role_idx]->prDevHandler,
 			prGlueInfo->prP2PInfo[role_idx]->chandef);
