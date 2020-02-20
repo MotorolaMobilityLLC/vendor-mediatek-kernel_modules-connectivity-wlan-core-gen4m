@@ -1681,6 +1681,8 @@ void saaFsmRunEventExternalAuthDone(IN struct ADAPTER *prAdapter,
 	prStaRec = prSaaFsmMsg->prStaRec;
 	status = prSaaFsmMsg->status;
 
+	cnmMemFree(prAdapter, prMsgHdr);
+
 	if (status != WLAN_STATUS_SUCCESS)
 		saaFsmSteps(prAdapter, prStaRec, AA_STATE_IDLE,
 			    (struct SW_RFB *)NULL);
