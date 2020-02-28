@@ -7372,6 +7372,9 @@ void qmDetectArpNoResponse(struct ADAPTER *prAdapter,
 	if (!prAdapter)
 		return;
 
+	if(prAdapter->fgDisBcnLostDetection == TRUE)
+		return;
+
 	prStaRec = QM_GET_STA_REC_PTR_FROM_INDEX(
 		prAdapter, prMsduInfo->ucStaRecIndex);
 	if (!prStaRec || !IS_STA_IN_AIS(prStaRec))
