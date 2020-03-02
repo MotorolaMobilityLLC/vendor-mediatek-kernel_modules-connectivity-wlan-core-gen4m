@@ -2380,10 +2380,12 @@ int set_p2p_mode_handler(struct net_device *netdev,
 	if (!prGlueInfo)
 		return -1;
 
+#if (CFG_MTK_ANDROID_WMT)
 	if (prGlueInfo->u4ReadyFlag == 0) {
 		DBGLOG(INIT, ERROR, "adapter is not ready\n");
 		return -1;
 	}
+#endif /*CFG_MTK_ANDROID_WMT*/
 
 	rSetP2P.u4Enable = p2pmode.u4Enable;
 	rSetP2P.u4Mode = p2pmode.u4Mode;
