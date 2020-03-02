@@ -2131,7 +2131,6 @@ uint32_t nicTxMsduQueue(IN struct ADAPTER *prAdapter,
 {
 	struct MSDU_INFO *prMsduInfo;
 	struct TX_CTRL *prTxCtrl;
-	void *prNativePacket;
 
 	ASSERT(prAdapter);
 	ASSERT(prQue);
@@ -2151,8 +2150,6 @@ uint32_t nicTxMsduQueue(IN struct ADAPTER *prAdapter,
 				(struct QUE_ENTRY *) prMsduInfo);
 			break;
 		}
-
-		prNativePacket = prMsduInfo->prPacket;
 
 #if !CFG_SUPPORT_MULTITHREAD
 		nicTxFillDataDesc(prAdapter, prMsduInfo);
