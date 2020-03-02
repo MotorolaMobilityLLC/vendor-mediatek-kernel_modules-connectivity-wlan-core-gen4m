@@ -333,13 +333,15 @@ static bool halIsTxHang(struct ADAPTER *prAdapter)
 	struct timeval rNowTs, rTime, rLongest, rTimeout;
 	uint32_t u4Idx = 0, u4TokenId = 0;
 	bool fgIsTimeout = false;
+	struct WIFI_VAR *prWifiVar;
 
 	ASSERT(prAdapter);
 	ASSERT(prAdapter->prGlueInfo);
 
 	prTokenInfo = &prAdapter->prGlueInfo->rHifInfo.rTokenInfo;
+	prWifiVar = &prAdapter->rWifiVar;
 
-	rTimeout.tv_sec = HIF_MSDU_REPORT_DUMP_TIMEOUT;
+	rTimeout.tv_sec = prWifiVar->ucMsduReportTimeout;
 	rTimeout.tv_usec = 0;
 	rLongest.tv_sec = 0;
 	rLongest.tv_usec = 0;
@@ -714,6 +716,8 @@ void haldumpPhyInfo(struct ADAPTER *prAdapter)
 	for (i = 0; i < 20; i++) {
 		HAL_MCR_RD(prAdapter, 0x82072644, &value);
 		DBGLOG(HAL, INFO, "0x82072644: 0x%08x\n", value);
+		HAL_MCR_RD(prAdapter, 0x82072644, &value);
+		DBGLOG(HAL, INFO, "0x82072654: 0x%08x\n", value);
 		kalMdelay(1);
 	}
 }
