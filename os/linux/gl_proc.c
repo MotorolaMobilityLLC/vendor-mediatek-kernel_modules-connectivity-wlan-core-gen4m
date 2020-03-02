@@ -102,6 +102,10 @@
 #endif
 #define PROC_AUTO_PERF_CFG			"autoPerfCfg"
 
+#if (CFG_SUPPORT_PRE_ON_PHY_ACTION == 1)
+#define PROC_CAL_RESULT				"cal_result"
+#endif /*(CFG_SUPPORT_PRE_ON_PHY_ACTION == 1)*/
+
 #define PROC_MCR_ACCESS_MAX_USER_INPUT_LEN      20
 #define PROC_RX_STATISTICS_MAX_USER_INPUT_LEN   10
 #define PROC_TX_STATISTICS_MAX_USER_INPUT_LEN   10
@@ -1185,6 +1189,76 @@ static const struct file_operations auto_perf_ops = {
 	.write = procAutoPerfCfgWrite,
 };
 
+#if (CFG_SUPPORT_PRE_ON_PHY_ACTION == 1)
+static ssize_t procCalResultRead(struct file *filp, char __user *buf,
+	size_t count, loff_t *f_pos)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct ADAPTER *prAdapter = NULL;
+	struct mt66xx_chip_info *prChipInfo = NULL;
+	uint32_t u4CalSize = 0;
+	uint8_t *prCalResult = NULL;
+
+	/* if *f_pos > 0, it means has read successed last time */
+	if (*f_pos > 0)
+		return 0;
+
+	prGlueInfo = wlanGetGlueInfo();
+	if (!prGlueInfo)
+		return 0;
+
+	prAdapter = prGlueInfo->prAdapter;
+	if (!prAdapter)
+		return 0;
+
+	prChipInfo = prAdapter->chip_info;
+	if (!prChipInfo)
+		return 0;
+
+	if (prChipInfo->getCalResult)
+		prCalResult = prChipInfo->getCalResult(&u4CalSize);
+	else
+		return 0;
+
+	if ((prCalResult == NULL) || (u4CalSize == 0)) {
+		DBGLOG(INIT, WARN, "prCalResult NULL\n");
+		return 0;
+	}
+
+	if (copy_to_user(buf, prCalResult, u4CalSize)) {
+		pr_err("copy to user failed\n");
+		return -EFAULT;
+	}
+
+	*f_pos += u4CalSize;
+
+	return (int32_t)u4CalSize;
+}
+
+static ssize_t procCalResultWrite(struct file *file, const char __user *buffer,
+	size_t count, loff_t *data)
+{
+	uint32_t u4CopySize = sizeof(g_aucProcBuf);
+
+	kalMemSet(g_aucProcBuf, 0, u4CopySize);
+	u4CopySize = (count < u4CopySize) ? count : (u4CopySize - 1);
+
+	if (copy_from_user(g_aucProcBuf, buffer, u4CopySize)) {
+		pr_err("error of copy from user\n");
+		return -EFAULT;
+	}
+
+	g_aucProcBuf[u4CopySize] = '\0';
+
+	return count;
+}
+
+static const struct file_operations cal_result_ops = {
+	.owner = THIS_MODULE,
+	.read = procCalResultRead,
+	.write = procCalResultWrite,
+};
+#endif /*(CFG_SUPPORT_PRE_ON_PHY_ACTION == 1)*/
 
 int32_t procInitFs(void)
 {
@@ -1228,12 +1302,31 @@ int32_t procInitFs(void)
 	proc_set_user(prEntry, KUIDT_INIT(PROC_UID_SHELL),
 		      KGIDT_INIT(PROC_GID_WIFI));
 
+#if (CFG_SUPPORT_PRE_ON_PHY_ACTION == 1)
+	prEntry = proc_create(PROC_CAL_RESULT,
+							0664,
+							gprProcRoot,
+							&cal_result_ops);
+	if (prEntry == NULL) {
+		DBGLOG(INIT, ERROR, "Unable to create /proc entry %s/n",
+				PROC_CAL_RESULT);
+		return -1;
+	}
+	proc_set_user(prEntry, KUIDT_INIT(PROC_UID_SHELL),
+					KGIDT_INIT(PROC_GID_WIFI));
+#endif /*(CFG_SUPPORT_PRE_ON_PHY_ACTION == 1)*/
+
 	return 0;
 }				/* end of procInitProcfs() */
 
 int32_t procUninitProcFs(void)
 {
 #if KERNEL_VERSION(3, 9, 0) <= LINUX_VERSION_CODE
+
+#if (CFG_SUPPORT_PRE_ON_PHY_ACTION == 1)
+	remove_proc_subtree(PROC_CAL_RESULT, gprProcRoot);
+#endif /*(CFG_SUPPORT_PRE_ON_PHY_ACTION == 1)*/
+
 	remove_proc_subtree(PROC_AUTO_PERF_CFG, gprProcRoot);
 	remove_proc_subtree(PROC_DBG_LEVEL_NAME, gprProcRoot);
 
@@ -1243,6 +1336,11 @@ int32_t procUninitProcFs(void)
 	 */
 	remove_proc_subtree(PROC_ROOT_NAME, init_net.proc_net);
 #else
+
+#if (CFG_SUPPORT_PRE_ON_PHY_ACTION == 1)
+	remove_proc_entry(PROC_CAL_RESULT, gprProcRoot);
+#endif /*(CFG_SUPPORT_PRE_ON_PHY_ACTION == 1)*/
+
 	remove_proc_entry(PROC_AUTO_PERF_CFG, gprProcRoot);
 	remove_proc_entry(PROC_DBG_LEVEL_NAME, gprProcRoot);
 

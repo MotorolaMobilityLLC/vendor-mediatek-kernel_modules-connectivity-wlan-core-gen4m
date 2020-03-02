@@ -683,7 +683,10 @@ struct mt66xx_chip_info mt66xx_chip_info_soc3_0 = {
 	.coexpccifoff = wlanConnacPccifoff,
 	.trigger_wholechiprst = soc3_0_Trigger_whole_chip_rst,
 	.sw_interrupt_handler = soc3_0_Sw_interrupt_handler,
-	.conninra_cb_register = soc3_0_Conninfra_cb_register
+	.conninra_cb_register = soc3_0_Conninfra_cb_register,
+#endif
+#if (CFG_SUPPORT_PRE_ON_PHY_ACTION == 1)
+	.getCalResult = soc3_0_wlanGetCalResult,
 #endif
 };
 
@@ -2632,6 +2635,8 @@ uint32_t soc3_0_wlanAccessCalibrationEMI(
 		}
 	}
 
+	DBGLOG(INIT, INFO, "backupEMI = 0x%x\n", backupEMI);
+
 	request_mem_region(gConEmiPhyBase, gConEmiSize, "WIFI-EMI");
 	kalSetEmiMpuProtection(gConEmiPhyBase, false);
 	pucEmiBaseAddr = ioremap_nocache(gConEmiPhyBase, gConEmiSize);
@@ -2662,7 +2667,7 @@ uint32_t soc3_0_wlanAccessCalibrationEMI(
 					pCalEvent->u4EmiAddress, gEmiCalOffset);
 
 			if (gEmiCalSize == 0) {
-				DBGLOG(INIT, ERROR, "gEmiCalSize failed\n");
+				DBGLOG(INIT, ERROR, "gEmiCalSize 0\n");
 				break;
 			}
 
@@ -2670,7 +2675,7 @@ uint32_t soc3_0_wlanAccessCalibrationEMI(
 
 			if (gEmiCalResult == NULL) {
 				DBGLOG(INIT, ERROR,
-					"gEmiCalResult kalMemAlloc failed\n");
+					"gEmiCalResult kalMemAlloc NULL\n");
 				break;
 			}
 
@@ -2685,7 +2690,7 @@ uint32_t soc3_0_wlanAccessCalibrationEMI(
 		/* else, put calibration data to EMI */
 
 		if (gEmiCalResult == NULL) {
-			DBGLOG(INIT, ERROR, "gEmiCalResult failed\n");
+			DBGLOG(INIT, ERROR, "gEmiCalResult NULL\n");
 			break;
 		}
 
@@ -3263,6 +3268,13 @@ int soc3_0_wlanPreCal(void)
 
 	DBGLOG(INIT, INFO, "soc3_0_wlanPreCal::end\n");
 	return (int)i4Status;
+}
+
+uint8_t *soc3_0_wlanGetCalResult(uint32_t *prCalSize)
+{
+	*prCalSize = gEmiCalSize;
+
+	return gEmiCalResult;
 }
 #endif /* (CFG_SUPPORT_PRE_ON_PHY_ACTION == 1) */
 
