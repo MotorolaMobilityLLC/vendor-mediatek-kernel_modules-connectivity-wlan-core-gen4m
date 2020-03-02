@@ -916,9 +916,9 @@ static void glLoadNvram(struct GLUE_INFO *prGlueInfo,
 	ASSERT(prRegInfo);
 	ASSERT(prGlueInfo);
 
-	DBGLOG(INIT, INFO, "leo g_fgNvramAvailable = %u\n", g_fgNvramAvailable);
+	DBGLOG(INIT, INFO, "g_fgNvramAvailable = %u\n", g_fgNvramAvailable);
 	if (!g_fgNvramAvailable) {
-		DBGLOG(INIT, WARN, "leo Nvram not available\n");
+		DBGLOG(INIT, WARN, "Nvram not available\n");
 		return;
 	}
 
