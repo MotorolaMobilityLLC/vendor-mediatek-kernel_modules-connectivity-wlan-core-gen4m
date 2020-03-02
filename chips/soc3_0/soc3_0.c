@@ -133,6 +133,10 @@ static uint8_t *soc3_0_apucCr4FwName[] = {
 *                            P U B L I C   D A T A
 ********************************************************************************
 */
+#if CFG_MTK_ANDROID_EMI
+	phys_addr_t gConEmiPhyBase;
+	unsigned long long gConEmiSize;
+#endif
 
 uint8_t *apucsoc3_0FwName[] = {
 	(uint8_t *) CFG_FW_FILENAME "_soc3_0",
@@ -585,7 +589,7 @@ struct mt66xx_chip_info mt66xx_chip_info_soc3_0 = {
 	.asicEnableFWDownload = NULL,
 #endif				/* CFG_ENABLE_FW_DOWNLOAD */
 	.asicGetChipID = asicGetChipID,
-	.downloadBufferBin = wlanConnacDownloadBufferBin,
+	.downloadBufferBin = NULL,
 	.is_support_hw_amsdu = TRUE,
 	.is_support_asic_lp = TRUE,
 	.is_support_wfdma1 = TRUE,
@@ -1181,9 +1185,11 @@ int hifWmmcuPwrOn(void)
 	int ret = 0;
 #if (CFG_SUPPORT_CONNINFRA == 1)
 	/* conninfra power on */
-	ret = conninfra_pwr_on(CONNDRV_TYPE_WIFI);
-	if (ret != 0)
-		return ret;
+	if (!kalIsWholeChipResetting()) {
+		ret = conninfra_pwr_on(CONNDRV_TYPE_WIFI);
+		if (ret != 0)
+			return ret;
+	}
 #endif
 	/* wf driver power on */
 	ret = wf_pwr_on_consys_mcu();

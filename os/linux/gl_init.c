@@ -3492,7 +3492,9 @@ void wlanOnPreAdapterStart(struct GLUE_INFO *prGlueInfo,
 
 	DBGLOG(INIT, TRACE, "start.\n");
 	prGlueInfo->u4ReadyFlag = 0;
-
+#if CFG_MTK_ANDROID_WMT
+	update_driver_loaded_status(prGlueInfo->u4ReadyFlag);
+#endif
 #if CFG_TCP_IP_CHKSUM_OFFLOAD
 	prAdapter->fgIsSupportCsumOffload = FALSE;
 	prAdapter->u4CSUMFlags = CSUM_OFFLOAD_EN_ALL;
@@ -3876,6 +3878,9 @@ int32_t wlanOnWhenProbeSuccess(struct GLUE_INFO *prGlueInfo,
 
 	/* card is ready */
 	prGlueInfo->u4ReadyFlag = 1;
+#if CFG_MTK_ANDROID_WMT
+		update_driver_loaded_status(prGlueInfo->u4ReadyFlag);
+#endif
 
 	if (!bAtResetFlow)
 		kalSetHalted(FALSE);
@@ -3992,7 +3997,9 @@ static int32_t wlanOffAtReset(void)
 
 	/* to avoid that wpa_supplicant/hostapd triogger new cfg80211 command */
 	prGlueInfo->u4ReadyFlag = 0;
-
+#if CFG_MTK_ANDROID_WMT
+	update_driver_loaded_status(prGlueInfo->u4ReadyFlag);
+#endif
 	kalPerMonDestroy(prGlueInfo);
 
 	/* Stop works */
@@ -4541,6 +4548,9 @@ static void wlanRemove(void)
 
 	/* to avoid that wpa_supplicant/hostapd triogger new cfg80211 command */
 	prGlueInfo->u4ReadyFlag = 0;
+#if CFG_MTK_ANDROID_WMT
+	update_driver_loaded_status(prGlueInfo->u4ReadyFlag);
+#endif
 
 	/* Have tried to do scan done here, but the exception occurs for */
 	/* the P2P scan. Keep the original design that scan done in the	 */

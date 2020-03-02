@@ -523,10 +523,23 @@ int glRstwlanPreWholeChipReset(void)
 
 	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wlanGetWiphy());
 	g_IsWholeChipRst = TRUE;
-	if (!g_IsSubsysRstOverThreshold)
+	DBGLOG(INIT, INFO,
+		"Enter glRstwlanPreWholeChipReset (%d).\n",
+		g_IsWholeChipRst);
+
+	if (!g_IsSubsysRstOverThreshold) {
+		if (!kalIsResetting()) {
+			DBGLOG(INIT, INFO,
+				"Wi-Fi Driver processes whole chip reset start.\n");
 		GL_RESET_TRIGGER(prGlueInfo->prAdapter, RST_FLAG_WF_RESET);
-	else
+		} else {
+			DBGLOG(INIT, INFO, "Wi-Fi is doing Subsys reset.\n");
+			kalSetRstEvent();
+		}
+	} else {
+		DBGLOG(INIT, INFO, "Reach subsys reset threshold!!!\n");
 		kalSetRstEvent();
+	}
 	waitRet = wait_for_completion_timeout(&g_RstComp,
 					MSEC_TO_JIFFIES(WIFI_RST_TIMEOUT));
 	if (waitRet > 0) {
@@ -543,6 +556,10 @@ int glRstwlanPreWholeChipReset(void)
 int glRstwlanPostWholeChipReset(void)
 {
 	glResetMsgHandler(WMTMSG_TYPE_RESET, WMTRSTMSG_RESET_END);
+	g_IsWholeChipRst = FALSE;
+	DBGLOG(INIT, INFO,
+		"Leave glRstwlanPostWholeChipReset (%d).\n",
+		g_IsWholeChipRst);
 	return 0;
 }
 u_int8_t kalIsWholeChipResetting(void)
@@ -606,7 +623,6 @@ int wlan_reset_thread_main(void *data)
 			if (g_IsWholeChipRst) {
 				glResetMsgHandler(WMTMSG_TYPE_RESET,
 							WMTRSTMSG_RESET_START);
-				g_IsWholeChipRst = FALSE;
 				g_IsSubsysRstOverThreshold = FALSE;
 				g_SubsysRstCnt = 0;
 			} else {
