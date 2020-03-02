@@ -537,13 +537,12 @@ static u_int8_t scanSanityCheckBssDesc(struct ADAPTER *prAdapter,
 		return FALSE;
 	}
 
-	if (prBssDesc->fgIsConnected) {
+	if (ucBssIndex != AIS_DEFAULT_INDEX) {
 		struct BSS_DESC *target =
-			aisGetTargetBssDesc(prAdapter, ucBssIndex);
+			aisGetTargetBssDesc(prAdapter, AIS_DEFAULT_INDEX);
 
-		if (!target || (target && !EQUAL_MAC_ADDR(prBssDesc->aucBSSID,
-			target->aucBSSID))) {
-			log_dbg(SCN, WARN, MACSTR" used by others\n",
+		if (target && prBssDesc->eBand == target->eBand) {
+			log_dbg(SCN, WARN, MACSTR" band %d used by main\n",
 				MAC2STR(prBssDesc->aucBSSID));
 			return FALSE;
 		}
