@@ -4724,6 +4724,9 @@ wlanoidQueryMaxLinkSpeed(IN struct ADAPTER *prAdapter,
 {
 	uint32_t u4CurRate = 0, u4MaxRate = 0;
 	uint32_t rv = WLAN_STATUS_FAILURE;
+	uint8_t ucBssIndex;
+	struct STA_RECORD *prStaRecOfAP;
+	struct BSS_INFO *prBssInfo;
 
 	DEBUGFUNC("wlanoidQueryMaxLinkSpeed");
 
@@ -4740,13 +4743,16 @@ wlanoidQueryMaxLinkSpeed(IN struct ADAPTER *prAdapter,
 	if (u4QueryBufferLen < sizeof(uint32_t))
 		return WLAN_STATUS_BUFFER_TOO_SHORT;
 
-	if (kalGetMediaStateIndicated(prAdapter->prGlueInfo) !=
+	ucBssIndex = GET_IOCTL_BSSIDX(prAdapter);
+	prStaRecOfAP = aisGetStaRecOfAP(prAdapter, ucBssIndex);
+	prBssInfo =  aisGetAisBssInfo(prAdapter, ucBssIndex);
+
+	if (kalGetMediaStateIndicated(prAdapter->prGlueInfo, ucBssIndex) !=
 	    MEDIA_STATE_CONNECTED) {
 		rv = WLAN_STATUS_ADAPTER_NOT_READY;
 	} else {
-		if (wlanGetMaxTxRate(prAdapter, prAdapter->prAisBssInfo,
-				      prAdapter->prAisBssInfo->prStaRecOfAP,
-				      &u4CurRate, &u4MaxRate) >= 0) {
+		if (wlanGetMaxTxRate(prAdapter, prBssInfo, prStaRecOfAP,
+				    &u4CurRate, &u4MaxRate) >= 0) {
 			u4MaxRate = u4MaxRate * 1000;
 			memcpy(pvQueryBuffer, &u4MaxRate, sizeof(uint32_t));
 			rv = WLAN_STATUS_SUCCESS;
