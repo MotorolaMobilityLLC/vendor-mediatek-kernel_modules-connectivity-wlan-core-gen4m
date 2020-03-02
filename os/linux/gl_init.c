@@ -742,7 +742,7 @@ static void glLoadNvram(IN struct GLUE_INFO *prGlueInfo,
 		if (sizeof(struct WIFI_CFG_PARAM_STRUCT) >
 						sizeof(prRegInfo->aucNvram)) {
 			DBGLOG(INIT, ERROR,
-			"Size WIFI_CFG_PARAM_STRUCT %d > size aucNvram %d\n"
+			"Size WIFI_CFG_PARAM_STRUCT %zu > size aucNvram %zu\n"
 			, sizeof(struct WIFI_CFG_PARAM_STRUCT),
 			sizeof(prRegInfo->aucNvram));
 			return;
@@ -751,7 +751,7 @@ static void glLoadNvram(IN struct GLUE_INFO *prGlueInfo,
 		if (sizeof(struct NEW_EFUSE_MAPPING2NVRAM) >
 						sizeof(prRegInfo->aucEFUSE)) {
 			DBGLOG(INIT, ERROR,
-			"Size NEW_EFUSE_MAPPING2NVRAM %d >size aucEFUSE %d\n"
+			"Size NEW_EFUSE_MAPPING2NVRAM %zu >size aucEFUSE %zu\n"
 			, sizeof(struct NEW_EFUSE_MAPPING2NVRAM),
 			sizeof(prRegInfo->aucEFUSE));
 			return;
