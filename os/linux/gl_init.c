@@ -2890,6 +2890,9 @@ static int32_t wlanProbe(void *pvData, void *pvDriverData)
 		case BUS_SET_IRQ_FAIL:
 			wlanWakeLockUninit(prGlueInfo);
 			wlanNetDestroy(prWdev);
+			/* prGlueInfo->prAdapter is released in wlanNetDestroy */
+			/* Set NULL value for local prAdapter as well */
+			prAdapter = NULL;
 			break;
 		case NET_CREATE_FAIL:
 			break;
