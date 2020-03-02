@@ -1136,7 +1136,9 @@ void asicConnac2xInitTxdHook(
 void asicConnac2xInitRxdHook(
 	struct RX_DESC_OPS_T *prRxDescOps);
 #if (CFG_SUPPORT_MSP == 1)
-void asicConnac2xRxProcessRxvforMSP(IN struct ADAPTER *prAdapter,
+void asicConnac2xRxProcessRxvChkRst(IN struct ADAPTER *prAdapter,
+	IN OUT struct SW_RFB *prRetSwRfb);
+uint32_t asicConnac2xRxProcessRxvforMSP(IN struct ADAPTER *prAdapter,
 	IN OUT struct SW_RFB *prRetSwRfb);
 #endif /* CFG_SUPPORT_MSP == 1 */
 uint8_t asicConnac2xRxGetRcpiValueFromRxv(
