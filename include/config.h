@@ -762,6 +762,8 @@
 
 #define CFG_SUPPORT_MTK_SYNERGY             1
 
+#define CFG_SUPPORT_VHT_IE_IN_2G             1
+
 #define CFG_SUPPORT_PWR_LIMIT_COUNTRY       1
 
 #define CFG_FIX_2_TX_PORT					0

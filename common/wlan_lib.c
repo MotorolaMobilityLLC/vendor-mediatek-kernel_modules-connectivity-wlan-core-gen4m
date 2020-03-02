@@ -5387,7 +5387,10 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 	prWifiVar->aucMtkFeature[3] = 0xff;
 	prWifiVar->ucGbandProbe256QAM = (uint8_t) wlanCfgGetUint32(prAdapter, "Probe256QAM", FEATURE_ENABLED);
 #endif
-
+#if CFG_SUPPORT_VHT_IE_IN_2G
+	prWifiVar->ucVhtIeIn2g =
+	    (uint8_t) wlanCfgGetUint32(prAdapter, "VhtIeIn2G", FEATURE_ENABLED);
+#endif
 	prWifiVar->ucCmdRsvResource = (uint8_t) wlanCfgGetUint32(prAdapter, "TxCmdRsv", QM_CMD_RESERVED_THRESHOLD);
 	prWifiVar->u4MgmtQueueDelayTimeout =
 			(uint32_t) wlanCfgGetUint32(prAdapter, "TxMgmtQueTO", QM_MGMT_QUEUED_TIMEOUT);	/* ms */

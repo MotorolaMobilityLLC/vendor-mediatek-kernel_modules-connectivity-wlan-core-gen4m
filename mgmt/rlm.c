@@ -854,6 +854,12 @@ void rlmReqGenerateVhtCapIE(struct ADAPTER *prAdapter, struct MSDU_INFO *prMsduI
 	if ((prAdapter->rWifiVar.ucAvailablePhyTypeSet & PHY_TYPE_SET_802_11AC) &&
 	    (!prStaRec || (prStaRec->ucPhyTypeSet & PHY_TYPE_SET_802_11AC)))
 		rlmFillVhtCapIE(prAdapter, prBssInfo, prMsduInfo);
+#if CFG_SUPPORT_VHT_IE_IN_2G
+	else if ((prBssInfo->eBand == BAND_2G4) &&
+	    (!prStaRec || (prStaRec->ucPhyTypeSet & PHY_TYPE_SET_802_11N)) &&
+		(prAdapter->rWifiVar.ucVhtIeIn2g == FEATURE_ENABLED))
+		rlmFillVhtCapIE(prAdapter, prBssInfo, prMsduInfo);
+#endif
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1104,14 +1110,21 @@ static void rlmFillVhtCapIE(struct ADAPTER *prAdapter, struct BSS_INFO *prBssInf
 	ucMaxBw = cnmGetBssMaxBw(prAdapter, prBssInfo->ucBssIndex);
 
 	prVhtCap->u4VhtCapInfo |= (prAdapter->rWifiVar.ucRxMaxMpduLen & VHT_CAP_INFO_MAX_MPDU_LEN_MASK);
+#if CFG_SUPPORT_VHT_IE_IN_2G
+	if (prBssInfo->eBand == BAND_2G4) {
+		prVhtCap->u4VhtCapInfo |=
+			    VHT_CAP_INFO_MAX_SUP_CHANNEL_WIDTH_SET_NONE;
+	} else {
+#endif
+		if (ucMaxBw == MAX_BW_160MHZ)
+			prVhtCap->u4VhtCapInfo |=
+			    VHT_CAP_INFO_MAX_SUP_CHANNEL_WIDTH_SET_160;
+		else if (ucMaxBw == MAX_BW_80_80_MHZ)
+			prVhtCap->u4VhtCapInfo |=
+			    VHT_CAP_INFO_MAX_SUP_CHANNEL_WIDTH_SET_160_80P80;
 
-	if (ucMaxBw == MAX_BW_160MHZ)
-		prVhtCap->u4VhtCapInfo |= VHT_CAP_INFO_MAX_SUP_CHANNEL_WIDTH_SET_160;
-	else if (ucMaxBw == MAX_BW_80_80_MHZ)
-		prVhtCap->u4VhtCapInfo |= VHT_CAP_INFO_MAX_SUP_CHANNEL_WIDTH_SET_160_80P80;
-
-	if (IS_FEATURE_ENABLED(prAdapter->rWifiVar.ucStaVhtBfee)) {
-		prVhtCap->u4VhtCapInfo |= FIELD_VHT_CAP_INFO_BFEE;
+		if (IS_FEATURE_ENABLED(prAdapter->rWifiVar.ucStaVhtBfee)) {
+			prVhtCap->u4VhtCapInfo |= FIELD_VHT_CAP_INFO_BFEE;
 #if CFG_SUPPORT_BFEE
 		prStaRec = cnmGetStaRecByIndex(prAdapter, prMsduInfo->ucStaRecIndex);
 
@@ -1133,11 +1146,13 @@ static void rlmFillVhtCapIE(struct ADAPTER *prAdapter, struct BSS_INFO *prBssInf
 #endif
 		if (IS_FEATURE_ENABLED(prAdapter->rWifiVar.ucStaVhtMuBfee))
 			prVhtCap->u4VhtCapInfo |= VHT_CAP_INFO_MU_BEAMFOMEE_CAPABLE;
+		}
+
+		if (IS_FEATURE_ENABLED(prAdapter->rWifiVar.ucStaVhtBfer))
+			prVhtCap->u4VhtCapInfo |= FIELD_VHT_CAP_INFO_BFER;
+#if CFG_SUPPORT_VHT_IE_IN_2G
 	}
-
-	if (IS_FEATURE_ENABLED(prAdapter->rWifiVar.ucStaVhtBfer))
-		prVhtCap->u4VhtCapInfo |= FIELD_VHT_CAP_INFO_BFER;
-
+#endif
 	if (IS_FEATURE_ENABLED(prAdapter->rWifiVar.ucRxShortGI)) {
 		prVhtCap->u4VhtCapInfo |= VHT_CAP_INFO_SHORT_GI_80;
 
