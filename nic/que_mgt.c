@@ -5034,9 +5034,6 @@ void mqmProcessAssocRsp(IN struct ADAPTER *prAdapter,
 	uint16_t u2Offset;
 	uint8_t *pucIEStart;
 	uint32_t u4Flags;
-#if DSCP_SUPPORT
-	u_int8_t hasnoQosMapSetIE = TRUE;
-#endif
 
 	DEBUGFUNC("mqmProcessAssocRsp");
 
@@ -5093,25 +5090,13 @@ void mqmProcessAssocRsp(IN struct ADAPTER *prAdapter,
 			case ELEM_ID_QOS_MAP_SET:
 				DBGLOG(QM, WARN,
 					"QM: received assoc resp qosmapset ie\n");
-				if (prStaRec->qosMapSet)
-					QosMapSetRelease(prStaRec);
-				prStaRec->qosMapSet =
-					qosParseQosMapSet(prAdapter, pucIE);
-				hasnoQosMapSetIE = FALSE;
+				qosParseQosMapSet(prAdapter, prStaRec, pucIE);
 				break;
 #endif
 			default:
 				break;
 			}
 		}
-#if DSCP_SUPPORT
-		if (hasnoQosMapSetIE) {
-			DBGLOG(QM, WARN,
-				"QM: remove assoc resp qosmapset ie\n");
-			QosMapSetRelease(prStaRec);
-			prStaRec->qosMapSet = NULL;
-		}
-#endif
 		/* Parse AC parameters and write to HW CRs */
 		if ((prStaRec->fgIsQoS)
 			&& (prStaRec->eStaType == STA_TYPE_LEGACY_AP)) {
