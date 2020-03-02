@@ -3608,8 +3608,8 @@ void qmInsertReorderPkt(IN struct ADAPTER *prAdapter,
 	}
 	/* Case 3: Fall behind */
 	else {
-#if CFG_SUPPORT_LOWLATENCY_MODE
-		if (qmIsNoDropPacket(prAdapter, prSwRfb->pvHeader)) {
+#if CFG_SUPPORT_LOWLATENCY_MODE || CFG_SUPPORT_OSHARE
+		if (qmIsNoDropPacket(prAdapter, prSwRfb)) {
 			DBGLOG(QM, LOUD, "QM: No drop packet:[%d](%d){%d,%d}\n",
 				prSwRfb->ucTid, u4SeqNo, u4WinStart, u4WinEnd);
 
@@ -7743,17 +7743,31 @@ u_int8_t qmHandleRxReplay(struct ADAPTER *prAdapter,
 }
 #endif
 
-#if CFG_SUPPORT_LOWLATENCY_MODE
+#if CFG_SUPPORT_LOWLATENCY_MODE || CFG_SUPPORT_OSHARE
 u_int8_t
-qmIsNoDropPacket(IN struct ADAPTER *prAdapter, IN uint8_t *pucData)
+qmIsNoDropPacket(IN struct ADAPTER *prAdapter, IN struct SW_RFB *prSwRfb)
 {
+	uint8_t *pucData = (uint8_t *) prSwRfb->pvHeader;
 	uint16_t u2Etype = (pucData[ETH_TYPE_LEN_OFFSET] << 8)
 		| (pucData[ETH_TYPE_LEN_OFFSET + 1]);
+	uint8_t ucBssIndex
+		= secGetBssIdxByWlanIdx(prAdapter, prSwRfb->ucWlanIdx);
+	u_int8_t fgCheckDrop = FALSE;
 
-	if (!prAdapter->fgEnLowLatencyMode)
-		return FALSE;
+#if CFG_SUPPORT_LOWLATENCY_MODE
+	if (prAdapter->fgEnLowLatencyMode)
+		fgCheckDrop = TRUE;
+#endif
 
-	if (u2Etype == ETH_P_IP) {
+#if CFG_SUPPORT_OSHARE
+	if (!fgCheckDrop &&
+		(prAdapter->fgEnOshareMode) &&
+		(GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex)->eNetworkType
+			== NETWORK_TYPE_P2P))
+		fgCheckDrop = TRUE;
+#endif
+
+	if (fgCheckDrop && u2Etype == ETH_P_IP) {
 		uint8_t *pucEthBody = &pucData[ETH_HLEN];
 		uint8_t ucIpProto = pucEthBody[IP_PROTO_HLEN];
 
