@@ -215,18 +215,18 @@ mtk_regd_control g_mtk_regd_control = {
 
 #if (CFG_SUPPORT_SINGLE_SKU_LOCAL_DB == 1)
 const struct ieee80211_regdomain default_regdom_ww = {
-	.n_reg_rules = 5,
+	.n_reg_rules = 4,
+	.alpha2 = "99",
 	.reg_rules = {
-	/* channels 1..11 */
-	REG_RULE_LIGHT(2412-10, 2462+10, 40, 0),
-	/* channels 12,13 */
-	REG_RULE_LIGHT(2467-10, 2472+10, 20, (NL80211_RRF_PASSIVE_SCAN|NL80211_RRF_NO_IBSS)),
-	/* channel 14 */
-	REG_RULE_LIGHT(2484-10, 2484+10, 20, (NL80211_RRF_NO_OFDM|NL80211_RRF_PASSIVE_SCAN|NL80211_RRF_NO_IBSS)),
-	/* channel 36..42 */
-	REG_RULE_LIGHT(5480-10, 5240+10, 40, (NL80211_RRF_PASSIVE_SCAN|NL80211_RRF_NO_IBSS)),
-	/* channel 149..165 */
-	REG_RULE_LIGHT(5745-10, 5825+10, 40, (NL80211_RRF_PASSIVE_SCAN|NL80211_RRF_NO_IBSS))}
+	/* channels 1..13 */
+	REG_RULE_LIGHT(2412-10, 2472+10, 40, 0),
+	/* channels 14 */
+	REG_RULE_LIGHT(2484-10, 2484+10, 20, 0),
+	/* channel 36..64 */
+	REG_RULE_LIGHT(5150-10, 5350+10, 80, 0),
+	/* channel 100..165 */
+	REG_RULE_LIGHT(5470-10, 5850+10, 80, 0),
+	}
 };
 #endif
 
@@ -2512,6 +2512,7 @@ const struct ieee80211_regdomain *rlmDomainSearchRegdomainFromLocalDataBase(char
 
 	DBGLOG(RLM, ERROR, "%s(): Error, Cannot find the correct RegDomain. country = %s.\n",
 			__func__, alpha2);
+	DBGLOG(RLM, INFO, "    Set as default WW.\n");
 
 	return &default_regdom_ww; /*default world wide*/
 #else
@@ -2624,4 +2625,14 @@ u32 rlmDomainGetTempCountryCode(void)
 #else
 	return 0;
 #endif
+}
+
+void rlmDomianAssert(BOOLEAN cond)
+{
+	/* bypass this check because single sku is not enable */
+	if (!regd_is_single_sku_en())
+		return;
+
+	if (!cond)
+		ASSERT(0);
 }
