@@ -50,64 +50,59 @@
  *
  *****************************************************************************/
 /*
-** Id: //Department/DaVinci/TRUNK/MT6620_WiFi_Firmware/mcu/wifi/mgmt/tkip_mic.c#7
-*/
+ * Id: //Department/DaVinci/TRUNK/MT6620_WiFi_Firmware/
+ *						mcu/wifi/mgmt/tkip_mic.c#7
+ */
 
 /*! \file tkip_sw.c
-*    \brief This file include the tkip encrypted / decrypted mic function.
-*/
+ *    \brief This file include the tkip encrypted / decrypted mic function.
+ */
 /*******************************************************************************
-* Copyright (c) 2003-2004 Inprocomm, Inc.
-*
-* All rights reserved. Copying, compilation, modification, distribution
-* or any other use whatsoever of this material is strictly prohibited
-* except in accordance with a Software License Agreement with
-* Inprocomm, Inc.
-********************************************************************************
-*/
+ * Copyright (c) 2003-2004 Inprocomm, Inc.
+ *
+ * All rights reserved. Copying, compilation, modification, distribution
+ * or any other use whatsoever of this material is strictly prohibited
+ * except in accordance with a Software License Agreement with
+ * Inprocomm, Inc.
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                     C O M P I L E R   F L A G S
-********************************************************************************
-*/
+ *                     C O M P I L E R   F L A G S
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                E X T E R N A L   R E F E R E N C E S
-********************************************************************************
-*/
+ *                E X T E R N A L   R E F E R E N C E S
+ *******************************************************************************
+ */
 #include "precomp.h"
 
 /*******************************************************************************
-*                          C O N S T A N T S
-********************************************************************************
-*/
+ *                          C O N S T A N T S
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                         D A T A   T Y P E S
-********************************************************************************
-*/
+ *                         D A T A   T Y P E S
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                        P U B L I C   D A T A
-********************************************************************************
-*/
+ *                             M A C R O S
+ *******************************************************************************
+ */
 
-/*******************************************************************************
-*                       P R I V A T E   D A T A
-********************************************************************************
-*/
-
-/*******************************************************************************
-*                             M A C R O S
-********************************************************************************
-*/
-
-#define WLAN_MAC_MIC_LEN                8	/* length of TKIP and CCMP MIC field */
+/* length of TKIP and CCMP MIC field */
+#define WLAN_MAC_MIC_LEN                8
 
 #define MK16_TKIP(x, y)       (((uint16_t) (x) << 8) | (uint16_t) (y))
 
-#define LO_8BITS(x)     ((x) & 0x00ff)	/* obtain low 8-bit from 16-bit value, OK */
-#define HI_8BITS(x)     ((x) >> 8)	/* obtain high 8-bit from 16-bit value, OK */
+/* obtain low 8-bit from 16-bit value */
+#define LO_8BITS(x)     ((x) & 0x00ff)
+
+/* obtain high 8-bit from 16-bit value */
+#define HI_8BITS(x)     ((x) >> 8)
 
 #define ROTR32(x, y)     (((x) >> (y)) | ((x) << (32 - (y))))
 #define ROTL32(x, y)     (((x) << (y)) | ((x) >> (32 - (y))))
@@ -119,15 +114,11 @@
 /* obtain 16-bit entries SBOX form two 8-bit entries SBOX1 and SBOX2 */
 #define SBOX(x)         (tkipSBOX1[LO_8BITS(x)] ^ tkipSBOX2[HI_8BITS(x)])
 
-/*******************************************************************************
-*                         D A T A   T Y P E S
-********************************************************************************
-*/
 
 /*******************************************************************************
-*                        P U B L I C   D A T A
-********************************************************************************
-*/
+ *                        P U B L I C   D A T A
+ *******************************************************************************
+ */
 const uint16_t tkipSBOX1[256] = {
 	0xC6A5, 0xF884, 0xEE99, 0xF68D, 0xFF0D, 0xD6BD, 0xDEB1, 0x9154,
 	0x6050, 0x0203, 0xCEA9, 0x567D, 0xE719, 0xB562, 0x4DE6, 0xEC9A,
@@ -199,29 +190,29 @@ const uint16_t tkipSBOX2[256] = {
 };
 
 /*******************************************************************************
-*                       P R I V A T E   D A T A
-********************************************************************************
-*/
+ *                       P R I V A T E   D A T A
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*              F U N C T I O N   D E C L A R A T I O N S
-********************************************************************************
-*/
+ *              F U N C T I O N   D E C L A R A T I O N S
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                          F U N C T I O N S
-********************************************************************************
-*/
+ *                          F U N C T I O N S
+ *******************************************************************************
+ */
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief TKIP Michael block function
-*
-* \param[in][out] pu4L - pointer to left value
-* \param[in][out] pu4PR - pointer to right value
-*
-* \return (none)
-*/
+ * \brief TKIP Michael block function
+ *
+ * \param[in][out] pu4L - pointer to left value
+ * \param[in][out] pu4PR - pointer to right value
+ *
+ * \return (none)
+ */
 /*----------------------------------------------------------------------------*/
 void tkipMicB(IN OUT uint32_t *pu4L, IN OUT uint32_t *pu4R)
 {
@@ -240,23 +231,24 @@ void tkipMicB(IN OUT uint32_t *pu4L, IN OUT uint32_t *pu4R)
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief TKIP Michael generation function
-*
-* \param[in]  pucMickey Pointer to MIC key
-* \param[in]  pucData Pointer to message
-* \param[in]  u4DataLen Message length, in byte(s)
-* \param[in]  pucSa Pointer to source address SA
-* \param[in]  pucDa Pointer to destination address DA
-* \param[in]  ucPriority Priority of IEEE 802.11 traffic class
-* \param[out] pucMic Pointer to 64-bit MIC
-*
-* \return (none)
-*/
+ * \brief TKIP Michael generation function
+ *
+ * \param[in]  pucMickey Pointer to MIC key
+ * \param[in]  pucData Pointer to message
+ * \param[in]  u4DataLen Message length, in byte(s)
+ * \param[in]  pucSa Pointer to source address SA
+ * \param[in]  pucDa Pointer to destination address DA
+ * \param[in]  ucPriority Priority of IEEE 802.11 traffic class
+ * \param[out] pucMic Pointer to 64-bit MIC
+ *
+ * \return (none)
+ */
 /*----------------------------------------------------------------------------*/
 void
 tkipMicGen(IN uint8_t *pucMickey,
 	   IN uint8_t *pucData,
-	   IN uint32_t u4DataLen, IN uint8_t *pucSa, IN uint8_t *pucDa, IN uint8_t ucPriority, OUT uint8_t *pucMic)
+	   IN uint32_t u4DataLen, IN uint8_t *pucSa, IN uint8_t *pucDa,
+	   IN uint8_t ucPriority, OUT uint8_t *pucMic)
 {
 
 	uint32_t i;
@@ -274,8 +266,9 @@ tkipMicGen(IN uint8_t *pucMickey,
 
 	/* Michael message processing for DA and SA. */
 	WLAN_GET_FIELD_32(pucDa, &au4Msg[0]);
-	au4Msg[1] = ((uint32_t) pucDa[4]) | ((uint32_t) pucDa[5] << 8) |
-	    ((uint32_t) pucSa[0] << 16) | ((uint32_t) pucSa[1] << 24);
+	au4Msg[1] = ((uint32_t) pucDa[4]) | ((uint32_t) pucDa[5] <<
+					     8) |
+		    ((uint32_t) pucSa[0] << 16) | ((uint32_t) pucSa[1] << 24);
 	WLAN_GET_FIELD_32(pucSa + 2, &au4Msg[2]);
 
 	for (i = 0; i < 3; i++) {
@@ -289,30 +282,33 @@ tkipMicGen(IN uint8_t *pucMickey,
 	l = l ^ au4Msg[0];
 	tkipMicB(&l, &r);
 
-	/* Michael message processing for MSDU data playload except the last octets
-	*  which cannot be partitioned into a 32-bit word.
-	*/
+	/* Michael message processing for MSDU data playload except
+	 *   the last octets which cannot be partitioned into a 32-bit word.
+	 */
 	for (i = 0; i < (uint32_t) u4DataLen / 4; i++) {
 		WLAN_GET_FIELD_32(pucData + i * 4, &au4Msg[0]);
 		l = l ^ au4Msg[0];
 		tkipMicB(&l, &r);
 	}
 
-	/* Michael message processing for the last uncomplete octets, if present,
-	*  and the padding.
-	*/
+	/* Michael message processing for the last uncomplete octets,
+	 *   if present, and the padding.
+	 */
 	switch (u4DataLen & 3) {
 	case 1:
-		au4Msg[0] = ((uint32_t) pucData[u4DataLen - 1]) | 0x00005A00;
+		au4Msg[0] = ((uint32_t) pucData[u4DataLen - 1]) |
+			    0x00005A00;
 		break;
 
 	case 2:
-		au4Msg[0] = ((uint32_t) pucData[u4DataLen - 2]) | ((uint32_t) pucData[u4DataLen - 1] << 8) | 0x005A0000;
+		au4Msg[0] = ((uint32_t) pucData[u4DataLen - 2]) | ((
+			uint32_t) pucData[u4DataLen - 1] << 8) | 0x005A0000;
 		break;
 
 	case 3:
 		au4Msg[0] = ((uint32_t) pucData[u4DataLen - 3]) |
-		    ((uint32_t) pucData[u4DataLen - 2] << 8) | ((uint32_t) pucData[u4DataLen - 1] << 16) | 0x5A000000;
+			    ((uint32_t) pucData[u4DataLen - 2] << 8) | ((
+			uint32_t) pucData[u4DataLen - 1] << 16) | 0x5A000000;
 		break;
 
 	default:
@@ -332,25 +328,26 @@ tkipMicGen(IN uint8_t *pucMickey,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief this function decapsulate MSDU frame body( with MIC ) according
-*        to IEEE 802.11i TKIP sepcification.
-*
-* \param[in] prAdapter Pointer to the adapter object data area.
-* \param[in]  pucDa Pointer to destination address DA
-* \param[in]  pucSa Pointer to source address SA
-* \param[in]  ucPriority Priority of IEEE 802.11 traffic class
-* \param[in]  pucPayload Pointer to message
-* \param[in]  u2PayloadLen Message length, in byte(s)
-* \param[out] pucMic Pointer to 64-bit MIC
-*
-* \retval NONE
-*/
+ * \brief this function decapsulate MSDU frame body( with MIC ) according
+ *        to IEEE 802.11i TKIP sepcification.
+ *
+ * \param[in] prAdapter Pointer to the adapter object data area.
+ * \param[in]  pucDa Pointer to destination address DA
+ * \param[in]  pucSa Pointer to source address SA
+ * \param[in]  ucPriority Priority of IEEE 802.11 traffic class
+ * \param[in]  pucPayload Pointer to message
+ * \param[in]  u2PayloadLen Message length, in byte(s)
+ * \param[out] pucMic Pointer to 64-bit MIC
+ *
+ * \retval NONE
+ */
 /*----------------------------------------------------------------------------*/
 void
 tkipMicEncapsulate(IN uint8_t *pucDa,
 		   IN uint8_t *pucSa,
 		   IN uint8_t ucPriority,
-		   IN uint16_t u2PayloadLen, IN uint8_t *pucPayload, IN uint8_t *pucMic, IN uint8_t *pucMicKey)
+		   IN uint16_t u2PayloadLen, IN uint8_t *pucPayload,
+		   IN uint8_t *pucMic, IN uint8_t *pucMicKey)
 {
 	uint8_t aucMic[8];	/* MIC' */
 
@@ -362,46 +359,27 @@ tkipMicEncapsulate(IN uint8_t *pucDa,
 	ASSERT(pucMic);
 	ASSERT(pucMicKey);
 
-	DBGLOG(RSN, LOUD, "MIC key %02x-%02x-%02x-%02x %02x-%02x-%02x-%02x\n",
+	DBGLOG(RSN, LOUD,
+	       "MIC key %02x-%02x-%02x-%02x %02x-%02x-%02x-%02x\n",
 	       pucMicKey[0], pucMicKey[1], pucMicKey[2], pucMicKey[3],
 	       pucMicKey[4], pucMicKey[5], pucMicKey[6], pucMicKey[7]);
 
-	tkipMicGen(pucMicKey, (uint8_t *) pucPayload, u2PayloadLen, pucSa, pucDa, ucPriority, aucMic);
+	tkipMicGen(pucMicKey, (uint8_t *) pucPayload, u2PayloadLen,
+		   pucSa, pucDa, ucPriority, aucMic);
 
-	kalMemCopy((uint8_t *) pucMic, &aucMic[0], WLAN_MAC_MIC_LEN);
+	kalMemCopy((uint8_t *) pucMic, &aucMic[0],
+		   WLAN_MAC_MIC_LEN);
 
-	DBGLOG(RSN, LOUD, "Mic %02x-%02x-%02x-%02x-%02x-%02x-%02x-%02x\n",
-	       pucMic[0], pucMic[1], pucMic[2], pucMic[3], pucMic[4], pucMic[5], pucMic[6], pucMic[7]);
+	DBGLOG(RSN, LOUD,
+	       "Mic %02x-%02x-%02x-%02x-%02x-%02x-%02x-%02x\n",
+	       pucMic[0], pucMic[1], pucMic[2], pucMic[3], pucMic[4],
+	       pucMic[5], pucMic[6], pucMic[7]);
 
 }				/* tkipSwMsduEncapsulate */
 
 /*----------------------------------------------------------------------------*/
-/*!
-* \brief This function decapsulate MSDU frame body (with MIC) according
-*        to IEEE 802.11i TKIP sepcification.
-*
-* \param[in]  prAdapter Pointer to the adapter object data area.
-* \param[in]  prMacHeader Pointer to frame MAC header
-* \param[in]  pucFrameBody Pointer to frame body
-* \param[in]  u4FrameBodyLen Length of frame body (in bytes), include
-*                            length of ICV and MIC
-* \param[in]  pucMickey Pointer to MIC key
-* \param[out] pu4ResultFrameBodyLen Pointer to put the result frame body length.
-*
-* \retval FALSE(TKIP_MIC_ERR), if this MSDU is not decapsulatable, i.e. MIC
-*         verification is failure.
-*         TRUE(TKIP_DECAPSULATE_SUCCESS), if this TKIP MSDU is decapsulated
-*         successfully, i.e. MIC verification is successful.
-*
-* \note 1  If return TRUE, result frame body length
-*          is only equal to data payload legth, and the result frame
-*          body's format is MSDU
-*       2. If return FALSE, result frame body length is equal
-*          to data payload legth plus MIC and MIC', and the result
-*          frame body's format is: MSDU + MIC
-*/
-/*----------------------------------------------------------------------------*/
-u_int8_t tkipMicDecapsulate(IN struct SW_RFB *prSwRfb, IN uint8_t *pucMicKey)
+u_int8_t tkipMicDecapsulate(IN struct SW_RFB *prSwRfb,
+			    IN uint8_t *pucMicKey)
 {
 	uint8_t *pucMic1;		/* MIC  */
 	uint8_t aucMic2[8];	/* MIC' */
@@ -426,9 +404,6 @@ u_int8_t tkipMicDecapsulate(IN struct SW_RFB *prSwRfb, IN uint8_t *pucMicKey)
 		DBGLOG(RSN, INFO, "pucPayload is NULL, drop this packet");
 		return FALSE;
 	}
-	/* if ((prRxStatus->ucKIdxSecMode & BITS(0,3)) != CIPHER_SUITE_TKIP_WO_MIC){ */
-	/* return TRUE; */
-	/* } */
 
 	DBGLOG(RSN, LOUD, "Before TKIP MSDU Decapsulate:\n");
 	DBGLOG(RSN, LOUD, "MIC key:\n");
@@ -455,12 +430,15 @@ u_int8_t tkipMicDecapsulate(IN struct SW_RFB *prSwRfb, IN uint8_t *pucMicKey)
 	}
 
 	if (RXM_IS_QOS_DATA_FRAME(prSwRfb->u2FrameCtrl))
-		ucPriority = (uint8_t) ((((struct WLAN_MAC_HEADER_QOS *) prSwRfb->pvHeader)->u2QosCtrl) & MASK_QC_TID);
+		ucPriority = (uint8_t) ((((struct WLAN_MAC_HEADER_QOS *)
+				  prSwRfb->pvHeader)->u2QosCtrl) & MASK_QC_TID);
 	else
 		ucPriority = 0;
 
 	/* generate MIC' */
-	tkipMicGen(pucMicKey, pucFrameBody, u2FrameBodyLen - WLAN_MAC_MIC_LEN, pucSa, pucDa, ucPriority, aucMic2);
+	tkipMicGen(pucMicKey, pucFrameBody,
+		   u2FrameBodyLen - WLAN_MAC_MIC_LEN, pucSa, pucDa, ucPriority,
+		   aucMic2);
 
 	/* verify MIC and MIC' */
 	pucMic1 = &pucFrameBody[u2FrameBodyLen - WLAN_MAC_MIC_LEN];
@@ -482,7 +460,8 @@ u_int8_t tkipMicDecapsulate(IN struct SW_RFB *prSwRfb, IN uint8_t *pucMicKey)
 	prSwRfb->u2PayloadLength = u2FrameBodyLen;
 
 	DBGLOG(RSN, LOUD, "After TKIP MSDU Decapsulate:\n");
-	DBGLOG(RSN, LOUD, "Frame body: (length = %u)\n", u2FrameBodyLen);
+	DBGLOG(RSN, LOUD, "Frame body: (length = %u)\n",
+	       u2FrameBodyLen);
 	/* DBGLOG_MEM8(RSN, LOUD, pucFrameBody, u2FrameBodyLen); */
 
 	return fgStatus;
@@ -491,32 +470,8 @@ u_int8_t tkipMicDecapsulate(IN struct SW_RFB *prSwRfb, IN uint8_t *pucMicKey)
 
 
 /*----------------------------------------------------------------------------*/
-/*!
-* \brief This function decapsulate MSDU frame body (with MIC) according
-*        to IEEE 802.11i TKIP sepcification.
-*
-* \param[in]  prAdapter Pointer to the adapter object data area.
-* \param[in]  prMacHeader Pointer to frame MAC header
-* \param[in]  pucFrameBody Pointer to frame body
-* \param[in]  u4FrameBodyLen Length of frame body (in bytes), include
-*                            length of ICV and MIC
-* \param[in]  pucMickey Pointer to MIC key
-* \param[out] pu4ResultFrameBodyLen Pointer to put the result frame body length.
-*
-* \retval FALSE(TKIP_MIC_ERR), if this MSDU is not decapsulatable, i.e. MIC
-*         verification is failure.
-*         TRUE(TKIP_DECAPSULATE_SUCCESS), if this TKIP MSDU is decapsulated
-*         successfully, i.e. MIC verification is successful.
-*
-* \note 1  If return TRUE, result frame body length
-*          is only equal to data payload legth, and the result frame
-*          body's format is MSDU
-*       2. If return FALSE, result frame body length is equal
-*          to data payload legth plus MIC and MIC', and the result
-*          frame body's format is: MSDU + MIC
-*/
-/*----------------------------------------------------------------------------*/
-u_int8_t tkipMicDecapsulateInRxHdrTransMode(IN struct SW_RFB *prSwRfb, IN uint8_t *pucMicKey)
+u_int8_t tkipMicDecapsulateInRxHdrTransMode(
+	IN struct SW_RFB *prSwRfb, IN uint8_t *pucMicKey)
 {
 	uint8_t *pucMic1;		/* MIC  */
 	uint8_t aucMic2[8];	/* MIC' */
@@ -543,26 +498,24 @@ u_int8_t tkipMicDecapsulateInRxHdrTransMode(IN struct SW_RFB *prSwRfb, IN uint8_
 	pucFrameBody = prSwRfb->pucPayload;
 	u2FrameBodyLen = prSwRfb->u2PayloadLength;
 
-	/* if ((prRxStatus->ucKIdxSecMode & BITS(0,3)) != CIPHER_SUITE_TKIP_WO_MIC){ */
-	/* return TRUE; */
-	/* } */
-
 	DBGLOG(RSN, LOUD, "Before TKIP MSDU Decapsulate:\n");
 	DBGLOG(RSN, LOUD, "MIC key:\n");
 	/* DBGLOG_MEM8(RSN, LOUD, pucMicKey, 8); */
 
-	prSkb = dev_alloc_skb(u2FrameBodyLen + ETHERNET_HEADER_SZ*4);
+	prSkb = dev_alloc_skb(u2FrameBodyLen + ETHERNET_HEADER_SZ *
+			      4);
 	if (prSkb) {
 		/* copy to etherhdr + payload to skb data */
-		kalMemCopy(prSkb->data, prSwRfb->pvHeader, u2FrameBodyLen + ETHERNET_HEADER_SZ);
-		*(prSkb->data+6) = ETH_LLC_DSAP_SNAP;
-		*(prSkb->data+7) = ETH_LLC_SSAP_SNAP;
-		*(prSkb->data+8) = ETH_LLC_CONTROL_UNNUMBERED_INFORMATION;
-		*(prSkb->data+9) = 0x00;
-		*(prSkb->data+10) = 0x00;
-		*(prSkb->data+11) = 0x00;
-		*(prSkb->data+12) = *(uint8_t *)(prSwRfb->pvHeader + 12);
-		*(prSkb->data+13) = *(uint8_t *)(prSwRfb->pvHeader + 13);
+		kalMemCopy(prSkb->data, prSwRfb->pvHeader,
+			   u2FrameBodyLen + ETHERNET_HEADER_SZ);
+		*(prSkb->data + 6) = ETH_LLC_DSAP_SNAP;
+		*(prSkb->data + 7) = ETH_LLC_SSAP_SNAP;
+		*(prSkb->data + 8) = ETH_LLC_CONTROL_UNNUMBERED_INFORMATION;
+		*(prSkb->data + 9) = 0x00;
+		*(prSkb->data + 10) = 0x00;
+		*(prSkb->data + 11) = 0x00;
+		*(prSkb->data + 12) = *(uint8_t *)(prSwRfb->pvHeader + 12);
+		*(prSkb->data + 13) = *(uint8_t *)(prSwRfb->pvHeader + 13);
 
 		tkipMicGen(pucMicKey,
 			   prSkb->data + 6,
@@ -593,7 +546,9 @@ u_int8_t tkipMicDecapsulateInRxHdrTransMode(IN struct SW_RFB *prSwRfb, IN uint8_
 	}
 
 #if 0
-	/* perform header transfer for tkip defragment frame, if receiving 802.11 pkt */
+	/* perform header transfer for tkip defragment frame,
+	 *   if receiving 802.11 pkt
+	 */
 	if (fgStatus == TRUE) {
 		/* reassign payload address */
 		prSwRfb->pucPayload += (ETH_LLC_LEN + ETH_SNAP_LEN);
@@ -601,15 +556,18 @@ u_int8_t tkipMicDecapsulateInRxHdrTransMode(IN struct SW_RFB *prSwRfb, IN uint8_
 		/* reassign payload length */
 		u2FrameBodyLen -= (ETH_LLC_LEN + ETH_SNAP_LEN);
 
-		prSwRfb->pvHeader = prSwRfb->pucPayload - (ETHERNET_HEADER_SZ);
+		prSwRfb->pvHeader = prSwRfb->pucPayload -
+				    (ETHERNET_HEADER_SZ);
 
 		kalMemCopy(&aucDA[0], pucDa, MAC_ADDR_LEN);
 		kalMemCopy(&aucSA[0], pucSa, MAC_ADDR_LEN);
 		kalMemCopy(&aucType[0], prSwRfb->pucPayload - 2, 2);
 
 		kalMemCopy(prSwRfb->pvHeader, &aucDA[0], MAC_ADDR_LEN);
-		kalMemCopy(prSwRfb->pvHeader + MAC_ADDR_LEN, &aucSA[0], MAC_ADDR_LEN);
-		kalMemCopy(prSwRfb->pvHeader + MAC_ADDR_LEN + 2, &aucType[0], 2);
+		kalMemCopy(prSwRfb->pvHeader + MAC_ADDR_LEN, &aucSA[0],
+			   MAC_ADDR_LEN);
+		kalMemCopy(prSwRfb->pvHeader + MAC_ADDR_LEN + 2,
+			   &aucType[0], 2);
 
 		prSwRfb->u2HeaderLen = ETHERNET_HEADER_SZ;
 	}
@@ -623,7 +581,8 @@ u_int8_t tkipMicDecapsulateInRxHdrTransMode(IN struct SW_RFB *prSwRfb, IN uint8_
 	prSwRfb->u2PayloadLength = u2FrameBodyLen;
 
 	DBGLOG(RSN, LOUD, "After TKIP MSDU Decapsulate:\n");
-	DBGLOG(RSN, LOUD, "Frame body: (length = %u)\n", u2FrameBodyLen);
+	DBGLOG(RSN, LOUD, "Frame body: (length = %u)\n",
+	       u2FrameBodyLen);
 	/* DBGLOG_MEM8(RSN, LOUD, pucFrameBody, u2FrameBodyLen); */
 
 	return fgStatus;

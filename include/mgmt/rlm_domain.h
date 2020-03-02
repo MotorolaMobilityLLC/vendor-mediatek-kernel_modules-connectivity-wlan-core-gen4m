@@ -50,31 +50,32 @@
  *
  *****************************************************************************/
 /*
-** Id: //Department/DaVinci/BRANCHES/MT6620_WIFI_DRIVER_V2_3/include/mgmt/rlm_domain.h#1
-*/
+ * Id: //Department/DaVinci/BRANCHES/MT6620_WIFI_DRIVER_V2_3/
+ *							include/mgmt/rlm_domain.h#1
+ */
 
 /*! \file   "rlm_domain.h"
-*    \brief
-*/
+ *    \brief
+ */
 
 
 #ifndef _RLM_DOMAIN_H
 #define _RLM_DOMAIN_H
 
 /*******************************************************************************
-*                         C O M P I L E R   F L A G S
-********************************************************************************
-*/
+ *                         C O M P I L E R   F L A G S
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                    E X T E R N A L   R E F E R E N C E S
-********************************************************************************
-*/
+ *                    E X T E R N A L   R E F E R E N C E S
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                              C O N S T A N T S
-********************************************************************************
-*/
+ *                              C O N S T A N T S
+ *******************************************************************************
+ */
 #define MAX_SUBBAND_NUM     6
 #define MAX_SUBBAND_NUM_5G  8
 
@@ -215,7 +216,7 @@
 #define COUNTRY_CODE_MD (((uint16_t) 'M' << 8) | (uint16_t) 'D')	/* Moldova                             */
 #define COUNTRY_CODE_ME (((uint16_t) 'M' << 8) | (uint16_t) 'E')	/* Montenegro                          */
 #define COUNTRY_CODE_MF (((uint16_t) 'M' << 8) | (uint16_t) 'F')	/* Saint Martin / Sint Marteen         */
-	/*(Added on window's list)             */
+/*(Added on window's list)             */
 #define COUNTRY_CODE_MG (((uint16_t) 'M' << 8) | (uint16_t) 'G')	/* Madagascar                          */
 #define COUNTRY_CODE_MH (((uint16_t) 'M' << 8) | (uint16_t) 'H')	/* Marshall Islands                    */
 #define COUNTRY_CODE_MK (((uint16_t) 'M' << 8) | (uint16_t) 'K')	/* Macedonia                           */
@@ -224,7 +225,7 @@
 #define COUNTRY_CODE_MN (((uint16_t) 'M' << 8) | (uint16_t) 'N')	/* Mongolia                            */
 #define COUNTRY_CODE_MO (((uint16_t) 'M' << 8) | (uint16_t) 'O')	/* Macao                               */
 #define COUNTRY_CODE_MP (((uint16_t) 'M' << 8) | (uint16_t) 'P')	/* Northern Mariana Islands (Rota Island*/
-	/*Saipan and Tinian Island)            */
+/*Saipan and Tinian Island)            */
 #define COUNTRY_CODE_MQ (((uint16_t) 'M' << 8) | (uint16_t) 'Q')	/* Martinique (France)                 */
 #define COUNTRY_CODE_MR (((uint16_t) 'M' << 8) | (uint16_t) 'R')	/* Mauritania                          */
 #define COUNTRY_CODE_MS (((uint16_t) 'M' << 8) | (uint16_t) 'S')	/* Montserrat (UK)                     */
@@ -356,17 +357,18 @@
 #define MAX_CMD_SUPPORT_FCC_CHANNEL_NUM		60
 #define MAX_CMD_SUPPORT_CHANNEL_NUM		(MAX_CMD_SUPPORT_FCC_CHANNEL_NUM	\
 						+ MAX_CMD_SUPPORT_160NC_CHANNEL_NUM + 1)
-						/* FCC sub-band channel + BW160NC channel + CH50 for BW160C */
+/* FCC sub-band channel + BW160NC channel + CH50 for BW160C */
 #endif
 
 #if (CFG_SUPPORT_SINGLE_SKU == 1)
 #define MAX_SUPPORTED_CH_COUNT (53) /*ARRAY_SIZE(mtk_2ghz_channels) + ARRAY_SIZE(mtk_5ghz_channels)*/
 #define REG_RULE_LIGHT(start, end, bw, reg_flags) REG_RULE(start, end, bw, 0, 0, reg_flags)
 #endif
+
 /*******************************************************************************
-*                             D A T A   T Y P E S
-********************************************************************************
-*/
+ *                             D A T A   T Y P E S
+ *******************************************************************************
+ */
 
 #if CFG_SUPPORT_PWR_LIMIT_COUNTRY
 
@@ -662,19 +664,19 @@ struct mtk_regdomain {
 
 #endif
 /*******************************************************************************
-*                            P U B L I C   D A T A
-********************************************************************************
-*/
+ *                            P U B L I C   D A T A
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                           P R I V A T E   D A T A
-********************************************************************************
-*/
+ *                           P R I V A T E   D A T A
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                                 M A C R O S
-********************************************************************************
-*/
+ *                                 M A C R O S
+ *******************************************************************************
+ */
 #define CAL_CH_OFFSET_80M(_PRIMARY_CH, _CENTRAL_CH) \
 			(((_PRIMARY_CH - _CENTRAL_CH) + 6) >> 2)
 
@@ -682,42 +684,52 @@ struct mtk_regdomain {
 			(((_PRIMARY_CH - _CENTRAL_CH) + 14) >> 2)
 
 /*******************************************************************************
-*                   F U N C T I O N   D E C L A R A T I O N S
-********************************************************************************
-*/
-struct DOMAIN_INFO_ENTRY *rlmDomainGetDomainInfo(struct ADAPTER *prAdapter);
+ *                   F U N C T I O N   D E C L A R A T I O N S
+ *******************************************************************************
+ */
+struct DOMAIN_INFO_ENTRY *rlmDomainGetDomainInfo(
+	struct ADAPTER *prAdapter);
 
 void
 rlmDomainGetChnlList(struct ADAPTER *prAdapter,
 		     enum ENUM_BAND eSpecificBand, u_int8_t fgNoDfs,
-		     uint8_t ucMaxChannelNum, uint8_t *pucNumOfChannel, struct RF_CHANNEL_INFO *paucChannelList);
+		     uint8_t ucMaxChannelNum, uint8_t *pucNumOfChannel,
+		     struct RF_CHANNEL_INFO *paucChannelList);
 
 void rlmDomainSendCmd(struct ADAPTER *prAdapter);
 
 void rlmDomainSendDomainInfoCmd(struct ADAPTER *prAdapter);
 
-void rlmDomainSendPassiveScanInfoCmd(struct ADAPTER *prAdapter);
+void rlmDomainSendPassiveScanInfoCmd(struct ADAPTER
+				     *prAdapter);
 
 uint32_t rlmDomainSupOperatingClassIeFill(uint8_t *pBuf);
 
-u_int8_t rlmDomainCheckChannelEntryValid(struct ADAPTER *prAdapter, uint8_t ucCentralCh);
+u_int8_t rlmDomainCheckChannelEntryValid(struct ADAPTER
+		*prAdapter, uint8_t ucCentralCh);
 
-uint8_t rlmDomainGetCenterChannel(enum ENUM_BAND eBand, uint8_t ucPriChannel, enum ENUM_CHNL_EXT eExtend);
+uint8_t rlmDomainGetCenterChannel(enum ENUM_BAND eBand,
+				  uint8_t ucPriChannel, enum ENUM_CHNL_EXT eExtend);
 
-u_int8_t rlmDomainIsValidRfSetting(struct ADAPTER *prAdapter, enum ENUM_BAND eBand,
-				  uint8_t ucPriChannel, enum ENUM_CHNL_EXT eExtend,
-				  enum ENUM_CHANNEL_WIDTH eChannelWidth, uint8_t ucChannelS1, uint8_t ucChannelS2);
+u_int8_t rlmDomainIsValidRfSetting(struct ADAPTER
+				   *prAdapter, enum ENUM_BAND eBand,
+				   uint8_t ucPriChannel, enum ENUM_CHNL_EXT eExtend,
+				   enum ENUM_CHANNEL_WIDTH eChannelWidth, uint8_t ucChannelS1,
+				   uint8_t ucChannelS2);
 
 #if CFG_SUPPORT_PWR_LIMIT_COUNTRY
 
 u_int8_t
 rlmDomainCheckPowerLimitValid(struct ADAPTER *prAdapter,
-			      struct COUNTRY_POWER_LIMIT_TABLE_CONFIGURATION rPowerLimitTableConfiguration,
+			      struct COUNTRY_POWER_LIMIT_TABLE_CONFIGURATION
+			      rPowerLimitTableConfiguration,
 			      uint8_t ucPwrLimitNum);
 
-void rlmDomainCheckCountryPowerLimitTable(struct ADAPTER *prAdapter);
+void rlmDomainCheckCountryPowerLimitTable(
+	struct ADAPTER *prAdapter);
 
-uint16_t rlmDomainPwrLimitDefaultTableDecision(struct ADAPTER *prAdapter, uint16_t u2CountryCode);
+uint16_t rlmDomainPwrLimitDefaultTableDecision(
+	struct ADAPTER *prAdapter, uint16_t u2CountryCode);
 
 void rlmDomainSendPwrLimitCmd(struct ADAPTER *prAdapter);
 #endif
@@ -728,25 +740,33 @@ extern struct ieee80211_supported_band mtk_band_5ghz;
 
 u_int8_t rlmDomainIsCtrlStateEqualTo(enum regd_state state);
 u_int8_t rlmDomainIsUsingLocalRegDomainDataBase(void);
-enum regd_state rlmDomainStateTransition(enum regd_state request_state, struct regulatory_request *pRequest);
-void rlmDomainSetCountryCode(char *alpha2, u8 size_of_alpha2);
-void rlmDomainSetDfsRegion(enum nl80211_dfs_regions dfs_region);
+enum regd_state rlmDomainStateTransition(enum regd_state
+		request_state, struct regulatory_request *pRequest);
+void rlmDomainSetCountryCode(char *alpha2,
+			     u8 size_of_alpha2);
+void rlmDomainSetDfsRegion(enum nl80211_dfs_regions
+			   dfs_region);
 enum nl80211_dfs_regions rlmDomainGetDfsRegion(void);
 void rlmDomainResetCtrlInfo(u_int8_t force);
-u32 rlmDomainSearchCountrySection(u32 country_code, const struct firmware *file);
-u_int8_t rlmDomainIsTheEndOfCountrySection(u32 start_offset, const struct firmware *file);
+u32 rlmDomainSearchCountrySection(u32 country_code,
+				  const struct firmware *file);
+u_int8_t rlmDomainIsTheEndOfCountrySection(u32 start_offset,
+		const struct firmware *file);
 void rlmDomainAddActiveChannel(u8 band);
 u8 rlmDomainGetActiveChannelCount(u8 band);
 void rlmDomainParsingChannel(IN struct wiphy *pWiphy);
 struct channel *rlmDomainGetActiveChannels(void);
-void rlmExtractChannelInfo(u32 max_ch_count, struct acctive_channel_list *prBuff);
+void rlmExtractChannelInfo(u32 max_ch_count,
+			   struct acctive_channel_list *prBuff);
 void regd_set_using_local_regdomain_db(void);
 void rlmDomainSetDefaultCountryCode(void);
 struct wiphy *rlmDomainGetRefWiphy(void);
 void rlmDomainSetRefWiphy(struct wiphy *pWiphy);
 enum regd_state rlmDomainGetCtrlState(void);
-bool rlmDomainIsSameCountryCode(char *alpha2, u8 size_of_alpha2);
-const struct ieee80211_regdomain *rlmDomainSearchRegdomainFromLocalDataBase(char *alpha2);
+bool rlmDomainIsSameCountryCode(char *alpha2,
+				u8 size_of_alpha2);
+const struct ieee80211_regdomain
+*rlmDomainSearchRegdomainFromLocalDataBase(char *alpha2);
 struct GLUE_INFO *rlmDomainGetGlueInfo(void);
 bool rlmDomainIsEfuseUsed(void);
 
@@ -757,22 +777,29 @@ extern const struct mtk_regdomain *g_prRegRuleTable[];
 
 #endif
 
-const struct ieee80211_regdomain *rlmDomainGetLocalDefaultRegd(void);
-void rlmDomainSendInfoToFirmware(IN struct ADAPTER *prAdapter);
-uint32_t rlmDomainExtractSingleSkuInfoFromFirmware(IN struct ADAPTER *prAdapter, IN uint8_t *pucEventBuf);
+const struct ieee80211_regdomain
+*rlmDomainGetLocalDefaultRegd(void);
+void rlmDomainSendInfoToFirmware(IN struct ADAPTER
+				 *prAdapter);
+uint32_t rlmDomainExtractSingleSkuInfoFromFirmware(
+	IN struct ADAPTER *prAdapter, IN uint8_t *pucEventBuf);
 u_int8_t regd_is_single_sku_en(void);
-u_int8_t rlmDomainIsLegalChannel(struct ADAPTER *prAdapter, enum ENUM_BAND eBand, uint8_t ucChannel);
-enum ENUM_CHNL_EXT rlmSelectSecondaryChannelType(struct ADAPTER *prAdapter, enum ENUM_BAND band, u8 primary_ch);
+u_int8_t rlmDomainIsLegalChannel(struct ADAPTER *prAdapter,
+				 enum ENUM_BAND eBand, uint8_t ucChannel);
+enum ENUM_CHNL_EXT rlmSelectSecondaryChannelType(
+	struct ADAPTER *prAdapter, enum ENUM_BAND band,
+	u8 primary_ch);
 extern void mtk_reg_notify(IN struct wiphy *pWiphy,
 			   IN struct regulatory_request *pRequest);
-void rlmDomainOidSetCountry(IN struct ADAPTER *prAdapter, char *country, u8 size_of_country);
+void rlmDomainOidSetCountry(IN struct ADAPTER *prAdapter,
+			    char *country, u8 size_of_country);
 u32 rlmDomainGetCountryCode(void);
 u32 rlmDomainGetTempCountryCode(void);
 void rlmDomianAssert(u_int8_t cond);
 
 /*******************************************************************************
-*                              F U N C T I O N S
-********************************************************************************
-*/
+ *                              F U N C T I O N S
+ *******************************************************************************
+ */
 
 #endif /* _RLM_DOMAIN_H */
