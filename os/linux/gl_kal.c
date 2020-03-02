@@ -3067,6 +3067,12 @@ kalIoctlByBssIdx(IN struct GLUE_INFO *prGlueInfo,
 		return WLAN_STATUS_FAILURE;
 	}
 
+	if (prGlueInfo->main_thread == NULL) {
+		dump_stack();
+		DBGLOG(OID, WARN, "skip executing request.\n");
+		return WLAN_STATUS_FAILURE;
+	}
+
 	/* <2> TODO: thread-safe */
 
 	/* <3> point to the OidEntry of Glue layer */
