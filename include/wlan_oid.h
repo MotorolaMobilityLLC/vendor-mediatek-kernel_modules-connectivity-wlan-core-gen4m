@@ -2146,6 +2146,7 @@ struct PARAM_SCAN_REQUEST_EXT {
 struct PARAM_SCAN_REQUEST_ADV {
 	uint32_t u4SsidNum;
 	struct PARAM_SSID rSsid[CFG_SCAN_SSID_MAX_NUM];
+	uint8_t ucScanType;
 	uint32_t u4IELength;
 	uint8_t *pucIE;
 };

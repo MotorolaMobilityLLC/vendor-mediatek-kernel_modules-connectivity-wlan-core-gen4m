@@ -803,16 +803,19 @@ int mtk_cfg80211_scan(struct wiphy *wiphy, struct cfg80211_scan_request *request
 
 	kalMemZero(&rScanRequest, sizeof(struct PARAM_SCAN_REQUEST_ADV));
 
-	if (request->n_ssids <= 0) {
+	if (request->n_ssids == 0) {
 		rScanRequest.u4SsidNum = 0;
-	} else if (request->n_ssids <= (SCN_SSID_MAX_NUM + 1)) {
+		rScanRequest.ucScanType = SCAN_TYPE_PASSIVE_SCAN;
+	} else if ((request->ssids) && (request->n_ssids > 0)
+			&& (request->n_ssids <= (SCN_SSID_MAX_NUM + 1))) {
 		num_ssid = (uint32_t)request->n_ssids;
 		old_num_ssid = (uint32_t)request->n_ssids;
 		u4ValidIdx = 0;
 		for (i = 0; i < request->n_ssids; i++) {
 			if ((request->ssids[i].ssid[0] == 0)
 				|| (request->ssids[i].ssid_len == 0)) {
-				num_ssid--; /* remove if this is a wildcard scan */
+				/* remove if this is a wildcard scan */
+				num_ssid--;
 				wildcard_flag |= (1 << i);
 				DBGLOG(REQ, INFO, "i=%d, wildcard scan\n", i);
 				continue;
@@ -821,8 +824,10 @@ int mtk_cfg80211_scan(struct wiphy *wiphy, struct cfg80211_scan_request *request
 				rScanRequest.rSsid[u4ValidIdx].u4SsidLen,
 				request->ssids[i].ssid,
 				request->ssids[i].ssid_len);
-			DBGLOG(REQ, INFO, "i=%d, u4ValidIdx=%d, aucSsid=%s, u4SsidLen=%d\n",
-				i, u4ValidIdx, rScanRequest.rSsid[u4ValidIdx].aucSsid,
+			DBGLOG(REQ, INFO,
+				"i=%d, u4ValidIdx=%d, Ssid=%s, SsidLen=%d\n",
+				i, u4ValidIdx,
+				rScanRequest.rSsid[u4ValidIdx].aucSsid,
 				rScanRequest.rSsid[u4ValidIdx].u4SsidLen);
 
 			u4ValidIdx++;
@@ -831,13 +836,16 @@ int mtk_cfg80211_scan(struct wiphy *wiphy, struct cfg80211_scan_request *request
 				break;
 			}
 		}
-		rScanRequest.u4SsidNum = u4ValidIdx; /* real SSID number to firmware */
+		/* real SSID number to firmware */
+		rScanRequest.u4SsidNum = u4ValidIdx;
+		rScanRequest.ucScanType = SCAN_TYPE_ACTIVE_SCAN;
 	} else {
 		DBGLOG(REQ, ERROR, "request->n_ssids:%d\n", request->n_ssids);
 		return -EINVAL;
 	}
-	DBGLOG(REQ, INFO, "mtk_cfg80211_scan(), n_ssids=%d, num_ssid=(%u->%u), wildcard=0x%X\n"
-		, request->n_ssids, old_num_ssid, num_ssid, wildcard_flag);
+	DBGLOG(REQ, INFO,
+	"mtk_cfg80211_scan(), n_ssids=%d, num_ssid=(%u->%u), wildcard=0x%X\n",
+	request->n_ssids, old_num_ssid, num_ssid, wildcard_flag);
 
 	if (request->ie_len > 0) {
 		rScanRequest.u4IELength = request->ie_len;
