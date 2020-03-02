@@ -3280,22 +3280,21 @@ int hif_thread(void *data)
 	struct net_device *dev = data;
 	struct GLUE_INFO *prGlueInfo = *((struct GLUE_INFO **)
 					 netdev_priv(dev));
+	struct ADAPTER *prAdapter = prGlueInfo->prAdapter;
 	int ret = 0;
 #if defined(CONFIG_ANDROID) && (CFG_ENABLE_WAKE_LOCK)
 	KAL_WAKE_LOCK_T rHifThreadWakeLock;
 #endif
 
-	KAL_WAKE_LOCK_INIT(prGlueInfo->prAdapter,
-			   &rHifThreadWakeLock, "WLAN hif_thread");
-	KAL_WAKE_LOCK(prGlueInfo->prAdapter, &rHifThreadWakeLock);
+	KAL_WAKE_LOCK_INIT(prAdapter, &rHifThreadWakeLock, "WLAN hif_thread");
+	KAL_WAKE_LOCK(prAdapter, &rHifThreadWakeLock);
 
 	DBGLOG(INIT, INFO, "%s:%u starts running...\n",
 	       KAL_GET_CURRENT_THREAD_NAME(), KAL_GET_CURRENT_THREAD_ID());
 
 	prGlueInfo->u4HifThreadPid = KAL_GET_CURRENT_THREAD_ID();
 
-	set_user_nice(current,
-		      prGlueInfo->prAdapter->rWifiVar.cThreadNice);
+	set_user_nice(current, prAdapter->rWifiVar.cThreadNice);
 
 	while (TRUE) {
 
@@ -3310,8 +3309,7 @@ int hif_thread(void *data)
 
 		/* Unlock wakelock if hif_thread going to idle */
 		if (!(prGlueInfo->ulFlag & GLUE_FLAG_HIF_PROCESS))
-			KAL_WAKE_UNLOCK(prGlueInfo->prAdapter,
-					&rHifThreadWakeLock);
+			KAL_WAKE_UNLOCK(prAdapter, &rHifThreadWakeLock);
 
 		/*
 		 * sleep on waitqueue if no events occurred. Event contain
@@ -3325,12 +3323,10 @@ int hif_thread(void *data)
 				!= 0));
 		} while (ret != 0);
 #if defined(CONFIG_ANDROID) && (CFG_ENABLE_WAKE_LOCK)
-		if (!KAL_WAKE_LOCK_ACTIVE(prGlueInfo->prAdapter,
-					  &rHifThreadWakeLock))
-			KAL_WAKE_LOCK(prGlueInfo->prAdapter,
-				      &rHifThreadWakeLock);
+		if (!KAL_WAKE_LOCK_ACTIVE(prAdapter, &rHifThreadWakeLock))
+			KAL_WAKE_LOCK(prAdapter, &rHifThreadWakeLock);
 #endif
-		if (prGlueInfo->prAdapter->fgIsFwOwn
+		if (prAdapter->fgIsFwOwn
 		    && (prGlueInfo->ulFlag == GLUE_FLAG_HIF_FW_OWN)) {
 			DBGLOG(INIT, INFO,
 			       "Only FW OWN request, but now already done FW OWN\n");
@@ -3338,7 +3334,7 @@ int hif_thread(void *data)
 				  &prGlueInfo->ulFlag);
 			continue;
 		}
-		wlanAcquirePowerControl(prGlueInfo->prAdapter);
+		wlanAcquirePowerControl(prAdapter);
 
 		/* Handle Interrupt */
 		if (test_and_clear_bit(GLUE_FLAG_INT_BIT,
@@ -3347,7 +3343,7 @@ int hif_thread(void *data)
 			 * thread, so we set the flag only to enable the
 			 * interrupt later
 			 */
-			prGlueInfo->prAdapter->fgIsIntEnable = FALSE;
+			prAdapter->fgIsIntEnable = FALSE;
 			if (prGlueInfo->ulFlag & GLUE_FLAG_HALT
 #if CFG_CHIP_RESET_SUPPORT
 			    || kalIsResetting()
@@ -3359,44 +3355,43 @@ int hif_thread(void *data)
 			} else {
 				/* DBGLOG(INIT, INFO, ("HIF Interrupt!\n")); */
 				prGlueInfo->TaskIsrCnt++;
-				wlanIST(prGlueInfo->prAdapter);
+				wlanIST(prAdapter);
 			}
 		}
 
 		/* Skip Tx request if SER is operating */
-		if (!nicSerIsTxStop(prGlueInfo->prAdapter)) {
+		if ((prAdapter->fgIsFwOwn == FALSE) &&
+		    !nicSerIsTxStop(prAdapter)) {
 			/* TX Commands */
 			if (test_and_clear_bit(GLUE_FLAG_HIF_TX_CMD_BIT,
 					       &prGlueInfo->ulFlag))
-				wlanTxCmdMthread(prGlueInfo->prAdapter);
+				wlanTxCmdMthread(prAdapter);
 
 			/* Process TX data packet to HIF */
 			if (test_and_clear_bit(GLUE_FLAG_HIF_TX_BIT,
 					       &prGlueInfo->ulFlag))
-				nicTxMsduQueueMthread(prGlueInfo->prAdapter);
+				nicTxMsduQueueMthread(prAdapter);
 		}
 
 		/* Read chip status when chip no response */
 		if (test_and_clear_bit(GLUE_FLAG_HIF_PRT_HIF_DBG_INFO_BIT,
 				       &prGlueInfo->ulFlag))
-			halPrintHifDbgInfo(prGlueInfo->prAdapter);
+			halPrintHifDbgInfo(prAdapter);
 
 		/* Set FW own */
 		if (test_and_clear_bit(GLUE_FLAG_HIF_FW_OWN_BIT,
 				       &prGlueInfo->ulFlag))
-			prGlueInfo->prAdapter->fgWiFiInSleepyState = TRUE;
+			prAdapter->fgWiFiInSleepyState = TRUE;
 
 		/* Release to FW own */
-		wlanReleasePowerControl(prGlueInfo->prAdapter);
+		wlanReleasePowerControl(prAdapter);
 	}
 
 	complete(&prGlueInfo->rHifHaltComp);
 #if defined(CONFIG_ANDROID) && (CFG_ENABLE_WAKE_LOCK)
-	if (KAL_WAKE_LOCK_ACTIVE(prGlueInfo->prAdapter,
-				 &rHifThreadWakeLock))
+	if (KAL_WAKE_LOCK_ACTIVE(prAdapter, &rHifThreadWakeLock))
 		KAL_WAKE_UNLOCK(prGlueInfo->prAdapter, &rHifThreadWakeLock);
-	KAL_WAKE_LOCK_DESTROY(prGlueInfo->prAdapter,
-			      &rHifThreadWakeLock);
+	KAL_WAKE_LOCK_DESTROY(prAdapter, &rHifThreadWakeLock);
 #endif
 
 	DBGLOG(INIT, TRACE, "%s:%u stopped!\n",
