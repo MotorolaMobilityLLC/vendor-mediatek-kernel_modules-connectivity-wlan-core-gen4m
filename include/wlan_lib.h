@@ -154,6 +154,7 @@
 
 #define WLAN_OID_NO_ACK_THRESHOLD			3
 
+
 /* If not setting the priority, 0 is the default */
 #define WLAN_THREAD_TASK_PRIORITY			0
 
@@ -1488,3 +1489,6 @@ uint8_t wlanGetSupportNss(IN struct ADAPTER *prAdapter, IN uint8_t ucBssIndex);
 #if CFG_SUPPORT_LOWLATENCY_MODE
 uint32_t wlanAdapterStartForLowLatency(IN struct ADAPTER *prAdapter);
 #endif /* CFG_SUPPORT_LOWLATENCY_MODE */
+int32_t wlanGetFileContent(struct ADAPTER *prAdapter,
+	const uint8_t *pcFileName, uint8_t *pucBuf,
+	uint32_t u4MaxFileLen, uint32_t *pu4ReadFileLen, u_int8_t bReqFw);

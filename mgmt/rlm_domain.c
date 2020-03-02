@@ -234,6 +234,36 @@ const struct ieee80211_regdomain default_regdom_ww = {
 };
 #endif
 
+const char *gTx_Pwr_Limit_Section[TX_PWR_LIMIT_SECTION_NUM] = {
+	"legacy", "ht20", "ht40", "vht20", "offset"
+};
+
+const u8 gTx_Pwr_Limit_Element_Num[TX_PWR_LIMIT_SECTION_NUM] = {
+	7, 6, 7, 7, 5
+};
+
+const char *gTx_Pwr_Limit_Element[][TX_PWR_LIMIT_ELEMENT_NUM] = {
+	{"cck1_2", "cck_5_11", "ofdm6_9", "ofdm12_18", "ofdm24_36",
+	 "ofdm48", "ofdm54"},
+	{"mcs0_8", "mcs1_2_9_10", "mcs3_4_11_12", "mcs5_13", "mcs6_14",
+	 "mcs7_15"},
+	{"mcs0_8", "mcs1_2_9_10", "mcs3_4_11_12", "mcs5_13", "mcs6_14",
+	 "mcs7_15", "mcs32"},
+	{"mcs0", "mcs1_2", "mcs3_4", "mcs5_6", "mcs7", "mcs8", "mcs9"},
+	{"lg40", "lg80", "vht40", "vht80", "vht160nc"}
+};
+
+static const int8_t gTx_Pwr_Limit_2g_Ch[] = {
+	1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14};
+static const int8_t gTx_Pwr_Limit_5g_Ch[] = {
+	36, 38, 40, 42, 44, 46, 48, 50, 52, 54, 56, 58, 60, 62, 64, 100, 102,
+	104, 106, 108, 110, 112, 114, 116, 118, 120, 122, 124, 126, 128, 132,
+	134, 136, 138, 140, 142, 144, 149, 151, 153, 155, 157, 159, 161, 165};
+
+#define TX_PWR_LIMIT_2G_CH_NUM (ARRAY_SIZE(gTx_Pwr_Limit_2g_Ch))
+#define TX_PWR_LIMIT_5G_CH_NUM (ARRAY_SIZE(gTx_Pwr_Limit_5g_Ch))
+
+
 #endif
 
 struct DOMAIN_INFO_ENTRY arSupportedRegDomains[] = {
@@ -1489,102 +1519,633 @@ rlmDomainIsValidRfSetting(struct ADAPTER *prAdapter,
 }
 
 #if (CFG_SUPPORT_SINGLE_SKU == 1)
-void rlmSetTxPwrLmtCmdValue(struct tx_pwr_element *pEle, struct CMD_CHANNEL_POWER_LIMIT_V2 *pCmd)
+/*
+ * This function coverts country code from alphabet chars to u32,
+ * the caller need to pass country code chars and do size check
+ */
+uint32_t rlmDomainAlpha2ToU32(uint8_t *pcAlpha2, uint8_t ucAlpha2Size)
 {
-	memcpy(pCmd, pEle, sizeof(struct CMD_CHANNEL_POWER_LIMIT_V2));
-	pCmd->ucCentralCh = pEle->channel_num;
+	uint8_t ucIdx;
+	uint32_t u4CountryCode = 0;
+
+	if (ucAlpha2Size > TX_PWR_LIMIT_COUNTRY_STR_MAX_LEN) {
+		DBGLOG(RLM, ERROR, "alpha2 size %d is invalid!(max: %d)\n",
+			ucAlpha2Size, TX_PWR_LIMIT_COUNTRY_STR_MAX_LEN);
+		ucAlpha2Size = TX_PWR_LIMIT_COUNTRY_STR_MAX_LEN;
+	}
+
+	for (ucIdx = 0; ucIdx < ucAlpha2Size; ucIdx++)
+		u4CountryCode |= (pcAlpha2[ucIdx] << (ucIdx * 8));
+
+	return u4CountryCode;
 }
 
-u_int8_t rlmDomainGetTxPwrLimit(u32 country_code,
-							  struct GLUE_INFO *prGlueInfo,
-							  struct CMD_SET_COUNTRY_CHANNEL_POWER_LIMIT_V2 *pSetCmd_2g,
-							  struct CMD_SET_COUNTRY_CHANNEL_POWER_LIMIT_V2 *pSetCmd_5g
-							  )
+/*----------------------------------------------------------------------------*/
+/*!
+* \brief Search the tx power limit setting range of the specified in the text
+*        file
+*
+* \param[IN] u4CountryCode The u32 type of the specified country.
+* \param[IN] pucBuf The content of the text file.
+* \param[IN] u4cBufLen End boundary of the text file.
+* \param[OUT] pu4CountryStart Store the start position of the desired country
+*             settings.
+* \param[OUT] pu4CountryEnd Store the end position of the desired country
+*             settings.
+*
+* \retval TRUE Success.
+* \retval FALSE Failure.
+*/
+/*----------------------------------------------------------------------------*/
+
+u_int8_t rlmDomainTxPwrLimitGetCountryRange(
+	uint32_t u4CountryCode, uint8_t *pucBuf, uint32_t u4BufLen,
+	uint32_t *pu4CountryStart, uint32_t *pu4CountryEnd)
 {
-	int ret;
-	u32 start_offset, ch_idx;
-	const struct firmware *file;
-	struct tx_pwr_element *pEle;
-	struct CMD_SET_COUNTRY_CHANNEL_POWER_LIMIT_V2 *pSetCmd;
-	struct CMD_CHANNEL_POWER_LIMIT_V2 *pCmd;
-	u_int8_t error = FALSE;
+	uint32_t u4TmpPos = 0;
+	char pcrCountryStr[TX_PWR_LIMIT_COUNTRY_STR_MAX_LEN + 1] = {0};
+	uint8_t cIdx = 0;
 
-	#define IS_5GHZ_CH(n) ((n) > 14)
-	#define TX_PWR_LIMIT_FILE "MT_TxPwrLimit.dat"
+	while (1) {
+		while (u4TmpPos < u4BufLen && pucBuf[u4TmpPos] != '[')
+			u4TmpPos++;
 
+		u4TmpPos++; /* skip the '[' char */
 
-	/*open file*/
+		cIdx = 0;
+		while ((u4TmpPos < u4BufLen) &&
+			   (cIdx < TX_PWR_LIMIT_COUNTRY_STR_MAX_LEN) &&
+			   (pucBuf[u4TmpPos] != ']')) {
+			pcrCountryStr[cIdx++] = pucBuf[u4TmpPos];
+			u4TmpPos++;
+		}
 
-	/*
-	 * Driver support request_firmware() to get files
-	 * Android path: "/etc/firmware", "/vendor/firmware", "/firmware/image"
-	 * Linux path: "/lib/firmware", "/lib/firmware/update"
+		u4TmpPos++; /* skip the ']' char */
+
+		if ((u4TmpPos >= u4BufLen) ||
+		    (cIdx > TX_PWR_LIMIT_COUNTRY_STR_MAX_LEN))
+			return FALSE;
+
+		if (u4CountryCode ==
+			rlmDomainAlpha2ToU32(pcrCountryStr, cIdx)) {
+			DBGLOG(RLM, INFO,
+				"Found TxPwrLimit table for CountryCode \"%s\"\n",
+				pcrCountryStr);
+			*pu4CountryStart = u4TmpPos;
+			/* the location after char ']' */
+			break;
+		}
+	}
+
+	while (u4TmpPos < u4BufLen && pucBuf[u4TmpPos] != '[')
+		u4TmpPos++;
+
+	*pu4CountryEnd = u4TmpPos;
+
+	return TRUE;
+}
+
+u_int8_t rlmDomainTxPwrLimitSearchSection(const char *pSectionName,
+	uint8_t *pucBuf, uint32_t *pu4Pos, uint32_t u4BufEnd)
+{
+	uint32_t u4TmpPos = *pu4Pos;
+	uint8_t uSectionNameLen = kalStrLen(pSectionName);
+
+	while (1) {
+		while (u4TmpPos < u4BufEnd && pucBuf[u4TmpPos] != '<')
+			u4TmpPos++;
+
+		u4TmpPos++; /* skip char '<' */
+
+		if (u4TmpPos + uSectionNameLen >= u4BufEnd)
+			return FALSE;
+
+		if (kalStrnCmp(&pucBuf[u4TmpPos],
+				pSectionName, uSectionNameLen) == 0) {
+
+			/* Go to the end of section header line */
+			while ((u4TmpPos < u4BufEnd) &&
+				   (pucBuf[u4TmpPos] != '\n'))
+				u4TmpPos++;
+
+			*pu4Pos = u4TmpPos;
+
+			break;
+		}
+	}
+
+	return TRUE;
+}
+
+u_int8_t rlmDomainTxPwrLimitSectionEnd(uint8_t *pucBuf,
+	const char *pSectionName, uint32_t *pu4Pos, uint32_t u4BufEnd)
+{
+	uint32_t u4TmpPos = *pu4Pos;
+	char cTmpChar = 0;
+	uint8_t uSectionNameLen = kalStrLen(pSectionName);
+
+	while (u4TmpPos < u4BufEnd) {
+		cTmpChar = pucBuf[u4TmpPos];
+
+		/* skip blank lines */
+		if (cTmpChar == ' ' || cTmpChar == '\t' ||
+			cTmpChar == '\n' || cTmpChar == '\r') {
+			u4TmpPos++;
+			continue;
+		}
+
+		break;
+	}
+
+	/* 2 means '/' and '>' */
+	if (u4TmpPos + uSectionNameLen + 2 >= u4BufEnd) {
+		*pu4Pos = u4BufEnd;
+		return FALSE;
+	}
+
+	if (pucBuf[u4TmpPos] != '<')
+		return FALSE;
+
+	if (pucBuf[u4TmpPos + 1] != '/' ||
+		pucBuf[u4TmpPos + 2 + uSectionNameLen] != '>' ||
+		kalStrnCmp(&pucBuf[u4TmpPos + 2],
+			pSectionName, uSectionNameLen)) {
+
+		*pu4Pos = u4TmpPos + uSectionNameLen + 2;
+		return FALSE;
+	}
+
+	/* 3 means go to the location after '>' */
+	*pu4Pos = u4TmpPos + uSectionNameLen + 3;
+	return TRUE;
+}
+
+int8_t rlmDomainTxPwrLimitGetChIdx(
+	struct TX_PWR_LIMIT_DATA *pTxPwrLimit, uint8_t ucChannel)
+{
+	int8_t cIdx = 0;
+
+	for (cIdx = 0; cIdx < pTxPwrLimit->ucChNum; cIdx++)
+		if (ucChannel ==
+			pTxPwrLimit->rChannelTxPwrLimit[cIdx].ucChannel)
+			return cIdx;
+
+	DBGLOG(RLM, ERROR,
+		"Can't find idx of channel %d in TxPwrLimit data\n",
+		ucChannel);
+
+	return -1;
+}
+
+u_int8_t rlmDomainTxPwrLimitLoadChannelSetting(
+	uint8_t *pucBuf, uint32_t *pu4Pos, uint32_t u4BufEnd,
+	struct TX_PWR_LIMIT_DATA *pTxPwrLimit, uint8_t ucSectionIdx)
+{
+	uint32_t u4TmpPos = *pu4Pos;
+	char cTmpChar = 0;
+	struct CHANNEL_TX_PWR_LIMIT *prChTxPwrLimit = NULL;
+	u_int8_t bNeg = FALSE;
+	int8_t cLimitValue = 0, cChIdx = 0;
+	uint8_t ucIdx = 0, ucChannel = 0;
+
+	/* skip blank lines */
+	while (u4TmpPos < u4BufEnd) {
+		cTmpChar = pucBuf[u4TmpPos];
+
+		if (cTmpChar == ' ' || cTmpChar == '\t' ||
+			cTmpChar == '\n' || cTmpChar == '\r') {
+			u4TmpPos++;
+			continue;
+		}
+
+		break;
+	}
+
+	/* current is at the location of 'c',
+	 * check remaining buf length for 'chxxx'
 	 */
-	ret = REQUEST_FIRMWARE(&file, TX_PWR_LIMIT_FILE, prGlueInfo->prDev);
+	if (u4TmpPos + 5 >= u4BufEnd) {
+		DBGLOG(RLM, ERROR,
+			"Invalid location of ch setting: %u/%u\n",
+			u4TmpPos, u4BufEnd);
+		return FALSE;
+	}
 
-	if (ret) {
-		DBGLOG(RLM, WARN, "\n===WARNING===\n%s(); Open file [%s] failed.\n",
-			   __func__, TX_PWR_LIMIT_FILE);
-		DBGLOG(RLM, WARN, "MaxTxPowerLimit is disable.\n===WARNING===\n");
+	if (pucBuf[u4TmpPos] == 'c' && pucBuf[u4TmpPos + 1] == 'h') {
+		ucChannel = (pucBuf[u4TmpPos + 2] - '0') * 100 +
+					(pucBuf[u4TmpPos + 3] - '0') * 10 +
+					(pucBuf[u4TmpPos + 4] - '0');
+	} else { /* invalid format */
+		*pu4Pos = u4TmpPos;
+		DBGLOG(RLM, ERROR,
+			"Invalid ch setting starting chars: %c%c\n",
+			pucBuf[u4TmpPos], pucBuf[u4TmpPos + 1]);
 
-		/*error*/
+		/* goto next line */
+		while (*pu4Pos < u4BufEnd && pucBuf[*pu4Pos] != '\n')
+			(*pu4Pos)++;
+
 		return TRUE;
 	}
 
-	DBGLOG(RLM, INFO, "%s(); country_code = 0x%x\n",
-		   __func__, country_code);
+	cChIdx = rlmDomainTxPwrLimitGetChIdx(pTxPwrLimit, ucChannel);
 
-	/*search country code*/
-	start_offset = rlmDomainSearchCountrySection(country_code, file);
-	if (!start_offset) {
-		DBGLOG(RLM, WARN, "\n===WARNING===\n%s(): Cannot find match country code: 0x%x\n",
-			   __func__, country_code);
-		DBGLOG(RLM, WARN, "MaxTxPowerLimit is disable.\n===WARNING===\n");
+	if (cChIdx == -1) {
+		*pu4Pos = u4TmpPos;
+		DBGLOG(RLM, ERROR, "Invalid ch %u %c%c%c\n", ucChannel,
+			pucBuf[u4TmpPos + 2],
+			pucBuf[u4TmpPos + 3], pucBuf[u4TmpPos + 4]);
 
-		error = TRUE;
-		goto END;
+		/* goto next line */
+		while (*pu4Pos < u4BufEnd && pucBuf[*pu4Pos] != '\n')
+			(*pu4Pos)++;
+
+		return TRUE;
 	}
 
-	while (!rlmDomainIsTheEndOfCountrySection(start_offset, file)) {
+	u4TmpPos += 5;
 
-		/*getting and assign tx power*/
-		pEle = (struct tx_pwr_element *)(file->data + start_offset); /*pointer to data base*/
+	prChTxPwrLimit = &pTxPwrLimit->rChannelTxPwrLimit[cChIdx];
 
-		if (pEle->prefix == ELEMENT_PREFIX) {
-			/*search the home of this channel and update the tx pwr*/
-			if (IS_5GHZ_CH(pEle->channel_num))
-				pSetCmd = pSetCmd_5g;
-			else
-				pSetCmd = pSetCmd_2g;
+	/* read the channel TxPwrLimit settings */
+	for (ucIdx = 0; ucIdx < gTx_Pwr_Limit_Element_Num[ucSectionIdx];
+		 ucIdx++) {
 
-			if (!pSetCmd)
+		/* skip blank and comma */
+		while (u4TmpPos < u4BufEnd) {
+			cTmpChar = pucBuf[u4TmpPos];
+
+			if ((cTmpChar == ' ') ||
+				(cTmpChar == '\t') ||
+				(cTmpChar == ',')) {
+				u4TmpPos++;
 				continue;
-
-
-			for (ch_idx = 0; ch_idx < pSetCmd->ucNum; ch_idx++) {
-				pCmd = &(pSetCmd->rChannelPowerLimit[ch_idx]);
-
-				if (pCmd->ucCentralCh == pEle->channel_num) {
-					rlmSetTxPwrLmtCmdValue(pEle, pCmd);
-
-					break;
-				}
 			}
+			break;
+		}
 
-			if (ch_idx == pSetCmd->ucNum) {
-				DBGLOG(RLM, WARN, "%s(); The channel 0x%x is not active.\n",
-					   __func__, pEle->channel_num);
+		if (u4TmpPos >= u4BufEnd) {
+			*pu4Pos = u4BufEnd;
+			DBGLOG(RLM, ERROR,
+				"Invalid location of ch tx pwr limit val: %u/%u\n",
+				u4TmpPos, u4BufEnd);
+			return FALSE;
+		}
+
+		bNeg = FALSE;
+
+		cTmpChar = pucBuf[u4TmpPos];
+
+		if (cTmpChar == '-') {
+			bNeg = TRUE;
+			u4TmpPos++;
+		} else if (cTmpChar == 'x') {
+			prChTxPwrLimit->rTxPwrLimitValue[ucSectionIdx][ucIdx] =
+				TX_PWR_LIMIT_MAX_VAL;
+			u4TmpPos++;
+			continue;
+		}
+
+		cLimitValue = 0;
+		while (u4TmpPos < u4BufEnd) {
+			cTmpChar = pucBuf[u4TmpPos];
+
+			if (cTmpChar < '0' || cTmpChar > '9')
+				break;
+
+			cLimitValue = (cLimitValue * 10) + (cTmpChar - '0');
+			u4TmpPos++;
+		}
+
+		if (bNeg)
+			cLimitValue = -cLimitValue;
+
+		prChTxPwrLimit->rTxPwrLimitValue[ucSectionIdx][ucIdx] =
+			cLimitValue;
+	}
+
+	*pu4Pos = u4TmpPos;
+	return TRUE;
+}
+
+void rlmDomainTxPwrLimitRemoveComments(
+	uint8_t *pucBuf, uint32_t u4BufLen)
+{
+	uint32_t u4TmpPos = 0;
+	char cTmpChar = 0;
+
+	while (u4TmpPos < u4BufLen) {
+		cTmpChar = pucBuf[u4TmpPos];
+
+		if (cTmpChar == '#') {
+			while (cTmpChar != '\n') {
+				pucBuf[u4TmpPos] = ' ';
+
+				u4TmpPos++;
+				if (u4TmpPos >= u4BufLen)
+					break;
+
+				cTmpChar = pucBuf[u4TmpPos];
 			}
 		}
-		start_offset += sizeof(struct tx_pwr_element);
+		u4TmpPos++;
+	}
+}
+
+u_int8_t rlmDomainTxPwrLimitLoad(
+	struct ADAPTER *prAdapter, uint8_t *pucBuf, uint32_t u4BufLen,
+	uint32_t u4CountryCode, struct TX_PWR_LIMIT_DATA *pTxPwrLimit)
+{
+	uint8_t uSecIdx = 0;
+	uint32_t u4CountryStart = 0, u4CountryEnd = 0, u4Pos = 0;
+
+	rlmDomainTxPwrLimitRemoveComments(pucBuf, u4BufLen);
+
+	if (!rlmDomainTxPwrLimitGetCountryRange(u4CountryCode, pucBuf,
+		u4BufLen, &u4CountryStart, &u4CountryEnd)) {
+		DBGLOG(RLM, ERROR, "Can't find specified table in %s\n",
+			WLAN_TX_PWR_LIMIT_FILE_NAME);
+		return FALSE;
 	}
 
-END:
-	/*close file*/
-	release_firmware(file);
+	u4Pos = u4CountryStart;
 
-	return error;
+	for (uSecIdx = 0; uSecIdx < TX_PWR_LIMIT_SECTION_NUM; uSecIdx++) {
+		if (!rlmDomainTxPwrLimitSearchSection(
+				gTx_Pwr_Limit_Section[uSecIdx],
+				pucBuf, &u4Pos, u4CountryEnd)) {
+			DBGLOG(RLM, ERROR,
+				"Can't find specified section %s in %s\n",
+				gTx_Pwr_Limit_Section[uSecIdx],
+				WLAN_TX_PWR_LIMIT_FILE_NAME);
+			return FALSE;
+		}
+
+		DBGLOG(RLM, INFO, "Find specified section %s in %s\n",
+			gTx_Pwr_Limit_Section[uSecIdx],
+			WLAN_TX_PWR_LIMIT_FILE_NAME);
+
+		while (!rlmDomainTxPwrLimitSectionEnd(pucBuf,
+			gTx_Pwr_Limit_Section[uSecIdx],
+			&u4Pos, u4CountryEnd) &&
+			u4Pos < u4CountryEnd) {
+			if (!rlmDomainTxPwrLimitLoadChannelSetting(
+				pucBuf, &u4Pos, u4CountryEnd,
+				pTxPwrLimit, uSecIdx))
+				return FALSE;
+		}
+	}
+
+	DBGLOG(RLM, INFO, "Load %s finished\n", WLAN_TX_PWR_LIMIT_FILE_NAME);
+	return TRUE;
 }
+
+void rlmDomainTxPwrLimitSetChValues(
+	struct CMD_CHANNEL_POWER_LIMIT_V2 *pCmd,
+	struct CHANNEL_TX_PWR_LIMIT *pChTxPwrLimit)
+{
+	uint8_t section = 0, e = 0;
+
+	pCmd->tx_pwr_dsss_cck = pChTxPwrLimit->rTxPwrLimitValue[0][0];
+	pCmd->tx_pwr_dsss_bpsk = pChTxPwrLimit->rTxPwrLimitValue[0][1];
+
+	/* 6M, 9M */
+	pCmd->tx_pwr_ofdm_bpsk = pChTxPwrLimit->rTxPwrLimitValue[0][2];
+	/* 12M, 18M */
+	pCmd->tx_pwr_ofdm_qpsk = pChTxPwrLimit->rTxPwrLimitValue[0][3];
+	/* 24M, 36M */
+	pCmd->tx_pwr_ofdm_16qam = pChTxPwrLimit->rTxPwrLimitValue[0][4];
+	pCmd->tx_pwr_ofdm_48m = pChTxPwrLimit->rTxPwrLimitValue[0][5];
+	pCmd->tx_pwr_ofdm_54m = pChTxPwrLimit->rTxPwrLimitValue[0][6];
+
+	/* MCS0*/
+	pCmd->tx_pwr_ht20_bpsk = pChTxPwrLimit->rTxPwrLimitValue[1][0];
+	/* MCS1, MCS2*/
+	pCmd->tx_pwr_ht20_qpsk = pChTxPwrLimit->rTxPwrLimitValue[1][1];
+	/* MCS3, MCS4*/
+	pCmd->tx_pwr_ht20_16qam = pChTxPwrLimit->rTxPwrLimitValue[1][2];
+	/* MCS5*/
+	pCmd->tx_pwr_ht20_mcs5 = pChTxPwrLimit->rTxPwrLimitValue[1][3];
+	/* MCS6*/
+	pCmd->tx_pwr_ht20_mcs6 = pChTxPwrLimit->rTxPwrLimitValue[1][4];
+	/* MCS7*/
+	pCmd->tx_pwr_ht20_mcs7 = pChTxPwrLimit->rTxPwrLimitValue[1][5];
+
+	/* MCS0*/
+	pCmd->tx_pwr_ht40_bpsk = pChTxPwrLimit->rTxPwrLimitValue[2][0];
+	/* MCS1, MCS2*/
+	pCmd->tx_pwr_ht40_qpsk = pChTxPwrLimit->rTxPwrLimitValue[2][1];
+	/* MCS3, MCS4*/
+	pCmd->tx_pwr_ht40_16qam = pChTxPwrLimit->rTxPwrLimitValue[2][2];
+	/* MCS5*/
+	pCmd->tx_pwr_ht40_mcs5 = pChTxPwrLimit->rTxPwrLimitValue[2][3];
+	/* MCS6*/
+	pCmd->tx_pwr_ht40_mcs6 = pChTxPwrLimit->rTxPwrLimitValue[2][4];
+	/* MCS7*/
+	pCmd->tx_pwr_ht40_mcs7 = pChTxPwrLimit->rTxPwrLimitValue[2][5];
+	/* MCS32*/
+	pCmd->tx_pwr_ht40_mcs32 = pChTxPwrLimit->rTxPwrLimitValue[2][6];
+
+	/* MCS0*/
+	pCmd->tx_pwr_vht20_bpsk = pChTxPwrLimit->rTxPwrLimitValue[3][0];
+	/* MCS1, MCS2*/
+	pCmd->tx_pwr_vht20_qpsk = pChTxPwrLimit->rTxPwrLimitValue[3][1];
+	/* MCS3, MCS4*/
+	pCmd->tx_pwr_vht20_16qam = pChTxPwrLimit->rTxPwrLimitValue[3][2];
+	/* MCS5, MCS6*/
+	pCmd->tx_pwr_vht20_64qam = pChTxPwrLimit->rTxPwrLimitValue[3][3];
+	pCmd->tx_pwr_vht20_mcs7 = pChTxPwrLimit->rTxPwrLimitValue[3][4];
+	pCmd->tx_pwr_vht20_mcs8 = pChTxPwrLimit->rTxPwrLimitValue[3][5];
+	pCmd->tx_pwr_vht20_mcs9 = pChTxPwrLimit->rTxPwrLimitValue[3][6];
+
+	pCmd->tx_pwr_vht_40 = pChTxPwrLimit->rTxPwrLimitValue[4][2];
+	pCmd->tx_pwr_vht_80 = pChTxPwrLimit->rTxPwrLimitValue[4][3];
+	pCmd->tx_pwr_vht_160c = pChTxPwrLimit->rTxPwrLimitValue[4][5];
+	pCmd->tx_pwr_vht_160nc = pChTxPwrLimit->rTxPwrLimitValue[4][4];
+	pCmd->tx_pwr_lg_40 = pChTxPwrLimit->rTxPwrLimitValue[4][0];
+	pCmd->tx_pwr_lg_80 = pChTxPwrLimit->rTxPwrLimitValue[4][1];
+
+
+	DBGLOG(RLM, TRACE, "ch %d\n", pCmd->ucCentralCh);
+	for (section = 0; section < TX_PWR_LIMIT_SECTION_NUM; section++)
+		for (e = 0; e < gTx_Pwr_Limit_Element_Num[section]; e++)
+			DBGLOG(RLM, TRACE, "TxPwrLimit[%s][%s]= %d\n",
+				gTx_Pwr_Limit_Section[section],
+				gTx_Pwr_Limit_Element[section][e],
+				pChTxPwrLimit->rTxPwrLimitValue[section][e]);
+}
+
+void rlmDomainTxPwrLimitSetValues(
+	struct CMD_SET_COUNTRY_CHANNEL_POWER_LIMIT_V2 *pSetCmd,
+	struct TX_PWR_LIMIT_DATA *pTxPwrLimit)
+{
+	uint8_t ucIdx = 0;
+	int8_t cChIdx = 0;
+	struct CMD_CHANNEL_POWER_LIMIT_V2 *pCmd = NULL;
+	struct CHANNEL_TX_PWR_LIMIT *pChTxPwrLimit = NULL;
+
+	for (ucIdx = 0; ucIdx < pSetCmd->ucNum; ucIdx++) {
+		pCmd = &(pSetCmd->rChannelPowerLimit[ucIdx]);
+		cChIdx = rlmDomainTxPwrLimitGetChIdx(pTxPwrLimit,
+			pCmd->ucCentralCh);
+		if (cChIdx == -1) {
+			DBGLOG(RLM, ERROR,
+				"Invalid ch idx found while assigning values\n");
+			continue;
+		}
+		pChTxPwrLimit = &pTxPwrLimit->rChannelTxPwrLimit[cChIdx];
+		rlmDomainTxPwrLimitSetChValues(pCmd, pChTxPwrLimit);
+	}
+}
+
+u_int8_t rlmDomainTxPwrLimitLoadFromFile(struct ADAPTER *prAdapter,
+	uint32_t u4CountryCode, struct TX_PWR_LIMIT_DATA *pTxPwrLimit)
+{
+	uint8_t *pucConfigBuf;
+	uint32_t u4ConfigReadLen;
+	u_int8_t bRet = TRUE;
+
+	pucConfigBuf = (uint8_t *)
+		kalMemAlloc(
+			WLAN_TX_PWR_LIMIT_FILE_BUF_SIZE,
+			VIR_MEM_TYPE);
+
+	if (!pucConfigBuf)
+		return FALSE;
+
+	kalMemZero(pucConfigBuf, WLAN_TX_PWR_LIMIT_FILE_BUF_SIZE);
+	u4ConfigReadLen = 0;
+
+	if (wlanGetFileContent(
+			prAdapter,
+			"/storage/sdcard0/" WLAN_TX_PWR_LIMIT_FILE_NAME,
+			pucConfigBuf,
+			WLAN_TX_PWR_LIMIT_FILE_BUF_SIZE,
+			&u4ConfigReadLen, FALSE) == 0) {
+		/* ToDo:: Nothing */
+	} else if (wlanGetFileContent(
+				prAdapter,
+				"/data/misc/" WLAN_TX_PWR_LIMIT_FILE_NAME,
+				pucConfigBuf,
+				WLAN_TX_PWR_LIMIT_FILE_BUF_SIZE,
+				&u4ConfigReadLen, FALSE) == 0) {
+		/* ToDo:: Nothing */
+	} else if (wlanGetFileContent(
+				prAdapter,
+				"/data/misc/wifi/" WLAN_TX_PWR_LIMIT_FILE_NAME,
+				pucConfigBuf,
+				WLAN_TX_PWR_LIMIT_FILE_BUF_SIZE,
+				&u4ConfigReadLen, FALSE) == 0) {
+		/* ToDo:: Nothing */
+	} else if (wlanGetFileContent(
+				prAdapter,
+				WLAN_TX_PWR_LIMIT_FILE_NAME,
+				pucConfigBuf,
+				WLAN_TX_PWR_LIMIT_FILE_BUF_SIZE,
+				&u4ConfigReadLen, TRUE) == 0) {
+		/* ToDo:: Nothing */
+	} else {
+		bRet = FALSE;
+		goto error;
+	}
+
+	if (pucConfigBuf[0] == '\0' || u4ConfigReadLen == 0) {
+		bRet = FALSE;
+		goto error;
+	}
+
+	if (!rlmDomainTxPwrLimitLoad(prAdapter,
+			pucConfigBuf, u4ConfigReadLen,
+		u4CountryCode, pTxPwrLimit)) {
+		bRet = FALSE;
+		goto error;
+	}
+
+error:
+	kalMemFree(pucConfigBuf,
+		VIR_MEM_TYPE, WLAN_TX_PWR_LIMIT_FILE_BUF_SIZE);
+	return bRet;
+}
+
+u_int8_t rlmDomainGetTxPwrLimit(
+	uint32_t country_code,
+	struct GLUE_INFO *prGlueInfo,
+	struct CMD_SET_COUNTRY_CHANNEL_POWER_LIMIT_V2 *pSetCmd_2g,
+	struct CMD_SET_COUNTRY_CHANNEL_POWER_LIMIT_V2 *pSetCmd_5g
+							  )
+{
+	u_int8_t bRet = TRUE;
+	uint8_t ucIdx = 0, ucCnt = 0;
+	struct TX_PWR_LIMIT_DATA *pTxPwrLimit =
+		(struct TX_PWR_LIMIT_DATA *)
+		kalMemAlloc(sizeof(struct TX_PWR_LIMIT_DATA),
+			VIR_MEM_TYPE);
+
+	if (!pTxPwrLimit) {
+		bRet = FALSE;
+		DBGLOG(RLM, ERROR,
+			"Alloc buffer for TxPwrLimit main struct failed\n");
+		return bRet;
+	}
+
+	pTxPwrLimit->ucChNum = pSetCmd_2g->ucNum + pSetCmd_5g->ucNum;
+
+	pTxPwrLimit->rChannelTxPwrLimit =
+		(struct CHANNEL_TX_PWR_LIMIT *)
+		kalMemAlloc(sizeof(struct CHANNEL_TX_PWR_LIMIT) *
+			(pTxPwrLimit->ucChNum), VIR_MEM_TYPE);
+
+	if (!pTxPwrLimit->rChannelTxPwrLimit) {
+		bRet = FALSE;
+		DBGLOG(RLM, ERROR,
+			"Alloc buffer for TxPwrLimit ch values failed\n");
+		goto error;
+	}
+
+	kalMemSet(pTxPwrLimit->rChannelTxPwrLimit, MAX_TX_POWER,
+		sizeof(struct CHANNEL_TX_PWR_LIMIT) * (pTxPwrLimit->ucChNum));
+
+	if (pSetCmd_2g) {
+		struct CMD_CHANNEL_POWER_LIMIT_V2 *prChPwrLimit = NULL;
+
+		for (ucIdx = 0; ucIdx < pSetCmd_2g->ucNum; ucIdx++) {
+			prChPwrLimit = &pSetCmd_2g->rChannelPowerLimit[ucIdx];
+			pTxPwrLimit->rChannelTxPwrLimit[ucCnt].ucChannel =
+				prChPwrLimit->ucCentralCh;
+			ucCnt++;
+		}
+	}
+
+	if (pSetCmd_5g) {
+		struct CMD_CHANNEL_POWER_LIMIT_V2 *prChPwrLimit = NULL;
+
+		for (ucIdx = 0; ucIdx < pSetCmd_5g->ucNum; ucIdx++) {
+			prChPwrLimit = &pSetCmd_5g->rChannelPowerLimit[ucIdx];
+			pTxPwrLimit->rChannelTxPwrLimit[ucCnt].ucChannel =
+				prChPwrLimit->ucCentralCh;
+			ucCnt++;
+		}
+	}
+
+	bRet = rlmDomainTxPwrLimitLoadFromFile(prGlueInfo->prAdapter,
+		country_code, pTxPwrLimit);
+
+	if (bRet) {
+		rlmDomainTxPwrLimitSetValues(pSetCmd_2g, pTxPwrLimit);
+		rlmDomainTxPwrLimitSetValues(pSetCmd_5g, pTxPwrLimit);
+	}
+
+	kalMemFree(pTxPwrLimit->rChannelTxPwrLimit, VIR_MEM_TYPE,
+		sizeof(struct CHANNEL_TX_PWR_LIMIT) *
+		pTxPwrLimit->ucChNum);
+
+error:
+	kalMemFree(pTxPwrLimit, VIR_MEM_TYPE,
+		sizeof(struct TX_PWR_LIMIT_DATA));
+
+	return bRet;
+}
+
 #endif
 
 #if CFG_SUPPORT_PWR_LIMIT_COUNTRY
@@ -1966,62 +2527,73 @@ void rlmDomainBuildCmdByConfigTable(struct ADAPTER *prAdapter, struct CMD_SET_CO
 void rlmDomainSendPwrLimitCmd_V2(struct ADAPTER *prAdapter)
 {
 #if (CFG_SUPPORT_SINGLE_SKU == 1)
-	uint8_t i;
 	uint32_t rStatus;
 	uint32_t u4SetQueryInfoLen;
 	uint32_t ch_cnt;
 	struct wiphy *wiphy;
 	u8 band_idx, ch_idx;
-	struct CMD_SET_COUNTRY_CHANNEL_POWER_LIMIT_V2 *prCmd[KAL_NUM_BANDS] = {NULL};
+	struct CMD_SET_COUNTRY_CHANNEL_POWER_LIMIT_V2
+		*prCmd[KAL_NUM_BANDS] = {NULL};
 	uint32_t u4SetCmdTableMaxSize[KAL_NUM_BANDS] = {0};
+	const int8_t *prChannelList = NULL;
+	uint16_t u2SetCmdSize =
+		sizeof(struct CMD_SET_COUNTRY_CHANNEL_POWER_LIMIT_V2);
+	uint16_t u2CmdSize =
+		sizeof(struct CMD_CHANNEL_POWER_LIMIT_V2);
 
 
 	DBGLOG(RLM, INFO, "rlmDomainSendPwrLimitCmd()\n");
 
 	wiphy = priv_to_wiphy(prAdapter->prGlueInfo);
 	for (band_idx = 0; band_idx < KAL_NUM_BANDS; band_idx++) {
-		struct ieee80211_supported_band *sband;
-		struct ieee80211_channel *chan;
-
-		sband = wiphy->bands[band_idx];
-		if (!sband)
+		if (band_idx != KAL_BAND_2GHZ && band_idx != KAL_BAND_5GHZ)
 			continue;
 
-		ch_cnt = rlmDomainGetActiveChannelCount(band_idx);
+		prChannelList = (band_idx == KAL_BAND_2GHZ) ?
+			gTx_Pwr_Limit_2g_Ch : gTx_Pwr_Limit_5g_Ch;
+
+		ch_cnt =
+			(band_idx == KAL_BAND_2GHZ) ?
+				TX_PWR_LIMIT_2G_CH_NUM :
+				TX_PWR_LIMIT_5G_CH_NUM;
+
 		if (!ch_cnt)
 			continue;
 
 		u4SetCmdTableMaxSize[band_idx] =
-			sizeof(struct CMD_SET_COUNTRY_CHANNEL_POWER_LIMIT_V2) +
-			ch_cnt * sizeof(struct CMD_CHANNEL_POWER_LIMIT_V2);
+			u2SetCmdSize + ch_cnt * u2CmdSize;
 
-		prCmd[band_idx] = cnmMemAlloc(prAdapter, RAM_TYPE_BUF, u4SetCmdTableMaxSize[band_idx]);
+		prCmd[band_idx] =
+			cnmMemAlloc(prAdapter, RAM_TYPE_BUF,
+				u4SetCmdTableMaxSize[band_idx]);
+
 
 		if (!prCmd[band_idx]) {
 			DBGLOG(RLM, ERROR, "Domain: no buf to send cmd\n");
-			return;
+			goto error;
 		}
 
 		/*initialize tw pwr table*/
-		kalMemSet(prCmd[band_idx], MAX_TX_POWER, u4SetCmdTableMaxSize[band_idx]);
+		kalMemSet(prCmd[band_idx],
+			MAX_TX_POWER, u4SetCmdTableMaxSize[band_idx]);
 
 		prCmd[band_idx]->ucNum = ch_cnt;
-		prCmd[band_idx]->eband = (band_idx == KAL_BAND_2GHZ) ? BAND_2G4 : BAND_5G;
+		prCmd[band_idx]->eband =
+			(band_idx == KAL_BAND_2GHZ) ?
+				BAND_2G4 :
+				BAND_5G;
 		prCmd[band_idx]->countryCode = rlmDomainGetCountryCode();
 
-		DBGLOG(RLM, INFO, "%s, active n_channels=%d, band=%d\n", __func__, ch_cnt, prCmd[band_idx]->eband);
+		DBGLOG(RLM, INFO,
+			"%s, active n_channels=%d, band=%d\n",
+			__func__,
+			ch_cnt, prCmd[band_idx]->eband);
 
-		i = 0;
-		for (ch_idx = 0; ch_idx < sband->n_channels; ch_idx++) {
-			chan = &sband->channels[ch_idx];
-			if (chan->flags & IEEE80211_CHAN_DISABLED)
-				continue;
-
-			prCmd[band_idx]->rChannelPowerLimit[i].ucCentralCh = chan->hw_value;
-
-			i++; /*point to the next entry*/
-			if (i == ch_cnt)
-				break;
+		for (ch_idx = 0; ch_idx < ch_cnt; ch_idx++) {
+			prCmd[band_idx]->
+				rChannelPowerLimit[ch_idx].
+				ucCentralCh =
+				prChannelList[ch_idx];
 		}
 	}
 
@@ -2036,26 +2608,76 @@ void rlmDomainSendPwrLimitCmd_V2(struct ADAPTER *prAdapter)
 
 
 	for (band_idx = 0; band_idx < KAL_NUM_BANDS; band_idx++) {
+		int8_t ucRemainChNum, i, ucTempChNum, prCmdBatchNum;
+		uint32_t u4BufSize = 0;
+		struct CMD_SET_COUNTRY_CHANNEL_POWER_LIMIT_V2
+			*prTempCmd = NULL;
+		enum ENUM_BAND eBand = (band_idx == KAL_BAND_2GHZ) ?
+				BAND_2G4 : BAND_5G;
+
 		if (!prCmd[band_idx])
 			continue;
 
-		u4SetQueryInfoLen = u4SetCmdTableMaxSize[band_idx];
+		ucRemainChNum = prCmd[band_idx]->ucNum;
+		prCmdBatchNum =
+			(ucRemainChNum +
+			 TX_PWR_LIMIT_CMD_CH_NUM_THRESHOLD -
+			 1) /
+			TX_PWR_LIMIT_CMD_CH_NUM_THRESHOLD;
 
-		/* Update tx max. power info to chip */
-		rStatus = wlanSendSetQueryCmd(prAdapter,	/* prAdapter */
-					      CMD_ID_SET_COUNTRY_POWER_LIMIT,	/* ucCID */
-					      TRUE,	/* fgSetQuery */
-					      FALSE,	/* fgNeedResp */
-					      FALSE,	/* fgIsOid */
-					      NULL,	/* pfCmdDoneHandler */
-					      NULL,	/* pfCmdTimeoutHandler */
-					      u4SetQueryInfoLen,	/* u4SetQueryInfoLen */
-					      (uint8_t *) prCmd[band_idx],	/* pucInfoBuffer */
-					      NULL,	/* pvSetQueryBuffer */
-					      0	/* u4SetQueryBufferLen */
-						);
+		for (i = 0; i < prCmdBatchNum; i++) {
+			if (i == prCmdBatchNum - 1)
+				ucTempChNum = ucRemainChNum;
+			else
+				ucTempChNum = TX_PWR_LIMIT_CMD_CH_NUM_THRESHOLD;
 
-		cnmMemFree(prAdapter, prCmd[band_idx]);
+			u4BufSize = u2SetCmdSize +
+				ucTempChNum * u2CmdSize;
+
+			prTempCmd = cnmMemAlloc(prAdapter,
+				RAM_TYPE_BUF, u4BufSize);
+
+			if (!prTempCmd) {
+				DBGLOG(RLM, ERROR,
+					"No buf to send cmd\n");
+				goto error;
+			}
+
+			/*copy partial tx pwr limit*/
+			prTempCmd->ucNum = ucTempChNum;
+			prTempCmd->eband = eBand;
+			prTempCmd->countryCode = rlmDomainGetCountryCode();
+			kalMemCopy(&prTempCmd->rChannelPowerLimit[0],
+				&prCmd[band_idx]->rChannelPowerLimit[i *
+				TX_PWR_LIMIT_CMD_CH_NUM_THRESHOLD],
+				ucTempChNum * u2CmdSize);
+
+			u4SetQueryInfoLen = u4BufSize;
+
+			/* Update tx max. power info to chip */
+			rStatus = wlanSendSetQueryCmd(prAdapter,
+				CMD_ID_SET_COUNTRY_POWER_LIMIT,
+				TRUE,
+				FALSE,
+				FALSE,
+				NULL,
+				NULL,
+				u4SetQueryInfoLen,
+				(uint8_t *) prTempCmd,
+				NULL,
+				0
+				);
+
+			cnmMemFree(prAdapter, prTempCmd);
+
+			ucRemainChNum -= ucTempChNum;
+		}
+	}
+
+error:
+	for (band_idx = 0; band_idx < KAL_NUM_BANDS; band_idx++) {
+		if (prCmd[band_idx])
+			cnmMemFree(prAdapter, prCmd[band_idx]);
 	}
 #endif
 }
@@ -2246,17 +2868,13 @@ bool rlmDomainIsSameCountryCode(char *alpha2, u8 size_of_alpha2)
 
 void rlmDomainSetCountryCode(char *alpha2, u8 size_of_alpha2)
 {
-	u8 idx, max;
+	u8 max;
 	u8 buf_size;
 
 	buf_size = sizeof(g_mtk_regd_control.alpha2);
 	max = (buf_size < size_of_alpha2) ? buf_size : size_of_alpha2;
 
-	g_mtk_regd_control.alpha2 = 0;
-
-	for (idx = 0; idx < max; idx++)
-		g_mtk_regd_control.alpha2 |= (alpha2[idx] << (idx * 8));
-
+	g_mtk_regd_control.alpha2 = rlmDomainAlpha2ToU32(alpha2, max);
 }
 void rlmDomainSetDfsRegion(enum nl80211_dfs_regions dfs_region)
 {
@@ -2341,45 +2959,6 @@ enum regd_state rlmDomainStateTransition(enum regd_state request_state, struct r
 	g_mtk_regd_control.state = next_state;
 
 	return g_mtk_regd_control.state;
-}
-
-u32 rlmDomainSearchCountrySection(u32 country_code, const struct firmware *file)
-{
-	u32 count;
-	struct tx_pwr_section *pSection;
-
-	if (!file) {
-		DBGLOG(RLM, ERROR, "%s(): ERROR. file = null.\n", __func__);
-		return 0;
-	}
-
-	count = SIZE_OF_VERSION;
-
-	while (count < file->size) {
-		pSection = (struct tx_pwr_section *)(file->data + count);
-		count += sizeof(struct tx_pwr_section); /*prepare for the next search*/
-
-		if ((pSection->prefix == SECTION_PREFIX) &&
-			(pSection->country_code == country_code))
-			return count;
-	}
-
-	return 0;
-}
-
-u_int8_t rlmDomainIsTheEndOfCountrySection(u32 start_offset, const struct firmware *file)
-{
-	struct tx_pwr_section *pSection;
-
-	if (start_offset >= file->size)
-		return TRUE;
-
-	pSection = (struct tx_pwr_section *)(file->data + start_offset);
-
-	if (pSection->prefix == SECTION_PREFIX)
-		return TRUE;
-	else
-		return FALSE;
 }
 
 /**
@@ -2658,3 +3237,5 @@ void rlmDomainAssert(u_int8_t cond)
 	}
 
 }
+
+
