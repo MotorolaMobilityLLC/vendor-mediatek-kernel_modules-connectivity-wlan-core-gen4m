@@ -1496,8 +1496,18 @@ u_int8_t glUnregisterP2P(struct GLUE_INFO *prGlueInfo, uint8_t ucIdx)
 			/* don't free the dev that share with the AIS */
 			if (prP2PInfo->prDevHandler == gprWdev->netdev)
 				gprP2pRoleWdev[ucRoleIdx] = NULL;
-			else
+			else {
+				if (prP2PInfo->prDevHandler->reg_state
+					== NETREG_REGISTERED) {
+					DBGLOG(INIT, WARN,
+						"Force unregister netdev\n");
+					unregister_netdev(
+						prP2PInfo->prDevHandler);
+					prGlueInfo->prAdapter->rP2PNetRegState =
+						ENUM_NET_REG_STATE_UNREGISTERED;
+				}
 				free_netdev(prP2PInfo->prDevHandler);
+			}
 			prP2PInfo->prDevHandler = NULL;
 		}
 
