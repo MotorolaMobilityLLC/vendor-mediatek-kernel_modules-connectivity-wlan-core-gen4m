@@ -97,6 +97,9 @@
 
 /* this is workaround for AXE, do not sync back to trunk*/
 
+#if (CFG_SUPPORT_CONNINFRA == 1)
+static struct sub_drv_ops_cb g_conninfra_wf_cb;
+#endif
 
 /*******************************************************************************
 *                                 M A C R O S
@@ -595,7 +598,8 @@ struct mt66xx_chip_info mt66xx_chip_info_soc3_0 = {
 	.triggerfwassert = soc3_0_Trigger_fw_assert,
 #if (CFG_SUPPORT_CONNINFRA == 1)
 	.trigger_wholechiprst = soc3_0_Trigger_whole_chip_rst,
-	.sw_interrupt_handler = soc3_0_Sw_interrupt_handler
+	.sw_interrupt_handler = soc3_0_Sw_interrupt_handler,
+	.conninra_cb_register = soc3_0_Conninfra_cb_register
 #endif
 };
 
@@ -1184,6 +1188,364 @@ void soc3_0_Sw_interrupt_handler(struct ADAPTER *prAdapter)
 		  (CONN_INFRA_CFG_AP2WF_BUS_ADDR + 0xc8),
 		  value);
 }
+
+void soc3_0_Conninfra_cb_register(void)
+{
+	g_conninfra_wf_cb.rst_cb.pre_whole_chip_rst =
+					glRstwlanPreWholeChipReset;
+	g_conninfra_wf_cb.rst_cb.post_whole_chip_rst =
+					glRstwlanPostWholeChipReset;
+
+#if (CFG_SUPPORT_PRE_ON_PHY_ACTION == 1)
+	/* Register conninfra call back */
+	g_conninfra_wf_cb.pre_cal_cb.pwr_on_cb = hifWmmcuPwrOn;
+	g_conninfra_wf_cb.pre_cal_cb.do_cal_cb = soc3_0_wlanPreCal;
+#endif /* (CFG_SUPPORT_PRE_ON_PHY_ACTION == 1) */
+
+	conninfra_sub_drv_ops_register(CONNDRV_TYPE_WIFI,
+		&g_conninfra_wf_cb);
+}
 #endif
+
+#if (CFG_POWER_ON_DOWNLOAD_EMI_ROM_PATCH == 1)
+
+#if (CFG_SUPPORT_PRE_ON_PHY_ACTION == 1)
+int soc3_0_wlanPreCal(void)
+{
+#if defined(SOC3_0)
+#if defined(_HIF_AXI)
+/* prPlatDev is already created by initWlan()->glRegisterBus()::axi.c */
+	void *pvData = (void *)g_prPlatDev;
+	void *pvDriverData = (void *)g_prPlatDev->id_entry->driver_data;
+#endif
+
+#if defined(_HIF_PCIE)
+	void *pvData = NULL;
+	void *pvDriverData = (void *)&mt66xx_driver_data_soc3_0;
+#endif
+#endif
+
+	int32_t i4Status = 0;
+	enum ENUM_POWER_ON_INIT_FAIL_REASON {
+					BUS_INIT_FAIL = 0,
+					NET_CREATE_FAIL,
+					BUS_SET_IRQ_FAIL,
+					ALLOC_ADAPTER_MEM_FAIL,
+					DRIVER_OWN_FAIL,
+					INIT_ADAPTER_FAIL,
+					INIT_HIFINFO_FAIL,
+					ROM_PATCH_DOWNLOAD_FAIL,
+					POWER_ON_INIT_DONE,
+					FAIL_REASON_NUM
+	} eFailReason;
+	uint32_t i = 0;
+	int32_t i4DevIdx = 0;
+	struct wireless_dev *prWdev = NULL;
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct ADAPTER *prAdapter = NULL;
+	struct mt66xx_chip_info *prChipInfo;
+
+	DBGLOG(INIT, INFO, "soc3_0_wlanPreCal::begin\n");
+
+	eFailReason = FAIL_REASON_NUM;
+
+	do {
+#if defined(_HIF_AXI)
+		/* AXI goes over here, to be conti... */
+		prChipInfo = ((struct mt66xx_hif_driver_data *)
+			pvDriverData)->chip_info;
+		pvData = (void *)prChipInfo->pdev;
+
+		/* we should call axi_enable_device(
+		*        (struct platform_device *)pvData);
+		* since it is invoked from within hifAxiProbe()::axi.c,
+		* before calling pfWlanProbe(), to be conti...
+		*/
+#endif
+
+#if defined(_HIF_PCIE)
+		prChipInfo = ((struct mt66xx_hif_driver_data *)
+			pvDriverData)->chip_info;
+		pvData = (void *)prChipInfo->pdev;
+
+		/* no need pci_enable_device(dev),
+		* it has already been done in PCI driver's probe() function
+		*/
+#endif
+
+		/* [1]Copy from wlanProbe()::Begin */
+		/* Initialize the IO port of the interface */
+		/* GeorgeKuo: pData has different meaning for _HIF_XXX:
+		* _HIF_EHPI: pointer to memory base variable, which will be
+		*      initialized by glBusInit().
+		* _HIF_SDIO: bus driver handle
+		*/
+
+#if (CFG_SUPPORT_TRACE_TC4 == 1)
+	    wlanDebugTC4Init();
+#endif
+
+		/* Create network device, Adapter, KalInfo,
+		*       prDevHandler(netdev)
+		*/
+		prWdev = wlanNetCreate(pvData, pvDriverData);
+
+		if (prWdev == NULL) {
+			DBGLOG(INIT, ERROR,
+				"[Wi-Fi Pre-Cal] No memory for dev and its private\n");
+
+			i4Status = -ENOMEM;
+			eFailReason = NET_CREATE_FAIL;
+			break;
+		}
+
+	    /* Set the ioaddr to HIF Info */
+	    prGlueInfo = (struct GLUE_INFO *) wiphy_priv(prWdev->wiphy);
+
+	    /* Should we need this??? to be conti... */
+	    gPrDev = prGlueInfo->prDevHandler;
+
+	    /* Setup IRQ */
+	    i4Status = glBusSetIrq(prWdev->netdev, NULL, prGlueInfo);
+
+		if (i4Status != WLAN_STATUS_SUCCESS) {
+			DBGLOG(INIT, ERROR, "[Wi-Fi Pre-Cal] Set IRQ error\n");
+
+			eFailReason = BUS_SET_IRQ_FAIL;
+			break;
+		}
+
+	    prGlueInfo->i4DevIdx = i4DevIdx;
+
+	    prAdapter = prGlueInfo->prAdapter;
+	    /* [1]Copy from wlanProbe()::End */
+
+	    /* [2]Copy from wlanProbe()->wlanOnPreAdapterStart()::Begin */
+	    /* Init Chip Capability */
+	    prChipInfo = prAdapter->chip_info;
+
+		if (prChipInfo->asicCapInit != NULL)
+			prChipInfo->asicCapInit(prAdapter);
+
+	    nicpmWakeUpWiFi(prAdapter);
+	    /* [2]Copy from wlanProbe()->wlanOnPreAdapterStart()::End */
+
+		/* [3]Copy from
+		* wlanProbe()
+		*	->wlanAdapterStart()
+		*		->wlanOnPreAllocAdapterMem()::Begin
+		*/
+
+		prAdapter->u4OwnFailedCount = 0;
+		prAdapter->u4OwnFailedLogCount = 0;
+
+		/* Additional with chip reset optimize*/
+		prAdapter->ucCmdSeqNum = 0;
+
+		QUEUE_INITIALIZE(&(prAdapter->rPendingCmdQueue));
+#if CFG_SUPPORT_MULTITHREAD
+		QUEUE_INITIALIZE(&prAdapter->rTxCmdQueue);
+		QUEUE_INITIALIZE(&prAdapter->rTxCmdDoneQueue);
+#if CFG_FIX_2_TX_PORT
+	    QUEUE_INITIALIZE(&prAdapter->rTxP0Queue);
+	    QUEUE_INITIALIZE(&prAdapter->rTxP1Queue);
+#else
+		for (i = 0; i < TX_PORT_NUM; i++)
+			QUEUE_INITIALIZE(&prAdapter->rTxPQueue[i]);
+#endif
+		QUEUE_INITIALIZE(&prAdapter->rRxQueue);
+		QUEUE_INITIALIZE(&prAdapter->rTxDataDoneQueue);
+#endif
+
+		/* reset fgIsBusAccessFailed */
+		fgIsBusAccessFailed = FALSE;
+
+		/* Allocate mandatory resource for TX/RX */
+		if (nicAllocateAdapterMemory(prAdapter) !=
+			WLAN_STATUS_SUCCESS) {
+
+			DBGLOG(INIT, ERROR,
+				"[Wi-Fi Pre-Cal] nicAllocateAdapterMemory Error!\n");
+
+			i4Status = -ENOMEM;
+			eFailReason = ALLOC_ADAPTER_MEM_FAIL;
+/*
+*#if CFG_ENABLE_KEYWORD_EXCEPTION_MECHANISM & 0
+*	mtk_wcn_wmt_assert_keyword(WMTDRV_TYPE_WIFI,
+*	"[Wi-Fi PWR On] nicAllocateAdapterMemory Error!");
+*#endif
+*/
+			break;
+		}
+
+		/* should we need this?  to be conti... */
+		prAdapter->u4OsPacketFilter = PARAM_PACKET_FILTER_SUPPORTED;
+
+		/* Initialize the Adapter:
+		*       verify chipset ID, HIF init...
+		*       the code snippet just do the copy thing
+		*/
+		if (nicInitializeAdapter(prAdapter) != WLAN_STATUS_SUCCESS) {
+
+			DBGLOG(INIT, ERROR,
+				"[Wi-Fi Pre-Cal] nicInitializeAdapter failed!\n");
+
+			eFailReason = INIT_ADAPTER_FAIL;
+			break;
+		}
+
+		/* Do the post NIC init adapter:
+		* copy only the mandatory task
+		* in wlanOnPostNicInitAdapter(prAdapter, FALSE)::Begin
+		*/
+		nicInitSystemService(prAdapter);
+
+		/* Initialize Tx */
+		nicTxInitialize(prAdapter);
+
+		/* Initialize Rx */
+		nicRxInitialize(prAdapter);
+		/* Do the post NIC init adapter:
+		* copy only the mandatory task
+		* in wlanOnPostNicInitAdapter(prAdapter, FALSE)::End
+		*/
+
+		/* HIF SW info initialize */
+		if (!halHifSwInfoInit(prAdapter)) {
+
+			DBGLOG(INIT, ERROR,
+				"[Wi-Fi Pre-Cal] halHifSwInfoInit failed!\n");
+
+			eFailReason = INIT_HIFINFO_FAIL;
+			break;
+		}
+
+		/* Enable HIF  cut-through to N9 mode */
+		HAL_ENABLE_FWDL(prAdapter, TRUE);
+
+		/* Disable interrupt, download is done by polling mode only */
+		nicDisableInterrupt(prAdapter);
+
+		/* Initialize Tx Resource to fw download state */
+		nicTxInitResetResource(prAdapter);
+
+		/* MCU ROM EMI +
+		* WiFi ROM EMI + ROM patch download goes over here::Begin
+		*/
+		/* assiggned in wlanNetCreate() */
+		prChipInfo = prAdapter->chip_info;
+
+		/* No need to check F/W ready bit,
+		* since we are downloading MCU ROM EMI
+		* + WiFi ROM EMI + ROM patch
+		*/
+		/*
+		*DBGLOG(INIT, INFO,
+		*             "wlanDownloadFW:: Check ready_bits(=0x%x)\n",
+		*             prChipInfo->sw_ready_bits);
+		*
+		*HAL_WIFI_FUNC_READY_CHECK(prAdapter,
+		*             prChipInfo->sw_ready_bits, &fgReady);
+		*/
+
+		wlanSendPhyAction(prAdapter, HAL_PHY_ACTION_CAL_FORCE_CAL_REQ);
+
+		/* MCU ROM EMI + WiFi ROM EMI
+		* + ROM patch download goes over here::End
+		*/
+
+		eFailReason = POWER_ON_INIT_DONE;
+		/* [3]Copy from wlanProbe()
+		*	->wlanAdapterStart()
+		*	->wlanOnPreAllocAdapterMem()::End
+		*/
+	} while (FALSE);
+
+	switch (eFailReason) {
+	case BUS_INIT_FAIL:
+	break;
+
+	case NET_CREATE_FAIL:
+#if (CFG_SUPPORT_TRACE_TC4 == 1)
+		wlanDebugTC4Uninit();  /* Uninit for TC4 debug */
+#endif
+
+		break;
+
+	case BUS_SET_IRQ_FAIL:
+#if (CFG_SUPPORT_TRACE_TC4 == 1)
+		wlanDebugTC4Uninit();  /* Uninit for TC4 debug */
+#endif
+
+		wlanWakeLockUninit(prGlueInfo);
+		wlanNetDestroy(prWdev);
+		break;
+
+	case ALLOC_ADAPTER_MEM_FAIL:
+	case DRIVER_OWN_FAIL:
+	case INIT_ADAPTER_FAIL:
+		glBusFreeIrq(prWdev->netdev,
+			*((struct GLUE_INFO **)	netdev_priv(prWdev->netdev)));
+
+#if (CFG_SUPPORT_TRACE_TC4 == 1)
+		wlanDebugTC4Uninit();  /* Uninit for TC4 debug */
+#endif
+
+		wlanWakeLockUninit(prGlueInfo);
+		wlanNetDestroy(prWdev);
+		break;
+
+	case INIT_HIFINFO_FAIL:
+		nicRxUninitialize(prAdapter);
+		nicTxRelease(prAdapter, FALSE);
+
+		/* System Service Uninitialization */
+		nicUninitSystemService(prAdapter);
+
+		glBusFreeIrq(prWdev->netdev,
+			*((struct GLUE_INFO **)netdev_priv(prWdev->netdev)));
+
+#if (CFG_SUPPORT_TRACE_TC4 == 1)
+		wlanDebugTC4Uninit();  /* Uninit for TC4 debug */
+#endif
+
+		wlanWakeLockUninit(prGlueInfo);
+		wlanNetDestroy(prWdev);
+		break;
+
+	case ROM_PATCH_DOWNLOAD_FAIL:
+	case POWER_ON_INIT_DONE:
+		HAL_ENABLE_FWDL(prAdapter, FALSE);
+		nicRxUninitialize(prAdapter);
+		nicTxRelease(prAdapter, FALSE);
+
+		/* System Service Uninitialization */
+		nicUninitSystemService(prAdapter);
+
+		glBusFreeIrq(prWdev->netdev,
+			*((struct GLUE_INFO **)netdev_priv(prWdev->netdev)));
+
+#if (CFG_SUPPORT_TRACE_TC4 == 1)
+		wlanDebugTC4Uninit();  /* Uninit for TC4 debug */
+#endif
+
+		wlanWakeLockUninit(prGlueInfo);
+		wlanNetDestroy(prWdev);
+		break;
+
+	default:
+		break;
+	}
+
+	if (prChipInfo->wmmcupwroff)
+		prChipInfo->wmmcupwroff();
+
+	DBGLOG(INIT, INFO, "soc3_0_wlanPreCal::end\n");
+	return (int)i4Status;
+}
+#endif /* (CFG_SUPPORT_PRE_ON_PHY_ACTION == 1) */
+
+#endif
+
 #endif				/* soc3_0 */
 

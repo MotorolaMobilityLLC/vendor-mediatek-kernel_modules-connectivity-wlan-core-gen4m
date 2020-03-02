@@ -90,7 +90,7 @@
 #include <linux/of_irq.h>
 #include <linux/of_address.h>
 #include <linux/of.h>
-#include "soc3_0.h"
+
 /*******************************************************************************
  *                              C O N S T A N T S
  *******************************************************************************
@@ -149,10 +149,6 @@ static u_int8_t g_fgDriverProbed = FALSE;
 
 #if AXI_CFG_PREALLOC_MEMORY_BUFFER
 struct HIF_PREALLOC_MEM grMem;
-#endif
-
-#if (CFG_SUPPORT_CONNINFRA == 1)
-static struct sub_drv_ops_cb g_conninfra_wf_cb;
 #endif
 
 /*******************************************************************************
@@ -643,18 +639,10 @@ static int mtk_axi_probe(IN struct platform_device *pdev)
 	rWlanCb.wlan_probe_cb = hifAxiProbe;
 	rWlanCb.wlan_remove_cb = hifAxiRemove;
 	mtk_wcn_wlan_reg(&rWlanCb);
-	g_conninfra_wf_cb.rst_cb.pre_whole_chip_rst =
-					glRstwlanPreWholeChipReset;
-	g_conninfra_wf_cb.rst_cb.post_whole_chip_rst =
-					glRstwlanPostWholeChipReset;
-#if (CFG_SUPPORT_PRE_ON_PHY_ACTION == 1)
-	/* Register conninfra call back */
-	g_conninfra_wf_cb.pre_cal_cb.pwr_on_cb = hifWmmcuPwrOn;
-	g_conninfra_wf_cb.pre_cal_cb.do_cal_cb = soc3_0_wlanPreCal;
 
-#endif /* (CFG_SUPPORT_PRE_ON_PHY_ACTION == 1) */
-	conninfra_sub_drv_ops_register(CONNDRV_TYPE_WIFI,
-		&g_conninfra_wf_cb);
+	if (prChipInfo->conninra_cb_register)
+		prChipInfo->conninra_cb_register();
+
 #endif
 #else
 	hifAxiProbe();
