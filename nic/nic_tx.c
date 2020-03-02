@@ -3554,6 +3554,7 @@ void nicTxSetMngPacket(struct ADAPTER *prAdapter,
 		       PFN_TX_DONE_HANDLER pfTxDoneHandler,
 		       uint8_t ucRateMode)
 {
+	static uint16_t u2SwSn;
 	ASSERT(prMsduInfo);
 
 	prMsduInfo->ucBssIndex = ucBssIndex;
@@ -3576,6 +3577,10 @@ void nicTxSetMngPacket(struct ADAPTER *prAdapter,
 	prMsduInfo->ucPacketType = TX_PACKET_TYPE_MGMT;
 	prMsduInfo->ucUserPriority = 0;
 	prMsduInfo->eSrc = TX_PACKET_MGMT;
+	u2SwSn++;
+	if (u2SwSn > 4095)
+		u2SwSn = 0;
+	nicTxSetPktSequenceNumber(prMsduInfo, u2SwSn);
 }
 
 void nicTxSetDataPacket(struct ADAPTER *prAdapter,
