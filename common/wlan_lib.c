@@ -6624,7 +6624,7 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 					FEATURE_ENABLED);
 
 	prWifiVar->ucMCS32 = (uint8_t) wlanCfgGetUint32(prAdapter, "MCS32",
-					FEATURE_DISABLED);
+					FEATURE_ENABLED);
 
 #if (CFG_SUPPORT_802_11AX == 1)
 	if (fgEfuseCtrlAxOn == 1) {
