@@ -368,4 +368,12 @@ void kalP2pUnlinkBss(IN struct GLUE_INFO *prGlueInfo, IN uint8_t aucBSSID[]);
 void kalP2pIndicateQueuedMgmtFrame(IN struct GLUE_INFO *prGlueInfo,
 		IN struct P2P_QUEUED_ACTION_FRAME *prFrame);
 
+void kalP2pIndicateAcsResult(IN struct GLUE_INFO *prGlueInfo,
+		IN uint8_t ucRoleIndex,
+		IN uint8_t ucPrimaryCh,
+		IN uint8_t ucSecondCh,
+		IN uint8_t ucSeg0Ch,
+		IN uint8_t ucSeg1Ch,
+		IN enum ENUM_MAX_BANDWIDTH_SETTING eChnlBw);
+
 #endif /* _GL_P2P_KAL_H */

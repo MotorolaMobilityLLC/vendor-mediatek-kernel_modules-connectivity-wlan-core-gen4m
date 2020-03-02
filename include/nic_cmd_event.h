@@ -1201,7 +1201,6 @@ struct CMD_CAL_BACKUP_STRUCT {
 };
 #endif
 
-#if CFG_AUTO_CHANNEL_SEL_SUPPORT
 struct CMD_ACCESS_CHN_LOAD {
 	uint32_t u4Address;
 	uint32_t u4Data;
@@ -1215,7 +1214,6 @@ struct CMD_GET_LTE_SAFE_CHN {
 	uint8_t aucReserved0[2];
 	uint8_t aucReserved2[16];
 };
-#endif
 
 /* CMD_DUMP_MEMORY */
 struct CMD_DUMP_MEM {
@@ -2421,14 +2419,12 @@ struct EVENT_STA_STATISTICS {
 	uint8_t aucReserved[4];
 };
 
-#if CFG_AUTO_CHANNEL_SEL_SUPPORT
 struct EVENT_LTE_SAFE_CHN {
 	uint8_t ucVersion;
 	uint8_t aucReserved[3];
 	uint32_t u4Flags;	/* Bit0: valid */
 	struct LTE_SAFE_CHN_INFO rLteSafeChn;
 };
-#endif
 
 #if CFG_SUPPORT_SNIFFER
 struct CMD_MONITOR_SET_INFO {
@@ -2781,12 +2777,9 @@ void nicCmdEventQueryStaStatistics(IN struct ADAPTER
 void nicCmdEventQueryBugReport(IN struct ADAPTER *prAdapter,
 	IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf);
 
-#if CFG_AUTO_CHANNEL_SEL_SUPPORT
-/* 4 Auto Channel Selection */
-void nicCmdEventQueryLteSafeChn(IN struct ADAPTER
-				*prAdapter, IN struct CMD_INFO *prCmdInfo,
-				IN uint8_t *pucEventBuf);
-#endif
+void nicCmdEventQueryLteSafeChn(IN struct ADAPTER *prAdapter,
+	IN struct CMD_INFO *prCmdInfo,
+	IN uint8_t *pucEventBuf);
 
 #if CFG_SUPPORT_BATCH_SCAN
 void nicCmdEventBatchScanResult(IN struct ADAPTER
