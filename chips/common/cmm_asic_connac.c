@@ -647,6 +647,22 @@ void asicLowPowerOwnClear(IN struct ADAPTER *prAdapter,
 	*pfgResult = (u4RegValue & PCIE_LPCR_HOST_SET_OWN) == 0;
 }
 
+#if defined(_HIF_PCIE)
+void asicLowPowerOwnClearPCIe(IN struct ADAPTER *prAdapter,
+			  OUT u_int8_t *pfgResult)
+{
+	struct GLUE_INFO *prGlueInfo;
+	struct GL_HIF_INFO *prHif = NULL;
+
+	prGlueInfo = prAdapter->prGlueInfo;
+	prHif = &prGlueInfo->rHifInfo;
+
+	pci_write_config_byte(prHif->pdev,
+				PCIE_DOORBELL_PUSH,
+				CR_PCIE_CFG_CLEAR_OWN);
+}
+#endif
+
 void asicWakeUpWiFi(IN struct ADAPTER *prAdapter)
 {
 	u_int8_t fgResult;
