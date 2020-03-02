@@ -86,31 +86,26 @@
 /* Type definition for BSS_INFO_T structure, to describe the attributes used in a
  * common BSS.
  */
-typedef struct _BSS_INFO_T BSS_INFO_T, *P_BSS_INFO_T;
-typedef struct _BSS_INFO_T P2P_DEV_INFO_T, *P_P2P_DEV_INFO_T;
+struct BSS_INFO;	/* declare BSS_INFO_T */
+struct BSS_INFO;	/* declare P2P_DEV_INFO_T */
 
-#if 0				/* Marked for MT6630 */
-typedef BSS_INFO_T AIS_BSS_INFO_T, *P_AIS_BSS_INFO_T;
-typedef BSS_INFO_T P2P_BSS_INFO_T, *P_P2P_BSS_INFO_T;
-typedef BSS_INFO_T BOW_BSS_INFO_T, *P_BOW_BSS_INFO_T;
-#endif
 
-typedef struct _AIS_SPECIFIC_BSS_INFO_T AIS_SPECIFIC_BSS_INFO_T, *P_AIS_SPECIFIC_BSS_INFO_T;
-typedef struct _P2P_SPECIFIC_BSS_INFO_T P2P_SPECIFIC_BSS_INFO_T, *P_P2P_SPECIFIC_BSS_INFO_T;
-typedef struct _BOW_SPECIFIC_BSS_INFO_T BOW_SPECIFIC_BSS_INFO_T, *P_BOW_SPECIFIC_BSS_INFO_T;
+struct AIS_SPECIFIC_BSS_INFO;	/* declare AIS_SPECIFIC_BSS_INFO_T */
+struct P2P_SPECIFIC_BSS_INFO;	/* declare P2P_SPECIFIC_BSS_INFO_T */
+struct BOW_SPECIFIC_BSS_INFO;	/* declare BOW_SPECIFIC_BSS_INFO_T */
 /* CFG_SUPPORT_WFD */
-typedef struct _WFD_CFG_SETTINGS_T WFD_CFG_SETTINGS_T, *P_WFD_CFG_SETTINGS_T;
+struct WFD_CFG_SETTINGS;	/* declare WFD_CFG_SETTINGS_T */
 
 /* BSS related structures */
 /* Type definition for BSS_DESC_T structure, to describe parameter sets of a particular BSS */
-typedef struct _BSS_DESC_T BSS_DESC_T, *P_BSS_DESC_T, **PP_BSS_DESC_T;
+struct BSS_DESC;	/* declare BSS_DESC_T */
 
 #if CFG_SUPPORT_ROAMING_SKIP_ONE_AP
-typedef struct _ROAM_BSS_DESC_T ROAM_BSS_DESC_T, *P_ROAM_BSS_DESC_T, **PP_ROAM_BSS_DESC_T;
+struct ROAM_BSS_DESC;	/* declare ROAM_BSS_DESC_T */
 #endif
 
 #if CFG_SUPPORT_PASSPOINT
-typedef struct _HS20_INFO_T HS20_INFO_T, *P_HS20_INFO_T;
+struct HS20_INFO;	/* declare HS20_INFO_T */
 #endif /* CFG_SUPPORT_PASSPOINT */
 
 /*******************************************************************************

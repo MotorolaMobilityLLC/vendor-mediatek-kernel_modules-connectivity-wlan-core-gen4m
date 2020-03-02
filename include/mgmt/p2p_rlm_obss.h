@@ -100,14 +100,14 @@
  ********************************************************************************
  */
 
-VOID rlmRspGenerateObssScanIE(P_ADAPTER_T prAdapter, P_MSDU_INFO_T prMsduInfo);
+void rlmRspGenerateObssScanIE(struct ADAPTER *prAdapter, struct MSDU_INFO *prMsduInfo);
 
-VOID rlmProcessPublicAction(P_ADAPTER_T prAdapter, P_SW_RFB_T prSwRfb);
+void rlmProcessPublicAction(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb);
 
-VOID rlmHandleObssStatusEventPkt(P_ADAPTER_T prAdapter, P_EVENT_AP_OBSS_STATUS_T prObssStatus);
+void rlmHandleObssStatusEventPkt(struct ADAPTER *prAdapter, struct EVENT_AP_OBSS_STATUS *prObssStatus);
 
-UINT_8 rlmObssChnlLevel(P_BSS_INFO_T prBssInfo, ENUM_BAND_T eBand, UINT_8 ucPriChannel, ENUM_CHNL_EXT_T eExtend);
+uint8_t rlmObssChnlLevel(struct BSS_INFO *prBssInfo, enum ENUM_BAND eBand, uint8_t ucPriChannel, enum ENUM_CHNL_EXT eExtend);
 
-VOID rlmObssScanExemptionRsp(P_ADAPTER_T prAdapter, P_BSS_INFO_T prBssInfo, P_SW_RFB_T prSwRfb);
+void rlmObssScanExemptionRsp(struct ADAPTER *prAdapter, struct BSS_INFO *prBssInfo, struct SW_RFB *prSwRfb);
 
 #endif

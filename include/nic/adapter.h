@@ -110,401 +110,401 @@ enum {
 };
 
 struct ESS_SCAN_RESULT_T {
-	UINT_8 aucBSSID[MAC_ADDR_LEN];
-	UINT_16 u2SSIDLen;
-	UINT_8 aucSSID[32];
+	uint8_t aucBSSID[MAC_ADDR_LEN];
+	uint16_t u2SSIDLen;
+	uint8_t aucSSID[32];
 };
 
-typedef struct _WLAN_INFO_T {
-	PARAM_BSSID_EX_T rCurrBssId;
+struct WLAN_INFO {
+	struct PARAM_BSSID_EX rCurrBssId;
 
 	/* Scan Result */
-	PARAM_BSSID_EX_T arScanResult[CFG_MAX_NUM_BSS_LIST];
-	PUINT_8 apucScanResultIEs[CFG_MAX_NUM_BSS_LIST];
-	UINT_32 u4ScanResultNum;
+	struct PARAM_BSSID_EX arScanResult[CFG_MAX_NUM_BSS_LIST];
+	uint8_t *apucScanResultIEs[CFG_MAX_NUM_BSS_LIST];
+	uint32_t u4ScanResultNum;
 
 	struct ESS_SCAN_RESULT_T arScanResultEss[CFG_MAX_NUM_BSS_LIST];
-	UINT_32 u4ScanResultEssNum;
-	UINT_32 u4ScanDbgTimes1;
-	UINT_32 u4ScanDbgTimes2;
-	UINT_32 u4ScanDbgTimes3;
-	UINT_32 u4ScanDbgTimes4;
+	uint32_t u4ScanResultEssNum;
+	uint32_t u4ScanDbgTimes1;
+	uint32_t u4ScanDbgTimes2;
+	uint32_t u4ScanDbgTimes3;
+	uint32_t u4ScanDbgTimes4;
 
 	/* IE pool for Scanning Result */
-	UINT_8 aucScanIEBuf[CFG_MAX_COMMON_IE_BUF_LEN];
-	UINT_32 u4ScanIEBufferUsage;
+	uint8_t aucScanIEBuf[CFG_MAX_COMMON_IE_BUF_LEN];
+	uint32_t u4ScanIEBufferUsage;
 
 	OS_SYSTIME u4SysTime;
 
 	/* connection parameter (for Ad-Hoc) */
-	UINT_16 u2BeaconPeriod;
-	UINT_16 u2AtimWindow;
+	uint16_t u2BeaconPeriod;
+	uint16_t u2AtimWindow;
 
-	PARAM_RATES eDesiredRates;
-	CMD_LINK_ATTRIB eLinkAttr;
+	uint8_t eDesiredRates[PARAM_MAX_LEN_RATES];
+	struct CMD_LINK_ATTRIB eLinkAttr;
 /* CMD_PS_PROFILE_T         ePowerSaveMode; */
-	CMD_PS_PROFILE_T arPowerSaveMode[MAX_BSSID_NUM];
+	struct CMD_PS_PROFILE arPowerSaveMode[MAX_BSSID_NUM];
 
 	/* trigger parameter */
-	ENUM_RSSI_TRIGGER_TYPE eRssiTriggerType;
-	PARAM_RSSI rRssiTriggerValue;
+	enum ENUM_RSSI_TRIGGER_TYPE eRssiTriggerType;
+	int32_t rRssiTriggerValue;
 
 	/* Privacy Filter */
-	ENUM_PARAM_PRIVACY_FILTER_T ePrivacyFilter;
+	enum ENUM_PARAM_PRIVACY_FILTER ePrivacyFilter;
 
 	/* RTS Threshold */
-	PARAM_RTS_THRESHOLD eRtsThreshold;
+	uint32_t eRtsThreshold;
 
 	/* Network Type */
-	UINT_8 ucNetworkType;
+	uint8_t ucNetworkType;
 
 	/* Network Type In Use */
-	UINT_8 ucNetworkTypeInUse;
+	uint8_t ucNetworkTypeInUse;
 
 	/* Force enable/disable power save mode*/
-	BOOLEAN fgEnSpecPwrMgt;
+	u_int8_t fgEnSpecPwrMgt;
 
-} WLAN_INFO_T, *P_WLAN_INFO_T;
+};
 
 /* Session for CONNECTION SETTINGS */
-typedef struct _CONNECTION_SETTINGS_T {
+struct CONNECTION_SETTINGS {
 
-	UINT_8 aucMacAddress[MAC_ADDR_LEN];
+	uint8_t aucMacAddress[MAC_ADDR_LEN];
 
-	UINT_8 ucDelayTimeOfDisconnectEvent;
+	uint8_t ucDelayTimeOfDisconnectEvent;
 
-	BOOLEAN fgIsConnByBssidIssued;
-	UINT_8 aucBSSID[MAC_ADDR_LEN];
+	u_int8_t fgIsConnByBssidIssued;
+	uint8_t aucBSSID[MAC_ADDR_LEN];
 
-	BOOLEAN fgIsConnReqIssued;
-	BOOLEAN fgIsDisconnectedByNonRequest;
+	u_int8_t fgIsConnReqIssued;
+	u_int8_t fgIsDisconnectedByNonRequest;
 	enum ENUM_RECONNECT_LEVEL_T eReConnectLevel;
 
-	UINT_8 ucSSIDLen;
-	UINT_8 aucSSID[ELEM_MAX_LEN_SSID];
+	uint8_t ucSSIDLen;
+	uint8_t aucSSID[ELEM_MAX_LEN_SSID];
 
-	ENUM_PARAM_OP_MODE_T eOPMode;
+	enum ENUM_PARAM_OP_MODE eOPMode;
 
-	ENUM_PARAM_CONNECTION_POLICY_T eConnectionPolicy;
+	enum ENUM_PARAM_CONNECTION_POLICY eConnectionPolicy;
 
-	ENUM_PARAM_AD_HOC_MODE_T eAdHocMode;
+	enum ENUM_PARAM_AD_HOC_MODE eAdHocMode;
 
-	ENUM_PARAM_AUTH_MODE_T eAuthMode;
+	enum ENUM_PARAM_AUTH_MODE eAuthMode;
 
-	ENUM_PARAM_ENCRYPTION_STATUS_T eEncStatus;
+	enum ENUM_WEP_STATUS eEncStatus;
 
-	BOOLEAN fgIsScanReqIssued;
+	u_int8_t fgIsScanReqIssued;
 
 	/* MIB attributes */
-	UINT_16 u2BeaconPeriod;
+	uint16_t u2BeaconPeriod;
 
-	UINT_16 u2RTSThreshold;	/* User desired setting */
+	uint16_t u2RTSThreshold;	/* User desired setting */
 
-	UINT_16 u2DesiredNonHTRateSet;	/* User desired setting */
+	uint16_t u2DesiredNonHTRateSet;	/* User desired setting */
 
-	UINT_8 ucAdHocChannelNum;	/* For AdHoc */
+	uint8_t ucAdHocChannelNum;	/* For AdHoc */
 
-	ENUM_BAND_T eAdHocBand;	/* For AdHoc */
+	enum ENUM_BAND eAdHocBand;	/* For AdHoc */
 
-	UINT_32 u4FreqInKHz;	/* Center frequency */
+	uint32_t u4FreqInKHz;	/* Center frequency */
 
 	/* ATIM windows using for IBSS power saving function */
-	UINT_16 u2AtimWindow;
+	uint16_t u2AtimWindow;
 
 	/* Features */
-	BOOLEAN fgIsEnableRoaming;
+	u_int8_t fgIsEnableRoaming;
 
-	BOOLEAN fgIsAdHocQoSEnable;
+	u_int8_t fgIsAdHocQoSEnable;
 
 	/* Indicates if OKC feature is enabled in wpa_supplicant for this ESS */
-	BOOLEAN fgOkcEnabled;
+	u_int8_t fgOkcEnabled;
 	/* Indicates that there's a PMKSA associated with this ESS
 	** in supplicant to generate PMKID for each BSS
 	*/
-	BOOLEAN fgOkcPmksaReady;
+	u_int8_t fgOkcPmksaReady;
 
-	ENUM_PARAM_PHY_CONFIG_T eDesiredPhyConfig;
+	enum ENUM_PARAM_PHY_CONFIG eDesiredPhyConfig;
 
 	/* Used for AP mode for desired channel and bandwidth */
-	UINT_16 u2CountryCode;
-	UINT_8 uc2G4BandwidthMode;	/* 20/40M or 20M only *//* Not used */
-	UINT_8 uc5GBandwidthMode;	/* 20/40M or 20M only *//* Not used */
+	uint16_t u2CountryCode;
+	uint8_t uc2G4BandwidthMode;	/* 20/40M or 20M only *//* Not used */
+	uint8_t uc5GBandwidthMode;	/* 20/40M or 20M only *//* Not used */
 
 #if CFG_SUPPORT_802_11D
-	BOOLEAN fgMultiDomainCapabilityEnabled;
+	u_int8_t fgMultiDomainCapabilityEnabled;
 #endif				/* CFG_SUPPORT_802_11D */
 
 #if 1				/* CFG_SUPPORT_WAPI */
-	BOOL fgWapiMode;
-	UINT_32 u4WapiSelectedGroupCipher;
-	UINT_32 u4WapiSelectedPairwiseCipher;
-	UINT_32 u4WapiSelectedAKMSuite;
+	u_int8_t fgWapiMode;
+	uint32_t u4WapiSelectedGroupCipher;
+	uint32_t u4WapiSelectedPairwiseCipher;
+	uint32_t u4WapiSelectedAKMSuite;
 #endif
 
 	/* CR1486, CR1640 */
 	/* for WPS, disable the privacy check for AP selection policy */
-	BOOLEAN fgPrivacyCheckDisable;
+	u_int8_t fgPrivacyCheckDisable;
 
 	/* b0~3: trigger-en AC0~3. b4~7: delivery-en AC0~3 */
-	UINT_8 bmfgApsdEnAc;
+	uint8_t bmfgApsdEnAc;
 
 	/* for RSN info store, when upper layer set rsn info */
-	RSN_INFO_T rRsnInfo;
+	struct RSN_INFO rRsnInfo;
 
-	BOOLEAN fgSecModeChangeStartTimer;
-} CONNECTION_SETTINGS_T, *P_CONNECTION_SETTINGS_T;
+	u_int8_t fgSecModeChangeStartTimer;
+};
 
-struct _BSS_INFO_T {
+struct BSS_INFO {
 
-	ENUM_NETWORK_TYPE_T eNetworkType;
+	enum ENUM_NETWORK_TYPE eNetworkType;
 
-	UINT_32 u4PrivateData;	/* Private data parameter for each NETWORK type usage. */
+	uint32_t u4PrivateData;	/* Private data parameter for each NETWORK type usage. */
 	/* P2P network type has 3 network interface to distinguish. */
 
-	ENUM_PARAM_MEDIA_STATE_T eConnectionState;	/* Connected Flag used in AIS_NORMAL_TR */
-	ENUM_PARAM_MEDIA_STATE_T eConnectionStateIndicated;	/* The Media State that report to HOST */
+	enum ENUM_PARAM_MEDIA_STATE eConnectionState;	/* Connected Flag used in AIS_NORMAL_TR */
+	enum ENUM_PARAM_MEDIA_STATE eConnectionStateIndicated;	/* The Media State that report to HOST */
 
-	ENUM_OP_MODE_T eCurrentOPMode;	/* Current Operation Mode - Infra/IBSS */
+	enum ENUM_OP_MODE eCurrentOPMode;	/* Current Operation Mode - Infra/IBSS */
 #if CFG_ENABLE_WIFI_DIRECT
-	ENUM_OP_MODE_T eIntendOPMode;
+	enum ENUM_OP_MODE eIntendOPMode;
 #endif
 
 #if (CFG_SUPPORT_DFS_MASTER == 1)
-	BOOLEAN fgIsDfsActive;
+	u_int8_t fgIsDfsActive;
 #endif
 
-	BOOLEAN fgIsInUse;	/* For CNM to assign BSS_INFO */
-	BOOLEAN fgIsNetActive;	/* TRUE if this network has been activated */
+	u_int8_t fgIsInUse;	/* For CNM to assign BSS_INFO */
+	u_int8_t fgIsNetActive;	/* TRUE if this network has been activated */
 
-	UINT_8 ucBssIndex;	/* BSS_INFO_T index */
+	uint8_t ucBssIndex;	/* BSS_INFO_T index */
 
-	UINT_8 ucReasonOfDisconnect;	/* Used by media state indication */
+	uint8_t ucReasonOfDisconnect;	/* Used by media state indication */
 
-	UINT_8 ucSSIDLen;	/* Length of SSID */
+	uint8_t ucSSIDLen;	/* Length of SSID */
 
 #if CFG_ENABLE_WIFI_DIRECT
-	ENUM_HIDDEN_SSID_TYPE_T eHiddenSsidType;	/* For Hidden SSID usage. */
+	enum ENUM_HIDDEN_SSID_TYPE eHiddenSsidType;	/* For Hidden SSID usage. */
 #endif
 
-	UINT_8 aucSSID[ELEM_MAX_LEN_SSID];	/* SSID used in this BSS */
+	uint8_t aucSSID[ELEM_MAX_LEN_SSID];	/* SSID used in this BSS */
 
-	UINT_8 aucBSSID[MAC_ADDR_LEN];	/* The BSSID of the associated BSS */
+	uint8_t aucBSSID[MAC_ADDR_LEN];	/* The BSSID of the associated BSS */
 
-	UINT_8 aucOwnMacAddr[MAC_ADDR_LEN];	/* Owned MAC Address used in this BSS */
+	uint8_t aucOwnMacAddr[MAC_ADDR_LEN];	/* Owned MAC Address used in this BSS */
 
-	UINT_8 ucOwnMacIndex;	/* Owned MAC index used in this BSS */
+	uint8_t ucOwnMacIndex;	/* Owned MAC index used in this BSS */
 
-	P_STA_RECORD_T prStaRecOfAP;	/* For Infra Mode, and valid only if
+	struct STA_RECORD *prStaRecOfAP;	/* For Infra Mode, and valid only if
 					 * eConnectionState == MEDIA_STATE_CONNECTED
 					 */
-	LINK_T rStaRecOfClientList;	/* For IBSS/AP Mode, all known STAs in current BSS */
+	struct LINK rStaRecOfClientList;	/* For IBSS/AP Mode, all known STAs in current BSS */
 
-	UINT_8 ucBMCWlanIndex;	/* For open Mode, BC/MC Tx wlan index, For STA, BC/MC Rx wlan index */
+	uint8_t ucBMCWlanIndex;	/* For open Mode, BC/MC Tx wlan index, For STA, BC/MC Rx wlan index */
 
-	UINT_8 ucBMCWlanIndexS[MAX_KEY_NUM];	/* For AP Mode, BC/MC Tx wlan index, For STA, BC/MC Rx wlan index */
-	UINT_8 ucBMCWlanIndexSUsed[MAX_KEY_NUM];
+	uint8_t ucBMCWlanIndexS[MAX_KEY_NUM];	/* For AP Mode, BC/MC Tx wlan index, For STA, BC/MC Rx wlan index */
+	uint8_t ucBMCWlanIndexSUsed[MAX_KEY_NUM];
 
-	BOOLEAN fgBcDefaultKeyExist;	/* Bc Transmit key exist or not */
-	UINT_8 ucBcDefaultKeyIdx;	/* Bc default key idx, for STA, the Rx just set, for AP, the tx key id */
+	u_int8_t fgBcDefaultKeyExist;	/* Bc Transmit key exist or not */
+	uint8_t ucBcDefaultKeyIdx;	/* Bc default key idx, for STA, the Rx just set, for AP, the tx key id */
 
-	UINT_8 wepkeyUsed[MAX_KEY_NUM];
-	UINT_8 wepkeyWlanIdx;	/* wlan index of the wep key */
+	uint8_t wepkeyUsed[MAX_KEY_NUM];
+	uint8_t wepkeyWlanIdx;	/* wlan index of the wep key */
 
-	UINT_16 u2CapInfo;	/* Change Detection */
+	uint16_t u2CapInfo;	/* Change Detection */
 
-	UINT_16 u2BeaconInterval;	/* The Beacon Interval of this BSS */
+	uint16_t u2BeaconInterval;	/* The Beacon Interval of this BSS */
 
-	UINT_16 u2ATIMWindow;	/* For IBSS Mode */
+	uint16_t u2ATIMWindow;	/* For IBSS Mode */
 
-	UINT_16 u2AssocId;	/* For Infra Mode, it is the Assoc ID assigned by AP.
+	uint16_t u2AssocId;	/* For Infra Mode, it is the Assoc ID assigned by AP.
 				 */
 
-	UINT_8 ucDTIMPeriod;	/* For Infra/AP Mode */
+	uint8_t ucDTIMPeriod;	/* For Infra/AP Mode */
 
-	UINT_8 ucDTIMCount;	/* For AP Mode, it is the DTIM value we should carried in
+	uint8_t ucDTIMCount;	/* For AP Mode, it is the DTIM value we should carried in
 				 * the Beacon of next TBTT.
 				 */
 
-	UINT_8 ucPhyTypeSet;	/* Available PHY Type Set of this peer
-				 * (This is deduced from received BSS_DESC_T)
+	uint8_t ucPhyTypeSet;	/* Available PHY Type Set of this peer
+				 * (This is deduced from received struct BSS_DESC)
 				 */
 
-	UINT_8 ucNonHTBasicPhyType;	/* The Basic PHY Type Index, used to setup Phy Capability */
+	uint8_t ucNonHTBasicPhyType;	/* The Basic PHY Type Index, used to setup Phy Capability */
 
-	UINT_8 ucConfigAdHocAPMode;	/* The configuration of AdHoc/AP Mode. e.g. 11g or 11b */
+	uint8_t ucConfigAdHocAPMode;	/* The configuration of AdHoc/AP Mode. e.g. 11g or 11b */
 
-	UINT_8 ucBeaconTimeoutCount;	/* For Infra/AP Mode, it is a threshold of Beacon Lost Count to
+	uint8_t ucBeaconTimeoutCount;	/* For Infra/AP Mode, it is a threshold of Beacon Lost Count to
 					*  confirm connection was lost
 					*/
 
-	BOOLEAN fgHoldSameBssidForIBSS;	/* For IBSS Mode, to keep use same BSSID to extend the life cycle of an IBSS */
+	u_int8_t fgHoldSameBssidForIBSS;	/* For IBSS Mode, to keep use same BSSID to extend the life cycle of an IBSS */
 
-	BOOLEAN fgIsBeaconActivated;	/* For AP/IBSS Mode, it is used to indicate that Beacon is sending */
+	u_int8_t fgIsBeaconActivated;	/* For AP/IBSS Mode, it is used to indicate that Beacon is sending */
 
-	P_MSDU_INFO_T prBeacon;	/* For AP/IBSS Mode - Beacon Frame */
+	struct MSDU_INFO *prBeacon;	/* For AP/IBSS Mode - Beacon Frame */
 
-	BOOLEAN fgIsIBSSMaster;	/* For IBSS Mode - To indicate that we can reply ProbeResp Frame.
+	u_int8_t fgIsIBSSMaster;	/* For IBSS Mode - To indicate that we can reply ProbeResp Frame.
 				* In current TBTT interval
 				*/
 
-	BOOLEAN fgIsShortPreambleAllowed;	/* From Capability Info. of AssocResp Frame
+	u_int8_t fgIsShortPreambleAllowed;	/* From Capability Info. of AssocResp Frame
 						* AND of Beacon/ProbeResp Frame
 						*/
-	BOOLEAN fgUseShortPreamble;	/* Short Preamble is enabled in current BSS. */
-	BOOLEAN fgUseShortSlotTime;	/* Short Slot Time is enabled in current BSS. */
+	u_int8_t fgUseShortPreamble;	/* Short Preamble is enabled in current BSS. */
+	u_int8_t fgUseShortSlotTime;	/* Short Slot Time is enabled in current BSS. */
 
-	UINT_16 u2OperationalRateSet;	/* Operational Rate Set of current BSS */
-	UINT_16 u2BSSBasicRateSet;	/* Basic Rate Set of current BSS */
+	uint16_t u2OperationalRateSet;	/* Operational Rate Set of current BSS */
+	uint16_t u2BSSBasicRateSet;	/* Basic Rate Set of current BSS */
 
-	UINT_8 ucAllSupportedRatesLen;	/* Used for composing Beacon Frame in AdHoc or AP Mode */
-	UINT_8 aucAllSupportedRates[RATE_NUM_SW];
+	uint8_t ucAllSupportedRatesLen;	/* Used for composing Beacon Frame in AdHoc or AP Mode */
+	uint8_t aucAllSupportedRates[RATE_NUM_SW];
 
-	UINT_8 ucAssocClientCnt;	/* TODO(Kevin): Number of associated clients */
+	uint8_t ucAssocClientCnt;	/* TODO(Kevin): Number of associated clients */
 
-	BOOLEAN fgIsProtection;
-	BOOLEAN fgIsQBSS;	/* fgIsWmmBSS; *//* For Infra/AP/IBSS Mode, it is used to indicate if we support WMM in
+	u_int8_t fgIsProtection;
+	u_int8_t fgIsQBSS;	/* fgIsWmmBSS; *//* For Infra/AP/IBSS Mode, it is used to indicate if we support WMM in
 				* current BSS.
 				*/
-	BOOLEAN fgIsNetAbsent;	/* TRUE: BSS is absent, FALSE: BSS is present */
+	u_int8_t fgIsNetAbsent;	/* TRUE: BSS is absent, FALSE: BSS is present */
 
-	UINT_32 u4RsnSelectedGroupCipher;
-	UINT_32 u4RsnSelectedPairwiseCipher;
-	UINT_32 u4RsnSelectedAKMSuite;
-	UINT_16 u2RsnSelectedCapInfo;
+	uint32_t u4RsnSelectedGroupCipher;
+	uint32_t u4RsnSelectedPairwiseCipher;
+	uint32_t u4RsnSelectedAKMSuite;
+	uint16_t u2RsnSelectedCapInfo;
 
 	/*------------------------------------------------------------------------*/
 	    /* Operation mode change notification			      */
 	/*------------------------------------------------------------------------*/
 
-	BOOLEAN fgIsOpChangeChannelWidth; /*Need to change OpMode channel width*/
-	UINT_8 ucOpChangeChannelWidth; /* The OpMode channel width that we want to change to*/
+	u_int8_t fgIsOpChangeChannelWidth; /*Need to change OpMode channel width*/
+	uint8_t ucOpChangeChannelWidth; /* The OpMode channel width that we want to change to*/
 					/* 0:20MHz, 1:40MHz, 2:80MHz, 3:160MHz 4:80+80MHz*/
-	BOOLEAN fgIsOpChangeNss; /*Need to change OpMode Nss*/
-	UINT_8 ucOpChangeNss; /* The OpMode Nss that we want to change to */
+	u_int8_t fgIsOpChangeNss; /*Need to change OpMode Nss*/
+	uint8_t ucOpChangeNss; /* The OpMode Nss that we want to change to */
 
 	PFN_OPMODE_NOTIFY_DONE_FUNC pfOpChangeHandler;
 
-	UINT_8 aucOpModeChangeState[OP_NOTIFY_TYPE_NUM];
+	uint8_t aucOpModeChangeState[OP_NOTIFY_TYPE_NUM];
 
-	UINT_8 aucOpModeChangeRetryCnt[OP_NOTIFY_TYPE_NUM];
+	uint8_t aucOpModeChangeRetryCnt[OP_NOTIFY_TYPE_NUM];
 
 
     /*------------------------------------------------------------------------*/
 	/* Power Management related information                                   */
     /*------------------------------------------------------------------------*/
-	PM_PROFILE_SETUP_INFO_T rPmProfSetupInfo;
+	struct PM_PROFILE_SETUP_INFO rPmProfSetupInfo;
 
     /*------------------------------------------------------------------------*/
 	/* WMM/QoS related information                                            */
     /*------------------------------------------------------------------------*/
-	UINT_8 ucWmmParamSetCount;	/* Used to detect the change of EDCA parameters. For AP mode,
+	uint8_t ucWmmParamSetCount;	/* Used to detect the change of EDCA parameters. For AP mode,
 					*the value is used in WMM IE
 					*/
 
-	AC_QUE_PARMS_T arACQueParms[WMM_AC_INDEX_NUM];
+	struct AC_QUE_PARMS arACQueParms[WMM_AC_INDEX_NUM];
 
-	UINT_8 aucCWminLog2ForBcast[WMM_AC_INDEX_NUM];	/* For AP mode, broadcast the CWminLog2 */
-	UINT_8 aucCWmaxLog2ForBcast[WMM_AC_INDEX_NUM];	/* For AP mode, broadcast the CWmaxLog2 */
-	AC_QUE_PARMS_T arACQueParmsForBcast[WMM_AC_INDEX_NUM];	/* For AP mode, broadcast the value */
-	UINT_8 ucWmmQueSet;
+	uint8_t aucCWminLog2ForBcast[WMM_AC_INDEX_NUM];	/* For AP mode, broadcast the CWminLog2 */
+	uint8_t aucCWmaxLog2ForBcast[WMM_AC_INDEX_NUM];	/* For AP mode, broadcast the CWmaxLog2 */
+	struct AC_QUE_PARMS arACQueParmsForBcast[WMM_AC_INDEX_NUM];	/* For AP mode, broadcast the value */
+	uint8_t ucWmmQueSet;
 
     /*------------------------------------------------------------------------*/
 	/* 802.11n HT operation IE when (prStaRec->ucPhyTypeSet & PHY_TYPE_BIT_HT) */
 	/* is true. They have the same definition with fields of                  */
 	/* information element (CM)                                               */
     /*------------------------------------------------------------------------*/
-	ENUM_BAND_T eBand;
-	UINT_8 ucPrimaryChannel;
-	UINT_8 ucHtOpInfo1;
-	UINT_16 u2HtOpInfo2;
-	UINT_16 u2HtOpInfo3;
-	UINT_8 ucNss;	/* Own OP Nss */
+	enum ENUM_BAND eBand;
+	uint8_t ucPrimaryChannel;
+	uint8_t ucHtOpInfo1;
+	uint16_t u2HtOpInfo2;
+	uint16_t u2HtOpInfo3;
+	uint8_t ucNss;	/* Own OP Nss */
     /*------------------------------------------------------------------------*/
 	/* 802.11ac VHT operation IE when (prStaRec->ucPhyTypeSet & PHY_TYPE_BIT_VHT) */
 	/* is true. They have the same definition with fields of                  */
 	/* information element (EASON)                                               */
     /*------------------------------------------------------------------------*/
 #if 1				/* CFG_SUPPORT_802_11AC */
-	UINT_8 ucVhtChannelWidth;
-	UINT_8 ucVhtChannelFrequencyS1;
-	UINT_8 ucVhtChannelFrequencyS2;
-	UINT_16 u2VhtBasicMcsSet;
+	uint8_t ucVhtChannelWidth;
+	uint8_t ucVhtChannelFrequencyS1;
+	uint8_t ucVhtChannelFrequencyS2;
+	uint16_t u2VhtBasicMcsSet;
 #endif
     /*------------------------------------------------------------------------*/
 	/* Required protection modes (CM)                                         */
     /*------------------------------------------------------------------------*/
-	BOOLEAN fgErpProtectMode;
-	ENUM_HT_PROTECT_MODE_T eHtProtectMode;
-	ENUM_GF_MODE_T eGfOperationMode;
-	ENUM_RIFS_MODE_T eRifsOperationMode;
+	u_int8_t fgErpProtectMode;
+	enum ENUM_HT_PROTECT_MODE eHtProtectMode;
+	enum ENUM_GF_MODE eGfOperationMode;
+	enum ENUM_RIFS_MODE eRifsOperationMode;
 
-	BOOLEAN fgObssErpProtectMode;	/* GO only */
-	ENUM_HT_PROTECT_MODE_T eObssHtProtectMode;	/* GO only */
-	ENUM_GF_MODE_T eObssGfOperationMode;	/* GO only */
-	BOOLEAN fgObssRifsOperationMode;	/* GO only */
+	u_int8_t fgObssErpProtectMode;	/* GO only */
+	enum ENUM_HT_PROTECT_MODE eObssHtProtectMode;	/* GO only */
+	enum ENUM_GF_MODE eObssGfOperationMode;	/* GO only */
+	u_int8_t fgObssRifsOperationMode;	/* GO only */
 
     /*------------------------------------------------------------------------*/
 	/* OBSS to decide if 20/40M bandwidth is permitted.                       */
 	/* The first member indicates the following channel list length.          */
     /*------------------------------------------------------------------------*/
-	BOOLEAN fgAssoc40mBwAllowed;
-	BOOLEAN fg40mBwAllowed;
-	ENUM_CHNL_EXT_T eBssSCO;	/* Real setting for HW
+	u_int8_t fgAssoc40mBwAllowed;
+	u_int8_t fg40mBwAllowed;
+	enum ENUM_CHNL_EXT eBssSCO;	/* Real setting for HW
 					 * 20/40M AP mode will always set 40M,
 					 * but its OP IE can be changed.
 					 */
-	UINT_8 auc2G_20mReqChnlList[CHNL_LIST_SZ_2G + 1];
-	UINT_8 auc2G_NonHtChnlList[CHNL_LIST_SZ_2G + 1];
-	UINT_8 auc2G_PriChnlList[CHNL_LIST_SZ_2G + 1];
-	UINT_8 auc2G_SecChnlList[CHNL_LIST_SZ_2G + 1];
+	uint8_t auc2G_20mReqChnlList[CHNL_LIST_SZ_2G + 1];
+	uint8_t auc2G_NonHtChnlList[CHNL_LIST_SZ_2G + 1];
+	uint8_t auc2G_PriChnlList[CHNL_LIST_SZ_2G + 1];
+	uint8_t auc2G_SecChnlList[CHNL_LIST_SZ_2G + 1];
 
-	UINT_8 auc5G_20mReqChnlList[CHNL_LIST_SZ_5G + 1];
-	UINT_8 auc5G_NonHtChnlList[CHNL_LIST_SZ_5G + 1];
-	UINT_8 auc5G_PriChnlList[CHNL_LIST_SZ_5G + 1];
-	UINT_8 auc5G_SecChnlList[CHNL_LIST_SZ_5G + 1];
+	uint8_t auc5G_20mReqChnlList[CHNL_LIST_SZ_5G + 1];
+	uint8_t auc5G_NonHtChnlList[CHNL_LIST_SZ_5G + 1];
+	uint8_t auc5G_PriChnlList[CHNL_LIST_SZ_5G + 1];
+	uint8_t auc5G_SecChnlList[CHNL_LIST_SZ_5G + 1];
 
-	TIMER_T rObssScanTimer;
-	UINT_16 u2ObssScanInterval;	/* in unit of sec */
+	struct TIMER rObssScanTimer;
+	uint16_t u2ObssScanInterval;	/* in unit of sec */
 
-	BOOLEAN fgObssActionForcedTo20M;	/* GO only */
-	BOOLEAN fgObssBeaconForcedTo20M;	/* GO only */
+	u_int8_t fgObssActionForcedTo20M;	/* GO only */
+	u_int8_t fgObssBeaconForcedTo20M;	/* GO only */
 
     /*------------------------------------------------------------------------*/
 	/* HW Related Fields (Kevin)                                              */
     /*------------------------------------------------------------------------*/
-	UINT_16 u2HwDefaultFixedRateCode;	/* The default rate code copied to MAC TX Desc */
-	UINT_16 u2HwLPWakeupGuardTimeUsec;
+	uint16_t u2HwDefaultFixedRateCode;	/* The default rate code copied to MAC TX Desc */
+	uint16_t u2HwLPWakeupGuardTimeUsec;
 
-	UINT_8 ucBssFreeQuota;	/* The value is updated from FW  */
+	uint8_t ucBssFreeQuota;	/* The value is updated from FW  */
 
 #if CFG_ENABLE_GTK_FRAME_FILTER
-	P_IPV4_NETWORK_ADDRESS_LIST prIpV4NetAddrList;
+	struct IPV4_NETWORK_ADDRESS_LIST *prIpV4NetAddrList;
 #endif
-	UINT_16 u2DeauthReason;
+	uint16_t u2DeauthReason;
 
 #if CFG_SUPPORT_TDLS
-	BOOLEAN fgTdlsIsProhibited;
-	BOOLEAN fgTdlsIsChSwProhibited;
+	u_int8_t fgTdlsIsProhibited;
+	u_int8_t fgTdlsIsChSwProhibited;
 #endif
 #if CFG_SUPPORT_PNO
-	BOOLEAN fgIsPNOEnable;
-	BOOLEAN fgIsNetRequestInActive;
+	u_int8_t fgIsPNOEnable;
+	u_int8_t fgIsNetRequestInActive;
 #endif
 
-	WIFI_WMM_AC_STAT_T arLinkStatistics[WMM_AC_INDEX_NUM];	/*link layer statistics */
+	struct WIFI_WMM_AC_STAT arLinkStatistics[WMM_AC_INDEX_NUM];	/*link layer statistics */
 
-	UINT_32 u4CoexPhyRateLimit;
+	uint32_t u4CoexPhyRateLimit;
 
 #if CFG_SUPPORT_ROAMING_SKIP_ONE_AP
-	UINT_8	ucRoamSkipTimes;
-	BOOLEAN fgGoodRcpiArea;
-	BOOLEAN fgPoorRcpiArea;
+	uint8_t	ucRoamSkipTimes;
+	u_int8_t fgGoodRcpiArea;
+	u_int8_t fgPoorRcpiArea;
 #endif
 
-	BOOLEAN fgIsGranted;
-	ENUM_BAND_T eBandGranted;
-	UINT_8 ucPrimaryChannelGranted;
-	PARAM_CUSTOM_ACL rACL;
+	u_int8_t fgIsGranted;
+	enum ENUM_BAND eBandGranted;
+	uint8_t ucPrimaryChannelGranted;
+	struct PARAM_CUSTOM_ACL rACL;
 
 #if CFG_SUPPORT_802_11W
 	/* AP PMF */
@@ -514,34 +514,34 @@ struct _BSS_INFO_T {
 	enum ENUM_KEY_ACTION_TYPE_T eKeyAction;
 };
 
-struct _AIS_SPECIFIC_BSS_INFO_T {
-	UINT_8 ucRoamingAuthTypes;	/* This value indicate the roaming type used in AIS_JOIN */
+struct AIS_SPECIFIC_BSS_INFO {
+	uint8_t ucRoamingAuthTypes;	/* This value indicate the roaming type used in AIS_JOIN */
 
-	BOOLEAN fgIsIBSSActive;
+	u_int8_t fgIsIBSSActive;
 
 	/*! \brief Global flag to let arbiter stay at standby and not connect to any network */
-	BOOLEAN fgCounterMeasure;
+	u_int8_t fgCounterMeasure;
 	/* UINT_8                  ucTxWlanIndex; *//* Legacy wep, adhoc wep wpa Transmit key wlan index */
 
 	/* BOOLEAN                 fgKeyMaterialExist[4]; */
 	/* UINT_8                  aucKeyMaterial[32][4]; */
 
 #if 0
-	BOOLEAN fgWepWapiBcKeyExist;	/* WEP WAPI BC key exist flag */
-	UINT_8 ucWepWapiBcWlanIndex;	/* WEP WAPI BC wlan index */
+	u_int8_t fgWepWapiBcKeyExist;	/* WEP WAPI BC key exist flag */
+	uint8_t ucWepWapiBcWlanIndex;	/* WEP WAPI BC wlan index */
 
-	BOOLEAN fgRsnBcKeyExist[4];	/* RSN BC key exist flag, map to key id 0, 1, 2, 3 */
-	UINT_8 ucRsnBcWlanIndex[4];	/* RSN BC wlan index, map to key id 0, 1, 2, 3 */
+	u_int8_t fgRsnBcKeyExist[4];	/* RSN BC key exist flag, map to key id 0, 1, 2, 3 */
+	uint8_t ucRsnBcWlanIndex[4];	/* RSN BC wlan index, map to key id 0, 1, 2, 3 */
 #endif
 
 	/* While Do CounterMeasure procedure, check the EAPoL Error report have send out */
-	BOOLEAN fgCheckEAPoLTxDone;
+	u_int8_t fgCheckEAPoLTxDone;
 
-	UINT_32 u4RsnaLastMICFailTime;
+	uint32_t u4RsnaLastMICFailTime;
 
 	/* Stored the current bss wpa rsn cap filed, used for roaming policy */
 	/* UINT_16                 u2RsnCap; */
-	TIMER_T rPreauthenticationTimer;
+	struct TIMER rPreauthenticationTimer;
 
 	/* By the flow chart of 802.11i,
 	 *  wait 60 sec before associating to same AP
@@ -549,357 +549,357 @@ struct _AIS_SPECIFIC_BSS_INFO_T {
 	 *  or sending data in IBSS,
 	 *  keep a timer for handle the 60 sec counterMeasure
 	 */
-	TIMER_T rRsnaBlockTrafficTimer;
-	TIMER_T rRsnaEAPoLReportTimeoutTimer;
+	struct TIMER rRsnaBlockTrafficTimer;
+	struct TIMER rRsnaEAPoLReportTimeoutTimer;
 
 	/* For Keep the Tx/Rx Mic key for TKIP SW Calculate Mic */
 	/* This is only one for AIS/AP */
-	UINT_8 aucTxMicKey[8];
-	UINT_8 aucRxMicKey[8];
+	uint8_t aucTxMicKey[8];
+	uint8_t aucRxMicKey[8];
 
 	/* Buffer for WPA2 PMKID */
 	/* The PMKID cache lifetime is expire by media_disconnect_indication */
-	UINT_32 u4PmkidCandicateCount;
-	PMKID_CANDICATE_T arPmkidCandicate[CFG_MAX_PMKID_CACHE];
-	UINT_32 u4PmkidCacheCount;
-	PMKID_ENTRY_T arPmkidCache[CFG_MAX_PMKID_CACHE];
-	BOOLEAN fgIndicatePMKID;
+	uint32_t u4PmkidCandicateCount;
+	struct PMKID_CANDICATE arPmkidCandicate[CFG_MAX_PMKID_CACHE];
+	uint32_t u4PmkidCacheCount;
+	struct PMKID_ENTRY arPmkidCache[CFG_MAX_PMKID_CACHE];
+	u_int8_t fgIndicatePMKID;
 #if CFG_SUPPORT_802_11W
-	BOOLEAN fgMgmtProtection;
-	UINT_32 u4SaQueryStart;
-	UINT_32 u4SaQueryCount;
-	UINT_8 ucSaQueryTimedOut;
-	PUINT_8 pucSaQueryTransId;
-	TIMER_T rSaQueryTimer;
-	BOOLEAN fgBipKeyInstalled;
+	u_int8_t fgMgmtProtection;
+	uint32_t u4SaQueryStart;
+	uint32_t u4SaQueryCount;
+	uint8_t ucSaQueryTimedOut;
+	uint8_t *pucSaQueryTransId;
+	struct TIMER rSaQueryTimer;
+	u_int8_t fgBipKeyInstalled;
 #endif
-	UINT_8 ucKeyAlgorithmId;
+	uint8_t ucKeyAlgorithmId;
 };
 
-struct _BOW_SPECIFIC_BSS_INFO_T {
-	UINT_16 u2Reserved;	/* Reserved for Data Type Check */
+struct BOW_SPECIFIC_BSS_INFO {
+	uint16_t u2Reserved;	/* Reserved for Data Type Check */
 };
 
 #if CFG_SLT_SUPPORT
-typedef struct _SLT_INFO_T {
+struct SLT_INFO {
 
-	P_BSS_DESC_T prPseudoBssDesc;
-	UINT_16 u2SiteID;
-	UINT_8 ucChannel2G4;
-	UINT_8 ucChannel5G;
-	BOOLEAN fgIsDUT;
-	UINT_32 u4BeaconReceiveCnt;
+	struct BSS_DESC *prPseudoBssDesc;
+	uint16_t u2SiteID;
+	uint8_t ucChannel2G4;
+	uint8_t ucChannel5G;
+	u_int8_t fgIsDUT;
+	uint32_t u4BeaconReceiveCnt;
 	/* ///////Deprecated///////// */
-	P_STA_RECORD_T prPseudoStaRec;
-} SLT_INFO_T, *P_SLT_INFO_T;
+	struct STA_RECORD *prPseudoStaRec;
+};
 #endif
 
-typedef struct _WLAN_TABLE_T {
-	UINT_8 ucUsed;
-	UINT_8 ucBssIndex;
-	UINT_8 ucKeyId;
-	UINT_8 ucPairwise;
-	UINT_8 aucMacAddr[MAC_ADDR_LEN];
-	UINT_8 ucStaIndex;
-} WLAN_TABLE_T, *P_WLAN_TABLE_T;
+struct WLAN_TABLE {
+	uint8_t ucUsed;
+	uint8_t ucBssIndex;
+	uint8_t ucKeyId;
+	uint8_t ucPairwise;
+	uint8_t aucMacAddr[MAC_ADDR_LEN];
+	uint8_t ucStaIndex;
+};
 
 /* Major member variables for WiFi FW operation.
  *  Variables within this region will be ready for access after WIFI function is enabled.
  */
-typedef struct _WIFI_VAR_T {
-	BOOLEAN fgIsRadioOff;
+struct WIFI_VAR {
+	u_int8_t fgIsRadioOff;
 
-	BOOLEAN fgIsEnterD3ReqIssued;
+	u_int8_t fgIsEnterD3ReqIssued;
 
-	BOOLEAN fgDebugCmdResp;
+	u_int8_t fgDebugCmdResp;
 
-	CONNECTION_SETTINGS_T rConnSettings;
+	struct CONNECTION_SETTINGS rConnSettings;
 
-	SCAN_INFO_T rScanInfo;
+	struct SCAN_INFO rScanInfo;
 
 #if CFG_SUPPORT_ROAMING
-	ROAMING_INFO_T rRoamingInfo;
+	struct ROAMING_INFO rRoamingInfo;
 #endif				/* CFG_SUPPORT_ROAMING */
 
-	AIS_FSM_INFO_T rAisFsmInfo;
+	struct AIS_FSM_INFO rAisFsmInfo;
 
-	ENUM_PWR_STATE_T aePwrState[MAX_BSSID_NUM];
+	enum ENUM_PWR_STATE aePwrState[MAX_BSSID_NUM];
 
-	BSS_INFO_T arBssInfoPool[MAX_BSSID_NUM];
+	struct BSS_INFO arBssInfoPool[MAX_BSSID_NUM];
 
-	P2P_DEV_INFO_T rP2pDevInfo;
+	struct BSS_INFO rP2pDevInfo;
 
-	AIS_SPECIFIC_BSS_INFO_T rAisSpecificBssInfo;
+	struct AIS_SPECIFIC_BSS_INFO rAisSpecificBssInfo;
 
 #if CFG_ENABLE_WIFI_DIRECT
-	P_P2P_CONNECTION_SETTINGS_T prP2PConnSettings[BSS_P2P_NUM];
+	struct P2P_CONNECTION_SETTINGS *prP2PConnSettings[BSS_P2P_NUM];
 
-	P_P2P_SPECIFIC_BSS_INFO_T prP2pSpecificBssInfo[BSS_P2P_NUM];
+	struct P2P_SPECIFIC_BSS_INFO *prP2pSpecificBssInfo[BSS_P2P_NUM];
 
 /* P_P2P_FSM_INFO_T prP2pFsmInfo; */
 
-	P_P2P_DEV_FSM_INFO_T prP2pDevFsmInfo;
+	struct P2P_DEV_FSM_INFO *prP2pDevFsmInfo;
 
 	/* Currently we only support 2 p2p interface. */
-	P_P2P_ROLE_FSM_INFO_T aprP2pRoleFsmInfo[BSS_P2P_NUM];
+	struct P2P_ROLE_FSM_INFO *aprP2pRoleFsmInfo[BSS_P2P_NUM];
 
 #endif				/* CFG_ENABLE_WIFI_DIRECT */
 
 #if CFG_ENABLE_BT_OVER_WIFI
-	BOW_SPECIFIC_BSS_INFO_T rBowSpecificBssInfo;
-	BOW_FSM_INFO_T rBowFsmInfo;
+	struct BOW_SPECIFIC_BSS_INFO rBowSpecificBssInfo;
+	struct BOW_FSM_INFO rBowFsmInfo;
 #endif				/* CFG_ENABLE_BT_OVER_WIFI */
 
-	WLAN_TABLE_T arWtbl[WTBL_SIZE];
+	struct WLAN_TABLE arWtbl[WTBL_SIZE];
 
-	DEAUTH_INFO_T arDeauthInfo[MAX_DEAUTH_INFO_COUNT];
+	struct DEAUTH_INFO arDeauthInfo[MAX_DEAUTH_INFO_COUNT];
 
 	/* Current Wi-Fi Settings and Flags */
-	UINT_8 aucPermanentAddress[MAC_ADDR_LEN];
-	UINT_8 aucMacAddress[MAC_ADDR_LEN];
-	UINT_8 aucDeviceAddress[MAC_ADDR_LEN];
-	UINT_8 aucInterfaceAddress[MAC_ADDR_LEN];
+	uint8_t aucPermanentAddress[MAC_ADDR_LEN];
+	uint8_t aucMacAddress[MAC_ADDR_LEN];
+	uint8_t aucDeviceAddress[MAC_ADDR_LEN];
+	uint8_t aucInterfaceAddress[MAC_ADDR_LEN];
 
-	UINT_8 ucAvailablePhyTypeSet;
+	uint8_t ucAvailablePhyTypeSet;
 
-	ENUM_PHY_TYPE_INDEX_T eNonHTBasicPhyType2G4;	/* Basic Phy Type used by SCN according
+	enum ENUM_PHY_TYPE_INDEX eNonHTBasicPhyType2G4;	/* Basic Phy Type used by SCN according
 							 * to the set of Available PHY Types
 							 */
 
-	ENUM_PARAM_PREAMBLE_TYPE_T ePreambleType;
-	ENUM_REGISTRY_FIXED_RATE_T eRateSetting;
+	enum ENUM_PARAM_PREAMBLE_TYPE ePreambleType;
+	enum ENUM_REGISTRY_FIXED_RATE eRateSetting;
 
-	BOOLEAN fgIsShortSlotTimeOptionEnable;
+	u_int8_t fgIsShortSlotTimeOptionEnable;
 	/* User desired setting, but will honor the capability of AP */
 
-	BOOLEAN fgEnableJoinToHiddenSSID;
-	BOOLEAN fgSupportWZCDisassociation;
+	u_int8_t fgEnableJoinToHiddenSSID;
+	u_int8_t fgSupportWZCDisassociation;
 
 #if CFG_SUPPORT_WFD
-	WFD_CFG_SETTINGS_T rWfdConfigureSettings;
+	struct WFD_CFG_SETTINGS rWfdConfigureSettings;
 #endif
 
 #if CFG_SLT_SUPPORT
-	SLT_INFO_T rSltInfo;
+	struct SLT_INFO rSltInfo;
 #endif
 
 #if CFG_SUPPORT_PASSPOINT
-	HS20_INFO_T rHS20Info;
+	struct HS20_INFO rHS20Info;
 #endif				/* CFG_SUPPORT_PASSPOINT */
-	UINT_8 aucMediatekOuiIE[64];
-	UINT_16 u2MediatekOuiIELen;
+	uint8_t aucMediatekOuiIE[64];
+	uint16_t u2MediatekOuiIELen;
 
 	/* Feature Options */
-	UINT_8 ucQoS;
+	uint8_t ucQoS;
 
-	UINT_8 ucStaHt;
-	UINT_8 ucStaVht;
-	UINT_8 ucApHt;
-	UINT_8 ucApVht;
-	UINT_8 ucP2pGoHt;
-	UINT_8 ucP2pGoVht;
-	UINT_8 ucP2pGcHt;
-	UINT_8 ucP2pGcVht;
+	uint8_t ucStaHt;
+	uint8_t ucStaVht;
+	uint8_t ucApHt;
+	uint8_t ucApVht;
+	uint8_t ucP2pGoHt;
+	uint8_t ucP2pGoVht;
+	uint8_t ucP2pGcHt;
+	uint8_t ucP2pGcVht;
 
-	UINT_8 ucAmpduTx;
-	UINT_8 ucAmpduRx;
-	UINT_8 ucAmsduInAmpduTx;
-	UINT_8 ucAmsduInAmpduRx;
-	UINT_8 ucHtAmsduInAmpduTx;
-	UINT_8 ucHtAmsduInAmpduRx;
-	UINT_8 ucVhtAmsduInAmpduTx;
-	UINT_8 ucVhtAmsduInAmpduRx;
-	UINT_8 ucTspec;
-	UINT_8 ucUapsd;
-	UINT_8 ucStaUapsd;
-	UINT_8 ucApUapsd;
-	UINT_8 ucP2pUapsd;
+	uint8_t ucAmpduTx;
+	uint8_t ucAmpduRx;
+	uint8_t ucAmsduInAmpduTx;
+	uint8_t ucAmsduInAmpduRx;
+	uint8_t ucHtAmsduInAmpduTx;
+	uint8_t ucHtAmsduInAmpduRx;
+	uint8_t ucVhtAmsduInAmpduTx;
+	uint8_t ucVhtAmsduInAmpduRx;
+	uint8_t ucTspec;
+	uint8_t ucUapsd;
+	uint8_t ucStaUapsd;
+	uint8_t ucApUapsd;
+	uint8_t ucP2pUapsd;
 
-	UINT_8 ucTxShortGI;
-	UINT_8 ucRxShortGI;
-	UINT_8 ucTxLdpc;
-	UINT_8 ucRxLdpc;
-	UINT_8 ucTxStbc;
-	UINT_8 ucRxStbc;
-	UINT_8 ucRxStbcNss;
-	UINT_8 ucTxGf;
-	UINT_8 ucRxGf;
+	uint8_t ucTxShortGI;
+	uint8_t ucRxShortGI;
+	uint8_t ucTxLdpc;
+	uint8_t ucRxLdpc;
+	uint8_t ucTxStbc;
+	uint8_t ucRxStbc;
+	uint8_t ucRxStbcNss;
+	uint8_t ucTxGf;
+	uint8_t ucRxGf;
 
-	UINT_8 ucTxopPsTx;
-	UINT_8 ucSigTaRts;
-	UINT_8 ucDynBwRts;
+	uint8_t ucTxopPsTx;
+	uint8_t ucSigTaRts;
+	uint8_t ucDynBwRts;
 
-	UINT_8 ucStaHtBfee;
-	UINT_8 ucStaVhtBfee;
-	UINT_8 ucStaHtBfer;
-	UINT_8 ucStaVhtBfer;
-	UINT_8 ucStaVhtMuBfee;
-	UINT_8 fgForceSTSNum;
+	uint8_t ucStaHtBfee;
+	uint8_t ucStaVhtBfee;
+	uint8_t ucStaHtBfer;
+	uint8_t ucStaVhtBfer;
+	uint8_t ucStaVhtMuBfee;
+	uint8_t fgForceSTSNum;
 
-	UINT_8 ucDataTxDone;
-	UINT_8 ucDataTxRateMode;
-	UINT_32 u4DataTxRateCode;
+	uint8_t ucDataTxDone;
+	uint8_t ucDataTxRateMode;
+	uint32_t u4DataTxRateCode;
 
-	UINT_8 ucApWpsMode;
-	UINT_8 ucApChannel;
+	uint8_t ucApWpsMode;
+	uint8_t ucApChannel;
 
-	UINT_8 ucApSco;
-	UINT_8 ucP2pGoSco;
+	uint8_t ucApSco;
+	uint8_t ucP2pGoSco;
 
-	UINT_8 ucStaBandwidth;
-	UINT_8 ucSta5gBandwidth;
-	UINT_8 ucSta2gBandwidth;
-	UINT_8 ucApBandwidth;
-	UINT_8 ucAp2gBandwidth;
-	UINT_8 ucAp5gBandwidth;
-	UINT_8 ucP2p5gBandwidth;
-	UINT_8 ucP2p2gBandwidth;
+	uint8_t ucStaBandwidth;
+	uint8_t ucSta5gBandwidth;
+	uint8_t ucSta2gBandwidth;
+	uint8_t ucApBandwidth;
+	uint8_t ucAp2gBandwidth;
+	uint8_t ucAp5gBandwidth;
+	uint8_t ucP2p5gBandwidth;
+	uint8_t ucP2p2gBandwidth;
 
 	/* If enable, AP channel bandwidth Channel Center Frequency Segment 0/1 */
 	/* and secondary channel offset will align wifi.cfg */
 	/* Otherwise align cfg80211 */
-	UINT_8 ucApChnlDefFromCfg;
+	uint8_t ucApChnlDefFromCfg;
 
-	UINT_8 ucNSS;
+	uint8_t ucNSS;
 
-	UINT_8 ucRxMaxMpduLen;
-	UINT_32 u4TxMaxAmsduInAmpduLen;
+	uint8_t ucRxMaxMpduLen;
+	uint32_t u4TxMaxAmsduInAmpduLen;
 
-	UINT_8 ucTxBaSize;
-	UINT_8 ucRxHtBaSize;
-	UINT_8 ucRxVhtBaSize;
+	uint8_t ucTxBaSize;
+	uint8_t ucRxHtBaSize;
+	uint8_t ucRxVhtBaSize;
 
-	UINT_8 ucStaDisconnectDetectTh;
-	UINT_8 ucApDisconnectDetectTh;
-	UINT_8 ucP2pDisconnectDetectTh;
+	uint8_t ucStaDisconnectDetectTh;
+	uint8_t ucApDisconnectDetectTh;
+	uint8_t ucP2pDisconnectDetectTh;
 
-	UINT_8 ucThreadScheduling;
-	UINT_8 ucThreadPriority;
-	INT_8 cThreadNice;
+	uint8_t ucThreadScheduling;
+	uint8_t ucThreadPriority;
+	int8_t cThreadNice;
 
-	UINT_8 ucTcRestrict;
-	UINT_32 u4MaxTxDeQLimit;
-	UINT_8 ucAlwaysResetUsedRes;
+	uint8_t ucTcRestrict;
+	uint32_t u4MaxTxDeQLimit;
+	uint8_t ucAlwaysResetUsedRes;
 
-	UINT_32 u4NetifStopTh;
-	UINT_32 u4NetifStartTh;
+	uint32_t u4NetifStopTh;
+	uint32_t u4NetifStartTh;
 #if CFG_AUTO_CHANNEL_SEL_SUPPORT
-	PARAM_GET_CHN_INFO rChnLoadInfo;
+	struct PARAM_GET_CHN_INFO rChnLoadInfo;
 #endif
 #if CFG_SUPPORT_MTK_SYNERGY
-	UINT_8 ucMtkOui;
-	UINT_32 u4MtkOuiCap;
-	UINT_8 aucMtkFeature[4];
-	BOOLEAN ucGbandProbe256QAM;
+	uint8_t ucMtkOui;
+	uint32_t u4MtkOuiCap;
+	uint8_t aucMtkFeature[4];
+	u_int8_t ucGbandProbe256QAM;
 #endif
 
-	BOOLEAN fgCsaInProgress;
-	UINT_8 ucChannelSwitchMode;
-	UINT_8 ucNewChannelNumber;
-	UINT_8 ucChannelSwitchCount;
+	u_int8_t fgCsaInProgress;
+	uint8_t ucChannelSwitchMode;
+	uint8_t ucNewChannelNumber;
+	uint8_t ucChannelSwitchCount;
 
-	UINT_32 u4HifIstLoopCount;
-	UINT_32 u4Rx2OsLoopCount;
-	UINT_32 u4HifTxloopCount;
-	UINT_32 u4TxRxLoopCount;
-	UINT_32 u4TxFromOsLoopCount;
-	UINT_32 u4TxIntThCount;
+	uint32_t u4HifIstLoopCount;
+	uint32_t u4Rx2OsLoopCount;
+	uint32_t u4HifTxloopCount;
+	uint32_t u4TxRxLoopCount;
+	uint32_t u4TxFromOsLoopCount;
+	uint32_t u4TxIntThCount;
 
-	UINT_32 au4TcPageCount[TC_NUM];
-	UINT_32 au4TcPageCountPle[TC_NUM];
-	UINT_8 ucExtraTxDone;
-	UINT_8 ucTxDbg;
+	uint32_t au4TcPageCount[TC_NUM];
+	uint32_t au4TcPageCountPle[TC_NUM];
+	uint8_t ucExtraTxDone;
+	uint8_t ucTxDbg;
 
-	UINT_8 ucCmdRsvResource;
-	UINT_32 u4MgmtQueueDelayTimeout;
+	uint8_t ucCmdRsvResource;
+	uint32_t u4MgmtQueueDelayTimeout;
 
-	UINT_32 u4StatsLogTimeout;
-	UINT_32 u4StatsLogDuration;
-	UINT_8 ucDhcpTxDone;
-	UINT_8 ucArpTxDone;
+	uint32_t u4StatsLogTimeout;
+	uint32_t u4StatsLogDuration;
+	uint8_t ucDhcpTxDone;
+	uint8_t ucArpTxDone;
 
-	UINT_8 ucMacAddrOverride;
-	UINT_8 aucMacAddrStr[32];
+	uint8_t ucMacAddrOverride;
+	uint8_t aucMacAddrStr[32];
 
-	UINT_8 ucCtiaMode;
-	UINT_8 ucTpTestMode;
-	UINT_8 ucSigmaTestMode;
+	uint8_t ucCtiaMode;
+	uint8_t ucTpTestMode;
+	uint8_t ucSigmaTestMode;
 #if CFG_SUPPORT_DBDC
-	ENUM_CNM_DBDC_MODE_T eDbdcMode;
-	BOOLEAN fgDbDcModeEn;
+	enum ENUM_CNM_DBDC_MODE eDbdcMode;
+	u_int8_t fgDbDcModeEn;
 #endif
-	UINT_8 u4ScanCtrl;
-	UINT_8 ucScanChannelListenTime;
+	uint8_t u4ScanCtrl;
+	uint8_t ucScanChannelListenTime;
 
 #if (CFG_EFUSE_BUFFER_MODE_DELAY_CAL == 1)
-	UINT_8 ucEfuseBufferModeCal;
+	uint8_t ucEfuseBufferModeCal;
 #endif
-	UINT_8 ucCalTimingCtrl;
-	UINT_8 ucWow;
-	UINT_8 ucOffload;
-	UINT_8 ucAdvPws; /* enable LP multiple DTIM function, default enable */
-	UINT_8 ucWowOnMdtim; /* multiple DTIM if WOW enable, default 1 */
-	UINT_8 ucWowOffMdtim; /* multiple DTIM if WOW disable, default 3 */
+	uint8_t ucCalTimingCtrl;
+	uint8_t ucWow;
+	uint8_t ucOffload;
+	uint8_t ucAdvPws; /* enable LP multiple DTIM function, default enable */
+	uint8_t ucWowOnMdtim; /* multiple DTIM if WOW enable, default 1 */
+	uint8_t ucWowOffMdtim; /* multiple DTIM if WOW disable, default 3 */
 
-	UINT_8 u4SwTestMode;
-	UINT_8	ucCtrlFlagAssertPath;
-	UINT_8	ucCtrlFlagDebugLevel;
-	UINT_32 u4WakeLockRxTimeout;
-	UINT_32 u4WakeLockThreadWakeup;
-	UINT_32 u4RegP2pIfAtProbe; /* register p2p interface during probe */
-	UINT_8 ucP2pShareMacAddr; /* p2p group interface use the same mac addr as p2p device interface */
-	UINT_8 ucSmartRTS;
+	uint8_t u4SwTestMode;
+	uint8_t	ucCtrlFlagAssertPath;
+	uint8_t	ucCtrlFlagDebugLevel;
+	uint32_t u4WakeLockRxTimeout;
+	uint32_t u4WakeLockThreadWakeup;
+	uint32_t u4RegP2pIfAtProbe; /* register p2p interface during probe */
+	uint8_t ucP2pShareMacAddr; /* p2p group interface use the same mac addr as p2p device interface */
+	uint8_t ucSmartRTS;
 
-	UINT_32 u4UapsdAcBmp;
-	UINT_32 u4MaxSpLen;
-	UINT_32 fgDisOnlineScan;	/* 0: enable online scan, non-zero: disable online scan */
-	UINT_32 fgDisBcnLostDetection;
-	UINT_32 fgDisRoaming;		/* 0:enable roaming 1:disable */
-	UINT_32 fgEnArpFilter;
+	uint32_t u4UapsdAcBmp;
+	uint32_t u4MaxSpLen;
+	uint32_t fgDisOnlineScan;	/* 0: enable online scan, non-zero: disable online scan */
+	uint32_t fgDisBcnLostDetection;
+	uint32_t fgDisRoaming;		/* 0:enable roaming 1:disable */
+	uint32_t fgEnArpFilter;
 
-	UINT_8	uDeQuePercentEnable;
-	UINT_32	u4DeQuePercentVHT80Nss1;
-	UINT_32	u4DeQuePercentVHT40Nss1;
-	UINT_32	u4DeQuePercentVHT20Nss1;
-	UINT_32	u4DeQuePercentHT40Nss1;
-	UINT_32	u4DeQuePercentHT20Nss1;
+	uint8_t	uDeQuePercentEnable;
+	uint32_t	u4DeQuePercentVHT80Nss1;
+	uint32_t	u4DeQuePercentVHT40Nss1;
+	uint32_t	u4DeQuePercentVHT20Nss1;
+	uint32_t	u4DeQuePercentHT40Nss1;
+	uint32_t	u4DeQuePercentHT20Nss1;
 
-	UINT_32 u4PerfMonUpdatePeriod;
-	UINT_32 u4PerfMonTpTh[PERF_MON_TP_MAX_THRESHOLD];
-	UINT_32	u4BoostCpuTh;
+	uint32_t u4PerfMonUpdatePeriod;
+	uint32_t u4PerfMonTpTh[PERF_MON_TP_MAX_THRESHOLD];
+	uint32_t	u4BoostCpuTh;
 
-	BOOLEAN fgTdlsBufferSTASleep; /* Support TDLS 5.5.4.2 optional case */
-	BOOLEAN fgChipResetRecover;
-	PARAM_POWER_MODE ePowerMode;
+	u_int8_t fgTdlsBufferSTASleep; /* Support TDLS 5.5.4.2 optional case */
+	u_int8_t fgChipResetRecover;
+	enum PARAM_POWER_MODE ePowerMode;
 
-	BOOLEAN fgNvramCheckEn; /* nvram checking in scan result*/
-} WIFI_VAR_T, *P_WIFI_VAR_T;	/* end of _WIFI_VAR_T */
+	u_int8_t fgNvramCheckEn; /* nvram checking in scan result*/
+};
 
 /* cnm_timer module */
-typedef struct {
-	LINK_T rLinkHead;
+struct ROOT_TIMER {
+	struct LINK rLinkHead;
 	OS_SYSTIME rNextExpiredSysTime;
 	KAL_WAKE_LOCK_T rWakeLock;
-	BOOLEAN fgWakeLocked;
-} ROOT_TIMER, *P_ROOT_TIMER;
+	u_int8_t fgWakeLocked;
+};
 
 /* FW/DRV/NVRAM version information */
-typedef struct {
+struct WIFI_VER_INFO {
 
 	/* NVRAM or Registry */
-	UINT_16 u2Part1CfgOwnVersion;
-	UINT_16 u2Part1CfgPeerVersion;
-	UINT_16 u2Part2CfgOwnVersion;
-	UINT_16 u2Part2CfgPeerVersion;
+	uint16_t u2Part1CfgOwnVersion;
+	uint16_t u2Part1CfgPeerVersion;
+	uint16_t u2Part2CfgOwnVersion;
+	uint16_t u2Part2CfgPeerVersion;
 
 	/* Firmware */
 	/* N9 SW */
-	UINT_16 u2FwProductID;
-	UINT_16 u2FwOwnVersion;
-	UINT_16 u2FwPeerVersion;
-	UINT_8 ucFwBuildNumber;
-	UINT_8 aucFwBranchInfo[4];
-	UINT_8 aucFwDateCode[16];
+	uint16_t u2FwProductID;
+	uint16_t u2FwOwnVersion;
+	uint16_t u2FwPeerVersion;
+	uint8_t ucFwBuildNumber;
+	uint8_t aucFwBranchInfo[4];
+	uint8_t aucFwDateCode[16];
 
 	struct TAILER_COMMON_FORMAT_T rCommonTailer;
 	struct TAILER_REGION_FORMAT_T rRegionTailers[MAX_FWDL_SECTION_NUM];
@@ -914,20 +914,20 @@ typedef struct {
 	struct TAILER_FORMAT_T_2 rN9Compressedtailer;
 	/* CR4 tailer */
 	struct TAILER_FORMAT_T_2 rCR4Compressedtailer;
-	BOOLEAN fgIsN9CompressedFW;
-	BOOLEAN fgIsCR4CompressedFW;
+	u_int8_t fgIsN9CompressedFW;
+	u_int8_t fgIsCR4CompressedFW;
 #endif
 	/* Patch header */
 	struct PATCH_FORMAT_T rPatchHeader;
-	BOOLEAN fgPatchIsDlByDrv;
-} WIFI_VER_INFO_T, *P_WIFI_VER_INFO_T;
+	u_int8_t fgPatchIsDlByDrv;
+};
 
 #if CFG_ENABLE_WIFI_DIRECT
 /*
 * p2p function pointer structure
 */
 
-typedef struct _P2P_FUNCTION_LINKER {
+struct P2P_FUNCTION_LINKER {
 	P2P_REMOVE prP2pRemove;
 /* NIC_P2P_MEDIA_STATE_CHANGE                  prNicP2pMediaStateChange; */
 /* SCAN_UPDATE_P2P_DEVICE_DESC                 prScanUpdateP2pDeviceDesc; */
@@ -941,7 +941,7 @@ typedef struct _P2P_FUNCTION_LINKER {
 	P2P_NET_UNREGISTER prP2pNetUnregister;
 	P2P_CALCULATE_P2P_IE_LEN prP2pCalculateP2p_IELenForAssocReq;	/* All IEs generated from supplicant. */
 	P2P_GENERATE_P2P_IE prP2pGenerateP2p_IEForAssocReq;	/* All IEs generated from supplicant. */
-} P2P_FUNCTION_LINKER, *P_P2P_FUNCTION_LINKER;
+};
 
 #endif
 
@@ -966,60 +966,60 @@ enum _ENUM_NCHO_DFS_SCN_MODE_T {
 };
 
 struct _CFG_NCHO_RE_ASSOC_T {
-	UINT_32 u4SsidLen;	/*!< SSID length in bytes. Zero length is broadcast(any) SSID */
-	UINT_8 aucSsid[ELEM_MAX_LEN_SSID];
-	UINT_8 aucBssid[MAC_ADDR_LEN];
-	UINT_32 u4CenterFreq;
+	uint32_t u4SsidLen;	/*!< SSID length in bytes. Zero length is broadcast(any) SSID */
+	uint8_t aucSsid[ELEM_MAX_LEN_SSID];
+	uint8_t aucBssid[MAC_ADDR_LEN];
+	uint32_t u4CenterFreq;
 };
 
 struct _CFG_NCHO_SCAN_CHNL_T {
-	UINT_8 ucChannelListNum;
-	RF_CHANNEL_INFO_T arChnlInfoList[MAXIMUM_OPERATION_CHANNEL_LIST];
+	uint8_t ucChannelListNum;
+	struct RF_CHANNEL_INFO arChnlInfoList[MAXIMUM_OPERATION_CHANNEL_LIST];
 };
 
 struct _NCHO_ACTION_FRAME_PARAMS_T {
-	UCHAR aucBssid[MAC_ADDR_LEN];
-	INT_32 i4channel;
-	INT_32 i4DwellTime;
-	INT_32 i4len;
-	UCHAR aucData[520];
+	uint8_t aucBssid[MAC_ADDR_LEN];
+	int32_t i4channel;
+	int32_t i4DwellTime;
+	int32_t i4len;
+	uint8_t aucData[520];
 };
 
 struct _NCHO_AF_INFO_T {
-	PUCHAR aucBssid;
-	INT_32 i4channel;
-	INT_32 i4DwellTime;
-	INT_32 i4len;
-	PUCHAR pucData;
+	uint8_t *aucBssid;
+	int32_t i4channel;
+	int32_t i4DwellTime;
+	int32_t i4len;
+	uint8_t *pucData;
 };
 
 struct _NCHO_INFO_T {
-	BOOLEAN fgECHOEnabled;
-	BOOLEAN fgChGranted;
-	BOOLEAN fgIsSendingAF;
-	INT_32 i4RoamTrigger;		/* db */
-	INT_32 i4RoamDelta;		/* db */
-	UINT32 u4RoamScanPeriod;	/* ms */
-	UINT32 u4ScanChannelTime;	/* ms */
-	UINT32 u4ScanHomeTime;		/* ms */
-	UINT32 u4ScanHomeawayTime;	/* ms */
-	UINT32 u4ScanNProbes;
-	UINT32 u4WesMode;
+	u_int8_t fgECHOEnabled;
+	u_int8_t fgChGranted;
+	u_int8_t fgIsSendingAF;
+	int32_t i4RoamTrigger;		/* db */
+	int32_t i4RoamDelta;		/* db */
+	uint32_t u4RoamScanPeriod;	/* ms */
+	uint32_t u4ScanChannelTime;	/* ms */
+	uint32_t u4ScanHomeTime;		/* ms */
+	uint32_t u4ScanHomeawayTime;	/* ms */
+	uint32_t u4ScanNProbes;
+	uint32_t u4WesMode;
 	enum _ENUM_NCHO_BAND_T eBand;
 	enum _ENUM_NCHO_DFS_SCN_MODE_T eDFSScnMode;
-	UINT32 u4RoamScanControl;
+	uint32_t u4RoamScanControl;
 	struct _CFG_NCHO_SCAN_CHNL_T rRoamScnChnl;
 	struct _NCHO_ACTION_FRAME_PARAMS_T rParamActionFrame;
 };
 #endif
 
-typedef struct _WIFI_FEM_CFG_T {
+struct WIFI_FEM_CFG {
 	/* WiFi FEM path */
-	UINT_16 u2WifiPath;
-	UINT_16 u2Reserved;
+	uint16_t u2WifiPath;
+	uint16_t u2Reserved;
 	/* Reserved  */
-	UINT_32 au4Reserved[4];
-} WIFI_FEM_CFG_T, *P_WIFI_FEM_CFG_T;
+	uint32_t au4Reserved[4];
+};
 /*
  * State Machine:
  * -->STOP: No Tx/Rx traffic
@@ -1027,309 +1027,309 @@ typedef struct _WIFI_FEM_CFG_T {
  * -->RUNNING: Screen is on && Tx/Rx traffic is active
  */
 struct PERF_MONITOR_T {
-	TIMER_T rPerfMonTimer;
-	ULONG ulPerfMonFlag;
-	ULONG ulLastTxBytes;
-	ULONG ulLastRxBytes;
-	ULONG ulP2PLastRxBytes;
-	ULONG ulP2PLastTxBytes;
-	ULONG ulThroughput; /* in bps */
-	ULONG ulWlanTxTp; /* in Bps */
-	ULONG ulWlanRxTp; /* in Bps */
-	ULONG ulP2PTxTp; /* in Bps */
-	ULONG ulP2PRxTp; /* in Bps */
-	UINT_32 u4UpdatePeriod; /* in ms */
-	UINT_32 u4TarPerfLevel;
-	UINT_32 u4CurrPerfLevel;
+	struct TIMER rPerfMonTimer;
+	unsigned long ulPerfMonFlag;
+	unsigned long ulLastTxBytes;
+	unsigned long ulLastRxBytes;
+	unsigned long ulP2PLastRxBytes;
+	unsigned long ulP2PLastTxBytes;
+	unsigned long ulThroughput; /* in bps */
+	unsigned long ulWlanTxTp; /* in Bps */
+	unsigned long ulWlanRxTp; /* in Bps */
+	unsigned long ulP2PTxTp; /* in Bps */
+	unsigned long ulP2PRxTp; /* in Bps */
+	uint32_t u4UpdatePeriod; /* in ms */
+	uint32_t u4TarPerfLevel;
+	uint32_t u4CurrPerfLevel;
 };
 
 /*
  * Major ADAPTER structure
  * Major data structure for driver operation
  */
-struct _ADAPTER_T {
+struct ADAPTER {
 	struct mt66xx_chip_info *chip_info;
-	UINT_8 ucRevID;
-	BOOLEAN fgIsReadRevID;
+	uint8_t ucRevID;
+	u_int8_t fgIsReadRevID;
 
-	UINT_16 u2NicOpChnlNum;
+	uint16_t u2NicOpChnlNum;
 
-	BOOLEAN fgIsEnableWMM;
-	BOOLEAN fgIsWmmAssoc;	/* This flag is used to indicate that WMM is enable in current BSS */
+	u_int8_t fgIsEnableWMM;
+	u_int8_t fgIsWmmAssoc;	/* This flag is used to indicate that WMM is enable in current BSS */
 
-	UINT_32 u4OsPacketFilter;	/* packet filter used by OS */
-	BOOLEAN fgAllMulicastFilter;	/* mDNS filter used by OS */
+	uint32_t u4OsPacketFilter;	/* packet filter used by OS */
+	u_int8_t fgAllMulicastFilter;	/* mDNS filter used by OS */
 
-	P_BSS_INFO_T aprBssInfo[MAX_BSSID_NUM + 1];
-	P_BSS_INFO_T prAisBssInfo;
-	UINT_8 ucHwBssIdNum;
-	UINT_8 ucWtblEntryNum;
-	UINT_8 ucTxDefaultWlanIndex;
-	UINT_8 ucP2PDevBssIdx;
+	struct BSS_INFO *aprBssInfo[MAX_BSSID_NUM + 1];
+	struct BSS_INFO *prAisBssInfo;
+	uint8_t ucHwBssIdNum;
+	uint8_t ucWtblEntryNum;
+	uint8_t ucTxDefaultWlanIndex;
+	uint8_t ucP2PDevBssIdx;
 
 #if CFG_TCP_IP_CHKSUM_OFFLOAD
-	BOOLEAN fgIsSupportCsumOffload; /* Does FW support Checksum Offload feature */
-	UINT_32 u4CSUMFlags;
+	u_int8_t fgIsSupportCsumOffload; /* Does FW support Checksum Offload feature */
+	uint32_t u4CSUMFlags;
 #endif				/* CFG_TCP_IP_CHKSUM_OFFLOAD */
 
-	ENUM_BAND_T aePreferBand[MAX_BSSID_NUM];
-	ENUM_BAND_T aeSetBand[NETWORK_TYPE_NUM];
+	enum ENUM_BAND aePreferBand[MAX_BSSID_NUM];
+	enum ENUM_BAND aeSetBand[NETWORK_TYPE_NUM];
 
 	/* ADAPTER flags */
-	UINT_32 u4Flags;
-	UINT_32 u4HwFlags;
+	uint32_t u4Flags;
+	uint32_t u4HwFlags;
 
-	BOOLEAN fgIsRadioOff;
+	u_int8_t fgIsRadioOff;
 
-	BOOLEAN fgIsEnterD3ReqIssued;
+	u_int8_t fgIsEnterD3ReqIssued;
 
-	UINT_8 aucMacAddress[MAC_ADDR_LEN];
+	uint8_t aucMacAddress[MAC_ADDR_LEN];
 
-	ENUM_PHY_TYPE_INDEX_T eCurrentPhyType;	/* Current selection basing on the set of Available PHY Types */
+	enum ENUM_PHY_TYPE_INDEX eCurrentPhyType;	/* Current selection basing on the set of Available PHY Types */
 
-	UINT_32 u4CoalescingBufCachedSize;
-	PUINT_8 pucCoalescingBufCached;
+	uint32_t u4CoalescingBufCachedSize;
+	uint8_t *pucCoalescingBufCached;
 
 	/* Buffer for CMD_INFO_T, Mgt packet and mailbox message */
-	BUF_INFO_T rMgtBufInfo;
-	BUF_INFO_T rMsgBufInfo;
-	PUINT_8 pucMgtBufCached;
-	UINT_32 u4MgtBufCachedSize;
-	UINT_8 aucMsgBuf[MSG_BUFFER_SIZE];
+	struct BUF_INFO rMgtBufInfo;
+	struct BUF_INFO rMsgBufInfo;
+	uint8_t *pucMgtBufCached;
+	uint32_t u4MgtBufCachedSize;
+	uint8_t aucMsgBuf[MSG_BUFFER_SIZE];
 #if CFG_DBG_MGT_BUF
-	UINT_32 u4MemAllocDynamicCount;	/* Debug only */
-	UINT_32 u4MemFreeDynamicCount;	/* Debug only */
+	uint32_t u4MemAllocDynamicCount;	/* Debug only */
+	uint32_t u4MemFreeDynamicCount;	/* Debug only */
 #endif
 
-	STA_RECORD_T arStaRec[CFG_STA_REC_NUM];
+	struct STA_RECORD arStaRec[CFG_STA_REC_NUM];
 
 	/* Element for TX PATH */
-	TX_CTRL_T rTxCtrl;
-	QUE_T rFreeCmdList;
-	CMD_INFO_T arHifCmdDesc[CFG_TX_MAX_CMD_PKT_NUM];
+	struct TX_CTRL rTxCtrl;
+	struct QUE rFreeCmdList;
+	struct CMD_INFO arHifCmdDesc[CFG_TX_MAX_CMD_PKT_NUM];
 
 	/* Element for RX PATH */
-	RX_CTRL_T rRxCtrl;
+	struct RX_CTRL rRxCtrl;
 
 	/* Timer for restarting RFB setup procedure */
-	TIMER_T rPacketDelaySetupTimer;
+	struct TIMER rPacketDelaySetupTimer;
 
 	/* Buffer for Authentication Event */
 	/* <Todo> Move to glue layer and refine the kal function */
 	/* Reference to rsnGeneratePmkidIndication function at rsn.c */
-	UINT_8 aucIndicationEventBuffer[(CFG_MAX_PMKID_CACHE * 20) + 8];
+	uint8_t aucIndicationEventBuffer[(CFG_MAX_PMKID_CACHE * 20) + 8];
 
-	UINT_32 u4IntStatus;
+	uint32_t u4IntStatus;
 
-	ENUM_ACPI_STATE_T rAcpiState;
+	enum ENUM_ACPI_STATE rAcpiState;
 
-	BOOLEAN fgIsIntEnable;
-	BOOLEAN fgIsIntEnableWithLPOwnSet;
+	u_int8_t fgIsIntEnable;
+	u_int8_t fgIsIntEnableWithLPOwnSet;
 
-	BOOLEAN fgIsFwOwn;
-	BOOLEAN fgWiFiInSleepyState;
+	u_int8_t fgIsFwOwn;
+	u_int8_t fgWiFiInSleepyState;
 
 	OS_SYSTIME rLastOwnFailedLogTime;
-	UINT_32 u4OwnFailedCount;
-	UINT_32 u4OwnFailedLogCount;
+	uint32_t u4OwnFailedCount;
+	uint32_t u4OwnFailedLogCount;
 
-	UINT_32 u4PwrCtrlBlockCnt;
+	uint32_t u4PwrCtrlBlockCnt;
 
 	/* TX Direct related : BEGIN */
-	BOOLEAN fgTxDirectInited;
+	u_int8_t fgTxDirectInited;
 
 	#define TX_DIRECT_CHECK_INTERVAL	(1000 * HZ / USEC_PER_SEC)
 	struct timer_list rTxDirectSkbTimer; /* check if an empty MsduInfo is available */
 	struct timer_list rTxDirectHifTimer; /* check if HIF port is ready to accept a new Msdu */
 
 	struct sk_buff_head rTxDirectSkbQueue;
-	QUE_T rTxDirectHifQueue[TX_PORT_NUM];
+	struct QUE rTxDirectHifQueue[TX_PORT_NUM];
 
-	QUE_T rStaPsQueue[CFG_STA_REC_NUM];
-	UINT_32 u4StaPsBitmap;
-	QUE_T rBssAbsentQueue[MAX_BSSID_NUM + 1];
-	UINT_32 u4BssAbsentBitmap;
+	struct QUE rStaPsQueue[CFG_STA_REC_NUM];
+	uint32_t u4StaPsBitmap;
+	struct QUE rBssAbsentQueue[MAX_BSSID_NUM + 1];
+	uint32_t u4BssAbsentBitmap;
 	/* TX Direct related : END */
 
-	QUE_T rPendingCmdQueue;
+	struct QUE rPendingCmdQueue;
 
 #if CFG_SUPPORT_MULTITHREAD
-	QUE_T rTxCmdQueue;
-	QUE_T rTxCmdDoneQueue;
+	struct QUE rTxCmdQueue;
+	struct QUE rTxCmdDoneQueue;
 #if CFG_FIX_2_TX_PORT
-	QUE_T rTxP0Queue;
-	QUE_T rTxP1Queue;
+	struct QUE rTxP0Queue;
+	struct QUE rTxP1Queue;
 #else
-	QUE_T rTxPQueue[TX_PORT_NUM];
+	struct QUE rTxPQueue[TX_PORT_NUM];
 #endif
-	QUE_T rRxQueue;
-	QUE_T rTxDataDoneQueue;
+	struct QUE rRxQueue;
+	struct QUE rTxDataDoneQueue;
 #endif
 
-	P_GLUE_INFO_T prGlueInfo;
+	struct GLUE_INFO *prGlueInfo;
 
-	UINT_8 ucCmdSeqNum;
-	UINT_8 ucTxSeqNum;
-	UINT_8 aucPidPool[WTBL_SIZE];
+	uint8_t ucCmdSeqNum;
+	uint8_t ucTxSeqNum;
+	uint8_t aucPidPool[WTBL_SIZE];
 
 #if 1				/* CFG_SUPPORT_WAPI */
-	BOOLEAN fgUseWapi;
+	u_int8_t fgUseWapi;
 #endif
 
 	/* RF Test flags */
-	BOOLEAN fgTestMode;
-	BOOLEAN fgIcapMode;
+	u_int8_t fgTestMode;
+	u_int8_t fgIcapMode;
 
 	/* WLAN Info for DRIVER_CORE OID query */
-	WLAN_INFO_T rWlanInfo;
+	struct WLAN_INFO rWlanInfo;
 
 #if CFG_ENABLE_WIFI_DIRECT
-	BOOLEAN fgIsP2PRegistered;
-	ENUM_NET_REG_STATE_T rP2PNetRegState;
+	u_int8_t fgIsP2PRegistered;
+	enum ENUM_NET_REG_STATE rP2PNetRegState;
 	/* BOOLEAN             fgIsWlanLaunched; */
-	P_P2P_INFO_T prP2pInfo;
+	struct P2P_INFO *prP2pInfo;
 #if CFG_SUPPORT_P2P_RSSI_QUERY
 	OS_SYSTIME rP2pLinkQualityUpdateTime;
-	BOOLEAN fgIsP2pLinkQualityValid;
-	EVENT_LINK_QUALITY rP2pLinkQuality;
+	u_int8_t fgIsP2pLinkQualityValid;
+	struct EVENT_LINK_QUALITY rP2pLinkQuality;
 #endif
 #endif
 
 	/* Online Scan Option */
-	BOOLEAN fgEnOnlineScan;
+	u_int8_t fgEnOnlineScan;
 
 	/* Online Scan Option */
-	BOOLEAN fgDisBcnLostDetection;
+	u_int8_t fgDisBcnLostDetection;
 
 	/* MAC address */
-	PARAM_MAC_ADDRESS rMyMacAddr;
+	uint8_t rMyMacAddr[PARAM_MAC_ADDR_LEN];
 
 	/* Wake-up Event for WOL */
-	UINT_32 u4WakeupEventEnable;
+	uint32_t u4WakeupEventEnable;
 
 	/* Event Buffering */
-	EVENT_STATISTICS rStatStruct;
+	struct EVENT_STATISTICS rStatStruct;
 	OS_SYSTIME rStatUpdateTime;
-	BOOLEAN fgIsStatValid;
+	u_int8_t fgIsStatValid;
 
 #if CFG_SUPPORT_MSP
-	EVENT_WLAN_INFO rEventWlanInfo;
+	struct EVENT_WLAN_INFO rEventWlanInfo;
 #endif
 
-	EVENT_LINK_QUALITY rLinkQuality;
+	struct EVENT_LINK_QUALITY rLinkQuality;
 	OS_SYSTIME rLinkQualityUpdateTime;
-	BOOLEAN fgIsLinkQualityValid;
+	u_int8_t fgIsLinkQualityValid;
 	OS_SYSTIME rLinkRateUpdateTime;
-	BOOLEAN fgIsLinkRateValid;
+	u_int8_t fgIsLinkRateValid;
 
 	/* WIFI_VAR_T */
-	WIFI_VAR_T rWifiVar;
+	struct WIFI_VAR rWifiVar;
 
 	/* MTK WLAN NIC driver IEEE 802.11 MIB */
-	IEEE_802_11_MIB_T rMib;
+	struct IEEE_802_11_MIB rMib;
 
 	/* Mailboxs for inter-module communication */
-	MBOX_T arMbox[MBOX_ID_TOTAL_NUM];
+	struct MBOX arMbox[MBOX_ID_TOTAL_NUM];
 
 	/* Timers for OID Pending Handling */
-	TIMER_T rOidTimeoutTimer;
-	UINT_8 ucOidTimeoutCount;
+	struct TIMER rOidTimeoutTimer;
+	uint8_t ucOidTimeoutCount;
 
 	/* Root Timer for cnm_timer module */
-	ROOT_TIMER rRootTimer;
+	struct ROOT_TIMER rRootTimer;
 
-	BOOLEAN fgIsChipNoAck;
-	BOOLEAN fgIsChipAssert;
+	u_int8_t fgIsChipNoAck;
+	u_int8_t fgIsChipAssert;
 
 	/* RLM maintenance */
-	ENUM_CHNL_EXT_T eRfSco;
-	ENUM_SYS_PROTECT_MODE_T eSysProtectMode;
-	ENUM_GF_MODE_T eSysHtGfMode;
-	ENUM_RIFS_MODE_T eSysTxRifsMode;
-	ENUM_SYS_PCO_PHASE_T eSysPcoPhase;
+	enum ENUM_CHNL_EXT eRfSco;
+	enum ENUM_SYS_PROTECT_MODE eSysProtectMode;
+	enum ENUM_GF_MODE eSysHtGfMode;
+	enum ENUM_RIFS_MODE eSysTxRifsMode;
+	enum ENUM_SYS_PCO_PHASE eSysPcoPhase;
 
-	P_DOMAIN_INFO_ENTRY prDomainInfo;
+	struct DOMAIN_INFO_ENTRY *prDomainInfo;
 
 	/* QM */
-	QUE_MGT_T rQM;
+	struct QUE_MGT rQM;
 
-	CNM_INFO_T rCnmInfo;
+	struct CNM_INFO rCnmInfo;
 
-	UINT_32 u4PowerMode;
+	uint32_t u4PowerMode;
 
-	UINT_32 u4CtiaPowerMode;
-	BOOLEAN fgEnCtiaPowerMode;
+	uint32_t u4CtiaPowerMode;
+	u_int8_t fgEnCtiaPowerMode;
 
-	UINT_32 fgEnArpFilter;
+	uint32_t fgEnArpFilter;
 
-	UINT_32 u4UapsdAcBmp;
+	uint32_t u4UapsdAcBmp;
 
-	UINT_32 u4MaxSpLen;
+	uint32_t u4MaxSpLen;
 
-	UINT_32 u4PsCurrentMeasureEn;
+	uint32_t u4PsCurrentMeasureEn;
 
 	/* Version Information */
-	WIFI_VER_INFO_T rVerInfo;
+	struct WIFI_VER_INFO rVerInfo;
 
 	/* 5GHz support (from F/W) */
-	BOOLEAN fgIsHw5GBandDisabled;
-	BOOLEAN fgEnable5GBand;
-	BOOLEAN fgIsEepromUsed;
-	BOOLEAN fgIsEfuseValid;
-	BOOLEAN fgIsEmbbededMacAddrValid;
+	u_int8_t fgIsHw5GBandDisabled;
+	u_int8_t fgEnable5GBand;
+	u_int8_t fgIsEepromUsed;
+	u_int8_t fgIsEfuseValid;
+	u_int8_t fgIsEmbbededMacAddrValid;
 
 #if CFG_SUPPORT_PWR_LIMIT_COUNTRY
-	BOOLEAN fgIsPowerLimitTableValid;
+	u_int8_t fgIsPowerLimitTableValid;
 #endif
 
 	/* Packet Forwarding Tracking */
-	INT_32 i4PendingFwdFrameCount;
+	int32_t i4PendingFwdFrameCount;
 
 #if CFG_SUPPORT_RDD_TEST_MODE
-	UINT_8 ucRddStatus;
+	uint8_t ucRddStatus;
 #endif
 
-	BOOL fgDisStaAgingTimeoutDetection;
+	u_int8_t fgDisStaAgingTimeoutDetection;
 
-	UINT_32 u4FwCompileFlag0;
-	UINT_32 u4FwCompileFlag1;
-	UINT_32 u4FwFeatureFlag0;
-	UINT_32 u4FwFeatureFlag1;
+	uint32_t u4FwCompileFlag0;
+	uint32_t u4FwCompileFlag1;
+	uint32_t u4FwFeatureFlag0;
+	uint32_t u4FwFeatureFlag1;
 
 #if CFG_SUPPORT_CFG_FILE
-	P_WLAN_CFG_T prWlanCfg;
-	WLAN_CFG_T rWlanCfg;
+	struct WLAN_CFG *prWlanCfg;
+	struct WLAN_CFG rWlanCfg;
 
-	P_WLAN_CFG_REC_T prWlanCfgRec;
-	WLAN_CFG_REC_T rWlanCfgRec;
+	struct WLAN_CFG_REC *prWlanCfgRec;
+	struct WLAN_CFG_REC rWlanCfgRec;
 #endif
 
 #if CFG_M0VE_BA_TO_DRIVER
-	TIMER_T rMqmIdleRxBaDetectionTimer;
-	UINT_32 u4FlagBitmap;
+	struct TIMER rMqmIdleRxBaDetectionTimer;
+	uint32_t u4FlagBitmap;
 #endif
 #if CFG_ASSERT_DUMP
-	TIMER_T rN9CorDumpTimer;
-	TIMER_T rCr4CorDumpTimer;
-	BOOLEAN fgN9CorDumpFileOpend;
-	BOOLEAN fgCr4CorDumpFileOpend;
-	BOOLEAN fgN9AssertDumpOngoing;
-	BOOLEAN fgCr4AssertDumpOngoing;
-	BOOLEAN fgKeepPrintCoreDump;
+	struct TIMER rN9CorDumpTimer;
+	struct TIMER rCr4CorDumpTimer;
+	u_int8_t fgN9CorDumpFileOpend;
+	u_int8_t fgCr4CorDumpFileOpend;
+	u_int8_t fgN9AssertDumpOngoing;
+	u_int8_t fgCr4AssertDumpOngoing;
+	u_int8_t fgKeepPrintCoreDump;
 #endif
 	/* Tx resource information */
-	BOOLEAN fgIsNicTxReousrceValid;
+	u_int8_t fgIsNicTxReousrceValid;
 	struct tx_resource_info nicTxReousrce;
 
     /* Efuse Start and End address */
-	UINT_32 u4EfuseStartAddress;
-	UINT_32 u4EfuseEndAddress;
+	uint32_t u4EfuseStartAddress;
+	uint32_t u4EfuseEndAddress;
 
 	/* COEX feature */
-	UINT_32 u4FddMode;
+	uint32_t u4FddMode;
 
 #if CFG_WOW_SUPPORT
-	WOW_CTRL_T	rWowCtrl;
+	struct WOW_CTRL	rWowCtrl;
 #endif
 
 #if CFG_SUPPORT_NCHO			/*  NCHO information */
@@ -1337,28 +1337,28 @@ struct _ADAPTER_T {
 #endif
 
 /*#if (CFG_EEPROM_PAGE_ACCESS == 1)*/
-	UINT_8 aucEepromVaule[16]; /* HQA CMD for Efuse Block size contents */
-	UINT_32 u4FreeBlockNum;
-	UINT_32 u4GetTxPower;
+	uint8_t aucEepromVaule[16]; /* HQA CMD for Efuse Block size contents */
+	uint32_t u4FreeBlockNum;
+	uint32_t u4GetTxPower;
 /*#endif*/
-	BOOLEAN fgIsCr4FwDownloaded;
-	BOOLEAN fgIsFwDownloaded;
-	BOOLEAN fgIsSupportBufferBinSize16Byte;
-	BOOLEAN fgIsSupportDelayCal;
-	BOOLEAN fgIsSupportGetFreeEfuseBlockCount;
-	BOOLEAN fgIsSupportQAAccessEfuse;
-	BOOLEAN fgIsSupportPowerOnSendBufferModeCMD;
-	BOOLEAN fgIsSupportGetTxPower;
-	BOOLEAN fgIsEnableLpdvt;
+	u_int8_t fgIsCr4FwDownloaded;
+	u_int8_t fgIsFwDownloaded;
+	u_int8_t fgIsSupportBufferBinSize16Byte;
+	u_int8_t fgIsSupportDelayCal;
+	u_int8_t fgIsSupportGetFreeEfuseBlockCount;
+	u_int8_t fgIsSupportQAAccessEfuse;
+	u_int8_t fgIsSupportPowerOnSendBufferModeCMD;
+	u_int8_t fgIsSupportGetTxPower;
+	u_int8_t fgIsEnableLpdvt;
 
 	/* SER related info */
-	UINT_8 ucSerState;
-	ULONG ulSuspendFlag;
-	WIFI_FEM_CFG_T rWifiFemCfg;
+	uint8_t ucSerState;
+	unsigned long ulSuspendFlag;
+	struct WIFI_FEM_CFG rWifiFemCfg;
 
 	/* Smar Gear */
-	UINT_8 ucSmarGearSupportSisoOnly;
-	UINT_8 ucSmartGearWfPathSupport;
+	uint8_t ucSmarGearSupportSisoOnly;
+	uint8_t ucSmartGearWfPathSupport;
 
 	struct PERF_MONITOR_T rPerMonitor;
 };				/* end of _ADAPTER_T */
@@ -1404,7 +1404,7 @@ struct _ADAPTER_T {
 	{(_prAdapter)->aprBssInfo[(_BssIndex)]->fgIsNetActive = FALSE; }
 
 #define BSS_INFO_INIT(_prAdapter, _prBssInfo) \
-	{   UINT_8 _aucZeroMacAddr[] = NULL_MAC_ADDR; \
+	{   uint8_t _aucZeroMacAddr[] = NULL_MAC_ADDR; \
 	    \
 	    (_prBssInfo)->eConnectionState = PARAM_MEDIA_STATE_DISCONNECTED; \
 	    (_prBssInfo)->eConnectionStateIndicated = PARAM_MEDIA_STATE_DISCONNECTED; \

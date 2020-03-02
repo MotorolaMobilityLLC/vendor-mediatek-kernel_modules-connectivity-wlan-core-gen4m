@@ -81,7 +81,7 @@
 ********************************************************************************
 */
 /* Message IDs */
-typedef enum _ENUM_MSG_ID_T {
+enum ENUM_MSG_ID {
 	MID_MNY_CNM_CH_REQ,	/* MANY notify CNM to obtain channel privilege */
 	MID_MNY_CNM_CH_ABORT,	/* MANY notify CNM to abort/release channel privilege */
 
@@ -180,89 +180,86 @@ typedef enum _ENUM_MSG_ID_T {
 	MID_MNY_AIS_NCHO_ACTION_FRAME,
 #endif
 	MID_TOTAL_NUM
-} ENUM_MSG_ID_T, *P_ENUM_MSG_ID_T;
-
-/* Message header of inter-components */
-struct _MSG_HDR_T {
-	LINK_ENTRY_T rLinkEntry;
-	ENUM_MSG_ID_T eMsgId;
 };
 
-typedef VOID(*PFN_MSG_HNDL_FUNC) (P_ADAPTER_T, P_MSG_HDR_T);
+/* Message header of inter-components */
+struct MSG_HDR {
+	struct LINK_ENTRY rLinkEntry;
+	enum ENUM_MSG_ID eMsgId;
+};
 
-typedef struct _MSG_HNDL_ENTRY {
-	ENUM_MSG_ID_T eMsgId;
+typedef void(*PFN_MSG_HNDL_FUNC) (struct ADAPTER *, struct MSG_HDR *);
+
+struct MSG_HNDL_ENTRY {
+	enum ENUM_MSG_ID eMsgId;
 	PFN_MSG_HNDL_FUNC pfMsgHndl;
-} MSG_HNDL_ENTRY_T, *P_MSG_HNDL_ENTRY_T;
+};
 
-typedef enum _EUNM_MSG_SEND_METHOD_T {
+enum EUNM_MSG_SEND_METHOD {
 	MSG_SEND_METHOD_BUF = 0,	/* Message is put in the queue and will be */
 					/*executed when mailbox is checked. */
 	MSG_SEND_METHOD_UNBUF	/* The handler function is called immediately */
 				/* in the same context of the sender */
-} EUNM_MSG_SEND_METHOD_T, *P_EUNM_MSG_SEND_METHOD_T;
+};
 
-typedef enum _ENUM_MBOX_ID_T {
+enum ENUM_MBOX_ID {
 	MBOX_ID_0 = 0,
 	MBOX_ID_TOTAL_NUM
-} ENUM_MBOX_ID_T, *P_ENUM_MBOX_ID_T;
+};
 
 /* Define Mailbox structure */
-typedef struct _MBOX_T {
-	LINK_T rLinkHead;
-} MBOX_T, *P_MBOX_T;
+struct MBOX {
+	struct LINK rLinkHead;
+};
 
-typedef struct _MSG_SAA_FSM_START_T {
-	MSG_HDR_T rMsgHdr;	/* Must be the first member */
-	UINT_8 ucSeqNum;
-	P_STA_RECORD_T prStaRec;
-} MSG_SAA_FSM_START_T, *P_MSG_SAA_FSM_START_T;
+struct MSG_SAA_FSM_START {
+	struct MSG_HDR rMsgHdr;	/* Must be the first member */
+	uint8_t ucSeqNum;
+	struct STA_RECORD *prStaRec;
+};
 
-typedef struct _MSG_SAA_FSM_COMP_T {
-	MSG_HDR_T rMsgHdr;	/* Must be the first member */
-	UINT_8 ucSeqNum;
-	WLAN_STATUS rJoinStatus;
-	P_STA_RECORD_T prStaRec;
-	P_SW_RFB_T prSwRfb;
-} MSG_SAA_FSM_COMP_T, *P_MSG_SAA_FSM_COMP_T;
+struct MSG_SAA_FSM_COMP {
+	struct MSG_HDR rMsgHdr;	/* Must be the first member */
+	uint8_t ucSeqNum;
+	uint32_t rJoinStatus;
+	struct STA_RECORD *prStaRec;
+	struct SW_RFB *prSwRfb;
+};
 
-typedef struct _MSG_SAA_FSM_ABORT_T {
-	MSG_HDR_T rMsgHdr;	/* Must be the first member */
-	UINT_8 ucSeqNum;
-	P_STA_RECORD_T prStaRec;
-} MSG_SAA_FSM_ABORT_T, *P_MSG_SAA_FSM_ABORT_T;
+struct MSG_SAA_FSM_ABORT {
+	struct MSG_HDR rMsgHdr;	/* Must be the first member */
+	uint8_t ucSeqNum;
+	struct STA_RECORD *prStaRec;
+};
 
-typedef struct _MSG_CONNECTION_ABORT_T {
-	MSG_HDR_T rMsgHdr;	/* Must be the first member */
-	UINT_8 ucNetTypeIndex;
-} MSG_CONNECTION_ABORT_T, *P_MSG_CONNECTION_ABORT_T;
+struct MSG_CONNECTION_ABORT {
+	struct MSG_HDR rMsgHdr;	/* Must be the first member */
+	uint8_t ucNetTypeIndex;
+};
 
-typedef struct _MSG_REMAIN_ON_CHANNEL_T {
-	MSG_HDR_T rMsgHdr;	/* Must be the first member */
-	ENUM_BAND_T eBand;
-	ENUM_CHNL_EXT_T eSco;
-	UINT_8 ucChannelNum;
-	UINT_32 u4DurationMs;
-	UINT_64 u8Cookie;
-} MSG_REMAIN_ON_CHANNEL_T, *P_MSG_REMAIN_ON_CHANNEL_T;
+struct MSG_REMAIN_ON_CHANNEL {
+	struct MSG_HDR rMsgHdr;	/* Must be the first member */
+	enum ENUM_BAND eBand;
+	enum ENUM_CHNL_EXT eSco;
+	uint8_t ucChannelNum;
+	uint32_t u4DurationMs;
+	uint64_t u8Cookie;
+};
 
-typedef struct _MSG_CANCEL_REMAIN_ON_CHANNEL_T {
-	MSG_HDR_T rMsgHdr;	/* Must be the first member */
-	UINT_64 u8Cookie;
-} MSG_CANCEL_REMAIN_ON_CHANNEL_T, *P_MSG_CANCEL_REMAIN_ON_CHANNEL_T;
+struct MSG_CANCEL_REMAIN_ON_CHANNEL {
+	struct MSG_HDR rMsgHdr;	/* Must be the first member */
+	uint64_t u8Cookie;
+};
 
-typedef struct _MSG_MGMT_TX_REQUEST_T {
-	MSG_HDR_T rMsgHdr;
-	P_MSDU_INFO_T prMgmtMsduInfo;
-	UINT_64 u8Cookie;	/* For indication. */
-	BOOLEAN fgNoneCckRate;
-	BOOLEAN fgIsWaitRsp;
-} MSG_MGMT_TX_REQUEST_T, *P_MSG_MGMT_TX_REQUEST_T;
+struct MSG_MGMT_TX_REQUEST {
+	struct MSG_HDR rMsgHdr;
+	struct MSDU_INFO *prMgmtMsduInfo;
+	uint64_t u8Cookie;	/* For indication. */
+	u_int8_t fgNoneCckRate;
+	u_int8_t fgIsWaitRsp;
+};
 
 /* specific message data types */
-typedef MSG_SAA_FSM_START_T MSG_JOIN_REQ_T, *P_MSG_JOIN_REQ_T;
-typedef MSG_SAA_FSM_COMP_T MSG_JOIN_COMP_T, *P_MSG_JOIN_COMP_T;
-typedef MSG_SAA_FSM_ABORT_T MSG_JOIN_ABORT_T, *P_MSG_JOIN_ABORT_T;
 
 /*******************************************************************************
 *                            P U B L I C   D A T A
@@ -283,19 +280,19 @@ typedef MSG_SAA_FSM_ABORT_T MSG_JOIN_ABORT_T, *P_MSG_JOIN_ABORT_T;
 *                  F U N C T I O N   D E C L A R A T I O N S
 ********************************************************************************
 */
-VOID mboxSetup(IN P_ADAPTER_T prAdapter, IN ENUM_MBOX_ID_T eMboxId);
+void mboxSetup(IN struct ADAPTER *prAdapter, IN enum ENUM_MBOX_ID eMboxId);
 
-VOID
-mboxSendMsg(IN P_ADAPTER_T prAdapter,
-	    IN ENUM_MBOX_ID_T eMboxId, IN P_MSG_HDR_T prMsg, IN EUNM_MSG_SEND_METHOD_T eMethod);
+void
+mboxSendMsg(IN struct ADAPTER *prAdapter,
+	    IN enum ENUM_MBOX_ID eMboxId, IN struct MSG_HDR *prMsg, IN enum EUNM_MSG_SEND_METHOD eMethod);
 
-VOID mboxRcvAllMsg(IN P_ADAPTER_T prAdapter, IN ENUM_MBOX_ID_T eMboxId);
+void mboxRcvAllMsg(IN struct ADAPTER *prAdapter, IN enum ENUM_MBOX_ID eMboxId);
 
-VOID mboxInitialize(IN P_ADAPTER_T prAdapter);
+void mboxInitialize(IN struct ADAPTER *prAdapter);
 
-VOID mboxDestroy(IN P_ADAPTER_T prAdapter);
+void mboxDestroy(IN struct ADAPTER *prAdapter);
 
-VOID mboxDummy(IN P_ADAPTER_T prAdapter, P_MSG_HDR_T prMsgHdr);
+void mboxDummy(IN struct ADAPTER *prAdapter, struct MSG_HDR *prMsgHdr);
 
 /*******************************************************************************
 *                              F U N C T I O N S

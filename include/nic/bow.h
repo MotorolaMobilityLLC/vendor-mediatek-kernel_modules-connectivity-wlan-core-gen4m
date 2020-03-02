@@ -99,46 +99,46 @@
 *                         D A T A   T Y P E S
 ********************************************************************************
 */
-typedef struct _BT_OVER_WIFI_COMMAND_HEADER_T {
-	UINT_8 ucCommandId;
-	UINT_8 ucSeqNumber;
-	UINT_16 u2PayloadLength;
-} AMPC_COMMAND_HEADER_T, *P_AMPC_COMMAND_HEADER_T;
+struct BT_OVER_WIFI_COMMAND_HEADER {
+	uint8_t ucCommandId;
+	uint8_t ucSeqNumber;
+	uint16_t u2PayloadLength;
+};
 
-typedef struct _BT_OVER_WIFI_COMMAND {
-	AMPC_COMMAND_HEADER_T rHeader;
-	UINT_8 aucPayload[0];
-} AMPC_COMMAND, *P_AMPC_COMMAND;
+struct BT_OVER_WIFI_COMMAND {
+	struct BT_OVER_WIFI_COMMAND_HEADER rHeader;
+	uint8_t aucPayload[0];
+};
 
-typedef struct _BT_OVER_WIFI_EVENT_HEADER_T {
-	UINT_8 ucEventId;
-	UINT_8 ucSeqNumber;
-	UINT_16 u2PayloadLength;
-} AMPC_EVENT_HEADER_T, *P_AMPC_EVENT_HEADER_T;
+struct BT_OVER_WIFI_EVENT_HEADER {
+	uint8_t ucEventId;
+	uint8_t ucSeqNumber;
+	uint16_t u2PayloadLength;
+};
 
-typedef struct _BT_OVER_WIFI_EVENT {
-	AMPC_EVENT_HEADER_T rHeader;
-	UINT_8 aucPayload[0];
-} AMPC_EVENT, *P_AMPC_EVENT;
+struct BT_OVER_WIFI_EVENT {
+	struct BT_OVER_WIFI_EVENT_HEADER rHeader;
+	uint8_t aucPayload[0];
+};
 
-typedef struct _CHANNEL_DESC_T {
-	UINT_8 ucChannelBand;
-	UINT_8 ucChannelNum;
-} CHANNEL_DESC, P_CHANNEL_DESC;
+struct CHANNEL_DESC {
+	uint8_t ucChannelBand;
+	uint8_t ucChannelNum;
+};
 
 /* Command Structures */
-typedef struct _BOW_SETUP_CONNECTION {
+struct BOW_SETUP_CONNECTION {
 /* Fixed to 2.4G */
-	UINT_8 ucChannelNum;
-	UINT_8 ucReserved1;
-	UINT_8 aucPeerAddress[6];
-	UINT_16 u2BeaconInterval;
-	UINT_8 ucTimeoutDiscovery;
-	UINT_8 ucTimeoutInactivity;
-	UINT_8 ucRole;
-	UINT_8 ucPAL_Capabilities;
-	INT_8 cMaxTxPower;
-	UINT_8 ucReserved2;
+	uint8_t ucChannelNum;
+	uint8_t ucReserved1;
+	uint8_t aucPeerAddress[6];
+	uint16_t u2BeaconInterval;
+	uint8_t ucTimeoutDiscovery;
+	uint8_t ucTimeoutInactivity;
+	uint8_t ucRole;
+	uint8_t ucPAL_Capabilities;
+	int8_t cMaxTxPower;
+	uint8_t ucReserved2;
 
 /* Pending, for future BOW 5G supporting. */
 /*    UINT_8          aucPeerAddress[6];
@@ -151,71 +151,71 @@ typedef struct _BOW_SETUP_CONNECTION {
  *   UINT_8          ucChannelListNum;
  *   CHANNEL_DESC    arChannelList[1];
  */
-} BOW_SETUP_CONNECTION, *P_BOW_SETUP_CONNECTION;
+};
 
-typedef struct _BOW_DESTROY_CONNECTION {
-	UINT_8 aucPeerAddress[6];
-	UINT_8 aucReserved[2];
-} BOW_DESTROY_CONNECTION, *P_BOW_DESTROY_CONNECTION;
+struct BOW_DESTROY_CONNECTION {
+	uint8_t aucPeerAddress[6];
+	uint8_t aucReserved[2];
+};
 
-typedef struct _BOW_SET_PTK {
-	UINT_8 aucPeerAddress[6];
-	UINT_8 aucReserved[2];
-	UINT_8 aucTemporalKey[16];
-} BOW_SET_PTK, *P_BOW_SET_PTK;
+struct BOW_SET_PTK {
+	uint8_t aucPeerAddress[6];
+	uint8_t aucReserved[2];
+	uint8_t aucTemporalKey[16];
+};
 
-typedef struct _BOW_READ_RSSI {
-	UINT_8 aucPeerAddress[6];
-	UINT_8 aucReserved[2];
-} BOW_READ_RSSI, *P_BOW_READ_RSSI;
+struct BOW_READ_RSSI {
+	uint8_t aucPeerAddress[6];
+	uint8_t aucReserved[2];
+};
 
-typedef struct _BOW_READ_LINK_QUALITY {
-	UINT_8 aucPeerAddress[6];
-	UINT_8 aucReserved[2];
-} BOW_READ_LINK_QUALITY, *P_BOW_READ_LINK_QUALITY;
+struct BOW_READ_LINK_QUALITY {
+	uint8_t aucPeerAddress[6];
+	uint8_t aucReserved[2];
+};
 
-typedef struct _BOW_SHORT_RANGE_MODE {
-	UINT_8 aucPeerAddress[6];
-	INT_8 cTxPower;
-	UINT_8 ucReserved;
-} BOW_SHORT_RANGE_MODE, *P_BOW_SHORT_RANGE_MODE;
+struct BOW_SHORT_RANGE_MODE {
+	uint8_t aucPeerAddress[6];
+	int8_t cTxPower;
+	uint8_t ucReserved;
+};
 
 /* Event Structures */
-typedef struct _BOW_COMMAND_STATUS {
-	UINT_8 ucStatus;
-	UINT_8 ucReserved[3];
-} BOW_COMMAND_STATUS, *P_BOW_COMMAND_STATUS;
+struct BOW_COMMAND_STATUS {
+	uint8_t ucStatus;
+	uint8_t ucReserved[3];
+};
 
-typedef struct _BOW_MAC_STATUS {
-	UINT_8 aucMacAddr[6];
-	UINT_8 ucAvailability;
-	UINT_8 ucNumOfChannel;
-	CHANNEL_DESC arChannelList[MAX_BOW_NUMBER_OF_CHANNEL];
-} BOW_MAC_STATUS, *P_BOW_MAC_STATUS;
+struct BOW_MAC_STATUS {
+	uint8_t aucMacAddr[6];
+	uint8_t ucAvailability;
+	uint8_t ucNumOfChannel;
+	struct CHANNEL_DESC arChannelList[MAX_BOW_NUMBER_OF_CHANNEL];
+};
 
-typedef struct _BOW_LINK_CONNECTED {
-	CHANNEL_DESC rChannel;
-	UINT_8 aucReserved;
-	UINT_8 aucPeerAddress[6];
-} BOW_LINK_CONNECTED, *P_BOW_LINK_CONNECTED;
+struct BOW_LINK_CONNECTED {
+	struct CHANNEL_DESC rChannel;
+	uint8_t aucReserved;
+	uint8_t aucPeerAddress[6];
+};
 
-typedef struct _BOW_LINK_DISCONNECTED {
-	UINT_8 ucReason;
-	UINT_8 aucReserved;
-	UINT_8 aucPeerAddress[6];
-} BOW_LINK_DISCONNECTED, *P_BOW_LINK_DISCONNECTED;
+struct BOW_LINK_DISCONNECTED {
+	uint8_t ucReason;
+	uint8_t aucReserved;
+	uint8_t aucPeerAddress[6];
+};
 
-typedef struct _BOW_RSSI {
-	INT_8 cRssi;
-	UINT_8 aucReserved[3];
-} BOW_RSSI, *P_BOW_RSSI;
+struct BOW_RSSI {
+	int8_t cRssi;
+	uint8_t aucReserved[3];
+};
 
-typedef struct _BOW_LINK_QUALITY {
-	UINT_8 ucLinkQuality;
-	UINT_8 aucReserved[3];
-} BOW_LINK_QUALITY, *P_BOW_LINK_QUALITY;
+struct BOW_LINK_QUALITY {
+	uint8_t ucLinkQuality;
+	uint8_t aucReserved[3];
+};
 
-typedef enum _ENUM_BOW_CMD_ID_T {
+enum ENUM_BOW_CMD_ID {
 	BOW_CMD_ID_GET_MAC_STATUS = 1,
 	BOW_CMD_ID_SETUP_CONNECTION,
 	BOW_CMD_ID_DESTROY_CONNECTION,
@@ -224,9 +224,9 @@ typedef enum _ENUM_BOW_CMD_ID_T {
 	BOW_CMD_ID_READ_LINK_QUALITY,
 	BOW_CMD_ID_SHORT_RANGE_MODE,
 	BOW_CMD_ID_GET_CHANNEL_LIST,
-} ENUM_BOW_CMD_ID_T, *P_ENUM_BOW_CMD_ID_T;
+};
 
-typedef enum _ENUM_BOW_EVENT_ID_T {
+enum ENUM_BOW_EVENT_ID {
 	BOW_EVENT_ID_COMMAND_STATUS = 1,
 	BOW_EVENT_ID_MAC_STATUS,
 	BOW_EVENT_ID_LINK_CONNECTED,
@@ -235,9 +235,9 @@ typedef enum _ENUM_BOW_EVENT_ID_T {
 	BOW_EVENT_ID_LINK_QUALITY,
 	BOW_EVENT_ID_CHANNEL_LIST,
 	BOW_EVENT_ID_CHANNEL_SELECTED,
-} ENUM_BOW_EVENT_ID_T, *P_ENUM_BOW_EVENT_ID_T;
+};
 
-typedef enum _ENUM_BOW_DEVICE_STATE {
+enum ENUM_BOW_DEVICE_STATE {
 	BOW_DEVICE_STATE_DISCONNECTED = 0,
 	BOW_DEVICE_STATE_DISCONNECTING,
 	BOW_DEVICE_STATE_ACQUIRING_CHANNEL,
@@ -246,7 +246,7 @@ typedef enum _ENUM_BOW_DEVICE_STATE {
 	BOW_DEVICE_STATE_CONNECTING,
 	BOW_DEVICE_STATE_CONNECTED,
 	BOW_DEVICE_STATE_NUM
-} ENUM_BOW_DEVICE_STATE, *P_ENUM_BOW_DEVICE_STATE;
+};
 
 /*******************************************************************************
 *                            P U B L I C   D A T A

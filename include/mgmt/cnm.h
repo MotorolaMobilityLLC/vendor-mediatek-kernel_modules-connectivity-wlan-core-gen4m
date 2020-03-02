@@ -84,7 +84,7 @@
 ********************************************************************************
 */
 
-typedef enum _ENUM_CH_REQ_TYPE_T {
+enum ENUM_CH_REQ_TYPE {
 	CH_REQ_TYPE_JOIN,
 	CH_REQ_TYPE_P2P_LISTEN,
 	CH_REQ_TYPE_OFFCHNL_TX,
@@ -93,92 +93,92 @@ typedef enum _ENUM_CH_REQ_TYPE_T {
 	CH_REQ_TYPE_DFS_CAC,
 #endif
 	CH_REQ_TYPE_NUM
-} ENUM_CH_REQ_TYPE_T, *P_ENUM_CH_REQ_TYPE_T;
+};
 
-typedef struct _MSG_CH_REQ_T {
-	MSG_HDR_T rMsgHdr;	/* Must be the first member */
-	UINT_8 ucBssIndex;
-	UINT_8 ucTokenID;
-	UINT_8 ucPrimaryChannel;
-	ENUM_CHNL_EXT_T eRfSco;
-	ENUM_BAND_T eRfBand;
-	ENUM_CHANNEL_WIDTH_T eRfChannelWidth;	/* To support 80/160MHz bandwidth */
-	UINT_8 ucRfCenterFreqSeg1;	/* To support 80/160MHz bandwidth */
-	UINT_8 ucRfCenterFreqSeg2;	/* To support 80/160MHz bandwidth */
-	ENUM_CH_REQ_TYPE_T eReqType;
-	UINT_32 u4MaxInterval;	/* In unit of ms */
-	ENUM_DBDC_BN_T eDBDCBand;
-} MSG_CH_REQ_T, *P_MSG_CH_REQ_T;
+struct MSG_CH_REQ {
+	struct MSG_HDR rMsgHdr;	/* Must be the first member */
+	uint8_t ucBssIndex;
+	uint8_t ucTokenID;
+	uint8_t ucPrimaryChannel;
+	enum ENUM_CHNL_EXT eRfSco;
+	enum ENUM_BAND eRfBand;
+	enum ENUM_CHANNEL_WIDTH eRfChannelWidth;	/* To support 80/160MHz bandwidth */
+	uint8_t ucRfCenterFreqSeg1;	/* To support 80/160MHz bandwidth */
+	uint8_t ucRfCenterFreqSeg2;	/* To support 80/160MHz bandwidth */
+	enum ENUM_CH_REQ_TYPE eReqType;
+	uint32_t u4MaxInterval;	/* In unit of ms */
+	enum ENUM_DBDC_BN eDBDCBand;
+};
 
-typedef struct _MSG_CH_ABORT_T {
-	MSG_HDR_T rMsgHdr;	/* Must be the first member */
-	UINT_8 ucBssIndex;
-	UINT_8 ucTokenID;
-	ENUM_DBDC_BN_T eDBDCBand;
-} MSG_CH_ABORT_T, *P_MSG_CH_ABORT_T;
+struct MSG_CH_ABORT {
+	struct MSG_HDR rMsgHdr;	/* Must be the first member */
+	uint8_t ucBssIndex;
+	uint8_t ucTokenID;
+	enum ENUM_DBDC_BN eDBDCBand;
+};
 
-typedef struct _MSG_CH_GRANT_T {
-	MSG_HDR_T rMsgHdr;	/* Must be the first member */
-	UINT_8 ucBssIndex;
-	UINT_8 ucTokenID;
-	UINT_8 ucPrimaryChannel;
-	ENUM_CHNL_EXT_T eRfSco;
-	ENUM_BAND_T eRfBand;
-	ENUM_CHANNEL_WIDTH_T eRfChannelWidth;	/* To support 80/160MHz bandwidth */
-	UINT_8 ucRfCenterFreqSeg1;	/* To support 80/160MHz bandwidth */
-	UINT_8 ucRfCenterFreqSeg2;	/* To support 80/160MHz bandwidth */
-	ENUM_CH_REQ_TYPE_T eReqType;
-	UINT_32 u4GrantInterval;	/* In unit of ms */
-	ENUM_DBDC_BN_T eDBDCBand;
-} MSG_CH_GRANT_T, *P_MSG_CH_GRANT_T;
+struct MSG_CH_GRANT {
+	struct MSG_HDR rMsgHdr;	/* Must be the first member */
+	uint8_t ucBssIndex;
+	uint8_t ucTokenID;
+	uint8_t ucPrimaryChannel;
+	enum ENUM_CHNL_EXT eRfSco;
+	enum ENUM_BAND eRfBand;
+	enum ENUM_CHANNEL_WIDTH eRfChannelWidth;	/* To support 80/160MHz bandwidth */
+	uint8_t ucRfCenterFreqSeg1;	/* To support 80/160MHz bandwidth */
+	uint8_t ucRfCenterFreqSeg2;	/* To support 80/160MHz bandwidth */
+	enum ENUM_CH_REQ_TYPE eReqType;
+	uint32_t u4GrantInterval;	/* In unit of ms */
+	enum ENUM_DBDC_BN eDBDCBand;
+};
 
-typedef struct _MSG_CH_REOCVER_T {
-	MSG_HDR_T rMsgHdr;	/* Must be the first member */
-	UINT_8 ucBssIndex;
-	UINT_8 ucTokenID;
-	UINT_8 ucPrimaryChannel;
-	ENUM_CHNL_EXT_T eRfSco;
-	ENUM_BAND_T eRfBand;
-	ENUM_CHANNEL_WIDTH_T eRfChannelWidth;	/* To support 80/160MHz bandwidth */
-	UINT_8 ucRfCenterFreqSeg1;	/* To support 80/160MHz bandwidth */
-	UINT_8 ucRfCenterFreqSeg2;	/* To support 80/160MHz bandwidth */
-	ENUM_CH_REQ_TYPE_T eReqType;
-} MSG_CH_RECOVER_T, *P_MSG_CH_RECOVER_T;
+struct MSG_CH_REOCVER {
+	struct MSG_HDR rMsgHdr;	/* Must be the first member */
+	uint8_t ucBssIndex;
+	uint8_t ucTokenID;
+	uint8_t ucPrimaryChannel;
+	enum ENUM_CHNL_EXT eRfSco;
+	enum ENUM_BAND eRfBand;
+	enum ENUM_CHANNEL_WIDTH eRfChannelWidth;	/* To support 80/160MHz bandwidth */
+	uint8_t ucRfCenterFreqSeg1;	/* To support 80/160MHz bandwidth */
+	uint8_t ucRfCenterFreqSeg2;	/* To support 80/160MHz bandwidth */
+	enum ENUM_CH_REQ_TYPE eReqType;
+};
 
-typedef struct _CNM_INFO_T {
-	BOOLEAN fgChGranted;
-	UINT_8 ucBssIndex;
-	UINT_8 ucTokenID;
-} CNM_INFO_T, *P_CNM_INFO_T;
+struct CNM_INFO {
+	u_int8_t fgChGranted;
+	uint8_t ucBssIndex;
+	uint8_t ucTokenID;
+};
 
 #if CFG_ENABLE_WIFI_DIRECT
 /* Moved from p2p_fsm.h */
-typedef struct _DEVICE_TYPE_T {
-	UINT_16 u2CategoryId;	/* Category ID */
-	UINT_8 aucOui[4];	/* OUI */
-	UINT_16 u2SubCategoryId;	/* Sub Category ID */
-} __KAL_ATTRIB_PACKED__ DEVICE_TYPE_T, *P_DEVICE_TYPE_T;
+struct DEVICE_TYPE {
+	uint16_t u2CategoryId;	/* Category ID */
+	uint8_t aucOui[4];	/* OUI */
+	uint16_t u2SubCategoryId;	/* Sub Category ID */
+} __KAL_ATTRIB_PACKED__;
 #endif
 
 #if CFG_SUPPORT_DBDC
-typedef struct _CNM_DBDC_CAP_T {
-	UINT_8 ucBssIndex;
-	UINT_8 ucNss;
-	UINT_8 ucWmmSetIndex;
-} CNM_DBDC_CAP_T, *P_CNM_DBDC_CAP_T;
+struct CNM_DBDC_CAP {
+	uint8_t ucBssIndex;
+	uint8_t ucNss;
+	uint8_t ucWmmSetIndex;
+};
 
-typedef enum _ENUM_CNM_DBDC_MODE_T {
+enum ENUM_CNM_DBDC_MODE {
 	ENUM_DBDC_MODE_DISABLED,	/* A/G traffic separate by WMM, but both TRX on band 0, CANNOT enable DBDC */
 	ENUM_DBDC_MODE_STATIC,		/* A/G traffic separate by WMM, WMM0/1 TRX on band 0/1, CANNOT disable DBDC */
 	ENUM_DBDC_MODE_DYNAMIC,		/* Automatically enable/disable DBDC, setting just like static/disable mode */
 	ENUM_DBDC_MODE_NUM
-} ENUM_CNM_DBDC_MODE_T, *P_ENUM_CNM_DBDC_MODE_T;
+};
 
-typedef enum _ENUM_CNM_DBDC_SWITCH_MECHANISM_T { /* When DBDC available in dynamic DBDC */
+enum ENUM_CNM_DBDC_SWITCH_MECHANISM { /* When DBDC available in dynamic DBDC */
 	ENUM_DBDC_SWITCH_MECHANISM_LATENCY_MODE,		/* Switch to DBDC when available (less latency) */
 	ENUM_DBDC_SWITCH_MECHANISM_THROUGHPUT_MODE,	/* Switch to DBDC when DBDC T-put > MCC T-put */
 	ENUM_DBDC_SWITCH_MECHANISM_NUM
-} ENUM_CNM_DBDC_SWITCH_MECHANISM_T, *P_ENUM_CNM_DBDC_SWITCH_MECHANISM_T;
+};
 #endif /*CFG_SUPPORT_DBDC*/
 
 enum ENUM_CNM_NETWORK_TYPE_T {
@@ -217,86 +217,86 @@ enum ENUM_CNM_NETWORK_TYPE_T {
 *                   F U N C T I O N   D E C L A R A T I O N S
 ********************************************************************************
 */
-VOID cnmInit(P_ADAPTER_T prAdapter);
+void cnmInit(struct ADAPTER *prAdapter);
 
-VOID cnmUninit(P_ADAPTER_T prAdapter);
+void cnmUninit(struct ADAPTER *prAdapter);
 
-VOID cnmChMngrRequestPrivilege(P_ADAPTER_T prAdapter, P_MSG_HDR_T prMsgHdr);
+void cnmChMngrRequestPrivilege(struct ADAPTER *prAdapter, struct MSG_HDR *prMsgHdr);
 
-VOID cnmChMngrAbortPrivilege(P_ADAPTER_T prAdapter, P_MSG_HDR_T prMsgHdr);
+void cnmChMngrAbortPrivilege(struct ADAPTER *prAdapter, struct MSG_HDR *prMsgHdr);
 
-VOID cnmChMngrHandleChEvent(P_ADAPTER_T prAdapter, P_WIFI_EVENT_T prEvent);
+void cnmChMngrHandleChEvent(struct ADAPTER *prAdapter, struct WIFI_EVENT *prEvent);
 
 #if (CFG_SUPPORT_DFS_MASTER == 1)
-VOID cnmRadarDetectEvent(P_ADAPTER_T prAdapter, P_WIFI_EVENT_T prEvent);
+void cnmRadarDetectEvent(struct ADAPTER *prAdapter, struct WIFI_EVENT *prEvent);
 
-VOID cnmCsaDoneEvent(P_ADAPTER_T prAdapter, P_WIFI_EVENT_T prEvent);
+void cnmCsaDoneEvent(struct ADAPTER *prAdapter, struct WIFI_EVENT *prEvent);
 #endif
 
-BOOLEAN
-cnmPreferredChannel(P_ADAPTER_T prAdapter, P_ENUM_BAND_T prBand, PUINT_8 pucPrimaryChannel, P_ENUM_CHNL_EXT_T prBssSCO);
+u_int8_t
+cnmPreferredChannel(struct ADAPTER *prAdapter, enum ENUM_BAND *prBand, uint8_t *pucPrimaryChannel, enum ENUM_CHNL_EXT *prBssSCO);
 
-BOOLEAN cnmAisInfraChannelFixed(P_ADAPTER_T prAdapter, P_ENUM_BAND_T prBand, PUINT_8 pucPrimaryChannel);
+u_int8_t cnmAisInfraChannelFixed(struct ADAPTER *prAdapter, enum ENUM_BAND *prBand, uint8_t *pucPrimaryChannel);
 
-VOID cnmAisInfraConnectNotify(P_ADAPTER_T prAdapter);
+void cnmAisInfraConnectNotify(struct ADAPTER *prAdapter);
 
-BOOLEAN cnmAisIbssIsPermitted(P_ADAPTER_T prAdapter);
+u_int8_t cnmAisIbssIsPermitted(struct ADAPTER *prAdapter);
 
-BOOLEAN cnmP2PIsPermitted(P_ADAPTER_T prAdapter);
+u_int8_t cnmP2PIsPermitted(struct ADAPTER *prAdapter);
 
-BOOLEAN cnmBowIsPermitted(P_ADAPTER_T prAdapter);
+u_int8_t cnmBowIsPermitted(struct ADAPTER *prAdapter);
 
-BOOLEAN cnmBss40mBwPermitted(P_ADAPTER_T prAdapter, UINT_8 ucBssIndex);
+u_int8_t cnmBss40mBwPermitted(struct ADAPTER *prAdapter, uint8_t ucBssIndex);
 
-BOOLEAN cnmBss80mBwPermitted(P_ADAPTER_T prAdapter, UINT_8 ucBssIndex);
+u_int8_t cnmBss80mBwPermitted(struct ADAPTER *prAdapter, uint8_t ucBssIndex);
 
-UINT_8 cnmGetBssMaxBw(P_ADAPTER_T prAdapter, UINT_8 ucBssIndex);
+uint8_t cnmGetBssMaxBw(struct ADAPTER *prAdapter, uint8_t ucBssIndex);
 
-UINT_8 cnmGetBssMaxBwToChnlBW(P_ADAPTER_T prAdapter, UINT_8 ucBssIndex);
+uint8_t cnmGetBssMaxBwToChnlBW(struct ADAPTER *prAdapter, uint8_t ucBssIndex);
 
-P_BSS_INFO_T cnmGetBssInfoAndInit(P_ADAPTER_T prAdapter, ENUM_NETWORK_TYPE_T eNetworkType, BOOLEAN fgIsP2pDevice);
+struct BSS_INFO *cnmGetBssInfoAndInit(struct ADAPTER *prAdapter, enum ENUM_NETWORK_TYPE eNetworkType, u_int8_t fgIsP2pDevice);
 
-VOID cnmFreeBssInfo(P_ADAPTER_T prAdapter, P_BSS_INFO_T prBssInfo);
+void cnmFreeBssInfo(struct ADAPTER *prAdapter, struct BSS_INFO *prBssInfo);
 #if CFG_SUPPORT_CHNL_CONFLICT_REVISE
-BOOLEAN cnmAisDetectP2PChannel(P_ADAPTER_T prAdapter, P_ENUM_BAND_T prBand, PUINT_8 pucPrimaryChannel);
+u_int8_t cnmAisDetectP2PChannel(struct ADAPTER *prAdapter, enum ENUM_BAND *prBand, uint8_t *pucPrimaryChannel);
 #endif
 
 #if CFG_SUPPORT_DBDC
-VOID cnmInitDbdcSetting(IN P_ADAPTER_T prAdapter);
+void cnmInitDbdcSetting(IN struct ADAPTER *prAdapter);
 
-VOID cnmDbdcOpModeChangeDoneCallback(
-	IN P_ADAPTER_T	prAdapter,
-	IN UINT_8		ucBssIndex,
-	IN BOOLEAN		fgSuccess);
+void cnmDbdcOpModeChangeDoneCallback(
+	IN struct ADAPTER *prAdapter,
+	IN uint8_t		ucBssIndex,
+	IN u_int8_t		fgSuccess);
 
-VOID cnmUpdateDbdcSetting(IN P_ADAPTER_T	prAdapter, IN BOOLEAN fgDbdcEn);
+void cnmUpdateDbdcSetting(IN struct ADAPTER *prAdapter, IN u_int8_t fgDbdcEn);
 
-VOID cnmGetDbdcCapability(
-	IN P_ADAPTER_T			prAdapter,
-	IN UINT_8				ucBssIndex,
-	IN ENUM_BAND_T			eRfBand,
-	IN UINT_8				ucPrimaryChannel,
-	IN UINT_8				ucNss,
-	OUT P_CNM_DBDC_CAP_T	prDbdcCap
+void cnmGetDbdcCapability(
+	IN struct ADAPTER *prAdapter,
+	IN uint8_t				ucBssIndex,
+	IN enum ENUM_BAND			eRfBand,
+	IN uint8_t				ucPrimaryChannel,
+	IN uint8_t				ucNss,
+	OUT struct CNM_DBDC_CAP *prDbdcCap
 );
 
-UINT_8 cnmGetDbdcBwCapability(
-	P_ADAPTER_T	prAdapter,
-	UINT_8		ucBssIndex
+uint8_t cnmGetDbdcBwCapability(
+	struct ADAPTER *prAdapter,
+	uint8_t		ucBssIndex
 );
 
-VOID cnmDbdcEnableDecision(
-	IN P_ADAPTER_T	prAdapter,
-	IN UINT_8		ucChangedBssIndex,
-	IN ENUM_BAND_T	eRfBand
+void cnmDbdcEnableDecision(
+	IN struct ADAPTER *prAdapter,
+	IN uint8_t		ucChangedBssIndex,
+	IN enum ENUM_BAND	eRfBand
 );
 
-VOID cnmDbdcDisableDecision(IN P_ADAPTER_T prAdapter,	IN UINT_8 ucChangedBssIndex);
-VOID cnmDbdcGuardTimerCallback(IN P_ADAPTER_T prAdapter, IN ULONG plParamPtr);
-VOID cnmDbdcEventHwSwitchDone(IN P_ADAPTER_T prAdapter, IN P_WIFI_EVENT_T prEvent);
+void cnmDbdcDisableDecision(IN struct ADAPTER *prAdapter,	IN uint8_t ucChangedBssIndex);
+void cnmDbdcGuardTimerCallback(IN struct ADAPTER *prAdapter, IN unsigned long plParamPtr);
+void cnmDbdcEventHwSwitchDone(IN struct ADAPTER *prAdapter, IN struct WIFI_EVENT *prEvent);
 #endif /*CFG_SUPPORT_DBDC*/
 
-enum ENUM_CNM_NETWORK_TYPE_T cnmGetBssNetworkType(P_BSS_INFO_T prBssInfo);
+enum ENUM_CNM_NETWORK_TYPE_T cnmGetBssNetworkType(struct BSS_INFO *prBssInfo);
 
 /*******************************************************************************
 *                              F U N C T I O N S
@@ -308,24 +308,24 @@ enum ENUM_CNM_NETWORK_TYPE_T cnmGetBssNetworkType(P_BSS_INFO_T prBssInfo);
  * We'll need this to guarantee the same member order in different structures
  * to simply handling effort in some functions.
  */
-static __KAL_INLINE__ VOID cnmMsgDataTypeCheck(VOID)
+static __KAL_INLINE__ void cnmMsgDataTypeCheck(void)
 {
-	DATA_STRUCT_INSPECTING_ASSERT(OFFSET_OF(MSG_CH_GRANT_T, rMsgHdr) == 0);
+	DATA_STRUCT_INSPECTING_ASSERT(OFFSET_OF(struct MSG_CH_GRANT, rMsgHdr) == 0);
 
-	DATA_STRUCT_INSPECTING_ASSERT(OFFSET_OF(MSG_CH_GRANT_T, rMsgHdr) == OFFSET_OF(MSG_CH_RECOVER_T, rMsgHdr));
+	DATA_STRUCT_INSPECTING_ASSERT(OFFSET_OF(struct MSG_CH_GRANT, rMsgHdr) == OFFSET_OF(struct MSG_CH_REOCVER, rMsgHdr));
 
-	DATA_STRUCT_INSPECTING_ASSERT(OFFSET_OF(MSG_CH_GRANT_T, ucBssIndex) == OFFSET_OF(MSG_CH_RECOVER_T, ucBssIndex));
+	DATA_STRUCT_INSPECTING_ASSERT(OFFSET_OF(struct MSG_CH_GRANT, ucBssIndex) == OFFSET_OF(struct MSG_CH_REOCVER, ucBssIndex));
 
-	DATA_STRUCT_INSPECTING_ASSERT(OFFSET_OF(MSG_CH_GRANT_T, ucTokenID) == OFFSET_OF(MSG_CH_RECOVER_T, ucTokenID));
+	DATA_STRUCT_INSPECTING_ASSERT(OFFSET_OF(struct MSG_CH_GRANT, ucTokenID) == OFFSET_OF(struct MSG_CH_REOCVER, ucTokenID));
 
-	DATA_STRUCT_INSPECTING_ASSERT(OFFSET_OF(MSG_CH_GRANT_T, ucPrimaryChannel) ==
-				      OFFSET_OF(MSG_CH_RECOVER_T, ucPrimaryChannel));
+	DATA_STRUCT_INSPECTING_ASSERT(OFFSET_OF(struct MSG_CH_GRANT, ucPrimaryChannel) ==
+				      OFFSET_OF(struct MSG_CH_REOCVER, ucPrimaryChannel));
 
-	DATA_STRUCT_INSPECTING_ASSERT(OFFSET_OF(MSG_CH_GRANT_T, eRfSco) == OFFSET_OF(MSG_CH_RECOVER_T, eRfSco));
+	DATA_STRUCT_INSPECTING_ASSERT(OFFSET_OF(struct MSG_CH_GRANT, eRfSco) == OFFSET_OF(struct MSG_CH_REOCVER, eRfSco));
 
-	DATA_STRUCT_INSPECTING_ASSERT(OFFSET_OF(MSG_CH_GRANT_T, eRfBand) == OFFSET_OF(MSG_CH_RECOVER_T, eRfBand));
+	DATA_STRUCT_INSPECTING_ASSERT(OFFSET_OF(struct MSG_CH_GRANT, eRfBand) == OFFSET_OF(struct MSG_CH_REOCVER, eRfBand));
 
-	DATA_STRUCT_INSPECTING_ASSERT(OFFSET_OF(MSG_CH_GRANT_T, eReqType) == OFFSET_OF(MSG_CH_RECOVER_T, eReqType));
+	DATA_STRUCT_INSPECTING_ASSERT(OFFSET_OF(struct MSG_CH_GRANT, eReqType) == OFFSET_OF(struct MSG_CH_REOCVER, eReqType));
 }
 #endif /* _lint */
 

@@ -100,22 +100,22 @@
  ********************************************************************************
  */
 
-typedef struct _EVENT_P2P_DEV_DISCOVER_RESULT_T {
+struct EVENT_P2P_DEV_DISCOVER_RESULT {
 /* UINT_8                          aucCommunicateAddr[MAC_ADDR_LEN];  // Deprecated. */
-	UINT_8 aucDeviceAddr[MAC_ADDR_LEN];	/* Device Address. */
-	UINT_8 aucInterfaceAddr[MAC_ADDR_LEN];	/* Device Address. */
-	UINT_8 ucDeviceCapabilityBitmap;
-	UINT_8 ucGroupCapabilityBitmap;
-	UINT_16 u2ConfigMethod;	/* Configure Method. */
-	P2P_DEVICE_TYPE_T rPriDevType;
-	UINT_8 ucSecDevTypeNum;
-	P2P_DEVICE_TYPE_T arSecDevType[2];
-	UINT_16 u2NameLength;
-	UINT_8 aucName[32];
-	PUINT_8 pucIeBuf;
-	UINT_16 u2IELength;
-	UINT_8 aucBSSID[MAC_ADDR_LEN];
+	uint8_t aucDeviceAddr[MAC_ADDR_LEN];	/* Device Address. */
+	uint8_t aucInterfaceAddr[MAC_ADDR_LEN];	/* Device Address. */
+	uint8_t ucDeviceCapabilityBitmap;
+	uint8_t ucGroupCapabilityBitmap;
+	uint16_t u2ConfigMethod;	/* Configure Method. */
+	struct P2P_DEVICE_TYPE rPriDevType;
+	uint8_t ucSecDevTypeNum;
+	struct P2P_DEVICE_TYPE arSecDevType[2];
+	uint16_t u2NameLength;
+	uint8_t aucName[32];
+	uint8_t *pucIeBuf;
+	uint16_t u2IELength;
+	uint8_t aucBSSID[MAC_ADDR_LEN];
 	/* TODO: Service Information or PasswordID valid? */
-} EVENT_P2P_DEV_DISCOVER_RESULT_T, *P_EVENT_P2P_DEV_DISCOVER_RESULT_T;
+};
 
 #endif

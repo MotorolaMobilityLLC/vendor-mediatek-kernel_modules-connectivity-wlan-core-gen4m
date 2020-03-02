@@ -90,7 +90,7 @@
 
 #define MSEC_PER_MIN                    (60 * MSEC_PER_SEC)
 
-#define MGMT_MAX_TIMEOUT_INTERVAL       ((UINT_32)0x7fffffff)
+#define MGMT_MAX_TIMEOUT_INTERVAL       ((uint32_t)0x7fffffff)
 
 #define WAKE_LOCK_MAX_TIME              5	/* Unit: sec */
 
@@ -112,17 +112,17 @@ enum ENUM_TIMER_WAKELOCK_TYPE_T {
 *                             D A T A   T Y P E S
 ********************************************************************************
 */
-typedef VOID(*PFN_MGMT_TIMEOUT_FUNC) (P_ADAPTER_T, ULONG);
+typedef void(*PFN_MGMT_TIMEOUT_FUNC) (struct ADAPTER *, unsigned long);
 
-typedef struct _TIMER_T {
-	LINK_ENTRY_T rLinkEntry;
+struct TIMER {
+	struct LINK_ENTRY rLinkEntry;
 	OS_SYSTIME rExpiredSysTime;
-	UINT_16 u2Minutes;
-	UINT_16 u2Reserved;
-	ULONG ulDataPtr;
+	uint16_t u2Minutes;
+	uint16_t u2Reserved;
+	unsigned long ulDataPtr;
 	PFN_MGMT_TIMEOUT_FUNC pfMgmtTimeOutFunc;
 	enum ENUM_TIMER_WAKELOCK_TYPE_T eType;
-} TIMER_T, *P_TIMER_T;
+};
 
 /*******************************************************************************
 *                            P U B L I C   D A T A
@@ -144,7 +144,7 @@ typedef struct _TIMER_T {
  */
 #define TIME_BEFORE_64bit(a, b)       (a < b)
 
-#define TIME_BEFORE(a, b)        ((UINT_32)((UINT_32)(a) - (UINT_32)(b)) > 0x7fffffff)
+#define TIME_BEFORE(a, b)        ((uint32_t)((uint32_t)(a) - (uint32_t)(b)) > 0x7fffffff)
 
 /* #define TIME_BEFORE(a,b)        ((INT_32)((INT_32)(b) - (INT_32)(a)) > 0)
  * may cause UNexpect result between Free build and Check build for WinCE
@@ -157,12 +157,12 @@ typedef struct _TIMER_T {
 
 /* The macros to convert second & millisecond */
 #define MSEC_TO_SEC(_msec)                  ((_msec) / MSEC_PER_SEC)
-#define SEC_TO_MSEC(_sec)                   ((UINT_32)(_sec) * MSEC_PER_SEC)
-#define SEC_TO_USEC(_sec)                   ((UINT_32)(_sec) * USEC_PER_SEC)
+#define SEC_TO_MSEC(_sec)                   ((uint32_t)(_sec) * MSEC_PER_SEC)
+#define SEC_TO_USEC(_sec)                   ((uint32_t)(_sec) * USEC_PER_SEC)
 
 /* The macros to convert millisecond & microsecond */
 #define USEC_TO_MSEC(_usec)                 ((_usec) / USEC_PER_MSEC)
-#define MSEC_TO_USEC(_msec)                 ((UINT_32)(_msec) * USEC_PER_MSEC)
+#define MSEC_TO_USEC(_msec)                 ((uint32_t)(_msec) * USEC_PER_MSEC)
 
 /* The macros to convert TU & microsecond, TU & millisecond */
 #define TU_TO_USEC(_tu)                     ((_tu) * USEC_PER_TU)
@@ -189,7 +189,7 @@ typedef struct _TIMER_T {
 
 /* The macro to check for the expiration, if TRUE means _currentTime >= _expirationTime */
 #define CHECK_FOR_EXPIRATION(_currentTime, _expirationTime) \
-	(((UINT_32)(_currentTime) - (UINT_32)(_expirationTime)) <= 0x7fffffffUL)
+	(((uint32_t)(_currentTime) - (uint32_t)(_expirationTime)) <= 0x7fffffffUL)
 
 /* The macro to check for the timeout */
 #define CHECK_FOR_TIMEOUT(_currentTime, _timeoutStartingTime, _timeout) \
@@ -206,43 +206,43 @@ typedef struct _TIMER_T {
 	timerStartTimer(adapter, tmr, interval, (tmr)->function, (tmr)->data)
 
 #define MGMT_INIT_TIMER(_adapter_p, _timer, _callbackFunc) \
-	timerInitTimer(_adapter_p, &(_timer), (UINT_32)(_callbackFunc))
+	timerInitTimer(_adapter_p, &(_timer), (uint32_t)(_callbackFunc))
 
 /*******************************************************************************
 *                  F U N C T I O N   D E C L A R A T I O N S
 ********************************************************************************
 */
-VOID cnmTimerInitialize(IN P_ADAPTER_T prAdapter);
+void cnmTimerInitialize(IN struct ADAPTER *prAdapter);
 
-VOID cnmTimerDestroy(IN P_ADAPTER_T prAdapter);
+void cnmTimerDestroy(IN struct ADAPTER *prAdapter);
 
-VOID cnmTimerInitTimerOption(IN P_ADAPTER_T prAdapter,
-			     IN P_TIMER_T prTimer,
+void cnmTimerInitTimerOption(IN struct ADAPTER *prAdapter,
+			     IN struct TIMER *prTimer,
 			     IN PFN_MGMT_TIMEOUT_FUNC pfFunc,
-			     IN ULONG ulDataPtr,
+			     IN unsigned long ulDataPtr,
 			     IN enum ENUM_TIMER_WAKELOCK_TYPE_T eType);
 
-VOID cnmTimerStopTimer(IN P_ADAPTER_T prAdapter, IN P_TIMER_T prTimer);
+void cnmTimerStopTimer(IN struct ADAPTER *prAdapter, IN struct TIMER *prTimer);
 
-VOID cnmTimerStartTimer(IN P_ADAPTER_T prAdapter, IN P_TIMER_T prTimer, IN UINT_32 u4TimeoutMs);
+void cnmTimerStartTimer(IN struct ADAPTER *prAdapter, IN struct TIMER *prTimer, IN uint32_t u4TimeoutMs);
 
-VOID cnmTimerDoTimeOutCheck(IN P_ADAPTER_T prAdapter);
+void cnmTimerDoTimeOutCheck(IN struct ADAPTER *prAdapter);
 
 /*******************************************************************************
 *                              F U N C T I O N S
 ********************************************************************************
 */
-static __KAL_INLINE__ INT_32 timerPendingTimer(IN P_TIMER_T prTimer)
+static __KAL_INLINE__ int32_t timerPendingTimer(IN struct TIMER *prTimer)
 {
 	ASSERT(prTimer);
 
 	return prTimer->rLinkEntry.prNext != NULL;
 }
 
-static __KAL_INLINE__ VOID cnmTimerInitTimer(IN P_ADAPTER_T prAdapter,
-					     IN P_TIMER_T prTimer,
+static __KAL_INLINE__ void cnmTimerInitTimer(IN struct ADAPTER *prAdapter,
+					     IN struct TIMER *prTimer,
 					     IN PFN_MGMT_TIMEOUT_FUNC pfFunc,
-					     IN ULONG ulDataPtr)
+					     IN unsigned long ulDataPtr)
 {
 	cnmTimerInitTimerOption(prAdapter, prTimer, pfFunc, ulDataPtr, TIMER_WAKELOCK_AUTO);
 }

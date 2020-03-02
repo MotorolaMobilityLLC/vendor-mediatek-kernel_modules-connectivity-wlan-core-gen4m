@@ -116,13 +116,13 @@ struct DBDC_INFO_T {
 	enum ENUM_DBDC_FSM_STATE_T       eDbdcFsmPrevState;
 	enum ENUM_DBDC_FSM_STATE_T       eDbdcFsmNextState;
 
-	TIMER_T                          rDbdcGuardTimer;
+	struct TIMER                          rDbdcGuardTimer;
 	enum ENUM_DBDC_GUARD_TIMER_T     eDdbcGuardTimerType;
 
-	BOOLEAN                          fgReqPrivelegeLock;
-	LINK_T                           rPendingMsgList;
+	u_int8_t                          fgReqPrivelegeLock;
+	struct LINK                           rPendingMsgList;
 
-	BOOLEAN                          fgDbdcDisableOpmodeChangeDone;
+	u_int8_t                          fgDbdcDisableOpmodeChangeDone;
 	enum ENUM_OPMODE_STATE_T         eBssOpModeState[BSSID_NUM];
 };
 
@@ -145,9 +145,9 @@ enum ENUM_DBDC_PROTOCOL_STATUS_T {
 	ENUM_DBDC_PROTOCOL_STATUS_NUM
 };
 
-typedef VOID (*DBDC_ENTRY_FUNC)(P_ADAPTER_T);
-typedef VOID (*DBDC_EVENT_HNDL_FUNC)(P_ADAPTER_T, enum ENUM_DBDC_FSM_EVENT_T);
-typedef VOID (*DBDC_EXIT_FUNC)(P_ADAPTER_T);
+typedef void (*DBDC_ENTRY_FUNC)(struct ADAPTER *);
+typedef void (*DBDC_EVENT_HNDL_FUNC)(struct ADAPTER *, enum ENUM_DBDC_FSM_EVENT_T);
+typedef void (*DBDC_EXIT_FUNC)(struct ADAPTER *);
 
 struct DBDC_FSM_T {
 	DBDC_ENTRY_FUNC               pfEntryFunc;
@@ -226,92 +226,92 @@ static struct DBDC_INFO_T g_rDbdcInfo;
 *                   F U N C T I O N   D E C L A R A T I O N S
 ********************************************************************************
 */
-static BOOLEAN
+static u_int8_t
 cnmDBDCIsReqPeivilegeLock(
-	VOID
+	void
 	);
 
-static VOID
+static void
 cnmDbdcFsmEntryFunc_DISABLE_IDLE(
-	IN P_ADAPTER_T	prAdapter
+	IN struct ADAPTER *prAdapter
 	);
 
-static VOID
+static void
 cnmDbdcFsmEntryFunc_WAIT_PROTOCOL_ENABLE(
-	IN P_ADAPTER_T	prAdapter
+	IN struct ADAPTER *prAdapter
 	);
 
-static VOID
+static void
 cnmDbdcFsmEntryFunc_WAIT_HW_ENABLE(
-	IN P_ADAPTER_T	prAdapter
+	IN struct ADAPTER *prAdapter
 	);
 
-static VOID
+static void
 cnmDbdcFsmEntryFunc_ENABLE_GUARD(
-	IN P_ADAPTER_T	prAdapter
+	IN struct ADAPTER *prAdapter
 	);
 
-static VOID
+static void
 cnmDbdcFsmEntryFunc_WAIT_HW_DISABLE(
-	IN P_ADAPTER_T	prAdapter
+	IN struct ADAPTER *prAdapter
 	);
 
-static VOID
+static void
 cnmDbdcFsmEntryFunc_DISABLE_GUARD(
-	IN P_ADAPTER_T	prAdapter
+	IN struct ADAPTER *prAdapter
 	);
 
-static VOID
+static void
 cnmDbdcFsmEventHandler_DISABLE_IDLE(
-	IN P_ADAPTER_T	prAdapter,
+	IN struct ADAPTER *prAdapter,
 	IN enum ENUM_DBDC_FSM_EVENT_T	eEvent
 	);
 
-static VOID
+static void
 cnmDbdcFsmEventHandler_WAIT_PROTOCOL_ENABLE(
-	IN P_ADAPTER_T	prAdapter,
+	IN struct ADAPTER *prAdapter,
 	IN enum ENUM_DBDC_FSM_EVENT_T	eEvent
 	);
 
-static VOID
+static void
 cnmDbdcFsmEventHandler_WAIT_HW_ENABLE(
-	IN P_ADAPTER_T	prAdapter,
+	IN struct ADAPTER *prAdapter,
 	IN enum ENUM_DBDC_FSM_EVENT_T	eEvent
 	);
 
-static VOID
+static void
 cnmDbdcFsmEventHandler_ENABLE_GUARD(
-	IN P_ADAPTER_T                  prAdapter,
+	IN struct ADAPTER *prAdapter,
 	IN enum ENUM_DBDC_FSM_EVENT_T   eEvent
 	);
 
-static VOID
+static void
 cnmDbdcFsmEventHandler_ENABLE_IDLE(
-	IN P_ADAPTER_T                  prAdapter,
+	IN struct ADAPTER *prAdapter,
 	IN enum ENUM_DBDC_FSM_EVENT_T   eEvent
 	);
 
-static VOID
+static void
 cnmDbdcFsmEventHandler_WAIT_HW_DISABLE(
-	IN P_ADAPTER_T                  prAdapter,
+	IN struct ADAPTER *prAdapter,
 	IN enum ENUM_DBDC_FSM_EVENT_T   eEvent
 	);
 
-static VOID
+static void
 cnmDbdcFsmEventHandler_DISABLE_GUARD(
-	IN P_ADAPTER_T                  prAdapter,
+	IN struct ADAPTER *prAdapter,
 	IN enum ENUM_DBDC_FSM_EVENT_T   eEvent
 	);
 
-static VOID
+static void
 cnmDbdcFsmEventHandler_WAIT_PROTOCOL_DISABLE(
-	IN P_ADAPTER_T                  prAdapter,
+	IN struct ADAPTER *prAdapter,
 	IN enum ENUM_DBDC_FSM_EVENT_T   eEvent
 	);
 
-static VOID
+static void
 cnmDbdcFsmExitFunc_WAIT_HW_ENABLE(
-	IN P_ADAPTER_T	prAdapter
+	IN struct ADAPTER *prAdapter
 	);
 
 /*******************************************************************************
@@ -383,9 +383,9 @@ static struct DBDC_FSM_T arDdbcFsmActionTable[] = {
 * @return (none)
 */
 /*----------------------------------------------------------------------------*/
-VOID cnmInit(P_ADAPTER_T prAdapter)
+void cnmInit(struct ADAPTER *prAdapter)
 {
-	P_CNM_INFO_T prCnmInfo;
+	struct CNM_INFO *prCnmInfo;
 
 	ASSERT(prAdapter);
 
@@ -402,7 +402,7 @@ VOID cnmInit(P_ADAPTER_T prAdapter)
 * @return (none)
 */
 /*----------------------------------------------------------------------------*/
-VOID cnmUninit(P_ADAPTER_T prAdapter)
+void cnmUninit(struct ADAPTER *prAdapter)
 {
 	cnmTimerStopTimer(prAdapter, &g_rDbdcInfo.rDbdcGuardTimer);
 }				/* end of cnmUninit()*/
@@ -417,16 +417,16 @@ VOID cnmUninit(P_ADAPTER_T prAdapter)
 * @return (none)
 */
 /*----------------------------------------------------------------------------*/
-VOID cnmChMngrRequestPrivilege(P_ADAPTER_T prAdapter, P_MSG_HDR_T prMsgHdr)
+void cnmChMngrRequestPrivilege(struct ADAPTER *prAdapter, struct MSG_HDR *prMsgHdr)
 {
-	P_MSG_CH_REQ_T prMsgChReq;
-	P_CMD_CH_PRIVILEGE_T prCmdBody;
-	WLAN_STATUS rStatus;
+	struct MSG_CH_REQ *prMsgChReq;
+	struct CMD_CH_PRIVILEGE *prCmdBody;
+	uint32_t rStatus;
 
 	ASSERT(prAdapter);
 	ASSERT(prMsgHdr);
 
-	prMsgChReq = (P_MSG_CH_REQ_T)prMsgHdr;
+	prMsgChReq = (struct MSG_CH_REQ *)prMsgHdr;
 
 #if CFG_SUPPORT_DBDC
 	if (cnmDBDCIsReqPeivilegeLock()) {
@@ -437,8 +437,8 @@ VOID cnmChMngrRequestPrivilege(P_ADAPTER_T prAdapter, P_MSG_HDR_T prMsgHdr)
 	}
 #endif
 
-	prCmdBody = (P_CMD_CH_PRIVILEGE_T)
-	    cnmMemAlloc(prAdapter, RAM_TYPE_BUF, sizeof(CMD_CH_PRIVILEGE_T));
+	prCmdBody = (struct CMD_CH_PRIVILEGE *)
+	    cnmMemAlloc(prAdapter, RAM_TYPE_BUF, sizeof(struct CMD_CH_PRIVILEGE));
 	ASSERT(prCmdBody);
 
 	/* To do: exception handle */
@@ -459,13 +459,13 @@ VOID cnmChMngrRequestPrivilege(P_ADAPTER_T prAdapter, P_MSG_HDR_T prMsgHdr)
 	prCmdBody->ucTokenID = prMsgChReq->ucTokenID;
 	prCmdBody->ucAction = CMD_CH_ACTION_REQ;	/* Request */
 	prCmdBody->ucPrimaryChannel = prMsgChReq->ucPrimaryChannel;
-	prCmdBody->ucRfSco = (UINT_8)prMsgChReq->eRfSco;
-	prCmdBody->ucRfBand = (UINT_8)prMsgChReq->eRfBand;
-	prCmdBody->ucRfChannelWidth = (UINT_8)prMsgChReq->eRfChannelWidth;
-	prCmdBody->ucRfCenterFreqSeg1 = (UINT_8)prMsgChReq->ucRfCenterFreqSeg1;
-	prCmdBody->ucRfCenterFreqSeg2 = (UINT_8)prMsgChReq->ucRfCenterFreqSeg2;
-	prCmdBody->ucReqType = (UINT_8)prMsgChReq->eReqType;
-	prCmdBody->ucDBDCBand = (UINT_8)prMsgChReq->eDBDCBand;
+	prCmdBody->ucRfSco = (uint8_t)prMsgChReq->eRfSco;
+	prCmdBody->ucRfBand = (uint8_t)prMsgChReq->eRfBand;
+	prCmdBody->ucRfChannelWidth = (uint8_t)prMsgChReq->eRfChannelWidth;
+	prCmdBody->ucRfCenterFreqSeg1 = (uint8_t)prMsgChReq->ucRfCenterFreqSeg1;
+	prCmdBody->ucRfCenterFreqSeg2 = (uint8_t)prMsgChReq->ucRfCenterFreqSeg2;
+	prCmdBody->ucReqType = (uint8_t)prMsgChReq->eReqType;
+	prCmdBody->ucDBDCBand = (uint8_t)prMsgChReq->eDBDCBand;
 	prCmdBody->aucReserved = 0;
 	prCmdBody->u4MaxInterval = prMsgChReq->u4MaxInterval;
 	prCmdBody->aucReserved2[0] = 0;
@@ -490,8 +490,8 @@ VOID cnmChMngrRequestPrivilege(P_ADAPTER_T prAdapter, P_MSG_HDR_T prMsgHdr)
 				      FALSE,	/* fgIsOid */
 				      NULL,	/* pfCmdDoneHandler */
 				      NULL,	/* pfCmdTimeoutHandler */
-				      sizeof(CMD_CH_PRIVILEGE_T),	/* u4SetQueryInfoLen */
-				      (PUINT_8)prCmdBody,	/* pucInfoBuffer */
+				      sizeof(struct CMD_CH_PRIVILEGE),	/* u4SetQueryInfoLen */
+				      (uint8_t *)prCmdBody,	/* pucInfoBuffer */
 				      NULL,	/* pvSetQueryBuffer */
 				      0	/* u4SetQueryBufferLen */
 	   );
@@ -512,30 +512,30 @@ VOID cnmChMngrRequestPrivilege(P_ADAPTER_T prAdapter, P_MSG_HDR_T prMsgHdr)
 * @return (none)
 */
 /*----------------------------------------------------------------------------*/
-VOID cnmChMngrAbortPrivilege(P_ADAPTER_T prAdapter, P_MSG_HDR_T prMsgHdr)
+void cnmChMngrAbortPrivilege(struct ADAPTER *prAdapter, struct MSG_HDR *prMsgHdr)
 {
-	P_MSG_CH_ABORT_T prMsgChAbort;
-	P_CMD_CH_PRIVILEGE_T prCmdBody;
-	P_CNM_INFO_T prCnmInfo;
-	WLAN_STATUS rStatus;
+	struct MSG_CH_ABORT *prMsgChAbort;
+	struct CMD_CH_PRIVILEGE *prCmdBody;
+	struct CNM_INFO *prCnmInfo;
+	uint32_t rStatus;
 #if CFG_SISO_SW_DEVELOP
-	P_BSS_INFO_T prBssInfo;
+	struct BSS_INFO *prBssInfo;
 #endif
 #if CFG_SUPPORT_DBDC
-	P_LINK_ENTRY_T prLinkEntry_pendingMsg;
-	P_MSG_CH_REQ_T prPendingMsg;
+	struct LINK_ENTRY *prLinkEntry_pendingMsg;
+	struct MSG_CH_REQ *prPendingMsg;
 #endif
 
 	ASSERT(prAdapter);
 	ASSERT(prMsgHdr);
 
-	prMsgChAbort = (P_MSG_CH_ABORT_T)prMsgHdr;
+	prMsgChAbort = (struct MSG_CH_ABORT *)prMsgHdr;
 
 #if CFG_SUPPORT_DBDC
 	if (cnmDBDCIsReqPeivilegeLock()) {
 		LINK_FOR_EACH(prLinkEntry_pendingMsg, &g_rDbdcInfo.rPendingMsgList) {
-			prPendingMsg = (P_MSG_CH_REQ_T)
-							LINK_ENTRY(prLinkEntry_pendingMsg, MSG_HDR_T, rLinkEntry);
+			prPendingMsg = (struct MSG_CH_REQ *)
+							LINK_ENTRY(prLinkEntry_pendingMsg, struct MSG_HDR, rLinkEntry);
 
 			/* Find matched request and check if it is being served. */
 			if (prPendingMsg->ucBssIndex == prMsgChAbort->ucBssIndex &&
@@ -564,8 +564,8 @@ VOID cnmChMngrAbortPrivilege(P_ADAPTER_T prAdapter, P_MSG_HDR_T prMsgHdr)
 		prCnmInfo->fgChGranted = FALSE;
 	}
 
-	prCmdBody = (P_CMD_CH_PRIVILEGE_T)
-	    cnmMemAlloc(prAdapter, RAM_TYPE_BUF, sizeof(CMD_CH_PRIVILEGE_T));
+	prCmdBody = (struct CMD_CH_PRIVILEGE *)
+	    cnmMemAlloc(prAdapter, RAM_TYPE_BUF, sizeof(struct CMD_CH_PRIVILEGE));
 	ASSERT(prCmdBody);
 
 	/* To do: exception handle */
@@ -580,7 +580,7 @@ VOID cnmChMngrAbortPrivilege(P_ADAPTER_T prAdapter, P_MSG_HDR_T prMsgHdr)
 	prCmdBody->ucBssIndex = prMsgChAbort->ucBssIndex;
 	prCmdBody->ucTokenID = prMsgChAbort->ucTokenID;
 	prCmdBody->ucAction = CMD_CH_ACTION_ABORT;	/* Abort */
-	prCmdBody->ucDBDCBand = (UINT_8)prMsgChAbort->eDBDCBand;
+	prCmdBody->ucDBDCBand = (uint8_t)prMsgChAbort->eDBDCBand;
 
 	DBGLOG(CNM, INFO, "ChAbort net=%d token=%d dbdc=%u\n",
 		prCmdBody->ucBssIndex, prCmdBody->ucTokenID, prCmdBody->ucDBDCBand);
@@ -598,8 +598,8 @@ VOID cnmChMngrAbortPrivilege(P_ADAPTER_T prAdapter, P_MSG_HDR_T prMsgHdr)
 				      FALSE,	/* fgIsOid */
 				      NULL,	/* pfCmdDoneHandler */
 				      NULL,	/* pfCmdTimeoutHandler */
-				      sizeof(CMD_CH_PRIVILEGE_T),	/* u4SetQueryInfoLen */
-				      (PUINT_8)prCmdBody,	/* pucInfoBuffer */
+				      sizeof(struct CMD_CH_PRIVILEGE),	/* u4SetQueryInfoLen */
+				      (uint8_t *)prCmdBody,	/* pucInfoBuffer */
 				      NULL,	/* pvSetQueryBuffer */
 				      0	/* u4SetQueryBufferLen */
 	   );
@@ -627,19 +627,19 @@ VOID cnmChMngrAbortPrivilege(P_ADAPTER_T prAdapter, P_MSG_HDR_T prMsgHdr)
 * @return (none)
 */
 /*----------------------------------------------------------------------------*/
-VOID cnmChMngrHandleChEvent(P_ADAPTER_T prAdapter, P_WIFI_EVENT_T prEvent)
+void cnmChMngrHandleChEvent(struct ADAPTER *prAdapter, struct WIFI_EVENT *prEvent)
 {
-	P_EVENT_CH_PRIVILEGE_T prEventBody;
-	P_MSG_CH_GRANT_T prChResp;
-	P_BSS_INFO_T prBssInfo;
-	P_CNM_INFO_T prCnmInfo;
+	struct EVENT_CH_PRIVILEGE *prEventBody;
+	struct MSG_CH_GRANT *prChResp;
+	struct BSS_INFO *prBssInfo;
+	struct CNM_INFO *prCnmInfo;
 
 	ASSERT(prAdapter);
 	ASSERT(prEvent);
 
-	prEventBody = (P_EVENT_CH_PRIVILEGE_T)(prEvent->aucBuffer);
-	prChResp = (P_MSG_CH_GRANT_T)
-	    cnmMemAlloc(prAdapter, RAM_TYPE_MSG, sizeof(MSG_CH_GRANT_T));
+	prEventBody = (struct EVENT_CH_PRIVILEGE *)(prEvent->aucBuffer);
+	prChResp = (struct MSG_CH_GRANT *)
+	    cnmMemAlloc(prAdapter, RAM_TYPE_MSG, sizeof(struct MSG_CH_GRANT));
 	ASSERT(prChResp);
 
 	/* To do: exception handle */
@@ -678,16 +678,16 @@ VOID cnmChMngrHandleChEvent(P_ADAPTER_T prAdapter, P_WIFI_EVENT_T prEvent)
 	prChResp->ucBssIndex = prEventBody->ucBssIndex;
 	prChResp->ucTokenID = prEventBody->ucTokenID;
 	prChResp->ucPrimaryChannel = prEventBody->ucPrimaryChannel;
-	prChResp->eRfSco = (ENUM_CHNL_EXT_T)prEventBody->ucRfSco;
-	prChResp->eRfBand = (ENUM_BAND_T)prEventBody->ucRfBand;
-	prChResp->eRfChannelWidth = (ENUM_CHANNEL_WIDTH_T)prEventBody->ucRfChannelWidth;
+	prChResp->eRfSco = (enum ENUM_CHNL_EXT)prEventBody->ucRfSco;
+	prChResp->eRfBand = (enum ENUM_BAND)prEventBody->ucRfBand;
+	prChResp->eRfChannelWidth = (enum ENUM_CHANNEL_WIDTH)prEventBody->ucRfChannelWidth;
 	prChResp->ucRfCenterFreqSeg1 = prEventBody->ucRfCenterFreqSeg1;
 	prChResp->ucRfCenterFreqSeg2 = prEventBody->ucRfCenterFreqSeg2;
-	prChResp->eReqType = (ENUM_CH_REQ_TYPE_T)prEventBody->ucReqType;
-	prChResp->eDBDCBand = (ENUM_DBDC_BN_T)prEventBody->ucDBDCBand;
+	prChResp->eReqType = (enum ENUM_CH_REQ_TYPE)prEventBody->ucReqType;
+	prChResp->eDBDCBand = (enum ENUM_DBDC_BN)prEventBody->ucDBDCBand;
 	prChResp->u4GrantInterval = prEventBody->u4GrantInterval;
 
-	mboxSendMsg(prAdapter, MBOX_ID_0, (P_MSG_HDR_T)prChResp, MSG_SEND_METHOD_BUF);
+	mboxSendMsg(prAdapter, MBOX_ID_0, (struct MSG_HDR *)prChResp, MSG_SEND_METHOD_BUF);
 
 	/* Record current granted BSS for TXM's reference */
 	prCnmInfo = &prAdapter->rCnmInfo;
@@ -697,18 +697,18 @@ VOID cnmChMngrHandleChEvent(P_ADAPTER_T prAdapter, P_WIFI_EVENT_T prEvent)
 }
 
 #if (CFG_SUPPORT_DFS_MASTER == 1)
-VOID cnmRadarDetectEvent(IN P_ADAPTER_T prAdapter, IN P_WIFI_EVENT_T prEvent)
+void cnmRadarDetectEvent(IN struct ADAPTER *prAdapter, IN struct WIFI_EVENT *prEvent)
 {
-	P_EVENT_RDD_REPORT_T prEventBody;
-	P_BSS_INFO_T prBssInfo;
-	P_MSG_P2P_RADAR_DETECT_T prP2pRddDetMsg;
-	UINT_8 ucBssIndex;
+	struct EVENT_RDD_REPORT *prEventBody;
+	struct BSS_INFO *prBssInfo;
+	struct MSG_P2P_RADAR_DETECT *prP2pRddDetMsg;
+	uint8_t ucBssIndex;
 
 	DBGLOG(CNM, INFO, "cnmRadarDetectEvent.\n");
 
-	prEventBody = (P_EVENT_RDD_REPORT_T)(prEvent->aucBuffer);
+	prEventBody = (struct EVENT_RDD_REPORT *)(prEvent->aucBuffer);
 
-	prP2pRddDetMsg = (P_MSG_P2P_RADAR_DETECT_T) cnmMemAlloc(prAdapter,
+	prP2pRddDetMsg = (struct MSG_P2P_RADAR_DETECT *) cnmMemAlloc(prAdapter,
 					RAM_TYPE_MSG, sizeof(*prP2pRddDetMsg));
 
 	if (!prP2pRddDetMsg) {
@@ -745,22 +745,22 @@ VOID cnmRadarDetectEvent(IN P_ADAPTER_T prAdapter, IN P_WIFI_EVENT_T prEvent)
 	g_rP2pRadarInfo.ucPRICountM2TH = prEventBody->ucPRICountM2TH;
 	g_rP2pRadarInfo.u4PRI1stUs = prEventBody->u4PRI1stUs;
 	kalMemCopy(&g_rP2pRadarInfo.arLpbContent[0], &prEventBody->arLpbContent[0],
-				prEventBody->ucLPBNum*sizeof(LONG_PULSE_BUFFER_T));
+				prEventBody->ucLPBNum*sizeof(struct LONG_PULSE_BUFFER));
 	kalMemCopy(&g_rP2pRadarInfo.arPpbContent[0], &prEventBody->arPpbContent[0],
-				prEventBody->ucPPBNum*sizeof(PERIODIC_PULSE_BUFFER_T));
+				prEventBody->ucPPBNum*sizeof(struct PERIODIC_PULSE_BUFFER));
 
-	mboxSendMsg(prAdapter, MBOX_ID_0, (P_MSG_HDR_T)prP2pRddDetMsg, MSG_SEND_METHOD_BUF);
+	mboxSendMsg(prAdapter, MBOX_ID_0, (struct MSG_HDR *)prP2pRddDetMsg, MSG_SEND_METHOD_BUF);
 }
 
-VOID cnmCsaDoneEvent(IN P_ADAPTER_T prAdapter, IN P_WIFI_EVENT_T prEvent)
+void cnmCsaDoneEvent(IN struct ADAPTER *prAdapter, IN struct WIFI_EVENT *prEvent)
 {
-	P_BSS_INFO_T prBssInfo;
-	P_MSG_P2P_CSA_DONE_T prP2pCsaDoneMsg;
-	UINT_8 ucBssIndex;
+	struct BSS_INFO *prBssInfo;
+	struct MSG_P2P_CSA_DONE *prP2pCsaDoneMsg;
+	uint8_t ucBssIndex;
 
 	DBGLOG(CNM, INFO, "cnmCsaDoneEvent.\n");
 
-	prP2pCsaDoneMsg = (P_MSG_P2P_CSA_DONE_T) cnmMemAlloc(prAdapter,
+	prP2pCsaDoneMsg = (struct MSG_P2P_CSA_DONE *) cnmMemAlloc(prAdapter,
 					RAM_TYPE_MSG, sizeof(*prP2pCsaDoneMsg));
 
 	if (!prP2pCsaDoneMsg) {
@@ -781,7 +781,7 @@ VOID cnmCsaDoneEvent(IN P_ADAPTER_T prAdapter, IN P_WIFI_EVENT_T prEvent)
 		}
 	}
 
-	mboxSendMsg(prAdapter, MBOX_ID_0, (P_MSG_HDR_T)prP2pCsaDoneMsg, MSG_SEND_METHOD_BUF);
+	mboxSendMsg(prAdapter, MBOX_ID_0, (struct MSG_HDR *)prP2pCsaDoneMsg, MSG_SEND_METHOD_BUF);
 }
 #endif
 
@@ -795,11 +795,11 @@ VOID cnmCsaDoneEvent(IN P_ADAPTER_T prAdapter, IN P_WIFI_EVENT_T prEvent)
 *         FALSE: No suggestion. Caller should adopt its preference
 */
 /*----------------------------------------------------------------------------*/
-BOOLEAN
-cnmPreferredChannel(P_ADAPTER_T prAdapter, P_ENUM_BAND_T prBand, PUINT_8 pucPrimaryChannel, P_ENUM_CHNL_EXT_T prBssSCO)
+u_int8_t
+cnmPreferredChannel(struct ADAPTER *prAdapter, enum ENUM_BAND *prBand, uint8_t *pucPrimaryChannel, enum ENUM_CHNL_EXT *prBssSCO)
 {
-	P_BSS_INFO_T prBssInfo;
-	UINT_8 i;
+	struct BSS_INFO *prBssInfo;
+	uint8_t i;
 
 	ASSERT(prAdapter);
 	ASSERT(prBand);
@@ -833,11 +833,11 @@ cnmPreferredChannel(P_ADAPTER_T prAdapter, P_ENUM_BAND_T prBand, PUINT_8 pucPrim
 *         FALSE: no limited
 */
 /*----------------------------------------------------------------------------*/
-BOOLEAN cnmAisInfraChannelFixed(P_ADAPTER_T prAdapter, P_ENUM_BAND_T prBand, PUINT_8 pucPrimaryChannel)
+u_int8_t cnmAisInfraChannelFixed(struct ADAPTER *prAdapter, enum ENUM_BAND *prBand, uint8_t *pucPrimaryChannel)
 {
-	P_BSS_INFO_T prBssInfo;
-	UINT_8 i;
-	P_WIFI_VAR_T prWifiVar;
+	struct BSS_INFO *prBssInfo;
+	uint8_t i;
+	struct WIFI_VAR *prWifiVar;
 
 	ASSERT(prAdapter);
 
@@ -861,7 +861,7 @@ BOOLEAN cnmAisInfraChannelFixed(P_ADAPTER_T prAdapter, P_ENUM_BAND_T prBand, PUI
 
 #if CFG_ENABLE_WIFI_DIRECT
 		if (prBssInfo->eNetworkType == NETWORK_TYPE_P2P) {
-			BOOLEAN fgFixedChannel =
+			u_int8_t fgFixedChannel =
 			p2pFuncIsAPMode(prAdapter->rWifiVar.prP2PConnSettings[prBssInfo->u4PrivateData]);
 
 			if (fgFixedChannel) {
@@ -890,10 +890,10 @@ BOOLEAN cnmAisInfraChannelFixed(P_ADAPTER_T prAdapter, P_ENUM_BAND_T prBand, PUI
 }
 
 #if CFG_SUPPORT_CHNL_CONFLICT_REVISE
-BOOLEAN cnmAisDetectP2PChannel(P_ADAPTER_T prAdapter, P_ENUM_BAND_T prBand, PUINT_8 pucPrimaryChannel)
+u_int8_t cnmAisDetectP2PChannel(struct ADAPTER *prAdapter, enum ENUM_BAND *prBand, uint8_t *pucPrimaryChannel)
 {
-	UINT_8 i = 0;
-	P_BSS_INFO_T prBssInfo;
+	uint8_t i = 0;
+	struct BSS_INFO *prBssInfo;
 
 	ASSERT(prAdapter);
 
@@ -923,11 +923,11 @@ BOOLEAN cnmAisDetectP2PChannel(P_ADAPTER_T prAdapter, P_ENUM_BAND_T prBand, PUIN
 * @return (none)
 */
 /*----------------------------------------------------------------------------*/
-VOID cnmAisInfraConnectNotify(P_ADAPTER_T prAdapter)
+void cnmAisInfraConnectNotify(struct ADAPTER *prAdapter)
 {
 #if CFG_ENABLE_BT_OVER_WIFI
-	P_BSS_INFO_T prBssInfo, prAisBssInfo, prBowBssInfo;
-	UINT_8 i;
+	struct BSS_INFO *prBssInfo, *prAisBssInfo, *prBowBssInfo;
+	uint8_t i;
 
 	ASSERT(prAdapter);
 
@@ -966,10 +966,10 @@ VOID cnmAisInfraConnectNotify(P_ADAPTER_T prAdapter)
 *         FALSE: Not permitted
 */
 /*----------------------------------------------------------------------------*/
-BOOLEAN cnmAisIbssIsPermitted(P_ADAPTER_T prAdapter)
+u_int8_t cnmAisIbssIsPermitted(struct ADAPTER *prAdapter)
 {
-	P_BSS_INFO_T prBssInfo;
-	UINT_8 i;
+	struct BSS_INFO *prBssInfo;
+	uint8_t i;
 
 	ASSERT(prAdapter);
 
@@ -994,11 +994,11 @@ BOOLEAN cnmAisIbssIsPermitted(P_ADAPTER_T prAdapter)
 *         FALSE: Not permitted
 */
 /*----------------------------------------------------------------------------*/
-BOOLEAN cnmP2PIsPermitted(P_ADAPTER_T prAdapter)
+u_int8_t cnmP2PIsPermitted(struct ADAPTER *prAdapter)
 {
-	P_BSS_INFO_T prBssInfo;
-	UINT_8 i;
-	BOOLEAN fgBowIsActive;
+	struct BSS_INFO *prBssInfo;
+	uint8_t i;
+	u_int8_t fgBowIsActive;
 
 	ASSERT(prAdapter);
 
@@ -1035,10 +1035,10 @@ BOOLEAN cnmP2PIsPermitted(P_ADAPTER_T prAdapter)
 *         FALSE: Not permitted
 */
 /*----------------------------------------------------------------------------*/
-BOOLEAN cnmBowIsPermitted(P_ADAPTER_T prAdapter)
+u_int8_t cnmBowIsPermitted(struct ADAPTER *prAdapter)
 {
-	P_BSS_INFO_T prBssInfo;
-	UINT_8 i;
+	struct BSS_INFO *prBssInfo;
+	uint8_t i;
 
 	ASSERT(prAdapter);
 
@@ -1057,14 +1057,14 @@ BOOLEAN cnmBowIsPermitted(P_ADAPTER_T prAdapter)
 
 
 
-static UINT_8 cnmGetAPBwPermitted(P_ADAPTER_T prAdapter, UINT_8 ucBssIndex)
+static uint8_t cnmGetAPBwPermitted(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 {
-	P_BSS_INFO_T prBssInfo;
-	UINT_8 ucAPBandwidth = MAX_BW_160MHZ;
-	P_BSS_DESC_T    prBssDesc = NULL;
-	P_P2P_ROLE_FSM_INFO_T prP2pRoleFsmInfo = (P_P2P_ROLE_FSM_INFO_T)NULL;
-	UINT_8 i = 0;
-	UINT_8 ucOffset = (MAX_BW_80MHZ - CW_80MHZ);
+	struct BSS_INFO *prBssInfo;
+	uint8_t ucAPBandwidth = MAX_BW_160MHZ;
+	struct BSS_DESC *prBssDesc = NULL;
+	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo = (struct P2P_ROLE_FSM_INFO *)NULL;
+	uint8_t i = 0;
+	uint8_t ucOffset = (MAX_BW_80MHZ - CW_80MHZ);
 
 
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
@@ -1126,7 +1126,7 @@ static UINT_8 cnmGetAPBwPermitted(P_ADAPTER_T prAdapter, UINT_8 ucBssIndex)
 *         FALSE: Not permitted
 */
 /*----------------------------------------------------------------------------*/
-BOOLEAN cnmBss40mBwPermitted(P_ADAPTER_T prAdapter, UINT_8 ucBssIndex)
+u_int8_t cnmBss40mBwPermitted(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 {
 	ASSERT(prAdapter);
 
@@ -1169,7 +1169,7 @@ BOOLEAN cnmBss40mBwPermitted(P_ADAPTER_T prAdapter, UINT_8 ucBssIndex)
 *         FALSE: Not permitted
 */
 /*----------------------------------------------------------------------------*/
-BOOLEAN cnmBss80mBwPermitted(P_ADAPTER_T prAdapter, UINT_8 ucBssIndex)
+u_int8_t cnmBss80mBwPermitted(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 {
 	ASSERT(prAdapter);
 
@@ -1194,14 +1194,14 @@ BOOLEAN cnmBss80mBwPermitted(P_ADAPTER_T prAdapter, UINT_8 ucBssIndex)
 	return TRUE;
 }
 
-UINT_8 cnmGetBssMaxBw(P_ADAPTER_T prAdapter, UINT_8 ucBssIndex)
+uint8_t cnmGetBssMaxBw(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 {
-	P_BSS_INFO_T prBssInfo;
-	UINT_8 ucMaxBandwidth = MAX_BW_80_80_MHZ; /*chip capability*/
-	P_BSS_DESC_T    prBssDesc = NULL;
-	ENUM_BAND_T eBand = BAND_NULL;
-	P_P2P_ROLE_FSM_INFO_T prP2pRoleFsmInfo = (P_P2P_ROLE_FSM_INFO_T) NULL;
-	P_P2P_CONNECTION_REQ_INFO_T prP2pConnReqInfo = (P_P2P_CONNECTION_REQ_INFO_T) NULL;
+	struct BSS_INFO *prBssInfo;
+	uint8_t ucMaxBandwidth = MAX_BW_80_80_MHZ; /*chip capability*/
+	struct BSS_DESC *prBssDesc = NULL;
+	enum ENUM_BAND eBand = BAND_NULL;
+	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo = (struct P2P_ROLE_FSM_INFO *) NULL;
+	struct P2P_CONNECTION_REQ_INFO *prP2pConnReqInfo = (struct P2P_CONNECTION_REQ_INFO *) NULL;
 
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
 
@@ -1262,9 +1262,9 @@ UINT_8 cnmGetBssMaxBw(P_ADAPTER_T prAdapter, UINT_8 ucBssIndex)
 }
 
 
-UINT_8 cnmGetBssMaxBwToChnlBW(P_ADAPTER_T prAdapter, UINT_8 ucBssIndex)
+uint8_t cnmGetBssMaxBwToChnlBW(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 {
-	UINT_8 ucMaxBandwidth = cnmGetBssMaxBw(prAdapter, ucBssIndex);
+	uint8_t ucMaxBandwidth = cnmGetBssMaxBw(prAdapter, ucBssIndex);
 	return ucMaxBandwidth == MAX_BW_20MHZ ? ucMaxBandwidth:(ucMaxBandwidth - 1);
 }
 
@@ -1279,10 +1279,10 @@ UINT_8 cnmGetBssMaxBwToChnlBW(P_ADAPTER_T prAdapter, UINT_8 ucBssIndex)
 * @return
 */
 /*----------------------------------------------------------------------------*/
-P_BSS_INFO_T cnmGetBssInfoAndInit(P_ADAPTER_T prAdapter, ENUM_NETWORK_TYPE_T eNetworkType, BOOLEAN fgIsP2pDevice)
+struct BSS_INFO *cnmGetBssInfoAndInit(struct ADAPTER *prAdapter, enum ENUM_NETWORK_TYPE eNetworkType, u_int8_t fgIsP2pDevice)
 {
-	P_BSS_INFO_T prBssInfo;
-	UINT_8 ucBssIndex, ucOwnMacIdx;
+	struct BSS_INFO *prBssInfo;
+	uint8_t ucBssIndex, ucOwnMacIdx;
 
 	ASSERT(prAdapter);
 
@@ -1382,7 +1382,7 @@ P_BSS_INFO_T cnmGetBssInfoAndInit(P_ADAPTER_T prAdapter, ENUM_NETWORK_TYPE_T eNe
 * @return
 */
 /*----------------------------------------------------------------------------*/
-VOID cnmFreeBssInfo(P_ADAPTER_T prAdapter, P_BSS_INFO_T prBssInfo)
+void cnmFreeBssInfo(struct ADAPTER *prAdapter, struct BSS_INFO *prBssInfo)
 {
 	ASSERT(prAdapter);
 	ASSERT(prBssInfo);
@@ -1400,9 +1400,9 @@ VOID cnmFreeBssInfo(P_ADAPTER_T prAdapter, P_BSS_INFO_T prBssInfo)
 * @return (none)
 */
 /*----------------------------------------------------------------------------*/
-VOID cnmInitDbdcSetting(IN P_ADAPTER_T prAdapter)
+void cnmInitDbdcSetting(IN struct ADAPTER *prAdapter)
 {
-	UINT_8			ucBssLoopIndex;
+	uint8_t			ucBssLoopIndex;
 
 	/* Parameter decision */
 	switch (prAdapter->rWifiVar.eDbdcMode) {
@@ -1418,7 +1418,7 @@ VOID cnmInitDbdcSetting(IN P_ADAPTER_T prAdapter)
 		cnmTimerInitTimer(prAdapter,
 						&g_rDbdcInfo.rDbdcGuardTimer,
 						(PFN_MGMT_TIMEOUT_FUNC)cnmDbdcGuardTimerCallback,
-						(ULONG) NULL);
+						(unsigned long) NULL);
 
 		g_rDbdcInfo.eDdbcGuardTimerType = ENUM_DBDC_GUARD_TIMER_NONE;
 		g_rDbdcInfo.fgReqPrivelegeLock = FALSE;
@@ -1450,16 +1450,16 @@ VOID cnmInitDbdcSetting(IN P_ADAPTER_T prAdapter)
 * @return TRUE: A+G, FALSE: NOT A+G
 */
 /*----------------------------------------------------------------------------*/
-static BOOLEAN cnmDbdcIsAGConcurrent(
-	IN P_ADAPTER_T	prAdapter,
-	IN ENUM_BAND_T	eRfBand_Connecting
+static u_int8_t cnmDbdcIsAGConcurrent(
+	IN struct ADAPTER *prAdapter,
+	IN enum ENUM_BAND	eRfBand_Connecting
 	)
 {
-	P_BSS_INFO_T	prBssInfo;
-	UINT_8			ucBssIndex;
-	ENUM_BAND_T		eBandCompare = eRfBand_Connecting;
-	BOOLEAN			fgAGConcurrent = FALSE;
-	ENUM_BAND_T		eBssBand[BSSID_NUM] = {BAND_NULL};
+	struct BSS_INFO *prBssInfo;
+	uint8_t			ucBssIndex;
+	enum ENUM_BAND		eBandCompare = eRfBand_Connecting;
+	u_int8_t			fgAGConcurrent = FALSE;
+	enum ENUM_BAND		eBssBand[BSSID_NUM] = {BAND_NULL};
 
 	for (ucBssIndex = 0; ucBssIndex < prAdapter->ucHwBssIdNum; ucBssIndex++) {
 
@@ -1500,15 +1500,15 @@ static BOOLEAN cnmDbdcIsAGConcurrent(
 */
 /*----------------------------------------------------------------------------*/
 static enum ENUM_DBDC_PROTOCOL_STATUS_T cnmDbdcOpmodeChangeAndWait(
-	IN P_ADAPTER_T	prAdapter,
-	IN BOOLEAN		fgDbdcEn
+	IN struct ADAPTER *prAdapter,
+	IN u_int8_t		fgDbdcEn
 	)
 {
-	UINT_8			ucBssIndex;
-	UINT_8			ucWmmSetBitmap = 0;
-	UINT_8			ucOpBw;
-	UINT_8			ucNss;
-	P_BSS_INFO_T	prBssInfo;
+	uint8_t			ucBssIndex;
+	uint8_t			ucWmmSetBitmap = 0;
+	uint8_t			ucOpBw;
+	uint8_t			ucNss;
+	struct BSS_INFO *prBssInfo;
 	enum ENUM_OP_CHANGE_STATUS_T eBssOpmodeChange;
 	enum ENUM_DBDC_PROTOCOL_STATUS_T eRetVar = ENUM_DBDC_PROTOCOL_STATUS_DONE_SUCCESS;
 
@@ -1576,13 +1576,13 @@ static enum ENUM_DBDC_PROTOCOL_STATUS_T cnmDbdcOpmodeChangeAndWait(
 }
 
 
-VOID cnmDbdcOpModeChangeDoneCallback(
-	IN P_ADAPTER_T	prAdapter,
-	IN UINT_8		ucBssIndex,
-	IN BOOLEAN		fgSuccess)
+void cnmDbdcOpModeChangeDoneCallback(
+	IN struct ADAPTER *prAdapter,
+	IN uint8_t		ucBssIndex,
+	IN u_int8_t		fgSuccess)
 {
-	UINT_8			ucBssLoopIndex;
-	BOOLEAN			fgIsAllActionFrameSuccess = TRUE;
+	uint8_t			ucBssLoopIndex;
+	u_int8_t			fgIsAllActionFrameSuccess = TRUE;
 
 	if (fgSuccess)
 		g_rDbdcInfo.eBssOpModeState[ucBssIndex] = ENUM_OPMODE_STATE_DONE;
@@ -1631,18 +1631,18 @@ VOID cnmDbdcOpModeChangeDoneCallback(
 * @return (none)
 */
 /*----------------------------------------------------------------------------*/
-VOID cnmUpdateDbdcSetting(IN P_ADAPTER_T prAdapter, IN BOOLEAN fgDbdcEn)
+void cnmUpdateDbdcSetting(IN struct ADAPTER *prAdapter, IN u_int8_t fgDbdcEn)
 {
-	CMD_DBDC_SETTING_T		rDbdcSetting;
-	P_CMD_DBDC_SETTING_T	prCmdBody;
-	WLAN_STATUS				rStatus = WLAN_STATUS_SUCCESS;
+	struct CMD_DBDC_SETTING		rDbdcSetting;
+	struct CMD_DBDC_SETTING *prCmdBody;
+	uint32_t				rStatus = WLAN_STATUS_SUCCESS;
 
 	DBGLOG(CNM, INFO, "[DBDC] %s\n", fgDbdcEn?"Enable":"Disable");
 
 	/* Send event to FW */
-	prCmdBody = (P_CMD_DBDC_SETTING_T)&rDbdcSetting;
+	prCmdBody = (struct CMD_DBDC_SETTING *)&rDbdcSetting;
 
-	kalMemZero(prCmdBody, sizeof(CMD_DBDC_SETTING_T));
+	kalMemZero(prCmdBody, sizeof(struct CMD_DBDC_SETTING));
 
 	prCmdBody->ucDbdcEn = fgDbdcEn;
 
@@ -1656,8 +1656,8 @@ VOID cnmUpdateDbdcSetting(IN P_ADAPTER_T prAdapter, IN BOOLEAN fgDbdcEn)
 				  FALSE,	/* fgIsOid */
 				  NULL, /* pfCmdDoneHandler */
 				  NULL, /* pfCmdTimeoutHandler */
-				  sizeof(CMD_DBDC_SETTING_T),	/* u4SetQueryInfoLen */
-				  (PUINT_8)prCmdBody,	/* pucInfoBuffer */
+				  sizeof(struct CMD_DBDC_SETTING),	/* u4SetQueryInfoLen */
+				  (uint8_t *)prCmdBody,	/* pucInfoBuffer */
 				  NULL, /* pvSetQueryBuffer */
 				  0 /* u4SetQueryBufferLen */);
 }
@@ -1671,9 +1671,9 @@ VOID cnmUpdateDbdcSetting(IN P_ADAPTER_T prAdapter, IN BOOLEAN fgDbdcEn)
 * \return none
 */
 /*----------------------------------------------------------------------------*/
-static VOID
+static void
 cnmDbdcFsmSteps(
-	IN P_ADAPTER_T                  prAdapter,
+	IN struct ADAPTER *prAdapter,
 	IN enum ENUM_DBDC_FSM_STATE_T   eNextState,
 	IN enum ENUM_DBDC_FSM_EVENT_T   eEvent
 	)
@@ -1699,40 +1699,40 @@ cnmDbdcFsmSteps(
 	}
 }
 
-static BOOLEAN
+static u_int8_t
 cnmDBDCIsReqPeivilegeLock(
-	VOID
+	void
 	)
 {
 	return g_rDbdcInfo.fgReqPrivelegeLock;
 }
 
-static VOID
+static void
 cnmDBDCFsmActionReqPeivilegeLock(
-	VOID
+	void
 	)
 {
 	g_rDbdcInfo.fgReqPrivelegeLock = TRUE;
 	DBGLOG(CNM, INFO, "[DBDC] ReqPrivelege Lock!!\n");
 }
 
-static VOID
+static void
 cnmDBDCFsmActionReqPeivilegeUnLock(
-	IN P_ADAPTER_T	prAdapter
+	IN struct ADAPTER *prAdapter
 	)
 {
-	P_MSG_CH_REQ_T prPendingMsg;
-	P_MSG_HDR_T prMsgHdr;
+	struct MSG_CH_REQ *prPendingMsg;
+	struct MSG_HDR *prMsgHdr;
 
 	g_rDbdcInfo.fgReqPrivelegeLock = FALSE;
 	DBGLOG(CNM, INFO, "[DBDC] ReqPrivelege Unlock!!\n");
 
 	while (!LINK_IS_EMPTY(&g_rDbdcInfo.rPendingMsgList)) {
 
-		LINK_REMOVE_HEAD(&g_rDbdcInfo.rPendingMsgList, prMsgHdr, P_MSG_HDR_T);
+		LINK_REMOVE_HEAD(&g_rDbdcInfo.rPendingMsgList, prMsgHdr, struct MSG_HDR *);
 
 		if (prMsgHdr) {
-			prPendingMsg = (P_MSG_CH_REQ_T)prMsgHdr;
+			prPendingMsg = (struct MSG_CH_REQ *)prMsgHdr;
 
 			DBGLOG(CNM, INFO, "[DBDC] ChReq: send queued REQ of BSS %u Token %u\n",
 						prPendingMsg->ucBssIndex, prPendingMsg->ucTokenID);
@@ -1744,25 +1744,25 @@ cnmDBDCFsmActionReqPeivilegeUnLock(
 	}
 }
 
-static VOID
+static void
 cnmDbdcFsmEntryFunc_DISABLE_IDLE(
-	IN P_ADAPTER_T	prAdapter
+	IN struct ADAPTER *prAdapter
 	)
 {
 	cnmDBDCFsmActionReqPeivilegeUnLock(prAdapter);
 }
 
-static VOID
+static void
 cnmDbdcFsmEntryFunc_WAIT_PROTOCOL_ENABLE(
-	IN P_ADAPTER_T	prAdapter
+	IN struct ADAPTER *prAdapter
 	)
 {
 	cnmDBDCFsmActionReqPeivilegeLock();
 }
 
-static VOID
+static void
 cnmDbdcFsmEntryFunc_WAIT_HW_ENABLE(
-	IN P_ADAPTER_T	prAdapter
+	IN struct ADAPTER *prAdapter
 	)
 {
 	if (!cnmDBDCIsReqPeivilegeLock())
@@ -1771,9 +1771,9 @@ cnmDbdcFsmEntryFunc_WAIT_HW_ENABLE(
 	cnmUpdateDbdcSetting(prAdapter, TRUE);
 }
 
-static VOID
+static void
 cnmDbdcFsmEntryFunc_ENABLE_GUARD(
-	IN P_ADAPTER_T	prAdapter
+	IN struct ADAPTER *prAdapter
 	)
 {
 	if (timerPendingTimer(&g_rDbdcInfo.rDbdcGuardTimer)) {
@@ -1786,17 +1786,17 @@ cnmDbdcFsmEntryFunc_ENABLE_GUARD(
 	DBDC_SET_GUARD_TIME(prAdapter);
 }
 
-static VOID
+static void
 cnmDbdcFsmEntryFunc_WAIT_HW_DISABLE(
-	IN P_ADAPTER_T	prAdapter
+	IN struct ADAPTER *prAdapter
 	)
 {
 	cnmUpdateDbdcSetting(prAdapter, FALSE);
 }
 
-static VOID
+static void
 cnmDbdcFsmEntryFunc_DISABLE_GUARD(
-	IN P_ADAPTER_T	prAdapter
+	IN struct ADAPTER *prAdapter
 	)
 {
 	if (timerPendingTimer(&g_rDbdcInfo.rDbdcGuardTimer)) {
@@ -1811,9 +1811,9 @@ cnmDbdcFsmEntryFunc_DISABLE_GUARD(
 	cnmDbdcOpmodeChangeAndWait(prAdapter, FALSE);
 }
 
-static VOID
+static void
 cnmDbdcFsmEventHandler_DISABLE_IDLE(
-	IN P_ADAPTER_T	prAdapter,
+	IN struct ADAPTER *prAdapter,
 	IN enum ENUM_DBDC_FSM_EVENT_T	eEvent
 	)
 {
@@ -1858,9 +1858,9 @@ cnmDbdcFsmEventHandler_DISABLE_IDLE(
 	cnmDbdcFsmSteps(prAdapter, g_rDbdcInfo.eDbdcFsmNextState, eEvent);
 }
 
-static VOID
+static void
 cnmDbdcFsmEventHandler_WAIT_PROTOCOL_ENABLE(
-	IN P_ADAPTER_T                  prAdapter,
+	IN struct ADAPTER *prAdapter,
 	IN enum ENUM_DBDC_FSM_EVENT_T   eEvent
 	)
 {
@@ -1899,9 +1899,9 @@ cnmDbdcFsmEventHandler_WAIT_PROTOCOL_ENABLE(
 	cnmDbdcFsmSteps(prAdapter, g_rDbdcInfo.eDbdcFsmNextState, eEvent);
 }
 
-static VOID
+static void
 cnmDbdcFsmEventHandler_WAIT_HW_ENABLE(
-	IN P_ADAPTER_T                  prAdapter,
+	IN struct ADAPTER *prAdapter,
 	IN enum ENUM_DBDC_FSM_EVENT_T   eEvent
 	)
 {
@@ -1935,9 +1935,9 @@ cnmDbdcFsmEventHandler_WAIT_HW_ENABLE(
 }
 
 
-static VOID
+static void
 cnmDbdcFsmEventHandler_ENABLE_GUARD(
-	IN P_ADAPTER_T                  prAdapter,
+	IN struct ADAPTER *prAdapter,
 	IN enum ENUM_DBDC_FSM_EVENT_T   eEvent
 	)
 {
@@ -1974,9 +1974,9 @@ cnmDbdcFsmEventHandler_ENABLE_GUARD(
 	cnmDbdcFsmSteps(prAdapter, g_rDbdcInfo.eDbdcFsmNextState, eEvent);
 }
 
-static VOID
+static void
 cnmDbdcFsmEventHandler_ENABLE_IDLE(
-	IN P_ADAPTER_T                  prAdapter,
+	IN struct ADAPTER *prAdapter,
 	IN enum ENUM_DBDC_FSM_EVENT_T   eEvent
 	)
 {
@@ -2027,9 +2027,9 @@ cnmDbdcFsmEventHandler_ENABLE_IDLE(
 	cnmDbdcFsmSteps(prAdapter, g_rDbdcInfo.eDbdcFsmNextState, eEvent);
 }
 
-static VOID
+static void
 cnmDbdcFsmEventHandler_WAIT_HW_DISABLE(
-	IN P_ADAPTER_T                  prAdapter,
+	IN struct ADAPTER *prAdapter,
 	IN enum ENUM_DBDC_FSM_EVENT_T   eEvent
 	)
 {
@@ -2060,9 +2060,9 @@ cnmDbdcFsmEventHandler_WAIT_HW_DISABLE(
 	cnmDbdcFsmSteps(prAdapter, g_rDbdcInfo.eDbdcFsmNextState, eEvent);
 }
 
-static VOID
+static void
 cnmDbdcFsmEventHandler_DISABLE_GUARD(
-	IN P_ADAPTER_T                  prAdapter,
+	IN struct ADAPTER *prAdapter,
 	IN enum ENUM_DBDC_FSM_EVENT_T   eEvent
 	)
 {
@@ -2126,9 +2126,9 @@ cnmDbdcFsmEventHandler_DISABLE_GUARD(
 	cnmDbdcFsmSteps(prAdapter, g_rDbdcInfo.eDbdcFsmNextState, eEvent);
 }
 
-static VOID
+static void
 cnmDbdcFsmEventHandler_WAIT_PROTOCOL_DISABLE(
-	IN P_ADAPTER_T                  prAdapter,
+	IN struct ADAPTER *prAdapter,
 	IN enum ENUM_DBDC_FSM_EVENT_T   eEvent
 	)
 {
@@ -2165,9 +2165,9 @@ cnmDbdcFsmEventHandler_WAIT_PROTOCOL_DISABLE(
 	cnmDbdcFsmSteps(prAdapter, g_rDbdcInfo.eDbdcFsmNextState, eEvent);
 }
 
-static VOID
+static void
 cnmDbdcFsmExitFunc_WAIT_HW_ENABLE(
-	IN P_ADAPTER_T	prAdapter
+	IN struct ADAPTER *prAdapter
 	)
 {
 	cnmDBDCFsmActionReqPeivilegeUnLock(prAdapter);
@@ -2182,13 +2182,13 @@ cnmDbdcFsmExitFunc_WAIT_HW_ENABLE(
 * @return (none)
 */
 /*----------------------------------------------------------------------------*/
-VOID cnmGetDbdcCapability(
-	IN P_ADAPTER_T			prAdapter,
-	IN UINT_8				ucBssIndex,
-	IN ENUM_BAND_T			eRfBand,
-	IN UINT_8				ucPrimaryChannel,
-	IN UINT_8				ucNss,
-	OUT P_CNM_DBDC_CAP_T	prDbdcCap
+void cnmGetDbdcCapability(
+	IN struct ADAPTER *prAdapter,
+	IN uint8_t				ucBssIndex,
+	IN enum ENUM_BAND			eRfBand,
+	IN uint8_t				ucPrimaryChannel,
+	IN uint8_t				ucNss,
+	OUT struct CNM_DBDC_CAP *prDbdcCap
 )
 {
 	if (!prDbdcCap)
@@ -2253,9 +2253,9 @@ VOID cnmGetDbdcCapability(
 * @return
 */
 /*----------------------------------------------------------------------------*/
-UINT_8 cnmGetDbdcBwCapability(IN P_ADAPTER_T prAdapter, IN UINT_8 ucBssIndex)
+uint8_t cnmGetDbdcBwCapability(IN struct ADAPTER *prAdapter, IN uint8_t ucBssIndex)
 {
-	UINT_8 ucMaxBw = MAX_BW_20MHZ;
+	uint8_t ucMaxBw = MAX_BW_20MHZ;
 
 	ucMaxBw = cnmGetBssMaxBw(prAdapter, ucBssIndex);
 
@@ -2279,10 +2279,10 @@ UINT_8 cnmGetDbdcBwCapability(IN P_ADAPTER_T prAdapter, IN UINT_8 ucBssIndex)
 * @return (none)
 */
 /*----------------------------------------------------------------------------*/
-VOID cnmDbdcEnableDecision(
-	IN P_ADAPTER_T	prAdapter,
-	IN UINT_8		ucChangedBssIndex,
-	IN ENUM_BAND_T	eRfBand
+void cnmDbdcEnableDecision(
+	IN struct ADAPTER *prAdapter,
+	IN uint8_t		ucChangedBssIndex,
+	IN enum ENUM_BAND	eRfBand
 )
 {
 	DBGLOG(CNM, INFO, "[DBDC] BSS %u Rf %u", ucChangedBssIndex, eRfBand);
@@ -2330,7 +2330,7 @@ VOID cnmDbdcEnableDecision(
 * @return (none)
 */
 /*----------------------------------------------------------------------------*/
-VOID cnmDbdcDisableDecision(IN P_ADAPTER_T prAdapter,	IN UINT_8 ucChangedBssIndex)
+void cnmDbdcDisableDecision(IN struct ADAPTER *prAdapter,	IN uint8_t ucChangedBssIndex)
 {
 	DBGLOG(CNM, INFO, "[DBDC Debug] BSS %u", ucChangedBssIndex);
 
@@ -2378,7 +2378,7 @@ VOID cnmDbdcDisableDecision(IN P_ADAPTER_T prAdapter,	IN UINT_8 ucChangedBssInde
 * @return (none)
 */
 /*----------------------------------------------------------------------------*/
-VOID cnmDbdcGuardTimerCallback(IN P_ADAPTER_T prAdapter, IN ULONG plParamPtr)
+void cnmDbdcGuardTimerCallback(IN struct ADAPTER *prAdapter, IN unsigned long plParamPtr)
 {
 	DBGLOG(CNM, INFO, "[DBDC Debug] Timer %u", g_rDbdcInfo.eDdbcGuardTimerType);
 
@@ -2410,12 +2410,12 @@ VOID cnmDbdcGuardTimerCallback(IN P_ADAPTER_T prAdapter, IN ULONG plParamPtr)
 * @return (none)
 */
 /*----------------------------------------------------------------------------*/
-VOID cnmDbdcEventHwSwitchDone(IN P_ADAPTER_T prAdapter, IN P_WIFI_EVENT_T prEvent)
+void cnmDbdcEventHwSwitchDone(IN struct ADAPTER *prAdapter, IN struct WIFI_EVENT *prEvent)
 {
-	P_CMD_INFO_T prCmdInfo;
-	UINT_8 ucBssIndex;
-	P_BSS_INFO_T prBssInfo;
-	BOOLEAN fgDbdcEn;
+	struct CMD_INFO *prCmdInfo;
+	uint8_t ucBssIndex;
+	struct BSS_INFO *prBssInfo;
+	u_int8_t fgDbdcEn;
 
 	/* command response handling */
 	prCmdInfo = nicGetPendingCmdInfo(prAdapter, prEvent->ucSeqNum);
@@ -2451,7 +2451,7 @@ VOID cnmDbdcEventHwSwitchDone(IN P_ADAPTER_T prAdapter, IN P_WIFI_EVENT_T prEven
 #endif /*CFG_SUPPORT_DBDC*/
 
 
-enum ENUM_CNM_NETWORK_TYPE_T cnmGetBssNetworkType(P_BSS_INFO_T prBssInfo)
+enum ENUM_CNM_NETWORK_TYPE_T cnmGetBssNetworkType(struct BSS_INFO *prBssInfo)
 {
 	if (prBssInfo->eNetworkType == NETWORK_TYPE_AIS)
 		return ENUM_CNM_NETWORK_TYPE_AIS;

@@ -89,217 +89,217 @@
 ********************************************************************************
 */
 /* duplicated from nic_cmd_event.h to avoid header dependency */
-typedef struct _TX_PWR_PARAM_T {
-	INT_8 cTxPwr2G4Cck;	/* signed, in unit of 0.5dBm */
-	INT_8 cTxPwr2G4Dsss;	/* signed, in unit of 0.5dBm */
-	INT_8 acReserved[2];
+struct TX_PWR_PARAM {
+	int8_t cTxPwr2G4Cck;	/* signed, in unit of 0.5dBm */
+	int8_t cTxPwr2G4Dsss;	/* signed, in unit of 0.5dBm */
+	int8_t acReserved[2];
 
-	INT_8 cTxPwr2G4OFDM_BPSK;
-	INT_8 cTxPwr2G4OFDM_QPSK;
-	INT_8 cTxPwr2G4OFDM_16QAM;
-	INT_8 cTxPwr2G4OFDM_Reserved;
-	INT_8 cTxPwr2G4OFDM_48Mbps;
-	INT_8 cTxPwr2G4OFDM_54Mbps;
+	int8_t cTxPwr2G4OFDM_BPSK;
+	int8_t cTxPwr2G4OFDM_QPSK;
+	int8_t cTxPwr2G4OFDM_16QAM;
+	int8_t cTxPwr2G4OFDM_Reserved;
+	int8_t cTxPwr2G4OFDM_48Mbps;
+	int8_t cTxPwr2G4OFDM_54Mbps;
 
-	INT_8 cTxPwr2G4HT20_BPSK;
-	INT_8 cTxPwr2G4HT20_QPSK;
-	INT_8 cTxPwr2G4HT20_16QAM;
-	INT_8 cTxPwr2G4HT20_MCS5;
-	INT_8 cTxPwr2G4HT20_MCS6;
-	INT_8 cTxPwr2G4HT20_MCS7;
+	int8_t cTxPwr2G4HT20_BPSK;
+	int8_t cTxPwr2G4HT20_QPSK;
+	int8_t cTxPwr2G4HT20_16QAM;
+	int8_t cTxPwr2G4HT20_MCS5;
+	int8_t cTxPwr2G4HT20_MCS6;
+	int8_t cTxPwr2G4HT20_MCS7;
 
-	INT_8 cTxPwr2G4HT40_BPSK;
-	INT_8 cTxPwr2G4HT40_QPSK;
-	INT_8 cTxPwr2G4HT40_16QAM;
-	INT_8 cTxPwr2G4HT40_MCS5;
-	INT_8 cTxPwr2G4HT40_MCS6;
-	INT_8 cTxPwr2G4HT40_MCS7;
+	int8_t cTxPwr2G4HT40_BPSK;
+	int8_t cTxPwr2G4HT40_QPSK;
+	int8_t cTxPwr2G4HT40_16QAM;
+	int8_t cTxPwr2G4HT40_MCS5;
+	int8_t cTxPwr2G4HT40_MCS6;
+	int8_t cTxPwr2G4HT40_MCS7;
 
-	INT_8 cTxPwr5GOFDM_BPSK;
-	INT_8 cTxPwr5GOFDM_QPSK;
-	INT_8 cTxPwr5GOFDM_16QAM;
-	INT_8 cTxPwr5GOFDM_Reserved;
-	INT_8 cTxPwr5GOFDM_48Mbps;
-	INT_8 cTxPwr5GOFDM_54Mbps;
+	int8_t cTxPwr5GOFDM_BPSK;
+	int8_t cTxPwr5GOFDM_QPSK;
+	int8_t cTxPwr5GOFDM_16QAM;
+	int8_t cTxPwr5GOFDM_Reserved;
+	int8_t cTxPwr5GOFDM_48Mbps;
+	int8_t cTxPwr5GOFDM_54Mbps;
 
-	INT_8 cTxPwr5GHT20_BPSK;
-	INT_8 cTxPwr5GHT20_QPSK;
-	INT_8 cTxPwr5GHT20_16QAM;
-	INT_8 cTxPwr5GHT20_MCS5;
-	INT_8 cTxPwr5GHT20_MCS6;
-	INT_8 cTxPwr5GHT20_MCS7;
+	int8_t cTxPwr5GHT20_BPSK;
+	int8_t cTxPwr5GHT20_QPSK;
+	int8_t cTxPwr5GHT20_16QAM;
+	int8_t cTxPwr5GHT20_MCS5;
+	int8_t cTxPwr5GHT20_MCS6;
+	int8_t cTxPwr5GHT20_MCS7;
 
-	INT_8 cTxPwr5GHT40_BPSK;
-	INT_8 cTxPwr5GHT40_QPSK;
-	INT_8 cTxPwr5GHT40_16QAM;
-	INT_8 cTxPwr5GHT40_MCS5;
-	INT_8 cTxPwr5GHT40_MCS6;
-	INT_8 cTxPwr5GHT40_MCS7;
-} TX_PWR_PARAM_T, *P_TX_PWR_PARAM_T;
+	int8_t cTxPwr5GHT40_BPSK;
+	int8_t cTxPwr5GHT40_QPSK;
+	int8_t cTxPwr5GHT40_16QAM;
+	int8_t cTxPwr5GHT40_MCS5;
+	int8_t cTxPwr5GHT40_MCS6;
+	int8_t cTxPwr5GHT40_MCS7;
+};
 
-typedef struct _TX_AC_PWR_T {
-	INT_8 c11AcTxPwr_BPSK;
-	INT_8 c11AcTxPwr_QPSK;
-	INT_8 c11AcTxPwr_16QAM;
-	INT_8 c11AcTxPwr_MCS5_MCS6;
-	INT_8 c11AcTxPwr_MCS7;
-	INT_8 c11AcTxPwr_MCS8;
-	INT_8 c11AcTxPwr_MCS9;
-	INT_8 c11AcTxPwrVht40_OFFSET;
-	INT_8 c11AcTxPwrVht80_OFFSET;
-	INT_8 c11AcTxPwrVht160_OFFSET;
-	INT_8 acReverse[2];
-} TX_AC_PWR_T, *P_TX_AC_PWR_T;
+struct TX_AC_PWR {
+	int8_t c11AcTxPwr_BPSK;
+	int8_t c11AcTxPwr_QPSK;
+	int8_t c11AcTxPwr_16QAM;
+	int8_t c11AcTxPwr_MCS5_MCS6;
+	int8_t c11AcTxPwr_MCS7;
+	int8_t c11AcTxPwr_MCS8;
+	int8_t c11AcTxPwr_MCS9;
+	int8_t c11AcTxPwrVht40_OFFSET;
+	int8_t c11AcTxPwrVht80_OFFSET;
+	int8_t c11AcTxPwrVht160_OFFSET;
+	int8_t acReverse[2];
+};
 
-typedef struct _RSSI_PATH_COMPASATION_T {
-	INT_8 c2GRssiCompensation;
-	INT_8 c5GRssiCompensation;
-} RSSI_PATH_COMPASATION_T, *P_RSSI_PATH_COMPASATION_T;
+struct RSSI_PATH_COMPASATION {
+	int8_t c2GRssiCompensation;
+	int8_t c5GRssiCompensation;
+};
 
-typedef struct _PWR_5G_OFFSET_T {
-	INT_8 cOffsetBand0;	/* 4.915-4.980G */
-	INT_8 cOffsetBand1;	/* 5.000-5.080G */
-	INT_8 cOffsetBand2;	/* 5.160-5.180G */
-	INT_8 cOffsetBand3;	/* 5.200-5.280G */
-	INT_8 cOffsetBand4;	/* 5.300-5.340G */
-	INT_8 cOffsetBand5;	/* 5.500-5.580G */
-	INT_8 cOffsetBand6;	/* 5.600-5.680G */
-	INT_8 cOffsetBand7;	/* 5.700-5.825G */
-} PWR_5G_OFFSET_T, *P_PWR_5G_OFFSET_T;
+struct PWR_5G_OFFSET {
+	int8_t cOffsetBand0;	/* 4.915-4.980G */
+	int8_t cOffsetBand1;	/* 5.000-5.080G */
+	int8_t cOffsetBand2;	/* 5.160-5.180G */
+	int8_t cOffsetBand3;	/* 5.200-5.280G */
+	int8_t cOffsetBand4;	/* 5.300-5.340G */
+	int8_t cOffsetBand5;	/* 5.500-5.580G */
+	int8_t cOffsetBand6;	/* 5.600-5.680G */
+	int8_t cOffsetBand7;	/* 5.700-5.825G */
+};
 
-typedef struct _PWR_PARAM_T {
-	UINT_32 au4Data[28];
-	UINT_32 u4RefValue1;
-	UINT_32 u4RefValue2;
-} PWR_PARAM_T, *P_PWR_PARAM_T;
+struct PWR_PARAM {
+	uint32_t au4Data[28];
+	uint32_t u4RefValue1;
+	uint32_t u4RefValue2;
+};
 
 #if 0
-typedef struct _MT6620_CFG_PARAM_STRUCT {
+struct WIFI_CFG_PARAM_STRUCT {
 	/* 256 bytes of MP data */
-	UINT_16 u2Part1OwnVersion;
-	UINT_16 u2Part1PeerVersion;
-	UINT_8 aucMacAddress[6];
-	UINT_8 aucCountryCode[2];
-	TX_PWR_PARAM_T rTxPwr;
-	UINT_8 aucEFUSE[144];
-	UINT_8 ucTxPwrValid;
-	UINT_8 ucSupport5GBand;
-	UINT_8 fg2G4BandEdgePwrUsed;
-	INT_8 cBandEdgeMaxPwrCCK;
-	INT_8 cBandEdgeMaxPwrOFDM20;
-	INT_8 cBandEdgeMaxPwrOFDM40;
+	uint16_t u2Part1OwnVersion;
+	uint16_t u2Part1PeerVersion;
+	uint8_t aucMacAddress[6];
+	uint8_t aucCountryCode[2];
+	struct TX_PWR_PARAM rTxPwr;
+	uint8_t aucEFUSE[144];
+	uint8_t ucTxPwrValid;
+	uint8_t ucSupport5GBand;
+	uint8_t fg2G4BandEdgePwrUsed;
+	int8_t cBandEdgeMaxPwrCCK;
+	int8_t cBandEdgeMaxPwrOFDM20;
+	int8_t cBandEdgeMaxPwrOFDM40;
 
-	UINT_8 ucRegChannelListMap;
-	UINT_8 ucRegChannelListIndex;
-	UINT_8 aucRegSubbandInfo[36];
+	uint8_t ucRegChannelListMap;
+	uint8_t ucRegChannelListIndex;
+	uint8_t aucRegSubbandInfo[36];
 
-	UINT_8 aucReserved2[256 - 240];
+	uint8_t aucReserved2[256 - 240];
 
 	/* 256 bytes of function data */
-	UINT_16 u2Part2OwnVersion;
-	UINT_16 u2Part2PeerVersion;
-	UINT_8 uc2G4BwFixed20M;
-	UINT_8 uc5GBwFixed20M;
-	UINT_8 ucEnable5GBand;
-	UINT_8 aucPreTailReserved;
-	UINT_8 aucTailReserved[256 - 8];
-} MT6620_CFG_PARAM_STRUCT, *P_MT6620_CFG_PARAM_STRUCT, WIFI_CFG_PARAM_STRUCT, *P_WIFI_CFG_PARAM_STRUCT;
+	uint16_t u2Part2OwnVersion;
+	uint16_t u2Part2PeerVersion;
+	uint8_t uc2G4BwFixed20M;
+	uint8_t uc5GBwFixed20M;
+	uint8_t ucEnable5GBand;
+	uint8_t aucPreTailReserved;
+	uint8_t aucTailReserved[256 - 8];
+};
 #else
 
-typedef struct _AC_PWR_SETTING_STRUCT {
-	UINT_8 c11AcTxPwr_BPSK;
-	UINT_8 c11AcTxPwr_QPSK;
-	UINT_8 c11AcTxPwr_16QAM;
-	UINT_8 c11AcTxPwr_MCS5_MCS6;
-	UINT_8 c11AcTxPwr_MCS7;
-	UINT_8 c11AcTxPwr_MCS8;
-	UINT_8 c11AcTxPwr_MCS9;
-	UINT_8 c11AcTxPwr_Reserved;
-	UINT_8 c11AcTxPwrVht40_OFFSET;
-	UINT_8 c11AcTxPwrVht80_OFFSET;
-	UINT_8 c11AcTxPwrVht160_OFFSET;
-} AC_PWR_SETTING_STRUCT, *P_AC_PWR_SETTING_STRUCT;
+struct AC_PWR_SETTING_STRUCT {
+	uint8_t c11AcTxPwr_BPSK;
+	uint8_t c11AcTxPwr_QPSK;
+	uint8_t c11AcTxPwr_16QAM;
+	uint8_t c11AcTxPwr_MCS5_MCS6;
+	uint8_t c11AcTxPwr_MCS7;
+	uint8_t c11AcTxPwr_MCS8;
+	uint8_t c11AcTxPwr_MCS9;
+	uint8_t c11AcTxPwr_Reserved;
+	uint8_t c11AcTxPwrVht40_OFFSET;
+	uint8_t c11AcTxPwrVht80_OFFSET;
+	uint8_t c11AcTxPwrVht160_OFFSET;
+};
 
-typedef struct _BANDEDGE_5G_T {
-	UINT_8 uc5GBandEdgePwrUsed;
-	UINT_8 c5GBandEdgeMaxPwrOFDM20;
-	UINT_8 c5GBandEdgeMaxPwrOFDM40;
-	UINT_8 c5GBandEdgeMaxPwrOFDM80;
+struct BANDEDGE_5G {
+	uint8_t uc5GBandEdgePwrUsed;
+	uint8_t c5GBandEdgeMaxPwrOFDM20;
+	uint8_t c5GBandEdgeMaxPwrOFDM40;
+	uint8_t c5GBandEdgeMaxPwrOFDM80;
 
-} BANDEDGE_5G_T, *P_BANDEDGE_5G_T;
+};
 
-typedef struct _NEW_EFUSE_MAPPING2NVRAM_T {
-	UINT_8 ucReverse1[8];
-	UINT_16 u2Signature;
-	BANDEDGE_5G_T r5GBandEdgePwr;
-	UINT_8 ucReverse2[14];
+struct NEW_EFUSE_MAPPING2NVRAM {
+	uint8_t ucReverse1[8];
+	uint16_t u2Signature;
+	struct BANDEDGE_5G r5GBandEdgePwr;
+	uint8_t ucReverse2[14];
 
 	/* 0x50 */
-	UINT_8 aucChOffset[3];
-	UINT_8 ucChannelOffsetVaild;
-	UINT_8 acAllChannelOffset;
-	UINT_8 aucChOffset3[11];
+	uint8_t aucChOffset[3];
+	uint8_t ucChannelOffsetVaild;
+	uint8_t acAllChannelOffset;
+	uint8_t aucChOffset3[11];
 
 	/* 0x60 */
-	UINT_8 auc5GChOffset[8];
-	UINT_8 uc5GChannelOffsetVaild;
-	UINT_8 aucChOffset4[7];
+	uint8_t auc5GChOffset[8];
+	uint8_t uc5GChannelOffsetVaild;
+	uint8_t aucChOffset4[7];
 
 	/* 0x70 */
-	AC_PWR_SETTING_STRUCT r11AcTxPwr;
-	UINT_8 uc11AcTxPwrValid;
+	struct AC_PWR_SETTING_STRUCT r11AcTxPwr;
+	uint8_t uc11AcTxPwrValid;
 
-	UINT_8 ucReverse4[20];
+	uint8_t ucReverse4[20];
 
 	/* 0x90 */
-	AC_PWR_SETTING_STRUCT r11AcTxPwr2G;
-	UINT_8 uc11AcTxPwrValid2G;
+	struct AC_PWR_SETTING_STRUCT r11AcTxPwr2G;
+	uint8_t uc11AcTxPwrValid2G;
 
-	UINT_8 ucReverse5[40];
-} NEW_EFUSE_MAPPING2NVRAM_T, *P_NEW_EFUSE_MAPPING2NVRAM_T;
+	uint8_t ucReverse5[40];
+};
 
-typedef struct _MT6620_CFG_PARAM_STRUCT {
+struct WIFI_CFG_PARAM_STRUCT {
 	/* 256 bytes of MP data */
-	UINT_16 u2Part1OwnVersion;
-	UINT_16 u2Part1PeerVersion;
-	UINT_8 aucMacAddress[6];
-	UINT_8 aucCountryCode[2];
-	TX_PWR_PARAM_T rTxPwr;
+	uint16_t u2Part1OwnVersion;
+	uint16_t u2Part1PeerVersion;
+	uint8_t aucMacAddress[6];
+	uint8_t aucCountryCode[2];
+	struct TX_PWR_PARAM rTxPwr;
 #if CFG_SUPPORT_NVRAM_5G
 	union {
-		NEW_EFUSE_MAPPING2NVRAM_T u;
-		UINT_8 aucEFUSE[144];
+		struct NEW_EFUSE_MAPPING2NVRAM u;
+		uint8_t aucEFUSE[144];
 	} EfuseMapping;
 #else
-	UINT_8 aucEFUSE[144];
+	uint8_t aucEFUSE[144];
 #endif
-	UINT_8 ucTxPwrValid;
-	UINT_8 ucSupport5GBand;
-	UINT_8 fg2G4BandEdgePwrUsed;
-	INT_8 cBandEdgeMaxPwrCCK;
-	INT_8 cBandEdgeMaxPwrOFDM20;
-	INT_8 cBandEdgeMaxPwrOFDM40;
+	uint8_t ucTxPwrValid;
+	uint8_t ucSupport5GBand;
+	uint8_t fg2G4BandEdgePwrUsed;
+	int8_t cBandEdgeMaxPwrCCK;
+	int8_t cBandEdgeMaxPwrOFDM20;
+	int8_t cBandEdgeMaxPwrOFDM40;
 
-	UINT_8 ucRegChannelListMap;
-	UINT_8 ucRegChannelListIndex;
-	UINT_8 aucRegSubbandInfo[36];
+	uint8_t ucRegChannelListMap;
+	uint8_t ucRegChannelListIndex;
+	uint8_t aucRegSubbandInfo[36];
 
-	UINT_8 aucReserved2[256 - 240];
+	uint8_t aucReserved2[256 - 240];
 
 	/* 256 bytes of function data */
-	UINT_16 u2Part2OwnVersion;
-	UINT_16 u2Part2PeerVersion;
-	UINT_8 uc2G4BwFixed20M;
-	UINT_8 uc5GBwFixed20M;
-	UINT_8 ucEnable5GBand;
-	UINT_8 ucRxDiversity;
-	RSSI_PATH_COMPASATION_T rRssiPathCompensation;
-	UINT_8 fgRssiCompensationVaildbit;
-	UINT_8 ucGpsDesense;
-	UINT_16 u2FeatureReserved;
-	UINT_8 aucPreTailReserved;
-	UINT_8 aucTailReserved[256 - 15];
-} MT6620_CFG_PARAM_STRUCT, *P_MT6620_CFG_PARAM_STRUCT, WIFI_CFG_PARAM_STRUCT, *P_WIFI_CFG_PARAM_STRUCT;
+	uint16_t u2Part2OwnVersion;
+	uint16_t u2Part2PeerVersion;
+	uint8_t uc2G4BwFixed20M;
+	uint8_t uc5GBwFixed20M;
+	uint8_t ucEnable5GBand;
+	uint8_t ucRxDiversity;
+	struct RSSI_PATH_COMPASATION rRssiPathCompensation;
+	uint8_t fgRssiCompensationVaildbit;
+	uint8_t ucGpsDesense;
+	uint16_t u2FeatureReserved;
+	uint8_t aucPreTailReserved;
+	uint8_t aucTailReserved[256 - 15];
+};
 
 #endif
 /*******************************************************************************
@@ -316,7 +316,7 @@ typedef struct _MT6620_CFG_PARAM_STRUCT {
 		{switch (0) {case 0: case (expr): default:; } }
 #endif
 
-#define CFG_FILE_WIFI_REC_SIZE    sizeof(WIFI_CFG_PARAM_STRUCT)
+#define CFG_FILE_WIFI_REC_SIZE    sizeof(struct WIFI_CFG_PARAM_STRUCT)
 
 /*******************************************************************************
 *                  F U N C T I O N   D E C L A R A T I O N S
@@ -333,17 +333,17 @@ typedef struct _MT6620_CFG_PARAM_STRUCT {
  * We'll need this to guarantee the same member order in different structures
  * to simply handling effort in some functions.
  */
-static __KAL_INLINE__ VOID nvramOffsetCheck(VOID)
+static __KAL_INLINE__ void nvramOffsetCheck(void)
 {
-	DATA_STRUCT_INSPECTING_ASSERT(OFFSET_OF(WIFI_CFG_PARAM_STRUCT, u2Part2OwnVersion) == 256);
+	DATA_STRUCT_INSPECTING_ASSERT(OFFSET_OF(struct WIFI_CFG_PARAM_STRUCT, u2Part2OwnVersion) == 256);
 
-	DATA_STRUCT_INSPECTING_ASSERT(sizeof(WIFI_CFG_PARAM_STRUCT) == 512);
+	DATA_STRUCT_INSPECTING_ASSERT(sizeof(struct WIFI_CFG_PARAM_STRUCT) == 512);
 #if CFG_SUPPORT_NVRAM_5G
-	DATA_STRUCT_INSPECTING_ASSERT((OFFSET_OF(WIFI_CFG_PARAM_STRUCT, EfuseMapping) & 0x0001) == 0);
+	DATA_STRUCT_INSPECTING_ASSERT((OFFSET_OF(struct WIFI_CFG_PARAM_STRUCT, EfuseMapping) & 0x0001) == 0);
 #else
-	DATA_STRUCT_INSPECTING_ASSERT((OFFSET_OF(WIFI_CFG_PARAM_STRUCT, aucEFUSE) & 0x0001) == 0);
+	DATA_STRUCT_INSPECTING_ASSERT((OFFSET_OF(struct WIFI_CFG_PARAM_STRUCT, aucEFUSE) & 0x0001) == 0);
 #endif
-	DATA_STRUCT_INSPECTING_ASSERT((OFFSET_OF(WIFI_CFG_PARAM_STRUCT, aucRegSubbandInfo) & 0x0001)
+	DATA_STRUCT_INSPECTING_ASSERT((OFFSET_OF(struct WIFI_CFG_PARAM_STRUCT, aucRegSubbandInfo) & 0x0001)
 				      == 0);
 }
 #endif

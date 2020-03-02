@@ -117,7 +117,7 @@
 *      Called by: Handle Rx mgmt request
 */
 /*----------------------------------------------------------------------------*/
-static struct _QOS_MAP_SET *QosMapSetMalloc(IN UINT_8 dscpExcNum)
+static struct _QOS_MAP_SET *QosMapSetMalloc(IN uint8_t dscpExcNum)
 {
 	if (dscpExcNum)
 		return (struct _QOS_MAP_SET *)kalMemAlloc((sizeof(struct _QOS_MAP_SET) +
@@ -127,7 +127,7 @@ static struct _QOS_MAP_SET *QosMapSetMalloc(IN UINT_8 dscpExcNum)
 
 }
 
-static void QosMapSetFree(IN P_STA_RECORD_T prStaRec)
+static void QosMapSetFree(IN struct STA_RECORD *prStaRec)
 {
 	if (prStaRec && prStaRec->qosMapSet) {
 		if (prStaRec->qosMapSet->dscpExceptionNum) {
@@ -139,19 +139,19 @@ static void QosMapSetFree(IN P_STA_RECORD_T prStaRec)
 	}
 }
 
-void QosMapSetRelease(IN P_STA_RECORD_T prStaRec)
+void QosMapSetRelease(IN struct STA_RECORD *prStaRec)
 {
 	QosMapSetFree(prStaRec);
 }
 
-VOID handleQosMapConf(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T prSwRfb)
+void handleQosMapConf(IN struct ADAPTER *prAdapter, IN struct SW_RFB *prSwRfb)
 {
-	P_WLAN_ACTION_FRAME prRxFrame;
+	struct WLAN_ACTION_FRAME *prRxFrame;
 
 	ASSERT(prAdapter);
 	ASSERT(prSwRfb);
 
-	prRxFrame = (P_WLAN_ACTION_FRAME) prSwRfb->pvHeader;
+	prRxFrame = (struct WLAN_ACTION_FRAME *) prSwRfb->pvHeader;
 
 	switch (prRxFrame->ucAction) {
 	case ACTION_ADDTS_REQ:
@@ -169,10 +169,10 @@ VOID handleQosMapConf(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T prSwRfb)
 	}
 }
 
-int qosHandleQosMapConfigure(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T prSwRfb)
+int qosHandleQosMapConfigure(IN struct ADAPTER *prAdapter, IN struct SW_RFB *prSwRfb)
 {
 	struct _ACTION_QOS_MAP_CONFIGURE_FRAME *prRxFrame = NULL;
-	P_STA_RECORD_T prStaRec;
+	struct STA_RECORD *prStaRec;
 
 	prRxFrame = (struct _ACTION_QOS_MAP_CONFIGURE_FRAME *) prSwRfb->pvHeader;
 	if (!prRxFrame)
@@ -192,12 +192,12 @@ int qosHandleQosMapConfigure(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T prSwRfb)
 	return 0;
 }
 
-struct _QOS_MAP_SET *qosParseQosMapSet(IN P_ADAPTER_T prAdapter, IN PUINT_8 qosMapSet)
+struct _QOS_MAP_SET *qosParseQosMapSet(IN struct ADAPTER *prAdapter, IN uint8_t *qosMapSet)
 {
-	UINT_8 dscpExcNum = 0;
+	uint8_t dscpExcNum = 0;
 	struct _QOS_MAP_SET *prQos = NULL;
 	int i, j = 0;
-	PUINT_8 tempq = qosMapSet + 2;
+	uint8_t *tempq = qosMapSet + 2;
 
 	if (IE_ID(qosMapSet) != ELEM_ID_QOS_MAP_SET) {
 		DBGLOG(INIT, WARN, "Wrong QosMapSet IE ID: %d\n", IE_ID(qosMapSet));
@@ -241,10 +241,10 @@ struct _QOS_MAP_SET *qosParseQosMapSet(IN P_ADAPTER_T prAdapter, IN PUINT_8 qosM
 	return prQos;
 }
 
-UINT_8 getUpFromDscp(IN P_GLUE_INFO_T prGlueInfo, IN int type, IN int dscp)
+uint8_t getUpFromDscp(IN struct GLUE_INFO *prGlueInfo, IN int type, IN int dscp)
 {
-	P_BSS_INFO_T prAisBssInfo;
-	P_STA_RECORD_T prStaRec;
+	struct BSS_INFO *prAisBssInfo;
+	struct STA_RECORD *prStaRec;
 
 	int i, j = 0;
 
