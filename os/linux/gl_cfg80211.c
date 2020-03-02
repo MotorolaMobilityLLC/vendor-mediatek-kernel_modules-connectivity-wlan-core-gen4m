@@ -5200,6 +5200,25 @@ int mtk_cfg_set_default_key(struct wiphy *wiphy,
 					    key_index, unicast, multicast);
 }
 
+int mtk_cfg_set_default_mgmt_key(struct wiphy *wiphy,
+		struct net_device *ndev, u8 key_index)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+
+	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wiphy);
+
+	if ((!prGlueInfo) || (prGlueInfo->u4ReadyFlag == 0)) {
+		DBGLOG(REQ, WARN, "driver is not ready\n");
+		return -EFAULT;
+	}
+
+	if (mtk_IsP2PNetDevice(prGlueInfo, ndev) > 0)
+		return mtk_p2p_cfg80211_set_mgmt_key(wiphy, ndev, key_index);
+	/* STA Mode */
+	DBGLOG(REQ, WARN, "STA don't support this function\n");
+	return -EFAULT;
+}
+
 #if KERNEL_VERSION(3, 16, 0) <= CFG80211_VERSION_CODE
 int mtk_cfg_get_station(struct wiphy *wiphy,
 			struct net_device *ndev,
