@@ -278,9 +278,6 @@ uint32_t wlanDownloadEMISection(IN struct ADAPTER
 	uint8_t __iomem *pucEmiBaseAddr = NULL;
 	uint32_t u4Offset = u4DestAddr & WIFI_EMI_ADDR_MASK;
 
-	DBGLOG(INIT, INFO,
-	       "Start EMI Download, EmiPhyBase:0x%llx offset:0x%x\n",
-	       (uint64_t)gConEmiPhyBase, u4Offset);
 	if (!gConEmiPhyBase) {
 		DBGLOG(INIT, ERROR,
 		       "Consys emi memory address gConEmiPhyBase invalid\n");
@@ -291,8 +288,9 @@ uint32_t wlanDownloadEMISection(IN struct ADAPTER
 	kalSetEmiMpuProtection(gConEmiPhyBase, WIFI_EMI_MEM_OFFSET,
 			       WIFI_EMI_MEM_SIZE, false);
 	pucEmiBaseAddr = ioremap_nocache(gConEmiPhyBase, gConEmiSize);
-	DBGLOG(INIT, INFO, "ioremap for device %s, region 0x%lX @ 0x%lX\n",
-	       "WIFI-EMI", gConEmiSize, pucEmiBaseAddr);
+	DBGLOG(INIT, INFO,
+	       "EmiPhyBase:0x%llx offset:0x%x, ioremap region 0x%lX @ 0x%lX\n",
+	       (uint64_t)gConEmiPhyBase, u4Offset, gConEmiSize, pucEmiBaseAddr);
 	if (!pucEmiBaseAddr) {
 		DBGLOG(INIT, ERROR, "ioremap failed\n");
 		return WLAN_STATUS_FAILURE;

@@ -1136,7 +1136,7 @@ bool halWpdmaAllocTxRing(struct GLUE_INFO *prGlueInfo, uint32_t u4Num,
 		return false;
 	}
 
-	DBGLOG(HAL, INFO, "TxDescRing[%p]: total %u bytes allocated\n",
+	DBGLOG(HAL, TRACE, "TxDescRing[%p]: total %u bytes allocated\n",
 	       prTxDesc->AllocVa, prTxDesc->AllocSize);
 
 	/* Save PA & VA for further operation */
