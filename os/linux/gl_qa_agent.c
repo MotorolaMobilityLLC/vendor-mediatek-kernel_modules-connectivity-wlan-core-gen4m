@@ -339,8 +339,10 @@ static int32_t ResponseToQA(struct HQA_CMD_FRAME
 			    IN union iwreq_data *prIwReqData, int32_t i4Length,
 			    int32_t i4Status)
 {
-	HqaCmdFrame->Length = ntohs((i4Length));
+	if (!prIwReqData)
+		return -EINVAL;
 
+	HqaCmdFrame->Length = ntohs((i4Length));
 	i4Status = ntohs((i4Status));
 	memcpy(HqaCmdFrame->Data, &i4Status, 2);
 
@@ -350,6 +352,9 @@ static int32_t ResponseToQA(struct HQA_CMD_FRAME
 				   sizeof((HqaCmdFrame)->Length) +
 				   sizeof((HqaCmdFrame)->Sequence) +
 				   ntohs((HqaCmdFrame)->Length);
+
+	if (prIwReqData->data.length == 0)
+		return -EFAULT;
 
 	if (copy_to_user(prIwReqData->data.pointer,
 			 (uint8_t *) (HqaCmdFrame), prIwReqData->data.length)) {
@@ -2222,7 +2227,12 @@ static int32_t HQA_ReadEEPROM(struct net_device *prNetDev,
 
 #if  (CFG_EEPROM_PAGE_ACCESS == 1)
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
-	ASSERT(prGlueInfo);
+	if (!prGlueInfo) {
+		log_dbg(RFTEST, ERROR, "prGlueInfo is NULL\n");
+		ResponseToQA(HqaCmdFrame, prIwReqData, 2, rStatus);
+		return rStatus;
+	}
+
 	if (prGlueInfo->prAdapter &&
 	    prGlueInfo->prAdapter->chip_info &&
 	    !prGlueInfo->prAdapter->chip_info->is_support_efuse) {
@@ -8988,13 +8998,17 @@ int priv_qa_agent(IN struct net_device *prNetDev,
 
 	HqaCmdFrame = kmalloc(sizeof(*HqaCmdFrame), GFP_KERNEL);
 
+	if (!prIwReqData || prIwReqData->data.length == 0) {
+		i4Status = -EINVAL;
+		goto ERROR0;
+	}
+
 	if (!HqaCmdFrame) {
 		i4Status = -ENOMEM;
 		goto ERROR0;
 	}
 
 	memset(HqaCmdFrame, 0, sizeof(*HqaCmdFrame));
-
 	if (copy_from_user(HqaCmdFrame, prIwReqData->data.pointer,
 			   prIwReqData->data.length)) {
 		i4Status = -EFAULT;

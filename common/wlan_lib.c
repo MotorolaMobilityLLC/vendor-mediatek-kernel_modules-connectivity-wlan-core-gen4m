@@ -1833,7 +1833,9 @@ uint32_t wlanTxCmdMthread(IN struct ADAPTER *prAdapter)
 			QUEUE_INSERT_TAIL(prTempCmdDoneQue, prQueueEntry);
 		}
 
-		nicTxCmd(prAdapter, prCmdInfo, TC4_INDEX);
+		if (nicTxCmd(prAdapter, prCmdInfo, TC4_INDEX)
+						!= WLAN_STATUS_SUCCESS)
+			DBGLOG(INIT, WARN, "nicTxCmd returns error\n");
 
 		/* DBGLOG(INIT, INFO, "==> TX CMD QID: %d (Q:%d)\n",
 		 *        prCmdInfo->ucCID, prTempCmdQue->u4NumElem));
@@ -2534,8 +2536,13 @@ void wlanReturnPacketDelaySetupTimeout(IN struct ADAPTER
 				  struct SW_RFB *);
 		KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_RX_FREE_QUE);
 
-		status = nicRxSetupRFB(prAdapter, prSwRfb);
-		nicRxReturnRFB(prAdapter, prSwRfb);
+		if (prSwRfb) {
+			status = nicRxSetupRFB(prAdapter, prSwRfb);
+			nicRxReturnRFB(prAdapter, prSwRfb);
+		} else {
+			log_dbg(RX, WARN, "prSwRfb == NULL\n");
+			break;
+		}
 
 		if (status != WLAN_STATUS_SUCCESS)
 			break;
@@ -3100,6 +3107,11 @@ uint32_t wlanAccessRegister(IN struct ADAPTER *prAdapter,
 	u4EventSize = prChipInfo->rxd_size + prChipInfo->init_event_size +
 		sizeof(struct INIT_EVENT_ACCESS_REG);
 	aucBuffer = kalMemAlloc(u4EventSize, PHY_MEM_TYPE);
+	if (!aucBuffer) {
+		log_dbg(INIT, ERROR, "memory not enough for aucBuffer\n");
+		cmdBufFreeCmdInfo(prAdapter, prCmdInfo);
+		return WLAN_STATUS_FAILURE;
+	}
 
 	prCmdInfo->u2InfoBufLen = cmd_size;
 
@@ -3166,6 +3178,13 @@ uint32_t wlanAccessRegister(IN struct ADAPTER *prAdapter,
 			(aucBuffer + prChipInfo->rxd_size);
 		prInitEventAccessReg = (struct INIT_EVENT_ACCESS_REG *)
 			prInitEvent->aucBuffer;
+
+		if (!prInitEventAccessReg) {
+			DBGLOG(INIT, ERROR,
+			"prInitEventAccessReg == NULL\n");
+			u4Status = WLAN_STATUS_FAILURE;
+			goto exit;
+		}
 
 		if (prInitEventAccessReg->u4Address != u4Addr) {
 			DBGLOG(INIT, ERROR,
@@ -4108,6 +4127,11 @@ uint32_t wlanQueryNicCapability(IN struct ADAPTER
 	u4EventSize = prChipInfo->rxd_size + prChipInfo->event_hdr_size +
 		sizeof(struct EVENT_NIC_CAPABILITY);
 	aucBuffer = kalMemAlloc(u4EventSize, PHY_MEM_TYPE);
+	if (!aucBuffer) {
+		DBGLOG(INIT, ERROR, "Not enough memory for aucBuffer\n");
+		cmdBufFreeCmdInfo(prAdapter, prCmdInfo);
+		return WLAN_STATUS_FAILURE;
+	}
 
 	/* compose CMD_BUILD_CONNECTION cmd pkt */
 	prCmdInfo->eCmdType = COMMAND_TYPE_GENERAL_IOCTL;
