@@ -103,8 +103,13 @@ void asicConnac2xCapInit(
 	struct GLUE_INFO *prGlueInfo;
 	struct mt66xx_chip_info *prChipInfo;
 	struct BUS_INFO *prBusInfo = NULL;
+	uint32_t u4HostWpdamBase = 0;
 
 	ASSERT(prAdapter);
+	if (prAdapter->chip_info->is_support_wfdma1)
+		u4HostWpdamBase = CONNAC2X_HOST_WPDMA_1_BASE;
+	else
+		u4HostWpdamBase = CONNAC2X_HOST_WPDMA_0_BASE;
 
 	prGlueInfo = prAdapter->prGlueInfo;
 	prChipInfo = prAdapter->chip_info;
@@ -162,7 +167,7 @@ void asicConnac2xCapInit(
 		if (prChipInfo->is_support_asic_lp) {
 			HAL_MCR_WR(prAdapter,
 				CONNAC2X_WPDMA_MCU2HOST_SW_INT_MASK
-					(CONNAC2X_HOST_WPDMA_1_BASE),
+					(u4HostWpdamBase),
 				BITS(0, 15));
 		}
 		break;
@@ -837,6 +842,7 @@ void asicConnac2xProcessSoftwareInterrupt(
 	struct GL_HIF_INFO *prHifInfo;
 	struct ERR_RECOVERY_CTRL_T *prErrRecoveryCtrl;
 	uint32_t u4Status = 0;
+	uint32_t u4HostWpdamBase = 0;
 
 	if (prAdapter->prGlueInfo == NULL) {
 		DBGLOG(HAL, ERROR, "prGlueInfo is NULL\n");
@@ -847,21 +853,24 @@ void asicConnac2xProcessSoftwareInterrupt(
 	prHifInfo = &prGlueInfo->rHifInfo;
 	prErrRecoveryCtrl = &prHifInfo->rErrRecoveryCtl;
 
+	if (prAdapter->chip_info->is_support_wfdma1)
+		u4HostWpdamBase = CONNAC2X_HOST_WPDMA_1_BASE;
+	else
+		u4HostWpdamBase = CONNAC2X_HOST_WPDMA_0_BASE;
+
 	kalDevRegRead(prGlueInfo,
-		CONNAC2X_WPDMA_MCU2HOST_SW_INT_STA(CONNAC2X_HOST_WPDMA_1_BASE),
+		CONNAC2X_WPDMA_MCU2HOST_SW_INT_STA(u4HostWpdamBase),
 		&u4Status);
 
 	if (u4Status & ERROR_DETECT_MASK) {
 		prErrRecoveryCtrl->u4Status = u4Status;
 		kalDevRegWrite(prGlueInfo,
-			CONNAC2X_WPDMA_MCU2HOST_SW_INT_STA
-				(CONNAC2X_HOST_WPDMA_1_BASE),
-			ERROR_DETECT_MASK);
+			CONNAC2X_WPDMA_MCU2HOST_SW_INT_STA(u4HostWpdamBase),
+			u4Status);
 		halHwRecoveryFromError(prAdapter);
 	} else
 		kalDevRegWrite(prGlueInfo,
-			CONNAC2X_WPDMA_MCU2HOST_SW_INT_STA
-				(CONNAC2X_HOST_WPDMA_1_BASE),
+			CONNAC2X_WPDMA_MCU2HOST_SW_INT_STA(u4HostWpdamBase),
 			u4Status);
 }
 
@@ -870,6 +879,7 @@ void asicConnac2xSoftwareInterruptMcu(
 	struct ADAPTER *prAdapter, u_int32_t intrBitMask)
 {
 	struct GLUE_INFO *prGlueInfo;
+	uint32_t u4McuWpdamBase = 0;
 
 	if (prAdapter == NULL || prAdapter->prGlueInfo == NULL) {
 		DBGLOG(HAL, ERROR, "prAdapter or prGlueInfo is NULL\n");
@@ -877,8 +887,12 @@ void asicConnac2xSoftwareInterruptMcu(
 	}
 
 	prGlueInfo = prAdapter->prGlueInfo;
+	if (prAdapter->chip_info->is_support_wfdma1)
+		u4McuWpdamBase = CONNAC2X_MCU_WPDMA_1_BASE;
+	else
+		u4McuWpdamBase = CONNAC2X_MCU_WPDMA_0_BASE;
 	kalDevRegWrite(prGlueInfo,
-		CONNAC2X_WPDMA_HOST2MCU_SW_INT_SET(CONNAC2X_MCU_WPDMA_1_BASE),
+		CONNAC2X_WPDMA_HOST2MCU_SW_INT_SET(u4McuWpdamBase),
 		intrBitMask);
 }
 
