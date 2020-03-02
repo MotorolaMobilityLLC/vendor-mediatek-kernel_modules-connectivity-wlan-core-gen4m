@@ -188,6 +188,17 @@ static void halDumpHifDebugLog(struct ADAPTER *prAdapter)
 	/* Avoid register checking */
 	prHifInfo->fgIsDumpLog = true;
 
+	prDbgOps = prAdapter->chip_info->prDebugOps;
+
+	if (prAdapter->u4HifDbgFlag & (DEG_HIF_ALL | DEG_HIF_HOST_CSR)) {
+		if (prDbgOps->showCsrInfo) {
+			bool fgIsClkEn = prDbgOps->showCsrInfo(prAdapter);
+
+			if (!fgIsClkEn)
+				return;
+		}
+	}
+
 	/* need to check Bus readable */
 	if (prAdapter->chip_info->checkbushang) {
 		ret = prAdapter->chip_info->checkbushang(prAdapter, TRUE);
@@ -219,8 +230,6 @@ static void halDumpHifDebugLog(struct ADAPTER *prAdapter)
 			return;
 		}
 	}
-
-	prDbgOps = prAdapter->chip_info->prDebugOps;
 
 	if (prAdapter->u4HifDbgFlag & (DEG_HIF_ALL | DEG_HIF_PLE)) {
 		if (prDbgOps && prDbgOps->showPleInfo)
