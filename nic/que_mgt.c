@@ -4963,7 +4963,10 @@ VOID qmHandleEventStaUpdateFreeQuota(IN P_ADAPTER_T prAdapter, IN P_WIFI_EVENT_T
 					  prEventStaUpdateFreeQuota->ucUpdateMode,
 					  prEventStaUpdateFreeQuota->ucFreeQuota);
 
-			kalSetEvent(prAdapter->prGlueInfo);
+			if (HAL_IS_TX_DIRECT(prAdapter))
+				nicTxDirectStartCheckQTimer(prAdapter);
+			else
+				kalSetEvent(prAdapter->prGlueInfo);
 		}
 #if 0
 		DBGLOG(QM, TRACE,
