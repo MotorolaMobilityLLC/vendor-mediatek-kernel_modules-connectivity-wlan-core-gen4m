@@ -3380,24 +3380,25 @@ static int32_t wlanProbe(void *pvData, void *pvDriverData)
 #endif
 		kalMemZero(&prGlueInfo->rFtIeForTx,
 			   sizeof(prGlueInfo->rFtIeForTx));
-	} while (FALSE);
 
-	/* Configure 5G band for registered wiphy */
-	if (prAdapter->fgEnable5GBand)
-		prWdev->wiphy->bands[KAL_BAND_5GHZ] = &mtk_band_5ghz;
-	else
-		prWdev->wiphy->bands[KAL_BAND_5GHZ] = NULL;
-
-	for (i = 0 ; i < KAL_P2P_NUM; i++) {
-		if (gprP2pRoleWdev[i] == NULL)
-			continue;
-
+		/* Configure 5G band for registered wiphy */
 		if (prAdapter->fgEnable5GBand)
-			gprP2pRoleWdev[i]->wiphy->bands[KAL_BAND_5GHZ] =
-								&mtk_band_5ghz;
+			prWdev->wiphy->bands[KAL_BAND_5GHZ] = &mtk_band_5ghz;
 		else
-			gprP2pRoleWdev[i]->wiphy->bands[KAL_BAND_5GHZ] = NULL;
-	}
+			prWdev->wiphy->bands[KAL_BAND_5GHZ] = NULL;
+
+		for (i = 0 ; i < KAL_P2P_NUM; i++) {
+			if (gprP2pRoleWdev[i] == NULL)
+				continue;
+
+			if (prAdapter->fgEnable5GBand)
+				gprP2pRoleWdev[i]->wiphy->bands[KAL_BAND_5GHZ] =
+				&mtk_band_5ghz;
+			else
+				gprP2pRoleWdev[i]->wiphy->bands[KAL_BAND_5GHZ] =
+				NULL;
+		}
+	} while (FALSE);
 
 	if (i4Status == 0) {
 #if CFG_SUPPORT_AGPS_ASSIST
