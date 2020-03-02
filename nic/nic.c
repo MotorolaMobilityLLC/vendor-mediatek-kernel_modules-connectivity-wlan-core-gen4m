@@ -1450,16 +1450,20 @@ uint32_t nicDeactivateNetwork(IN struct ADAPTER *prAdapter,
 
 	rCmdActivateCtrl.ucBssIndex = ucBssIndex;
 	rCmdActivateCtrl.ucActive = 0;
-
-#if 1				/* DBG */
-	DBGLOG(RSN, INFO,
-	       "[wlan index]=%d OwnMac=" MACSTR " BSSID=" MACSTR
-	       " BMCIndex = %d\n", ucBssIndex,
-	       MAC2STR(prBssInfo->aucOwnMacAddr),
-	       MAC2STR(prBssInfo->aucBSSID), prBssInfo->ucBMCWlanIndex);
-#endif
+	rCmdActivateCtrl.ucNetworkType =
+		(uint8_t)prBssInfo->eNetworkType;
 	rCmdActivateCtrl.ucOwnMacAddrIndex =
 		prBssInfo->ucOwnMacIndex;
+	rCmdActivateCtrl.ucBMCWlanIndex =
+		prBssInfo->ucBMCWlanIndex;
+
+	DBGLOG(RSN, INFO,
+	       "[wlan index]=%d OwnMac=" MACSTR " BSSID=" MACSTR
+	       " BMCIndex = %d NetType=%d\n",
+	       ucBssIndex,
+	       MAC2STR(prBssInfo->aucOwnMacAddr),
+	       MAC2STR(prBssInfo->aucBSSID),
+	       prBssInfo->ucBMCWlanIndex, prBssInfo->eNetworkType);
 
 	u4Status = wlanSendSetQueryCmd(prAdapter,
 				       CMD_ID_BSS_ACTIVATE_CTRL,
