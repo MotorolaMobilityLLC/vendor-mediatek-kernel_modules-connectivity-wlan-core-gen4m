@@ -886,7 +886,6 @@ int mtk_cfg80211_scan(struct wiphy *wiphy,
 		return -EINVAL;
 	}
 
-	DBGLOG(REQ, TRACE, "mtk_cfg80211_scan\n");
 #if (CFG_SUPPORT_QA_TOOL == 1) || (CFG_SUPPORT_LOWLATENCY_MODE == 1)
 	prAdapter = prGlueInfo->prAdapter;
 	if (prGlueInfo->prAdapter == NULL) {
@@ -964,7 +963,7 @@ int mtk_cfg80211_scan(struct wiphy *wiphy,
 				prScanRequest->rSsid[u4ValidIdx].u4SsidLen =
 				ELEM_MAX_LEN_SSID;
 			}
-			DBGLOG(REQ, INFO,
+			DBGLOG(REQ, TRACE,
 			       "i=%d, u4ValidIdx=%d, Ssid=%s, SsidLen=%d\n",
 			       i, u4ValidIdx,
 			       prScanRequest->rSsid[u4ValidIdx].aucSsid,
@@ -986,9 +985,6 @@ int mtk_cfg80211_scan(struct wiphy *wiphy,
 			   sizeof(struct PARAM_SCAN_REQUEST_ADV), VIR_MEM_TYPE);
 		return -EINVAL;
 	}
-	DBGLOG(REQ, INFO,
-	       "mtk_cfg80211_scan(), n_ssids=%d, num_ssid=(%u->%u), wildcard=0x%X\n",
-	       request->n_ssids, old_num_ssid, num_ssid, wildcard_flag);
 
 	/* Set channel info */
 	if (request->n_channels > MAXIMUM_OPERATION_CHANNEL_LIST) {
@@ -1026,9 +1022,6 @@ int mtk_cfg80211_scan(struct wiphy *wiphy,
 		}
 		prScanRequest->u4ChannelNum = j;
 	}
-	DBGLOG(REQ, INFO, "n_ssids(%d==>%u) n_channel(%u==>%u)\n",
-	       request->n_ssids, num_ssid, request->n_channels,
-	       prScanRequest->u4ChannelNum);
 
 	if (kalScanParseRandomMac(request->wdev->netdev,
 		request, prScanRequest->aucRandomMac)) {
@@ -1039,6 +1032,14 @@ int mtk_cfg80211_scan(struct wiphy *wiphy,
 		prScanRequest->u4IELength = request->ie_len;
 		prScanRequest->pucIE = (uint8_t *) (request->ie);
 	}
+
+#define TEMP_LOG_TEMPLATE "n_ssid=(%u->%u) n_channel(%u==>%u) " \
+	"wildcard=0x%X random_mac=" MACSTR "\n"
+	DBGLOG(REQ, INFO, TEMP_LOG_TEMPLATE,
+		request->n_ssids, num_ssid, request->n_channels,
+		prScanRequest->u4ChannelNum, wildcard_flag,
+		MAC2STR(prScanRequest->aucRandomMac));
+#undef TEMP_LOG_TEMPLATE
 
 	prGlueInfo->prScanRequest = request;
 	rStatus = kalIoctl(prGlueInfo, wlanoidSetBssidListScanAdv,

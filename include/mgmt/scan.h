@@ -194,7 +194,7 @@
 
 #define SCN_CTRL_DEFAULT_SCAN_CTRL		SCN_CTRL_IGNORE_AIS_FIX_CHANNEL
 
-#define SCN_SCAN_DONE_PRINT_BUFFER_LENGTH	200
+#define SCN_SCAN_DONE_PRINT_BUFFER_LENGTH	300
 /*******************************************************************************
  *                             D A T A   T Y P E S
  *******************************************************************************
@@ -249,9 +249,8 @@ enum ENUM_SCHED_SCAN_ACT {
 };
 
 #define SCAN_LOG_PREFIX_MAX_LEN		(16)
-#define SCAN_LOG_MSG_MAX_LEN		(400)
+#define SCAN_LOG_MSG_MAX_LEN		(500)
 #define SCAN_LOG_BUFF_SIZE		(200)
-#define SCAN_LOG_DYN_ALLOC_MEM		(1)
 
 enum ENUM_SCAN_LOG_PREFIX {
 	/* Scan */
@@ -925,10 +924,6 @@ u_int8_t isScanCacheDone(struct GL_SCAN_CACHE_INFO *prScanCache);
 #endif /* CFG_SUPPORT_SCAN_CACHE_RESULT */
 
 void scanReqLog(struct CMD_SCAN_REQ_V2 *prCmdScanReq);
-void scanReqSsidLog(struct CMD_SCAN_REQ_V2 *prCmdScanReq,
-	const uint16_t logBufLen);
-void scanReqChannelLog(struct CMD_SCAN_REQ_V2 *prCmdScanReq,
-	const uint16_t logBufLen);
 void scanResultLog(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb);
 void scanLogCacheAddBSS(struct LINK *prList,
 	struct SCAN_LOG_ELEM_BSS *prListBuf,

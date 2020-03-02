@@ -2358,11 +2358,13 @@ void scanInitEssResult(struct ADAPTER *prAdapter)
  */
 void scanLogEssResult(struct ADAPTER *prAdapter)
 {
-#define NUMBER_SSID_PER_LINE 16
 	struct ESS_SCAN_RESULT_T *prEssResult
 		= &prAdapter->rWlanInfo.arScanResultEss[0];
 	uint32_t u4ResultNum = prAdapter->rWlanInfo.u4ScanResultEssNum;
 	uint32_t u4Index = 0;
+	char *strbuf = NULL, *pos = NULL, *end = NULL;
+	int slen = 0;
+	u_int8_t first = TRUE;
 
 	if (u4ResultNum == 0) {
 		scanlog_dbg(LOG_SCAN_DONE_D2K, INFO, "0 Bss is found, %d, %d, %d, %d\n",
@@ -2373,37 +2375,50 @@ void scanLogEssResult(struct ADAPTER *prAdapter)
 		return;
 	}
 
-	scanlog_dbg(LOG_SCAN_DONE_D2K, INFO, "Total:%u/%u; %s; %s; %s; %s; %s; %s; %s; %s; %s; %s; %s; %s; %s; %s; %s; %s\n",
-		u4ResultNum, prAdapter->rWlanInfo.u4ScanResultNum,
-		prEssResult[0].aucSSID, prEssResult[1].aucSSID,
-		prEssResult[2].aucSSID, prEssResult[3].aucSSID,
-		prEssResult[4].aucSSID, prEssResult[5].aucSSID,
-		prEssResult[6].aucSSID, prEssResult[7].aucSSID,
-		prEssResult[8].aucSSID, prEssResult[9].aucSSID,
-		prEssResult[10].aucSSID, prEssResult[11].aucSSID,
-		prEssResult[12].aucSSID, prEssResult[13].aucSSID,
-		prEssResult[14].aucSSID, prEssResult[15].aucSSID);
-
-	if (u4ResultNum <= NUMBER_SSID_PER_LINE)
-		return;
-
-	u4ResultNum = u4ResultNum / NUMBER_SSID_PER_LINE;
-	if ((u4ResultNum % NUMBER_SSID_PER_LINE) != 0)
-		u4ResultNum++;
-	for (u4Index = 1; u4Index < u4ResultNum; u4Index++) {
-		struct ESS_SCAN_RESULT_T *prEss
-			= &prEssResult[NUMBER_SSID_PER_LINE*u4Index];
-
-		scanlog_dbg(LOG_SCAN_DONE_D2K, INFO, "%s; %s; %s; %s; %s; %s; %s; %s; %s; %s; %s; %s; %s; %s; %s; %s\n",
-			prEss[0].aucSSID, prEss[1].aucSSID,
-			prEss[2].aucSSID, prEss[3].aucSSID,
-			prEss[4].aucSSID, prEss[5].aucSSID,
-			prEss[6].aucSSID, prEss[7].aucSSID,
-			prEss[8].aucSSID, prEss[9].aucSSID,
-			prEss[10].aucSSID, prEss[11].aucSSID,
-			prEss[12].aucSSID, prEss[13].aucSSID,
-			prEss[14].aucSSID, prEss[15].aucSSID);
+	for (u4Index = 0; u4Index < u4ResultNum; u4Index++) {
+		if (prEssResult[u4Index].u2SSIDLen > 0)
+			slen += prEssResult[u4Index].u2SSIDLen + 2; /* _ssid;*/
 	}
+
+	slen = min(slen + 1, SCAN_LOG_MSG_MAX_LEN); /* 1 for null end*/
+	pos = strbuf = kalMemAlloc(slen, VIR_MEM_TYPE);
+	if (strbuf == NULL) {
+		scanlog_dbg(LOG_SCAN_DONE_D2K, INFO, "Can't allocate memory\n");
+		return;
+	}
+	end = strbuf + slen;
+	for (u4Index = 0; u4Index < u4ResultNum; u4Index++) {
+		uint8_t len = prEssResult[u4Index].u2SSIDLen;
+		char ssid[PARAM_MAX_LEN_SSID + 1] = {0};
+
+		if (len == 0)
+			continue;
+		if (pos + len + 3 > end) { /* _ssid;nul */
+			pos = strbuf;
+			if (first) {
+				scanlog_dbg(LOG_SCAN_DONE_D2K, INFO,
+					"Total:%u/%u %s", u4ResultNum,
+					prAdapter->rWlanInfo.u4ScanResultNum,
+					strbuf);
+				first = FALSE;
+			} else {
+				scanlog_dbg(LOG_SCAN_DONE_D2K, INFO,
+					"%s", strbuf);
+			}
+		}
+		kalStrnCpy(ssid, prEssResult[u4Index].aucSSID, sizeof(ssid));
+		ssid[sizeof(ssid) - 1] = '\0';
+		pos += kalSnprintf(pos, end - pos, " %s;", ssid);
+	}
+	if (pos != strbuf) {
+		if (first)
+			scanlog_dbg(LOG_SCAN_DONE_D2K, INFO,
+				"Total:%u/%u %s", u4ResultNum,
+				prAdapter->rWlanInfo.u4ScanResultNum, strbuf);
+		else
+			scanlog_dbg(LOG_SCAN_DONE_D2K, INFO, "%s", strbuf);
+	}
+	kalMemFree(strbuf, VIR_MEM_TYPE, slen);
 }
 
 /* record all Scanned ESS, only one BSS was saved for each ESS, and AP who
@@ -3854,201 +3869,77 @@ void scanReportScanResultToAgps(struct ADAPTER *prAdapter)
 
 void scanReqLog(struct CMD_SCAN_REQ_V2 *prCmdScanReq)
 {
-	char *scanType;
-	char *ssidType;
-	char *channelType;
+	struct CMD_SCAN_REQ_V2 *req = prCmdScanReq;
+	char *strbuf = NULL, *pos = NULL, *end = NULL;
+	uint32_t slen = 0;
+	int i, j;
+	int snum[2] = {req->ucSSIDNum, req->ucSSIDExtNum};
+	struct PARAM_SSID *slist[2] = {req->arSSID, req->arSSIDExtend};
+	int cnum[2] = {req->ucChannelListNum, req->ucChannelListExtNum};
+	struct CHANNEL_INFO *clist[2] =	{
+		req->arChannelList, req->arChannelListExtend};
 
-	switch (prCmdScanReq->ucScanType) {
-	case SCAN_TYPE_PASSIVE_SCAN:
-		scanType = "Passive";
-		break;
-	case SCAN_TYPE_ACTIVE_SCAN:
-		scanType = "Active";
-		break;
-	default:
-		scanType = "Uknown";
+	/* ssid and space */
+	for (i = 0; i < 2; ++i)
+		for (j = 0; j < snum[i]; ++j)
+			slen += slist[i][j].u4SsidLen + 1;
+
+	/* The length should be added 6 + 10 + 4 + 8 + 1 for the format
+	 * ",Ssid:", * ",Ext ssid:", ",Ch:", ",Ext Ch:" and null byte.
+	 */
+	slen += 29 + 4 * (req->ucChannelListNum + req->ucChannelListExtNum);
+	pos = strbuf = kalMemAlloc(slen, VIR_MEM_TYPE);
+	if (strbuf == NULL) {
+		scanlog_dbg(LOG_SCAN_REQ_K2D, INFO, "Can't allocate memory\n");
+		return;
+	}
+	end = strbuf + slen;
+
+	for (i = 0; i < 2; ++i) {
+		if (snum[i] > 0) {
+			pos += kalSnprintf(pos, end - pos, "%s",
+				i == 0 ? ",Ssid:" : ",Ext Ssid:");
+			for (j = 0; j < snum[i]; ++j) {
+				char ssid[PARAM_MAX_LEN_SSID + 1] = {0};
+
+				kalStrnCpy(ssid,
+					slist[i][j].aucSsid, sizeof(ssid));
+				ssid[sizeof(ssid) - 1] = '\0';
+				pos += kalSnprintf(pos, end - pos, " %s", ssid);
+			}
+		}
 	}
 
-	switch (prCmdScanReq->ucSSIDType) {
-	case SCAN_REQ_SSID_WILDCARD:
-		ssidType = "Wildcard";
-		break;
-	case SCAN_REQ_SSID_P2P_WILDCARD:
-		ssidType = "P2PWildcard";
-		break;
-	case SCAN_REQ_SSID_SPECIFIED:
-		ssidType = "Specified";
-		break;
-	case SCAN_REQ_SSID_SPECIFIED_ONLY:
-		ssidType = "SpecifiedOnly";
-		break;
-	default:
-		ssidType = "Uknown";
+	for (i = 0; i < 2; ++i) {
+		if (cnum[i] > 0) {
+			pos += kalSnprintf(pos, end - pos, "%s",
+				i == 0 ? ",Ch:" : ",Ext Ch:");
+			for (j = 0; j < cnum[i]; ++j)
+				pos += kalSnprintf(pos, end - pos, " %u",
+					clist[i][j].ucChannelNum % 1000);
+		}
 	}
-
-	switch (prCmdScanReq->ucChannelType) {
-	case SCAN_CHANNEL_FULL:
-		channelType = "full";
-		break;
-	case SCAN_CHANNEL_2G4:
-		channelType = "2G";
-		break;
-	case SCAN_CHANNEL_5G:
-		channelType = "5G";
-		break;
-	case SCAN_CHANNEL_P2P_SOCIAL:
-		channelType = "P2PSocial";
-		break;
-	case SCAN_CHANNEL_SPECIFIED:
-		channelType = "Sepcified";
-		break;
-	default:
-		channelType = "Uknown";
-	}
-
-	scanlog_dbg(LOG_SCAN_REQ_D2F, INFO, "Scan#%u to Q:[Scan]%s:0x%x[SSID]%s:0x%x Num=%u ExtNum=%u[Ch]%s:0x%x Num=%u ExtNum=%u DW=%u minDW=%u[Ver%u]",
-		prCmdScanReq->ucSeqNum,
-		scanType,
+#define TEMP_LOG_TEMPLATE \
+	"ScanReqV2: ScanType=%d,BSS=%u,SSIDType=%d,Num=%u,Ext=%u," \
+	"ChannelType=%d,Num=%d,Ext=%u,Seq=%u,Ver=%u,Dw=%u,Min=%u," \
+	"Func=0x%X,Mac="MACSTR"%s\n"
+	scanlog_dbg(LOG_SCAN_REQ_D2F, INFO, TEMP_LOG_TEMPLATE,
 		prCmdScanReq->ucScanType,
-		ssidType,
+		prCmdScanReq->ucBssIndex,
 		prCmdScanReq->ucSSIDType,
 		prCmdScanReq->ucSSIDNum,
 		prCmdScanReq->ucSSIDExtNum,
-		channelType,
 		prCmdScanReq->ucChannelType,
 		prCmdScanReq->ucChannelListNum,
 		prCmdScanReq->ucChannelListExtNum,
+		prCmdScanReq->ucSeqNum, prCmdScanReq->auVersion[0],
 		prCmdScanReq->u2ChannelDwellTime,
 		prCmdScanReq->u2ChannelMinDwellTime,
-		prCmdScanReq->auVersion[0]);
-	if (prCmdScanReq->ucSSIDNum || prCmdScanReq->ucSSIDExtNum)
-		scanReqSsidLog(prCmdScanReq, SCAN_LOG_MSG_MAX_LEN);
-	if (prCmdScanReq->ucChannelListNum || prCmdScanReq->ucChannelListExtNum)
-		scanReqChannelLog(prCmdScanReq, SCAN_LOG_MSG_MAX_LEN);
-}
-
-void scanReqSsidLog(struct CMD_SCAN_REQ_V2 *prCmdScanReq,
-	const uint16_t logBufLen)
-{
-	char logBuf[logBufLen];
-	uint32_t idx = 0;
-	int i = 0;
-	u_int8_t ext = FALSE;
-	uint8_t ssidNum = 0;
-	struct PARAM_SSID *ssid = NULL;
-
-	while (1) {
-		if (ext == FALSE) {
-			ssidNum = prCmdScanReq->ucSSIDNum;
-			ssid = prCmdScanReq->arSSID;
-		} else {
-			ssidNum = prCmdScanReq->ucSSIDExtNum;
-			ssid = prCmdScanReq->arSSIDExtend;
-		}
-		for (i = 0; i < ssidNum; ++i) {
-			uint8_t len = (uint8_t) ssid[i].u4SsidLen;
-
-			if (len == 0) {
-				continue;
-			} else if (len+1+1 > logBufLen) {
-				scanlog_dbg(LOG_SCAN_REQ_D2F, INFO, "Need more buffer: %u\n",
-					len+1+1);
-				break;
-			} else if (idx+len+1+1 > logBufLen) {
-				logBuf[idx] = 0; /* terminating null byte */
-				if (ext == FALSE) {
-					scanlog_dbg(LOG_SCAN_REQ_D2F, INFO, "Ssid: %s\n",
-						logBuf);
-				} else {
-					scanlog_dbg(LOG_SCAN_REQ_D2F, INFO, "Ext Ssid: %s\n",
-						logBuf);
-				}
-				idx = 0;
-			}
-
-			kalStrnCpy(logBuf+idx, ssid[i].aucSsid, len);
-			idx = idx + len;
-
-			kalStrnCpy(logBuf+idx, " ", 1);
-			idx = idx + 1;
-		}
-		if (idx != 0) {
-			logBuf[idx] = 0; /* terminating null byte */
-			if (ext == FALSE) {
-				scanlog_dbg(LOG_SCAN_REQ_D2F, INFO, "Ssid: %s\n",
-					logBuf);
-			} else {
-				scanlog_dbg(LOG_SCAN_REQ_D2F, INFO, "Ext Ssid: %s\n",
-					logBuf);
-			}
-			idx = 0;
-		}
-
-		if (ext == FALSE)
-			ext = TRUE;
-		else
-			break;
-	}
-}
-
-void scanReqChannelLog(struct CMD_SCAN_REQ_V2 *prCmdScanReq,
-	const uint16_t logBufLen)
-{
-	char logBuf[logBufLen];
-	uint32_t idx = 0;
-	uint32_t i = 0;
-	u_int8_t ext = FALSE;
-	uint8_t chNum = 0;
-	struct CHANNEL_INFO *ch = NULL;
-	/* the decimal value could 0 ~ 255 */
-	const char *fmt = "%u ";
-	const uint8_t dataLen = 4;
-
-	while (1) {
-		if (ext == FALSE) {
-			chNum = prCmdScanReq->ucChannelListNum;
-			ch = prCmdScanReq->arChannelList;
-		} else {
-			chNum = prCmdScanReq->ucChannelListExtNum;
-			ch = prCmdScanReq->arChannelListExtend;
-		}
-		for (i = 0; i < chNum; ++i) {
-			if (dataLen+1 > logBufLen) {
-				scanlog_dbg(LOG_SCAN_REQ_D2F, INFO, "Need buffer size %u for log\n",
-					dataLen+1);
-				break;
-			} else if (idx+dataLen+1 > logBufLen) {
-				logBuf[idx] = 0; /* terminating null byte */
-				if (ext == FALSE) {
-					scanlog_dbg(LOG_SCAN_REQ_D2F, INFO, "Ch: %s\n",
-						logBuf);
-				} else {
-					scanlog_dbg(LOG_SCAN_REQ_D2F, INFO, "Ext Ch: %s\n",
-						logBuf);
-				}
-				idx = 0;
-			}
-
-			/* number + terminating null byte + a space */
-			idx += kalSnprintf(logBuf+idx, dataLen+1, fmt,
-				ch[i].ucChannelNum);
-		}
-		if (idx != 0) {
-			logBuf[idx] = 0; /* terminating null byte */
-			if (ext == FALSE) {
-				scanlog_dbg(LOG_SCAN_REQ_D2F, INFO, "Ch: %s\n",
-					logBuf);
-			} else {
-				scanlog_dbg(LOG_SCAN_REQ_D2F, INFO, "Ext Ch: %s\n",
-					logBuf);
-			}
-			idx = 0;
-		}
-		if (ext == FALSE)
-			ext = TRUE;
-		else
-			break;
-	}
+		prCmdScanReq->ucScnFuncMask,
+		prCmdScanReq->aucRandomMac,
+		strbuf);
+#undef TEMP_LOG_TEMPLATE
+	kalMemFree(strbuf, VIR_MEM_TYPE, slen);
 }
 
 void scanResultLog(struct ADAPTER *prAdapter,
@@ -4075,7 +3966,6 @@ void scanLogCacheAddBSS(struct LINK *prList,
 
 	if (LINK_IS_INVALID(prList)) {
 		LINK_INITIALIZE(prList);
-		scanlog_dbg(prefix, INFO, "Init scan log cache\n");
 	}
 
 	LINK_FOR_EACH_ENTRY(pSavedBss, prList,
@@ -4092,17 +3982,8 @@ void scanLogCacheAddBSS(struct LINK *prList,
 			return;
 		}
 	} else {
-#if SCAN_LOG_DYN_ALLOC_MEM
-		pBss = kalMemAlloc(sizeof(struct SCAN_LOG_ELEM_BSS),
-			VIR_MEM_TYPE);
-		if (pBss == NULL) {
-			scanlog_dbg(prefix, INFO, "Cannot allocate memory for scan log\n");
-			return;
-		}
-#else
 		scanlog_dbg(prefix, INFO, "Need more buffer\n");
 		return;
-#endif
 	}
 	kalMemZero(pBss, sizeof(struct SCAN_LOG_ELEM_BSS));
 
@@ -4130,7 +4011,6 @@ void scanLogCacheFlushBSS(struct LINK *prList, enum ENUM_SCAN_LOG_PREFIX prefix,
 
 	if (LINK_IS_INVALID(prList)) {
 		LINK_INITIALIZE(prList);
-		scanlog_dbg(prefix, INFO, "Init scan log cache\n");
 	}
 
 	if (LINK_IS_EMPTY(prList))
@@ -4144,12 +4024,6 @@ void scanLogCacheFlushBSS(struct LINK *prList, enum ENUM_SCAN_LOG_PREFIX prefix,
 		while (!LINK_IS_EMPTY(prList)) {
 			LINK_REMOVE_HEAD(prList,
 				pBss, struct SCAN_LOG_ELEM_BSS *);
-#if SCAN_LOG_DYN_ALLOC_MEM
-			if (prList->u4NumElem >= SCAN_LOG_BUFF_SIZE) {
-				kalMemFree(pBss, VIR_MEM_TYPE,
-					sizeof(struct SCAN_LOG_ELEM_BSS));
-			}
-#endif
 		}
 		return;
 	}
@@ -4158,8 +4032,8 @@ void scanLogCacheFlushBSS(struct LINK *prList, enum ENUM_SCAN_LOG_PREFIX prefix,
 	while (!LINK_IS_EMPTY(prList)) {
 		if (idx+dataLen+1 > logBufLen) {
 			logBuf[idx] = 0; /* terminating null byte */
-			scanlog_dbg(prefix, INFO, "%s\n",
-				logBuf);
+			if (prefix != LOG_SCAN_D2D)
+				scanlog_dbg(prefix, INFO, "%s\n", logBuf);
 			idx = 0;
 		}
 
@@ -4186,17 +4060,11 @@ void scanLogCacheFlushBSS(struct LINK *prList, enum ENUM_SCAN_LOG_PREFIX prefix,
 			((uint8_t *)pBss->aucBSSID)[5]);
 #endif
 
-#if SCAN_LOG_DYN_ALLOC_MEM
-		if (prList->u4NumElem >= SCAN_LOG_BUFF_SIZE) {
-			kalMemFree(pBss, VIR_MEM_TYPE,
-				sizeof(struct SCAN_LOG_ELEM_BSS));
-		}
-#endif
 	}
 	if (idx != 0) {
 		logBuf[idx] = 0; /* terminating null byte */
-		scanlog_dbg(prefix, INFO, "%s\n",
-			logBuf);
+		if (prefix != LOG_SCAN_D2D)
+			scanlog_dbg(prefix, INFO, "%s\n", logBuf);
 		idx = 0;
 	}
 }
