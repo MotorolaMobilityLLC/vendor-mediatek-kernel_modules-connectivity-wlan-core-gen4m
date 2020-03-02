@@ -1509,6 +1509,7 @@ VOID nicRxProcessDataPacket(IN P_ADAPTER_T prAdapter, IN OUT P_SW_RFB_T prSwRfb)
 						qmHandleRxDhcpPackets(prAdapter, prRetSwRfb);
 #endif
 					}
+					secHandleRxEapolPacket(prAdapter, prRetSwRfb, prStaRec);
 					nicRxProcessPktWithoutReorder(prAdapter, prRetSwRfb);
 					break;
 
