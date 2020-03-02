@@ -1272,6 +1272,7 @@ struct mt66xx_chip_info {
 #endif
 	void (*asicDumpSerDummyCR)(IN struct ADAPTER *prAdapter);
 	void (*asicWfdmaReInit)(IN struct ADAPTER *prAdapter);
+	void (*asicWfdmaReInit_handshakeInit)(IN struct ADAPTER *prAdapter);
 	void *pdev;
 	uint32_t group5_size;
 	void (*wlanCheckAsicCap)(IN struct ADAPTER *prAdapter);

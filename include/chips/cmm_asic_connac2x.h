@@ -1043,6 +1043,8 @@ uint8_t asicConnac2xRxGetRcpiValueFromRxv(
 	IN struct SW_RFB *prSwRfb);
 void asicConnac2xWfdmaReInit(
 	struct ADAPTER *prAdapter);
+void asicConnac2xWfdmaDummyCrWrite(
+	struct ADAPTER *prAdapter);
 
 #if (CFG_CHIP_RESET_SUPPORT == 1) && (CFG_WMT_RESET_API_SUPPORT == 0)
 u_int8_t conn2_rst_L0_notify_step2(void);
