@@ -411,12 +411,12 @@ void rlmProcessSpecMgtAction(struct ADAPTER *prAdapter,
 			     struct SW_RFB *prSwRfb);
 #endif
 
-void
+uint32_t
 rlmSendOpModeNotificationFrame(struct ADAPTER *prAdapter,
 			       struct STA_RECORD *prStaRec,
 			       uint8_t ucChannelWidth, uint8_t ucNss);
 
-void
+uint32_t
 rlmSendSmPowerSaveFrame(struct ADAPTER *prAdapter,
 			struct STA_RECORD *prStaRec, uint8_t ucNss);
 
