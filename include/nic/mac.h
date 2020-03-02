@@ -489,6 +489,7 @@
 #define MAC_FRAME_ACTION                        (MAC_FRAME_TYPE_MGT | 0x00D0)
 #define MAC_FRAME_ACTION_NO_ACK                 (MAC_FRAME_TYPE_MGT | 0x00E0)
 
+#define MAC_FRAME_HE_TRIGGER                    (MAC_FRAME_TYPE_CTRL | 0x0020)
 #define MAC_FRAME_CONTRL_WRAPPER                (MAC_FRAME_TYPE_CTRL | 0x0070)
 #define MAC_FRAME_BLOCK_ACK_REQ                 (MAC_FRAME_TYPE_CTRL | 0x0080)
 #define MAC_FRAME_BLOCK_ACK                     (MAC_FRAME_TYPE_CTRL | 0x0090)
