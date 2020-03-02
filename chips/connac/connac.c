@@ -137,26 +137,54 @@ void connacConstructFirmwarePrio(struct GLUE_INFO *prGlueInfo,
 	uint8_t *pucNameIdx, uint8_t ucMaxNameIdx)
 {
 	uint8_t ucIdx = 0;
+	uint8_t ucFlavor = 0;
+	uint32_t u4IsFlavor = kalGetFwFlavor(&ucFlavor);
 
 	for (ucIdx = 0; apucConnacFwName[ucIdx]; ucIdx++) {
 		if ((*pucNameIdx + 3) < ucMaxNameIdx) {
-			/* Type 1. WIFI_RAM_CODE_soc1_0_1_1 */
-			snprintf(*(apucName + (*pucNameIdx)),
-					CFG_FW_NAME_MAX_LEN, "%s_%u_%u",
-					apucConnacFwName[ucIdx],
-					CFG_WIFI_IP_SET,
-					wlanGetEcoVersion(
-						prGlueInfo->prAdapter));
-			(*pucNameIdx) += 1;
+			if (!u4IsFlavor) {
+				/* Type 1. WIFI_RAM_CODE_soc1_0_1_1 */
+				snprintf(*(apucName + (*pucNameIdx)),
+						CFG_FW_NAME_MAX_LEN,
+						"%s_%u_%u",
+						apucConnacFwName[ucIdx],
+						CFG_WIFI_IP_SET,
+						wlanGetEcoVersion(
+							prGlueInfo->prAdapter));
+				(*pucNameIdx) += 1;
 
-			/* Type 2. WIFI_RAM_CODE_soc1_0_1_1.bin */
-			snprintf(*(apucName + (*pucNameIdx)),
-					CFG_FW_NAME_MAX_LEN, "%s_%u_%u.bin",
-					apucConnacFwName[ucIdx],
-					CFG_WIFI_IP_SET,
-					wlanGetEcoVersion(
-						prGlueInfo->prAdapter));
-			(*pucNameIdx) += 1;
+				/* Type 2. WIFI_RAM_CODE_soc1_0_1_1.bin */
+				snprintf(*(apucName + (*pucNameIdx)),
+						CFG_FW_NAME_MAX_LEN,
+						"%s_%u_%u.bin",
+						apucConnacFwName[ucIdx],
+						CFG_WIFI_IP_SET,
+						wlanGetEcoVersion(
+							prGlueInfo->prAdapter));
+				(*pucNameIdx) += 1;
+			} else {
+				/* Type 1. WIFI_RAM_CODE_soc1_0_1_1 */
+				snprintf(*(apucName + (*pucNameIdx)),
+						CFG_FW_NAME_MAX_LEN,
+						"%s_%u%c_%u",
+						apucConnacFwName[ucIdx],
+						CFG_WIFI_IP_SET,
+						ucFlavor,
+						wlanGetEcoVersion(
+							prGlueInfo->prAdapter));
+				(*pucNameIdx) += 1;
+
+				/* Type 2. WIFI_RAM_CODE_soc1_0_1_1.bin */
+				snprintf(*(apucName + (*pucNameIdx)),
+						CFG_FW_NAME_MAX_LEN,
+						"%s_%u%c_%u.bin",
+						apucConnacFwName[ucIdx],
+						CFG_WIFI_IP_SET,
+						ucFlavor,
+						wlanGetEcoVersion(
+							prGlueInfo->prAdapter));
+				(*pucNameIdx) += 1;
+			}
 
 			/* Type 3. WIFI_RAM_CODE_soc1_0 */
 			snprintf(*(apucName + (*pucNameIdx)),
