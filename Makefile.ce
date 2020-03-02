@@ -128,6 +128,7 @@ CFG_DRIVER_INF_NAME_CHANGE=n
 
 #/***** Platform dependent part ******/
 ifeq ($(PLATFORM),MT53XX)
+CFG_SUPPORT_ROAMING=0
 endif
 
 
@@ -184,6 +185,11 @@ endif
 ifneq ($(CFG_P2P_SCAN_REPORT_ALL_BSS),)
 PLATFORM_FLAGS += -DCFG_P2P_SCAN_REPORT_ALL_BSS=$(CFG_P2P_SCAN_REPORT_ALL_BSS)
 endif
+
+ifneq ($(CFG_SUPPORT_ROAMING),)
+PLATFORM_FLAGS += -DCFG_SUPPORT_ROAMING=$(CFG_SUPPORT_ROAMING)
+endif
+
 ##############################################################
 # Compile settings
 ##############################################################
