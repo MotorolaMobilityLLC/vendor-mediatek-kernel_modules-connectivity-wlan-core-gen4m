@@ -3608,6 +3608,17 @@ void qmInsertReorderPkt(IN struct ADAPTER *prAdapter,
 	}
 	/* Case 3: Fall behind */
 	else {
+#if CFG_SUPPORT_LOWLATENCY_MODE
+		if (qmIsNoDropPacket(prAdapter, prSwRfb->pvHeader)) {
+			DBGLOG(QM, LOUD, "QM: No drop packet:[%d](%d){%d,%d}\n",
+				prSwRfb->ucTid, u4SeqNo, u4WinStart, u4WinEnd);
+
+			qmPopOutReorderPkt(prAdapter, prSwRfb,
+				prReturnedQue, RX_DATA_REORDER_BEHIND_COUNT);
+			return;
+		}
+#endif /* CFG_SUPPORT_LOWLATENCY_MODE */
+
 #if QM_RX_WIN_SSN_AUTO_ADVANCING && QM_RX_INIT_FALL_BEHIND_PASS
 		if (prReorderQueParm->fgIsWaitingForPktWithSsn) {
 			DBGLOG(QM, LOUD, "QM:(P)[%d](%u){%u,%u}\n",
@@ -3910,7 +3921,7 @@ void qmPopOutDueToFallWithin(IN struct ADAPTER *prAdapter,
 			if (!prReorderQueParm->fgHasBubble) {
 				cnmTimerStartTimer(prAdapter,
 				&(prReorderQueParm->rReorderBubbleTimer),
-					QM_RX_BA_ENTRY_MISS_TIMEOUT_MS);
+					prAdapter->u4QmRxBaMissTimeout);
 				prReorderQueParm->fgHasBubble = TRUE;
 				prReorderQueParm->u2FirstBubbleSn =
 					prReorderQueParm->u2WinStart;
@@ -3927,7 +3938,7 @@ void qmPopOutDueToFallWithin(IN struct ADAPTER *prAdapter,
 			if (fgMissing &&
 				CHECK_FOR_TIMEOUT(rCurrentTime, *prMissTimeout,
 				MSEC_TO_SYSTIME(
-				QM_RX_BA_ENTRY_MISS_TIMEOUT_MS
+				prAdapter->u4QmRxBaMissTimeout
 				))) {
 
 				DBGLOG(QM, TRACE,
@@ -4070,7 +4081,7 @@ void qmPopOutDueToFallAhead(IN struct ADAPTER *prAdapter,
 				cnmTimerStartTimer(prAdapter,
 					&(prReorderQueParm->
 					rReorderBubbleTimer),
-					QM_RX_BA_ENTRY_MISS_TIMEOUT_MS);
+					prAdapter->u4QmRxBaMissTimeout);
 				prReorderQueParm->fgHasBubble = TRUE;
 				prReorderQueParm->u2FirstBubbleSn =
 					prReorderQueParm->u2WinStart;
@@ -4193,7 +4204,7 @@ void qmHandleReorderBubbleTimeout(IN struct ADAPTER *prAdapter,
 
 		cnmTimerStartTimer(prAdapter,
 			&(prReorderQueParm->rReorderBubbleTimer),
-			QM_RX_BA_ENTRY_MISS_TIMEOUT_MS);
+			prAdapter->u4QmRxBaMissTimeout);
 
 		DBGLOG(QM, TRACE,
 			"QM:(Bub Timer Restart) STA[%u] TID[%u] BubSN[%u] Win{%d, %d}\n",
@@ -4329,7 +4340,7 @@ void qmHandleEventCheckReorderBubble(IN struct ADAPTER *prAdapter,
 			prReorderQueParm->u2WinStart;
 		cnmTimerStartTimer(prAdapter,
 			&(prReorderQueParm->rReorderBubbleTimer),
-			QM_RX_BA_ENTRY_MISS_TIMEOUT_MS);
+			prAdapter->u4QmRxBaMissTimeout);
 
 		DBGLOG(QM, TRACE,
 			"QM:(Bub Timer) STA[%u] TID[%u] BubSN[%u] Win{%d, %d}\n",
@@ -7731,3 +7742,24 @@ u_int8_t qmHandleRxReplay(struct ADAPTER *prAdapter,
 	return FALSE;
 }
 #endif
+
+#if CFG_SUPPORT_LOWLATENCY_MODE
+u_int8_t
+qmIsNoDropPacket(IN struct ADAPTER *prAdapter, IN uint8_t *pucData)
+{
+	uint16_t u2Etype = (pucData[ETH_TYPE_LEN_OFFSET] << 8)
+		| (pucData[ETH_TYPE_LEN_OFFSET + 1]);
+
+	if (!prAdapter->fgEnLowLatencyMode)
+		return FALSE;
+
+	if (u2Etype == ETH_P_IP) {
+		uint8_t *pucEthBody = &pucData[ETH_HLEN];
+		uint8_t ucIpProto = pucEthBody[IP_PROTO_HLEN];
+
+		if (ucIpProto == IP_PRO_UDP || ucIpProto == IP_PRO_TCP)
+			return TRUE;
+	}
+	return FALSE;
+}
+#endif /* CFG_SUPPORT_LOWLATENCY_MODE */

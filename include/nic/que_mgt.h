@@ -246,7 +246,10 @@ extern const uint8_t *apucACI2Str[4];
 
 #define TXM_DEFAULT_FLUSH_QUEUE_GUARD_TIME  0	/* Unit: 64 us */
 
-#define QM_RX_BA_ENTRY_MISS_TIMEOUT_MS      (200)
+#define QM_RX_BA_ENTRY_MISS_TIMEOUT_MS		(200)
+#if CFG_SUPPORT_LOWLATENCY_MODE
+#define QM_RX_BA_ENTRY_MISS_TIMEOUT_MS_SHORT	(50)
+#endif /* CFG_SUPPORT_LOWLATENCY_MODE */
 
 #if CFG_M0VE_BA_TO_DRIVER
 /* MQM internal control bitmap per-bit usage
@@ -1154,6 +1157,10 @@ void qmHandleRxDhcpPackets(struct ADAPTER *prAdapter,
 u_int8_t qmHandleRxReplay(struct ADAPTER *prAdapter,
 			  struct SW_RFB *prSwRfb);
 #endif
+
+#if CFG_SUPPORT_LOWLATENCY_MODE
+u_int8_t qmIsNoDropPacket(IN struct ADAPTER *prAdapter, IN uint8_t *pucData);
+#endif /* CFG_SUPPORT_LOWLATENCY_MODE */
 /*******************************************************************************
  *                              F U N C T I O N S
  *******************************************************************************

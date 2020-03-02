@@ -236,6 +236,10 @@
 #define OID_802_11_WSC_ASSOC_INFO                       0xFFA0CB00
 #endif
 
+#if CFG_SUPPORT_LOWLATENCY_MODE
+#define OID_CUSTOM_LOWLATENCY_MODE			0xFFA0CC00
+#endif /* CFG_SUPPORT_LOWLATENCY_MODE */
+
 #define OID_IPC_WIFI_LOG_UI                             0xFFA0CC01
 #define OID_IPC_WIFI_LOG_LEVEL                          0xFFA0CC02
 

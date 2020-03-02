@@ -682,6 +682,13 @@ uint32_t wlanAdapterStart(IN struct ADAPTER *prAdapter, IN struct REG_INFO *prRe
 		/* Update DBDC default setting */
 		cnmInitDbdcSetting(prAdapter);
 #endif /*CFG_SUPPORT_DBDC*/
+
+		/* Default QM RX BA timeout */
+		prAdapter->u4QmRxBaMissTimeout = QM_RX_BA_ENTRY_MISS_TIMEOUT_MS;
+
+#if CFG_SUPPORT_LOWLATENCY_MODE
+		wlanAdapterStartForLowLatency(prAdapter);
+#endif /* CFG_SUPPORT_LOWLATENCY_MODE */
 	} while (FALSE);
 
 	if (u4Status == WLAN_STATUS_SUCCESS) {
@@ -8069,3 +8076,30 @@ wlanGetSupportNss(IN struct ADAPTER *prAdapter, IN uint8_t ucBssIndex)
 #endif
 	return ucRetValNss;
 }
+
+#if CFG_SUPPORT_LOWLATENCY_MODE
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief This is a private routine, which is used to initialize the variables
+ *        for low latency mode.
+ *
+ * \param prAdapter      Pointer of Adapter Data Structure
+ *
+ * \retval WLAN_STATUS_SUCCESS: Success
+ * \retval WLAN_STATUS_FAILURE: Failed
+ */
+/*----------------------------------------------------------------------------*/
+uint32_t
+wlanAdapterStartForLowLatency(IN struct ADAPTER *prAdapter)
+{
+	uint32_t u4Status = WLAN_STATUS_SUCCESS;
+
+	/* Default disable low latency mode */
+	prAdapter->fgEnLowLatencyMode = FALSE;
+
+	/* Default enable scan */
+	prAdapter->fgEnCfg80211Scan = TRUE;
+
+	return u4Status;
+}
+#endif /* CFG_SUPPORT_LOWLATENCY_MODE */

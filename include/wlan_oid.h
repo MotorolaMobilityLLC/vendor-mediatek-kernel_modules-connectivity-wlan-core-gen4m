@@ -246,6 +246,12 @@
 #define TXPOWER_RATE_NUM                (TXPOWER_RATE_VHT160_OFFSET + MODULATION_SYSTEM_VHT160_NUM)
 #endif
 
+#if CFG_SUPPORT_LOWLATENCY_MODE
+#define GED_EVENT_GAS               (1 << 4)
+#define GED_EVENT_NETWORK           (1 << 11)
+#define GED_EVENT_DOPT_WIFI_SCAN    (1 << 12)
+#endif /* CFG_SUPPORT_LOWLATENCY_MODE */
+
 /*******************************************************************************
 *                             D A T A   T Y P E S
 ********************************************************************************
@@ -3334,5 +3340,11 @@ wlanoidSetWifiLogLevel(IN struct ADAPTER *prAdapter,
 		IN void *pvSetBuffer,
 		IN uint32_t u4SetBufferLen,
 		OUT uint32_t *pu4SetInfoLen);
+
+#if CFG_SUPPORT_LOWLATENCY_MODE
+uint32_t
+wlanoidSetLowLatencyMode(IN struct ADAPTER *prAdapter, IN void *pvSetBuffer,
+		IN uint32_t u4SetBufferLen, OUT uint32_t *pu4SetInfoLen);
+#endif /* CFG_SUPPORT_LOWLATENCY_MODE */
 
 #endif /* _WLAN_OID_H */

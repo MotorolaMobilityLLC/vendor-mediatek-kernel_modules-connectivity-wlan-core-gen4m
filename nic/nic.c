@@ -1883,53 +1883,138 @@ uint32_t nicPmIndicateBssAbort(IN struct ADAPTER *prAdapter,
 				   (uint8_t *)&rCmdIndicatePmBssAbort, NULL, 0);
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * @brief This utility function is used to set power save bit map
+ *
+ *
+ * @param prAdapter          Pointer of ADAPTER_T
+ *        ucBssIndex         Index of BSS-INFO
+ *        ucSet              enter power save or not(1 PS, 0 not PS)
+ *        ucCaller           index of bit map for caller
+ * @retval -
+ */
+/*----------------------------------------------------------------------------*/
+void
+nicPowerSaveInfoMap(IN struct ADAPTER *prAdapter,
+		    IN uint8_t ucBssIndex,
+		    IN enum PARAM_POWER_MODE ePowerMode,
+		    IN enum POWER_SAVE_CALLER ucCaller)
+{
+	uint32_t u4Flag;
+
+	/* max caller is 24 */
+	if (ucCaller >= PS_CALLER_MAX_NUM)
+		ASSERT(0);
+
+	u4Flag = prAdapter->rWlanInfo.u4PowerSaveFlag[ucBssIndex];
+	DBGLOG(NIC, INFO,
+		"nicPowerSaveInfoMap u4Flag=0x%04x, ucCaller=%d\n",
+		u4Flag, ucCaller);
+
+	/* set send command flag */
+	if (ePowerMode != Param_PowerModeCAM) {
+		if ((u4Flag & 0x00FFFFFF) == BIT(ucCaller))
+			u4Flag |= PS_SYNC_WITH_FW;
+		u4Flag &= ~BIT(ucCaller);
+	} else {
+		if (u4Flag == 0)
+			u4Flag |= PS_SYNC_WITH_FW;
+		u4Flag |= BIT(ucCaller);
+	}
+
+	prAdapter->rWlanInfo.u4PowerSaveFlag[ucBssIndex] = u4Flag;
+	DBGLOG(NIC, INFO,
+		"nicPowerSaveInfoMap u4PowerSaveFlag[%d]=0x%04x\n",
+		ucBssIndex, prAdapter->rWlanInfo.u4PowerSaveFlag[ucBssIndex]);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * @brief This utility function is used to set power save profile
+ *
+ *
+ * @param prAdapter          Pointer of ADAPTER_T
+ *        ucBssIndex         Index of BSS-INFO
+ *        ucSet              enter power save or not(1 PS, 0 not PS)
+ *        fgEnCmdEvent       Enable the functions when command done and timeout
+ *        ucCaller           index of bit map for caller
+ *
+ * @retval WLAN_STATUS_SUCCESS
+ * @retval WLAN_STATUS_PENDING
+ * @retval WLAN_STATUS_FAILURE
+ * @retval WLAN_STATUS_NOT_SUPPORTED
+ */
+/*----------------------------------------------------------------------------*/
 uint32_t
 nicConfigPowerSaveProfile(IN struct ADAPTER *prAdapter,
-	IN uint8_t ucBssIndex, IN enum PARAM_POWER_MODE ePwrMode,
-	IN u_int8_t fgEnCmdEvent)
+			  IN uint8_t ucBssIndex,
+			  IN enum PARAM_POWER_MODE ePwrMode,
+			  IN u_int8_t fgEnCmdEvent,
+			  IN enum POWER_SAVE_CALLER ucCaller)
 {
 	DEBUGFUNC("nicConfigPowerSaveProfile");
 	DBGLOG(INIT, TRACE,
-	       "ucBssIndex:%d, ePwrMode:%d, fgEnCmdEvent:%d\n", ucBssIndex,
-	       ePwrMode, fgEnCmdEvent);
+		"ucBssIndex:%d, ePwrMode:%d, fgEnCmdEvent:%d\n",
+		ucBssIndex, ePwrMode, fgEnCmdEvent);
 
 	ASSERT(prAdapter);
 
 	if (ucBssIndex >= prAdapter->ucHwBssIdNum) {
-
 		ASSERT(0);
 		return WLAN_STATUS_NOT_SUPPORTED;
 	}
-	/* prAdapter->rWlanInfo.ePowerSaveMode.ucNetTypeIndex
-	 * = eNetTypeIndex;
-	 * prAdapter->rWlanInfo.ePowerSaveMode.ucPsProfile
-	 * = (UINT_8)ePwrMode;
-	 */
+
+	nicPowerSaveInfoMap(prAdapter, ucBssIndex, ePwrMode, ucCaller);
+
 	prAdapter->rWlanInfo.arPowerSaveMode[ucBssIndex].ucBssIndex
 		= ucBssIndex;
 	prAdapter->rWlanInfo.arPowerSaveMode[ucBssIndex].ucPsProfile
 		= (uint8_t) ePwrMode;
 
-	if ((prAdapter->prAisBssInfo != NULL) &&
-	    (ucBssIndex == prAdapter->prAisBssInfo->ucBssIndex) &&
-	    prAdapter->rWlanInfo.fgEnSpecPwrMgt) {
-		return WLAN_STATUS_SUCCESS;
-	}
+	if (PS_SYNC_WITH_FW
+		& prAdapter->rWlanInfo.u4PowerSaveFlag[ucBssIndex]) {
+		uint32_t rWlanStatus = WLAN_STATUS_SUCCESS;
 
-	return wlanSendSetQueryCmd(prAdapter,
-			CMD_ID_POWER_SAVE_MODE,
-			TRUE,
-			FALSE,
-			TRUE,
+		prAdapter->rWlanInfo.u4PowerSaveFlag[ucBssIndex]
+			&= ~PS_SYNC_WITH_FW;
+
+		DBGLOG(NIC, INFO,
+			"SYNC_WITH_FW u4PowerSaveFlag[%d]=0x%04x\n",
+			ucBssIndex,
+			prAdapter->rWlanInfo.u4PowerSaveFlag[ucBssIndex]);
+
+		rWlanStatus = wlanSendSetQueryCmd(prAdapter,	/* prAdapter */
+			CMD_ID_POWER_SAVE_MODE,		/* ucCID */
+			TRUE,	/* fgSetQuery */
+			FALSE,	/* fgNeedResp */
+			fgEnCmdEvent,	/* fgIsOid */
+
+			/* pfCmdDoneHandler */
 			(fgEnCmdEvent ? nicCmdEventSetCommon : NULL),
+
+			/* pfCmdTimeoutHandler */
 			(fgEnCmdEvent ? nicOidCmdTimeoutCommon : NULL),
+
+			/* u4SetQueryInfoLen */
 			sizeof(struct CMD_PS_PROFILE),
-			(uint8_t *) &
-			(prAdapter->rWlanInfo.arPowerSaveMode[ucBssIndex]),
-			NULL, sizeof(enum PARAM_POWER_MODE)
+
+			/* pucInfoBuffer */
+			(uint8_t *) &(prAdapter->rWlanInfo
+				.arPowerSaveMode[ucBssIndex]),
+
+			/* pvSetQueryBuffer */
+			NULL,
+
+			/* u4SetQueryBufferLen */
+			0
 			);
 
-} /* end of wlanoidSetAcpiDevicePowerStateMode() */
+		if (fgEnCmdEvent)
+			return rWlanStatus;
+	}
+	return WLAN_STATUS_SUCCESS;
+} /* end of nicConfigPowerSaveProfile */
 
 uint32_t
 nicConfigProcSetCamCfgWrite(IN struct ADAPTER *prAdapter,
@@ -2016,7 +2101,7 @@ uint32_t nicEnterCtiaMode(IN struct ADAPTER *prAdapter,
 			ePowerMode = Param_PowerModeCAM;
 			rWlanStatus = nicConfigPowerSaveProfile(prAdapter,
 				prAdapter->prAisBssInfo->ucBssIndex,
-				ePowerMode, fgEnCmdEvent);
+				ePowerMode, fgEnCmdEvent, PS_CALLER_CTIA);
 		}
 
 		/* 5. Disable Beacon Timeout Detection */
@@ -2050,7 +2135,7 @@ uint32_t nicEnterCtiaMode(IN struct ADAPTER *prAdapter,
 			ePowerMode = Param_PowerModeFast_PSP;
 			rWlanStatus = nicConfigPowerSaveProfile(prAdapter,
 				prAdapter->prAisBssInfo->ucBssIndex,
-				ePowerMode, fgEnCmdEvent);
+				ePowerMode, fgEnCmdEvent, PS_CALLER_CTIA);
 		}
 
 		/* 5. Enable Beacon Timeout Detection */
@@ -2144,7 +2229,7 @@ uint32_t nicEnterCtiaModeOfCAM(IN struct ADAPTER *prAdapter,
 			ePowerMode = Param_PowerModeCAM;
 			rWlanStatus = nicConfigPowerSaveProfile(prAdapter,
 				prAdapter->prAisBssInfo->ucBssIndex,
-				ePowerMode, fgEnCmdEvent);
+				ePowerMode, fgEnCmdEvent, PS_CALLER_CTIA_CAM);
 		}
 	} else {
 		/* Keep at Fast PS */
@@ -2157,7 +2242,7 @@ uint32_t nicEnterCtiaModeOfCAM(IN struct ADAPTER *prAdapter,
 			ePowerMode = Param_PowerModeFast_PSP;
 			rWlanStatus = nicConfigPowerSaveProfile(prAdapter,
 				prAdapter->prAisBssInfo->ucBssIndex,
-				ePowerMode, fgEnCmdEvent);
+				ePowerMode, fgEnCmdEvent, PS_CALLER_CTIA_CAM);
 		}
 	}
 
@@ -2313,8 +2398,8 @@ uint32_t nicEnterTPTestMode(IN struct ADAPTER *prAdapter,
 				    && (prBssInfo->eCurrentOPMode
 				    == OP_MODE_INFRASTRUCTURE))
 					nicConfigPowerSaveProfile(prAdapter,
-						ucBssIdx,
-						Param_PowerModeCAM, FALSE);
+						ucBssIdx, Param_PowerModeCAM,
+						FALSE, PS_CALLER_TP);
 			}
 
 		/* 4. Disable Beacon Timeout Detection */
@@ -2340,7 +2425,8 @@ uint32_t nicEnterTPTestMode(IN struct ADAPTER *prAdapter,
 			    && (prBssInfo->eCurrentOPMode
 						== OP_MODE_INFRASTRUCTURE))
 				nicConfigPowerSaveProfile(prAdapter, ucBssIdx,
-					Param_PowerModeFast_PSP, FALSE);
+					Param_PowerModeFast_PSP,
+					FALSE, PS_CALLER_TP);
 		}
 
 		/* 4. Enable Beacon Timeout Detection */
