@@ -3608,13 +3608,17 @@ int mtk_cfg80211_suspend(struct wiphy *wiphy, struct cfg80211_wowlan *wow)
 	prGlueInfo = (P_GLUE_INFO_T) wiphy_priv(wiphy);
 	ASSERT(prGlueInfo);
 
+	if (!prGlueInfo || !prGlueInfo->prAdapter) {
+		DBGLOG(REQ, ERROR, "prGlueInfo or prAdapter is NULL!\n");
+		return 0;
+	}
 	prAdapter = prGlueInfo->prAdapter;
 
 	DBGLOG(REQ, WARN, "Wow:%d, WowEnable:%d, state:%d\n",
 		prGlueInfo->prAdapter->rWifiVar.ucWow, prGlueInfo->prAdapter->rWowCtrl.fgWowEnable,
 		kalGetMediaStateIndicated(prGlueInfo));
 
-    /* 1) wifi cfg "Wow" must be true, 2) wow is disable 3) WIfI connected => execute link down flow */
+	/* 1) wifi cfg "Wow" must be true, 2) wow is disable 3) WIfI connected => execute link down flow */
 	if (prGlueInfo->prAdapter->rWifiVar.ucWow && !prGlueInfo->prAdapter->rWowCtrl.fgWowEnable) {
 		if (kalGetMediaStateIndicated(prGlueInfo) == PARAM_MEDIA_STATE_CONNECTED) {
 			DBGLOG(REQ, WARN, "CFG80211 suspend link down\n");
