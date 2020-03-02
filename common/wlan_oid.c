@@ -5048,7 +5048,6 @@ typedef struct _TXBF_CMD_DONE_HANDLER_T {
 TXBF_CMD_DONE_HANDLER_T rTxBfCmdDoneHandler[] = {
 	{BF_SOUNDING_OFF, nicCmdEventSetCommon},
 	{BF_SOUNDING_ON, nicCmdEventSetCommon},
-	{BF_HW_CTRL, nicCmdEventSetCommon},
 	{BF_DATA_PACKET_APPLY, nicCmdEventSetCommon},
 	{BF_PFMU_MEM_ALLOCATE, nicCmdEventSetCommon},
 	{BF_PFMU_MEM_RELEASE, nicCmdEventSetCommon},
@@ -5058,7 +5057,10 @@ TXBF_CMD_DONE_HANDLER_T rTxBfCmdDoneHandler[] = {
 	{BF_PROFILE_WRITE, nicCmdEventSetCommon},
 	{BF_PN_READ, nicCmdEventSetCommon},
 	{BF_PN_WRITE, nicCmdEventSetCommon},
-	{BF_PFMU_MEM_ALLOC_MAP_READ, nicCmdEventSetCommon}
+	{BF_PFMU_MEM_ALLOC_MAP_READ, nicCmdEventSetCommon},
+#if CFG_SUPPORT_TX_BF_FPGA
+	{BF_PFMU_SW_TAG_WRITE, nicCmdEventSetCommon}
+#endif
 };
 
 WLAN_STATUS
