@@ -399,7 +399,7 @@ void aisFsmInit(IN struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 			prAdapter->rWifiVar.aucMacAddress);
 	else
 		COPY_MAC_ADDR(prAisBssInfo->aucOwnMacAddr,
-			prAdapter->rWifiVar.aucInterfaceAddress);
+			prAdapter->rWifiVar.aucMacAddress1);
 
 	/* 4 <3> Initiate BSS_INFO_T - private part */
 	/* TODO */

@@ -3629,7 +3629,7 @@ static int32_t wlanOnPreNetRegister(struct GLUE_INFO *prGlueInfo,
 		if (KAL_AIS_NUM > 1) {
 			prDevHandler = wlanGetNetDev(prGlueInfo, 1);
 			kalMemCopy(prDevHandler->dev_addr,
-				&prAdapter->rWifiVar.aucInterfaceAddress,
+				&prAdapter->rWifiVar.aucMacAddress1,
 				ETH_ALEN);
 			kalMemCopy(prDevHandler->perm_addr,
 				prDevHandler->dev_addr,
