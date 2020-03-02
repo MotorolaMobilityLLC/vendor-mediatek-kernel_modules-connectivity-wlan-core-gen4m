@@ -4231,7 +4231,7 @@ uint32_t ServiceWlanOid(void *winfos,
 	 void *param,
 	 uint32_t paramLen,
 	 uint32_t *u4BufLen,
-	 void *stats_data)
+	 void *rsp_data)
 {
 	int32_t i4Status = 0;
 	uint32_t u4BufLen2;
@@ -4241,7 +4241,7 @@ uint32_t ServiceWlanOid(void *winfos,
 	boolean fgRead, fgWaitResp, fgCmd;
 	PFN_OID_HANDLER_FUNC pfnOidHandler = NULL;
 	struct test_wlan_info *prTestWinfo;
-	struct hqa_comm_rx_stat *prStatsData = NULL;
+	struct hqa_m_rx_stat *prStatsData = NULL;
 #if CFG_SUPPORT_ANT_SWAP
 	struct mt66xx_chip_info *prChipInfo = NULL;
 #endif
@@ -4249,7 +4249,9 @@ uint32_t ServiceWlanOid(void *winfos,
 	ASSERT(winfos);
 
     /* Avoid assert caused by u4BufLen = NULL. */
-	u4BufLen = &u4BufLen2;
+	if (u4BufLen == NULL)
+		u4BufLen = &u4BufLen2;
+
 	prTestWinfo = (struct test_wlan_info *)winfos;
 
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prTestWinfo->net_dev));
@@ -4277,7 +4279,7 @@ uint32_t ServiceWlanOid(void *winfos,
 		pfnOidHandler = wlanoidRftestSetAutoTest;
 		break;
 	case OP_WLAN_OID_QUERY_RX_STATISTICS:
-		prStatsData = (struct hqa_comm_rx_stat *)stats_data;
+		prStatsData = (struct hqa_m_rx_stat *)rsp_data;
 		pfnOidHandler = wlanoidQueryRxStatistics;
 		fgRead = TRUE;
 		fgWaitResp = TRUE;
@@ -4345,14 +4347,14 @@ uint32_t ServiceWlanOid(void *winfos,
 		fgRead, /* fgRead */
 		fgWaitResp, /* fgWaitResp */
 		fgCmd, /* fgCmd */
-		&u4BufLen2); /* pu4QryInfoLen */
+		u4BufLen); /* pu4QryInfoLen */
 
 	if ((prStatsData) &&
 		(oidType == OP_WLAN_OID_QUERY_RX_STATISTICS)) {
 
 		/* 264 = 66 items * 4 bytes */
-		kalMemCopy(&prStatsData->u.r_test_m_hqa_rx_stat,
-		&(g_HqaRxStat), 264);
+		kalMemCopy(&prStatsData->mac_rx_fcs_err_cnt,
+		&(g_HqaRxStat.MAC_FCS_Err), 264);
 	}
 
 	return i4Status;
