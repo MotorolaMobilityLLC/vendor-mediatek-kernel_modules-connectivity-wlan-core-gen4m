@@ -98,7 +98,8 @@
 #define CONNAC_PCIe_DEVICE_ID	0x3280
 #define NIC7915_PCIe_DEVICE_ID	0x7915
 #define NICSOC3_0_PCIe_DEVICE_ID  0x0789
-
+/* Using PID 0x7915 for bitfile WF-3 */
+#define NIC7961_PCIe_DEVICE_ID	0x7915
 
 static const struct pci_device_id mtk_pci_ids[] = {
 #ifdef MT6632
@@ -132,7 +133,10 @@ static const struct pci_device_id mtk_pci_ids[] = {
 	{	PCI_DEVICE(CONNAC_PCI_VENDOR_ID, NICSOC3_0_PCIe_DEVICE_ID),
 		.driver_data = (kernel_ulong_t)&mt66xx_driver_data_soc3_0 },
 #endif /* SOC3_0 */
-
+#ifdef MT7961
+	{	PCI_DEVICE(MTK_PCI_VENDOR_ID, NIC7961_PCIe_DEVICE_ID),
+		.driver_data = (kernel_ulong_t)&mt66xx_driver_data_mt7961},
+#endif /* MT7961 */
 	{ /* end: all zeroes */ },
 };
 
