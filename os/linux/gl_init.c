@@ -388,7 +388,7 @@ static struct cfg80211_ops mtk_wlan_ops = {
 #endif
 };
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 18, 0)
+#if KERNEL_VERSION(3, 18, 0) <= CFG80211_VERSION_CODE
 
 static const struct wiphy_vendor_command mtk_wlan_vendor_ops[] = {
 	{
@@ -1477,7 +1477,7 @@ static void wlanCreateWirelessDevice(void)
 	prWiphy->signal_type = CFG80211_SIGNAL_TYPE_MBM;
 	prWiphy->cipher_suites = (const u32 *)mtk_cipher_suites;
 	prWiphy->n_cipher_suites = ARRAY_SIZE(mtk_cipher_suites);
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 14, 0)
+#if KERNEL_VERSION(3, 14, 0) > CFG80211_VERSION_CODE
 	prWiphy->flags = WIPHY_FLAG_CUSTOM_REGULATORY | WIPHY_FLAG_SUPPORTS_FW_ROAM | WIPHY_FLAG_HAS_REMAIN_ON_CHANNEL;
 #else
 #if (CFG_SUPPORT_DFS_MASTER == 1)
@@ -1496,7 +1496,7 @@ static void wlanCreateWirelessDevice(void)
 	prWiphy->max_remain_on_channel_duration = 5000;
 	prWiphy->mgmt_stypes = mtk_cfg80211_ais_default_mgmt_stypes;
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 18, 0)
+#if KERNEL_VERSION(3, 18, 0) <= CFG80211_VERSION_CODE
 	prWiphy->vendor_commands = mtk_wlan_vendor_ops;
 	prWiphy->n_vendor_commands = sizeof(mtk_wlan_vendor_ops) / sizeof(struct wiphy_vendor_command);
 	prWiphy->vendor_events = mtk_wlan_vendor_events;
@@ -1504,7 +1504,7 @@ static void wlanCreateWirelessDevice(void)
 #endif
 	/* 4 <1.4> wowlan support */
 #ifdef CONFIG_PM
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 11, 0)
+#if KERNEL_VERSION(3, 11, 0) <= CFG80211_VERSION_CODE
 	prWiphy->wowlan = &mtk_wlan_wowlan_support;
 #else
 	kalMemCopy(&prWiphy->wowlan, &mtk_wlan_wowlan_support, sizeof(struct wiphy_wowlan_support));
@@ -2526,7 +2526,7 @@ static VOID wlanRemove(VOID)
 
 	if (prGlueInfo->eParamMediaStateIndicated == PARAM_MEDIA_STATE_CONNECTED) {
 
-#if CFG_WPS_DISCONNECT || (KERNEL_VERSION(4, 2, 0) <= LINUX_VERSION_CODE)
+#if CFG_WPS_DISCONNECT || (KERNEL_VERSION(4, 2, 0) <= CFG80211_VERSION_CODE)
 		cfg80211_disconnected(prGlueInfo->prDevHandler, 0, NULL, 0, TRUE, GFP_KERNEL);
 #else
 		cfg80211_disconnected(prGlueInfo->prDevHandler, 0, NULL, 0, GFP_KERNEL);

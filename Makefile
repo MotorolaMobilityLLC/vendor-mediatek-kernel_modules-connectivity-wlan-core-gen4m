@@ -83,6 +83,18 @@ else ifeq ($(CONFIG_MTK_COMBO_WIFI_HIF), usb)
 else
     $(error Unsuppoted HIF=$(CONFIG_MTK_COMBO_WIFI_HIF)!!)
 endif
+
+ifneq ($(CFG_CFG80211_VERSION),)
+VERSION_STR = $(subst ",,$(subst ., , $(subst -, ,$(subst v,,$(CFG_CFG80211_VERSION)))))
+$(info VERSION_STR=$(VERSION_STR))
+X = $(firstword $(VERSION_STR))
+Y = $(word 2 ,$(VERSION_STR))
+Z = $(word 3 ,$(VERSION_STR))
+VERSION := $(shell echo "$$(( $X * 65536 + $Y * 256 + $Z))" )
+ccflags-y += -DCFG_CFG80211_VERSION=$(VERSION)
+$(info DCFG_CFG80211_VERSION=$(VERSION))
+endif
+
 $(info HIF=$(CONFIG_MTK_COMBO_WIFI_HIF))
 
 ifeq ($(CONFIG_MTK_PASSPOINT_R1_SUPPORT), y)
