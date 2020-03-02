@@ -344,7 +344,7 @@ extern const UINT_32 mtk_cipher_suites[5];
 
 #define CHAN2G(_channel, _freq, _flags)             \
 {                                               \
-	.band               = IEEE80211_BAND_2GHZ,  \
+	.band               = KAL_BAND_2GHZ,  \
 	.center_freq        = (_freq),              \
 	.hw_value           = (_channel),           \
 	.flags              = (_flags),             \
@@ -354,7 +354,7 @@ extern const UINT_32 mtk_cipher_suites[5];
 
 #define CHAN5G(_channel, _flags)                        \
 {                                                   \
-	.band               = IEEE80211_BAND_5GHZ,      \
+	.band               = KAL_BAND_5GHZ,      \
 	.center_freq        = 5000 + (5 * (_channel)),  \
 	.hw_value           = (_channel),               \
 	.flags              = (_flags),                 \
