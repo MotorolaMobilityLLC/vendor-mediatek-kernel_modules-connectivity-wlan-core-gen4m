@@ -9489,14 +9489,16 @@ uint8_t wlanGetBssIdx(struct net_device *ndev)
 			netdev_priv(ndev);
 
 		DBGLOG(REQ, LOUD,
-			"ucBssIndex = %d\n",
-			prNetDevPrivate->ucBssIdx);
+			"ucBssIndex = %d, ndev(%p)\n",
+			prNetDevPrivate->ucBssIdx,
+			ndev);
 
 		return prNetDevPrivate->ucBssIdx;
 	}
 
 	DBGLOG(REQ, LOUD,
-		"ucBssIndex = 0xff\n");
+		"ucBssIndex = 0xff, ndev(%p)\n",
+		ndev);
 
 	return 0xff;
 }
