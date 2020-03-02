@@ -451,6 +451,14 @@ static void axiAllocHifMem(struct platform_device *pdev)
 	prChipInfo = ((struct mt66xx_hif_driver_data *)
 		mtk_axi_ids[0].driver_data)->chip_info;
 
+#if (CFG_SUPPORT_CONNINFRA == 1)
+	conninfra_get_phy_addr(
+		(unsigned int *)&gConEmiPhyBase,
+		(unsigned int *)&gConEmiSize);
+	gWifiRsvMemPhyBase = gConEmiPhyBase + WIFI_EMI_WFDMA_OFFSET;
+	gWifiRsvMemSize = WIFI_EMI_WFDMA_SIZE;
+#endif
+
 	request_mem_region(gWifiRsvMemPhyBase, gWifiRsvMemSize, axi_name(pdev));
 
 #if CFG_MTK_ANDROID_EMI
