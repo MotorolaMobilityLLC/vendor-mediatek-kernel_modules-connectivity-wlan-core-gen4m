@@ -325,12 +325,12 @@ static VOID rlmObssScanTimeout(P_ADAPTER_T prAdapter, ULONG ulParamPtr)
 /*----------------------------------------------------------------------------*/
 VOID rlmObssTriggerScan(P_ADAPTER_T prAdapter, P_BSS_INFO_T prBssInfo)
 {
-	P_MSG_SCN_SCAN_REQ prScanReqMsg;
+	P_MSG_SCN_SCAN_REQ_V2 prScanReqMsg;
 
 	ASSERT(prBssInfo);
 
-	prScanReqMsg = (P_MSG_SCN_SCAN_REQ)
-	    cnmMemAlloc(prAdapter, RAM_TYPE_MSG, sizeof(MSG_SCN_SCAN_REQ));
+	prScanReqMsg = (P_MSG_SCN_SCAN_REQ_V2)
+	    cnmMemAlloc(prAdapter, RAM_TYPE_MSG, sizeof(MSG_SCN_SCAN_REQ_V2));
 	ASSERT(prScanReqMsg);
 
 	if (!prScanReqMsg) {
@@ -344,12 +344,13 @@ VOID rlmObssTriggerScan(P_ADAPTER_T prAdapter, P_BSS_INFO_T prBssInfo)
 	 * OBSS scan interval is limited to OBSS_SCAN_MIN_INTERVAL (min 10 sec)
 	 * and scan module don't care seqNum of OBSS scanning
 	 */
-	prScanReqMsg->rMsgHdr.eMsgId = MID_RLM_SCN_SCAN_REQ;
+	kalMemZero(prScanReqMsg, sizeof(MSG_SCN_SCAN_REQ_V2));
+	prScanReqMsg->rMsgHdr.eMsgId = MID_RLM_SCN_SCAN_REQ_V2;
 	prScanReqMsg->ucSeqNum = 0x33;
 	prScanReqMsg->ucBssIndex = prBssInfo->ucBssIndex;
 	prScanReqMsg->eScanType = SCAN_TYPE_ACTIVE_SCAN;
 	prScanReqMsg->ucSSIDType = SCAN_REQ_SSID_WILDCARD;
-	prScanReqMsg->ucSSIDLength = 0;
+	prScanReqMsg->ucSSIDNum = 0;
 	prScanReqMsg->eScanChannel = SCAN_CHANNEL_2G4;
 	prScanReqMsg->u2IELen = 0;
 
