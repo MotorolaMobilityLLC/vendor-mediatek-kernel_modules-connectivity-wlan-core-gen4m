@@ -85,6 +85,12 @@ else
     ccflags-y += -DCFG_MTK_ANDROID_EMI=0
 endif
 
+ifneq ($(WIFI_IP_SET),)
+    ccflags-y += -DCFG_WIFI_IP_SET=$(WIFI_IP_SET)
+else
+    ccflags-y += -DCFG_WIFI_IP_SET=1
+endif
+
 ifneq ($(filter MTK_WCN_REMOVE_KERNEL_MODULE,$(KBUILD_SUBDIR_CCFLAGS)),)
     ccflags-y += -DCFG_BUILT_IN_DRIVER=1
 else
