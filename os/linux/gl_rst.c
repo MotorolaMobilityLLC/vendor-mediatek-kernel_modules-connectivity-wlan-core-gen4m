@@ -232,6 +232,9 @@ void glResetUninit(void)
 	/* 1. Deregister reset callback */
 #if (CFG_SUPPORT_CONNINFRA == 0)
 	mtk_wcn_wmt_msgcb_unreg(WMTDRV_TYPE_WIFI);
+#else
+	set_bit(GLUE_FLAG_HALT_BIT, &g_ulFlag);
+	wake_up_interruptible(&g_waitq_rst);
 #endif
 #endif
 }
@@ -542,6 +545,14 @@ int glRstwlanPostWholeChipReset(void)
 	glResetMsgHandler(WMTMSG_TYPE_RESET, WMTRSTMSG_RESET_END);
 	return 0;
 }
+u_int8_t kalIsWholeChipResetting(void)
+{
+#if CFG_CHIP_RESET_SUPPORT
+	return g_IsWholeChipRst;
+#else
+	return FALSE;
+#endif
+}
 
 int wlan_reset_thread_main(void *data)
 {
@@ -575,8 +586,7 @@ int wlan_reset_thread_main(void *data)
 		KAL_WAKE_UNLOCK(NULL, prWlanRstThreadWakeLock);
 		/*
 		 * sleep on waitqueue if no events occurred. Event contain
-		 * (1) GLUE_FLAG_INT (2) GLUE_FLAG_OID (3) GLUE_FLAG_TXREQ
-		 * (4) GLUE_FLAG_HALT
+		 * (1) GLUE_FLAG_HALT (2) GLUE_FLAG_RST
 		 *
 		 */
 		do {
@@ -618,6 +628,10 @@ int wlan_reset_thread_main(void *data)
 							RST_FLAG_WHOLE_RESET);
 				}
 			}
+		}
+		if (test_and_clear_bit(GLUE_FLAG_HALT_BIT, &g_ulFlag)) {
+			DBGLOG(INIT, INFO, "rst_thread should stop now...\n");
+			break;
 		}
 	}
 

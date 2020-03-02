@@ -313,8 +313,9 @@ u_int8_t glIsWmtCodeDump(void);
 
 int wlan_reset_thread_main(void *data);
 int glRstwlanPreWholeChipReset(void);
-
 int glRstwlanPostWholeChipReset(void);
+u_int8_t kalIsWholeChipResetting(void);
+
 #endif /*end of CFG_SUPPORT_CONNINFRA == 0*/
 
 #else

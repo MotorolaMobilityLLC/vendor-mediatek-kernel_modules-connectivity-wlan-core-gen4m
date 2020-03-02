@@ -1160,10 +1160,15 @@ int hifWmmcuPwrOff(void)
 	if (ret != 0)
 		return ret;
 #if (CFG_SUPPORT_CONNINFRA == 1)
-	/* conninfra power off */
-	ret = conninfra_pwr_off(CONNDRV_TYPE_WIFI);
-	if (ret != 0)
-		return ret;
+	/*
+	 * conninfra power off sequence
+	 * conninfra will do conninfra power off self during whole chip reset.
+	 */
+	if (!kalIsWholeChipResetting()) {
+		ret = conninfra_pwr_off(CONNDRV_TYPE_WIFI);
+		if (ret != 0)
+			return ret;
+	}
 #endif
 	return ret;
 }
