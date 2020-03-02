@@ -1423,16 +1423,18 @@ void halSerHifReset(IN struct ADAPTER *prAdapter)
 	 * void usb_reset_endpoint(struct usb_device *dev, unsigned int epaddr);
 	 */
 
+	/* SER new flow: just flush out ep out fifo,
+	* not to reset ep out endpoint
+	*/
+#if 0
 	/* reset ALL BULK OUT endpoints */
 	for (i = USB_DATA_BULK_OUT_EP4; i <= USB_DATA_BULK_OUT_EP9; i++)
 		usb_reset_endpoint(prAdapter->prGlueInfo->rHifInfo.udev, i);
+#endif
 	/* reset ALL BULK IN endpoints */
 	for (i = USB_DATA_BULK_IN_EP4; i <= USB_DATA_BULK_IN_EP5; i++)
 		usb_reset_endpoint(prAdapter->prGlueInfo->rHifInfo.udev,
 					i | USB_DIR_IN);
-
-	halEnableInterrupt(prAdapter);
-
 }
 
 void halProcessRxInterrupt(IN struct ADAPTER *prAdapter)
@@ -1837,6 +1839,10 @@ void halSerSyncTimerHandler(IN struct ADAPTER *prAdapter)
 
 			DBGLOG(HAL, INFO,
 				"SER(U) Host reset TX/RX endpoint\n");
+
+			halSerHifReset(prAdapter);
+			halEnableInterrupt(prAdapter);
+
 			/* resume TX/RX */
 			nicSerStartTxRx(prAdapter);
 			ucSerState = ERR_RECOV_STOP_IDLE;
