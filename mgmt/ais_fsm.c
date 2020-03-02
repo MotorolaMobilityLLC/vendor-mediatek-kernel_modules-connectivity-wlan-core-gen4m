@@ -1809,12 +1809,17 @@ void aisFsmSteps(IN struct ADAPTER *prAdapter, enum ENUM_AIS_STATE eNextState)
 				prScanReqMsg->arChnlInfoList[0].eBand = eBand;
 				prScanReqMsg->arChnlInfoList[0].ucChannelNum =
 				    ucChannel;
-			} else if (prAisBssInfo->eConnectionState ==
+			} else if ((prAisBssInfo->eConnectionState ==
 				   MEDIA_STATE_CONNECTED
 				   && (prAdapter->rWifiVar.
 				       rRoamingInfo.eCurrentState ==
 				       ROAMING_STATE_DISCOVERY)
-				   && prAisFsmInfo->fgTargetChnlScanIssued) {
+				   && prAisFsmInfo->fgTargetChnlScanIssued)
+				   /* Partial channels collection
+				    * for beacon timeout
+				   */
+				   || aisIsProcessingBeaconTimeout(
+				   prAdapter)) {
 				struct RF_CHANNEL_INFO *prChnlInfo =
 				    &prScanReqMsg->arChnlInfoList[0];
 				uint8_t ucChannelNum = 0;
