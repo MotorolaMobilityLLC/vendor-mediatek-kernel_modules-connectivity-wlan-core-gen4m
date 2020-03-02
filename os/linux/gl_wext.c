@@ -2061,7 +2061,8 @@ wext_get_scan(IN struct net_device *prNetDev,
 		pcCur += IW_EV_POINT_LEN;
 
 		/* rearrange rate information */
-		u4BufIndex = sprintf(aucRatesBuf, "Rates (Mb/s):");
+		u4BufIndex = snprintf(aucRatesBuf, sizeof(aucRatesBuf),
+				"Rates (Mb/s):");
 		u4HighestRate = 0;
 		for (j = 0; j < PARAM_MAX_LEN_RATES_EX; ++j) {
 			uint8_t curRate = prBss->rSupportedRates[j] & 0x7F;
@@ -2073,11 +2074,14 @@ wext_get_scan(IN struct net_device *prNetDev,
 				u4HighestRate = curRate;
 
 			if (curRate == RATE_5_5M)
-				u4BufIndex += sprintf(aucRatesBuf + u4BufIndex,
-						      " 5.5");
+				u4BufIndex += snprintf(aucRatesBuf + u4BufIndex,
+						sizeof(aucRatesBuf)
+						- u4BufIndex, " 5.5");
 			else
-				u4BufIndex += sprintf(aucRatesBuf + u4BufIndex,
-						      " %d", curRate / 2);
+				u4BufIndex += snprintf(aucRatesBuf + u4BufIndex,
+						sizeof(aucRatesBuf)
+						- u4BufIndex, " %d",
+						curRate / 2);
 #if DBG
 			if (u4BufIndex > sizeof(aucRatesBuf)) {
 				/* printk("rate info too long\n"); */
