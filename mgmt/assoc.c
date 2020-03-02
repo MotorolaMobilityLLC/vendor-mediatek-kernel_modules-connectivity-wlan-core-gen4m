@@ -2030,9 +2030,13 @@ void assocGenerateMDIE(IN struct ADAPTER *prAdapter,
 	/* don't include MDIE in assoc request frame if auth mode is not FT
 	 * related
 	 */
-	if (eAuthMode != AUTH_MODE_NON_RSN_FT &&
-	    eAuthMode != AUTH_MODE_WPA2_FT &&
-		eAuthMode != AUTH_MODE_WPA2_FT_PSK)
+	if (eAuthMode != AUTH_MODE_WPA2_FT &&
+		eAuthMode != AUTH_MODE_WPA2_FT_PSK &&
+		!(eAuthMode == AUTH_MODE_OPEN &&
+		prAdapter->prGlueInfo->rWpaInfo.u4WpaVersion ==
+		IW_AUTH_WPA_VERSION_DISABLED &&
+		prAdapter->prGlueInfo->rWpaInfo.u4AuthAlg ==
+		IW_AUTH_ALG_FT)) /* Non-RSN FT */
 		return;
 
 	if (!prFtIEs->prMDIE) {
@@ -2056,6 +2060,7 @@ void assocGenerateMDIE(IN struct ADAPTER *prAdapter,
 	prMsduInfo->u2FrameLength +=
 		5; /* IE size for MD IE is fixed, it is 5 */
 	kalMemCopy(pucBuffer, prFtIEs->prMDIE, 5);
+	DBGLOG(SAA, TRACE, "FT: Generate MD IE\n");
 }
 
 #endif /* CFG_SUPPORT_AAA */

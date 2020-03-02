@@ -1644,16 +1644,6 @@ uint32_t nicUpdateBss(IN struct ADAPTER *prAdapter,
 					     ENUM_ENCRYPTION3_KEY_ABSENT;
 #endif
 	}
-	/* Firmware didn't define AUTH_MODE_NON_RSN_FT, so AUTH_MODE_OPEN is
-	** zero in firmware,
-	** but it is 1 in driver. so we need to minus 1 for all authmode except
-	** AUTH_MODE_NON_RSN_FT,
-	** because AUTH_MODE_NON_RSN_FT will be same as AUTH_MODE_OPEN in
-	** firmware
-	**/
-	if (rCmdSetBssInfo.ucAuthMode != AUTH_MODE_NON_RSN_FT)
-		rCmdSetBssInfo.ucAuthMode -= 1;
-
 	rCmdSetBssInfo.ucDisconnectDetectTh = 0;
 
 	if ((prAdapter->prAisBssInfo != NULL) &&
