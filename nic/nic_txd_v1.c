@@ -512,6 +512,8 @@ void nic_txd_v1_compose(
 			wlanGetSpeIdx(prAdapter, prBssInfo->ucBssIndex,
 				eWfPathFavor));
 #endif
+		/* Always follow WTBL set by firmware */
+		HAL_MAC_TX_DESC_SET_SPE_IDX_SEL(prTxDesc, 1);
 		HAL_MAC_TX_DESC_SET_FIXED_RATE_MODE_TO_DESC(prTxDesc);
 		HAL_MAC_TX_DESC_SET_FIXED_RATE_ENABLE(prTxDesc);
 		break;

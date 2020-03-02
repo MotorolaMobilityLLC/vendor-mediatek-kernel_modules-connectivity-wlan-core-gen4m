@@ -564,6 +564,8 @@ void nic_txd_v2_compose(
 			prTxDesc,
 			wlanGetSpeIdx(prAdapter, prBssInfo->ucBssIndex));
 #endif
+		/* Always follow WTBL set by firmware */
+		HAL_MAC_CONNAC2X_TXD_SET_SPE_IDX_SEL(prTxDesc, 1);
 		HAL_MAC_CONNAC2X_TXD_SET_FIXED_RATE_ENABLE(prTxDesc);
 		break;
 
