@@ -2317,8 +2317,8 @@ struct CMD_SET_BSS_RLM_PARAM {
 	uint8_t ucVhtChannelFrequencyS1;
 	uint8_t ucVhtChannelFrequencyS2;
 	uint16_t u2VhtBasicMcsSet;
-	uint8_t ucNss;
-	uint8_t aucPadding0[1];
+	uint8_t ucOpTxNss;
+	uint8_t ucOpRxNss;
 };
 
 /* This struct uses uint32_t,

@@ -413,8 +413,16 @@ struct BSS_INFO {
 	/* The OpMode channel width that we want to change to*/
 	/* 0:20MHz, 1:40MHz, 2:80MHz, 3:160MHz 4:80+80MHz*/
 	uint8_t ucOpChangeChannelWidth;
-	u_int8_t fgIsOpChangeNss; /*Need to change OpMode Nss*/
-	uint8_t ucOpChangeNss; /* The OpMode Nss that we want to change to */
+
+	/* Need to change OpMode RxNss */
+	uint8_t fgIsOpChangeRxNss;
+	/* The OpMode RxNss that we want to change to */
+	uint8_t ucOpChangeRxNss;
+
+	/* Need to change OpMode TxNss */
+	uint8_t fgIsOpChangeTxNss;
+	/* The OpMode TxNss that we want to change to */
+	uint8_t ucOpChangeTxNss;
 
 	PFN_OPMODE_NOTIFY_DONE_FUNC pfOpChangeHandler;
 
@@ -458,7 +466,9 @@ struct BSS_INFO {
 	uint8_t ucHtOpInfo1;
 	uint16_t u2HtOpInfo2;
 	uint16_t u2HtOpInfo3;
-	uint8_t ucNss;	/* Own OP Nss */
+	uint8_t ucOpRxNss; /* Own OP RxNss */
+	uint8_t ucOpTxNss; /* Own OP TxNss */
+
 	/*-------------------------------------------------------------------*/
 	/* 802.11ac VHT operation IE when (prStaRec->ucPhyTypeSet            */
 	/* & PHY_TYPE_BIT_VHT) is true. They have the same definition with   */

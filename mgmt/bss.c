@@ -2304,12 +2304,14 @@ void bssDumpBssInfo(IN struct ADAPTER *prAdapter, IN uint8_t ucBssIndex)
 	       prBssInfo->eConnectionState, prBssInfo->fgIsNetAbsent);
 
 	DBGLOG(SW4, INFO,
-	       "Channel[%u] Band[%u] SCO[%u] Assoc40mBwAllowed[%u] 40mBwAllowed[%u] MaxBw[%u] Nss[%u]\n",
+	       "Channel[%u] Band[%u] SCO[%u] Assoc40mBwAllowed[%u] 40mBwAllowed[%u]\n",
 	       prBssInfo->ucPrimaryChannel, prBssInfo->eBand,
 	       prBssInfo->eBssSCO, prBssInfo->fgAssoc40mBwAllowed,
-	       prBssInfo->fg40mBwAllowed, cnmGetBssMaxBw(prAdapter,
-							 prBssInfo->ucBssIndex),
-	       prBssInfo->ucNss);
+	       prBssInfo->fg40mBwAllowed);
+
+	DBGLOG(SW4, INFO, "MaxBw[%u] OpRxNss[%u] OpTxNss[%u]\n",
+	       cnmGetBssMaxBw(prAdapter, prBssInfo->ucBssIndex),
+	       prBssInfo->ucOpRxNss, prBssInfo->ucOpTxNss);
 
 	DBGLOG(SW4, INFO, "QBSS[%u] CapInfo[0x%04x] AID[%u]\n",
 	       prBssInfo->fgIsQBSS, prBssInfo->u2CapInfo, prBssInfo->u2AssocId);

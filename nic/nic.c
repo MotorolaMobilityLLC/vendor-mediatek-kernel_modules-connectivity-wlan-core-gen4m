@@ -1550,7 +1550,7 @@ uint32_t nicUpdateBss(IN struct ADAPTER *prAdapter,
 	rCmdSetBssInfo.ucDBDCBand = ENUM_BAND_AUTO;
 #endif
 	rCmdSetBssInfo.ucWmmSet = prBssInfo->ucWmmQueSet;
-	rCmdSetBssInfo.ucNss = prBssInfo->ucNss;
+	rCmdSetBssInfo.ucNss = prBssInfo->ucOpTxNss; /* Backward compatible */
 
 	if (prBssInfo->fgBcDefaultKeyExist) {
 		if (prBssInfo->wepkeyWlanIdx <
