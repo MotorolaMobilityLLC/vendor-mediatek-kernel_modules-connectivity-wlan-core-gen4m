@@ -556,6 +556,8 @@ struct mt66xx_chip_info mt66xx_chip_info_mt7915 = {
 	.asicWfdmaReInit_handshakeInit = asicConnac2xWfdmaDummyCrWrite,
 	.group5_size = sizeof(struct HW_MAC_RX_STS_GROUP_5),
 	.wlanCheckAsicCap = mt7915CheckAsicCap,
+	.u4LmacWtblDUAddr = CONNAC2X_WIFI_LWTBL_BASE,
+	.u4UmacWtblDUAddr = CONNAC2X_WIFI_UWTBL_BASE,
 };
 
 struct mt66xx_hif_driver_data mt66xx_driver_data_mt7915 = {

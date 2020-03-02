@@ -585,6 +585,8 @@ struct mt66xx_chip_info mt66xx_chip_info_mt7961 = {
 	.u4SerUsbMcuEventAddr = WF_SW_DEF_CR_USB_MCU_EVENT_ADD,
 	.u4SerUsbHostAckAddr = WF_SW_DEF_CR_USB_HOST_ACK_ADDR,
 #endif
+	.u4LmacWtblDUAddr = MT7961_WIFI_LWTBL_BASE,
+	.u4UmacWtblDUAddr = MT7961_WIFI_UWTBL_BASE,
 };
 
 struct mt66xx_hif_driver_data mt66xx_driver_data_mt7961 = {

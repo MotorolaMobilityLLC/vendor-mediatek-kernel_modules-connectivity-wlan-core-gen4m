@@ -863,6 +863,7 @@ static void connac2x_print_wtbl_info(
 	struct ADAPTER *prAdapter,
 	int32_t idx)
 {
+	struct mt66xx_chip_info *prChipInfo;
 	int32_t start_idx, end_idx;
 	uint32_t wtbl_offset, addr;
 	uint32_t u4Value = 0;
@@ -872,6 +873,7 @@ static void connac2x_print_wtbl_info(
 	unsigned char myaddr[6];
 	uint16_t txrate[8], rate_idx, txmode, mcs, nss, stbc;
 
+	prChipInfo = prAdapter->chip_info;
 	if ((idx >= 0) && (idx < prAdapter->ucWtblEntryNum))
 		start_idx = end_idx = idx;
 	else {
@@ -881,13 +883,15 @@ static void connac2x_print_wtbl_info(
 
 	for (idx = start_idx; idx <= end_idx; idx++) {
 		/* LMAC */
-		CONNAC2X_LWTBL_CONFIG(prAdapter, idx);
-		wtbl_lmac_baseaddr = CONNAC2X_LWTBL_IDX2BASE(idx, 0);
-		HAL_MCR_RD(prAdapter, CONNAC2X_WIFI_LWTBL_BASE,
+		CONNAC2X_LWTBL_CONFIG(prAdapter,
+			prChipInfo->u4LmacWtblDUAddr, idx);
+		wtbl_lmac_baseaddr = CONNAC2X_LWTBL_IDX2BASE(
+			prChipInfo->u4LmacWtblDUAddr, idx, 0);
+		HAL_MCR_RD(prAdapter, prChipInfo->u4LmacWtblDUAddr,
 					&u4Value);
 
 		LOG_FUNC("\n\tLMAC WTBL Addr: group: 0x%x=0x%x addr: 0x%x\n",
-			CONNAC2X_WIFI_LWTBL_BASE,
+			prChipInfo->u4LmacWtblDUAddr,
 			u4Value,
 			wtbl_lmac_baseaddr);
 
@@ -1236,6 +1240,7 @@ int32_t connac2x_show_wtbl_info(
 	char *pcCommand,
 	int i4TotalLen)
 {
+	struct mt66xx_chip_info *prChipInfo;
 	uint32_t u4Value = 0;
 	uint32_t wtbl_lmac_baseaddr;
 	uint32_t wtbl_offset, addr;
@@ -1243,6 +1248,7 @@ int32_t connac2x_show_wtbl_info(
 	struct fwtbl_lmac_struct *pwtbl;
 	int32_t i4BytesWritten = 0;
 
+	prChipInfo = prAdapter->chip_info;
 	DBGLOG(REQ, INFO, "WTBL : index = %d\n", u4Index);
 
 	wtbl_raw_dw = (unsigned char *)kalMemAlloc(
@@ -1253,13 +1259,14 @@ int32_t connac2x_show_wtbl_info(
 	}
 
 	/* LMAC */
-	CONNAC2X_LWTBL_CONFIG(prAdapter, u4Index);
-	wtbl_lmac_baseaddr = CONNAC2X_LWTBL_IDX2BASE(u4Index, 0);
-	HAL_MCR_RD(prAdapter, CONNAC2X_WIFI_LWTBL_BASE,
+	CONNAC2X_LWTBL_CONFIG(prAdapter, prChipInfo->u4LmacWtblDUAddr, u4Index);
+	wtbl_lmac_baseaddr = CONNAC2X_LWTBL_IDX2BASE(
+		prChipInfo->u4LmacWtblDUAddr, u4Index, 0);
+	HAL_MCR_RD(prAdapter, prChipInfo->u4LmacWtblDUAddr,
 				&u4Value);
 
 	DBGLOG(REQ, INFO, "LMAC WTBL Addr: group: 0x%x=0x%x addr: 0x%x\n",
-		CONNAC2X_WIFI_LWTBL_BASE,
+		prChipInfo->u4LmacWtblDUAddr,
 		u4Value,
 		wtbl_lmac_baseaddr);
 
@@ -1312,6 +1319,7 @@ int32_t connac2x_show_umac_wtbl_info(
 	char *pcCommand,
 	int i4TotalLen)
 {
+	struct mt66xx_chip_info *prChipInfo;
 	int32_t i4BytesWritten = 0;
 	uint8_t keytbl[32] = {0};
 	uint8_t keytbl2[32] = {0};
@@ -1326,13 +1334,15 @@ int32_t connac2x_show_umac_wtbl_info(
 	struct fwtbl_umac_struct *puwtbl;
 	unsigned long long pn = 0;
 
+	prChipInfo = prAdapter->chip_info;
 	/* UMAC */
-	CONNAC2X_UWTBL_CONFIG(prAdapter, u4Index);
-	wtbl_umac_baseaddr = CONNAC2X_UWTBL_IDX2BASE(u4Index, 0);
-	HAL_MCR_RD(prAdapter, CONNAC2X_WIFI_UWTBL_BASE, &u4Value);
+	CONNAC2X_UWTBL_CONFIG(prAdapter, prChipInfo->u4UmacWtblDUAddr, u4Index);
+	wtbl_umac_baseaddr = CONNAC2X_UWTBL_IDX2BASE(
+		prChipInfo->u4UmacWtblDUAddr, u4Index, 0);
+	HAL_MCR_RD(prAdapter, prChipInfo->u4UmacWtblDUAddr, &u4Value);
 	LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
 		"UMAC WTBL Addr: group: 0x%x=0x%x addr: 0x%x\n",
-		CONNAC2X_WIFI_UWTBL_BASE,
+		prChipInfo->u4UmacWtblDUAddr,
 		u4Value,
 		wtbl_umac_baseaddr);
 
@@ -1380,16 +1390,17 @@ int32_t connac2x_show_umac_wtbl_info(
 		(CONNAC2X_WTBL_KEY_LINK_DW_KEY_LOC0_MASK >>
 		CONNAC2X_WTBL_KEY_LINK_DW_KEY_LOC0_OFFSET)) {
 		/* will write new value WTBL_UMAC_TOP_BASE */
-		CONNAC2X_KEYTBL_CONFIG(prAdapter,
+		CONNAC2X_KEYTBL_CONFIG(prAdapter, prChipInfo->u4UmacWtblDUAddr,
 		puwtbl->klink_amsdu.wtbl_d5.field.key_loc0);
 		u4SrcAddr = CONNAC2X_KEYTBL_IDX2BASE(
+			prChipInfo->u4UmacWtblDUAddr,
 			puwtbl->klink_amsdu.wtbl_d5.field.key_loc0, 0);
 
-		HAL_MCR_RD(prAdapter, CONNAC2X_WIFI_UWTBL_BASE,
+		HAL_MCR_RD(prAdapter, prChipInfo->u4UmacWtblDUAddr,
 			&u4Value);
 		LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
 			"KEY WTBL Addr: group:0x%x=0x%x addr: 0x%x\n",
-			CONNAC2X_WIFI_UWTBL_BASE,
+			prChipInfo->u4UmacWtblDUAddr,
 			u4Value,
 			u4SrcAddr);
 
@@ -1422,16 +1433,17 @@ int32_t connac2x_show_umac_wtbl_info(
 		sizeInDW = 8;
 
 		/* will write new value WF_WTBLON_TOP_WDUCR_ADDR */
-		CONNAC2X_KEYTBL_CONFIG(prAdapter,
+		CONNAC2X_KEYTBL_CONFIG(prAdapter, prChipInfo->u4UmacWtblDUAddr,
 		puwtbl->klink_amsdu.wtbl_d5.field.key_loc1);
 		u4SrcAddr = CONNAC2X_KEYTBL_IDX2BASE(
-		puwtbl->klink_amsdu.wtbl_d5.field.key_loc1, 0);
+			prChipInfo->u4UmacWtblDUAddr,
+			puwtbl->klink_amsdu.wtbl_d5.field.key_loc1, 0);
 
-		HAL_MCR_RD(prAdapter, CONNAC2X_WIFI_UWTBL_BASE,
+		HAL_MCR_RD(prAdapter, prChipInfo->u4UmacWtblDUAddr,
 			&u4Value);
 		LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
 			"KEY WTBL Addr: group:0x%x=0x%x addr: 0x%x\n",
-			CONNAC2X_WIFI_UWTBL_BASE,
+			prChipInfo->u4UmacWtblDUAddr,
 			u4Value,
 			u4SrcAddr);
 
