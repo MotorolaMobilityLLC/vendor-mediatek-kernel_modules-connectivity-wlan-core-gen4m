@@ -240,8 +240,6 @@ uint16_t assocBuildCapabilityInfo(IN struct ADAPTER *prAdapter,
 	uint16_t u2CapInfo;
 	struct BSS_INFO *prBssInfo;
 
-	ASSERT(prStaRec);
-
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prStaRec->ucBssIndex);
 
 	/* Set up our requested capabilities. */
@@ -322,11 +320,7 @@ static __KAL_INLINE__ void assocBuildReAssocReqFrameCommonIEs(
 	uint8_t ucSupRatesLen;
 	uint8_t ucExtSupRatesLen;
 
-	ASSERT(prMsduInfo);
-	ASSERT(prMsduInfo->eSrc == TX_PACKET_MGMT);
-
 	prStaRec = cnmGetStaRecByIndex(prAdapter, prMsduInfo->ucStaRecIndex);
-	ASSERT(prStaRec);
 
 	if (!prStaRec)
 		return;
@@ -334,7 +328,6 @@ static __KAL_INLINE__ void assocBuildReAssocReqFrameCommonIEs(
 	pucBuffer =
 	    (uint8_t *) ((unsigned long)prMsduInfo->prPacket +
 			 (unsigned long)prMsduInfo->u2FrameLength);
-	ASSERT(pucBuffer);
 
 	prConnSettings =
 		aisGetConnSettings(prAdapter, prStaRec->ucBssIndex);
@@ -401,8 +394,6 @@ static __KAL_INLINE__ void assocBuildReAssocReqFrameCommonIEs(
 		u2SupportedRateSet = (prStaRec->u2OperationalRateSet &
 				      rNonHTPhyAttributes
 				      [u4NonHTPhyType].u2SupportedRateSet);
-
-		/*ASSERT(u2SupportedRateSet); */
 
 		if (!u2SupportedRateSet) {
 			DBGLOG(SAA, INFO,
@@ -486,11 +477,6 @@ assocComposeReAssocReqFrameHeaderAndFF(IN struct ADAPTER *prAdapter,
 	uint16_t u2FrameCtrl;
 	uint16_t u2CapInfo;
 	uint16_t u2ListenInterval;
-
-	ASSERT(prStaRec);
-	ASSERT(pucBuffer);
-	ASSERT(aucMACAddress);
-	ASSERT(pu2PayloadLen);
 
 	prAssocFrame = (struct WLAN_ASSOC_REQ_FRAME *)pucBuffer;
 	fgIsReAssoc = prStaRec->fgIsReAssoc;
@@ -595,8 +581,6 @@ uint32_t assocSendReAssocReqFrame(IN struct ADAPTER *prAdapter,
 	u_int8_t fgIsReAssoc;
 	uint32_t i;
 
-	ASSERT(prStaRec);
-
 	/* 4 <1> Allocate a PKT_INFO_T for Authentication Frame */
 	fgIsReAssoc = prStaRec->fgIsReAssoc;
 
@@ -673,9 +657,6 @@ uint32_t assocSendReAssocReqFrame(IN struct ADAPTER *prAdapter,
 	u2EstimatedExtraIELen += assoc_get_nonwfa_vend_ie_len(prAdapter,
 		prStaRec->ucBssIndex);
 #endif
-
-	ASSERT(prStaRec->ucBssIndex <= prAdapter->ucHwBssIdNum);
-
 	u2EstimatedFrameLen += u2EstimatedExtraIELen;
 
 	/* Allocate a MSDU_INFO_T */
@@ -815,15 +796,8 @@ uint32_t assocCheckTxReAssocReqFrame(IN struct ADAPTER *prAdapter,
 	struct STA_RECORD *prStaRec;
 	uint16_t u2TxFrameCtrl;
 
-	ASSERT(prMsduInfo);
-	ASSERT(prMsduInfo->eSrc == TX_PACKET_MGMT);
-
 	prAssocReqFrame = (struct WLAN_ASSOC_REQ_FRAME *)(prMsduInfo->prPacket);
-	ASSERT(prAssocReqFrame);
-
 	prStaRec = cnmGetStaRecByIndex(prAdapter, prMsduInfo->ucStaRecIndex);
-	ASSERT(prStaRec);
-
 	if (!prStaRec)
 		return WLAN_STATUS_INVALID_PACKET;
 
@@ -864,15 +838,8 @@ uint32_t assocCheckTxReAssocRespFrame(IN struct ADAPTER *prAdapter,
 	struct STA_RECORD *prStaRec;
 	uint16_t u2TxFrameCtrl;
 
-	ASSERT(prMsduInfo);
-	ASSERT(prMsduInfo->eSrc == TX_PACKET_MGMT);
-
 	prAssocRspFrame = (struct WLAN_ASSOC_RSP_FRAME *)(prMsduInfo->prPacket);
-	ASSERT(prAssocRspFrame);
-
 	prStaRec = cnmGetStaRecByIndex(prAdapter, prMsduInfo->ucStaRecIndex);
-	ASSERT(prStaRec);
-
 	if (!prStaRec)
 		return WLAN_STATUS_INVALID_PACKET;
 
@@ -1052,8 +1019,6 @@ assocCheckRxReAssocRspFrameStatus(IN struct ADAPTER *prAdapter,
 				prBssSpecInfo =
 					aisGetAisSpecBssInfo(prAdapter,
 					prStaRec->ucBssIndex);
-				ASSERT(prBssSpecInfo);
-
 				prBssSpecInfo->ucSaQueryTimedOut = 0;
 			}
 #endif
@@ -1125,10 +1090,6 @@ assocComposeDisassocFrame(IN struct STA_RECORD *prStaRec,
 	struct WLAN_DISASSOC_FRAME *prDisAssocFrame;
 	uint16_t u2FrameCtrl;
 
-	ASSERT(pucBuffer);
-	ASSERT(pucBuffer);
-	ASSERT(aucMACAddress);
-
 	prDisAssocFrame = (struct WLAN_DISASSOC_FRAME *)pucBuffer;
 
 	/* 4 <1> Compose the frame header of the DisAssociation  frame. */
@@ -1178,9 +1139,6 @@ uint32_t assocSendDisAssocFrame(IN struct ADAPTER *prAdapter,
 	uint16_t u2PayloadLen;
 	uint16_t u2EstimatedFrameLen;
 	/* UINT_32 u4Status = WLAN_STATUS_SUCCESS; */
-
-	ASSERT(prStaRec);
-	ASSERT(prStaRec->ucBssIndex <= prAdapter->ucHwBssIdNum);
 
 	DBGLOG(RSN, INFO, "assocSendDisAssocFrame\n");
 
@@ -1370,7 +1328,6 @@ uint32_t assocProcessRxAssocReqFrame(IN struct ADAPTER *prAdapter,
 
 	prWifiVar = &(prAdapter->rWifiVar);
 	prRxDescOps = prAdapter->chip_info->prRxDescOps;
-
 	prStaRec = cnmGetStaRecByIndex(prAdapter, prSwRfb->ucStaRecIdx);
 
 	if (prStaRec == NULL)
@@ -1727,19 +1684,12 @@ assocBuildReAssocRespFrameCommonIEs(IN struct ADAPTER *prAdapter,
 	uint8_t ucSupRatesLen;
 	uint8_t ucExtSupRatesLen;
 
-	ASSERT(prMsduInfo);
-	ASSERT(prMsduInfo->eSrc == TX_PACKET_MGMT);
-
 	prStaRec = cnmGetStaRecByIndex(prAdapter, prMsduInfo->ucStaRecIndex);
-	ASSERT(prStaRec);
-
 	pucBuffer =
 	    (uint8_t *) ((unsigned long)prMsduInfo->prPacket +
 			 (unsigned long)prMsduInfo->u2FrameLength);
-	ASSERT(pucBuffer);
 
 	if (prBssInfo->ucAllSupportedRatesLen > ELEM_MAX_LEN_SUP_RATES) {
-
 		ucSupRatesLen = ELEM_MAX_LEN_SUP_RATES;
 		ucExtSupRatesLen =
 		    prBssInfo->ucAllSupportedRatesLen - ELEM_MAX_LEN_SUP_RATES;
@@ -1798,11 +1748,6 @@ assocComposeReAssocRespFrameHeaderAndFF(IN struct STA_RECORD *prStaRec,
 	u_int8_t fgIsReAssoc;
 
 	uint16_t u2FrameCtrl;
-
-	ASSERT(prStaRec);
-	ASSERT(pucBuffer);
-	ASSERT(aucBSSID);
-	ASSERT(pu2PayloadLen);
 
 	prAssocRspFrame = (struct WLAN_ASSOC_RSP_FRAME *)pucBuffer;
 	fgIsReAssoc = prStaRec->fgIsReAssoc;
@@ -1880,9 +1825,6 @@ uint32_t assocSendReAssocRespFrame(IN struct ADAPTER *prAdapter,
 	u_int8_t fgIsReAssoc;
 	uint32_t i;
 
-	ASSERT(prStaRec);
-	ASSERT(prStaRec->ucBssIndex <= prAdapter->ucHwBssIdNum);
-
 	/* 4 <1> Allocate a PKT_INFO_T for Authentication Frame */
 	fgIsReAssoc = prStaRec->fgIsReAssoc;
 
@@ -1928,8 +1870,6 @@ uint32_t assocSendReAssocRespFrame(IN struct ADAPTER *prAdapter,
 	/* 4 <2> Compose (Re)Association Request frame header and fixed fields
 	 *       in MSDU_INfO_T.
 	 */
-	ASSERT(!IS_BSS_INDEX_AIS(prAdapter, prStaRec->ucBssIndex));
-
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prStaRec->ucBssIndex);
 
 	/* Compose Header and Fixed Field */
