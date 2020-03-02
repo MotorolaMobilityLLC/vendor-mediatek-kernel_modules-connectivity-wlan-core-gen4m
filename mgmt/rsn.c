@@ -878,9 +878,19 @@ u_int8_t rsnPerformPolicySelection(IN struct ADAPTER
 	}
 
 	if (!rsnIsSuitableBSS(prAdapter, prBssRsnInfo)) {
-		DBGLOG(RSN, INFO, "RSN info check no matched\n");
+		/* Support AP Selection*/
+		DBGLOG(RSN, WARN, "RSN info check no matched, RSN Score support[%d]\n",
+			CFG_SUPPORT_RSN_SCORE);
+#if CFG_SUPPORT_RSN_SCORE
+		prBss->fgIsRSNSuitableBss = FALSE;
+	} else
+		prBss->fgIsRSNSuitableBss = TRUE;
+#else
+
 		return FALSE;
 	}
+#endif
+		/* end Support AP Selection*/
 
 	if (prBssRsnInfo->u4PairwiseKeyCipherSuiteCount == 1 &&
 	    GET_SELECTOR_TYPE(
