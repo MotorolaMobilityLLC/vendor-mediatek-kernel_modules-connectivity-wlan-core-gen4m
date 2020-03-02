@@ -1428,7 +1428,7 @@ void nicTxMsduQueueByPrio(struct ADAPTER *prAdapter)
 /*----------------------------------------------------------------------------*/
 void nicTxMsduQueueByRR(struct ADAPTER *prAdapter)
 {
-	struct QUE qDataPort;
+	struct QUE qDataPort, arTempQue[TX_PORT_NUM];
 	struct QUE *prDataPort, *prTxQue;
 	struct MSDU_INFO *prMsduInfo;
 	bool fgIsAllQueneEmpty = false;
@@ -1438,6 +1438,9 @@ void nicTxMsduQueueByRR(struct ADAPTER *prAdapter)
 
 	prDataPort = &qDataPort;
 	QUEUE_INITIALIZE(prDataPort);
+
+	for (i = 0; i < TX_PORT_NUM; i++)
+		QUEUE_INITIALIZE(&arTempQue[i]);
 
 	KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_PORT_QUE);
 	/* Dequeue each TCQ to dataQ by round-robin  */
@@ -1463,10 +1466,20 @@ void nicTxMsduQueueByRR(struct ADAPTER *prAdapter)
 
 	KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_PORT_QUE);
 	/* Enque from dataQ to TCQ if TX don't finish */
+	/* Need to reverse dataQ by TC first */
 	while (QUEUE_IS_NOT_EMPTY(prDataPort)) {
 		QUEUE_REMOVE_HEAD(prDataPort, prMsduInfo, struct MSDU_INFO *);
-		prTxQue = &(prAdapter->rTxPQueue[prMsduInfo->ucTC]);
-		QUEUE_INSERT_HEAD(prTxQue, (struct QUE_ENTRY *) prMsduInfo);
+		QUEUE_INSERT_HEAD(&arTempQue[prMsduInfo->ucTC],
+				  (struct QUE_ENTRY *) prMsduInfo);
+	}
+
+	for (i = 0; i < TX_PORT_NUM; i++) {
+		while (QUEUE_IS_NOT_EMPTY(&arTempQue[i])) {
+			QUEUE_REMOVE_HEAD(&arTempQue[i], prMsduInfo,
+					  struct MSDU_INFO *);
+			QUEUE_INSERT_HEAD(&prAdapter->rTxPQueue[i],
+					  (struct QUE_ENTRY *) prMsduInfo);
+		}
 	}
 	KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_PORT_QUE);
 }
