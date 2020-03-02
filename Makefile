@@ -211,7 +211,14 @@ else
 obj-$(CONFIG_MTK_COMBO_WIFI) += $(MODULE_NAME).o
 #obj-y += $(MODULE_NAME).o
 endif
+
+ifeq ($(CONFIG_WLAN_DRV_BUILD_IN),y)
+$(warning $(MODULE_NAME) build-in boot.img)
+obj-y += $(MODULE_NAME).o
+else
+$(warning $(MODULE_NAME) is kernel module)
 obj-m += $(MODULE_NAME).o
+endif
 
 # ---------------------------------------------------
 # Directory List
