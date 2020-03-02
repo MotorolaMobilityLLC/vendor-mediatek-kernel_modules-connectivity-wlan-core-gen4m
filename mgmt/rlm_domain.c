@@ -1445,7 +1445,7 @@ BOOLEAN rlmDomainGetTxPwrLimit(u32 country_code,
 	 * Android path: "/etc/firmware", "/vendor/firmware", "/firmware/image"
 	 * Linux path: "/lib/firmware", "/lib/firmware/update"
 	 */
-	ret = request_firmware(&file, TX_PWR_LIMIT_FILE, prGlueInfo->prDev);
+	ret = REQUEST_FIRMWARE(&file, TX_PWR_LIMIT_FILE, prGlueInfo->prDev);
 
 	if (ret) {
 		DBGLOG(RLM, WARN, "\n===WARNING===\n%s(); Open file [%s] failed.\n",
@@ -2304,12 +2304,12 @@ enum regd_state rlmDomainStateTransition(enum regd_state request_state, struct r
 		break;
 
 	case REGD_STATE_SET_COUNTRY_USER:
-		if ((old_state == REGD_STATE_SET_WW_CORE) || (old_state == REGD_STATE_INIT))
+		/* Allow user to set multiple times */
+		if ((old_state == REGD_STATE_SET_WW_CORE) || (old_state == REGD_STATE_INIT)
+		    || old_state == REGD_STATE_SET_COUNTRY_USER)
 			next_state = request_state;
-		else if ((old_state == request_state)
-				 && (rlmDomainIsSameCountryCode(pRequest->alpha2, sizeof(pRequest->alpha2))))
-			next_state = old_state;
-
+		else
+			DBGLOG(RLM, ERROR, "Invalid old state = %d\n", old_state);
 		break;
 	case REGD_STATE_SET_COUNTRY_DRIVER:
 		/*check if country is the same as previous one*/
@@ -2394,6 +2394,38 @@ struct wiphy *rlmDomainGetRefWiphy(void)
 	return g_mtk_regd_control.pRefWiphy;
 }
 
+/**
+ * rlmDomainChannelFlagString - Transform channel flags to readable string
+ *
+ * @ flags: the ieee80211_channel->flags for a channel
+ * @ buf: string buffer to put the transformed string
+ * @ buf_size: size of the buf
+ **/
+void rlmDomainChannelFlagString(u32 flags, char *buf, size_t buf_size)
+{
+	INT_32 buf_written = 0;
+
+	if (!flags || !buf || !buf_size)
+		return;
+
+	if (flags & IEEE80211_CHAN_DISABLED) {
+		LOGBUF(buf, ((INT_32)buf_size), buf_written, "DISABLED ");
+		/* If DISABLED, don't need to check other flags */
+		return;
+	}
+	if (flags & IEEE80211_CHAN_PASSIVE_FLAG)
+		LOGBUF(buf, ((INT_32)buf_size), buf_written, IEEE80211_CHAN_PASSIVE_STR " ");
+	if (flags & IEEE80211_CHAN_RADAR)
+		LOGBUF(buf, ((INT_32)buf_size), buf_written, "RADAR ");
+	if (flags & IEEE80211_CHAN_NO_HT40PLUS)
+		LOGBUF(buf, ((INT_32)buf_size), buf_written, "NO_HT40PLUS ");
+	if (flags & IEEE80211_CHAN_NO_HT40MINUS)
+		LOGBUF(buf, ((INT_32)buf_size), buf_written, "NO_HT40MINUS ");
+	if (flags & IEEE80211_CHAN_NO_80MHZ)
+		LOGBUF(buf, ((INT_32)buf_size), buf_written, "NO_80MHZ ");
+	if (flags & IEEE80211_CHAN_NO_160MHZ)
+		LOGBUF(buf, ((INT_32)buf_size), buf_written, "NO_160MHZ ");
+}
 
 void rlmDomainParsingChannel(IN struct wiphy *pWiphy)
 {
@@ -2402,6 +2434,7 @@ void rlmDomainParsingChannel(IN struct wiphy *pWiphy)
 	struct ieee80211_supported_band *sband;
 	struct ieee80211_channel *chan;
 	struct channel *pCh;
+	char chan_flag_string[64] = {0};
 
 
 	if (!pWiphy) {
@@ -2437,11 +2470,13 @@ void rlmDomainParsingChannel(IN struct wiphy *pWiphy)
 		for (ch_idx = 0; ch_idx < sband->n_channels; ch_idx++) {
 			chan = &sband->channels[ch_idx];
 			pCh = (rlmDomainGetActiveChannels() + ch_count);
+			/* Parse flags and get readable string */
+			rlmDomainChannelFlagString(chan->flags, chan_flag_string, sizeof(chan_flag_string));
 
 			if (chan->flags & IEEE80211_CHAN_DISABLED) {
-				DBGLOG(RLM, INFO, "[DISABLE] channel[%d][%d]: freq = %d, ch_num = %d\n",
-					band_idx, ch_idx, chan->center_freq, chan->hw_value);
-
+				DBGLOG(RLM, INFO, "channels[%d][%d]: ch%d (freq = %d) flags=0x%x [ %s]\n",
+				    band_idx, ch_idx, chan->hw_value, chan->center_freq, chan->flags,
+				    chan_flag_string);
 				continue;
 			}
 
@@ -2453,13 +2488,9 @@ void rlmDomainParsingChannel(IN struct wiphy *pWiphy)
 
 			rlmDomainAddActiveChannel(band_idx);
 
-			DBGLOG(RLM, INFO, "[EN-ABLE] channel[%d][%d]: freq = %d, ch_num = %d ",
-					band_idx, ch_idx, chan->center_freq, chan->hw_value);
-
-			DBGLOG(RLM, INFO, "flags = %x (radar = %d, no ht40 PLUS = %d, no ht40 minus = %d)\n",
-					chan->flags, (chan->flags & IEEE80211_CHAN_RADAR)?1:0,
-								(chan->flags & IEEE80211_CHAN_NO_HT40PLUS)?1:0,
-								(chan->flags & IEEE80211_CHAN_NO_HT40MINUS)?1:0);
+			DBGLOG(RLM, INFO, "channels[%d][%d]: ch%d (freq = %d) flgs=0x%x [ %s]\n",
+				band_idx, ch_idx, chan->hw_value, chan->center_freq, chan->flags,
+				chan_flag_string);
 
 			pCh->chNum = chan->hw_value;
 			pCh->flags = chan->flags;
@@ -2584,11 +2615,12 @@ ENUM_CHNL_EXT_T rlmSelectSecondaryChannelType(P_ADAPTER_T prAdapter, ENUM_BAND_T
 	below_ch = primary_ch - CHNL_SPAN_20;
 	above_ch = primary_ch + CHNL_SPAN_20;
 
+	if (rlmDomainIsLegalChannel(prAdapter, band, above_ch))
+		return CHNL_EXT_SCA;
+
 	if (rlmDomainIsLegalChannel(prAdapter, band, below_ch))
 		return CHNL_EXT_SCB;
 
-	if (rlmDomainIsLegalChannel(prAdapter, band, above_ch))
-		return CHNL_EXT_SCA;
 #endif
 
 	return CHNL_EXT_SCN;
