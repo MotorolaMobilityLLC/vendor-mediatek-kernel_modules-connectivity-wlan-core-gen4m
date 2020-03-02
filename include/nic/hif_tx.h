@@ -87,8 +87,6 @@
 
 #define TX_HDR_SIZE                         sizeof(struct HIF_TX_HEADER)
 
-#define CMD_HDR_SIZE                        sizeof(struct WIFI_CMD)
-
 /* !< 2048 Bytes CMD payload buffer */
 #define CMD_PKT_SIZE_FOR_IMAGE              2048
 

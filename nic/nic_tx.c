@@ -2431,16 +2431,16 @@ uint32_t nicTxMsduQueue(IN struct ADAPTER *prAdapter,
 uint32_t nicTxCmd(IN struct ADAPTER *prAdapter,
 		  IN struct CMD_INFO *prCmdInfo, IN uint8_t ucTC)
 {
-	struct WIFI_CMD *prWifiCmd;
 	struct MSDU_INFO *prMsduInfo;
 	struct TX_CTRL *prTxCtrl;
 	struct sk_buff *skb;
+	struct TX_DESC_OPS_T *prTxDescOps;
 
 	KAL_SPIN_LOCK_DECLARATION();
 
 	ASSERT(prAdapter);
 	ASSERT(prCmdInfo);
-
+	prTxDescOps = prAdapter->chip_info->prTxDescOps;
 	prTxCtrl = &prAdapter->rTxCtrl;
 #if (CFG_SUPPORT_TRACE_TC4 == 1)
 	wlanTraceTxCmd(prCmdInfo);
@@ -2450,8 +2450,8 @@ uint32_t nicTxCmd(IN struct ADAPTER *prAdapter,
 		prMsduInfo = prCmdInfo->prMsduInfo;
 
 		prCmdInfo->pucTxd = prMsduInfo->aucTxDescBuffer;
-		if (HAL_MAC_TX_DESC_IS_LONG_FORMAT((struct HW_MAC_TX_DESC *)
-						   prMsduInfo->aucTxDescBuffer))
+		if (prTxDescOps->nic_txd_long_format_op(
+			prMsduInfo->aucTxDescBuffer, FALSE))
 			prCmdInfo->u4TxdLen = NIC_TX_DESC_LONG_FORMAT_LENGTH;
 		else
 			prCmdInfo->u4TxdLen = NIC_TX_DESC_SHORT_FORMAT_LENGTH;
@@ -2487,8 +2487,8 @@ uint32_t nicTxCmd(IN struct ADAPTER *prAdapter,
 		ASSERT(prMsduInfo->eSrc == TX_PACKET_MGMT);
 
 		prCmdInfo->pucTxd = prMsduInfo->aucTxDescBuffer;
-		if (HAL_MAC_TX_DESC_IS_LONG_FORMAT((struct HW_MAC_TX_DESC *)
-						   prMsduInfo->aucTxDescBuffer))
+		if (prTxDescOps->nic_txd_long_format_op(
+			prMsduInfo->aucTxDescBuffer, FALSE))
 			prCmdInfo->u4TxdLen = NIC_TX_DESC_LONG_FORMAT_LENGTH;
 		else
 			prCmdInfo->u4TxdLen = NIC_TX_DESC_SHORT_FORMAT_LENGTH;
@@ -2519,47 +2519,12 @@ uint32_t nicTxCmd(IN struct ADAPTER *prAdapter,
 		}
 
 	} else {
-		struct PSE_CMD_HDR *prPseCmdHdr;
-
-		prWifiCmd = (struct WIFI_CMD *) prCmdInfo->pucInfoBuffer;
-
-		prPseCmdHdr = (struct PSE_CMD_HDR *) (
-				      prCmdInfo->pucInfoBuffer);
-		prPseCmdHdr->u2Qidx = TXD_Q_IDX_MCU_RQ0;
-		prPseCmdHdr->u2Pidx = TXD_P_IDX_MCU;
-		prPseCmdHdr->u2Hf = TXD_HF_CMD;
-		prPseCmdHdr->u2Ft = TXD_FT_LONG_FORMAT;
-		prPseCmdHdr->u2PktFt = TXD_PKT_FT_CMD;
-
-		prWifiCmd->u2Length = prWifiCmd->u2TxByteCount - sizeof(
-					      struct PSE_CMD_HDR);
-
-#if (CFG_UMAC_GENERATION >= 0x20)
-		/* TODO ? */
-		/* prWifiCmd->prPseCmd.u2TxByteCount
-		 *  = u2OverallBufferLength;
-		 * prWifiCmd->u2TxByteCount = u2OverallBufferLength
-		 *   - sizeof(struct PSE_CMD_HDR);
-		 */
-#else
-		prWifiCmd->u2TxByteCount =
-			TFCB_FRAME_PAD_TO_DW((prCmdInfo->u2InfoBufLen) &
-				(uint16_t) HIF_TX_HDR_TX_BYTE_COUNT_MASK);
-#endif
-		prWifiCmd->u2PQ_ID = CMD_PQ_ID;
-		prWifiCmd->ucPktTypeID = CMD_PACKET_TYPE_ID;
-		prWifiCmd->ucS2DIndex = S2D_INDEX_CMD_H2N_H2C;
 		prCmdInfo->pucTxd = prCmdInfo->pucInfoBuffer;
 		prCmdInfo->u4TxdLen = prCmdInfo->u2InfoBufLen;
 		prCmdInfo->pucTxp = NULL;
 		prCmdInfo->u4TxpLen = 0;
 
 		HAL_WRITE_TX_CMD(prAdapter, prCmdInfo, ucTC);
-
-		DBGLOG(INIT, TRACE,
-		       "TX CMD: ID[0x%02X] SEQ[%u] SET[%u] LEN[%u]\n",
-		       prWifiCmd->ucCID, prWifiCmd->ucSeqNum,
-		       prWifiCmd->ucSetQuery, prWifiCmd->u2Length);
 	}
 
 	return WLAN_STATUS_SUCCESS;

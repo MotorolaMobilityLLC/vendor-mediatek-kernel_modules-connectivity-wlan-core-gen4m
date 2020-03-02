@@ -682,9 +682,9 @@ uint32_t wlanPatchRecvSemaResp(IN struct ADAPTER *prAdapter,
 	struct mt66xx_chip_info *prChipInfo;
 	uint8_t *aucBuffer;
 	uint32_t u4EventSize;
+	struct INIT_WIFI_EVENT *prInitEvent;
 	struct INIT_EVENT_CMD_RESULT *prEventCmdResult;
 	uint32_t u4RxPktLength;
-	struct WIFI_EVENT_INFO rWifiEventInfo;
 
 	ASSERT(prAdapter);
 	prChipInfo = prAdapter->chip_info;
@@ -705,25 +705,24 @@ uint32_t wlanPatchRecvSemaResp(IN struct ADAPTER *prAdapter,
 		return WLAN_STATUS_FAILURE;
 	}
 
-	NIC_PARSE_EVEMT_RX_HDR(prAdapter,
-			aucBuffer, &rWifiEventInfo, TRUE);
-
-	if (rWifiEventInfo.ucEID != INIT_EVENT_ID_PATCH_SEMA_CTRL) {
+	prInitEvent = (struct INIT_WIFI_EVENT *)
+		(aucBuffer + prChipInfo->rxd_size);
+	if (prInitEvent->ucEID != INIT_EVENT_ID_PATCH_SEMA_CTRL) {
 		DBGLOG(INIT, WARN, "Unexpected EVENT ID, get 0x%0x\n",
-		       rWifiEventInfo.ucEID);
+		       prInitEvent->ucEID);
 		kalMemFree(aucBuffer, PHY_MEM_TYPE, u4EventSize);
 		return WLAN_STATUS_FAILURE;
 	}
 
-	if (rWifiEventInfo.ucSeqNum != ucCmdSeqNum) {
+	if (prInitEvent->ucSeqNum != ucCmdSeqNum) {
 		DBGLOG(INIT, WARN, "Unexpected SeqNum %d, %d\n",
-		       ucCmdSeqNum, rWifiEventInfo.ucSeqNum);
+		       ucCmdSeqNum, prInitEvent->ucSeqNum);
 		kalMemFree(aucBuffer, PHY_MEM_TYPE, u4EventSize);
 		return WLAN_STATUS_FAILURE;
 	}
 
 	prEventCmdResult = (struct INIT_EVENT_CMD_RESULT *)
-		rWifiEventInfo.pucInfoBuffer;
+		prInitEvent->aucBuffer;
 
 	*pucPatchStatus = prEventCmdResult->ucStatus;
 
@@ -1152,10 +1151,10 @@ uint32_t wlanImageQueryStatus(IN struct ADAPTER *prAdapter)
 	uint8_t *aucBuffer;
 	uint32_t u4EventSize;
 	uint32_t u4RxPktLength;
+	struct INIT_WIFI_EVENT *prInitEvent;
 	struct INIT_EVENT_CMD_RESULT *prEventPendingError;
 	uint32_t u4Status = WLAN_STATUS_SUCCESS;
 	uint8_t ucTC, ucCmdSeqNum;
-	struct WIFI_EVENT_INFO rWifiEventInfo;
 
 	ASSERT(prAdapter);
 	prChipInfo = prAdapter->chip_info;
@@ -1240,18 +1239,18 @@ uint32_t wlanImageQueryStatus(IN struct ADAPTER *prAdapter)
 			   WLAN_STATUS_SUCCESS) {
 			u4Status = WLAN_STATUS_FAILURE;
 		} else {
-			NIC_PARSE_EVEMT_RX_HDR(prAdapter,
-				aucBuffer, &rWifiEventInfo, TRUE);
+			prInitEvent = (struct INIT_WIFI_EVENT *)
+				(aucBuffer + prChipInfo->rxd_size);
 
 			/* EID / SeqNum check */
-			if (rWifiEventInfo.ucEID != INIT_EVENT_ID_PENDING_ERROR)
+			if (prInitEvent->ucEID != INIT_EVENT_ID_PENDING_ERROR)
 				u4Status = WLAN_STATUS_FAILURE;
-			else if (rWifiEventInfo.ucSeqNum != ucCmdSeqNum)
+			else if (prInitEvent->ucSeqNum != ucCmdSeqNum)
 				u4Status = WLAN_STATUS_FAILURE;
 			else {
 				prEventPendingError =
 					(struct INIT_EVENT_CMD_RESULT *)
-					rWifiEventInfo.pucInfoBuffer;
+					prInitEvent->aucBuffer;
 				/* 0 for download success */
 				if (prEventPendingError->ucStatus != 0)
 					u4Status = WLAN_STATUS_FAILURE;
@@ -1287,11 +1286,11 @@ uint32_t wlanConfigWifiFuncStatus(IN struct ADAPTER
 	struct mt66xx_chip_info *prChipInfo;
 	uint8_t *aucBuffer;
 	uint32_t u4EventSize;
+	struct INIT_WIFI_EVENT *prInitEvent;
 	struct INIT_EVENT_CMD_RESULT *prEventCmdResult;
 	uint32_t u4RxPktLength;
 	uint32_t u4Status;
 	uint8_t ucPortIdx = IMG_DL_STATUS_PORT_IDX;
-	struct WIFI_EVENT_INFO rWifiEventInfo;
 
 	ASSERT(prAdapter);
 	prChipInfo = prAdapter->chip_info;
@@ -1310,18 +1309,18 @@ uint32_t wlanConfigWifiFuncStatus(IN struct ADAPTER
 			   WLAN_STATUS_SUCCESS) {
 			u4Status = WLAN_STATUS_FAILURE;
 		} else {
-			NIC_PARSE_EVEMT_RX_HDR(prAdapter,
-				aucBuffer, &rWifiEventInfo, TRUE);
+			prInitEvent = (struct INIT_WIFI_EVENT *)
+				(aucBuffer + prChipInfo->rxd_size);
 
 			/* EID / SeqNum check */
-			if (rWifiEventInfo.ucEID != INIT_EVENT_ID_CMD_RESULT)
+			if (prInitEvent->ucEID != INIT_EVENT_ID_CMD_RESULT)
 				u4Status = WLAN_STATUS_FAILURE;
-			else if (rWifiEventInfo.ucSeqNum != ucCmdSeqNum)
+			else if (prInitEvent->ucSeqNum != ucCmdSeqNum)
 				u4Status = WLAN_STATUS_FAILURE;
 			else {
 				prEventCmdResult =
 					(struct INIT_EVENT_CMD_RESULT *)
-					rWifiEventInfo.pucInfoBuffer;
+					prInitEvent->aucBuffer;
 
 				/* 0 for download success */
 				if (prEventCmdResult->ucStatus != 0) {

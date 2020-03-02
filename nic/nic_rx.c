@@ -3468,6 +3468,7 @@ void nicRxProcessRFBs(IN struct ADAPTER *prAdapter)
 	struct QUE rTempRfbList;
 	struct QUE *prTempRfbList = &rTempRfbList;
 	uint32_t u4RxLoopCount, u4Tick;
+	struct mt66xx_chip_info *prChipInfo;
 
 	KAL_SPIN_LOCK_DECLARATION();
 
@@ -3552,17 +3553,19 @@ void nicRxProcessRFBs(IN struct ADAPTER *prAdapter)
 
 				case RX_PKT_TYPE_SW_DEFINED:
 					/* HIF_RX_PKT_TYPE_EVENT */
+					prChipInfo = prAdapter->chip_info;
 					if ((prSwRfb->prRxStatus->u2PktTYpe &
-					     RXM_RXD_PKT_TYPE_SW_BITMAP) ==
-					    RXM_RXD_PKT_TYPE_SW_EVENT) {
+					     prChipInfo->u2RxSwPktBitMap) ==
+					    prChipInfo->u2RxSwPktEvent) {
 						nicRxProcessEventPacket(
 							prAdapter,
 							prSwRfb);
 					}
 					/* case HIF_RX_PKT_TYPE_MANAGEMENT: */
-					else if ((prSwRfb->prRxStatus->u2PktTYpe
-						& RXM_RXD_PKT_TYPE_SW_BITMAP) ==
-						RXM_RXD_PKT_TYPE_SW_FRAME) {
+					else if (
+						(prSwRfb->prRxStatus->u2PktTYpe
+						& prChipInfo->u2RxSwPktBitMap)
+						== prChipInfo->u2RxSwPktFrame){
 						/* OFLD pkts should go data flow
 						 * 1: EAPOL
 						 * 2: ARP / NS
