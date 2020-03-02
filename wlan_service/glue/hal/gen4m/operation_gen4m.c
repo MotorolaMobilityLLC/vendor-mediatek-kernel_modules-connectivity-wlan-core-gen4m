@@ -711,32 +711,6 @@ s_int32 mt_op_set_antswap(
 	return ret;
 }
 
-s_int32 mt_op_get_thermal_value(
-	struct test_wlan_info *winfos,
-	struct test_configuration *test_configs)
-{
-	s_int32 ret = SERV_STATUS_SUCCESS;
-	struct param_mtk_wifi_test_struct rf_at_info;
-	wlan_oid_handler_t pr_oid_funcptr = winfos->oid_funcptr;
-	u_int32 buf_len;
-
-	if (pr_oid_funcptr == NULL)
-		return SERV_STATUS_HAL_OP_INVALID_NULL_POINTER;
-
-	rf_at_info.func_idx = RF_AT_FUNCID_TEMP_SENSOR;
-	rf_at_info.func_data = 0;
-
-	ret = tm_rftest_query_auto_test(winfos,
-		&rf_at_info, &buf_len);
-
-	if (ret == SERV_STATUS_SUCCESS) {
-		test_configs->thermal_val = rf_at_info.func_data;
-		test_configs->thermal_val = test_configs->thermal_val >> 16;
-	}
-
-	return ret;
-}
-
 s_int32 mt_op_set_freq_offset(
 	struct test_wlan_info *winfos,
 	u_int32 freq_offset, u_char band_idx)
@@ -2293,6 +2267,34 @@ s_int32 mt_op_get_thermal_val(
 	u_char band_idx,
 	u_int32 *value)
 {
+	s_int32 ret = SERV_STATUS_SUCCESS;
+	struct param_mtk_wifi_test_struct rf_at_info;
+	wlan_oid_handler_t pr_oid_funcptr = winfos->oid_funcptr;
+	u_int32 buf_len = 0;
+
+	if (pr_oid_funcptr == NULL)
+		return SERV_STATUS_HAL_OP_INVALID_NULL_POINTER;
+
+	rf_at_info.func_idx = RF_AT_FUNCID_TEMP_SENSOR;
+	rf_at_info.func_data = 0;
+
+	ret = tm_rftest_query_auto_test(winfos,
+		&rf_at_info, &buf_len);
+
+	if (ret == SERV_STATUS_SUCCESS) {
+		*value = rf_at_info.func_data;
+		*value = *value >> 16;
+		SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_TRACE,
+			("%s: value = %x\n",
+				__func__, *value));
+	} else {
+		SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_TRACE,
+			("%s: get thermal fail ret = %d\n",
+				__func__, ret));
+
+		return ret;
+	}
+
 	return SERV_STATUS_SUCCESS;
 }
 
