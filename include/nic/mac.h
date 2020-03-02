@@ -991,12 +991,16 @@
 	62	/* Secondary Channel Offset */
 #define ELEM_ID_RRM_ENABLED_CAP \
 	70	/* Radio Resource Management Enabled Capabilities */
+#define ELEM_ID_MBSSID  \
+	71	/* Multiple BSSID element */
 #define ELEM_ID_20_40_BSS_COEXISTENCE \
 	72	/* 20/40 BSS Coexistence */
 #define ELEM_ID_20_40_INTOLERANT_CHNL_REPORT \
 	73	/* 20/40 BSS Intolerant Channel Report */
 #define ELEM_ID_OBSS_SCAN_PARAMS \
 	74	/* Overlapping BSS Scan Parameters */
+#define ELEM_ID_MBSSID_INDEX \
+	85	/* Multiple BSSID-Index element */
 #define ELEM_ID_EXTENDED_CAP \
 	127	/* Extended capabilities */
 
@@ -1136,6 +1140,7 @@
 #define ELEM_EXT_CAP_SCHEDULE_PSMP                  BIT(6)
 
 #define ELEM_EXT_CAP_BSS_TRANSITION_BIT             19
+#define ELEM_EXT_CAP_MBSSID_BIT                     22
 #define ELEM_EXT_CAP_UTC_TSF_OFFSET_BIT             27
 #define ELEM_EXT_CAP_INTERWORKING_BIT               31
 #define ELEM_EXT_CAP_QOSMAPSET_BIT                  32
@@ -1143,7 +1148,11 @@
 #define ELEM_EXT_CAP_WNM_NOTIFICATION_BIT           46
 #define ELEM_EXT_CAP_OP_MODE_NOTIFICATION_BIT       62
 
+#if (CFG_SUPPORT_802_11AX == 1)
+#define ELEM_MAX_LEN_EXT_CAP                        (10)
+#else
 #define ELEM_MAX_LEN_EXT_CAP                        (8)
+#endif
 
 /* 7.3.2.30 TSPEC element */
 /* WMM: 0 (Asynchronous TS of low-duty cycles) */
@@ -1665,6 +1674,10 @@
 #define RM_ACTION_LM_REPORT                         3
 #define RM_ACTION_NEIGHBOR_REQUEST                  4
 #define RM_ACTION_REIGHBOR_RESPONSE                 5
+
+/* 9.4.2.46 Multiple BSSID element */
+/* Nontransmitted BSSID Profile */
+#define NON_TX_BSSID_PROFILE                        0
 
 /*******************************************************************************
  *                             D A T A   T Y P E S
@@ -3182,6 +3195,23 @@ struct WMM_ACTION_TSPEC_FRAME {
 	uint8_t		aucInfoElem[1];
 } __KAL_ATTRIB_PACKED__;
 
+/* 9.4.2.46 Multiple BSSID element */
+struct IE_MBSSID {
+	uint8_t      ucId;
+	uint8_t      ucLength;
+	uint8_t      ucMaxBSSIDIndicator;
+	uint8_t      ucSubelements[1];
+} __KAL_ATTRIB_PACKED__;
+
+/* 9.4.2.74 Multiple BSSID-Index element */
+struct IE_MBSSID_INDEX {
+	uint8_t      ucId;
+	uint8_t      ucLength;
+	uint8_t      ucBSSIDIndex;
+	uint8_t      ucDtimPeriod;
+	uint8_t      ucDtimCount;
+} __KAL_ATTRIB_PACKED__;
+
 #if defined(WINDOWS_DDK) || defined(WINDOWS_CE)
 #pragma pack()
 #endif
@@ -3275,6 +3305,9 @@ struct WMM_ACTION_TSPEC_FRAME {
 #define SM_MEASUREMENT_REQ_IE(fp) ((struct IE_MEASUREMENT_REQ *) fp)
 #define SM_MEASUREMENT_REP_IE(fp) ((struct IE_MEASUREMENT_REPORT *) fp)
 #define SM_BASIC_REQ_IE(fp) ((struct SM_BASIC_REQ *) fp)
+
+#define MBSSID_IE(fp)                 ((struct IE_MBSSID *) fp)
+#define MBSSID_INDEX_IE(fp)           ((struct IE_MBSSID_INDEX *) fp)
 
 /* The macro to check if the MAC address is B/MCAST Address */
 #define IS_BMCAST_MAC_ADDR(_pucDestAddr)            \

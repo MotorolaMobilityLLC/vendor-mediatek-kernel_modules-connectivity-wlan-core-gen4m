@@ -992,6 +992,12 @@ static void rlmFillExtCapIE(struct ADAPTER *prAdapter,
 		    ELEM_EXT_CAP_BSS_TRANSITION_BIT);
 #endif
 
+#if (CFG_SUPPORT_802_11V_MBSSID == 1)
+	prExtCap->ucLength = ELEM_MAX_LEN_EXT_CAP;
+	SET_EXT_CAP(prHsExtCap->aucCapabilities, ELEM_MAX_LEN_EXT_CAP,
+		    ELEM_EXT_CAP_MBSSID_BIT);
+#endif
+
 	ASSERT(IE_SIZE(prHsExtCap) <= (ELEM_HDR_LEN + ELEM_MAX_LEN_EXT_CAP));
 
 	prMsduInfo->u2FrameLength += IE_SIZE(prHsExtCap);
@@ -1052,6 +1058,12 @@ static void rlmFillExtCapIE(struct ADAPTER *prAdapter,
 	prExtCap->ucLength = ELEM_MAX_LEN_EXT_CAP;
 	SET_EXT_CAP(prExtCap->aucCapabilities, ELEM_MAX_LEN_EXT_CAP,
 				ELEM_EXT_CAP_BSS_TRANSITION_BIT);
+#endif
+
+#if (CFG_SUPPORT_802_11V_MBSSID == 1)
+	prExtCap->ucLength = ELEM_MAX_LEN_EXT_CAP;
+	SET_EXT_CAP(prExtCap->aucCapabilities, ELEM_MAX_LEN_EXT_CAP,
+				ELEM_EXT_CAP_MBSSID_BIT);
 #endif
 
 	ASSERT(IE_SIZE(prExtCap) <= (ELEM_HDR_LEN + ELEM_MAX_LEN_EXT_CAP));

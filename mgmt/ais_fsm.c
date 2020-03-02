@@ -3848,6 +3848,12 @@ void aisUpdateBssInfoForJOIN(IN struct ADAPTER *prAdapter,
 		aisRemoveBlackList(prAdapter, prBssDesc);
 		/* 4 <4.1> Setup MIB for current BSS */
 		prAisBssInfo->u2BeaconInterval = prBssDesc->u2BeaconInterval;
+#if (CFG_SUPPORT_802_11V_MBSSID == 1)
+		prAisBssInfo->ucMaxBSSIDIndicator =
+					prBssDesc->ucMaxBSSIDIndicator;
+		prAisBssInfo->ucMBSSIDIndex = prBssDesc->ucMBSSIDIndex;
+#endif
+
 	} else {
 		/* should never happen */
 		ASSERT(0);
