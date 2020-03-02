@@ -690,6 +690,30 @@ void asicConnac2xWfdmaManualPrefetch(
 		WF_WFDMA_HOST_DMA1_WPDMA_RST_DTX_PTR_ADDR, 0xFFFFFFFF);
 }
 
+void asicConnac2xEnablePlatformIRQ(IN struct ADAPTER *prAdapter)
+{
+	struct GL_HIF_INFO *prHifInfo = NULL;
+
+	ASSERT(prAdapter);
+
+	prAdapter->fgIsIntEnable = TRUE;
+
+	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
+	enable_irq(prHifInfo->u4IrqId);
+}
+
+void asicConnac2xDisablePlatformIRQ(IN struct ADAPTER *prAdapter)
+{
+	struct GL_HIF_INFO *prHifInfo = NULL;
+
+	ASSERT(prAdapter);
+
+	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
+	disable_irq_nosync(prHifInfo->u4IrqId);
+
+	prAdapter->fgIsIntEnable = FALSE;
+}
+
 void asicConnac2xEnableExtInterrupt(
 	struct ADAPTER *prAdapter)
 {

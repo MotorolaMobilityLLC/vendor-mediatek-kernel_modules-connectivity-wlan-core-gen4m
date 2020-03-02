@@ -1183,6 +1183,35 @@ void soc3_0_show_pse_info(
 	}
 }
 
+static void DumpPPDebugCr(struct ADAPTER *prAdapter)
+{
+	uint32_t ReadRegValue[4];
+	uint32_t u4Value[4];
+
+	/* 0x820CC0F0 : PP DBG_CTRL */
+	ReadRegValue[0] = 0x820CC0F0;
+	HAL_MCR_RD(prAdapter, ReadRegValue[0], &u4Value[0]);
+
+	/* 0x820CC0F8 : PP DBG_CS0 */
+	ReadRegValue[1] = 0x820CC0F8;
+	HAL_MCR_RD(prAdapter, ReadRegValue[1], &u4Value[1]);
+
+	/* 0x820CC0FC : PP DBG_CS1 */
+	ReadRegValue[2] = 0x820CC0FC;
+	HAL_MCR_RD(prAdapter, ReadRegValue[2], &u4Value[2]);
+
+	/* 0x820CC100 : PP DBG_CS2 */
+	ReadRegValue[3] = 0x820CC100;
+	HAL_MCR_RD(prAdapter, ReadRegValue[3], &u4Value[3]);
+
+	DBGLOG(HAL, INFO,
+	"PP[0x%08x]=0x%08x,[0x%08x]=0x%08x,[0x%08x]=0x%08x,[0x%08x]=0x%08x,",
+		ReadRegValue[0], u4Value[0],
+		ReadRegValue[1], u4Value[1],
+		ReadRegValue[2], u4Value[2],
+		ReadRegValue[3], u4Value[3]);
+}
+
 void show_wfdma_interrupt_info(
 	IN struct ADAPTER *prAdapter,
 	IN enum _ENUM_WFDMA_TYPE_T enum_wfdma_type)
@@ -1527,6 +1556,8 @@ void soc3_0_show_wfdma_info(IN struct ADAPTER *prAdapter)
 	/* dump debug flag CR by host or WM*/
 	show_wfdma_dbg_flag_log(prAdapter, WFDMA_TYPE_HOST, FALSE);
 	show_wfdma_dbg_flag_log(prAdapter, WFDMA_TYPE_WM, FALSE);
+
+	DumpPPDebugCr(prAdapter);
 }
 
 void soc3_0_show_wfdma_info_by_type(IN struct ADAPTER *prAdapter,
