@@ -11268,7 +11268,7 @@ wlanoidQueryNvramRead(IN struct ADAPTER *prAdapter,
 		}
 	} else if (prNvramRwInfo->ucEepromMethod ==
 		   PARAM_EEPROM_READ_METHOD_GETSIZE) {
-		prNvramRwInfo->u2EepromData = CFG_FILE_WIFI_REC_SIZE;
+		prNvramRwInfo->u2EepromData = MAX_CFG_FILE_WIFI_REC_SIZE;
 		DBGLOG(REQ, INFO, "EEPROM size =%d\r\n",
 		       prNvramRwInfo->u2EepromData);
 	}

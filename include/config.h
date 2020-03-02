@@ -1280,7 +1280,7 @@
  * Flags of using wlan_assistant to read/write NVRAM
  *------------------------------------------------------------------------------
  */
-#define CFG_WLAN_ASSISTANT_NVRAM		0
+#define CFG_WLAN_ASSISTANT_NVRAM		1
 
 /*------------------------------------------------------------------------------
  * Flags of WORKAROUND HWITS00012836 WTBL_SEARCH_FAIL

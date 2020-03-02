@@ -525,6 +525,11 @@ struct WIFI_CFG_PARAM_STRUCT {
 	uint8_t aucReserved1[1346];
 };
 
+struct WIFI_NVRAM_TAG_FORMAT {
+	uint8_t u1NvramTypeID;
+	uint8_t u1NvramTypeLenLsb;
+	uint8_t u1NvramTypeLenMsb;
+};
 /*******************************************************************************
  *                           P R I V A T E   D A T A
  *******************************************************************************
@@ -539,7 +544,7 @@ struct WIFI_CFG_PARAM_STRUCT {
 		{switch (0) {case 0: case (expr): default:; } }
 #endif
 
-#define CFG_FILE_WIFI_REC_SIZE    sizeof(struct WIFI_CFG_PARAM_STRUCT)
+#define MAX_CFG_FILE_WIFI_REC_SIZE    (1024*8)
 
 /*******************************************************************************
  *                  F U N C T I O N   D E C L A R A T I O N S

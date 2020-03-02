@@ -493,7 +493,7 @@ u_int8_t kalCfgDataRead(IN struct GLUE_INFO *prGlueInfo,
 	if (pu2Data == NULL)
 		return FALSE;
 
-	if (u4Offset + len > CFG_FILE_WIFI_REC_SIZE)
+	if (u4Offset + len > MAX_CFG_FILE_WIFI_REC_SIZE)
 		return FALSE;
 
 	kalMemCopy(pu2Data, &g_aucNvram[u4Offset], len);
@@ -528,7 +528,7 @@ u_int8_t kalCfgDataRead16(IN struct GLUE_INFO *prGlueInfo,
 	if (pu2Data == NULL)
 		return FALSE;
 
-	if (u4Offset + sizeof(unsigned short) > CFG_FILE_WIFI_REC_SIZE)
+	if (u4Offset + sizeof(unsigned short) > MAX_CFG_FILE_WIFI_REC_SIZE)
 		return FALSE;
 
 	kalMemCopy(pu2Data, &g_aucNvram[u4Offset],
@@ -561,7 +561,7 @@ u_int8_t kalCfgDataRead16(IN struct GLUE_INFO *prGlueInfo,
 u_int8_t kalCfgDataWrite16(IN struct GLUE_INFO *prGlueInfo,
 			   uint32_t u4Offset, uint16_t u2Data)
 {
-	if (u4Offset + sizeof(unsigned short) > CFG_FILE_WIFI_REC_SIZE)
+	if (u4Offset + sizeof(unsigned short) > MAX_CFG_FILE_WIFI_REC_SIZE)
 		return FALSE;
 
 	kalMemCopy(&g_aucNvram[u4Offset], &u2Data,
