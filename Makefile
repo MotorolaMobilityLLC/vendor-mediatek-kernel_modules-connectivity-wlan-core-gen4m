@@ -1,4 +1,22 @@
 # ---------------------------------------------------
+# ALPS Setting
+# ---------------------------------------------------
+ifneq ($(KERNEL_OUT),)
+    ccflags-y += -imacros $(KERNEL_OUT)/include/generated/autoconf.h
+endif
+
+ifeq ($(TARGET_BUILD_VARIANT),$(filter $(TARGET_BUILD_VARIANT),userdebug user))
+    #ldflags-y += -s
+    ccflags-y += -g1 -ggdb1
+endif
+
+ifeq ($(KBUILD_MODPOST_FAIL_ON_WARNINGS),)
+    # Force build fail on modpost warning
+    KBUILD_MODPOST_FAIL_ON_WARNINGS=y
+endif
+
+
+# ---------------------------------------------------
 # Compile Options
 # ---------------------------------------------------
 WLAN_CHIP_LIST:=-UMT6620 -UMT6628 -UMT5931 -UMT6630 -UMT6632 -UMT7663 -UCONNAC
