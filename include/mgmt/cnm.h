@@ -98,6 +98,13 @@ enum ENUM_CH_REQ_TYPE {
 #endif
 	CH_REQ_TYPE_NUM
 };
+#if (CFG_SUPPORT_IDC_CH_SWITCH == 1)
+enum ENUM_CH_SWITCH_TYPE {
+	CH_SWITCH_2G, /* Default */
+	CH_SWITCH_5G,
+	CH_SWITCH_NUM
+};
+#endif
 
 struct MSG_CH_REQ {
 	struct MSG_HDR rMsgHdr;	/* Must be the first member */
@@ -266,6 +273,14 @@ void cnmRadarDetectEvent(struct ADAPTER *prAdapter,
 
 void cnmCsaDoneEvent(struct ADAPTER *prAdapter,
 	struct WIFI_EVENT *prEvent);
+
+#if (CFG_SUPPORT_IDC_CH_SWITCH == 1)
+uint8_t cnmIdcCsaReq(IN struct ADAPTER *prAdapter,
+	IN uint8_t ch_num, IN uint8_t ucRoleIdx);
+
+void cnmIdcDetectHandler(IN struct ADAPTER *prAdapter,
+	IN struct WIFI_EVENT *prEvent);
+#endif
 #endif
 
 u_int8_t cnmPreferredChannel(struct ADAPTER *prAdapter, enum ENUM_BAND *prBand,
