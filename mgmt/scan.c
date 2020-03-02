@@ -1661,7 +1661,8 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 	prBssDesc->fgIsHTPresent = FALSE;
 	prBssDesc->fgIsVHTPresent = FALSE;
 #if (CFG_SUPPORT_802_11AX == 1)
-	prBssDesc->fgIsHEPresent = FALSE;
+	if (fgEfuseCtrlAxOn == 1)
+		prBssDesc->fgIsHEPresent = FALSE;
 #endif
 	prBssDesc->eSco = CHNL_EXT_SCN;
 	prBssDesc->fgIEWAPI = FALSE;
@@ -1928,7 +1929,7 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 		}
 #if (CFG_SUPPORT_802_11AX == 1)
 		case ELEM_ID_RESERVED:
-			{
+			if (fgEfuseCtrlAxOn == 1) {
 				if (IE_ID_EXT(pucIE) == ELEM_EXT_ID_HE_CAP)
 					prBssDesc->fgIsHEPresent = TRUE;
 			}
@@ -2173,8 +2174,10 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 		prBssDesc->ucPhyTypeSet |= PHY_TYPE_BIT_HT;
 
 #if (CFG_SUPPORT_802_11AX == 1)
-	if (prBssDesc->fgIsHEPresent)
-		prBssDesc->ucPhyTypeSet |= PHY_TYPE_BIT_HE;
+	if (fgEfuseCtrlAxOn == 1) {
+		if (prBssDesc->fgIsHEPresent)
+			prBssDesc->ucPhyTypeSet |= PHY_TYPE_BIT_HE;
+	}
 #endif
 
 	/* if not 11n only */

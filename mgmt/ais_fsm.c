@@ -237,15 +237,20 @@ void aisInitializeConnectionSettings(IN struct ADAPTER *prAdapter,
 
 	prConnSettings->fgIsAdHocQoSEnable = FALSE;
 
-#if (CFG_SUPPORT_802_11AX == 1)
-	prAdapter->rWifiVar.eDesiredPhyConfig
-		= PHY_CONFIG_802_11ABGNACAX;
-#elif CFG_SUPPORT_802_11AC
-	prAdapter->rWifiVar.eDesiredPhyConfig
-		= PHY_CONFIG_802_11ABGNAC;
-#else
+
 	prAdapter->rWifiVar.eDesiredPhyConfig
 		= PHY_CONFIG_802_11ABGN;
+
+#if (CFG_SUPPORT_802_11AC == 1)
+	prAdapter->rWifiVar.eDesiredPhyConfig
+		= PHY_CONFIG_802_11ABGNAC;
+#endif
+
+#if (CFG_SUPPORT_802_11AX == 1)
+	if (fgEfuseCtrlAxOn == 1) {
+	prAdapter->rWifiVar.eDesiredPhyConfig
+			= PHY_CONFIG_802_11ABGNACAX;
+	}
 #endif
 
 
@@ -590,6 +595,7 @@ void aisFsmStateInit_JOIN(IN struct ADAPTER *prAdapter,
 		ucBssIndex);
 
 #if (CFG_SUPPORT_802_11AX == 1)
+	if (fgEfuseCtrlAxOn == 1) {
 	/* check prBssDesc, if HE_AP and TKIP/WEP, don't join */
 	if (prBssDesc->fgIsHEPresent &&
 		!((prConnSettings->eEncStatus ==
@@ -607,6 +613,7 @@ void aisFsmStateInit_JOIN(IN struct ADAPTER *prAdapter,
 		/* Don't trigger SAA FSM */
 		DBGLOG(AIS, STATE, "Don't JOIN HE AP with TKIP/WEP\n");
 		return;
+		}
 	}
 #endif
 

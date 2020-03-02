@@ -143,8 +143,10 @@ void asicConnac2xCapInit(
 #endif /* CFG_SUPPORT_WIFI_SYSDVT */
 
 #if (CFG_SUPPORT_802_11AX == 1)
-	prAdapter->fgEnShowHETrigger = FALSE;
-	heRlmInitHeHtcACtrlOMAndUPH(prAdapter);
+	if (fgEfuseCtrlAxOn == 1) {
+		prAdapter->fgEnShowHETrigger = FALSE;
+		heRlmInitHeHtcACtrlOMAndUPH(prAdapter);
+	}
 #endif
 
 	switch (prGlueInfo->u4InfType) {
