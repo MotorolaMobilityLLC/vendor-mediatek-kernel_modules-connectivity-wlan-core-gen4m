@@ -81,9 +81,7 @@ uint8_t p2pRoleFsmInit(IN struct ADAPTER *prAdapter, IN uint8_t ucRoleIdx)
 	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo = (struct P2P_ROLE_FSM_INFO *) NULL;
 	struct BSS_INFO *prP2pBssInfo = (struct BSS_INFO *) NULL;
 	struct P2P_CHNL_REQ_INFO *prP2pChnlReqInfo = (struct P2P_CHNL_REQ_INFO *) NULL;
-#if CFG_ENABLE_UNIFY_WIPHY
 	struct GL_P2P_INFO *prP2PInfo = NULL;
-#endif
 
 	do {
 		ASSERT_BREAK(prAdapter != NULL);
@@ -132,17 +130,16 @@ uint8_t p2pRoleFsmInit(IN struct ADAPTER *prAdapter, IN uint8_t ucRoleIdx)
 		/* For state identify, not really used. */
 		prP2pBssInfo->eIntendOPMode = OP_MODE_P2P_DEVICE;
 
-#if CFG_ENABLE_UNIFY_WIPHY
 		/* glRegisterP2P has setup the mac address */
+		/* For wlan0 as AP mode case, this function will be called when
+		 * changing interface type. And the MAC Addr overwrite by Role
+		 * isn't expected.
+		 * Maybe only using ucRoleIdx to calc MAC addr is better than
+		 * using Role type.
+		 */
 		prP2PInfo = prAdapter->prGlueInfo->prP2PInfo[ucRoleIdx];
 		COPY_MAC_ADDR(prP2pBssInfo->aucOwnMacAddr,
 			      prP2PInfo->prDevHandler->dev_addr);
-#else
-		COPY_MAC_ADDR(prP2pBssInfo->aucOwnMacAddr, prAdapter->rMyMacAddr);
-		/*prP2pBssInfo->aucOwnMacAddr[0] ^= 0x2;*/	/* change to local administrated address */
-		prP2pBssInfo->aucOwnMacAddr[0] |= 0x2;
-		prP2pBssInfo->aucOwnMacAddr[0] ^= ucRoleIdx << 2;	/* change to local administrated address */
-#endif
 
 		/* For BSS_INFO back trace to P2P Role & get Role FSM. */
 		prP2pBssInfo->u4PrivateData = ucRoleIdx;
