@@ -155,7 +155,15 @@ extern const PUINT_8 apucACI2Str[4];
 #define QM_DEFAULT_USER_PRIORITY    0
 
 #define QM_STA_FORWARD_COUNT_UNLIMITED      0xFFFFFFFF
-#define QM_FWD_PKT_QUE_THRESHOLD            128
+/* Pending Forwarding Frame Threshold:
+ *
+ *   A conservative estimated value, to reserve enough free MSDU resource for OS packet,
+ *   rather than full consumed by the pending forwarding frame.
+ *
+ *   Indeed, even if network subqueue is not stopped when no MSDU resource, the new arriving
+ *   skb will be queued in prGlueInfo->rTxQueue and not be dropped.
+ */
+#define QM_FWD_PKT_QUE_THRESHOLD            (CFG_TX_MAX_PKT_NUM - 2 * CFG_TX_STOP_NETIF_PER_QUEUE_THRESHOLD)
 
 /* 1 WMM-related */
 /* WMM FLAGS */
