@@ -3582,8 +3582,8 @@ void qmInsertReorderPkt(IN struct ADAPTER *prAdapter,
 		/* Advance the window after inserting a new tail */
 		prReorderQueParm->u2WinEnd = (uint16_t) u4SeqNo;
 		prReorderQueParm->u2WinStart =
-			(((prReorderQueParm->u2WinEnd) -
-			(prReorderQueParm->u2WinSize) + MAX_SEQ_NO_COUNT + 1) %
+			(((prReorderQueParm->u2WinEnd) + MAX_SEQ_NO_COUNT -
+			prReorderQueParm->u2WinSize + 1) %
 			MAX_SEQ_NO_COUNT);
 #if CFG_SUPPORT_RX_AMSDU
 		/* RX reorder for one MSDU in AMSDU issue */
@@ -4110,7 +4110,7 @@ void qmPopOutDueToFallAhead(IN struct ADAPTER *prAdapter,
 				prNext)->prPrev = NULL;
 			}
 			prReorderQue->u4NumElem--;
-			DBGLOG(QM, TRACE, "QM: [%d] %d (%d)\n",
+			DBGLOG(QM, TRACE, "QM: [%u] %u (%u)\n",
 				prReorderQueParm->ucTid,
 				prReorderedSwRfb->u2PacketLen,
 				prReorderedSwRfb->u2SSN);
@@ -4291,6 +4291,8 @@ void qmHandleEventCheckReorderBubble(IN struct ADAPTER *prAdapter,
 			prReorderQue);
 
 		prReorderQueParm->u2WinStart = prReorderedSwRfb->u2SSN + 1;
+		if (prReorderQueParm->u2WinStart >= MAX_SEQ_NO_COUNT)
+			prReorderQueParm->u2WinStart %= MAX_SEQ_NO_COUNT;
 		prReorderQueParm->u2WinEnd =
 			((prReorderQueParm->u2WinStart) +
 			(prReorderQueParm->u2WinSize) - 1) % MAX_SEQ_NO_COUNT;
@@ -4302,7 +4304,7 @@ void qmHandleEventCheckReorderBubble(IN struct ADAPTER *prAdapter,
 			prReturnedQue);
 
 		DBGLOG(QM, TRACE,
-			"QM:(Bub Flush) STA[%u] TID[%u] BubSN[%u] Win{%d, %d}\n",
+			"QM:(Bub Flush) STA[%u] TID[%u] BubSN[%u] Win{%u, %u}\n",
 			prReorderQueParm->ucStaRecIdx,
 			prReorderQueParm->ucTid,
 			prReorderQueParm->u2FirstBubbleSn,
@@ -4349,7 +4351,7 @@ void qmHandleEventCheckReorderBubble(IN struct ADAPTER *prAdapter,
 			prAdapter->u4QmRxBaMissTimeout);
 
 		DBGLOG(QM, TRACE,
-			"QM:(Bub Timer) STA[%u] TID[%u] BubSN[%u] Win{%d, %d}\n",
+			"QM:(Bub Timer) STA[%u] TID[%u] BubSN[%u] Win{%u, %u}\n",
 			prReorderQueParm->ucStaRecIdx,
 			prReorderQueParm->ucTid,
 			prReorderQueParm->u2FirstBubbleSn,
@@ -4655,7 +4657,7 @@ u_int8_t qmAddRxBaEntry(IN struct ADAPTER *prAdapter,
 		g_arMissTimeout[ucStaRecIdx][ucTid] = 0;
 
 		DBGLOG(QM, INFO,
-			"QM: +RxBA(STA=%d TID=%d WinStart=%d WinEnd=%d WinSize=%d)\n",
+			"QM: +RxBA(STA=%u TID=%u WinStart=%u WinEnd=%u WinSize=%u)\n",
 			ucStaRecIdx, ucTid, prRxBaEntry->u2WinStart,
 			prRxBaEntry->u2WinEnd,
 			prRxBaEntry->u2WinSize);
