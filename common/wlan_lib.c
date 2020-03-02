@@ -813,61 +813,12 @@ uint32_t wlanAdapterStop(IN struct ADAPTER *prAdapter)
 
 #endif
 	/* Hif power off wifi */
-#if 1
-	wlanPowerOffWifi(prAdapter);
-#else
+
 	if (prAdapter->rAcpiState == ACPI_STATE_D0 &&
-	    !wlanIsChipNoAck(prAdapter)
-	    && !kalIsCardRemoved(prAdapter->prGlueInfo)) {
-		/* 0. Disable interrupt, this can be done without Driver own */
-		nicDisableInterrupt(prAdapter);
-
-		ACQUIRE_POWER_CONTROL_FROM_PM(prAdapter);
-
-		/* 1. Set CMD to FW to tell WIFI to stop (enter power off state)
-		 */
-		if (prAdapter->fgIsFwOwn == FALSE
-		    && wlanSendNicPowerCtrlCmd(prAdapter,
-					       1) == WLAN_STATUS_SUCCESS) {
-			uint32_t i;
-			/* 2. Clear pending interrupt */
-			i = 0;
-			while (i < CFG_IST_LOOP_COUNT
-			       && nicProcessIST(prAdapter) !=
-			       WLAN_STATUS_NOT_INDICATING) {
-				i++;
-			};
-
-			/* 3. Wait til RDY bit has been cleaerd */
-			wlanCheckWifiFunc(prAdapter, FALSE);
-		}
-#if !CFG_ENABLE_FULL_PM
-		/* 4. Set Onwership to F/W */
-		nicpmSetFWOwn(prAdapter, FALSE);
-#endif
-
-#if CFG_FORCE_RESET_UNDER_BUS_ERROR
-		if (HAL_TEST_FLAG(prAdapter, ADAPTER_FLAG_HW_ERR) == TRUE) {
-			/* force acquire firmware own */
-			kalDevRegWrite(prAdapter->prGlueInfo, MCR_WHLPCR,
-				       WHLPCR_FW_OWN_REQ_CLR);
-
-			/* delay for 10ms */
-			kalMdelay(10);
-
-			/* force firmware reset via software interrupt */
-			kalDevRegWrite(prAdapter->prGlueInfo, MCR_WSICR,
-				       WSICR_H2D_SW_INT_SET);
-
-			/* force release firmware own */
-			kalDevRegWrite(prAdapter->prGlueInfo, MCR_WHLPCR,
-				       WHLPCR_FW_OWN_REQ_SET);
-		}
-#endif
-
-		RECLAIM_POWER_CONTROL_TO_PM(prAdapter, FALSE);
-	}
-#endif
+		!wlanIsChipNoAck(prAdapter)
+		&& !kalIsCardRemoved(prAdapter->prGlueInfo)) {
+		wlanPowerOffWifi(prAdapter);
+	 }
 
 	nicRxUninitialize(prAdapter);
 
