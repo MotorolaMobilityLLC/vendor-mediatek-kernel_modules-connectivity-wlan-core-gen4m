@@ -498,6 +498,11 @@ u_int8_t tkipMicDecapsulateInRxHdrTransMode(
 	pucFrameBody = prSwRfb->pucPayload;
 	u2FrameBodyLen = prSwRfb->u2PayloadLength;
 
+	if (!pucFrameBody) {
+		DBGLOG(RSN, INFO, "pucPayload is NULL, drop this packet");
+		return FALSE;
+	}
+
 	DBGLOG(RSN, LOUD, "Before TKIP MSDU Decapsulate:\n");
 	DBGLOG(RSN, LOUD, "MIC key:\n");
 	/* DBGLOG_MEM8(RSN, LOUD, pucMicKey, 8); */
