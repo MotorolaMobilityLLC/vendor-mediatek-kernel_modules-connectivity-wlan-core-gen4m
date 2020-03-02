@@ -549,9 +549,10 @@ batchConvertResult(IN struct EVENT_BATCH_RESULT *prEventBatchResult,
 		pBr++;
 	}
 
-	nsize1 = kalSnprintf(text1, TMP_TEXT_LEN_S, "scancount=%ld\nnextcount=%ld\n", scancount, scancount);
+	nsize1 = kalSnprintf(text1, TMP_TEXT_LEN_S, "scancount=%d\nnextcount=%d\n", scancount, scancount);
 	if (nsize1 < nleft) {
-		p += nsize1 = kalSprintf(p, "%s", text1);
+		kalStrnCpy(p, text1, nsize1);
+		p += nsize1;
 		nleft -= nsize1;
 	} else
 		goto short_buf;
@@ -570,7 +571,8 @@ batchConvertResult(IN struct EVENT_BATCH_RESULT *prEventBatchResult,
 		/* We only support one round scan result now. */
 		nsize1 = kalSnprintf(text1, TMP_TEXT_LEN_S, "apcount=%d\n", pBr->ucScanCount);
 		if (nsize1 < nleft) {
-			p += nsize1 = kalSprintf(p, "%s", text1);
+			kalStrnCpy(p, text1, nsize1);
+			p += nsize1;
 			nleft -= nsize1;
 		} else
 			goto short_buf;
@@ -590,7 +592,7 @@ batchConvertResult(IN struct EVENT_BATCH_RESULT *prEventBatchResult,
 			freq = batchChannelNum2Freq(prEntry->ucFreq);
 			nsize3 =
 			    kalSnprintf(text3, TMP_TEXT_LEN_L,
-					"freq=%lu\nlevel=%d\ndist=%lu\ndistSd=%lu\n====\n", freq,
+					"freq=%u\nlevel=%d\ndist=%u\ndistSd=%u\n====\n", freq,
 					prEntry->cRssi, prEntry->u4Dist, prEntry->u4Distsd);
 
 			nsize = nsize1 + nsize2 + nsize3;
@@ -613,13 +615,21 @@ batchConvertResult(IN struct EVENT_BATCH_RESULT *prEventBatchResult,
 		}
 
 		nsize1 = kalSnprintf(text1, TMP_TEXT_LEN_S, "%s", "####\n");
-		p += kalSprintf(p, "%s", text1);
+		if (nsize1 < nleft) {
+			kalStrnCpy(p, text1, nsize1);
+			p += nsize1;
+			nleft -= nsize1;
+		}
 
 		pBr++;
 	}
 
 	nsize1 = kalSnprintf(text1, TMP_TEXT_LEN_S, "%s", "----\n");
-	kalSprintf(p, "%s", text1);
+	if (nsize1 < nleft) {
+		kalStrnCpy(p, text1, nsize1);
+		p += nsize1;
+		nleft -= nsize1;
+	}
 
 	*pu4RetLen = u4MaxBufferLen - nleft;
 	DBGLOG(SCN, TRACE, "total len = %d (max len = %d)\n", *pu4RetLen, u4MaxBufferLen);
@@ -628,7 +638,7 @@ batchConvertResult(IN struct EVENT_BATCH_RESULT *prEventBatchResult,
 
 short_buf:
 	DBGLOG(SCN, TRACE,
-	       "Short buffer issue! %d > %d, %s\n", u4MaxBufferLen + (nsize - nleft), u4MaxBufferLen, pvBuffer);
+	       "Short buffer issue! %d > %d, %s\n", u4MaxBufferLen + (nsize - nleft), u4MaxBufferLen, (char *)pvBuffer);
 	return WLAN_STATUS_INVALID_LENGTH;
 }
 #endif
@@ -827,7 +837,8 @@ priv_set_int(IN struct net_device *prNetDev,
 	case PRIV_CUSTOM_BWCS_CMD:
 
 		DBGLOG(REQ, INFO,
-		       "pu4IntBuf[1] = %x, size of struct PTA_IPC = %d.\n", pu4IntBuf[1], sizeof(struct PTA_IPC));
+		       "pu4IntBuf[1] = %x, size of struct PTA_IPC = %d.\n",
+		       pu4IntBuf[1], (uint32_t) sizeof(struct PTA_IPC));
 
 		prPtaIpc = (struct PTA_IPC *) aucOidBuf;
 		prPtaIpc->u.aucBTPParams[0] = (uint8_t) (pu4IntBuf[1] >> 24);
@@ -857,7 +868,7 @@ priv_set_int(IN struct net_device *prNetDev,
 
 	case PRIV_CMD_BAND_CONFIG:
 		{
-			DBGLOG(INIT, INFO, "CMD set_band = %lu\n", (uint32_t) pu4IntBuf[1]);
+			DBGLOG(INIT, INFO, "CMD set_band = %u\n", (uint32_t) pu4IntBuf[1]);
 		}
 		break;
 
@@ -1576,7 +1587,7 @@ priv_get_struct(IN struct net_device *prNetDev,
 		}
 		return 0;
 	default:
-		DBGLOG(REQ, WARN, "get struct cmd:0x%lx\n", u4SubCmd);
+		DBGLOG(REQ, WARN, "get struct cmd:0x%x\n", u4SubCmd);
 		return -EOPNOTSUPP;
 	}
 }				/* priv_get_struct */
@@ -1641,7 +1652,7 @@ priv_set_ndis(IN struct net_device *prNetDev, IN struct NDIS_TRANSPORT_STRUCT * 
 
 	if (prWlanReqEntry->fgSetBufLenChecking) {
 		if (prNdisReq->inNdisOidlength != prWlanReqEntry->u4InfoBufLen) {
-			DBGLOG(REQ, WARN, "Set %s: Invalid length (current=%ld, needed=%ld)\n",
+			DBGLOG(REQ, WARN, "Set %s: Invalid length (current=%d, needed=%d)\n",
 			       prWlanReqEntry->pucOidName, prNdisReq->inNdisOidlength, prWlanReqEntry->u4InfoBufLen);
 
 			*pu4OutputLen = prWlanReqEntry->u4InfoBufLen;
@@ -2416,7 +2427,7 @@ int priv_driver_get_dbg_level(IN struct net_device *prNetDev, IN char *pcCommand
 			fgIsCmdAccept = TRUE;
 			i4BytesWritten =
 			    snprintf(pcCommand, i4TotalLen,
-				     "Get DBG module[%lu] log level => [0x%02x]!", u4DbgIdx, (uint8_t) u4DbgMask);
+				     "Get DBG module[%u] log level => [0x%02x]!", u4DbgIdx, (uint8_t) u4DbgMask);
 		}
 	}
 
@@ -2700,7 +2711,7 @@ static int priv_driver_get_sta_statistics(IN struct net_device *prNetDev, IN cha
 			DBGLOG(RSN, INFO, "use ais ap "MACSTR"\n",
 				MAC2STR(prGlueInfo->prAdapter->prAisBssInfo->prStaRecOfAP->aucMacAddr));
 		} else {
-			DBGLOG(RSN, INFO, "not connect to ais ap %x\n",
+			DBGLOG(RSN, INFO, "not connect to ais ap %lx\n",
 				prGlueInfo->prAdapter->prAisBssInfo->prStaRecOfAP);
 			i4BytesWritten = kalSnprintf(pcCommand, i4TotalLen, "%s", "\n\nNo STA Stat:\n");
 			return i4BytesWritten;
@@ -2724,18 +2735,18 @@ static int priv_driver_get_sta_statistics(IN struct net_device *prNetDev, IN cha
 		i4BytesWritten = kalSnprintf(pcCommand, i4TotalLen, "%s", "\n\nSTA Stat:\n");
 
 		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-			"Tx total cnt           = %ld\n",
+			"Tx total cnt           = %d\n",
 			rQueryStaStatistics.u4TransmitCount);
 
 		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-			"Tx success	       = %ld\n",
+			"Tx success	       = %d\n",
 			rQueryStaStatistics.u4TransmitCount - rQueryStaStatistics.u4TransmitFailCount);
 
 		u4Per = rQueryStaStatistics.u4TransmitCount == 0 ? 0 :
 			(1000 * (rQueryStaStatistics.u4TransmitFailCount)) /
 			rQueryStaStatistics.u4TransmitCount;
 		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-			"Tx fail count	       = %ld, PER=%ld.%1ld%%\n",
+			"Tx fail count	       = %d, PER=%d.%d%%\n",
 			rQueryStaStatistics.u4TransmitFailCount, u4Per/10, u4Per%10);
 
 		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
@@ -2813,10 +2824,10 @@ static int priv_driver_get_bss_statistics(IN struct net_device *prNetDev, IN cha
 			i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 				"%s", "CurrentTemperature    = -\n");
 			i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-				"Tx success	       = %ld\n",
+				"Tx success	       = %d\n",
 				rQueryBssStatistics.u4TransmitCount - rQueryBssStatistics.u4TransmitFailCount);
 			i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-				"Tx fail count	       = %ld\n", rQueryBssStatistics.u4TransmitFailCount);
+				"Tx fail count	       = %d\n", rQueryBssStatistics.u4TransmitFailCount);
 #if 0
 			i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 				"Rx success	       = %ld\n", 0);
@@ -3074,8 +3085,8 @@ static int32_t priv_driver_dump_helper_wtbl_info(IN char *pcCommand, IN int i4To
 		for (i = 0; i < 8; i += 2) {
 			i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 				"\t\tBA WinSize: TID 0 - %d, TID 1 - %d\n",
-				(prHwWlanInfo->rWtblBaConfig.u4BaWinSize >> (i * 3)) & BITS(0, 2),
-				(prHwWlanInfo->rWtblBaConfig.u4BaWinSize >> ((i + 1) * 3)) & BITS(0, 2));
+				(uint32_t) ((prHwWlanInfo->rWtblBaConfig.u4BaWinSize >> (i * 3)) & BITS(0, 2)),
+				(uint32_t) ((prHwWlanInfo->rWtblBaConfig.u4BaWinSize >> ((i + 1) * 3)) & BITS(0, 2)));
 		}
 	}
 
@@ -3272,18 +3283,18 @@ static int priv_driver_get_sta_info(IN struct net_device *prNetDev, IN char *pcC
 				"%s", "\n\nSTA Stat:\n");
 
 			i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-				"Tx total cnt           = %ld\n",
+				"Tx total cnt           = %d\n",
 				rQueryStaStatistics.u4TransmitCount);
 
 			i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-				"Tx success	       = %ld\n",
+				"Tx success	       = %d\n",
 				rQueryStaStatistics.u4TransmitCount - rQueryStaStatistics.u4TransmitFailCount);
 
 			u4Per = rQueryStaStatistics.u4TransmitCount == 0 ? 0 :
 				(1000 * (rQueryStaStatistics.u4TransmitFailCount)) /
 				rQueryStaStatistics.u4TransmitCount;
 			i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-				"Tx fail count	       = %ld, PER=%ld.%1ld%%\n",
+				"Tx fail count	       = %d, PER=%d.%1d%%\n",
 				rQueryStaStatistics.u4TransmitFailCount, u4Per/10, u4Per%10);
 
 			i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
@@ -3355,17 +3366,17 @@ static int priv_driver_get_mib_info(IN struct net_device *prNetDev, IN char *pcC
 		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 			"%s", "===Rx Related Counters===\n");
 		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-			"\tRx with CRC=%ld\n", prHwMibInfo->rHwMibCnt.u4RxFcsErrCnt);
+			"\tRx with CRC=%d\n", prHwMibInfo->rHwMibCnt.u4RxFcsErrCnt);
 		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-			"\tRx drop due to out of resource=%ld\n", prHwMibInfo->rHwMibCnt.u4RxFifoFullCnt);
+			"\tRx drop due to out of resource=%d\n", prHwMibInfo->rHwMibCnt.u4RxFifoFullCnt);
 		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-			"\tRx Mpdu=%ld\n", prHwMibInfo->rHwMibCnt.u4RxMpduCnt);
+			"\tRx Mpdu=%d\n", prHwMibInfo->rHwMibCnt.u4RxMpduCnt);
 		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-			"\tRx AMpdu=%ld\n", prHwMibInfo->rHwMibCnt.u4RxAMPDUCnt);
+			"\tRx AMpdu=%d\n", prHwMibInfo->rHwMibCnt.u4RxAMPDUCnt);
 		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-			"\tRx PF Drop=%ld\n", prHwMibInfo->rHwMibCnt.u4PFDropCnt);
+			"\tRx PF Drop=%d\n", prHwMibInfo->rHwMibCnt.u4PFDropCnt);
 		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-			"\tRx Len Mismatch=%ld\n", prHwMibInfo->rHwMibCnt.u4RxLenMismatchCnt);
+			"\tRx Len Mismatch=%d\n", prHwMibInfo->rHwMibCnt.u4RxLenMismatchCnt);
 		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 			"\tRx data indicate total=%ld\n", RX_GET_CNT(prRxCtrl, RX_DATA_INDICATION_COUNT));
 		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
@@ -3390,7 +3401,7 @@ static int priv_driver_get_mib_info(IN struct net_device *prNetDev, IN char *pcC
 					RX_GET_CNT(prRxCtrl, RX_DATA_AMSDU_COUNT));
 
 			i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-				"\tRx avg MSDU in AMSDU=%1ld.%02ld\n", u4AmsduCntx100 / 100, u4AmsduCntx100 % 100);
+				"\tRx avg MSDU in AMSDU=%1d.%02d\n", u4AmsduCntx100 / 100, u4AmsduCntx100 % 100);
 		} while (FALSE);
 
 		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
@@ -3422,64 +3433,64 @@ static int priv_driver_get_mib_info(IN struct net_device *prNetDev, IN char *pcC
 		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 			"%s", "===Phy/Timing Related Counters===\n");
 		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-			"\tChannelIdleCnt=%ld\n", prHwMibInfo->rHwMibCnt.u4ChannelIdleCnt);
+			"\tChannelIdleCnt=%d\n", prHwMibInfo->rHwMibCnt.u4ChannelIdleCnt);
 		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-			"\tCCA_NAV_Tx_Time=%ld\n", prHwMibInfo->rHwMibCnt.u4CcaNavTx);
+			"\tCCA_NAV_Tx_Time=%d\n", prHwMibInfo->rHwMibCnt.u4CcaNavTx);
 		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-			"\tRx_MDRDY_CNT=%ld\n", prHwMibInfo->rHwMibCnt.u4MdrdyCnt);
+			"\tRx_MDRDY_CNT=%d\n", prHwMibInfo->rHwMibCnt.u4MdrdyCnt);
 		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-			"\tCCK_MDRDY=%ld, OFDM_MDRDY=0x%lx, OFDM_GREEN_MDRDY=0x%lx\n",
+			"\tCCK_MDRDY=%d, OFDM_MDRDY=0x%x, OFDM_GREEN_MDRDY=0x%x\n",
 			prHwMibInfo->rHwMibCnt.u4CCKMdrdyCnt, prHwMibInfo->rHwMibCnt.u4OFDMLGMixMdrdy,
 			prHwMibInfo->rHwMibCnt.u4OFDMGreenMdrdy);
 		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-			"\tPrim CCA Time=%ld\n", prHwMibInfo->rHwMibCnt.u4PCcaTime);
+			"\tPrim CCA Time=%d\n", prHwMibInfo->rHwMibCnt.u4PCcaTime);
 		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-			"\tSec CCA Time=%ld\n", prHwMibInfo->rHwMibCnt.u4SCcaTime);
+			"\tSec CCA Time=%d\n", prHwMibInfo->rHwMibCnt.u4SCcaTime);
 		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-			"\tPrim ED Time=%ld\n", prHwMibInfo->rHwMibCnt.u4PEDTime);
+			"\tPrim ED Time=%d\n", prHwMibInfo->rHwMibCnt.u4PEDTime);
 		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 			"%s", "===Tx Related Counters(Generic)===\n");
 		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-			"\tBeaconTxCnt=%ld\n", prHwMibInfo->rHwMibCnt.u4BeaconTxCnt);
+			"\tBeaconTxCnt=%d\n", prHwMibInfo->rHwMibCnt.u4BeaconTxCnt);
 		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-			"\tTx 40MHz Cnt=%ld\n", prHwMibInfo->rHwMib2Cnt.u4Tx40MHzCnt);
+			"\tTx 40MHz Cnt=%d\n", prHwMibInfo->rHwMib2Cnt.u4Tx40MHzCnt);
 		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-			"\tTx 80MHz Cnt=%ld\n", prHwMibInfo->rHwMib2Cnt.u4Tx80MHzCnt);
+			"\tTx 80MHz Cnt=%d\n", prHwMibInfo->rHwMib2Cnt.u4Tx80MHzCnt);
 		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-			"\tTx 160MHz Cnt=%ld\n", prHwMibInfo->rHwMib2Cnt.u4Tx160MHzCnt);
+			"\tTx 160MHz Cnt=%d\n", prHwMibInfo->rHwMib2Cnt.u4Tx160MHzCnt);
 		for (i = 0; i < BSSID_NUM; i++) {
 			i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 				"\t===BSSID[%d] Related Counters===\n", i);
 			i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-				"\tBA Miss Cnt=%ld\n", prHwMibInfo->rHwMibCnt.au4BaMissedCnt[i]);
+				"\tBA Miss Cnt=%d\n", prHwMibInfo->rHwMibCnt.au4BaMissedCnt[i]);
 			i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-				"\tRTS Tx Cnt=%ld\n", prHwMibInfo->rHwMibCnt.au4RtsTxCnt[i]);
+				"\tRTS Tx Cnt=%d\n", prHwMibInfo->rHwMibCnt.au4RtsTxCnt[i]);
 			i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-				"\tFrame Retry Cnt=%ld\n", prHwMibInfo->rHwMibCnt.au4FrameRetryCnt[i]);
+				"\tFrame Retry Cnt=%d\n", prHwMibInfo->rHwMibCnt.au4FrameRetryCnt[i]);
 			i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-				"\tFrame Retry 2 Cnt=%ld\n", prHwMibInfo->rHwMibCnt.au4FrameRetry2Cnt[i]);
+				"\tFrame Retry 2 Cnt=%d\n", prHwMibInfo->rHwMibCnt.au4FrameRetry2Cnt[i]);
 			i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-				"\tRTS Retry Cnt=%ld\n", prHwMibInfo->rHwMibCnt.au4RtsRetryCnt[i]);
+				"\tRTS Retry Cnt=%d\n", prHwMibInfo->rHwMibCnt.au4RtsRetryCnt[i]);
 			i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-				"\tAck Failed Cnt=%ld\n", prHwMibInfo->rHwMibCnt.au4AckFailedCnt[i]);
+				"\tAck Failed Cnt=%d\n", prHwMibInfo->rHwMibCnt.au4AckFailedCnt[i]);
 		}
 
 		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 			"%s", "===AMPDU Related Counters===\n");
 		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-			"\tTx AMPDU_Pkt_Cnt=%ld\n", prHwMibInfo->rHwTxAmpduMts.u2TxAmpduCnt);
+			"\tTx AMPDU_Pkt_Cnt=%d\n", prHwMibInfo->rHwTxAmpduMts.u2TxAmpduCnt);
 		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-			"\tTx AMPDU_MPDU_Pkt_Cnt=%ld\n", prHwMibInfo->rHwTxAmpduMts.u4TxSfCnt);
+			"\tTx AMPDU_MPDU_Pkt_Cnt=%d\n", prHwMibInfo->rHwTxAmpduMts.u4TxSfCnt);
 		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-			"\tAMPDU SuccessCnt=%ld\n", prHwMibInfo->rHwTxAmpduMts.u4TxAckSfCnt);
+			"\tAMPDU SuccessCnt=%d\n", prHwMibInfo->rHwTxAmpduMts.u4TxAckSfCnt);
 		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-			"\tAMPDU Tx success      = %ld\n", prHwMibInfo->rHwTxAmpduMts.u4TxAckSfCnt);
+			"\tAMPDU Tx success      = %d\n", prHwMibInfo->rHwTxAmpduMts.u4TxAckSfCnt);
 
 		u4Per = prHwMibInfo->rHwTxAmpduMts.u4TxSfCnt == 0 ? 0 :
 			(1000 * (prHwMibInfo->rHwTxAmpduMts.u4TxSfCnt - prHwMibInfo->rHwTxAmpduMts.u4TxAckSfCnt)) /
 			prHwMibInfo->rHwTxAmpduMts.u4TxSfCnt;
 		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-			"\tAMPDU Tx fail count   = %ld, PER=%ld.%1ld%%\n",
+			"\tAMPDU Tx fail count   = %d, PER=%d.%1d%%\n",
 			prHwMibInfo->rHwTxAmpduMts.u4TxSfCnt - prHwMibInfo->rHwTxAmpduMts.u4TxAckSfCnt,
 			u4Per/10, u4Per%10);
 		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
@@ -3557,9 +3568,10 @@ static int priv_driver_set_fw_log(IN struct net_device *prNetDev, IN char *pcCom
 		}
 	} else {
 		DBGLOG(REQ, ERROR, "argc %i is not equal to 3\n", i4Argc);
-		return -1;
+		i4BytesWritten = -1;
 	}
 
+	kalMemFree(prFwLog2HostCtrl, VIR_MEM_TYPE, sizeof(struct CMD_FW_LOG_2_HOST_CTRL));
 	return i4BytesWritten;
 }
 #endif
@@ -4331,13 +4343,13 @@ static int32_t priv_driver_dump_stat_info(struct ADAPTER *prAdapter, IN char *pc
 		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 			"%s", "----- RX Reorder (Group 0x10) -----\n");
 		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-			"%-20s%s%d\n", "Rx reorder miss", " = ", RX_GET_CNT(prRxCtrl, RX_DATA_REORDER_MISS_COUNT));
+			"%-20s%s%ld\n", "Rx reorder miss", " = ", RX_GET_CNT(prRxCtrl, RX_DATA_REORDER_MISS_COUNT));
 		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-			"%-20s%s%d\n", "Rx reorder within", " = ", RX_GET_CNT(prRxCtrl, RX_DATA_REORDER_WITHIN_COUNT));
+			"%-20s%s%ld\n", "Rx reorder within", " = ", RX_GET_CNT(prRxCtrl, RX_DATA_REORDER_WITHIN_COUNT));
 		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-			"%-20s%s%d\n", "Rx reorder ahead", " = ", RX_GET_CNT(prRxCtrl, RX_DATA_REORDER_AHEAD_COUNT));
+			"%-20s%s%ld\n", "Rx reorder ahead", " = ", RX_GET_CNT(prRxCtrl, RX_DATA_REORDER_AHEAD_COUNT));
 		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-			"%-20s%s%d\n", "Rx reorder behind", " = ", RX_GET_CNT(prRxCtrl, RX_DATA_REORDER_BEHIND_COUNT));
+			"%-20s%s%ld\n", "Rx reorder behind", " = ", RX_GET_CNT(prRxCtrl, RX_DATA_REORDER_BEHIND_COUNT));
 	}
 
 	/* =========== Group 0x0020 =========== */
@@ -4377,14 +4389,14 @@ static int32_t priv_driver_dump_stat_info(struct ADAPTER *prAdapter, IN char *pc
 					"%-20s%s%s\n", "Train Up", " = ", "N/A");
 			} else {
 				i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-					"%-20s%s%d -> %d\n", "Train Down", " = ",
-					(prQueryStaStatistics->u2TrainDown) & BITS(0, 7),
-					((prQueryStaStatistics->u2TrainDown) >> 8) & BITS(0, 7));
+					"%-20s%s%d -> %hd\n", "Train Down", " = ",
+					(uint16_t)((prQueryStaStatistics->u2TrainDown) & BITS(0, 7)),
+					(uint16_t)(((prQueryStaStatistics->u2TrainDown) >> 8) & BITS(0, 7)));
 
 				i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-					"%-20s%s%d -> %d\n", "Train Up", " = ",
-					(prQueryStaStatistics->u2TrainUp) & BITS(0, 7),
-					((prQueryStaStatistics->u2TrainUp) >> 8) & BITS(0, 7));
+					"%-20s%s%d -> %hd\n", "Train Up", " = ",
+					(uint16_t)((prQueryStaStatistics->u2TrainUp) & BITS(0, 7)),
+					(uint16_t)(((prQueryStaStatistics->u2TrainUp) >> 8) & BITS(0, 7)));
 			}
 
 			if (prQueryStaStatistics->fgIsForceTxStream == 0)
@@ -5732,7 +5744,7 @@ static int priv_driver_get_sta_stat2(IN struct net_device *prNetDev, IN char *pc
 
 	/* to do for UMAC Dump */
 	prUmacStat2GetInfo = (struct UMAC_STAT2_GET *)kalMemAlloc(sizeof(struct UMAC_STAT2_GET), VIR_MEM_TYPE);
-	if (!prUmacStat2GetInfo)
+	if (prUmacStat2GetInfo == NULL)
 		return -1;
 
 	halUmacInfoGetMiscStatus(prAdapter, prUmacStat2GetInfo);
@@ -5741,8 +5753,10 @@ static int priv_driver_get_sta_stat2(IN struct net_device *prNetDev, IN char *pc
 	/* Get Driver stat info */
 	prQueryDrvStatistics =
 		(struct PARAM_GET_DRV_STATISTICS *)kalMemAlloc(sizeof(struct PARAM_GET_DRV_STATISTICS), VIR_MEM_TYPE);
-	if (!prQueryDrvStatistics)
+	if (prQueryDrvStatistics == NULL) {
+		kalMemFree(prUmacStat2GetInfo, VIR_MEM_TYPE, sizeof(struct UMAC_STAT2_GET));
 		return -1;
+	}
 
 	prQueryDrvStatistics->i4TxPendingFrameNum =
 		(uint32_t) GLUE_GET_REF_CNT(prGlueInfo->i4TxPendingFrameNum);
@@ -5991,23 +6005,27 @@ static int32_t priv_driver_dump_rx_stat_info(struct ADAPTER *prAdapter, IN char 
 
 		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 			"%-20s%s%d\n", "RX SNR (dB)", " = ",
-			((u4RxVector4 & BITS(26, 31)) >> 26) - 16);
+			(uint32_t)(((u4RxVector4 & BITS(26, 31)) >> 26) - 16));
 
 		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 			"%-20s%s%d\n", "uint8_t RX0", " = ",
-			u4RxVector3 & BITS(0, 7));
+			(uint32_t)(u4RxVector3 & BITS(0, 7)));
 
 		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 			"%-20s%s%d\n", "uint8_t RX1", " = ",
-			(u4RxVector3 & BITS(8, 15)) >> 8);
+			(uint32_t)((u4RxVector3 & BITS(8, 15)) >> 8));
 
 		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 			"%-20s%s%d\n", "uint8_t RX2", " = ",
-			((u4RxVector3 & BITS(16, 23)) >> 16) == 0xFF ? (0) : ((u4RxVector3 & BITS(16, 23)) >> 16));
+			((u4RxVector3 & BITS(16, 23)) >> 16) == 0xFF ?
+			(0) :
+			((uint32_t)(u4RxVector3 & BITS(16, 23)) >> 16));
 
 		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 			"%-20s%s%d\n", "uint8_t RX3", " = ",
-			((u4RxVector3 & BITS(24, 31)) >> 24) == 0xFF ? (0) : ((u4RxVector3 & BITS(24, 31)) >> 24));
+			((u4RxVector3 & BITS(24, 31)) >> 24) == 0xFF ?
+			(0) :
+			((uint32_t)(u4RxVector3 & BITS(24, 31)) >> 24));
 	} else{
 #if 0
 		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
@@ -6956,6 +6974,7 @@ int priv_driver_set_cfg(IN struct net_device *prNetDev, IN char *pcCommand, IN i
 		int8_t ucTmp[WLAN_CFG_VALUE_LEN_MAX];
 		uint8_t *pucCurrBuf = ucTmp;
 		uint8_t	i = 0;
+		uint32_t offset = 0;
 
 		pucCurrBuf = ucTmp;
 		kalMemZero(ucTmp, WLAN_CFG_VALUE_LEN_MAX);
@@ -6963,10 +6982,23 @@ int priv_driver_set_cfg(IN struct net_device *prNetDev, IN char *pcCommand, IN i
 		if (i4Argc == 3) {
 			/*no space for it, driver can't accept space in the end of the line*/
 			/*ToDo: skip the space when parsing*/
-			SPRINTF(pucCurrBuf, ("%s", apcArgv[2]));
+			u4BufLen = kalStrLen(apcArgv[2]);
+			if (offset + u4BufLen > WLAN_CFG_VALUE_LEN_MAX - 1) {
+				DBGLOG(INIT, ERROR, "apcArgv[2] length [%d] overrun\n", u4BufLen);
+				return -1;
+			}
+			kalStrnCpy(pucCurrBuf + offset, apcArgv[2], u4BufLen);
+			offset += u4BufLen;
 		} else {
-			for (i = 2; i < i4Argc; i++)
-				SPRINTF(pucCurrBuf, ("%s ", apcArgv[i]));
+			for (i = 2; i < i4Argc; i++) {
+				u4BufLen = kalStrLen(apcArgv[i]);
+				if (offset + u4BufLen > WLAN_CFG_VALUE_LEN_MAX - 1) {
+					DBGLOG(INIT, ERROR, "apcArgv[%d] length [%d] overrun\n", i, u4BufLen);
+					return -1;
+				}
+				kalStrnCpy(pucCurrBuf + offset, apcArgv[i], u4BufLen);
+				offset += u4BufLen;
+			}
 		}
 
 		DBGLOG(INIT, WARN, "Update to driver temp buffer as [%s]\n", ucTmp);
@@ -7030,7 +7062,7 @@ int priv_driver_set_chip_config(IN struct net_device *prNetDev, IN char *pcComma
 	/* INT_32 i4Argc = 0; */
 	/* PCHAR  apcArgv[WLAN_CFG_ARGV_MAX] = {0}; */
 
-	struct PARAM_CUSTOM_CHIP_CONFIG_STRUCT rChipConfigInfo;
+	struct PARAM_CUSTOM_CHIP_CONFIG_STRUCT rChipConfigInfo = {0};
 
 	ASSERT(prNetDev);
 	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
@@ -7054,7 +7086,8 @@ int priv_driver_set_chip_config(IN struct net_device *prNetDev, IN char *pcComma
 		/* rChipConfigInfo.u2MsgSize = kalStrnLen(apcArgv[1],CHIP_CONFIG_RESP_SIZE); */
 		rChipConfigInfo.u2MsgSize = u4CmdLen - u4PrefixLen;
 		/* kalStrnCpy(rChipConfigInfo.aucCmd,apcArgv[1],CHIP_CONFIG_RESP_SIZE); */
-		kalStrnCpy(rChipConfigInfo.aucCmd, pcCommand + u4PrefixLen, CHIP_CONFIG_RESP_SIZE);
+		kalStrnCpy(rChipConfigInfo.aucCmd, pcCommand + u4PrefixLen, CHIP_CONFIG_RESP_SIZE - 1);
+		rChipConfigInfo.aucCmd[CHIP_CONFIG_RESP_SIZE - 1] = '\0';
 
 		rStatus = kalIoctl(prGlueInfo,
 				   wlanoidSetChipConfig,
@@ -7080,7 +7113,7 @@ priv_driver_get_chip_config_16(uint8_t *pucStartAddr, uint32_t u4Length, uint32_
 			i4BytesWritten +=
 			    snprintf(pcCommand + i4BytesWritten,
 					i4TotalLen - i4BytesWritten,
-					"%04lx %02x %02x %02x %02x  %02x %02x %02x %02x - %02x %02x %02x %02x  %02x %02x %02x %02x\n",
+					"%04x %02x %02x %02x %02x  %02x %02x %02x %02x - %02x %02x %02x %02x  %02x %02x %02x %02x\n",
 					u4Line, pucStartAddr[0],
 					pucStartAddr[1],
 					pucStartAddr[2],
@@ -7114,7 +7147,7 @@ priv_driver_get_chip_config_4(uint32_t *pu4StartAddr, uint32_t u4Length, uint32_
 				     i4BytesWritten,
 				     i4TotalLen -
 				     i4BytesWritten,
-				     "%04lx %08lx %08lx %08lx %08lx\n",
+				     "%04x %08x %08x %08x %08x\n",
 				     u4Line, pu4StartAddr[0], pu4StartAddr[1], pu4StartAddr[2], pu4StartAddr[3]);
 		}
 
@@ -7137,7 +7170,7 @@ int priv_driver_get_chip_config(IN struct net_device *prNetDev, IN char *pcComma
 	/* INT_32 i4Argc = 0; */
 	/* PCHAR  apcArgv[WLAN_CFG_ARGV_MAX]; */
 
-	struct PARAM_CUSTOM_CHIP_CONFIG_STRUCT rChipConfigInfo;
+	struct PARAM_CUSTOM_CHIP_CONFIG_STRUCT rChipConfigInfo = {0};
 
 	ASSERT(prNetDev);
 	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
@@ -7159,7 +7192,8 @@ int priv_driver_get_chip_config(IN struct net_device *prNetDev, IN char *pcComma
 		/* rChipConfigInfo.u2MsgSize = kalStrnLen(apcArgv[1],CHIP_CONFIG_RESP_SIZE); */
 		rChipConfigInfo.u2MsgSize = u4CmdLen - u4PrefixLen;
 		/* kalStrnCpy(rChipConfigInfo.aucCmd,apcArgv[1],CHIP_CONFIG_RESP_SIZE); */
-		kalStrnCpy(rChipConfigInfo.aucCmd, pcCommand + u4PrefixLen, CHIP_CONFIG_RESP_SIZE);
+		kalStrnCpy(rChipConfigInfo.aucCmd, pcCommand + u4PrefixLen, CHIP_CONFIG_RESP_SIZE - 1);
+		rChipConfigInfo.aucCmd[CHIP_CONFIG_RESP_SIZE - 1] = '\0';
 		rStatus = kalIoctl(prGlueInfo,
 				   wlanoidQueryChipConfig,
 				   &rChipConfigInfo, sizeof(rChipConfigInfo), TRUE, TRUE, TRUE, &u4BufLen);
@@ -7520,8 +7554,7 @@ int priv_driver_get_country(IN struct net_device *prNetDev, IN char *pcCommand, 
 
 	country = rlmDomainGetCountryCode();
 
-	LOGBUF(pcCommand, i4TotalLen, i4BytesWritten, "\nCountry Code: \"%s\" (0x%x)",
-			&country, country);
+	LOGBUF(pcCommand, i4TotalLen, i4BytesWritten, "\nCountry Code: (0x%x)", country);
 
 	return	i4BytesWritten;
 }
@@ -8399,7 +8432,7 @@ static int priv_driver_set_adv_pws(IN struct net_device *prNetDev, IN char *pcCo
 
 	prGlueInfo->prAdapter->rWifiVar.ucAdvPws = ucAdvPws;
 
-	DBGLOG(INIT, INFO, "AdvPws:%d\n", &prGlueInfo->prAdapter->rWifiVar.ucAdvPws);
+	DBGLOG(INIT, INFO, "AdvPws:%d\n", prGlueInfo->prAdapter->rWifiVar.ucAdvPws);
 
 	return 0;
 
@@ -8436,10 +8469,10 @@ static int priv_driver_set_mdtim(IN struct net_device *prNetDev, IN char *pcComm
 
 		if (ucVer == 0) {
 			prGlueInfo->prAdapter->rWifiVar.ucWowOnMdtim = ucMultiDtim;
-			DBGLOG(REQ, INFO, "WOW On MDTIM:%d\n", &prGlueInfo->prAdapter->rWifiVar.ucWowOnMdtim);
+			DBGLOG(REQ, INFO, "WOW On MDTIM:%d\n", prGlueInfo->prAdapter->rWifiVar.ucWowOnMdtim);
 		} else {
 			prGlueInfo->prAdapter->rWifiVar.ucWowOffMdtim = ucMultiDtim;
-			DBGLOG(REQ, INFO, "WOW Off MDTIM:%d\n", &prGlueInfo->prAdapter->rWifiVar.ucWowOffMdtim);
+			DBGLOG(REQ, INFO, "WOW Off MDTIM:%d\n", prGlueInfo->prAdapter->rWifiVar.ucWowOffMdtim);
 		}
 	}
 
@@ -9032,7 +9065,7 @@ static int priv_driver_get_ch_dirtiness(IN struct net_device *prNetDev, IN char 
 			if (prChnLoadInfo->rChnRankList[cIdx].ucChannel ==
 				prChannelList[cIdx2].ucChannelNum) {
 				u4Offset = kalSprintf(pcCommand + i4BytesWritten,
-							"\nch %03u -> dirtiness %lu",
+							"\nch %03u -> dirtiness %u",
 							prChnLoadInfo->rChnRankList[cIdx].ucChannel,
 							prChnLoadInfo->rChnRankList[cIdx].u4Dirtiness);
 				i4BytesWritten += u4Offset;
@@ -9836,7 +9869,7 @@ int priv_support_driver_cmd(IN struct net_device *prNetDev, IN OUT struct ifreq 
 
 	i4TotalLen = priv_cmd->total_len;
 
-	if (i4TotalLen <= 0) {
+	if (i4TotalLen <= 0 || i4TotalLen >= sizeof(priv_cmd->buf)) {
 		ret = -EINVAL;
 		DBGLOG(REQ, INFO, "%s: i4TotalLen invalid\n", __func__);
 		goto exit;
