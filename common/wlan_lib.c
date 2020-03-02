@@ -5053,7 +5053,7 @@ uint32_t wlanLoadManufactureData(IN struct ADAPTER
 		u4NvramOffset +=
 			OFFSET_OF(struct WIFI_CFG_PARAM_STRUCT, ucTypeID0);
 
-		DBGLOG(INIT, INFO,
+		DBGLOG(INIT, TRACE,
 			   "NVRAM-Frag Startofs[0x%08X]ID[%d][0x%08X]Len:%d\n"
 			    , u4NvramStartOffset
 			    , u1TypeID
@@ -5094,7 +5094,7 @@ uint32_t wlanLoadManufactureData(IN struct ADAPTER
 				u1LenLSB = prTagDataCurr->u1NvramTypeLenLsb;
 				u1LenMSB = prTagDataCurr->u1NvramTypeLenMsb;
 
-				DBGLOG(INIT, INFO,
+				DBGLOG(INIT, TRACE,
 				   "(%d,%d)CurOfs[0x%08X]:Next(%d)Len:%d\n",
 				   i, index,
 				   u4NvramOffset,
@@ -5104,7 +5104,7 @@ uint32_t wlanLoadManufactureData(IN struct ADAPTER
 			}
 			u4NvramFragmentSize = u4NvramOffset-u4NvramStartOffset;
 
-			DBGLOG(INIT, INFO,
+			DBGLOG(INIT, TRACE,
 			       "NVRAM Fragement(%d)Startofs[0x%08X]Len:%d\n",
 			       i, u4NvramStartOffset, u4NvramFragmentSize);
 
