@@ -2567,6 +2567,9 @@ void reset_p2p_mode(struct GLUE_INFO *prGlueInfo)
 			sizeof(struct PARAM_CUSTOM_P2P_SET_STRUCT),
 			FALSE, FALSE, TRUE, &u4BufLen);
 
+	if (rWlanStatus != WLAN_STATUS_SUCCESS)
+		prGlueInfo->prAdapter->fgIsP2PRegistered = FALSE;
+
 	DBGLOG(INIT, INFO,
 			"ret = 0x%08x\n", (uint32_t) rWlanStatus);
 }
