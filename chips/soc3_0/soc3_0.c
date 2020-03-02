@@ -472,9 +472,9 @@ struct RX_DESC_OPS_T soc3_0_RxDescOps = {
 };
 
 struct CHIP_DBG_OPS soc3_0_debug_ops = {
-	.showPdmaInfo = NULL,
-	.showPseInfo = NULL,
-	.showPleInfo = NULL,
+	.showPdmaInfo = soc3_0_show_wfdma_info,
+	.showPseInfo = soc3_0_show_pse_info,
+	.showPleInfo = soc3_0_show_ple_info,
 	.showTxdInfo = connac2x_show_txd_Info,
 	.showWtblInfo = connac2x_show_wtbl_info,
 	.showUmacFwtblInfo = connac2x_show_umac_wtbl_info,
