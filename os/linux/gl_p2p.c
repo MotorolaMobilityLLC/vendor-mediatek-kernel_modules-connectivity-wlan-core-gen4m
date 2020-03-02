@@ -1161,7 +1161,7 @@ int glSetupP2P(struct GLUE_INFO *prGlueInfo, struct wireless_dev *prP2pWdev,
 	}
 
 	/* register callback functions */
-	prP2pDev->needed_headroom +=
+	prP2pDev->needed_headroom =
 		NIC_TX_DESC_AND_PADDING_LENGTH + prChipInfo->txd_append_size;
 	prP2pDev->netdev_ops = &p2p_netdev_ops;
 #ifdef CONFIG_WIRELESS_EXT

@@ -1096,7 +1096,7 @@ u_int8_t kalInitBowDevice(IN struct GLUE_INFO *prGlueInfo, IN const char *prDevN
 			   prGlueInfo->rBowInfo.prDevHandler->dev_addr, ETH_ALEN);
 
 		/* 1.3 register callback functions */
-		prGlueInfo->rBowInfo.prDevHandler->needed_headroom +=
+		prGlueInfo->rBowInfo.prDevHandler->needed_headroom =
 			NIC_TX_DESC_AND_PADDING_LENGTH + prChipInfo->txd_append_size;
 		prGlueInfo->rBowInfo.prDevHandler->netdev_ops = &bow_netdev_ops;
 
