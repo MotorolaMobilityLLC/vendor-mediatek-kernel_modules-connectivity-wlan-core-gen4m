@@ -4242,6 +4242,9 @@ uint32_t ServiceWlanOid(void *winfos,
 	PFN_OID_HANDLER_FUNC pfnOidHandler = NULL;
 	struct test_wlan_info *prTestWinfo;
 	struct hqa_comm_rx_stat *prStatsData = NULL;
+#if CFG_SUPPORT_ANT_SWAP
+	struct mt66xx_chip_info *prChipInfo = NULL;
+#endif
 
 	ASSERT(winfos);
 
@@ -4309,6 +4312,27 @@ uint32_t ServiceWlanOid(void *winfos,
 		}
 
 		return WLAN_STATUS_SUCCESS;
+	case OP_WLAN_OID_GET_ANTSWAP_CAPBILITY:
+#if CFG_SUPPORT_ANT_SWAP
+		prChipInfo = prGlueInfo->prAdapter->chip_info;
+		if (!prChipInfo) {
+			DBGLOG(RFTEST, ERROR, "prChipInfo is NULL\n");
+			return -EFAULT;
+		}
+
+		DBGLOG(RFTEST, INFO, "HQA_GetAntSwapCapability [%d]\n",
+				prGlueInfo->prAdapter->fgIsSupportAntSwp);
+
+		DBGLOG(RFTEST, INFO, "ucMaxSwapAntenna = [%d]\n",
+					prChipInfo->ucMaxSwapAntenna);
+
+		if (prGlueInfo->prAdapter->fgIsSupportAntSwp)
+			*u4BufLen = prChipInfo->ucMaxSwapAntenna;
+		else
+			*u4BufLen = 0;
+
+		return WLAN_STATUS_SUCCESS;
+#endif
 	case OP_WLAN_OID_NUM:
 	default:
 		return WLAN_STATUS_FAILURE;
