@@ -1643,6 +1643,10 @@
 #define VENDOR_OUI_TYPE_P2P                         9
 #define VENDOR_OUI_TYPE_WFD                         10
 
+/* Epigram IE */
+#define VENDOR_IE_EPIGRAM_OUI                      0x00904c
+#define VENDOR_IE_EPIGRAM_VHTTYPE                  0x0408
+
 #if CFG_SUPPORT_PASSPOINT
 #define VENDOR_OUI_TYPE_HS20                        16
 #endif /* CFG_SUPPORT_PASSPOINT */
@@ -2506,6 +2510,14 @@ struct IE_VHT_OP {
 	uint8_t ucLength;
 	uint8_t ucVhtOperation[3];
 	uint16_t u2VhtBasicMcsSet;
+} __KAL_ATTRIB_PACKED__;
+
+struct IE_VENDOR_EPIGRAM_IE {
+	uint8_t ucId;
+	uint8_t ucLength;
+	uint8_t aucOui[3];
+	uint8_t aucVendorType[2];
+	uint8_t pucData[1];
 } __KAL_ATTRIB_PACKED__;
 
 /*8.4.1.50 Operating Mode field*/
