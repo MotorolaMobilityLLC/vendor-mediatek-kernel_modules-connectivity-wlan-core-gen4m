@@ -153,6 +153,11 @@ struct CMD_INFO {
  *                                 M A C R O S
  *******************************************************************************
  */
+#if CFG_DBG_MGT_BUF
+#define cmdBufAllocateCmdInfo(_prAdapter, u4Length) \
+	cmdBufAllocateCmdInfoX(_prAdapter, u4Length, \
+		__FILE__ ":" STRLINE(__LINE__))
+#endif
 
 /*******************************************************************************
  *                   F U N C T I O N   D E C L A R A T I O N S
@@ -160,8 +165,14 @@ struct CMD_INFO {
  */
 void cmdBufInitialize(IN struct ADAPTER *prAdapter);
 
+#if CFG_DBG_MGT_BUF
+struct CMD_INFO *cmdBufAllocateCmdInfoX(IN struct ADAPTER
+					   *prAdapter, IN uint32_t u4Length,
+					   uint8_t *fileAndLine);
+#else
 struct CMD_INFO *cmdBufAllocateCmdInfo(IN struct ADAPTER
 				       *prAdapter, IN uint32_t u4Length);
+#endif
 
 void cmdBufFreeCmdInfo(IN struct ADAPTER *prAdapter,
 		       IN struct CMD_INFO *prCmdInfo);
