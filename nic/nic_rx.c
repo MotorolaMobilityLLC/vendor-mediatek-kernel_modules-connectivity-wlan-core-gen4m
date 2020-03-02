@@ -181,6 +181,7 @@ static RX_EVENT_HANDLER_T arEventTable[] = {
 #else
 	{EVENT_ID_UPDATE_COEX_PHYRATE,		nicEventUpdateCoexPhyrate},
 #endif
+	{EVENT_ID_TX_ADDBA,					qmHandleEventTxAddBa},
 };
 
 /*******************************************************************************
