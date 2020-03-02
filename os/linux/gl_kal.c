@@ -4976,30 +4976,27 @@ struct REG_INFO *kalGetConfiguration(IN struct GLUE_INFO
 /*----------------------------------------------------------------------------*/
 void
 kalUpdateRSSI(IN struct GLUE_INFO *prGlueInfo,
-	      IN enum ENUM_KAL_NETWORK_TYPE_INDEX eNetTypeIdx,
+	      IN uint8_t ucBssIndex,
 	      IN int8_t cRssi, IN int8_t cLinkQuality)
 {
 	struct iw_statistics *pStats = (struct iw_statistics *)NULL;
+	struct ADAPTER *prAdapter = NULL;
+	struct BSS_INFO *prBssInfo = (struct BSS_INFO *) NULL;
 
 	ASSERT(prGlueInfo);
+	prAdapter = prGlueInfo->prAdapter;
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
 
-	switch (eNetTypeIdx) {
-	case KAL_NETWORK_TYPE_AIS_INDEX:
-		pStats = (struct iw_statistics *)(&(prGlueInfo->rIwStats));
-		break;
+	if (IS_BSS_AIS(prBssInfo))
+		pStats = (struct iw_statistics *)
+			(&(prGlueInfo->rIwStats[ucBssIndex]));
 #if CFG_ENABLE_WIFI_DIRECT
 #if CFG_SUPPORT_P2P_RSSI_QUERY
-	case KAL_NETWORK_TYPE_P2P_INDEX:
-		pStats = (struct iw_statistics *)(&
-						  (prGlueInfo->rP2pIwStats));
-		break;
+	else if (IS_BSS_P2P(prBssInfo))
+		pStats = (struct iw_statistics *)
+			(&(prGlueInfo->rP2pIwStats));
 #endif
 #endif
-	default:
-		break;
-
-	}
-
 	if (pStats) {
 		pStats->qual.qual = cLinkQuality;
 		pStats->qual.noise = 0;

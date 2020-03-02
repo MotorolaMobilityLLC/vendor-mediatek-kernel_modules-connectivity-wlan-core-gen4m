@@ -1372,7 +1372,7 @@ u_int8_t kalCfgDataWrite16(IN struct GLUE_INFO *prGlueInfo,
 /*----------------------------------------------------------------------------*/
 void
 kalUpdateRSSI(IN struct GLUE_INFO *prGlueInfo,
-	      IN enum ENUM_KAL_NETWORK_TYPE_INDEX eNetTypeIdx,
+	      IN uint8_t ucBssIndex,
 	      IN int8_t cRssi,
 	      IN int8_t cLinkQuality);
 
