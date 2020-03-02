@@ -1043,6 +1043,7 @@ struct mt66xx_chip_info {
 	struct BUS_INFO *bus_info;
 	struct FWDL_OPS_T *fw_dl_ops;
 	struct TX_DESC_OPS_T *prTxDescOps;
+	struct RX_DESC_OPS_T *prRxDescOps;
 #if CFG_SUPPORT_QA_TOOL
 	struct ATE_OPS_T *prAteOps;
 #endif
@@ -1101,6 +1102,11 @@ struct mt66xx_chip_info {
 	uint32_t (*downloadBufferBin)(IN struct ADAPTER *prAdapter);
 	void (*showTaskStack)(IN struct task_struct *tsk,
 			      IN unsigned long *sp);
+	void (*asicRxProcessRxvforMSP)(IN struct ADAPTER *prAdapter,
+		IN OUT struct SW_RFB *prRetSwRfb);
+	uint8_t (*asicRxGetRcpiValueFromRxv)(
+		IN uint8_t ucRcpiMode,
+		IN struct SW_RFB *prSwRfb);
 
 	const uint32_t features;	/* feature bits */
 	u_int8_t is_support_hw_amsdu;

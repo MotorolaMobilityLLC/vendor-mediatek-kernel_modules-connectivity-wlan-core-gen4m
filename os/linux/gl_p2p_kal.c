@@ -1346,7 +1346,7 @@ kalP2PIndicateRxMgmtFrame(IN struct GLUE_INFO *prGlueInfo,
 		/* HAL_RX_STATUS_GET_CHAN_FREQ( prSwRfb->prRxStatus) */
 		/* ucChnlNum = prSwRfb->prHifRxHdr->ucHwChannelNum; */
 
-		ucChnlNum = HAL_RX_STATUS_GET_CHNL_NUM(prSwRfb->prRxStatus);
+		ucChnlNum = prSwRfb->ucChnlNum;
 
 #if DBG_P2P_MGMT_FRAME_INDICATION
 
@@ -1392,7 +1392,8 @@ kalP2PIndicateRxMgmtFrame(IN struct GLUE_INFO *prGlueInfo,
 			prNetdevice->ieee80211_ptr,
 			i4Freq,
 			RCPI_TO_dBm(
-				nicRxGetRcpiValueFromRxv(RCPI_MODE_MAX,
+				nicRxGetRcpiValueFromRxv(prGlueInfo->prAdapter,
+				RCPI_MODE_MAX,
 				prSwRfb)),
 			prSwRfb->pvHeader,
 			prSwRfb->u2PacketLen,
@@ -1403,7 +1404,8 @@ kalP2PIndicateRxMgmtFrame(IN struct GLUE_INFO *prGlueInfo,
 			prNetdevice->ieee80211_ptr,
 			i4Freq,
 			RCPI_TO_dBm(
-				nicRxGetRcpiValueFromRxv(RCPI_MODE_WF0,
+				nicRxGetRcpiValueFromRxv(prGlueInfo->prAdapter,
+				RCPI_MODE_WF0,
 				prSwRfb)),
 			prSwRfb->pvHeader,
 			prSwRfb->u2PacketLen,
@@ -1415,7 +1417,8 @@ kalP2PIndicateRxMgmtFrame(IN struct GLUE_INFO *prGlueInfo,
 			prNetdevice->ieee80211_ptr,
 			i4Freq,
 			RCPI_TO_dBm(
-				nicRxGetRcpiValueFromRxv(RCPI_MODE_WF0,
+				nicRxGetRcpiValueFromRxv(prGlueInfo->prAdapter,
+				RCPI_MODE_WF0,
 				prSwRfb)),
 			prSwRfb->pvHeader,
 			prSwRfb->u2PacketLen,

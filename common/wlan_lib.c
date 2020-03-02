@@ -3764,7 +3764,6 @@ uint32_t wlanQueryNicCapability(IN struct ADAPTER
 	uint32_t u4RxPktLength;
 	uint8_t *aucBuffer;
 	uint32_t u4EventSize;
-	struct HW_MAC_RX_DESC *prRxStatus;
 	struct WIFI_EVENT *prEvent;
 	struct EVENT_NIC_CAPABILITY *prEventNicCapability;
 	uint16_t cmd_size;
@@ -3821,11 +3820,11 @@ uint32_t wlanQueryNicCapability(IN struct ADAPTER
 			return WLAN_STATUS_FAILURE;
 		}
 		/* header checking .. */
-		prRxStatus = (struct HW_MAC_RX_DESC *) aucBuffer;
-		if (prRxStatus->u2PktTYpe != prChipInfo->u2RxSwPktEvent) {
+		if (NIC_RX_GET_U2_SW_PKT_TYPE(aucBuffer)
+			!= prChipInfo->u2RxSwPktEvent) {
 			DBGLOG(INIT, WARN,
 			       "%s: skip unexpected Rx pkt type[0x%04x]\n",
-			       __func__, prRxStatus->u2PktTYpe);
+			       __func__, NIC_RX_GET_U2_SW_PKT_TYPE(aucBuffer));
 			continue;
 		}
 
@@ -5493,7 +5492,6 @@ uint32_t wlanQueryNicCapabilityV2(IN struct ADAPTER *prAdapter)
 	struct CMD_INFO *prCmdInfo;
 	uint32_t u4RxPktLength;
 	uint8_t *prEventBuff;
-	struct HW_MAC_RX_DESC *prRxStatus;
 	struct WIFI_EVENT *prEvent;
 	struct mt66xx_chip_info *prChipInfo;
 	uint32_t chip_id;
@@ -5590,13 +5588,13 @@ uint32_t wlanQueryNicCapabilityV2(IN struct ADAPTER *prAdapter)
 			}
 
 			/* header checking .. */
-			prRxStatus = (struct HW_MAC_RX_DESC *) prEventBuff;
-			if ((prRxStatus->u2PktTYpe &
+			if ((NIC_RX_GET_U2_SW_PKT_TYPE(prEventBuff) &
 				prChipInfo->u2RxSwPktBitMap) !=
 				prChipInfo->u2RxSwPktEvent) {
 				DBGLOG(INIT, WARN,
 				       "%s: skip unexpected Rx pkt type[0x%04x]\n",
-				       __func__, prRxStatus->u2PktTYpe);
+				       __func__,
+				       NIC_RX_GET_U2_SW_PKT_TYPE(prEventBuff));
 
 				continue;
 			}

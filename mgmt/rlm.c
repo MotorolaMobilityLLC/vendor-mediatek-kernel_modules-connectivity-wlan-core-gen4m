@@ -3096,10 +3096,13 @@ static u_int8_t rlmRecBcnFromNeighborForClient(struct ADAPTER *prAdapter,
 	uint8_t ucPriChannel, ucSecChannel;
 	enum ENUM_CHNL_EXT eSCO;
 	u_int8_t fgHtBss, fg20mReq;
+	enum ENUM_BAND eBand = 0;
+	struct RX_DESC_OPS_T *prRxDescOps;
 
 	ASSERT(prAdapter);
 	ASSERT(prBssInfo && prSwRfb);
 	ASSERT(pucIE);
+	prRxDescOps = prAdapter->chip_info->prRxDescOps;
 
 	/* Record it to channel list to change 20/40 bandwidth */
 	ucPriChannel = 0;
@@ -3171,11 +3174,17 @@ static u_int8_t rlmRecBcnFromNeighborForClient(struct ADAPTER *prAdapter,
 	 * update procedure. We should give it the entry pointer of desired
 	 * channel list.
 	 */
-	if (HAL_RX_STATUS_GET_RF_BAND(prSwRfb->prRxStatus) != BAND_2G4)
+	RX_STATUS_GET(prRxDescOps, eBand, get_rf_band, prSwRfb->prRxStatus);
+	if (eBand != BAND_2G4)
 		return FALSE;
 
-	if (ucPriChannel == 0 || ucPriChannel > 14)
-		ucPriChannel = HAL_RX_STATUS_GET_CHNL_NUM(prSwRfb->prRxStatus);
+	if (ucPriChannel == 0 || ucPriChannel > 14) {
+		RX_STATUS_GET(
+			prRxDescOps,
+			ucPriChannel,
+			get_ch_num,
+			prSwRfb->prRxStatus);
+	}
 
 	if (fgHtBss) {
 		ASSERT(prBssInfo->auc2G_PriChnlList[0] <= CHNL_LIST_SZ_2G);
@@ -7384,14 +7393,22 @@ static void rlmCollectBeaconReport(IN struct ADAPTER *prAdapter,
 	       prRepParams->ucChannel);
 }
 
-static uint8_t rlmGetChannel(struct HW_MAC_RX_DESC *prRxStatus, uint8_t *pucIE,
+static uint8_t rlmGetChannel(
+	struct ADAPTER *prAdapter,
+	void *prRxStatus,
+	uint8_t *pucIE,
 			     uint16_t u2IELen)
 {
+	struct RX_DESC_OPS_T *prRxDescOps;
 	uint8_t ucDsChannel = 0;
 	uint8_t ucHtChannel = 0;
-	uint8_t ucHwChannel = HAL_RX_STATUS_GET_CHNL_NUM(prRxStatus);
+	uint8_t ucHwChannel = 0;
 	uint16_t u2Offset = 0;
-	enum ENUM_BAND eBand = HAL_RX_STATUS_GET_RF_BAND(prRxStatus);
+	enum ENUM_BAND eBand = 0;
+
+	prRxDescOps = prAdapter->chip_info->prRxDescOps;
+	RX_STATUS_GET(prRxDescOps, ucHwChannel, get_ch_num, prRxStatus);
+	RX_STATUS_GET(prRxDescOps, eBand, get_rf_band, prRxStatus);
 
 	IE_FOR_EACH(pucIE, u2IELen, u2Offset)
 	{
@@ -7436,10 +7453,11 @@ void rlmProcessBeaconAndProbeResp(struct ADAPTER *prAdapter,
 	 ** 7.3.2.40
 	 */
 	rRepParams.ucAntennaID = 1;
-	rRepParams.ucChannel = rlmGetChannel(
+	rRepParams.ucChannel = rlmGetChannel(prAdapter,
 		prSwRfb->prRxStatus, prWlanBeacon->aucInfoElem, u2IELen);
 	ASSERT(prSwRfb->prRxStatusGroup3);
-	rRepParams.ucRCPI = nicRxGetRcpiValueFromRxv(RCPI_MODE_MAX, prSwRfb);
+	rRepParams.ucRCPI = nicRxGetRcpiValueFromRxv(
+			prAdapter, RCPI_MODE_MAX, prSwRfb);
 	rRepParams.ucRSNI =
 		255; /* 255 means RSNI not available. see 7.3.2.41 */
 	rRepParams.ucFrameInfo = 0;

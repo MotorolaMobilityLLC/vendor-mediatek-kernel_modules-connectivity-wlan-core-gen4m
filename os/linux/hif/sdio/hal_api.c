@@ -1048,7 +1048,7 @@ uint32_t halRxReadBuffer(IN struct ADAPTER *prAdapter, IN OUT struct SW_RFB *prS
 {
 	struct RX_CTRL *prRxCtrl;
 	uint8_t *pucBuf;
-	struct HW_MAC_RX_DESC *prRxStatus;
+	void *prRxStatus;
 	uint32_t u4PktLen = 0, u4ReadBytes;
 	uint32_t u4Status = WLAN_STATUS_SUCCESS;
 	u_int8_t fgResult = TRUE;
@@ -1057,6 +1057,8 @@ uint32_t halRxReadBuffer(IN struct ADAPTER *prAdapter, IN OUT struct SW_RFB *prS
 #if CFG_TCP_IP_CHKSUM_OFFLOAD
 	uint32_t *pu4HwAppendDW;
 #endif /* CFG_TCP_IP_CHKSUM_OFFLOAD */
+	struct RX_DESC_OPS_T *prRxDescOps;
+	uint16_t u2RxByteCount = 0;
 
 	DEBUGFUNC("halRxReadBuffer");
 
@@ -1071,8 +1073,12 @@ uint32_t halRxReadBuffer(IN struct ADAPTER *prAdapter, IN OUT struct SW_RFB *prS
 
 	ASSERT(prRxStatus);
 	ASSERT(pucBuf);
-	DBGLOG(RX, TRACE, "pucBuf= 0x%x, prRxStatus= 0x%x\n", pucBuf, prRxStatus);
+	prRxDescOps = prAdapter->chip_info->prRxDescOps;
+	ASSERT(prRxDescOps->nic_rxd_get_rx_byte_count);
+	ASSERT(prRxDescOps->nic_rxd_get_pkt_type);
+	ASSERT(prRxDescOps->nic_rxd_get_wlan_idx);
 
+	u2RxByteCount = prRxDescOps->nic_rxd_get_rx_byte_count(prRxStatus);
 	do {
 		/* Read the RFB DW length and packet length */
 		HAL_MCR_RD(prAdapter, MCR_WRPLR, &u4RegValue);
@@ -1102,30 +1108,34 @@ uint32_t halRxReadBuffer(IN struct ADAPTER *prAdapter, IN OUT struct SW_RFB *prS
 
 		/* 20091021 move the line to get the HIF RX header */
 		/* u4PktLen = (UINT_32)prHifRxHdr->u2PacketLen; */
-		if (u4PktLen != (uint32_t) HAL_RX_STATUS_GET_RX_BYTE_CNT(prRxStatus)) {
+		if (u4PktLen != (uint32_t) u2RxByteCount) {
 			DBGLOG(RX, ERROR, "Read u4PktLen = %d, prHifRxHdr->u2PacketLen: %d\n",
-			       u4PktLen, HAL_RX_STATUS_GET_RX_BYTE_CNT(prRxStatus));
+			       u4PktLen,
+			       u2RxByteCount);
 #if DBG
 			DBGLOG_MEM8(RX, TRACE, (uint8_t *) prRxStatus,
-				    (HAL_RX_STATUS_GET_RX_BYTE_CNT(prRxStatus) >
-				     4096) ? 4096 : prRxStatus->u2RxByteCount);
+				    (u2RxByteCount >
+				     4096) ? 4096 : u2RxByteCount);
 #endif
 			ASSERT(0);
 		}
 		/* u4PktLen is byte unit, not inlude HW appended DW */
 
-		prSwRfb->ucPacketType = (uint8_t) HAL_RX_STATUS_GET_PKT_TYPE(prRxStatus);
+		prSwRfb->ucPacketType =
+			prRxDescOps->nic_rxd_get_pkt_type(prRxStatus);
 		DBGLOG(RX, TRACE, "ucPacketType = %d\n", prSwRfb->ucPacketType);
 
 #if CFG_TCP_IP_CHKSUM_OFFLOAD
 		pu4HwAppendDW = (uint32_t *) prRxStatus;
-		pu4HwAppendDW += (ALIGN_4(prRxStatus->u2RxByteCount) >> 2);
+		pu4HwAppendDW += (ALIGN_4(u2RxByteCount) >> 2);
 		prSwRfb->u4TcpUdpIpCksStatus = *pu4HwAppendDW;
 		DBGLOG(RX, TRACE, "u4TcpUdpIpCksStatus[0x%02x]\n", prSwRfb->u4TcpUdpIpCksStatus);
 #endif /* CFG_TCP_IP_CHKSUM_OFFLOAD */
 
 		prSwRfb->ucStaRecIdx =
-		    secGetStaIdxByWlanIdx(prAdapter, (uint8_t) HAL_RX_STATUS_GET_WLAN_IDX(prRxStatus));
+		    secGetStaIdxByWlanIdx(
+			prAdapter,
+			prRxDescOps->nic_rxd_get_wlan_idx(prRxStatus));
 
 		/* fgResult will be updated in MACRO */
 		if (!fgResult)
@@ -1152,9 +1162,11 @@ void halRxSDIOReceiveRFBs(IN struct ADAPTER *prAdapter)
 {
 	struct RX_CTRL *prRxCtrl;
 	struct SW_RFB *prSwRfb = (struct SW_RFB *) NULL;
-	struct HW_MAC_RX_DESC *prRxStatus;
+	void *prRxStatus;
 	uint32_t u4HwAppendDW;
 	uint32_t *pu4Temp;
+	struct RX_DESC_OPS_T *prRxDescOps;
+	uint16_t u2RxByteCount;
 
 	KAL_SPIN_LOCK_DECLARATION();
 
@@ -1165,6 +1177,8 @@ void halRxSDIOReceiveRFBs(IN struct ADAPTER *prAdapter)
 	prRxCtrl = &prAdapter->rRxCtrl;
 	ASSERT(prRxCtrl);
 
+	prRxDescOps = prAdapter->chip_info->prRxDescOps;
+	ASSERT(prRxDescOps->nic_rxd_get_rx_byte_count);
 	do {
 		KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_RX_FREE_QUE);
 		QUEUE_REMOVE_HEAD(&prRxCtrl->rFreeSwRfbList, prSwRfb, struct SW_RFB *);
@@ -1190,9 +1204,11 @@ void halRxSDIOReceiveRFBs(IN struct ADAPTER *prAdapter)
 		ASSERT(prRxStatus);
 
 		pu4Temp = (uint32_t *) prRxStatus;
-		u4HwAppendDW = *(pu4Temp + (ALIGN_4(prRxStatus->u2RxByteCount) >> 2));
+		u2RxByteCount =
+			prRxDescOps->nic_rxd_get_rx_byte_count(prRxStatus);
+		u4HwAppendDW = *(pu4Temp + (ALIGN_4(u2RxByteCount) >> 2));
 		DBGLOG(RX, TRACE, "u4HwAppendDW = 0x%x\n", u4HwAppendDW);
-		DBGLOG(RX, TRACE, "u2PacketLen = 0x%x\n", HAL_RX_STATUS_GET_RX_BYTE_CNT(prRxStatus));
+		DBGLOG(RX, TRACE, "u2PacketLen = 0x%x\n", u2RxByteCount);
 	} while (FALSE);
 
 }				/* end of nicReceiveRFBs() */
@@ -1218,13 +1234,14 @@ halRxEnhanceReadBuffer(IN struct ADAPTER *prAdapter,
 {
 	struct RX_CTRL *prRxCtrl;
 	uint8_t *pucBuf;
-	struct HW_MAC_RX_DESC *prRxStatus;
+	void *prRxStatus;
 	uint32_t u4PktLen = 0;
 	uint32_t u4Status = WLAN_STATUS_FAILURE;
 	u_int8_t fgResult = TRUE;
 #if CFG_TCP_IP_CHKSUM_OFFLOAD
 	uint32_t *pu4HwAppendDW;
 #endif /* CFG_TCP_IP_CHKSUM_OFFLOAD */
+	struct RX_DESC_OPS_T *prRxDescOps;
 
 	DEBUGFUNC("halRxEnhanceReadBuffer");
 
@@ -1240,6 +1257,11 @@ halRxEnhanceReadBuffer(IN struct ADAPTER *prAdapter,
 	prRxStatus = prSwRfb->prRxStatus;
 	ASSERT(prRxStatus);
 
+	prRxDescOps = prAdapter->chip_info->prRxDescOps;
+	ASSERT(prRxDescOps->nic_rxd_get_rx_byte_count);
+	ASSERT(prRxDescOps->nic_rxd_get_pkt_type);
+	ASSERT(prRxDescOps->nic_rxd_get_wlan_idx);
+
 	/* DBGLOG(RX, TRACE, ("u2RxLength = %d\n", u2RxLength)); */
 
 	do {
@@ -1252,14 +1274,18 @@ halRxEnhanceReadBuffer(IN struct ADAPTER *prAdapter,
 			break;
 		}
 
-		u4PktLen = (uint32_t) (HAL_RX_STATUS_GET_RX_BYTE_CNT(prRxStatus));
+		u4PktLen = (uint32_t)(prRxDescOps->nic_rxd_get_rx_byte_count(
+							prRxStatus));
 		/* DBGLOG(RX, TRACE, ("u4PktLen = %d\n", u4PktLen)); */
 
-		prSwRfb->ucPacketType = (uint8_t) HAL_RX_STATUS_GET_PKT_TYPE(prRxStatus);
+		prSwRfb->ucPacketType = (uint8_t)
+			prRxDescOps->nic_rxd_get_pkt_type(prRxStatus);
 		/* DBGLOG(RX, TRACE, ("ucPacketType = %d\n", prSwRfb->ucPacketType)); */
 
 		prSwRfb->ucStaRecIdx =
-		    secGetStaIdxByWlanIdx(prAdapter, (uint8_t) HAL_RX_STATUS_GET_WLAN_IDX(prRxStatus));
+		    secGetStaIdxByWlanIdx(
+			prAdapter,
+			prRxDescOps->nic_rxd_get_wlan_idx(prRxStatus));
 
 		/* 4 <2> if the RFB dw size or packet size is zero */
 		if (u4PktLen == 0) {
@@ -1279,7 +1305,7 @@ halRxEnhanceReadBuffer(IN struct ADAPTER *prAdapter,
 
 #if CFG_TCP_IP_CHKSUM_OFFLOAD
 		pu4HwAppendDW = (uint32_t *) prRxStatus;
-		pu4HwAppendDW += (ALIGN_4(prRxStatus->u2RxByteCount) >> 2);
+		pu4HwAppendDW += (ALIGN_4(u4PktLen) >> 2);
 		prSwRfb->u4TcpUdpIpCksStatus = *pu4HwAppendDW;
 		DBGLOG(RX, TRACE, "u4TcpUdpIpCksStatus[0x%02x]\n", prSwRfb->u4TcpUdpIpCksStatus);
 #endif /* CFG_TCP_IP_CHKSUM_OFFLOAD */
@@ -2230,15 +2256,19 @@ u_int8_t halDeAggErrorCheck(struct ADAPTER *prAdapter,
 			    uint8_t *pucPktAddr)
 {
 	struct mt66xx_chip_info *prChipInfo;
-	uint16_t u2PktLength;
+	uint16_t u2PktLength = 0;
 	uint8_t *pucRxBufEnd;
+	struct RX_DESC_OPS_T *prRxDescOps;
 
 	ASSERT(prAdapter);
 	prChipInfo = prAdapter->chip_info;
+	prRxDescOps = prChipInfo->prRxDescOps;
 
 	pucRxBufEnd = (uint8_t *)prRxBuf->pvRxCoalescingBuf + prRxBuf->u4PktTotalLength;
 
-	u2PktLength = HAL_RX_STATUS_GET_RX_BYTE_CNT((struct HW_MAC_RX_DESC *)pucPktAddr);
+	if (prRxDescOps->nic_rxd_get_rx_byte_count)
+		u2PktLength =
+			prRxDescOps->nic_rxd_get_rx_byte_count(pucPktAddr);
 
 	/* Rx buffer boundary check */
 	if ((pucPktAddr + ALIGN_4(u2PktLength + HIF_RX_HW_APPENDED_LEN)) >= pucRxBufEnd)
@@ -2276,6 +2306,7 @@ void halDeAggRxPktWorker(struct work_struct *work)
 	u_int8_t fgDeAggErr = FALSE;
 	struct SDIO_INT_LOG_T *prIntLog;
 	uint64_t u8Current = 0;
+	struct RX_DESC_OPS_T *prRxDescOps;
 
 	KAL_SPIN_LOCK_DECLARATION();
 	SDIO_TIME_INTERVAL_DEC();
@@ -2286,6 +2317,9 @@ void halDeAggRxPktWorker(struct work_struct *work)
 	prGlueInfo = ENTRY_OF(work, struct GLUE_INFO, rRxPktDeAggWork);
 	prHifInfo = &prGlueInfo->rHifInfo;
 	prAdapter = prGlueInfo->prAdapter;
+	prRxDescOps = prAdapter->chip_info->prRxDescOps;
+	ASSERT(prRxDescOps->nic_rxd_get_rx_byte_count);
+	ASSERT(prRxDescOps->nic_rxd_get_pkt_type);
 
 	if (prGlueInfo->ulFlag & GLUE_FLAG_HALT)
 		return;
@@ -2341,18 +2375,20 @@ void halDeAggRxPktWorker(struct work_struct *work)
 				break;
 			}
 
-			u2PktLength = HAL_RX_STATUS_GET_RX_BYTE_CNT((struct HW_MAC_RX_DESC *)pucSrcAddr);
+			u2PktLength = prRxDescOps->nic_rxd_get_rx_byte_count(
+							pucSrcAddr);
 
 			prIntLog->au2RxPktLen[i] = u2PktLength;
 
 			QUEUE_REMOVE_HEAD(prTempFreeRfbList, prSwRfb, struct SW_RFB *);
 			kalMemCopy(prSwRfb->pucRecvBuff, pucSrcAddr, ALIGN_4(u2PktLength + HIF_RX_HW_APPENDED_LEN));
 
-			prSwRfb->ucPacketType = (uint8_t)HAL_RX_STATUS_GET_PKT_TYPE(prSwRfb->prRxStatus);
+			prSwRfb->ucPacketType =
+				prRxDescOps->nic_rxd_get_pkt_type(pucSrcAddr);
 
 #if CFG_TCP_IP_CHKSUM_OFFLOAD
 			pu4HwAppendDW = (uint32_t *) prSwRfb->prRxStatus;
-			pu4HwAppendDW += (ALIGN_4(prSwRfb->prRxStatus->u2RxByteCount) >> 2);
+			pu4HwAppendDW += (ALIGN_4(u2PktLength) >> 2);
 			prSwRfb->u4TcpUdpIpCksStatus = *pu4HwAppendDW;
 			DBGLOG(RX, TRACE, "u4TcpUdpIpCksStatus[0x%02x]\n", prSwRfb->u4TcpUdpIpCksStatus);
 #endif /* CFG_TCP_IP_CHKSUM_OFFLOAD */

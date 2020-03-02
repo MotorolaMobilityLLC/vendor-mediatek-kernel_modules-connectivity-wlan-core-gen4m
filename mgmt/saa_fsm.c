@@ -944,7 +944,7 @@ void saaFsmRunEventRxAuth(IN struct ADAPTER *prAdapter,
 
 	ASSERT(prSwRfb);
 	prStaRec = cnmGetStaRecByIndex(prAdapter, prSwRfb->ucStaRecIdx);
-	ucWlanIdx = (uint8_t) HAL_RX_STATUS_GET_WLAN_IDX(prSwRfb->prRxStatus);
+	ucWlanIdx = prSwRfb->ucWlanIdx;
 
 	/* We should have the corresponding Sta Record. */
 	if (!prStaRec) {
@@ -1113,7 +1113,7 @@ uint32_t saaFsmRunEventRxAssoc(IN struct ADAPTER *prAdapter,
 
 	ASSERT(prSwRfb);
 	prStaRec = cnmGetStaRecByIndex(prAdapter, prSwRfb->ucStaRecIdx);
-	ucWlanIdx = (uint8_t) HAL_RX_STATUS_GET_WLAN_IDX(prSwRfb->prRxStatus);
+	ucWlanIdx = prSwRfb->ucWlanIdx;
 
 	/* We should have the corresponding Sta Record. */
 	if (!prStaRec) {
@@ -1171,7 +1171,8 @@ uint32_t saaFsmRunEventRxAssoc(IN struct ADAPTER *prAdapter,
 			/* update RCPI */
 			ASSERT(prSwRfb->prRxStatusGroup3);
 			prStaRec->ucRCPI =
-			      nicRxGetRcpiValueFromRxv(RCPI_MODE_MAX, prSwRfb);
+				nicRxGetRcpiValueFromRxv(
+					prAdapter, RCPI_MODE_MAX, prSwRfb);
 
 			eNextState = AA_STATE_IDLE;
 
@@ -1207,7 +1208,7 @@ uint32_t saaFsmRunEventRxDeauth(IN struct ADAPTER *prAdapter,
 	ASSERT(prSwRfb);
 	prStaRec = cnmGetStaRecByIndex(prAdapter, prSwRfb->ucStaRecIdx);
 	prDeauthFrame = (struct WLAN_DEAUTH_FRAME *) prSwRfb->pvHeader;
-	ucWlanIdx = (uint8_t) HAL_RX_STATUS_GET_WLAN_IDX(prSwRfb->prRxStatus);
+	ucWlanIdx = prSwRfb->ucWlanIdx;
 
 	DBGLOG(SAA, INFO, "Rx Deauth frame ,DA[" MACSTR "] SA[" MACSTR
 	       "] BSSID[" MACSTR "] ReasonCode[0x%x]\n",
@@ -1260,16 +1261,13 @@ uint32_t saaFsmRunEventRxDeauth(IN struct ADAPTER *prAdapter,
 					       "QM RX MGT: Deauth frame, P=%d Sec=%d CM=%d BC=%d fc=%02x\n",
 					       prAisSpecBssInfo->
 						fgMgmtProtection, (uint8_t)
-						HAL_RX_STATUS_GET_SEC_MODE
-						(prSwRfb->prRxStatus),
-						HAL_RX_STATUS_IS_CIPHER_MISMATCH
-						(prSwRfb->prRxStatus),
+						prSwRfb->ucSecMode,
+						prSwRfb->fgIsCipherMS,
 						IS_BMCAST_MAC_ADDR
 						(prDeauthFrame->aucDestAddr),
 						prDeauthFrame->u2FrameCtrl);
 					if (prAisSpecBssInfo->fgMgmtProtection
-					    && HAL_RX_STATUS_IS_CIPHER_MISMATCH
-							(prSwRfb->prRxStatus)
+					    && prSwRfb->fgIsCipherMS
 					    /* HAL_RX_STATUS_GET_SEC_MODE
 					     * (prSwRfb->prRxStatus) !=
 					     * CIPHER_SUITE_BIP
@@ -1339,10 +1337,8 @@ void saaChkDeauthfrmParamHandler(IN struct ADAPTER *prAdapter,
 		} else {
 			DBGLOG(RSN, INFO, "RXM: Drop unprotected Mgmt frame\n");
 			DBGLOG(RSN, INFO,
-			       "RXM: (MAC RX Done) RX (u2StatusFlag=0x%x) (ucKIdxSecMode=0x%x) (ucWlanIdx=0x%x)\n",
-			       prSwRfb->prRxStatus->u2StatusFlag,
-			       prSwRfb->prRxStatus->ucTidSecMode,
-			       prSwRfb->prRxStatus->ucWlanIdx);
+			"RXM:(MACRX Done)RX(ucSecMode=0x%x)(ucWlanIdx=0x%x)\n",
+			prSwRfb->ucSecMode, prSwRfb->ucWlanIdx);
 		}
 	} while (0);
 }
@@ -1442,7 +1438,7 @@ uint32_t saaFsmRunEventRxDisassoc(IN struct ADAPTER *prAdapter,
 	ASSERT(prSwRfb);
 	prStaRec = cnmGetStaRecByIndex(prAdapter, prSwRfb->ucStaRecIdx);
 	prDisassocFrame = (struct WLAN_DISASSOC_FRAME *) prSwRfb->pvHeader;
-	ucWlanIdx = (uint8_t) HAL_RX_STATUS_GET_WLAN_IDX(prSwRfb->prRxStatus);
+	ucWlanIdx = prSwRfb->ucWlanIdx;
 
 	DBGLOG(SAA, INFO,
 	       "Rx Disassoc frame from BSSID[" MACSTR "] DA[" MACSTR
@@ -1490,17 +1486,14 @@ uint32_t saaFsmRunEventRxDisassoc(IN struct ADAPTER *prAdapter,
 					       "QM RX MGT: Disassoc frame, P=%d Sec=%d CM=%d BC=%d fc=%02x\n",
 					       prAisSpecBssInfo->
 						fgMgmtProtection, (uint8_t)
-						HAL_RX_STATUS_GET_SEC_MODE
-						(prSwRfb->prRxStatus),
-						HAL_RX_STATUS_IS_CIPHER_MISMATCH
-						(prSwRfb->prRxStatus),
+						prSwRfb->ucSecMode,
+						prSwRfb->fgIsCipherMS,
 						IS_BMCAST_MAC_ADDR
 						(prDisassocFrame->aucDestAddr),
 						prDisassocFrame->u2FrameCtrl);
 					if (IS_STA_IN_AIS(prStaRec) &&
 					    prAisSpecBssInfo->fgMgmtProtection
-					    && HAL_RX_STATUS_IS_CIPHER_MISMATCH
-							(prSwRfb->prRxStatus)
+					    && prSwRfb->fgIsCipherMS
 					    /* HAL_RX_STATUS_GET_SEC_MODE(
 					     * prSwRfb->prRxStatus) !=
 					     * CIPHER_SUITE_CCMP
@@ -1574,10 +1567,8 @@ saaChkDisassocfrmParamHandler(IN struct ADAPTER *prAdapter,
 	} else {
 		DBGLOG(RSN, INFO, "RXM: Drop unprotected Mgmt frame\n");
 		DBGLOG(RSN, INFO,
-		       "RXM: (MAC RX Done) RX (u2StatusFlag=0x%x) (ucKIdxSecMode=0x%x) (ucWlanIdx=0x%x)\n",
-		       prSwRfb->prRxStatus->u2StatusFlag,
-		       prSwRfb->prRxStatus->ucTidSecMode,
-		       prSwRfb->prRxStatus->ucWlanIdx);
+			"RXM:(MACRX Done)RX(ucSecMode=0x%x)(ucWlanIdx=0x%x)\n",
+			prSwRfb->ucSecMode, prSwRfb->ucWlanIdx);
 	}
 }
 

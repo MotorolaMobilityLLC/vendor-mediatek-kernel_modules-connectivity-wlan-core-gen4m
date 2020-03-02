@@ -112,6 +112,16 @@ void asicConnac2xCapInit(
 	prChipInfo->u2CmdTxHdrSize = sizeof(struct CONNAC2X_WIFI_CMD);
 	prChipInfo->asicFillInitCmdTxd = asicConnac2xFillInitCmdTxd;
 	prChipInfo->asicFillCmdTxd = asicConnac2xFillCmdTxd;
+	prChipInfo->u2RxSwPktBitMap = CONNAC2X_RX_STATUS_PKT_TYPE_SW_BITMAP;
+	prChipInfo->u2RxSwPktEvent = CONNAC2X_RX_STATUS_PKT_TYPE_SW_EVENT;
+	prChipInfo->u2RxSwPktFrame = CONNAC2X_RX_STATUS_PKT_TYPE_SW_FRAME;
+	asicConnac2xInitTxdHook(prChipInfo->prTxDescOps);
+	asicConnac2xInitRxdHook(prChipInfo->prRxDescOps);
+#if (CFG_SUPPORT_MSP == 1)
+	prChipInfo->asicRxProcessRxvforMSP = asicConnac2xRxProcessRxvforMSP;
+#endif /* CFG_SUPPORT_MSP == 1 */
+	prChipInfo->asicRxGetRcpiValueFromRxv =
+			asicConnac2xRxGetRcpiValueFromRxv;
 
 	switch (prGlueInfo->u4InfType) {
 #if defined(_HIF_PCIE) || defined(_HIF_AXI)
@@ -552,6 +562,203 @@ void fillTxDescTxByteCountWithWaCpu(
 	/* Calculate Tx byte count */
 	HAL_MAC_CONNAC2X_TXD_SET_TX_BYTE_COUNT(
 		(struct HW_MAC_CONNAC2X_TX_DESC *)prTxDesc, u4TxByteCount);
+}
+
+void asicConnac2xInitTxdHook(
+	struct TX_DESC_OPS_T *prTxDescOps)
+{
+	ASSERT(prTxDescOps);
+	prTxDescOps->nic_txd_long_format_op = nic_txd_v2_long_format_op;
+	prTxDescOps->nic_txd_tid_op = nic_txd_v2_tid_op;
+	prTxDescOps->nic_txd_queue_idx_op = nic_txd_v2_queue_idx_op;
+#if (CFG_TCP_IP_CHKSUM_OFFLOAD == 1)
+	prTxDescOps->nic_txd_chksum_op = nic_txd_v2_chksum_op;
+#endif /* CFG_TCP_IP_CHKSUM_OFFLOAD == 1 */
+	prTxDescOps->nic_txd_header_format_op = nic_txd_v2_header_format_op;
+	prTxDescOps->nic_txd_fill_by_pkt_option = nic_txd_v2_fill_by_pkt_option;
+	prTxDescOps->nic_txd_compose = nic_txd_v2_compose;
+	prTxDescOps->nic_txd_compose_security_frame =
+		nic_txd_v2_compose_security_frame;
+	prTxDescOps->nic_txd_set_pkt_fixed_rate_option_full =
+		nic_txd_v2_set_pkt_fixed_rate_option_full;
+	prTxDescOps->nic_txd_set_pkt_fixed_rate_option =
+		nic_txd_v2_set_pkt_fixed_rate_option;
+	prTxDescOps->nic_txd_set_hw_amsdu_template =
+		nic_txd_v2_set_hw_amsdu_template;
+}
+
+void asicConnac2xInitRxdHook(
+	struct RX_DESC_OPS_T *prRxDescOps)
+{
+	ASSERT(prRxDescOps);
+	prRxDescOps->nic_rxd_get_rx_byte_count = nic_rxd_v2_get_rx_byte_count;
+	prRxDescOps->nic_rxd_get_pkt_type = nic_rxd_v2_get_packet_type;
+	prRxDescOps->nic_rxd_get_wlan_idx = nic_rxd_v2_get_wlan_idx;
+	prRxDescOps->nic_rxd_get_sec_mode = nic_rxd_v2_get_sec_mode;
+	prRxDescOps->nic_rxd_get_sw_class_error_bit =
+		nic_rxd_v2_get_sw_class_error_bit;
+	prRxDescOps->nic_rxd_get_ch_num = nic_rxd_v2_get_ch_num;
+	prRxDescOps->nic_rxd_get_rf_band = nic_rxd_v2_get_rf_band;
+	prRxDescOps->nic_rxd_get_tcl = nic_rxd_v2_get_tcl;
+	prRxDescOps->nic_rxd_get_ofld = nic_rxd_v2_get_ofld;
+	prRxDescOps->nic_rxd_fill_rfb = nic_rxd_v2_fill_rfb;
+	prRxDescOps->nic_rxd_sanity_check = nic_rxd_v2_sanity_check;
+	prRxDescOps->nic_rxd_check_wakeup_reason =
+		nic_rxd_v2_check_wakeup_reason;
+}
+
+#if (CFG_SUPPORT_MSP == 1)
+void asicConnac2xRxProcessRxvforMSP(IN struct ADAPTER *prAdapter,
+	  IN OUT struct SW_RFB *prRetSwRfb) {
+	struct HW_MAC_RX_STS_GROUP_3_V2 *prGroup3;
+
+	if (prRetSwRfb->ucStaRecIdx >= CFG_STA_REC_NUM) {
+		DBGLOG(RX, WARN,
+		"prRetSwRfb->ucStaRecIdx(%d) >= CFG_STA_REC_NUM(%d)\n",
+			prRetSwRfb->ucStaRecIdx, CFG_STA_REC_NUM);
+		return;
+	}
+
+	prGroup3 =
+		(struct HW_MAC_RX_STS_GROUP_3_V2 *)prRetSwRfb->prRxStatusGroup3;
+	if (prRetSwRfb->ucGroupVLD & BIT(RX_GROUP_VLD_3)) {
+		prAdapter->arStaRec[
+			prRetSwRfb->ucStaRecIdx].u4RxVector0 =
+			CONNAC2X_HAL_RX_VECTOR_GET_RX_VECTOR(prGroup3, 0);
+	} else {
+		prAdapter->arStaRec[
+			prRetSwRfb->ucStaRecIdx].u4RxVector0 = 0;
+	}
+
+	if (prRetSwRfb->ucGroupVLD & BIT(RX_GROUP_VLD_5)) {
+		prAdapter->arStaRec[
+			prRetSwRfb->ucStaRecIdx].u4RxVector1 =
+			CONNAC2X_HAL_RX_VECTOR_GET_RX_VECTOR(
+			prRetSwRfb->prRxStatusGroup5, 0);
+
+		prAdapter->arStaRec[
+			prRetSwRfb->ucStaRecIdx].u4RxVector2 =
+			CONNAC2X_HAL_RX_VECTOR_GET_RX_VECTOR(
+			prRetSwRfb->prRxStatusGroup5, 2);
+
+		prAdapter->arStaRec[
+			prRetSwRfb->ucStaRecIdx].u4RxVector3 =
+			CONNAC2X_HAL_RX_VECTOR_GET_RX_VECTOR(
+			prRetSwRfb->prRxStatusGroup5, 4);
+
+		prAdapter->arStaRec[
+			prRetSwRfb->ucStaRecIdx].u4RxVector4 =
+			CONNAC2X_HAL_RX_VECTOR_GET_RX_VECTOR(
+			prRetSwRfb->prRxStatusGroup5, 6);
+	} else {
+		prAdapter->arStaRec[
+			prRetSwRfb->ucStaRecIdx].u4RxVector1 = 0;
+		prAdapter->arStaRec[
+			prRetSwRfb->ucStaRecIdx].u4RxVector2 = 0;
+		prAdapter->arStaRec[
+			prRetSwRfb->ucStaRecIdx].u4RxVector3 = 0;
+		prAdapter->arStaRec[
+			prRetSwRfb->ucStaRecIdx].u4RxVector4 = 0;
+	}
+}
+#endif /* CFG_SUPPORT_MSP == 1 */
+
+uint8_t asicConnac2xRxGetRcpiValueFromRxv(
+	IN uint8_t ucRcpiMode,
+	IN struct SW_RFB *prSwRfb)
+{
+#if 1
+	/* TODO: need to read RCPI from WTBL */
+	DBGLOG(RX, WARN,
+		"asicConnac2xRxGetRcpiValueFromRxv:: TODO - read from WTBL?\n");
+	return 0;
+#else
+	uint8_t ucRcpi0, ucRcpi1;
+	uint8_t ucRcpiValue = 0;
+	uint8_t ucRxNum;
+
+	ASSERT(prSwRfb);
+
+	if (ucRcpiMode >= RCPI_MODE_NUM) {
+		DBGLOG(RX, WARN,
+		"Rcpi Mode=%d is invalid for getting uint8_t value from RXV\n",
+		ucRcpiMode);
+		return 0;
+	}
+
+	ucRcpi0 = HAL_RX_STATUS_GET_RCPI0(
+			  prSwRfb->prRxStatusGroup3);
+	ucRcpi1 = HAL_RX_STATUS_GET_RCPI1(
+			  prSwRfb->prRxStatusGroup3);
+	ucRxNum = HAL_RX_STATUS_GET_RX_NUM(
+			  prSwRfb->prRxStatusGroup3);
+
+	if (ucRxNum == 0)
+		ucRcpiValue =
+			ucRcpi0; /*0:1R, BBP always report RCPI0 at 1R mode*/
+
+	else if (ucRxNum == 1) {
+		switch (ucRcpiMode) {
+		case RCPI_MODE_WF0:
+			ucRcpiValue = ucRcpi0;
+			break;
+
+		case RCPI_MODE_WF1:
+			ucRcpiValue = ucRcpi1;
+			break;
+
+		case RCPI_MODE_WF2:
+		case RCPI_MODE_WF3:
+			DBGLOG(RX, WARN,
+			"Rcpi Mode=%d is invalid for",
+			       ucRcpiMode);
+			DBGLOG(RX, WARN,
+			" device with only 2 antenna, use default rcpi0\n");
+			ucRcpiValue = ucRcpi0;
+			break;
+
+		case RCPI_MODE_AVG: /*Not recommended for CBW80+80*/
+			if (ucRcpi0 <= RCPI_HIGH_BOUND &&
+				ucRcpi1 <= RCPI_HIGH_BOUND)
+				ucRcpiValue = (ucRcpi0 + ucRcpi1) / 2;
+			else
+				ucRcpiValue = ucRcpi0 <= RCPI_HIGH_BOUND ?
+					(ucRcpi0) : (ucRcpi1);
+			break;
+
+		case RCPI_MODE_MAX:
+			if (ucRcpi0 <= RCPI_HIGH_BOUND &&
+				ucRcpi1 <= RCPI_HIGH_BOUND)
+				ucRcpiValue =
+					(ucRcpi0 > ucRcpi1) ?
+					(ucRcpi0) : (ucRcpi1);
+			else
+				ucRcpiValue = ucRcpi0 <= RCPI_HIGH_BOUND ?
+					(ucRcpi0) : (ucRcpi1);
+			break;
+
+		case RCPI_MODE_MIN:
+			ucRcpiValue =
+				(ucRcpi0 < ucRcpi1) ? (ucRcpi0) : (ucRcpi1);
+			break;
+
+		default:
+			break;
+		}
+	} else {
+		DBGLOG(RX, WARN,
+		"RX_NUM = %d is invalid for getting uint8_t value from RXV\n",
+		ucRxNum);
+		return 0;
+	}
+
+	if (ucRcpiValue < RCPI_MEASUREMENT_NOT_AVAILABLE)
+		return ucRcpiValue;
+
+	DBGLOG(RX, ERROR,
+	       "ucRcpiValue == RCPI_MEASUREMENT_NOT_AVAILABLE ??\n");
+	return 0;
+#endif
 }
 
 #endif /* CFG_SUPPORT_CONNAC2X == 1 */

@@ -556,6 +556,9 @@ enum ENUM_MAC_RX_GROUP_VLD {
 	RX_GROUP_VLD_2,
 	RX_GROUP_VLD_3,
 	RX_GROUP_VLD_4,
+#if (CFG_SUPPORT_CONNAC2X == 1)
+	RX_GROUP_VLD_5,
+#endif /* CFG_SUPPORT_CONNAC2X == 1 */
 	RX_GROUP_VLD_NUM
 };
 
@@ -640,6 +643,21 @@ struct HW_MAC_RX_STS_GROUP_3 {
 	uint32_t u4RxVector[6];	/* DW 14~19 */
 };
 
+#if (CFG_SUPPORT_CONNAC2X == 1)
+struct HW_MAC_RX_STS_GROUP_3_V2 {
+	/*  PRXVector Info */
+	uint32_t u4RxVector[2];	/* FALCON: DW 16~17 */
+};
+
+struct HW_MAC_RX_STS_GROUP_5 {
+	/*  CRXVector Info */
+	uint32_t u4RxVector[16]; /* FALCON: DW 18~33 */
+};
+
+#define CONNAC2X_RSSI_MASK	BITS(0, 31)
+#define CONNAC2X_SEL_ANT	BITS(28, 30)
+#endif /* CFG_SUPPORT_CONNAC2X == 1 */
+
 struct HW_MAC_RX_TMRI_PKT_FORMAT {
 	uint8_t ucPID;
 	uint8_t ucStatus;
@@ -704,14 +722,18 @@ struct SW_RFB {
 	/* add fot mt6630 */
 	uint8_t ucGroupVLD;
 	uint16_t u2RxStatusOffst;
-	struct HW_MAC_RX_DESC *prRxStatus;
+	void *prRxStatus;
 	struct HW_MAC_RX_STS_GROUP_1 *prRxStatusGroup1;
 	struct HW_MAC_RX_STS_GROUP_2 *prRxStatusGroup2;
-	struct HW_MAC_RX_STS_GROUP_3 *prRxStatusGroup3;
+	void *prRxStatusGroup3;
 	struct HW_MAC_RX_STS_GROUP_4 *prRxStatusGroup4;
+#if (CFG_SUPPORT_CONNAC2X == 1)
+	struct HW_MAC_RX_STS_GROUP_5 *prRxStatusGroup5;
+#endif /* CFG_SUPPORT_CONNAC2X == 1 */
 
 	/* rx data information */
 	void *pvHeader;
+	uint16_t u2RxByteCount;
 	uint16_t u2PacketLen;
 	uint16_t u2HeaderLen;
 
@@ -721,6 +743,13 @@ struct SW_RFB {
 	struct STA_RECORD *prStaRec;
 
 	uint8_t ucPacketType;
+	uint8_t ucPayloadFormat;
+	uint8_t ucSecMode;
+	uint8_t ucOFLD;
+	uint8_t ucKeyID;
+	uint8_t ucChanFreq;
+	uint8_t ucRxvSeqNo;
+	uint8_t ucChnlNum;
 
 	/* rx sta record */
 	uint8_t ucWlanIdx;
@@ -729,6 +758,15 @@ struct SW_RFB {
 	u_int8_t fgReorderBuffer;
 	u_int8_t fgDataFrame;
 	u_int8_t fgFragFrame;
+	u_int8_t fgHdrTran;
+	u_int8_t fgIcvErr;
+	u_int8_t fgIsBC;
+	u_int8_t fgIsMC;
+	u_int8_t fgIsCipherMS;
+	u_int8_t fgIsCipherLenMS;
+	u_int8_t fgIsFrag;
+	u_int8_t fgIsFCS;
+	u_int8_t fgIsAmpdu;
 	/* duplicate detection */
 	uint16_t u2FrameCtrl;
 	uint16_t u2SequenceControl;
@@ -828,6 +866,38 @@ struct EMU_MAC_RATE_INFO {
 	uint32_t u4PhyRate[4][2];
 };
 
+struct RX_DESC_OPS_T {
+	uint16_t (*nic_rxd_get_rx_byte_count)(
+		void *prRxStatus);
+	uint8_t (*nic_rxd_get_pkt_type)(
+		void *prRxStatus);
+	uint8_t (*nic_rxd_get_wlan_idx)(
+		void *prRxStatus);
+	uint8_t (*nic_rxd_get_sec_mode)(
+		void *prRxStatus);
+	uint8_t (*nic_rxd_get_sw_class_error_bit)(
+		void *prRxStatus);
+	uint8_t (*nic_rxd_get_ch_num)(
+		void *prRxStatus);
+	uint8_t (*nic_rxd_get_rf_band)(
+		void *prRxStatus);
+	uint8_t (*nic_rxd_get_tcl)(
+		void *prRxStatus);
+	uint8_t (*nic_rxd_get_ofld)(
+		void *prRxStatus);
+	void (*nic_rxd_fill_rfb)(
+		struct ADAPTER *prAdapter,
+		struct SW_RFB *prSwRfb);
+	u_int8_t (*nic_rxd_sanity_check)(
+		struct ADAPTER *prAdapter,
+		struct SW_RFB *prSwRfb);
+#if CFG_SUPPORT_WAKEUP_REASON_DEBUG
+	void (*nic_rxd_check_wakeup_reason)(
+		struct ADAPTER *prAdapter,
+		struct SW_RFB *prSwRfb);
+#endif /* CFG_SUPPORT_WAKEUP_REASON_DEBUG */
+};
+
 /*******************************************************************************
  *                           P R I V A T E   D A T A
  *******************************************************************************
@@ -837,6 +907,9 @@ struct EMU_MAC_RATE_INFO {
  *                                 M A C R O S
  *******************************************************************************
  */
+#define NIC_RX_GET_U2_SW_PKT_TYPE(__rx_status) \
+	((*(uint32_t *)(__rx_status) & (BITS(16, 31))) >> (16))
+
 #define RATE_INFO(_RateCode, _Bw20, _Bw20SGI, _Bw40, _BW40SGI, \
 	_Bw80, _Bw80SGI, _Bw160, _Bw160SGI) \
 	{ \
@@ -868,6 +941,15 @@ struct EMU_MAC_RATE_INFO {
 #define RX_STATUS_TEST_MORE_FLAG(flag)	\
 	((u_int8_t)((flag & RX_STATUS_FLAG_MORE_PACKET) ? TRUE : FALSE))
 
+#define RX_STATUS_GET(__RxDescOps, __out_buf, __fn_name, __rx_status) { \
+	if (__RxDescOps->nic_rxd_##__fn_name) \
+		__out_buf = __RxDescOps->nic_rxd_##__fn_name(__rx_status); \
+	else {\
+		__out_buf = 0; \
+		DBGLOG(RX, ERROR, "%s:: no hook api??\n", \
+			__func__); \
+	} \
+} \
 /*------------------------------------------------------------------------------
  * MACRO for HW_MAC_RX_DESC_T
  *------------------------------------------------------------------------------
@@ -1165,7 +1247,9 @@ uint32_t nicRxFlush(IN struct ADAPTER *prAdapter);
 uint32_t nicRxProcessActionFrame(IN struct ADAPTER *prAdapter,
 	IN struct SW_RFB *prSwRfb);
 
-uint8_t nicRxGetRcpiValueFromRxv(IN uint8_t ucRcpiMode,
+uint8_t nicRxGetRcpiValueFromRxv(
+	IN struct ADAPTER *prAdapter,
+	IN uint8_t ucRcpiMode,
 	IN struct SW_RFB *prSwRfb);
 
 #endif /* _NIC_RX_H */

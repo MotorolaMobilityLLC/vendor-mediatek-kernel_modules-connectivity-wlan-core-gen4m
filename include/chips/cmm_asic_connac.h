@@ -150,5 +150,15 @@ void asicFillCmdTxd(
 	void **pCmdBuf);
 void asicInitTxdHook(
 	struct TX_DESC_OPS_T *prTxDescOps);
+void asicInitRxdHook(
+	struct RX_DESC_OPS_T *prRxDescOps);
+#if (CFG_SUPPORT_MSP == 1)
+void asicRxProcessRxvforMSP(
+	IN struct ADAPTER *prAdapter,
+	IN OUT struct SW_RFB *prRetSwRfb);
+#endif /* CFG_SUPPORT_MSP == 1 */
+uint8_t asicRxGetRcpiValueFromRxv(
+	IN uint8_t ucRcpiMode,
+	IN struct SW_RFB *prSwRfb);
 #endif /* _CMM_ASIC_CONNAC_H */
 

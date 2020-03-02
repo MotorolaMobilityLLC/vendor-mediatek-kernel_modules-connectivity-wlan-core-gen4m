@@ -152,6 +152,7 @@ void mt6632CapInit(IN struct ADAPTER *prAdapter)
 	prChipInfo->u2RxSwPktEvent = RXM_RXD_PKT_TYPE_SW_EVENT;
 	prChipInfo->u2RxSwPktFrame = RXM_RXD_PKT_TYPE_SW_FRAME;
 	asicInitTxdHook(prChipInfo->prTxDescOps);
+	asicInitRxdHook(prChipInfo->prRxDescOps);
 
 	switch (prGlueInfo->u4InfType) {
 #if defined(_HIF_PCIE)
@@ -368,6 +369,7 @@ struct BUS_INFO mt6632_bus_info = {
 	.u4device_vender_request_out = DEVICE_VENDOR_REQUEST_OUT,
 	.asicUsbSuspend = NULL,
 	.asicUsbEventEpDetected = NULL,
+	.asicUsbRxByteCount = NULL,
 #endif /* _HIF_USB */
 #if defined(_HIF_SDIO)
 	.halTxGetFreeResource = NULL,
@@ -389,6 +391,9 @@ struct TX_DESC_OPS_T mt6632TxDescOps = {
 	.fillNicAppend = fillNicTxDescAppendWithCR4,
 	.fillHifAppend = fillTxDescAppendByCR4,
 	.fillTxByteCount = fillTxDescTxByteCountWithCR4,
+};
+
+struct RX_DESC_OPS_T mt6632RxDescOps = {
 };
 
 #if CFG_SUPPORT_QA_TOOL
@@ -414,6 +419,7 @@ struct mt66xx_chip_info mt66xx_chip_info_mt6632 = {
 	.bus_info = &mt6632_bus_info,
 	.fw_dl_ops = &mt6632_fw_dl_ops,
 	.prTxDescOps = &mt6632TxDescOps,
+	.prRxDescOps = &mt6632RxDescOps,
 #if CFG_SUPPORT_QA_TOOL
 	.prAteOps = &mt6632AteOps,
 #endif
