@@ -862,6 +862,24 @@ void asicConnac2xProcessSoftwareInterrupt(
 			u4Status);
 }
 
+
+void asicConnac2xSoftwareInterruptMcu(
+	struct ADAPTER *prAdapter, u_int32_t intrBitMask)
+{
+	struct GLUE_INFO *prGlueInfo;
+
+	if (prAdapter == NULL || prAdapter->prGlueInfo == NULL) {
+		DBGLOG(HAL, ERROR, "prAdapter or prGlueInfo is NULL\n");
+		return;
+	}
+
+	prGlueInfo = prAdapter->prGlueInfo;
+	kalDevRegWrite(prGlueInfo,
+		CONNAC2X_WPDMA_HOST2MCU_SW_INT_SET(CONNAC2X_MCU_WPDMA_1_BASE),
+		intrBitMask);
+}
+
+
 void asicConnac2xHifRst(
 	struct GLUE_INFO *prGlueInfo)
 {

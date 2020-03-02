@@ -649,7 +649,9 @@ void asicPdmaConfig(struct GLUE_INFO *prGlueInfo, u_int8_t fgEnable)
 	kalDevRegWrite(prGlueInfo, WPDMA_APSRC_ACK_LOCK_SLPPROT,
 		u4Val | BIT(4));
 
-	if (!fgEnable) {
+	if (fgEnable) {
+		kalDevRegWrite(prGlueInfo, WPDMA_PAUSE_TX_Q, 0);
+	} else {
 		halWpdmaWaitIdle(prGlueInfo, 100, 1000);
 		/* Reset DMA Index */
 		kalDevRegWrite(prGlueInfo, WPDMA_RST_PTR, 0xFFFFFFFF);
