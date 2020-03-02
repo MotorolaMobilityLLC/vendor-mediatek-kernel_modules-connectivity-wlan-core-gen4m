@@ -258,6 +258,11 @@ wlanoidQueryP2pRssi(IN P_ADAPTER_T prAdapter,
 		    IN PVOID pvQueryBuffer, IN UINT_32 u4QueryBufferLen, OUT PUINT_32 pu4QueryInfoLen);
 #endif
 
+WLAN_STATUS
+wlanoidAbortP2pScan(IN P_ADAPTER_T prAdapter,
+			OUT PVOID pvQueryBuffer, IN UINT_32 u4QueryBufferLen,
+			OUT PUINT_32 pu4QueryInfoLen);
+
 /*--------------------------------------------------------------*/
 /* Callbacks for event indication                               */
 /*--------------------------------------------------------------*/
