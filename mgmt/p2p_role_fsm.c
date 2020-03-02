@@ -1753,13 +1753,14 @@ void p2pRoleFsmRunEventSetNewChannel(IN struct ADAPTER *prAdapter,
 void p2pRoleFsmRunEventCsaDone(IN struct ADAPTER *prAdapter,
 		IN struct MSG_HDR *prMsgHdr)
 {
+	struct GLUE_INFO *prGlueInfo;
 	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo =
 		(struct P2P_ROLE_FSM_INFO *) NULL;
 	struct BSS_INFO *prP2pBssInfo = (struct BSS_INFO *) NULL;
 	struct MSG_P2P_CSA_DONE *prMsgP2pCsaDoneMsg;
+	uint8_t role_idx = 0;
 
-
-	DBGLOG(P2P, INFO, "p2pRoleFsmRunEventCsaDone\n");
+	DBGLOG(P2P, TRACE, "p2pRoleFsmRunEventCsaDone\n");
 
 	prMsgP2pCsaDoneMsg = (struct MSG_P2P_CSA_DONE *) prMsgHdr;
 
@@ -1770,9 +1771,17 @@ void p2pRoleFsmRunEventCsaDone(IN struct ADAPTER *prAdapter,
 		P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prAdapter,
 			prP2pBssInfo->u4PrivateData);
 
-	p2pRoleFsmStateTransition(prAdapter,
-		prP2pRoleFsmInfo,
-		P2P_ROLE_STATE_SWITCH_CHANNEL);
+	prGlueInfo = prAdapter->prGlueInfo;
+	role_idx = prP2pRoleFsmInfo->ucRoleIndex;
+	if (prGlueInfo->prP2PInfo[role_idx]->chandef == NULL) {
+		p2pFuncDfsSwitchCh(prAdapter,
+			prP2pBssInfo,
+			prP2pRoleFsmInfo->rChnlReqInfo);
+	} else {
+		p2pRoleFsmStateTransition(prAdapter,
+			prP2pRoleFsmInfo,
+			P2P_ROLE_STATE_SWITCH_CHANNEL);
+	}
 
 	cnmMemFree(prAdapter, prMsgHdr);
 }				/*p2pRoleFsmRunEventCsaDone*/
