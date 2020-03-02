@@ -358,7 +358,7 @@ void cnmTimerStartTimer(IN struct ADAPTER *prAdapter, IN struct TIMER *prTimer,
 	 */
 	if ((prTimer != NULL) && (&(prAdapter->rOidTimeoutTimer) != prTimer)
 		&& (wlan_fb_power_down == TRUE)) {
-		log_dbg(CNM, INFO,
+		DBGLOG_LIMITED(CNM, INFO,
 			"[WLAN-LP] Start timer %u ms -handler(%pf)\n",
 			u4TimeoutMs,
 			prTimer->pfMgmtTimeOutFunc);
