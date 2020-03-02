@@ -50,69 +50,70 @@
  *
  *****************************************************************************/
 /*
-** Id: @(#) gl_p2p_init.c@@
-*/
+ ** Id: @(#) gl_p2p_init.c@@
+ */
 
 /*! \file   gl_p2p_init.c
-*    \brief  init and exit routines of Linux driver interface for Wi-Fi Direct
-*
-*    This file contains the main routines of Linux driver for MediaTek Inc. 802.11
-*    Wireless LAN Adapters.
-*/
+ *    \brief  init and exit routines of Linux driver interface for Wi-Fi Direct
+ *
+ *    This file contains the main routines
+ *    of Linux driver for MediaTek Inc. 802.11
+ *    Wireless LAN Adapters.
+ */
 
-/*******************************************************************************
-*                         C O M P I L E R   F L A G S
-********************************************************************************
-*/
+/******************************************************************************
+ *                         C O M P I L E R   F L A G S
+ ******************************************************************************
+ */
 
-/*******************************************************************************
-*                    E X T E R N A L   R E F E R E N C E S
-********************************************************************************
-*/
+/******************************************************************************
+ *                    E X T E R N A L   R E F E R E N C E S
+ ******************************************************************************
+ */
 
 #include "precomp.h"
 
-/*******************************************************************************
-*                              C O N S T A N T S
-********************************************************************************
-*/
+/******************************************************************************
+ *                              C O N S T A N T S
+ ******************************************************************************
+ */
 
 #define P2P_INF_NAME "p2p%d"
 #define AP_INF_NAME  "ap%d"
 
-/*******************************************************************************
-*                             D A T A   T Y P E S
-********************************************************************************
-*/
+/******************************************************************************
+ *                             D A T A   T Y P E S
+ ******************************************************************************
+ */
 
-/*******************************************************************************
-*                            P U B L I C   D A T A
-********************************************************************************
-*/
+/******************************************************************************
+ *                            P U B L I C   D A T A
+ ******************************************************************************
+ */
 
-/*******************************************************************************
-*                           P R I V A T E   D A T A
-********************************************************************************
-*/
+/******************************************************************************
+ *                           P R I V A T E   D A T A
+ ******************************************************************************
+ */
 static uint8_t *ifname = P2P_INF_NAME;
 static uint8_t *ifname2 = P2P_INF_NAME;
 static uint16_t mode = RUNNING_P2P_MODE;
 
 
-/*******************************************************************************
-*                                 M A C R O S
-********************************************************************************
-*/
+/******************************************************************************
+ *                                 M A C R O S
+ ******************************************************************************
+ */
 
-/*******************************************************************************
-*                   F U N C T I O N   D E C L A R A T I O N S
-********************************************************************************
-*/
+/******************************************************************************
+ *                   F U N C T I O N   D E C L A R A T I O N S
+ ******************************************************************************
+ */
 
-/*******************************************************************************
-*                              F U N C T I O N S
-********************************************************************************
-*/
+/******************************************************************************
+ *                              F U N C T I O N S
+ ******************************************************************************
+ */
 
 void p2pSetSuspendMode(struct GLUE_INFO *prGlueInfo, u_int8_t fgEnable)
 {
@@ -128,7 +129,8 @@ void p2pSetSuspendMode(struct GLUE_INFO *prGlueInfo, u_int8_t fgEnable)
 
 	prDev = prGlueInfo->prP2PInfo[0]->prDevHandler;
 	if (!prDev) {
-		DBGLOG(INIT, INFO, "%s: P2P dev is not available, SKIP!\n", __func__);
+		DBGLOG(INIT, INFO,
+			"%s: P2P dev is not available, SKIP!\n", __func__);
 		return;
 	}
 
@@ -136,14 +138,14 @@ void p2pSetSuspendMode(struct GLUE_INFO *prGlueInfo, u_int8_t fgEnable)
 	wlanNotifyFwSuspend(prGlueInfo, prDev, fgEnable);
 }
 
-/*----------------------------------------------------------------------------*/
+/*---------------------------------------------------------------------------*/
 /*!
-* \brief
-*       run p2p init procedure, glue register p2p and set p2p registered flag
-*
-* \retval 1     Success
-*/
-/*----------------------------------------------------------------------------*/
+ * \brief
+ *       run p2p init procedure, glue register p2p and set p2p registered flag
+ *
+ * \retval 1     Success
+ */
+/*---------------------------------------------------------------------------*/
 u_int8_t p2pLaunch(struct GLUE_INFO *prGlueInfo)
 {
 	if (prGlueInfo->prAdapter->fgIsP2PRegistered == TRUE) {
@@ -170,12 +172,14 @@ void p2pSetMode(IN uint8_t ucAPMode)
 
 	if (kalStrLen(gprifnamep2p) > 0) {
 		prP2PInfName = kalStrCat(gprifnamep2p, "%d");
-		DBGLOG(INIT, WARN, "P2P ifname customized, use %s\n", prP2PInfName);
+		DBGLOG(INIT, WARN,
+			"P2P ifname customized, use %s\n", prP2PInfName);
 	}
 
 	if (kalStrLen(gprifnameap) > 0) {
 		prAPInfName = kalStrCat(gprifnameap, "%d");
-		DBGLOG(INIT, WARN, "AP ifname customized, use %s\n", prAPInfName);
+		DBGLOG(INIT, WARN,
+			"AP ifname customized, use %s\n", prAPInfName);
 	}
 
 #endif /* CFG_DRIVER_INF_NAME_CHANGE */
@@ -201,14 +205,14 @@ void p2pSetMode(IN uint8_t ucAPMode)
 	}
 }				/* p2pSetMode */
 
-/*----------------------------------------------------------------------------*/
+/*---------------------------------------------------------------------------*/
 /*!
-* \brief
-*       run p2p exit procedure, glue unregister p2p and set p2p registered flag
-*
-* \retval 1     Success
-*/
-/*----------------------------------------------------------------------------*/
+ * \brief
+ *       run p2p exit procedure, glue unregister p2p and set p2p registered flag
+ *
+ * \retval 1     Success
+ */
+/*---------------------------------------------------------------------------*/
 u_int8_t p2pRemove(struct GLUE_INFO *prGlueInfo)
 {
 	if (prGlueInfo->prAdapter->fgIsP2PRegistered == FALSE) {

@@ -50,26 +50,26 @@
  *
  *****************************************************************************/
 /*
-** Id: @(#) gl_p2p.c@@
-*/
+ ** Id: @(#) gl_p2p.c@@
+ */
 
 /*! \file   gl_p2p.c
-*    \brief  Main routines of Linux driver interface for Wi-Fi Direct
-*
-*    This file contains the main routines of Linux driver for MediaTek Inc. 802.11
-*    Wireless LAN Adapters.
-*/
+ *    \brief  Main routines of Linux driver interface for Wi-Fi Direct
+ *
+ *    This file contains the main routines of Linux driver
+ *    for MediaTek Inc. 802.11 Wireless LAN Adapters.
+ */
 
 
-/*******************************************************************************
-*                         C O M P I L E R   F L A G S
-********************************************************************************
-*/
+/******************************************************************************
+ *                         C O M P I L E R   F L A G S
+ ******************************************************************************
+ */
 
-/*******************************************************************************
-*                    E X T E R N A L   R E F E R E N C E S
-********************************************************************************
-*/
+/******************************************************************************
+ *                    E X T E R N A L   R E F E R E N C E S
+ ******************************************************************************
+ */
 
 #include <linux/poll.h>
 
@@ -88,10 +88,10 @@
 #include "gl_vendor.h"
 #include "gl_cfg80211.h"
 
-/*******************************************************************************
-*                              C O N S T A N T S
-********************************************************************************
-*/
+/******************************************************************************
+ *                              C O N S T A N T S
+ ******************************************************************************
+ */
 #define ARGV_MAX_NUM        (4)
 
 /*For CFG80211 - wiphy parameters*/
@@ -103,21 +103,21 @@
 #define RUNNING_AP_MODE 1
 #define RUNNING_DUAL_AP_MODE 2
 #endif
-/*******************************************************************************
-*                             D A T A   T Y P E S
-********************************************************************************
-*/
+/******************************************************************************
+ *                             D A T A   T Y P E S
+ ******************************************************************************
+ */
 
-/*******************************************************************************
-*                            P U B L I C   D A T A
-********************************************************************************
-*/
+/******************************************************************************
+ *                            P U B L I C   D A T A
+ ******************************************************************************
+ */
 
 
-/*******************************************************************************
-*                           P R I V A T E   D A T A
-********************************************************************************
-*/
+/******************************************************************************
+ *                           P R I V A T E   D A T A
+ ******************************************************************************
+ */
 
 struct net_device *g_P2pPrDev;
 struct wireless_dev *gprP2pWdev;
@@ -182,7 +182,8 @@ static const struct wiphy_vendor_command mtk_p2p_vendor_ops[] = {
 			.vendor_id = GOOGLE_OUI,
 			.subcmd = WIFI_SUBCMD_GET_CHANNEL_LIST
 		},
-		.flags = WIPHY_VENDOR_CMD_NEED_WDEV | WIPHY_VENDOR_CMD_NEED_NETDEV,
+		.flags = WIPHY_VENDOR_CMD_NEED_WDEV
+				| WIPHY_VENDOR_CMD_NEED_NETDEV,
 		.doit = mtk_cfg80211_vendor_get_channel_list
 	},
 	{
@@ -190,7 +191,8 @@ static const struct wiphy_vendor_command mtk_p2p_vendor_ops[] = {
 			.vendor_id = GOOGLE_OUI,
 			.subcmd = WIFI_SUBCMD_SET_COUNTRY_CODE
 		},
-		.flags = WIPHY_VENDOR_CMD_NEED_WDEV | WIPHY_VENDOR_CMD_NEED_NETDEV,
+		.flags = WIPHY_VENDOR_CMD_NEED_WDEV
+				| WIPHY_VENDOR_CMD_NEED_NETDEV,
 		.doit = mtk_cfg80211_vendor_set_country_code
 	},
 };
@@ -201,35 +203,40 @@ static const struct wiphy_vendor_command mtk_p2p_vendor_ops[] = {
 static const struct ieee80211_txrx_stypes
 mtk_cfg80211_default_mgmt_stypes[NUM_NL80211_IFTYPES] = {
 	[NL80211_IFTYPE_ADHOC] = {
-				  .tx = 0xffff,
-				  .rx = BIT(IEEE80211_STYPE_ACTION >> 4)
-				  },
+			.tx = 0xffff,
+			.rx = BIT(IEEE80211_STYPE_ACTION >> 4)
+			},
 	[NL80211_IFTYPE_STATION] = {
-				    .tx = 0xffff,
-				    .rx = BIT(IEEE80211_STYPE_ACTION >> 4) | BIT(IEEE80211_STYPE_PROBE_REQ >> 4)
-				    },
+			.tx = 0xffff,
+			.rx = BIT(IEEE80211_STYPE_ACTION >> 4)
+				| BIT(IEEE80211_STYPE_PROBE_REQ >> 4)
+			},
 	[NL80211_IFTYPE_AP] = {
-			       .tx = 0xffff,
-			       .rx = BIT(IEEE80211_STYPE_PROBE_REQ >> 4) | BIT(IEEE80211_STYPE_ACTION >> 4)
-			       },
+			.tx = 0xffff,
+			.rx = BIT(IEEE80211_STYPE_PROBE_REQ >> 4)
+				| BIT(IEEE80211_STYPE_ACTION >> 4)
+			},
 	[NL80211_IFTYPE_AP_VLAN] = {
-				    /* copy AP */
-				    .tx = 0xffff,
-				    .rx = BIT(IEEE80211_STYPE_ASSOC_REQ >> 4) |
-				    BIT(IEEE80211_STYPE_REASSOC_REQ >> 4) |
-				    BIT(IEEE80211_STYPE_PROBE_REQ >> 4) |
-				    BIT(IEEE80211_STYPE_DISASSOC >> 4) |
-				    BIT(IEEE80211_STYPE_AUTH >> 4) |
-				    BIT(IEEE80211_STYPE_DEAUTH >> 4) | BIT(IEEE80211_STYPE_ACTION >> 4)
-				    },
+			/* copy AP */
+			.tx = 0xffff,
+		    .rx = BIT(IEEE80211_STYPE_ASSOC_REQ >> 4) |
+				BIT(IEEE80211_STYPE_REASSOC_REQ >> 4) |
+				BIT(IEEE80211_STYPE_PROBE_REQ >> 4) |
+				BIT(IEEE80211_STYPE_DISASSOC >> 4) |
+				BIT(IEEE80211_STYPE_AUTH >> 4) |
+				BIT(IEEE80211_STYPE_DEAUTH >> 4) |
+				BIT(IEEE80211_STYPE_ACTION >> 4)
+			},
 	[NL80211_IFTYPE_P2P_CLIENT] = {
-				       .tx = 0xffff,
-				       .rx = BIT(IEEE80211_STYPE_ACTION >> 4) | BIT(IEEE80211_STYPE_PROBE_REQ >> 4)
-				       },
+			.tx = 0xffff,
+			.rx = BIT(IEEE80211_STYPE_ACTION >> 4)
+				| BIT(IEEE80211_STYPE_PROBE_REQ >> 4)
+			},
 	[NL80211_IFTYPE_P2P_GO] = {
-				   .tx = 0xffff,
-				   .rx = BIT(IEEE80211_STYPE_PROBE_REQ >> 4) | BIT(IEEE80211_STYPE_ACTION >> 4)
-				   }
+			.tx = 0xffff,
+			.rx = BIT(IEEE80211_STYPE_PROBE_REQ >> 4)
+				| BIT(IEEE80211_STYPE_ACTION >> 4)
+			}
 };
 
 #endif
@@ -238,13 +245,15 @@ mtk_cfg80211_default_mgmt_stypes[NUM_NL80211_IFTYPES] = {
 static const struct iw_priv_args rP2PIwPrivTable[] = {
 	{
 	 .cmd = IOC_P2P_CFG_DEVICE,
-	 .set_args = IW_PRIV_TYPE_BYTE | (__u16) sizeof(struct iw_p2p_cfg_device_type),
+	 .set_args = IW_PRIV_TYPE_BYTE
+				| (__u16) sizeof(struct iw_p2p_cfg_device_type),
 	 .get_args = IW_PRIV_TYPE_NONE,
 	 .name = "P2P_CFG_DEVICE"}
 	,
 	{
 	 .cmd = IOC_P2P_START_STOP_DISCOVERY,
-	 .set_args = IW_PRIV_TYPE_BYTE | (__u16) sizeof(struct iw_p2p_req_device_type),
+	 .set_args = IW_PRIV_TYPE_BYTE
+				| (__u16) sizeof(struct iw_p2p_req_device_type),
 	 .get_args = IW_PRIV_TYPE_NONE,
 	 .name = "P2P_DISCOVERY"}
 	,
@@ -256,19 +265,22 @@ static const struct iw_priv_args rP2PIwPrivTable[] = {
 	,
 	{
 	 .cmd = IOC_P2P_WSC_BEACON_PROBE_RSP_IE,
-	 .set_args = IW_PRIV_TYPE_BYTE | (__u16) sizeof(struct iw_p2p_hostapd_param),
+	 .set_args = IW_PRIV_TYPE_BYTE
+				| (__u16) sizeof(struct iw_p2p_hostapd_param),
 	 .get_args = IW_PRIV_TYPE_NONE,
 	 .name = "P2P_WSC_IE"}
 	,
 	{
 	 .cmd = IOC_P2P_CONNECT_DISCONNECT,
-	 .set_args = IW_PRIV_TYPE_BYTE | (__u16) sizeof(struct iw_p2p_connect_device),
+	 .set_args = IW_PRIV_TYPE_BYTE
+				| (__u16) sizeof(struct iw_p2p_connect_device),
 	 .get_args = IW_PRIV_TYPE_NONE,
 	 .name = "P2P_CONNECT"}
 	,
 	{
 	 .cmd = IOC_P2P_PASSWORD_READY,
-	 .set_args = IW_PRIV_TYPE_BYTE | (__u16) sizeof(struct iw_p2p_password_ready),
+	 .set_args = IW_PRIV_TYPE_BYTE
+				| (__u16) sizeof(struct iw_p2p_password_ready),
 	 .get_args = IW_PRIV_TYPE_NONE,
 	 .name = "P2P_PASSWD_RDY"}
 	,
@@ -287,7 +299,8 @@ static const struct iw_priv_args rP2PIwPrivTable[] = {
 	{
 	 .cmd = IOC_P2P_GET_REQ_DEVICE_INFO,
 	 .set_args = IW_PRIV_TYPE_NONE,
-	 .get_args = IW_PRIV_TYPE_BYTE | (__u16) sizeof(struct iw_p2p_device_req),
+	 .get_args = IW_PRIV_TYPE_BYTE
+				| (__u16) sizeof(struct iw_p2p_device_req),
 	 .name = "P2P_GET_REQDEV"}
 	,
 	{
@@ -307,9 +320,11 @@ static const struct iw_priv_args rP2PIwPrivTable[] = {
 
 #if 0
 const struct iw_handler_def mtk_p2p_wext_handler_def = {
-	.num_standard = (__u16) sizeof(rP2PIwStandardHandler) / sizeof(iw_handler),
+	.num_standard = (__u16) sizeof(rP2PIwStandardHandler)
+					/ sizeof(iw_handler),
 /* .num_private        = (__u16)sizeof(rP2PIwPrivHandler)/sizeof(iw_handler), */
-	.num_private_args = (__u16) sizeof(rP2PIwPrivTable) / sizeof(struct iw_priv_args),
+	.num_private_args = (__u16) sizeof(rP2PIwPrivTable)
+					/ sizeof(struct iw_priv_args),
 	.standard = rP2PIwStandardHandler,
 /* .private            = rP2PIwPrivHandler, */
 	.private_args = rP2PIwPrivTable,
@@ -335,17 +350,21 @@ static const struct ieee80211_iface_limit mtk_p2p_sta_go_limits[] = {
 
 	{
 		.max = 1,
-		.types = BIT(NL80211_IFTYPE_P2P_GO) | BIT(NL80211_IFTYPE_P2P_CLIENT),
+		.types = BIT(NL80211_IFTYPE_P2P_GO)
+				| BIT(NL80211_IFTYPE_P2P_CLIENT),
 	},
 };
 
-#if ((CFG_SUPPORT_DFS_MASTER == 1) && (KERNEL_VERSION(3, 17, 0) > CFG80211_VERSION_CODE))
+#if (CFG_SUPPORT_DFS_MASTER == 1)
+#if (KERNEL_VERSION(3, 17, 0) > CFG80211_VERSION_CODE)
+
 static const struct ieee80211_iface_limit mtk_ap_limits[] = {
 	{
 		.max = 1,
 		.types = BIT(NL80211_IFTYPE_AP),
 	},
 };
+#endif
 #endif
 
 static const struct ieee80211_iface_combination
@@ -376,8 +395,11 @@ mtk_iface_combinations_p2p[] = {
 		.limits = mtk_p2p_sta_go_limits,
 		.n_limits = ARRAY_SIZE(mtk_p2p_sta_go_limits), /* include p2p */
 	},
-#if ((CFG_SUPPORT_DFS_MASTER == 1) && (KERNEL_VERSION(3, 17, 0) > CFG80211_VERSION_CODE))
-	/* ONLY for passing checks in cfg80211_can_use_iftype_chan before linux-3.17.0 */
+#if (CFG_SUPPORT_DFS_MASTER == 1)
+#if (KERNEL_VERSION(3, 17, 0) > CFG80211_VERSION_CODE)
+	/* ONLY for passing checks in cfg80211_can_use_iftype_chan
+	 * before linux-3.17.0
+	 */
 	{
 		.num_different_channels = 1,
 		.max_interfaces = 1,
@@ -390,24 +412,29 @@ mtk_iface_combinations_p2p[] = {
 				       BIT(NL80211_CHAN_WIDTH_80P80),
 	},
 #endif
+#endif
 };
 
 
-const struct ieee80211_iface_combination *p_mtk_iface_combinations_sta = mtk_iface_combinations_sta;
-const int32_t mtk_iface_combinations_sta_num = ARRAY_SIZE(mtk_iface_combinations_sta);
+const struct ieee80211_iface_combination
+	*p_mtk_iface_combinations_sta = mtk_iface_combinations_sta;
+const int32_t mtk_iface_combinations_sta_num =
+	ARRAY_SIZE(mtk_iface_combinations_sta);
 
-const struct ieee80211_iface_combination *p_mtk_iface_combinations_p2p = mtk_iface_combinations_p2p;
-const int32_t mtk_iface_combinations_p2p_num = ARRAY_SIZE(mtk_iface_combinations_p2p);
+const struct ieee80211_iface_combination
+	*p_mtk_iface_combinations_p2p = mtk_iface_combinations_p2p;
+const int32_t mtk_iface_combinations_p2p_num =
+	ARRAY_SIZE(mtk_iface_combinations_p2p);
 
-/*******************************************************************************
-*                                 M A C R O S
-********************************************************************************
-*/
+/******************************************************************************
+ *                                 M A C R O S
+ ******************************************************************************
+ */
 
-/*******************************************************************************
-*                   F U N C T I O N   D E C L A R A T I O N S
-********************************************************************************
-*/
+/******************************************************************************
+ *                   F U N C T I O N   D E C L A R A T I O N S
+ ******************************************************************************
+ */
 
 /* Net Device Hooks */
 static int p2pOpen(IN struct net_device *prDev);
@@ -418,23 +445,26 @@ static struct net_device_stats *p2pGetStats(IN struct net_device *prDev);
 
 static void p2pSetMulticastList(IN struct net_device *prDev);
 
-static int p2pHardStartXmit(IN struct sk_buff *prSkb, IN struct net_device *prDev);
+static int p2pHardStartXmit(IN struct sk_buff *prSkb,
+		IN struct net_device *prDev);
 
 static int p2pSetMACAddress(IN struct net_device *prDev, void *addr);
 
-static int p2pDoIOCTL(struct net_device *prDev, struct ifreq *prIFReq, int i4Cmd);
+static int p2pDoIOCTL(struct net_device *prDev,
+		struct ifreq *prIFReq,
+		int i4Cmd);
 
 
-/*----------------------------------------------------------------------------*/
+/*---------------------------------------------------------------------------*/
 /*!
-* \brief A function for prDev->init
-*
-* \param[in] prDev      Pointer to struct net_device.
-*
-* \retval 0         The execution of wlanInit succeeds.
-* \retval -ENXIO    No such device.
-*/
-/*----------------------------------------------------------------------------*/
+ * \brief A function for prDev->init
+ *
+ * \param[in] prDev      Pointer to struct net_device.
+ *
+ * \retval 0         The execution of wlanInit succeeds.
+ * \retval -ENXIO    No such device.
+ */
+/*---------------------------------------------------------------------------*/
 static int p2pInit(struct net_device *prDev)
 {
 	if (!prDev)
@@ -443,14 +473,14 @@ static int p2pInit(struct net_device *prDev)
 	return 0;		/* success */
 }				/* end of p2pInit() */
 
-/*----------------------------------------------------------------------------*/
+/*---------------------------------------------------------------------------*/
 /*!
-* \brief A function for prDev->uninit
-*
-* \param[in] prDev      Pointer to struct net_device.
-*
-* \return (none)
-*/
+ * \brief A function for prDev->uninit
+ *
+ * \param[in] prDev      Pointer to struct net_device.
+ *
+ * \return (none)
+ */
 /*----------------------------------------------------------------------------*/
 static void p2pUninit(IN struct net_device *prDev)
 {
@@ -470,22 +500,22 @@ const struct net_device_ops p2p_netdev_ops = {
 	.ndo_uninit = p2pUninit,
 };
 
-/*******************************************************************************
-*                              F U N C T I O N S
-********************************************************************************
-*/
+/******************************************************************************
+ *                              F U N C T I O N S
+ ******************************************************************************
+ */
 
-/*----------------------------------------------------------------------------*/
+/*---------------------------------------------------------------------------*/
 /*!
-* \brief Allocate memory for P2P_INFO, GL_P2P_INFO, P2P_CONNECTION_SETTINGS
-*                                          P2P_SPECIFIC_BSS_INFO, P2P_FSM_INFO
-*
-* \param[in] prGlueInfo      Pointer to glue info
-*
-* \return   TRUE
-*           FALSE
-*/
-/*----------------------------------------------------------------------------*/
+ * \brief Allocate memory for P2P_INFO, GL_P2P_INFO, P2P_CONNECTION_SETTINGS
+ *                                          P2P_SPECIFIC_BSS_INFO, P2P_FSM_INFO
+ *
+ * \param[in] prGlueInfo      Pointer to glue info
+ *
+ * \return   TRUE
+ *           FALSE
+ */
+/*---------------------------------------------------------------------------*/
 u_int8_t p2PAllocInfo(IN struct GLUE_INFO *prGlueInfo, IN uint8_t ucIdex)
 {
 	struct ADAPTER *prAdapter = NULL;
@@ -504,12 +534,14 @@ u_int8_t p2PAllocInfo(IN struct GLUE_INFO *prGlueInfo, IN uint8_t ucIdex)
 		if (prGlueInfo->prP2PInfo[ucIdex] == NULL) {
 			/*alloc memory for p2p info */
 			prGlueInfo->prP2PInfo[ucIdex] =
-			      kalMemAlloc(sizeof(struct GL_P2P_INFO), VIR_MEM_TYPE);
+				kalMemAlloc(sizeof(struct GL_P2P_INFO),
+					VIR_MEM_TYPE);
 
 			if (prGlueInfo->prP2PDevInfo == NULL) {
 				prGlueInfo->prP2PDevInfo =
-					kalMemAlloc(sizeof(struct GL_P2P_DEV_INFO),
-						    VIR_MEM_TYPE);
+					kalMemAlloc(
+						sizeof(struct GL_P2P_DEV_INFO),
+						VIR_MEM_TYPE);
 				if (prGlueInfo->prP2PDevInfo) {
 					kalMemZero(prGlueInfo->prP2PDevInfo,
 						sizeof(struct GL_P2P_DEV_INFO));
@@ -532,25 +564,34 @@ u_int8_t p2PAllocInfo(IN struct GLUE_INFO *prGlueInfo, IN uint8_t ucIdex)
 				 * called without p2p0.
 				 */
 				prWifiVar->prP2pDevFsmInfo =
-					kalMemAlloc(sizeof(struct P2P_DEV_FSM_INFO),
-						    VIR_MEM_TYPE);
+					kalMemAlloc(
+						sizeof(struct P2P_DEV_FSM_INFO),
+						VIR_MEM_TYPE);
 				if (prWifiVar->prP2pDevFsmInfo) {
 					kalMemZero(prWifiVar->prP2pDevFsmInfo,
-						sizeof(struct P2P_DEV_FSM_INFO));
+						sizeof(struct
+							P2P_DEV_FSM_INFO));
 				}
 			}
 
 			prWifiVar->prP2PConnSettings[ucIdex] =
-				kalMemAlloc(sizeof(struct P2P_CONNECTION_SETTINGS), VIR_MEM_TYPE);
+				kalMemAlloc(
+					sizeof(struct P2P_CONNECTION_SETTINGS),
+					VIR_MEM_TYPE);
 			prWifiVar->prP2pSpecificBssInfo[ucIdex] =
-				kalMemAlloc(sizeof(struct P2P_SPECIFIC_BSS_INFO), VIR_MEM_TYPE);
+				kalMemAlloc(
+					sizeof(struct P2P_SPECIFIC_BSS_INFO),
+					VIR_MEM_TYPE);
 
-			/* TODO: It can be moved to the interface been created. */
+			/* TODO: It can be moved
+			 * to the interface been created.
+			 */
 #if 0
-			    for (u4Idx = 0; u4Idx < BSS_P2P_NUM; u4Idx++) {
+			for (u4Idx = 0; u4Idx < BSS_P2P_NUM; u4Idx++) {
 				prWifiVar->aprP2pRoleFsmInfo[u4Idx] =
-				kalMemAlloc(sizeof(struct P2P_ROLE_FSM_INFO), VIR_MEM_TYPE);
-			    }
+				kalMemAlloc(sizeof(struct P2P_ROLE_FSM_INFO),
+					VIR_MEM_TYPE);
+			}
 #endif
 		} else {
 			ASSERT(prAdapter->prP2pInfo != NULL);
@@ -559,10 +600,13 @@ u_int8_t p2PAllocInfo(IN struct GLUE_INFO *prGlueInfo, IN uint8_t ucIdex)
 			ASSERT(prWifiVar->prP2pSpecificBssInfo[ucIdex] != NULL);
 		}
 		/*MUST set memory to 0 */
-		kalMemZero(prGlueInfo->prP2PInfo[ucIdex], sizeof(struct GL_P2P_INFO));
-		kalMemZero(prWifiVar->prP2PConnSettings[ucIdex], sizeof(struct P2P_CONNECTION_SETTINGS));
+		kalMemZero(prGlueInfo->prP2PInfo[ucIdex],
+			sizeof(struct GL_P2P_INFO));
+		kalMemZero(prWifiVar->prP2PConnSettings[ucIdex],
+			sizeof(struct P2P_CONNECTION_SETTINGS));
 /* kalMemZero(prWifiVar->prP2pFsmInfo, sizeof(P2P_FSM_INFO_T)); */
-		kalMemZero(prWifiVar->prP2pSpecificBssInfo[ucIdex], sizeof(struct P2P_SPECIFIC_BSS_INFO));
+		kalMemZero(prWifiVar->prP2pSpecificBssInfo[ucIdex],
+			sizeof(struct P2P_SPECIFIC_BSS_INFO));
 
 	} while (FALSE);
 
@@ -579,7 +623,9 @@ u_int8_t p2PAllocInfo(IN struct GLUE_INFO *prGlueInfo, IN uint8_t ucIdex)
 
 
 	/* chk if alloc successful or not */
-	if (prGlueInfo->prP2PInfo[ucIdex] && prGlueInfo->prP2PDevInfo && prAdapter->prP2pInfo &&
+	if (prGlueInfo->prP2PInfo[ucIdex] &&
+		prGlueInfo->prP2PDevInfo &&
+		prAdapter->prP2pInfo &&
 		prWifiVar->prP2PConnSettings[ucIdex] &&
 /* prWifiVar->prP2pFsmInfo && */
 	    prWifiVar->prP2pSpecificBssInfo[ucIdex])
@@ -589,32 +635,40 @@ u_int8_t p2PAllocInfo(IN struct GLUE_INFO *prGlueInfo, IN uint8_t ucIdex)
 	DBGLOG(P2P, ERROR, "[fail!]p2PAllocInfo :fail\n");
 
 	if (prWifiVar->prP2pSpecificBssInfo[ucIdex]) {
-		kalMemFree(prWifiVar->prP2pSpecificBssInfo[ucIdex], VIR_MEM_TYPE, sizeof(struct P2P_SPECIFIC_BSS_INFO));
+		kalMemFree(prWifiVar->prP2pSpecificBssInfo[ucIdex],
+			VIR_MEM_TYPE,
+			sizeof(struct P2P_SPECIFIC_BSS_INFO));
 
 		prWifiVar->prP2pSpecificBssInfo[ucIdex] = NULL;
 	}
 /* if (prWifiVar->prP2pFsmInfo) { */
-/* kalMemFree(prWifiVar->prP2pFsmInfo, VIR_MEM_TYPE, sizeof(P2P_FSM_INFO_T)); */
+/* kalMemFree(prWifiVar->prP2pFsmInfo,
+ * VIR_MEM_TYPE, sizeof(P2P_FSM_INFO_T));
+ */
 
 /* prWifiVar->prP2pFsmInfo = NULL; */
 /* } */
 	if (prWifiVar->prP2PConnSettings[ucIdex]) {
-		kalMemFree(prWifiVar->prP2PConnSettings[ucIdex], VIR_MEM_TYPE, sizeof(struct P2P_CONNECTION_SETTINGS));
+		kalMemFree(prWifiVar->prP2PConnSettings[ucIdex],
+			VIR_MEM_TYPE, sizeof(struct P2P_CONNECTION_SETTINGS));
 
 		prWifiVar->prP2PConnSettings[ucIdex] = NULL;
 	}
 	if (prGlueInfo->prP2PDevInfo) {
-		kalMemFree(prGlueInfo->prP2PDevInfo, VIR_MEM_TYPE, sizeof(struct GL_P2P_DEV_INFO));
+		kalMemFree(prGlueInfo->prP2PDevInfo,
+			VIR_MEM_TYPE, sizeof(struct GL_P2P_DEV_INFO));
 
 		prGlueInfo->prP2PDevInfo = NULL;
 	}
 	if (prGlueInfo->prP2PInfo[ucIdex]) {
-		kalMemFree(prGlueInfo->prP2PInfo[ucIdex], VIR_MEM_TYPE, sizeof(struct GL_P2P_INFO));
+		kalMemFree(prGlueInfo->prP2PInfo[ucIdex],
+			VIR_MEM_TYPE, sizeof(struct GL_P2P_INFO));
 
 		prGlueInfo->prP2PInfo[ucIdex] = NULL;
 	}
 	if (prAdapter->prP2pInfo) {
-		kalMemFree(prAdapter->prP2pInfo, VIR_MEM_TYPE, sizeof(struct P2P_INFO));
+		kalMemFree(prAdapter->prP2pInfo,
+			VIR_MEM_TYPE, sizeof(struct P2P_INFO));
 
 		prAdapter->prP2pInfo = NULL;
 	}
@@ -622,20 +676,20 @@ u_int8_t p2PAllocInfo(IN struct GLUE_INFO *prGlueInfo, IN uint8_t ucIdex)
 
 }
 
-/*----------------------------------------------------------------------------*/
+/*---------------------------------------------------------------------------*/
 /*!
-* \brief Free memory for P2P_INFO, GL_P2P_INFO, P2P_CONNECTION_SETTINGS
-*                                          P2P_SPECIFIC_BSS_INFO, P2P_FSM_INFO
-*
-* \param[in] prGlueInfo      Pointer to glue info
-*	[in] ucIdx	     The BSS with the idx will be freed.
-*			     "ucIdx == 0xff" will free all BSSs.
-*			     Only has meaning for "CFG_ENABLE_UNIFY_WIPHY == 1"
-*
-* \return   TRUE
-*           FALSE
-*/
-/*----------------------------------------------------------------------------*/
+ * \brief Free memory for P2P_INFO, GL_P2P_INFO, P2P_CONNECTION_SETTINGS
+ *                                          P2P_SPECIFIC_BSS_INFO, P2P_FSM_INFO
+ *
+ * \param[in] prGlueInfo      Pointer to glue info
+ *	[in] ucIdx	     The BSS with the idx will be freed.
+ *			     "ucIdx == 0xff" will free all BSSs.
+ *			     Only has meaning for "CFG_ENABLE_UNIFY_WIPHY == 1"
+ *
+ * \return   TRUE
+ *           FALSE
+ */
+/*---------------------------------------------------------------------------*/
 u_int8_t p2PFreeInfo(struct GLUE_INFO *prGlueInfo, uint8_t ucIdx)
 {
 	struct ADAPTER *prAdapter = prGlueInfo->prAdapter;
@@ -662,15 +716,18 @@ u_int8_t p2PFreeInfo(struct GLUE_INFO *prGlueInfo, uint8_t ucIdx)
 
 	if (prGlueInfo->prP2PInfo[ucIdx] != NULL) {
 		kalMemFree(prAdapter->rWifiVar.prP2PConnSettings[ucIdx],
-			   VIR_MEM_TYPE, sizeof(struct P2P_CONNECTION_SETTINGS));
+			VIR_MEM_TYPE,
+			sizeof(struct P2P_CONNECTION_SETTINGS));
 		prAdapter->rWifiVar.prP2PConnSettings[ucIdx] = NULL;
 
 		kalMemFree(prAdapter->rWifiVar.prP2pSpecificBssInfo[ucIdx],
-			   VIR_MEM_TYPE, sizeof(struct P2P_SPECIFIC_BSS_INFO));
+			VIR_MEM_TYPE,
+			sizeof(struct P2P_SPECIFIC_BSS_INFO));
 		prAdapter->rWifiVar.prP2pSpecificBssInfo[ucIdx] = NULL;
 
-		kalMemFree(prGlueInfo->prP2PInfo[ucIdx], VIR_MEM_TYPE,
-				sizeof(struct GL_P2P_INFO));
+		kalMemFree(prGlueInfo->prP2PInfo[ucIdx],
+			VIR_MEM_TYPE,
+			sizeof(struct GL_P2P_INFO));
 		prGlueInfo->prP2PInfo[ucIdx] = NULL;
 
 		prAdapter->prP2pInfo->u4DeviceNum--;
@@ -701,7 +758,8 @@ u_int8_t p2PFreeInfo(struct GLUE_INFO *prGlueInfo, uint8_t ucIdx)
 	return TRUE;
 }
 
-u_int8_t p2pNetRegister(struct GLUE_INFO *prGlueInfo, u_int8_t fgIsRtnlLockAcquired)
+u_int8_t p2pNetRegister(struct GLUE_INFO *prGlueInfo,
+		u_int8_t fgIsRtnlLockAcquired)
 {
 	u_int8_t fgDoRegister = FALSE;
 	u_int8_t fgRollbackRtnlLock = FALSE;
@@ -713,8 +771,10 @@ u_int8_t p2pNetRegister(struct GLUE_INFO *prGlueInfo, u_int8_t fgIsRtnlLockAcqui
 	ASSERT(prGlueInfo->prAdapter);
 
 	GLUE_ACQUIRE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
-	if (prGlueInfo->prAdapter->rP2PNetRegState == ENUM_NET_REG_STATE_UNREGISTERED) {
-		prGlueInfo->prAdapter->rP2PNetRegState = ENUM_NET_REG_STATE_REGISTERING;
+	if (prGlueInfo->prAdapter->rP2PNetRegState
+		== ENUM_NET_REG_STATE_UNREGISTERED) {
+		prGlueInfo->prAdapter->rP2PNetRegState =
+			ENUM_NET_REG_STATE_REGISTERING;
 		fgDoRegister = TRUE;
 	}
 	GLUE_RELEASE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
@@ -738,7 +798,8 @@ u_int8_t p2pNetRegister(struct GLUE_INFO *prGlueInfo, u_int8_t fgIsRtnlLockAcqui
 		/* free_netdev(prGlueInfo->prP2PInfo[0]->prDevHandler); */
 		ret = FALSE;
 	} else {
-		prGlueInfo->prAdapter->rP2PNetRegState = ENUM_NET_REG_STATE_REGISTERED;
+		prGlueInfo->prAdapter->rP2PNetRegState =
+			ENUM_NET_REG_STATE_REGISTERED;
 		gPrP2pDev[0] = prGlueInfo->prP2PInfo[0]->prDevHandler;
 		ret = TRUE;
 	}
@@ -746,17 +807,22 @@ u_int8_t p2pNetRegister(struct GLUE_INFO *prGlueInfo, u_int8_t fgIsRtnlLockAcqui
 	if (prGlueInfo->prAdapter->prP2pInfo->u4DeviceNum == KAL_P2P_NUM) {
 		/* net device initialize */
 		netif_carrier_off(prGlueInfo->prP2PInfo[1]->prDevHandler);
-		netif_tx_stop_all_queues(prGlueInfo->prP2PInfo[1]->prDevHandler);
+		netif_tx_stop_all_queues(
+			prGlueInfo->prP2PInfo[1]->prDevHandler);
 
 		/* register for net device */
-		if (register_netdev(prGlueInfo->prP2PInfo[1]->prDevHandler) < 0) {
-			DBGLOG(INIT, WARN, "unable to register netdevice for p2p\n");
+		if (register_netdev(
+			prGlueInfo->prP2PInfo[1]->prDevHandler) < 0) {
+
+			DBGLOG(INIT, WARN,
+				"unable to register netdevice for p2p\n");
 
 			free_netdev(prGlueInfo->prP2PInfo[1]->prDevHandler);
 
 			ret = FALSE;
 		} else {
-			prGlueInfo->prAdapter->rP2PNetRegState = ENUM_NET_REG_STATE_REGISTERED;
+			prGlueInfo->prAdapter->rP2PNetRegState =
+				ENUM_NET_REG_STATE_REGISTERED;
 			gPrP2pDev[1] = prGlueInfo->prP2PInfo[1]->prDevHandler;
 			ret = TRUE;
 		}
@@ -770,7 +836,8 @@ u_int8_t p2pNetRegister(struct GLUE_INFO *prGlueInfo, u_int8_t fgIsRtnlLockAcqui
 	return ret;
 }
 
-u_int8_t p2pNetUnregister(struct GLUE_INFO *prGlueInfo, u_int8_t fgIsRtnlLockAcquired)
+u_int8_t p2pNetUnregister(struct GLUE_INFO *prGlueInfo,
+		u_int8_t fgIsRtnlLockAcquired)
 {
 	u_int8_t fgDoUnregister = FALSE;
 	u_int8_t fgRollbackRtnlLock = FALSE;
@@ -816,8 +883,8 @@ u_int8_t p2pNetUnregister(struct GLUE_INFO *prGlueInfo, u_int8_t fgIsRtnlLockAcq
 		prRoleDev = prP2PInfo->aprRoleHandler;
 		if (prRoleDev != NULL) {
 			/* info cfg80211 disconnect */
-			prNetDevPriv = (struct NETDEV_PRIVATE_GLUE_INFO *)netdev_priv(
-						prRoleDev);
+			prNetDevPriv = (struct NETDEV_PRIVATE_GLUE_INFO *)
+				netdev_priv(prRoleDev);
 			iftype = prRoleDev->ieee80211_ptr->iftype;
 			prP2pBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
 							prNetDevPriv->ucBssIdx);
@@ -874,27 +941,28 @@ u_int8_t p2pNetUnregister(struct GLUE_INFO *prGlueInfo, u_int8_t fgIsRtnlLockAcq
 			rtnl_lock();
 	}
 
-	prGlueInfo->prAdapter->rP2PNetRegState = ENUM_NET_REG_STATE_UNREGISTERED;
+	prGlueInfo->prAdapter->rP2PNetRegState =
+		ENUM_NET_REG_STATE_UNREGISTERED;
 
 	return TRUE;
 }
 
-/*----------------------------------------------------------------------------*/
+/*---------------------------------------------------------------------------*/
 /*!
-* \brief Setup the P2P device information
-*
-* \param[in] prGlueInfo      Pointer to glue info
-*       [in] prP2pWdev       Pointer to the wireless device
-*       [in] prP2pDev        Pointer to the net device
-*       [in] u4Idx           The P2P Role index (max : (KAL_P2P_NUM-1))
-*       [in] fgIsApMode      Indicate that this device is AP Role or not
-*
-* \return    0	Success
-*           -1	Failure
-*/
-/*----------------------------------------------------------------------------*/
+ * \brief Setup the P2P device information
+ *
+ * \param[in] prGlueInfo      Pointer to glue info
+ *       [in] prP2pWdev       Pointer to the wireless device
+ *       [in] prP2pDev        Pointer to the net device
+ *       [in] u4Idx           The P2P Role index (max : (KAL_P2P_NUM-1))
+ *       [in] fgIsApMode      Indicate that this device is AP Role or not
+ *
+ * \return    0	Success
+ *           -1	Failure
+ */
+/*---------------------------------------------------------------------------*/
 int glSetupP2P(struct GLUE_INFO *prGlueInfo, struct wireless_dev *prP2pWdev,
-	       struct net_device *prP2pDev, int u4Idx, u_int8_t fgIsApMode)
+		struct net_device *prP2pDev, int u4Idx, u_int8_t fgIsApMode)
 {
 	struct ADAPTER *prAdapter = NULL;
 	struct GL_P2P_INFO *prP2PInfo = NULL;
@@ -950,7 +1018,8 @@ int glSetupP2P(struct GLUE_INFO *prGlueInfo, struct wireless_dev *prP2pWdev,
 
 	/* setup netdev */
 	/* Point to shared glue structure */
-	prNetDevPriv = (struct NETDEV_PRIVATE_GLUE_INFO *) netdev_priv(prP2pDev);
+	prNetDevPriv = (struct NETDEV_PRIVATE_GLUE_INFO *)
+		netdev_priv(prP2pDev);
 	prNetDevPriv->prGlueInfo = prGlueInfo;
 
 	/* set ucIsP2p for P2P function device */
@@ -1028,18 +1097,18 @@ int glSetupP2P(struct GLUE_INFO *prGlueInfo, struct wireless_dev *prP2pWdev,
 	return 0;
 }
 
-/*----------------------------------------------------------------------------*/
+/*---------------------------------------------------------------------------*/
 /*!
-* \brief Register for cfg80211 for Wi-Fi Direct
-*
-* \param[in] prGlueInfo      Pointer to glue info
-*
-* \return   TRUE
-*           FALSE
-*/
-/*----------------------------------------------------------------------------*/
+ * \brief Register for cfg80211 for Wi-Fi Direct
+ *
+ * \param[in] prGlueInfo      Pointer to glue info
+ *
+ * \return   TRUE
+ *           FALSE
+ */
+/*---------------------------------------------------------------------------*/
 u_int8_t glRegisterP2P(struct GLUE_INFO *prGlueInfo, const char *prDevName,
-		      const char *prDevName2, uint8_t ucApMode)
+		const char *prDevName2, uint8_t ucApMode)
 {
 	struct ADAPTER *prAdapter = NULL;
 	uint8_t rMacAddr[PARAM_MAC_ADDR_LEN];
@@ -1100,11 +1169,13 @@ u_int8_t glRegisterP2P(struct GLUE_INFO *prGlueInfo, const char *prDevName,
 
 		/* allocate netdev */
 #if KERNEL_VERSION(3, 17, 0) <= CFG80211_VERSION_CODE
-		prP2pDev = alloc_netdev_mq(sizeof(struct NETDEV_PRIVATE_GLUE_INFO),
+		prP2pDev = alloc_netdev_mq(
+					sizeof(struct NETDEV_PRIVATE_GLUE_INFO),
 					prSetDevName, NET_NAME_PREDICTABLE,
 					ether_setup, CFG_MAX_TXQ_NUM);
 #else
-		prP2pDev = alloc_netdev_mq(sizeof(struct NETDEV_PRIVATE_GLUE_INFO),
+		prP2pDev = alloc_netdev_mq(
+					sizeof(struct NETDEV_PRIVATE_GLUE_INFO),
 					prSetDevName,
 					ether_setup, CFG_MAX_TXQ_NUM);
 #endif
@@ -1196,7 +1267,8 @@ u_int8_t glP2pCreateWirelessDevice(struct GLUE_INFO *prGlueInfo)
 #if CFG_ENABLE_WIFI_DIRECT_CFG_80211
 	prWdev = kzalloc(sizeof(struct wireless_dev), GFP_KERNEL);
 	if (!prWdev) {
-		DBGLOG(P2P, ERROR, "allocate p2p wireless device fail, no memory\n");
+		DBGLOG(P2P, ERROR,
+			"allocate p2p wireless device fail, no memory\n");
 		return FALSE;
 	}
 	/* 1. allocate WIPHY */
@@ -1224,12 +1296,17 @@ u_int8_t glP2pCreateWirelessDevice(struct GLUE_INFO *prGlueInfo)
 	prWiphy->n_cipher_suites = 5;
 	prWiphy->cipher_suites = mtk_cipher_suites;
 #if KERNEL_VERSION(3, 14, 0) > CFG80211_VERSION_CODE
-	prWiphy->flags = WIPHY_FLAG_CUSTOM_REGULATORY | WIPHY_FLAG_HAS_REMAIN_ON_CHANNEL | WIPHY_FLAG_HAVE_AP_SME;
+	prWiphy->flags = WIPHY_FLAG_CUSTOM_REGULATORY
+				| WIPHY_FLAG_HAS_REMAIN_ON_CHANNEL
+				| WIPHY_FLAG_HAVE_AP_SME;
 #else
 #if (CFG_SUPPORT_DFS_MASTER == 1)
-	prWiphy->flags = WIPHY_FLAG_HAS_REMAIN_ON_CHANNEL | WIPHY_FLAG_HAVE_AP_SME | WIPHY_FLAG_HAS_CHANNEL_SWITCH;
+	prWiphy->flags = WIPHY_FLAG_HAS_REMAIN_ON_CHANNEL
+				| WIPHY_FLAG_HAVE_AP_SME
+				| WIPHY_FLAG_HAS_CHANNEL_SWITCH;
 #else
-	prWiphy->flags = WIPHY_FLAG_HAS_REMAIN_ON_CHANNEL | WIPHY_FLAG_HAVE_AP_SME;
+	prWiphy->flags = WIPHY_FLAG_HAS_REMAIN_ON_CHANNEL
+				| WIPHY_FLAG_HAVE_AP_SME;
 #endif
 	prWiphy->regulatory_flags = REGULATORY_CUSTOM_REG;
 #endif
@@ -1240,7 +1317,8 @@ u_int8_t glP2pCreateWirelessDevice(struct GLUE_INFO *prGlueInfo)
 	prWiphy->signal_type = CFG80211_SIGNAL_TYPE_MBM;
 #if KERNEL_VERSION(3, 18, 0) <= CFG80211_VERSION_CODE
 	prWiphy->vendor_commands = mtk_p2p_vendor_ops;
-	prWiphy->n_vendor_commands = sizeof(mtk_p2p_vendor_ops) / sizeof(struct wiphy_vendor_command);
+	prWiphy->n_vendor_commands = sizeof(mtk_p2p_vendor_ops)
+		/ sizeof(struct wiphy_vendor_command);
 #endif
 
 #ifdef CONFIG_PM
@@ -1263,7 +1341,9 @@ u_int8_t glP2pCreateWirelessDevice(struct GLUE_INFO *prGlueInfo)
 	for (i = 0 ; i < KAL_P2P_NUM; i++) {
 		if (!gprP2pRoleWdev[i]) {
 			gprP2pRoleWdev[i] = prWdev;
-			DBGLOG(INIT, INFO, "glP2pCreateWirelessDevice (%x)\n", gprP2pRoleWdev[i]->wiphy);
+			DBGLOG(INIT, INFO,
+				"glP2pCreateWirelessDevice (%x)\n",
+				gprP2pRoleWdev[i]->wiphy);
 			break;
 		}
 	}
@@ -1282,19 +1362,19 @@ free_wdev:
 }
 #endif	/* CFG_ENABLE_UNIFY_WIPHY */
 
-/*----------------------------------------------------------------------------*/
+/*---------------------------------------------------------------------------*/
 /*!
-* \brief Unregister Net Device for Wi-Fi Direct
-*
-* \param[in] prGlueInfo      Pointer to glue info
-*	[in] ucIdx	     The BSS with the idx will be freed.
-*			     "ucIdx == 0xff" will free all BSSs.
-*			     Only has meaning for "CFG_ENABLE_UNIFY_WIPHY == 1"
-*
-* \return   TRUE
-*           FALSE
-*/
-/*----------------------------------------------------------------------------*/
+ * \brief Unregister Net Device for Wi-Fi Direct
+ *
+ * \param[in] prGlueInfo      Pointer to glue info
+ *	[in] ucIdx	     The BSS with the idx will be freed.
+ *			     "ucIdx == 0xff" will free all BSSs.
+ *			     Only has meaning for "CFG_ENABLE_UNIFY_WIPHY == 1"
+ *
+ * \return   TRUE
+ *           FALSE
+ */
+/*---------------------------------------------------------------------------*/
 u_int8_t glUnregisterP2P(struct GLUE_INFO *prGlueInfo, uint8_t ucIdx)
 {
 	uint8_t ucRoleIdx;
@@ -1408,7 +1488,7 @@ static int p2pOpen(IN struct net_device *prDev)
 
 	ASSERT(prDev);
 
-#if 0				/* Move after device name set. (mtk_p2p_set_local_dev_info) */
+#if 0 /* Move after device name set. (mtk_p2p_set_local_dev_info) */
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prDev));
 	ASSERT(prGlueInfo);
 
@@ -1418,7 +1498,7 @@ static int p2pOpen(IN struct net_device *prDev)
 	/* 1. switch P2P-FSM on */
 	/* 1.1 allocate for message */
 	prFuncSwitch = (P_MSG_P2P_FUNCTION_SWITCH_T) cnmMemAlloc(prAdapter,
-								 RAM_TYPE_MSG, sizeof(MSG_P2P_FUNCTION_SWITCH_T));
+			RAM_TYPE_MSG, sizeof(MSG_P2P_FUNCTION_SWITCH_T));
 
 	if (!prFuncSwitch) {
 		ASSERT(0);	/* Can't trigger P2P FSM */
@@ -1430,7 +1510,10 @@ static int p2pOpen(IN struct net_device *prDev)
 	prFuncSwitch->fgIsFuncOn = TRUE;
 
 	/* 1.3 send message */
-	mboxSendMsg(prAdapter, MBOX_ID_0, (struct MSG_HDR *) prFuncSwitch, MSG_SEND_METHOD_BUF);
+	mboxSendMsg(prAdapter,
+		MBOX_ID_0,
+		(struct MSG_HDR *) prFuncSwitch,
+		MSG_SEND_METHOD_BUF);
 #endif
 
 	/* 2. carrier on & start TX queue */
@@ -1501,7 +1584,7 @@ static int p2pStop(IN struct net_device *prDev)
 	/* 2. switch P2P-FSM off */
 	/* 2.1 allocate for message */
 	prFuncSwitch = (P_MSG_P2P_FUNCTION_SWITCH_T) cnmMemAlloc(prAdapter,
-								 RAM_TYPE_MSG, sizeof(MSG_P2P_FUNCTION_SWITCH_T));
+			RAM_TYPE_MSG, sizeof(MSG_P2P_FUNCTION_SWITCH_T));
 
 	if (!prFuncSwitch) {
 		ASSERT(0);	/* Can't trigger P2P FSM */
@@ -1513,10 +1596,14 @@ static int p2pStop(IN struct net_device *prDev)
 	prFuncSwitch->fgIsFuncOn = FALSE;
 
 	/* 2.3 send message */
-	mboxSendMsg(prAdapter, MBOX_ID_0, (struct MSG_HDR *) prFuncSwitch, MSG_SEND_METHOD_BUF);
+	mboxSendMsg(prAdapter,
+		MBOX_ID_0,
+		(struct MSG_HDR *) prFuncSwitch,
+		MSG_SEND_METHOD_BUF);
 #endif
 	/* 3. stop queue and turn off carrier */
-	/*prGlueInfo->prP2PInfo[0]->eState = PARAM_MEDIA_STATE_DISCONNECTED;*//* TH3 multiple P2P */
+	/* TH3 multiple P2P */
+	/*prGlueInfo->prP2PInfo[0]->eState = PARAM_MEDIA_STATE_DISCONNECTED;*/
 
 	netif_tx_stop_all_queues(prDev);
 	if (netif_carrier_ok(prDev))
@@ -1525,19 +1612,21 @@ static int p2pStop(IN struct net_device *prDev)
 	return 0;
 }				/* end of p2pStop() */
 
-/*----------------------------------------------------------------------------*/
+/*---------------------------------------------------------------------------*/
 /*!
- * \brief A method of struct net_device, to get the network interface statistical
+ * \brief A method of struct net_device,
+ *        to get the network interface statistical
  *        information.
  *
- * Whenever an application needs to get statistics for the interface, this method
- * is called. This happens, for example, when ifconfig or netstat -i is run.
+ * Whenever an application needs to get statistics for the interface,
+ * this method is called.
+ * This happens, for example, when ifconfig or netstat -i is run.
  *
  * \param[in] prDev      Pointer to struct net_device.
  *
  * \return net_device_stats buffer pointer.
  */
-/*----------------------------------------------------------------------------*/
+/*---------------------------------------------------------------------------*/
 struct net_device_stats *p2pGetStats(IN struct net_device *prDev)
 {
 	return (struct net_device_stats *)kalGetStats(prDev);
@@ -1547,12 +1636,16 @@ static void p2pSetMulticastList(IN struct net_device *prDev)
 {
 	struct GLUE_INFO *prGlueInfo = (struct GLUE_INFO *) NULL;
 
-	prGlueInfo = (prDev != NULL) ? *((struct GLUE_INFO **) netdev_priv(prDev)) : NULL;
+	prGlueInfo = (prDev != NULL)
+		? *((struct GLUE_INFO **) netdev_priv(prDev))
+		: NULL;
 
 	ASSERT(prDev);
 	ASSERT(prGlueInfo);
 	if (!prDev || !prGlueInfo) {
-		DBGLOG(INIT, WARN, " abnormal dev or skb: prDev(0x%p), prGlueInfo(0x%p)\n", prDev, prGlueInfo);
+		DBGLOG(INIT, WARN,
+			" abnormal dev or skb: prDev(0x%p), prGlueInfo(0x%p)\n",
+			prDev, prGlueInfo);
 		return;
 	}
 
@@ -1580,30 +1673,40 @@ void mtk_p2p_wext_set_Multicastlist(struct GLUE_INFO *prGlueInfo)
 	uint32_t u4McCount;
 	struct net_device *prDev = g_P2pPrDev;
 
-	prGlueInfo = (prDev != NULL) ? *((struct GLUE_INFO **) netdev_priv(prDev)) : NULL;
+	prGlueInfo = (prDev != NULL)
+		? *((struct GLUE_INFO **) netdev_priv(prDev))
+		: NULL;
 
 	ASSERT(prDev);
 	ASSERT(prGlueInfo);
 	if (!prDev || !prGlueInfo) {
-		DBGLOG(INIT, WARN, " abnormal dev or skb: prDev(0x%p), prGlueInfo(0x%p)\n", prDev, prGlueInfo);
+		DBGLOG(INIT, WARN,
+			" abnormal dev or skb: prDev(0x%p), prGlueInfo(0x%p)\n",
+			prDev, prGlueInfo);
 		return;
 	}
 
 	if (prDev->flags & IFF_PROMISC)
-		prGlueInfo->prP2PDevInfo->u4PacketFilter |= PARAM_PACKET_FILTER_PROMISCUOUS;
+		prGlueInfo->prP2PDevInfo->u4PacketFilter
+			|= PARAM_PACKET_FILTER_PROMISCUOUS;
 
 	if (prDev->flags & IFF_BROADCAST)
-		prGlueInfo->prP2PDevInfo->u4PacketFilter |= PARAM_PACKET_FILTER_BROADCAST;
+		prGlueInfo->prP2PDevInfo->u4PacketFilter
+			|= PARAM_PACKET_FILTER_BROADCAST;
 	u4McCount = netdev_mc_count(prDev);
 
 	if (prDev->flags & IFF_MULTICAST) {
-		if ((prDev->flags & IFF_ALLMULTI) || (u4McCount > MAX_NUM_GROUP_ADDR))
-			prGlueInfo->prP2PDevInfo->u4PacketFilter |= PARAM_PACKET_FILTER_ALL_MULTICAST;
+		if ((prDev->flags & IFF_ALLMULTI)
+			|| (u4McCount > MAX_NUM_GROUP_ADDR))
+			prGlueInfo->prP2PDevInfo->u4PacketFilter
+				|= PARAM_PACKET_FILTER_ALL_MULTICAST;
 		else
-			prGlueInfo->prP2PDevInfo->u4PacketFilter |= PARAM_PACKET_FILTER_MULTICAST;
+			prGlueInfo->prP2PDevInfo->u4PacketFilter
+				|= PARAM_PACKET_FILTER_MULTICAST;
 	}
 
-	if (prGlueInfo->prP2PDevInfo->u4PacketFilter & PARAM_PACKET_FILTER_MULTICAST) {
+	if (prGlueInfo->prP2PDevInfo->u4PacketFilter
+		& PARAM_PACKET_FILTER_MULTICAST) {
 		/* Prepare multicast address list */
 		struct netdev_hw_addr *ha;
 		uint32_t i = 0;
@@ -1612,8 +1715,12 @@ void mtk_p2p_wext_set_Multicastlist(struct GLUE_INFO *prGlueInfo)
 		netif_addr_lock_bh(prDev);
 
 		netdev_for_each_mc_addr(ha, prDev) {
-			if (i < MAX_NUM_GROUP_ADDR) { /* If ha is null, it will break the loop. */
-				COPY_MAC_ADDR(&(prGlueInfo->prP2PDevInfo->aucMCAddrList[i]), GET_ADDR(ha));
+			/* If ha is null, it will break the loop. */
+			if (i < MAX_NUM_GROUP_ADDR) {
+				COPY_MAC_ADDR(
+					&(prGlueInfo->prP2PDevInfo
+						->aucMCAddrList[i]),
+					GET_ADDR(ha));
 				i++;
 			}
 		}
@@ -1625,27 +1732,28 @@ void mtk_p2p_wext_set_Multicastlist(struct GLUE_INFO *prGlueInfo)
 		if (i >= MAX_NUM_GROUP_ADDR)
 			return;
 		wlanoidSetP2PMulticastList(prGlueInfo->prAdapter,
-					   &(prGlueInfo->prP2PDevInfo->aucMCAddrList[0]),
-					   (i * ETH_ALEN), &u4SetInfoLen);
+			&(prGlueInfo->prP2PDevInfo->aucMCAddrList[0]),
+			(i * ETH_ALEN), &u4SetInfoLen);
 
 	}
 
 }				/* end of p2pSetMulticastList() */
 
-/*----------------------------------------------------------------------------*/
+/*---------------------------------------------------------------------------*/
 /*!
- * * \brief This function is TX entry point of NET DEVICE.
- * *
- * * \param[in] prSkb  Pointer of the sk_buff to be sent
- * * \param[in] prDev  Pointer to struct net_device
- * *
- * * \retval NETDEV_TX_OK - on success.
- * * \retval NETDEV_TX_BUSY - on failure, packet will be discarded by upper layer.
+ *  \brief This function is TX entry point of NET DEVICE.
+ *
+ *  \param[in] prSkb  Pointer of the sk_buff to be sent
+ *  \param[in] prDev  Pointer to struct net_device
+ *
+ * \retval NETDEV_TX_OK - on success.
+ * \retval NETDEV_TX_BUSY - on failure, packet will be discarded by upper layer.
  */
-/*----------------------------------------------------------------------------*/
+/*---------------------------------------------------------------------------*/
 int p2pHardStartXmit(IN struct sk_buff *prSkb, IN struct net_device *prDev)
 {
-	struct NETDEV_PRIVATE_GLUE_INFO *prNetDevPrivate = (struct NETDEV_PRIVATE_GLUE_INFO *) NULL;
+	struct NETDEV_PRIVATE_GLUE_INFO *prNetDevPrivate =
+		(struct NETDEV_PRIVATE_GLUE_INFO *) NULL;
 	struct GLUE_INFO *prGlueInfo = NULL;
 	uint8_t ucBssIndex;
 	struct BSS_INFO *prP2pBssInfo = NULL;
@@ -1653,7 +1761,8 @@ int p2pHardStartXmit(IN struct sk_buff *prSkb, IN struct net_device *prDev)
 	ASSERT(prSkb);
 	ASSERT(prDev);
 
-	prNetDevPrivate = (struct NETDEV_PRIVATE_GLUE_INFO *) netdev_priv(prDev);
+	prNetDevPrivate = (struct NETDEV_PRIVATE_GLUE_INFO *)
+		netdev_priv(prDev);
 	prGlueInfo = prNetDevPrivate->prGlueInfo;
 	ucBssIndex = prNetDevPrivate->ucBssIdx;
 
@@ -1672,13 +1781,15 @@ int p2pHardStartXmit(IN struct sk_buff *prSkb, IN struct net_device *prDev)
 /*!
  * \brief A method of struct net_device, a primary SOCKET interface to configure
  *        the interface lively. Handle an ioctl call on one of our devices.
- *        Everything Linux ioctl specific is done here. Then we pass the contents
+ *        Everything Linux ioctl specific is done here.
+ *        Then we pass the contents
  *        of the ifr->data to the request message handler.
  *
  * \param[in] prDev      Linux kernel netdevice
  *
- * \param[in] prIFReq    Our private ioctl request structure, typed for the generic
- *                       struct ifreq so we can use ptr to function
+ * \param[in] prIFReq    Our private ioctl request structure,
+ *                       typed for the generic struct ifreq
+ *                       so we can use ptr to function
  *
  * \param[in] cmd        Command ID
  *
@@ -1734,7 +1845,9 @@ int p2pDoIOCTL(struct net_device *prDev, struct ifreq *prIfReq, int i4Cmd)
 				break;
 			}
 
-			if (copy_from_user(prExtraBuf, prIwReq->u.encoding.pointer, prIwReq->u.encoding.length))
+			if (copy_from_user(prExtraBuf,
+				prIwReq->u.encoding.pointer,
+				prIwReq->u.encoding.length))
 				ret = -EFAULT;
 		} else if (prIwReq->u.encoding.length != 0) {
 			ret = -EINVAL;
@@ -1742,7 +1855,9 @@ int p2pDoIOCTL(struct net_device *prDev, struct ifreq *prIfReq, int i4Cmd)
 		}
 
 		if (ret == 0)
-			ret = mtk_p2p_wext_set_key(prDev, &rIwReqInfo, &(prIwReq->u), prExtraBuf);
+			ret = mtk_p2p_wext_set_key(prDev,
+				&rIwReqInfo,
+				&(prIwReq->u), prExtraBuf);
 
 		kalMemFree(prExtraBuf, VIR_MEM_TYPE, u4ExtraSize);
 		prExtraBuf = NULL;
@@ -1751,7 +1866,9 @@ int p2pDoIOCTL(struct net_device *prDev, struct ifreq *prIfReq, int i4Cmd)
 	case SIOCSIWMLME:
 		/* IW_MLME_DISASSOC used for disconnection */
 		if (prIwReq->u.data.length != sizeof(struct iw_mlme)) {
-			DBGLOG(INIT, INFO, "MLME buffer strange:%d\n", prIwReq->u.data.length);
+			DBGLOG(INIT, INFO,
+				"MLME buffer strange:%d\n",
+				prIwReq->u.data.length);
 			ret = -EINVAL;
 			break;
 		}
@@ -1767,10 +1884,12 @@ int p2pDoIOCTL(struct net_device *prDev, struct ifreq *prIfReq, int i4Cmd)
 			break;
 		}
 
-		if (copy_from_user(prExtraBuf, prIwReq->u.data.pointer, sizeof(struct iw_mlme)))
+		if (copy_from_user(prExtraBuf,
+			prIwReq->u.data.pointer, sizeof(struct iw_mlme)))
 			ret = -EFAULT;
 		else
-			ret = mtk_p2p_wext_mlme_handler(prDev, &rIwReqInfo, &(prIwReq->u), prExtraBuf);
+			ret = mtk_p2p_wext_mlme_handler(prDev,
+				&rIwReqInfo, &(prIwReq->u), prExtraBuf);
 
 		kalMemFree(prExtraBuf, VIR_MEM_TYPE, sizeof(struct iw_mlme));
 		prExtraBuf = NULL;
@@ -1778,15 +1897,18 @@ int p2pDoIOCTL(struct net_device *prDev, struct ifreq *prIfReq, int i4Cmd)
 
 	case SIOCGIWPRIV:
 		/* This ioctl is used to list all IW privilege ioctls */
-		ret = mtk_p2p_wext_get_priv(prDev, &rIwReqInfo, &(prIwReq->u), NULL);
+		ret = mtk_p2p_wext_get_priv(prDev,
+			&rIwReqInfo, &(prIwReq->u), NULL);
 		break;
 
 	case SIOCGIWSCAN:
-		ret = mtk_p2p_wext_discovery_results(prDev, &rIwReqInfo, &(prIwReq->u), NULL);
+		ret = mtk_p2p_wext_discovery_results(prDev,
+			&rIwReqInfo, &(prIwReq->u), NULL);
 		break;
 
 	case SIOCSIWAUTH:
-		ret = mtk_p2p_wext_set_auth(prDev, &rIwReqInfo, &(prIwReq->u), NULL);
+		ret = mtk_p2p_wext_set_auth(prDev,
+			&rIwReqInfo, &(prIwReq->u), NULL);
 		break;
 
 	case IOC_P2P_CFG_DEVICE:
@@ -1801,14 +1923,15 @@ int p2pDoIOCTL(struct net_device *prDev, struct ifreq *prIfReq, int i4Cmd)
 	case IOC_P2P_GET_REQ_DEVICE_INFO:
 #if 0
 		ret = rP2PIwPrivHandler[i4Cmd - SIOCIWFIRSTPRIV](prDev,
-									&rIwReqInfo,
-									&(prIwReq->u),
-									(char *)&(prIwReq->u));
+				&rIwReqInfo,
+				&(prIwReq->u),
+				(char *)&(prIwReq->u));
 #endif
 		break;
 #if CFG_SUPPORT_P2P_RSSI_QUERY
 	case SIOCGIWSTATS:
-		ret = mtk_p2p_wext_get_rssi(prDev, &rIwReqInfo, &(prIwReq->u), NULL);
+		ret = mtk_p2p_wext_get_rssi(prDev,
+			&rIwReqInfo, &(prIwReq->u), NULL);
 		break;
 #endif
 	default:
@@ -1820,7 +1943,7 @@ int p2pDoIOCTL(struct net_device *prDev, struct ifreq *prIfReq, int i4Cmd)
 }				/* end of p2pDoIOCTL() */
 
 
-/*----------------------------------------------------------------------------*/
+/*---------------------------------------------------------------------------*/
 /*!
  * \brief To override p2p interface address
  *
@@ -1832,7 +1955,7 @@ int p2pDoIOCTL(struct net_device *prDev, struct ifreq *prIfReq, int i4Cmd)
  * \retval -EFAULT For fail.
  *
  */
-/*----------------------------------------------------------------------------*/
+/*---------------------------------------------------------------------------*/
 int p2pSetMACAddress(IN struct net_device *prDev, void *addr)
 {
 	struct ADAPTER *prAdapter = NULL;
