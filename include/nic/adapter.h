@@ -935,6 +935,10 @@ struct WIFI_VAR {
 	enum PARAM_POWER_MODE ePowerMode;
 
 	u_int8_t fgNvramCheckEn; /* nvram checking in scan result*/
+
+#if CFG_SUPPORT_SPE_IDX_CONTROL
+	u_int8_t ucSpeIdxCtrl;	/* 0: WF0, 1: WF1, 2: duplicate */
+#endif
 };
 
 /* cnm_timer module */
