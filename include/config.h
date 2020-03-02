@@ -1118,7 +1118,13 @@
  * Flags to force enable performance monitor even when screen is OFF
  *------------------------------------------------------------------------------
  */
-#define CFG_FORCE_ENABLE_PERF_MONITOR 0
+#define CFG_FORCE_ENABLE_PERF_MONITOR	0
+
+/*------------------------------------------------------------------------------
+ * Flags to ignore invalid auth tsn issue (ex. ALPS03089071)
+ *------------------------------------------------------------------------------
+ */
+#define CFG_IGNORE_INVALID_AUTH_TSN	1
 
 /*------------------------------------------------------------------------------
  * Flags of Network Controlled HandOver(NCHO) support
