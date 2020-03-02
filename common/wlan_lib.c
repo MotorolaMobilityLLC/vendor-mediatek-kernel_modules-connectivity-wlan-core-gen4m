@@ -1065,44 +1065,8 @@ uint32_t wlanProcessCommandQueue(IN struct ADAPTER
 		prCmdInfo = (struct CMD_INFO *) prQueueEntry;
 
 		switch (prCmdInfo->eCmdType) {
-		case COMMAND_TYPE_NETWORK_IOCTL: {
-			struct WIFI_CMD *prWifiCmd = (struct WIFI_CMD *) NULL;
-			struct CMD_802_11_KEY *prKey = (struct CMD_802_11_KEY *)
-						       NULL;
-			struct BSS_INFO *prBssInfo = (struct BSS_INFO *) NULL;
-
-			eFrameAction = FRAME_ACTION_TX_PKT;
-			do {
-				prWifiCmd = (struct WIFI_CMD *)
-						(prCmdInfo->pucInfoBuffer);
-				prKey = (struct CMD_802_11_KEY *)
-						(prWifiCmd->aucBuffer);
-				prBssInfo =
-					prAdapter->aprBssInfo[prKey->ucBssIdx];
-
-				if ((prCmdInfo->ucCID != CMD_ID_ADD_REMOVE_KEY)
-				    || !prKey->ucTxKey
-				    || !prKey->ucAddRemove
-				    || (
-				    prKey->ucAlgorithmId != CIPHER_SUITE_TKIP &&
-				    prKey->ucAlgorithmId != CIPHER_SUITE_CCMP))
-					break;
-				switch (prBssInfo->eKeyAction) {
-				case SEC_DROP_KEY_COMMAND:
-					eFrameAction = FRAME_ACTION_DROP_PKT;
-					break;
-				case SEC_QUEUE_KEY_COMMAND:
-					eFrameAction = FRAME_ACTION_QUEUE_PKT;
-					break;
-				case SEC_TX_KEY_COMMAND:
-				default:
-					eFrameAction = FRAME_ACTION_TX_PKT;
-					break;
-				}
-			} while (FALSE);
-			break;
-		}
 		case COMMAND_TYPE_GENERAL_IOCTL:
+		case COMMAND_TYPE_NETWORK_IOCTL:
 			/* command packet will be always sent */
 			eFrameAction = FRAME_ACTION_TX_PKT;
 			break;
@@ -8532,14 +8496,11 @@ wlanPktTxDone(IN struct ADAPTER *prAdapter,
 		prMsduInfo->ucWlanIndex, prMsduInfo->ucPID, rTxDoneStatus,
 		prMsduInfo->ucTxSeqNum);
 
-	if (prMsduInfo->ucPktType == ENUM_PKT_1X) {
+	if (prMsduInfo->ucPktType == ENUM_PKT_1X)
 		p2pRoleFsmNotifyEapolTxStatus(prAdapter,
 				prMsduInfo->ucBssIndex,
 				prMsduInfo->eEapolKeyType,
 				rTxDoneStatus);
-		secHandleEapolTxStatus(prAdapter, prMsduInfo,
-				rTxDoneStatus);
-	}
 
 	return WLAN_STATUS_SUCCESS;
 }

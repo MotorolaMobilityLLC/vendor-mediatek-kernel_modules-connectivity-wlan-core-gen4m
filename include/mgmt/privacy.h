@@ -270,15 +270,6 @@ void secPostUpdateAddr(IN struct ADAPTER *prAdapter,
 
 enum ENUM_EAPOL_KEY_TYPE_T secGetEapolKeyType(
 	uint8_t *pucPacket);
-
-void secHandleRxEapolPacket(IN struct ADAPTER *prAdapter,
-			    IN struct SW_RFB *prRetSwRfb,
-			    IN struct STA_RECORD *prStaRec);
-
-void secHandleEapolTxStatus(IN struct ADAPTER *prAdapter,
-			    IN struct MSDU_INFO *prMsduInfo,
-			    IN enum ENUM_TX_RESULT_CODE rTxDoneStatus);
-
 /*******************************************************************************
  *                              F U N C T I O N S
  *******************************************************************************

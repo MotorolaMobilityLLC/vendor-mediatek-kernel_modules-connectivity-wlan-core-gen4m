@@ -1792,9 +1792,6 @@ void nicRxProcessDataPacket(IN struct ADAPTER *prAdapter,
 							prRetSwRfb);
 #endif
 					}
-					secHandleRxEapolPacket(
-						prAdapter, prRetSwRfb,
-						prStaRec);
 					nicRxProcessPktWithoutReorder(
 						prAdapter, prRetSwRfb);
 					break;
