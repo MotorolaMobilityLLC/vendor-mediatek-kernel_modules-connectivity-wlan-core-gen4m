@@ -1038,7 +1038,8 @@ void aisFsmSteps(IN struct ADAPTER *prAdapter, enum ENUM_AIS_STATE eNextState)
 #if CFG_SELECT_BSS_BASE_ON_MULTI_PARAM
 				prBssDesc = scanSearchBssDescByScoreForAis(prAdapter);
 #else
-				prBssDesc = scanSearchBssDescByPolicy(prAdapter, NETWORK_TYPE_AIS_INDEX);
+				prBssDesc = scanSearchBssDescByPolicy(prAdapter,
+						prAisBssInfo->ucBssIndex);
 #endif
 			}
 #endif
