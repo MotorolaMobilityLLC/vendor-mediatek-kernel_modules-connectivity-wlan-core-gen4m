@@ -204,7 +204,8 @@ struct BUS_INFO {
 	const struct PCIE_CHIP_CR_MAPPING *bus2chip;
 	const unsigned int tx_ring_cmd_idx;
 	const unsigned int tx_ring_fwdl_idx;
-	const unsigned int tx_ring_data_idx;
+	const unsigned int tx_ring0_data_idx;
+	const unsigned int tx_ring1_data_idx;
 	const bool fgCheckDriverOwnInt;
 	const bool fgInitPCIeInt;
 	const uint32_t u4DmaMask;

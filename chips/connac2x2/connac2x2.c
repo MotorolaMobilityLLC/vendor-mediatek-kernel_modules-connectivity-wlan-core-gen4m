@@ -192,7 +192,11 @@ struct BUS_INFO connac2x2_bus_info = {
 	.bus2chip = connac2x2_bus2chip_cr_mapping,
 	.tx_ring_fwdl_idx = 3,
 	.tx_ring_cmd_idx = 15,
-	.tx_ring_data_idx = 0,
+	.tx_ring0_data_idx = 0,
+	/* Make sure your HIF_TX_MSDU_TOKEN_NUM is larger enough
+	 * to support max HW(or SW) AMSDU number.
+	 */
+	.tx_ring1_data_idx = 1,
 	.fgCheckDriverOwnInt = FALSE,
 	.fgInitPCIeInt = FALSE,
 	.u4DmaMask = 36,

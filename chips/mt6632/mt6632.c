@@ -229,7 +229,8 @@ void mt6632PdmaConfig(struct GLUE_INFO *prGlueInfo, u_int8_t enable)
 		IntMask.field.rx_done_1 = 1;
 		IntMask.field.tx_done = BIT(prBusInfo->tx_ring_fwdl_idx) |
 			BIT(prBusInfo->tx_ring_cmd_idx) |
-			BIT(prBusInfo->tx_ring_data_idx);
+			BIT(prBusInfo->tx_ring0_data_idx)|
+			BIT(prBusInfo->tx_ring1_data_idx);
 	} else {
 		GloCfg.field.EnableRxDMA = 0;
 		GloCfg.field.EnableTxDMA = 0;
@@ -284,7 +285,8 @@ void mt6632EnableInterrupt(IN struct ADAPTER *prAdapter)
 	IntMask.field.rx_done_1 = 1;
 	IntMask.field.tx_done = BIT(prBusInfo->tx_ring_fwdl_idx) |
 		BIT(prBusInfo->tx_ring_cmd_idx) |
-		BIT(prBusInfo->tx_ring_data_idx);
+		BIT(prBusInfo->tx_ring0_data_idx)|
+		BIT(prBusInfo->tx_ring1_data_idx);
 	IntMask.field.tx_coherent = 0;
 	IntMask.field.rx_coherent = 0;
 	IntMask.field.tx_dly_int = 0;
@@ -331,7 +333,8 @@ struct BUS_INFO mt6632_bus_info = {
 	.bus2chip = mt6632_bus2chip_cr_mapping,
 	.tx_ring_fwdl_idx = 3,
 	.tx_ring_cmd_idx = 2,
-	.tx_ring_data_idx = 0,
+	.tx_ring0_data_idx = 0,
+	.tx_ring1_data_idx = 0, /* no used */
 	.fgCheckDriverOwnInt = TRUE,
 	.fgInitPCIeInt = FALSE,
 	.u4DmaMask = 32,

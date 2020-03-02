@@ -2825,6 +2825,7 @@ uint32_t gmGetDequeueQuota(
 
 	struct QUE_MGT *prQM = &prAdapter->rQM;
 
+	/* Only apply to SDIO, PCIE/AXI use HW DMA */
 	if ((prAdapter->rWifiVar.uDeQuePercentEnable == FALSE) ||
 		(prQM->fgIsTxResrouceControlEn == FALSE))
 		return u4TotalQuota;

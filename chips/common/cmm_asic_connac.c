@@ -454,10 +454,13 @@ void asicPcieDmaShdlInit(IN struct ADAPTER *prAdapter)
 {
 	uint32_t u4BaseAddr, u4MacVal;
 	struct mt66xx_chip_info *prChipInfo;
+	struct BUS_INFO *prBusInfo;
+	uint32_t u4FreePageCnt;
 
 	ASSERT(prAdapter);
 
 	prChipInfo = prAdapter->chip_info;
+	prBusInfo = prChipInfo->bus_info;
 	u4BaseAddr = prChipInfo->u4HifDmaShdlBaseAddr;
 
 	HAL_MCR_RD(prAdapter,
@@ -484,17 +487,42 @@ void asicPcieDmaShdlInit(IN struct ADAPTER *prAdapter)
 	 CONN_HIF_DMASHDL_TOP_REFILL_CONTROL_GROUP13_REFILL_DISABLE_MASK |
 	 CONN_HIF_DMASHDL_TOP_REFILL_CONTROL_GROUP14_REFILL_DISABLE_MASK |
 	 CONN_HIF_DMASHDL_TOP_REFILL_CONTROL_GROUP15_REFILL_DISABLE_MASK);
+	/* Always use group 1 if we support 2 Data TxRing */
+	if (prBusInfo->tx_ring0_data_idx != prBusInfo->tx_ring1_data_idx) {
+		u4MacVal &=
+	~CONN_HIF_DMASHDL_TOP_REFILL_CONTROL_GROUP1_REFILL_DISABLE_MASK;
+	}
 	HAL_MCR_WR(prAdapter,
 		   CONN_HIF_DMASHDL_REFILL_CONTROL(u4BaseAddr), u4MacVal);
 
-	u4MacVal = DMASHDL_MIN_QUOTA_NUM(0x3);
-	u4MacVal |= DMASHDL_MAX_QUOTA_NUM(0xfff);
-	HAL_MCR_WR(prAdapter,
-		   CONN_HIF_DMASHDL_GROUP0_CTRL(u4BaseAddr), u4MacVal);
+	/* Always use group 1 if we support 2 TxRing for data */
+	if (prBusInfo->tx_ring0_data_idx != prBusInfo->tx_ring1_data_idx) {
+		/* HW has no gruantee to switch Quota at runtime */
+		/* Just separate equally. */
+		HAL_MCR_RD(prAdapter,
+			CONN_HIF_DMASHDL_STATUS_RD(u4BaseAddr), &u4FreePageCnt);
+		u4FreePageCnt = (u4FreePageCnt & DMASHDL_FREE_PG_CNT_MASK)
+			>> DMASHDL_FREE_PG_CNT_OFFSET;
+		u4MacVal = DMASHDL_MIN_QUOTA_NUM(0x3);
+		u4MacVal |= DMASHDL_MAX_QUOTA_NUM(u4FreePageCnt/2);
+		HAL_MCR_WR(prAdapter,
+			CONN_HIF_DMASHDL_GROUP0_CTRL(u4BaseAddr), u4MacVal);
+		HAL_MCR_WR(prAdapter,
+			CONN_HIF_DMASHDL_GROUP1_CTRL(u4BaseAddr), u4MacVal);
+		/* Wmm1: group 1, others group 0 */
+		HAL_MCR_WR(prAdapter,
+			CONN_HIF_DMASHDL_Q_MAP0(u4BaseAddr), 0x11110000);
+	} else {
+		u4MacVal = DMASHDL_MIN_QUOTA_NUM(0x3);
+		u4MacVal |= DMASHDL_MAX_QUOTA_NUM(0xFFF);
+		HAL_MCR_WR(prAdapter,
+			CONN_HIF_DMASHDL_GROUP0_CTRL(u4BaseAddr), u4MacVal);
+		u4MacVal = 0;
+		HAL_MCR_WR(prAdapter,
+			CONN_HIF_DMASHDL_GROUP1_CTRL(u4BaseAddr), u4MacVal);
+	}
 
 	u4MacVal = 0;
-	HAL_MCR_WR(prAdapter,
-		   CONN_HIF_DMASHDL_GROUP1_CTRL(u4BaseAddr), u4MacVal);
 	HAL_MCR_WR(prAdapter,
 		   CONN_HIF_DMASHDL_GROUP2_CTRL(u4BaseAddr), u4MacVal);
 	HAL_MCR_WR(prAdapter,
@@ -570,7 +598,8 @@ void asicPdmaConfig(struct GLUE_INFO *prGlueInfo, u_int8_t fgEnable)
 		IntMask.field.tx_done =
 			BIT(prBusInfo->tx_ring_fwdl_idx) |
 			BIT(prBusInfo->tx_ring_cmd_idx) |
-			BIT(prBusInfo->tx_ring_data_idx);
+			BIT(prBusInfo->tx_ring0_data_idx) |
+			BIT(prBusInfo->tx_ring1_data_idx);
 		IntMask.field_conn.tx_coherent = 0;
 		IntMask.field_conn.rx_coherent = 0;
 		IntMask.field_conn.tx_dly_int = 0;

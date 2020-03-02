@@ -249,6 +249,13 @@ uint32_t halDumpHifStatus(IN struct ADAPTER *prAdapter,
 			halDumpTxRing(prGlueInfo, u4Idx, u4DmaIdx);
 			halDumpTxRing(prGlueInfo, u4Idx, prTxRing->TxSwUsedIdx);
 		}
+
+		if (u4Idx == TX_RING_DATA1_IDX_1) {
+			halDumpTxRing(prGlueInfo, u4Idx, prTxRing->TxCpuIdx);
+			halDumpTxRing(prGlueInfo, u4Idx, u4CpuIdx);
+			halDumpTxRing(prGlueInfo, u4Idx, u4DmaIdx);
+			halDumpTxRing(prGlueInfo, u4Idx, prTxRing->TxSwUsedIdx);
+		}
 	}
 
 	for (u4Idx = 0; u4Idx < NUM_OF_RX_RING; u4Idx++) {
@@ -484,12 +491,18 @@ void halShowPdmaInfo(IN struct ADAPTER *prAdapter)
 	DBGLOG(HAL, INFO, "%10s%12s%18s%10s%10s%10s\n",
 		"Tx Ring", "Reg", "Base", "Cnt", "CIDX", "DIDX");
 
-	for (i = 0; i < 3; i++) {
+	for (i = 0; i < 4; i++) {
 		if (i == 0) {
-			offset = prBus_info->tx_ring_data_idx * MT_RINGREG_DIFF;
-			offset_ext = prBus_info->tx_ring_data_idx *
+			offset = prBus_info->tx_ring0_data_idx *
+						MT_RINGREG_DIFF;
+			offset_ext = prBus_info->tx_ring0_data_idx *
 					MT_RINGREG_EXT_DIFF;
 		} else if (i == 1) {
+			offset = prBus_info->tx_ring1_data_idx *
+					MT_RINGREG_DIFF;
+			offset_ext = prBus_info->tx_ring1_data_idx *
+					MT_RINGREG_EXT_DIFF;
+		} else if (i == 2) {
 			offset = prBus_info->tx_ring_fwdl_idx * MT_RINGREG_DIFF;
 			offset_ext = prBus_info->tx_ring_fwdl_idx *
 					MT_RINGREG_EXT_DIFF;
@@ -516,27 +529,27 @@ void halShowPdmaInfo(IN struct ADAPTER *prAdapter)
 	DBGLOG(HAL, INFO, "Rx Ring configuration\n");
 	DBGLOG(HAL, INFO, "%10s%12s%18s%10s%10s%10s\n",
 		"Rx Ring", "Reg", "Base", "Cnt", "CIDX", "DIDX");
-	HAL_MCR_RD(prAdapter, WPDMA_RX_RING0_CTRL0, &Base[3]);
-	HAL_MCR_RD(prAdapter, WPDMA_RX_RING0_BASE_PTR_EXT, &Base_Ext[3]);
-	HAL_MCR_RD(prAdapter, WPDMA_RX_RING0_CTRL1, &Cnt[3]);
-	HAL_MCR_RD(prAdapter, WPDMA_RX_RING0_CTRL2, &Cidx[3]);
-	HAL_MCR_RD(prAdapter, WPDMA_RX_RING0_CTRL3, &Didx[3]);
+	HAL_MCR_RD(prAdapter, WPDMA_RX_RING0_CTRL0, &Base[4]);
+	HAL_MCR_RD(prAdapter, WPDMA_RX_RING0_BASE_PTR_EXT, &Base_Ext[4]);
+	HAL_MCR_RD(prAdapter, WPDMA_RX_RING0_CTRL1, &Cnt[4]);
+	HAL_MCR_RD(prAdapter, WPDMA_RX_RING0_CTRL2, &Cidx[4]);
+	HAL_MCR_RD(prAdapter, WPDMA_RX_RING0_CTRL3, &Didx[4]);
 	kalSprintf(buf, "%10d  0x%08x  0x%016llx%10d%10d%10d",
 		0, WPDMA_RX_RING0_CTRL0,
-		(Base[3] + ((uint64_t)Base_Ext[3] << 32)),
-		Cnt[3], Cidx[3], Didx[3]);
-	DBGLOG(HAL, INFO, "%s\n", buf);
-
-	HAL_MCR_RD(prAdapter, WPDMA_RX_RING0_CTRL0 + MT_RINGREG_DIFF, &Base[4]);
-	HAL_MCR_RD(prAdapter, WPDMA_RX_RING0_BASE_PTR_EXT + MT_RINGREG_EXT_DIFF,
-			&Base_Ext[4]);
-	HAL_MCR_RD(prAdapter, WPDMA_RX_RING0_CTRL1 + MT_RINGREG_DIFF, &Cnt[4]);
-	HAL_MCR_RD(prAdapter, WPDMA_RX_RING0_CTRL2 + MT_RINGREG_DIFF, &Cidx[4]);
-	HAL_MCR_RD(prAdapter, WPDMA_RX_RING0_CTRL3 + MT_RINGREG_DIFF, &Didx[4]);
-	kalSprintf(buf, "%10d  0x%08x  0x%016llx%10d%10d%10d",
-		1, WPDMA_RX_RING0_CTRL0 + MT_RINGREG_DIFF,
 		(Base[4] + ((uint64_t)Base_Ext[4] << 32)),
 		Cnt[4], Cidx[4], Didx[4]);
+	DBGLOG(HAL, INFO, "%s\n", buf);
+
+	HAL_MCR_RD(prAdapter, WPDMA_RX_RING0_CTRL0 + MT_RINGREG_DIFF, &Base[5]);
+	HAL_MCR_RD(prAdapter, WPDMA_RX_RING0_BASE_PTR_EXT + MT_RINGREG_EXT_DIFF,
+			&Base_Ext[5]);
+	HAL_MCR_RD(prAdapter, WPDMA_RX_RING0_CTRL1 + MT_RINGREG_DIFF, &Cnt[5]);
+	HAL_MCR_RD(prAdapter, WPDMA_RX_RING0_CTRL2 + MT_RINGREG_DIFF, &Cidx[5]);
+	HAL_MCR_RD(prAdapter, WPDMA_RX_RING0_CTRL3 + MT_RINGREG_DIFF, &Didx[5]);
+	kalSprintf(buf, "%10d  0x%08x  0x%016llx%10d%10d%10d",
+		1, WPDMA_RX_RING0_CTRL0 + MT_RINGREG_DIFF,
+		(Base[5] + ((uint64_t)Base_Ext[5] << 32)),
+		Cnt[5], Cidx[5], Didx[5]);
 	DBGLOG(HAL, INFO, "%s\n", buf);
 
 	/* PDMA Tx/Rx descriptor & packet content */

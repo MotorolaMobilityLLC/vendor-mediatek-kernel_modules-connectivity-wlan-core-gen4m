@@ -117,7 +117,11 @@
 
 #define HIF_TX_INIT_CMD_PORT				TX_RING_FWDL_IDX_3
 
+#if CFG_SUPPORT_DBDC
+#define HIF_TX_MSDU_TOKEN_NUM				(TX_RING_SIZE * 3)
+#else
 #define HIF_TX_MSDU_TOKEN_NUM				(TX_RING_SIZE * 2)
+#endif
 
 #define HIF_TX_PAYLOAD_LENGTH				72
 
@@ -342,6 +346,7 @@ struct MSDU_TOKEN_ENTRY {
 	uint32_t u4DmaLength;
 	phys_addr_t rPktDmaAddr;
 	uint32_t u4PktDmaLength;
+	uint16_t u2Port; /* tx ring number */
 };
 
 struct MSDU_TOKEN_INFO {
