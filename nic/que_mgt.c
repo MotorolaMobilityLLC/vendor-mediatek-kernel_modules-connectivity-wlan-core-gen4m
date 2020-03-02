@@ -2088,6 +2088,7 @@ void qmAdjustTcQuotaPle(IN struct ADAPTER *prAdapter,
 	int32_t i4pages;
 	struct TX_CTRL *prTxCtrl;
 	struct TX_TCQ_STATUS *prTc;
+	int32_t i4TotalExtraQuota = 0;
 
 	ASSERT(prAdapter);
 
@@ -2098,7 +2099,7 @@ void qmAdjustTcQuotaPle(IN struct ADAPTER *prAdapter,
 	if (!prTc->fgNeedPleCtrl)
 		return;
 
-
+	/* collect free PLE resource */
 	for (i = TC0_INDEX; i < TC_NUM; i++) {
 
 		if (!nicTxResourceIsPleCtrlNeeded(prAdapter, i))
@@ -2106,26 +2107,97 @@ void qmAdjustTcQuotaPle(IN struct ADAPTER *prAdapter,
 
 		/* adjust ple resource */
 		i4pages = prTcqAdjust->ai4Variation[i] *
-			  NIX_TX_PLE_PAGE_CNT_PER_FRAME;
+				NIX_TX_PLE_PAGE_CNT_PER_FRAME;
 
 		if (i4pages < 0) {
 			/* donate resource to other TC */
 			if (prTcqStatus->au4FreePageCount_PLE[i] < (-i4pages)) {
-				/* not enought to give */
+				/* not enough to give */
 				i4pages =
 					-(prTcqStatus->au4FreePageCount_PLE[i]);
 			}
+			i4TotalExtraQuota += -i4pages;
+
+			prTcqStatus->au4FreePageCount_PLE[i] += i4pages;
+			prTcqStatus->au4MaxNumOfPage_PLE[i] += i4pages;
+
+			prTcqStatus->au4FreeBufferCount_PLE[i] +=
+				(i4pages / NIX_TX_PLE_PAGE_CNT_PER_FRAME);
+			prTcqStatus->au4MaxNumOfBuffer_PLE[i] +=
+				(i4pages / NIX_TX_PLE_PAGE_CNT_PER_FRAME);
 		}
-
-
-		prTcqStatus->au4FreePageCount_PLE[i] += i4pages;
-		prTcqStatus->au4MaxNumOfPage_PLE[i] += i4pages;
-
-		prTcqStatus->au4FreeBufferCount_PLE[i] +=
-			prTcqAdjust->ai4Variation[i];
-		prTcqStatus->au4MaxNumOfBuffer_PLE[i] +=
-			prTcqAdjust->ai4Variation[i];
 	}
+
+	/* distribute PLE resource */
+	for (i = TC0_INDEX; i < TC_NUM; i++) {
+		if (!nicTxResourceIsPleCtrlNeeded(prAdapter, i))
+			continue;
+
+		/* adjust ple resource */
+		i4pages = prTcqAdjust->ai4Variation[i] *
+				NIX_TX_PLE_PAGE_CNT_PER_FRAME;
+
+		if (i4pages > 0) {
+			if (i4TotalExtraQuota >= i4pages) {
+				i4TotalExtraQuota -= i4pages;
+			} else {
+				i4pages = i4TotalExtraQuota;
+				i4TotalExtraQuota = 0;
+			}
+			prTcqStatus->au4FreePageCount_PLE[i] += i4pages;
+			prTcqStatus->au4MaxNumOfPage_PLE[i] += i4pages;
+
+			prTcqStatus->au4FreeBufferCount_PLE[i] =
+				(prTcqStatus->au4FreePageCount_PLE[i] /
+					NIX_TX_PLE_PAGE_CNT_PER_FRAME);
+			prTcqStatus->au4MaxNumOfBuffer_PLE[i] =
+				(prTcqStatus->au4MaxNumOfBuffer_PLE[i] /
+					NIX_TX_PLE_PAGE_CNT_PER_FRAME);
+		}
+	}
+
+	/* distribute remaining PLE resource */
+	while (i4TotalExtraQuota != 0) {
+		DBGLOG(QM, INFO,
+				"distribute remaining PLE resource[%u]\n",
+				i4TotalExtraQuota);
+		for (i = TC0_INDEX; i < TC_NUM; i++) {
+			if (!nicTxResourceIsPleCtrlNeeded(prAdapter, i))
+				continue;
+
+			if (i4TotalExtraQuota >=
+				NIX_TX_PLE_PAGE_CNT_PER_FRAME) {
+				prTcqStatus->au4FreePageCount_PLE[i] +=
+					NIX_TX_PLE_PAGE_CNT_PER_FRAME;
+				prTcqStatus->au4MaxNumOfPage_PLE[i] +=
+					NIX_TX_PLE_PAGE_CNT_PER_FRAME;
+
+				prTcqStatus->au4FreeBufferCount_PLE[i] += 1;
+				prTcqStatus->au4MaxNumOfBuffer_PLE[i] += 1;
+
+				i4TotalExtraQuota -=
+					NIX_TX_PLE_PAGE_CNT_PER_FRAME;
+			} else {
+				/* remaining PLE pages are
+				 * not enough for a package
+				 */
+				prTcqStatus->au4FreePageCount_PLE[i] +=
+					i4TotalExtraQuota;
+				prTcqStatus->au4MaxNumOfPage_PLE[i] +=
+					i4TotalExtraQuota;
+
+				prTcqStatus->au4FreeBufferCount_PLE[i] =
+					(prTcqStatus->au4FreePageCount_PLE[i] /
+						NIX_TX_PLE_PAGE_CNT_PER_FRAME);
+				prTcqStatus->au4MaxNumOfBuffer_PLE[i] =
+					(prTcqStatus->au4MaxNumOfBuffer_PLE[i] /
+						NIX_TX_PLE_PAGE_CNT_PER_FRAME);
+
+				i4TotalExtraQuota = 0;
+			}
+		}
+	}
+
 }
 
 #endif
