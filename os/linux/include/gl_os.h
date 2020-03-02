@@ -275,6 +275,7 @@ extern const int32_t mtk_iface_combinations_sta_num;
 extern const struct ieee80211_iface_combination
 	*p_mtk_iface_combinations_p2p;
 extern const int32_t mtk_iface_combinations_p2p_num;
+extern uint8_t g_aucNvram[];
 
 #ifdef CONFIG_MTK_CONNSYS_DEDICATED_LOG_PATH
 typedef void (*wifi_fwlog_event_func_cb)(int, int);
@@ -402,6 +403,13 @@ enum ENUM_PKT_FLAG {
 	ENUM_PKT_DNS,		/* DNS */
 
 	ENUM_PKT_FLAG_NUM
+};
+
+enum ENUM_WLAN_DRV_BUF_TYPE_T {
+	ENUM_BUF_TYPE_NVRAM,
+	ENUM_BUF_TYPE_DRV_CFG,
+	ENUM_BUF_TYPE_FW_CFG,
+	ENUM_BUF_TYPE_NUM
 };
 
 struct GL_IO_REQ {
