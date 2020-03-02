@@ -1722,6 +1722,8 @@ struct ADAPTER {
 #endif
 	int8_t cArpNoResponseIdx;
 
+	u_int8_t fgEnDbgPowerMode;
+
 };				/* end of _ADAPTER_T */
 
 /*******************************************************************************
