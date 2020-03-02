@@ -1199,6 +1199,22 @@ void aisFsmSteps(IN struct ADAPTER *prAdapter, enum ENUM_AIS_STATE eNextState)
 					if ((prBssDesc) && (prBssDesc->fgIsConnected))
 						ASSERT(EQUAL_MAC_ADDR(prBssDesc->aucBSSID, prAisBssInfo->aucBSSID));
 #endif /* DBG */
+					if (prAisFsmInfo->
+						fgTargetChnlScanIssued) {
+					/* if target channel scan has issued,
+					 * and no roaming target is found,
+					 * need to do full scan again
+					 */
+						DBGLOG(AIS, INFO,
+						"[Roaming] No target found, try to full scan again\n");
+						prAisFsmInfo->
+							fgTargetChnlScanIssued
+							= FALSE;
+						eNextState
+							= AIS_STATE_LOOKING_FOR;
+						fgIsTransition = TRUE;
+						break;
+					}
 					/* We already associated with it, go back to NORMAL_TR */
 					/* TODO(Kevin): Roaming Fail */
 #if CFG_SUPPORT_ROAMING
@@ -1225,6 +1241,14 @@ void aisFsmSteps(IN struct ADAPTER *prAdapter, enum ENUM_AIS_STATE eNextState)
 
 						/* Transit to channel acquire */
 						eNextState = AIS_STATE_REQ_CHANNEL_JOIN;
+						/* Find target AP to roaming
+						 * and set
+						 *   fgTargetChnlScanIssued
+						 * to false
+						 */
+						prAisFsmInfo->
+							fgTargetChnlScanIssued
+							= FALSE;
 						fgIsTransition = TRUE;
 					}
 				}
@@ -1369,6 +1393,41 @@ void aisFsmSteps(IN struct ADAPTER *prAdapter, enum ENUM_AIS_STATE eNextState)
 				prScanReqMsg->ucChannelListNum = 1;
 				prScanReqMsg->arChnlInfoList[0].eBand = eBand;
 				prScanReqMsg->arChnlInfoList[0].ucChannelNum = ucChannel;
+			} else if (prAisBssInfo->eConnectionState
+					== PARAM_MEDIA_STATE_CONNECTED &&
+				(prAdapter->rWifiVar.rRoamingInfo.eCurrentState
+					== ROAMING_STATE_DISCOVERY) &&
+					prAisFsmInfo->fgTargetChnlScanIssued) {
+				struct RF_CHANNEL_INFO *prChnlInfo =
+					&prScanReqMsg->arChnlInfoList[0];
+				uint8_t ucChannelNum = 0;
+				uint8_t i = 0;
+
+				for (i = 0; i < prAdapter->rWifiVar.
+					rAisSpecificBssInfo.
+					ucCurEssChnlInfoNum; i++) {
+					ucChannelNum =
+					prAdapter->rWifiVar.
+						rAisSpecificBssInfo.
+						arCurEssChnlInfo[i].
+						ucChannel;
+					if ((ucChannelNum >= 1) &&
+						(ucChannelNum <= 14))
+						prChnlInfo[i].eBand = BAND_2G4;
+					else
+						prChnlInfo[i].eBand = BAND_5G;
+					prChnlInfo[i].ucChannelNum
+						= ucChannelNum;
+				}
+				prScanReqMsg->ucChannelListNum
+					= prAdapter->rWifiVar.
+						rAisSpecificBssInfo.
+						ucCurEssChnlInfoNum;
+				prScanReqMsg->eScanChannel
+					= SCAN_CHANNEL_SPECIFIED;
+				DBGLOG(AIS, INFO,
+					"[Roaming] Target Scan: ucChannelListNum=%d\n",
+					prScanReqMsg->ucChannelListNum);
 #if CFG_SUPPORT_NCHO
 			} else if (prAdapter->rNchoInfo.fgECHOEnabled &&
 				prAdapter->rNchoInfo.u4RoamScanControl == TRUE &&
@@ -4075,10 +4134,12 @@ void aisFsmRunEventRoamingDiscovery(IN struct ADAPTER *prAdapter, uint32_t u4Req
 		}
 	}
 
-	if (prAisFsmInfo->eCurrentState == AIS_STATE_NORMAL_TR && prAisFsmInfo->fgIsInfraChannelFinished == TRUE) {
-		if (eAisRequest == AIS_REQUEST_ROAMING_SEARCH)
+	if (prAisFsmInfo->eCurrentState == AIS_STATE_NORMAL_TR
+		&& prAisFsmInfo->fgIsInfraChannelFinished == TRUE) {
+		if (eAisRequest == AIS_REQUEST_ROAMING_SEARCH) {
+			prAisFsmInfo->fgTargetChnlScanIssued = TRUE;
 			aisFsmSteps(prAdapter, AIS_STATE_LOOKING_FOR);
-		else
+		} else
 			aisFsmSteps(prAdapter, AIS_STATE_SEARCH);
 	} else {
 		aisFsmIsRequestPending(prAdapter, AIS_REQUEST_ROAMING_SEARCH, TRUE);
