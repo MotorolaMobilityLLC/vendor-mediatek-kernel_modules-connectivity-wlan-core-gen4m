@@ -393,7 +393,7 @@ struct WLAN_DEBUG_INFO {
 #define UNICODE_TEXT(_msg)  TEXT(_msg)
 #define ASSERT(_exp) \
 	{ \
-		if (!(_exp) && !fgIsBusAccessFailed) { \
+		if (!(_exp)) { \
 			TCHAR rUbuf[256]; \
 			kalBreakPoint(); \
 			_stprintf(rUbuf, TEXT("Assertion failed: %s:%d %s\n"), \
@@ -404,7 +404,7 @@ struct WLAN_DEBUG_INFO {
 	}
 #define ASSERT_REPORT(_exp, _fmt) \
 	{ \
-		if (!(_exp) && !fgIsBusAccessFailed) { \
+		if (!(_exp)) { \
 			TCHAR rUbuf[256]; \
 			kalBreakPoint(); \
 			_stprintf(rUbuf, TEXT("Assertion failed: %s:%d %s\n"), \
@@ -423,7 +423,7 @@ struct WLAN_DEBUG_INFO {
 
 #define ASSERT(_exp) \
 	{ \
-		if (!(_exp) && !fgIsBusAccessFailed) { \
+		if (!(_exp)) { \
 			LOG_FUNC("Assertion failed: %s:%d (%s)\n", \
 				__FILE__, __LINE__, #_exp); \
 			kalBreakPoint(); \
@@ -431,7 +431,7 @@ struct WLAN_DEBUG_INFO {
 	}
 #define ASSERT_REPORT(_exp, _fmt) \
 	{ \
-		if (!(_exp) && !fgIsBusAccessFailed) { \
+		if (!(_exp)) { \
 			LOG_FUNC("Assertion failed: %s:%d (%s)\n", \
 				__FILE__, __LINE__, #_exp); \
 			LOG_FUNC _fmt; \
