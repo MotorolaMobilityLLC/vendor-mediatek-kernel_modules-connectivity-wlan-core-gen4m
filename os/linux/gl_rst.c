@@ -116,6 +116,19 @@ u_int8_t g_IsSubsysRstOverThreshold = FALSE;
 u_int8_t g_IsWfsysBusHang = FALSE;
 char *g_reason;
 #endif
+
+#if (CFG_ANDORID_CONNINFRA_COREDUMP_SUPPORT == 1)
+static uint8_t *apucRstReason[RST_REASON_MAX] = {
+	(uint8_t *) DISP_STRING("RST_UNKNOWN"),
+	(uint8_t *) DISP_STRING("RST_PROCESS_ABNORMAL_INT"),
+	(uint8_t *) DISP_STRING("RST_DRV_OWN_FAIL"),
+	(uint8_t *) DISP_STRING("RST_FW_ASSERT"),
+	(uint8_t *) DISP_STRING("RST_BT_TRIGGER"),
+	(uint8_t *) DISP_STRING("RST_OID_TIMEOUT"),
+	(uint8_t *) DISP_STRING("RST_CMD_TRIGGER"),
+};
+#endif
+
 /*******************************************************************************
  *                           P R I V A T E   D A T A
  *******************************************************************************
@@ -732,7 +745,10 @@ int wlan_reset_thread_main(void *data)
 				KAL_WAKE_UNLOCK(NULL, &g_IntrWakeLock);
 
 #if (CFG_ANDORID_CONNINFRA_COREDUMP_SUPPORT == 1)
-			fw_log_connsys_coredump_start(NULL);
+			if (eResetReason >= RST_REASON_MAX)
+				eResetReason = 0;
+			fw_log_connsys_coredump_start(
+				apucRstReason[eResetReason]);
 #endif
 
 			if (g_IsWholeChipRst) {
