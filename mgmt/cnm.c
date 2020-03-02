@@ -2266,7 +2266,7 @@ void cnmDbdcOpModeChangeDoneCallback(
 	       g_rDbdcInfo.eBssOpModeState[BSSID_3]);
 
 	for (ucBssLoopIndex = 0;
-	     ucBssLoopIndex <= prAdapter->ucHwBssIdNum;
+	     ucBssLoopIndex < prAdapter->ucHwBssIdNum;
 	     ucBssLoopIndex++) {
 
 		if (g_rDbdcInfo.eBssOpModeState[ucBssLoopIndex] ==
