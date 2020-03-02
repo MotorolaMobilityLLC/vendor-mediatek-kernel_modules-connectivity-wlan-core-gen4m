@@ -914,14 +914,27 @@ uint32_t wlanAdapterStart(IN struct ADAPTER *prAdapter,
 
 		if (u4Status == WLAN_STATUS_SUCCESS) {
 #if defined(_HIF_SDIO)
-			uint32_t u4WHISR = 0;
+			uint32_t *pu4WHISR = NULL;
 			uint16_t au2TxCount[16];
 
+			pu4WHISR = (uint32_t *)kalMemAlloc(sizeof(uint32_t),
+							   PHY_MEM_TYPE);
+			if (!pu4WHISR) {
+				DBGLOG(INIT, ERROR,
+				       "Allocate pu4WHISR fail\n");
+				u4Status = WLAN_STATUS_FAILURE;
+				break;
+			}
 			/* 1. reset interrupt status */
-			HAL_READ_INTR_STATUS(prAdapter, 4, (uint8_t *)&u4WHISR);
-			if (HAL_IS_TX_DONE_INTR(u4WHISR))
+			HAL_READ_INTR_STATUS(prAdapter, sizeof(uint32_t),
+					     (uint8_t *)pu4WHISR);
+			if (HAL_IS_TX_DONE_INTR(*pu4WHISR))
 				HAL_READ_TX_RELEASED_COUNT(prAdapter,
 							   au2TxCount);
+
+			if (pu4WHISR)
+				kalMemFree(pu4WHISR, PHY_MEM_TYPE,
+					   sizeof(uint32_t));
 #endif
 			/* Set FW download success flag */
 			prAdapter->fgIsFwDownloaded = TRUE;
