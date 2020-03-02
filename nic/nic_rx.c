@@ -1365,6 +1365,7 @@ VOID nicRxProcessDataPacket(IN P_ADAPTER_T prAdapter, IN OUT P_SW_RFB_T prSwRfb)
 	P_SW_RFB_T prRetSwRfb, prNextSwRfb;
 	P_HW_MAC_RX_DESC_T prRxStatus;
 	BOOLEAN fgDrop;
+	struct mt66xx_chip_info *prChipInfo;
 
 	DEBUGFUNC("nicRxProcessDataPacket");
 	/* DBGLOG(INIT, TRACE, ("\n")); */
@@ -1376,6 +1377,7 @@ VOID nicRxProcessDataPacket(IN P_ADAPTER_T prAdapter, IN OUT P_SW_RFB_T prSwRfb)
 
 	prRxStatus = prSwRfb->prRxStatus;
 	prRxCtrl = &prAdapter->rRxCtrl;
+	prChipInfo = prAdapter->chip_info;
 
 	/* Check AMPDU_nERR_Bitmap */
 	prSwRfb->fgDataFrame = TRUE;
@@ -1408,6 +1410,20 @@ VOID nicRxProcessDataPacket(IN P_ADAPTER_T prAdapter, IN OUT P_SW_RFB_T prSwRfb)
 			}
 		}
 #if UNIFIED_MAC_RX_FORMAT
+		else if (HAL_RX_STATUS_IS_LLC_MIS(prRxStatus)
+				&& !HAL_RX_STATUS_IS_ERROR(prRxStatus)
+				&& !FEAT_SUP_LLC_VLAN_RX(prChipInfo)) {
+			PUINT_16 pu2EtherType;
+
+			nicRxFillRFB(prAdapter, prSwRfb);
+
+			pu2EtherType = (PUINT_16)((PUINT_8)prSwRfb->pvHeader + 2*MAC_ADDR_LEN);
+
+			/* If ethernet type is VLAN, do not drop it. Pass up to driver process */
+			if (prSwRfb->u2HeaderLen >= ETH_HLEN
+				&& *pu2EtherType == NTOHS(ETH_P_VLAN))
+				fgDrop = FALSE;
+		}
 #else
 		else if (HAL_RX_STATUS_IS_LLC_MIS(prRxStatus)) {
 			DBGLOG(RSN, EVENT, ("LLC_MIS_ERR\n"));
