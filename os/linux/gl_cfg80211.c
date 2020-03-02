@@ -3684,6 +3684,38 @@ int32_t mtk_cfg80211_process_str_cmd(struct GLUE_INFO *prGlueInfo, uint8_t *cmd,
 		DBGLOG(REQ, WARN, "not support tdls\n");
 		return -EOPNOTSUPP;
 #endif
+
+	} else if (strnicmp(cmd, "OSHAREMOD ", 10) == 0) {
+#if CFG_SUPPORT_OSHARE
+		struct OSHARE_MODE_T cmdBuf;
+		struct OSHARE_MODE_T *pCmdHeader = NULL;
+		struct OSHARE_MODE_SETTING_V1_T *pCmdData = NULL;
+
+		kalMemZero(&cmdBuf, sizeof(cmdBuf));
+
+		pCmdHeader = &cmdBuf;
+		pCmdHeader->cmdVersion = OSHARE_MODE_CMD_V1;
+		pCmdHeader->cmdType = 1; /*1-set   0-query*/
+		pCmdHeader->magicCode = OSHARE_MODE_MAGIC_CODE;
+		pCmdHeader->cmdBufferLen = MAX_OSHARE_MODE_LENGTH;
+
+		pCmdData = (struct OSHARE_MODE_SETTING_V1_T *)&(pCmdHeader->buffer[0]);
+		pCmdData->osharemode = *(uint8_t *)(cmd + 10) - '0';
+
+		DBGLOG(REQ, INFO, "cmd=%s, osharemode=%u\n", cmd, pCmdData->osharemode);
+
+		rStatus = kalIoctl(prGlueInfo,
+				   wlanoidSetOshareMode,
+				   &cmdBuf,
+				   sizeof(struct OSHARE_MODE_T),
+				   FALSE,
+				   FALSE,
+				   TRUE,
+				   &u4SetInfoLen);
+#else
+		DBGLOG(REQ, WARN, "not support OSHAREMOD\n");
+		return -EOPNOTSUPP;
+#endif
 	} else
 		return -EOPNOTSUPP;
 
