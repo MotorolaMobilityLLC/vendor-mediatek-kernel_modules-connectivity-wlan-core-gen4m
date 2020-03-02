@@ -408,7 +408,7 @@ extern struct mt66xx_hif_driver_data mt66xx_driver_data_connac;
 #define PP_R_RXCUTDISP0_END_OFFSET(p)     (((p) & 0x3fff) << 18)
 
 
-#elif defined(_HIF_PCIE)
+#elif defined(_HIF_PCIE) ||  defined(_HIF_AXI)
 #define RTC_TOP_BASE					0x0000
 
 #define RTC_TOP_MISC2					(RTC_TOP_BASE + 0x1128)
