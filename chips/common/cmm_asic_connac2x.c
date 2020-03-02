@@ -1314,6 +1314,9 @@ u_int8_t asicConnac2xUsbResume(IN struct ADAPTER *prAdapter,
 			IN struct GLUE_INFO *prGlueInfo)
 {
 	uint8_t count = 0;
+	struct mt66xx_chip_info *prChipInfo = NULL;
+
+	prChipInfo = prAdapter->chip_info;
 
 #if 0 /* enable it if need to do bug fixing by vender request */
 	/* NOTE: USB bus may not really do suspend and resume*/
@@ -1330,6 +1333,10 @@ u_int8_t asicConnac2xUsbResume(IN struct ADAPTER *prAdapter,
 #endif
 
 	glUsbSetState(&prGlueInfo->rHifInfo, USB_STATE_PRE_RESUME);
+
+	/* reinit USB because LP could clear WFDMA's CR */
+	if (prChipInfo->is_support_asic_lp && prChipInfo->asicUsbInit)
+		prChipInfo->asicUsbInit(prAdapter, prChipInfo);
 
 	/* To trigger CR4 path */
 	wlanSendDummyCmd(prGlueInfo->prAdapter, FALSE);
