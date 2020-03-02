@@ -8439,6 +8439,8 @@ wlanoidRssiMonitor(IN struct ADAPTER *prAdapter,
 	struct PARAM_RSSI_MONITOR_T rRssi;
 	int8_t orig_max_rssi_value;
 	int8_t orig_min_rssi_value;
+	uint32_t rStatus1 = WLAN_STATUS_SUCCESS;
+	uint32_t rStatus2;
 
 	ASSERT(prAdapter);
 	ASSERT(pu4QueryInfoLen);
@@ -8453,6 +8455,10 @@ wlanoidRssiMonitor(IN struct ADAPTER *prAdapter,
 		       u4QueryBufferLen);
 		return WLAN_STATUS_BUFFER_TOO_SHORT;
 	}
+
+	if (kalGetMediaStateIndicated(prAdapter->prGlueInfo) ==
+	    PARAM_MEDIA_STATE_DISCONNECTED)
+		rStatus1 = WLAN_STATUS_ADAPTER_NOT_READY;
 
 	kalMemZero(&rRssi, sizeof(struct PARAM_RSSI_MONITOR_T));
 
@@ -8476,7 +8482,7 @@ wlanoidRssiMonitor(IN struct ADAPTER *prAdapter,
 	       rRssi.enable, rRssi.max_rssi_value, rRssi.min_rssi_value,
 	       orig_max_rssi_value, orig_min_rssi_value);
 
-	return wlanSendSetQueryCmd(prAdapter,
+	rStatus2 = wlanSendSetQueryCmd(prAdapter,
 				   CMD_ID_RSSI_MONITOR,
 				   TRUE,
 				   FALSE,
@@ -8486,6 +8492,8 @@ wlanoidRssiMonitor(IN struct ADAPTER *prAdapter,
 				   sizeof(struct PARAM_RSSI_MONITOR_T),
 				   (uint8_t *)&rRssi, NULL, 0);
 
+	return (rStatus1 == WLAN_STATUS_ADAPTER_NOT_READY) ?
+		rStatus1 : rStatus2;
 }
 
 /*----------------------------------------------------------------------------*/
