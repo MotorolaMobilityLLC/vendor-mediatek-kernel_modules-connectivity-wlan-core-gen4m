@@ -75,10 +75,13 @@
  *                              C O N S T A N T S
  ********************************************************************************
  */
+PUINT_8 apucConnacFwName[] = {
+	(PUINT_8) CFG_FW_FILENAME "_P18",
+	NULL
+};
+
 ECO_INFO_T connac_eco_table[] = {
 	/* HW version,  ROM version,    Factory version */
-	{0x00, 0x00, 0xA},	/* E1 */
-	{0x10, 0x01, 0xB},	/* E2 */
 	{0x00, 0x00, 0x0}	/* End of table */
 };
 
@@ -123,6 +126,42 @@ PCIE_CHIP_CR_MAPPING connac_bus2chip_cr_mapping[] = {
 };
 #endif /* _HIF_PCIE */
 
+VOID connacConstructFirmwarePrio(P_GLUE_INFO_T prGlueInfo, PPUINT_8 apucNameTable,
+				 PPUINT_8 apucName, PUINT_8 pucNameIdx, UINT_8 ucMaxNameIdx)
+{
+	UINT_8 ucIdx = 0;
+
+	for (ucIdx = 0; apucConnacFwName[ucIdx]; ucIdx++) {
+		if ((*pucNameIdx + 3) < ucMaxNameIdx) {
+			/* Type 1. WIFI_RAM_CODE_P18_Ex */
+			snprintf(*(apucName + (*pucNameIdx)), CFG_FW_NAME_MAX_LEN, "%s_E%u",
+					apucConnacFwName[ucIdx],
+					wlanGetEcoVersion(prGlueInfo->prAdapter));
+			(*pucNameIdx) += 1;
+
+			/* Type 2. WIFI_RAM_CODE_P18_Ex.bin */
+			snprintf(*(apucName + (*pucNameIdx)), CFG_FW_NAME_MAX_LEN, "%s_E%u.bin",
+					apucConnacFwName[ucIdx],
+					wlanGetEcoVersion(prGlueInfo->prAdapter));
+			(*pucNameIdx) += 1;
+
+			/* Type 3. WIFI_RAM_CODE_P18 */
+			snprintf(*(apucName + (*pucNameIdx)), CFG_FW_NAME_MAX_LEN, "%s",
+					apucConnacFwName[ucIdx]);
+			(*pucNameIdx) += 1;
+
+			/* Type 4. WIFI_RAM_CODE_P18.bin */
+			snprintf(*(apucName + (*pucNameIdx)), CFG_FW_NAME_MAX_LEN, "%s.bin",
+					apucConnacFwName[ucIdx]);
+			(*pucNameIdx) += 1;
+		} else {
+			/* the table is not large enough */
+			DBGLOG(INIT, ERROR, "kalFirmwareImageMapping >> file name array is not enough.\n");
+			ASSERT(0);
+		}
+	}
+}
+
 BUS_INFO connac_bus_info = {
 #if defined(_HIF_PCIE)
 	.top_cfg_base = CONNAC_TOP_CFG_BASE,
@@ -140,7 +179,7 @@ BUS_INFO connac_bus_info = {
 
 struct firmware_download_operations connac_fw_dl_ops = {
 	.tailer_format = CONNAC_TAILER_FORMAT,
-	.constructFirmwarePrio = NULL,
+	.constructFirmwarePrio = connacConstructFirmwarePrio,
 	.downloadFirmware = wlanConnacFormatDownload,
 	.getFwInfo = wlanGetConnacFwInfo,
 };
