@@ -1243,7 +1243,7 @@
  * Driver supports preferred frequency list for p2p operating channel
  *------------------------------------------------------------------------------
  */
-#define CFG_SUPPORT_P2P_PREFERRED_FREQ_LIST  0
+#define CFG_SUPPORT_P2P_PREFERRED_FREQ_LIST  1
 
 /*-----------------------------------------------------------------------------
 * Flags to support IOT AP blacklist
