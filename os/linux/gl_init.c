@@ -3936,6 +3936,9 @@ int32_t wlanOnWhenProbeSuccess(struct GLUE_INFO *prGlueInfo,
 
 		wlanCfgSetSwCtrl(prGlueInfo->prAdapter);
 		wlanCfgSetChip(prGlueInfo->prAdapter);
+#if (CFG_SUPPORT_CONNINFRA == 1)
+		wlanCfgSetChipSyncTime(prGlueInfo->prAdapter);
+#endif
 		wlanCfgSetCountryCode(prGlueInfo->prAdapter);
 		kalPerMonInit(prGlueInfo);
 #if CFG_MET_TAG_SUPPORT
