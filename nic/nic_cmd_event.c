@@ -1723,7 +1723,7 @@ int32_t GetIQData(struct ADAPTER *prAdapter,
 		prAdapter->rIcapInfo.u2DumpIndex - 1, u4GetWf1);
 	if (kalCheckPath(aucPath) == -1) {
 		snprintf(aucPath, sizeof(aucPath),
-			"/data/dump_out_%05ld_WF%d.txt",
+			"/data/dump_out_%05hu_WF%u.txt",
 			prAdapter->rIcapInfo.u2DumpIndex - 1, u4GetWf1);
 	}
 
