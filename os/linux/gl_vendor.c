@@ -357,9 +357,9 @@ int mtk_cfg80211_vendor_set_scan_mac_oui(struct wiphy *wiphy,
 	uint32_t rStatus = WLAN_STATUS_SUCCESS;
 	struct nlattr *attr;
 	uint32_t i = 0;
-	uint8_t ucMacOui[MAC_OUI_LEN];
-
+	struct PARAM_BSS_MAC_OUI rParamMacOui;
 	uint32_t u4BufLen = 0;
+	struct NETDEV_PRIVATE_GLUE_INFO *prNetDevPrivate = NULL;
 
 	ASSERT(wiphy);
 	ASSERT(wdev);
@@ -381,9 +381,16 @@ int mtk_cfg80211_vendor_set_scan_mac_oui(struct wiphy *wiphy,
 		log_dbg(REQ, ERROR, "Invalid glue info\n");
 		return -EFAULT;
 	}
+	prNetDevPrivate =
+		(struct NETDEV_PRIVATE_GLUE_INFO *) netdev_priv(wdev->netdev);
+	if (!prNetDevPrivate) {
+		log_dbg(REQ, ERROR, "Invalid net device private\n");
+		return -EFAULT;
+	}
+	rParamMacOui.ucBssIndex = prNetDevPrivate->ucBssIdx;
 
 	attr = (struct nlattr *)data;
-	kalMemZero(ucMacOui, MAC_OUI_LEN);
+	kalMemZero(rParamMacOui.ucMacOui, MAC_OUI_LEN);
 	if (nla_type(attr) != WIFI_ATTRIBUTE_PNO_RANDOM_MAC_OUI) {
 		log_dbg(REQ, ERROR, "Set MAC oui type error(%u)\n",
 			nla_type(attr));
@@ -397,13 +404,14 @@ int mtk_cfg80211_vendor_set_scan_mac_oui(struct wiphy *wiphy,
 	}
 
 	for (i = 0; i < MAC_OUI_LEN; i++)
-		ucMacOui[i] = *((uint8_t *)nla_data(attr) + i);
+		rParamMacOui.ucMacOui[i] = *((uint8_t *)nla_data(attr) + i);
 
 	log_dbg(REQ, INFO, "Set MAC oui: %02x-%02x-%02x\n",
-		ucMacOui[0], ucMacOui[1], ucMacOui[2]);
+		rParamMacOui.ucMacOui[0], rParamMacOui.ucMacOui[1],
+		rParamMacOui.ucMacOui[2]);
 
 	rStatus = kalIoctl(prGlueInfo, wlanoidSetScanMacOui,
-		ucMacOui, MAC_OUI_LEN,
+		&rParamMacOui, sizeof(rParamMacOui),
 		FALSE, FALSE, FALSE, &u4BufLen);
 	if (rStatus != WLAN_STATUS_SUCCESS) {
 		log_dbg(REQ, ERROR, "Set MAC oui error: 0x%X\n", rStatus);

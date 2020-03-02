@@ -255,14 +255,7 @@ struct AIS_FSM_INFO {
 
 	uint8_t ucConnTrialCount;
 
-	uint8_t ucScanSSIDNum;
-	struct PARAM_SSID arScanSSID[SCN_SSID_MAX_NUM];
-	enum ENUM_SCAN_TYPE eScanType;
-	uint32_t u4ScanChannelNum;
-	struct RF_CHANNEL_INFO arChannel[MAXIMUM_OPERATION_CHANNEL_LIST];
-	uint8_t aucRandomMac[MAC_ADDR_LEN];
-
-	uint32_t u4ScanIELength;
+	struct PARAM_SCAN_REQUEST_ADV rScanRequest;
 	uint8_t aucScanIEBuf[MAX_IE_LENGTH];
 
 	u_int8_t fgIsScanOidAborted;
@@ -486,12 +479,8 @@ void aisFsmScanRequest(IN struct ADAPTER *prAdapter,
 		       IN uint32_t u4IeLength);
 
 void
-aisFsmScanRequestAdv(IN struct ADAPTER *prAdapter, IN uint8_t ucSsidNum,
-		IN struct PARAM_SSID *prSsid,
-		IN enum ENUM_SCAN_TYPE eScanType,
-		IN uint8_t *pucIe, IN uint32_t u4IeLength,
-		IN uint8_t u4ChannelNum,
-		IN struct RF_CHANNEL_INFO *prChannel, IN uint8_t *pucRandomMac);
+aisFsmScanRequestAdv(IN struct ADAPTER *prAdapter,
+		IN struct PARAM_SCAN_REQUEST_ADV *prRequestIn);
 
 /*----------------------------------------------------------------------------*/
 /* Internal State Checking                                                    */

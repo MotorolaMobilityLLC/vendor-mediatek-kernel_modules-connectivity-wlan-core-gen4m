@@ -545,6 +545,10 @@ struct PARAM_PACKET_KEEPALIVE_T {
 	uint8_t reserved[8]; /* reserved for MT6632 */
 };
 
+struct PARAM_BSS_MAC_OUI {
+	uint8_t ucBssIndex;
+	uint8_t ucMacOui[MAC_OUI_LEN];
+};
 /*******************************************************************************
  *                                 M A C R O S
  *******************************************************************************

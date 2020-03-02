@@ -941,9 +941,14 @@ int mtk_cfg80211_scan(struct wiphy *wiphy,
 				continue;
 			}
 			COPY_SSID(prScanRequest->rSsid[u4ValidIdx].aucSsid,
-				  prScanRequest->rSsid[u4ValidIdx].u4SsidLen,
-				  request->ssids[i].ssid,
-				  request->ssids[i].ssid_len);
+				prScanRequest->rSsid[u4ValidIdx].u4SsidLen,
+				request->ssids[i].ssid,
+				request->ssids[i].ssid_len);
+			if (prScanRequest->rSsid[u4ValidIdx].u4SsidLen >
+				ELEM_MAX_LEN_SSID) {
+				prScanRequest->rSsid[u4ValidIdx].u4SsidLen =
+				ELEM_MAX_LEN_SSID;
+			}
 			DBGLOG(REQ, INFO,
 			       "i=%d, u4ValidIdx=%d, Ssid=%s, SsidLen=%d\n",
 			       i, u4ValidIdx,
@@ -1010,7 +1015,10 @@ int mtk_cfg80211_scan(struct wiphy *wiphy,
 	       request->n_ssids, num_ssid, request->n_channels,
 	       prScanRequest->u4ChannelNum);
 
-	kalScanParseRandomMac(prGlueInfo, request, prScanRequest->aucRandomMac);
+	if (kalScanParseRandomMac(request->wdev->netdev,
+		request, prScanRequest->aucRandomMac)) {
+		prScanRequest->ucScnFuncMask |= ENUM_SCN_RANDOM_MAC_EN;
+	}
 
 	if (request->ie_len > 0) {
 		prScanRequest->u4IELength = request->ie_len;
@@ -3375,9 +3383,11 @@ int mtk_cfg80211_sched_scan_start(IN struct wiphy *wiphy,
 	}
 	prSchedScanRequest->u4MatchSsidNum = num;
 
-	kalSchedScanParseRandomMac(prGlueInfo, request,
+	if (kalSchedScanParseRandomMac(ndev, request,
 		prSchedScanRequest->aucRandomMac,
-		prSchedScanRequest->aucRandomMacMask);
+		prSchedScanRequest->aucRandomMacMask)) {
+		prSchedScanRequest->ucScnFuncMask |= ENUM_SCN_RANDOM_MAC_EN;
+	}
 
 	prSchedScanRequest->u4IELength = request->ie_len;
 	if (request->ie_len > 0) {
