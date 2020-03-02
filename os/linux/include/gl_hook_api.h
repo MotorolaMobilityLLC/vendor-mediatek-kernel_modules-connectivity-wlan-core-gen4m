@@ -342,7 +342,8 @@ uint32_t ServiceWlanOid(void *prNetDev,
 	 enum op_wlan_oid oidType,
 	 void *param,
 	 uint32_t paramLen,
-	 uint32_t *u4BufLen);
+	 uint32_t *u4BufLen,
+	 void *stats_data);
 #endif /*#if (CONFIG_WLAN_SERVICE == 1)*/
 
 #endif /* _GL_HOOK_API_H */

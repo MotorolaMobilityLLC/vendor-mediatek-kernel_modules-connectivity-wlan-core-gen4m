@@ -4230,18 +4230,28 @@ uint32_t ServiceWlanOid(void *winfos,
 	 enum op_wlan_oid oidType,
 	 void *param,
 	 uint32_t paramLen,
-	 uint32_t *u4BufLen)
+	 uint32_t *u4BufLen,
+	 void *stats_data)
 {
 	int32_t i4Status = 0;
+	uint32_t u4BufLen2;
 	struct GLUE_INFO *prGlueInfo = NULL;
+	struct ADAPTER *prAdapter = NULL;
+	struct RECAL_INFO_T *prReCalInfo = NULL;
 	boolean fgRead, fgWaitResp, fgCmd;
 	PFN_OID_HANDLER_FUNC pfnOidHandler = NULL;
 	struct test_wlan_info *prTestWinfo;
+	struct hqa_comm_rx_stat *prStatsData = NULL;
 
 	ASSERT(winfos);
+
+    /* Avoid assert caused by u4BufLen = NULL. */
+	u4BufLen = &u4BufLen2;
 	prTestWinfo = (struct test_wlan_info *)winfos;
 
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prTestWinfo->net_dev));
+	prAdapter = prGlueInfo->prAdapter;
+	prReCalInfo = &prAdapter->rReCalInfo;
 
 	if (prGlueInfo == NULL) {
 		DBGLOG(INIT, WARN, "prGlueInfo is NULL:%d\n");
@@ -4264,6 +4274,7 @@ uint32_t ServiceWlanOid(void *winfos,
 		pfnOidHandler = wlanoidRftestSetAutoTest;
 		break;
 	case OP_WLAN_OID_QUERY_RX_STATISTICS:
+		prStatsData = (struct hqa_comm_rx_stat *)stats_data;
 		pfnOidHandler = wlanoidQueryRxStatistics;
 		fgRead = TRUE;
 		fgWaitResp = TRUE;
@@ -4287,6 +4298,17 @@ uint32_t ServiceWlanOid(void *winfos,
 	case OP_WLAN_OID_QUERY_MCR_READ:
 		pfnOidHandler = wlanoidQueryMcrRead;
 		break;
+	case OP_WLAN_OID_GET_RECAL_COUNT:
+		*u4BufLen = prReCalInfo->u4Count;
+
+		return WLAN_STATUS_SUCCESS;
+	case OP_WLAN_OID_GET_RECAL_CONTENT:
+		if (prReCalInfo->u4Count > 0) {
+			kalMemCopy(u4BufLen, &prReCalInfo->prCalArray[0],
+			(prReCalInfo->u4Count * sizeof(struct RECAL_DATA_T)));
+		}
+
+		return WLAN_STATUS_SUCCESS;
 	case OP_WLAN_OID_NUM:
 	default:
 		return WLAN_STATUS_FAILURE;
@@ -4299,7 +4321,15 @@ uint32_t ServiceWlanOid(void *winfos,
 		fgRead, /* fgRead */
 		fgWaitResp, /* fgWaitResp */
 		fgCmd, /* fgCmd */
-		u4BufLen); /* pu4QryInfoLen */
+		&u4BufLen2); /* pu4QryInfoLen */
+
+	if ((prStatsData) &&
+		(oidType == OP_WLAN_OID_QUERY_RX_STATISTICS)) {
+
+		/* 264 = 66 items * 4 bytes */
+		kalMemCopy(&prStatsData->u.r_test_m_hqa_rx_stat,
+		&(g_HqaRxStat), 264);
+	}
 
 	return i4Status;
 }
