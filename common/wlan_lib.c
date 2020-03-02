@@ -833,6 +833,7 @@ WLAN_STATUS wlanCheckWifiFunc(IN P_ADAPTER_T prAdapter, IN BOOLEAN fgRdyChk)
 #endif
 
 	while (TRUE) {
+		DBGLOG(INIT, INFO, "Check ready_bits(=0x%x)\n", ready_bits);
 		if (fgRdyChk)
 			HAL_WIFI_FUNC_READY_CHECK(prAdapter, ready_bits/*WIFI_FUNC_READY_BITS*/, &fgResult);
 		else {
@@ -3538,6 +3539,7 @@ WLAN_STATUS wlanDownloadFW(IN P_ADAPTER_T prAdapter)
 	if (!prAdapter)
 		return WLAN_STATUS_FAILURE;
 
+	DBGLOG(INIT, INFO, "wlanDownloadFW:: Check ready_bits(=0x%x)\n", ready_bits);
 	HAL_WIFI_FUNC_READY_CHECK(prAdapter, ready_bits/*WIFI_FUNC_READY_BITS*/, &fgReady);
 
 	if (fgReady) {
