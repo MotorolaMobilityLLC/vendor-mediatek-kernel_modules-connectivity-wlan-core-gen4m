@@ -88,7 +88,9 @@
 #endif
 #include "gl_vendor.h"
 #include "gl_hook_api.h"
-
+#if CFG_MTK_MCIF_WIFI_SUPPORT
+#include "mddp.h"
+#endif
 /*******************************************************************************
  *                              C O N S T A N T S
  *******************************************************************************
@@ -4151,10 +4153,14 @@ int32_t wlanOnWhenProbeSuccess(struct GLUE_INFO *prGlueInfo,
 	DBGLOG(INIT, STATE, "[SER][L0] PASS!!\n");
 #endif
 
+#if CFG_MTK_MCIF_WIFI_SUPPORT
+	mddpRegisterCb(prGlueInfo->prAdapter);
+	mddpNotifyDrvMac(prGlueInfo->prAdapter);
+#endif
+
 #if CFG_SUPPORT_LOWLATENCY_MODE
 	wlanProbeSuccessForLowLatency(prAdapter);
 #endif
-
 	return 0;
 }
 
@@ -4513,6 +4519,10 @@ static int32_t wlanProbe(void *pvData, void *pvDriverData)
 	uint8_t *pucConfigBuf = NULL, pucCfgBuf = NULL;
 	uint32_t u4ConfigReadLen = 0;
 #endif
+
+#if CFG_MTK_MCIF_WIFI_SUPPORT
+	mddpNotifyWifiOnStart();
+#endif
 	eFailReason = FAIL_REASON_NUM;
 	do {
 		/* 4 <1> Initialize the IO port of the interface */
@@ -4711,7 +4721,9 @@ static int32_t wlanProbe(void *pvData, void *pvDriverData)
 			break;
 		}
 	}
-
+#if CFG_MTK_MCIF_WIFI_SUPPORT
+	mddpNotifyWifiOnEnd();
+#endif
 	return i4Status;
 }				/* end of wlanProbe() */
 
@@ -4779,6 +4791,10 @@ static void wlanRemove(void)
 		if (wlanOffAtReset() == WLAN_STATUS_SUCCESS)
 			return;
 	}
+#endif
+
+#if CFG_MTK_MCIF_WIFI_SUPPORT
+	mddpNotifyWifiOffStart();
 #endif
 
 	kalSetHalted(TRUE);
@@ -4968,6 +4984,9 @@ static void wlanRemove(void)
 	fgIsResetting = FALSE;
 #endif
 
+#if CFG_MTK_MCIF_WIFI_SUPPORT
+	mddpNotifyWifiOffEnd();
+#endif
 }				/* end of wlanRemove() */
 
 /*----------------------------------------------------------------------------*/
