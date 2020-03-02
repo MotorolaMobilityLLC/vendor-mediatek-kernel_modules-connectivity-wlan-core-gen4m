@@ -430,7 +430,9 @@ void rlmRspGenerateHtCapIE(struct ADAPTER *prAdapter,
 		ucPhyTypeSet = prBssInfo->ucPhyTypeSet;
 	}
 
-	if (RLM_NET_IS_11N(prBssInfo) && (ucPhyTypeSet & PHY_TYPE_SET_802_11N))
+	if (RLM_NET_IS_11N(prBssInfo) &&
+	    (ucPhyTypeSet & PHY_TYPE_SET_802_11N) &&
+		(!prBssInfo->fgIsWepCipherGroup))
 		rlmFillHtCapIE(prAdapter, prBssInfo, prMsduInfo);
 }
 
@@ -512,7 +514,9 @@ void rlmRspGenerateHtOpIE(struct ADAPTER *prAdapter,
 		ucPhyTypeSet = prBssInfo->ucPhyTypeSet;
 	}
 
-	if (RLM_NET_IS_11N(prBssInfo) && (ucPhyTypeSet & PHY_TYPE_SET_802_11N))
+	if (RLM_NET_IS_11N(prBssInfo) &&
+	    (ucPhyTypeSet & PHY_TYPE_SET_802_11N) &&
+		(!prBssInfo->fgIsWepCipherGroup))
 		rlmFillHtOpIE(prAdapter, prBssInfo, prMsduInfo);
 }
 

@@ -1603,6 +1603,14 @@ int mtk_p2p_cfg80211_start_ap(struct wiphy *wiphy,
 			prP2pBcnUpdateMsg->pucBcnBody = NULL;
 		}
 
+		if ((settings->crypto.cipher_group ==
+			 WLAN_CIPHER_SUITE_WEP40) ||
+			(settings->crypto.cipher_group ==
+			 WLAN_CIPHER_SUITE_WEP104))
+			prP2pBcnUpdateMsg->fgIsWepCipher = TRUE;
+		else
+			prP2pBcnUpdateMsg->fgIsWepCipher = FALSE;
+
 		if (settings->beacon.assocresp_ies_len != 0
 			&& settings->beacon.assocresp_ies != NULL) {
 			prP2pBcnUpdateMsg->pucAssocRespIE = pucBuffer;
@@ -1855,6 +1863,7 @@ int mtk_p2p_cfg80211_channel_switch(struct wiphy *wiphy,
 	struct RF_CHANNEL_INFO rRfChnlInfo;
 	struct BSS_INFO *prBssInfo;
 	uint8_t ucBssIndex;
+	uint32_t u4Len = 0;
 
 	do {
 		if ((wiphy == NULL) || (params == NULL))
@@ -1973,18 +1982,22 @@ int mtk_p2p_cfg80211_channel_switch(struct wiphy *wiphy,
 		/* Update beacon */
 		if ((params->beacon_csa.head_len != 0)
 			|| (params->beacon_csa.tail_len != 0)) {
+			u4Len = (sizeof(struct MSG_P2P_BEACON_UPDATE)
+				+ params->beacon_csa.head_len
+				+ params->beacon_csa.tail_len);
+
 			prP2pBcnUpdateMsg = (struct MSG_P2P_BEACON_UPDATE *)
 				cnmMemAlloc(prGlueInfo->prAdapter,
 					RAM_TYPE_MSG,
-					(sizeof(struct MSG_P2P_BEACON_UPDATE)
-					+ params->beacon_csa.head_len
-					+ params->beacon_csa.tail_len));
+					u4Len);
 
 			if (prP2pBcnUpdateMsg == NULL) {
 				ASSERT(FALSE);
 				i4Rslt = -ENOMEM;
 				break;
 			}
+
+			kalMemZero(prP2pBcnUpdateMsg, u4Len);
 
 			prP2pBcnUpdateMsg->ucRoleIndex = ucRoleIdx;
 			prP2pBcnUpdateMsg->rMsgHdr.eMsgId =
@@ -2067,6 +2080,7 @@ int mtk_p2p_cfg80211_change_beacon(struct wiphy *wiphy,
 		(struct MSG_P2P_BEACON_UPDATE *) NULL;
 	uint8_t *pucBuffer = (uint8_t *) NULL;
 	uint8_t ucRoleIdx = 0;
+	uint32_t u4Len = 0;
 
 	do {
 		if ((wiphy == NULL) || (info == NULL))
@@ -2080,23 +2094,27 @@ int mtk_p2p_cfg80211_change_beacon(struct wiphy *wiphy,
 			break;
 
 		if ((info->head_len != 0) || (info->tail_len != 0)) {
+			u4Len = (sizeof(struct MSG_P2P_BEACON_UPDATE)
+				+ info->head_len
+				+ info->tail_len
+				+ info->assocresp_ies_len
+#if CFG_SUPPORT_P2P_GO_OFFLOAD_PROBE_RSP
+				+ info->proberesp_ies_len
+#endif
+				);
+
 			prP2pBcnUpdateMsg = (struct MSG_P2P_BEACON_UPDATE *)
 			    cnmMemAlloc(prGlueInfo->prAdapter,
 					RAM_TYPE_MSG,
-					(sizeof(struct MSG_P2P_BEACON_UPDATE)
-					+ info->head_len
-					+ info->tail_len
-					+ info->assocresp_ies_len
-#if CFG_SUPPORT_P2P_GO_OFFLOAD_PROBE_RSP
-					+ info->proberesp_ies_len
-#endif
-					));
+					u4Len);
 
 			if (prP2pBcnUpdateMsg == NULL) {
 				ASSERT(FALSE);
 				i4Rslt = -ENOMEM;
 				break;
 			}
+
+			kalMemZero(prP2pBcnUpdateMsg, u4Len);
 
 			prP2pBcnUpdateMsg->ucRoleIndex = ucRoleIdx;
 			prP2pBcnUpdateMsg->rMsgHdr.eMsgId =

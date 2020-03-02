@@ -1123,6 +1123,7 @@ uint32_t assocProcessRxAssocReqFrame(IN struct ADAPTER *prAdapter, IN struct SW_
 	struct RSN_INFO_ELEM *prIeRsn = (struct RSN_INFO_ELEM *) NULL;
 	struct IE_SUPPORTED_RATE *prIeSupportedRate = (struct IE_SUPPORTED_RATE *) NULL;
 	struct IE_EXT_SUPPORTED_RATE *prIeExtSupportedRate = (struct IE_EXT_SUPPORTED_RATE *) NULL;
+	struct WIFI_VAR *prWifiVar = NULL;
 	uint8_t *pucIE, *pucIEStart;
 	uint16_t u2IELength;
 	uint16_t u2Offset = 0;
@@ -1132,10 +1133,13 @@ uint32_t assocProcessRxAssocReqFrame(IN struct ADAPTER *prAdapter, IN struct SW_
 	uint8_t ucFixedFieldLength;
 	u_int8_t fgIsUnknownBssBasicRate;
 	uint32_t i;
+	u_int8_t fgIsTKIP = FALSE;
 
 	ASSERT(prAdapter);
 	ASSERT(prSwRfb);
 	ASSERT(pu2StatusCode);
+
+	prWifiVar = &(prAdapter->rWifiVar);
 
 	prStaRec = cnmGetStaRecByIndex(prAdapter, prSwRfb->ucStaRecIdx);
 
@@ -1240,6 +1244,9 @@ uint32_t assocProcessRxAssocReqFrame(IN struct ADAPTER *prAdapter, IN struct SW_
 #endif
 			break;
 		case ELEM_ID_VENDOR:
+			if (p2pFuncParseCheckForTKIPInfoElem(pucIE))
+				fgIsTKIP = TRUE;
+
 #if CFG_ENABLE_WIFI_DIRECT
 			{
 				if ((prAdapter->fgIsP2PRegistered)) {
@@ -1273,6 +1280,13 @@ uint32_t assocProcessRxAssocReqFrame(IN struct ADAPTER *prAdapter, IN struct SW_
 			break;
 		}
 	}			/* end of IE_FOR_EACH */
+
+	/*
+	 * According to TGn & TGac 4.2.44, AP should not bring HT/VHT Cap IE in
+	 * the IE of Assoc resp, if the STA request to use TKIP cipher
+	 */
+	if (fgIsTKIP && !prWifiVar->ucApAllowHtVhtTkip)
+		prStaRec->ucPhyTypeSet &= ~(PHY_TYPE_BIT_VHT | PHY_TYPE_BIT_HT);
 
 	/* parsing for WMM related information (2010/12/21) */
 	mqmProcessAssocReq(prAdapter, prSwRfb, pucIEStart, u2IELength);
