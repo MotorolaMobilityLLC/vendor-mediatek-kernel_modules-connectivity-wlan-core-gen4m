@@ -880,7 +880,7 @@ VOID p2pRoleFsmRunEventStartAP(IN P_ADAPTER_T prAdapter, IN P_MSG_HDR_T prMsgHdr
 	CNM_DBDC_CAP_T rDbdcCap;
 #endif /*CFG_SUPPORT_DBDC*/
 
-	DBGLOG(P2P, INFO, "p2pRoleFsmRunEventStartAP\n");
+	DBGLOG(P2P, TRACE, "p2pRoleFsmRunEventStartAP\n");
 
 	prP2pStartAPMsg = (P_MSG_P2P_START_AP_T) prMsgHdr;
 
@@ -888,7 +888,7 @@ VOID p2pRoleFsmRunEventStartAP(IN P_ADAPTER_T prAdapter, IN P_MSG_HDR_T prMsgHdr
 
 	prAdapter->prP2pInfo->eConnState = P2P_CNN_NORMAL;
 
-	DBGLOG(P2P, INFO, "p2pRoleFsmRunEventStartAP with Role(%d)\n", prP2pStartAPMsg->ucRoleIdx);
+	DBGLOG(P2P, TRACE, "p2pRoleFsmRunEventStartAP with Role(%d)\n", prP2pStartAPMsg->ucRoleIdx);
 
 
 	if (!prP2pRoleFsmInfo) {
@@ -966,7 +966,7 @@ VOID p2pRoleFsmRunEventStartAP(IN P_ADAPTER_T prAdapter, IN P_MSG_HDR_T prMsgHdr
 		wlanGetSupportNss(prAdapter, prP2pBssInfo->ucBssIndex),
 		&rDbdcCap);
 
-	DBGLOG(P2P, INFO,
+	DBGLOG(P2P, TRACE,
 	   "p2pRoleFsmRunEventStartAP: start AP at CH %u NSS=%u.\n",
 	   prP2pConnReqInfo->rChannelInfo.ucChannelNum,
 	   rDbdcCap.ucNss);
@@ -978,9 +978,9 @@ VOID p2pRoleFsmRunEventStartAP(IN P_ADAPTER_T prAdapter, IN P_MSG_HDR_T prMsgHdr
 	prP2pBssInfo->eHiddenSsidType = prP2pStartAPMsg->ucHiddenSsidType;
 
 	/*
-	*beacon content is related with Nss number ,
-	*need to update because of modification
-	*/
+	 * beacon content is related with Nss number ,
+	 * need to update because of modification
+	 */
 	bssUpdateBeaconContent(prAdapter, prP2pBssInfo->ucBssIndex);
 
 	if ((prP2pBssInfo->eCurrentOPMode != OP_MODE_ACCESS_POINT) ||
@@ -1003,16 +1003,17 @@ VOID p2pRoleFsmRunEventStartAP(IN P_ADAPTER_T prAdapter, IN P_MSG_HDR_T prMsgHdr
 		prP2pBssInfo->eIntendOPMode = OP_MODE_ACCESS_POINT;
 
 #if 0
-					prP2pRoleFsmInfo->rConnReqInfo.rChannelInfo.ucChannelNum = 8;
-					prP2pRoleFsmInfo->rConnReqInfo.rChannelInfo.eBand = BAND_2G4;
-					/*prP2pRoleFsmInfo->rConnReqInfo.rChannelInfo.ucBandwidth = 0;*/
-					/*prP2pRoleFsmInfo->rConnReqInfo.rChannelInfo.eSCO= CHNL_EXT_SCN;*/
+		prP2pRoleFsmInfo->rConnReqInfo.rChannelInfo.ucChannelNum = 8;
+		prP2pRoleFsmInfo->rConnReqInfo.rChannelInfo.eBand = BAND_2G4;
+		/*prP2pRoleFsmInfo->rConnReqInfo.rChannelInfo.ucBandwidth = 0;*/
+		/*prP2pRoleFsmInfo->rConnReqInfo.rChannelInfo.eSCO= CHNL_EXT_SCN;*/
 #endif
 
 		if (prP2pRoleFsmInfo->rConnReqInfo.rChannelInfo.ucChannelNum != 0) {
-			DBGLOG(P2P, INFO, "Role(%d) StartAP at CH(%d)\n",
+			DBGLOG(P2P, INFO, "Role(%d) StartAP at CH(%d) NSS = %u\n",
 				prP2pStartAPMsg->ucRoleIdx,
-				prP2pRoleFsmInfo->rConnReqInfo.rChannelInfo.ucChannelNum);
+				prP2pRoleFsmInfo->rConnReqInfo.rChannelInfo.ucChannelNum,
+				rDbdcCap.ucNss);
 
 			p2pRoleStatePrepare_To_REQING_CHANNEL_STATE(prAdapter,
 								    GET_BSS_INFO_BY_INDEX(prAdapter,
