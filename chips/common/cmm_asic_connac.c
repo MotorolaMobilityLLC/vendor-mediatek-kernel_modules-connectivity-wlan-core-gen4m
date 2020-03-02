@@ -130,6 +130,7 @@ uint8_t arAcQIdx2GroupId[MAC_TXQ_NUM] = {
  *******************************************************************************
  */
 #if defined(_HIF_USB)
+#define USB_DMA_SHDL_GROUP_DEF_SEQUENCE_ORDER 0xFFFEFFFF
 #define USB_DMA_SHDL_GROUP_DEF_MIN_QUOTA 0x3
 #define USB_DMA_SHDL_GROUP_DEF_MAX_QUOTA 0x1FF
 #define USB_ACCESS_RETRY_LIMIT           1
@@ -762,6 +763,13 @@ void asicUsbDmaShdlGroupInit(IN struct ADAPTER *prAdapter,
 	CONN_HIF_DMASHDL_TOP_REFILL_CONTROL_GROUP3_REFILL_PRIORITY_MASK);
 	HAL_MCR_WR(prAdapter,
 		   CONN_HIF_DMASHDL_REFILL_CONTROL(u4BaseAddr), u4RefillGroup);
+
+	/* Use "User program group sequence order" by default.[16]1'b0	*/
+	HAL_MCR_RD(prAdapter,
+		   CONN_HIF_DMASHDL_PAGE_SETTING(u4BaseAddr), &u4MacVal);
+	u4MacVal &= USB_DMA_SHDL_GROUP_DEF_SEQUENCE_ORDER;
+	HAL_MCR_WR(prAdapter,
+		   CONN_HIF_DMASHDL_PAGE_SETTING(u4BaseAddr), u4MacVal);
 
 #if CFG_SUPPORT_CFG_FILE
 	u4CfgVal = wlanCfgGetUint32(prAdapter,
