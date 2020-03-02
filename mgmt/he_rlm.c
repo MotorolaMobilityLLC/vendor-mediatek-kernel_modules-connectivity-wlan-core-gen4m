@@ -348,6 +348,7 @@ static void heRlmFillHeCapIE(
 	struct _HE_SUPPORTED_MCS_FIELD *prHeSupportedMcsSet;
 	uint32_t u4OverallLen = OFFSET_OF(struct _IE_HE_CAP_T, aucVarInfo[0]);
 	uint16_t ucMaxBw;
+	boolean fgBfEn = TRUE;
 
 	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
 #if (CFG_RX_PPE_THRESHOLD == 1)
@@ -420,12 +421,15 @@ static void heRlmFillHeCapIE(
 		prBssDesc = prAisFsmInfo->prTargetBssDesc;
 		if (prBssDesc != NULL && (bssGetRxNss(prAdapter, prBssDesc) ==
 			wlanGetSupportNss(prAdapter, prBssInfo->ucBssIndex))) {
+			fgBfEn = FALSE;
 			DBGLOG(SW4, ERROR,
 				"Disable Bfee due to same Nss between STA and AP\n");
+		} else {
+			fgBfEn = TRUE;
 		}
-	} else
+	}
 #endif
-	if (IS_FEATURE_ENABLED(prWifiVar->ucStaHeBfee)) {
+	if ((fgBfEn == TRUE) && (IS_FEATURE_ENABLED(prWifiVar->ucStaHeBfee))) {
 		HE_SET_PHY_CAP_SU_BFMEE(prHeCap->ucHePhyCap);
 		HE_SET_PHY_CAP_BFMEE_STS_LT_OR_EQ_80M(prHeCap->ucHePhyCap, 3);
 		HE_SET_PHY_CAP_NG_16_SU_FB(prHeCap->ucHePhyCap);
