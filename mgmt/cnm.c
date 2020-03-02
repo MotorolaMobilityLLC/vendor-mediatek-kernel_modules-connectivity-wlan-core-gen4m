@@ -923,6 +923,11 @@ void cnmCsaDoneEvent(IN struct ADAPTER *prAdapter,
 		return;
 	}
 
+	if (prAdapter->rWifiVar.fgCsaInProgress == FALSE) {
+		DBGLOG(CNM, WARN, "Receive duplicate cnmCsaDoneEvent.\n");
+		return;
+	}
+
 	prAdapter->rWifiVar.fgCsaInProgress = FALSE;
 
 	prP2pCsaDoneMsg->rMsgHdr.eMsgId = MID_CNM_P2P_CSA_DONE;
@@ -1186,7 +1191,7 @@ uint8_t cnmIdcCsaReq(IN struct ADAPTER *prAdapter,
 			? BAND_2G4 : BAND_5G;
 
 		/* Heritage BW from Old connection*/
-		rRfChnlInfo.ucChnlBw = (uint8_t) CW_20_40MHZ;
+		rRfChnlInfo.ucChnlBw = MAX_BW_20MHZ;
 		rRfChnlInfo.u2PriChnlFreq =
 			nicChannelNum2Freq((uint32_t)ch_num) / 1000;
 		rRfChnlInfo.u4CenterFreq1 =
@@ -1257,8 +1262,21 @@ uint8_t cnmIdcCsaReq(IN struct ADAPTER *prAdapter,
 		prP2pSetNewChannelMsg->rMsgHdr.eMsgId =
 			MID_MNY_P2P_SET_NEW_CHANNEL;
 
-		prP2pSetNewChannelMsg->eChannelWidth =
-			(enum ENUM_CHANNEL_WIDTH) rRfChnlInfo.ucChnlBw;
+		switch (rRfChnlInfo.ucChnlBw) {
+		case MAX_BW_20MHZ:
+		case MAX_BW_40MHZ:
+			prP2pSetNewChannelMsg->eChannelWidth
+				= CW_20_40MHZ;
+			break;
+		case MAX_BW_80MHZ:
+			prP2pSetNewChannelMsg->eChannelWidth
+				= CW_80MHZ;
+			break;
+		default:
+			prP2pSetNewChannelMsg->eChannelWidth
+				= CW_20_40MHZ;
+			break;
+		}
 
 		prP2pSetNewChannelMsg->ucRoleIdx = ucRoleIdx;
 
