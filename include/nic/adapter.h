@@ -697,6 +697,10 @@ struct WIFI_VAR {
 	/* Currently we only support 2 p2p interface. */
 	struct P2P_ROLE_FSM_INFO *aprP2pRoleFsmInfo[BSS_P2P_NUM];
 
+#if	CFG_ENABLE_PER_STA_STATISTICS_LOG
+	struct PARAM_GET_STA_STATISTICS *prP2pQueryStaStatistics;
+#endif
+
 #endif				/* CFG_ENABLE_WIFI_DIRECT */
 
 #if CFG_ENABLE_BT_OVER_WIFI

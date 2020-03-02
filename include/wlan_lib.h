@@ -1186,6 +1186,13 @@ uint32_t
 wlanoidQueryStaStatistics(IN struct ADAPTER *prAdapter,
 			  IN void *pvQueryBuffer, IN uint32_t u4QueryBufferLen, OUT uint32_t *pu4QueryInfoLen);
 
+uint32_t
+wlanQueryStaStatistics(IN struct ADAPTER *prAdapter,
+		IN void *pvQueryBuffer,
+		IN uint32_t u4QueryBufferLen,
+		OUT uint32_t *pu4QueryInfoLen,
+		u_int8_t fgIsOid);
+
 /*----------------------------------------------------------------------------*/
 /* query NIC resource information from chip and reset Tx resource for normal operation        */
 /*----------------------------------------------------------------------------*/

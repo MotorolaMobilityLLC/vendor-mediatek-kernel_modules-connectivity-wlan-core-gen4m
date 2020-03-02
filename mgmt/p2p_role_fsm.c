@@ -120,6 +120,13 @@ uint8_t p2pRoleFsmInit(IN struct ADAPTER *prAdapter,
 			(PFN_MGMT_TIMEOUT_FUNC) p2pRoleFsmRunEventTimeout,
 			(unsigned long) prP2pRoleFsmInfo);
 
+#if CFG_ENABLE_PER_STA_STATISTICS_LOG
+		cnmTimerInitTimer(prAdapter,
+			&(prP2pRoleFsmInfo->rP2pRoleFsmGetStatisticsTimer),
+			(PFN_MGMT_TIMEOUT_FUNC) p2pRoleFsmGetStaStatistics,
+			(unsigned long) prP2pRoleFsmInfo);
+#endif
+
 #if (CFG_SUPPORT_DFS_MASTER == 1)
 		cnmTimerInitTimer(prAdapter,
 			&(prP2pRoleFsmInfo->rDfsShutDownTimer),
@@ -306,6 +313,11 @@ void p2pRoleFsmUninit(IN struct ADAPTER *prAdapter, IN uint8_t ucRoleIdx)
 		/* ensure the timer be stopped */
 		cnmTimerStopTimer(prAdapter,
 			&(prP2pRoleFsmInfo->rP2pRoleFsmTimeoutTimer));
+
+#if CFG_ENABLE_PER_STA_STATISTICS_LOG
+		cnmTimerStopTimer(prAdapter,
+			&prP2pRoleFsmInfo->rP2pRoleFsmGetStatisticsTimer);
+#endif
 
 #if (CFG_SUPPORT_DFS_MASTER == 1)
 		cnmTimerStopTimer(prAdapter,
@@ -3150,3 +3162,85 @@ p2pProcessEvent_UpdateNOAParam(IN struct ADAPTER *prAdapter,
 	/* update beacon content by the change */
 	bssUpdateBeaconContent(prAdapter, ucBssIdx);
 }				/* p2pProcessEvent_UpdateNOAParam */
+
+#if CFG_ENABLE_PER_STA_STATISTICS_LOG
+void
+p2pRoleFsmGetStaStatistics(IN struct ADAPTER *prAdapter,
+		IN unsigned long ulParamPtr)
+{
+	uint32_t u4BufLen;
+	struct PARAM_GET_STA_STATISTICS *prQueryStaStatistics;
+	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo =
+		(struct P2P_ROLE_FSM_INFO *) ulParamPtr;
+	struct BSS_INFO *prP2pBssInfo = (struct BSS_INFO *) NULL;
+
+	if ((!prAdapter) || (!prP2pRoleFsmInfo)) {
+		DBGLOG(P2P, ERROR, "prAdapter=NULL || prP2pRoleFsmInfo=NULL\n");
+		return;
+	}
+
+	prP2pBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
+		prP2pRoleFsmInfo->ucBssIndex);
+	if (!prP2pBssInfo) {
+		DBGLOG(P2P, ERROR, "prP2pBssInfo=NULL\n");
+		return;
+	}
+
+	prQueryStaStatistics = prAdapter->rWifiVar.prP2pQueryStaStatistics;
+	if (!prQueryStaStatistics) {
+		DBGLOG(P2P, ERROR, "prQueryStaStatistics=NULL\n");
+		return;
+	}
+
+	if (prP2pBssInfo->eConnectionState == PARAM_MEDIA_STATE_CONNECTED) {
+		if ((prP2pBssInfo->eCurrentOPMode
+			!= OP_MODE_INFRASTRUCTURE) &&
+			(prP2pBssInfo->eCurrentOPMode
+			!= OP_MODE_ACCESS_POINT)) {
+			DBGLOG(P2P, ERROR, "Invalid OPMode=%d\n",
+				prP2pBssInfo->eCurrentOPMode);
+			return;
+		}
+		if (prP2pBssInfo->eCurrentOPMode == OP_MODE_INFRASTRUCTURE
+			&& prP2pBssInfo->prStaRecOfAP) {
+			COPY_MAC_ADDR(
+				prQueryStaStatistics->aucMacAddr,
+				prP2pBssInfo->prStaRecOfAP->aucMacAddr);
+		} else if (prP2pBssInfo->eCurrentOPMode
+			== OP_MODE_ACCESS_POINT) {
+			struct STA_RECORD *prCurrStaRec;
+			struct LINK *prClientList =
+				&prP2pBssInfo->rStaRecOfClientList;
+			if (!prClientList) {
+				DBGLOG(P2P, ERROR, "prClientList=NULL\n");
+				return;
+			}
+			LINK_FOR_EACH_ENTRY(prCurrStaRec,
+				prClientList, rLinkEntry, struct STA_RECORD) {
+				if (prCurrStaRec) {
+					COPY_MAC_ADDR(
+					prQueryStaStatistics->aucMacAddr,
+					prCurrStaRec->aucMacAddr);
+					/* break for LINK_FOR_EACH_ENTRY */
+					break;
+				}
+			}
+			if (!prCurrStaRec)
+				return;
+		}
+
+		prQueryStaStatistics->ucReadClear = TRUE;
+		wlanQueryStaStatistics(prAdapter,
+			prQueryStaStatistics,
+			sizeof(struct PARAM_GET_STA_STATISTICS),
+			&u4BufLen,
+			FALSE);
+
+	}
+
+	cnmTimerStartTimer(prAdapter,
+		&(prP2pRoleFsmInfo->rP2pRoleFsmGetStatisticsTimer),
+		P2P_ROLE_GET_STATISTICS_TIME);
+}
+#endif
+

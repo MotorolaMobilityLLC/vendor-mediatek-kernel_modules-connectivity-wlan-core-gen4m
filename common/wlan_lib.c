@@ -4630,7 +4630,20 @@ void wlanDumpAllBssStatistics(IN struct ADAPTER *prAdapter)
 
 uint32_t
 wlanoidQueryStaStatistics(IN struct ADAPTER *prAdapter,
-			  IN void *pvQueryBuffer, IN uint32_t u4QueryBufferLen, OUT uint32_t *pu4QueryInfoLen)
+		IN void *pvQueryBuffer,
+		IN uint32_t u4QueryBufferLen,
+		OUT uint32_t *pu4QueryInfoLen)
+{
+	return wlanQueryStaStatistics(prAdapter,
+		pvQueryBuffer, u4QueryBufferLen, pu4QueryInfoLen, TRUE);
+}
+
+uint32_t
+wlanQueryStaStatistics(IN struct ADAPTER *prAdapter,
+		IN void *pvQueryBuffer,
+		IN uint32_t u4QueryBufferLen,
+		OUT uint32_t *pu4QueryInfoLen,
+		u_int8_t fgIsOid)
 {
 	uint32_t rResult = WLAN_STATUS_FAILURE;
 	struct STA_RECORD *prStaRec, *prTempStaRec;
@@ -4807,12 +4820,15 @@ wlanoidQueryStaStatistics(IN struct ADAPTER *prAdapter,
 					      CMD_ID_GET_STA_STATISTICS,
 					      FALSE,
 					      TRUE,
-					      TRUE,
+					      fgIsOid,
 					      nicCmdEventQueryStaStatistics,
 					      nicOidCmdTimeoutCommon,
 					      sizeof(struct CMD_GET_STA_STATISTICS),
 					      (uint8_t *)&rQueryCmdStaStatistics,
 					      pvQueryBuffer, u4QueryBufferLen);
+
+		if ((!fgIsOid) && (rResult == WLAN_STATUS_PENDING))
+			rResult = WLAN_STATUS_SUCCESS;
 
 		prQueryStaStatistics->u4Flag |= BIT(1);
 
