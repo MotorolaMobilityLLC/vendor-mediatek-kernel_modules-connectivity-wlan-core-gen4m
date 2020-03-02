@@ -1912,7 +1912,6 @@ WLAN_STATUS scanProcessBeaconAndProbeResp(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_
 	prAdapter->rWlanInfo.u4ScanDbgTimes1++;
 
 	if (prBssDesc) {
-#if CFG_SUPPORT_BEACON_CHANGE_DETECTION
 		/* 4 <1.1> Beacon Change Detection for Connected BSS */
 		if ((prAisBssInfo != NULL) &&
 		    (prAisBssInfo->eConnectionState ==
@@ -1924,15 +1923,38 @@ WLAN_STATUS scanProcessBeaconAndProbeResp(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_
 				  prAisBssInfo->ucSSIDLen)) {
 			BOOLEAN fgNeedDisconnect = FALSE;
 
+#if CFG_SUPPORT_BEACON_CHANGE_DETECTION
 			/* <1.1.2> check if supported rate differs */
 			if (prAisBssInfo->u2OperationalRateSet != prBssDesc->u2OperationalRateSet)
 				fgNeedDisconnect = TRUE;
+#endif
+			if (rsnCheckSecurityModeChanged(prAdapter, prAisBssInfo, prBssDesc)
+#if CFG_SUPPORT_WAPI
+				|| (prAdapter->rWifiVar.rConnSettings.fgWapiMode == TRUE &&
+					!wapiPerformPolicySelection(prAdapter, prBssDesc))
+#endif
+				) {
+				DBGLOG(SCN, INFO, "Beacon security mode change detected\n");
+				DBGLOG_MEM8(SCN, INFO, prSwRfb->pvHeader, prSwRfb->u2PacketLen);
+				fgNeedDisconnect = FALSE;
+				if (!prConnSettings->fgSecModeChangeStartTimer) {
+					cnmTimerStartTimer(prAdapter,
+							&prAdapter->rWifiVar.rAisFsmInfo.rSecModeChangeTimer,
+							SEC_TO_MSEC(3));
+					prConnSettings->fgSecModeChangeStartTimer = TRUE;
+				}
+			} else {
+				if (prConnSettings->fgSecModeChangeStartTimer) {
+					cnmTimerStopTimer(prAdapter,
+							&prAdapter->rWifiVar.rAisFsmInfo.rSecModeChangeTimer);
+					prConnSettings->fgSecModeChangeStartTimer = FALSE;
+				}
+			}
 
 			/* <1.1.3> beacon content change detected, disconnect immediately */
 			if (fgNeedDisconnect == TRUE)
 				aisBssBeaconTimeout(prAdapter);
 		}
-#endif
 		/* 4 <1.1> Update AIS_BSS_INFO */
 		if ((prAisBssInfo != NULL) &&
 		    (((prBssDesc->eBSSType == BSS_TYPE_INFRASTRUCTURE) &&
