@@ -1368,7 +1368,7 @@ cnmPeerUpdate(P_ADAPTER_T prAdapter, PVOID pvSetBuffer, UINT_32 u4SetBufferLen, 
 	prStaRec->eStaType = prCmd->eStaType;
 
 	/* ++ support rate */
-	if (prCmd->aucSupRate) {
+	if (prCmd->u2SupRateLen) {
 		for (i = 0; i < prCmd->u2SupRateLen; i++) {
 			if (prCmd->aucSupRate[i]) {
 				ucRate = prCmd->aucSupRate[i] & RATE_MASK;
@@ -1391,7 +1391,7 @@ cnmPeerUpdate(P_ADAPTER_T prAdapter, PVOID pvSetBuffer, UINT_32 u4SetBufferLen, 
 		prStaRec->ucPhyTypeSet = 0;
 
 		if (prAisBssInfo->eBand == BAND_2G4) {
-			if (prCmd->rHtCap.rMCS.arRxMask)
+			if (prCmd->fgIsSupHt)
 				prStaRec->ucPhyTypeSet |= PHY_TYPE_BIT_HT;
 
 			/* if not 11n only */
@@ -1411,7 +1411,7 @@ cnmPeerUpdate(P_ADAPTER_T prAdapter, PVOID pvSetBuffer, UINT_32 u4SetBufferLen, 
 			if (prCmd->rVHtCap.u2CapInfo)
 				prStaRec->ucPhyTypeSet |= PHY_TYPE_BIT_VHT;
 
-			if (prCmd->rHtCap.rMCS.arRxMask)
+			if (prCmd->fgIsSupHt)
 				prStaRec->ucPhyTypeSet |= PHY_TYPE_BIT_HT;
 
 			/* if not 11n only */
@@ -1463,7 +1463,7 @@ cnmPeerUpdate(P_ADAPTER_T prAdapter, PVOID pvSetBuffer, UINT_32 u4SetBufferLen, 
 
 	/* ++HT capability */
 
-	if (prCmd->rHtCap.rMCS.arRxMask) {
+	if (prCmd->fgIsSupHt) {
 		prAdapter->rWifiVar.eRateSetting = FIXED_RATE_NONE;
 		prStaRec->ucDesiredPhyTypeSet |= PHY_TYPE_BIT_HT;
 		prStaRec->ucPhyTypeSet |= PHY_TYPE_BIT_HT;
