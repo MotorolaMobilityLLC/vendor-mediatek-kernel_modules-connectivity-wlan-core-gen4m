@@ -1615,12 +1615,19 @@ struct PARAM_VOIP_CONFIG {
 struct PARAM_802_11_STATISTICS_STRUCT {
 	uint8_t ucInvalid;
 	union LARGE_INTEGER rTransmittedFragmentCount;
+	union LARGE_INTEGER rMulticastTransmittedFrameCount;
 	union LARGE_INTEGER rFailedCount;
 	union LARGE_INTEGER rRetryCount;
 	union LARGE_INTEGER rMultipleRetryCount;
+	union LARGE_INTEGER rRTSSuccessCount;
+	union LARGE_INTEGER rRTSFailureCount;
 	union LARGE_INTEGER rACKFailureCount;
+	union LARGE_INTEGER rFrameDuplicateCount;
 	union LARGE_INTEGER rReceivedFragmentCount;
+	union LARGE_INTEGER rMulticastReceivedFrameCount;
 	union LARGE_INTEGER rFCSErrorCount;
+	union LARGE_INTEGER rMdrdyCnt;
+	union LARGE_INTEGER rChnlIdleCnt;
 	uint32_t u4RstReason;
 	uint64_t u8RstTime;
 	uint32_t u4RoamFailCnt;
@@ -2491,6 +2498,13 @@ enum ENUM_WIFI_LOG_LEVEL_SUPPORT_T {
 	ENUM_WIFI_LOG_LEVEL_SUPPORT_NUM
 };
 
+#ifdef CFG_SUPPORT_LINK_QUALITY_MONITOR
+struct PARAM_GET_LINK_QUALITY_INFO {
+	uint8_t ucBssIdx;
+	struct WIFI_LINK_QUALITY_INFO *prLinkQualityInfo;
+};
+#endif /* CFG_SUPPORT_LINK_QUALITY_MONITOR */
+
 /*******************************************************************************
  *                            P U B L I C   D A T A
  *******************************************************************************
@@ -2811,6 +2825,13 @@ wlanoidQueryLinkSpeed(IN struct ADAPTER *prAdapter,
 		      IN void *pvQueryBuffer,
 		      IN uint32_t u4QueryBufferLen,
 		      OUT uint32_t *pu4QueryInfoLen);
+
+uint32_t
+wlanQueryLinkSpeed(IN struct ADAPTER *prAdapter,
+		       IN void *pvQueryBuffer,
+		       IN uint32_t u4QueryBufferLen,
+		       OUT uint32_t *pu4QueryInfoLen,
+		       IN uint8_t fgIsOid);
 
 uint32_t
 wlanoidQueryLinkSpeedEx(IN struct ADAPTER *prAdapter,
@@ -3417,10 +3438,24 @@ wlanoidQueryWlanInfo(IN struct ADAPTER *prAdapter,
 		     OUT uint32_t *pu4QueryInfoLen);
 
 uint32_t
+wlanQueryWlanInfo(IN struct ADAPTER *prAdapter,
+		     OUT void *pvQueryBuffer,
+		     IN uint32_t u4QueryBufferLen,
+		     OUT uint32_t *pu4QueryInfoLen,
+		     IN uint8_t fgIsOid);
+
+uint32_t
 wlanoidQueryMibInfo(IN struct ADAPTER *prAdapter,
 		    OUT void *pvQueryBuffer,
 		    IN uint32_t u4QueryBufferLen,
 		    OUT uint32_t *pu4QueryInfoLen);
+
+uint32_t
+wlanQueryMibInfo(IN struct ADAPTER *prAdapter,
+		 IN void *pvQueryBuffer,
+		 IN uint32_t u4QueryBufferLen,
+		 OUT uint32_t *pu4QueryInfoLen,
+		 IN uint8_t fgIsOid);
 
 uint32_t
 wlanoidSetFwLog2Host(IN struct ADAPTER *prAdapter,
@@ -3958,5 +3993,12 @@ uint32_t wlanoidGetWifiType(IN struct ADAPTER *prAdapter,
 			    IN void *pvSetBuffer,
 			    IN uint32_t u4SetBufferLen,
 			    OUT uint32_t *pu4SetInfoLen);
+
+#ifdef CFG_SUPPORT_LINK_QUALITY_MONITOR
+uint32_t wlanoidGetLinkQualityInfo(IN struct ADAPTER *prAdapter,
+				   IN void *pvSetBuffer,
+				   IN uint32_t u4SetBufferLen,
+				   OUT uint32_t *pu4SetInfoLen);
+#endif /* CFG_SUPPORT_LINK_QUALITY_MONITOR */
 
 #endif /* _WLAN_OID_H */

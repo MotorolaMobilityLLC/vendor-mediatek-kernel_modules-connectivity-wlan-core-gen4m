@@ -151,6 +151,17 @@ static uint8_t gatewayIp[4];
  *                                 M A C R O S
  *******************************************************************************
  */
+#ifdef CFG_SUPPORT_LINK_QUALITY_MONITOR
+#define LINK_QUALITY_COUNT_DUP(prAdapter, prSwRfb) \
+do { \
+	if (prAdapter->prAisBssInfo->prStaRecOfAP) \
+		if (prAdapter->prAisBssInfo->prStaRecOfAP->ucWlanIndex == \
+		    prSwRfb->ucWlanIdx) \
+			prAdapter->rLinkQualityInfo.u4RxDupCount++; \
+} while (0)
+#else
+#define LINK_QUALITY_COUNT_DUP
+#endif /* CFG_SUPPORT_LINK_QUALITY_MONITOR */
 
 #if CFG_RX_REORDERING_ENABLED
 #define qmHandleRxPackets_AOSP_1 \
@@ -159,6 +170,7 @@ do { \
 	if (!fgIsBMC && nicRxIsDuplicateFrame(prCurrSwRfb) == TRUE) { \
 		DBGLOG(QM, TRACE, "Duplicated packet is detected\n"); \
 		RX_INC_CNT(&prAdapter->rRxCtrl, RX_DUPICATE_DROP_COUNT); \
+		LINK_QUALITY_COUNT_DUP(prAdapter, prCurrSwRfb); \
 		prCurrSwRfb->eDst = RX_PKT_DESTINATION_NULL; \
 	} \
 	/* ToDo[6630]: defragmentation */ \
@@ -3803,6 +3815,7 @@ void qmInsertFallWithinReorderPkt(IN struct ADAPTER *prAdapter,
 				qmPopOutReorderPkt(prAdapter,
 					prSwRfb, prReturnedQue,
 					RX_DUPICATE_DROP_COUNT);
+				LINK_QUALITY_COUNT_DUP(prAdapter, prSwRfb);
 				return;
 			}
 

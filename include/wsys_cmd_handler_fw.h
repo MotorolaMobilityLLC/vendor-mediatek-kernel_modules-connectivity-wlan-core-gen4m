@@ -1436,6 +1436,25 @@ struct EVENT_STATISTICS {
 	uint8_t  ucType;
 	uint8_t  ucBssIndex;
 	uint8_t  aucPadding1[2];
+	uint8_t  ucBandIdx;
+	uint8_t  aucPadding2[3];
+
+	/* Link quality for customer */
+	union LARGE_INTEGER rTransmittedFragmentCount;
+	union LARGE_INTEGER rMulticastTransmittedFrameCount;
+	union LARGE_INTEGER rFailedCount;
+	union LARGE_INTEGER rRetryCount;
+	union LARGE_INTEGER rMultipleRetryCount;
+	union LARGE_INTEGER rRTSSuccessCount;
+	union LARGE_INTEGER rRTSFailureCount;
+	union LARGE_INTEGER rACKFailureCount;
+	union LARGE_INTEGER rFrameDuplicateCount;
+	union LARGE_INTEGER rReceivedFragmentCount;
+	union LARGE_INTEGER rMulticastReceivedFrameCount;
+	union LARGE_INTEGER rFCSErrorCount;
+	union LARGE_INTEGER rMdrdyCnt;
+	union LARGE_INTEGER rChnlIdleCnt;
+	uint32_t au4Padding3[16];
 
 	/* wifi_radio_stat */
 	int32_t      i4RadioIdx;
@@ -1477,13 +1496,13 @@ struct EVENT_STATISTICS {
 	int16_t      i2Roaming;
 	uint32_t u4Capabilities;
 	uint8_t      aucSsid[33];
-	uint8_t      aucPadding2[1];
-	uint8_t      aucBssid[6];
-	uint8_t      aucPadding3[2];
-	uint8_t      aucApCountryStr[3];
 	uint8_t      aucPadding4[1];
+	uint8_t      aucBssid[6];
+	uint8_t      aucPadding5[2];
+	uint8_t      aucApCountryStr[3];
+	uint8_t      aucPadding6[1];
 	uint8_t      aucCountryStr[3];
-	uint8_t      aucPadding5[1];
+	uint8_t      aucPadding7[1];
 
 	/* wifi_wmm_ac_stat: VO */
 	uint32_t u4VoTxMpdu;
