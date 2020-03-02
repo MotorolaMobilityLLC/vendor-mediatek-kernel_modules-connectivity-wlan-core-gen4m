@@ -2803,4 +2803,9 @@ wlanoidLinkDown(IN P_ADAPTER_T prAdapter,
 ********************************************************************************
 */
 
+WLAN_STATUS
+wlanoidAbortScan(IN P_ADAPTER_T prAdapter,
+			OUT PVOID pvQueryBuffer, IN UINT_32 u4QueryBufferLen,
+			OUT PUINT_32 pu4QueryInfoLen);
+
 #endif /* _WLAN_OID_H */
