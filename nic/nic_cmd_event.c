@@ -4751,9 +4751,10 @@ void nicEventRssiMonitor(IN struct ADAPTER *prAdapter,
 
 	kalMemCopy(&rssi, prEvent->aucBuffer, sizeof(int32_t));
 	DBGLOG(RX, TRACE, "EVENT_ID_RSSI_MONITOR value=%d\n", rssi);
-
+#if KERNEL_VERSION(3, 16, 0) <= LINUX_VERSION_CODE
 	mtk_cfg80211_vendor_event_rssi_beyond_range(wiphy,
 		prGlueInfo->prDevHandler->ieee80211_ptr, rssi);
+#endif
 }
 
 void nicEventDumpMem(IN struct ADAPTER *prAdapter,
