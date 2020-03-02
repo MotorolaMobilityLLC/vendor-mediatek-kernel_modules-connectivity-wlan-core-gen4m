@@ -826,7 +826,7 @@ struct mt66xx_chip_info mt66xx_chip_info_soc3_0 = {
 	.pwrondownload = NULL,
 #endif
 	.triggerfwassert = soc3_0_Trigger_fw_assert,
-	.dumpwfsyscpupcr = soc3_0_DumpWfsysCpupcr,
+	.dumpwfsyscpupcr = soc3_0_DumpWfsyscpupcr,
 #if (CFG_SUPPORT_CONNINFRA == 1)
 	.coexpccifon = wlanConnacPccifon,
 	.coexpccifoff = wlanConnacPccifoff,
@@ -1014,7 +1014,7 @@ uint32_t soc3_0_DownloadByDynMemMap(IN struct ADAPTER *prAdapter,
 	return WLAN_STATUS_SUCCESS;
 }
 #endif
-void soc3_0_DumpWfsysCpupcr(struct ADAPTER *prAdapter)
+void soc3_0_DumpWfsyscpupcr(struct ADAPTER *prAdapter)
 {
 	uint32_t i = 0, u4Value = 0, u4Value_2 = 0;
 
@@ -1025,7 +1025,7 @@ void soc3_0_DumpWfsysCpupcr(struct ADAPTER *prAdapter)
 		HAL_MCR_RD(prAdapter, WFSYS_CPUPCR_ADDR, &u4Value);
 		HAL_MCR_RD(prAdapter, WFSYS_LP_ADDR, &u4Value_2);
 		DBGLOG(HAL, INFO,
-			"MCU PC: 0x%08x, MCU LP: 0x%08x\n", u4Value, u4Value_2);
+			"wm pc=0x%08x, wm lp=0x%08x\n", u4Value, u4Value_2);
 	}
 }
 
@@ -1483,7 +1483,7 @@ static void soc3_0_DumpHostCr(struct ADAPTER *prAdapter)
 	soc3_0_DumpOtherCr(prAdapter);
 	soc3_0_DumpHwDebugFlag(prAdapter);
 	soc3_0_DumpSpecifiedWfTop(prAdapter);
-	soc3_0_DumpWfsysCpupcr(prAdapter);
+	soc3_0_DumpWfsyscpupcr(prAdapter);
 }
 
 int soc3_0_CheckBusHang(struct ADAPTER *prAdapter,
