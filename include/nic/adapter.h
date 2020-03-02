@@ -1253,15 +1253,11 @@ struct WIFI_FEM_CFG {
 struct PERF_MONITOR_T {
 	struct TIMER rPerfMonTimer;
 	unsigned long ulPerfMonFlag;
-	unsigned long ulLastTxBytes;
-	unsigned long ulLastRxBytes;
-	unsigned long ulP2PLastRxBytes;
-	unsigned long ulP2PLastTxBytes;
-	unsigned long ulThroughput; /* in bps */
-	unsigned long ulWlanTxTp; /* in Bps */
-	unsigned long ulWlanRxTp; /* in Bps */
-	unsigned long ulP2PTxTp; /* in Bps */
-	unsigned long ulP2PRxTp; /* in Bps */
+	unsigned long ulLastTxBytes[BSS_DEFAULT_NUM];
+	unsigned long ulLastRxBytes[BSS_DEFAULT_NUM];
+	uint64_t ulThroughput; /* in bps */
+	unsigned long ulTxTp[BSS_DEFAULT_NUM]; /* in Bps */
+	unsigned long ulRxTp[BSS_DEFAULT_NUM]; /* in Bps */
 	uint32_t u4UpdatePeriod; /* in ms */
 	uint32_t u4TarPerfLevel;
 	uint32_t u4CurrPerfLevel;
