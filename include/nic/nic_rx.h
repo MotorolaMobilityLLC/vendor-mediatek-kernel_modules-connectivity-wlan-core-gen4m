@@ -600,6 +600,37 @@ enum ENUM_RXPI_MODE {
 #define RXS_DW2_RX_FRAG_BITMAP     0x3800
 #define RXS_DW2_RX_FRAG_VALUE      0x0800
 
+
+/* TX Free Done Event Definition
+ * Format version of this tx done event.
+ *	0: MT7615
+ *	1: MT7622, CONNAC (X18/P18/MT7663)
+ *	2: MT7619_AXE, MT7915 E1, Petrus
+  *	3: MT7915 E2, Buzzard
+ */
+enum {
+	TFD_EVT_VER_0,
+	TFD_EVT_VER_1,
+	TFD_EVT_VER_2,
+	TFD_EVT_VER_3,
+};
+
+#define RX_TFD_EVT_V3_PAIR_SHIFT 31
+#define RX_TFD_EVT_V3_PAIR_MASK BIT(31)
+#define RX_TFD_EVT_V3_QID_SHIFT 24
+#define RX_TFD_EVT_V3_QID_MASK BITS(24, 30)
+#define RX_TFD_EVT_V3_WLAN_ID_SHIFT 14
+#define RX_TFD_EVT_V3_WLAN_ID_MASK BITS(14, 23)
+#define RX_TFD_EVT_V3_MSDU_ID_SHIFT 16
+#define RX_TFD_EVT_V3_MSDU_ID_MASK BITS(16, 30)
+
+#define RX_TFD_EVT_V3_GET_PAIR_BIT(_rField) \
+	(((_rField) & (RX_TFD_EVT_V3_PAIR_MASK)) >> (RX_TFD_EVT_V3_PAIR_SHIFT))
+#define RX_TFD_EVT_V3_GET_MSDU_ID(_rField) \
+	(((_rField) & (RX_TFD_EVT_V3_MSDU_ID_MASK)) \
+		>> (RX_TFD_EVT_V3_MSDU_ID_SHIFT))
+
+
 /*******************************************************************************
  *                            P U B L I C   D A T A
  *******************************************************************************
@@ -690,26 +721,72 @@ struct HW_RX_VECTOR_DESC {
 union HW_MAC_MSDU_TOKEN_T {
 	struct {
 		uint16_t         u2MsduID[2];
-	} rFormatV1;
+	} rFormatV0;
 	struct {
 		uint16_t         u2MsduID;
 		uint16_t         u2WlanID:10;
 		uint16_t         u2Rsv:1;
 		uint16_t         u2QueIdx:5;
+	} rFormatV1;
+	struct {
+		uint32_t         u2MsduID:15;
+		uint32_t         u2WlanID:10;
+		uint32_t         u2QueIdx:7;
 	} rFormatV2;
+	union {
+		struct {
+			uint32_t         u4TxCnt:13;
+			uint32_t         u4Stat:2;
+			uint32_t         u4H:1;
+			uint32_t         u4MsduID:15;
+			uint32_t         u4Pair:1;
+		} rP0;
+		struct {
+			uint32_t         u4BW:2;
+			uint32_t         u4Rate:4;
+			uint32_t         u4GI:2;
+			uint32_t         u4TxMode:2;
+			uint32_t         u4Nsts:3;
+			uint32_t         u4DCM:1;
+			uint32_t         u4WlanID:10;
+			uint32_t         u4QID:7;
+			uint32_t         u4Pair:1;
+		} rP1;
+	} rFormatV3;
 };
 
 struct HW_MAC_MSDU_REPORT {
 	/* DW 0 */
-	uint32_t         u2BufByteCount:16;
-	uint32_t         u2MsduCount:7;
-	uint32_t         u2DoneEventType:6;
-	uint32_t         u2PktType:3;
+	union {
+		struct {
+			uint16_t         u2BufByteCount;
+			uint16_t         u2MsduCount:7;
+			uint16_t	 u2TxDoneInfo:9;
+		} field;
+
+		struct {
+			uint16_t         u2BufByteCount;
+			uint16_t         u2MsduCount:10;
+			uint16_t	 u2Rsv:1;
+			uint16_t	 u2PktType:5;
+		} field_v3;
+
+		uint32_t word;
+	} DW0;
+
 	/* DW 1 */
+	union {
+		struct {
 	uint32_t         u4TxdCount:8;
 	uint32_t         u4Rsv1:8;
 	uint32_t         u4Ver:3;
 	uint32_t         u4Rsv2:13;
+		} field;
+
+		uint32_t word;
+	} DW1;
+
+	/* DW 2 */
 	/* MSDU token array */
 	union HW_MAC_MSDU_TOKEN_T au4MsduToken[0];
 };

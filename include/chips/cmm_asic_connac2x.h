@@ -98,6 +98,9 @@
 #define CONNAC2X_NIC_TX_PSE_HEADER_LENGTH			8
 #define CONNAC2X_RX_INIT_EVENT_LENGTH                           8
 
+#define CONNAC2X_WFDMA_DUMMY_CR		(CONNAC2X_MCU_WPDMA_0_BASE + 0x120)
+#define CONNAC2X_WFDMA_NEED_REINIT_BIT	BIT(1)
+
 #if defined(_HIF_PCIE) || defined(_HIF_AXI)
 #define CONNAC2X_CONN_HIF_ON_ADDR_REMAP23              0x7010
 #define CONNAC2X_HOST_EXT_CONN_HIF_WRAP                0x7c027000
@@ -327,6 +330,15 @@
 
 #define CONNAC2X_HAL_RX_VECTOR_GET_RX_VECTOR(_prHwRxVector, _ucIdx) \
 	((_prHwRxVector)->u4RxVector[_ucIdx])
+
+
+#if defined(_HIF_PCIE) || defined(_HIF_AXI)
+#define HAL_IS_CONNAC2X_EXT_TX_DONE_INTR(u4IntrStatus, __u4IntrBits) \
+	((u4IntrStatus & (__u4IntrBits)) ? TRUE : FALSE)
+
+#define HAL_IS_CONNAC2X_EXT_RX_DONE_INTR(u4IntrStatus, __u4IntrBits) \
+	((u4IntrStatus & (__u4IntrBits)) ? TRUE : FALSE)
+#endif /* defined(_HIF_PCIE) || defined(_HIF_AXI) */
 
 /*******************************************************************************
 *                             D A T A   T Y P E S
@@ -954,10 +966,13 @@ void asicConnac2xLowPowerOwnClear(
 	uint8_t *pfgResult);
 void asicConnac2xProcessSoftwareInterrupt(
 	struct ADAPTER *prAdapter);
-void asicConnac2xSoftwareInterruptMcu(
-	struct ADAPTER *prAdapter, u_int32_t intrBitMask);
 void asicConnac2xHifRst(
 	struct GLUE_INFO *prGlueInfo);
+void asicConnac2xReadExtIntStatus(
+	struct ADAPTER *prAdapter,
+	uint32_t *pu4IntStatus);
+void asicConnac2xProcessRxInterrupt(
+	struct ADAPTER *prAdapter);
 #endif /* _HIF_PCIE */
 
 #if defined(_HIF_USB)
@@ -974,6 +989,9 @@ void asicConnac2xEnableUsbFWDL(
 #endif /* CFG_ENABLE_FW_DOWNLOAD */
 u_int8_t asicConnac2xUsbResume(IN struct ADAPTER *prAdapter,
 	IN struct GLUE_INFO *prGlueInfo);
+void asicConnac2xUdmaRxFlush(
+	struct ADAPTER *prAdapter,
+	u_int8_t bEnable);
 #endif /* _HIF_USB */
 
 void fillConnac2xTxDescTxByteCount(

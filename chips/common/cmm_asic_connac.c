@@ -648,6 +648,12 @@ void asicPdmaConfig(struct GLUE_INFO *prGlueInfo, u_int8_t fgEnable)
 	kalDevRegRead(prGlueInfo, WPDMA_APSRC_ACK_LOCK_SLPPROT, &u4Val);
 	kalDevRegWrite(prGlueInfo, WPDMA_APSRC_ACK_LOCK_SLPPROT,
 		u4Val | BIT(4));
+
+	if (!fgEnable) {
+		halWpdmaWaitIdle(prGlueInfo, 100, 1000);
+		/* Reset DMA Index */
+		kalDevRegWrite(prGlueInfo, WPDMA_RST_PTR, 0xFFFFFFFF);
+	}
 }
 
 void asicEnableInterrupt(IN struct ADAPTER *prAdapter)
@@ -792,6 +798,51 @@ void asicCheckDummyReg(struct GLUE_INFO *prGlueInfo)
 	}
 	/* Write sleep mode magic num to dummy reg */
 	asicSetDummyReg(prGlueInfo);
+}
+
+void asicPdmaTxRingExtCtrl(
+	struct GLUE_INFO *prGlueInfo,
+	struct RTMP_TX_RING *tx_ring,
+	uint32_t index)
+{
+	struct BUS_INFO *prBusInfo;
+	struct ADAPTER *prAdapter = prGlueInfo->prAdapter;
+	uint32_t phy_addr_ext = 0, ext_offset = 0;
+	struct RTMP_DMACB *prTxCell;
+
+	prBusInfo = prGlueInfo->prAdapter->chip_info->bus_info;
+	prTxCell = &tx_ring->Cell[0];
+
+	phy_addr_ext = (((uint64_t)prTxCell->AllocPa >>
+			DMA_BITS_OFFSET) & DMA_HIGHER_4BITS_MASK);
+	ext_offset = index * MT_RINGREG_EXT_DIFF;
+
+	tx_ring->hw_desc_base_ext =
+		prBusInfo->host_tx_ring_ext_ctrl_base + ext_offset;
+
+	HAL_MCR_WR(prAdapter, tx_ring->hw_desc_base_ext,
+			phy_addr_ext);
+}
+
+void asicPdmaRxRingExtCtrl(
+	struct GLUE_INFO *prGlueInfo,
+	struct RTMP_RX_RING *rx_ring,
+	uint32_t index)
+{
+	struct BUS_INFO *prBusInfo;
+	struct ADAPTER *prAdapter = prGlueInfo->prAdapter;
+	uint32_t phy_addr_ext = 0, ext_offset = 0;
+
+	prBusInfo = prGlueInfo->prAdapter->chip_info->bus_info;
+
+	phy_addr_ext = (((uint64_t)rx_ring->Cell[0].AllocPa >>
+			DMA_BITS_OFFSET) & DMA_HIGHER_4BITS_MASK);
+	ext_offset = index * MT_RINGREG_EXT_DIFF;
+	rx_ring->hw_desc_base_ext =
+		prBusInfo->host_rx_ring_ext_ctrl_base + ext_offset;
+
+	HAL_MCR_WR(prAdapter, rx_ring->hw_desc_base_ext,
+			phy_addr_ext);
 }
 #endif /* _HIF_PCIE || _HIF_AXI */
 

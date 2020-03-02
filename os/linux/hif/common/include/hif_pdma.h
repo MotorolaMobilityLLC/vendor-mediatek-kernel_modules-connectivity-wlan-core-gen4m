@@ -63,9 +63,18 @@
  *                              C O N S T A N T S
  *******************************************************************************
  */
+#define NUM_OF_WFDMA1_TX_RING			0
+#define NUM_OF_WFDMA1_RX_RING			0
 
-#define NUM_OF_TX_RING				4
-#define NUM_OF_RX_RING				2
+#if (CFG_SUPPORT_CONNAC2X == 1)
+#undef NUM_OF_WFDMA1_TX_RING
+#define NUM_OF_WFDMA1_TX_RING			1  /* WA CMD Ring */
+#undef NUM_OF_WFDMA1_RX_RING
+#define NUM_OF_WFDMA1_RX_RING			5
+#endif /* CFG_SUPPORT_CONNAC2X == 1 */
+
+#define NUM_OF_TX_RING				(4+NUM_OF_WFDMA1_TX_RING)
+#define NUM_OF_RX_RING				(2+NUM_OF_WFDMA1_RX_RING)
 
 #define TX_RING_SIZE				256
 #define RX_RING_SIZE				256	/* Max Rx ring size */
@@ -194,11 +203,17 @@ enum ENUM_TX_RING_IDX {
 	TX_RING_DATA1_IDX_1,
 	TX_RING_CMD_IDX_2,
 	TX_RING_FWDL_IDX_3,
+	TX_RING_WA_CMD_IDX_4,
 };
 
 enum ENUM_RX_RING_IDX {
-	RX_RING_DATA_IDX_0 = 0,
-	RX_RING_EVT_IDX_1
+	RX_RING_DATA_IDX_0 = 0,  /*Rx Data */
+	RX_RING_EVT_IDX_1,
+	WFDMA0_RX_RING_IDX_2,  /* Band0 TxFreeDoneEvent */
+	WFDMA0_RX_RING_IDX_3,  /* Band1 TxFreeDoneEvent  */
+	WFDMA1_RX_RING_IDX_0,  /* WM Event */
+	WFDMA1_RX_RING_IDX_1,  /*WA Band 0 Event*/
+	WFDMA1_RX_RING_IDX_2,  /*WA Band 1 Event*/
 };
 
 /* ============================================================================
