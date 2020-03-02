@@ -1742,6 +1742,11 @@ void aisFsmSteps(IN struct ADAPTER *prAdapter,
 					prAisFsmInfo->fgTargetChnlScanIssued =
 					    FALSE;
 					fgIsTransition = TRUE;
+
+					cnmOpModeGetTRxNss(prAdapter,
+						prAisBssInfo->ucBssIndex,
+						&prAisBssInfo->ucOpRxNss,
+						&prAisBssInfo->ucOpTxNss);
 				}
 			}
 			break;
@@ -2226,12 +2231,17 @@ void aisFsmSteps(IN struct ADAPTER *prAdapter,
 #endif /* CFG_SUPPORT_ADHOC */
 
 		case AIS_STATE_NORMAL_TR:
-			if (prAisFsmInfo->fgIsInfraChannelFinished == FALSE) {
-				/* Don't do anything when rJoinTimeoutTimer
-				 * is still ticking
-				 */
+			/* Renew op trx nss */
+			cnmOpModeGetTRxNss(prAdapter,
+					   prAisBssInfo->ucBssIndex,
+					   &prAisBssInfo->ucOpRxNss,
+					   &prAisBssInfo->ucOpTxNss);
+
+			/* Don't do anything when rJoinTimeoutTimer
+			 * is still ticking
+			 */
+			if (timerPendingTimer(&prAisFsmInfo->rJoinTimeoutTimer))
 				break;
-			}
 
 			if (prAisFsmInfo->ePreviousState ==
 					AIS_STATE_OFF_CHNL_TX)
