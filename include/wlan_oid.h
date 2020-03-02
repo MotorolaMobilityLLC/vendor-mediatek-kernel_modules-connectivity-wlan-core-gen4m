@@ -2374,9 +2374,17 @@ struct PARAM_CUSTOM_MONITOR_SET_STRUCT {
 /*--------------------------------------------------------------*/
 /*! \brief MTK Auto Channel Selection related Container         */
 /*--------------------------------------------------------------*/
+enum ENUM_SAFE_CH_MASK {
+	ENUM_SAFE_CH_MASK_BAND_2G4 = 0,
+	ENUM_SAFE_CH_MASK_BAND_5G_0 = 1,
+	ENUM_SAFE_CH_MASK_BAND_5G_1 = 2,
+	ENUM_SAFE_CH_MASK_BAND_5G_2 = 3,
+	ENUM_SAFE_CH_MASK_MAX_NUM = 4,
+};
+
 struct LTE_SAFE_CHN_INFO {
-	/* NL80211_TESTMODE_AVAILABLE_CHAN_ATTR_MAX */
-	uint32_t au4SafeChannelBitmask[5];
+	/* ENUM_SAFE_CH_MASK_MAX_NUM */
+	uint32_t au4SafeChannelBitmask[ENUM_SAFE_CH_MASK_MAX_NUM];
 };
 
 struct PARAM_CHN_LOAD_INFO {

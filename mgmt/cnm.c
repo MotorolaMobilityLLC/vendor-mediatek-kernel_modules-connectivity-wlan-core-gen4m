@@ -1098,16 +1098,20 @@ void cnmCsaDoneEvent(IN struct ADAPTER *prAdapter,
 
 #if CFG_SUPPORT_IDC_CH_SWITCH
 uint8_t cnmDecideSapNewChannel(
-	IN struct GLUE_INFO *prGlueInfo, uint8_t ucCurrentChannel)
+	IN struct GLUE_INFO *prGlueInfo,
+	IN struct BSS_INFO *prBssInfo)
 {
 	uint8_t ucSwitchMode;
 	uint32_t u4LteSafeChnBitMask_2G  = 0, u4LteSafeChnBitMask_5G_1 = 0,
 		u4LteSafeChnBitMask_5G_2 = 0;
+	uint8_t ucCurrentChannel = 0;
 
-	if (!prGlueInfo) {
-		DBGLOG(P2P, ERROR, "prGlueInfo is NULL\n");
+	if (!prGlueInfo || !prBssInfo) {
+		DBGLOG(P2P, ERROR, "prGlueInfo or prBssInfo is NULL\n");
 		return -EFAULT;
 	}
+
+	ucCurrentChannel = prBssInfo->ucPrimaryChannel;
 
 	ASSERT(ucCurrentChannel);
 
@@ -1152,7 +1156,7 @@ uint8_t cnmDecideSapNewChannel(
 
 	return p2pFunGetAcsBestCh(prGlueInfo->prAdapter,
 			ucSwitchMode == CH_SWITCH_2G ? BAND_2G4 : BAND_5G,
-			MAX_BW_20MHZ,
+			rlmGetBssOpBwByVhtAndHtOpInfo(prBssInfo),
 			u4LteSafeChnBitMask_2G,
 			u4LteSafeChnBitMask_5G_1,
 			u4LteSafeChnBitMask_5G_2);
@@ -1184,7 +1188,8 @@ uint8_t cnmIdcCsaReq(IN struct ADAPTER *prAdapter,
 		rRfChnlInfo.eBand =
 			(rRfChnlInfo.ucChannelNum <= 14)
 			? BAND_2G4 : BAND_5G;
-		rRfChnlInfo.ucChnlBw = MAX_BW_20MHZ;
+		rRfChnlInfo.ucChnlBw =
+			rlmGetBssOpBwByVhtAndHtOpInfo(prBssInfo);
 		rRfChnlInfo.u2PriChnlFreq =
 			nicChannelNum2Freq(ch_num) / 1000;
 		rRfChnlInfo.u4CenterFreq1 =
@@ -1239,7 +1244,7 @@ void cnmIdcDetectHandler(IN struct ADAPTER *prAdapter,
 	/* Statistics from FW is valid */
 	if (prEventBody->u4Flags & BIT(0)) {
 		for (ucIdx = 0;
-			ucIdx < NL80211_TESTMODE_AVAILABLE_CHAN_ATTR_MAX;
+			ucIdx < ENUM_SAFE_CH_MASK_MAX_NUM;
 				ucIdx++) {
 			g_rLteSafeChInfo.rLteSafeChn.
 				au4SafeChannelBitmask[ucIdx]
@@ -1279,14 +1284,13 @@ void cnmIdcDetectHandler(IN struct ADAPTER *prAdapter,
 	}
 
 	/* Choose New Ch & Start CH Swtich*/
-
-	prBssInfo =  cnmGetSapBssInfo(prAdapter);
+	prBssInfo = cnmGetSapBssInfo(prAdapter);
 	if (prBssInfo) {
 		DBGLOG(CNM, INFO, "[CSA]BssIdx=%d,CurCH=%d\n",
 			prBssInfo->ucBssIndex,
 			prBssInfo->ucPrimaryChannel);
 		ucNewChannel = cnmDecideSapNewChannel(prGlueInfo,
-			prBssInfo->ucPrimaryChannel);
+			prBssInfo);
 		if (ucNewChannel) {
 			u4Ret = cnmIdcCsaReq(prAdapter, ucNewChannel,
 						prBssInfo->u4PrivateData);
