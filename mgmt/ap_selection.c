@@ -170,6 +170,14 @@ struct WEIGHT_CONFIG gasMtkWeightConfig[ROAM_TYPE_NUM] = {
 	}
 };
 
+#if (CFG_SUPPORT_802_11AX == 1)
+#define CALCULATE_SCORE_BY_AX_AP(prAdapter, prBssDesc, eRoamType) \
+	((eRoamType == ROAM_TYPE_PER) ? \
+	((prAdapter->rWifiVar).ucApSelAxWeight * \
+	(prBssDesc->fgIsHEPresent ? \
+	(BSS_FULL_SCORE/(prAdapter->rWifiVar).ucApSelAxScoreDiv) : 0)):0)
+#endif
+
 #define CALCULATE_SCORE_BY_PROBE_RSP(prBssDesc, eRoamType) \
 	(gasMtkWeightConfig[eRoamType].ucProbeRespWeight * \
 	(prBssDesc->fgSeenProbeResp ? BSS_FULL_SCORE : 0))
@@ -735,6 +743,9 @@ uint16_t scanCalculateTotalScore(struct ADAPTER *prAdapter,
 	uint16_t u2ScoreIdleTime = 0;
 	uint16_t u2ScoreTotal = 0;
 	uint16_t u2BlackListScore = 0;
+#if (CFG_SUPPORT_802_11AX == 1)
+	uint16_t u2AxApScore = 0;
+#endif
 	int8_t cRssi = -128;
 
 	prAisSpecificBssInfo =
@@ -761,21 +772,47 @@ uint16_t scanCalculateTotalScore(struct ADAPTER *prAdapter,
 	u2BlackListScore =
 	       scanCalculateScoreByBlackList(prAdapter, prBssDesc, eRoamType);
 
+#if (CFG_SUPPORT_802_11AX == 1)
+	u2AxApScore = CALCULATE_SCORE_BY_AX_AP(prAdapter, prBssDesc, eRoamType);
+#endif
 	u2ScoreTotal = u2ScoreBandwidth + u2ScoreChnlInfo +
 		u2ScoreDeauth + u2ScoreProbeRsp + u2ScoreScanMiss +
 		u2ScoreSnrRssi + u2ScoreStaCnt + u2ScoreSTBC +
 		u2ScoreBand + u2BlackListScore + u2ScoreSaa +
 		u2ScoreIdleTime;
+#if (CFG_SUPPORT_802_11AX == 1)
+	u2ScoreTotal += u2AxApScore;
+#endif
+
+#if (CFG_SUPPORT_802_11AX == 1)
+#define TEMP_LOG_TEMPLATE\
+		MACSTR" cRSSI[%d] 5G[%d] Score,Total %d,DE[%d]"\
+		", PR[%d], SM[%d], RSSI[%d],BD[%d],BL[%d],SAA[%d]"\
+		", BW[%d], SC[%d],ST[%d],CI[%d],IT[%d]"\
+		", HE[%d], AxWeight[%d], AxScoreDiv[%d], AxScore[%d]\n"
+#else
+#define TEMP_LOG_TEMPLATE\
+		MACSTR" cRSSI[%d] 5G[%d] Score,Total %d,DE[%d]"\
+		", PR[%d], SM[%d], RSSI[%d],BD[%d],BL[%d],SAA[%d]"\
+		", BW[%d], SC[%d],ST[%d],CI[%d],IT[%d]\n"
+#endif
 
 	log_dbg(SCN, INFO,
-		MACSTR
-		" cRSSI[%d] 5G[%d] Score,Total %d,DE[%d],PR[%d],SM[%d],RSSI[%d],BD[%d],BL[%d],SAA[%d],BW[%d],SC[%d],ST[%d],CI[%d],IT[%d]\n",
+		TEMP_LOG_TEMPLATE,
 		MAC2STR(prBssDesc->aucBSSID), cRssi,
 		(prBssDesc->eBand == BAND_5G ? 1 : 0), u2ScoreTotal,
 		u2ScoreDeauth, u2ScoreProbeRsp, u2ScoreScanMiss,
 		u2ScoreSnrRssi, u2ScoreBand, u2BlackListScore,
 		u2ScoreSaa, u2ScoreBandwidth, u2ScoreStaCnt,
-		u2ScoreSTBC, u2ScoreChnlInfo, u2ScoreIdleTime);
+		u2ScoreSTBC, u2ScoreChnlInfo, u2ScoreIdleTime
+#if (CFG_SUPPORT_802_11AX == 1)
+		, prBssDesc->fgIsHEPresent
+		, (prAdapter->rWifiVar).ucApSelAxWeight
+		, (prAdapter->rWifiVar).ucApSelAxScoreDiv
+		, u2AxApScore
+#endif
+		);
+#undef TEMP_LOG_TEMPLATE
 
 	return u2ScoreTotal;
 }
@@ -1172,3 +1209,4 @@ uint8_t scanBeaconTimeoutFilterPolicyForAis(struct ADAPTER *prAdapter,
 	roam->eReason = reason;
 	return FALSE;
 }
+
