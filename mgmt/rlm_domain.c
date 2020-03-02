@@ -1448,9 +1448,9 @@ BOOLEAN rlmDomainGetTxPwrLimit(u32 country_code,
 	ret = request_firmware(&file, TX_PWR_LIMIT_FILE, prGlueInfo->prDev);
 
 	if (ret) {
-		DBGLOG(RLM, ERROR, "\nERROR + ERROR + ERROR\n%s(); ERROR. Open file [%s] failed.\n",
+		DBGLOG(RLM, WARN, "\n===WARNING===\n%s(); Open file [%s] failed.\n",
 			   __func__, TX_PWR_LIMIT_FILE);
-		DBGLOG(RLM, ERROR, "MaxTxPowerLimit is disable.\nERROR + ERROR + ERROR\n");
+		DBGLOG(RLM, WARN, "MaxTxPowerLimit is disable.\n===WARNING===\n");
 
 		/*error*/
 		return TRUE;
@@ -1462,8 +1462,9 @@ BOOLEAN rlmDomainGetTxPwrLimit(u32 country_code,
 	/*search country code*/
 	start_offset = rlmDomainSearchCountrySection(country_code, file);
 	if (!start_offset) {
-		DBGLOG(RLM, ERROR, "%s(); Cannot find match country code: %s\n",
+		DBGLOG(RLM, WARN, "\n===WARNING===\n%s(): Cannot find match country code: %s\n",
 			   __func__, country_code);
+		DBGLOG(RLM, WARN, "MaxTxPowerLimit is disable.\n===WARNING===\n");
 
 		error = TRUE;
 		goto END;
