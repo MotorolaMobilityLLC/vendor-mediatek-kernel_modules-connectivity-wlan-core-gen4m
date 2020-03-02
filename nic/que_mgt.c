@@ -3402,7 +3402,7 @@ void qmProcessPktWithReordering(IN struct ADAPTER *prAdapter,
 	prReorderQueParm = ((
 		prStaRec->aprRxReorderParamRefTbl)[prSwRfb->ucTid]);
 	if (!prReorderQueParm || !(prReorderQueParm->fgIsValid)) {
-		DBGLOG(QM, ERROR,
+		DBGLOG(QM, TRACE,
 			"Reordering but no BA agreement for STA[%d] TID[%d]\n",
 			prStaRec->ucIndex, prSwRfb->ucTid);
 		QUEUE_INSERT_TAIL(prReturnedQue,
