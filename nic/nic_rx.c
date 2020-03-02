@@ -2831,18 +2831,21 @@ void nicRxProcessEventPacket(IN struct ADAPTER *prAdapter,
 		{
 			struct PTA_IPC *prEventBwcsStatus;
 
-			prEventBwcsStatus = (struct PTA_IPC *) (prEvent->aucBuffer);
+			prEventBwcsStatus =
+				(struct PTA_IPC *) (prEvent->aucBuffer);
 
 #if CFG_SUPPORT_BCM_BWCS_DEBUG
 			DBGLOG(RSN, EVENT, "BCM BWCS Event: %02x%02x%02x%02x\n",
-			       prEventBwcsStatus->u.aucBTPParams[0],
-			       prEventBwcsStatus->u.aucBTPParams[1],
-			       prEventBwcsStatus->u.aucBTPParams[2], prEventBwcsStatus->u.aucBTPParams[3]);
+				prEventBwcsStatus->u.aucBTPParams[0],
+				prEventBwcsStatus->u.aucBTPParams[1],
+				prEventBwcsStatus->u.aucBTPParams[2],
+				prEventBwcsStatus->u.aucBTPParams[3]);
 #endif
 
 			kalIndicateStatusAndComplete(prAdapter->prGlueInfo,
-						     WLAN_STATUS_BWCS_UPDATE,
-						     (void *) prEventBwcsStatus, sizeof(struct PTA_IPC));
+				WLAN_STATUS_BWCS_UPDATE,
+				(void *) prEventBwcsStatus,
+				sizeof(struct PTA_IPC));
 		}
 
 		break;

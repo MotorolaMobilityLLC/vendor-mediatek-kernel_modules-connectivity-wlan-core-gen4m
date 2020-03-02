@@ -50,26 +50,26 @@
  *
  *****************************************************************************/
 /******************************************************************************
-*[File]             pcie.c
-*[Version]          v1.0
-*[Revision Date]    2010-03-01
-*[Author]
-*[Description]
-*    The program provides PCIE HIF driver
-*[Copyright]
-*    Copyright (C) 2010 MediaTek Incorporation. All Rights Reserved.
-******************************************************************************/
+ *[File]             pcie.c
+ *[Version]          v1.0
+ *[Revision Date]    2010-03-01
+ *[Author]
+ *[Description]
+ *    The program provides PCIE HIF driver
+ *[Copyright]
+ *    Copyright (C) 2010 MediaTek Incorporation. All Rights Reserved.
+ ******************************************************************************/
 
 
 /*******************************************************************************
-*                         C O M P I L E R   F L A G S
-********************************************************************************
-*/
+ *                         C O M P I L E R   F L A G S
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                    E X T E R N A L   R E F E R E N C E S
-********************************************************************************
-*/
+ *                    E X T E R N A L   R E F E R E N C E S
+ *******************************************************************************
+ */
 
 #include "gl_os.h"
 
@@ -85,9 +85,9 @@
 #include "mt66xx_reg.h"
 
 /*******************************************************************************
-*                              C O N S T A N T S
-********************************************************************************
-*/
+ *                              C O N S T A N T S
+ *******************************************************************************
+ */
 
 #define MTK_PCI_VENDOR_ID	0x14C3
 #define NIC6632_PCIe_DEVICE_ID	0x6632
@@ -123,19 +123,19 @@ static const struct pci_device_id mtk_pci_ids[] = {
 MODULE_DEVICE_TABLE(pci, mtk_pci_ids);
 
 /*******************************************************************************
-*                             D A T A   T Y P E S
-********************************************************************************
-*/
+ *                             D A T A   T Y P E S
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                            P U B L I C   D A T A
-********************************************************************************
-*/
+ *                            P U B L I C   D A T A
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                           P R I V A T E   D A T A
-********************************************************************************
-*/
+ *                           P R I V A T E   D A T A
+ *******************************************************************************
+ */
 static probe_card pfWlanProbe;
 static remove_card pfWlanRemove;
 
@@ -149,28 +149,28 @@ static struct pci_driver mtk_pci_driver = {
 static u_int8_t g_fgDriverProbed = FALSE;
 static uint32_t g_u4DmaMask = 32;
 /*******************************************************************************
-*                                 M A C R O S
-********************************************************************************
-*/
+ *                                 M A C R O S
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                   F U N C T I O N   D E C L A R A T I O N S
-********************************************************************************
-*/
+ *                   F U N C T I O N   D E C L A R A T I O N S
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                              F U N C T I O N S
-********************************************************************************
-*/
+ *                              F U N C T I O N S
+ *******************************************************************************
+ */
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief This function is a PCIE interrupt callback function
-*
-* \param[in] func  pointer to PCIE handle
-*
-* \return void
-*/
+ * \brief This function is a PCIE interrupt callback function
+ *
+ * \param[in] func  pointer to PCIE handle
+ *
+ * \return void
+ */
 /*----------------------------------------------------------------------------*/
 static uint8_t *CSRBaseAddress;
 
@@ -205,13 +205,13 @@ static irqreturn_t mtk_pci_interrupt(int irq, void *dev_instance)
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief This function is a PCIE probe function
-*
-* \param[in] func   pointer to PCIE handle
-* \param[in] id     pointer to PCIE device id table
-*
-* \return void
-*/
+ * \brief This function is a PCIE probe function
+ *
+ * \param[in] func   pointer to PCIE handle
+ * \param[in] id     pointer to PCIE device id table
+ *
+ * \return void
+ */
 /*----------------------------------------------------------------------------*/
 static int mtk_pci_probe(struct pci_dev *pdev, const struct pci_device_id *id)
 {
@@ -229,14 +229,16 @@ static int mtk_pci_probe(struct pci_dev *pdev, const struct pci_device_id *id)
 
 	DBGLOG(INIT, INFO, "pci_enable_device done!\n");
 
-	if (pfWlanProbe((void *) pdev, (void *) id->driver_data) != WLAN_STATUS_SUCCESS) {
+	if (pfWlanProbe((void *) pdev,
+		(void *) id->driver_data) != WLAN_STATUS_SUCCESS) {
 		DBGLOG(INIT, INFO, "pfWlanProbe fail!call pfWlanRemove()\n");
 		pfWlanRemove();
 		ret = -1;
 	} else {
 		struct mt66xx_chip_info *prChipInfo;
 
-		prChipInfo = ((struct mt66xx_hif_driver_data *)id->driver_data)->chip_info;
+		prChipInfo = ((struct mt66xx_hif_driver_data *)
+			id->driver_data)->chip_info;
 		g_fgDriverProbed = TRUE;
 		g_u4DmaMask = prChipInfo->bus_info->u4DmaMask;
 	}
@@ -276,13 +278,13 @@ int mtk_pci_resume(struct pci_dev *pdev)
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief This function will register pci bus to the os
-*
-* \param[in] pfProbe    Function pointer to detect card
-* \param[in] pfRemove   Function pointer to remove card
-*
-* \return The result of registering pci bus
-*/
+ * \brief This function will register pci bus to the os
+ *
+ * \param[in] pfProbe    Function pointer to detect card
+ * \param[in] pfRemove   Function pointer to remove card
+ *
+ * \return The result of registering pci bus
+ */
 /*----------------------------------------------------------------------------*/
 uint32_t glRegisterBus(probe_card pfProbe, remove_card pfRemove)
 {
@@ -300,19 +302,20 @@ uint32_t glRegisterBus(probe_card pfProbe, remove_card pfRemove)
 	mtk_pci_driver.suspend = mtk_pci_suspend;
 	mtk_pci_driver.resume = mtk_pci_resume;
 
-	ret = (pci_register_driver(&mtk_pci_driver) == 0) ? WLAN_STATUS_SUCCESS : WLAN_STATUS_FAILURE;
+	ret = (pci_register_driver(&mtk_pci_driver) == 0) ?
+		WLAN_STATUS_SUCCESS : WLAN_STATUS_FAILURE;
 
 	return ret;
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief This function will unregister pci bus to the os
-*
-* \param[in] pfRemove Function pointer to remove card
-*
-* \return (none)
-*/
+ * \brief This function will unregister pci bus to the os
+ *
+ * \param[in] pfRemove Function pointer to remove card
+ *
+ * \return (none)
+ */
 /*----------------------------------------------------------------------------*/
 void glUnregisterBus(remove_card pfRemove)
 {
@@ -325,13 +328,13 @@ void glUnregisterBus(remove_card pfRemove)
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief This function stores hif related info, which is initialized before.
-*
-* \param[in] prGlueInfo Pointer to glue info structure
-* \param[in] u4Cookie   Pointer to UINT_32 memory base variable for _HIF_HPI
-*
-* \return (none)
-*/
+ * \brief This function stores hif related info, which is initialized before.
+ *
+ * \param[in] prGlueInfo Pointer to glue info structure
+ * \param[in] u4Cookie   Pointer to UINT_32 memory base variable for _HIF_HPI
+ *
+ * \return (none)
+ */
 /*----------------------------------------------------------------------------*/
 void glSetHifInfo(struct GLUE_INFO *prGlueInfo, unsigned long ulCookie)
 {
@@ -365,12 +368,12 @@ void glSetHifInfo(struct GLUE_INFO *prGlueInfo, unsigned long ulCookie)
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief This function clears hif related info.
-*
-* \param[in] prGlueInfo Pointer to glue info structure
-*
-* \return (none)
-*/
+ * \brief This function clears hif related info.
+ *
+ * \param[in] prGlueInfo Pointer to glue info structure
+ *
+ * \return (none)
+ */
 /*----------------------------------------------------------------------------*/
 void glClearHifInfo(struct GLUE_INFO *prGlueInfo)
 {
@@ -398,14 +401,15 @@ void glClearHifInfo(struct GLUE_INFO *prGlueInfo)
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief Initialize bus operation and hif related information, request resources.
-*
-* \param[out] pvData    A pointer to HIF-specific data type buffer.
-*                       For eHPI, pvData is a pointer to UINT_32 type and stores a
-*                       mapped base address.
-*
-* \return (none)
-*/
+ * \brief Initialize bus operation and hif related information, request
+ *        resources.
+ *
+ * \param[out] pvData    A pointer to HIF-specific data type buffer.
+ *                       For eHPI, pvData is a pointer to UINT_32 type and
+ *                       stores a mapped base address.
+ *
+ * \return (none)
+ */
 /*----------------------------------------------------------------------------*/
 u_int8_t glBusInit(void *pvData)
 {
@@ -424,16 +428,22 @@ u_int8_t glBusInit(void *pvData)
 
 	ret = pci_request_regions(pdev, pci_name(pdev));
 	if (ret != 0) {
-		DBGLOG(INIT, INFO, "Request PCI resource failed, errno=%d!\n", ret);
+		DBGLOG(INIT, INFO,
+			"Request PCI resource failed, errno=%d!\n", ret);
 	}
 
 	/* map physical address to virtual address for accessing register */
-	CSRBaseAddress = (uint8_t *) ioremap(pci_resource_start(pdev, 0), pci_resource_len(pdev, 0));
+	CSRBaseAddress = (uint8_t *) ioremap(pci_resource_start(pdev, 0),
+		pci_resource_len(pdev, 0));
 	DBGLOG(INIT, INFO, "ioremap for device %s, region 0x%lX @ 0x%lX\n",
-		pci_name(pdev), (unsigned long) pci_resource_len(pdev, 0), (unsigned long) pci_resource_start(pdev, 0));
+		pci_name(pdev), (unsigned long) pci_resource_len(pdev, 0),
+		(unsigned long) pci_resource_start(pdev, 0));
 	if (!CSRBaseAddress) {
-		DBGLOG(INIT, INFO, "ioremap failed for device %s, region 0x%lX @ 0x%lX\n",
-			pci_name(pdev), (unsigned long) pci_resource_len(pdev, 0), (unsigned long) pci_resource_start(pdev, 0));
+		DBGLOG(INIT, INFO,
+			"ioremap failed for device %s, region 0x%lX @ 0x%lX\n",
+			pci_name(pdev),
+			(unsigned long) pci_resource_len(pdev, 0),
+			(unsigned long) pci_resource_start(pdev, 0));
 		goto err_out_free_res;
 	}
 
@@ -452,12 +462,12 @@ err_out_free_res:
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief Stop bus operation and release resources.
-*
-* \param[in] pvData A pointer to struct net_device.
-*
-* \return (none)
-*/
+ * \brief Stop bus operation and release resources.
+ *
+ * \param[in] pvData A pointer to struct net_device.
+ *
+ * \return (none)
+ */
 /*----------------------------------------------------------------------------*/
 void glBusRelease(void *pvData)
 {
@@ -465,15 +475,15 @@ void glBusRelease(void *pvData)
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief Setup bus interrupt operation and interrupt handler for os.
-*
-* \param[in] pvData     A pointer to struct net_device.
-* \param[in] pfnIsr     A pointer to interrupt handler function.
-* \param[in] pvCookie   Private data for pfnIsr function.
-*
-* \retval WLAN_STATUS_SUCCESS   if success
-*         NEGATIVE_VALUE   if fail
-*/
+ * \brief Setup bus interrupt operation and interrupt handler for os.
+ *
+ * \param[in] pvData     A pointer to struct net_device.
+ * \param[in] pfnIsr     A pointer to interrupt handler function.
+ * \param[in] pvCookie   Private data for pfnIsr function.
+ *
+ * \retval WLAN_STATUS_SUCCESS   if success
+ *         NEGATIVE_VALUE   if fail
+ */
 /*----------------------------------------------------------------------------*/
 int32_t glBusSetIrq(void *pvData, void *pfnIsr, void *pvCookie)
 {
@@ -499,9 +509,11 @@ int32_t glBusSetIrq(void *pvData, void *pfnIsr, void *pvCookie)
 	prHifInfo = &prGlueInfo->rHifInfo;
 	pdev = prHifInfo->pdev;
 
-	ret = request_irq(pdev->irq, mtk_pci_interrupt, IRQF_SHARED, prNetDevice->name, prGlueInfo);
+	ret = request_irq(pdev->irq, mtk_pci_interrupt,
+		IRQF_SHARED, prNetDevice->name, prGlueInfo);
 	if (ret != 0)
-		DBGLOG(INIT, INFO, "glBusSetIrq: request_irq  ERROR(%d)\n", ret);
+		DBGLOG(INIT, INFO,
+			"glBusSetIrq: request_irq  ERROR(%d)\n", ret);
 	else if (prBusInfo->fgInitPCIeInt)
 		HAL_MCR_WR(prGlueInfo->prAdapter, MT_PCIE_IRQ_ENABLE, 1);
 
@@ -510,13 +522,13 @@ int32_t glBusSetIrq(void *pvData, void *pfnIsr, void *pvCookie)
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief Stop bus interrupt operation and disable interrupt handling for os.
-*
-* \param[in] pvData     A pointer to struct net_device.
-* \param[in] pvCookie   Private data for pfnIsr function.
-*
-* \return (none)
-*/
+ * \brief Stop bus interrupt operation and disable interrupt handling for os.
+ *
+ * \param[in] pvData     A pointer to struct net_device.
+ * \param[in] pvCookie   Private data for pfnIsr function.
+ *
+ * \return (none)
+ */
 /*----------------------------------------------------------------------------*/
 void glBusFreeIrq(void *pvData, void *pvCookie)
 {

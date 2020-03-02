@@ -347,8 +347,8 @@ uint32_t wlanCompressedImageSectionDownloadStage(
 	uint32_t u4FileOffset = 0;
 	uint32_t u4StartOffset = 0;
 	uint32_t u4DataMode = 0;
-	uint32_t u4Addr, u4Len, u4BlockSize, u4CRC,
-		 u4UnCompressedLength;
+	uint32_t u4Addr, u4Len, u4BlockSize, u4CRC;
+	uint32_t u4UnCompressedLength;
 	uint32_t u4Status = WLAN_STATUS_SUCCESS;
 	uint8_t *pucStartPtr;
 	uint32_t u4offset = 0, u4ChunkSize;

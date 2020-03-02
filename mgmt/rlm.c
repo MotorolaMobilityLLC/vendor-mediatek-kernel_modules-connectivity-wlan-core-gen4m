@@ -1120,12 +1120,12 @@ static void rlmFillVhtCapIE(struct ADAPTER *prAdapter, struct BSS_INFO *prBssInf
 		    (prStaRec->ucVhtCapNumSoundingDimensions < VHT_CAP_INFO_BEAMFORMEE_STS_CAP_MAX) &&
 		    !prAdapter->rWifiVar.fgForceSTSNum) {
 			prVhtCap->u4VhtCapInfo |= (((uint32_t)prStaRec->ucVhtCapNumSoundingDimensions) <<
-				VHT_CAP_INFO_COMPRESSED_STEERING_NUMBER_OF_BEAMFORMER_ANTENNAS_SUPPOERTED_OFFSET);
+				VHT_CAP_INFO_COMPRESSED_STEERING_NUMBER_OF_BEAMFORMER_ANTENNAS_SUP_OFF);
 			DBGLOG(RLM, INFO, "Set VHT Cap BFEE STS CAP=%d\n",
 			       prStaRec->ucVhtCapNumSoundingDimensions);
 		} else {
 			prVhtCap->u4VhtCapInfo |=
-				VHT_CAP_INFO_COMPRESSED_STEERING_NUMBER_OF_BEAMFORMER_ANTENNAS_4_SUPPOERTED;
+				VHT_CAP_INFO_COMPRESSED_STEERING_NUMBER_OF_BEAMFORMER_ANTENNAS_4_SUP;
 			DBGLOG(RLM, TRACE, "Set VHT Cap BFEE STS CAP=%d\n",
 			       VHT_CAP_INFO_BEAMFORMEE_STS_CAP_MAX);
 		}
