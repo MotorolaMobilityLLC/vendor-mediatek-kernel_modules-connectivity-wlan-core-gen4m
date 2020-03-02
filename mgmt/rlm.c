@@ -2865,23 +2865,6 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 		prBssInfo->ucVhtChannelFrequencyS1 = 0;
 		prBssInfo->ucVhtChannelFrequencyS2 = 0;
 		prBssInfo->eBssSCO = 0;
-		COPY_SSID(rSsid.aucSsid, rSsid.u4SsidLen, prBssInfo->aucSSID,
-			  prBssInfo->ucSSIDLen);
-		prBssDesc = scanSearchBssDescByBssidAndSsid(
-			prAdapter, prBssInfo->aucBSSID, TRUE, &rSsid);
-
-		if (prBssDesc) {
-			DBGLOG(RLM, INFO,
-			       "DFS: BSS: " MACSTR
-			       " Desc found, channel from %u to %u\n ",
-			       MAC2STR(prBssInfo->aucBSSID),
-			       prBssDesc->ucChannelNum, ucChannelAnnouncePri);
-			prBssDesc->ucChannelNum = ucChannelAnnouncePri;
-		} else {
-			DBGLOG(RLM, INFO,
-			       "DFS: BSS: " MACSTR " Desc is not found\n ",
-			       MAC2STR(prBssInfo->aucBSSID));
-		}
 
 		if (fgHasWideBandIE != FALSE) {
 			prBssInfo->ucVhtChannelWidth = ucChannelAnnounceVhtBw;
@@ -2909,11 +2892,32 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 		if (fgHasSCOIE != FALSE)
 			prBssInfo->eBssSCO = eChannelAnnounceSco;
 
-		if (prBssDesc)
+		COPY_SSID(rSsid.aucSsid, rSsid.u4SsidLen, prBssInfo->aucSSID,
+			  prBssInfo->ucSSIDLen);
+		prBssDesc = scanSearchBssDescByBssidAndSsid(
+			prAdapter, prBssInfo->aucBSSID, TRUE, &rSsid);
+
+		if (prBssDesc) {
+			DBGLOG(RLM, INFO,
+			       "DFS: BSS: " MACSTR
+			       " Desc found, channel from %u to %u\n ",
+			       MAC2STR(prBssInfo->aucBSSID),
+			       prBssDesc->ucChannelNum, ucChannelAnnouncePri);
+			prBssDesc->ucChannelNum = ucChannelAnnouncePri;
+			prBssDesc->eChannelWidth = prBssInfo->ucVhtChannelWidth;
+			prBssDesc->ucCenterFreqS1 =
+				prBssInfo->ucVhtChannelFrequencyS1;
+			prBssDesc->ucCenterFreqS2 =
+				prBssInfo->ucVhtChannelFrequencyS2;
 			kalIndicateChannelSwitch(
 				prAdapter->prGlueInfo,
 				prBssInfo->eBssSCO,
 				prBssDesc->ucChannelNum);
+		} else {
+			DBGLOG(RLM, INFO,
+			       "DFS: BSS: " MACSTR " Desc is not found\n ",
+			       MAC2STR(prBssInfo->aucBSSID));
+		}
 	}
 #endif
 
@@ -4975,6 +4979,14 @@ void rlmProcessSpecMgtAction(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb)
 			} /*end of switch IE_ID */
 		}	 /*end of IE_FOR_EACH */
 		if (fgHasChannelSwitchIE != FALSE) {
+			struct BSS_DESC *prBssDesc;
+			struct PARAM_SSID rSsid;
+
+			COPY_SSID(rSsid.aucSsid, rSsid.u4SsidLen,
+			      prBssInfo->aucSSID, prBssInfo->ucSSIDLen);
+			prBssDesc = scanSearchBssDescByBssidAndSsid(
+				prAdapter, prBssInfo->aucBSSID, TRUE, &rSsid);
+
 			if (fgHasWideBandIE == FALSE) {
 				prBssInfo->ucVhtChannelWidth = 0;
 				prBssInfo->ucVhtChannelFrequencyS1 =
@@ -4987,6 +4999,13 @@ void rlmProcessSpecMgtAction(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb)
 			/* Check SAP channel */
 			p2pFuncSwitchSapChannel(prAdapter);
 
+			prBssDesc->ucChannelNum = prBssInfo->ucPrimaryChannel;
+			prBssDesc->eChannelWidth = prBssInfo->
+							ucVhtChannelWidth;
+			prBssDesc->ucCenterFreqS1 = prBssInfo->
+							ucVhtChannelFrequencyS1;
+			prBssDesc->ucCenterFreqS2 = prBssInfo->
+							ucVhtChannelFrequencyS2;
 		}
 		nicUpdateBss(prAdapter, prBssInfo->ucBssIndex);
 		break;
