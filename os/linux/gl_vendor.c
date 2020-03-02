@@ -193,15 +193,13 @@ int mtk_cfg80211_vendor_get_channel_list(struct wiphy *wiphy,
 					 struct wireless_dev *wdev,
 					 const void *data, int data_len)
 {
-#define CHN_ARRAY_MAX_NUM (((MAX_5G_BAND_CHN_NUM) > (MAX_2G_BAND_CHN_NUM)) ?\
-			   (MAX_5G_BAND_CHN_NUM) : (MAX_2G_BAND_CHN_NUM))
 	struct GLUE_INFO *prGlueInfo;
 	struct nlattr *attr;
 	uint32_t band = 0;
 	uint8_t ucNumOfChannel, i, j;
-	struct RF_CHANNEL_INFO aucChannelList[CHN_ARRAY_MAX_NUM];
+	struct RF_CHANNEL_INFO *aucChannelList;
 	uint32_t num_channels;
-	uint32_t channels[CHN_ARRAY_MAX_NUM];
+	uint32_t channels[MAX_CHN_NUM];
 	struct sk_buff *skb;
 	uint16_t u2CountryCode;
 
@@ -231,6 +229,17 @@ int mtk_cfg80211_vendor_get_channel_list(struct wiphy *wiphy,
 
 	if (!prGlueInfo)
 		return -EFAULT;
+
+	aucChannelList = (struct RF_CHANNEL_INFO *)
+		kalMemAlloc(sizeof(struct RF_CHANNEL_INFO)*MAX_CHN_NUM,
+			VIR_MEM_TYPE);
+	if (!aucChannelList) {
+		DBGLOG(REQ, ERROR,
+			"Can not alloc memory for rf channel info\n");
+		return -ENOMEM;
+	}
+	kalMemZero(aucChannelList,
+		sizeof(struct RF_CHANNEL_INFO)*MAX_CHN_NUM);
 
 	switch (band) {
 	case 1: /* 2.4G band */
@@ -279,6 +288,9 @@ int mtk_cfg80211_vendor_get_channel_list(struct wiphy *wiphy,
 	num_channels = j;
 	DBGLOG(REQ, INFO, "Get channel list for band: %d, num_channels=%d\n",
 	       band, num_channels);
+
+	kalMemFree(aucChannelList, VIR_MEM_TYPE,
+		sizeof(struct RF_CHANNEL_INFO)*MAX_CHN_NUM);
 
 	skb = cfg80211_vendor_cmd_alloc_reply_skb(wiphy, sizeof(channels));
 	if (!skb) {
