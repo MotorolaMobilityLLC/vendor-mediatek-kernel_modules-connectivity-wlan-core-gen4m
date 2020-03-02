@@ -122,6 +122,40 @@ static VOID SetTestChannel(UINT_8 *pucPrimaryChannel);
 *                              F U N C T I O N S
 *******************************************************************************
 */
+static VOID setApUapsdEnable(P_ADAPTER_T prAdapter, BOOLEAN enable)
+{
+	PARAM_CUSTOM_UAPSD_PARAM_STRUCT_T rUapsdParams;
+	UINT_32 u4SetInfoLen = 0;
+	P_BSS_INFO_T prBssInfo;
+
+	prBssInfo = prAdapter->aprBssInfo[NETWORK_TYPE_P2P];
+	if (prBssInfo)
+		rUapsdParams.ucBssIdx = prBssInfo->ucBssIndex; /* TODO: */
+
+	DBGLOG(OID, INFO, "setApUapsdEnable: %d, ucBssIdx: %d\n", enable, rUapsdParams.ucBssIdx);
+
+	if (enable) {
+		prAdapter->rWifiVar.ucApUapsd = TRUE;
+		rUapsdParams.fgEnAPSD = 1;
+		rUapsdParams.fgEnAPSD_AcBe = 1;
+		rUapsdParams.fgEnAPSD_AcBk = 1;
+		rUapsdParams.fgEnAPSD_AcVi = 1;
+		rUapsdParams.fgEnAPSD_AcVo = 1;
+		rUapsdParams.ucMaxSpLen = 0; /* default: 0, do not limit delivery pkt number */
+	} else {
+		prAdapter->rWifiVar.ucApUapsd = FALSE;
+		rUapsdParams.fgEnAPSD = 0;
+		rUapsdParams.fgEnAPSD_AcBe = 0;
+		rUapsdParams.fgEnAPSD_AcBk = 0;
+		rUapsdParams.fgEnAPSD_AcVi = 0;
+		rUapsdParams.fgEnAPSD_AcVo = 0;
+		rUapsdParams.ucMaxSpLen = 0; /* default: 0, do not limit delivery pkt number */
+	}
+	wlanoidSetUApsdParam(prAdapter,
+				   &rUapsdParams,
+				   sizeof(PARAM_CUSTOM_UAPSD_PARAM_STRUCT_T), &u4SetInfoLen);
+}
+
 #if CFG_ENABLE_STATISTICS_BUFFERING
 static BOOLEAN IsBufferedStatisticsUsable(P_ADAPTER_T prAdapter)
 {
@@ -6273,6 +6307,10 @@ wlanoidSetSwCtrlWrite(IN P_ADAPTER_T prAdapter,
 				prAdapter->rWifiVar.ucRxGf = FEATURE_ENABLED;
 		} else if (u2SubId == 0x0101)
 			prAdapter->rWifiVar.ucRxShortGI = (UINT_8) u4Data;
+		else if (u2SubId == 0x0103) { /* AP Mode WMMPS */
+			DBGLOG(OID, INFO, "ApUapsd 0x10010103 cmd received: %d\n", u4Data);
+			setApUapsdEnable(prAdapter, (BOOLEAN) u4Data);
+		}
 		else if (u2SubId == 0x0110) {
 			prAdapter->fgIsEnableLpdvt = (BOOLEAN) u4Data;
 			prAdapter->fgEnOnlineScan = (BOOLEAN) u4Data;
@@ -11008,6 +11046,10 @@ wlanoidSetP2pMode(IN P_ADAPTER_T prAdapter, IN PVOID pvSetBuffer, IN UINT_32 u4S
 		if (p2pLaunch(prAdapter->prGlueInfo)) {
 			/* ToDo:: ASSERT */
 			ASSERT(prAdapter->fgIsP2PRegistered);
+			if (prAdapter->rWifiVar.ucApUapsd && (prSetP2P->u4Mode != RUNNING_P2P_MODE)) {
+				DBGLOG(OID, INFO, "wlanoidSetP2pMode Default enable ApUapsd\n");
+				setApUapsdEnable(prAdapter, TRUE);
+			}
 		} else {
 			DBGLOG(P2P, ERROR, "P2P Launch Failed\n");
 			status = WLAN_STATUS_FAILURE;
