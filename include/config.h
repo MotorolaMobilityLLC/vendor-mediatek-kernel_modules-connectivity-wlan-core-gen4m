@@ -1213,12 +1213,29 @@
  */
 #define CFG_SUPPORT_P2P_PREFERRED_FREQ_LIST  0
 
+/*-----------------------------------------------------------------------------
+* Flags to support IOT AP blacklist
+*------------------------------------------------------------------------------
+*/
+#ifndef CFG_SUPPORT_IOT_AP_BLACKLIST
+#if CFG_SUPPORT_DBDC
+#define CFG_SUPPORT_IOT_AP_BLACKLIST 1
+#else
+#define CFG_SUPPORT_IOT_AP_BLACKLIST 0
+#endif
+#endif
+
+#if CFG_SUPPORT_IOT_AP_BLACKLIST
+#define CFG_IOT_AP_RULE_MAX_CNT 32
+#define CFG_IOT_AP_DATA_MAX_LEN 16
+#endif
 /*------------------------------------------------------------------------------
  * Driver supports reporting max tx rate instead of current tx rate
  * in mtk_cfg80211_get_station
  *------------------------------------------------------------------------------
  */
 #define CFG_REPORT_MAX_TX_RATE	0
+
 
 /*******************************************************************************
  *                             D A T A   T Y P E S
