@@ -6225,6 +6225,54 @@ wlanoidQueryCalBackupV2(IN struct ADAPTER *prAdapter,
 }
 #endif
 
+
+#if CFG_SUPPORT_SMART_GEAR
+uint32_t
+wlandioSetSGStatus(IN struct ADAPTER *prAdapter,
+			IN uint8_t ucSGEnable,
+			IN uint8_t ucSGSpcCmd)
+{
+	uint32_t rWlanStatus = WLAN_STATUS_SUCCESS;
+	struct CMD_SMART_GEAR_PARAM *prCmdSGStatus;
+
+	prCmdSGStatus = (struct CMD_SMART_GEAR_PARAM *)cnmMemAlloc(prAdapter,
+					RAM_TYPE_MSG,
+					sizeof(struct CMD_SMART_GEAR_PARAM));
+
+	if (!prCmdSGStatus) {
+		DBGLOG(SW4, ERROR,
+			"[SG]cnmMemAlloc for wlandioSetSGStatus failed!\n");
+		return WLAN_STATUS_NOT_ACCEPTED;
+	}
+
+	prCmdSGStatus->ucSGEnable = ucSGEnable;
+	prCmdSGStatus->ucSGSpcCmd = ucSGSpcCmd;
+
+	prCmdSGStatus->ucSGCfg = 0xFF;
+
+	if (ucSGSpcCmd == 0xFF)
+		prCmdSGStatus->ucSGCfg = prAdapter->rWifiVar.ucSGCfg;
+
+	DBGLOG(SW4, INFO,
+			"[SG]Status[%d][%d]\n",
+			prCmdSGStatus->ucSGEnable, prCmdSGStatus->ucSGSpcCmd);
+
+	wlanSendSetQueryCmd(prAdapter,
+			CMD_ID_SG_PARAM,
+			TRUE,
+			FALSE,
+			FALSE,
+			NULL,
+			NULL,
+			sizeof(*prCmdSGStatus),
+			(uint8_t *) prCmdSGStatus, NULL, 0);
+
+	cnmMemFree(prAdapter, prCmdSGStatus);
+	return rWlanStatus;
+
+}
+#endif
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief This routine is called to query MCR value.
@@ -7013,6 +7061,9 @@ wlanoidSetSwCtrlWrite(IN struct ADAPTER *prAdapter,
 			rlmChangeOperationMode(
 				prAdapter, ucBssIndex, ucChannelWidth,
 				ucOpRxNss, ucOpTxNss,
+				#ifdef CFG_SUPPORT_SMART_GEAR
+				0x00,
+				#endif
 				rlmDummyChangeOpHandler);
 		}
 		break;

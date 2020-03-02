@@ -5928,7 +5928,11 @@ enum ENUM_OP_CHANGE_STATUS_T
 rlmChangeOperationMode(
 	struct ADAPTER *prAdapter, uint8_t ucBssIndex,
 	uint8_t ucChannelWidth, uint8_t ucOpRxNss, uint8_t ucOpTxNss,
-	PFN_OPMODE_NOTIFY_DONE_FUNC pfOpChangeHandler)
+	#if CFG_SUPPORT_SMART_GEAR
+	uint8_t eNewReq,
+	#endif
+	PFN_OPMODE_NOTIFY_DONE_FUNC pfOpChangeHandler
+	)
 {
 	struct BSS_INFO *prBssInfo;
 	struct STA_RECORD *prStaRec = (struct STA_RECORD *)NULL;
@@ -6029,7 +6033,11 @@ rlmChangeOperationMode(
 				prBssInfo->aucOpModeChangeRetryCnt[i] = 0;
 			}
 		}
-		/* <5.2> Send operating mode notification frame (STA mode)
+
+#if CFG_SUPPORT_SMART_GEAR
+		/*CNM_OPMODE_REQ_SMARTGEAR_1T2R*/
+		if (eNewReq != 0x05) {
+#endif		/* <5.2> Send operating mode notification frame (STA mode)
 		 * No action frame is needed if we only changed OpTxNss.
 		 */
 #if CFG_SUPPORT_802_11AC
@@ -6081,6 +6089,9 @@ rlmChangeOperationMode(
 				}
 			}
 		}
+#if CFG_SUPPORT_SMART_GEAR
+	}
+#endif
 		/* <5.3> Change OP Info w/o waiting for notification Tx done */
 		if (prBssInfo->pfOpChangeHandler == NULL ||
 			(!fgIsChangeBw && !fgIsChangeRxNss)) {

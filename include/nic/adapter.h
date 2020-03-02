@@ -1113,6 +1113,9 @@ struct WIFI_VAR {
 #if CFG_SUPPORT_HE_ER
 	uint8_t u4ExtendedRange;
 #endif
+#if CFG_SUPPORT_SMART_GEAR
+	uint8_t ucSGCfg;
+#endif
 };
 
 /* cnm_timer module */
