@@ -436,12 +436,14 @@ static void asicConnac2xWfdmaControl(
 		if (ucDmaIdx == 1)
 			GloCfg.field_conn2x.omit_rx_info = 1;
 		GloCfg.field_conn2x.csr_disp_base_ptr_chain_en = 1;
+		GloCfg.field_conn2x.omit_rx_info_pfet2 = 1;
 	} else {
 		GloCfg.field_conn2x.tx_dma_en = 0;
 		GloCfg.field_conn2x.rx_dma_en = 0;
 		GloCfg.field_conn2x.csr_disp_base_ptr_chain_en = 0;
 		GloCfg.field_conn2x.omit_tx_info = 0;
 		GloCfg.field_conn2x.omit_rx_info = 0;
+		GloCfg.field_conn2x.omit_rx_info_pfet2 = 0;
 	}
 	HAL_MCR_WR(prAdapter, u4DmaCfgCr, GloCfg.word);
 
