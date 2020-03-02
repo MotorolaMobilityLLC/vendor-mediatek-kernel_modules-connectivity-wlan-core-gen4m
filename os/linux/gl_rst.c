@@ -923,6 +923,9 @@ int wlan_reset_thread_main(void *data)
 			"Whole Chip rst count /WF reset total count = (%d)/(%d).\n",
 				g_WholeChipRstTotalCnt,
 				g_SubsysRstTotalCnt);
+		} else if ((prGlueInfo) && (prGlueInfo->u4ReadyFlag)) {
+			DBGLOG(INIT, INFO,
+				"Skip rst due to driver is not ready.\n");
 		}
 		if (test_and_clear_bit(GLUE_FLAG_RST_END_BIT, &g_ulFlag)) {
 			if (KAL_WAKE_LOCK_ACTIVE(NULL, &g_IntrWakeLock))
