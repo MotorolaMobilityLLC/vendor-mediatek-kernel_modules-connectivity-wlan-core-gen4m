@@ -173,8 +173,8 @@ else ifeq ($(CONFIG_MTK_COMBO_WIFI_HIF), axi)
 else ifeq ($(CONFIG_MTK_COMBO_WIFI_HIF), ut)
     # Increase frame size to 2048 because of 'cfg80211_connect_result' exceed stack size
     ccflags-y += -D_HIF_UT=1 -Wno-unused-function -Wno-unused-variable -Wframe-larger-than=2048
-else ifeq ($(CONFIG_MTK_COMBO_WIFI_HIF), virtual)
-	ccflags-y += -D_HIF_VIRTUAL=1
+else ifeq ($(CONFIG_MTK_COMBO_WIFI_HIF), none)
+	ccflags-y += -D_HIF_NONE=1
 else
     $(error Unsuppoted HIF=$(CONFIG_MTK_COMBO_WIFI_HIF)!!)
 endif
@@ -256,8 +256,8 @@ else ifeq ($(CONFIG_MTK_COMBO_WIFI_HIF), usb)
 ccflags-y += -I$(src)/os/$(os)/hif/usb/include
 else ifeq ($(CONFIG_MTK_COMBO_WIFI_HIF), ut)
 ccflags-y += -I$(src)/test -I$(src)/test/lib/include -I$(src)/test/testcases -I$(src)/test/lib/hif
-else ifeq ($(CONFIG_MTK_COMBO_WIFI_HIF), virtual)
-ccflags-y += -I$(src)/os/$(os)/hif/virtual/include
+else ifeq ($(CONFIG_MTK_COMBO_WIFI_HIF), none)
+ccflags-y += -I$(src)/os/$(os)/hif/none/include
 endif
 
 ifneq ($(PLATFORM_FLAGS), )
@@ -295,8 +295,8 @@ else ifeq ($(CONFIG_MTK_COMBO_WIFI_HIF), usb)
 HIF_DIR	    := os/$(os)/hif/usb/
 else ifeq ($(CONFIG_MTK_COMBO_WIFI_HIF), ut)
 HIF_DIR	    := test/lib/hif/
-else ifeq ($(CONFIG_MTK_COMBO_WIFI_HIF), virtual)
-HIF_DIR	    := os/$(os)/hif/virtual/
+else ifeq ($(CONFIG_MTK_COMBO_WIFI_HIF), none)
+HIF_DIR	    := os/$(os)/hif/none/
 endif
 NIC_DIR     := nic/
 MGMT_DIR    := mgmt/
@@ -469,8 +469,8 @@ HIF_OBJS :=  $(HIF_DIR)usb.o \
 else ifeq ($(CONFIG_MTK_COMBO_WIFI_HIF), ut)
 HIF_OBJS :=  $(HIF_DIR)ut.o \
              $(HIF_DIR)hal_api.o
-else ifeq ($(CONFIG_MTK_COMBO_WIFI_HIF), virtual)
-HIF_OBJS :=  $(HIF_DIR)virt.o
+else ifeq ($(CONFIG_MTK_COMBO_WIFI_HIF), none)
+HIF_OBJS :=  $(HIF_DIR)none.o
 endif
 # ---------------------------------------------------
 # Platform Objects List
