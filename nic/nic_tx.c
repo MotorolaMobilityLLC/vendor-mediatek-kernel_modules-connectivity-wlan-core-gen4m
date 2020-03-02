@@ -2787,8 +2787,11 @@ u_int8_t nicTxFillMsduInfo(IN struct ADAPTER *prAdapter,
 			/* Set BSS/STA lowest basic rate */
 			prMsduInfo->ucRateMode = MSDU_RATE_MODE_LOWEST_RATE;
 
+#if CFG_CHANGE_CRITICAL_PACKET_PRIORITY
 			/* Set higher priority */
-			prMsduInfo->ucUserPriority = NIC_TX_CRITICAL_DATA_TID;
+			prMsduInfo->ucUserPriority =
+					NIC_TX_CRITICAL_DATA_TID;
+#endif
 		}
 	}
 
