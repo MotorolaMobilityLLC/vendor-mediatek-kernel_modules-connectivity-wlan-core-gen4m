@@ -965,10 +965,12 @@ struct mt66xx_chip_info {
 
 	const P_ECO_INFO_T eco_info;	/* chip version table */
 	UINT_8 eco_ver;	/* chip version */
+	UINT_8 ucPacketFormat;
 
 	UINT_16 u2TxInitCmdPort;
 	UINT_16 u2TxFwDlPort;
 	UINT_16 u2HifTxdSize;
+	UINT_32 u2ExtraTxByteCount;  /* Extra TXD Size for TX Byte Count field (in unit of Byte) */
 
 	void (*asicCapInit)(IN P_ADAPTER_T prAdapter);
 	void (*asicEnableFWDownload)(IN P_ADAPTER_T prAdapter, IN BOOL fgEnable);
