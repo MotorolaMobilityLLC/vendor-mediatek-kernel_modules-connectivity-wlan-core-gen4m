@@ -107,6 +107,39 @@
  *                           P R I V A T E   D A T A
  *******************************************************************************
  */
+static const uint8_t *apucDebugNetdevState[] = {
+	(uint8_t *) DISP_STRING("NETDEV_UNKNOWN"),
+	(uint8_t *) DISP_STRING("NETDEV_UP"),
+	(uint8_t *) DISP_STRING("NETDEV_DOWN"),
+	(uint8_t *) DISP_STRING("NETDEV_REBOOT"),
+	(uint8_t *) DISP_STRING("NETDEV_CHANGE"),
+	(uint8_t *) DISP_STRING("NETDEV_REGISTER"),
+	(uint8_t *) DISP_STRING("NETDEV_UNREGISTER"),
+	(uint8_t *) DISP_STRING("NETDEV_CHANGEMTU"),
+	(uint8_t *) DISP_STRING("NETDEV_CHANGEADDR"),
+	(uint8_t *) DISP_STRING("NETDEV_GOING_DOWN"),
+	(uint8_t *) DISP_STRING("NETDEV_CHANGENAME"),
+	(uint8_t *) DISP_STRING("NETDEV_FEAT_CHANGE"),
+	(uint8_t *) DISP_STRING("NETDEV_BONDING_FAILOVER"),
+	(uint8_t *) DISP_STRING("NETDEV_PRE_UP"),
+	(uint8_t *) DISP_STRING("NETDEV_PRE_TYPE_CHANGE"),
+	(uint8_t *) DISP_STRING("NETDEV_POST_TYPE_CHANGE"),
+	(uint8_t *) DISP_STRING("NETDEV_POST_INIT"),
+	(uint8_t *) DISP_STRING("NETDEV_UNREGISTER_FINAL"),
+	(uint8_t *) DISP_STRING("NETDEV_RELEASE"),
+	(uint8_t *) DISP_STRING("NETDEV_NOTIFY_PEERS"),
+	(uint8_t *) DISP_STRING("NETDEV_JOIN"),
+	(uint8_t *) DISP_STRING("NETDEV_CHANGEUPPER"),
+	(uint8_t *) DISP_STRING("NETDEV_RESEND_IGMP"),
+	(uint8_t *) DISP_STRING("NETDEV_PRECHANGEMTU"),
+	(uint8_t *) DISP_STRING("NETDEV_CHANGEINFODATA"),
+	(uint8_t *) DISP_STRING("NETDEV_BONDING_INFO"),
+	(uint8_t *) DISP_STRING("NETDEV_PRECHANGEUPPER"),
+	(uint8_t *) DISP_STRING("NETDEV_CHANGELOWERSTATE"),
+	(uint8_t *) DISP_STRING("NETDEV_UDP_TUNNEL_PUSH_INFO"),
+	(uint8_t *) DISP_STRING("NETDEV_UNKNOWN"),
+	(uint8_t *) DISP_STRING("NETDEV_CHANGE_TX_QUEUE_LEN"),
+};
 
 /*******************************************************************************
  *                                 M A C R O S
@@ -117,6 +150,8 @@
  *                   F U N C T I O N   D E C L A R A T I O N S
  *******************************************************************************
  */
+static int wlan_netdev_notifier_call(struct notifier_block *nb,
+		unsigned long state, void *ndev);
 
 /*******************************************************************************
  *                              F U N C T I O N S
@@ -223,7 +258,7 @@ static struct notifier_block inet6addr_notifier = {
 };
 #endif /* CFG_SUPPORT_PASSPOINT */
 
-void wlanRegisterNotifier(void)
+void wlanRegisterInetAddrNotifier(void)
 {
 #if CFG_ENABLE_NET_DEV_NOTIFY
 
@@ -235,7 +270,7 @@ void wlanRegisterNotifier(void)
 #endif
 }
 
-void wlanUnregisterNotifier(void)
+void wlanUnregisterInetAddrNotifier(void)
 {
 #if CFG_ENABLE_NET_DEV_NOTIFY
 
@@ -576,4 +611,44 @@ u_int8_t kalCfgDataWrite16(IN struct GLUE_INFO *prGlueInfo,
 		return TRUE;
 	}
 #endif
+}
+
+static int wlan_netdev_notifier_call(struct notifier_block *nb,
+		unsigned long state, void *ndev)
+{
+#if KERNEL_VERSION(3, 11, 0) <= CFG80211_VERSION_CODE
+	struct netdev_notifier_info *dev_notif_info = ndev;
+	struct net_device *dev = dev_notif_info != NULL ?
+			dev_notif_info->dev : NULL;
+#else
+	struct net_device *dev = ndev;
+#endif
+
+	if (!dev)
+		return NOTIFY_DONE;
+
+	if ((strncmp(dev->name, "wlan", 4) != 0) &&
+			(strncmp(dev->name, "p2p", 3) != 0) &&
+			(strncmp(dev->name, "ap", 2) != 0)) {
+		return NOTIFY_DONE;
+	}
+
+	DBGLOG(REQ, INFO, "%s's new state: %lu %s.\n",
+			dev->name, state, apucDebugNetdevState[state]);
+
+	return NOTIFY_DONE;
+}
+
+static struct notifier_block wlan_netdev_notifier = {
+	.notifier_call = wlan_netdev_notifier_call,
+};
+
+void wlanRegisterNetdevNotifier(void)
+{
+	register_netdevice_notifier(&wlan_netdev_notifier);
+}
+
+void wlanUnregisterNetdevNotifier(void)
+{
+	unregister_netdevice_notifier(&wlan_netdev_notifier);
 }
