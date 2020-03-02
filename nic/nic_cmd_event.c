@@ -853,6 +853,47 @@ void nicCmdEventQueryLinkSpeed(IN struct ADAPTER *prAdapter,
 	}
 }
 
+void nicCmdEventQueryLinkSpeedEx(IN struct ADAPTER *prAdapter,
+	IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf)
+{
+	struct EVENT_LINK_QUALITY_V2 *prLinkQuality;
+	struct PARAM_LINK_SPEED_EX *pu4LinkSpeed;
+	struct GLUE_INFO *prGlueInfo;
+	uint32_t u4QueryInfoLen;
+	uint32_t i;
+
+	ASSERT(prAdapter);
+	ASSERT(prCmdInfo);
+
+	prLinkQuality = (struct EVENT_LINK_QUALITY_V2 *) pucEventBuf;
+
+	if (prCmdInfo->fgIsOid) {
+		prGlueInfo = prAdapter->prGlueInfo;
+		pu4LinkSpeed = (struct PARAM_LINK_SPEED_EX *) (
+					   prCmdInfo->pvInformationBuffer);
+
+		for (i = 0; i < BSSID_NUM; i++) {
+			pu4LinkSpeed->rLq[i].u2LinkSpeed
+				= prLinkQuality->rLq[i].u2LinkSpeed * 5000;
+
+			/* ranged from (-128 ~ 30) in unit of dBm */
+			pu4LinkSpeed->rLq[i].cRssi
+				= prLinkQuality->rLq[i].cRssi;
+
+			DBGLOG(P2P, TRACE,
+				"ucBssIdx = %d, rate = %u, signal = %d\n",
+				i,
+				pu4LinkSpeed->rLq[i].u2LinkSpeed,
+				pu4LinkSpeed->rLq[i].cRssi);
+		}
+
+		u4QueryInfoLen = sizeof(struct PARAM_LINK_SPEED_EX);
+
+		kalOidComplete(prGlueInfo, prCmdInfo->fgSetQuery,
+			u4QueryInfoLen, WLAN_STATUS_SUCCESS);
+	}
+}
+
 void nicCmdEventQueryStatistics(IN struct ADAPTER
 				*prAdapter, IN struct CMD_INFO *prCmdInfo,
 				IN uint8_t *pucEventBuf)
