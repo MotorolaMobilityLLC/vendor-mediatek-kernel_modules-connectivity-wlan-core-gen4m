@@ -381,6 +381,8 @@ struct RX_BA_ENTRY {
 	u_int8_t fgAmsduNeedLastFrame; /* for statistic */
 	uint8_t u8LastAmsduSubIdx;
 	u_int8_t fgIsAmsduDuplicated;
+	u_int8_t fgNoDrop;
+	uint32_t u4SNOverlapCount;
 #endif
 };
 
