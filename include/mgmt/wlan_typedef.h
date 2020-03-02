@@ -70,6 +70,7 @@
  *                         C O M P I L E R   F L A G S
  *******************************************************************************
  */
+#define NIC_TX_ENABLE_SECOND_HW_QUEUE            0
 
 /*******************************************************************************
  *                    E X T E R N A L   R E F E R E N C E S
@@ -111,6 +112,26 @@ struct ROAM_BSS_DESC;	/* declare ROAM_BSS_DESC_T */
 #if CFG_SUPPORT_PASSPOINT
 struct HS20_INFO;	/* declare HS20_INFO_T */
 #endif /* CFG_SUPPORT_PASSPOINT */
+
+/* Tc Resource index */
+enum ENUM_TRAFFIC_CLASS_INDEX {
+	/*First HW queue */
+	TC0_INDEX = 0,	/* HIF TX: AC0 packets */
+	TC1_INDEX,		/* HIF TX: AC1 packets */
+	TC2_INDEX,		/* HIF TX: AC2 packets */
+	TC3_INDEX,		/* HIF TX: AC3 packets */
+	TC4_INDEX,		/* HIF TX: CPU packets */
+
+#if NIC_TX_ENABLE_SECOND_HW_QUEUE
+	/* Second HW queue */
+	TC5_INDEX,		/* HIF TX: AC10 packets */
+	TC6_INDEX,		/* HIF TX: AC11 packets */
+	TC7_INDEX,		/* HIF TX: AC12 packets */
+	TC8_INDEX,		/* HIF TX: AC13 packets */
+#endif
+
+	TC_NUM			/* Maximum number of Traffic Classes. */
+};
 
 /*******************************************************************************
  *                            P U B L I C   D A T A

@@ -105,6 +105,9 @@
 #include "swcr.h"
 #endif
 
+#include "rlm_obss.h"
+#include "cnm_timer.h"
+
 /*------------------------------------------------------------------------------
  * .\include\nic
  *------------------------------------------------------------------------------
@@ -185,8 +188,6 @@
 #include "qosmap.h"
 
 #include "aa_fsm.h"
-
-#include "cnm_timer.h"
 
 #include "que_mgt.h"
 

@@ -148,8 +148,6 @@
 
 #endif
 
-#define NIC_TX_ENABLE_SECOND_HW_QUEUE            0
-
 /* 4 TODO: The following values shall be got from FW by query CMD */
 /*------------------------------------------------------------------------*/
 /* Resource Management related information                                */
@@ -405,6 +403,8 @@
 
 #define NIC_TX_INIT_CMD_PORT                    HIF_TX_INIT_CMD_PORT
 
+#define NIC_TX_REMAINING_LIFE_TIME              2000	/* in unit of ms */
+
 /*******************************************************************************
  *                             D A T A   T Y P E S
  *******************************************************************************
@@ -495,26 +495,6 @@ enum ENUM_MCU_Q_INDEX {
 	MCU_Q2_INDEX,
 	MCU_Q3_INDEX,
 	MCU_Q_NUM
-};
-
-/* Tc Resource index */
-enum ENUM_TRAFFIC_CLASS_INDEX {
-	/*First HW queue */
-	TC0_INDEX = 0,	/* HIF TX: AC0 packets */
-	TC1_INDEX,		/* HIF TX: AC1 packets */
-	TC2_INDEX,		/* HIF TX: AC2 packets */
-	TC3_INDEX,		/* HIF TX: AC3 packets */
-	TC4_INDEX,		/* HIF TX: CPU packets */
-
-#if NIC_TX_ENABLE_SECOND_HW_QUEUE
-	/* Second HW queue */
-	TC5_INDEX,		/* HIF TX: AC10 packets */
-	TC6_INDEX,		/* HIF TX: AC11 packets */
-	TC7_INDEX,		/* HIF TX: AC12 packets */
-	TC8_INDEX,		/* HIF TX: AC13 packets */
-#endif
-
-	TC_NUM			/* Maximum number of Traffic Classes. */
 };
 
 /* +1 for DBDC */
@@ -830,6 +810,7 @@ struct MSDU_INFO {
 	PFN_TX_DONE_HANDLER pfTxDoneHandler;	/* Tx done handler */
 	uint32_t u4TxDoneTag;	/* Tag for data frame Tx done log */
 	uint8_t ucPktType;
+	struct TIMER rLifetimeTimer;
 
 #if CFG_ENABLE_PKT_LIFETIME_PROFILE
 	struct PKT_PROFILE rPktProfile;
@@ -1745,6 +1726,9 @@ uint32_t nicTxGetMsduPendingCnt(IN struct ADAPTER *prAdapter);
 
 uint32_t nicTxMsduQueue(IN struct ADAPTER *prAdapter,
 	uint8_t ucPortIdx, struct QUE *prQue);
+
+void nicTxMsduLifeTimeoutHandler(IN struct ADAPTER *prAdapter,
+	IN unsigned long plParamPtr);
 
 uint32_t nicTxCmd(IN struct ADAPTER *prAdapter,
 	IN struct CMD_INFO *prCmdInfo, IN uint8_t ucTC);
