@@ -820,10 +820,15 @@ authSendDeauthFrame(IN struct ADAPTER *prAdapter,
 		if ((prWlanMacHeader->u2FrameCtrl & MASK_TO_DS_FROM_DS) == 0)
 			return WLAN_STATUS_FAILURE;
 
-		DBGLOG(SAA, INFO, "u2FrameCtrl=0x%x, DestAddr=%pM srcAddr=%pM BSSID=%pM, u2SeqCtrl=0x%x\n",
-			prWlanMacHeader->u2FrameCtrl,
-			prWlanMacHeader->aucAddr1, prWlanMacHeader->aucAddr2, prWlanMacHeader->aucAddr3,
-			prWlanMacHeader->u2SeqCtrl);
+		DBGLOG(SAA, INFO,
+		       "u2FrameCtrl=0x%x, DestAddr=" MACSTR
+		       " srcAddr=" MACSTR " BSSID=" MACSTR
+		       ", u2SeqCtrl=0x%x\n",
+		       prWlanMacHeader->u2FrameCtrl,
+		       MAC2STR(prWlanMacHeader->aucAddr1),
+		       MAC2STR(prWlanMacHeader->aucAddr2),
+		       MAC2STR(prWlanMacHeader->aucAddr3),
+		       prWlanMacHeader->u2SeqCtrl);
 		/* Check if corresponding BSS is able to send Deauth */
 		for (i = 0; i < prAdapter->ucHwBssIdNum; i++) {
 			prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, i);
@@ -929,9 +934,13 @@ authSendDeauthFrame(IN struct ADAPTER *prAdapter,
 				MAC_TX_RESERVED_FIELD);
 
 			prDeauthFrame->u2FrameCtrl |= MASK_FC_PROTECTED_FRAME;
-			DBGLOG(SAA, INFO, "Reason=%d, DestAddr=%pM srcAddr=%pM BSSID=%pM\n",
-				prDeauthFrame->u2ReasonCode, prDeauthFrame->aucDestAddr,
-				prDeauthFrame->aucSrcAddr, prDeauthFrame->aucBSSID);
+			DBGLOG(SAA, INFO,
+			       "Reason=%d, DestAddr=" MACSTR
+			       " srcAddr=" MACSTR " BSSID=" MACSTR "\n",
+			       prDeauthFrame->u2ReasonCode,
+			       MAC2STR(prDeauthFrame->aucDestAddr),
+			       MAC2STR(prDeauthFrame->aucSrcAddr),
+			       MAC2STR(prDeauthFrame->aucBSSID));
 		}
 	}
 #endif

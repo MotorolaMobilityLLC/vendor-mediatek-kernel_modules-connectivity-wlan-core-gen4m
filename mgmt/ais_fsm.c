@@ -1167,8 +1167,14 @@ void aisFsmSteps(IN struct ADAPTER *prAdapter, enum ENUM_AIS_STATE eNextState)
 					(EQUAL_MAC_ADDR(prBssDesc->aucBSSID, prAisBssInfo->aucBSSID))) /* CASE VI */) {
 					if (prBssDesc) {
 						DBGLOG(ROAMING, INFO,
-						"fgIsConnected=%d, prBssDesc->BSSID %pM, prAisBssInfo->BSSID %pM\n",
-						prBssDesc->fgIsConnected, prBssDesc->aucBSSID, prAisBssInfo->aucBSSID);
+						"fgIsConnected=%d, prBssDesc->BSSID "
+						MACSTR
+						", prAisBssInfo->BSSID "
+						MACSTR "\n",
+						prBssDesc->fgIsConnected,
+						MAC2STR(prBssDesc->aucBSSID),
+						MAC2STR(prAisBssInfo
+							->aucBSSID));
 					}
 #if DBG
 					if ((prBssDesc) && (prBssDesc->fgIsConnected))
@@ -1214,7 +1220,9 @@ void aisFsmSteps(IN struct ADAPTER *prAdapter, enum ENUM_AIS_STATE eNextState)
 				if (rsnSearchPmkidEntry(prAdapter, prBssDesc->aucBSSID, &u4Entry) &&
 					prAdapter->rWifiVar.rAisSpecificBssInfo.arPmkidCache[u4Entry].fgPmkidExist)
 					break;
-				DBGLOG(AIS, INFO, "No PMK for %pM, try to generate a OKC PMK\n", prBssDesc->aucBSSID);
+				DBGLOG(AIS, INFO, "No PMK for " MACSTR
+					", try to generate a OKC PMK\n",
+					MAC2STR(prBssDesc->aucBSSID));
 				prStatusEvent->eStatusType = ENUM_STATUS_TYPE_CANDIDATE_LIST;
 				prPmkidCandicate->u4Version = 1;
 				prPmkidCandicate->u4NumCandidates = 1;
@@ -4641,8 +4649,10 @@ aisAddBlacklist(struct ADAPTER *prAdapter, struct BSS_DESC *prBssDesc)
 		prBssDesc->prBlack->ucCount++;
 		if (prBssDesc->prBlack->ucCount > 10)
 			prBssDesc->prBlack->ucCount = 10;
-		DBGLOG(AIS, INFO, "update blacklist for %pM, count %d\n",
-			prBssDesc->aucBSSID, prBssDesc->prBlack->ucCount);
+		DBGLOG(AIS, INFO, "update blacklist for " MACSTR
+				", count %d\n",
+			MAC2STR(prBssDesc->aucBSSID),
+			prBssDesc->prBlack->ucCount);
 		return prBssDesc->prBlack;
 	}
 
@@ -4654,8 +4664,9 @@ aisAddBlacklist(struct ADAPTER *prAdapter, struct BSS_DESC *prBssDesc)
 		prEntry->ucCount++;
 		if (prEntry->ucCount > 10)
 			prEntry->ucCount = 10;
-		DBGLOG(AIS, INFO, "update blacklist for %pM, count %d\n",
-			prBssDesc->aucBSSID, prEntry->ucCount);
+		DBGLOG(AIS, INFO, "update blacklist for " MACSTR
+				", count %d\n",
+			MAC2STR(prBssDesc->aucBSSID), prEntry->ucCount);
 		return prEntry;
 	}
 
@@ -4677,7 +4688,8 @@ aisAddBlacklist(struct ADAPTER *prAdapter, struct BSS_DESC *prBssDesc)
 	LINK_INSERT_HEAD(prBlackList, &prEntry->rLinkEntry);
 	prBssDesc->prBlack = prEntry;
 
-	DBGLOG(AIS, INFO, "Add %pM to black List\n", prBssDesc->aucBSSID);
+	DBGLOG(AIS, INFO, "Add " MACSTR " to black List\n",
+		MAC2STR(prBssDesc->aucBSSID));
 	return prEntry;
 }
 
@@ -4695,7 +4707,8 @@ void aisRemoveBlackList(struct ADAPTER *prAdapter, struct BSS_DESC *prBssDesc)
 	LINK_REMOVE_KNOWN_ENTRY(prBlackList, &prEntry->rLinkEntry);
 	LINK_INSERT_HEAD(prFreeList, &prEntry->rLinkEntry);
 	prBssDesc->prBlack = NULL;
-	DBGLOG(AIS, INFO, "Remove %pM from blacklist\n", prBssDesc->aucBSSID);
+	DBGLOG(AIS, INFO, "Remove " MACSTR " from blacklist\n",
+		MAC2STR(prBssDesc->aucBSSID));
 }
 
 struct AIS_BLACKLIST_ITEM *
@@ -4720,7 +4733,8 @@ aisQueryBlackList(struct ADAPTER *prAdapter, struct BSS_DESC *prBssDesc)
 			return prEntry;
 		}
 	}
-	DBGLOG(AIS, TRACE, "%pM is not in blacklist\n", prBssDesc->aucBSSID);
+	DBGLOG(AIS, TRACE, MACSTR " is not in blacklist\n",
+		MAC2STR(prBssDesc->aucBSSID));
 	return NULL;
 }
 
@@ -4778,8 +4792,8 @@ static void aisRemoveDisappearedBlacklist(struct ADAPTER *prAdapter)
 		}
 		if (!fgDisappeared || (u4Current - prEntry->u4DisapperTime) < 600 * USEC_PER_SEC)
 			continue;
-		DBGLOG(AIS, INFO, "Remove disappeared blacklist %s %pM\n",
-			prEntry->aucSSID, prEntry->aucBSSID);
+		DBGLOG(AIS, INFO, "Remove disappeared blacklist %s " MACSTR,
+			prEntry->aucSSID, MAC2STR(prEntry->aucBSSID));
 		LINK_REMOVE_KNOWN_ENTRY(prBlackList, &prEntry->rLinkEntry);
 		LINK_INSERT_HEAD(prFreeList, &prEntry->rLinkEntry);
 	}

@@ -126,8 +126,9 @@ void wnmWNMAction(IN struct ADAPTER *prAdapter, IN struct SW_RFB *prSwRfb)
 	ASSERT(prAdapter);
 	ASSERT(prSwRfb);
 
-	prRxFrame = (struct WLAN_ACTION_FRAME *) prSwRfb->pvHeader;
-
+	prRxFrame = (struct WLAN_ACTION_FRAME *)prSwRfb->pvHeader;
+	DBGLOG(WNM, TRACE, "WNM action frame: %d from " MACSTR "\n",
+	       prRxFrame->ucAction, MAC2STR(prRxFrame->aucSrcAddr));
 	switch (prRxFrame->ucAction) {
 #if CFG_SUPPORT_802_11V_TIMING_MEASUREMENT
 	case ACTION_WNM_TIMING_MEASUREMENT_REQUEST:
