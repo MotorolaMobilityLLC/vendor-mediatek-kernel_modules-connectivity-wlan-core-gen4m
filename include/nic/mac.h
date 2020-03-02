@@ -854,7 +854,7 @@
 /* 7.3.1.10 Timestamp field */
 #define TIMESTAMP_FIELD_LEN                         8
 
-/* 7.3.1.11 Category of Action field */
+/* 80211-2016 Table 9-47 Category of Action field */
 #define CATEGORY_SPEC_MGT                           0
 /* QoS action */
 #define CATEGORY_QOS_ACTION                         1
@@ -866,28 +866,44 @@
 #define CATEGORY_PUBLIC_ACTION                      4
 /* Radio measurement action */
 #define CATEGORY_RM_ACTION                          5
+/* Fast BSS Transition */
+#define CATEGORY_FT_ACTION                          6
+/* HT */
 #define CATEGORY_HT_ACTION                          7
-#if CFG_SUPPORT_802_11W
+/* SA Qurery */
 #define CATEGORY_SA_QUERY_ACTION                    8
+/* Protected Dual of Public Action */
 #define CATEGORY_PROTECTED_DUAL_OF_PUBLIC_ACTION    9
-#endif
 /* 802.11v Wireless Network Management */
 #define CATEGORY_WNM_ACTION                         10
-/* 802.11v Wireless Network Management */
+/* 802.11v Unprotected Wireless Network Management */
 #define CATEGORY_UNPROTECTED_WNM_ACTION             11
+/* TDLS */
+#define CATEGORY_TDLS_ACTION                        12
+/* Mesh */
+#define CATEGORY_MESH_ACTION                        13
+/* Multihop */
+#define CATEGORY_MULTIHOP_ACTION                    14
+/* Self-protected */
+#define CATEGORY_SELF_PROTECTED_ACTION              15
+/* Directional Multi-Gigabit  */
+#define CATEGORY_DMG_ACTION                         16
 /* WME management notification */
 #define CATEGORY_WME_MGT_NOTIFICATION               17
-
+/* Fast Session Transfer */
+#define CATEGORY_FST_ACTION                         18
+/* Robust AV Streaming */
+#define CATEGORY_ROBUST_AV_STREAMING_ACTION         19
+/* Unprotected DMG */
+#define CATEGORY_UNPROTECTED_DMG_ACTION             20
 /* VHT action */
 #define CATEGORY_VHT_ACTION                         21
-
 #if (CFG_SUPPORT_TWT == 1)
-#define CATEGORY_S1G_ACTION                         22	/* S1G action */
+#define CATEGORY_S1G_ACTION                         22  /* S1G action */
 #endif
-
-#if CFG_SUPPORT_802_11W
-#define CATEGORY_VENDOR_SPECIFIC_ACTION_PROTECTED   126
-#endif
+/* Vendor-specific Protected */
+#define CATEGORY_VENDOR_SPECIFIC_PROTECTED_ACTION   126
+/* Vendor-specific */
 #define CATEGORY_VENDOR_SPECIFIC_ACTION             127
 
 /* 7.3.1.14 Block Ack Parameter Set field */
@@ -1047,6 +1063,26 @@
 	199	/* Operation Mode Notification */
 #define ELEM_ID_RESERVED \
 	255	/* Reserved */
+
+#if CFG_SUPPORT_MBO
+/* MBO v0.0_r19, 4.2: MBO Attributes */
+/* Table 4-5: MBO Attributes */
+/* OCE v0.0.10, Table 4-3: OCE Attributes */
+enum MBO_ATTR_ID {
+	MBO_ATTR_ID_AP_CAPA_IND = 1,
+	MBO_ATTR_ID_NON_PREF_CHAN_REPORT = 2,
+	MBO_ATTR_ID_CELL_DATA_CAPA = 3,
+	MBO_ATTR_ID_ASSOC_DISALLOW = 4,
+	MBO_ATTR_ID_CELL_DATA_PREF = 5,
+	MBO_ATTR_ID_TRANSITION_REASON = 6,
+	MBO_ATTR_ID_TRANSITION_REJECT_REASON = 7,
+	MBO_ATTR_ID_ASSOC_RETRY_DELAY = 8,
+	OCE_ATTR_ID_CAPA_IND = 101,
+	OCE_ATTR_ID_RSSI_BASED_ASSOC_REJECT = 102,
+	OCE_ATTR_ID_REDUCED_WAN_METRICS = 103,
+	OCE_ATTR_ID_RNR_COMPLETENESS = 104,
+};
+#endif
 
 /* 7.3.2.1 SSID element */
 #define ELEM_MAX_LEN_SSID                           32
@@ -2258,6 +2294,14 @@ struct  IE_NEIGHBOR_REPORT {
 	uint8_t ucChnlNumber;
 	uint8_t ucPhyType;
 	uint8_t aucSubElem[0];
+} __KAL_ATTRIB_PACKED__;
+
+struct IE_MBO_OCE {
+	uint8_t ucId;
+	uint8_t ucLength;
+	uint8_t aucOui[3];
+	uint8_t ucOuiType;
+	uint8_t aucSubElements[1];
 } __KAL_ATTRIB_PACKED__;
 
 /* 8.5.7.6/8.5.7.7 Neighbor Report Request/Response frame format */

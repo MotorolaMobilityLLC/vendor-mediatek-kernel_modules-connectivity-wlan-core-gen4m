@@ -770,8 +770,7 @@ void scanRemoveBssDescsByPolicy(IN struct ADAPTER *prAdapter,
 
 			if (CHECK_FOR_TIMEOUT(rCurrentTime,
 				prBssDesc->rUpdateTime,
-				SEC_TO_SYSTIME(
-					SCN_BSS_DESC_REMOVE_TIMEOUT_SEC))) {
+				SEC_TO_SYSTIME(SCN_BSS_DESC_STALE_SEC))) {
 
 #if 0 /* TODO: Remove this */
 				log_dbg(SCN, TRACE, "Remove TIMEOUT BSS DESC(%#x):MAC: "
@@ -1667,6 +1666,9 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 	/* Support AP Selection */
 	prBssDesc->fgExsitBssLoadIE = FALSE;
 	prBssDesc->fgMultiAnttenaAndSTBC = FALSE;
+#if CFG_SUPPORT_MBO
+	prBssDesc->fgIsDisallowed = FALSE;
+#endif
 
 	if (fgIsProbeResp == FALSE) {
 		/* Probe response doesn't have TIM IE. Thus, we should
@@ -1914,6 +1916,27 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 				}
 			}
 #endif /* CFG_ENABLE_WIFI_DIRECT */
+#if CFG_SUPPORT_MBO
+			if (pucIE[1] >= 4 &&
+			    kalMemCmp(pucIE + 2, "\x50\x6f\x9a\x16", 4) == 0) {
+				struct IE_MBO_OCE *mbo =
+					(struct IE_MBO_OCE *)pucIE;
+				const uint8_t *disallow = NULL;
+
+				disallow = kalFindIeMatchMask(
+						MBO_ATTR_ID_ASSOC_DISALLOW,
+						mbo->aucSubElements,
+						mbo->ucLength - 4,
+						NULL, 0, 0, NULL);
+				if (disallow && disallow[1] >= 1) {
+					prBssDesc->fgIsDisallowed = TRUE;
+					DBGLOG(SCN, INFO,
+						MACSTR " disallow reason %d\n",
+						MAC2STR(prBssDesc->aucBSSID),
+						disallow[2]);
+				}
+			}
+#endif
 			break;
 		}
 #if (CFG_SUPPORT_802_11AX == 1)

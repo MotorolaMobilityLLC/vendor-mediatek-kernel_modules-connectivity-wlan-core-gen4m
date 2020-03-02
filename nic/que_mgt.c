@@ -6855,14 +6855,6 @@ mqmSendDelBaFrame(IN struct ADAPTER *prAdapter,
 		WLAN_MAC_HEADER_LEN, ACTION_DELBA_FRAME_LEN, NULL,
 		MSDU_RATE_MODE_AUTO);
 
-#if CFG_SUPPORT_802_11W
-	if (rsnCheckBipKeyInstalled(prAdapter, prStaRec)) {
-		DBGLOG(RSN, INFO, "Set MSDU_OPT_PROTECTED_FRAME\n");
-		nicTxConfigPktOption(prTxMsduInfo, MSDU_OPT_PROTECTED_FRAME,
-			TRUE);
-	}
-#endif
-
 	/* TID and fgIsInitiator are needed
 	 * when processing TX Done of the DELBA frame
 	 */
@@ -7531,14 +7523,6 @@ void mqmHandleAddBaReq(IN struct ADAPTER *prAdapter,
 			ACTION_ADDBA_RSP_FRAME_LEN,
 			mqmCallbackAddBaRspSent,
 			MSDU_RATE_MODE_AUTO);
-
-#if CFG_SUPPORT_802_11W
-		if (rsnCheckBipKeyInstalled(prAdapter, prStaRec)) {
-			DBGLOG(RSN, INFO, "Set MSDU_OPT_PROTECTED_FRAME\n");
-			nicTxConfigPktOption(prTxMsduInfo,
-				MSDU_OPT_PROTECTED_FRAME, TRUE);
-		}
-#endif
 
 		/* Note: prTxMsduInfo->ucTID is not used for transmitting the
 		 * ADDBA_RSP. However, when processing TX Done of this

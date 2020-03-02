@@ -15019,6 +15019,26 @@ wlanoidQueryTxPowerInfo(IN struct ADAPTER *prAdapter,
 }
 #endif
 
+#if CFG_SUPPORT_MBO
+uint32_t
+wlanoidBssDisallowedList(IN struct ADAPTER *prAdapter,
+			   IN void *pvSetBuffer, IN uint32_t u4SetBufferLen,
+			   OUT uint32_t *pu4SetInfoLen) {
+	struct WIFI_VAR *prWifiVar = NULL;
+
+
+	if (!prAdapter || !u4SetBufferLen || !pvSetBuffer ||
+		u4SetBufferLen != sizeof(struct PARAM_BSS_DISALLOWED_LIST))
+		return WLAN_STATUS_NOT_ACCEPTED;
+
+	prWifiVar = &prAdapter->rWifiVar;
+	kalMemCopy(&prWifiVar->rBssDisallowedList, pvSetBuffer, u4SetBufferLen);
+	DBGLOG(OID, INFO, "Set disallowed list size: %d\n",
+		prWifiVar->rBssDisallowedList.u4NumBssDisallowed);
+	return WLAN_STATUS_SUCCESS;
+}
+#endif
+
 uint32_t
 wlanoidSetDrvRoamingPolicy(IN struct ADAPTER *prAdapter,
 			   IN void *pvSetBuffer, IN uint32_t u4SetBufferLen,

@@ -865,6 +865,7 @@
 #define CFG_SUPPORT_802_11R                     0
 #define CFG_SUPPORT_802_11K                     0
 #endif
+#define CFG_SUPPORT_MBO                         1
 
 #define CFG_SUPPORT_SUPPLICANT_SME              0
 

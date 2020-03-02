@@ -81,6 +81,7 @@
 #define OUI_QCA 0x001374
 
 #define NL80211_VENDOR_SUBCMD_GET_PREFER_FREQ_LIST 103
+#define QCA_NL80211_VENDOR_SUBCMD_ROAM 64
 #define QCA_NL80211_VENDOR_SUBCMD_SETBAND 105
 
 enum ANDROID_VENDOR_SUB_COMMAND {
@@ -236,6 +237,32 @@ enum QCA_SET_BAND {
 	QCA_SETBAND_AUTO,
 	QCA_SETBAND_5G,
 	QCA_SETBAND_2G,
+};
+
+enum QCA_ATTR_ROAM_SUBCMD {
+	QCA_ATTR_ROAM_SUBCMD_INVALID = 0,
+	QCA_ATTR_ROAM_SUBCMD_SET_BLACKLIST_BSSID = 6,
+
+	/* keep last */
+	QCA_ATTR_ROAM_SUBCMD_AFTER_LAST,
+	QCA_ATTR_ROAM_SUBCMD_MAX =
+	QCA_ATTR_ROAM_SUBCMD_AFTER_LAST - 1,
+};
+
+enum QCA_ATTR_ROAMING_PARAMS {
+	QCA_ATTR_ROAMING_PARAM_INVALID = 0,
+
+	QCA_ATTR_ROAMING_SUBCMD = 1,
+
+	/* Attribute for set_blacklist bssid params */
+	QCA_ATTR_ROAMING_PARAM_SET_BSSID_PARAMS = 18,
+	QCA_ATTR_ROAMING_PARAM_SET_BSSID_PARAMS_NUM_BSSID = 19,
+	QCA_ATTR_ROAMING_PARAM_SET_BSSID_PARAMS_BSSID = 20,
+
+	/* keep last */
+	QCA_ATTR_ROAMING_PARAM_AFTER_LAST,
+	QCA_ATTR_ROAMING_PARAM_MAX =
+	QCA_ATTR_ROAMING_PARAM_AFTER_LAST - 1,
 };
 
 enum WIFI_VENDOR_ATTR_PREFERRED_FREQ_LIST {
@@ -562,6 +589,7 @@ struct PARAM_BSS_MAC_OUI {
 	uint8_t ucBssIndex;
 	uint8_t ucMacOui[MAC_OUI_LEN];
 };
+
 /*******************************************************************************
  *                                 M A C R O S
  *******************************************************************************

@@ -105,21 +105,12 @@
  */
 #define SCN_BSS_DESC_SAME_SSID_THRESHOLD	20
 
-#if 1
-#define SCN_BSS_DESC_REMOVE_TIMEOUT_SEC		30
 #define SCN_BSS_DESC_STALE_SEC			20 /* Scan Request Timeout */
 #if CFG_ENABLE_WIFI_DIRECT
 #if CFG_SUPPORT_WFD
 /* For WFD scan need about 15s. */
 #define SCN_BSS_DESC_STALE_SEC_WFD		20
 #endif
-#endif
-
-#else
-/* Second. This is used by POLICY TIMEOUT, If exceed this
- * value, remove timeout struct BSS_DESC.
- */
-#define SCN_BSS_DESC_REMOVE_TIMEOUT_SEC		5
 #endif
 
 #define SCN_PROBE_DELAY_MSEC			0
@@ -436,6 +427,9 @@ struct BSS_DESC {
 
 	/* Support AP Selection */
 	struct AIS_BLACKLIST_ITEM *prBlack;
+#if CFG_SUPPORT_MBO
+	uint8_t fgIsDisallowed;
+#endif
 	uint16_t u2StaCnt;
 	uint16_t u2AvaliableAC; /* Available Admission Capacity */
 	uint8_t ucJoinFailureCount;

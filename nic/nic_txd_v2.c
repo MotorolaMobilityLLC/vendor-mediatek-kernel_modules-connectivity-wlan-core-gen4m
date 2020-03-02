@@ -393,10 +393,12 @@ void nic_txd_v2_compose(
 		/* PF bit will be set in nicTxFillDescByPktOption() */
 		if ((prStaRec
 			&& prStaRec->fgTransmitKeyExist) || fgIsTemplate) {
+			DBGLOG(RSN, INFO, "Set MSDU_OPT_PROTECTED_FRAME\n");
 			nicTxConfigPktOption(
 				prMsduInfo, MSDU_OPT_PROTECTED_FRAME, TRUE);
 
-			if (prMsduInfo->fgIs802_1x_NonProtected) {
+			if (prMsduInfo->fgIs802_1x &&
+			    prMsduInfo->fgIs802_1x_NonProtected) {
 				nicTxConfigPktOption(
 					prMsduInfo,
 					MSDU_OPT_PROTECTED_FRAME, FALSE);
