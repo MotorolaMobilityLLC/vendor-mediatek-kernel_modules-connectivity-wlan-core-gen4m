@@ -1175,6 +1175,9 @@ int mtk_cfg80211_connect(struct wiphy *wiphy,
 		prGlueInfo->rWpaInfo.u4WpaVersion =
 			IW_AUTH_WPA_VERSION_DISABLED;
 
+	DBGLOG(REQ, INFO, "sme->auth_type=%x, sme->crypto.wpa_versions=%x",
+		sme->auth_type,	sme->crypto.wpa_versions);
+
 	switch (sme->auth_type) {
 	case NL80211_AUTHTYPE_OPEN_SYSTEM:
 		prGlueInfo->rWpaInfo.u4AuthAlg = IW_AUTH_ALG_OPEN_SYSTEM;
@@ -1258,8 +1261,10 @@ int mtk_cfg80211_connect(struct wiphy *wiphy,
 		}
 	}
 
-	/* DBGLOG(SCN, INFO, ("akm_suites=%x\n", sme->crypto.akm_suites[0])); */
 	if (sme->crypto.n_akm_suites) {
+		DBGLOG(REQ, INFO, "n_akm_suites=%x, akm_suites=%x",
+			sme->crypto.n_akm_suites,
+			sme->crypto.akm_suites[0]);
 		prGlueInfo->prAdapter->rWifiVar.rConnSettings.rRsnInfo
 		.au4AuthKeyMgtSuite[0] = sme->crypto.akm_suites[0];
 		if (prGlueInfo->rWpaInfo.u4WpaVersion ==
@@ -1324,7 +1329,11 @@ int mtk_cfg80211_connect(struct wiphy *wiphy,
 		}
 	}
 
-	if (prGlueInfo->rWpaInfo.u4WpaVersion == IW_AUTH_WPA_VERSION_DISABLED) {
+	DBGLOG(REQ, INFO, "u4WpaVersion=%d, u4AuthAlg=%d",
+		prGlueInfo->rWpaInfo.u4WpaVersion,
+		prGlueInfo->rWpaInfo.u4AuthAlg);
+	if (prGlueInfo->rWpaInfo.u4WpaVersion ==
+	    IW_AUTH_WPA_VERSION_DISABLED) {
 		switch (prGlueInfo->rWpaInfo.u4AuthAlg) {
 		case IW_AUTH_ALG_FT:
 			DBGLOG(REQ, INFO, "FT: Non-RSN FT connect\n");

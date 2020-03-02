@@ -771,6 +771,14 @@ u_int8_t aisFsmStateInit_RetryJOIN(IN struct ADAPTER *prAdapter,
 	if (!prAisFsmInfo->ucAvailableAuthTypes)
 		return FALSE;
 
+	if ((prStaRec->u2StatusCode !=
+		STATUS_CODE_AUTH_ALGORITHM_NOT_SUPPORTED) &&
+		(prStaRec->u2StatusCode !=
+		STATUS_CODE_AUTH_TIMEOUT)) {
+		prAisFsmInfo->ucAvailableAuthTypes = 0;
+		return FALSE;
+	}
+
 	if (prAisFsmInfo->ucAvailableAuthTypes & (uint8_t)
 	    AUTH_TYPE_OPEN_SYSTEM) {
 
@@ -784,8 +792,9 @@ u_int8_t aisFsmStateInit_RetryJOIN(IN struct ADAPTER *prAdapter,
 		    (uint8_t) AUTH_ALGORITHM_NUM_OPEN_SYSTEM;
 	} else {
 		DBGLOG(AIS, ERROR,
-		       "RETRY JOIN INIT: Retry Authentication with Unexpected AuthType.\n");
-		ASSERT(0);
+		       "RETRY JOIN INIT: Retry Authentication with Unexpected AuthType: %d.\n",
+		       prAisFsmInfo->ucAvailableAuthTypes);
+		return FALSE;
 	}
 
 	/* No more available Auth Types */
