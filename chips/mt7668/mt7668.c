@@ -416,6 +416,7 @@ struct BUS_INFO mt7668_bus_info = {
 	.tx_ring_cmd_idx = 2,
 	.tx_ring0_data_idx = 0,
 	.tx_ring1_data_idx = 0,
+	.max_static_map_addr = 0x00040000,
 	.fgCheckDriverOwnInt = FALSE,
 	.fgInitPCIeInt = FALSE,
 	.u4DmaMask = 32,
