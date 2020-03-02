@@ -1020,6 +1020,7 @@ rlmDomainGetChnlList(struct ADAPTER *prAdapter,
 				paucChannelList[ucNum].ucChannelNum =
 				    prSubband->ucFirstChannelNum +
 				    j * prSubband->ucChannelSpan;
+				paucChannelList[ucNum].eDFS = prSubband->fgDfs;
 				ucNum++;
 			}
 		}
