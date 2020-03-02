@@ -2299,7 +2299,6 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 	ASSERT(pucIE);
 
 	prStaRec = prBssInfo->prStaRecOfAP;
-	ASSERT(prStaRec);
 	if (!prStaRec)
 		return 0;
 
@@ -3102,7 +3101,6 @@ static void rlmRecAssocRespIeInfoForClient(struct ADAPTER *prAdapter,
 
 	prStaRec = prBssInfo->prStaRecOfAP;
 
-	ASSERT(prStaRec);
 	if (!prStaRec)
 		return;
 	COPY_SSID(rSsid.aucSsid, rSsid.u4SsidLen, prBssInfo->aucSSID,
@@ -3910,7 +3908,6 @@ void rlmProcessVhtAction(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb)
 void rlmFillSyncCmdParam(struct CMD_SET_BSS_RLM_PARAM *prCmdBody,
 			 struct BSS_INFO *prBssInfo)
 {
-	ASSERT(prCmdBody && prBssInfo);
 	if (!prCmdBody || !prBssInfo)
 		return;
 

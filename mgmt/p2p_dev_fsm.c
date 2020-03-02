@@ -1017,7 +1017,6 @@ p2pDevChnlReqByOffChnl(IN struct ADAPTER *prAdapter,
 			sizeof(struct MSG_P2P_CHNL_REQUEST));
 
 	if (prMsgChnlReq == NULL) {
-		ASSERT(FALSE);
 		DBGLOG(P2P, ERROR,
 				"Not enough MSG buffer for chnl request.\n");
 		return FALSE;
@@ -1058,7 +1057,6 @@ p2pDevAbortChlReqIfNeed(IN struct ADAPTER *prAdapter,
 			RAM_TYPE_MSG, sizeof(struct MSG_P2P_CHNL_ABORT));
 
 	if (prMsgChnlAbort == NULL) {
-		ASSERT(FALSE);
 		DBGLOG(P2P, ERROR, "Memory allocate failed.\n");
 		return;
 	}
@@ -1129,7 +1127,6 @@ p2pDevAddTxReq2Queue(IN struct ADAPTER *prAdapter,
 	if (prTmpOffChnlTxReq == NULL) {
 		DBGLOG(P2P, ERROR,
 				"Allocate TX request buffer fails.\n");
-		ASSERT(FALSE);
 		return FALSE;
 	}
 
