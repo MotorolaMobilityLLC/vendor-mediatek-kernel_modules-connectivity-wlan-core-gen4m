@@ -612,10 +612,13 @@ static VOID rlmFillHtCapIE(P_ADAPTER_T prAdapter, P_BSS_INFO_T prBssInfo, P_MSDU
 		prHtCap->u2HtExtendedCap &= ~(HT_EXT_CAP_PCO | HT_EXT_CAP_PCO_TRANS_TIME_NONE);
 
 	prHtCap->u4TxBeamformingCap = TX_BEAMFORMING_CAP_DEFAULT_VAL;
-	if (IS_FEATURE_ENABLED(prAdapter->rWifiVar.ucStaHtBfee))
-		prHtCap->u4TxBeamformingCap = TX_BEAMFORMING_CAP_BFEE;
-	if (IS_FEATURE_ENABLED(prAdapter->rWifiVar.ucStaHtBfer))
-		prHtCap->u4TxBeamformingCap |= TX_BEAMFORMING_CAP_BFER;
+	if ((prAdapter->rWifiVar.ucDbdcMode == DBDC_MODE_DISABLED) ||
+		(prBssInfo->eBand == BAND_5G)) {
+		if (IS_FEATURE_ENABLED(prAdapter->rWifiVar.ucStaHtBfee))
+			prHtCap->u4TxBeamformingCap = TX_BEAMFORMING_CAP_BFEE;
+		if (IS_FEATURE_ENABLED(prAdapter->rWifiVar.ucStaHtBfer))
+			prHtCap->u4TxBeamformingCap |= TX_BEAMFORMING_CAP_BFER;
+	}
 
 	prHtCap->ucAselCap = ASEL_CAP_DEFAULT_VAL;
 
