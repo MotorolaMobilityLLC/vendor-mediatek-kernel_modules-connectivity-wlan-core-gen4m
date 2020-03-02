@@ -3418,6 +3418,11 @@ p2pRoleChnlReqByOffChnl(IN struct ADAPTER *prAdapter,
 			prOffChnlTxReq->rChannelInfo.ucChannelNum;
 	prP2pChnlReqInfo->eChnlSco = prOffChnlTxReq->eChnlExt;
 	prP2pChnlReqInfo->u4MaxInterval = prOffChnlTxReq->u4Duration;
+	prP2pChnlReqInfo->eChannelWidth = prOffChnlTxReq->rChannelInfo.ucChnlBw;
+	prP2pChnlReqInfo->ucCenterFreqS1 =
+			prOffChnlTxReq->rChannelInfo.u4CenterFreq1;
+	prP2pChnlReqInfo->ucCenterFreqS2 =
+			prOffChnlTxReq->rChannelInfo.u4CenterFreq2;
 
 	p2pRoleFsmStateTransition(prAdapter, prP2pRoleFsmInfo,
 			P2P_ROLE_STATE_REQING_CHANNEL);
