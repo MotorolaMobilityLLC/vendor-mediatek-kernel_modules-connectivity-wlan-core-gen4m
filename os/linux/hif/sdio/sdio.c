@@ -918,28 +918,32 @@ u_int8_t kalDevRegRead_mac(IN struct GLUE_INFO *prGlueInfo, IN uint32_t u4Regist
 {
 	uint32_t value;
 	uint32_t u4Time, u4Current;
+	uint8_t ucResult;/* For Unchecked return value*/
 
     /* progrqm h2d mailbox0 as interested register address */
-	kalDevRegWrite(prGlueInfo, MCR_H2DSM0R, u4Register);
+	ucResult = kalDevRegWrite(prGlueInfo, MCR_H2DSM0R, u4Register);
 
     /* set h2d interrupt to notify firmware. bit16 */
-	kalDevRegWrite(prGlueInfo, MCR_WSICR, SDIO_MAILBOX_FUNC_READ_REG_IDX);
+	ucResult = kalDevRegWrite(prGlueInfo, MCR_WSICR,
+			SDIO_MAILBOX_FUNC_READ_REG_IDX);
 
 	/* polling interrupt status asserted. bit16 */
 
 	/* first, disable interrupt enable for SDIO_MAILBOX_FUNC_READ_REG_IDX */
-	kalDevRegRead(prGlueInfo, MCR_WHIER, &value);
-	kalDevRegWrite(prGlueInfo, MCR_WHIER, (value & ~SDIO_MAILBOX_FUNC_READ_REG_IDX));
+	ucResult = kalDevRegRead(prGlueInfo, MCR_WHIER, &value);
+	ucResult = kalDevRegWrite(prGlueInfo, MCR_WHIER,
+			(value & ~SDIO_MAILBOX_FUNC_READ_REG_IDX));
 
 	u4Time = (uint32_t) kalGetTimeTick();
 
 	do {
 		/* check bit16 of WHISR assert for read register response */
-		kalDevRegRead(prGlueInfo, MCR_WHISR, &value);
+		ucResult = kalDevRegRead(prGlueInfo, MCR_WHISR, &value);
 
 		if (value & SDIO_MAILBOX_FUNC_READ_REG_IDX) {
 			/* read d2h mailbox0 for interested register address */
-			kalDevRegRead(prGlueInfo, MCR_D2HRM0R, &value);
+			ucResult = kalDevRegRead(prGlueInfo,
+						MCR_D2HRM0R, &value);
 
 			if (value != u4Register) {
 				DBGLOG(HAL, ERROR, "ERROR! kalDevRegRead_mac():register address mis-match");
@@ -949,7 +953,8 @@ u_int8_t kalDevRegRead_mac(IN struct GLUE_INFO *prGlueInfo, IN uint32_t u4Regist
 			}
 
 			/* read d2h mailbox1 for the value of the register */
-			kalDevRegRead(prGlueInfo, MCR_D2HRM1R, &value);
+			ucResult = kalDevRegRead(prGlueInfo,
+						MCR_D2HRM1R, &value);
 			*pu4Value = value;
 			return	TRUE;
 		}
@@ -1035,31 +1040,35 @@ u_int8_t kalDevRegWrite_mac(IN struct GLUE_INFO *prGlueInfo, IN uint32_t u4Regis
 {
 	uint32_t value;
 	uint32_t u4Time, u4Current;
+	uint8_t ucResult; /* For Unchecked return value*/
 
 	/* progrqm h2d mailbox0 as interested register address */
-	kalDevRegWrite(prGlueInfo, MCR_H2DSM0R, u4Register);
+	ucResult = kalDevRegWrite(prGlueInfo, MCR_H2DSM0R, u4Register);
 
 	/* progrqm h2d mailbox1 as the value to write */
-	kalDevRegWrite(prGlueInfo, MCR_H2DSM1R, u4Value);
+	ucResult = kalDevRegWrite(prGlueInfo, MCR_H2DSM1R, u4Value);
 
 	/*  set h2d interrupt to notify firmware bit17 */
-	kalDevRegWrite(prGlueInfo, MCR_WSICR, SDIO_MAILBOX_FUNC_WRITE_REG_IDX);
+	ucResult = kalDevRegWrite(prGlueInfo, MCR_WSICR,
+			SDIO_MAILBOX_FUNC_WRITE_REG_IDX);
 
 	/* polling interrupt status asserted. bit17 */
 
 	/* first, disable interrupt enable for SDIO_MAILBOX_FUNC_WRITE_REG_IDX */
-	kalDevRegRead(prGlueInfo, MCR_WHIER, &value);
-	kalDevRegWrite(prGlueInfo, MCR_WHIER, (value & ~SDIO_MAILBOX_FUNC_WRITE_REG_IDX));
+	ucResult = kalDevRegRead(prGlueInfo, MCR_WHIER, &value);
+	ucResult = kalDevRegWrite(prGlueInfo, MCR_WHIER,
+			(value & ~SDIO_MAILBOX_FUNC_WRITE_REG_IDX));
 
 	u4Time = (uint32_t) kalGetTimeTick();
 
 	do {
 		/* check bit17 of WHISR assert for response */
-		kalDevRegRead(prGlueInfo, MCR_WHISR, &value);
+		ucResult = kalDevRegRead(prGlueInfo, MCR_WHISR, &value);
 
 		if (value & SDIO_MAILBOX_FUNC_WRITE_REG_IDX) {
 			/* read d2h mailbox0 for interested register address */
-			kalDevRegRead(prGlueInfo, MCR_D2HRM0R, &value);
+			ucResult = kalDevRegRead(prGlueInfo,
+						MCR_D2HRM0R, &value);
 
 			if (value != u4Register) {
 				DBGLOG(HAL, ERROR, "ERROR! kalDevRegWrite_mac():register address mis-match");
