@@ -2424,8 +2424,9 @@ void wlanGetParseConfig(struct ADAPTER *prAdapter)
 	kalMemZero(pucConfigBuf, WLAN_CFG_FILE_BUF_SIZE);
 	u4ConfigReadLen = 0;
 	if (pucConfigBuf) {
-		if (kalReadToFile("/storage/sdcard0/wifi.cfg", pucConfigBuf,
-		    WLAN_CFG_FILE_BUF_SIZE, &u4ConfigReadLen) == 0) {
+		if (kalRequestFirmware("wifi.cfg", pucConfigBuf,
+			   WLAN_CFG_FILE_BUF_SIZE, &u4ConfigReadLen,
+			   prAdapter->prGlueInfo->prDev) == 0) {
 			/* ToDo:: Nothing */
 		} else if (kalReadToFile("/data/misc/wifi.cfg",
 			   pucConfigBuf, WLAN_CFG_FILE_BUF_SIZE,
@@ -2435,9 +2436,9 @@ void wlanGetParseConfig(struct ADAPTER *prAdapter)
 			   pucConfigBuf, WLAN_CFG_FILE_BUF_SIZE,
 			   &u4ConfigReadLen) == 0) {
 			/* ToDo:: Nothing */
-		} else if (kalRequestFirmware("wifi.cfg", pucConfigBuf,
-			   WLAN_CFG_FILE_BUF_SIZE, &u4ConfigReadLen,
-			   prAdapter->prGlueInfo->prDev) == 0) {
+		} else if (kalReadToFile("/storage/sdcard0/wifi.cfg",
+			   pucConfigBuf, WLAN_CFG_FILE_BUF_SIZE,
+			   &u4ConfigReadLen) == 0) {
 			/* ToDo:: Nothing */
 		}
 
@@ -2473,16 +2474,17 @@ void wlanGetConfig(struct ADAPTER *prAdapter)
 	kalMemZero(pucConfigBuf, WLAN_CFG_FILE_BUF_SIZE);
 	u4ConfigReadLen = 0;
 	if (pucConfigBuf) {
-		if (kalReadToFile("/storage/sdcard0/wifi.cfg", pucConfigBuf,
-		    WLAN_CFG_FILE_BUF_SIZE, &u4ConfigReadLen) == 0) {
+		if (kalRequestFirmware("wifi.cfg", pucConfigBuf,
+			   WLAN_CFG_FILE_BUF_SIZE, &u4ConfigReadLen,
+			   prAdapter->prGlueInfo->prDev) == 0) {
 			/* ToDo:: Nothing */
 		} else if (kalReadToFile("/data/misc/wifi/wifi.cfg",
 			   pucConfigBuf, WLAN_CFG_FILE_BUF_SIZE,
 			   &u4ConfigReadLen) == 0) {
 			/* ToDo:: Nothing */
-		} else if (kalRequestFirmware("wifi.cfg", pucConfigBuf,
-			   WLAN_CFG_FILE_BUF_SIZE, &u4ConfigReadLen,
-			   prAdapter->prGlueInfo->prDev) == 0) {
+		} else if (kalReadToFile("/storage/sdcard0/wifi.cfg",
+			   pucConfigBuf, WLAN_CFG_FILE_BUF_SIZE,
+			   &u4ConfigReadLen) == 0) {
 			/* ToDo:: Nothing */
 		}
 
