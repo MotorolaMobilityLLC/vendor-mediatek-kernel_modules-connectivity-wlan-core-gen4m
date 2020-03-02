@@ -1659,7 +1659,7 @@ static int32_t HQA_MacBbpRegRead(struct net_device *prNetDev,
 	memcpy(&u4Offset, HqaCmdFrame->Data, 4);
 	u4Offset = ntohl(u4Offset);
 
-	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_MacBbpRegRead Offset = 0x%08lx\n", u4Offset);
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_MacBbpRegRead Offset = 0x%08x\n", u4Offset);
 
 	rMcrInfo.u4McrOffset = u4Offset;
 	rMcrInfo.u4McrData = 0;
@@ -1670,7 +1670,7 @@ static int32_t HQA_MacBbpRegRead(struct net_device *prNetDev,
 	if (i4Status == 0) {
 		u4Value = rMcrInfo.u4McrData;
 
-		DBGLOG(RFTEST, INFO, "QA_AGENT Address = 0x%08lx, Result = 0x%08lx\n", u4Offset, u4Value);
+		DBGLOG(RFTEST, INFO, "QA_AGENT Address = 0x%08x, Result = 0x%08x\n", u4Offset, u4Value);
 
 		u4Value = ntohl(u4Value);
 		memcpy(HqaCmdFrame->Data + 2, &u4Value, 4);
@@ -1712,8 +1712,8 @@ static int32_t HQA_MacBbpRegWrite(struct net_device *prNetDev,
 	u4Offset = ntohl(u4Offset);
 	u4Value = ntohl(u4Value);
 
-	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_MacBbpRegWrite Offset = 0x%08lx\n", u4Offset);
-	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_MacBbpRegWrite Value = 0x%08lx\n", u4Value);
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_MacBbpRegWrite Offset = 0x%08x\n", u4Offset);
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_MacBbpRegWrite Value = 0x%08x\n", u4Value);
 
 	rMcrInfo.u4McrOffset = u4Offset;
 	rMcrInfo.u4McrData = u4Value;
@@ -1755,8 +1755,8 @@ static int32_t HQA_MACBbpRegBulkRead(struct net_device *prNetDev,
 	memcpy(&u2Len, HqaCmdFrame->Data + 4, 2);
 	u2Len = ntohs(u2Len);
 
-	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_MACBbpRegBulkRead Offset = 0x%08lx\n", u4Offset);
-	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_MACBbpRegBulkRead Len = 0x%08lx\n", u2Len);
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_MACBbpRegBulkRead Offset = 0x%08x\n", u4Offset);
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_MACBbpRegBulkRead Len = 0x%08x\n", u2Len);
 
 	for (u4Index = 0; u4Index < u2Len; u4Index++) {
 		rMcrInfo.u4McrOffset = u4Offset + u4Index * 4;
@@ -1769,7 +1769,7 @@ static int32_t HQA_MACBbpRegBulkRead(struct net_device *prNetDev,
 		if (i4Status == 0) {
 			u4Value = rMcrInfo.u4McrData;
 
-			DBGLOG(RFTEST, INFO, "QA_AGENT Address = 0x%08lx, Result = 0x%08lx\n",
+			DBGLOG(RFTEST, INFO, "QA_AGENT Address = 0x%08x, Result = 0x%08x\n",
 			       u4Offset + u4Index * 4, u4Value);
 
 			u4Value = ntohl(u4Value);
@@ -1813,7 +1813,7 @@ static int32_t HQA_RfRegBulkRead(struct net_device *prNetDev,
 	u4Length = ntohl(u4Length);
 
 	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_RfRegBulkRead WfSel  = %d\n", u4WfSel);
-	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_RfRegBulkRead Offset = 0x%08lx\n", u4Offset);
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_RfRegBulkRead Offset = 0x%08x\n", u4Offset);
 	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_RfRegBulkRead Length = %d\n", u4Length);
 
 	if (u4WfSel == 0)
@@ -1833,7 +1833,7 @@ static int32_t HQA_RfRegBulkRead(struct net_device *prNetDev,
 		if (i4Status == 0) {
 			u4Value = rMcrInfo.u4McrData;
 
-			DBGLOG(RFTEST, INFO, "QA_AGENT Address = 0x%08lx, Result = 0x%08lx\n",
+			DBGLOG(RFTEST, INFO, "QA_AGENT Address = 0x%08x, Result = 0x%08x\n",
 			       u4Offset + u4Index * 4, u4Value);
 
 			u4Value = ntohl(u4Value);
@@ -1879,9 +1879,9 @@ static int32_t HQA_RfRegBulkWrite(struct net_device *prNetDev,
 	u4Value = ntohl(u4Value);
 
 	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_RfRegBulkWrite WfSel  = %d\n", u4WfSel);
-	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_RfRegBulkWrite Offset = 0x%08lx\n", u4Offset);
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_RfRegBulkWrite Offset = 0x%08x\n", u4Offset);
 	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_RfRegBulkWrite Length = %d\n", u4Length);
-	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_RfRegBulkWrite Value  = 0x%08lx\n", u4Value);
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_RfRegBulkWrite Value  = 0x%08x\n", u4Value);
 
 	if (u4WfSel == 0)
 		u4Offset = u4Offset | 0x99900000;
@@ -2701,16 +2701,16 @@ static int32_t HQA_DBDCTXTone(struct net_device *prNetDev, IN union iwreq_data *
 	memcpy(&i4Digi_Power, HqaCmdFrame->Data + 4 * 9, 4);	/* Digi_Power: (0.25db) -32~31 */
 	i4Digi_Power = ntohl(i4Digi_Power);
 
-	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_DBDCTXTone BandIdx = 0x%08lx\n", i4BandIdx);
-	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_DBDCTXTone Control = 0x%08lx\n", i4Control);
-	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_DBDCTXTone AntIndex = 0x%08lx\n", i4AntIndex);
-	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_DBDCTXTone ToneType = 0x%08lx\n", i4ToneType);
-	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_DBDCTXTone ToneFreq = 0x%08lx\n", i4ToneFreq);
-	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_DBDCTXTone DcOffsetI = 0x%08lx\n", i4DcOffsetI);
-	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_DBDCTXTone DcOffsetQ = 0x%08lx\n", i4DcOffsetQ);
-	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_DBDCTXTone Band = 0x%08lx\n", i4Band);
-	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_DBDCTXTone RF_Power = 0x%08lx\n", i4RF_Power);
-	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_DBDCTXTone Digi_Power = 0x%08lx\n", i4Digi_Power);
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_DBDCTXTone BandIdx = 0x%08x\n", i4BandIdx);
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_DBDCTXTone Control = 0x%08x\n", i4Control);
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_DBDCTXTone AntIndex = 0x%08x\n", i4AntIndex);
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_DBDCTXTone ToneType = 0x%08x\n", i4ToneType);
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_DBDCTXTone ToneFreq = 0x%08x\n", i4ToneFreq);
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_DBDCTXTone DcOffsetI = 0x%08x\n", i4DcOffsetI);
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_DBDCTXTone DcOffsetQ = 0x%08x\n", i4DcOffsetQ);
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_DBDCTXTone Band = 0x%08x\n", i4Band);
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_DBDCTXTone RF_Power = 0x%08x\n", i4RF_Power);
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_DBDCTXTone Digi_Power = 0x%08x\n", i4Digi_Power);
 
 	/*
 	 * Select TX Antenna
@@ -3776,7 +3776,7 @@ static int32_t HQA_GetChipID(struct net_device *prNetDev, IN union iwreq_data *p
 	g_u4Chip_ID = prChipInfo->chip_id;
 	u4ChipId = 0x00006632;
 
-	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_GetChipID ChipId = 0x%08lx\n", u4ChipId);
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_GetChipID ChipId = 0x%08x\n", u4ChipId);
 
 	u4ChipId = ntohl(u4ChipId);
 	memcpy(HqaCmdFrame->Data + 2, &u4ChipId, 4);
@@ -7568,7 +7568,7 @@ static int32_t hqa_ext_cmds(struct net_device *prNetDev, IN union iwreq_data *pr
 	if (hqa_ext_cmd_set[i4Idx] != NULL)
 		i4Ret = (*hqa_ext_cmd_set[i4Idx]) (prNetDev, prIwReqData, HqaCmdFrame);
 	else
-		DBGLOG(RFTEST, INFO, "QA_AGENT hqa_ext_cmds cmd idx %d is not supported : %d\n", i4Idx);
+		DBGLOG(RFTEST, INFO, "QA_AGENT hqa_ext_cmds cmd idx %d is not supported\n", i4Idx);
 
 	return i4Ret;
 }

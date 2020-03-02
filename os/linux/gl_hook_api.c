@@ -1173,7 +1173,7 @@ int32_t MT_ATESetRate(struct net_device *prNetDev, uint32_t u4Rate)
 
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 
-	DBGLOG(RFTEST, INFO, "QA_ATE_HOOK SetRate=0x%08lx\n", u4Rate);
+	DBGLOG(RFTEST, INFO, "QA_ATE_HOOK SetRate=0x%08x\n", u4Rate);
 
 	rRfATInfo.u4FuncIndex = RF_AT_FUNCID_RATE;
 	rRfATInfo.u4FuncData = u4Rate;
