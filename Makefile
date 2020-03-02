@@ -385,7 +385,15 @@ endif
 # Platform Objects List
 # ---------------------------------------------------
 ifneq ($(MTK_PLATFORM),)
-ifneq ($(wildcard $(src)/$(PLAT_DIR)plat_priv.c),)
+
+PLAT_PRIV_C = $(src)/$(PLAT_DIR)plat_priv.c
+
+# search path (out of kernel tree)
+IS_EXIST_PLAT_PRIV_C := $(wildcard $(PLAT_PRIV_C))
+# search path (build-in kernel tree)
+IS_EXIST_PLAT_PRIV_C += $(wildcard $(srctree)/$(PLAT_PRIV_C))
+
+ifneq ($(strip $(IS_EXIST_PLAT_PRIV_C)),)
 PLAT_OBJS := $(PLAT_DIR)plat_priv.o
 $(MODULE_NAME)-objs  += $(PLAT_OBJS)
 endif
