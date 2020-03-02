@@ -8455,10 +8455,6 @@ wlanoidRssiMonitor(IN struct ADAPTER *prAdapter,
 
 	kalMemZero(&rRssi, sizeof(struct PARAM_RSSI_MONITOR_T));
 
-	if (kalGetMediaStateIndicated(prAdapter->prGlueInfo) ==
-		PARAM_MEDIA_STATE_DISCONNECTED)
-		return WLAN_STATUS_ADAPTER_NOT_READY;
-
 	orig_max_rssi_value = rRssi.max_rssi_value;
 	orig_min_rssi_value = rRssi.min_rssi_value;
 
