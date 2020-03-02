@@ -34,7 +34,7 @@ export CONFIG_MTK_COMBO_PLAT_PATH=x86
 ##############################################################
 #/***** Common part ******/
 
-CFG_TX_DIRECT_USB=0
+CFG_TX_DIRECT_USB=1
 
 CFG_RX_DIRECT_USB=1
 
