@@ -637,6 +637,7 @@ struct mt66xx_chip_info mt66xx_chip_info_soc3_0 = {
 	.pwrondownload = NULL,
 #endif
 	.triggerfwassert = soc3_0_Trigger_fw_assert,
+	.dumpwfsyscpupcr = soc3_0_DumpWfsysCpupcr,
 #if (CFG_SUPPORT_CONNINFRA == 1)
 	.trigger_wholechiprst = soc3_0_Trigger_whole_chip_rst,
 	.sw_interrupt_handler = soc3_0_Sw_interrupt_handler,
@@ -817,6 +818,18 @@ uint32_t soc3_0_DownloadByDynMemMap(IN struct ADAPTER *prAdapter,
 	return WLAN_STATUS_SUCCESS;
 }
 #endif
+void soc3_0_DumpWfsysCpupcr(struct ADAPTER *prAdapter)
+{
+	uint32_t i = 0, u4Value = 0;
+
+	for (i = 0; i < 5; i++) {
+		HAL_MCR_RD(prAdapter, WFSYS_CPUPCR_ADDR, &u4Value);
+		DBGLOG(HAL, INFO,
+			"MCU programming Counter info (no sync): 0x%08x = 0x%08x\n",
+			WFSYS_CPUPCR_ADDR, u4Value);
+	}
+
+}
 int wf_ioremap_read(size_t addr, unsigned int *val)
 {
 	void *vir_addr = NULL;
@@ -853,14 +866,19 @@ int soc3_0_Trigger_fw_assert(void)
 {
 	int ret = 0;
 	int value;
-
-	wf_ioremap_read(WF_TRIGGER_AP2CONN_EINT, &value);
-	value &= 0xFFFFFF7F;
-	ret = wf_ioremap_write(WF_TRIGGER_AP2CONN_EINT, value);
-	udelay(1000);
-	wf_ioremap_read(WF_TRIGGER_AP2CONN_EINT, &value);
-	value |= 0x80;
-	ret = wf_ioremap_write(WF_TRIGGER_AP2CONN_EINT, value);
+	g_IsConninfraBusHang = conninfra_is_bus_hang();
+	if (g_IsConninfraBusHang) {
+		glSetRstReasonString("conninfra bus hang");
+		ret = soc3_0_Trigger_whole_chip_rst(g_reason);
+	} else {
+		wf_ioremap_read(WF_TRIGGER_AP2CONN_EINT, &value);
+		value &= 0xFFFFFF7F;
+		ret = wf_ioremap_write(WF_TRIGGER_AP2CONN_EINT, value);
+		udelay(1000);
+		wf_ioremap_read(WF_TRIGGER_AP2CONN_EINT, &value);
+		value |= 0x80;
+		ret = wf_ioremap_write(WF_TRIGGER_AP2CONN_EINT, value);
+	}
 	return ret;
 }
 int wf_pwr_on_consys_mcu(void)
@@ -1268,6 +1286,9 @@ int wf_pwr_off_consys_mcu(void)
 			value);
 		return ret;
 	}
+	/*Disable A-die top_ck_en (use common API)(clear driver & FW resource)*/
+	conninfra_adie_top_ck_en_off(CONNSYS_ADIE_CTL_FW_WIFI);
+
 	/* Disable conn_infra off domain force on 0x180601A4[0] = 1'b0 */
 	wf_ioremap_read(CONN_INFRA_WAKEUP_WF_ADDR, &value);
 	value &= 0xFFFFFFFE;

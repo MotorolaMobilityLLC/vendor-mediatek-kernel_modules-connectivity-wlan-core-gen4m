@@ -58,7 +58,9 @@
 
 #ifndef _SOC3_0_H
 #define _SOC3_0_H
-
+#if (CFG_SUPPORT_CONNINFRA == 1)
+#include "conninfra.h"
+#endif
 /*******************************************************************************
 *                         C O M P I L E R   F L A G S
 ********************************************************************************
@@ -124,41 +126,11 @@
 #define WF_TRIGGER_AP2CONN_EINT 0x10001F00
 #define WF_CONN_INFA_BUS_CLOCK_RATE 0x1000123C
 
-
+#define WFSYS_CPUPCR_ADDR (CONNAC2x_CONN_CFG_ON_BASE + 0x0204)
 /*******************************************************************************
 *                         D A T A   T Y P E S
 ********************************************************************************
 */
-enum consys_drv_type {
-	CONNDRV_TYPE_BT = 0,
-	CONNDRV_TYPE_FM = 1,
-	CONNDRV_TYPE_GPS = 2,
-	CONNDRV_TYPE_WIFI = 3,
-	CONNDRV_TYPE_MAX
-};
-
-struct whole_chip_rst_cb {
-	int (*pre_whole_chip_rst)(void);
-	int (*post_whole_chip_rst)(void);
-};
-
-struct pre_calibration_cb {
-	int (*pwr_on_cb)(void);
-	int (*do_cal_cb)(void);
-};
-
-struct sub_drv_ops_cb {
-	/* chip reset */
-	struct whole_chip_rst_cb rst_cb;
-
-	/* calibration */
-	struct pre_calibration_cb pre_cal_cb;
-
-	/* thermal query */
-	int (*thermal_qry)(void);
-
-};
-
 enum ENUM_WLAN_POWER_ON_DOWNLOAD {
 	ENUM_WLAN_POWER_ON_DOWNLOAD_EMI = 0,
 	ENUM_WLAN_POWER_ON_DOWNLOAD_ROM_PATCH = 1,
@@ -180,7 +152,10 @@ struct ROM_EMI_HEADER {
 ********************************************************************************
 */
 extern struct platform_device *g_prPlatDev;
-
+#if (CFG_SUPPORT_CONNINFRA == 1)
+extern u_int8_t g_IsConninfraBusHang;
+extern u_int8_t g_IsWfsysBusHang;
+#endif
 /*******************************************************************************
 *                           P R I V A T E   D A T A
 ********************************************************************************
@@ -195,14 +170,6 @@ extern struct platform_device *g_prPlatDev;
 *                  F U N C T I O N   D E C L A R A T I O N S
 ********************************************************************************
 */
-#if (CFG_SUPPORT_CONNINFRA == 1)
-extern int conninfra_pwr_on(enum consys_drv_type drv_type);
-extern int conninfra_pwr_off(enum consys_drv_type drv_type);
-extern int conninfra_sub_drv_ops_register(enum consys_drv_type drv_type,
-				struct sub_drv_ops_cb *cb);
-extern int conninfra_trigger_whole_chip_rst(enum consys_drv_type who,
-				char *reason);
-#endif
 void soc3_0_show_ple_info(
 	struct ADAPTER *prAdapter,
 	u_int8_t fgDumpTxd);
@@ -261,6 +228,8 @@ uint32_t soc3_0_DownloadByDynMemMap(IN struct ADAPTER *prAdapter,
 	IN uint32_t u4Addr, IN uint32_t u4Len,
 	IN uint8_t *pucStartPtr, IN enum ENUM_IMG_DL_IDX_T eDlIdx);
 #endif
+void soc3_0_DumpWfsysCpupcr(struct ADAPTER *prAdapter);
+
 int hifWmmcuPwrOn(void);
 int hifWmmcuPwrOff(void);
 int wf_ioremap_read(size_t addr, unsigned int *val);
