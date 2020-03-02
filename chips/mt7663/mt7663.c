@@ -183,6 +183,8 @@ struct BUS_INFO mt7663_bus_info = {
 		UDMA_WLCFG_0_RX_MPSZ_PAD0(1) |
 		UDMA_WLCFG_0_1US_TIMER_EN(1)),
 	.u4UdmaTxTimeout = UDMA_TX_TIMEOUT_LIMIT,
+	.u4device_vender_request_in = DEVICE_VENDOR_REQUEST_IN,
+	.u4device_vender_request_out = DEVICE_VENDOR_REQUEST_OUT,
 	.asicUsbSuspend = asicUsbSuspend,
 	.asicUsbEventEpDetected = asicUsbEventEpDetected,
 #endif /* _HIF_USB */
@@ -252,6 +254,7 @@ struct mt66xx_chip_info mt66xx_chip_info_mt7663 = {
 	.is_support_cr4 = FALSE,
 	.txd_append_size = MT7663_TX_DESC_APPEND_LENGTH,
 	.rxd_size = MT7663_RX_DESC_LENGTH,
+	.pse_header_length = NIC_TX_PSE_HEADER_LENGTH,
 	.init_event_size = MT7663_RX_INIT_EVENT_LENGTH,
 	.event_hdr_size = MT7663_RX_EVENT_HDR_LENGTH,
 	.eco_info = mt7663_eco_table,
@@ -268,6 +271,10 @@ struct mt66xx_chip_info mt66xx_chip_info_mt7663 = {
 	.workAround = 0,
 	.prTxPwrLimitFile = "TxPwrLimit_MT7663.dat",
 	.ucTxPwrLimitBatchSize = 16,
+
+	.top_hcr = TOP_HCR,
+	.top_hvr = TOP_HVR,
+	.top_fvr = TOP_FVR,
 };
 
 struct mt66xx_hif_driver_data mt66xx_driver_data_mt7663 = {
