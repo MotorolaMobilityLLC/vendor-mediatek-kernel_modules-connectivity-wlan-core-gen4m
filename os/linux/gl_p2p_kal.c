@@ -1500,6 +1500,9 @@ kalP2PGCIndicateConnectionStatus(IN struct GLUE_INFO *prGlueInfo,
 		}
 
 		if (prP2pConnInfo) {
+			/* switch netif on */
+			netif_carrier_on(prGlueP2pInfo->aprRoleHandler);
+
 			cfg80211_connect_result(prGlueP2pInfo->aprRoleHandler,
 				/* struct net_device * dev, */
 				prP2pConnInfo->aucBssid,
