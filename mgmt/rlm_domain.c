@@ -2895,6 +2895,9 @@ rlmDomainInitTxPwrLimitData(struct ADAPTER *prAdapter)
 	if (!pTxPwrLimitData->rChannelTxPwrLimit) {
 		DBGLOG(RLM, ERROR,
 			"Alloc buffer for TxPwrLimit ch values failed\n");
+
+		kalMemFree(pTxPwrLimitData, VIR_MEM_TYPE,
+			sizeof(struct TX_PWR_LIMIT_DATA));
 		return NULL;
 	}
 
