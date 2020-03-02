@@ -137,29 +137,6 @@ struct service_test {
 /* struct _ATE_LOG_DUMP_CB log_dump[ATE_LOG_TYPE_NUM]; */
 };
 
-/* Test rbist status for hqa command usage*/
-struct GNU_PACKED hqa_rbist_cap_start {
-	u_int32 trig;
-	u_int32 ring_cap_en;
-	u_int32 trig_event;
-	u_int32 cap_node;
-	u_int32 cap_len;
-	u_int32 cap_stop_cycle;
-	u_int32 mac_trig_event;
-	u_int32 src_addr_lsb;
-	u_int32 src_addr_msb;
-	u_int32 band_idx;
-	u_int32 bw;
-	u_int32 en_bit_width;
-	u_int32 arch;
-	u_int32 phy_idx;
-	u_int32 emi_start_addr;
-	u_int32 emi_end_addr;
-	u_int32 emi_msb_addr;
-	u_int32 cap_src;
-	u_int32 resv[2];
-};
-
 /*****************************************************************************
  *	Function declaration
  *****************************************************************************/

@@ -81,6 +81,9 @@
 #include "soc3_0.h"
 #include "hal_dmashdl_soc3_0.h"
 #include <linux/platform_device.h>
+#ifndef CFG_BUILD_X86_PLATFORM
+#include <linux/pm_qos.h>
+#endif /*#ifndef CFG_BUILD_X86_PLATFORM*/
 
 /*******************************************************************************
 *                              C O N S T A N T S
@@ -136,6 +139,10 @@ static uint8_t *soc3_0_apucCr4FwName[] = {
 #if CFG_MTK_ANDROID_EMI
 	phys_addr_t gConEmiPhyBase;
 	unsigned long long gConEmiSize;
+#endif
+
+#ifndef CFG_BUILD_X86_PLATFORM
+static struct pm_qos_request wifi_req;
 #endif
 
 uint8_t *apucsoc3_0FwName[] = {
@@ -555,13 +562,30 @@ struct CHIP_DBG_OPS soc3_0_debug_ops = {
 	.show_rx_rssi_info = connac2x_show_rx_rssi_info,
 };
 
+#if CFG_SUPPORT_QA_TOOL
+struct ATE_OPS_T soc3_0_AteOps = {
+	/*ICapStart phase out , wlan_service instead*/
+	.setICapStart = connacSetICapStart,
+	/*ICapStatus phase out , wlan_service instead*/
+	.getICapStatus = connacGetICapStatus,
+	/*CapIQData phase out , wlan_service instead*/
+	.getICapIQData = connacGetICapIQData,
+	.getRbistDataDumpEvent = nicExtEventICapIQData,
+	.icapRiseVcoreClockRate = soc3_0_icapRiseVcoreClockRate,
+	.icapDownVcoreClockRate = soc3_0_icapDownVcoreClockRate
+};
+#endif
+
+
 /* Litien code refine to support multi chip */
 struct mt66xx_chip_info mt66xx_chip_info_soc3_0 = {
 	.bus_info = &soc3_0_bus_info,
 #if CFG_ENABLE_FW_DOWNLOAD
 	.fw_dl_ops = &soc3_0_fw_dl_ops,
 #endif				/* CFG_ENABLE_FW_DOWNLOAD */
-
+#if CFG_SUPPORT_QA_TOOL
+	.prAteOps = &soc3_0_AteOps,
+#endif /*CFG_SUPPORT_QA_TOOL*/
 	.prDebugOps = &soc3_0_debug_ops,
 	.prTxDescOps = &soc3_0_TxDescOps,
 	.prRxDescOps = &soc3_0_RxDescOps,
@@ -1266,7 +1290,52 @@ void soc3_0_Conninfra_cb_register(void)
 		&g_conninfra_wf_cb);
 }
 #endif
+void soc3_0_icapRiseVcoreClockRate(void)
+{
+#ifndef CFG_BUILD_X86_PLATFORM
 
+	u_int32 value;
+	/*Enable VCore to 0.725*/
+
+	/*init*/
+	pm_qos_add_request(&wifi_req, PM_QOS_VCORE_OPP,
+					PM_QOS_VCORE_OPP_DEFAULT_VALUE);
+
+	/*update Vcore*/
+	pm_qos_update_request(&wifi_req, 0);
+
+	/*2 update Clork Rate*/
+	/*0x1000123C[20]=1,218Mhz*/
+	wf_ioremap_read(WF_CONN_INFA_BUS_CLOCK_RATE, &value);
+	value |= 0x00010000;
+	wf_ioremap_write(WF_CONN_INFA_BUS_CLOCK_RATE, value);
+
+	DBGLOG(HAL, STATE, "icapRiseVcoreClockRate done\n");
+
+#endif  /*#ifndef CFG_BUILD_X86_PLATFORM*/
+
+}
+void soc3_0_icapDownVcoreClockRate(void)
+{
+#ifndef CFG_BUILD_X86_PLATFORM
+
+	u_int32 value;
+
+	/*restore to default value*/
+	pm_qos_add_request(&wifi_req, PM_QOS_VCORE_OPP,
+					PM_QOS_VCORE_OPP_DEFAULT_VALUE);
+
+	/*2 update Clork Rate*/
+	/*0x1000123C[20]=0,156Mhz*/
+	wf_ioremap_read(WF_CONN_INFA_BUS_CLOCK_RATE, &value);
+	value &= ~(0x00010000);
+	wf_ioremap_write(WF_CONN_INFA_BUS_CLOCK_RATE, value);
+
+	/*disable VCore to normal setting*/
+	DBGLOG(HAL, STATE, "icapDownVcoreClockRate done!\n");
+#endif  /*#ifndef CFG_BUILD_X86_PLATFORM*/
+
+}
 #if (CFG_POWER_ON_DOWNLOAD_EMI_ROM_PATCH == 1)
 #pragma message("SOC3_0::CFG_POWER_ON_DOWNLOAD_EMI_ROM_PATCH == 1")
 void soc3_0_ConstructFirmwarePrio(struct GLUE_INFO *prGlueInfo,
