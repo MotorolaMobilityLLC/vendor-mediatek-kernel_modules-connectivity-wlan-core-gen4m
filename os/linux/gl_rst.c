@@ -102,7 +102,8 @@ u_int8_t fgIsResetHangState = SER_L0_HANG_RST_NONE;
 uint32_t g_u4WlanRstThreadPid;
 wait_queue_head_t g_waitq_rst;
 unsigned long g_ulFlag;/* GLUE_FLAG_XXX */
-struct completion g_RstComp;
+struct completion g_RstOffComp;
+struct completion g_RstOnComp;
 struct completion g_triggerComp;
 KAL_WAKE_LOCK_T g_IntrWakeLock;
 struct task_struct *wlan_reset_thread;
@@ -236,7 +237,8 @@ void glResetInit(struct GLUE_INFO *prGlueInfo)
 	update_driver_reset_status(fgIsResetting);
 	KAL_WAKE_LOCK_INIT(NULL, &g_IntrWakeLock, "WLAN Reset");
 	init_waitqueue_head(&g_waitq_rst);
-	init_completion(&g_RstComp);
+	init_completion(&g_RstOffComp);
+	init_completion(&g_RstOnComp);
 	init_completion(&g_triggerComp);
 	wlan_reset_thread = kthread_run(wlan_reset_thread_main,
 					&g_rst_data, "wlan_rst_thread");
@@ -388,6 +390,7 @@ static void mtk_wifi_reset(struct work_struct *work)
 	wifi_reset_end(rst->rst_data);
 #if (CFG_SUPPORT_CONNINFRA == 1)
 	update_driver_reset_status(fgIsResetting);
+	complete(&g_RstOnComp);
 #endif
 #else
 	fgResult = rst_L0_notify_step1();
@@ -527,7 +530,7 @@ static u_int8_t glResetMsgHandler(enum ENUM_WMTMSG_TYPE eMsgType,
 				fgSimplifyResetFlow = TRUE;
 				wifi_reset_start();
 				hifAxiRemove();
-				complete(&g_RstComp);
+				complete(&g_RstOffComp);
 				break;
 
 			case WMTRSTMSG_RESET_END:
@@ -582,7 +585,6 @@ void glRstWholeChipRstParamInit(void)
 
 int glRstwlanPreWholeChipReset(enum consys_drv_type type, char *reason)
 {
-	uint32_t waitRet = 0;
 	bool bRet = TRUE;
 	struct GLUE_INFO *prGlueInfo;
 
@@ -612,25 +614,16 @@ int glRstwlanPreWholeChipReset(enum consys_drv_type type, char *reason)
 		g_IsWholeChipRst = TRUE;
 		kalSetRstEvent();
 	}
-	waitRet = wait_for_completion_timeout(&g_RstComp,
-					MSEC_TO_JIFFIES(WIFI_RST_TIMEOUT));
-	if (waitRet > 0) {
-		/* Case 1: No timeout. */
+	wait_for_completion(&g_RstOffComp);
 		DBGLOG(INIT, INFO, "Wi-Fi is off successfully.\n");
-	} else {
-		/* Case 2: timeout TBD*/
-		DBGLOG(INIT, ERROR,
-			"WiFi rst takes more than 12 seconds, trigger rst self\n");
-		glResetMsgHandler(WMTMSG_TYPE_RESET,
-						WMTRSTMSG_0P5RESET_START);
-		glRstWholeChipRstParamInit();
-	}
+
 	return bRet;
 }
 
 int glRstwlanPostWholeChipReset(void)
 {
 	glResetMsgHandler(WMTMSG_TYPE_RESET, WMTRSTMSG_RESET_END);
+	wait_for_completion(&g_RstOnComp);
 	g_IsWholeChipRst = FALSE;
 	DBGLOG(INIT, INFO,
 		"Leave glRstwlanPostWholeChipReset (%d).\n",
