@@ -168,11 +168,12 @@ typedef struct _GL_HIF_INFO_T {
 
 typedef struct _BUS_INFO {
 	const unsigned int top_cfg_base;	/* TOP_CFG_BASE address */
-	const unsigned char is_pcie_32dw_read;	/* diff PDMA config */
 	const PCIE_CHIP_CR_MAPPING *bus2chip;
 	const unsigned int tx_ring_cmd_idx;
 	const unsigned int tx_ring_fwdl_idx;
 	const unsigned int tx_ring_data_idx;
+
+	VOID (*pdmaSetup)(P_GLUE_INFO_T prGlueInfo, BOOLEAN enable);
 } BUS_INFO, *P_BUS_INFO;
 
 /*******************************************************************************
@@ -238,6 +239,7 @@ BOOLEAN halIsStaticMapBusAddr(IN UINT_32 u4Addr);
 BOOLEAN halChipToStaticMapBusAddr(IN P_BUS_INFO prBusInfo, IN UINT_32 u4ChipAddr, OUT PUINT_32 pu4BusAddr);
 BOOLEAN halGetDynamicMapReg(IN P_GLUE_INFO_T prGlueInfo, IN UINT_32 u4ChipAddr, OUT PUINT_32 pu4Value);
 BOOLEAN halSetDynamicMapReg(IN P_GLUE_INFO_T prGlueInfo, IN UINT_32 u4ChipAddr, IN UINT_32 u4Value);
+VOID halConnacWpdmaConfig(P_GLUE_INFO_T prGlueInfo, BOOLEAN enable);
 VOID halEnhancedWpdmaConfig(P_GLUE_INFO_T prGlueInfo, BOOLEAN enable);
 VOID halWpdmaConfig(P_GLUE_INFO_T prGlueInfo, BOOLEAN enable);
 
