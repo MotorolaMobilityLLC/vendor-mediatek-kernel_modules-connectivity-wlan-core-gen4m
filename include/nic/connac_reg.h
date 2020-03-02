@@ -53,7 +53,7 @@
 ** Id:
 */
 
-/*! \file   "mt66xx_reg.h"
+/*! \file   "connac_reg.h"
  *   \brief  The common register definition of MT6630
  *
  *   N/A
@@ -107,25 +107,24 @@
 #define CONN_CFG_ON_CONN_ON_MISC_HOST_LPCR_FW_OWN_MASK         0x00000001/*HOST_LPCR_FW_OWN[0]*/
 #define CONN_CFG_ON_CONN_ON_MISC_HOST_LPCR_FW_OWN_SHFT         0
 
-#if defined(_HIF_PCIE)
-#define PCIE_HIF_DMASHDL_BASE                  0x6000
-#define CONN_DMASHDL_SW_CONTROL                (PCIE_HIF_DMASHDL_BASE + 0x04)
-#define CONN_DMASHDL_PAGE_SETTING              (PCIE_HIF_DMASHDL_BASE + 0x08)
-#define CONN_DMASHDL_OPTIONAL_CONTROL          (PCIE_HIF_DMASHDL_BASE + 0x0C)
-#define CONN_DMASHDL_REFILL_CONTROL            (PCIE_HIF_DMASHDL_BASE + 0x10)
-#define CONN_DMASHDL_TX_PACKET_SIZE_PAGE_MAP   (PCIE_HIF_DMASHDL_BASE + 0x14)
-#define CONN_DMASHDL_CONTROL_SIGNAL            (PCIE_HIF_DMASHDL_BASE + 0x18)
-#define CONN_DMASHDL_PACKET_MAX_SIZE           (PCIE_HIF_DMASHDL_BASE + 0x1C)
-#define CONN_DMASHDL_GROUP0_CONTROL            (PCIE_HIF_DMASHDL_BASE + 0x20)
-#endif /* _HIF_PCIE */
-
 #if defined(_HIF_USB)
 #define CONNAC_UDMA_BASE                         0x7C000000
 #define CONNAC_UDMA_TX_QSEL                      (CONNAC_UDMA_BASE + 0x8)
 #define CONNAC_UDMA_RESET                        (CONNAC_UDMA_BASE + 0x14)
 #define CONNAC_UDMA_WLCFG_1                      (CONNAC_UDMA_BASE + 0xc)
 #define CONNAC_UDMA_WLCFG_0                      (CONNAC_UDMA_BASE + 0x18)
+
+#define UDMA_WLCFG_0_1US_TIMER_EN_MASK          (0x1 << 20)
+#define UDMA_WLCFG_0_1US_TIMER_EN(p)            (((p) & 0x1) << 20)
 #endif /* _HIF_USB */
+
+#define PLE_PKT_MAX_SIZE_MASK (0xfff << 0)
+#define PLE_PKT_MAX_SIZE_NUM(p) (((p) & 0xfff) << 0)
+#define GET_PLE_PKT_MAX_SIZE_NUM(p) (((p) & PLE_PKT_MAX_SIZE_MASK) >> 0)
+
+#define PSE_PKT_MAX_SIZE_MASK (0xfff << 16)
+#define PSE_PKT_MAX_SIZE_NUM(p) (((p) & 0xfff) << 16)
+#define GET_PSE_PKT_MAX_SIZE_NUM(p) (((p) & PSE_PKT_MAX_SIZE_MASK) >> 16)
 
 #define EXTRA_TXD_SIZE_FOR_TX_BYTE_COUNT         32
 
@@ -133,41 +132,6 @@
 *                             D A T A   T Y P E S
 ********************************************************************************
 */
-#if defined(_HIF_PCIE)
-/* DMASHDL_REFILL_CONTROL */
-typedef union _DMASHDL_REFILL_CONTROL {
-	struct {
-		UINT_32 PRIORITY:16;
-		UINT_32 DISABLE:16;
-	} field;
-
-	UINT_32 word;
-} DMASHDL_REFILL_CONTROL;
-
-/* DMASHDL_PACKET_MAX_SIZE */
-typedef union _DMASHDL_PACKET_MAX_SIZE {
-	struct {
-		UINT_32 PLE_SIZE:12;
-		UINT_32 RSV_12_15:4;
-		UINT_32 PSE_SIZE:12;
-		UINT_32 RSV_28_31:4;
-	} field;
-
-	UINT_32 word;
-} DMASHDL_PACKET_MAX_SIZE;
-
-/* DMASHDL_GROUP_CONTROL */
-typedef union _DMASHDL_GROUP_CONTROL {
-	struct {
-		UINT_32 MIN_QUOTAE:12;
-		UINT_32 RSV_12_15:4;
-		UINT_32 MAX_QUOTAE:12;
-		UINT_32 RSV_28_31:4;
-	} field;
-
-	UINT_32 word;
-} DMASHDL_GROUP_CONTROL;
-#endif /* _HIF_PCIE */
 
 /*******************************************************************************
 *                            P U B L I C   D A T A

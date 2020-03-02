@@ -571,9 +571,9 @@ VOID glUdmaTxRxEnable(P_GLUE_INFO_T prGlueInfo, BOOLEAN enable)
 
 	/* enable UDMA TX & RX */
 	if (enable)
-		u4Value |= UDMA_WLCFG_0_TX_EN(1) | UDMA_WLCFG_0_RX_EN(1) | UDMA_WLCFG_0_RX_MPSZ_PAD0(1);
+		u4Value |= prBusInfo->u4UdmaWlCfg_0;
 	else
-		u4Value &= ~(UDMA_WLCFG_0_TX_EN(1) | UDMA_WLCFG_0_RX_EN(1));
+		u4Value &= ~prBusInfo->u4UdmaWlCfg_0;
 
 	kalDevRegWrite(prGlueInfo, prBusInfo->u4UdmaWlCfg_0_Addr, u4Value);
 }
