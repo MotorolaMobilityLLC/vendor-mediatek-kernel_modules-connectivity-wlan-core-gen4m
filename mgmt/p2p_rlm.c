@@ -941,6 +941,7 @@ ENUM_CHNL_EXT_T rlmDecideScoForAP(P_ADAPTER_T prAdapter, P_BSS_INFO_T prBssInfo)
 	UINT_8 ucSecondChannel, i, j;
 	ENUM_CHNL_EXT_T eSCO;
 	ENUM_CHNL_EXT_T eTempSCO;
+	UINT_8 ucMaxBandwidth = MAX_BW_80_80_MHZ; /*chip capability*/
 
 	eSCO = CHNL_EXT_SCN;
 	eTempSCO = CHNL_EXT_SCN;
@@ -1007,6 +1008,27 @@ ENUM_CHNL_EXT_T rlmDecideScoForAP(P_ADAPTER_T prAdapter, P_BSS_INFO_T prBssInfo)
 			if (rlmDomainIsLegalChannel(prAdapter, prBssInfo->eBand, ucSecondChannel))
 				eSCO = eTempSCO;
 		}
+	}
+
+	/* Overwrite SCO settings by wifi cfg bandwidth setting */
+	if (IS_BSS_P2P(prBssInfo)) {
+		/* AP mode */
+		if (p2pFuncIsAPMode(prAdapter->rWifiVar.prP2PConnSettings[prBssInfo->u4PrivateData])) {
+			if (prBssInfo->eBand == BAND_2G4)
+				ucMaxBandwidth = prAdapter->rWifiVar.ucAp2gBandwidth;
+			else
+				ucMaxBandwidth = prAdapter->rWifiVar.ucAp5gBandwidth;
+		}
+		/* P2P mode */
+		else {
+			if (prBssInfo->eBand == BAND_2G4)
+				ucMaxBandwidth = prAdapter->rWifiVar.ucP2p2gBandwidth;
+			else
+				ucMaxBandwidth = prAdapter->rWifiVar.ucP2p5gBandwidth;
+		}
+
+		if (ucMaxBandwidth < MAX_BW_40MHZ)
+			eSCO = CHNL_EXT_SCN;
 	}
 
 	return eSCO;
