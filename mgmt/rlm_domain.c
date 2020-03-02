@@ -976,7 +976,7 @@ void rlmDomainSendCmd(struct ADAPTER *prAdapter)
 void rlmDomainSendDomainInfoCmd_V2(struct ADAPTER *prAdapter)
 {
 #if (CFG_SUPPORT_SINGLE_SKU == 1)
-	u8 max_channel_count;
+	u8 max_channel_count = 0;
 	u32 buff_max_size, buff_valid_size;
 	struct CMD_SET_DOMAIN_INFO_V2 *prCmd;
 	struct acctive_channel_list *prChs;
@@ -984,8 +984,10 @@ void rlmDomainSendDomainInfoCmd_V2(struct ADAPTER *prAdapter)
 
 
 	pWiphy = priv_to_wiphy(prAdapter->prGlueInfo);
-	max_channel_count = pWiphy->bands[KAL_BAND_2GHZ]->n_channels
-						+ pWiphy->bands[KAL_BAND_5GHZ]->n_channels;
+	if (pWiphy->bands[KAL_BAND_2GHZ] != NULL)
+		max_channel_count += pWiphy->bands[KAL_BAND_2GHZ]->n_channels;
+	if (pWiphy->bands[KAL_BAND_5GHZ] != NULL)
+		max_channel_count += pWiphy->bands[KAL_BAND_5GHZ]->n_channels;
 
 	if (max_channel_count == 0) {
 		DBGLOG(RLM, ERROR, "%s, invalid channel count.\n", __func__);
