@@ -832,4 +832,11 @@ void scnSetSchedScanPlan(IN struct ADAPTER *prAdapter,
 void scanLogEssResult(struct ADAPTER *prAdapter);
 void scanInitEssResult(struct ADAPTER *prAdapter);
 
+#if CFG_SUPPORT_SCAN_CACHE_RESULT
+/*----------------------------------------------------------------------------*/
+/* Routines in scan_cache.c                                                   */
+/*----------------------------------------------------------------------------*/
+u_int8_t isScanCacheDone(struct GL_SCAN_CACHE_INFO *prScanCache);
+#endif /* CFG_SUPPORT_SCAN_CACHE_RESULT */
+
 #endif /* _SCAN_H */
