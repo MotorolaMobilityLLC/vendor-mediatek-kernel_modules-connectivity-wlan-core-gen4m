@@ -12544,6 +12544,7 @@ static int priv_driver_trigger_whole_chip_reset(
 	int i4TotalLen)
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
+	struct mt66xx_chip_info *prChipInfo;
 	int32_t i4BytesWritten = 0;
 	int32_t i4Argc = 0;
 	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
@@ -12553,15 +12554,17 @@ static int priv_driver_trigger_whole_chip_reset(
 		return -1;
 
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+	prChipInfo = prGlueInfo->prAdapter->chip_info;
 
 	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
 	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
 	DBGLOG(REQ, LOUD, "argc is %i\n", i4Argc);
 
 	glSetRstReasonString(
-			"cmd test trigger whole chip reset");
-	GL_RESET_TRIGGER(prGlueInfo->prAdapter,
-			RST_FLAG_WHOLE_RESET);
+		"cmd test trigger whole chip reset");
+	if (prChipInfo->trigger_wholechiprst)
+		prChipInfo->trigger_wholechiprst(g_reason);
+
 	return i4BytesWritten;
 }
 static int priv_driver_trigger_wfsys_reset(
