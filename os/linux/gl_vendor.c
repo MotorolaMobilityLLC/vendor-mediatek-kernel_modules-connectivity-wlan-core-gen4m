@@ -1103,7 +1103,7 @@ int mtk_cfg80211_vendor_get_version(struct wiphy *wiphy,
 					     DRIVER_BUILD_DATE;
 
 		u2Len = kalStrLen(aucDriverVersionStr);
-		DBGLOG(REQ, INFO, "Get driver version len: %d\n", u2Len);
+		DBGLOG(REQ, TRACE, "Get driver version len: %d\n", u2Len);
 		u2CopySize = (u2Len >= 256) ? 255 : u2Len;
 		if (u2CopySize > 0)
 			kalMemCopy(aucVersionBuf, &aucDriverVersionStr[0],
@@ -1117,7 +1117,7 @@ int mtk_cfg80211_vendor_get_version(struct wiphy *wiphy,
 		if (prAdapter) {
 			u2Len = kalStrLen(
 					prAdapter->rVerInfo.aucReleaseManifest);
-			DBGLOG(REQ, INFO,
+			DBGLOG(REQ, TRACE,
 				"Get FW manifest version len: %d\n", u2Len);
 			u2CopySize = (u2Len >= 256) ? 255 : u2Len;
 			if (u2CopySize > 0)
@@ -1127,7 +1127,9 @@ int mtk_cfg80211_vendor_get_version(struct wiphy *wiphy,
 		}
 	}
 
-	if (u2CopySize <= 0)
+	DBGLOG(REQ, TRACE, "Get version(%d)=[%s]\n", u2CopySize, aucVersionBuf);
+
+	if (u2CopySize == 0)
 		return -EFAULT;
 
 	skb = cfg80211_vendor_cmd_alloc_reply_skb(wiphy, u2CopySize);
@@ -1136,10 +1138,50 @@ int mtk_cfg80211_vendor_get_version(struct wiphy *wiphy,
 		return -ENOMEM;
 	}
 
-	DBGLOG(REQ, INFO, "Get version(%d)=[%s]\n", u2CopySize, aucVersionBuf);
 	if (unlikely(nla_put_nohdr(skb, u2CopySize, &aucVersionBuf[0]) < 0))
 		goto nla_put_failure;
 
+	return cfg80211_vendor_cmd_reply(skb);
+
+nla_put_failure:
+	kfree_skb(skb);
+	return -EFAULT;
+}
+
+int mtk_cfg80211_vendor_get_supported_feature_set(struct wiphy *wiphy,
+		struct wireless_dev *wdev, const void *data, int data_len)
+{
+	uint32_t u4FeatureSet;
+	struct GLUE_INFO *prGlueInfo;
+	struct sk_buff *skb;
+
+	ASSERT(wiphy);
+	ASSERT(wdev);
+
+#if CFG_ENABLE_UNIFY_WIPHY
+	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wiphy);
+#else	/* CFG_ENABLE_UNIFY_WIPHY */
+	if (wdev == gprWdev)	/* wlan0 */
+		prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wiphy);
+	else
+		prGlueInfo = *((struct GLUE_INFO **) wiphy_priv(wiphy));
+#endif	/* CFG_ENABLE_UNIFY_WIPHY */
+	if (!prGlueInfo)
+		return -EFAULT;
+
+	u4FeatureSet = wlanGetSupportedFeatureSet(prGlueInfo);
+	skb = cfg80211_vendor_cmd_alloc_reply_skb(wiphy, sizeof(u4FeatureSet));
+	if (!skb) {
+		DBGLOG(REQ, ERROR, "Allocate skb failed\n");
+		return -ENOMEM;
+	}
+	if (unlikely(
+	    nla_put_nohdr(skb, sizeof(u4FeatureSet), &u4FeatureSet) < 0)) {
+		DBGLOG(REQ, ERROR, "nla_put_nohdr failed\n");
+		goto nla_put_failure;
+	}
+
+	DBGLOG(REQ, TRACE, "supported feature set=0x%x\n", u4FeatureSet);
 	return cfg80211_vendor_cmd_reply(skb);
 
 nla_put_failure:

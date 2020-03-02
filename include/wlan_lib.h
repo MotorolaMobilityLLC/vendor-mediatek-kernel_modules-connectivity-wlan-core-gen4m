@@ -82,6 +82,75 @@
  *                              C O N S T A N T S
  *******************************************************************************
  */
+/* These values must sync from Wifi HAL
+ * /hardware/libhardware_legacy/include/hardware_legacy/wifi_hal.h
+ */
+/* Basic infrastructure mode */
+#define WIFI_FEATURE_INFRA              (0x0001)
+/* Support for 5 GHz Band */
+#define WIFI_FEATURE_INFRA_5G           (0x0002)
+/* Support for GAS/ANQP */
+#define WIFI_FEATURE_HOTSPOT            (0x0004)
+/* Wifi-Direct */
+#define WIFI_FEATURE_P2P                (0x0008)
+/* Soft AP */
+#define WIFI_FEATURE_SOFT_AP            (0x0010)
+/* Google-Scan APIs */
+#define WIFI_FEATURE_GSCAN              (0x0020)
+/* Neighbor Awareness Networking */
+#define WIFI_FEATURE_NAN                (0x0040)
+/* Device-to-device RTT */
+#define WIFI_FEATURE_D2D_RTT            (0x0080)
+/* Device-to-AP RTT */
+#define WIFI_FEATURE_D2AP_RTT           (0x0100)
+/* Batched Scan (legacy) */
+#define WIFI_FEATURE_BATCH_SCAN         (0x0200)
+/* Preferred network offload */
+#define WIFI_FEATURE_PNO                (0x0400)
+/* Support for two STAs */
+#define WIFI_FEATURE_ADDITIONAL_STA     (0x0800)
+/* Tunnel directed link setup */
+#define WIFI_FEATURE_TDLS               (0x1000)
+/* Support for TDLS off channel */
+#define WIFI_FEATURE_TDLS_OFFCHANNEL    (0x2000)
+/* Enhanced power reporting */
+#define WIFI_FEATURE_EPR                (0x4000)
+/* Support for AP STA Concurrency */
+#define WIFI_FEATURE_AP_STA             (0x8000)
+/* Link layer stats collection */
+#define WIFI_FEATURE_LINK_LAYER_STATS   (0x10000)
+/* WiFi Logger */
+#define WIFI_FEATURE_LOGGER             (0x20000)
+/* WiFi PNO enhanced */
+#define WIFI_FEATURE_HAL_EPNO           (0x40000)
+/* RSSI Monitor */
+#define WIFI_FEATURE_RSSI_MONITOR       (0x80000)
+/* WiFi mkeep_alive */
+#define WIFI_FEATURE_MKEEP_ALIVE        (0x100000)
+/* ND offload configure */
+#define WIFI_FEATURE_CONFIG_NDO         (0x200000)
+/* Capture Tx transmit power levels */
+#define WIFI_FEATURE_TX_TRANSMIT_POWER  (0x400000)
+/* Enable/Disable firmware roaming */
+#define WIFI_FEATURE_CONTROL_ROAMING    (0x800000)
+/* Support Probe IE white listing */
+#define WIFI_FEATURE_IE_WHITELIST       (0x1000000)
+/* Support MAC & Probe Sequence Number randomization */
+#define WIFI_FEATURE_SCAN_RAND          (0x2000000)
+/* Support Tx Power Limit setting */
+#define WIFI_FEATURE_SET_TX_POWER_LIMIT (0x4000000)
+/* Support Using Body/Head Proximity for SAR */
+#define WIFI_FEATURE_USE_BODY_HEAD_SAR  (0x8000000)
+
+/* note: WIFI_FEATURE_GSCAN be enabled just for ACTS test item: scanner */
+#define WIFI_HAL_FEATURE_SET ((WIFI_FEATURE_P2P) |\
+			      (WIFI_FEATURE_SOFT_AP) |\
+			      (WIFI_FEATURE_PNO) |\
+			      (WIFI_FEATURE_TDLS) |\
+			      (WIFI_FEATURE_RSSI_MONITOR) |\
+			      (WIFI_FEATURE_CONTROL_ROAMING) |\
+			      (WIFI_FEATURE_SET_TX_POWER_LIMIT)\
+			      )
 
 #define MAX_NUM_GROUP_ADDR		32 /* max number of group addresses */
 #define AUTO_RATE_NUM			8
@@ -1532,4 +1601,6 @@ int32_t wlanGetFileContent(struct ADAPTER *prAdapter,
 void wlanReleasePendingCmdById(struct ADAPTER *prAdapter, uint8_t ucCid);
 
 uint32_t wlanDecimalStr2Hexadecimals(uint8_t *pucDecimalStr, uint16_t *pu2Out);
+
+uint32_t wlanGetSupportedFeatureSet(IN struct GLUE_INFO *prGlueInfo);
 
