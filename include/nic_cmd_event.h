@@ -1845,6 +1845,7 @@ struct LINK_QUALITY_ {
 	uint16_t u2LinkSpeed;	/* TX rate1 */
 	uint8_t ucMediumBusyPercentage;	/* Read clear */
 	uint8_t ucIsLQ0Rdy;	/* Link Quality BSS0 Ready. */
+	uint8_t aucReserved[2];
 };
 
 struct EVENT_LINK_QUALITY_V2 {
