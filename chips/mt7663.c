@@ -113,10 +113,15 @@ BUS_INFO bus_info_mt7663 = {
 	.tx_ring_cmd_idx = 2,
 	.tx_ring_data_idx = 0,
 #endif /* _HIF_PCIE */
+#if defined(_HIF_USB)
+	.u4UdmaWlCfg_0_Addr = CONNAC_UDMA_WLCFG_0,
+	.u4UdmaWlCfg_1_Addr = CONNAC_UDMA_WLCFG_1,
+#endif /* _HIF_USB */
 };
 
 /* Litien code refine to support multi chip */
 struct mt66xx_chip_info mt66xx_chip_info_mt7663 = {
+	.bus_info = &bus_info_mt7663,
 	.chip_id = MT7663_CHIP_ID,
 	.sw_sync0 = MT7663_SW_SYNC0,
 	.sw_ready_bits = WIFI_FUNC_NO_CR4_READY_BITS,
@@ -125,9 +130,10 @@ struct mt66xx_chip_info mt66xx_chip_info_mt7663 = {
 	.is_support_cr4 = FALSE,
 	.txd_append_size = MT7663_TX_DESC_APPEND_LENGTH,
 	.eco_info = mt7663_eco_table,
+
 	.constructFirmwarePrio = NULL,
+	.asicCapInit = asicCapInit,
 	.asicEnableFWDownload = asicEnableFWDownload,
-	.asicDevInit = asicDevInit,
 	.fillTxDescAppend = fillTxDescAppendByHostV2,
 };
 

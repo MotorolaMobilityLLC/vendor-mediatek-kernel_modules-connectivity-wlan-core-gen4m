@@ -165,6 +165,39 @@ PPUINT_8 apucName, PUINT_8 pucNameIdx, UINT_8 ucMaxNameIdx)
 	}
 }
 
+VOID mt7668CapInit(IN P_ADAPTER_T prAdapter)
+{
+	P_GLUE_INFO_T prGlueInfo;
+	struct mt66xx_chip_info *prChipInfo;
+
+	ASSERT(prAdapter);
+
+	prGlueInfo = prAdapter->prGlueInfo;
+	prChipInfo = prAdapter->chip_info;
+
+	prChipInfo->u2HifTxdSize = 0;
+	prChipInfo->u2TxInitCmdPort = 0;
+	prChipInfo->u2TxFwDlPort = 0;
+	prChipInfo->fillHifTxDesc = NULL;
+
+	switch (prGlueInfo->u4InfType) {
+#if defined(_HIF_PCIE)
+	case MT_DEV_INF_PCIE:
+		prChipInfo->u2TxInitCmdPort = TX_RING_FWDL_IDX_3;
+		prChipInfo->u2TxFwDlPort = TX_RING_FWDL_IDX_3;
+		break;
+#endif /* _HIF_PCIE */
+#if defined(_HIF_USB)
+	case MT_DEV_INF_USB:
+		prChipInfo->u2TxInitCmdPort = USB_DATA_BULK_OUT_EP8;
+		prChipInfo->u2TxFwDlPort = USB_DATA_BULK_OUT_EP8;
+		break;
+#endif /* _HIF_USB */
+	default:
+		break;
+	}
+}
+
 BUS_INFO bus_info_mt7668 = {
 #if defined(_HIF_PCIE)
 	.top_cfg_base = MT7668_TOP_CFG_BASE,
@@ -174,6 +207,10 @@ BUS_INFO bus_info_mt7668 = {
 	.tx_ring_cmd_idx = 2,
 	.tx_ring_data_idx = 0,
 #endif /* _HIF_PCIE */
+#if defined(_HIF_USB)
+	.u4UdmaWlCfg_0_Addr = UDMA_WLCFG_0,
+	.u4UdmaWlCfg_1_Addr = UDMA_WLCFG_1,
+#endif /* _HIF_USB */
 };
 
 /* Litien code refine to support multi chip */
@@ -187,9 +224,10 @@ struct mt66xx_chip_info mt66xx_chip_info_mt7668 = {
 	.is_support_cr4 = TRUE,
 	.txd_append_size = MT7668_TX_DESC_APPEND_LENGTH,
 	.eco_info = mt7668_eco_table,
+
 	.constructFirmwarePrio = mt7668ConstructFirmwarePrio,
+	.asicCapInit = mt7668CapInit,
 	.asicEnableFWDownload = NULL,
-	.asicDevInit = NULL,
 	.fillTxDescAppend = fillTxDescAppendByCR4,
 };
 
