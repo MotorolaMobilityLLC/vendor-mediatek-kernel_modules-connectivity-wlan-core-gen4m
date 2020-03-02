@@ -625,12 +625,12 @@ u_int8_t p2PAllocInfo(IN struct GLUE_INFO *prGlueInfo, IN uint8_t ucIdex)
 	if (!prGlueInfo->prP2PDevInfo)
 		DBGLOG(P2P, ERROR, "prP2PDevInfo error\n");
 	else
-		DBGLOG(P2P, INFO, "prP2PDevInfo ok\n");
+		DBGLOG(P2P, TRACE, "prP2PDevInfo ok\n");
 
 	if (!prGlueInfo->prP2PInfo[ucIdex])
 		DBGLOG(P2P, ERROR, "prP2PInfo error\n");
 	else
-		DBGLOG(P2P, INFO, "prP2PInfo ok\n");
+		DBGLOG(P2P, TRACE, "prP2PInfo ok\n");
 
 
 
@@ -1104,8 +1104,9 @@ int glSetupP2P(struct GLUE_INFO *prGlueInfo, struct wireless_dev *prP2pWdev,
 
 	prP2PInfo->aprRoleHandler = prP2PInfo->prDevHandler;
 
-	DBGLOG(P2P, INFO, "check prDevHandler = %p\n", prP2PInfo->prDevHandler);
-	DBGLOG(P2P, INFO, "aprRoleHandler = %p\n", prP2PInfo->aprRoleHandler);
+	DBGLOG(P2P, INFO,
+		"check prDevHandler = %p, aprRoleHandler = %p\n",
+		prP2PInfo->prDevHandler, prP2PInfo->aprRoleHandler);
 
 	prNetDevPriv->ucBssIdx = p2pRoleFsmInit(prAdapter, u4Idx);
 	/* Currently wpasupplicant can't support create interface. */
