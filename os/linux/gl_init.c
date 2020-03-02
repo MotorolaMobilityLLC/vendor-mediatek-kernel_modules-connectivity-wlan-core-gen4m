@@ -3948,7 +3948,7 @@ static int32_t wlanPowerOnInit(void)
 		* copy only the mandatory task
 		* in wlanOnPostNicInitAdapter(prAdapter, FALSE)::Begin
 		*/
-		nicInitSystemService(prAdapter);
+		nicInitSystemService(prAdapter, FALSE);
 
 		/* Initialize Tx */
 		nicTxInitialize(prAdapter);
