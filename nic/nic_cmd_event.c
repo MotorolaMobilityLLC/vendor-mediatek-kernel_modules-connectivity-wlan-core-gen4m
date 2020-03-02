@@ -4979,7 +4979,14 @@ void nicCmdEventSetAddKey(IN struct ADAPTER *prAdapter,
 	if (pucEventBuf) {
 		prWifiCmd = (struct WIFI_CMD *) (pucEventBuf);
 		prCmdKey = (struct CMD_802_11_KEY *) (prWifiCmd->aucBuffer);
-		if (!prCmdKey->ucKeyType) {
+
+		if (!prCmdKey->ucKeyType &&
+			prCmdKey->ucKeyId >= 0 && prCmdKey->ucKeyId < 4) {
+			/* Only save data broadcast key info.
+			*  ucKeyType == 1 means unicast key
+			*  ucKeyId == 4 or ucKeyId == 5 means it is a PMF key
+			*/
+
 			prDetRplyInfo->ucCurKeyId = prCmdKey->ucKeyId;
 			prDetRplyInfo->ucKeyType = prCmdKey->ucKeyType;
 			prDetRplyInfo->arReplayPNInfo[
