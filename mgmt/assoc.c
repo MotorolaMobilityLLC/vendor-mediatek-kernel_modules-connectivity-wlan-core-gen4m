@@ -1549,9 +1549,17 @@ uint32_t assocProcessRxAssocReqFrame(IN struct ADAPTER *prAdapter,
 			prStaRec->u2AssocReqIeLen = u2IELength;
 			if (u2IELength) {
 				prStaRec->pucAssocReqIe =
-				    kalMemAlloc(u2IELength, VIR_MEM_TYPE);
-				kalMemCopy(prStaRec->pucAssocReqIe, cp,
-					   u2IELength);
+					kalMemAlloc(u2IELength,
+						VIR_MEM_TYPE);
+
+				if (prStaRec->pucAssocReqIe) {
+					kalMemCopy(prStaRec->pucAssocReqIe,
+						cp, u2IELength);
+				} else {
+					DBGLOG(SAA, LOUD,
+						"allocate memory for prStaRec->pucAssocReqIe failed!\n");
+					return WLAN_STATUS_RESOURCES;
+				}
 			}
 		}
 #endif
