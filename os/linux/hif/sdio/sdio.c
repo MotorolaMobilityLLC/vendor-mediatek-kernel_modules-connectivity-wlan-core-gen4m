@@ -1365,8 +1365,10 @@ void kalDevReadIntStatus(IN struct ADAPTER *prAdapter, OUT uint32_t *pu4IntStatu
 #endif /* CFG_SDIO_INTR_ENHANCE */
 
 	if (*pu4IntStatus & ~(WHIER_DEFAULT | WHIER_FW_OWN_BACK_INT_EN)) {
-		DBGLOG(INTR, WARN, "Un-handled HISR %#lx, HISR = %#lx (HIER:0x%lx)\n",
-		       (*pu4IntStatus & ~WHIER_DEFAULT), *pu4IntStatus, WHIER_DEFAULT);
+		DBGLOG(INTR, WARN,
+			"Un-handled HISR %lx, HISR = %lx (HIER:0x%lx)\n",
+			(*pu4IntStatus & ~WHIER_DEFAULT), *pu4IntStatus,
+			WHIER_DEFAULT);
 		*pu4IntStatus &= WHIER_DEFAULT;
 	}
 }				/* end of nicSDIOReadIntStatus() */
