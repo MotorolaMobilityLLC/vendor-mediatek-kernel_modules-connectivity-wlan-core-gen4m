@@ -1078,6 +1078,8 @@ struct mt66xx_chip_info {
 	u_int8_t is_support_hw_amsdu;
 	uint8_t ucMaxSwAmsduNum;
 	uint32_t workAround;
+	char *prTxPwrLimitFile;
+	uint8_t ucTxPwrLimitBatchSize;
 };
 
 struct mt66xx_hif_driver_data {

@@ -503,6 +503,8 @@ struct mt66xx_chip_info mt66xx_chip_info_mt7668 = {
 	.is_support_hw_amsdu = FALSE,
 	.ucMaxSwAmsduNum = 0,
 	.workAround = 0,
+	.prTxPwrLimitFile = "TxPwrLimit_MT76x8.dat",
+	.ucTxPwrLimitBatchSize = 32,
 };
 
 struct mt66xx_hif_driver_data mt66xx_driver_data_mt7668 = {
