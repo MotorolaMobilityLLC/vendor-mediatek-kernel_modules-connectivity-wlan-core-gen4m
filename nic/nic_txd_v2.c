@@ -396,7 +396,8 @@ void nic_txd_v2_compose(
 		/* PF bit will be set in nicTxFillDescByPktOption() */
 		if ((prStaRec
 			&& prStaRec->fgTransmitKeyExist) || fgIsTemplate) {
-			DBGLOG(RSN, INFO, "Set MSDU_OPT_PROTECTED_FRAME\n");
+			DBGLOG_LIMITED(RSN, INFO,
+				"Set MSDU_OPT_PROTECTED_FRAME\n");
 			nicTxConfigPktOption(
 				prMsduInfo, MSDU_OPT_PROTECTED_FRAME, TRUE);
 
