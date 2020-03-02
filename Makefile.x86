@@ -5,7 +5,8 @@
 # - Default=wlan_mt6632_pcie.ko:
 # 	make -f Makefile.x86
 # - wlan_mt7663_usb.ko:
-# 	make -f Makefile.x86 MTK_COMBO_CHIP=mt7663 hif=usb
+# 	make -f Makefile.x86 MTK_COMBO_CHIP=MT7663 hif=usb
+# Note: Chip ID must be uppercase. E.g., MT7663
 
 LINUX_SRC=/lib/modules/$(shell uname -r)/build
 
