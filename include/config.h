@@ -1294,7 +1294,8 @@
  * for some code flow in mobile gen4m.
  *------------------------------------------------------------------------------
  */
-#define CFG_SUPPORT_CONNINFRA 0
+#define CFG_SUPPORT_CONNINFRA 1
+#define CFG_SUPPORT_PRE_ON_PHY_ACTION 0
 
 /*------------------------------------------------------------------------------
  * Flags of Disconnect with disable channel based on REGD update

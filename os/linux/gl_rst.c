@@ -126,8 +126,8 @@ u_int8_t fgIsResetting = FALSE;
 static void mtk_wifi_reset(struct work_struct *work);
 
 #if CFG_WMT_RESET_API_SUPPORT
-static void mtk_wifi_trigger_reset(struct work_struct *work);
 #if (CFG_SUPPORT_CONNINFRA == 0)
+static void mtk_wifi_trigger_reset(struct work_struct *work);
 static void *glResetCallback(enum ENUM_WMTDRV_TYPE eSrcType,
 			     enum ENUM_WMTDRV_TYPE eDstType,
 			     enum ENUM_WMTMSG_TYPE eMsgType, void *prMsgBody,
@@ -198,10 +198,10 @@ void glResetInit(struct GLUE_INFO *prGlueInfo)
 #if (CFG_SUPPORT_CONNINFRA == 0)
 	mtk_wcn_wmt_msgcb_reg(WMTDRV_TYPE_WIFI,
 			      (PF_WMT_CB) glResetCallback);
-#endif
 	/* 2. Initialize reset work */
 	INIT_WORK(&(wifi_rst.rst_trigger_work),
 		  mtk_wifi_trigger_reset);
+#endif
 #endif
 	fgIsResetting = FALSE;
 	wifi_rst.prGlueInfo = prGlueInfo;
@@ -365,7 +365,7 @@ static void mtk_wifi_reset(struct work_struct *work)
 
 
 #if CFG_WMT_RESET_API_SUPPORT
-
+#if (CFG_SUPPORT_CONNINFRA == 0)
 static void mtk_wifi_trigger_reset(struct work_struct *work)
 {
 	u_int8_t fgResult = FALSE;
@@ -384,7 +384,7 @@ static void mtk_wifi_trigger_reset(struct work_struct *work)
 	DBGLOG(INIT, INFO, "reset result %d, trigger flag 0x%x\n",
 				fgResult, rst->rst_trigger_flag);
 }
-
+#endif
 /* Weak reference for those platform doesn't support wmt functions */
 u_int8_t __weak mtk_wcn_stp_coredump_start_get(void)
 {
@@ -516,10 +516,9 @@ int glRstwlanPreWholeChipReset(void)
 {
 	uint32_t waitRet = 0;
 	bool bRet = TRUE;
-	struct wireless_dev *prWdev = gprWdev;
 	struct GLUE_INFO *prGlueInfo;
 
-	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(prWdev->wiphy);
+	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wlanGetWiphy());
 	g_IsWholeChipRst = TRUE;
 	if (!g_IsSubsysRstOverThreshold)
 		GL_RESET_TRIGGER(prGlueInfo->prAdapter, RST_FLAG_WF_RESET);
@@ -547,7 +546,6 @@ int glRstwlanPostWholeChipReset(void)
 int wlan_reset_thread_main(void *data)
 {
 	int ret = 0;
-	struct wireless_dev *prWdev = gprWdev;
 	struct GLUE_INFO *prGlueInfo = NULL;
 
 #if defined(CONFIG_ANDROID) && (CFG_ENABLE_WAKE_LOCK)
@@ -565,7 +563,7 @@ int wlan_reset_thread_main(void *data)
 			   prWlanRstThreadWakeLock, "WLAN rst_thread");
 	KAL_WAKE_LOCK(NULL, prWlanRstThreadWakeLock);
 #endif
-	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(prWdev->wiphy);
+	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wlanGetWiphy());
 
 	DBGLOG(INIT, INFO, "%s:%u starts running...\n",
 	       KAL_GET_CURRENT_THREAD_NAME(), KAL_GET_CURRENT_THREAD_ID());

@@ -22,8 +22,8 @@ extern "C" {
 */
 
 #if defined(_HIF_AXI)
-#define CONN_INFRA_CFG_BASE                                    0x18001000
-#define CONN_INFRA_CFG_AP2WF_BUS_ADDR                          0x18500000
+#define CONN_INFRA_CFG_BASE                                    0x7c001000
+#define CONN_INFRA_CFG_AP2WF_BUS_ADDR                          0x7c500000
 #endif
 
 #if defined(_HIF_PCIE)
