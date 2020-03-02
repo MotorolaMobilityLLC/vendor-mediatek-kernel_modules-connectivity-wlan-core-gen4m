@@ -153,6 +153,7 @@ static struct cfg80211_ops mtk_p2p_ops = {
 	.get_key = mtk_p2p_cfg80211_get_key,
 	.del_key = mtk_p2p_cfg80211_del_key,
 	.set_default_key = mtk_p2p_cfg80211_set_default_key,
+	.set_default_mgmt_key = mtk_p2p_cfg80211_set_mgmt_key,
 	.join_ibss = mtk_p2p_cfg80211_join_ibss,
 	.leave_ibss = mtk_p2p_cfg80211_leave_ibss,
 	.set_tx_power = mtk_p2p_cfg80211_set_txpower,

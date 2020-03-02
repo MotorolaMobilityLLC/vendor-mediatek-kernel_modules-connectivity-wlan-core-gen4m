@@ -474,6 +474,11 @@ struct _BSS_INFO_T {
 	ENUM_BAND_T eBandGranted;
 	UINT_8 ucPrimaryChannelGranted;
 	PARAM_CUSTOM_ACL rACL;
+
+#if CFG_SUPPORT_802_11W
+	/* AP PMF */
+	struct AP_PMF_CFG rApPmfCfg;
+#endif
 };
 
 struct _AIS_SPECIFIC_BSS_INFO_T {

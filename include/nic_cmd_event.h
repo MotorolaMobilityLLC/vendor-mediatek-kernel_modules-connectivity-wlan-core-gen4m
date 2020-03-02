@@ -1009,7 +1009,7 @@ typedef struct _CMD_802_11_KEY {
 	UINT_8 ucKeyId;
 	UINT_8 ucKeyLen;
 	UINT_8 ucWlanIndex;
-	UINT_8 ucReverved;
+	UINT_8 ucMgmtProtection;
 	UINT_8 aucKeyMaterial[32];
 	UINT_8 aucKeyRsc[16];
 } CMD_802_11_KEY, *P_CMD_802_11_KEY;
