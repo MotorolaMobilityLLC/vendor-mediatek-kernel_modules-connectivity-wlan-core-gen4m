@@ -1010,6 +1010,8 @@ int mtk_cfg80211_scan(struct wiphy *wiphy,
 	       request->n_ssids, num_ssid, request->n_channels,
 	       prScanRequest->u4ChannelNum);
 
+	kalScanParseRandomMac(prGlueInfo, request, prScanRequest->aucRandomMac);
+
 	if (request->ie_len > 0) {
 		prScanRequest->u4IELength = request->ie_len;
 		prScanRequest->pucIE = (uint8_t *) (request->ie);
@@ -3372,6 +3374,10 @@ int mtk_cfg80211_sched_scan_start(IN struct wiphy *wiphy,
 		}
 	}
 	prSchedScanRequest->u4MatchSsidNum = num;
+
+	kalSchedScanParseRandomMac(prGlueInfo, request,
+		prSchedScanRequest->aucRandomMac,
+		prSchedScanRequest->aucRandomMacMask);
 
 	prSchedScanRequest->u4IELength = request->ie_len;
 	if (request->ie_len > 0) {

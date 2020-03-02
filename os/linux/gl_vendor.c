@@ -350,6 +350,69 @@ int mtk_cfg80211_vendor_set_country_code(struct wiphy
 	return 0;
 }
 
+int mtk_cfg80211_vendor_set_scan_mac_oui(struct wiphy *wiphy,
+	struct wireless_dev *wdev, const void *data, int data_len)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	uint32_t rStatus = WLAN_STATUS_SUCCESS;
+	struct nlattr *attr;
+	uint32_t i = 0;
+	uint8_t ucMacOui[MAC_OUI_LEN];
+
+	uint32_t u4BufLen = 0;
+
+	ASSERT(wiphy);
+	ASSERT(wdev);
+
+	if (data == NULL || data_len <= 0) {
+		log_dbg(REQ, ERROR, "data error(len=%d)\n", data_len);
+		return -EINVAL;
+	}
+
+#if CFG_ENABLE_UNIFY_WIPHY
+	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wiphy);
+#else	/* CFG_ENABLE_UNIFY_WIPHY */
+	if (wdev == gprWdev)
+		prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wiphy);
+	else
+		prGlueInfo = *((struct GLUE_INFO **) wiphy_priv(wiphy));
+#endif	/* CFG_ENABLE_UNIFY_WIPHY */
+	if (!prGlueInfo) {
+		log_dbg(REQ, ERROR, "Invalid glue info\n");
+		return -EFAULT;
+	}
+
+	attr = (struct nlattr *)data;
+	kalMemZero(ucMacOui, MAC_OUI_LEN);
+	if (nla_type(attr) != WIFI_ATTRIBUTE_PNO_RANDOM_MAC_OUI) {
+		log_dbg(REQ, ERROR, "Set MAC oui type error(%u)\n",
+			nla_type(attr));
+		return -EINVAL;
+	}
+
+	if (nla_len(attr) != MAC_OUI_LEN) {
+		log_dbg(REQ, ERROR, "Set MAC oui length error(%u), %u needed\n",
+			nla_len(attr), MAC_OUI_LEN);
+		return -EINVAL;
+	}
+
+	for (i = 0; i < MAC_OUI_LEN; i++)
+		ucMacOui[i] = *((uint8_t *)nla_data(attr) + i);
+
+	log_dbg(REQ, INFO, "Set MAC oui: %02x-%02x-%02x\n",
+		ucMacOui[0], ucMacOui[1], ucMacOui[2]);
+
+	rStatus = kalIoctl(prGlueInfo, wlanoidSetScanMacOui,
+		ucMacOui, MAC_OUI_LEN,
+		FALSE, FALSE, FALSE, &u4BufLen);
+	if (rStatus != WLAN_STATUS_SUCCESS) {
+		log_dbg(REQ, ERROR, "Set MAC oui error: 0x%X\n", rStatus);
+		return -EFAULT;
+	}
+
+	return 0;
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief This routine is to answer FWK that we can support FW Roaming.

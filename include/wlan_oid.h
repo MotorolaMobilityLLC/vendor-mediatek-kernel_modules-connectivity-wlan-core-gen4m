@@ -2301,6 +2301,7 @@ struct PARAM_SCAN_REQUEST_ADV {
 	uint32_t u4ChannelNum;
 	struct RF_CHANNEL_INFO
 		arChannel[MAXIMUM_OPERATION_CHANNEL_LIST];
+	uint8_t aucRandomMac[MAC_ADDR_LEN];
 };
 
 /*--------------------------------------------------------------*/
@@ -2314,6 +2315,8 @@ struct PARAM_SCHED_SCAN_REQUEST {
 	struct PARAM_SSID arMatchSsid[CFG_SCAN_SSID_MATCH_MAX_NUM];
 	int32_t ai4RssiThold[CFG_SCAN_SSID_MATCH_MAX_NUM];
 	int32_t i4MinRssiThold;
+	uint8_t aucRandomMac[MAC_ADDR_LEN];
+	uint8_t aucRandomMacMask[MAC_ADDR_LEN];
 	uint32_t u4IELength;
 	uint8_t *pucIE;
 	uint16_t u2ScanInterval;	/* in second */
@@ -3400,6 +3403,12 @@ wlanoidSetCountryCode(IN struct ADAPTER *prAdapter,
 		      IN void *pvSetBuffer,
 		      IN uint32_t u4SetBufferLen,
 		      OUT uint32_t *pu4SetInfoLen);
+
+uint32_t
+wlanoidSetScanMacOui(IN struct ADAPTER *prAdapter,
+		IN void *pvSetBuffer,
+		IN uint32_t u4SetBufferLen,
+		OUT uint32_t *pu4SetInfoLen);
 
 uint32_t wlanSendMemDumpCmd(IN struct ADAPTER *prAdapter,
 			    IN void *pvQueryBuffer,

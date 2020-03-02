@@ -498,6 +498,15 @@ static const struct wiphy_vendor_command
 	},
 	{
 		{
+			.vendor_id = GOOGLE_OUI,
+			.subcmd = WIFI_SUBCMD_SET_PNO_RANDOM_MAC_OUI
+		},
+		.flags = WIPHY_VENDOR_CMD_NEED_WDEV
+			| WIPHY_VENDOR_CMD_NEED_NETDEV,
+		.doit = mtk_cfg80211_vendor_set_scan_mac_oui
+	},
+	{
+		{
 			.vendor_id = OUI_QCA,
 			.subcmd = QCA_NL80211_VENDOR_SUBCMD_SETBAND
 		},
@@ -1786,6 +1795,12 @@ static void wlanCreateWirelessDevice(void)
 #endif /* CFG_SUPPORT_TDLS */
 	prWiphy->max_remain_on_channel_duration = 5000;
 	prWiphy->mgmt_stypes = mtk_cfg80211_ais_default_mgmt_stypes;
+
+#if (CFG_SUPPORT_SCAN_RANDOM_MAC && \
+	(KERNEL_VERSION(3, 19, 0) <= CFG80211_VERSION_CODE))
+	prWiphy->features |= NL80211_FEATURE_SCAN_RANDOM_MAC_ADDR;
+	prWiphy->features |= NL80211_FEATURE_SCHED_SCAN_RANDOM_MAC_ADDR;
+#endif
 
 #if KERNEL_VERSION(3, 18, 0) <= CFG80211_VERSION_CODE
 	prWiphy->vendor_commands = mtk_wlan_vendor_ops;
