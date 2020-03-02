@@ -519,6 +519,9 @@ void
 rlmSendSmPowerSaveFrame(struct ADAPTER *prAdapter,
 			struct STA_RECORD *prStaRec, uint8_t ucNss);
 
+void rlmSendChannelSwitchFrame(struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex);
+
 uint32_t
 rlmNotifyVhtOpModeTxDone(struct ADAPTER *prAdapter,
 			 struct MSDU_INFO *prMsduInfo,

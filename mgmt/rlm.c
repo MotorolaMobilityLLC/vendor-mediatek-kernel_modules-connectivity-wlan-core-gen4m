@@ -2853,13 +2853,8 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 			~(HT_OP_INFO1_SCO | HT_OP_INFO1_STA_CHNL_WIDTH);
 
 		/* Check SAP channel */
-		if (cnmSapIsActive(prAdapter))
-			p2pFuncSwitchSapChannel(prAdapter);
-#if CFG_SUPPORT_SAP_DFS_CHANNEL
-		if (cnmSapIsConcurrent(prAdapter))
-			wlanUpdateDfsChannelTable(prAdapter->prGlueInfo,
-				prBssInfo->ucPrimaryChannel);
-#endif
+		p2pFuncSwitchSapChannel(prAdapter);
+
 	}
 #if CFG_SUPPORT_QUIET && 0
 	if (!fgHasQuietIE)
@@ -4749,13 +4744,8 @@ void rlmProcessSpecMgtAction(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb)
 				prBssInfo->eBssSCO = CHNL_EXT_SCN;
 
 			/* Check SAP channel */
-			if (cnmSapIsActive(prAdapter))
-				p2pFuncSwitchSapChannel(prAdapter);
-#if CFG_SUPPORT_SAP_DFS_CHANNEL
-			if (cnmSapIsConcurrent(prAdapter))
-				wlanUpdateDfsChannelTable(prAdapter->prGlueInfo,
-					prBssInfo->ucPrimaryChannel);
-#endif
+			p2pFuncSwitchSapChannel(prAdapter);
+
 		}
 		nicUpdateBss(prAdapter, prBssInfo->ucBssIndex);
 		break;
@@ -7454,3 +7444,91 @@ void rlmUpdateBssTimeTsf(struct ADAPTER *prAdapter, struct BSS_DESC *prBssDesc)
 	rTsf.rTime = prBssDesc->rUpdateTime;
 	kalMemCopy(&rTsf.au4Tsf[0], &prBssDesc->u8TimeStamp, 8);
 }
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Send channel switch frame
+ *
+ * \param[in]
+ *
+ * \return none
+ */
+/*----------------------------------------------------------------------------*/
+uint32_t rlmSendChannelSwitchTxDone(IN struct ADAPTER *prAdapter,
+	IN struct MSDU_INFO *prMsduInfo,
+	IN enum ENUM_TX_RESULT_CODE rTxDoneStatus)
+{
+	do {
+		ASSERT_BREAK((prAdapter != NULL) && (prMsduInfo != NULL));
+
+		DBGLOG(P2P, INFO,
+			"CSA TX Done Status: %d, seqNo: %d\n",
+			rTxDoneStatus,
+			prMsduInfo->ucTxSeqNum);
+
+	} while (FALSE);
+
+	return WLAN_STATUS_SUCCESS;
+}
+
+void rlmSendChannelSwitchFrame(struct ADAPTER *prAdapter,
+	IN uint8_t ucBssIndex)
+{
+	struct MSDU_INFO *prMsduInfo;
+	struct ACTION_CHANNEL_SWITCH_FRAME *prTxFrame;
+	struct BSS_INFO *prBssInfo;
+	uint16_t u2EstimatedFrameLen;
+	PFN_TX_DONE_HANDLER pfTxDoneHandler = (PFN_TX_DONE_HANDLER)NULL;
+	uint8_t aucBMC[] = BC_MAC_ADDR;
+
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
+	if (!prBssInfo)
+		return;
+
+	/* Calculate MSDU buffer length */
+	u2EstimatedFrameLen = MAC_TX_RESERVED_FIELD +
+			      sizeof(struct ACTION_CHANNEL_SWITCH_FRAME);
+
+	/* Alloc MSDU_INFO */
+	prMsduInfo = (struct MSDU_INFO *)cnmMgtPktAlloc(prAdapter,
+							u2EstimatedFrameLen);
+	if (!prMsduInfo)
+		return;
+
+	kalMemZero(prMsduInfo->prPacket, u2EstimatedFrameLen);
+
+	prTxFrame = prMsduInfo->prPacket;
+
+	/* Fill frame ctrl */
+	prTxFrame->u2FrameCtrl = MAC_FRAME_ACTION;
+
+	COPY_MAC_ADDR(prTxFrame->aucDestAddr, aucBMC);
+	COPY_MAC_ADDR(prTxFrame->aucSrcAddr, prBssInfo->aucOwnMacAddr);
+	COPY_MAC_ADDR(prTxFrame->aucBSSID, prBssInfo->aucBSSID);
+
+	/* 3 Compose the frame body's frame */
+	prTxFrame->ucCategory = CATEGORY_SPEC_MGT;
+	prTxFrame->ucAction = ACTION_CHNL_SWITCH;
+
+	prTxFrame->aucInfoElem[0] = ELEM_ID_CH_SW_ANNOUNCEMENT;
+	prTxFrame->aucInfoElem[1] = 3;
+	prTxFrame->aucInfoElem[2]
+		= prAdapter->rWifiVar.ucChannelSwitchMode;
+	prTxFrame->aucInfoElem[3]
+		= prAdapter->rWifiVar.ucNewChannelNumber;
+	prTxFrame->aucInfoElem[4]
+		= prAdapter->rWifiVar.ucChannelSwitchCount;
+
+	pfTxDoneHandler = rlmSendChannelSwitchTxDone;
+
+	/* 4 Update information of MSDU_INFO_T */
+	TX_SET_MMPDU(prAdapter, prMsduInfo, prBssInfo->ucBssIndex,
+		     STA_REC_INDEX_BMCAST, WLAN_MAC_MGMT_HEADER_LEN,
+		     sizeof(struct ACTION_CHANNEL_SWITCH_FRAME),
+		     pfTxDoneHandler,
+		     MSDU_RATE_MODE_AUTO);
+
+	/* 4 Enqueue the frame to send this action frame. */
+	nicTxEnqueueMsdu(prAdapter, prMsduInfo);
+}
+
