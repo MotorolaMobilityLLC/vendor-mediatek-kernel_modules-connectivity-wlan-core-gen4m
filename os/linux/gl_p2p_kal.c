@@ -1224,12 +1224,14 @@ kalP2PIndicateBssInfo(IN struct GLUE_INFO *prGlueInfo,
 		 * / 1000;
 		 */
 
-		prCfg80211Bss = cfg80211_inform_bss_frame(
-			/* struct wiphy * wiphy, */
-			prGlueP2pInfo->prWdev->wiphy,
-			prChannelEntry,
-			prBcnProbeRspFrame,
-			u4BufLen, i4SignalStrength, GFP_KERNEL);
+		if (u4BufLen > 0) {
+			prCfg80211Bss = cfg80211_inform_bss_frame(
+				/* struct wiphy * wiphy, */
+				prGlueP2pInfo->prWdev->wiphy,
+				prChannelEntry,
+				prBcnProbeRspFrame,
+				u4BufLen, i4SignalStrength, GFP_KERNEL);
+		}
 
 		/* Return this structure. */
 		if (prCfg80211Bss)
@@ -1238,10 +1240,10 @@ kalP2PIndicateBssInfo(IN struct GLUE_INFO *prGlueInfo,
 		else
 			DBGLOG(P2P, WARN,
 				"indicate BSS to cfg80211 failed [" MACSTR
-					"]: bss channel %d, rcpi %d\n",
+				"]: bss channel %d, rcpi %d, frame_len=%d\n",
 				MAC2STR(prBcnProbeRspFrame->bssid),
 				prChannelInfo->ucChannelNum,
-				i4SignalStrength);
+				i4SignalStrength, u4BufLen);
 
 	} while (FALSE);
 
