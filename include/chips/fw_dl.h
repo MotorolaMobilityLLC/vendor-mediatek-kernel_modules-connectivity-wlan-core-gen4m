@@ -94,6 +94,7 @@
 #define FW_FEATURE_COMPRESS_IMG	BIT(3)
 #define FW_FEATURE_ENCRY_MODE	BIT(4)
 #define FW_FEATURE_OVERRIDE_RAM_ADDR	BIT(5)
+#define FW_FEATURE_NOT_DOWNLOAD	BIT(6)
 #define FW_FEATURE_DL_TO_EMI	BIT(7)
 
 #if CFG_SUPPORT_COMPRESSION_FW_OPTION
@@ -143,7 +144,8 @@ struct FWDL_OPS_T {
 	void (*getFwInfo)(IN struct ADAPTER *prAdapter,
 		IN uint8_t u4SecIdx, IN enum ENUM_IMG_DL_IDX_T eDlIdx,
 		OUT uint32_t *pu4Addr, OUT uint32_t *pu4Len,
-		OUT uint32_t *pu4DataMode, OUT u_int8_t *pfgIsEMIDownload);
+		OUT uint32_t *pu4DataMode, OUT u_int8_t *pfgIsEMIDownload,
+		OUT u_int8_t *pfgIsNotDownload);
 	unsigned int (*getFwDlInfo)(struct ADAPTER *prAdapter,
 		char *pcBuf, int i4TotalLen);
 };
@@ -289,12 +291,14 @@ uint32_t wlanGetDataMode(IN struct ADAPTER *prAdapter,
 void wlanGetHarvardFwInfo(IN struct ADAPTER *prAdapter,
 	IN uint8_t u4SecIdx, IN enum ENUM_IMG_DL_IDX_T eDlIdx,
 	OUT uint32_t *pu4Addr, OUT uint32_t *pu4Len,
-	OUT uint32_t *pu4DataMode, OUT u_int8_t *pfgIsEMIDownload);
+	OUT uint32_t *pu4DataMode, OUT u_int8_t *pfgIsEMIDownload,
+	OUT u_int8_t *pfgIsNotDownload);
 
 void wlanGetConnacFwInfo(IN struct ADAPTER *prAdapter,
 	IN uint8_t u4SecIdx, IN enum ENUM_IMG_DL_IDX_T eDlIdx,
 	OUT uint32_t *pu4Addr, OUT uint32_t *pu4Len,
-	OUT uint32_t *pu4DataMode, OUT u_int8_t *pfgIsEMIDownload);
+	OUT uint32_t *pu4DataMode, OUT u_int8_t *pfgIsEMIDownload,
+	OUT u_int8_t *pfgIsNotDownload);
 
 #if CFG_SUPPORT_COMPRESSION_FW_OPTION
 uint32_t wlanCompressedImageSectionDownloadStage(IN struct ADAPTER *prAdapter,
