@@ -1024,7 +1024,7 @@ void kalUpdateRxCSUMOffloadParam(IN void *pvPacket,
 #endif /* CFG_TCP_IP_CHKSUM_OFFLOAD */
 
 u_int8_t kalRetrieveNetworkAddress(IN struct GLUE_INFO *prGlueInfo,
-				IN OUT uint8_t *prMacAddr[PARAM_MAC_ADDR_LEN]);
+				IN OUT uint8_t *prMacAddr);
 
 void
 kalReadyOnChannel(IN struct GLUE_INFO *prGlueInfo,
