@@ -1994,15 +1994,15 @@ void p2pFuncDfsSwitchCh(IN struct ADAPTER *prAdapter,
 				= prGlueP2pInfo->chandef->chan->center_freq;
 			if (prBssInfo->eBssSCO == CHNL_EXT_SCA) {
 				prGlueP2pInfo->chandef->width
-					= NL80211_CHAN_HT40MINUS;
+					= NL80211_CHAN_WIDTH_40;
 				prGlueP2pInfo->chandef->center_freq1 += 10;
 			} else if (prBssInfo->eBssSCO == CHNL_EXT_SCB) {
 				prGlueP2pInfo->chandef->width
-					= NL80211_CHAN_HT40PLUS;
+					= NL80211_CHAN_WIDTH_40;
 				prGlueP2pInfo->chandef->center_freq1 -= 10;
 			} else {
 				prGlueP2pInfo->chandef->width
-					= NL80211_CHAN_HT20;
+					= NL80211_CHAN_WIDTH_20;
 			}
 			prGlueP2pInfo->chandef->center_freq2 = 0;
 			break;
