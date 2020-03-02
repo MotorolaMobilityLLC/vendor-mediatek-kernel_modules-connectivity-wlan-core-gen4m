@@ -918,6 +918,12 @@ void secRemoveBssBcEntry(IN struct ADAPTER *prAdapter,
 			prBssInfo->ucBcDefaultKeyIdx = 0xff;
 		}
 	} else {
+		/* According to discussion, it's ok to change to
+		 * reserved_entry here so that the entry is _NOT_ freed at all.
+		 * In this way, the same BSS(ucBssIndex) could reuse the same
+		 * entry next time in secPrivacySeekForBcEntry(), and we could
+		 * see the following log: "[Wlan index]: Reuse entry ...".
+		 */
 		prBssInfo->ucBMCWlanIndex = WTBL_RESERVED_ENTRY;
 		secPrivacyFreeForEntry(prAdapter, prBssInfo->ucBMCWlanIndex);
 
