@@ -1095,16 +1095,25 @@ void cnmStaSendUpdateCmd(struct ADAPTER *prAdapter, struct STA_RECORD *prStaRec,
 
 	prCmdContent->u4TxMaxAmsduInAmpduLen
 		= prAdapter->rWifiVar.u4TxMaxAmsduInAmpduLen;
-
-	prCmdContent->rBaSize.rHtVhtBaSize.ucTxBaSize
-		= prAdapter->rWifiVar.ucTxBaSize;
-
-	if (prStaRec->ucDesiredPhyTypeSet & PHY_TYPE_SET_802_11AC)
+#if (CFG_SUPPORT_802_11AX == 1)
+	if (prStaRec->ucDesiredPhyTypeSet & PHY_TYPE_SET_802_11AX) {
+		prCmdContent->rBaSize.rHeBaSize.u2RxBaSize =
+				prAdapter->rWifiVar.u2RxHeBaSize;
+		prCmdContent->rBaSize.rHeBaSize.u2TxBaSize =
+				prAdapter->rWifiVar.u2TxHeBaSize;
+	} else
+#endif
+	{
 		prCmdContent->rBaSize.rHtVhtBaSize.ucTxBaSize
-			= prAdapter->rWifiVar.ucRxVhtBaSize;
-	else
-		prCmdContent->rBaSize.rHeBaSize.u2TxBaSize
-			= prAdapter->rWifiVar.ucRxHtBaSize;
+			= prAdapter->rWifiVar.ucTxBaSize;
+
+		if (prStaRec->ucDesiredPhyTypeSet & PHY_TYPE_SET_802_11AC)
+			prCmdContent->rBaSize.rHtVhtBaSize.ucTxBaSize
+				= prAdapter->rWifiVar.ucRxVhtBaSize;
+		else
+			prCmdContent->rBaSize.rHeBaSize.u2TxBaSize
+				= prAdapter->rWifiVar.ucRxHtBaSize;
+	}
 
 	/* RTS Policy */
 	if (IS_FEATURE_ENABLED(prAdapter->rWifiVar.ucSigTaRts)) {
