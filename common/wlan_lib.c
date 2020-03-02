@@ -6745,6 +6745,7 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 #endif /* CFG_SUPPORT_LOWLATENCY_MODE */
 
 	prWifiVar->u4MTU = wlanCfgGetUint32(prAdapter, "MTU", 0);
+
 #if CFG_SUPPORT_RX_GRO
 	prWifiVar->ucGROFlushTimeout = (uint32_t) wlanCfgGetUint32(
 			prAdapter, "GROFlushTimeout", 1);
@@ -6754,6 +6755,24 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 	prWifiVar->ucMsduReportTimeout =
 		(uint8_t) wlanCfgGetUint32(prAdapter,
 		"MsduReportTimeout", NIC_MSDU_REPORT_DUMP_TIMEOUT);
+
+#if CFG_SUPPORT_DATA_STALL
+	prWifiVar->u4PerHighThreshole = (uint32_t) wlanCfgGetUint32(
+			prAdapter, "PerHighThreshole",
+			EVENT_PER_HIGH_THRESHOLD);
+	prWifiVar->u4TxLowRateThreshole = (uint32_t) wlanCfgGetUint32(
+			prAdapter, "TxLowRateThreshole",
+			EVENT_TX_LOW_RATE_THRESHOLD);
+	prWifiVar->u4RxLowRateThreshole = (uint32_t) wlanCfgGetUint32(
+			prAdapter, "RxLowRateThreshole",
+			EVENT_RX_LOW_RATE_THRESHOLD);
+	prWifiVar->u4ReportEventInterval = (uint32_t) wlanCfgGetUint32(
+			prAdapter, "ReportEventInterval",
+			REPORT_EVENT_INTERVAL);
+	prWifiVar->u4TrafficThreshold = (uint32_t) wlanCfgGetUint32(
+			prAdapter, "TrafficThreshold",
+			TRAFFIC_RHRESHOLD);
+#endif
 }
 
 void wlanCfgSetSwCtrl(IN struct ADAPTER *prAdapter)
@@ -10432,6 +10451,10 @@ uint32_t wlanLinkQualityMonitor(struct GLUE_INFO *prGlueInfo, bool bFgIsOid)
 
 	prLinkQualityInfo = &(prAdapter->rLinkQualityInfo);
 
+#if CFG_SUPPORT_DATA_STALL
+	wlanCustomMonitorFunction(prAdapter, prLinkQualityInfo, ucBssIndex);
+#endif
+
 	DBGLOG(SW4, INFO,
 	       "Link Quality: Tx(rate:%u, total:%lu, retry:%lu, fail:%lu, RTS fail:%lu, ACK fail:%lu), Rx(rate:%u, total:%lu, dup:%u, error:%lu), PER(%u), Congestion(idle slot:%lu, diff:%lu)\n",
 	       prLinkQualityInfo->u4CurTxRate, /* current tx link speed */
@@ -10509,4 +10532,33 @@ void wlanFinishCollectingLinkQuality(struct GLUE_INFO *prGlueInfo)
 					prLinkQualityInfo->u8IdleSlotCount;
 }
 #endif /* CFG_SUPPORT_LINK_QUALITY_MONITOR */
+
+#if CFG_SUPPORT_DATA_STALL
+void wlanCustomMonitorFunction(struct ADAPTER *prAdapter,
+	 struct WIFI_LINK_QUALITY_INFO *prLinkQualityInfo, uint8_t ucBssIdx)
+{
+	uint64_t u8TxTotalCntDif;
+
+	u8TxTotalCntDif = (prLinkQualityInfo->u8TxTotalCount >
+			   prLinkQualityInfo->u8LastTxTotalCount) ?
+			  (prLinkQualityInfo->u8TxTotalCount -
+			   prLinkQualityInfo->u8LastTxTotalCount) : 0;
+
+	/* Add custom monitor here */
+	if (u8TxTotalCntDif >= prAdapter->rWifiVar.u4TrafficThreshold) {
+		if (prLinkQualityInfo->u4CurTxRate <
+			prAdapter->rWifiVar.u4TxLowRateThreshole)
+			KAL_REPORT_ERROR_EVENT(prAdapter,
+				EVENT_TX_LOW_RATE, ucBssIdx);
+		else if (prLinkQualityInfo->u4CurRxRate <
+			prAdapter->rWifiVar.u4RxLowRateThreshole)
+			KAL_REPORT_ERROR_EVENT(prAdapter,
+				EVENT_RX_LOW_RATE, ucBssIdx);
+		else if (prLinkQualityInfo->u4CurTxPer >
+			prAdapter->rWifiVar.u4PerHighThreshole)
+			KAL_REPORT_ERROR_EVENT(prAdapter,
+				EVENT_PER_HIGH, ucBssIdx);
+	}
+}
+#endif
 

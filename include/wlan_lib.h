@@ -1718,3 +1718,8 @@ void wlanOffUninitNicModule(IN struct ADAPTER *prAdapter,
 void wlanOffClearAllQueues(IN struct ADAPTER *prAdapter);
 uint8_t wlanGetBssIdx(struct net_device *ndev);
 
+#if CFG_SUPPORT_DATA_STALL
+void wlanCustomMonitorFunction(struct ADAPTER *prAdapter,
+	struct WIFI_LINK_QUALITY_INFO *prLinkQualityInfo, uint8_t ucBssIdx);
+#endif /* CFG_SUPPORT_DATA_STALL */
+

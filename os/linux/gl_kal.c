@@ -76,6 +76,7 @@
 #include "gl_kal.h"
 #include "gl_wext.h"
 #include "precomp.h"
+
 #if CFG_SUPPORT_AGPS_ASSIST
 #include <net/netlink.h>
 #endif
@@ -6402,6 +6403,53 @@ int kalMetRemoveProcfs(void)
 
 #endif
 
+#if CFG_SUPPORT_DATA_STALL
+u_int8_t kalIndicateDriverEvent(struct ADAPTER *prAdapter,
+					enum ENUM_VENDOR_DRIVER_EVENT event,
+					uint8_t ucBssIdx)
+{
+	struct sk_buff *skb = NULL;
+	struct wiphy *wiphy;
+	struct wireless_dev *wdev;
+	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
+
+	wiphy = priv_to_wiphy(prAdapter->prGlueInfo);
+	wdev = ((prAdapter->prGlueInfo)->prDevHandler)->ieee80211_ptr;
+
+	if (!wiphy || !wdev || !prWifiVar)
+		return -EINVAL;
+
+	if (prAdapter->tmReportinterval > 0 &&
+		!CHECK_FOR_TIMEOUT(kalGetTimeTick(),
+		prAdapter->tmReportinterval,
+		prWifiVar->u4ReportEventInterval*1000)) {
+		return -ETIME;
+	}
+	GET_CURRENT_SYSTIME(&prAdapter->tmReportinterval);
+
+	skb = cfg80211_vendor_event_alloc(wiphy, wdev,
+		(uint16_t)(sizeof(uint8_t)*2),
+		WIFI_EVENT_DRIVER_ERROR, GFP_KERNEL);
+
+	if (!skb) {
+		DBGLOG(REQ, ERROR, "%s allocate skb failed\n", __func__);
+		return -ENOMEM;
+	}
+
+	if (unlikely(nla_put(skb, WIFI_ATTRIBUTE_ERROR_REASON
+		, sizeof(uint8_t), &event) < 0) ||
+		unlikely(nla_put(skb, WIFI_ATTRIBUTE_BSS_INDEX
+			, sizeof(uint8_t), &ucBssIdx) < 0))
+		goto nla_put_failure;
+
+	cfg80211_vendor_event(skb, GFP_KERNEL);
+	return TRUE;
+nla_put_failure:
+	kfree_skb(skb);
+	return FALSE;
+}
+#endif
+
 #if CFG_SUPPORT_AGPS_ASSIST
 u_int8_t kalIndicateAgpsNotify(struct ADAPTER *prAdapter,
 			       uint8_t cmd, uint8_t *data, uint16_t dataLen)
@@ -7101,7 +7149,7 @@ void kalPerMonHandler(IN struct ADAPTER *prAdapter,
 	    rxDiffBytes[BSS_DEFAULT_NUM];
 	struct net_device *prDevHandler = NULL;
 	struct GLUE_INFO *prGlueInfo = prAdapter->prGlueInfo;
-#if CFG_SUPPORT_PERF_IND
+#if CFG_SUPPORT_PERF_IND || CFG_SUPPORT_DATA_STALL
 	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
 #endif
 
@@ -7205,6 +7253,12 @@ void kalPerMonHandler(IN struct ADAPTER *prAdapter,
 		prPerMonitor->ulTotalTxSuccessCount,
 		prPerMonitor->ulTotalTxFailCount);
 
+#if CFG_SUPPORT_DATA_STALL
+		/* test mode event */
+		if (prWifiVar->u4ReportEventInterval == 0)
+			KAL_REPORT_ERROR_EVENT(prAdapter,
+				EVENT_TEST_MODE, 0);
+#endif
 	prPerMonitor->u4TarPerfLevel = PERF_MON_TP_MAX_THRESHOLD;
 	for (u4Idx = 0; u4Idx < PERF_MON_TP_MAX_THRESHOLD;
 	     u4Idx++) {
