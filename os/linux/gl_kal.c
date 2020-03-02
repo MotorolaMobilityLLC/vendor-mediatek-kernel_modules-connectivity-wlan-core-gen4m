@@ -7407,6 +7407,17 @@ void kalPerMonHandler(IN struct ADAPTER *prAdapter,
 		prPerMonitor->ulTotalTxFailCount,
 		prPerMonitor->u4CurrPerfLevel);
 
+	DBGLOG(SW4, INFO,
+		"Pending BSS[0] QLEN[%u:%u:%u:%u], BSS[2] QLEN[%u:%u:%u:%u]\n",
+		prGlueInfo->ai4TxPendingFrameNumPerQueue[0][0],
+		prGlueInfo->ai4TxPendingFrameNumPerQueue[0][1],
+		prGlueInfo->ai4TxPendingFrameNumPerQueue[0][2],
+		prGlueInfo->ai4TxPendingFrameNumPerQueue[0][3],
+		prGlueInfo->ai4TxPendingFrameNumPerQueue[2][0],
+		prGlueInfo->ai4TxPendingFrameNumPerQueue[2][1],
+		prGlueInfo->ai4TxPendingFrameNumPerQueue[2][2],
+		prGlueInfo->ai4TxPendingFrameNumPerQueue[2][3]);
+
 #if CFG_SUPPORT_DATA_STALL
 		/* test mode event */
 		if (prWifiVar->u4ReportEventInterval == 0)
