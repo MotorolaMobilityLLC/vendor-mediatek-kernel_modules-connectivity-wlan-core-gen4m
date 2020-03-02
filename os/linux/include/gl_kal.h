@@ -1243,6 +1243,8 @@ void kalSetEvent(struct GLUE_INFO *pr);
 
 void kalSetIntEvent(struct GLUE_INFO *pr);
 
+void kalSetHifDbgEvent(struct GLUE_INFO *pr);
+
 #if CFG_SUPPORT_MULTITHREAD
 void kalSetTxEvent2Hif(struct GLUE_INFO *pr);
 

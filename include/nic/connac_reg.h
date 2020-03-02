@@ -179,9 +179,16 @@
 #if defined(_HIF_PCIE) || defined(_HIF_AXI)
 #define PDMA_DEBUG_EN                           0x50000124
 #define PDMA_DEBUG_STATUS                       0x50000128
+#define AXI_DEBUG_DEBUG_EN                      0x5000012C
+#define CONN_HIF_DEBUG_STATUS                   0x50000130
 #define PDMA_DEBUG_HIF_BUSY_STATUS              0x50000138
 #define PDMA_DEBUG_BUSY_STATUS                  0x50000168
-#define PDMA_DEBUG_REFill                       0X5000A010
+#define PDMA_DEBUG_REFill                       0x5000A010
+
+#define PDMA_AXI_DEBUG_FLAG                     0x2222
+#define GALS_AXI_DEBUG_FLAG                     0x3333
+#define MCU_AXI_DEBUG_FLAG                      0x4444
+#define RBUS_DEBUG_FLAG                         0x118
 #endif /* _HIF_PCIE */
 
 
@@ -199,6 +206,7 @@
 #define MCU_INT_PDMA0_INIT_DONE         BIT(1)
 #define MCU_INT_SER_TRIGGER_FROM_HOST   BIT(2)
 #define MCU_INT_PDMA0_RECOVERY_DONE     BIT(3)
+#define MCU_INT_DRIVER_SER              BIT(4)
 #define CONNAC_MCU_SW_INT BIT(29)
 
 #define ERROR_DETECT_STOP_PDMA_WITH_FW_RELOAD BIT(1)

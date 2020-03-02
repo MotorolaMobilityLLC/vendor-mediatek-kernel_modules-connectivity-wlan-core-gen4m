@@ -3968,6 +3968,7 @@ nicRxWaitResponse(IN struct ADAPTER *prAdapter,
 		       prEvent->ucEID, prEvent->ucSeqNum,
 		       prEvent->u2PacketLength);
 	} else {
+		prAdapter->u4HifDbgFlag |= DEG_HIF_DEFAULT_DUMP;
 		halPrintHifDbgInfo(prAdapter);
 		DBGLOG(RX, ERROR, "halRxWaitResponse fail!status %X\n",
 		       u4Status);

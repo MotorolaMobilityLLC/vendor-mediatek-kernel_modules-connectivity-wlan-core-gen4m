@@ -373,10 +373,12 @@ HIF_OBJS :=  $(HIF_DIR)arm.o \
 else ifeq ($(CONFIG_MTK_COMBO_WIFI_HIF), pcie)
 HIF_OBJS :=  $(HIF_COMMON_DIR)hal_pdma.o \
              $(HIF_COMMON_DIR)kal_pdma.o \
+             $(HIF_COMMON_DIR)dbg_pdma.o \
              $(HIF_DIR)pcie.o
 else ifeq ($(CONFIG_MTK_COMBO_WIFI_HIF), axi)
 HIF_OBJS :=  $(HIF_COMMON_DIR)hal_pdma.o \
              $(HIF_COMMON_DIR)kal_pdma.o \
+             $(HIF_COMMON_DIR)dbg_pdma.o \
              $(HIF_DIR)axi.o
 else ifeq ($(CONFIG_MTK_COMBO_WIFI_HIF), usb)
 HIF_OBJS :=  $(HIF_DIR)usb.o \

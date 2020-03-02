@@ -2797,6 +2797,8 @@ reqExtSetAcpiDevicePowerState(IN struct GLUE_INFO
 #define CMD_SET_SW_AMSDU_NUM      "SET_SW_AMSDU_NUM"
 #define CMD_SET_SW_AMSDU_SIZE      "SET_SW_AMSDU_SIZE"
 
+#define CMD_SET_DRV_SER           "SET_DRV_SER"
+
 /* Debug for consys */
 #define CMD_DBG_SHOW_TR_INFO			"show-tr"
 #define CMD_DBG_SHOW_PLE_INFO			"show-ple"
@@ -12253,6 +12255,45 @@ static int priv_driver_set_p2p_noa(IN struct net_device *prNetDev,
 }
 #endif /* CFG_ENABLE_WIFI_DIRECT */
 
+static int priv_driver_set_drv_ser(struct net_device *prNetDev,
+				   char *pcCommand, int i4TotalLen)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	uint32_t rStatus = WLAN_STATUS_SUCCESS;
+	uint32_t u4BufLen = 0;
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = { 0 };
+	int32_t i4Argc = 0;
+	int32_t i4BytesWritten = 0;
+	uint32_t u4Num = 0;
+
+	ASSERT(prNetDev);
+	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
+		return -1;
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+
+	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+	DBGLOG(REQ, LOUD, "argc is %i\n", i4Argc);
+
+	if (i4Argc <= 0) {
+		DBGLOG(REQ, ERROR, "Argc(%d) ERR: Set driver SER\n", i4Argc);
+		return -1;
+	}
+
+	rStatus = kalIoctl(prGlueInfo, wlanoidSetDrvSer,
+			   (void *)&u4Num, sizeof(uint32_t),
+			   FALSE, FALSE, FALSE, &u4BufLen);
+
+	i4BytesWritten += snprintf(pcCommand, i4TotalLen,
+				   "trigger driver SER\n");
+	if (rStatus != WLAN_STATUS_SUCCESS) {
+		DBGLOG(REQ, ERROR, "ERR: kalIoctl fail (%d)\n", rStatus);
+		return -1;
+	}
+
+	return i4BytesWritten;
+}
+
 static int priv_driver_set_amsdu_num(IN struct net_device *prNetDev,
 				     IN char *pcCommand, IN int i4TotalLen)
 {
@@ -12805,6 +12846,10 @@ int32_t priv_driver_cmds(IN struct net_device *prNetDev, IN int8_t *pcCommand,
 			i4BytesWritten = priv_driver_set_p2p_noa(prNetDev,
 							pcCommand, i4TotalLen);
 #endif /* CFG_ENABLE_WIFI_DIRECT */
+		else if (strnicmp(pcCommand, CMD_SET_DRV_SER,
+				strlen(CMD_SET_DRV_SER)) == 0)
+			i4BytesWritten = priv_driver_set_drv_ser(
+				prNetDev, pcCommand, i4TotalLen);
 		else if (strnicmp(pcCommand, CMD_SET_SW_AMSDU_NUM,
 				strlen(CMD_SET_SW_AMSDU_NUM)) == 0)
 			i4BytesWritten = priv_driver_set_amsdu_num(

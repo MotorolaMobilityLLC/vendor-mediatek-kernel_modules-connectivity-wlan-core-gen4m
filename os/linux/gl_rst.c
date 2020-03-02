@@ -274,7 +274,7 @@ void glSendResetRequest(void)
 /*----------------------------------------------------------------------------*/
 u_int8_t kalIsResetting(void)
 {
-	return fgIsResetting;
+	return fgIsResetting || fgResetTriggered;
 }
 
 static void mtk_wifi_trigger_reset(struct work_struct *work)
@@ -300,39 +300,29 @@ u_int8_t glResetTrigger(struct ADAPTER *prAdapter,
 		uint32_t u4RstFlag, const uint8_t *pucFile, uint32_t u4Line)
 {
 	u_int8_t fgResult = TRUE;
+	uint16_t u2FwOwnVersion;
+	uint16_t u2FwPeerVersion;
 
-	if (kalIsResetting() || fgResetTriggered) {
-		DBGLOG(INIT, ERROR,
-		       "Skip trigger chip reset in %s line %u, during resetting! Chip[%04X E%u]\n",
-		       pucFile, u4Line,
-		       MTK_CHIP_REV, wlanGetEcoVersion(prAdapter));
-		DBGLOG(INIT, ERROR,
-		       "FW Ver DEC[%u.%u] HEX[%x.%x], Driver Ver[%u.%u]\n",
-		       (uint16_t)(prAdapter->rVerInfo.u2FwOwnVersion >> 8),
-		       (uint16_t)(prAdapter->rVerInfo.u2FwOwnVersion &
-				  BITS(0, 7)),
-		       (uint16_t)(prAdapter->rVerInfo.u2FwOwnVersion >> 8),
-		       (uint16_t)(prAdapter->rVerInfo.u2FwOwnVersion &
-				  BITS(0, 7)),
-		       (uint16_t)(prAdapter->rVerInfo.u2FwPeerVersion >> 8),
-		       (uint16_t)(prAdapter->rVerInfo.u2FwPeerVersion &
-				  BITS(0, 7)));
-		fgResult = TRUE;
-	} else {
+	ASSERT(prAdapter);
+	u2FwOwnVersion = prAdapter->rVerInfo.u2FwOwnVersion;
+	u2FwPeerVersion = prAdapter->rVerInfo.u2FwPeerVersion;
+	if (!kalIsResetting()) {
 		DBGLOG(INIT, ERROR,
 		       "Trigger chip reset in %s line %u! Chip[%04X E%u] FW Ver DEC[%u.%u] HEX[%x.%x], Driver Ver[%u.%u]\n",
 		       pucFile, u4Line,
 		       MTK_CHIP_REV,
 		       wlanGetEcoVersion(prAdapter),
-		       (uint16_t)(prAdapter->rVerInfo.u2FwOwnVersion >> 8),
-		       (uint16_t)(prAdapter->rVerInfo.u2FwOwnVersion &
-				  BITS(0, 7)),
-		       (uint16_t)(prAdapter->rVerInfo.u2FwOwnVersion >> 8),
-		       (uint16_t)(prAdapter->rVerInfo.u2FwOwnVersion &
-				  BITS(0, 7)),
-		       (uint16_t)(prAdapter->rVerInfo.u2FwPeerVersion >> 8),
-		       (uint16_t)(prAdapter->rVerInfo.u2FwPeerVersion &
-				  BITS(0, 7)));
+		       (uint16_t)(u2FwOwnVersion >> 8),
+		       (uint16_t)(u2FwOwnVersion & BITS(0, 7)),
+		       (uint16_t)(u2FwOwnVersion >> 8),
+		       (uint16_t)(u2FwOwnVersion & BITS(0, 7)),
+		       (uint16_t)(u2FwPeerVersion >> 8),
+		       (uint16_t)(u2FwPeerVersion & BITS(0, 7)));
+
+		fgResetTriggered = TRUE;
+		prAdapter->u4HifDbgFlag |= DEG_HIF_DEFAULT_DUMP;
+		halPrintHifDbgInfo(prAdapter);
+
 		wifi_rst.rst_trigger_flag = u4RstFlag;
 		schedule_work(&(wifi_rst.rst_trigger_work));
 	}
