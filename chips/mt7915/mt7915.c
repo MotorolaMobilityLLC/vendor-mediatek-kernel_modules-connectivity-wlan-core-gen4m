@@ -104,6 +104,8 @@
 */
 struct ECO_INFO mt7915_eco_table[] = {
 	/* HW version,  ROM version,    Factory version */
+	{0x00, 0x00, 0xA, 0x1},	/* E1 */
+	{0x10, 0x01, 0xA, 0x2},	/* E2 */
 	{0x00, 0x00, 0x0}	/* End of table */
 };
 
@@ -291,6 +293,21 @@ void mt7915DumpSerDummyCR(
 
 }
 
+/* check capability of chip depends on different ECO version */
+void mt7915CheckAsicCap(
+	struct ADAPTER *prAdapter)
+{
+	struct mt66xx_chip_info *prChipInfo = prAdapter->chip_info;
+
+	/* check capability of chip depends on different ECO version */
+	if (nicIsEcoVerEqualTo(prAdapter, ECO_VER_1)) {
+		/* FALCON: DW 18~33 for harrier E1,
+		 * DW 18~35 for harrier E2 of Group5.
+		 */
+		prChipInfo->group5_size =
+			sizeof(struct HW_MAC_RX_STS_HARRIER_E1_GROUP_5);
+	}
+}
 
 struct BUS_INFO mt7915_bus_info = {
 #if defined(_HIF_PCIE)
@@ -487,7 +504,9 @@ struct mt66xx_chip_info mt66xx_chip_info_mt7915 = {
 	.is_support_hw_amsdu = TRUE,
 	.is_support_asic_lp = TRUE,
 	.is_support_wfdma = TRUE,
-	.asicWfdmaReInit = asicConnac2xWfdmaReInit
+	.asicWfdmaReInit = asicConnac2xWfdmaReInit,
+	.group5_size = sizeof(struct HW_MAC_RX_STS_GROUP_5),
+	.wlanCheckAsicCap = mt7915CheckAsicCap,
 };
 
 struct mt66xx_hif_driver_data mt66xx_driver_data_mt7915 = {

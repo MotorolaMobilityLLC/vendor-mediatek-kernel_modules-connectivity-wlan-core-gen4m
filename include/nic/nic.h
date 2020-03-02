@@ -143,6 +143,12 @@ enum POWER_SAVE_CALLER {
 	PS_CALLER_MAX_NUM = 24
 };
 
+enum ENUM_ECO_VER {
+	ECO_VER_1 = 1,
+	ECO_VER_2,
+	ECO_VER_3
+};
+
 /* Test mode bitmask of disable flag */
 #define TEST_MODE_DISABLE_ONLINE_SCAN  BIT(0)
 #define TEST_MODE_DISABLE_ROAMING      BIT(1)
