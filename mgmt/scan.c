@@ -1541,7 +1541,7 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 
 	if (u2IELength > CFG_IE_BUFFER_SIZE)
 		u2IELength = CFG_IE_BUFFER_SIZE;
-
+	kalMemZero(&rSsid, sizeof(rSsid));
 	IE_FOR_EACH(pucIE, u2IELength, u2Offset) {
 		switch (IE_ID(pucIE)) {
 		case ELEM_ID_SSID:
@@ -1716,22 +1716,29 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 			prBssDesc->ucChannelNum
 			&& prBssDesc->ucRCPI
 			> nicRxGetRcpiValueFromRxv(RCPI_MODE_MAX, prSwRfb)) {
+			uint8_t ucRcpi = 0;
 
 			/* for signal strength is too much weaker and
 			 * previous beacon is not stale
 			 */
 			ASSERT(prSwRfb->prRxStatusGroup3);
-			if ((prBssDesc->ucRCPI -
-			    nicRxGetRcpiValueFromRxv(RCPI_MODE_MAX, prSwRfb))
+			ucRcpi = nicRxGetRcpiValueFromRxv(RCPI_MODE_MAX,
+				prSwRfb);
+			if ((prBssDesc->ucRCPI - ucRcpi)
 			    >= REPLICATED_BEACON_STRENGTH_THRESHOLD
 			    && rCurrentTime - prBssDesc->rUpdateTime
 			    <= REPLICATED_BEACON_FRESH_PERIOD) {
+				log_dbg(SCN, TRACE, "rssi(%u) is too much weaker and previous one(%u) is fresh\n",
+					ucRcpi, prBssDesc->ucRCPI);
 				return prBssDesc;
 			}
 			/* for received beacons too close in time domain */
 			else if (rCurrentTime - prBssDesc->rUpdateTime
-				<= REPLICATED_BEACON_TIME_THRESHOLD)
+				<= REPLICATED_BEACON_TIME_THRESHOLD) {
+				log_dbg(SCN, TRACE, "receive beacon/probe responses too soon(%u:%u)\n",
+					prBssDesc->rUpdateTime, rCurrentTime);
 				return prBssDesc;
+			}
 		}
 
 		/* if Timestamp has been reset, re-generate BSS
