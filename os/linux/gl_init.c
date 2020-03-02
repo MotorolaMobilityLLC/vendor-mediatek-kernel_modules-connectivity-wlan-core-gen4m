@@ -216,10 +216,8 @@ static struct ieee80211_channel mtk_2ghz_channels[] = {
 	.max_power          = 30,                       \
 }
 static struct ieee80211_channel mtk_5ghz_channels[] = {
-	CHAN5G(34, 0), CHAN5G(36, 0),
-	CHAN5G(38, 0), CHAN5G(40, 0),
-	CHAN5G(42, 0), CHAN5G(44, 0),
-	CHAN5G(46, 0), CHAN5G(48, 0),
+	CHAN5G(36, 0), CHAN5G(40, 0),
+	CHAN5G(44, 0), CHAN5G(48, 0),
 	CHAN5G(52, 0), CHAN5G(56, 0),
 	CHAN5G(60, 0), CHAN5G(64, 0),
 	CHAN5G(100, 0), CHAN5G(104, 0),
