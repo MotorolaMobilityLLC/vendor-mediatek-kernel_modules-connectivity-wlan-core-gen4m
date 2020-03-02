@@ -285,6 +285,7 @@ int hifAxiRemove(void)
 		DBGLOG(INIT, TRACE, "pccif off\n");
 	}
 #endif
+	g_fgDriverProbed = FALSE;
 
 	DBGLOG(INIT, TRACE, "pfWlanRemove done\n");
 	DBGLOG(INIT, TRACE, "hifAxiRemove() done\n");
