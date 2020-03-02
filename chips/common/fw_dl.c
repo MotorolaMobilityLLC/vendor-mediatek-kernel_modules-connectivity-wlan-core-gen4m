@@ -299,7 +299,6 @@ uint32_t wlanDownloadEMISection(IN struct ADAPTER
 	}
 
 	kalMemCopy((pucEmiBaseAddr + u4Offset), pucStartPtr, u4Len);
-	KAL_FLUSH_DCACHE();
 	iounmap(pucEmiBaseAddr);
 	release_mem_region(gConEmiPhyBase, gConEmiSize);
 #endif
