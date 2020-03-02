@@ -179,6 +179,12 @@ typedef struct _CMD_EFUSE_BUFFER_MODE_T {
 	UINT_8 aBinContent[MAX_EEPROM_BUFFER_SIZE];
 } CMD_EFUSE_BUFFER_MODE_T, *P_CMD_EFUSE_BUFFER_MODE_T;
 
+struct CMD_EFUSE_BUFFER_MODE_CONNAC_T {
+	UINT_8 ucSourceMode;
+	UINT_8 ucContentFormat;
+	UINT_16 u2Count;
+	UINT_8 aBinContent[MAX_EEPROM_BUFFER_SIZE];
+};
 
 /*#if (CFG_EEPROM_PAGE_ACCESS == 1)*/
 typedef struct _CMD_ACCESS_EFUSE_T {

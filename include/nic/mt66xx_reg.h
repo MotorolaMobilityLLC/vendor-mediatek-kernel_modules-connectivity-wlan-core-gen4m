@@ -993,6 +993,7 @@ struct mt66xx_chip_info {
 	void (*asicCapInit)(IN P_ADAPTER_T prAdapter);
 	void (*asicEnableFWDownload)(IN P_ADAPTER_T prAdapter, IN BOOL fgEnable);
 	void (*fillHifTxDesc)(IN PUINT_8 *pDest, IN PUINT_16 pInfoBufLen);
+	WLAN_STATUS (*downloadBufferBin)(IN P_ADAPTER_T prAdapter);
 
 	const UINT_32 features;	/* feature bits */
 	BOOLEAN is_support_hw_amsdu;
