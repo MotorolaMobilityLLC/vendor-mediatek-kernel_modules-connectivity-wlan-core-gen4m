@@ -209,13 +209,13 @@ int mtk_cfg80211_vendor_get_channel_list(struct wiphy *wiphy,
 	if ((data == NULL) || !data_len)
 		return -EINVAL;
 
-	DBGLOG(REQ, INFO, "data_len=%d, iftype=%d\n", data_len, wdev->iftype);
+	DBGLOG(REQ, TRACE, "data_len=%d, iftype=%d\n", data_len, wdev->iftype);
 
 	attr = (struct nlattr *)data;
 	if (attr->nla_type == WIFI_ATTRIBUTE_BAND)
 		band = nla_get_u32(attr);
 
-	DBGLOG(REQ, INFO, "Get channel list for band: %d\n", band);
+	DBGLOG(REQ, TRACE, "Get channel list for band: %d\n", band);
 
 #if CFG_ENABLE_UNIFY_WIPHY
 	if (wdev->iftype == NL80211_IFTYPE_AP)
@@ -790,7 +790,7 @@ int mtk_cfg80211_vendor_set_rssi_monitoring(
 		}
 	}
 
-	DBGLOG(REQ, INFO,
+	DBGLOG(REQ, TRACE,
 	       "mMax_rssi=%d, mMin_rssi=%d enable=%d\r\n",
 	       rRSSIMonitor.max_rssi_value, rRSSIMonitor.min_rssi_value,
 	       rRSSIMonitor.enable);
