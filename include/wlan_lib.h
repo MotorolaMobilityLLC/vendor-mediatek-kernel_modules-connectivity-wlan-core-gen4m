@@ -127,7 +127,7 @@
 
 #define WLAN_CFG_ARGV_MAX 8
 #define WLAN_CFG_ARGV_MAX_LONG 22 /* for WOW, 2+20 */
-#define WLAN_CFG_ENTRY_NUM_MAX 128
+#define WLAN_CFG_ENTRY_NUM_MAX 200 /* 128 */
 #define WLAN_CFG_KEY_LEN_MAX 32	/* include \x00  EOL */
 #define WLAN_CFG_VALUE_LEN_MAX 32	/* include \x00 EOL */
 #define WLAN_CFG_FLAG_SKIP_CB BIT(0)
@@ -480,7 +480,7 @@ typedef struct _WOW_PORT_T {
 } WOW_PORT_T, *P_WOW_PORT_T;
 
 typedef struct _WOW_CTRL_T {
-	BOOLEAN fgEnable;	/* Reserved, but not use now */
+	UINT_8 fgWowEnable;	/* 0: disable, 1: wow enable */
 	UINT_8 ucScenarioId;	/* just a profile ID */
 	UINT_8 ucBlockCount;
 	UINT_8 aucReserved1[1];
