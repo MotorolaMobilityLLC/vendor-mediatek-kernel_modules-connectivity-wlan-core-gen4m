@@ -1176,9 +1176,17 @@ typedef enum _NIC_CAPABILITY_V2_TAG_T {
 	TAG_CAP_TX_EFUSEADDRESS = 0x1,
 	TAG_CAP_COEX_FEATURE = 0x2,
 	TAG_CAP_SINGLE_SKU = 0x3,
-#if CFG_TCP_IP_CHKSUM_OFFLOAD
 	TAG_CAP_CSUM_OFFLOAD = 0x4,
-#endif
+	TAG_CAP_HW_VERSION = 0x5,
+	TAG_CAP_SW_VERSION = 0x6,
+	TAG_CAP_MAC_ADDR = 0x7,
+	TAG_CAP_PHY_CAP = 0x8,
+	TAG_CAP_MAC_CAP = 0x9,
+	TAG_CAP_FRAME_BUF_CAP = 0xa,
+	TAG_CAP_BEAMFORM_CAP = 0xb,
+	TAG_CAP_LOCATION_CAP = 0xc,
+	TAG_CAP_MUMIMO_CAP = 0xd,
+	TAG_CAP_BUFFER_MODE_INFO = 0xe,
 	TAG_CAP_TOTAL
 } NIC_CAPABILITY_V2_TAG_T;
 
@@ -1196,6 +1204,93 @@ typedef struct _NIC_EFUSE_ADDRESS_T {
 	UINT_32 u4EfuseStartAddress;  /* Efuse Start Address */
 	UINT_32 u4EfuseEndAddress;   /* Efuse End Address */
 } NIC_EFUSE_ADDRESS_T, *P_NIC_EFUSE_ADDRESS_T;
+
+struct CAP_HW_VERSION_T {
+	UINT_16 u2ProductID; /* CHIP ID */
+	UINT_8 ucEcoVersion; /* ECO version */
+	UINT_8 ucReserved;
+	UINT_32 u4MacIpID; /* MAC IP version */
+	UINT_32 u4BBIpID; /* Baseband IP version */
+	UINT_32 u4TopIpID; /* TOP IP version */
+	UINT_32 u4ConfigId;  /* Configuration ID */
+};
+
+struct CAP_SW_VERSION_T {
+	UINT_16 u2FwVersion; /* FW version <major.minor> */
+	UINT_16 u2FwBuildNumber; /* FW build number */
+	UINT_8 aucBranchInfo[4]; /* Branch name in ASCII */
+	UINT_8 aucDateCode[16]; /* FW build data code */
+};
+
+struct CAP_MAC_ADDR_T {
+	UINT_8 aucMacAddr[6];
+	UINT_8 aucReserved[2];
+};
+
+struct CAP_PHY_CAP_T {
+	UINT_8 ucHt; /* 1:support, 0:not*/
+	UINT_8 ucVht; /* 1:support, 0:not*/
+	UINT_8 uc5gBand; /* 1:support, 0:not*/
+	UINT_8 ucMaxBandwidth; /* 0: BW20, 1:BW40, 2:BW80, 3:BW160, 4:BW80+80 */
+	UINT_8 ucNss; /* 1:1x1, 2:2x2, ... */
+	UINT_8 ucDbdc; /* 1:support, 0:not*/
+	UINT_8 ucTxLdpc; /* 1:support, 0:not*/
+	UINT_8 ucRxLdpc; /* 1:support, 0:not*/
+	UINT_8 ucTxStbc; /* 1:support, 0:not*/
+	UINT_8 ucRxStbc; /* 1:support, 0:not*/
+	UINT_8 aucReserved[2];
+};
+
+struct CAP_MAC_CAP_T {
+	UINT_8 ucHwBssIdNum; /* HW BSSID number */
+	UINT_8 ucWmmSet; /* 1: AC0~3, 2: AC0~3 and AC10~13, ... */
+	UINT_8 ucWtblEntryNum; /* WTBL entry number */
+	UINT_8 ucReserved;
+};
+
+struct CAP_FRAME_BUF_CAP_T {
+	UINT_8 ucChipTxAmsdu; /* 1: support in-chip Tx AMSDU (HW or CR4) */
+	UINT_8 ucTxAmsduNum; /* 2: support 2 MSDU in AMSDU, 3:support 3 MSDU in AMSDU,...*/
+	UINT_8 ucRxAmsduSize; /* Rx AMSDU size, 0:4K, 1:8K,2:12K */
+	UINT_8 ucReserved;
+	UINT_32 u4TxdCount; /* Txd entry number */
+	UINT_32 u4PacketBufSize; /* Txd and packet buffer in KB (cut through sysram size) */
+};
+
+struct CAP_BEAMFORM_CAP_T {
+	UINT_8 ucBFer; /* Tx beamformer, 1:support, 0:not*/
+	UINT_8 ucIBFer; /* Tx implicit beamformer 1:support, 0:not*/
+	UINT_8 ucBFee; /* Rx beamformee, 1:support, 0:not */
+	UINT_8 ucReserved;
+	UINT_32 u4BFerCap; /* Tx beamformere cap */
+	UINT_32 u4BFeeCap; /* Rx beamformee cap */
+};
+
+struct CAP_LOCATION_CAP_T {
+	UINT_8 ucTOAE; /* 1:support, 0:not */
+	UINT_8 aucReserved[3];
+};
+
+struct CAP_MUMIMO_CAP_T {
+	UINT_8 ucMuMimoRx; /* 1:support, 0:not */
+	UINT_8 ucMuMimoTx; /* 1:support, 0:not */
+	UINT_8 aucReserved[2];
+};
+
+#define EFUSE_SECTION_TABLE_SIZE        (10)   /* It should not be changed. */
+
+struct EFUSE_SECTION_T {
+	UINT_16         u2StartOffset;
+	UINT_16         u2Length;
+};
+
+struct CAP_BUFFER_MODE_INFO_T {
+	UINT_8 ucVersion; /* Version */
+	UINT_8 ucFormatSupportBitmap; /* Format Support Bitmap*/
+	UINT_16 u2EfuseTotalSize; /* Total eFUSE Size */
+	struct EFUSE_SECTION_T arSections[EFUSE_SECTION_TABLE_SIZE];
+    /* NOTE: EFUSE_SECTION_TABLE_SIZE should be fixed to 10 so that driver don't change. */
+};
 
 /*
  * NIC_TX_RESOURCE_REPORT_EVENT related definition
@@ -3005,14 +3100,20 @@ VOID nicCmdEventQueryMibInfo(IN P_ADAPTER_T prAdapter, IN P_CMD_INFO_T prCmdInfo
 VOID nicCmdEventQueryNicCapabilityV2(IN P_ADAPTER_T prAdapter, IN PUINT_8 pucEventBuf);
 
 WLAN_STATUS nicCmdEventQueryNicTxResource(IN P_ADAPTER_T prAdapter, IN PUINT_8 pucEventBuf);
-
 WLAN_STATUS nicCmdEventQueryNicEfuseAddr(IN P_ADAPTER_T prAdapter, IN PUINT_8 pucEventBuf);
-
 WLAN_STATUS nicCmdEventQueryNicCoexFeature(IN P_ADAPTER_T prAdapter, IN PUINT_8 pucEventBuf);
-
 #if CFG_TCP_IP_CHKSUM_OFFLOAD
 WLAN_STATUS nicCmdEventQueryNicCsumOffload(IN P_ADAPTER_T prAdapter, IN PUINT_8 pucEventBuf);
 #endif
+WLAN_STATUS nicCfgChipCapHwVersion(IN P_ADAPTER_T prAdapter, IN PUINT_8 pucEventBuf);
+WLAN_STATUS nicCfgChipCapSwVersion(IN P_ADAPTER_T prAdapter, IN PUINT_8 pucEventBuf);
+WLAN_STATUS nicCfgChipCapMacAddr(IN P_ADAPTER_T prAdapter, IN PUINT_8 pucEventBuf);
+WLAN_STATUS nicCfgChipCapPhyCap(IN P_ADAPTER_T prAdapter, IN PUINT_8 pucEventBuf);
+WLAN_STATUS nicCfgChipCapMacCap(IN P_ADAPTER_T prAdapter, IN PUINT_8 pucEventBuf);
+WLAN_STATUS nicCfgChipCapFrameBufCap(IN P_ADAPTER_T prAdapter, IN PUINT_8 pucEventBuf);
+WLAN_STATUS nicCfgChipCapBeamformCap(IN P_ADAPTER_T prAdapter, IN PUINT_8 pucEventBuf);
+WLAN_STATUS nicCfgChipCapLocationCap(IN P_ADAPTER_T prAdapter, IN PUINT_8 pucEventBuf);
+WLAN_STATUS nicCfgChipCapMuMimoCap(IN P_ADAPTER_T prAdapter, IN PUINT_8 pucEventBuf);
 
 VOID nicEventLinkQuality(IN P_ADAPTER_T prAdapter, IN P_WIFI_EVENT_T prEvent);
 VOID nicEventLayer0ExtMagic(IN P_ADAPTER_T prAdapter, IN P_WIFI_EVENT_T prEvent);
