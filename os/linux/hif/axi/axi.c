@@ -673,20 +673,15 @@ void glSetHifInfo(struct GLUE_INFO *prGlueInfo, unsigned long ulCookie)
 
 	SET_NETDEV_DEV(prGlueInfo->prDevHandler, &prHif->pdev->dev);
 
-	spin_lock_init(&prHif->rDynMapRegLock);
-
 	prGlueInfo->u4InfType = MT_DEV_INF_AXI;
 
 	prHif->rErrRecoveryCtl.eErrRecovState = ERR_RECOV_STOP_IDLE;
 	prHif->rErrRecoveryCtl.u4Status = 0;
 	prHif->fgIsErrRecovery = FALSE;
-	spin_lock_init(&prHif->rSerLock);
 
 	INIT_LIST_HEAD(&prHif->rTxCmdQ);
 	INIT_LIST_HEAD(&prHif->rTxDataQ);
 	prHif->u4TxDataQLen = 0;
-	spin_lock_init(&prHif->rTxCmdQLock);
-	spin_lock_init(&prHif->rTxDataQLock);
 
 	prHif->fgIsPowerOff = true;
 	prHif->fgIsDumpLog = false;

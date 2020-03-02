@@ -464,11 +464,11 @@ void nicRxFillChksumStatus(IN struct ADAPTER *prAdapter,
 
 	u4TcpUdpIpCksStatus = prSwRfb->u4TcpUdpIpCksStatus;
 	rReport = (struct RX_CSO_REPORT_T *) &u4TcpUdpIpCksStatus;
-	DBGLOG(RX, TRACE,
+	DBGLOG_LIMITED(RX, LOUD,
 	       "RX_IPV4_STATUS=%d, RX_TCP_STATUS=%d, RX_UDP_STATUS=%d\n",
 	       rReport->u4IpV4CksStatus, rReport->u4TcpCksStatus,
 	       rReport->u4UdpCksStatus);
-	DBGLOG(RX, TRACE,
+	DBGLOG_LIMITED(RX, LOUD,
 		"RX_IPV4_TYPE=%d, RX_IPV6_TYPE=%d, RX_TCP_TYPE=%d, RX_UDP_TYPE=%d\n",
 	  rReport->u4IpV4CksType, rReport->u4IpV6CksType,
 	  rReport->u4TcpCksType, rReport->u4UdpCksType);

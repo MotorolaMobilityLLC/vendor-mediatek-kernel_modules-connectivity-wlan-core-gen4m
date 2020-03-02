@@ -3513,7 +3513,7 @@ void qmInsertReorderPkt(IN struct ADAPTER *prAdapter,
 	u4WinEnd = (uint32_t) (prReorderQueParm->u2WinEnd);
 
 	/* Debug */
-	DBGLOG(QM, TRACE, "QM:(R)[%u](%u){%u,%u}\n", prSwRfb->ucTid,
+	DBGLOG_LIMITED(QM, LOUD, "QM:(R)[%u](%u){%u,%u}\n", prSwRfb->ucTid,
 		u4SeqNo, u4WinStart, u4WinEnd);
 
 	/* Case 1: Fall within */
@@ -4110,10 +4110,10 @@ void qmPopOutDueToFallAhead(IN struct ADAPTER *prAdapter,
 				prNext)->prPrev = NULL;
 			}
 			prReorderQue->u4NumElem--;
-			DBGLOG(QM, TRACE, "QM: [%u] %u (%u)\n",
-				prReorderQueParm->ucTid,
-				prReorderedSwRfb->u2PacketLen,
-				prReorderedSwRfb->u2SSN);
+			DBGLOG_LIMITED(QM, TRACE, "QM: [%u] %u (%u)\n",
+				       prReorderQueParm->ucTid,
+				       prReorderedSwRfb->u2PacketLen,
+				       prReorderedSwRfb->u2SSN);
 
 			qmPopOutReorderPkt(prAdapter, prReorderedSwRfb,
 				prReturnedQue, RX_DATA_REORDER_AHEAD_COUNT);
