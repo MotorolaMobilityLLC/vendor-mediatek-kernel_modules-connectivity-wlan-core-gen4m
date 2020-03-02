@@ -2785,12 +2785,12 @@ uint32_t scanProcessBeaconAndProbeResp(IN struct ADAPTER *prAdapter,
 		/* 4 <3> Send SW_RFB_T to HIF when we perform SCAN for HOST */
 		if (prBssDesc->eBSSType == BSS_TYPE_INFRASTRUCTURE
 			|| prBssDesc->eBSSType == BSS_TYPE_IBSS) {
+			u_int8_t fgAddToScanResult = FALSE;
+
 			/* for AIS, send to host */
 			prAdapter->rWlanInfo.u4ScanDbgTimes3++;
 			if (prConnSettings->fgIsScanReqIssued
 				|| prScanInfo->fgSchedScanning) {
-				u_int8_t fgAddToScanResult;
-
 				fgAddToScanResult
 					= scanCheckBssIsLegal(prAdapter,
 						prBssDesc);
@@ -2800,6 +2800,11 @@ uint32_t scanProcessBeaconAndProbeResp(IN struct ADAPTER *prAdapter,
 					rStatus = scanAddScanResult(prAdapter,
 						prBssDesc, prSwRfb);
 				}
+			}
+			if (fgAddToScanResult == FALSE) {
+				kalMemZero(prBssDesc->aucRawBuf,
+					CFG_RAW_BUFFER_SIZE);
+				prBssDesc->u2RawLength = 0;
 			}
 		}
 #if CFG_ENABLE_WIFI_DIRECT
