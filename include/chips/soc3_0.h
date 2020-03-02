@@ -251,6 +251,15 @@ void soc3_0_show_pse_info(
 void soc3_0_show_wfdma_info(
 	IN struct ADAPTER *prAdapter);
 
+void soc3_0_show_wfdma_info_by_type(
+	IN struct ADAPTER *prAdapter,
+	bool bShowWFDMA_type);
+
+void soc3_0_show_wfdma_info_by_type_without_adapter(
+	bool bIsHostDMA);
+
+void soc3_0_DumpWFDMACr(struct ADAPTER *prAdapter);
+
 void soc3_0_show_dmashdl_info(
 	IN struct ADAPTER *prAdapter);
 void soc3_0EnableInterrupt(
