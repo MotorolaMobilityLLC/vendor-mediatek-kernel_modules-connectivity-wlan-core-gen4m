@@ -374,9 +374,27 @@ void scnSendScanReqV2(IN struct ADAPTER *prAdapter)
 		kalMemCopy(prCmdScanReq->aucIE, prScanParam->aucIE,
 			sizeof(uint8_t) * prCmdScanReq->u2IELen);
 
+	log_dbg(SCN, INFO, "ScanReqV2: ScanType=%d,BSS=%u,SSIDType=%d,Num=%u,Ext=%u,ChannelType=%d,Num=%d,Ext=%u,Seq=%u,Ver=%u,Dw=%u,Min=%u,Func=0x%X,Mac="
+		MACSTR "\n",
+		prCmdScanReq->ucScanType,
+		prCmdScanReq->ucBssIndex,
+		prCmdScanReq->ucSSIDType,
+		prCmdScanReq->ucSSIDNum,
+		prCmdScanReq->ucSSIDExtNum,
+		prCmdScanReq->ucChannelType,
+		prCmdScanReq->ucChannelListNum,
+		prCmdScanReq->ucChannelListExtNum,
+		prCmdScanReq->ucSeqNum, prCmdScanReq->auVersion[0],
+		prCmdScanReq->u2ChannelDwellTime,
+		prCmdScanReq->u2ChannelMinDwellTime,
+		prCmdScanReq->ucScnFuncMask,
+		prCmdScanReq->aucRandomMac);
+
 	scanLogCacheFlushAll(&(prScanInfo->rScanLogCache),
 		LOG_SCAN_REQ_D2F, SCAN_LOG_MSG_MAX_LEN);
 	scanReqLog(prCmdScanReq);
+	if (prCmdScanReq->ucBssIndex == KAL_NETWORK_TYPE_AIS_INDEX)
+		scanInitEssResult(prAdapter);
 
 	wlanSendSetQueryCmd(prAdapter,
 		CMD_ID_SCAN_REQ_V2,
