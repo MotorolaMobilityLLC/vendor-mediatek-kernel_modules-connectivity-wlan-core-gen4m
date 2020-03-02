@@ -330,6 +330,11 @@ VOID rlmProcessPublicAction(P_ADAPTER_T prAdapter, P_SW_RFB_T prSwRfb)
 	prRxFrame = (P_ACTION_20_40_COEXIST_FRAME) prSwRfb->pvHeader;
 	prStaRec = cnmGetStaRecByIndex(prAdapter, prSwRfb->ucStaRecIdx);
 
+	if (!(prSwRfb->prStaRec)) {
+		DBGLOG(P2P, ERROR, "prSwRfb->prStaRec is null.\n");
+		return;
+	}
+
 	if (prRxFrame->ucAction != ACTION_PUBLIC_20_40_COEXIST || !prStaRec || prStaRec->ucStaState != STA_STATE_3 ||
 	    prSwRfb->u2PacketLen < (WLAN_MAC_MGMT_HEADER_LEN + 5) || prSwRfb->prStaRec->ucBssIndex !=
 	    /* HIF_RX_HDR_GET_NETWORK_IDX(prSwRfb->prHifRxHdr) != */
