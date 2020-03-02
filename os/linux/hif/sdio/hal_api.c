@@ -2009,6 +2009,16 @@ VOID halDeAggRxPkt(P_ADAPTER_T prAdapter, P_SDIO_RX_COALESCING_BUF_T prRxBuf)
 	schedule_delayed_work(&prAdapter->prGlueInfo->rRxPktDeAggWork, 0);
 }
 
+VOID halRxTasklet(unsigned long data)
+{
+
+}
+
+VOID halTxCompleteTasklet(unsigned long data)
+{
+
+}
+
 /* Hif power off wifi */
 WLAN_STATUS halHifPowerOffWifi(IN P_ADAPTER_T prAdapter)
 {
