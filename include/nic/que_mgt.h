@@ -386,7 +386,8 @@ struct RX_BA_ENTRY {
 
 typedef uint32_t(*PFN_DEQUEUE_FUNCTION) (IN struct ADAPTER *prAdapter,
 	OUT struct QUE *prQue, IN uint8_t ucTC,
-	IN uint32_t u4CurrentQuota, IN uint32_t u4TotalQuota);
+	IN uint32_t u4CurrentQuota,
+	IN uint32_t *prPleCurrentQuota, IN uint32_t u4TotalQuota);
 
 /* The mailbox message
  * (could be used for Host-To-Device or Device-To-Host Mailbox)
@@ -923,17 +924,23 @@ void qmDetermineStaRecIndex(IN struct ADAPTER *prAdapter,
 uint32_t qmDequeueTxPacketsFromPerStaQueues(IN struct ADAPTER
 	*prAdapter, OUT struct QUE *prQue, IN uint8_t ucTC,
 	IN uint32_t
-	u4CurrentQuota, IN uint32_t u4TotalQuota);
+	u4CurrentQuota,
+	IN uint32_t
+	*prPleCurrentQuota, IN uint32_t u4TotalQuota);
 
 void qmDequeueTxPacketsFromPerTypeQueues(IN struct ADAPTER
 	*prAdapter, OUT struct QUE *prQue, IN uint8_t ucTC,
 	IN uint32_t
-	u4CurrentQuota, IN uint32_t u4TotalQuota);
+	u4CurrentQuota,
+	IN uint32_t
+	*prPleCurrentQuota, IN uint32_t u4TotalQuota);
 
 uint32_t qmDequeueTxPacketsFromGlobalQueue(IN struct ADAPTER
 	*prAdapter, OUT struct QUE *prQue, IN uint8_t ucTC,
 	IN uint32_t
-	u4CurrentQuota, IN uint32_t u4TotalQuota);
+	u4CurrentQuota,
+	IN uint32_t
+	*prPleCurrentQuota, IN uint32_t u4TotalQuota);
 
 void qmSetStaRecTxAllowed(IN struct ADAPTER *prAdapter,
 	IN struct STA_RECORD *prStaRec, IN u_int8_t fgIsTxAllowed);
