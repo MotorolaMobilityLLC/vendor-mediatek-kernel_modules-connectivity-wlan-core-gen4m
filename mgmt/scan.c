@@ -257,7 +257,8 @@ void scanSetRequestChannel(IN uint32_t u4ScanChannelNum,
 	if (u4ScanChannelNum == 0 ||
 		u4ScanChannelNum > MAXIMUM_OPERATION_CHANNEL_LIST) {
 		prScanReqMsg->ucChannelListNum = 0;
-		DBGLOG(SCN, TRACE, "scan channel num(%u==>0)\n", u4ScanChannelNum);
+		DBGLOG(SCN, TRACE, "scan channel num(%u==>0)\n",
+			u4ScanChannelNum);
 		return;
 	}
 

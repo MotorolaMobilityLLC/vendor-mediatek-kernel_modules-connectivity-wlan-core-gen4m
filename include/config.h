@@ -482,10 +482,26 @@
 #define CFG_INIT_ADHOC_ATIM_WINDOW              (0)
 
 /*------------------------------------------------------------------------------
- * Flags and Parameters for Maximum Scan SSID number
+ * Maximum scan SSID number and channel number
+ * Should be aligned with FW scan command
  *------------------------------------------------------------------------------
  */
-#define CFG_SCAN_SSID_MAX_NUM                   (4)
+#define SCAN_CMD_SSID_NUM                       (4)
+#define SCAN_CMD_CHNL_NUM                       (32)
+
+#if 1
+/* to be compatible with old FW, we set ssid num to 0 here,
+ * we should set correct num when query of scan capability from FW is done
+ */
+#define SCAN_CMD_EXT_SSID_NUM                   (0)
+#define SCAN_CMD_EXT_CHNL_NUM                   (0)
+#else
+#define SCAN_CMD_EXT_SSID_NUM                   (6)
+#define SCAN_CMD_EXT_CHNL_NUM                   (32)
+#endif
+#define CFG_SCAN_SSID_MAX_NUM (SCAN_CMD_SSID_NUM+SCAN_CMD_EXT_SSID_NUM)
+#define MAXIMUM_OPERATION_CHANNEL_LIST (SCAN_CMD_CHNL_NUM+SCAN_CMD_EXT_CHNL_NUM)
+
 
 /*------------------------------------------------------------------------------
  * Flags and Parameters for Load Setup Default
