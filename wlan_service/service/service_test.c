@@ -785,13 +785,15 @@ s_int32 mt_serv_start_tx(struct service_test *serv_test)
 		goto err_out;
 	}
 
-	if (configs->mcs == 32
-		&& configs->per_pkt_bw != TEST_BW_40
-		&& configs->bw != TEST_BW_40) {
-		ret = SERV_STATUS_SERV_TEST_INVALID_PARAM;
-		SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_ERROR,
+	if (configs->tx_mode < TEST_MODE_HE_SU)	{
+		if (configs->mcs == 32
+			&& configs->per_pkt_bw != TEST_BW_40
+			&& configs->bw != TEST_BW_40) {
+			ret = SERV_STATUS_SERV_TEST_INVALID_PARAM;
+			SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_ERROR,
 			("%s: bandwidth must to be 40 at MCS 32\n", __func__));
-		goto err_out;
+			goto err_out;
+		}
 	}
 
 	if (!serv_test->engine_offload) {
