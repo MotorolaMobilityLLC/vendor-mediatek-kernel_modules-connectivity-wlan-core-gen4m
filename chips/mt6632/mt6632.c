@@ -381,7 +381,7 @@ struct BUS_INFO mt6632_bus_info = {
 	.rx_ring_ext_ctrl = asicPdmaRxRingExtCtrl,
 	.hifRst = NULL,
 	.initPcieInt = NULL,
-	.pcieDmaShdlInit = NULL,
+	.DmaShdlInit = NULL,
 #endif /* _HIF_PCIE */
 #if defined(_HIF_USB)
 	.u4UdmaWlCfg_0_Addr = UDMA_WLCFG_0,
@@ -395,6 +395,7 @@ struct BUS_INFO mt6632_bus_info = {
 	.asicUsbResume = NULL,
 	.asicUsbEventEpDetected = NULL,
 	.asicUsbRxByteCount = NULL,
+	.DmaShdlInit = NULL,
 #endif /* _HIF_USB */
 #if defined(_HIF_SDIO)
 	.halTxGetFreeResource = NULL,

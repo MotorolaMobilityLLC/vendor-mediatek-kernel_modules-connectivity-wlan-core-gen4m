@@ -441,7 +441,7 @@ struct BUS_INFO soc3_0_bus_info = {
 
 	.initPcieInt = NULL,
 	.devReadIntStatus = asicConnac2xReadExtIntStatus,
-	.pcieDmaShdlInit = NULL,
+	.DmaShdlInit = NULL,
 	.wfdmaAllocRxRing = soc3_0WfdmaAllocRxRing,
 #endif			/*_HIF_PCIE || _HIF_AXI */
 };

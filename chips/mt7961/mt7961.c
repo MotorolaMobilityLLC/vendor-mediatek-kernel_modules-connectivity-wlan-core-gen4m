@@ -73,6 +73,7 @@
 #include "coda/mt7961/wf_cr_sw_def.h"
 #include "precomp.h"
 #include "mt7961.h"
+#include "hal_dmashdl_mt7961.h"
 
 /*******************************************************************************
 *                              C O N S T A N T S
@@ -485,7 +486,7 @@ struct BUS_INFO mt7961_bus_info = {
 
 	.initPcieInt = NULL, /* Todo: check if enable INT on driver side */
 	.devReadIntStatus = mt7961ReadIntStatus,
-	.pcieDmaShdlInit = NULL, /* Todo: hook it by owner */
+	.DmaShdlInit = mt7961DmashdlInit,
 	.setRxRingHwAddr = mt7961SetRxRingHwAddr,
 	.wfdmaAllocRxRing = mt7961LiteWfdmaAllocRxRing,
 #endif /*_HIF_PCIE || _HIF_AXI */
@@ -503,6 +504,7 @@ struct BUS_INFO mt7961_bus_info = {
 	.u4device_vender_request_out = DEVICE_VENDOR_REQUEST_OUT_CONNAC2,
 	.asicUsbEventEpDetected = asicConnac2xUsbEventEpDetected,
 	.asicUsbRxByteCount = asicConnac2xUsbRxByteCount,
+	.DmaShdlInit = mt7961DmashdlInit,
 #endif
 };
 
