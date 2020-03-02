@@ -141,6 +141,9 @@ static enum _ENUM_CHIP_RESET_REASON_TYPE_T eResetReason;
 #if CFG_CHIP_RESET_SUPPORT
 static struct RESET_STRUCT wifi_rst;
 u_int8_t fgIsResetting = FALSE;
+#if (CFG_SUPPORT_CONNINFRA == 1)
+enum ENUM_WF_RST_SOURCE g_eWfRstSource = WF_RST_SOURCE_NONE;
+#endif
 #endif
 
 /*******************************************************************************
@@ -733,9 +736,12 @@ void glResetSubsysRstProcedure(
 #if (CFG_ANDORID_CONNINFRA_COREDUMP_SUPPORT == 1)
 			if (eResetReason >= RST_REASON_MAX)
 				eResetReason = 0;
-			fw_log_connsys_coredump_start(
-					CONNDRV_TYPE_WIFI,
-					apucRstReason[eResetReason]);
+			if (g_eWfRstSource == WF_RST_SOURCE_FW)
+				fw_log_connsys_coredump_start(-1, NULL);
+			else
+				fw_log_connsys_coredump_start(
+						CONNDRV_TYPE_WIFI,
+						apucRstReason[eResetReason]);
 #endif
 			glResetMsgHandler(WMTMSG_TYPE_RESET,
 					  WMTRSTMSG_0P5RESET_START);
@@ -758,9 +764,12 @@ void glResetSubsysRstProcedure(
 #if (CFG_ANDORID_CONNINFRA_COREDUMP_SUPPORT == 1)
 		if (eResetReason >= RST_REASON_MAX)
 			eResetReason = 0;
-		fw_log_connsys_coredump_start(
-				CONNDRV_TYPE_WIFI,
-				apucRstReason[eResetReason]);
+		if (g_eWfRstSource == WF_RST_SOURCE_FW)
+			fw_log_connsys_coredump_start(-1, NULL);
+		else
+			fw_log_connsys_coredump_start(
+					CONNDRV_TYPE_WIFI,
+					apucRstReason[eResetReason]);
 #endif
 		glResetMsgHandler(WMTMSG_TYPE_RESET,
 				  WMTRSTMSG_0P5RESET_START);
@@ -776,6 +785,9 @@ void glResetSubsysRstProcedure(
 		rLastTs->tv_usec = rNowTs->tv_usec;
 	}
 	g_IsTriggerTimeout = FALSE;
+#if (CFG_ANDORID_CONNINFRA_COREDUMP_SUPPORT == 1)
+	g_eWfRstSource = WF_RST_SOURCE_NONE;
+#endif
 }
 int wlan_reset_thread_main(void *data)
 {
