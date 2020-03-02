@@ -17,11 +17,12 @@ static s_int32 mt_serv_init_op(struct test_operation *ops)
 {
 	ops->op_set_tr_mac = mt_op_set_tr_mac;
 	ops->op_set_tx_stream = mt_op_set_tx_stream;
+	ops->op_set_tx_path = mt_op_set_tx_path;
 	ops->op_set_rx_path = mt_op_set_rx_path;
 	ops->op_set_rx_filter = mt_op_set_rx_filter;
 	ops->op_set_clean_persta_txq = mt_op_set_clean_persta_txq;
 	ops->op_set_cfg_on_off = mt_op_set_cfg_on_off;
-	ops->op_log_of_off = mt_op_log_of_off;
+	ops->op_log_on_off = mt_op_log_on_off;
 	ops->op_dbdc_tx_tone = mt_op_dbdc_tx_tone;
 	ops->op_dbdc_tx_tone_pwr = mt_op_dbdc_tx_tone_pwr;
 	ops->op_dbdc_continuous_tx = mt_op_dbdc_continuous_tx;
@@ -127,19 +128,19 @@ static s_int32 mt_serv_init_config(
 		/* Hardware resource init */
 		configs->wdev_idx = 0;
 		configs->wmm_idx = 0;
-		configs->q_id = SERV_QID_AC_BE;
+		configs->ac_idx = SERV_QID_AC_BE;
 
 		/* Tx frame init */
 		sys_ad_move_mem(&configs->template_frame, &template_frame, 32);
-		configs->addr1[0] = 0x00;
-		configs->addr1[1] = 0x11;
-		configs->addr1[2] = 0x22;
-		configs->addr1[3] = 0xAA;
-		configs->addr1[4] = 0xBB;
-		configs->addr1[5] = 0xCC;
-		sys_ad_move_mem(&configs->addr2, &configs->addr1,
+		configs->addr1[0][0] = 0x00;
+		configs->addr1[0][1] = 0x11;
+		configs->addr1[0][2] = 0x22;
+		configs->addr1[0][3] = 0xAA;
+		configs->addr1[0][4] = 0xBB;
+		configs->addr1[0][5] = 0xCC;
+		sys_ad_move_mem(configs->addr2[0], configs->addr1[0],
 				SERV_MAC_ADDR_LEN);
-		sys_ad_move_mem(&configs->addr3, &configs->addr1,
+		sys_ad_move_mem(configs->addr3[0], &configs->addr1[0],
 				SERV_MAC_ADDR_LEN);
 		configs->payload[0] = 0xAA;
 		configs->seq = 0;
@@ -178,7 +179,7 @@ static s_int32 mt_serv_init_config(
 
 		/* Phy */
 		configs->tx_ant = 1;
-		configs->rx_ant = 0;
+		configs->rx_ant = 1;
 
 		/* TODO: factor out here for phy */
 		configs->channel = 1;
@@ -190,7 +191,7 @@ static s_int32 mt_serv_init_config(
 		else
 			configs->channel = 1;
 #endif
-		configs->phy_mode = TEST_MODE_OFDM;
+		configs->tx_mode = TEST_MODE_OFDM;
 		configs->bw = TEST_BW_20;
 		configs->mcs = 7;
 		configs->sgi = 0;
@@ -201,7 +202,8 @@ static s_int32 mt_serv_init_config(
 		configs->tx_pwr_backoff_en = FALSE;
 		configs->tx_pwr_percentage_level = 100;
 	}
-#ifdef DBDC_MODE
+/* #ifdef DBDC_MODE  */
+#if 0
 	else if (band_idx == TEST_DBDC_BAND1) {
 		/* Operated mode init */
 		configs->op_mode = OP_MODE_STOP;
@@ -218,16 +220,16 @@ static s_int32 mt_serv_init_config(
 		/* Hardware resource init */
 		configs->wdev_idx = 1;
 		configs->wmm_idx = 1;
-		configs->q_id = SERV_QID_AC_BE;
+		configs->ac_idx = SERV_QID_AC_BE;
 
 		/* Tx frame init */
 		sys_ad_move_mem(&configs->template_frame, &template_frame, 32);
-		configs->addr1[0] = 0x00;
-		configs->addr1[1] = 0x11;
-		configs->addr1[2] = 0x22;
-		configs->addr1[3] = 0xAA;
-		configs->addr1[4] = 0xBB;
-		configs->addr1[5] = 0xCC;
+		configs->addr1[0][0] = 0x00;
+		configs->addr1[1][0] = 0x11;
+		configs->addr1[2][0] = 0x22;
+		configs->addr1[3][0] = 0xAA;
+		configs->addr1[4][0] = 0xBB;
+		configs->addr1[5][0] = 0xCC;
 		sys_ad_move_mem(&configs->addr2, &configs->addr1,
 				SERV_MAC_ADDR_LEN);
 		sys_ad_move_mem(&configs->addr3, &configs->addr1,
@@ -268,7 +270,7 @@ static s_int32 mt_serv_init_config(
 
 		/* Phy */
 		configs->tx_ant = 1;
-		configs->rx_ant = 0;
+		configs->rx_ant = 1;
 
 		/* TODO: factor out here for phy */
 		configs->channel = 36;
@@ -283,7 +285,7 @@ static s_int32 mt_serv_init_config(
 			configs->ctrl_ch = 36;
 		}
 #endif
-		configs->phy_mode = TEST_MODE_OFDM;
+		configs->tx_mode = TEST_MODE_OFDM;
 		configs->bw = TEST_BW_20;
 		configs->mcs = 7;
 		configs->sgi = 0;
@@ -308,7 +310,8 @@ static s_int32 mt_serv_release_config(
 			configs->test_pkt = NULL;
 		}
 	}
-#ifdef DBDC_MODE
+/* #ifdef DBDC_MODE  */
+#if 1
 	else if (band_idx == TEST_DBDC_BAND1) {
 		if (configs->test_pkt) {
 			sys_ad_free_mem(configs->test_pkt);
@@ -344,7 +347,7 @@ s_int32 mt_serv_init_test(struct service_test *serv_test)
 		serv_test->ctrl_band_idx = TEST_DBDC_BAND0;
 
 		/* Init test mode backup CR data struct */
-		sys_ad_zero_mem(&serv_test->test_bkcr,
+		sys_ad_zero_mem(serv_test->test_bkcr,
 			sizeof(struct test_bk_cr) * TEST_MAX_BKCR_NUM);
 
 		/* Init test mode rx statistic data struct */
@@ -457,7 +460,10 @@ s_int32 mt_serv_set_channel(struct service_test *serv_test)
 	u_char ant_mask = 0;
 	u_int32 tx_stream_num = 0, max_stream_num = 0;
 	s_int8 ch_offset = 0;
-	u_char tmp = 0, pri_sel = 0, channel = 0, channel_2nd = 0;
+#if 0
+	u_char tmp = 0;
+#endif
+	u_char pri_sel = 0, channel = 0, channel_2nd = 0;
 	const s_int8 bw40_sel[] = { -2, 2};
 	const s_int8 bw80_sel[] = { -6, -2, 2, 6};
 	const s_int8 bw160_sel[] = { -14, -10, -6, -2, 2, 6, 10, 14};
@@ -466,6 +472,8 @@ s_int32 mt_serv_set_channel(struct service_test *serv_test)
 
 	/* update max stream num cap */
 	max_stream_num = cap->mcs_nss.max_nss;
+	if (IS_TEST_DBDC(winfos))
+		max_stream_num /= 2;
 
 	for (ant_loop = 0; ant_loop < max_stream_num; ant_loop++) {
 		if (configs->tx_ant & (0x1 << ant_loop))
@@ -566,19 +574,20 @@ s_int32 mt_serv_set_channel(struct service_test *serv_test)
 		if (!channel_2nd)
 			goto error2;
 
+#if 0
 		/* swap control channel to be in order */
 		if (channel_2nd < channel) {
 			tmp = channel;
 			channel = channel_2nd;
 			channel_2nd = tmp;
 		}
-
+#endif
 		/* TODO: bw80+80 primary select definition */
 		if (pri_sel < 4) {
 			configs->ctrl_ch = channel + bw80_sel[pri_sel];
 			ch_offset = bw80_sel[pri_sel];
 		} else {
-			configs->ctrl_ch = channel_2nd + bw80_sel[pri_sel - 4];
+			configs->ctrl_ch = channel + bw80_sel[pri_sel - 4];
 			ch_offset = bw80_sel[pri_sel - 4];
 		}
 
@@ -643,7 +652,7 @@ error3:
 	SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_ERROR,
 		("%s: set channel fail, ", __func__));
 	SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_ERROR,
-		("bw is invalid\n"));
+		("bw=%d is invalid\n", configs->bw));
 	return SERV_STATUS_OSAL_NET_FAIL_SET_CHANNEL;
 }
 
@@ -656,6 +665,46 @@ s_int32 mt_serv_set_tx_content(struct service_test *serv_test)
 	configs = &serv_test->test_config[ctrl_band_idx];
 
 	ret = serv_test->test_op->op_set_tx_content(
+		serv_test->test_winfo,
+		ctrl_band_idx,
+		configs);
+
+	if (ret)
+		SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_ERROR,
+			("%s: err=0x%08x\n", __func__, ret));
+
+	return ret;
+}
+
+s_int32 mt_serv_set_tx_path(struct service_test *serv_test)
+{
+	s_int32 ret = SERV_STATUS_SUCCESS;
+	u_char ctrl_band_idx = serv_test->ctrl_band_idx;
+	struct test_configuration *configs;
+
+	configs = &serv_test->test_config[ctrl_band_idx];
+
+	ret = serv_test->test_op->op_set_tx_path(
+		serv_test->test_winfo,
+		ctrl_band_idx,
+		configs);
+
+	if (ret)
+		SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_ERROR,
+			("%s: err=0x%08x\n", __func__, ret));
+
+	return ret;
+}
+
+s_int32 mt_serv_set_rx_path(struct service_test *serv_test)
+{
+	s_int32 ret = SERV_STATUS_SUCCESS;
+	u_char ctrl_band_idx = serv_test->ctrl_band_idx;
+	struct test_configuration *configs;
+
+	configs = &serv_test->test_config[ctrl_band_idx];
+
+	ret = serv_test->test_op->op_set_rx_path(
 		serv_test->test_winfo,
 		ctrl_band_idx,
 		configs);
@@ -693,7 +742,7 @@ err_out:
 	return ret;
 }
 
-u_int32 mt_serv_revert_tx(struct service_test *serv_test)
+s_int32 mt_serv_revert_tx(struct service_test *serv_test)
 {
 	u_int32 ret = SERV_STATUS_SUCCESS;
 	u_char ctrl_band_idx = serv_test->ctrl_band_idx;
@@ -1688,7 +1737,7 @@ s_int32 mt_serv_log_on_off(
 	struct test_operation *ops;
 
 	ops = serv_test->test_op;
-	ret = ops->op_log_of_off(
+	ret = ops->op_log_on_off(
 		serv_test->test_winfo,
 		serv_test->ctrl_band_idx,
 		log_type,
@@ -1701,6 +1750,7 @@ s_int32 mt_serv_log_on_off(
 
 	return ret;
 }
+
 
 s_int32 mt_serv_set_cfg_on_off(
 	struct service_test *serv_test)
@@ -1803,8 +1853,15 @@ s_int32 mt_serv_reg_eprm_operation(
 
 	switch (item) {
 	case SERV_TEST_REG_MAC_READ:
+		if (!serv_test->engine_offload) {
 		ret = net_ad_read_mac_bbp_reg(serv_test->test_winfo,
 						&serv_test->test_reg);
+		} else {
+			ops = serv_test->test_op;
+			ret = ops->op_read_bulk_mac_bbp_reg(
+				serv_test->test_winfo,
+				&serv_test->test_reg);
+		}
 		break;
 
 	case SERV_TEST_REG_MAC_WRITE:
@@ -2009,14 +2066,14 @@ s_int32 mt_serv_set_preamble(struct service_test *serv_test)
 {
 	s_int32 ret = SERV_STATUS_SUCCESS;
 	u_char ctrl_band_idx = serv_test->ctrl_band_idx;
-	u_char phy_mode = serv_test->test_config[ctrl_band_idx].phy_mode;
+	u_char tx_mode = serv_test->test_config[ctrl_band_idx].tx_mode;
 
 	if (!serv_test->engine_offload) {
 
 	} else {
 		ret = serv_test->test_op->op_set_preamble(
 			serv_test->test_winfo,
-			phy_mode);
+			tx_mode);
 	}
 
 	if (ret)

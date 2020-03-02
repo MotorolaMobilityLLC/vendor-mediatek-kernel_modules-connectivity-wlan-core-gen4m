@@ -1384,8 +1384,8 @@ void soc3_0_icapRiseVcoreClockRate(void)
 	DBGLOG(HAL, STATE, "icapRiseVcoreClockRate done\n");
 
 #endif  /*#ifndef CFG_BUILD_X86_PLATFORM*/
-
 }
+
 void soc3_0_icapDownVcoreClockRate(void)
 {
 #ifndef CFG_BUILD_X86_PLATFORM
@@ -1407,6 +1407,7 @@ void soc3_0_icapDownVcoreClockRate(void)
 #endif  /*#ifndef CFG_BUILD_X86_PLATFORM*/
 
 }
+
 #if (CFG_POWER_ON_DOWNLOAD_EMI_ROM_PATCH == 1)
 #pragma message("SOC3_0::CFG_POWER_ON_DOWNLOAD_EMI_ROM_PATCH == 1")
 void soc3_0_ConstructFirmwarePrio(struct GLUE_INFO *prGlueInfo,
