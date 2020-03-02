@@ -1677,6 +1677,7 @@ struct RECAL_INFO_T {
 struct ICAP_INFO_T {
 	u_int8_t fgCaptureDone;
 	u_int8_t fgIcapEnable;
+	u_int8_t fgICapStartDump;
 	uint32_t u4CapNode;
 
 #if CFG_SUPPORT_QA_TOOL

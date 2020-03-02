@@ -7659,6 +7659,7 @@ int32_t connacSetICapStart(struct GLUE_INFO *prGlueInfo,
 		prGlueInfo->prAdapter->rIcapInfo.u4IQArrayIndex = 0;
 		prGlueInfo->prAdapter->rIcapInfo.u4ICapEventCnt = 0;
 		prGlueInfo->prAdapter->rIcapInfo.prIQArray = NULL;
+		prGlueInfo->prAdapter->rIcapInfo.fgICapStartDump = FALSE;
 		return 0;
 	}
 
@@ -7767,17 +7768,18 @@ int32_t connacGetICapStatus(struct GLUE_INFO *prGlueInfo)
 		return 0;
 	}
 
-	rStatus = kalIoctl(prGlueInfo,	/* prGlueInfo */
-			   wlanoidExtRfTestICapStatus,	/* pfnOidHandler */
-			   &rRfATInfo,	/* pvInfoBuf */
-			   sizeof(rRfATInfo),	/* u4InfoBufLen */
-			   FALSE,	/* fgRead */
-			   FALSE,	/* fgWaitResp */
-			   TRUE,	/* fgCmd */
-			   &u4BufLen);	/* pu4QryInfoLen */
+	if (!prGlueInfo->prAdapter->rIcapInfo.fgICapStartDump) {
+		rStatus = kalIoctl(prGlueInfo,	/* prGlueInfo */
+				   wlanoidExtRfTestICapStatus,
+				   &rRfATInfo,	/* pvInfoBuf */
+				   sizeof(rRfATInfo),	/* u4InfoBufLen */
+				   FALSE,	/* fgRead */
+				   FALSE,	/* fgWaitResp */
+				   TRUE,	/* fgCmd */
+				   &u4BufLen);	/* pu4QryInfoLen */
+	}
 
-	DBGLOG(RFTEST, INFO,
-	       "QA_AGENT HQA_CapWiFiSpectrum Wait!!!!!!!!!!!!!!!!!\n");
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_CapWiFiSpectrum Wait!!!!!!!!!!!!\n");
 	return 1;
 }
 
