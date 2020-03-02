@@ -141,6 +141,14 @@ static const struct iw_priv_args rIwPrivTable[] = {
 	/* added for ATE iwpriv Command */
 	{IOCTL_IWPRIV_ATE, IW_PRIV_TYPE_CHAR | 2000, 0, ""},
 #endif
+	{IOC_AP_SET_CFG, IW_PRIV_TYPE_CHAR | 256,
+	 IW_PRIV_TYPE_CHAR | 1024, "AP_SET_CFG"},
+	{IOC_AP_GET_STA_LIST, IW_PRIV_TYPE_CHAR | 1024,
+	 IW_PRIV_TYPE_CHAR | 1024, "AP_GET_STA_LIST"},
+	{IOC_AP_SET_MAC_FLTR, IW_PRIV_TYPE_CHAR | 256,
+	 IW_PRIV_TYPE_CHAR | IW_PRIV_SIZE_FIXED | 1024, "AP_SET_MAC_FLTR"},
+	{IOC_AP_STA_DISASSOC, IW_PRIV_TYPE_CHAR | 256,
+	 IW_PRIV_TYPE_CHAR | 1024, "AP_STA_DISASSOC"},
 
 	/* sub-ioctl definitions */
 #if 0
@@ -244,7 +252,10 @@ static const iw_handler rIwPrivHandler[] = {
 	[IOCTL_SET_INTS - SIOCIWFIRSTPRIV] = priv_set_ints,
 	[IOCTL_GET_INTS - SIOCIWFIRSTPRIV] = priv_get_ints,
 	[IOCTL_GET_DRIVER - SIOCIWFIRSTPRIV] = priv_set_driver,
-
+	[IOC_AP_GET_STA_LIST - SIOCIWFIRSTPRIV] = priv_set_ap,
+	[IOC_AP_SET_MAC_FLTR - SIOCIWFIRSTPRIV] = priv_set_ap,
+	[IOC_AP_SET_CFG - SIOCIWFIRSTPRIV] = priv_set_ap,
+	[IOC_AP_STA_DISASSOC - SIOCIWFIRSTPRIV] = priv_set_ap,
 #if CFG_SUPPORT_QA_TOOL
 	[IOCTL_IWPRIV_ATE - SIOCIWFIRSTPRIV] = priv_ate_set
 #endif

@@ -2765,7 +2765,7 @@ void p2pRoleFsmRunEventDissolve(IN struct ADAPTER *prAdapter,
 void p2pRoleUpdateACLEntry(IN struct ADAPTER *prAdapter, IN uint8_t ucBssIdx)
 {
 	u_int8_t bMatchACL = FALSE;
-	int32_t i = 0, i4Ret = 0;
+	int32_t i = 0;
 	struct LINK *prClientList;
 	struct STA_RECORD *prCurrStaRec, *prNextStaRec;
 	struct BSS_INFO *prP2pBssInfo;
@@ -2801,21 +2801,32 @@ void p2pRoleUpdateACLEntry(IN struct ADAPTER *prAdapter, IN uint8_t ucBssIdx)
 			|| ((bMatchACL) &&
 			(prP2pBssInfo->rACL.ePolicy
 				== PARAM_CUSTOM_ACL_POLICY_DENY))) {
+			struct MSG_P2P_CONNECTION_ABORT *prDisconnectMsg =
+				(struct MSG_P2P_CONNECTION_ABORT *) NULL;
 
 			DBGLOG(P2P, TRACE,
 				"ucBssIdx=%d, ACL Policy=%d\n",
 				ucBssIdx, prP2pBssInfo->rACL.ePolicy);
 
-			i4Ret = assocSendDisAssocFrame(prAdapter,
-				prCurrStaRec,
-				STATUS_CODE_REQ_DECLINED);
-			if (!i4Ret)
-				DBGLOG(P2P, TRACE,
-				"Send DISASSOC to [" MACSTR "], Reason = %d\n",
-				MAC2STR(prCurrStaRec->aucMacAddr),
-				STATUS_CODE_REQ_DECLINED);
-			LINK_REMOVE_KNOWN_ENTRY(prClientList,
-				&prCurrStaRec->rLinkEntry);
+			prDisconnectMsg =
+				(struct MSG_P2P_CONNECTION_ABORT *)
+				cnmMemAlloc(prAdapter, RAM_TYPE_MSG,
+				sizeof(struct MSG_P2P_CONNECTION_ABORT));
+			if (prDisconnectMsg == NULL)
+				return;
+			prDisconnectMsg->rMsgHdr.eMsgId
+				= MID_MNY_P2P_CONNECTION_ABORT;
+			prDisconnectMsg->ucRoleIdx
+				=  (uint8_t) prP2pBssInfo->u4PrivateData;
+			COPY_MAC_ADDR(prDisconnectMsg->aucTargetID,
+				prCurrStaRec->aucMacAddr);
+			prDisconnectMsg->u2ReasonCode
+				= STATUS_CODE_REQ_DECLINED;
+			prDisconnectMsg->fgSendDeauth = TRUE;
+			mboxSendMsg(prAdapter,
+				MBOX_ID_0,
+				(struct MSG_HDR *) prDisconnectMsg,
+				MSG_SEND_METHOD_BUF);
 		}
 	}
 } /* p2pRoleUpdateACLEntry */
