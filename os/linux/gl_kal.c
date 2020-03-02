@@ -613,11 +613,10 @@ void kalAcquireMutex(IN struct GLUE_INFO *prGlueInfo,
 	ASSERT(prGlueInfo);
 
 	if (rMutexCategory < MUTEX_NUM) {
-		DBGLOG(INIT, TRACE, "MUTEX_LOCK[%u] Try to acquire\n",
-		       rMutexCategory);
+		DBGLOG(INIT, TEMP,
+			"MUTEX_LOCK[%u] Try to acquire\n", rMutexCategory);
 		mutex_lock(&prGlueInfo->arMutex[rMutexCategory]);
-		DBGLOG(INIT, TRACE, "MUTEX_LOCK[%u] Acquired\n",
-		       rMutexCategory);
+		DBGLOG(INIT, TEMP, "MUTEX_LOCK[%u] Acquired\n", rMutexCategory);
 	}
 
 }				/* end of kalAcquireMutex() */
@@ -640,7 +639,7 @@ void kalReleaseMutex(IN struct GLUE_INFO *prGlueInfo,
 
 	if (rMutexCategory < MUTEX_NUM) {
 		mutex_unlock(&prGlueInfo->arMutex[rMutexCategory]);
-		DBGLOG(INIT, TRACE, "MUTEX_UNLOCK[%u]\n", rMutexCategory);
+		DBGLOG(INIT, TEMP, "MUTEX_UNLOCK[%u]\n", rMutexCategory);
 	}
 
 }				/* end of kalReleaseMutex() */
@@ -6331,7 +6330,7 @@ inline int32_t kalPerMonStart(IN struct GLUE_INFO
 	struct PERF_MONITOR_T *prPerMonitor;
 
 	prPerMonitor = &prGlueInfo->prAdapter->rPerMonitor;
-	DBGLOG(SW4, TRACE, "enter %s\n", __func__);
+	DBGLOG(SW4, TEMP, "enter %s\n", __func__);
 
 	if (!wlan_perf_monitor_force_enable &&
 	    (wlan_fb_power_down || prGlueInfo->fgIsInSuspendMode))
