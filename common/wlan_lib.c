@@ -503,7 +503,6 @@ uint32_t wlanAdapterStart(IN struct ADAPTER *prAdapter,
 
 			/* 2.9 Workaround for Capability CMD packet lost issue
 			 */
-			DBGLOG(INIT, WARN, "Send a Dummy CMD as workaround\n");
 			wlanSendDummyCmd(prAdapter, TRUE);
 
 			/* 3. query for NIC capability */
