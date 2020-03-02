@@ -131,7 +131,9 @@ ifeq ($(PLATFORM),MT53XX)
 CFG_SUPPORT_ROAMING=0
 endif
 
-
+# For wpa_supplicant w/o MTK priv lib
+# y: enable, n: disable
+CFG_ANDROID_AOSP_PRIV_CMD=n
 
 #/***** Manage configs into compile options ******/
 ifneq ($(CFG_NUM_DIFFERENT_CHANNELS_STA),)
@@ -188,6 +190,10 @@ endif
 
 ifneq ($(CFG_SUPPORT_ROAMING),)
 PLATFORM_FLAGS += -DCFG_SUPPORT_ROAMING=$(CFG_SUPPORT_ROAMING)
+endif
+
+ifeq ($(CFG_ANDROID_AOSP_PRIV_CMD), y)
+PLATFORM_FLAGS += -DCFG_ANDROID_AOSP_PRIV_CMD
 endif
 
 ##############################################################
