@@ -881,6 +881,10 @@ struct WIFI_VAR {
 	uint8_t ucApAllowHtVhtTkip;
 
 	uint8_t ucNSS;
+	uint8_t ucAp5gNSS; /* Less or euqal than ucNss */
+	uint8_t ucAp2gNSS; /* Less or euqal than ucNss */
+	uint8_t ucGo5gNSS; /* Less or euqal than ucNss */
+	uint8_t ucGo2gNSS; /* Less or euqal than ucNss */
 
 	uint8_t ucRxMaxMpduLen;
 	uint32_t u4TxMaxAmsduInAmpduLen;
@@ -1582,6 +1586,10 @@ struct ADAPTER {
 
 #define IS_BSS_BOW(_prBssInfo) \
 	((_prBssInfo)->eNetworkType == NETWORK_TYPE_BOW)
+
+#define IS_BSS_APGO(_prBssInfo) \
+	(IS_BSS_P2P(_prBssInfo) && \
+	(_prBssInfo)->eCurrentOPMode == OP_MODE_ACCESS_POINT)
 
 #define SET_NET_ACTIVE(_prAdapter, _BssIndex) \
 	{(_prAdapter)->aprBssInfo[(_BssIndex)]->fgIsNetActive = TRUE; }
