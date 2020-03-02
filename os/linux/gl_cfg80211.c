@@ -1727,7 +1727,7 @@ int mtk_cfg80211_join_ibss(struct wiphy *wiphy,
 	struct PARAM_SSID rNewSsid;
 	struct GLUE_INFO *prGlueInfo = NULL;
 	uint32_t u4ChnlFreq;	/* Store channel or frequency information */
-	uint32_t u4BufLen = 0;
+	uint32_t u4BufLen = 0, u4SsidLen = 0;
 	uint32_t rStatus;
 
 	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wiphy);
@@ -1747,8 +1747,13 @@ int mtk_cfg80211_join_ibss(struct wiphy *wiphy,
 	}
 
 	/* set SSID */
+	if (params->ssid_len > PARAM_MAX_LEN_SSID)
+		u4SsidLen = PARAM_MAX_LEN_SSID;
+	else
+		u4SsidLen = params->ssid_len;
+
 	kalMemCopy(rNewSsid.aucSsid, params->ssid,
-		   params->ssid_len);
+		   u4SsidLen);
 	rStatus = kalIoctl(prGlueInfo, wlanoidSetSsid, (void *)&rNewSsid,
 				sizeof(struct PARAM_SSID),
 				FALSE, FALSE, TRUE, &u4BufLen);
