@@ -49,14 +49,16 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  *****************************************************************************/
-/*! \file   mt7663.c
-*    \brief  Internal driver stack will export the required procedures here for GLUE Layer.
+/*! \file   "hif.h"
+*    \brief  Functions for the driver to register bus and setup the IRQ
 *
-*    This file contains all routines which are exported from MediaTek 802.11 Wireless
-*    LAN driver stack to GLUE Layer.
+*    Functions for the driver to register bus and setup the IRQ
 */
 
-#ifdef MT7663
+
+#ifndef _HIF_CMM_H
+#define _HIF_CMM_H
+
 
 /*******************************************************************************
 *                         C O M P I L E R   F L A G S
@@ -67,9 +69,6 @@
 *                    E X T E R N A L   R E F E R E N C E S
 ********************************************************************************
 */
-#include "precomp.h"
-
-#include "mt7663.h"
 
 /*******************************************************************************
 *                              C O N S T A N T S
@@ -77,59 +76,48 @@
 */
 
 /*******************************************************************************
+*                             D A T A   T Y P E S
+********************************************************************************
+*/
+
+/* Interface Type */
+typedef enum _MT_INF_TYPE_T {
+	MT_DEV_INF_UNKNOWN = 0,
+	MT_DEV_INF_PCI = 1,
+	MT_DEV_INF_USB = 2,
+	MT_DEV_INF_RBUS = 4,
+	MT_DEV_INF_PCIE = 5,
+	MT_DEV_INF_SDIO = 6,
+	MT_DEV_INF_EHPI = 7,
+} MT_INF_TYPE_T;
+
+/*******************************************************************************
+*                            P U B L I C   D A T A
+********************************************************************************
+*/
+
+/*******************************************************************************
+*                           P R I V A T E   D A T A
+********************************************************************************
+*/
+
+/*******************************************************************************
 *                                 M A C R O S
 ********************************************************************************
 */
+#define IS_SDIO_INF(__GlueInfo)		((__GlueInfo)->u4InfType == MT_DEV_INF_SDIO)
+#define IS_USB_INF(__GlueInfo)		((__GlueInfo)->u4InfType == MT_DEV_INF_USB)
+#define IS_PCIE_INF(__GlueInfo)		((__GlueInfo)->u4InfType == MT_DEV_INF_PCIE)
+#define IS_EHPI_INF(__GlueInfo)		((__GlueInfo)->u4InfType == MT_DEV_INF_PCIE)
 
 /*******************************************************************************
 *                   F U N C T I O N   D E C L A R A T I O N S
 ********************************************************************************
 */
 
+
 /*******************************************************************************
 *                              F U N C T I O N S
 ********************************************************************************
 */
-
-
-/*******************************************************************************
-*                            P U B L I C   D A T A
-********************************************************************************
-*/
-ECO_INFO_T mt7663_eco_table[] = {
-	/* HW version,  ROM version,    Factory version */
-#if 0 /* TODO: update after receive information */
-	{0x00, 0x00, 0xA},	/* E1 */
-	{0x10, 0x01, 0xB},	/* E2 */
-#endif /* if 0 */
-	{0x00, 0x00, 0x0}	/* End of table */
-};
-
-BUS_INFO bus_info_mt7663 = {
-#if defined(_HIF_PCIE)
-	.top_cfg_base = MT7663_TOP_CFG_BASE,
-	.is_pcie_32dw_read = MT7663_IS_PCIE_32DW_READ, /* Litien */
-	.tx_ring_fwdl_idx = 3,
-	.tx_ring_cmd_idx = 2,
-	.tx_ring_data_idx = 0,
-#endif /* _HIF_PCIE */
-};
-
-/* Litien code refine to support multi chip */
-struct mt66xx_chip_info mt66xx_chip_info_mt7663 = {
-	.chip_id = MT7663_CHIP_ID,
-	.sw_sync0 = MT7663_SW_SYNC0,
-	.sw_ready_bits = WIFI_FUNC_NO_CR4_READY_BITS,
-	.sw_ready_bit_offset = MT7663_SW_SYNC0_RDY_OFFSET,
-	.patch_addr = MT7663_PATCH_START_ADDR,
-	.eco_info = mt7663_eco_table,
-	.constructFirmwarePrio = NULL,
-	.asicEnableFWDownload = asicEnableFWDownload,
-	.asicDevInit = asicDevInit,
-};
-
-struct mt66xx_hif_driver_data mt66xx_driver_data_mt7663 = {
-	.chip_info = &mt66xx_chip_info_mt7663,
-};
-
-#endif /* MT7663 */
+#endif /* _HIF_CMM_H */

@@ -173,7 +173,6 @@ BUS_INFO bus_info_mt7668 = {
 	.tx_ring_fwdl_idx = 3,
 	.tx_ring_cmd_idx = 2,
 	.tx_ring_data_idx = 0,
-	.enableFWDownload = NULL,
 #endif /* _HIF_PCIE */
 };
 
@@ -187,6 +186,8 @@ struct mt66xx_chip_info mt66xx_chip_info_mt7668 = {
 	.patch_addr = MT7668_PATCH_START_ADDR,
 	.eco_info = mt7668_eco_table,
 	.constructFirmwarePrio = mt7668ConstructFirmwarePrio,
+	.asicEnableFWDownload = NULL,
+	.asicDevInit = NULL,
 };
 
 struct mt66xx_hif_driver_data mt66xx_driver_data_mt7668 = {

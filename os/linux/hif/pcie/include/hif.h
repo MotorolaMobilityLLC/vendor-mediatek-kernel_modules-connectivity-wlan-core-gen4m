@@ -174,8 +174,6 @@ typedef struct _BUS_INFO {
 	const unsigned int tx_ring_cmd_idx;
 	const unsigned int tx_ring_fwdl_idx;
 	const unsigned int tx_ring_data_idx;
-
-	void (*enableFWDownload)(IN P_ADAPTER_T prAdapter, IN BOOL fgEnable);
 } BUS_INFO, *P_BUS_INFO;
 
 /*******************************************************************************
