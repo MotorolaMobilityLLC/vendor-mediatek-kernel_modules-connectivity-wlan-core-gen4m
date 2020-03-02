@@ -722,8 +722,8 @@ struct GLUE_INFO {
 	uint8_t aucDADipv6[16];
 #endif				/* CFG_SUPPORT_PASSPOINT */
 
-	KAL_WAKE_LOCK_T rIntrWakeLock;
-	KAL_WAKE_LOCK_T rTimeoutWakeLock;
+	KAL_WAKE_LOCK_T *rIntrWakeLock;
+	KAL_WAKE_LOCK_T *rTimeoutWakeLock;
 
 #if CFG_MET_PACKET_TRACE_SUPPORT
 	u_int8_t fgMetProfilingEn;

@@ -2499,10 +2499,18 @@ void halProcessSoftwareInterrupt(IN struct ADAPTER *prAdapter)
 	else
 		halDefaultProcessSoftwareInterrupt(prAdapter);
 }
-
+#if KERNEL_VERSION(4, 15, 0) <= LINUX_VERSION_CODE
+void halHwRecoveryTimeout(struct timer_list *timer)
+#else
 void halHwRecoveryTimeout(unsigned long arg)
+#endif
 {
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 15, 0))
+	struct GL_HIF_INFO *prHif = from_timer(prHif, timer, rSerTimer);
+	struct GLUE_INFO *prGlueInfo = (struct GLUE_INFO *)prHif->rSerTimerData;
+#else
 	struct GLUE_INFO *prGlueInfo = (struct GLUE_INFO *)arg;
+#endif
 	struct ADAPTER *prAdapter = NULL;
 
 	ASSERT(prGlueInfo);
