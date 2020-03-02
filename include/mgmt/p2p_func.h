@@ -207,6 +207,13 @@ uint32_t
 p2pFuncAssocRespUpdate(IN struct ADAPTER *prAdapter, IN struct BSS_INFO *prP2pBssInfo, IN uint8_t *AssocRespIE, IN
 		    uint32_t u4AssocRespLen);
 
+#if CFG_SUPPORT_P2P_GO_OFFLOAD_PROBE_RSP
+uint32_t
+p2pFuncProbeRespUpdate(IN struct ADAPTER *prAdapter,
+		IN struct BSS_INFO *prP2pBssInfo,
+		IN uint8_t *ProbeRespIE, IN uint32_t u4ProbeRespLen);
+#endif
+
 u_int8_t
 p2pFuncValidateAuth(IN struct ADAPTER *prAdapter, IN struct BSS_INFO *prBssInfo, IN struct SW_RFB *prSwRfb, IN struct STA_RECORD **
 		    pprStaRec, OUT uint16_t *pu2StatusCode);
