@@ -3449,6 +3449,41 @@ p2pFuncValidateProbeReq(IN struct ADAPTER *prAdapter,
 
 }				/* end of p2pFuncValidateProbeReq() */
 
+static void p2pFunBufferP2pActionFrame(IN struct ADAPTER *prAdapter,
+		IN struct SW_RFB *prSwRfb,
+		IN uint8_t ucRoleIdx)
+{
+	struct P2P_DEV_FSM_INFO *prP2pDevFsmInfo =
+			(struct P2P_DEV_FSM_INFO *) NULL;
+	struct P2P_QUEUED_ACTION_FRAME *prFrame;
+
+	prP2pDevFsmInfo = prAdapter->rWifiVar.prP2pDevFsmInfo;
+
+	if (prP2pDevFsmInfo == NULL)
+		return;
+
+	prFrame = &prP2pDevFsmInfo->rQueuedActionFrame;
+
+	if (prFrame->u2Length > 0) {
+		DBGLOG(P2P, WARN, "p2p action frames are pending, drop it.\n");
+		return;
+	}
+
+	DBGLOG(P2P, INFO, "Buffer the p2p action frame.\n");
+	prFrame->ucRoleIdx = ucRoleIdx;
+	prFrame->u4Freq = nicChannelNum2Freq(
+		HAL_RX_STATUS_GET_CHNL_NUM(prSwRfb->prRxStatus)) / 1000;
+	prFrame->u2Length = prSwRfb->u2PacketLen;
+	prFrame->prHeader = cnmMemAlloc(prAdapter, RAM_TYPE_BUF,
+			prSwRfb->u2PacketLen);
+	if (prFrame->prHeader == NULL) {
+		DBGLOG(P2P, WARN, "Allocate buffer fail.\n");
+		p2pFunCleanQueuedMgmtFrame(prAdapter, prFrame);
+		return;
+	}
+	kalMemCopy(prFrame->prHeader, prSwRfb->pvHeader, prSwRfb->u2PacketLen);
+}
+
 /*---------------------------------------------------------------------------*/
 /*!
  * @brief This function will validate the Rx Probe Request Frame and then return
@@ -3471,6 +3506,7 @@ void p2pFuncValidateRxActionFrame(IN struct ADAPTER *prAdapter,
 	struct WLAN_ACTION_FRAME *prActFrame;
 	struct WLAN_PUBLIC_VENDOR_ACTION_FRAME *prActPubVenFrame;
 	uint32_t u4OUI;
+	u_int8_t fgBufferFrame = FALSE;
 
 	DEBUGFUNC("p2pFuncValidateRxActionFrame");
 
@@ -3498,13 +3534,19 @@ void p2pFuncValidateRxActionFrame(IN struct ADAPTER *prAdapter,
 				prActPubVenFrame->ucPubSubType);
 			if (fgIsDevInterface) {
 				p2pDevFsmNotifyP2pRx(prAdapter,
-						prActPubVenFrame->ucPubSubType);
+						prActPubVenFrame->ucPubSubType,
+						&fgBufferFrame);
 			}
 		default:
 			break;
 		}
 
-		/* TODO: */
+		if (fgBufferFrame) {
+			p2pFunBufferP2pActionFrame(prAdapter,
+					prSwRfb,
+					ucRoleIdx);
+			break;
+		}
 
 		if (prAdapter->u4OsPacketFilter
 			& PARAM_PACKET_FILTER_ACTION_FRAME) {
@@ -5902,4 +5944,20 @@ void p2pFuncGenerateP2P_IE_NoA(IN struct ADAPTER *prAdapter,
 
 	prMsduInfo->u2FrameLength += (ELEM_HDR_LEN + prIeP2P->ucLength);
 
+}
+
+void p2pFunCleanQueuedMgmtFrame(IN struct ADAPTER *prAdapter,
+		IN struct P2P_QUEUED_ACTION_FRAME *prFrame)
+{
+	if (prAdapter == NULL || prFrame == NULL || prFrame->u2Length == 0 ||
+			prFrame->prHeader == NULL)
+		return;
+
+	DBGLOG(P2P, INFO, "Clean queued p2p action frame.\n");
+
+	prFrame->ucRoleIdx = 0;
+	prFrame->u4Freq = 0;
+	prFrame->u2Length = 0;
+	cnmMemFree(prAdapter, prFrame->prHeader);
+	prFrame->prHeader = NULL;
 }

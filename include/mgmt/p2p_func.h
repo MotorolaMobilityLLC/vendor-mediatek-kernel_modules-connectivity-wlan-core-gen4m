@@ -413,4 +413,7 @@ uint32_t p2pFuncCalculateP2P_IE_NoA(IN struct ADAPTER *prAdapter,
 void p2pFuncGenerateP2P_IE_NoA(IN struct ADAPTER *prAdapter,
 		IN struct MSDU_INFO *prMsduInfo);
 
+void p2pFunCleanQueuedMgmtFrame(IN struct ADAPTER *prAdapter,
+		IN struct P2P_QUEUED_ACTION_FRAME *prFrame);
+
 #endif
