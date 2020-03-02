@@ -270,6 +270,9 @@ mtk_cfg80211_add_key(struct wiphy *wiphy,
 	}
 
 	if (params->key) {
+		if (params->key_len > sizeof(rKey.aucKeyMaterial))
+			return -EINVAL;
+
 		kalMemCopy(rKey.aucKeyMaterial, params->key,
 			   params->key_len);
 		if (rKey.ucCipher == CIPHER_SUITE_TKIP) {
