@@ -1527,7 +1527,6 @@ static int wlanSetMacAddress(struct net_device *ndev, void *addr)
 	struct ADAPTER *prAdapter = NULL;
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct sockaddr *sa = NULL;
-	struct wireless_dev *wdev = NULL;
 	struct BSS_INFO *prAisBssInfo = NULL;
 
 	/**********************************************************************
@@ -1538,18 +1537,6 @@ static int wlanSetMacAddress(struct net_device *ndev, void *addr)
 		DBGLOG(INIT, ERROR, "Set macaddr with ndev(%d) and addr(%d)\n",
 		       (ndev == NULL) ? 0 : 1, (addr == NULL) ? 0 : 1);
 		return WLAN_STATUS_INVALID_DATA;
-	}
-
-	/**********************************************************************
-	 * Block mac address changing if this setting is not for connection   *
-	 **********************************************************************
-	 */
-	wdev = ndev->ieee80211_ptr;
-	if (wdev->ssid_len > 0 || (wdev->current_bss)) {
-		DBGLOG(INIT, ERROR,
-		       "Reject macaddr change due to ssid_len(%d) & bss(%d)\n",
-		       wdev->ssid_len, (wdev->current_bss == NULL) ? 0 : 1);
-		return WLAN_STATUS_NOT_ACCEPTED;
 	}
 
 	/**********************************************************************
