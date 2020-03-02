@@ -762,7 +762,8 @@ uint8_t rsnKeyMgmtWpa(IN struct ADAPTER *prAdapter,
 	       eAuthMode == AUTH_MODE_WPA2_FT ||
 	       eAuthMode == AUTH_MODE_WPA3_SAE ||
 	       eAuthMode == AUTH_MODE_WPA3_OWE ||
-	       rsnSearchAKMSuite(prAdapter, RSN_CIPHER_SUITE_OWE, &i, bssidx);
+	       rsnSearchAKMSuite(prAdapter, RSN_CIPHER_SUITE_OWE, &i, bssidx) ||
+	       rsnSearchAKMSuite(prAdapter, RSN_CIPHER_SUITE_SAE, &i, bssidx);
 }
 
 /*----------------------------------------------------------------------------*/
