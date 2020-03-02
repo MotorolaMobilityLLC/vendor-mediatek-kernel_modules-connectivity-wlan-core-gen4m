@@ -600,7 +600,7 @@
 
 #if (CFG_SUPPORT_SINGLE_SKU == 1)
 /* ARRAY_SIZE(mtk_2ghz_channels) + ARRAY_SIZE(mtk_5ghz_channels) */
-#define MAX_SUPPORTED_CH_COUNT (53)
+#define MAX_SUPPORTED_CH_COUNT (MAX_CHN_NUM)
 #define REG_RULE_LIGHT(start, end, bw, reg_flags)	\
 		REG_RULE(start, end, bw, 0, 0, reg_flags)
 #endif
