@@ -145,7 +145,7 @@ u_int8_t halVerifyChipID(IN struct ADAPTER *prAdapter)
 	HAL_MCR_RD(prAdapter, prBusInfo->top_cfg_base + TOP_HW_CONTROL, &u4CIR);
 
 	DBGLOG(INIT, INFO, "WCIR_CHIP_ID = 0x%x, chip_id = 0x%x\n",
-		(u4CIR & WCIR_CHIP_ID), prChipInfo->chip_id);
+	       (uint32_t)(u4CIR & WCIR_CHIP_ID), prChipInfo->chip_id);
 
 	if ((u4CIR & WCIR_CHIP_ID) != prChipInfo->chip_id)
 		return FALSE;
