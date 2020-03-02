@@ -74,7 +74,6 @@
 
 
 #include "precomp.h"
-
 /*******************************************************************************
 *                              C O N S T A N T S
 ********************************************************************************
@@ -347,15 +346,17 @@ void asicConnac2xWfdmaReInit(
 	/*WFDMA re-init flow after chip deep sleep*/
 	asicConnac2xWfdmaDummyCrRead(prAdapter, &fgResult);
 	if (fgResult) {
-		DBGLOG(INIT, INFO, "WFDMA reinit due to deep sleep\n");
 #if defined(_HIF_PCIE) || defined(_HIF_AXI)
-#if 1
+
+#if 0 /* Original Driver re-init Host WFDAM flow */
+	DBGLOG(INIT, INFO, "WFDMA host sw-reinit due to deep sleep\n");
 	halWpdmaInitRing(prAdapter->prGlueInfo);
-#else /* TODO check pin fail */
+#else /* Do Driver re-init Host WFDMA flow with FW bk/sr solution */
 	{
 		struct GL_HIF_INFO *prHifInfo;
 		uint32_t u4Idx;
 
+		DBGLOG(INIT, INFO, "WFDMA reinit after bk/sr(deep sleep)\n");
 		prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
 		for (u4Idx = 0; u4Idx < NUM_OF_TX_RING; u4Idx++) {
 			prHifInfo->TxRing[u4Idx].TxSwUsedIdx = 0;
@@ -368,7 +369,6 @@ void asicConnac2xWfdmaReInit(
 			prAdapter->u4NoMoreRfb |= BIT(WFDMA1_RX_RING_IDX_0);
 		}
 	}
-
 #endif
 	/* Write sleep mode magic num to dummy reg */
 	if (prBusInfo->setDummyReg)
