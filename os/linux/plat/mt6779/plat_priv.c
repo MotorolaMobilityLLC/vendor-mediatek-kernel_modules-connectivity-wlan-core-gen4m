@@ -54,3 +54,11 @@ void kalSetDrvEmiMpuProtection(phys_addr_t emiPhyBase, uint32_t offset,
 	emi_mpu_set_protection(&region_info);
 }
 #endif
+
+#if (CFG_FLAVOR_FIRMWARE)
+int32_t kalGetFwFlavor(uint8_t *flavor)
+{
+	*flavor = 'a';
+	return 1;
+}
+#endif
