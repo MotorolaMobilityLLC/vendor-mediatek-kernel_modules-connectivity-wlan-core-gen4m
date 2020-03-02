@@ -506,6 +506,10 @@ static u_int8_t scanSanityCheckBssDesc(struct ADAPTER *prAdapter,
 			eBand, ucChannel);
 		return FALSE;
 	}
+
+#if CFG_SUPPORT_WIFI_SYSDVT
+	if (!IS_SKIP_CH_CHECK(prAdapter))
+#endif
 	if (!rlmDomainIsLegalChannel(prAdapter, prBssDesc->eBand,
 		prBssDesc->ucChannelNum)) {
 		log_dbg(SCN, WARN, "Band %d channel %d is not legal\n",

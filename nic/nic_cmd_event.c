@@ -3912,7 +3912,15 @@ void nicEventLayer0ExtMagic(IN struct ADAPTER *prAdapter,
 		       prStaRec->ucMaxMpduCount);
 		break;
 	}
-
+#if CFG_SUPPORT_WIFI_SYSDVT
+	case EXT_EVENT_ID_SYSDVT_TEST:
+	{
+		u4QueryInfoLen = sizeof(struct SYSDVT_CTRL_EXT_T);
+		prCmdInfo = nicGetPendingCmdInfo(prAdapter,
+			prEvent->ucSeqNum);
+		break;
+	}
+#endif	/* CFG_SUPPORT_WIFI_SYSDVT */
 	default:
 		break;
 	}

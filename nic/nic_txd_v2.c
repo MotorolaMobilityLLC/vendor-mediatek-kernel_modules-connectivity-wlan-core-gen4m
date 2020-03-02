@@ -330,6 +330,23 @@ void nic_txd_v2_compose(
 	ucTarQueue = nicTxGetTxDestQIdxByTc(prMsduInfo->ucTC);
 	ucTarQueue += (prBssInfo->ucWmmQueSet * WMM_AC_INDEX_NUM);
 
+#if (CFG_SUPPORT_DMASHDL_SYSDVT)
+	if (prMsduInfo->ucPktType == ENUM_PKT_ICMP) {
+		/* send packets to specific mapping queue for DMASHDL DVT */
+		if (DMASHDL_DVT_QUEUE_MAPPING_TYPE1(prAdapter)) {
+			ucTarQueue = DMASHDL_DVT_GET_MAPPING_QID(prAdapter);
+			prMsduInfo->ucTarQueue = ucTarQueue;
+			DMASHDL_DVT_SET_MAPPING_QID(prAdapter,
+				(ucTarQueue + 1) % MAC_TXQ_AC33_INDEX);
+		} else if (DMASHDL_DVT_QUEUE_MAPPING_TYPE2(prAdapter)) {
+			ucTarQueue = DMASHDL_DVT_GET_MAPPING_QID(prAdapter);
+			prMsduInfo->ucTarQueue = ucTarQueue;
+			DMASHDL_DVT_SET_MAPPING_QID(prAdapter,
+				(ucTarQueue + 1) % MAC_TXQ_AC2_INDEX);
+		}
+	}
+#endif
+
 	HAL_MAC_CONNAC2X_TXD_SET_QUEUE_INDEX(prTxDesc, ucTarQueue);
 
 	/* BMC packet */
@@ -452,6 +469,69 @@ void nic_txd_v2_compose(
 			prTxDesc, NIC_TX_DESC_PID_RESERVED);
 		HAL_MAC_CONNAC2X_TXD_SET_TXS_TO_MCU(prTxDesc);
 	}
+
+#if CFG_SUPPORT_WIFI_SYSDVT
+	if (prMsduInfo->pfTxDoneHandler) {
+		DBGLOG(REQ, LOUD, "PacketType=%d\n",
+			prMsduInfo->ucPacketType);
+		if (is_frame_test(prAdapter, 0) == 1 &&
+			prMsduInfo->ucPacketType == 0) { /* Data */
+			prMsduInfo->ucPID = prAdapter->auto_dvt->txs.pid;
+			HAL_MAC_CONNAC2X_TXD_SET_PID(prTxDesc,
+				prAdapter->auto_dvt->txs.pid);
+			HAL_MAC_CONNAC2X_TXD_SET_TXS_FORMAT(prTxDesc,
+				prAdapter->auto_dvt->txs.format);
+			send_add_txs_queue(prAdapter->auto_dvt->txs.pid,
+				prMsduInfo->ucWlanIndex);
+			DBGLOG(REQ, LOUD,
+				"Send_add_txs_queue pid=%d auto_txs_format=%d\n",
+				prMsduInfo->ucPID,
+				prAdapter->auto_dvt->txs.format);
+		} else if (is_frame_test(prAdapter, 0) == 2 &&
+			prMsduInfo->ucPacketType == 1) { /* Mgmt */
+			struct WLAN_MAC_HEADER *prWlanHeader =
+			(struct WLAN_MAC_HEADER *)
+			((unsigned long)(prMsduInfo->prPacket) +
+			MAC_TX_RESERVED_FIELD);
+
+			if (((prWlanHeader->u2FrameCtrl &
+				MASK_FC_TYPE) >> 2) == 0 &&
+				((prWlanHeader->u2FrameCtrl & MASK_FC_SUBTYPE)
+				>> OFFSET_OF_FC_SUBTYPE) == 8)
+				;/* FC_TYPE_MGMT=0, SUBTYPE_BEACON=8 */
+			else if (((prWlanHeader->u2FrameCtrl &
+				MASK_FC_TYPE) >> 2) == 0) {
+				prMsduInfo->ucPID =
+					prAdapter->auto_dvt->txs.pid;
+				HAL_MAC_CONNAC2X_TXD_SET_PID(prTxDesc,
+					prAdapter->auto_dvt->txs.pid);
+				HAL_MAC_CONNAC2X_TXD_SET_TXS_FORMAT(prTxDesc,
+					prAdapter->auto_dvt->txs.format);
+				send_add_txs_queue(prAdapter->auto_dvt->txs.pid,
+					prMsduInfo->ucWlanIndex);
+				DBGLOG(REQ, LOUD,
+					"Send_add_txs_queue pid=%d auto_txs_format=%d\n",
+					prMsduInfo->ucPID,
+					prAdapter->auto_dvt->txs.format);
+			} else {
+				prMsduInfo->ucPID =
+					prAdapter->auto_dvt->txs.pid;
+				HAL_MAC_CONNAC2X_TXD_SET_PID(prTxDesc,
+					prAdapter->auto_dvt->txs.pid);
+				HAL_MAC_CONNAC2X_TXD_SET_TXS_FORMAT(prTxDesc,
+					prAdapter->auto_dvt->txs.format);
+				HAL_MAC_CONNAC2X_TXD_SET_NO_ACK(prTxDesc);
+					send_add_txs_queue(
+					prAdapter->auto_dvt->txs.pid,
+					prMsduInfo->ucWlanIndex);
+				DBGLOG(REQ, LOUD,
+					"Send_add_txs_queue pid=%d auto_txs_format=%d\n",
+					prMsduInfo->ucPID,
+					prAdapter->auto_dvt->txs.format);
+			}
+		}
+	}
+#endif /* AUTOMATION */
 
 	/* Remaining TX time */
 	if (!(prMsduInfo->u4Option & MSDU_OPT_MANUAL_LIFE_TIME))

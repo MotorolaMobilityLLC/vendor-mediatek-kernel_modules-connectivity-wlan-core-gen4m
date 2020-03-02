@@ -1612,6 +1612,19 @@ void nicRxProcessDataPacket(IN struct ADAPTER *prAdapter,
 							prRetSwRfb);
 #endif
 					}
+#if CFG_SUPPORT_WIFI_SYSDVT
+#if (CFG_SUPPORT_CONNAC2X == 1)
+					/* Not handle non-CONNAC2X case */
+					if (RXV_AUTODVT_DNABLED(prAdapter) &&
+						(prRetSwRfb->ucGroupVLD &
+						BIT(RX_GROUP_VLD_3)) &&
+						(prRetSwRfb->ucGroupVLD &
+						BIT(RX_GROUP_VLD_5))) {
+						connac2x_rxv_correct_test(
+							prAdapter, prRetSwRfb);
+					}
+#endif
+#endif /* CFG_SUPPORT_WIFI_SYSDVT */
 					nicRxProcessPktWithoutReorder(
 						prAdapter, prRetSwRfb);
 					break;

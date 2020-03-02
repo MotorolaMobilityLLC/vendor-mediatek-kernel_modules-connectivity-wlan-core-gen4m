@@ -837,6 +837,9 @@ struct MSDU_INFO {
 	struct TX_DATA_REQ rTxReq;
 #endif
 	enum ENUM_EAPOL_KEY_TYPE_T eEapolKeyType;
+#if (CFG_SUPPORT_DMASHDL_SYSDVT)
+	uint8_t ucTarQueue;
+#endif
 };
 
 #define HIF_PKT_FLAGS_CT_INFO_APPLY_TXD            BIT(0)
