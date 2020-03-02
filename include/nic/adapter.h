@@ -1479,6 +1479,7 @@ struct ADAPTER {
 
 	struct PERF_MONITOR_T rPerMonitor;
 	struct ICAP_INFO_T rIcapInfo;
+	struct RECAL_INFO_T rReCalInfo;
 
 	/* Support change QM RX BA entry miss timeout (unit: ms) dynamically */
 	uint32_t u4QmRxBaMissTimeout;

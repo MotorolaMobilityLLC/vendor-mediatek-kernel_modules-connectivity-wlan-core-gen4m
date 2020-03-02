@@ -255,6 +255,14 @@ static int procEfuseDump_show(struct seq_file *s, void *v)
 	prGlueInfo = g_prGlueInfo_proc;
 
 #if  (CFG_EEPROM_PAGE_ACCESS == 1)
+	ASSERT(prGlueInfo);
+	if (prGlueInfo->prAdapter &&
+	    prGlueInfo->prAdapter->chip_info &&
+	    !prGlueInfo->prAdapter->chip_info->is_support_efuse) {
+		seq_puts(s, "efuse ops is invalid\n");
+		return -EPERM; /* return negative value to stop read process */
+	}
+
 	idx_addr = *(loff_t *) v;
 	rAccessEfuseInfo.u4Address =
 		(idx_addr / EFUSE_BLOCK_SIZE) * EFUSE_BLOCK_SIZE;

@@ -93,6 +93,8 @@ enum {
 	ATE_LOG_CTRL_NUM,
 };
 
+/* Maximum rxv vectors under 2048-2 bytes */
+#define MAX_RXV_DUMP_COUNT			(56)
 /*******************************************************************************
  *				F U N C T I O N   D E C L A R A T I O N S
  *******************************************************************************
@@ -1546,6 +1548,93 @@ int32_t MT_ATELogOnOff(struct net_device *prNetDev,
 
 	return i4Status;
 }
+
+/*----------------------------------------------------------------------------*/
+/*!
+* \brief  Hook API for Get RX Vector Dump.
+*
+* \param[in] prNetDev		Pointer to the Net Device
+* \param[out] pucData		Pointer to the output data buffer
+* \param[out] pCount		Pointer to the length of data
+*
+* \retval 0				On success.
+* \retval -EFAULT			If kalIoctl return nonzero.
+*/
+/*----------------------------------------------------------------------------*/
+int32_t MT_ATEGetDumpRXV(struct net_device *prNetDev,
+			 uint8_t *pucData,
+			 int32_t *pCount)
+{
+	int32_t i4Status = 0;
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct PARAM_MTK_WIFI_TEST_STRUCT rRfATInfo;
+	uint32_t i = 0, u4BufLen = 0, u4Value = 0;
+	uint32_t u4RespLen = 2, i4TargetLength = 0;
+
+	rRfATInfo.u4FuncIndex = RF_AT_FUNCID_RESULT_INFO;
+	rRfATInfo.u4FuncData = RF_AT_FUNCID_RXV_DUMP;
+
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+	ASSERT(prGlueInfo);
+
+	i4Status = kalIoctl(prGlueInfo,
+			    wlanoidRftestQueryAutoTest,
+			    &rRfATInfo,
+			    sizeof(rRfATInfo),
+			    TRUE,
+			    TRUE,
+			    TRUE,
+			    &u4BufLen);
+
+	if (i4Status == 0) {
+		DBGLOG(RFTEST, INFO, "Get RX Vector Total count = %d\n",
+				     rRfATInfo.u4FuncData);
+		if (rRfATInfo.u4FuncData > MAX_RXV_DUMP_COUNT)
+			rRfATInfo.u4FuncData = MAX_RXV_DUMP_COUNT;
+
+		i4TargetLength = rRfATInfo.u4FuncData * 36;
+		u4Value = ntohl(rRfATInfo.u4FuncData);
+		kalMemCopy(pucData + u4RespLen,
+			   (uint8_t *)&u4Value,
+			   sizeof(u4Value));
+		u4RespLen += sizeof(u4Value);
+	} else {
+		DBGLOG(RFTEST, ERROR, "Get RX Vector Total Size Error!!\n");
+		return -EFAULT;
+	}
+
+	for (i = 0; i < i4TargetLength; i += 4) {
+		rRfATInfo.u4FuncIndex = RF_AT_FUNCID_RXV_DUMP;
+		rRfATInfo.u4FuncData = i;
+
+		i4Status = kalIoctl(prGlueInfo,
+					wlanoidRftestQueryAutoTest,
+					&rRfATInfo,
+					sizeof(rRfATInfo),
+					TRUE,
+					TRUE,
+					TRUE,
+					&u4BufLen);
+
+		if (i4Status == 0) {
+			u4Value = ntohl(rRfATInfo.u4FuncData);
+			kalMemCopy(pucData + u4RespLen,
+				   (uint8_t *)&u4Value,
+				   sizeof(u4Value));
+			u4RespLen += sizeof(u4Value);
+		} else {
+			DBGLOG(RFTEST, ERROR,
+			      "Error getting index[%d]'s RXV dump data!!\n", i);
+			return -EFAULT;
+		}
+	}
+
+	*pCount = i4TargetLength;
+	/* dumpMemory32((PUINT_32)pucData, i4TargetLength + 8); */
+
+	return 0;
+}
+
 
 /*----------------------------------------------------------------------------*/
 /*!

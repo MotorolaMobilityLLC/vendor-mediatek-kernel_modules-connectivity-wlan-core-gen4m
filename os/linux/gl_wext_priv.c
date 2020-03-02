@@ -5903,19 +5903,19 @@ static int32_t priv_driver_dump_stat_info(struct ADAPTER *prAdapter,
 			"%s", "----- RX Reorder (Group 0x10) -----\n");
 		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten,
 			i4TotalLen - i4BytesWritten,
-			"%-20s%s%d\n", "Rx reorder miss", " = ",
+			"%-20s%s%ld\n", "Rx reorder miss", " = ",
 			RX_GET_CNT(prRxCtrl, RX_DATA_REORDER_MISS_COUNT));
 		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten,
 			i4TotalLen - i4BytesWritten,
-			"%-20s%s%d\n", "Rx reorder within", " = ",
+			"%-20s%s%ld\n", "Rx reorder within", " = ",
 			RX_GET_CNT(prRxCtrl, RX_DATA_REORDER_WITHIN_COUNT));
 		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten,
 			i4TotalLen - i4BytesWritten,
-			"%-20s%s%d\n", "Rx reorder ahead", " = ",
+			"%-20s%s%ld\n", "Rx reorder ahead", " = ",
 			RX_GET_CNT(prRxCtrl, RX_DATA_REORDER_AHEAD_COUNT));
 		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten,
 			i4TotalLen - i4BytesWritten,
-			"%-20s%s%d\n", "Rx reorder behind", " = ",
+			"%-20s%s%ld\n", "Rx reorder behind", " = ",
 			RX_GET_CNT(prRxCtrl, RX_DATA_REORDER_BEHIND_COUNT));
 	}
 
@@ -5961,6 +5961,12 @@ static int32_t priv_driver_dump_stat_info(struct ADAPTER *prAdapter,
 					1 : 0);
 			}
 
+			i4BytesWritten += kalScnprintf(
+				pcCommand + i4BytesWritten,
+				i4TotalLen - i4BytesWritten,
+				"%-20s%s%d%%\n", "Rate1 instantPer", " = ",
+				u4InstantPer);
+
 			if (prQueryStaStatistics->ucAvePer == 0xFF) {
 				i4BytesWritten += kalScnprintf(
 					pcCommand + i4BytesWritten,
@@ -5979,19 +5985,23 @@ static int32_t priv_driver_dump_stat_info(struct ADAPTER *prAdapter,
 					i4TotalLen - i4BytesWritten,
 					"%-20s%s%d -> %d\n", "Train Down",
 					" = ",
-					(prQueryStaStatistics->u2TrainDown)
-						& BITS(0, 7),
-					((prQueryStaStatistics->u2TrainDown) >>
-						8) & BITS(0, 7));
+					(uint16_t)
+					(prQueryStaStatistics->u2TrainDown
+						& BITS(0, 7)),
+					(uint16_t)
+					((prQueryStaStatistics->u2TrainDown >>
+						8) & BITS(0, 7)));
 
 				i4BytesWritten += kalScnprintf(
 					pcCommand + i4BytesWritten,
 					i4TotalLen - i4BytesWritten,
 					"%-20s%s%d -> %d\n", "Train Up", " = ",
-					(prQueryStaStatistics->u2TrainUp)
-						& BITS(0, 7),
-					((prQueryStaStatistics->u2TrainUp) >> 8)
-						& BITS(0, 7));
+					(uint16_t)
+					(prQueryStaStatistics->u2TrainUp
+						& BITS(0, 7)),
+					(uint16_t)
+					((prQueryStaStatistics->u2TrainUp >> 8)
+						& BITS(0, 7)));
 			}
 
 			if (prQueryStaStatistics->fgIsForceTxStream == 0)
@@ -11631,6 +11641,16 @@ static int priv_driver_efuse_ops(IN struct net_device *prNetDev,
 	/* Start operation */
 #if  (CFG_EEPROM_PAGE_ACCESS == 1)
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+	ASSERT(prGlueInfo);
+	if (prGlueInfo->prAdapter &&
+	    prGlueInfo->prAdapter->chip_info &&
+	    !prGlueInfo->prAdapter->chip_info->is_support_efuse) {
+		u4Offset += snprintf(pcCommand + u4Offset,
+				     i4TotalLen - u4Offset,
+				     "efuse ops is invalid\n");
+		return (int32_t)u4Offset;
+	}
+
 	kalMemSet(&rAccessEfuseInfo, 0,
 		  sizeof(struct PARAM_CUSTOM_ACCESS_EFUSE));
 	rAccessEfuseInfo.u4Address = (u4Efuse_addr / EFUSE_BLOCK_SIZE)
