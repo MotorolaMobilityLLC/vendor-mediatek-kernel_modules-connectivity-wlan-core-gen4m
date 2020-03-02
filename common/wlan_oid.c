@@ -6910,6 +6910,7 @@ wlanoidQueryDrvMcrRead(IN struct ADAPTER *prAdapter,
 	ACQUIRE_POWER_CONTROL_FROM_PM(prAdapter);
 	HAL_MCR_RD(prAdapter, (prMcrRdInfo->u4McrOffset & BITS(2,
 			       31)), &prMcrRdInfo->u4McrData);
+	RECLAIM_POWER_CONTROL_TO_PM(prAdapter, FALSE);
 
 	DBGLOG(INIT, TRACE,
 	       "DRV MCR Read: Offset = %#08x, Data = %#08x\n",
