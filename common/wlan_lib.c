@@ -7969,9 +7969,9 @@ uint32_t wlanCfgInit(IN struct ADAPTER *prAdapter,
 	prWlanCfgRec->u4WlanCfgEntryNumMax =
 		WLAN_CFG_REC_ENTRY_NUM_MAX;
 	prWlanCfgRec->u4WlanCfgKeyLenMax =
-		WLAN_CFG_REC_ENTRY_NUM_MAX;
+		WLAN_CFG_KEY_LEN_MAX;
 	prWlanCfgRec->u4WlanCfgValueLenMax =
-		WLAN_CFG_REC_ENTRY_NUM_MAX;
+		WLAN_CFG_VALUE_LEN_MAX;
 
 	DBGLOG(INIT, INFO, "Init wifi config len %u max entry %u\n",
 	       u4ConfigBufLen, prWlanCfg->u4WlanCfgEntryNumMax);
