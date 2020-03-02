@@ -2694,6 +2694,10 @@ aisIndicationOfMediaStateToHost(IN struct ADAPTER *prAdapter,
 		/* 4 <2> Indication */
 		nicMediaStateChange(prAdapter, prAdapter->prAisBssInfo->ucBssIndex, &rEventConnStatus);
 		prAisBssInfo->eConnectionStateIndicated = eConnectionState;
+		if (eConnectionState == PARAM_MEDIA_STATE_DISCONNECTED) {
+			prAisFsmInfo->prTargetBssDesc = NULL;
+			prAisFsmInfo->prTargetStaRec = NULL;
+		}
 	} else {
 		/* NOTE: Only delay the Indication of Disconnect Event */
 		ASSERT(eConnectionState == PARAM_MEDIA_STATE_DISCONNECTED);
