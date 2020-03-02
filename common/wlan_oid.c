@@ -13287,6 +13287,11 @@ wlanoidSetDbdcEnable(
 	if (!prAdapter || !pvSetBuffer)
 		return WLAN_STATUS_INVALID_DATA;
 
+	/* Be careful.
+	 * We only use the test cmd "set_dbdc" to enable DBDC HW
+	 * wo/ OP Mode Change. Besides, it may also confuse original
+	 * DBDC FSM.
+	 */
 	kalMemCopy(&ucDBDCEnable, pvSetBuffer, 1);
 	cnmUpdateDbdcSetting(prAdapter, ucDBDCEnable);
 
