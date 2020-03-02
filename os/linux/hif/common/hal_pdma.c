@@ -705,7 +705,7 @@ uint32_t halGetMsduTokenFreeCnt(IN struct ADAPTER *prAdapter)
 	prPerMonitor = &prAdapter->rPerMonitor;
 	prPerMonitor->u4UsedCnt = prTokenInfo->i4UsedCnt;
 
-	return (HIF_TX_MSDU_TOKEN_NUM - prTokenInfo->i4UsedCnt);
+	return HIF_TX_MSDU_TOKEN_NUM - prTokenInfo->i4UsedCnt;
 }
 
 struct MSDU_TOKEN_ENTRY *halGetMsduTokenEntry(IN struct ADAPTER *prAdapter,
