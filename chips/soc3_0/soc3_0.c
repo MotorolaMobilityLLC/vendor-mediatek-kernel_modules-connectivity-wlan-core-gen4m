@@ -72,7 +72,7 @@
 #include "coda/soc3_0/wf_wfdma_host_dma0.h"
 #include "coda/soc3_0/wf_wfdma_host_dma1.h"
 
-#if 1 /* (CFG_DOWNLOAD_DYN_MEMORY_MAP == 1) */
+#if (CFG_DOWNLOAD_DYN_MEMORY_MAP == 1)
 #include "coda/soc3_0/conn_infra_cfg.h"
 #endif
 
@@ -95,6 +95,8 @@
 
 #define SW_WORKAROUND_FOR_WFDMA_ISSUE_HWITS00009838 1
 
+#define SOC3_0_FILE_NAME_TOTAL 8
+#define SOC3_0_FILE_NAME_MAX 64
 /* this is workaround for AXE, do not sync back to trunk*/
 
 #if (CFG_SUPPORT_CONNINFRA == 1)
@@ -115,7 +117,15 @@ static struct sub_drv_ops_cb g_conninfra_wf_cb;
 *                              F U N C T I O N S
 ********************************************************************************
 */
+static uint8_t *soc3_0_apucFwName[] = {
+	(uint8_t *) CFG_FW_FILENAME "_MT",
+	NULL
+};
 
+static uint8_t *soc3_0_apucCr4FwName[] = {
+	(uint8_t *) CFG_CR4_FW_FILENAME "_MT",
+	NULL
+};
 
 /*******************************************************************************
 *                            P U B L I C   D A T A
@@ -123,13 +133,14 @@ static struct sub_drv_ops_cb g_conninfra_wf_cb;
 */
 
 uint8_t *apucsoc3_0FwName[] = {
-	(uint8_t *) CFG_FW_FILENAME "_SOC3_0",
+	(uint8_t *) CFG_FW_FILENAME "_soc3_0",
 	NULL
 };
 
 struct ECO_INFO soc3_0_eco_table[] = {
 	/* HW version,  ROM version,    Factory version */
-	{0x00, 0x00, 0x0}	/* End of table */
+	{0x00, 0x00, 0xA, 0x1}, /* E1 */
+	{0x00, 0x00, 0x0, 0x0}	/* End of table */
 };
 
 #if defined(_HIF_PCIE)
@@ -180,9 +191,7 @@ struct PCIE_CHIP_CR_MAPPING soc3_0_bus2chip_cr_mapping[] = {
 	{0x820b0000, 0xae000, 0x1000}, /* [APB2] WFSYS_ON */
 	{0x80020000, 0xb0000, 0x10000}, /* WF_TOP_MISC_OFF */
 	{0x81020000, 0xc0000, 0x10000}, /* WF_TOP_MISC_ON */
-#if (CFG_DOWNLOAD_DYN_MEMORY_MAP == 1)
 	{0x7c500000, 0x50000, 0x10000}, /* CONN_INFRA, dyn mem map */
-#endif
 	{0x7c020000, 0xd0000, 0x10000}, /* CONN_INFRA, wfdma */
 	{0x7c060000, 0xe0000, 0x10000}, /* CONN_INFRA, conn_host_csr_top */
 	{0x7c000000, 0xf0000, 0x10000}, /* CONN_INFRA */
@@ -498,9 +507,9 @@ struct BUS_INFO soc3_0_bus_info = {
 
 #if CFG_ENABLE_FW_DOWNLOAD
 struct FWDL_OPS_T soc3_0_fw_dl_ops = {
-	.constructFirmwarePrio = NULL,
+	.constructFirmwarePrio = soc3_0_ConstructFirmwarePrio,
 	.constructPatchName = NULL,
-	.downloadPatch = wlanDownloadPatch,
+	.downloadPatch = NULL,
 	.downloadFirmware = wlanConnacFormatDownload,
 #if (CFG_DOWNLOAD_DYN_MEMORY_MAP == 1)
 	.downloadByDynMemMap = soc3_0_DownloadByDynMemMap,
@@ -580,6 +589,11 @@ struct mt66xx_chip_info mt66xx_chip_info_soc3_0 = {
 	.u4UmacWtblDUAddr = CONNAC2X_WIFI_UWTBL_BASE,
 	.wmmcupwron = hifWmmcuPwrOn,
 	.wmmcupwroff = hifWmmcuPwrOff,
+#if (CFG_POWER_ON_DOWNLOAD_EMI_ROM_PATCH == 1)
+	.pwrondownload = soc3_0_wlanPowerOnDownload,
+#else
+	.pwrondownload = NULL,
+#endif
 	.triggerfwassert = soc3_0_Trigger_fw_assert,
 #if (CFG_SUPPORT_CONNINFRA == 1)
 	.trigger_wholechiprst = soc3_0_Trigger_whole_chip_rst,
@@ -598,15 +612,53 @@ uint32_t soc3_0_DownloadByDynMemMap(IN struct ADAPTER *prAdapter,
 	IN uint8_t *pucStartPtr, IN enum ENUM_IMG_DL_IDX_T eDlIdx)
 {
 	uint32_t u4Val = 0;
-	struct GL_HIF_INFO *prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
 	uint32_t u4Idx = 0;
 	uint32_t u4NonZeroMemCnt = 0;
+#if defined(_HIF_AXI)
+	struct GL_HIF_INFO *prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
+#endif
+
+#if defined(_HIF_PCIE)
+	struct GL_HIF_INFO *prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
+#endif
 
 	if ((eDlIdx == IMG_DL_IDX_PATCH) || (eDlIdx == IMG_DL_IDX_N9_FW)) {
-#if defined(SOC3_0)
 /*#pragma message("wlanDownloadSectionByDynMemMap()::SOC3_0")*/
 #if defined(_HIF_AXI)
-		/* AXI goes over here */
+		/* AXI workable version by bytes of u4Len in one movement */
+		/* for PCIe WLAN drv, use 0x7C000000 based;
+		 * for AXI, also use 0x7C000000 based
+		 */
+		HAL_MCR_WR(prAdapter,
+			CONN_INFRA_CFG_AP2WF_REMAP_1_ADDR,
+			u4Addr);
+
+		if (eDlIdx == IMG_DL_IDX_PATCH) {
+			do {
+				u4Val = 0;
+
+				kalMemCopy(
+					(void *)&u4Val,
+					(void *)(
+						prHifInfo->CSRBaseAddress+
+						0x500000+(u4Idx * 4)),
+					4);
+
+				if (u4Val != 0)
+					u4NonZeroMemCnt++;
+			} while (u4Idx++ < 20);
+
+			if (u4NonZeroMemCnt != 0) {
+				DBGLOG(INIT, WARN,
+					"[MJ]ROM patch exists(%d)!\n",
+					u4NonZeroMemCnt);
+
+				return WLAN_STATUS_NOT_ACCEPTED;
+			}
+		}
+
+		memcpy_toio((void *)(prHifInfo->CSRBaseAddress+0x500000),
+			(void *)pucStartPtr, u4Len);
 #endif
 
 #if defined(_HIF_PCIE)
@@ -710,7 +762,6 @@ uint32_t soc3_0_DownloadByDynMemMap(IN struct ADAPTER *prAdapter,
 		}
 #endif
 #endif /* _HIF_PCIE */
-#endif /* SOC3_0 */
 	} else {
 		return WLAN_STATUS_NOT_SUPPORTED;
 	}
@@ -957,8 +1008,9 @@ int wf_pwr_on_consys_mcu(void)
 		DBGLOG(INIT, ERROR, "Polling CONNSYS version ID fail.\n");
 		return ret;
 	}
+
 	/* Setup CONNSYS firmware in EMI */
-#if 0/*(CFG_POWER_ON_DOWNLOAD_EMI_ROM_PATCH == 1)*/
+#if (CFG_POWER_ON_DOWNLOAD_EMI_ROM_PATCH == 1)
 	soc3_0_wlanPowerOnInit(ENUM_WLAN_POWER_ON_DOWNLOAD_EMI);
 #endif
 
@@ -1130,9 +1182,10 @@ int hifWmmcuPwrOn(void)
 	ret = wf_pwr_on_consys_mcu();
 	if (ret != 0)
 		return ret;
+
 	/* Power on download ROM patch*/
-#if 0/*(CFG_POWER_ON_DOWNLOAD_EMI_ROM_PATCH == 1)*/
-	ret = soc3_0_wlanPowerOnInit(ENUM_WLAN_POWER_ON_DOWNLOAD_ROM_PATCH);
+#if (CFG_POWER_ON_DOWNLOAD_EMI_ROM_PATCH == 1)
+	soc3_0_wlanPowerOnInit(ENUM_WLAN_POWER_ON_DOWNLOAD_ROM_PATCH);
 #endif
 
 	return ret;
@@ -1198,6 +1251,983 @@ void soc3_0_Conninfra_cb_register(void)
 #endif
 
 #if (CFG_POWER_ON_DOWNLOAD_EMI_ROM_PATCH == 1)
+#pragma message("SOC3_0::CFG_POWER_ON_DOWNLOAD_EMI_ROM_PATCH == 1")
+void soc3_0_ConstructFirmwarePrio(struct GLUE_INFO *prGlueInfo,
+	uint8_t **apucNameTable, uint8_t **apucName,
+	uint8_t *pucNameIdx, uint8_t ucMaxNameIdx)
+{
+	uint8_t ucIdx = 0;
+
+	for (ucIdx = 0; apucsoc3_0FwName[ucIdx]; ucIdx++) {
+		if ((*pucNameIdx + 3) < ucMaxNameIdx) {
+			/* Type 1. WIFI_RAM_CODE_soc1_0_1_1 */
+			snprintf(*(apucName + (*pucNameIdx)),
+					CFG_FW_NAME_MAX_LEN, "%s_%u_%u",
+					apucsoc3_0FwName[ucIdx],
+					CFG_WIFI_IP_SET,
+					wlanGetEcoVersion(
+						prGlueInfo->prAdapter));
+			(*pucNameIdx) += 1;
+
+			/* Type 2. WIFI_RAM_CODE_soc1_0_1_1.bin */
+			snprintf(*(apucName + (*pucNameIdx)),
+					CFG_FW_NAME_MAX_LEN, "%s_%u_%u.bin",
+					apucsoc3_0FwName[ucIdx],
+					CFG_WIFI_IP_SET,
+					wlanGetEcoVersion(
+						prGlueInfo->prAdapter));
+			(*pucNameIdx) += 1;
+
+			/* Type 3. WIFI_RAM_CODE_soc1_0 */
+			snprintf(*(apucName + (*pucNameIdx)),
+					CFG_FW_NAME_MAX_LEN, "%s",
+					apucsoc3_0FwName[ucIdx]);
+			(*pucNameIdx) += 1;
+
+			/* Type 4. WIFI_RAM_CODE_soc1_0.bin */
+			snprintf(*(apucName + (*pucNameIdx)),
+					CFG_FW_NAME_MAX_LEN, "%s.bin",
+					apucsoc3_0FwName[ucIdx]);
+			(*pucNameIdx) += 1;
+		} else {
+			/* the table is not large enough */
+			DBGLOG(INIT, ERROR,
+				"kalFirmwareImageMapping >> file name array is not enough.\n");
+			ASSERT(0);
+		}
+	}
+}
+
+void *
+soc3_0_kalFirmwareImageMapping(
+			IN struct GLUE_INFO *prGlueInfo,
+			OUT void **ppvMapFileBuf,
+			OUT uint32_t *pu4FileLength,
+			IN enum ENUM_IMG_DL_IDX_T eDlIdx)
+{
+	uint8_t **apucNameTable = NULL;
+	uint8_t *apucName[SOC3_0_FILE_NAME_TOTAL +
+					  1]; /* extra +1, for the purpose of
+					       * detecting the end of the array
+					       */
+	uint8_t idx = 0, max_idx,
+		aucNameBody[SOC3_0_FILE_NAME_TOTAL][SOC3_0_FILE_NAME_MAX],
+		sub_idx = 0;
+	struct mt66xx_chip_info *prChipInfo =
+			prGlueInfo->prAdapter->chip_info;
+	/* uint32_t chip_id = prChipInfo->chip_id; */
+
+	DEBUGFUNC("kalFirmwareImageMapping");
+
+	ASSERT(prGlueInfo);
+	ASSERT(ppvMapFileBuf);
+	ASSERT(pu4FileLength);
+
+	*ppvMapFileBuf = NULL;
+	*pu4FileLength = 0;
+
+	do {
+		/* <0.0> Get FW name prefix table */
+		switch (eDlIdx) {
+		case IMG_DL_IDX_N9_FW:
+			apucNameTable = soc3_0_apucFwName;
+			break;
+
+		case IMG_DL_IDX_CR4_FW:
+			apucNameTable = soc3_0_apucCr4FwName;
+			break;
+
+		case IMG_DL_IDX_PATCH:
+			break;
+
+		case IMG_DL_IDX_MCU_ROM_EMI:
+			break;
+
+		case IMG_DL_IDX_WIFI_ROM_EMI:
+			break;
+
+		default:
+			ASSERT(0);
+			break;
+		}
+
+		/* <0.2> Construct FW name */
+		memset(apucName, 0, sizeof(apucName));
+
+		/* magic number 1: reservation for detection
+		 * of the end of the array
+		 */
+		max_idx = (sizeof(apucName) / sizeof(uint8_t *)) - 1;
+
+		idx = 0;
+		apucName[idx] = (uint8_t *)(aucNameBody + idx);
+
+		if (eDlIdx == IMG_DL_IDX_PATCH) {
+			/* construct the file name for patch */
+			/* soc3_0_patch_wmmcu_1_1_hdr.bin */
+			if (prChipInfo->fw_dl_ops->constructPatchName)
+				prChipInfo->fw_dl_ops->constructPatchName(
+					prGlueInfo, apucName, &idx);
+			else
+				snprintf(apucName[idx], SOC3_0_FILE_NAME_MAX,
+					"soc3_0_patch_wmmcu_1_%x_hdr.bin",
+					wlanGetEcoVersion(
+						prGlueInfo->prAdapter));
+			idx += 1;
+		} else if (eDlIdx == IMG_DL_IDX_MCU_ROM_EMI) {
+			/* construct the file name for MCU ROM EMI */
+			/* soc3_0_ram_wmmcu_1_1_hdr.bin */
+			snprintf(apucName[idx], SOC3_0_FILE_NAME_MAX,
+					"soc3_0_ram_wmmcu_1_%x_hdr.bin",
+					wlanGetEcoVersion(
+						prGlueInfo->prAdapter));
+
+			idx += 1;
+		} else if (eDlIdx == IMG_DL_IDX_WIFI_ROM_EMI) {
+			/* construct the file name for WiFi ROM EMI */
+			/* soc3_0_ram_wifi_1_1_hdr.bin */
+			snprintf(apucName[idx], SOC3_0_FILE_NAME_MAX,
+					"soc3_0_ram_wifi_1_%x_hdr.bin",
+					wlanGetEcoVersion(
+						prGlueInfo->prAdapter));
+
+			idx += 1;
+		} else {
+			for (sub_idx = 0; sub_idx < max_idx; sub_idx++)
+				apucName[sub_idx] =
+					(uint8_t *)(aucNameBody + sub_idx);
+
+			if (prChipInfo->fw_dl_ops->constructFirmwarePrio)
+				prChipInfo->fw_dl_ops->constructFirmwarePrio(
+					prGlueInfo, apucNameTable, apucName,
+					&idx, max_idx);
+			else
+				kalConstructDefaultFirmwarePrio(
+					prGlueInfo, apucNameTable, apucName,
+					&idx, max_idx);
+		}
+
+		/* let the last pointer point to NULL
+		 * so that we can detect the end of the array in
+		 * kalFirmwareOpen().
+		 */
+		apucName[idx] = NULL;
+
+		apucNameTable = apucName;
+
+		/* <1> Open firmware */
+		if (kalFirmwareOpen(prGlueInfo,
+				    apucNameTable) != WLAN_STATUS_SUCCESS)
+			break;
+		{
+			uint32_t u4FwSize = 0;
+			void *prFwBuffer = NULL;
+			/* <2> Query firmare size */
+			kalFirmwareSize(prGlueInfo, &u4FwSize);
+			/* <3> Use vmalloc for allocating large memory trunk */
+			prFwBuffer = vmalloc(ALIGN_4(u4FwSize));
+			/* <4> Load image binary into buffer */
+			if (kalFirmwareLoad(prGlueInfo, prFwBuffer, 0,
+					    &u4FwSize) != WLAN_STATUS_SUCCESS) {
+				vfree(prFwBuffer);
+				kalFirmwareClose(prGlueInfo);
+				break;
+			}
+			/* <5> write back info */
+			*pu4FileLength = u4FwSize;
+			*ppvMapFileBuf = prFwBuffer;
+
+			return prFwBuffer;
+		}
+	} while (FALSE);
+
+	return NULL;
+}
+
+uint32_t soc3_0_wlanImageSectionDownloadStage(
+	IN struct ADAPTER *prAdapter, IN void *pvFwImageMapFile,
+	IN uint32_t u4FwImageFileLength, IN uint8_t ucSectionNumber,
+	IN enum ENUM_IMG_DL_IDX_T eDlIdx)
+{
+	uint32_t u4SecIdx, u4Offset = 0;
+	uint32_t u4Addr, u4Len, u4DataMode = 0;
+	u_int8_t fgIsEMIDownload = FALSE;
+	u_int8_t fgIsNotDownload = FALSE;
+	uint32_t u4Status = WLAN_STATUS_SUCCESS;
+	struct mt66xx_chip_info *prChipInfo = prAdapter->chip_info;
+	struct patch_dl_target target;
+	struct PATCH_FORMAT_T *prPatchHeader;
+	struct ROM_EMI_HEADER *prRomEmiHeader;
+	struct FWDL_OPS_T *prFwDlOps;
+
+	prFwDlOps = prChipInfo->fw_dl_ops;
+
+	/* 3a. parse file header for decision of
+	 * divided firmware download or not
+	 */
+	if (eDlIdx == IMG_DL_IDX_PATCH) {
+		prPatchHeader = pvFwImageMapFile;
+		if (prPatchHeader->u4PatchVersion == PATCH_VERSION_MAGIC_NUM) {
+			wlanImageSectionGetPatchInfoV2(prAdapter,
+				pvFwImageMapFile,
+				u4FwImageFileLength,
+				&u4DataMode,
+				&target);
+			DBGLOG(INIT, INFO,
+				"FormatV2 num_of_regoin[%d] datamode[0x%08x]\n",
+				target.num_of_region, u4DataMode);
+		} else {
+			wlanImageSectionGetPatchInfo(prAdapter,
+				pvFwImageMapFile,
+					     u4FwImageFileLength,
+					     &u4Offset, &u4Addr,
+					     &u4Len, &u4DataMode);
+			DBGLOG(INIT, INFO,
+		"FormatV1 DL Offset[%u] addr[0x%08x] len[%u] datamode[0x%08x]\n",
+		       u4Offset, u4Addr, u4Len, u4DataMode);
+		}
+
+		if (prPatchHeader->u4PatchVersion == PATCH_VERSION_MAGIC_NUM)
+			u4Status = wlanDownloadSectionV2(prAdapter,
+				u4DataMode, eDlIdx, &target);
+		else
+/* For dynamic memory map::Begin */
+#if (CFG_DOWNLOAD_DYN_MEMORY_MAP == 1)
+			u4Status = prFwDlOps->downloadByDynMemMap(
+						prAdapter, u4Addr, u4Len,
+						pvFwImageMapFile
+							+ u4Offset,
+							eDlIdx);
+#else
+			u4Status = wlanDownloadSection(
+							prAdapter,
+							u4Addr,
+							u4Len,
+							u4DataMode,
+							pvFwImageMapFile
+								+ u4Offset,
+						       eDlIdx);
+#endif
+/* For dynamic memory map::End */
+	} else if ((eDlIdx == IMG_DL_IDX_MCU_ROM_EMI) ||
+				(eDlIdx == IMG_DL_IDX_WIFI_ROM_EMI)) {
+		prRomEmiHeader = (struct ROM_EMI_HEADER *)pvFwImageMapFile;
+
+		u4Addr = prRomEmiHeader->u4PatchAddr;
+
+		u4Len = u4FwImageFileLength - sizeof(struct ROM_EMI_HEADER);
+
+		u4Offset = sizeof(struct ROM_EMI_HEADER);
+
+		u4Status = wlanDownloadEMISection(prAdapter,
+					u4Addr, u4Len,
+					pvFwImageMapFile + u4Offset);
+	} else {
+		for (u4SecIdx = 0; u4SecIdx < ucSectionNumber;
+		     u4SecIdx++, u4Offset += u4Len) {
+			prChipInfo->fw_dl_ops->getFwInfo(prAdapter, u4SecIdx,
+				eDlIdx, &u4Addr,
+				&u4Len, &u4DataMode, &fgIsEMIDownload,
+				&fgIsNotDownload);
+
+			DBGLOG(INIT, INFO,
+			       "DL Offset[%u] addr[0x%08x] len[%u] datamode[0x%08x]\n",
+			       u4Offset, u4Addr, u4Len, u4DataMode);
+
+			if (fgIsNotDownload)
+				continue;
+			else if (fgIsEMIDownload)
+				u4Status = wlanDownloadEMISection(prAdapter,
+					u4Addr, u4Len,
+					pvFwImageMapFile + u4Offset);
+/* For dynamic memory map:: Begin */
+#if (CFG_DOWNLOAD_DYN_MEMORY_MAP == 1)
+			else if ((u4DataMode &
+				DOWNLOAD_CONFIG_ENCRYPTION_MODE) == 0) {
+				/* Non-encrypted F/W region,
+				 * use dynamic memory mapping for download
+				 */
+				u4Status = prFwDlOps->downloadByDynMemMap(
+					prAdapter,
+					u4Addr,
+					u4Len,
+					pvFwImageMapFile + u4Offset,
+					eDlIdx);
+			}
+#endif
+/* For dynamic memory map:: End */
+			else
+				u4Status = wlanDownloadSection(prAdapter,
+					u4Addr, u4Len,
+					u4DataMode,
+					pvFwImageMapFile + u4Offset, eDlIdx);
+
+			/* escape from loop if any pending error occurs */
+			if (u4Status == WLAN_STATUS_FAILURE)
+				break;
+		}
+	}
+
+	return u4Status;
+}
+
+/* WiFi power on download MCU/WiFi ROM EMI + ROM patch */
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Wlan power on download function. This function prepare the job
+ *  during power on stage:
+ *  [1]Download MCU + WiFi ROM EMI
+ *  [2]Download ROM patch
+ *
+ * \retval 0 Success
+ * \retval negative value Failed
+ */
+/*----------------------------------------------------------------------------*/
+uint32_t soc3_0_wlanPowerOnDownload(
+	IN struct ADAPTER *prAdapter,
+	IN uint8_t ucDownloadItem)
+{
+	uint32_t u4FwSize = 0;
+	void *prFwBuffer = NULL;
+	uint32_t u4Status;
+#if CFG_SUPPORT_COMPRESSION_FW_OPTION
+	uint8_t ucIsCompressed;
+#endif
+	if (!prAdapter)
+		return WLAN_STATUS_FAILURE;
+
+
+	DBGLOG(INIT, INFO, "Power on download start(%d)\n", ucDownloadItem);
+
+	switch (ucDownloadItem) {
+	case ENUM_WLAN_POWER_ON_DOWNLOAD_EMI:
+		/* Download MCU ROM EMI*/
+		soc3_0_kalFirmwareImageMapping(prAdapter->prGlueInfo,
+			&prFwBuffer, &u4FwSize, IMG_DL_IDX_MCU_ROM_EMI);
+
+		u4Status = soc3_0_wlanImageSectionDownloadStage(
+			prAdapter, prFwBuffer, u4FwSize, 1,
+			IMG_DL_IDX_MCU_ROM_EMI);
+
+		kalFirmwareImageUnmapping(
+			prAdapter->prGlueInfo, NULL, prFwBuffer);
+
+		DBGLOG(INIT, INFO, "Power on download mcu ROM EMI %s\n",
+			(u4Status == WLAN_STATUS_SUCCESS) ? "pass" : "failed");
+
+		/* Download WiFi ROM EMI*/
+		if (u4Status == WLAN_STATUS_SUCCESS) {
+			soc3_0_kalFirmwareImageMapping(prAdapter->prGlueInfo,
+				&prFwBuffer, &u4FwSize,
+				IMG_DL_IDX_WIFI_ROM_EMI);
+
+			u4Status = soc3_0_wlanImageSectionDownloadStage(
+				prAdapter, prFwBuffer, u4FwSize, 1,
+				IMG_DL_IDX_WIFI_ROM_EMI);
+
+			kalFirmwareImageUnmapping(
+				prAdapter->prGlueInfo, NULL, prFwBuffer);
+
+			DBGLOG(INIT, INFO,
+				"Power on download WiFi ROM EMI %s\n",
+				(u4Status == WLAN_STATUS_SUCCESS)
+					? "pass" : "failed");
+		}
+
+		break;
+
+	case ENUM_WLAN_POWER_ON_DOWNLOAD_ROM_PATCH:
+		prAdapter->rVerInfo.fgPatchIsDlByDrv = FALSE;
+
+		soc3_0_kalFirmwareImageMapping(prAdapter->prGlueInfo,
+			&prFwBuffer, &u4FwSize, IMG_DL_IDX_PATCH);
+
+		if (prFwBuffer == NULL) {
+			DBGLOG(INIT, WARN, "FW[%u] load error!\n",
+			       IMG_DL_IDX_PATCH);
+			return WLAN_STATUS_FAILURE;
+		}
+
+#if (CFG_ROM_PATCH_NO_SEM_CTRL == 0)
+#pragma message("ROM code supports SEM-CTRL for ROM patch download")
+		if (wlanPatchIsDownloaded(prAdapter)) {
+			kalFirmwareImageUnmapping(prAdapter->prGlueInfo, NULL,
+						  prFwBuffer);
+			DBGLOG(INIT, INFO, "No need to download patch\n");
+			return WLAN_STATUS_SUCCESS;
+		}
+#else
+#pragma message("ROM code supports no SEM-CTRL for ROM patch download")
+#endif
+
+		/* Patch DL */
+#if CFG_SUPPORT_COMPRESSION_FW_OPTION
+		u4Status = wlanCompressedImageSectionDownloadStage(
+			prAdapter, prFwBuffer, u4FwSize, 1,
+			IMG_DL_IDX_PATCH, &ucIsCompressed, NULL);
+#else
+		u4Status = soc3_0_wlanImageSectionDownloadStage(
+			prAdapter, prFwBuffer, u4FwSize, 1, IMG_DL_IDX_PATCH);
+#endif
+
+/* Dynamic memory map::Begin */
+#if (CFG_DOWNLOAD_DYN_MEMORY_MAP == 1)
+		if (u4Status == WLAN_STATUS_SUCCESS)
+			wlanPatchDynMemMapSendComplete(prAdapter);
+		else if (u4Status == WLAN_STATUS_NOT_ACCEPTED)
+			u4Status = WLAN_STATUS_SUCCESS; /* already download*/
+#else
+		wlanPatchSendComplete(prAdapter);
+#endif
+/* Dynamic memory map::End */
+
+		kalFirmwareImageUnmapping(
+			prAdapter->prGlueInfo, NULL, prFwBuffer);
+
+		prAdapter->rVerInfo.fgPatchIsDlByDrv = TRUE;
+
+		break;
+
+	default:
+		return WLAN_STATUS_NOT_SUPPORTED;
+	}
+
+	DBGLOG(INIT, INFO, "Power on download end[%d].\n", u4Status);
+
+	return u4Status;
+}
+
+/* WiFi power on init for MCU/WiFi ROM EMI + ROM patch download */
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Wlan power on init function. This function do the job in the
+ *  power on stage, they are:
+ *  [1]Download MCU + WiFi ROM EMI
+ *  [2]Download ROM patch
+ *
+ *  It is to simulate wlanProbe() with the minimum effort to complete
+ *  ROM EMI + ROM patch download.
+ *
+ * \retval 0 Success
+ * \retval negative value Failed
+ */
+/*----------------------------------------------------------------------------*/
+int32_t soc3_0_wlanPowerOnInit(
+	enum ENUM_WLAN_POWER_ON_DOWNLOAD eDownloadItem)
+{
+/*
+*	pvData     data passed by bus driver init function
+*		_HIF_EHPI: NULL
+*		_HIF_SDIO: sdio bus driver handle
+*	see hifAxiProbe() for more detail...
+*	pfWlanProbe((void *)prPlatDev,
+*			(void *)prPlatDev->id_entry->driver_data)
+*/
+#if defined(SOC3_0)
+#if defined(_HIF_AXI)
+/* prPlatDev is already created by initWlan()->glRegisterBus()::axi.c */
+	void *pvData = (void *)g_prPlatDev;
+	void *pvDriverData = (void *)g_prPlatDev->id_entry->driver_data;
+#endif
+
+#if defined(_HIF_PCIE)
+	void *pvData = NULL;
+	void *pvDriverData = (void *)&mt66xx_driver_data_soc3_0;
+#endif
+#endif
+
+	int32_t i4Status = 0;
+	enum ENUM_POWER_ON_INIT_FAIL_REASON {
+		BUS_INIT_FAIL = 0,
+		NET_CREATE_FAIL,
+		BUS_SET_IRQ_FAIL,
+		ALLOC_ADAPTER_MEM_FAIL,
+		DRIVER_OWN_FAIL,
+		INIT_ADAPTER_FAIL,
+		INIT_HIFINFO_FAIL,
+		ROM_PATCH_DOWNLOAD_FAIL,
+		POWER_ON_INIT_DONE,
+		FAIL_REASON_NUM
+	} eFailReason;
+	uint32_t i = 0;
+	int32_t i4DevIdx = 0;
+	struct wireless_dev *prWdev = NULL;
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct ADAPTER *prAdapter = NULL;
+	struct mt66xx_chip_info *prChipInfo;
+	struct FWDL_OPS_T *prFwDlOps;
+
+	DBGLOG(INIT, INFO, "wlanPowerOnInit::begin\n");
+
+	eFailReason = FAIL_REASON_NUM;
+
+	do {
+#if defined(_HIF_AXI)
+		/* AXI goes over here, to be conti... */
+		prChipInfo = ((struct mt66xx_hif_driver_data *)pvDriverData)
+					->chip_info;
+
+		pvData = (void *)prChipInfo->pdev;
+
+		/* we should call axi_enable_device(
+		*        (struct platform_device *)pvData);
+		* since it is invoked from within hifAxiProbe()::axi.c,
+		* before calling pfWlanProbe(), to be conti...
+		*/
+#endif
+
+#if defined(_HIF_PCIE)
+		prChipInfo = ((struct mt66xx_hif_driver_data *)pvDriverData)
+					->chip_info;
+
+		pvData = (void *)prChipInfo->pdev;
+
+		/* no need pci_enable_device(dev),
+		 * it has already been done in PCI driver's probe() function
+		 */
+#endif
+
+		if (eDownloadItem == ENUM_WLAN_POWER_ON_DOWNLOAD_EMI) {
+			prWdev = wlanNetCreate(pvData, pvDriverData);
+
+			if (prWdev == NULL) {
+				DBGLOG(INIT, ERROR,
+				"[Wi-Fi PWR On] No memory for dev and its private\n");
+
+				i4Status = -NET_CREATE_FAIL;
+			} else {
+				/* Set the ioaddr to HIF Info */
+				prGlueInfo = (struct GLUE_INFO *)
+					wiphy_priv(prWdev->wiphy);
+
+				prAdapter = prGlueInfo->prAdapter;
+
+				if (prChipInfo->pwrondownload) {
+					DBGLOG_LIMITED(INIT, INFO,
+					"[Wi-Fi PWR On] EMI download Start\n");
+
+					if (prChipInfo->pwrondownload(
+						prAdapter, eDownloadItem)
+						!= WLAN_STATUS_SUCCESS) {
+						i4Status =
+						-ROM_PATCH_DOWNLOAD_FAIL;
+					}
+
+					DBGLOG_LIMITED(INIT, INFO,
+					"[Wi-Fi PWR On] EMI download End\n");
+				}
+			}
+
+			wlanWakeLockUninit(prGlueInfo);
+
+			wlanNetDestroy(prWdev);
+
+			return i4Status;
+		}
+
+		/* [1]Copy from wlanProbe()::Begin */
+		/* Initialize the IO port of the interface */
+		/* GeorgeKuo: pData has different meaning for _HIF_XXX:
+		* _HIF_EHPI: pointer to memory base variable, which will be
+		*      initialized by glBusInit().
+		* _HIF_SDIO: bus driver handle
+		*/
+
+		/* Remember to call glBusRelease() in wlanPowerOnDeinit() */
+		if (glBusInit(pvData) == FALSE) {
+			DBGLOG(INIT, ERROR,
+				"[Wi-Fi PWR On] glBusInit() fail\n");
+
+			i4Status = -EIO;
+
+			eFailReason = BUS_INIT_FAIL;
+
+			break;
+		}
+
+#if (CFG_SUPPORT_TRACE_TC4 == 1)
+		wlanDebugTC4Init();
+#endif
+
+		/* Create network device, Adapter, KalInfo,
+		*       prDevHandler(netdev)
+		*/
+		prWdev = wlanNetCreate(pvData, pvDriverData);
+
+		if (prWdev == NULL) {
+			DBGLOG(INIT, ERROR,
+				"[Wi-Fi PWR On] No memory for dev and its private\n");
+
+			i4Status = -ENOMEM;
+
+			eFailReason = NET_CREATE_FAIL;
+
+			break;
+		}
+
+		/* Set the ioaddr to HIF Info */
+		prGlueInfo = (struct GLUE_INFO *) wiphy_priv(prWdev->wiphy);
+
+		/* Should we need this??? to be conti... */
+		gPrDev = prGlueInfo->prDevHandler;
+
+		/* Setup IRQ */
+		i4Status = glBusSetIrq(prWdev->netdev, NULL, prGlueInfo);
+
+		if (i4Status != WLAN_STATUS_SUCCESS) {
+			DBGLOG(INIT, ERROR, "[Wi-Fi PWR On] Set IRQ error\n");
+
+			eFailReason = BUS_SET_IRQ_FAIL;
+
+			break;
+		}
+
+		prGlueInfo->i4DevIdx = i4DevIdx;
+
+		prAdapter = prGlueInfo->prAdapter;
+		/* [1]Copy from wlanProbe()::End */
+
+		/* [2]Copy from wlanProbe()->wlanOnPreAdapterStart()::Begin */
+		/* Init Chip Capability */
+		prChipInfo = prAdapter->chip_info;
+
+		if (prChipInfo->asicCapInit)
+			prChipInfo->asicCapInit(prAdapter);
+
+		/* Trigger the action of switching Pwr state to drv_own */
+		prAdapter->fgIsFwOwn = TRUE;
+
+		nicpmWakeUpWiFi(prAdapter);
+		/* [2]Copy from wlanProbe()->wlanOnPreAdapterStart()::End */
+
+		/* [3]Copy from
+		* wlanProbe()
+		*	->wlanAdapterStart()
+		*		->wlanOnPreAllocAdapterMem()::Begin
+		*/
+#if 0  /* Sample's gen4m code base doesn't support */
+		prAdapter->u4HifDbgFlag = 0;
+		prAdapter->u4HifChkFlag = 0;
+		prAdapter->u4TxHangFlag = 0;
+		prAdapter->u4NoMoreRfb = 0;
+#endif
+
+		prAdapter->u4OwnFailedCount = 0;
+		prAdapter->u4OwnFailedLogCount = 0;
+
+#if 0  /* Sample's gen4m code base doesn't support */
+		prAdapter->fgEnHifDbgInfo = TRUE;
+#endif
+
+		/* Additional with chip reset optimize*/
+		prAdapter->ucCmdSeqNum = 0;
+		prAdapter->u4PwrCtrlBlockCnt = 0;
+
+		QUEUE_INITIALIZE(&(prAdapter->rPendingCmdQueue));
+#if CFG_SUPPORT_MULTITHREAD
+		QUEUE_INITIALIZE(&prAdapter->rTxCmdQueue);
+		QUEUE_INITIALIZE(&prAdapter->rTxCmdDoneQueue);
+#if CFG_FIX_2_TX_PORT
+		QUEUE_INITIALIZE(&prAdapter->rTxP0Queue);
+		QUEUE_INITIALIZE(&prAdapter->rTxP1Queue);
+#else
+		for (i = 0; i < TX_PORT_NUM; i++)
+			QUEUE_INITIALIZE(&prAdapter->rTxPQueue[i]);
+#endif
+		QUEUE_INITIALIZE(&prAdapter->rRxQueue);
+		QUEUE_INITIALIZE(&prAdapter->rTxDataDoneQueue);
+#endif
+
+		/* reset fgIsBusAccessFailed */
+		fgIsBusAccessFailed = FALSE;
+
+		/* Allocate mandatory resource for TX/RX */
+		if (nicAllocateAdapterMemory(prAdapter)
+			!= WLAN_STATUS_SUCCESS) {
+			DBGLOG(INIT, ERROR,
+				"[Wi-Fi PWR On] nicAllocateAdapterMemory Error!\n");
+
+			i4Status = -ENOMEM;
+
+			eFailReason = ALLOC_ADAPTER_MEM_FAIL;
+/*
+*#if CFG_ENABLE_KEYWORD_EXCEPTION_MECHANISM & 0
+*			mtk_wcn_wmt_assert_keyword(WMTDRV_TYPE_WIFI,
+*			"[Wi-Fi PWR On] nicAllocateAdapterMemory Error!");
+*#endif
+*/
+			break;
+		}
+
+		/* should we need this?  to be conti... */
+		prAdapter->u4OsPacketFilter = PARAM_PACKET_FILTER_SUPPORTED;
+
+		/* WLAN driver acquire LP own */
+		DBGLOG(INIT, TRACE, "[Wi-Fi PWR On] Acquiring LP-OWN\n");
+
+		ACQUIRE_POWER_CONTROL_FROM_PM(prAdapter);
+
+		DBGLOG(INIT, TRACE, "[Wi-Fi PWR On] Acquiring LP-OWN-end\n");
+
+		if (prAdapter->fgIsFwOwn == TRUE) {
+			DBGLOG(INIT, ERROR,
+				"[Wi-Fi PWR On] nicpmSetDriverOwn() failed!\n");
+
+			eFailReason = DRIVER_OWN_FAIL;
+/*
+*#if CFG_ENABLE_KEYWORD_EXCEPTION_MECHANISM & 0
+*			mtk_wcn_wmt_assert_keyword(WMTDRV_TYPE_WIFI,
+*				"[Wi-Fi PWR On] nicpmSetDriverOwn() failed!");
+*#endif
+*/
+			break;
+		}
+
+		/* Initialize the Adapter:
+		*       verify chipset ID, HIF init...
+		*       the code snippet just do the copy thing
+		*/
+		if (nicInitializeAdapter(prAdapter) != WLAN_STATUS_SUCCESS) {
+			DBGLOG(INIT, ERROR,
+				"[Wi-Fi PWR On] nicInitializeAdapter failed!\n");
+
+			eFailReason = INIT_ADAPTER_FAIL;
+
+			break;
+		}
+
+		/* Do the post NIC init adapter:
+		* copy only the mandatory task
+		* in wlanOnPostNicInitAdapter(prAdapter, FALSE)::Begin
+		*/
+		nicInitSystemService(prAdapter, FALSE);
+
+		/* Initialize Tx */
+		nicTxInitialize(prAdapter);
+
+		/* Initialize Rx */
+		nicRxInitialize(prAdapter);
+		/* Do the post NIC init adapter:
+		* copy only the mandatory task
+		* in wlanOnPostNicInitAdapter(prAdapter, FALSE)::End
+		*/
+
+		/* HIF SW info initialize */
+		if (!halHifSwInfoInit(prAdapter)) {
+			DBGLOG(INIT, ERROR,
+				"[Wi-Fi PWR On] halHifSwInfoInit failed!\n");
+
+			eFailReason = INIT_HIFINFO_FAIL;
+
+			break;
+		}
+
+		/* Enable HIF  cut-through to N9 mode */
+		HAL_ENABLE_FWDL(prAdapter, TRUE);
+
+		wlanSetChipEcoInfo(prAdapter);
+
+		/* should we open it, to be conti */
+		/* wlanOnPostInitHifInfo(prAdapter); */
+
+		/* Disable interrupt, download is done by polling mode only */
+		nicDisableInterrupt(prAdapter);
+
+		/* Initialize Tx Resource to fw download state */
+		nicTxInitResetResource(prAdapter);
+
+		/* MCU ROM EMI +
+		* WiFi ROM EMI + ROM patch download goes over here::Begin
+		*/
+		/* assiggned in wlanNetCreate() */
+		prChipInfo = prAdapter->chip_info;
+
+		/* It is configured in mt66xx_chip_info_connac2x2.fw_dl_ops */
+		prFwDlOps = prChipInfo->fw_dl_ops;
+
+		/* No need to check F/W ready bit,
+		* since we are downloading MCU ROM EMI
+		* + WiFi ROM EMI + ROM patch
+		*/
+		/*
+		*DBGLOG(INIT, INFO,
+		*	"wlanDownloadFW:: Check ready_bits(=0x%x)\n",
+		*	prChipInfo->sw_ready_bits);
+		*
+		*HAL_WIFI_FUNC_READY_CHECK(prAdapter,
+		*	prChipInfo->sw_ready_bits, &fgReady);
+		*/
+
+		if (prChipInfo->pwrondownload) {
+			HAL_ENABLE_FWDL(prAdapter, TRUE);
+
+			DBGLOG_LIMITED(INIT, INFO,
+				"[Wi-Fi PWR On] download Start\n");
+
+			if (prChipInfo->pwrondownload(prAdapter, eDownloadItem)
+				!= WLAN_STATUS_SUCCESS) {
+				eFailReason = ROM_PATCH_DOWNLOAD_FAIL;
+
+				HAL_ENABLE_FWDL(prAdapter, FALSE);
+
+				break;
+			}
+
+			DBGLOG_LIMITED(INIT, INFO,
+				"[Wi-Fi PWR On] download End\n");
+
+			HAL_ENABLE_FWDL(prAdapter, FALSE);
+		}
+		/* MCU ROM EMI + WiFi ROM EMI
+		* + ROM patch download goes over here::End
+		*/
+
+		eFailReason = POWER_ON_INIT_DONE;
+		/* [3]Copy from wlanProbe()
+		*		->wlanAdapterStart()
+		*			->wlanOnPreAllocAdapterMem()::End
+		*/
+	} while (FALSE);
+
+	switch (eFailReason) {
+	case BUS_INIT_FAIL:
+		break;
+
+	case NET_CREATE_FAIL:
+#if (CFG_SUPPORT_TRACE_TC4 == 1)
+		wlanDebugTC4Uninit();  /* Uninit for TC4 debug */
+#endif
+
+		/* We should call this, although nothing is inside */
+		glBusRelease(pvData);
+
+		break;
+
+	case BUS_SET_IRQ_FAIL:
+#if (CFG_SUPPORT_TRACE_TC4 == 1)
+		wlanDebugTC4Uninit();  /* Uninit for TC4 debug */
+#endif
+
+		/* We should call this, although nothing is inside */
+		glBusRelease(pvData);
+
+		wlanWakeLockUninit(prGlueInfo);
+
+		wlanNetDestroy(prWdev);
+
+		break;
+
+	case ALLOC_ADAPTER_MEM_FAIL:
+	case DRIVER_OWN_FAIL:
+	case INIT_ADAPTER_FAIL:
+		/* Should we set Onwership to F/W for advanced debug???
+		* to be conti...
+		*/
+		/* nicpmSetFWOwn(prAdapter, FALSE); */
+
+		glBusFreeIrq(prWdev->netdev,
+			*((struct GLUE_INFO **)netdev_priv(prWdev->netdev)));
+
+#if (CFG_SUPPORT_TRACE_TC4 == 1)
+		wlanDebugTC4Uninit();  /* Uninit for TC4 debug */
+#endif
+
+		/* We should call this, although nothing is inside */
+		glBusRelease(pvData);
+
+		wlanWakeLockUninit(prGlueInfo);
+
+		wlanNetDestroy(prWdev);
+
+		break;
+
+	case INIT_HIFINFO_FAIL:
+		nicRxUninitialize(prAdapter);
+
+		nicTxRelease(prAdapter, FALSE);
+
+		/* System Service Uninitialization */
+		nicUninitSystemService(prAdapter);
+
+		/* Should we set Onwership to F/W for advanced debug???
+		* to be conti...
+		*/
+		/* nicpmSetFWOwn(prAdapter, FALSE); */
+
+		glBusFreeIrq(prWdev->netdev,
+			*((struct GLUE_INFO **)netdev_priv(prWdev->netdev)));
+
+#if (CFG_SUPPORT_TRACE_TC4 == 1)
+		wlanDebugTC4Uninit();  /* Uninit for TC4 debug */
+#endif
+
+		/* We should call this, although nothing is inside */
+		glBusRelease(pvData);
+
+		wlanWakeLockUninit(prGlueInfo);
+
+		wlanNetDestroy(prWdev);
+
+		break;
+
+	case ROM_PATCH_DOWNLOAD_FAIL:
+	case POWER_ON_INIT_DONE:
+		HAL_ENABLE_FWDL(prAdapter, FALSE);
+
+		nicRxUninitialize(prAdapter);
+
+		nicTxRelease(prAdapter, FALSE);
+
+		/* System Service Uninitialization */
+		nicUninitSystemService(prAdapter);
+
+		/* Should we set Onwership to F/W for advanced debug???
+		* to be conti...
+		*/
+		/* nicpmSetFWOwn(prAdapter, FALSE); */
+
+		glBusFreeIrq(prWdev->netdev,
+			*((struct GLUE_INFO **)netdev_priv(prWdev->netdev)));
+
+#if (CFG_SUPPORT_TRACE_TC4 == 1)
+		wlanDebugTC4Uninit();  /* Uninit for TC4 debug */
+#endif
+
+		/* We should call this, although nothing is inside */
+		glBusRelease(pvData);
+
+		wlanWakeLockUninit(prGlueInfo);
+
+		wlanNetDestroy(prWdev);
+
+		break;
+
+	default:
+		break;
+	}
+
+	DBGLOG(INIT, INFO, "wlanPowerOnInit::end\n");
+
+	return i4Status;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Wlan power on deinit function. This function revert whatever
+ * has been altered in the
+ * power on stage to restore to the most original state.
+ *
+ * \param[in] void
+ *
+ * \return (none)
+ */
+/*----------------------------------------------------------------------------*/
+/*
+*static void wlanPowerOnDeinit(void)
+*{
+*
+*}
+*/
 
 #if (CFG_SUPPORT_PRE_ON_PHY_ACTION == 1)
 int soc3_0_wlanPreCal(void)
@@ -1536,6 +2566,4 @@ int soc3_0_wlanPreCal(void)
 #endif /* (CFG_SUPPORT_PRE_ON_PHY_ACTION == 1) */
 
 #endif
-
 #endif				/* soc3_0 */
-
