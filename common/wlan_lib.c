@@ -6918,7 +6918,7 @@ void wlanCfgSetDebugLevel(IN struct ADAPTER *prAdapter)
 	int8_t *pcDupValue;
 	int8_t *pcPtr = NULL;
 
-	uint32_t au4Values[2];
+	uint32_t au4Values[2] = {0};
 	uint32_t u4TokenCount = 0;
 	uint32_t u4DbgIdx = 0;
 	uint32_t u4DbgMask = 0;

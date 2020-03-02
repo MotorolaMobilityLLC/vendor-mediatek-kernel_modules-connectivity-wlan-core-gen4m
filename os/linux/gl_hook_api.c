@@ -4097,7 +4097,7 @@ int32_t TxBfBssInfoUpdate(struct net_device *prNetDev,
 	if (!prBssInfo)
 		return WLAN_STATUS_FAILURE;
 	prBssInfo->ucOwnMacIndex = ucOwnMacIdx;
-	memcpy(&prBssInfo->aucBSSID, &ucBssId, MAC_ADDR_LEN);
+	memcpy(&prBssInfo->aucBSSID, &ucBssId[0], MAC_ADDR_LEN);
 
 	nicUpdateBss(prAdapter, prBssInfo->ucBssIndex);
 
