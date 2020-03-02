@@ -1027,6 +1027,10 @@ struct WIFI_VAR {
 	uint8_t ucTxMsduQueue;
 
 	uint32_t u4MTU; /* net device maximum transmission unit */
+#if CFG_SUPPORT_RX_GRO
+	uint32_t ucGROFlushTimeout; /* Flush packet timeout (ms) */
+	uint32_t ucGROEnableTput; /* Threshold of enable GRO Tput */
+#endif
 };
 
 /* cnm_timer module */
@@ -1556,6 +1560,9 @@ struct ADAPTER {
 #endif
 
 	struct WLAN_DEBUG_INFO rDebugInfo;
+#if CFG_SUPPORT_RX_GRO
+	OS_SYSTIME tmGROFlushTimeout;
+#endif
 };				/* end of _ADAPTER_T */
 
 /*******************************************************************************

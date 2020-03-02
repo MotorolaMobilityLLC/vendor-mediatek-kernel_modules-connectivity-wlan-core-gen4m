@@ -949,6 +949,55 @@ uint32_t kalRxIndicatePkts(IN struct GLUE_INFO *prGlueInfo,
 	return WLAN_STATUS_SUCCESS;
 }
 
+#if CFG_SUPPORT_RX_GRO
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief To indicate Tput is higher than ucGROEnableTput or not.
+ *
+ * \param[in] prAdapter Pointer to the Adapter structure.
+ *
+ * \retval TRUE Success.
+ *
+ */
+/*----------------------------------------------------------------------------*/
+uint32_t kal_is_skb_gro(struct ADAPTER *prAdapter)
+{
+	struct PERF_MONITOR_T *prPerMonitor;
+	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
+
+	prPerMonitor = &prAdapter->rPerMonitor;
+	/* Use GRO if Tput is higher than ucGROEnableTput */
+	if (prPerMonitor->ulWlanRxTp > prWifiVar->ucGROEnableTput
+		|| prPerMonitor->ulP2PRxTp > prWifiVar->ucGROEnableTput)
+		return 1;
+
+	return 0;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * @brief flush Rx packet to kernel if kernel buffer is full or timeout(1ms)
+ *
+ * @param[in] prAdapter Pointer to the Adapter structure.
+ *
+ * @retval VOID
+ *
+ */
+/*----------------------------------------------------------------------------*/
+void kal_gro_flush(struct ADAPTER *prAdapter)
+{
+	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
+
+	if (CHECK_FOR_TIMEOUT(kalGetTimeTick(),
+		prAdapter->tmGROFlushTimeout,
+		MSEC_TO_SYSTIME(prWifiVar->ucGROFlushTimeout))) {
+		napi_gro_flush(&prAdapter->prGlueInfo->napi, false);
+		DBGLOG_LIMITED(INIT, INFO, "napi_gro_flush\n");
+	}
+	GET_CURRENT_SYSTIME(&prAdapter->tmGROFlushTimeout);
+}
+#endif
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief To indicate one received packets is available for higher
@@ -1101,11 +1150,30 @@ uint32_t kalRxIndicateOnePkt(IN struct GLUE_INFO
 		skb_reset_transport_header(prSkb);
 		kal_skb_reset_mac_len(prSkb);
 	}
-
+#if CFG_SUPPORT_RX_GRO
+	if (kal_is_skb_gro(prGlueInfo->prAdapter)) {
+		/* GRO receive function can't be interrupt so it need to
+		 * disable preempt and protect by spin lock
+		 */
+		preempt_disable();
+		spin_lock_bh(&prGlueInfo->napi_spinlock);
+		napi_gro_receive(&prGlueInfo->napi, prSkb);
+		kal_gro_flush(prGlueInfo->prAdapter);
+		spin_unlock_bh(&prGlueInfo->napi_spinlock);
+		preempt_enable();
+		DBGLOG_LIMITED(INIT, INFO, "napi_gro_receive\n");
+	} else {
+		if (!in_interrupt())
+			netif_rx_ni(prSkb);
+		else
+			netif_rx(prSkb);
+	}
+#else
 	if (!in_interrupt())
-		netif_rx_ni(prSkb);	/* only in non-interrupt context */
+		netif_rx_ni(prSkb);
 	else
 		netif_rx(prSkb);
+#endif
 
 	return WLAN_STATUS_SUCCESS;
 }

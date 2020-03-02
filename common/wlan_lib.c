@@ -6457,6 +6457,12 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 #endif /* CFG_SUPPORT_LOWLATENCY_MODE */
 
 	prWifiVar->u4MTU = wlanCfgGetUint32(prAdapter, "MTU", 0);
+#if CFG_SUPPORT_RX_GRO
+	prWifiVar->ucGROFlushTimeout = (uint32_t) wlanCfgGetUint32(
+			prAdapter, "GROFlushTimeout", 1);
+	prWifiVar->ucGROEnableTput = (uint32_t) wlanCfgGetUint32(
+			prAdapter, "GROEnableTput", 6250000);
+#endif
 }
 
 void wlanCfgSetSwCtrl(IN struct ADAPTER *prAdapter)

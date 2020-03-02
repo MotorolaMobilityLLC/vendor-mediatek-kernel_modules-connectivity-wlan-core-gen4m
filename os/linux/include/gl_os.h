@@ -474,7 +474,9 @@ struct GLUE_INFO {
 
 	/* Device Index(index of arWlanDevInfo[]) */
 	int32_t i4DevIdx;
-
+#if CFG_SUPPORT_RX_GRO
+	struct napi_struct napi;
+#endif
 	/* Device statistics */
 	/* struct net_device_stats rNetDevStats; */
 
@@ -753,10 +755,13 @@ struct GLUE_INFO {
 	/* 11R */
 	struct FT_IES rFtIeForTx;
 	struct cfg80211_ft_event_params rFtEventParam;
-
 	/*service for test mode*/
 #if (CONFIG_WLAN_SERVICE == 1)
 	struct service rService;
+#endif
+
+#if CFG_SUPPORT_RX_GRO
+	spinlock_t napi_spinlock;
 #endif
 };
 
