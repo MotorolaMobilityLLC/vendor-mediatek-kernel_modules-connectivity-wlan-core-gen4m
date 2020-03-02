@@ -310,11 +310,6 @@ u_int8_t halSetDriverOwn(IN struct ADAPTER *prAdapter)
 	return KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__, prAdapter);
 }
 
-void halDumpTxdInfo(IN struct ADAPTER *prAdapter, uint32_t *tmac_info)
-{
-	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__, prAdapter);
-}
-
 uint8_t halTxRingDataSelect(IN struct ADAPTER *prAdapter,
 	IN struct MSDU_INFO *prMsduInfo)
 {

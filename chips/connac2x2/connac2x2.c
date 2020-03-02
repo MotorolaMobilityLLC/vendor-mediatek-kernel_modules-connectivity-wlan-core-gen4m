@@ -319,6 +319,7 @@ struct CHIP_DBG_OPS connac2x2_debug_ops = {
 	.showPdmaInfo = halShowPdmaInfo,
 	.showPseInfo = halShowPseInfo,
 	.showPleInfo = halShowPleInfo,
+	.showTxdInfo = halShowTxdInfo,
 	.showCsrInfo = halShowHostCsrInfo,
 	.showDmaschInfo = halShowDmaschInfo,
 	.showHifInfo = connac2x2ShowHifInfo,
@@ -326,10 +327,12 @@ struct CHIP_DBG_OPS connac2x2_debug_ops = {
 	.showPdmaInfo = NULL,
 	.showPseInfo = NULL,
 	.showPleInfo = NULL,
+	.showTxdInfo = NULL,
 	.showCsrInfo = NULL,
 	.showDmaschInfo = NULL,
 	.showHifInfo = NULL,
 #endif
+	.showWtblInfo = NULL,
 	.printHifDbgInfo = halPrintHifDbgInfo,
 };
 

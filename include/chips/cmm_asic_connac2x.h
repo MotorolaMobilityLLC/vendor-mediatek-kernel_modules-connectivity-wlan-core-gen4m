@@ -342,6 +342,16 @@
 	((u4IntrStatus & (__u4IntrBits)) ? TRUE : FALSE)
 #endif /* defined(_HIF_PCIE) || defined(_HIF_AXI) */
 
+
+/*------------------------------------------------------------------------------
+ * MACRO for CONNAC2X WTBL TX RATE
+ *------------------------------------------------------------------------------
+ */
+#define CONNAC2X_HW_TX_RATE_TO_MODE(_x)        (((_x) & (0xf << 6)) >> 6)
+#define CONNAC2X_HW_TX_RATE_TO_NSS(_x)         (((_x) & (0x7 << 10)) >> 10)
+#define CONNAC2X_HW_TX_RATE_TO_STBC(_x)        (((_x) & (0x1 << 13)) >> 13)
+
+
 /*******************************************************************************
 *                             D A T A   T Y P E S
 ********************************************************************************
@@ -1038,16 +1048,6 @@ void asicConnac2xWfdmaReInit(
 *                  D E B U G F U N C T I O N   D E C L A R A T I O N S
 ********************************************************************************
 */
-u_int32_t asic_connac2x_oid_show_txd_Info(
-	struct ADAPTER *prAdapter,
-	u_int32_t fid);
-
-uint32_t asic_connac2x_show_ple_info(
-	struct ADAPTER *prAdapter,
-	uint8_t *arg);
-uint32_t asic_connac2x_show_pse_info(
-	struct ADAPTER *prAdapter,
-	uint8_t *arg);
 uint32_t asic_connac2x_show_raw_wtbl_info(
 	struct GLUE_INFO *prGlueInfo,
 	int8_t *pcCommand,

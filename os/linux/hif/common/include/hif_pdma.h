@@ -469,23 +469,12 @@ void halHwRecoveryFromError(IN struct ADAPTER *prAdapter);
 /* Debug functions */
 int halTimeCompare(struct timeval *prTs1, struct timeval *prTs2);
 void halShowPdmaInfo(IN struct ADAPTER *prAdapter);
-void halShowPseInfo(IN struct ADAPTER *prAdapter);
-void halShowPleInfo(IN struct ADAPTER *prAdapter);
 bool halShowHostCsrInfo(IN struct ADAPTER *prAdapter);
-void halShowDmaschInfo(IN struct ADAPTER *prAdapter);
 void kalDumpTxRing(struct GLUE_INFO *prGlueInfo,
 		   struct RTMP_TX_RING *prTxRing,
 		   uint32_t u4Num, bool fgDumpContent);
 void kalDumpRxRing(struct GLUE_INFO *prGlueInfo,
 		   struct RTMP_RX_RING *prRxRing,
 		   uint32_t u4Num, bool fgDumpContent);
-void haldumpMacInfo(IN struct ADAPTER *prAdapter);
 void haldumpPhyInfo(struct ADAPTER *prAdapter);
-void halGetPleTxdInfo(IN struct ADAPTER *prAdapter,
-		      uint32_t fid, uint32_t *result);
-void halGetPsePayload(IN struct ADAPTER *prAdapter,
-		      uint32_t fid, uint32_t *result);
-void halDumpTxdInfo(IN struct ADAPTER *prAdapter, uint32_t *tmac_info);
-void halShowLitePleInfo(IN struct ADAPTER *prAdapter);
-
 #endif /* HIF_PDMA_H__ */

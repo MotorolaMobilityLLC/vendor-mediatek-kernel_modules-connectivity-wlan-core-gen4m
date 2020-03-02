@@ -138,6 +138,8 @@ extern int get_logtoomuch_enable(void) __attribute__((weak));
 #define HIF_CHK_TX_HANG         BIT(1)
 #define HIF_DRV_SER             BIT(2)
 
+#define DUMP_MEM_SIZE 64
+
 /*******************************************************************************
  *                             D A T A   T Y P E S
  *******************************************************************************
@@ -193,13 +195,26 @@ enum ENUM_DBG_ASSERT_PATH {
 };
 
 struct CHIP_DBG_OPS {
-	void (*showPdmaInfo)(IN struct ADAPTER *prAdapter);
-	void (*showPseInfo)(IN struct ADAPTER *prAdapter);
-	void (*showPleInfo)(IN struct ADAPTER *prAdapter);
-	bool (*showCsrInfo)(IN struct ADAPTER *prAdapter);
-	void (*showDmaschInfo)(IN struct ADAPTER *prAdapter);
-	void (*showHifInfo)(IN struct ADAPTER *prAdapter);
-	void (*printHifDbgInfo)(IN struct ADAPTER *prAdapter);
+	void (*showPdmaInfo)(struct ADAPTER *prAdapter);
+	void (*showPseInfo)(struct ADAPTER *prAdapter);
+	void (*showPleInfo)(struct ADAPTER *prAdapter, u_int8_t fgDumpTxd);
+	void (*showTxdInfo)(struct ADAPTER *prAdapter, u_int32_t fid);
+	bool (*showCsrInfo)(struct ADAPTER *prAdapter);
+	void (*showDmaschInfo)(struct ADAPTER *prAdapter);
+	int32_t (*showWtblInfo)(
+		struct ADAPTER *prAdapter,
+		uint32_t u4Index,
+		char *pcCommand,
+		int32_t i4TotalLen);
+#if (CFG_SUPPORT_CONNAC2X == 1)
+	int32_t (*showUmacFwtblInfo)(
+		struct ADAPTER *prAdapter,
+		uint32_t u4Index,
+		char *pcCommand,
+		int32_t i4TotalLen);
+#endif /* CFG_SUPPORT_CONNAC2X == 1 */
+	void (*showHifInfo)(struct ADAPTER *prAdapter);
+	void (*printHifDbgInfo)(struct ADAPTER *prAdapter);
 };
 
 enum PKT_PHASE {
@@ -470,6 +485,39 @@ u_int8_t wlanDbgSetGlobalLogLevel(uint32_t u4Module, uint32_t u4Level);
 
 void wlanFillTimestamp(struct ADAPTER *prAdapter, void *pvPacket,
 		       uint8_t ucPhase);
+
+void halShowPseInfo(IN struct ADAPTER *prAdapter);
+void halShowPleInfo(IN struct ADAPTER *prAdapter,
+	u_int8_t fgDumpTxd);
+void halShowDmaschInfo(IN struct ADAPTER *prAdapter);
+void haldumpMacInfo(IN struct ADAPTER *prAdapter);
+void halGetPleTxdInfo(IN struct ADAPTER *prAdapter,
+		      uint32_t fid, uint32_t *result);
+void halGetPsePayload(IN struct ADAPTER *prAdapter,
+		      uint32_t fid, uint32_t *result);
+void halDumpTxdInfo(IN struct ADAPTER *prAdapter, uint32_t *tmac_info);
+void halShowLitePleInfo(IN struct ADAPTER *prAdapter);
+void halShowTxdInfo(
+	struct ADAPTER *prAdapter,
+	u_int32_t fid);
+
+
+#if (CFG_SUPPORT_CONNAC2X == 1)
+void connac2x_show_txd_Info(
+	struct ADAPTER *prAdapter,
+	u_int32_t fid);
+int32_t connac2x_show_wtbl_info(
+	struct ADAPTER *prAdapter,
+	uint32_t u4Index,
+	char *pcCommand,
+	int i4TotalLen);
+int32_t connac2x_show_umac_wtbl_info(
+	struct ADAPTER *prAdapter,
+	uint32_t u4Index,
+	char *pcCommand,
+	int i4TotalLen);
+#endif /* CFG_SUPPORT_CONNAC2X == 1 */
+
 /*******************************************************************************
  *                              F U N C T I O N S
  *******************************************************************************
