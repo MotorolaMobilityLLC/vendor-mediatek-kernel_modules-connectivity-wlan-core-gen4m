@@ -5909,6 +5909,11 @@ p2pFuncComposeBeaconProbeRspTemplate(IN struct ADAPTER *prAdapter,
 
 			prMsduInfo = prP2pProbeRspInfo->prProbeRspMsduTemplate;
 
+			if (prMsduInfo == NULL) {
+				rWlanStatus = WLAN_STATUS_FAILURE;
+				break;
+			}
+
 			prMsduInfo->eSrc = TX_PACKET_MGMT;
 			prMsduInfo->ucStaRecIndex = 0xFF;
 			prMsduInfo->ucBssIndex = prP2pBssInfo->ucBssIndex;
