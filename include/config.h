@@ -1060,7 +1060,7 @@
 
 #define CFG_SUPPORT_DBDC	1
 #define CFG_SUPPORT_DBDC_NO_BLOCKING_OPMODE 1
-
+#define CFG_SUPPORT_SAP_DFS_CHANNEL 1
 
 /*------------------------------------------------------------------------------
  * Flags for Using TC4 Resource in ROM code stage
