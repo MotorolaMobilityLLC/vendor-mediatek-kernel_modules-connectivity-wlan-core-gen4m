@@ -135,6 +135,7 @@ apfnProcessRxMgtFrame[MAX_NUM_OF_FC_SUBTYPES] = {
 
 static struct RX_EVENT_HANDLER arEventTable[] = {
 	{EVENT_ID_RX_ADDBA,	qmHandleEventRxAddBa},
+	{EVENT_ID_DBDC_SWITCH_DONE, cnmDbdcEventHwSwitchDone},
 	{EVENT_ID_RX_DELBA,	qmHandleEventRxDelBa},
 	{EVENT_ID_CHECK_REORDER_BUBBLE, qmHandleEventCheckReorderBubble},
 	{EVENT_ID_LINK_QUALITY, nicEventLinkQuality},

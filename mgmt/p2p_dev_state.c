@@ -142,11 +142,11 @@ p2pDevStateInit_REQING_CHANNEL(IN struct ADAPTER *prAdapter,
 			ASSERT(FALSE);
 			break;
 		}
-#if (CFG_HW_WMM_BY_BSS == 1)
+
 		if (prBssInfo->fgIsWmmInited == FALSE)
 			prBssInfo->ucWmmQueSet = MAX_HW_WMM_INDEX;
 		prBssInfo->eBand = prP2pMsgChnlReq->rChannelInfo.eBand;
-#endif
+
 #if CFG_SUPPORT_DBDC
 		kalMemZero(&rDbdcCap, sizeof(struct CNM_DBDC_CAP));
 
@@ -158,9 +158,6 @@ p2pDevStateInit_REQING_CHANNEL(IN struct ADAPTER *prAdapter,
 			&rDbdcCap);
 
 		prBssInfo->ucNss = rDbdcCap.ucNss;
-#if (CFG_HW_WMM_BY_BSS == 0)
-		prBssInfo->ucWmmQueSet = rDbdcCap.ucWmmSetIndex;
-#endif
 #endif /*CFG_SUPPORT_DBDC*/
 		prChnlReqInfo->u4MaxInterval = prP2pMsgChnlReq->u4Duration;
 		prChnlReqInfo->ucReqChnlNum =
