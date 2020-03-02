@@ -227,6 +227,7 @@ struct FWDL_OPS_T mt7663_fw_dl_ops = {
 	.constructFirmwarePrio = NULL,
 	.downloadPatch = wlanDownloadPatch,
 	.downloadFirmware = wlanConnacFormatDownload,
+	.downloadByDynMemMap = NULL,
 	.getFwInfo = wlanGetConnacFwInfo,
 	.getFwDlInfo = asicGetFwDlInfo,
 };

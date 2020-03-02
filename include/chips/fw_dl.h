@@ -136,6 +136,10 @@ struct FWDL_OPS_T {
 	uint32_t (*downloadPatch)(IN struct ADAPTER *prAdapter);
 	uint32_t (*downloadFirmware)(IN struct ADAPTER *prAdapter,
 		IN enum ENUM_IMG_DL_IDX_T eDlIdx);
+	uint32_t (*downloadByDynMemMap)(
+		IN struct ADAPTER *prAdapter, IN uint32_t u4Addr,
+		IN uint32_t u4Len,	IN uint8_t *pucStartPtr,
+		IN enum ENUM_IMG_DL_IDX_T eDlIdx);
 	void (*getFwInfo)(IN struct ADAPTER *prAdapter,
 		IN uint8_t u4SecIdx, IN enum ENUM_IMG_DL_IDX_T eDlIdx,
 		OUT uint32_t *pu4Addr, OUT uint32_t *pu4Len,
@@ -303,6 +307,14 @@ uint32_t wlanImageSectionDownloadStage(IN struct ADAPTER *prAdapter,
 	IN void *pvFwImageMapFile,
 	IN uint32_t u4FwImageFileLength, IN uint8_t ucSectionNumber,
 	IN enum ENUM_IMG_DL_IDX_T eDlIdx);
+
+#if (CFG_DOWNLOAD_DYN_MEMORY_MAP == 1)
+uint32_t wlanPatchDynMemMapSendComplete(IN struct ADAPTER *prAdapter);
+
+uint32_t wlanRamCodeDynMemMapSendComplete(IN struct ADAPTER *prAdapter,
+	IN u_int8_t fgEnable, IN uint32_t u4StartAddress,
+	IN uint8_t ucPDA);
+#endif
 
 uint32_t wlanDownloadSection(IN struct ADAPTER *prAdapter,
 	IN uint32_t u4Addr, IN uint32_t u4Len,

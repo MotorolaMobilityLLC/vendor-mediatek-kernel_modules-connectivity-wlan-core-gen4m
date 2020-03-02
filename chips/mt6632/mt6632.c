@@ -408,6 +408,7 @@ struct FWDL_OPS_T mt6632_fw_dl_ops = {
 	.constructFirmwarePrio = NULL,
 	.downloadPatch = NULL,
 	.downloadFirmware = wlanHarvardFormatDownload,
+	.downloadByDynMemMap = NULL,
 	.getFwInfo = wlanGetHarvardFwInfo,
 	.getFwDlInfo = mt6632GetFwDlInfo,
 };
