@@ -173,6 +173,11 @@ extern int wifi_reset_start(void);
 extern int wifi_reset_end(enum ENUM_RESET_STATUS);
 #endif
 
+#if CFG_ENABLE_KEYWORD_EXCEPTION_MECHANISM
+extern int mtk_wcn_wmt_assert_keyword(enum ENUM_WMTDRV_TYPE type,
+	unsigned char *keyword);
+#endif
+
 /*******************************************************************************
  *                            P U B L I C   D A T A
  *******************************************************************************

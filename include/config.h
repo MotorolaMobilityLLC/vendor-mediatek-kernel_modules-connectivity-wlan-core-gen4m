@@ -1155,6 +1155,11 @@
 #define CFG_SUPPORT_NCHO		0
 #define CFG_SUPPORT_NCHO_AUTO_ENABLE	0
 
+/*------------------------------------------------------------------------------
+ * Flags of Key Word Exception Mechanism
+ *------------------------------------------------------------------------------
+ */
+#define CFG_ENABLE_KEYWORD_EXCEPTION_MECHANISM  0
 
 /*******************************************************************************
  *                             D A T A   T Y P E S
