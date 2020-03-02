@@ -1119,7 +1119,7 @@ uint32_t authProcessRxDeauthFrame(IN struct SW_RFB *prSwRfb,
 
 	if ((prSwRfb->u2PacketLen - prSwRfb->u2HeaderLen) <
 	    REASON_CODE_FIELD_LEN) {
-		ASSERT(0);
+		DBGLOG(SAA, WARN, "Invalid Deauth packet length");
 		return WLAN_STATUS_FAILURE;
 	}
 
