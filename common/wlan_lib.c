@@ -5520,6 +5520,12 @@ VOID wlanInitFeatureOption(IN P_ADAPTER_T prAdapter)
 		(UINT_32) wlanCfgGetUint32(prAdapter, "PerfMonLv10", 700);
 	prWifiVar->u4BoostCpuTh =
 			(UINT_32) wlanCfgGetUint32(prAdapter, "BoostCpuTh", 1);
+
+	/*
+	 * For Certification purpose,forcibly set
+	 * "Compressed Steering Number of Beamformer Antennas Supported" to our own capability.
+	 */
+	prWifiVar->fgForceSTSNum = (UINT_8)wlanCfgGetUint32(prAdapter, "ForceSTSNum", 0);
 }
 
 VOID wlanCfgSetSwCtrl(IN P_ADAPTER_T prAdapter)
