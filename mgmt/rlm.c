@@ -2721,7 +2721,8 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 				    prBssInfo->ucVhtChannelWidth)
 					rlmFillVhtOpInfoByBssOpBw(
 					prBssInfo,
-					prBssInfo->ucOpChangeChannelWidth);
+					prBssInfo
+					->ucOpChangeChannelWidth);
 				/* HT */
 				if (prBssInfo->fgIsOpChangeChannelWidth &&
 				    prBssInfo->ucOpChangeChannelWidth ==
@@ -3706,11 +3707,13 @@ void rlmProcessVhtAction(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb)
 				if (prBssInfo->fgIsOpChangeChannelWidth) {
 					/* VHT */
 					if (rlmGetVhtOpBwByBssOpBw(
-					prBssInfo->ucOpChangeChannelWidth) <
-					prBssInfo->ucVhtChannelWidth)
-					rlmFillVhtOpInfoByBssOpBw(
-					prBssInfo,
-					prBssInfo->ucOpChangeChannelWidth);
+					prBssInfo
+					->ucOpChangeChannelWidth) <
+						prBssInfo->ucVhtChannelWidth)
+						rlmFillVhtOpInfoByBssOpBw(
+						prBssInfo,
+						prBssInfo
+						->ucOpChangeChannelWidth);
 					/* HT */
 					if (prBssInfo
 					->fgIsOpChangeChannelWidth &&
@@ -5213,7 +5216,7 @@ static void rlmOpModeTxDoneHandler(IN struct ADAPTER *prAdapter,
 						rlmSendNotifyChannelWidthFrame(
 						prAdapter, prStaRec,
 						rlmGetBssOpBwByVhtAndHtOpInfo(
-							prBssInfo));
+						prBssInfo));
 					else if (ucOpChangeType ==
 						 OP_NOTIFY_TYPE_HT_NSS)
 						rlmSendSmPowerSaveFrame(
@@ -5270,8 +5273,9 @@ static void rlmOpModeTxDoneHandler(IN struct ADAPTER *prAdapter,
 						prBssInfo->ucOpChangeRxNss);
 				else if (ucOpChangeType == OP_NOTIFY_TYPE_HT_BW)
 					rlmSendNotifyChannelWidthFrame(
-					prAdapter, prStaRec,
-					prBssInfo->ucOpChangeChannelWidth);
+						prAdapter, prStaRec,
+						prBssInfo
+						->ucOpChangeChannelWidth);
 				return;
 			}
 
@@ -5335,7 +5339,7 @@ static void rlmOpModeTxDoneHandler(IN struct ADAPTER *prAdapter,
 						rlmSendNotifyChannelWidthFrame(
 						prAdapter, prStaRec,
 						rlmGetBssOpBwByVhtAndHtOpInfo(
-							prBssInfo));
+						prBssInfo));
 					} else if (ucRelatedFrameType ==
 						   OP_NOTIFY_TYPE_HT_NSS)
 						rlmSendSmPowerSaveFrame(
@@ -5626,6 +5630,7 @@ static void rlmCompleteOpModeChange(struct ADAPTER *prAdapter,
 				    struct BSS_INFO *prBssInfo,
 				    u_int8_t fgIsSuccess)
 {
+	PFN_OPMODE_NOTIFY_DONE_FUNC pfnCallback;
 
 	ASSERT((prAdapter != NULL) && (prBssInfo != NULL));
 
@@ -5655,13 +5660,14 @@ static void rlmCompleteOpModeChange(struct ADAPTER *prAdapter,
 		prBssInfo->ucOpRxNss,
 		prBssInfo->ucOpTxNss);
 
-	/* <4> Tell OpMode change caller the change result */
-	if (prBssInfo->pfOpChangeHandler) {
-		prBssInfo->pfOpChangeHandler(prAdapter, prBssInfo->ucBssIndex,
+	/* <4> Tell OpMode change caller the change result
+	 * Allow callback function re-trigger OpModeChange immediately.
+	 */
+	pfnCallback = prBssInfo->pfOpChangeHandler;
+	prBssInfo->pfOpChangeHandler = NULL;
+	if (pfnCallback)
+		pfnCallback(prAdapter, prBssInfo->ucBssIndex,
 					     fgIsSuccess);
-		/* Clear to NULL when handling OP Mode change request done */
-		prBssInfo->pfOpChangeHandler = NULL;
-	}
 }
 
 /*----------------------------------------------------------------------------*/
@@ -6009,7 +6015,8 @@ static u_int8_t rlmCheckOpChangeParamValid(struct ADAPTER *prAdapter,
 
 	/* <3>Check if target OP BW/Nss <= Own Cap BW/Nss */
 	ucCapNss = wlanGetSupportNss(prAdapter, prBssInfo->ucBssIndex);
-	if (ucOpRxNss > ucCapNss || ucOpTxNss > ucCapNss) {
+	if (ucOpRxNss > ucCapNss || ucOpRxNss == 0 ||
+		ucOpTxNss > ucCapNss || ucOpTxNss == 0) {
 		DBGLOG(RLM, WARN,
 		       "Can't change BSS[%d] OP RxNss[%d]TxNss[%d] due to CapNss[%d]\n",
 		       prBssInfo->ucBssIndex, ucOpRxNss, ucOpTxNss, ucCapNss);
@@ -6068,7 +6075,7 @@ static u_int8_t rlmCheckOpChangeParamValid(struct ADAPTER *prAdapter,
 }
 
 void rlmDummyChangeOpHandler(struct ADAPTER *prAdapter, uint8_t ucBssIndex,
-			     u_int8_t fgIsChangeSuccess)
+			     bool fgIsChangeSuccess)
 {
 	DBGLOG(RLM, INFO, "OP change done for BSS[%d] IsSuccess[%d]\n",
 	       ucBssIndex, fgIsChangeSuccess);

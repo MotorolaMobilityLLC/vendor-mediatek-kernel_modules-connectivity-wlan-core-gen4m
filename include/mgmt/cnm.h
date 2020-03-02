@@ -313,11 +313,6 @@ void cnmFreeWmmIndex(IN struct ADAPTER *prAdapter,
 #if CFG_SUPPORT_DBDC
 void cnmInitDbdcSetting(IN struct ADAPTER *prAdapter);
 
-void cnmDbdcOpModeChangeDoneCallback(
-	IN struct ADAPTER *prAdapter,
-	IN uint8_t ucBssIndex,
-	IN u_int8_t fgSuccess);
-
 void cnmUpdateDbdcSetting(IN struct ADAPTER *prAdapter, IN u_int8_t fgDbdcEn);
 
 uint8_t cnmGetDbdcBwCapability(
@@ -349,24 +344,14 @@ u_int8_t cnmSapIsConcurrent(IN struct ADAPTER *prAdapter);
 
 struct BSS_INFO *cnmGetSapBssInfo(IN struct ADAPTER *prAdapter);
 
-enum ENUM_OP_CHANGE_STATUS_T cnmSetOpTRxNssBw(
-	IN struct ADAPTER *prAdapter,
-	IN uint8_t ucBssIndex,
-	IN enum ENUM_EVENT_OPMODE_CHANGE_REASON eSource,
-	IN bool fgEnable,
-	IN uint8_t ucOpRxNss,
-	IN uint8_t ucOpTxNss,
-	IN PFN_OPMODE_NOTIFY_DONE_FUNC pfnCallback
-);
-
-void cnmGetOpTRxNss(
+void cnmOpModeGetTRxNss(
 	IN struct ADAPTER *prAdapter,
 	IN uint8_t ucBssIndex,
 	OUT uint8_t *pucOpRxNss,
 	OUT uint8_t *pucOpTxNss
 );
 
-void cnmEventOpmodeChange(
+void cnmOpmodeEventHandler(
 	IN struct ADAPTER *prAdapter,
 	IN struct WIFI_EVENT *prEvent
 );
