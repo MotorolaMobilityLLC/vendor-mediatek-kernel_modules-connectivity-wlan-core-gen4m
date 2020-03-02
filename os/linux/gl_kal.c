@@ -4958,6 +4958,12 @@ void kalIndicateRxMgmtFrame(IN struct GLUE_INFO *prGlueInfo,
 
 		i4Freq = nicChannelNum2Freq(ucChnlNum) / 1000;
 
+		if (prGlueInfo->prDevHandler->ieee80211_ptr == NULL) {
+			DBGLOG(AIS, WARN,
+				"ieee80211_ptr is NULL!\n");
+			break;
+		}
+
 #if (KERNEL_VERSION(3, 18, 0) <= CFG80211_VERSION_CODE)
 		cfg80211_rx_mgmt(prGlueInfo->prDevHandler->ieee80211_ptr,
 			i4Freq,	/* in MHz */
