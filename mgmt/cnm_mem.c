@@ -457,6 +457,8 @@ void *cnmMemAlloc(IN struct ADAPTER *prAdapter, IN enum ENUM_RAM_TYPE eRamType,
 	}
 #else
 	pvMemory = (void *) kalMemAlloc(u4Length, PHY_MEM_TYPE);
+	if (!pvMemory)
+		DBGLOG(MEM, WARN, "kmalloc fail: %u\n", u4Length);
 #endif
 #else
 	pvMemory = (void *) NULL;
