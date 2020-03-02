@@ -1543,6 +1543,12 @@ int mtk_cfg80211_vendor_acs(struct wiphy *wiphy,
 		}
 	}
 
+	if (!ch_list_count) {
+		DBGLOG(REQ, ERROR, "channel list count can NOT be 0\n");
+		rStatus = -EINVAL;
+		goto exit;
+	}
+
 	msg_size = sizeof(struct MSG_P2P_ACS_REQUEST) +
 			(ch_list_count * sizeof(struct RF_CHANNEL_INFO));
 
