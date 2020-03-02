@@ -5331,10 +5331,6 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 	/* Max Tx AMSDU in AMPDU length *in BYTES* */
 	prWifiVar->u4TxMaxAmsduInAmpduLen = wlanCfgGetUint32(prAdapter, "TxMaxAmsduInAmpduLen", 4096);
 
-	prWifiVar->ucStaDisconnectDetectTh = (uint8_t) wlanCfgGetUint32(prAdapter, "StaDisconnectDetectTh", 0);
-	prWifiVar->ucApDisconnectDetectTh = (uint8_t) wlanCfgGetUint32(prAdapter, "ApDisconnectDetectTh", 0);
-	prWifiVar->ucP2pDisconnectDetectTh = (uint8_t) wlanCfgGetUint32(prAdapter, "P2pDisconnectDetectTh", 0);
-
 	prWifiVar->ucTcRestrict = (uint8_t) wlanCfgGetUint32(prAdapter, "TcRestrict", 0xFF);
 	/* Max Tx dequeue limit: 0 => auto */
 	prWifiVar->u4MaxTxDeQLimit = (uint32_t) wlanCfgGetUint32(prAdapter, "MaxTxDeQLimit", 0x0);
