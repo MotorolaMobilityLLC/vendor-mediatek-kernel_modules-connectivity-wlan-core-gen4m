@@ -291,7 +291,7 @@ enum ENUM_CMD_ID {
 	CMD_ID_GET_CNM = 0x79,
 
 	CMD_ID_FRM_IND_FROM_HOST = 0x7D,    /* 0x7D (Set) */
-
+	CMD_ID_PERF_IND = 0x7E,     /* 0x7E(Set) */
 	CMD_ID_GET_NIC_CAPABILITY   = 0x80, /* 0x80 (Query) */
 	CMD_ID_GET_LINK_QUALITY,            /* 0x81 (Query) */
 	CMD_ID_GET_STATISTICS,              /* 0x82 (Query) */
@@ -453,9 +453,11 @@ enum ENUM_EVENT_ID {
 	EVENT_ID_BA_FW_DROP_SN = 0x5A,          /* 0x5A (Unsolicited) */
 	EVENT_ID_RDD_REPORT = 0x60,
 	EVENT_ID_CSA_DONE = 0x61,
-	EVENT_ID_LTE_IDC_REPORT = 0x62,
-	EVENT_ID_OPMODE_CHANGE = 0x63,
 
+	EVENT_ID_OPMODE_CHANGE = 0x63,
+#if CFG_SUPPORT_IDC_CH_SWITCH
+	EVENT_ID_LTE_IDC_REPORT = 0x64,
+#endif
 	EVENT_ID_GET_CMD_INFO = 0x70,
 	/* 0x70 (Query - EVENT_ID_GET_CMD_INFO) */
 	/*query info from cmd.*/
