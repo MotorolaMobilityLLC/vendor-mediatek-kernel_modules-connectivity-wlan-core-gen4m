@@ -105,7 +105,7 @@ struct APPEND_VAR_IE_ENTRY txAssocReqIETable[] = {
 #endif
 #if CFG_SUPPORT_802_11K
 	{(ELEM_HDR_LEN + 5), NULL,
-	 rlmGenerateRRMEnabledCapIE}, /* Element ID: 70 */
+	 rrmGenerateRRMEnabledCapIE}, /* Element ID: 70 */
 #endif
 	{(ELEM_HDR_LEN + ELEM_MAX_LEN_EXT_CAP), NULL, rlmReqGenerateExtCapIE}
 	,			/* 127 */
