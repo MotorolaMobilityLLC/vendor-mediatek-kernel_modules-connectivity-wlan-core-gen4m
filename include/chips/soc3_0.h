@@ -73,11 +73,9 @@
 *                              C O N S T A N T S
 ********************************************************************************
 */
-/*TODO: To use correct ID after FPGA uses correct ID @20170927*/
-
-#define CONNAC2X_TOP_HCR 0x70010200
-#define CONNAC2X_TOP_HVR 0x70010204
-#define CONNAC2X_TOP_FVR 0x70010208
+#define CONNAC2X_TOP_HCR 0x88000000  /*no use, set HCR = HVR*/
+#define CONNAC2X_TOP_HVR 0x88000000
+#define CONNAC2X_TOP_FVR 0x88000004
 #define CONNAC2x_CONN_CFG_ON_BASE	0x7C060000
 #define CONNAC2x_CONN_CFG_ON_CONN_ON_MISC_ADDR \
 	(CONNAC2x_CONN_CFG_ON_BASE + 0xF0)
@@ -93,11 +91,72 @@
 #define SOC3_0_RX_DESC_LENGTH   24
 #define SOC3_0_ARB_AC_MODE_ADDR (0x820e3020)
 
+#define CONN_HOST_CSR_TOP_BASE_ADDR 0x18060000
+#define CONN_INFRA_CFG_BASE_ADDR 0x18001000
+#define CONN_INFRA_RGU_BASE_ADDR 0x18000000
+#define CONN_INFRA_BRCM_BASE_ADDR 0x1800E000
+
+#define WF_TOP_MISC_OFF_BASE_ADDR 0x184B0000
+
+#define CONN_INFRA_WAKEUP_WF_ADDR (CONN_HOST_CSR_TOP_BASE_ADDR + 0x01A4)
+#define CONN_INFRA_ON2OFF_SLP_PROT_ACK_ADDR \
+	(CONN_HOST_CSR_TOP_BASE_ADDR + 0x0184)
+#define CONN_HW_VER_ADDR (CONN_INFRA_CFG_BASE_ADDR + 0x0000)
+#define WFSYS_CPU_SW_RST_B_ADDR (CONN_INFRA_RGU_BASE_ADDR + 0x0010)
+#define WFSYS_ON_TOP_PWR_CTL_ADDR (CONN_INFRA_RGU_BASE_ADDR + 0x0000)
+#define TOP_DBG_DUMMY_3_CONNSYS_PWR_STATUS_ADDR \
+	(CONN_HOST_CSR_TOP_BASE_ADDR + 0x02CC)
+#define CONN_INFRA_WF_SLP_CTRL_R_ADDR (CONN_INFRA_CFG_BASE_ADDR + 0x0620)
+#define CONN_INFRA_WFDMA_SLP_CTRL_R_ADDR (CONN_INFRA_CFG_BASE_ADDR + 0x0624)
+#define WF_VDNR_EN_ADDR (CONN_INFRA_BRCM_BASE_ADDR + 0x6C)
+#define WFSYS_VERSION_ID_ADDR (WF_TOP_MISC_OFF_BASE_ADDR + 0x10)
+#define CONN_CFG_AP2WF_REMAP_1_ADDR (CONN_INFRA_CFG_BASE_ADDR + 0x0120)
+#define CONN_MCU_CONFG_HS_BASE 0x89040000
+#define CONNSYS_VERSION_ID  0x20010000
+#define WF_DYNAMIC_BASE 0x18500000
+#define MCU_EMI_ENTRY_OFFSET 0x01DC
+#define WF_EMI_ENTRY_OFFSET 0x01E0
+
+#define CONNSYS_ROM_DONE_CHECK  0x00001D1E
+
+#define WF_ROM_CODE_INDEX_ADDR 0x184C1604
+
+#define WF_TRIGGER_AP2CONN_EINT 0x10001F00
+
+
 /*******************************************************************************
 *                         D A T A   T Y P E S
 ********************************************************************************
 */
+enum consys_drv_type {
+	CONNDRV_TYPE_BT = 0,
+	CONNDRV_TYPE_FM = 1,
+	CONNDRV_TYPE_GPS = 2,
+	CONNDRV_TYPE_WIFI = 3,
+	CONNDRV_TYPE_MAX
+};
 
+struct whole_chip_rst_cb {
+	int (*pre_whole_chip_rst)(void);
+	int (*post_whole_chip_rst)(void);
+};
+
+struct pre_calibration_cb {
+	int (*pwr_on_cb)(void);
+	int (*do_cal_cb)(void);
+};
+
+struct sub_drv_ops_cb {
+	/* chip reset */
+	struct whole_chip_rst_cb rst_cb;
+
+	/* calibration */
+	struct pre_calibration_cb pre_cal_cb;
+
+	/* thermal query */
+	int (*thermal_qry)(void);
+
+};
 /*******************************************************************************
 *                            P U B L I C   D A T A
 ********************************************************************************
@@ -117,7 +176,14 @@
 *                  F U N C T I O N   D E C L A R A T I O N S
 ********************************************************************************
 */
-
+#if (CFG_SUPPORT_CONNINFRA == 1)
+extern int conninfra_pwr_on(enum consys_drv_type drv_type);
+extern int conninfra_pwr_off(enum consys_drv_type drv_type);
+extern int conninfra_sub_drv_ops_register(enum consys_drv_type drv_type,
+				struct sub_drv_ops_cb *cb);
+extern int conninfra_trigger_whole_chip_rst(enum consys_drv_type who,
+				char *reason);
+#endif
 void soc3_0_show_ple_info(
 	struct ADAPTER *prAdapter,
 	u_int8_t fgDumpTxd);
@@ -137,7 +203,16 @@ uint32_t soc3_0_DownloadByDynMemMap(IN struct ADAPTER *prAdapter,
 	IN uint32_t u4Addr, IN uint32_t u4Len,
 	IN uint8_t *pucStartPtr, IN enum ENUM_IMG_DL_IDX_T eDlIdx);
 #endif
+int hifWmmcuPwrOn(void);
+int hifWmmcuPwrOff(void);
+int wf_ioremap_read(size_t addr, unsigned int *val);
 
+int wf_ioremap_write(phys_addr_t addr, unsigned int val);
+int soc3_0_Trigger_fw_assert(void);
+#if (CFG_SUPPORT_CONNINFRA == 1)
+int soc3_0_Trigger_whole_chip_rst(char *reason);
+void soc3_0_Sw_interrupt_handler(struct ADAPTER *prAdapter);
+#endif
 #endif /* _SOC3_0_H */
 
 #endif  /* soc3_0 */

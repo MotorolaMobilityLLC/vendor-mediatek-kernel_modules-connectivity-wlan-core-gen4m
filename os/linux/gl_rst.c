@@ -94,6 +94,19 @@ uint64_t u8ResetTime;
 u_int8_t fgIsResetHangState = SER_L0_HANG_RST_NONE;
 #endif
 
+#if (CFG_SUPPORT_CONNINFRA == 1)
+uint32_t g_u4WlanRstThreadPid;
+wait_queue_head_t g_waitq_rst;
+unsigned long g_ulFlag;/* GLUE_FLAG_XXX */
+struct completion g_RstComp;
+KAL_WAKE_LOCK_T g_IntrWakeLock;
+struct task_struct *wlan_reset_thread;
+static int g_rst_data;
+u_int8_t g_IsWholeChipRst = FALSE;
+u_int8_t g_SubsysRstCnt;
+u_int8_t g_IsSubsysRstOverThreshold = FALSE;
+char *g_reason;
+#endif
 /*******************************************************************************
  *                           P R I V A T E   D A T A
  *******************************************************************************
@@ -114,10 +127,12 @@ static void mtk_wifi_reset(struct work_struct *work);
 
 #if CFG_WMT_RESET_API_SUPPORT
 static void mtk_wifi_trigger_reset(struct work_struct *work);
+#if (CFG_SUPPORT_CONNINFRA == 0)
 static void *glResetCallback(enum ENUM_WMTDRV_TYPE eSrcType,
 			     enum ENUM_WMTDRV_TYPE eDstType,
 			     enum ENUM_WMTMSG_TYPE eMsgType, void *prMsgBody,
 			     unsigned int u4MsgLength);
+#endif /*end of CFG_SUPPORT_CONNINFRA == 0*/
 #else
 static u_int8_t is_bt_exist(void);
 static u_int8_t rst_L0_notify_step1(void);
@@ -180,9 +195,10 @@ void glResetInit(struct GLUE_INFO *prGlueInfo)
 {
 #if CFG_WMT_RESET_API_SUPPORT
 	/* 1. Register reset callback */
+#if (CFG_SUPPORT_CONNINFRA == 0)
 	mtk_wcn_wmt_msgcb_reg(WMTDRV_TYPE_WIFI,
 			      (PF_WMT_CB) glResetCallback);
-
+#endif
 	/* 2. Initialize reset work */
 	INIT_WORK(&(wifi_rst.rst_trigger_work),
 		  mtk_wifi_trigger_reset);
@@ -190,6 +206,14 @@ void glResetInit(struct GLUE_INFO *prGlueInfo)
 	fgIsResetting = FALSE;
 	wifi_rst.prGlueInfo = prGlueInfo;
 	INIT_WORK(&(wifi_rst.rst_work), mtk_wifi_reset);
+#if (CFG_SUPPORT_CONNINFRA == 1)
+	KAL_WAKE_LOCK_INIT(NULL, &g_IntrWakeLock, "WLAN Reset");
+	init_waitqueue_head(&g_waitq_rst);
+	init_completion(&g_RstComp);
+	wlan_reset_thread = kthread_run(wlan_reset_thread_main,
+					&g_rst_data, "wlan_rst_thread");
+	g_SubsysRstCnt = 0;
+#endif
 }
 
 /*----------------------------------------------------------------------------*/
@@ -206,7 +230,9 @@ void glResetUninit(void)
 {
 #if CFG_WMT_RESET_API_SUPPORT
 	/* 1. Deregister reset callback */
+#if (CFG_SUPPORT_CONNINFRA == 0)
 	mtk_wcn_wmt_msgcb_unreg(WMTDRV_TYPE_WIFI);
+#endif
 #endif
 }
 /*----------------------------------------------------------------------------*/
@@ -232,7 +258,9 @@ u_int8_t glResetTrigger(struct ADAPTER *prAdapter,
 	u_int8_t fgResult = TRUE;
 	uint16_t u2FwOwnVersion;
 	uint16_t u2FwPeerVersion;
-
+#if (CFG_SUPPORT_CONNINFRA == 1)
+	struct mt66xx_chip_info *prChipInfo = prAdapter->chip_info;
+#endif
 	dump_stack();
 	if (kalIsResetting())
 		return fgResult;
@@ -270,8 +298,19 @@ u_int8_t glResetTrigger(struct ADAPTER *prAdapter,
 	halPrintHifDbgInfo(prAdapter);
 
 #if CFG_WMT_RESET_API_SUPPORT
+#if (CFG_SUPPORT_CONNINFRA == 0)
 	wifi_rst.rst_trigger_flag = u4RstFlag;
 	schedule_work(&(wifi_rst.rst_trigger_work));
+#else
+	if (u4RstFlag & RST_FLAG_DO_WHOLE_RESET) {
+		if (prChipInfo->trigger_wholechiprst)
+			prChipInfo->trigger_wholechiprst(g_reason);
+	} else {
+		if (prChipInfo->triggerfwassert)
+			prChipInfo->triggerfwassert();
+	}
+#endif /*end of CFG_SUPPORT_CONNINFRA == 0*/
+
 #else
 	wifi_rst.prGlueInfo = prAdapter->prGlueInfo;
 	schedule_work(&(wifi_rst.rst_work));
@@ -372,6 +411,7 @@ u_int8_t glIsWmtCodeDump(void)
  * @retval
  */
 /*----------------------------------------------------------------------------*/
+#if (CFG_SUPPORT_CONNINFRA == 0)
 static void *glResetCallback(enum ENUM_WMTDRV_TYPE eSrcType,
 			     enum ENUM_WMTDRV_TYPE eDstType,
 			     enum ENUM_WMTMSG_TYPE eMsgType, void *prMsgBody,
@@ -416,6 +456,189 @@ static void *glResetCallback(enum ENUM_WMTDRV_TYPE eSrcType,
 
 	return NULL;
 }
+#else
+
+void glSetRstReasonString(char *reason)
+{
+	g_reason = reason;
+}
+
+
+static u_int8_t glResetMsgHandler(enum ENUM_WMTMSG_TYPE eMsgType,
+				  enum ENUM_WMTRSTMSG_TYPE MsgBody)
+{
+	switch (eMsgType) {
+	case WMTMSG_TYPE_RESET:
+
+			switch (MsgBody) {
+			case WMTRSTMSG_RESET_START:
+				DBGLOG(INIT, WARN, "Whole chip reset start!\n");
+				fgIsResetting = TRUE;
+				fgSimplifyResetFlow = TRUE;
+				wifi_reset_start();
+				hifAxiRemove();
+				complete(&g_RstComp);
+				break;
+
+			case WMTRSTMSG_RESET_END:
+				DBGLOG(INIT, WARN, "WF reset end!\n");
+				fgIsResetting = FALSE;
+				wifi_rst.rst_data = RESET_SUCCESS;
+				schedule_work(&(wifi_rst.rst_work));
+				break;
+
+			case WMTRSTMSG_RESET_END_FAIL:
+				DBGLOG(INIT, WARN, "Whole chip reset fail!\n");
+				fgIsResetting = FALSE;
+				wifi_rst.rst_data = RESET_FAIL;
+				schedule_work(&(wifi_rst.rst_work));
+				break;
+			case WMTRSTMSG_0P5RESET_START:
+				DBGLOG(INIT, WARN, "WF chip reset start!\n");
+				fgIsResetting = TRUE;
+				fgSimplifyResetFlow = TRUE;
+				wifi_reset_start();
+				hifAxiRemove();
+				break;
+			default:
+				break;
+			}
+		break;
+
+	default:
+		break;
+	}
+
+	return TRUE;
+}
+
+int glRstwlanPreWholeChipReset(void)
+{
+	uint32_t waitRet = 0;
+	bool bRet = TRUE;
+	struct wireless_dev *prWdev = gprWdev;
+	struct GLUE_INFO *prGlueInfo;
+
+	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(prWdev->wiphy);
+	g_IsWholeChipRst = TRUE;
+	if (!g_IsSubsysRstOverThreshold)
+		GL_RESET_TRIGGER(prGlueInfo->prAdapter, RST_FLAG_WF_RESET);
+	else
+		kalSetRstEvent();
+	waitRet = wait_for_completion_timeout(&g_RstComp,
+					MSEC_TO_JIFFIES(WIFI_RST_TIMEOUT));
+	if (waitRet > 0) {
+		/* Case 1: No timeout. */
+		DBGLOG(INIT, INFO, "Wi-Fi is off successfully.\n");
+	} else {
+		/* Case 2: timeout TBD*/
+		DBGLOG(INIT, ERROR,
+			"WiFi rst takes more than 4 seconds, trigger rst self\n");
+	}
+	return bRet;
+}
+
+int glRstwlanPostWholeChipReset(void)
+{
+	glResetMsgHandler(WMTMSG_TYPE_RESET, WMTRSTMSG_RESET_END);
+	return 0;
+}
+
+int wlan_reset_thread_main(void *data)
+{
+	int ret = 0;
+	struct wireless_dev *prWdev = gprWdev;
+	struct GLUE_INFO *prGlueInfo = NULL;
+
+#if defined(CONFIG_ANDROID) && (CFG_ENABLE_WAKE_LOCK)
+	KAL_WAKE_LOCK_T *prWlanRstThreadWakeLock;
+
+	prWlanRstThreadWakeLock = kalMemAlloc(sizeof(KAL_WAKE_LOCK_T),
+		VIR_MEM_TYPE);
+	if (!prWlanRstThreadWakeLock) {
+		DBGLOG(INIT, ERROR, "%s MemAlloc Fail\n",
+			KAL_GET_CURRENT_THREAD_NAME());
+		return 0;
+	}
+
+	KAL_WAKE_LOCK_INIT(NULL,
+			   prWlanRstThreadWakeLock, "WLAN rst_thread");
+	KAL_WAKE_LOCK(NULL, prWlanRstThreadWakeLock);
+#endif
+	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(prWdev->wiphy);
+
+	DBGLOG(INIT, INFO, "%s:%u starts running...\n",
+	       KAL_GET_CURRENT_THREAD_NAME(), KAL_GET_CURRENT_THREAD_ID());
+
+	g_u4WlanRstThreadPid = KAL_GET_CURRENT_THREAD_ID();
+
+	while (TRUE) {
+		/* Unlock wakelock if hif_thread going to idle */
+		KAL_WAKE_UNLOCK(NULL, prWlanRstThreadWakeLock);
+		/*
+		 * sleep on waitqueue if no events occurred. Event contain
+		 * (1) GLUE_FLAG_INT (2) GLUE_FLAG_OID (3) GLUE_FLAG_TXREQ
+		 * (4) GLUE_FLAG_HALT
+		 *
+		 */
+		do {
+			ret = wait_event_interruptible(g_waitq_rst,
+				((g_ulFlag & GLUE_FLAG_RST_PROCESS)
+				!= 0));
+		} while (ret != 0);
+#if defined(CONFIG_ANDROID) && (CFG_ENABLE_WAKE_LOCK)
+		if (!KAL_WAKE_LOCK_ACTIVE(NULL,
+					  prWlanRstThreadWakeLock))
+			KAL_WAKE_LOCK(NULL,
+				      prWlanRstThreadWakeLock);
+#endif
+		if (test_and_clear_bit(GLUE_FLAG_RST_START_BIT, &g_ulFlag)) {
+			if (KAL_WAKE_LOCK_ACTIVE(NULL, &g_IntrWakeLock))
+				KAL_WAKE_UNLOCK(NULL, &g_IntrWakeLock);
+			if (g_IsWholeChipRst) {
+				glResetMsgHandler(WMTMSG_TYPE_RESET,
+							WMTRSTMSG_RESET_START);
+				g_IsWholeChipRst = FALSE;
+				g_IsSubsysRstOverThreshold = FALSE;
+				g_SubsysRstCnt = 0;
+			} else {
+				if (g_SubsysRstCnt < 3) {
+					g_SubsysRstCnt++;
+					DBGLOG(INIT, INFO,
+						"WF reset count = %d\n",
+						g_SubsysRstCnt);
+					glResetMsgHandler(WMTMSG_TYPE_RESET,
+						WMTRSTMSG_0P5RESET_START);
+					glResetMsgHandler(WMTMSG_TYPE_RESET,
+							WMTRSTMSG_RESET_END);
+				} else {
+					g_SubsysRstCnt = 0;
+					g_IsSubsysRstOverThreshold = TRUE;
+					glSetRstReasonString(
+							"subsys reset more than 3 times");
+					GL_RESET_TRIGGER(prGlueInfo->prAdapter,
+							RST_FLAG_WHOLE_RESET);
+				}
+			}
+		}
+	}
+
+#if defined(CONFIG_ANDROID) && (CFG_ENABLE_WAKE_LOCK)
+	if (KAL_WAKE_LOCK_ACTIVE(NULL,
+				 prWlanRstThreadWakeLock))
+		KAL_WAKE_UNLOCK(NULL, prWlanRstThreadWakeLock);
+	KAL_WAKE_LOCK_DESTROY(NULL,
+			      prWlanRstThreadWakeLock);
+	kalMemFree(prWlanRstThreadWakeLock, VIR_MEM_TYPE,
+		sizeof(KAL_WAKE_LOCK_T));
+#endif
+
+	DBGLOG(INIT, TRACE, "%s:%u stopped!\n",
+	       KAL_GET_CURRENT_THREAD_NAME(), KAL_GET_CURRENT_THREAD_ID());
+
+	return 0;
+}
+#endif
 #else
 static u_int8_t is_bt_exist(void)
 {
