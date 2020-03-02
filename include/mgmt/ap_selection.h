@@ -56,8 +56,8 @@
 /* Support AP Selection */
 struct BSS_DESC *scanSearchBssDescByScoreForAis(struct ADAPTER *prAdapter,
 	uint8_t ucBssIndex);
-void scanGetCurrentEssChnlList(struct ADAPTER *prAdapter,
-	uint8_t ucBssIndex);
-/* end Support AP Selection */
+void scanGetCurrentEssChnlList(struct ADAPTER *prAdapter, uint8_t ucBssIndex);
+uint8_t scanCheckNeedDriverRoaming(
+	struct ADAPTER *prAdapter, uint8_t ucBssIndex);
 
 #endif
