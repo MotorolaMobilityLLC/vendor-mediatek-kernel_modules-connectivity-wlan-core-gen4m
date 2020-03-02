@@ -4948,6 +4948,10 @@ int mtk_IsP2PNetDevice(struct GLUE_INFO *prGlueInfo,
 	else if (iftype == NL80211_IFTYPE_ADHOC)
 		ret = 0;
 
+	DBGLOG(REQ, LOUD,
+		"ucIsP2p = %d\n",
+		ret);
+
 	return ret;
 }
 
