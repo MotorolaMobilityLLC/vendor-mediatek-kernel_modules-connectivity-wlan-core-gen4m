@@ -653,7 +653,9 @@
 #define CFG_HOTSPOT_OPTIMIZATION_DTIM           1
 #define CFG_AUTO_CHANNEL_SEL_SUPPORT            1
 
+#ifndef CFG_ENABLE_UNIFY_WIPHY
 #define CFG_ENABLE_UNIFY_WIPHY 1
+#endif
 
 /*------------------------------------------------------------------------------
  * Configuration Flags (Linux Only)

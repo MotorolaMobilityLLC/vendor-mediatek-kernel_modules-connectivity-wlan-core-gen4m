@@ -385,7 +385,10 @@ mtk_iface_combinations_sta[] = {
 static const struct ieee80211_iface_combination
 mtk_iface_combinations_p2p[] = {
 	{
-#ifdef CFG_NUM_DIFFERENT_CHANNELS_P2P
+#if CFG_ENABLE_UNIFY_WIPHY
+		/* The 2 MCC channels case has been verified */
+		.num_different_channels = 2,
+#elif defined(CFG_NUM_DIFFERENT_CHANNELS_P2P)
 		.num_different_channels = CFG_NUM_DIFFERENT_CHANNELS_P2P,
 #else
 		.num_different_channels = 2,
