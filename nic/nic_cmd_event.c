@@ -3012,9 +3012,15 @@ uint32_t nicCfgChipCapPhyCap(IN struct ADAPTER *prAdapter,
 
 	prAdapter->rWifiFemCfg.u2WifiPath = prPhyCap->ucWifiPath;
 
+#if (CFG_SUPPORT_802_11AX == 1)
+	prAdapter->rWifiVar.ucStaHe &= prPhyCap->ucHe;
+	wlanCfgSetUint32(prAdapter, "StaHE", prAdapter->rWifiVar.ucStaHe);
+#endif
+
 	DBGLOG(INIT, TRACE,
-		"Vht [%u], 5gBand [%d], Nss [%d], Dbdc [%d]\n",
+		"Vht [%u] He[%u] 5gBand [%d], Nss [%d], Dbdc [%d]\n",
 			prPhyCap->ucVht,
+			prPhyCap->ucHe,
 			prPhyCap->uc5gBand,
 			prPhyCap->ucNss,
 			prPhyCap->ucDbdc);
