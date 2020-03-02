@@ -695,10 +695,11 @@ void halInitMsduTokenInfo(IN struct ADAPTER *prAdapter)
 			prMemOps->allocTxDataBuf(prToken, u4Idx);
 
 		if (prToken->prPacket) {
-			DBGLOG(HAL, TRACE,
+			/* DBGLOG(HAL, TRACE,
 				"Msdu Entry[0x%p] Tok[%u] Buf[0x%p] len[%u]\n",
 				prToken, u4Idx, prToken->prPacket,
 				prToken->u4DmaLength);
+			*/
 		} else {
 			prTokenInfo->i4UsedCnt++;
 			DBGLOG(HAL, WARN,
