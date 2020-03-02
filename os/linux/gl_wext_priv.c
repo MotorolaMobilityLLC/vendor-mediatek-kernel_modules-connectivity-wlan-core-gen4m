@@ -152,7 +152,12 @@ reqExtSetAcpiDevicePowerState(IN struct GLUE_INFO
 			      IN void *pvSetBuffer, IN uint32_t u4SetBufferLen,
 			      OUT uint32_t *pu4SetInfoLen);
 
-
+#if CFG_SUPPORT_DYNAMIC_PWR_LIMIT
+/* dynamic tx power control */
+static int priv_driver_set_power_control(IN struct net_device *prNetDev,
+			      IN char *pcCommand,
+			      IN int i4TotalLen);
+#endif
 /*******************************************************************************
  *                       P R I V A T E   D A T A
  *******************************************************************************
@@ -1917,6 +1922,32 @@ __priv_set_struct(IN struct net_device *prNetDev,
 		}
 		break; /* case PRIV_CMD_GET_WIFI_TYPE: */
 
+	/* dynamic tx power control */
+	case PRIV_CMD_SET_PWR_CTRL:
+		{
+			char *pCommand = NULL;
+
+			u4CmdLen = prIwReqData->data.length;
+			if (u4CmdLen > CMD_OID_BUF_LENGTH)
+				return -EINVAL;
+			if (copy_from_user(&aucOidBuf[0],
+					   prIwReqData->data.pointer,
+					   u4CmdLen)) {
+				status = -EFAULT;
+				break;
+			}
+			pCommand = kalMemAlloc(u4CmdLen + 1, VIR_MEM_TYPE);
+			if (pCommand == NULL) {
+				DBGLOG(REQ, INFO, "alloc fail\n");
+				return -EINVAL;
+			}
+			kalMemZero(pCommand, u4CmdLen + 1);
+			kalMemCopy(pCommand, aucOidBuf, u4CmdLen);
+			priv_driver_cmds(prNetDev, pCommand, u4CmdLen);
+			kalMemFree(pCommand, VIR_MEM_TYPE, i4TotalLen);
+		}
+		break;
+
 	default:
 		return -EOPNOTSUPP;
 	}
@@ -2984,6 +3015,7 @@ reqExtSetAcpiDevicePowerState(IN struct GLUE_INFO
 #define CMD_DUMP_UAPSD		"dumpuapsd"
 #define CMD_FW_EVENT		"FW-EVENT "
 #define CMD_GET_WIFI_TYPE	"GET_WIFI_TYPE"
+#define CMD_SET_PWR_CTRL        "SET_PWR_CTRL"
 #define PRIV_CMD_SIZE 512
 #define CMD_SET_FIXED_RATE      "FixedRate"
 #define CMD_GET_VERSION         "VER"
@@ -14513,6 +14545,9 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers[] = {
 	{CMD_RUN_UT, priv_driver_run_ut},
 #endif /* UT_TEST_MODE */
 	{CMD_GET_WIFI_TYPE, priv_driver_get_wifi_type},
+#if CFG_SUPPORT_DYNAMIC_PWR_LIMIT
+	{CMD_SET_PWR_CTRL, priv_driver_set_power_control},
+#endif
 	{CMD_GET_PLE_INFO, priv_driver_get_ple_info},
 	{CMD_GET_PSE_INFO, priv_driver_get_pse_info},
 	{CMD_GET_DMASCH_INFO, priv_driver_get_dmasch_info},
@@ -14738,6 +14773,12 @@ int32_t priv_driver_cmds(IN struct net_device *prNetDev, IN int8_t *pcCommand,
 			kalIoctl(prGlueInfo, wlanoidDumpUapsdSetting,
 				 (void *)pcCommand, i4TotalLen, FALSE, FALSE,
 				 FALSE, &i4BytesWritten);
+#if CFG_SUPPORT_DYNAMIC_PWR_LIMIT
+		} else if (strnicmp(pcCommand, CMD_SET_PWR_CTRL,
+				    strlen(CMD_SET_PWR_CTRL)) == 0) {
+			priv_driver_set_power_control(prNetDev,
+						      pcCommand, i4TotalLen);
+#endif
 		} else if (strnicmp(pcCommand, CMD_SET_BF,
 			   strlen(CMD_SET_BF)) == 0) {
 			i4BytesWritten = priv_driver_set_bf(prNetDev,
@@ -16599,3 +16640,67 @@ priv_driver_auto_enable_ncho(IN struct net_device *prNetDev)
 
 #endif /* CFG_SUPPORT_NCHO */
 
+#if CFG_SUPPORT_DYNAMIC_PWR_LIMIT
+/* dynamic tx power control */
+static int priv_driver_set_power_control(IN struct net_device *prNetDev,
+				  IN char *pcCommand, IN int i4TotalLen)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct PARAM_TX_PWR_CTRL_IOCTL rPwrCtrlParam = { 0 };
+	u_int8_t fgIndex = FALSE;
+	char *ptr = pcCommand, *ptr2 = NULL;
+	char *str = NULL, *cmd = NULL, *name = NULL, *setting = NULL;
+	uint8_t index = 0;
+	uint32_t u4SetInfoLen = 0;
+
+	while ((str = strsep(&ptr, " ")) != NULL) {
+		if (kalStrLen(str) <= 0)
+			continue;
+		if (cmd == NULL)
+			cmd = str;
+		else if (name == NULL)
+			name = str;
+		else if (fgIndex == FALSE) {
+			ptr2 = str;
+			if (kalkStrtou8(str, 0, &index) != 0) {
+				DBGLOG(REQ, INFO,
+				       "index is wrong: %s\n", ptr2);
+				return -1;
+			}
+			fgIndex = TRUE;
+		} else if (setting == NULL) {
+			setting = str;
+			break;
+		}
+	}
+
+	if ((name == NULL) || (fgIndex == FALSE)) {
+		DBGLOG(REQ, INFO, "name(%s) or fgIndex(%d) is wrong\n",
+		       name, fgIndex);
+		return -1;
+	}
+
+	rPwrCtrlParam.fgApplied = (index == 0) ? FALSE : TRUE;
+	rPwrCtrlParam.name = name;
+	rPwrCtrlParam.index = index;
+	rPwrCtrlParam.newSetting = setting;
+
+	DBGLOG(REQ, INFO, "applied=[%d], name=[%s], index=[%u], setting=[%s]\n",
+	       rPwrCtrlParam.fgApplied,
+	       rPwrCtrlParam.name,
+	       rPwrCtrlParam.index,
+	       rPwrCtrlParam.newSetting);
+
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+	kalIoctl(prGlueInfo,
+		 wlanoidTxPowerControl,
+		 (void *)&rPwrCtrlParam,
+		 sizeof(struct PARAM_TX_PWR_CTRL_IOCTL),
+		 FALSE,
+		 FALSE,
+		 TRUE,
+		 &u4SetInfoLen);
+
+	return 0;
+}
+#endif

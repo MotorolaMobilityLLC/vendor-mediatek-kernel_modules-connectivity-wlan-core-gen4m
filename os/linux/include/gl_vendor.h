@@ -151,7 +151,8 @@ enum WIFI_SUB_COMMAND {
 	WIFI_SUBCMD_GET_ROAMING_CAPABILITIES,			/* 0x0008 */
 	WIFI_SUBCMD_SET_ROAMING = 0x0009,			/* 0x0009 */
 	WIFI_SUBCMD_CONFIG_ROAMING = 0x000a,			/* 0x000a */
-	WIFI_SUBCMD_ENABLE_ROAMING				/* 0x000b */
+	WIFI_SUBCMD_ENABLE_ROAMING,				/* 0x000b */
+	WIFI_SUBCMD_SELECT_TX_POWER_SCENARIO,			/* 0x000c */
 };
 
 enum RTT_SUB_COMMAND {
@@ -209,7 +210,8 @@ enum WIFI_ATTRIBUTE {
 	WIFI_ATTRIBUTE_ROAMING_BLACKLIST_BSSID,
 	WIFI_ATTRIBUTE_ROAMING_WHITELIST_NUM,
 	WIFI_ATTRIBUTE_ROAMING_WHITELIST_SSID,
-	WIFI_ATTRIBUTE_ROAMING_STATE
+	WIFI_ATTRIBUTE_ROAMING_STATE,
+	WIFI_ATTRIBUTE_TX_POWER_SCENARIO,
 };
 
 /* moved from wifi_logger.cpp */
@@ -716,6 +718,10 @@ int mtk_cfg80211_vendor_get_supported_feature_set(
 int mtk_cfg80211_vendor_event_rssi_beyond_range(
 	struct wiphy *wiphy,
 	struct wireless_dev *wdev, int rssi);
+
+int mtk_cfg80211_vendor_set_tx_power_scenario(
+	struct wiphy *wiphy, struct wireless_dev *wdev,
+	const void *data, int data_len);
 
 int mtk_cfg80211_vendor_get_preferred_freq_list(struct wiphy
 		*wiphy, struct wireless_dev *wdev, const void *data,

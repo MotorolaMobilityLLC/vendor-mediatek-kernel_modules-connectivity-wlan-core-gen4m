@@ -72,6 +72,7 @@
 #if CFG_SUPPORT_PASSPOINT
 #include "hs20.h"
 #endif /* CFG_SUPPORT_PASSPOINT */
+#include "gl_os.h"
 
 /*******************************************************************************
  *                              C O N S T A N T S
@@ -1636,6 +1637,11 @@ struct ADAPTER {
 	uint32_t u4BufLen;
 #endif /* CFG_SUPPORT_LINK_QUALITY_MONITOR */
 
+#if CFG_SUPPORT_DYNAMIC_PWR_LIMIT
+	/* dynamic tx power control */
+	struct LINK rTxPwr_DefaultList;
+	struct LINK rTxPwr_DynamicList;
+#endif
 };				/* end of _ADAPTER_T */
 
 /*******************************************************************************

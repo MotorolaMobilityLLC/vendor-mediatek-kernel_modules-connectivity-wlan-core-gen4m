@@ -612,6 +612,89 @@
 
 #if CFG_SUPPORT_PWR_LIMIT_COUNTRY
 
+/* Define Tx Power Control Channel Type */
+#define MAX_TX_PWR_CTRL_ELEMENT_NAME_SIZE	16
+#define PWR_CTRL_CHNL_TYPE_KEY_ALL		"ALL"
+#define PWR_CTRL_CHNL_TYPE_KEY_2G4		"2G4"
+#define PWR_CTRL_CHNL_TYPE_KEY_5G		"5G"
+#define PWR_CTRL_CHNL_TYPE_KEY_BANDEDGE_2G4	"BANDEDGE2G4"
+#define PWR_CTRL_CHNL_TYPE_KEY_BANDEDGE_5G	"BANDEDGE5G"
+#define PWR_CTRL_CHNL_TYPE_KEY_5G_BAND1		"5GBAND1"
+#define PWR_CTRL_CHNL_TYPE_KEY_5G_BAND2		"5GBAND2"
+#define PWR_CTRL_CHNL_TYPE_KEY_5G_BAND3		"5GBAND3"
+#define PWR_CTRL_CHNL_TYPE_KEY_5G_BAND4		"5GBAND4"
+
+enum ENUM_TX_POWER_CTRL_LIST_TYPE {
+	PWR_CTRL_TYPE_DEFAULT_LIST = 0,
+	PWR_CTRL_TYPE_DYNAMIC_LIST,
+	PWR_CTRL_TYPE_ALL_LIST,
+};
+
+enum ENUM_TX_POWER_CTRL_APPLIED_WAY {
+	PWR_CTRL_TYPE_APPLIED_WAY_WIFION = 1,
+	PWR_CTRL_TYPE_APPLIED_WAY_IOCTL,
+};
+
+enum ENUM_TX_POWER_CTRL_OPERATION {
+	PWR_CTRL_TYPE_OPERATION_POWER_LEVEL = 1,
+	PWR_CTRL_TYPE_OPERATION_POWER_OFFSET,
+};
+
+enum ENUM_TX_POWER_CTRL_TYPE {
+	PWR_CTRL_TYPE_WIFION_POWER_LEVEL = 1,
+	PWR_CTRL_TYPE_WIFION_POWER_OFFSET,
+	PWR_CTRL_TYPE_IOCTL_POWER_LEVEL,
+	PWR_CTRL_TYPE_IOCTL_POWER_OFFSET,
+};
+
+enum ENUM_TX_POWER_CTRL_VALUE_SIGN {
+	PWR_CTRL_TYPE_NO_ACTION = 0,
+	PWR_CTRL_TYPE_POSITIVE,
+	PWR_CTRL_TYPE_NEGATIVE,
+};
+
+enum ENUM_TX_POWER_CTRL_CHANNEL_TYPE {
+	PWR_CTRL_CHNL_TYPE_NORMAL = 0,
+	PWR_CTRL_CHNL_TYPE_ALL,
+	PWR_CTRL_CHNL_TYPE_RANGE,
+	PWR_CTRL_CHNL_TYPE_2G4,
+	PWR_CTRL_CHNL_TYPE_5G,
+	PWR_CTRL_CHNL_TYPE_BANDEDGE_2G4,
+	PWR_CTRL_CHNL_TYPE_BANDEDGE_5G,
+	PWR_CTRL_CHNL_TYPE_5G_BAND1,
+	PWR_CTRL_CHNL_TYPE_5G_BAND2,
+	PWR_CTRL_CHNL_TYPE_5G_BAND3,
+	PWR_CTRL_CHNL_TYPE_5G_BAND4,
+};
+
+struct TX_PWR_CTRL_CHANNEL_SETTING {
+	enum ENUM_TX_POWER_CTRL_CHANNEL_TYPE eChnlType;
+	uint8_t channelParam[2];
+
+	/* 0: CCK
+	 * 1: 20L, MCS0~4
+	 * 2: 20H, MCS5~8
+	 * 3: 40L, MCS0~4
+	 * 4: 40H, MCS5~9
+	 * 5: 80L, MCS0~4
+	 * 6: 80H, MCS5~9
+	 * 7: 160L, MCS0~4
+	 * 8: 160H, MCS5~9
+	 */
+	enum ENUM_TX_POWER_CTRL_VALUE_SIGN op[9];
+	int8_t i8PwrLimit[9];
+};
+
+struct TX_PWR_CTRL_ELEMENT {
+	struct LINK_ENTRY node;
+	u_int8_t fgApplied;
+	char name[MAX_TX_PWR_CTRL_ELEMENT_NAME_SIZE]; /* scenario name */
+	uint8_t index; /* scenario index */
+	enum ENUM_TX_POWER_CTRL_TYPE eCtrlType;
+	uint8_t settingCount;
+	struct TX_PWR_CTRL_CHANNEL_SETTING rChlSettingList[1];
+};
+
 enum ENUM_POWER_LIMIT {
 	PWR_LIMIT_CCK = 0,
 	PWR_LIMIT_20M_L = 1,
@@ -623,6 +706,13 @@ enum ENUM_POWER_LIMIT {
 	PWR_LIMIT_160M_L = 7,
 	PWR_LIMIT_160M_H = 8,
 	PWR_LIMIT_NUM
+};
+
+struct PARAM_TX_PWR_CTRL_IOCTL {
+	u_int8_t fgApplied;
+	uint8_t *name;
+	uint8_t index;
+	uint8_t *newSetting;
 };
 
 #endif
@@ -1028,6 +1118,28 @@ u32 rlmDomainGetCountryCode(void);
 u32 rlmDomainGetTempCountryCode(void);
 void rlmDomainAssert(u_int8_t cond);
 
+#if CFG_SUPPORT_DYNAMIC_PWR_LIMIT
+/* dynamic tx power control */
+void txPwrCtrlInit(struct ADAPTER *prAdapter);
+void txPwrCtrlLoadConfig(struct ADAPTER *prAdapter);
+void txPwrCtrlUninit(struct ADAPTER *prAdapter);
+void txPwrCtrlShowList(struct ADAPTER *prAdapter,
+				uint8_t filterType,
+				char *message);
+void txPwrCtrlDeleteElement(struct ADAPTER *prAdapter,
+				uint8_t *name, uint32_t index,
+				enum ENUM_TX_POWER_CTRL_LIST_TYPE eListType);
+struct TX_PWR_CTRL_ELEMENT *txPwrCtrlStringToStruct(char *pcContent,
+				u_int8_t fgSkipHeader);
+struct TX_PWR_CTRL_ELEMENT *txPwrCtrlFindElement(
+				struct ADAPTER *prAdapter,
+				uint8_t *name,
+				uint32_t index,
+				u_int8_t fgCheckIsApplied,
+				enum ENUM_TX_POWER_CTRL_LIST_TYPE eListType);
+void txPwrCtrlAddElement(struct ADAPTER *prAdapter,
+				struct TX_PWR_CTRL_ELEMENT *prElement);
+#endif
 /*******************************************************************************
  *   F U N C T I O N S
  *******************************************************************************
