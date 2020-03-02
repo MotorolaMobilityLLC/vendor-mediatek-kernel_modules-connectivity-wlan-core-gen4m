@@ -283,6 +283,10 @@ void cnmIdcDetectHandler(IN struct ADAPTER *prAdapter,
 #endif
 #endif
 
+uint8_t cnmSapChannelSwitchReq(IN struct ADAPTER *prAdapter,
+	IN struct RF_CHANNEL_INFO *prRfChannelInfo,
+	IN uint8_t ucRoleIdx);
+
 u_int8_t cnmPreferredChannel(struct ADAPTER *prAdapter, enum ENUM_BAND *prBand,
 	uint8_t *pucPrimaryChannel, enum ENUM_CHNL_EXT *prBssSCO);
 
