@@ -336,17 +336,17 @@ void bssDetermineApBssInfoPhyTypeSet(IN struct ADAPTER *prAdapter,
 	/* Set HT/VHT capability from Feature Option */
 	if (IS_FEATURE_DISABLED(ucHtOption))
 		prBssInfo->ucPhyTypeSet &= ~PHY_TYPE_BIT_HT;
-	else if (IS_FEATURE_ENABLED(ucHtOption))
+	else if (IS_FEATURE_FORCE_ENABLED(ucHtOption))
 		prBssInfo->ucPhyTypeSet |= PHY_TYPE_BIT_HT;
 
 	if (IS_FEATURE_DISABLED(ucVhtOption)) {
 		prBssInfo->ucPhyTypeSet &= ~PHY_TYPE_BIT_VHT;
-	} else if (IS_FEATURE_FORCE_ENABLED(ucVhtOption) ||
-		   (IS_FEATURE_ENABLED(ucVhtOption)
-		    && (prBssInfo->eBand == BAND_5G
-		    || prWifiVar->ucVhtIeIn2g))) {
-
-		/* Enable HT capability if VHT is enabled */
+	} else if (IS_FEATURE_FORCE_ENABLED(ucVhtOption)) {
+		prBssInfo->ucPhyTypeSet |= PHY_TYPE_BIT_VHT;
+	} else if (IS_FEATURE_ENABLED(ucVhtOption) &&
+			prBssInfo->eBand == BAND_2G4 &&
+			prWifiVar->ucVhtIeIn2g &&
+			(prBssInfo->ucPhyTypeSet & PHY_TYPE_SET_802_11N)) {
 		prBssInfo->ucPhyTypeSet |= PHY_TYPE_BIT_VHT;
 	}
 
