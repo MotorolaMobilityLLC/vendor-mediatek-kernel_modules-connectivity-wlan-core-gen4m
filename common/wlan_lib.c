@@ -6460,6 +6460,8 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 	prWifiVar->ucLowLatencyModePower = (uint32_t) wlanCfgGetUint32(
 			prAdapter, "LowLatencyModePower", FEATURE_ENABLED);
 #endif /* CFG_SUPPORT_LOWLATENCY_MODE */
+
+	prWifiVar->u4MTU = wlanCfgGetUint32(prAdapter, "MTU", 0);
 }
 
 void wlanCfgSetSwCtrl(IN struct ADAPTER *prAdapter)
