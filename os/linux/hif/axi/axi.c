@@ -243,8 +243,12 @@ static int hifAxiProbe(void)
 #endif
 	if (prChipInfo->wmmcupwron)
 		ret = prChipInfo->wmmcupwron();
-	if (ret != 0)
+	if (ret != 0) {
+		DBGLOG(INIT, INFO, "wmmcu pwr on fail!\n");
+		if (prChipInfo->wmmcupwroff)
+			prChipInfo->wmmcupwroff();
 		goto out;
+	}
 	if (pfWlanProbe((void *)prPlatDev,
 			(void *)prPlatDev->id_entry->driver_data) !=
 			WLAN_STATUS_SUCCESS) {
