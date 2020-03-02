@@ -725,6 +725,10 @@ struct _SW_RFB_T {
 	UINT_16 u2SSN;
 	UINT_8 ucTid;
 
+#if CFG_TCP_IP_CHKSUM_OFFLOAD
+	UINT_32 u4TcpUdpIpCksStatus;
+#endif /* CFG_TCP_IP_CHKSUM_OFFLOAD */
+
 	ENUM_CSUM_RESULT_T aeCSUM[CSUM_TYPE_NUM];
 	ENUM_RX_PKT_DESTINATION_T eDst;
 	ENUM_TRAFFIC_CLASS_INDEX_T eTC;	/* only valid when eDst == FORWARD */
@@ -733,6 +737,23 @@ struct _SW_RFB_T {
 	/*QUE_T rAmsduQue;*/
 #endif
 };
+
+#if CFG_TCP_IP_CHKSUM_OFFLOAD
+struct RX_CSO_REPORT_T {
+	UINT_32 u4IpV4CksStatus:1;
+	UINT_32 u4Reserved1:1;
+	UINT_32 u4TcpCksStatus:1;
+	UINT_32 u4UdpCksStatus:1;
+	UINT_32 u4IpV4CksType:1;
+	UINT_32 u4IpV6CksType:1;
+	UINT_32 u4TcpCksType:1;
+	UINT_32 u4UdpCksType:1;
+	UINT_32 u4IpDataLenMismatch:1;
+	UINT_32 u4IpFragPkg:1;
+	UINT_32 u4UnknowNextHeader:1;
+	UINT_32 u4Reserved2:21;
+};
+#endif /* CFG_TCP_IP_CHKSUM_OFFLOAD */
 
 /*! RX configuration type structure */
 typedef struct _RX_CTRL_T {
@@ -1033,7 +1054,7 @@ VOID nicRxProcessEventPacket(IN P_ADAPTER_T prAdapter, IN OUT P_SW_RFB_T prSwRfb
 VOID nicRxProcessMgmtPacket(IN P_ADAPTER_T prAdapter, IN OUT P_SW_RFB_T prSwRfb);
 
 #if CFG_TCP_IP_CHKSUM_OFFLOAD
-VOID nicRxFillChksumStatus(IN P_ADAPTER_T prAdapter, IN OUT P_SW_RFB_T prSwRfb, IN UINT_32 u4TcpUdpIpCksStatus);
+VOID nicRxFillChksumStatus(IN P_ADAPTER_T prAdapter, IN OUT P_SW_RFB_T prSwRfb);
 
 VOID nicRxUpdateCSUMStatistics(IN P_ADAPTER_T prAdapter, IN const ENUM_CSUM_RESULT_T aeCSUM[]);
 #endif /* CFG_TCP_IP_CHKSUM_OFFLOAD */
