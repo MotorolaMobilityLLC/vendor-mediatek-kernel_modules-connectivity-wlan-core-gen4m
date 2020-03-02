@@ -369,6 +369,7 @@ BOOLEAN halSetDriverOwn(IN P_ADAPTER_T prAdapter)
 	BOOLEAN fgReady = FALSE;
 	UINT_32 u4DriverOwnTime = 0, u4Cr4ReadyTime = 0;
 	P_GL_HIF_INFO_T prHifInfo;
+	BOOLEAN fgWmtCoreDump = FALSE;
 
 	ASSERT(prAdapter);
 
@@ -425,10 +426,10 @@ BOOLEAN halSetDriverOwn(IN P_ADAPTER_T prAdapter)
 				       "LP cannot be own back, Timeout[%u](%ums), BusAccessError[%u]",
 				       fgTimeout, kalGetTimeTick() - u4CurrTick, fgIsBusAccessFailed);
 				DBGLOG(INIT, ERROR,
-				       "Resetting[%u], CardRemoved[%u] NoAck[%u] Cnt[%u]\n",
+				       "Resetting[%u], CardRemoved[%u] NoAck[%u] Cnt[%u] fgCoreDump[%u]\n",
 				       kalIsResetting(),
 				       kalIsCardRemoved(prAdapter->prGlueInfo), wlanIsChipNoAck(prAdapter),
-				       prAdapter->u4OwnFailedCount);
+				       prAdapter->u4OwnFailedCount, fgWmtCoreDump);
 
 				DBGLOG(INIT, INFO,
 				       "Skip LP own back failed log for next %ums\n", LP_OWN_BACK_FAILED_LOG_SKIP_MS);
@@ -436,8 +437,13 @@ BOOLEAN halSetDriverOwn(IN P_ADAPTER_T prAdapter)
 				prAdapter->u4OwnFailedLogCount++;
 				if (prAdapter->u4OwnFailedLogCount > LP_OWN_BACK_FAILED_RESET_CNT) {
 					/* Trigger RESET */
-					glGetRstReason(RST_DRV_OWN_FAIL);
-					GL_RESET_TRIGGER(prAdapter, RST_FLAG_CHIP_RESET);
+					fgWmtCoreDump = glIsWmtCodeDump();
+					if (!fgWmtCoreDump) {
+						glGetRstReason(RST_DRV_OWN_FAIL);
+						GL_RESET_TRIGGER(prAdapter, RST_FLAG_DO_CORE_DUMP);
+					} else
+						DBGLOG(NIC, WARN,
+								"[Driver own fail!] WMT is code dumping !STOP AEE & chip reset\n");
 				}
 				GET_CURRENT_SYSTIME(&prAdapter->rLastOwnFailedLogTime);
 			}
@@ -492,10 +498,10 @@ BOOLEAN halSetDriverOwn(IN P_ADAPTER_T prAdapter)
 				halPollDbgCr(prAdapter, LP_OWN_BACK_FAILED_DBGCR_POLL_ROUND);
 
 				DBGLOG(INIT, ERROR,
-				       "Resetting[%u], CardRemoved[%u] NoAck[%u] Timeout[%u](%u - %u)ms\n",
+				       "Resetting[%u], CardRemoved[%u] NoAck[%u] Timeout[%u](%u - %u)ms, fgCoreDump[%u]\n",
 				       kalIsResetting(),
 				       kalIsCardRemoved(prAdapter->prGlueInfo), wlanIsChipNoAck(prAdapter),
-				       fgTimeout, kalGetTimeTick(), u4CurrTick);
+				       fgTimeout, kalGetTimeTick(), u4CurrTick, fgWmtCoreDump);
 
 
 				DBGLOG(INIT, INFO,
@@ -504,8 +510,13 @@ BOOLEAN halSetDriverOwn(IN P_ADAPTER_T prAdapter)
 
 				if (fgTimeout) {
 					/* Trigger RESET */
-					glGetRstReason(RST_DRV_OWN_FAIL);
-					GL_RESET_TRIGGER(prAdapter, RST_FLAG_CHIP_RESET);
+					fgWmtCoreDump = glIsWmtCodeDump();
+					if (!fgWmtCoreDump) {
+						glGetRstReason(RST_DRV_OWN_FAIL);
+						GL_RESET_TRIGGER(prAdapter, RST_FLAG_DO_CORE_DUMP);
+					} else
+						DBGLOG(NIC, WARN,
+								"[Driver own fail!] WMT is code dumping !STOP AEE & chip reset\n");
 				}
 
 				break;
