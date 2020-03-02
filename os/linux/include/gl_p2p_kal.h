@@ -349,6 +349,9 @@ u_int8_t kalP2PSetBlackList(IN struct GLUE_INFO *prGlueInfo,
 		IN u_int8_t fgIsblock,
 		IN uint8_t ucRoleIndex);
 
+u_int8_t kalP2PResetBlackList(IN struct GLUE_INFO *prGlueInfo,
+		IN uint8_t ucRoleIndex);
+
 u_int8_t kalP2PCmpBlackList(IN struct GLUE_INFO *prGlueInfo,
 		IN uint8_t rbssid[PARAM_MAC_ADDR_LEN],
 		IN uint8_t ucRoleIndex);
