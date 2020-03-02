@@ -4544,10 +4544,13 @@ uint32_t nicApplyNetworkAddress(IN struct ADAPTER
 	prAdapter->rWifiVar.aucDeviceAddress[0] ^=
 		MAC_ADDR_LOCAL_ADMIN;
 
-	COPY_MAC_ADDR(prAdapter->rWifiVar.aucInterfaceAddress,
-		      prAdapter->rMyMacAddr);
-	prAdapter->rWifiVar.aucInterfaceAddress[0] ^=
-		MAC_ADDR_LOCAL_ADMIN;
+	for (i = 0; i < KAL_P2P_NUM; i++) {
+		COPY_MAC_ADDR(prAdapter->rWifiVar.aucInterfaceAddress[i],
+			      prAdapter->rMyMacAddr);
+		prAdapter->rWifiVar.aucInterfaceAddress[i][0] |= 0x2;
+		prAdapter->rWifiVar.aucInterfaceAddress[i][0] ^=
+			i << MAC_ADDR_LOCAL_ADMIN;
+	}
 
 #if CFG_ENABLE_WIFI_DIRECT
 	if (prAdapter->fgIsP2PRegistered) {
