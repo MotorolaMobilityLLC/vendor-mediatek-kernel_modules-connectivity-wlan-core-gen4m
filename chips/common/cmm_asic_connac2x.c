@@ -74,6 +74,8 @@
 
 
 #include "precomp.h"
+#include "wlan_lib.h"
+
 /*******************************************************************************
 *                              C O N S T A N T S
 ********************************************************************************
@@ -1710,18 +1712,14 @@ void asicConnac2xRxPerfIndProcessRXV(IN struct ADAPTER *prAdapter,
 			       IN uint8_t ucBssIndex)
 {
 	struct HW_MAC_RX_STS_GROUP_3 *prRxStatusGroup3;
-	uint8_t ucRxRate;
-	uint8_t ucRxMode;
-	uint8_t ucMcs;
-	uint8_t ucFrMode;
-	uint8_t ucShortGI, ucGroupid, ucMu, ucNsts = 1;
-	uint32_t u4PhyRate;
 	uint8_t ucRCPI0 = 0, ucRCPI1 = 0;
-	/* Rate
-	 * Bit Number 2
-	 * Unit 500 Kbps
-	 */
-	uint16_t u2Rate = 0;
+	uint32_t rxmode = 0, rate = 0, frmode = 0, sgi = 0, nsts = 0;
+	uint32_t groupid = 0, mu = 0;
+	uint32_t u4RxVector0 = 0, u4RxVector1 = 0;
+	int rv;
+
+	uint32_t u4CurRate = 0;
+	uint32_t u4MaxRate = 0;
 
 	ASSERT(prAdapter);
 	ASSERT(prSwRfb);
@@ -1736,56 +1734,37 @@ void asicConnac2xRxPerfIndProcessRXV(IN struct ADAPTER *prAdapter,
 	}
 
 	prRxStatusGroup3 = prSwRfb->prRxStatusGroup3;
-
-	ucRxMode = (((prRxStatusGroup3)->u4RxVector[0] &
-		RX_VT_RX_MODE_MASK) >> RX_VT_RX_MODE_OFFSET);
-
-	/* RATE & NSS */
-	if ((ucRxMode == RX_VT_LEGACY_CCK)
-		|| (ucRxMode == RX_VT_LEGACY_OFDM)) {
-		/* Bit[2:0] for Legacy CCK, Bit[3:0] for Legacy OFDM */
-		ucRxRate = (HAL_RX_VECTOR_GET_RX_VECTOR(
-			prRxStatusGroup3, 0) & RX_VT_RX_RATE_AC_MASK);
-		u2Rate = nicGetHwRateByPhyRate(ucRxRate);
-	} else {
-		ucMcs = (HAL_RX_VECTOR_GET_RX_VECTOR(
-			prRxStatusGroup3, 0) & RX_VT_RX_RATE_AC_MASK);
-		ucNsts = ((HAL_RX_VECTOR_GET_RX_VECTOR(
-			prRxStatusGroup3, 1) &
-			RX_VT_NSTS_MASK) >> RX_VT_NSTS_OFFSET);
-		ucGroupid = ((HAL_RX_VECTOR_GET_RX_VECTOR(
-			prRxStatusGroup3, 1) &
-			RX_VT_GROUP_ID_MASK) >> RX_VT_GROUP_ID_OFFSET);
-
-		if (ucNsts == 0)
-			ucNsts = 1;
-
-		if (ucGroupid && ucGroupid != 63)
-			ucMu = 1;
-		else {
-			ucMu = 0;
-			ucNsts += 1;
-		}
-
-		/* VHTA1 B0-B1 */
-		ucFrMode = ((HAL_RX_VECTOR_GET_RX_VECTOR(
-			prRxStatusGroup3, 0) &
-			RX_VT_FR_MODE_MASK) >> RX_VT_FR_MODE_OFFSET);
-		ucShortGI = (HAL_RX_VECTOR_GET_RX_VECTOR(
-			prRxStatusGroup3, 0) &
-			RX_VT_SHORT_GI) ? 1 : 0;	/* VHTA2 B0 */
-
-		if ((ucMcs > PHY_RATE_MCS9) ||
-			(ucFrMode > RX_VT_FR_MODE_160) ||
-			(ucShortGI > MAC_GI_SHORT))
-			return;
-
-		/* ucRate(500kbs) = u4PhyRate(100kbps) */
-		u4PhyRate = nicGetPhyRateByMcsRate(ucMcs, ucFrMode,
-					ucShortGI);
-		u2Rate = u4PhyRate / 5;
-
+	u4RxVector0 = HAL_RX_VECTOR_GET_RX_VECTOR(prRxStatusGroup3, 0);
+	u4RxVector1 = HAL_RX_VECTOR_GET_RX_VECTOR(prRxStatusGroup3, 1);
+	if ((u4RxVector0 == 0) || (u4RxVector1 == 0)) {
+		DBGLOG(SW4, ERROR, "u4RxVector0 or u4RxVector1 is 0\n");
+		return;
 	}
+
+	rxmode = (u4RxVector0 & RX_VT_RX_MODE_MASK) >> RX_VT_RX_MODE_OFFSET;
+	rate = (u4RxVector0 & RX_VT_RX_RATE_MASK) >> RX_VT_RX_RATE_OFFSET;
+	frmode = (u4RxVector0 & RX_VT_FR_MODE_MASK) >> RX_VT_FR_MODE_OFFSET;
+	nsts = ((u4RxVector1 & RX_VT_NSTS_MASK) >> RX_VT_NSTS_OFFSET);
+	sgi = u4RxVector0 & RX_VT_SHORT_GI;
+	groupid = (u4RxVector1 & RX_VT_GROUP_ID_MASK) >> RX_VT_GROUP_ID_OFFSET;
+	if (groupid && groupid != 63) {
+		mu = 1;
+	} else {
+		mu = 0;
+		nsts += 1;
+	}
+	sgi = (sgi == 0) ? 0 : 1;
+	if (frmode >= 4) {
+		DBGLOG(SW4, ERROR, "frmode error: %u\n", frmode);
+		return;
+	}
+
+	rv = wlanQueryRateByTable(rxmode, rate, frmode, sgi, nsts,
+				 &u4CurRate, &u4MaxRate);
+
+	if (rv < 0)
+		return;
+
 
 	/* RCPI */
 	ucRCPI0 = HAL_RX_STATUS_GET_RCPI0(prRxStatusGroup3);
@@ -1793,12 +1772,12 @@ void asicConnac2xRxPerfIndProcessRXV(IN struct ADAPTER *prAdapter,
 
 
 	/* Record peak rate to Traffic Indicator*/
-	if (u2Rate > prAdapter->prGlueInfo
+	if (u4CurRate > prAdapter->prGlueInfo
 		->PerfIndCache.u2CurRxRate[ucBssIndex]) {
 		prAdapter->prGlueInfo->PerfIndCache.
-			u2CurRxRate[ucBssIndex] = u2Rate;
+			u2CurRxRate[ucBssIndex] = u4CurRate;
 		prAdapter->prGlueInfo->PerfIndCache.
-			ucCurRxNss[ucBssIndex] = ucNsts;
+			ucCurRxNss[ucBssIndex] = nsts;
 		prAdapter->prGlueInfo->PerfIndCache.
 			ucCurRxRCPI0[ucBssIndex] = ucRCPI0;
 		prAdapter->prGlueInfo->PerfIndCache.
