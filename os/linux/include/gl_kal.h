@@ -88,6 +88,9 @@
 
 #include "linux/kallsyms.h"
 #include "linux/sched.h"
+#if KERNEL_VERSION(4, 11, 0) <= CFG80211_VERSION_CODE
+#include "linux/sched/types.h"
+#endif
 
 #if CFG_SUPPORT_SCAN_CACHE_RESULT
 #include "wireless/core.h"

@@ -319,6 +319,18 @@ keyStructBuf[100];	/* add/remove key shared buffer */
 
 #endif
 
+#if KERNEL_VERSION(4, 12, 0) <= CFG80211_VERSION_CODE
+#define NLA_PARSE_NESTED(nlattr, maxtype, nla, policy)	\
+	nla_parse_nested(nlattr, maxtype, nla, policy, NULL)
+#define NLA_PARSE(tb, maxtype, head, len, policy) \
+	nla_parse(tb, maxtype, head, len, policy, NULL)
+#else
+#define NLA_PARSE_NESTED(nlattr, maxtype, nla, policy)	\
+	nla_parse_nested(nlattr, maxtype, nla, policy)
+#define NLA_PARSE(tb, maxtype, head, len, policy) \
+	nla_parse(tb, maxtype, head, len, policy)
+#endif
+
 /*******************************************************************************
  *				P R I V A T E   D A T A
  *
