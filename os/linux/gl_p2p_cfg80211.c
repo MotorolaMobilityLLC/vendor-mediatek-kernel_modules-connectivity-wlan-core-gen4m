@@ -1358,6 +1358,7 @@ int mtk_p2p_cfg80211_set_power_mgmt(struct wiphy *wiphy,
 	struct GLUE_INFO *prGlueInfo = NULL;
 	enum PARAM_POWER_MODE ePowerMode;
 	struct PARAM_POWER_MODE_ rPowerMode;
+	uint32_t rStatus;
 	uint32_t u4Leng;
 	uint8_t ucRoleIdx;
 
@@ -1383,10 +1384,15 @@ int mtk_p2p_cfg80211_set_power_mgmt(struct wiphy *wiphy,
 	rPowerMode.ePowerMode = ePowerMode;
 
 	/* p2p_set_power_save */
-	kalIoctl(prGlueInfo,
+	rStatus = kalIoctl(prGlueInfo,
 		wlanoidSet802dot11PowerSaveProfile,
 		&rPowerMode, sizeof(rPowerMode),
 		FALSE, FALSE, TRUE, &u4Leng);
+
+	if (rStatus != WLAN_STATUS_SUCCESS) {
+		DBGLOG(REQ, WARN, "set_power_mgmt error:%x\n", rStatus);
+		return -EFAULT;
+	}
 
 	return 0;
 }
@@ -3698,15 +3704,22 @@ int mtk_p2p_cfg80211_testmode_p2p_sigma_pre_cmd(IN struct wiphy *wiphy,
 	case 106:		/* P2P set sleep  */
 		{
 			struct PARAM_POWER_MODE_ rPowerMode;
+			uint32_t rStatus;
 
 			rPowerMode.ePowerMode = Param_PowerModeMAX_PSP;
 			rPowerMode.ucBssIdx = ucBssIdx;
 
-			kalIoctl(prGlueInfo,
-				 wlanoidSet802dot11PowerSaveProfile,
-				 &rPowerMode,
-				 sizeof(rPowerMode),
-				 FALSE, FALSE, TRUE, &u4Leng);
+			rStatus = kalIoctl(prGlueInfo,
+				wlanoidSet802dot11PowerSaveProfile,
+				&rPowerMode,
+				sizeof(rPowerMode),
+				FALSE, FALSE, TRUE, &u4Leng);
+
+			if (rStatus != WLAN_STATUS_SUCCESS) {
+				DBGLOG(REQ, WARN,
+					"set_power_mgmt error:%x\n", rStatus);
+				return -EFAULT;
+			}
 		}
 		break;
 	case 107:		/* P2P set opps, CTWindowl */
@@ -3718,15 +3731,22 @@ int mtk_p2p_cfg80211_testmode_p2p_sigma_pre_cmd(IN struct wiphy *wiphy,
 	case 108:		/* p2p_set_power_save */
 		{
 			struct PARAM_POWER_MODE_ rPowerMode;
+			uint32_t rStatus;
 
 			rPowerMode.ePowerMode = value;
 			rPowerMode.ucBssIdx = ucBssIdx;
 
-			kalIoctl(prGlueInfo,
-				 wlanoidSet802dot11PowerSaveProfile,
-				 &rPowerMode,
-				 sizeof(rPowerMode),
-				 FALSE, FALSE, TRUE, &u4Leng);
+			rStatus = kalIoctl(prGlueInfo,
+				wlanoidSet802dot11PowerSaveProfile,
+				&rPowerMode,
+				sizeof(rPowerMode),
+				FALSE, FALSE, TRUE, &u4Leng);
+
+			if (rStatus != WLAN_STATUS_SUCCESS) {
+				DBGLOG(REQ, WARN,
+					"set_power_mgmt error:%x\n", rStatus);
+				return -EFAULT;
+			}
 		}
 		break;
 	default:
@@ -3748,6 +3768,7 @@ int mtk_p2p_cfg80211_testmode_p2p_sigma_cmd(IN struct wiphy *wiphy,
 	/* P_P2P_CONNECTION_SETTINGS_T prP2pConnSettings =
 	 * (P_P2P_CONNECTION_SETTINGS_T)NULL;
 	 */
+	uint32_t rStatus;
 	uint32_t index;
 	int32_t value;
 	int status = 0;
@@ -3814,11 +3835,16 @@ int mtk_p2p_cfg80211_testmode_p2p_sigma_cmd(IN struct wiphy *wiphy,
 			prNoaParams->duration);
 
 		/* only to apply setting when setting NOA count */
-		kalIoctl(prGlueInfo,
+		rStatus = kalIoctl(prGlueInfo,
 			wlanoidSetNoaParam,
 			&prP2pSpecificBssInfo->rNoaParam,
 			sizeof(struct PARAM_CUSTOM_NOA_PARAM_STRUCT),
 			FALSE, FALSE, TRUE, &u4Leng);
+
+		if (rStatus != WLAN_STATUS_SUCCESS) {
+			DBGLOG(REQ, WARN, "set_noa error:%x\n", rStatus);
+			return -EFAULT;
+		}
 		break;
 	case 5:		/* Noa interval */
 		prP2pSpecificBssInfo->rNoaParam.u4NoaIntervalMs = value;
@@ -3866,22 +3892,33 @@ int mtk_p2p_cfg80211_testmode_p2p_sigma_cmd(IN struct wiphy *wiphy,
 			rPowerMode.ePowerMode = Param_PowerModeMAX_PSP;
 			rPowerMode.ucBssIdx = ucBssIdx;
 
-			kalIoctl(prGlueInfo,
-				 wlanoidSet802dot11PowerSaveProfile,
-				 &rPowerMode,
-				 sizeof(rPowerMode),
-				 FALSE, FALSE, TRUE, &u4Leng);
+			rStatus = kalIoctl(prGlueInfo,
+				wlanoidSet802dot11PowerSaveProfile,
+				&rPowerMode,
+				sizeof(rPowerMode),
+				FALSE, FALSE, TRUE, &u4Leng);
+
+			if (rStatus != WLAN_STATUS_SUCCESS) {
+				DBGLOG(REQ, WARN,
+					"set_power_mgmt error:%x\n", rStatus);
+				return -EFAULT;
+			}
 		}
 		break;
 	case 107:		/* P2P set opps, CTWindowl */
 		prP2pSpecificBssInfo->rOppPsParam.u4CTwindowMs = value;
 		prP2pSpecificBssInfo->rOppPsParam.ucBssIdx = ucBssIdx;
 		DBGLOG(P2P, INFO, "SET OPPS[%d]: %d\n", ucBssIdx, value);
-		kalIoctl(prGlueInfo,
+		rStatus = kalIoctl(prGlueInfo,
 			wlanoidSetOppPsParam,
 			&prP2pSpecificBssInfo->rOppPsParam,
 			sizeof(struct PARAM_CUSTOM_OPPPS_PARAM_STRUCT),
 			FALSE, FALSE, TRUE, &u4Leng);
+		if (rStatus != WLAN_STATUS_SUCCESS) {
+			DBGLOG(REQ, WARN,
+				"set_opps error:%x\n", rStatus);
+			return -EFAULT;
+		}
 		break;
 	case 108:		/* p2p_set_power_save */
 		{
@@ -3890,10 +3927,16 @@ int mtk_p2p_cfg80211_testmode_p2p_sigma_cmd(IN struct wiphy *wiphy,
 			rPowerMode.ePowerMode = value;
 			rPowerMode.ucBssIdx = ucBssIdx;
 
-			kalIoctl(prGlueInfo,
-				 wlanoidSet802dot11PowerSaveProfile,
-				 &rPowerMode, sizeof(rPowerMode),
-				 FALSE, FALSE, TRUE, &u4Leng);
+			rStatus = kalIoctl(prGlueInfo,
+				wlanoidSet802dot11PowerSaveProfile,
+				&rPowerMode, sizeof(rPowerMode),
+				FALSE, FALSE, TRUE, &u4Leng);
+
+			if (rStatus != WLAN_STATUS_SUCCESS) {
+				DBGLOG(REQ, WARN,
+					"set_power_mgmt error:%x\n", rStatus);
+				return -EFAULT;
+			}
 		}
 		break;
 	case 109:		/* Max Clients */
@@ -3904,10 +3947,16 @@ int mtk_p2p_cfg80211_testmode_p2p_sigma_cmd(IN struct wiphy *wiphy,
 		break;
 	case 110:		/* Hotspot WPS mode */
 #if CFG_SUPPORT_HOTSPOT_WPS_MANAGER
-		kalIoctl(prGlueInfo,
+		rStatus = kalIoctl(prGlueInfo,
 			wlanoidSetP2pWPSmode,
 			&value, sizeof(value),
 			FALSE, FALSE, TRUE, &u4Leng);
+
+		if (rStatus != WLAN_STATUS_SUCCESS) {
+			DBGLOG(REQ, WARN,
+				"set_wps error:%x\n", rStatus);
+			return -EFAULT;
+		}
 #endif
 		break;
 	default:

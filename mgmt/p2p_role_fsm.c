@@ -102,7 +102,11 @@ uint8_t p2pRoleFsmInit(IN struct ADAPTER *prAdapter,
 		P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prAdapter, ucRoleIdx) =
 			prP2pRoleFsmInfo;
 
-		ASSERT_BREAK(prP2pRoleFsmInfo != NULL);
+		if (!prP2pRoleFsmInfo) {
+			DBGLOG(P2P, ERROR,
+				"Error allocating fsm Info Structure\n");
+			break;
+		}
 
 		kalMemZero(prP2pRoleFsmInfo, sizeof(struct P2P_ROLE_FSM_INFO));
 
