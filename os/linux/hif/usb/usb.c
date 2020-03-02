@@ -371,6 +371,8 @@ BOOL mtk_usb_vendor_request(IN P_GLUE_INFO_T prGlueInfo, IN UCHAR uEndpointAddre
 			    IN UCHAR Request, IN UINT_16 Value, IN UINT_16 Index, IN PVOID TransferBuffer,
 			    IN UINT_32 TransferBufferLength)
 {
+	P_GL_HIF_INFO_T prHifInfo = &prGlueInfo->rHifInfo;
+
 	/* refer to RTUSB_VendorRequest */
 	int ret = 0;
 
@@ -381,7 +383,7 @@ BOOL mtk_usb_vendor_request(IN P_GLUE_INFO_T prGlueInfo, IN UCHAR uEndpointAddre
 		return FALSE;
 	}
 
-	if (prGlueInfo->rHifInfo.state != USB_STATE_LINK_UP)
+	if (prHifInfo->state != USB_STATE_LINK_UP)
 		return FALSE;
 
 
@@ -390,22 +392,22 @@ BOOL mtk_usb_vendor_request(IN P_GLUE_INFO_T prGlueInfo, IN UCHAR uEndpointAddre
 		return FALSE;
 #endif
 
-	mutex_lock(&prGlueInfo->rHifInfo.vendor_req_sem);
+	mutex_lock(&prHifInfo->vendor_req_sem);
 
 	if (RequestType == DEVICE_VENDOR_REQUEST_OUT)
 		ret =
-		    usb_control_msg(prGlueInfo->rHifInfo.udev,
-				    usb_sndctrlpipe(prGlueInfo->rHifInfo.udev, uEndpointAddress), Request,
+		    usb_control_msg(prHifInfo->udev,
+				    usb_sndctrlpipe(prHifInfo->udev, uEndpointAddress), Request,
 				    RequestType, Value, Index, TransferBuffer, TransferBufferLength,
 				    VENDOR_TIMEOUT_MS);
 	else if (RequestType == DEVICE_VENDOR_REQUEST_IN)
 		ret =
-		    usb_control_msg(prGlueInfo->rHifInfo.udev,
-				    usb_rcvctrlpipe(prGlueInfo->rHifInfo.udev, uEndpointAddress), Request,
+		    usb_control_msg(prHifInfo->udev,
+				    usb_rcvctrlpipe(prHifInfo->udev, uEndpointAddress), Request,
 				    RequestType, Value, Index, TransferBuffer, TransferBufferLength,
 				    VENDOR_TIMEOUT_MS);
 
-	mutex_unlock(&prGlueInfo->rHifInfo.vendor_req_sem);
+	mutex_unlock(&prHifInfo->vendor_req_sem);
 
 	return (ret == TransferBufferLength) ? 0 : ret;
 }
@@ -422,7 +424,7 @@ BOOL mtk_usb_vendor_request(IN P_GLUE_INFO_T prGlueInfo, IN UCHAR uEndpointAddre
 * \retval
 */
 /*----------------------------------------------------------------------------*/
-int mtk_usb_bulk_in_msg(IN P_GLUE_INFO_T prGlueInfo, IN UINT_32 len, OUT UCHAR *buffer, int InEp)
+static int mtk_usb_bulk_in_msg(IN P_GL_HIF_INFO_T prHifInfo, IN UINT_32 len, OUT UCHAR *buffer, int InEp)
 {
 	int ret = 0;
 	UINT_32 count;
@@ -432,15 +434,15 @@ int mtk_usb_bulk_in_msg(IN P_GLUE_INFO_T prGlueInfo, IN UINT_32 len, OUT UCHAR *
 		return FALSE;
 	}
 
-	mutex_lock(&prGlueInfo->rHifInfo.vendor_req_sem);
+	mutex_lock(&prHifInfo->vendor_req_sem);
 
 	/* do a blocking bulk read to get data from the device */
-	ret = usb_bulk_msg(prGlueInfo->rHifInfo.udev,
-			   usb_rcvbulkpipe(prGlueInfo->rHifInfo.udev, InEp), buffer, len, &count, BULK_TIMEOUT_MS);
+	ret = usb_bulk_msg(prHifInfo->udev,
+			   usb_rcvbulkpipe(prHifInfo->udev, InEp), buffer, len, &count, BULK_TIMEOUT_MS);
 
-	mutex_unlock(&prGlueInfo->rHifInfo.vendor_req_sem);
+	mutex_unlock(&prHifInfo->vendor_req_sem);
 
-	if (!ret) {
+	if (ret >= 0) {
 #if 0 /* maximize buff len for usb in */
 		if (count != len) {
 			DBGLOG(HAL, WARN, "usb_bulk_msg(IN=%d) Warning. Data is not completed. (receive %d/%u)\n",
@@ -454,7 +456,7 @@ int mtk_usb_bulk_in_msg(IN P_GLUE_INFO_T prGlueInfo, IN UINT_32 len, OUT UCHAR *
 	return ret;
 }
 
-int mtk_usb_intr_in_msg(IN P_GLUE_INFO_T prGlueInfo, IN UINT_32 len, OUT UCHAR * buffer, int InEp)
+static int mtk_usb_intr_in_msg(IN P_GL_HIF_INFO_T prHifInfo, IN UINT_32 len, OUT UCHAR *buffer, int InEp)
 {
 	int ret = 0;
 	UINT_32 count;
@@ -464,15 +466,15 @@ int mtk_usb_intr_in_msg(IN P_GLUE_INFO_T prGlueInfo, IN UINT_32 len, OUT UCHAR *
 		return FALSE;
 	}
 
-	mutex_lock(&prGlueInfo->rHifInfo.vendor_req_sem);
+	mutex_lock(&prHifInfo->vendor_req_sem);
 
 	/* do a blocking interrupt read to get data from the device */
-	ret = usb_interrupt_msg(prGlueInfo->rHifInfo.udev,
-			   usb_rcvintpipe(prGlueInfo->rHifInfo.udev, InEp), buffer, len, &count, INTERRUPT_TIMEOUT_MS);
+	ret = usb_interrupt_msg(prHifInfo->udev,
+			   usb_rcvintpipe(prHifInfo->udev, InEp), buffer, len, &count, INTERRUPT_TIMEOUT_MS);
 
-	mutex_unlock(&prGlueInfo->rHifInfo.vendor_req_sem);
+	mutex_unlock(&prHifInfo->vendor_req_sem);
 
-	if (!ret) {
+	if (ret >= 0) {
 #if 0 /* maximize buff len for usb in */
 		if (count != len) {
 			DBGLOG(HAL, WARN, "usb_interrupt_msg(IN=%d) Warning. Data is not completed. (receive %d/%u)\n",
@@ -498,7 +500,7 @@ int mtk_usb_intr_in_msg(IN P_GLUE_INFO_T prGlueInfo, IN UINT_32 len, OUT UCHAR *
 * \retval
 */
 /*----------------------------------------------------------------------------*/
-int mtk_usb_bulk_out_msg(IN P_GLUE_INFO_T prGlueInfo, IN UINT_32 len, IN UCHAR *buffer, int OutEp)
+static int mtk_usb_bulk_out_msg(IN P_GL_HIF_INFO_T prHifInfo, IN UINT_32 len, IN UCHAR *buffer, int OutEp)
 {
 	int ret = 0;
 	UINT_32 count;
@@ -508,20 +510,22 @@ int mtk_usb_bulk_out_msg(IN P_GLUE_INFO_T prGlueInfo, IN UINT_32 len, IN UCHAR *
 		return FALSE;
 	}
 
-	mutex_lock(&prGlueInfo->rHifInfo.vendor_req_sem);
+	mutex_lock(&prHifInfo->vendor_req_sem);
 
 	/* do a blocking bulk read to get data from the device */
-	ret = usb_bulk_msg(prGlueInfo->rHifInfo.udev,
-			   usb_sndbulkpipe(prGlueInfo->rHifInfo.udev, OutEp), buffer, len, &count, BULK_TIMEOUT_MS);
+	ret = usb_bulk_msg(prHifInfo->udev,
+			   usb_sndbulkpipe(prHifInfo->udev, OutEp), buffer, len, &count, BULK_TIMEOUT_MS);
 
-	mutex_unlock(&prGlueInfo->rHifInfo.vendor_req_sem);
+	mutex_unlock(&prHifInfo->vendor_req_sem);
 
-	if (!ret) {
+	if (ret >= 0) {
+#if 0
 		if (count != len) {
 			DBGLOG(HAL, ERROR, "usb_bulk_msg(OUT=%d) Warning. Data is not completed. (send %d/%u)\n", OutEp,
 			       count, len);
 		}
-		return ret;
+#endif
+		return count;
 	}
 
 	DBGLOG(HAL, ERROR, "usb_bulk_msg(OUT=%d) Fail. Error code = %d.\n", OutEp, ret);
@@ -577,6 +581,47 @@ VOID glUnregisterBus(remove_card pfRemove)
 	}
 	usb_deregister(&mtk_usb_driver);
 }				/* end of glUnregisterBus() */
+
+VOID glUdmaTxRxEnable(P_GLUE_INFO_T prGlueInfo, BOOLEAN enable)
+{
+	UINT_32 u4Value = 0;
+
+	kalDevRegRead(prGlueInfo, UDMA_WLCFG_0, &u4Value);
+
+	/* enable UDMA TX & RX */
+	if (enable)
+		u4Value |= UDMA_WLCFG_0_TX_EN(1) | UDMA_WLCFG_0_RX_EN(1) | UDMA_WLCFG_0_RX_MPSZ_PAD0(1);
+	else
+		u4Value &= ~(UDMA_WLCFG_0_TX_EN(1) | UDMA_WLCFG_0_RX_EN(1));
+
+	kalDevRegWrite(prGlueInfo, UDMA_WLCFG_0, u4Value);
+}
+
+VOID glUdmaRxAggEnable(P_GLUE_INFO_T prGlueInfo, BOOLEAN enable)
+{
+	UINT_32 u4Value = 0;
+
+	if (enable) {
+		kalDevRegRead(prGlueInfo, UDMA_WLCFG_0, &u4Value);
+		/* enable UDMA TX & RX */
+		u4Value &= ~(UDMA_WLCFG_0_RX_AGG_EN_MASK |
+		    UDMA_WLCFG_0_RX_AGG_LMT_MASK |
+		    UDMA_WLCFG_0_RX_AGG_TO_MASK);
+		u4Value |= UDMA_WLCFG_0_RX_AGG_EN(1) |
+		    UDMA_WLCFG_0_RX_AGG_LMT(USB_RX_AGGREGTAION_LIMIT) |
+		    UDMA_WLCFG_0_RX_AGG_TO(USB_RX_AGGREGTAION_TIMEOUT);
+		kalDevRegWrite(prGlueInfo, UDMA_WLCFG_0, u4Value);
+
+		kalDevRegRead(prGlueInfo, UDMA_WLCFG_1, &u4Value);
+		u4Value &= ~UDMA_WLCFG_1_RX_AGG_PKT_LMT_MASK;
+		u4Value |= UDMA_WLCFG_1_RX_AGG_PKT_LMT(USB_RX_AGGREGTAION_PKT_LIMIT);
+		kalDevRegWrite(prGlueInfo, UDMA_WLCFG_1, u4Value);
+	} else {
+		kalDevRegRead(prGlueInfo, UDMA_WLCFG_0, &u4Value);
+		u4Value &= ~UDMA_WLCFG_0_RX_AGG_EN(1);
+		kalDevRegWrite(prGlueInfo, UDMA_WLCFG_0, u4Value);
+	}
+}
 
 PVOID glUsbInitQ(P_GL_HIF_INFO_T prHifInfo, struct list_head *prHead, UINT_32 u4Cnt)
 {
@@ -1208,7 +1253,7 @@ kalDevPortRead(IN P_GLUE_INFO_T prGlueInfo,
 	if (prGlueInfo->rHifInfo.eEventEpType == EVENT_EP_TYPE_INTR &&
 		u2Port == (USB_EVENT_EP_IN & USB_ENDPOINT_NUMBER_MASK)) {
 		/* maximize buff len for usb in */
-		ret = mtk_usb_intr_in_msg(prGlueInfo, u4ValidOutBufSize, pucDst, u2Port);
+		ret = mtk_usb_intr_in_msg(&prGlueInfo->rHifInfo, u4ValidOutBufSize, pucDst, u2Port);
 		if (ret != u4Len) {
 			DBGLOG(HAL, WARN, "usb_interrupt_msg(IN=%d) Warning. Data is not completed. (receive %d/%u)\n",
 			       u2Port, ret, u4Len);
@@ -1216,7 +1261,7 @@ kalDevPortRead(IN P_GLUE_INFO_T prGlueInfo,
 		ret = ret >= 0 ? 0 : ret;
 	} else if (u2Port >= MTK_USB_BULK_IN_MIN_EP && u2Port <= MTK_USB_BULK_IN_MAX_EP) {
 		/* maximize buff len for usb in */
-		ret = mtk_usb_bulk_in_msg(prGlueInfo, u4ValidOutBufSize, pucDst, u2Port);
+		ret = mtk_usb_bulk_in_msg(&prGlueInfo->rHifInfo, u4ValidOutBufSize, pucDst, u2Port);
 		if (ret != u4Len) {
 			DBGLOG(HAL, WARN, "usb_bulk_msg(IN=%d) Warning. Data is not completed. (receive %d/%u)\n",
 			       u2Port, ret, u4Len);
@@ -1224,7 +1269,7 @@ kalDevPortRead(IN P_GLUE_INFO_T prGlueInfo,
 		ret = ret >= 0 ? 0 : ret;
 	} else {
 		DBGLOG(HAL, ERROR, "kalDevPortRead reports error: invalid port %x\n", u2Port);
-		ret = FALSE;
+		ret = -EINVAL;
 	}
 
 	if (ret) {
@@ -1276,10 +1321,15 @@ kalDevPortWrite(IN P_GLUE_INFO_T prGlueInfo,
 
 	u2Port &= MTK_USB_PORT_MASK;
 	if (u2Port >= MTK_USB_BULK_OUT_MIN_EP && u2Port <= MTK_USB_BULK_OUT_MAX_EP) {
-		ret = mtk_usb_bulk_out_msg(prGlueInfo, u4Len, pucSrc, 8);
+		ret = mtk_usb_bulk_out_msg(&prGlueInfo->rHifInfo, u4Len, pucSrc, 8);
+		if (ret != u4Len) {
+			DBGLOG(HAL, WARN, "usb_bulk_msg(OUT=%d) Warning. Data is not completed. (receive %d/%u)\n",
+			       u2Port, ret, u4Len);
+		}
+		ret = ret >= 0 ? 0 : ret;
 	} else {
 		DBGLOG(HAL, ERROR, "kalDevPortWrite reports error: invalid port %x\n", u2Port);
-		ret = FALSE;
+		ret = -EINVAL;
 	}
 
 	if (ret) {
@@ -1333,7 +1383,9 @@ BOOL kalDevWriteData(IN P_GLUE_INFO_T prGlueInfo, IN P_MSDU_INFO_T prMsduInfo)
 /*----------------------------------------------------------------------------*/
 BOOL kalDevKickData(IN P_GLUE_INFO_T prGlueInfo)
 {
+#if 0
 	halTxUSBKickData(prGlueInfo);
+#endif
 	return TRUE;
 }
 

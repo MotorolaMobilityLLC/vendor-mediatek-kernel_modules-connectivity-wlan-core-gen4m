@@ -210,6 +210,8 @@ halRxWaitResponse(IN P_ADAPTER_T prAdapter, IN UINT_8 ucPortIdx, OUT PUINT_8 puc
 			kalMemCopy(pucRspBuffer, prRxCtrl->pucRxCoalescingBufPtr, u4MaxRespBufferLen);
 			*pu4Length = u4MaxRespBufferLen;
 
+			if (ret == FALSE)
+				u4Status = WLAN_STATUS_FAILURE;
 			return u4Status;
 		}
 
@@ -224,11 +226,15 @@ halRxWaitResponse(IN P_ADAPTER_T prAdapter, IN UINT_8 ucPortIdx, OUT PUINT_8 puc
 			ucPortIdx = USB_EVENT_EP_IN;
 
 	}
-	HAL_PORT_RD(prAdapter, ucPortIdx, ALIGN_4(u4MaxRespBufferLen) + LEN_USB_RX_PADDING_CSO,
+	ret = kalDevPortRead(prAdapter->prGlueInfo, ucPortIdx,
+		ALIGN_4(u4MaxRespBufferLen) + LEN_USB_RX_PADDING_CSO,
 		prRxCtrl->pucRxCoalescingBufPtr, HIF_RX_COALESCING_BUFFER_SIZE);
 
 	kalMemCopy(pucRspBuffer, prRxCtrl->pucRxCoalescingBufPtr, u4MaxRespBufferLen);
 	*pu4Length = u4MaxRespBufferLen;
+
+	if (ret == FALSE)
+		u4Status = WLAN_STATUS_FAILURE;
 
 	return u4Status;
 }
@@ -968,9 +974,19 @@ VOID halRxUSBProcessEventDataComplete(IN P_ADAPTER_T prAdapter,
 /*----------------------------------------------------------------------------*/
 VOID halEnableInterrupt(IN P_ADAPTER_T prAdapter)
 {
+	P_GLUE_INFO_T prGlueInfo;
+	P_GL_HIF_INFO_T prHifInfo;
+
+	ASSERT(prAdapter);
+
+	prGlueInfo = prAdapter->prGlueInfo;
+	prHifInfo = &prGlueInfo->rHifInfo;
+
 	halRxUSBReceiveData(prAdapter);
-	if (prAdapter->prGlueInfo->rHifInfo.eEventEpType != EVENT_EP_TYPE_DATA_EP)
+	if (prHifInfo->eEventEpType != EVENT_EP_TYPE_DATA_EP)
 		halRxUSBReceiveEvent(prAdapter, TRUE);
+
+	glUdmaRxAggEnable(prGlueInfo, TRUE);
 } /* end of halEnableInterrupt() */
 
 /*----------------------------------------------------------------------------*/
@@ -1000,6 +1016,7 @@ VOID halDisableInterrupt(IN P_ADAPTER_T prAdapter)
 		usb_kill_urb(prUsbReq->prUrb);
 	}
 
+	glUdmaRxAggEnable(prGlueInfo, FALSE);
 	prAdapter->fgIsIntEnable = FALSE;
 }
 
@@ -1090,30 +1107,13 @@ VOID halEnableFWDownload(IN P_ADAPTER_T prAdapter, IN BOOL fgEnable)
 
 VOID halDevInit(IN P_ADAPTER_T prAdapter)
 {
-	UINT_32 u4Value = 0;
+	P_GLUE_INFO_T prGlueInfo;
 
 	ASSERT(prAdapter);
+	prGlueInfo = prAdapter->prGlueInfo;
 
-	{
-		HAL_MCR_RD(prAdapter, UDMA_WLCFG_0, &u4Value);
-
-		/* enable UDMA TX & RX */
-		u4Value = UDMA_WLCFG_0_TX_EN(1) | UDMA_WLCFG_0_RX_EN(1) |
-		    UDMA_WLCFG_0_RX_AGG_EN(1) |
-		    UDMA_WLCFG_0_RX_MPSZ_PAD0(1) |
-		    UDMA_WLCFG_0_RX_AGG_LMT(USB_RX_AGGREGTAION_LIMIT) |
-		    UDMA_WLCFG_0_RX_AGG_TO(USB_RX_AGGREGTAION_TIMEOUT);
-
-		HAL_MCR_WR(prAdapter, UDMA_WLCFG_0, u4Value);
-	}
-	{
-		HAL_MCR_RD(prAdapter, UDMA_WLCFG_1, &u4Value);
-
-		u4Value &= ~UDMA_WLCFG_1_RX_AGG_PKT_LMT_MASK;
-		u4Value |= UDMA_WLCFG_1_RX_AGG_PKT_LMT(USB_RX_AGGREGTAION_PKT_LIMIT);
-
-		HAL_MCR_WR(prAdapter, UDMA_WLCFG_1, u4Value);
-	}
+	glUdmaRxAggEnable(prGlueInfo, FALSE);
+	glUdmaTxRxEnable(prGlueInfo, TRUE);
 }
 
 BOOLEAN halTxIsDataBufEnough(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduInfo)
