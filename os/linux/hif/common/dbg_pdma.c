@@ -979,6 +979,8 @@ void halShowPleInfo(IN struct ADAPTER *prAdapter)
 	DBGLOG(HAL, INFO, "\tINT_STS(0x82060024): 0x%08x\n", value);
 	HAL_MCR_RD(prAdapter, PLE_INT_ERR_STS, &value);
 	DBGLOG(HAL, INFO, "\tINT_ERR_STS(0x82060028): 0x%08x\n", value);
+	HAL_MCR_RD(prAdapter, PLE_QUEUE_CMD_ERR_STS, &value);
+	DBGLOG(HAL, INFO, "\tQUEUE_CMD_ERR_STS(0x82060550): 0x%08x\n", value);
 
 	DBGLOG(HAL, INFO,
 		"\tPacket Buffer Control(0x82060014): 0x%08x\n",
