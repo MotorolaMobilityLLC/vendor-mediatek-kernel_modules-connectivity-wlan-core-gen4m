@@ -2312,7 +2312,7 @@ struct PARAM_SCHED_SCAN_REQUEST {
 	struct PARAM_SSID arSsid[CFG_SCAN_HIDDEN_SSID_MAX_NUM];
 	uint32_t u4MatchSsidNum;   /* matched for a scan request */
 	struct PARAM_SSID arMatchSsid[CFG_SCAN_SSID_MATCH_MAX_NUM];
-	int8_t acRssiThold[CFG_SCAN_SSID_MATCH_MAX_NUM];
+	int32_t ai4RssiThold[CFG_SCAN_SSID_MATCH_MAX_NUM];
 	int32_t i4MinRssiThold;
 	uint32_t u4IELength;
 	uint8_t *pucIE;

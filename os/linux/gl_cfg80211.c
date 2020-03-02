@@ -3349,11 +3349,11 @@ int mtk_cfg80211_sched_scan_start(IN struct wiphy *wiphy,
 					  request->match_sets[i].ssid.ssid,
 					  request->match_sets[i].ssid.ssid_len);
 #if KERNEL_VERSION(3, 15, 0) <= CFG80211_VERSION_CODE
-				prSchedScanRequest->acRssiThold[i] = (int8_t)
-					     request->match_sets[i].rssi_thold;
+				prSchedScanRequest->ai4RssiThold[i] =
+					request->match_sets[i].rssi_thold;
 #else
-				prSchedScanRequest->acRssiThold[i] = (int8_t)
-						     request->rssi_thold;
+				prSchedScanRequest->ai4RssiThold[i] =
+					request->rssi_thold;
 #endif
 				num++;
 			}
