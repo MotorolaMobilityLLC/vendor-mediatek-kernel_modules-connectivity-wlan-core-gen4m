@@ -5,9 +5,9 @@
 
 #include <cpu_ctrl.h>
 #include <topo_ctrl.h>
-#ifdef WLAN_FORCE_DDR_OPP
+
 #include <linux/pm_qos.h>
-#endif
+#include <helio-dvfsrc-opp-mt6885.h>
 
 #include "precomp.h"
 
@@ -42,10 +42,9 @@ int32_t kalBoostCpu(IN struct ADAPTER *prAdapter,
 	struct ppm_limit_data freq_to_set[MAX_CLUSTER_NUM];
 	int32_t i = 0, i4Freq = -1;
 
-#ifdef WLAN_FORCE_DDR_OPP
 	static struct pm_qos_request wifi_qos_request;
 	static u_int8_t fgRequested;
-#endif
+
 	uint32_t u4ClusterNum = topo_ctrl_get_nr_clusters();
 
 	prGlueInfo = (struct GLUE_INFO *)wiphy_priv(wlanGetWiphy());
@@ -72,7 +71,6 @@ int32_t kalBoostCpu(IN struct ADAPTER *prAdapter,
 
 	update_userlimit_cpu_freq(CPU_KIR_WIFI, u4ClusterNum, freq_to_set);
 
-#ifdef WLAN_FORCE_DDR_OPP
 	if (u4TarPerfLevel >= u4BoostCpuTh) {
 		if (!fgRequested) {
 			fgRequested = 1;
@@ -80,14 +78,16 @@ int32_t kalBoostCpu(IN struct ADAPTER *prAdapter,
 					   PM_QOS_DDR_OPP,
 					   DDR_OPP_0);
 		}
+		pr_info("Max Dram Freq start\n");
 		pm_qos_update_request(&wifi_qos_request, DDR_OPP_0);
 
 	} else if (fgRequested) {
+		pr_info("Max Dram Freq end\n");
 		pm_qos_update_request(&wifi_qos_request, DDR_OPP_UNREQ);
 		pm_qos_remove_request(&wifi_qos_request);
 		fgRequested = 0;
 	}
-#endif
+
 	return 0;
 }
 
