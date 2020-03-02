@@ -2667,7 +2667,7 @@ mtk_p2p_cfg80211_change_iface(IN struct wiphy *wiphy,
 
 	do {
 		if ((wiphy == NULL) || (ndev == NULL)) {
-			DBGLOG(P2P, ERROR, "wiphy=%x, ndev=%x.\n", wiphy, ndev);
+			DBGLOG(P2P, ERROR, "wiphy=%p, ndev=%p.\n", wiphy, ndev);
 			break;
 		}
 
