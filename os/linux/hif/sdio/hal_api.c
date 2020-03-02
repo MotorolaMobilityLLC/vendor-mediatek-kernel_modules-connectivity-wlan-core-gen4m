@@ -571,13 +571,24 @@ void halSetFWOwn(IN struct ADAPTER *prAdapter, IN u_int8_t fgEnableGlobalInt)
 {
 
 	u_int8_t fgResult;
+	struct GL_HIF_INFO *prHifInfo = NULL;
 
 	ASSERT(prAdapter);
 
 	ASSERT(prAdapter->u4PwrCtrlBlockCnt != 0);
 	/* Decrease Block to Enter Low Power Semaphore count */
 	GLUE_DEC_REF_CNT(prAdapter->u4PwrCtrlBlockCnt);
-	if (!(prAdapter->fgWiFiInSleepyState && (prAdapter->u4PwrCtrlBlockCnt == 0)))
+
+	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
+
+	if (prAdapter->u4PwrCtrlBlockCnt != 0) {
+		DBGLOG(INIT, INFO, "prAdapter->u4PwrCtrlBlockCnt = %d\n",
+			prAdapter->u4PwrCtrlBlockCnt);
+		return;
+	}
+
+	if (prHifInfo->fgForceFwOwn == FALSE
+		&& prAdapter->fgWiFiInSleepyState == FALSE)
 		return;
 
 	if (prAdapter->fgIsFwOwn == TRUE)

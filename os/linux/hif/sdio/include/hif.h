@@ -289,6 +289,7 @@ struct GL_HIF_INFO {
 	struct SDIO_INT_LOG_T arIntLog[CFG_SDIO_INT_LOG_CNT];
 	uint32_t u4IntLogIdx;
 	uint8_t ucIntLogEntry;
+	uint8_t fgForceFwOwn;
 };
 
 struct BUS_INFO {
