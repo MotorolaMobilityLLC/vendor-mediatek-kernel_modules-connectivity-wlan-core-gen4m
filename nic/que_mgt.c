@@ -6203,8 +6203,7 @@ void qmHandleRxArpPackets(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb)
 	if (arpOpCode == ARP_PRO_RSP) {
 		arpMoniter = 0;
 		if (prAdapter->prAisBssInfo &&
-				prAdapter->prAisBssInfo->prStaRecOfAP &&
-				prAdapter->prAisBssInfo->prStaRecOfAP->aucMacAddr) {
+				prAdapter->prAisBssInfo->prStaRecOfAP) {
 			if (EQUAL_MAC_ADDR(&(pucData[ETH_TYPE_LEN_OFFSET + 10]), /* source hardware address */
 					prAdapter->prAisBssInfo->prStaRecOfAP->aucMacAddr)) {
 				kalMemCopy(apIp, &(pucData[ETH_TYPE_LEN_OFFSET + 16]), sizeof(apIp));
