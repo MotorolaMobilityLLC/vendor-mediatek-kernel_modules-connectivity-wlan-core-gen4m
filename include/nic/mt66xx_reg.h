@@ -421,6 +421,7 @@ extern struct mt66xx_hif_driver_data mt66xx_driver_data_connac;
 #define WIFI_CFG_SYNC0_RDY_OFFSET		(16)
 
 #define PCIE_HIF_BASE					0x4000
+#define PCIE_NEW_HIF_BASE				0x7c030000
 
 /* HIF Sys Revision */
 #define HIF_SYS_REV						(PCIE_HIF_BASE + 0x0000)
@@ -483,6 +484,8 @@ extern struct mt66xx_hif_driver_data mt66xx_driver_data_connac;
 #define MT_WPDMA_ABT_CFG                (PCIE_HIF_BASE + 0x0530)
 
 #define MT_WPDMA_ABT_CFG1               (PCIE_HIF_BASE + 0x0534)
+
+#define MT_PCIE_IRQ_ENABLE              (PCIE_NEW_HIF_BASE + 0x0188)
 
 /* WPDMA_INT_STA */
 typedef union _WPDMA_INT_STA_STRUCT {
