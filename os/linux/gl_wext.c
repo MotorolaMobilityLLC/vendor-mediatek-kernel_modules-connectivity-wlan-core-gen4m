@@ -2550,28 +2550,35 @@ wext_get_rate(IN struct net_device *prNetDev,
 	      OUT struct iw_param *prRate, IN char *pcExtra)
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
+	struct PARAM_LINK_SPEED_EX rLinkSpeed;
 	uint32_t rStatus = WLAN_STATUS_SUCCESS;
 	uint32_t u4BufLen = 0;
 	uint32_t u4Rate = 0;
+	uint8_t ucBssIndex = AIS_DEFAULT_INDEX;
 
 	ASSERT(prNetDev);
 	ASSERT(prRate);
 	if (GLUE_CHK_PR2(prNetDev, prRate) == FALSE)
 		return -EINVAL;
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+	ucBssIndex = wlanGetBssIdx(prNetDev);
 
 	if (!netif_carrier_ok(prNetDev))
 		return -ENOTCONN;
 
-	rStatus = kalIoctl(prGlueInfo, wlanoidQueryLinkSpeed,
-			   &u4Rate, sizeof(u4Rate),
-			   TRUE, FALSE, FALSE, &u4BufLen);
+	if (!IS_BSS_INDEX_VALID(ucBssIndex))
+		return -EFAULT;
+
+	rStatus = kalIoctlByBssIdx(prGlueInfo, wlanoidQueryLinkSpeedEx,
+			   &rLinkSpeed, sizeof(rLinkSpeed),
+			   TRUE, FALSE, FALSE,
+			   &u4BufLen, ucBssIndex);
 
 	if (rStatus != WLAN_STATUS_SUCCESS)
 		return -EFAULT;
-
-	prRate->value = u4Rate *
-			100;	/* u4Rate is in unit of 100bps */
+	u4Rate = rLinkSpeed.rLq[ucBssIndex].u2LinkSpeed;
+	/* u4Rate is in unit of 100bps */
+	prRate->value = u4Rate * 100;
 	prRate->fixed = 0;
 
 	return 0;

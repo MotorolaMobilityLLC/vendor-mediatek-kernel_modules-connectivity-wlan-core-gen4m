@@ -7763,29 +7763,35 @@ int priv_driver_get_linkspeed(IN struct net_device *prNetDev,
 			      IN char *pcCommand, IN int i4TotalLen)
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
+	struct PARAM_LINK_SPEED_EX rLinkSpeed;
 	uint32_t rStatus = WLAN_STATUS_SUCCESS;
 	uint32_t u4BufLen = 0;
 	uint32_t u4Rate = 0;
-	uint32_t u4LinkSpeed = 0;
 	int32_t i4BytesWritten = 0;
+	uint8_t ucBssIndex = AIS_DEFAULT_INDEX;
 
 	ASSERT(prNetDev);
 	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
 		return -1;
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+	ucBssIndex = wlanGetBssIdx(prNetDev);
 
 	if (!netif_carrier_ok(prNetDev))
 		return -1;
 
-	rStatus = kalIoctl(prGlueInfo, wlanoidQueryLinkSpeed, &u4Rate,
-			   sizeof(u4Rate), TRUE, TRUE, TRUE, &u4BufLen);
+	if (!IS_BSS_INDEX_VALID(ucBssIndex))
+		return -EFAULT;
+
+	rStatus = kalIoctl(prGlueInfo,
+			   wlanoidQueryLinkSpeedEx,
+			   &rLinkSpeed, sizeof(rLinkSpeed),
+			   TRUE, TRUE, TRUE, &u4BufLen);
 
 	if (rStatus != WLAN_STATUS_SUCCESS)
 		return -1;
-
-	u4LinkSpeed = u4Rate * 100;
+	u4Rate = rLinkSpeed.rLq[ucBssIndex].u2LinkSpeed;
 	i4BytesWritten = snprintf(pcCommand, i4TotalLen, "LinkSpeed %u",
-				  (unsigned int)u4LinkSpeed);
+				  (unsigned int)(u4Rate * 100));
 	DBGLOG(REQ, INFO, "%s: command result is %s\n", __func__, pcCommand);
 	return i4BytesWritten;
 
