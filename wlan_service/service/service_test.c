@@ -369,6 +369,9 @@ s_int32 mt_serv_init_test(struct service_test *serv_test)
 	sys_ad_zero_mem(&serv_test->test_eprm,
 			sizeof(struct test_eeprom));
 
+	/* Init test mode eeprom data struct */
+	serv_test->ctrl_band_idx = 0;
+
 	/* TODO: factor out here */
 	/* Common Part */
 
