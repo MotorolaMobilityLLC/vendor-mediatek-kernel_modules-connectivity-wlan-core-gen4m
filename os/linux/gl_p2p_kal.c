@@ -1920,6 +1920,11 @@ void kalP2PSetMaxClients(IN struct GLUE_INFO *prGlueInfo,
 			P2P_MAXIMUM_CLIENT_COUNT;
 	else
 		prGlueInfo->prP2PInfo[ucRoleIndex]->ucMaxClients = u4MaxClient;
+
+	DBGLOG(P2P, TRACE,
+		"Role(%d) max client count = %u\n",
+		ucRoleIndex,
+		prGlueInfo->prP2PInfo[ucRoleIndex]->ucMaxClients);
 }
 
 /*---------------------------------------------------------------------------*/
