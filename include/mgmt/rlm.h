@@ -351,6 +351,9 @@ rlmSendOpModeNotificationFrame(P_ADAPTER_T prAdapter, P_STA_RECORD_T prStaRec, U
 VOID
 rlmSendSmPowerSaveFrame(P_ADAPTER_T prAdapter, P_STA_RECORD_T prStaRec, UINT_8 ucNss);
 
+UINT_8
+rlmGetBssOpBwByVhtAndHtOpInfo(P_BSS_INFO_T prBssInfo);
+
 VOID
 rlmChangeVhtOpBwPara(P_ADAPTER_T prAdapter, UINT_8 ucBssIndex, UINT_8 ucChannelWidth);
 
