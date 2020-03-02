@@ -2899,3 +2899,35 @@ void halDumpTxdInfo(IN struct ADAPTER *prAdapter, uint32_t *tmac_info)
 {
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+* @brief Check if HIF state is READY for upper layer cfg80211
+*
+* @param prAdapter      Pointer to the Adapter structure.
+*
+* @return (TRUE: ready, FALSE: not ready)
+*/
+/*----------------------------------------------------------------------------*/
+bool halIsHifStateReady(IN struct ADAPTER *prAdapter, uint8_t *pucState)
+{
+	/* SDIO owner should implement this function */
+
+	return TRUE;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+* @brief Check if HIF state is during supend process
+*
+* @param prAdapter      Pointer to the Adapter structure.
+*
+* @return (TRUE: suspend, reject the caller action. FALSE: not suspend)
+*/
+/*----------------------------------------------------------------------------*/
+bool halIsHifStateSuspend(IN struct ADAPTER *prAdapter)
+{
+	/* SDIO owner should implement this function */
+
+	return FALSE;
+}
+

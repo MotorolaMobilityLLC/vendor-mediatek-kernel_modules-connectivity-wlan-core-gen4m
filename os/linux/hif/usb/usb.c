@@ -259,6 +259,58 @@ static void mtk_usb_disconnect(struct usb_interface *intf)
 	DBGLOG(HAL, STATE, "mtk_usb_disconnect() done\n");
 }
 
+static int mtk_usb_resume(struct usb_interface *intf)
+{
+	int ret = 0;
+	struct GLUE_INFO *prGlueInfo =
+		(struct GLUE_INFO *)usb_get_intfdata(intf);
+	struct BUS_INFO *prBusInfo = NULL;
+
+	DBGLOG(HAL, STATE, "mtk_usb_resume()\n");
+	prBusInfo = prGlueInfo->prAdapter->chip_info->bus_info;
+
+	if (prBusInfo->asicUsbResume) {
+		/* callback func registered for each chip */
+		if (prBusInfo->asicUsbResume(prGlueInfo->prAdapter, prGlueInfo))
+			ret = 0;
+		else
+			ret = -1;
+	} else {
+		/* Do general method if no callback func registered */
+		/* NOTE: USB bus may not really do suspend and resume*/
+		ret = usb_control_msg(prGlueInfo->rHifInfo.udev,
+			      usb_sndctrlpipe(prGlueInfo->rHifInfo.udev, 0),
+			      VND_REQ_FEATURE_SET,
+			      prBusInfo->u4device_vender_request_out,
+			      FEATURE_SET_WVALUE_RESUME, 0, NULL, 0,
+			      VENDOR_TIMEOUT_MS);
+		if (ret)
+			DBGLOG(HAL, ERROR,
+				"VendorRequest FeatureSetResume ERROR: %x\n",
+				(unsigned int)ret);
+
+		glUsbSetState(&prGlueInfo->rHifInfo, USB_STATE_PRE_RESUME);
+		/* To trigger CR4 path */
+		wlanSendDummyCmd(prGlueInfo->prAdapter, FALSE);
+
+		glUsbSetState(&prGlueInfo->rHifInfo, USB_STATE_LINK_UP);
+		halEnableInterrupt(prGlueInfo->prAdapter);
+
+		if (prGlueInfo->prAdapter->rWifiVar.ucWow) {
+			DBGLOG(HAL, EVENT, "leave WOW flow\n");
+			kalWowProcess(prGlueInfo, FALSE);
+		}
+	}
+
+	/* Allow upper layers to call the device hard_start_xmit routine. */
+	netif_tx_start_all_queues(prGlueInfo->prDevHandler);
+
+	DBGLOG(HAL, STATE, "mtk_usb_resume() done ret=%d!\n", ret);
+
+	/* TODO */
+	return ret;
+}
+
 static int mtk_usb_suspend(struct usb_interface *intf, pm_message_t message)
 {
 	struct GLUE_INFO *prGlueInfo = (struct GLUE_INFO *)usb_get_intfdata(intf);
@@ -271,17 +323,10 @@ static int mtk_usb_suspend(struct usb_interface *intf, pm_message_t message)
 	/* Stop upper layers calling the device hard_start_xmit routine. */
 	netif_tx_stop_all_queues(prGlueInfo->prDevHandler);
 
-	/* 1) wifi cfg "Wow" is true, 2) wow is enable 3) WIfI connected => execute WOW flow */
-	if (prGlueInfo->prAdapter->rWifiVar.ucWow &&
-		prGlueInfo->prAdapter->rWowCtrl.fgWowEnable) {
-		if (kalGetMediaStateIndicated(prGlueInfo) ==
-			MEDIA_STATE_CONNECTED) {
-			DBGLOG(HAL, EVENT, "enter WOW flow\n");
-			kalWowProcess(prGlueInfo, TRUE);
-		}
+	/* change to non-READY state to block cfg80211 ops */
+	glUsbSetState(&prGlueInfo->rHifInfo, USB_STATE_PRE_SUSPEND_START);
 
-		/* else: do nothing, and FW enter LMAC sleep */
-	}
+	wlanSuspendPmHandle(prGlueInfo);
 
 	prBusInfo = prGlueInfo->prAdapter->chip_info->bus_info;
 	if (prBusInfo->asicUsbSuspend) {
@@ -313,46 +358,6 @@ static int mtk_usb_suspend(struct usb_interface *intf, pm_message_t message)
 		mtk_usb_resume(intf);
 
 	return ret;
-}
-
-static int mtk_usb_resume(struct usb_interface *intf)
-{
-	int ret = 0;
-	struct GLUE_INFO *prGlueInfo = (struct GLUE_INFO *)usb_get_intfdata(intf);
-	struct BUS_INFO *prBusInfo = NULL;
-
-	DBGLOG(HAL, STATE, "mtk_usb_resume()\n");
-	prBusInfo = prGlueInfo->prAdapter->chip_info->bus_info;
-
-	/* NOTE: USB bus may not really do suspend and resume*/
-	ret = usb_control_msg(prGlueInfo->rHifInfo.udev,
-			      usb_sndctrlpipe(prGlueInfo->rHifInfo.udev, 0),
-			      VND_REQ_FEATURE_SET,
-			      prBusInfo->u4device_vender_request_out,
-			      FEATURE_SET_WVALUE_RESUME, 0, NULL, 0,
-			      VENDOR_TIMEOUT_MS);
-	if (ret)
-		DBGLOG(HAL, ERROR, "VendorRequest FeatureSetResume ERROR: %x\n", (unsigned int)ret);
-
-	glUsbSetState(&prGlueInfo->rHifInfo, USB_STATE_PRE_RESUME);
-	/* To trigger CR4 path */
-	wlanSendDummyCmd(prGlueInfo->prAdapter, FALSE);
-
-	glUsbSetState(&prGlueInfo->rHifInfo, USB_STATE_LINK_UP);
-	halEnableInterrupt(prGlueInfo->prAdapter);
-
-	if (prGlueInfo->prAdapter->rWifiVar.ucWow) {
-		DBGLOG(HAL, EVENT, "leave WOW flow\n");
-		kalWowProcess(prGlueInfo, FALSE);
-	}
-
-	DBGLOG(HAL, STATE, "mtk_usb_resume() done!\n");
-
-	/* Allow upper layers to call the device hard_start_xmit routine. */
-	netif_tx_start_all_queues(prGlueInfo->prDevHandler);
-
-	/* TODO */
-	return 0;
 }
 
 static int mtk_usb_reset_resume(struct usb_interface *intf)
@@ -775,7 +780,9 @@ int glUsbSubmitUrb(struct GL_HIF_INFO *prHifInfo, struct urb *urb,
 	spin_lock_irqsave(&prHifInfo->rStateLock, flags);
 	if (type == SUBMIT_TYPE_TX_CMD) {
 		if (!(prHifInfo->state == USB_STATE_LINK_UP ||
-				prHifInfo->state == USB_STATE_PRE_RESUME)) {
+			prHifInfo->state == USB_STATE_PRE_RESUME ||
+			prHifInfo->state == USB_STATE_PRE_SUSPEND_START ||
+			prHifInfo->state == USB_STATE_READY)) {
 			spin_unlock_irqrestore(&prHifInfo->rStateLock, flags);
 			DBGLOG(HAL, INFO,
 				"not allowed to transmit CMD packet. (%d)\n",
@@ -783,7 +790,8 @@ int glUsbSubmitUrb(struct GL_HIF_INFO *prHifInfo, struct urb *urb,
 			return -ESHUTDOWN;
 		}
 	} else if (type == SUBMIT_TYPE_TX_DATA) {
-		if (prHifInfo->state != USB_STATE_LINK_UP) {
+		if (prHifInfo->state != USB_STATE_LINK_UP ||
+			prHifInfo->state == USB_STATE_READY) {
 			spin_unlock_irqrestore(&prHifInfo->rStateLock, flags);
 			DBGLOG(HAL, INFO,
 				"not allowed to transmit DATA packet. (%d)\n",

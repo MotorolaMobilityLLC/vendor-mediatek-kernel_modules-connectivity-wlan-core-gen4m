@@ -2302,7 +2302,7 @@ struct EVENT_HIF_CTRL {
 	uint8_t ucHifType;
 	uint8_t ucHifTxTrafficStatus;
 	uint8_t ucHifRxTrafficStatus;
-	uint8_t ucReserved1;
+	uint8_t ucHifSuspend;
 	uint8_t aucReserved2[32];
 };
 
