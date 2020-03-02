@@ -2432,7 +2432,7 @@ static s_int32 hqa_mps_set_seq_data(
 	get_param_and_shift_buf(TRUE, sizeof(band_idx),
 				&data, (u_char *)&band_idx);
 
-	len = SERV_OS_NTOHS(hqa_frame->length) / sizeof(u_int32) - 1;
+	len = hqa_frame->length / sizeof(u_int32) - 1;
 	if ((len > TEST_MPS_ITEM_LEN) || (len == 0)) {
 		ret = SERV_STATUS_AGENT_INVALID_LEN;
 		goto err;
@@ -2454,11 +2454,6 @@ static s_int32 hqa_mps_set_seq_data(
 	serv_test->ctrl_band_idx = (u_char)band_idx;
 	test_config = &serv_test->test_config[band_idx];
 	mps_cb = &test_config->mps_cb;
-
-	if (test_config->op_mode & fTEST_MPS) {
-		ret = SERV_STATUS_AGENT_INVALID_PARAM;
-		goto err;
-	}
 
 	if (!mps_cb->mps_setting && !mps_cb->mps_cnt) {
 		mps_cb->mps_cnt = len;
@@ -2513,7 +2508,7 @@ static s_int32 hqa_mps_set_payload_length(
 	get_param_and_shift_buf(TRUE, sizeof(band_idx),
 				&data, (u_char *)&band_idx);
 
-	len = SERV_OS_NTOHS(hqa_frame->length) / sizeof(u_int32) - 1;
+	len = hqa_frame->length / sizeof(u_int32) - 1;
 	if ((len > TEST_MPS_ITEM_LEN) || (len == 0)) {
 		ret = SERV_STATUS_AGENT_INVALID_LEN;
 		goto err;
@@ -2535,11 +2530,6 @@ static s_int32 hqa_mps_set_payload_length(
 	serv_test->ctrl_band_idx = (u_char)band_idx;
 	test_config = &serv_test->test_config[band_idx];
 	mps_cb = &test_config->mps_cb;
-
-	if (test_config->op_mode & fTEST_MPS) {
-		ret = SERV_STATUS_AGENT_INVALID_PARAM;
-		goto err;
-	}
 
 	if (!mps_cb->mps_setting && !mps_cb->mps_cnt) {
 		mps_cb->mps_cnt = len;
@@ -2564,6 +2554,9 @@ static s_int32 hqa_mps_set_payload_length(
 		mps_setting[idx+1].pkt_len = param[idx];
 	}
 	sys_ad_free_mem(param);
+
+	ret = mt_serv_mps_set_payload_length(serv_test);
+
 err:
 	SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_TRACE,
 		("%s: band_idx=%d, len=%d, op_mode=0x%x, mps_cnt=%d\n",
@@ -2593,7 +2586,7 @@ static s_int32 hqa_mps_set_packet_count(
 	get_param_and_shift_buf(TRUE, sizeof(band_idx),
 				&data, (u_char *)&band_idx);
 
-	len = SERV_OS_NTOHS(hqa_frame->length) / sizeof(u_int32) - 1;
+	len = hqa_frame->length / sizeof(u_int32) - 1;
 	if ((len > TEST_MPS_ITEM_LEN) || (len == 0)) {
 		ret = SERV_STATUS_AGENT_INVALID_LEN;
 		goto err;
@@ -2616,11 +2609,6 @@ static s_int32 hqa_mps_set_packet_count(
 	test_config = &serv_test->test_config[band_idx];
 	mps_cb = &test_config->mps_cb;
 
-	if (test_config->op_mode & fTEST_MPS) {
-		ret = SERV_STATUS_AGENT_INVALID_PARAM;
-		goto err;
-	}
-
 	if (!mps_cb->mps_setting && !mps_cb->mps_cnt) {
 		mps_cb->mps_cnt = len;
 		ret = sys_ad_alloc_mem((u_char **)&mps_cb->mps_setting,
@@ -2639,6 +2627,9 @@ static s_int32 hqa_mps_set_packet_count(
 		mps_setting[idx+1].pkt_cnt = param[idx];
 
 	sys_ad_free_mem(param);
+
+	ret = mt_serv_mps_set_packet_count(serv_test);
+
 err:
 	SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_TRACE,
 		("%s: band_idx=%d, len=%d, op_mode=0x%x, mps_cnt=%d\n",
@@ -2668,7 +2659,7 @@ static s_int32 hqa_mps_set_power_gain(
 	get_param_and_shift_buf(TRUE, sizeof(band_idx),
 				&data, (u_char *)&band_idx);
 
-	len = SERV_OS_NTOHS(hqa_frame->length) / sizeof(u_int32) - 1;
+	len = hqa_frame->length / sizeof(u_int32) - 1;
 	if ((len > TEST_MPS_ITEM_LEN) || (len == 0)) {
 		ret = SERV_STATUS_AGENT_INVALID_LEN;
 		goto err;
@@ -2691,11 +2682,6 @@ static s_int32 hqa_mps_set_power_gain(
 	test_config = &serv_test->test_config[band_idx];
 	mps_cb = &test_config->mps_cb;
 
-	if (test_config->op_mode & fTEST_MPS) {
-		ret = SERV_STATUS_AGENT_INVALID_PARAM;
-		goto err;
-	}
-
 	if (!mps_cb->mps_setting && !mps_cb->mps_cnt) {
 		mps_cb->mps_cnt = len;
 		ret = sys_ad_alloc_mem((u_char **)&mps_cb->mps_setting,
@@ -2714,6 +2700,9 @@ static s_int32 hqa_mps_set_power_gain(
 		mps_setting[idx+1].pwr = param[idx];
 
 	sys_ad_free_mem(param);
+
+	ret = mt_serv_mps_set_power_gain(serv_test);
+
 err:
 	SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_TRACE,
 		("%s: band_idx=%d, len=%d, op_mode=0x%x, mps_cnt=%d\n",
@@ -2981,7 +2970,7 @@ static s_int32 hqa_mps_set_nss(
 	get_param_and_shift_buf(TRUE, sizeof(band_idx),
 				&data, (u_char *) &band_idx);
 
-	len = SERV_OS_NTOHS(hqa_frame->length) / sizeof(u_int32) - 1;
+	len = hqa_frame->length / sizeof(u_int32) - 1;
 	if ((len > TEST_MPS_ITEM_LEN) || (len == 0)) {
 		ret = SERV_STATUS_AGENT_INVALID_LEN;
 		goto err;
@@ -3004,11 +2993,6 @@ static s_int32 hqa_mps_set_nss(
 	test_config = &serv_test->test_config[band_idx];
 	mps_cb = &test_config->mps_cb;
 
-	if (test_config->op_mode & fTEST_MPS) {
-		ret = SERV_STATUS_AGENT_INVALID_PARAM;
-		goto err;
-	}
-
 	if (!mps_cb->mps_setting && !mps_cb->mps_cnt) {
 		mps_cb->mps_cnt = len;
 		ret = sys_ad_alloc_mem((u_char **)&mps_cb->mps_setting,
@@ -3027,6 +3011,9 @@ static s_int32 hqa_mps_set_nss(
 		mps_setting[idx+1].nss = param[idx];
 
 	sys_ad_free_mem(param);
+
+	ret = mt_serv_mps_set_nss(serv_test);
+
 err:
 	SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_TRACE,
 		("%s: band_idx=%d, len=%d, op_mode=0x%x, mps_cnt=%d\n",
@@ -3056,7 +3043,7 @@ static s_int32 hqa_mps_set_per_packet_bw(
 	get_param_and_shift_buf(TRUE, sizeof(band_idx),
 				&data, (u_char *)&band_idx);
 
-	len = SERV_OS_NTOHS(hqa_frame->length) / sizeof(u_int32) - 1;
+	len = hqa_frame->length / sizeof(u_int32) - 1;
 	if ((len > TEST_MPS_ITEM_LEN) || (len == 0)) {
 		ret = SERV_STATUS_AGENT_INVALID_LEN;
 		goto err;
@@ -3114,11 +3101,6 @@ static s_int32 hqa_mps_set_per_packet_bw(
 	test_config = &serv_test->test_config[band_idx];
 	mps_cb = &test_config->mps_cb;
 
-	if (test_config->op_mode & fTEST_MPS) {
-		ret = SERV_STATUS_AGENT_INVALID_PARAM;
-		goto err;
-	}
-
 	if (!mps_cb->mps_setting && !mps_cb->mps_cnt) {
 		mps_cb->mps_cnt = len;
 		ret = sys_ad_alloc_mem((u_char **)&mps_cb->mps_setting,
@@ -3137,6 +3119,9 @@ static s_int32 hqa_mps_set_per_packet_bw(
 		mps_setting[idx+1].pkt_bw = param[idx];
 
 	sys_ad_free_mem(param);
+
+	ret = mt_serv_mps_set_per_packet_bw(serv_test);
+
 err:
 	SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_TRACE,
 		("%s: band_idx=%d, len=%d, op_mode=0x%x, mps_cnt=%d\n",
