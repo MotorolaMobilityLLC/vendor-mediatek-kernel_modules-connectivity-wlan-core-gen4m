@@ -913,7 +913,7 @@ void halReturnTimeoutMsduToken(struct ADAPTER *prAdapter)
 		/* Return token to free stack */
 		if (halTimeCompare(&rTime, &rTimeout) >= 0) {
 			DBGLOG(HAL, INFO,
-			       "Free TokenId[%u] timeout[sec:%u, usec:%u]\n",
+			       "Free TokenId[%u] timeout[sec:%ld, usec:%ld]\n",
 			       u4Idx, rTime.tv_sec, rTime.tv_usec);
 			halReturnMsduToken(prAdapter, u4Idx);
 		}
