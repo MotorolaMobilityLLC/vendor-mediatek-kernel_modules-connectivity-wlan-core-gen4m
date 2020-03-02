@@ -179,6 +179,8 @@ VOID nicTxInitialize(IN P_ADAPTER_T prAdapter)
 	ASSERT(prAdapter);
 	prTxCtrl = &prAdapter->rTxCtrl;
 
+	prTxCtrl->u4PageSize = halGetHifTxPageSize(prAdapter);
+	prTxCtrl->u4MaxPageCntPerFrame = nicTxGetMaxPageCntPerFrame(prAdapter);
 	/* 4 <1> Initialization of Traffic Class Queue Parameters */
 	nicTxResetResource(prAdapter);
 
@@ -221,8 +223,6 @@ VOID nicTxInitialize(IN P_ADAPTER_T prAdapter)
 	/* PID pool */
 	for (i = 0; i < WTBL_SIZE; i++)
 		prAdapter->aucPidPool[i] = NIC_TX_DESC_DRIVER_PID_MIN;
-
-	prTxCtrl->u4PageSize = NIC_TX_PAGE_SIZE;
 
 	/* enable/disable TX resource control */
 	prTxCtrl->fgIsTxResourceCtrl = NIC_TX_RESOURCE_CTRL;
@@ -307,6 +307,7 @@ WLAN_STATUS nicTxAcquireResource(IN P_ADAPTER_T prAdapter, IN UINT_8 ucTC, IN UI
 	P_TX_CTRL_T prTxCtrl;
 	P_TX_TCQ_STATUS_T prTc;
 	WLAN_STATUS u4Status = WLAN_STATUS_RESOURCES;
+	UINT_32 u4MaxPageCntPerFrame = prAdapter->rTxCtrl.u4MaxPageCntPerFrame;
 
 	KAL_SPIN_LOCK_DECLARATION();
 
@@ -323,7 +324,7 @@ WLAN_STATUS nicTxAcquireResource(IN P_ADAPTER_T prAdapter, IN UINT_8 ucTC, IN UI
 #if 1
 	if (prTc->au4FreePageCount[ucTC] >= u4PageCount) {
 		prTc->au4FreePageCount[ucTC] -= u4PageCount;
-		prTc->au4FreeBufferCount[ucTC] = (prTc->au4FreePageCount[ucTC] / NIC_TX_MAX_PAGE_PER_FRAME);
+		prTc->au4FreeBufferCount[ucTC] = (prTc->au4FreePageCount[ucTC] / u4MaxPageCntPerFrame);
 
 		DBGLOG(TX, LOUD, "Acquire: TC%d AcquirePageCnt[%u] FreeBufferCnt[%u] FreePageCnt[%u]\n",
 			ucTC, u4PageCount, prTc->au4FreeBufferCount[ucTC], prTc->au4FreePageCount[ucTC]);
@@ -427,6 +428,7 @@ BOOLEAN nicTxReleaseResource(IN P_ADAPTER_T prAdapter, IN UINT_8 ucTc, IN UINT_3
 {
 	P_TX_TCQ_STATUS_T prTcqStatus;
 	BOOLEAN bStatus = FALSE;
+	UINT_32 u4MaxPageCntPerFrame = prAdapter->rTxCtrl.u4MaxPageCntPerFrame;
 
 	KAL_SPIN_LOCK_DECLARATION();
 
@@ -442,7 +444,7 @@ BOOLEAN nicTxReleaseResource(IN P_ADAPTER_T prAdapter, IN UINT_8 ucTc, IN UINT_3
 		KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_RESOURCE);
 
 	prTcqStatus->au4FreePageCount[ucTc] += u4PageCount;
-	prTcqStatus->au4FreeBufferCount[ucTc] = (prTcqStatus->au4FreePageCount[ucTc] / NIC_TX_MAX_PAGE_PER_FRAME);
+	prTcqStatus->au4FreeBufferCount[ucTc] = (prTcqStatus->au4FreePageCount[ucTc] / u4MaxPageCntPerFrame);
 
 	if (fgReqLock)
 		KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_RESOURCE);
@@ -494,6 +496,7 @@ WLAN_STATUS nicTxResetResource(IN P_ADAPTER_T prAdapter)
 {
 	P_TX_CTRL_T prTxCtrl;
 	UINT_8 ucIdx;
+	UINT_32 u4MaxPageCntPerFrame = prAdapter->rTxCtrl.u4MaxPageCntPerFrame;
 
 	KAL_SPIN_LOCK_DECLARATION();
 
@@ -533,9 +536,11 @@ WLAN_STATUS nicTxResetResource(IN P_ADAPTER_T prAdapter)
 
 		/* Buffer count */
 		prTxCtrl->rTc.au4MaxNumOfBuffer[ucIdx] =
-		    (prTxCtrl->rTc.au4MaxNumOfPage[ucIdx] / NIC_TX_MAX_PAGE_PER_FRAME);
+			(prTxCtrl->rTc.au4MaxNumOfPage[ucIdx] / u4MaxPageCntPerFrame);
+
 		prTxCtrl->rTc.au4FreeBufferCount[ucIdx] =
-		    (prTxCtrl->rTc.au4FreePageCount[ucIdx] / NIC_TX_MAX_PAGE_PER_FRAME);
+			(prTxCtrl->rTc.au4FreePageCount[ucIdx] / u4MaxPageCntPerFrame);
+
 
 		DBGLOG(TX, TRACE, "Set TC%u Default[%u] Buffer Max[%u] Free[%u]\n",
 		       ucIdx,
@@ -2289,6 +2294,7 @@ WLAN_STATUS nicTxInitResetResource(IN P_ADAPTER_T prAdapter)
 {
 	P_TX_CTRL_T prTxCtrl;
 	UINT_8 ucIdx;
+	UINT_32 u4MaxPageCntPerFrame = prAdapter->rTxCtrl.u4MaxPageCntPerFrame;
 
 	DEBUGFUNC("nicTxInitResetResource");
 
@@ -2323,9 +2329,9 @@ WLAN_STATUS nicTxInitResetResource(IN P_ADAPTER_T prAdapter)
 	/* Buffer count */
 	for (ucIdx = TC0_INDEX; ucIdx < TC_NUM; ucIdx++) {
 		prTxCtrl->rTc.au4MaxNumOfBuffer[ucIdx] =
-		    prTxCtrl->rTc.au4MaxNumOfPage[ucIdx] / NIC_TX_MAX_PAGE_PER_FRAME;
+		    prTxCtrl->rTc.au4MaxNumOfPage[ucIdx] / u4MaxPageCntPerFrame;
 		prTxCtrl->rTc.au4FreeBufferCount[ucIdx] =
-		    prTxCtrl->rTc.au4FreePageCount[ucIdx] / NIC_TX_MAX_PAGE_PER_FRAME;
+		    prTxCtrl->rTc.au4FreePageCount[ucIdx] / u4MaxPageCntPerFrame;
 	}
 
 	return WLAN_STATUS_SUCCESS;
@@ -3218,3 +3224,17 @@ VOID nicTxCancelSendingCmd(IN P_ADAPTER_T prAdapter, IN P_CMD_INFO_T prCmdInfo)
 	halTxCancelSendingCmd(prAdapter, prCmdInfo);
 }
 
+UINT_32 nicTxGetMaxPageCntPerFrame(IN P_ADAPTER_T prAdapter)
+{
+	UINT_32 page_size = halGetHifTxPageSize(prAdapter);
+
+	/*
+	 * want to replace
+	 *	#define NIC_TX_MAX_PAGE_PER_FRAME \
+	 *	 ((NIC_TX_DESC_AND_PADDING_LENGTH + NIC_TX_DESC_HEADER_PADDING_LENGTH + \
+	 *	 NIC_TX_MAX_SIZE_PER_FRAME + NIC_TX_PAGE_SIZE - 1) / NIC_TX_PAGE_SIZE)
+	 */
+
+	return ((NIC_TX_DESC_AND_PADDING_LENGTH + NIC_TX_DESC_HEADER_PADDING_LENGTH +
+			NIC_TX_MAX_SIZE_PER_FRAME + page_size - 1) / page_size);
+}
