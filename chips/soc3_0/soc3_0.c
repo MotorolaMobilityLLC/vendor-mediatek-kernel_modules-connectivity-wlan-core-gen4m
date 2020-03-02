@@ -2779,9 +2779,6 @@ uint32_t soc3_0_wlanRcvPhyActionRsp(struct ADAPTER *prAdapter,
 			break;
 		}
 
-		DBGLOG_MEM8(INIT, INFO, prInitEvent->aucBuffer,
-					prInitEvent->u2RxByteCount);
-
 		prPhyTlvHeader = (struct HAL_PHY_ACTION_TLV_HEADER *)
 			prInitEvent->aucBuffer;
 
@@ -2799,9 +2796,11 @@ uint32_t soc3_0_wlanRcvPhyActionRsp(struct ADAPTER *prAdapter,
 				prPhyTlv->aucBuffer;
 
 			DBGLOG(INIT, INFO,
-				"prPhyCalEvent->ucEvent[0x%x], status[0x%x]\n",
+				"ucEvent[0x%x]status[0x%x]emiAddr[0x%x]emiLen[0x%x]\n",
 				prPhyCalEvent->ucEvent,
-				prPhyCalEvent->ucStatus);
+				prPhyCalEvent->ucStatus,
+				prPhyCalEvent->u4EmiAddress,
+				prPhyCalEvent->u4EmiLength);
 
 			if ((prPhyCalEvent->ucEvent ==
 				HAL_PHY_ACTION_CAL_FORCE_CAL_RSP &&
@@ -2929,8 +2928,6 @@ uint32_t soc3_0_wlanSendPhyAction(struct ADAPTER *prAdapter,
 
 	DBGLOG(INIT, INFO,
 	       "soc3_0_wlanSendPhyAction, waiting for RSP\n");
-	DBGLOG_MEM8(INIT, INFO, prPhyTlvHeader,
-				u4CmdSize);
 
 	u4Status = soc3_0_wlanRcvPhyActionRsp(prAdapter, ucCmdSeqNum);
 
