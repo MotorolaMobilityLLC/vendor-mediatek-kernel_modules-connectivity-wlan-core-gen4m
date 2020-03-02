@@ -784,8 +784,16 @@ void aisFsmStateInit_JOIN(IN struct ADAPTER *prAdapter,
 			DBGLOG(AIS, TRACE, "FT: RSN FT roaming\n");
 			break;
 		case AUTH_MODE_WPA3_SAE:
-			prAisFsmInfo->ucAvailableAuthTypes =
-			    (uint8_t) AUTH_TYPE_SAE;
+			if (rsnSearchPmkidEntry(prAdapter, prBssDesc->aucBSSID,
+						ucBssIndex)) {
+				prAisFsmInfo->ucAvailableAuthTypes =
+					(uint8_t) AUTH_TYPE_OPEN_SYSTEM;
+				DBGLOG(AIS, INFO,
+					"SAE: change AUTH to OPEN when roaming with PMK\n");
+			} else {
+				prAisFsmInfo->ucAvailableAuthTypes =
+					(uint8_t) AUTH_TYPE_SAE;
+			}
 			break;
 		default:
 			prAisFsmInfo->ucAvailableAuthTypes =
