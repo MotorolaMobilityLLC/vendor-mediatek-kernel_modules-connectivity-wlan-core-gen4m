@@ -439,6 +439,7 @@ typedef struct _QUE_MGT_T {	/* Queue Management Control Info */
 	UINT_32 u4MaxForwardBufferCount;
 
 	OS_SYSTIME rLastTxPktDumpTime;
+	BOOLEAN fgIsTxResrouceControlEn;
 } QUE_MGT_T, *P_QUE_MGT_T;
 
 typedef struct _EVENT_RX_ADDBA_T {
@@ -758,7 +759,7 @@ typedef enum _ENUM_BA_ENTRY_STATUS_T {
 /* Queue Management and STA_REC Initialization                                */
 /*----------------------------------------------------------------------------*/
 
-VOID qmInit(IN P_ADAPTER_T prAdapter);
+VOID qmInit(IN P_ADAPTER_T prAdapter, IN BOOLEAN isTxResrouceControlEn);
 
 #if QM_TEST_MODE
 VOID qmTestCases(IN P_ADAPTER_T prAdapter);
