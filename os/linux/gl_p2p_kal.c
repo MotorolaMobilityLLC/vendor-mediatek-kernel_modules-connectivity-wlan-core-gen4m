@@ -1237,8 +1237,9 @@ kalP2PIndicateBssInfo(IN struct GLUE_INFO *prGlueInfo,
 				prCfg80211Bss);
 		else
 			DBGLOG(P2P, WARN,
-				"indicate BSS to cfg80211 failed [%pM]: bss channel %d, rcpi %d\n",
-				prBcnProbeRspFrame->bssid,
+				"indicate BSS to cfg80211 failed [" MACSTR
+					"]: bss channel %d, rcpi %d\n",
+				MAC2STR(prBcnProbeRspFrame->bssid),
 				prChannelInfo->ucChannelNum,
 				i4SignalStrength);
 
