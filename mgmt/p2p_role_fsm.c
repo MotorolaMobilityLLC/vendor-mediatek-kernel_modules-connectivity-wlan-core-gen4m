@@ -1987,6 +1987,9 @@ p2pRoleFsmRunEventChnlGrant(IN P_ADAPTER_T prAdapter,
 				else
 					u4CacTime = prP2pRoleFsmInfo->rChnlReqInfo.u4MaxInterval;
 
+				if (p2pFuncIsManualCac())
+					u4CacTime = p2pFuncGetManualCacTime();
+
 				cnmTimerStartTimer(prAdapter, &(prP2pRoleFsmInfo->rP2pRoleFsmTimeoutTimer),
 					u4CacTime);
 

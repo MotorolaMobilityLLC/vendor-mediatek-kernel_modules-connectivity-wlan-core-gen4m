@@ -1301,7 +1301,7 @@ static int p2pOpen(IN struct net_device *prDev)
 	/* 2. carrier on & start TX queue */
 	/*DFS todo 20161220_DFS*/
 #if (CFG_SUPPORT_DFS_MASTER == 1)
-	if (mode != RUNNING_AP_MODE) {
+	if (prDev->ieee80211_ptr->iftype != NL80211_IFTYPE_AP) {
 		netif_carrier_on(prDev);
 		netif_tx_start_all_queues(prDev);
 	}
