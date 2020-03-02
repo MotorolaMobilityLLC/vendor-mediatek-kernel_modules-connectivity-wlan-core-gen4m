@@ -132,7 +132,7 @@ struct ECO_INFO soc3_0_eco_table[] = {
 	{0x00, 0x00, 0x0}	/* End of table */
 };
 
-#if defined(_HIF_PCIE) || defined(_HIF_AXI)
+#if defined(_HIF_PCIE)
 struct PCIE_CHIP_CR_MAPPING soc3_0_bus2chip_cr_mapping[] = {
 	/* chip addr, bus addr, range */
 	{0x54000000, 0x02000, 0x1000}, /* WFDMA PCIE0 MCU DMA0 */
@@ -243,7 +243,7 @@ struct PCIE_CHIP_CR_MAPPING soc3_0_bus2chip_cr_mapping[] = {
 	{0x0, 0x0, 0x0} /* End */
 };
 #endif
-#if defined(_HIF_PCIE) || defined(_HIF_AXI)
+
 static bool soc3_0WfdmaAllocRxRing(
 	struct GLUE_INFO *prGlueInfo,
 	bool fgAllocMem)
@@ -266,22 +266,8 @@ static bool soc3_0WfdmaAllocRxRing(
 		DBGLOG(HAL, ERROR, "AllocWfdmaRxRing fail\n");
 		return false;
 	}
-	if (!halWpdmaAllocRxRing(prGlueInfo, WFDMA1_RX_RING_IDX_1,
-			RX_RING_SIZE, RXD_SIZE, RX_BUFFER_AGGRESIZE,
-			fgAllocMem)) {
-		DBGLOG(HAL, ERROR, "AllocWfdmaRxRing fail\n");
-		return false;
-	}
-	if (!halWpdmaAllocRxRing(prGlueInfo, WFDMA1_RX_RING_IDX_2,
-			RX_RING_SIZE, RXD_SIZE, RX_BUFFER_AGGRESIZE,
-			fgAllocMem)) {
-		DBGLOG(HAL, ERROR, "AllocWfdmaRxRing fail\n");
-		return false;
-	}
 	return true;
 }
-
-#endif /*_HIF_PCIE || _HIF_AXI */
 
 void soc3_0asicConnac2xProcessTxInterrupt(IN struct ADAPTER *prAdapter)
 {
@@ -476,9 +462,8 @@ struct BUS_INFO soc3_0_bus_info = {
 #if defined(_HIF_PCIE)
 	.max_static_map_addr = 0x000f0000,
 #elif defined(_HIF_AXI)
-			.max_static_map_addr = 0x00700000,
+	.max_static_map_addr = 0x00700000,
 #endif
-
 	.tx_ring_fwdl_idx = CONNAC2X_FWDL_TX_RING_IDX,
 	.tx_ring_cmd_idx = CONNAC2X_CMD_TX_RING_IDX,
 	.tx_ring0_data_idx = 0,
