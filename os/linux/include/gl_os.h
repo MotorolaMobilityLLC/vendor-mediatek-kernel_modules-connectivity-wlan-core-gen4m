@@ -1077,7 +1077,7 @@ extern char *gprifnamesta;
 
 extern void wlanRegisterNotifier(void);
 extern void wlanUnregisterNotifier(void);
-#if (MTK_WCN_HIF_SDIO && CFG_SUPPORT_MTK_ANDROID_KK)
+#if CFG_MTK_ANDROID_WMT
 typedef int (*set_p2p_mode) (struct net_device *netdev, PARAM_CUSTOM_P2P_SET_STRUCT_T p2pmode);
 extern void register_set_p2p_mode_handler(set_p2p_mode handler);
 #endif
@@ -1097,7 +1097,7 @@ VOID kalMetInit(IN P_GLUE_INFO_T prGlueInfo);
 
 VOID wlanUpdateChannelTable(P_GLUE_INFO_T prGlueInfo);
 
-#if ((MTK_WCN_HIF_SDIO && CFG_SUPPORT_MTK_ANDROID_KK) || WLAN_INCLUDE_PROC)
+#if (CFG_MTK_ANDROID_WMT || WLAN_INCLUDE_PROC)
 int set_p2p_mode_handler(struct net_device *netdev, PARAM_CUSTOM_P2P_SET_STRUCT_T p2pmode);
 #endif
 

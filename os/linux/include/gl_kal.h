@@ -799,8 +799,12 @@ do { \
 #ifdef CONFIG_X86
 #define kal_show_stack(_task, _sp)
 #else
+/* TODO: temp remove for 7663 on mobile */
+/*
 #define kal_show_stack(_task, _sp) \
 	show_stack(_task, _sp)
+ */
+#define kal_show_stack(_task, _sp)
 #endif
 
 /*******************************************************************************

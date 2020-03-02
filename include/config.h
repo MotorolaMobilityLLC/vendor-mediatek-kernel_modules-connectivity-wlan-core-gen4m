@@ -105,12 +105,12 @@
 
 
 #if (CFG_SUPPORT_AEE == 1)
-#define CFG_ENABLE_AEE_MSG          1
+/* TODO: temp remove for 7663 on mobile */
+/* #define CFG_ENABLE_AEE_MSG          1 */
+#define CFG_ENABLE_AEE_MSG          0
 #else
 #define CFG_ENABLE_AEE_MSG          0
 #endif
-
-#define CFG_SUPPORT_MTK_ANDROID_KK      1
 
 #define CFG_ENABLE_EARLY_SUSPEND        0
 #define CFG_ENABLE_NET_DEV_NOTIFY		1
