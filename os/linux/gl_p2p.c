@@ -1346,6 +1346,7 @@ u_int8_t glP2pCreateWirelessDevice(struct GLUE_INFO *prGlueInfo)
 	prWiphy->flags = WIPHY_FLAG_HAS_REMAIN_ON_CHANNEL
 				| WIPHY_FLAG_HAVE_AP_SME
 				| WIPHY_FLAG_HAS_CHANNEL_SWITCH;
+	prWiphy->max_num_csa_counters = 2;
 #else
 	prWiphy->flags = WIPHY_FLAG_HAS_REMAIN_ON_CHANNEL
 				| WIPHY_FLAG_HAVE_AP_SME;
