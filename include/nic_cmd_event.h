@@ -2537,7 +2537,7 @@ struct CMD_SCAN_REQ_V2 {
 	uint8_t aucIE[MAX_IE_LENGTH];			/*total 826*/
 	uint8_t ucChannelListExtNum;
 	uint8_t ucSSIDExtNum;
-	uint8_t aucPadding_1[2];
+	uint16_t u2ChannelMinDwellTime;
 	struct CHANNEL_INFO arChannelListExtend[32];
 	struct PARAM_SSID arSSIDExtend[6];
 	uint8_t aucBSSID[MAC_ADDR_LEN];
