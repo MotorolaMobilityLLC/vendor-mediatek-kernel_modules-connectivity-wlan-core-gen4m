@@ -1462,6 +1462,10 @@ VOID nicTxReleaseMsduResource(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduI
 
 WLAN_STATUS nicTxResetResource(IN P_ADAPTER_T prAdapter);
 
+#if defined(_HIF_SDIO)
+UINT_32 nicTxGetAdjustableResourceCnt(IN P_ADAPTER_T prAdapter);
+#endif
+
 UINT_16 nicTxGetResource(IN P_ADAPTER_T prAdapter, IN UINT_8 ucTC);
 
 UINT_8 nicTxGetFrameResourceType(IN UINT_8 eFrameType, IN P_MSDU_INFO_T prMsduInfo);
