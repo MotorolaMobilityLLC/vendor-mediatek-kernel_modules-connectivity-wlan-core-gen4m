@@ -573,6 +573,11 @@ uint32_t wlanAdapterStart(IN struct ADAPTER *prAdapter, IN struct REG_INFO *prRe
 		prAdapter->fgEnCtiaPowerMode = FALSE;
 
 #endif
+		/* QA_TOOL and ICAP info struct */
+		prAdapter->rIcapInfo.fgCaptureDone = FALSE;
+		prAdapter->rIcapInfo.fgIcapEnable = FALSE;
+		prAdapter->rIcapInfo.u2DumpIndex = 0;
+		prAdapter->rIcapInfo.u4CapNode = 0;
 
 		/* MGMT Initialization */
 		nicInitMGMT(prAdapter, prRegInfo);

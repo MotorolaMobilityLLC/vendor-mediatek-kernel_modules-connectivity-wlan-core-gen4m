@@ -1564,6 +1564,173 @@ struct PARAM_MTK_WIFI_TEST_STRUCT {
 	uint32_t u4FuncData;
 };
 
+struct _RBIST_IQ_DATA_T {
+	int32_t u4IQArray[4][2]; /* IQ_Array[WF][IQ] */
+};
+
+struct ICAP_INFO_T {
+	u_int8_t fgCaptureDone;
+	u_int8_t fgIcapEnable;
+	uint32_t u4CapNode;
+
+#if CFG_SUPPORT_QA_TOOL
+	/* for MT6632/MT7668 file dump mode */
+	uint16_t u2DumpIndex;
+	uint32_t au4Offset[2][2];
+	uint32_t au4IQData[256];
+
+	/* for MT7663/Connad FW parser mode */
+	uint32_t u4IQArrayIndex;
+	uint32_t u4ICapEventCnt;		/* Count of packet getting from FW */
+	uint32_t au4ICapDumpIndex[4][2];	/* Count of packet sent to QA Tool, 4 WF * 2 I/Q */
+	struct _RBIST_IQ_DATA_T *prIQArray;
+#endif
+};
+
+struct RF_TEST_CALIBRATION_T {
+	uint32_t	u4FuncData;
+	uint8_t	ucDbdcIdx;
+	uint8_t	aucReserved[3];
+};
+
+struct TX_TONE_PARAM_T {
+	uint8_t ucAntIndex;
+	uint8_t ucToneType;
+	uint8_t ucToneFreq;
+	uint8_t ucDbdcIdx;
+	int32_t i4DcOffsetI;
+	int32_t i4DcOffsetQ;
+	uint32_t u4Band;
+};
+
+struct CONTINUOUS_TX_PARAM_T {
+	uint8_t ucCtrlCh;
+	uint8_t ucCentralCh;
+	uint8_t ucBW;
+	uint8_t ucAntIndex;
+	uint16_t u2RateCode;
+	uint8_t ucBand;
+	uint8_t ucTxfdMode;
+};
+
+struct TX_TONE_POWER_GAIN_T {
+	uint8_t ucAntIndex;
+	uint8_t ucTonePowerGain;
+	uint8_t ucBand;
+	uint8_t aucReserved[1];
+};
+
+struct EXT_CMD_RDD_ON_OFF_CTRL_T {
+	uint8_t ucDfsCtrl;
+	uint8_t ucRddIdx;
+	uint8_t ucRddRxSel;
+	uint8_t ucSetVal;
+	uint8_t aucReserved[4];
+};
+
+struct SET_ADC_T {
+	uint32_t  u4ChannelFreq;
+	uint8_t	ucAntIndex;
+	uint8_t	ucBW;
+	uint8_t   ucSX;
+	uint8_t	ucDbdcIdx;
+	uint8_t	ucRunType;
+	uint8_t	ucFType;
+	uint8_t	aucReserved[2];		/* Reserving For future */
+};
+
+struct SET_RX_GAIN_T {
+	uint8_t	ucLPFG;
+	uint8_t   ucLNA;
+	uint8_t	ucDbdcIdx;
+	uint8_t	ucAntIndex;
+};
+
+struct SET_TTG_T {
+	uint32_t  u4ChannelFreq;
+	uint32_t  u4ToneFreq;
+	uint8_t	ucTTGPwrIdx;
+	uint8_t	ucDbdcIdx;
+	uint8_t	ucXtalFreq;
+	uint8_t	aucReserved[1];
+};
+
+struct TTG_ON_OFF_T {
+	uint8_t	ucTTGEnable;
+	uint8_t	ucDbdcIdx;
+	uint8_t	ucAntIndex;
+	uint8_t	aucReserved[1];
+};
+
+struct RBIST_CAP_START_T {
+	uint32_t u4Trigger;
+	uint32_t u4RingCapEn;
+	uint32_t u4TriggerEvent;
+	uint32_t u4CaptureNode;
+	uint32_t u4CaptureLen;    /* Unit : IQ Sample */
+	uint32_t u4CapStopCycle;  /* Unit : IQ Sample */
+	uint32_t u4MacTriggerEvent;
+	uint32_t u4SourceAddressLSB;
+	uint32_t u4SourceAddressMSB;
+	uint32_t u4BandIdx;
+	uint32_t u4BW;
+	uint32_t u4EnBitWidth;/* 0:32bit, 1:96bit, 2:128bit */
+	uint32_t u4Architech;/* 0:on-chip, 1:on-the-fly */
+	uint32_t u4PhyIdx;
+	uint32_t u4EmiStartAddress;
+	uint32_t u4EmiEndAddress;
+	uint32_t u4EmiMsbAddress;
+	uint32_t u4Reserved[3];
+};
+
+struct RBIST_DUMP_RAW_DATA_T {
+	uint32_t u4Address;
+	uint32_t u4AddrOffset;
+	uint32_t u4Bank;
+	uint32_t u4BankSize;/* Uint:Kbytes */
+	uint32_t u4Reserved[8];
+};
+
+/* FuncIndex */
+enum FUNC_IDX {
+	RE_CALIBRATION = 0x01,
+	CALIBRATION_BYPASS = 0x02,
+	TX_TONE_START = 0x03,
+	TX_TONE_STOP = 0x04,
+	CONTINUOUS_TX_START = 0x05,
+	CONTINUOUS_TX_STOP = 0x06,
+	RF_AT_EXT_FUNCID_TX_TONE_RF_GAIN = 0x07,
+	RF_AT_EXT_FUNCID_TX_TONE_DIGITAL_GAIN = 0x08,
+	CAL_RESULT_DUMP_FLAG = 0x09,
+	RDD_TEST_MODE  = 0x0A,
+	SET_ICAP_CAPTURE_START = 0x0B,
+	GET_ICAP_CAPTURE_STATUS = 0x0C,
+	SET_ADC = 0x0D,
+	SET_RX_GAIN = 0x0E,
+	SET_TTG = 0x0F,
+	TTG_ON_OFF = 0x10,
+	GET_ICAP_RAW_DATA = 0x11
+};
+
+struct PARAM_MTK_WIFI_TEST_STRUCT_EXT_T {
+	uint32_t u4FuncIndex;
+	union {
+		uint32_t u4FuncData;
+		uint32_t u4CalDump;
+		struct RF_TEST_CALIBRATION_T rCalParam;
+		struct TX_TONE_PARAM_T rTxToneParam;
+		struct CONTINUOUS_TX_PARAM_T rConTxParam;
+		struct TX_TONE_POWER_GAIN_T rTxToneGainParam;
+		struct RBIST_CAP_START_T rICapInfo;
+		struct RBIST_DUMP_RAW_DATA_T rICapDump;
+		struct EXT_CMD_RDD_ON_OFF_CTRL_T rRDDParam;
+		struct SET_ADC_T rSetADC;
+		struct SET_RX_GAIN_T rSetRxGain;
+		struct SET_TTG_T rSetTTG;
+		struct TTG_ON_OFF_T rTTGOnOff;
+	} Data;
+};
+
 /* 802.11 Media stream constraints */
 enum ENUM_MEDIA_STREAM_MODE {
 	ENUM_MEDIA_STREAM_OFF,
@@ -2649,6 +2816,14 @@ wlanoidRftestQueryAutoTest(IN struct ADAPTER *prAdapter,
 uint32_t
 wlanoidRftestSetAutoTest(IN struct ADAPTER *prAdapter,
 			 OUT void *pvSetBuffer, IN uint32_t u4SetBufferLen, OUT uint32_t *pu4SetInfoLen);
+uint32_t
+wlanoidExtRfTestICapStart(IN struct ADAPTER *prAdapter, IN void *pvSetBuffer,
+			  IN uint32_t u4SetBufferLen, OUT uint32_t *pu4SetInfoLen);
+uint32_t
+wlanoidExtRfTestICapStatus(IN struct ADAPTER *prAdapter, IN void *pvSetBuffer,
+			   IN uint32_t u4SetBufferLen, OUT uint32_t *pu4SetInfoLen);
+
+void wlanoidRfTestICapRawDataProc(IN struct ADAPTER *prAdapter, uint32_t u4CapStartAddr, uint32_t u4TotalBufferSize);
 
 #if CFG_SUPPORT_WAPI
 uint32_t

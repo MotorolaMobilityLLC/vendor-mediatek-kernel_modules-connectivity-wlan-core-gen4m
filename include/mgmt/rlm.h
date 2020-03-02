@@ -71,14 +71,6 @@
 ********************************************************************************
 */
 
-extern u_int8_t g_bIcapEnable;
-extern u_int8_t g_bCaptureDone;
-extern uint16_t g_u2DumpIndex;
-#if CFG_SUPPORT_QA_TOOL
-extern uint32_t g_au4Offset[2][2];
-extern uint32_t g_au4IQData[256];
-#endif
-
 /*******************************************************************************
 *                              C O N S T A N T S
 ********************************************************************************

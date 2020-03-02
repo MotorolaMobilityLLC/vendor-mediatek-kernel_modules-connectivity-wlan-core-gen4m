@@ -874,13 +874,72 @@ struct CMD_RX_PACKET_FILTER {
 #define S2D_INDEX_EVENT_N2H_N2C 0x3
 #endif
 
-#define EXT_EVENT_ID_CMD_RESULT    0x00
-
-/*#if (CFG_EEPROM_PAGE_ACCESS == 1)*/
-#define EXT_EVENT_ID_CMD_EFUSE_ACCESS   0x1
-#define EXT_EVENT_ID_EFUSE_FREE_BLOCK  0x4D
-#define EXT_EVENT_ID_GET_TX_POWER       0x1C
 #define EXT_EVENT_TARGET_TX_POWER  0x1
+
+#define EXT_EVENT_ID_CMD_RESULT 0x00
+#define EXT_EVENT_ID_EFUSE_ACCESS 0x01
+#define EXT_EVENT_ID_RF_REG_ACCESS 0x02
+#define EXT_EVENT_ID_EEPROM_ACCESS 0x03
+#define EXT_EVENT_ID_RF_TEST 0x04
+#define EXT_EVENT_ID_PS_SYNC 0x05
+#define EXT_EVENT_ID_SLEEPY_NOTIFY 0x06
+#define EXT_EVENT_ID_WLAN_ERROR 0x07
+#define EXT_EVENT_ID_NIC_CAPABILITY 0x09
+#define EXT_EVENT_ID_AP_PWR_SAVING_CLEAR 0x0A
+#define EXT_EVENT_ID_SET_WTBL2_RATETABLE 0x0B
+#define EXT_EVENT_ID_GET_WTBL2_INFORMATION 0x0C
+#define EXT_EVENT_ID_MULTIPLE_REG_ACCESS 0x0E
+#define EXT_EVENT_ID_AP_PWR_SAVING_CAPABILITY 0x0F
+#define EXT_EVENT_ID_SECURITY_ADDREMOVE_KEY 0x10
+#define EXT_EVENT_ID_FW_LOG_2_HOST 0x13
+#define EXT_EVENT_ID_AP_PWR_SAVING_START 0x14
+#define EXT_EVENT_ID_PACKET_FILTER 0x18
+#define EXT_EVENT_ID_COEXISTENCE 0x19
+#define EXT_EVENT_ID_BEACON_LOSS 0x1A
+#define EXT_EVENT_ID_PWR_MGT_BIT_WIFI 0x1B
+#define EXT_EVENT_ID_GET_TX_POWER 0x1C
+
+#define EXT_EVENT_ID_WMT_EVENT_OVER_WIFI 0x20
+#define EXT_EVENT_ID_MCC_TRIGGER 0x21
+#define EXT_EVENT_ID_THERMAL_PROTECT 0x22
+#define EXT_EVENT_ID_ASSERT_DUMP 0x23
+#define EXT_EVENT_ID_GET_SENSOR_RESULT 0x2C
+#define EXT_EVENT_ID_ROAMING_DETECT_NOTIFICATION 0x2D
+#define EXT_EVENT_ID_TMR_CAL 0x2E
+#define EXT_EVENT_ID_RA_THROUGHPUT_BURST 0x2F
+
+#define EXT_EVENT_ID_GET_TX_STATISTIC 0x30
+#define EXT_EVENT_ID_PRETBTT_INT 0x31
+#define EXT_EVENT_ID_WTBL_UPDATE 0x32
+
+#define EXT_EVENT_ID_BF_STATUS_READ 0x35
+#define EXT_EVENT_ID_DRR_CTRL 0x36
+#define EXT_EVENT_ID_BSSGROUP_CTRL 0x37
+#define EXT_EVENT_ID_VOW_FEATURE_CTRL 0x38
+#define EXT_EVENT_ID_PKT_PROCESSOR_CTRL 0x39
+#define EXT_EVENT_ID_RDD_REPORT 0x3A
+#define EXT_EVENT_ID_DEVICE_CAPABILITY 0x3B
+#define EXT_EVENT_ID_MAC_INFO 0x3C
+#define EXT_EVENT_ID_ATE_TEST_MODE 0x3D
+#define EXT_EVENT_ID_CAC_END 0x3E
+#define EXT_EVENT_ID_MU_CTRL 0x40
+
+#define EXT_EVENT_ID_DBDC_CTRL 0x45
+#define EXT_EVENT_ID_CONFIG_MUAR 0x48
+
+#define EXT_EVENT_ID_RX_AIRTIME_CTRL 0x4a
+#define EXT_EVENT_ID_AT_PROC_MODULE 0x4b
+#define EXT_EVENT_ID_MAX_AMSDU_LENGTH_UPDATE 0x4c
+#define EXT_EVENT_ID_EFUSE_FREE_BLOCK 0x4d
+#define EXT_EVENT_ID_MURA_CTRL 0x4d
+#define EXT_EVENT_ID_CSA_NOTIFY 0x4F
+#define EXT_EVENT_ID_WIFI_SPECTRUM 0x50
+#define EXT_EVENT_ID_TMR_CALCU_INFO 0x51
+#define EXT_EVENT_ID_DUMP_MEM 0x57
+#define EXT_EVENT_ID_TX_POWER_FEATURE_CTRL 0x58
+
+#define EXT_EVENT_ID_G_BAND_256QAM_PROBE_RESULT 0x6B
+#define EXT_EVENT_ID_MPDU_TIME_UPDATE 0x6F
 
 /*#endif*/
 
@@ -978,6 +1037,17 @@ struct CMD_TEST_CTRL {
 		uint32_t u4OpMode;
 		uint32_t u4ChannelFreq;
 		struct PARAM_MTK_WIFI_TEST_STRUCT rRfATInfo;
+	} u;
+};
+
+struct CMD_TEST_CTRL_EXT_T {
+	uint8_t ucAction;
+	uint8_t ucIcapLen;
+	uint8_t aucReserved[2];
+	union {
+		uint32_t u4OpMode;
+		uint32_t u4ChannelFreq;
+		struct PARAM_MTK_WIFI_TEST_STRUCT_EXT_T rRfATInfo;
 	} u;
 };
 
@@ -3161,6 +3231,29 @@ struct EXT_EVENT_GET_TX_POWER {
 
 };
 
+struct EXT_EVENT_RF_TEST_RESULT_T {
+	uint32_t u4FuncIndex;
+	uint32_t u4PayloadLength;
+	uint8_t  aucEvent[0];
+};
+
+struct EXT_EVENT_RBIST_DUMP_DATA_T {
+	uint32_t u4FuncIndex;
+	uint32_t u4PktNum;
+	uint32_t u4Bank;
+	uint32_t u4DataLength;
+	uint32_t u4WFCnt;
+	uint32_t u4SmplCnt;
+	uint32_t u4Reserved[6];
+	uint32_t u4Data[256];
+};
+
+struct EXT_EVENT_RBIST_CAP_STATUS_T {
+	uint32_t u4FuncIndex;
+	uint32_t u4CapDone;
+	uint32_t u4Reserved[15];
+};
+
 struct CMD_SUSPEND_MODE_SETTING {
 	uint8_t ucBssIndex;
 	uint8_t ucEnableSuspendMode;
@@ -3288,9 +3381,10 @@ void nicCmdEventQueryMcrRead(IN struct ADAPTER *prAdapter, IN struct CMD_INFO *p
 #if CFG_SUPPORT_QA_TOOL
 void nicCmdEventQueryRxStatistics(IN struct ADAPTER *prAdapter, IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf);
 
-uint32_t TsfRawData2IqFmt(struct EVENT_DUMP_MEM *prEventDumpMem);
+uint32_t nicTsfRawData2IqFmt(struct EVENT_DUMP_MEM *prEventDumpMem, struct ICAP_INFO_T *prIcap);
+uint32_t nicExtTsfRawData2IqFmt(struct EXT_EVENT_RBIST_DUMP_DATA_T *prEventDumpMem, struct ICAP_INFO_T *prIcap);
 
-int32_t GetIQData(int32_t **prIQAry, uint32_t *prDataLen, uint32_t u4IQ, uint32_t u4GetWf1);
+int32_t GetIQData(struct ADAPTER *prAdapter, int32_t **prIQAry, uint32_t *prDataLen, uint32_t u4IQ, uint32_t u4GetWf1);
 
 #if CFG_SUPPORT_TX_BF
 void nicCmdEventPfmuDataRead(IN struct ADAPTER *prAdapter, IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf);
@@ -3307,8 +3401,9 @@ void nicCmdEventGetCalcInitMcs(IN struct ADAPTER *prAdapter, IN struct CMD_INFO 
 #if CFG_SUPPORT_CAL_RESULT_BACKUP_TO_HOST
 void nicCmdEventQueryCalBackupV2(IN struct ADAPTER *prAdapter, IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf);
 #endif
-
+#if 0
 void nicEventQueryMemDump(IN struct ADAPTER *prAdapter, IN uint8_t *pucEventBuf);
+#endif
 
 void nicCmdEventQueryMemDump(IN struct ADAPTER *prAdapter, IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf);
 
@@ -3415,6 +3510,8 @@ uint32_t nicCfgChipCapBeamformCap(IN struct ADAPTER *prAdapter, IN uint8_t *pucE
 uint32_t nicCfgChipCapLocationCap(IN struct ADAPTER *prAdapter, IN uint8_t *pucEventBuf);
 uint32_t nicCfgChipCapMuMimoCap(IN struct ADAPTER *prAdapter, IN uint8_t *pucEventBuf);
 
+void nicExtEventICapIQData(IN struct ADAPTER *prAdapter, IN uint8_t *pucEventBuf);
+void nicExtEventQueryMemDump(IN struct ADAPTER *prAdapter, IN uint8_t *pucEventBuf);
 void nicEventLinkQuality(IN struct ADAPTER *prAdapter, IN struct WIFI_EVENT *prEvent);
 void nicEventLayer0ExtMagic(IN struct ADAPTER *prAdapter, IN struct WIFI_EVENT *prEvent);
 void nicEventMicErrorInfo(IN struct ADAPTER *prAdapter, IN struct WIFI_EVENT *prEvent);

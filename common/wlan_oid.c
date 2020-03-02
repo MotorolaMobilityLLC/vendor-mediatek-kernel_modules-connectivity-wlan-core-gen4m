@@ -9018,12 +9018,12 @@ uint32_t rftestSetATInfo(IN struct ADAPTER *prAdapter, uint32_t u4FuncIndex, uin
 	pCmdTestCtrl->u.rRfATInfo.u4FuncData = u4FuncData;
 
 	if ((u4FuncIndex == RF_AT_FUNCID_COMMAND) && (u4FuncData == RF_AT_COMMAND_ICAP)) {
-		g_bIcapEnable = TRUE;
-		g_bCaptureDone = FALSE;
+		prAdapter->rIcapInfo.fgIcapEnable = TRUE;
+		prAdapter->rIcapInfo.fgCaptureDone = FALSE;
 	}
 	/* ICAP dump name Reset */
 	if ((u4FuncIndex == RF_AT_FUNCID_COMMAND) && (u4FuncData == RF_AT_COMMAND_RESET_DUMP_NAME))
-		g_u2DumpIndex = 0;
+		prAdapter->rIcapInfo.u2DumpIndex = 0;
 	/* insert into prCmdQueue */
 	kalEnqueueCommand(prGlueInfo, (struct QUE_ENTRY *) prCmdInfo);
 
@@ -9031,6 +9031,122 @@ uint32_t rftestSetATInfo(IN struct ADAPTER *prAdapter, uint32_t u4FuncIndex, uin
 	GLUE_SET_EVENT(prAdapter->prGlueInfo);
 
 	return WLAN_STATUS_PENDING;
+}
+
+uint32_t wlanoidExtRfTestICapStart(IN struct ADAPTER *prAdapter, OUT void *pvSetBuffer,
+					IN uint32_t u4SetBufferLen, OUT uint32_t *pu4SetInfoLen)
+{
+	struct CMD_TEST_CTRL_EXT_T rCmdTestCtrl;
+	struct RBIST_CAP_START_T *prCmdICapInfo;
+	struct PARAM_MTK_WIFI_TEST_STRUCT_EXT_T *prRfATInfo;
+	uint32_t rStatus = WLAN_STATUS_SUCCESS;
+
+	DEBUGFUNC("wlanoidExtRfTestICapStart");
+
+	ASSERT(prAdapter);
+	ASSERT(pvSetBuffer);
+	ASSERT(pu4SetInfoLen);
+
+	*pu4SetInfoLen = sizeof(struct PARAM_MTK_WIFI_TEST_STRUCT_EXT_T);
+
+	prRfATInfo = (struct PARAM_MTK_WIFI_TEST_STRUCT_EXT_T *) pvSetBuffer;
+
+	DBGLOG(RFTEST, INFO, "Set AT_CMD BufferLen = %d, AT Index = %d\n",
+		u4SetBufferLen,
+		prRfATInfo->u4FuncIndex);
+
+	rCmdTestCtrl.ucAction = ACTION_IN_RFTEST;
+	rCmdTestCtrl.u.rRfATInfo.u4FuncIndex = SET_ICAP_CAPTURE_START;
+
+	prCmdICapInfo = &(rCmdTestCtrl.u.rRfATInfo.Data.rICapInfo);
+	kalMemCopy(prCmdICapInfo, &(prRfATInfo->Data.rICapInfo), sizeof(struct RBIST_CAP_START_T));
+
+	prAdapter->rIcapInfo.fgIcapEnable = TRUE;
+	prAdapter->rIcapInfo.fgCaptureDone = FALSE;
+
+	rStatus = wlanSendSetQueryExtCmd(prAdapter,
+					CMD_ID_LAYER_0_EXT_MAGIC_NUM,
+					EXT_CMD_ID_RF_TEST,
+					FALSE,   /* Query Bit:  True->write  False->read*/
+					FALSE,
+					TRUE,
+					NULL, /* No Tx done function wait until fw ack */
+					nicOidCmdTimeoutCommon,
+					sizeof(struct CMD_TEST_CTRL_EXT_T),
+					(uint8_t *)&rCmdTestCtrl, pvSetBuffer, u4SetBufferLen);
+	return rStatus;
+}
+
+uint32_t wlanoidExtRfTestICapStatus(IN struct ADAPTER *prAdapter, OUT void *pvSetBuffer,
+				       IN uint32_t u4SetBufferLen, OUT uint32_t *pu4SetInfoLen)
+{
+	struct CMD_TEST_CTRL_EXT_T rCmdTestCtrl;
+	struct RBIST_CAP_START_T *prCmdICapInfo;
+	struct PARAM_MTK_WIFI_TEST_STRUCT_EXT_T *prRfATInfo;
+	uint32_t rStatus = WLAN_STATUS_SUCCESS;
+
+	DEBUGFUNC("wlanoidExtRfTestICapStatus");
+
+	ASSERT(prAdapter);
+	ASSERT(pvSetBuffer);
+	ASSERT(pu4SetInfoLen);
+
+	*pu4SetInfoLen = sizeof(struct PARAM_MTK_WIFI_TEST_STRUCT_EXT_T);
+
+	prRfATInfo = (struct PARAM_MTK_WIFI_TEST_STRUCT_EXT_T *) pvSetBuffer;
+
+	DBGLOG(RFTEST, INFO, "Set AT_CMD BufferLen = %d, AT Index = %d\n",
+		u4SetBufferLen,
+		prRfATInfo->u4FuncIndex);
+
+	rCmdTestCtrl.ucAction = ACTION_IN_RFTEST;
+	rCmdTestCtrl.u.rRfATInfo.u4FuncIndex = GET_ICAP_CAPTURE_STATUS;
+
+	prCmdICapInfo = &(rCmdTestCtrl.u.rRfATInfo.Data.rICapInfo);
+	kalMemCopy(prCmdICapInfo, &(prRfATInfo->Data.rICapInfo), sizeof(struct RBIST_CAP_START_T));
+
+	rStatus = wlanSendSetQueryExtCmd(prAdapter,
+					CMD_ID_LAYER_0_EXT_MAGIC_NUM,
+					EXT_CMD_ID_RF_TEST,
+					FALSE,   /* Query Bit:  True->write  False->read*/
+					TRUE,
+					TRUE,
+					NULL,
+					nicOidCmdTimeoutCommon,
+					sizeof(struct CMD_TEST_CTRL_EXT_T),
+					(uint8_t *)(&rCmdTestCtrl), pvSetBuffer, u4SetBufferLen);
+	return rStatus;
+}
+
+void wlanoidRfTestICapRawDataProc(IN struct ADAPTER *prAdapter, uint32_t u4CapStartAddr, uint32_t u4TotalBufferSize)
+{
+	struct CMD_TEST_CTRL_EXT_T rCmdTestCtrl;
+	struct PARAM_MTK_WIFI_TEST_STRUCT_EXT_T *prRfATInfo;
+	uint32_t u4SetBufferLen = 0;
+	void *pvSetBuffer = NULL;
+	int32_t rStatus;
+
+	ASSERT(prAdapter);
+
+	prRfATInfo = &(rCmdTestCtrl.u.rRfATInfo);
+
+	rCmdTestCtrl.ucAction = ACTION_IN_RFTEST;
+	prRfATInfo->u4FuncIndex = GET_ICAP_RAW_DATA;
+	prRfATInfo->Data.rICapDump.u4Address = u4CapStartAddr;
+	prRfATInfo->Data.rICapDump.u4AddrOffset = 0x04;
+	prRfATInfo->Data.rICapDump.u4Bank = 1;
+	prRfATInfo->Data.rICapDump.u4BankSize = u4TotalBufferSize;
+
+	rStatus = wlanSendSetQueryExtCmd(prAdapter,
+					CMD_ID_LAYER_0_EXT_MAGIC_NUM,
+					EXT_CMD_ID_RF_TEST,
+					FALSE,   /* Query Bit:  True->write  False->read*/
+					TRUE,
+					TRUE,
+					NULL,
+					nicOidCmdTimeoutCommon,
+					sizeof(struct CMD_TEST_CTRL_EXT_T),
+					(uint8_t *)(&rCmdTestCtrl), pvSetBuffer, u4SetBufferLen);
 }
 
 uint32_t
@@ -9069,7 +9185,7 @@ rftestQueryATInfo(IN struct ADAPTER *prAdapter,
 		/* driver implementation */
 		prTestStatus = (union EVENT_TEST_STATUS *) pvQueryBuffer;
 
-		prTestStatus->rATInfo.u4FuncData = g_u2DumpIndex;
+		prTestStatus->rATInfo.u4FuncData = prAdapter->rIcapInfo.u2DumpIndex;
 		u4QueryBufferLen = sizeof(union EVENT_TEST_STATUS);
 
 		return WLAN_STATUS_SUCCESS;
