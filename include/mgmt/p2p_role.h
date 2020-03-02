@@ -178,6 +178,11 @@ struct MSG_P2P_START_AP {
 	int32_t i4InactiveTimeout;
 };
 
+struct MSG_P2P_STOP_AP {
+	struct MSG_HDR rMsgHdr;
+	uint8_t ucRoleIdx;
+};
+
 #if (CFG_SUPPORT_DFS_MASTER == 1)
 struct MSG_P2P_DFS_CAC {
 	struct MSG_HDR rMsgHdr;

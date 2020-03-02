@@ -1206,6 +1206,7 @@ int glSetupP2P(struct GLUE_INFO *prGlueInfo, struct wireless_dev *prP2pWdev,
 		prP2PInfo->prDevHandler, prP2PInfo->aprRoleHandler);
 
 	prNetDevPriv->ucBssIdx = p2pRoleFsmInit(prAdapter, u4Idx);
+	init_completion(&prP2PInfo->rStopApComp);
 	/* Currently wpasupplicant can't support create interface. */
 	/* so initial the corresponding data structure here. */
 	wlanBindBssIdxToNetInterface(prGlueInfo, prNetDevPriv->ucBssIdx,

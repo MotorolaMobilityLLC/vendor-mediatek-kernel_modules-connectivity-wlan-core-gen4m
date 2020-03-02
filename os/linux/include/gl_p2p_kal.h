@@ -376,4 +376,7 @@ void kalP2pIndicateAcsResult(IN struct GLUE_INFO *prGlueInfo,
 		IN uint8_t ucSeg1Ch,
 		IN enum ENUM_MAX_BANDWIDTH_SETTING eChnlBw);
 
+void kalP2pNotifyStopApComplete(IN struct ADAPTER *prAdapter,
+		IN uint8_t ucRoleIndex);
+
 #endif /* _GL_P2P_KAL_H */

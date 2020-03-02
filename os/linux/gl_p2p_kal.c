@@ -2153,3 +2153,16 @@ nla_put_failure:
 	if (vendor_event)
 		kfree_skb(vendor_event);
 }
+
+void kalP2pNotifyStopApComplete(IN struct ADAPTER *prAdapter,
+		IN uint8_t ucRoleIndex)
+{
+	struct GL_P2P_INFO *prP2PInfo;
+
+	if (!prAdapter)
+		return;
+
+	prP2PInfo = prAdapter->prGlueInfo->prP2PInfo[ucRoleIndex];
+	if (prP2PInfo && !completion_done(&prP2PInfo->rStopApComp))
+		complete(&prP2PInfo->rStopApComp);
+}
