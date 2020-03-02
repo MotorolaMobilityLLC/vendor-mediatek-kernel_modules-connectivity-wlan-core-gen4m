@@ -734,7 +734,7 @@ static int32_t HQA_SetTxPath(struct net_device *prNetDev,
 		DBGLOG(RFTEST, INFO, "tx_path:%d, band:%d\n", tx_ant, band_idx);
 	} else {
 		memcpy(&tx_ant, HqaCmdFrame->Data + 2 * 0, 2);
-		tx_ant = ntohl(tx_ant);
+		tx_ant = ntohs(tx_ant);
 		DBGLOG(RFTEST, INFO, "tx_path:%d, ", tx_ant);
 	}
 
@@ -811,7 +811,7 @@ static int32_t HQA_SetRxPath(struct net_device *prNetDev,
 		DBGLOG(RFTEST, INFO, "rx_path:%d, band:%d\n", rx_ant, band_idx);
 	} else {
 		memcpy(&rx_ant, HqaCmdFrame->Data + 2 * 0, 2);
-		rx_ant = ntohl(rx_ant);
+		rx_ant = ntohs(rx_ant);
 		DBGLOG(RFTEST, INFO, "rx_path:%d, ", rx_ant);
 	}
 
