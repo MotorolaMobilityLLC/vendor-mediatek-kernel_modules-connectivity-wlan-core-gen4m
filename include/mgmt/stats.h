@@ -41,7 +41,6 @@
  *            M A C R O   D E C L A R A T I O N S
  *******************************************************************************
  */
-#include <linux/rtc.h>
 
 #if (CFG_SUPPORT_STATISTICS == 1)
 #define STATS_RX_PKT_INFO_DISPLAY			StatsRxPktInfoDisplay

@@ -72,11 +72,7 @@
  *                    E X T E R N A L   R E F E R E N C E S
  *******************************************************************************
  */
-#include "linux/sched.h"
-#if CFG_MTK_ANDROID_WMT
-extern void connectivity_export_show_stack(struct task_struct *tsk,
-					   unsigned long *sp);
-#endif
+#include "gl_os.h"
 
 /*******************************************************************************
  *                              C O N S T A N T S
