@@ -117,8 +117,10 @@ static bool halIsTxHang(struct ADAPTER *prAdapter);
 
 void halPrintHifDbgInfo(IN struct ADAPTER *prAdapter)
 {
-	halCheckHifState(prAdapter);
-	halDumpHifDebugLog(prAdapter);
+	if (!prAdapter->fgIsFwOwn) {
+		halCheckHifState(prAdapter);
+		halDumpHifDebugLog(prAdapter);
+	}
 	if (prAdapter->chip_info->dumpwfsyscpupcr)
 		prAdapter->chip_info->dumpwfsyscpupcr(prAdapter);
 }

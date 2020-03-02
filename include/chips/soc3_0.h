@@ -106,6 +106,7 @@
 #define CONN_INFRA_ON2OFF_SLP_PROT_ACK_ADDR \
 	(CONN_HOST_CSR_TOP_BASE_ADDR + 0x0184)
 #define CONN_HW_VER_ADDR (CONN_INFRA_CFG_BASE_ADDR + 0x0000)
+#define WFSYS_SW_RST_B_ADDR (CONN_INFRA_RGU_BASE_ADDR + 0x0018)
 #define WFSYS_CPU_SW_RST_B_ADDR (CONN_INFRA_RGU_BASE_ADDR + 0x0010)
 #define WFSYS_ON_TOP_PWR_CTL_ADDR (CONN_INFRA_RGU_BASE_ADDR + 0x0000)
 #define TOP_DBG_DUMMY_3_CONNSYS_PWR_STATUS_ADDR \
@@ -159,6 +160,7 @@ extern struct platform_device *g_prPlatDev;
 #if (CFG_SUPPORT_CONNINFRA == 1)
 extern u_int8_t g_IsWfsysBusHang;
 extern struct completion g_triggerComp;
+extern bool g_IsTriggerTimeout;
 #endif
 /*******************************************************************************
 *                           P R I V A T E   D A T A
