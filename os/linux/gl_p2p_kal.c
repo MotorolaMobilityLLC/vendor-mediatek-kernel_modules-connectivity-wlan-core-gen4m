@@ -2163,3 +2163,144 @@ void kalP2pNotifyStopApComplete(IN struct ADAPTER *prAdapter,
 	if (prP2PInfo && !completion_done(&prP2PInfo->rStopApComp))
 		complete(&prP2PInfo->rStopApComp);
 }
+
+void kalP2pIndicateChnlSwitch(IN struct ADAPTER *prAdapter,
+		IN struct BSS_INFO *prBssInfo)
+{
+	struct GL_P2P_INFO *prP2PInfo;
+	uint8_t role_idx = 0;
+
+	if (!prAdapter || !prBssInfo)
+		return;
+
+	role_idx = prBssInfo->u4PrivateData;
+	prP2PInfo = prAdapter->prGlueInfo->prP2PInfo[role_idx];
+
+	if (!prP2PInfo) {
+		DBGLOG(P2P, WARN, "p2p glue info is not active\n");
+		return;
+	}
+
+	/* Compose ch info. */
+	if (prP2PInfo->chandef == NULL) {
+		struct ieee80211_channel *chan;
+
+		prP2PInfo->chandef = (struct cfg80211_chan_def *)
+				cnmMemAlloc(prAdapter, RAM_TYPE_BUF,
+				sizeof(struct cfg80211_chan_def));
+		prP2PInfo->chandef->chan = (struct ieee80211_channel *)
+				cnmMemAlloc(prAdapter, RAM_TYPE_BUF,
+				sizeof(struct ieee80211_channel));
+
+		if (!prP2PInfo->chandef->chan) {
+			DBGLOG(P2P, WARN, "ieee80211_channel alloc fail\n");
+			return;
+		}
+
+		chan = ieee80211_get_channel(prP2PInfo->prWdev->wiphy,
+				nicChannelNum2Freq(
+					prBssInfo->ucPrimaryChannel) / 1000);
+		if (!chan) {
+			DBGLOG(P2P, WARN,
+				"get channel fail\n");
+			return;
+		}
+
+		/* Fill chan def */
+		prP2PInfo->chandef->chan->band =
+				(prBssInfo->eBand == BAND_5G) ?
+					KAL_BAND_5GHZ : KAL_BAND_2GHZ;
+		prP2PInfo->chandef->chan->center_freq = nicChannelNum2Freq(
+				prBssInfo->ucPrimaryChannel) / 1000;
+
+		prP2PInfo->chandef->chan->dfs_state = chan->dfs_state;
+
+		switch (prBssInfo->ucVhtChannelWidth) {
+		case VHT_OP_CHANNEL_WIDTH_80P80:
+			prP2PInfo->chandef->width
+				= NL80211_CHAN_WIDTH_80P80;
+			prP2PInfo->chandef->center_freq1
+				= nicChannelNum2Freq(
+				prBssInfo->ucVhtChannelFrequencyS1) / 1000;
+			prP2PInfo->chandef->center_freq2
+				= nicChannelNum2Freq(
+				prBssInfo->ucVhtChannelFrequencyS2) / 1000;
+			break;
+		case VHT_OP_CHANNEL_WIDTH_160:
+			prP2PInfo->chandef->width
+				= NL80211_CHAN_WIDTH_160;
+			prP2PInfo->chandef->center_freq1
+				= nicChannelNum2Freq(
+				prBssInfo->ucVhtChannelFrequencyS1) / 1000;
+			prP2PInfo->chandef->center_freq2
+				= nicChannelNum2Freq(
+				prBssInfo->ucVhtChannelFrequencyS2) / 1000;
+			break;
+		case VHT_OP_CHANNEL_WIDTH_80:
+			prP2PInfo->chandef->width
+				= NL80211_CHAN_WIDTH_80;
+			prP2PInfo->chandef->center_freq1
+				= nicChannelNum2Freq(
+				prBssInfo->ucVhtChannelFrequencyS1) / 1000;
+			prP2PInfo->chandef->center_freq2
+				= nicChannelNum2Freq(
+				prBssInfo->ucVhtChannelFrequencyS2) / 1000;
+			break;
+		case VHT_OP_CHANNEL_WIDTH_20_40:
+			prP2PInfo->chandef->center_freq1
+				= prP2PInfo->chandef->chan->center_freq;
+			if (prBssInfo->eBssSCO == CHNL_EXT_SCA) {
+				prP2PInfo->chandef->width
+					= NL80211_CHAN_WIDTH_40;
+				prP2PInfo->chandef->center_freq1 += 10;
+			} else if (prBssInfo->eBssSCO == CHNL_EXT_SCB) {
+				prP2PInfo->chandef->width
+					= NL80211_CHAN_WIDTH_40;
+				prP2PInfo->chandef->center_freq1 -= 10;
+			} else {
+				prP2PInfo->chandef->width
+					= NL80211_CHAN_WIDTH_20;
+			}
+			prP2PInfo->chandef->center_freq2 = 0;
+			break;
+		default:
+			prP2PInfo->chandef->width
+				= NL80211_CHAN_WIDTH_20;
+			prP2PInfo->chandef->center_freq1
+				= prP2PInfo->chandef->chan->center_freq;
+			prP2PInfo->chandef->center_freq2 = 0;
+			break;
+		}
+
+		DBGLOG(P2P, INFO,
+			"role(%d) b=%d f=%d w=%d s1=%d s2=%d dfs=%d\n",
+			role_idx,
+			prP2PInfo->chandef->chan->band,
+			prP2PInfo->chandef->chan->center_freq,
+			prP2PInfo->chandef->width,
+			prP2PInfo->chandef->center_freq1,
+			prP2PInfo->chandef->center_freq2,
+			prP2PInfo->chandef->chan->dfs_state);
+	}
+
+	/* Ch notify */
+	if (prP2PInfo->chandef) {
+#if (KERNEL_VERSION(4, 2, 0) <= CFG80211_VERSION_CODE)
+		u_int8_t fgRegBeaconRelax = FALSE;
+
+		rtnl_lock();
+		fgRegBeaconRelax = cfg80211_reg_can_beacon_relax(
+			prP2PInfo->prWdev->wiphy,
+			prP2PInfo->chandef,
+			prP2PInfo->prWdev->iftype);
+		rtnl_unlock();
+		if (!fgRegBeaconRelax)
+			DBGLOG(P2P, WARN,
+				"plz check channel info. is correct.\n");
+#endif
+
+		cfg80211_ch_switch_notify(
+			prP2PInfo->prDevHandler,
+			prP2PInfo->chandef);
+	}
+}

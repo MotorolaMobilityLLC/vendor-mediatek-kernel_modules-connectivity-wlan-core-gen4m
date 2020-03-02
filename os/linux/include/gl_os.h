@@ -1255,7 +1255,9 @@ void kalMetInit(IN struct GLUE_INFO *prGlueInfo);
 void wlanUpdateChannelTable(struct GLUE_INFO *prGlueInfo);
 
 #if CFG_SUPPORT_SAP_DFS_CHANNEL
-void wlanUpdateDfsChannelTable(struct GLUE_INFO *prGlueInfo, uint8_t ucChannel);
+void wlanUpdateDfsChannelTable(struct GLUE_INFO *prGlueInfo,
+		uint8_t ucRoleIdx, uint8_t ucChannel, uint8_t ucBandWidth,
+		enum ENUM_CHNL_EXT eBssSCO, uint32_t u4CenterFreq);
 #endif
 
 #if (CFG_MTK_ANDROID_WMT || WLAN_INCLUDE_PROC)

@@ -11470,6 +11470,21 @@ wlanoidSetCountryCode(IN struct ADAPTER *prAdapter,
 	 */
 	wlanUpdateChannelTable(prAdapter->prGlueInfo);
 
+#if CFG_SUPPORT_SAP_DFS_CHANNEL
+	if (aisGetConnectedBssInfo(prAdapter)) {
+		struct BSS_INFO *prAisBssInfo =
+				aisGetConnectedBssInfo(prAdapter);
+
+		/* restore DFS channels table */
+		wlanUpdateDfsChannelTable(prAdapter->prGlueInfo,
+			-1, /* p2p role index */
+			prAisBssInfo->ucPrimaryChannel, /* primary channel */
+			0, /* bandwidth */
+			0, /* sco */
+			0 /* center frequency */);
+	}
+#endif
+
 	return WLAN_STATUS_SUCCESS;
 }
 
