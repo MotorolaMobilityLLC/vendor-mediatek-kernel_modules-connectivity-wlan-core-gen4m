@@ -11508,6 +11508,167 @@ static int priv_driver_set_maxrfgain(IN struct net_device *prNetDev,
 
 #endif
 
+#if CFG_ENABLE_WIFI_DIRECT
+static int priv_driver_set_p2p_ps(IN struct net_device *prNetDev,
+				  IN char *pcCommand, IN int i4TotalLen)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct ADAPTER *prAdapter = NULL;
+	struct BSS_INFO *prBssInfo = NULL;
+	uint32_t rStatus = WLAN_STATUS_SUCCESS;
+	uint32_t u4BufLen = 0;
+	int32_t i4Argc = 0;
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = { 0 };
+	uint32_t ucRoleIdx;
+	uint8_t ucBssIdx;
+	uint32_t u4CTwindowMs;
+	struct P2P_SPECIFIC_BSS_INFO *prP2pSpecBssInfo = NULL;
+	struct PARAM_CUSTOM_OPPPS_PARAM_STRUCT *rOppPsParam = NULL;
+
+	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
+		return -1;
+
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+	prAdapter = prGlueInfo->prAdapter;
+
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+
+	if (i4Argc < 2) {
+		DBGLOG(REQ, ERROR,
+		 "Expect param: <role_idx> <CTW>. argc=%d now\n", i4Argc);
+		return -1;
+	}
+
+	if (kalkStrtou32(apcArgv[1], 0, &ucRoleIdx)) {
+		DBGLOG(REQ, ERROR, "parse ucRoleIdx error\n");
+		return -1;
+	}
+
+	if (kalkStrtou32(apcArgv[2], 0, &u4CTwindowMs)) {
+		DBGLOG(REQ, ERROR, "parse u4CTwindowMs error\n");
+		return -1;
+	}
+
+	/* get Bss Index from ndev */
+	if (p2pFuncRoleToBssIdx(prAdapter, ucRoleIdx, &ucBssIdx) !=
+		WLAN_STATUS_SUCCESS) {
+		DBGLOG(REQ, ERROR, "can't find ucBssIdx\n");
+		return -1;
+	}
+
+	prBssInfo = prAdapter->aprBssInfo[ucBssIdx];
+
+	if (!(prBssInfo->fgIsInUse) || (prBssInfo->eIftype != IFTYPE_P2P_GO)) {
+		DBGLOG(REQ, ERROR, "wrong bss InUse=%d, iftype=%d\n",
+			prBssInfo->fgIsInUse, prBssInfo->eIftype);
+		return -1;
+	}
+
+	DBGLOG(REQ, INFO, "ucRoleIdx=%d, ucBssIdx=%d, u4CTwindowMs=%d\n",
+		ucRoleIdx, ucBssIdx, u4CTwindowMs);
+
+	if (u4CTwindowMs > 0)
+		u4CTwindowMs |= BIT(7);	/* FW checks BIT(7) for enable */
+
+	prP2pSpecBssInfo = prAdapter->rWifiVar.prP2pSpecificBssInfo[ucRoleIdx];
+	rOppPsParam = &prP2pSpecBssInfo->rOppPsParam;
+	rOppPsParam->u4CTwindowMs = u4CTwindowMs;
+	rOppPsParam->ucBssIdx = ucBssIdx;
+
+	rStatus = kalIoctl(prGlueInfo, wlanoidSetOppPsParam, rOppPsParam,
+			sizeof(struct PARAM_CUSTOM_OPPPS_PARAM_STRUCT),
+			FALSE, FALSE, TRUE, &u4BufLen);
+
+	return !(rStatus == WLAN_STATUS_SUCCESS);
+}
+
+static int priv_driver_set_p2p_noa(IN struct net_device *prNetDev,
+				   IN char *pcCommand, IN int i4TotalLen)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct ADAPTER *prAdapter = NULL;
+	struct BSS_INFO *prBssInfo = NULL;
+	uint32_t rStatus = WLAN_STATUS_SUCCESS;
+	uint32_t u4BufLen = 0;
+	int32_t i4Argc = 0;
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = { 0 };
+	uint8_t ucBssIdx;
+	uint32_t ucRoleIdx;
+	uint32_t u4NoaDurationMs;
+	uint32_t u4NoaIntervalMs;
+	uint32_t u4NoaCount;
+	struct P2P_SPECIFIC_BSS_INFO *prP2pSpecBssInfo = NULL;
+	struct PARAM_CUSTOM_NOA_PARAM_STRUCT *rNoaParam = NULL;
+
+	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
+		return -1;
+
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+	prAdapter = prGlueInfo->prAdapter;
+
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+
+	if (i4Argc < 4) {
+		DBGLOG(REQ, ERROR,
+		  "SET_P2P_NOA <role_idx> <count> <interval> <duration>\n");
+		return -1;
+	}
+
+	if (kalkStrtou32(apcArgv[1], 0, &ucRoleIdx)) {
+		DBGLOG(REQ, ERROR, "parse ucRoleIdx error\n");
+		return -1;
+	}
+
+	if (kalkStrtou32(apcArgv[2], 0, &u4NoaCount)) {
+		DBGLOG(REQ, ERROR, "parse u4NoaCount error\n");
+		return -1;
+	}
+
+	if (kalkStrtou32(apcArgv[3], 0, &u4NoaIntervalMs)) {
+		DBGLOG(REQ, ERROR, "parse u4NoaIntervalMs error\n");
+		return -1;
+	}
+
+	if (kalkStrtou32(apcArgv[4], 0, &u4NoaDurationMs)) {
+		DBGLOG(REQ, ERROR, "parse u4NoaDurationMs error\n");
+		return -1;
+	}
+
+	/* get Bss Index from ndev */
+	if (p2pFuncRoleToBssIdx(prAdapter, ucRoleIdx, &ucBssIdx) !=
+		WLAN_STATUS_SUCCESS) {
+		DBGLOG(REQ, ERROR, "can't find ucBssIdx\n");
+		return -1;
+	}
+
+	prBssInfo = prAdapter->aprBssInfo[ucBssIdx];
+
+	if (!(prBssInfo->fgIsInUse) || (prBssInfo->eIftype != IFTYPE_P2P_GO)) {
+		DBGLOG(REQ, ERROR, "wrong bss InUse=%d, iftype=%d\n",
+			prBssInfo->fgIsInUse, prBssInfo->eIftype);
+		return -1;
+	}
+
+	DBGLOG(REQ, INFO,
+		"RoleIdx=%d, BssIdx=%d, count=%d, interval=%d, duration=%d\n",
+		ucRoleIdx, ucBssIdx, u4NoaCount, u4NoaIntervalMs,
+		u4NoaDurationMs);
+
+	prP2pSpecBssInfo = prAdapter->rWifiVar.prP2pSpecificBssInfo[ucRoleIdx];
+	rNoaParam = &prP2pSpecBssInfo->rNoaParam;
+	rNoaParam->u4NoaCount = u4NoaCount;
+	rNoaParam->u4NoaIntervalMs = u4NoaIntervalMs;
+	rNoaParam->u4NoaDurationMs = u4NoaDurationMs;
+	rNoaParam->ucBssIdx = ucBssIdx;
+
+	rStatus = kalIoctl(prGlueInfo, wlanoidSetNoaParam, rNoaParam,
+			sizeof(struct PARAM_CUSTOM_NOA_PARAM_STRUCT),
+			FALSE, FALSE, TRUE, &u4BufLen);
+
+	return !(rStatus == WLAN_STATUS_SUCCESS);
+}
+#endif /* CFG_ENABLE_WIFI_DIRECT */
+
 int32_t priv_driver_cmds(IN struct net_device *prNetDev, IN int8_t *pcCommand,
 			 IN int32_t i4TotalLen)
 {
@@ -11954,6 +12115,16 @@ int32_t priv_driver_cmds(IN struct net_device *prNetDev, IN int8_t *pcCommand,
 			i4BytesWritten = priv_driver_set_maxrfgain(prNetDev,
 							pcCommand, i4TotalLen);
 #endif
+#if CFG_ENABLE_WIFI_DIRECT
+		else if (strnicmp(pcCommand, CMD_P2P_SET_PS,
+			 strlen(CMD_P2P_SET_PS)) == 0)
+			i4BytesWritten = priv_driver_set_p2p_ps(prNetDev,
+							pcCommand, i4TotalLen);
+		else if (strnicmp(pcCommand, CMD_P2P_SET_NOA,
+			 strlen(CMD_P2P_SET_NOA)) == 0)
+			i4BytesWritten = priv_driver_set_p2p_noa(prNetDev,
+							pcCommand, i4TotalLen);
+#endif /* CFG_ENABLE_WIFI_DIRECT */
 		else
 			i4CmdFound = 0;
 	}
