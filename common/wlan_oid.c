@@ -4193,7 +4193,7 @@ wlanoidQueryRssi(IN struct ADAPTER *prAdapter,
 		return WLAN_STATUS_NOT_SUPPORTED;
 
 	*pu4QueryInfoLen = sizeof(struct PARAM_LINK_SPEED_EX);
-
+	prLq = &prAdapter->rLinkQuality.rLq[ucBssIndex];
 	/* Check for query buffer length */
 	if (u4QueryBufferLen < *pu4QueryInfoLen) {
 		DBGLOG(REQ, WARN, "Too short length %u\n",
@@ -4205,11 +4205,10 @@ wlanoidQueryRssi(IN struct ADAPTER *prAdapter,
 		ucBssIndex) ==
 	    MEDIA_STATE_DISCONNECTED) {
 		return WLAN_STATUS_ADAPTER_NOT_READY;
-	} else if (prAdapter->fgIsLinkQualityValid == TRUE &&
-		   (kalGetTimeTick() - prAdapter->rLinkQualityUpdateTime) <=
+	} else if (prLq->fgIsLinkQualityValid == TRUE &&
+		   (kalGetTimeTick() - prLq->rLinkQualityUpdateTime) <=
 		   CFG_LINK_QUALITY_VALID_PERIOD) {
 		prLinkSpeed = (struct PARAM_LINK_SPEED_EX *) pvQueryBuffer;
-		prLq = &prAdapter->rLinkQuality.rLq[ucBssIndex];
 
 		prLinkSpeed->rLq[ucBssIndex].
 			u2LinkSpeed = prLq->u2LinkSpeed * 5000;
@@ -4666,6 +4665,7 @@ wlanQueryLinkSpeed(IN struct ADAPTER *prAdapter,
 		   OUT uint32_t *pu4QueryInfoLen, IN uint8_t fgIsOid)
 {
 	uint8_t ucBssIndex = AIS_DEFAULT_INDEX;
+	struct LINK_SPEED_EX_ *prLq;
 
 	DEBUGFUNC("wlanQueryLinkSpeed");
 
@@ -4682,17 +4682,17 @@ wlanQueryLinkSpeed(IN struct ADAPTER *prAdapter,
 	if (u4QueryBufferLen < sizeof(uint32_t))
 		return WLAN_STATUS_BUFFER_TOO_SHORT;
 
+	prLq = &prAdapter->rLinkQuality.rLq[ucBssIndex];
 	if (kalGetMediaStateIndicated(prAdapter->prGlueInfo,
 		ucBssIndex) !=
 	    MEDIA_STATE_CONNECTED) {
 		return WLAN_STATUS_ADAPTER_NOT_READY;
-	} else if (prAdapter->fgIsLinkRateValid == TRUE &&
-		   (kalGetTimeTick() - prAdapter->rLinkRateUpdateTime) <=
+	} else if (prLq->fgIsLinkRateValid == TRUE &&
+		   (kalGetTimeTick() - prLq->rLinkRateUpdateTime) <=
 		   CFG_LINK_QUALITY_VALID_PERIOD) {
 		/* change to unit of 100bps */
 		*(uint32_t *) pvQueryBuffer =
-			prAdapter->rLinkQuality.
-			rLq[ucBssIndex].u2LinkSpeed * 5000;
+			prLq->u2LinkSpeed * 5000;
 		return WLAN_STATUS_SUCCESS;
 	} else {
 		return wlanSendSetQueryCmd(prAdapter,
@@ -4714,6 +4714,7 @@ wlanoidQueryLinkSpeedEx(IN struct ADAPTER *prAdapter,
 	uint8_t ucBssIndex = AIS_DEFAULT_INDEX;
 	OS_SYSTIME rUpdateDeltaTime;
 	struct PARAM_LINK_SPEED_EX *pu4LinkSpeed;
+	struct LINK_SPEED_EX_ *prLq;
 	DEBUGFUNC("wlanoidQueryLinkSpeedEx");
 
 	ASSERT(prAdapter);
@@ -4730,15 +4731,14 @@ wlanoidQueryLinkSpeedEx(IN struct ADAPTER *prAdapter,
 		return WLAN_STATUS_BUFFER_TOO_SHORT;
 
 	ucBssIndex = GET_IOCTL_BSSIDX(prAdapter);
-	rUpdateDeltaTime = kalGetTimeTick() - prAdapter->rLinkRateUpdateTime;
+	prLq = &prAdapter->rLinkQuality.rLq[ucBssIndex];
+	rUpdateDeltaTime = kalGetTimeTick() - prLq->rLinkRateUpdateTime;
 	if (IS_BSS_INDEX_AIS(prAdapter, ucBssIndex) &&
-	    prAdapter->fgIsLinkRateValid == TRUE &&
+	    prLq->fgIsLinkRateValid == TRUE &&
 	    rUpdateDeltaTime <= CFG_LINK_QUALITY_VALID_PERIOD) {
 		pu4LinkSpeed = (struct PARAM_LINK_SPEED_EX *) (pvQueryBuffer);
-		pu4LinkSpeed->rLq[ucBssIndex].cRssi =
-			prAdapter->rLinkQuality.rLq[ucBssIndex].cRssi;
-		pu4LinkSpeed->rLq[ucBssIndex].u2LinkSpeed =
-			prAdapter->rLinkQuality.rLq[ucBssIndex].u2LinkSpeed;
+		pu4LinkSpeed->rLq[ucBssIndex].cRssi = prLq->cRssi;
+		pu4LinkSpeed->rLq[ucBssIndex].u2LinkSpeed = prLq->u2LinkSpeed;
 
 		/* change to unit of 100bps */
 		pu4LinkSpeed->rLq[ucBssIndex].u2LinkSpeed *= 5000;
