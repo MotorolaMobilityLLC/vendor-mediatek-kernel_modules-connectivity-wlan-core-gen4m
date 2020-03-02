@@ -1824,7 +1824,7 @@ void nicRxProcessEventPacket(IN struct ADAPTER *prAdapter,
 
 	if (prEvent->ucEID != EVENT_ID_DEBUG_MSG
 	    && prEvent->ucEID != EVENT_ID_ASSERT_DUMP) {
-		DBGLOG(NIC, INFO,
+		DBGLOG(NIC, TRACE,
 			"RX EVENT: ID[0x%02X] SEQ[%u] LEN[%u]\n",
 			prEvent->ucEID, prEvent->ucSeqNum,
 			prEvent->u2PacketLength);

@@ -2413,7 +2413,7 @@ uint32_t nicTxCmd(IN struct ADAPTER *prAdapter,
 		/* <4> Management Frame Post-Processing */
 		GLUE_DEC_REF_CNT(prTxCtrl->i4TxMgmtPendingNum);
 
-		DBGLOG(INIT, INFO,
+		DBGLOG(INIT, TRACE,
 		       "TX MGMT Frame: BSS[%u] WIDX:PID[%u:%u] SEQ[%u] STA[%u] RSP[%u]\n",
 		       prMsduInfo->ucBssIndex, prMsduInfo->ucWlanIndex,
 		       prMsduInfo->ucPID,
@@ -2469,7 +2469,7 @@ uint32_t nicTxCmd(IN struct ADAPTER *prAdapter,
 
 		HAL_WRITE_TX_CMD(prAdapter, prCmdInfo, ucTC);
 
-		DBGLOG(INIT, INFO,
+		DBGLOG(INIT, TRACE,
 		       "TX CMD: ID[0x%02X] SEQ[%u] SET[%u] LEN[%u]\n",
 		       prWifiCmd->ucCID, prWifiCmd->ucSeqNum,
 		       prWifiCmd->ucSetQuery, prWifiCmd->u2Length);
@@ -3178,7 +3178,7 @@ void nicTxProcessTxDoneEvent(IN struct ADAPTER *prAdapter,
 			if (icTxPwr & BIT(6))
 				icTxPwr |= BIT(7);
 
-			DBGLOG(NIC, INFO,
+			DBGLOG(NIC, TRACE,
 				"||AMPDU[%u] PS[%u] IBF[%u] EBF[%u] TxPwr[%d%sdBm] TSF[%u] TxDelay[%uus]\n",
 				prTxDone->u4AppliedFlag &
 				BIT(TX_FRAME_IN_AMPDU_FORMAT) ? TRUE : FALSE,
@@ -3191,7 +3191,7 @@ void nicTxProcessTxDoneEvent(IN struct ADAPTER *prAdapter,
 				icTxPwr / 2, icTxPwr & BIT(0) ? ".5" : "",
 				prTxDone->u4Timestamp, prTxDone->u4TxDelay);
 
-			DBGLOG(NIC, INFO,
+			DBGLOG(NIC, TRACE,
 				"TxS[%08x %08x %08x %08x %08x %08x %08x]\n",
 			  *pu4RawTxs, *(pu4RawTxs + 1), *(pu4RawTxs + 2),
 			  *(pu4RawTxs + 3), *(pu4RawTxs + 4), *(pu4RawTxs + 5),
