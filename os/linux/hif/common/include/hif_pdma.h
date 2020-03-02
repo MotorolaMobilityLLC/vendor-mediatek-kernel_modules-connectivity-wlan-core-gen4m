@@ -85,7 +85,7 @@
 
 #define HIF_TX_PREALLOC_DATA_BUFFER			1
 
-#define HIF_NUM_OF_QM_RX_PKT_NUM			4096
+#define HIF_NUM_OF_QM_RX_PKT_NUM			2048
 #define HIF_IST_LOOP_COUNT					32
 /* Min msdu count to trigger Tx during INT polling state */
 #define HIF_IST_TX_THRESHOLD				1

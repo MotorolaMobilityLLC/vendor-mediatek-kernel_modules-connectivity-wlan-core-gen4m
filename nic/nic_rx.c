@@ -137,7 +137,6 @@ static struct RX_EVENT_HANDLER arEventTable[] = {
 	{EVENT_ID_RX_ADDBA,	qmHandleEventRxAddBa},
 	{EVENT_ID_DBDC_SWITCH_DONE, cnmDbdcEventHwSwitchDone},
 	{EVENT_ID_RX_DELBA,	qmHandleEventRxDelBa},
-	{EVENT_ID_CHECK_REORDER_BUBBLE, qmHandleEventCheckReorderBubble},
 	{EVENT_ID_LINK_QUALITY, nicEventLinkQuality},
 	{EVENT_ID_LAYER_0_EXT_MAGIC_NUM, nicEventLayer0ExtMagic},
 	{EVENT_ID_MIC_ERR_INFO,	nicEventMicErrorInfo},
@@ -3720,6 +3719,10 @@ void nicRxReturnRFB(IN struct ADAPTER *prAdapter,
 	if (prSwRfb->pvPacket) {
 		/* QUEUE_INSERT_TAIL */
 		QUEUE_INSERT_TAIL(&prRxCtrl->rFreeSwRfbList, prQueEntry);
+		if (prAdapter->u4NoMoreRfb != 0) {
+			DBGLOG(RX, ERROR, "Free rfb and set IntEvent!!!!!\n");
+			kalSetIntEvent(prAdapter->prGlueInfo);
+		}
 	} else {
 		/* QUEUE_INSERT_TAIL */
 		QUEUE_INSERT_TAIL(&prRxCtrl->rIndicatedRfbList, prQueEntry);

@@ -1008,8 +1008,8 @@ void qmPopOutDueToFallAhead(IN struct ADAPTER *prAdapter,
 void qmHandleReorderBubbleTimeout(IN struct ADAPTER
 				  *prAdapter, IN unsigned long ulParamPtr);
 
-void qmHandleEventCheckReorderBubble(IN struct ADAPTER
-				     *prAdapter, IN struct WIFI_EVENT *prEvent);
+void qmHandleEventCheckReorderBubble(IN struct ADAPTER *prAdapter,
+				     struct RX_BA_ENTRY *prReorderQueParm);
 
 void qmHandleMailboxRxMessage(IN struct MAILBOX_MSG
 			      prMailboxRxMsg);
