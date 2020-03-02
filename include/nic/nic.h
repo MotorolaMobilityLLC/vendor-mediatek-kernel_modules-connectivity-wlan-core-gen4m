@@ -50,33 +50,34 @@
  *
  *****************************************************************************/
 /*
-** Id: //Department/DaVinci/BRANCHES/MT6620_WIFI_DRIVER_V2_3/include/nic/nic.h#1
-*/
+ ** Id: //Department/DaVinci/BRANCHES/
+ *      MT6620_WIFI_DRIVER_V2_3/include/nic/nic.h#1
+ */
 
 /*! \file   "nic.h"
-*    \brief  The declaration of nic functions
-*
-*    Detail description.
-*/
+ *    \brief  The declaration of nic functions
+ *
+ *    Detail description.
+ */
 
 
 #ifndef _NIC_H
 #define _NIC_H
 
 /*******************************************************************************
-*                         C O M P I L E R   F L A G S
-********************************************************************************
-*/
+ *                         C O M P I L E R   F L A G S
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                              C O N S T A N T S
-********************************************************************************
-*/
+ *                              C O N S T A N T S
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                             D A T A   T Y P E S
-********************************************************************************
-*/
+ *                             D A T A   T Y P E S
+ *******************************************************************************
+ */
 
 struct REG_ENTRY {
 	uint32_t u4Offset;
@@ -136,36 +137,38 @@ enum ENUM_SER_STATE {
 #define TEST_MODE_THROUGHPUT \
 		(TEST_MODE_DISABLE_ONLINE_SCAN | TEST_MODE_DISABLE_ROAMING | \
 		TEST_MODE_FIXED_CAM_MODE | TEST_MODE_DISABLE_BCN_LOST_DET)
-#define TEST_MODE_SIGMA_AC_N_PMF (TEST_MODE_DISABLE_ONLINE_SCAN | TEST_MODE_FIXED_CAM_MODE)
+#define TEST_MODE_SIGMA_AC_N_PMF \
+		(TEST_MODE_DISABLE_ONLINE_SCAN | TEST_MODE_FIXED_CAM_MODE)
 #define TEST_MODE_SIGMA_WMM_PS (TEST_MODE_DISABLE_ONLINE_SCAN)
 /*******************************************************************************
-*                    E X T E R N A L   R E F E R E N C E S
-********************************************************************************
-*/
+ *                    E X T E R N A L   R E F E R E N C E S
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                            P U B L I C   D A T A
-********************************************************************************
-*/
+ *                            P U B L I C   D A T A
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                           P R I V A T E   D A T A
-********************************************************************************
-*/
+ *                           P R I V A T E   D A T A
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                                 M A C R O S
-********************************************************************************
-*/
+ *                                 M A C R O S
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                   F U N C T I O N   D E C L A R A T I O N S
-********************************************************************************
-*/
+ *                   F U N C T I O N   D E C L A R A T I O N S
+ *******************************************************************************
+ */
 /*----------------------------------------------------------------------------*/
 /* Routines in nic.c                                                          */
 /*----------------------------------------------------------------------------*/
-uint32_t nicAllocateAdapterMemory(IN struct ADAPTER *prAdapter);
+uint32_t nicAllocateAdapterMemory(IN struct ADAPTER
+				  *prAdapter);
 
 void nicReleaseAdapterMemory(IN struct ADAPTER *prAdapter);
 
@@ -175,7 +178,8 @@ void nicEnableInterrupt(IN struct ADAPTER *prAdapter);
 
 uint32_t nicProcessIST(IN struct ADAPTER *prAdapter);
 
-uint32_t nicProcessIST_impl(IN struct ADAPTER *prAdapter, IN uint32_t u4IntStatus);
+uint32_t nicProcessIST_impl(IN struct ADAPTER *prAdapter,
+			    IN uint32_t u4IntStatus);
 
 uint32_t nicInitializeAdapter(IN struct ADAPTER *prAdapter);
 
@@ -187,7 +191,8 @@ void nicpmWakeUpWiFi(IN struct ADAPTER *prAdapter);
 
 u_int8_t nicpmSetDriverOwn(IN struct ADAPTER *prAdapter);
 
-void nicpmSetFWOwn(IN struct ADAPTER *prAdapter, IN u_int8_t fgEnableGlobalInt);
+void nicpmSetFWOwn(IN struct ADAPTER *prAdapter,
+		   IN u_int8_t fgEnableGlobalInt);
 
 u_int8_t nicpmSetAcpiPowerD0(IN struct ADAPTER *prAdapter);
 
@@ -197,17 +202,24 @@ u_int8_t nicpmSetAcpiPowerD3(IN struct ADAPTER *prAdapter);
 void nicRestoreSpiDefMode(IN struct ADAPTER *prAdapter);
 #endif
 
-void nicProcessSoftwareInterrupt(IN struct ADAPTER *prAdapter);
+void nicProcessSoftwareInterrupt(IN struct ADAPTER
+				 *prAdapter);
 
-void nicProcessAbnormalInterrupt(IN struct ADAPTER *prAdapter);
+void nicProcessAbnormalInterrupt(IN struct ADAPTER
+				 *prAdapter);
 
-void nicSetSwIntr(IN struct ADAPTER *prAdapter, IN uint32_t u4SwIntrBitmap);
+void nicSetSwIntr(IN struct ADAPTER *prAdapter,
+		  IN uint32_t u4SwIntrBitmap);
 
-struct CMD_INFO *nicGetPendingCmdInfo(IN struct ADAPTER *prAdapter, IN uint8_t ucSeqNum);
+struct CMD_INFO *nicGetPendingCmdInfo(IN struct ADAPTER
+				      *prAdapter, IN uint8_t ucSeqNum);
 
-struct MSDU_INFO *nicGetPendingTxMsduInfo(IN struct ADAPTER *prAdapter, IN uint8_t ucWlanIndex, IN uint8_t ucSeqNum);
+struct MSDU_INFO *nicGetPendingTxMsduInfo(
+	IN struct ADAPTER *prAdapter, IN uint8_t ucWlanIndex,
+	IN uint8_t ucSeqNum);
 
-void nicFreePendingTxMsduInfoByBssIdx(IN struct ADAPTER *prAdapter, IN uint8_t ucBssIndex);
+void nicFreePendingTxMsduInfoByBssIdx(IN struct ADAPTER
+				      *prAdapter, IN uint8_t ucBssIndex);
 
 uint8_t nicIncreaseCmdSeqNum(IN struct ADAPTER *prAdapter);
 
@@ -215,56 +227,73 @@ uint8_t nicIncreaseTxSeqNum(IN struct ADAPTER *prAdapter);
 
 /* Media State Change */
 uint32_t
-nicMediaStateChange(IN struct ADAPTER *prAdapter, IN uint8_t ucBssIndex, IN struct EVENT_CONNECTION_STATUS *prConnectionStatus);
+nicMediaStateChange(IN struct ADAPTER *prAdapter,
+		    IN uint8_t ucBssIndex,
+		    IN struct EVENT_CONNECTION_STATUS *prConnectionStatus);
 
-uint32_t nicMediaJoinFailure(IN struct ADAPTER *prAdapter, IN uint8_t ucBssIndex, IN uint32_t rStatus);
+uint32_t nicMediaJoinFailure(IN struct ADAPTER *prAdapter,
+			     IN uint8_t ucBssIndex, IN uint32_t rStatus);
 
 /* Utility function for channel number conversion */
 uint32_t nicChannelNum2Freq(IN uint32_t u4ChannelNum);
 
 uint32_t nicFreq2ChannelNum(IN uint32_t u4FreqInKHz);
 
-uint8_t nicGetVhtS1(IN uint8_t ucPrimaryChannel, IN uint8_t ucBandwidth);
+uint8_t nicGetVhtS1(IN uint8_t ucPrimaryChannel,
+		    IN uint8_t ucBandwidth);
 
 /* firmware command wrapper */
-    /* NETWORK (WIFISYS) */
-uint32_t nicActivateNetwork(IN struct ADAPTER *prAdapter, IN uint8_t ucBssIndex);
+/* NETWORK (WIFISYS) */
+uint32_t nicActivateNetwork(IN struct ADAPTER *prAdapter,
+			    IN uint8_t ucBssIndex);
 
-uint32_t nicDeactivateNetwork(IN struct ADAPTER *prAdapter, IN uint8_t ucBssIndex);
+uint32_t nicDeactivateNetwork(IN struct ADAPTER *prAdapter,
+			      IN uint8_t ucBssIndex);
 
-    /* BSS-INFO */
-uint32_t nicUpdateBss(IN struct ADAPTER *prAdapter, IN uint8_t ucBssIndex);
+/* BSS-INFO */
+uint32_t nicUpdateBss(IN struct ADAPTER *prAdapter,
+		      IN uint8_t ucBssIndex);
 
-    /* BSS-INFO Indication (PM) */
-uint32_t nicPmIndicateBssCreated(IN struct ADAPTER *prAdapter, IN uint8_t ucBssIndex);
+/* BSS-INFO Indication (PM) */
+uint32_t nicPmIndicateBssCreated(IN struct ADAPTER
+				 *prAdapter, IN uint8_t ucBssIndex);
 
-uint32_t nicPmIndicateBssConnected(IN struct ADAPTER *prAdapter, IN uint8_t ucBssIndex);
+uint32_t nicPmIndicateBssConnected(IN struct ADAPTER
+				   *prAdapter, IN uint8_t ucBssIndex);
 
-uint32_t nicPmIndicateBssAbort(IN struct ADAPTER *prAdapter, IN uint8_t ucBssIndex);
+uint32_t nicPmIndicateBssAbort(IN struct ADAPTER *prAdapter,
+			       IN uint8_t ucBssIndex);
 
-    /* Beacon Template Update */
+/* Beacon Template Update */
 uint32_t
 nicUpdateBeaconIETemplate(IN struct ADAPTER *prAdapter,
 			  IN enum ENUM_IE_UPD_METHOD eIeUpdMethod,
-			  IN uint8_t ucBssIndex, IN uint16_t u2Capability, IN uint8_t *aucIe, IN uint16_t u2IELen);
+			  IN uint8_t ucBssIndex, IN uint16_t u2Capability,
+			  IN uint8_t *aucIe, IN uint16_t u2IELen);
 
-uint32_t nicQmUpdateWmmParms(IN struct ADAPTER *prAdapter, IN uint8_t ucBssIndex);
+uint32_t nicQmUpdateWmmParms(IN struct ADAPTER *prAdapter,
+			     IN uint8_t ucBssIndex);
 
-uint32_t nicSetAutoTxPower(IN struct ADAPTER *prAdapter, IN struct CMD_AUTO_POWER_PARAM *prAutoPwrParam);
+uint32_t nicSetAutoTxPower(IN struct ADAPTER *prAdapter,
+			   IN struct CMD_AUTO_POWER_PARAM *prAutoPwrParam);
 
 /*----------------------------------------------------------------------------*/
 /* Calibration Control                                                        */
 /*----------------------------------------------------------------------------*/
-uint32_t nicUpdateTxPower(IN struct ADAPTER *prAdapter, IN struct CMD_TX_PWR *prTxPwrParam);
+uint32_t nicUpdateTxPower(IN struct ADAPTER *prAdapter,
+			  IN struct CMD_TX_PWR *prTxPwrParam);
 
-uint32_t nicUpdate5GOffset(IN struct ADAPTER *prAdapter, IN struct CMD_5G_PWR_OFFSET *pr5GPwrOffset);
+uint32_t nicUpdate5GOffset(IN struct ADAPTER *prAdapter,
+			   IN struct CMD_5G_PWR_OFFSET *pr5GPwrOffset);
 
-uint32_t nicUpdateDPD(IN struct ADAPTER *prAdapter, IN struct CMD_PWR_PARAM *prDpdCalResult);
+uint32_t nicUpdateDPD(IN struct ADAPTER *prAdapter,
+		      IN struct CMD_PWR_PARAM *prDpdCalResult);
 
 /*----------------------------------------------------------------------------*/
 /* PHY configuration                                                          */
 /*----------------------------------------------------------------------------*/
-void nicSetAvailablePhyTypeSet(IN struct ADAPTER *prAdapter);
+void nicSetAvailablePhyTypeSet(IN struct ADAPTER
+			       *prAdapter);
 
 /*----------------------------------------------------------------------------*/
 /* MGMT and System Service Control                                            */
@@ -275,31 +304,43 @@ void nicResetSystemService(IN struct ADAPTER *prAdapter);
 
 void nicUninitSystemService(IN struct ADAPTER *prAdapter);
 
-void nicInitMGMT(IN struct ADAPTER *prAdapter, IN struct REG_INFO *prRegInfo);
+void nicInitMGMT(IN struct ADAPTER *prAdapter,
+		IN struct REG_INFO *prRegInfo);
 
 void nicUninitMGMT(IN struct ADAPTER *prAdapter);
 
 uint32_t
-nicConfigPowerSaveProfile(IN struct ADAPTER *prAdapter, uint8_t ucBssIndex, enum PARAM_POWER_MODE ePwrMode, u_int8_t fgEnCmdEvent);
+nicConfigPowerSaveProfile(IN struct ADAPTER *prAdapter,
+		uint8_t ucBssIndex, enum PARAM_POWER_MODE ePwrMode,
+		u_int8_t fgEnCmdEvent);
 
 uint32_t
-nicConfigProcSetCamCfgWrite(IN struct ADAPTER *prAdapter, IN u_int8_t enabled);
+nicConfigProcSetCamCfgWrite(IN struct ADAPTER *prAdapter,
+		IN u_int8_t enabled);
 
-uint32_t nicEnterCtiaMode(IN struct ADAPTER *prAdapter, u_int8_t fgEnterCtia, u_int8_t fgEnCmdEvent);
+uint32_t nicEnterCtiaMode(IN struct ADAPTER *prAdapter,
+		u_int8_t fgEnterCtia, u_int8_t fgEnCmdEvent);
 
-uint32_t nicEnterTPTestMode(IN struct ADAPTER *prAdapter, IN uint8_t ucFuncMask);
+uint32_t nicEnterTPTestMode(IN struct ADAPTER *prAdapter,
+		IN uint8_t ucFuncMask);
 
-uint32_t nicEnterCtiaModeOfScan(IN struct ADAPTER *prAdapter, u_int8_t fgEnterCtia, u_int8_t fgEnCmdEvent);
+uint32_t nicEnterCtiaModeOfScan(IN struct ADAPTER
+		*prAdapter, u_int8_t fgEnterCtia, u_int8_t fgEnCmdEvent);
 
-uint32_t nicEnterCtiaModeOfRoaming(IN struct ADAPTER *prAdapter, u_int8_t fgEnterCtia, u_int8_t fgEnCmdEvent);
+uint32_t nicEnterCtiaModeOfRoaming(IN struct ADAPTER
+		*prAdapter, u_int8_t fgEnterCtia, u_int8_t fgEnCmdEvent);
 
-uint32_t nicEnterCtiaModeOfCAM(IN struct ADAPTER *prAdapter, u_int8_t fgEnterCtia, u_int8_t fgEnCmdEvent);
+uint32_t nicEnterCtiaModeOfCAM(IN struct ADAPTER *prAdapter,
+		u_int8_t fgEnterCtia, u_int8_t fgEnCmdEvent);
 
-uint32_t nicEnterCtiaModeOfBCNTimeout(IN struct ADAPTER *prAdapter, u_int8_t fgEnterCtia, u_int8_t fgEnCmdEvent);
+uint32_t nicEnterCtiaModeOfBCNTimeout(IN struct ADAPTER
+		*prAdapter, u_int8_t fgEnterCtia, u_int8_t fgEnCmdEvent);
 
-uint32_t nicEnterCtiaModeOfAutoTxPower(IN struct ADAPTER *prAdapter, u_int8_t fgEnterCtia, u_int8_t fgEnCmdEvent);
+uint32_t nicEnterCtiaModeOfAutoTxPower(IN struct ADAPTER
+		*prAdapter, u_int8_t fgEnterCtia, u_int8_t fgEnCmdEvent);
 
-uint32_t nicEnterCtiaModeOfFIFOFullNoAck(IN struct ADAPTER *prAdapter, u_int8_t fgEnterCtia, u_int8_t fgEnCmdEvent);
+uint32_t nicEnterCtiaModeOfFIFOFullNoAck(IN struct ADAPTER
+		*prAdapter, u_int8_t fgEnterCtia, u_int8_t fgEnCmdEvent);
 /*----------------------------------------------------------------------------*/
 /* Scan Result Processing                                                     */
 /*----------------------------------------------------------------------------*/
@@ -312,9 +353,11 @@ nicAddScanResult(IN struct ADAPTER *prAdapter,
 		 IN enum ENUM_PARAM_NETWORK_TYPE eNetworkType,
 		 IN struct PARAM_802_11_CONFIG *prConfiguration,
 		 IN enum ENUM_PARAM_OP_MODE eOpMode,
-		 IN uint8_t rSupportedRates[PARAM_MAX_LEN_RATES_EX], IN uint16_t u2IELength, IN uint8_t *pucIEBuf);
+		 IN uint8_t rSupportedRates[PARAM_MAX_LEN_RATES_EX],
+		 IN uint16_t u2IELength, IN uint8_t *pucIEBuf);
 
-void nicFreeScanResultIE(IN struct ADAPTER *prAdapter, IN uint32_t u4Idx);
+void nicFreeScanResultIE(IN struct ADAPTER *prAdapter,
+			 IN uint32_t u4Idx);
 
 /*----------------------------------------------------------------------------*/
 /* Fixed Rate Hacking                                                         */
@@ -325,12 +368,14 @@ nicUpdateRateParams(IN struct ADAPTER *prAdapter,
 		    IN uint8_t *pucDesiredPhyTypeSet,
 		    IN uint16_t *pu2DesiredNonHTRateSet,
 		    IN uint16_t *pu2BSSBasicRateSet,
-		    IN uint8_t *pucMcsSet, IN uint8_t *pucSupMcs32, IN uint16_t *u2HtCapInfo);
+		    IN uint8_t *pucMcsSet, IN uint8_t *pucSupMcs32,
+		    IN uint16_t *u2HtCapInfo);
 
 /*----------------------------------------------------------------------------*/
 /* Write registers                                                            */
 /*----------------------------------------------------------------------------*/
-uint32_t nicWriteMcr(IN struct ADAPTER *prAdapter, IN uint32_t u4Address, IN uint32_t u4Value);
+uint32_t nicWriteMcr(IN struct ADAPTER *prAdapter,
+		     IN uint32_t u4Address, IN uint32_t u4Value);
 
 /*----------------------------------------------------------------------------*/
 /* Update auto rate                                                           */
@@ -338,38 +383,49 @@ uint32_t nicWriteMcr(IN struct ADAPTER *prAdapter, IN uint32_t u4Address, IN uin
 uint32_t
 nicRlmArUpdateParms(IN struct ADAPTER *prAdapter,
 		    IN uint32_t u4ArSysParam0,
-		    IN uint32_t u4ArSysParam1, IN uint32_t u4ArSysParam2, IN uint32_t u4ArSysParam3);
+		    IN uint32_t u4ArSysParam1, IN uint32_t u4ArSysParam2,
+		    IN uint32_t u4ArSysParam3);
 
 /*----------------------------------------------------------------------------*/
 /* Enable/Disable Roaming                                                     */
 /*----------------------------------------------------------------------------*/
-uint32_t nicRoamingUpdateParams(IN struct ADAPTER *prAdapter, IN uint32_t u4EnableRoaming);
+uint32_t nicRoamingUpdateParams(IN struct ADAPTER
+				*prAdapter, IN uint32_t u4EnableRoaming);
 
 /*----------------------------------------------------------------------------*/
 /* Link Quality Updating                                                      */
 /*----------------------------------------------------------------------------*/
 void
-nicUpdateLinkQuality(IN struct ADAPTER *prAdapter, IN uint8_t ucBssIndex, IN struct EVENT_LINK_QUALITY_V2 *prEventLinkQuality);
+nicUpdateLinkQuality(IN struct ADAPTER *prAdapter,
+		     IN uint8_t ucBssIndex,
+		     IN struct EVENT_LINK_QUALITY_V2 *prEventLinkQuality);
 
-void nicUpdateRSSI(IN struct ADAPTER *prAdapter, IN uint8_t ucBssIndex, IN int8_t cRssi, IN int8_t cLinkQuality);
+void nicUpdateRSSI(IN struct ADAPTER *prAdapter,
+		   IN uint8_t ucBssIndex, IN int8_t cRssi,
+		   IN int8_t cLinkQuality);
 
-void nicUpdateLinkSpeed(IN struct ADAPTER *prAdapter, IN uint8_t ucBssIndex, IN uint16_t u2LinkSpeed);
+void nicUpdateLinkSpeed(IN struct ADAPTER *prAdapter,
+			IN uint8_t ucBssIndex, IN uint16_t u2LinkSpeed);
 
 #if CFG_SUPPORT_RDD_TEST_MODE
-uint32_t nicUpdateRddTestMode(IN struct ADAPTER *prAdapter, IN struct CMD_RDD_CH *prRddChParam);
+uint32_t nicUpdateRddTestMode(IN struct ADAPTER *prAdapter,
+			      IN struct CMD_RDD_CH *prRddChParam);
 #endif
 
 /*----------------------------------------------------------------------------*/
 /* Address Setting Apply                                                      */
 /*----------------------------------------------------------------------------*/
-uint32_t nicApplyNetworkAddress(IN struct ADAPTER *prAdapter);
+uint32_t nicApplyNetworkAddress(IN struct ADAPTER
+				*prAdapter);
 
 /*----------------------------------------------------------------------------*/
 /* ECO Version                                                                */
 /*----------------------------------------------------------------------------*/
 uint8_t nicGetChipEcoVer(IN struct ADAPTER *prAdapter);
-u_int8_t nicIsEcoVerEqualTo(IN struct ADAPTER *prAdapter, uint8_t ucEcoVer);
-u_int8_t nicIsEcoVerEqualOrLaterTo(IN struct ADAPTER *prAdapter, uint8_t ucEcoVer);
+u_int8_t nicIsEcoVerEqualTo(IN struct ADAPTER *prAdapter,
+			    uint8_t ucEcoVer);
+u_int8_t nicIsEcoVerEqualOrLaterTo(IN struct ADAPTER
+				   *prAdapter, uint8_t ucEcoVer);
 uint8_t nicSetChipHwVer(uint8_t value);
 uint8_t nicSetChipSwVer(uint8_t value);
 uint8_t nicSetChipFactoryVer(uint8_t value);
