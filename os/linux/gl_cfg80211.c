@@ -6690,12 +6690,12 @@ int mtk_cfg_get_txpower(struct wiphy *wiphy,
 	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wiphy);
 
 	if ((!prGlueInfo) || (prGlueInfo->u4ReadyFlag == 0)) {
-		DBGLOG_LIMITED(REQ, WARN, "driver is not ready\n");
+		DBGLOG_LIMITED(REQ, TRACE, "driver is not ready\n");
 		return -EFAULT;
 	}
 
 	if (mtk_IsP2PNetDevice(prGlueInfo, wdev->netdev) <= 0) {
-		DBGLOG_LIMITED(REQ, WARN,
+		DBGLOG_LIMITED(REQ, TRACE,
 			"STA doesn't support this function\n");
 		return -EFAULT;
 	}
