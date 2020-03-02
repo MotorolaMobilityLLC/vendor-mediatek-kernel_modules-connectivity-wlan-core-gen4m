@@ -2606,12 +2606,34 @@ int mtk_p2p_cfg80211_connect(struct wiphy *wiphy, struct net_device *dev, struct
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct MSG_P2P_CONNECTION_REQUEST *prConnReqMsg = (struct MSG_P2P_CONNECTION_REQUEST *) NULL;
 	uint8_t ucRoleIdx = 0;
+	const u8 *bssid = NULL;
+	struct ieee80211_channel *channel = NULL;
 
 	do {
 		if ((wiphy == NULL) || (dev == NULL) || (sme == NULL))
 			break;
 
-		DBGLOG(P2P, INFO, "mtk_p2p_cfg80211_connect to " MACSTR ".\n", sme->bssid);
+		if (sme->bssid)
+			bssid = sme->bssid;
+#if KERNEL_VERSION(3, 15, 0) <= CFG80211_VERSION_CODE
+		else if (sme->bssid_hint)
+			bssid = sme->bssid_hint;
+#endif
+		if (sme->channel)
+			channel = sme->channel;
+#if KERNEL_VERSION(3, 15, 0) <= CFG80211_VERSION_CODE
+		else if (sme->channel_hint)
+			channel = sme->channel_hint;
+#endif
+
+		if ((bssid == NULL) || (channel == NULL)) {
+			DBGLOG(P2P, ERROR,
+				"Reject connect since bssid/channel null.\n");
+			break;
+		}
+
+		DBGLOG(P2P, INFO, "bssid: " MACSTR ", band: %d, freq: %d.\n",
+			MAC2STR(bssid), channel->band, channel->center_freq);
 
 		P2P_WIPHY_PRIV(wiphy, prGlueInfo);
 
@@ -2634,7 +2656,7 @@ int mtk_p2p_cfg80211_connect(struct wiphy *wiphy, struct net_device *dev, struct
 
 		COPY_SSID(prConnReqMsg->rSsid.aucSsid, prConnReqMsg->rSsid.ucSsidLen, sme->ssid, sme->ssid_len);
 
-		COPY_MAC_ADDR(prConnReqMsg->aucBssid, sme->bssid);
+		COPY_MAC_ADDR(prConnReqMsg->aucBssid, bssid);
 		COPY_MAC_ADDR(prConnReqMsg->aucSrcMacAddr, dev->dev_addr);
 
 		DBGLOG(P2P, TRACE, "Assoc Req IE Buffer Length:%zu\n", sme->ie_len);
@@ -2663,8 +2685,8 @@ int mtk_p2p_cfg80211_connect(struct wiphy *wiphy, struct net_device *dev, struct
 			}
 		}
 
-		mtk_p2p_cfg80211func_channel_format_switch(NULL, sme->channel,
-							   &prConnReqMsg->rChannelInfo);
+		mtk_p2p_cfg80211func_channel_format_switch(NULL, channel,
+						&prConnReqMsg->rChannelInfo);
 		mtk_p2p_cfg80211func_channel_sco_switch(NL80211_CHAN_NO_HT, &prConnReqMsg->eChnlSco);
 
 		mboxSendMsg(prGlueInfo->prAdapter, MBOX_ID_0, (struct MSG_HDR *) prConnReqMsg, MSG_SEND_METHOD_BUF);
