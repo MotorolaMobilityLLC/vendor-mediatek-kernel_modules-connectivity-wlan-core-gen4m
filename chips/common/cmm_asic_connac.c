@@ -766,9 +766,11 @@ void asicSetDummyReg(struct GLUE_INFO *prGlueInfo)
 void asicCheckDummyReg(struct GLUE_INFO *prGlueInfo)
 {
 	struct GL_HIF_INFO *prHifInfo;
+	struct ADAPTER *prAdapter;
 	uint32_t u4Value = 0;
 	uint32_t u4Idx;
 
+	prAdapter = prGlueInfo->prAdapter;
 	prHifInfo = &prGlueInfo->rHifInfo;
 	kalDevRegRead(prGlueInfo, CONN_DUMMY_CR, &u4Value);
 	DBGLOG(HAL, TRACE, "Check sleep mode DummyReg[0x%x]\n", u4Value);
@@ -779,6 +781,10 @@ void asicCheckDummyReg(struct GLUE_INFO *prGlueInfo)
 		prHifInfo->TxRing[u4Idx].TxSwUsedIdx = 0;
 	DBGLOG(HAL, INFO, "Weakup from sleep mode\n");
 
+	if (halWpdmaGetRxDmaDoneCnt(prGlueInfo, RX_RING_EVT_IDX_1)) {
+		DBGLOG(HAL, INFO, "Force to read RX event\n");
+		prAdapter->u4NoMoreRfb |= BIT(RX_RING_EVT_IDX_1);
+	}
 	/* Write sleep mode magic num to dummy reg */
 	asicSetDummyReg(prGlueInfo);
 }
