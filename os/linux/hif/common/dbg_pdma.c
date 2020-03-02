@@ -381,12 +381,6 @@ static bool halIsTxHang(struct ADAPTER *prAdapter)
 			DBGLOG_MEM32(HAL, INFO, prToken->prPacket, 64);
 	}
 
-	/* Return token to free stack */
-	rTimeout.tv_sec = HIF_MSDU_REPORT_RETURN_TIMEOUT;
-	rTimeout.tv_usec = 0;
-	if (halTimeCompare(&rLongest, &rTimeout) >= 0)
-		halReturnTimeoutMsduToken(prAdapter);
-
 	return fgIsTimeout;
 }
 
