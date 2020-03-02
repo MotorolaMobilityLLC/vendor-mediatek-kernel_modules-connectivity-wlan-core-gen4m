@@ -15117,51 +15117,6 @@ uint32_t wlanoidSendBTMQuery(struct ADAPTER *prAdapter, void *pvSetBuffer,
 	return WLAN_STATUS_SUCCESS;
 }
 
-/*
- * This func is mainly from bionic's strtok.c
- */
-static int8_t *strtok_r(int8_t *s, const int8_t *delim, int8_t **last)
-{
-	char *spanp;
-	int c, sc;
-	char *tok;
-
-
-	if (s == NULL) {
-		s = *last;
-		if (s == 0)
-			return NULL;
-	}
-cont:
-	c = *s++;
-	for (spanp = (char *)delim; (sc = *spanp++) != 0;) {
-		if (c == sc)
-			goto cont;
-	}
-
-	if (c == 0) {		/* no non-delimiter characters */
-		*last = NULL;
-		return NULL;
-	}
-	tok = s - 1;
-
-	for (;;) {
-		c = *s++;
-		spanp = (char *)delim;
-		do {
-			sc = *spanp++;
-			if (sc == c) {
-				if (c == 0)
-					s = NULL;
-				else
-					s[-1] = 0;
-				*last = s;
-				return tok;
-			}
-		} while (sc != 0);
-	}
-}
-
 uint32_t wlanoidTspecOperation(struct ADAPTER *prAdapter, void *pvBuffer,
 			       uint32_t u4BufferLen, uint32_t *pu4InfoLen)
 {
@@ -15212,8 +15167,7 @@ uint32_t wlanoidTspecOperation(struct ADAPTER *prAdapter, void *pvBuffer,
 	prMsgTsOperate->eOpCode = eTsOp;
 	prTspecParam = &prMsgTsOperate->rTspecParam;
 	pucCmd += 6;
-	pucItem = (uint8_t *)strtok_r((int8_t *)pucCmd, ",",
-				      (int8_t **)&pucSavedPtr);
+	pucItem = (uint8_t *)kalStrtokR(pucCmd, ",", &pucSavedPtr);
 	while (pucItem) {
 		if (kalStrniCmp(pucItem, "token ", 6) == 0)
 			u4Ret = kstrtou8(pucItem + 6, 0,
@@ -15290,7 +15244,7 @@ uint32_t wlanoidTspecOperation(struct ADAPTER *prAdapter, void *pvBuffer,
 			return WLAN_STATUS_FAILURE;
 		}
 		pucItem =
-			(uint8_t *)strtok_r(NULL, ",", (int8_t **)&pucSavedPtr);
+			(uint8_t *)kalStrtokR(NULL, ",", &pucSavedPtr);
 	}
 	/* if APSD is not set in addts request, use global wmmps settings */
 	if (!prAdapter->prAisBssInfo)
@@ -15377,7 +15331,7 @@ uint32_t wlanoidPktProcessIT(struct ADAPTER *prAdapter, void *pvBuffer,
 		return WLAN_STATUS_NOT_SUPPORTED;
 	}
 	kalMemZero(aucPacket, sizeof(aucPacket));
-	pucItem = strtok_r(pucSavedPtr, ",", (int8_t **)&pucSavedPtr);
+	pucItem = kalStrtokR(pucSavedPtr, ",", &pucSavedPtr);
 	while (pucItem) {
 		ucByte = *pucItem;
 		i = 0;
@@ -15403,7 +15357,7 @@ uint32_t wlanoidPktProcessIT(struct ADAPTER *prAdapter, void *pvBuffer,
 			i++;
 		}
 		j++;
-		pucItem = strtok_r(NULL, ",", (int8_t **)&pucSavedPtr);
+		pucItem = kalStrtokR(NULL, ",", &pucSavedPtr);
 	}
 	DBGLOG(OID, INFO, "Dump IT packet, len %d\n", j);
 	dumpMemory8(aucPacket, j);

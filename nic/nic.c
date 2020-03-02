@@ -749,7 +749,7 @@ struct CMD_INFO *nicGetPendingCmdInfo(IN struct ADAPTER
 	struct QUE_ENTRY *prQueueEntry = (struct QUE_ENTRY *) NULL;
 	struct CMD_INFO *prCmdInfo = (struct CMD_INFO *) NULL;
 
-	GLUE_SPIN_LOCK_DECLARATION();
+	KAL_SPIN_LOCK_DECLARATION();
 
 	ASSERT(prAdapter);
 
@@ -802,7 +802,7 @@ struct MSDU_INFO *nicGetPendingTxMsduInfo(
 	struct QUE_ENTRY *prQueueEntry = (struct QUE_ENTRY *) NULL;
 	struct MSDU_INFO *prMsduInfo = (struct MSDU_INFO *) NULL;
 
-	GLUE_SPIN_LOCK_DECLARATION();
+	KAL_SPIN_LOCK_DECLARATION();
 
 	ASSERT(prAdapter);
 
@@ -858,7 +858,7 @@ void nicFreePendingTxMsduInfoByBssIdx(IN struct ADAPTER
 					       NULL;
 	struct MSDU_INFO *prMsduInfo = (struct MSDU_INFO *) NULL;
 
-	GLUE_SPIN_LOCK_DECLARATION();
+	KAL_SPIN_LOCK_DECLARATION();
 
 	ASSERT(prAdapter);
 
