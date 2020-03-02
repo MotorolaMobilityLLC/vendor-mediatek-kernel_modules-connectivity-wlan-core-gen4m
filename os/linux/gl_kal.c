@@ -182,9 +182,6 @@ uint8_t *apucCorDumpCr4FileName =
 uint8_t *apucCorDumpN9FileName = "/tmp/FW_DUMP_N9";
 uint8_t *apucCorDumpCr4FileName = "/tmp/FW_DUMP_Cr4";
 #endif
-
-struct file *fpN9CorDump;
-struct file *fpCr4CorDump;
 #endif
 /*----------------------------------------------------------------------------*/
 /*!
@@ -5955,53 +5952,39 @@ uint64_t kalGetBootTime(void)
 #if CFG_ASSERT_DUMP
 uint32_t kalOpenCorDumpFile(u_int8_t fgIsN9)
 {
-	if (fgIsN9) {
-		fpN9CorDump = filp_open(apucCorDumpN9FileName,
-				O_WRONLY | O_CREAT | O_RDWR,
-				0007 | 0700 | 0070);
-		if (fpN9CorDump)
-			return WLAN_STATUS_SUCCESS;
-		else
-			return WLAN_STATUS_FAILURE;
-	} else {
-		fpCr4CorDump = filp_open(apucCorDumpCr4FileName,
-				O_WRONLY | O_CREAT,
-				0700 | 0070 | 0007);
-		if (fpCr4CorDump)
-			return WLAN_STATUS_SUCCESS;
-		else
-			return WLAN_STATUS_FAILURE;
-	}
+	/* Move open-op to kalWriteCorDumpFile(). Empty files only */
+	uint32_t ret;
+	uint8_t *apucFileName;
+
+	if (fgIsN9)
+		apucFileName = apucCorDumpN9FileName;
+	else
+		apucFileName = apucCorDumpCr4FileName;
+
+	ret = kalTrunkPath(apucFileName);
+
+	return (ret >= 0)?WLAN_STATUS_SUCCESS:WLAN_STATUS_FAILURE;
 }
 
 uint32_t kalWriteCorDumpFile(uint8_t *pucBuffer,
 			     uint16_t u2Size, u_int8_t fgIsN9)
 {
-	if (fgIsN9)	{
-		if (fpN9CorDump != NULL && !IS_ERR(fpN9CorDump)) {
-			fpN9CorDump->f_op->write(fpN9CorDump, pucBuffer,
-						u2Size, &fpN9CorDump->f_pos);
-			return WLAN_STATUS_SUCCESS;
-		} else {
-			return WLAN_STATUS_FAILURE;
-		}
-	} else {
-		if (fpCr4CorDump != NULL && !IS_ERR(fpCr4CorDump)) {
-			fpCr4CorDump->f_op->write(fpCr4CorDump, pucBuffer,
-						u2Size, &fpCr4CorDump->f_pos);
-			return WLAN_STATUS_SUCCESS;
-		} else {
-			return WLAN_STATUS_FAILURE;
-		}
-	}
+	uint32_t ret;
+	uint8_t *apucFileName;
+
+	if (fgIsN9)
+		apucFileName = apucCorDumpN9FileName;
+	else
+		apucFileName = apucCorDumpCr4FileName;
+
+	ret = kalWriteToFile(apucFileName, TRUE, pucBuffer, u2Size);
+
+	return (ret >= 0)?WLAN_STATUS_SUCCESS:WLAN_STATUS_FAILURE;
 }
 
 uint32_t kalCloseCorDumpFile(u_int8_t fgIsN9)
 {
-	if (fgIsN9)
-		filp_close(fpN9CorDump, NULL);
-	else
-		filp_close(fpCr4CorDump, NULL);
+	/* Move close-op to kalWriteCorDumpFile(). Do nothing here */
 
 	return WLAN_STATUS_SUCCESS;
 }
