@@ -136,7 +136,7 @@ void scnFsmSteps(IN struct ADAPTER *prAdapter,
 	prScanParam = &prScanInfo->rScanParam;
 
 	do {
-		DBGLOG(SCN, STATE, "[SCAN]TRANSITION: [%s] -> [%s]\n",
+		log_dbg(SCN, STATE, "[SCAN]TRANSITION: [%s] -> [%s]\n",
 			apucDebugScanState[prScanInfo->eCurrentState],
 			apucDebugScanState[eNextState]);
 
@@ -221,7 +221,7 @@ void scnFsmSteps(IN struct ADAPTER *prAdapter,
 /*----------------------------------------------------------------------------*/
 void scnSendScanReq(IN struct ADAPTER *prAdapter)
 {
-	DBGLOG(SCN, WARN,
+	log_dbg(SCN, WARN,
 		"CMD_ID_SCAN_REQ is deprecated, use CMD_ID_SCAN_REQ_V2\n");
 	scnSendScanReqV2(prAdapter);
 }
@@ -251,7 +251,7 @@ void scnSendScanReqV2(IN struct ADAPTER *prAdapter)
 	prCmdScanReq = kalMemAlloc(
 		sizeof(struct CMD_SCAN_REQ_V2), VIR_MEM_TYPE);
 	if (!prCmdScanReq) {
-		DBGLOG(SCN, ERROR, "alloc CmdScanReq V2 fail\n");
+		log_dbg(SCN, ERROR, "alloc CmdScanReq V2 fail\n");
 		return;
 	}
 	/* send command packet for scan */
@@ -272,7 +272,7 @@ void scnSendScanReqV2(IN struct ADAPTER *prAdapter)
 		prCmdScanReq->ucSSIDExtNum = prScanParam->ucSSIDNum
 			- SCAN_CMD_SSID_NUM;
 	} else {
-		DBGLOG(SCN, WARN, "Too many SSID %u\n",
+		log_dbg(SCN, WARN, "Too many SSID %u\n",
 					prScanParam->ucSSIDNum);
 		prCmdScanReq->ucSSIDNum = SCAN_CMD_SSID_NUM;
 		prCmdScanReq->ucSSIDExtNum = SCAN_CMD_EXT_SSID_NUM;
@@ -283,7 +283,7 @@ void scnSendScanReqV2(IN struct ADAPTER *prAdapter)
 			prCmdScanReq->arSSID[i].u4SsidLen,
 			prScanParam->aucSpecifiedSSID[i],
 			prScanParam->ucSpecifiedSSIDLen[i]);
-		DBGLOG(SCN, TRACE,
+		log_dbg(SCN, TRACE,
 			"Ssid=%s, SsidLen=%d\n",
 			prCmdScanReq->arSSID[i].aucSsid,
 			prCmdScanReq->arSSID[i].u4SsidLen);
@@ -295,7 +295,7 @@ void scnSendScanReqV2(IN struct ADAPTER *prAdapter)
 			[prCmdScanReq->ucSSIDNum+i],
 			prScanParam->ucSpecifiedSSIDLen
 			[prCmdScanReq->ucSSIDNum+i]);
-		DBGLOG(SCN, TRACE,
+		log_dbg(SCN, TRACE,
 			"Ssid=%s, SsidLen=%d\n",
 			prCmdScanReq->arSSIDExtend[i].aucSsid,
 			prCmdScanReq->arSSIDExtend[i].u4SsidLen);
@@ -320,7 +320,7 @@ void scnSendScanReqV2(IN struct ADAPTER *prAdapter)
 				prScanParam->ucChannelListNum -
 				SCAN_CMD_CHNL_NUM;
 		} else {
-			DBGLOG(SCN, WARN, "Too many Channel %u\n",
+			log_dbg(SCN, WARN, "Too many Channel %u\n",
 				prScanParam->ucChannelListNum);
 			prCmdScanReq->ucChannelListNum = 0;
 			prCmdScanReq->ucChannelListExtNum = 0;
@@ -363,10 +363,7 @@ void scnSendScanReqV2(IN struct ADAPTER *prAdapter)
 		kalMemCopy(prCmdScanReq->aucIE, prScanParam->aucIE,
 			sizeof(uint8_t) * prCmdScanReq->u2IELen);
 
-#define __STR_FMT__ \
-"ScanReqV2: ScanType=%d,SSIDType=%d,Num=%u,Ext=%u,ChannelType=%d,Num=%d,Ext=%u,Seq=%u"
-
-	DBGLOG(SCN, INFO, __STR_FMT__,
+	log_dbg(SCN, INFO, "ScanReqV2: ScanType=%d,SSIDType=%d,Num=%u,Ext=%u,ChannelType=%d,Num=%d,Ext=%u,Seq=%u",
 		prCmdScanReq->ucScanType,
 		prCmdScanReq->ucSSIDType,
 		prCmdScanReq->ucSSIDNum,
@@ -375,7 +372,6 @@ void scnSendScanReqV2(IN struct ADAPTER *prAdapter)
 		prCmdScanReq->ucChannelListNum,
 		prCmdScanReq->ucChannelListExtNum,
 		prCmdScanReq->ucSeqNum);
-#undef __STR_FMT__
 
 	wlanSendSetQueryCmd(prAdapter,
 		CMD_ID_SCAN_REQ_V2,
@@ -386,7 +382,7 @@ void scnSendScanReqV2(IN struct ADAPTER *prAdapter)
 		NULL,
 		sizeof(struct CMD_SCAN_REQ_V2),
 		(uint8_t *)prCmdScanReq, NULL, 0);
-	DBGLOG(SCN, TRACE, "Send %zu bytes\n", sizeof(struct CMD_SCAN_REQ_V2));
+	log_dbg(SCN, TRACE, "Send %zu bytes\n", sizeof(struct CMD_SCAN_REQ_V2));
 
 
 	kalMemFree(prCmdScanReq, VIR_MEM_TYPE, sizeof(struct CMD_SCAN_REQ_V2));
@@ -767,37 +763,25 @@ void scnEventScanDone(IN struct ADAPTER *prAdapter,
 #undef __LOCAL_VAR__
 
 	if (fgIsNewVersion) {
-#define __STR_FMT__ \
-"scnEventScanDone Version%u!size of ScanDone%zu,ucCompleteChanCount[%u],ucCurrentState%u, u4ScanDurBcnCnt[%u],Seq[%u]\n"
-
-		DBGLOG(SCN, INFO, __STR_FMT__,
+		log_dbg(SCN, INFO, "scnEventScanDone Version%u!size of ScanDone%zu,ucCompleteChanCount[%u],ucCurrentState%u, u4ScanDurBcnCnt[%u],Seq[%u]\n",
 			prScanDone->ucScanDoneVersion,
 			sizeof(struct EVENT_SCAN_DONE),
 			prScanDone->ucCompleteChanCount,
 			prScanDone->ucCurrentState,
 			prScanDone->u4ScanDurBcnCnt,
 			prScanDone->ucSeqNum);
-#undef __STR_FMT__
 
 		if (prScanDone->ucCurrentState != FW_SCAN_STATE_SCAN_DONE) {
-#define __STR_FMT__ \
-"FW Scan timeout!generate ScanDone event at State%d complete chan count%d ucChannelListNum%d\n"
-
-			DBGLOG(SCN, INFO, __STR_FMT__,
+			log_dbg(SCN, INFO, "FW Scan timeout!generate ScanDone event at State%d complete chan count%d ucChannelListNum%d\n",
 				prScanDone->ucCurrentState,
 				prScanDone->ucCompleteChanCount,
 				prScanParam->ucChannelListNum);
-#undef __STR_FMT__
 
 		} else {
-#define __STR_FMT__ \
-" scnEventScanDone at FW_SCAN_STATE_SCAN_DONE state\n"
-
-			DBGLOG(SCN, INFO, __STR_FMT__);
-#undef __STR_FMT__
+			log_dbg(SCN, INFO, " scnEventScanDone at FW_SCAN_STATE_SCAN_DONE state\n");
 		}
 	} else {
-		DBGLOG(SCN, INFO, "Old scnEventScanDone Version\n");
+		log_dbg(SCN, INFO, "Old scnEventScanDone Version\n");
 	}
 
 	/* buffer empty channel information */
@@ -813,16 +797,12 @@ void scnEventScanDone(IN struct ADAPTER *prAdapter,
 			prScanInfo->ucSparseChannelArrayValidNum
 				= prScanDone->ucSparseChannelArrayValidNum;
 
-#define __STR_FMT__ \
-"Country Code = %c%c, Detected_Channel_Num = %d\n"
-
-			DBGLOG(SCN, INFO, __STR_FMT__,
+			log_dbg(SCN, INFO, "Country Code = %c%c, Detected_Channel_Num = %d\n",
 				((prAdapter->rWifiVar.rConnSettings
 					.u2CountryCode & 0xff00) >> 8),
 				(prAdapter->rWifiVar.rConnSettings
 					.u2CountryCode & 0x00ff),
 				prScanInfo->ucSparseChannelArrayValidNum);
-#undef __STR_FMT__
 
 			for (u4ChCnt = 0; u4ChCnt < prScanInfo
 				->ucSparseChannelArrayValidNum; u4ChCnt++) {
@@ -840,20 +820,16 @@ void scnEventScanDone(IN struct ADAPTER *prAdapter,
 						->aucChannelBAndPCnt[u4ChCnt];
 
 				if (u4PrintfIdx % 10 == 0 && u4PrintfIdx != 0) {
-					DBGFWLOG(SCN, INFO, "Channel  : %s\n",
+					log_fw_dbg(SCN, INFO, "Channel  : %s\n",
 						g_aucScanChannelNum);
-					DBGFWLOG(SCN, INFO, "IdleTime : %s\n",
+					log_fw_dbg(SCN, INFO, "IdleTime : %s\n",
 						g_aucScanChannelIdleTime);
-					DBGFWLOG(SCN, INFO, "MdrdyCnt : %s\n",
+					log_fw_dbg(SCN, INFO, "MdrdyCnt : %s\n",
 						g_aucScanChannelMDRDY);
-					DBGFWLOG(SCN, INFO, "BAndPCnt : %s\n",
+					log_fw_dbg(SCN, INFO, "BAndPCnt : %s\n",
 						g_aucScanChannelBeacon);
 
-#define __STR_FMT__ \
-"==================================================================================\n"
-
-					DBGFWLOG(SCN, INFO, __STR_FMT__);
-#undef __STR_FMT__
+					log_fw_dbg(SCN, INFO, "==================================================================================\n");
 
 #define __LOCAL_VAR__ SCN_SCAN_DONE_PRINT_BUFFER_LENGTH
 					kalMemZero(g_aucScanChannelNum,
@@ -886,13 +862,13 @@ void scnEventScanDone(IN struct ADAPTER *prAdapter,
 				u4PrintfIdx++;
 			}
 
-			DBGFWLOG(SCN, INFO, "Channel  : %s\n",
+			log_fw_dbg(SCN, INFO, "Channel  : %s\n",
 				g_aucScanChannelNum);
-			DBGFWLOG(SCN, INFO, "IdleTime : %s\n",
+			log_fw_dbg(SCN, INFO, "IdleTime : %s\n",
 				g_aucScanChannelIdleTime);
-			DBGFWLOG(SCN, INFO, "MdrdyCnt : %s\n",
+			log_fw_dbg(SCN, INFO, "MdrdyCnt : %s\n",
 				g_aucScanChannelMDRDY);
-			DBGFWLOG(SCN, INFO, "BAndPCnt : %s\n",
+			log_fw_dbg(SCN, INFO, "BAndPCnt : %s\n",
 				g_aucScanChannelBeacon);
 		} else {
 			prScanInfo->fgIsSparseChannelValid = FALSE;
@@ -908,13 +884,9 @@ void scnEventScanDone(IN struct ADAPTER *prAdapter,
 		/* switch to next pending scan */
 		scnFsmSteps(prAdapter, SCAN_STATE_IDLE);
 	} else {
-#define __STR_FMT__ \
-"Unexpected SCAN-DONE event: SeqNum = %d, Current State = %d\n"
-
-		DBGLOG(SCN, INFO, __STR_FMT__,
+		log_dbg(SCN, INFO, "Unexpected SCAN-DONE event: SeqNum = %d, Current State = %d\n",
 			prScanDone->ucSeqNum,
 			prScanInfo->eCurrentState);
-#undef __STR_FMT__
 	}
 }	/* end of scnEventScanDone */
 
@@ -966,7 +938,7 @@ scnFsmGenerateScanDoneMsg(IN struct ADAPTER *prAdapter,
 			break;
 
 		default:
-			DBGLOG(SCN, LOUD,
+			log_dbg(SCN, LOUD,
 				"Unexpected Network Type: %d\n",
 				GET_BSS_INFO_BY_INDEX(
 					prAdapter, ucBssIndex)->eNetworkType);
@@ -1037,7 +1009,7 @@ void scnEventSchedScanDone(IN struct ADAPTER *prAdapter,
 
 	if (prScanInfo->fgSchedScanning == TRUE) {
 
-		DBGLOG(SCN, INFO, "scnEventSchedScanDone seq %u\n",
+		log_dbg(SCN, INFO, "scnEventSchedScanDone seq %u\n",
 			prSchedScanDone->ucSeqNum);
 
 		kalSchedScanResults(prAdapter->prGlueInfo);
@@ -1049,12 +1021,8 @@ void scnEventSchedScanDone(IN struct ADAPTER *prAdapter,
 			prScanInfo->fgSchedScanning = FALSE;
 		}
 	} else {
-#define __STR_FMT__ \
-"Unexpected SCHEDSCANDONE event: Seq = %u, Current State = %d\n"
-
-		DBGLOG(SCN, INFO, __STR_FMT__,
+		log_dbg(SCN, INFO, "Unexpected SCHEDSCANDONE event: Seq = %u, Current State = %d\n",
 			prSchedScanDone->ucSeqNum, prScanInfo->eCurrentState);
-#undef __STR_FMT__
 	}
 }
 
@@ -1086,10 +1054,10 @@ scnFsmSchedScanRequest(IN struct ADAPTER *prAdapter,
 	ASSERT(prRequest);
 	ASSERT(prRequest->u4SsidNum <= CFG_SCAN_HIDDEN_SSID_MAX_NUM);
 	ASSERT(prRequest->u4MatchSsidNum <= CFG_SCAN_SSID_MATCH_MAX_NUM);
-	DBGLOG(SCN, TRACE, "scnFsmSchedScanRequest\n");
+	log_dbg(SCN, TRACE, "scnFsmSchedScanRequest\n");
 
 	if (prAdapter->prAisBssInfo == NULL) {
-		DBGLOG(SCN, WARN, "prAisBssInfo is NULL\n");
+		log_dbg(SCN, WARN, "prAisBssInfo is NULL\n");
 		return FALSE;
 	}
 
@@ -1097,11 +1065,7 @@ scnFsmSchedScanRequest(IN struct ADAPTER *prAdapter,
 	prSchedScanParam = &prScanInfo->rSchedScanParam;
 
 	if (prScanInfo->fgSchedScanning) {
-#define __STR_FMT__ \
-"prScanInfo->fgSchedScanning = TRUE already scanning\n"
-
-		DBGLOG(SCN, WARN, __STR_FMT__);
-#undef __STR_FMT__
+		log_dbg(SCN, WARN, "prScanInfo->fgSchedScanning = TRUE already scanning\n");
 
 		return FALSE;
 	}
@@ -1115,7 +1079,7 @@ scnFsmSchedScanRequest(IN struct ADAPTER *prAdapter,
 	prSchedScanCmd = (struct CMD_SCHED_SCAN_REQ *) cnmMemAlloc(prAdapter,
 		RAM_TYPE_BUF, sizeof(struct CMD_SCHED_SCAN_REQ) + u2IeLen);
 	if (!prSchedScanCmd) {
-		DBGLOG(SCN, ERROR, "alloc CMD_SCHED_SCAN_REQ (%d+%d) fail\n",
+		log_dbg(SCN, ERROR, "alloc CMD_SCHED_SCAN_REQ (%d+%d) fail\n",
 			sizeof(struct CMD_SCHED_SCAN_REQ), u2IeLen);
 		return FALSE;
 	}
@@ -1141,7 +1105,7 @@ scnFsmSchedScanRequest(IN struct ADAPTER *prAdapter,
 	for (i = 0; i < prSchedScanCmd->ucSsidNum; i++) {
 		kalMemCopy(&(prSsid[i]), &(prRequest->arSsid[i]),
 			sizeof(struct PARAM_SSID));
-		DBGLOG(SCN, TRACE, "ssid set(%d) %s\n", i, prSsid[i].aucSsid);
+		log_dbg(SCN, TRACE, "ssid set(%d) %s\n", i, prSsid[i].aucSsid);
 	}
 
 	prSchedScanCmd->ucMatchSsidNum = prRequest->u4MatchSsidNum;
@@ -1149,7 +1113,7 @@ scnFsmSchedScanRequest(IN struct ADAPTER *prAdapter,
 		COPY_SSID(prMatchSets[i].aucSsid, prMatchSets[i].ucSsidLen,
 			prRequest->arMatchSsid[i].aucSsid,
 			prRequest->arMatchSsid[i].u4SsidLen);
-		DBGLOG(SCN, TRACE, "Match set(%d) %s\n",
+		log_dbg(SCN, TRACE, "Match set(%d) %s\n",
 				i, prMatchSets[i].aucSsid);
 		prMatchSets[i].i4RssiThresold = prRequest->acRssiThold[i];
 	}
@@ -1196,27 +1160,24 @@ scnFsmSchedScanRequest(IN struct ADAPTER *prAdapter,
 
 	scnSetSchedScanPlan(prAdapter, prSchedScanCmd);
 
-#define __STR_FMT__ \
-"V(%u)seq(%u)sz(%u)chT(%u)chN(%u)ssid(%u)match(%u)IE(%u=>%u)MSP(%u)\n"
-
-	DBGLOG(SCN, INFO, __STR_FMT__, prSchedScanCmd->ucVersion,
+	log_dbg(SCN, INFO, "V(%u)seq(%u)sz(%u)chT(%u)chN(%u)ssid(%u)match(%u)IE(%u=>%u)MSP(%u)\n",
+		prSchedScanCmd->ucVersion,
 		prSchedScanCmd->ucSeqNum, sizeof(struct CMD_SCHED_SCAN_REQ),
 		prSchedScanCmd->ucChannelType, prSchedScanCmd->ucChnlNum,
 		prSchedScanCmd->ucSsidNum, prSchedScanCmd->ucMatchSsidNum,
 		prRequest->u4IELength, prSchedScanCmd->u2IELen,
 		prSchedScanCmd->ucMspEntryNum);
-#undef __STR_FMT__
 
 	/* 3. send command packet to FW */
 	do {
 		if (!scnFsmSchedScanSetCmd(prAdapter, prSchedScanCmd)) {
-			DBGLOG(SCN, TRACE, "scnFsmSchedScanSetCmd failed\n");
+			log_dbg(SCN, TRACE, "scnFsmSchedScanSetCmd failed\n");
 			fgRet = FALSE;
 			break;
 		}
 		if (!scnFsmSchedScanSetAction(prAdapter,
 				SCHED_SCAN_ACT_ENABLE)) {
-			DBGLOG(SCN, TRACE, "scnFsmSchedScanSetAction failed\n");
+			log_dbg(SCN, TRACE, "scnFsmSchedScanSetAction failed\n");
 			fgRet = FALSE;
 			break;
 		}
@@ -1243,15 +1204,15 @@ scnFsmSchedScanRequest(IN struct ADAPTER *prAdapter,
 u_int8_t scnFsmSchedScanStopRequest(IN struct ADAPTER *prAdapter)
 {
 	ASSERT(prAdapter);
-	DBGLOG(SCN, INFO, "scnFsmSchedScanStopRequest\n");
+	log_dbg(SCN, INFO, "scnFsmSchedScanStopRequest\n");
 
 	if (prAdapter->prAisBssInfo == NULL) {
-		DBGLOG(SCN, WARN, "prAisBssInfo is NULL\n");
+		log_dbg(SCN, WARN, "prAisBssInfo is NULL\n");
 		return FALSE;
 	}
 
 	if (!scnFsmSchedScanSetAction(prAdapter, SCHED_SCAN_ACT_DISABLE)) {
-		DBGLOG(SCN, TRACE, "scnFsmSchedScanSetAction failed\n");
+		log_dbg(SCN, TRACE, "scnFsmSchedScanSetAction failed\n");
 		return FALSE;
 	}
 #if CFG_SUPPORT_PNO
@@ -1286,7 +1247,7 @@ scnFsmSchedScanSetAction(IN struct ADAPTER *prAdapter,
 	/* 0:enable, 1:disable */
 	rCmdSchedScanAction.ucSchedScanAct = ucSchedScanAct;
 
-	DBGLOG(SCN, INFO, "sched scan action = %d\n",
+	log_dbg(SCN, INFO, "sched scan action = %d\n",
 		rCmdSchedScanAction.ucSchedScanAct);
 
 	rStatus = wlanSendSetQueryCmd(prAdapter,
@@ -1321,7 +1282,7 @@ scnFsmSchedScanSetCmd(IN struct ADAPTER *prAdapter,
 
 	ASSERT(prAdapter);
 
-	DBGLOG(SCN, TRACE, "--> %s()\n", __func__);
+	log_dbg(SCN, TRACE, "--> %s()\n", __func__);
 
 	if (prSchedScanCmd)
 		u2IeSize = prSchedScanCmd->u2IELen;
@@ -1352,7 +1313,7 @@ scnSetSchedScanPlan(IN struct ADAPTER *prAdapter,
 		IN struct CMD_SCHED_SCAN_REQ *prSchedScanCmd)
 {
 	/* Set Multiple Scan Plan here */
-	DBGLOG(SCN, TRACE, "--> %s()\n", __func__);
+	log_dbg(SCN, TRACE, "--> %s()\n", __func__);
 
 	ASSERT(prAdapter);
 
