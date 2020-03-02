@@ -1731,6 +1731,9 @@ void nicRxProcessDataPacket(IN struct ADAPTER *prAdapter,
 		}
 #endif /* CFG_SUPPORT_802_11AX == 1 */
 
+#if (CFG_SUPPORT_STATISTICS == 1)
+		STATS_RX_PKT_INFO_DISPLAY(prSwRfb);
+#endif
 		prRetSwRfb = qmHandleRxPackets(prAdapter, prSwRfb);
 		if (prRetSwRfb != NULL) {
 			do {
@@ -1846,7 +1849,9 @@ void nicRxProcessEventPacket(IN struct ADAPTER *prAdapter,
 			prEvent->ucEID, prEvent->ucSeqNum,
 			prEvent->u2PacketLength);
 	}
-
+#if (CFG_SUPPORT_STATISTICS == 1)
+	wlanWakeLogEvent(prEvent->ucEID);
+#endif
 	/* Event handler table */
 	u4Size = sizeof(arEventTable) / sizeof(struct
 					       RX_EVENT_HANDLER);

@@ -79,6 +79,7 @@
  */
 #include "gl_typedef.h"
 
+extern u_int8_t wlan_fb_power_down;
 extern uint8_t aucDebugModule[];
 extern uint32_t au4LogLevel[];
 
@@ -270,6 +271,18 @@ struct WLAN_DEBUG_INFO {
 	u_int8_t fgVoE5_7Test:1;
 	u_int8_t fgReserved:7;
 };
+
+#if (CFG_SUPPORT_STATISTICS == 1)
+enum WAKE_DATA_TYPE {
+	WLAN_WAKE_ARP = 0,
+	WLAN_WAKE_IPV4,
+	WLAN_WAKE_IPV6,
+	WLAN_WAKE_1X,
+	WLAN_WAKE_TDLS,
+	WLAN_WAKE_OTHER,
+	WLAN_WAKE_MAX_NUM
+};
+#endif
 
 #if MTK_WCN_HIF_SDIO
 #define DBG_ASSERT_PATH_DEFAULT DBG_ASSERT_PATH_WMT
@@ -582,6 +595,16 @@ int32_t connac2x_show_stat_info(
 	uint32_t u4StatGroup);
 
 #endif /* CFG_SUPPORT_CONNAC2X == 1 */
+
+#if (CFG_SUPPORT_STATISTICS == 1)
+void wlanWakeStaticsInit(void);
+void wlanWakeStaticsUninit(void);
+uint32_t wlanWakeLogCmd(uint8_t ucCmdId);
+uint32_t wlanWakeLogEvent(uint8_t ucEventId);
+void wlanLogTxData(enum WAKE_DATA_TYPE dataType);
+void wlanLogRxData(enum WAKE_DATA_TYPE dataType);
+uint32_t wlanWakeDumpRes(void);
+#endif
 
 #if (CFG_SUPPORT_RA_GEN == 1)
 int32_t mt7663_show_stat_info(struct ADAPTER *prAdapter,
