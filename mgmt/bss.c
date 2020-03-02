@@ -233,6 +233,9 @@ void bssDetermineStaRecPhyTypeSet(IN struct ADAPTER *prAdapter,
 	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
 	uint8_t ucHtOption = FEATURE_ENABLED;
 	uint8_t ucVhtOption = FEATURE_ENABLED;
+#if (CFG_SUPPORT_802_11AX == 1)
+	uint8_t ucHeOption = FEATURE_ENABLED;
+#endif
 
 	prStaRec->ucPhyTypeSet = prBssDesc->ucPhyTypeSet;
 #if CFG_SUPPORT_BFEE
@@ -258,10 +261,17 @@ void bssDetermineStaRecPhyTypeSet(IN struct ADAPTER *prAdapter,
 			       "Ignore the HT Bit for TKIP as pairwise cipher configed!\n");
 			prStaRec->ucPhyTypeSet &=
 			    ~(PHY_TYPE_BIT_HT | PHY_TYPE_BIT_VHT);
+#if (CFG_SUPPORT_802_11AX == 1)
+			prStaRec->ucPhyTypeSet &= ~(PHY_TYPE_BIT_HE);
+#endif
 		}
 
 		ucHtOption = prWifiVar->ucStaHt;
 		ucVhtOption = prWifiVar->ucStaVht;
+#if (CFG_SUPPORT_802_11AX == 1)
+		ucHeOption = prWifiVar->ucStaHe;
+#endif
+
 	}
 	/* Decide P2P GC PHY type set */
 	else if (prStaRec->eStaType == STA_TYPE_P2P_GO) {
@@ -279,6 +289,13 @@ void bssDetermineStaRecPhyTypeSet(IN struct ADAPTER *prAdapter,
 		prStaRec->ucPhyTypeSet &= ~PHY_TYPE_BIT_VHT;
 	else if (IS_FEATURE_FORCE_ENABLED(ucVhtOption))
 		prStaRec->ucPhyTypeSet |= PHY_TYPE_BIT_VHT;
+
+#if (CFG_SUPPORT_802_11AX == 1)
+	if (IS_FEATURE_DISABLED(ucHeOption))
+		prStaRec->ucPhyTypeSet &= ~PHY_TYPE_BIT_HE;
+	else if (IS_FEATURE_FORCE_ENABLED(ucHeOption))
+		prStaRec->ucPhyTypeSet |= PHY_TYPE_BIT_HE;
+#endif
 
 	prStaRec->ucDesiredPhyTypeSet =
 	    prStaRec->ucPhyTypeSet & prAdapter->rWifiVar.ucAvailablePhyTypeSet;

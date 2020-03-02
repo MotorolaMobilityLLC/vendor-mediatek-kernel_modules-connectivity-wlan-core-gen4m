@@ -49,52 +49,28 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  *****************************************************************************/
-
-/*! \file  mt7915.h
-*    \brief This file contains the info of MT7915
+/*
+** Id: @(#) he_rlm.c@@
 */
 
-#ifdef MT7915
-
-#ifndef _MT7915_H
-#define _MT7915_H
-
-/*******************************************************************************
-*                         C O M P I L E R   F L A G S
-********************************************************************************
+/*! \file   "he_ie.c"
+*    \brief This file contains HE IE processing routines.
+*
 */
 
-/*******************************************************************************
-*                    E X T E R N A L   R E F E R E N C E S
-********************************************************************************
-*/
+#include "precomp.h"
+
+#if (CFG_SUPPORT_802_11AX == 1)
+#include "he_ie.h"
 
 /*******************************************************************************
 *                              C O N S T A N T S
 ********************************************************************************
 */
-/*TODO: To use correct ID after FPGA uses correct ID @20170927*/
 
-#define CONNAC2X_TOP_HCR 0x70010200
-#define CONNAC2X_TOP_FVR 0x70010204
-#define CONNAC2X_TOP_HVR 0x70010208
-#define CONNAC2x_CONN_CFG_ON_BASE	0x7C060000
-#define CONNAC2x_CONN_CFG_ON_CONN_ON_MISC_ADDR \
-	(CONNAC2x_CONN_CFG_ON_BASE + 0xF0)
-#define CONNAC2x_CONN_CFG_ON_CONN_ON_MISC_DRV_FM_STAT_SYNC_SHFT         0
-
-#define MT7915_CHIP_ID                 (0x7915)
-#define MT7915_SW_SYNC0                CONNAC2x_CONN_CFG_ON_CONN_ON_MISC_ADDR
-#define MT7915_SW_SYNC0_RDY_OFFSET \
-	CONNAC2x_CONN_CFG_ON_CONN_ON_MISC_DRV_FM_STAT_SYNC_SHFT
-#define MT7915_PATCH_START_ADDR        (0x00200000)
-#define MT7915_TOP_CFG_BASE			CONN_CFG_BASE
-#define MT7915_TX_DESC_APPEND_LENGTH        44
-#define MT7915_RX_DESC_LENGTH               24
-#define MT7915_ARB_AC_MODE_ADDR (0x820e3020)
 
 /*******************************************************************************
-*                         D A T A   T Y P E S
+*                             D A T A   T Y P E S
 ********************************************************************************
 */
 
@@ -114,7 +90,7 @@
 */
 
 /*******************************************************************************
-*                  F U N C T I O N   D E C L A R A T I O N S
+*                   F U N C T I O N   D E C L A R A T I O N S
 ********************************************************************************
 */
 
@@ -123,5 +99,6 @@
 ********************************************************************************
 */
 
-#endif /* _MT7915_H */
-#endif  /* MT7915 */
+
+#endif /* CFG_SUPPORT_802_11AX == 1 */
+

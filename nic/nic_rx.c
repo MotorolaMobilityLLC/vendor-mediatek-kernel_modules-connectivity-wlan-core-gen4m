@@ -801,6 +801,11 @@ u_int8_t nicRxIsDuplicateFrame(IN OUT struct SW_RFB
 		if (prSwRfb->prStaRec->ucDesiredPhyTypeSet &
 		    (PHY_TYPE_BIT_HT | PHY_TYPE_BIT_VHT)) {
 			u4SeqCtrlCacheIdx = prSwRfb->ucTid;
+#if (CFG_SUPPORT_802_11AX == 1)
+			} else if (prSwRfb->prStaRec->ucDesiredPhyTypeSet &
+				   PHY_TYPE_BIT_HE) {
+				u4SeqCtrlCacheIdx = prSwRfb->ucTid;
+#endif
 		} else {
 			if (prSwRfb->ucTid < 8) {	/* UP = 0~7 */
 				u4SeqCtrlCacheIdx = aucTid2ACI[prSwRfb->ucTid];
@@ -3055,6 +3060,22 @@ void nicRxProcessMgmtPacket(IN struct ADAPTER *prAdapter,
 
 		u2TxFrameCtrl = (*(uint8_t *) (prSwRfb->pvHeader) &
 				 MASK_FRAME_TYPE);
+
+#if (CFG_SUPPORT_802_11AX == 1)
+	if (RXM_IS_TRIGGER_FRAME(u2TxFrameCtrl)) {
+		if (prAdapter->fgEnShowHETrigger) {
+			DBGLOG(NIC, STATE,
+					"HE Trigger --------------\n");
+			dumpMemory8((uint8_t *)prSwRfb->prRxStatus,
+				NIC_RX_GET_RX_BYTE_CNT(prSwRfb->prRxStatus));
+			DBGLOG(NIC, STATE,
+					"HE Trigger end --------------\n");
+		}
+		nicRxReturnRFB(prAdapter, prSwRfb);
+		return;
+	}
+#endif /* CFG_SUPPORT_802_11AX == 1 */
+
 		if (prAdapter->rRxCtrl.u4RxPktsDumpTypeMask & BIT(
 			    HIF_RX_PKT_TYPE_MANAGEMENT)) {
 			if (u2TxFrameCtrl == MAC_FRAME_BEACON
@@ -3981,6 +4002,12 @@ uint32_t nicRxProcessActionFrame(IN struct ADAPTER *
 #if CFG_SUPPORT_802_11AC
 	case CATEGORY_VHT_ACTION:
 		rlmProcessVhtAction(prAdapter, prSwRfb);
+		break;
+#endif
+
+#if (CFG_SUPPORT_TWT == 1)
+	case CATEGORY_S1G_ACTION:
+		twtProcessS1GAction(prAdapter, prSwRfb);
 		break;
 #endif
 

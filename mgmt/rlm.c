@@ -1054,6 +1054,11 @@ static void rlmFillExtCapIE(struct ADAPTER *prAdapter,
 	}
 #endif
 
+#if (CFG_SUPPORT_TWT == 1)
+	prExtCap->aucCapabilities[ELEM_EXT_CAP_TWT_REQUESTER_BIT >> 3] |=
+		BIT(ELEM_EXT_CAP_TWT_REQUESTER_BIT % 8);
+#endif
+
 #if CFG_SUPPORT_802_11V_BSS_TRANSITION_MGT
 	prExtCap->ucLength = ELEM_MAX_LEN_EXT_CAP;
 	SET_EXT_CAP(prExtCap->aucCapabilities, ELEM_MAX_LEN_EXT_CAP,
@@ -2704,6 +2709,17 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 			fgHasQuietIE = TRUE;
 			break;
 #endif
+
+#if (CFG_SUPPORT_802_11AX == 1)
+		case ELEM_ID_RESERVED:
+			if (IE_ID_EXT(pucIE) == ELEM_EXT_ID_HE_CAP)
+				heRlmRecHeCapInfo(prAdapter, prStaRec, pucIE);
+			else if (IE_ID_EXT(pucIE) == ELEM_EXT_ID_HE_OP)
+				heRlmRecHeOperation(prAdapter,
+							prBssInfo, pucIE);
+			break;
+#endif
+
 		default:
 			break;
 		} /* end of switch */
@@ -3045,6 +3061,9 @@ static void rlmRecAssocRespIeInfoForClient(struct ADAPTER *prAdapter,
 	struct STA_RECORD *prStaRec;
 	u_int8_t fgIsHasHtCap = FALSE;
 	u_int8_t fgIsHasVhtCap = FALSE;
+#if (CFG_SUPPORT_802_11AX == 1)
+	u_int8_t fgIsHasHeCap = FALSE;
+#endif
 	struct BSS_DESC *prBssDesc;
 	struct PARAM_SSID rSsid;
 
@@ -3079,6 +3098,15 @@ static void rlmRecAssocRespIeInfoForClient(struct ADAPTER *prAdapter,
 			fgIsHasVhtCap = TRUE;
 			break;
 #endif
+#if (CFG_SUPPORT_802_11AX == 1)
+		case ELEM_ID_RESERVED:
+			if (IE_ID_EXT(pucIE) != ELEM_EXT_ID_HE_CAP ||
+			    !RLM_NET_IS_11AX(prBssInfo))
+				break;
+			fgIsHasHeCap = TRUE;
+			break;
+#endif
+
 		default:
 			break;
 		} /* end of switch */
@@ -3106,6 +3134,17 @@ static void rlmRecAssocRespIeInfoForClient(struct ADAPTER *prAdapter,
 			}
 		}
 	}
+#if (CFG_SUPPORT_802_11AX == 1)
+	if (!fgIsHasHeCap) {
+		prStaRec->ucDesiredPhyTypeSet &= ~PHY_TYPE_BIT_HE;
+		if (prBssDesc) {
+			if (prBssDesc->ucPhyTypeSet & PHY_TYPE_BIT_HE) {
+				DBGLOG(RLM, WARN, "PhyTypeSet are unsync. ");
+				DBGLOG(RLM, WARN, "Disable HE per assoc.\n");
+			}
+		}
+	}
+#endif
 
 #if defined(CFG_REPORT_MAX_TX_RATE) && (CFG_REPORT_MAX_TX_RATE == 1)
 	if (prBssInfo->eNetworkType == NETWORK_TYPE_AIS)
@@ -3417,6 +3456,9 @@ void rlmProcessBcn(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb,
 {
 	struct BSS_INFO *prBssInfo;
 	u_int8_t fgNewParameter;
+#if (CFG_SUPPORT_802_11AX == 1)
+	u_int8_t fgNewSRParam = FALSE;
+#endif
 	uint8_t i;
 
 	ASSERT(prAdapter);
@@ -3453,6 +3495,11 @@ void rlmProcessBcn(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb,
 					fgNewParameter = rlmRecBcnInfoForClient(
 						prAdapter, prBssInfo, prSwRfb,
 						pucIE, u2IELength);
+#if (CFG_SUPPORT_802_11AX == 1)
+					fgNewSRParam = heRlmRecHeSRParams(
+						prAdapter, prBssInfo,
+						prSwRfb, pucIE, u2IELength);
+#endif
 				} else {
 					fgNewParameter =
 						rlmRecBcnFromNeighborForClient(
@@ -3485,6 +3532,14 @@ void rlmProcessBcn(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb,
 				rlmSyncOperationParams(prAdapter, prBssInfo);
 				fgNewParameter = FALSE;
 			}
+#if (CFG_SUPPORT_802_11AX == 1)
+			if (fgNewSRParam) {
+				nicRlmUpdateSRParams(prAdapter,
+					prBssInfo->ucBssIndex);
+				fgNewSRParam = FALSE;
+			}
+#endif
+
 		} /* end of IS_BSS_ACTIVE() */
 	}
 }
@@ -3504,6 +3559,9 @@ void rlmProcessAssocRsp(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb,
 	struct BSS_INFO *prBssInfo;
 	struct STA_RECORD *prStaRec;
 	uint8_t ucPriChannel;
+#if (CFG_SUPPORT_802_11AX == 1)
+	uint8_t fgNewSRParam;
+#endif
 
 	ASSERT(prAdapter);
 	ASSERT(prSwRfb);
@@ -3556,6 +3614,13 @@ void rlmProcessAssocRsp(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb,
 	if (!RLM_NET_IS_11N(prBssInfo) ||
 	    !(prStaRec->u2HtCapInfo & HT_CAP_INFO_SUP_CHNL_WIDTH))
 		prBssInfo->fg40mBwAllowed = FALSE;
+
+#if (CFG_SUPPORT_802_11AX == 1)
+	fgNewSRParam = heRlmRecHeSRParams(prAdapter, prBssInfo,
+					prSwRfb, pucIE, u2IELength);
+	/* ASSERT(fgNewSRParam); */
+	nicRlmUpdateSRParams(prAdapter, prBssInfo->ucBssIndex);
+#endif
 
 	/* Note: Update its capabilities to WTBL by cnmStaRecChangeState(),
 	 * which
@@ -4230,6 +4295,27 @@ static void rlmBssReset(struct ADAPTER *prAdapter, struct BSS_INFO *prBssInfo)
 	prBssInfo->fgIsOpChangeChannelWidth = FALSE;
 	prBssInfo->fgIsOpChangeRxNss = FALSE;
 	prBssInfo->fgIsOpChangeTxNss = FALSE;
+
+#if (CFG_SUPPORT_802_11AX == 1)
+	/* MU EDCA params */
+	prBssInfo->ucMUEdcaUpdateCnt = 0;
+	kalMemSet(&prBssInfo->arMUEdcaParams[0], 0,
+		sizeof(struct _CMD_MU_EDCA_PARAMS_T) * WMM_AC_INDEX_NUM);
+
+	/* Spatial Reuse params */
+	prBssInfo->ucSRControl = 0;
+	prBssInfo->ucNonSRGObssPdMaxOffset = 0;
+	prBssInfo->ucSRGObssPdMinOffset = 0;
+	prBssInfo->ucSRGObssPdMaxOffset = 0;
+	prBssInfo->u8SRGBSSColorBitmap = 0;
+	prBssInfo->u8SRGPartialBSSIDBitmap = 0;
+
+	/* HE Operation */
+	memset(prBssInfo->ucHeOpParams, 0, HE_OP_BYTE_NUM);
+	prBssInfo->ucBssColorInfo = 0;
+	prBssInfo->u2HeBasicMcsSet = 0;
+#endif
+
 }
 
 #if CFG_SUPPORT_TDLS

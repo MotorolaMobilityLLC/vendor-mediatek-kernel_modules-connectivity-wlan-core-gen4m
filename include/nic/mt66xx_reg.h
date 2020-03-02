@@ -1202,6 +1202,9 @@ struct mt66xx_chip_info {
 	const unsigned int top_hcr; /* TOP_HCR */
 	const unsigned int top_hvr; /* TOP_HVR */
 	const unsigned int top_fvr; /* TOP_FVR */
+#if (CFG_SUPPORT_802_11AX == 1)
+	const unsigned int arb_ac_mode_addr;
+#endif /* CFG_SUPPORT_802_11AX == 1 */
 
 	const struct ECO_INFO *eco_info;	/* chip version table */
 	uint8_t eco_ver;	/* chip version */

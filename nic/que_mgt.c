@@ -2856,6 +2856,10 @@ uint32_t gmGetDequeueQuota(
 			u4Weight = prAdapter->rWifiVar.u4DeQuePercentHT20Nss1;
 		}
 	}
+#if (CFG_SUPPORT_802_11AX == 1)
+	else if (prStaRec->ucDesiredPhyTypeSet & PHY_TYPE_BIT_HE)
+		;/* TBD */
+#endif
 
 	u4Quota = u4TotalQuota * u4Weight / 100;
 
@@ -5056,6 +5060,11 @@ void mqmProcessAssocRsp(IN struct ADAPTER *prAdapter,
 			&& (prStaRec->eStaType == STA_TYPE_LEGACY_AP)) {
 			mqmParseEdcaParameters(prAdapter, prSwRfb, pucIEStart,
 				u2IELength, TRUE);
+#if (CFG_SUPPORT_802_11AX == 1)
+			mqmParseMUEdcaParams(prAdapter, prSwRfb, pucIEStart,
+				u2IELength, TRUE);
+#endif
+
 #if ARP_MONITER_ENABLE
 			qmResetArpDetect();
 #endif
@@ -5065,6 +5074,14 @@ void mqmProcessAssocRsp(IN struct ADAPTER *prAdapter,
 			prStaRec->fgIsQoS);
 		if (prStaRec->fgIsWmmSupported)
 			nicQmUpdateWmmParms(prAdapter, prStaRec->ucBssIndex);
+#if (CFG_SUPPORT_802_11AX == 1)
+		if (prStaRec->fgIsMuEdcaSupported ||
+			prAdapter->fgMuEdcaOverride) {
+			nicQmUpdateMUEdcaParams(prAdapter,
+				prStaRec->ucBssIndex);
+		}
+#endif
+
 	}
 }
 
@@ -5083,6 +5100,9 @@ void mqmProcessBcn(IN struct ADAPTER *prAdapter,
 {
 	struct BSS_INFO *prBssInfo;
 	u_int8_t fgNewParameter;
+#if (CFG_SUPPORT_802_11AX == 1)
+	u_int8_t fgNewMUEdca = FALSE;
+#endif
 	uint8_t i;
 
 	ASSERT(prAdapter);
@@ -5111,6 +5131,11 @@ void mqmProcessBcn(IN struct ADAPTER *prAdapter,
 							prAdapter,
 							prSwRfb, pucIE,
 							u2IELength, FALSE);
+#if (CFG_SUPPORT_802_11AX == 1)
+					fgNewMUEdca = mqmParseMUEdcaParams(
+						prAdapter, prSwRfb, pucIE,
+						u2IELength, FALSE);
+#endif
 				}
 			}
 
@@ -5119,6 +5144,13 @@ void mqmProcessBcn(IN struct ADAPTER *prAdapter,
 				nicQmUpdateWmmParms(prAdapter,
 					prBssInfo->ucBssIndex);
 				fgNewParameter = FALSE;
+#if (CFG_SUPPORT_802_11AX == 1)
+			if (fgNewMUEdca) {
+				nicQmUpdateMUEdcaParams(prAdapter,
+					prBssInfo->ucBssIndex);
+				fgNewMUEdca = FALSE;
+			}
+#endif
 			}
 		}		/* end of IS_BSS_ACTIVE() */
 	}
@@ -5167,6 +5199,170 @@ u_int8_t mqmUpdateEdcaParameters(IN struct BSS_INFO	*prBssInfo,
 
 	return fgNewParameter;
 }
+
+#if (CFG_SUPPORT_802_11AX == 1)
+uint8_t mqmCompareMUEdcaParameters(
+	struct _IE_MU_EDCA_PARAM_T *prIeMUEdcaParam,
+	struct BSS_INFO *prBssInfo)
+{
+	struct _CMD_MU_EDCA_PARAMS_T *prBSSMUEdca;
+	struct _MU_AC_PARAM_RECORD_T *prMUAcParamInIE;
+	enum ENUM_WMM_ACI eAci;
+
+	/* Check Set Count */
+	if (prBssInfo->ucMUEdcaUpdateCnt !=
+		(prIeMUEdcaParam->ucMUQosInfo & WMM_QOS_INFO_PARAM_SET_CNT))
+		return FALSE;
+
+	for (eAci = 0; eAci < WMM_AC_INDEX_NUM; eAci++) {
+		prBSSMUEdca = &prBssInfo->arMUEdcaParams[eAci];
+		prMUAcParamInIE = &prIeMUEdcaParam->arMUAcParam[eAci];
+
+		/* ACM */
+		if (prBSSMUEdca->ucIsACMSet != ((prMUAcParamInIE->ucAciAifsn &
+			WMM_ACIAIFSN_ACM) ? TRUE : FALSE))
+			return FALSE;
+
+		/* AIFSN */
+		if (prBSSMUEdca->ucAifsn != (prMUAcParamInIE->ucAciAifsn &
+			WMM_ACIAIFSN_AIFSN))
+			return FALSE;
+
+		/* CW Max */
+		if (prBSSMUEdca->ucECWmax !=
+			((prMUAcParamInIE->ucEcw & WMM_ECW_WMAX_MASK)
+				>> WMM_ECW_WMAX_OFFSET))
+			return FALSE;
+
+		/* CW Min */
+		if (prBSSMUEdca->ucECWmin !=
+			(prMUAcParamInIE->ucEcw & WMM_ECW_WMIN_MASK))
+			return FALSE;
+
+		/* MU EDCA timer */
+		if (prBSSMUEdca->ucMUEdcaTimer !=
+			prMUAcParamInIE->ucMUEdcaTimer)
+			return FALSE;
+	}
+
+	return TRUE;
+}
+
+uint8_t mqmUpdateMUEdcaParams(struct BSS_INFO *prBssInfo,
+	uint8_t *pucIE, uint8_t fgForceOverride)
+{
+	struct _CMD_MU_EDCA_PARAMS_T *prBSSMUEdca;
+	struct _IE_MU_EDCA_PARAM_T *prIeMUEdcaParam;
+	struct _MU_AC_PARAM_RECORD_T *prMUAcParamInIE;
+	enum ENUM_WMM_ACI eAci;
+	uint8_t fgNewParameter = FALSE;
+
+	do {
+		if (IE_LEN(pucIE) != 14)
+			break;	/* MU EDCA Param IE with a wrong length */
+
+		prIeMUEdcaParam = (struct _IE_MU_EDCA_PARAM_T *) pucIE;
+
+		/*
+		 * Check the Parameter Set Count to determine whether
+		 * MU EDCA parameters have been changed
+		 */
+		if (!fgForceOverride) {
+			if (mqmCompareMUEdcaParameters(prIeMUEdcaParam,
+				prBssInfo)) {
+				fgNewParameter = FALSE;
+				break;
+			}
+		}
+
+		fgNewParameter = TRUE;
+		/* Update Parameter Set Count */
+		prBssInfo->ucMUEdcaUpdateCnt = (prIeMUEdcaParam->ucMUQosInfo &
+			WMM_QOS_INFO_PARAM_SET_CNT);
+		/* Update MU EDCA parameters to BSS structure */
+		for (eAci = 0; eAci < WMM_AC_INDEX_NUM; eAci++) {
+			prMUAcParamInIE = &(prIeMUEdcaParam->arMUAcParam[eAci]);
+			prBSSMUEdca = &prBssInfo->arMUEdcaParams[eAci];
+
+			prBSSMUEdca->ucECWmin = prMUAcParamInIE->ucEcw &
+							WMM_ECW_WMIN_MASK;
+			prBSSMUEdca->ucECWmax = (prMUAcParamInIE->ucEcw &
+							WMM_ECW_WMAX_MASK)
+							>> WMM_ECW_WMAX_OFFSET;
+			prBSSMUEdca->ucAifsn = (prMUAcParamInIE->ucAciAifsn &
+				WMM_ACIAIFSN_AIFSN);
+			prBSSMUEdca->ucIsACMSet = (prMUAcParamInIE->ucAciAifsn &
+				WMM_ACIAIFSN_ACM) ? TRUE : FALSE;
+			prBSSMUEdca->ucMUEdcaTimer =
+				prMUAcParamInIE->ucMUEdcaTimer;
+
+			DBGLOG(QM, INFO,
+				"BSS[%u]: eAci[%d] ACM[%d] Aifsn[%d],",
+				prBssInfo->ucBssIndex, eAci,
+				prBSSMUEdca->ucIsACMSet, prBSSMUEdca->ucAifsn);
+			DBGLOG(QM, INFO,
+				"ECWmin/max[%d/%d] NewParameter[%d]\n",
+				prBSSMUEdca->ucECWmin, prBSSMUEdca->ucECWmax,
+				fgNewParameter);
+
+		}
+	} while (FALSE);
+
+	return fgNewParameter;
+}
+
+uint8_t
+mqmParseMUEdcaParams(
+	struct ADAPTER *prAdapter,
+	struct SW_RFB *prSwRfb,
+	uint8_t *pucIE,
+	uint16_t u2IELength,
+	uint8_t fgForceOverride)
+{
+	struct STA_RECORD *prStaRec;
+	uint16_t u2Offset;
+	struct BSS_INFO *prBssInfo;
+	uint8_t fgNewParameter = FALSE;
+
+	DEBUGFUNC("mqmParseMUEdcaParams");
+
+	if (!prSwRfb)
+		return FALSE;
+
+	if (!pucIE)
+		return FALSE;
+
+	prStaRec = cnmGetStaRecByIndex(prAdapter, prSwRfb->ucStaRecIdx);
+	if (prStaRec == NULL)
+		return FALSE;
+
+	DBGLOG(QM, TRACE, "QM: (fgIsQoS=%d)\n", prStaRec->fgIsQoS);
+
+	if (IS_FEATURE_DISABLED(prAdapter->rWifiVar.ucQoS) ||
+		(!prStaRec->fgIsQoS))
+		return FALSE;
+
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prStaRec->ucBssIndex);
+
+	/* Goal: Obtain the MU EDCA parameters */
+	IE_FOR_EACH(pucIE, u2IELength, u2Offset) {
+		switch (IE_ID(pucIE)) {
+		case ELEM_ID_RESERVED:
+			if (IE_ID_EXT(pucIE) == ELEM_EXT_ID_MU_EDCA_PARAM) {
+				prStaRec->fgIsMuEdcaSupported = TRUE;
+				fgNewParameter = mqmUpdateMUEdcaParams(
+					prBssInfo, pucIE, fgForceOverride);
+			}
+			break;
+		default:
+			break;
+		}
+	}
+
+	return fgNewParameter;
+}
+#endif
+
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -5370,6 +5566,9 @@ void mqmProcessScanResult(IN struct ADAPTER *prAdapter,
 	prStaRec->fgIsWmmSupported = FALSE;
 	prStaRec->fgIsUapsdSupported = FALSE;
 	prStaRec->fgIsQoS = FALSE;
+#if (CFG_SUPPORT_802_11AX == 1)
+	prStaRec->fgIsMuEdcaSupported = FALSE;
+#endif
 
 	fgIsHtVht = FALSE;
 
@@ -5465,6 +5664,12 @@ void mqmProcessScanResult(IN struct ADAPTER *prAdapter,
 
 	if (fgIsHtVht || prStaRec->fgIsWmmSupported)
 		prStaRec->fgIsQoS = TRUE;
+
+#if (CFG_SUPPORT_802_11AX == 1)
+	if (prStaRec->ucDesiredPhyTypeSet & PHY_TYPE_SET_802_11AX)
+		prStaRec->fgIsQoS = TRUE;
+#endif
+
 }
 
 /*----------------------------------------------------------------------------*/

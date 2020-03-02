@@ -148,6 +148,13 @@ cnmStaSendRemoveCmd(struct ADAPTER *prAdapter,
 	enum ENUM_STA_REC_CMD_ACTION eActionType, uint8_t ucStaRecIndex,
 	uint8_t ucBssIndex);
 
+#if (CFG_SUPPORT_802_11AX == 1)
+static void cnmStaRecCmdHeContentFill(
+	struct STA_RECORD *prStaRec,
+	struct CMD_UPDATE_STA_RECORD *prCmdContent);
+#endif
+
+
 /*******************************************************************************
  *                              F U N C T I O N S
  *******************************************************************************
@@ -1078,6 +1085,15 @@ void cnmStaSendUpdateCmd(struct ADAPTER *prAdapter, struct STA_RECORD *prStaRec,
 	/* AMSDU in AMPDU global configuration */
 	prCmdContent->ucTxAmsduInAmpdu = prAdapter->rWifiVar.ucAmsduInAmpduTx;
 	prCmdContent->ucRxAmsduInAmpdu = prAdapter->rWifiVar.ucAmsduInAmpduRx;
+#if (CFG_SUPPORT_802_11AX == 1)
+	if (prStaRec->ucDesiredPhyTypeSet & PHY_TYPE_SET_802_11AX) {
+		/* HE peer AMSDU in AMPDU configuration */
+		prCmdContent->ucTxAmsduInAmpdu &=
+			prAdapter->rWifiVar.ucHeAmsduInAmpduTx;
+		prCmdContent->ucRxAmsduInAmpdu &=
+			prAdapter->rWifiVar.ucHeAmsduInAmpduRx;
+	} else
+#endif
 	if ((prStaRec->ucDesiredPhyTypeSet & PHY_TYPE_SET_802_11AC) ||
 		(prStaRec->u4Flags & MTK_SYNERGY_CAP_SUPPORT_24G_MCS89)) {
 		/* VHT pear AMSDU in AMPDU configuration */
@@ -1123,6 +1139,10 @@ void cnmStaSendUpdateCmd(struct ADAPTER *prAdapter, struct STA_RECORD *prStaRec,
 			prCmdContent->ucRtsPolicy = RTS_POLICY_STATIC_BW;
 	} else
 		prCmdContent->ucRtsPolicy = RTS_POLICY_LEGACY;
+
+#if (CFG_SUPPORT_802_11AX == 1)
+	cnmStaRecCmdHeContentFill(prStaRec, prCmdContent);
+#endif
 
 	log_dbg(REQ, TRACE, "Update StaRec[%u] WIDX[%u] State[%u] Type[%u] BssIdx[%u] AID[%u]\n",
 		prCmdContent->ucStaIndex,
@@ -1760,3 +1780,30 @@ struct STA_RECORD *cnmGetTdlsPeerByAddress(struct ADAPTER *prAdapter,
 }
 
 #endif
+
+#if (CFG_SUPPORT_802_11AX == 1)
+static void cnmStaRecCmdHeContentFill(
+	struct STA_RECORD *prStaRec,
+	struct CMD_UPDATE_STA_RECORD *prCmdContent)
+{
+	prCmdContent->ucVersion = CMD_UPDATE_STAREC_VER1;
+	memcpy(prCmdContent->ucHeMacCapInfo, prStaRec->ucHeMacCapInfo,
+		HE_MAC_CAP_BYTE_NUM);
+	memcpy(prCmdContent->ucHePhyCapInfo, prStaRec->ucHePhyCapInfo,
+		HE_PHY_CAP_BYTE_NUM);
+
+	prCmdContent->u2HeRxMcsMapBW80 =
+		CPU_TO_LE16(prStaRec->u2HeRxMcsMapBW80);
+	prCmdContent->u2HeTxMcsMapBW80 =
+		CPU_TO_LE16(prStaRec->u2HeTxMcsMapBW80);
+	prCmdContent->u2HeRxMcsMapBW160 =
+		CPU_TO_LE16(prStaRec->u2HeRxMcsMapBW160);
+	prCmdContent->u2HeTxMcsMapBW160 =
+		CPU_TO_LE16(prStaRec->u2HeTxMcsMapBW160);
+	prCmdContent->u2HeRxMcsMapBW80P80 =
+		CPU_TO_LE16(prStaRec->u2HeRxMcsMapBW80P80);
+	prCmdContent->u2HeTxMcsMapBW80P80 =
+		CPU_TO_LE16(prStaRec->u2HeTxMcsMapBW80P80);
+}
+#endif
+

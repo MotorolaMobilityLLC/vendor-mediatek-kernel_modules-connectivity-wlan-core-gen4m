@@ -378,6 +378,10 @@ struct RADIO_MEASUREMENT_REPORT_PARAMS {
 #define RLM_NET_IS_11AC(_prBssInfo) \
 	((_prBssInfo)->ucPhyTypeSet & PHY_TYPE_SET_802_11AC)
 #endif
+#if (CFG_SUPPORT_802_11AX == 1)
+#define RLM_NET_IS_11AX(_prBssInfo) \
+	((_prBssInfo)->ucPhyTypeSet & PHY_TYPE_SET_802_11AX)
+#endif
 
 /* The bandwidth modes are not used anymore. They represent if AP
  * can use 20/40 bandwidth, not all modes. (20110411)
