@@ -270,15 +270,10 @@ void soc3_0_Sw_interrupt_handler(struct ADAPTER *prAdapter);
 void soc3_0_Conninfra_cb_register(void);
 #endif
 
-#if (CFG_SUPPORT_PRE_ON_PHY_ACTION == 1)
-int soc3_0_wlanPreCal(void);
-#endif /* (CFG_SUPPORT_PRE_ON_PHY_ACTION == 1) */
-
+#if (CFG_POWER_ON_DOWNLOAD_EMI_ROM_PATCH == 1)
 void soc3_0_ConstructFirmwarePrio(struct GLUE_INFO *prGlueInfo,
 	uint8_t **apucNameTable, uint8_t **apucName,
 	uint8_t *pucNameIdx, uint8_t ucMaxNameIdx);
-
-#if (CFG_POWER_ON_DOWNLOAD_EMI_ROM_PATCH == 1)
 void *
 soc3_0_kalFirmwareImageMapping(IN struct GLUE_INFO *prGlueInfo,
 			OUT void **ppvMapFileBuf, OUT uint32_t *pu4FileLength,
@@ -292,6 +287,11 @@ uint32_t soc3_0_wlanPowerOnDownload(
 	IN uint8_t ucDownloadItem);
 int32_t soc3_0_wlanPowerOnInit(
 	enum ENUM_WLAN_POWER_ON_DOWNLOAD eDownloadItem);
+
+#if (CFG_SUPPORT_PRE_ON_PHY_ACTION == 1)
+int soc3_0_wlanPreCal(void);
+#endif /* (CFG_SUPPORT_PRE_ON_PHY_ACTION == 1) */
+
 #endif
 
 #endif /* _SOC3_0_H */
