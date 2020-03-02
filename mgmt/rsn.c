@@ -2153,8 +2153,8 @@ uint32_t rsnCheckBipKeyInstalled(IN struct ADAPTER
 			(GET_BSS_INFO_BY_INDEX(prAdapter,
 				prStaRec->ucBssIndex)
 				->eCurrentOPMode == OP_MODE_ACCESS_POINT)) {
-			DBGLOG(RSN, INFO, "AP-STA PMF capable:%d\n",
-			       prStaRec->rPmfCfg.fgApplyPmf);
+			if (prStaRec->rPmfCfg.fgApplyPmf)
+				DBGLOG(RSN, INFO, "AP-STA PMF capable\n");
 			return prStaRec->rPmfCfg.fgApplyPmf;
 		} else {
 			return FALSE;
