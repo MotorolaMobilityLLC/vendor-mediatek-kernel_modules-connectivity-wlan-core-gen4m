@@ -120,7 +120,7 @@ enum consys_drv_type g_WholeChipRstType;
 char *g_WholeChipRstReason;
 u_int8_t g_IsWfsysResetOnFail = FALSE;
 u_int8_t g_IsWfsysRstDone = TRUE;
-
+u_int8_t g_fgRstRecover = FALSE;
 #endif
 
 #if (CFG_ANDORID_CONNINFRA_COREDUMP_SUPPORT == 1)
@@ -772,6 +772,10 @@ void glResetSubsysRstProcedure(
 {
 	bool fgIsTimeout;
 	struct mt66xx_chip_info *prChipInfo;
+	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
+
+	if (prWifiVar->fgRstRecover == 1)
+		g_fgRstRecover = TRUE;
 #if 0
 	if (prAdapter->chip_info->checkbushang)
 		prAdapter->chip_info->checkbushang(FALSE);
@@ -826,12 +830,17 @@ void glResetSubsysRstProcedure(
 #if (CFG_ANDORID_CONNINFRA_COREDUMP_SUPPORT == 1)
 		if (eResetReason >= RST_REASON_MAX)
 			eResetReason = 0;
-		if (g_eWfRstSource == WF_RST_SOURCE_FW)
-			fw_log_connsys_coredump_start(-1, NULL);
-		else
+		if (g_eWfRstSource == WF_RST_SOURCE_FW) {
+			if (g_fgRstRecover == FALSE)
+				fw_log_connsys_coredump_start(-1, NULL);
+			else
+				g_fgRstRecover = FALSE;
+		} else {
 			fw_log_connsys_coredump_start(
 					CONNDRV_TYPE_WIFI,
 					apucRstReason[eResetReason]);
+		}
+
 #endif
 		glResetMsgHandler(WMTMSG_TYPE_RESET,
 				  WMTRSTMSG_0P5RESET_START);
