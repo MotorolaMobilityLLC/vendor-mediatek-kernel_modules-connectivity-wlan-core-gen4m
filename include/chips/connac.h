@@ -79,6 +79,7 @@
  *******************************************************************************
  */
 #define CONNAC_CHIP_ID                          (0x0001)
+#define CONNAC_CHIP_ADIE_INFO			(0x6631)
 #define CONNAC_SW_SYNC0                         CONN_CFG_ON_CONN_ON_MISC_ADDR
 #define CONNAC_SW_SYNC0_RDY_OFFSET \
 	CONN_CFG_ON_CONN_ON_MISC_DRV_FM_STAT_SYNC_SHFT

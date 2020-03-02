@@ -1230,6 +1230,7 @@ struct mt66xx_chip_info {
 	/* chip ip version from FW */
 	uint32_t u4ChipIpVersion;
 	uint32_t u4ChipIpConfig;
+	uint16_t u2ADieChipVersion;
 
 	void (*asicCapInit)(IN struct ADAPTER *prAdapter);
 	void (*asicEnableFWDownload)(IN struct ADAPTER *prAdapter,
