@@ -10102,13 +10102,6 @@ wlanoidSetWapiAssocInfo(IN struct ADAPTER *prAdapter,
 	struct WAPI_INFO_ELEM *prWapiInfo;
 	struct CONNECTION_SETTINGS *prConnSettings;
 	uint8_t ucBssIndex = 0;
-	uint8_t *cp;
-	uint16_t u2AuthSuiteCount = 0;
-	uint16_t u2PairSuiteCount = 0;
-	uint32_t u4AuthKeyMgtSuite = 0;
-	uint32_t u4PairSuite = 0;
-	uint32_t u4GroupSuite = 0;
-	uint16_t u2IeLength = 0;
 
 	ASSERT(prAdapter);
 	ASSERT(pvSetBuffer);
@@ -10135,72 +10128,57 @@ wlanoidSetWapiAssocInfo(IN struct ADAPTER *prAdapter,
 	if (!prWapiInfo || prWapiInfo->ucLength < 18)
 		return WLAN_STATUS_INVALID_LENGTH;
 
-	u2IeLength = prWapiInfo->ucLength + 2;
-
 	/* Skip Version check */
-	cp = (uint8_t *) &prWapiInfo->u2AuthKeyMgtSuiteCount;
 
-	WLAN_GET_FIELD_16(cp, &u2AuthSuiteCount);
-
-	if (u2AuthSuiteCount > 1)
+	/*Cipher suite count check, only one of each for now*/
+	if (prWapiInfo->u2AKMSuiteCount > 1 ||
+	    prWapiInfo->u2PairSuiteCount > 1)
 		return WLAN_STATUS_INVALID_LENGTH;
-
-	cp += 2;
-	WLAN_GET_FIELD_32(cp, &u4AuthKeyMgtSuite);
 
 	DBGLOG(SEC, TRACE,
 	       "WAPI: Assoc Info auth mgt suite [%d]: %02x-%02x-%02x-%02x\n",
-	       u2AuthSuiteCount,
-	       (uint8_t) (u4AuthKeyMgtSuite & 0x000000FF),
-	       (uint8_t) ((u4AuthKeyMgtSuite >> 8) & 0x000000FF),
-	       (uint8_t) ((u4AuthKeyMgtSuite >> 16) & 0x000000FF),
-	       (uint8_t) ((u4AuthKeyMgtSuite >> 24) & 0x000000FF));
+	       prWapiInfo->u2AKMSuiteCount,
+	       (uint8_t) (prWapiInfo->u4AKMSuite & 0x000000FF),
+	       (uint8_t) ((prWapiInfo->u4AKMSuite >> 8) & 0x000000FF),
+	       (uint8_t) ((prWapiInfo->u4AKMSuite >> 16) & 0x000000FF),
+	       (uint8_t) ((prWapiInfo->u4AKMSuite >> 24) & 0x000000FF));
 
-	if (u4AuthKeyMgtSuite != WAPI_AKM_SUITE_802_1X
-	    && u4AuthKeyMgtSuite != WAPI_AKM_SUITE_PSK)
-		ASSERT(FALSE);
+	if (prWapiInfo->u4AKMSuite != WAPI_AKM_SUITE_802_1X
+	    && prWapiInfo->u4AKMSuite != WAPI_AKM_SUITE_PSK)
+		return WLAN_STATUS_NOT_SUPPORTED;
 
-	cp += 4;
-	WLAN_GET_FIELD_16(cp, &u2PairSuiteCount);
-	if (u2PairSuiteCount > 1)
-		return WLAN_STATUS_INVALID_LENGTH;
-
-	cp += 2;
-	WLAN_GET_FIELD_32(cp, &u4PairSuite);
 	DBGLOG(SEC, TRACE,
 	       "WAPI: Assoc Info pairwise cipher suite [%d]: %02x-%02x-%02x-%02x\n",
-	       u2PairSuiteCount,
-	       (uint8_t) (u4PairSuite & 0x000000FF),
-	       (uint8_t) ((u4PairSuite >> 8) & 0x000000FF),
-	       (uint8_t) ((u4PairSuite >> 16) & 0x000000FF),
-	       (uint8_t) ((u4PairSuite >> 24) & 0x000000FF));
+	       prWapiInfo->u2PairSuiteCount,
+	       (uint8_t) (prWapiInfo->u4PairSuite & 0x000000FF),
+	       (uint8_t) ((prWapiInfo->u4PairSuite >> 8) & 0x000000FF),
+	       (uint8_t) ((prWapiInfo->u4PairSuite >> 16) & 0x000000FF),
+	       (uint8_t) ((prWapiInfo->u4PairSuite >> 24) & 0x000000FF));
 
-	if (u4PairSuite != WAPI_CIPHER_SUITE_WPI)
-		ASSERT(FALSE);
+	if (prWapiInfo->u4PairSuite != WAPI_CIPHER_SUITE_WPI)
+		return WLAN_STATUS_NOT_SUPPORTED;
 
-	cp += 4;
-	WLAN_GET_FIELD_32(cp, &u4GroupSuite);
 	DBGLOG(SEC, TRACE,
 	       "WAPI: Assoc Info group cipher suite : %02x-%02x-%02x-%02x\n",
-	       (uint8_t) (u4GroupSuite & 0x000000FF),
-	       (uint8_t) ((u4GroupSuite >> 8) & 0x000000FF),
-	       (uint8_t) ((u4GroupSuite >> 16) & 0x000000FF),
-	       (uint8_t) ((u4GroupSuite >> 24) & 0x000000FF));
+	       (uint8_t) (prWapiInfo->u4GroupSuite & 0x000000FF),
+	       (uint8_t) ((prWapiInfo->u4GroupSuite >> 8) & 0x000000FF),
+	       (uint8_t) ((prWapiInfo->u4GroupSuite >> 16) & 0x000000FF),
+	       (uint8_t) ((prWapiInfo->u4GroupSuite >> 24) & 0x000000FF));
 
-	if (u4GroupSuite != WAPI_CIPHER_SUITE_WPI)
-		ASSERT(FALSE);
+	if (prWapiInfo->u4GroupSuite != WAPI_CIPHER_SUITE_WPI)
+		return WLAN_STATUS_NOT_SUPPORTED;
 
-	prConnSettings->u4WapiSelectedAKMSuite =
-		u4AuthKeyMgtSuite;
+	prConnSettings->u4WapiSelectedAKMSuite
+		= prWapiInfo->u4AKMSuite;
 	prConnSettings->u4WapiSelectedPairwiseCipher
-		= u4PairSuite;
+		= prWapiInfo->u4PairSuite;
 	prConnSettings->u4WapiSelectedGroupCipher
-		= u4GroupSuite;
+		= prWapiInfo->u4GroupSuite;
 
 	kalMemCopy(prConnSettings->aucWapiAssocInfoIEs,
-		   prWapiInfo, u2IeLength);
-	prConnSettings->u2WapiAssocInfoIESz = u2IeLength;
-	DBGLOG(SEC, TRACE, "Assoc Info IE sz %u\n", u2IeLength);
+		   prWapiInfo, prWapiInfo->ucLength + 2);
+	prConnSettings->u2WapiAssocInfoIESz = prWapiInfo->ucLength + 2;
+	DBGLOG(SEC, TRACE, "Assoc Info IE sz %u\n", prWapiInfo->ucLength + 2);
 
 	prConnSettings->fgWapiMode = TRUE;
 
