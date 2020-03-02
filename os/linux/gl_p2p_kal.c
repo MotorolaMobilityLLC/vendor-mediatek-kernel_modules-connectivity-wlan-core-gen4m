@@ -1406,12 +1406,20 @@ struct ieee80211_channel *kalP2pFuncGetChannelEntry(IN P_GL_P2P_INFO_T prP2pInfo
 
 		switch (prChannelInfo->eBand) {
 		case BAND_2G4:
-			prTargetChannelEntry = wiphy->bands[KAL_BAND_2GHZ]->channels;
-			u4TblSize = wiphy->bands[KAL_BAND_2GHZ]->n_channels;
+			if (wiphy->bands[KAL_BAND_2GHZ] == NULL)
+				DBGLOG(P2P, ERROR, "kalP2pFuncGetChannelEntry 2.4G NULL Bands!!\n");
+			else {
+				prTargetChannelEntry = wiphy->bands[KAL_BAND_2GHZ]->channels;
+				u4TblSize = wiphy->bands[KAL_BAND_2GHZ]->n_channels;
+			}
 			break;
 		case BAND_5G:
-			prTargetChannelEntry = wiphy->bands[KAL_BAND_5GHZ]->channels;
-			u4TblSize = wiphy->bands[KAL_BAND_5GHZ]->n_channels;
+			if (wiphy->bands[KAL_BAND_5GHZ] == NULL)
+				DBGLOG(P2P, ERROR, "kalP2pFuncGetChannelEntry 5G NULL Bands!!\n");
+			else {
+				prTargetChannelEntry = wiphy->bands[KAL_BAND_5GHZ]->channels;
+				u4TblSize = wiphy->bands[KAL_BAND_5GHZ]->n_channels;
+			}
 			break;
 		default:
 			break;
