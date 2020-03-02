@@ -50,23 +50,23 @@
  *
  *****************************************************************************/
 /*
-** Id: //Department/DaVinci/BRANCHES/MT6620_WIFI_DRIVER_V2_3/include/debug.h#1
-*/
+ ** Id: include/debug.h
+ */
 
 /*! \file   debug.h
-*    \brief  Definition of SW debugging level.
-*
-*    In this file, it describes the definition of various SW debugging levels and
-*    assert functions.
-*/
+ *    \brief  Definition of SW debugging level.
+ *
+ *    In this file, it describes the definition of various SW debugging levels
+ *    and assert functions.
+ */
 
 #ifndef _DEBUG_H
 #define _DEBUG_H
 
 /*******************************************************************************
-*                         C O M P I L E R   F L A G S
-********************************************************************************
-*/
+ *                         C O M P I L E R   F L A G S
+ *******************************************************************************
+ */
 #ifndef BUILD_QA_DBG
 #define BUILD_QA_DBG 0
 #endif
@@ -74,17 +74,17 @@
 #define DBG_DISABLE_ALL_LOG             0
 
 /*******************************************************************************
-*                    E X T E R N A L   R E F E R E N C E S
-********************************************************************************
-*/
+ *                    E X T E R N A L   R E F E R E N C E S
+ *******************************************************************************
+ */
 #include "gl_typedef.h"
 
 extern uint8_t aucDebugModule[];
 
 /*******************************************************************************
-*                              C O N S T A N T S
-********************************************************************************
-*/
+ *                              C O N S T A N T S
+ *******************************************************************************
+ */
 /* Define debug category (class):
  * (1) ERROR (2) WARN (3) STATE (4) EVENT (5) TRACE (6) INFO (7) LOUD (8) TEMP
  */
@@ -105,9 +105,9 @@ extern uint8_t aucDebugModule[];
 #endif
 #define DBG_ALL_MODULE_IDX      0xFFFFFFFF
 /*******************************************************************************
-*                             D A T A   T Y P E S
-********************************************************************************
-*/
+ *                             D A T A   T Y P E S
+ *******************************************************************************
+ */
 /* Define debug module index */
 enum ENUM_DBG_MODULE {
 	DBG_INIT_IDX = 0,	/* 0x00 *//* For driver initial */
@@ -160,17 +160,17 @@ enum ENUM_DBG_ASSERT_PATH {
 #endif
 #define DBG_ASSERT_CTRL_LEVEL_DEFAULT DBG_ASSERT_CTRL_LEVEL_ERROR
 /*******************************************************************************
-*                            P U B L I C   D A T A
-********************************************************************************
-*/
+ *                            P U B L I C   D A T A
+ *******************************************************************************
+ */
 /*******************************************************************************
-*                           P R I V A T E   D A T A
-********************************************************************************
-*/
+ *                           P R I V A T E   D A T A
+ *******************************************************************************
+ */
 /*******************************************************************************
-*                                 M A C R O S
-********************************************************************************
-*/
+ *                                 M A C R O S
+ *******************************************************************************
+ */
 /* Debug print format string for the OS system time */
 #define OS_SYSTIME_DBG_FORMAT               "0x%08x"
 /* Debug print argument for the OS system time */
@@ -187,15 +187,17 @@ enum ENUM_DBG_ASSERT_PATH {
 #define IPV6STR		"%pI6"
 /* Debug print argument for the MAC Address */
 #define IPV6TOSTR(a)	a
-/* The pre-defined format to dump the value of a varaible with its name shown. */
-#define DUMPVAR(variable, format)           (#variable " = " format "\n", variable)
+/* The pre-defined format to dump the varaible value with its name shown. */
+#define DUMPVAR(variable, format)   (#variable " = " format "\n", variable)
 /* The pre-defined format to dump the MAC type value with its name shown. */
-#define DUMPMACADDR(addr)                   (#addr " = " MACSTR "\n", MAC2STR(addr))
+#define DUMPMACADDR(addr)           (#addr " = " MACSTR "\n", MAC2STR(addr))
 /* Debug print format string for the floating point */
 #define FPSTR		"%u.%u"
 /* Debug print argument for the floating point */
-#define DIV2INT(_dividend, _divisor) ((_divisor) ? (_dividend) / (_divisor) : 0)
-#define DIV2DEC(_dividend, _divisor) ((_divisor) ? (((_dividend) * 100) / (_divisor)) % 100 : 0)
+#define DIV2INT(_dividend, _divisor) \
+		((_divisor) ? (_dividend) / (_divisor) : 0)
+#define DIV2DEC(_dividend, _divisor) \
+		((_divisor) ? (((_dividend) * 100) / (_divisor)) % 100 : 0)
 /* Basiclly, we just do renaming of KAL functions although they should
  * be defined as "Nothing to do" if DBG=0. But in some compiler, the macro
  * syntax does not support  #define LOG_FUNC(x,...)
@@ -208,58 +210,65 @@ enum ENUM_DBG_ASSERT_PATH {
 /* If __FUNCTION__ is already defined by compiler, we just use it. */
 #define DEBUGFUNC(_Func)
 /* Disabled due to AOSP
-*#if defined(__FUNCTION__)
-*#define DEBUGFUNC(_Func)
-*#else
-*    #define DEBUGFUNC(_Func) static const char __FUNCTION__[] = _Func;
-*#endif
-*/
+ * #if defined(__FUNCTION__)
+ *    #define DEBUGFUNC(_Func)
+ * #else
+ *    #define DEBUGFUNC(_Func) static const char __FUNCTION__[] = _Func;
+ * #endif
+ */
 #if DBG_DISABLE_ALL_LOG
 #define DBGLOG(_Module, _Class, _Fmt)
 #define DBGLOG_LIMITED(_Module, _Class, _Fmt)
 #define DBGLOG_MEM8(_Module, _Class, _StartAddr, _Length)
 #define DBGLOG_MEM32(_Module, _Class, _StartAddr, _Length)
 #else
-#define DBGLOG(_Module, _Class, _Fmt, ...) \
+#define DBGLOG(_Mod, _Clz, _Fmt, ...) \
 	do { \
-		if ((aucDebugModule[DBG_##_Module##_IDX] & DBG_CLASS_##_Class) == 0) \
+		if ((aucDebugModule[DBG_##_Mod##_IDX] & \
+			 DBG_CLASS_##_Clz) == 0) \
 			break; \
-		LOG_FUNC("[%u]%s:(" #_Module " " #_Class ") " _Fmt, KAL_GET_CURRENT_THREAD_ID(), \
+		LOG_FUNC("[%u]%s:(" #_Mod " " #_Clz ") " _Fmt, \
+			 KAL_GET_CURRENT_THREAD_ID(), \
 			 __func__, ##__VA_ARGS__); \
 	} while (0)
-#define DBGLOG_LIMITED(_Module, _Class, _Fmt, ...) \
+#define DBGLOG_LIMITED(_Mod, _Clz, _Fmt, ...) \
 	do { \
-		if ((aucDebugModule[DBG_##_Module##_IDX] & DBG_CLASS_##_Class) == 0) \
+		if ((aucDebugModule[DBG_##_Mod##_IDX] & \
+			 DBG_CLASS_##_Clz) == 0) \
 			break; \
-		LOG_FUNC_LIMITED("[%u]%s:(" #_Module " " #_Class ") " _Fmt, KAL_GET_CURRENT_THREAD_ID(), \
+		LOG_FUNC_LIMITED("[%u]%s:(" #_Mod " " #_Clz ") " _Fmt, \
+			 KAL_GET_CURRENT_THREAD_ID(), \
 			 __func__, ##__VA_ARGS__); \
 	} while (0)
-#define DBGFWLOG(_Module, _Class, _Fmt, ...) \
+#define DBGFWLOG(_Mod, _Clz, _Fmt, ...) \
 	do { \
-		if ((aucDebugModule[DBG_##_Module##_IDX] & DBG_CLASS_##_Class) == 0) \
+		if ((aucDebugModule[DBG_##_Mod##_IDX] & \
+			 DBG_CLASS_##_Clz) == 0) \
 			break; \
 		wlanPrintFwLog(NULL, 0, DEBUG_MSG_TYPE_DRIVER, \
-			"[%u]%s:(" #_Module " " #_Class ") " _Fmt, KAL_GET_CURRENT_THREAD_ID(), \
+			 "[%u]%s:(" #_Mod " " #_Clz ") " _Fmt, \
+			 KAL_GET_CURRENT_THREAD_ID(), \
 			 __func__, ##__VA_ARGS__); \
 	} while (0)
-#define TOOL_PRINTLOG(_Module, _Class, _Fmt, ...) \
+#define TOOL_PRINTLOG(_Mod, _Clz, _Fmt, ...) \
 	do { \
-		if ((aucDebugModule[DBG_##_Module##_IDX] & DBG_CLASS_##_Class) == 0) \
+		if ((aucDebugModule[DBG_##_Mod##_IDX] & \
+			 DBG_CLASS_##_Clz) == 0) \
 			break; \
 		LOG_FUNC(_Fmt, ##__VA_ARGS__); \
 	} while (0)
-#define DBGLOG_MEM8(_Module, _Class, _StartAddr, _Length) \
+#define DBGLOG_MEM8(_Mod, _Clz, _Adr, _Len) \
 	{ \
-		if (aucDebugModule[DBG_##_Module##_IDX] & DBG_CLASS_##_Class) { \
-			LOG_FUNC("%s:(" #_Module " " #_Class ")\n", __func__); \
-			dumpMemory8((uint8_t *)(_StartAddr), (uint32_t)(_Length)); \
+		if (aucDebugModule[DBG_##_Mod##_IDX] & DBG_CLASS_##_Clz) { \
+			LOG_FUNC("%s:(" #_Mod " " #_Clz ")\n", __func__); \
+			dumpMemory8((uint8_t *)(_Adr), (uint32_t)(_Len)); \
 		} \
 	}
-#define DBGLOG_MEM32(_Module, _Class, _StartAddr, _Length) \
+#define DBGLOG_MEM32(_Mod, _Clz, _Adr, _Len) \
 	{ \
-		if (aucDebugModule[DBG_##_Module##_IDX] & DBG_CLASS_##_Class) { \
-			LOG_FUNC("%s:(" #_Module " " #_Class ")\n", __func__); \
-			dumpMemory32((uint32_t *)(_StartAddr), (uint32_t)(_Length)); \
+		if (aucDebugModule[DBG_##_Mod##_IDX] & DBG_CLASS_##_Clz) { \
+			LOG_FUNC("%s:(" #_Mod " " #_Clz ")\n", __func__); \
+			dumpMemory32((uint32_t *)(_Adr), (uint32_t)(_Len)); \
 		} \
 	}
 #endif
@@ -282,7 +291,8 @@ enum ENUM_DBG_ASSERT_PATH {
 	}
 #define ASSERT_REPORT(_exp, _fmt) \
 	{ \
-		LOG_FUNC("Assertion failed: %s:%d (%s)\n", __FILE__, __LINE__, #_exp); \
+		LOG_FUNC("Assertion failed: %s:%d (%s)\n", \
+			__FILE__, __LINE__, #_exp); \
 		LOG_FUNC _fmt; \
 		if (!(_exp)) { \
 			do {} while (1); \
@@ -296,7 +306,8 @@ enum ENUM_DBG_ASSERT_PATH {
 			TCHAR rUbuf[256]; \
 			kalBreakPoint(); \
 			_stprintf(rUbuf, TEXT("Assertion failed: %s:%d %s\n"), \
-				  UNICODE_TEXT(__FILE__), __LINE__, UNICODE_TEXT(#_exp)); \
+				  UNICODE_TEXT(__FILE__), __LINE__, \
+				  UNICODE_TEXT(#_exp)); \
 			MessageBox(NULL, rUbuf, TEXT("ASSERT!"), MB_OK); \
 		} \
 	}
@@ -306,7 +317,8 @@ enum ENUM_DBG_ASSERT_PATH {
 			TCHAR rUbuf[256]; \
 			kalBreakPoint(); \
 			_stprintf(rUbuf, TEXT("Assertion failed: %s:%d %s\n"), \
-				  UNICODE_TEXT(__FILE__), __LINE__, UNICODE_TEXT(#_exp)); \
+				  UNICODE_TEXT(__FILE__), __LINE__, \
+				  UNICODE_TEXT(#_exp)); \
 			MessageBox(NULL, rUbuf, TEXT("ASSERT!"), MB_OK); \
 		} \
 	}
@@ -321,14 +333,16 @@ enum ENUM_DBG_ASSERT_PATH {
 #define ASSERT(_exp) \
 	{ \
 		if (!(_exp) && !fgIsBusAccessFailed) { \
-			LOG_FUNC("Assertion failed: %s:%d (%s)\n", __FILE__, __LINE__, #_exp); \
+			LOG_FUNC("Assertion failed: %s:%d (%s)\n", \
+				__FILE__, __LINE__, #_exp); \
 			kalBreakPoint(); \
 		} \
 	}
 #define ASSERT_REPORT(_exp, _fmt) \
 	{ \
 		if (!(_exp) && !fgIsBusAccessFailed) { \
-			LOG_FUNC("Assertion failed: %s:%d (%s)\n", __FILE__, __LINE__, #_exp); \
+			LOG_FUNC("Assertion failed: %s:%d (%s)\n", \
+				__FILE__, __LINE__, #_exp); \
 			LOG_FUNC _fmt; \
 			kalBreakPoint(); \
 		} \
@@ -344,7 +358,8 @@ enum ENUM_DBG_ASSERT_PATH {
 #define LOGBUF(_pucBuf, _maxLen, _curLen, _Fmt, ...) \
 	{ \
 		if (_pucBuf) \
-			(_curLen) += kalSnprintf((_pucBuf) + (_curLen), (_maxLen) - (_curLen), _Fmt, ##__VA_ARGS__); \
+			(_curLen) += kalSnprintf((_pucBuf) + (_curLen), \
+			(_maxLen) - (_curLen), _Fmt, ##__VA_ARGS__); \
 		else \
 			DBGLOG(SW4, INFO, _Fmt, ##__VA_ARGS__); \
 	}
@@ -356,17 +371,20 @@ enum ENUM_DBG_ASSERT_PATH {
 }
 #endif
 /*******************************************************************************
-*                  F U N C T I O N   D E C L A R A T I O N S
-********************************************************************************
-*/
-void dumpMemory8(IN uint8_t *pucStartAddr, IN uint32_t u4Length);
-void dumpMemory32(IN uint32_t *pu4StartAddr, IN uint32_t u4Length);
-void wlanPrintFwLog(uint8_t *pucLogContent, uint16_t u2MsgSize, uint8_t ucMsgType,
-	const uint8_t *pucFmt, ...);
+ *                  F U N C T I O N   D E C L A R A T I O N S
+ *******************************************************************************
+ */
+void dumpMemory8(IN uint8_t *pucStartAddr,
+		 IN uint32_t u4Length);
+void dumpMemory32(IN uint32_t *pu4StartAddr,
+		  IN uint32_t u4Length);
+void wlanPrintFwLog(uint8_t *pucLogContent,
+		    uint16_t u2MsgSize, uint8_t ucMsgType,
+		    const uint8_t *pucFmt, ...);
 /*******************************************************************************
-*                              F U N C T I O N S
-********************************************************************************
-*/
+ *                              F U N C T I O N S
+ *******************************************************************************
+ */
 #endif /* _DEBUG_H */
 
 
