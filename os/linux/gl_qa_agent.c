@@ -2097,6 +2097,8 @@ static int32_t HQA_RfRegBulkRead(struct net_device
 		u4Offset = u4Offset | 0x99900000;
 	else if (u4WfSel == 1)
 		u4Offset = u4Offset | 0x99910000;
+	else if (u4WfSel == 15)
+		u4Offset = u4Offset | 0x999F0000;
 
 
 	for (u4Index = 0; u4Index < u4Length; u4Index++) {
@@ -4396,7 +4398,7 @@ static int32_t HQA_GetChipID(struct net_device *prNetDev,
 	prChipInfo = prAdapter->chip_info;
 	g_u4Chip_ID = prChipInfo->chip_id;
 	DBGLOG(RFTEST, INFO,
-	       "QA_AGENT IPVer= 0x%08x, Adie = 0x%08x\n",
+		"QA_AGENT IPVer= 0x%08x, Adie = 0x%08x\n",
 		prChipInfo->u4ChipIpVersion,
 		prChipInfo->u2ADieChipVersion);
 
