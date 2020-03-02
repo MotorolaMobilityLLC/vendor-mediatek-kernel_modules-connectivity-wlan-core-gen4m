@@ -371,7 +371,7 @@ static ssize_t procCfgRead(struct file *filp, char __user *buf, size_t count,
 			       (uint32_t)prWlanCfgEntry->aucValue[
 				WLAN_CFG_VALUE_LEN_MAX - 1]);
 			kalMemSet(g_aucProcBuf, ' ', u4StrLen);
-			kalStrnCpy(g_aucProcBuf, str2, kalStrLen(str2));
+			kalStrnCpy(g_aucProcBuf, str2, kalStrLen(str2) + 1);
 			g_aucProcBuf[u4StrLen-1] = '\n';
 			goto procCfgReadLabel;
 		}
@@ -404,7 +404,7 @@ static ssize_t procCfgRead(struct file *filp, char __user *buf, size_t count,
 			       (uint32_t)prWlanCfgEntry->aucValue[
 				WLAN_CFG_VALUE_LEN_MAX - 1]);
 			kalMemSet(g_aucProcBuf, ' ', u4StrLen);
-			kalStrnCpy(g_aucProcBuf, str2, kalStrLen(str2));
+			kalStrnCpy(g_aucProcBuf, str2, kalStrLen(str2) + 1);
 			g_aucProcBuf[u4StrLen-1] = '\n';
 			goto procCfgReadLabel;
 		}
@@ -1049,7 +1049,7 @@ static ssize_t procCountryRead(struct file *filp, char __user *buf,
 	kalMemZero(g_aucProcBuf, sizeof(g_aucProcBuf));
 	if (country)
 		kalSnprintf(g_aucProcBuf, sizeof(g_aucProcBuf),
-			"Current Country Code: %s\n", &country);
+			"Current Country Code: %d\n", &country);
 	else
 		kalSnprintf(g_aucProcBuf, sizeof(g_aucProcBuf),
 			"Current Country Code: NULL\n");
