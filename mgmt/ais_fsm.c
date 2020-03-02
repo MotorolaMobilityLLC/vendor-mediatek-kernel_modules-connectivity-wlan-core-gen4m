@@ -1883,7 +1883,8 @@ void aisFsmRunEventAbort(IN struct ADAPTER *prAdapter, IN struct MSG_HDR *prMsgH
 	/* to support user space triggered roaming */
 	if (ucReasonOfDisconnect == DISCONNECT_REASON_CODE_ROAMING &&
 	    prAisFsmInfo->eCurrentState != AIS_STATE_DISCONNECTING) {
-
+		cnmTimerStopTimer(prAdapter,
+			&prAisFsmInfo->rSecModeChangeTimer);
 		if (prAisFsmInfo->eCurrentState == AIS_STATE_NORMAL_TR) {
 			/* 1. release channel */
 			aisFsmReleaseCh(prAdapter);
@@ -2300,15 +2301,55 @@ enum ENUM_AIS_STATE aisFsmJoinCompleteAction(IN struct ADAPTER *prAdapter, IN st
 					cnmStaRecFree(prAdapter, prStaRec);
 
 				if (prAisBssInfo->eConnectionState == PARAM_MEDIA_STATE_CONNECTED) {
+					struct PARAM_SSID rSsid;
+
 					/* roaming fail count and time */
 					prAdapter->prGlueInfo->u4RoamFailCnt++;
 					prAdapter->prGlueInfo->u8RoamFailTime = sched_clock();
 #if CFG_SUPPORT_ROAMING
 					eNextState = AIS_STATE_WAIT_FOR_NEXT_SCAN;
 #endif /* CFG_SUPPORT_ROAMING */
-					if (prConnSettings->eConnectionPolicy == CONNECT_BY_BSSID
-						&& prBssDesc->u2JoinStatus)
-						eNextState = AIS_STATE_JOIN_FAILURE;
+
+					if (prAisBssInfo->prStaRecOfAP)
+						prAisBssInfo->prStaRecOfAP
+						->fgIsTxAllowed = TRUE;
+
+					if (prConnSettings->eConnectionPolicy
+						== CONNECT_BY_BSSID
+						&& prBssDesc->u2JoinStatus) {
+						uint32_t u4InfoBufLen = 0;
+					/* For framework roaming case, if
+					 *   authentication is rejected,
+					 *   need to make driver disconnecting
+					 *   because wpa_supplicant will enter
+					 *   disconnected state in this case,
+					 *   otherwise, connection state
+					 *   between driver and supplicant will
+					 *   be not synchronized.
+					 */
+						wlanoidSetDisassociate(
+							prAdapter,
+							NULL, 0,
+							&u4InfoBufLen);
+						eNextState = prAisFsmInfo
+							     ->eCurrentState;
+						break;
+					}
+					COPY_SSID(rSsid.aucSsid,
+						rSsid.u4SsidLen,
+						prAisBssInfo->aucSSID,
+						prAisBssInfo->ucSSIDLen);
+					prAisFsmInfo->prTargetBssDesc =
+					  scanSearchBssDescByBssidAndSsid(
+						prAdapter,
+						prAisBssInfo->aucBSSID,
+						TRUE, &rSsid);
+					prAisFsmInfo->prTargetStaRec
+						= prAisBssInfo->prStaRecOfAP;
+					ASSERT(prAisFsmInfo->prTargetBssDesc);
+					if (!prAisFsmInfo->prTargetBssDesc)
+						DBGLOG(AIS, ERROR,
+							"Can't retrieve target bss descriptor\n");
 				} else if (prAisFsmInfo->rJoinReqTime != 0 && CHECK_FOR_TIMEOUT
 					(rCurrentTime, prAisFsmInfo->rJoinReqTime, SEC_TO_SYSTIME(AIS_JOIN_TIMEOUT))) {
 					/* 4.a temrminate join operation */
@@ -3203,7 +3244,8 @@ void aisFsmDisconnect(IN struct ADAPTER *prAdapter, IN u_int8_t fgDelayIndicatio
 	ASSERT(prAdapter);
 
 	prAisBssInfo = prAdapter->prAisBssInfo;
-
+	cnmTimerStopTimer(prAdapter,
+		&prAdapter->rWifiVar.rAisFsmInfo.rSecModeChangeTimer);
 	nicPmIndicateBssAbort(prAdapter, prAdapter->prAisBssInfo->ucBssIndex);
 
 #if CFG_SUPPORT_ADHOC
