@@ -1972,8 +1972,10 @@ void kalP2pUnlinkBss(IN struct GLUE_INFO *prGlueInfo, IN uint8_t aucBSSID[])
 			WLAN_CAPABILITY_ESS);
 #endif
 
-	if (bss != NULL)
+	if (bss != NULL) {
 		cfg80211_unlink_bss(prGlueP2pInfo->prWdev->wiphy, bss);
+		cfg80211_put_bss(prGlueP2pInfo->prWdev->wiphy, bss);
+	}
 
 	if (scanSearchBssDescByBssidAndSsid(prGlueInfo->prAdapter,
 			aucBSSID, FALSE, NULL) != NULL)
