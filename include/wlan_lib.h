@@ -1136,6 +1136,7 @@ struct WIFI_LINK_QUALITY_INFO {
 	uint64_t u8IdleSlotCount;	/* congestion stats: idle slot */
 	uint64_t u8DiffIdleSlotCount;
 	uint8_t u8HwMacAwakeDuration;
+	uint16_t u2FlagScanning;
 
 	uint32_t u4PhyMode;
 	uint16_t u2LinkSpeed;
