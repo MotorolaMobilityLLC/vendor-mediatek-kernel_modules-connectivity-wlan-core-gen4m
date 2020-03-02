@@ -1125,6 +1125,10 @@ struct WIFI_VAR {
 #if CFG_SUPPORT_SMART_GEAR
 	uint8_t ucSGCfg;
 #endif
+#if (CFG_SUPPORT_P2PGO_ACS == 1)
+	uint8_t ucP2pGoACS;
+#endif
+
 };
 
 /* cnm_timer module */
