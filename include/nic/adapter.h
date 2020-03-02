@@ -1008,6 +1008,9 @@ struct WIFI_VAR {
 
 	/* WMMAC */
 	struct WMM_INFO rWmmInfo;
+
+	/* Tx Msdu Queue method */
+	uint8_t ucTxMsduQueue;
 };
 
 /* cnm_timer module */
