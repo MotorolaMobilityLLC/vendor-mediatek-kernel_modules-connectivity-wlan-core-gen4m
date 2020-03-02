@@ -1229,7 +1229,7 @@ static void wlanSetMulticastListWorkQueue(
 		netif_addr_lock_bh(prDev);
 
 		netdev_for_each_mc_addr(ha, prDev) {
-			if (i < MAX_NUM_GROUP_ADDR) {
+			if (i < MAX_NUM_GROUP_ADDR && (ha != NULL)) {
 				kalMemCopy((prMCAddrList + i * ETH_ALEN),
 					   GET_ADDR(ha), ETH_ALEN);
 				i++;
@@ -2617,10 +2617,8 @@ void wlanSetSuspendMode(struct GLUE_INFO *prGlueInfo,
 			u_int8_t fgEnable)
 {
 	struct net_device *prDev = NULL;
-#if CFG_SUPPORT_DROP_MC_PACKET
 	uint32_t u4PacketFilter = 0;
 	uint32_t u4SetInfoLen = 0;
-#endif
 	uint32_t u4Idx = 0;
 
 	if (!prGlueInfo)
@@ -2632,7 +2630,6 @@ void wlanSetSuspendMode(struct GLUE_INFO *prGlueInfo,
 		if (!prDev)
 			continue;
 
-#if CFG_SUPPORT_DROP_MC_PACKET
 		/* new filter should not include p2p mask */
 #if CFG_ENABLE_WIFI_DIRECT_CFG_80211
 		u4PacketFilter =
@@ -2645,6 +2642,58 @@ void wlanSetSuspendMode(struct GLUE_INFO *prGlueInfo,
 			sizeof(u4PacketFilter), FALSE, FALSE, TRUE,
 			&u4SetInfoLen) != WLAN_STATUS_SUCCESS)
 			DBGLOG(INIT, ERROR, "set packet filter failed.\n");
+
+#if !CFG_SUPPORT_DROP_ALL_MC_PACKET
+		if (fgEnable) {
+			/* Prepare IPv6 RA packet when suspend */
+			uint8_t MC_address[ETH_ALEN] = {0x33, 0x33, 0, 0, 0, 1};
+
+			kalIoctl(prGlueInfo,
+				wlanoidSetMulticastList, MC_address, ETH_ALEN,
+				FALSE, FALSE, TRUE, &u4SetInfoLen);
+		} else if (u4PacketFilter & PARAM_PACKET_FILTER_MULTICAST) {
+			/* Prepare multicast address list when resume */
+			struct netdev_hw_addr *ha;
+			uint8_t *prMCAddrList = NULL;
+			uint32_t i = 0;
+
+			down(&g_halt_sem);
+			if (g_u4HaltFlag) {
+				up(&g_halt_sem);
+				return;
+			}
+
+			prMCAddrList = kalMemAlloc(
+				MAX_NUM_GROUP_ADDR * ETH_ALEN, VIR_MEM_TYPE);
+			if (!prMCAddrList) {
+				DBGLOG(INIT, WARN,
+					"prMCAddrList memory alloc fail!\n");
+				return;
+			}
+
+			/* Avoid race condition with kernel net subsystem */
+			netif_addr_lock_bh(prDev);
+
+			netdev_for_each_mc_addr(ha, prDev) {
+				if ((i < MAX_NUM_GROUP_ADDR) && (ha != NULL)) {
+					kalMemCopy(
+						(prMCAddrList + i * ETH_ALEN),
+						ha->addr, ETH_ALEN);
+					i++;
+				}
+			}
+
+			netif_addr_unlock_bh(prDev);
+
+			up(&g_halt_sem);
+
+			kalIoctl(prGlueInfo, wlanoidSetMulticastList,
+				prMCAddrList, (i * ETH_ALEN), FALSE, FALSE,
+				TRUE, &u4SetInfoLen);
+
+			kalMemFree(prMCAddrList, VIR_MEM_TYPE,
+				MAX_NUM_GROUP_ADDR * ETH_ALEN);
+		}
 #endif
 		kalSetNetAddressFromInterface(prGlueInfo, prDev, fgEnable);
 		wlanNotifyFwSuspend(prGlueInfo, prDev, fgEnable);
