@@ -2520,14 +2520,19 @@ void cnmGetDbdcCapability(
 	}
 
 	log_dbg(CNM, INFO,
-	       "[DBDC] BSS%u RF%u CH%u Nss%u get Wmm%u Nss%u\n",
-	       ucBssIndex,
-	       eRfBand,
-	       ucPrimaryChannel,
-	       ucNss,
-	       prDbdcCap->ucWmmSetIndex,
-	       prDbdcCap->ucNss
-	      );
+			"[DBDC] BSS%u RF%u CH%u Nss%u get Wmm%u Nss%u\n",
+			ucBssIndex,
+			eRfBand,
+			ucPrimaryChannel,
+			ucNss,
+#if (CFG_HW_WMM_BY_BSS == 0)
+			prDbdcCap->ucWmmSetIndex,
+#else
+			/*Wmm Selection varies from Bss instead of RfBand. */
+			0xFF,
+#endif
+			prDbdcCap->ucNss
+		);
 }
 
 /*----------------------------------------------------------------------------*/
