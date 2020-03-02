@@ -3325,12 +3325,12 @@ void wlanEnableATGO(IN struct ADAPTER *prAdapter)
 
 void wlanPrintVersion(IN struct ADAPTER *prAdapter)
 {
-	uint8_t aucBuf[256];
+	uint8_t aucBuf[512];
 
-	kalMemZero(aucBuf, 256);
+	kalMemZero(aucBuf, 512);
 
 #if CFG_ENABLE_FW_DOWNLOAD
-	fwDlGetFwdlInfo(prAdapter, aucBuf, 256);
+	fwDlGetFwdlInfo(prAdapter, aucBuf, 512);
 #endif
 	DBGLOG(SW4, INFO, "%s", aucBuf);
 }

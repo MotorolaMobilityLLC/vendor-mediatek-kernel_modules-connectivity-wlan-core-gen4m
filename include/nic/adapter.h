@@ -945,6 +945,8 @@ struct WIFI_VER_INFO {
 	uint16_t u2Part2CfgPeerVersion;
 
 	/* Firmware */
+	uint8_t aucReleaseManifest[256];
+
 	/* N9 SW */
 	uint16_t u2FwProductID;
 	uint16_t u2FwOwnVersion;
