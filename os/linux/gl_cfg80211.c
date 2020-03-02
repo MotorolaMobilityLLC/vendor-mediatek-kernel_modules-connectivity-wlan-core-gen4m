@@ -511,8 +511,8 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy,
 	}
 
 #if defined(CFG_REPORT_MAX_TX_RATE) && (CFG_REPORT_MAX_TX_RATE == 1)
-	u4Rate = prGlueInfo->prAdapter->u4StaMaxTxRate * 1000;
-	rStatus = WLAN_STATUS_SUCCESS;
+	rStatus = kalIoctl(prGlueInfo, wlanoidQueryMaxLinkSpeed, &u4Rate,
+				sizeof(u4Rate), TRUE, FALSE, FALSE, &u4BufLen);
 #else
 	rStatus = kalIoctl(prGlueInfo, wlanoidQueryLinkSpeed, &u4Rate,
 				sizeof(u4Rate), TRUE, FALSE, FALSE, &u4BufLen);
@@ -667,8 +667,9 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy,
 		DBGLOG(REQ, WARN, "not yet connected\n");
 	} else {
 #if defined(CFG_REPORT_MAX_TX_RATE) && (CFG_REPORT_MAX_TX_RATE == 1)
-		u4Rate = prGlueInfo->prAdapter->u4StaMaxTxRate * 1000;
-		rStatus = WLAN_STATUS_SUCCESS;
+		rStatus = kalIoctl(prGlueInfo, wlanoidQueryMaxLinkSpeed,
+				&u4Rate, sizeof(u4Rate), TRUE, FALSE, FALSE,
+				&u4BufLen);
 #else
 		rStatus = kalIoctl(prGlueInfo, wlanoidQueryLinkSpeed, &u4Rate,
 				sizeof(u4Rate), TRUE, FALSE, FALSE, &u4BufLen);

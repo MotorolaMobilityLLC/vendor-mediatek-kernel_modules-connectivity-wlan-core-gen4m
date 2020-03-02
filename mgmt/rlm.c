@@ -3145,11 +3145,6 @@ static void rlmRecAssocRespIeInfoForClient(struct ADAPTER *prAdapter,
 		}
 	}
 #endif
-
-#if defined(CFG_REPORT_MAX_TX_RATE) && (CFG_REPORT_MAX_TX_RATE == 1)
-	if (prBssInfo->eNetworkType == NETWORK_TYPE_AIS)
-		wlanSaveStaMaxTxRate(prAdapter, prBssInfo, prStaRec);
-#endif /* CFG_REPORT_MAX_TX_RATE */
 }
 
 /*----------------------------------------------------------------------------*/

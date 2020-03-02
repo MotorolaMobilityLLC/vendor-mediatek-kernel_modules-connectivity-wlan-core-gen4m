@@ -1626,9 +1626,6 @@ struct ADAPTER {
 #if CFG_SUPPORT_IOT_AP_BLACKLIST
 	struct WLAN_IOT_AP_RULE_T rIotApRule[CFG_IOT_AP_RULE_MAX_CNT];
 #endif
-#if defined(CFG_REPORT_MAX_TX_RATE) && (CFG_REPORT_MAX_TX_RATE == 1)
-	uint32_t u4StaMaxTxRate;
-#endif /* CFG_REPORT_MAX_TX_RATE */
 
 #ifdef CFG_SUPPORT_LINK_QUALITY_MONITOR
 	uint32_t u4LastLinkQuality;
