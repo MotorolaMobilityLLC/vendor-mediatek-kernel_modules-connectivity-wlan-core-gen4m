@@ -1454,8 +1454,8 @@ int32_t GetIQData(struct ADAPTER *prAdapter, int32_t **prIQAry, uint32_t *prData
 	*prIQAry = prAdapter->rIcapInfo.au4IQData;
 
 	/* sprintf(aucPath, "/pattern.txt");             // CSD's Pattern */
-	sprintf(aucPath, "/dump_out_%05ld_WF%d.txt", prAdapter->rIcapInfo.u2DumpIndex - 1, u4GetWf1);
-	DBGLOG(INIT, INFO, "iCap Read Dump File dump_out_%05ld_WF%d.txt\n",
+	sprintf(aucPath, "/dump_out_%05hu_WF%u.txt", prAdapter->rIcapInfo.u2DumpIndex - 1, u4GetWf1);
+	DBGLOG(INIT, INFO, "iCap Read Dump File dump_out_%05hu_WF%u.txt\n",
 	       prAdapter->rIcapInfo.u2DumpIndex - 1, u4GetWf1);
 
 	file = kalFileOpen(aucPath, O_RDONLY, 0);
@@ -1560,37 +1560,37 @@ uint32_t nicTsfRawData2IqFmt(struct EVENT_DUMP_MEM *prEventDumpMem, struct ICAP_
 #if defined(LINUX)
 
 		/*if blbist mkdir undre /data/blbist, the dump files wouls put on it */
-		scnprintf(aucPathWF0, sizeof(aucPathWF0), "/tmp/dump_out_%05ld_WF0.txt", prIcap->u2DumpIndex);
-		scnprintf(aucPathWF1, sizeof(aucPathWF1), "/tmp/dump_out_%05ld_WF1.txt", prIcap->u2DumpIndex);
+		scnprintf(aucPathWF0, sizeof(aucPathWF0), "/tmp/dump_out_%05hu_WF0.txt", prIcap->u2DumpIndex);
+		scnprintf(aucPathWF1, sizeof(aucPathWF1), "/tmp/dump_out_%05hu_WF1.txt", prIcap->u2DumpIndex);
 		if (kalCheckPath(aucPathWF0) == -1) {
 			kalMemSet(aucPathWF0, 0x00, sizeof(aucPathWF0));
 			scnprintf(aucPathWF0, sizeof(aucPathWF0),
-				  "/data/dump_out_%05ld_WF0.txt", prIcap->u2DumpIndex);
+				  "/data/dump_out_%05hu_WF0.txt", prIcap->u2DumpIndex);
 		} else
 			kalTrunkPath(aucPathWF0);
 
 		if (kalCheckPath(aucPathWF1) == -1) {
 			kalMemSet(aucPathWF1, 0x00, sizeof(aucPathWF1));
 			scnprintf(aucPathWF1, sizeof(aucPathWF1),
-				  "/data/dump_out_%05ld_WF1.txt", prIcap->u2DumpIndex);
+				  "/data/dump_out_%05hu_WF1.txt", prIcap->u2DumpIndex);
 		} else
 			kalTrunkPath(aucPathWF1);
 
 		scnprintf(aucPathRAWWF0, sizeof(aucPathRAWWF0),
-			  "/dump_RAW_%05ld_WF0.txt", prIcap->u2DumpIndex);
+			  "/dump_RAW_%hu_WF0.txt", prIcap->u2DumpIndex);
 		scnprintf(aucPathRAWWF1, sizeof(aucPathRAWWF1),
-			  "/dump_RAW_%05ld_WF1.txt", prIcap->u2DumpIndex);
+			  "/dump_RAW_%hu_WF1.txt", prIcap->u2DumpIndex);
 		if (kalCheckPath(aucPathRAWWF0) == -1) {
 			kalMemSet(aucPathRAWWF0, 0x00, sizeof(aucPathRAWWF0));
 			scnprintf(aucPathRAWWF0, sizeof(aucPathRAWWF0),
-				  "/data/dump_RAW_%05ld_WF0.txt", prIcap->u2DumpIndex);
+				  "/data/dump_RAW_%05hu_WF0.txt", prIcap->u2DumpIndex);
 		} else
 			kalTrunkPath(aucPathRAWWF0);
 
 		if (kalCheckPath(aucPathRAWWF1) == -1) {
 			kalMemSet(aucPathRAWWF1, 0x00, sizeof(aucPathRAWWF1));
 			scnprintf(aucPathRAWWF1, sizeof(aucPathRAWWF1),
-				  "/data/dump_RAW_%05ld_WF1.txt", prIcap->u2DumpIndex);
+				  "/data/dump_RAW_%05hu_WF1.txt", prIcap->u2DumpIndex);
 		} else
 			kalTrunkPath(aucPathRAWWF1);
 
@@ -1896,13 +1896,13 @@ void nicEventQueryMemDump(IN struct ADAPTER *prAdapter, IN uint8_t *pucEventBuf)
 	ASSERT(prAdapter);
 	ASSERT(pucEventBuf);
 
-	sprintf(aucPath, "/dump_%05ld.hex", prAdapter->rIcapInfo.u2DumpIndex);
+	sprintf(aucPath, "/dump_%05hu.hex", prAdapter->rIcapInfo.u2DumpIndex);
 
 	prEventDumpMem = (struct EVENT_DUMP_MEM *) (pucEventBuf);
 
 	if (kalCheckPath(aucPath) == -1) {
 		kalMemSet(aucPath, 0x00, 256);
-		sprintf(aucPath, "/data/dump_%05ld.hex", prAdapter->rIcapInfo.u2DumpIndex);
+		sprintf(aucPath, "/data/dump_%05hu.hex", prAdapter->rIcapInfo.u2DumpIndex);
 	}
 
 	if (prEventDumpMem->ucFragNum == 1) {
@@ -1913,10 +1913,10 @@ void nicEventQueryMemDump(IN struct ADAPTER *prAdapter, IN uint8_t *pucEventBuf)
 #if defined(LINUX)
 
 		/*if blbist mkdir undre /data/blbist, the dump files wouls put on it */
-		sprintf(aucPath, "/dump_%05ld.hex", prAdapter->rIcapInfo.u2DumpIndex);
+		sprintf(aucPath, "/dump_%05hu.hex", prAdapter->rIcapInfo.u2DumpIndex);
 		if (kalCheckPath(aucPath) == -1) {
 			kalMemSet(aucPath, 0x00, 256);
-			sprintf(aucPath, "/data/dump_%05ld.hex", prAdapter->rIcapInfo.u2DumpIndex);
+			sprintf(aucPath, "/data/dump_%05hu.hex", prAdapter->rIcapInfo.u2DumpIndex);
 		}
 #else
 		kal_sprintf_ddk(aucPath, sizeof(aucPath),
@@ -2008,14 +2008,14 @@ void nicCmdEventQueryMemDump(IN struct ADAPTER *prAdapter, IN struct CMD_INFO *p
 				prAdapter->rIcapInfo.u2DumpIndex = 0;
 
 			/*if blbist mkdir undre /data/blbist, the dump files wouls put on it */
-			sprintf(aucPath, "/dump_%05ld.hex", prAdapter->rIcapInfo.u2DumpIndex);
+			sprintf(aucPath, "/dump_%05hu.hex", prAdapter->rIcapInfo.u2DumpIndex);
 			if (kalCheckPath(aucPath) == -1) {
 				kalMemSet(aucPath, 0x00, 256);
-				sprintf(aucPath, "/data/dump_%05ld.hex", prAdapter->rIcapInfo.u2DumpIndex);
+				sprintf(aucPath, "/data/dump_%05hu.hex", prAdapter->rIcapInfo.u2DumpIndex);
 			} else
 				kalTrunkPath(aucPath);
 
-			DBGLOG(INIT, INFO, "iCap Create New Dump File dump_%05ld.hex\n",
+			DBGLOG(INIT, INFO, "iCap Create New Dump File dump_%05hu.hex\n",
 			       prAdapter->rIcapInfo.u2DumpIndex);
 #else
 			kal_sprintf_ddk(aucPath, sizeof(aucPath),
@@ -2899,35 +2899,35 @@ uint32_t nicExtTsfRawData2IqFmt(struct EXT_EVENT_RBIST_DUMP_DATA_T *prEventDumpM
 #if defined(LINUX)
 
 		/*if blbist mkdir undre /data/blbist, the dump files wouls put on it */
-		scnprintf(aucPathWF0, sizeof(aucPathWF0), "/dump_out_%05ld_WF0.txt", prIcap->u2DumpIndex);
-		scnprintf(aucPathWF1, sizeof(aucPathWF1), "/dump_out_%05ld_WF1.txt", prIcap->u2DumpIndex);
+		scnprintf(aucPathWF0, sizeof(aucPathWF0), "/dump_out_%05hu_WF0.txt", prIcap->u2DumpIndex);
+		scnprintf(aucPathWF1, sizeof(aucPathWF1), "/dump_out_%05hu_WF1.txt", prIcap->u2DumpIndex);
 		if (kalCheckPath(aucPathWF0) == -1) {
 			kalMemSet(aucPathWF0, 0x00, sizeof(aucPathWF0));
 			scnprintf(aucPathWF0, sizeof(aucPathWF0),
-				  "/data/dump_out_%05ld_WF0.txt", prIcap->u2DumpIndex);
+				  "/data/dump_out_%05hu_WF0.txt", prIcap->u2DumpIndex);
 		} else
 			kalTrunkPath(aucPathWF0);
 
 		if (kalCheckPath(aucPathWF1) == -1) {
 			kalMemSet(aucPathWF1, 0x00, sizeof(aucPathWF1));
 			scnprintf(aucPathWF1, sizeof(aucPathWF1),
-				  "/data/dump_out_%05ld_WF1.txt", prIcap->u2DumpIndex);
+				  "/data/dump_out_%05hu_WF1.txt", prIcap->u2DumpIndex);
 		} else
 			kalTrunkPath(aucPathWF1);
 
-		scnprintf(aucPathRAWWF0, sizeof(aucPathRAWWF0), "/dump_RAW_%05ld_WF0.txt", prIcap->u2DumpIndex);
-		scnprintf(aucPathRAWWF1, sizeof(aucPathRAWWF1), "/dump_RAW_%05ld_WF1.txt", prIcap->u2DumpIndex);
+		scnprintf(aucPathRAWWF0, sizeof(aucPathRAWWF0), "/dump_RAW_%05hu_WF0.txt", prIcap->u2DumpIndex);
+		scnprintf(aucPathRAWWF1, sizeof(aucPathRAWWF1), "/dump_RAW_%05hu_WF1.txt", prIcap->u2DumpIndex);
 		if (kalCheckPath(aucPathRAWWF0) == -1) {
 			kalMemSet(aucPathRAWWF0, 0x00, sizeof(aucPathRAWWF0));
 			scnprintf(aucPathRAWWF0, sizeof(aucPathRAWWF0),
-				  "/data/dump_RAW_%05ld_WF0.txt", prIcap->u2DumpIndex);
+				  "/data/dump_RAW_%05hu_WF0.txt", prIcap->u2DumpIndex);
 		} else
 			kalTrunkPath(aucPathRAWWF0);
 
 		if (kalCheckPath(aucPathRAWWF1) == -1) {
 			kalMemSet(aucPathRAWWF1, 0x00, sizeof(aucPathRAWWF1));
 			scnprintf(aucPathRAWWF1, sizeof(aucPathRAWWF1),
-				  "/data/dump_RAW_%05ld_WF1.txt", prIcap->u2DumpIndex);
+				  "/data/dump_RAW_%hu_WF1.txt", prIcap->u2DumpIndex);
 		} else
 			kalTrunkPath(aucPathRAWWF1);
 
@@ -3158,13 +3158,13 @@ void nicExtEventQueryMemDump(IN struct ADAPTER *prAdapter, IN uint8_t *pucEventB
 	ASSERT(prAdapter);
 	ASSERT(pucEventBuf);
 
-	sprintf(aucPath, "/dump_%05ld.hex", prAdapter->rIcapInfo.u2DumpIndex);
+	sprintf(aucPath, "/dump_%05hu.hex", prAdapter->rIcapInfo.u2DumpIndex);
 
 	prEventDumpMem = (struct EXT_EVENT_RBIST_DUMP_DATA_T *)pucEventBuf;
 
 	if (kalCheckPath(aucPath) == -1) {
 		kalMemSet(aucPath, 0x00, 256);
-		sprintf(aucPath, "/data/dump_%05ld.hex", prAdapter->rIcapInfo.u2DumpIndex);
+		sprintf(aucPath, "/data/dump_%05hu.hex", prAdapter->rIcapInfo.u2DumpIndex);
 	}
 
 	if (prEventDumpMem->u4PktNum == 0) {
@@ -3175,10 +3175,10 @@ void nicExtEventQueryMemDump(IN struct ADAPTER *prAdapter, IN uint8_t *pucEventB
 #if defined(LINUX)
 
 		/*if blbist mkdir undre /data/blbist, the dump files wouls put on it */
-		sprintf(aucPath, "/dump_%05ld.hex", prAdapter->rIcapInfo.u2DumpIndex);
+		sprintf(aucPath, "/dump_%05hu.hex", prAdapter->rIcapInfo.u2DumpIndex);
 		if (kalCheckPath(aucPath) == -1) {
 			kalMemSet(aucPath, 0x00, 256);
-			sprintf(aucPath, "/data/dump_%05ld.hex", prAdapter->rIcapInfo.u2DumpIndex);
+			sprintf(aucPath, "/data/dump_%05hu.hex", prAdapter->rIcapInfo.u2DumpIndex);
 		}
 #else
 		/* TODO: check Address */
