@@ -339,7 +339,7 @@ static void statsParsePktInfo(uint8_t *pucPkt, struct sk_buff *skb,
 				break;
 			case EVENT_TX:
 				DBGLOG(TX, TRACE,
-					"<TX> ICMP: Type %d, Id 0x04%x, Seq BE 0x%04x\n",
+					"<TX> ICMP: Type %d, Id 0x%04x, Seq BE 0x%04x\n",
 					ucIcmpType, u2IcmpId, u2IcmpSeq);
 				break;
 			}
@@ -351,28 +351,32 @@ static void statsParsePktInfo(uint8_t *pucPkt, struct sk_buff *skb,
 			 * so we print log here
 			 */
 			uint8_t *pucUdp = &pucEthBody[20];
-			uint8_t *pucBootp = &pucUdp[8];
+			uint8_t *pucBootp = &pucUdp[UDP_HDR_LEN];
+			struct BOOTP_PROTOCOL *prBootp;
 			uint16_t u2UdpDstPort;
 			uint16_t u2UdpSrcPort;
 			uint32_t u4TransID;
+			prBootp =
+				(struct BOOTP_PROTOCOL *) &pucUdp[UDP_HDR_LEN];
 
 			u2UdpDstPort = (pucUdp[2] << 8) | pucUdp[3];
 			u2UdpSrcPort = (pucUdp[0] << 8) | pucUdp[1];
 			if ((u2UdpDstPort == UDP_PORT_DHCPS)
 				|| (u2UdpDstPort == UDP_PORT_DHCPC)) {
-				u4TransID =
-					pucBootp[4]<<24  | pucBootp[5]<<16
-					| pucBootp[6]<<8  | pucBootp[7];
+				WLAN_GET_FIELD_BE32(
+					&prBootp->u4TransId, &u4TransID);
 				switch (eventType) {
 				case EVENT_RX:
 					DBGLOG(RX, INFO,
 						"<RX> DHCP: IPID 0x%02x, MsgType 0x%x, TransID 0x%04x\n",
-						u2IpId, pucBootp[0], u4TransID);
+						u2IpId, prBootp->aucOptions[6],
+						u4TransID);
 					break;
 				case EVENT_TX:
 					DBGLOG(TX, INFO,
 						"<TX> DHCP: IPID 0x%02x, MsgType 0x%x, TransID 0x%04x\n",
-						u2IpId, pucBootp[0], u4TransID);
+						u2IpId, prBootp->aucOptions[6],
+						u4TransID);
 					break;
 				}
 			} else if (u2UdpSrcPort == UDP_PORT_DNS) { /* tx dns */

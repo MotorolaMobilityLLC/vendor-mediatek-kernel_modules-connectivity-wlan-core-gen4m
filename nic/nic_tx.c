@@ -3144,13 +3144,22 @@ void nicTxProcessTxDoneEvent(IN struct ADAPTER *prAdapter,
 
 	if (prTxDone->ucFlag & BIT(TXS_WITH_ADVANCED_INFO)) {
 		/* Tx Done with advanced info */
-		DBGLOG(NIC, TRACE,
-		       "EVENT_ID_TX_DONE WIDX:PID[%u:%u] Status[%u:%s] SN[%u] TID[%u] CNT[%u] Flush[%u]\n",
-		       prTxDone->ucWlanIndex, prTxDone->ucPacketSeq,
-		       prTxDone->ucStatus,
-		       apucTxResultStr[prTxDone->ucStatus],
-		       prTxDone->u2SequenceNumber, prTxDone->ucTid,
-		       prTxDone->ucTxCount, prTxDone->ucFlushReason);
+		if (prTxDone->ucStatus != 0)
+			DBGLOG_LIMITED(NIC, INFO,
+				"EVENT_ID_TX_DONE WIDX:PID[%u:%u] Status[%u:%s] SN[%u] TID[%u] CNT[%u] Flush[%u]\n",
+				prTxDone->ucWlanIndex, prTxDone->ucPacketSeq,
+				prTxDone->ucStatus,
+				apucTxResultStr[prTxDone->ucStatus],
+				prTxDone->u2SequenceNumber, prTxDone->ucTid,
+				prTxDone->ucTxCount, prTxDone->ucFlushReason);
+		else
+			DBGLOG(NIC, TRACE,
+				"EVENT_ID_TX_DONE WIDX:PID[%u:%u] Status[%u:%s] SN[%u] TID[%u] CNT[%u] Flush[%u]\n",
+				prTxDone->ucWlanIndex, prTxDone->ucPacketSeq,
+				prTxDone->ucStatus,
+				apucTxResultStr[prTxDone->ucStatus],
+				prTxDone->u2SequenceNumber, prTxDone->ucTid,
+				prTxDone->ucTxCount, prTxDone->ucFlushReason);
 
 		if (prTxDone->ucFlag & BIT(TXS_IS_EXIST)) {
 			uint8_t ucNss, ucStbc;
@@ -3167,35 +3176,72 @@ void nicTxProcessTxDoneEvent(IN struct ADAPTER *prAdapter,
 			if (ucStbc)
 				ucNss /= 2;
 
-			DBGLOG(NIC, TRACE,
-				"||RATE[0x%04x] BW[%s] NSS[%u] ArIdx[%u] RspRate[0x%02x]\n",
-				prTxDone->u2TxRate,
-				apucBandwidt[prTxDone->ucBandwidth],
-				ucNss,
-				prTxDone->ucRateTableIdx, prTxDone->ucRspRate);
-
+			if (prTxDone->ucStatus != 0)
+				DBGLOG_LIMITED(NIC, INFO,
+					"||RATE[0x%04x] BW[%s] NSS[%u] ArIdx[%u] RspRate[0x%02x]\n",
+					prTxDone->u2TxRate,
+					apucBandwidt[prTxDone->ucBandwidth],
+					ucNss,
+					prTxDone->ucRateTableIdx,
+					prTxDone->ucRspRate);
+			else
+				DBGLOG(NIC, TRACE,
+					"||RATE[0x%04x] BW[%s] NSS[%u] ArIdx[%u] RspRate[0x%02x]\n",
+					prTxDone->u2TxRate,
+					apucBandwidt[prTxDone->ucBandwidth],
+					ucNss,
+					prTxDone->ucRateTableIdx,
+					prTxDone->ucRspRate);
 			icTxPwr = (int8_t)prTxDone->ucTxPower;
 			if (icTxPwr & BIT(6))
 				icTxPwr |= BIT(7);
 
-			DBGLOG(NIC, TRACE,
-				"||AMPDU[%u] PS[%u] IBF[%u] EBF[%u] TxPwr[%d%sdBm] TSF[%u] TxDelay[%uus]\n",
-				prTxDone->u4AppliedFlag &
-				BIT(TX_FRAME_IN_AMPDU_FORMAT) ? TRUE : FALSE,
-				prTxDone->u4AppliedFlag &
-				BIT(TX_FRAME_PS_BIT) ? TRUE : FALSE,
-				prTxDone->u4AppliedFlag &
-				BIT(TX_FRAME_IMP_BF) ? TRUE : FALSE,
-				prTxDone->u4AppliedFlag &
-				BIT(TX_FRAME_EXP_BF) ? TRUE : FALSE,
-				icTxPwr / 2, icTxPwr & BIT(0) ? ".5" : "",
-				prTxDone->u4Timestamp, prTxDone->u4TxDelay);
-
-			DBGLOG(NIC, TRACE,
-				"TxS[%08x %08x %08x %08x %08x %08x %08x]\n",
-			  *pu4RawTxs, *(pu4RawTxs + 1), *(pu4RawTxs + 2),
-			  *(pu4RawTxs + 3), *(pu4RawTxs + 4), *(pu4RawTxs + 5),
-			  *(pu4RawTxs + 6));
+			if (prTxDone->ucStatus != 0)
+				DBGLOG_LIMITED(NIC, INFO,
+					"||AMPDU[%u] PS[%u] IBF[%u] EBF[%u] TxPwr[%d%sdBm] TSF[%u] TxDelay[%uus]\n",
+					prTxDone->u4AppliedFlag &
+					BIT(TX_FRAME_IN_AMPDU_FORMAT) ?
+						TRUE : FALSE,
+					prTxDone->u4AppliedFlag &
+					BIT(TX_FRAME_PS_BIT) ? TRUE : FALSE,
+					prTxDone->u4AppliedFlag &
+					BIT(TX_FRAME_IMP_BF) ? TRUE : FALSE,
+					prTxDone->u4AppliedFlag &
+					BIT(TX_FRAME_EXP_BF) ? TRUE : FALSE,
+					icTxPwr / 2, icTxPwr & BIT(0) ?
+						".5" : "",
+					prTxDone->u4Timestamp,
+					prTxDone->u4TxDelay);
+			else
+				DBGLOG(NIC, TRACE,
+					"||AMPDU[%u] PS[%u] IBF[%u] EBF[%u] TxPwr[%d%sdBm] TSF[%u] TxDelay[%uus]\n",
+					prTxDone->u4AppliedFlag &
+					BIT(TX_FRAME_IN_AMPDU_FORMAT) ?
+						TRUE : FALSE,
+					prTxDone->u4AppliedFlag &
+					BIT(TX_FRAME_PS_BIT) ? TRUE : FALSE,
+					prTxDone->u4AppliedFlag &
+					BIT(TX_FRAME_IMP_BF) ? TRUE : FALSE,
+					prTxDone->u4AppliedFlag &
+					BIT(TX_FRAME_EXP_BF) ? TRUE : FALSE,
+					icTxPwr / 2, icTxPwr & BIT(0) ?
+						".5" : "",
+					prTxDone->u4Timestamp,
+					prTxDone->u4TxDelay);
+			if (prTxDone->ucStatus != 0)
+				DBGLOG_LIMITED(NIC, INFO,
+					"TxS[%08x %08x %08x %08x %08x %08x %08x]\n",
+					*pu4RawTxs,
+					*(pu4RawTxs + 1), *(pu4RawTxs + 2),
+					*(pu4RawTxs + 3), *(pu4RawTxs + 4),
+					*(pu4RawTxs + 5), *(pu4RawTxs + 6));
+			else
+				DBGLOG(NIC, TRACE,
+					"TxS[%08x %08x %08x %08x %08x %08x %08x]\n",
+					*pu4RawTxs,
+					*(pu4RawTxs + 1), *(pu4RawTxs + 2),
+					*(pu4RawTxs + 3), *(pu4RawTxs + 4),
+					*(pu4RawTxs + 5), *(pu4RawTxs + 6));
 		}
 	} else {
 		DBGLOG(NIC, TRACE,
