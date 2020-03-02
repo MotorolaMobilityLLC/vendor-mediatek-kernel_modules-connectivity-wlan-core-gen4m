@@ -214,31 +214,26 @@ VOID p2pFsmRunEventUpdateMgmtFrame(IN P_ADAPTER_T prAdapter, IN P_MSG_HDR_T prMs
 {
 	P_MSG_P2P_MGMT_FRAME_UPDATE_T prP2pMgmtFrameUpdateMsg = (P_MSG_P2P_MGMT_FRAME_UPDATE_T) NULL;
 
-	do {
-		ASSERT_BREAK((prAdapter != NULL) && (prMsgHdr != NULL));
+	DBGLOG(P2P, TRACE, "p2pFsmRunEventUpdateMgmtFrame\n");
 
-		DBGLOG(P2P, TRACE, "p2pFsmRunEventUpdateMgmtFrame\n");
+	prP2pMgmtFrameUpdateMsg = (P_MSG_P2P_MGMT_FRAME_UPDATE_T) prMsgHdr;
 
-		prP2pMgmtFrameUpdateMsg = (P_MSG_P2P_MGMT_FRAME_UPDATE_T) prMsgHdr;
+	switch (prP2pMgmtFrameUpdateMsg->eBufferType) {
+	case ENUM_FRAME_TYPE_EXTRA_IE_BEACON:
+		break;
+	case ENUM_FRAME_TYPE_EXTRA_IE_ASSOC_RSP:
+		break;
+	case ENUM_FRAME_TYPE_EXTRA_IE_PROBE_RSP:
+		break;
+	case ENUM_FRAME_TYPE_PROBE_RSP_TEMPLATE:
+		break;
+	case ENUM_FRAME_TYPE_BEACON_TEMPLATE:
+		break;
+	default:
+		break;
+	}
 
-		switch (prP2pMgmtFrameUpdateMsg->eBufferType) {
-		case ENUM_FRAME_TYPE_EXTRA_IE_BEACON:
-			break;
-		case ENUM_FRAME_TYPE_EXTRA_IE_ASSOC_RSP:
-			break;
-		case ENUM_FRAME_TYPE_EXTRA_IE_PROBE_RSP:
-			break;
-		case ENUM_FRAME_TYPE_PROBE_RSP_TEMPLATE:
-			break;
-		case ENUM_FRAME_TYPE_BEACON_TEMPLATE:
-			break;
-		default:
-			break;
-		}
-	} while (FALSE);
-
-	if (prMsgHdr)
-		cnmMemFree(prAdapter, prMsgHdr);
+	cnmMemFree(prAdapter, prMsgHdr);
 }				/* p2pFsmRunEventUpdateMgmtFrame */
 
 #if CFG_SUPPORT_WFD
@@ -298,40 +293,36 @@ VOID p2pFsmRunEventScanDone(IN P_ADAPTER_T prAdapter, IN P_MSG_HDR_T prMsgHdr)
 	P_MSG_SCN_SCAN_DONE prScanDoneMsg = (P_MSG_SCN_SCAN_DONE) NULL;
 	P_BSS_INFO_T prP2pBssInfo = (P_BSS_INFO_T) NULL;
 
-	do {
-		ASSERT_BREAK((prAdapter != NULL) && (prMsgHdr != NULL));
+	prScanDoneMsg = (P_MSG_SCN_SCAN_DONE) prMsgHdr;
 
-		prScanDoneMsg = (P_MSG_SCN_SCAN_DONE) prMsgHdr;
+	prP2pBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prScanDoneMsg->ucBssIndex);
 
-		prP2pBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prScanDoneMsg->ucBssIndex);
+	if (prAdapter->fgIsP2PRegistered == FALSE) {
+		DBGLOG(P2P, TRACE, "P2P BSS Info is removed, break p2pFsmRunEventScanDone\n");
 
-		if (prAdapter->fgIsP2PRegistered == FALSE) {
-			DBGLOG(P2P, TRACE, "P2P BSS Info is removed, break p2pFsmRunEventScanDone\n");
+		if (prMsgHdr)
+			cnmMemFree(prAdapter, prMsgHdr);
+		return;
+	}
 
-			if (prMsgHdr)
-				cnmMemFree(prAdapter, prMsgHdr);
-			break;
-		}
+	DBGLOG(P2P, TRACE, "P2P Scan Done Event\n");
 
-		DBGLOG(P2P, TRACE, "P2P Scan Done Event\n");
-
-		switch (prP2pBssInfo->eCurrentOPMode) {
-		case OP_MODE_P2P_DEVICE:
-			ASSERT(prP2pBssInfo->ucBssIndex == prAdapter->ucP2PDevBssIdx);
-			p2pDevFsmRunEventScanDone(prAdapter, prMsgHdr, prAdapter->rWifiVar.prP2pDevFsmInfo);
-			break;
-		case OP_MODE_INFRASTRUCTURE:
-		case OP_MODE_ACCESS_POINT:
-			ASSERT(prP2pBssInfo->ucBssIndex < prAdapter->ucP2PDevBssIdx);
-			p2pRoleFsmRunEventScanDone(prAdapter, prMsgHdr,
-						   P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prAdapter,
-										  prP2pBssInfo->u4PrivateData));
-			break;
-		default:
-			ASSERT(FALSE);
-			break;
-		}
-	} while (FALSE);
+	switch (prP2pBssInfo->eCurrentOPMode) {
+	case OP_MODE_P2P_DEVICE:
+		ASSERT(prP2pBssInfo->ucBssIndex == prAdapter->ucP2PDevBssIdx);
+		p2pDevFsmRunEventScanDone(prAdapter, prMsgHdr, prAdapter->rWifiVar.prP2pDevFsmInfo);
+		break;
+	case OP_MODE_INFRASTRUCTURE:
+	case OP_MODE_ACCESS_POINT:
+		ASSERT(prP2pBssInfo->ucBssIndex < prAdapter->ucP2PDevBssIdx);
+		p2pRoleFsmRunEventScanDone(prAdapter, prMsgHdr,
+					   P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prAdapter,
+									  prP2pBssInfo->u4PrivateData));
+		break;
+	default:
+		ASSERT(FALSE);
+		break;
+	}
 }				/* p2pFsmRunEventScanDone */
 
 
