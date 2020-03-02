@@ -3131,11 +3131,16 @@ void nicTxProcessTxDoneEvent(IN struct ADAPTER *prAdapter,
 {
 	struct EVENT_TX_DONE *prTxDone;
 	struct MSDU_INFO *prMsduInfo;
+	struct TX_CTRL *prTxCtrl = &prAdapter->rTxCtrl;
+
 	uint8_t *apucBandwidt[4] = {
 		(uint8_t *)"20", (uint8_t *)"40",
 		(uint8_t *)"80", (uint8_t *)"160/80+80"};
 
 	prTxDone = (struct EVENT_TX_DONE *) (prEvent->aucBuffer);
+
+	if (prTxDone->ucStatus == 0)
+		GET_CURRENT_SYSTIME(&prTxCtrl->u4LastTxTime);
 
 	if (prTxDone->ucFlag & BIT(TXS_WITH_ADVANCED_INFO)) {
 		/* Tx Done with advanced info */

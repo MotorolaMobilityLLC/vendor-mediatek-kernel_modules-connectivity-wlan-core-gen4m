@@ -801,6 +801,9 @@ struct RX_CTRL {
 #if CFG_SUPPORT_SNIFFER
 	uint32_t u4AmpduRefNum;
 #endif
+
+	/* Store SysTime of Last Rx */
+	uint32_t u4LastRxTime;
 };
 
 struct RX_MAILBOX {
