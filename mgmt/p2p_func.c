@@ -3299,8 +3299,6 @@ p2pFuncValidateAuth(IN struct ADAPTER *prAdapter,
 
 	if (bssGetClientCount(prAdapter, prP2pBssInfo)
 		>= P2P_MAXIMUM_CLIENT_COUNT
-		|| !p2pRoleProcessACLInspection(prAdapter,
-		prStaRec->aucMacAddr, prP2pBssInfo->ucBssIndex)
 #if CFG_SUPPORT_HOTSPOT_WPS_MANAGER
 		|| kalP2PMaxClients(prAdapter->prGlueInfo,
 		bssGetClientCount(prAdapter, prP2pBssInfo),
@@ -3321,8 +3319,13 @@ p2pFuncValidateAuth(IN struct ADAPTER *prAdapter,
 		/* Hotspot Blacklist */
 		if (kalP2PCmpBlackList(prAdapter->prGlueInfo,
 			prAuthFrame->aucSrcAddr,
-			(uint8_t) prP2pBssInfo->u4PrivateData)) {
+			(uint8_t) prP2pBssInfo->u4PrivateData)
+			|| !p2pRoleProcessACLInspection(prAdapter,
+			prStaRec->aucMacAddr, prP2pBssInfo->ucBssIndex)) {
 			DBGLOG(P2P, WARN, "in black list.\n");
+			cnmStaRecFree(prAdapter, prStaRec);
+			*pu2StatusCode
+				= STATUS_CODE_ASSOC_DENIED_OUTSIDE_STANDARD;
 			return FALSE;
 		}
 
