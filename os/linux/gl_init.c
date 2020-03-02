@@ -905,7 +905,7 @@ static void wlanSetMulticastListWorkQueue(struct work_struct *work)
 
 		netdev_for_each_mc_addr(ha, prDev) {
 			if (i < MAX_NUM_GROUP_ADDR) {
-				kalMemCopy((prMCAddrList + i * ETH_ALEN), ha->addr, ETH_ALEN);
+				kalMemCopy((prMCAddrList + i * ETH_ALEN), GET_ADDR(ha), ETH_ALEN);
 				i++;
 			}
 		}
