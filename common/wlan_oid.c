@@ -7471,6 +7471,24 @@ wlanoidSetKeyCfg(IN struct ADAPTER *prAdapter,
 			   prKeyCfgInfo->aucValue, 0);
 
 	wlanInitFeatureOption(prAdapter);
+
+	DBGLOG(REQ, TRACE,
+		"StaVHT [%u], ApVHT [%u], GoVHT [%u], GcVHT [%u]\n",
+		prAdapter->rWifiVar.ucStaVht,
+		prAdapter->rWifiVar.ucApVht,
+		prAdapter->rWifiVar.ucP2pGoVht,
+		prAdapter->rWifiVar.ucP2pGcVht);
+
+	DBGLOG(REQ, TRACE, "Nss [%u], Dbdc [%u]\n",
+		prAdapter->rWifiVar.ucNSS,
+		prAdapter->rWifiVar.eDbdcMode);
+
+	DBGLOG(REQ, TRACE,
+		"TxLdpc [%u], RxLdpc [%u], StbcTx [%u], StbcRx [%u]\n",
+		prAdapter->rWifiVar.ucTxLdpc,
+		prAdapter->rWifiVar.ucRxLdpc,
+		prAdapter->rWifiVar.ucTxStbc,
+		prAdapter->rWifiVar.ucRxStbc);
 #if CFG_SUPPORT_EASY_DEBUG
 	wlanFeatureToFw(prAdapter);
 #endif
