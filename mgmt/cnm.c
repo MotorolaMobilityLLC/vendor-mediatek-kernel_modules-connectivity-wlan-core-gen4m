@@ -1211,9 +1211,8 @@ void cnmIdcDetectHandler(IN struct ADAPTER *prAdapter,
 {
 
 	struct EVENT_LTE_SAFE_CHN *prEventBody;
-	uint8_t ucBssIndex, ucIdx;
+	uint8_t ucIdx;
 	struct BSS_INFO *prBssInfo;
-	uint8_t ucRoleIdx = 0;
 	struct GLUE_INFO *prGlueInfo = prAdapter->prGlueInfo;
 	uint8_t ucNewChannel = 0;
 	uint32_t u4Ret = 0;
@@ -1272,29 +1271,28 @@ void cnmIdcDetectHandler(IN struct ADAPTER *prAdapter,
 	}
 
 	/* Choose New Ch & Start CH Swtich*/
-	for (ucBssIndex = 0; ucBssIndex < BSS_DEFAULT_NUM;
-		ucBssIndex++) {
 
-		prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
-		if (prBssInfo &&
-			(prBssInfo->eCurrentOPMode == OP_MODE_ACCESS_POINT)) {
-			DBGLOG(CNM, INFO, "[CSA]BssIdx=%d,CurCH=%d\n",
-				prBssInfo->ucBssIndex,
-				prBssInfo->ucPrimaryChannel);
-			ucNewChannel = cnmDecideSapNewChannel(prGlueInfo,
-				prBssInfo->ucPrimaryChannel);
-			if (ucNewChannel) {
-				u4Ret = cnmIdcCsaReq(prAdapter, ucNewChannel,
-							ucRoleIdx);
-				DBGLOG(CNM, INFO, "[CSA]BssIdx=%d,NewCH=%d\n",
-					ucBssIndex, ucNewChannel);
-			} else {
-				DBGLOG(CNM, INFO,
-					"[CSA]No Safe channel,not switch CH\n");
-			}
-			break;
+	prBssInfo =  cnmGetSapBssInfo(prAdapter);
+	if (prBssInfo) {
+		DBGLOG(CNM, INFO, "[CSA]BssIdx=%d,CurCH=%d\n",
+			prBssInfo->ucBssIndex,
+			prBssInfo->ucPrimaryChannel);
+		ucNewChannel = cnmDecideSapNewChannel(prGlueInfo,
+			prBssInfo->ucPrimaryChannel);
+		if (ucNewChannel) {
+			u4Ret = cnmIdcCsaReq(prAdapter, ucNewChannel,
+						prBssInfo->u4PrivateData);
+			DBGLOG(CNM, INFO, "[CSA]BssIdx=%d,NewCH=%d\n",
+				prBssInfo->ucBssIndex, ucNewChannel);
+		} else {
+			DBGLOG(CNM, INFO,
+				"[CSA]No Safe channel,not switch CH\n");
 		}
+	} else {
+		DBGLOG(CNM, WARN,
+			"[CSA]SoftAp Not Exist\n");
 	}
+
 }
 #endif
 
