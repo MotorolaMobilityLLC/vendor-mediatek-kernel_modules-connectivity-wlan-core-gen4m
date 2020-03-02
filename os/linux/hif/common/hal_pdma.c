@@ -393,10 +393,11 @@ static void halDriverOwnTimeout(struct ADAPTER *prAdapter,
 		       kalIsCardRemoved(prAdapter->prGlueInfo),
 		       wlanIsChipNoAck(prAdapter),
 		       prAdapter->u4OwnFailedCount);
-
 		DBGLOG(INIT, INFO,
 		       "Skip LP own back failed log for next %ums\n",
 		       LP_OWN_BACK_FAILED_LOG_SKIP_MS);
+		if (prAdapter->chip_info->dumpwfsyscpupcr)
+			prAdapter->chip_info->dumpwfsyscpupcr(prAdapter);
 
 		prAdapter->u4OwnFailedLogCount++;
 		if (prAdapter->u4OwnFailedLogCount >
@@ -475,6 +476,8 @@ u_int8_t halSetDriverOwn(IN struct ADAPTER *prAdapter)
 			prAdapter->u4OwnFailedLogCount = 0;
 			break;
 		} else if (wlanIsChipNoAck(prAdapter)) {
+			DBGLOG(INIT, INFO,
+			"Driver own return due to chip reset and chip no response.\n");
 			fgStatus = FALSE;
 			break;
 		} else if ((i > LP_OWN_BACK_FAILED_RETRY_CNT) &&
@@ -510,13 +513,12 @@ u_int8_t halSetDriverOwn(IN struct ADAPTER *prAdapter)
 	if (prAdapter->fgIsFwDownloaded && prChipInfo->is_support_cr4)
 		fgStatus &= halDriverOwnCheckCR4(prAdapter);
 
-	if (prAdapter->fgIsFwDownloaded) {
-		/*WFDMA re-init flow after chip deep sleep*/
-		if (prChipInfo->asicWfdmaReInit)
-			prChipInfo->asicWfdmaReInit(prAdapter);
-	}
-
 	if (fgStatus) {
+		if (prAdapter->fgIsFwDownloaded) {
+			/*WFDMA re-init flow after chip deep sleep*/
+			if (prChipInfo->asicWfdmaReInit)
+				prChipInfo->asicWfdmaReInit(prAdapter);
+		}
 		/* Check consys enter sleep mode DummyReg(0x0F) */
 		if (prBusInfo->checkDummyReg)
 			prBusInfo->checkDummyReg(prAdapter->prGlueInfo);
