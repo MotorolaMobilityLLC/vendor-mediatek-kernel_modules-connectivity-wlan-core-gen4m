@@ -89,7 +89,7 @@
 struct semaphore g_halt_sem;
 int g_u4HaltFlag;
 
-static struct wireless_dev *gprWdev;
+struct wireless_dev *gprWdev;
 /*******************************************************************************
 *                             D A T A   T Y P E S
 ********************************************************************************
@@ -340,6 +340,7 @@ const UINT_32 mtk_cipher_suites[] = {
 	WLAN_CIPHER_SUITE_NO_GROUP_ADDR
 };
 
+#if (CFG_ENABLE_UNIFY_WIPHY == 0)
 static struct cfg80211_ops mtk_wlan_ops = {
 	.suspend = mtk_cfg80211_suspend,
 	.resume = mtk_cfg80211_resume,
@@ -390,6 +391,73 @@ static struct cfg80211_ops mtk_wlan_ops = {
 	.tdls_mgmt = mtk_cfg80211_tdls_mgmt,
 #endif
 };
+#else /* CFG_ENABLE_UNIFY_WIPHY */
+static struct cfg80211_ops mtk_cfg_ops = {
+	.add_virtual_intf = mtk_cfg_add_iface,
+	.del_virtual_intf = mtk_cfg_del_iface,
+	.change_virtual_intf = mtk_cfg_change_iface,
+	.add_key = mtk_cfg_add_key,
+	.get_key = mtk_cfg_get_key,
+	.del_key = mtk_cfg_del_key,
+	.set_default_key = mtk_cfg_set_default_key,
+	.get_station = mtk_cfg_get_station,
+#if CFG_SUPPORT_TDLS
+	.change_station = mtk_cfg_change_station,
+	.add_station = mtk_cfg_add_station,
+	.tdls_oper = mtk_cfg_tdls_oper,
+	.tdls_mgmt = mtk_cfg_tdls_mgmt,
+#endif
+	.del_station = mtk_cfg_del_station,	/* AP/P2P use this function */
+	.scan = mtk_cfg_scan,
+#if KERNEL_VERSION(4, 5, 0) <= CFG80211_VERSION_CODE
+	.abort_scan = mtk_cfg_abort_scan,
+#endif
+	.connect = mtk_cfg_connect,
+	.disconnect = mtk_cfg_disconnect,
+	.join_ibss = mtk_cfg_join_ibss,
+	.leave_ibss = mtk_cfg_leave_ibss,
+	.set_power_mgmt = mtk_cfg_set_power_mgmt,
+	.set_pmksa = mtk_cfg_set_pmksa,
+	.del_pmksa = mtk_cfg_del_pmksa,
+	.flush_pmksa = mtk_cfg_flush_pmksa,
+#if CONFIG_SUPPORT_GTK_REKEY
+	.set_rekey_data = mtk_cfg_set_rekey_data,
+#endif
+	.suspend = mtk_cfg_suspend,
+	.resume = mtk_cfg_resume,
+
+	.assoc = mtk_cfg_assoc,
+
+	/* Action Frame TX/RX */
+	.remain_on_channel = mtk_cfg_remain_on_channel,
+	.cancel_remain_on_channel = mtk_cfg_cancel_remain_on_channel,
+	.mgmt_tx = mtk_cfg_mgmt_tx,
+	/* .mgmt_tx_cancel_wait        = mtk_cfg80211_mgmt_tx_cancel_wait, */
+	.mgmt_frame_register = mtk_cfg_mgmt_frame_register,
+
+#ifdef CONFIG_NL80211_TESTMODE
+	.testmode_cmd = mtk_cfg_testmode_cmd,
+#endif
+#if 0	/* Remove schedule_scan because we need more verification for NLO */
+	.sched_scan_start = mtk_cfg80211_sched_scan_start,
+	.sched_scan_stop = mtk_cfg80211_sched_scan_stop,
+#endif
+
+#if (CFG_ENABLE_WIFI_DIRECT_CFG_80211 != 0)
+	.change_bss = mtk_cfg_change_bss,
+	.mgmt_tx_cancel_wait = mtk_cfg_mgmt_tx_cancel_wait,
+	.deauth = mtk_cfg_deauth,
+	.disassoc = mtk_cfg_disassoc,
+	.start_ap = mtk_cfg_start_ap,
+	.change_beacon = mtk_cfg_change_beacon,
+	.stop_ap = mtk_cfg_stop_ap,
+	.set_wiphy_params = mtk_cfg_set_wiphy_params,
+	.set_bitrate_mask = mtk_cfg_set_bitrate_mask,
+	.set_tx_power = mtk_cfg_set_txpower,
+	.get_tx_power = mtk_cfg_get_txpower,
+#endif
+};
+#endif	/* CFG_ENABLE_UNIFY_WIPHY */
 
 #if KERNEL_VERSION(3, 18, 0) <= CFG80211_VERSION_CODE
 
@@ -1392,6 +1460,9 @@ static INT_32 wlanNetRegister(struct wireless_dev *prWdev)
 		prNetDevPrivate = (P_NETDEV_PRIVATE_GLUE_INFO) netdev_priv(prGlueInfo->prDevHandler);
 		ASSERT(prNetDevPrivate->prGlueInfo == prGlueInfo);
 		prNetDevPrivate->ucBssIdx = prGlueInfo->prAdapter->prAisBssInfo->ucBssIndex;
+#if CFG_ENABLE_UNIFY_WIPHY
+		prNetDevPrivate->ucIsP2p = FALSE;
+#endif
 		wlanBindBssIdxToNetInterface(prGlueInfo,
 					     prGlueInfo->prAdapter->prAisBssInfo->ucBssIndex, (PVOID) prWdev->netdev);
 #else
@@ -1435,6 +1506,7 @@ static VOID wlanNetUnregister(struct wireless_dev *prWdev)
 #if CFG_SUPPORT_SNIFFER
 	if (prGlueInfo->prMonDevHandler) {
 		unregister_netdev(prGlueInfo->prMonDevHandler);
+		/* FIXME: Why not free_netdev()? */
 		prGlueInfo->prMonDevHandler = NULL;
 	}
 	prGlueInfo->fgIsEnableMon = FALSE;
@@ -1454,6 +1526,12 @@ static const struct net_device_ops wlan_netdev_ops = {
 	.ndo_select_queue = wlanSelectQueue,
 };
 
+#if CFG_ENABLE_UNIFY_WIPHY
+const struct net_device_ops *wlanGetNdevOps(void)
+{
+	return &wlan_netdev_ops;
+}
+#endif
 
 static void wlanCreateWirelessDevice(void)
 {
@@ -1467,7 +1545,12 @@ static void wlanCreateWirelessDevice(void)
 		return;
 	}
 	/* 4 <1.2> Create wiphy */
+#if CFG_ENABLE_UNIFY_WIPHY
+	prWiphy = wiphy_new(&mtk_cfg_ops, sizeof(GLUE_INFO_T));
+#else
 	prWiphy = wiphy_new(&mtk_wlan_ops, sizeof(GLUE_INFO_T));
+#endif
+
 	if (!prWiphy) {
 		DBGLOG(INIT, ERROR, "Allocating memory to wiphy device failed\n");
 		goto free_wdev;
@@ -1524,11 +1607,29 @@ static void wlanCreateWirelessDevice(void)
 
 #ifdef CONFIG_CFG80211_WEXT
 	/* 4 <1.5> Use wireless extension to replace IOCTL */
+
+#if CFG_ENABLE_UNIFY_WIPHY
+	prWiphy->wext = NULL;
+#else
 	prWiphy->wext = &wext_handler_def;
+#endif
 #endif
 	/* initialize semaphore for halt control */
 	sema_init(&g_halt_sem, 1);
 
+#if CFG_ENABLE_UNIFY_WIPHY
+	prWiphy->iface_combinations = p_mtk_iface_combinations_p2p;
+	prWiphy->n_iface_combinations = mtk_iface_combinations_p2p_num;
+
+	prWiphy->interface_modes |= BIT(NL80211_IFTYPE_AP) |
+				    BIT(NL80211_IFTYPE_P2P_CLIENT) |
+				    BIT(NL80211_IFTYPE_P2P_GO) |
+				    BIT(NL80211_IFTYPE_STATION);
+	prWiphy->software_iftypes |= BIT(NL80211_IFTYPE_P2P_DEVICE);
+	prWiphy->flags |= WIPHY_FLAG_HAS_REMAIN_ON_CHANNEL |
+			  WIPHY_FLAG_HAVE_AP_SME;
+	prWiphy->ap_sme_capa = 1;
+#endif
 	if (wiphy_register(prWiphy) < 0) {
 		DBGLOG(INIT, ERROR, "wiphy_register error\n");
 		goto free_wiphy;
@@ -1544,6 +1645,7 @@ free_wdev:
 	kfree(prWdev);
 }
 
+#if (CFG_ENABLE_UNIFY_WIPHY == 0)
 static void wlanDestroyWirelessDevice(void)
 {
 	wiphy_unregister(gprWdev->wiphy);
@@ -1551,6 +1653,75 @@ static void wlanDestroyWirelessDevice(void)
 	kfree(gprWdev);
 	gprWdev = NULL;
 }
+#endif
+
+/*----------------------------------------------------------------------------*/
+/*!
+* \brief Destroy all wdev (including the P2P device), and unregister wiphy
+*
+* \param (none)
+*
+* \return (none)
+*
+*/
+/*----------------------------------------------------------------------------*/
+#if CFG_ENABLE_UNIFY_WIPHY
+static void wlanDestroyAllWdev(void)
+{
+	struct wiphy *wiphy = NULL;
+	int i = 0;
+
+	/* There is only one wiphy, avoid the double free the wiphy */
+
+#if CFG_ENABLE_WIFI_DIRECT
+	/* free P2P wdev */
+	for (i = 0; i < KAL_P2P_NUM; i++) {
+		if (gprP2pRoleWdev[i] == NULL)
+			continue;
+		if (gprP2pRoleWdev[i] == gprWdev) /* This is AIS/AP Interface */
+			continue;
+		if (gprP2pRoleWdev[i] == gprP2pWdev) /* handle later */
+			continue;
+
+		wiphy = gprP2pRoleWdev[i]->wiphy;
+
+		kfree(gprP2pRoleWdev[i]);
+		gprP2pRoleWdev[i] = NULL;
+	}
+
+	if (gprP2pWdev != NULL) {
+		/* In initWlan(), the gprP2pRoleWdev[0] is created &
+		 * (gprP2pWdev = gprP2pRoleWdev[0]).
+		 * But in the mtk_p2p_cfg80211_add_iface alloc new prWdev,
+		 * and gprP2pRoleWdev[0]=prWdev.
+		 * For (gprP2pWdev != gprP2pRoleWdev[0]), we must free
+		 * gprP2pWdev & take care double free case.
+		 */
+		wiphy = gprP2pWdev->wiphy;
+
+		kfree(gprP2pWdev);
+		gprP2pWdev = NULL;
+	}
+#endif
+
+	/* free AIS wdev */
+	if (gprWdev) {
+		wiphy = gprWdev->wiphy;
+		kfree(gprWdev);
+		gprWdev = NULL;
+	}
+
+	/* unregister & free wiphy */
+	if (wiphy) {
+		/* set_wiphy_dev(wiphy, NULL): set the wiphy->dev->parent = NULL
+		 * The trunk-ce1 does this, but the trunk seems not.
+		 */
+		/* set_wiphy_dev(wiphy, NULL); */
+		wiphy_unregister(wiphy);
+		wiphy_free(wiphy);
+	}
+}
+#endif /* CFG_ENABLE_UNIFY_WIPHY */
 
 VOID wlanWakeLockInit(P_GLUE_INFO_T prGlueInfo)
 {
@@ -1595,6 +1766,9 @@ static struct wireless_dev *wlanNetCreate(PVOID pvData, PVOID pvDriverData)
 	struct device *prDev;
 	P_NETDEV_PRIVATE_GLUE_INFO prNetDevPrivate = (P_NETDEV_PRIVATE_GLUE_INFO) NULL;
 	struct mt66xx_chip_info *prChipInfo;
+#if CFG_ENABLE_UNIFY_WIPHY
+	struct wiphy *prWiphy = NULL;
+#endif
 
 	PUCHAR prInfName = NULL;
 
@@ -1602,6 +1776,24 @@ static struct wireless_dev *wlanNetCreate(PVOID pvData, PVOID pvDriverData)
 		DBGLOG(INIT, ERROR, "No wireless dev exist, abort power on\n");
 		return NULL;
 	}
+
+#if CFG_ENABLE_UNIFY_WIPHY
+	/* The gprWdev is created at initWlan() and isn't reset when the
+	 * disconnection occur. That cause some issue.
+	 */
+	prWiphy = prWdev->wiphy;
+	memset(prWdev, 0, sizeof(struct wireless_dev));
+	prWdev->wiphy = prWiphy;
+	prWdev->iftype = NL80211_IFTYPE_STATION;
+#if (CFG_SUPPORT_SINGLE_SKU == 1)
+	/* XXX: ref from cfg80211_regd_set_wiphy().
+	 * The error case: Sometimes after unplug/plug usb, the wlan0 STA can't
+	 * scan correctly (FW doesn't do scan). The usb_probe message:
+	 * "mtk_reg_notify:(RLM ERROR) Invalid REG state happened. state = 0x6".
+	 */
+	rlmDomainResetCtrlInfo(TRUE);
+#endif
+#endif
 
 	/* 4 <1.3> co-relate wiphy & prDev */
 	glGetDev(pvData, &prDev);
@@ -2479,14 +2671,11 @@ static INT_32 wlanProbe(PVOID pvData, PVOID pvDriverData)
 
 			if (rStatus != WLAN_STATUS_SUCCESS) {
 				DBGLOG(INIT, WARN, "set MAC addr fail 0x%lx\n", rStatus);
-				prGlueInfo->u4ReadyFlag = 0;
 			} else {
 				kalMemCopy(prGlueInfo->prDevHandler->dev_addr, &MacAddr.sa_data, ETH_ALEN);
 				kalMemCopy(prGlueInfo->prDevHandler->perm_addr,
 					   prGlueInfo->prDevHandler->dev_addr, ETH_ALEN);
 
-				/* card is ready */
-				prGlueInfo->u4ReadyFlag = 1;
 #if CFG_SHOW_MACADDR_SOURCE
 				DBGLOG(INIT, INFO, "MAC address: " MACSTR, MAC2STR(&MacAddr.sa_data));
 #endif
@@ -2616,6 +2805,9 @@ static INT_32 wlanProbe(PVOID pvData, PVOID pvDriverData)
 		}
 #endif
 
+		/* card is ready */
+		prGlueInfo->u4ReadyFlag = 1;
+
 		kalSetHalted(FALSE);
 		DBGLOG(INIT, INFO, "wlanProbe: probe success\n");
 	} else {
@@ -2699,6 +2891,13 @@ static VOID wlanRemove(VOID)
 		free_netdev(prDev);
 		return;
 	}
+
+	/* to avoid that wpa_supplicant/hostapd triogger new cfg80211 command */
+	prGlueInfo->u4ReadyFlag = 0;
+
+	/* Have tried to do scan done here, but the exception occurs for */
+	/* the P2P scan. Keep the original design that scan done in the	 */
+	/* p2pStop/wlanStop.						 */
 
 #if WLAN_INCLUDE_PROC
 	procRemoveProcfs();
@@ -2862,6 +3061,7 @@ static VOID wlanRemove(VOID)
 static int initWlan(void)
 {
 	int ret = 0;
+	P_GLUE_INFO_T prGlueInfo = NULL;
 
 	DBGLOG(INIT, INFO, "initWlan\n");
 
@@ -2891,9 +3091,13 @@ static int initWlan(void)
 #endif
 
 	wlanCreateWirelessDevice();
-	if (gprWdev)
-		glP2pCreateWirelessDevice((P_GLUE_INFO_T) wiphy_priv(gprWdev->wiphy));
-	gprP2pWdev = gprP2pRoleWdev[0];/* P2PDev and P2PRole[0] share the same Wdev */
+
+	prGlueInfo = (P_GLUE_INFO_T) wiphy_priv(gprWdev->wiphy);
+	if (gprWdev) {
+		/* P2PDev and P2PRole[0] share the same Wdev */
+		if (glP2pCreateWirelessDevice(prGlueInfo) == TRUE)
+			gprP2pWdev = gprP2pRoleWdev[0];
+	}
 
 	ret = ((glRegisterBus(wlanProbe, wlanRemove) == WLAN_STATUS_SUCCESS) ? 0 : -EIO);
 
@@ -2930,8 +3134,12 @@ static VOID exitWlan(void)
 
 	/* free pre-allocated memory */
 	kalUninitIOBuffer();
+#if CFG_ENABLE_UNIFY_WIPHY
+	wlanDestroyAllWdev();
+#else
 	wlanDestroyWirelessDevice();
 	glP2pDestroyWirelessDevice();
+#endif
 #if WLAN_INCLUDE_PROC
 	procUninitProcFs();
 #endif

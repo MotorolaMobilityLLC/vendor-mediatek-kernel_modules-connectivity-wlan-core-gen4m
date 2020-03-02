@@ -2250,10 +2250,10 @@ void rlmDomainSetDefaultCountryCode(void)
 	g_mtk_regd_control.alpha2 = COUNTRY_CODE_WW;
 }
 
-void rlmDomainResetCtrlInfo(void)
+void rlmDomainResetCtrlInfo(BOOLEAN force)
 {
-	if (g_mtk_regd_control.state == REGD_STATE_UNDEFINED) {
-
+	if ((g_mtk_regd_control.state == REGD_STATE_UNDEFINED) ||
+	    (force == TRUE)) {
 		memset(&g_mtk_regd_control, 0, sizeof(mtk_regd_control));
 
 		g_mtk_regd_control.state = REGD_STATE_INIT;
