@@ -437,7 +437,7 @@ static s_int32 tm_rftest_query_auto_test(
 
 }
 
-static s_int32 tm_icap_start(
+static s_int32 tm_icap_mode(
 	struct test_wlan_info *winfos)
 {
 	s_int32 ret = SERV_STATUS_SUCCESS;
@@ -453,7 +453,10 @@ static s_int32 tm_icap_start(
 		NULL,
 		NULL);
 
-	return ret;
+	SERV_LOG(SERV_DBG_CAT_MISC, SERV_DBG_LVL_WARN,
+		("Switch ICAP Mode,ret=0x%08x\n", ret));
+
+	return SERV_STATUS_SUCCESS;
 }
 
 s_int32 mt_op_set_tr_mac(
@@ -1771,7 +1774,7 @@ s_int32 mt_op_calibration_test_mode(
 		return SERV_STATUS_HAL_OP_INVALID_NULL_POINTER;
 
 	if (mode == 2)
-		ret = tm_icap_start(winfos);
+		ret = tm_icap_mode(winfos);
 
 	return ret;
 }
@@ -1867,9 +1870,11 @@ s_int32 mt_op_get_icap_status(
 		ret = SERV_STATUS_HAL_OP_FAIL_SEND_FWCMD;
 
 	SERV_LOG(SERV_DBG_CAT_MISC, SERV_DBG_LVL_WARN,
-		("Status ICAP %d\n", *icap_stat)); /*0:OK,1:WAITING,2:FAIL*/
+		("Query Status ICAP %d, ret=0x%X\n",
+		*icap_stat,  /*0:OK,1:WAITING,2:FAIL*/
+		ret));
 
-	return ret;
+	return SERV_STATUS_SUCCESS;
 }
 
 s_int32 mt_op_get_icap_max_data_len(
@@ -1920,7 +1925,8 @@ s_int32 mt_op_get_icap_data(
 
 	if (ret == SERV_STATUS_SUCCESS) {
 		*icap_cnt = r_dump_iq.icap_cnt;
-		sys_ad_mem_dump32(icap_data, r_dump_iq.icap_data_len);
+		/*debug*/
+		/*sys_ad_mem_dump32(icap_data, r_dump_iq.icap_data_len);*/
 	}
 
 	SERV_LOG(SERV_DBG_CAT_MISC, SERV_DBG_LVL_WARN,
