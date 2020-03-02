@@ -150,7 +150,9 @@ p2pFuncProcessP2pProbeRspAction(IN struct ADAPTER *prAdapter,
 		IN uint8_t *pucIEBuf, IN uint8_t ucElemIdType,
 		OUT uint8_t *ucBssIdx, OUT struct BSS_INFO **prP2pBssInfo,
 		OUT u_int8_t *fgIsWSCIE,
-		OUT u_int8_t *fgIsP2PIE, OUT u_int8_t *fgIsWFDIE);
+		OUT u_int8_t *fgIsP2PIE,
+		OUT u_int8_t *fgIsWFDIE,
+		OUT u_int8_t *fgIsVenderIE);
 
 static void
 p2pFuncGetSpecAttriAction(IN struct IE_P2P *prP2pIE,
@@ -4722,6 +4724,7 @@ struct MSDU_INFO *p2pFuncProcessP2pProbeRsp(IN struct ADAPTER *prAdapter,
 	uint16_t u2Offset = 0, u2IELength = 0, u2ProbeRspHdrLen = 0;
 	u_int8_t fgIsWSCIE = FALSE;
 	u_int8_t fgIsWFDIE = FALSE;
+	u_int8_t fgIsVenderIE = FALSE;
 	struct BSS_INFO *prP2pBssInfo = (struct BSS_INFO *) NULL;
 	uint16_t u2EstimateSize = 0, u2EstimatedExtraIELen = 0;
 	uint32_t u4IeArraySize = 0, u4Idx = 0;
@@ -4749,9 +4752,11 @@ struct MSDU_INFO *p2pFuncProcessP2pProbeRsp(IN struct ADAPTER *prAdapter,
 		u2IELength = prMgmtTxMsdu->u2FrameLength - u2ProbeRspHdrLen;
 
 #if CFG_SUPPORT_WFD
-		/* prAdapter->prGlueInfo
-		 * ->prP2PInfo[0]->u2VenderIELen = 0;
-		 */
+#if CFG_SUPPORT_WFD_VENDOR_IE
+		prAdapter->prGlueInfo
+			->prP2PInfo[prP2pBssInfo->u4PrivateData]
+			->u2VenderIELen = 0;
+#endif
 		/* Reset in each time ?? */
 		prAdapter->prGlueInfo
 			->prP2PInfo[prP2pBssInfo->u4PrivateData]
@@ -4769,7 +4774,8 @@ struct MSDU_INFO *p2pFuncProcessP2pProbeRsp(IN struct ADAPTER *prAdapter,
 						&prP2pBssInfo,
 						&fgIsWSCIE,
 						&u4P2PIEIdx,
-						&fgIsWFDIE);
+						&fgIsWFDIE,
+						&fgIsVenderIE);
 				}
 				break;
 			case ELEM_ID_VENDOR:
@@ -4781,7 +4787,8 @@ struct MSDU_INFO *p2pFuncProcessP2pProbeRsp(IN struct ADAPTER *prAdapter,
 						&prP2pBssInfo,
 						&fgIsWSCIE,
 						&u4P2PIEIdx,
-						&fgIsWFDIE);
+						&fgIsWFDIE,
+						&fgIsVenderIE);
 				}
 				break;
 			default:
@@ -4854,9 +4861,12 @@ struct MSDU_INFO *p2pFuncProcessP2pProbeRsp(IN struct ADAPTER *prAdapter,
 				prAdapter->prGlueInfo
 					->prP2PInfo[prP2pBssInfo->u4PrivateData]
 					->u2WFDIELen;
-#if 0
-		u2EstimatedExtraIELen +=
-			prAdapter->prGlueInfo->prP2PInfo[0]->u2VenderIELen;
+#if CFG_SUPPORT_WFD_VENDOR_IE
+		if (fgIsVenderIE)
+			u2EstimatedExtraIELen +=
+				prAdapter->prGlueInfo
+					->prP2PInfo[prP2pBssInfo->u4PrivateData]
+					->u2VenderIELen;
 #endif
 #endif
 
@@ -4959,18 +4969,24 @@ struct MSDU_INFO *p2pFuncProcessP2pProbeRsp(IN struct ADAPTER *prAdapter,
 				->u2WFDIELen;
 
 		}
-#if 0
-		if (prAdapter->prGlueInfo->prP2PInfo[0]->u2VenderIELen > 0) {
+#if CFG_SUPPORT_WFD_VENDOR_IE
+		if (fgIsVenderIE &&
+			prAdapter->prGlueInfo
+			->prP2PInfo[prP2pBssInfo->u4PrivateData]
+			->u2VenderIELen > 0) {
 			kalMemCopy((uint8_t *)
-				((uint32_t) prRetMsduInfo->prPacket +
-				(uint32_t) prRetMsduInfo->u2FrameLength),
-				prAdapter->prGlueInfo
-					->prP2PInfo[0]->aucVenderIE,
-				prAdapter->prGlueInfo
-					->prP2PInfo[0]->u2VenderIELen);
+				((unsigned long) prRetMsduInfo->prPacket +
+				(unsigned long) prRetMsduInfo->u2FrameLength),
+				prAdapter->prGlueInfo->prP2PInfo
+					[prP2pBssInfo->u4PrivateData]
+					->aucVenderIE,
+				prAdapter->prGlueInfo->prP2PInfo
+					[prP2pBssInfo->u4PrivateData]
+					->u2VenderIELen);
 			prRetMsduInfo->u2FrameLength +=
-				(uint16_t) prAdapter->prGlueInfo
-					->prP2PInfo[0]->u2VenderIELen;
+			(uint16_t) prAdapter->prGlueInfo
+				->prP2PInfo[prP2pBssInfo->u4PrivateData]
+				->u2VenderIELen;
 		}
 #endif
 #endif /* CFG_SUPPORT_WFD */
@@ -4992,7 +5008,8 @@ p2pFuncProcessP2pProbeRspAction(IN struct ADAPTER *prAdapter,
 		OUT struct BSS_INFO **prP2pBssInfo,
 		OUT u_int8_t *fgIsWSCIE,
 		OUT u_int8_t *u4P2PIEIdx,
-		OUT u_int8_t *fgIsWFDIE)
+		OUT u_int8_t *fgIsWFDIE,
+		OUT u_int8_t *fgIsVenderIE)
 {
 	uint8_t ucOuiType = 0;
 	uint16_t u2SubTypeVersion = 0;
@@ -5107,6 +5124,31 @@ p2pFuncProcessP2pProbeRspAction(IN struct ADAPTER *prAdapter,
 			DBGLOG(P2P, INFO,
 			       "Other vender IE is found in probe resp (supp). Len %u\n",
 			       IE_SIZE(pucIEBuf));
+#if CFG_SUPPORT_WFD && CFG_SUPPORT_WFD_VENDOR_IE
+			if ((prAdapter->prGlueInfo->prP2PInfo
+				[((struct BSS_INFO *)*prP2pBssInfo)
+				->u4PrivateData]->u2VenderIELen
+				+ IE_SIZE(pucIEBuf)) < 1024) {
+				*fgIsVenderIE = TRUE;
+				kalMemCopy(prAdapter->prGlueInfo
+					->prP2PInfo
+					[((struct BSS_INFO *)
+					*prP2pBssInfo)
+					->u4PrivateData]->aucVenderIE +
+					prAdapter->prGlueInfo
+					->prP2PInfo
+					[((struct BSS_INFO *)
+					*prP2pBssInfo)
+					->u4PrivateData]->u2VenderIELen,
+					pucIEBuf, IE_SIZE(pucIEBuf));
+				prAdapter->prGlueInfo
+					->prP2PInfo
+					[((struct BSS_INFO *)
+					*prP2pBssInfo)
+					->u4PrivateData]->u2VenderIELen +=
+					IE_SIZE(pucIEBuf);
+			}
+#endif
 		}
 		break;
 	default:
