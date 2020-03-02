@@ -4261,6 +4261,12 @@ mtk_cfg80211_tdls_mgmt(struct wiphy *wiphy,
 	rCmdMgt.ucDialogToken = dialog_token;
 	rCmdMgt.ucActionCode = action_code;
 	kalMemCopy(&(rCmdMgt.aucPeer), peer, 6);
+
+	if  (len > TDLS_SEC_BUF_LENGTH) {
+		DBGLOG(REQ, WARN, "%s:len > TDLS_SEC_BUF_LENGTH\n", __func__);
+		return -EINVAL;
+	}
+
 	kalMemCopy(&(rCmdMgt.aucSecBuf), buf, len);
 
 	rStatus = kalIoctl(prGlueInfo, TdlsexLinkMgt, &rCmdMgt,
