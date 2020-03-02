@@ -80,7 +80,7 @@
 #define DBDC_5G_WMM_INDEX	0
 #define DBDC_2G_WMM_INDEX	1
 #endif
-#define HW_WMM_NUM		(prAdapter->ucHwBssIdNum)
+#define HW_WMM_NUM		(prAdapter->ucWmmSetNum)
 #define MAX_HW_WMM_INDEX	(HW_WMM_NUM - 1)
 #define DEFAULT_HW_WMM_INDEX	MAX_HW_WMM_INDEX
 /*******************************************************************************
