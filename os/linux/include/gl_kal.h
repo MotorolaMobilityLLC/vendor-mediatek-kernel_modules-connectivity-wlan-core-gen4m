@@ -1187,12 +1187,8 @@ u_int8_t kalIsConfigurationExist(IN struct GLUE_INFO *prGlueInfo);
 
 struct REG_INFO *kalGetConfiguration(IN struct GLUE_INFO *prGlueInfo);
 
-void
-kalGetConfigurationVersion(IN struct GLUE_INFO *prGlueInfo,
-	OUT uint16_t *pu2Part1CfgOwnVersion,
-	OUT uint16_t *pu2Part1CfgPeerVersion,
-	OUT uint16_t *pu2Part2CfgOwnVersion,
-	OUT uint16_t *pu2Part2CfgPeerVersion);
+u_int8_t kalCfgDataRead(IN struct GLUE_INFO *prGlueInfo, IN uint32_t u4Offset,
+				IN ssize_t len, OUT uint16_t *pu2Data);
 
 u_int8_t kalCfgDataRead16(IN struct GLUE_INFO *prGlueInfo, IN uint32_t u4Offset,
 	OUT uint16_t *pu2Data);
