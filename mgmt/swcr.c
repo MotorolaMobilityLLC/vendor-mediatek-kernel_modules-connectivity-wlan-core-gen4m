@@ -599,8 +599,8 @@ VOID swCtrlCmdCategory0(P_ADAPTER_T prAdapter, UINT_8 ucCate, UINT_8 ucAction, U
 
 					break;
 				}
-
 			}
+			break;
 		case SWCTRL_TX_CTRL_INFO:
 			{
 				P_TX_CTRL_T prTxCtrl;
@@ -923,6 +923,12 @@ VOID testPsCmdCategory1(P_ADAPTER_T prAdapter, UINT_8 ucCate, UINT_8 ucAction, U
 		return;
 
 	prStaRec = cnmGetStaRecByIndex(prAdapter, ucOpt0);
+
+	if (!prStaRec) {
+		DBGLOG(SW4, INFO, "prStaRec is NULL, ucOpt0:%d\n", ucOpt0);
+		return;
+	}
+
 	ucWTEntry = prStaRec->ucWlanIndex;
 	if (ucRead == SWCR_WRITE) {
 
