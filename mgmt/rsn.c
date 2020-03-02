@@ -1530,8 +1530,8 @@ void rsnGenerateRSNIE(IN struct ADAPTER *prAdapter,
 	/* Todo:: network id */
 	ucBssIndex = prMsduInfo->ucBssIndex;
 	/* for Fast Bss Transition,  we reuse the RSN Element composed in
-	** userspace
-	*/
+	 * userspace
+	 */
 	if ((prAdapter->rWifiVar.rConnSettings.eAuthMode == AUTH_MODE_WPA2_FT ||
 	     prAdapter->rWifiVar.rConnSettings.eAuthMode ==
 		     AUTH_MODE_WPA2_FT_PSK) &&
@@ -1669,10 +1669,10 @@ void rsnGenerateRSNIE(IN struct ADAPTER *prAdapter,
 #if CFG_SUPPORT_802_11W
 			else {
 				/* Follow supplicant flow to
-				* fill PMKID Count field = 0 only when
-				* Group Management Cipher field
-				* need to be filled
-				*/
+				 * fill PMKID Count field = 0 only when
+				 * Group Management Cipher field
+				 * need to be filled
+				 */
 				if (prAdapter->rWifiVar.
 					rAisSpecificBssInfo.fgMgmtProtection) {
 					WLAN_SET_FIELD_16(cp, 0)
@@ -2409,12 +2409,13 @@ uint32_t rsnCheckBipKeyInstalled(IN struct ADAPTER
 		    ->eNetworkType == (uint8_t) NETWORK_TYPE_AIS) {
 			return prAdapter->rWifiVar.rAisSpecificBssInfo.
 			    fgBipKeyInstalled;
-		} else
-		    if ((GET_BSS_INFO_BY_INDEX(prAdapter, prStaRec->ucBssIndex)
-			 ->eNetworkType == NETWORK_TYPE_P2P)
-			&&
-			(GET_BSS_INFO_BY_INDEX(prAdapter, prStaRec->ucBssIndex)
-			 ->eCurrentOPMode == OP_MODE_ACCESS_POINT)) {
+		} else if ((GET_BSS_INFO_BY_INDEX(prAdapter,
+				prStaRec->ucBssIndex)
+				->eNetworkType == NETWORK_TYPE_P2P)
+				&&
+			(GET_BSS_INFO_BY_INDEX(prAdapter,
+				prStaRec->ucBssIndex)
+				->eCurrentOPMode == OP_MODE_ACCESS_POINT)) {
 			DBGLOG(RSN, INFO, "AP-STA PMF capable:%d\n",
 			       prStaRec->rPmfCfg.fgApplyPmf);
 			return prStaRec->rPmfCfg.fgApplyPmf;

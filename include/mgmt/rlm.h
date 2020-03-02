@@ -306,16 +306,16 @@ struct RM_BEACON_REPORT_PARAMS {
 struct RM_MEASURE_REPORT_ENTRY {
 	struct LINK_ENTRY rLinkEntry;
 	/* should greater than sizeof(struct RM_BCN_REPORT) +
-	** sizeof(struct IE_MEASUREMENT_REPORT) +
-	** RM_BCN_REPORT_SUB_ELEM_MAX_LENGTH
-	*/
+	 * sizeof(struct IE_MEASUREMENT_REPORT) +
+	 * RM_BCN_REPORT_SUB_ELEM_MAX_LENGTH
+	 */
 	uint8_t aucMeasReport[260];
 };
 
 struct RADIO_MEASUREMENT_REQ_PARAMS {
 	/* Remain Request Elements Length, started at prMeasElem. if it is 0,
-	** means RM is done
-	*/
+	 * means RM is done
+	 */
 	uint16_t u2RemainReqLen;
 	uint16_t u2ReqIeBufLen;
 	struct IE_MEASUREMENT_REQ *prCurrMeasElem;
