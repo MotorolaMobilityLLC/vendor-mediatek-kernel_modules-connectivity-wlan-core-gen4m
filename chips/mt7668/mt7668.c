@@ -202,6 +202,74 @@ VOID mt7668CapInit(IN P_ADAPTER_T prAdapter)
 }
 
 #if defined(_HIF_PCIE)
+
+VOID mt7668PdmaConfig(P_GLUE_INFO_T prGlueInfo, BOOLEAN enable)
+{
+	P_BUS_INFO prBusInfo = prGlueInfo->prAdapter->chip_info->bus_info;
+	WPDMA_GLO_CFG_STRUCT GloCfg;
+	WPMDA_INT_MASK IntMask;
+
+	kalDevRegRead(prGlueInfo, WPDMA_GLO_CFG, &GloCfg.word);
+
+	kalDevRegRead(prGlueInfo, WPDMA_INT_MSK, &IntMask.word);
+
+	if (enable == TRUE) {
+		/*0x4208 = 5440_1E70*/
+		GloCfg.field_1.EnableTxDMA = 1;
+		GloCfg.field_1.EnableRxDMA = 1;
+
+		GloCfg.field_1.WPDMABurstSIZE = 3;
+		GloCfg.field_1.EnTXWriteBackDDONE = 1;
+
+		GloCfg.field_1.tx_bt_size = 1;
+		GloCfg.field_1.multi_dma_en = 3;
+		GloCfg.field_1.fifo_little_endian = 1;
+
+		GloCfg.field_1.tx_bt_size_bit21 = 1;
+		GloCfg.field_1.first_token = 1;
+		GloCfg.field_1.omit_tx_info = 1;
+		GloCfg.field_1.reserve_30 = 1;
+
+		IntMask.field.rx_done_0 = 1;
+		IntMask.field.rx_done_1 = 1;
+		IntMask.field.tx_done = BIT(prBusInfo->tx_ring_fwdl_idx) |
+			BIT(prBusInfo->tx_ring_cmd_idx) | BIT(prBusInfo->tx_ring_data_idx);
+		IntMask.field.tx_dly_int = 0;
+	} else {
+		GloCfg.field_1.EnableRxDMA = 0;
+		GloCfg.field_1.EnableTxDMA = 0;
+
+		IntMask.field.rx_done_0 = 0;
+		IntMask.field.rx_done_1 = 0;
+		IntMask.field.tx_done = 0;
+		IntMask.field.tx_dly_int = 0;
+	}
+
+	kalDevRegWrite(prGlueInfo, WPDMA_INT_MSK, IntMask.word);
+	kalDevRegWrite(prGlueInfo, WPDMA_GLO_CFG, GloCfg.word);
+
+
+	/* new PDMA */
+	/*  0x4260 = 0000_0005 */
+	kalDevRegWrite(prGlueInfo, MT_WPDMA_PAUSE_RX_Q, 0x5);
+
+	/*  0x4500 = 0000_0001*/
+	kalDevRegWrite(prGlueInfo, MT_WPDMA_GLO_CFG_1, 0x1);
+
+	/*  0x4510 = 000F_0000*/
+	kalDevRegWrite(prGlueInfo, MT_WPDMA_TX_PRE_CFG, 0xF0000);
+
+	/* 0x4520 = 0F7F_0000 */
+	kalDevRegWrite(prGlueInfo, MT_WPDMA_RX_PRE_CFG, 0xF7F0000);
+
+	/* 0x4530 = 0EA6_0026 */
+	kalDevRegWrite(prGlueInfo, MT_WPDMA_ABT_CFG, 0x0EA60026);
+
+	/* 0x4534 = E4E4_E4E4*/
+	kalDevRegWrite(prGlueInfo, MT_WPDMA_ABT_CFG1, 0xE4E4E4E4);
+
+}
+
 VOID mt7668LowPowerOwnRead(IN P_ADAPTER_T prAdapter, OUT PBOOLEAN pfgResult)
 {
 	UINT_32 u4RegValue;
@@ -240,7 +308,7 @@ BUS_INFO mt7668_bus_info = {
 	.fgInitPCIeInt = FALSE,
 	.u4DmaMask = 32,
 
-	.pdmaSetup = halEnhancedWpdmaConfig,
+	.pdmaSetup = mt7668PdmaConfig,
 	.lowPowerOwnRead = mt7668LowPowerOwnRead,
 	.lowPowerOwnSet = mt7668LowPowerOwnSet,
 	.lowPowerOwnClear = mt7668LowPowerOwnClear,
