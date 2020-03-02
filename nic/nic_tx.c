@@ -1948,6 +1948,8 @@ WLAN_STATUS nicTxMsduQueue(IN P_ADAPTER_T prAdapter, UINT_8 ucPortIdx, P_QUE_T p
 		} else
 			wlanTxLifetimeTagPacket(prAdapter, prMsduInfo, TX_PROF_TAG_DRV_TX_DONE);
 
+		StatsEnvTxTime2Hif(prAdapter, prMsduInfo);
+
 		HAL_WRITE_TX_DATA(prAdapter, prMsduInfo);
 	}
 
