@@ -3568,7 +3568,7 @@ static int priv_driver_get_bss_statistics(
 	uint32_t rStatus;
 	uint8_t arBssid[PARAM_MAC_ADDR_LEN];
 	uint32_t u4BufLen;
-	int32_t i4Rssi;
+	struct PARAM_LINK_SPEED_EX *prLinkSpeed;
 	struct PARAM_GET_BSS_STATISTICS rQueryBssStatistics;
 	uint8_t ucBssIndex = AIS_DEFAULT_INDEX;
 	int32_t i4BytesWritten = 0;
@@ -3589,6 +3589,9 @@ static int priv_driver_get_bss_statistics(
 	if (i4Argc >= 2)
 		u4Ret = kalkStrtou32(apcArgv[1], 0, &u4Index);
 #endif
+	ucBssIndex = wlanGetBssIdx(prNetDev);
+	if (!IS_BSS_INDEX_VALID(ucBssIndex))
+		return WLAN_STATUS_FAILURE;
 
 	/* 2. fill RSSI */
 	if (kalGetMediaStateIndicated(prGlueInfo,
@@ -3598,8 +3601,11 @@ static int priv_driver_get_bss_statistics(
 		DBGLOG(REQ, WARN, "not yet connected\n");
 		return WLAN_STATUS_SUCCESS;
 	}
-	rStatus = kalIoctl(prGlueInfo, wlanoidQueryRssi, &i4Rssi,
-			   sizeof(i4Rssi), TRUE, FALSE, FALSE, &u4BufLen);
+	rStatus = kalIoctlByBssIdx(prGlueInfo,
+				   wlanoidQueryRssi,
+				   &prLinkSpeed, sizeof(prLinkSpeed),
+				   TRUE, FALSE, FALSE,
+				   &u4BufLen, ucBssIndex);
 	if (rStatus != WLAN_STATUS_SUCCESS)
 		DBGLOG(REQ, WARN, "unable to retrieve rssi\n");
 
