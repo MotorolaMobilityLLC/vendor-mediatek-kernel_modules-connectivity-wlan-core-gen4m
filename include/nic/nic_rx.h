@@ -1202,12 +1202,27 @@ struct RX_DESC_OPS_T {
 	(((_prHwMacRxStsGroup3)->u4RxVector[0] & RX_VT_NUM_RX_MASK) >> \
 	RX_VT_NUM_RX_OFFSET)
 
+#if (CFG_SUPPORT_CONNAC2X == 1)
+#define HAL_RX_STATUS_GET_RCPI0(_prHwMacRxStsGroup3)	\
+	(((_prHwMacRxStsGroup3)->u4RxVector[1] & RX_VT_RCPI0_MASK) >> \
+	RX_VT_RCPI0_OFFSET)
+#define HAL_RX_STATUS_GET_RCPI1(_prHwMacRxStsGroup3)	\
+	(((_prHwMacRxStsGroup3)->u4RxVector[1] & RX_VT_RCPI1_MASK) >> \
+	RX_VT_RCPI1_OFFSET)
+#define HAL_RX_STATUS_GET_RCPI2(_prHwMacRxStsGroup3)	\
+	(((_prHwMacRxStsGroup3)->u4RxVector[1] & RX_VT_RCPI2_MASK) >> \
+	RX_VT_RCPI0_OFFSET)
+#define HAL_RX_STATUS_GET_RCPI3(_prHwMacRxStsGroup3)	\
+	(((_prHwMacRxStsGroup3)->u4RxVector[1] & RX_VT_RCPI3_MASK) >> \
+	RX_VT_RCPI1_OFFSET)
+#else
 #define HAL_RX_STATUS_GET_RCPI0(_prHwMacRxStsGroup3)	\
 	(((_prHwMacRxStsGroup3)->u4RxVector[3] & RX_VT_RCPI0_MASK) >> \
 	RX_VT_RCPI0_OFFSET)
 #define HAL_RX_STATUS_GET_RCPI1(_prHwMacRxStsGroup3)	\
 	(((_prHwMacRxStsGroup3)->u4RxVector[3] & RX_VT_RCPI1_MASK) >> \
 	RX_VT_RCPI1_OFFSET)
+#endif
 
 /* TBD */
 #define HAL_RX_STATUS_GET_RX_PACKET_LEN(_prHwMacRxDesc)
