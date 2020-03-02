@@ -611,13 +611,6 @@ int glRstwlanPreWholeChipReset(enum consys_drv_type type, char *reason)
 
 int glRstwlanPostWholeChipReset(void)
 {
-	struct GLUE_INFO *prGlueInfo;
-
-	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wlanGetWiphy());
-	if ((!prGlueInfo) || (prGlueInfo->u4ReadyFlag == 0)) {
-		DBGLOG(REQ, WARN, "driver is not ready\n");
-		return 0;
-	}
 	glResetMsgHandler(WMTMSG_TYPE_RESET, WMTRSTMSG_RESET_END);
 	g_IsWholeChipRst = FALSE;
 	DBGLOG(INIT, INFO,
