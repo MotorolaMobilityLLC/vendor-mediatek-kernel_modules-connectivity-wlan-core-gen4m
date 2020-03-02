@@ -2070,20 +2070,20 @@ int SetByPassCac(struct net_device *prNetDev, UINT_8 *prInBuf)
 {
 	INT_32 i4Status;
 	INT_32 rv;
-	int byPassCacTime;
-	UINT_8 ucByPassCacTime;
+	INT_32 i4ByPassCacTime;
+	UINT_32 u4ByPassCacTime;
 
 	DBGLOG(REQ, INFO, "MT6632 : ATE_AGENT iwpriv Set By Pass Cac, buf: %s\n", prInBuf);
 
-	rv = kstrtoint(prInBuf, 0, &byPassCacTime);
+	rv = kstrtoint(prInBuf, 0, &i4ByPassCacTime);
 
 	DBGLOG(REQ, INFO, "MT6632 : ATE_AGENT iwpriv Set By Pass Cac, prInBuf: %s\n", prInBuf);
-	DBGLOG(INIT, ERROR, "MT6632 : ATE_AGENT iwpriv Set By Pass Cac : %dsec\n", byPassCacTime);
+	DBGLOG(INIT, ERROR, "MT6632 : ATE_AGENT iwpriv Set By Pass Cac : %dsec\n", i4ByPassCacTime);
 
-	ucByPassCacTime = (UINT_8) byPassCacTime;
+	u4ByPassCacTime = (UINT_32) i4ByPassCacTime;
 
 	if (rv == 0)
-		i4Status = p2pFuncSetManualCacTime(ucByPassCacTime);
+		i4Status = p2pFuncSetManualCacTime(u4ByPassCacTime);
 	else
 		return -EINVAL;
 

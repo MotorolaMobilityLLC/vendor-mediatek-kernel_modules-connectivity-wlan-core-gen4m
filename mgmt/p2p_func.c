@@ -1323,6 +1323,8 @@ VOID p2pFuncStartRdd(IN P_ADAPTER_T prAdapter, IN UINT_8 ucBssIdx)
 		prCmdRddOnOffCtrl = (P_CMD_RDD_ON_OFF_CTRL_T) cnmMemAlloc(prAdapter, RAM_TYPE_MSG,
 					sizeof(*prCmdRddOnOffCtrl));
 
+		ASSERT_BREAK((prCmdRddOnOffCtrl != NULL));
+
 		prCmdRddOnOffCtrl->ucDfsCtrl = RDD_START;
 
 		prCmdRddOnOffCtrl->ucRddIdx = prAdapter->aprBssInfo[ucBssIdx]->eDBDCBand;
@@ -1351,10 +1353,52 @@ VOID p2pFuncStartRdd(IN P_ADAPTER_T prAdapter, IN UINT_8 ucBssIdx)
 					FALSE,
 					NULL,
 					NULL,
-					sizeof(CMD_RDD_ON_OFF_CTRL_T), (PUINT_8) prCmdRddOnOffCtrl, NULL, 0);
+					sizeof(*prCmdRddOnOffCtrl), (PUINT_8) prCmdRddOnOffCtrl, NULL, 0);
+
+		cnmMemFree(prAdapter, prCmdRddOnOffCtrl);
 
 	} while (FALSE);
 }				/* p2pFuncStartRdd */
+
+VOID p2pFuncStopRdd(IN P_ADAPTER_T prAdapter, IN UINT_8 ucBssIdx)
+{
+	P_CMD_RDD_ON_OFF_CTRL_T prCmdRddOnOffCtrl;
+
+	DEBUGFUNC("p2pFuncStopRdd()");
+
+	do {
+		ASSERT_BREAK((prAdapter != NULL));
+
+		prCmdRddOnOffCtrl = (P_CMD_RDD_ON_OFF_CTRL_T) cnmMemAlloc(prAdapter, RAM_TYPE_MSG,
+					sizeof(*prCmdRddOnOffCtrl));
+
+		ASSERT_BREAK((prCmdRddOnOffCtrl != NULL));
+
+		prCmdRddOnOffCtrl->ucDfsCtrl = RDD_STOP;
+
+		prCmdRddOnOffCtrl->ucRddIdx = prAdapter->aprBssInfo[ucBssIdx]->eDBDCBand;
+
+		if (prCmdRddOnOffCtrl->ucRddIdx)
+			prCmdRddOnOffCtrl->ucRddInSel = RDD_IN_SEL_1;
+		else
+			prCmdRddOnOffCtrl->ucRddInSel = RDD_IN_SEL_0;
+
+		DBGLOG(P2P, INFO, "p2pFuncStopRdd: Stop Radar detection - DFS ctrl: %d, RDD index: %d\n",
+				prCmdRddOnOffCtrl->ucDfsCtrl, prCmdRddOnOffCtrl->ucRddIdx);
+
+		wlanSendSetQueryCmd(prAdapter,
+					CMD_ID_RDD_ON_OFF_CTRL,
+					TRUE,
+					FALSE,
+					FALSE,
+					NULL,
+					NULL,
+					sizeof(*prCmdRddOnOffCtrl), (PUINT_8) prCmdRddOnOffCtrl, NULL, 0);
+
+		cnmMemFree(prAdapter, prCmdRddOnOffCtrl);
+
+	} while (FALSE);
+}				/* p2pFuncStopRdd */
 
 VOID p2pFuncDfsSwitchCh(IN P_ADAPTER_T prAdapter, IN P_BSS_INFO_T prBssInfo, IN P2P_CHNL_REQ_INFO_T rP2pChnlReqInfo)
 {
@@ -1383,7 +1427,9 @@ VOID p2pFuncDfsSwitchCh(IN P_ADAPTER_T prAdapter, IN P_BSS_INFO_T prBssInfo, IN 
 		nicUpdateBss(prAdapter, prBssInfo->ucBssIndex);
 
 		prCmdRddOnOffCtrl = (P_CMD_RDD_ON_OFF_CTRL_T) cnmMemAlloc(prAdapter, RAM_TYPE_MSG,
-						sizeof(P_CMD_RDD_ON_OFF_CTRL_T));
+						sizeof(*prCmdRddOnOffCtrl));
+
+		ASSERT_BREAK((prCmdRddOnOffCtrl != NULL));
 
 		prCmdRddOnOffCtrl->ucDfsCtrl = RDD_START_TXQ;
 
@@ -1396,7 +1442,9 @@ VOID p2pFuncDfsSwitchCh(IN P_ADAPTER_T prAdapter, IN P_BSS_INFO_T prBssInfo, IN 
 					FALSE,
 					NULL,
 					NULL,
-					sizeof(CMD_RDD_ON_OFF_CTRL_T), (PUINT_8) prCmdRddOnOffCtrl, NULL, 0);
+					sizeof(*prCmdRddOnOffCtrl), (PUINT_8) prCmdRddOnOffCtrl, NULL, 0);
+
+		cnmMemFree(prAdapter, prCmdRddOnOffCtrl);
 
 		prP2pRoleFsmInfo = P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prAdapter, prBssInfo->u4PrivateData);
 
