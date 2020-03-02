@@ -352,8 +352,6 @@ authSendAuthFrame(IN struct ADAPTER *prAdapter,
 	uint16_t ucAuthAlgNum;
 	uint32_t i;
 
-	DBGLOG(SAA, LOUD, "Send Auth Frame %d, Status Code = %d\n", u2TransactionSeqNum, u2StatusCode);
-
 	/* 4 <1> Allocate a PKT_INFO_T for Authentication Frame */
 	/* Init with MGMT Header Length + Length of Fixed Fields */
 	u2EstimatedFrameLen = (MAC_TX_RESERVED_FIELD +
@@ -447,6 +445,12 @@ authSendAuthFrame(IN struct ADAPTER *prAdapter,
 
 	/* 4 <6> Inform TXM  to send this Authentication frame. */
 	nicTxEnqueueMsdu(prAdapter, prMsduInfo);
+
+	DBGLOG(SAA, INFO,
+			"Send Auth Frame, TranSeq: %d, Status: %d, Seq: %d\n",
+			u2TransactionSeqNum,
+			u2StatusCode,
+			prMsduInfo->ucTxSeqNum);
 
 	return WLAN_STATUS_SUCCESS;
 }				/* end of authSendAuthFrame() */
