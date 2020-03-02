@@ -1330,8 +1330,8 @@ s_int32 mt_op_set_channel(
 	tm_rftest_set_auto_test(winfos,
 		RF_AT_FUNCID_SET_DBDC_BAND_IDX, band_idx);
 
-	if ((central_ch0 >= 7 && central_ch0 <= 16) && central_ch0 == 1) {
-		/*Ch7 - Ch12, 5G (5035-5060)*/
+	if ((central_ch0 >= 7 && central_ch0 <= 16) && ch_band == 1) {
+		/*Ch7 - Ch12, 5G (5035-5060)  ch_band: 0:2.4G    1:5G */
 		SetFreq = 1000 * (5000 + central_ch0 * 5);
 	} else if (central_ch0 == 6 && ch_band == 1) {
 		SetFreq = 1000 * 5032;
