@@ -984,10 +984,12 @@ nicMediaStateChange(IN struct ADAPTER *prAdapter,
 {
 	struct GLUE_INFO *prGlueInfo;
 	struct AIS_FSM_INFO *prAisFsmInfo;
+	struct BSS_INFO *prAisBssInfo;
 
 	ASSERT(prAdapter);
 	prGlueInfo = prAdapter->prGlueInfo;
 	prAisFsmInfo = &(prAdapter->rWifiVar.rAisFsmInfo);
+	prAisBssInfo = prAdapter->prAisBssInfo;
 
 	switch (GET_BSS_INFO_BY_INDEX(prAdapter,
 				      ucBssIndex)->eNetworkType) {
@@ -998,8 +1000,15 @@ nicMediaStateChange(IN struct ADAPTER *prAdapter,
 			    PARAM_MEDIA_STATE_DISCONNECTED ||
 			    prAisFsmInfo->eCurrentState == AIS_STATE_JOIN) {
 
-				kalIndicateStatusAndComplete(prGlueInfo,
-					WLAN_STATUS_MEDIA_DISCONNECT, NULL, 0);
+				/* To prevent the new connection being
+				 * erased by this indication
+				 */
+				if (prAisBssInfo->ucReasonOfDisconnect !=
+					DISCONNECT_REASON_CODE_NEW_CONNECTION)
+					kalIndicateStatusAndComplete(
+						prGlueInfo,
+						WLAN_STATUS_MEDIA_DISCONNECT,
+						NULL, 0);
 
 				prAdapter->rWlanInfo.u4SysTime =
 					kalGetTimeTick();
