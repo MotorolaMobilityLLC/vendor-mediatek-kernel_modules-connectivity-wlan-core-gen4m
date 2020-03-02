@@ -15170,33 +15170,33 @@ uint32_t wlanoidTspecOperation(struct ADAPTER *prAdapter, void *pvBuffer,
 	pucItem = (uint8_t *)kalStrtokR(pucCmd, ",", &pucSavedPtr);
 	while (pucItem) {
 		if (kalStrniCmp(pucItem, "token ", 6) == 0)
-			u4Ret = kstrtou8(pucItem + 6, 0,
+			u4Ret = kalkStrtou8(pucItem + 6, 0,
 					 &prTspecParam->ucDialogToken);
 		else if (kalStrniCmp(pucItem, "tid ", 4) == 0) {
-			u4Ret = kstrtou8(pucItem + 4, 0,
+			u4Ret = kalkStrtou8(pucItem + 4, 0,
 					 &prMsgTsOperate->ucTid);
 			prTspecParam->rTsInfo.ucTid = prMsgTsOperate->ucTid;
 		} else if (kalStrniCmp(pucItem, "dir ", 4) == 0)
-			u4Ret = kstrtou8(pucItem + 4, 0,
+			u4Ret = kalkStrtou8(pucItem + 4, 0,
 					 &prTspecParam->rTsInfo.ucDirection);
 		else if (kalStrniCmp(pucItem, "psb ", 4) == 0)
-			u4Ret = kstrtou8(pucItem+4, 0, &ucApsdSetting);
+			u4Ret = kalkStrtou8(pucItem+4, 0, &ucApsdSetting);
 		else if (kalStrniCmp(pucItem, "up ", 3) == 0)
-			u4Ret = kstrtou8(pucItem + 3, 0,
+			u4Ret = kalkStrtou8(pucItem + 3, 0,
 					 &prTspecParam->rTsInfo.ucuserPriority);
 		else if (kalStrniCmp(pucItem, "size ", 5) == 0) {
 			uint16_t u2Size = 0;
 
-			u4Ret = kstrtou16(pucItem+5, 0, &u2Size);
+			u4Ret = kalkStrtou16(pucItem+5, 0, &u2Size);
 			prTspecParam->u2NominalMSDUSize |= u2Size;
 		} else if (kalStrniCmp(pucItem, "fixed ", 6) == 0) {
 			uint8_t ucFixed = 0;
 
-			u4Ret = kstrtou8(pucItem+6, 0, &ucFixed);
+			u4Ret = kalkStrtou8(pucItem+6, 0, &ucFixed);
 			if (ucFixed)
 				prTspecParam->u2NominalMSDUSize |= BIT(15);
 		} else if (kalStrniCmp(pucItem, "maxsize ", 8) == 0)
-			u4Ret = kstrtou16(pucItem + 8, 0,
+			u4Ret = kalkStrtou16(pucItem + 8, 0,
 					  &prTspecParam->u2MaxMSDUsize);
 		else if (kalStrniCmp(pucItem, "maxsrvint ", 10) == 0)
 			u4Ret = kalkStrtou32(pucItem + 10, 0,
@@ -15235,7 +15235,7 @@ uint32_t wlanoidTspecOperation(struct ADAPTER *prAdapter, void *pvBuffer,
 			u4Ret = wlanDecimalStr2Hexadecimals(
 				pucItem + 4, &prTspecParam->u2Sba);
 		else if (kalStrniCmp(pucItem, "mediumtime ", 11) == 0)
-			u4Ret = kstrtou16(pucItem + 11, 0,
+			u4Ret = kalkStrtou16(pucItem + 11, 0,
 					  &prTspecParam->u2MediumTime);
 
 		if (u4Ret) {

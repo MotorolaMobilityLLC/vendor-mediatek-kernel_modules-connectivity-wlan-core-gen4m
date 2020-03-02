@@ -3549,7 +3549,7 @@ void nicRxQueryStatus(IN struct ADAPTER *prAdapter,
 #define SPRINTF_RX_QSTATUS(arg) \
 	{ \
 		u4CurrCount = \
-			scnprintf(pucCurrBuf, *pu4Count, PRINTF_ARG arg); \
+			kalScnprintf(pucCurrBuf, *pu4Count, PRINTF_ARG arg); \
 		pucCurrBuf += (uint8_t)u4CurrCount; \
 		*pu4Count -= u4CurrCount; \
 	}
@@ -3616,8 +3616,8 @@ void nicRxQueryStatistics(IN struct ADAPTER *prAdapter,
 
 #define SPRINTF_RX_COUNTER(eCounter) \
 	{ \
-		u4CurrCount = scnprintf(pucCurrBuf, *pu4Count, "%-30s : %u\n", \
-			#eCounter, \
+		u4CurrCount = kalScnprintf(pucCurrBuf, *pu4Count, \
+			"%-30s : %u\n", #eCounter, \
 			(uint32_t)prRxCtrl->au8Statistics[eCounter]); \
 		pucCurrBuf += (uint8_t)u4CurrCount; \
 		*pu4Count -= u4CurrCount; \
