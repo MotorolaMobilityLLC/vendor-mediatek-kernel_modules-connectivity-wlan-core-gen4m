@@ -1033,7 +1033,7 @@ void nicCmdEventSetStopSchedScan(IN struct ADAPTER *prAdapter, IN struct CMD_INF
 
 	DBGLOG(SCN, INFO, "nicCmdEventSetStopSchedScan OID done, release lock and send event to uplayer\n");
 	/*Due to dead lock issue, need to release the IO control before calling kernel APIs */
-	kalSchedScanStopped(prAdapter->prGlueInfo);
+	kalSchedScanStopped(prAdapter->prGlueInfo, !prCmdInfo->fgIsOid);
 
 }
 
