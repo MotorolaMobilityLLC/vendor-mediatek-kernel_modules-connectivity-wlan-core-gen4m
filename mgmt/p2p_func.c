@@ -6021,3 +6021,96 @@ void p2pFunCleanQueuedMgmtFrame(IN struct ADAPTER *prAdapter,
 	cnmMemFree(prAdapter, prFrame->prHeader);
 	prFrame->prHeader = NULL;
 }
+
+void p2pFuncSwitchSapChannel(
+		IN struct ADAPTER *prAdapter)
+{
+	u_int8_t fgEnable = FALSE;
+	u_int8_t fgDbDcModeEn = FALSE;
+	struct BSS_INFO *prP2pBssInfo =
+		(struct BSS_INFO *) NULL;
+	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo =
+		(struct P2P_ROLE_FSM_INFO *) NULL;
+	uint8_t ucStaChannelNum = 0;
+	uint8_t ucSapChannelNum = 0;
+	enum ENUM_BAND eStaBand;
+	enum ENUM_BAND eSapBand;
+
+#if CFG_SUPPORT_DFS_MASTER && CFG_SUPPORT_IDC_CH_SWITCH
+	fgEnable = TRUE;
+#endif
+
+	if (!prAdapter
+		|| !prAdapter->prAisBssInfo
+		|| !cnmSapIsConcurrent(prAdapter)
+		|| !fgEnable) {
+		DBGLOG(P2P, WARN, "Not support concurrent STA + SAP\n");
+		goto exit;
+	}
+
+	if (kalGetMediaStateIndicated(prAdapter->prGlueInfo)
+		!= PARAM_MEDIA_STATE_CONNECTED) {
+		DBGLOG(P2P, WARN, "STA is not connected\n");
+		goto exit;
+	}
+
+	/* Assume only one sap bss info */
+	prP2pBssInfo = cnmGetSapBssInfo(prAdapter);
+	if (!prP2pBssInfo) {
+		DBGLOG(P2P, WARN, "SAP is not active\n");
+		goto exit;
+	}
+	prP2pRoleFsmInfo =
+		P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prAdapter,
+			prP2pBssInfo->u4PrivateData);
+	if (!prP2pRoleFsmInfo) {
+		DBGLOG(P2P, WARN, "SAP is not active\n");
+		goto exit;
+	}
+
+	/* Get current channel info */
+	ucStaChannelNum = prAdapter->prAisBssInfo->ucPrimaryChannel;
+	eStaBand = prAdapter->prAisBssInfo->eBand;
+	if (eStaBand != BAND_2G4 && eStaBand != BAND_5G) {
+		DBGLOG(P2P, WARN, "STA has invalid band\n");
+		goto exit;
+	}
+	ucSapChannelNum = prP2pBssInfo->ucPrimaryChannel;
+	eSapBand = prP2pBssInfo->eBand;
+	if (eSapBand != BAND_2G4 && eSapBand != BAND_5G) {
+		DBGLOG(P2P, WARN, "SAP has invalid band\n");
+		goto exit;
+	}
+
+#if CFG_SUPPORT_DBDC
+	fgDbDcModeEn = prAdapter->rWifiVar.fgDbDcModeEn;
+#endif
+
+	/* Check channel no */
+	if (ucStaChannelNum == ucSapChannelNum) {
+		/* Do nothing, i.e. SCC */
+		DBGLOG(P2P, INFO, "[SCC] Keep StaCH(%d)\n", ucStaChannelNum);
+		goto exit;
+	} else if (fgDbDcModeEn == TRUE && eStaBand != eSapBand) {
+		/* Do nothing, i.e. DBDC */
+		DBGLOG(P2P, INFO,
+			"[DBDC] Keep StaCH(%d), SapCH(%d)\n",
+			ucStaChannelNum, ucSapChannelNum);
+		goto exit;
+	} else {
+		/* Otherwise, switch to STA channel, i.e. SCC */
+		DBGLOG(P2P, INFO,
+			"[SCC] StaCH(%d), SapCH(%d)\n",
+			ucStaChannelNum, ucSapChannelNum);
+
+		cnmIdcCsaReq(prAdapter,
+			ucStaChannelNum,
+			prP2pBssInfo->u4PrivateData);
+	}
+
+exit:
+
+	DBGLOG(P2P, TRACE, "Check done\n");
+	/* return; */
+}
+

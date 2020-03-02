@@ -416,4 +416,6 @@ void p2pFuncGenerateP2P_IE_NoA(IN struct ADAPTER *prAdapter,
 void p2pFunCleanQueuedMgmtFrame(IN struct ADAPTER *prAdapter,
 		IN struct P2P_QUEUED_ACTION_FRAME *prFrame);
 
+void p2pFuncSwitchSapChannel(IN struct ADAPTER *prAdapter);
+
 #endif
