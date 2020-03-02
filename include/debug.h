@@ -410,9 +410,9 @@ struct WLAN_DEBUG_INFO {
 	}
 #endif /* WINDOWS_CE */
 #else
-#define ASSERT_NOMEM()
-#define ASSERT(_exp)
-#define ASSERT_REPORT(_exp, _fmt)
+#define ASSERT_NOMEM() {}
+#define ASSERT(_exp) {}
+#define ASSERT_REPORT(_exp, _fmt) {}
 #endif /* BUILD_QA_DBG */
 /* LOG function for print to buffer */
 /* If buffer pointer is NULL, redirect to normal DBGLOG */
