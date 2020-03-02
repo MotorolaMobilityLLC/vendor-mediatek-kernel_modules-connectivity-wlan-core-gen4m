@@ -1541,7 +1541,7 @@ void soc3_0_Conninfra_cb_register(void)
 
 #if (CFG_SUPPORT_PRE_ON_PHY_ACTION == 1)
 	/* Register conninfra call back */
-	g_conninfra_wf_cb.pre_cal_cb.pwr_on_cb = hifWmmcuPwrOn;
+	g_conninfra_wf_cb.pre_cal_cb.pwr_on_cb = soc3_0_wlanPreCalPwrOn;
 	g_conninfra_wf_cb.pre_cal_cb.do_cal_cb = soc3_0_wlanPreCal;
 
 #endif /* (CFG_SUPPORT_PRE_ON_PHY_ACTION == 1) */
@@ -2944,6 +2944,16 @@ uint32_t soc3_0_wlanPhyAction(IN struct ADAPTER *prAdapter)
 	return u4Status;
 }
 
+int soc3_0_wlanPreCalPwrOn(void)
+{
+	int ret = 0;
+
+	/* wf driver power on */
+	ret = wf_pwr_on_consys_mcu();
+
+	return ret;
+}
+
 int soc3_0_wlanPreCal(void)
 {
 #if defined(SOC3_0)
@@ -3103,12 +3113,6 @@ int soc3_0_wlanPreCal(void)
 
 			i4Status = -ENOMEM;
 			eFailReason = ALLOC_ADAPTER_MEM_FAIL;
-/*
-*#if CFG_ENABLE_KEYWORD_EXCEPTION_MECHANISM & 0
-*	mtk_wcn_wmt_assert_keyword(WMTDRV_TYPE_WIFI,
-*	"[Wi-Fi PWR On] nicAllocateAdapterMemory Error!");
-*#endif
-*/
 			break;
 		}
 
@@ -3128,10 +3132,6 @@ int soc3_0_wlanPreCal(void)
 			break;
 		}
 
-		/* Do the post NIC init adapter:
-		* copy only the mandatory task
-		* in wlanOnPostNicInitAdapter(prAdapter, FALSE)::Begin
-		*/
 		nicInitSystemService(prAdapter, FALSE);
 
 		/* Initialize Tx */
@@ -3139,10 +3139,6 @@ int soc3_0_wlanPreCal(void)
 
 		/* Initialize Rx */
 		nicRxInitialize(prAdapter);
-		/* Do the post NIC init adapter:
-		* copy only the mandatory task
-		* in wlanOnPostNicInitAdapter(prAdapter, FALSE)::End
-		*/
 
 		/* HIF SW info initialize */
 		if (!halHifSwInfoInit(prAdapter)) {
@@ -3163,38 +3159,28 @@ int soc3_0_wlanPreCal(void)
 		/* Initialize Tx Resource to fw download state */
 		nicTxInitResetResource(prAdapter);
 
-		/* MCU ROM EMI +
-		* WiFi ROM EMI + ROM patch download goes over here::Begin
-		*/
-		/* assiggned in wlanNetCreate() */
 		prChipInfo = prAdapter->chip_info;
 
-		/* No need to check F/W ready bit,
-		* since we are downloading MCU ROM EMI
-		* + WiFi ROM EMI + ROM patch
-		*/
+		if (prChipInfo->pwrondownload) {
 
-		/*
-		*DBGLOG(INIT, INFO,
-		*             "wlanDownloadFW:: Check ready_bits(=0x%x)\n",
-		*             prChipInfo->sw_ready_bits);
-		*
-		*HAL_WIFI_FUNC_READY_CHECK(prAdapter,
-		*             prChipInfo->sw_ready_bits, &fgReady);
-		*/
+			DBGLOG_LIMITED(INIT, INFO,
+				"[Wi-Fi Pre-Cal] patch download Start\n");
+
+			if (prChipInfo->pwrondownload(prAdapter,
+					ENUM_WLAN_POWER_ON_DOWNLOAD_ROM_PATCH)
+				!= WLAN_STATUS_SUCCESS) {
+				eFailReason = ROM_PATCH_DOWNLOAD_FAIL;
+				break;
+			}
+
+			DBGLOG_LIMITED(INIT, INFO,
+				"[Wi-Fi Pre-Cal] patch download End\n");
+		}
 
 		soc3_0_wlanSendPhyAction(prAdapter,
 			HAL_PHY_ACTION_CAL_FORCE_CAL_REQ);
 
-		/* MCU ROM EMI + WiFi ROM EMI
-		* + ROM patch download goes over here::End
-		*/
-
 		eFailReason = POWER_ON_INIT_DONE;
-		/* [3]Copy from wlanProbe()
-		*	->wlanAdapterStart()
-		*	->wlanOnPreAllocAdapterMem()::End
-		*/
 	} while (FALSE);
 
 	switch (eFailReason) {
@@ -3273,8 +3259,7 @@ int soc3_0_wlanPreCal(void)
 		break;
 	}
 
-	if (prChipInfo->wmmcupwroff)
-		prChipInfo->wmmcupwroff();
+	wf_pwr_off_consys_mcu();
 
 	DBGLOG(INIT, INFO, "soc3_0_wlanPreCal::end\n");
 	return (int)i4Status;
