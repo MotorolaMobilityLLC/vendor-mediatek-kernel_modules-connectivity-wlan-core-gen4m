@@ -82,6 +82,7 @@
 #endif
 
 #include "mt66xx_reg.h"
+#include "cust_usb_id.h"
 
 /*******************************************************************************
 *                              C O N S T A N T S
@@ -117,6 +118,8 @@ static const struct usb_device_id mtk_usb_ids[] = {
 	{	USB_DEVICE_AND_INTERFACE_INFO(0x0E8D, 0x7663, 0xff, 0xff, 0xff),
 		.driver_info = (kernel_ulong_t)&mt66xx_driver_data_mt7663},
 #endif /* MT7663 */
+	/* If customer usb id is presented, add to the table. */
+	CUST_USB_ID_TABLES
 	{ /* end: all zeroes */ },
 };
 
