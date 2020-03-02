@@ -222,6 +222,26 @@ do { \
 } while (0)
 #endif
 
+#define RX_DIRECT_REORDER_LOCK(pad, dbg) \
+do { \
+	struct GLUE_INFO *_glue = pad->prGlueInfo; \
+	if (!HAL_IS_RX_DIRECT(pad) || !_glue) \
+		break; \
+	if (dbg) \
+		DBGLOG(QM, EVENT, "RX_DIRECT_REORDER_LOCK %d\n", __LINE__); \
+	spin_lock_bh(&_glue->rSpinLock[SPIN_LOCK_RX_DIRECT_REORDER]);\
+} while (0)
+
+#define RX_DIRECT_REORDER_UNLOCK(pad, dbg) \
+do { \
+	struct GLUE_INFO *_glue = pad->prGlueInfo; \
+	if (!HAL_IS_RX_DIRECT(pad) || !_glue) \
+		break; \
+	if (dbg) \
+		DBGLOG(QM, EVENT, "RX_DIRECT_REORDER_UNLOCK %u\n", __LINE__); \
+	spin_unlock_bh(&_glue->rSpinLock[SPIN_LOCK_RX_DIRECT_REORDER]); \
+} while (0)
+
 /*******************************************************************************
  *                   F U N C T I O N   D E C L A R A T I O N S
  *******************************************************************************
@@ -771,6 +791,7 @@ struct SW_RFB *qmFlushRxQueues(IN struct ADAPTER *prAdapter)
 
 	DBGLOG(QM, TRACE, "QM: Enter qmFlushRxQueues()\n");
 
+	RX_DIRECT_REORDER_LOCK(prAdapter, 0);
 	for (i = 0; i < CFG_NUM_OF_RX_BA_AGREEMENTS; i++) {
 		if (QUEUE_IS_NOT_EMPTY(&
 			(prQM->arRxBaTable[i].rReOrderQue))) {
@@ -801,11 +822,16 @@ struct SW_RFB *qmFlushRxQueues(IN struct ADAPTER *prAdapter)
 			}
 
 			QUEUE_INITIALIZE(&(prQM->arRxBaTable[i].rReOrderQue));
-
+			if (QM_RX_GET_NEXT_SW_RFB(prSwRfbListTail)) {
+				DBGLOG(QM, ERROR,
+					"QM: non-null tail->next at arRxBaTable[%u]\n",
+					i);
+			}
 		} else {
 			continue;
 		}
 	}
+	RX_DIRECT_REORDER_UNLOCK(prAdapter, 0);
 
 	if (prSwRfbListTail) {
 		/* Terminate the MSDU_INFO list with a NULL pointer */
@@ -854,7 +880,7 @@ struct SW_RFB *qmFlushStaRxQueue(IN struct ADAPTER *prAdapter,
 	 * prCurrSwRfb->eDst equals RX_PKT_DESTINATION_HOST
 	 */
 	if (prReorderQueParm) {
-
+		RX_DIRECT_REORDER_LOCK(prAdapter, 0);
 		if (QUEUE_IS_NOT_EMPTY(&(prReorderQueParm->rReOrderQue))) {
 
 			prSwRfbListHead = (struct SW_RFB *)
@@ -865,11 +891,17 @@ struct SW_RFB *qmFlushStaRxQueue(IN struct ADAPTER *prAdapter,
 					&(prReorderQueParm->rReOrderQue));
 
 			QUEUE_INITIALIZE(&(prReorderQueParm->rReOrderQue));
-
 		}
+		RX_DIRECT_REORDER_UNLOCK(prAdapter, 0);
 	}
 
 	if (prSwRfbListTail) {
+		if (QM_RX_GET_NEXT_SW_RFB(prSwRfbListTail)) {
+			DBGLOG(QM, ERROR,
+				"QM: non-empty tail->next at STA %u TID %u\n",
+				u4StaRecIdx, u4Tid);
+		}
+
 		/* Terminate the MSDU_INFO list with a NULL pointer */
 		QM_TX_SET_NEXT_SW_RFB(prSwRfbListTail, NULL);
 	}
@@ -3387,10 +3419,11 @@ void qmProcessPktWithReordering(IN struct ADAPTER *prAdapter,
 	prReorderQueParm->u4SeqNo = u4SeqNo;
 #endif
 
+	RX_DIRECT_REORDER_LOCK(prAdapter, 0);
 	/* Insert reorder packet */
 	qmInsertReorderPkt(prAdapter, prSwRfb, prReorderQueParm,
 		prReturnedQue);
-
+	RX_DIRECT_REORDER_UNLOCK(prAdapter, 0);
 }
 
 void qmProcessBarFrame(IN struct ADAPTER *prAdapter,
@@ -3405,8 +3438,6 @@ void qmProcessBarFrame(IN struct ADAPTER *prAdapter,
 	uint32_t u4SSN;
 	uint32_t u4WinStart;
 	uint32_t u4WinEnd;
-	struct QUE *prReorderQue;
-	/* P_SW_RFB_T prReorderedSwRfb; */
 
 	ASSERT(prSwRfb);
 	ASSERT(prReturnedQue);
@@ -3458,8 +3489,7 @@ void qmProcessBarFrame(IN struct ADAPTER *prAdapter,
 #endif
 
 	/* Check whether the BA agreement exists */
-	prReorderQueParm = ((
-		prStaRec->aprRxReorderParamRefTbl)[prSwRfb->ucTid]);
+	prReorderQueParm = prStaRec->aprRxReorderParamRefTbl[prSwRfb->ucTid];
 	if (!prReorderQueParm) {
 		/* TODO: (Tehuang) Handle the Host-FW sync issue. */
 		DBGLOG(QM, WARN,
@@ -3468,8 +3498,9 @@ void qmProcessBarFrame(IN struct ADAPTER *prAdapter,
 		return;
 	}
 
+	RX_DIRECT_REORDER_LOCK(prAdapter, 0);
+
 	u4SSN = (uint32_t) (prSwRfb->u2SSN);
-	prReorderQue = &(prReorderQueParm->rReOrderQue);
 	u4WinStart = (uint32_t) (prReorderQueParm->u2WinStart);
 	u4WinEnd = (uint32_t) (prReorderQueParm->u2WinEnd);
 
@@ -3493,6 +3524,7 @@ void qmProcessBarFrame(IN struct ADAPTER *prAdapter,
 		DBGLOG(QM, TRACE, "QM:(BAR)(%d)(%u){%u,%u}\n",
 			prSwRfb->ucTid, u4SSN, u4WinStart, u4WinEnd);
 	}
+	RX_DIRECT_REORDER_UNLOCK(prAdapter, 0);
 }
 
 void qmInsertReorderPkt(IN struct ADAPTER *prAdapter,
@@ -3500,15 +3532,12 @@ void qmInsertReorderPkt(IN struct ADAPTER *prAdapter,
 	IN struct RX_BA_ENTRY *prReorderQueParm,
 	OUT struct QUE *prReturnedQue)
 {
-	struct QUE *prReorderQue;
-
 	uint32_t u4SeqNo;
 	uint32_t u4WinStart;
 	uint32_t u4WinEnd;
 
 	/* Start to reorder packets */
 	u4SeqNo = (uint32_t) (prSwRfb->u2SSN);
-	prReorderQue = &(prReorderQueParm->rReOrderQue);
 	u4WinStart = (uint32_t) (prReorderQueParm->u2WinStart);
 	u4WinEnd = (uint32_t) (prReorderQueParm->u2WinEnd);
 
@@ -3621,7 +3650,7 @@ void qmInsertReorderPkt(IN struct ADAPTER *prAdapter,
 
 #if QM_RX_WIN_SSN_AUTO_ADVANCING && QM_RX_INIT_FALL_BEHIND_PASS
 		if (prReorderQueParm->fgIsWaitingForPktWithSsn) {
-			DBGLOG(QM, LOUD, "QM:(P)[%d](%u){%u,%u}\n",
+			DBGLOG(QM, LOUD, "QM:(P)[%u](%u){%u,%u}\n",
 				prSwRfb->ucTid, u4SeqNo, u4WinStart, u4WinEnd);
 			qmPopOutReorderPkt(prAdapter, prSwRfb, prReturnedQue,
 				RX_DATA_REORDER_BEHIND_COUNT);
@@ -3630,14 +3659,13 @@ void qmInsertReorderPkt(IN struct ADAPTER *prAdapter,
 #endif
 
 		/* An erroneous packet */
-		DBGLOG(QM, LOUD, "QM:(D)[%d](%u){%u,%u}\n", prSwRfb->ucTid,
+		DBGLOG(QM, LOUD, "QM:(D)[%u](%u){%u,%u}\n", prSwRfb->ucTid,
 			u4SeqNo, u4WinStart, u4WinEnd);
 		prSwRfb->eDst = RX_PKT_DESTINATION_NULL;
 		qmPopOutReorderPkt(prAdapter, prSwRfb, prReturnedQue,
 			RX_DATA_REORDER_BEHIND_COUNT);
 		return;
 	}
-
 }
 
 void qmInsertFallWithinReorderPkt(IN struct ADAPTER *prAdapter,
@@ -3766,7 +3794,6 @@ void qmInsertFallWithinReorderPkt(IN struct ADAPTER *prAdapter,
 		}
 
 		prReorderQue->u4NumElem++;
-
 	}
 
 }
@@ -3786,7 +3813,6 @@ void qmInsertFallAheadReorderPkt(IN struct ADAPTER *prAdapter,
 	prReorderQueParm->fgIsAmsduDuplicated = FALSE;
 #endif
 	prReorderQue = &(prReorderQueParm->rReOrderQue);
-
 	/* There are no packets queued in the Reorder Queue */
 	if (QUEUE_IS_EMPTY(prReorderQue)) {
 		((struct QUE_ENTRY *) prSwRfb)->prPrev = NULL;
@@ -3801,7 +3827,6 @@ void qmInsertFallAheadReorderPkt(IN struct ADAPTER *prAdapter,
 	}
 	prReorderQue->prTail = (struct QUE_ENTRY *) prSwRfb;
 	prReorderQue->u4NumElem++;
-
 }
 
 void qmPopOutReorderPkt(IN struct ADAPTER *prAdapter,
@@ -4269,6 +4294,8 @@ void qmHandleEventCheckReorderBubble(IN struct ADAPTER *prAdapter,
 
 	prReorderQue = &(prReorderQueParm->rReOrderQue);
 
+	RX_DIRECT_REORDER_LOCK(prAdapter, 0);
+
 	if (QUEUE_IS_EMPTY(prReorderQue)) {
 		prReorderQueParm->fgHasBubble = FALSE;
 
@@ -4276,6 +4303,7 @@ void qmHandleEventCheckReorderBubble(IN struct ADAPTER *prAdapter,
 			"QM:(Bub Check Cancel) STA[%u] TID[%u], Bubble has been filled\n",
 			prReorderQueParm->ucStaRecIdx, prReorderQueParm->ucTid);
 
+		RX_DIRECT_REORDER_UNLOCK(prAdapter, 0);
 		return;
 	}
 
@@ -4311,6 +4339,10 @@ void qmHandleEventCheckReorderBubble(IN struct ADAPTER *prAdapter,
 			prReorderQueParm->u2WinStart,
 			prReorderQueParm->u2WinEnd);
 
+		prReorderQueParm->fgHasBubble = FALSE;
+		RX_DIRECT_REORDER_UNLOCK(prAdapter, 0);
+
+		/* process prReturnedQue after unlock prReturnedQue */
 		if (QUEUE_IS_NOT_EMPTY(prReturnedQue)) {
 			QM_TX_SET_NEXT_MSDU_INFO(
 				(struct SW_RFB *) QUEUE_GET_TAIL(
@@ -4339,16 +4371,11 @@ void qmHandleEventCheckReorderBubble(IN struct ADAPTER *prAdapter,
 				prReorderQueParm->ucStaRecIdx,
 				prReorderQueParm->ucTid);
 		}
-
-		prReorderQueParm->fgHasBubble = FALSE;
 	}
 	/* First bubble has been filled but others exist */
 	else {
 		prReorderQueParm->u2FirstBubbleSn =
 			prReorderQueParm->u2WinStart;
-		cnmTimerStartTimer(prAdapter,
-			&(prReorderQueParm->rReorderBubbleTimer),
-			prAdapter->u4QmRxBaMissTimeout);
 
 		DBGLOG(QM, TRACE,
 			"QM:(Bub Timer) STA[%u] TID[%u] BubSN[%u] Win{%u, %u}\n",
@@ -4357,6 +4384,11 @@ void qmHandleEventCheckReorderBubble(IN struct ADAPTER *prAdapter,
 			prReorderQueParm->u2FirstBubbleSn,
 			prReorderQueParm->u2WinStart,
 			prReorderQueParm->u2WinEnd);
+		RX_DIRECT_REORDER_UNLOCK(prAdapter, 0);
+
+		cnmTimerStartTimer(prAdapter,
+			&(prReorderQueParm->rReorderBubbleTimer),
+			prAdapter->u4QmRxBaMissTimeout);
 	}
 
 	prMissTimeout = &g_arMissTimeout[
