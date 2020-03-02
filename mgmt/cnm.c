@@ -1079,8 +1079,6 @@ void cnmRadarDetectEvent(IN struct ADAPTER *prAdapter,
 void cnmCsaDoneEvent(IN struct ADAPTER *prAdapter,
 			IN struct WIFI_EVENT *prEvent)
 {
-	struct BSS_INFO *prBssInfo;
-
 	DBGLOG(CNM, INFO, "cnmCsaDoneEvent.\n");
 
 	if (prAdapter->rWifiVar.fgCsaInProgress == FALSE) {
@@ -1090,35 +1088,7 @@ void cnmCsaDoneEvent(IN struct ADAPTER *prAdapter,
 
 	prAdapter->rWifiVar.fgCsaInProgress = FALSE;
 
-	prBssInfo = cnmGetSapBssInfo(prAdapter);
-
-	if (prBssInfo) {
-		struct MSG_P2P_CSA_DONE *prP2pCsaDoneMsg;
-
-		prP2pCsaDoneMsg = (struct MSG_P2P_CSA_DONE *)
-			cnmMemAlloc(
-			prAdapter,
-			RAM_TYPE_MSG, sizeof(*prP2pCsaDoneMsg));
-
-		if (!prP2pCsaDoneMsg) {
-			log_dbg(CNM, ERROR,
-			       "cnmMemAlloc for prP2pCsaDoneMsg failed!\n");
-			return;
-		}
-
-		prP2pCsaDoneMsg->rMsgHdr.eMsgId = MID_CNM_P2P_CSA_DONE;
-
-		prP2pCsaDoneMsg->ucBssIndex
-			= prBssInfo->ucBssIndex;
-
-		DBGLOG(CNM, INFO,
-			"cnmCsaDoneEvent.ucBssIndex=%d\n",
-			prP2pCsaDoneMsg->ucBssIndex);
-
-		mboxSendMsg(prAdapter, MBOX_ID_0,
-		    (struct MSG_HDR *)prP2pCsaDoneMsg,
-		    MSG_SEND_METHOD_BUF);
-	}
+	p2pFunChnlSwitchNotifyDone(prAdapter);
 }
 #endif
 
@@ -3426,13 +3396,6 @@ uint8_t cnmSapChannelSwitchReq(IN struct ADAPTER *prAdapter,
 		goto error;
 	}
 
-	/* Set CSA IE */
-	prAdapter->rWifiVar.fgCsaInProgress = TRUE;
-	prAdapter->rWifiVar.ucChannelSwitchMode = 1;
-	prAdapter->rWifiVar.ucNewChannelNumber =
-		prRfChannelInfo->ucChannelNum;
-	prAdapter->rWifiVar.ucChannelSwitchCount = 5;
-
 	/* Set new channel */
 	prP2pSetNewChannelMsg = (struct MSG_P2P_SET_NEW_CHANNEL *)
 		cnmMemAlloc(prAdapter,
@@ -3457,11 +3420,13 @@ uint8_t cnmSapChannelSwitchReq(IN struct ADAPTER *prAdapter,
 
 	kalP2PSetRole(prGlueInfo, 2, ucRoleIdx);
 
-	/* Send Action Frame */
-	rlmSendChannelSwitchFrame(prAdapter, ucBssIdx);
+	prGlueInfo->prP2PInfo[ucRoleIdx]->eChnlSwitchPolicy =
+		p2pFunDetermineChnlSwitchPolicy(prAdapter, ucBssIdx,
+			prRfChannelInfo);
 
-	/* Update Beacon */
-	bssUpdateBeaconContent(prAdapter, ucBssIdx);
+	p2pFunNotifyChnlSwitch(prAdapter, ucBssIdx,
+		prGlueInfo->prP2PInfo[ucRoleIdx]->eChnlSwitchPolicy,
+		prRfChannelInfo);
 
 	return 0;
 

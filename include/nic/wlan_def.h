@@ -738,6 +738,12 @@ struct DEAUTH_INFO {
 	OS_SYSTIME rLastSendTime;
 };
 
+enum ENUM_CHNL_SWITCH_POLICY {
+	CHNL_SWITCH_POLICY_NONE,
+	CHNL_SWITCH_POLICY_DEAUTH,
+	CHNL_SWITCH_POLICY_CSA
+};
+
 /*----------------------------------------------------------------------------*/
 /* Information Element (IE) handlers                                          */
 /*----------------------------------------------------------------------------*/

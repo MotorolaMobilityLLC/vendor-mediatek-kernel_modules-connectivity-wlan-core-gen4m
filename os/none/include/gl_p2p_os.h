@@ -232,6 +232,8 @@ struct GL_P2P_INFO {
 	/*BOOLEAN fgEnableHotspotOptimization;*//* TH3 multiple P2P */
 	/*UINT_32 u4PsLevel;*//* TH3 multiple P2P */
 #endif
+
+	enum ENUM_CHNL_SWITCH_POLICY eChnlSwitchPolicy;
 };
 
 struct GL_P2P_DEV_INFO {
