@@ -1630,5 +1630,10 @@ void kalRemoveBss(struct GLUE_INFO *prGlueInfo,
 	uint8_t ucChannelNum,
 	enum ENUM_BAND eBand);
 
+#if CFG_SUPPORT_WPA3
+int kalExternalAuthRequest(IN struct ADAPTER *prAdapter,
+			   IN uint8_t uBssIndex);
+#endif
+
 #endif /* _GL_KAL_H */
 

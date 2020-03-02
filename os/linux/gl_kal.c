@@ -1226,7 +1226,7 @@ kalIndicateStatusAndComplete(IN struct GLUE_INFO
 	struct ADAPTER *prAdapter = NULL;
 	uint8_t fgScanAborted = FALSE;
 	struct net_device *prDevHandler;
-	struct CONNECTION_SETTINGS *prConnSettings;
+	struct CONNECTION_SETTINGS *prConnSettings = NULL;
 	struct FT_IES *prFtIEs;
 
 #if KERNEL_VERSION(4, 12, 0) <= CFG80211_VERSION_CODE
@@ -1533,6 +1533,12 @@ kalIndicateStatusAndComplete(IN struct GLUE_INFO
 
 
 #endif
+		}
+		prConnSettings = aisGetConnSettings(prAdapter, ucBssIndex);
+		if (prConnSettings && prConnSettings->assocIeLen > 0) {
+			kalMemFree(prConnSettings->pucAssocIEs, VIR_MEM_TYPE,
+				   prConnSettings->assocIeLen);
+			prConnSettings->assocIeLen = 0;
 		}
 
 		prFtIEs = aisGetFtIe(prAdapter, ucBssIndex);
@@ -8009,4 +8015,68 @@ int8_t atoi(uint8_t ch)
 		return ch - 48;
 
 	return 0;
+}
+
+#if CFG_SUPPORT_WPA3
+int kalExternalAuthRequest(IN struct ADAPTER *prAdapter,
+				   IN uint8_t uBssIndex)
+{
+	struct cfg80211_external_auth_params params;
+	struct AIS_FSM_INFO *prAisFsmInfo = NULL;
+	struct BSS_DESC *prBssDesc = NULL;
+	struct net_device *ndev = NULL;
+
+	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, uBssIndex);
+	if (!prAisFsmInfo) {
+		DBGLOG(SAA, WARN,
+		       "SAE auth failed with NULL prAisFsmInfo\n");
+		return WLAN_STATUS_INVALID_DATA;
+	}
+
+	prBssDesc = prAisFsmInfo->prTargetBssDesc;
+	if (!prBssDesc) {
+		DBGLOG(SAA, WARN,
+		       "SAE auth failed without prTargetBssDesc\n");
+		return WLAN_STATUS_INVALID_DATA;
+	}
+
+	ndev = prAdapter->prGlueInfo->prDevHandler;
+	params.action = NL80211_EXTERNAL_AUTH_START;
+	COPY_MAC_ADDR(params.bssid, prBssDesc->aucBSSID);
+	COPY_SSID(params.ssid.ssid, params.ssid.ssid_len,
+		  prBssDesc->aucSSID, prBssDesc->ucSSIDLen);
+	params.key_mgmt_suite = RSN_CIPHER_SUITE_SAE;
+	DBGLOG(AIS, INFO, "[WPA3] "MACSTR" %s %d %d %02x-%02x-%02x-%02x",
+	       params.bssid, params.ssid.ssid,
+	       params.ssid.ssid_len, params.action,
+	       (uint8_t) (params.key_mgmt_suite & 0x000000FF),
+	       (uint8_t) ((params.key_mgmt_suite >> 8) & 0x000000FF),
+	       (uint8_t) ((params.key_mgmt_suite >> 16) & 0x000000FF),
+	       (uint8_t) ((params.key_mgmt_suite >> 24) & 0x000000FF));
+	return cfg80211_external_auth_request(ndev, &params, GFP_KERNEL);
+}
+#endif
+
+const uint8_t *kalFindIeMatchMask(uint8_t eid,
+				const uint8_t *ies, int len,
+				const uint8_t *match,
+				int match_len, int match_offset,
+				const uint8_t *match_mask)
+{
+	/* match_offset can't be smaller than 2, unless match_len is
+	 * zero, in which case match_offset must be zero as well.
+	 */
+	if (WARN_ON((match_len && match_offset < 2) ||
+		(!match_len && match_offset)))
+		return NULL;
+	while (len >= 2 && len >= ies[1] + 2) {
+		if ((ies[0] == eid) &&
+			(ies[1] + 2 >= match_offset + match_len) &&
+			!kalMaskMemCmp(ies + match_offset,
+			match, match_mask, match_len))
+			return ies;
+		len -= ies[1] + 2;
+		ies += ies[1] + 2;
+	}
+	return NULL;
 }
