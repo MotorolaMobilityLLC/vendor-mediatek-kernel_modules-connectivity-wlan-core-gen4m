@@ -241,6 +241,7 @@ struct WLAN_DEBUG_INFO {
 #define MACSTR          "%02x:%02x:**:**:**:%02x"
 #define MAC2STR(a)   ((uint8_t *)a)[0], ((uint8_t *)a)[1], ((uint8_t *)a)[5]
 #endif
+#define PMKSTR "%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%03x%02x%02x"
 /* Debug print format string for the IPv4 Address */
 #define IPV4STR		"%pI4"
 /* Debug print argument for the IPv4 Address */

@@ -1363,9 +1363,6 @@ int mtk_cfg80211_connect(struct wiphy *wiphy,
 	prGlueInfo->fgConnectHS20AP = FALSE;
 #endif /* CFG_SUPPORT_PASSPOINT */
 
-	prConnSettings->fgOkcEnabled = FALSE;
-	prConnSettings->fgOkcPmksaReady = FALSE;
-
 	prGlueInfo->non_wfa_vendor_ie_len = 0;
 	if (sme->ie && sme->ie_len > 0) {
 		uint32_t rStatus;
@@ -1464,37 +1461,6 @@ int mtk_cfg80211_connect(struct wiphy *wiphy,
 			DBGLOG(RSN, INFO, "Found non-wfa vendor ie (len=%u)\n",
 				   prGlueInfo->non_wfa_vendor_ie_len);
 		}
-
-		wextSrchOkcAndPMKID(pucIEStart, sme->ie_len,
-						(uint8_t **)&prDesiredIE,
-						&prConnSettings->fgOkcEnabled);
-		if (prConnSettings->fgOkcEnabled) {
-			uint16_t u2PmkIdCnt = 0;
-
-			if (prDesiredIE)
-				u2PmkIdCnt = *(uint16_t *)prDesiredIE;
-			DBGLOG(REQ, TRACE, "u2PmkIdCnt %d\n", u2PmkIdCnt);
-			if (u2PmkIdCnt != 0 && sme->bssid
-			    && !EQUAL_MAC_ADDR("\x0\x0\x0\x0\x0\x0",
-			    sme->bssid) && IS_UCAST_MAC_ADDR(sme->bssid)) {
-				struct PARAM_PMKID rPmkid;
-
-				rPmkid.u4Length = (uint32_t)(sizeof(rPmkid)
-								| (1 << 31));
-				rPmkid.u4BSSIDInfoCount = 1;
-				kalMemCopy(rPmkid.arBSSIDInfo[0].aucBssid,
-					sme->bssid, MAC_ADDR_LEN);
-				kalMemCopy(rPmkid.arBSSIDInfo[0].arPMKID,
-					prDesiredIE + 2, IW_PMKID_LEN);
-				rStatus = kalIoctl(prGlueInfo, wlanoidSetPmkid,
-					   (void *)&rPmkid, rPmkid.u4Length,
-					   FALSE, FALSE, FALSE, &u4BufLen);
-				if (rStatus != WLAN_STATUS_SUCCESS)
-					DBGLOG(REQ, WARN,
-						"failed to add OKC PMKID\n");
-			}
-		}
-
 	}
 
 	/* clear WSC Assoc IE buffer in case WPS IE is not detected */
@@ -1870,35 +1836,22 @@ int mtk_cfg80211_set_pmksa(struct wiphy *wiphy,
 	struct GLUE_INFO *prGlueInfo = NULL;
 	uint32_t rStatus;
 	uint32_t u4BufLen;
-	struct PARAM_PMKID *prPmkid;
+	struct PARAM_PMKID pmkid;
 
 	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wiphy);
 	ASSERT(prGlueInfo);
 
-	prPmkid = (struct PARAM_PMKID *) kalMemAlloc(8 + sizeof(
-				struct PARAM_BSSID_INFO), VIR_MEM_TYPE);
-	DBGLOG(REQ, INFO, "mtk_cfg80211_set_pmksa\n");
+	DBGLOG(REQ, TRACE, "mtk_cfg80211_set_pmksa " MACSTR " pmk\n",
+		MAC2STR(pmksa->bssid));
 
-	if (!prPmkid) {
-		DBGLOG(INIT, INFO,
-		       "Can not alloc memory for IW_PMKSA_ADD\n");
-		return -ENOMEM;
-	}
+	COPY_MAC_ADDR(pmkid.arBSSID, pmksa->bssid);
+	kalMemCopy(pmkid.arPMKID, pmksa->pmkid, IW_PMKID_LEN);
 
-	prPmkid->u4Length = 8 + sizeof(struct PARAM_BSSID_INFO);
-	prPmkid->u4BSSIDInfoCount = 1;
-	kalMemCopy(prPmkid->arBSSIDInfo->aucBssid, pmksa->bssid, 6);
-	kalMemCopy(prPmkid->arBSSIDInfo->arPMKID, pmksa->pmkid,
-		   IW_PMKID_LEN);
-
-	rStatus = kalIoctl(prGlueInfo, wlanoidSetPmkid, prPmkid,
+	rStatus = kalIoctl(prGlueInfo, wlanoidSetPmkid, &pmkid,
 			   sizeof(struct PARAM_PMKID),
 			   FALSE, FALSE, FALSE, &u4BufLen);
-
 	if (rStatus != WLAN_STATUS_SUCCESS)
 		DBGLOG(INIT, INFO, "add pmkid error:%x\n", rStatus);
-	kalMemFree(prPmkid, VIR_MEM_TYPE,
-		   8 + sizeof(struct PARAM_BSSID_INFO));
 
 	return 0;
 }
@@ -1917,7 +1870,26 @@ int mtk_cfg80211_set_pmksa(struct wiphy *wiphy,
 int mtk_cfg80211_del_pmksa(struct wiphy *wiphy,
 			struct net_device *ndev, struct cfg80211_pmksa *pmksa)
 {
-	DBGLOG(REQ, INFO, "not support now\n");
+	struct GLUE_INFO *prGlueInfo = NULL;
+	uint32_t rStatus;
+	uint32_t u4BufLen;
+	struct PARAM_PMKID pmkid;
+
+	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wiphy);
+	ASSERT(prGlueInfo);
+
+	DBGLOG(REQ, TRACE, "mtk_cfg80211_del_pmksa " MACSTR "\n",
+		MAC2STR(pmksa->bssid));
+
+	COPY_MAC_ADDR(pmkid.arBSSID, pmksa->bssid);
+	kalMemCopy(pmkid.arPMKID, pmksa->pmkid, IW_PMKID_LEN);
+
+	rStatus = kalIoctl(prGlueInfo, wlanoidDelPmkid, &pmkid,
+			   sizeof(struct PARAM_PMKID),
+			   FALSE, FALSE, FALSE, &u4BufLen);
+	if (rStatus != WLAN_STATUS_SUCCESS)
+		DBGLOG(INIT, INFO, "add pmkid error:%x\n", rStatus);
+
 	return 0;
 }
 
@@ -1938,31 +1910,16 @@ int mtk_cfg80211_flush_pmksa(struct wiphy *wiphy,
 	struct GLUE_INFO *prGlueInfo = NULL;
 	uint32_t rStatus;
 	uint32_t u4BufLen;
-	struct PARAM_PMKID *prPmkid;
 
 	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wiphy);
 	ASSERT(prGlueInfo);
 
-	prPmkid = (struct PARAM_PMKID *) kalMemAlloc(8,
-			VIR_MEM_TYPE);
+	DBGLOG(REQ, INFO, "mtk_cfg80211_flush_pmksa\n");
 
-	DBGLOG(P2P, INFO, "mtk_cfg80211_flush_pmksa\n");
-
-	if (!prPmkid) {
-		DBGLOG(INIT, INFO,
-		       "Can not alloc memory for IW_PMKSA_FLUSH\n");
-		return -ENOMEM;
-	}
-
-	prPmkid->u4Length = 8;
-	prPmkid->u4BSSIDInfoCount = 0;
-
-	rStatus = kalIoctl(prGlueInfo, wlanoidSetPmkid, prPmkid,
-		sizeof(struct PARAM_PMKID), FALSE, FALSE, FALSE, &u4BufLen);
-
+	rStatus = kalIoctl(prGlueInfo, wlanoidFlushPmkid, NULL, 0,
+			   FALSE, FALSE, FALSE, &u4BufLen);
 	if (rStatus != WLAN_STATUS_SUCCESS)
 		DBGLOG(INIT, INFO, "flush pmkid error:%x\n", rStatus);
-	kalMemFree(prPmkid, VIR_MEM_TYPE, 8);
 
 	return 0;
 }

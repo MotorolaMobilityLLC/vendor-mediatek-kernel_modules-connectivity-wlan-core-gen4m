@@ -443,6 +443,7 @@ void aisFsmInit(IN struct ADAPTER *prAdapter)
 		   sizeof(prAisSpecificBssInfo->arCurEssChnlInfo));
 	LINK_INITIALIZE(&prAisSpecificBssInfo->rCurEssLink);
 	/* end Support AP Selection */
+	LINK_INITIALIZE(&prAisSpecificBssInfo->rPmkidCache);
 	/* 11K, 11V */
 	LINK_MGMT_INIT(&prAisSpecificBssInfo->rNeighborApList);
 	kalMemZero(&prAisSpecificBssInfo->rBTMParam,
@@ -523,7 +524,10 @@ void aisFsmUninit(IN struct ADAPTER *prAdapter)
 	/* end Support AP Selection */
 	LINK_MGMT_UNINIT(&prAisSpecificBssInfo->rNeighborApList,
 			 struct NEIGHBOR_AP_T, VIR_MEM_TYPE);
-}				/* end of aisFsmUninit() */
+
+	/* make sure pmkid cached is empty after uninit*/
+	rsnFlushPmkid(prAdapter);
+} /* end of aisFsmUninit() */
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -1626,47 +1630,6 @@ void aisFsmSteps(IN struct ADAPTER *prAdapter, enum ENUM_AIS_STATE eNextState)
 					fgIsTransition = TRUE;
 				}
 			}
-			if (prBssDesc && prConnSettings->fgOkcEnabled) {
-				uint8_t
-				    aucBuf[sizeof
-					   (struct PARAM_PMKID_CANDIDATE_LIST) +
-					   sizeof(struct
-						  PARAM_STATUS_INDICATION)];
-				struct PARAM_STATUS_INDICATION *prStatusEvent =
-				    (struct PARAM_STATUS_INDICATION *)aucBuf;
-				struct PARAM_PMKID_CANDIDATE_LIST
-				*prPmkidCandicate =
-				    (struct PARAM_PMKID_CANDIDATE_LIST
-				     *)(prStatusEvent + 1);
-				uint32_t u4Entry = 0;
-
-				if (rsnSearchPmkidEntry
-				    (prAdapter, prBssDesc->aucBSSID, &u4Entry)
-				    && prAdapter->rWifiVar.
-				    rAisSpecificBssInfo.arPmkidCache[u4Entry].
-				    fgPmkidExist)
-					break;
-				DBGLOG(AIS, INFO, "No PMK for " MACSTR
-				       ", try to generate a OKC PMK\n",
-				       MAC2STR(prBssDesc->aucBSSID));
-				prStatusEvent->eStatusType =
-				    ENUM_STATUS_TYPE_CANDIDATE_LIST;
-				prPmkidCandicate->u4Version = 1;
-				prPmkidCandicate->u4NumCandidates = 1;
-				/* don't request preauth */
-				prPmkidCandicate->
-					      arCandidateList[0].u4Flags = 0;
-				COPY_MAC_ADDR(prPmkidCandicate->arCandidateList
-					      [0].arBSSID, prBssDesc->aucBSSID);
-				kalIndicateStatusAndComplete
-				    (prAdapter->prGlueInfo,
-				     WLAN_STATUS_MEDIA_SPECIFIC_INDICATION,
-				     (void *)aucBuf, sizeof(aucBuf));
-				cnmTimerStartTimer(prAdapter,
-					&prAisFsmInfo->rWaitOkcPMKTimer,
-					AIS_WAIT_OKC_PMKID_SEC);
-			}
-
 			break;
 
 		case AIS_STATE_WAIT_FOR_NEXT_SCAN:
@@ -3654,8 +3617,6 @@ aisIndicationOfMediaStateToHost(IN struct ADAPTER *prAdapter,
 				break;
 			}
 		} else {
-			/* Clear the pmkid cache while media disconnect */
-			secClearPmkid(prAdapter);
 			rEventConnStatus.ucReasonOfDisconnect =
 			    prAisBssInfo->ucReasonOfDisconnect;
 		}
@@ -4844,7 +4805,6 @@ void aisFsmRunEventChGrant(IN struct ADAPTER *prAdapter,
 	struct MSG_CH_GRANT *prMsgChGrant;
 	uint8_t ucTokenID;
 	uint32_t u4GrantInterval;
-	uint32_t u4Entry = 0;
 
 	ASSERT(prAdapter);
 	ASSERT(prMsgHdr);
@@ -4877,25 +4837,8 @@ void aisFsmRunEventChGrant(IN struct ADAPTER *prAdapter,
 				   &prAisFsmInfo->rJoinTimeoutTimer,
 				   prAisFsmInfo->u4ChGrantedInterval -
 				   AIS_JOIN_CH_GRANT_THRESHOLD);
-		/* 3.2 set local variable to indicate join timer is ticking */
-		prAisFsmInfo->fgIsInfraChannelFinished = FALSE;
-
-		/* 3.3 switch to join state */
-		/* Three cases can switch to join state:
-		 ** 1. There's an available PMKSA in wpa_supplicant
-		 ** 2. found okc pmkid entry for this BSS
-		 ** 3. current state is disconnected. In this case,
-		 ** supplicant may not get a valid pmksa,
-		 ** so no pmkid will be passed to driver, so we no need
-		 ** to wait pmkid anyway.
-		 */
-		if (!prAdapter->rWifiVar.rConnSettings.fgOkcPmksaReady ||
-		    (rsnSearchPmkidEntry
-		     (prAdapter, prAisFsmInfo->prTargetBssDesc->aucBSSID,
-		      &u4Entry)
-		     && prAdapter->rWifiVar.
-		     rAisSpecificBssInfo.arPmkidCache[u4Entry].fgPmkidExist))
-			aisFsmSteps(prAdapter, AIS_STATE_JOIN);
+		DBGLOG(AIS, INFO, "Start JOIN Timer!");
+		aisFsmSteps(prAdapter, AIS_STATE_JOIN);
 
 		prAisFsmInfo->fgIsChannelGranted = TRUE;
 	} else if (prAisFsmInfo->eCurrentState ==
@@ -5970,17 +5913,6 @@ aisFsmRunEventMgmtFrameTxDone(IN struct ADAPTER *prAdapter,
 	return WLAN_STATUS_SUCCESS;
 
 }				/* aisFsmRunEventMgmtFrameTxDone */
-
-void aisFsmRunEventSetOkcPmk(IN struct ADAPTER *prAdapter)
-{
-	struct AIS_FSM_INFO *prAisFsmInfo = &prAdapter->rWifiVar.rAisFsmInfo;
-
-	prAdapter->rWifiVar.rConnSettings.fgOkcPmksaReady = TRUE;
-	cnmTimerStopTimer(prAdapter, &prAisFsmInfo->rWaitOkcPMKTimer);
-	if (prAisFsmInfo->eCurrentState == AIS_STATE_REQ_CHANNEL_JOIN &&
-	    prAisFsmInfo->fgIsChannelGranted)
-		aisFsmSteps(prAdapter, AIS_STATE_JOIN);
-}
 
 static void aisFsmSetOkcTimeout(IN struct ADAPTER *prAdapter,
 				unsigned long ulParam)

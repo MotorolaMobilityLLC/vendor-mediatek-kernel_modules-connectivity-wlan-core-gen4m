@@ -205,8 +205,6 @@ u_int8_t secIsProtectedFrame(IN struct ADAPTER *prAdapter,
 			     IN struct MSDU_INFO *prMsdu,
 			     IN struct STA_RECORD *prStaRec);
 
-void secClearPmkid(IN struct ADAPTER *prAdapter);
-
 u_int8_t secRsnKeyHandshakeEnabled(IN struct ADAPTER
 				   *prAdapter);
 
