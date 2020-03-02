@@ -9824,7 +9824,9 @@ int parseValueInString(
 				wlanHwAddrToBin(pucValueHead, addr);
 				DBGLOG(REQ, TRACE, "MAC type");
 			} else {
-				kalStrnCpy(aucValue, pucValueHead, u4Len);
+				u8 *addr = aucValue;
+
+				kalStrnCpy(addr, pucValueHead, u4Len);
 				*((char *)aucValue + u4Len) = '\0';
 				DBGLOG(REQ, TRACE,
 					"STR type = %s\n", (char *)aucValue);
@@ -10153,7 +10155,6 @@ priv_set_ap(IN struct net_device *prNetDev,
 {
 	uint32_t u4SubCmd = 0;
 	uint16_t u2Cmd = 0;
-	int32_t i4TotalLen = 0;
 	int32_t i4TotalFixLen = 1024;
 	int32_t i4CmdFound = 0;
 
@@ -10186,26 +10187,26 @@ priv_set_ap(IN struct net_device *prNetDev,
 	DBGLOG(REQ, INFO, "prIwReqData->data.length %u\n",
 		prIwReqData->data.length);
 
-	i4TotalLen = prIwReqData->data.length;
-
 	ASSERT(IW_IS_GET(u2Cmd));
-	if (i4TotalLen != 0) {
+	if (prIwReqData->data.length != 0) {
 		if (!access_ok(VERIFY_READ, prIwReqData->data.pointer,
-			i4TotalLen)) {
+			prIwReqData->data.length)) {
 			DBGLOG(REQ, INFO,
 				"%s access_ok Read fail written = %d\n",
 				__func__, i4BytesWritten);
 			return -EFAULT;
 		}
-		if (copy_from_user(pcExtra,
+		if (copy_from_user(&pcExtra,
 			prIwReqData->data.pointer,
-			i4TotalLen)) {
+			prIwReqData->data.length)) {
 			DBGLOG(REQ, INFO,
 				"%s copy_form_user fail written = %d\n",
-				__func__, i4TotalLen);
+				__func__,
+				prIwReqData->data.length);
 				return -EFAULT;
 		}
-		pcExtra[i4TotalLen - 1] = '\0';
+		/* prIwReqData->data.length include the terminate '\0' */
+		pcExtra[prIwReqData->data.length - 1] = 0;
 	}
 
 	DBGLOG(REQ, INFO, "%s pcExtra %s\n", __func__, pcExtra);
@@ -10250,8 +10251,7 @@ priv_set_ap(IN struct net_device *prNetDev,
 
 	if (i4CmdFound == 0)
 		DBGLOG(REQ, INFO,
-			"Unknown driver command %s - ignored\n",
-			pcExtra);
+			"Unknown driver command\n");
 
 	if (i4BytesWritten >= 0) {
 		if ((i4BytesWritten == 0) && (i4TotalFixLen > 0)) {
