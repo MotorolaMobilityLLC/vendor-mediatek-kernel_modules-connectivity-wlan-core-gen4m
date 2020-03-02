@@ -2955,6 +2955,7 @@ int mtk_p2p_cfg80211_testmode_hotspot_config_cmd(IN struct wiphy *wiphy, IN void
 	struct NL80211_DRIVER_HOTSPOT_CONFIG_PARAMS *prParams = (struct NL80211_DRIVER_HOTSPOT_CONFIG_PARAMS *) NULL;
 	UINT_32 index;
 	UINT_32 value;
+	UINT_32 i;
 
 	ASSERT(wiphy);
 
@@ -2975,7 +2976,8 @@ int mtk_p2p_cfg80211_testmode_hotspot_config_cmd(IN struct wiphy *wiphy, IN void
 
 	switch (index) {
 	case 1:		/* Max Clients */
-		kalP2PSetMaxClients(prGlueInfo, value);
+		for (i = 0; i < KAL_P2P_NUM; i++)
+			kalP2PSetMaxClients(prGlueInfo, value, i);
 		break;
 	default:
 		break;
