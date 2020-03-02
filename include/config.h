@@ -854,7 +854,9 @@
 
 #define CFG_SHOW_FULL_MACADDR     1
 
+#ifndef CFG_SUPPORT_VO_ENTERPRISE
 #define CFG_SUPPORT_VO_ENTERPRISE               1
+#endif
 #define CFG_SUPPORT_WMM_AC                      1
 #if CFG_SUPPORT_VO_ENTERPRISE
 #define CFG_SUPPORT_802_11R                     1
@@ -877,8 +879,14 @@
 #endif
 
 /* Support 802.11v Wireless Network Management */
+#ifndef CFG_SUPPORT_802_11V
 #define CFG_SUPPORT_802_11V                     1
+#endif
+#if CFG_SUPPORT_802_11V
 #define CFG_SUPPORT_802_11V_BSS_TRANSITION_MGT  1
+#else
+#define CFG_SUPPORT_802_11V_BSS_TRANSITION_MGT  0
+#endif
 #define CFG_SUPPORT_802_11V_TIMING_MEASUREMENT	0
 
 #if (CFG_SUPPORT_802_11V_TIMING_MEASUREMENT == 1) && \

@@ -590,9 +590,11 @@ struct AIS_BLACKLIST_ITEM *aisQueryBlackList(struct ADAPTER *prAdapter,
 /* Support 11K */
 void aisResetNeighborApList(struct ADAPTER *prAdapter,
 	uint8_t ucBssIndex);
+#if CFG_SUPPORT_802_11K
 void aisCollectNeighborAP(struct ADAPTER *prAdapter, uint8_t *pucApBuf,
 			  uint16_t u2ApBufLen, uint8_t ucValidInterval,
 			  uint8_t ucBssIndex);
+#endif
 void aisSendNeighborRequest(struct ADAPTER *prAdapter,
 	uint8_t ucBssIndex);
 /* end Support 11K */
