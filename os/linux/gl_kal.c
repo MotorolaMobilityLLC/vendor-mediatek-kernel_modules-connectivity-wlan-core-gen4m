@@ -2818,7 +2818,7 @@ static int32_t kalThreadSchedRetrieve(struct task_struct *pThread,
 	/* always clear sched to simplify error handling at caller side */
 	memset(pSched, 0, sizeof(struct KAL_THREAD_SCHEDSTATS));
 
-	if (!pThread)
+	if (!pThread || kalIsResetting())
 		return -2;
 
 	memcpy(&se, &pThread->se, sizeof(struct sched_entity));
