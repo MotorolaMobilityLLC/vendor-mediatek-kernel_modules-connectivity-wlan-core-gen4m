@@ -1671,7 +1671,7 @@ qmDequeueTxPacketsFromPerTypeQueues(IN struct ADAPTER *prAdapter,
 		__func__, ucTC, u4CurrentQuota);
 
 	/* Broadcast/Multicast data packets */
-	if ((u4CurrentQuota == 0))
+	if (u4CurrentQuota == 0)
 		return;
 	/* Check PLE resource */
 	u4AvailableResourcePLE = nicTxResourceGetPleFreeCount(
@@ -3675,8 +3675,8 @@ void qmInsertFallWithinReorderPkt(IN struct ADAPTER *prAdapter,
 	else {
 		do {
 			/* Case 1: Terminate. A duplicate packet */
-			if (((prExaminedQueuedSwRfb->u2SSN) ==
-				(prSwRfb->u2SSN))) {
+			if ((prExaminedQueuedSwRfb->u2SSN) ==
+				(prSwRfb->u2SSN)) {
 #if CFG_SUPPORT_RX_AMSDU
 				/* RX reorder for one MSDU in AMSDU issue */
 				/* if middle or last and first is not
