@@ -1405,7 +1405,7 @@ void soc3_0_show_dmashdl_info(IN struct ADAPTER *prAdapter)
 	DBGLOG(HAL, INFO, "DMASHDL ERR FLAG CTRL(0x%08x): 0x%08x\n",
 		WF_HIF_DMASHDL_TOP_ERROR_FLAG_CTRL_ADDR, value);
 
-	for (idx = 0; idx < ENUM_MT6885_DMASHDL_GROUP_NUM; idx++) {
+	for (idx = 0; idx < ENUM_MT6885_DMASHDL_GROUP_2; idx++) {
 		DBGLOG(HAL, INFO, "Group %d info:\n", idx);
 		mt6885HalDmashdlGetGroupControl(prAdapter, idx);
 		rsv_cnt = mt6885HalDmashdlGetRsvCount(prAdapter, idx);
