@@ -436,6 +436,7 @@ BOOLEAN halSetDriverOwn(IN P_ADAPTER_T prAdapter)
 				if (prAdapter->u4OwnFailedLogCount > LP_OWN_BACK_FAILED_RESET_CNT) {
 					/* Trigger RESET */
 #if CFG_CHIP_RESET_SUPPORT
+					glGetRstReason(RST_DRV_OWN_FAIL);
 					GL_RESET_TRIGGER(prAdapter, RST_FLAG_CHIP_RESET);
 #endif
 				}
@@ -506,6 +507,7 @@ BOOLEAN halSetDriverOwn(IN P_ADAPTER_T prAdapter)
 				if (fgTimeout) {
 					/* Trigger RESET */
 #if CFG_CHIP_RESET_SUPPORT
+					glGetRstReason(RST_DRV_OWN_FAIL);
 					GL_RESET_TRIGGER(prAdapter, RST_FLAG_CHIP_RESET);
 #endif
 				}

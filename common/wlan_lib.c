@@ -363,7 +363,7 @@ WLAN_STATUS wlanAdapterStart(IN P_ADAPTER_T prAdapter, IN P_REG_INFO_T prRegInfo
 
 	/* 4 <0.1> reset fgIsBusAccessFailed */
 	fgIsBusAccessFailed = FALSE;
-	prAdapter->ulSuspendFlag = 0;
+
 	do {
 		u4Status = nicAllocateAdapterMemory(prAdapter);
 		if (u4Status != WLAN_STATUS_SUCCESS) {
@@ -375,9 +375,9 @@ WLAN_STATUS wlanAdapterStart(IN P_ADAPTER_T prAdapter, IN P_REG_INFO_T prRegInfo
 
 		prAdapter->u4OsPacketFilter = PARAM_PACKET_FILTER_SUPPORTED;
 
-		DBGLOG(INIT, TRACE, "wlanAdapterStart(): Acquiring LP-OWN\n");
+		DBGLOG(INIT, INFO, "wlanAdapterStart(): Acquiring LP-OWN\n");
 		ACQUIRE_POWER_CONTROL_FROM_PM(prAdapter);
-		DBGLOG(INIT, TRACE, "wlanAdapterStart(): Acquiring LP-OWN-end\n");
+		DBGLOG(INIT, INFO, "wlanAdapterStart(): Acquiring LP-OWN-end\n");
 
 #if (CFG_ENABLE_FULL_PM == 0)
 		nicpmSetDriverOwn(prAdapter);
@@ -1737,24 +1737,27 @@ VOID wlanReleasePendingOid(IN P_ADAPTER_T prAdapter, IN ULONG ulParamPtr)
 		if (ulParamPtr == 1)
 			break;
 
-		if (prAdapter->prGlueInfo->ulFlag & GLUE_FLAG_HALT) {
-			DBGLOG(OID, INFO, "%s stopped! Releasing pending OIDs ..\n", KAL_GET_CURRENT_THREAD_NAME());
-		} else {
-			DBGLOG(OID, ERROR, "OID Timeout! Releasing pending OIDs ..\n");
-			prAdapter->ucOidTimeoutCount++;
+		if (prAdapter->ucOidTimeoutCount >= WLAN_OID_NO_ACK_THRESHOLD) {
+			if (!prAdapter->fgIsChipNoAck) {
+				DBGLOG(INIT, WARN,
+				       "No response from chip for %u times, set NoAck flag!\n",
+				       prAdapter->ucOidTimeoutCount);
+#if 0
+#if CFG_CHIP_RESET_SUPPORT
+				glGetRstReason(RST_OID_TIMEOUT);
+				GL_RESET_TRIGGER(prAdapter, RST_FLAG_CHIP_RESET);
+#endif
+#endif
+			}
 
 			if (prAdapter->ucOidTimeoutCount >= WLAN_OID_NO_ACK_THRESHOLD) {
 				if (!prAdapter->fgIsChipNoAck) {
 					DBGLOG(INIT, WARN,
 					       "No response from chip for %u times, set NoAck flag!\n",
 					       prAdapter->ucOidTimeoutCount);
-#if 0
-					glGetRstReason(RST_OID_TIMEOUT);
-					GL_RESET_TRIGGER(prAdapter, RST_FLAG_DO_CORE_DUMP);
-#endif
 				}
 
-				prAdapter->fgIsChipNoAck = TRUE;
+					prAdapter->fgIsChipNoAck = TRUE;
 			}
 			set_bit(GLUE_FLAG_HIF_PRT_HIF_DBG_INFO_BIT, &(prAdapter->prGlueInfo->ulFlag));
 		}
@@ -3934,11 +3937,11 @@ WLAN_STATUS wlanEnqueueTxPacket(IN P_ADAPTER_T prAdapter, IN P_NATIVE_PACKET prN
 
 		return WLAN_STATUS_SUCCESS;
 	}
-		kalSendComplete(prAdapter->prGlueInfo, prNativePacket, WLAN_STATUS_INVALID_PACKET);
+	kalSendComplete(prAdapter->prGlueInfo, prNativePacket, WLAN_STATUS_INVALID_PACKET);
 
-		nicTxReturnMsduInfo(prAdapter, prMsduInfo);
+	nicTxReturnMsduInfo(prAdapter, prMsduInfo);
 
-		return WLAN_STATUS_INVALID_PACKET;
+	return WLAN_STATUS_INVALID_PACKET;
 
 }
 
@@ -6996,11 +6999,9 @@ BOOLEAN wlanIsChipNoAck(IN P_ADAPTER_T prAdapter)
 	BOOLEAN fgIsNoAck;
 
 	fgIsNoAck = prAdapter->fgIsChipNoAck
-
 #if CFG_CHIP_RESET_SUPPORT
 	    || kalIsResetting()
 #endif
-
 	    || fgIsBusAccessFailed;
 
 	return fgIsNoAck;
@@ -7128,7 +7129,7 @@ VOID wlanTxLifetimeUpdateStaStats(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prM
 
 BOOLEAN wlanTxLifetimeIsProfilingEnabled(IN P_ADAPTER_T prAdapter)
 {
-	BOOLEAN fgEnabled = FALSE;
+	BOOLEAN fgEnabled = TRUE;
 #if CFG_SUPPORT_WFD
 	P_WFD_CFG_SETTINGS_T prWfdCfgSettings = (P_WFD_CFG_SETTINGS_T) NULL;
 
@@ -7313,6 +7314,9 @@ WLAN_STATUS wlanTriggerStatsLog(IN P_ADAPTER_T prAdapter, IN UINT_32 u4DurationI
 WLAN_STATUS
 wlanPktTxDone(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduInfo, IN ENUM_TX_RESULT_CODE_T rTxDoneStatus)
 {
+	OS_SYSTIME rCurrent = kalGetTimeTick();
+	P_PKT_PROFILE_T prPktProfile = &prMsduInfo->rPktProfile;
+
 	PUINT_8 apucPktType[ENUM_PKT_FLAG_NUM] = {
 		(PUINT_8) DISP_STRING("INVALID"),
 		(PUINT_8) DISP_STRING("802_3"),
@@ -7328,6 +7332,24 @@ wlanPktTxDone(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduInfo, IN ENUM_TX_
 	};
 	if (prMsduInfo->ucPktType >= ENUM_PKT_FLAG_NUM)
 		prMsduInfo->ucPktType = 0;
+
+	if ((prMsduInfo->ucPktType == ENUM_PKT_ARP) || (prMsduInfo->ucPktType == ENUM_PKT_DHCP)) {
+		if (rCurrent - prPktProfile->rHardXmitArrivalTimestamp > 2000) {
+			DBGLOG(TX, INFO, "valid %d; ArriveDrv %u, Enq %u, Deq %u, LeaveDrv %u, TxDone %u\n",
+				prPktProfile->fgIsValid, prPktProfile->rHardXmitArrivalTimestamp,
+				prPktProfile->rEnqueueTimestamp, prPktProfile->rDequeueTimestamp,
+				prPktProfile->rHifTxDoneTimestamp, rCurrent);
+
+			if (prMsduInfo->ucPktType == ENUM_PKT_ARP)
+				prAdapter->prGlueInfo->fgTxDoneDelayIsARP = TRUE;
+			prAdapter->prGlueInfo->u4ArriveDrvTick = prPktProfile->rHardXmitArrivalTimestamp;
+			prAdapter->prGlueInfo->u4EnQueTick = prPktProfile->rEnqueueTimestamp;
+			prAdapter->prGlueInfo->u4DeQueTick = prPktProfile->rDequeueTimestamp;
+			prAdapter->prGlueInfo->u4LeaveDrvTick = prPktProfile->rHifTxDoneTimestamp;
+			prAdapter->prGlueInfo->u4CurrTick = rCurrent;
+			prAdapter->prGlueInfo->u8CurrTime = sched_clock();
+		}
+	}
 
 	DBGLOG(TX, INFO, "TX DONE, Type[%s] Tag[0x%08x] WIDX:PID[%u:%u] Status[%u], SeqNo: %d\n",
 	       apucPktType[prMsduInfo->ucPktType], prMsduInfo->u4TxDoneTag, prMsduInfo->ucWlanIndex,
