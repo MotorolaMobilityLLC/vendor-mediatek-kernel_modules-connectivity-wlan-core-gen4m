@@ -50,29 +50,30 @@
  *
  *****************************************************************************/
 /*! \file   mt7668.c
-*    \brief  Internal driver stack will export the required procedures here for GLUE Layer.
-*
-*    This file contains all routines which are exported from MediaTek 802.11 Wireless
-*    LAN driver stack to GLUE Layer.
-*/
+ *  \brief  Internal driver stack will export the required procedures here
+ *          for GLUE Layer.
+ *
+ *    This file contains all routines which are exported from MediaTek 802.11
+ *    Wireless LAN driver stack to GLUE Layer.
+ */
 
 /*******************************************************************************
-*                         C O M P I L E R   F L A G S
-********************************************************************************
-*/
+ *                         C O M P I L E R   F L A G S
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                    E X T E R N A L   R E F E R E N C E S
-********************************************************************************
-*/
+ *                    E X T E R N A L   R E F E R E N C E S
+ *******************************************************************************
+ */
 #include "precomp.h"
 
 #include "mt7668.h"
 
 /*******************************************************************************
-*                              C O N S T A N T S
-********************************************************************************
-*/
+ *                              C O N S T A N T S
+ *******************************************************************************
+ */
 
 struct ECO_INFO mt7668_eco_table[] = {
 	/* HW version,  ROM version,    Factory version, Eco version */
@@ -123,13 +124,14 @@ struct PCIE_CHIP_CR_MAPPING mt7668_bus2chip_cr_mapping[] = {
 #endif /* _HIF_PCIE */
 
 /*******************************************************************************
-*                            P U B L I C   D A T A
-********************************************************************************
-*/
+ *                            P U B L I C   D A T A
+ *******************************************************************************
+ */
 
 void
-mt7668ConstructFirmwarePrio(struct GLUE_INFO *prGlueInfo, uint8_t **apucNameTable,
-uint8_t **apucName, uint8_t *pucNameIdx, uint8_t ucMaxNameIdx)
+mt7668ConstructFirmwarePrio(struct GLUE_INFO *prGlueInfo,
+	uint8_t **apucNameTable, uint8_t **apucName,
+	uint8_t *pucNameIdx, uint8_t ucMaxNameIdx)
 {
 	struct mt66xx_chip_info *prChipInfo = prGlueInfo->prAdapter->chip_info;
 	uint32_t chip_id = prChipInfo->chip_id;
@@ -138,29 +140,36 @@ uint8_t **apucName, uint8_t *pucNameIdx, uint8_t ucMaxNameIdx)
 	for (sub_idx = 0; apucNameTable[sub_idx]; sub_idx++) {
 		if (((*pucNameIdx) + 3) < ucMaxNameIdx) {
 			/* Type 1. WIFI_RAM_CODE_MTxxxx.bin */
-			snprintf(*(apucName + (*pucNameIdx)), CFG_FW_NAME_MAX_LEN, "%s%x.bin",
-					apucNameTable[sub_idx], chip_id);
+			snprintf(*(apucName + (*pucNameIdx)),
+				CFG_FW_NAME_MAX_LEN, "%s%x.bin",
+				apucNameTable[sub_idx], chip_id);
 			(*pucNameIdx) += 1;
 
 			/* Type 2. WIFI_RAM_CODE_MTxxxx */
-			snprintf(*(apucName + (*pucNameIdx)), CFG_FW_NAME_MAX_LEN, "%s%x",
-					apucNameTable[sub_idx], chip_id);
+			snprintf(*(apucName + (*pucNameIdx)),
+				CFG_FW_NAME_MAX_LEN, "%s%x",
+				apucNameTable[sub_idx], chip_id);
 			(*pucNameIdx) += 1;
 
 			/* Type 3. WIFI_RAM_CODE_MTxxxx_Ex.bin */
-			snprintf(*(apucName + (*pucNameIdx)), CFG_FW_NAME_MAX_LEN, "%s%x_E%u.bin",
+			snprintf(*(apucName + (*pucNameIdx)),
+					CFG_FW_NAME_MAX_LEN, "%s%x_E%u.bin",
 					apucNameTable[sub_idx], chip_id,
-					wlanGetEcoVersion(prGlueInfo->prAdapter));
+					wlanGetEcoVersion(
+					prGlueInfo->prAdapter));
 			(*pucNameIdx) += 1;
 
 			/* Type 4. WIFI_RAM_CODE_MTxxxx_Ex */
-			snprintf(*(apucName + (*pucNameIdx)), CFG_FW_NAME_MAX_LEN, "%s%x_E%u",
+			snprintf(*(apucName + (*pucNameIdx)),
+				CFG_FW_NAME_MAX_LEN, "%s%x_E%u",
 					apucNameTable[sub_idx], chip_id,
-					wlanGetEcoVersion(prGlueInfo->prAdapter));
+					wlanGetEcoVersion(
+					prGlueInfo->prAdapter));
 			(*pucNameIdx) += 1;
 		} else {
 			/* the table is not large enough */
-			DBGLOG(INIT, ERROR, "kalFirmwareImageMapping >> file name array is not enough.\n");
+			DBGLOG(INIT, ERROR,
+				"kalFirmwareImageMapping >> file name array is not enough.\n");
 			ASSERT(0);
 		}
 	}
@@ -201,7 +210,8 @@ void mt7668CapInit(IN struct ADAPTER *prAdapter)
 	}
 }
 
-uint32_t mt7668GetFwDlInfo(struct ADAPTER *prAdapter, char *pcBuf, int i4TotalLen)
+uint32_t mt7668GetFwDlInfo(struct ADAPTER *prAdapter,
+	char *pcBuf, int i4TotalLen)
 {
 	struct WIFI_VER_INFO *prVerInfo = &prAdapter->rVerInfo;
 #if CFG_SUPPORT_COMPRESSION_FW_OPTION
@@ -271,7 +281,8 @@ void mt7668PdmaConfig(struct GLUE_INFO *prGlueInfo, u_int8_t enable)
 		IntMask.field.rx_done_0 = 1;
 		IntMask.field.rx_done_1 = 1;
 		IntMask.field.tx_done = BIT(prBusInfo->tx_ring_fwdl_idx) |
-			BIT(prBusInfo->tx_ring_cmd_idx) | BIT(prBusInfo->tx_ring_data_idx);
+			BIT(prBusInfo->tx_ring_cmd_idx) |
+			BIT(prBusInfo->tx_ring_data_idx);
 		IntMask.field.tx_dly_int = 0;
 	} else {
 		GloCfg.field_1.EnableRxDMA = 0;
@@ -308,7 +319,8 @@ void mt7668PdmaConfig(struct GLUE_INFO *prGlueInfo, u_int8_t enable)
 
 }
 
-void mt7668LowPowerOwnRead(IN struct ADAPTER *prAdapter, OUT u_int8_t *pfgResult)
+void mt7668LowPowerOwnRead(IN struct ADAPTER *prAdapter,
+	OUT u_int8_t *pfgResult)
 {
 	uint32_t u4RegValue;
 
@@ -325,7 +337,8 @@ void mt7668LowPowerOwnSet(IN struct ADAPTER *prAdapter, OUT u_int8_t *pfgResult)
 	*pfgResult = (u4RegValue == 0);
 }
 
-void mt7668LowPowerOwnClear(IN struct ADAPTER *prAdapter, OUT u_int8_t *pfgResult)
+void mt7668LowPowerOwnClear(IN struct ADAPTER *prAdapter,
+	OUT u_int8_t *pfgResult)
 {
 	uint32_t u4RegValue;
 
@@ -356,7 +369,8 @@ struct BUS_INFO mt7668_bus_info = {
 	.u4UdmaWlCfg_0_Addr = UDMA_WLCFG_0,
 	.u4UdmaWlCfg_1_Addr = UDMA_WLCFG_1,
 	.u4UdmaWlCfg_0 =
-	    (UDMA_WLCFG_0_TX_EN(1) | UDMA_WLCFG_0_RX_EN(1) | UDMA_WLCFG_0_RX_MPSZ_PAD0(1)),
+	    (UDMA_WLCFG_0_TX_EN(1) | UDMA_WLCFG_0_RX_EN(1) |
+	    UDMA_WLCFG_0_RX_MPSZ_PAD0(1)),
 	.asicUsbSuspend = NULL,
 	.asicUsbEventEpDetected = NULL,
 #endif /* _HIF_USB */
