@@ -1010,7 +1010,7 @@
 /* During a full2partial scan period, all online full scan requests would be
  * changed to partial scan. The unit of this value is second
  */
-#define CFG_SUPPORT_FULL2PARTIAL_SCAN      (0)
+#define CFG_SUPPORT_FULL2PARTIAL_SCAN      (1)
 #define CFG_SCAN_FULL2PARTIAL_PERIOD       (60)
 
 /*------------------------------------------------------------------------------
