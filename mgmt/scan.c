@@ -1808,6 +1808,8 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 	/* Support AP Selection */
 	prBssDesc->fgExsitBssLoadIE = FALSE;
 	prBssDesc->fgMultiAnttenaAndSTBC = FALSE;
+	prBssDesc->fgTIMPresent = FALSE;
+	prBssDesc->ucDTIMPeriod = 0;
 	/* 4 <3.1> Full IE parsing on SW_RFB_T */
 	pucIE = prWlanBeaconFrame->aucInfoElem;
 	/* pucDumpIE = pucIE; */
@@ -1882,6 +1884,7 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 
 		case ELEM_ID_TIM:
 			if (IE_LEN(pucIE) <= ELEM_MAX_LEN_TIM) {
+				prBssDesc->fgTIMPresent = TRUE;
 				prBssDesc->ucDTIMPeriod
 					= TIM_IE(pucIE)->ucDTIMPeriod;
 			}
@@ -2662,7 +2665,12 @@ uint32_t scanProcessBeaconAndProbeResp(IN struct ADAPTER *prAdapter,
 				 * hidden SSID, and would have different
 				 * BSS descriptor
 				 */
+				log_dbg(SCN, TRACE, "DTIMPeriod[%u] Present[%u] BSSID[%pM]\n",
+				       prAisBssInfo->ucDTIMPeriod,
+				       prAisBssInfo->fgTIMPresent,
+				       prBssDesc->aucBSSID);
 				if ((!prAisBssInfo->ucDTIMPeriod) &&
+					prAisBssInfo->fgTIMPresent &&
 					EQUAL_MAC_ADDR(prBssDesc->aucBSSID,
 						prAisBssInfo->aucBSSID) &&
 					(prAisBssInfo->eCurrentOPMode
@@ -2670,10 +2678,24 @@ uint32_t scanProcessBeaconAndProbeResp(IN struct ADAPTER *prAdapter,
 					((prWlanBeaconFrame->u2FrameCtrl
 					& MASK_FRAME_TYPE)
 					== MAC_FRAME_BEACON)) {
-
 					prAisBssInfo->ucDTIMPeriod
 						= prBssDesc->ucDTIMPeriod;
+					prAisBssInfo->fgTIMPresent
+						= prBssDesc->fgTIMPresent;
 
+					/* Handle No TIM IE information case */
+					if (!prAisBssInfo->fgTIMPresent) {
+						enum PARAM_POWER_MODE ePwrMode
+							= Param_PowerModeCAM;
+
+						log_dbg(SCN, WARN, "IE TIM absence, set to CAM mode!\n");
+						nicConfigPowerSaveProfile(
+							prAdapter,
+							prAisBssInfo->
+							ucBssIndex, ePwrMode,
+							FALSE,
+							PS_CALLER_NO_TIM);
+					}
 					/* sync with firmware for
 					 * beacon information
 					 */

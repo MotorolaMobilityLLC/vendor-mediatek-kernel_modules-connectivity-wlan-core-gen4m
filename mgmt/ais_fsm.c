@@ -2831,6 +2831,7 @@ void aisUpdateBssInfoForJOIN(IN struct ADAPTER *prAdapter, struct STA_RECORD *pr
 
 	/* NOTE: Defer ucDTIMPeriod updating to when beacon is received after connection */
 	prAisBssInfo->ucDTIMPeriod = 0;
+	prAisBssInfo->fgTIMPresent = TRUE;
 	prAisBssInfo->u2ATIMWindow = 0;
 
 	prAisBssInfo->ucBeaconTimeoutCount = AIS_BEACON_TIMEOUT_COUNT_INFRA;
@@ -3172,6 +3173,13 @@ void aisFsmDisconnect(IN struct ADAPTER *prAdapter, IN u_int8_t fgDelayIndicatio
 			if (prAdapter->rWifiVar.ucSigmaTestMode)
 				nicEnterTPTestMode(prAdapter, TEST_MODE_NONE);
 #endif
+		}
+		/* for NO TIM IE case */
+		if (!prAisBssInfo->fgTIMPresent) {
+			nicConfigPowerSaveProfile(prAdapter,
+						  prAisBssInfo->ucBssIndex,
+						  Param_PowerModeFast_PSP,
+						  FALSE, PS_CALLER_NO_TIM);
 		}
 
 		if (prAisBssInfo->ucReasonOfDisconnect == DISCONNECT_REASON_CODE_RADIO_LOST) {
