@@ -79,7 +79,7 @@
 #endif
 
 #include "mt66xx_reg.h"
-
+#include "gl_kal.h"
 /*******************************************************************************
  *                              C O N S T A N T S
  *******************************************************************************
@@ -2507,7 +2507,11 @@ void halHwRecoveryTimeout(unsigned long arg)
 	DBGLOG(HAL, ERROR, "SER timer Timeout\n");
 
 #if CFG_CHIP_RESET_SUPPORT
+#if (CFG_SUPPORT_CONNINFRA == 0)
 	GL_RESET_TRIGGER(prAdapter, RST_FLAG_CHIP_RESET);
+#else
+	kalSetSerTimeoutEvent(prGlueInfo);
+#endif
 #endif
 }
 
