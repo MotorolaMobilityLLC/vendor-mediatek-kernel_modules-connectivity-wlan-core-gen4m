@@ -552,6 +552,10 @@ struct BSS_INFO {
 	struct AP_PMF_CFG rApPmfCfg;
 #endif
 
+	uint8_t ucCountryIELen;
+	uint8_t aucCountryStr[3];
+	uint8_t aucSubbandTriplet[253];
+
 	enum ENUM_KEY_ACTION_TYPE_T eKeyAction;
 	enum ENUM_IFTYPE eIftype;
 };

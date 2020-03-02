@@ -1030,6 +1030,7 @@ bssBuildBeaconProbeRespFrameCommonIEs(IN struct MSDU_INFO *prMsduInfo,
 			    0 /*ucBitmapControl | (uint8_t)u4N1 */;
 
 			prMsduInfo->u2FrameLength += IE_SIZE(pucBuffer);
+			pucBuffer += IE_SIZE(pucBuffer);
 
 #endif
 
@@ -1041,6 +1042,22 @@ bssBuildBeaconProbeRespFrameCommonIEs(IN struct MSDU_INFO *prMsduInfo,
 			 */
 		}
 
+	}
+	/* 4 <6> Fill the DS Parameter Set element. */
+	if (prBssInfo->ucCountryIELen != 0) {
+		COUNTRY_IE(pucBuffer)->ucId = ELEM_ID_COUNTRY_INFO;
+		COUNTRY_IE(pucBuffer)->ucLength = prBssInfo->ucCountryIELen;
+		COUNTRY_IE(pucBuffer)->aucCountryStr[0] =
+			prBssInfo->aucCountryStr[0];
+		COUNTRY_IE(pucBuffer)->aucCountryStr[1] =
+			prBssInfo->aucCountryStr[1];
+		COUNTRY_IE(pucBuffer)->aucCountryStr[2] =
+			prBssInfo->aucCountryStr[2];
+		kalMemCopy(COUNTRY_IE(pucBuffer)->arCountryStr,
+			prBssInfo->aucSubbandTriplet,
+			prBssInfo->ucCountryIELen - 3);
+
+		prMsduInfo->u2FrameLength += IE_SIZE(pucBuffer);
 	}
 }				/* end of bssBuildBeaconProbeRespFrameCommonIEs() */
 
