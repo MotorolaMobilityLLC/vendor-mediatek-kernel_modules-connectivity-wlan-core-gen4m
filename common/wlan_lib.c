@@ -936,8 +936,8 @@ uint32_t wlanCheckWifiFunc(IN struct ADAPTER *prAdapter,
 	fgTimeout = FALSE;
 
 #if defined(_HIF_USB)
-	if (prAdapter->prGlueInfo->rHifInfo.state !=
-	    USB_STATE_LINK_UP)
+	if (prAdapter->prGlueInfo->rHifInfo.state ==
+	    USB_STATE_LINK_DOWN)
 		return WLAN_STATUS_FAILURE;
 #endif
 
