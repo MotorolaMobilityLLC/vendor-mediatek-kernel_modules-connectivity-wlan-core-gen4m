@@ -425,6 +425,15 @@ void soc3_0asicConnac2xWfdmaManualPrefetch(
 		WF_WFDMA_HOST_DMA1_WPDMA_RST_DTX_PTR_ADDR, 0xFFFFFFFF);
 }
 
+void soc3_0_ConstructPatchName(struct GLUE_INFO *prGlueInfo,
+	uint8_t **apucName, uint8_t *pucNameIdx)
+{
+	snprintf(apucName[(*pucNameIdx)], SOC3_0_FILE_NAME_MAX,
+					"soc3_0_patch_wmmcu_1_%x_hdr.bin",
+					wlanGetEcoVersion(
+						prGlueInfo->prAdapter));
+}
+
 struct BUS_INFO soc3_0_bus_info = {
 #if defined(_HIF_PCIE) || defined(_HIF_AXI)
 	.top_cfg_base = SOC3_0_TOP_CFG_BASE,
@@ -532,8 +541,8 @@ struct FWDL_OPS_T soc3_0_fw_dl_ops = {
 #else
 	.constructFirmwarePrio = NULL,
 #endif
-	.constructPatchName = NULL,
-	.downloadPatch = NULL,
+	.constructPatchName = soc3_0_ConstructPatchName,
+	.downloadPatch = wlanDownloadPatch,
 	.downloadFirmware = wlanConnacFormatDownload,
 #if (CFG_DOWNLOAD_DYN_MEMORY_MAP == 1)
 	.downloadByDynMemMap = soc3_0_DownloadByDynMemMap,
@@ -1312,9 +1321,11 @@ int hifWmmcuPwrOn(void)
 	if (ret != 0)
 		return ret;
 
+#if 0
 	/* Power on download ROM patch*/
 #if (CFG_POWER_ON_DOWNLOAD_EMI_ROM_PATCH == 1)
 	soc3_0_wlanPowerOnInit(ENUM_WLAN_POWER_ON_DOWNLOAD_ROM_PATCH);
+#endif
 #endif
 
 	return ret;
@@ -1692,6 +1703,12 @@ uint32_t soc3_0_wlanImageSectionDownloadStage(
 				(eDlIdx == IMG_DL_IDX_WIFI_ROM_EMI)) {
 		prRomEmiHeader = (struct ROM_EMI_HEADER *)pvFwImageMapFile;
 
+		DBGLOG(INIT, INFO,
+			"DL %s ROM EMI %s\n",
+			(eDlIdx == IMG_DL_IDX_MCU_ROM_EMI) ?
+				"MCU":"WiFi",
+			(char *)prRomEmiHeader->ucDateTime);
+
 		u4Addr = prRomEmiHeader->u4PatchAddr;
 
 		u4Len = u4FwImageFileLength - sizeof(struct ROM_EMI_HEADER);
@@ -1967,6 +1984,25 @@ int32_t soc3_0_wlanPowerOnInit(
 #endif
 
 		if (eDownloadItem == ENUM_WLAN_POWER_ON_DOWNLOAD_EMI) {
+			if (fgSimplifyResetFlow) {
+				prGlueInfo = (struct GLUE_INFO *)
+					wiphy_priv(wlanGetWiphy());
+				prAdapter = prGlueInfo->prAdapter;
+
+				if (prChipInfo->pwrondownload) {
+					DBGLOG_LIMITED(INIT, INFO,
+						"[Wi-Fi PWR On] EMI download Start\n");
+
+					if (prChipInfo->pwrondownload(
+						prAdapter, eDownloadItem)
+						!= WLAN_STATUS_SUCCESS)
+						i4Status =
+						-ROM_PATCH_DOWNLOAD_FAIL;
+
+				DBGLOG_LIMITED(INIT, INFO,
+					"[Wi-Fi PWR On] EMI download End\n");
+				}
+			} else {
 			prWdev = wlanNetCreate(pvData, pvDriverData);
 
 			if (prWdev == NULL) {
@@ -2000,6 +2036,7 @@ int32_t soc3_0_wlanPowerOnInit(
 			wlanWakeLockUninit(prGlueInfo);
 
 			wlanNetDestroy(prWdev);
+			}
 
 			return i4Status;
 		}
