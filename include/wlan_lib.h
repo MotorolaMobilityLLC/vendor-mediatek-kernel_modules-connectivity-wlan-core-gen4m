@@ -189,6 +189,15 @@
 #define ED_VALUE_SITE		2
 #endif
 
+#if CFG_AUTO_CHANNEL_SEL_SUPPORT
+#define ACS_AP_RSSI_LEVEL_HIGH -50
+#define ACS_AP_RSSI_LEVEL_LOW -80
+#define ACS_DIRTYNESS_LEVEL_HIGH 52
+#define ACS_DIRTYNESS_LEVEL_MID 40
+#define ACS_DIRTYNESS_LEVEL_LOW 32
+#endif
+
+
 typedef enum _CMD_VER_T {
 	CMD_VER_1, /* Type[2]+String[32]+Value[32] */
 	CMD_VER_2 /* for furtur define. */
