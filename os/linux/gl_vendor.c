@@ -1815,6 +1815,9 @@ int mtk_cfg80211_vendor_driver_memory_dump(struct wiphy *wiphy,
 		uint16_t u2Tag11; /* Idle slot count */
 		uint16_t u2Len11;
 		uint64_t u8IdleSlotCount;
+		uint16_t u2Tag12; /* Awake duration */
+		uint16_t u2Len12;
+		uint64_t u8HwMacAwakeDuration;
 	} __packed outputData = {
 		.u2Tag01 = 1,  /* tag: 1, cur tx rate */
 		.u2Len01 = 4,  /* len: 4, bytes */
@@ -1837,7 +1840,9 @@ int mtk_cfg80211_vendor_driver_memory_dump(struct wiphy *wiphy,
 		.u2Tag10 = 10, /* tag: 10, rx err count */
 		.u2Len10 = 8,  /* len: 8, bytes */
 		.u2Tag11 = 11,
-		.u2Len11 = 8
+		.u2Len11 = 8,
+		.u2Tag12 = 12, /* tag: 12, Hw Mac Awake Duration */
+		.u2Len12 = 8   /* len: 8, bytes */
 	};
 	struct PARAM_GET_LINK_QUALITY_INFO rParam;
 	struct NETDEV_PRIVATE_GLUE_INFO *prNetDevPrivate;
@@ -1881,9 +1886,10 @@ int mtk_cfg80211_vendor_driver_memory_dump(struct wiphy *wiphy,
 	outputData.u4RxDupCount = rLinkQualityInfo.u4RxDupCount;
 	outputData.u8RxErrCount = rLinkQualityInfo.u8RxErrCount;
 	outputData.u8IdleSlotCount = rLinkQualityInfo.u8IdleSlotCount;
+	outputData.u8HwMacAwakeDuration = rLinkQualityInfo.u8HwMacAwakeDuration;
 
 	DBGLOG(REQ, INFO,
-	       "LQ: Tx(rate:%u, total:%u, Rty:%lu, fail:%lu, RTSF:%lu, ACKF:%lu), Rx(rate:%u, total:%u, dup:%u, error:%lu), Idle:%lu\n",
+	       "LQ: Tx(rate:%u, total:%u, Rty:%lu, fail:%lu, RTSF:%lu, ACKF:%lu), Rx(rate:%u, total:%u, dup:%u, error:%lu), Idle:%lu AwakeDur:%lu\n",
 	       outputData.u4CurTxRate, /* tx rate, current tx link speed */
 	       outputData.u8TxTotalCount, /* tx total packages */
 	       outputData.u8TxRetryCount, /* tx retry count */
@@ -1894,7 +1900,8 @@ int mtk_cfg80211_vendor_driver_memory_dump(struct wiphy *wiphy,
 	       outputData.u8RxTotalCount, /* rx total packages */
 	       outputData.u4RxDupCount, /* rx duplicate package count */
 	       outputData.u8RxErrCount, /* rx error count */
-	       outputData.u8IdleSlotCount
+	       outputData.u8IdleSlotCount,
+	       outputData.u8HwMacAwakeDuration
 	);
 
 	u2CopySize = sizeof(struct LINK_QUALITY_INFO_OUTPUT_DATA);
