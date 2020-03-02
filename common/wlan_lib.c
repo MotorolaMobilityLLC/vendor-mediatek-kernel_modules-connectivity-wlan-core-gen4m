@@ -10278,7 +10278,172 @@ wlanAdapterStartForLowLatency(IN struct ADAPTER *prAdapter)
 
 	return u4Status;
 }
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief This is a private routine, which is used to initialize the variables
+ *        for low latency mode.
+ *
+ * \param prAdapter      Pointer of Adapter Data Structure
+ *
+ * \retval WLAN_STATUS_SUCCESS: Success
+ * \retval WLAN_STATUS_FAILURE: Failed
+ */
+/*----------------------------------------------------------------------------*/
+uint32_t
+wlanConnectedForLowLatency(IN struct ADAPTER *prAdapter)
+{
+	uint32_t u4Events;
+
+	/* Query setting from wifi adaptor module */
+	u4Events = get_low_latency_mode();
+
+	/* Set low latency mode */
+	DBGLOG(AIS, INFO, "LowLatency(Connected) event:0x%x\n", u4Events);
+	wlanSetLowLatencyMode(prAdapter, u4Events);
+
+	return WLAN_STATUS_SUCCESS;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief This routine is called to enable/disable low latency mode
+ *
+ * \param[in]  prAdapter       A pointer to the Adapter structure.
+ * \param[in]  pvSetBuffer     A pointer to the buffer that holds the
+ *                             OID-specific data to be set.
+ * \param[in]  u4SetBufferLen  The number of bytes the set buffer.
+ * \param[out] pu4SetInfoLen   Points to the number of bytes it read or is
+ *                             needed
+ * \retval WLAN_STATUS_SUCCESS
+ */
+/*----------------------------------------------------------------------------*/
+uint32_t wlanSetLowLatencyMode(
+	IN struct ADAPTER *prAdapter,
+	IN uint32_t u4Events)
+{
+	u_int8_t fgEnMode = FALSE; /* Low Latency Mode */
+	u_int8_t fgEnScan = FALSE; /* Scan management */
+	u_int8_t fgEnPM = FALSE; /* Power management */
+	uint32_t u4PowerFlag;
+	struct PARAM_POWER_MODE_ rPowerMode;
+	struct WIFI_VAR *prWifiVar = NULL;
+	struct BSS_INFO *prAisBssInfo;
+	uint8_t ucBssIndex = AIS_DEFAULT_INDEX;
+
+	DEBUGFUNC("wlanSetLowLatencyMode");
+
+	ASSERT(prAdapter);
+
+	prAisBssInfo =
+		aisGetAisBssInfo(prAdapter, ucBssIndex);
+	if (!prAisBssInfo) {
+		DBGLOG(OID, ERROR, "prAisBssInfo = NULL\n");
+		return WLAN_STATUS_FAILURE;
+	}
+
+	/* Initialize */
+	prWifiVar = &prAdapter->rWifiVar;
+	DBGLOG(OID, INFO,
+		"LowLatency(gaming) event - gas:0x%x, net:0x%x, whitelist:0x%x, scan=%u, reorder=%u, power=%u\n",
+		(u4Events & GED_EVENT_GAS),
+		(u4Events & GED_EVENT_NETWORK),
+		(u4Events & GED_EVENT_DOPT_WIFI_SCAN),
+		(uint32_t)prWifiVar->ucLowLatencyModeScan,
+		(uint32_t)prWifiVar->ucLowLatencyModeReOrder,
+		(uint32_t)prWifiVar->ucLowLatencyModePower);
+	rPowerMode.ucBssIdx = prAisBssInfo->ucBssIndex;
+	u4PowerFlag =
+		prAdapter->rWlanInfo.u4PowerSaveFlag[rPowerMode.ucBssIdx];
+
+	/* Enable/disable low latency mode decision:
+	 *
+	 * Enable if it's GAS and network event
+	 * and the Glue media state is connected.
+	 */
+	if ((u4Events & GED_EVENT_GAS) != 0
+		&& (u4Events & GED_EVENT_NETWORK) != 0
+		&& MEDIA_STATE_CONNECTED
+		== kalGetMediaStateIndicated(prAdapter->prGlueInfo,
+			prAisBssInfo->ucBssIndex))
+		fgEnMode = TRUE; /* It will enable low latency mode */
+
+	/* Enable/disable scan management decision:
+	 *
+	 * Enable if it will enable low latency mode.
+	 * Or, enable if it is a white list event.
+	 */
+	if (fgEnMode != TRUE
+	    || (u4Events & GED_EVENT_DOPT_WIFI_SCAN) != 0)
+		fgEnScan = TRUE; /* It will enable scan management */
+
+	/* Enable/disable power management decision:
+	 */
+	if (BIT(PS_CALLER_GPU) & u4PowerFlag)
+		fgEnPM = TRUE;
+	else
+		fgEnPM = FALSE;
+
+	/* Debug log for the actions */
+	if (fgEnMode != prAdapter->fgEnLowLatencyMode
+	    || fgEnScan != prAdapter->fgEnCfg80211Scan
+	    || fgEnPM != fgEnMode) {
+		DBGLOG(OID, INFO,
+		       "LowLatency(gaming) change (m:%d,s:%d,PM:%d,F:0x%x)\n",
+		       fgEnMode, fgEnScan, fgEnPM, u4PowerFlag);
+	}
+
+	/* Scan management:
+	 *
+	 * Disable/enable scan
+	 */
+	if ((prWifiVar->ucLowLatencyModeScan == FEATURE_ENABLED) &&
+	    (fgEnScan != prAdapter->fgEnCfg80211Scan))
+		prAdapter->fgEnCfg80211Scan = fgEnScan;
+
+	if ((prWifiVar->ucLowLatencyModeReOrder == FEATURE_ENABLED) &&
+	    (fgEnMode != prAdapter->fgEnLowLatencyMode)) {
+		prAdapter->fgEnLowLatencyMode = fgEnMode;
+
+		/* Queue management:
+		 *
+		 * Change QM RX BA timeout if the gaming mode state changed
+		 */
+		if (fgEnMode) {
+			prAdapter->u4QmRxBaMissTimeout
+				= QM_RX_BA_ENTRY_MISS_TIMEOUT_MS_SHORT;
+		} else {
+			prAdapter->u4QmRxBaMissTimeout
+				= QM_RX_BA_ENTRY_MISS_TIMEOUT_MS;
+		}
+	}
+
+	/* Power management:
+	 *
+	 * Set power saving mode profile to FW
+	 *
+	 * Do if 1. the power saving caller including GPU
+	 * and 2. it will disable low latency mode.
+	 * Or, do if 1. the power saving caller is not including GPU
+	 * and 2. it will enable low latency mode.
+	 */
+	if ((prWifiVar->ucLowLatencyModePower == FEATURE_ENABLED) &&
+	    (fgEnPM != fgEnMode)) {
+		if (fgEnMode == TRUE)
+			rPowerMode.ePowerMode = Param_PowerModeCAM;
+		else
+			rPowerMode.ePowerMode = Param_PowerModeFast_PSP;
+
+		nicConfigPowerSaveProfile(prAdapter, rPowerMode.ucBssIdx,
+			rPowerMode.ePowerMode, FALSE, PS_CALLER_GPU);
+	}
+
+	return WLAN_STATUS_SUCCESS;
+
+}
+
 #endif /* CFG_SUPPORT_LOWLATENCY_MODE */
+
 int32_t wlanGetFileContent(struct ADAPTER *prAdapter,
 	const uint8_t *pcFileName, uint8_t *pucBuf,
 	uint32_t u4MaxFileLen, uint32_t *pu4ReadFileLen, u_int8_t bReqFw)

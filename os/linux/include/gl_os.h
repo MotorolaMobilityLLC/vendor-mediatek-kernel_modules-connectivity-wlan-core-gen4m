@@ -1295,6 +1295,9 @@ extern void register_file_buf_handler(file_buf_handler handler,
 			void *ctx,
 			uint8_t ucType);
 
+/* extern from wifi wmt cdev wifi */
+extern uint32_t get_low_latency_mode(void);
+
 extern const uint8_t *kalFindIeMatchMask(uint8_t eid,
 				const uint8_t *ies, int len,
 				const uint8_t *match,
