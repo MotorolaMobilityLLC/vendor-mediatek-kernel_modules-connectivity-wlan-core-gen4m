@@ -21,6 +21,8 @@
 
 /* #ifdef DBDC_MODE  */
 #if 1
+#define SET_TEST_DBDC(_test_winfo, _boolean)	\
+	(_test_winfo->dbdc_mode = _boolean)
 #define IS_TEST_DBDC(_test_winfo)	_test_winfo->dbdc_mode
 #define TEST_DBDC_BAND_NUM		2
 #else
