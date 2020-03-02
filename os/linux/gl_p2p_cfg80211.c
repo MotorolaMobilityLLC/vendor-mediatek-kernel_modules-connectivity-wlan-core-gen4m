@@ -278,7 +278,7 @@ struct wireless_dev *mtk_p2p_cfg80211_add_iface(struct wiphy *wiphy,
 	P_GL_P2P_INFO_T prP2pInfo = (P_GL_P2P_INFO_T) NULL;
 	P_GL_HIF_INFO_T prHif = NULL;
 	P_MSG_P2P_SWITCH_OP_MODE_T prSwitchModeMsg = (P_MSG_P2P_SWITCH_OP_MODE_T) NULL;
-	struct wireless_dev *prWdev = ERR_PTR(-ENOMEM);
+	struct wireless_dev *prWdev = NULL;
 	P_P2P_ROLE_FSM_INFO_T prP2pRoleFsmInfo = (P_P2P_ROLE_FSM_INFO_T) NULL;
 	P_NETDEV_PRIVATE_GLUE_INFO prNetDevPriv = (P_NETDEV_PRIVATE_GLUE_INFO) NULL;
 	PARAM_MAC_ADDRESS rMacAddr;
@@ -347,10 +347,7 @@ struct wireless_dev *mtk_p2p_cfg80211_add_iface(struct wiphy *wiphy,
 		prWdev = kzalloc(sizeof(struct wireless_dev), GFP_KERNEL);
 		if (!prWdev) {
 			DBGLOG(P2P, ERROR, "allocate p2p wireless device fail, no memory\n");
-			prWdev = ERR_PTR(-ENOMEM);
-			free_netdev(prP2pInfo->aprRoleHandler);
-			prP2pInfo->aprRoleHandler = NULL;
-			break;
+			return FALSE;
 		}
 		kalMemCopy(prWdev, gprP2pWdev, sizeof(struct wireless_dev));
 		prWdev->netdev = prNewNetDevice;
@@ -380,11 +377,10 @@ struct wireless_dev *mtk_p2p_cfg80211_add_iface(struct wiphy *wiphy,
 		if (register_netdevice(prP2pInfo->aprRoleHandler) < 0) {
 			DBGLOG(P2P, TRACE, "mtk_p2p_cfg80211_add_iface 456\n");
 			DBGLOG(INIT, WARN, "unable to register netdevice for p2p\n");
-			kfree(prWdev);
-			prWdev = ERR_PTR(-ENOMEM);
+
 			free_netdev(prP2pInfo->aprRoleHandler);
-			prP2pInfo->aprRoleHandler = NULL;
-			break;
+
+			prNewNetDevice = NULL;
 		} else {
 			DBGLOG(P2P, TRACE, "register_netdev OK\n");
 			prGlueInfo->prAdapter->rP2PNetRegState = ENUM_NET_REG_STATE_REGISTERED;
@@ -423,11 +419,10 @@ struct wireless_dev *mtk_p2p_cfg80211_add_iface(struct wiphy *wiphy,
 		if (prSwitchModeMsg == NULL) {
 			ASSERT(FALSE);
 			DBGLOG(INIT, WARN, "unable to alloc msg\n");
-			kfree(prWdev);
-			prWdev = ERR_PTR(-ENOMEM);
+
 			free_netdev(prGlueInfo->prP2PInfo[u4Idx]->aprRoleHandler);
-			prGlueInfo->prP2PInfo[u4Idx]->aprRoleHandler = NULL;
-			break;
+
+			prNewNetDevice = NULL;
 		} else {
 			prSwitchModeMsg->rMsgHdr.eMsgId = MID_MNY_P2P_FUN_SWITCH;
 			prSwitchModeMsg->ucRoleIdx = 0;
@@ -465,7 +460,7 @@ struct wireless_dev *mtk_p2p_cfg80211_add_iface(struct wiphy *wiphy,
 		mboxSendMsg(prGlueInfo->prAdapter, MBOX_ID_0, (P_MSG_HDR_T) prMsgActiveBss, MSG_SEND_METHOD_BUF);
 	} while (FALSE);
 
-	return prWdev;
+	return gprP2pRoleWdev[u4Idx];
 }				/* mtk_p2p_cfg80211_add_iface */
 
 int mtk_p2p_cfg80211_del_iface(struct wiphy *wiphy, struct wireless_dev *wdev)
