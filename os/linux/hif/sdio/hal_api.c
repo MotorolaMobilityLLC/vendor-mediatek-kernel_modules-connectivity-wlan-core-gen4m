@@ -1873,6 +1873,8 @@ uint32_t halGetValidCoalescingBufSize(IN struct ADAPTER *prAdapter)
 	uint32_t u4BufSize;
 #if (MTK_WCN_HIF_SDIO == 0)
 	struct sdio_func *prSdioFunc;
+	uint32_t u4RuntimeMaxBuf;
+
 #endif
 
 	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
@@ -1886,8 +1888,37 @@ uint32_t halGetValidCoalescingBufSize(IN struct ADAPTER *prAdapter)
 	prSdioFunc = prHifInfo->func;
 
 	/* Check host capability */
+	/* 1. Should less than host-max_req_size */
 	if (u4BufSize > prSdioFunc->card->host->max_req_size)
 		u4BufSize = prSdioFunc->card->host->max_req_size;
+
+	/* 2. Should less than runtime-blksize * host-blk_count  */
+	u4RuntimeMaxBuf = prSdioFunc->cur_blksize *
+					prSdioFunc->card->host->max_blk_count;
+	if (u4BufSize > u4RuntimeMaxBuf)
+		u4BufSize = u4RuntimeMaxBuf;
+
+	DBGLOG(INIT, TRACE, "\n"
+				"Final buf : 0x%X\n"
+				"Default TX buf : 0x%X\n"
+				"Default RX buf : 0x%X\n"
+				"Host caps -\n"
+				"max_req_size : 0x%X\n"
+				"max_seg_size : 0x%X\n"
+				"max_segs : 0x%X\n"
+				"max_blk_size : 0x%X\n"
+				"max_blk_count : 0x%X\n"
+				"Runtime -\n"
+				"cur_blksize : 0x%X\n",
+				u4BufSize,
+				HIF_TX_COALESCING_BUFFER_SIZE,
+				HIF_RX_COALESCING_BUFFER_SIZE,
+				prSdioFunc->card->host->max_req_size,
+				prSdioFunc->card->host->max_seg_size,
+				prSdioFunc->card->host->max_segs,
+				prSdioFunc->card->host->max_blk_size,
+				prSdioFunc->card->host->max_blk_count,
+				prSdioFunc->cur_blksize);
 #endif
 
 	return u4BufSize;
