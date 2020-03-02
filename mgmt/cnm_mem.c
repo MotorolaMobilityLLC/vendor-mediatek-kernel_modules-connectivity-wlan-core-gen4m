@@ -1277,7 +1277,8 @@ void cnmDumpStaRec(IN struct ADAPTER *prAdapter, IN uint8_t ucStaRecIdx)
 	 * [39]aucRxMcsBitmask
 	 */
 
-	log_dbg(SW4, INFO, "[1][%u],[2][%u],[3][%pM],[4][%s %s],[5][%u],[6][%u],[7][%u],[8][%u],[9][%u/%u],[10][%u]\n",
+	log_dbg(SW4, INFO, "[1][%u],[2][%u],[3][" MACSTR
+			"],[4][%s %s],[5][%u],[6][%u],[7][%u],[8][%u],[9][%u/%u],[10][%u]\n",
 		prStaRec->ucIndex,
 		prStaRec->ucBssIndex,
 		MAC2STR(prStaRec->aucMacAddr),
