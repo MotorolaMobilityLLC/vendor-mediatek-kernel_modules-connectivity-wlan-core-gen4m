@@ -1937,3 +1937,44 @@ u_int8_t kalP2PMaxClients(IN struct GLUE_INFO *prGlueInfo,
 }
 
 #endif
+
+void kalP2pUnlinkBss(IN struct GLUE_INFO *prGlueInfo, IN uint8_t aucBSSID[])
+{
+	struct GL_P2P_INFO *prGlueP2pInfo = (struct GL_P2P_INFO *) NULL;
+	struct cfg80211_bss *bss = NULL;
+
+	ASSERT(prGlueInfo);
+	ASSERT(aucBSSID);
+
+	DBGLOG(P2P, INFO, "bssid: " MACSTR "\n", MAC2STR(aucBSSID));
+
+	prGlueP2pInfo = prGlueInfo->prP2PInfo[0];
+
+	if (prGlueP2pInfo == NULL)
+		return;
+
+#if (KERNEL_VERSION(4, 1, 0) <= CFG80211_VERSION_CODE)
+	bss = cfg80211_get_bss(prGlueP2pInfo->prWdev->wiphy,
+			NULL, /* channel */
+			aucBSSID,
+			NULL, /* ssid */
+			0, /* ssid length */
+			IEEE80211_BSS_TYPE_ESS,
+			IEEE80211_PRIVACY_ANY);
+#else
+	bss = cfg80211_get_bss(prGlueP2pInfo->prWdev->wiphy,
+			NULL, /* channel */
+			aucBSSID,
+			NULL, /* ssid */
+			0, /* ssid length */
+			WLAN_CAPABILITY_ESS,
+			WLAN_CAPABILITY_ESS);
+#endif
+
+	if (bss != NULL)
+		cfg80211_unlink_bss(prGlueP2pInfo->prWdev->wiphy, bss);
+
+	if (scanSearchBssDescByBssidAndSsid(prGlueInfo->prAdapter,
+			aucBSSID, FALSE, NULL) != NULL)
+		scanRemoveBssDescByBssid(prGlueInfo->prAdapter, aucBSSID);
+}

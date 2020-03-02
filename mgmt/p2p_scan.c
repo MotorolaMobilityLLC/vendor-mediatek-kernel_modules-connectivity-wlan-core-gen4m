@@ -118,116 +118,103 @@ scanP2pProcessBeaconAndProbeResp(IN struct ADAPTER *prAdapter,
 		 IN struct BSS_DESC *prBssDesc,
 		 IN struct WLAN_BEACON_FRAME *prWlanBeaconFrame)
 {
+	u_int8_t fgIsBeacon = FALSE;
 	u_int8_t fgIsSkipThisBeacon = FALSE;
-	struct P2P_DEV_FSM_INFO *prP2pDevFsmInfo =
-		(struct P2P_DEV_FSM_INFO *) NULL;
 
-	prP2pDevFsmInfo = prAdapter->rWifiVar.prP2pDevFsmInfo;
+	if (prBssDesc->fgIsP2PPresent == FALSE)
+		return;
 
-	if (prBssDesc->fgIsP2PPresent) {
-		if ((prBssDesc->fgIsConnected) &&	/* P2P GC connected. */
-		    ((prWlanBeaconFrame->u2FrameCtrl
-		    & MASK_FRAME_TYPE)
-		    == MAC_FRAME_BEACON)	/* TX Beacon */
-		    ) {
-			uint32_t u4Idx = 0;
-			struct BSS_INFO *prP2pBssInfo =
-				(struct BSS_INFO *) NULL;
+	fgIsBeacon = (prWlanBeaconFrame->u2FrameCtrl & MASK_FRAME_TYPE) ==
+			MAC_FRAME_BEACON;
 
-			for (u4Idx = 0
-				; u4Idx < prAdapter->ucHwBssIdNum
-				; u4Idx++) {
-				/* Check BSS for P2P. */
-				/* Check BSSID. */
-				prP2pBssInfo =
-					GET_BSS_INFO_BY_INDEX(prAdapter,
-						(uint8_t) u4Idx);
+	if (prBssDesc->fgIsConnected && fgIsBeacon) {
+		uint32_t u4Idx = 0;
+		struct BSS_INFO *prP2pBssInfo =
+			(struct BSS_INFO *) NULL;
 
-				if (!IS_BSS_ACTIVE(prP2pBssInfo))
-					continue;
+		for (u4Idx = 0; u4Idx < prAdapter->ucHwBssIdNum; u4Idx++) {
+			/* Check BSS for P2P. */
+			/* Check BSSID. */
+			prP2pBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
+					(uint8_t) u4Idx);
 
-				if ((prP2pBssInfo->eNetworkType
-					!= NETWORK_TYPE_P2P)
-					||
-				    (UNEQUAL_MAC_ADDR(prP2pBssInfo->aucBSSID,
-					prBssDesc->aucBSSID)
-					|| (!EQUAL_SSID
-					(prP2pBssInfo->aucSSID,
+			if (!IS_BSS_ACTIVE(prP2pBssInfo))
+				continue;
+
+			if ((prP2pBssInfo->eNetworkType != NETWORK_TYPE_P2P) ||
+				(UNEQUAL_MAC_ADDR(prP2pBssInfo->aucBSSID,
+					prBssDesc->aucBSSID) ||
+				(!EQUAL_SSID(prP2pBssInfo->aucSSID,
 					prP2pBssInfo->ucSSIDLen,
 					prBssDesc->aucSSID,
 					prBssDesc->ucSSIDLen)))) {
-					continue;
+				continue;
+			}
+			/* P2P GC */
+			/* Connected */
+			if ((prP2pBssInfo->eCurrentOPMode ==
+					OP_MODE_INFRASTRUCTURE) &&
+				(prP2pBssInfo->eConnectionState ==
+					PARAM_MEDIA_STATE_CONNECTED)) {
+				fgIsSkipThisBeacon = TRUE;
+				/* First Time. */
+				if ((!prP2pBssInfo->ucDTIMPeriod)) {
+					prP2pBssInfo->ucDTIMPeriod =
+						prBssDesc->ucDTIMPeriod;
+					nicPmIndicateBssConnected(
+					prAdapter,
+					prP2pBssInfo->ucBssIndex);
 				}
-				/* P2P GC */
-				/* Connected */
-				if ((prP2pBssInfo->eCurrentOPMode
-					== OP_MODE_INFRASTRUCTURE)
-					&& (prP2pBssInfo->eConnectionState
-				    == PARAM_MEDIA_STATE_CONNECTED)) {
-					fgIsSkipThisBeacon = TRUE;
-					/* First Time. */
-					if ((!prP2pBssInfo->ucDTIMPeriod)) {
-						prP2pBssInfo->ucDTIMPeriod =
-							prBssDesc->ucDTIMPeriod;
-						nicPmIndicateBssConnected(
-						prAdapter,
-						prP2pBssInfo->ucBssIndex);
-					}
-				}
-
 			}
 
 		}
 
-		do {
-			struct RF_CHANNEL_INFO rChannelInfo;
-
-			ASSERT_BREAK((prSwRfb != NULL) && (prBssDesc != NULL));
-
-			if (((prWlanBeaconFrame->u2FrameCtrl & MASK_FRAME_TYPE)
-				!= MAC_FRAME_PROBE_RSP)) {
-				/* Only report Probe Response frame
-				 * to supplicant except passive scan.
-				 */
-				/* Probe response collect
-				 * much more information.
-				 */
-				if (fgIsSkipThisBeacon) {
-					DBGLOG(P2P, TRACE,
-						"Skip beacon [%pM][%s][ch %d]",
-						prWlanBeaconFrame->aucBSSID,
-						prBssDesc->aucSSID,
-						prBssDesc->ucChannelNum);
-					break;
-				}
-			}
-
-			rChannelInfo.ucChannelNum = prBssDesc->ucChannelNum;
-			rChannelInfo.eBand = prBssDesc->eBand;
-			prBssDesc->fgIsP2PReport = TRUE;
-
-			if (prP2pDevFsmInfo
-				&&
-				prP2pDevFsmInfo->rScanReqInfo.fgIsScanRequest)
-				DBGLOG(P2P, INFO,
-					"indicate [%pM][%s][%s][ch %d][r %d] update time %u\n",
-					prWlanBeaconFrame->aucBSSID,
-					ieee80211_is_beacon(
-						prWlanBeaconFrame->u2FrameCtrl)
-					? "Beacon" : "Probe Response",
-					prBssDesc->aucSSID,
-					prBssDesc->ucChannelNum,
-					prBssDesc->ucRCPI,
-					prBssDesc->rUpdateTime);
-
-			kalP2PIndicateBssInfo(prAdapter->prGlueInfo,
-					(uint8_t *) prSwRfb->pvHeader,
-					(uint32_t) prSwRfb->u2PacketLen,
-					&rChannelInfo,
-					RCPI_TO_dBm(prBssDesc->ucRCPI));
-
-		} while (FALSE);
 	}
+
+	/* Skip report beacon to upper layer if no p2p scan */
+	if (prAdapter->prGlueInfo->prP2PDevInfo->prScanRequest == NULL &&
+			fgIsBeacon)
+		fgIsSkipThisBeacon = TRUE;
+
+	if (fgIsBeacon && fgIsSkipThisBeacon) {
+		/* Only report Probe Response frame
+		 * to supplicant except passive scan.
+		 */
+		/* Probe response collect
+		 * much more information.
+		 */
+		DBGLOG(P2P, TRACE, "Skip beacon [%pM][%s][ch %d]\n",
+				prWlanBeaconFrame->aucBSSID,
+				prBssDesc->aucSSID,
+				prBssDesc->ucChannelNum);
+		return;
+	}
+
+	do {
+		struct RF_CHANNEL_INFO rChannelInfo;
+
+		ASSERT_BREAK((prSwRfb != NULL) && (prBssDesc != NULL));
+
+		rChannelInfo.ucChannelNum = prBssDesc->ucChannelNum;
+		rChannelInfo.eBand = prBssDesc->eBand;
+		prBssDesc->fgIsP2PReport = TRUE;
+
+		DBGLOG(P2P, INFO,
+			"indicate [%pM][%s][%s][ch %d][r %d] update time %u\n",
+			prWlanBeaconFrame->aucBSSID,
+			fgIsBeacon ? "Beacon" : "Probe Response",
+			prBssDesc->aucSSID,
+			prBssDesc->ucChannelNum,
+			prBssDesc->ucRCPI,
+			prBssDesc->rUpdateTime);
+
+		kalP2PIndicateBssInfo(prAdapter->prGlueInfo,
+				(uint8_t *) prSwRfb->pvHeader,
+				(uint32_t) prSwRfb->u2PacketLen,
+				&rChannelInfo,
+				RCPI_TO_dBm(prBssDesc->ucRCPI));
+
+	} while (FALSE);
 }
 
 void scnEventReturnChannel(IN struct ADAPTER *prAdapter,

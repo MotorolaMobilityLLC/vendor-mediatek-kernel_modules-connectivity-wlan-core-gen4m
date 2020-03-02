@@ -2254,7 +2254,7 @@ void p2pRoleFsmRunEventJoinComplete(IN struct ADAPTER *prAdapter,
 			 */
 			if (prJoinInfo->prTargetBssDesc)
 				scanReportBss2Cfg80211(prAdapter,
-					OP_MODE_P2P_DEVICE,
+					BSS_TYPE_P2P_DEVICE,
 					prJoinInfo->prTargetBssDesc);
 #if CFG_WPS_DISCONNECT || (KERNEL_VERSION(4, 4, 0) <= CFG80211_VERSION_CODE)
 			kalP2PGCIndicateConnectionStatus(prAdapter->prGlueInfo,
@@ -2984,7 +2984,8 @@ void p2pRoleFsmRunEventSwitchOPMode(IN struct ADAPTER *prAdapter,
 		(struct MSG_P2P_SWITCH_OP_MODE *) prMsgHdr;
 	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo =
 		(struct P2P_ROLE_FSM_INFO *) NULL;
-
+	struct P2P_CONNECTION_REQ_INFO *prConnReqInfo =
+		(struct P2P_CONNECTION_REQ_INFO *) NULL;
 
 	ASSERT(prSwitchOpMode->ucRoleIdx < BSS_P2P_NUM);
 	if (!(prSwitchOpMode->ucRoleIdx < BSS_P2P_NUM)) {
@@ -2997,6 +2998,7 @@ void p2pRoleFsmRunEventSwitchOPMode(IN struct ADAPTER *prAdapter,
 	prP2pRoleFsmInfo =
 		prAdapter->rWifiVar
 			.aprP2pRoleFsmInfo[prSwitchOpMode->ucRoleIdx];
+	prConnReqInfo = &(prP2pRoleFsmInfo->rConnReqInfo);
 
 	ASSERT(prP2pRoleFsmInfo->ucBssIndex < prAdapter->ucP2PDevBssIdx);
 	if (!(prP2pRoleFsmInfo->ucBssIndex < prAdapter->ucP2PDevBssIdx)) {
@@ -3023,6 +3025,12 @@ void p2pRoleFsmRunEventSwitchOPMode(IN struct ADAPTER *prAdapter,
 		prP2pBssInfo,
 		prSwitchOpMode->eOpMode,
 		TRUE);
+
+	if (prP2pBssInfo->eIftype == IFTYPE_P2P_CLIENT &&
+			prSwitchOpMode->eIftype == IFTYPE_STATION) {
+		kalP2pUnlinkBss(prAdapter->prGlueInfo, prConnReqInfo->aucBssid);
+	}
+	prP2pBssInfo->eIftype = prSwitchOpMode->eIftype;
 
 error:
 	cnmMemFree(prAdapter, prMsgHdr);

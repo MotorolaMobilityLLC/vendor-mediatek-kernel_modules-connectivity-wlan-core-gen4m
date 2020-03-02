@@ -3140,6 +3140,7 @@ mtk_p2p_cfg80211_change_iface(IN struct wiphy *wiphy,
 
 		prSwitchModeMsg->rMsgHdr.eMsgId = MID_MNY_P2P_FUN_SWITCH;
 		prSwitchModeMsg->ucRoleIdx = ucRoleIdx;
+		prSwitchModeMsg->eIftype = type;
 
 		switch (type) {
 		case NL80211_IFTYPE_P2P_CLIENT:
