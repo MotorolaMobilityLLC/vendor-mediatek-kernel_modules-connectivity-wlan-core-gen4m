@@ -195,6 +195,11 @@ struct _GL_P2P_INFO_T {
 	/*UINT_8 aucSecCheckRsp[256];*//* TH3 multiple P2P */
 #endif
 
+#if (CFG_SUPPORT_DFS_MASTER == 1)
+	struct cfg80211_chan_def *chandef;
+	UINT_32 cac_time_ms;
+#endif
+
 #if CFG_SUPPORT_HOTSPOT_WPS_MANAGER
 	/* Hotspot Client Management */
 	/* dependent with  #define P2P_MAXIMUM_CLIENT_COUNT 10,

@@ -133,6 +133,9 @@ APPEND_VAR_IE_ENTRY_T txBcnIETable[] = {
 #if CFG_SUPPORT_MTK_SYNERGY
 	, {(ELEM_HDR_LEN + ELEM_MIN_LEN_MTK_OUI), NULL, rlmGenerateMTKOuiIE}	/* 221 */
 #endif
+#if (CFG_SUPPORT_DFS_MASTER == 1)
+	, {(ELEM_HDR_LEN + ELEM_MIN_LEN_CSA), NULL, rlmGenerateCsaIE}            /* 37 */
+#endif
 
 };
 

@@ -719,6 +719,11 @@ typedef struct _PARAM_CUSTOM_SET_TX_TARGET_POWER_T {
 	INT_8 cTxPwr5GHT40_MCS7;
 } PARAM_CUSTOM_SET_TX_TARGET_POWER_T, *P_PARAM_CUSTOM_SET_TX_TARGET_POWER_T;
 
+#if (CFG_SUPPORT_DFS_MASTER == 1)
+typedef struct _PARAM_CUSTOM_SET_RDD_REPORT_T {
+	UINT_8 ucDbdcIdx; /* 0:Band 0, 1: Band1 */
+} PARAM_CUSTOM_SET_RDD_REPORT_T, *P_PARAM_CUSTOM_SET_RDD_REPORT_T;
+#endif
 
 typedef struct _PARAM_CUSTOM_ACCESS_RX_STAT {
 	UINT_32 u4SeqNum;
@@ -2730,6 +2735,12 @@ wlanoidSetDbdcEnable(
 WLAN_STATUS
 wlanoidQuerySetTxTargetPower(IN P_ADAPTER_T prAdapter,
 			IN PVOID pvSetBuffer, IN UINT_32 u4SetBufferLen, OUT PUINT_32 pu4SetInfoLen);
+
+#if (CFG_SUPPORT_DFS_MASTER == 1)
+WLAN_STATUS
+wlanoidQuerySetRddReport(IN P_ADAPTER_T prAdapter,
+			IN PVOID pvSetBuffer, IN UINT_32 u4SetBufferLen, OUT PUINT_32 pu4SetInfoLen);
+#endif
 
 #if CFG_AUTO_CHANNEL_SEL_SUPPORT
 WLAN_STATUS
