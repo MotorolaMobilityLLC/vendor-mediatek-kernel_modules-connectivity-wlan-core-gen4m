@@ -2893,3 +2893,8 @@ void halUpdateTxDonePendingCount_v1(IN struct ADAPTER *prAdapter, IN u_int8_t is
 	else
 		prAdapter->prGlueInfo->rHifInfo.au4PendingTxDoneCount[idx] -= NIX_TX_PLE_PAGE_CNT_PER_FRAME;
 }
+
+void halDumpTxdInfo(IN struct ADAPTER *prAdapter, uint32_t *tmac_info)
+{
+}
+

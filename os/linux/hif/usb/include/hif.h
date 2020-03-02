@@ -435,7 +435,7 @@ uint16_t glGetUsbDeviceProductId(struct usb_device *dev);
 int32_t glGetUsbDeviceManufacturerName(struct usb_device *dev, uint8_t *buffer, uint32_t bufLen);
 int32_t glGetUsbDeviceProductName(struct usb_device *dev, uint8_t *buffer, uint32_t bufLen);
 int32_t glGetUsbDeviceSerialNumber(struct usb_device *dev, uint8_t *buffer, uint32_t bufLen);
-
+void halDumpTxdInfo(IN struct ADAPTER *prAdapter, uint32_t *tmac_info);
 
 /*******************************************************************************
 *                              F U N C T I O N S
