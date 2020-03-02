@@ -2674,6 +2674,9 @@ void rlmDomianAssert(BOOLEAN cond)
 	if (!regd_is_single_sku_en())
 		return;
 
-	if (!cond)
-		ASSERT(0);
+	if (!cond) {
+		WARN_ON(1);
+		DBGLOG(RLM, ERROR, "[WARNING!!] RLM unexpected case.\n");
+	}
+
 }
