@@ -1153,6 +1153,11 @@ VOID p2pRoleFsmRunEventConnectionRequest(IN P_ADAPTER_T prAdapter, IN P_MSG_HDR_
 			prChnlReqInfo->eChannelWidth = prJoinInfo->prTargetBssDesc->eChannelWidth;
 			prChnlReqInfo->ucCenterFreqS1 = prJoinInfo->prTargetBssDesc->ucCenterFreqS1;
 			prChnlReqInfo->ucCenterFreqS2 = prJoinInfo->prTargetBssDesc->ucCenterFreqS2;
+
+			rlmReviseMaxBw(prAdapter, prP2pBssInfo->ucBssIndex, &prChnlReqInfo->eChnlSco,
+					(P_ENUM_CHANNEL_WIDTH_P)&prChnlReqInfo->eChannelWidth,
+				&prChnlReqInfo->ucCenterFreqS1, &prChnlReqInfo->ucReqChnlNum);
+
 #if CFG_SUPPORT_DBDC
 			cnmDbdcEnableDecision(prAdapter, prP2pBssInfo->ucBssIndex, prChnlReqInfo->eBand);
 			cnmGetDbdcCapability(prAdapter,
