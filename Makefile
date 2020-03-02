@@ -106,7 +106,10 @@ CONFIG_MTK_WIFI_CONNINFRA_SUPPORT=y
 ccflags-y += -DCFG_POWER_ON_DOWNLOAD_EMI_ROM_PATCH=1
 ccflags-y += -DCFG_DOWNLOAD_DYN_MEMORY_MAP=1
 ccflags-y += -DCFG_ROM_PATCH_NO_SEM_CTRL=1
-endif
+ccflags-y += -DCFG_ANDORID_CONNINFRA_SUPPORT=1
+else
+ccflags-y += -DCFG_ANDORID_CONNINFRA_SUPPORT=0
+ endif
 
 ifneq ($(findstring MT7961,$(MTK_COMBO_CHIP)),)
 ccflags-y:=$(filter-out -UMT7961,$(ccflags-y))
@@ -148,6 +151,17 @@ ifeq ($(CONFIG_MTK_WIFI_CONNINFRA_SUPPORT), y)
 	ccflags-y += -DCFG_SUPPORT_CONNINFRA=1
 	ccflags-y += -DCFG_SUPPORT_PRE_ON_PHY_ACTION=1
 	ccflags-y += -I$(TOP)/vendor/mediatek/kernel_modules/connectivity/conninfra/include
+ifneq ($(CONFIG_MTK_CONNSYS_DEDICATED_LOG_PATH),)
+	ccflags-y += -I$(TOP)/vendor/mediatek/kernel_modules/connectivity/conninfra/include
+	ccflags-y += -I$(TOP)/vendor/mediatek/kernel_modules/connectivity/conninfra/platform/include
+	ccflags-y += -I$(TOP)/vendor/mediatek/kernel_modules/connectivity/conninfra/base/include
+	ccflags-y += -I$(TOP)/vendor/mediatek/kernel_modules/connectivity/conninfra/debug_utility
+	ccflags-y += -I$(TOP)/vendor/mediatek/kernel_modules/connectivity/conninfra/debug_utility/include
+	ccflags-y += -I$(TOP)/vendor/mediatek/kernel_modules/connectivity/conninfra/debug_utility/connsyslog
+	ccflags-y += -I$(TOP)/vendor/mediatek/kernel_modules/connectivity/conninfra/debug_utility/coredump
+	ccflags-y += -I$(TOP)/vendor/mediatek/kernel_modules/connectivity/conninfra/debug_utility/coredump/platform/include
+	ccflags-y += -I$(TOP)/vendor/mediatek/kernel_modules/connectivity/wlan/adaptor
+endif
 else
 	ccflags-y += -DCFG_SUPPORT_CONNINFRA=0
 	ccflags-y += -DCFG_SUPPORT_PRE_ON_PHY_ACTION=0
