@@ -990,6 +990,8 @@ int mtk_cfg80211_connect(struct wiphy *wiphy, struct net_device *ndev, struct cf
 		case WLAN_CIPHER_SUITE_AES_CMAC:
 			prGlueInfo->rWpaInfo.u4CipherGroup = IW_AUTH_CIPHER_CCMP;
 			break;
+		case WLAN_CIPHER_SUITE_NO_GROUP_ADDR:
+			break;
 		default:
 			DBGLOG(REQ, WARN, "invalid cipher group (%d)\n", sme->crypto.cipher_group);
 			return -EINVAL;
@@ -1034,6 +1036,12 @@ int mtk_cfg80211_connect(struct wiphy *wiphy, struct net_device *ndev, struct cf
 				eAuthMode = AUTH_MODE_WPA2_PSK;
 				u4AkmSuite = RSN_AKM_SUITE_PSK_SHA256;
 				break;
+#endif
+#if CFG_SUPPORT_PASSPOINT
+			case WLAN_AKM_SUITE_OSEN:
+				eAuthMode = AUTH_MODE_WPA_OSEN;
+				u4AkmSuite = WFA_AKM_SUITE_OSEN;
+			break;
 #endif
 			default:
 				DBGLOG(REQ, WARN, "invalid Akm Suite (%d)\n", sme->crypto.akm_suites[0]);
@@ -1982,37 +1990,34 @@ int mtk_cfg80211_testmode_hs20_cmd(IN struct wiphy *wiphy, IN void *data, IN int
 
 	prGlueInfo = (P_GLUE_INFO_T) wiphy_priv(wiphy);
 
-#if 1
-	DBGLOG(INIT, INFO, "--> %s()\n", __func__);
-#endif
+	DBGLOG(REQ, INFO, "--> %s()\n", __func__);
 
-	if (data && len)
+	if (data && len) {
 		prParams = (struct wpa_driver_hs20_data_s *)data;
 
-	DBGLOG(INIT, INFO, "[%s] Cmd Type (%d)\n", __func__, prParams->CmdType);
+		DBGLOG(REQ, TRACE, "[%s] Cmd Type (%d)\n", __func__, prParams->CmdType);
+	}
 
 	if (prParams) {
 		int i;
 
 		switch (prParams->CmdType) {
 		case HS20_CMD_ID_SET_BSSID_POOL:
-			DBGLOG(INIT, INFO,
-			       "[%s] fgBssidPoolIsEnable (%d)\n", __func__,
-			       prParams->hs20_set_bssid_pool.fgBssidPoolIsEnable);
-			DBGLOG(INIT, INFO,
-			       "[%s] ucNumBssidPool (%d)\n", __func__, prParams->hs20_set_bssid_pool.ucNumBssidPool);
-
+			DBGLOG(REQ, TRACE, "fgBssidPoolIsEnable=%d, ucNumBssidPool=%d\n",
+				prParams->hs20_set_bssid_pool.fgBssidPoolIsEnable,
+				prParams->hs20_set_bssid_pool.ucNumBssidPool);
 			for (i = 0; i < prParams->hs20_set_bssid_pool.ucNumBssidPool; i++) {
-				DBGLOG(INIT, INFO, "[%s][%d][" MACSTR "]\n", __func__, i,
-				       MAC2STR(prParams->hs20_set_bssid_pool.arBssidPool[i]));
+				DBGLOG(REQ, TRACE, "[%d][ %pM ]\n", i,
+					(prParams->hs20_set_bssid_pool.arBssidPool[i]));
 			}
 			rstatus = kalIoctl(prGlueInfo,
-					   (PFN_OID_HANDLER_FUNC) wlanoidSetHS20BssidPool,
-					   &prParams->hs20_set_bssid_pool,
-					   sizeof(struct param_hs20_set_bssid_pool), FALSE, FALSE, TRUE, &u4SetInfoLen);
+					(PFN_OID_HANDLER_FUNC) wlanoidSetHS20BssidPool,
+					&prParams->hs20_set_bssid_pool,
+					sizeof(struct param_hs20_set_bssid_pool),
+					FALSE, FALSE, TRUE, FALSE, &u4SetInfoLen);
 			break;
 		default:
-			DBGLOG(INIT, INFO, "[%s] Unknown Cmd Type (%d)\n", __func__, prParams->CmdType);
+			DBGLOG(REQ, TRACE, "[%s] Unknown Cmd Type (%d)\n", __func__, prParams->CmdType);
 			rstatus = WLAN_STATUS_FAILURE;
 
 		}
@@ -2024,7 +2029,6 @@ int mtk_cfg80211_testmode_hs20_cmd(IN struct wiphy *wiphy, IN void *data, IN int
 
 	return fgIsValid;
 }
-
 #endif /* CFG_SUPPORT_PASSPOINT */
 
 #if CFG_SUPPORT_WAPI

@@ -84,6 +84,7 @@
 #if CFG_SUPPORT_802_11W
 #define RSN_CIPHER_SUITE_AES_128_CMAC   0x06AC0F00
 #endif
+#define RSN_CIPHER_SUITE_GROUP_NOT_USED 0x07AC0F00
 
 #define WPA_CIPHER_SUITE_NONE           0x00F25000
 #define WPA_CIPHER_SUITE_WEP40          0x01F25000
@@ -95,6 +96,10 @@
 #define RSN_AKM_SUITE_NONE              0x00AC0F00
 #define RSN_AKM_SUITE_802_1X            0x01AC0F00
 #define RSN_AKM_SUITE_PSK               0x02AC0F00
+#define RSN_AKM_SUITE_FT_802_1X         0x03AC0F00
+#define RSN_AKM_SUITE_FT_PSK            0x04AC0F00
+#define WLAN_AKM_SUITE_FT_8021X         0x000FAC03
+#define WLAN_AKM_SUITE_FT_PSK           0x000FAC04
 #if CFG_SUPPORT_802_11W
 #define RSN_AKM_SUITE_802_1X_SHA256     0x05AC0F00
 #define RSN_AKM_SUITE_PSK_SHA256        0x06AC0F00
@@ -103,6 +108,11 @@
 #define WPA_AKM_SUITE_NONE              0x00F25000
 #define WPA_AKM_SUITE_802_1X            0x01F25000
 #define WPA_AKM_SUITE_PSK               0x02F25000
+
+#define WFA_AKM_SUITE_OSEN              0x019A6F50
+/* this define should be in ieee80211.h, but kernel didn't update it. so we define here temporary */
+#define WLAN_AKM_SUITE_OSEN             0x506f9a01
+#define WLAN_CIPHER_SUITE_NO_GROUP_ADDR 0x000fac07
 
 #define ELEM_ID_RSN_LEN_FIXED           20	/* The RSN IE len for associate request */
 
@@ -240,6 +250,8 @@ void rsnApSaQueryAction(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T prSwRfb);
 #if CFG_SUPPORT_AAA
 VOID rsnGenerateWSCIEForAssocRsp(P_ADAPTER_T prAdapter, P_MSDU_INFO_T prMsduInfo);
 #endif
+
+BOOLEAN rsnParseOsenIE(P_ADAPTER_T prAdapter, struct IE_WFA_OSEN *prInfoElem, P_RSN_INFO_T prOsenInfo);
 
 /*******************************************************************************
 *                              F U N C T I O N S
