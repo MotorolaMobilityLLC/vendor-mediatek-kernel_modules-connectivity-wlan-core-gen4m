@@ -1,4 +1,4 @@
-/******************************************************************************
+/*******************************************************************************
  *
  * This file is provided under a dual license.  When you use or
  * distribute this software, you may choose to be licensed under
@@ -48,46 +48,47 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *****************************************************************************/
+ ******************************************************************************/
 /*
-** Id: //Department/DaVinci/BRANCHES/MT6620_WIFI_DRIVER_V2_3/include/CFG_Wifi_File.h#1
-*/
+ ** Id: //Department/DaVinci/BRANCHES/MT6620_WIFI_DRIVER_V2_3/include
+ *      /CFG_Wifi_File.h#1
+ */
 
 /*! \file   CFG_Wifi_File.h
-*    \brief  Collection of NVRAM structure used for YuSu project
-*
-*    In this file we collect all compiler flags and detail the driver behavior if
-*    enable/disable such switch or adjust numeric parameters.
-*/
+ *    \brief  Collection of NVRAM structure used for YuSu project
+ *
+ *    In this file we collect all compiler flags and detail the driver behavior
+ *    if enable/disable such switch or adjust numeric parameters.
+ */
 
 #ifndef _CFG_WIFI_FILE_H
 #define _CFG_WIFI_FILE_H
 
 /*******************************************************************************
-*                         C O M P I L E R   F L A G S
-********************************************************************************
-*/
+ *                         C O M P I L E R   F L A G S
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                    E X T E R N A L   R E F E R E N C E S
-********************************************************************************
-*/
+ *                    E X T E R N A L   R E F E R E N C E S
+ *******************************************************************************
+ */
 #include "gl_typedef.h"
 
 /*******************************************************************************
-*                              C O N S T A N T S
-********************************************************************************
-*/
+ *                              C O N S T A N T S
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                             D A T A   T Y P E S
-********************************************************************************
-*/
+ *                             D A T A   T Y P E S
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                            P U B L I C   D A T A
-********************************************************************************
-*/
+ *                            P U B L I C   D A T A
+ *******************************************************************************
+ */
 /* duplicated from nic_cmd_event.h to avoid header dependency */
 struct TX_PWR_PARAM {
 	int8_t cTxPwr2G4Cck;	/* signed, in unit of 0.5dBm */
@@ -303,14 +304,14 @@ struct WIFI_CFG_PARAM_STRUCT {
 
 #endif
 /*******************************************************************************
-*                           P R I V A T E   D A T A
-********************************************************************************
-*/
+ *                           P R I V A T E   D A T A
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                                 M A C R O S
-********************************************************************************
-*/
+ *                                 M A C R O S
+ *******************************************************************************
+ */
 #ifndef DATA_STRUCT_INSPECTING_ASSERT
 #define DATA_STRUCT_INSPECTING_ASSERT(expr) \
 		{switch (0) {case 0: case (expr): default:; } }
@@ -319,14 +320,14 @@ struct WIFI_CFG_PARAM_STRUCT {
 #define CFG_FILE_WIFI_REC_SIZE    sizeof(struct WIFI_CFG_PARAM_STRUCT)
 
 /*******************************************************************************
-*                  F U N C T I O N   D E C L A R A T I O N S
-********************************************************************************
-*/
+ *                  F U N C T I O N   D E C L A R A T I O N S
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                              F U N C T I O N S
-********************************************************************************
-*/
+ *                              F U N C T I O N S
+ *******************************************************************************
+ */
 #ifndef _lint
 /* We don't have to call following function to inspect the data structure.
  * It will check automatically while at compile time.
@@ -335,16 +336,23 @@ struct WIFI_CFG_PARAM_STRUCT {
  */
 static __KAL_INLINE__ void nvramOffsetCheck(void)
 {
-	DATA_STRUCT_INSPECTING_ASSERT(OFFSET_OF(struct WIFI_CFG_PARAM_STRUCT, u2Part2OwnVersion) == 256);
+	DATA_STRUCT_INSPECTING_ASSERT(OFFSET_OF(
+		struct WIFI_CFG_PARAM_STRUCT, u2Part2OwnVersion) == 256);
 
-	DATA_STRUCT_INSPECTING_ASSERT(sizeof(struct WIFI_CFG_PARAM_STRUCT) == 512);
+	DATA_STRUCT_INSPECTING_ASSERT(sizeof(
+		struct WIFI_CFG_PARAM_STRUCT) == 512);
 #if CFG_SUPPORT_NVRAM_5G
-	DATA_STRUCT_INSPECTING_ASSERT((OFFSET_OF(struct WIFI_CFG_PARAM_STRUCT, EfuseMapping) & 0x0001) == 0);
+	DATA_STRUCT_INSPECTING_ASSERT((OFFSET_OF(
+		struct WIFI_CFG_PARAM_STRUCT, EfuseMapping) & 0x0001)
+		== 0);
 #else
-	DATA_STRUCT_INSPECTING_ASSERT((OFFSET_OF(struct WIFI_CFG_PARAM_STRUCT, aucEFUSE) & 0x0001) == 0);
+	DATA_STRUCT_INSPECTING_ASSERT((OFFSET_OF(
+		struct WIFI_CFG_PARAM_STRUCT, aucEFUSE) & 0x0001)
+		== 0);
 #endif
-	DATA_STRUCT_INSPECTING_ASSERT((OFFSET_OF(struct WIFI_CFG_PARAM_STRUCT, aucRegSubbandInfo) & 0x0001)
-				      == 0);
+	DATA_STRUCT_INSPECTING_ASSERT((OFFSET_OF(
+		struct WIFI_CFG_PARAM_STRUCT, aucRegSubbandInfo) & 0x0001)
+		== 0);
 }
 #endif
 

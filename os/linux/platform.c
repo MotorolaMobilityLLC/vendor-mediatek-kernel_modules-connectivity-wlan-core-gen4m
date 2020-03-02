@@ -1,4 +1,4 @@
-/******************************************************************************
+/*******************************************************************************
  *
  * This file is provided under a dual license.  When you use or
  * distribute this software, you may choose to be licensed under
@@ -48,29 +48,30 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *****************************************************************************/
+ ******************************************************************************/
 /*
-** Id: //Department/DaVinci/BRANCHES/MT6620_WIFI_DRIVER_V2_3/os/linux/platform.c#3
-*/
+ ** Id: //Department/DaVinci/BRANCHES/MT6620_WIFI_DRIVER_V2_3/os/linux
+ *      /platform.c#3
+ */
 
 /*! \file   "platform.c"
-*    \brief  This file including the protocol layer privacy function.
-*
-*    This file provided the macros and functions library support for the
-*    protocol layer security setting from wlan_oid.c and for parse.c and
-*    rsn.c and nic_privacy.c
-*
-*/
+ *    \brief  This file including the protocol layer privacy function.
+ *
+ *    This file provided the macros and functions library support for the
+ *    protocol layer security setting from wlan_oid.c and for parse.c and
+ *    rsn.c and nic_privacy.c
+ *
+ */
 
 /*******************************************************************************
-*                         C O M P I L E R   F L A G S
-********************************************************************************
-*/
+ *                         C O M P I L E R   F L A G S
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                    E X T E R N A L   R E F E R E N C E S
-********************************************************************************
-*/
+ *                    E X T E R N A L   R E F E R E N C E S
+ *******************************************************************************
+ */
 #include <linux/version.h>
 #include <linux/init.h>
 #include <linux/types.h>
@@ -86,43 +87,44 @@
 #endif
 
 /*******************************************************************************
-*                              C O N S T A N T S
-********************************************************************************
-*/
+ *                              C O N S T A N T S
+ *******************************************************************************
+ */
 #define WIFI_NVRAM_FILE_NAME   "/data/nvram/APCFG/APRDEB/WIFI"
 #define WIFI_NVRAM_CUSTOM_NAME "/data/nvram/APCFG/APRDEB/WIFI_CUSTOM"
 
 /*******************************************************************************
-*                             D A T A   T Y P E S
-********************************************************************************
-*/
+ *                             D A T A   T Y P E S
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                            P U B L I C   D A T A
-********************************************************************************
-*/
+ *                            P U B L I C   D A T A
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                           P R I V A T E   D A T A
-********************************************************************************
-*/
+ *                           P R I V A T E   D A T A
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                                 M A C R O S
-********************************************************************************
-*/
+ *                                 M A C R O S
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                   F U N C T I O N   D E C L A R A T I O N S
-********************************************************************************
-*/
+ *                   F U N C T I O N   D E C L A R A T I O N S
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                              F U N C T I O N S
-********************************************************************************
-*/
+ *                              F U N C T I O N S
+ *******************************************************************************
+ */
 #if 1
-static int netdev_event(struct notifier_block *nb, unsigned long notification, void *ptr)
+static int netdev_event(struct notifier_block *nb,
+			unsigned long notification, void *ptr)
 {
 	struct in_ifaddr *ifa = (struct in_ifaddr *)ptr;
 	struct net_device *prDev = ifa->ifa_dev->dev;
@@ -133,18 +135,23 @@ static int netdev_event(struct notifier_block *nb, unsigned long notification, v
 		return NOTIFY_DONE;
 	}
 
-	if ((strncmp(prDev->name, "p2p", 3) != 0) && (strncmp(prDev->name, "wlan", 4) != 0)) {
+	if ((strncmp(prDev->name, "p2p", 3) != 0)
+	    && (strncmp(prDev->name, "wlan", 4) != 0)) {
 		/* DBGLOG(REQ, INFO, ("netdev_event: xxx\n")); */
 		return NOTIFY_DONE;
 	}
 #if 0				/* CFG_SUPPORT_PASSPOINT */
 	{
-		/* printk(KERN_INFO "[netdev_event] IPV4_DAD is unlock now!!\n"); */
+		/* printk(KERN_INFO
+		 *        "[netdev_event] IPV4_DAD is unlock now!!\n");
+		 */
 		prGlueInfo->fgIsDad = FALSE;
 	}
 #endif /* CFG_SUPPORT_PASSPOINT */
-	if ((prDev != gPrDev) && (prDev != gPrP2pDev[0]) && (prDev != gPrP2pDev[1])) {
-		/* DBGLOG(REQ, INFO, ("netdev_event: device is not mine.\n")); */
+	if ((prDev != gPrDev) && (prDev != gPrP2pDev[0])
+	    && (prDev != gPrP2pDev[1])) {
+		/* DBGLOG(REQ, INFO, ("netdev_event: device is not mine.\n"));
+		 */
 		return NOTIFY_DONE;
 	}
 
@@ -170,7 +177,8 @@ static int netdev_event(struct notifier_block *nb, unsigned long notification, v
 }
 #endif
 #if 0				/* CFG_SUPPORT_PASSPOINT */
-static int net6dev_event(struct notifier_block *nb, unsigned long notification, void *ptr)
+static int net6dev_event(struct notifier_block *nb,
+			 unsigned long notification, void *ptr)
 {
 	struct inet6_ifaddr *ifa = (struct inet6_ifaddr *)ptr;
 	struct net_device *prDev = ifa->idev->dev;
@@ -181,14 +189,19 @@ static int net6dev_event(struct notifier_block *nb, unsigned long notification, 
 		return NOTIFY_DONE;
 	}
 
-	if ((strncmp(prDev->name, "p2p", 3) != 0) && (strncmp(prDev->name, "wlan", 4) != 0)) {
+	if ((strncmp(prDev->name, "p2p", 3) != 0)
+	    && (strncmp(prDev->name, "wlan", 4) != 0)) {
 		DBGLOG(REQ, INFO, "net6dev_event: xxx\n");
 		return NOTIFY_DONE;
 	}
 
 	if (strncmp(prDev->name, "p2p", 3) == 0) {
-		/* because we store the address of prGlueInfo in p2p's private date of net device */
-		/* *((P_GLUE_INFO_T *) netdev_priv(prGlueInfo->prP2PInfo[0]->prDevHandler)) = prGlueInfo; */
+		/* because we store the address of prGlueInfo in p2p's private
+		 * date of net device
+		 */
+		/* *((P_GLUE_INFO_T *) netdev_priv(
+		 *        prGlueInfo->prP2PInfo[0]->prDevHandler)) = prGlueInfo;
+		 */
 		prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prDev));
 	} else {		/* wlan0 */
 		prGlueInfo = (struct GLUE_INFO *) netdev_priv(prDev);
@@ -244,31 +257,34 @@ void wlanUnregisterNotifier(void)
 #if CFG_ENABLE_EARLY_SUSPEND
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief This function will register platform driver to os
-*
-* \param[in] wlanSuspend    Function pointer to platform suspend function
-* \param[in] wlanResume   Function pointer to platform resume   function
-*
-* \return The result of registering earlysuspend
-*/
+ * \brief This function will register platform driver to os
+ *
+ * \param[in] wlanSuspend    Function pointer to platform suspend function
+ * \param[in] wlanResume   Function pointer to platform resume   function
+ *
+ * \return The result of registering earlysuspend
+ */
 /*----------------------------------------------------------------------------*/
 
 int glRegisterEarlySuspend(struct early_suspend *prDesc,
-			   early_suspend_callback wlanSuspend, late_resume_callback wlanResume)
+			   early_suspend_callback wlanSuspend,
+			   late_resume_callback wlanResume)
 {
 	int ret = 0;
 
 	if (wlanSuspend != NULL)
 		prDesc->suspend = wlanSuspend;
 	else {
-		DBGLOG(REQ, INFO, "glRegisterEarlySuspend wlanSuspend ERROR.\n");
+		DBGLOG(REQ, INFO,
+		       "glRegisterEarlySuspend wlanSuspend ERROR.\n");
 		ret = -1;
 	}
 
 	if (wlanResume != NULL)
 		prDesc->resume = wlanResume;
 	else {
-		DBGLOG(REQ, INFO, "glRegisterEarlySuspend wlanResume ERROR.\n");
+		DBGLOG(REQ, INFO,
+		       "glRegisterEarlySuspend wlanResume ERROR.\n");
 		ret = -1;
 	}
 
@@ -278,10 +294,10 @@ int glRegisterEarlySuspend(struct early_suspend *prDesc,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief This function will un-register platform driver to os
-*
-* \return The result of un-registering earlysuspend
-*/
+ * \brief This function will un-register platform driver to os
+ *
+ * \return The result of un-registering earlysuspend
+ */
 /*----------------------------------------------------------------------------*/
 
 int glUnregisterEarlySuspend(struct early_suspend *prDesc)
@@ -299,19 +315,20 @@ int glUnregisterEarlySuspend(struct early_suspend *prDesc)
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief Utility function for reading data from files on NVRAM-FS
-*
-* \param[in]
-*           filename
-*           len
-*           offset
-* \param[out]
-*           buf
-* \return
-*           actual length of data being read
-*/
+ * \brief Utility function for reading data from files on NVRAM-FS
+ *
+ * \param[in]
+ *           filename
+ *           len
+ *           offset
+ * \param[out]
+ *           buf
+ * \return
+ *           actual length of data being read
+ */
 /*----------------------------------------------------------------------------*/
-static int nvram_read(char *filename, char *buf, ssize_t len, int offset)
+static int nvram_read(char *filename, char *buf,
+		      ssize_t len, int offset)
 {
 #if CFG_SUPPORT_NVRAM
 	struct file *fd;
@@ -342,7 +359,8 @@ static int nvram_read(char *filename, char *buf, ssize_t len, int offset)
 		if (fd->f_pos != offset) {
 			if (fd->f_op->llseek) {
 				if (fd->f_op->llseek(fd, offset, 0) != offset) {
-					DBGLOG(INIT, INFO, "[nvram_read] : failed to seek!!\n");
+					DBGLOG(INIT, INFO,
+					       "[nvram_read] : failed to seek!!\n");
 					break;
 				}
 			} else {
@@ -359,7 +377,9 @@ static int nvram_read(char *filename, char *buf, ssize_t len, int offset)
 		retLen = fd->f_op->read(fd, buf, len, &fd->f_pos);
 #endif
 		if (retLen < 0)
-			DBGLOG(INIT, ERROR, "[nvram_read] : read failed!! Error code: %d\n", retLen);
+			DBGLOG(INIT, ERROR,
+			       "[nvram_read] : read failed!! Error code: %d\n",
+			       retLen);
 	} while (FALSE);
 
 	filp_close(fd, NULL);
@@ -377,18 +397,19 @@ static int nvram_read(char *filename, char *buf, ssize_t len, int offset)
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief Utility function for writing data to files on NVRAM-FS
-*
-* \param[in]
-*           filename
-*           buf
-*           len
-*           offset
-* \return
-*           actual length of data being written
-*/
+ * \brief Utility function for writing data to files on NVRAM-FS
+ *
+ * \param[in]
+ *           filename
+ *           buf
+ *           len
+ *           offset
+ * \return
+ *           actual length of data being written
+ */
 /*----------------------------------------------------------------------------*/
-static int nvram_write(char *filename, char *buf, ssize_t len, int offset)
+static int nvram_write(char *filename, char *buf,
+		       ssize_t len, int offset)
 {
 #if CFG_SUPPORT_NVRAM
 	struct file *fd;
@@ -419,7 +440,8 @@ static int nvram_write(char *filename, char *buf, ssize_t len, int offset)
 		if (fd->f_pos != offset) {
 			if (fd->f_op->llseek) {
 				if (fd->f_op->llseek(fd, offset, 0) != offset) {
-					DBGLOG(INIT, INFO, "[nvram_write] : failed to seek!!\n");
+					DBGLOG(INIT, INFO,
+					       "[nvram_write] : failed to seek!!\n");
 					break;
 				}
 			} else {
@@ -436,7 +458,9 @@ static int nvram_write(char *filename, char *buf, ssize_t len, int offset)
 		retLen = fd->f_op->write(fd, buf, len, &fd->f_pos);
 #endif
 		if (retLen < 0)
-			DBGLOG(INIT, ERROR, "[nvram_write] : write failed!! Error code: %d\n", retLen);
+			DBGLOG(INIT, ERROR,
+			       "[nvram_write] : write failed!! Error code: %d\n",
+			       retLen);
 	} while (FALSE);
 
 	filp_close(fd, NULL);
@@ -454,20 +478,21 @@ static int nvram_write(char *filename, char *buf, ssize_t len, int offset)
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief API for reading data on NVRAM with flexible length.
-*
-* \param[in]
-*           prGlueInfo
-*           u4Offset
-*           len
-* \param[out]
-*           pu2Data
-* \return
-*           TRUE
-*           FALSE
-*/
+ * \brief API for reading data on NVRAM with flexible length.
+ *
+ * \param[in]
+ *           prGlueInfo
+ *           u4Offset
+ *           len
+ * \param[out]
+ *           pu2Data
+ * \return
+ *           TRUE
+ *           FALSE
+ */
 /*----------------------------------------------------------------------------*/
-u_int8_t kalCfgDataRead(IN struct GLUE_INFO *prGlueInfo, IN uint32_t u4Offset,
+u_int8_t kalCfgDataRead(IN struct GLUE_INFO *prGlueInfo,
+			IN uint32_t u4Offset,
 			IN ssize_t len, OUT uint16_t *pu2Data)
 {
 	if (pu2Data == NULL)
@@ -483,25 +508,27 @@ u_int8_t kalCfgDataRead(IN struct GLUE_INFO *prGlueInfo, IN uint32_t u4Offset,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief API for reading data on NVRAM with 2 bytes fixed length.
-*
-* \param[in]
-*           prGlueInfo
-*           u4Offset
-* \param[out]
-*           pu2Data
-* \return
-*           TRUE
-*           FALSE
-*/
+ * \brief API for reading data on NVRAM with 2 bytes fixed length.
+ *
+ * \param[in]
+ *           prGlueInfo
+ *           u4Offset
+ * \param[out]
+ *           pu2Data
+ * \return
+ *           TRUE
+ *           FALSE
+ */
 /*----------------------------------------------------------------------------*/
-u_int8_t kalCfgDataRead16(IN struct GLUE_INFO *prGlueInfo, IN uint32_t u4Offset, OUT uint16_t *pu2Data)
+u_int8_t kalCfgDataRead16(IN struct GLUE_INFO *prGlueInfo,
+			  IN uint32_t u4Offset, OUT uint16_t *pu2Data)
 {
 	if (pu2Data == NULL)
 		return FALSE;
 
 	if (nvram_read(WIFI_NVRAM_FILE_NAME,
-		       (char *)pu2Data, sizeof(unsigned short), u4Offset) != sizeof(unsigned short)) {
+		       (char *)pu2Data, sizeof(unsigned short),
+		       u4Offset) != sizeof(unsigned short)) {
 		return FALSE;
 	} else {
 		return TRUE;
@@ -510,21 +537,23 @@ u_int8_t kalCfgDataRead16(IN struct GLUE_INFO *prGlueInfo, IN uint32_t u4Offset,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief API for writing data on NVRAM with 2 bytes fixed length.
-*
-* \param[in]
-*           prGlueInfo
-*           u4Offset
-*           u2Data
-* \return
-*           TRUE
-*           FALSE
-*/
+ * \brief API for writing data on NVRAM with 2 bytes fixed length.
+ *
+ * \param[in]
+ *           prGlueInfo
+ *           u4Offset
+ *           u2Data
+ * \return
+ *           TRUE
+ *           FALSE
+ */
 /*----------------------------------------------------------------------------*/
-u_int8_t kalCfgDataWrite16(IN struct GLUE_INFO *prGlueInfo, uint32_t u4Offset, uint16_t u2Data)
+u_int8_t kalCfgDataWrite16(IN struct GLUE_INFO *prGlueInfo,
+			   uint32_t u4Offset, uint16_t u2Data)
 {
 	if (nvram_write(WIFI_NVRAM_FILE_NAME,
-			(char *)&u2Data, sizeof(unsigned short), u4Offset) != sizeof(unsigned short)) {
+			(char *)&u2Data, sizeof(unsigned short),
+			u4Offset) != sizeof(unsigned short)) {
 		return FALSE;
 	} else {
 		return TRUE;
