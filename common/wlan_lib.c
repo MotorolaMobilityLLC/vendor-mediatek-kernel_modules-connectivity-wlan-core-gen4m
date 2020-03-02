@@ -8410,17 +8410,17 @@ wlanPktTxDone(IN struct ADAPTER *prAdapter,
 	if (prMsduInfo->ucPktType >= ENUM_PKT_FLAG_NUM)
 		prMsduInfo->ucPktType = 0;
 
-	if ((prMsduInfo->ucPktType == ENUM_PKT_ARP)
-	    || (prMsduInfo->ucPktType == ENUM_PKT_DHCP)) {
-		if (rCurrent - prPktProfile->rHardXmitArrivalTimestamp >
-		    2000) {
+	if (prPktProfile->fgIsValid &&
+		((prMsduInfo->ucPktType == ENUM_PKT_ARP) ||
+		(prMsduInfo->ucPktType == ENUM_PKT_DHCP))) {
+		if (rCurrent - prPktProfile->rHardXmitArrivalTimestamp > 2000) {
 			DBGLOG(TX, INFO,
-			       "valid %d; ArriveDrv %u, Enq %u, Deq %u, LeaveDrv %u, TxDone %u\n",
-			       prPktProfile->fgIsValid,
-			       prPktProfile->rHardXmitArrivalTimestamp,
-			       prPktProfile->rEnqueueTimestamp,
-			       prPktProfile->rDequeueTimestamp,
-			       prPktProfile->rHifTxDoneTimestamp, rCurrent);
+				"valid %d; ArriveDrv %u, Enq %u, Deq %u, LeaveDrv %u, TxDone %u\n",
+				prPktProfile->fgIsValid,
+				prPktProfile->rHardXmitArrivalTimestamp,
+				prPktProfile->rEnqueueTimestamp,
+				prPktProfile->rDequeueTimestamp,
+				prPktProfile->rHifTxDoneTimestamp, rCurrent);
 
 			if (prMsduInfo->ucPktType == ENUM_PKT_ARP)
 				prAdapter->prGlueInfo->fgTxDoneDelayIsARP =
