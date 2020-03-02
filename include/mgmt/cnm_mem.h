@@ -511,6 +511,9 @@ struct _STA_RECORD_T {
 #if CFG_SUPPORT_MSP
 	UINT_32 u4RxVector0;
 	UINT_32 u4RxVector1;
+	UINT_32 u4RxVector2;
+	UINT_32 u4RxVector3;
+	UINT_32 u4RxVector4;
 #endif
 	UINT_8 ucSmDialogToken;	/* Spectrum Mngt Dialog Token */
 	UINT_8 ucSmMsmtRequestMode; /* Measurement Request Mode */
