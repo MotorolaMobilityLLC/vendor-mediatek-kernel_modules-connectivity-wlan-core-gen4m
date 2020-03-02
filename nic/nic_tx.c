@@ -977,6 +977,25 @@ nicTxGetAdjustableResourceCnt(IN struct ADAPTER *prAdapter)
 		u4TotAdjCnt += u4AdjCnt;
 	}
 
+	/* no PLE resource control */
+	if (!prAdapter->rTxCtrl.rTc.fgNeedPleCtrl)
+		return u4TotAdjCnt;
+
+	/* PLE part */
+	for (ucIdx = TC0_INDEX; ucIdx < TC_NUM; ucIdx++) {
+		if (ucIdx == TC4_INDEX)
+			continue;
+
+		if (prTxCtrl->rTc.au4FreeBufferCount_PLE[ucIdx] >
+		    prQM->au4MinReservedTcResource[ucIdx])
+			u4AdjCnt = prTxCtrl->rTc.au4FreeBufferCount_PLE[ucIdx] -
+				   prQM->au4MinReservedTcResource[ucIdx];
+		else
+			u4AdjCnt = 0;
+
+		u4TotAdjCnt += u4AdjCnt;
+	}
+
 	return u4TotAdjCnt;
 }
 #endif
