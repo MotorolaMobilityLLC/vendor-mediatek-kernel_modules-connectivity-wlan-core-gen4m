@@ -444,6 +444,8 @@ struct CHIP_DBG_OPS soc3_0_debug_ops = {
 	.showDmaschInfo = NULL,
 	.showHifInfo = NULL,
 	.printHifDbgInfo = NULL,
+	.show_rx_rate_info = connac2x_show_rx_rate_info,
+	.show_rx_rssi_info = connac2x_show_rx_rssi_info,
 };
 
 /* Litien code refine to support multi chip */
@@ -476,7 +478,6 @@ struct mt66xx_chip_info mt66xx_chip_info_soc3_0 = {
 	.top_fvr = CONNAC2X_TOP_FVR,
 	.arb_ac_mode_addr = SOC3_0_ARB_AC_MODE_ADDR,
 	.asicCapInit = asicConnac2xCapInit,
-
 #if CFG_ENABLE_FW_DOWNLOAD
 	.asicEnableFWDownload = NULL,
 #endif				/* CFG_ENABLE_FW_DOWNLOAD */

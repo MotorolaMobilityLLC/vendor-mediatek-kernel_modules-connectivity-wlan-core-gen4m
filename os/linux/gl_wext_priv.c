@@ -5299,6 +5299,7 @@ int32_t priv_driver_last_rx_rssi(struct ADAPTER *prAdapter, IN char *pcCommand,
 	int32_t i4BytesWritten = 0;
 	uint32_t u4RxVector3 = 0;
 	uint8_t ucStaIdx;
+	struct CHIP_DBG_OPS *prChipDbg;
 
 	if (wlanGetStaIdxByWlanIdx(prAdapter, ucWlanIdx, &ucStaIdx) ==
 	    WLAN_STATUS_SUCCESS) {
@@ -5309,6 +5310,17 @@ int32_t priv_driver_last_rx_rssi(struct ADAPTER *prAdapter, IN char *pcCommand,
 		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten,
 			i4TotalLen - i4BytesWritten,
 			"%-20s%s", "Last RX RSSI", " = NOT SUPPORT");
+		return i4BytesWritten;
+	}
+
+	prChipDbg = prAdapter->chip_info->prDebugOps;
+
+	if (prChipDbg && prChipDbg->show_rx_rssi_info) {
+		i4BytesWritten = prChipDbg->show_rx_rssi_info(
+				prAdapter,
+				pcCommand,
+				i4TotalLen,
+				ucStaIdx);
 		return i4BytesWritten;
 	}
 
@@ -5342,6 +5354,7 @@ int32_t priv_driver_rx_rate_info(struct ADAPTER *prAdapter, IN char *pcCommand,
 	int32_t i4BytesWritten = 0;
 	uint32_t u4RxVector0 = 0, u4RxVector1 = 0;
 	uint8_t ucStaIdx;
+	struct CHIP_DBG_OPS *prChipDbg;
 
 	if (wlanGetStaIdxByWlanIdx(prAdapter, ucWlanIdx, &ucStaIdx) ==
 	    WLAN_STATUS_SUCCESS) {
@@ -5355,6 +5368,17 @@ int32_t priv_driver_rx_rate_info(struct ADAPTER *prAdapter, IN char *pcCommand,
 		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten,
 			i4TotalLen - i4BytesWritten,
 			"%-20s%s", "Last RX Rate", " = NOT SUPPORT");
+		return i4BytesWritten;
+	}
+
+	prChipDbg = prAdapter->chip_info->prDebugOps;
+
+	if (prChipDbg && prChipDbg->show_rx_rate_info) {
+		i4BytesWritten = prChipDbg->show_rx_rate_info(
+				prAdapter,
+				pcCommand,
+				i4TotalLen,
+				ucStaIdx);
 		return i4BytesWritten;
 	}
 
@@ -5416,12 +5440,16 @@ int32_t priv_driver_rx_rate_info(struct ADAPTER *prAdapter, IN char *pcCommand,
 	if (mu) {
 		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten,
 			i4TotalLen - i4BytesWritten, "%s, %s, %s (%d)\n",
-			txmode < 5 ? HW_TX_MODE_STR[txmode] : HW_TX_MODE_STR[5],
+			(txmode < ENUM_TX_MODE_VHT_NUM ?
+			 HW_TX_MODE_STR[txmode] :
+			 HW_TX_MODE_STR[ENUM_TX_MODE_NA]),
 			ldpc == 0 ? "BCC" : "LDPC", "MU", groupid);
 	} else {
 		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten,
 			i4TotalLen - i4BytesWritten, "%s, %s\n",
-			txmode < 5 ? HW_TX_MODE_STR[txmode] : HW_TX_MODE_STR[5],
+			(txmode < ENUM_TX_MODE_VHT_NUM ?
+			 HW_TX_MODE_STR[txmode] :
+			 HW_TX_MODE_STR[ENUM_TX_MODE_NA]),
 			ldpc == 0 ? "BCC" : "LDPC");
 	}
 
@@ -6003,7 +6031,7 @@ static int32_t priv_driver_dump_stat_info(struct ADAPTER *prAdapter,
 	int32_t i4BytesWritten = 0;
 	int32_t rRssi;
 	uint16_t u2LinkSpeed;
-	uint32_t u4Per, u4RxPer[ENUM_BAND_NUM], u4AmpduPer[ENUM_BAND_NUM],
+	uint32_t u4Per, u4RxPer[ENUM_BAND_NUM], u4TxMpduPer[ENUM_BAND_NUM],
 		 u4InstantPer;
 	uint8_t ucDbdcIdx, ucSkipAr, ucStaIdx, ucNss;
 	static uint32_t u4TotalTxCnt, u4TotalFailCnt;
@@ -6015,6 +6043,7 @@ static int32_t priv_driver_dump_stat_info(struct ADAPTER *prAdapter,
 	static uint32_t au4AmpduTxAckSfCnt[ENUM_BAND_NUM] = {0};
 	struct RX_CTRL *prRxCtrl;
 	uint32_t u4InstantRxPer[ENUM_BAND_NUM];
+	uint32_t u4InstantTxMpduPer[ENUM_BAND_NUM];
 	struct PARAM_CUSTOM_SW_CTRL_STRUCT rSwCtrlInfo;
 	uint32_t rStatus = WLAN_STATUS_SUCCESS;
 	int16_t i2Wf0AvgPwr = 0, i2Wf1AvgPwr = 0;
@@ -6074,7 +6103,7 @@ static int32_t priv_driver_dump_stat_info(struct ADAPTER *prAdapter,
 				(au4RxMpduCnt[ucDbdcIdx] +
 				au4FcsError[ucDbdcIdx]));
 
-		u4AmpduPer[ucDbdcIdx] =
+		u4TxMpduPer[ucDbdcIdx] =
 		    (au4AmpduTxSfCnt[ucDbdcIdx] == 0) ?
 			(0) : (1000 * (au4AmpduTxSfCnt[ucDbdcIdx] -
 				au4AmpduTxAckSfCnt[ucDbdcIdx]) /
@@ -6090,6 +6119,16 @@ static int32_t priv_driver_dump_stat_info(struct ADAPTER *prAdapter,
 				u4RxMpduCnt +
 				prQueryStaStatistics->rMibInfo[ucDbdcIdx].
 				u4FcsError));
+		u4InstantTxMpduPer[ucDbdcIdx] =
+			(prQueryStaStatistics->rMibInfo[ucDbdcIdx].
+			u4AmpduTxSfCnt == 0) ?
+				(0) : (1000 *
+				(prQueryStaStatistics->rMibInfo[ucDbdcIdx].
+				u4AmpduTxSfCnt -
+				prQueryStaStatistics->rMibInfo[ucDbdcIdx].
+				u4AmpduTxAckSfCnt) /
+				prQueryStaStatistics->rMibInfo[ucDbdcIdx].
+				u4AmpduTxSfCnt);
 	}
 
 	rRssi = RCPI_TO_dBm(prQueryStaStatistics->ucRcpi);
@@ -6183,6 +6222,24 @@ static int32_t priv_driver_dump_stat_info(struct ADAPTER *prAdapter,
 				i4TotalLen - i4BytesWritten,
 				"%-20s%s%d\n", "RX drop FIFO full", " = ",
 				au4RxFifoCnt[ucDbdcIdx]);
+
+			i4BytesWritten += kalScnprintf(
+				pcCommand + i4BytesWritten,
+				i4TotalLen - i4BytesWritten,
+				"%-20s%s%d\n", "TX MPDU Success", " = ",
+				au4AmpduTxAckSfCnt[ucDbdcIdx]);
+
+			i4BytesWritten += kalScnprintf(
+				pcCommand + i4BytesWritten,
+				i4TotalLen - i4BytesWritten,
+				"%-20s%s%d, PER = %d.%1d%%, instant PER = %d.%1d%%\n",
+				"TX MPDU Fail", " = ",
+				au4AmpduTxSfCnt[ucDbdcIdx] -
+				au4AmpduTxAckSfCnt[ucDbdcIdx],
+				u4TxMpduPer[ucDbdcIdx]/10,
+				u4TxMpduPer[ucDbdcIdx]%10,
+				u4InstantTxMpduPer[ucDbdcIdx]/10,
+				u4InstantTxMpduPer[ucDbdcIdx]%10);
 
 			if (!prAdapter->rWifiVar.fgDbDcModeEn)
 				break;
