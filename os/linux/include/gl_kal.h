@@ -112,7 +112,11 @@ extern struct delayed_work sched_workq;
 /* Define how many concurrent operation networks. */
 #define KAL_BSS_NUM             4
 
+#if CFG_SUPPORT_DUAL_STA
+#define KAL_AIS_NUM           2
+#else
 #define KAL_AIS_NUM           1
+#endif
 
 #if CFG_DUAL_P2PLIKE_INTERFACE
 #define KAL_P2P_NUM             2
