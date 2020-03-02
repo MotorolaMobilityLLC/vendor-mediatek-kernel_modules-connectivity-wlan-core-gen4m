@@ -651,16 +651,8 @@ int mtk_p2p_cfg80211_del_iface(struct wiphy *wiphy, struct wireless_dev *wdev)
 	prScanRequest = prP2pGlueDevInfo->prScanRequest;
 	if ((prScanRequest != NULL) &&
 	    (prScanRequest->wdev == UnregRoleHander->ieee80211_ptr)) {
-		prP2pGlueDevInfo->prScanRequest = NULL;
-	}
-#endif
-	GLUE_RELEASE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
-
-	/* Check the Scan request is pending and we abort it before delete interface */
-#if 1
-	if (prScanRequest) {
-		DBGLOG(INIT, INFO, "do scan done (req=%p)\n", prScanRequest);
 		kalCfg80211ScanDone(prScanRequest, TRUE);
+		prP2pGlueDevInfo->prScanRequest = NULL;
 	}
 #else
 	/* 2017/12/18: This part is for error case that p2p-p2p0-0 which is
@@ -681,6 +673,7 @@ int mtk_p2p_cfg80211_del_iface(struct wiphy *wiphy, struct wireless_dev *wdev)
 		}
 	}
 #endif
+	GLUE_RELEASE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
 
 	/* prepare for removal */
 	if (netif_carrier_ok(UnregRoleHander))
