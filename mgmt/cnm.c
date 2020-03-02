@@ -527,6 +527,7 @@ static uint8_t *apucCnmOpModeReq[CNM_OPMODE_REQ_MAX_CAP+1] = {
 	(uint8_t *) DISP_STRING("DBDC Scan"),
 	(uint8_t *) DISP_STRING("COEX"),
 	(uint8_t *) DISP_STRING("SmartGear"),
+	(uint8_t *) DISP_STRING("SmartGear_1T2R"),
 	(uint8_t *) DISP_STRING("CoAnt"),
 	(uint8_t *) DISP_STRING("N/A"),
 	(uint8_t *) DISP_STRING("MAX_CAP")
