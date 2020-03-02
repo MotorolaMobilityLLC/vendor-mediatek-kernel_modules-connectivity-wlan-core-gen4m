@@ -57,7 +57,7 @@
  *  Wireless LAN driver stack to GLUE Layer.
  */
 
-#ifdef CONNAC
+#ifdef CONNAC2X2
 
 /*******************************************************************************
  *                         C O M P I L E R   F L A G S
@@ -70,25 +70,25 @@
  */
 #include "precomp.h"
 
-#include "connac.h"
+#include "connac2x2.h"
 
 /*******************************************************************************
  *                              C O N S T A N T S
  *******************************************************************************
  */
-uint8_t *apucConnacFwName[] = {
-	(uint8_t *) CFG_FW_FILENAME "_soc1_0",
+uint8_t *apucConnac2x2FwName[] = {
+	(uint8_t *) CFG_FW_FILENAME "_soc2_0",
 	NULL
 };
 
-struct ECO_INFO connac_eco_table[] = {
+struct ECO_INFO connac2x2_eco_table[] = {
 	/* HW version,  ROM version,    Factory version */
 	{0x00, 0x00, 0xA, 0x1}, /* E1 */
 	{0x00, 0x00, 0x0, 0x0}	/* End of table */
 };
 
 #if defined(_HIF_PCIE) || defined(_HIF_AXI)
-struct PCIE_CHIP_CR_MAPPING connac_bus2chip_cr_mapping[] = {
+struct PCIE_CHIP_CR_MAPPING connac2x2_bus2chip_cr_mapping[] = {
 	/* chip addr, bus addr, range */
 	{0x80000000, 0x00002000, 0x00001000}, /* MCU_CFG */
 
@@ -132,24 +132,24 @@ struct PCIE_CHIP_CR_MAPPING connac_bus2chip_cr_mapping[] = {
 };
 #endif /* _HIF_PCIE || _HIF_AXI */
 
-int connacGetIpSetVersion(struct GLUE_INFO *prGlueInfo)
+int connac2x2GetIpSetVersion(struct GLUE_INFO *prGlueInfo)
 {
 	return 1;
 }
 
-void connacConstructFirmwarePrio(struct GLUE_INFO *prGlueInfo,
+void connac2x2ConstructFirmwarePrio(struct GLUE_INFO *prGlueInfo,
 	uint8_t **apucNameTable, uint8_t **apucName,
 	uint8_t *pucNameIdx, uint8_t ucMaxNameIdx)
 {
 	uint8_t ucIdx = 0;
 
-	for (ucIdx = 0; apucConnacFwName[ucIdx]; ucIdx++) {
+	for (ucIdx = 0; apucConnac2x2FwName[ucIdx]; ucIdx++) {
 		if ((*pucNameIdx + 3) < ucMaxNameIdx) {
 			/* Type 1. WIFI_RAM_CODE_soc1_0_1_1 */
 			snprintf(*(apucName + (*pucNameIdx)),
 					CFG_FW_NAME_MAX_LEN, "%s_%u_%u",
-					apucConnacFwName[ucIdx],
-					connacGetIpSetVersion(prGlueInfo),
+					apucConnac2x2FwName[ucIdx],
+					connac2x2GetIpSetVersion(prGlueInfo),
 					wlanGetEcoVersion(
 						prGlueInfo->prAdapter));
 			(*pucNameIdx) += 1;
@@ -157,8 +157,8 @@ void connacConstructFirmwarePrio(struct GLUE_INFO *prGlueInfo,
 			/* Type 2. WIFI_RAM_CODE_soc1_0_1_1.bin */
 			snprintf(*(apucName + (*pucNameIdx)),
 					CFG_FW_NAME_MAX_LEN, "%s_%u_%u.bin",
-					apucConnacFwName[ucIdx],
-					connacGetIpSetVersion(prGlueInfo),
+					apucConnac2x2FwName[ucIdx],
+					connac2x2GetIpSetVersion(prGlueInfo),
 					wlanGetEcoVersion(
 						prGlueInfo->prAdapter));
 			(*pucNameIdx) += 1;
@@ -166,13 +166,13 @@ void connacConstructFirmwarePrio(struct GLUE_INFO *prGlueInfo,
 			/* Type 3. WIFI_RAM_CODE_soc1_0 */
 			snprintf(*(apucName + (*pucNameIdx)),
 					CFG_FW_NAME_MAX_LEN, "%s",
-					apucConnacFwName[ucIdx]);
+					apucConnac2x2FwName[ucIdx]);
 			(*pucNameIdx) += 1;
 
 			/* Type 4. WIFI_RAM_CODE_soc1_0.bin */
 			snprintf(*(apucName + (*pucNameIdx)),
 					CFG_FW_NAME_MAX_LEN, "%s.bin",
-					apucConnacFwName[ucIdx]);
+					apucConnac2x2FwName[ucIdx]);
 			(*pucNameIdx) += 1;
 		} else {
 			/* the table is not large enough */
@@ -183,7 +183,7 @@ void connacConstructFirmwarePrio(struct GLUE_INFO *prGlueInfo,
 	}
 }
 
-void connacConstructPatchName(struct GLUE_INFO *prGlueInfo,
+void connac2x2ConstructPatchName(struct GLUE_INFO *prGlueInfo,
 	uint8_t **apucName, uint8_t *pucNameIdx)
 {
 	snprintf(apucName[(*pucNameIdx)],
@@ -191,10 +191,10 @@ void connacConstructPatchName(struct GLUE_INFO *prGlueInfo,
 		wlanGetEcoVersion(prGlueInfo->prAdapter));
 }
 
-struct BUS_INFO connac_bus_info = {
+struct BUS_INFO connac2x2_bus_info = {
 #if defined(_HIF_PCIE) || defined(_HIF_AXI)
-	.top_cfg_base = CONNAC_TOP_CFG_BASE,
-	.bus2chip = connac_bus2chip_cr_mapping,
+	.top_cfg_base = CONNAC2X2_TOP_CFG_BASE,
+	.bus2chip = connac2x2_bus2chip_cr_mapping,
 	.tx_ring_fwdl_idx = 3,
 	.tx_ring_cmd_idx = 15,
 	.tx_ring_data_idx = 0,
@@ -225,9 +225,9 @@ struct BUS_INFO connac_bus_info = {
 #endif /* _HIF_USB */
 };
 
-struct FWDL_OPS_T connac_fw_dl_ops = {
-	.constructFirmwarePrio = connacConstructFirmwarePrio,
-	.constructPatchName = connacConstructPatchName,
+struct FWDL_OPS_T connac2x2_fw_dl_ops = {
+	.constructFirmwarePrio = connac2x2ConstructFirmwarePrio,
+	.constructPatchName = connac2x2ConstructPatchName,
 #if !CFG_MTK_ANDROID_WMT
 	.downloadPatch = wlanDownloadPatch,
 #endif
@@ -236,14 +236,14 @@ struct FWDL_OPS_T connac_fw_dl_ops = {
 	.getFwDlInfo = asicGetFwDlInfo,
 };
 
-struct TX_DESC_OPS_T connacTxDescOps = {
+struct TX_DESC_OPS_T connac2x2TxDescOps = {
 	.fillNicAppend = fillNicTxDescAppend,
 	.fillHifAppend = fillTxDescAppendByHostV2,
 	.fillTxByteCount = fillTxDescTxByteCount,
 };
 
 #if CFG_SUPPORT_QA_TOOL
-struct ATE_OPS_T connacAteOps = {
+struct ATE_OPS_T connac2x2AteOps = {
 	.setICapStart = connacSetICapStart,
 	.getICapStatus = connacGetICapStatus,
 	.getICapIQData = connacGetICapIQData,
@@ -251,7 +251,7 @@ struct ATE_OPS_T connacAteOps = {
 };
 #endif
 
-struct CHIP_DBG_OPS connac_debug_ops = {
+struct CHIP_DBG_OPS connac2x2_debug_ops = {
 #if defined(_HIF_PCIE) || defined(_HIF_AXI)
 	.showPdmaInfo = halShowPdmaInfo,
 	.showPseInfo = halShowPseInfo,
@@ -267,24 +267,24 @@ struct CHIP_DBG_OPS connac_debug_ops = {
 #endif
 };
 
-struct mt66xx_chip_info mt66xx_chip_info_connac = {
-	.bus_info = &connac_bus_info,
-	.fw_dl_ops = &connac_fw_dl_ops,
-	.prTxDescOps = &connacTxDescOps,
+struct mt66xx_chip_info mt66xx_chip_info_connac2x2 = {
+	.bus_info = &connac2x2_bus_info,
+	.fw_dl_ops = &connac2x2_fw_dl_ops,
+	.prTxDescOps = &connac2x2TxDescOps,
 #if CFG_SUPPORT_QA_TOOL
-	.prAteOps = &connacAteOps,
+	.prAteOps = &connac2x2AteOps,
 #endif
-	.prDebugOps = &connac_debug_ops,
+	.prDebugOps = &connac2x2_debug_ops,
 
-	.chip_id = CONNAC_CHIP_ID,
+	.chip_id = CONNAC2X2_CHIP_ID,
 	.should_verify_chip_id = FALSE,
-	.sw_sync0 = CONNAC_SW_SYNC0,
+	.sw_sync0 = CONNAC2X2_SW_SYNC0,
 	.sw_ready_bits = WIFI_FUNC_NO_CR4_READY_BITS,
-	.sw_ready_bit_offset = CONNAC_SW_SYNC0_RDY_OFFSET,
-	.patch_addr = CONNAC_PATCH_START_ADDR,
+	.sw_ready_bit_offset = CONNAC2X2_SW_SYNC0_RDY_OFFSET,
+	.patch_addr = CONNAC2X2_PATCH_START_ADDR,
 	.is_support_cr4 = FALSE,
-	.txd_append_size = CONNAC_TX_DESC_APPEND_LENGTH,
-	.eco_info = connac_eco_table,
+	.txd_append_size = CONNAC2X2_TX_DESC_APPEND_LENGTH,
+	.eco_info = connac2x2_eco_table,
 	.isNicCapV1 = FALSE,
 	.is_support_efuse = FALSE,
 
@@ -300,13 +300,13 @@ struct mt66xx_chip_info mt66xx_chip_info_connac = {
 #else
 	.showTaskStack = NULL,
 #endif
-	.is_support_hw_amsdu = FALSE,
-	.ucMaxSwAmsduNum = 4,
+	.is_support_hw_amsdu = TRUE,
+	.ucMaxSwAmsduNum = 0,
 	.workAround = 0,
 };
 
-struct mt66xx_hif_driver_data mt66xx_driver_data_connac = {
-	.chip_info = &mt66xx_chip_info_connac,
+struct mt66xx_hif_driver_data mt66xx_driver_data_connac2x2 = {
+	.chip_info = &mt66xx_chip_info_connac2x2,
 };
 
-#endif /* CONNAC */
+#endif /* CONNAC2X2 */

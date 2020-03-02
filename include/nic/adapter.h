@@ -1455,6 +1455,8 @@ struct ADAPTER {
 #if CFG_SUPPORT_OSHARE
 	bool fgEnOshareMode;
 #endif
+
+	bool fgEnHifDbgInfo;
 };				/* end of _ADAPTER_T */
 
 /*******************************************************************************

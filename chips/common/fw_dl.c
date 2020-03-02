@@ -276,11 +276,11 @@ uint32_t wlanDownloadEMISection(IN struct ADAPTER
 {
 #if CFG_MTK_ANDROID_EMI
 	uint8_t __iomem *pucEmiBaseAddr = NULL;
-	uint32_t u4Offset = u4DestAddr & 0xFFFFF;
+	uint32_t u4Offset = u4DestAddr & WIFI_EMI_ADDR_MASK;
 
 	DBGLOG(INIT, INFO,
-	       "Start EMI Download, EmiPhyBase:0x%x offset:0x%x\n",
-	       gConEmiPhyBase, u4Offset);
+	       "Start EMI Download, EmiPhyBase:0x%llx offset:0x%x\n",
+	       (uint64_t)gConEmiPhyBase, u4Offset);
 	if (!gConEmiPhyBase) {
 		DBGLOG(INIT, ERROR,
 		       "Consys emi memory address gConEmiPhyBase invalid\n");
@@ -288,10 +288,10 @@ uint32_t wlanDownloadEMISection(IN struct ADAPTER
 	}
 
 	request_mem_region(gConEmiPhyBase, gConEmiSize, "WIFI-EMI");
-	pucEmiBaseAddr = ioremap_nocache(gConEmiPhyBase,
-					 gConEmiSize);
-	DBGLOG(INIT, INFO,
-	       "ioremap for device %s, region 0x%lX @ 0x%lX\n",
+	kalSetEmiMpuProtection(gConEmiPhyBase, WIFI_EMI_MEM_OFFSET,
+			       WIFI_EMI_MEM_SIZE, false);
+	pucEmiBaseAddr = ioremap_nocache(gConEmiPhyBase, gConEmiSize);
+	DBGLOG(INIT, INFO, "ioremap for device %s, region 0x%lX @ 0x%lX\n",
 	       "WIFI-EMI", gConEmiSize, pucEmiBaseAddr);
 	if (!pucEmiBaseAddr) {
 		DBGLOG(INIT, ERROR, "ioremap failed\n");
@@ -299,9 +299,12 @@ uint32_t wlanDownloadEMISection(IN struct ADAPTER
 	}
 
 	kalMemCopy((pucEmiBaseAddr + u4Offset), pucStartPtr, u4Len);
+
+	kalSetEmiMpuProtection(gConEmiPhyBase, WIFI_EMI_MEM_OFFSET,
+			       WIFI_EMI_MEM_SIZE, true);
 	iounmap(pucEmiBaseAddr);
 	release_mem_region(gConEmiPhyBase, gConEmiSize);
-#endif
+#endif /* CFG_MTK_ANDROID_EMI */
 	return WLAN_STATUS_SUCCESS;
 }
 
@@ -1596,7 +1599,7 @@ uint32_t wlanGetConnacTailerInfo(IN struct ADAPTER
 
 	pucImgPtr = prFwBuffer;
 	pucStartPtr = prFwBuffer + u4FwSize -
-			sizeof(struct TAILER_COMMON_FORMAT_T);
+		sizeof(struct TAILER_COMMON_FORMAT_T);
 	prComTailer = (struct TAILER_COMMON_FORMAT_T *) pucStartPtr;
 	kalMemCopy(&prVerInfo->rCommonTailer, prComTailer,
 		   sizeof(struct TAILER_COMMON_FORMAT_T));
@@ -1630,11 +1633,11 @@ uint32_t wlanGetConnacTailerInfo(IN struct ADAPTER
 			   prRegTailer, sizeof(struct TAILER_REGION_FORMAT_T));
 
 		/* Dump image information */
-		DBGLOG(INIT, INFO,
+		DBGLOG(INIT, TRACE,
 		       "Region[%d]: addr[0x%08X] feature[0x%02X] size[%u]\n",
-		       u4SecIdx, prRegTailer->u4Addr, prRegTailer->ucFeatureSet,
-		       prRegTailer->u4Len);
-		DBGLOG(INIT, INFO,
+		       u4SecIdx, prRegTailer->u4Addr,
+		       prRegTailer->ucFeatureSet, prRegTailer->u4Len);
+		DBGLOG(INIT, TRACE,
 		       "uncompress_crc[0x%08X] uncompress_size[0x%08X] block_size[0x%08X]\n",
 		       prRegTailer->u4CRC, prRegTailer->u4RealSize,
 		       prRegTailer->u4BlockSize);
@@ -1935,6 +1938,7 @@ uint32_t fwDlGetFwdlInfo(struct ADAPTER *prAdapter,
 	kalStrnCpy(aucBuf, prVerInfo->aucFwBranchInfo, 4);
 	kalMemZero(aucDate, 32);
 	kalStrnCpy(aucDate, prVerInfo->aucFwDateCode, 16);
+
 	u4Offset += snprintf(pcBuf + u4Offset,
 			i4TotalLen - u4Offset,
 			"\nN9 FW version %s-%u.%u.%u[DEC] (%s)\n",

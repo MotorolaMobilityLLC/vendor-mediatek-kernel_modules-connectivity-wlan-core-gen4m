@@ -1447,6 +1447,12 @@ uint32_t kalPerMonGetInfo(IN struct ADAPTER *prAdapter,
 int32_t kalBoostCpu(IN struct ADAPTER *prAdapter,
 		    IN uint32_t u4TarPerfLevel,
 		    IN uint32_t u4BoostCpuTh);
+#if CFG_MTK_ANDROID_EMI
+void kalSetEmiMpuProtection(phys_addr_t emiPhyBase, uint32_t offset,
+			    uint32_t size, bool enable);
+void kalSetDrvEmiMpuProtection(phys_addr_t emiPhyBase, uint32_t offset,
+			       uint32_t size);
+#endif
 int32_t kalSetCpuNumFreq(uint32_t u4CoreNum,
 			 uint32_t u4Freq);
 int32_t kalPerMonSetForceEnableFlag(uint8_t uFlag);

@@ -173,6 +173,16 @@ enum ENUM_DBG_ASSERT_PATH {
 	DBG_ASSERT_PATH_WIFI,
 	DBG_ASSERT_PATH_WMT
 };
+
+struct CHIP_DBG_OPS {
+	void (*showPdmaInfo)(IN struct ADAPTER *prAdapter,
+			     bool fgTxContent, bool fgRxContent);
+	void (*showPseInfo)(IN struct ADAPTER *prAdapter);
+	void (*showPleInfo)(IN struct ADAPTER *prAdapter);
+	bool (*showCsrInfo)(IN struct ADAPTER *prAdapter);
+	void (*showDmaschInfo)(IN struct ADAPTER *prAdapter);
+};
+
 #if MTK_WCN_HIF_SDIO
 #define DBG_ASSERT_PATH_DEFAULT DBG_ASSERT_PATH_WMT
 #else

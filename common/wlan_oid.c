@@ -15589,6 +15589,106 @@ wlanoidSetWifiLogLevel(IN struct ADAPTER *prAdapter,
 	return WLAN_STATUS_SUCCESS;
 }
 
+uint32_t wlanoidSetAmsduNum(IN struct ADAPTER *prAdapter,
+			    IN void *pvSetBuffer,
+			    IN uint32_t u4SetBufferLen,
+			    OUT uint32_t *pu4SetInfoLen)
+{
+	struct mt66xx_chip_info *prChipInfo = NULL;
+
+	ASSERT(prAdapter);
+	if (u4SetBufferLen)
+		ASSERT(pvSetBuffer);
+	ASSERT(pu4SetInfoLen);
+
+	prChipInfo = prAdapter->chip_info;
+	prChipInfo->ucMaxSwAmsduNum = (uint8_t)*((uint32_t *)pvSetBuffer);
+	DBGLOG(OID, INFO, "Set SW AMSDU Num: %d\n",
+	       prChipInfo->ucMaxSwAmsduNum);
+	return 0;
+}
+
+uint32_t wlanoidSetAmsduSize(IN struct ADAPTER *prAdapter,
+			     IN void *pvSetBuffer,
+			     IN uint32_t u4SetBufferLen,
+			     OUT uint32_t *pu4SetInfoLen)
+{
+	struct mt66xx_chip_info *prChipInfo = NULL;
+	struct WIFI_VAR *prWifiVar = NULL;
+
+	ASSERT(prAdapter);
+	if (u4SetBufferLen)
+		ASSERT(pvSetBuffer);
+	ASSERT(pu4SetInfoLen);
+
+	prChipInfo = prAdapter->chip_info;
+	prWifiVar = &prAdapter->rWifiVar;
+	prWifiVar->u4TxMaxAmsduInAmpduLen = *((uint32_t *)pvSetBuffer);
+	DBGLOG(OID, INFO, "Set SW AMSDU max Size: %d\n",
+	       prWifiVar->u4TxMaxAmsduInAmpduLen);
+	return 0;
+}
+
+uint32_t
+wlanoidShowPdmaInfo(IN struct ADAPTER *prAdapter,
+		    IN void *pvSetBuffer, IN uint32_t u4SetBufferLen,
+		    OUT uint32_t *pu4SetInfoLen)
+{
+	struct CHIP_DBG_OPS *prOps = prAdapter->chip_info->prDebugOps;
+
+	if (prOps->showPdmaInfo)
+		prOps->showPdmaInfo(prAdapter, true, true);
+	return 0;
+}
+
+uint32_t
+wlanoidShowPseInfo(IN struct ADAPTER *prAdapter,
+		   IN void *pvSetBuffer, IN uint32_t u4SetBufferLen,
+		   OUT uint32_t *pu4SetInfoLen)
+{
+	struct CHIP_DBG_OPS *prOps = prAdapter->chip_info->prDebugOps;
+
+	if (prOps->showPseInfo)
+		prOps->showPseInfo(prAdapter);
+	return 0;
+}
+
+uint32_t
+wlanoidShowPleInfo(IN struct ADAPTER *prAdapter,
+		   IN void *pvSetBuffer, IN uint32_t u4SetBufferLen,
+		   OUT uint32_t *pu4SetInfoLen)
+{
+	struct CHIP_DBG_OPS *prOps = prAdapter->chip_info->prDebugOps;
+
+	if (prOps->showPleInfo)
+		prOps->showPleInfo(prAdapter);
+	return 0;
+}
+
+uint32_t
+wlanoidShowCsrInfo(IN struct ADAPTER *prAdapter,
+		   IN void *pvSetBuffer, IN uint32_t u4SetBufferLen,
+		   OUT uint32_t *pu4SetInfoLen)
+{
+	struct CHIP_DBG_OPS *prOps = prAdapter->chip_info->prDebugOps;
+
+	if (prOps->showCsrInfo)
+		prOps->showCsrInfo(prAdapter);
+	return 0;
+}
+
+uint32_t
+wlanoidShowDmaschInfo(IN struct ADAPTER *prAdapter,
+		      IN void *pvSetBuffer, IN uint32_t u4SetBufferLen,
+		      OUT uint32_t *pu4SetInfoLen)
+{
+	struct CHIP_DBG_OPS *prOps = prAdapter->chip_info->prDebugOps;
+
+	if (prOps->showDmaschInfo)
+		prOps->showDmaschInfo(prAdapter);
+	return 0;
+}
+
 #if CFG_SUPPORT_LOWLATENCY_MODE
 /*----------------------------------------------------------------------------*/
 /*!

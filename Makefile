@@ -14,7 +14,7 @@ endif
 # ---------------------------------------------------
 # Compile Options
 # ---------------------------------------------------
-WLAN_CHIP_LIST:=-UMT6620 -UMT6628 -UMT5931 -UMT6630 -UMT6632 -UMT7663 -UCONNAC
+WLAN_CHIP_LIST:=-UMT6620 -UMT6628 -UMT5931 -UMT6630 -UMT6632 -UMT7663 -UCONNAC -UCONNAC2X2
 # '-D' and '-U' options are processed in the order they are given on the command line.
 # All '-imacros file' and '-include file' options are processed after all '-D' and '-U' options.
 ccflags-y += $(WLAN_CHIP_LIST)
@@ -23,7 +23,12 @@ ifeq ($(MTK_COMBO_CHIP),)
 MTK_COMBO_CHIP = MT6632
 endif
 
+$(info $$MTK_PLATFORM is [${MTK_PLATFORM}])
+$(info $$WLAN_CHIP_ID is [${WLAN_CHIP_ID}])
+
+ifeq ($(WLAN_CHIP_ID),)
 WLAN_CHIP_ID=$(word 1, $(MTK_COMBO_CHIP))
+endif
 
 ccflags-y += -DCFG_SUPPORT_DEBUG_FS=0
 ccflags-y += -DWLAN_INCLUDE_PROC
@@ -35,24 +40,29 @@ ccflags-y += -Werror
 #ccflags-y += -DLINUX -D$(WLAN_CHIP_ID)
 ccflags-y += -DLINUX
 
-ifneq ($(findstring 6632,$(MTK_COMBO_CHIP)),)
+ifneq ($(filter MT6632,$(MTK_COMBO_CHIP)),)
 ccflags-y:=$(filter-out -UMT6632,$(ccflags-y))
 ccflags-y += -DMT6632
 endif
 
-ifneq ($(findstring 7668,$(MTK_COMBO_CHIP)),)
+ifneq ($(filter MT7668,$(MTK_COMBO_CHIP)),)
 ccflags-y:=$(filter-out -UMT7668,$(ccflags-y))
 ccflags-y += -DMT7668
 endif
 
-ifneq ($(findstring 7663,$(MTK_COMBO_CHIP)),)
+ifneq ($(filter MT7663,$(MTK_COMBO_CHIP)),)
 ccflags-y:=$(filter-out -UMT7663,$(ccflags-y))
 ccflags-y += -DMT7663
 endif
 
-ifneq ($(findstring CONNAC,$(MTK_COMBO_CHIP)),)
+ifneq ($(filter CONNAC,$(MTK_COMBO_CHIP)),)
 ccflags-y:=$(filter-out -UCONNAC,$(ccflags-y))
 ccflags-y += -DCONNAC
+endif
+
+ifneq ($(filter CONNAC2X2,$(MTK_COMBO_CHIP)),)
+ccflags-y:=$(filter-out -UCONNAC2X2,$(ccflags-y))
+ccflags-y += -DCONNAC2X2
 endif
 
 ifeq ($(WIFI_ENABLE_GCOV), y)
@@ -61,7 +71,7 @@ endif
 
 ifeq ($(MTK_ANDROID_WMT), y)
     ccflags-y += -DCFG_MTK_ANDROID_WMT=1
-else ifneq ($(findstring 6632,$(MTK_COMBO_CHIP)),)
+else ifneq ($(filter MT6632,$(MTK_COMBO_CHIP)),)
     ccflags-y += -DCFG_MTK_ANDROID_WMT=1
 else
     ccflags-y += -DCFG_MTK_ANDROID_WMT=0
@@ -172,6 +182,11 @@ ccflags-y += -DDBG=0
 ccflags-y += -I$(src)/os -I$(src)/os/linux/include
 ccflags-y += -I$(src)/include -I$(src)/include/nic -I$(src)/include/mgmt -I$(src)/include/chips
 ccflags-y += -I$(srctree)/drivers/misc/mediatek/base/power/include/
+ccflags-y += -I$(srctree)/drivers/misc/mediatek/include/mt-plat/
+ccflags-y += -I$(srctree)/drivers/misc/mediatek/performance/include/
+ccflags-y += -I$(srctree)/drivers/misc/mediatek/emi/$(MTK_PLATFORM)
+ccflags-y += -I$(srctree)/drivers/misc/mediatek/emi/submodule
+ccflags-y += -I$(srctree)/drivers/devfreq/
 ccflags-y += -I$(srctree)/net
 
 ifeq ($(CONFIG_MTK_COMBO_WIFI_HIF), sdio)
@@ -217,7 +232,8 @@ NIC_DIR     := nic/
 MGMT_DIR    := mgmt/
 CHIPS       := chips/
 CHIPS_CMM   := $(CHIPS)common/
-ifeq ($(MTK_PLATFORM), mt6799)
+
+ifneq ($(MTK_PLATFORM),)
 PLAT_DIR    := os/linux/plat/$(MTK_PLATFORM)/
 endif
 
@@ -295,19 +311,21 @@ MGMT_OBJS += $(MGMT_DIR)stats.o
 CHIPS_OBJS += $(CHIPS_CMM)cmm_asic_connac.o
 CHIPS_OBJS += $(CHIPS_CMM)fw_dl.o
 
-ifneq ($(findstring 6632,$(MTK_COMBO_CHIP)),)
+ifneq ($(filter MT6632,$(MTK_COMBO_CHIP)),)
 CHIPS_OBJS += $(CHIPS)mt6632/mt6632.o
 endif
-ifneq ($(findstring 7668,$(MTK_COMBO_CHIP)),)
+ifneq ($(filter MT7668,$(MTK_COMBO_CHIP)),)
 CHIPS_OBJS += $(CHIPS)mt7668/mt7668.o
 endif
-ifneq ($(findstring 7663,$(MTK_COMBO_CHIP)),)
+ifneq ($(filter MT7663,$(MTK_COMBO_CHIP)),)
 CHIPS_OBJS += $(CHIPS)mt7663/mt7663.o
 endif
-ifneq ($(findstring CONNAC,$(MTK_COMBO_CHIP)),)
+ifneq ($(filter CONNAC,$(MTK_COMBO_CHIP)),)
 CHIPS_OBJS += $(CHIPS)connac/connac.o
 endif
-
+ifneq ($(filter CONNAC2X2,$(MTK_COMBO_CHIP)),)
+CHIPS_OBJS += $(CHIPS)connac2x2/connac2x2.o
+endif
 
 # ---------------------------------------------------
 # P2P Objects List
@@ -360,7 +378,7 @@ endif
 # Platform Objects List
 # ---------------------------------------------------
 ifneq ($(MTK_PLATFORM),)
-ifneq ($(wildcard $(PLAT_DIR)plat_priv.c),)
+ifneq ($(wildcard $(src)/$(PLAT_DIR)plat_priv.c),)
 PLAT_OBJS := $(PLAT_DIR)plat_priv.o
 $(MODULE_NAME)-objs  += $(PLAT_OBJS)
 endif

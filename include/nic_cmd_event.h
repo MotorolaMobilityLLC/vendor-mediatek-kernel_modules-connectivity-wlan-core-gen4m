@@ -3362,6 +3362,11 @@ struct CMD_EVENT_LOG_UI_INFO {
 	uint8_t aucReserved[4];
 };
 
+struct EXT_EVENT_MAX_AMSDU_LENGTH_UPDATE {
+	uint8_t ucWlanIdx;
+	uint8_t ucAmsduLen;
+};
+
 /*******************************************************************************
  *                            P U B L I C   D A T A
  *******************************************************************************

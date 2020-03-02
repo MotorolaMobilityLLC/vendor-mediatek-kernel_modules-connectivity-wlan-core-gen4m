@@ -859,6 +859,7 @@ struct MSDU_INFO {
 
 #if defined(_HIF_PCIE) || defined(_HIF_AXI)
 	struct MSDU_TOKEN_ENTRY *prToken;
+	struct TX_DATA_REQ rTxReq;
 #endif
 	enum ENUM_EAPOL_KEY_TYPE_T eEapolKeyType;
 };
