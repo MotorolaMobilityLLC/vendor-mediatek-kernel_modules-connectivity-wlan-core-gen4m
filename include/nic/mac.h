@@ -1202,6 +1202,8 @@
 #define HT_OP_INFO1_STA_CHNL_WIDTH                  BIT(2)
 #define HT_OP_INFO1_RIFS_MODE                       BIT(3)
 
+#define HT_OP_INFO1_STA_CHNL_WIDTH_OFFSET		2
+
 #define HT_OP_INFO2_HT_PROTECTION                   BITS(0, 1)
 #define HT_OP_INFO2_NON_GF_HT_STA_PRESENT           BIT(2)
 #define HT_OP_INFO2_OBSS_NON_HT_STA_PRESENT         BIT(4)

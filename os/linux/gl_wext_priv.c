@@ -8504,9 +8504,9 @@ int priv_driver_set_dbdc(IN struct net_device *prNetDev, IN char *pcCommand, IN 
 			prBssInfo->eBand);
 	}
 #endif
-	if (prGlueInfo->prAdapter->rWifiVar.ucDbdcMode != DBDC_MODE_DYNAMIC) {
+	if (prGlueInfo->prAdapter->rWifiVar.eDbdcMode != ENUM_DBDC_MODE_DYNAMIC) {
 		DBGLOG(REQ, LOUD, "Current DBDC mode %u cannot enable/disable DBDC!!\n",
-			prGlueInfo->prAdapter->rWifiVar.ucDbdcMode);
+			prGlueInfo->prAdapter->rWifiVar.eDbdcMode);
 		return -1;
 	}
 
@@ -8585,12 +8585,12 @@ static int priv_driver_get_cnm(IN struct net_device *prNetDev, IN char *pcComman
 	INT_32 i4BytesWritten = 0;
 	INT_32 i4Argc = 0;
 	PCHAR apcArgv[WLAN_CFG_ARGV_MAX];
-	struct _PARAM_GET_CNM_T *prCnmInfo = NULL;
+	struct PARAM_GET_CNM_T *prCnmInfo = NULL;
 
 	ENUM_DBDC_BN_T	eDbdcIdx, eDbdcIdxMax;
 	UINT_8			ucBssIdx;
 	P_BSS_INFO_T	prBssInfo;
-	UINT_8 ucNetworkType;
+	enum ENUM_CNM_NETWORK_TYPE_T eNetworkType;
 	UINT_8 ucNss;
 
 	ASSERT(prNetDev);
@@ -8603,16 +8603,16 @@ static int priv_driver_get_cnm(IN struct net_device *prNetDev, IN char *pcComman
 
 	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
 
-	prCnmInfo = (struct _PARAM_GET_CNM_T *)kalMemAlloc(sizeof(struct _PARAM_GET_CNM_T), VIR_MEM_TYPE);
+	prCnmInfo = (struct PARAM_GET_CNM_T *)kalMemAlloc(sizeof(struct PARAM_GET_CNM_T), VIR_MEM_TYPE);
 	if (prCnmInfo == NULL)
 		return -1;
 
-	kalMemZero(prCnmInfo, sizeof(struct _PARAM_GET_CNM_T));
+	kalMemZero(prCnmInfo, sizeof(struct PARAM_GET_CNM_T));
 
 	rStatus = kalIoctl(prGlueInfo,
 					wlanoidQueryCnm,
 					prCnmInfo,
-					sizeof(struct _PARAM_GET_CNM_T),
+					sizeof(struct PARAM_GET_CNM_T),
 					TRUE,
 					TRUE,
 					TRUE,
@@ -8657,14 +8657,14 @@ static int priv_driver_get_cnm(IN struct net_device *prNetDev, IN char *pcComman
 		if (!prBssInfo)
 			continue;
 
-		ucNetworkType = cnmGetBssNetworkType(prBssInfo);
-		if (prCnmInfo->ucInuse[ucBssIdx] &&
-			prCnmInfo->ucActive[ucBssIdx] &&
-			((ucNetworkType == ENUM_CNM_NETWORK_TYPE_P2P_GO) ||
-			 ((ucNetworkType == ENUM_CNM_NETWORK_TYPE_AIS ||
-			   ucNetworkType == ENUM_CNM_NETWORK_TYPE_P2P_GC) &&
-			   (prCnmInfo->ucConnectState[ucBssIdx] == PARAM_MEDIA_STATE_CONNECTED)))) {
-			if (ucNetworkType == ENUM_CNM_NETWORK_TYPE_P2P_GO) {
+		eNetworkType = cnmGetBssNetworkType(prBssInfo);
+		if (prCnmInfo->ucBssInuse[ucBssIdx] &&
+			prCnmInfo->ucBssActive[ucBssIdx] &&
+			((eNetworkType == ENUM_CNM_NETWORK_TYPE_P2P_GO) ||
+			 ((eNetworkType == ENUM_CNM_NETWORK_TYPE_AIS ||
+			   eNetworkType == ENUM_CNM_NETWORK_TYPE_P2P_GC) &&
+			   (prCnmInfo->ucBssConnectState[ucBssIdx] == PARAM_MEDIA_STATE_CONNECTED)))) {
+			if (eNetworkType == ENUM_CNM_NETWORK_TYPE_P2P_GO) {
 				P_STA_RECORD_T prCurrStaRec = (P_STA_RECORD_T) NULL;
 
 				prCurrStaRec = LINK_PEEK_HEAD(&prBssInfo->rStaRecOfClientList, STA_RECORD_T,
@@ -8682,7 +8682,7 @@ static int priv_driver_get_cnm(IN struct net_device *prNetDev, IN char *pcComman
 				ucNss = 1;
 
 		} else {
-			ucNetworkType = ENUM_CNM_NETWORK_TYPE_OTHER;
+			eNetworkType = ENUM_CNM_NETWORK_TYPE_OTHER;
 			ucNss = prBssInfo->ucNss;
 			/* Do not show history information */
 			/* if argc is 1 */
@@ -8693,10 +8693,10 @@ static int priv_driver_get_cnm(IN struct net_device *prNetDev, IN char *pcComman
 		i4BytesWritten += snprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 								"BSS%u Inuse%u Act%u ConnStat%u [NetType%u][CH%3u][DBDC b%u][WMM%u b%u][OMAC%u b%u][BW%3u][NSS%u]\n",
 								ucBssIdx,
-								prCnmInfo->ucInuse[ucBssIdx],
-								prCnmInfo->ucActive[ucBssIdx],
-								prCnmInfo->ucConnectState[ucBssIdx],
-								ucNetworkType,
+								prCnmInfo->ucBssInuse[ucBssIdx],
+								prCnmInfo->ucBssActive[ucBssIdx],
+								prCnmInfo->ucBssConnectState[ucBssIdx],
+								eNetworkType,
 								prCnmInfo->ucBssCh[ucBssIdx],
 								prCnmInfo->ucBssDBDCBand[ucBssIdx],
 								prCnmInfo->ucBssWmmSet[ucBssIdx],
@@ -8708,7 +8708,7 @@ static int priv_driver_get_cnm(IN struct net_device *prNetDev, IN char *pcComman
 								);
 	}
 
-	kalMemFree(prCnmInfo, VIR_MEM_TYPE, sizeof(struct _PARAM_GET_CNM_T));
+	kalMemFree(prCnmInfo, VIR_MEM_TYPE, sizeof(struct PARAM_GET_CNM_T));
 	return i4BytesWritten;
 }				/* priv_driver_get_sw_ctrl */
 
