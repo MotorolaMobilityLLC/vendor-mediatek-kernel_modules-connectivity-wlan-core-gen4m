@@ -632,7 +632,8 @@ u_int8_t secIsProtectedFrame(IN struct ADAPTER *prAdapter,
 #if CFG_SUPPORT_802_11W
 	if (rsnCheckBipKeyInstalled(prAdapter, prStaRec) &&
 	    (secIsRobustActionFrame(prAdapter, prMsdu->prPacket)
-	    || secIsRobustMgmtFrame(prAdapter, prMsdu->prPacket)))
+	    || (IS_BSS_INDEX_AIS(prAdapter, prMsdu->ucBssIndex) &&
+	    secIsRobustMgmtFrame(prAdapter, prMsdu->prPacket))))
 		return TRUE;
 #endif
 	if (prMsdu->ucPacketType == TX_PACKET_TYPE_MGMT)
