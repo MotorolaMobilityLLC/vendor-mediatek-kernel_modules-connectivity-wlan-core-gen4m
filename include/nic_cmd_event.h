@@ -1068,7 +1068,13 @@ struct CAP_PHY_CAP {
 	uint8_t ucRxLdpc; /* 1:support, 0:not*/
 	uint8_t ucTxStbc; /* 1:support, 0:not*/
 	uint8_t ucRxStbc; /* 1:support, 0:not*/
-	uint8_t aucReserved[2];
+	/* BIT(0): WLAN_FLAG_2G4_WF0
+	 * BIT(1): WLAN_FLAG_5G_WF0
+	 * BIT(2): WLAN_FLAG_2G4_WF1
+	 * BIT(3): WLAN_FLAG_5G_WF1
+	 */
+	uint8_t ucWifiPath;
+	uint8_t ucReserved;
 };
 
 struct CAP_MAC_CAP {
