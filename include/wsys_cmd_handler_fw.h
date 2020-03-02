@@ -310,7 +310,7 @@ enum ENUM_CMD_ID {
 	/* Oshare mode*/
 	CMD_ID_SET_OSHARE_MODE = 0x8E,
 	CMD_ID_RDD_ON_OFF_CTRL = 0x8F,      /* 0x8F(Set) */
-
+	CMD_ID_SET_FORCE_RTS = 0x90,
 	CMD_ID_WFC_KEEP_ALIVE = 0xA0,       /* 0xA0 (Set) */
 	CMD_ID_RSSI_MONITOR = 0xA1,         /* 0xA1 (Set) */
 	CMD_ID_CAL_BACKUP_IN_HOST_V2 = 0xAE,    /* 0xAE (Set / Query) */
@@ -2022,6 +2022,12 @@ struct EVENT_GET_CNM {
 
 	/* Reserved fields */
 	uint8_t  au4Reserved[68]; /*Total 164 byte*/
+};
+
+struct CMD_SET_FORCE_RTS {
+	uint8_t ucForceRtsEn;
+	uint8_t ucRtsPktNum;
+	uint8_t aucReserved[2];
 };
 
 #endif /* _WSYS_CMD_HANDLER_FW_H */

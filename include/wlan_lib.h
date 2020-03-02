@@ -1772,4 +1772,5 @@ uint8_t wlanGetBssIdx(struct net_device *ndev);
 void wlanCustomMonitorFunction(struct ADAPTER *prAdapter,
 	struct WIFI_LINK_QUALITY_INFO *prLinkQualityInfo, uint8_t ucBssIdx);
 #endif /* CFG_SUPPORT_DATA_STALL */
-
+uint32_t wlanSetForceRTS(IN struct ADAPTER *prAdapter,
+	IN u_int8_t fgEnForceRTS);
