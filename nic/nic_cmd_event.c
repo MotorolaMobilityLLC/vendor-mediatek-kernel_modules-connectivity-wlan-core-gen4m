@@ -4931,23 +4931,23 @@ void nicEventDebugMsg(IN struct ADAPTER *prAdapter,
 			return;
 		} else if (prAdapter->rReCalInfo.fgDumped &&
 				  kalStrnCmp("[Recal]", pucMsg, 7) == 0) {
-			struct WIFI_EVENT *prEvent;
+			struct WIFI_EVENT *prTmpEvent;
 			struct EXT_EVENT_RECAL_DATA_T *prCalData;
 			uint32_t u4Size = sizeof(struct WIFI_EVENT) +
 					  sizeof(struct EXT_EVENT_RECAL_DATA_T);
 
-			prEvent = (struct WIFI_EVENT *)
+			prTmpEvent = (struct WIFI_EVENT *)
 				kalMemAlloc(u4Size, VIR_MEM_TYPE);
-			kalMemZero(prEvent, u4Size);
+			kalMemZero(prTmpEvent, u4Size);
 
 			prCalData = (struct EXT_EVENT_RECAL_DATA_T *)
-						    prEvent->aucBuffer;
+						    prTmpEvent->aucBuffer;
 			prCalData->u4FuncIndex = RE_CALIBRATION;
 			prCalData->u4Type = 0;
 			/* format: [XXXXXXXX][YYYYYYYY]ZZZZZZZZ */
 			kalMemCopy(prCalData->u.ucData, pucMsg + 7, 28);
-			nicRfTestEventHandler(prAdapter, prEvent);
-			kalMemFree(prEvent, VIR_MEM_TYPE, u4Size);
+			nicRfTestEventHandler(prAdapter, prTmpEvent);
+			kalMemFree(prTmpEvent, VIR_MEM_TYPE, u4Size);
 		}
 	}
 #endif
