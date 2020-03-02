@@ -166,7 +166,8 @@ static struct RX_EVENT_HANDLER arEventTable[] = {
 	{EVENT_ID_ADD_PKEY_DONE, nicEventAddPkeyDone},
 	{EVENT_ID_ICAP_DONE, nicEventIcapDone},
 	{EVENT_ID_DEBUG_MSG, nicEventDebugMsg},
-	{EVENT_ID_TDLS,	nicEventTdls},
+	{EVENT_ID_TDLS, nicEventTdls},
+	{EVENT_ID_RSSI_MONITOR, nicEventRssiMonitor},
 	{EVENT_ID_DUMP_MEM, nicEventDumpMem},
 #if CFG_ASSERT_DUMP
 	{EVENT_ID_ASSERT_DUMP, nicEventAssertDump},

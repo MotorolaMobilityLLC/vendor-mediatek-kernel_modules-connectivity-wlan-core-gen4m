@@ -2520,6 +2520,12 @@ wlanoidSetChannel(IN struct ADAPTER *prAdapter,
 		  IN void *pvSetBuffer, IN uint32_t u4SetBufferLen, OUT uint32_t *pu4SetInfoLen);
 
 uint32_t
+wlanoidRssiMonitor(IN struct ADAPTER *prAdapter,
+		   OUT void *pvQueryBuffer,
+		   IN uint32_t u4QueryBufferLen,
+		   OUT uint32_t *pu4QueryInfoLen);
+
+uint32_t
 wlanoidQueryRssi(IN struct ADAPTER *prAdapter,
 		 OUT void *pvQueryBuffer, IN uint32_t u4QueryBufferLen, OUT uint32_t *pu4QueryInfoLen);
 
@@ -3112,6 +3118,11 @@ wlanoidQueryCnm(
 	IN void *pvQueryBuffer,
 	IN uint32_t u4QueryBufferLen,
 	OUT uint32_t *pu4QueryInfoLen);
+
+uint32_t
+wlanoidPacketKeepAlive(IN struct ADAPTER *prAdapter,
+	IN void *pvSetBuffer, IN uint32_t u4SetBufferLen,
+	OUT uint32_t *pu4SetInfoLen);
 
 #if CFG_SUPPORT_DBDC
 uint32_t

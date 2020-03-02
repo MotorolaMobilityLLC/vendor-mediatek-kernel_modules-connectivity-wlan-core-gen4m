@@ -76,6 +76,8 @@
 #include "gl_vendor.h"
 #include "wlan_oid.h"
 
+#if KERNEL_VERSION(3, 18, 0) <= LINUX_VERSION_CODE
+
 /*******************************************************************************
 *                              C O N S T A N T S
 ********************************************************************************
@@ -92,6 +94,40 @@
 */
 uint8_t g_GetResultsBufferedCnt;
 uint8_t g_GetResultsCmdCnt;
+
+static struct nla_policy nla_parse_wifi_policy[
+		WIFI_ATTRIBUTE_ROAMING_STATE + 1] = {
+	[WIFI_ATTRIBUTE_BAND] = {.type = NLA_U32},
+	[WIFI_ATTRIBUTE_NUM_CHANNELS] = {.type = NLA_U32},
+	[WIFI_ATTRIBUTE_CHANNEL_LIST] = {.type = NLA_UNSPEC},
+
+	[WIFI_ATTRIBUTE_NUM_FEATURE_SET] = {.type = NLA_U32},
+	[WIFI_ATTRIBUTE_FEATURE_SET] = {.type = NLA_UNSPEC},
+	[WIFI_ATTRIBUTE_PNO_RANDOM_MAC_OUI] = {.type = NLA_UNSPEC},
+	[WIFI_ATTRIBUTE_NODFS_VALUE] = {.type = NLA_U32},
+	[WIFI_ATTRIBUTE_COUNTRY_CODE] = {.type = NLA_STRING},
+
+	[WIFI_ATTRIBUTE_MAX_RSSI] = {.type = NLA_U32},
+	[WIFI_ATTRIBUTE_MIN_RSSI] = {.type = NLA_U32},
+	[WIFI_ATTRIBUTE_RSSI_MONITOR_START] = {.type = NLA_U32},
+
+	[WIFI_ATTRIBUTE_ROAMING_CAPABILITIES] = {.type = NLA_UNSPEC},
+	[WIFI_ATTRIBUTE_ROAMING_BLACKLIST_NUM] = {.type = NLA_U32},
+	[WIFI_ATTRIBUTE_ROAMING_BLACKLIST_BSSID] = {.type = NLA_UNSPEC},
+	[WIFI_ATTRIBUTE_ROAMING_WHITELIST_NUM] = {.type = NLA_U32},
+	[WIFI_ATTRIBUTE_ROAMING_WHITELIST_SSID] = {.type = NLA_UNSPEC},
+	[WIFI_ATTRIBUTE_ROAMING_STATE] = {.type = NLA_U32},
+};
+
+static struct nla_policy nla_parse_offloading_policy[
+		MKEEP_ALIVE_ATTRIBUTE_PERIOD_MSEC + 1] = {
+	[MKEEP_ALIVE_ATTRIBUTE_ID] = {.type = NLA_U8},
+	[MKEEP_ALIVE_ATTRIBUTE_IP_PKT] = {.type = NLA_UNSPEC},
+	[MKEEP_ALIVE_ATTRIBUTE_IP_PKT_LEN] = {.type = NLA_U16},
+	[MKEEP_ALIVE_ATTRIBUTE_SRC_MAC_ADDR] = {.type = NLA_UNSPEC},
+	[MKEEP_ALIVE_ATTRIBUTE_DST_MAC_ADDR] = {.type = NLA_UNSPEC},
+	[MKEEP_ALIVE_ATTRIBUTE_PERIOD_MSEC] = {.type = NLA_U32},
+};
 
 /*******************************************************************************
 *                           P R I V A T E   D A T A
@@ -112,8 +148,6 @@ uint8_t g_GetResultsCmdCnt;
 *                              F U N C T I O N S
 ********************************************************************************
 */
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 18, 0)
-
 int mtk_cfg80211_NLA_PUT(struct sk_buff *skb, int attrtype, int attrlen, const void *data)
 {
 	if (unlikely(nla_put(skb, attrtype, attrlen, data) < 0))
@@ -444,15 +478,59 @@ int mtk_cfg80211_vendor_enable_roaming(struct wiphy *wiphy,
 	return WLAN_STATUS_SUCCESS;
 }
 
-#if 0
-int mtk_cfg80211_vendor_llstats_get_info(struct wiphy *wiphy, struct wireless_dev *wdev, const void *data, int data_len)
+int mtk_cfg80211_vendor_get_rtt_capabilities(
+	struct wiphy *wiphy, struct wireless_dev *wdev,
+	const void *data, int data_len)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	int32_t i4Status = -EINVAL;
+	struct PARAM_WIFI_RTT_CAPABILITIES rRttCapabilities;
+	struct sk_buff *skb;
+
+	DBGLOG(REQ, TRACE, "vendor command\r\n");
+
+	ASSERT(wiphy);
+	ASSERT(wdev);
+	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wiphy);
+
+	skb = cfg80211_vendor_cmd_alloc_reply_skb(wiphy,
+		sizeof(rRttCapabilities));
+	if (!skb) {
+		DBGLOG(REQ, ERROR, "%s allocate skb failed:%x\n",
+			__func__, i4Status);
+		return -ENOMEM;
+	}
+
+	kalMemZero(&rRttCapabilities, sizeof(rRttCapabilities));
+
+	/* RTT Capabilities return from driver not firmware */
+	rRttCapabilities.rtt_one_sided_supported = 0;
+	rRttCapabilities.rtt_ftm_supported = 1;
+	rRttCapabilities.lci_support = 1;
+	rRttCapabilities.lcr_support = 1;
+	rRttCapabilities.preamble_support = 0x07;
+	rRttCapabilities.bw_support = 0x1c;
+
+	if (unlikely(nla_put(skb, RTT_ATTRIBUTE_CAPABILITIES,
+		sizeof(rRttCapabilities), &rRttCapabilities) < 0))
+		goto nla_put_failure;
+
+	i4Status = cfg80211_vendor_cmd_reply(skb);
+	return i4Status;
+
+nla_put_failure:
+	kfree_skb(skb);
+	return i4Status;
+}
+
+int mtk_cfg80211_vendor_llstats_get_info(
+	struct wiphy *wiphy, struct wireless_dev *wdev,
+	const void *data, int data_len)
 {
 	int32_t i4Status = -EINVAL;
 	struct WIFI_RADIO_STAT *pRadioStat;
 	struct sk_buff *skb;
-	uint32_t u4BufLen;
-
-	DBGLOG(REQ, INFO, "%s for vendor command\r\n", __func__);
+	uint32_t u4BufLen = 0;
 
 	ASSERT(wiphy);
 	ASSERT(wdev);
@@ -471,32 +549,37 @@ int mtk_cfg80211_vendor_llstats_get_info(struct wiphy *wiphy, struct wireless_de
 		return -ENOMEM;
 	}
 
-	/*rStatus = kalIoctl(prGlueInfo,
-	 *  wlanoidQueryStatistics,
-	 *  &rRadioStat,
-	 *  sizeof(rRadioStat),
-	 *  TRUE,
-	 *  TRUE,
-	 *  TRUE,
-	 *  FALSE,
-	 *  &u4BufLen);
-	 */
+#if 0
+	rStatus = kalIoctl(prGlueInfo,
+			   wlanoidQueryStatistics,
+			   &rRadioStat,
+			   sizeof(rRadioStat),
+			   TRUE,
+			   TRUE,
+			   TRUE,
+			   FALSE,
+			   &u4BufLen);
+#endif
 	/* only for test */
 	pRadioStat->radio = 10;
 	pRadioStat->on_time = 11;
 	pRadioStat->tx_time = 12;
 	pRadioStat->num_channels = 4;
 
-	NLA_PUT(skb, NL80211_ATTR_VENDOR_LLSTAT, u4BufLen, pRadioStat);
+	/*NLA_PUT(skb, LSTATS_ATTRIBUTE_STATS, u4BufLen, pRadioStat);*/
+	if (unlikely(nla_put(skb, LSTATS_ATTRIBUTE_STATS, u4BufLen,
+							pRadioStat) < 0))
+		goto nla_put_failure;
 
 	i4Status = cfg80211_vendor_cmd_reply(skb);
-
 	kalMemFree(pRadioStat, VIR_MEM_TYPE, u4BufLen);
+	return -1; /* not support LLS now*/
+	/* return i4Status; */
 
+nla_put_failure:
+	kfree_skb(skb);
 	return i4Status;
 }
-#endif
-#endif
 
 int mtk_cfg80211_vendor_set_band(struct wiphy *wiphy, struct wireless_dev *wdev,
 					const void *data, int data_len)
@@ -572,3 +655,302 @@ nla_put_failure:
 	return i4Status;
 
 }
+
+int mtk_cfg80211_vendor_set_rssi_monitoring(
+	struct wiphy *wiphy, struct wireless_dev *wdev,
+	const void *data, int data_len)
+{
+	uint32_t rStatus = WLAN_STATUS_SUCCESS;
+	uint32_t u4BufLen = 0;
+	struct GLUE_INFO *prGlueInfo = NULL;
+
+	int32_t i4Status = -EINVAL;
+	struct PARAM_RSSI_MONITOR_T rRSSIMonitor;
+	struct nlattr *attr[WIFI_ATTRIBUTE_RSSI_MONITOR_START + 1];
+	uint32_t i = 0;
+
+	ASSERT(wiphy);
+	ASSERT(wdev);
+
+	DBGLOG(REQ, TRACE, "vendor command: data_len=%d\r\n", data_len);
+	kalMemZero(&rRSSIMonitor, sizeof(struct PARAM_RSSI_MONITOR_T));
+	if ((data == NULL) || !data_len)
+		goto nla_put_failure;
+	kalMemZero(attr, sizeof(struct nlattr *) *
+		(WIFI_ATTRIBUTE_RSSI_MONITOR_START + 1));
+
+	if (nla_parse_nested(attr, WIFI_ATTRIBUTE_RSSI_MONITOR_START,
+		(struct nlattr *)(data - NLA_HDRLEN),
+		nla_parse_wifi_policy) < 0) {
+		DBGLOG(REQ, ERROR, "%s nla_parse_nested failed\n", __func__);
+		goto nla_put_failure;
+	}
+
+	for (i = WIFI_ATTRIBUTE_MAX_RSSI;
+		i <= WIFI_ATTRIBUTE_RSSI_MONITOR_START; i++) {
+		if (attr[i]) {
+			switch (i) {
+			case WIFI_ATTRIBUTE_MAX_RSSI:
+				rRSSIMonitor.max_rssi_value =
+					nla_get_u32(attr[i]);
+				break;
+			case WIFI_ATTRIBUTE_MIN_RSSI:
+				rRSSIMonitor.min_rssi_value
+					= nla_get_u32(attr[i]);
+				break;
+			case WIFI_ATTRIBUTE_RSSI_MONITOR_START:
+				rRSSIMonitor.enable = nla_get_u32(attr[i]);
+				break;
+			}
+		}
+	}
+
+	DBGLOG(REQ, INFO, "mMax_rssi=%d, mMin_rssi=%d enable=%d\r\n",
+	       rRSSIMonitor.max_rssi_value, rRSSIMonitor.min_rssi_value,
+	       rRSSIMonitor.enable);
+
+	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wiphy);
+	ASSERT(prGlueInfo);
+
+	rStatus = kalIoctl(prGlueInfo,
+			   wlanoidRssiMonitor,
+			   &rRSSIMonitor, sizeof(struct PARAM_RSSI_MONITOR_T),
+			   FALSE, FALSE, TRUE, &u4BufLen);
+	return rStatus;
+
+nla_put_failure:
+	return i4Status;
+}
+
+int mtk_cfg80211_vendor_packet_keep_alive_start(
+	struct wiphy *wiphy, struct wireless_dev *wdev,
+	const void *data, int data_len)
+{
+	uint32_t rStatus = WLAN_STATUS_SUCCESS;
+	uint32_t u4BufLen = 0;
+	struct GLUE_INFO *prGlueInfo = NULL;
+
+	int32_t i4Status = -EINVAL;
+	struct PARAM_PACKET_KEEPALIVE_T *prPkt = NULL;
+	struct nlattr *attr[MKEEP_ALIVE_ATTRIBUTE_PERIOD_MSEC + 1];
+	uint32_t i = 0;
+
+	ASSERT(wiphy);
+	ASSERT(wdev);
+	if ((data == NULL) || !data_len)
+		goto nla_put_failure;
+
+	DBGLOG(REQ, TRACE, "vendor command: data_len=%d\r\n", data_len);
+	prPkt = (struct PARAM_PACKET_KEEPALIVE_T *)
+		kalMemAlloc(sizeof(struct PARAM_PACKET_KEEPALIVE_T),
+			VIR_MEM_TYPE);
+	if (!prPkt) {
+		DBGLOG(REQ, ERROR,
+		"Can not alloc memory for struct PARAM_PACKET_KEEPALIVE_T\n");
+		return -ENOMEM;
+	}
+	kalMemZero(prPkt, sizeof(struct PARAM_PACKET_KEEPALIVE_T));
+	kalMemZero(attr, sizeof(struct nlattr *)
+		* (MKEEP_ALIVE_ATTRIBUTE_PERIOD_MSEC + 1));
+
+	prPkt->enable = TRUE; /*start packet keep alive*/
+	if (nla_parse_nested(attr, MKEEP_ALIVE_ATTRIBUTE_PERIOD_MSEC,
+		(struct nlattr *)(data - NLA_HDRLEN),
+			nla_parse_offloading_policy) < 0) {
+		DBGLOG(REQ, ERROR, "%s nla_parse_nested failed\n", __func__);
+		goto nla_put_failure;
+	}
+
+	for (i = MKEEP_ALIVE_ATTRIBUTE_ID;
+		i <= MKEEP_ALIVE_ATTRIBUTE_PERIOD_MSEC; i++) {
+		if (attr[i]) {
+			switch (i) {
+			case MKEEP_ALIVE_ATTRIBUTE_ID:
+				prPkt->index = nla_get_u8(attr[i]);
+				break;
+			case MKEEP_ALIVE_ATTRIBUTE_IP_PKT_LEN:
+				prPkt->u2IpPktLen = nla_get_u16(attr[i]);
+				break;
+			case MKEEP_ALIVE_ATTRIBUTE_IP_PKT:
+				kalMemCopy(prPkt->pIpPkt,
+					nla_data(attr[i]), prPkt->u2IpPktLen);
+				break;
+			case MKEEP_ALIVE_ATTRIBUTE_SRC_MAC_ADDR:
+				kalMemCopy(prPkt->ucSrcMacAddr,
+					nla_data(attr[i]), sizeof(uint8_t)*6);
+				break;
+			case MKEEP_ALIVE_ATTRIBUTE_DST_MAC_ADDR:
+				kalMemCopy(prPkt->ucDstMacAddr,
+					nla_data(attr[i]), sizeof(uint8_t)*6);
+				break;
+			case MKEEP_ALIVE_ATTRIBUTE_PERIOD_MSEC:
+				prPkt->u4PeriodMsec = nla_get_u32(attr[i]);
+				break;
+			}
+		}
+	}
+
+	DBGLOG(REQ, INFO,
+		"enable=%d, index=%d, u2IpPktLen=%d u4PeriodMsec=%d\n",
+		prPkt->enable, prPkt->index,
+		prPkt->u2IpPktLen, prPkt->u4PeriodMsec);
+	DBGLOG(REQ, TRACE, "prPkt->pIpPkt=0x%02x%02x%02x%02x\n",
+		prPkt->pIpPkt[0], prPkt->pIpPkt[1],
+		prPkt->pIpPkt[2], prPkt->pIpPkt[3]);
+	DBGLOG(REQ, TRACE, "%02x%02x%02x%02x, %02x%02x%02x%02x\n",
+		prPkt->pIpPkt[4], prPkt->pIpPkt[5],
+		prPkt->pIpPkt[6], prPkt->pIpPkt[7],
+		prPkt->pIpPkt[8], prPkt->pIpPkt[9],
+		prPkt->pIpPkt[10], prPkt->pIpPkt[11]);
+	DBGLOG(REQ, TRACE, "%02x%02x%02x%02x\n",
+		prPkt->pIpPkt[12], prPkt->pIpPkt[13],
+		prPkt->pIpPkt[14], prPkt->pIpPkt[15]);
+	DBGLOG(REQ, TRACE, "prPkt->srcMAC=%02x:%02x:%02x:%02x:%02x:%02x\n",
+		prPkt->ucSrcMacAddr[0], prPkt->ucSrcMacAddr[1],
+		prPkt->ucSrcMacAddr[2], prPkt->ucSrcMacAddr[3],
+		prPkt->ucSrcMacAddr[4], prPkt->ucSrcMacAddr[5]);
+	DBGLOG(REQ, TRACE, "dstMAC=%02x:%02x:%02x:%02x:%02x:%02x\n",
+		prPkt->ucDstMacAddr[0], prPkt->ucDstMacAddr[1],
+		prPkt->ucDstMacAddr[2], prPkt->ucDstMacAddr[3],
+		prPkt->ucDstMacAddr[4], prPkt->ucDstMacAddr[5]);
+
+	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wiphy);
+	ASSERT(prGlueInfo);
+
+	rStatus = kalIoctl(prGlueInfo,
+			   wlanoidPacketKeepAlive,
+			   prPkt, sizeof(struct PARAM_PACKET_KEEPALIVE_T),
+			   FALSE, FALSE, TRUE, &u4BufLen);
+	kalMemFree(prPkt, VIR_MEM_TYPE,
+		sizeof(struct PARAM_PACKET_KEEPALIVE_T));
+	return rStatus;
+
+nla_put_failure:
+	if (prPkt != NULL)
+		kalMemFree(prPkt, VIR_MEM_TYPE,
+			sizeof(struct PARAM_PACKET_KEEPALIVE_T));
+	return i4Status;
+}
+
+int mtk_cfg80211_vendor_packet_keep_alive_stop(
+	struct wiphy *wiphy, struct wireless_dev *wdev,
+	const void *data, int data_len)
+{
+	uint32_t rStatus = WLAN_STATUS_SUCCESS;
+	uint32_t u4BufLen = 0;
+	struct GLUE_INFO *prGlueInfo = NULL;
+
+	int32_t i4Status = -EINVAL;
+	struct PARAM_PACKET_KEEPALIVE_T *prPkt = NULL;
+	struct nlattr *attr;
+
+	ASSERT(wiphy);
+	ASSERT(wdev);
+	if ((data == NULL) || !data_len)
+		goto nla_put_failure;
+
+	DBGLOG(REQ, TRACE, "vendor command: data_len=%d\r\n", data_len);
+	prPkt = (struct PARAM_PACKET_KEEPALIVE_T *)
+		kalMemAlloc(sizeof(struct PARAM_PACKET_KEEPALIVE_T),
+			VIR_MEM_TYPE);
+	if (!prPkt) {
+		DBGLOG(REQ, ERROR,
+			"Can not alloc memory for PARAM_PACKET_KEEPALIVE_T\n");
+		return -ENOMEM;
+	}
+	kalMemZero(prPkt, sizeof(struct PARAM_PACKET_KEEPALIVE_T));
+
+	prPkt->enable = FALSE;  /*stop packet keep alive*/
+	attr = (struct nlattr *)data;
+	if (attr->nla_type == MKEEP_ALIVE_ATTRIBUTE_ID)
+		prPkt->index = nla_get_u8(attr);
+
+	DBGLOG(REQ, INFO, "enable=%d, index=%d\r\n",
+		prPkt->enable, prPkt->index);
+
+	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wiphy);
+	ASSERT(prGlueInfo);
+
+	rStatus = kalIoctl(prGlueInfo,
+			   wlanoidPacketKeepAlive,
+			   prPkt, sizeof(struct PARAM_PACKET_KEEPALIVE_T),
+			   FALSE, FALSE, TRUE, &u4BufLen);
+	kalMemFree(prPkt, VIR_MEM_TYPE,
+		sizeof(struct PARAM_PACKET_KEEPALIVE_T));
+	return rStatus;
+
+nla_put_failure:
+	if (prPkt != NULL)
+		kalMemFree(prPkt, VIR_MEM_TYPE,
+			sizeof(struct PARAM_PACKET_KEEPALIVE_T));
+	return i4Status;
+}
+
+int mtk_cfg80211_vendor_event_rssi_beyond_range(
+	struct wiphy *wiphy, struct wireless_dev *wdev, int rssi)
+{
+	struct sk_buff *skb;
+	struct PARAM_RSSI_MONITOR_EVENT rRSSIEvt;
+	struct BSS_INFO *prAisBssInfo;
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct ADAPTER *prAdapter;
+
+	ASSERT(wiphy);
+	ASSERT(wdev);
+
+	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wiphy);
+	ASSERT(prGlueInfo);
+
+	DBGLOG(REQ, TRACE, "vendor command rssi=%d\r\n", rssi);
+	kalMemZero(&rRSSIEvt, sizeof(struct PARAM_RSSI_MONITOR_EVENT));
+
+#if KERNEL_VERSION(4, 4, 0) <= LINUX_VERSION_CODE
+	skb = cfg80211_vendor_event_alloc(wiphy, wdev,
+		sizeof(struct PARAM_RSSI_MONITOR_EVENT),
+		WIFI_EVENT_RSSI_MONITOR, GFP_KERNEL);
+#else
+	skb = cfg80211_vendor_event_alloc(wiphy,
+		sizeof(struct PARAM_RSSI_MONITOR_EVENT),
+		WIFI_EVENT_RSSI_MONITOR, GFP_KERNEL);
+#endif /* KERNEL_VERSION(4, 4, 0) <= LINUX_VERSION_CODE */
+
+	if (!skb) {
+		DBGLOG(REQ, ERROR, "%s allocate skb failed\n", __func__);
+		return -ENOMEM;
+	}
+
+	prAdapter = prGlueInfo->prAdapter;
+	prAisBssInfo =
+		&(prAdapter->rWifiVar.arBssInfoPool[NETWORK_TYPE_AIS]);
+	kalMemCopy(rRSSIEvt.BSSID, prAisBssInfo->aucBSSID,
+		sizeof(uint8_t) * MAC_ADDR_LEN);
+
+	rRSSIEvt.version = 1; /* RSSI_MONITOR_EVT_VERSION = 1 */
+	if (rssi > PARAM_WHQL_RSSI_MAX_DBM)
+		rssi = PARAM_WHQL_RSSI_MAX_DBM;
+	else if (rssi < -120)
+		rssi = -120;
+	rRSSIEvt.rssi = (int8_t)rssi;
+	DBGLOG(REQ, INFO,
+		"RSSI Event: version=%d, rssi=%d, BSSID=" MACSTR "\r\n",
+		rRSSIEvt.version, rRSSIEvt.rssi, MAC2STR(rRSSIEvt.BSSID));
+
+	/*NLA_PUT_U32(skb, GOOGLE_RSSI_MONITOR_EVENT, rssi);*/
+	{
+		/* unsigned int __tmp = rssi; */
+
+		if (unlikely(nla_put(skb, WIFI_EVENT_RSSI_MONITOR,
+			sizeof(struct PARAM_RSSI_MONITOR_EVENT),
+				&rRSSIEvt) < 0))
+			goto nla_put_failure;
+	}
+
+	cfg80211_vendor_event(skb, GFP_KERNEL);
+	return 0;
+
+nla_put_failure:
+	kfree_skb(skb);
+	return -ENOMEM;
+}
+
+#endif /* KERNEL_VERSION(3, 18, 0) <= LINUX_VERSION_CODE */

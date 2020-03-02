@@ -4674,6 +4674,23 @@ void nicEventTdls(IN struct ADAPTER *prAdapter,
 			  (uint32_t)(prEvent->u2PacketLength - 8));
 }
 
+void nicEventRssiMonitor(IN struct ADAPTER *prAdapter,
+	IN struct WIFI_EVENT *prEvent)
+{
+	int32_t rssi = 0;
+	struct GLUE_INFO *prGlueInfo;
+	struct wiphy *wiphy;
+
+	prGlueInfo = prAdapter->prGlueInfo;
+	wiphy = priv_to_wiphy(prGlueInfo);
+
+	kalMemCopy(&rssi, prEvent->aucBuffer, sizeof(int32_t));
+	DBGLOG(RX, TRACE, "EVENT_ID_RSSI_MONITOR value=%d\n", rssi);
+
+	mtk_cfg80211_vendor_event_rssi_beyond_range(wiphy,
+		prGlueInfo->prDevHandler->ieee80211_ptr, rssi);
+}
+
 void nicEventDumpMem(IN struct ADAPTER *prAdapter,
 		     IN struct WIFI_EVENT *prEvent)
 {

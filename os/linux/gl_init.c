@@ -519,6 +519,55 @@ static const struct wiphy_vendor_command mtk_wlan_vendor_ops[] = {
 		.flags = WIPHY_VENDOR_CMD_NEED_WDEV | WIPHY_VENDOR_CMD_NEED_NETDEV,
 		.doit = mtk_cfg80211_vendor_enable_roaming
 	},
+	/* RTT */
+	{
+		{
+			.vendor_id = GOOGLE_OUI,
+			.subcmd = RTT_SUBCMD_GETCAPABILITY
+		},
+		.flags = WIPHY_VENDOR_CMD_NEED_WDEV |
+				WIPHY_VENDOR_CMD_NEED_NETDEV,
+		.doit = mtk_cfg80211_vendor_get_rtt_capabilities
+	},
+	/* Link Layer Statistics */
+	{
+		{
+			.vendor_id = GOOGLE_OUI,
+			.subcmd = LSTATS_SUBCMD_GET_INFO
+		},
+		.flags = WIPHY_VENDOR_CMD_NEED_WDEV |
+				WIPHY_VENDOR_CMD_NEED_NETDEV,
+		.doit = mtk_cfg80211_vendor_llstats_get_info
+	},
+	/* RSSI Monitoring */
+	{
+		{
+			.vendor_id = GOOGLE_OUI,
+			.subcmd = WIFI_SUBCMD_SET_RSSI_MONITOR
+		},
+		.flags = WIPHY_VENDOR_CMD_NEED_WDEV |
+				WIPHY_VENDOR_CMD_NEED_NETDEV,
+		.doit = mtk_cfg80211_vendor_set_rssi_monitoring
+	},
+	/* Packet Keep Alive */
+	{
+		{
+			.vendor_id = GOOGLE_OUI,
+			.subcmd = WIFI_OFFLOAD_START_MKEEP_ALIVE
+		},
+		.flags = WIPHY_VENDOR_CMD_NEED_WDEV |
+				WIPHY_VENDOR_CMD_NEED_NETDEV,
+		.doit = mtk_cfg80211_vendor_packet_keep_alive_start
+	},
+	{
+		{
+			.vendor_id = GOOGLE_OUI,
+			.subcmd = WIFI_OFFLOAD_STOP_MKEEP_ALIVE
+		},
+		.flags = WIPHY_VENDOR_CMD_NEED_WDEV |
+				WIPHY_VENDOR_CMD_NEED_NETDEV,
+		.doit = mtk_cfg80211_vendor_packet_keep_alive_stop
+	},
 };
 
 static const struct nl80211_vendor_cmd_info mtk_wlan_vendor_events[] = {
@@ -549,6 +598,10 @@ static const struct nl80211_vendor_cmd_info mtk_wlan_vendor_events[] = {
 	{
 		.vendor_id = GOOGLE_OUI,
 		.subcmd = GSCAN_EVENT_HOTLIST_RESULTS_LOST
+	},
+	{
+		.vendor_id = GOOGLE_OUI,
+		.subcmd = WIFI_EVENT_RSSI_MONITOR
 	},
 };
 #endif
