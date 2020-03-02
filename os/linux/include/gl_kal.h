@@ -870,7 +870,7 @@ do { \
 	dma_mapping_error(_dev, _addr)
 #endif
 
-#if CFG_MTK_ANDROID_WMT
+#if defined(_HIF_AXI)
 #define KAL_FLUSH_DCACHE() \
 	connectivity_inner_flush_dcache_all()
 #define KAL_ARCH_SETUP_DMA_OPS(_dev, _base, _size, _iommu, _coherent) \
