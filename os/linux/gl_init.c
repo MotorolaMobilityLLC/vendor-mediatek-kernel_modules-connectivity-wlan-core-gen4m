@@ -3670,17 +3670,21 @@ static int32_t wlanOnPreNetRegister(struct GLUE_INFO *prGlueInfo,
 #endif
 #if CFG_SUPPORT_802_11K
 	{
-		uint32_t rStatus = WLAN_STATUS_FAILURE;
-		uint32_t u4SetInfoLen = 0;
+		uint32_t u4Idx = 0;
 
-		rStatus = kalIoctl(prGlueInfo,
-				   wlanoidSync11kCapabilities, NULL, 0,
-				   FALSE, FALSE, TRUE, &u4SetInfoLen);
+		for (u4Idx = 0; u4Idx < KAL_AIS_NUM; u4Idx++) {
+			uint32_t rStatus = WLAN_STATUS_FAILURE;
+			uint32_t u4SetInfoLen = 0;
 
-		if (rStatus != WLAN_STATUS_SUCCESS)
-			DBGLOG(INIT, WARN,
-			       "RRM: Set 11k Capabilities fail 0x%x\n",
-			       rStatus);
+			rStatus = kalIoctlByBssIdx(prGlueInfo,
+					wlanoidSync11kCapabilities, NULL, 0,
+					FALSE, FALSE, TRUE, &u4SetInfoLen,
+					u4Idx);
+			if (rStatus != WLAN_STATUS_SUCCESS)
+				DBGLOG(INIT, WARN,
+					"[%d] Set 11k Capabilities fail 0x%x\n",
+					u4Idx, rStatus);
+		}
 	}
 #endif
 	return 0;
