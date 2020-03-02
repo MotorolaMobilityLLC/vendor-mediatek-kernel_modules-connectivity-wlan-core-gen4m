@@ -3892,28 +3892,22 @@ INT_32 priv_driver_tx_rate_info(IN char *pcCommand, IN int i4TotalLen, BOOLEAN f
 				"%s%s%s\n", txmode < 5 ? HW_TX_MODE_STR[txmode] : HW_TX_MODE_STR[5],
 				stbc ? ", STBC, " : ", ",
 				priv_driver_get_ldpc_info(&prHwWlanInfo->rWtblTxConfig) == 0 ? "BCC" : "LDPC");
-		} else if (prQueryStaStatistics->aucArRatePer[prQueryStaStatistics->aucRateEntryIndex[i]] == 0xFF) {
-#if (CFG_SUPPORT_RA_GEN == 0)
-			i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-				"%s%s%s   (--)\n", txmode < 5 ? HW_TX_MODE_STR[txmode] : HW_TX_MODE_STR[5],
-				stbc ? ", STBC, " : ", ",
-				((priv_driver_get_ldpc_info(&prHwWlanInfo->rWtblTxConfig) == 0) ||
-				(txmode == TX_RATE_MODE_CCK) || (txmode == TX_RATE_MODE_OFDM)) ? "BCC" : "LDPC");
-#else
-			i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-				"%s%s%s\n", txmode < 5 ? HW_TX_MODE_STR[txmode] : HW_TX_MODE_STR[5],
-				stbc ? ", STBC, " : ", ",
-				((priv_driver_get_ldpc_info(&prHwWlanInfo->rWtblTxConfig) == 0) ||
-				(txmode == TX_RATE_MODE_CCK) || (txmode == TX_RATE_MODE_OFDM)) ? "BCC" : "LDPC");
-#endif
 		} else {
 #if (CFG_SUPPORT_RA_GEN == 0)
-			i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-				"%s%s%s   (%d)\n", txmode < 5 ? HW_TX_MODE_STR[txmode] : HW_TX_MODE_STR[5],
-				stbc ? ", STBC, " : ", ",
-				((priv_driver_get_ldpc_info(&prHwWlanInfo->rWtblTxConfig) == 0) ||
-				(txmode == TX_RATE_MODE_CCK) || (txmode == TX_RATE_MODE_OFDM)) ? "BCC" : "LDPC",
-				prQueryStaStatistics->aucArRatePer[prQueryStaStatistics->aucRateEntryIndex[i]]);
+			if (prQueryStaStatistics->aucArRatePer[prQueryStaStatistics->aucRateEntryIndex[i]] == 0xFF)
+				i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+					"%s%s%s   (--)\n", txmode < 5 ? HW_TX_MODE_STR[txmode] : HW_TX_MODE_STR[5],
+					stbc ? ", STBC, " : ", ",
+					((priv_driver_get_ldpc_info(&prHwWlanInfo->rWtblTxConfig) == 0) ||
+					(txmode == TX_RATE_MODE_CCK) || (txmode == TX_RATE_MODE_OFDM)) ?
+					"BCC" : "LDPC");
+			else
+				i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+					"%s%s%s   (%d)\n", txmode < 5 ? HW_TX_MODE_STR[txmode] : HW_TX_MODE_STR[5],
+					stbc ? ", STBC, " : ", ",
+					((priv_driver_get_ldpc_info(&prHwWlanInfo->rWtblTxConfig) == 0) ||
+					(txmode == TX_RATE_MODE_CCK) || (txmode == TX_RATE_MODE_OFDM)) ? "BCC" : "LDPC",
+					prQueryStaStatistics->aucArRatePer[prQueryStaStatistics->aucRateEntryIndex[i]]);
 #else
 			i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 				"%s%s%s\n", txmode < 5 ? HW_TX_MODE_STR[txmode] : HW_TX_MODE_STR[5],
@@ -4470,6 +4464,9 @@ static INT_32 priv_driver_dump_stat_info(P_ADAPTER_T prAdapter, IN char *pcComma
 	UINT_8 ucRaLtModeNum = sizeof(LT_MODE_TBLE)/sizeof(char *);
 	UINT_8 ucRaSgiUnSpStateNum = sizeof(SGI_UNSP_STATE_TBLE)/sizeof(char *);
 	UINT_8 ucRaBwStateNum = sizeof(BW_STATE_TBLE)/sizeof(char *);
+	UINT_8 ucAggRange[AGG_RANGE_SEL_NUM] = {0};
+	UINT_32 u4RangeCtrl_0, u4RangeCtrl_1;
+	enum AGG_RANGE_TYPE_T eRangeType = ENUM_AGG_RANGE_TYPE_TX;
 
 	ucSkipAr = prQueryStaStatistics->ucSkipAr;
 	prRxCtrl = &prAdapter->rRxCtrl;
@@ -4821,30 +4818,95 @@ static INT_32 priv_driver_dump_stat_info(P_ADAPTER_T prAdapter, IN char *pcComma
 
 	/* =========== Group 0x0040 =========== */
 	if (u4StatGroup & 0x0040) {
+		u4RangeCtrl_0 = prQueryStaStatistics->u4AggRangeCtrl_0;
+		u4RangeCtrl_1 = prQueryStaStatistics->u4AggRangeCtrl_1;
+		eRangeType = (enum AGG_RANGE_TYPE_T) prQueryStaStatistics->ucRangeType;
+
+		ucAggRange[0] = (((u4RangeCtrl_0) & AGG_RANGE_SEL_0_MASK) >> AGG_RANGE_SEL_0_OFFSET);
+		ucAggRange[1] = (((u4RangeCtrl_0) & AGG_RANGE_SEL_1_MASK) >> AGG_RANGE_SEL_1_OFFSET);
+		ucAggRange[2] = (((u4RangeCtrl_0) & AGG_RANGE_SEL_2_MASK) >> AGG_RANGE_SEL_2_OFFSET);
+		ucAggRange[3] = (((u4RangeCtrl_0) & AGG_RANGE_SEL_3_MASK) >> AGG_RANGE_SEL_3_OFFSET);
+		ucAggRange[4] = (((u4RangeCtrl_1) & AGG_RANGE_SEL_4_MASK) >> AGG_RANGE_SEL_4_OFFSET);
+		ucAggRange[5] = (((u4RangeCtrl_1) & AGG_RANGE_SEL_5_MASK) >> AGG_RANGE_SEL_5_OFFSET);
+		ucAggRange[6] = (((u4RangeCtrl_1) & AGG_RANGE_SEL_6_MASK) >> AGG_RANGE_SEL_6_OFFSET);
+
 		/* Tx Agg */
 		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-			"%s", "------ TX AGG (Group 0x40) -----\n");
+			"%s%s%s", "------ ",
+			(eRangeType) ? ((eRangeType == ENUM_AGG_RANGE_TYPE_TRX) ? ("TRX"):("RX")):("TX"),
+			" AGG (Group 0x40) -----\n");
 
-		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-			"%-12s%s", "Range:", "1     2~5     6~15    16~22    23~33    34~49    50~57    58~64\n");
-
-		for (ucDbdcIdx = 0; ucDbdcIdx < ENUM_BAND_NUM; ucDbdcIdx++) {
+		if (eRangeType == ENUM_AGG_RANGE_TYPE_TRX) {
 			i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-				"DBDC%d:", ucDbdcIdx);
+				"%-6s%8d%5d%1s%2d%5d%1s%2d%5d%3s",
+				" TX  :", ucAggRange[0] + 1,
+				ucAggRange[0] + 2, "~", ucAggRange[1] + 1,
+				ucAggRange[1] + 2, "~", ucAggRange[2] + 1,
+				ucAggRange[2] + 2, "~64\n");
+
+			for (ucDbdcIdx = 0; ucDbdcIdx < ENUM_BAND_NUM; ucDbdcIdx++) {
+				i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+					"DBDC%d:", ucDbdcIdx);
+				i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+					"%8d%8d%8d%8d\n",
+					prQueryStaStatistics->rMibInfo[ucDbdcIdx].u2TxRange1AmpduCnt,
+					prQueryStaStatistics->rMibInfo[ucDbdcIdx].u2TxRange2AmpduCnt,
+					prQueryStaStatistics->rMibInfo[ucDbdcIdx].u2TxRange3AmpduCnt,
+					prQueryStaStatistics->rMibInfo[ucDbdcIdx].u2TxRange4AmpduCnt);
+
+				if (!prAdapter->rWifiVar.fgDbDcModeEn)
+					break;
+			}
 
 			i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-				"%7d%8d%9d%9d%9d%9d%9d%9d\n",
-				prQueryStaStatistics->rMibInfo[ucDbdcIdx].u2TxRange1AmpduCnt,
-				prQueryStaStatistics->rMibInfo[ucDbdcIdx].u2TxRange2AmpduCnt,
-				prQueryStaStatistics->rMibInfo[ucDbdcIdx].u2TxRange3AmpduCnt,
-				prQueryStaStatistics->rMibInfo[ucDbdcIdx].u2TxRange4AmpduCnt,
-				prQueryStaStatistics->rMibInfo[ucDbdcIdx].u2TxRange5AmpduCnt,
-				prQueryStaStatistics->rMibInfo[ucDbdcIdx].u2TxRange6AmpduCnt,
-				prQueryStaStatistics->rMibInfo[ucDbdcIdx].u2TxRange7AmpduCnt,
-				prQueryStaStatistics->rMibInfo[ucDbdcIdx].u2TxRange8AmpduCnt);
+				"%-6s%8d%5d%1s%2d%5d%1s%2d%5d%3s",
+				" RX  :", ucAggRange[3] + 1,
+				ucAggRange[3] + 2, "~", ucAggRange[4] + 1,
+				ucAggRange[4] + 2, "~", ucAggRange[5] + 1,
+				ucAggRange[5] + 2, "~64\n");
 
-			if (!prAdapter->rWifiVar.fgDbDcModeEn)
-				break;
+			for (ucDbdcIdx = 0; ucDbdcIdx < ENUM_BAND_NUM; ucDbdcIdx++) {
+				i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+					"DBDC%d:", ucDbdcIdx);
+				i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+					"%8d%8d%8d%8d\n",
+					prQueryStaStatistics->rMibInfo[ucDbdcIdx].u2TxRange5AmpduCnt,
+					prQueryStaStatistics->rMibInfo[ucDbdcIdx].u2TxRange6AmpduCnt,
+					prQueryStaStatistics->rMibInfo[ucDbdcIdx].u2TxRange7AmpduCnt,
+					prQueryStaStatistics->rMibInfo[ucDbdcIdx].u2TxRange8AmpduCnt);
+
+				if (!prAdapter->rWifiVar.fgDbDcModeEn)
+					break;
+			}
+		} else {
+			i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+				"%-6s%8d%5d%1s%2d%5d%1s%2d%5d%1s%2d%5d%1s%2d%5d%1s%2d%5d%1s%2d%5d%3s",
+				"Range:", ucAggRange[0] + 1,
+				ucAggRange[0] + 2, "~", ucAggRange[1] + 1,
+				ucAggRange[1] + 2, "~", ucAggRange[2] + 1,
+				ucAggRange[2] + 2, "~", ucAggRange[3] + 1,
+				ucAggRange[3] + 2, "~", ucAggRange[4] + 1,
+				ucAggRange[4] + 2, "~", ucAggRange[5] + 1,
+				ucAggRange[5] + 2, "~", ucAggRange[6] + 1,
+				ucAggRange[6] + 2, "~64\n");
+
+			for (ucDbdcIdx = 0; ucDbdcIdx < ENUM_BAND_NUM; ucDbdcIdx++) {
+				i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+					"DBDC%d:", ucDbdcIdx);
+				i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+					"%8d%8d%8d%8d%8d%8d%8d%8d\n",
+					prQueryStaStatistics->rMibInfo[ucDbdcIdx].u2TxRange1AmpduCnt,
+					prQueryStaStatistics->rMibInfo[ucDbdcIdx].u2TxRange2AmpduCnt,
+					prQueryStaStatistics->rMibInfo[ucDbdcIdx].u2TxRange3AmpduCnt,
+					prQueryStaStatistics->rMibInfo[ucDbdcIdx].u2TxRange4AmpduCnt,
+					prQueryStaStatistics->rMibInfo[ucDbdcIdx].u2TxRange5AmpduCnt,
+					prQueryStaStatistics->rMibInfo[ucDbdcIdx].u2TxRange6AmpduCnt,
+					prQueryStaStatistics->rMibInfo[ucDbdcIdx].u2TxRange7AmpduCnt,
+					prQueryStaStatistics->rMibInfo[ucDbdcIdx].u2TxRange8AmpduCnt);
+
+				if (!prAdapter->rWifiVar.fgDbDcModeEn)
+					break;
+			}
 		}
 	}
 
