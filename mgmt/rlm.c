@@ -809,14 +809,16 @@ static void rlmFillHtCapIE(struct ADAPTER *prAdapter, struct BSS_INFO *prBssInfo
 * \return none
 */
 /*----------------------------------------------------------------------------*/
-static void rlmFillExtCapIE(struct ADAPTER *prAdapter, struct BSS_INFO *prBssInfo, struct MSDU_INFO *prMsduInfo)
+static void rlmFillExtCapIE(struct ADAPTER *prAdapter,
+		struct BSS_INFO *prBssInfo, struct MSDU_INFO *prMsduInfo)
 {
 #if CFG_SUPPORT_PASSPOINT
 	struct IE_HS20_EXT_CAP_T *prHsExtCap;
 #else
 	struct IE_EXT_CAP *prExtCap;
 #endif
-	u_int8_t fg40mAllowed;
+	u_int8_t fg40mAllowed, fgAppendVhtCap;
+	struct STA_RECORD *prStaRec;
 
 	ASSERT(prAdapter);
 	ASSERT(prMsduInfo);
@@ -842,6 +844,34 @@ static void rlmFillExtCapIE(struct ADAPTER *prAdapter, struct BSS_INFO *prBssInf
 
 	if (prBssInfo->eCurrentOPMode != OP_MODE_INFRASTRUCTURE)
 		prHsExtCap->aucCapabilities[0] &= ~ELEM_EXT_CAP_PSMP_CAP;
+
+#if CFG_SUPPORT_802_11AC
+	prStaRec = cnmGetStaRecByIndex(prAdapter, prMsduInfo->ucStaRecIndex);
+	fgAppendVhtCap = FALSE;
+
+	/* Check append rule */
+	if (prAdapter->rWifiVar.ucAvailablePhyTypeSet
+		& PHY_TYPE_SET_802_11AC) {
+		/* Note: For AIS connecting state,
+		 * structure in BSS_INFO will not be inited
+		 *	 So, we check StaRec instead of BssInfo
+		 */
+		if (prStaRec) {
+			if (prStaRec->ucPhyTypeSet & PHY_TYPE_SET_802_11AC)
+				fgAppendVhtCap = TRUE;
+		} else if ((RLM_NET_IS_11AC(prBssInfo)) &&
+			(prBssInfo->eCurrentOPMode == OP_MODE_INFRASTRUCTURE))
+			fgAppendVhtCap = TRUE;
+		}
+
+	if (fgAppendVhtCap) {
+		if (prHsExtCap->ucLength < ELEM_MAX_LEN_EXT_CAP)
+			prHsExtCap->ucLength = ELEM_MAX_LEN_EXT_CAP;
+
+		SET_EXT_CAP(prHsExtCap->aucCapabilities, ELEM_MAX_LEN_EXT_CAP,
+			ELEM_EXT_CAP_OP_MODE_NOTIFICATION_BIT);
+	}
+#endif
 
 	if (prAdapter->prGlueInfo->fgConnectHS20AP == TRUE) {
 		SET_EXT_CAP(prHsExtCap->aucCapabilities, ELEM_MAX_LEN_EXT_CAP, ELEM_EXT_CAP_INTERWORKING_BIT);
@@ -872,6 +902,34 @@ static void rlmFillExtCapIE(struct ADAPTER *prAdapter, struct BSS_INFO *prBssInf
 
 	if (prBssInfo->eCurrentOPMode != OP_MODE_INFRASTRUCTURE)
 		prExtCap->aucCapabilities[0] &= ~ELEM_EXT_CAP_PSMP_CAP;
+
+#if CFG_SUPPORT_802_11AC
+	prStaRec = cnmGetStaRecByIndex(prAdapter, prMsduInfo->ucStaRecIndex);
+	fgAppendVhtCap = FALSE;
+
+	/* Check append rule */
+	if (prAdapter->rWifiVar.ucAvailablePhyTypeSet
+		& PHY_TYPE_SET_802_11AC) {
+		/* Note: For AIS connecting state,
+		 * structure in BSS_INFO will not be inited
+		 *       So, we check StaRec instead of BssInfo
+		 */
+		if (prStaRec) {
+			if (prStaRec->ucPhyTypeSet & PHY_TYPE_SET_802_11AC)
+				fgAppendVhtCap = TRUE;
+		} else if ((RLM_NET_IS_11AC(prBssInfo)) &&
+			(prBssInfo->eCurrentOPMode == OP_MODE_INFRASTRUCTURE))
+			fgAppendVhtCap = TRUE;
+	}
+
+	if (fgAppendVhtCap) {
+		if (prExtCap->ucLength < ELEM_MAX_LEN_EXT_CAP)
+			prExtCap->ucLength = ELEM_MAX_LEN_EXT_CAP;
+
+		SET_EXT_CAP(prExtCap->aucCapabilities, ELEM_MAX_LEN_EXT_CAP,
+			ELEM_EXT_CAP_OP_MODE_NOTIFICATION_BIT);
+	}
+#endif
 
 	ASSERT(IE_SIZE(prExtCap) <= (ELEM_HDR_LEN + ELEM_MAX_LEN_EXT_CAP));
 
