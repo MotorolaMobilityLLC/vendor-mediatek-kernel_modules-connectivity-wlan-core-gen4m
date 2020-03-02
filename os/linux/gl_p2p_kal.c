@@ -1236,7 +1236,11 @@ kalP2PIndicateBssInfo(IN struct GLUE_INFO *prGlueInfo,
 			cfg80211_put_bss(prGlueP2pInfo->prWdev->wiphy,
 				prCfg80211Bss);
 		else
-			DBGLOG(P2P, WARN, "indicate BSS to cfg80211 failed\n");
+			DBGLOG(P2P, WARN,
+				"indicate BSS to cfg80211 failed [%pM]: bss channel %d, rcpi %d\n",
+				prBcnProbeRspFrame->bssid,
+				prChannelInfo->ucChannelNum,
+				i4SignalStrength);
 
 	} while (FALSE);
 
