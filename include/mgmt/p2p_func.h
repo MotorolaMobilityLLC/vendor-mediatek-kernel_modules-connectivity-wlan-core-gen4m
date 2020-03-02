@@ -418,4 +418,8 @@ void p2pFunCleanQueuedMgmtFrame(IN struct ADAPTER *prAdapter,
 
 void p2pFuncSwitchSapChannel(IN struct ADAPTER *prAdapter);
 
+uint32_t p2pFunGetPreferredFreqList(IN struct ADAPTER *prAdapter,
+		IN enum ENUM_IFTYPE eIftype, OUT uint32_t *freq_list,
+		OUT uint32_t *num_freq_list);
+
 #endif

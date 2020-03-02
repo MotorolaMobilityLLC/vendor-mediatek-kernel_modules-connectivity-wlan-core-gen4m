@@ -129,6 +129,11 @@ static struct nla_policy nla_parse_offloading_policy[
 	[MKEEP_ALIVE_ATTRIBUTE_PERIOD_MSEC] = {.type = NLA_U32},
 };
 
+static struct nla_policy nla_get_preferred_freq_list_policy[
+		WIFI_VENDOR_ATTR_PREFERRED_FREQ_LIST_MAX] = {
+	[WIFI_VENDOR_ATTR_PREFERRED_FREQ_LIST_IFACE_TYPE] = {.type = NLA_U32},
+};
+
 /*******************************************************************************
  *                           P R I V A T E   D A T A
  *******************************************************************************
@@ -1201,6 +1206,110 @@ int mtk_cfg80211_vendor_event_rssi_beyond_range(
 nla_put_failure:
 	kfree_skb(skb);
 	return -ENOMEM;
+}
+
+int mtk_cfg80211_vendor_get_preferred_freq_list(struct wiphy
+		*wiphy, struct wireless_dev *wdev, const void *data,
+		int data_len)
+{
+	struct GLUE_INFO *prGlueInfo;
+	struct sk_buff *skb;
+	struct nlattr *tb[WIFI_VENDOR_ATTR_PREFERRED_FREQ_LIST_LAST];
+	uint32_t freq_list[MAX_CHN_NUM];
+	uint32_t num_freq_list = 0;
+	uint32_t rStatus = WLAN_STATUS_SUCCESS;
+	enum CONN_MODE_IFACE_TYPE type;
+	enum ENUM_IFTYPE eIftype;
+	uint32_t i;
+
+	ASSERT(wiphy);
+	ASSERT(wdev);
+
+	if ((data == NULL) || !data_len)
+		return -EINVAL;
+
+#if CFG_ENABLE_UNIFY_WIPHY
+	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wiphy);
+#else	/* CFG_ENABLE_UNIFY_WIPHY */
+	if (wdev == gprWdev)	/* wlan0 */
+		prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wiphy);
+	else
+		prGlueInfo = *((struct GLUE_INFO **) wiphy_priv(wiphy));
+#endif	/* CFG_ENABLE_UNIFY_WIPHY */
+
+	if (!prGlueInfo)
+		return -EFAULT;
+
+	if (nla_parse(tb, WIFI_VENDOR_ATTR_PREFERRED_FREQ_LIST_MAX,
+			data, data_len, nla_get_preferred_freq_list_policy)) {
+		DBGLOG(REQ, ERROR, "Invalid ATTR.\n");
+		return -EINVAL;
+	}
+
+	type = nla_get_u32(tb[WIFI_VENDOR_ATTR_PREFERRED_FREQ_LIST_IFACE_TYPE]);
+
+	DBGLOG(REQ, INFO, "type: %d\n", type);
+
+	switch (type) {
+	case CONN_MODE_IFACE_TYPE_STA:
+		eIftype = IFTYPE_STATION;
+		break;
+	case CONN_MODE_IFACE_TYPE_SAP:
+		eIftype = IFTYPE_AP;
+		break;
+	case CONN_MODE_IFACE_TYPE_P2P_GC:
+		eIftype = IFTYPE_P2P_CLIENT;
+		break;
+	case CONN_MODE_IFACE_TYPE_P2P_GO:
+		eIftype = IFTYPE_P2P_GO;
+		break;
+	default:
+		eIftype = IFTYPE_NUM;
+		break;
+	}
+
+	if (eIftype != IFTYPE_P2P_CLIENT && eIftype != IFTYPE_P2P_GO) {
+		DBGLOG(REQ, ERROR, "Only support p2p gc/go type.\n");
+		return -EINVAL;
+	}
+
+	rStatus = p2pFunGetPreferredFreqList(prGlueInfo->prAdapter, eIftype,
+			freq_list, &num_freq_list);
+	if (rStatus != WLAN_STATUS_SUCCESS) {
+		DBGLOG(REQ, ERROR, "get preferred freq list failed.\n");
+		return -EINVAL;
+	}
+
+	DBGLOG(P2P, INFO, "num. of preferred freq list = %d\n", num_freq_list);
+	for (i = 0; i < num_freq_list; i++)
+		DBGLOG(P2P, INFO, "dump preferred freq list[%d] = %d\n",
+			i, freq_list[i]);
+
+	skb = cfg80211_vendor_cmd_alloc_reply_skb(wiphy, sizeof(u32) +
+			sizeof(uint32_t) * num_freq_list + NLMSG_HDRLEN);
+	if (!skb) {
+		DBGLOG(REQ, ERROR, "Allocate skb failed.\n");
+		return -ENOMEM;
+	}
+
+	if (unlikely(nla_put_u32(skb,
+			WIFI_VENDOR_ATTR_PREFERRED_FREQ_LIST_IFACE_TYPE,
+			type) < 0)) {
+		DBGLOG(REQ, ERROR, "put iface into skb failed.\n");
+		goto nla_put_failure;
+	}
+
+	if (unlikely(nla_put(skb, WIFI_VENDOR_ATTR_PREFERRED_FREQ_LIST_GET,
+			sizeof(uint32_t) * num_freq_list, freq_list) < 0)) {
+		DBGLOG(REQ, ERROR, "put freq list into skb failed.\n");
+		goto nla_put_failure;
+	}
+
+	return cfg80211_vendor_cmd_reply(skb);
+
+nla_put_failure:
+	kfree_skb(skb);
+	return -EFAULT;
 }
 
 #endif /* KERNEL_VERSION(3, 16, 0) <= LINUX_VERSION_CODE */
