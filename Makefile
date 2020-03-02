@@ -253,7 +253,8 @@ MGMT_OBJS += $(MGMT_DIR)p2p_dev_fsm.o\
             $(MGMT_DIR)p2p_rlm.o\
             $(MGMT_DIR)p2p_assoc.o\
             $(MGMT_DIR)p2p_bss.o\
-            $(MGMT_DIR)p2p_rlm_obss.o
+            $(MGMT_DIR)p2p_rlm_obss.o\
+            $(MGMT_DIR)p2p_fsm.o
 
 MGMT_OBJS += $(MGMT_DIR)wapi.o
 
