@@ -15721,6 +15721,7 @@ uint32_t wlanoidSetLowLatencyMode(
 	uint32_t u4Events;
 	uint32_t u4PowerFlag;
 	struct PARAM_POWER_MODE_ rPowerMode;
+	struct WIFI_VAR *prWifiVar = NULL;
 
 	DEBUGFUNC("wlanoidSetLowLatencyMode");
 
@@ -15733,12 +15734,16 @@ uint32_t wlanoidSetLowLatencyMode(
 	ASSERT(pu4SetInfoLen);
 
 	/* Initialize */
+	prWifiVar = &prAdapter->rWifiVar;
 	kalMemCopy(&u4Events, pvSetBuffer, u4SetBufferLen);
 	DBGLOG(OID, INFO,
-	       "LowLatency(gaming) event - gas:0x%x, net:0x%x, whitelist:0x%x\n",
-	       (u4Events & GED_EVENT_GAS),
-	       (u4Events & GED_EVENT_NETWORK),
-	       (u4Events & GED_EVENT_DOPT_WIFI_SCAN));
+		"LowLatency(gaming) event - gas:0x%x, net:0x%x, whitelist:0x%x, scan=%u, reorder=%u, power=%u\n",
+		(u4Events & GED_EVENT_GAS),
+		(u4Events & GED_EVENT_NETWORK),
+		(u4Events & GED_EVENT_DOPT_WIFI_SCAN),
+		(uint32_t)prWifiVar->ucLowLatencyModeScan,
+		(uint32_t)prWifiVar->ucLowLatencyModeReOrder,
+		(uint32_t)prWifiVar->ucLowLatencyModePower);
 	rPowerMode.ucBssIdx = prAdapter->prAisBssInfo->ucBssIndex;
 	u4PowerFlag =
 		prAdapter->rWlanInfo.u4PowerSaveFlag[rPowerMode.ucBssIdx];
@@ -15783,10 +15788,12 @@ uint32_t wlanoidSetLowLatencyMode(
 	 *
 	 * Disable/enable scan
 	 */
-	if (fgEnScan != prAdapter->fgEnCfg80211Scan)
+	if ((prWifiVar->ucLowLatencyModeScan == FEATURE_ENABLED) &&
+	    (fgEnScan != prAdapter->fgEnCfg80211Scan))
 		prAdapter->fgEnCfg80211Scan = fgEnScan;
 
-	if (fgEnMode != prAdapter->fgEnLowLatencyMode) {
+	if ((prWifiVar->ucLowLatencyModeReOrder == FEATURE_ENABLED) &&
+	    (fgEnMode != prAdapter->fgEnLowLatencyMode)) {
 		prAdapter->fgEnLowLatencyMode = fgEnMode;
 
 		/* Queue management:
@@ -15811,7 +15818,8 @@ uint32_t wlanoidSetLowLatencyMode(
 	 * Or, do if 1. the power saving caller is not including GPU
 	 * and 2. it will enable low latency mode.
 	 */
-	if (fgEnPM != fgEnMode) {
+	if ((prWifiVar->ucLowLatencyModePower == FEATURE_ENABLED) &&
+	    (fgEnPM != fgEnMode)) {
 		if (fgEnMode == TRUE)
 			rPowerMode.ePowerMode = Param_PowerModeCAM;
 		else
