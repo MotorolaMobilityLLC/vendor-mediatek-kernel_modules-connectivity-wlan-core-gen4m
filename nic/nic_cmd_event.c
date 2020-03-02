@@ -3290,18 +3290,35 @@ VOID nicEventUpdateBcmDebug(IN P_ADAPTER_T prAdapter, IN P_WIFI_EVENT_T prEvent)
 
 VOID nicEventAddPkeyDone(IN P_ADAPTER_T prAdapter, IN P_WIFI_EVENT_T prEvent)
 {
-	P_EVENT_ADD_KEY_DONE_INFO prAddKeyDone;
-	P_STA_RECORD_T prStaRec;
+	P_EVENT_ADD_KEY_DONE_INFO prKeyDone;
+	P_STA_RECORD_T prStaRec = NULL;
+	UINT_8 ucKeyId;
 
-	prAddKeyDone = (P_EVENT_ADD_KEY_DONE_INFO) (prEvent->aucBuffer);
+	prKeyDone = (P_EVENT_ADD_KEY_DONE_INFO) (prEvent->aucBuffer);
 
-	DBGLOG(RSN, EVENT, "EVENT_ID_ADD_PKEY_DONE BSSIDX=%d " MACSTR "\n",
-		prAddKeyDone->ucBSSIndex, MAC2STR(prAddKeyDone->aucStaAddr));
+	DBGLOG(RSN, INFO, "EVENT_ID_ADD_PKEY_DONE BSSIDX=%d " MACSTR "\n",
+		prKeyDone->ucBSSIndex, MAC2STR(prKeyDone->aucStaAddr));
 
-	prStaRec = cnmGetStaRecByAddress(prAdapter, prAddKeyDone->ucBSSIndex, prAddKeyDone->aucStaAddr);
+	prStaRec = cnmGetStaRecByAddress(prAdapter, prKeyDone->ucBSSIndex, prKeyDone->aucStaAddr);
 
+	if (!prStaRec) {
+		ucKeyId = prAdapter->rWifiVar.rAisSpecificBssInfo.ucKeyAlgorithmId;
+		if ((ucKeyId == CIPHER_SUITE_WEP40) || (ucKeyId == CIPHER_SUITE_WEP104)) {
+			DBGLOG(RX, INFO, "WEP, ucKeyAlgorithmId= %d\n", ucKeyId);
+			prStaRec = cnmGetStaRecByAddress(prAdapter, prKeyDone->ucBSSIndex,
+				prAdapter->rWifiVar.arBssInfoPool[prKeyDone->ucBSSIndex].aucBSSID);
+			if (!prStaRec) {
+				DBGLOG(RX, INFO, "WEP, AddPKeyDone, ucBSSIndex %d, Addr %pM, StaRec is NULL\n",
+					prKeyDone->ucBSSIndex,
+					prAdapter->rWifiVar.arBssInfoPool[prKeyDone->ucBSSIndex].aucBSSID);
+			}
+		} else {
+			DBGLOG(RX, INFO, "AddPKeyDone, ucBSSIndex %d, Addr %pM, StaRec is NULL\n",
+				prKeyDone->ucBSSIndex, prKeyDone->aucStaAddr);
+		}
+	}
 	if (prStaRec) {
-		DBGLOG(RSN, EVENT, "STA " MACSTR " Add Key Done!!\n", MAC2STR(prStaRec->aucMacAddr));
+		DBGLOG(RSN, INFO, "STA " MACSTR " Add Key Done!!\n", MAC2STR(prStaRec->aucMacAddr));
 		prStaRec->fgIsTxKeyReady = TRUE;
 		qmUpdateStaRec(prAdapter, prStaRec);
 	}
