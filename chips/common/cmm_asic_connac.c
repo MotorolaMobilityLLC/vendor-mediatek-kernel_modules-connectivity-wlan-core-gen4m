@@ -155,6 +155,10 @@ void asicCapInit(IN struct ADAPTER *prAdapter)
 	prChipInfo->u2TxFwDlPort = 0;
 	prChipInfo->fillHifTxDesc = NULL;
 	prChipInfo->u4ExtraTxByteCount = 0;
+	prChipInfo->asicFillInitCmdTxd = asicFillInitCmdTxd;
+	prChipInfo->asicFillCmdTxd = asicFillCmdTxd;
+	prChipInfo->asicParseInitEventRxInfo = asicParseInitEventRxInfo;
+	prChipInfo->asicParseEventRxInfo = asicParseEventRxInfo;
 
 	switch (prGlueInfo->u4InfType) {
 #if defined(_HIF_PCIE) || defined(_HIF_AXI)
@@ -1203,3 +1207,163 @@ void fillUsbHifTxDesc(IN uint8_t **pDest,
 		   sizeof(uint16_t));
 }
 #endif /* _HIF_USB */
+
+static void asicFillInitCmdTxdInfo(
+	struct ADAPTER *prAdapter,
+	struct WIFI_CMD_INFO *prCmdInfo,
+	u_int8_t *pucSeqNum)
+{
+	struct INIT_HIF_TX_HEADER *prInitHifTxHeader;
+	struct INIT_HIF_TX_HEADER_PENDING_FOR_HW_32BYTES
+			*prInitHifTxHeaderPending;
+	uint32_t u4TxdLen =
+		sizeof(struct INIT_HIF_TX_HEADER_PENDING_FOR_HW_32BYTES);
+
+	prInitHifTxHeaderPending =
+		(struct INIT_HIF_TX_HEADER_PENDING_FOR_HW_32BYTES *)
+		(prCmdInfo->pucInfoBuffer);
+	prInitHifTxHeader = (struct INIT_HIF_TX_HEADER *)
+		(prCmdInfo->pucInfoBuffer + u4TxdLen);
+
+	prInitHifTxHeaderPending->u2TxByteCount = prCmdInfo->u2InfoBufLen;
+	if (!prCmdInfo->ucCID) {
+		prInitHifTxHeaderPending->u2PQ_ID =
+			INIT_CMD_PDA_PQ_ID;
+		prInitHifTxHeaderPending->ucHeaderFormat =
+			INIT_CMD_PDA_PACKET_TYPE_ID;
+		prInitHifTxHeaderPending->ucPktFt =
+			INIT_PKT_FT_PDA_FWDL;
+	} else {
+		prInitHifTxHeaderPending->u2PQ_ID =
+			INIT_CMD_PQ_ID;
+		prInitHifTxHeaderPending->ucHeaderFormat =
+			INIT_CMD_PACKET_TYPE_ID;
+		prInitHifTxHeaderPending->ucPktFt =
+			INIT_PKT_FT_CMD;
+	}
+
+	prInitHifTxHeader->rInitWifiCmd.ucCID = prCmdInfo->ucCID;
+	prInitHifTxHeader->rInitWifiCmd.ucPktTypeID = prCmdInfo->ucPktTypeID;
+	prInitHifTxHeader->rInitWifiCmd.ucSeqNum =
+		nicIncreaseCmdSeqNum(prAdapter);
+	prInitHifTxHeader->u2TxByteCount =
+		prInitHifTxHeaderPending->u2TxByteCount - u4TxdLen;
+
+	if (pucSeqNum)
+		*pucSeqNum = prInitHifTxHeader->rInitWifiCmd.ucSeqNum;
+
+	DBGLOG(INIT, INFO, "TX CMD: ID[0x%02X] SEQ[%u] LEN[%u]\n",
+			prInitHifTxHeader->rInitWifiCmd.ucCID,
+			prInitHifTxHeader->rInitWifiCmd.ucSeqNum,
+			prInitHifTxHeader->u2TxByteCount);
+}
+
+static void asicFillCmdTxdInfo(
+	struct ADAPTER *prAdapter,
+	struct WIFI_CMD_INFO *prCmdInfo,
+	u_int8_t *pucSeqNum)
+{
+	struct WIFI_CMD *prWifiCmd;
+
+	prWifiCmd = (struct WIFI_CMD *)prCmdInfo->pucInfoBuffer;
+
+	prWifiCmd->u2TxByteCount = prCmdInfo->u2InfoBufLen;
+	prWifiCmd->u2PQ_ID =
+		CMD_PQ_ID;
+	prWifiCmd->ucHeaderFormat =
+		CMD_PACKET_TYPE_ID;
+	prWifiCmd->ucPktFt =
+		TXD_PKT_FT_CMD;
+
+	prWifiCmd->ucCID = prCmdInfo->ucCID;
+	prWifiCmd->ucExtenCID = prCmdInfo->ucExtCID;
+	prWifiCmd->ucPktTypeID = prCmdInfo->ucPktTypeID;
+	prWifiCmd->ucSetQuery = prCmdInfo->ucSetQuery;
+	prWifiCmd->ucSeqNum = nicIncreaseCmdSeqNum(prAdapter);
+	prWifiCmd->ucS2DIndex = S2D_INDEX_CMD_H2N_H2C;
+	prWifiCmd->u2Length =
+		prWifiCmd->u2TxByteCount
+		- (uint16_t) OFFSET_OF(struct WIFI_CMD, u2Length);
+
+	if (pucSeqNum)
+		*pucSeqNum = prWifiCmd->ucSeqNum;
+
+	DBGLOG(INIT, INFO, "TX CMD: ID[0x%02X] SEQ[%u] SET[%u] LEN[%u]\n",
+			prWifiCmd->ucCID, prWifiCmd->ucSeqNum,
+			prWifiCmd->ucSetQuery, prWifiCmd->u2Length);
+}
+
+
+void asicFillInitCmdTxd(
+	struct ADAPTER *prAdapter,
+	struct WIFI_CMD_INFO *prCmdInfo,
+	uint16_t *pu2BufInfoLen,
+	u_int8_t *pucSeqNum,
+	void **pCmdBuf)
+{
+	struct INIT_HIF_TX_HEADER *prInitHifTxHeader;
+
+	prInitHifTxHeader = (struct INIT_HIF_TX_HEADER *)
+		(prCmdInfo->pucInfoBuffer +
+		sizeof(struct INIT_HIF_TX_HEADER_PENDING_FOR_HW_32BYTES));
+
+	if (!prCmdInfo->ucCID) {
+		*pu2BufInfoLen += sizeof(struct INIT_HIF_TX_HEADER) +
+		sizeof(struct INIT_HIF_TX_HEADER_PENDING_FOR_HW_32BYTES);
+		prCmdInfo->u2InfoBufLen = *pu2BufInfoLen;
+	}
+	asicFillInitCmdTxdInfo(prAdapter, prCmdInfo, pucSeqNum);
+
+	if (pCmdBuf)
+		*pCmdBuf = prInitHifTxHeader->rInitWifiCmd.aucBuffer;
+}
+
+void asicFillCmdTxd(
+	struct ADAPTER *prAdapter,
+	struct WIFI_CMD_INFO *prCmdInfo,
+	u_int8_t *pucSeqNum,
+	void **pCmdBuf)
+{
+	struct WIFI_CMD *prWifiCmd;
+
+	prWifiCmd = (struct WIFI_CMD *)prCmdInfo->pucInfoBuffer;
+	asicFillCmdTxdInfo(prAdapter, prCmdInfo, pucSeqNum);
+
+	if (pCmdBuf)
+		*pCmdBuf = &prWifiCmd->aucBuffer[0];
+}
+
+void asicParseInitEventRxInfo(
+	struct ADAPTER *prAdapter,
+	u_int8_t *paucInBuffer,
+	struct WIFI_EVENT_INFO *prEventInfo)
+{
+	struct mt66xx_chip_info *prChipInfo;
+	struct INIT_HIF_RX_HEADER *prInitEvent;
+
+	prChipInfo = prAdapter->chip_info;
+	prInitEvent = (struct INIT_HIF_RX_HEADER *)
+			(paucInBuffer + prChipInfo->rxd_size);
+	prEventInfo->ucEID = prInitEvent->rInitWifiEvent.ucEID;
+	prEventInfo->ucSeqNum = prInitEvent->rInitWifiEvent.ucSeqNum;
+	prEventInfo->pucInfoBuffer = &prInitEvent->rInitWifiEvent.aucBuffer[0];
+}
+
+void asicParseEventRxInfo(
+	struct ADAPTER *prAdapter,
+	u_int8_t *paucInBuffer,
+	struct WIFI_EVENT_INFO *prEventInfo)
+{
+	struct mt66xx_chip_info *prChipInfo;
+	struct WIFI_EVENT *prWifiEvent;
+
+	prChipInfo = prAdapter->chip_info;
+	prWifiEvent = (struct WIFI_EVENT *)
+			(paucInBuffer + prChipInfo->rxd_size);
+	prEventInfo->u2PacketType = prWifiEvent->u2PacketType;
+	prEventInfo->ucEID = prWifiEvent->ucEID;
+	prEventInfo->ucExtEID = prWifiEvent->ucExtenEID;
+	prEventInfo->ucSeqNum = prWifiEvent->ucSeqNum;
+	prEventInfo->pucInfoBuffer = &prWifiEvent->aucBuffer[0];
+	prEventInfo->u2InfoBufLen = prWifiEvent->u2PacketLength;
+}

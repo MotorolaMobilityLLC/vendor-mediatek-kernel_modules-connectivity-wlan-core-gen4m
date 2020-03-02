@@ -1050,6 +1050,7 @@ struct mt66xx_chip_info {
 	const unsigned int sw_ready_bit_offset;	/* sw_sync0 ready bit offset */
 	const unsigned int patch_addr;	/* patch download start address */
 	const unsigned int is_support_cr4;	/* support CR4 */
+	const unsigned int is_support_wacpu;	/* support WA-CPU */
 	const unsigned int txd_append_size;	/* hw mac txd append */
 	const unsigned int rxd_size;	        /* hw mac rxd size */
 	const unsigned int init_event_size;     /* init event w/o rxd size */
@@ -1074,6 +1075,19 @@ struct mt66xx_chip_info {
 	void (*asicCapInit)(IN struct ADAPTER *prAdapter);
 	void (*asicEnableFWDownload)(IN struct ADAPTER *prAdapter,
 		IN u_int8_t fgEnable);
+	void (*asicFillInitCmdTxd)(IN struct ADAPTER *prAdapter,
+		IN struct WIFI_CMD_INFO *prCmdInfo,
+		OUT uint16_t *pu2BufInfoLen, OUT uint8_t *pucSeqNum,
+		OUT void **pCmdBuf);
+	void (*asicFillCmdTxd)(IN struct ADAPTER *prAdapter,
+		IN struct WIFI_CMD_INFO *prCmdInfo,
+		OUT uint8_t *pucSeqNum, OUT void **pCmdBuf);
+	void (*asicParseInitEventRxInfo)(IN struct ADAPTER *prAdapter,
+		IN uint8_t *paucInBuffer,
+		OUT struct WIFI_EVENT_INFO *prEventInfo);
+	void (*asicParseEventRxInfo)(IN struct ADAPTER *prAdapter,
+		IN uint8_t *paucInBuffer,
+		OUT struct WIFI_EVENT_INFO *prEventInfo);
 	uint32_t (*asicGetChipID)(IN struct ADAPTER *prAdapter);
 	void (*fillHifTxDesc)(IN uint8_t **pDest, IN uint16_t *pInfoBufLen);
 	uint32_t (*downloadBufferBin)(IN struct ADAPTER *prAdapter);

@@ -709,7 +709,7 @@ struct PSE_CMD_HDR {
 struct WIFI_CMD {
 	uint16_t u2TxByteCount;	/* Max value is over 2048 */
 	uint16_t u2PQ_ID;	/* Must be 0x8000 (Port1, Queue 0) */
-#if 1
+
 	uint8_t ucWlanIdx;
 	uint8_t ucHeaderFormat;
 	uint8_t ucHeaderPadding;
@@ -719,12 +719,12 @@ struct WIFI_CMD {
 
 	uint16_t u2Length;
 	uint16_t u2PqId;
-#endif
+
 	uint8_t ucCID;
 	uint8_t ucPktTypeID;	/* Must be 0x20 (CMD Packet) */
 	uint8_t ucSetQuery;
 	uint8_t ucSeqNum;
-#if 1
+
 	/* padding fields, hw may auto modify this field */
 	uint8_t ucD2B0Rev;
 	uint8_t ucExtenCID;	/* Extend CID */
@@ -734,7 +734,7 @@ struct WIFI_CMD {
 	uint8_t ucCmdVersion;
 	uint8_t ucReserved2[3];
 	uint32_t au4Reserved3[4];	/* padding fields */
-#endif
+
 	uint8_t aucBuffer[0];
 };
 
@@ -2602,6 +2602,46 @@ struct EXT_EVENT_MAX_AMSDU_LENGTH_UPDATE {
  *                                 M A C R O S
  *******************************************************************************
  */
+#define NIC_FILL_CMD_TX_HDR(__prAd, __pucInfoBuffer, __u2InfoBufLen, \
+	__ucCID, __ucPktTypeID, __pucSeqNum, __fgSetQuery, __ppCmdBuf, \
+	__bucInitCmd, __ucExtCID, __ucS2DIndex) \
+{ \
+	struct mt66xx_chip_info *__prChipInfo; \
+	struct WIFI_CMD_INFO __wifi_cmd_info; \
+	__prChipInfo = __prAd->chip_info; \
+	__wifi_cmd_info.pucInfoBuffer = __pucInfoBuffer; \
+	__wifi_cmd_info.u2InfoBufLen = __u2InfoBufLen; \
+	__wifi_cmd_info.ucCID = __ucCID; \
+	__wifi_cmd_info.ucExtCID = __ucExtCID; \
+	__wifi_cmd_info.ucPktTypeID = __ucPktTypeID; \
+	__wifi_cmd_info.ucSetQuery = __fgSetQuery; \
+	__wifi_cmd_info.ucS2DIndex = __ucS2DIndex; \
+	if (__bucInitCmd) { \
+		ASSERT(__prChipInfo->asicFillInitCmdTxd); \
+		__prChipInfo->asicFillInitCmdTxd(__prAd, &(__wifi_cmd_info), \
+			(&__u2InfoBufLen), __pucSeqNum, (void **)__ppCmdBuf); \
+	} else { \
+		ASSERT(__prChipInfo->asicFillCmdTxd); \
+		__prChipInfo->asicFillCmdTxd(__prAd, &(__wifi_cmd_info), \
+			__pucSeqNum, (void **)__ppCmdBuf); \
+	} \
+}
+
+#define NIC_PARSE_EVEMT_RX_HDR(__prAd, __pucInfoBuffer, \
+	__pr_wifi_event_info, __bucInitEvent) \
+{ \
+	struct mt66xx_chip_info *__prChipInfo; \
+	__prChipInfo = __prAd->chip_info; \
+	if (__bucInitEvent) { \
+		ASSERT(__prChipInfo->asicParseInitEventRxInfo); \
+		__prChipInfo->asicParseInitEventRxInfo(__prAd,\
+		__pucInfoBuffer, __pr_wifi_event_info); \
+	} else { \
+		ASSERT(__prChipInfo->asicParseEventRxInfo); \
+		__prChipInfo->asicParseEventRxInfo(__prAd,\
+		__pucInfoBuffer, __pr_wifi_event_info); \
+	} \
+}
 
 /*******************************************************************************
  *                   F U N C T I O N   D E C L A R A T I O N S
