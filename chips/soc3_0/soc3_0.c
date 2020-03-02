@@ -2215,6 +2215,13 @@ uint32_t soc3_0_wlanImageSectionDownloadStage(
 						       eDlIdx);
 #endif
 /* For dynamic memory map::End */
+#if (CFG_SUPPORT_CONNINFRA == 1)
+		/* Set datecode to EMI */
+		wlanDownloadEMISection(prAdapter,
+			WMMCU_ROM_PATCH_DATE_ADDR,
+			DATE_CODE_SIZE, prPatchHeader->aucBuildDate);
+#endif
+
 	} else if ((eDlIdx == IMG_DL_IDX_MCU_ROM_EMI) ||
 				(eDlIdx == IMG_DL_IDX_WIFI_ROM_EMI)) {
 		prRomEmiHeader = (struct ROM_EMI_HEADER *)pvFwImageMapFile;
@@ -2234,6 +2241,17 @@ uint32_t soc3_0_wlanImageSectionDownloadStage(
 		u4Status = wlanDownloadEMISection(prAdapter,
 					u4Addr, u4Len,
 					pvFwImageMapFile + u4Offset);
+#if (CFG_SUPPORT_CONNINFRA == 1)
+		/* Set datecode to EMI */
+		if (eDlIdx == IMG_DL_IDX_MCU_ROM_EMI)
+			wlanDownloadEMISection(prAdapter,
+				WMMCU_MCU_ROM_EMI_DATE_ADDR,
+				DATE_CODE_SIZE, prRomEmiHeader->ucDateTime);
+		else
+			wlanDownloadEMISection(prAdapter,
+				WMMCU_WIFI_ROM_EMI_DATE_ADDR,
+				DATE_CODE_SIZE, prRomEmiHeader->ucDateTime);
+#endif
 	} else {
 		for (u4SecIdx = 0; u4SecIdx < ucSectionNumber;
 		     u4SecIdx++, u4Offset += u4Len) {
