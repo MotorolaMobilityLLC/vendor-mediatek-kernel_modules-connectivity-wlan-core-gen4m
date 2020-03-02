@@ -785,6 +785,16 @@ static const struct wiphy_wowlan_support mtk_wlan_wowlan_support = {
 };
 #endif
 
+#if CFG_SUPPORT_RM_BEACON_REPORT_BY_SUPPLICANT
+/* NL80211_FEATURE_DS_PARAM_SET_IE_IN_PROBES & NL80211_FEATURE_QUIET
+ * support in linux kernet version => 3.18
+ */
+#if KERNEL_VERSION(3, 18, 0) > CFG80211_VERSION_CODE
+#define NL80211_FEATURE_DS_PARAM_SET_IE_IN_PROBES BIT(19)
+#define NL80211_FEATURE_QUIET BIT(21)
+#endif
+#endif
+
 /*******************************************************************************
  *                                 M A C R O S
  *******************************************************************************
@@ -2065,6 +2075,14 @@ static void wlanCreateWirelessDevice(void)
 #if CFG_ENABLE_OFFCHANNEL_TX
 	prWiphy->flags |= WIPHY_FLAG_OFFCHAN_TX;
 #endif /* CFG_ENABLE_OFFCHANNEL_TX */
+
+#if CFG_SUPPORT_RM_BEACON_REPORT_BY_SUPPLICANT
+	/* Enable following to indicate supplicant
+	 * to support Beacon report feature
+	 */
+	prWiphy->features |= NL80211_FEATURE_DS_PARAM_SET_IE_IN_PROBES;
+	prWiphy->features |= NL80211_FEATURE_QUIET;
+#endif
 
 	if (wiphy_register(prWiphy) < 0) {
 		DBGLOG(INIT, ERROR, "wiphy_register error\n");

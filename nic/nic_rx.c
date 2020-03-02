@@ -4047,7 +4047,17 @@ uint32_t nicRxProcessActionFrame(IN struct ADAPTER *
 	case CATEGORY_RM_ACTION:
 		switch (prActFrame->ucAction) {
 		case RM_ACTION_RM_REQUEST:
+#if CFG_SUPPORT_RM_BEACON_REPORT_BY_SUPPLICANT
+			/* handle RM beacon request by supplicant */
+			if (prAdapter->prAisBssInfo &&
+					prSwRfb->prStaRec
+					&& prSwRfb->prStaRec->ucBssIndex ==
+					prAdapter->prAisBssInfo->ucBssIndex)
+				aisFuncValidateRxActionFrame(prAdapter,
+					prSwRfb);
+#else
 			rlmProcessRadioMeasurementRequest(prAdapter, prSwRfb);
+#endif
 			break;
 		case RM_ACTION_REIGHBOR_RESPONSE:
 			rlmProcessNeighborReportResonse(prAdapter, prActFrame,
