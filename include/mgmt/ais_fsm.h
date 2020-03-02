@@ -344,6 +344,8 @@ void aisFsmInit(IN struct ADAPTER *prAdapter);
 
 void aisFsmUninit(IN struct ADAPTER *prAdapter);
 
+bool aisFsmIsInProcessBeaconTimeout(IN struct ADAPTER *prAdapter);
+
 void aisFsmStateInit_JOIN(IN struct ADAPTER *prAdapter,
 			  struct BSS_DESC *prBssDesc);
 

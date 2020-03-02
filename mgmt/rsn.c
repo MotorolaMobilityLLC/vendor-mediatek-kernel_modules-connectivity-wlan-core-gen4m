@@ -287,11 +287,8 @@ u_int8_t rsnParseRsnIE(IN struct ADAPTER *prAdapter,
 	prRsnInfo->u4GroupKeyCipherSuite = u4GroupSuite;
 
 	DBGLOG(RSN, LOUD,
-	       "RSN: version %d, group key cipher suite %02x-%02x-%02x-%02x\n",
-	       u2Version, (uint8_t) (u4GroupSuite & 0x000000FF),
-	       (uint8_t) ((u4GroupSuite >> 8) & 0x000000FF),
-	       (uint8_t) ((u4GroupSuite >> 16) & 0x000000FF),
-	       (uint8_t) ((u4GroupSuite >> 24) & 0x000000FF));
+	       "RSN: version %d, group key cipher suite 0x%x\n",
+	       u2Version, SWAP32(u4GroupSuite));
 
 	if (pucPairSuite) {
 		/* The information about the pairwise key cipher suites
@@ -310,20 +307,8 @@ u_int8_t rsnParseRsnIE(IN struct ADAPTER *prAdapter,
 			pucPairSuite += 4;
 
 			DBGLOG(RSN, LOUD,
-			       "RSN: pairwise key cipher suite [%d]: %02x-%02x-%02x-%02x\n",
-			       (uint8_t) i,
-			       (uint8_t) (prRsnInfo->au4PairwiseKeyCipherSuite
-					  [i]
-					  & 0x000000FF),
-			       (uint8_t) ((prRsnInfo->au4PairwiseKeyCipherSuite
-					   [i] >> 8)
-					  & 0x000000FF),
-			       (uint8_t) ((prRsnInfo->au4PairwiseKeyCipherSuite
-					   [i] >> 16)
-					  & 0x000000FF),
-			       (uint8_t) ((prRsnInfo->au4PairwiseKeyCipherSuite
-					   [i] >> 24)
-					  & 0x000000FF));
+			   "RSN: pairwise key cipher suite [%d]: 0x%x\n", i,
+			   SWAP32(prRsnInfo->au4PairwiseKeyCipherSuite[i]));
 		}
 	} else {
 		/* The information about the pairwise key cipher suites
@@ -333,17 +318,8 @@ u_int8_t rsnParseRsnIE(IN struct ADAPTER *prAdapter,
 		prRsnInfo->au4PairwiseKeyCipherSuite[0] = RSN_CIPHER_SUITE_CCMP;
 
 		DBGLOG(RSN, LOUD,
-		       "RSN: pairwise key cipher suite: %02x-%02x-%02x-%02x (default)\n",
-		       (uint8_t) (prRsnInfo->au4PairwiseKeyCipherSuite[0]
-				  & 0x000000FF),
-		       (uint8_t) ((prRsnInfo->au4PairwiseKeyCipherSuite[0] >> 8)
-				  & 0x000000FF),
-		       (uint8_t) ((prRsnInfo->au4PairwiseKeyCipherSuite[0] >>
-				   16)
-				  & 0x000000FF),
-		       (uint8_t) ((prRsnInfo->au4PairwiseKeyCipherSuite[0] >>
-				   24)
-				  & 0x000000FF));
+			"RSN: pairwise key cipher suite: 0x%x (default)\n",
+			SWAP32(prRsnInfo->au4PairwiseKeyCipherSuite[0]));
 	}
 
 	if (pucAuthSuite) {
@@ -361,20 +337,8 @@ u_int8_t rsnParseRsnIE(IN struct ADAPTER *prAdapter,
 					  &prRsnInfo->au4AuthKeyMgtSuite[i]);
 			pucAuthSuite += 4;
 
-			DBGLOG(RSN, LOUD,
-			       "RSN: AKM suite [%d]: %02x-%02x-%02x-%02x\n",
-			       (uint8_t) i,
-			       (uint8_t) (prRsnInfo->au4AuthKeyMgtSuite[i]
-					  & 0x000000FF),
-			       (uint8_t) ((prRsnInfo->au4AuthKeyMgtSuite[i] >>
-					   8)
-					  & 0x000000FF),
-			       (uint8_t) ((prRsnInfo->au4AuthKeyMgtSuite[i] >>
-					   16)
-					  & 0x000000FF),
-			       (uint8_t) ((prRsnInfo->au4AuthKeyMgtSuite[i] >>
-					   24)
-					  & 0x000000FF));
+			DBGLOG(RSN, LOUD, "RSN: AKM suite [%d]: 0x%x\n", i,
+				SWAP32(prRsnInfo->au4AuthKeyMgtSuite[i]));
 		}
 	} else {
 		/* The information about the authentication and
@@ -384,16 +348,8 @@ u_int8_t rsnParseRsnIE(IN struct ADAPTER *prAdapter,
 		prRsnInfo->u4AuthKeyMgtSuiteCount = 1;
 		prRsnInfo->au4AuthKeyMgtSuite[0] = RSN_AKM_SUITE_802_1X;
 
-		DBGLOG(RSN, LOUD,
-		       "RSN: AKM suite: %02x-%02x-%02x-%02x (default)\n",
-		       (uint8_t) (prRsnInfo->au4AuthKeyMgtSuite[0] &
-				  0x000000FF),
-		       (uint8_t) ((prRsnInfo->au4AuthKeyMgtSuite[0] >> 8)
-				  & 0x000000FF),
-		       (uint8_t) ((prRsnInfo->au4AuthKeyMgtSuite[0] >> 16)
-				  & 0x000000FF),
-		       (uint8_t) ((prRsnInfo->au4AuthKeyMgtSuite[0] >> 24)
-				  & 0x000000FF));
+		DBGLOG(RSN, LOUD, "RSN: AKM suite: 0x%x (default)\n",
+			SWAP32(prRsnInfo->au4AuthKeyMgtSuite[0]));
 	}
 
 	prRsnInfo->u2RsnCap = u2Cap;
@@ -566,12 +522,8 @@ u_int8_t rsnParseWpaIE(IN struct ADAPTER *prAdapter,
 
 	prWpaInfo->u4GroupKeyCipherSuite = u4GroupSuite;
 
-	DBGLOG(RSN, LOUD,
-	       "WPA: version %d, group key cipher suite %02x-%02x-%02x-%02x\n",
-	       u2Version, (uint8_t) (u4GroupSuite & 0x000000FF),
-	       (uint8_t) ((u4GroupSuite >> 8) & 0x000000FF),
-	       (uint8_t) ((u4GroupSuite >> 16) & 0x000000FF),
-	       (uint8_t) ((u4GroupSuite >> 24) & 0x000000FF));
+	DBGLOG(RSN, LOUD, "WPA: version %d, group key cipher suite 0x%x\n",
+		u2Version, SWAP32(u4GroupSuite));
 
 	if (pucPairSuite) {
 		/* The information about the pairwise key cipher suites
@@ -590,20 +542,8 @@ u_int8_t rsnParseWpaIE(IN struct ADAPTER *prAdapter,
 			pucPairSuite += 4;
 
 			DBGLOG(RSN, LOUD,
-			       "WPA: pairwise key cipher suite [%d]: %02x-%02x-%02x-%02x\n",
-			       (uint8_t) i,
-			       (uint8_t) (prWpaInfo->au4PairwiseKeyCipherSuite
-					  [i]
-					  & 0x000000FF),
-			       (uint8_t) ((prWpaInfo->au4PairwiseKeyCipherSuite
-					   [i] >> 8)
-					  & 0x000000FF),
-			       (uint8_t) ((prWpaInfo->au4PairwiseKeyCipherSuite
-					   [i] >> 16)
-					  & 0x000000FF),
-			       (uint8_t) ((prWpaInfo->au4PairwiseKeyCipherSuite
-					   [i] >> 24)
-					  & 0x000000FF));
+			   "WPA: pairwise key cipher suite [%d]: 0x%x\n", i,
+			   SWAP32(prWpaInfo->au4PairwiseKeyCipherSuite[i]));
 		}
 	} else {
 		/* The information about the pairwise key cipher suites
@@ -614,17 +554,8 @@ u_int8_t rsnParseWpaIE(IN struct ADAPTER *prAdapter,
 		prWpaInfo->au4PairwiseKeyCipherSuite[0] = WPA_CIPHER_SUITE_TKIP;
 
 		DBGLOG(RSN, LOUD,
-		       "WPA: pairwise key cipher suite: %02x-%02x-%02x-%02x (default)\n",
-		       (uint8_t) (prWpaInfo->au4PairwiseKeyCipherSuite[0]
-				  & 0x000000FF),
-		       (uint8_t) ((prWpaInfo->au4PairwiseKeyCipherSuite[0] >> 8)
-				  & 0x000000FF),
-		       (uint8_t) ((prWpaInfo->au4PairwiseKeyCipherSuite[0] >>
-				   16)
-				  & 0x000000FF),
-		       (uint8_t) ((prWpaInfo->au4PairwiseKeyCipherSuite[0] >>
-				   24)
-				  & 0x000000FF));
+			"WPA: pairwise key cipher suite: 0x%x (default)\n",
+			SWAP32(prWpaInfo->au4PairwiseKeyCipherSuite[0]));
 	}
 
 	if (pucAuthSuite) {
@@ -643,16 +574,8 @@ u_int8_t rsnParseWpaIE(IN struct ADAPTER *prAdapter,
 			pucAuthSuite += 4;
 
 			DBGLOG(RSN, LOUD,
-			       "WPA: AKM suite [%d]: %02x-%02x-%02x-%02x\n",
-			       (uint8_t) i,
-			       (uint8_t)(prWpaInfo->au4AuthKeyMgtSuite[i]
-					& 0x000000FF),
-			       (uint8_t)((prWpaInfo->au4AuthKeyMgtSuite[i]>>8)
-					& 0x000000FF),
-			       (uint8_t)((prWpaInfo->au4AuthKeyMgtSuite[i]>>16)
-					& 0x000000FF),
-			       (uint8_t)((prWpaInfo->au4AuthKeyMgtSuite[i]>>24)
-					& 0x000000FF));
+			       "WPA: AKM suite [%d]: 0x%x\n", i,
+			       SWAP32(prWpaInfo->au4AuthKeyMgtSuite[i]));
 		}
 	} else {
 		/* The information about the authentication
@@ -663,15 +586,8 @@ u_int8_t rsnParseWpaIE(IN struct ADAPTER *prAdapter,
 		prWpaInfo->au4AuthKeyMgtSuite[0] = WPA_AKM_SUITE_802_1X;
 
 		DBGLOG(RSN, LOUD,
-		       "WPA: AKM suite: %02x-%02x-%02x-%02x (default)\n",
-		       (uint8_t)(prWpaInfo->au4AuthKeyMgtSuite[0]
-				& 0x000000FF),
-		       (uint8_t)((prWpaInfo->au4AuthKeyMgtSuite[0]>>8)
-				& 0x000000FF),
-		       (uint8_t)((prWpaInfo->au4AuthKeyMgtSuite[0]>>16)
-				& 0x000000FF),
-		       (uint8_t)((prWpaInfo->au4AuthKeyMgtSuite[0]>>24)
-				& 0x000000FF));
+		       "WPA: AKM suite: 0x%x (default)\n",
+		       SWAP32(prWpaInfo->au4AuthKeyMgtSuite[0]));
 	}
 
 	if (fgCapPresent) {
@@ -736,41 +652,43 @@ u_int8_t rsnSearchSupportedCipher(IN struct ADAPTER *prAdapter,
 u_int8_t rsnIsSuitableBSS(IN struct ADAPTER *prAdapter,
 			  IN struct RSN_INFO *prBssRsnInfo)
 {
-	uint8_t i = 0;
+	uint32_t i, c, s, k;
 
 	DEBUGFUNC("rsnIsSuitableBSS");
 
-	if ((prAdapter->rWifiVar.rConnSettings.rRsnInfo.u4GroupKeyCipherSuite
-		& 0x000000FF) !=
-		GET_SELECTOR_TYPE(prBssRsnInfo->u4GroupKeyCipherSuite)) {
-		DBGLOG(RSN, WARN, "Break by GroupKeyCipherSuite\n");
+	s = prAdapter->rWifiVar.rConnSettings.rRsnInfo.u4GroupKeyCipherSuite;
+	k = prBssRsnInfo->u4GroupKeyCipherSuite;
+
+	if ((s & 0x000000FF) != GET_SELECTOR_TYPE(k)) {
+		DBGLOG(RSN, WARN, "Break by GroupKey s=0x%x k=0x%x\n",
+			SWAP32(s), SWAP32(k));
 		return FALSE;
 	}
 
-	for (i = 0; i < prBssRsnInfo->u4PairwiseKeyCipherSuiteCount;
-		i++) {
-		if ((prAdapter->rWifiVar.rConnSettings.
-			rRsnInfo.au4PairwiseKeyCipherSuite[0]
-			& 0x000000FF) ==
-			GET_SELECTOR_TYPE(
-			prBssRsnInfo->au4PairwiseKeyCipherSuite[i])) {
+	c = prBssRsnInfo->u4PairwiseKeyCipherSuiteCount;
+	for (i = 0; i < c; i++) {
+		s = prAdapter->rWifiVar.rConnSettings.
+			rRsnInfo.au4PairwiseKeyCipherSuite[0];
+		k = prBssRsnInfo->au4PairwiseKeyCipherSuite[i];
+		if ((s & 0x000000FF) == GET_SELECTOR_TYPE(k)) {
 			break;
-		} else if (i ==
-			prBssRsnInfo->u4PairwiseKeyCipherSuiteCount - 1) {
-			DBGLOG(RSN, WARN, "Break by PairwiseKeyCipherSuite\n");
+		} else if (i == c - 1) {
+			DBGLOG(RSN, WARN, "Break by PairwisKey s=0x%x k=0x%x\n",
+				SWAP32(s), SWAP32(k));
 			return FALSE;
 		}
 	}
 
-	for (i = 0; i < prBssRsnInfo->u4AuthKeyMgtSuiteCount; i++) {
-		if ((prAdapter->rWifiVar.rConnSettings.
-			rRsnInfo.au4AuthKeyMgtSuite[0]
-			& 0x000000FF) ==
-			GET_SELECTOR_TYPE(
-			prBssRsnInfo->au4AuthKeyMgtSuite[i])) {
+	c = prBssRsnInfo->u4AuthKeyMgtSuiteCount;
+	for (i = 0; i < c; i++) {
+		s = prAdapter->rWifiVar.rConnSettings.
+			rRsnInfo.au4AuthKeyMgtSuite[0];
+		k = prBssRsnInfo->au4AuthKeyMgtSuite[i];
+		if ((s & 0x000000FF) == GET_SELECTOR_TYPE(k)) {
 			break;
-		} else if (i == prBssRsnInfo->u4AuthKeyMgtSuiteCount - 1) {
-			DBGLOG(RSN, WARN, "Break by AuthKeyMgtSuite\n");
+		} else if (i == c - 1) {
+			DBGLOG(RSN, WARN, "Break by AuthKey s=0x%x k=0x%x\n",
+				SWAP32(s), SWAP32(k));
 			return FALSE;
 		}
 	}
@@ -957,9 +875,6 @@ u_int8_t rsnPerformPolicySelection(
 	}
 
 	if (!rsnIsSuitableBSS(prAdapter, prBssRsnInfo)) {
-		/* Support AP Selection */
-		DBGLOG(RSN, WARN, "RSN info check no matched,RSN Score [%d]\n",
-		       CFG_SUPPORT_RSN_SCORE);
 #if CFG_SUPPORT_RSN_SCORE
 		prBss->fgIsRSNSuitableBss = FALSE;
 	} else
@@ -1100,7 +1015,7 @@ u_int8_t rsnPerformPolicySelection(
 	 * to join the BSS, do not check the supported AKM suites.
 	 */
 	if (u4PairwiseCipher == 0 || u4GroupCipher == 0) {
-		DBGLOG(RSN, TRACE,
+		DBGLOG(RSN, INFO,
 		       "Failed to select pairwise/group cipher (0x%08x/0x%08x)\n",
 		       u4PairwiseCipher, u4GroupCipher);
 		return FALSE;
@@ -1112,7 +1027,7 @@ u_int8_t rsnPerformPolicySelection(
 		if (u4PairwiseCipher != RSN_CIPHER_SUITE_CCMP ||
 		    u4GroupCipher != RSN_CIPHER_SUITE_CCMP
 		    || u4AkmSuite != RSN_AKM_SUITE_PSK) {
-			DBGLOG(RSN, TRACE,
+			DBGLOG(RSN, INFO,
 			       "Failed to select pairwise/group cipher for P2P network (0x%08x/0x%08x)\n",
 			       u4PairwiseCipher, u4GroupCipher);
 			return FALSE;
@@ -1126,7 +1041,7 @@ u_int8_t rsnPerformPolicySelection(
 		if (u4PairwiseCipher != RSN_CIPHER_SUITE_CCMP ||
 		    u4GroupCipher != RSN_CIPHER_SUITE_CCMP
 		    || u4AkmSuite != RSN_AKM_SUITE_PSK) {
-			DBGLOG(RSN, TRACE,
+			DBGLOG(RSN, INFO,
 			       "Failed to select pairwise/group cipher for BT over Wi-Fi network (0x%08x/0x%08x)\n",
 			       u4PairwiseCipher, u4GroupCipher);
 			return FALSE;
@@ -1144,7 +1059,7 @@ u_int8_t rsnPerformPolicySelection(
 							    u4GroupCipher, &i);
 
 	if (!fgSuiteSupported) {
-		DBGLOG(RSN, TRACE,
+		DBGLOG(RSN, INFO,
 		       "Failed to support selected pairwise/group cipher (0x%08x/0x%08x)\n",
 		       u4PairwiseCipher, u4GroupCipher);
 		return FALSE;
@@ -1186,22 +1101,11 @@ u_int8_t rsnPerformPolicySelection(
 	}
 
 	DBGLOG(RSN, TRACE,
-	       "Selected pairwise/group cipher: %02x-%02x-%02x-%02x/%02x-%02x-%02x-%02x\n",
-	       (uint8_t) (u4PairwiseCipher & 0x000000FF),
-	       (uint8_t) ((u4PairwiseCipher >> 8) & 0x000000FF),
-	       (uint8_t) ((u4PairwiseCipher >> 16) & 0x000000FF),
-	       (uint8_t) ((u4PairwiseCipher >> 24) & 0x000000FF),
-	       (uint8_t) (u4GroupCipher & 0x000000FF),
-	       (uint8_t) ((u4GroupCipher >> 8) & 0x000000FF),
-	       (uint8_t) ((u4GroupCipher >> 16) & 0x000000FF),
-	       (uint8_t) ((u4GroupCipher >> 24) & 0x000000FF));
+	       "Selected pairwise/group cipher: 0x%x/0x%x\n",
+	       SWAP32(u4PairwiseCipher), SWAP32(u4GroupCipher));
 
 	DBGLOG(RSN, TRACE,
-	       "Selected AKM suite: %02x-%02x-%02x-%02x\n",
-	       (uint8_t) (u4AkmSuite & 0x000000FF),
-	       (uint8_t) ((u4AkmSuite >> 8) & 0x000000FF),
-	       (uint8_t) ((u4AkmSuite >> 16) & 0x000000FF),
-	       (uint8_t) ((u4AkmSuite >> 24) & 0x000000FF));
+	       "Selected AKM suite: 0x%x\n", SWAP32(u4AkmSuite));
 
 #if CFG_SUPPORT_802_11W
 	DBGLOG(RSN, TRACE, "[MFP] MFP setting = %d\n ",
@@ -1234,7 +1138,7 @@ u_int8_t rsnPerformPolicySelection(
 		}
 	}
 
-	DBGLOG(RSN, INFO,
+	DBGLOG(RSN, TRACE,
 	       "setting=%d, Cap=%d, CapPresent=%d, MgmtProtection = %d\n",
 	       kalGetMfpSetting(prAdapter->prGlueInfo),
 	       prBssRsnInfo->u2RsnCap,
@@ -2027,10 +1931,12 @@ void rsnCheckPmkidCache(IN struct ADAPTER *prAdapter, IN struct BSS_DESC *prBss)
 	prAisSpecBssInfo = &prAdapter->rWifiVar.rAisSpecificBssInfo;
 
 	/* Generate pmkid candidate indications for other APs which are
-	 * also belong to the same SSID with the current connected AP but
-	 * without available pmkid.
+	 * also belong to the same SSID with the current connected AP or
+	 * beacon timeout AP but have no available pmkid.
 	 */
-	if (prAisBssInfo->eConnectionState == MEDIA_STATE_CONNECTED &&
+	if ((prAisBssInfo->eConnectionState == MEDIA_STATE_CONNECTED ||
+	    (prAisBssInfo->eConnectionState == MEDIA_STATE_DISCONNECTED &&
+		 aisFsmIsInProcessBeaconTimeout(prAdapter))) &&
 	    prConnSettings->eAuthMode == AUTH_MODE_WPA2 &&
 	    EQUAL_SSID(prBss->aucSSID, prBss->ucSSIDLen,
 		prConnSettings->aucSSID, prConnSettings->ucSSIDLen) &&
@@ -3456,11 +3362,8 @@ u_int8_t rsnParseOsenIE(struct ADAPTER *prAdapter,
 	prOsenInfo->u4GroupKeyCipherSuite = u4GroupSuite;
 
 	DBGLOG(RSN, TRACE,
-	       "RSN: version %d, group key cipher suite %02x-%02x-%02x-%02x\n",
-	       u2Version, (uint8_t) (u4GroupSuite & 0x000000FF),
-	       (uint8_t) ((u4GroupSuite >> 8) & 0x000000FF),
-	       (uint8_t) ((u4GroupSuite >> 16) & 0x000000FF),
-	       (uint8_t) ((u4GroupSuite >> 24) & 0x000000FF));
+	       "RSN: version %d, group key cipher suite 0x%x\n",
+	       u2Version, SWAP32(u4GroupSuite));
 
 	if (pucPairSuite) {
 		/* The information about the pairwise key cipher suites
@@ -3478,19 +3381,8 @@ u_int8_t rsnParseOsenIE(struct ADAPTER *prAdapter,
 			pucPairSuite += 4;
 
 			DBGLOG(RSN, TRACE,
-			       "RSN: pairwise key cipher suite [%d]: %02x-%02x-%02x-%02x\n",
-			       (uint8_t) i, (uint8_t) (
-				       prOsenInfo->au4PairwiseKeyCipherSuite[i]
-						& 0x000000FF),
-			       (uint8_t)
-			       ((prOsenInfo->au4PairwiseKeyCipherSuite[i] >> 8)
-						& 0x000000FF),
-			       (uint8_t)
-			       ((prOsenInfo->au4PairwiseKeyCipherSuite[i] >> 16)
-						& 0x000000FF),
-			       (uint8_t)
-			       ((prOsenInfo->au4PairwiseKeyCipherSuite[i] >> 24)
-						& 0x000000FF));
+			  "RSN: pairwise key cipher suite [%d]: 0x%x\n", i,
+			  SWAP32(prOsenInfo->au4PairwiseKeyCipherSuite[i]));
 		}
 	} else {
 		/* The information about the pairwise key cipher suites
@@ -3521,20 +3413,8 @@ u_int8_t rsnParseOsenIE(struct ADAPTER *prAdapter,
 					  &prOsenInfo->au4AuthKeyMgtSuite[i]);
 			pucAuthSuite += 4;
 
-			DBGLOG(RSN, TRACE,
-			       "RSN: AKM suite [%d]: %02x-%02x-%02x-%02x\n",
-			       (uint8_t) i,
-			       (uint8_t) (prOsenInfo->au4AuthKeyMgtSuite[i]
-					& 0x000000FF),
-			       (uint8_t)
-			       ((prOsenInfo->au4AuthKeyMgtSuite[i] >> 8)
-					& 0x000000FF),
-			       (uint8_t)
-			       ((prOsenInfo->au4AuthKeyMgtSuite[i] >> 16)
-					& 0x000000FF),
-			       (uint8_t)
-			       ((prOsenInfo->au4AuthKeyMgtSuite[i] >> 24)
-					& 0x000000FF));
+			DBGLOG(RSN, TRACE, "RSN: AKM suite [%d]: 0x%x\n", i
+				SWAP32(prOsenInfo->au4AuthKeyMgtSuite[i]));
 		}
 	} else {
 		/* The information about the authentication and

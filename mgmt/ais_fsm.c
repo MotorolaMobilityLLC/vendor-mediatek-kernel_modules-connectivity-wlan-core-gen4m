@@ -534,6 +534,25 @@ void aisFsmUninit(IN struct ADAPTER *prAdapter)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * @brief Check if ais is processing beacon timeout
+ *
+ * @return true if processing
+ */
+/*----------------------------------------------------------------------------*/
+bool aisFsmIsInProcessBeaconTimeout(IN struct ADAPTER *prAdapter)
+{
+	struct AIS_FSM_INFO *fsm = &(prAdapter->rWifiVar.rAisFsmInfo);
+	struct BSS_INFO *bss = prAdapter->prAisBssInfo;
+	struct CONNECTION_SETTINGS *set = &(prAdapter->rWifiVar.rConnSettings);
+
+	return bss->ucReasonOfDisconnect == DISCONNECT_REASON_CODE_RADIO_LOST &&
+	    fsm->u4PostponeIndStartTime > 0 &&
+	    !CHECK_FOR_TIMEOUT(kalGetTimeTick(), fsm->u4PostponeIndStartTime,
+	    SEC_TO_MSEC(set->ucDelayTimeOfDisconnectEvent));
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * @brief Initialization of JOIN STATE
  *
  * @param[in] prBssDesc  The pointer of BSS_DESC_T which is the BSS we will
@@ -550,7 +569,6 @@ void aisFsmStateInit_JOIN(IN struct ADAPTER *prAdapter,
 	struct CONNECTION_SETTINGS *prConnSettings;
 	struct STA_RECORD *prStaRec;
 	struct MSG_SAA_FSM_START *prJoinReqMsg;
-	bool fgIsInProcessBeaconTimeout;
 
 	DEBUGFUNC("aisFsmStateInit_JOIN()");
 
@@ -610,17 +628,10 @@ void aisFsmStateInit_JOIN(IN struct ADAPTER *prAdapter,
 	if (prStaRec->ucStaState == STA_STATE_1)
 		cnmStaRecChangeState(prAdapter, prStaRec, STA_STATE_1);
 
-	fgIsInProcessBeaconTimeout = (prAisBssInfo->ucReasonOfDisconnect ==
-		DISCONNECT_REASON_CODE_RADIO_LOST)
-		&& (prAisFsmInfo->u4PostponeIndStartTime > 0)
-		&& !CHECK_FOR_TIMEOUT(
-		kalGetTimeTick(), prAisFsmInfo->u4PostponeIndStartTime,
-		SEC_TO_MSEC(prConnSettings->ucDelayTimeOfDisconnectEvent));
-
 	/* 4 <3> Update ucAvailableAuthTypes which we can choice during SAA */
 	if (prAisBssInfo->eConnectionState == MEDIA_STATE_DISCONNECTED
 		/* Not in case of beacon timeout*/
-		&& !fgIsInProcessBeaconTimeout) {
+		&& !aisFsmIsInProcessBeaconTimeout(prAdapter)) {
 
 		prStaRec->fgIsReAssoc = FALSE;
 
