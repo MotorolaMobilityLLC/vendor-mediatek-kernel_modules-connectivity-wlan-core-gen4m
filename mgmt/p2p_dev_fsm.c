@@ -309,7 +309,7 @@ p2pDevFsmStateTransition(IN struct ADAPTER *prAdapter,
 	ASSERT(prP2pDevFsmInfo->ucBssIndex == prAdapter->ucP2PDevBssIdx);
 	if (prP2pDevFsmInfo->ucBssIndex != prAdapter->ucP2PDevBssIdx) {
 		DBGLOG(P2P, ERROR,
-			"prP2pDevFsmInfo->ucBssIndex %s should be prAdapter->ucP2PDevBssIdx(%d)!\n",
+			"prP2pDevFsmInfo->ucBssIndex %d should be prAdapter->ucP2PDevBssIdx(%d)!\n",
 			prP2pDevFsmInfo->ucBssIndex, prAdapter->ucP2PDevBssIdx);
 		return;
 	}
@@ -718,7 +718,7 @@ void p2pDevFsmRunEventChannelAbort(IN struct ADAPTER *prAdapter, IN struct MSG_H
 				if (prP2pMsgChnlReq->u8Cookie == prChnlAbortMsg->u8Cookie) {
 					LINK_REMOVE_KNOWN_ENTRY(&prChnlReqInfo->rP2pChnlReqLink, prLinkEntry);
 					DBGLOG(P2P, TRACE,
-						"p2pDevFsmRunEventChannelAbort: Channel Abort, cookie found:%d\n",
+						"p2pDevFsmRunEventChannelAbort: Channel Abort, cookie found:0x%llx\n",
 						prChnlAbortMsg->u8Cookie);
 					kalP2PIndicateChannelReady(prAdapter->prGlueInfo,
 							prP2pMsgChnlReq->u8Cookie,
@@ -737,7 +737,7 @@ void p2pDevFsmRunEventChannelAbort(IN struct ADAPTER *prAdapter, IN struct MSG_H
 			}
 		} else {
 			DBGLOG(P2P, WARN,
-			       "p2pDevFsmRunEventChannelAbort: Channel Abort Fail, cookie not found:%d\n",
+			       "p2pDevFsmRunEventChannelAbort: Channel Abort Fail, cookie not found:0x%llx\n",
 			       prChnlAbortMsg->u8Cookie);
 		}
 	} while (FALSE);
