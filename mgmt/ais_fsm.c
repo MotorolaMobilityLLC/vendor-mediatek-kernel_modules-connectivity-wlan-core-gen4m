@@ -2374,7 +2374,6 @@ enum ENUM_AIS_STATE aisFsmStateSearchAction(IN struct ADAPTER *prAdapter,
 	struct CONNECTION_SETTINGS *prConnSettings;
 	struct BSS_INFO *prAisBssInfo;
 	struct AIS_FSM_INFO *prAisFsmInfo;
-	struct BSS_DESC *prBssDesc;
 	enum ENUM_AIS_STATE eState = AIS_STATE_IDLE;
 
 	DBGLOG(AIS, LOUD, "ucBssIndex = %d\n", ucBssIndex);
@@ -2382,14 +2381,6 @@ enum ENUM_AIS_STATE aisFsmStateSearchAction(IN struct ADAPTER *prAdapter,
 	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
 	prAisBssInfo = aisGetAisBssInfo(prAdapter, ucBssIndex);
 	prConnSettings = aisGetConnSettings(prAdapter, ucBssIndex);
-
-#if CFG_SLT_SUPPORT
-	prBssDesc = prAdapter->rWifiVar.rSltInfo.prPseudoBssDesc;
-#else
-	prBssDesc =
-	    scanSearchBssDescByPolicy(prAdapter,
-				      prAisBssInfo->ucBssIndex);
-#endif
 
 	if (ucPhase == AIS_FSM_STATE_SEARCH_ACTION_PHASE_0) {
 		if (prConnSettings->eOPMode == NET_TYPE_INFRA) {
@@ -6385,6 +6376,7 @@ void aisRemoveTimeoutBlacklist(struct ADAPTER *prAdapter)
 						     prEntry->aucBSSID);
 		if (prBssDesc) {
 			prBssDesc->prBlack = NULL;
+			prBssDesc->ucJoinFailureCount = 0;
 			DBGLOG(AIS, INFO, "Remove Timeout %pM from blacklist\n",
 			       prBssDesc->aucBSSID);
 		}
