@@ -2849,6 +2849,10 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 		prBssInfo->eBssSCO = CHNL_EXT_SCN;
 		prBssInfo->ucHtOpInfo1 &=
 			~(HT_OP_INFO1_SCO | HT_OP_INFO1_STA_CHNL_WIDTH);
+
+		/* Check SAP channel */
+		if (cnmSapIsActive(prAdapter))
+			p2pFuncSwitchSapChannel(prAdapter);
 	}
 #if CFG_SUPPORT_QUIET && 0
 	if (!fgHasQuietIE)
@@ -4736,6 +4740,10 @@ void rlmProcessSpecMgtAction(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb)
 			}
 			if (fgHasSCOIE == FALSE)
 				prBssInfo->eBssSCO = CHNL_EXT_SCN;
+
+			/* Check SAP channel */
+			if (cnmSapIsActive(prAdapter))
+				p2pFuncSwitchSapChannel(prAdapter);
 		}
 		nicUpdateBss(prAdapter, prBssInfo->ucBssIndex);
 		break;
