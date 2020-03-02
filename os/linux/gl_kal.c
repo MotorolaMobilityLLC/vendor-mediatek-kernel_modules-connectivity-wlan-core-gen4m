@@ -906,6 +906,19 @@ kalProcessRxPacket(IN struct GLUE_INFO *prGlueInfo,
 	skb_reset_tail_pointer(skb);
 	skb_trim(skb, 0);
 
+	if (skb->tail > skb->end) {
+		DBGLOG(RX, ERROR,
+		       "[skb:0x%p][skb->len:%d][skb->protocol:0x%02X] tail:%p, end:%p, data:%p\n",
+			(uint8_t *) skb,
+			skb->len,
+			skb->protocol,
+			skb->tail,
+			skb->end,
+			skb->data);
+		DBGLOG_MEM32(RX, ERROR, (uint32_t *) skb->data, skb->len);
+		return WLAN_STATUS_FAILURE;
+	}
+
 	/* Put data */
 	skb_put(skb, u4PacketLen);
 
