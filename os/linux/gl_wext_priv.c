@@ -7480,8 +7480,6 @@ int priv_driver_set_chip_config(IN struct net_device *prNetDev,
 	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
 		return -1;
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
-	prAdapter = prGlueInfo->prAdapter;
-
 	if ((!prGlueInfo) ||
 	    (prGlueInfo->u4ReadyFlag == 0) ||
 	    kalIsResetting()) {
@@ -7489,6 +7487,7 @@ int priv_driver_set_chip_config(IN struct net_device *prNetDev,
 		return -1;
 	}
 
+	prAdapter = prGlueInfo->prAdapter;
 	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
 	/* wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv); */
 	/* DBGLOG(REQ, LOUD,("argc is %i\n",i4Argc)); */
@@ -12595,7 +12594,6 @@ static int priv_driver_trigger_whole_chip_reset(
 		return -1;
 
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
-	prChipInfo = prGlueInfo->prAdapter->chip_info;
 
 	if ((!prGlueInfo) ||
 	    (prGlueInfo->u4ReadyFlag == 0) ||
@@ -12603,6 +12601,7 @@ static int priv_driver_trigger_whole_chip_reset(
 		DBGLOG(REQ, WARN, "driver is not ready\n");
 		return -1;
 	}
+	prChipInfo = prGlueInfo->prAdapter->chip_info;
 
 	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
 	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
