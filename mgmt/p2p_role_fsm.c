@@ -971,7 +971,6 @@ VOID p2pRoleFsmRunEventStartAP(IN P_ADAPTER_T prAdapter, IN P_MSG_HDR_T prMsgHdr
 	   prP2pConnReqInfo->rChannelInfo.ucChannelNum,
 	   rDbdcCap.ucNss);
 
-	prP2pBssInfo->eDBDCBand = rDbdcCap.ucDbdcBandIndex;
 	prP2pBssInfo->ucNss = rDbdcCap.ucNss;
 	prP2pBssInfo->ucWmmQueSet = rDbdcCap.ucWmmSetIndex;
 #endif /*CFG_SUPPORT_DBDC*/
@@ -1223,7 +1222,6 @@ VOID p2pRoleFsmRunEventDfsCac(IN P_ADAPTER_T prAdapter, IN P_MSG_HDR_T prMsgHdr)
 		"p2pRoleFsmRunEventDfsCac: Set channel at CH %u.\n",
 		prP2pConnReqInfo->rChannelInfo.ucChannelNum);
 
-	prP2pBssInfo->eDBDCBand = rDbdcCap.ucDbdcBandIndex;
 	prP2pBssInfo->ucNss = rDbdcCap.ucNss;
 	prP2pBssInfo->ucWmmQueSet = rDbdcCap.ucWmmSetIndex;
 #endif /*CFG_SUPPORT_DBDC*/
@@ -1478,7 +1476,6 @@ VOID p2pRoleFsmRunEventConnectionRequest(IN P_ADAPTER_T prAdapter, IN P_MSG_HDR_
 		   prChnlReqInfo->ucReqChnlNum,
 		   rDbdcCap.ucNss);
 
-		prP2pBssInfo->eDBDCBand = rDbdcCap.ucDbdcBandIndex;
 		prP2pBssInfo->ucNss = rDbdcCap.ucNss;
 		prP2pBssInfo->ucWmmQueSet = rDbdcCap.ucWmmSetIndex;
 #endif
@@ -1990,7 +1987,6 @@ p2pRoleFsmRunEventScanDone(IN P_ADAPTER_T prAdapter, IN P_MSG_HDR_T prMsgHdr, IN
 					rDbdcCap.ucNss);
 
 
-				prP2pBssInfo->eDBDCBand = rDbdcCap.ucDbdcBandIndex;
 				prP2pBssInfo->ucNss = rDbdcCap.ucNss;
 				prP2pBssInfo->ucWmmQueSet = rDbdcCap.ucWmmSetIndex;
 
