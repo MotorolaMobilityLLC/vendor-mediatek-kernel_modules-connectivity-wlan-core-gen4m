@@ -3003,6 +3003,12 @@ static int32_t wlanProbe(void *pvData, void *pvDriverData)
 			return -1;
 #endif
 #endif
+
+#if CFG_SUPPORT_DBDC
+		/* Update DBDC default setting */
+		cnmInitDbdcSetting(prAdapter);
+#endif /*CFG_SUPPORT_DBDC*/
+
 		/* set MAC address */
 		{
 			uint32_t rStatus = WLAN_STATUS_FAILURE;
