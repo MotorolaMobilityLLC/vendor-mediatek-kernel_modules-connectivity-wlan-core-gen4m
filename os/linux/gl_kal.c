@@ -4512,6 +4512,35 @@ void kalSchedScanStopped(IN struct GLUE_INFO *prGlueInfo, u_int8_t fgDriverTrigg
 	}
 }
 
+#if CFG_SUPPORT_WAKEUP_REASON_DEBUG
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief    To check if device if wake up by wlan
+ *
+ * \param[in]
+ *           prAdapter
+ *
+ * \return
+ *           TRUE: wake up by wlan; otherwise, FALSE
+ */
+/*----------------------------------------------------------------------------*/
+u_int8_t kalIsWakeupByWlan(struct ADAPTER *prAdapter)
+{
+	/*
+	 * SUSPEND_FLAG_FOR_WAKEUP_REASON is set means system has suspended,
+	 * but may be failed duo to some driver suspend failed. so we need
+	 * help of function slp_get_wake_reason
+	 */
+	if (test_and_clear_bit(SUSPEND_FLAG_FOR_WAKEUP_REASON,
+			&prAdapter->ulSuspendFlag) == 0)
+		return FALSE;
+
+	return TRUE;
+}
+#endif
+
+
+
 u_int8_t
 kalGetIPv4Address(IN struct net_device *prDev,
 		  IN uint32_t u4MaxNumOfAddr, OUT uint8_t *pucIpv4Addrs, OUT uint32_t *pu4NumOfIpv4Addr)
