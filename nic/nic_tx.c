@@ -2929,7 +2929,7 @@ UINT_8 nicTxGetWlanIdx(P_ADAPTER_T prAdapter, UINT_8 ucBssIdx, UINT_8 ucStaRecId
 {
 	P_STA_RECORD_T prStaRec;
 	P_BSS_INFO_T prBssInfo;
-	UINT_8 ucWlanIndex = NIC_TX_DEFAULT_WLAN_INDEX;
+	UINT_8 ucWlanIndex = prAdapter->ucTxDefaultWlanIndex;
 
 	prStaRec = cnmGetStaRecByIndex(prAdapter, ucStaRecIdx);
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIdx);
@@ -2939,7 +2939,7 @@ UINT_8 nicTxGetWlanIdx(P_ADAPTER_T prAdapter, UINT_8 ucBssIdx, UINT_8 ucStaRecId
 	else if ((ucStaRecIdx == STA_REC_INDEX_BMCAST) && prBssInfo->fgIsInUse) {
 		if (prBssInfo->fgBcDefaultKeyExist) {
 			if (prBssInfo->wepkeyUsed[prBssInfo->ucBcDefaultKeyIdx] &&
-				prBssInfo->wepkeyWlanIdx < NIC_TX_DEFAULT_WLAN_INDEX)
+				prBssInfo->wepkeyWlanIdx < prAdapter->ucTxDefaultWlanIndex)
 				ucWlanIndex = prBssInfo->wepkeyWlanIdx;
 			else if (prBssInfo->ucBMCWlanIndexSUsed[prBssInfo->ucBcDefaultKeyIdx])
 				ucWlanIndex = prBssInfo->ucBMCWlanIndexS[prBssInfo->ucBcDefaultKeyIdx];
@@ -2949,9 +2949,9 @@ UINT_8 nicTxGetWlanIdx(P_ADAPTER_T prAdapter, UINT_8 ucBssIdx, UINT_8 ucStaRecId
 
 	if (ucWlanIndex >= WTBL_SIZE) {
 		DBGLOG(TX, WARN, "%s: Unexpected WIDX[%u] BSS[%u] STA[%u], set WIDX to default value[%u]\n",
-		       ucWlanIndex, ucBssIdx, ucStaRecIdx, NIC_TX_DEFAULT_WLAN_INDEX);
+		       ucWlanIndex, ucBssIdx, ucStaRecIdx, prAdapter->ucTxDefaultWlanIndex);
 
-		ucWlanIndex = NIC_TX_DEFAULT_WLAN_INDEX;
+		ucWlanIndex = prAdapter->ucTxDefaultWlanIndex;
 	}
 
 	return ucWlanIndex;

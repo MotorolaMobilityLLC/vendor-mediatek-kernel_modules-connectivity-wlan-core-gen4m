@@ -1403,7 +1403,7 @@ WLAN_STATUS nicUpdateBss(IN P_ADAPTER_T prAdapter, IN UINT_8 ucBssIndex)
 	rCmdSetBssInfo.ucNss = prBssInfo->ucNss;
 
 	if (prBssInfo->fgBcDefaultKeyExist) {
-		if (prBssInfo->wepkeyWlanIdx < NIC_TX_DEFAULT_WLAN_INDEX)
+		if (prBssInfo->wepkeyWlanIdx < prAdapter->ucTxDefaultWlanIndex)
 			rCmdSetBssInfo.ucBMCWlanIndex = prBssInfo->wepkeyWlanIdx;
 		else if (prBssInfo->ucBMCWlanIndexSUsed[prBssInfo->ucBcDefaultKeyIdx])
 			rCmdSetBssInfo.ucBMCWlanIndex = prBssInfo->ucBMCWlanIndexS[prBssInfo->ucBcDefaultKeyIdx];
