@@ -182,8 +182,8 @@ static u_int8_t scanNeedReplaceCandidate(struct ADAPTER *prAdapter,
 	struct BSS_DESC *prCandBss, struct BSS_DESC *prCurrBss,
 	uint16_t u2CandScore, uint16_t u2CurrScore)
 {
-	uint8_t cCandRssi = RCPI_TO_dBm(prCandBss->ucRCPI);
-	uint8_t cCurrRssi = RCPI_TO_dBm(prCurrBss->ucRCPI);
+	int8_t cCandRssi = RCPI_TO_dBm(prCandBss->ucRCPI);
+	int8_t cCurrRssi = RCPI_TO_dBm(prCurrBss->ucRCPI);
 	uint32_t u4UpdateIdx = prAdapter->rWifiVar.rScanInfo.u4ScanUpdateIdx;
 	uint16_t u2CandMiss = u4UpdateIdx - prCandBss->u4UpdateIdx;
 	uint16_t u2CurrMiss = u4UpdateIdx - prCurrBss->u4UpdateIdx;
@@ -296,7 +296,7 @@ static u_int8_t scanSanityCheckBssDesc(struct ADAPTER *prAdapter,
 static uint16_t scanCalculateScoreByRssi(struct BSS_DESC *prBssDesc)
 {
 	uint16_t u2Score = 0;
-	uint8_t cRssi = RCPI_TO_dBm(prBssDesc->ucRCPI);
+	int8_t cRssi = RCPI_TO_dBm(prBssDesc->ucRCPI);
 
 	if (cRssi >= -20)
 		u2Score = BSS_FULL_SCORE;
@@ -321,7 +321,7 @@ static uint16_t scanCalculateScoreByRssi(struct BSS_DESC *prBssDesc)
 }
 
 static uint16_t scanCalculateScoreByBand(struct ADAPTER *prAdapter,
-	struct BSS_DESC *prBssDesc, uint8_t cRssi)
+	struct BSS_DESC *prBssDesc, int8_t cRssi)
 {
 	uint16_t u2Score = 0;
 	struct AIS_FSM_INFO *prAisFsmInfo;
