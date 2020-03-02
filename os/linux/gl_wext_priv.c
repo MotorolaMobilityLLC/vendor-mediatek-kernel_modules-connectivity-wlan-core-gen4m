@@ -7780,7 +7780,7 @@ int priv_driver_get_linkspeed(IN struct net_device *prNetDev,
 	if (!netif_carrier_ok(prNetDev))
 		return -1;
 
-	if (!IS_BSS_INDEX_VALID(ucBssIndex))
+	if (ucBssIndex >= BSSID_NUM)
 		return -EFAULT;
 
 	rStatus = kalIoctl(prGlueInfo,
