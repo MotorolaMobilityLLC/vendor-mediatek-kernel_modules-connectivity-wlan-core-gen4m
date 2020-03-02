@@ -4415,8 +4415,6 @@ wext_indicate_wext_event(IN struct GLUE_INFO *prGlueInfo,
 
 	memset(&wrqu, 0, sizeof(wrqu));
 
-	DBGLOG(REQ, LOUD, "ucBssIndex = %d\n", ucBssIndex);
-
 	prWpaInfo = aisGetWpaInfo(prGlueInfo->prAdapter,
 		ucBssIndex);
 

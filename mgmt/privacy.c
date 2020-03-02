@@ -1218,8 +1218,6 @@ uint8_t secGetBssIdxByRfb(IN struct ADAPTER *prAdapter,
 			cnmGetStaRecByIndex(prAdapter,
 			prSwRfb->ucStaRecIdx);
 
-		DBGLOG(RSN, LOUD,
-			"ucBssIndex = %d\n", ucBssIndex);
 
 		if (ucBssIndex != WTBL_RESERVED_ENTRY)
 			return ucBssIndex;
