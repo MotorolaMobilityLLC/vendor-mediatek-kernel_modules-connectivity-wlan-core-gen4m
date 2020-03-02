@@ -1041,6 +1041,12 @@ KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__, _prGlueInfo, _prMacAddr)
 	_eSco, _ucChannelNum, _ucBssIndex) \
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__, _prGlueInfo)
 
+#if CFG_SUPPORT_DFS
+#define	kalIndicateChannelSwitch(_prGlueInfo, _eSco, _ucChannelNum) \
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__, _prGlueInfo)
+#endif
+
+
 #define kalIndicateMgmtTxStatus(_prGlueInfo, _u8Cookie, _fgIsAck, \
 	_pucFrameBuf, _u4FrameLen, _ucBssIndex) \
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__, _prGlueInfo)
@@ -1063,6 +1069,13 @@ kalRemainOnChannelExpired(IN struct GLUE_INFO *prGlueInfo,
 			  IN uint64_t u8Cookie, IN enum ENUM_BAND eBand,
 			  IN enum ENUM_CHNL_EXT eSco, IN uint8_t ucChannelNum,
 			  IN uint8_t ucBssIndex);
+
+#if CFG_SUPPORT_DFS
+void
+kalIndicateChannelSwitch(IN struct GLUE_INFO *prGlueInfo,
+			IN enum ENUM_CHNL_EXT eSco,
+			IN uint8_t ucChannelNum);
+#endif
 
 void
 kalIndicateMgmtTxStatus(IN struct GLUE_INFO *prGlueInfo,
