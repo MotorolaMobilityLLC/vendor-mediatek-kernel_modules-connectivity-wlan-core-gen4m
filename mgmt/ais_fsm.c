@@ -2970,13 +2970,15 @@ enum ENUM_AIS_STATE aisFsmJoinCompleteAction(IN struct ADAPTER *prAdapter,
 				 */
 				if ((prAisBssInfo->prStaRecOfAP) &&
 				    (prAisBssInfo->prStaRecOfAP != prStaRec) &&
-				    (prAisBssInfo->prStaRecOfAP->fgIsInUse)) {
+				    (prAisBssInfo->prStaRecOfAP->fgIsInUse) &&
+				    (prAisBssInfo->prStaRecOfAP->ucBssIndex ==
+				     prAisBssInfo->ucBssIndex)) {
 
 					cnmStaRecChangeState(prAdapter,
-					prAisBssInfo->prStaRecOfAP,
-					STA_STATE_1);
+						prAisBssInfo->prStaRecOfAP,
+						STA_STATE_1);
 					cnmStaRecFree(prAdapter,
-					prAisBssInfo->prStaRecOfAP);
+						prAisBssInfo->prStaRecOfAP);
 				}
 
 				/* For temp solution, need to refine */
