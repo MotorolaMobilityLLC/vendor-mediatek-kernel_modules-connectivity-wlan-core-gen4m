@@ -589,7 +589,13 @@ int glRstwlanPreWholeChipReset(enum consys_drv_type type, char *reason)
 	} else {
 		/* Case 2: timeout TBD*/
 		DBGLOG(INIT, ERROR,
-			"WiFi rst takes more than 4 seconds, trigger rst self\n");
+			"WiFi rst takes more than 12 seconds, trigger rst self\n");
+		glResetMsgHandler(WMTMSG_TYPE_RESET,
+						WMTRSTMSG_0P5RESET_START);
+		g_IsSubsysRstOverThreshold = FALSE;
+		g_SubsysRstCnt = 0;
+		g_IsTriggerTimeout = FALSE;
+		g_WholeChipRstTotalCnt++;
 	}
 	return bRet;
 }
