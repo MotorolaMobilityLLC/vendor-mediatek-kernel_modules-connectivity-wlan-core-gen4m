@@ -140,14 +140,17 @@ void StatsEnvRxTime2Host(IN struct ADAPTER *prAdapter, struct sk_buff *prSkb)
 	struct timeval tval;
 	struct rtc_time tm;
 
-	if ((g_ucTxRxFlag & BIT(1)) == 0)
-		return;
-
-	if (prSkb->len <= 24 + ETH_HLEN)
-		return;
 	u2EthType = (pucEth[ETH_TYPE_LEN_OFFSET] << 8)
 		| (pucEth[ETH_TYPE_LEN_OFFSET + 1]);
 	pucEth += ETH_HLEN;
+	u2IPID = pucEth[4] << 8 | pucEth[5];
+
+	DBGLOG(RX, LOUD, "StatsEnvRxTime2Host: u2IpId after:%d\n", u2IPID);
+
+	if ((g_ucTxRxFlag & BIT(1)) == 0)
+		return;
+	if (prSkb->len <= 24 + ETH_HLEN)
+		return;
 	if (u2EthType != ETH_P_IPV4)
 		return;
 	ucIpProto = pucEth[9];
@@ -315,7 +318,7 @@ static void statsParsePktInfo(uint8_t *pucPkt, struct sk_buff *skb,
 			(pucEthBody[0] & IPVH_VERSION_MASK)
 				>> IPVH_VERSION_OFFSET;
 		uint16_t u2IpId = *(uint16_t *) &pucEthBody[4];
-
+		DBGLOG(RX, LOUD, "statsParsePktInfo: u2IpId:%d\n", u2IpId);
 		if (ucIpVersion != IPVERSION)
 			break;
 		switch (ucIpProto) {
