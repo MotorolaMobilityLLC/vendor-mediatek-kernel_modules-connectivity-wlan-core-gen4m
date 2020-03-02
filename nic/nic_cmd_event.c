@@ -4850,7 +4850,7 @@ void nicEventUpdateCoexPhyrate(IN struct ADAPTER *prAdapter,
 	for (i = 0; i < (prAdapter->ucHwBssIdNum + 1); i++) {
 		prAdapter->aprBssInfo[i]->u4CoexPhyRateLimit =
 			prEventUpdateCoexPhyrate->au4PhyRateLimit[i];
-		DBGLOG(NIC, INFO, "Coex:BSS[%d]R:%d\n", i,
+		DBGLOG_LIMITED(NIC, TRACE, "Coex:BSS[%d]R:%d\n", i,
 		       prAdapter->aprBssInfo[i]->u4CoexPhyRateLimit);
 	}
 
@@ -4859,7 +4859,7 @@ void nicEventUpdateCoexPhyrate(IN struct ADAPTER *prAdapter,
 	prAdapter->ucSmartGearWfPathSupport =
 		prEventUpdateCoexPhyrate->ucWfPathSupport;
 
-	DBGLOG(NIC, INFO, "Smart Gear SISO:%d, WF:%d\n",
+	DBGLOG_LIMITED(NIC, INFO, "Smart Gear SISO:%d, WF:%d\n",
 	       prAdapter->ucSmarGearSupportSisoOnly,
 	       prAdapter->ucSmartGearWfPathSupport);
 }
