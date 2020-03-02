@@ -1470,6 +1470,13 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 		fgIsNewBssDesc = TRUE;
 
 		do {
+			/* check if it is a beacon frame */
+			if (((prWlanBeaconFrame->u2FrameCtrl & MASK_FRAME_TYPE)
+				== MAC_FRAME_BEACON) && !fgIsValidSsid) {
+				log_dbg(SCN, INFO, "scanAddToBssDescssid is NULL Beacon, don't add hidden BSS(%pM)\n",
+					(uint8_t *)prWlanBeaconFrame->aucBSSID);
+				return NULL;
+			}
 			/* 4 <1.2.1> First trial of allocation */
 			prBssDesc = scanAllocateBssDesc(prAdapter);
 			if (prBssDesc)
@@ -1513,6 +1520,9 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 		 * the original one, ignore it due to it might be received
 		 * on the folding frequency
 		 */
+
+		prBssDesc->fgIsValidSSID = fgIsValidSsid;
+
 		GET_CURRENT_SYSTIME(&rCurrentTime);
 
 		ASSERT(prSwRfb->prRxStatusGroup3);
@@ -1568,6 +1578,9 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 			prBssDesc->fgIsConnecting = fgIsConnecting;
 		}
 	}
+
+	prBssDesc->fgIsValidSSID = fgIsValidSsid;
+
 #if 1
 	prBssDesc->u2RawLength = prSwRfb->u2PacketLen;
 	if (prBssDesc->u2RawLength > CFG_RAW_BUFFER_SIZE)
@@ -1675,6 +1688,15 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 						  prBssDesc->ucSSIDLen,
 						  SSID_IE(pucIE)->aucSSID,
 						  SSID_IE(pucIE)->ucLength);
+				} else if ((prWlanBeaconFrame->u2FrameCtrl &
+					MASK_FRAME_TYPE) ==
+					MAC_FRAME_PROBE_RSP) {
+					/* SSID should be updated
+					 * if it is ProbeResp
+					 */
+					kalMemZero(prBssDesc->aucSSID,
+					sizeof(prBssDesc->aucSSID));
+					prBssDesc->ucSSIDLen = 0;
 				}
 
 			}
@@ -2276,11 +2298,13 @@ uint32_t scanAddScanResult(IN struct ADAPTER *prAdapter,
 		}
 	}
 
-	kalIndicateBssInfo(prAdapter->prGlueInfo,
+	if (prBssDesc->fgIsValidSSID) {
+		kalIndicateBssInfo(prAdapter->prGlueInfo,
 			   (uint8_t *) prSwRfb->pvHeader,
 			   prSwRfb->u2PacketLen,
 			   prBssDesc->ucChannelNum,
 			   RCPI_TO_dBm(prBssDesc->ucRCPI));
+	}
 
 	nicAddScanResult(prAdapter,
 		rMacAddr,
@@ -3255,16 +3279,21 @@ void scanReportBss2Cfg80211(IN struct ADAPTER *prAdapter,
 			}
 
 			log_dbg(SCN, TRACE,
-				"Report Specific SSID[%s]\n",
-				SpecificprBssDesc->aucSSID);
-			if (eBSSType == BSS_TYPE_INFRASTRUCTURE) {
+				"Report specific SSID[%s] ValidSSID[%u]\n",
+				SpecificprBssDesc->aucSSID,
+				SpecificprBssDesc->fgIsValidSSID);
 
-				kalIndicateBssInfo(prAdapter->prGlueInfo,
-					(uint8_t *)
+			if (eBSSType == BSS_TYPE_INFRASTRUCTURE) {
+				if (SpecificprBssDesc->fgIsValidSSID) {
+					kalIndicateBssInfo(
+						prAdapter->prGlueInfo,
+						(uint8_t *)
 						SpecificprBssDesc->aucRawBuf,
-					SpecificprBssDesc->u2RawLength,
-					SpecificprBssDesc->ucChannelNum,
-					RCPI_TO_dBm(SpecificprBssDesc->ucRCPI));
+						SpecificprBssDesc->u2RawLength,
+						SpecificprBssDesc->ucChannelNum,
+						RCPI_TO_dBm(
+						SpecificprBssDesc->ucRCPI));
+				}
 			} else {
 
 				rChannelInfo.ucChannelNum
@@ -3323,12 +3352,14 @@ void scanReportBss2Cfg80211(IN struct ADAPTER *prAdapter,
 #endif
 			    ) {
 
-				log_dbg(SCN, TRACE, "Report ALL SSID[%s %d]\n",
+				log_dbg(SCN, TRACE, "Report ALL SSID[%s %u] ValidSSID[%u]\n",
 					prBssDesc->aucSSID,
-					prBssDesc->ucChannelNum);
+					prBssDesc->ucChannelNum,
+					prBssDesc->fgIsValidSSID);
 
 				if (eBSSType == BSS_TYPE_INFRASTRUCTURE) {
-					if (prBssDesc->u2RawLength != 0) {
+					if (prBssDesc->u2RawLength != 0 &&
+						prBssDesc->fgIsValidSSID) {
 						kalIndicateBssInfo(
 							prAdapter->prGlueInfo,
 							(uint8_t *)
@@ -3337,15 +3368,13 @@ void scanReportBss2Cfg80211(IN struct ADAPTER *prAdapter,
 							prBssDesc->ucChannelNum,
 							RCPI_TO_dBm(
 							prBssDesc->ucRCPI));
-						kalMemZero(prBssDesc->aucRawBuf,
-							CFG_RAW_BUFFER_SIZE);
-						prBssDesc->u2RawLength = 0;
-
-#if CFG_ENABLE_WIFI_DIRECT
-						prBssDesc->fgIsP2PReport
-							= FALSE;
-#endif
 					}
+					kalMemZero(prBssDesc->aucRawBuf,
+						CFG_RAW_BUFFER_SIZE);
+					prBssDesc->u2RawLength = 0;
+#if CFG_ENABLE_WIFI_DIRECT
+					prBssDesc->fgIsP2PReport = FALSE;
+#endif
 				} else {
 #if CFG_ENABLE_WIFI_DIRECT
 					if (prBssDesc->fgIsP2PReport == TRUE) {
