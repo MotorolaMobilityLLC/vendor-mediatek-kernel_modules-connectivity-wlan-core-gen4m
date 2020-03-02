@@ -439,7 +439,7 @@ int mtk_usb_bulk_in_msg(IN P_GLUE_INFO_T prGlueInfo, IN UINT_32 len, OUT UCHAR *
 	if (!ret) {
 #if 0 /* maximize buff len for usb in */
 		if (count != len) {
-			DBGLOG(HAL, WARN, "usb_bulk_msg(IN=%d) Warning. Data is not completed. (receive %u/%u)\n",
+			DBGLOG(HAL, WARN, "usb_bulk_msg(IN=%d) Warning. Data is not completed. (receive %d/%u)\n",
 			       InEp, count, len);
 		}
 #endif
@@ -471,7 +471,7 @@ int mtk_usb_intr_in_msg(IN P_GLUE_INFO_T prGlueInfo, IN UINT_32 len, OUT UCHAR *
 	if (!ret) {
 #if 0 /* maximize buff len for usb in */
 		if (count != len) {
-			DBGLOG(HAL, WARN, "usb_interrupt_msg(IN=%d) Warning. Data is not completed. (receive %u/%u)\n",
+			DBGLOG(HAL, WARN, "usb_interrupt_msg(IN=%d) Warning. Data is not completed. (receive %d/%u)\n",
 			       InEp, count, len);
 		}
 #endif
@@ -514,7 +514,7 @@ int mtk_usb_bulk_out_msg(IN P_GLUE_INFO_T prGlueInfo, IN UINT_32 len, IN UCHAR *
 
 	if (!ret) {
 		if (count != len) {
-			DBGLOG(HAL, ERROR, "usb_bulk_msg(OUT=%d) Warning. Data is not completed. (send %u/%u)\n", OutEp,
+			DBGLOG(HAL, ERROR, "usb_bulk_msg(OUT=%d) Warning. Data is not completed. (send %d/%u)\n", OutEp,
 			       count, len);
 		}
 		return ret;
@@ -663,7 +663,8 @@ VOID glSetHifInfo(P_GLUE_INFO_T prGlueInfo, ULONG ulCookie)
 	UINT_8 ucTc;
 #endif
 
-	prHifInfo->eEventEpType = EVENT_EP_TYPE_UNKONW;
+	prHifInfo->eEventEpType = USB_EVENT_TYPE;
+	prHifInfo->fgEventEpDetected = FALSE;
 
 	prHifInfo->intf = (struct usb_interface *)ulCookie;
 	prHifInfo->udev = interface_to_usbdev(prHifInfo->intf);
@@ -1205,7 +1206,7 @@ kalDevPortRead(IN P_GLUE_INFO_T prGlueInfo,
 		/* maximize buff len for usb in */
 		ret = mtk_usb_intr_in_msg(prGlueInfo, u4ValidOutBufSize, pucDst, u2Port);
 		if (ret != u4Len) {
-			DBGLOG(HAL, WARN, "usb_interrupt_msg(IN=%d) Warning. Data is not completed. (receive %u/%u)\n",
+			DBGLOG(HAL, WARN, "usb_interrupt_msg(IN=%d) Warning. Data is not completed. (receive %d/%u)\n",
 			       u2Port, ret, u4Len);
 		}
 		ret = ret >= 0 ? 0 : ret;
@@ -1213,7 +1214,7 @@ kalDevPortRead(IN P_GLUE_INFO_T prGlueInfo,
 		/* maximize buff len for usb in */
 		ret = mtk_usb_bulk_in_msg(prGlueInfo, u4ValidOutBufSize, pucDst, u2Port);
 		if (ret != u4Len) {
-			DBGLOG(HAL, WARN, "usb_bulk_msg(IN=%d) Warning. Data is not completed. (receive %u/%u)\n",
+			DBGLOG(HAL, WARN, "usb_bulk_msg(IN=%d) Warning. Data is not completed. (receive %d/%u)\n",
 			       u2Port, ret, u4Len);
 		}
 		ret = ret >= 0 ? 0 : ret;
