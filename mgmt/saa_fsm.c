@@ -1359,64 +1359,69 @@ saaSendDisconnectMsgHandler(IN struct ADAPTER *prAdapter,
 			    IN struct BSS_INFO *prAisBssInfo,
 			    IN enum ENUM_AA_FRM_TYPE eFrmType)
 {
-	do {
-		if (eFrmType == FRM_DEAUTH) {
-			if (prStaRec->ucStaState == STA_STATE_3) {
-				struct MSG_AIS_ABORT *prAisAbortMsg;
+	if (eFrmType == FRM_DEAUTH) {
+		if (prStaRec->ucStaState == STA_STATE_3) {
+			struct MSG_AIS_ABORT *prAisAbortMsg;
 
-				/* NOTE(Kevin): Change state immediately to
-				 * avoid starvation of MSG buffer because of too
-				 * many deauth frames before changing the STA
-				 * state.
-				 */
-				cnmStaRecChangeState(prAdapter, prStaRec,
-						     STA_STATE_1);
+			/* NOTE(Kevin): Change state immediately to
+			 * avoid starvation of MSG buffer because of too
+			 * many deauth frames before changing the STA
+			 * state.
+			 */
+			cnmStaRecChangeState(prAdapter, prStaRec,
+					     STA_STATE_1);
 
-				prAisAbortMsg =
-				    (struct MSG_AIS_ABORT *)
-				    cnmMemAlloc(prAdapter,
-						RAM_TYPE_MSG,
-						sizeof(struct MSG_AIS_ABORT));
-				if (!prAisAbortMsg)
-					break;
+			prAisAbortMsg =
+			    (struct MSG_AIS_ABORT *)
+			    cnmMemAlloc(prAdapter,
+					RAM_TYPE_MSG,
+					sizeof(struct MSG_AIS_ABORT));
+			if (!prAisAbortMsg)
+				return;
 
-				prAisAbortMsg->rMsgHdr.eMsgId =
-					MID_SAA_AIS_FSM_ABORT;
-				prAisAbortMsg->ucReasonOfDisconnect =
-					DISCONNECT_REASON_CODE_DEAUTHENTICATED;
-				prAisAbortMsg->fgDelayIndication = FALSE;
-				mboxSendMsg(prAdapter, MBOX_ID_0,
-					    (struct MSG_HDR *) prAisAbortMsg,
-					    MSG_SEND_METHOD_BUF);
-			} else {
-				/* TODO(Kevin): Joining Abort */
-			}
-		} else {	/* FRM_DISASSOC */
-			if (prStaRec->ucStaState == STA_STATE_3) {
-				struct MSG_AIS_ABORT *prAisAbortMsg;
-
-				prAisAbortMsg = (struct MSG_AIS_ABORT *)
-				      cnmMemAlloc(prAdapter,
-						  RAM_TYPE_MSG,
-						  sizeof(struct MSG_AIS_ABORT));
-				if (!prAisAbortMsg)
-					break;
-
-				prAisAbortMsg->rMsgHdr.eMsgId =
-					MID_SAA_AIS_FSM_ABORT;
-				prAisAbortMsg->ucReasonOfDisconnect =
-					DISCONNECT_REASON_CODE_DISASSOCIATED;
-				prAisAbortMsg->fgDelayIndication = FALSE;
-				mboxSendMsg(prAdapter, MBOX_ID_0,
-					    (struct MSG_HDR *) prAisAbortMsg,
-					    MSG_SEND_METHOD_BUF);
-			} else {
-				/* TODO(Kevin): Joining Abort */
-			}
+			prAisAbortMsg->rMsgHdr.eMsgId =
+				MID_SAA_AIS_FSM_ABORT;
+			prAisAbortMsg->ucReasonOfDisconnect =
+				DISCONNECT_REASON_CODE_DEAUTHENTICATED;
+			prAisAbortMsg->fgDelayIndication = FALSE;
+			mboxSendMsg(prAdapter, MBOX_ID_0,
+				    (struct MSG_HDR *) prAisAbortMsg,
+				    MSG_SEND_METHOD_BUF);
+		} else {
+			/* TODO(Kevin): Joining Abort */
 		}
-		if (prAisBssInfo)
-			prAisBssInfo->u2DeauthReason = prStaRec->u2ReasonCode;
-	} while (0);
+	} else {	/* FRM_DISASSOC */
+		if (prStaRec->ucStaState == STA_STATE_3) {
+			struct MSG_AIS_ABORT *prAisAbortMsg;
+
+			/* Change state immediately to avoid starvation
+			 * of MSG buffer because of too many disassoc
+			 * frames before changing the STA state.
+			 */
+			cnmStaRecChangeState(prAdapter, prStaRec,
+					     STA_STATE_2);
+
+			prAisAbortMsg = (struct MSG_AIS_ABORT *)
+			      cnmMemAlloc(prAdapter,
+					  RAM_TYPE_MSG,
+					  sizeof(struct MSG_AIS_ABORT));
+			if (!prAisAbortMsg)
+				return;
+
+			prAisAbortMsg->rMsgHdr.eMsgId =
+				MID_SAA_AIS_FSM_ABORT;
+			prAisAbortMsg->ucReasonOfDisconnect =
+				DISCONNECT_REASON_CODE_DISASSOCIATED;
+			prAisAbortMsg->fgDelayIndication = FALSE;
+			mboxSendMsg(prAdapter, MBOX_ID_0,
+				    (struct MSG_HDR *) prAisAbortMsg,
+				    MSG_SEND_METHOD_BUF);
+		} else {
+			/* TODO(Kevin): Joining Abort */
+		}
+	}
+	if (prAisBssInfo)
+		prAisBssInfo->u2DeauthReason = prStaRec->u2ReasonCode;
 }
 
 /*----------------------------------------------------------------------------*/
