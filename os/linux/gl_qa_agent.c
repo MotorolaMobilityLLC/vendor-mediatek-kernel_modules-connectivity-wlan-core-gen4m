@@ -90,6 +90,9 @@ u_int8_t	g_BufferDownload = FALSE;
 uint32_t	u4EepromMode = 4;
 uint32_t g_u4Chip_ID;
 
+static struct hqa_rx_stat_band_format g_backup_band0_info;
+static struct hqa_rx_stat_band_format g_backup_band1_info;
+
 #if CFG_SUPPORT_BUFFER_MODE
 uint8_t	uacEEPROMImage[MAX_EEPROM_BUFFER_SIZE] = {
 	/* 0x000 ~ 0x00F */
@@ -711,9 +714,61 @@ static int32_t HQA_SetTxPath(struct net_device *prNetDev,
 			     IN union iwreq_data *prIwReqData,
 			     struct HQA_CMD_FRAME *HqaCmdFrame)
 {
-	int32_t i4Ret = 0;
+	int32_t i4Ret = 0, value = 0;
+	uint8_t	band_idx = 0;
+	uint16_t tx_ant = 0;
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct PARAM_MTK_WIFI_TEST_STRUCT rRfATInfo;
+	uint32_t u4BufLen = 0;
 
 	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_SetTxPath\n");
+
+	if (HqaCmdFrame->Length > 2) {
+		memcpy(&value, HqaCmdFrame->Data + 4 * 0, 4);
+		tx_ant = ntohl(value);
+		memcpy(&value, HqaCmdFrame->Data + 4 * 1, 4);
+		band_idx = ntohl(value);
+
+		if (band_idx && tx_ant > 0x3)
+			tx_ant >>= 2;
+		DBGLOG(RFTEST, INFO, "tx_path:%d, band:%d\n", tx_ant, band_idx);
+	} else {
+		memcpy(&tx_ant, HqaCmdFrame->Data + 2 * 0, 2);
+		tx_ant = ntohl(tx_ant);
+		DBGLOG(RFTEST, INFO, "tx_path:%d, ", tx_ant);
+	}
+
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+
+	rRfATInfo.u4FuncIndex = RF_AT_FUNCID_SET_DBDC_BAND_IDX;
+	rRfATInfo.u4FuncData = band_idx;
+
+	i4Ret = kalIoctl(prGlueInfo,	/* prGlueInfo */
+			    wlanoidRftestSetAutoTest,	/* pfnOidHandler */
+			    &rRfATInfo,	/* pvInfoBuf */
+			    sizeof(rRfATInfo),	/* u4InfoBufLen */
+			    FALSE,	/* fgRead */
+			    FALSE,	/* fgWaitResp */
+			    TRUE,	/* fgCmd */
+			    &u4BufLen);	/* pu4QryInfoLen */
+
+	if (i4Ret != WLAN_STATUS_SUCCESS)
+		return -EFAULT;
+
+	rRfATInfo.u4FuncIndex = RF_AT_FUNCID_SET_TX_PATH;
+	rRfATInfo.u4FuncData = tx_ant;
+
+	i4Ret = kalIoctl(prGlueInfo,	/* prGlueInfo */
+			    wlanoidRftestSetAutoTest,	/* pfnOidHandler */
+			    &rRfATInfo,	/* pvInfoBuf */
+			    sizeof(rRfATInfo),	/* u4InfoBufLen */
+			    FALSE,	/* fgRead */
+			    FALSE,	/* fgWaitResp */
+			    TRUE,	/* fgCmd */
+			    &u4BufLen);	/* pu4QryInfoLen */
+
+	if (i4Ret != WLAN_STATUS_SUCCESS)
+		return -EFAULT;
 
 	ResponseToQA(HqaCmdFrame, prIwReqData, 2, i4Ret);
 
@@ -736,26 +791,51 @@ static int32_t HQA_SetRxPath(struct net_device *prNetDev,
 			     IN union iwreq_data *prIwReqData,
 			     struct HQA_CMD_FRAME *HqaCmdFrame)
 {
-	int32_t i4Ret = 0;
-	/* INT_16 Value = 0;
-	 * P_GLUE_INFO_T prGlueInfo = NULL;
-	 * PARAM_MTK_WIFI_TEST_STRUCT_T rRfATInfo;
-	 * UINT_32 u4BufLen = 0;
-	 */
+	int32_t i4Ret = 0, value = 0;
+	uint8_t	band_idx = 0;
+	uint16_t rx_ant = 0;
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct PARAM_MTK_WIFI_TEST_STRUCT rRfATInfo;
+	uint32_t u4BufLen = 0;
 
 	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_SetRxPath\n");
 
-#if 0
+	if (HqaCmdFrame->Length > 2) {
+		memcpy(&value, HqaCmdFrame->Data + 4 * 0, 4);
+		rx_ant = ntohl(value);
+		memcpy(&value, HqaCmdFrame->Data + 4 * 1, 4);
+		band_idx = ntohl(value);
+
+		if (band_idx && rx_ant > 0x3)
+			rx_ant >>= 2;
+		DBGLOG(RFTEST, INFO, "rx_path:%d, band:%d\n", rx_ant, band_idx);
+	} else {
+		memcpy(&rx_ant, HqaCmdFrame->Data + 2 * 0, 2);
+		rx_ant = ntohl(rx_ant);
+		DBGLOG(RFTEST, INFO, "rx_path:%d, ", rx_ant);
+	}
+
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 
-	memcpy(&Value, HqaCmdFrame->Data + 4 * 0, 2);
-	Value = ntohs(Value);
+	rRfATInfo.u4FuncIndex = RF_AT_FUNCID_SET_DBDC_BAND_IDX;
+	rRfATInfo.u4FuncData = band_idx;
 
-	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_SetRxPath Value : %d\n",
-	       Value);
+	i4Ret = kalIoctl(prGlueInfo,	/* prGlueInfo */
+			    wlanoidRftestSetAutoTest,	/* pfnOidHandler */
+			    &rRfATInfo,	/* pvInfoBuf */
+			    sizeof(rRfATInfo),	/* u4InfoBufLen */
+			    FALSE,	/* fgRead */
+			    FALSE,	/* fgWaitResp */
+			    TRUE,	/* fgCmd */
+			    &u4BufLen);	/* pu4QryInfoLen */
+
+	if (i4Ret != WLAN_STATUS_SUCCESS)
+		return -EFAULT;
+
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 
 	rRfATInfo.u4FuncIndex = RF_AT_FUNCID_SET_RX_PATH;
-	rRfATInfo.u4FuncData = (uint32_t) ((Value << 16)
+	rRfATInfo.u4FuncData = (uint32_t) ((rx_ant << 16)
 					   || (0 & BITS(0, 15)));
 
 	i4Ret = kalIoctl(prGlueInfo,	/* prGlueInfo */
@@ -769,7 +849,6 @@ static int32_t HQA_SetRxPath(struct net_device *prNetDev,
 
 	if (i4Ret != WLAN_STATUS_SUCCESS)
 		return -EFAULT;
-#endif
 
 	ResponseToQA(HqaCmdFrame, prIwReqData, 2, i4Ret);
 
@@ -4801,6 +4880,471 @@ static int32_t HQA_MPSStop(struct net_device *prNetDev,
 	return i4Ret;
 }
 
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  internal function used by HQA_GetRxStatisticsAllV2.
+ */
+/*----------------------------------------------------------------------------*/
+int32_t hqa_genStatBandReport(
+	u_int8_t band_idx,
+	u_int8_t blk_idx,
+	struct hqa_rx_stat_band_format *rx_st_band)
+{
+
+	int32_t ret = 0;
+
+	if (band_idx == HQA_M_BAND_0) {
+		rx_st_band->mac_rx_fcs_err_cnt =
+			ntohl(g_HqaRxStat.MAC_FCS_Err) +
+			ntohl(g_backup_band0_info.mac_rx_fcs_err_cnt);
+		rx_st_band->mac_rx_mdrdy_cnt =
+			ntohl(g_HqaRxStat.MAC_Mdrdy) +
+			ntohl(g_backup_band0_info.mac_rx_mdrdy_cnt);
+		rx_st_band->mac_rx_len_mismatch =
+			ntohl(g_HqaRxStat.LengthMismatchCount_B0) +
+			ntohl(g_backup_band0_info.mac_rx_len_mismatch);
+		rx_st_band->mac_rx_fcs_ok_cnt = 0;
+		rx_st_band->phy_rx_fcs_err_cnt_cck =
+			ntohl(g_HqaRxStat.FCSErr_CCK);
+		rx_st_band->phy_rx_fcs_err_cnt_ofdm =
+			ntohl(g_HqaRxStat.FCSErr_OFDM);
+		rx_st_band->phy_rx_pd_cck =
+			ntohl(g_HqaRxStat.CCK_PD);
+		rx_st_band->phy_rx_pd_ofdm =
+			ntohl(g_HqaRxStat.OFDM_PD);
+		rx_st_band->phy_rx_sig_err_cck =
+			ntohl(g_HqaRxStat.CCK_SIG_Err);
+		rx_st_band->phy_rx_sfd_err_cck =
+			ntohl(g_HqaRxStat.CCK_SFD_Err);
+		rx_st_band->phy_rx_sig_err_ofdm =
+			ntohl(g_HqaRxStat.OFDM_SIG_Err);
+		rx_st_band->phy_rx_tag_err_ofdm =
+			ntohl(g_HqaRxStat.OFDM_TAG_Err);
+		rx_st_band->phy_rx_mdrdy_cnt_cck =
+			ntohl(g_HqaRxStat.PhyMdrdyCCK);
+		rx_st_band->phy_rx_mdrdy_cnt_ofdm =
+			ntohl(g_HqaRxStat.PhyMdrdyOFDM);
+
+		/* Backup Band1 info */
+		g_backup_band1_info.mac_rx_fcs_err_cnt +=
+			g_HqaRxStat.MAC_FCS_Err1;
+
+		g_backup_band1_info.mac_rx_mdrdy_cnt +=
+			g_HqaRxStat.MAC_Mdrdy1;
+
+		g_backup_band1_info.mac_rx_len_mismatch +=
+			g_HqaRxStat.LengthMismatchCount_B1;
+
+		/* Reset Band0 backup info */
+		kalMemZero(&g_backup_band0_info,
+			sizeof(struct hqa_rx_stat_band_format));
+	} else {
+		rx_st_band->mac_rx_fcs_err_cnt =
+			ntohl(
+			g_HqaRxStat.MAC_FCS_Err1) +
+			ntohl(
+			g_backup_band1_info.mac_rx_fcs_err_cnt);
+		rx_st_band->mac_rx_mdrdy_cnt =
+			ntohl(
+			g_HqaRxStat.MAC_Mdrdy1) +
+			ntohl(
+			g_backup_band1_info.mac_rx_mdrdy_cnt);
+		rx_st_band->mac_rx_len_mismatch =
+			ntohl(
+			g_HqaRxStat.LengthMismatchCount_B1) +
+			ntohl(
+			g_backup_band1_info.mac_rx_len_mismatch);
+		rx_st_band->mac_rx_fcs_ok_cnt = 0;
+		rx_st_band->phy_rx_fcs_err_cnt_cck =
+			ntohl(
+			g_HqaRxStat.CCK_FCS_Err_Band1);
+		rx_st_band->phy_rx_fcs_err_cnt_ofdm =
+			ntohl(
+			g_HqaRxStat.OFDM_FCS_Err_Band1);
+		rx_st_band->phy_rx_pd_cck =
+			ntohl(
+			g_HqaRxStat.CCK_PD_Band1);
+		rx_st_band->phy_rx_pd_ofdm =
+			ntohl(
+			g_HqaRxStat.OFDM_PD_Band1);
+		rx_st_band->phy_rx_sig_err_cck =
+			ntohl(
+			g_HqaRxStat.CCK_SIG_Err_Band1);
+		rx_st_band->phy_rx_sfd_err_cck =
+			ntohl(
+			g_HqaRxStat.CCK_SFD_Err_Band1);
+		rx_st_band->phy_rx_sig_err_ofdm =
+			ntohl(
+			g_HqaRxStat.OFDM_SIG_Err_Band1);
+		rx_st_band->phy_rx_tag_err_ofdm =
+			ntohl(
+			g_HqaRxStat.OFDM_TAG_Err_Band1);
+		rx_st_band->phy_rx_mdrdy_cnt_cck =
+			ntohl(
+			g_HqaRxStat.PHY_CCK_MDRDY_Band1);
+		rx_st_band->phy_rx_mdrdy_cnt_ofdm =
+			ntohl(
+			g_HqaRxStat.PHY_OFDM_MDRDY_Band1);
+
+
+		/* Backup Band0 info */
+		g_backup_band0_info.mac_rx_fcs_err_cnt +=
+			g_HqaRxStat.MAC_FCS_Err;
+
+		g_backup_band0_info.mac_rx_mdrdy_cnt +=
+			g_HqaRxStat.MAC_Mdrdy;
+
+		g_backup_band0_info.mac_rx_len_mismatch +=
+			g_HqaRxStat.LengthMismatchCount_B0;
+
+		/* Reset Band1 backup info */
+		kalMemZero(&g_backup_band1_info,
+			sizeof(struct hqa_rx_stat_band_format));
+	}
+
+	return ret;
+}
+
+int32_t hqa_genStatPathReport(
+	u_int8_t band_idx,
+	u_int8_t blk_idx,
+	struct hqa_rx_stat_path_format *rx_st_path)
+{
+	int32_t ret = 0;
+
+	switch (blk_idx) {
+	case HQA_ANT_WF0:
+		rx_st_path->rcpi =
+			ntohl(g_HqaRxStat.RCPI0);
+		rx_st_path->rssi =
+			ntohl(g_HqaRxStat.RSSI0);
+		rx_st_path->fagc_ib_rssi =
+			ntohl(g_HqaRxStat.FAGCRssiIBR0);
+		rx_st_path->fagc_wb_rssi =
+			ntohl(g_HqaRxStat.FAGCRssiWBR0);
+		rx_st_path->inst_ib_rssi =
+			ntohl(g_HqaRxStat.InstRssiIBR0);
+		rx_st_path->inst_wb_rssi =
+			ntohl(g_HqaRxStat.InstRssiWBR0);
+		break;
+	case HQA_ANT_WF1:
+		rx_st_path->rcpi =
+			ntohl(g_HqaRxStat.RCPI1);
+		rx_st_path->rssi =
+			ntohl(g_HqaRxStat.RSSI1);
+		rx_st_path->fagc_ib_rssi =
+			ntohl(g_HqaRxStat.FAGCRssiIBR1);
+		rx_st_path->fagc_wb_rssi =
+			ntohl(g_HqaRxStat.FAGCRssiWBR1);
+		rx_st_path->inst_ib_rssi =
+			ntohl(g_HqaRxStat.InstRssiIBR1);
+		rx_st_path->inst_wb_rssi =
+			ntohl(g_HqaRxStat.InstRssiWBR1);
+		break;
+
+	default:
+		ret = WLAN_STATUS_INVALID_DATA;
+		break;
+	}
+
+	return ret;
+}
+
+int32_t hqa_genStatUserReport(
+	u_int8_t band_idx,
+	u_int8_t blk_idx,
+	struct hqa_rx_stat_user_format *rx_st_user)
+{
+	int32_t ret = WLAN_STATUS_SUCCESS;
+
+	rx_st_user->freq_offset_from_rx =
+		ntohl(g_HqaRxStat.FreqOffsetFromRX);
+	if (band_idx == HQA_M_BAND_0)
+		rx_st_user->snr = ntohl(g_HqaRxStat.SNR0);
+	else
+		rx_st_user->snr = ntohl(g_HqaRxStat.SNR1);
+
+	rx_st_user->fcs_error_cnt =
+		ntohl(g_HqaRxStat.MAC_FCS_Err);
+
+	return ret;
+}
+
+int32_t hqa_genStatCommReport(
+	u_int8_t band_idx,
+	u_int8_t blk_idx,
+	struct hqa_rx_stat_comm_format *rx_st_comm)
+{
+	int32_t ret = WLAN_STATUS_SUCCESS;
+
+	rx_st_comm->rx_fifo_full =
+		ntohl(g_HqaRxStat.OutOfResource);
+	rx_st_comm->aci_hit_low =
+		ntohl(g_HqaRxStat.ACIHitLower);
+	rx_st_comm->aci_hit_high =
+		ntohl(g_HqaRxStat.ACIHitUpper);
+	rx_st_comm->mu_pkt_count =
+		ntohl(g_HqaRxStat.MRURxCount);
+	rx_st_comm->sig_mcs =
+		ntohl(g_HqaRxStat.SIGMCS);
+	rx_st_comm->sinr =
+		ntohl(g_HqaRxStat.SINR);
+	if (band_idx == HQA_M_BAND_0) {
+		rx_st_comm->driver_rx_count =
+		ntohl(g_HqaRxStat.DriverRxCount);
+	} else {
+		rx_st_comm->driver_rx_count =
+		ntohl(g_HqaRxStat.DriverRxCount1);
+	}
+	return ret;
+}
+
+
+int32_t hqa_getRxStatisticsByType(
+	struct GLUE_INFO *prGlueInfo,
+	u_int8_t band_idx,
+	u_int8_t blk_idx,
+	u_int8_t test_rx_stat_cat,
+	struct hqa_rx_stat_u *st)
+{
+	int32_t i4Ret = 0;
+	uint32_t u4BufLen = 0;
+	struct PARAM_CUSTOM_ACCESS_RX_STAT rx_stat_test;
+
+	rx_stat_test.u4SeqNum = 0;
+	rx_stat_test.u4TotalNum = 72;
+
+	/* only TEST_RX_STAT_BAND send query command to FW. */
+	if (test_rx_stat_cat == HQA_RX_STAT_BAND) {
+		i4Ret = kalIoctl(prGlueInfo,
+			 wlanoidQueryRxStatistics,
+			 &rx_stat_test, sizeof(rx_stat_test),
+			 TRUE, TRUE, TRUE, &u4BufLen);
+	}
+
+	switch (test_rx_stat_cat) {
+	case HQA_RX_STAT_BAND:
+		i4Ret = hqa_genStatBandReport(
+		band_idx,
+		blk_idx,
+		&(st->u.rx_st_band));
+		break;
+	case HQA_RX_STAT_PATH:
+		i4Ret = hqa_genStatPathReport(
+		band_idx,
+		blk_idx,
+		&(st->u.rx_st_path));
+		break;
+	case HQA_RX_STAT_USER:
+		i4Ret = hqa_genStatUserReport(
+		band_idx,
+		blk_idx,
+		&(st->u.rx_st_user));
+		break;
+	case HQA_RX_STAT_COMM:
+		i4Ret = hqa_genStatCommReport(
+		band_idx,
+		blk_idx,
+		&(st->u.rx_st_comm));
+		break;
+	default:
+		break;
+	}
+
+	if (i4Ret)
+		DBGLOG(RFTEST, INFO, "err=0x%08x\n.", i4Ret);
+
+	return i4Ret;
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  QA Agent For Get Rx Statistics.
+ *
+ * \param[in] prNetDev		Pointer to the Net Device
+ * \param[in] prIwReqData
+ * \param[in] HqaCmdFrame	Ethernet Frame Format receive from QA Tool DLL
+ * \param[out] None
+ *
+ * \retval 0			On success.
+ */
+/*----------------------------------------------------------------------------*/
+static int32_t HQA_GetRxStatisticsAllV2(struct net_device
+				      *prNetDev,
+				      IN union iwreq_data *prIwReqData,
+				      struct HQA_CMD_FRAME *HqaCmdFrame)
+{
+	int32_t	i4Ret = 0;
+	struct GLUE_INFO *prGlueInfo = NULL;
+	u_int32_t buf_size = 0;
+	u_int32_t type_mask = 0, band_idx = 0, type_num = 0, length;
+	u_int32_t blk_idx = 0, type_idx = 0, buf = 0;
+	u_int32_t dw_idx = 0, dw_cnt = 0;
+	u_int32_t *ptr2 = NULL;
+	struct hqa_rx_stat_u *rx_stat = NULL;
+	u_int8_t path[HQA_ANT_NUM] = {0};
+	u_int8_t path_len = 0;
+	u_int8_t *ptr = NULL;
+	u_int8_t i = 0;
+
+	struct hqa_rx_stat_resp_field st_form[HQA_SERV_RX_STAT_TYPE_NUM] = {
+	 {HQA_SERV_RX_STAT_TYPE_BAND, 0, 0, 0,
+		 sizeof(struct hqa_rx_stat_band_format)},
+	 {HQA_SERV_RX_STAT_TYPE_PATH, 0, 0, 0,
+		 sizeof(struct hqa_rx_stat_path_format)},
+	 {HQA_SERV_RX_STAT_TYPE_USER, 0, 0, 0,
+		 sizeof(struct hqa_rx_stat_user_format)},
+	 {HQA_SERV_RX_STAT_TYPE_COMM, 0, 0, 0,
+		 sizeof(struct hqa_rx_stat_comm_format)}
+	};
+
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_GetRxStatisticsAllV2\n");
+
+
+	/* Request format type */
+	memcpy(&type_mask, HqaCmdFrame->Data + 4 * 0, 4);
+	type_mask = ntohl(type_mask);
+
+	memcpy(&band_idx, HqaCmdFrame->Data + 4 * 1, 4);
+	band_idx = ntohl(band_idx);
+
+	DBGLOG(RFTEST, INFO, "type_mask = %d, band_idx = %d\n",
+		type_mask, band_idx);
+
+	/* sanity check for band index param */
+	if ((!g_DBDCEnable) && (band_idx != HQA_M_BAND_0))
+		goto error2;
+
+	/* check wifi path combination for specific band */
+	/* check with Yenchih */
+	if (g_DBDCEnable) {
+		path_len = 1;
+		if (band_idx == HQA_M_BAND_0)
+			path[0] = 0;
+		else
+			path[0] = 1;
+	} else {
+		path_len = 2;
+		for (i = 0; i < path_len; i++)
+			path[i] = i;
+	}
+
+	/* update item mask for each type */
+	st_form[HQA_SERV_RX_STAT_TYPE_BAND].item_mask = BIT(band_idx);
+	for (blk_idx = 0; blk_idx < path_len; blk_idx++)
+		st_form[HQA_SERV_RX_STAT_TYPE_PATH].item_mask |=
+			BIT(path[blk_idx]);
+	for (blk_idx = 0; blk_idx < HQA_USER_NUM; blk_idx++)
+		st_form[HQA_SERV_RX_STAT_TYPE_USER].item_mask |=
+			BIT(blk_idx);
+	st_form[HQA_SERV_RX_STAT_TYPE_COMM].item_mask = BIT(0);
+
+	/* update block count for each type */
+	for (type_idx = HQA_SERV_RX_STAT_TYPE_BAND;
+		type_idx < HQA_SERV_RX_STAT_TYPE_NUM; type_idx++) {
+		for (blk_idx = 0; blk_idx < 32; blk_idx++) {
+			if (st_form[type_idx].item_mask & BIT(blk_idx))
+				st_form[type_idx].blk_cnt++;
+		}
+	}
+
+	ptr = HqaCmdFrame->Data + 2 + sizeof(type_num);
+
+	/* allocate dynamic memory for rx stat info */
+	rx_stat = kalMemAlloc(sizeof(struct hqa_rx_stat_u), VIR_MEM_TYPE);
+	if (!rx_stat) {
+		i4Ret = WLAN_STATUS_RESOURCES;
+		goto error1;
+	}
+
+	for (type_idx = HQA_SERV_RX_STAT_TYPE_BAND;
+			type_idx < HQA_SERV_RX_STAT_TYPE_NUM; type_idx++) {
+		if (type_mask & BIT(type_idx)) {
+			type_num++;
+			length = st_form[type_idx].blk_cnt *
+				st_form[type_idx].blk_size;
+
+			/* fill in type */
+			buf = htonl(st_form[type_idx].type);
+			kalMemMove(ptr, &buf, sizeof(buf));
+			ptr += sizeof(st_form[type_idx].type);
+			buf_size += sizeof(st_form[type_idx].type);
+
+			/* fill in version */
+			buf = htonl(st_form[type_idx].version);
+			kalMemMove(ptr, &buf, sizeof(buf));
+			ptr += sizeof(st_form[type_idx].version);
+			buf_size += sizeof(st_form[type_idx].version);
+
+			/* fill in item mask */
+			buf = htonl(st_form[type_idx].item_mask);
+			kalMemMove(ptr, &buf, sizeof(buf));
+			ptr += sizeof(st_form[type_idx].item_mask);
+			buf_size += sizeof(st_form[type_idx].item_mask);
+
+			/* fill in length */
+			buf = htonl(length);
+			kalMemMove(ptr, &buf, sizeof(buf));
+			ptr += sizeof(length);
+			buf_size += sizeof(length);
+
+			for (blk_idx = 0; blk_idx < 32; blk_idx++) {
+				if (st_form[type_idx].item_mask
+						& BIT(blk_idx)) {
+					/* service handle for rx stat info */
+					hqa_getRxStatisticsByType(prGlueInfo,
+						band_idx,
+						blk_idx,
+						type_idx,
+						rx_stat);
+					ptr2 = (u_int32_t *) rx_stat;
+					dw_cnt = st_form[type_idx].blk_size
+						>> 2;
+					for (dw_idx = 0; dw_idx < dw_cnt;
+							dw_idx++, ptr2++,
+							ptr += 4) {
+						/* endian transform */
+						buf = htonl(*ptr2);
+						/* fill in block content */
+						kalMemMove(ptr, &buf,
+								sizeof(buf));
+					}
+
+					buf_size += st_form[type_idx].blk_size;
+				}
+			}
+		}
+	}
+
+	/* free allocated memory */
+	kalMemFree(rx_stat, VIR_MEM_TYPE, sizeof(struct hqa_rx_stat_u));
+
+	/* fill in type num */
+	ptr = HqaCmdFrame->Data + 2;
+	buf = htonl(type_num);
+	kalMemMove(ptr, &buf, sizeof(buf));
+	buf_size += sizeof(type_num);
+
+	ResponseToQA(HqaCmdFrame, prIwReqData,
+		     (2 + buf_size), i4Ret);
+
+	return i4Ret;
+
+error1:
+	DBGLOG(RFTEST, INFO, "memory allocation fail for rx stat.");
+	ResponseToQA(HqaCmdFrame, prIwReqData, 2, i4Ret);
+	return i4Ret;
+
+error2:
+	DBGLOG(RFTEST, INFO, "invalid band index for non-dbdc mode\n");
+	ResponseToQA(HqaCmdFrame, prIwReqData, 2, i4Ret);
+	return i4Ret;
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  QA Agent For
@@ -5048,7 +5592,11 @@ static int32_t HQA_SetBandMode(struct net_device *prNetDev,
 	int32_t i4Ret = 0;
 	uint32_t u4Band_mode = 0;
 	uint32_t u4Band_type = 0;
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct PARAM_MTK_WIFI_TEST_STRUCT rRfATInfo;
+	uint32_t u4BufLen = 0;
 
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 	memcpy((uint8_t *)&u4Band_mode, HqaCmdFrame->Data + 4 * 0,
 	       4);
 	u4Band_mode = ntohl(u4Band_mode);
@@ -5065,6 +5613,29 @@ static int32_t HQA_SetBandMode(struct net_device *prNetDev,
 		g_DBDCEnable = TRUE;
 	else if (u4Band_mode == 1)
 		g_DBDCEnable = FALSE;
+
+	/* notifiy FW */
+	rRfATInfo.u4FuncIndex = RF_AT_FUNCID_SET_DBDC_ENABLE;
+	if (g_DBDCEnable)
+		rRfATInfo.u4FuncData = 1;
+	else
+		rRfATInfo.u4FuncData = 0;
+
+	DBGLOG(RFTEST, INFO,
+	       "QA_AGENT HQA_GetBandMode g_DBDCEnable = %d\n",
+	       g_DBDCEnable);
+
+	i4Ret = kalIoctl(prGlueInfo,	/* prGlueInfo */
+			 wlanoidRftestSetAutoTest,	/* pfnOidHandler */
+			 &rRfATInfo,	/* pvInfoBuf */
+			 sizeof(rRfATInfo),	/* u4InfoBufLen */
+			 FALSE,	/* fgRead */
+			 FALSE,	/* fgWaitResp */
+			 TRUE,	/* fgCmd */
+			 &u4BufLen);	/* pu4QryInfoLen */
+
+	if (i4Ret != WLAN_STATUS_SUCCESS)
+		return -EFAULT;
 
 	ResponseToQA(HqaCmdFrame, prIwReqData, 2, i4Ret);
 
@@ -5475,7 +6046,7 @@ static HQA_CMD_HANDLER HQA_CMD_SET5[] = {
 	HQA_MPSStart,		/* 0x1519 */
 	HQA_MPSStop,		/* 0x151A */
 	ToDoFunction,		/* 0x151B */
-	ToDoFunction,		/* 0x151C */
+	HQA_GetRxStatisticsAllV2,	/* 0x151C */
 	ToDoFunction,		/* 0x151D */
 	ToDoFunction,		/* 0x151E */
 	ToDoFunction,		/* 0x151F */
@@ -8991,10 +9562,17 @@ int priv_qa_agent(IN struct net_device *prNetDev,
 	int32_t i4Status = 0;
 	struct HQA_CMD_FRAME *HqaCmdFrame;
 	uint32_t u4ATEMagicNum, u4ATEId, u4ATEData;
-#if (CONFIG_WLAN_SERVICE == 1)
 	struct GLUE_INFO *prGlueInfo = NULL;
+#if (CONFIG_WLAN_SERVICE == 1)
 	struct hqa_frame_ctrl local_hqa;
 #endif
+
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+	ASSERT(prGlueInfo);
+
+	/* workaroud for meta tool */
+	if (prGlueInfo->prAdapter->fgTestMode == FALSE)
+		MT_ATEStart(prNetDev, "ATESTART");
 
 	HqaCmdFrame = kmalloc(sizeof(*HqaCmdFrame), GFP_KERNEL);
 
@@ -9024,9 +9602,6 @@ int priv_qa_agent(IN struct net_device *prNetDev,
 	case HQA_CMD_MAGIC_NO:
 #if (CONFIG_WLAN_SERVICE == 1)
 	{
-		prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
-		ASSERT(prGlueInfo);
-
 		local_hqa.type = 0;
 		local_hqa.hqa_frame_comm.hqa_frame_eth =
 		(struct hqa_frame *)HqaCmdFrame;
