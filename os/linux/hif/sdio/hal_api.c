@@ -197,6 +197,7 @@ uint32_t
 halRxWaitResponse(IN struct ADAPTER *prAdapter, IN uint8_t ucPortIdx, OUT uint8_t *pucRspBuffer,
 		  IN uint32_t u4MaxRespBufferLen, OUT uint32_t *pu4Length)
 {
+	struct mt66xx_chip_info *prChipInfo;
 	uint32_t u4Value = 0, u4PktLen = 0, i = 0, u4CpyLen;
 	uint32_t u4Status = WLAN_STATUS_SUCCESS;
 	uint32_t u4Time, u4Current;
@@ -207,6 +208,7 @@ halRxWaitResponse(IN struct ADAPTER *prAdapter, IN uint8_t ucPortIdx, OUT uint8_
 
 	ASSERT(prAdapter);
 	ASSERT(pucRspBuffer);
+	prChipInfo = prAdapter->chip_info;
 
 	prRxCtrl = &prAdapter->rRxCtrl;
 
@@ -227,7 +229,8 @@ halRxWaitResponse(IN struct ADAPTER *prAdapter, IN uint8_t ucPortIdx, OUT uint8_
 		if (u4PktLen > u4MaxRespBufferLen) {
 			DBGLOG(RX, ERROR, "Packet length over buffer! Dump Response buffer, length = 0x%x\n",
 				*pu4Length);
-			prEvent = (struct WIFI_EVENT *) pucRspBuffer;
+			prEvent = (struct WIFI_EVENT *)
+				(pucRspBuffer + prChipInfo->rxd_size);
 			DBGLOG(RX, ERROR, "RX EVENT: ID[0x%02X] SEQ[%u] LEN[%u]\n",
 				   prEvent->ucEID, prEvent->ucSeqNum, prEvent->u2PacketLength);
 			DBGLOG_MEM8(RX, ERROR, pucRspBuffer, u4MaxRespBufferLen);
@@ -2161,10 +2164,16 @@ void halGetMailbox(IN struct ADAPTER *prAdapter, IN uint32_t u4MailboxNum, OUT u
 	}
 }
 
-u_int8_t halDeAggErrorCheck(struct SDIO_RX_COALESCING_BUF *prRxBuf, uint8_t *pucPktAddr)
+u_int8_t halDeAggErrorCheck(struct ADAPTER *prAdapter,
+			    struct SDIO_RX_COALESCING_BUF *prRxBuf,
+			    uint8_t *pucPktAddr)
 {
+	struct mt66xx_chip_info *prChipInfo;
 	uint16_t u2PktLength;
 	uint8_t *pucRxBufEnd;
+
+	ASSERT(prAdapter);
+	prChipInfo = prAdapter->chip_info;
 
 	pucRxBufEnd = (uint8_t *)prRxBuf->pvRxCoalescingBuf + prRxBuf->u4PktTotalLength;
 
@@ -2175,7 +2184,7 @@ u_int8_t halDeAggErrorCheck(struct SDIO_RX_COALESCING_BUF *prRxBuf, uint8_t *puc
 		return TRUE;
 
 	/* Rx packet min length check */
-	if (u2PktLength <= sizeof(struct HW_MAC_RX_DESC))
+	if (u2PktLength <= prChipInfo->rxd_size)
 		return TRUE;
 
 	/* Rx packet max length check */
@@ -2265,7 +2274,8 @@ void halDeAggRxPktWorker(struct work_struct *work)
 		SDIO_REC_TIME_START();
 		for (i = 0; i < prRxBuf->u4PktCount; i++) {
 			/* Rx de-aggregation check */
-			if (halDeAggErrorCheck(prRxBuf, pucSrcAddr)) {
+			if (halDeAggErrorCheck(prAdapter, prRxBuf,
+					       pucSrcAddr)) {
 				fgDeAggErr = TRUE;
 				break;
 			}

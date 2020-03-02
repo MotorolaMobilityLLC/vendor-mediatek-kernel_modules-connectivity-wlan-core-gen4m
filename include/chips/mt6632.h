@@ -81,6 +81,9 @@
 #define MT6632_PATCH_START_ADDR			(0x000B4000)
 #define MT6632_TOP_CFG_BASE			(0x0000)
 #define MT6632_TX_DESC_APPEND_LENGTH            44
+#define MT6632_RX_DESC_LENGTH                   16
+#define MT6632_RX_INIT_EVENT_LENGTH             8
+#define MT6632_RX_EVENT_HDR_LENGTH              12
 
 /*******************************************************************************
  *                         D A T A   T Y P E S

@@ -2698,23 +2698,22 @@ uint32_t wlanAccessRegister(IN struct ADAPTER *prAdapter,
 			    IN uint32_t u4Data,
 			    IN uint8_t ucSetQuery)
 {
+	struct mt66xx_chip_info *prChipInfo;
 	struct CMD_INFO *prCmdInfo;
 	struct INIT_HIF_TX_HEADER *prInitHifTxHeader;
-	struct INIT_HIF_RX_HEADER *prInitHifRxHeader;
+	struct INIT_WIFI_EVENT *prInitEvent;
 	struct INIT_CMD_ACCESS_REG *prInitCmdAccessReg;
 	struct INIT_EVENT_ACCESS_REG *prInitEventAccessReg;
 	uint8_t ucTC, ucCmdSeqNum;
 	uint16_t cmd_size;
-	uint8_t aucBuffer[sizeof(struct INIT_HIF_RX_HEADER) +
-					sizeof(struct INIT_CMD_ACCESS_REG)];
+	uint8_t *aucBuffer;
+	uint32_t u4EventSize;
 	uint32_t u4Status = WLAN_STATUS_SUCCESS;
-	struct mt66xx_chip_info *prChipInfo;
 
 	ASSERT(prAdapter);
 	prChipInfo = prAdapter->chip_info;
 
 	DEBUGFUNC("wlanAccessRegister");
-
 
 	/* 1. Allocate CMD Info Packet and its Buffer. */
 	cmd_size = sizeof(struct INIT_HIF_TX_HEADER) + sizeof(
@@ -2725,6 +2724,10 @@ uint32_t wlanAccessRegister(IN struct ADAPTER *prAdapter,
 		DBGLOG(INIT, ERROR, "Allocate CMD_INFO_T ==> FAILED.\n");
 		return WLAN_STATUS_FAILURE;
 	}
+
+	u4EventSize = prChipInfo->rxd_size + prChipInfo->init_event_size +
+		sizeof(struct INIT_CMD_ACCESS_REG);
+	aucBuffer = kalMemAlloc(u4EventSize, PHY_MEM_TYPE);
 
 	prCmdInfo->u2InfoBufLen = cmd_size;
 
@@ -2795,11 +2798,12 @@ uint32_t wlanAccessRegister(IN struct ADAPTER *prAdapter,
 
 	/* 7. Wait for INIT_EVENT_ID_CMD_RESULT */
 	u4Status = wlanAccessRegisterStatus(prAdapter, ucCmdSeqNum, ucSetQuery,
-					    aucBuffer, sizeof(aucBuffer));
+					    aucBuffer, u4EventSize);
 	if (ucSetQuery == 0) {
-		prInitHifRxHeader = (struct INIT_HIF_RX_HEADER *)aucBuffer;
+		prInitEvent = (struct INIT_WIFI_EVENT *)
+			(aucBuffer + prChipInfo->rxd_size);
 		prInitEventAccessReg = (struct INIT_EVENT_ACCESS_REG *)
-				prInitHifRxHeader->rInitWifiEvent.aucBuffer;
+			prInitEvent->aucBuffer;
 
 		if (prInitEventAccessReg->u4Address != u4Addr) {
 			DBGLOG(INIT, ERROR,
@@ -2814,40 +2818,37 @@ exit:
 	/* 8. Free CMD Info Packet. */
 	cmdBufFreeCmdInfo(prAdapter, prCmdInfo);
 
+	kalMemFree(aucBuffer, PHY_MEM_TYPE, u4EventSize);
+
 	return u4Status;
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * @brief This function is called to get the response of INIT_CMD_ACCESS_REG
- *
- * @param prAdapter      Pointer to the Adapter structure.
- *        ucCmdSeqNum    Sequence number of previous firmware scatter
- *        ucSetQuery     Read or write
- *        prEvent        the pointer of buffer to store the response
- *
- * @return WLAN_STATUS_SUCCESS
- *         WLAN_STATUS_FAILURE
- */
+* @brief This function is called to get the response of INIT_CMD_ACCESS_REG
+*
+* @param prAdapter      Pointer to the Adapter structure.
+*        ucCmdSeqNum    Sequence number of previous firmware scatter
+*        ucSetQuery     Read or write
+*        prEvent        the pointer of buffer to store the response
+*
+* @return WLAN_STATUS_SUCCESS
+*         WLAN_STATUS_FAILURE
+*/
 /*----------------------------------------------------------------------------*/
-uint32_t wlanAccessRegisterStatus(IN struct ADAPTER
-				  *prAdapter, IN uint8_t ucCmdSeqNum,
+uint32_t wlanAccessRegisterStatus(IN struct ADAPTER *prAdapter,
+				  IN uint8_t ucCmdSeqNum,
 				  IN uint8_t ucSetQuery, IN void *prEvent,
 				  IN uint32_t u4EventLen)
 {
-	/* UINT_8 aucBuffer[sizeof(INIT_HIF_RX_HEADER_T) +
-	 *		    sizeof(INIT_CMD_ACCESS_REG)];
-	 */
-	struct INIT_HIF_RX_HEADER *prInitHifRxHeader;
-	/* P_INIT_EVENT_CMD_RESULT prEventCmdResult;
-	 * P_INIT_CMD_ACCESS_REG prEventCmdAccessReg;
-	 */
+	struct mt66xx_chip_info *prChipInfo;
+	struct INIT_WIFI_EVENT *prInitEvent;
 	uint32_t u4RxPktLength;
 	uint32_t u4Status = WLAN_STATUS_SUCCESS;
-
 	uint8_t ucPortIdx = IMG_DL_STATUS_PORT_IDX;
 
 	ASSERT(prAdapter);
+	prChipInfo = prAdapter->chip_info;
 
 	do {
 		if (kalIsCardRemoved(prAdapter->prGlueInfo) == TRUE
@@ -2860,16 +2861,14 @@ uint32_t wlanAccessRegisterStatus(IN struct ADAPTER
 					 RST_FLAG_PREVENT_POWER_OFF);
 			u4Status = WLAN_STATUS_FAILURE;
 		} else {
-			prInitHifRxHeader =
-				(struct INIT_HIF_RX_HEADER *) prEvent;
+			prInitEvent = (struct INIT_WIFI_EVENT *)
+				(prEvent + prChipInfo->rxd_size);
 
 			/* EID / SeqNum check */
-			if (((prInitHifRxHeader->rInitWifiEvent.ucEID !=
-			      INIT_EVENT_ID_CMD_RESULT)
-			     && (ucSetQuery == 1)) ||
-			    ((prInitHifRxHeader->rInitWifiEvent.ucEID !=
-			      INIT_EVENT_ID_ACCESS_REG)
-			     && (ucSetQuery == 0))) {
+			if (((prInitEvent->ucEID != INIT_EVENT_ID_CMD_RESULT) &&
+			     (ucSetQuery == 1)) ||
+			    ((prInitEvent->ucEID != INIT_EVENT_ID_ACCESS_REG)
+				&& (ucSetQuery == 0))) {
 				GL_RESET_TRIGGER(prAdapter,
 						 RST_FLAG_DO_CORE_DUMP |
 						 RST_FLAG_PREVENT_POWER_OFF);
@@ -2877,8 +2876,7 @@ uint32_t wlanAccessRegisterStatus(IN struct ADAPTER
 				DBGLOG(INIT, ERROR,
 				       "wlanAccessRegisterStatus: incorrect ucEID. ucSetQuery = 0x%x\n",
 				       ucSetQuery);
-			} else if (prInitHifRxHeader->rInitWifiEvent.ucSeqNum !=
-			    ucCmdSeqNum) {
+			} else if (prInitEvent->ucSeqNum != ucCmdSeqNum) {
 				u4Status = WLAN_STATUS_FAILURE;
 				GL_RESET_TRIGGER(prAdapter,
 						 RST_FLAG_DO_CORE_DUMP |
@@ -3729,19 +3727,21 @@ void wlanPrintVersion(IN struct ADAPTER *prAdapter)
 uint32_t wlanQueryNicCapability(IN struct ADAPTER
 				*prAdapter)
 {
+	struct mt66xx_chip_info *prChipInfo;
 	uint8_t aucZeroMacAddr[] = NULL_MAC_ADDR;
 	uint8_t ucCmdSeqNum;
 	struct CMD_INFO *prCmdInfo;
 	struct WIFI_CMD *prWifiCmd;
 	uint32_t u4RxPktLength;
-	uint8_t aucBuffer[sizeof(struct WIFI_EVENT) + sizeof(
-						struct EVENT_NIC_CAPABILITY)];
+	uint8_t *aucBuffer;
+	uint32_t u4EventSize;
 	struct HW_MAC_RX_DESC *prRxStatus;
 	struct WIFI_EVENT *prEvent;
 	struct EVENT_NIC_CAPABILITY *prEventNicCapability;
 	struct PSE_CMD_HDR *prPseCmdHdr;
 
 	ASSERT(prAdapter);
+	prChipInfo = prAdapter->chip_info;
 
 	DEBUGFUNC("wlanQueryNicCapability");
 
@@ -3752,6 +3752,11 @@ uint32_t wlanQueryNicCapability(IN struct ADAPTER
 		DBGLOG(INIT, ERROR, "Allocate CMD_INFO_T ==> FAILED.\n");
 		return WLAN_STATUS_FAILURE;
 	}
+
+	u4EventSize = prChipInfo->rxd_size + prChipInfo->event_hdr_size +
+		sizeof(struct EVENT_NIC_CAPABILITY);
+	aucBuffer = kalMemAlloc(u4EventSize, PHY_MEM_TYPE);
+
 	/* increase command sequence number */
 	ucCmdSeqNum = nicIncreaseCmdSeqNum(prAdapter);
 
@@ -3792,13 +3797,12 @@ uint32_t wlanQueryNicCapability(IN struct ADAPTER
 	cmdBufFreeCmdInfo(prAdapter, prCmdInfo);
 
 	while (TRUE) {
-		if (nicRxWaitResponse(prAdapter, 1, aucBuffer,
-				      sizeof(struct WIFI_EVENT) + sizeof(struct
-						      EVENT_NIC_CAPABILITY),
+		if (nicRxWaitResponse(prAdapter, 1, aucBuffer, u4EventSize,
 				      &u4RxPktLength) != WLAN_STATUS_SUCCESS) {
 
 			DBGLOG(INIT, WARN, "%s: wait for event failed!\n",
 			       __func__);
+			kalMemFree(aucBuffer, PHY_MEM_TYPE, u4EventSize);
 			return WLAN_STATUS_FAILURE;
 		}
 		/* header checking .. */
@@ -3810,7 +3814,11 @@ uint32_t wlanQueryNicCapability(IN struct ADAPTER
 			continue;
 		}
 
-		prEvent = (struct WIFI_EVENT *) aucBuffer;
+		prEvent = (struct WIFI_EVENT *)
+			(aucBuffer + prChipInfo->rxd_size);
+		prEventNicCapability =
+			(struct EVENT_NIC_CAPABILITY *)prEvent->aucBuffer;
+
 		if (prEvent->ucEID != EVENT_ID_NIC_CAPABILITY) {
 			DBGLOG(INIT, WARN,
 			      "%s: skip unexpected event ID[0x%02x]\n",
@@ -3898,6 +3906,7 @@ uint32_t wlanQueryNicCapability(IN struct ADAPTER
 	       prEventNicCapability->ucRfCalFail,
 	       prEventNicCapability->ucBbCalFail);
 #endif
+	kalMemFree(aucBuffer, PHY_MEM_TYPE, u4EventSize);
 
 	return WLAN_STATUS_SUCCESS;
 }
@@ -3917,17 +3926,19 @@ uint32_t wlanQueryNicCapability(IN struct ADAPTER
 uint32_t wlanQueryPdMcr(IN struct ADAPTER *prAdapter,
 			struct PARAM_MCR_RW_STRUCT *prMcrRdInfo)
 {
+	struct mt66xx_chip_info *prChipInfo;
 	uint8_t ucCmdSeqNum;
 	struct CMD_INFO *prCmdInfo;
 	struct WIFI_CMD *prWifiCmd;
 	uint32_t u4RxPktLength;
-	uint8_t aucBuffer[sizeof(struct WIFI_EVENT) + sizeof(
-						struct CMD_ACCESS_REG)];
+	uint8_t *aucBuffer;
+	uint32_t u4EventSize;
 	struct HW_MAC_RX_DESC *prRxStatus;
 	struct WIFI_EVENT *prEvent;
 	struct CMD_ACCESS_REG *prCmdMcrQuery;
 
 	ASSERT(prAdapter);
+	prChipInfo = prAdapter->chip_info;
 
 	/* 1. Allocate CMD Info Packet and its Buffer */
 	prCmdInfo = cmdBufAllocateCmdInfo(prAdapter,
@@ -3937,6 +3948,11 @@ uint32_t wlanQueryPdMcr(IN struct ADAPTER *prAdapter,
 		DBGLOG(INIT, ERROR, "Allocate CMD_INFO_T ==> FAILED.\n");
 		return WLAN_STATUS_FAILURE;
 	}
+
+	u4EventSize = prChipInfo->rxd_size + prChipInfo->event_hdr_size +
+		struct CMD_ACCESS_REG;
+	aucBuffer = kalMemAlloc(u4EventSize, PHY_MEM_TYPE);
+
 	/* increase command sequence number */
 	ucCmdSeqNum = nicIncreaseCmdSeqNum(prAdapter);
 
@@ -3967,26 +3983,31 @@ uint32_t wlanQueryPdMcr(IN struct ADAPTER *prAdapter,
 	wlanSendCommand(prAdapter, prCmdInfo);
 	cmdBufFreeCmdInfo(prAdapter, prCmdInfo);
 
-	if (nicRxWaitResponse(prAdapter, 1, aucBuffer,
-			      sizeof(struct WIFI_EVENT) +
-			      sizeof(struct CMD_ACCESS_REG),
+	if (nicRxWaitResponse(prAdapter, 1, aucBuffer, u4EventSize,
 			      &u4RxPktLength) != WLAN_STATUS_SUCCESS) {
+		kalMemFree(aucBuffer, PHY_MEM_TYPE, u4EventSize);
 		return WLAN_STATUS_FAILURE;
 	}
 	/* header checking .. */
 	prRxStatus = (struct HW_MAC_RX_DESC *) aucBuffer;
-	if (prRxStatus->u2PktTYpe != RXM_RXD_PKT_TYPE_SW_EVENT)
+	if (prRxStatus->u2PktTYpe != RXM_RXD_PKT_TYPE_SW_EVENT) {
+		kalMemFree(aucBuffer, PHY_MEM_TYPE, u4EventSize);
 		return WLAN_STATUS_FAILURE;
+	}
 
-	prEvent = (struct WIFI_EVENT *) aucBuffer;
-
-	if (prEvent->ucEID != EVENT_ID_ACCESS_REG)
+	prEvent = (struct WIFI_EVENT *)
+		(aucBuffer + prChipInfo->rxd_size);
+	if (prEvent->ucEID != EVENT_ID_ACCESS_REG) {
+		kalMemFree(aucBuffer, PHY_MEM_TYPE, u4EventSize);
 		return WLAN_STATUS_FAILURE;
+	}
 
 	prCmdMcrQuery = (struct CMD_ACCESS_REG *) (
 				prEvent->aucBuffer);
 	prMcrRdInfo->u4McrOffset = prCmdMcrQuery->u4Address;
 	prMcrRdInfo->u4McrData = prCmdMcrQuery->u4Data;
+
+	kalMemFree(aucBuffer, PHY_MEM_TYPE, u4EventSize);
 
 	return WLAN_STATUS_SUCCESS;
 }
@@ -5468,6 +5489,7 @@ uint32_t wlanQueryNicCapabilityV2(IN struct ADAPTER *prAdapter)
 	struct mt66xx_chip_info *prChipInfo;
 	uint32_t chip_id;
 
+	ASSERT(prAdapter);
 	prChipInfo = prAdapter->chip_info;
 	chip_id = prChipInfo->chip_id;
 
@@ -5564,7 +5586,8 @@ uint32_t wlanQueryNicCapabilityV2(IN struct ADAPTER *prAdapter)
 				continue;
 			}
 
-			prEvent = (struct WIFI_EVENT *) prEventBuff;
+			prEvent = (struct WIFI_EVENT *)
+				(prEventBuff + prChipInfo->rxd_size);
 			if (prEvent->ucEID != EVENT_ID_NIC_CAPABILITY_V2) {
 				DBGLOG(INIT, WARN,
 				       "%s: skip unexpected event ID[0x%02x]\n",

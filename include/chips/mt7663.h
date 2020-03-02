@@ -84,6 +84,9 @@
 #define MT7663_PATCH_START_ADDR                 (0x000DC000)
 #define MT7663_TOP_CFG_BASE			CONN_CFG_BASE
 #define MT7663_TX_DESC_APPEND_LENGTH            32
+#define MT7663_RX_DESC_LENGTH                   16
+#define MT7663_RX_INIT_EVENT_LENGTH             8
+#define MT7663_RX_EVENT_HDR_LENGTH              12
 
 /*******************************************************************************
  *                         D A T A   T Y P E S

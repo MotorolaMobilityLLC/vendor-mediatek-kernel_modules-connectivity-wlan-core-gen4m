@@ -612,6 +612,7 @@ struct HW_MAC_RX_DESC {
 	uint8_t ucTidSecMode;
 	uint16_t u2StatusFlag;
 	uint32_t u4PatternFilterInfo;	/* DW 3 */
+	uint32_t u4PatternFilterInfo2;  /* DW 4 */
 };
 
 struct HW_MAC_RX_STS_GROUP_1 {
