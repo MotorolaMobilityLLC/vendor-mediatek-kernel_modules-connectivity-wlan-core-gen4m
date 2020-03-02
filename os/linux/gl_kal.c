@@ -2747,7 +2747,7 @@ kalQoSFrameClassifierAndPacketInfo(IN struct GLUE_INFO *prGlueInfo,
 
 #if (CFG_SUPPORT_STATISTICS == 1)
 		wlanLogTxData(WLAN_WAKE_IPV6);
-
+#endif
 #if DSCP_SUPPORT
 		if (GLUE_GET_PKT_BSS_IDX(prSkb) != P2P_DEV_BSS_INDEX) {
 			uint16_t u2Tmp;
