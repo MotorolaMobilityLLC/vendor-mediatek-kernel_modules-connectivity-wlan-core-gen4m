@@ -92,12 +92,19 @@
 #define MTK_PCI_VENDOR_ID	0x14C3
 #define NIC6632_PCIe_DEVICE_ID	0x6632
 #define NIC7668_PCIe_DEVICE_ID	0x7668
+#ifdef MT7663
+#define NIC7663_PCIe_DEVICE_ID	0x7663
+#endif /* MT7663 */
 
 static const struct pci_device_id mtk_pci_ids[] = {
 	{	PCI_DEVICE(MTK_PCI_VENDOR_ID, NIC6632_PCIe_DEVICE_ID),
 		.driver_data = (kernel_ulong_t)&mt66xx_driver_data_mt6632},
 	{	PCI_DEVICE(MTK_PCI_VENDOR_ID, NIC7668_PCIe_DEVICE_ID),
 		.driver_data = (kernel_ulong_t)&mt66xx_driver_data_mt7668},
+#ifdef MT7663
+	{	PCI_DEVICE(MTK_PCI_VENDOR_ID, NIC7663_PCIe_DEVICE_ID),
+		.driver_data = (kernel_ulong_t)&mt66xx_driver_data_mt7663},
+#endif /* MT7663 */
 	{ /* end: all zeroes */ },
 };
 

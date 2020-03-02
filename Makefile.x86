@@ -19,7 +19,7 @@ ifeq ($(hif),)
     hif=usb
 endif
 
-MODULES_NAME := wlan_$(shell echo $(MTK_COMBO_CHIP) | tr A-Z a-z)
+MODULES_NAME := wlan_$(shell echo $(word 1, $(MTK_COMBO_CHIP)) | tr A-Z a-z)
 
 export CONFIG_MTK_COMBO_WIFI_HIF=$(hif)
 
