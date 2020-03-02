@@ -4273,25 +4273,14 @@ uint8_t kalUpdateBssTimestamp(IN struct GLUE_INFO *prGlueInfo)
 
 	spin_lock_bh(&rdev->bss_lock);
 	list_for_each_entry(bss, &rdev->bss_list, list) {
-		const struct cfg80211_bss_ies *old;
-
-		ies = kzalloc(sizeof(*ies) + bss->pub.ies->len, GFP_ATOMIC);
-		if (!ies)
-			continue;
-		ies->len = bss->pub.ies->len;
-		ies->tsf = le64_to_cpu(new_timestamp);
-		ies->from_beacon = bss->pub.ies->from_beacon;
-		memcpy(ies->data, bss->pub.ies->data, bss->pub.ies->len);
-		if (ies->from_beacon) {
-			old = rcu_access_pointer(bss->pub.beacon_ies);
-			rcu_assign_pointer(bss->pub.beacon_ies, ies);
-		} else { /* proberesp */
-			old = rcu_access_pointer(bss->pub.proberesp_ies);
-			rcu_assign_pointer(bss->pub.proberesp_ies, ies);
+		ies = *(struct cfg80211_bss_ies **)
+		(((size_t)&(bss->pub)) + offsetof(struct cfg80211_bss, ies));
+		if (rcu_access_pointer(bss->pub.ies) == ies) {
+			ies->tsf = le64_to_cpu(new_timestamp);
+		} else {
+			log_limited_dbg(REQ, WARN, "Update tsf fail. bss->pub.ies=%p ies=%p\n",
+				bss->pub.ies, ies);
 		}
-		rcu_assign_pointer(bss->pub.ies, ies);
-		if (old)
-			kfree_rcu((struct cfg80211_bss_ies *)old, rcu_head);
 	}
 	spin_unlock_bh(&rdev->bss_lock);
 
