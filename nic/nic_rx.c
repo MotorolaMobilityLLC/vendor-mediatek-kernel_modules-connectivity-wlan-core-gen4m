@@ -1523,8 +1523,8 @@ void nicRxProcessMonitorPacket(IN struct ADAPTER *prAdapter,
 	}
 
 	/* Bit Number 5 ANT SIGNAL */
-	rMonitorRadiotap.ucAntennaSignal = (((
-			prRxStatusGroup3)->u4RxVector[3] & RX_VT_IB_RSSI_MASK));
+	rMonitorRadiotap.ucAntennaSignal =
+		RCPI_TO_dBm(HAL_RX_STATUS_GET_RCPI0(prRxStatusGroup3));
 
 	/* Bit Number 6 ANT NOISE */
 	rMonitorRadiotap.ucAntennaNoise = ((((
@@ -1577,6 +1577,7 @@ void nicRxProcessMonitorPacket(IN struct ADAPTER *prAdapter,
 	prRxCtrl->ucNumIndPacket++;
 #endif
 
+	prSwRfb->pvPacket = NULL;
 	/* Return RFB */
 	if (nicRxSetupRFB(prAdapter, prSwRfb)) {
 		DBGLOG(RX, WARN,
@@ -1593,6 +1594,22 @@ void nicRxProcessMonitorPacket(IN struct ADAPTER *prAdapter,
 		}
 	}
 	nicRxReturnRFB(prAdapter, prSwRfb);
+}
+#else
+/*----------------------------------------------------------------------------*/
+/*!
+ * @brief Process HIF monitor packet
+ *
+ * @param prAdapter pointer to the Adapter handler
+ * @param prSWRfb the RFB to receive rx data
+ *
+ * @return (none)
+ *
+ */
+/*----------------------------------------------------------------------------*/
+void nicRxProcessMonitorPacket(IN struct ADAPTER *prAdapter,
+			       IN OUT struct SW_RFB *prSwRfb)
+{
 }
 #endif
 
@@ -3489,15 +3506,24 @@ void nicRxProcessRFBs(IN struct ADAPTER *prAdapter)
 
 				switch (prSwRfb->ucPacketType) {
 				case RX_PKT_TYPE_RX_DATA:
-#if CFG_SUPPORT_SNIFFER
-					if (prAdapter->prGlueInfo->
-						fgIsEnableMon) {
+					if (HAL_IS_RX_DIRECT(prAdapter)
+						&& HAL_MON_EN(prAdapter)) {
+						spin_lock_bh(
+							&prAdapter->prGlueInfo->
+							rSpinLock[
+							SPIN_LOCK_RX_DIRECT]);
 						nicRxProcessMonitorPacket(
-							prAdapter,
-							prSwRfb);
+							prAdapter, prSwRfb);
+						spin_unlock_bh(
+							&prAdapter->prGlueInfo->
+							rSpinLock[
+							SPIN_LOCK_RX_DIRECT]);
+						break;
+					} else if (HAL_MON_EN(prAdapter)) {
+						nicRxProcessMonitorPacket(
+							prAdapter, prSwRfb);
 						break;
 					}
-#endif
 					if (HAL_IS_RX_DIRECT(prAdapter)) {
 						spin_lock_bh(
 							&prAdapter->prGlueInfo->

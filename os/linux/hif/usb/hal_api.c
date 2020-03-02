@@ -781,14 +781,13 @@ uint32_t halRxUSBEnqueueRFB(IN struct ADAPTER *prAdapter, IN uint8_t *pucBuf, IN
 			if (HAL_IS_RX_DIRECT(prAdapter)) {
 				switch (prSwRfb->ucPacketType) {
 				case RX_PKT_TYPE_RX_DATA:
-#if CFG_SUPPORT_SNIFFER
-					if (prGlueInfo->fgIsEnableMon) {
-						nicRxProcessMonitorPacket(prAdapter, prSwRfb);
-						break;
-					}
-#endif
 					spin_lock_bh(&prGlueInfo->rSpinLock[SPIN_LOCK_RX_DIRECT]);
-					nicRxProcessDataPacket(prAdapter, prSwRfb);
+					if (HAL_MON_EN(prAdapter))
+						nicRxProcessMonitorPacket(
+							prAdapter, prSwRfb);
+					else
+						nicRxProcessDataPacket(
+							prAdapter, prSwRfb);
 					spin_unlock_bh(&prGlueInfo->rSpinLock[SPIN_LOCK_RX_DIRECT]);
 					break;
 				default:
