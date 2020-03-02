@@ -281,8 +281,7 @@ static int hifAxiClrBusCnt(void)
 static int hifAxiSetMpuProtect(bool enable)
 {
 #if CFG_MTK_ANDROID_EMI
-	kalSetEmiMpuProtection(gConEmiPhyBase, WIFI_EMI_MEM_OFFSET,
-			       WIFI_EMI_MEM_SIZE, enable);
+	kalSetEmiMpuProtection(gConEmiPhyBase, enable);
 #endif
 	return 0;
 }
