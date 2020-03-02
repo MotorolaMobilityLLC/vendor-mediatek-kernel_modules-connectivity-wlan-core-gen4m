@@ -299,6 +299,12 @@ void rlmFsmEventUninit(struct ADAPTER *prAdapter);
 void rlmReqGenerateHtCapIE(struct ADAPTER *prAdapter,
 			   struct MSDU_INFO *prMsduInfo);
 
+void rlmReqGeneratePowerCapIE(struct ADAPTER *prAdapter,
+			   struct MSDU_INFO *prMsduInfo);
+
+void rlmReqGenerateSupportedChIE(struct ADAPTER *prAdapter,
+			   struct MSDU_INFO *prMsduInfo);
+
 void rlmReqGenerateExtCapIE(struct ADAPTER *prAdapter,
 			    struct MSDU_INFO *prMsduInfo);
 
