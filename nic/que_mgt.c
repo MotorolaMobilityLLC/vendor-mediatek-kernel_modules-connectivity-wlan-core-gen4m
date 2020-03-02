@@ -8252,49 +8252,8 @@ void qmReleaseCHAtFinishedDhcp(struct ADAPTER *prAdapter,
 {
 	if (!timerPendingTimer(prTimer)) {
 		DBGLOG(QM, ERROR, "No channel occupation\n");
-		return;
-	} else if (prAdapter->rWifiVar.ucChannelSwitchMode) {
+	} else {
 		DBGLOG(QM, INFO, "Let the join timer count down.\n");
 		aisFsmReleaseCh(prAdapter, ucBssIndex);
-		return;
 	}
-	DBGLOG(QM, INFO, "Earily release channel\n");
-	/* 1. Rlease channel and stop timer */
-	aisFsmReleaseCh(prAdapter, ucBssIndex);
-	cnmTimerStopTimer(prAdapter, prTimer);
-	/* 2. process if there is pending scan */
-	if (aisFsmIsRequestPending(prAdapter, AIS_REQUEST_SCAN,
-		TRUE, ucBssIndex)
-	    == TRUE) {
-		wlanClearScanningResult(prAdapter, ucBssIndex);
-		aisFsmSteps(prAdapter, AIS_STATE_ONLINE_SCAN,
-			ucBssIndex);
-	}
-	/* 3. Process for pending roaming scan */
-	else if (aisFsmIsRequestPending(prAdapter,
-					AIS_REQUEST_ROAMING_SEARCH,
-					TRUE,
-					ucBssIndex) == TRUE)
-		aisFsmSteps(prAdapter, AIS_STATE_LOOKING_FOR,
-			ucBssIndex);
-	/* 4. Process for pending roaming connect */
-	else if (aisFsmIsRequestPending(prAdapter,
-					AIS_REQUEST_ROAMING_CONNECT,
-					TRUE,
-					ucBssIndex) == TRUE)
-		aisFsmSteps(prAdapter, AIS_STATE_SEARCH,
-			ucBssIndex);
-
-	else if (aisFsmIsRequestPending(prAdapter,
-					AIS_REQUEST_REMAIN_ON_CHANNEL,
-					TRUE,
-					ucBssIndex) == TRUE)
-		aisFsmSteps(prAdapter, AIS_STATE_REQ_REMAIN_ON_CHANNEL,
-			ucBssIndex);
-	else
-		DBGLOG(QM, INFO, "No pending request\n");
-
-	/* 5. Check if need to set low latency after connected. */
-	wlanConnectedForLowLatency(prAdapter);
-
 }
