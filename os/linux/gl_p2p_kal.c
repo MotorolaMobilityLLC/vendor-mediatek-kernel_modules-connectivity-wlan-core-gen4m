@@ -1304,6 +1304,12 @@ VOID kalP2PRddDetectUpdate(IN P_GLUE_INFO_T prGlueInfo, IN UINT_8 ucRoleIndex)
 		netif_carrier_off(prGlueInfo->prP2PInfo[ucRoleIndex]->prDevHandler);
 		netif_tx_stop_all_queues(prGlueInfo->prP2PInfo[ucRoleIndex]->prDevHandler);
 
+		if (prGlueInfo->prP2PInfo[ucRoleIndex]->chandef->chan)
+			cnmMemFree(prGlueInfo->prAdapter, prGlueInfo->prP2PInfo[ucRoleIndex]->chandef->chan);
+
+		if (prGlueInfo->prP2PInfo[ucRoleIndex]->chandef)
+			cnmMemFree(prGlueInfo->prAdapter, prGlueInfo->prP2PInfo[ucRoleIndex]->chandef);
+
 	} while (FALSE);
 
 }				/* kalP2PRddDetectUpdate */
@@ -1325,6 +1331,13 @@ VOID kalP2PCacFinishedUpdate(IN P_GLUE_INFO_T prGlueInfo, IN UINT_8 ucRoleIndex)
 		cfg80211_cac_event(prGlueInfo->prP2PInfo[ucRoleIndex]->prDevHandler,
 				prGlueInfo->prP2PInfo[ucRoleIndex]->chandef, NL80211_RADAR_CAC_FINISHED, GFP_KERNEL);
 		DBGLOG(INIT, INFO, "kalP2PCacFinishedUpdate: Update to OS Done\n");
+
+		if (prGlueInfo->prP2PInfo[ucRoleIndex]->chandef->chan)
+			cnmMemFree(prGlueInfo->prAdapter, prGlueInfo->prP2PInfo[ucRoleIndex]->chandef->chan);
+
+		if (prGlueInfo->prP2PInfo[ucRoleIndex]->chandef)
+			cnmMemFree(prGlueInfo->prAdapter, prGlueInfo->prP2PInfo[ucRoleIndex]->chandef);
+
 
 	} while (FALSE);
 
