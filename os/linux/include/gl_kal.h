@@ -1569,6 +1569,8 @@ uint32_t kalPerMonGetInfo(IN struct ADAPTER *prAdapter,
 int32_t kalBoostCpu(IN struct ADAPTER *prAdapter,
 		    IN uint32_t u4TarPerfLevel,
 		    IN uint32_t u4BoostCpuTh);
+extern int set_task_util_min_pct(pid_t pid, unsigned int min);
+
 #if CFG_MTK_ANDROID_EMI
 void kalSetEmiMpuProtection(phys_addr_t emiPhyBase, bool enable);
 void kalSetDrvEmiMpuProtection(phys_addr_t emiPhyBase, uint32_t offset,
