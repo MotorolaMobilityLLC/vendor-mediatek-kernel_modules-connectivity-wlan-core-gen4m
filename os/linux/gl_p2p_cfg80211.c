@@ -1806,8 +1806,10 @@ int mtk_p2p_cfg80211_stop_ap(struct wiphy *wiphy, struct net_device *dev)
 		prGlueInfo = *((P_GLUE_INFO_T *) wiphy_priv(wiphy));
 
 #if (CFG_SUPPORT_DFS_MASTER == 1)
-		netif_carrier_off(dev);
-		netif_tx_stop_all_queues(dev);
+		if (dev->ieee80211_ptr->iftype == NL80211_IFTYPE_AP) {
+			netif_carrier_off(dev);
+			netif_tx_stop_all_queues(dev);
+		}
 #endif
 
 		if (mtk_Netdev_To_RoleIdx(prGlueInfo, dev, &ucRoleIdx) < 0)
