@@ -1098,12 +1098,12 @@ void soc3_0_DumpWfsyscpupcr(struct ADAPTER *prAdapter)
 		HAL_MCR_RD(prAdapter, WFSYS_CPUPCR_ADDR, &var_pc);
 		HAL_MCR_RD(prAdapter, WFSYS_LP_ADDR, &var_lp);
 
-		snprintf(log_buf_pc[i], CPUPCR_BUF_SZ, "%llu.%06lu/0x%08x;",
+		snprintf(log_buf_pc[i], CPUPCR_BUF_SZ, "%llu.%06llu/0x%08x;",
 					log_sec,
 					log_nsec,
 					var_pc);
 
-		snprintf(log_buf_lp[i], CPUPCR_BUF_SZ, "%llu.%06lu/0x%08x;",
+		snprintf(log_buf_lp[i], CPUPCR_BUF_SZ, "%llu.%06llu/0x%08x;",
 					log_sec,
 					log_nsec,
 					var_lp);
@@ -1775,6 +1775,8 @@ int soc3_0_CheckBusHang(struct ADAPTER *prAdapter,
 
 	/* if under wf bus hang reset, dump cr only */
 	if (g_IsWfsysBusHang) {
+		/* check again for dump log */
+		conninfra_is_bus_hang();
 		soc3_0_DumpHostCr(prAdapter);
 		return ret;
 	}
