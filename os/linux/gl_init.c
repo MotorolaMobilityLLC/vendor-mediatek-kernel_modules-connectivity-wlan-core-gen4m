@@ -1064,7 +1064,6 @@ VOID wlanDebugInit(VOID)
 	for (i = 0; i < DBG_MODULE_NUM; i++)
 		aucDebugModule[i] = CFG_DEFAULT_DBG_LEVEL;
 #else
-
 	for (i = 0; i < DBG_MODULE_NUM; i++) {
 		aucDebugModule[i] = DBG_CLASS_ERROR |
 			DBG_CLASS_WARN | DBG_CLASS_STATE | DBG_CLASS_EVENT | DBG_CLASS_INFO;
@@ -1408,7 +1407,7 @@ static VOID wlanNetUnregister(struct wireless_dev *prWdev)
 	P_GLUE_INFO_T prGlueInfo;
 
 	if (!prWdev) {
-		DBGLOG(INIT, ERROR, "wlanNetUnregister: The device context is NULL\n");
+		DBGLOG(INIT, ERROR, "The device context is NULL\n");
 		return;
 	}
 
@@ -1518,7 +1517,7 @@ static void wlanCreateWirelessDevice(void)
 	}
 	prWdev->wiphy = prWiphy;
 	gprWdev = prWdev;
-	DBGLOG(INIT, INFO, "create wireless device success\n");
+	DBGLOG(INIT, INFO, "Create wireless device success\n");
 	return;
 
 free_wiphy:
@@ -1626,15 +1625,14 @@ static struct wireless_dev *wlanNetCreate(PVOID pvData, PVOID pvDriverData)
 		prInfName = NIC_INF_NAME;
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 18, 0)
-		prGlueInfo->prDevHandler =
-			alloc_netdev_mq(sizeof(NETDEV_PRIVATE_GLUE_INFO), prInfName,
-						NET_NAME_PREDICTABLE, ether_setup, CFG_MAX_TXQ_NUM);
+	prGlueInfo->prDevHandler =
+		alloc_netdev_mq(sizeof(NETDEV_PRIVATE_GLUE_INFO), prInfName,
+				NET_NAME_PREDICTABLE, ether_setup, CFG_MAX_TXQ_NUM);
 #else
-		prGlueInfo->prDevHandler =
-			alloc_netdev_mq(sizeof(NETDEV_PRIVATE_GLUE_INFO), prInfName,
-					ether_setup, CFG_MAX_TXQ_NUM);
+	prGlueInfo->prDevHandler =
+		alloc_netdev_mq(sizeof(NETDEV_PRIVATE_GLUE_INFO), prInfName,
+				ether_setup, CFG_MAX_TXQ_NUM);
 #endif
-		DBGLOG(INIT, INFO, "net_device prDev(0x%p) allocated\n", prGlueInfo->prDevHandler);
 
 	if (!prGlueInfo->prDevHandler) {
 		DBGLOG(INIT, ERROR, "Allocating memory to net_device context failed\n");
