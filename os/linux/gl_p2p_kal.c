@@ -1066,6 +1066,11 @@ kalP2PIndicateChannelReady(IN struct GLUE_INFO *prGlueInfo,
 
 		kalP2pFuncGetChannelType(eSco, &eChnlType);
 
+		if (!prIEEE80211ChnlStruct) {
+			DBGLOG(P2P, WARN, "prIEEE80211ChnlStruct is NULL\n");
+			break;
+		}
+
 		cfg80211_ready_on_channel(
 			/* struct wireless_dev, */
 			prGlueInfo->prP2PInfo[0]->prWdev,
@@ -1118,6 +1123,11 @@ kalP2PIndicateChannelExpired(IN struct GLUE_INFO *prGlueInfo,
 				&rRfChannelInfo);
 
 		kalP2pFuncGetChannelType(eSco, &eChnlType);
+
+		if (!prIEEE80211ChnlStruct) {
+			DBGLOG(P2P, WARN, "prIEEE80211ChnlStruct is NULL\n");
+			break;
+		}
 
 		/* struct wireless_dev, */
 		cfg80211_remain_on_channel_expired(prGlueP2pInfo->prWdev,
