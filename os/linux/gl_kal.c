@@ -2769,6 +2769,18 @@ kalQoSFrameClassifierAndPacketInfo(IN struct GLUE_INFO *prGlueInfo,
 	/* at net_dev selection callback (ndo_select_queue) */
 	prTxPktInfo->ucPriorityParam = prSkb->priority;
 
+#if CFG_CHANGE_PRIORITY_BY_SKB_MARK_FIELD
+	/* Raise priority for special packet if skb mark filed
+	 * marked with pre-defined value.
+	 */
+	if (prSkb->mark == NIC_TX_SKB_PRIORITY_MARK1 ||
+	    (prSkb->mark & BIT(NIC_TX_SKB_PRIORITY_MARK_BIT))) {
+		prTxPktInfo->ucPriorityParam = NIC_TX_PRIORITY_DATA_TID;
+		DBGLOG_LIMITED(INIT, TRACE,
+				"skb mark field=[%x]", prSkb->mark);
+	}
+#endif
+
 	/* 4 <6> Retrieve Packet Information - DA */
 	/* Packet Length/ Destination Address */
 	prTxPktInfo->u4PacketLen = u4PacketLen;

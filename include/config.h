@@ -254,6 +254,9 @@
 
 #define CFG_SUPPORT_ANT_SWAP		0
 
+/* If skb_buff mark field marked with pre-defined value, change priority to VO*/
+#define CFG_CHANGE_PRIORITY_BY_SKB_MARK_FIELD	1
+
 #if KERNEL_VERSION(4, 4, 0) <= LINUX_VERSION_CODE
 #define CFG_SUPPORT_DATA_STALL			1
 #else

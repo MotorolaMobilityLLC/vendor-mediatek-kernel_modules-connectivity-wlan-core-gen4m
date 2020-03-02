@@ -212,6 +212,8 @@
 #define NIC_TX_MGMT_REMAINING_TX_TIME		2000
 
 #define NIC_TX_CRITICAL_DATA_TID                7
+/*802.1d Voice Traffic,use AC_VO */
+#define NIC_TX_PRIORITY_DATA_TID                6
 
 /*Customization: sk_buff mark for special packet that need raise priority */
 #define NIC_TX_SKB_PRIORITY_MARK1	0x5a /* customer special value*/
