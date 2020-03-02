@@ -1087,6 +1087,8 @@ struct WIFI_VAR {
 
 	/* Tx Msdu Queue method */
 	uint8_t ucTxMsduQueue;
+	uint8_t ucTxMsduQueueInit;
+	uint32_t u4TxHifRes;
 
 	uint32_t u4MTU; /* net device maximum transmission unit */
 #if CFG_SUPPORT_RX_GRO
