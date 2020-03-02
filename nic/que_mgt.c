@@ -5519,7 +5519,7 @@ mqmGenerateWmmInfoIEByStaRec(struct ADAPTER *prAdapter,
 	if (prStaRec == NULL)
 		return 0;
 
-	if (!prStaRec->fgIsWmmSupported)
+	if (!prStaRec->fgIsQoS)
 		return 0;
 
 	prPmProfSetupInfo = &prBssInfo->rPmProfSetupInfo;
@@ -5556,18 +5556,11 @@ void mqmGenerateWmmInfoIE(IN struct ADAPTER *prAdapter,
 
 	ASSERT(prMsduInfo);
 
-	/* In case QoS is not turned off, exit directly */
-	if (IS_FEATURE_DISABLED(prAdapter->rWifiVar.ucQoS))
-		return;
-
 	prStaRec = cnmGetStaRecByIndex(prAdapter,
 		prMsduInfo->ucStaRecIndex);
 	ASSERT(prStaRec);
 
 	if (prStaRec == NULL)
-		return;
-
-	if (!prStaRec->fgIsWmmSupported)
 		return;
 
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
