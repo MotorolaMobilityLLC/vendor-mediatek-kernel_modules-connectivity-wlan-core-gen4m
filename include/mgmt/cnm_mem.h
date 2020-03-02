@@ -735,9 +735,6 @@ struct STA_RECORD {
 	 * indicate disconnected status only when connected.
 	 */
 	u_int8_t fgIsConnected;
-#if (CFG_SUPPORT_HE_ER == 1)
-	u_int8_t fgIsExtendedRange;
-#endif
 };
 
 #if 0
