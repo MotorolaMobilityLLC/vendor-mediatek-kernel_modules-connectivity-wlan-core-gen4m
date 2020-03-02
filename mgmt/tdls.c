@@ -2001,8 +2001,8 @@ void TdlsEventTearDown(struct GLUE_INFO *prGlueInfo,
 	/* sanity check */
 	if (prStaRec == NULL)
 		return;
-	else
-		pMac = prStaRec->aucMacAddr;
+
+	pMac = prStaRec->aucMacAddr;
 
 	if (fgIsPtiTimeoutSkip == TRUE) {
 		/* skip PTI timeout event */
