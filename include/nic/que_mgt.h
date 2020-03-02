@@ -1010,6 +1010,9 @@ void qmResetArpDetect(void);
 void qmHandleRxArpPackets(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb);
 void qmHandleRxDhcpPackets(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb);
 #endif
+#ifdef CFG_SUPPORT_REPLAY_DETECTION
+u_int8_t qmHandleRxReplay(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb);
+#endif
 /*******************************************************************************
  *                              F U N C T I O N S
  ********************************************************************************

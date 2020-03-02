@@ -317,6 +317,19 @@ struct GL_WPA_INFO {
 #endif
 };
 
+#if CFG_SUPPORT_REPLAY_DETECTION
+struct GL_REPLEY_PN_INFO {
+	uint8_t auPN[16];
+	u_int8_t fgRekey;
+	u_int8_t fgFirstPkt;
+};
+struct GL_DETECT_REPLAY_INFO {
+	uint8_t ucCurKeyId;
+	uint8_t ucKeyType;
+	struct GL_REPLEY_PN_INFO arReplayPNInfo[4];
+};
+#endif
+
 enum ENUM_NET_DEV_IDX {
 	NET_DEV_WLAN_IDX = 0,
 	NET_DEV_P2P_IDX,
@@ -470,6 +483,9 @@ struct GLUE_INFO {
 
 	/*! \brief wext wpa related information */
 	struct GL_WPA_INFO rWpaInfo;
+#if CFG_SUPPORT_REPLAY_DETECTION
+	struct GL_DETECT_REPLAY_INFO prDetRplyInfo;
+#endif
 
 	/* Pointer to ADAPTER_T - main data structure of internal protocol stack */
 	struct ADAPTER *prAdapter;

@@ -866,7 +866,11 @@
  */
 #define CFG_SUPPORT_PMIC_SPI_CLOCK_SWITCH       1
 
-
+/*------------------------------------------------------------------------------
+ * Flags of Drop Packet Replay SUPPORT
+ *------------------------------------------------------------------------------
+ */
+#define CFG_SUPPORT_REPLAY_DETECTION		1
 
 /*------------------------------------------------------------------------------
  * Flags of driver EEPROM pages for QA tool
