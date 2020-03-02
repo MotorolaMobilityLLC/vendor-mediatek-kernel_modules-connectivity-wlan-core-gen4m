@@ -2310,6 +2310,7 @@ static void halStartSerTimer(IN struct ADAPTER *prAdapter)
 void halHwRecoveryFromError(IN struct ADAPTER *prAdapter)
 {
 	struct GLUE_INFO *prGlueInfo;
+	struct mt66xx_chip_info *prChipInfo;
 	struct GL_HIF_INFO *prHifInfo;
 	struct BUS_INFO *prBusInfo = NULL;
 	struct ERR_RECOVERY_CTRL_T *prErrRecoveryCtrl;
@@ -2323,9 +2324,16 @@ void halHwRecoveryFromError(IN struct ADAPTER *prAdapter)
 	u4Status = prErrRecoveryCtrl->u4Status;
 	prErrRecoveryCtrl->u4Status = 0;
 
+	if (prAdapter->rWifiVar.fgEnableSer == FALSE)
+		return;
+
 	switch (prErrRecoveryCtrl->eErrRecovState) {
 	case ERR_RECOV_STOP_IDLE:
 		if (u4Status & ERROR_DETECT_STOP_PDMA) {
+			prChipInfo = prAdapter->chip_info;
+			if (prChipInfo->asicDumpSerDummyCR)
+				prChipInfo->asicDumpSerDummyCR(prAdapter);
+
 			if (!prHifInfo->fgIsErrRecovery) {
 				prHifInfo->fgIsErrRecovery = TRUE;
 				halStartSerTimer(prAdapter);

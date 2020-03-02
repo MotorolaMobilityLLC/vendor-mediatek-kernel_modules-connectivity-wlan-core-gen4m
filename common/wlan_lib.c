@@ -805,16 +805,8 @@ uint32_t wlanAdapterStart(IN struct ADAPTER *prAdapter,
 
 		/* Enable interrupt */
 		nicEnableInterrupt(prAdapter);
-#if defined(_HIF_USB)
-		cnmTimerInitTimer(prAdapter,
-			&rSerSyncTimer,
-			(PFN_MGMT_TIMEOUT_FUNC) halSerSyncTimerHandler,
-			(unsigned long) NULL);
-		cnmTimerStartTimer(prAdapter,
-			&rSerSyncTimer,
-			WIFI_SER_SYNC_TIMER_TIMEOUT_IN_MS);
-#endif
-
+		/* init SER module */
+		nicSerInit(prAdapter);
 	} else {
 		prAdapter->u4HifDbgFlag |= DEG_HIF_DEFAULT_DUMP;
 		halPrintHifDbgInfo(prAdapter);
@@ -6568,6 +6560,10 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 		(uint32_t) wlanCfgGetUint32(prAdapter, "PerfMonLv10", 700);
 	prWifiVar->u4BoostCpuTh =
 		(uint32_t) wlanCfgGetUint32(prAdapter, "BoostCpuTh", 1);
+
+	/* for SER */
+	prWifiVar->fgEnableSer = (uint8_t)wlanCfgGetUint32(prAdapter,
+						"SerEnable", FEATURE_ENABLED);
 
 	/*
 	 * For Certification purpose,forcibly set

@@ -457,5 +457,7 @@ u_int8_t nicSerIsWaitingReset(IN struct ADAPTER *prAdapter);
 u_int8_t nicSerIsTxStop(IN struct ADAPTER *prAdapter);
 u_int8_t nicSerIsRxStop(IN struct ADAPTER *prAdapter);
 void nicSerReInitBeaconFrame(IN struct ADAPTER *prAdapter);
+void nicSerInit(IN struct ADAPTER *prAdapter);
+void nicSerDeInit(IN struct ADAPTER *prAdapter);
 
 #endif /* _NIC_H */
