@@ -6491,6 +6491,15 @@ void kalPerMonHandler(IN struct ADAPTER *prAdapter,
 			prPerMonitor->ulP2PRxTp =
 				(p2pRxDiffBytes * MSEC_PER_SEC) /
 				prPerMonitor->u4UpdatePeriod;
+		DBGLOG(SW4, INFO,
+			"Tput: %ld > [%ld][%ld] [%ld][%ld], Pending[%d], Used[%d] PER[%ld %ld]\n",
+			prPerMonitor->ulThroughput,
+			txDiffBytes, rxDiffBytes,
+			p2pTxDiffBytes, p2pRxDiffBytes,
+			GLUE_GET_REF_CNT(prGlueInfo->i4TxPendingFrameNum),
+			GLUE_GET_REF_CNT(prPerMonitor->u4UsedCnt),
+			prPerMonitor->ulTotalTxSuccessCount,
+			prPerMonitor->ulTotalTxFailCount);
 	}
 
 	prPerMonitor->ulLastTxBytes = latestTxBytes;
