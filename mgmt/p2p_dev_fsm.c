@@ -131,7 +131,7 @@ UINT_8 p2pDevFsmInit(IN P_ADAPTER_T prAdapter)
 	if (prP2pBssInfo)
 		return prP2pBssInfo->ucBssIndex;
 	else
-		return P2P_DEV_BSS_INDEX + 1;
+		return prAdapter->ucP2PDevBssIdx + 1;
 
 #if 0
 	do {
@@ -298,7 +298,7 @@ p2pDevFsmStateTransition(IN P_ADAPTER_T prAdapter,
 {
 	BOOLEAN fgIsLeaveState = (BOOLEAN) FALSE;
 
-	ASSERT(prP2pDevFsmInfo->ucBssIndex == P2P_DEV_BSS_INDEX);
+	ASSERT(prP2pDevFsmInfo->ucBssIndex == prAdapter->ucP2PDevBssIdx);
 
 	do {
 		if (!IS_BSS_ACTIVE(prAdapter->aprBssInfo[prP2pDevFsmInfo->ucBssIndex])) {
@@ -703,7 +703,8 @@ VOID p2pDevFsmRunEventMgmtTx(IN P_ADAPTER_T prAdapter, IN P_MSG_HDR_T prMsgHdr)
 
 		prMgmtTxMsg = (P_MSG_P2P_MGMT_TX_REQUEST_T) prMsgHdr;
 
-		if ((prMgmtTxMsg->ucBssIdx != P2P_DEV_BSS_INDEX) && (IS_NET_ACTIVE(prAdapter, prMgmtTxMsg->ucBssIdx))) {
+		if ((prMgmtTxMsg->ucBssIdx != prAdapter->ucP2PDevBssIdx) &&
+			(IS_NET_ACTIVE(prAdapter, prMgmtTxMsg->ucBssIdx))) {
 			DBGLOG(P2P, TRACE, " Role Interface\n");
 			p2pFuncTxMgmtFrame(prAdapter,
 					   prMgmtTxMsg->ucBssIdx,
@@ -714,7 +715,7 @@ VOID p2pDevFsmRunEventMgmtTx(IN P_ADAPTER_T prAdapter, IN P_MSG_HDR_T prMsgHdr)
 		DBGLOG(P2P, TRACE, " Device Interface\n");
 		DBGLOG(P2P, STATE, "p2pDevFsmRunEventMgmtTx\n");
 
-		prMgmtTxMsg->ucBssIdx = P2P_DEV_BSS_INDEX;
+		prMgmtTxMsg->ucBssIdx = prAdapter->ucP2PDevBssIdx;
 
 		prP2pDevFsmInfo = prAdapter->rWifiVar.prP2pDevFsmInfo;
 

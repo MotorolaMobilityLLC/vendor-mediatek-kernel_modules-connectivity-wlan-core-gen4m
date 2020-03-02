@@ -2416,6 +2416,8 @@ VOID nicEventLinkQuality(IN P_ADAPTER_T prAdapter, IN P_WIFI_EVENT_T prEvent)
 {
 	P_CMD_INFO_T prCmdInfo;
 
+	ASSERT(prAdapter);
+
 #if CFG_ENABLE_WIFI_DIRECT && CFG_SUPPORT_P2P_RSSI_QUERY
 	if (prEvent->u2PacketLen == EVENT_HDR_WITHOUT_RXD_SIZE + sizeof(EVENT_LINK_QUALITY_EX)) {
 		P_EVENT_LINK_QUALITY_EX prLqEx = (P_EVENT_LINK_QUALITY_EX) (prEvent->aucBuffer);
@@ -2437,14 +2439,14 @@ VOID nicEventLinkQuality(IN P_ADAPTER_T prAdapter, IN P_WIFI_EVENT_T prEvent)
 		UINT_8 ucBssIndex;
 		P_BSS_INFO_T prBssInfo;
 
-		for (ucBssIndex = 0; ucBssIndex < BSS_INFO_NUM; ucBssIndex++) {
+		for (ucBssIndex = 0; ucBssIndex < prAdapter->ucHwBssIdNum; ucBssIndex++) {
 			prBssInfo = prAdapter->aprBssInfo[ucBssIndex];
 
 			if (prBssInfo->eNetworkType == NETWORK_TYPE_AIS && prBssInfo->fgIsInUse)
 				break;
 		}
 
-		if (ucBssIndex >= BSS_INFO_NUM)
+		if (ucBssIndex >= prAdapter->ucHwBssIdNum)
 			ucBssIndex = 1;	/* No hit(bss1 for default ais network) */
 		/* printk("=======> rssi with bss%d ,%d\n",ucBssIndex,
 		 * ((P_EVENT_LINK_QUALITY_V2)(prEvent->aucBuffer))->rLq[ucBssIndex].cRssi);
@@ -2755,7 +2757,7 @@ VOID nicEventBeaconTimeout(IN P_ADAPTER_T prAdapter, IN P_WIFI_EVENT_T prEvent)
 
 		prEventBssBeaconTimeout = (P_EVENT_BSS_BEACON_TIMEOUT_T) (prEvent->aucBuffer);
 
-		if (prEventBssBeaconTimeout->ucBssIndex >= MAX_BSS_INDEX)
+		if (prEventBssBeaconTimeout->ucBssIndex >= prAdapter->ucHwBssIdNum)
 			return;
 
 		DBGLOG(NIC, INFO, "Reason code: %d\n", prEventBssBeaconTimeout->ucReasonCode);
@@ -3146,11 +3148,13 @@ VOID nicEventUpdateCoexPhyrate(IN P_ADAPTER_T prAdapter, IN P_WIFI_EVENT_T prEve
 	UINT_8 i;
 	P_EVENT_UPDATE_COEX_PHYRATE_T prEventUpdateCoexPhyrate;
 
+	ASSERT(prAdapter);
+
 	DBGLOG(NIC, LOUD, "%s\n", __func__);
 
 	prEventUpdateCoexPhyrate = (P_EVENT_UPDATE_COEX_PHYRATE_T)(prEvent->aucBuffer);
 
-	for (i = 0; i < (HW_BSSID_NUM+1); i++) {
+	for (i = 0; i < (prAdapter->ucHwBssIdNum + 1); i++) {
 		prAdapter->aprBssInfo[i]->u4CoexPhyRateLimit = prEventUpdateCoexPhyrate->au4PhyRateLimit[i];
 		DBGLOG(NIC, INFO, "Coex:BSS[%d]R:%d\n", i, prAdapter->aprBssInfo[i]->u4CoexPhyRateLimit);
 	}

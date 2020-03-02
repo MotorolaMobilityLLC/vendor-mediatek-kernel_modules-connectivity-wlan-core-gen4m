@@ -433,7 +433,7 @@ typedef struct _QUE_MGT_T {	/* Queue Management Control Info */
 	UINT_32 u4TxAllowedStaCount;
 
 #if QM_TC_RESOURCE_EMPTY_COUNTER
-	UINT_32 au4QmTcResourceEmptyCounter[MAX_BSS_INDEX][TC_NUM];
+	UINT_32 au4QmTcResourceEmptyCounter[MAX_BSSID_NUM][TC_NUM];
 #endif
 
 	UINT_32 u4MaxForwardBufferCount;
@@ -956,6 +956,6 @@ VOID qmResetTcControlResource(IN P_ADAPTER_T prAdapter);
 extern QUE_MGT_T g_rQM;
 #endif
 extern const UINT_8 aucTid2ACI[TX_DESC_TID_NUM];
-extern const UINT_8 arNetwork2TcResource[HW_BSSID_NUM + 1][NET_TC_NUM];
+extern const UINT_8 arNetwork2TcResource[MAX_BSSID_NUM + 1][NET_TC_NUM];
 
 #endif /* _QUE_MGT_H */

@@ -345,7 +345,7 @@ saaFsmSendEventJoinComplete(IN P_ADAPTER_T prAdapter,
 	}
 
 	/* Store limitation about 40Mhz bandwidth capability during association */
-	if (prStaRec->ucBssIndex < BSS_INFO_NUM) {
+	if (prStaRec->ucBssIndex < prAdapter->ucHwBssIdNum) {
 		prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prStaRec->ucBssIndex);
 
 		if (rJoinStatus == WLAN_STATUS_SUCCESS) {
@@ -501,7 +501,7 @@ VOID saaFsmRunEventStart(IN P_ADAPTER_T prAdapter, IN P_MSG_HDR_T prMsgHdr)
 	/* cnmStaRecChangeState(prStaRec, STA_STATE_1); */
 
 	/* 4 <6> Decide if this BSS 20/40M bandwidth is allowed */
-	if (prStaRec->ucBssIndex < BSS_INFO_NUM) {
+	if (prStaRec->ucBssIndex < prAdapter->ucHwBssIdNum) {
 		prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prStaRec->ucBssIndex);
 
 		if ((prAdapter->rWifiVar.ucAvailablePhyTypeSet & PHY_TYPE_SET_802_11N)

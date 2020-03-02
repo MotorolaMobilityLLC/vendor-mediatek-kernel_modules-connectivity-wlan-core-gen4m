@@ -1366,7 +1366,7 @@ wlanoidSetInfrastructureMode(IN P_ADAPTER_T prAdapter,
 #endif
 
 #if 0				/* STA record remove at AIS_ABORT nicUpdateBss and DISCONNECT */
-	for (i = 0; i < BSS_INFO_NUM; i++) {
+	for (i = 0; i < prAdapter->ucHwBssIdNum; i++) {
 		prBssInfo = prAdapter->aprBssInfo[i];
 		if (prBssInfo->eNetworkType == NETWORK_TYPE_AIS)
 			cnmStaFreeAllStaByNetwork(prAdapter, prBssInfo->ucBssIndex, 0);
@@ -7756,7 +7756,7 @@ wlanoidSet802dot11PowerSaveProfile(IN P_ADAPTER_T prAdapter,
 	} else if (prPowerMode->ePowerMode >= Param_PowerModeMax) {
 		DBGLOG(REQ, WARN, "Set power mode error: Invalid power mode(%u)\n", prPowerMode->ePowerMode);
 		return WLAN_STATUS_INVALID_DATA;
-	} else if (prPowerMode->ucBssIdx >= BSS_INFO_NUM) {
+	} else if (prPowerMode->ucBssIdx >= prAdapter->ucHwBssIdNum) {
 		DBGLOG(REQ, WARN, "Set power mode error: Invalid BSS index(%u)\n", prPowerMode->ucBssIdx);
 		return WLAN_STATUS_INVALID_DATA;
 	}
