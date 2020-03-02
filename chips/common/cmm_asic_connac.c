@@ -587,6 +587,7 @@ void asicPdmaConfig(struct GLUE_INFO *prGlueInfo, u_int8_t fgEnable)
 			prGlueInfo->prAdapter->chip_info->bus_info;
 	union WPDMA_GLO_CFG_STRUCT GloCfg;
 	union WPDMA_INT_MASK IntMask;
+	uint32_t u4Val;
 
 	kalDevRegRead(prGlueInfo, WPDMA_GLO_CFG, &GloCfg.word);
 	kalDevRegRead(prGlueInfo, WPDMA_INT_MSK, &IntMask.word);
@@ -632,6 +633,11 @@ void asicPdmaConfig(struct GLUE_INFO *prGlueInfo, u_int8_t fgEnable)
 	kalDevRegWrite(prGlueInfo, WPDMA_GLO_CFG, GloCfg.word);
 	kalDevRegWrite(prGlueInfo, MCU2HOST_SW_INT_ENA,
 		       ERROR_DETECT_MASK);
+
+	/* Set PDMA APSRC_ACK CR */
+	kalDevRegRead(prGlueInfo, WPDMA_APSRC_ACK_LOCK_SLPPROT, &u4Val);
+	kalDevRegWrite(prGlueInfo, WPDMA_APSRC_ACK_LOCK_SLPPROT,
+		u4Val | BIT(4));
 }
 
 void asicEnableInterrupt(IN struct ADAPTER *prAdapter)
