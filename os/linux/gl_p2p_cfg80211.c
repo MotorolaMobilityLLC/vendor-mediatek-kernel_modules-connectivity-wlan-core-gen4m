@@ -1419,7 +1419,8 @@ int mtk_p2p_cfg80211_start_ap(struct wiphy *wiphy,
 		if ((wiphy == NULL) || (settings == NULL))
 			break;
 
-		DBGLOG(P2P, INFO, "%s\n", __func__);
+		DBGLOG(P2P, INFO, "inactivity_timeout: %d\n",
+				settings->inactivity_timeout);
 		P2P_WIPHY_PRIV(wiphy, prGlueInfo);
 
 		/*DFS todo 20161220_DFS*/
