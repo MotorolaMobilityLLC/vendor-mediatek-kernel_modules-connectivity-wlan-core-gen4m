@@ -1375,6 +1375,9 @@ uint32_t nicActivateNetwork(IN struct ADAPTER *prAdapter,
 	ASSERT(prAdapter);
 	ASSERT(ucBssIndex <= prAdapter->ucHwBssIdNum);
 
+	/* Enable tx hang detect */
+	prAdapter->u4TxHangFlag |= BIT(ucBssIndex);
+
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
 
 	prBssInfo->fg40mBwAllowed = FALSE;
@@ -1447,6 +1450,9 @@ uint32_t nicDeactivateNetwork(IN struct ADAPTER *prAdapter,
 
 	ASSERT(prAdapter);
 	ASSERT(ucBssIndex <= prAdapter->ucHwBssIdNum);
+
+	/* Disable tx hang detect */
+	prAdapter->u4TxHangFlag &= ~BIT(ucBssIndex);
 
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
 
