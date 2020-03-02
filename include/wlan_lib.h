@@ -1718,3 +1718,5 @@ uint32_t wlanLinkQualityMonitor(struct GLUE_INFO *prGlueInfo, bool bFgIsOid);
 void wlanFinishCollectingLinkQuality(struct GLUE_INFO *prGlueInfo);
 #endif /* CFG_SUPPORT_LINK_QUALITY_MONITOR */
 
+uint8_t wlanGetBssIdx(struct net_device *ndev);
+
