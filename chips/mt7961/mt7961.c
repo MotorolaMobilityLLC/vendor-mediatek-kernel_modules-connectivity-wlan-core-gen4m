@@ -600,6 +600,7 @@ struct CHIP_DBG_OPS mt7961DebugOps = {
 	.printHifDbgInfo = NULL,
 	.show_rx_rate_info = connac2x_show_rx_rate_info,
 	.show_rx_rssi_info = connac2x_show_rx_rssi_info,
+	.show_stat_info = connac2x_show_stat_info,
 };
 
 /* Litien code refine to support multi chip */
@@ -646,6 +647,7 @@ struct mt66xx_chip_info mt66xx_chip_info_mt7961 = {
 	.u4SerUsbMcuEventAddr = WF_SW_DEF_CR_USB_MCU_EVENT_ADD,
 	.u4SerUsbHostAckAddr = WF_SW_DEF_CR_USB_HOST_ACK_ADDR,
 #endif
+	.group5_size = sizeof(struct HW_MAC_RX_STS_GROUP_5),
 	.u4LmacWtblDUAddr = MT7961_WIFI_LWTBL_BASE,
 	.u4UmacWtblDUAddr = MT7961_WIFI_UWTBL_BASE,
 };

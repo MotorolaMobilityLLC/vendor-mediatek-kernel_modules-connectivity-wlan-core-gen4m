@@ -74,41 +74,42 @@
  *                              C O N S T A N T S
  *******************************************************************************
  */
+#define RA_FIXEDRATE_FIELD_CCK_MCS_S		0
+#define RA_FIXEDRATE_FIELD_CCK_MCS_E		1
+#define RA_FIXEDRATE_FIELD_S_PREAMBLE		2
+#define RA_FIXEDRATE_FIELD_MCS_S		0
+#define RA_FIXEDRATE_FIELD_MCS_E		5
 
+#define RA_FIXEDRATE_V1_FIELD_MODE_S		6
+#define RA_FIXEDRATE_V1_FIELD_MODE_E		8
+#define RA_FIXEDRATE_V1_FIELD_VHTNSS_S		9
+#define RA_FIXEDRATE_V1_FIELD_VHTNSS_E		10
 
-#define RA_FIXEDRATE_V1_FIELD_MODE_S       6
-#define RA_FIXEDRATE_V1_FIELD_MODE_E       8
-#define RA_FIXEDRATE_V1_FIELD_VHTNSS_S     9
-#define RA_FIXEDRATE_V1_FIELD_VHTNSS_E     10
+#define RA_FIXEDRATE_V2_FIELD_MODE_S		6
+#define RA_FIXEDRATE_V2_FIELD_MODE_E		10
+#define RA_FIXEDRATE_V2_FIELD_VHTNSS_S		12
+#define RA_FIXEDRATE_V2_FIELD_VHTNSS_E		14
 
-#define RA_FIXEDRATE_V2_FIELD_MODE_S       6
-#define RA_FIXEDRATE_V2_FIELD_MODE_E       10
-#define RA_FIXEDRATE_V2_FIELD_VHTNSS_S     12
-#define RA_FIXEDRATE_V2_FIELD_VHTNSS_E     14
+#define RA_FIXEDRATE_FIELD_STBC			11
 
-
-#define RA_FIXEDRATE_FIELD_STBC         11
-#define RA_FIXEDRATE_FIELD_SGI          30
-#define RA_FIXEDRATE_FIELD_BAND         25
-
-#define RA_FIXEDRATE_FIELD_BW_S         26
-#define RA_FIXEDRATE_FIELD_BW_E         27
-
-#define RA_FIXEDRATE_FIELD_LDPC         29
-#define RA_FIXEDRATE_FIELD_SPEEN        28
-
-#define RA_FIXEDRATE_FIELD_CCK_MCS_S    0
-#define RA_FIXEDRATE_FIELD_CCK_MCS_E    1
-
-#define RA_FIXEDRATE_FIELD_S_PREAMBLE   2
-
-#define RA_FIXEDRATE_FIELD_MCS_S        0
-#define RA_FIXEDRATE_FIELD_MCS_E        5
-
-#define RA_FIXEDRATE_FIELD_HE_LTF_MASK        BITS(15, 16)
+#define RA_FIXEDRATE_FIELD_HE_LTF_MASK		BITS(15, 16)
 #define RA_FIXEDRATE_FIELD_HE_LTF_OFFSET        15
-#define RA_FIXEDRATE_FIELD_HE_GI_MASK        BITS(17, 18)
-#define RA_FIXEDRATE_FIELD_HE_GI_OFFSET        17
+#define RA_FIXEDRATE_FIELD_HE_GI_MASK		BITS(17, 18)
+#define RA_FIXEDRATE_FIELD_HE_GI_OFFSET		17
+#define RA_FIXEDRATE_FIELD_HE_ER_DCM		19
+#define RA_FIXEDRATE_FIELD_HE_ER_106		20
+
+#define RA_FIXEDRATE_FIELD_FORMAT_VER_MASK	BITS(23, 24)
+#define RA_FIXEDRATE_FIELD_FORMAT_VER_OFFSET	23
+
+#define RA_FIXEDRATE_FIELD_BAND			25
+#define RA_FIXEDRATE_FIELD_BW_S			26
+#define RA_FIXEDRATE_FIELD_BW_E			27
+#define RA_FIXEDRATE_FIELD_SPEEN		28
+#define RA_FIXEDRATE_FIELD_LDPC			29
+#define RA_FIXEDRATE_FIELD_SGI			30
+#define RA_FIXEDRATE				BIT(31)
+
 
 const uint16_t au2RateCCKLong[CCK_RATE_NUM] = {
 	RATE_CCK_1M_LONG,	/* RATE_1M_INDEX = 0 */
@@ -220,7 +221,7 @@ const uint8_t aucHwRate2PhyRate[] = {
  */
 
 char *HW_TX_MODE_STR[] = {
-	"CCK", "OFDM", "MM", "GF", "VHT", "N/A",
+	"CCK", "OFDM", "MM", "GF", "VHT", "PLR",
 	"N/A", "N/A", "HE_SU", "HE_ER", "HE_TRIG", "HE_MU"};
 char *HW_TX_RATE_CCK_STR[] = {"1M", "2M", "5.5M", "11M", "N/A"};
 char *HW_TX_RATE_OFDM_STR[] = {"6M", "9M", "12M", "18M", "24M", "36M",
@@ -236,6 +237,8 @@ char *HW_TX_RATE_BW[] = {"BW20", "BW40", "BW80", "BW160/BW8080", "N/A"};
  *                                 M A C R O S
  *******************************************************************************
  */
+#define TX_GET_GI(_gi, _mode)	\
+	((_mode) >= TX_RATE_MODE_HE_SU ? (((_gi) & 0xf0) >> 4) : ((_gi) & 0xf))
 
 /*******************************************************************************
  *                   F U N C T I O N   D E C L A R A T I O N S
@@ -527,14 +530,39 @@ char *nicHwRateOfdmStr(
 
 uint32_t nicSetFixedRateData(
 	struct FIXED_RATE_INFO *pFixedRate,
-	uint32_t u4RateVer,
 	uint32_t *pu4Data)
 {
-	uint32_t u4Data = 0x80000000;
+	uint32_t u4Data = 0;
 	uint8_t u4Nsts = 1;
+	uint8_t u1FormatVer;
+	uint8_t u1TxModeMcsNumMax[ENUM_TX_MODE_NUM]
+		= {4, 8, 33, 33, 10
+#if (CFG_SUPPORT_802_11AX == 1)
+		, 2, 0, 0, 12, 12, 12, 12
+#endif
+		};
 
-	if (pFixedRate->u4SGI)
-		u4Data |= BIT(RA_FIXEDRATE_FIELD_SGI);
+	u4Data |= RA_FIXEDRATE;
+
+	u1FormatVer = (pFixedRate->u4Mode < TX_RATE_MODE_HE_SU) ?
+			RATE_VER_1 : RATE_VER_2;
+
+	u4Data |= ((u1FormatVer << RA_FIXEDRATE_FIELD_FORMAT_VER_OFFSET)
+			& RA_FIXEDRATE_FIELD_FORMAT_VER_MASK);
+
+	if (u1FormatVer == RATE_VER_1) {
+		if (pFixedRate->u4SGI)
+			u4Data |= BIT(RA_FIXEDRATE_FIELD_SGI);
+	} else {
+		if (pFixedRate->u4SGI < GI_HE_NUM)
+			u4Data |= ((pFixedRate->u4SGI <<
+				RA_FIXEDRATE_FIELD_HE_GI_OFFSET) &
+				RA_FIXEDRATE_FIELD_HE_GI_MASK);
+		else
+			DBGLOG(INIT, ERROR,
+				"Wrong HE GI! SGI=0, MGI=1, LGI=2\n");
+	}
+
 	if (pFixedRate->u4LDPC)
 		u4Data |= BIT(RA_FIXEDRATE_FIELD_LDPC);
 	if (pFixedRate->u4SpeEn)
@@ -551,8 +579,8 @@ uint32_t nicSetFixedRateData(
 		return WLAN_STATUS_INVALID_DATA;
 	}
 
-	if (pFixedRate->u4Mode <= MAX_TX_MODE) {
-		if (u4RateVer == RATE_VER_1)
+	if (pFixedRate->u4Mode < ENUM_TX_MODE_NUM) {
+		if (u1FormatVer == RATE_VER_1)
 			u4Data |=
 			((pFixedRate->u4Mode << RA_FIXEDRATE_V1_FIELD_MODE_S)
 			& BITS(RA_FIXEDRATE_V1_FIELD_MODE_S,
@@ -562,18 +590,27 @@ uint32_t nicSetFixedRateData(
 			((pFixedRate->u4Mode << RA_FIXEDRATE_V2_FIELD_MODE_S)
 			& BITS(RA_FIXEDRATE_V2_FIELD_MODE_S,
 				RA_FIXEDRATE_V2_FIELD_MODE_E));
+
+		if (pFixedRate->u4Mcs < u1TxModeMcsNumMax[pFixedRate->u4Mode]) {
+			if (pFixedRate->u4Mode != TX_RATE_MODE_OFDM)
+				u4Data |= pFixedRate->u4Mcs;
+		} else {
+			DBGLOG(INIT, ERROR, "%s mode but wrong MCS(=%d)!\n",
+				HW_TX_MODE_STR[pFixedRate->u4Mode],
+				pFixedRate->u4Mcs);
+				return WLAN_STATUS_INVALID_DATA;
+		}
+
 		switch (pFixedRate->u4Mode) {
 		case TX_RATE_MODE_CCK:
-			if (pFixedRate->u4Mcs <= 3)
-				u4Data |= pFixedRate->u4Mcs;
-			else {
-				DBGLOG(INIT, ERROR,
-				       "CCK mode but wrong MCS!\n");
-				return WLAN_STATUS_INVALID_DATA;
-			}
-
 			if (pFixedRate->u4Preamble)
-				u4Data |= BIT(RA_FIXEDRATE_FIELD_S_PREAMBLE);
+				if (pFixedRate->u4Mcs > 0)
+					u4Data |=
+					BIT(RA_FIXEDRATE_FIELD_S_PREAMBLE);
+				else {
+					DBGLOG(INIT, ERROR, "SP but MCS=0!\n");
+					return WLAN_STATUS_INVALID_DATA;
+				}
 			else
 				u4Data &= ~BIT(RA_FIXEDRATE_FIELD_S_PREAMBLE);
 			break;
@@ -619,32 +656,19 @@ uint32_t nicSetFixedRateData(
 			break;
 		case TX_RATE_MODE_HTMIX:
 		case TX_RATE_MODE_HTGF:
-			if (pFixedRate->u4Mcs <= 32)
-				u4Data |= pFixedRate->u4Mcs;
-			else {
-				DBGLOG(INIT, ERROR,
-				       "HT mode but wrong MCS!\n");
-				return WLAN_STATUS_INVALID_DATA;
-			}
 			if (pFixedRate->u4Mcs != 32) {
 				u4Nsts += (pFixedRate->u4Mcs >> 3);
 				if (pFixedRate->u4STBC && (u4Nsts == 1))
 					u4Nsts++;
 			}
 			break;
+		case TX_RATE_MODE_PLR:
+			break;
 		case TX_RATE_MODE_VHT:
 		case TX_RATE_MODE_HE_SU:
 		case TX_RATE_MODE_HE_ER:
 		case TX_RATE_MODE_HE_TRIG:
 		case TX_RATE_MODE_HE_MU:
-			if (pFixedRate->u4Mcs <= 11)
-				u4Data |= pFixedRate->u4Mcs;
-			else {
-			    DBGLOG(INIT, ERROR,
-				   "Wrong MCS(=%d)!\n",
-				   pFixedRate->u4Mcs);
-			    return WLAN_STATUS_INVALID_DATA;
-			}
 			if (pFixedRate->u4STBC && (pFixedRate->u4VhtNss == 1))
 				u4Nsts++;
 			else
@@ -655,24 +679,488 @@ uint32_t nicSetFixedRateData(
 		}
 	} else {
 		DBGLOG(INIT, ERROR,
-			"Wrong TxMode! CCK=0, OFDM=1, HT=2, GF=3, VHT=4\n");
+			"Wrong TxMode! CCK=0, OFDM=1, HT=2, GF=3, VHT=4");
+		DBGLOG(INIT, ERROR,
+			"HE_SU=8, HE_ER_SU=9, HE_TRIG=10, HE_MU=11\n");
 		return WLAN_STATUS_INVALID_DATA;
 	}
 
-	if (u4RateVer == RATE_VER_1)
+	if (u1FormatVer == RATE_VER_1)
 		u4Data |= (((u4Nsts - 1) << RA_FIXEDRATE_V1_FIELD_VHTNSS_S)
-		& BITS(RA_FIXEDRATE_V1_FIELD_VHTNSS_S,
+			& BITS(RA_FIXEDRATE_V1_FIELD_VHTNSS_S,
 			RA_FIXEDRATE_V1_FIELD_VHTNSS_E));
-	else
+	else {
 		u4Data |= (((u4Nsts - 1) << RA_FIXEDRATE_V2_FIELD_VHTNSS_S)
-		& BITS(RA_FIXEDRATE_V2_FIELD_VHTNSS_S,
+			& BITS(RA_FIXEDRATE_V2_FIELD_VHTNSS_S,
 			RA_FIXEDRATE_V2_FIELD_VHTNSS_E));
-
-	u4Data |= ((pFixedRate->u4HeLTF << RA_FIXEDRATE_FIELD_HE_LTF_OFFSET)
+		u4Data |= ((pFixedRate->u4HeLTF <<
+			RA_FIXEDRATE_FIELD_HE_LTF_OFFSET)
 			& RA_FIXEDRATE_FIELD_HE_LTF_MASK);
-	u4Data |= ((pFixedRate->u4HeGI << RA_FIXEDRATE_FIELD_HE_GI_OFFSET)
-			& RA_FIXEDRATE_FIELD_HE_GI_MASK);
+
+		if (pFixedRate->u4Mode == TX_RATE_MODE_HE_ER) {
+			if (pFixedRate->u4HeErDCM)
+				u4Data |= RA_FIXEDRATE_FIELD_HE_ER_DCM;
+			if (pFixedRate->u4HeEr106t)
+				u4Data |= RA_FIXEDRATE_FIELD_HE_ER_106;
+		}
+	}
+
 	*pu4Data = u4Data;
 	return WLAN_STATUS_SUCCESS;
 }
+
+uint32_t nicRateHeLtfCheckGi(
+	struct FIXED_RATE_INFO *pFixedRate)
+{
+	uint32_t u4Mode, u4GI;
+
+	u4Mode = pFixedRate->u4Mode;
+	u4GI = pFixedRate->u4SGI;
+
+	if (u4Mode < TX_RATE_MODE_HE_SU)
+		return WLAN_STATUS_SUCCESS;
+
+	switch (pFixedRate->u4HeLTF) {
+	case HE_LTF_1X:
+		if (u4GI == GI_HE_SGI) {
+			if ((u4Mode == TX_RATE_MODE_HE_SU) ||
+				(u4Mode == TX_RATE_MODE_HE_ER))
+				return WLAN_STATUS_SUCCESS;
+		} else if (u4GI == GI_HE_MGI) {
+			/* also need non-OFDMA */
+			if (u4Mode == TX_RATE_MODE_HE_TRIG)
+				return WLAN_STATUS_SUCCESS;
+		}
+		break;
+	case HE_LTF_2X:
+		if (u4GI == GI_HE_SGI) {
+			if ((u4Mode == TX_RATE_MODE_HE_SU) ||
+				(u4Mode == TX_RATE_MODE_HE_ER) ||
+				(u4Mode == TX_RATE_MODE_HE_MU))
+				return WLAN_STATUS_SUCCESS;
+		} else if (u4GI == GI_HE_MGI) {
+			if ((u4Mode >= TX_RATE_MODE_HE_SU) &&
+				(u4Mode <= TX_RATE_MODE_HE_MU))
+				return WLAN_STATUS_SUCCESS;
+		}
+		break;
+	case HE_LTF_4X:
+		if (u4GI == GI_HE_SGI) {
+			if ((u4Mode == TX_RATE_MODE_HE_SU) ||
+				(u4Mode == TX_RATE_MODE_HE_ER) ||
+				(u4Mode == TX_RATE_MODE_HE_MU))
+				return WLAN_STATUS_SUCCESS;
+		} else if (u4GI == GI_HE_LGI) {
+			if ((u4Mode >= TX_RATE_MODE_HE_SU) &&
+				(u4Mode <= TX_RATE_MODE_HE_MU))
+				return WLAN_STATUS_SUCCESS;
+		}
+		break;
+
+	default:
+		break;
+	}
+
+	return WLAN_STATUS_FAILURE;
+}
+
+uint8_t nicGetTxSgiInfo(
+	IN struct PARAM_PEER_CAP *prWtblPeerCap,
+	IN uint8_t u1TxMode)
+{
+	if (!prWtblPeerCap)
+		return FALSE;
+
+	switch (prWtblPeerCap->ucFrequencyCapability) {
+	case BW_20:
+		return TX_GET_GI(prWtblPeerCap->fgG2, u1TxMode);
+	case BW_40:
+		return TX_GET_GI(prWtblPeerCap->fgG4, u1TxMode);
+	case BW_80:
+		return TX_GET_GI(prWtblPeerCap->fgG8, u1TxMode);
+	case BW_160:
+		return TX_GET_GI(prWtblPeerCap->fgG16, u1TxMode);
+	default:
+		return FALSE;
+	}
+}
+
+uint8_t nicGetTxLdpcInfo(
+	IN struct PARAM_TX_CONFIG *prWtblTxConfig)
+{
+	if (!prWtblTxConfig)
+		return FALSE;
+
+	if (prWtblTxConfig->fgIsHE)
+		return prWtblTxConfig->fgHeLDPC;
+	else if (prWtblTxConfig->fgIsVHT)
+		return prWtblTxConfig->fgVhtLDPC;
+	else
+		return prWtblTxConfig->fgLDPC;
+}
+
+uint16_t nicGetStatIdxInfo(IN struct ADAPTER *prAdapter,
+				  IN uint8_t ucWlanIdx)
+{
+	static uint8_t aucWlanIdxArray[CFG_STAT_DBG_PEER_NUM] = {0};
+	static uint16_t u2ValidBitMask;	/* support max 16 peers */
+	uint8_t ucIdx, ucStaIdx, ucCnt = 0;
+	uint8_t ucWlanIdxExist;
+
+	/* check every wlanIdx and unmask no longer used wlanIdx */
+	for (ucIdx = 0; ucIdx < CFG_STAT_DBG_PEER_NUM; ucIdx++) {
+		if (u2ValidBitMask & BIT(ucIdx)) {
+			ucWlanIdxExist = aucWlanIdxArray[ucIdx];
+
+			if (wlanGetStaIdxByWlanIdx(prAdapter, ucWlanIdxExist,
+				&ucStaIdx) != WLAN_STATUS_SUCCESS)
+				u2ValidBitMask &= ~BIT(ucIdx);
+		}
+	}
+
+	/* Search matched WlanIdx */
+	for (ucIdx = 0; ucIdx < CFG_STAT_DBG_PEER_NUM; ucIdx++) {
+		if (u2ValidBitMask & BIT(ucIdx)) {
+			ucCnt++;
+			ucWlanIdxExist = aucWlanIdxArray[ucIdx];
+
+			if (ucWlanIdxExist == ucWlanIdx) {
+				DBGLOG(REQ, INFO,
+				    "=== Matched, Mask=0x%x, ucIdx=%d ===\n",
+				    u2ValidBitMask, ucIdx);
+				return ucIdx;
+			}
+		}
+	}
+
+	/* No matched WlanIdx, add new one */
+	if (ucCnt < CFG_STAT_DBG_PEER_NUM) {
+		for (ucIdx = 0; ucIdx < CFG_STAT_DBG_PEER_NUM; ucIdx++)	{
+			if (~u2ValidBitMask & BIT(ucIdx)) {
+				u2ValidBitMask |= BIT(ucIdx);
+				aucWlanIdxArray[ucIdx] = ucWlanIdx;
+				DBGLOG(REQ, INFO,
+				    "=== New Add, Mask=0x%x, ucIdx=%d ===\n",
+				    u2ValidBitMask, ucIdx);
+				return ucIdx;
+			}
+		}
+	}
+
+	return 0xFFFF;
+}
+
+int32_t nicGetTxRateInfo(IN char *pcCommand, IN int i4TotalLen,
+			u_int8_t fgDumpAll,
+			struct PARAM_HW_WLAN_INFO *prHwWlanInfo,
+			struct PARAM_GET_STA_STATISTICS *prQueryStaStatistics)
+{
+	uint8_t i, txmode, rate, stbc, sgi;
+	uint8_t nsts;
+	int32_t i4BytesWritten = 0;
+
+	for (i = 0; i < AUTO_RATE_NUM; i++) {
+		txmode = HW_TX_RATE_TO_MODE(
+				prHwWlanInfo->rWtblRateInfo.au2RateCode[i]);
+		if (txmode >= ENUM_TX_MODE_NUM)
+			txmode = ENUM_TX_MODE_NUM - 1;
+		rate = HW_TX_RATE_TO_MCS(
+			prHwWlanInfo->rWtblRateInfo.au2RateCode[i]);
+		nsts = HW_TX_RATE_TO_NSS(
+			prHwWlanInfo->rWtblRateInfo.au2RateCode[i]) + 1;
+		stbc = HW_TX_RATE_TO_STBC(
+			prHwWlanInfo->rWtblRateInfo.au2RateCode[i]);
+		sgi = nicGetTxSgiInfo(&prHwWlanInfo->rWtblPeerCap, txmode);
+
+		if (fgDumpAll) {
+			i4BytesWritten += kalScnprintf(
+				pcCommand + i4BytesWritten,
+				i4TotalLen - i4BytesWritten,
+				"Rate index[%d]    ", i);
+
+			if (prHwWlanInfo->rWtblRateInfo.ucRateIdx == i) {
+				i4BytesWritten += kalScnprintf(
+					pcCommand + i4BytesWritten,
+					i4TotalLen - i4BytesWritten,
+					"%s", "--> ");
+			} else {
+				i4BytesWritten += kalScnprintf(
+					pcCommand + i4BytesWritten,
+					i4TotalLen - i4BytesWritten,
+					"%s", "    ");
+			}
+		}
+
+		if (!fgDumpAll) {
+			if (prHwWlanInfo->rWtblRateInfo.ucRateIdx != i)
+				continue;
+			else
+				i4BytesWritten += kalScnprintf(
+					pcCommand + i4BytesWritten,
+					i4TotalLen - i4BytesWritten,
+					"%-20s%s", "Auto TX Rate", " = ");
+		}
+
+		if (txmode == TX_RATE_MODE_CCK)
+			i4BytesWritten += kalScnprintf(
+				pcCommand + i4BytesWritten,
+				i4TotalLen - i4BytesWritten,
+				"%s, ", HW_TX_RATE_CCK_STR[rate & 0x3]);
+		else if (txmode == TX_RATE_MODE_OFDM)
+			i4BytesWritten += kalScnprintf(
+				pcCommand + i4BytesWritten,
+				i4TotalLen - i4BytesWritten,
+				"%s, ", nicHwRateOfdmStr(rate));
+		else if ((txmode == TX_RATE_MODE_HTMIX) ||
+			 (txmode == TX_RATE_MODE_HTGF))
+			i4BytesWritten += kalScnprintf(
+				pcCommand + i4BytesWritten,
+				i4TotalLen - i4BytesWritten,
+				"MCS%d, ", rate);
+		else
+			i4BytesWritten += kalScnprintf(
+				pcCommand + i4BytesWritten,
+				i4TotalLen - i4BytesWritten,
+				"%s%d_MCS%d, ", stbc ? "NSTS" : "NSS",
+				nsts, rate);
+
+		if (prQueryStaStatistics->ucSkipAr) {
+			i4BytesWritten += kalScnprintf(
+			    pcCommand + i4BytesWritten,
+			    i4TotalLen - i4BytesWritten, "%s, ",
+			    prHwWlanInfo->rWtblPeerCap.ucFrequencyCapability
+			      < 4 ? HW_TX_RATE_BW[
+			      prHwWlanInfo->rWtblPeerCap.ucFrequencyCapability]
+			      : HW_TX_RATE_BW[4]);
+		} else {
+			if ((txmode == TX_RATE_MODE_CCK) ||
+			    (txmode == TX_RATE_MODE_OFDM))
+				i4BytesWritten += kalScnprintf(
+				    pcCommand + i4BytesWritten,
+				    i4TotalLen - i4BytesWritten,
+				    "%s, ", HW_TX_RATE_BW[0]);
+			else
+			if (i > prHwWlanInfo->rWtblPeerCap
+				.ucChangeBWAfterRateN)
+				i4BytesWritten += kalScnprintf(
+				    pcCommand + i4BytesWritten,
+				    i4TotalLen - i4BytesWritten, "%s, ",
+				    prHwWlanInfo->rWtblPeerCap.
+					ucFrequencyCapability < 4 ?
+				    (prHwWlanInfo->rWtblPeerCap.
+					ucFrequencyCapability > BW_20 ?
+					HW_TX_RATE_BW[prHwWlanInfo->
+					    rWtblPeerCap
+					    .ucFrequencyCapability - 1] :
+					HW_TX_RATE_BW[prHwWlanInfo->rWtblPeerCap
+					    .ucFrequencyCapability]) :
+				    HW_TX_RATE_BW[4]);
+			else
+				i4BytesWritten += kalScnprintf(
+				    pcCommand + i4BytesWritten,
+				    i4TotalLen - i4BytesWritten,
+				    "%s, ",
+				    prHwWlanInfo->rWtblPeerCap.
+					ucFrequencyCapability < 4 ?
+				    HW_TX_RATE_BW[
+					prHwWlanInfo->rWtblPeerCap
+					.ucFrequencyCapability] :
+				    HW_TX_RATE_BW[4]);
+		}
+
+		if (txmode == TX_RATE_MODE_CCK)
+			i4BytesWritten += kalScnprintf(
+				pcCommand + i4BytesWritten,
+				i4TotalLen - i4BytesWritten,
+				"%s, ", rate < 4 ? "LP" : "SP");
+		else if (txmode == TX_RATE_MODE_OFDM)
+			;
+		else if ((txmode == TX_RATE_MODE_HTMIX) ||
+			 (txmode == TX_RATE_MODE_HTGF) ||
+			 (txmode == TX_RATE_MODE_VHT) ||
+			 (txmode == TX_RATE_MODE_PLR))
+			i4BytesWritten += kalScnprintf(
+				pcCommand + i4BytesWritten,
+				i4TotalLen - i4BytesWritten,
+				"%s, ", sgi == 0 ? "LGI" : "SGI");
+		else
+			i4BytesWritten += kalScnprintf(
+				pcCommand + i4BytesWritten,
+				i4TotalLen - i4BytesWritten,
+				"%s, ", sgi == 0 ? "SGI" :
+				(sgi == 1 ? "MGI" : "LGI"));
+
+		if (prQueryStaStatistics->ucSkipAr) {
+			i4BytesWritten += kalScnprintf(
+				pcCommand + i4BytesWritten,
+				i4TotalLen - i4BytesWritten,
+				"%s%s%s\n",
+				txmode <= ENUM_TX_MODE_NUM ?
+				    HW_TX_MODE_STR[txmode] : "N/A",
+				stbc ? ", STBC, " : ", ",
+				nicGetTxLdpcInfo(
+				    &prHwWlanInfo->rWtblTxConfig) == 0 ?
+				    "BCC" : "LDPC");
+		} else {
+#if (CFG_SUPPORT_RA_GEN == 0)
+			if (prQueryStaStatistics->aucArRatePer[
+			    prQueryStaStatistics->aucRateEntryIndex[i]] == 0xFF)
+				i4BytesWritten += kalScnprintf(
+					pcCommand + i4BytesWritten,
+					i4TotalLen - i4BytesWritten,
+					"%s%s%s   (--)\n",
+					txmode < ENUM_TX_MODE_NUM ?
+					    HW_TX_MODE_STR[txmode] : "N/A",
+					stbc ? ", STBC, " : ", ",
+					((nicGetTxLdpcInfo(
+					    &prHwWlanInfo->rWtblTxConfig) == 0)
+					    || (txmode == TX_RATE_MODE_CCK)
+					    || (txmode == TX_RATE_MODE_OFDM)) ?
+						"BCC" : "LDPC");
+			else
+				i4BytesWritten += kalScnprintf(
+					pcCommand + i4BytesWritten,
+					i4TotalLen - i4BytesWritten,
+					"%s%s%s   (%d)\n",
+					txmode < ENUM_TX_MODE_NUM ?
+					    HW_TX_MODE_STR[txmode] : "N/A",
+					stbc ? ", STBC, " : ", ",
+					((nicGetTxLdpcInfo(
+					    &prHwWlanInfo->rWtblTxConfig) == 0)
+					    || (txmode == TX_RATE_MODE_CCK)
+					    || (txmode == TX_RATE_MODE_OFDM))
+						? "BCC" : "LDPC",
+					prQueryStaStatistics->aucArRatePer[
+					    prQueryStaStatistics
+					    ->aucRateEntryIndex[i]]);
+#else
+			i4BytesWritten += kalScnprintf(
+				pcCommand + i4BytesWritten,
+				i4TotalLen - i4BytesWritten,
+				"%s%s%s\n",
+				txmode < ENUM_TX_MODE_NUM ?
+				    HW_TX_MODE_STR[txmode] : "N/A",
+				stbc ? ", STBC, " : ", ",
+				((nicGetTxLdpcInfo(
+				    &prHwWlanInfo->rWtblTxConfig) == 0) ||
+				    (txmode == TX_RATE_MODE_CCK) ||
+				    (txmode == TX_RATE_MODE_OFDM)) ?
+				    "BCC" : "LDPC");
+#endif
+		}
+
+		if (!fgDumpAll)
+			break;
+	}
+
+	return i4BytesWritten;
+}
+
+int32_t nicGetRxRateInfo(struct ADAPTER *prAdapter, IN char *pcCommand,
+				 IN int i4TotalLen, IN uint8_t ucWlanIdx)
+{
+	uint32_t txmode, rate, frmode, sgi, nsts, ldpc, stbc, groupid, mu;
+	int32_t i4BytesWritten = 0;
+	uint32_t u4RxVector0 = 0, u4RxVector1 = 0;
+	uint8_t ucStaIdx;
+	struct CHIP_DBG_OPS *prChipDbg;
+
+	if (wlanGetStaIdxByWlanIdx(prAdapter, ucWlanIdx, &ucStaIdx) ==
+	    WLAN_STATUS_SUCCESS) {
+		u4RxVector0 = prAdapter->arStaRec[ucStaIdx].u4RxVector0;
+		u4RxVector1 = prAdapter->arStaRec[ucStaIdx].u4RxVector1;
+		DBGLOG(REQ, LOUD, "****** RX Vector0 = 0x%08x ******\n",
+		       u4RxVector0);
+		DBGLOG(REQ, LOUD, "****** RX Vector1 = 0x%08x ******\n",
+		       u4RxVector1);
+	} else {
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten,
+			i4TotalLen - i4BytesWritten,
+			"%-20s%s", "Last RX Rate", " = NOT SUPPORT");
+		return i4BytesWritten;
+	}
+
+	prChipDbg = prAdapter->chip_info->prDebugOps;
+
+	if (prChipDbg && prChipDbg->show_rx_rate_info) {
+		i4BytesWritten = prChipDbg->show_rx_rate_info(
+				prAdapter,
+				pcCommand,
+				i4TotalLen,
+				ucStaIdx);
+		return i4BytesWritten;
+	}
+
+	txmode = (u4RxVector0 & RX_VT_RX_MODE_MASK) >> RX_VT_RX_MODE_OFFSET;
+	rate = (u4RxVector0 & RX_VT_RX_RATE_MASK) >> RX_VT_RX_RATE_OFFSET;
+	frmode = (u4RxVector0 & RX_VT_FR_MODE_MASK) >> RX_VT_FR_MODE_OFFSET;
+	nsts = ((u4RxVector1 & RX_VT_NSTS_MASK) >> RX_VT_NSTS_OFFSET);
+	stbc = (u4RxVector0 & RX_VT_STBC_MASK) >> RX_VT_STBC_OFFSET;
+	sgi = u4RxVector0 & RX_VT_SHORT_GI;
+	ldpc = u4RxVector0 & RX_VT_LDPC;
+	groupid = (u4RxVector1 & RX_VT_GROUP_ID_MASK) >> RX_VT_GROUP_ID_OFFSET;
+
+	if (groupid && groupid != 63) {
+		mu = 1;
+	} else {
+		mu = 0;
+		nsts += 1;
+	}
+
+	i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten,
+		i4TotalLen - i4BytesWritten, "%-20s%s", "Last RX Rate", " = ");
+
+	if (txmode == TX_RATE_MODE_CCK)
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten,
+			i4TotalLen - i4BytesWritten, "%s, ",
+			rate < 4 ? HW_TX_RATE_CCK_STR[rate] :
+				HW_TX_RATE_CCK_STR[4]);
+	else if (txmode == TX_RATE_MODE_OFDM)
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten,
+			i4TotalLen - i4BytesWritten, "%s, ",
+			nicHwRateOfdmStr(rate));
+	else if ((txmode == TX_RATE_MODE_HTMIX) ||
+		 (txmode == TX_RATE_MODE_HTGF))
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten,
+			i4TotalLen - i4BytesWritten, "MCS%d, ", rate);
+	else
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten,
+			i4TotalLen - i4BytesWritten, "NSS%d_MCS%d, ",
+			nsts, rate);
+
+	i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten,
+		i4TotalLen - i4BytesWritten, "%s, ",
+		frmode < 4 ? HW_TX_RATE_BW[frmode] : HW_TX_RATE_BW[4]);
+
+	if (txmode == TX_RATE_MODE_CCK)
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten,
+			i4TotalLen - i4BytesWritten, "%s, ",
+			rate < 4 ? "LP" : "SP");
+	else if (txmode == TX_RATE_MODE_OFDM)
+		;
+	else
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten,
+			i4TotalLen - i4BytesWritten, "%s, ",
+			sgi == 0 ? "LGI" : "SGI");
+
+	i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten,
+		i4TotalLen - i4BytesWritten, "%s", stbc == 0 ? "" : "STBC, ");
+
+	if (mu) {
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten,
+			i4TotalLen - i4BytesWritten, "%s, %s, %s (%d)\n",
+			(txmode < ENUM_TX_MODE_NUM ?
+			 HW_TX_MODE_STR[txmode] : "N/A"),
+			ldpc == 0 ? "BCC" : "LDPC", "MU", groupid);
+	} else {
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten,
+			i4TotalLen - i4BytesWritten, "%s, %s\n",
+			(txmode < ENUM_TX_MODE_NUM ?
+			 HW_TX_MODE_STR[txmode] : "N/A"),
+			ldpc == 0 ? "BCC" : "LDPC");
+	}
+
+	return i4BytesWritten;
+}
+
 

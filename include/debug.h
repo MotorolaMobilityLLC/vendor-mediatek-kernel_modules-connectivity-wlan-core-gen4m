@@ -85,6 +85,8 @@ extern uint32_t au4LogLevel[];
 extern void set_logtoomuch_enable(int value) __attribute__((weak));
 extern int get_logtoomuch_enable(void) __attribute__((weak));
 
+extern struct MIB_INFO_STAT g_arMibInfo[ENUM_BAND_NUM];
+
 /*******************************************************************************
  *                              C O N S T A N T S
  *******************************************************************************
@@ -139,6 +141,29 @@ extern int get_logtoomuch_enable(void) __attribute__((weak));
 #define HIF_DRV_SER             BIT(2)
 
 #define DUMP_MEM_SIZE 64
+
+#if CFG_SUPPORT_ADVANCE_CONTROL
+#define CMD_SW_DBGCTL_ADVCTL_SET_ID 0xa1260000
+#define CMD_SW_DBGCTL_ADVCTL_GET_ID 0xb1260000
+#endif
+
+#define CFG_STAT_DBG_PEER_NUM		10
+#define AGG_RANGE_SEL_4BYTE_NUM		4
+
+#define AGG_RANGE_SEL_0_MASK		BITS(0, 7)
+#define AGG_RANGE_SEL_0_OFFSET		0
+#define AGG_RANGE_SEL_1_MASK		BITS(8, 15)
+#define AGG_RANGE_SEL_1_OFFSET		8
+#define AGG_RANGE_SEL_2_MASK		BITS(16, 23)
+#define AGG_RANGE_SEL_2_OFFSET		16
+#define AGG_RANGE_SEL_3_MASK		BITS(24, 31)
+#define AGG_RANGE_SEL_3_OFFSET		24
+#define AGG_RANGE_SEL_4_MASK		AGG_RANGE_SEL_0_MASK
+#define AGG_RANGE_SEL_4_OFFSET		AGG_RANGE_SEL_0_OFFSET
+#define AGG_RANGE_SEL_5_MASK		AGG_RANGE_SEL_1_MASK
+#define AGG_RANGE_SEL_5_OFFSET		AGG_RANGE_SEL_1_OFFSET
+#define AGG_RANGE_SEL_6_MASK		AGG_RANGE_SEL_2_MASK
+#define AGG_RANGE_SEL_6_OFFSET		AGG_RANGE_SEL_2_OFFSET
 
 /*******************************************************************************
  *                             D A T A   T Y P E S
@@ -225,6 +250,14 @@ struct CHIP_DBG_OPS {
 		char *pcCommand,
 		int32_t i4TotalLen,
 		uint8_t ucStaIdx);
+	int32_t (*show_stat_info)(
+		struct ADAPTER *prAdapter,
+		char *pcCommand,
+		int32_t i4TotalLen,
+		struct PARAM_HW_WLAN_INFO *prHwWlanInfo,
+		struct PARAM_GET_STA_STATISTICS *prQueryStaStatistics,
+		uint8_t fgResetCnt,
+		uint32_t u4StatGroup);
 };
 
 enum PKT_PHASE {
@@ -539,8 +572,38 @@ int32_t connac2x_show_rx_rssi_info(
 	int32_t i4TotalLen,
 	uint8_t ucStaIdx);
 
+int32_t connac2x_show_stat_info(
+	struct ADAPTER *prAdapter,
+	char *pcCommand,
+	int32_t i4TotalLen,
+	struct PARAM_HW_WLAN_INFO *prHwWlanInfo,
+	struct PARAM_GET_STA_STATISTICS *prQueryStaStatistics,
+	uint8_t fgResetCnt,
+	uint32_t u4StatGroup);
+
 #endif /* CFG_SUPPORT_CONNAC2X == 1 */
 
+#if (CFG_SUPPORT_RA_GEN == 1)
+int32_t mt7663_show_stat_info(struct ADAPTER *prAdapter,
+			char *pcCommand, int32_t i4TotalLen,
+			struct PARAM_HW_WLAN_INFO *prHwWlanInfo,
+			struct PARAM_GET_STA_STATISTICS *prQueryStaStatistics,
+			uint8_t fgResetCnt, uint32_t u4StatGroup);
+#endif
+
+#if (CFG_SUPPORT_RA_GEN == 0)
+int32_t mt7668_show_stat_info(struct ADAPTER *prAdapter,
+			char *pcCommand, int32_t i4TotalLen,
+			struct PARAM_HW_WLAN_INFO *prHwWlanInfo,
+			struct PARAM_GET_STA_STATISTICS *prQueryStaStatistics,
+			uint8_t fgResetCnt, uint32_t u4StatGroup);
+
+int32_t mt6632_show_stat_info(struct ADAPTER *prAdapter,
+			char *pcCommand, int32_t i4TotalLen,
+			struct PARAM_HW_WLAN_INFO *prHwWlanInfo,
+			struct PARAM_GET_STA_STATISTICS *prQueryStaStatistics,
+			uint8_t fgResetCnt, uint32_t u4StatGroup);
+#endif
 /*******************************************************************************
  *                              F U N C T I O N S
  *******************************************************************************

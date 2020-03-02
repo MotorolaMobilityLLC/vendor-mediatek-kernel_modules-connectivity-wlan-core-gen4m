@@ -1377,4 +1377,7 @@ uint8_t nicRxGetRcpiValueFromRxv(
 	IN uint8_t ucRcpiMode,
 	IN struct SW_RFB *prSwRfb);
 
+int32_t nicRxGetLastRxRssi(struct ADAPTER *prAdapter, IN char *pcCommand,
+			IN int i4TotalLen, IN uint8_t ucWlanIdx);
+
 #endif /* _NIC_RX_H */

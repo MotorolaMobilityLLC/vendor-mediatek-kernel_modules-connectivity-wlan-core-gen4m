@@ -2028,14 +2028,12 @@ struct PARAM_TX_CONFIG {
 	u_int8_t fgIsAMSDUCrossLG;
 	u_int8_t fgCheckPER;
 	u_int8_t fgIsGID63;
-	uint8_t aucReserved[1];
+	u_int8_t fgIsHE;
 
-#if (1 /* CFG_SUPPORT_VHT == 1 */)
 	u_int8_t fgVhtTIBF;
 	u_int8_t fgVhtTEBF;
 	u_int8_t fgVhtLDPC;
-	uint8_t aucReserved2[1];
-#endif
+	u_int8_t fgHeLDPC;
 };
 
 struct PARAM_KEY_CONFIG {
