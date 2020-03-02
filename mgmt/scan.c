@@ -2606,7 +2606,7 @@ uint32_t scanAddScanResult(IN struct ADAPTER *prAdapter,
 		break;
 	}
 
-	log_dbg(SCN, TRACE, "ind %s %d %d\n", prBssDesc->aucSSID,
+	log_dbg(SCN, LOUD, "ind %s %d %d\n", prBssDesc->aucSSID,
 		prBssDesc->ucChannelNum, prBssDesc->ucRCPI);
 
 	scanAddEssResult(prAdapter, prBssDesc);
@@ -2630,10 +2630,10 @@ uint32_t scanAddScanResult(IN struct ADAPTER *prAdapter,
 		}
 	}
 
-	if (prBssDesc->fgIsValidSSID) {
+	if (prBssDesc->fgIsValidSSID && prBssDesc->u2RawLength != 0) {
 		kalIndicateBssInfo(prAdapter->prGlueInfo,
-			   (uint8_t *) prSwRfb->pvHeader,
-			   prSwRfb->u2PacketLen,
+			   prBssDesc->aucRawBuf,
+			   prBssDesc->u2RawLength,
 			   prBssDesc->ucChannelNum,
 			   RCPI_TO_dBm(prBssDesc->ucRCPI));
 	}
