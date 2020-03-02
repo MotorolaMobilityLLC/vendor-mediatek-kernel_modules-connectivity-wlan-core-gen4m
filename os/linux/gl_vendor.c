@@ -239,7 +239,7 @@ int mtk_cfg80211_vendor_set_country_code(struct wiphy *wiphy, struct wireless_de
 	uint32_t rStatus;
 	uint32_t u4BufLen;
 	struct nlattr *attr;
-	uint8_t country[2];
+	uint8_t country[2] = {0};
 
 	ASSERT(wiphy && wdev);
 	if ((data == NULL) || (data_len == 0))
