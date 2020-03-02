@@ -7379,13 +7379,12 @@ void qmDetectArpNoResponse(struct ADAPTER *prAdapter,
 	if (u2EtherType != ETH_P_ARP)
 		return;
 
-	if (!((apIp[0] == 0) || (gatewayIp[0] == 0))) {
-		if (kalMemCmp(apIp, &pucData[ETH_TYPE_LEN_OFFSET + 26],
-			sizeof(apIp)) &&
-			kalMemCmp(gatewayIp, &pucData[ETH_TYPE_LEN_OFFSET + 26],
-			sizeof(gatewayIp)))
-			return;
-	}
+	/* If ARP req is neither to apIp nor to gatewayIp, ignore detection */
+	if (kalMemCmp(apIp, &pucData[ETH_TYPE_LEN_OFFSET + 26],
+		sizeof(apIp)) &&
+		kalMemCmp(gatewayIp, &pucData[ETH_TYPE_LEN_OFFSET + 26],
+		sizeof(gatewayIp)))
+		return;
 
 	arpOpCode = (pucData[ETH_TYPE_LEN_OFFSET + 8] << 8) |
 		(pucData[ETH_TYPE_LEN_OFFSET + 8 + 1]);
