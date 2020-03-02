@@ -147,6 +147,9 @@
 	((NIC_TX_DESC_AND_PADDING_LENGTH + NIC_TX_DESC_HEADER_PADDING_LENGTH + \
 	NIC_TX_MAX_SIZE_PER_FRAME + NIC_TX_PAGE_SIZE - 1) / NIC_TX_PAGE_SIZE)
 
+#define NIX_TX_PLE_PAGE_CNT_PER_FRAME		1
+#define NIC_TX_LEN_ADDING_LENGTH		8 /*0x8206_C000[15:8] x 4.*/
+
 /*------------------------------------------------------------------------*/
 /* Tx descriptor related information                                      */
 /*------------------------------------------------------------------------*/
@@ -602,6 +605,25 @@ typedef struct _TX_TCQ_STATUS_T {
 	/* buffer count */
 	UINT_32 au4FreeBufferCount[TC_NUM];
 	UINT_32 au4MaxNumOfBuffer[TC_NUM];
+
+	/*
+	 * PLE part
+	 */
+
+	BOOLEAN fgNeedPleCtrl;
+
+	/* HIF reported page count delta */
+	UINT_32 au4TxDonePageCount_PLE[TC_NUM];	/* other TC */
+	UINT_32 au4PreUsedPageCoun_PLE[TC_NUM];
+	UINT_32 u4AvaliablePageCount_PLE;	/* FFA */
+
+	/* distributed page count */
+	UINT_32 au4FreePageCount_PLE[TC_NUM];
+	UINT_32 au4MaxNumOfPage_PLE[TC_NUM];
+
+	/* buffer count */
+	UINT_32 au4FreeBufferCount_PLE[TC_NUM];
+	UINT_32 au4MaxNumOfBuffer_PLE[TC_NUM];
 } TX_TCQ_STATUS_T, *P_TX_TCQ_STATUS_T;
 
 typedef struct _TX_TCQ_ADJUST_T {
@@ -1385,6 +1407,12 @@ do { \
 #define HAL_MAC_TX_DESC_SET_HIF_ERR(_prHwMacTxDesc) ((_prHwMacTxDesc)->u2PseFid |= TX_DESC_HIF_ERR)
 #define HAL_MAC_TX_DESC_UNSET_HIF_ERR(_prHwMacTxDesc) ((_prHwMacTxDesc)->u2PseFid &= ~TX_DESC_HIF_ERR)
 
+
+#define nicTxReleaseResource_PSE(prAdapter, ucTc, u4PageCount, fgReqLock) \
+		nicTxReleaseResource(prAdapter, ucTc, u4PageCount, fgReqLock, FALSE)
+
+#define nicTxReleaseResource_PLE(prAdapter, ucTc, u4PageCount, fgReqLock) \
+		nicTxReleaseResource(prAdapter, ucTc, u4PageCount, fgReqLock, TRUE)
 /*******************************************************************************
 *                  F U N C T I O N   D E C L A R A T I O N S
 ********************************************************************************
@@ -1397,7 +1425,7 @@ WLAN_STATUS nicTxAcquireResource(IN P_ADAPTER_T prAdapter, IN UINT_8 ucTC, IN UI
 WLAN_STATUS nicTxPollingResource(IN P_ADAPTER_T prAdapter, IN UINT_8 ucTC);
 
 BOOLEAN nicTxReleaseResource(IN P_ADAPTER_T prAdapter, IN UINT_8 ucTc, IN UINT_32 u4PageCount,
-	IN BOOLEAN fgReqLock);
+	IN BOOLEAN fgReqLock, IN BOOLEAN fgPLE);
 
 VOID nicTxReleaseMsduResource(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduInfoListHead);
 
@@ -1559,6 +1587,8 @@ void nicTxDirectTimerCheckHifQ(unsigned long data);
 WLAN_STATUS nicTxDirectStartXmit(struct sk_buff *prSkb, P_GLUE_INFO_T prGlueInfo);
 /* TX Direct functions : END */
 
+UINT_32 nicTxResourceGetPleFreeCount(IN P_ADAPTER_T prAdapter, IN UINT_8 ucTC);
+BOOLEAN nicTxResourceIsPleCtrlNeeded(IN P_ADAPTER_T prAdapter, IN UINT_8 ucTC);
 /*******************************************************************************
 *                              F U N C T I O N S
 ********************************************************************************

@@ -1447,7 +1447,7 @@ VOID halWpdmaProcessCmdDmaDone(IN P_GLUE_INFO_T prGlueInfo, IN UINT_16 u2Port)
 		prTxRing->u4UsedCnt--;
 
 		if (u2Port == TX_RING_CMD_IDX_2)
-			nicTxReleaseResource(prGlueInfo->prAdapter, TC4_INDEX,
+			nicTxReleaseResource_PSE(prGlueInfo->prAdapter, TC4_INDEX,
 				nicTxGetPageCount(prGlueInfo->prAdapter, pTxD->SDLen0, TRUE), TRUE);
 
 		INC_RING_INDEX(u4SwIdx, TX_RING_SIZE);

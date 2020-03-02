@@ -1246,6 +1246,7 @@ qmDequeueTxPacketsFromPerStaQueues(IN P_ADAPTER_T prAdapter, OUT P_QUE_T prQue,
 	UINT_32 u4MaxForwardFrameCountLimit;	/* The maximum number of packets a STA can forward */
 	UINT_32 u4AvaliableResource;	/* The TX resource amount */
 	UINT_32 u4MaxResourceLimit;
+	UINT_32 u4AvailableResourcePLE;
 
 	BOOLEAN fgEndThisRound;
 	P_QUE_MGT_T prQM = &prAdapter->rQM;
@@ -1257,6 +1258,10 @@ qmDequeueTxPacketsFromPerStaQueues(IN P_ADAPTER_T prAdapter, OUT P_QUE_T prQue,
 		DBGLOG(TX, LOUD, "(Fairness) Skip TC = %u u4CurrentQuota = %u\n", ucTC, u4CurrentQuota);
 		return u4CurrentQuota;
 	}
+	/* Check PLE resource */
+	u4AvailableResourcePLE = nicTxResourceGetPleFreeCount(prAdapter, ucTC);
+	if (!u4AvailableResourcePLE)
+		return u4CurrentQuota;
 	/* 4 <1> Assign init value */
 	u4AvaliableResource = u4CurrentQuota;
 	u4MaxResourceLimit = u4TotalQuota;
@@ -1330,6 +1335,10 @@ qmDequeueTxPacketsFromPerStaQueues(IN P_ADAPTER_T prAdapter, OUT P_QUE_T prQue,
 					if (!(prAdapter->rWifiVar.ucAlwaysResetUsedRes & BIT(0)))
 						fgEndThisRound = TRUE;
 					break;
+				} else if (u4AvailableResourcePLE < NIX_TX_PLE_PAGE_CNT_PER_FRAME) {
+					if (!(prAdapter->rWifiVar.ucAlwaysResetUsedRes & BIT(0)))
+						fgEndThisRound = TRUE;
+					break;
 				}
 				/* Available to be Tx */
 
@@ -1345,6 +1354,7 @@ qmDequeueTxPacketsFromPerStaQueues(IN P_ADAPTER_T prAdapter, OUT P_QUE_T prQue,
 				u4AvaliableResource -= prDequeuedPkt->u4PageCount;
 				u4CurStaUsedResource += prDequeuedPkt->u4PageCount;
 				u4CurStaForwardFrameCount++;
+				u4AvailableResourcePLE -= NIX_TX_PLE_PAGE_CNT_PER_FRAME;
 			}
 
 			/* AP mode: Update STA in PS Free quota */
@@ -1414,11 +1424,16 @@ qmDequeueTxPacketsFromPerTypeQueues(IN P_ADAPTER_T prAdapter, OUT P_QUE_T prQue,
 	PFN_DEQUEUE_FUNCTION pfnDeQFunc[2];
 	BOOLEAN fgChangeDeQFunc = TRUE;
 	BOOLEAN fgGlobalQueFirst = TRUE;
+	UINT_32 u4AvailableResourcePLE;
 
 	DBGLOG(QM, LOUD, "Enter %s (TC = %d, quota = %u)\n", __func__, ucTC, u4CurrentQuota);
 
 	/* Broadcast/Multicast data packets */
 	if ((u4CurrentQuota == 0))
+		return;
+	/* Check PLE resource */
+	u4AvailableResourcePLE = nicTxResourceGetPleFreeCount(prAdapter, ucTC);
+	if (!u4AvailableResourcePLE)
 		return;
 
 	prQM = &prAdapter->rQM;
@@ -1492,11 +1507,16 @@ qmDequeueTxPacketsFromGlobalQueue(IN P_ADAPTER_T prAdapter, OUT P_QUE_T prQue,
 	QUE_T rMergeQue;
 	P_QUE_T prMergeQue;
 	P_QUE_MGT_T prQM;
+	UINT_32 u4AvailableResourcePLE;
 
 	DBGLOG(QM, LOUD, "Enter %s (TC = %d, quota = %u)\n", __func__, ucTC, u4CurrentQuota);
 
 	/* Broadcast/Multicast data packets */
 	if (u4CurrentQuota == 0)
+		return u4CurrentQuota;
+	/* Check PLE resource */
+	u4AvailableResourcePLE = nicTxResourceGetPleFreeCount(prAdapter, ucTC);
+	if (!u4AvailableResourcePLE)
 		return u4CurrentQuota;
 
 	prQM = &prAdapter->rQM;
@@ -1515,6 +1535,8 @@ qmDequeueTxPacketsFromGlobalQueue(IN P_ADAPTER_T prAdapter, OUT P_QUE_T prQue,
 		prDequeuedPkt = (P_MSDU_INFO_T) QUEUE_GET_HEAD(prCurrQueue);
 		if (prDequeuedPkt->u4PageCount > u4AvaliableResource)
 			break;
+		if (u4AvailableResourcePLE < NIX_TX_PLE_PAGE_CNT_PER_FRAME)
+			break;
 
 		QUEUE_REMOVE_HEAD(prCurrQueue, prDequeuedPkt, P_MSDU_INFO_T);
 
@@ -1526,6 +1548,7 @@ qmDequeueTxPacketsFromGlobalQueue(IN P_ADAPTER_T prAdapter, OUT P_QUE_T prQue,
 				QUEUE_INSERT_TAIL(prQue, (P_QUE_ENTRY_T) prDequeuedPkt);
 				prBurstEndPkt = prDequeuedPkt;
 				u4AvaliableResource -= prDequeuedPkt->u4PageCount;
+				u4AvailableResourcePLE -= NIX_TX_PLE_PAGE_CNT_PER_FRAME;
 				QM_DBG_CNT_INC(prQM, QM_DBG_CNT_26);
 			} else {
 				QUEUE_INSERT_TAIL(prMergeQue, (P_QUE_ENTRY_T) prDequeuedPkt);

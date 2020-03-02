@@ -2466,19 +2466,19 @@ WLAN_STATUS nicCmdEventQueryNicTxResource(IN P_ADAPTER_T prAdapter, IN PUINT_8 p
 	P_NIC_TX_RESOURCE_T prTxResource = (P_NIC_TX_RESOURCE_T)pucEventBuf;
 
 	prAdapter->fgIsNicTxReousrceValid = TRUE;
-	prAdapter->nicTxReousrce.u4McuTotalResource = prTxResource->u4McuTotalResource;
-	prAdapter->nicTxReousrce.u4McuResourceUnit = prTxResource->u4McuResourceUnit;
-	prAdapter->nicTxReousrce.u4LmacTotalResource = prTxResource->u4LmacTotalResource;
-	prAdapter->nicTxReousrce.u4LmacResourceUnit = prTxResource->u4LmacResourceUnit;
+	prAdapter->nicTxReousrce.u4CmdTotalResource = prTxResource->u4CmdTotalResource;
+	prAdapter->nicTxReousrce.u4CmdResourceUnit = prTxResource->u4CmdResourceUnit;
+	prAdapter->nicTxReousrce.u4DataTotalResource = prTxResource->u4DataTotalResource;
+	prAdapter->nicTxReousrce.u4DataResourceUnit = prTxResource->u4DataResourceUnit;
 
-	DBGLOG(INIT, INFO, "nicCmdEventQueryNicTxResource: u4McuTotalResource = %x\n",
-						prAdapter->nicTxReousrce.u4McuTotalResource);
-	DBGLOG(INIT, INFO, "nicCmdEventQueryNicTxResource: u4McuResourceUnit = %x\n",
-						prAdapter->nicTxReousrce.u4McuResourceUnit);
-	DBGLOG(INIT, INFO, "nicCmdEventQueryNicTxResource: u4LmacTotalResource = %x\n",
-						prAdapter->nicTxReousrce.u4LmacTotalResource);
-	DBGLOG(INIT, INFO, "nicCmdEventQueryNicTxResource: u4LmacResourceUnit = %x\n",
-						prAdapter->nicTxReousrce.u4LmacResourceUnit);
+	DBGLOG(INIT, INFO, "nicCmdEventQueryNicTxResource: u4CmdTotalResource = %x\n",
+						prAdapter->nicTxReousrce.u4CmdTotalResource);
+	DBGLOG(INIT, INFO, "nicCmdEventQueryNicTxResource: u4CmdResourceUnit = %x\n",
+						prAdapter->nicTxReousrce.u4CmdResourceUnit);
+	DBGLOG(INIT, INFO, "nicCmdEventQueryNicTxResource: u4DataTotalResource = %x\n",
+						prAdapter->nicTxReousrce.u4DataTotalResource);
+	DBGLOG(INIT, INFO, "nicCmdEventQueryNicTxResource: u4DataResourceUnit = %x\n",
+						prAdapter->nicTxReousrce.u4DataResourceUnit);
 
 	return WLAN_STATUS_SUCCESS;
 }
