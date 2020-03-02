@@ -653,9 +653,11 @@ uint32_t soc3_0_DownloadByDynMemMap(IN struct ADAPTER *prAdapter,
 	IN uint32_t u4Addr, IN uint32_t u4Len,
 	IN uint8_t *pucStartPtr, IN enum ENUM_IMG_DL_IDX_T eDlIdx)
 {
+#if 0
 	uint32_t u4Val = 0;
 	uint32_t u4Idx = 0;
 	uint32_t u4NonZeroMemCnt = 0;
+#endif
 #if defined(_HIF_AXI)
 	struct GL_HIF_INFO *prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
 #endif
