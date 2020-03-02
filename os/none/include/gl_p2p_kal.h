@@ -443,10 +443,22 @@ u_int8_t kalP2PMaxClients(IN struct GLUE_INFO *prGlueInfo,
 
 #define kalP2pIndicateQueuedMgmtFrame(_prGlueInfo, _prFrame) \
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__, _prGlueInfo)
+
+#define kalP2pIndicateAcsResult(_prGlueInfo, _ucRoleIndex, _ucPrimaryCh,\
+	_ucSecondCh, _ucSeg0Ch, _ucSeg1Ch, _eChnlBw) \
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__, _prGlueInfo)
 #else
 void kalP2pUnlinkBss(IN struct GLUE_INFO *prGlueInfo, IN uint8_t aucBSSID[]);
 
 void kalP2pIndicateQueuedMgmtFrame(IN struct GLUE_INFO *prGlueInfo,
 		IN struct P2P_QUEUED_ACTION_FRAME *prFrame);
+
+void kalP2pIndicateAcsResult(IN struct GLUE_INFO *prGlueInfo,
+		IN uint8_t ucRoleIndex,
+		IN uint8_t ucPrimaryCh,
+		IN uint8_t ucSecondCh,
+		IN uint8_t ucSeg0Ch,
+		IN uint8_t ucSeg1Ch,
+		IN enum ENUM_MAX_BANDWIDTH_SETTING eChnlBw);
 #endif
 #endif /* _GL_P2P_KAL_H */
