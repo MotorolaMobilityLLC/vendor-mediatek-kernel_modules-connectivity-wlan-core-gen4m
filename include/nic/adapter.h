@@ -704,7 +704,7 @@ struct WIFI_VAR {
 	struct P2P_ROLE_FSM_INFO *aprP2pRoleFsmInfo[BSS_P2P_NUM];
 
 #if	CFG_ENABLE_PER_STA_STATISTICS_LOG
-	struct PARAM_GET_STA_STATISTICS *prP2pQueryStaStatistics;
+	struct PARAM_GET_STA_STATISTICS *prP2pQueryStaStatistics[BSS_P2P_NUM];
 #endif
 
 #endif				/* CFG_ENABLE_WIFI_DIRECT */
