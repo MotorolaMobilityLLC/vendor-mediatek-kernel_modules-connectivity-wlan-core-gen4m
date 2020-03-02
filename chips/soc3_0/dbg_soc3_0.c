@@ -821,7 +821,7 @@ void soc3_0_show_pse_info(
 	u_int32_t fpg_cnt, ffa_cnt, fpg_head, fpg_tail;
 	u_int32_t max_q, min_q, rsv_pg, used_pg;
 	u_int32_t i, group_cnt;
-	u_int32_t group_squota, group_info, freepg_cnt, freepg_head_tail;
+	u_int32_t group_quota, group_info, freepg_cnt, freepg_head_tail;
 	struct pse_group_info *group;
 	char *str;
 	u_int32_t pse_peek[10] = {0};
