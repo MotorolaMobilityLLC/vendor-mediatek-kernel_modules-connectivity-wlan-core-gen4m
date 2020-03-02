@@ -1484,11 +1484,14 @@ WLAN_STATUS wlanDownloadFW(IN P_ADAPTER_T prAdapter)
 	WLAN_STATUS rStatus = 0;
 	BOOLEAN fgReady;
 	struct mt66xx_chip_info *prChipInfo;
+	struct FWDL_OPS_T *prFwDlOps;
 
 	if (!prAdapter)
 		return WLAN_STATUS_FAILURE;
 
 	prChipInfo = prAdapter->chip_info;
+	prFwDlOps = prChipInfo->fw_dl_ops;
+
 	DBGLOG(INIT, INFO, "wlanDownloadFW:: Check ready_bits(=0x%x)\n", prChipInfo->sw_ready_bits);
 	HAL_WIFI_FUNC_READY_CHECK(prAdapter, prChipInfo->sw_ready_bits, &fgReady);
 
@@ -1504,15 +1507,17 @@ WLAN_STATUS wlanDownloadFW(IN P_ADAPTER_T prAdapter)
 
 	HAL_ENABLE_FWDL(prAdapter, TRUE);
 
-#if (MTK_WCN_HIF_SDIO == 0)
-	wlanDownloadPatch(prAdapter);
-#endif
+	if (prFwDlOps->downloadPatch)
+		prFwDlOps->downloadPatch(prAdapter);
 
 	DBGLOG(INIT, INFO, "FW download Start\n");
 
-	rStatus = prChipInfo->fw_dl_ops->downloadFirmware(prAdapter, IMG_DL_IDX_N9_FW);
-	if (prChipInfo->is_support_cr4 && rStatus == WLAN_STATUS_SUCCESS)
-		rStatus = prChipInfo->fw_dl_ops->downloadFirmware(prAdapter, IMG_DL_IDX_CR4_FW);
+	if (prFwDlOps->downloadFirmware) {
+		rStatus = prFwDlOps->downloadFirmware(prAdapter, IMG_DL_IDX_N9_FW);
+		if (prChipInfo->is_support_cr4 && rStatus == WLAN_STATUS_SUCCESS)
+			rStatus = prFwDlOps->downloadFirmware(prAdapter, IMG_DL_IDX_CR4_FW);
+	} else
+		DBGLOG(INIT, WARN, "Without downlaod firmware Ops\n");
 
 	DBGLOG(INIT, INFO, "FW download End\n");
 
@@ -1589,53 +1594,46 @@ WLAN_STATUS wlanGetPatchInfo(IN P_ADAPTER_T prAdapter)
 	return WLAN_STATUS_SUCCESS;
 }
 
-VOID wlanPrintFwdlInfo(IN P_ADAPTER_T prAdapter)
+UINT_32 fwDlGetFwdlInfo(P_ADAPTER_T prAdapter, char *pcBuf, int i4TotalLen)
 {
 	P_WIFI_VER_INFO_T prVerInfo = &prAdapter->rVerInfo;
-	struct TAILER_COMMON_FORMAT_T *prComTailer = &prAdapter->rVerInfo.rCommonTailer;
-	struct mt66xx_chip_info *prChipInfo = prAdapter->chip_info;
-	UINT_8 aucBuf[32];
-#if CFG_SUPPORT_COMPRESSION_FW_OPTION
-	struct TAILER_FORMAT_T_2 *prTailer;
-#else
-	struct TAILER_FORMAT_T *prTailer;
-#endif
+	struct FWDL_OPS_T *prFwDlOps;
+	UINT_32 u4Offset = 0;
+	UINT_8 aucBuf[32], aucDate[32];
+
+	prFwDlOps = prAdapter->chip_info->fw_dl_ops;
 
 	kalMemZero(aucBuf, 32);
+	kalStrnCpy(aucBuf, prVerInfo->aucFwBranchInfo, 4);
+	kalMemZero(aucDate, 32);
+	kalStrnCpy(aucDate, prVerInfo->aucFwDateCode, 16);
+	u4Offset += snprintf(pcBuf + u4Offset, i4TotalLen - u4Offset,
+			     "\nN9 FW version %s-%u.%u.%u[DEC] (%s)\n",
+			     aucBuf, (prVerInfo->u2FwOwnVersion >> 8),
+			     (prVerInfo->u2FwOwnVersion & BITS(0, 7)),
+			     prVerInfo->ucFwBuildNumber, aucDate);
 
-	if (prChipInfo->fw_dl_ops->tailer_format == HARVARD_TAILER_FORMAT) {
-#if CFG_SUPPORT_COMPRESSION_FW_OPTION
-		prTailer = &prVerInfo->rN9Compressedtailer;
-#else
-		prTailer = &prVerInfo->rN9tailer[0];
-#endif
-		kalMemCopy(aucBuf, prTailer->ram_version, 10);
-		DBGLOG(SW4, INFO, "N9 tailer version %s (%s) info %u:E%u\n",
-			aucBuf, prTailer->ram_built_date, prTailer->chip_info,
-			prTailer->eco_code + 1);
-
-		if (prChipInfo->is_support_cr4) {
-#if CFG_SUPPORT_COMPRESSION_FW_OPTION
-			prTailer = &prVerInfo->rCR4Compressedtailer;
-#else
-			prTailer = &prVerInfo->rCR4tailer[0];
-#endif
-			kalMemCopy(aucBuf, prTailer->ram_version, 10);
-			DBGLOG(SW4, INFO, "CR4 tailer version %s (%s) info %u:E%u\n",
-				aucBuf, prTailer->ram_built_date, prTailer->chip_info,
-				prTailer->eco_code + 1);
-		}
-	} else {
-		kalMemCopy(aucBuf, prComTailer->aucRamVersion, 10);
-		DBGLOG(SW4, INFO, "N9 tailer version %s (%s) info %u:E%u\n",
-			aucBuf, prComTailer->aucRamBuiltDate, prComTailer->ucChipInfo,
-			prComTailer->ucEcoCode + 1);
-	}
+	if (prFwDlOps->getFwDlInfo)
+		u4Offset += prFwDlOps->getFwDlInfo(prAdapter, pcBuf + u4Offset, i4TotalLen - u4Offset);
 
 	if (!prVerInfo->fgPatchIsDlByDrv) {
-		DBGLOG(SW4, TRACE, "MCU patch is not downloaded by wlan driver, read patch info\n");
+		u4Offset += snprintf(pcBuf + u4Offset, i4TotalLen - u4Offset,
+			"MCU patch is not downloaded by wlan driver, read patch info\n");
 		wlanGetPatchInfo(prAdapter);
 	}
+
+	kalMemZero(aucBuf, 32);
+	kalMemZero(aucDate, 32);
+	kalStrnCpy(aucBuf, prVerInfo->rPatchHeader.aucPlatform, 4);
+	kalStrnCpy(aucDate, prVerInfo->rPatchHeader.aucBuildDate, 16);
+	u4Offset += snprintf(pcBuf + u4Offset, i4TotalLen - u4Offset,
+			     "Patch platform %s version 0x%04X %s\n",
+			     aucBuf, prVerInfo->rPatchHeader.u4PatchVersion, aucDate);
+
+	u4Offset += snprintf(pcBuf + u4Offset, i4TotalLen - u4Offset,
+			     "Drv version %u.%u[DEC]\n", (prVerInfo->u2FwPeerVersion >> 8),
+			     (prVerInfo->u2FwPeerVersion & BITS(0, 7)));
+	return u4Offset;
 }
 
 #endif  /* CFG_ENABLE_FW_DOWNLOAD */

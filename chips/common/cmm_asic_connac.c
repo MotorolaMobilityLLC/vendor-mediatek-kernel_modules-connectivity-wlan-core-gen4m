@@ -185,6 +185,23 @@ VOID asicCapInit(IN P_ADAPTER_T prAdapter)
 	}
 }
 
+UINT_32 asicGetFwDlInfo(P_ADAPTER_T prAdapter, char *pcBuf, int i4TotalLen)
+{
+	struct TAILER_COMMON_FORMAT_T *prComTailer;
+	UINT_32 u4Offset = 0;
+	UINT_8 aucBuf[32];
+
+	prComTailer = &prAdapter->rVerInfo.rCommonTailer;
+
+	kalMemZero(aucBuf, 32);
+	kalMemCopy(aucBuf, prComTailer->aucRamVersion, 10);
+	u4Offset += snprintf(pcBuf + u4Offset, i4TotalLen - u4Offset,
+			     "N9 tailer version %s (%s) info %u:E%u\n",
+			     aucBuf, prComTailer->aucRamBuiltDate, prComTailer->ucChipInfo,
+			     prComTailer->ucEcoCode + 1);
+	return u4Offset;
+}
+
 VOID asicEnableFWDownload(IN P_ADAPTER_T prAdapter, IN BOOL fgEnable)
 {
 	P_GLUE_INFO_T prGlueInfo;
@@ -522,6 +539,14 @@ VOID asicLowPowerOwnClear(IN P_ADAPTER_T prAdapter, OUT PBOOLEAN pfgResult)
 	HAL_MCR_WR(prAdapter, CONN_HIF_ON_LPCTL, PCIE_LPCR_HOST_CLR_OWN);
 	HAL_MCR_RD(prAdapter, CONN_HIF_ON_LPCTL, &u4RegValue);
 	*pfgResult = (u4RegValue & PCIE_LPCR_HOST_SET_OWN) == 0;
+}
+
+VOID asicGetMailboxStatus(IN P_ADAPTER_T prAdapter, OUT PUINT_32 pu4Val)
+{
+	UINT_32 u4RegValue;
+
+	HAL_MCR_RD(prAdapter, CONN_MCU_CONFG_ON_HOST_MAILBOX_WF_ADDR, &u4RegValue);
+	*pu4Val = u4RegValue;
 }
 #endif /* _HIF_PCIE */
 

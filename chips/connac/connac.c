@@ -191,6 +191,7 @@ BUS_INFO connac_bus_info = {
 	.lowPowerOwnRead = asicLowPowerOwnRead,
 	.lowPowerOwnSet = asicLowPowerOwnSet,
 	.lowPowerOwnClear = asicLowPowerOwnClear,
+	.getMailboxStatus = asicGetMailboxStatus,
 #endif /* _HIF_PCIE */
 #if defined(_HIF_USB)
 	.u4UdmaWlCfg_0_Addr = CONNAC_UDMA_WLCFG_0,
@@ -204,11 +205,12 @@ BUS_INFO connac_bus_info = {
 };
 
 struct FWDL_OPS_T connac_fw_dl_ops = {
-	.tailer_format = CONNAC_TAILER_FORMAT,
 	.constructFirmwarePrio = connacConstructFirmwarePrio,
 	.constructPatchName = connacConstructPatchName,
+	.downloadPatch = wlanDownloadPatch,
 	.downloadFirmware = wlanConnacFormatDownload,
 	.getFwInfo = wlanGetConnacFwInfo,
+	.getFwDlInfo = asicGetFwDlInfo,
 };
 
 struct TX_DESC_OPS_T connacTxDescOps = {
