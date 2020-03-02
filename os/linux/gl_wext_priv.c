@@ -1194,7 +1194,7 @@ priv_get_int(IN struct net_device *prNetDev,
 		status = priv_get_ndis(prNetDev, prNdisReq, &u4BufLen);
 		if (status == 0) {
 			/* printk("Result=%ld\n",
-			 *        *(PUINT_32)&prNdisReq->ndisOidContent[4]);
+			 *        *(uint32_t *)&prNdisReq->ndisOidContent[4]);
 			 */
 			prIwReqData->mode = *(uint32_t *)
 					    &prNdisReq->ndisOidContent[4];
@@ -1228,7 +1228,7 @@ priv_get_int(IN struct net_device *prNetDev,
 		status = priv_get_ndis(prNetDev, prNdisReq, &u4BufLen);
 		if (status == 0) {
 			/* printk("Result=%ld\n",
-			 *        *(PUINT_32)&prNdisReq->ndisOidContent[4]);
+			 *        *(uint32_t *)&prNdisReq->ndisOidContent[4]);
 			 */
 			prIwReqData->mode = *(uint32_t *)
 					    &prNdisReq->ndisOidContent[4];
@@ -1273,7 +1273,7 @@ priv_get_int(IN struct net_device *prNetDev,
 		status = priv_get_ndis(prNetDev, prNdisReq, &u4BufLen);
 		if (status == 0) {
 			/* printk("Result=%ld\n",
-			 *        *(PUINT_32)&prNdisReq->ndisOidContent[4]);
+			 *        *(uint32_t *)&prNdisReq->ndisOidContent[4]);
 			 */
 			prIwReqData->mode = *(uint32_t *)
 					    &prNdisReq->ndisOidContent[4];
@@ -1890,7 +1890,7 @@ priv_get_struct(IN struct net_device *prNetDev,
 		if (status == 0) {
 			prNdisReq->outNdisOidLength = u4BufLen;
 			/* printk("len=%d Result=%08lx\n", u4BufLen,
-			 * *(PUINT_32)&prNdisReq->ndisOidContent[4]);
+			 * *(uint32_t *)&prNdisReq->ndisOidContent[4]);
 			 */
 
 			if (copy_to_user(prIwReqData->data.pointer,
@@ -2210,7 +2210,7 @@ priv_ate_set(IN struct net_device *prNetDev,
 {
 	int32_t i4Status;
 	/* uint8_t *InBuf;
-	 * UINT_8 *addr_str, *value_str;
+	 * uint8_t *addr_str, *value_str;
 	 * uint32_t InBufLen;
 	 */
 	uint32_t u4SubCmd;
@@ -2762,6 +2762,12 @@ reqExtSetAcpiDevicePowerState(IN struct GLUE_INFO
 #define CMD_GET_CHIP            "GET_CHIP"
 #define CMD_SET_DBG_LEVEL       "SET_DBG_LEVEL"
 #define CMD_GET_DBG_LEVEL       "GET_DBG_LEVEL"
+#define CMD_ADD_TS		"addts"
+#define CMD_DEL_TS		"delts"
+#define CMD_DUMP_TS		"dumpts"
+#define CMD_RM_IT		"RM-IT"
+#define CMD_DUMP_UAPSD		"dumpuapsd"
+#define CMD_FW_EVENT		"FW-EVENT "
 #define PRIV_CMD_SIZE 512
 #define CMD_SET_FIXED_RATE      "FixedRate"
 #define CMD_GET_VERSION         "VER"
@@ -10379,7 +10385,7 @@ static int priv_driver_set_calbackup_test_drv_fw(IN struct net_device *prNetDev,
 			       "==================================================================\n");
 			/* RFTEST_INFO_LOGDUMP32(
 			 *     &(g_rBackupCalDataAllV2.au4RamCalData[0]),
-			 *     3328*sizeof(UINT_32));
+			 *     3328*sizeof(uint32_t));
 			 */
 			DBGLOG(RFTEST, INFO,
 			       "==================================================================\n");
@@ -10429,7 +10435,7 @@ static int priv_driver_set_calbackup_test_drv_fw(IN struct net_device *prNetDev,
 			/* RFTEST_INFO_LOGDUMP32(
 			 *     &(g_rBackupCalDataAllV2.au4RamCalData[3328]),
 			 *     (g_rBackupCalDataAllV2.u4ValidRamCalDataLength -
-			 *     3328*sizeof(UINT_32)));
+			 *     3328*sizeof(uint32_t)));
 			 */
 			DBGLOG(RFTEST, INFO,
 			       "==================================================================\n");
@@ -13066,6 +13072,28 @@ int32_t priv_driver_cmds(IN struct net_device *prNetDev, IN int8_t *pcCommand,
 				 wlanoidShowDmaschInfo,
 				 (void *) pcCommand, i4TotalLen,
 				 FALSE, FALSE, TRUE, &i4BytesWritten);
+		} else if (!strnicmp(pcCommand, CMD_DUMP_TS,
+				     strlen(CMD_DUMP_TS)) ||
+			   !strnicmp(pcCommand, CMD_ADD_TS,
+				     strlen(CMD_ADD_TS)) ||
+			   !strnicmp(pcCommand, CMD_DEL_TS,
+				     strlen(CMD_DEL_TS))) {
+			kalIoctl(prGlueInfo, wlanoidTspecOperation,
+				 (void *)pcCommand, i4TotalLen, FALSE, FALSE,
+				 FALSE, &i4BytesWritten);
+		} else if (kalStrStr(pcCommand, "-IT ")) {
+			kalIoctl(prGlueInfo, wlanoidPktProcessIT,
+				 (void *)pcCommand, i4TotalLen, FALSE, FALSE,
+				 FALSE, &i4BytesWritten);
+		} else if (!strnicmp(pcCommand, CMD_FW_EVENT, 9)) {
+			kalIoctl(prGlueInfo, wlanoidFwEventIT,
+				 (void *)(pcCommand + 9), i4TotalLen, FALSE,
+				 FALSE, FALSE, &i4BytesWritten);
+		} else if (!strnicmp(pcCommand, CMD_DUMP_UAPSD,
+				     strlen(CMD_DUMP_UAPSD))) {
+			kalIoctl(prGlueInfo, wlanoidDumpUapsdSetting,
+				 (void *)pcCommand, i4TotalLen, FALSE, FALSE,
+				 FALSE, &i4BytesWritten);
 		} else
 				i4BytesWritten = priv_cmd_not_support
 				(prNetDev, pcCommand, i4TotalLen);
@@ -13194,7 +13222,7 @@ int priv_support_driver_cmd(IN struct net_device *prNetDev,
 		DBGLOG(REQ, INFO, "%s: i4TotalLen invalid\n", __func__);
 		goto exit;
 	}
-
+	priv_cmd->buf[PRIV_CMD_SIZE - 1] = '\0';
 	pcCommand = priv_cmd->buf;
 
 	DBGLOG(REQ, INFO, "%s: driver cmd \"%s\" on %s\n", __func__, pcCommand,

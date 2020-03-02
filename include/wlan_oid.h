@@ -388,7 +388,7 @@ enum ENUM_PARAM_AD_HOC_MODE {
 enum ENUM_PARAM_MEDIA_STATE {
 	PARAM_MEDIA_STATE_CONNECTED,
 	PARAM_MEDIA_STATE_DISCONNECTED,
-
+	PARAM_MEDIA_STATE_DISCONNECT_PREV,
 	/* for following MSDN re-association behavior */
 	PARAM_MEDIA_STATE_TO_BE_INDICATED
 };
@@ -448,6 +448,7 @@ enum ENUM_STATUS_TYPE {
 	ENUM_STATUS_TYPE_AUTHENTICATION,
 	ENUM_STATUS_TYPE_MEDIA_STREAM_MODE,
 	ENUM_STATUS_TYPE_CANDIDATE_LIST,
+	ENUM_STATUS_TYPE_FT_AUTH_STATUS,
 	ENUM_STATUS_TYPE_NUM	/*!< Upper bound, not real case */
 };
 
@@ -1206,10 +1207,10 @@ struct CMD_STAREC_BF {
 /* QA tool: maunal assoc */
 struct CMD_MANUAL_ASSOC_STRUCT {
 	/*
-	 *	UINT_8              ucBssIndex;
-	 *	UINT_8              ucWlanIdx;
-	 *	UINT_16             u2TotalElementNum;
-	 *	UINT_32             u4Reserve;
+	 *	uint8_t              ucBssIndex;
+	 *	uint8_t              ucWlanIdx;
+	 *	uint16_t             u2TotalElementNum;
+	 *	uint32_t             u4Reserve;
 	 */
 	/* extension */
 	uint16_t u2Tag;		/* Tag = 0x05 */
@@ -1654,6 +1655,7 @@ struct PARAM_QOS_TSPEC {
 	uint32_t u4MinPHYRate;	/* minimum PHY rate */
 	uint16_t u2Sba;		/* surplus bandwidth allowance */
 	uint16_t u2MediumTime;	/* medium time */
+	uint8_t  ucDialogToken;
 };
 
 struct PARAM_QOS_ADDTS_REQ_INFO {
@@ -3979,5 +3981,36 @@ wlanoidSetLowLatencyMode(IN struct ADAPTER *prAdapter,
 			 IN uint32_t u4SetBufferLen,
 			 OUT uint32_t *pu4SetInfoLen);
 #endif /* CFG_SUPPORT_LOWLATENCY_MODE */
+
+uint32_t wlanoidUpdateFtIes(IN struct ADAPTER *prAdapter, IN void *pvSetBuffer,
+			    IN uint32_t u4SetBufferLen,
+			    OUT uint32_t *pu4SetInfoLen);
+
+uint32_t wlanoidSync11kCapabilities(IN struct ADAPTER *prAdapter,
+				    IN void *pvSetBuffer,
+				    IN uint32_t u4SetBufferLen,
+				    OUT uint32_t *pu4SetInfoLen);
+
+uint32_t wlanoidSendNeighborRequest(IN struct ADAPTER *prAdapter,
+				    IN void *pvSetBuffer,
+				    IN uint32_t u4SetBufferLen,
+				    OUT uint32_t *pu4SetInfoLen);
+
+uint32_t wlanoidSendBTMQuery(IN struct ADAPTER *prAdapter, IN void *pvSetBuffer,
+			     IN uint32_t u4SetBufferLen,
+			     OUT uint32_t *pu4SetInfoLen);
+
+uint32_t wlanoidPktProcessIT(struct ADAPTER *prAdapter, void *pvBuffer,
+			     uint32_t u4BufferLen, uint32_t *pu4InfoLen);
+
+uint32_t wlanoidFwEventIT(struct ADAPTER *prAdapter, void *pvBuffer,
+			  uint32_t u4BufferLen, uint32_t *pu4InfoLen);
+
+uint32_t wlanoidTspecOperation(IN struct ADAPTER *prAdapter, IN void *pvBuffer,
+			       IN uint32_t u4BufferLen,
+			       OUT uint32_t *pu4InfoLen);
+
+uint32_t wlanoidDumpUapsdSetting(struct ADAPTER *prAdapter, void *pvBuffer,
+				 uint32_t u4BufferLen, uint32_t *pu4InfoLen);
 
 #endif /* _WLAN_OID_H */

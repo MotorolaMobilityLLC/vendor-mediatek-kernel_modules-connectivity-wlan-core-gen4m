@@ -201,7 +201,7 @@ void hs20FillExtCapIE(struct ADAPTER *prAdapter,
 	else
 		prExtCap->ucLength = 3 - ELEM_HDR_LEN;
 
-	kalMemZero(prExtCap->aucCapabilities, prExtCap->ucLength);
+	kalMemZero(prExtCap->aucCapabilities, ELEM_MAX_LEN_EXT_CAP);
 
 	prExtCap->aucCapabilities[0] = ELEM_EXT_CAP_DEFAULT_VAL;
 

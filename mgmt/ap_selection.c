@@ -197,6 +197,43 @@ static uint16_t scanCalculateScoreByClientCnt(struct BSS_DESC *prBssDesc)
 	return u2Score * WEIGHT_IDX_CLIENT_CNT;
 }
 
+#if CFG_SUPPORT_802_11V_BSS_TRANSITION_MGT
+struct NEIGHBOR_AP_T *scanGetNeighborAPEntry(struct LINK *prNeighborApLink,
+					     uint8_t *pucBssid)
+{
+	struct NEIGHBOR_AP_T *prNeighborAP = NULL;
+
+	LINK_FOR_EACH_ENTRY(prNeighborAP, prNeighborApLink, rLinkEntry,
+			    struct NEIGHBOR_AP_T)
+	{
+		if (EQUAL_MAC_ADDR(prNeighborAP->aucBssid, pucBssid))
+			return prNeighborAP;
+	}
+	return NULL;
+}
+
+u_int8_t scanPreferenceIsZero(struct ADAPTER *prAdapter, uint8_t *pucBssid)
+{
+	struct LINK *prNeighborAPLink = &prAdapter->rWifiVar.rAisSpecificBssInfo
+						 .rNeighborApList.rUsingLink;
+	struct NEIGHBOR_AP_T *prNeighborAP = NULL;
+
+	if (prNeighborAPLink->u4NumElem == 0)
+		return FALSE;
+
+	prNeighborAP = scanGetNeighborAPEntry(prNeighborAPLink, pucBssid);
+
+	if (prNeighborAP == NULL)
+		return FALSE;
+	if (!prNeighborAP->fgPrefPresence)
+		return FALSE;
+	if (prNeighborAP->ucPreference > 0)
+		return FALSE;
+
+	return TRUE;
+}
+#endif
+
 static u_int8_t scanNeedReplaceCandidate(struct ADAPTER *prAdapter,
 	struct BSS_DESC *prCandBss, struct BSS_DESC *prCurrBss,
 	uint16_t u2CandScore, uint16_t u2CurrScore)
@@ -267,6 +304,15 @@ static u_int8_t scanNeedReplaceCandidate(struct ADAPTER *prAdapter,
 	/* RSSI of Candidate Bss is lower than Current, replace */
 	if (cCurrRssi - cCandRssi >= RSSI_DIFF_BETWEEN_BSS)
 		return TRUE;
+
+#if CFG_SUPPORT_802_11V_BSS_TRANSITION_MGT
+	if (scanPreferenceIsZero(prAdapter, prCurrBss->aucBSSID)) {
+		log_dbg(SCN, INFO,
+			"BTM: %s[" MACSTR "] preference value is 0, skip it\n",
+			prCurrBss->aucSSID, MAC2STR(prCurrBss->aucBSSID));
+		return FALSE;
+	}
+#endif
 
 	/* 2. Check Score */
 	/* 2.1 Cases that no need to replace candidate */
@@ -396,7 +442,6 @@ static uint16_t scanCalculateScoreBySaa(struct ADAPTER *prAdapter,
 
 	return u2Score;
 }
-
 
 /*
  * Bss Characteristics to be taken into account when calculate Score:

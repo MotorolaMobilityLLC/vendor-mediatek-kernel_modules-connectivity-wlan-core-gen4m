@@ -696,6 +696,9 @@ int mtk_cfg_get_txpower(struct wiphy *wiphy,
 
 #endif	/* CFG_ENABLE_UNIFY_WIPHY */
 
+int mtk_cfg80211_update_ft_ies(struct wiphy *wiphy, struct net_device *dev,
+			       struct cfg80211_update_ft_ies_params *ftie);
+
 /*******************************************************************************
  *                              F U N C T I O N S
  *******************************************************************************

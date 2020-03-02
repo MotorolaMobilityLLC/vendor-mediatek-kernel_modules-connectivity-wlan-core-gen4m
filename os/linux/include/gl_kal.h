@@ -754,7 +754,7 @@ static inline void kalCfg80211ScanDone(struct cfg80211_scan_request *request,
 #define kalStrnChr(s, n, c)                strnchr(s, n, c)
 #define kalStrLen(s)                       strlen(s)
 #define kalStrnLen(s, b)                   strnlen(s, b)
-/* #define kalStrniCmp(s, n)               strnicmp(s, n)	*/
+#define kalStrniCmp(ct, cs, n)             strncasecmp(ct, cs, n)
 /* #define kalStrtoul(cp, endp, base)      simple_strtoul(cp, endp, base) */
 /* #define kalStrtol(cp, endp, base)       simple_strtol(cp, endp, base) */
 #define kalkStrtou8(cp, base, resp)        kstrtou8(cp, base, resp)

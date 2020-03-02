@@ -2300,6 +2300,8 @@ uint32_t nicTxMsduQueue(IN struct ADAPTER *prAdapter,
 		if (prMsduInfo->eSrc == TX_PACKET_OS) {
 			wlanTxProfilingTagMsdu(prAdapter, prMsduInfo,
 					       TX_PROF_TAG_DRV_TX_DONE);
+			wlanFillTimestamp(prAdapter, prMsduInfo->prPacket,
+					       PHASE_HIF_TX);
 		}
 
 		if (prMsduInfo->pfTxDoneHandler) {
@@ -2452,7 +2454,7 @@ uint32_t nicTxCmd(IN struct ADAPTER *prAdapter,
 		/* prWifiCmd->prPseCmd.u2TxByteCount
 		 *  = u2OverallBufferLength;
 		 * prWifiCmd->u2TxByteCount = u2OverallBufferLength
-		 *   - sizeof(PSE_CMD_HDR_T);
+		 *   - sizeof(struct PSE_CMD_HDR);
 		 */
 #else
 		prWifiCmd->u2TxByteCount =
@@ -4546,8 +4548,12 @@ static uint32_t nicTxDirectStartXmitMain(struct sk_buff
 	struct QUE_ENTRY *prQueueEntry = (struct QUE_ENTRY *) NULL;
 	struct QUE rProcessingQue;
 	struct QUE *prProcessingQue = &rProcessingQue;
+	uint8_t ucActivedTspec = 0;
+
 
 	QUEUE_INITIALIZE(prProcessingQue);
+
+	ucActivedTspec = wmmHasActiveTspec(&prAdapter->rWifiVar.rWmmInfo);
 
 	if (prSkb) {
 		nicTxFillMsduInfo(prAdapter, prMsduInfo, prSkb);
@@ -4611,7 +4617,7 @@ static uint32_t nicTxDirectStartXmitMain(struct sk_buff
 			return WLAN_STATUS_FAILURE;
 		default:
 			prTxQue = qmDetermineStaTxQueue(prAdapter, prMsduInfo,
-							&ucTC);
+							ucActivedTspec, &ucTC);
 			break;	/*default */
 		}	/* switch (prMsduInfo->ucStaRecIndex) */
 
@@ -5126,4 +5132,91 @@ void nicTxResourceUpdate_v1(IN struct ADAPTER *prAdapter)
 		prWifiVar->au4TcPageCountPle[TC1_INDEX] += u4pleRemain;
 	}
 }
+
+void nicTxChangeDataPortByAc(struct STA_RECORD *prStaRec, uint8_t ucAci,
+			     u_int8_t fgToMcu)
+{
+	uint8_t ucTid;
+	void **pprTxDTemplate = NULL;
+
+	if (!prStaRec)
+		return;
+	DBGLOG(TX, INFO, "Data Packets in Aci %d will route to %s\n", ucAci,
+	       fgToMcu ? "MCU" : "LMAC");
+	pprTxDTemplate = &prStaRec->aprTxDescTemplate[0];
+	for (ucTid = 0; ucTid < TX_DESC_TID_NUM; ucTid++) {
+		if (aucTid2ACI[ucTid] != ucAci)
+			continue;
+		HAL_MAC_TX_DESC_SET_PORT_INDEX(
+			(struct HW_MAC_TX_DESC *)pprTxDTemplate[ucTid],
+			fgToMcu ? PORT_INDEX_MCU:PORT_INDEX_LMAC);
+	}
+}
+
+/* if some msdus are waiting tx done status, but now roaming done, then need to
+** change wlan index of these msdus to match tx done status event
+** In multi-thread solution, we also need to check if pending tx packets in
+** hif_thread tx queue.
+*/
+void nicTxHandleRoamingDone(struct ADAPTER *prAdapter,
+			    struct STA_RECORD *prOldStaRec,
+			    struct STA_RECORD *prNewStaRec)
+{
+	struct MSDU_INFO *prMsduInfo = NULL;
+	uint8_t ucOldWlanIndex = prOldStaRec->ucWlanIndex;
+	uint8_t ucNewWlanIndex = prNewStaRec->ucWlanIndex;
+	uint8_t ucIndex = 0;
+
+	KAL_SPIN_LOCK_DECLARATION();
+
+	KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_TXING_MGMT_LIST);
+	prMsduInfo = (struct MSDU_INFO *)QUEUE_GET_HEAD(
+		&prAdapter->rTxCtrl.rTxMgmtTxingQueue);
+	while (prMsduInfo) {
+		if (prMsduInfo->ucWlanIndex == ucOldWlanIndex)
+			prMsduInfo->ucWlanIndex = ucNewWlanIndex;
+		prMsduInfo = (struct MSDU_INFO *)QUEUE_GET_NEXT_ENTRY(
+			&prMsduInfo->rQueEntry);
+	}
+	KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_TXING_MGMT_LIST);
+
+/* I think any time we disconnect with previous AP, rTxP0Queue and rTxP1Queue
+** should be empty.
+** because we have stopped dequeue when initial to connect the new roaming AP.
+** It is enough time for hif_thread to send out these packets. But anyway, let's
+** prepare code for that case to avoid scheduler corner case.
+*/
+#if CFG_SUPPORT_MULTITHREAD
+	KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_PORT_QUE);
+#if CFG_FIX_2_TX_PORT
+	prMsduInfo = (struct MSDU_INFO *)QUEUE_GET_HEAD(&prAdapter->rTxP0Queue);
+	while (prMsduInfo) {
+		if (prMsduInfo->ucWlanIndex == ucOldWlanIndex)
+			prMsduInfo->ucWlanIndex = ucNewWlanIndex;
+		prMsduInfo = (struct MSDU_INFO *)QUEUE_GET_NEXT_ENTRY(
+			&prMsduInfo->rQueEntry);
+	}
+	prMsduInfo = (struct MSDU_INFO *)QUEUE_GET_HEAD(&prAdapter->rTxP1Queue);
+	while (prMsduInfo) {
+		if (prMsduInfo->ucWlanIndex == ucOldWlanIndex)
+			prMsduInfo->ucWlanIndex = ucNewWlanIndex;
+		prMsduInfo = (struct MSDU_INFO *)QUEUE_GET_NEXT_ENTRY(
+			&prMsduInfo->rQueEntry);
+	}
+#else
+	for (ucIndex = 0; ucIndex < TX_PORT_NUM; ucIndex++) {
+		prMsduInfo = (struct MSDU_INFO *)QUEUE_GET_HEAD(
+			&prAdapter->rTxPQueue[ucIndex]);
+		while (prMsduInfo) {
+			if (prMsduInfo->ucWlanIndex == ucOldWlanIndex)
+				prMsduInfo->ucWlanIndex = ucNewWlanIndex;
+			prMsduInfo = (struct MSDU_INFO *)QUEUE_GET_NEXT_ENTRY(
+				&prMsduInfo->rQueEntry);
+		}
+	}
+#endif
+	KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_PORT_QUE);
+#endif
+}
+
 

@@ -415,6 +415,8 @@ struct STA_RECORD {
 	 * in Authentication(SAA/AAA)
 	 */
 	uint8_t ucAuthAlgNum;
+	uint8_t ucAuthTranNum; /* For Infra/AP Mode, the Auth Transaction Number
+				  */
 
 	/* For Infra/AP Mode, to indicate ReAssoc Frame was in used(SAA/AAA) */
 	u_int8_t fgIsReAssoc;
@@ -544,6 +546,8 @@ struct STA_RECORD {
 
 	/* Set according to the scan result (for association) */
 	u_int8_t fgIsUapsdSupported;
+
+	u_int8_t afgAcmRequired[ACI_NUM];
 
 	/*----------------------------------------------------------------------
 	 * P2P related fields
@@ -692,6 +696,7 @@ struct STA_RECORD {
 #if DSCP_SUPPORT
 	struct _QOS_MAP_SET *qosMapSet;
 #endif
+	u_int8_t fgSupportBTM; /* Indicates whether to support BTM */
 };
 
 #if 0

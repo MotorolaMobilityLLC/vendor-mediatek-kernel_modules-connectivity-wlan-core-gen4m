@@ -144,4 +144,7 @@ uint16_t assoc_get_nonwfa_vend_ie_len(struct ADAPTER *prAdapter);
 void assoc_build_nonwfa_vend_ie(struct ADAPTER *prAdapter,
 			   struct MSDU_INFO *prMsduInfo);
 
+void assocGenerateMDIE(IN struct ADAPTER *prAdapter,
+		       IN OUT struct MSDU_INFO *prMsduInfo);
+
 #endif /* _ASSOC_H */

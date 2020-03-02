@@ -507,6 +507,10 @@ enum ENUM_CMD_ID {
 #if CFG_WOW_SUPPORT
 	CMD_ID_SET_PF_CAPABILITY = 0x59,	/* 0x59 (Set) */
 #endif
+	CMD_ID_SET_RRM_CAPABILITY = 0x5A, /* 0x5A (Set) */
+	CMD_ID_SET_AP_CONSTRAINT_PWR_LIMIT = 0x5B, /* 0x5B (Set) */
+	CMD_ID_SET_TSM_STATISTICS_REQUEST = 0x5E,
+	CMD_ID_GET_TSM_STATISTICS = 0x5F,
 	CMD_ID_GET_PSCAN_CAPABILITY = 0x60,     /* 0x60 (Get) deprecated */
 	CMD_ID_SET_SCHED_SCAN_ENABLE,           /* 0x61 (Set) */
 	CMD_ID_SET_SCHED_SCAN_REQ,              /* 0x62 (Set) */
@@ -515,7 +519,7 @@ enum ENUM_CMD_ID {
 	CMD_ID_SET_GSCAN_MAC_ADDR,              /* 0x65 (Set) deprecated */
 	CMD_ID_GET_GSCAN_RESULT,                /* 0x66 (Get) deprecated */
 	CMD_ID_SET_PSCAN_MAC_ADDR,              /* 0x67 (Set) deprecated */
-
+	CMD_ID_UPDATE_AC_PARMS = 0x6A,		/* 0x6A (Set) */
 #if CFG_SUPPORT_ROAMING_SKIP_ONE_AP
 	/* 0x6D (Set) used to setting roaming skip*/
 	CMD_ID_SET_ROAMING_SKIP = 0x6D,
@@ -638,6 +642,7 @@ enum ENUM_EVENT_ID {
 	EVENT_ID_GET_CHIPID,	/* 0x42 (Query - CMD_ID_GET_CHIPID) */
 	EVENT_ID_SLT_STATUS,	/* 0x43 (Query - CMD_ID_SET_SLTINFO) */
 	EVENT_ID_CHIP_CONFIG,	/* 0x44 (Query - CMD_ID_CHIP_CONFIG) */
+
 #if CFG_SUPPORT_QA_TOOL
 	/* 0x45 (Query - CMD_ID_ACCESS_RX_STAT) */
 	EVENT_ID_ACCESS_RX_STAT,
@@ -1227,6 +1232,37 @@ struct CMD_CUSTOM_UAPSD_PARAM_STRUCT {
 	uint8_t fgEnAPSD_AcVi;
 	uint8_t ucMaxSpLen;
 	uint8_t aucResv[2];
+};
+
+struct CMD_SET_AP_CONSTRAINT_PWR_LIMIT {
+	/* DWORD_0 - Common Part */
+	uint8_t  ucCmdVer;
+	uint8_t  aucPadding0[1];
+	uint16_t u2CmdLen; /* Cmd size including common part and body */
+
+	/* DWORD_1 afterwards - Command Body */
+	uint8_t  ucBssIndex;
+	uint8_t  ucPwrSetEnable;
+	int8_t   cMaxTxPwr;              /* In unit of 0.5 dBm (signed) */
+	int8_t   cMinTxPwr;              /* In unit of 0.5 dBm (signed) */
+
+	uint8_t  aucPadding1[32];        /* for new param in the future */
+};
+
+struct CMD_SET_RRM_CAPABILITY {
+	/* DWORD_0 - Common Part */
+	uint8_t  ucCmdVer;
+	uint8_t  aucPadding0[1];
+	uint16_t u2CmdLen; /* Cmd size including common part and body */
+
+	/* DWORD_1 afterwards - Command Body */
+	uint8_t  ucBssIndex;
+	uint8_t  ucRrmEnable;          /* 802.11k rrm flag */
+	/* Table 7-43e, RRM Enabled Capabilities Field */
+	uint8_t ucCapabilities[5];
+	uint8_t  aucPadding1[1];
+
+	uint8_t  aucPadding2[32];      /* for new param in the future */
 };
 
 #if CFG_M0VE_BA_TO_DRIVER
@@ -2750,6 +2786,85 @@ struct CMD_AUTO_POWER_PARAM {
 	int8_t aicLevelPowerOffset[3];	/* signed, in unit of 0.5dBm */
 	uint8_t aucReserved3[1];
 	uint8_t aucReserved4[8];
+};
+
+/*for WMMAC, CMD_ID_UPDATE_AC_PARAMS*/
+struct CMD_UPDATE_AC_PARAMS {
+	uint8_t  ucAcIndex; /*0 ~3, from AC0 to AC3*/
+	uint8_t  ucBssIdx;  /*no use*/
+	/* if 0, disable ACM for ACx specified by
+	** ucAcIndex, otherwise in unit of 32us
+	*/
+	uint16_t u2MediumTime;
+	/* rate to be used to tx packet with priority
+	** ucAcIndex , unit: bps
+	*/
+	uint32_t u4PhyRate;
+	uint16_t u2EDCALifeTime; /* msdu life time for this TC, unit: 2TU */
+	/* if we use fix rate to tx packets, should tell
+	** firmware the limited retries
+	*/
+	uint8_t ucRetryCount;
+	uint8_t aucReserved[5];
+};
+
+/* S56 Traffic Stream Metrics */
+struct CMD_SET_TSM_STATISTICS_REQUEST {
+	uint8_t ucEnabled; /* 0, disable; 1, enable; */
+	uint8_t ucBssIdx; /* always AIS Bss index now */
+	uint8_t ucAcIndex; /* wmm ac index, the statistics should be on this TC
+			      */
+	uint8_t ucTid;
+
+	uint8_t aucPeerAddr
+		[MAC_ADDR_LEN]; /* packet to the target address to be mesured */
+	uint8_t ucBin0Range;
+	uint8_t aucReserved[3];
+
+	/* if this variable is 0, followed variables are meaningless
+	** only report once for a same trigger condition in this time frame
+	** for triggered mode: bit(0):average, bit(1):consecutive,
+	** bit(2):delay
+	*/
+	uint8_t ucTriggerCondition;
+	uint8_t ucAvgErrThreshold;
+	uint8_t ucConsecutiveErrThreshold;
+	uint8_t ucDelayThreshold;
+	uint8_t ucMeasureCount;
+	uint8_t ucTriggerTimeout; /* unit: 100 TU*/
+};
+
+struct CMD_GET_TSM_STATISTICS {
+	uint8_t ucBssIdx; /* always AIS Bss now */
+	/* wmm ac index, the statistics should be on this TC or TS */
+	uint8_t ucAcIndex;
+	uint8_t ucTid; /* */
+
+	uint8_t aucPeerAddr
+		[MAC_ADDR_LEN]; /* indicating the RA for the measured frames */
+	/* for triggered mode: bit(0):average, bit(1):consecutive,
+	** bit(2):delay
+	*/
+	uint8_t ucReportReason;
+	uint16_t u2Reserved;
+
+	uint32_t u4PktTxDoneOK;
+	uint32_t u4PktDiscard; /* u2PktTotal - u2PktTxDoneOK */
+	uint32_t u4PktFail; /* failed count for exceeding retry limit */
+	uint32_t u4PktRetryTxDoneOK;
+	uint32_t u4PktQosCfPollLost;
+
+	/* 802.11k - Average Packet Transmission delay for all packets per this
+	** TC or TS
+	*/
+	uint32_t u4AvgPktTxDelay;
+	/* 802.11k - Average Packet Queue Delay */
+	uint32_t u4AvgPktQueueDelay;
+	uint64_t u8StartTime; /* represented by TSF */
+	/* sum of packets whose packet tx delay is less than Bi (i=0~6) range
+	** value(unit: TU)
+	*/
+	uint32_t au4PktCntBin[6];
 };
 
 struct CMD_DBDC_SETTING {
