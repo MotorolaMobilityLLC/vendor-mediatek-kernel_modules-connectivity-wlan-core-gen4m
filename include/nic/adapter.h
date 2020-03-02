@@ -602,6 +602,10 @@ struct BSS_INFO {
 	struct AP_PMF_CFG rApPmfCfg;
 #endif
 
+#if (CFG_SUPPORT_HE_ER == 1)
+	boolean fgIsTxErStarted;
+#endif
+
 	uint8_t ucCountryIELen;
 	uint8_t aucCountryStr[3];
 	uint8_t aucSubbandTriplet[253];

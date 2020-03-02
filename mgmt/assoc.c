@@ -1642,7 +1642,7 @@ uint32_t assocProcessRxAssocReqFrame(IN struct ADAPTER *prAdapter,
 		}
 
 		/* Update default Tx rate */
-		nicTxUpdateStaRecDefaultRate(prStaRec);
+		nicTxUpdateStaRecDefaultRate(prAdapter, prStaRec);
 
 #if CFG_ENABLE_WIFI_DIRECT && CFG_ENABLE_HOTSPOT_PRIVACY_CHECK
 		if (prAdapter->fgIsP2PRegistered && IS_STA_IN_P2P(prStaRec)) {
