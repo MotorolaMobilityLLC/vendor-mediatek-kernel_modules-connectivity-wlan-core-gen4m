@@ -633,7 +633,7 @@ static int wlan_netdev_notifier_call(struct notifier_block *nb,
 		return NOTIFY_DONE;
 	}
 
-	DBGLOG(REQ, INFO, "%s's new state: %lu %s.\n",
+	DBGLOG(REQ, TRACE, "%s's new state: %lu %s.\n",
 			dev->name, state, apucDebugNetdevState[state]);
 
 	return NOTIFY_DONE;
