@@ -1789,7 +1789,7 @@ void nicRxProcessEventPacket(IN struct ADAPTER *prAdapter,
 		RX_INC_CNT(&prAdapter->rRxCtrl, RX_DROP_TOTAL_COUNT);
 #if 0
 #if CFG_CHIP_RESET_SUPPORT
-		glGetRstReason(RST_GROUP3_NULL);
+		glSetRstReason(RST_GROUP3_NULL);
 		glResetTrigger(prAdapter);
 #endif
 #endif

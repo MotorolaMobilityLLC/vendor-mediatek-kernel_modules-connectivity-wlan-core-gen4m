@@ -1647,3 +1647,11 @@ void glGetHifDev(struct GL_HIF_INFO *prHif, struct device **dev)
 {
 	*dev = &(prHif->udev->dev);
 }
+
+#if CFG_CHIP_RESET_SUPPORT
+void kalRemoveProbe(IN struct GLUE_INFO *prGlueInfo)
+{
+	DBGLOG(INIT, WARN, "[SER][L0] not support..\n");
+}
+#endif
+

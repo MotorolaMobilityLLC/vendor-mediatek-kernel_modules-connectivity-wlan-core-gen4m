@@ -1137,6 +1137,9 @@ void kalFirmwareImageUnmapping(IN struct GLUE_INFO
 			       IN void *prFwHandle, IN void *pvMapFileBuf);
 #endif
 
+#if CFG_CHIP_RESET_SUPPORT
+void kalRemoveProbe(IN struct GLUE_INFO *prGlueInfo);
+#endif
 /*----------------------------------------------------------------------------*/
 /* Card Removal Check                                                         */
 /*----------------------------------------------------------------------------*/

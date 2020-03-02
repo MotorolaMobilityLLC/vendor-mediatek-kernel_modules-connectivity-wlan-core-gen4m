@@ -930,3 +930,11 @@ static void pcieDumpRx(struct GL_HIF_INFO *prHifInfo,
 	prDmaBuf->AllocPa = pcieMapRxBuf(prHifInfo, prDmaBuf->AllocVa,
 					0, prDmaBuf->AllocSize);
 }
+
+#if CFG_CHIP_RESET_SUPPORT
+void kalRemoveProbe(IN struct GLUE_INFO *prGlueInfo)
+{
+	DBGLOG(INIT, WARN, "[SER][L0] not support...\n");
+}
+#endif
+

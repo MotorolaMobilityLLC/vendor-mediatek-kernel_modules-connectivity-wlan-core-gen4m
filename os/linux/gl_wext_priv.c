@@ -2927,6 +2927,13 @@ reqExtSetAcpiDevicePowerState(IN struct GLUE_INFO
 #define CMD_GET_CH_RANK_LIST	"GET_CH_RANK_LIST"
 #define CMD_GET_CH_DIRTINESS	"GET_CH_DIRTINESS"
 
+#if CFG_CHIP_RESET_HANG
+#define CMD_SET_RST_HANG                 "RST_HANG_SET"
+
+#define CMD_SET_RST_HANG_ARG_NUM		2
+#endif
+
+
 #define CMD_EFUSE		"EFUSE"
 
 #if (CFG_SUPPORT_TWT == 1)
@@ -12532,6 +12539,62 @@ static int priv_driver_get_version(IN struct net_device *prNetDev,
 	return i4BytesWritten;
 }
 
+#if CFG_CHIP_RESET_HANG
+static int priv_driver_set_rst_hang(IN struct net_device *prNetDev,
+				IN char *pcCommand, IN int i4TotalLen)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	int32_t i4Argc = 0;
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX];
+	uint32_t u4Ret;
+
+
+	ASSERT(prNetDev);
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+	DBGLOG(REQ, LOUD, "argc is %i\n", i4Argc);
+
+	if (i4Argc == 0) {
+		DBGLOG(REQ, INFO, "set_rst_hang Argc = %d\n", i4Argc);
+		return -EFAULT;
+	}
+
+	if (strnicmp(apcArgv[0], CMD_SET_RST_HANG,
+				strlen(CMD_SET_RST_HANG)) == 0) {
+		if (i4Argc < CMD_SET_RST_HANG_ARG_NUM) {
+			DBGLOG(REQ, STATE,
+				"[SER][L0] RST_HANG_SET arg num=%d,must be %d\n",
+				i4Argc, CMD_SET_RST_HANG_ARG_NUM);
+			return -EFAULT;
+		}
+		u4Ret = kalkStrtou8(apcArgv[1], 0, &fgIsResetHangState);
+		if (u4Ret)
+			DBGLOG(REQ, ERROR, "u4Ret=%d\n", u4Ret);
+
+		DBGLOG(REQ, STATE, "[SER][L0] set fgIsResetHangState=%d\n",
+							fgIsResetHangState);
+
+		if (fgIsResetHangState == SER_L0_HANG_RST_CMD_TRG) {
+			DBGLOG(REQ, STATE, "[SER][L0] cmd trigger\n");
+			glSetRstReason(RST_CMD_TRIGGER);
+			GL_RESET_TRIGGER(NULL, RST_FLAG_CHIP_RESET);
+		}
+
+	} else {
+		DBGLOG(REQ, STATE, "[SER][L0] get fgIsResetSqcState=%d\n",
+							fgIsResetHangState);
+		DBGLOG(REQ, ERROR, "[SER][L0] RST HANG subcmd(%s) error !\n",
+								apcArgv[0]);
+
+		return -EFAULT;
+	}
+
+	return 0;
+
+}
+#endif
+
 #if CFG_SUPPORT_DBDC
 int priv_driver_set_dbdc(IN struct net_device *prNetDev, IN char *pcCommand,
 			 IN int i4TotalLen)
@@ -14761,6 +14824,14 @@ int32_t priv_driver_cmds(IN struct net_device *prNetDev, IN int8_t *pcCommand,
 			i4BytesWritten = priv_driver_set_pad_dur(prNetDev,
 				pcCommand, i4TotalLen);
 #endif
+
+#if CFG_CHIP_RESET_HANG
+		} else if (strnicmp(pcCommand, CMD_SET_RST_HANG,
+				strlen(CMD_SET_RST_HANG)) == 0) {
+			i4BytesWritten = priv_driver_set_rst_hang(
+				prNetDev, pcCommand, i4TotalLen);
+#endif
+
 #if (CFG_SUPPORT_TWT == 1)
 		} else if (strnicmp(pcCommand, CMD_SET_TWT_PARAMS,
 			   strlen(CMD_SET_TWT_PARAMS)) == 0) {

@@ -3003,7 +3003,7 @@ struct SW_RFB *qmHandleRxPackets(IN struct ADAPTER *prAdapter,
 						 32 ? 32 :
 						prCurrSwRfb->u2PacketLen);
 #if 0
-				glGetRstReason(RST_GROUP4_NULL);
+				glSetRstReason(RST_GROUP4_NULL);
 				GL_RESET_TRIGGER(prAdapter,
 					RST_FLAG_DO_CORE_DUMP);
 #endif

@@ -384,10 +384,12 @@
 
 #define MAX_BSSID_NUM			4	/* MAX BSSID number */
 
-#if (MTK_WCN_HIF_SDIO == 1) || (MTK_WCN_HIF_AXI == 1)
 #define CFG_CHIP_RESET_SUPPORT          1
+
+#if CFG_CHIP_RESET_SUPPORT
+#define CFG_CHIP_RESET_HANG		0
 #else
-#define CFG_CHIP_RESET_SUPPORT		0
+#define CFG_CHIP_RESET_HANG		0
 #endif
 
 #define HW_BSSID_NUM			4	/* HW BSSID number by chip */

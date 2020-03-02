@@ -1379,12 +1379,10 @@ int wlanHardStartXmit(struct sk_buff *prSkb,
 		DBGLOG(INIT, WARN,
 		"u4ReadyFlag:%u, kalIsResetting():%d, dropping the packet\n",
 		prGlueInfo->u4ReadyFlag, kalIsResetting());
-
 		dev_kfree_skb(prSkb);
 		return NETDEV_TX_OK;
 	}
 #endif
-
 	kalResetPacket(prGlueInfo, (void *) prSkb);
 
 	STATS_TX_TIME_ARRIVE(prSkb);
@@ -3671,6 +3669,16 @@ int32_t wlanOnWhenProbeSuccess(struct GLUE_INFO *prGlueInfo,
 		consys_log_event_notification((int)FW_LOG_CMD_ON_OFF,
 			u4LogOnOffCache);
 #endif
+
+#if CFG_CHIP_RESET_HANG
+	if (fgIsResetHangState == SER_L0_HANG_RST_TRGING) {
+		DBGLOG(INIT, STATE, "[SER][L0] SET hang!\n");
+			fgIsResetHangState = SER_L0_HANG_RST_HANG;
+			fgIsResetting = TRUE;
+	}
+	DBGLOG(INIT, STATE, "[SER][L0] PASS!!\n");
+#endif
+
 	return 0;
 }
 
@@ -4898,6 +4906,10 @@ static void wlanRemove(void)
 	/* 4 <9> Unregister notifier callback */
 	wlanUnregisterNotifier();
 
+#if CFG_CHIP_RESET_SUPPORT & !CFG_WMT_RESET_API_SUPPORT
+	fgIsResetting = FALSE;
+#endif
+
 }				/* end of wlanRemove() */
 
 /*----------------------------------------------------------------------------*/
@@ -4999,7 +5011,7 @@ static int initWlan(void)
 		return ret;
 	}
 #if (CFG_CHIP_RESET_SUPPORT)
-	glResetInit();
+	glResetInit(prGlueInfo);
 #endif
 	kalFbNotifierReg((struct GLUE_INFO *) wiphy_priv(
 				 gprWdev->wiphy));

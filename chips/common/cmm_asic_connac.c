@@ -68,6 +68,7 @@
  */
 #include "precomp.h"
 
+
 /*******************************************************************************
  *                              C O N S T A N T S
  *******************************************************************************
@@ -167,6 +168,9 @@ void asicCapInit(IN struct ADAPTER *prAdapter)
 	prChipInfo->asicRxProcessRxvforMSP = asicRxProcessRxvforMSP;
 #endif /* CFG_SUPPORT_MSP == 1 */
 	prChipInfo->asicRxGetRcpiValueFromRxv =	asicRxGetRcpiValueFromRxv;
+#if (CFG_CHIP_RESET_SUPPORT == 1) && (CFG_WMT_RESET_API_SUPPORT == 0)
+	prChipInfo->rst_L0_notify_step2 = conn1_rst_L0_notify_step2;
+#endif
 #if CFG_SUPPORT_WIFI_SYSDVT
 	prAdapter->u2TxTest = TX_TEST_UNLIMITIED;
 	prAdapter->u2TxTestCount = 0;
@@ -1680,4 +1684,24 @@ uint8_t asicRxGetRcpiValueFromRxv(
 	       "ucRcpiValue == RCPI_MEASUREMENT_NOT_AVAILABLE ??\n");
 	return 0;
 }
+
+#if (CFG_CHIP_RESET_SUPPORT == 1) && (CFG_WMT_RESET_API_SUPPORT == 0)
+u_int8_t conn1_rst_L0_notify_step2(void)
+{
+	typedef int (*p_bt_fun_type) (void);
+	p_bt_fun_type bt_func;
+	char *bt_func_name = "WF_rst_L0_notify_BT_step2";
+
+	DBGLOG(INIT, STATE, "[SER][L0] %s\n", bt_func_name);
+	bt_func = (p_bt_fun_type)(uintptr_t) GLUE_LOOKUP_FUN(bt_func_name);
+	if (bt_func)
+		bt_func();
+	else {
+		DBGLOG(INIT, WARN, "[SER][L0] %s does not exist\n",
+							bt_func_name);
+		return FALSE;
+	}
+	return TRUE;
+}
+#endif
 

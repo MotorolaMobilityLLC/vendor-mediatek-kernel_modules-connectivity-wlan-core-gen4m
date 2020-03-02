@@ -224,6 +224,7 @@
 
 
 /* Use a magic number to prevent human mistake */
+#define SER_USER_CMD_L0_RECOVER          956
 #define SER_USER_CMD_L1_RECOVER          995
 
 #define SER_USER_CMD_L2_BN0_RECOVER      (300)

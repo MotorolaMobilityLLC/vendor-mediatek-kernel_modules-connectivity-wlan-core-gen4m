@@ -1891,5 +1891,9 @@ void kalRemoveBss(struct GLUE_INFO *prGlueInfo,
 u_int8_t kalIsResetting(void);
 #endif
 
+#if CFG_CHIP_RESET_SUPPORT
+void kalRemoveProbe(IN struct GLUE_INFO *prGlueInfo);
+#endif
+
 #endif /* _GL_KAL_H */
 
