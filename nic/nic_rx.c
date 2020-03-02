@@ -3873,8 +3873,9 @@ uint32_t nicRxProcessActionFrame(IN struct ADAPTER *
 	    GET_BSS_INFO_BY_INDEX(prAdapter,
 				prSwRfb->prStaRec->ucBssIndex)->eNetworkType ==
 	    NETWORK_TYPE_AIS) {
-		prAisSpecBssInfo = &
-				   (prAdapter->rWifiVar.rAisSpecificBssInfo);
+		prAisSpecBssInfo =
+			aisGetAisSpecBssInfo(prAdapter,
+			prSwRfb->prStaRec->ucBssIndex);
 
 		DBGLOG(RSN, INFO,
 		       "[Rx]RobustAction %x %x\n",
@@ -3917,17 +3918,14 @@ uint32_t nicRxProcessActionFrame(IN struct ADAPTER *
 #if 0				/* CFG_SUPPORT_802_11W */
 		/* Sigma */
 #else
-		if (prAdapter->prAisBssInfo &&
-		    prSwRfb->prStaRec
-		    && prSwRfb->prStaRec->ucBssIndex ==
-		    prAdapter->prAisBssInfo->ucBssIndex) {
+		if (prBssInfo &&
+		    IS_BSS_AIS(prBssInfo)) {
 			aisFuncValidateRxActionFrame(prAdapter, prSwRfb);
 		}
 #endif
 
-		if (prAdapter->prAisBssInfo
-		    && prAdapter->prAisBssInfo->ucBssIndex ==
-		    KAL_NETWORK_TYPE_AIS_INDEX)
+		if (prBssInfo &&
+		    IS_BSS_AIS(prBssInfo))
 			aisFuncValidateRxActionFrame(prAdapter, prSwRfb);
 #if CFG_ENABLE_WIFI_DIRECT
 		if (prAdapter->fgIsP2PRegistered) {
@@ -3987,7 +3985,8 @@ uint32_t nicRxProcessActionFrame(IN struct ADAPTER *
 				prSwRfb->prStaRec->ucBssIndex);
 			ASSERT(prBssInfo);
 			if ((prBssInfo->eNetworkType == NETWORK_TYPE_AIS) &&
-			    prAdapter->rWifiVar.rAisSpecificBssInfo.
+				aisGetAisSpecBssInfo(prAdapter,
+				prSwRfb->prStaRec->ucBssIndex)->
 			    fgMgmtProtection /* Use MFP */) {
 				/* MFP test plan 5.3.3.4 */
 				rsnSaQueryAction(prAdapter, prSwRfb);
@@ -4061,7 +4060,7 @@ uint32_t nicRxProcessActionFrame(IN struct ADAPTER *
 			break;
 		case RM_ACTION_REIGHBOR_RESPONSE:
 			rlmProcessNeighborReportResonse(prAdapter, prActFrame,
-							prSwRfb->u2PacketLen);
+							prSwRfb);
 			break;
 		}
 		break;

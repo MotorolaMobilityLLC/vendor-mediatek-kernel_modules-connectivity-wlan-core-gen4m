@@ -115,7 +115,8 @@ static uint32_t getNumberOfScanChannels(struct GL_SCAN_CACHE_INFO *prScanCache)
 static u_int8_t isMediaConnected(struct GL_SCAN_CACHE_INFO *prScanCache)
 {
 	return MEDIA_STATE_CONNECTED ==
-		kalGetMediaStateIndicated(prScanCache->prGlueInfo);
+		kalGetMediaStateIndicated(prScanCache->prGlueInfo,
+		prScanCache->ucBssIndex);
 }
 
 static u_int8_t isScanCacheChannels(struct GL_SCAN_CACHE_INFO *prScanCache)

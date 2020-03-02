@@ -314,11 +314,13 @@ struct MSG_REMAIN_ON_CHANNEL {
 	uint32_t u4DurationMs;
 	uint64_t u8Cookie;
 	enum ENUM_CH_REQ_TYPE eReqType;
+	uint8_t ucBssIdx;
 };
 
 struct MSG_CANCEL_REMAIN_ON_CHANNEL {
 	struct MSG_HDR rMsgHdr;	/* Must be the first member */
 	uint64_t u8Cookie;
+	uint8_t ucBssIdx;
 };
 
 struct MSG_MGMT_TX_REQUEST {

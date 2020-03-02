@@ -4333,7 +4333,8 @@ static uint32_t nicTxDirectStartXmitMain(struct sk_buff
 
 	QUEUE_INITIALIZE(prProcessingQue);
 
-	ucActivedTspec = wmmHasActiveTspec(&prAdapter->rWifiVar.rWmmInfo);
+	ucActivedTspec =
+		wmmHasActiveTspec(aisGetWMMInfo(prAdapter, ucBssIndex));
 
 	if (prSkb) {
 		nicTxFillMsduInfo(prAdapter, prMsduInfo, prSkb);

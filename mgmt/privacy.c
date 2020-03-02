@@ -124,14 +124,17 @@ void secInit(IN struct ADAPTER *prAdapter, IN uint8_t ucBssIndex)
 	struct CONNECTION_SETTINGS *prConnSettings;
 	struct BSS_INFO *prBssInfo;
 	struct AIS_SPECIFIC_BSS_INFO *prAisSpecBssInfo;
+	struct IEEE_802_11_MIB *prMib;
 
 	DEBUGFUNC("secInit");
 
 	ASSERT(prAdapter);
 
-	prConnSettings = &prAdapter->rWifiVar.rConnSettings;
+	prConnSettings = aisGetConnSettings(prAdapter, ucBssIndex);
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
-	prAisSpecBssInfo = &prAdapter->rWifiVar.rAisSpecificBssInfo;
+	prAisSpecBssInfo =
+		aisGetAisSpecBssInfo(prAdapter, ucBssIndex);
+	prMib = aisGetMib(prAdapter, ucBssIndex);
 
 	prBssInfo->u4RsnSelectedGroupCipher = 0;
 	prBssInfo->u4RsnSelectedPairwiseCipher = 0;
@@ -153,69 +156,69 @@ void secInit(IN struct ADAPTER *prAdapter, IN uint8_t ucBssIndex)
 	prBssInfo->u4RsnSelectedAKMSuite = RSN_AKM_SUITE_PSK;
 #endif
 
-	prAdapter->rMib.
-	   dot11RSNAConfigPairwiseCiphersTable[0].dot11RSNAConfigPairwiseCipher
+	prMib->
+	    dot11RSNAConfigPairwiseCiphersTable[0].dot11RSNAConfigPairwiseCipher
 	    = WPA_CIPHER_SUITE_WEP40;
-	prAdapter->rMib.
-	   dot11RSNAConfigPairwiseCiphersTable[1].dot11RSNAConfigPairwiseCipher
+	prMib->
+	    dot11RSNAConfigPairwiseCiphersTable[1].dot11RSNAConfigPairwiseCipher
 	    = WPA_CIPHER_SUITE_TKIP;
-	prAdapter->rMib.
-	   dot11RSNAConfigPairwiseCiphersTable[2].dot11RSNAConfigPairwiseCipher
+	prMib->
+	    dot11RSNAConfigPairwiseCiphersTable[2].dot11RSNAConfigPairwiseCipher
 	    = WPA_CIPHER_SUITE_CCMP;
-	prAdapter->rMib.
-	   dot11RSNAConfigPairwiseCiphersTable[3].dot11RSNAConfigPairwiseCipher
+	prMib->
+	    dot11RSNAConfigPairwiseCiphersTable[3].dot11RSNAConfigPairwiseCipher
 	    = WPA_CIPHER_SUITE_WEP104;
 
-	prAdapter->rMib.
-	   dot11RSNAConfigPairwiseCiphersTable[4].dot11RSNAConfigPairwiseCipher
+	prMib->
+	    dot11RSNAConfigPairwiseCiphersTable[4].dot11RSNAConfigPairwiseCipher
 	    = RSN_CIPHER_SUITE_WEP40;
-	prAdapter->rMib.
-	   dot11RSNAConfigPairwiseCiphersTable[5].dot11RSNAConfigPairwiseCipher
+	prMib->
+	    dot11RSNAConfigPairwiseCiphersTable[5].dot11RSNAConfigPairwiseCipher
 	    = RSN_CIPHER_SUITE_TKIP;
-	prAdapter->rMib.
-	   dot11RSNAConfigPairwiseCiphersTable[6].dot11RSNAConfigPairwiseCipher
+	prMib->
+	    dot11RSNAConfigPairwiseCiphersTable[6].dot11RSNAConfigPairwiseCipher
 	    = RSN_CIPHER_SUITE_CCMP;
-	prAdapter->rMib.
-	   dot11RSNAConfigPairwiseCiphersTable[7].dot11RSNAConfigPairwiseCipher
+	prMib->
+	    dot11RSNAConfigPairwiseCiphersTable[7].dot11RSNAConfigPairwiseCipher
 	    = RSN_CIPHER_SUITE_WEP104;
-	prAdapter->rMib.
-	   dot11RSNAConfigPairwiseCiphersTable[8].dot11RSNAConfigPairwiseCipher
+	prMib->
+	    dot11RSNAConfigPairwiseCiphersTable[8].dot11RSNAConfigPairwiseCipher
 	    = RSN_CIPHER_SUITE_GROUP_NOT_USED;
 
 	for (i = 0; i < MAX_NUM_SUPPORTED_CIPHER_SUITES; i++)
-		prAdapter->rMib.dot11RSNAConfigPairwiseCiphersTable
+		prMib->dot11RSNAConfigPairwiseCiphersTable
 		    [i].dot11RSNAConfigPairwiseCipherEnabled = FALSE;
 
-	prAdapter->rMib.dot11RSNAConfigAuthenticationSuitesTable
+	prMib->dot11RSNAConfigAuthenticationSuitesTable
 	    [0].dot11RSNAConfigAuthenticationSuite = WPA_AKM_SUITE_NONE;
-	prAdapter->rMib.dot11RSNAConfigAuthenticationSuitesTable
+	prMib->dot11RSNAConfigAuthenticationSuitesTable
 	    [1].dot11RSNAConfigAuthenticationSuite = WPA_AKM_SUITE_802_1X;
-	prAdapter->rMib.dot11RSNAConfigAuthenticationSuitesTable
+	prMib->dot11RSNAConfigAuthenticationSuitesTable
 	    [2].dot11RSNAConfigAuthenticationSuite = WPA_AKM_SUITE_PSK;
-	prAdapter->rMib.dot11RSNAConfigAuthenticationSuitesTable
+	prMib->dot11RSNAConfigAuthenticationSuitesTable
 	    [3].dot11RSNAConfigAuthenticationSuite = RSN_AKM_SUITE_NONE;
-	prAdapter->rMib.dot11RSNAConfigAuthenticationSuitesTable
+	prMib->dot11RSNAConfigAuthenticationSuitesTable
 	    [4].dot11RSNAConfigAuthenticationSuite = RSN_AKM_SUITE_802_1X;
-	prAdapter->rMib.dot11RSNAConfigAuthenticationSuitesTable
+	prMib->dot11RSNAConfigAuthenticationSuitesTable
 	    [5].dot11RSNAConfigAuthenticationSuite = RSN_AKM_SUITE_PSK;
 
-	prAdapter->rMib.dot11RSNAConfigAuthenticationSuitesTable
+	prMib->dot11RSNAConfigAuthenticationSuitesTable
 	    [6].dot11RSNAConfigAuthenticationSuite = RSN_AKM_SUITE_FT_802_1X;
-	prAdapter->rMib.dot11RSNAConfigAuthenticationSuitesTable
+	prMib->dot11RSNAConfigAuthenticationSuitesTable
 	    [7].dot11RSNAConfigAuthenticationSuite = RSN_AKM_SUITE_FT_PSK;
-	prAdapter->rMib.dot11RSNAConfigAuthenticationSuitesTable
+	prMib->dot11RSNAConfigAuthenticationSuitesTable
 	    [8].dot11RSNAConfigAuthenticationSuite = WFA_AKM_SUITE_OSEN;
 
 #if CFG_SUPPORT_802_11W
-	prAdapter->rMib.dot11RSNAConfigAuthenticationSuitesTable
+	prMib->dot11RSNAConfigAuthenticationSuitesTable
 	    [9].dot11RSNAConfigAuthenticationSuite =
 	    RSN_AKM_SUITE_802_1X_SHA256;
-	prAdapter->rMib.dot11RSNAConfigAuthenticationSuitesTable
+	prMib->dot11RSNAConfigAuthenticationSuitesTable
 	    [10].dot11RSNAConfigAuthenticationSuite = RSN_AKM_SUITE_PSK_SHA256;
 #endif
 
 	for (i = 0; i < MAX_NUM_SUPPORTED_AKM_SUITES; i++) {
-		prAdapter->rMib.dot11RSNAConfigAuthenticationSuitesTable
+		prMib->dot11RSNAConfigAuthenticationSuitesTable
 		    [i].dot11RSNAConfigAuthenticationSuiteEnabled = FALSE;
 	}
 
@@ -223,12 +226,12 @@ void secInit(IN struct ADAPTER *prAdapter, IN uint8_t ucBssIndex)
 	cnmTimerInitTimer(prAdapter,
 			  &prAisSpecBssInfo->rSaQueryTimer,
 			  (PFN_MGMT_TIMEOUT_FUNC) rsnStartSaQueryTimer,
-			  (unsigned long)NULL);
+			  (unsigned long)ucBssIndex);
 #endif
 
 	prAisSpecBssInfo->fgCounterMeasure = FALSE;
-	prAdapter->prAisBssInfo->ucBcDefaultKeyIdx = 0xff;
-	prAdapter->prAisBssInfo->fgBcDefaultKeyExist = FALSE;
+	prBssInfo->ucBcDefaultKeyIdx = 0xff;
+	prBssInfo->fgBcDefaultKeyExist = FALSE;
 
 #if 0
 	for (i = 0; i < WTBL_SIZE; i++) {
@@ -269,7 +272,8 @@ u_int8_t secCheckClassError(IN struct ADAPTER *prAdapter,
 
 	if (prRxDescOps->nic_rxd_get_sw_class_error_bit(prRxStatus)
 	    || (IS_STA_IN_AIS(prStaRec)
-		&& prAdapter->prAisBssInfo->eConnectionState ==
+		&& aisGetAisBssInfo(prAdapter,
+		prStaRec->ucBssIndex)->eConnectionState ==
 		MEDIA_STATE_DISCONNECTED)) {
 
 		DBGLOG_LIMITED(RSN, WARN,
@@ -440,7 +444,8 @@ u_int8_t secRxPortControlCheck(IN struct ADAPTER *prAdapter,
  */
 /*----------------------------------------------------------------------------*/
 void secSetCipherSuite(IN struct ADAPTER *prAdapter,
-		       IN uint32_t u4CipherSuitesFlags)
+		       IN uint32_t u4CipherSuitesFlags,
+		       IN uint8_t ucBssIndex)
 {
 
 	uint32_t i;
@@ -449,7 +454,7 @@ void secSetCipherSuite(IN struct ADAPTER *prAdapter,
 
 	ASSERT(prAdapter);
 
-	prMib = &prAdapter->rMib;
+	prMib = aisGetMib(prAdapter, ucBssIndex);
 
 	ASSERT(prMib);
 
@@ -524,18 +529,20 @@ void secSetCipherSuite(IN struct ADAPTER *prAdapter,
 	}
 
 	/* Update the group cipher suite. */
-	if (rsnSearchSupportedCipher(prAdapter, WPA_CIPHER_SUITE_CCMP, &i))
+	if (rsnSearchSupportedCipher(prAdapter,
+		WPA_CIPHER_SUITE_CCMP, &i, ucBssIndex))
 		prMib->dot11RSNAConfigGroupCipher = WPA_CIPHER_SUITE_CCMP;
-	else if (rsnSearchSupportedCipher(prAdapter, WPA_CIPHER_SUITE_TKIP, &i))
+	else if (rsnSearchSupportedCipher(prAdapter,
+		WPA_CIPHER_SUITE_TKIP, &i, ucBssIndex))
 		prMib->dot11RSNAConfigGroupCipher = WPA_CIPHER_SUITE_TKIP;
 	else if (rsnSearchSupportedCipher(prAdapter,
-					  WPA_CIPHER_SUITE_WEP104, &i))
+		WPA_CIPHER_SUITE_WEP104, &i, ucBssIndex))
 		prMib->dot11RSNAConfigGroupCipher = WPA_CIPHER_SUITE_WEP104;
 	else if (rsnSearchSupportedCipher(prAdapter,
-					  WPA_CIPHER_SUITE_WEP40, &i))
+		WPA_CIPHER_SUITE_WEP40, &i, ucBssIndex))
 		prMib->dot11RSNAConfigGroupCipher = WPA_CIPHER_SUITE_WEP40;
 	else if (rsnSearchSupportedCipher(prAdapter,
-					  RSN_CIPHER_SUITE_GROUP_NOT_USED, &i))
+		RSN_CIPHER_SUITE_GROUP_NOT_USED, &i, ucBssIndex))
 		prMib->dot11RSNAConfigGroupCipher =
 		    RSN_CIPHER_SUITE_GROUP_NOT_USED;
 	else
@@ -552,14 +559,19 @@ void secSetCipherSuite(IN struct ADAPTER *prAdapter,
  * \retval BOOLEAN
  */
 /*----------------------------------------------------------------------------*/
-u_int8_t secEnabledInAis(IN struct ADAPTER *prAdapter)
+u_int8_t secEnabledInAis(IN struct ADAPTER *prAdapter,
+		IN uint8_t ucBssIndex)
 {
+	enum ENUM_WEP_STATUS eEncStatus;
+
+	eEncStatus = aisGetEncStatus(prAdapter, ucBssIndex);
+
 	DEBUGFUNC("secEnabledInAis");
 
-	ASSERT(prAdapter->rWifiVar.rConnSettings.eEncStatus <
+	ASSERT(eEncStatus <
 	       ENUM_ENCRYPTION3_KEY_ABSENT);
 
-	switch (prAdapter->rWifiVar.rConnSettings.eEncStatus) {
+	switch (eEncStatus) {
 	case ENUM_ENCRYPTION_DISABLED:
 		return FALSE;
 	case ENUM_ENCRYPTION1_ENABLED:
@@ -568,7 +580,7 @@ u_int8_t secEnabledInAis(IN struct ADAPTER *prAdapter)
 		return TRUE;
 	default:
 		DBGLOG(RSN, TRACE, "Unknown encryption setting %d\n",
-		       prAdapter->rWifiVar.rConnSettings.eEncStatus);
+		       eEncStatus);
 		break;
 	}
 	return FALSE;
@@ -587,7 +599,8 @@ u_int8_t secIsProtected1xFrame(IN struct ADAPTER *prAdapter,
 						  prStaRec->ucBssIndex);
 		if (prBssInfo && prBssInfo->eNetworkType == NETWORK_TYPE_AIS) {
 #if CFG_SUPPORT_WAPI
-			if (wlanQueryWapiMode(prAdapter))
+			if (aisGetWapiMode(prAdapter,
+				prStaRec->ucBssIndex))
 				return FALSE;
 #endif
 		}
@@ -635,14 +648,19 @@ u_int8_t secIsProtectedFrame(IN struct ADAPTER *prAdapter,
 u_int8_t secIsProtectedBss(IN struct ADAPTER *prAdapter,
 			   IN struct BSS_INFO *prBssInfo)
 {
+	uint8_t ucBssIndex = 0;
+
 	ASSERT(prBssInfo);
+
+	ucBssIndex = prBssInfo->ucBssIndex;
 
 	if (prBssInfo->eNetworkType == NETWORK_TYPE_AIS) {
 #if CFG_SUPPORT_WAPI
-		if (wlanQueryWapiMode(prAdapter))
+		if (aisGetWapiMode(prAdapter, ucBssIndex))
 			return TRUE;
 #endif
-		return secEnabledInAis(prAdapter);
+		return secEnabledInAis(prAdapter,
+			ucBssIndex);
 	}
 #if CFG_ENABLE_WIFI_DIRECT
 	else if (prBssInfo->eNetworkType == NETWORK_TYPE_P2P)
@@ -659,10 +677,15 @@ u_int8_t secIsProtectedBss(IN struct ADAPTER *prAdapter,
 u_int8_t secIsWepBss(IN struct ADAPTER *prAdapter,
 		     IN struct BSS_INFO *prBssInfo)
 {
+	enum ENUM_WEP_STATUS eEncStatus;
+
 	ASSERT(prBssInfo);
 
+	eEncStatus = aisGetEncStatus(prAdapter,
+		prBssInfo->ucBssIndex);
+
 	if (prBssInfo->eNetworkType == NETWORK_TYPE_AIS) {
-		if (prAdapter->rWifiVar.rConnSettings.eEncStatus ==
+		if (eEncStatus ==
 		    ENUM_ENCRYPTION1_ENABLED)
 			return TRUE;
 	}
@@ -880,8 +903,6 @@ void secRemoveBssBcEntry(IN struct ADAPTER *prAdapter,
 			 IN struct BSS_INFO *prBssInfo, IN u_int8_t fgRoam)
 {
 	int i;
-	struct CONNECTION_SETTINGS *prConnSettings = &
-	    (prAdapter->rWifiVar.rConnSettings);
 
 	if (!prBssInfo)
 		return;
@@ -889,6 +910,10 @@ void secRemoveBssBcEntry(IN struct ADAPTER *prAdapter,
 	DBGLOG(RSN, INFO, "remove all the key related with BSS!");
 
 	if (fgRoam) {
+		struct CONNECTION_SETTINGS *prConnSettings =
+			aisGetConnSettings(prAdapter,
+			prBssInfo->ucBssIndex);
+
 		if (IS_BSS_AIS(prBssInfo) &&
 		    prBssInfo->prStaRecOfAP
 		    && (prConnSettings->eAuthMode >= AUTH_MODE_WPA &&
@@ -1144,6 +1169,37 @@ uint8_t secGetBssIdxByWlanIdx(struct ADAPTER *prAdapter, uint8_t ucWlanIdx)
 		return WTBL_RESERVED_ENTRY;
 }
 
+uint8_t secGetBssIdxByRfb(IN struct ADAPTER *prAdapter,
+	IN struct SW_RFB *prSwRfb) {
+
+	if (prAdapter && prSwRfb) {
+		uint8_t	ucBssIndex =
+			secGetBssIdxByWlanIdx(prAdapter,
+			prSwRfb->ucWlanIdx);
+		struct STA_RECORD *prStaRec =
+			cnmGetStaRecByIndex(prAdapter,
+			prSwRfb->ucStaRecIdx);
+
+		DBGLOG(RSN, LOUD,
+			"ucBssIndex = %d\n", ucBssIndex);
+
+		if (ucBssIndex != WTBL_RESERVED_ENTRY)
+			return ucBssIndex;
+
+
+		if (prStaRec) {
+			DBGLOG(RSN, LOUD,
+				"prStaRec->ucBssIndex = %d\n",
+				prStaRec->ucBssIndex);
+			return prStaRec->ucBssIndex;
+		}
+	}
+
+	DBGLOG(RSN, LOUD, "Return default index\n");
+
+	return AIS_DEFAULT_INDEX;
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Got the STA record index by mac addr
@@ -1215,11 +1271,12 @@ void secPrivacyDumpWTBL(IN struct ADAPTER *prAdapter)
 void secPostUpdateAddr(IN struct ADAPTER *prAdapter,
 		       IN struct BSS_INFO *prBssInfo)
 {
-	struct CONNECTION_SETTINGS *prConnSettings = &
-	    (prAdapter->rWifiVar.rConnSettings);
 	struct WLAN_TABLE *prWtbl;
 
 	if (IS_BSS_AIS(prBssInfo) && prBssInfo->prStaRecOfAP) {
+		struct CONNECTION_SETTINGS *prConnSettings =
+			aisGetConnSettings(prAdapter,
+			prBssInfo->ucBssIndex);
 
 		if (prConnSettings->eEncStatus == ENUM_ENCRYPTION1_ENABLED) {
 

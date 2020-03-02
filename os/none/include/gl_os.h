@@ -398,10 +398,6 @@ struct GLUE_INFO {
 	 * stack
 	 */
 	struct ADAPTER *prAdapter;
-	/* TODO: os-related? */
-	/* Should be large than the PARAM_WAPI_ASSOC_INFO_T */
-	uint8_t aucWapiAssocInfoIEs[42];
-	uint16_t u2WapiAssocInfoIESz;
 
 	/* OID related */
 	struct QUE rCmdQueue;
@@ -420,16 +416,10 @@ struct GLUE_INFO {
 	int32_t i4TxPendingCmdNum;
 
 	/*! \brief wext wpa related information */
-	struct GL_WPA_INFO rWpaInfo;
+	struct GL_WPA_INFO rWpaInfo[KAL_AIS_NUM];
 #if CFG_SUPPORT_REPLAY_DETECTION
-	struct GL_DETECT_REPLAY_INFO prDetRplyInfo;
+	struct GL_DETECT_REPLAY_INFO prDetRplyInfo[KAL_AIS_NUM];
 #endif
-
-	uint8_t aucWSCIE[GLUE_INFO_WSCIE_LENGTH];	/*for probe req */
-	uint16_t u2WSCIELen;
-
-	uint8_t aucWSCAssocInfoIE[200];	/*for Assoc req */
-	uint16_t u2WSCAssocInfoIELen;
 
 	uint32_t u4RoamFailCnt;
 	uint64_t u8RoamFailTime;
@@ -1182,11 +1172,9 @@ uint32_t wlanConnacDownloadBufferBin(struct ADAPTER
  *			 E X T E R N A L   F U N C T I O N S / V A R I A B L E
  *******************************************************************************
  */
-#if 0	/* TODO: os-related */
 extern struct net_device *gPrP2pDev[KAL_P2P_NUM];
 extern struct net_device *gPrDev;
-extern struct wireless_dev *gprWdev;
-#endif
+extern struct wireless_dev *gprWdev[KAL_AIS_NUM];
 
 #ifdef CFG_DRIVER_INF_NAME_CHANGE
 extern char *gprifnameap;

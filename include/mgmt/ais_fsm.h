@@ -146,6 +146,7 @@ struct MSG_AIS_ABORT {
 	struct MSG_HDR rMsgHdr;	/* Must be the first member */
 	uint8_t ucReasonOfDisconnect;
 	u_int8_t fgDelayIndication;
+	uint8_t ucBssIndex;
 };
 
 struct MSG_AIS_IBSS_PEER_FOUND {
@@ -315,6 +316,7 @@ struct MSG_AIS_BSS_TRANSITION_T {
 	enum WNM_AIS_BSS_TRANSITION eTransitionType;
 	uint16_t u2CandListLen;
 	uint8_t *pucCandList;
+	uint8_t ucBssIndex;
 };
 /*******************************************************************************
  *                            P U B L I C   D A T A
@@ -330,48 +332,52 @@ struct MSG_AIS_BSS_TRANSITION_T {
  *                                 M A C R O S
  *******************************************************************************
  */
-#define aisChangeMediaState(_prAdapter, _eNewMediaState) \
-	(_prAdapter->prAisBssInfo->eConnectionState = (_eNewMediaState))
+#define aisChangeMediaState(_prAisBssInfo, _eNewMediaState) \
+	(_prAisBssInfo->eConnectionState = (_eNewMediaState))
 
 /*******************************************************************************
  *                  F U N C T I O N   D E C L A R A T I O N S
  *******************************************************************************
  */
 void aisInitializeConnectionSettings(IN struct ADAPTER
-				     *prAdapter, IN struct REG_INFO *prRegInfo);
+		*prAdapter, IN struct REG_INFO *prRegInfo,
+		IN uint8_t ucBssIndex);
 
-void aisFsmInit(IN struct ADAPTER *prAdapter);
+void aisFsmInit(IN struct ADAPTER *prAdapter, uint8_t ucBssIndex);
 
-void aisFsmUninit(IN struct ADAPTER *prAdapter);
+void aisFsmUninit(IN struct ADAPTER *prAdapter, uint8_t ucBssIndex);
 
-bool aisFsmIsInProcessBeaconTimeout(IN struct ADAPTER *prAdapter);
+bool aisFsmIsInProcessBeaconTimeout(IN struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex);
 
 void aisFsmStateInit_JOIN(IN struct ADAPTER *prAdapter,
-			  struct BSS_DESC *prBssDesc);
+		struct BSS_DESC *prBssDesc, uint8_t ucBssIndex);
 
 u_int8_t aisFsmStateInit_RetryJOIN(IN struct ADAPTER
-				   *prAdapter, IN struct STA_RECORD *prStaRec);
+				   *prAdapter, IN struct STA_RECORD *prStaRec,
+				   uint8_t ucBssIndex);
 
 void aisFsmStateInit_IBSS_ALONE(IN struct ADAPTER
-				*prAdapter);
+				*prAdapter, uint8_t ucBssIndex);
 
 void aisFsmStateInit_IBSS_MERGE(IN struct ADAPTER
-				*prAdapter, struct BSS_DESC *prBssDesc);
+	*prAdapter, struct BSS_DESC *prBssDesc, uint8_t ucBssIndex);
 
 void aisFsmStateAbort(IN struct ADAPTER *prAdapter,
-		      uint8_t ucReasonOfDisconnect, u_int8_t fgDelayIndication);
+		      uint8_t ucReasonOfDisconnect, u_int8_t fgDelayIndication,
+		      uint8_t ucBssIndex);
 
-void aisFsmStateAbort_JOIN(IN struct ADAPTER *prAdapter);
+void aisFsmStateAbort_JOIN(IN struct ADAPTER *prAdapter, uint8_t ucBssIndex);
 
-void aisFsmStateAbort_SCAN(IN struct ADAPTER *prAdapter);
+void aisFsmStateAbort_SCAN(IN struct ADAPTER *prAdapter, uint8_t ucBssIndex);
 
 void aisFsmStateAbort_NORMAL_TR(IN struct ADAPTER
-				*prAdapter);
+				*prAdapter, uint8_t ucBssIndex);
 
-void aisFsmStateAbort_IBSS(IN struct ADAPTER *prAdapter);
+void aisFsmStateAbort_IBSS(IN struct ADAPTER *prAdapter, uint8_t ucBssIndex);
 
 void aisFsmSteps(IN struct ADAPTER *prAdapter,
-		 enum ENUM_AIS_STATE eNextState);
+		 enum ENUM_AIS_STATE eNextState, uint8_t ucBssIndex);
 
 /*----------------------------------------------------------------------------*/
 /* Mailbox Message Handling                                                   */
@@ -400,7 +406,7 @@ void aisFsmRunEventCancelRemainOnChannel(IN struct ADAPTER
 /*----------------------------------------------------------------------------*/
 /* Handling for Ad-Hoc Network                                                */
 /*----------------------------------------------------------------------------*/
-void aisFsmCreateIBSS(IN struct ADAPTER *prAdapter);
+void aisFsmCreateIBSS(IN struct ADAPTER *prAdapter, uint8_t ucBssIndex);
 
 void aisFsmMergeIBSS(IN struct ADAPTER *prAdapter,
 		     IN struct STA_RECORD *prStaRec);
@@ -414,7 +420,7 @@ void aisFsmRunEventChGrant(IN struct ADAPTER *prAdapter,
 /*----------------------------------------------------------------------------*/
 /* Generating Outgoing Mailbox Message to CNM                                 */
 /*----------------------------------------------------------------------------*/
-void aisFsmReleaseCh(IN struct ADAPTER *prAdapter);
+void aisFsmReleaseCh(IN struct ADAPTER *prAdapter, IN uint8_t ucBssIndex);
 
 /*----------------------------------------------------------------------------*/
 /* Event Indication                                                           */
@@ -423,22 +429,25 @@ void
 aisIndicationOfMediaStateToHost(IN struct ADAPTER
 				*prAdapter,
 				enum ENUM_PARAM_MEDIA_STATE eConnectionState,
-				u_int8_t fgDelayIndication);
+				u_int8_t fgDelayIndication,
+				uint8_t ucBssIndex);
 
 void aisPostponedEventOfDisconnTimeout(IN struct ADAPTER *prAdapter,
-				IN struct AIS_FSM_INFO *prAisFsmInfo);
+				IN uint8_t ucBssIndex);
 
 void aisUpdateBssInfoForJOIN(IN struct ADAPTER *prAdapter,
 			     struct STA_RECORD *prStaRec,
 			     struct SW_RFB *prAssocRspSwRfb);
 
-void aisUpdateBssInfoForCreateIBSS(IN struct ADAPTER *prAdapter);
+void aisUpdateBssInfoForCreateIBSS(IN struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex);
 
 void aisUpdateBssInfoForMergeIBSS(IN struct ADAPTER *prAdapter,
 				IN struct STA_RECORD *prStaRec);
 
 u_int8_t aisValidateProbeReq(IN struct ADAPTER *prAdapter,
 				IN struct SW_RFB *prSwRfb,
+				IN uint8_t ucBssIndex,
 				OUT uint32_t *pu4ControlFlags);
 
 uint32_t
@@ -450,28 +459,39 @@ aisFsmRunEventMgmtFrameTxDone(IN struct ADAPTER *prAdapter,
 /* Disconnection Handling                                                     */
 /*----------------------------------------------------------------------------*/
 void aisFsmDisconnect(IN struct ADAPTER *prAdapter,
-		      IN u_int8_t fgDelayIndication);
+		      IN u_int8_t fgDelayIndication,
+		      IN uint8_t ucBssIndex);
 
 /*----------------------------------------------------------------------------*/
 /* Event Handling                                                             */
 /*----------------------------------------------------------------------------*/
-void aisBssBeaconTimeout(IN struct ADAPTER *prAdapter);
+void aisBssBeaconTimeout(IN struct ADAPTER *prAdapter,
+	IN uint8_t ucBssIndex);
 
-void aisBssLinkDown(IN struct ADAPTER *prAdapter);
+void aisBssLinkDown(IN struct ADAPTER *prAdapter,
+	IN uint8_t ucBssIndex);
 
-void aisBssSecurityChanged(IN struct ADAPTER *prAdapter);
+void aisBssSecurityChanged(IN struct ADAPTER *prAdapter,
+	IN uint8_t ucBssIndex);
 
 uint32_t
 aisDeauthXmitComplete(IN struct ADAPTER *prAdapter,
 		      IN struct MSDU_INFO *prMsduInfo,
 		      IN enum ENUM_TX_RESULT_CODE rTxDoneStatus);
+uint32_t
+aisDeauthXmitCompleteBss(IN struct ADAPTER *prAdapter,
+		      IN uint8_t ucBssIndex,
+		      IN enum ENUM_TX_RESULT_CODE rTxDoneStatus);
 
 #if CFG_SUPPORT_ROAMING
-void aisFsmRunEventRoamingDiscovery(IN struct ADAPTER
-				    *prAdapter, uint32_t u4ReqScan);
+void aisFsmRunEventRoamingDiscovery(
+	IN struct ADAPTER *prAdapter,
+	uint32_t u4ReqScan,
+	uint8_t ucBssIndex);
 
 enum ENUM_AIS_STATE aisFsmRoamingScanResultsUpdate(
-				   IN struct ADAPTER *prAdapter);
+				   IN struct ADAPTER *prAdapter,
+				   IN uint8_t ucBssIndex);
 
 void aisFsmRoamingDisconnectPrevAP(IN struct ADAPTER
 				   *prAdapter,
@@ -508,7 +528,8 @@ void aisFsmRunEventSecModeChangeTimeout(IN struct ADAPTER
 /*----------------------------------------------------------------------------*/
 void aisFsmScanRequest(IN struct ADAPTER *prAdapter,
 		       IN struct PARAM_SSID *prSsid, IN uint8_t *pucIe,
-		       IN uint32_t u4IeLength);
+		       IN uint32_t u4IeLength,
+		       IN uint8_t ucBssIndex);
 
 void
 aisFsmScanRequestAdv(IN struct ADAPTER *prAdapter,
@@ -519,19 +540,24 @@ aisFsmScanRequestAdv(IN struct ADAPTER *prAdapter,
 /*----------------------------------------------------------------------------*/
 u_int8_t aisFsmIsRequestPending(IN struct ADAPTER *prAdapter,
 				IN enum ENUM_AIS_REQUEST_TYPE eReqType,
-				IN u_int8_t bRemove);
+				IN u_int8_t bRemove,
+				IN uint8_t ucBssIndex);
 
-struct AIS_REQ_HDR *aisFsmGetNextRequest(IN struct ADAPTER *prAdapter);
+struct AIS_REQ_HDR *aisFsmGetNextRequest(IN struct ADAPTER *prAdapter,
+				IN uint8_t ucBssIndex);
 
 u_int8_t aisFsmInsertRequest(IN struct ADAPTER *prAdapter,
-			     IN enum ENUM_AIS_REQUEST_TYPE eReqType);
+			     IN enum ENUM_AIS_REQUEST_TYPE eReqType,
+			     IN uint8_t ucBssIndex);
 
-void aisFsmFlushRequest(IN struct ADAPTER *prAdapter);
+void aisFsmFlushRequest(IN struct ADAPTER *prAdapter,
+				IN uint8_t ucBssIndex);
 
 uint32_t
 aisFuncTxMgmtFrame(IN struct ADAPTER *prAdapter,
 		   IN struct AIS_MGMT_TX_REQ_INFO *prMgmtTxReqInfo,
-		   IN struct MSDU_INFO *prMgmtTxMsdu, IN uint64_t u8Cookie);
+		   IN struct MSDU_INFO *prMgmtTxMsdu, IN uint64_t u8Cookie,
+		   IN uint8_t ucBssIndex);
 
 void aisFsmRunEventMgmtFrameTx(IN struct ADAPTER *prAdapter,
 				IN struct MSG_HDR *prMsgHdr);
@@ -546,7 +572,7 @@ void aisFsmRunEventCancelTxWait(IN struct ADAPTER *prAdapter,
 		IN struct MSG_HDR *prMsgHdr);
 
 enum ENUM_AIS_STATE aisFsmStateSearchAction(
-	IN struct ADAPTER *prAdapter, uint8_t ucPhase);
+	IN struct ADAPTER *prAdapter, uint8_t ucPhase, uint8_t ucBssIndex);
 #if defined(CFG_TEST_MGMT_FSM) && (CFG_TEST_MGMT_FSM != 0)
 void aisTest(void);
 #endif /* CFG_TEST_MGMT_FSM */
@@ -564,17 +590,145 @@ uint16_t aisCalculateBlackListScore(struct ADAPTER *prAdapter,
 /* end Support AP Selection */
 
 /* Support 11K */
-void aisResetNeighborApList(struct ADAPTER *prAdapter);
+void aisResetNeighborApList(struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex);
 void aisCollectNeighborAP(struct ADAPTER *prAdapter, uint8_t *pucApBuf,
-			  uint16_t u2ApBufLen, uint8_t ucValidInterval);
-void aisSendNeighborRequest(struct ADAPTER *prAdapter);
+			  uint16_t u2ApBufLen, uint8_t ucValidInterval,
+			  uint8_t ucBssIndex);
+void aisSendNeighborRequest(struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex);
 /* end Support 11K */
 
-u_int8_t aisIsProcessingBeaconTimeout(IN struct ADAPTER *prAdapter);
+u_int8_t aisIsProcessingBeaconTimeout(IN struct ADAPTER *prAdapter,
+	IN uint8_t ucBssIndex);
 
 /*******************************************************************************
  *                              F U N C T I O N S
  *******************************************************************************
  */
+
+#define AIS_DEFAULT_INDEX (0)
+
+struct AIS_FSM_INFO *aisGetAisFsmInfo(
+	IN struct ADAPTER *prAdapter,
+	IN uint8_t ucBssIndex);
+
+struct AIS_SPECIFIC_BSS_INFO *aisGetAisSpecBssInfo(
+	IN struct ADAPTER *prAdapter,
+	IN uint8_t ucBssIndex);
+
+struct BSS_TRANSITION_MGT_PARAM_T *
+	aisGetBTMParam(
+	IN struct ADAPTER *prAdapter,
+	IN uint8_t ucBssIndex);
+
+struct BSS_INFO *aisGetConnectedBssInfo(
+	IN struct ADAPTER *prAdapter);
+
+struct BSS_INFO *aisGetAisBssInfo(
+	IN struct ADAPTER *prAdapter,
+	IN uint8_t ucBssIndex);
+
+struct STA_RECORD *aisGetStaRecOfAP(
+	IN struct ADAPTER *prAdapter,
+	IN uint8_t ucBssIndex);
+
+struct BSS_DESC *aisGetTargetBssDesc(
+	IN struct ADAPTER *prAdapter,
+	IN uint8_t ucBssIndex);
+
+struct STA_RECORD *aisGetTargetStaRec(
+	IN struct ADAPTER *prAdapter,
+	IN uint8_t ucBssIndex);
+
+uint8_t aisGetTargetBssDescChannel(
+	IN struct ADAPTER *prAdapter,
+	IN uint8_t ucBssIndex);
+
+struct TIMER *aisGetSecModeChangeTimer(
+	IN struct ADAPTER *prAdapter,
+	IN uint8_t ucBssIndex);
+
+struct TIMER *aisGetScanDoneTimer(
+	IN struct ADAPTER *prAdapter,
+	IN uint8_t ucBssIndex);
+
+enum ENUM_AIS_STATE aisGetCurrState(
+	IN struct ADAPTER *prAdapter,
+	IN uint8_t ucBssIndex);
+
+struct CONNECTION_SETTINGS *
+	aisGetConnSettings(
+	IN struct ADAPTER *prAdapter,
+	IN uint8_t ucBssIndex);
+
+struct GL_WPA_INFO *aisGetWpaInfo(
+	IN struct ADAPTER *prAdapter,
+	IN uint8_t ucBssIndex);
+
+u_int8_t aisGetWapiMode(
+	IN struct ADAPTER *prAdapter,
+	IN uint8_t ucBssIndex);
+
+enum ENUM_PARAM_AUTH_MODE aisGetAuthMode(
+	IN struct ADAPTER *prAdapter,
+	IN uint8_t ucBssIndex);
+
+enum ENUM_PARAM_OP_MODE aisGetOPMode(
+	IN struct ADAPTER *prAdapter,
+	IN uint8_t ucBssIndex);
+
+enum ENUM_WEP_STATUS aisGetEncStatus(
+	IN struct ADAPTER *prAdapter,
+	IN uint8_t ucBssIndex);
+
+struct IEEE_802_11_MIB *aisGetMib(
+	IN struct ADAPTER *prAdapter,
+	IN uint8_t ucBssIndex);
+
+struct ROAMING_INFO *aisGetRoamingInfo(
+	IN struct ADAPTER *prAdapter,
+	IN uint8_t ucBssIndex);
+
+struct PARAM_BSSID_EX *aisGetCurrBssId(
+	IN struct ADAPTER *prAdapter,
+	IN uint8_t ucBssIndex);
+
+#if CFG_SUPPORT_PASSPOINT
+struct HS20_INFO *aisGetHS20Info(
+	IN struct ADAPTER *prAdapter,
+	IN uint8_t ucBssIndex);
+#endif
+
+struct RADIO_MEASUREMENT_REQ_PARAMS *aisGetRmReqParam(
+	IN struct ADAPTER *prAdapter,
+	IN uint8_t ucBssIndex);
+
+struct RADIO_MEASUREMENT_REPORT_PARAMS *
+	aisGetRmReportParam(
+	IN struct ADAPTER *prAdapter,
+	IN uint8_t ucBssIndex);
+
+struct WMM_INFO *
+	aisGetWMMInfo(
+	IN struct ADAPTER *prAdapter,
+	IN uint8_t ucBssIndex);
+
+#ifdef CFG_SUPPORT_REPLAY_DETECTION
+struct GL_DETECT_REPLAY_INFO *
+	aisGetDetRplyInfo(
+	IN struct ADAPTER *prAdapter,
+	IN uint8_t ucBssIndex);
+#endif
+
+struct FT_IES *
+	aisGetFtIe(
+	IN struct ADAPTER *prAdapter,
+	IN uint8_t ucBssIndex);
+
+struct cfg80211_ft_event_params *
+	aisGetFtEventParam(
+	IN struct ADAPTER *prAdapter,
+	IN uint8_t ucBssIndex);
 
 #endif /* _AIS_FSM_H */

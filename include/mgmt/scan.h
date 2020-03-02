@@ -288,7 +288,7 @@ enum ENUM_SCAN_LOG_PREFIX {
 struct BSS_DESC {
 	struct LINK_ENTRY rLinkEntry;
 	/* Support AP Selection*/
-	struct LINK_ENTRY rLinkEntryEss;
+	struct LINK_ENTRY rLinkEntryEss[KAL_AIS_NUM];
 
 	uint8_t aucBSSID[MAC_ADDR_LEN];
 

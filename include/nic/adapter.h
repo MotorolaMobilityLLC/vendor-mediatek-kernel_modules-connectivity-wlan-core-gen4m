@@ -116,7 +116,7 @@ struct ESS_SCAN_RESULT_T {
 };
 
 struct WLAN_INFO {
-	struct PARAM_BSSID_EX rCurrBssId;
+	struct PARAM_BSSID_EX rCurrBssId[KAL_AIS_NUM];
 
 	/* Scan Result */
 	struct PARAM_BSSID_EX arScanResult[CFG_MAX_NUM_BSS_LIST];
@@ -159,7 +159,7 @@ struct WLAN_INFO {
 	uint32_t eRtsThreshold;
 
 	/* Network Type */
-	uint8_t ucNetworkType;
+	uint8_t ucNetworkType[KAL_AIS_NUM];
 
 	/* Network Type In Use */
 	uint8_t ucNetworkTypeInUse;
@@ -222,11 +222,6 @@ struct CONNECTION_SETTINGS {
 
 	enum ENUM_PARAM_PHY_CONFIG eDesiredPhyConfig;
 
-	/* Used for AP mode for desired channel and bandwidth */
-	uint16_t u2CountryCode;
-	uint8_t uc2G4BandwidthMode;	/* 20/40M or 20M only *//* Not used */
-	uint8_t uc5GBandwidthMode;	/* 20/40M or 20M only *//* Not used */
-
 #if CFG_SUPPORT_802_11D
 	u_int8_t fgMultiDomainCapabilityEnabled;
 #endif				/* CFG_SUPPORT_802_11D */
@@ -236,7 +231,34 @@ struct CONNECTION_SETTINGS {
 	uint32_t u4WapiSelectedGroupCipher;
 	uint32_t u4WapiSelectedPairwiseCipher;
 	uint32_t u4WapiSelectedAKMSuite;
+	uint8_t aucWapiAssocInfoIEs[42];
+	uint16_t u2WapiAssocInfoIESz;
 #endif
+	uint8_t aucWSCAssocInfoIE[200];	/*for Assoc req */
+	uint16_t u2WSCAssocInfoIELen;
+
+	/* for cfg80211 connected indication */
+	uint32_t u4RspIeLength;
+	uint8_t aucRspIe[CFG_CFG80211_IE_BUF_LEN];
+
+	uint32_t u4ReqIeLength;
+	uint8_t aucReqIe[CFG_CFG80211_IE_BUF_LEN];
+
+	u_int8_t fgWpsActive;
+	uint8_t aucWSCIE[GLUE_INFO_WSCIE_LENGTH];	/*for probe req */
+	uint16_t u2WSCIELen;
+
+	/*
+	 * Buffer to hold non-wfa vendor specific IEs set
+	 * from wpa_supplicant. This is used in sending
+	 * Association Request in AIS mode.
+	 */
+	uint16_t non_wfa_vendor_ie_len;
+	uint8_t non_wfa_vendor_ie_buf[NON_WFA_VENDOR_IE_MAX_LEN];
+
+	/* 11R */
+	struct FT_IES rFtIeForTx;
+	struct cfg80211_ft_event_params rFtEventParam;
 
 	/* CR1486, CR1640 */
 	/* for WPS, disable the privacy check for AP selection policy */
@@ -250,8 +272,6 @@ struct CONNECTION_SETTINGS {
 
 	u_int8_t fgSecModeChangeStartTimer;
 
-	/* Support AP Selection */
-	struct LINK_MGMT rBlackList;
 };
 
 struct BSS_INFO {
@@ -725,15 +745,25 @@ struct WIFI_VAR {
 
 	u_int8_t fgDebugCmdResp;
 
-	struct CONNECTION_SETTINGS rConnSettings;
+	/* Common connection settings start */
+	/* Used for AP mode for desired channel and bandwidth */
+	uint16_t u2CountryCode;
+	uint8_t uc2G4BandwidthMode;	/* 20/40M or 20M only *//* Not used */
+	uint8_t uc5GBandwidthMode;	/* 20/40M or 20M only *//* Not used */
+	/* Support AP Selection */
+	struct LINK_MGMT rBlackList;
+	enum ENUM_PARAM_PHY_CONFIG eDesiredPhyConfig;
+	/* Common connection settings end */
+
+	struct CONNECTION_SETTINGS rConnSettings[KAL_AIS_NUM];
 
 	struct SCAN_INFO rScanInfo;
 
 #if CFG_SUPPORT_ROAMING
-	struct ROAMING_INFO rRoamingInfo;
+	struct ROAMING_INFO rRoamingInfo[KAL_AIS_NUM];
 #endif				/* CFG_SUPPORT_ROAMING */
 
-	struct AIS_FSM_INFO rAisFsmInfo;
+	struct AIS_FSM_INFO rAisFsmInfo[KAL_AIS_NUM];
 
 	enum ENUM_PWR_STATE aePwrState[MAX_BSSID_NUM + 1];
 
@@ -741,7 +771,7 @@ struct WIFI_VAR {
 
 	struct BSS_INFO rP2pDevInfo;
 
-	struct AIS_SPECIFIC_BSS_INFO rAisSpecificBssInfo;
+	struct AIS_SPECIFIC_BSS_INFO rAisSpecificBssInfo[KAL_AIS_NUM];
 
 #if CFG_ENABLE_WIFI_DIRECT
 	struct P2P_CONNECTION_SETTINGS *prP2PConnSettings[BSS_P2P_NUM];
@@ -801,7 +831,7 @@ struct WIFI_VAR {
 #endif
 
 #if CFG_SUPPORT_PASSPOINT
-	struct HS20_INFO rHS20Info;
+	struct HS20_INFO rHS20Info[KAL_AIS_NUM];
 #endif				/* CFG_SUPPORT_PASSPOINT */
 	uint8_t aucMediatekOuiIE[64];
 	uint16_t u2MediatekOuiIELen;
@@ -1048,11 +1078,11 @@ struct WIFI_VAR {
 #endif
 
 	/* 11K */
-	struct RADIO_MEASUREMENT_REQ_PARAMS rRmReqParams;
-	struct RADIO_MEASUREMENT_REPORT_PARAMS rRmRepParams;
+	struct RADIO_MEASUREMENT_REQ_PARAMS rRmReqParams[KAL_AIS_NUM];
+	struct RADIO_MEASUREMENT_REPORT_PARAMS rRmRepParams[KAL_AIS_NUM];
 
 	/* WMMAC */
-	struct WMM_INFO rWmmInfo;
+	struct WMM_INFO rWmmInfo[KAL_AIS_NUM];
 
 	/* Tx Msdu Queue method */
 	uint8_t ucTxMsduQueue;
@@ -1259,7 +1289,7 @@ struct ADAPTER {
 	u_int8_t fgAllMulicastFilter;	/* mDNS filter used by OS */
 
 	struct BSS_INFO *aprBssInfo[MAX_BSSID_NUM + 1];
-	struct BSS_INFO *prAisBssInfo;
+	struct BSS_INFO *prAisBssInfo[KAL_AIS_NUM];
 	uint8_t ucHwBssIdNum;
 	uint8_t ucWmmSetNum;
 	uint8_t ucWtblEntryNum;
@@ -1430,7 +1460,7 @@ struct ADAPTER {
 	struct WIFI_VAR rWifiVar;
 
 	/* MTK WLAN NIC driver IEEE 802.11 MIB */
-	struct IEEE_802_11_MIB rMib;
+	struct IEEE_802_11_MIB rMib[KAL_AIS_NUM];
 
 	/* Mailboxs for inter-module communication */
 	struct MBOX arMbox[MBOX_ID_TOTAL_NUM];
@@ -1671,6 +1701,11 @@ struct ADAPTER {
 
 #define IS_BSS_AIS(_prBssInfo) \
 	((_prBssInfo)->eNetworkType == NETWORK_TYPE_AIS)
+
+#define IS_BSS_INDEX_AIS(_prAdapter, _BssIndex) \
+	((_BssIndex < KAL_AIS_NUM) || \
+	(IS_BSS_INDEX_VALID(_BssIndex) && \
+	IS_BSS_AIS(GET_BSS_INFO_BY_INDEX(_prAdapter, _BssIndex))))
 
 #define IS_BSS_P2P(_prBssInfo) \
 	((_prBssInfo)->eNetworkType == NETWORK_TYPE_P2P)

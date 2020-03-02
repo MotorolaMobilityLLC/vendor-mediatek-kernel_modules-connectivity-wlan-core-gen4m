@@ -862,9 +862,14 @@ uint32_t authProcessRxAuth2_Auth4Frame(IN struct ADAPTER *prAdapter,
 			 */
 		} else if (prAuthFrame->u2AuthTransSeqNo ==
 			   AUTH_TRANSACTION_SEQ_2) {
-			prAdapter->prGlueInfo->rFtEventParam.ies =
-				&prAuthFrame->aucInfoElem[0];
-			prAdapter->prGlueInfo->rFtEventParam.ies_len = u2IEsLen;
+			struct cfg80211_ft_event_params *prFtEvent =
+				aisGetFtEventParam(prAdapter,
+				secGetBssIdxByRfb(prAdapter,
+				prSwRfb));
+
+			prFtEvent->ies =
+			    &prAuthFrame->aucInfoElem[0];
+			prFtEvent->ies_len = u2IEsLen;
 		}
 	}
 
@@ -1302,10 +1307,10 @@ authProcessRxAuth1Frame(IN struct ADAPTER *prAdapter,
 void authAddMDIE(IN struct ADAPTER *prAdapter,
 		 IN OUT struct MSDU_INFO *prMsduInfo)
 {
-	struct FT_IES *prFtIEs = &prAdapter->prGlueInfo->rFtIeForTx;
 	uint8_t *pucBuffer =
 		(uint8_t *)prMsduInfo->prPacket + prMsduInfo->u2FrameLength;
 	uint8_t ucBssIdx = prMsduInfo->ucBssIndex;
+	struct FT_IES *prFtIEs = aisGetFtIe(prAdapter, ucBssIdx);
 
 	if (!IS_BSS_INDEX_VALID(ucBssIdx) ||
 	    !IS_BSS_AIS(GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIdx)) ||
@@ -1320,8 +1325,8 @@ uint32_t authCalculateRSNIELen(struct ADAPTER *prAdapter, uint8_t ucBssIdx,
 			       struct STA_RECORD *prStaRec)
 {
 	enum ENUM_PARAM_AUTH_MODE eAuthMode =
-		prAdapter->rWifiVar.rConnSettings.eAuthMode;
-	struct FT_IES *prFtIEs = &prAdapter->prGlueInfo->rFtIeForTx;
+	    aisGetAuthMode(prAdapter, ucBssIdx);
+	struct FT_IES *prFtIEs = aisGetFtIe(prAdapter, ucBssIdx);
 
 	if (!IS_BSS_INDEX_VALID(ucBssIdx) ||
 	    !IS_BSS_AIS(GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIdx)) ||
@@ -1334,13 +1339,13 @@ uint32_t authCalculateRSNIELen(struct ADAPTER *prAdapter, uint8_t ucBssIdx,
 void authAddRSNIE(IN struct ADAPTER *prAdapter,
 		  IN OUT struct MSDU_INFO *prMsduInfo)
 {
-	enum ENUM_PARAM_AUTH_MODE eAuthMode =
-		prAdapter->rWifiVar.rConnSettings.eAuthMode;
-	struct FT_IES *prFtIEs = &prAdapter->prGlueInfo->rFtIeForTx;
 	uint8_t *pucBuffer =
 		(uint8_t *)prMsduInfo->prPacket + prMsduInfo->u2FrameLength;
 	uint32_t ucRSNIeSize = 0;
 	uint8_t ucBssIdx = prMsduInfo->ucBssIndex;
+	enum ENUM_PARAM_AUTH_MODE eAuthMode =
+	    aisGetAuthMode(prAdapter, ucBssIdx);
+	struct FT_IES *prFtIEs = aisGetFtIe(prAdapter, ucBssIdx);
 
 	if (!IS_BSS_INDEX_VALID(ucBssIdx) ||
 	    !IS_BSS_AIS(GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIdx)) ||

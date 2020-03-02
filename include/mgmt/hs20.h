@@ -116,6 +116,12 @@ struct HS20_INFO {
 	struct BSSID_ENTRY arBssidPool[BSSID_POOL_MAX_SIZE];
 	uint8_t ucNumBssidPoolEntry;
 	u_int8_t fgIsHS2SigmaMode;
+
+	uint8_t aucHS20AssocInfoIE[200];	/*for Assoc req */
+	uint16_t u2HS20AssocInfoIELen;
+	uint8_t ucHotspotConfig;
+	u_int8_t fgConnectHS20AP;
+
 };
 
 /******************************************************************************
@@ -199,7 +205,7 @@ u_int8_t hs20IsFrameFilterEnabled(IN struct ADAPTER *prAdapter,
 
 uint32_t hs20SetBssidPool(IN struct ADAPTER *prAdapter,
 		IN void *pvBuffer,
-		IN enum ENUM_KAL_NETWORK_TYPE_INDEX eNetTypeIdx);
+		IN uint8_t ucBssIndex);
 
 #endif /* CFG_SUPPORT_PASSPOINT */
 #endif
