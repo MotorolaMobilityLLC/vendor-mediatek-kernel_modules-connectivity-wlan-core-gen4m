@@ -293,6 +293,8 @@ void aisFsmInit(IN struct ADAPTER *prAdapter)
 	/* Support AP Selection */
 	prAisFsmInfo->ucJoinFailCntAfterScan = 0;
 
+	prAisFsmInfo->fgIsScanOidAborted = FALSE;
+
 	/* 4 <1.1> Initiate FSM - Timer INIT */
 	cnmTimerInitTimer(prAdapter,
 			  &prAisFsmInfo->rBGScanTimer,
@@ -801,11 +803,15 @@ void aisFsmStateAbort_SCAN(IN struct ADAPTER *prAdapter)
 		ASSERT(0);	/* Can't abort SCN FSM */
 		return;
 	}
-
+	kalMemZero(prScanCancelMsg, sizeof(struct MSG_SCN_SCAN_CANCEL));
 	prScanCancelMsg->rMsgHdr.eMsgId = MID_AIS_SCN_SCAN_CANCEL;
 	prScanCancelMsg->ucSeqNum = prAisFsmInfo->ucSeqNumOfScanReq;
 	prScanCancelMsg->ucBssIndex = prAdapter->prAisBssInfo->ucBssIndex;
 	prScanCancelMsg->fgIsChannelExt = FALSE;
+	if (prAisFsmInfo->fgIsScanOidAborted) {
+		prScanCancelMsg->fgIsOidRequest = TRUE;
+		prAisFsmInfo->fgIsScanOidAborted = FALSE;
+	}
 
 	/* unbuffered message to guarantee scan is cancelled in sequence */
 	mboxSendMsg(prAdapter, MBOX_ID_0, (struct MSG_HDR *) prScanCancelMsg, MSG_SEND_METHOD_UNBUF);

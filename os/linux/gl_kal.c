@@ -1398,14 +1398,8 @@ kalIndicateStatusAndComplete(IN struct GLUE_INFO
 		/* indicate scan complete event */
 		wext_indicate_wext_event(prGlueInfo, SIOCGIWSCAN, NULL, 0);
 
-		log_dbg(SCN, INFO, "Call cfg80211_scan_done (aborted %u=>0)\n",
+		log_dbg(SCN, INFO, "Call cfg80211_scan_done (aborted=%u)\n",
 			fgScanAborted);
-		/* workaround 2018.02.14
-		 * Framework will drop scan result if aborted = TRUE
-		 * However, some results are still useful when scan is aborted.
-		 * Set fgScanAborted = FALSE to prevent Setting from scan no AP
-		 */
-		fgScanAborted = FALSE;
 
 		/* 1. reset first for newly incoming request */
 		GLUE_ACQUIRE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);

@@ -459,6 +459,8 @@ void scnFsmMsgAbort(IN struct ADAPTER *prAdapter, IN struct MSG_HDR *prMsgHdr)
 	if (prScanInfo->eCurrentState != SCAN_STATE_IDLE) {
 		if (prScanCancel->ucSeqNum == prScanParam->ucSeqNum &&
 			prScanCancel->ucBssIndex == prScanParam->ucBssIndex) {
+			enum ENUM_SCAN_STATUS eStatus = SCAN_STATUS_DONE;
+
 			/* send cancel message to firmware domain */
 			rCmdScanCancel.ucSeqNum = prScanParam->ucSeqNum;
 			rCmdScanCancel.ucIsExtChannel
@@ -486,10 +488,14 @@ void scnFsmMsgAbort(IN struct ADAPTER *prAdapter, IN struct MSG_HDR *prMsgHdr)
 			}
 
 			/* generate scan-done event for caller */
+			if (prScanCancel->fgIsOidRequest)
+				eStatus = SCAN_STATUS_CANCELLED;
+			else
+				eStatus = SCAN_STATUS_DONE;
 			scnFsmGenerateScanDoneMsg(prAdapter,
 				prScanParam->ucSeqNum,
 				prScanParam->ucBssIndex,
-				SCAN_STATUS_CANCELLED);
+				eStatus);
 
 			/* switch to next pending scan */
 			scnFsmSteps(prAdapter, SCAN_STATE_IDLE);

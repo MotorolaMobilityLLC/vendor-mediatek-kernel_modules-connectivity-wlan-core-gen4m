@@ -350,6 +350,8 @@ void p2pFuncCancelScan(IN struct ADAPTER *prAdapter,
 			ASSERT(FALSE);
 			break;
 		}
+		kalMemZero(prScanCancelMsg,
+			sizeof(struct MSG_SCN_SCAN_CANCEL));
 
 		prScanCancelMsg->rMsgHdr.eMsgId =
 			MID_P2P_SCN_SCAN_CANCEL;
