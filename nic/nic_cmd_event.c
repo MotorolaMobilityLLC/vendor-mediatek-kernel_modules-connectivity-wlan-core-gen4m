@@ -4839,6 +4839,12 @@ void nicEventDebugMsg(IN struct ADAPTER *prAdapter,
 
 			prTmpEvent = (struct WIFI_EVENT *)
 				kalMemAlloc(u4Size, VIR_MEM_TYPE);
+
+			if (prTmpEvent == NULL) {
+				DBGLOG(RFTEST, ERROR,
+					"Unable to alloc memory for prTmpEvent\n");
+				return;
+			}
 			kalMemZero(prTmpEvent, u4Size);
 
 			prCalData = (struct EXT_EVENT_RECAL_DATA_T *)
