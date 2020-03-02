@@ -236,7 +236,7 @@ s_int32 mt_serv_get_rx_stat_leg(
 s_int32 mt_serv_calibration_test_mode(
 	struct service_test *serv_test, u_char mode);
 s_int32 mt_serv_do_cal_item(
-	struct service_test *serv_test, u_char item);
+	struct service_test *serv_test, u_int32 item);
 s_int32 mt_serv_set_band_mode(struct service_test *serv_test);
 s_int32 mt_serv_get_band_mode(struct service_test *serv_test);
 s_int32 mt_serv_log_on_off(

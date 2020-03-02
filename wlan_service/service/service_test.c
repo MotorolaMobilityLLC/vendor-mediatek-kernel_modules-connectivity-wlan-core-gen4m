@@ -1632,7 +1632,7 @@ s_int32 mt_serv_calibration_test_mode(
 }
 
 s_int32 mt_serv_do_cal_item(
-	struct service_test *serv_test, u_char item)
+	struct service_test *serv_test, u_int32 item)
 {
 	s_int32 ret = SERV_STATUS_SUCCESS;
 	u_char ctrl_band_idx = serv_test->ctrl_band_idx;
