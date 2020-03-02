@@ -8542,20 +8542,19 @@ static int32_t hqa_ext_cmds(struct net_device *prNetDev,
 
 	if (i4Idx < (sizeof(hqa_ext_cmd_set) / sizeof(HQA_CMD_HANDLER))) {
 		if (hqa_ext_cmd_set[i4Idx] != NULL) {
-		/* valid command */
-		i4Ret = (*hqa_ext_cmd_set[i4Idx])(prNetDev,
+			/* valid command */
+			i4Ret = (*hqa_ext_cmd_set[i4Idx])(prNetDev,
 				prIwReqData, HqaCmdFrame);
 		} else {
 			/* invalid command */
 			DBGLOG(RFTEST, INFO,
-			"QA_AGENT hqa_ext_cmds cmd idx %d is NULL : %d\n",
-			i4Idx);
+			       "QA_AGENT hqa_ext_cmds cmd idx is NULL: %d\n",
+			       i4Idx);
 		}
 	} else {
 		/* invalid command */
 		DBGLOG(RFTEST, INFO,
-		"QA_AGENT hqa_ext_cmds cmd idx %d is not supported : %d\n",
-		i4Idx);
+		"QA_AGENT hqa_ext_cmds cmd idx is not supported: %d\n", i4Idx);
 	}
 
 	return i4Ret;
