@@ -3214,7 +3214,9 @@ uint32_t nicCfgChipCapPhyCap(IN struct ADAPTER *prAdapter,
 	prAdapter->rWifiVar.ucP2pGoVht &= prPhyCap->ucVht;
 	prAdapter->rWifiVar.ucP2pGcVht &= prPhyCap->ucVht;
 	prAdapter->fgIsHw5GBandDisabled = !prPhyCap->uc5gBand;
-	prAdapter->rWifiVar.ucNSS = prPhyCap->ucNss;
+	prAdapter->rWifiVar.ucNSS = (prPhyCap->ucNss >
+		prAdapter->rWifiVar.ucNSS) ?
+		(prAdapter->rWifiVar.ucNSS):(prPhyCap->ucNss);
 #if CFG_SUPPORT_DBDC
 	if (!prPhyCap->ucDbdc)
 		prAdapter->rWifiVar.eDbdcMode = ENUM_DBDC_MODE_DISABLED;

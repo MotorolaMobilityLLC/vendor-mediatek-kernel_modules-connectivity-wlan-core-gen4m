@@ -5908,12 +5908,6 @@ static int32_t priv_driver_dump_stat_info(struct ADAPTER *prAdapter,
 					1 : 0);
 			}
 
-			i4BytesWritten += kalScnprintf(
-				pcCommand + i4BytesWritten,
-				i4TotalLen - i4BytesWritten,
-				"%-20s%s%d%%\n", "Rate1 instantPer", " = ",
-				u4InstantPer);
-
 			if (prQueryStaStatistics->ucAvePer == 0xFF) {
 				i4BytesWritten += kalScnprintf(
 					pcCommand + i4BytesWritten,
@@ -5966,7 +5960,7 @@ static int32_t priv_driver_dump_stat_info(struct ADAPTER *prAdapter,
 				i4TotalLen - i4BytesWritten,
 				"%-20s%s%d\n", "Force SE off", " = ",
 				prQueryStaStatistics->fgIsForceSeOff);
-
+#if 0
 			i4BytesWritten += kalScnprintf(
 				pcCommand + i4BytesWritten,
 				i4TotalLen - i4BytesWritten,
@@ -5983,7 +5977,7 @@ static int32_t priv_driver_dump_stat_info(struct ADAPTER *prAdapter,
 				i4TotalLen - i4BytesWritten,
 				"%-20s%s%d\n", "UpPenalty", " = ",
 				prQueryStaStatistics->ucTxRateUpPenalty);
-
+#endif
 			i4BytesWritten += kalScnprintf(
 				pcCommand + i4BytesWritten,
 				i4TotalLen - i4BytesWritten,
@@ -5993,7 +5987,7 @@ static int32_t priv_driver_dump_stat_info(struct ADAPTER *prAdapter,
 				LT_MODE_TBLE[prQueryStaStatistics->
 				ucLowTrafficMode] :
 				LT_MODE_TBLE[ucRaLtModeNum - 1]);
-
+#if 0
 			i4BytesWritten += kalScnprintf(
 				pcCommand + i4BytesWritten,
 				i4TotalLen - i4BytesWritten,
@@ -6005,7 +5999,7 @@ static int32_t priv_driver_dump_stat_info(struct ADAPTER *prAdapter,
 				i4TotalLen - i4BytesWritten,
 				"%-20s%s%d\n", "LtDashBoard", " = ",
 				prQueryStaStatistics->ucLowTrafficDashBoard);
-
+#endif
 			i4BytesWritten += kalScnprintf(
 				pcCommand + i4BytesWritten,
 				i4TotalLen - i4BytesWritten,
@@ -6015,13 +6009,13 @@ static int32_t priv_driver_dump_stat_info(struct ADAPTER *prAdapter,
 				SGI_UNSP_STATE_TBLE[prQueryStaStatistics->
 				ucDynamicSGIState] :
 				SGI_UNSP_STATE_TBLE[ucRaSgiUnSpStateNum - 1]);
-
+#if 0
 			i4BytesWritten += kalScnprintf(
 				pcCommand + i4BytesWritten,
 				i4TotalLen - i4BytesWritten,
 				"%-20s%s%d\n", "SgiScore", " = ",
 				prQueryStaStatistics->ucDynamicSGIScore);
-
+#endif
 			i4BytesWritten += kalScnprintf(
 				pcCommand + i4BytesWritten,
 				i4TotalLen - i4BytesWritten,
