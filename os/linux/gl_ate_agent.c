@@ -175,6 +175,7 @@ ATE_PRIV_CMD rAtePrivCmdTable[] = {
 #if (CFG_SUPPORT_DFS_MASTER == 1)
 	{"RDDReport", SetRddReport},
 	{"ByPassCac", SetByPassCac},
+	{"RadarDetectMode", SetRadarDetectMode},
 #endif
 
 	{NULL,}
@@ -2083,6 +2084,49 @@ int SetByPassCac(struct net_device *prNetDev, UINT_8 *prInBuf)
 
 	if (rv == 0)
 		i4Status = p2pFuncSetManualCacTime(ucByPassCacTime);
+	else
+		return -EINVAL;
+
+	return i4Status;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+* \brief  This routine is called to Set Radar Detect Mode.
+*
+* \param[in] prNetDev		Pointer to the Net Device
+* \param[in] prInBuf		A pointer to the command string buffer
+* \param[out] None
+*
+* \retval 0				On success.
+* \retval -EINVAL			If invalid argument.
+*/
+/*----------------------------------------------------------------------------*/
+int SetRadarDetectMode(struct net_device *prNetDev, UINT_8 *prInBuf)
+{
+	INT_32 i4Status;
+	INT_32 rv;
+	int radarDetectMode;
+	UINT_8 ucRadarDetectMode;
+
+	DBGLOG(REQ, INFO, "MT6632 : ATE_AGENT iwpriv Set Radar Detect Mode, buf: %s\n", prInBuf);
+
+	rv = kstrtoint(prInBuf, 0, &radarDetectMode);
+
+	DBGLOG(REQ, INFO, "MT6632 : ATE_AGENT iwpriv Set Radar Detect Mode, prInBuf: %s\n", prInBuf);
+	DBGLOG(INIT, ERROR, "MT6632 : ATE_AGENT iwpriv Set Radar Detect Mode : %d\n", radarDetectMode);
+
+	ucRadarDetectMode = (UINT_8) radarDetectMode;
+
+	if (ucRadarDetectMode > 1) {
+		DBGLOG(REQ, ERROR, "Radar Detect Mode > 1, Invalid data\n");
+		return WLAN_STATUS_INVALID_DATA;
+	}
+
+	p2pFuncSetRadarDetectMode(ucRadarDetectMode);
+
+	if (rv == 0)
+		i4Status = MT_ATESetRadarDetectMode(prNetDev, ucRadarDetectMode);
 	else
 		return -EINVAL;
 
