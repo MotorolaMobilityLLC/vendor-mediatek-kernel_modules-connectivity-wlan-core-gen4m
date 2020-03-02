@@ -152,6 +152,137 @@ reqExtSetAcpiDevicePowerState(IN struct GLUE_INFO
  *                       P R I V A T E   D A T A
  *******************************************************************************
  */
+/* data rate mapping table for CCK */
+struct cckDataRateMappingTable_t {
+	uint32_t rate[4];
+} g_rCckDataRateMappingTable = {
+	{10, 20, 55, 110}
+};
+/* data rate mapping table for OFDM */
+struct ofdmDataRateMappingTable_t {
+	uint32_t rate[8];
+} g_rOfdmDataRateMappingTable = {
+	{60, 90, 120, 180, 240, 360, 480, 540}
+};
+/* data rate mapping table for 802.11n and 802.11ac */
+struct dataRateMappingTable_t {
+	struct nsts_t {
+		struct bw_t {
+			struct sgi_t {
+				uint32_t rate[10];
+			} sgi[2];
+		} bw[4];
+	} nsts[3];
+} g_rDataRateMappingTable = {
+{ { { { { /* 20MHz */
+	{ /* no SGI */
+	{65, 130, 195, 260, 390, 520, 585, 650, 780, 867}
+	},
+	{ /* SGI */
+	{72, 144, 217, 289, 433, 578, 650, 722, 867, 963}
+	}
+} },
+{
+	{ /* 40MHz */
+	{ /* no SGI */
+	{135, 270, 405, 540, 810, 1080, 1215, 1350, 1620, 1800}
+	},
+	{ /* SGI */
+	{150, 300, 450, 600, 900, 1200, 1350, 1500, 1800, 2000}
+	}
+} },
+{
+	{ /* 80MHz */
+	{ /* no SGI */
+	{293, 585, 878, 1170, 1755, 2340, 2633, 2925, 3510, 3900}
+	},
+	{ /* SGI */
+	{325, 650, 975, 1300, 1950, 2600, 2925, 3250, 3900, 4333}
+	}
+} },
+{
+	{ /* 160MHz */
+	{ /* no SGI */
+	{585, 1170, 1755, 2340, 3510, 4680, 5265, 5850, 7020, 7800}
+	},
+	{ /* SGI */
+	{650, 1300, 1950, 2600, 3900, 5200, 5850, 6500, 7800, 8667}
+	}
+} } } },
+{ { {
+	{ /* 20MHz */
+	{ /* no SGI */
+	{130, 260, 390, 520, 780, 1040, 1170, 1300, 1560, 1733}
+	},
+	{ /* SGI */
+	{144, 289, 433, 578, 867, 1156, 1303, 1444, 1733, 1926}
+	}
+} },
+{
+	{ /* 40MHz */
+	{ /* no SGI */
+	{270, 540, 810, 1080, 1620, 2160, 2430, 2700, 3240, 3600}
+	},
+	{ /* SGI */
+	{300, 600, 900, 1200, 1800, 2400, 2700, 3000, 3600, 4000}
+	}
+} },
+{
+	{ /* 80MHz */
+	{ /* no SGI */
+	{585, 1170, 1755, 2340, 3510, 4680, 5265, 5850, 7020, 7800}
+	},
+	{ /* SGI */
+	{650, 1300, 1950, 2600, 3900, 5200, 5850, 6500, 7800, 8667}
+	}
+} },
+{
+	{ /* 160MHz */
+	{ /* no SGI */
+	{1170, 2340, 3510, 4680, 7020, 9360, 1053, 1170, 1404, 1560}
+	},
+	{ /* SGI */
+	{1300, 2600, 3900, 5200, 7800, 10400, 11700, 13000, 15600, 17333}
+	}
+} } } },
+{ { {
+	{ /* 20MHz */
+	{ /* no SGI */
+	{195, 390, 585, 780, 1170, 1560, 1755, 1950, 2340, 2600}
+	},
+	{ /* SGI */
+	{217, 433, 650, 867, 1300, 1733, 1950, 2167, 2600, 2889}
+	}
+} },
+{
+	{ /* 40MHz */
+	{ /* no SGI */
+	{405, 810, 1215, 1620, 2430, 3240, 3645, 4050, 4860, 5400}
+	},
+	{ /* SGI */
+	{450, 900, 1350, 1800, 2700, 3600, 4050, 4500, 5400, 6000}
+	}
+} },
+{
+	{ /* 80MHz */
+	{ /* no SGI */
+	{878, 1755, 2633, 3510, 5265, 7020, 0, 8775, 10530, 11700}
+	},
+	{ /* SGI */
+	{975, 1950, 2925, 3900, 5850, 7800, 0, 9750, 11700, 13000}
+	}
+} },
+{
+	{ /* 160MHz */
+	{ /* no SGI */
+	{1755, 3510, 5265, 7020, 10530, 14040, 15795, 17550, 21060, 23400}
+	},
+	{ /* SGI */
+	{1950, 3900, 5850, 7800, 11700, 15600, 17550, 19500, 23400, 26001}
+	}
+} } } } }
+};
+
 static uint8_t aucOidBuf[CMD_OID_BUF_LENGTH] = { 0 };
 
 /* OID processing table */
@@ -3742,6 +3873,30 @@ static char *hw_rate_ofdm_str(uint16_t ofdm_idx)
 		return HW_TX_RATE_OFDM_STR[7];
 	default:
 		return HW_TX_RATE_OFDM_STR[8];
+	}
+}
+
+static uint32_t hw_rate_ofdm_num(uint16_t ofdm_idx)
+{
+	switch (ofdm_idx) {
+	case 11: /* 6M */
+		return g_rOfdmDataRateMappingTable.rate[0];
+	case 15: /* 9M */
+		return g_rOfdmDataRateMappingTable.rate[1];
+	case 10: /* 12M */
+		return g_rOfdmDataRateMappingTable.rate[2];
+	case 14: /* 18M */
+		return g_rOfdmDataRateMappingTable.rate[3];
+	case 9: /* 24M */
+		return g_rOfdmDataRateMappingTable.rate[4];
+	case 13: /* 36M */
+		return g_rOfdmDataRateMappingTable.rate[5];
+	case 8: /* 48M */
+		return g_rOfdmDataRateMappingTable.rate[6];
+	case 12: /* 54M */
+		return g_rOfdmDataRateMappingTable.rate[7];
+	default:
+		return 0;
 	}
 }
 
@@ -14977,4 +15132,163 @@ priv_driver_auto_enable_ncho(IN struct net_device *prNetDev)
 	return TRUE;
 }
 
+#endif /* CFG_SUPPORT_NCHO */
+
+int kalQueryRateByTable(uint32_t txmode, uint32_t rate,
+			uint32_t frmode, uint32_t sgi, uint32_t nsts,
+			uint32_t *pu4CurRate, uint32_t *pu4MaxRate)
+{
+	uint32_t u4CurRate, u4MaxRate;
+	uint8_t ucMaxSize;
+
+	if (txmode == TX_RATE_MODE_CCK) { /* 11B */
+		ucMaxSize = ARRAY_SIZE(g_rCckDataRateMappingTable.rate);
+		if (rate >= ucMaxSize) {
+			DBGLOG(SW4, ERROR, "rate error for CCK: %u\n", rate);
+			return -1;
+		}
+		u4CurRate = g_rCckDataRateMappingTable.rate[rate];
+		u4MaxRate = g_rCckDataRateMappingTable.rate[ucMaxSize - 1];
+	} else if (txmode == TX_RATE_MODE_OFDM) { /* 11G */
+		u4CurRate = hw_rate_ofdm_num(rate);
+		if (u4CurRate == 0) {
+			DBGLOG(SW4, ERROR, "rate error for OFDM\n");
+			return -1;
+		}
+		ucMaxSize = ARRAY_SIZE(g_rOfdmDataRateMappingTable.rate);
+		u4MaxRate = g_rOfdmDataRateMappingTable.rate[ucMaxSize - 1];
+	} else if ((txmode == TX_RATE_MODE_HTMIX) ||
+		   (txmode == TX_RATE_MODE_HTGF)) { /* 11N */
+		if (rate < 8)
+			nsts = 0;
+		else if (rate < 16) {
+			nsts = 1;
+			rate -= 8;
+		} else if (rate <= 23) {
+			nsts = 2;
+			rate -= 16;
+		} else {
+			DBGLOG(SW4, ERROR, "rate error for 11N: %u\n",
+			       rate);
+			return -1;
+		}
+		if (frmode > 1) {
+			DBGLOG(SW4, ERROR,
+			       "frmode error for 11N: %u\n",
+			       frmode);
+			return -1;
+		}
+		u4CurRate = g_rDataRateMappingTable.nsts[nsts].bw[frmode]
+				.sgi[sgi].rate[rate];
+		ucMaxSize = 8;
+		u4MaxRate = g_rDataRateMappingTable.nsts[nsts].bw[frmode]
+				.sgi[sgi].rate[ucMaxSize - 1];
+	} else { /* 11AC */
+		if ((nsts == 0) || (nsts >= 4)) {
+			DBGLOG(SW4, ERROR, "nsts error: %u\n", nsts);
+			return -1;
+		}
+		if (frmode > 3) {
+			DBGLOG(SW4, ERROR,
+			       "frmode error for 11AC: %u\n",
+			       frmode);
+			return -1;
+		}
+		u4CurRate = g_rDataRateMappingTable.nsts[nsts - 1]
+				.bw[frmode].sgi[sgi].rate[rate];
+		ucMaxSize = ARRAY_SIZE(g_rDataRateMappingTable.nsts[nsts - 1]
+				.bw[frmode].sgi[sgi].rate);
+		u4MaxRate = g_rDataRateMappingTable.nsts[nsts - 1]
+				.bw[frmode].sgi[sgi].rate[ucMaxSize - 1];
+	}
+	*pu4CurRate = u4CurRate;
+	*pu4MaxRate = u4MaxRate;
+	return 0;
+}
+
+#if defined(CFG_REPORT_MAX_TX_RATE) && (CFG_REPORT_MAX_TX_RATE == 1)
+int kalSaveStaMaxTxRate(struct ADAPTER *prAdapter, void *prBssPtr,
+			struct STA_RECORD *prStaRec)
+{
+	struct BSS_INFO *prBssInfo;
+	uint8_t ucPhyType, ucMaxBw, ucNss, txmode, rate, sgi;
+	uint8_t bShortPreambleAllowed;
+	uint32_t u4CurRate, u4MaxRate;
+	int rv;
+
+	prBssInfo = (struct BSS_INFO *) prBssPtr;
+	ucMaxBw = cnmGetBssMaxBw(prAdapter, prBssInfo->ucBssIndex);
+	DBGLOG(RLM, TRACE, "cnmGetBssMaxBw:%d\n", ucMaxBw);
+
+	bShortPreambleAllowed = prBssInfo->fgIsShortPreambleAllowed;
+	DBGLOG(RLM, TRACE, "bShortPreambleAllowed:%d\n", bShortPreambleAllowed);
+
+	/* Get Short GI Tx capability */
+	sgi = 0;
+	if ((prStaRec->u2HtCapInfo & HT_CAP_INFO_SHORT_GI_20M) ==
+	    HT_CAP_INFO_SHORT_GI_20M) {
+		DBGLOG(RLM, TRACE, "HT_CAP_INFO_SHORT_GI_20M\n");
+		sgi = 1;
+	}
+	if ((prStaRec->u2HtCapInfo & HT_CAP_INFO_SHORT_GI_40M) ==
+	    HT_CAP_INFO_SHORT_GI_40M) {
+		DBGLOG(RLM, TRACE, "HT_CAP_INFO_SHORT_GI_40M\n");
+		sgi = 1;
+	}
+#if CFG_SUPPORT_802_11AC
+	if ((prStaRec->u4VhtCapInfo & VHT_CAP_INFO_SHORT_GI_80) ==
+	    VHT_CAP_INFO_SHORT_GI_80) {
+		DBGLOG(RLM, TRACE, "VHT_CAP_INFO_SHORT_GI_80\n");
+		sgi = 1;
+	}
+	if ((prStaRec->u4VhtCapInfo & VHT_CAP_INFO_SHORT_GI_160_80P80) ==
+	    VHT_CAP_INFO_SHORT_GI_160_80P80) {
+		DBGLOG(RLM, TRACE, "VHT_CAP_INFO_SHORT_GI_160_80P80\n");
+		sgi = 1;
+	}
 #endif
+	ucNss = prAdapter->rWifiVar.ucNSS;
+	if ((ucNss < 1) && (ucNss > 3)) {
+		DBGLOG(RLM, ERROR, "error ucNss: %u\n", ucNss);
+		return -1;
+	}
+	DBGLOG(RLM, TRACE, "NSS:%d, IsNss2=%d\n",
+	       ucNss, IS_CONNECTION_NSS2(prBssInfo, prStaRec));
+
+	rate = 0;
+	ucPhyType = prBssInfo->ucPhyTypeSet;
+	if (ucPhyType & PHY_TYPE_SET_802_11AC)
+		txmode = TX_RATE_MODE_VHT;
+	else if (ucPhyType & PHY_TYPE_SET_802_11N)
+		txmode = TX_RATE_MODE_HTMIX;
+	else if (ucPhyType & PHY_TYPE_SET_802_11G) {
+		txmode = TX_RATE_MODE_OFDM;
+		rate = 12;
+	} else if (ucPhyType & PHY_TYPE_SET_802_11A) {
+		txmode = TX_RATE_MODE_OFDM;
+		rate = 12;
+	} else if (ucPhyType & PHY_TYPE_SET_802_11B)
+		txmode = TX_RATE_MODE_CCK;
+	else {
+		DBGLOG(RLM, ERROR,
+		       "unknown wifi type, prBssInfo->ucPhyTypeSet: %u\n",
+		       ucPhyType);
+		return -1;
+	}
+
+	if ((ucMaxBw < MAX_BW_20MHZ) || (ucMaxBw > MAX_BW_80_80_MHZ)) {
+		DBGLOG(RLM, ERROR,
+		       "unknown band width: %u\n", ucMaxBw);
+		return -1;
+	} else if (ucMaxBw == MAX_BW_80_80_MHZ)
+		ucMaxBw == MAX_BW_160MHZ;
+
+	rv = kalQueryRateByTable(txmode, rate, ucMaxBw, sgi, ucNss,
+				 &u4CurRate, &u4MaxRate);
+	if (rv == 0)
+		prAdapter->u4StaMaxTxRate = u4MaxRate;
+
+	return rv;
+}
+#endif /* CFG_REPORT_MAX_TX_RATE */
+
