@@ -199,7 +199,7 @@ struct GL_P2P_INFO {
 	uint8_t aucWFDIE[400];
 	uint16_t u2WFDIELen;
 	/* Save the other IE for probe resp */
-#if CFG_SUPPORT_WFD_VENDOR_IE
+#if CFG_SUPPORT_CUSTOM_VENDOR_IE
 	uint8_t aucVenderIE[1024];
 	uint16_t u2VenderIELen;
 #endif
