@@ -493,8 +493,6 @@ struct _BSS_INFO_T {
 
 	WIFI_WMM_AC_STAT_T arLinkStatistics[WMM_AC_INDEX_NUM];	/*link layer statistics */
 
-	ENUM_DBDC_BN_T eDBDCBand;
-
 	UINT_32 u4CoexPhyRateLimit;
 
 #if CFG_SUPPORT_ROAMING_SKIP_ONE_AP

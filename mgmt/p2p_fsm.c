@@ -159,11 +159,6 @@ VOID p2pFsmRunEventChGrant(IN P_ADAPTER_T prAdapter, IN P_MSG_HDR_T prMsgHdr)
 
 		DBGLOG(P2P, TRACE, "P2P Run Event Channel Grant\n");
 
-#if CFG_SUPPORT_DBDC
-		if (prP2pBssInfo->eDBDCBand == ENUM_BAND_AUTO)
-			prP2pBssInfo->eDBDCBand = prMsgChGrant->eDBDCBand;
-#endif
-
 #if CFG_SISO_SW_DEVELOP
 		/* Driver record granted CH in BSS info */
 		prP2pBssInfo->fgIsGranted = TRUE;
