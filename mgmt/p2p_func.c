@@ -1905,6 +1905,39 @@ p2pFuncBeaconUpdate(IN P_ADAPTER_T prAdapter,
 	return rWlanStatus;
 }				/* p2pFuncBeaconUpdate */
 
+/*----------------------------------------------------------------------------*/
+/*!
+* \brief    This function is to update extra IEs (ex: WPS) for assoc resp.
+*           Caller should sanity check the params.
+*
+* \param[in] prAdapter      Pointer of ADAPTER_T
+* \param[in] prP2pBssInfo   Pointer to BSS_INFO_T structure
+* \param[in] AssocRespIE    Pointer to extra IEs for assoc resp
+* \param[in] u4AssocRespLen Length of extra IEs for assoc resp
+*
+* \return WLAN_STATUS
+*/
+/*----------------------------------------------------------------------------*/
+
+WLAN_STATUS
+p2pFuncAssocRespUpdate(IN P_ADAPTER_T prAdapter,
+		    IN P_BSS_INFO_T prP2pBssInfo,
+		    IN PUINT_8 AssocRespIE, IN UINT_32 u4AssocRespLen)
+{
+	UINT_8 ucOuiType = 0;
+	UINT_16 u2SubTypeVersion = 0;
+
+	if (!rsnParseCheckForWFAInfoElem(prAdapter, AssocRespIE, &ucOuiType, &u2SubTypeVersion))
+		return WLAN_STATUS_FAILURE;
+
+	if (ucOuiType == VENDOR_OUI_TYPE_WPS) {
+		kalP2PUpdateWSC_IE(prAdapter->prGlueInfo, 3, (PUINT_8)AssocRespIE, IE_SIZE(AssocRespIE),
+			(UINT_8) (prP2pBssInfo->u4PrivateData));
+	}
+
+	return WLAN_STATUS_SUCCESS;
+}
+
 #endif
 
 #if 0
