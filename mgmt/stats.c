@@ -198,8 +198,8 @@ void StatsEnvTxTime2Hif(IN struct ADAPTER *prAdapter,
 {
 	uint64_t u8SysTime, u8SysTimeIn;
 	uint32_t u4TimeDiff;
-	uint8_t *pucEth = ((struct sk_buff *)prMsduInfo->prPacket)->data;
-	uint32_t u4PacketLen = ((struct sk_buff *)prMsduInfo->prPacket)->len;
+	uint8_t *pucEth;
+	uint32_t u4PacketLen;
 	uint8_t ucIpVersion = 0;
 	uint8_t ucIpProto = 0;
 	uint8_t *pucEthBody = NULL;
@@ -208,6 +208,25 @@ void StatsEnvTxTime2Hif(IN struct ADAPTER *prAdapter,
 	uint16_t u2IPID = 0;
 	uint16_t u2UdpDstPort = 0;
 	uint16_t u2UdpSrcPort = 0;
+
+	if (prMsduInfo == NULL) {
+		DBGLOG(TX, ERROR, "prMsduInfo=NULL");
+		return;
+	}
+
+	if (prMsduInfo->prPacket == NULL) {
+		DBGLOG(TX, ERROR, "prMsduInfo->prPacket=NULL");
+		return;
+	}
+
+	pucEth = ((struct sk_buff *)prMsduInfo->prPacket)->data;
+
+	if (pucEth == NULL) {
+		DBGLOG(TX, ERROR, "pucEth=NULL");
+		return;
+	}
+
+	u4PacketLen = ((struct sk_buff *)prMsduInfo->prPacket)->len;
 
 	u8SysTime = StatsEnvTimeGet();
 	u8SysTimeIn = GLUE_GET_PKT_XTIME(prMsduInfo->prPacket);
