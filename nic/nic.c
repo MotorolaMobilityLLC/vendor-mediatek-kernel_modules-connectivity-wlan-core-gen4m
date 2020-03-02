@@ -1413,7 +1413,7 @@ WLAN_STATUS nicUpdateBss(IN P_ADAPTER_T prAdapter, IN UINT_8 ucBssIndex)
 	} else
 		rCmdSetBssInfo.ucBMCWlanIndex = prBssInfo->ucBMCWlanIndex;
 
-#ifdef CFG_ENABLE_WIFI_DIRECT
+#if CFG_ENABLE_WIFI_DIRECT
 	rCmdSetBssInfo.ucHiddenSsidMode = prBssInfo->eHiddenSsidType;
 #endif
 	rlmFillSyncCmdParam(&rCmdSetBssInfo.rBssRlmParam, prBssInfo);
