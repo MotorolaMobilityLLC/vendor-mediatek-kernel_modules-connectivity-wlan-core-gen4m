@@ -2450,13 +2450,13 @@ s_int32 mt_op_get_rx_stat_path(
 		rx_st_path->rssi =
 			SERV_OS_NTOHL(test_hqa_rx_stat.rssi0);
 		rx_st_path->fagc_ib_rssi =
-			SERV_OS_NTOHL(test_hqa_rx_stat.ib_rssi0);
+			SERV_OS_NTOHL(test_hqa_rx_stat.fagc_ib_RSSSI0);
 		rx_st_path->fagc_wb_rssi =
-			SERV_OS_NTOHL(test_hqa_rx_stat.wb_rssi0);
+			SERV_OS_NTOHL(test_hqa_rx_stat.fagc_wb_RSSSI0);
 		rx_st_path->inst_ib_rssi =
-			SERV_OS_NTOHL(test_hqa_rx_stat.ib_rssi0);
+			SERV_OS_NTOHL(test_hqa_rx_stat.inst_ib_RSSSI0);
 		rx_st_path->inst_wb_rssi =
-			SERV_OS_NTOHL(test_hqa_rx_stat.wb_rssi0);
+			SERV_OS_NTOHL(test_hqa_rx_stat.inst_wb_RSSSI0);
 		break;
 	case ANT_WF1:
 		rx_st_path->rcpi =
@@ -2464,13 +2464,13 @@ s_int32 mt_op_get_rx_stat_path(
 		rx_st_path->rssi =
 			SERV_OS_NTOHL(test_hqa_rx_stat.rssi1);
 		rx_st_path->fagc_ib_rssi =
-			SERV_OS_NTOHL(test_hqa_rx_stat.ib_rssi1);
+			SERV_OS_NTOHL(test_hqa_rx_stat.fagc_ib_rssi1);
 		rx_st_path->fagc_wb_rssi =
-			SERV_OS_NTOHL(test_hqa_rx_stat.wb_rssi1);
+			SERV_OS_NTOHL(test_hqa_rx_stat.fagc_wb_rssi1);
 		rx_st_path->inst_ib_rssi =
-			SERV_OS_NTOHL(test_hqa_rx_stat.ib_rssi1);
+			SERV_OS_NTOHL(test_hqa_rx_stat.inst_ib_rssi1);
 		rx_st_path->inst_wb_rssi =
-			SERV_OS_NTOHL(test_hqa_rx_stat.wb_rssi1);
+			SERV_OS_NTOHL(test_hqa_rx_stat.inst_wb_rssi1);
 		break;
 	default:
 		ret = SERV_STATUS_HAL_OP_FAIL;
