@@ -103,7 +103,7 @@
 #define HIF_SDIO_ERR_TITLE_STR              "["CHIP_NAME"] SDIO Access Error!"
 #define HIF_SDIO_ERR_DESC_STR               "**SDIO Access Error**\n"
 
-#define HIF_SDIO_ACCESS_RETRY_LIMIT         3
+#define HIF_SDIO_ACCESS_RETRY_LIMIT         250
 #define HIF_SDIO_INTERRUPT_RESPONSE_TIMEOUT (15000)
 
 #if MTK_WCN_HIF_SDIO
