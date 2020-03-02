@@ -64,7 +64,6 @@
 ********************************************************************************
 */
 #define CFG_SUPPORT_VCODE_VDFS	0
-#define CFG_WF_BUS_HANG_CHECK	0
 
 /*******************************************************************************
 *                    E X T E R N A L   R E F E R E N C E S
@@ -150,6 +149,7 @@ static uint8_t *soc3_0_apucCr4FwName[] = {
 u_int8_t *gEmiCalResult;
 u_int32_t gEmiCalSize;
 u_int32_t gEmiCalOffset;
+bool gEmiCalUseEmiData;
 #endif /* (CFG_SUPPORT_PRE_ON_PHY_ACTION == 1) */
 
 #endif
@@ -836,7 +836,7 @@ struct mt66xx_chip_info mt66xx_chip_info_soc3_0 = {
 #endif
 #if (CFG_SUPPORT_PRE_ON_PHY_ACTION == 1)
 	.getCalResult = soc3_0_wlanGetCalResult,
-	.resetCalResult = soc3_0_wlanResetCalResult,
+	.calDebugCmd = soc3_0_wlanCalDebugCmd,
 #endif
 	.checkbushang = soc3_0_CheckBusHang,
 };
@@ -1182,41 +1182,274 @@ void soc3_0_CheckBusHangUT(void)
 	HAL_MCR_RD(prAdapter, 0x7c060000, &u4Value);
 }
 
+static void soc3_0_DumpMemory32(uint32_t *pu4StartAddr,
+		  uint32_t u4Count, char *info)
+{
+#define ONE_LINE_MAX_COUNT 16
+	uint32_t i, endCount;
+	char buf[ONE_LINE_MAX_COUNT*10];
+	char tmp[20];
+
+	ASSERT(pu4StartAddr);
+
+	LOG_FUNC("[Host_CSR] %s, Count(%d)\n", info, u4Count);
+
+	while (u4Count > 0) {
+
+		sprintf(buf, "%08x", pu4StartAddr[0]);
+
+		if (u4Count > ONE_LINE_MAX_COUNT)
+			endCount = ONE_LINE_MAX_COUNT;
+		else
+			endCount = u4Count;
+
+		for (i = 1; i < endCount; i++) {
+			sprintf(tmp, " %08x", pu4StartAddr[i]);
+			strcat(buf, tmp);
+		}
+
+		LOG_FUNC("%s\n", buf);
+
+		if (u4Count > ONE_LINE_MAX_COUNT) {
+			u4Count -= ONE_LINE_MAX_COUNT;
+			pu4StartAddr += ONE_LINE_MAX_COUNT;
+		} else
+			u4Count = 0;
+	}
+}
+
+static uint32_t soc3_0_DumpHwDebugFlagSub(uint32_t RegValue)
+{
+	uint32_t u4Cr;
+	uint32_t u4Value = 0;
+
+	u4Cr = 0x1806009C;
+	wf_ioremap_write(u4Cr, RegValue);
+
+	u4Cr = 0x1806021C;
+	wf_ioremap_read(u4Cr, &u4Value);
+
+	return u4Value;
+}
+
+static void soc3_0_DumpHwDebugFlag(void)
+{
+#define	HANG_HW_FLAG_NUM		7
+
+	uint32_t u4Cr;
+	uint32_t RegValue = 0;
+	uint32_t log[HANG_HW_FLAG_NUM];
+
+	DBGLOG(HAL, LOUD,
+		"Host_CSR - dump all HW Debug flag");
+
+	u4Cr = 0x18060094;
+	RegValue = 0x00139CE7;
+	wf_ioremap_write(u4Cr, RegValue);
+
+	log[0] = soc3_0_DumpHwDebugFlagSub(0x366CD932);
+	log[1] = soc3_0_DumpHwDebugFlagSub(0x36AD5A34);
+	log[2] = soc3_0_DumpHwDebugFlagSub(0x36EDDB36);
+	log[3] = soc3_0_DumpHwDebugFlagSub(0x3972E54A);
+	log[4] = soc3_0_DumpHwDebugFlagSub(0x39B3664C);
+	log[5] = soc3_0_DumpHwDebugFlagSub(0x7C387060);
+	log[6] = soc3_0_DumpHwDebugFlagSub(0x7C78F162);
+
+	soc3_0_DumpMemory32(log, HANG_HW_FLAG_NUM, "HW Debug flag");
+}
+
+static void soc3_0_DumpPcLrLog(void)
+{
+#define	HANG_PC_LOG_NUM			32
+	uint32_t u4Cr, u4Index, i;
+	uint32_t u4Value = 0;
+	uint32_t RegValue = 0;
+	uint32_t log[HANG_PC_LOG_NUM];
+
+	DBGLOG(HAL, LOUD,
+		"Host_CSR - dump PC log / LR log");
+
+	/* PC log
+	* dbg_pc_log_sel	Write	0x1806_0090 [7:2]	6'h20
+	*  choose 33th pc log buffer to read current pc log buffer index
+	* read pc from host CR	Read	0x1806_0204 [21:17]
+	*  read current pc log buffer index
+	* dbg_pc_log_sel	Write	0x1806_0090 [7:2]	index
+	*  set pc log buffer index to read pc log
+	* read pc from host CR	Read	0x1806_0204 [31:0]
+	*  read pc log of the specific index
+	*/
+
+	u4Cr = 0x18060090;
+	wf_ioremap_read(u4Cr, &u4Value);
+	RegValue = (0x20<<2) | (u4Value&BITS(0, 1)) | (u4Value&BITS(8, 31));
+	wf_ioremap_write(u4Cr, RegValue);
+
+	u4Cr = 0x18060204;
+	wf_ioremap_read(u4Cr, &u4Value);
+	u4Index = (u4Value&BITS(17, 21)) >> 17;
+
+	for (i = 0; i < HANG_PC_LOG_NUM; i++) {
+
+		u4Index++;
+
+		if (u4Index == HANG_PC_LOG_NUM)
+			u4Index = 0;
+
+		u4Cr = 0x18060090;
+		wf_ioremap_read(u4Cr, &u4Value);
+		RegValue = (u4Index<<2) | (u4Value&BITS(0, 1)) |
+			(u4Value&BITS(8, 31));
+		wf_ioremap_write(u4Cr, RegValue);
+
+		u4Cr = 0x18060204;
+		wf_ioremap_read(u4Cr, &log[i]);
+	}
+
+	soc3_0_DumpMemory32(log, HANG_PC_LOG_NUM, "PC log");
+
+	/* GPR log */
+
+	u4Cr = 0x18060090;
+	wf_ioremap_read(u4Cr, &u4Value);
+	RegValue = (0x20<<8) | (u4Value&BITS(0, 7)) | (u4Value&BITS(14, 31));
+	wf_ioremap_write(u4Cr, RegValue);
+
+	u4Cr = 0x18060208;
+	wf_ioremap_read(u4Cr, &u4Value);
+	u4Index = (u4Value&BITS(17, 21)) >> 17;
+
+	for (i = 0; i < HANG_PC_LOG_NUM; i++) {
+
+		u4Index++;
+
+		if (u4Index == HANG_PC_LOG_NUM)
+			u4Index = 0;
+
+		u4Cr = 0x18060090;
+		wf_ioremap_read(u4Cr, &u4Value);
+		RegValue = (u4Index<<8) | (u4Value&BITS(0, 7)) |
+			(u4Value&BITS(14, 31));
+		wf_ioremap_write(u4Cr, RegValue);
+
+		u4Cr = 0x18060208;
+		wf_ioremap_read(u4Cr, &log[i]);
+	}
+
+	soc3_0_DumpMemory32(log, HANG_PC_LOG_NUM, "GPR log");
+}
+
+static void soc3_0_DumpN10CoreReg(void)
+{
+#define	HANG_N10_CORE_LOG_NUM	40
+	uint32_t u4Cr, i;
+	uint32_t RegValue = 0;
+	uint32_t log[HANG_N10_CORE_LOG_NUM];
+
+	DBGLOG(HAL, LOUD,
+		"Host_CSR - read N10 core register");
+
+	u4Cr = 0x18060090;
+	RegValue = 0x00002000;
+	wf_ioremap_write(u4Cr, RegValue);
+
+	u4Cr = 0x18060208;
+	wf_ioremap_read(u4Cr, &log[0]);
+
+	u4Cr = 0x18060090;
+	RegValue = 0x00002100;
+	wf_ioremap_write(u4Cr, RegValue);
+
+	u4Cr = 0x18060208;
+	wf_ioremap_read(u4Cr, &log[1]);
+
+	for (i = 2, RegValue = 0x00003F00; i < HANG_N10_CORE_LOG_NUM; i++) {
+
+		u4Cr = 0x18060090;
+		wf_ioremap_write(u4Cr, RegValue);
+
+		u4Cr = 0x18060208;
+		wf_ioremap_read(u4Cr, &log[i]);
+
+		RegValue += 0x04000000;
+	}
+
+	soc3_0_DumpMemory32(log, HANG_N10_CORE_LOG_NUM, "N10 core register");
+}
+
+static void soc3_0_DumpOtherCr(void)
+{
+#define	HANG_OTHER_LOG_NUM		2
+
+	uint32_t u4Cr, i;
+	uint32_t log[HANG_OTHER_LOG_NUM];
+
+	DBGLOG(HAL, LOUD,
+		"Host_CSR - mailbox and other CRs");
+
+	for (i = 0, u4Cr = 0x18060260; i < HANG_OTHER_LOG_NUM; i++) {
+		wf_ioremap_read(u4Cr, &log[i]);
+
+		u4Cr += 0x04;
+	}
+
+	soc3_0_DumpMemory32(log, HANG_OTHER_LOG_NUM, "mailbox and other CRs");
+}
+
+static void soc3_0_DumpHostCr(void)
+{
+	soc3_0_DumpPcLrLog();
+	soc3_0_DumpN10CoreReg();
+	soc3_0_DumpOtherCr();
+	soc3_0_DumpHwDebugFlag();
+}
+
 int soc3_0_CheckBusHang(uint8_t ucWfResetEnable)
 {
 	int ret = 1;
 	uint8_t conninfra_reset = FALSE;
-#if (CFG_WF_BUS_HANG_CHECK == 1)
+	uint32_t u4Cr = 0;
 	uint32_t u4Value = 0;
 	uint32_t RegValue = 0;
-#endif
 
 	do {
 /*
 * 1. Check "AP2CONN_INFRA ON step is ok"
 *   & Check "AP2CONN_INFRA OFF step is ok"
 */
-		if (conninfra_is_bus_hang() > 0) {
-			conninfra_reset = TRUE;
 
+		if (!conninfra_reg_readable()) {
 			DBGLOG(HAL, ERROR,
-				"conninfra_is_bus_hang, CR dump, Chip reset\n");
+				"conninfra_reg_readable fail\n");
+
+			if (conninfra_is_bus_hang() > 0) {
+				conninfra_reset = TRUE;
+
+				DBGLOG(HAL, ERROR,
+					"conninfra_is_bus_hang, Chip reset\n");
+			} else {
+				/*
+				* not readable, but no hang
+				* => no reset and return fail
+				*/
+				ucWfResetEnable = FALSE;
+			}
+
 			break;
 		}
-
-#if (CFG_WF_BUS_HANG_CHECK == 1)
 
 /*
 * 2. Check MCU wake up and setting mux sel done CR (mailbox)
 *  - 0x1806_0260[31] should be 1'b1  (FW view 0x8900_0100[31])
 */
 
-		wf_ioremap_read(0x18060260, &u4Value);
+		u4Cr = 0x18060260;
+		wf_ioremap_read(u4Cr, &u4Value);
 
 		if ((u4Value&BIT(31)) != BIT(31)) {
 			DBGLOG(HAL, ERROR,
-				"Bus hang check: 0x18060260 = 0x%08x\n",
-				u4Value);
+				"Bus hang check: 0x%08x = 0x%08x\n",
+				u4Cr, u4Value);
 		}
 
 /*
@@ -1237,55 +1470,60 @@ int soc3_0_CheckBusHang(uint8_t ucWfResetEnable)
 * Read Address : 0x1806_021c[0] shoulde be 1'b0
 */
 
-		wf_ioremap_read(0x1806009c, &u4Value);
-		RegValue = u4Value&BITS(7, 31) + 0x60;
-		wf_ioremap_write(0x1806009c, RegValue);
+		u4Cr = 0x1806009c;
+		wf_ioremap_read(u4Cr, &u4Value);
+		RegValue = (u4Value&BITS(7, 31)) | 0x60;
+		wf_ioremap_write(u4Cr, RegValue);
 
-		wf_ioremap_read(0x1806009c, &u4Value);
+		u4Cr = 0x1806009c;
+		wf_ioremap_read(u4Cr, &u4Value);
 		RegValue = u4Value|BIT(28);
-		wf_ioremap_write(0x1806009c, RegValue);
+		wf_ioremap_write(u4Cr, RegValue);
 
-		wf_ioremap_read(0x18060094, &u4Value);
-		RegValue = u4Value&BITS(5, 31) + 0x7;
-		wf_ioremap_write(0x18060094, RegValue);
+		u4Cr = 0x18060094;
+		wf_ioremap_read(u4Cr, &u4Value);
+		RegValue = (u4Value&BITS(5, 31)) | 0x7;
+		wf_ioremap_write(u4Cr, RegValue);
 
-		wf_ioremap_read(0x18060094, &u4Value);
+		u4Cr = 0x18060094;
+		wf_ioremap_read(u4Cr, &u4Value);
 		RegValue = u4Value|BIT(20);
-		wf_ioremap_write(0x18060094, RegValue);
+		wf_ioremap_write(u4Cr, RegValue);
 
-		wf_ioremap_read(0x1806021c, &u4Value);
+		u4Cr = 0x1806021c;
+		wf_ioremap_read(u4Cr, &u4Value);
 
 		if ((u4Value&BIT(0)) == BIT(0)) {
 			DBGLOG(HAL, ERROR,
-				"Bus hang check: 0x1806021c = 0x%08x\n",
-				u4Value);
+				"Bus hang check: 0x%08x = 0x%08x\n",
+				u4Cr, u4Value);
 		}
 
 /*
 * 4. Check conn2wf sleep protect
 *  - 0x1800_1620[3] (sleep protect enable raedy), should be 1'b0
 */
-		wf_ioremap_read(0x18001620, &u4Value);
+		u4Cr = 0x18001620;
+		wf_ioremap_read(u4Cr, &u4Value);
 
 		if ((u4Value&BIT(3)) == BIT(3)) {
 			DBGLOG(HAL, ERROR,
-				"Bus hang check: 0x18001620 = 0x%08x\n",
-				u4Value);
+				"Bus hang check: 0x%08x = 0x%08x\n",
+				u4Cr, u4Value);
 		}
 
 /*
 * 5. check wfsys bus clock
-*  - 0x1806_0000[14] , 1: means bus no clock, 0: ok
+*  - 0x1806_0000[15] , 1: means bus no clock, 0: ok
 */
-		wf_ioremap_read(0x18060000, &u4Value);
+		u4Cr = 0x18060000;
+		wf_ioremap_read(u4Cr, &u4Value);
 
-		if ((u4Value&BIT(14)) == BIT(14)) {
+		if ((u4Value&BIT(15)) == BIT(15)) {
 			DBGLOG(HAL, ERROR,
-				"Bus hang check: 0x18060000 = 0x%08x\n",
-				u4Value);
+				"Bus hang check: 0x%08x = 0x%08x\n",
+				u4Cr, u4Value);
 		}
-
-#endif /* (CFG_WF_BUS_HANG_CHECK == 1) */
 
 		DBGLOG(HAL, INFO,
 			"Bus hang check: Done\n");
@@ -1294,6 +1532,9 @@ int soc3_0_CheckBusHang(uint8_t ucWfResetEnable)
 	} while (FALSE);
 
 	if (ret > 0) {
+
+		soc3_0_DumpHostCr();
+
 		if (conninfra_reset)
 			conninfra_trigger_whole_chip_rst(CONNDRV_TYPE_WIFI,
 				"bus hang");
@@ -3118,6 +3359,11 @@ uint32_t soc3_0_wlanAccessCalibrationEMI(
 			break;
 		}
 
+		if (gEmiCalUseEmiData == TRUE) {
+			DBGLOG(INIT, INFO, "No Write back to EMI\n");
+			break;
+		}
+
 		memcpy_toio((pucEmiBaseAddr + gEmiCalOffset),
 			gEmiCalResult,
 			gEmiCalSize);
@@ -3668,17 +3914,28 @@ uint8_t *soc3_0_wlanGetCalResult(uint32_t *prCalSize)
 	return gEmiCalResult;
 }
 
-void soc3_0_wlanResetCalResult(void)
+void soc3_0_wlanCalDebugCmd(uint32_t cmd, uint32_t para)
 {
-	DBGLOG(RFTEST, INFO, "%s: gEmiCalResult = 0x%x\n",
-			__func__, gEmiCalResult);
+	switch (cmd) {
+	case 0:
+		if (gEmiCalResult != NULL) {
+			kalMemFree(gEmiCalResult,
+				VIR_MEM_TYPE,
+				gEmiCalSize);
+			gEmiCalResult = NULL;
+		}
+		break;
 
-	if (gEmiCalResult != NULL) {
-		kalMemFree(gEmiCalResult,
-			VIR_MEM_TYPE,
-			gEmiCalSize);
-		gEmiCalResult = NULL;
+	case 1:
+		if (para == 1)
+			gEmiCalUseEmiData = TRUE;
+		else
+			gEmiCalUseEmiData = FALSE;
+		break;
 	}
+
+	DBGLOG(RFTEST, INFO, "gEmiCalResult(0x%x), gEmiCalUseEmiData(%d)\n",
+			gEmiCalResult, gEmiCalUseEmiData);
 }
 
 #endif /* (CFG_SUPPORT_PRE_ON_PHY_ACTION == 1) */

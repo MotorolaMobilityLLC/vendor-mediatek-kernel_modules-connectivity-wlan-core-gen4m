@@ -12973,8 +12973,7 @@ static int priv_driver_calibration(
 	int32_t i4BytesWritten = 0;
 	int32_t i4Argc = 0;
 	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
-	uint32_t u4Ret = 0;
-	uint32_t u4GetInput = 0;
+	uint32_t u4Ret, u4GetInput, u4GetInput2;
 	int32_t i4ArgNum = 2;
 
 	ASSERT(prNetDev);
@@ -12994,12 +12993,33 @@ static int priv_driver_calibration(
 			DBGLOG(RFTEST, INFO,
 				   "%s: Parsing Fail\n", __func__);
 		} else if (u4GetInput == 0) {
+
 			i4BytesWritten = snprintf(pcCommand,
 				i4TotalLen,
-				"reset calibration result\n");
+				"reset driver calibration result\n");
 
-			if (prChipInfo->resetCalResult)
-				prChipInfo->resetCalResult();
+			if (prChipInfo->calDebugCmd)
+				prChipInfo->calDebugCmd(u4GetInput, 0);
+
+		} else if (u4GetInput == 1) {
+
+			u4Ret = kalkStrtou32(apcArgv[2], 0, &u4GetInput2);
+			if (u4Ret) {
+				DBGLOG(RFTEST, INFO,
+					   "%s: Parsing 2 Fail\n", __func__);
+			} else if (u4GetInput2 == 0) {
+				i4BytesWritten = snprintf(pcCommand,
+					i4TotalLen,
+					"driver result write back EMI\n");
+			} else {
+				i4BytesWritten = snprintf(pcCommand,
+					i4TotalLen,
+					"FW use EMI original data\n");
+			}
+
+			if (prChipInfo->calDebugCmd)
+				prChipInfo->calDebugCmd(u4GetInput,
+					u4GetInput2);
 		}
 	} else {
 		i4BytesWritten = snprintf(pcCommand,
@@ -13009,7 +13029,17 @@ static int priv_driver_calibration(
 		i4BytesWritten += snprintf(
 			pcCommand + i4BytesWritten,
 			i4TotalLen - i4BytesWritten,
-			"0: reset calibration result\n");
+			"0: reset driver calibration result\n");
+
+		i4BytesWritten += snprintf(
+			pcCommand + i4BytesWritten,
+			i4TotalLen - i4BytesWritten,
+			"1,0: driver result write back EMI\n");
+
+		i4BytesWritten += snprintf(
+			pcCommand + i4BytesWritten,
+			i4TotalLen - i4BytesWritten,
+			"1,1: FW use EMI original data\n");
 	}
 
 	return i4BytesWritten;
