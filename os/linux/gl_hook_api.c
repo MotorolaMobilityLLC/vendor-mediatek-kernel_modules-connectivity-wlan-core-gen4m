@@ -585,7 +585,7 @@ int32_t MT_ATESetSystemBW(struct net_device *prNetDev,
 	int32_t i4Status;
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct PARAM_MTK_WIFI_TEST_STRUCT rRfATInfo;
-	uint32_t u4BWMapping;
+	uint32_t u4BWMapping = 0;
 
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 
@@ -856,7 +856,7 @@ int32_t MT_ATESetPerPacketBW(struct net_device *prNetDev,
 	int32_t i4Status;
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct PARAM_MTK_WIFI_TEST_STRUCT rRfATInfo;
-	uint32_t u4BWMapping;
+	uint32_t u4BWMapping = 0;
 
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 
