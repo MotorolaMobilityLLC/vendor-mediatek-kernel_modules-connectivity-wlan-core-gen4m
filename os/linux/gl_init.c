@@ -4512,9 +4512,18 @@ static int32_t wlanProbe(void *pvData, void *pvDriverData)
 	struct WIFI_VAR *prWifiVar;
 	uint32_t u4Idx = 0;
 
+#if CFG_MTK_MCIF_WIFI_SUPPORT
+	mddpNotifyWifiOnStart();
+#endif
+
 #if CFG_CHIP_RESET_SUPPORT
-	if (fgSimplifyResetFlow)
-		return wlanOnAtReset();
+	if (fgSimplifyResetFlow) {
+		i4Status = wlanOnAtReset();
+#if CFG_MTK_MCIF_WIFI_SUPPORT
+		mddpNotifyWifiOnEnd();
+#endif
+		return i4Status;
+	}
 #endif
 
 #if 0
@@ -4522,9 +4531,6 @@ static int32_t wlanProbe(void *pvData, void *pvDriverData)
 	uint32_t u4ConfigReadLen = 0;
 #endif
 
-#if CFG_MTK_MCIF_WIFI_SUPPORT
-	mddpNotifyWifiOnStart();
-#endif
 	eFailReason = FAIL_REASON_NUM;
 	do {
 		/* 4 <1> Initialize the IO port of the interface */
@@ -4784,19 +4790,22 @@ static void wlanRemove(void)
 	/*reset NVRAM State to ready for the next wifi-no*/
 	if (g_NvramFsm == NVRAM_STATE_SEND_TO_FW)
 		g_NvramFsm = NVRAM_STATE_READY;
+#if CFG_MTK_MCIF_WIFI_SUPPORT
+	mddpNotifyWifiOffStart();
+#endif
 
 #if CFG_CHIP_RESET_SUPPORT
 	/* During chip reset, use simplify remove flow first
 	 * if anything goes wrong in wlanOffAtReset then goes to normal flow
 	 */
 	if (fgSimplifyResetFlow) {
-		if (wlanOffAtReset() == WLAN_STATUS_SUCCESS)
-			return;
-	}
-#endif
-
+		if (wlanOffAtReset() == WLAN_STATUS_SUCCESS) {
 #if CFG_MTK_MCIF_WIFI_SUPPORT
-	mddpNotifyWifiOffStart();
+			mddpNotifyWifiOffEnd();
+#endif
+			return;
+		}
+	}
 #endif
 
 	kalSetHalted(TRUE);
