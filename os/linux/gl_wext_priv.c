@@ -2245,6 +2245,7 @@ reqExtSetAcpiDevicePowerState(IN P_GLUE_INFO_T prGlueInfo,
 
 #if CFG_AUTO_CHANNEL_SEL_SUPPORT
 #define CMD_GET_CH_RANK_LIST "GET_CH_RANK_LIST"
+#define CMD_GET_CH_DIRTINESS "GET_CH_DIRTINESS"
 #endif
 
 #define CMD_EFUSE		"EFUSE"
@@ -7621,6 +7622,57 @@ static int priv_driver_get_ch_rank_list(IN struct net_device *prNetDev, IN char 
 
 	return i4BytesWritten;
 }
+
+static int priv_driver_get_ch_dirtiness(IN struct net_device *prNetDev, IN char *pcCommand, IN int i4TotalLen)
+{
+	P_GLUE_INFO_T prGlueInfo = NULL;
+	INT_8 cIdx = 0;
+	UINT_8 ucNumOf2gChannel = 0;
+	UINT_8 ucNumOf5gChannel = 0;
+	UINT_32 i4BytesWritten = 0;
+	P_PARAM_GET_CHN_INFO prChnLoadInfo = NULL;
+	RF_CHANNEL_INFO_T ar2gChannelList[MAX_2G_BAND_CHN_NUM];
+	RF_CHANNEL_INFO_T ar5gChannelList[MAX_5G_BAND_CHN_NUM];
+
+	ASSERT(prNetDev);
+	prGlueInfo = *((P_GLUE_INFO_T *) netdev_priv(prNetDev));
+	prChnLoadInfo = &(prGlueInfo->prAdapter->rWifiVar.rChnLoadInfo);
+	kalMemZero(pcCommand, i4TotalLen);
+
+	rlmDomainGetChnlList(prGlueInfo->prAdapter, BAND_2G4, TRUE,
+			     MAX_2G_BAND_CHN_NUM, &ucNumOf2gChannel, ar2gChannelList);
+	rlmDomainGetChnlList(prGlueInfo->prAdapter, BAND_5G, TRUE,
+			     MAX_5G_BAND_CHN_NUM, &ucNumOf5gChannel, ar5gChannelList);
+
+	for (cIdx = 0; cIdx < MAX_CHN_NUM; cIdx++) {
+		INT_8 cIdx2 = 0;
+		UINT_8 ucChannelNum = 0;
+		UINT_32 u4Offset = 0;
+		RF_CHANNEL_INFO_T *prChannelList = NULL;
+
+		if (prChnLoadInfo->rChnRankList[cIdx].ucChannel > 14) {
+			prChannelList = ar5gChannelList;
+			ucChannelNum = ucNumOf5gChannel;
+		} else {
+			prChannelList = ar2gChannelList;
+			ucChannelNum = ucNumOf2gChannel;
+		}
+
+		for (cIdx2 = 0; cIdx2 < ucChannelNum; cIdx2++) {
+			if (prChnLoadInfo->rChnRankList[cIdx].ucChannel ==
+				prChannelList[cIdx2].ucChannelNum) {
+				u4Offset = kalSprintf(pcCommand + i4BytesWritten,
+							"\nch %03u -> dirtiness %lu",
+							prChnLoadInfo->rChnRankList[cIdx].ucChannel,
+							prChnLoadInfo->rChnRankList[cIdx].u4Dirtiness);
+				i4BytesWritten += u4Offset;
+				break;
+			}
+		}
+	}
+
+	return i4BytesWritten;
+}
 #endif
 
 static int priv_driver_efuse_ops(IN struct net_device *prNetDev, IN char *pcCommand, IN int i4TotalLen)
@@ -8286,6 +8338,8 @@ INT_32 priv_driver_cmds(IN struct net_device *prNetDev, IN PCHAR pcCommand, IN I
 #if CFG_AUTO_CHANNEL_SEL_SUPPORT
 		else if (strnicmp(pcCommand, CMD_GET_CH_RANK_LIST, strlen(CMD_GET_CH_RANK_LIST)) == 0)
 			i4BytesWritten = priv_driver_get_ch_rank_list(prNetDev, pcCommand, i4TotalLen);
+		else if (strnicmp(pcCommand, CMD_GET_CH_DIRTINESS, strlen(CMD_GET_CH_DIRTINESS)) == 0)
+			i4BytesWritten = priv_driver_get_ch_dirtiness(prNetDev, pcCommand, i4TotalLen);
 #endif
 		else if (strnicmp(pcCommand, CMD_EFUSE, sizeof(CMD_EFUSE)-1) == 0)
 			i4BytesWritten = priv_driver_efuse_ops(prNetDev, pcCommand, i4TotalLen);
