@@ -533,7 +533,14 @@ uint32_t wlanAdapterStart(IN struct ADAPTER *prAdapter,
 				wlanQueryNicCapability(prAdapter);
 
 			/* 4. query for NIC capability V2 */
-			wlanQueryNicCapabilityV2(prAdapter);
+			u4Status = wlanQueryNicCapabilityV2(prAdapter);
+			if (u4Status !=  WLAN_STATUS_SUCCESS) {
+				DBGLOG(INIT, WARN,
+							"wlanQueryNicCapabilityV2 failed.\n");
+				RECLAIM_POWER_CONTROL_TO_PM(prAdapter, FALSE);
+				eFailReason = WAIT_FIRMWARE_READY_FAIL;
+				break;
+			}
 
 			/* 5. reset TX Resource for normal operation
 			 *    based on the information reported from
@@ -5483,6 +5490,7 @@ uint32_t wlanQueryNicCapabilityV2(IN struct ADAPTER *prAdapter)
 	struct WIFI_EVENT *prEvent;
 	struct mt66xx_chip_info *prChipInfo;
 	uint32_t chip_id;
+	uint32_t u4Time;
 
 	ASSERT(prAdapter);
 	prChipInfo = prAdapter->chip_info;
@@ -5552,6 +5560,7 @@ uint32_t wlanQueryNicCapabilityV2(IN struct ADAPTER *prAdapter)
 		}
 
 		/* get event */
+		u4Time = kalGetTimeTick();
 		while (TRUE) {
 			if (nicRxWaitResponse(prAdapter,
 					      1,
@@ -5566,6 +5575,13 @@ uint32_t wlanQueryNicCapabilityV2(IN struct ADAPTER *prAdapter)
 				/* free event buffer */
 				cnmMemFree(prAdapter, prEventBuff);
 
+				return WLAN_STATUS_FAILURE;
+			}
+
+			if (CHECK_FOR_TIMEOUT(kalGetTimeTick(), u4Time,
+				MSEC_TO_SYSTIME(3000))) {
+				DBGLOG(HAL, ERROR,
+					"Query nic capability timeout\n");
 				return WLAN_STATUS_FAILURE;
 			}
 
@@ -5593,6 +5609,7 @@ uint32_t wlanQueryNicCapabilityV2(IN struct ADAPTER *prAdapter)
 				/* hit */
 				break;
 			}
+
 		}
 
 		/*
