@@ -977,14 +977,19 @@ uint32_t saaFsmRunEventRxDeauth(IN struct ADAPTER *prAdapter, IN struct SW_RFB *
 			if (!IS_AP_STA(prStaRec))
 				break;
 
+			/* if state != CONNECTED, don't do disconnect again */
+			if (prAdapter->prGlueInfo->eParamMediaStateIndicated !=
+				PARAM_MEDIA_STATE_CONNECTED)
+				break;
+
 			prAisBssInfo = prAdapter->prAisBssInfo;
 
 			if (prStaRec->ucStaState > STA_STATE_1) {
 
 				/* Check if this is the AP we are associated or associating with */
 				if (authProcessRxDeauthFrame(prSwRfb,
-							     prStaRec->aucMacAddr,
-							     &prStaRec->u2ReasonCode) == WLAN_STATUS_SUCCESS) {
+						     prStaRec->aucMacAddr,
+						     &prStaRec->u2ReasonCode) == WLAN_STATUS_SUCCESS) {
 
 #if CFG_SUPPORT_802_11W
 					struct AIS_SPECIFIC_BSS_INFO *prAisSpecBssInfo;
