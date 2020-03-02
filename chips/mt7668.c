@@ -81,6 +81,46 @@ ECO_INFO_T mt7668_eco_table[] = {
 	{0x00, 0x00, 0x0}	/* End of table */
 };
 
+#if defined(_HIF_PCIE)
+PCIE_CHIP_CR_MAPPING arBus2ChipCrMapping[] = {
+	/* chip addr, bus addr, range */
+	{0x82060000, 0x00008000, 0x00000450}, /* WF_PLE */
+	{0x82068000, 0x0000c000, 0x00000450}, /* WF_PSE */
+	{0x8206c000, 0x0000e000, 0x00000300}, /* PP */
+	{0x820d0000, 0x00020000, 0x00000200}, /* WF_AON */
+	{0x820f0000, 0x00020200, 0x00000400}, /* WF_CFG */
+	{0x820f0800, 0x00020600, 0x00000200}, /* WF_CFGOFF */
+	{0x820f1000, 0x00020800, 0x00000200}, /* WF_TRB */
+	{0x820f2000, 0x00020a00, 0x00000200}, /* WF_AGG */
+	{0x820f3000, 0x00020c00, 0x00000400}, /* WF_ARB */
+	{0x820f4000, 0x00021000, 0x00000200}, /* WF_TMAC */
+	{0x820f5000, 0x00021200, 0x00000400}, /* WF_RMAC */
+	{0x820f6000, 0x00021600, 0x00000200}, /* WF_SEC */
+	{0x820f7000, 0x00021800, 0x00000200}, /* WF_DMA */
+
+	{0x820f8000, 0x00022000, 0x00001000}, /* WF_PF */
+	{0x820f9000, 0x00023000, 0x00000400}, /* WF_WTBLON */
+	{0x820f9800, 0x00023400, 0x00000200}, /* WF_WTBLOFF */
+
+	{0x820fa000, 0x00024000, 0x00000200}, /* WF_ETBF */
+	{0x820fb000, 0x00024200, 0x00000400}, /* WF_LPON */
+	{0x820fc000, 0x00024600, 0x00000200}, /* WF_INT */
+	{0x820fd000, 0x00024800, 0x00000400}, /* WF_MIB */
+
+	{0x820fe000, 0x00025000, 0x00002000}, /* WF_MU */
+
+	{0x820e0000, 0x00030000, 0x00010000}, /* WF_WTBL */
+
+	{0x80020000, 0x00000000, 0x00002000}, /* TOP_CFG */
+	{0x80000000, 0x00002000, 0x00002000}, /* MCU_CFG */
+	{0x50000000, 0x00004000, 0x00004000}, /* PDMA_CFG */
+	{0xA0000000, 0x00008000, 0x00008000}, /* PSE_CFG */
+	{0x82070000, 0x00010000, 0x00010000}, /* WF_PHY */
+
+	{0x0, 0x0, 0x0}
+};
+#endif /* _HIF_PCIE */
+
 /*******************************************************************************
 *                            P U B L I C   D A T A
 ********************************************************************************
@@ -125,14 +165,25 @@ PPUINT_8 apucName, PUINT_8 pucNameIdx, UINT_8 ucMaxNameIdx)
 	}
 }
 
+BUS_INFO bus_info_mt7668 = {
+#if defined(_HIF_PCIE)
+	.top_cfg_base = MT7668_TOP_CFG_BASE,
+	.is_pcie_32dw_read = MT7668_IS_PCIE_32DW_READ, /* Litien */
+	.tx_ring_fwdl_idx = 3,
+	.tx_ring_cmd_idx = 2,
+	.tx_ring_data_idx = 0,
+	.enableFWDownload = NULL,
+#endif /* _HIF_PCIE */
+};
+
 /* Litien code refine to support multi chip */
 struct mt66xx_chip_info mt66xx_chip_info_mt7668 = {
+	.bus_info = &bus_info_mt7668,
 	.chip_id = MT7668_CHIP_ID,
 	.sw_sync0 = MT7668_SW_SYNC0,
 	.sw_ready_bits = WIFI_FUNC_READY_BITS,
 	.sw_ready_bit_offset = MT7668_SW_SYNC0_RDY_OFFSET,
 	.patch_addr = MT7668_PATCH_START_ADDR,
-	.is_pcie_32dw_read = MT7668_IS_PCIE_32DW_READ, /* Litien */
 	.eco_info = mt7668_eco_table,
 	.constructFirmwarePrio = mt7668ConstructFirmwarePrio,
 };

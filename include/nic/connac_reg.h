@@ -81,11 +81,12 @@
 */
 #define CONN_CFG_BASE                                          0x80021000
 
-
 #define CONN_CFG_ON_BASE                                       0x81021000
 
 #define CONN_CFG_ON_CONN_ON_MISC_ADDR                          (CONN_CFG_ON_BASE + 0x140)
-/*=====================================================================================
+
+/*
+* =====================================================================================
 *
 *  ---CONN_ON_MISC (0x81021000 + 0x140)---
 *
@@ -94,7 +95,7 @@
 *    RBIST_MODE[4]                - (RW)  xxx
 *    RESERVED5[31..5]             - (RO) Reserved bits
 *
-*=====================================================================================
+* =====================================================================================
 */
 #define CONN_CFG_ON_CONN_ON_MISC_RBIST_MODE_ADDR               CONN_CFG_ON_CONN_ON_MISC_ADDR
 #define CONN_CFG_ON_CONN_ON_MISC_RBIST_MODE_MASK               0x00000010/*RBIST_MODE[4]*/
@@ -106,12 +107,6 @@
 #define CONN_CFG_ON_CONN_ON_MISC_HOST_LPCR_FW_OWN_MASK         0x00000001/*HOST_LPCR_FW_OWN[0]*/
 #define CONN_CFG_ON_CONN_ON_MISC_HOST_LPCR_FW_OWN_SHFT         0
 
-#if 0
-#undef TOP_HW_VERSION
-#define TOP_HW_VERSION					(CONN_CFG_BASE + 0x1000)
-#undef TOP_HW_CONTROL
-#define TOP_HW_CONTROL					(CONN_CFG_BASE + 0x1008)
-#endif
 /*******************************************************************************
 *                             D A T A   T Y P E S
 ********************************************************************************

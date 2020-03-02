@@ -73,12 +73,18 @@
 *                    E X T E R N A L   R E F E R E N C E S
 ********************************************************************************
 */
-
+#ifdef MT6632
 extern struct mt66xx_hif_driver_data mt66xx_driver_data_mt6632;
+#endif /* MT6632 */
+#ifdef MT7668
 extern struct mt66xx_hif_driver_data mt66xx_driver_data_mt7668;
+#endif /* MT7668 */
 #ifdef MT7663
 extern struct mt66xx_hif_driver_data mt66xx_driver_data_mt7663;
 #endif /* MT7663 */
+#ifdef CONNAC
+extern struct mt66xx_hif_driver_data mt66xx_driver_data_connac;
+#endif /* CONNAC */
 
 /*******************************************************************************
 *                              C O N S T A N T S
@@ -408,8 +414,8 @@ extern struct mt66xx_hif_driver_data mt66xx_driver_data_mt7663;
 #define RTC_TOP_MISC2					(RTC_TOP_BASE + 0x1128)
 
 #define TOP_HIF_BASE					0x0000
-#define TOP_HW_VERSION					(TOP_HIF_BASE + 0x1000)
-#define TOP_HW_CONTROL					(TOP_HIF_BASE + 0x1008)
+#define TOP_HW_VERSION					0x1000
+#define TOP_HW_CONTROL					0x1008
 
 #define WIFI_CFG_SW_SYNC0				RTC_TOP_MISC2
 #define WIFI_CFG_SYNC0_RDY_OFFSET		(16)
@@ -483,22 +489,7 @@ typedef union _WPDMA_INT_STA_STRUCT {
 		UINT_32 rx_done_1:1;
 		UINT_32 err_det_int_0:1;
 		UINT_32 err_det_int_1:1;
-		UINT_32 tx_done_0:1;
-		UINT_32 tx_done_1:1;
-		UINT_32 tx_done_2:1;
-		UINT_32 tx_done_3:1;
-		UINT_32 tx_done_4:1;
-		UINT_32 tx_done_5:1;
-		UINT_32 tx_done_6:1;
-		UINT_32 tx_done_7:1;
-		UINT_32 tx_done_8:1;
-		UINT_32 tx_done_9:1;
-		UINT_32 tx_done_10:1;
-		UINT_32 tx_done_11:1;
-		UINT_32 tx_done_12:1;
-		UINT_32 tx_done_13:1;
-		UINT_32 rsv_18:1;
-		UINT_32 tx_done_15:1;
+		UINT_32 tx_done:16;
 		UINT_32 rx_coherent:1;
 		UINT_32 tx_coherent:1;
 		UINT_32 rx_dly_int:1;
@@ -523,22 +514,7 @@ typedef union _WPDMA_INT_MASK {
 		UINT_32 rx_done_1:1;
 		UINT_32 err_det_int_0:1;
 		UINT_32 err_det_int_1:1;
-		UINT_32 tx_done_0:1;
-		UINT_32 tx_done_1:1;
-		UINT_32 tx_done_2:1;
-		UINT_32 tx_done_3:1;
-		UINT_32 tx_done_4:1;
-		UINT_32 tx_done_5:1;
-		UINT_32 tx_done_6:1;
-		UINT_32 tx_done_7:1;
-		UINT_32 tx_done_8:1;
-		UINT_32 tx_done_9:1;
-		UINT_32 tx_done_10:1;
-		UINT_32 tx_done_11:1;
-		UINT_32 tx_done_12:1;
-		UINT_32 tx_done_13:1;
-		UINT_32 rsv_18:1;
-		UINT_32 tx_done_15:1;
+		UINT_32 tx_done:16;
 		UINT_32 rx_coherent:1;
 		UINT_32 tx_coherent:1;
 		UINT_32 rx_dly_int:1;
@@ -608,6 +584,31 @@ typedef union _WPDMA_GLO_CFG_STRUCT {
 		UINT_32 rx_2b_offset:1;
 	} field_1;
 
+	struct {
+		UINT_32 tx_dma_en:1;
+		UINT_32 tx_dma_busy:1;
+		UINT_32 rx_dma_en:1;
+		UINT_32 rx_dma_busy:1;
+		UINT_32 pdma_bt_size:2;
+		UINT_32 tx_wb_ddone:1;
+		UINT_32 big_endian:1;
+		UINT_32 dmad_32b_en:1;
+		UINT_32 bypass_dmashdl_txring3:1;
+		UINT_32 multi_dma_en:2;
+		UINT_32 fifo_little_endian:1;
+		UINT_32 mi_depth:3;
+		UINT_32 dfet_arb_mi_depth:3;
+		UINT_32 pfet_arb_mi_depth:3;
+		UINT_32 reserved22:3;
+		UINT_32 force_tx_eof:1;
+		UINT_32 rx_token_wb_option:1;
+		UINT_32 omit_rx_info:1;
+		UINT_32 omit_tx_info:1;
+		UINT_32 byte_swap:1;
+		UINT_32 clk_gate_dis:1;
+		UINT_32 rx_2b_offset:1;
+	} field_conn;
+
 	UINT_32 word;
 } WPDMA_GLO_CFG_STRUCT;
 
@@ -658,6 +659,7 @@ typedef union _DELAY_INT_CFG_STRUCT {
 
 /* WPDMA_INT_STA */
 #define WPDMA_FW_CLR_OWN_INT			BIT(31)
+#define WPDMA_TX_DONE_INT15				BIT(19)
 #define WPDMA_TX_DONE_INT3				BIT(7)
 #define WPDMA_TX_DONE_INT2				BIT(6)
 #define WPDMA_TX_DONE_INT1				BIT(5)
@@ -938,12 +940,12 @@ enum enum_mt66xx_chip {
 };
 
 struct mt66xx_chip_info {
+	P_BUS_INFO bus_info;
 	const unsigned int chip_id;	/* chip id */
 	const unsigned int sw_sync0;	/* sw_sync0 address */
 	const unsigned int sw_ready_bits;	/* sw_sync0 ready bits */
 	const unsigned int sw_ready_bit_offset;	/* sw_sync0 ready bit offset */
 	const unsigned int patch_addr;	/* patch download start address */
-	const unsigned char is_pcie_32dw_read;	/* diff PDMA config */
 
 	const P_ECO_INFO_T eco_info;	/* chip version table */
 	UINT_8 eco_ver;	/* chip version */

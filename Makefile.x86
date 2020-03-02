@@ -1,7 +1,7 @@
 LINUX_SRC=/lib/modules/$(shell uname -r)/build
 
 export CONFIG_MTK_COMBO_PLATFORM=x86
-export MTK_COMBO_CHIP=MT6632
+export MTK_COMBO_CHIP=CONNAC
 
 PWD=$(shell pwd)
 DRIVER_DIR=$(PWD)
@@ -16,7 +16,7 @@ export CONFIG_MT_WIFI_CHRDEV=m
 
 # pcie | sdio | usb
 ifeq ($(hif),)
-    hif=usb
+    hif=pcie
 endif
 
 MODULES_NAME := wlan_$(shell echo $(word 1, $(MTK_COMBO_CHIP)) | tr A-Z a-z)
