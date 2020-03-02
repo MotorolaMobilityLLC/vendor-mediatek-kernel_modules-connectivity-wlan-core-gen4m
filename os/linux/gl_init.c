@@ -1995,7 +1995,8 @@ static struct wireless_dev *wlanNetCreate(void *pvData,
 	 * scan correctly (FW doesn't do scan). The usb_probe message:
 	 * "mtk_reg_notify:(RLM ERROR) Invalid REG state happened. state = 0x6".
 	 */
-	rlmDomainResetCtrlInfo(TRUE);
+	if (rlmDomainGetCtrlState() == REGD_STATE_INVALID)
+		rlmDomainResetCtrlInfo(TRUE);
 #endif
 #endif	/* CFG_ENABLE_UNIFY_WIPHY */
 
