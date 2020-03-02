@@ -1283,6 +1283,8 @@ struct ADAPTER {
 
 #if CFG_ENABLE_WIFI_DIRECT
 	u_int8_t fgIsP2PRegistered;
+	/* flag to report all networks in p2p scan */
+	u_int8_t p2p_scan_report_all_bss;
 	enum ENUM_NET_REG_STATE rP2PNetRegState;
 	/* BOOLEAN             fgIsWlanLaunched; */
 	struct P2P_INFO *prP2pInfo;

@@ -626,6 +626,15 @@
  * Flags of Wi-Fi Direct support
  *------------------------------------------------------------------------------
  */
+/*------------------------------------------------------------------------------
+ * Support reporting all BSS networks to cfg80211 kernel when scan
+ * request is from P2P interface
+ * Originally only P2P networks will be reported when scan request is from p2p0
+ *------------------------------------------------------------------------------
+ */
+#ifndef CFG_P2P_SCAN_REPORT_ALL_BSS
+#define CFG_P2P_SCAN_REPORT_ALL_BSS            0
+#endif
 
 /*------------------------------------------------------------------------------
  * Flags for GTK rekey offload

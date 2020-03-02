@@ -159,6 +159,8 @@ u_int8_t p2pLaunch(struct GLUE_INFO *prGlueInfo)
 	}
 
 	prGlueInfo->prAdapter->fgIsP2PRegistered = TRUE;
+	prGlueInfo->prAdapter->p2p_scan_report_all_bss =
+		CFG_P2P_SCAN_REPORT_ALL_BSS;
 	DBGLOG(P2P, TRACE, "Launch success, fgIsP2PRegistered TRUE\n");
 	return TRUE;
 }
@@ -224,6 +226,7 @@ u_int8_t p2pRemove(struct GLUE_INFO *prGlueInfo)
 
 	DBGLOG(P2P, INFO, "fgIsP2PRegistered FALSE\n");
 	prGlueInfo->prAdapter->fgIsP2PRegistered = FALSE;
+	prGlueInfo->prAdapter->p2p_scan_report_all_bss = FALSE;
 
 	glUnregisterP2P(prGlueInfo, 0xff);
 

@@ -70,6 +70,9 @@ CFG_USB_REQ_RX_DATA_CNT=2
 
 #CFG_SUPPORT_SINGLE_SKU_LOCAL_DB=0
 
+# Report all bss networks to cfg80211 when do p2p scan
+CFG_P2P_SCAN_REPORT_ALL_BSS=0
+
 # Support to change sta, p2p, ap interface names
 # y: enable, n: disable
 # eg. insmod wlan_mt76x8_usb.ko sta=wlan p2p=p2p ap=ap
@@ -135,6 +138,9 @@ ifeq ($(CFG_DRIVER_INF_NAME_CHANGE), y)
 PLATFORM_FLAGS += -DCFG_DRIVER_INF_NAME_CHANGE
 endif
 
+ifneq ($(CFG_P2P_SCAN_REPORT_ALL_BSS),)
+PLATFORM_FLAGS += -DCFG_P2P_SCAN_REPORT_ALL_BSS=$(CFG_P2P_SCAN_REPORT_ALL_BSS)
+endif
 
 all: driver
 
