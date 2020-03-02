@@ -1057,6 +1057,16 @@ void kal_kfree_skb(struct sk_buff *skb);
 #define cpu_to_le64(_val) \
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
 
+#define le16_to_cpu(_val) \
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
+#define le32_to_cpu(_val) \
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
+#define le64_to_cpu(_val) \
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
+
+#define div_u64(_val, _div) \
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
+
 int kal_test_and_clear_bit(unsigned long bit, unsigned long *p);
 #ifndef test_and_clear_bit
 #define test_and_clear_bit(_offset, _val) \
