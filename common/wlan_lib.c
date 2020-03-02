@@ -1483,7 +1483,8 @@ uint32_t wlanCheckWifiFunc(IN struct ADAPTER *prAdapter,
 #endif
 
 	while (TRUE) {
-		DBGLOG(INIT, INFO, "Check ready_bits(=0x%x)\n", ready_bits);
+		DBGLOG_LIMITED(INIT, INFO,
+			"Check ready_bits(=0x%x)\n", ready_bits);
 		if (fgRdyChk)
 			HAL_WIFI_FUNC_READY_CHECK(prAdapter,
 					ready_bits /* WIFI_FUNC_READY_BITS */,
@@ -1495,7 +1496,7 @@ uint32_t wlanCheckWifiFunc(IN struct ADAPTER *prAdapter,
 #if defined(_HIF_USB) || defined(_HIF_SDIO)
 			if (nicProcessIST(prAdapter) !=
 				WLAN_STATUS_NOT_INDICATING)
-				DBGLOG(INIT, INFO,
+				DBGLOG_LIMITED(INIT, INFO,
 				       "Handle pending interrupt\n");
 #endif /* _HIF_USB or _HIF_SDIO */
 		}
@@ -1510,9 +1511,11 @@ uint32_t wlanCheckWifiFunc(IN struct ADAPTER *prAdapter,
 
 		if (fgResult) {
 			if (fgRdyChk)
-				DBGLOG(INIT, INFO, "Ready bit asserted\n");
+				DBGLOG_LIMITED(INIT, INFO,
+					"Ready bit asserted\n");
 			else
-				DBGLOG(INIT, INFO, "Wi-Fi power off done!\n");
+				DBGLOG_LIMITED(INIT, INFO,
+					"Wi-Fi power off done!\n");
 
 			u4Status = WLAN_STATUS_SUCCESS;
 
