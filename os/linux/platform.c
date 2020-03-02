@@ -164,7 +164,7 @@ static int netdev_event(struct notifier_block *nb,
 
 	if (prGlueInfo->fgIsInSuspendMode == FALSE) {
 		/* DBGLOG(REQ, INFO,
-		 *  ("netdev_event: PARAM_MEDIA_STATE_DISCONNECTED. (%d)\n",
+		 *  ("netdev_event: MEDIA_STATE_DISCONNECTED. (%d)\n",
 		 * prGlueInfo->eParamMediaStateIndicated));
 		 */
 		return NOTIFY_DONE;

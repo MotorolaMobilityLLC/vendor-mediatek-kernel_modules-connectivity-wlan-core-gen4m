@@ -275,7 +275,7 @@ u_int8_t secCheckClassError(IN struct ADAPTER *prAdapter,
 	     == RXS_DW2_RX_CLASSERR_VALUE)
 	    || (IS_STA_IN_AIS(prStaRec)
 		&& prAdapter->prAisBssInfo->eConnectionState ==
-		PARAM_MEDIA_STATE_DISCONNECTED)) {
+		MEDIA_STATE_DISCONNECTED)) {
 
 		DBGLOG(RSN, ERROR,
 		       "RX_CLASSERR: prStaRec=%p StatusFlag=0x%x, PktTYpe=0x%x, WlanIdx=%d, StaRecIdx=%d, eDst=%d, prStaRec->eStaType=%d\n",

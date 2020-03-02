@@ -993,9 +993,9 @@ nicMediaStateChange(IN struct ADAPTER *prAdapter,
 				      ucBssIndex)->eNetworkType) {
 	case NETWORK_TYPE_AIS:
 		if (prConnectionStatus->ucMediaStatus ==
-		    PARAM_MEDIA_STATE_DISCONNECTED) {	/* disconnected */
+		    MEDIA_STATE_DISCONNECTED) {	/* disconnected */
 			if (kalGetMediaStateIndicated(prGlueInfo) !=
-			    PARAM_MEDIA_STATE_DISCONNECTED ||
+			    MEDIA_STATE_DISCONNECTED ||
 			    prAisFsmInfo->eCurrentState == AIS_STATE_JOIN) {
 
 				/* To prevent the new connection being
@@ -1016,7 +1016,7 @@ nicMediaStateChange(IN struct ADAPTER *prAdapter,
 			prAdapter->fgIsLinkQualityValid = FALSE;
 			prAdapter->fgIsLinkRateValid = FALSE;
 		} else if (prConnectionStatus->ucMediaStatus ==
-			   PARAM_MEDIA_STATE_CONNECTED) {	/* connected */
+			   MEDIA_STATE_CONNECTED) {	/* connected */
 			prAdapter->rWlanInfo.u4SysTime = kalGetTimeTick();
 
 			/* fill information for association result */
@@ -1052,7 +1052,7 @@ nicMediaStateChange(IN struct ADAPTER *prAdapter,
 			 * MSDN (re-association/roaming)
 			 */
 			if (kalGetMediaStateIndicated(prGlueInfo) !=
-			    PARAM_MEDIA_STATE_CONNECTED) {
+			    MEDIA_STATE_CONNECTED) {
 				kalIndicateStatusAndComplete(prGlueInfo,
 					WLAN_STATUS_MEDIA_CONNECT, NULL, 0);
 			} else {
@@ -1650,7 +1650,7 @@ uint32_t nicUpdateBss(IN struct ADAPTER *prAdapter,
 					     ENUM_ENCRYPTION3_KEY_ABSENT;
 #endif
 	}
-	rCmdSetBssInfo.ucDisconnectDetectTh = 0;
+	rCmdSetBssInfo.ucDisconnectDetectThreshold = 0;
 
 	if ((prAdapter->prAisBssInfo != NULL) &&
 	    (ucBssIndex == prAdapter->prAisBssInfo->ucBssIndex) &&
@@ -1704,7 +1704,7 @@ uint32_t nicUpdateBss(IN struct ADAPTER *prAdapter,
 	 * free all correlated station records
 	 */
 	if (prBssInfo->eConnectionState ==
-	    PARAM_MEDIA_STATE_DISCONNECTED) {
+	    MEDIA_STATE_DISCONNECTED) {
 		/* clear client list */
 		bssInitializeClientList(prAdapter, prBssInfo);
 
@@ -4087,7 +4087,7 @@ uint32_t nicRoamingUpdateParams(IN struct ADAPTER
 /*----------------------------------------------------------------------------*/
 void nicUpdateLinkQuality(IN struct ADAPTER *prAdapter,
 			  IN uint8_t ucBssIndex,
-			  IN struct EVENT_LINK_QUALITY_V2 *prEventLinkQuality)
+			  IN struct EVENT_LINK_QUALITY *prEventLinkQuality)
 {
 	int8_t cRssi;
 	uint16_t u2AdjustRssi = 10;
@@ -4101,7 +4101,7 @@ void nicUpdateLinkQuality(IN struct ADAPTER *prAdapter,
 	case NETWORK_TYPE_AIS:
 		if (GET_BSS_INFO_BY_INDEX(prAdapter,
 					  ucBssIndex)->eConnectionState ==
-		    PARAM_MEDIA_STATE_CONNECTED) {
+		    MEDIA_STATE_CONNECTED) {
 			/* check is to prevent RSSI to be updated by
 			 * incorrect initial RSSI from hardware
 			 */
@@ -4186,7 +4186,7 @@ void nicUpdateRSSI(IN struct ADAPTER *prAdapter,
 	case NETWORK_TYPE_AIS:
 		if (GET_BSS_INFO_BY_INDEX(prAdapter,
 					  ucBssIndex)->eConnectionState ==
-		    PARAM_MEDIA_STATE_CONNECTED) {
+		    MEDIA_STATE_CONNECTED) {
 			prAdapter->fgIsLinkQualityValid = TRUE;
 			prAdapter->rLinkQualityUpdateTime = kalGetTimeTick();
 
@@ -4243,7 +4243,7 @@ void nicUpdateLinkSpeed(IN struct ADAPTER *prAdapter,
 	case NETWORK_TYPE_AIS:
 		if (GET_BSS_INFO_BY_INDEX(prAdapter,
 					  ucBssIndex)->eConnectionState ==
-		    PARAM_MEDIA_STATE_CONNECTED) {
+		    MEDIA_STATE_CONNECTED) {
 			/* buffer statistics for further query */
 			prAdapter->fgIsLinkRateValid = TRUE;
 			prAdapter->rLinkRateUpdateTime = kalGetTimeTick();

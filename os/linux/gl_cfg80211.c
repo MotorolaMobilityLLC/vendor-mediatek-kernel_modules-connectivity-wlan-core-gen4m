@@ -501,7 +501,7 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy,
 
 	/* 2. fill TX rate */
 	if (prGlueInfo->eParamMediaStateIndicated !=
-	    PARAM_MEDIA_STATE_CONNECTED) {
+	    MEDIA_STATE_CONNECTED) {
 		/* not connected */
 		DBGLOG(REQ, WARN, "not yet connected\n");
 		return 0;
@@ -654,7 +654,7 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy,
 
 	/* 2. fill TX rate */
 	if (prGlueInfo->eParamMediaStateIndicated !=
-	    PARAM_MEDIA_STATE_CONNECTED) {
+	    MEDIA_STATE_CONNECTED) {
 		/* not connected */
 		DBGLOG(REQ, WARN, "not yet connected\n");
 	} else {
@@ -676,7 +676,7 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy,
 
 	/* 3. fill RSSI */
 	if (prGlueInfo->eParamMediaStateIndicated !=
-	    PARAM_MEDIA_STATE_CONNECTED) {
+	    MEDIA_STATE_CONNECTED) {
 		/* not connected */
 		DBGLOG(REQ, WARN, "not yet connected\n");
 	} else {
@@ -798,7 +798,7 @@ int mtk_cfg80211_get_link_statistics(struct wiphy *wiphy,
 
 	/* 2. fill RSSI */
 	if (prGlueInfo->eParamMediaStateIndicated !=
-	    PARAM_MEDIA_STATE_CONNECTED) {
+	    MEDIA_STATE_CONNECTED) {
 		/* not connected */
 		DBGLOG(REQ, WARN, "not yet connected\n");
 	} else {
@@ -911,7 +911,7 @@ int mtk_cfg80211_scan(struct wiphy *wiphy,
 
 #if CFG_SUPPORT_LOWLATENCY_MODE
 	if (!prGlueInfo->prAdapter->fgEnCfg80211Scan
-	    && PARAM_MEDIA_STATE_CONNECTED
+	    && MEDIA_STATE_CONNECTED
 	    == kalGetMediaStateIndicated(prGlueInfo)) {
 		DBGLOG(REQ, INFO,
 		       "mtk_cfg80211_scan LowLatency reject scan\n");
@@ -1460,7 +1460,7 @@ int mtk_cfg80211_connect(struct wiphy *wiphy,
 				rPmkid.u4Length = (uint32_t)(sizeof(rPmkid)
 								| (1 << 31));
 				rPmkid.u4BSSIDInfoCount = 1;
-				kalMemCopy(rPmkid.arBSSIDInfo[0].arBSSID,
+				kalMemCopy(rPmkid.arBSSIDInfo[0].aucBssid,
 					sme->bssid, MAC_ADDR_LEN);
 				kalMemCopy(rPmkid.arBSSIDInfo[0].arPMKID,
 					prDesiredIE + 2, IW_PMKID_LEN);
@@ -1860,7 +1860,7 @@ int mtk_cfg80211_set_pmksa(struct wiphy *wiphy,
 
 	prPmkid->u4Length = 8 + sizeof(struct PARAM_BSSID_INFO);
 	prPmkid->u4BSSIDInfoCount = 1;
-	kalMemCopy(prPmkid->arBSSIDInfo->arBSSID, pmksa->bssid, 6);
+	kalMemCopy(prPmkid->arBSSIDInfo->aucBssid, pmksa->bssid, 6);
 	kalMemCopy(prPmkid->arBSSIDInfo->arPMKID, pmksa->pmkid,
 		   IW_PMKID_LEN);
 
@@ -3048,16 +3048,16 @@ mtk_cfg80211_testmode_get_link_detection(IN struct wiphy
 	uint32_t u4BufLen;
 	uint8_t u1buf = 0;
 	uint32_t i = 0;
-	uint32_t arBugReport[sizeof(struct _EVENT_BUG_REPORT_T)];
+	uint32_t arBugReport[sizeof(struct EVENT_BUG_REPORT)];
 	struct PARAM_802_11_STATISTICS_STRUCT rStatistics;
-	struct _EVENT_BUG_REPORT_T *prBugReport;
+	struct EVENT_BUG_REPORT *prBugReport;
 	struct sk_buff *skb;
 
 	ASSERT(wiphy);
 	ASSERT(prGlueInfo);
 
-	prBugReport = (struct _EVENT_BUG_REPORT_T *) kalMemAlloc(
-			      sizeof(struct _EVENT_BUG_REPORT_T), VIR_MEM_TYPE);
+	prBugReport = (struct EVENT_BUG_REPORT *) kalMemAlloc(
+			      sizeof(struct EVENT_BUG_REPORT), VIR_MEM_TYPE);
 	if (!prBugReport) {
 		DBGLOG(QM, TRACE, "%s allocate prBugReport failed\n",
 		       __func__);
@@ -3065,18 +3065,18 @@ mtk_cfg80211_testmode_get_link_detection(IN struct wiphy
 	}
 	skb = cfg80211_testmode_alloc_reply_skb(wiphy,
 			sizeof(struct PARAM_802_11_STATISTICS_STRUCT) +
-			sizeof(struct _EVENT_BUG_REPORT_T) + 1);
+			sizeof(struct EVENT_BUG_REPORT) + 1);
 
 	if (!skb) {
 		kalMemFree(prBugReport, VIR_MEM_TYPE,
-			   sizeof(struct _EVENT_BUG_REPORT_T));
+			   sizeof(struct EVENT_BUG_REPORT));
 		DBGLOG(QM, TRACE, "%s allocate skb failed\n", __func__);
 		return -ENOMEM;
 	}
 
 	kalMemZero(&rStatistics, sizeof(rStatistics));
-	kalMemZero(prBugReport, sizeof(struct _EVENT_BUG_REPORT_T));
-	kalMemZero(arBugReport, sizeof(struct _EVENT_BUG_REPORT_T));
+	kalMemZero(prBugReport, sizeof(struct EVENT_BUG_REPORT));
+	kalMemZero(arBugReport, sizeof(struct EVENT_BUG_REPORT));
 
 	rStatus = kalIoctl(prGlueInfo,
 			   wlanoidQueryStatistics,
@@ -3088,14 +3088,14 @@ mtk_cfg80211_testmode_get_link_detection(IN struct wiphy
 
 	rStatus = kalIoctl(prGlueInfo,
 			   wlanoidQueryBugReport,
-			   prBugReport, sizeof(struct _EVENT_BUG_REPORT_T),
+			   prBugReport, sizeof(struct EVENT_BUG_REPORT),
 			   TRUE, TRUE, TRUE, &u4BufLen);
 
 	if (rStatus != WLAN_STATUS_SUCCESS)
 		DBGLOG(INIT, INFO, "query statistics error:%x\n", rStatus);
 
 	kalMemCopy(arBugReport, prBugReport,
-		   sizeof(struct _EVENT_BUG_REPORT_T));
+		   sizeof(struct EVENT_BUG_REPORT));
 
 	rStatistics.u4RstReason = eResetReason;
 	rStatistics.u8RstTime = u8ResetTime;
@@ -3188,7 +3188,7 @@ mtk_cfg80211_testmode_get_link_detection(IN struct wiphy
 		goto nla_put_failure;
 
 	for (i = 0;
-	     i < sizeof(struct _EVENT_BUG_REPORT_T) / sizeof(uint32_t);
+	     i < sizeof(struct EVENT_BUG_REPORT) / sizeof(uint32_t);
 	     i++) {
 		if (!NLA_PUT_U32(skb, i + NL80211_TESTMODE_LINK_DETECT_NUM,
 				 &arBugReport[i]))
@@ -3197,14 +3197,14 @@ mtk_cfg80211_testmode_get_link_detection(IN struct wiphy
 
 	i4Status = cfg80211_testmode_reply(skb);
 	kalMemFree(prBugReport, VIR_MEM_TYPE,
-		   sizeof(struct _EVENT_BUG_REPORT_T));
+		   sizeof(struct EVENT_BUG_REPORT));
 	return i4Status;
 
 nla_put_failure:
 	/* nal_put_skb_fail */
 	kfree_skb(skb);
 	kalMemFree(prBugReport, VIR_MEM_TYPE,
-		   sizeof(struct _EVENT_BUG_REPORT_T));
+		   sizeof(struct EVENT_BUG_REPORT));
 	return -EFAULT;
 }
 
@@ -3362,7 +3362,7 @@ int mtk_cfg80211_sched_scan_start(IN struct wiphy *wiphy,
 
 #if CFG_SUPPORT_LOWLATENCY_MODE
 	if (!prGlueInfo->prAdapter->fgEnCfg80211Scan
-	    && PARAM_MEDIA_STATE_CONNECTED
+	    && MEDIA_STATE_CONNECTED
 	    == kalGetMediaStateIndicated(prGlueInfo)) {
 		DBGLOG(REQ, INFO,
 		       "sched_scan_start LowLatency reject scan\n");

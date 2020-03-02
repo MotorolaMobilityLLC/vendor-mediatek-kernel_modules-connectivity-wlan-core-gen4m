@@ -2203,7 +2203,7 @@ static struct wireless_dev *wlanNetCreate(void *pvData,
 
 	/* 4 <3.2> Initialize glue variables */
 	prGlueInfo->eParamMediaStateIndicated =
-		PARAM_MEDIA_STATE_DISCONNECTED;
+		MEDIA_STATE_DISCONNECTED;
 	prGlueInfo->ePowerState = ParamDeviceStateD0;
 	prGlueInfo->fgIsRegistered = FALSE;
 	prGlueInfo->prScanRequest = NULL;
@@ -3650,7 +3650,7 @@ static void wlanRemove(void)
 #endif
 
 	if (prGlueInfo->eParamMediaStateIndicated ==
-	    PARAM_MEDIA_STATE_CONNECTED) {
+	    MEDIA_STATE_CONNECTED) {
 
 #if CFG_WPS_DISCONNECT || (KERNEL_VERSION(4, 2, 0) <= CFG80211_VERSION_CODE)
 		cfg80211_disconnected(prGlueInfo->prDevHandler, 0, NULL, 0,

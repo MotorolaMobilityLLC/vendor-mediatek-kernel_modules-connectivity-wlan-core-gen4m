@@ -284,37 +284,6 @@
 /*----------------------------------------------------------------------------*/
 /* Parameters of User Configuration which match to NDIS5.1                    */
 /*----------------------------------------------------------------------------*/
-/* NDIS_802_11_AUTHENTICATION_MODE */
-enum ENUM_PARAM_AUTH_MODE {
-	AUTH_MODE_OPEN,		/*!< Open system */
-	AUTH_MODE_SHARED,	/*!< Shared key */
-	AUTH_MODE_AUTO_SWITCH,	/*!< Either open system or shared key */
-	AUTH_MODE_WPA,
-	AUTH_MODE_WPA_PSK,
-	AUTH_MODE_WPA_NONE,	/*!< For Ad hoc */
-	AUTH_MODE_WPA2,
-	AUTH_MODE_WPA2_PSK,
-	AUTH_MODE_WPA2_FT,	/* Fast Bss Transition for 802.1x */
-	AUTH_MODE_WPA2_FT_PSK,	/* Fast Bss Transition for WPA2 PSK */
-	AUTH_MODE_WPA_OSEN,
-	AUTH_MODE_NUM		/*!< Upper bound, not real case */
-};
-
-/* NDIS_802_11_ENCRYPTION_STATUS *//* Encryption types */
-enum ENUM_WEP_STATUS {
-	ENUM_WEP_ENABLED,
-	ENUM_ENCRYPTION1_ENABLED = ENUM_WEP_ENABLED,
-	ENUM_WEP_DISABLED,
-	ENUM_ENCRYPTION_DISABLED = ENUM_WEP_DISABLED,
-	ENUM_WEP_KEY_ABSENT,
-	ENUM_ENCRYPTION1_KEY_ABSENT = ENUM_WEP_KEY_ABSENT,
-	ENUM_WEP_NOT_SUPPORTED,
-	ENUM_ENCRYPTION_NOT_SUPPORTED = ENUM_WEP_NOT_SUPPORTED,
-	ENUM_ENCRYPTION2_ENABLED,
-	ENUM_ENCRYPTION2_KEY_ABSENT,
-	ENUM_ENCRYPTION3_ENABLED,
-	ENUM_ENCRYPTION3_KEY_ABSENT
-};
 
 enum ENUM_PARAM_PHY_TYPE {
 	PHY_TYPE_802_11ABG = 0,	/*!< Can associated with 802.11abg AP,
@@ -355,13 +324,6 @@ enum ENUM_PARAM_OP_MODE {
 	NET_TYPE_NUM		/* 4 */
 };
 
-struct PARAM_SSID {
-	uint32_t u4SsidLen;	/*!< SSID length in bytes.
-				 * Zero length is broadcast(any) SSID
-				 */
-	uint8_t aucSsid[PARAM_MAX_LEN_SSID];
-};
-
 struct PARAM_CONNECT {
 	uint32_t u4SsidLen;	/*!< SSID length in bytes.
 				 * Zero length is broadcast(any) SSID
@@ -387,14 +349,6 @@ enum ENUM_PARAM_AD_HOC_MODE {
 				 * 802.11abg.
 				 */
 	AD_HOC_MODE_NUM		/* 4 */
-};
-
-enum ENUM_PARAM_MEDIA_STATE {
-	PARAM_MEDIA_STATE_CONNECTED,
-	PARAM_MEDIA_STATE_DISCONNECTED,
-	PARAM_MEDIA_STATE_DISCONNECT_PREV,
-	/* for following MSDN re-association behavior */
-	PARAM_MEDIA_STATE_TO_BE_INDICATED
 };
 
 enum ENUM_PARAM_NETWORK_TYPE {
@@ -658,11 +612,6 @@ struct PARAM_CAPABILITY {
 	uint32_t u4NoOfAuthEncryptPairsSupported;
 	struct PARAM_AUTH_ENCRYPTION
 		arAuthenticationEncryptionSupported[1];
-};
-
-struct PARAM_BSSID_INFO {
-	uint8_t arBSSID[PARAM_MAC_ADDR_LEN];
-	uint8_t arPMKID[16];
 };
 
 struct PARAM_PMKID {

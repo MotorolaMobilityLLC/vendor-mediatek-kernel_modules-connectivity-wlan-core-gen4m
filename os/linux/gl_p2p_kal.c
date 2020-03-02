@@ -252,8 +252,8 @@ kalP2PSetState(IN struct GLUE_INFO *prGlueInfo,
 
 	memset(&evt, 0, sizeof(evt));
 
-	if (eState == PARAM_MEDIA_STATE_CONNECTED) {
-		prGlueInfo->prP2PInfo[0]->eState = PARAM_MEDIA_STATE_CONNECTED;
+	if (eState == MEDIA_STATE_CONNECTED) {
+		prGlueInfo->prP2PInfo[0]->eState = MEDIA_STATE_CONNECTED;
 
 		snprintf(aucBuffer, IW_CUSTOM_MAX - 1,
 			"P2P_STA_CONNECT=" MACSTR, MAC2STR(rPeerAddr));
@@ -263,7 +263,7 @@ kalP2PSetState(IN struct GLUE_INFO *prGlueInfo,
 		wireless_send_event(prGlueInfo->prP2PInfo[0]->prDevHandler,
 			IWEVCUSTOM, &evt, aucBuffer);
 
-	} else if (eState == PARAM_MEDIA_STATE_DISCONNECTED) {
+	} else if (eState == MEDIA_STATE_DISCONNECTED) {
 		snprintf(aucBuffer, IW_CUSTOM_MAX - 1,
 			"P2P_STA_DISCONNECT=" MACSTR, MAC2STR(rPeerAddr));
 		evt.data.length = strlen(aucBuffer);

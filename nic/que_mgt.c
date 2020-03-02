@@ -3127,7 +3127,7 @@ struct SW_RFB *qmHandleRxPackets(IN struct ADAPTER *prAdapter,
 				RXM_IS_DATA_FRAME(u2FrameCtrl) &&
 				(prAdapter->prAisBssInfo) &&
 				(prAdapter->prAisBssInfo->eConnectionState ==
-				PARAM_MEDIA_STATE_CONNECTED)) {
+				MEDIA_STATE_CONNECTED)) {
 				/* rx header translation */
 				log_dbg(QM, INFO, "RXD Trans: FrameCtrl=0x%02x GVLD=0x%x, StaRecIdx=%d, WlanIdx=%d PktLen=%d\n",
 					u2FrameCtrl, prCurrSwRfb->ucGroupVLD,
@@ -5105,7 +5105,7 @@ void mqmProcessBcn(IN struct ADAPTER *prAdapter,
 			if (prBssInfo->eCurrentOPMode ==
 				OP_MODE_INFRASTRUCTURE &&
 			    prBssInfo->eConnectionState ==
-			    PARAM_MEDIA_STATE_CONNECTED) {
+			    MEDIA_STATE_CONNECTED) {
 				/* P2P client or AIS infra STA */
 				if (EQUAL_MAC_ADDR(prBssInfo->aucBSSID,
 					((struct WLAN_MAC_MGMT_HEADER *)

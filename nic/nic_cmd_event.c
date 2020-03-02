@@ -730,7 +730,7 @@ void nicCmdEventSetIpAddress(IN struct ADAPTER *prAdapter,
 
 	u4Count = (prCmdInfo->u4SetInfoLen - OFFSET_OF(
 			   struct CMD_SET_NETWORK_ADDRESS_LIST, arNetAddress))
-		  / sizeof(struct IPV4_NETWORK_ADDRESS);
+		  / sizeof(struct CMD_IPV4_NETWORK_ADDRESS);
 
 	if (prCmdInfo->fgIsOid) {
 		/* Update Set Information Length */
@@ -781,20 +781,20 @@ void nicCmdEventQueryLinkQuality(IN struct ADAPTER
 				 IN uint8_t *pucEventBuf)
 {
 	int32_t rRssi, *prRssi;
-	struct EVENT_LINK_QUALITY *prLinkQuality;
+	struct LINK_QUALITY *prLinkQuality;
 	struct GLUE_INFO *prGlueInfo;
 	uint32_t u4QueryInfoLen;
 
 	ASSERT(prAdapter);
 	ASSERT(prCmdInfo);
 
-	prLinkQuality = (struct EVENT_LINK_QUALITY *) pucEventBuf;
+	prLinkQuality = (struct LINK_QUALITY *) pucEventBuf;
 
 	/* ranged from (-128 ~ 30) in unit of dBm */
 	rRssi = (int32_t)	prLinkQuality->cRssi;
 
 	if (prAdapter->prAisBssInfo->eConnectionState ==
-	    PARAM_MEDIA_STATE_CONNECTED) {
+	    MEDIA_STATE_CONNECTED) {
 		if (rRssi > PARAM_WHQL_RSSI_MAX_DBM)
 			rRssi = PARAM_WHQL_RSSI_MAX_DBM;
 		else if (rRssi < PARAM_WHQL_RSSI_MIN_DBM)
@@ -829,7 +829,7 @@ void nicCmdEventQueryLinkQuality(IN struct ADAPTER
 void nicCmdEventQueryLinkSpeed(IN struct ADAPTER *prAdapter,
 	IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf)
 {
-	struct EVENT_LINK_QUALITY *prLinkQuality;
+	struct LINK_QUALITY *prLinkQuality;
 	struct GLUE_INFO *prGlueInfo;
 	uint32_t u4QueryInfoLen;
 	uint32_t *pu4LinkSpeed;
@@ -837,7 +837,7 @@ void nicCmdEventQueryLinkSpeed(IN struct ADAPTER *prAdapter,
 	ASSERT(prAdapter);
 	ASSERT(prCmdInfo);
 
-	prLinkQuality = (struct EVENT_LINK_QUALITY *) pucEventBuf;
+	prLinkQuality = (struct LINK_QUALITY *) pucEventBuf;
 
 	if (prCmdInfo->fgIsOid) {
 		prGlueInfo = prAdapter->prGlueInfo;
@@ -856,7 +856,7 @@ void nicCmdEventQueryLinkSpeed(IN struct ADAPTER *prAdapter,
 void nicCmdEventQueryLinkSpeedEx(IN struct ADAPTER *prAdapter,
 	IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf)
 {
-	struct EVENT_LINK_QUALITY_V2 *prLinkQuality;
+	struct EVENT_LINK_QUALITY *prLinkQuality;
 	struct PARAM_LINK_SPEED_EX *pu4LinkSpeed;
 	struct GLUE_INFO *prGlueInfo;
 	uint32_t u4QueryInfoLen;
@@ -865,7 +865,7 @@ void nicCmdEventQueryLinkSpeedEx(IN struct ADAPTER *prAdapter,
 	ASSERT(prAdapter);
 	ASSERT(prCmdInfo);
 
-	prLinkQuality = (struct EVENT_LINK_QUALITY_V2 *) pucEventBuf;
+	prLinkQuality = (struct EVENT_LINK_QUALITY *) pucEventBuf;
 
 	if (prCmdInfo->fgIsOid) {
 		prGlueInfo = prAdapter->prGlueInfo;
@@ -942,23 +942,23 @@ void nicCmdEventQueryBugReport(IN struct ADAPTER *prAdapter,
 {
 #define BUG_REPORT_VERSION 1
 
-	struct _EVENT_BUG_REPORT_T *prStatistics;
-	struct _EVENT_BUG_REPORT_T *prEventStatistics;
+	struct EVENT_BUG_REPORT *prStatistics;
+	struct EVENT_BUG_REPORT *prEventStatistics;
 	struct GLUE_INFO *prGlueInfo;
 	uint32_t u4QueryInfoLen;
 
 	ASSERT(prAdapter);
 	ASSERT(prCmdInfo);
 
-	prEventStatistics = (struct _EVENT_BUG_REPORT_T *)
+	prEventStatistics = (struct EVENT_BUG_REPORT *)
 			    pucEventBuf;
 
 	if (prCmdInfo->fgIsOid) {
 		prGlueInfo = prAdapter->prGlueInfo;
-		u4QueryInfoLen = sizeof(struct _EVENT_BUG_REPORT_T);
+		u4QueryInfoLen = sizeof(struct EVENT_BUG_REPORT);
 		if (prEventStatistics->u4BugReportVersion ==
 		    BUG_REPORT_VERSION) {
-			prStatistics = (struct _EVENT_BUG_REPORT_T *)
+			prStatistics = (struct EVENT_BUG_REPORT *)
 				       prCmdInfo->pvInformationBuffer;
 			kalMemCopy(prStatistics,
 				prEventStatistics, u4QueryInfoLen);
@@ -984,7 +984,7 @@ void nicCmdEventEnterRfTest(IN struct ADAPTER *prAdapter,
 
 	/* 0. always indicate disconnection */
 	if (kalGetMediaStateIndicated(prAdapter->prGlueInfo) !=
-	    PARAM_MEDIA_STATE_DISCONNECTED)
+	    MEDIA_STATE_DISCONNECTED)
 		kalIndicateStatusAndComplete(prAdapter->prGlueInfo,
 			WLAN_STATUS_MEDIA_DISCONNECT, NULL, 0);
 	/* 1. Remove pending TX */
@@ -1129,7 +1129,7 @@ void nicCmdEventLeaveRfTest(IN struct ADAPTER *prAdapter,
 
 	/* 8. Indicate as disconnected */
 	if (kalGetMediaStateIndicated(prAdapter->prGlueInfo) !=
-	    PARAM_MEDIA_STATE_DISCONNECTED) {
+	    MEDIA_STATE_DISCONNECTED) {
 
 		kalIndicateStatusAndComplete(prAdapter->prGlueInfo,
 			WLAN_STATUS_MEDIA_DISCONNECT, NULL, 0);
@@ -3120,10 +3120,10 @@ void nicEventLinkQuality(IN struct ADAPTER *prAdapter,
 
 		if (prLqEx->ucIsLQ0Rdy)
 			nicUpdateLinkQuality(prAdapter, 0,
-				(struct EVENT_LINK_QUALITY *) prLqEx);
+				(struct LINK_QUALITY *) prLqEx);
 		if (prLqEx->ucIsLQ1Rdy)
 			nicUpdateLinkQuality(prAdapter, 1,
-				(struct EVENT_LINK_QUALITY *) prLqEx);
+				(struct LINK_QUALITY *) prLqEx);
 	} else {
 		/* For old FW, P2P may invoke link quality query,
 		 * and make driver flag becone TRUE.
@@ -3135,7 +3135,7 @@ void nicEventLinkQuality(IN struct ADAPTER *prAdapter,
 		 * cause the structure is mismatch.
 		 */
 		nicUpdateLinkQuality(prAdapter, 0,
-			(struct EVENT_LINK_QUALITY *) (prEvent->aucBuffer));
+			(struct LINK_QUALITY *) (prEvent->aucBuffer));
 	}
 #else
 	/*only support ais query */
@@ -3156,11 +3156,11 @@ void nicEventLinkQuality(IN struct ADAPTER *prAdapter,
 			ucBssIndex = 1;
 			/* No hit(bss1 for default ais network) */
 		/* printk("=======> rssi with bss%d ,%d\n",ucBssIndex,
-		 * ((struct EVENT_LINK_QUALITY_V2 *)
+		 * ((struct EVENT_LINK_QUALITY *)
 		 * (prEvent->aucBuffer))->rLq[ucBssIndex].cRssi);
 		 */
 		nicUpdateLinkQuality(prAdapter, ucBssIndex,
-			(struct EVENT_LINK_QUALITY_V2 *) (prEvent->aucBuffer));
+			(struct EVENT_LINK_QUALITY *) (prEvent->aucBuffer));
 	}
 
 #endif
@@ -4141,7 +4141,7 @@ void nicEventWlanInfo(IN struct ADAPTER *prAdapter,
 	kalMemCopy(&prAdapter->rEventWlanInfo, prEvent->aucBuffer,
 		   sizeof(struct EVENT_WLAN_INFO));
 
-	DBGLOG(RSN, INFO, "EVENT_ID_WLAN_INFO");
+	DBGLOG(RSN, INFO, "EVENT_ID_WTBL_INFO");
 	/* command response handling */
 	prCmdInfo = nicGetPendingCmdInfo(prAdapter,
 					 prEvent->ucSeqNum);

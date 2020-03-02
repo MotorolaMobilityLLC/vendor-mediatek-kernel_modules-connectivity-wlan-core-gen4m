@@ -1161,7 +1161,7 @@ kalIndicateStatusAndComplete(IN struct GLUE_INFO
 	case WLAN_STATUS_MEDIA_CONNECT:
 
 		prGlueInfo->eParamMediaStateIndicated =
-			PARAM_MEDIA_STATE_CONNECTED;
+			MEDIA_STATE_CONNECTED;
 
 		/* indicate assoc event */
 		wlanQueryInformation(prGlueInfo->prAdapter, wlanoidQueryBssid,
@@ -1426,7 +1426,7 @@ kalIndicateStatusAndComplete(IN struct GLUE_INFO
 			   sizeof(prGlueInfo->rFtIeForTx));
 
 		prGlueInfo->eParamMediaStateIndicated =
-			PARAM_MEDIA_STATE_DISCONNECTED;
+			MEDIA_STATE_DISCONNECTED;
 
 		break;
 
@@ -1587,7 +1587,7 @@ kalIndicateStatusAndComplete(IN struct GLUE_INFO
 				WLAN_STATUS_AUTH_TIMEOUT,
 				GFP_KERNEL);
 		prGlueInfo->eParamMediaStateIndicated =
-			PARAM_MEDIA_STATE_DISCONNECTED;
+			MEDIA_STATE_DISCONNECTED;
 		break;
 	}
 	default:
@@ -6646,7 +6646,7 @@ void kalPerMonHandler(IN struct ADAPTER *prAdapter,
 	     prGlueInfo->fgIsInSuspendMode ||
 	     !(netif_carrier_ok(prNetDev) ||
 	       (prP2pBssInfo->eConnectionState ==
-		PARAM_MEDIA_STATE_CONNECTED) ||
+		    MEDIA_STATE_CONNECTED) ||
 	       (prP2pBssInfo->rStaRecOfClientList.u4NumElem > 0))))
 		kalPerMonStop(prGlueInfo);
 	else {

@@ -426,7 +426,7 @@ void p2pFuncGCJoin(IN struct ADAPTER *prAdapter,
 		cnmStaRecChangeState(prAdapter, prStaRec, STA_STATE_1);
 
 		if (prP2pBssInfo->eConnectionState
-			== PARAM_MEDIA_STATE_DISCONNECTED) {
+			== MEDIA_STATE_DISCONNECTED) {
 			prStaRec->fgIsReAssoc = FALSE;
 			prP2pJoinInfo->ucAvailableAuthTypes =
 				(uint8_t) AUTH_TYPE_OPEN_SYSTEM;
@@ -1345,7 +1345,7 @@ void p2pFuncStopGO(IN struct ADAPTER *prAdapter,
 			DBGLOG(P2P, INFO,
 				"No client! Deactive GO immediately.\n");
 			p2pChangeMediaState(prAdapter,
-				prP2pBssInfo, PARAM_MEDIA_STATE_DISCONNECTED);
+				prP2pBssInfo, MEDIA_STATE_DISCONNECTED);
 			p2pFuncStopComplete(prAdapter, prP2pBssInfo);
 		}
 
@@ -1493,7 +1493,7 @@ p2pFuncSwitchOPMode(IN struct ADAPTER *prAdapter,
 
 					p2pChangeMediaState(prAdapter,
 						prP2pBssInfo,
-						PARAM_MEDIA_STATE_DISCONNECTED);
+						MEDIA_STATE_DISCONNECTED);
 
 					COPY_MAC_ADDR(
 						prP2pBssInfo->aucOwnMacAddr,
@@ -2903,7 +2903,7 @@ p2pFuncDissolve(IN struct ADAPTER *prAdapter,
 			 */
 			p2pChangeMediaState(prAdapter,
 				prP2pBssInfo,
-				PARAM_MEDIA_STATE_DISCONNECTED);
+				MEDIA_STATE_DISCONNECTED);
 
 			prP2pBssInfo->prStaRecOfAP = NULL;
 
@@ -2951,7 +2951,7 @@ p2pFuncDissolve(IN struct ADAPTER *prAdapter,
 		/* Change Connection Status. */
 		/* 20161025, can not set DISCONNECTED if clientcount > 0 */
 		/*p2pChangeMediaState(prAdapter,
-		 * prP2pBssInfo, PARAM_MEDIA_STATE_DISCONNECTED);
+		 * prP2pBssInfo, MEDIA_STATE_DISCONNECTED);
 		 */
 
 	} while (FALSE);
@@ -3047,7 +3047,7 @@ p2pFuncDisconnect(IN struct ADAPTER *prAdapter,
 					"No More Client, Media Status DISCONNECTED\n");
 				p2pChangeMediaState(prAdapter,
 					prP2pBssInfo,
-					PARAM_MEDIA_STATE_DISCONNECTED);
+					MEDIA_STATE_DISCONNECTED);
 			}
 
 			if (eOriMediaStatus != prP2pBssInfo->eConnectionState) {
@@ -6169,7 +6169,7 @@ void p2pFuncSwitchSapChannel(
 	}
 
 	if (kalGetMediaStateIndicated(prAdapter->prGlueInfo)
-		!= PARAM_MEDIA_STATE_CONNECTED) {
+		!= MEDIA_STATE_CONNECTED) {
 		DBGLOG(P2P, WARN, "STA is not connected\n");
 		goto exit;
 	}
@@ -6276,7 +6276,7 @@ p2pFunGetPreferredFreqList(IN struct ADAPTER *prAdapter,
 			eIftype,
 			prAisBssInfo->eConnectionState);
 
-	if (prAisBssInfo->eConnectionState != PARAM_MEDIA_STATE_CONNECTED) {
+	if (prAisBssInfo->eConnectionState != MEDIA_STATE_CONNECTED) {
 		/* Prefer 5G if STA is NOT connected */
 		rlmDomainGetChnlList(prAdapter, BAND_5G, TRUE,
 				MAX_CHN_NUM, &ucNumOfChannel, aucChannelList);

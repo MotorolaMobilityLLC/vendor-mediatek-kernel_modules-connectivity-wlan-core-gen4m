@@ -418,7 +418,7 @@ uint32_t nicRoamingUpdateParams(IN struct ADAPTER
 void
 nicUpdateLinkQuality(IN struct ADAPTER *prAdapter,
 		     IN uint8_t ucBssIndex,
-		     IN struct EVENT_LINK_QUALITY_V2 *prEventLinkQuality);
+		     IN struct EVENT_LINK_QUALITY *prEventLinkQuality);
 
 void nicUpdateRSSI(IN struct ADAPTER *prAdapter,
 		   IN uint8_t ucBssIndex, IN int8_t cRssi,

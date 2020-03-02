@@ -491,17 +491,6 @@ struct WOW_WAKE_HIF {
 	uint8_t		aucResv[5];
 };
 
-struct WOW_PORT {
-	uint8_t ucIPv4UdpPortCnt;
-	uint8_t ucIPv4TcpPortCnt;
-	uint8_t ucIPv6UdpPortCnt;
-	uint8_t ucIPv6TcpPortCnt;
-	uint16_t ausIPv4UdpPort[MAX_TCP_UDP_PORT];
-	uint16_t ausIPv4TcpPort[MAX_TCP_UDP_PORT];
-	uint16_t ausIPv6UdpPort[MAX_TCP_UDP_PORT];
-	uint16_t ausIPv6TcpPort[MAX_TCP_UDP_PORT];
-};
-
 struct WOW_CTRL {
 	uint8_t fgWowEnable;	/* 0: disable, 1: wow enable */
 	uint8_t ucScenarioId;	/* just a profile ID */

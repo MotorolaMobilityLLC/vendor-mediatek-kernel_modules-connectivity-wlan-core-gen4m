@@ -885,7 +885,7 @@ rlmDomainGetChnlList_V2(struct ADAPTER *prAdapter,
 #if (CFG_SUPPORT_SINGLE_SKU == 1)
 	enum ENUM_BAND band;
 	uint8_t max_count, i, ucNum;
-	struct channel *prCh;
+	struct CMD_DOMAIN_CHANNEL *prCh;
 
 	if (eSpecificBand == BAND_2G4) {
 		i = 0;
@@ -903,7 +903,7 @@ rlmDomainGetChnlList_V2(struct ADAPTER *prAdapter,
 	ucNum = 0;
 	for (; i < max_count; i++) {
 		prCh = rlmDomainGetActiveChannels() + i;
-		if (fgNoDfs && (prCh->flags & IEEE80211_CHAN_RADAR))
+		if (fgNoDfs && (prCh->eFlags & IEEE80211_CHAN_RADAR))
 			continue; /*not match*/
 
 		if (i < rlmDomainGetActiveChannelCount(KAL_BAND_2GHZ))
@@ -912,7 +912,7 @@ rlmDomainGetChnlList_V2(struct ADAPTER *prAdapter,
 			band = BAND_5G;
 
 		paucChannelList[ucNum].eBand = band;
-		paucChannelList[ucNum].ucChannelNum = prCh->chNum;
+		paucChannelList[ucNum].ucChannelNum = prCh->u2ChNum;
 
 		ucNum++;
 		if (ucMaxChannelNum == ucNum)
@@ -1083,7 +1083,7 @@ void rlmDomainSendDomainInfoCmd_V2(struct ADAPTER *prAdapter)
 	u8 max_channel_count = 0;
 	u32 buff_max_size, buff_valid_size;
 	struct CMD_SET_DOMAIN_INFO_V2 *prCmd;
-	struct acctive_channel_list *prChs;
+	struct CMD_DOMAIN_ACTIVE_CHANNEL_LIST *prChs;
 	struct wiphy *pWiphy;
 
 
@@ -1100,11 +1100,10 @@ void rlmDomainSendDomainInfoCmd_V2(struct ADAPTER *prAdapter)
 
 
 	buff_max_size = sizeof(struct CMD_SET_DOMAIN_INFO_V2) +
-			       max_channel_count * sizeof(struct channel);
+		max_channel_count * sizeof(struct CMD_DOMAIN_CHANNEL);
 
 	prCmd = cnmMemAlloc(prAdapter, RAM_TYPE_BUF, buff_max_size);
-	prChs = &(prCmd->active_chs);
-
+	prChs = &(prCmd->arActiveChannels);
 
 
 	/*
@@ -1117,12 +1116,12 @@ void rlmDomainSendDomainInfoCmd_V2(struct ADAPTER *prAdapter)
 							uc2G4BandwidthMode;
 	prCmd->uc5GBandwidth = prAdapter->rWifiVar.rConnSettings.
 							uc5GBandwidthMode;
-	prCmd->aucReserved[0] = 0;
-	prCmd->aucReserved[1] = 0;
+	prCmd->aucPadding[0] = 0;
+	prCmd->aucPadding[1] = 0;
 
 	buff_valid_size = sizeof(struct CMD_SET_DOMAIN_INFO_V2) +
-				 (prChs->n_channels_2g + prChs->n_channels_5g) *
-				 sizeof(struct channel);
+		(prChs->u1ActiveChNum2g + prChs->u1ActiveChNum5g) *
+		sizeof(struct CMD_DOMAIN_CHANNEL);
 
 	DBGLOG(RLM, INFO,
 	       "rlmDomainSendDomainInfoCmd_V2(), buff_valid_size = 0x%x\n",
@@ -1331,7 +1330,7 @@ u_int8_t rlmDomainIsLegalChannel_V2(struct ADAPTER *prAdapter,
 {
 #if (CFG_SUPPORT_SINGLE_SKU == 1)
 	uint8_t idx, start_idx, end_idx;
-	struct channel *prCh;
+	struct CMD_DOMAIN_CHANNEL *prCh;
 
 	if (eBand == BAND_2G4) {
 		start_idx = 0;
@@ -1345,7 +1344,7 @@ u_int8_t rlmDomainIsLegalChannel_V2(struct ADAPTER *prAdapter,
 	for (idx = start_idx; idx < end_idx; idx++) {
 		prCh = rlmDomainGetActiveChannels() + idx;
 
-		if (prCh->chNum == ucChannel)
+		if (prCh->u2ChNum == ucChannel)
 			return TRUE;
 	}
 
@@ -2177,7 +2176,7 @@ void rlmDomainTxPwrLimitSetChValues(
 
 void rlmDomainTxPwrLimitPerRateSetChValues(
 	uint8_t ucVersion,
-	struct CHANNEL_POWER_LIMIT_PER_RATE *pCmd,
+	struct CMD_TXPOWER_CHANNEL_POWER_LIMIT_PER_RATE *pCmd,
 	struct CHANNEL_TX_PWR_LIMIT *pChTxPwrLimit)
 {
 	uint8_t section = 0, e = 0, count = 0;
@@ -2192,7 +2191,7 @@ void rlmDomainTxPwrLimitPerRateSetChValues(
 		}
 	}
 
-	DBGLOG(RLM, TRACE, "ch %d\n", pCmd->ucCentralCh);
+	DBGLOG(RLM, TRACE, "ch %d\n", pCmd->u1CentralCh);
 	count = 0;
 	for (section = 0; section < TX_PWR_LIMIT_SECTION_NUM; section++) {
 		struct TX_PWR_LIMIT_SECTION *pSection =
@@ -2239,18 +2238,18 @@ void rlmDomainTxPwrLimitSetValues(
 
 void rlmDomainTxPwrLimitPerRateSetValues(
 	uint8_t ucVersion,
-	struct CMD_SET_COUNTRY_TX_POWER_LIMIT_PER_RATE *pSetCmd,
+	struct CMD_SET_TXPOWER_COUNTRY_TX_POWER_LIMIT_PER_RATE *pSetCmd,
 	struct TX_PWR_LIMIT_DATA *pTxPwrLimit)
 {
 	uint8_t ucIdx = 0;
 	int8_t cChIdx = 0;
-	struct CHANNEL_POWER_LIMIT_PER_RATE *pChPwrLimit = NULL;
+	struct CMD_TXPOWER_CHANNEL_POWER_LIMIT_PER_RATE *pChPwrLimit = NULL;
 	struct CHANNEL_TX_PWR_LIMIT *pChTxPwrLimit = NULL;
 
 	for (ucIdx = 0; ucIdx < pSetCmd->ucNum; ucIdx++) {
 		pChPwrLimit = &(pSetCmd->rChannelPowerLimit[ucIdx]);
 		cChIdx = rlmDomainTxPwrLimitGetChIdx(pTxPwrLimit,
-			pChPwrLimit->ucCentralCh);
+			pChPwrLimit->u1CentralCh);
 
 		if (cChIdx == -1) {
 			DBGLOG(RLM, ERROR,
@@ -3090,12 +3089,13 @@ rlmDomainSendTxPwrLimitPerRateCmd(struct ADAPTER *prAdapter,
 	uint32_t u4SetQueryInfoLen;
 	uint32_t u4SetCmdTableMaxSize[KAL_NUM_BANDS] = {0};
 	struct wiphy *wiphy;
-	struct CMD_SET_COUNTRY_TX_POWER_LIMIT_PER_RATE
+	struct CMD_SET_TXPOWER_COUNTRY_TX_POWER_LIMIT_PER_RATE
 		*prCmd[KAL_NUM_BANDS] = {0};
-	struct CHANNEL_POWER_LIMIT_PER_RATE *prChPwrLimit = NULL;
+	struct CMD_TXPOWER_CHANNEL_POWER_LIMIT_PER_RATE *prChPwrLimit = NULL;
 	uint32_t u4SetCountryTxPwrLimitCmdSize =
-		sizeof(struct CMD_SET_COUNTRY_TX_POWER_LIMIT_PER_RATE);
-	uint32_t u4ChPwrLimitSize = sizeof(struct CHANNEL_POWER_LIMIT_PER_RATE);
+		sizeof(struct CMD_SET_TXPOWER_COUNTRY_TX_POWER_LIMIT_PER_RATE);
+	uint32_t u4ChPwrLimitSize =
+		sizeof(struct CMD_TXPOWER_CHANNEL_POWER_LIMIT_PER_RATE);
 	const uint8_t ucCmdBatchSize =
 		prAdapter->chip_info->ucTxPwrLimitBatchSize;
 
@@ -3132,7 +3132,7 @@ rlmDomainSendTxPwrLimitPerRateCmd(struct ADAPTER *prAdapter,
 		prCmd[band_idx]->eBand =
 			(band_idx == KAL_BAND_2GHZ) ?
 				BAND_2G4 : BAND_5G;
-		prCmd[band_idx]->countryCode = rlmDomainGetCountryCode();
+		prCmd[band_idx]->u4CountryCode = rlmDomainGetCountryCode();
 
 		DBGLOG(RLM, INFO,
 			"%s, active n_channels=%d, band=%d\n",
@@ -3142,7 +3142,7 @@ rlmDomainSendTxPwrLimitPerRateCmd(struct ADAPTER *prAdapter,
 			prChPwrLimit =
 				&(prCmd[band_idx]->
 				  rChannelPowerLimit[ch_idx]);
-			prChPwrLimit->ucCentralCh =	prChannelList[ch_idx];
+			prChPwrLimit->u1CentralCh =	prChannelList[ch_idx];
 		}
 	}
 
@@ -3154,7 +3154,7 @@ rlmDomainSendTxPwrLimitPerRateCmd(struct ADAPTER *prAdapter,
 	for (band_idx = 0; band_idx < KAL_NUM_BANDS; band_idx++) {
 		uint8_t ucRemainChNum, i, ucTempChNum, prCmdBatchNum;
 		uint32_t u4BufSize = 0;
-		struct CMD_SET_COUNTRY_TX_POWER_LIMIT_PER_RATE
+		struct CMD_SET_TXPOWER_COUNTRY_TX_POWER_LIMIT_PER_RATE
 			*prTempCmd = NULL;
 		enum ENUM_BAND eBand = (band_idx == KAL_BAND_2GHZ) ?
 				BAND_2G4 : BAND_5G;
@@ -3193,7 +3193,7 @@ rlmDomainSendTxPwrLimitPerRateCmd(struct ADAPTER *prAdapter,
 			/*copy partial tx pwr limit*/
 			prTempCmd->ucNum = ucTempChNum;
 			prTempCmd->eBand = eBand;
-			prTempCmd->countryCode =
+			prTempCmd->u4CountryCode =
 				rlmDomainGetCountryCode();
 			prTempCmd->bCmdFinished = bCmdFinished;
 			u2ChIdx = i * ucCmdBatchSize;
@@ -3430,7 +3430,7 @@ u8 rlmDomainGetActiveChannelCount(u8 band)
 		return 0;
 }
 
-struct channel *rlmDomainGetActiveChannels(void)
+struct CMD_DOMAIN_CHANNEL *rlmDomainGetActiveChannels(void)
 {
 	return g_mtk_regd_control.channels;
 }
@@ -3617,7 +3617,7 @@ void rlmDomainParsingChannel(IN struct wiphy *pWiphy)
 	u32 ch_count;
 	struct ieee80211_supported_band *sband;
 	struct ieee80211_channel *chan;
-	struct channel *pCh;
+	struct CMD_DOMAIN_CHANNEL *pCh;
 	char chan_flag_string[64] = {0};
 
 
@@ -3673,8 +3673,8 @@ void rlmDomainParsingChannel(IN struct wiphy *pWiphy)
 				chan->center_freq, chan->flags,
 				chan_flag_string);
 
-			pCh->chNum = chan->hw_value;
-			pCh->flags = chan->flags;
+			pCh->u2ChNum = chan->hw_value;
+			pCh->eFlags = chan->flags;
 
 			ch_count += 1;
 		}
@@ -3682,14 +3682,14 @@ void rlmDomainParsingChannel(IN struct wiphy *pWiphy)
 	}
 }
 void rlmExtractChannelInfo(u32 max_ch_count,
-			   struct acctive_channel_list *prBuff)
+			   struct CMD_DOMAIN_ACTIVE_CHANNEL_LIST *prBuff)
 {
 	u32 ch_count, idx;
-	struct channel *pCh;
+	struct CMD_DOMAIN_CHANNEL *pCh;
 
-	prBuff->n_channels_2g = rlmDomainGetActiveChannelCount(KAL_BAND_2GHZ);
-	prBuff->n_channels_5g = rlmDomainGetActiveChannelCount(KAL_BAND_5GHZ);
-	ch_count = prBuff->n_channels_2g + prBuff->n_channels_5g;
+	prBuff->u1ActiveChNum2g = rlmDomainGetActiveChannelCount(KAL_BAND_2GHZ);
+	prBuff->u1ActiveChNum5g = rlmDomainGetActiveChannelCount(KAL_BAND_5GHZ);
+	ch_count = prBuff->u1ActiveChNum2g + prBuff->u1ActiveChNum5g;
 
 	if (ch_count > max_ch_count) {
 		ch_count = max_ch_count;
@@ -3699,10 +3699,10 @@ void rlmExtractChannelInfo(u32 max_ch_count,
 	}
 
 	for (idx = 0; idx < ch_count; idx++) {
-		pCh = &(prBuff->channels[idx]);
+		pCh = &(prBuff->arChannels[idx]);
 
-		pCh->chNum = (rlmDomainGetActiveChannels() + idx)->chNum;
-		pCh->flags = (rlmDomainGetActiveChannels() + idx)->flags;
+		pCh->u2ChNum = (rlmDomainGetActiveChannels() + idx)->u2ChNum;
+		pCh->eFlags = (rlmDomainGetActiveChannels() + idx)->eFlags;
 	}
 
 }
@@ -3761,7 +3761,7 @@ uint8_t rlmDomainGetChannelBw(uint8_t channelNum)
 {
 	uint32_t ch_idx = 0, start_idx = 0, end_idx = 0;
 	uint8_t channelBw = MAX_BW_80_80_MHZ;
-	struct channel *pCh;
+	struct CMD_DOMAIN_CHANNEL *pCh;
 
 	end_idx = rlmDomainGetActiveChannelCount(KAL_BAND_2GHZ)
 			+ rlmDomainGetActiveChannelCount(KAL_BAND_5GHZ);
@@ -3769,17 +3769,17 @@ uint8_t rlmDomainGetChannelBw(uint8_t channelNum)
 	for (ch_idx = start_idx; ch_idx < end_idx; ch_idx++) {
 		pCh = (rlmDomainGetActiveChannels() + ch_idx);
 
-		if (pCh->chNum != channelNum)
+		if (pCh->u2ChNum != channelNum)
 			continue;
 
 		/* Max BW */
-		if ((pCh->flags & IEEE80211_CHAN_NO_160MHZ)
+		if ((pCh->eFlags & IEEE80211_CHAN_NO_160MHZ)
 						== IEEE80211_CHAN_NO_160MHZ)
 			channelBw = MAX_BW_80MHZ;
-		if ((pCh->flags & IEEE80211_CHAN_NO_80MHZ)
+		if ((pCh->eFlags & IEEE80211_CHAN_NO_80MHZ)
 						== IEEE80211_CHAN_NO_80MHZ)
 			channelBw = MAX_BW_40MHZ;
-		if ((pCh->flags & IEEE80211_CHAN_NO_HT40)
+		if ((pCh->eFlags & IEEE80211_CHAN_NO_HT40)
 						== IEEE80211_CHAN_NO_HT40)
 			channelBw = MAX_BW_20MHZ;
 	}
