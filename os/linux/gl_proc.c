@@ -260,7 +260,8 @@ static int procEfuseDump_show(struct seq_file *s, void *v)
 		return -EPERM;
 	}
 
-	if (prGlueInfo->prAdapter &&
+	if (prGlueInfo &&
+	    prGlueInfo->prAdapter &&
 	    prGlueInfo->prAdapter->chip_info &&
 	    !prGlueInfo->prAdapter->chip_info->is_support_efuse) {
 		seq_puts(s, "efuse ops is invalid\n");
