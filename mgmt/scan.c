@@ -1539,8 +1539,15 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 	u2IELength = (prSwRfb->u2PacketLen - prSwRfb->u2HeaderLen) -
 	    (uint16_t) OFFSET_OF(struct WLAN_BEACON_FRAME_BODY, aucInfoElem[0]);
 
-	if (u2IELength > CFG_IE_BUFFER_SIZE)
+	if (u2IELength > CFG_IE_BUFFER_SIZE) {
+		/* Give an warning msg when IE is going to be
+		 * truncated.
+		 */
+		DBGLOG(SCN, ERROR,
+			"IE len(%u) > Max IE buffer size(%u), truncate IE!\n",
+			u2IELength, CFG_IE_BUFFER_SIZE);
 		u2IELength = CFG_IE_BUFFER_SIZE;
+	}
 	kalMemZero(&rSsid, sizeof(rSsid));
 	IE_FOR_EACH(pucIE, u2IELength, u2Offset) {
 		switch (IE_ID(pucIE)) {
@@ -1774,8 +1781,15 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 
 	prBssDesc->fgIsValidSSID = fgIsValidSsid;
 	prBssDesc->u2RawLength = prSwRfb->u2PacketLen;
-	if (prBssDesc->u2RawLength > CFG_RAW_BUFFER_SIZE)
+	if (prBssDesc->u2RawLength > CFG_RAW_BUFFER_SIZE) {
 		prBssDesc->u2RawLength = CFG_RAW_BUFFER_SIZE;
+		/* Give an warning msg when content is going to be
+		 * truncated.
+		 */
+		DBGLOG(SCN, WARN,
+			"Pkt len(%u) > Max RAW buffer size(%u), truncate it!\n",
+			prSwRfb->u2PacketLen, CFG_RAW_BUFFER_SIZE);
+}
 	if (fgIsProbeResp || fgIsValidSsid) {
 		kalMemCopy(prBssDesc->aucRawBuf, prWlanBeaconFrame,
 			prBssDesc->u2RawLength);
@@ -1810,6 +1824,7 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 	if (u2IELength > CFG_IE_BUFFER_SIZE) {
 		u2IELength = CFG_IE_BUFFER_SIZE;
 		prBssDesc->fgIsIEOverflow = TRUE;
+		DBGLOG(SCN, WARN, "IE is truncated!\n");
 	} else {
 		prBssDesc->fgIsIEOverflow = FALSE;
 	}
