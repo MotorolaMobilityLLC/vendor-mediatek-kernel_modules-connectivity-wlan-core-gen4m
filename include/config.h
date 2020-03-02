@@ -696,7 +696,6 @@
  *------------------------------------------------------------------------------
  */
 
-#define CFG_SUPPORT_PNO             0
 #define CFG_SUPPORT_TDLS		1
 
 #define CFG_SUPPORT_QOS             1	/* Enable/disable QoS TX, AMPDU */
@@ -830,15 +829,17 @@
  * Flags of SCHEDULE SCAN SUPPORT
  *------------------------------------------------------------------------------
  */
+#define CFG_SUPPORT_PNO                    (0)
 #define CFG_SUPPORT_SCHED_SCAN             (0)
-#define PSCAN_VERSION                      (1)
+#define SCHED_SCAN_CMD_VERSION             (1)
 
-#define CFG_SCAN_HIDDEN_SSID_MAX_NUM       (7)
+/* this value should be aligned to auSsid in struct CMD_SCHED_SCAN_REQ */
+#define CFG_SCAN_HIDDEN_SSID_MAX_NUM       (10)
+/* this value should be aligned to auMatchSsid in struct CMD_SCHED_SCAN_REQ */
 #define CFG_SCAN_SSID_MATCH_MAX_NUM        (16)
-#define CFG_SUPPORT_SCHED_SCAN_IE          (0)
 
 #if CFG_SUPPORT_PNO != CFG_SUPPORT_SCHED_SCAN
-#error Value of CFG_SUPPORT_SCHED_SCAN should equal to value of CFG_SUPPORT_PNO
+#error Value of CFG_SUPPORT_SCHED_SCAN and CFG_SUPPORT_PNO should be the same
 #endif
 /*------------------------------------------------------------------------------
  * Flags of Sniffer SUPPORT

@@ -141,8 +141,6 @@
 #endif
 #endif
 
-#define SCN_NLO_NETWORK_CHANNEL_NUM		(4)
-
 #define SCAN_DONE_DIFFERENCE			3
 
 /*----------------------------------------------------------------------------*/
@@ -174,8 +172,6 @@
 #define SCAN_BATCH_REQ_RESULT			BIT(2)
 #endif
 
-#define SCAN_NLO_CHECK_SSID_ONLY		(0x01)
-#define SCAN_NLO_DEFAULT_INTERVAL		(30000)
 /* Support AP Setection */
 #define SCN_BSS_JOIN_FAIL_THRESOLD          4
 
@@ -232,6 +228,11 @@ enum ENUM_SCAN_CHANNEL {
 struct MSG_SCN_FSM {
 	struct MSG_HDR rMsgHdr;	/* Must be the first member */
 	uint32_t u4Dummy;
+};
+
+enum ENUM_SCHED_SCAN_ACT {
+	SCHED_SCAN_ACT_ENABLE = 0,
+	SCHED_SCAN_ACT_DISABLE,
 };
 
 /*----------------------------------------------------------------------------*/
@@ -456,7 +457,7 @@ struct SCAN_PARAM {	/* Used by SCAN FSM */
 
 };
 
-struct NLO_PARAM {	/* Used by SCAN FSM */
+struct SCHED_SCAN_PARAM {	/* Used by SCAN FSM */
 	uint8_t ucSeqNum;
 	uint8_t ucBssIndex;              /* Network Type */
 	u_int8_t fgStopAfterIndication;  /* always FALSE */
@@ -471,7 +472,7 @@ struct SCAN_INFO {
 	OS_SYSTIME rLastScanCompletedTime;
 
 	struct SCAN_PARAM rScanParam;
-	struct NLO_PARAM rNloParam;
+	struct SCHED_SCAN_PARAM rSchedScanParam;
 
 	uint32_t u4NumOfBssDesc;
 
@@ -491,8 +492,8 @@ struct SCAN_INFO {
 	u_int8_t fgIsSparseChannelValid;
 	struct RF_CHANNEL_INFO rSparseChannel;
 
-	/* NLO scanning state tracking */
-	u_int8_t fgNloScanning;
+	/* Sched scan state tracking */
+	u_int8_t fgSchedScanning;
 
 	/*channel idle count # Mike */
 	uint8_t		ucSparseChannelArrayValidNum;
@@ -557,32 +558,6 @@ struct MSG_SCN_SCAN_CANCEL {
 	u_int8_t fgIsChannelExt;
 };
 
-struct tagOFFLOAD_NETWORK {
-	uint8_t aucSsid[ELEM_MAX_LEN_SSID];
-	uint8_t ucSsidLen;
-	uint8_t ucUnicastCipher;	/* ENUM_NLO_CIPHER_ALGORITHM */
-	uint16_t u2AuthAlgo;		/* ENUM_NLO_AUTH_ALGORITHM */
-	uint8_t aucChannelList[SCN_NLO_NETWORK_CHANNEL_NUM];
-};
-
-struct MSG_SCN_NLO_REQ {
-	struct MSG_HDR rMsgHdr;	/* Must be the first member */
-	u_int8_t fgStopAfterIndication;
-	uint8_t ucSeqNum;
-	uint8_t ucBssIndex;
-	uint32_t u4FastScanPeriod;
-	uint32_t u4FastScanIterations;
-	uint32_t u4SlowScanPeriod;
-	uint32_t u4NumOfEntries;
-	struct tagOFFLOAD_NETWORK arNetwork[CFG_SCAN_SSID_MAX_NUM];
-};
-
-struct MSG_SCN_NLO_CANCEL {
-	struct MSG_HDR rMsgHdr;	/* Must be the first member */
-	uint8_t ucSeqNum;
-	uint8_t ucBssIndex;
-};
-
 /* Outgoing Mailbox Messages */
 enum ENUM_SCAN_STATUS {
 	SCAN_STATUS_DONE = 0,
@@ -618,21 +593,6 @@ struct AGPS_AP_LIST {
 	struct AGPS_AP_INFO arApInfo[SCN_AGPS_AP_LIST_MAX_NUM];
 };
 #endif
-
-enum ENUM_NLO_STATUS {
-	NLO_STATUS_FOUND = 0,
-	NLO_STATUS_CANCELLED,
-	NLO_STATUS_FAIL,
-	NLO_STATUS_BUSY,
-	NLO_STATUS_NUM
-};
-
-struct MSG_SCN_NLO_DONE {
-	struct MSG_HDR rMsgHdr;	/* Must be the first member */
-	uint8_t ucSeqNum;
-	uint8_t ucBssIndex;
-	enum ENUM_NLO_STATUS eNloStatus;
-};
 
 /*******************************************************************************
  *                            P U B L I C   D A T A
@@ -779,8 +739,8 @@ void scnEventScanDone(IN struct ADAPTER *prAdapter,
 		      IN struct EVENT_SCAN_DONE *prScanDone,
 		      u_int8_t fgIsNewVersion);
 
-void scnEventNloDone(IN struct ADAPTER *prAdapter,
-		     IN struct EVENT_NLO_DONE *prNloDone);
+void scnEventSchedScanDone(IN struct ADAPTER *prAdapter,
+		     IN struct EVENT_SCHED_SCAN_DONE *prSchedScanDone);
 
 /*----------------------------------------------------------------------------*/
 /* Mailbox Message Handling                                                   */
@@ -800,15 +760,6 @@ void scnFsmHandleScanMsgV2(IN struct ADAPTER *prAdapter,
 void scnFsmRemovePendingMsg(IN struct ADAPTER *prAdapter,
 			    IN uint8_t ucSeqNum,
 			    IN uint8_t ucBssIndex);
-
-void scnFsmNloMsgStart(IN struct ADAPTER *prAdapter,
-		       IN struct MSG_HDR *prMsgHdr);
-
-void scnFsmNloMsgAbort(IN struct ADAPTER *prAdapter,
-		       IN struct MSG_HDR *prMsgHdr);
-
-void scnFsmHandleNloMsg(IN struct ADAPTER *prAdapter,
-			IN struct MSG_SCN_NLO_REQ *prNloReqMsg);
 
 /*----------------------------------------------------------------------------*/
 /* Mailbox Message Generation                                                 */
@@ -845,14 +796,14 @@ u_int8_t scnFsmSchedScanRequest(IN struct ADAPTER *prAdapter,
 
 u_int8_t scnFsmSchedScanStopRequest(IN struct ADAPTER *prAdapter);
 
-u_int8_t scnFsmPSCNAction(IN struct ADAPTER *prAdapter,
-			IN enum ENUM_PSCAN_ACT ucPscanAct);
+u_int8_t scnFsmSchedScanSetAction(IN struct ADAPTER *prAdapter,
+			IN enum ENUM_SCHED_SCAN_ACT ucSchedScanAct);
 
-u_int8_t scnFsmPSCNSetParam(IN struct ADAPTER *prAdapter,
-			IN struct CMD_SET_PSCAN_PARAM *prCmdPscnParam);
+u_int8_t scnFsmSchedScanSetCmd(IN struct ADAPTER *prAdapter,
+			IN struct CMD_SCHED_SCAN_REQ *prSchedScanCmd);
 
-void scnSetSchedScanPlanIntoPSCN(IN struct ADAPTER *prAdapter,
-			IN struct CMD_SET_PSCAN_PARAM *prCmdPscnParam);
+void scnSetSchedScanPlan(IN struct ADAPTER *prAdapter,
+			IN struct CMD_SCHED_SCAN_REQ *prSchedScanCmd);
 
 #endif /* CFG_SUPPORT_SCHED_SCAN */
 
