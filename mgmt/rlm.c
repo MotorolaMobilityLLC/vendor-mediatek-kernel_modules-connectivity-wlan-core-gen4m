@@ -6805,7 +6805,10 @@ void rlmProcessRadioMeasurementRequest(struct ADAPTER *prAdapter,
 
 	ASSERT(prAdapter);
 	ASSERT(prSwRfb);
-	ASSERT(prAdapter->prAisBssInfo);
+	if (prAdapter->prAisBssInfo == NULL) {
+		DBGLOG(RLM, INFO, "Ignored due to AIS isn't created\n");
+		return;
+	}
 	prRmReqFrame = (struct ACTION_RM_REQ_FRAME *)prSwRfb->pvHeader;
 	prRmReqParam = &prAdapter->rWifiVar.rRmReqParams;
 	prRmRepParam = &prAdapter->rWifiVar.rRmRepParams;
