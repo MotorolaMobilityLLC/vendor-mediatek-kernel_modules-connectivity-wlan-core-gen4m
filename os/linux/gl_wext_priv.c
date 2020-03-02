@@ -432,6 +432,26 @@ static struct WLAN_REQ_ENTRY arWlanOidReqTable[] = {
 	 (PFN_OID_HANDLER_FUNC_REQ) wlanoidSetWSCAssocInfo}
 	,
 #endif
+
+	{OID_IPC_WIFI_LOG_UI,
+	DISP_STRING("OID_IPC_WIFI_LOG_UI"),
+	FALSE,
+	FALSE,
+	ENUM_OID_DRIVER_CORE,
+	sizeof(struct PARAM_WIFI_LOG_LEVEL_UI),
+	(PFN_OID_HANDLER_FUNC_REQ) wlanoidQueryWifiLogLevelSupport,
+	NULL}
+	,
+
+	{OID_IPC_WIFI_LOG_LEVEL,
+	DISP_STRING("OID_IPC_WIFI_LOG_LEVEL"),
+	FALSE,
+	FALSE,
+	ENUM_OID_DRIVER_CORE,
+	sizeof(struct PARAM_WIFI_LOG_LEVEL),
+	(PFN_OID_HANDLER_FUNC_REQ) wlanoidQueryWifiLogLevel,
+	(PFN_OID_HANDLER_FUNC_REQ) wlanoidSetWifiLogLevel}
+	,
 };
 
 /*******************************************************************************
@@ -2426,7 +2446,8 @@ int priv_driver_get_dbg_level(IN struct net_device *prNetDev, IN char *pcCommand
 		if (u4Ret)
 			DBGLOG(REQ, LOUD, "parse apcArgv error u4Ret=%d\n", u4Ret);
 
-		if (wlanGetDebugLevel(u4DbgIdx, &u4DbgMask) == WLAN_STATUS_SUCCESS) {
+		if (wlanGetDriverDbgLevel(u4DbgIdx, &u4DbgMask) ==
+				WLAN_STATUS_SUCCESS) {
 			fgIsCmdAccept = TRUE;
 			i4BytesWritten =
 			    snprintf(pcCommand, i4TotalLen,

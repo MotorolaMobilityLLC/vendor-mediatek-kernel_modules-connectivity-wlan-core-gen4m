@@ -2335,6 +2335,42 @@ struct OSHARE_MODE_SETTING_V1_T {
 };
 #endif
 
+struct PARAM_WIFI_LOG_LEVEL_UI {
+	uint32_t u4Version;
+	uint32_t u4Module;
+	uint32_t u4Enable;
+};
+
+struct PARAM_WIFI_LOG_LEVEL {
+	uint32_t u4Version;
+	uint32_t u4Module;
+	uint32_t u4Level;
+};
+
+enum ENUM_WIFI_LOG_LEVEL_VERSION_T {
+	ENUM_WIFI_LOG_LEVEL_VERSION_V1 = 1,
+	ENUM_WIFI_LOG_LEVEL_VERSION_NUM
+};
+
+enum ENUM_WIFI_LOG_LEVEL_T {
+	ENUM_WIFI_LOG_LEVEL_DEFAULT = 0,
+	ENUM_WIFI_LOG_LEVEL_MORE,
+	ENUM_WIFI_LOG_LEVEL_EXTREME,
+	ENUM_WIFI_LOG_LEVEL_NUM
+};
+
+enum ENUM_WIFI_LOG_MODULE_T {
+	ENUM_WIFI_LOG_MODULE_DRIVER = 0,
+	ENUM_WIFI_LOG_MODULE_FW,
+	ENUM_WIFI_LOG_MODULE_NUM,
+};
+
+enum ENUM_WIFI_LOG_LEVEL_SUPPORT_T {
+	ENUM_WIFI_LOG_LEVEL_SUPPORT_DISABLE = 0,
+	ENUM_WIFI_LOG_LEVEL_SUPPORT_ENABLE,
+	ENUM_WIFI_LOG_LEVEL_SUPPORT_NUM
+};
+
 /*******************************************************************************
 *                            P U B L I C   D A T A
 ********************************************************************************
@@ -3270,5 +3306,22 @@ wlanoidSetOshareMode(IN struct ADAPTER *prAdapter,
 		OUT uint32_t *pu4SetInfoLen);
 #endif
 
+uint32_t
+wlanoidQueryWifiLogLevelSupport(IN struct ADAPTER *prAdapter,
+		IN void *pvQueryBuffer,
+		IN uint32_t u4QueryBufferLen,
+		OUT uint32_t *pu4QueryInfoLen);
+
+uint32_t
+wlanoidQueryWifiLogLevel(IN struct ADAPTER *prAdapter,
+		IN void *pvQueryBuffer,
+		IN uint32_t u4QueryBufferLen,
+		OUT uint32_t *pu4QueryInfoLen);
+
+uint32_t
+wlanoidSetWifiLogLevel(IN struct ADAPTER *prAdapter,
+		IN void *pvSetBuffer,
+		IN uint32_t u4SetBufferLen,
+		OUT uint32_t *pu4SetInfoLen);
 
 #endif /* _WLAN_OID_H */

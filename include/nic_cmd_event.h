@@ -536,6 +536,7 @@ enum ENUM_CMD_ID {
 	CMD_ID_GET_CHN_LOADING = 0x88,	/* 0x88 (Query) */
 	CMD_ID_GET_BUG_REPORT = 0x89,	/* 0x89 (Query) */
 	CMD_ID_GET_NIC_CAPABILITY_V2 = 0x8A,/* 0x8A (Query) */
+	CMD_ID_LOG_UI_INFO = 0x8D,	/* 0x8D (Set / Query) */
 
 #if CFG_SUPPORT_OSHARE
 	CMD_ID_SET_OSHARE_MODE = 0x8C,
@@ -662,6 +663,7 @@ enum ENUM_EVENT_ID {
 	EVENT_ID_DBDC_SWITCH_DONE = 0x78,
 	EVENT_ID_GET_CNM = 0x79,
 	EVENT_ID_TDLS = 0x80,	/* TDLS event_id */
+	EVENT_ID_LOG_UI_INFO = 0x8D,
 
 	EVENT_ID_UPDATE_COEX_PHYRATE = 0x90,	/* 0x90 (Unsolicited) */
 
@@ -3446,6 +3448,12 @@ struct CMD_SET_PSCAN_MAC_ADDR {
 	uint8_t ucFlags;
 	uint8_t aucMacAddr[6];
 	uint8_t aucReserved[8];
+};
+
+struct CMD_EVENT_LOG_UI_INFO {
+	uint32_t u4Version;
+	uint32_t u4LogLevel;
+	uint8_t aucReserved[4];
 };
 
 /*******************************************************************************

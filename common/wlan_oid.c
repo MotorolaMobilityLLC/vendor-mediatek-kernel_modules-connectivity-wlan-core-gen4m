@@ -13834,3 +13834,83 @@ wlanoidSetOshareMode(IN struct ADAPTER *prAdapter,
 }
 #endif
 
+uint32_t
+wlanoidQueryWifiLogLevelSupport(IN struct ADAPTER *prAdapter,
+		IN void *pvQueryBuffer, IN uint32_t u4QueryBufferLen,
+		OUT uint32_t *pu4QueryInfoLen)
+{
+	struct PARAM_WIFI_LOG_LEVEL_UI *pparam;
+
+	ASSERT(prAdapter);
+	if (u4QueryBufferLen)
+		ASSERT(pvQueryBuffer);
+	ASSERT(pu4QueryInfoLen);
+
+	pparam = (struct PARAM_WIFI_LOG_LEVEL_UI *) pvQueryBuffer;
+	pparam->u4Enable = wlanDbgLevelUiSupport(prAdapter,
+			pparam->u4Version, pparam->u4Module);
+
+	DBGLOG(OID, INFO, "version: %d, module: %d, enable: %d\n",
+			pparam->u4Version,
+			pparam->u4Module,
+			pparam->u4Enable);
+
+	*pu4QueryInfoLen = sizeof(struct PARAM_WIFI_LOG_LEVEL_UI);
+
+	return WLAN_STATUS_SUCCESS;
+}
+
+uint32_t
+wlanoidQueryWifiLogLevel(IN struct ADAPTER *prAdapter,
+		IN void *pvQueryBuffer, IN uint32_t u4QueryBufferLen,
+		OUT uint32_t *pu4QueryInfoLen)
+{
+	struct PARAM_WIFI_LOG_LEVEL *pparam;
+
+	ASSERT(prAdapter);
+	if (u4QueryBufferLen)
+		ASSERT(pvQueryBuffer);
+	ASSERT(pu4QueryInfoLen);
+
+	pparam = (struct PARAM_WIFI_LOG_LEVEL *) pvQueryBuffer;
+	pparam->u4Level = wlanDbgGetLogLevelImpl(prAdapter,
+			pparam->u4Version,
+			pparam->u4Module);
+
+	DBGLOG(OID, INFO, "version: %d, module: %d, level: %d\n",
+			pparam->u4Version,
+			pparam->u4Module,
+			pparam->u4Level);
+
+	*pu4QueryInfoLen = sizeof(struct PARAM_WIFI_LOG_LEVEL_UI);
+
+	return WLAN_STATUS_SUCCESS;
+}
+
+uint32_t
+wlanoidSetWifiLogLevel(IN struct ADAPTER *prAdapter,
+		IN void *pvSetBuffer, IN uint32_t u4SetBufferLen,
+		OUT uint32_t *pu4SetInfoLen)
+{
+	struct PARAM_WIFI_LOG_LEVEL *pparam;
+
+	ASSERT(prAdapter);
+	if (u4SetBufferLen)
+		ASSERT(pvSetBuffer);
+	ASSERT(pu4SetInfoLen);
+
+	pparam = (struct PARAM_WIFI_LOG_LEVEL *) pvSetBuffer;
+
+	DBGLOG(OID, INFO, "version: %d, module: %d, level: %d\n",
+		pparam->u4Version,
+		pparam->u4Module,
+		pparam->u4Level);
+
+	wlanDbgSetLogLevelImpl(prAdapter,
+			pparam->u4Version,
+			pparam->u4Module,
+			pparam->u4Level);
+
+	return WLAN_STATUS_SUCCESS;
+}
+
