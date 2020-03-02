@@ -1670,7 +1670,7 @@ VOID wlanReleasePendingOid(IN P_ADAPTER_T prAdapter, IN ULONG ulParamPtr)
 	ASSERT(prAdapter);
 
 	if (prAdapter->prGlueInfo->ulFlag & GLUE_FLAG_HALT) {
-		DBGLOG(OID, TRACE, "%s stopped! Releasing pending OIDs ..\n", KAL_GET_CURRENT_THREAD_NAME());
+		DBGLOG(OID, INFO, "%s stopped! Releasing pending OIDs ..\n", KAL_GET_CURRENT_THREAD_NAME());
 	} else {
 		DBGLOG(OID, ERROR, "OID Timeout! Releasing pending OIDs ..\n");
 		prAdapter->ucOidTimeoutCount++;
@@ -1742,10 +1742,6 @@ VOID wlanReleasePendingOid(IN P_ADAPTER_T prAdapter, IN ULONG ulParamPtr)
 		KAL_RELEASE_MUTEX(prAdapter, MUTEX_TX_CMD_CLEAR);
 #endif
 	} while (FALSE);
-
-	DBGLOG(OID, INFO, "End of Release pending OID\n");
-
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -3709,7 +3705,7 @@ WLAN_STATUS wlanDownloadPatch(IN P_ADAPTER_T prAdapter)
 		return WLAN_STATUS_FAILURE;
 
 
-	DBGLOG(INIT, INFO, "Patch download Start\n");
+	DBGLOG(INIT, INFO, "Patch download start\n");
 
 	prAdapter->rVerInfo.fgPatchIsDlByDrv = FALSE;
 
@@ -3721,7 +3717,7 @@ WLAN_STATUS wlanDownloadPatch(IN P_ADAPTER_T prAdapter)
 
 	if (wlanPatchIsDownloaded(prAdapter)) {
 		kalFirmwareImageUnmapping(prAdapter->prGlueInfo, NULL, prFwBuffer);
-		DBGLOG(INIT, INFO, "No need to DL patch\n");
+		DBGLOG(INIT, INFO, "No need to download patch\n");
 		return WLAN_STATUS_SUCCESS;
 	}
 
@@ -3739,7 +3735,7 @@ WLAN_STATUS wlanDownloadPatch(IN P_ADAPTER_T prAdapter)
 		prAdapter->rVerInfo.fgPatchIsDlByDrv = TRUE;
 	} while (0);
 
-	DBGLOG(INIT, INFO, "Patch download End\n");
+	DBGLOG(INIT, INFO, "Patch download end\n");
 
 	return WLAN_STATUS_SUCCESS;
 }
@@ -4764,7 +4760,7 @@ VOID wlanPrintVersion(IN P_ADAPTER_T prAdapter)
 	}
 
 	if (!prVerInfo->fgPatchIsDlByDrv) {
-		DBGLOG(SW4, INFO, "Patch is not downloaded by driver, read patch binary\n");
+		DBGLOG(SW4, TRACE, "MCU patch is not downloaded by wlan driver, read patch info\n");
 		wlanGetPatchInfo(prAdapter);
 	}
 
@@ -5082,8 +5078,6 @@ WLAN_STATUS wlanLoadManufactureData_5G(IN P_ADAPTER_T prAdapter, IN P_REG_INFO_T
 
 		/* dumpMemory8(&rCmdEdgeTxPwrLimit,4); */
 	}
-
-	kalPrint("wlanLoadManufactureData_5G");
 
 	/*2.set channel offset for 8 sub-band */
 	if (prRegInfo->prOldEfuseMapping->uc5GChannelOffsetVaild) {
@@ -8341,8 +8335,7 @@ WLAN_STATUS wlanCfgInit(IN P_ADAPTER_T prAdapter, PUINT_8 pucConfigBuf, UINT_32 
 	/*load default value because kalMemZero in this function*/
 	wlanLoadDefaultCustomerSetting(prAdapter);
 
-	/* Parse the pucConfigBuff */
-
+	/* Parse the pucConfigBuf */
 	if (pucConfigBuf && (u4ConfigBufLen > 0))
 #if CFG_SUPPORT_EASY_DEBUG
 		wlanCfgParse(prAdapter, pucConfigBuf, u4ConfigBufLen, FALSE);
