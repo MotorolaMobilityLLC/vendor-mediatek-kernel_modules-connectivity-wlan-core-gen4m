@@ -649,6 +649,9 @@
 #define CFG_P2P_SCAN_REPORT_ALL_BSS            0
 #endif
 
+/* Allow connection with no P2P IE device */
+#define CFG_P2P_CONNECT_ALL_BSS            0
+
 /*------------------------------------------------------------------------------
  * Flags for GTK rekey offload
  *------------------------------------------------------------------------------
