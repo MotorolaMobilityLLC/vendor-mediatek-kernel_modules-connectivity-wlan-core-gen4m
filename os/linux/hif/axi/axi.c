@@ -283,7 +283,7 @@ int hifAxiRemove(void)
 #if (CFG_SUPPORT_CONNINFRA == 1)
 	if (prChipInfo->coexpccifoff) {
 		prChipInfo->coexpccifoff();
-		DBGLOG(INIT, TRACE, "pccif off fail\n");
+		DBGLOG(INIT, TRACE, "pccif off\n");
 	}
 #endif
 

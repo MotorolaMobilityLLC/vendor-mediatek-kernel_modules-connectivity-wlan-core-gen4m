@@ -2278,6 +2278,14 @@ uint32_t wlanDownloadFW(IN struct ADAPTER *prAdapter)
 	if (prFwDlOps->phyAction)
 		prFwDlOps->phyAction(prAdapter);
 
+#if (CFG_SUPPORT_CONNINFRA == 1)
+	if (prChipInfo->coexpccifon) {
+		rPccifstatus = prChipInfo->coexpccifon();
+		if (rPccifstatus != 0)
+			DBGLOG(INIT, WARN, "pccif on fail\n");
+	}
+#endif
+
 	DBGLOG(INIT, INFO, "FW download Start\n");
 
 	if (prFwDlOps->downloadFirmware) {
@@ -2287,16 +2295,15 @@ uint32_t wlanDownloadFW(IN struct ADAPTER *prAdapter)
 		    && rStatus == WLAN_STATUS_SUCCESS)
 			rStatus = prFwDlOps->downloadFirmware(prAdapter,
 						IMG_DL_IDX_CR4_FW);
+	} else {
+		DBGLOG(INIT, WARN, "Without downlaod firmware Ops\n");
 #if (CFG_SUPPORT_CONNINFRA == 1)
-		if (prChipInfo->coexpccifon && rStatus == WLAN_STATUS_SUCCESS) {
-			rPccifstatus = prChipInfo->coexpccifon();
-			if (rPccifstatus != 0)
-			DBGLOG(INIT, WARN, "pccif on fail\n");
+		if (prChipInfo->coexpccifoff) {
+			prChipInfo->coexpccifoff();
+			DBGLOG(INIT, TRACE, "pccif off\n");
 		}
 #endif
-	} else
-		DBGLOG(INIT, WARN, "Without downlaod firmware Ops\n");
-
+	}
 	DBGLOG(INIT, INFO, "FW download End\n");
 
 	HAL_ENABLE_FWDL(prAdapter, FALSE);
