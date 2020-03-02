@@ -1210,7 +1210,7 @@ kalIndicateStatusAndComplete(IN struct GLUE_INFO
 				       ucChannelNum);
 
 			/* ensure BSS exists */
-#if KERNEL_VERSION(4, 4, 0) <= CFG80211_VERSION_CODE
+#if KERNEL_VERSION(4, 1, 0) <= CFG80211_VERSION_CODE
 			bss = cfg80211_get_bss(
 				priv_to_wiphy(prGlueInfo), prChannel, arBssid,
 				ssid.aucSsid, ssid.u4SsidLen,
@@ -1268,7 +1268,7 @@ kalIndicateStatusAndComplete(IN struct GLUE_INFO
 			 * connected even if AP has change channel from A to B
 			 */
 			while (ucLoopCnt--) {
-#if KERNEL_VERSION(4, 4, 0) <= CFG80211_VERSION_CODE
+#if KERNEL_VERSION(4, 1, 0) <= CFG80211_VERSION_CODE
 				bss_others = cfg80211_get_bss(
 						priv_to_wiphy(prGlueInfo),
 						NULL, arBssid, ssid.aucSsid,

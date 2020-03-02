@@ -3012,7 +3012,7 @@ int mtk_p2p_cfg80211_connect(struct wiphy *wiphy,
 #endif
 
 		if ((bssid == NULL) || (channel == NULL)) {
-#if KERNEL_VERSION(4, 4, 0) <= CFG80211_VERSION_CODE
+#if KERNEL_VERSION(4, 1, 0) <= CFG80211_VERSION_CODE
 			bss = cfg80211_get_bss(wiphy, NULL, NULL,
 				sme->ssid, sme->ssid_len,
 				IEEE80211_BSS_TYPE_ESS, IEEE80211_PRIVACY_ANY);
