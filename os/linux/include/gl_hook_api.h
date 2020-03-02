@@ -109,6 +109,10 @@ int32_t MT_ATESetTxCount(struct net_device *prNetDev,
 			 uint32_t u4TxCount);
 int32_t MT_ATESetTxIPG(struct net_device *prNetDev,
 		       uint32_t u4TxIPG);
+int32_t MT_ATESetTxPath(struct net_device *prNetDev,
+			uint32_t u4Tx_path);
+int32_t MT_ATESetRxPath(struct net_device *prNetDev,
+			uint32_t u4Rx_path);
 int32_t MT_ATESetTxPower0(struct net_device *prNetDev,
 			  uint32_t u4TxPower0);
 int32_t MT_ATESetPerPacketBW(struct net_device *prNetDev,
