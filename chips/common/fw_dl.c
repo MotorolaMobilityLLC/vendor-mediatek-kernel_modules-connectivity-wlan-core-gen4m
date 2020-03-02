@@ -2275,6 +2275,9 @@ uint32_t wlanDownloadFW(IN struct ADAPTER *prAdapter)
 	if (prFwDlOps->downloadPatch)
 		prFwDlOps->downloadPatch(prAdapter);
 
+	if (prFwDlOps->phyAction)
+		prFwDlOps->phyAction(prAdapter);
+
 	DBGLOG(INIT, INFO, "FW download Start\n");
 
 	if (prFwDlOps->downloadFirmware) {

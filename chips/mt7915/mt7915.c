@@ -507,6 +507,7 @@ struct FWDL_OPS_T mt7915_fw_dl_ops = {
 	.downloadByDynMemMap = NULL,
 	.getFwInfo = wlanGetConnacFwInfo,
 	.getFwDlInfo = asicGetFwDlInfo,
+	.phyAction = NULL,
 };
 #endif				/* CFG_ENABLE_FW_DOWNLOAD */
 

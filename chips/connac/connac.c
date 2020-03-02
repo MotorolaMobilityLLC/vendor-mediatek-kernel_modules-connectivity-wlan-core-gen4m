@@ -257,6 +257,7 @@ struct FWDL_OPS_T connac_fw_dl_ops = {
 	.downloadByDynMemMap = NULL,
 	.getFwInfo = wlanGetConnacFwInfo,
 	.getFwDlInfo = asicGetFwDlInfo,
+	.phyAction = NULL,
 };
 
 struct TX_DESC_OPS_T connacTxDescOps = {

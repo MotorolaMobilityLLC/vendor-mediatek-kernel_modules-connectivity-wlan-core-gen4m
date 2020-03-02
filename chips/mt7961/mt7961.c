@@ -575,6 +575,7 @@ struct FWDL_OPS_T mt7961_fw_dl_ops = {
 	.downloadFirmware = wlanConnacFormatDownload,
 	.getFwInfo = wlanGetConnacFwInfo,
 	.getFwDlInfo = asicGetFwDlInfo,
+	.phyAction = NULL,
 };
 #endif /* CFG_ENABLE_FW_DOWNLOAD */
 
