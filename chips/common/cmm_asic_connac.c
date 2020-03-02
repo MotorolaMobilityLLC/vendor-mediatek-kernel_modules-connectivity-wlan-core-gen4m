@@ -523,7 +523,7 @@ void asicPcieDmaShdlInit(IN struct ADAPTER *prAdapter)
 		u4FreePageCnt = (u4FreePageCnt & DMASHDL_FREE_PG_CNT_MASK)
 			>> DMASHDL_FREE_PG_CNT_OFFSET;
 		u4MacVal = DMASHDL_MIN_QUOTA_NUM(0x3);
-		u4MacVal |= DMASHDL_MAX_QUOTA_NUM(u4FreePageCnt/2);
+		u4MacVal |= DMASHDL_MAX_QUOTA_NUM(0xFFF);
 		HAL_MCR_WR(prAdapter,
 			CONN_HIF_DMASHDL_GROUP0_CTRL(u4BaseAddr), u4MacVal);
 		HAL_MCR_WR(prAdapter,
@@ -641,6 +641,7 @@ void asicPdmaConfig(struct GLUE_INFO *prGlueInfo, u_int8_t fgEnable)
 
 	kalDevRegWrite(prGlueInfo, WPDMA_INT_MSK, IntMask.word);
 	kalDevRegWrite(prGlueInfo, WPDMA_GLO_CFG, GloCfg.word);
+	kalDevRegWrite(prGlueInfo, WPDMA_PAUSE_TX_Q, 0);
 	kalDevRegWrite(prGlueInfo, MCU2HOST_SW_INT_ENA,
 		       ERROR_DETECT_MASK);
 
@@ -657,6 +658,89 @@ void asicPdmaConfig(struct GLUE_INFO *prGlueInfo, u_int8_t fgEnable)
 		kalDevRegWrite(prGlueInfo, WPDMA_RST_PTR, 0xFFFFFFFF);
 	}
 }
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * @brief This function is used to update DmaSchdl max quota.
+ *
+ * @param prAdapter
+ * @param u2Port, the TxRing number
+ * @param u4MaxQuota, the desired max quota for the TxRing.
+ *
+ * @return (none)
+ */
+/*----------------------------------------------------------------------------*/
+uint32_t asicUpdatTxRingMaxQuota(IN struct ADAPTER *prAdapter,
+	IN uint16_t u2Port, IN uint32_t u4MaxQuota)
+{
+	struct GLUE_INFO *prGlueInfo;
+	uint32_t u4BaseAddr, u4GroupIdx;
+	uint32_t u4MacVal, u4SrcCnt, u4RsvCnt, u4TxRingBitmap;
+
+#define DMASHDL_MAX_QUOTA (DMASHDL_MAX_QUOTA_MASK >> DMASHDL_MAX_QUOTA_OFFSET)
+	ASSERT(prAdapter);
+	if (u4MaxQuota > DMASHDL_MAX_QUOTA)
+		u4MaxQuota = DMASHDL_MAX_QUOTA;
+#undef DMASHDL_MAX_QUOTA
+
+	prGlueInfo = prAdapter->prGlueInfo;
+	u4BaseAddr = prAdapter->chip_info->u4HifDmaShdlBaseAddr;
+
+	/* The mapping must be equal to CONN_HIF_DMASHDL_Q_MAP0
+	 * in asicPcieDmaShdlInit.
+	 */
+	switch (u2Port) {
+	case TX_RING_DATA0_IDX_0:
+		u4GroupIdx = 0;
+		break;
+	case TX_RING_DATA1_IDX_1:
+		u4GroupIdx = 1;
+		break;
+	default:
+		return WLAN_STATUS_NOT_ACCEPTED;
+	}
+
+	/* Step 1. Pause the TxRing */
+	kalDevRegRead(prGlueInfo, WPDMA_PAUSE_TX_Q, &u4TxRingBitmap);
+	kalDevRegWrite(prGlueInfo, WPDMA_PAUSE_TX_Q,
+		u4TxRingBitmap |
+		(BIT(u2Port) << WPDMA_PAUSE_TX_Q_RINGIDX_OFFSET));
+
+	/* Step 2. Check MaxQuota >= rsv_cnt + src_cnt */
+	HAL_MCR_RD(prAdapter,
+		CONN_HIF_DMASHDL_STATUS_RD_GP0(u4BaseAddr) + 4*u4GroupIdx,
+		&u4MacVal);
+	u4SrcCnt = (u4MacVal & DMASHDL_SRC_CNT_MASK) >> DMASHDL_SRC_CNT_OFFSET;
+	u4RsvCnt = (u4MacVal & DMASHDL_RSV_CNT_MASK) >> DMASHDL_RSV_CNT_OFFSET;
+
+	/* BE CAREFUL! Caller must call this function again until
+	 * WLAN_STATUS_SUCCESS or unlock the TxRing by itself.
+	 */
+	if (u4MaxQuota < u4SrcCnt+u4RsvCnt) {
+		DBGLOG(HAL, INFO,
+			"WmmQuota,CannotUpdateNow,Port,%u,Grp,%u,reqMax,%u,src,%u,rsv,%u\n",
+			u2Port, u4GroupIdx, u4MaxQuota, u4SrcCnt, u4RsvCnt);
+		return WLAN_STATUS_PENDING;
+	}
+
+	/* Step 3. Update MaxQuota */
+	HAL_MCR_RD(prAdapter,
+			CONN_HIF_DMASHDL_GROUP0_CTRL(u4BaseAddr) + 4*u4GroupIdx,
+			&u4MacVal);
+	u4MacVal &= ~(DMASHDL_MAX_QUOTA_NUM(0xFFF));
+	u4MacVal |= DMASHDL_MAX_QUOTA_NUM(u4MaxQuota);
+	HAL_MCR_WR(prAdapter,
+		CONN_HIF_DMASHDL_GROUP0_CTRL(u4BaseAddr) + 4*u4GroupIdx,
+		u4MacVal);
+
+	/* Step 4. Unlock the TxRing */
+	kalDevRegWrite(prGlueInfo, WPDMA_PAUSE_TX_Q,
+		u4TxRingBitmap &
+		(~(BIT(u2Port) << WPDMA_PAUSE_TX_Q_RINGIDX_OFFSET)));
+
+	return WLAN_STATUS_SUCCESS;
+}
+
 
 void asicEnableInterrupt(IN struct ADAPTER *prAdapter)
 {

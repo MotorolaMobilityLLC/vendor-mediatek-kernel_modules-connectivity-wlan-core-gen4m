@@ -1331,6 +1331,16 @@ u_int8_t halTxIsDataBufEnough(IN struct ADAPTER *prAdapter, IN struct MSDU_INFO 
 	return TRUE;
 }
 
+uint8_t halTxRingDataSelect(IN struct ADAPTER *prAdapter,
+	IN struct MSDU_INFO *prMsduInfo)
+{
+	return 0;
+}
+
+void halUpdateTxMaxQuota(IN struct ADAPTER *prAdapter)
+{
+}
+
 void halProcessTxInterrupt(IN struct ADAPTER *prAdapter)
 {
 #if CFG_USB_TX_HANDLE_IN_HIF_THREAD

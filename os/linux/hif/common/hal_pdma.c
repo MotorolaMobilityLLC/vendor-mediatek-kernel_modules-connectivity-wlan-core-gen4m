@@ -117,6 +117,21 @@
  *******************************************************************************
  */
 
+static uint8_t halRingDataSelectByWmmIndex(
+	IN struct ADAPTER *prAdapter,
+	IN uint8_t ucWmmIndex)
+{
+	struct BUS_INFO *bus_info;
+	uint16_t u2Port = TX_RING_DATA0_IDX_0;
+
+	bus_info = prAdapter->chip_info->bus_info;
+	if (bus_info->tx_ring0_data_idx != bus_info->tx_ring1_data_idx) {
+		u2Port = (ucWmmIndex == 1) ?
+			TX_RING_DATA1_IDX_1 : TX_RING_DATA0_IDX_0;
+	}
+	return u2Port;
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
  * @brief Decide TxRingData number by MsduInfo
@@ -128,25 +143,11 @@
  * @return TxRingData number
  */
 /*----------------------------------------------------------------------------*/
-static uint8_t halTxRingDataSelect(IN struct GLUE_INFO *prGlueInfo,
+uint8_t halTxRingDataSelect(IN struct ADAPTER *prAdapter,
 	IN struct MSDU_INFO *prMsduInfo)
 {
-	struct GL_HIF_INFO *prHifInfo = NULL;
-	struct mt66xx_chip_info *prChipInfo;
-	uint16_t u2Port = TX_RING_DATA0_IDX_0;
-
-	ASSERT(prGlueInfo);
-
-	prHifInfo = &prGlueInfo->rHifInfo;
-	prChipInfo = prGlueInfo->prAdapter->chip_info;
-
-	/* Wmm1 use TxRing1 if supported */
-	if (prChipInfo->bus_info->tx_ring0_data_idx !=
-	    prChipInfo->bus_info->tx_ring1_data_idx) {
-		u2Port = prMsduInfo->ucWmmQueSet == 1 ?
-			TX_RING_DATA1_IDX_1 : TX_RING_DATA0_IDX_0;
-	}
-	return u2Port;
+	ASSERT(prAdapter);
+	return halRingDataSelectByWmmIndex(prAdapter, prMsduInfo->ucWmmQueSet);
 }
 
 
@@ -598,7 +599,7 @@ u_int8_t halTxIsDataBufEnough(IN struct ADAPTER *prAdapter,
 	struct RTMP_TX_RING *prTxRing;
 	uint16_t u2Port;
 
-	u2Port = halTxRingDataSelect(prAdapter->prGlueInfo, prMsduInfo);
+	u2Port = halTxRingDataSelect(prAdapter, prMsduInfo);
 	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
 	prTxRing = &prHifInfo->TxRing[u2Port];
 
@@ -2039,7 +2040,8 @@ static bool halWpdmaFillTxRing(struct GLUE_INFO *prGlueInfo,
 	prHifInfo = &prGlueInfo->rHifInfo;
 	prChipInfo = prGlueInfo->prAdapter->chip_info;
 
-	u2Port = halTxRingDataSelect(prGlueInfo, prToken->prMsduInfo);
+	u2Port = halTxRingDataSelect(
+		prGlueInfo->prAdapter, prToken->prMsduInfo);
 	prTxRing = &prHifInfo->TxRing[u2Port];
 
 	kalDevRegRead(prGlueInfo, prTxRing->hw_cidx_addr, &prTxRing->TxCpuIdx);
@@ -2244,7 +2246,8 @@ bool halWpdmaWriteAmsdu(struct GLUE_INFO *prGlueInfo,
 
 	/* Peek head to select TxRing */
 	prTxReq = list_entry(prList, struct TX_DATA_REQ, list);
-	u2Port = halTxRingDataSelect(prGlueInfo, prTxReq->prMsduInfo);
+	u2Port = halTxRingDataSelect(
+		prGlueInfo->prAdapter, prTxReq->prMsduInfo);
 	u4FreeRing = TX_RING_SIZE - prHifInfo->TxRing[u2Port].u4UsedCnt;
 
 	if ((u4FreeToken < u4Num) || (u4FreeRing <= 1)) {
@@ -2724,5 +2727,51 @@ bool halIsHifStateSuspend(IN struct ADAPTER *prAdapter)
 	/* PCIE owner should implement this function */
 
 	return FALSE;
+}
+
+void halUpdateTxMaxQuota(IN struct ADAPTER *prAdapter)
+{
+	struct BUS_INFO *prBusInfo;
+	uint32_t u4Ret;
+	uint32_t u4Quota;
+	uint16_t u2PortIdx;
+	bool fgRun;
+	uint8_t ucWmmIndex;
+
+	KAL_SPIN_LOCK_DECLARATION();
+
+	prBusInfo = prAdapter->chip_info->bus_info;
+	if (!prBusInfo->updateTxRingMaxQuota)
+		return;
+
+	for (ucWmmIndex = 0; ucWmmIndex < prAdapter->ucWmmSetNum;
+		ucWmmIndex++) {
+
+		u4Ret = WLAN_STATUS_SUCCESS;
+		u2PortIdx = halRingDataSelectByWmmIndex(prAdapter, ucWmmIndex);
+
+		KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_UPDATE_WMM_QUOTA);
+		u4Quota = prAdapter->rWmmQuotaReqCS[ucWmmIndex].u4Quota;
+		fgRun = prAdapter->rWmmQuotaReqCS[ucWmmIndex].fgRun;
+		KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_UPDATE_WMM_QUOTA);
+
+		if (fgRun) {
+			u4Ret = prBusInfo->updateTxRingMaxQuota(
+					prAdapter, u2PortIdx, u4Quota);
+		}
+
+		DBGLOG(HAL, INFO,
+			"WmmQuota,Run,%u,Wmm,%u,Port,%u,Quota,0x%x,ret=0x%x\n",
+			fgRun, ucWmmIndex, u2PortIdx, u4Quota, u4Ret);
+
+		if (u4Ret != WLAN_STATUS_PENDING) {
+			KAL_ACQUIRE_SPIN_LOCK(prAdapter,
+				SPIN_LOCK_UPDATE_WMM_QUOTA);
+			prAdapter->rWmmQuotaReqCS[ucWmmIndex].fgRun
+				= false;
+			KAL_RELEASE_SPIN_LOCK(prAdapter,
+				SPIN_LOCK_UPDATE_WMM_QUOTA);
+		}
+	}
 }
 
