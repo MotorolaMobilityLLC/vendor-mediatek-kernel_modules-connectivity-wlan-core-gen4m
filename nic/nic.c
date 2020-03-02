@@ -142,7 +142,7 @@ struct ECO_INFO g_eco_info = {0xFF};
 		break; \
 	} \
 	ASSERT(((unsigned long)pucMem % 4) == 0); \
-	DBGLOG(INIT, INFO, "Alloc %u bytes, addr = 0x%p for %s.\n", \
+	DBGLOG(INIT, TRACE, "Alloc %u bytes, addr = 0x%p for %s.\n", \
 		u4Size, (void *) pucMem, (char *) pucComment); \
 }
 
@@ -1974,7 +1974,7 @@ nicConfigPowerSaveProfile(IN struct ADAPTER *prAdapter,
 		prAdapter->rWlanInfo.u4PowerSaveFlag[ucBssIndex]
 			&= ~PS_SYNC_WITH_FW;
 
-		DBGLOG(NIC, INFO,
+		DBGLOG(NIC, TRACE,
 			"SYNC_WITH_FW u4PowerSaveFlag[%d]=0x%04x\n",
 			ucBssIndex,
 			prAdapter->rWlanInfo.u4PowerSaveFlag[ucBssIndex]);
