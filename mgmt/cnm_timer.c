@@ -488,6 +488,11 @@ void cnmTimerDoTimeOutCheck(IN struct ADAPTER *prAdapter)
 			} else if (pfMgmtTimeOutFunc) {
 				KAL_RELEASE_SPIN_LOCK(prAdapter,
 					SPIN_LOCK_TIMER);
+			#ifdef UT_TEST_MODE
+				if (testTimerTimeout(prAdapter,
+						     pfMgmtTimeOutFunc,
+						     ulTimeoutDataPtr))
+			#endif
 				(pfMgmtTimeOutFunc) (prAdapter,
 					ulTimeoutDataPtr);
 				KAL_ACQUIRE_SPIN_LOCK(prAdapter,

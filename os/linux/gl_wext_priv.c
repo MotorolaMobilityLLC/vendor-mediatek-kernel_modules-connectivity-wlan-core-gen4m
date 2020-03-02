@@ -2806,6 +2806,10 @@ reqExtSetAcpiDevicePowerState(IN struct GLUE_INFO
 
 #define CMD_GET_CNM		"GET_CNM"
 
+#ifdef UT_TEST_MODE
+#define CMD_RUN_UT		"UT"
+#endif
+
 #if CFG_SUPPORT_ADVANCE_CONTROL
 #define CMD_SW_DBGCTL_ADVCTL_SET_ID 0xa1260000
 #define CMD_SW_DBGCTL_ADVCTL_GET_ID 0xb1260000
@@ -12466,6 +12470,78 @@ static int priv_driver_set_drv_ser(struct net_device *prNetDev,
 	return i4BytesWritten;
 }
 
+#ifdef UT_TEST_MODE
+int priv_driver_run_ut(IN struct net_device *prNetDev,
+		       IN char *pcCommand, IN int i4TotalLen)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	int32_t i4Argc = 0;
+	int8_t  *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
+	int32_t u4Ret = 0;
+	uint32_t u4Input = 0;
+
+	ASSERT(prNetDev);
+
+	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
+		return -1;
+
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+	if (!prGlueInfo || !prGlueInfo->prAdapter) {
+		DBGLOG(REQ, ERROR, "prGlueInfo or prAdapter is NULL\n");
+		return -1;
+	}
+
+	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+	DBGLOG(REQ, LOUD, "argc is %i\n", i4Argc);
+
+	if (i4Argc < 2) {
+		DBGLOG(REQ, ERROR, "Argc(%d) ERR: RUN_UT COMMAND\n", i4Argc);
+		return -1;
+	}
+
+	if (strlen(apcArgv[1]) == strlen("all") &&
+		   strnicmp(apcArgv[1], "all", strlen("all")) == 0)
+		testRunAllTestCases(prGlueInfo->prAdapter);
+	else if (i4Argc >= 3) {
+		if (strlen(apcArgv[1]) == strlen("tc") &&
+		    strnicmp(apcArgv[1], "tc", strlen("tc")) == 0) {
+			u4Ret = kalkStrtou32(apcArgv[2], 0, &u4Input);
+			if (u4Ret) {
+				DBGLOG(REQ, ERROR, "parse error u4Ret=%d\n",
+				       u4Ret);
+				return -1;
+			}
+			testRunTestCase(prGlueInfo->prAdapter, u4Input);
+
+		} else if (strlen(apcArgv[1]) == strlen("group") &&
+			   strnicmp(apcArgv[1], "group",
+				    strlen("group")) == 0) {
+			testRunGroupTestCases(prGlueInfo->prAdapter,
+					      apcArgv[2]);
+
+		} else if (strlen(apcArgv[1]) == strlen("list") &&
+			   strnicmp(apcArgv[1], "list", strlen("list")) == 0) {
+			if (strlen(apcArgv[2]) == strlen("all") &&
+			    strnicmp(apcArgv[2], "all", strlen("all")) == 0) {
+				testRunAllTestCaseLists(prGlueInfo->prAdapter);
+			} else {
+				u4Ret = kalkStrtou32(apcArgv[2], 0, &u4Input);
+				if (u4Ret) {
+					DBGLOG(REQ, ERROR,
+					       "parse error u4Ret=%d\n", u4Ret);
+					return -1;
+				}
+				testRunTestCaseList(prGlueInfo->prAdapter,
+						    u4Input);
+			}
+		}
+	}
+
+	return 0;
+}
+#endif /* UT_TEST_MODE */
+
 static int priv_driver_set_amsdu_num(IN struct net_device *prNetDev,
 				     IN char *pcCommand, IN int i4TotalLen)
 {
@@ -13092,6 +13168,13 @@ int32_t priv_driver_cmds(IN struct net_device *prNetDev, IN int8_t *pcCommand,
 			kalIoctl(prGlueInfo, wlanoidDumpUapsdSetting,
 				 (void *)pcCommand, i4TotalLen, FALSE, FALSE,
 				 FALSE, &i4BytesWritten);
+#ifdef UT_TEST_MODE
+		} else if (strnicmp(pcCommand, CMD_RUN_UT,
+				    strlen(CMD_RUN_UT)) == 0) {
+			i4BytesWritten = priv_driver_run_ut(prNetDev,
+							    pcCommand,
+							    i4TotalLen);
+#endif /* UT_TEST_MODE */
 		} else
 				i4BytesWritten = priv_cmd_not_support
 				(prNetDev, pcCommand, i4TotalLen);

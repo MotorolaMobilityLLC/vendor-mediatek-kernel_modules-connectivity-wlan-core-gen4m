@@ -28,7 +28,7 @@ ifneq ($(BACKPORTED_KERNEL_VERSION),)
 export CFG_CFG80211_VERSION ?= $(BACKPORTED_KERNEL_VERSION)
 endif
 
-# pcie | sdio | usb
+# pcie | sdio | usb | ut
 ifeq ($(hif),)
     hif=pcie
 endif
@@ -157,6 +157,10 @@ endif
 
 ifneq ($(CFG_SDIO_RX_AGG_TASKLET),)
 PLATFORM_FLAGS += -DCFG_SDIO_RX_AGG_TASKLET=$(CFG_SDIO_RX_AGG_TASKLET)
+endif
+
+ifeq ($(CONFIG_MTK_COMBO_PLATFORM), x86)
+PLATFORM_FLAGS += -DCFG_BUILD_X86_PLATFORM
 endif
 
 all: driver
