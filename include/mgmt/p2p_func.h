@@ -422,4 +422,19 @@ uint32_t p2pFunGetPreferredFreqList(IN struct ADAPTER *prAdapter,
 		IN enum ENUM_IFTYPE eIftype, OUT uint32_t *freq_list,
 		OUT uint32_t *num_freq_list);
 
+enum ENUM_P2P_CONNECT_STATE
+p2pFuncGetP2pActionFrameType(IN struct MSDU_INFO *prMgmtMsdu);
+
+u_int8_t
+p2pFuncCheckOnRocChnl(IN struct RF_CHANNEL_INFO *prTxChnl,
+		IN struct P2P_CHNL_REQ_INFO *prChnlReqInfo);
+
+u_int8_t
+p2pFuncNeedWaitRsp(IN struct ADAPTER *prAdapter,
+		IN enum ENUM_P2P_CONNECT_STATE eConnState);
+
+void
+p2pFunClearAllTxReq(IN struct ADAPTER *prAdapter,
+		IN struct P2P_MGMT_TX_REQ_INFO *prP2pMgmtTxInfo);
+
 #endif

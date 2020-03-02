@@ -82,18 +82,6 @@ struct MSG_P2P_CHNL_REQUEST {
 	enum ENUM_CH_REQ_TYPE eChnlReqType;
 };
 
-struct MSG_P2P_MGMT_TX_REQUEST {
-	struct MSG_HDR rMsgHdr;
-	uint8_t ucBssIdx;
-	struct MSDU_INFO *prMgmtMsduInfo;
-	uint64_t u8Cookie;	/* For indication. */
-	u_int8_t fgNoneCckRate;
-	u_int8_t fgIsOffChannel;
-	struct RF_CHANNEL_INFO rChannelInfo;	/* Off channel TX. */
-	enum ENUM_CHNL_EXT eChnlExt;
-	u_int8_t fgIsWaitRsp;
-};
-
 #define P2P_DEV_EXTEND_CHAN_TIME	500
 
 #if CFG_SUPPORT_WFD
@@ -158,14 +146,11 @@ struct P2P_OFF_CHNL_TX_REQ_INFO {
 	u_int8_t fgNoneCckRate;
 	struct RF_CHANNEL_INFO rChannelInfo;	/* Off channel TX. */
 	enum ENUM_CHNL_EXT eChnlExt;
-	u_int8_t fgIsWaitRsp;
 	/* See if driver should keep at the same channel. */
-};
-
-struct P2P_MGMT_TX_REQ_INFO {
-	struct LINK rP2pTxReqLink;
-	struct MSDU_INFO *prMgmtTxMsdu;
 	u_int8_t fgIsWaitRsp;
+	uint64_t u8Cookie; /* cookie used to match with supplicant */
+	uint32_t u4Duration; /* wait time for tx request */
+	uint8_t ucBssIndex;
 };
 
 struct P2P_DEV_FSM_INFO {
@@ -265,4 +250,7 @@ void p2pDevFsmRunEventActiveDevBss(IN struct ADAPTER *prAdapter,
 void
 p2pDevFsmNotifyP2pRx(IN struct ADAPTER *prAdapter, uint8_t p2pFrameType,
 		u_int8_t *prFgBufferFrame);
+
+void p2pDevFsmRunEventTxCancelWait(IN struct ADAPTER *prAdapter,
+		IN struct MSG_HDR *prMsgHdr);
 

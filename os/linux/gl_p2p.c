@@ -1369,6 +1369,10 @@ u_int8_t glP2pCreateWirelessDevice(struct GLUE_INFO *prGlueInfo)
 #endif
 	prWiphy->ap_sme_capa = 1;
 
+#if CFG_ENABLE_OFFCHANNEL_TX
+	prWiphy->flags |= WIPHY_FLAG_OFFCHAN_TX;
+#endif /* CFG_ENABLE_OFFCHANNEL_TX */
+
 	prWiphy->max_scan_ssids = MAX_SCAN_LIST_NUM;
 	prWiphy->max_scan_ie_len = MAX_SCAN_IE_LEN;
 	prWiphy->signal_type = CFG80211_SIGNAL_TYPE_MBM;

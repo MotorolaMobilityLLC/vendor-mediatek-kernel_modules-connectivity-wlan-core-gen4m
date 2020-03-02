@@ -60,12 +60,11 @@ static uint8_t *apucDebugP2pRoleState[P2P_ROLE_STATE_NUM] = {
 	(uint8_t *) DISP_STRING("P2P_ROLE_STATE_SCAN"),
 	(uint8_t *) DISP_STRING("P2P_ROLE_STATE_REQING_CHANNEL"),
 	(uint8_t *) DISP_STRING("P2P_ROLE_STATE_AP_CHNL_DETECTION"),
-#if (CFG_SUPPORT_DFS_MASTER == 1)
 	(uint8_t *) DISP_STRING("P2P_ROLE_STATE_GC_JOIN"),
+	(uint8_t *) DISP_STRING("P2P_ROLE_STATE_OFF_CHNL_TX"),
+#if (CFG_SUPPORT_DFS_MASTER == 1)
 	(uint8_t *) DISP_STRING("P2P_ROLE_STATE_DFS_CAC"),
-	(uint8_t *) DISP_STRING("P2P_ROLE_STATE_SWITCH_CHANNEL")
-#else
-	(uint8_t *) DISP_STRING("P2P_ROLE_STATE_GC_JOIN")
+	(uint8_t *) DISP_STRING("P2P_ROLE_STATE_SWITCH_CHANNEL"),
 #endif
 };
 
@@ -85,6 +84,8 @@ uint8_t p2pRoleFsmInit(IN struct ADAPTER *prAdapter,
 	struct BSS_INFO *prP2pBssInfo = (struct BSS_INFO *) NULL;
 	struct P2P_CHNL_REQ_INFO *prP2pChnlReqInfo =
 		(struct P2P_CHNL_REQ_INFO *) NULL;
+	struct P2P_MGMT_TX_REQ_INFO *prP2pMgmtTxReqInfo =
+		(struct P2P_MGMT_TX_REQ_INFO *) NULL;
 	struct GL_P2P_INFO *prP2PInfo = NULL;
 
 	do {
@@ -114,6 +115,9 @@ uint8_t p2pRoleFsmInit(IN struct ADAPTER *prAdapter,
 
 		prP2pChnlReqInfo = &prP2pRoleFsmInfo->rChnlReqInfo;
 		LINK_INITIALIZE(&(prP2pChnlReqInfo->rP2pChnlReqLink));
+
+		prP2pMgmtTxReqInfo = &prP2pRoleFsmInfo->rMgmtTxInfo;
+		LINK_INITIALIZE(&prP2pMgmtTxReqInfo->rTxReqLink);
 
 		cnmTimerInitTimer(prAdapter,
 			&(prP2pRoleFsmInfo->rP2pRoleFsmTimeoutTimer),
@@ -284,6 +288,9 @@ void p2pRoleFsmUninit(IN struct ADAPTER *prAdapter, IN uint8_t ucRoleIdx)
 			P2P_ROLE_STATE_IDLE);
 
 		p2pRoleFsmRunEventAbort(prAdapter, prP2pRoleFsmInfo);
+
+		p2pFunClearAllTxReq(prAdapter,
+				&(prP2pRoleFsmInfo->rMgmtTxInfo));
 
 		/* Clear CmdQue */
 		kalClearMgmtFramesByBssIdx(prAdapter->prGlueInfo,
@@ -485,6 +492,22 @@ p2pRoleFsmStateTransition(IN struct ADAPTER *prAdapter,
 					eNextState);
 			}
 			break;
+		case P2P_ROLE_STATE_OFF_CHNL_TX:
+			if (!fgIsTransitionOut) {
+				fgIsTransitionOut =
+					p2pRoleStateInit_OFF_CHNL_TX(prAdapter,
+					prP2pRoleFsmInfo,
+					&(prP2pRoleFsmInfo->rChnlReqInfo),
+					&(prP2pRoleFsmInfo->rMgmtTxInfo),
+					&eNextState);
+			} else {
+				p2pRoleStateAbort_OFF_CHNL_TX(prAdapter,
+					prP2pRoleFsmInfo,
+					&(prP2pRoleFsmInfo->rMgmtTxInfo),
+					&(prP2pRoleFsmInfo->rChnlReqInfo),
+					eNextState);
+			}
+			break;
 
 #if (CFG_SUPPORT_DFS_MASTER == 1)
 		case P2P_ROLE_STATE_DFS_CAC:
@@ -559,6 +582,10 @@ void p2pRoleFsmRunEventTimeout(IN struct ADAPTER *prAdapter,
 			p2pRoleFsmStateTransition(prAdapter,
 				prP2pRoleFsmInfo,
 				P2P_ROLE_STATE_IDLE);
+			break;
+		case P2P_ROLE_STATE_OFF_CHNL_TX:
+			p2pRoleFsmStateTransition(prAdapter, prP2pRoleFsmInfo,
+				P2P_ROLE_STATE_OFF_CHNL_TX);
 			break;
 #if (CFG_SUPPORT_DFS_MASTER == 1)
 		case P2P_ROLE_STATE_DFS_CAC:
@@ -2630,6 +2657,9 @@ p2pRoleFsmRunEventChnlGrant(IN struct ADAPTER *prAdapter,
 			case CH_REQ_TYPE_GO_START_BSS:
 				eNextState = P2P_ROLE_STATE_IDLE;
 				break;
+			case CH_REQ_TYPE_OFFCHNL_TX:
+				eNextState = P2P_ROLE_STATE_OFF_CHNL_TX;
+				break;
 			default:
 				DBGLOG(P2P, WARN,
 				       "p2pRoleFsmRunEventChnlGrant: Invalid Channel Request Type:%d\n",
@@ -3308,4 +3338,305 @@ void p2pRoleFsmNotifyEapolTxStatus(IN struct ADAPTER *prAdapter,
 				P2P_ROLE_STATE_IDLE);
 	}
 }
+
+static u_int8_t
+p2pRoleNeedOffchnlTx(IN struct ADAPTER *prAdapter,
+		IN struct BSS_INFO *prBssInfo,
+		IN struct MSG_MGMT_TX_REQUEST *prMgmtTxMsg)
+{
+	u_int8_t fgNeedOffchnlTx = FALSE;
+	struct WLAN_MAC_HEADER *prWlanHdr = (struct WLAN_MAC_HEADER *) NULL;
+
+	if (prAdapter == NULL || prBssInfo == NULL || prMgmtTxMsg == NULL)
+		return FALSE;
+
+	fgNeedOffchnlTx = prMgmtTxMsg->fgIsOffChannel;
+
+	if (fgNeedOffchnlTx) {
+		prWlanHdr = (struct WLAN_MAC_HEADER *)
+			((unsigned long) prMgmtTxMsg->prMgmtMsduInfo->prPacket +
+					MAC_TX_RESERVED_FIELD);
+		if (prMgmtTxMsg->rChannelInfo.ucChannelNum ==
+				prBssInfo->ucPrimaryChannel)
+			fgNeedOffchnlTx = FALSE;
+		else if ((prWlanHdr->u2FrameCtrl & MASK_FRAME_TYPE) ==
+				MAC_FRAME_PROBE_RSP)
+			fgNeedOffchnlTx = FALSE;
+	}
+
+	return fgNeedOffchnlTx;
+}				/* p2pRoleNeedOffchnlTx */
+
+
+static void
+p2pRoleAdjustChnlTime(IN struct MSG_MGMT_TX_REQUEST *prMgmtTxMsg,
+	IN struct P2P_OFF_CHNL_TX_REQ_INFO *prOffChnlTxReq)
+{
+	if (prMgmtTxMsg == NULL || prOffChnlTxReq == NULL)
+		return;
+
+	if (!prMgmtTxMsg->fgIsOffChannel)
+		return;
+
+	if (prMgmtTxMsg->u4Duration < P2P_MIN_TX_DURATION_TIME_MS) {
+		/*
+		 * The wait time requested from Supplicant is too short
+		 * to TX a frame, eg. nego.conf.. Overwrite the wait time
+		 * as driver's min TX time.
+		 */
+		DBGLOG(P2P, INFO, "Overwrite channel duration from %d to %d\n",
+				prMgmtTxMsg->u4Duration,
+				P2P_MIN_TX_DURATION_TIME_MS);
+		prOffChnlTxReq->u4Duration = P2P_MIN_TX_DURATION_TIME_MS;
+	} else {
+		prOffChnlTxReq->u4Duration = prMgmtTxMsg->u4Duration;
+	}
+}				/* p2pRoleAdjustChnlTime */
+
+static void
+p2pRoleChnlReqByOffChnl(IN struct ADAPTER *prAdapter,
+	IN struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo,
+	struct P2P_OFF_CHNL_TX_REQ_INFO *prOffChnlTxReq)
+{
+	struct P2P_CHNL_REQ_INFO *prP2pChnlReqInfo =
+			(struct P2P_CHNL_REQ_INFO *) NULL;
+
+	if (prAdapter == NULL || prP2pRoleFsmInfo == NULL ||
+			prOffChnlTxReq == NULL)
+		return;
+
+	prP2pChnlReqInfo = &(prP2pRoleFsmInfo->rChnlReqInfo);
+
+	prP2pChnlReqInfo->u8Cookie = prOffChnlTxReq->u8Cookie;
+	prP2pChnlReqInfo->eChnlReqType = CH_REQ_TYPE_OFFCHNL_TX;
+	prP2pChnlReqInfo->eBand = prOffChnlTxReq->rChannelInfo.eBand;
+	prP2pChnlReqInfo->ucReqChnlNum =
+			prOffChnlTxReq->rChannelInfo.ucChannelNum;
+	prP2pChnlReqInfo->eChnlSco = prOffChnlTxReq->eChnlExt;
+	prP2pChnlReqInfo->u4MaxInterval = prOffChnlTxReq->u4Duration;
+
+	p2pRoleFsmStateTransition(prAdapter, prP2pRoleFsmInfo,
+			P2P_ROLE_STATE_REQING_CHANNEL);
+}				/* p2pRoleChnlReqByOffChnl */
+
+static u_int8_t
+p2pRoleAddTxReq2Queue(IN struct ADAPTER *prAdapter,
+		IN struct P2P_MGMT_TX_REQ_INFO *prP2pMgmtTxReqInfo,
+		IN struct MSG_MGMT_TX_REQUEST *prMgmtTxMsg,
+		OUT struct P2P_OFF_CHNL_TX_REQ_INFO **pprOffChnlTxReq)
+{
+	struct P2P_OFF_CHNL_TX_REQ_INFO *prTmpOffChnlTxReq =
+			(struct P2P_OFF_CHNL_TX_REQ_INFO *) NULL;
+
+	prTmpOffChnlTxReq = cnmMemAlloc(prAdapter,
+			RAM_TYPE_MSG,
+			sizeof(struct P2P_OFF_CHNL_TX_REQ_INFO));
+
+	if (prTmpOffChnlTxReq == NULL) {
+		DBGLOG(P2P, ERROR,
+				"Allocate TX request buffer fails.\n");
+		ASSERT(FALSE);
+		return FALSE;
+	}
+
+	prTmpOffChnlTxReq->ucBssIndex = prMgmtTxMsg->ucBssIdx;
+	prTmpOffChnlTxReq->u8Cookie = prMgmtTxMsg->u8Cookie;
+	prTmpOffChnlTxReq->prMgmtTxMsdu = prMgmtTxMsg->prMgmtMsduInfo;
+	prTmpOffChnlTxReq->fgNoneCckRate = prMgmtTxMsg->fgNoneCckRate;
+	kalMemCopy(&prTmpOffChnlTxReq->rChannelInfo,
+			&prMgmtTxMsg->rChannelInfo,
+			sizeof(struct RF_CHANNEL_INFO));
+	prTmpOffChnlTxReq->eChnlExt = prMgmtTxMsg->eChnlExt;
+	prTmpOffChnlTxReq->fgIsWaitRsp = prMgmtTxMsg->fgIsWaitRsp;
+
+	p2pRoleAdjustChnlTime(prMgmtTxMsg, prTmpOffChnlTxReq);
+
+	LINK_INSERT_TAIL(&prP2pMgmtTxReqInfo->rTxReqLink,
+			&prTmpOffChnlTxReq->rLinkEntry);
+
+	*pprOffChnlTxReq = prTmpOffChnlTxReq;
+
+	return TRUE;
+}
+
+static void
+p2pRoleAbortChlReqIfNeed(IN struct ADAPTER *prAdapter,
+		struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo,
+		struct P2P_CHNL_REQ_INFO *prChnlReqInfo)
+{
+	if (prAdapter == NULL || prP2pRoleFsmInfo == NULL ||
+			prChnlReqInfo == NULL)
+		return;
+
+	/* Cancel ongoing channel request whose type is not offchannel-tx*/
+	if (prP2pRoleFsmInfo->eCurrentState != P2P_ROLE_STATE_REQING_CHANNEL ||
+			prChnlReqInfo->eChnlReqType == CH_REQ_TYPE_OFFCHNL_TX)
+		return;
+
+	p2pRoleFsmRunEventAbort(prAdapter, prP2pRoleFsmInfo);
+}
+
+static void
+p2pRoleHandleOffchnlTxReq(IN struct ADAPTER *prAdapter,
+		IN struct MSG_MGMT_TX_REQUEST *prMgmtTxMsg)
+{
+	struct BSS_INFO *prP2pRoleBssInfo = (struct BSS_INFO *) NULL;
+	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo =
+			(struct P2P_ROLE_FSM_INFO *) NULL;
+	struct P2P_MGMT_TX_REQ_INFO *prP2pMgmtTxReqInfo =
+			(struct P2P_MGMT_TX_REQ_INFO *) NULL;
+	struct P2P_OFF_CHNL_TX_REQ_INFO *prOffChnlTxReq =
+			(struct P2P_OFF_CHNL_TX_REQ_INFO *) NULL;
+	struct P2P_CHNL_REQ_INFO *prChnlReqInfo =
+			(struct P2P_CHNL_REQ_INFO *) NULL;
+
+	if (prAdapter == NULL || prMgmtTxMsg == NULL)
+		return;
+
+	prP2pRoleBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
+			prMgmtTxMsg->ucBssIdx);
+	prP2pRoleFsmInfo = prP2pRoleBssInfo != NULL ?
+			P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prAdapter,
+			prP2pRoleBssInfo->u4PrivateData) : NULL;
+
+	if (prP2pRoleFsmInfo == NULL)
+		return;
+
+	prP2pMgmtTxReqInfo = &(prP2pRoleFsmInfo->rMgmtTxInfo);
+	prChnlReqInfo = &(prP2pRoleFsmInfo->rChnlReqInfo);
+
+	if (prP2pMgmtTxReqInfo == NULL || prChnlReqInfo == NULL)
+
+	p2pRoleAbortChlReqIfNeed(prAdapter, prP2pRoleFsmInfo, prChnlReqInfo);
+
+	if (p2pRoleAddTxReq2Queue(prAdapter, prP2pMgmtTxReqInfo,
+			prMgmtTxMsg, &prOffChnlTxReq) == FALSE)
+		goto error;
+
+	switch (prP2pRoleFsmInfo->eCurrentState) {
+	case P2P_ROLE_STATE_IDLE:
+		p2pRoleChnlReqByOffChnl(prAdapter, prP2pRoleFsmInfo,
+				prOffChnlTxReq);
+		break;
+	case P2P_ROLE_STATE_REQING_CHANNEL:
+		if (prChnlReqInfo->eChnlReqType != CH_REQ_TYPE_OFFCHNL_TX) {
+			DBGLOG(P2P, WARN,
+				"channel already requested by others\n");
+			goto error;
+		}
+		break;
+	case P2P_ROLE_STATE_OFF_CHNL_TX:
+		if (p2pFuncCheckOnRocChnl(&(prMgmtTxMsg->rChannelInfo),
+				prChnlReqInfo) &&
+				prP2pMgmtTxReqInfo->rTxReqLink.u4NumElem == 1) {
+			p2pRoleFsmStateTransition(prAdapter,
+					prP2pRoleFsmInfo,
+					P2P_ROLE_STATE_OFF_CHNL_TX);
+		} else {
+			log_dbg(P2P, INFO, "tx ch: %d, current ch: %d, requested: %d, tx link num: %d",
+				prMgmtTxMsg->rChannelInfo.ucChannelNum,
+				prChnlReqInfo->ucReqChnlNum,
+				prChnlReqInfo->fgIsChannelRequested,
+				prP2pMgmtTxReqInfo->rTxReqLink.u4NumElem);
+		}
+		break;
+	default:
+		DBGLOG(P2P, WARN, "Unknown state (%s) for offchannel-tx.\n",
+				apucDebugP2pRoleState[
+				prP2pRoleFsmInfo->eCurrentState]);
+		goto error;
+	}
+
+	return;
+
+error:
+	LINK_REMOVE_KNOWN_ENTRY(
+			&(prP2pMgmtTxReqInfo->rTxReqLink),
+			&prOffChnlTxReq->rLinkEntry);
+	cnmMgtPktFree(prAdapter, prOffChnlTxReq->prMgmtTxMsdu);
+	cnmMemFree(prAdapter, prOffChnlTxReq);
+	ASSERT(FALSE);
+}				/* p2pRoleHandleOffchnlTxReq */
+
+void p2pRoleFsmRunEventMgmtTx(IN struct ADAPTER *prAdapter,
+		IN struct MSG_HDR *prMsgHdr)
+{
+	struct BSS_INFO *prP2pRoleBssInfo = (struct BSS_INFO *) NULL;
+	struct MSG_MGMT_TX_REQUEST *prMgmtTxMsg =
+		(struct MSG_MGMT_TX_REQUEST *) NULL;
+	u_int8_t fgNeedOffchnlTx;
+
+	if (prAdapter == NULL || prMsgHdr == NULL)
+		goto error;
+
+	prMgmtTxMsg = (struct MSG_MGMT_TX_REQUEST *) prMsgHdr;
+	prP2pRoleBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
+			prMgmtTxMsg->ucBssIdx);
+
+	fgNeedOffchnlTx = p2pRoleNeedOffchnlTx(prAdapter, prP2pRoleBssInfo,
+			prMgmtTxMsg);
+	DBGLOG(P2P, INFO, "fgNeedOffchnlTx: %d\n", fgNeedOffchnlTx);
+
+	if (!fgNeedOffchnlTx)
+		p2pFuncTxMgmtFrame(prAdapter,
+				prMgmtTxMsg->ucBssIdx,
+				prMgmtTxMsg->prMgmtMsduInfo,
+				prMgmtTxMsg->fgNoneCckRate);
+	else
+		p2pRoleHandleOffchnlTxReq(prAdapter, prMgmtTxMsg);
+
+error:
+	cnmMemFree(prAdapter, prMsgHdr);
+}				/* p2pRoleFsmRunEventMgmtTx */
+
+void p2pRoleFsmRunEventTxCancelWait(IN struct ADAPTER *prAdapter,
+		IN struct MSG_HDR *prMsgHdr)
+{
+	struct BSS_INFO *prP2pRoleBssInfo = (struct BSS_INFO *) NULL;
+	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo =
+			(struct P2P_ROLE_FSM_INFO *) NULL;
+	struct P2P_MGMT_TX_REQ_INFO *prP2pMgmtTxInfo =
+			(struct P2P_MGMT_TX_REQ_INFO *) NULL;
+	struct MSG_CANCEL_TX_WAIT_REQUEST *prCancelTxWaitMsg =
+			(struct MSG_CANCEL_TX_WAIT_REQUEST *) NULL;
+	struct P2P_OFF_CHNL_TX_REQ_INFO *prOffChnlTxPkt =
+			(struct P2P_OFF_CHNL_TX_REQ_INFO *) NULL;
+	u_int8_t fgIsCookieFound = FALSE;
+
+	if (prAdapter == NULL || prMsgHdr == NULL)
+		goto exit;
+
+	prCancelTxWaitMsg = (struct MSG_CANCEL_TX_WAIT_REQUEST *) prMsgHdr;
+	prP2pRoleBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
+			prCancelTxWaitMsg->ucBssIdx);
+	prP2pRoleFsmInfo = P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prAdapter,
+			prP2pRoleBssInfo->u4PrivateData);
+	prP2pMgmtTxInfo = prP2pRoleFsmInfo != NULL ?
+			&(prP2pRoleFsmInfo->rMgmtTxInfo) : NULL;
+
+	if (prCancelTxWaitMsg == NULL || prP2pRoleFsmInfo == NULL ||
+			prP2pMgmtTxInfo == NULL || prP2pMgmtTxInfo == NULL)
+		goto exit;
+
+	LINK_FOR_EACH_ENTRY(prOffChnlTxPkt,
+			&(prP2pMgmtTxInfo->rTxReqLink),
+			rLinkEntry,
+			struct P2P_OFF_CHNL_TX_REQ_INFO) {
+		if (!prOffChnlTxPkt)
+			continue;
+		if (prOffChnlTxPkt->u8Cookie == prCancelTxWaitMsg->u8Cookie) {
+			fgIsCookieFound = TRUE;
+			break;
+		}
+	}
+
+	if (fgIsCookieFound || prP2pRoleFsmInfo->eCurrentState ==
+			P2P_ROLE_STATE_OFF_CHNL_TX) {
+		p2pRoleFsmRunEventAbort(prAdapter, prP2pRoleFsmInfo);
+	}
+
+exit:
+	if (prMsgHdr)
+		cnmMemFree(prAdapter, prMsgHdr);
+}				/* p2pRoleFsmRunEventTxCancelWait */
 

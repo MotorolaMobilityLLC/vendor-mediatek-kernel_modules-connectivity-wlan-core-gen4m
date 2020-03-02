@@ -143,4 +143,18 @@ p2pRoleStatePrepare_To_REQING_CHANNEL_STATE(IN struct ADAPTER *prAdapter,
 		IN struct P2P_CONNECTION_REQ_INFO *prConnReqInfo,
 		OUT struct P2P_CHNL_REQ_INFO *prChnlReqInfo);
 
+u_int8_t
+p2pRoleStateInit_OFF_CHNL_TX(IN struct ADAPTER *prAdapter,
+		IN struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo,
+		IN struct P2P_CHNL_REQ_INFO *prChnlReqInfo,
+		IN struct P2P_MGMT_TX_REQ_INFO *prP2pMgmtTxInfo,
+		OUT enum ENUM_P2P_ROLE_STATE *peNextState);
+
+void
+p2pRoleStateAbort_OFF_CHNL_TX(IN struct ADAPTER *prAdapter,
+		IN struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo,
+		IN struct P2P_MGMT_TX_REQ_INFO *prP2pMgmtTxInfo,
+		IN struct P2P_CHNL_REQ_INFO *prChnlReqInfo,
+		IN enum ENUM_P2P_ROLE_STATE eNextState);
+
 #endif

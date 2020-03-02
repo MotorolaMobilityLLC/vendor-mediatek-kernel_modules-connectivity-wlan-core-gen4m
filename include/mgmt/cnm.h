@@ -89,16 +89,6 @@
  *******************************************************************************
  */
 
-enum ENUM_CH_REQ_TYPE {
-	CH_REQ_TYPE_JOIN,
-	CH_REQ_TYPE_P2P_LISTEN,
-	CH_REQ_TYPE_OFFCHNL_TX,
-	CH_REQ_TYPE_GO_START_BSS,
-#if (CFG_SUPPORT_DFS_MASTER == 1)
-	CH_REQ_TYPE_DFS_CAC,
-#endif
-	CH_REQ_TYPE_NUM
-};
 #if (CFG_SUPPORT_IDC_CH_SWITCH == 1)
 enum ENUM_CH_SWITCH_TYPE {
 	CH_SWITCH_2G, /* Default */
