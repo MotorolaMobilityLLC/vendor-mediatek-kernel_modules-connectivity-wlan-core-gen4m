@@ -495,6 +495,30 @@ static const struct wiphy_vendor_command mtk_wlan_vendor_ops[] = {
 		.flags = WIPHY_VENDOR_CMD_NEED_WDEV | WIPHY_VENDOR_CMD_NEED_NETDEV,
 		.doit = mtk_cfg80211_vendor_set_roaming_policy
 	},
+	{
+		{
+			.vendor_id = GOOGLE_OUI,
+			.subcmd = WIFI_SUBCMD_GET_ROAMING_CAPABILITIES
+		},
+		.flags = WIPHY_VENDOR_CMD_NEED_WDEV | WIPHY_VENDOR_CMD_NEED_NETDEV,
+		.doit = mtk_cfg80211_vendor_get_roaming_capabilities
+	},
+	{
+		{
+			.vendor_id = GOOGLE_OUI,
+			.subcmd = WIFI_SUBCMD_CONFIG_ROAMING
+		},
+		.flags = WIPHY_VENDOR_CMD_NEED_WDEV | WIPHY_VENDOR_CMD_NEED_NETDEV,
+		.doit = mtk_cfg80211_vendor_config_roaming
+	},
+	{
+		{
+			.vendor_id = GOOGLE_OUI,
+			.subcmd = WIFI_SUBCMD_ENABLE_ROAMING
+		},
+		.flags = WIPHY_VENDOR_CMD_NEED_WDEV | WIPHY_VENDOR_CMD_NEED_NETDEV,
+		.doit = mtk_cfg80211_vendor_enable_roaming
+	},
 };
 
 static const struct nl80211_vendor_cmd_info mtk_wlan_vendor_events[] = {

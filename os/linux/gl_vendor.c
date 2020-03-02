@@ -276,6 +276,173 @@ int mtk_cfg80211_vendor_set_country_code(struct wiphy *wiphy, struct wireless_de
 	return 0;
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+* \brief This routine is to answer FWK that we can support FW Roaming.
+*
+* \param[in] wiphy wiphy for AIS STA.
+*
+* \param[in] wdev (not used here).
+*
+* \param[in] data (not used here).
+*
+* \param[in] data_len (not used here).
+*
+* \retval TRUE Success.
+*
+* \note we use cfg80211_vendor_cmd_reply to send the max number of our
+*       blacklist and whiltlist directly without receiving any data
+*       from the upper layer.
+*/
+/*----------------------------------------------------------------------------*/
+int mtk_cfg80211_vendor_get_roaming_capabilities(struct wiphy *wiphy,
+				 struct wireless_dev *wdev, const void *data, int data_len)
+{
+	uint32_t maxNumOfList[2] = { MAX_FW_ROAMING_BLACKLIST_SIZE, MAX_FW_ROAMING_WHITELIST_SIZE };
+	struct sk_buff *skb;
+
+	ASSERT(wiphy);
+
+	DBGLOG(REQ, INFO, "Get roaming capabilities: max black/whitelist=%d/%d", maxNumOfList[0], maxNumOfList[1]);
+
+	skb = cfg80211_vendor_cmd_alloc_reply_skb(wiphy, sizeof(maxNumOfList));
+	if (!skb) {
+		DBGLOG(REQ, ERROR, "Allocate skb failed\n");
+		return -ENOMEM;
+	}
+
+	if (unlikely(nla_put(skb, WIFI_ATTRIBUTE_ROAMING_CAPABILITIES,
+						 sizeof(maxNumOfList), maxNumOfList)) < 0)
+		goto nla_put_failure;
+
+	return cfg80211_vendor_cmd_reply(skb);
+
+nla_put_failure:
+	kfree_skb(skb);
+	return -EFAULT;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+* \brief This routine is to receive the black/whiltelist. from FWK.
+*
+* \param[in] wiphy wiphy for AIS STA.
+*
+* \param[in] wdev (not used here).
+*
+* \param[in] data BSSIDs in the FWK blact&whitelist.
+*
+* \param[in] data_len the byte-length of the FWK blact&whitelist.
+*
+* \retval TRUE Success.
+*
+* \note we iterate each BSSID in 'data' and put it into driver blacklist.
+*       For now, whiltelist doesn't be implemented by the FWK currently.
+*/
+/*----------------------------------------------------------------------------*/
+int mtk_cfg80211_vendor_config_roaming(struct wiphy *wiphy,
+				 struct wireless_dev *wdev, const void *data, int data_len)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct nlattr *attrlist;
+	struct AIS_BLACKLIST_ITEM *prBlackList;
+	struct BSS_DESC *prBssDesc = NULL;
+	uint32_t len_shift = 0;
+	uint32_t numOfList[2] = { 0 };
+	int i;
+
+	DBGLOG(REQ, INFO, "Receives roaming blacklist & whitelist with data_len=%d\n", data_len);
+	ASSERT(wiphy);
+	ASSERT(wdev);
+	if ((data == NULL) || (data_len == 0))
+		return -EINVAL;
+
+	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wiphy);
+	if (!prGlueInfo)
+		return -EINVAL;
+
+	if (prGlueInfo->u4FWRoamingEnable == 0) {
+		DBGLOG(REQ, INFO, "FWRoaming is disabled (FWRoamingEnable=%d)\n", prGlueInfo->u4FWRoamingEnable);
+		return WLAN_STATUS_SUCCESS;
+	}
+
+	attrlist = (struct nlattr *)((uint8_t *) data);
+
+	/* get the number of blacklist and copy those mac addresses from HAL */
+	if (attrlist->nla_type == WIFI_ATTRIBUTE_ROAMING_BLACKLIST_NUM) {
+		numOfList[0] = nla_get_u32(attrlist);
+		len_shift += NLA_ALIGN(attrlist->nla_len);
+	}
+	DBGLOG(REQ, INFO, "Get the number of blacklist=%d\n", numOfList[0]);
+
+	if (numOfList[0] < 0 || numOfList[0] > MAX_FW_ROAMING_BLACKLIST_SIZE)
+		return -EINVAL;
+
+	/*Refresh all the FWKBlacklist */
+	aisRefreshFWKBlacklist(prGlueInfo->prAdapter);
+
+	/* Start to receive blacklist mac addresses and set to FWK blacklist */
+	attrlist = (struct nlattr *)((uint8_t *) data + len_shift);
+	for (i = 0; i < numOfList[0]; i++) {
+		if (attrlist->nla_type == WIFI_ATTRIBUTE_ROAMING_BLACKLIST_BSSID) {
+			prBssDesc = scanSearchBssDescByBssid(prGlueInfo->prAdapter, nla_data(attrlist));
+			len_shift += NLA_ALIGN(attrlist->nla_len);
+			attrlist = (struct nlattr *)((uint8_t *) data + len_shift);
+
+			if (prBssDesc == NULL) {
+				DBGLOG(REQ, ERROR, "Cannot find the blacklist BSS=%pM\n", nla_data(attrlist));
+				continue;
+			}
+
+			prBlackList = aisAddBlacklist(prGlueInfo->prAdapter, prBssDesc);
+			prBlackList->fgIsInFWKBlacklist = TRUE;
+			DBGLOG(REQ, INFO, "Receives roaming blacklist SSID=%s addr=%pM\n",
+						prBssDesc->aucSSID, prBssDesc->aucBSSID);
+		}
+	}
+
+	return WLAN_STATUS_SUCCESS;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+* \brief This routine is to turn on/off FW Roaming.
+*
+* \param[in] wiphy wiphy for AIS STA.
+*
+* \param[in] wdev (not used here).
+*
+* \param[in] data 1 for ON / 0 for OFF.
+*
+* \param[in] data_len the byte-length of the data.
+*
+* \retval TRUE Success.
+*
+* \note we only receive the data and make the interface available to FWK.
+*       For now, this SUBCMD woundn't be sent from the FWK currently.
+*/
+/*----------------------------------------------------------------------------*/
+int mtk_cfg80211_vendor_enable_roaming(struct wiphy *wiphy,
+				 struct wireless_dev *wdev, const void *data, int data_len)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct nlattr *attr;
+
+	ASSERT(wiphy);	/* change to if (wiphy == NULL) then return? */
+	ASSERT(wdev);	/* change to if (wiphy == NULL) then return? */
+
+	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wiphy);
+	if (!prGlueInfo)
+		return -EFAULT;
+
+	attr = (struct nlattr *)data;
+	if (attr->nla_type == WIFI_ATTRIBUTE_ROAMING_STATE)
+		prGlueInfo->u4FWRoamingEnable = nla_get_u32(attr);
+
+	DBGLOG(REQ, INFO, "FWK set FWRoamingEnable = %d\n", prGlueInfo->u4FWRoamingEnable);
+
+	return WLAN_STATUS_SUCCESS;
+}
 
 #if 0
 int mtk_cfg80211_vendor_llstats_get_info(struct wiphy *wiphy, struct wireless_dev *wdev, const void *data, int data_len)

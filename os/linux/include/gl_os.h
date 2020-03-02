@@ -676,6 +676,11 @@ struct GLUE_INFO {
 	uint32_t u4LeaveDrvTick;
 	uint32_t u4CurrTick;
 	uint64_t u8CurrTime;
+
+	/* FW Roaming */
+	/* store the FW roaming enable state which FWK determines */
+	/* if it's = 0, ignore the black/whitelists settings from FWK */
+	uint32_t u4FWRoamingEnable;
 };
 
 typedef irqreturn_t(*PFN_WLANISR) (int irq, void *dev_id, struct pt_regs *regs);
