@@ -104,6 +104,10 @@ static const struct platform_device_id mtk_axi_ids[] = {
 #ifdef CONNAC2X2
 		.driver_data = (kernel_ulong_t)&mt66xx_driver_data_connac2x2},
 #endif /* CONNAC2X2 */
+#ifdef SOC3_0
+		.driver_data = (kernel_ulong_t)&mt66xx_driver_data_soc3_0},
+#endif /* SOC3_0 */
+
 	{ /* end: all zeroes */ },
 };
 

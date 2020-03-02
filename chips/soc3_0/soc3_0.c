@@ -49,7 +49,7 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  *****************************************************************************/
-/*! \file   mt7915.c
+/*! \file   soc3_0.c
 *    \brief  Internal driver stack will export
 *    the required procedures here for GLUE Layer.
 *
@@ -57,7 +57,7 @@
      from MediaTek 802.11 Wireless LAN driver stack to GLUE Layer.
 */
 
-#ifdef MT7915
+#ifdef SOC3_0
 
 /*******************************************************************************
 *                         C O M P I L E R   F L A G S
@@ -68,20 +68,30 @@
 *                    E X T E R N A L   R E F E R E N C E S
 ********************************************************************************
 */
+
+#include "coda/soc3_0/wf_wfdma_host_dma0.h"
+#include "coda/soc3_0/wf_wfdma_host_dma1.h"
+
 #include "precomp.h"
 
-#include "mt7915.h"
-#include "coda/mt7915/wf_cr_sw_def.h"
+#include "soc3_0.h"
 
 /*******************************************************************************
 *                              C O N S T A N T S
 ********************************************************************************
 */
+
 #define CONN_MCU_CONFG_BASE                0x88000000
 #define CONN_MCU_CONFG_COM_REG0_ADDR       (CONN_MCU_CONFG_BASE + 0x200)
 
 #define PATCH_SEMAPHORE_COMM_REG 0
 #define PATCH_SEMAPHORE_COMM_REG_PATCH_DONE 1	/* bit0 is for patch. */
+
+#define SW_WORKAROUND_FOR_WFDMA_ISSUE_HWITS00009838 1
+
+/* this is workaround for AXE, do not sync back to trunk*/
+
+
 /*******************************************************************************
 *                                 M A C R O S
 ********************************************************************************
@@ -102,13 +112,19 @@
 *                            P U B L I C   D A T A
 ********************************************************************************
 */
-struct ECO_INFO mt7915_eco_table[] = {
+
+uint8_t *apucsoc3_0FwName[] = {
+	(uint8_t *) CFG_FW_FILENAME "_SOC3_0",
+	NULL
+};
+
+struct ECO_INFO soc3_0_eco_table[] = {
 	/* HW version,  ROM version,    Factory version */
 	{0x00, 0x00, 0x0}	/* End of table */
 };
 
-#if defined(_HIF_PCIE)
-struct PCIE_CHIP_CR_MAPPING mt7915_bus2chip_cr_mapping[] = {
+#if defined(_HIF_PCIE) || defined(_HIF_AXI)
+struct PCIE_CHIP_CR_MAPPING soc3_0_bus2chip_cr_mapping[] = {
 	/* chip addr, bus addr, range */
 	{0x54000000, 0x02000, 0x1000}, /* WFDMA PCIE0 MCU DMA0 */
 	{0x55000000, 0x03000, 0x1000}, /* WFDMA PCIE0 MCU DMA1 */
@@ -151,149 +167,147 @@ struct PCIE_CHIP_CR_MAPPING mt7915_bus2chip_cr_mapping[] = {
 	{0x820fc000, 0xa4600, 0x0200}, /* WF_LMAC_TOP BN1 (WF_INT) */
 	{0x820fd000, 0xa4800, 0x0800}, /* WF_LMAC_TOP BN1 (WF_MIB) */
 	{0x820cc000, 0xa5000, 0x2000}, /* WF_LMAC_TOP BN1 (WF_MUCOP) */
-	{0x820c4000, 0xa8000, 0x4000}, /* WF_LMAC_TOP BN1 (WF_MUCOP) */
+	{0x820c4000, 0xa8000, 0x4000}, /* WF_LMAC_TOP (WF_UWTBL)  */
 	{0x820b0000, 0xae000, 0x1000}, /* [APB2] WFSYS_ON */
 	{0x80020000, 0xb0000, 0x10000}, /* WF_TOP_MISC_OFF */
 	{0x81020000, 0xc0000, 0x10000}, /* WF_TOP_MISC_ON */
 	{0x7c020000, 0xd0000, 0x10000}, /* CONN_INFRA, wfdma */
 	{0x7c060000, 0xe0000, 0x10000}, /* CONN_INFRA, conn_host_csr_top */
 	{0x7c000000, 0xf0000, 0x10000}, /* CONN_INFRA */
-	{0x000f0000, 0xf0000, 0x10000},
-	{0x000e0000, 0xe0000, 0x10000},
-	{0x0, 0x0, 0x0}
 };
-#endif				/* _HIF_PCIE */
+#endif /*_HIF_PCIE || _HIF_AXI */
 
-#if defined(_HIF_USB)
-uint16_t wlanHarrierUsbRxByteCount(
-	struct ADAPTER *prAdapter,
-	struct BUS_INFO *prBusInfo,
-	uint8_t *pRXD,
-	struct list_head *prCompleteQ)
+void soc3_0asicConnac2xProcessTxInterrupt(IN struct ADAPTER *prAdapter)
 {
 	struct GL_HIF_INFO *prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
-	uint16_t u2RxByteCount;
-	uint8_t ucPacketType;
-	uint8_t ucHdrTrans;
+	union WPDMA_INT_STA_STRUCT rIntrStatus;
 
-	ucHdrTrans = HAL_MAC_CONNAC2X_RX_STATUS_IS_HEADER_TRAN(
-		(struct HW_MAC_CONNAC2X_RX_DESC *)pRXD);
-	ucPacketType = HAL_MAC_CONNAC2X_RX_STATUS_GET_PKT_TYPE(
-		(struct HW_MAC_CONNAC2X_RX_DESC *)pRXD);
-	u2RxByteCount = HAL_MAC_CONNAC2X_RX_STATUS_GET_RX_BYTE_CNT(
-		(struct HW_MAC_CONNAC2X_RX_DESC *)pRXD);
+	rIntrStatus = (union WPDMA_INT_STA_STRUCT)prHifInfo->u4IntStatus;
+	if (rIntrStatus.field_conn2x_ext.wfdma1_tx_done_16)
+		halWpdmaProcessCmdDmaDone(prAdapter->prGlueInfo,
+			TX_RING_FWDL_IDX_3);
 
-	/* According to Barry's rule, it can be summarized as below formula:
-	 * 1. Event packet (including WIFI packet sent by MCU)
-	   -> RX padding for 4B alignment
-	 * 2. WIFI packet from UMAC
-	 * case 1. In case byte length =
-				128*N-7 ~ 128*N -> RX padding for 4B alignment
-	 * case 2. RX padding for 8B alignment first,
-				then extra 4B padding
-	 */
-	if ((ucPacketType == RX_PKT_TYPE_RX_DATA) &&
-	((u2RxByteCount & BITS(0, 6)) != 0 &&
-	(u2RxByteCount & BITS(0, 6)) < 121) &&
-	(prCompleteQ == &prHifInfo->rRxDataCompleteQ))
-		u2RxByteCount = ALIGN_8(u2RxByteCount)
-			+ LEN_USB_RX_PADDING_CSO;
-	else
-		u2RxByteCount = ALIGN_4(u2RxByteCount);
-	return u2RxByteCount;
+	if (rIntrStatus.field_conn2x_ext.wfdma1_tx_done_17)
+		halWpdmaProcessCmdDmaDone(prAdapter->prGlueInfo,
+			TX_RING_CMD_IDX_2);
+
+	if (rIntrStatus.field_conn2x_ext.wfdma1_tx_done_0) {
+		halWpdmaProcessDataDmaDone(prAdapter->prGlueInfo,
+			TX_RING_DATA0_IDX_0);
+
+		kalSetTxEvent2Hif(prAdapter->prGlueInfo);
+	}
+
 }
-#endif /* defined(_HIF_USB) */
 
-#if defined(_HIF_PCIE)
-static void wlanHarrierInitPcieInt(
-	struct GLUE_INFO *prGlueInfo)
-{
-	uint32_t u4MacVal;
-
-	/* Backup original setting */
-	HAL_MCR_RD(prGlueInfo->prAdapter,
-		0xF11AC,
-		&u4MacVal);
-
-	/*
-	 *	To set 0x74030188 = 0x000000FF
-	 *	1. set 0xF11AC = 0x7403
-	 *	2. set 0xE0188 = 0x000000FF
-	*/
-	HAL_MCR_WR(prGlueInfo->prAdapter,
-		0xF11AC,
-		0x7403);
-	HAL_MCR_WR(prGlueInfo->prAdapter,
-		0xE0188,
-		0x000000FF);
-
-	/* Recovery original setting */
-	HAL_MCR_WR(prGlueInfo->prAdapter,
-		0xF11AC,
-		u4MacVal);
-}
-#endif /* _HIF_PCIE */
-
-void mt7915DumpSerDummyCR(
+void soc3_0asicConnac2xProcessRxInterrupt(
 	struct ADAPTER *prAdapter)
 {
-	uint32_t u4MacVal;
+	struct GL_HIF_INFO *prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
+	union WPDMA_INT_STA_STRUCT rIntrStatus;
 
-	DBGLOG(HAL, INFO, "%s\n", __func__);
+	rIntrStatus = (union WPDMA_INT_STA_STRUCT)prHifInfo->u4IntStatus;
+	if (rIntrStatus.field_conn2x_ext.wfdma1_rx_done_0)
+		halRxReceiveRFBs(prAdapter, WFDMA1_RX_RING_IDX_0, FALSE);
 
-	DBGLOG(HAL, INFO, "=====Dump Start====\n");
+	if (rIntrStatus.field_conn2x_ext.wfdma0_rx_done_0)
+		halRxReceiveRFBs(prAdapter, RX_RING_DATA_IDX_0, TRUE);
 
-	HAL_MCR_RD(prAdapter, WF_SW_DEF_CR_SER_STATUS_ADDR, &u4MacVal);
-	DBGLOG(HAL, INFO, "SER STATUS[0x%08x]: 0x%08x\n",
-		WF_SW_DEF_CR_SER_STATUS_ADDR, u4MacVal);
+	if (rIntrStatus.field_conn2x_ext.wfdma0_rx_done_1)
+		halRxReceiveRFBs(prAdapter, RX_RING_EVT_IDX_1, TRUE);
 
-	HAL_MCR_RD(prAdapter, WF_SW_DEF_CR_PLE_STATUS_ADDR, &u4MacVal);
-	DBGLOG(HAL, INFO, "PLE STATUS[0x%08x]: 0x%08x\n",
-		WF_SW_DEF_CR_PLE_STATUS_ADDR, u4MacVal);
+	if (rIntrStatus.field_conn2x_ext.wfdma0_rx_done_2)
+		halRxReceiveRFBs(prAdapter, WFDMA0_RX_RING_IDX_2, TRUE);
 
-	HAL_MCR_RD(prAdapter, WF_SW_DEF_CR_PLE1_STATUS_ADDR, &u4MacVal);
-	DBGLOG(HAL, INFO, "PLE1 STATUS[0x%08x]: 0x%08x\n",
-		WF_SW_DEF_CR_PLE1_STATUS_ADDR, u4MacVal);
-
-	HAL_MCR_RD(prAdapter, WF_SW_DEF_CR_PLE_AMSDU_STATUS_ADDR, &u4MacVal);
-	DBGLOG(HAL, INFO, "PLE AMSDU STATUS[0x%08x]: 0x%08x\n",
-		WF_SW_DEF_CR_PLE_AMSDU_STATUS_ADDR, u4MacVal);
-
-	HAL_MCR_RD(prAdapter, WF_SW_DEF_CR_PSE_STATUS_ADDR, &u4MacVal);
-	DBGLOG(HAL, INFO, "PSE STATUS[0x%08x]: 0x%08x\n",
-		WF_SW_DEF_CR_PSE_STATUS_ADDR, u4MacVal);
-
-	HAL_MCR_RD(prAdapter, WF_SW_DEF_CR_PSE1_STATUS_ADDR, &u4MacVal);
-	DBGLOG(HAL, INFO, "PSE1 STATUS[0x%08x]: 0x%08x\n",
-		WF_SW_DEF_CR_PSE1_STATUS_ADDR, u4MacVal);
-
-	HAL_MCR_RD(prAdapter, WF_SW_DEF_CR_LAMC_WISR6_BN0_STATUS_ADDR,
-			&u4MacVal);
-	DBGLOG(HAL, INFO, "LMAC WISR6 BN0 STATUS[0x%08x]: 0x%08x\n",
-		WF_SW_DEF_CR_LAMC_WISR6_BN0_STATUS_ADDR, u4MacVal);
-
-	HAL_MCR_RD(prAdapter, WF_SW_DEF_CR_LAMC_WISR6_BN1_STATUS_ADDR,
-			&u4MacVal);
-	DBGLOG(HAL, INFO, "LMAC WISR6 BN1 STATUS[0x%08x]: 0x%08x\n",
-		WF_SW_DEF_CR_LAMC_WISR6_BN1_STATUS_ADDR, u4MacVal);
-
-	HAL_MCR_RD(prAdapter, WF_SW_DEF_CR_LAMC_WISR7_BN0_STATUS_ADDR,
-			&u4MacVal);
-	DBGLOG(HAL, INFO, "LMAC WISR7 BN0 STATUS[0x%08x]: 0x%08x\n",
-		WF_SW_DEF_CR_LAMC_WISR7_BN0_STATUS_ADDR, u4MacVal);
-
-	HAL_MCR_RD(prAdapter, WF_SW_DEF_CR_LAMC_WISR7_BN1_STATUS_ADDR,
-			&u4MacVal);
-	DBGLOG(HAL, INFO, "LMAC WISR7 BN1 STATUS[0x%08x]: 0x%08x\n",
-		WF_SW_DEF_CR_LAMC_WISR7_BN1_STATUS_ADDR, u4MacVal);
-
-	DBGLOG(HAL, INFO, "=====Dump End====\n");
-
+	if (rIntrStatus.field_conn2x_ext.wfdma0_rx_done_3)
+		halRxReceiveRFBs(prAdapter, WFDMA0_RX_RING_IDX_3, TRUE);
 }
 
-struct BUS_INFO mt7915_bus_info = {
-#if defined(_HIF_PCIE)
-	.top_cfg_base = MT7915_TOP_CFG_BASE,
+void soc3_0asicConnac2xWfdmaManualPrefetch(
+	struct GLUE_INFO *prGlueInfo)
+{
+	struct ADAPTER *prAdapter = prGlueInfo->prAdapter;
+	u_int32_t val = 0;
+
+	HAL_MCR_RD(prAdapter, WF_WFDMA_HOST_DMA0_WPDMA_GLO_CFG_ADDR, &val);
+	/* disable prefetch offset calculation auto-mode */
+	val &=
+	~WF_WFDMA_HOST_DMA0_WPDMA_GLO_CFG_CSR_DISP_BASE_PTR_CHAIN_EN_MASK;
+	HAL_MCR_WR(prAdapter, WF_WFDMA_HOST_DMA0_WPDMA_GLO_CFG_ADDR, val);
+
+	HAL_MCR_RD(prAdapter, WF_WFDMA_HOST_DMA1_WPDMA_GLO_CFG_ADDR, &val);
+	/* disable prefetch offset calculation auto-mode */
+	val &=
+	~WF_WFDMA_HOST_DMA1_WPDMA_GLO_CFG_CSR_DISP_BASE_PTR_CHAIN_EN_MASK;
+	HAL_MCR_WR(prAdapter,
+		WF_WFDMA_HOST_DMA1_WPDMA_GLO_CFG_ADDR, val);
+
+	HAL_MCR_WR(prAdapter,
+		WF_WFDMA_HOST_DMA0_WPDMA_RX_RING0_EXT_CTRL_ADDR, 0x00000004);
+	HAL_MCR_WR(prAdapter,
+		WF_WFDMA_HOST_DMA0_WPDMA_RX_RING1_EXT_CTRL_ADDR, 0x00400004);
+	HAL_MCR_WR(prAdapter,
+		WF_WFDMA_HOST_DMA0_WPDMA_RX_RING2_EXT_CTRL_ADDR, 0x00800004);
+	HAL_MCR_WR(prAdapter,
+		WF_WFDMA_HOST_DMA0_WPDMA_RX_RING3_EXT_CTRL_ADDR, 0x00c00004);
+
+#if (SW_WORKAROUND_FOR_WFDMA_ISSUE_HWITS00009838 == 1)
+	HAL_MCR_WR(prAdapter,
+		WF_WFDMA_HOST_DMA0_WPDMA_RX_RING4_EXT_CTRL_ADDR, 0x01000004);
+#endif
+
+	HAL_MCR_WR(prAdapter,
+		WF_WFDMA_HOST_DMA1_WPDMA_TX_RING0_EXT_CTRL_ADDR, 0x01400004);
+	HAL_MCR_WR(prAdapter,
+		WF_WFDMA_HOST_DMA1_WPDMA_TX_RING1_EXT_CTRL_ADDR, 0x01800004);
+	HAL_MCR_WR(prAdapter,
+		WF_WFDMA_HOST_DMA1_WPDMA_TX_RING2_EXT_CTRL_ADDR, 0x01c00004);
+
+	HAL_MCR_WR(prAdapter,
+		WF_WFDMA_HOST_DMA1_WPDMA_TX_RING3_EXT_CTRL_ADDR, 0x02000004);
+	HAL_MCR_WR(prAdapter,
+		WF_WFDMA_HOST_DMA1_WPDMA_TX_RING4_EXT_CTRL_ADDR, 0x02400004);
+	HAL_MCR_WR(prAdapter,
+		WF_WFDMA_HOST_DMA1_WPDMA_TX_RING5_EXT_CTRL_ADDR, 0x02800004);
+	HAL_MCR_WR(prAdapter,
+		WF_WFDMA_HOST_DMA1_WPDMA_TX_RING6_EXT_CTRL_ADDR, 0x02c00004);
+
+#if (SW_WORKAROUND_FOR_WFDMA_ISSUE_HWITS00009838 == 1)
+	HAL_MCR_WR(prAdapter,
+		WF_WFDMA_HOST_DMA1_WPDMA_TX_RING7_EXT_CTRL_ADDR, 0x03000004);
+#endif
+
+	HAL_MCR_WR(prAdapter,
+		WF_WFDMA_HOST_DMA1_WPDMA_TX_RING16_EXT_CTRL_ADDR, 0x03400004);
+	HAL_MCR_WR(prAdapter,
+		WF_WFDMA_HOST_DMA1_WPDMA_TX_RING17_EXT_CTRL_ADDR, 0x03800004);
+
+#if (SW_WORKAROUND_FOR_WFDMA_ISSUE_HWITS00009838 == 1)
+	HAL_MCR_WR(prAdapter,
+		WF_WFDMA_HOST_DMA1_WPDMA_TX_RING18_EXT_CTRL_ADDR, 0x03c00004);
+#endif
+
+	HAL_MCR_WR(prAdapter,
+		WF_WFDMA_HOST_DMA1_WPDMA_RX_RING0_EXT_CTRL_ADDR, 0x04800004);
+	HAL_MCR_WR(prAdapter,
+		WF_WFDMA_HOST_DMA1_WPDMA_RX_RING1_EXT_CTRL_ADDR, 0x04C00004);
+
+#if (SW_WORKAROUND_FOR_WFDMA_ISSUE_HWITS00009838 == 1)
+	HAL_MCR_WR(prAdapter,
+		WF_WFDMA_HOST_DMA1_WPDMA_RX_RING2_EXT_CTRL_ADDR, 0x05000004);
+#endif
+
+	/* reset dma idx */
+	HAL_MCR_WR(prAdapter,
+		WF_WFDMA_HOST_DMA0_WPDMA_RST_DTX_PTR_ADDR, 0xFFFFFFFF);
+	HAL_MCR_WR(prAdapter,
+		WF_WFDMA_HOST_DMA1_WPDMA_RST_DTX_PTR_ADDR, 0xFFFFFFFF);
+}
+
+struct BUS_INFO soc3_0_bus_info = {
+#if defined(_HIF_PCIE) || defined(_HIF_AXI)
+	.top_cfg_base = SOC3_0_TOP_CFG_BASE,
+
 	/* host_dma0 for TXP */
 	.host_dma0_base = CONNAC2X_HOST_WPDMA_0_BASE,
 	/* host_dma1 for TXD and host cmd to WX_CPU */
@@ -301,20 +315,23 @@ struct BUS_INFO mt7915_bus_info = {
 	.host_ext_conn_hif_wrap_base = CONNAC2X_HOST_EXT_CONN_HIF_WRAP,
 	.host_int_status_addr =
 		CONNAC2X_WPDMA_EXT_INT_STA(CONNAC2X_HOST_EXT_CONN_HIF_WRAP),
+
 	.host_int_txdone_bits = (CONNAC2X_EXT_WFDMA1_TX_DONE_INT0
 				| CONNAC2X_EXT_WFDMA1_TX_DONE_INT1
 				| CONNAC2X_EXT_WFDMA1_TX_DONE_INT2
+				| CONNAC2X_EXT_WFDMA1_TX_DONE_INT3
+				| CONNAC2X_EXT_WFDMA1_TX_DONE_INT4
+				| CONNAC2X_EXT_WFDMA1_TX_DONE_INT5
+				| CONNAC2X_EXT_WFDMA1_TX_DONE_INT6
 				| CONNAC2X_EXT_WFDMA1_TX_DONE_INT16
-				| CONNAC2X_EXT_WFDMA1_TX_DONE_INT17
-				| CONNAC2X_EXT_WFDMA1_TX_DONE_INT18
-				| CONNAC2X_EXT_WFDMA1_TX_DONE_INT19
-				| CONNAC2X_EXT_WFDMA1_TX_DONE_INT20),
+				| CONNAC2X_EXT_WFDMA1_TX_DONE_INT17),
 	.host_int_rxdone_bits = (CONNAC2X_EXT_WFDMA1_RX_DONE_INT0
-				| CONNAC2X_EXT_WFDMA1_RX_DONE_INT1
-				| CONNAC2X_EXT_WFDMA1_RX_DONE_INT2
 				| CONNAC2X_EXT_WFDMA0_RX_DONE_INT0
 				| CONNAC2X_EXT_WFDMA0_RX_DONE_INT1
+				| CONNAC2X_EXT_WFDMA0_RX_DONE_INT2
+				| CONNAC2X_EXT_WFDMA0_RX_DONE_INT3
 				),
+
 	.host_tx_ring_base =
 		CONNAC2X_TX_RING_BASE(CONNAC2X_HOST_WPDMA_1_BASE),
 	.host_tx_ring_ext_ctrl_base =
@@ -349,27 +366,26 @@ struct BUS_INFO mt7915_bus_info = {
 		CONNAC2X_WFDMA1_RX_RING_EXT_CTRL_BASE(
 			CONNAC2X_HOST_WPDMA_1_BASE),
 
-	.bus2chip = mt7915_bus2chip_cr_mapping,
+	.bus2chip = soc3_0_bus2chip_cr_mapping,
 	.max_static_map_addr = 0x000f0000,
+
 	.tx_ring_fwdl_idx = CONNAC2X_FWDL_TX_RING_IDX,
 	.tx_ring_cmd_idx = CONNAC2X_CMD_TX_RING_IDX,
-	.tx_ring_wa_cmd_idx = CONNAC2X_CMD_TX_WA_RING_IDX,
-	.tx_ring0_data_idx = CONNAC2X_DATA0_TXD_IDX,
-	.tx_ring1_data_idx = CONNAC2X_DATA1_TXD_IDX,
+	.tx_ring0_data_idx = 0,
+	.tx_ring1_data_idx = 1,
 	.fw_own_clear_addr = CONNAC2X_BN0_IRQ_STAT_ADDR,
 	.fw_own_clear_bit = PCIE_LPCR_FW_CLR_OWN,
-
 	.fgCheckDriverOwnInt = FALSE,
 	.u4DmaMask = 32,
-
 	.pdmaSetup = asicConnac2xWpdmaConfig,
 	.enableInterrupt = asicConnac2xEnableExtInterrupt,
 	.disableInterrupt = asicConnac2xDisableExtInterrupt,
-	.processTxInterrupt = asicConnac2xProcessTxInterrupt,
+	.processTxInterrupt = soc3_0asicConnac2xProcessTxInterrupt,
+	.processRxInterrupt = soc3_0asicConnac2xProcessRxInterrupt,
 	.tx_ring_ext_ctrl = asicConnac2xWfdmaTxRingExtCtrl,
 	.rx_ring_ext_ctrl = asicConnac2xWfdmaRxRingExtCtrl,
 	/* null wfdmaManualPrefetch if want to disable manual mode */
-	.wfdmaManualPrefetch = asicConnac2xWfdmaManualPrefetch,
+	.wfdmaManualPrefetch = soc3_0asicConnac2xWfdmaManualPrefetch,
 	.lowPowerOwnRead = asicConnac2xLowPowerOwnRead,
 	.lowPowerOwnSet = asicConnac2xLowPowerOwnSet,
 	.lowPowerOwnClear = asicConnac2xLowPowerOwnClear,
@@ -377,59 +393,35 @@ struct BUS_INFO mt7915_bus_info = {
 	.processSoftwareInterrupt = asicConnac2xProcessSoftwareInterrupt,
 	.softwareInterruptMcu = asicConnac2xSoftwareInterruptMcu,
 	.hifRst = asicConnac2xHifRst,
-	.processRxInterrupt = asicConnac2xProcessRxInterrupt,
-	.initPcieInt = wlanHarrierInitPcieInt,
+
+	.initPcieInt = NULL,
 	.devReadIntStatus = asicConnac2xReadExtIntStatus,
 	.pcieDmaShdlInit = NULL,
-#endif				/* _HIF_PCIE */
-#if defined(_HIF_USB)
-	.u4UdmaWlCfg_0_Addr = CONNAC2X_UDMA_WLCFG_0,
-	.u4UdmaWlCfg_1_Addr = CONNAC2X_UDMA_WLCFG_1,
-	.u4UdmaTxQsel = CONNAC2X_UDMA_TX_QSEL,
-	.u4device_vender_request_in = DEVICE_VENDOR_REQUEST_IN_CONNAC2,
-	.u4device_vender_request_out = DEVICE_VENDOR_REQUEST_OUT_CONNAC2,
-	.u4usb_tx_cmd_queue_mask = USB_TX_CMD_QUEUE_MASK,
-	.u4UdmaWlCfg_0 =
-	    (CONNAC2X_UDMA_WLCFG_0_WL_TX_EN(1) |
-	     CONNAC2X_UDMA_WLCFG_0_WL_RX_EN(1) |
-	     CONNAC2X_UDMA_WLCFG_0_WL_RX_MPSZ_PAD0(1) |
-	     CONNAC2X_UDMA_WLCFG_0_TICK_1US_EN(1)),
-	.u4UdmaTxTimeout = CONNAC2X_UDMA_TX_TIMEOUT_LIMIT,
-	.u4SuspendVer = SUSPEND_V2,
-	.asicUsbSuspend = NULL,	/*asicUsbSuspend*/
-	.asicUsbResume = asicConnac2xUsbResume,
-	.asicUsbEventEpDetected = asicConnac2xUsbEventEpDetected,
-	.asicUsbRxByteCount = wlanHarrierUsbRxByteCount,
-#endif				/* _HIF_USB */
-#if defined(_HIF_SDIO)
-	.halTxGetFreeResource = halTxGetFreeResource_v1,
-	.halTxReturnFreeResource = halTxReturnFreeResource_v1,
-	.halRestoreTxResource = halRestoreTxResource_v1,
-	.halUpdateTxDonePendingCount = halUpdateTxDonePendingCount_v1,
-#endif				/* _HIF_SDIO */
+
+#endif			/*_HIF_PCIE || _HIF_AXI */
 };
 
 #if CFG_ENABLE_FW_DOWNLOAD
-struct FWDL_OPS_T mt7915_fw_dl_ops = {
+struct FWDL_OPS_T soc3_0_fw_dl_ops = {
 	.constructFirmwarePrio = NULL,
-	.downloadPatch = wlanDownloadPatch,
+	.constructPatchName = NULL,
+	.downloadPatch = NULL, /*wlanDownloadPatch,*/
 	.downloadFirmware = wlanConnacFormatDownload,
 	.getFwInfo = wlanGetConnacFwInfo,
 	.getFwDlInfo = asicGetFwDlInfo,
 };
-#endif				/* CFG_ENABLE_FW_DOWNLOAD */
+#endif			/* CFG_ENABLE_FW_DOWNLOAD */
 
-struct TX_DESC_OPS_T mt7915TxDescOps = {
-	.fillNicAppend = fillConnac2xTxDescAppendWithWaCpu,
-	.fillHifAppend = fillConnac2xTxDescAppendByWaCpu,
-	.fillTxByteCount = fillTxDescTxByteCountWithWaCpu,
+struct TX_DESC_OPS_T soc3_0_TxDescOps = {
+	.fillNicAppend = fillNicTxDescAppend,
+	.fillHifAppend = fillTxDescAppendByHostV2,
+	.fillTxByteCount = fillConnac2xTxDescTxByteCount,
 };
 
-struct RX_DESC_OPS_T mt7915RxDescOps = {
+struct RX_DESC_OPS_T soc3_0_RxDescOps = {
 };
 
-
-struct CHIP_DBG_OPS mt7915_debug_ops = {
+struct CHIP_DBG_OPS soc3_0_debug_ops = {
 	.showPdmaInfo = NULL,
 	.showPseInfo = NULL,
 	.showPleInfo = NULL,
@@ -440,39 +432,36 @@ struct CHIP_DBG_OPS mt7915_debug_ops = {
 };
 
 /* Litien code refine to support multi chip */
-struct mt66xx_chip_info mt66xx_chip_info_mt7915 = {
-	.bus_info = &mt7915_bus_info,
+struct mt66xx_chip_info mt66xx_chip_info_soc3_0 = {
+	.bus_info = &soc3_0_bus_info,
 #if CFG_ENABLE_FW_DOWNLOAD
-	.fw_dl_ops = &mt7915_fw_dl_ops,
+	.fw_dl_ops = &soc3_0_fw_dl_ops,
 #endif				/* CFG_ENABLE_FW_DOWNLOAD */
-	.prDebugOps = &mt7915_debug_ops,
-	.prTxDescOps = &mt7915TxDescOps,
-	.prRxDescOps = &mt7915RxDescOps,
-	.chip_id = MT7915_CHIP_ID,
+
+	.prDebugOps = &soc3_0_debug_ops,
+	.prTxDescOps = &soc3_0_TxDescOps,
+	.prRxDescOps = &soc3_0_RxDescOps,
+	.chip_id = SOC3_0_CHIP_ID,
 	.should_verify_chip_id = FALSE,
-	.sw_sync0 = MT7915_SW_SYNC0,
-	.sw_ready_bits = WIFI_FUNC_READY_BITS,
-	.sw_ready_bit_offset = MT7915_SW_SYNC0_RDY_OFFSET,
-	.patch_addr = MT7915_PATCH_START_ADDR,
+	.sw_sync0 = SOC3_0_SW_SYNC0,
+	.sw_ready_bits = WIFI_FUNC_NO_CR4_READY_BITS,
+	.sw_ready_bit_offset = SOC3_0_SW_SYNC0_RDY_OFFSET,
+	.patch_addr = SOC3_0_PATCH_START_ADDR,
 	.is_support_cr4 = FALSE,
-	.is_support_wacpu = TRUE,
-	.txd_append_size = MT7915_TX_DESC_APPEND_LENGTH,
-	.rxd_size = MT7915_RX_DESC_LENGTH,
+	.is_support_wacpu = FALSE,
+	.txd_append_size = SOC3_0_TX_DESC_APPEND_LENGTH,
+	.rxd_size = SOC3_0_RX_DESC_LENGTH,
+
 	.pse_header_length = CONNAC2X_NIC_TX_PSE_HEADER_LENGTH,
 	.init_event_size = CONNAC2X_RX_INIT_EVENT_LENGTH,
-	.eco_info = mt7915_eco_table,
+	.eco_info = soc3_0_eco_table,
 	.isNicCapV1 = FALSE,
 	.top_hcr = CONNAC2X_TOP_HCR,
 	.top_hvr = CONNAC2X_TOP_HVR,
 	.top_fvr = CONNAC2X_TOP_FVR,
-	.arb_ac_mode_addr = MT7915_ARB_AC_MODE_ADDR,
+	.arb_ac_mode_addr = SOC3_0_ARB_AC_MODE_ADDR,
 	.asicCapInit = asicConnac2xCapInit,
-#if defined(_HIF_USB)
-	.asicUsbInit = asicConnac2xWfdmaInitForUSB,
-	.u4SerUsbMcuEventAddr = WF_SW_DEF_CR_USB_MCU_EVENT_ADD,
-	.u4SerUsbHostAckAddr = WF_SW_DEF_CR_USB_HOST_ACK_ADDR,
-#endif
-	.asicDumpSerDummyCR = mt7915DumpSerDummyCR,
+
 #if CFG_ENABLE_FW_DOWNLOAD
 	.asicEnableFWDownload = NULL,
 #endif				/* CFG_ENABLE_FW_DOWNLOAD */
@@ -480,12 +469,12 @@ struct mt66xx_chip_info mt66xx_chip_info_mt7915 = {
 	.is_support_hw_amsdu = TRUE,
 	.is_support_asic_lp = TRUE,
 	.is_support_wfdma = TRUE,
-	.asicWfdmaReInit = asicConnac2xWfdmaReInit
+	.asicWfdmaReInit = asicConnac2xWfdmaReInit,
 };
 
-struct mt66xx_hif_driver_data mt66xx_driver_data_mt7915 = {
-	.chip_info = &mt66xx_chip_info_mt7915,
+struct mt66xx_hif_driver_data mt66xx_driver_data_soc3_0 = {
+	.chip_info = &mt66xx_chip_info_soc3_0,
 };
 
-#endif				/* MT7915 */
+#endif				/* soc3_0 */
 
