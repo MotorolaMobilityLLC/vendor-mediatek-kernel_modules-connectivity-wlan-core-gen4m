@@ -3242,8 +3242,12 @@ wlanoidSetDefaultKey(IN struct ADAPTER *prAdapter,
 			prBssInfo->ucBcDefaultKeyIdx = prDefaultKey->ucKeyID;
 			prBssInfo->fgBcDefaultKeyExist = TRUE;
 		}
-		if (ucWlanIndex > WTBL_SIZE)
-			ASSERT(FALSE);
+		if (ucWlanIndex > WTBL_SIZE) {
+			DBGLOG(RSN, ERROR, "ucWlanIndex = %d, wepUsed = %d\n",
+			       ucWlanIndex,
+			       prBssInfo->wepkeyUsed[prDefaultKey->ucKeyID]);
+			return WLAN_STATUS_FAILURE;
+		}
 
 	} else {
 		DBGLOG(RSN, ERROR,
