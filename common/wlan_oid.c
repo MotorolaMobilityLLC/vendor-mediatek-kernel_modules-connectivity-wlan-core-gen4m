@@ -4183,7 +4183,7 @@ wlanoidQueryRssi(IN struct ADAPTER *prAdapter,
 	ASSERT(pu4QueryInfoLen);
 
 	ucBssIndex = GET_IOCTL_BSSIDX(prAdapter);
-	if (!IS_BSS_INDEX_VALID(ucBssIndex))
+	if (!IS_BSS_INDEX_AIS(prAdapter, ucBssIndex))
 		return WLAN_STATUS_NOT_SUPPORTED;
 
 	if (u4QueryBufferLen)
