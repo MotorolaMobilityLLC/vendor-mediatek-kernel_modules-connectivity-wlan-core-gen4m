@@ -97,8 +97,10 @@
 #define CONN_INFRA_CFG_BASE_ADDR 0x18001000
 #define CONN_INFRA_RGU_BASE_ADDR 0x18000000
 #define CONN_INFRA_BRCM_BASE_ADDR 0x1800E000
+#define WFDMA_AXI0_R2A_CTRL_0	0x7c027500
 
 #define WF_TOP_MISC_OFF_BASE_ADDR 0x184B0000
+#define BID_CHK_BYP_EN_MASK 0x00000800
 
 #define CONN_INFRA_WAKEUP_WF_ADDR (CONN_HOST_CSR_TOP_BASE_ADDR + 0x01A4)
 #define CONN_INFRA_ON2OFF_SLP_PROT_ACK_ADDR \
@@ -230,6 +232,7 @@ uint32_t soc3_0_DownloadByDynMemMap(IN struct ADAPTER *prAdapter,
 	IN uint8_t *pucStartPtr, IN enum ENUM_IMG_DL_IDX_T eDlIdx);
 #endif
 void soc3_0_DumpWfsysCpupcr(struct ADAPTER *prAdapter);
+void soc3_0_WfdmaAxiCtrl(struct ADAPTER *prAdapter);
 
 int hifWmmcuPwrOn(void);
 int hifWmmcuPwrOff(void);

@@ -288,7 +288,9 @@ u_int8_t glResetTrigger(struct ADAPTER *prAdapter,
 #endif
 	if (prAdapter == NULL)
 		prAdapter = wifi_rst.prGlueInfo->prAdapter;
+#if (CFG_SUPPORT_CONNINFRA == 1)
 	prChipInfo = prAdapter->chip_info;
+#endif
 	u2FwOwnVersion = prAdapter->rVerInfo.u2FwOwnVersion;
 	u2FwPeerVersion = prAdapter->rVerInfo.u2FwPeerVersion;
 
