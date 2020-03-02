@@ -205,7 +205,7 @@ struct AIS_FSM_INFO {
 
 	struct TIMER rIbssAloneTimer;
 
-	struct TIMER rIndicationOfDisconnectTimer;
+	uint32_t u4PostponeIndStartTime;
 
 	struct TIMER rJoinTimeoutTimer;
 
@@ -363,22 +363,21 @@ aisIndicationOfMediaStateToHost(IN struct ADAPTER
 				enum ENUM_PARAM_MEDIA_STATE eConnectionState,
 				u_int8_t fgDelayIndication);
 
-void aisPostponedEventOfDisconnTimeout(IN struct ADAPTER
-				       *prAdapter, unsigned long ulParamPtr);
+void aisPostponedEventOfDisconnTimeout(IN struct ADAPTER *prAdapter,
+				IN struct AIS_FSM_INFO *prAisFsmInfo);
 
 void aisUpdateBssInfoForJOIN(IN struct ADAPTER *prAdapter,
 			     struct STA_RECORD *prStaRec,
 			     struct SW_RFB *prAssocRspSwRfb);
 
-void aisUpdateBssInfoForCreateIBSS(IN struct ADAPTER
-				   *prAdapter);
+void aisUpdateBssInfoForCreateIBSS(IN struct ADAPTER *prAdapter);
 
-void aisUpdateBssInfoForMergeIBSS(IN struct ADAPTER
-				  *prAdapter, IN struct STA_RECORD *prStaRec);
+void aisUpdateBssInfoForMergeIBSS(IN struct ADAPTER *prAdapter,
+				IN struct STA_RECORD *prStaRec);
 
 u_int8_t aisValidateProbeReq(IN struct ADAPTER *prAdapter,
-			     IN struct SW_RFB *prSwRfb,
-			     OUT uint32_t *pu4ControlFlags);
+				IN struct SW_RFB *prSwRfb,
+				OUT uint32_t *pu4ControlFlags);
 
 uint32_t
 aisFsmRunEventMgmtFrameTxDone(IN struct ADAPTER *prAdapter,
