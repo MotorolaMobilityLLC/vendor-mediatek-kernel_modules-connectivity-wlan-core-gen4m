@@ -256,6 +256,10 @@
 #define OID_IPC_WIFI_LOG_UI                             0xFFA0CC01
 #define OID_IPC_WIFI_LOG_LEVEL                          0xFFA0CC02
 
+#if CFG_SUPPORT_ANT_SWAP
+#define OID_CUSTOM_QUERY_ANT_SWAP_CAPABILITY		0xFFA0CD00
+#endif
+
 #if CFG_SUPPORT_NCHO
 #define CMD_NCHO_COMP_TIMEOUT			1500	/* ms */
 #define CMD_NCHO_AF_DATA_LENGTH			1040

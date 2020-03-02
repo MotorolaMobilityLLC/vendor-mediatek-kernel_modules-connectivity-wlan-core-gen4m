@@ -2848,6 +2848,57 @@ int32_t MT_ATESetTxTargetPower(struct net_device *prNetDev,
 	return i4Status;
 }
 
+#if CFG_SUPPORT_ANT_SWAP
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Hook API for Set Antenna swap
+ *
+ * \param[in] prNetDev		 Pointer to the Net Device
+ * \param[in] u4Ant		 The antenna to choose (0 for main, 1 for aux)
+ * \param[out] None
+ *
+ * \retval 0				On success.
+ * \retval -EFAULT			If kalIoctl return nonzero.
+ * \retval -EINVAL			If invalid argument.
+ */
+/*----------------------------------------------------------------------------*/
+int32_t MT_ATESetAntSwap(struct net_device *prNetDev,
+					     uint32_t u4Ant)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct PARAM_MTK_WIFI_TEST_STRUCT rRfATInfo;
+	uint32_t u4BufLen = 0;
+	int32_t i4Status = 0;
+
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+	if (!prGlueInfo) {
+		DBGLOG(RFTEST, ERROR, "prGlueInfo is NULL\n");
+		return WLAN_STATUS_ADAPTER_NOT_READY;
+	}
+
+	DBGLOG(RFTEST, INFO,
+	       "QA_AGENT MT_ATESetAntSwap u4Ant : %d\n", u4Ant);
+
+	rRfATInfo.u4FuncIndex = RF_AT_FUNCID_SET_ANT_SWP;
+	rRfATInfo.u4FuncData = (uint32_t) u4Ant;
+
+	i4Status = kalIoctl(prGlueInfo,	/* prGlueInfo */
+			 wlanoidRftestSetAutoTest,	/* pfnOidHandler */
+			 &rRfATInfo,	/* pvInfoBuf */
+			 sizeof(rRfATInfo),	/* u4InfoBufLen */
+			 FALSE,	/* fgRead */
+			 FALSE,	/* fgWaitResp */
+			 TRUE,	/* fgCmd */
+			 &u4BufLen);	/* pu4QryInfoLen */
+
+	if (i4Status != WLAN_STATUS_SUCCESS)
+		return -EFAULT;
+
+	return i4Status;
+
+}
+#endif /* CFG_SUPPORT_ANT_SWAP */
+
 #if (CFG_SUPPORT_DFS_MASTER == 1)
 /*----------------------------------------------------------------------------*/
 /*!

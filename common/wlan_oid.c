@@ -15811,3 +15811,53 @@ uint32_t wlanoidGetLinkQualityInfo(IN struct ADAPTER *prAdapter,
 }
 #endif /* CFG_SUPPORT_LINK_QUALITY_MONITOR */
 
+#if CFG_SUPPORT_ANT_SWAP
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief This routine is called to query antenna swap capablity
+ *
+ * \param[in]  prAdapter       A pointer to the Adapter structure.
+ * \param[in]  pvSetBuffer     A pointer to the buffer that holds the
+ *                             OID-specific data to be set.
+ * \param[in]  u4SetBufferLen  The number of bytes the set buffer.
+ * \param[out] pu4SetInfoLen   Points to the number of bytes it read or is
+ *                             needed
+ * \retval WLAN_STATUS_SUCCESS
+ */
+/*----------------------------------------------------------------------------*/
+uint32_t wlanoidQueryAntennaSwap(IN struct ADAPTER *prAdapter,
+				OUT void *pvQueryBuffer,
+				IN uint32_t u4QueryBufferLen,
+				OUT uint32_t *pu4QueryInfoLen)
+
+{
+	uint32_t *puSupportSwpAntenn = 0;
+
+	if (!prAdapter) {
+		DBGLOG(REQ, ERROR, "prAdapter is NULL\n");
+		return WLAN_STATUS_ADAPTER_NOT_READY;
+	}
+
+	if (!pu4QueryInfoLen) {
+		DBGLOG(REQ, ERROR, "pu4QueryInfoLen is NULL\n");
+		return WLAN_STATUS_INVALID_DATA;
+	}
+
+	*pu4QueryInfoLen = sizeof(uint32_t);
+
+	/* Check for query buffer length */
+	if (u4QueryBufferLen != sizeof(uint32_t)) {
+		DBGLOG(REQ, WARN, "Invalid length %lu\n", u4QueryBufferLen);
+		return WLAN_STATUS_INVALID_LENGTH;
+	}
+
+	ASSERT(pvQueryBuffer);
+
+	puSupportSwpAntenn = (uint32_t *) pvQueryBuffer;
+
+	*puSupportSwpAntenn = !!(prAdapter->fgIsSupportAntSwp);
+	DBGLOG(REQ, WARN, "*puSupportSwpAntenn : %lu\n",
+			*puSupportSwpAntenn);
+	return WLAN_STATUS_SUCCESS;
+}
+#endif	/* CFG_SUPPORT_ANT_SWAP */

@@ -160,6 +160,10 @@ int SetATETxMcs(struct net_device *prNetDev,
 		uint8_t *prInBuf);
 int SetATEIpg(struct net_device *prNetDev,
 	      uint8_t *prInBuf);
+#if CFG_SUPPORT_ANT_SWAP
+int SetATEAntSwp(struct net_device *prNetDev,
+	      uint8_t *prInBuf);
+#endif
 
 #if CFG_SUPPORT_TX_BF
 int Set_TxBfProfileTag_Help(struct net_device *prNetDev,

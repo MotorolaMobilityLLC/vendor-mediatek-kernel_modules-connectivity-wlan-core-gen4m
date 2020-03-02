@@ -1481,6 +1481,9 @@ struct ADAPTER {
 	u_int8_t fgIsEfuseValid;
 	u_int8_t fgIsEmbbededMacAddrValid;
 
+#if CFG_SUPPORT_ANT_SWAP
+	u_int8_t fgIsSupportAntSwp;
+#endif
 #if CFG_SUPPORT_PWR_LIMIT_COUNTRY
 	u_int8_t fgIsPowerLimitTableValid;
 #endif
