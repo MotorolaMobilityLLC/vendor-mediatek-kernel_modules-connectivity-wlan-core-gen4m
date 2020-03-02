@@ -7867,6 +7867,8 @@ wlanoidSet802dot11PowerSaveProfile(IN P_ADAPTER_T prAdapter,
 	if ((prAdapter->rWifiVar.ucTpTestMode == ENUM_TP_TEST_MODE_THROUGHPUT) ||
 		(prAdapter->rWifiVar.ucTpTestMode == ENUM_TP_TEST_MODE_SIGMA_AC_N_PMF))
 		prPowerMode->ePowerMode = Param_PowerModeCAM;
+	else if (prAdapter->rWifiVar.ePowerMode != Param_PowerModeMax)
+		prPowerMode->ePowerMode = prAdapter->rWifiVar.ePowerMode;
 
 	/* for WMM PS Sigma certification, keep WiFi in ps mode continuously */
 	/* force PS == Param_PowerModeMAX_PSP */
