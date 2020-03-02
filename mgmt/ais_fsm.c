@@ -2402,8 +2402,7 @@ void aisFsmRunEventScanDone(IN struct ADAPTER *prAdapter,
 		rlmDoBeaconMeasurement(prAdapter, 0);
 		/* pending normal scan here, should schedule it on time */
 	} else if (prBcnRmParam->rNormalScan.fgExist) {
-		struct PARAM_SCAN_REQUEST_ADV *prScanRequest =
-			&prBcnRmParam->rNormalScan.rScanRequest;
+		struct NORMAL_SCAN_PARAMS *prParam = &prBcnRmParam->rNormalScan;
 
 		DBGLOG(AIS, INFO,
 		       "BCN REQ: Schedule normal scan after a beacon measurement done\n");
@@ -2412,7 +2411,7 @@ void aisFsmRunEventScanDone(IN struct ADAPTER *prAdapter,
 		cnmTimerStartTimer(prAdapter, &prAisFsmInfo->rScanDoneTimer,
 				   SEC_TO_MSEC(AIS_SCN_DONE_TIMEOUT_SEC));
 
-		aisFsmScanRequestAdv(prAdapter, prScanRequest);
+		aisFsmScanRequestAdv(prAdapter, &prParam->rScanRequest);
 		/* Radio Measurement is on-going, schedule to next Measurement
 		 ** Element
 		 */
@@ -4672,23 +4671,20 @@ aisFsmScanRequestAdv(IN struct ADAPTER *prAdapter,
 	} else if (prAdapter->rWifiVar.rRmReqParams.rBcnRmParam.eState ==
 		   RM_ON_GOING) {
 		struct NORMAL_SCAN_PARAMS *prNormalScan =
-			&prAdapter->rWifiVar.rRmReqParams.rBcnRmParam
-				 .rNormalScan;
-		struct PARAM_SCAN_REQUEST_ADV *prScanRequest =
-			&prNormalScan->rScanRequest;
+		    &prAdapter->rWifiVar.rRmReqParams.rBcnRmParam.rNormalScan;
 
 		prNormalScan->fgExist = TRUE;
-		kalMemCopy(prScanRequest, prRequestIn,
+		kalMemCopy(&(prNormalScan->rScanRequest), prRequestIn,
 			sizeof(struct PARAM_SCAN_REQUEST_ADV));
+		prNormalScan->rScanRequest.pucIE = prNormalScan->aucScanIEBuf;
 		if (prRequestIn->u4IELength > 0 &&
 		prRequestIn->u4IELength <= MAX_IE_LENGTH) {
-			prScanRequest->u4IELength =
+			prNormalScan->rScanRequest.u4IELength =
 			    prRequestIn->u4IELength;
-			kalMemCopy(prNormalScan->aucScanIEBuf,
-				prRequestIn->pucIE,
-				prRequestIn->u4IELength);
+			kalMemCopy(prNormalScan->rScanRequest.pucIE,
+				   prRequestIn->pucIE, prRequestIn->u4IELength);
 		} else {
-			prScanRequest->u4IELength = 0;
+			prNormalScan->rScanRequest.u4IELength = 0;
 		}
 
 		cnmTimerStopTimer(prAdapter, &prAisFsmInfo->rScanDoneTimer);

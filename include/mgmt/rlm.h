@@ -282,9 +282,9 @@ enum RM_REQ_PRIORITY {
 };
 
 struct NORMAL_SCAN_PARAMS {
-	u_int8_t fgExist;
 	struct PARAM_SCAN_REQUEST_ADV rScanRequest;
 	uint8_t aucScanIEBuf[MAX_IE_LENGTH];
+	u_int8_t fgExist;
 };
 
 /* Beacon RM related parameters */
