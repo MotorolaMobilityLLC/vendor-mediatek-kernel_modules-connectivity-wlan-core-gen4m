@@ -84,6 +84,7 @@
 #include <tc1_partition.h>
 #endif
 #include "gl_vendor.h"
+#include "gl_hook_api.h"
 
 /*******************************************************************************
  *                              C O N S T A N T S
@@ -2940,6 +2941,74 @@ label_exit:
 
 	return retWlanStat;
 }
+#if (CONFIG_WLAN_SERVICE == 1)
+uint32_t wlanServiceInit(struct GLUE_INFO *prGlueInfo)
+{
+
+	struct service_test *prServiceTest;
+
+	uint32_t rStatus = WLAN_STATUS_SUCCESS;
+
+	DBGLOG(INIT, TRACE, "%s enter!\n", __func__);
+
+	if (prGlueInfo == NULL)
+		return WLAN_STATUS_FAILURE;
+
+
+	prGlueInfo->rService.serv_id = SERV_HANDLE_TEST;
+	prGlueInfo->rService.serv_handle
+		= kalMemAlloc(sizeof(struct service_test), VIR_MEM_TYPE);
+
+	prServiceTest = (struct service_test *)prGlueInfo->rService.serv_handle;
+	prServiceTest->test_winfo
+		= kalMemAlloc(sizeof(struct test_wlan_info), VIR_MEM_TYPE);
+	prServiceTest->test_winfo->net_dev = gPrDev;
+	prServiceTest->test_winfo->chip_id = 0x00066310;
+	prServiceTest->test_op
+		= kalMemAlloc(sizeof(struct test_operation), VIR_MEM_TYPE);
+	prServiceTest->engine_offload = true;
+	prServiceTest->oid_funcptr = (wlan_oid_handler_t) ServiceWlanOid;
+
+	rStatus = mt_agent_init_service(&prGlueInfo->rService);
+	if (rStatus != WLAN_STATUS_SUCCESS)
+		DBGLOG(INIT, WARN, "%s init fail err:%d\n", __func__, rStatus);
+
+	return rStatus;
+}
+uint32_t wlanServiceExit(struct GLUE_INFO *prGlueInfo)
+{
+	uint32_t rStatus = WLAN_STATUS_SUCCESS;
+	struct service_test *prServiceTest;
+
+	DBGLOG(INIT, TRACE, "%s enter\n", __func__);
+
+	if (prGlueInfo == NULL)
+		return WLAN_STATUS_FAILURE;
+
+	rStatus = mt_agent_exit_service(&prGlueInfo->rService);
+
+	prServiceTest = (struct service_test *)prGlueInfo->rService.serv_handle;
+
+	if (rStatus != WLAN_STATUS_SUCCESS)
+		DBGLOG(INIT, WARN, "wlanServiceExit fail err:%d\n", rStatus);
+
+	if (prServiceTest->test_winfo)
+		kalMemFree(prServiceTest->test_winfo,
+		VIR_MEM_TYPE, sizeof(struct test_wlan_info));
+
+	if (prServiceTest->test_op)
+		kalMemFree(prServiceTest->test_op,
+		VIR_MEM_TYPE, sizeof(struct test_operation));
+
+	if (prGlueInfo->rService.serv_handle)
+		kalMemFree(prGlueInfo->rService.serv_handle,
+		VIR_MEM_TYPE, sizeof(struct service_test));
+
+	prGlueInfo->rService.serv_id = 0;
+
+	return rStatus;
+}
+#endif
 
 #ifdef CONFIG_MTK_CONNSYS_DEDICATED_LOG_PATH
 
@@ -3601,6 +3670,9 @@ static int32_t wlanProbe(void *pvData, void *pvDriverData)
 #endif
 
 	wlanOnP2pRegistration(prGlueInfo, prAdapter, prWdev);
+#if (CONFIG_WLAN_SERVICE == 1)
+	wlanServiceInit(prGlueInfo);
+#endif
 
 #if (CFG_MET_PACKET_TRACE_SUPPORT == 1)
 		DBGLOG(INIT, TRACE, "init MET procfs...\n");
@@ -3636,6 +3708,7 @@ static int32_t wlanProbe(void *pvData, void *pvDriverData)
 
 	if (i4Status == 0) {
 		wlanOnWhenProbeSuccess(prGlueInfo, prAdapter, FALSE);
+
 		DBGLOG(INIT, INFO, "wlanProbe: probe success\n");
 	} else {
 		DBGLOG(INIT, ERROR, "wlanProbe: probe failed, reason:%d\n",
@@ -3786,6 +3859,10 @@ static void wlanRemove(void)
 		free_netdev(prDev);
 		return;
 	}
+
+#if (CONFIG_WLAN_SERVICE == 1)
+	wlanServiceExit(prGlueInfo);
+#endif
 
 	/* to avoid that wpa_supplicant/hostapd triogger new cfg80211 command */
 	prGlueInfo->u4ReadyFlag = 0;

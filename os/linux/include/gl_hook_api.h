@@ -332,4 +332,12 @@ int32_t TxBfPseudoTagUpdate(struct net_device *prNetDev,
 
 #endif
 #endif /*CFG_SUPPORT_QA_TOOL */
+#if (CONFIG_WLAN_SERVICE == 1)
+uint32_t ServiceWlanOid(void *prNetDev,
+	 enum op_wlan_oid oidType,
+	 void *param,
+	 uint32_t paramLen,
+	 void *rsp);
+#endif /*#if (CONFIG_WLAN_SERVICE == 1)*/
+
 #endif /* _GL_HOOK_API_H */

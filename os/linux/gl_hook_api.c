@@ -4151,3 +4151,46 @@ int32_t TxBfPseudoTagUpdate(struct net_device *prNetDev,
 
 #endif
 #endif /*CFG_SUPPORT_QA_TOOL */
+#if (CONFIG_WLAN_SERVICE == 1)
+uint32_t ServiceWlanOid(void *winfos,
+	 enum op_wlan_oid oidType,
+	 void *param,
+	 uint32_t paramLen,
+	 void *rsp)
+{
+	int32_t i4Status = 0;
+	struct GLUE_INFO *prGlueInfo = NULL;
+	uint32_t u4BufLen = 0;
+	PFN_OID_HANDLER_FUNC pfnOidHandler = NULL;
+	struct test_wlan_info *prTestWinfo;
+
+	ASSERT(winfos);
+	prTestWinfo = (struct test_wlan_info *)winfos;
+
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prTestWinfo->net_dev));
+
+	if (prGlueInfo == NULL) {
+		DBGLOG(INIT, WARN, "prGlueInfo is NULL:%d\n");
+		return WLAN_STATUS_FAILURE;
+	}
+
+	switch (oidType) {
+	case OP_WLAN_OID_SET_TEST_MODE_START:
+		pfnOidHandler = wlanoidRftestSetTestMode;
+		break;
+
+	case OP_WLAN_OID_SET_TEST_MODE_ABORT:
+		pfnOidHandler = wlanoidRftestSetAbortTestMode;
+
+	case OP_WLAN_OID_NUM:
+	default:
+		return WLAN_STATUS_FAILURE;
+	}
+
+	i4Status = kalIoctl(prGlueInfo,
+			    pfnOidHandler,
+			    param, paramLen, FALSE, FALSE, TRUE, &u4BufLen);
+
+	return i4Status;
+}
+#endif

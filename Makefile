@@ -455,6 +455,31 @@ endif
 
 # ---------------------------------------------------
 
+# ---------------------------------------------------
+# Service git List
+# ---------------------------------------------------
+ifeq ($(MTK_WLAN_SERVICE), yes)
+SERVICE_DIR  := wlan_service/
+ccflags-y += -DCONFIG_WLAN_SERVICE=1
+ccflags-y += -DCONFIG_TEST_ENGINE_OFFLOAD=1
+ccflags-y += -I$(src)/wlan_service/include
+ccflags-y += -I$(src)/wlan_service/service/include
+ccflags-y += -I$(src)/wlan_service/glue/osal/include
+ccflags-y += -I$(src)/wlan_service/glue/hal/include
+$(info $$CCFLAG is [{$(ccflags-y)}])
+SERVICE_OBJS := $(SERVICE_DIR)agent/agent.o \
+                $(SERVICE_DIR)service/service_test.o \
+                $(SERVICE_DIR)service/test_engine.o \
+                $(SERVICE_DIR)glue/osal/gen4m/sys_adaption_gen4m.o \
+                $(SERVICE_DIR)glue/osal/gen4m/net_adaption_gen4m.o \
+                $(SERVICE_DIR)glue/hal/gen4m/operation_gen4m.o
+$(MODULE_NAME)-objs  += $(SERVICE_OBJS)
+$(info $$MTK_WLAN_SERVICE is [{$(SERVICE_OBJS)}])
+else
+ccflags-y += -DCONFIG_WLAN_SERVICE=0
+ccflags-y += -DCONFIG_TEST_ENGINE_OFFLOAD=0
+endif
+
 $(MODULE_NAME)-objs  += $(COMMON_OBJS)
 $(MODULE_NAME)-objs  += $(NIC_OBJS)
 $(MODULE_NAME)-objs  += $(OS_OBJS)
