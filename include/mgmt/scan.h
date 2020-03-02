@@ -143,6 +143,13 @@
 
 #define SCAN_DONE_DIFFERENCE			3
 
+/* Full2Partial */
+/* Define a full scan as scan channel number larger than this number */
+#define SCAN_FULL2PARTIAL_CHANNEL_NUM           (25)
+#define SCAN_CHANNEL_BITMAP_ARRAY_LEN           (8)
+#define BITS_OF_UINT                            (32)
+#define BITS_OF_BYTE                            (8)
+
 /*----------------------------------------------------------------------------*/
 /* MSG_SCN_SCAN_REQ                                                           */
 /*----------------------------------------------------------------------------*/
@@ -498,6 +505,12 @@ struct SCAN_INFO {
 	/* Sched scan state tracking */
 	u_int8_t fgSchedScanning;
 
+	/* Full2Partial */
+	OS_SYSTIME u4LastFullScanTime;
+	u_int8_t fgIsScanForFull2Partial;
+	u_int8_t ucFull2PartialSeq;
+	uint32_t au4ChannelBitMap[SCAN_CHANNEL_BITMAP_ARRAY_LEN];
+
 	/*channel idle count # Mike */
 	uint8_t		ucSparseChannelArrayValidNum;
 	uint8_t		aucReserved[3];
@@ -624,8 +637,12 @@ void scnInit(IN struct ADAPTER *prAdapter);
 void scnUninit(IN struct ADAPTER *prAdapter);
 
 /* Scan utilities */
-void scanSetRequestChannel(IN uint32_t u4ScanChannelNum,
+uint32_t scanCountBits(IN uint32_t bitMap[], IN uint32_t bitMapSize);
+
+void scanSetRequestChannel(IN struct ADAPTER *prAdapter,
+		IN uint32_t u4ScanChannelNum,
 		IN struct RF_CHANNEL_INFO arChannel[],
+		IN uint8_t fgIsOnlineScan,
 		OUT struct MSG_SCN_SCAN_REQ_V2 *prScanReqMsg);
 
 /* BSS-DESC Search */
