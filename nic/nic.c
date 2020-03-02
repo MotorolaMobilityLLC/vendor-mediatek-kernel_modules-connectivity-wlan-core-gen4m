@@ -2914,21 +2914,26 @@ uint32_t nicUpdateDPD(IN struct ADAPTER *prAdapter,
  * @retval none
  */
 /*----------------------------------------------------------------------------*/
-void nicInitSystemService(IN struct ADAPTER *prAdapter)
+void nicInitSystemService(IN struct ADAPTER *prAdapter,
+				   IN const u_int8_t bAtResetFlow)
 {
 	ASSERT(prAdapter);
 
 	/* <1> Initialize MGMT Memory pool and STA_REC */
-	cnmMemInit(prAdapter);
-	cnmStaRecInit(prAdapter);
+	if (!bAtResetFlow) {
+		cnmMemInit(prAdapter);
+		cnmStaRecInit(prAdapter);
+	}
+
 	cmdBufInitialize(prAdapter);
 
-	/* <2> Mailbox Initialization */
-	mboxInitialize(prAdapter);
+	if (!bAtResetFlow) {
+		/* <2> Mailbox Initialization */
+		mboxInitialize(prAdapter);
 
-	/* <3> Timer Initialization */
-	cnmTimerInitialize(prAdapter);
-
+		/* <3> Timer Initialization */
+		cnmTimerInitialize(prAdapter);
+	}
 }
 
 /*----------------------------------------------------------------------------*/

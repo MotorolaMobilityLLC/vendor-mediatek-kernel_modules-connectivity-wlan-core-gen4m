@@ -85,6 +85,7 @@
 #define DISCONNECT_REASON_CODE_NEW_CONNECTION   4
 #define DISCONNECT_REASON_CODE_REASSOCIATION    5
 #define DISCONNECT_REASON_CODE_ROAMING          6
+#define DISCONNECT_REASON_CODE_CHIPRESET        7
 
 /* The rate definitions */
 #define TX_MODE_CCK             0x00

@@ -1561,5 +1561,10 @@ uint32_t kal_is_skb_gro(struct ADAPTER *prAdapter, uint8_t ucBssIdx);
 void kal_gro_flush(struct ADAPTER *prAdapter, uint8_t ucBssIdx);
 #endif
 
+void kalRemoveBss(struct GLUE_INFO *prGlueInfo,
+	uint8_t aucBSSID[],
+	uint8_t ucChannelNum,
+	enum ENUM_BAND eBand);
+
 #endif /* _GL_KAL_H */
 

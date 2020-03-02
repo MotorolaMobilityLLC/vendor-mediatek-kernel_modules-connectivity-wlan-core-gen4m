@@ -326,7 +326,8 @@ void nicSetAvailablePhyTypeSet(IN struct ADAPTER
 /*----------------------------------------------------------------------------*/
 /* MGMT and System Service Control                                            */
 /*----------------------------------------------------------------------------*/
-void nicInitSystemService(IN struct ADAPTER *prAdapter);
+void nicInitSystemService(IN struct ADAPTER *prAdapter,
+				   IN const u_int8_t bAtResetFlow);
 
 void nicResetSystemService(IN struct ADAPTER *prAdapter);
 

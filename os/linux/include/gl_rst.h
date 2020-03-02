@@ -202,6 +202,7 @@ extern int mtk_wcn_wmt_assert_keyword(enum ENUM_WMTDRV_TYPE type,
 #endif
 
 extern uint64_t u8ResetTime;
+extern u_int8_t fgSimplifyResetFlow;
 extern enum _ENUM_CHIP_RESET_REASON_TYPE_T eResetReason;
 /*******************************************************************************
  *                  F U N C T I O N   D E C L A R A T I O N S

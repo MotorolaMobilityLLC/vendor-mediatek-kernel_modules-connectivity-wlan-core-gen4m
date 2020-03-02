@@ -251,6 +251,7 @@ enum ENUM_SCHED_SCAN_ACT {
 #define SCAN_LOG_PREFIX_MAX_LEN		(16)
 #define SCAN_LOG_MSG_MAX_LEN		(500)
 #define SCAN_LOG_BUFF_SIZE		(200)
+#define SCAN_LOG_DYN_ALLOC_MEM		(0)
 
 enum ENUM_SCAN_LOG_PREFIX {
 	/* Scan */

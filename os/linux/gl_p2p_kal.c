@@ -1235,6 +1235,10 @@ kalP2PIndicateBssInfo(IN struct GLUE_INFO *prGlueInfo,
 		 */
 
 		if (u4BufLen > 0) {
+#if CFG_SUPPORT_TSF_USING_BOOTTIME
+			prBcnProbeRspFrame->u.beacon.timestamp =
+				kalGetBootTime();
+#endif
 			prCfg80211Bss = cfg80211_inform_bss_frame(
 				/* struct wiphy * wiphy, */
 				prGlueP2pInfo->prWdev->wiphy,

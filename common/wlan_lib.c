@@ -383,6 +383,21 @@ void wlanCardEjected(IN struct ADAPTER *prAdapter)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief This routine is called to check driver ready state
+ *
+ * \param[in] prGlueInfo Pointer to the GlueInfo structure.
+ *
+ * \retval TRUE Driver is ready for kernel access
+ * \retval FALSE Driver is not ready
+ */
+/*----------------------------------------------------------------------------*/
+u_int8_t wlanIsDriverReady(IN struct GLUE_INFO *prGlueInfo)
+{
+	return prGlueInfo && prGlueInfo->u4ReadyFlag && !kalIsResetting();
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Create adapter object
  *
  * \param prAdapter This routine is call to allocate the driver software
@@ -445,23 +460,48 @@ void wlanOnPreAllocAdapterMem(IN struct ADAPTER *prAdapter,
 
 	DBGLOG(INIT, TRACE, "start.\n");
 
-	/* 4 <0> Reset variables in ADAPTER_T */
-	/* prAdapter->fgIsFwOwn = TRUE; */
-	prAdapter->fgIsEnterD3ReqIssued = FALSE;
+	if (!bAtResetFlow) {
+		/* 4 <0> Reset variables in ADAPTER_T */
+		/* prAdapter->fgIsFwOwn = TRUE; */
+		prAdapter->fgIsEnterD3ReqIssued = FALSE;
+		prAdapter->ucHwBssIdNum = BSS_DEFAULT_NUM;
+		prAdapter->ucWmmSetNum = BSS_DEFAULT_NUM;
+		prAdapter->ucP2PDevBssIdx = BSS_DEFAULT_NUM;
+		prAdapter->ucWtblEntryNum = WTBL_SIZE;
+		prAdapter->ucTxDefaultWlanIndex = prAdapter->ucWtblEntryNum - 1;
+
+		prAdapter->u4HifDbgFlag = 0;
+		prAdapter->u4HifChkFlag = 0;
+		prAdapter->u4TxHangFlag = 0;
+		prAdapter->u4NoMoreRfb = 0;
+
+		/* Initialize rWlanInfo */
+		kalMemSet(&(prAdapter->rWlanInfo), 0,
+			sizeof(struct WLAN_INFO));
+
+		/* Initialize aprBssInfo[].
+		 * Important: index shall be same
+		 *            when mapping between aprBssInfo[]
+		 *            and arBssInfoPool[].rP2pDevInfo
+		 *            is indexed to final one.
+		 */
+		for (i = 0; i < MAX_BSSID_NUM; i++)
+			prAdapter->aprBssInfo[i] =
+				&prAdapter->rWifiVar.arBssInfoPool[i];
+		prAdapter->aprBssInfo[prAdapter->ucP2PDevBssIdx] =
+			&prAdapter->rWifiVar.rP2pDevInfo;
+	}
 
 	prAdapter->u4OwnFailedCount = 0;
 	prAdapter->u4OwnFailedLogCount = 0;
-	prAdapter->ucHwBssIdNum = BSS_DEFAULT_NUM;
-	prAdapter->ucWmmSetNum = BSS_DEFAULT_NUM;
-	prAdapter->ucP2PDevBssIdx = BSS_DEFAULT_NUM;
-	prAdapter->ucWtblEntryNum = WTBL_SIZE;
-	prAdapter->ucTxDefaultWlanIndex = prAdapter->ucWtblEntryNum - 1;
-
 	prAdapter->fgEnHifDbgInfo = true;
-	prAdapter->u4HifDbgFlag = 0;
-	prAdapter->u4HifChkFlag = 0;
-	prAdapter->u4TxHangFlag = 0;
-	prAdapter->u4NoMoreRfb = 0;
+	prAdapter->ucCmdSeqNum = 0;
+	prAdapter->u4PwrCtrlBlockCnt = 0;
+
+	if (bAtResetFlow) {
+		for (i = 0; i < (prAdapter->ucHwBssIdNum + 1); i++)
+			UNSET_NET_ACTIVE(prAdapter, i);
+	}
 
 	QUEUE_INITIALIZE(&(prAdapter->rPendingCmdQueue));
 #if CFG_SUPPORT_MULTITHREAD
@@ -478,23 +518,8 @@ void wlanOnPreAllocAdapterMem(IN struct ADAPTER *prAdapter,
 	QUEUE_INITIALIZE(&prAdapter->rTxDataDoneQueue);
 #endif
 
-	/* Initialize rWlanInfo */
-	kalMemSet(&(prAdapter->rWlanInfo), 0,
-		  sizeof(struct WLAN_INFO));
-
-	/* Initialize aprBssInfo[].
-	 * Important: index shall be same when mapping between aprBssInfo[]
-	 *            and arBssInfoPool[]. rP2pDevInfo is indexed to final one.
-	 */
-	for (i = 0; i < MAX_BSSID_NUM; i++)
-		prAdapter->aprBssInfo[i] =
-			&prAdapter->rWifiVar.arBssInfoPool[i];
-	prAdapter->aprBssInfo[prAdapter->ucP2PDevBssIdx] =
-		&prAdapter->rWifiVar.rP2pDevInfo;
-
 	/* 4 <0.1> reset fgIsBusAccessFailed */
 	fgIsBusAccessFailed = FALSE;
-
 }
 
 void wlanOnPostNicInitAdapter(IN struct ADAPTER *prAdapter,
@@ -506,25 +531,28 @@ void wlanOnPostNicInitAdapter(IN struct ADAPTER *prAdapter,
 	/* 4 <2.1> Initialize System Service (MGMT Memory pool and
 	 *	   STA_REC)
 	 */
-	nicInitSystemService(prAdapter);
+	nicInitSystemService(prAdapter, bAtResetFlow);
 
-	/* 4 <2.2> Initialize Feature Options */
-	wlanInitFeatureOption(prAdapter);
+	if (!bAtResetFlow) {
+
+		/* 4 <2.2> Initialize Feature Options */
+		wlanInitFeatureOption(prAdapter);
 #if CFG_SUPPORT_MTK_SYNERGY
-	if (kalIsConfigurationExist(prAdapter->prGlueInfo) == TRUE) {
-		if (prRegInfo->prNvramSettings->u2FeatureReserved &
-		    BIT(MTK_FEATURE_2G_256QAM_DISABLED))
-			prAdapter->rWifiVar.aucMtkFeature[0] &=
-				~(MTK_SYNERGY_CAP_SUPPORT_24G_MCS89);
-	}
+		if (kalIsConfigurationExist(prAdapter->prGlueInfo) == TRUE) {
+			if (prRegInfo->prNvramSettings->u2FeatureReserved &
+					BIT(MTK_FEATURE_2G_256QAM_DISABLED))
+				prAdapter->rWifiVar.aucMtkFeature[0] &=
+					~(MTK_SYNERGY_CAP_SUPPORT_24G_MCS89);
+		}
 #endif
 
-	/* 4 <2.3> Overwrite debug level settings */
-	wlanCfgSetDebugLevel(prAdapter);
+		/* 4 <2.3> Overwrite debug level settings */
+		wlanCfgSetDebugLevel(prAdapter);
 
-	/* 4 <3> Initialize Tx */
-	nicTxInitialize(prAdapter);
-	wlanDefTxPowerCfg(prAdapter);
+		/* 4 <3> Initialize Tx */
+		nicTxInitialize(prAdapter);
+		wlanDefTxPowerCfg(prAdapter);
+	}
 
 	/* 4 <4> Initialize Rx */
 	nicRxInitialize(prAdapter);
@@ -772,20 +800,23 @@ uint32_t wlanAdapterStart(IN struct ADAPTER *prAdapter,
 	wlanOnPreAllocAdapterMem(prAdapter, bAtResetFlow);
 
 	do {
-		u4Status = nicAllocateAdapterMemory(prAdapter);
-		if (u4Status != WLAN_STATUS_SUCCESS) {
-			DBGLOG(INIT, ERROR,
-			       "nicAllocateAdapterMemory Error!\n");
-			u4Status = WLAN_STATUS_FAILURE;
-			eFailReason = ALLOC_ADAPTER_MEM_FAIL;
+		if (!bAtResetFlow) {
+			u4Status = nicAllocateAdapterMemory(prAdapter);
+			if (u4Status != WLAN_STATUS_SUCCESS) {
+				DBGLOG(INIT, ERROR,
+						"nicAllocateAdapterMemory Error!\n");
+				u4Status = WLAN_STATUS_FAILURE;
+				eFailReason = ALLOC_ADAPTER_MEM_FAIL;
 #if CFG_ENABLE_KEYWORD_EXCEPTION_MECHANISM
-			mtk_wcn_wmt_assert_keyword(WMTDRV_TYPE_WIFI,
-				"[Wi-Fi On] nicAllocateAdapterMemory Error!");
+				mtk_wcn_wmt_assert_keyword(WMTDRV_TYPE_WIFI,
+						"[Wi-Fi On] nicAllocateAdapterMemory Error!");
 #endif
-			break;
-		}
+				break;
+			}
 
-		prAdapter->u4OsPacketFilter = PARAM_PACKET_FILTER_SUPPORTED;
+			prAdapter->u4OsPacketFilter
+				= PARAM_PACKET_FILTER_SUPPORTED;
+		}
 
 		DBGLOG(INIT, INFO,
 		       "wlanAdapterStart(): Acquiring LP-OWN\n");
@@ -807,13 +838,17 @@ uint32_t wlanAdapterStart(IN struct ADAPTER *prAdapter,
 #endif
 			break;
 		}
-		/* 4 <1> Initialize the Adapter */
-		u4Status = nicInitializeAdapter(prAdapter);
-		if (u4Status != WLAN_STATUS_SUCCESS) {
-			DBGLOG(INIT, ERROR, "nicInitializeAdapter failed!\n");
-			u4Status = WLAN_STATUS_FAILURE;
-			eFailReason = INIT_ADAPTER_FAIL;
-			break;
+
+		if (!bAtResetFlow) {
+			/* 4 <1> Initialize the Adapter */
+			u4Status = nicInitializeAdapter(prAdapter);
+			if (u4Status != WLAN_STATUS_SUCCESS) {
+				DBGLOG(INIT, ERROR,
+					"nicInitializeAdapter failed!\n");
+				u4Status = WLAN_STATUS_FAILURE;
+				eFailReason = INIT_ADAPTER_FAIL;
+				break;
+			}
 		}
 
 		wlanOnPostNicInitAdapter(prAdapter, prRegInfo, bAtResetFlow);
@@ -883,46 +918,55 @@ uint32_t wlanAdapterStart(IN struct ADAPTER *prAdapter,
 			wlanQueryNicResourceInformation(prAdapter);
 
 #if (CFG_SUPPORT_NIC_CAPABILITY == 1)
+			if (!bAtResetFlow) {
+				/* 2.9 Workaround for Capability
+				*CMD packet lost issue
+				*/
+				wlanSendDummyCmd(prAdapter, TRUE);
 
-			/* 2.9 Workaround for Capability CMD packet lost issue
-			 */
-			wlanSendDummyCmd(prAdapter, TRUE);
+				/* 3. query for NIC capability */
+				if (prAdapter->chip_info->isNicCapV1)
+					wlanQueryNicCapability(prAdapter);
 
-			/* 3. query for NIC capability */
-			if (prAdapter->chip_info->isNicCapV1)
-				wlanQueryNicCapability(prAdapter);
+				/* 4. query for NIC capability V2 */
+				u4Status = wlanQueryNicCapabilityV2(prAdapter);
+				if (u4Status !=  WLAN_STATUS_SUCCESS) {
+					DBGLOG(INIT, WARN,
+						"wlanQueryNicCapabilityV2 failed.\n");
+					RECLAIM_POWER_CONTROL_TO_PM(
+						prAdapter, FALSE);
+					eFailReason = WAIT_FIRMWARE_READY_FAIL;
+					break;
+				}
 
-			/* 4. query for NIC capability V2 */
-			u4Status = wlanQueryNicCapabilityV2(prAdapter);
-			if (u4Status !=  WLAN_STATUS_SUCCESS) {
-				DBGLOG(INIT, WARN,
-							"wlanQueryNicCapabilityV2 failed.\n");
-				RECLAIM_POWER_CONTROL_TO_PM(prAdapter, FALSE);
-				eFailReason = WAIT_FIRMWARE_READY_FAIL;
-				break;
+				/* 5. reset TX Resource for normal operation
+				 *    based on the information reported from
+				 *    CMD_NicCapabilityV2
+				 */
+				wlanUpdateNicResourceInformation(prAdapter);
+
+				wlanPrintVersion(prAdapter);
 			}
-
-			/* 5. reset TX Resource for normal operation
-			 *    based on the information reported from
-			 *    CMD_NicCapabilityV2
-			 */
-			wlanUpdateNicResourceInformation(prAdapter);
-
-			wlanPrintVersion(prAdapter);
 #endif
 
 			/* 6. update basic configuration */
 			wlanUpdateBasicConfig(prAdapter);
 
-			/* 7. Override network address */
-			wlanUpdateNetworkAddress(prAdapter);
+			if (!bAtResetFlow) {
+				/* 7. Override network address */
+				wlanUpdateNetworkAddress(prAdapter);
 
-			/* 8. Apply Network Address */
-			nicApplyNetworkAddress(prAdapter);
+				/* 8. Apply Network Address */
+				nicApplyNetworkAddress(prAdapter);
 
-			/* 9. indicate disconnection as default status */
-			kalIndicateStatusAndComplete(prAdapter->prGlueInfo,
-					WLAN_STATUS_MEDIA_DISCONNECT, NULL, 0);
+				/* 9. indicate disconnection
+				 *    as default status
+				 */
+				kalIndicateStatusAndComplete(
+						prAdapter->prGlueInfo,
+						WLAN_STATUS_MEDIA_DISCONNECT,
+						NULL, 0);
+			}
 		}
 
 		RECLAIM_POWER_CONTROL_TO_PM(prAdapter, FALSE);
@@ -932,7 +976,8 @@ uint32_t wlanAdapterStart(IN struct ADAPTER *prAdapter,
 			break;
 		}
 
-		wlanOnPostFirmwareReady(prAdapter, prRegInfo);
+		if (!bAtResetFlow)
+			wlanOnPostFirmwareReady(prAdapter, prRegInfo);
 	} while (FALSE);
 
 	if (u4Status == WLAN_STATUS_SUCCESS) {
@@ -994,7 +1039,8 @@ void wlanOffClearAllQueues(IN struct ADAPTER *prAdapter)
 #endif
 }
 
-void wlanOffUninitNicModule(IN struct ADAPTER *prAdapter)
+void wlanOffUninitNicModule(IN struct ADAPTER *prAdapter,
+	IN const u_int8_t bAtResetFlow)
 {
 	DBGLOG(INIT, INFO, "wlanClearQueues(): start.\n")
 ;
@@ -1002,18 +1048,20 @@ void wlanOffUninitNicModule(IN struct ADAPTER *prAdapter)
 
 	nicTxRelease(prAdapter, FALSE);
 
-	/* MGMT - unitialization */
-	nicUninitMGMT(prAdapter);
+	if (!bAtResetFlow) {
+		/* MGMT - unitialization */
+		nicUninitMGMT(prAdapter);
 
-	/* System Service Uninitialization */
-	nicUninitSystemService(prAdapter);
+		/* System Service Uninitialization */
+		nicUninitSystemService(prAdapter);
 
-	nicReleaseAdapterMemory(prAdapter);
+		nicReleaseAdapterMemory(prAdapter);
 
 #if defined(_HIF_SPI)
-	/* Note: restore the SPI Mode Select from 32 bit to default */
-	nicRestoreSpiDefMode(prAdapter);
+		/* Note: restore the SPI Mode Select from 32 bit to default */
+		nicRestoreSpiDefMode(prAdapter);
 #endif
+	}
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1041,7 +1089,7 @@ uint32_t wlanAdapterStop(IN struct ADAPTER *prAdapter)
 		wlanPowerOffWifi(prAdapter);
 	 }
 
-	wlanOffUninitNicModule(prAdapter);
+	wlanOffUninitNicModule(prAdapter, FALSE);
 
 	return u4Status;
 }				/* wlanAdapterStop */
