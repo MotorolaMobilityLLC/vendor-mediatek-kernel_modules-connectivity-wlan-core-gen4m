@@ -316,6 +316,7 @@ WLAN_STATUS halTxUSBSendCmd(IN P_GLUE_INFO_T prGlueInfo, IN UINT_8 ucTc, IN P_CM
 
 	if (wlanIsChipRstRecEnabled(prGlueInfo->prAdapter)
 			&& wlanIsChipNoAck(prGlueInfo->prAdapter)) {
+		wlanChipRstPreAct(prGlueInfo->prAdapter);
 		DBGLOG(HAL, ERROR, "usb trigger whole reset\n");
 		HAL_WIFI_FUNC_CHIP_RESET(prGlueInfo->prAdapter);
 	}
@@ -565,6 +566,7 @@ WLAN_STATUS halTxUSBSendData(IN P_GLUE_INFO_T prGlueInfo, IN P_MSDU_INFO_T prMsd
 
 	if (wlanIsChipRstRecEnabled(prGlueInfo->prAdapter)
 			&& wlanIsChipNoAck(prGlueInfo->prAdapter)) {
+		wlanChipRstPreAct(prGlueInfo->prAdapter);
 		DBGLOG(HAL, ERROR, "usb trigger whole reset\n");
 		HAL_WIFI_FUNC_CHIP_RESET(prGlueInfo->prAdapter);
 	}
