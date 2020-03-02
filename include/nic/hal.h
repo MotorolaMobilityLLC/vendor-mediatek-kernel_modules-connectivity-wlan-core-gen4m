@@ -1215,6 +1215,9 @@ void halRxReceiveRFBs(IN struct ADAPTER *prAdapter, uint32_t u4Port,
 	uint8_t fgRxData);
 u_int8_t halWpdmaWaitIdle(struct GLUE_INFO *prGlueInfo,
 	int32_t round, int32_t wait_us);
+bool halWpdmaAllocRxRing(struct GLUE_INFO *prGlueInfo, uint32_t u4Num,
+			 uint32_t u4Size, uint32_t u4DescSize,
+			 uint32_t u4BufSize, bool fgAllocMem);
 #endif /* defined(_HIF_PCIE) || defined(_HIF_AXI) */
 
 #endif /* _HAL_H */

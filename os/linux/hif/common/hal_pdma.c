@@ -233,7 +233,7 @@ uint32_t halRxWaitResponse(IN struct ADAPTER *prAdapter, IN uint8_t ucPortIdx,
 	ASSERT(prGlueInfo);
 	ASSERT(pucRspBuffer);
 
-	if (prChipInfo->is_support_wfdma)
+	if (prChipInfo->is_support_wfdma1)
 		ucPortIdx = prChipInfo->rx_event_port;
 	else {
 		ASSERT(ucPortIdx < 2);
@@ -1489,13 +1489,13 @@ bool halWpdmaAllocRing(struct GLUE_INFO *prGlueInfo, bool fgAllocMem)
 	struct GL_HIF_INFO *prHifInfo;
 	int32_t u4Num, u4Index;
 #if (CFG_SUPPORT_CONNAC2X == 1)
-	struct mt66xx_chip_info *prChipInfo;
+	struct BUS_INFO *prBusInfo = NULL;
 #endif /* CFG_SUPPORT_CONNAC2X == 1 */
 
 	ASSERT(prGlueInfo);
 	prHifInfo = &prGlueInfo->rHifInfo;
 #if (CFG_SUPPORT_CONNAC2X == 1)
-	prChipInfo = prGlueInfo->prAdapter->chip_info;
+	prBusInfo = prGlueInfo->prAdapter->chip_info->bus_info;
 #endif /* CFG_SUPPORT_CONNAC2X == 1  */
 
 	/*
@@ -1521,6 +1521,7 @@ bool halWpdmaAllocRing(struct GLUE_INFO *prGlueInfo, bool fgAllocMem)
 
 	/* For connac & old ic: Event Rx path */
 	/* For falcon: TxFreeDoneEvent to Host Rx path */
+	/* For buzzard(costdown wfdma): Event Rx path */
 	/* Event Rx path */
 	if (!halWpdmaAllocRxRing(prGlueInfo, RX_RING_EVT_IDX_1,
 				 RX_RING1_SIZE, RXD_SIZE,
@@ -1530,38 +1531,11 @@ bool halWpdmaAllocRing(struct GLUE_INFO *prGlueInfo, bool fgAllocMem)
 	}
 
 #if (CFG_SUPPORT_CONNAC2X == 1)
-	if (prChipInfo->is_support_wfdma) {
-		if (!halWpdmaAllocRxRing(prGlueInfo, WFDMA0_RX_RING_IDX_2,
-				RX_RING1_SIZE, RXD_SIZE, RX_BUFFER_AGGRESIZE,
-				fgAllocMem)) {
-			DBGLOG(HAL, ERROR, "AllocWfdmaRxRing fail\n");
+	if (prBusInfo->wfdmaAllocRxRing)
+		if (!prBusInfo->wfdmaAllocRxRing(prGlueInfo, fgAllocMem)) {
+			DBGLOG(HAL, ERROR, "wfdmaAllocRxRing fail\n");
 			return false;
 		}
-		if (!halWpdmaAllocRxRing(prGlueInfo, WFDMA0_RX_RING_IDX_3,
-				RX_RING1_SIZE, RXD_SIZE, RX_BUFFER_AGGRESIZE,
-				fgAllocMem)) {
-			DBGLOG(HAL, ERROR, "AllocWfdmaRxRing fail\n");
-			return false;
-		}
-		if (!halWpdmaAllocRxRing(prGlueInfo, WFDMA1_RX_RING_IDX_0,
-				RX_RING1_SIZE, RXD_SIZE, RX_BUFFER_AGGRESIZE,
-				fgAllocMem)) {
-			DBGLOG(HAL, ERROR, "AllocWfdmaRxRing fail\n");
-			return false;
-		}
-		if (!halWpdmaAllocRxRing(prGlueInfo, WFDMA1_RX_RING_IDX_1,
-				RX_RING_SIZE, RXD_SIZE, RX_BUFFER_AGGRESIZE,
-				fgAllocMem)) {
-			DBGLOG(HAL, ERROR, "AllocWfdmaRxRing fail\n");
-			return false;
-		}
-		if (!halWpdmaAllocRxRing(prGlueInfo, WFDMA1_RX_RING_IDX_2,
-				RX_RING_SIZE, RXD_SIZE, RX_BUFFER_AGGRESIZE,
-				fgAllocMem)) {
-			DBGLOG(HAL, ERROR, "AllocWfdmaRxRing fail\n");
-			return false;
-		}
-	}
 #endif /* CFG_SUPPORT_CONNAC2X == 1 */
 
 	/* Initialize all transmit related software queues */
@@ -1770,13 +1744,57 @@ void halWpdmaInitTxRing(IN struct GLUE_INFO *prGlueInfo)
 	}
 }
 
+static uint8_t defaultSetRxRingHwAddr(
+	struct RTMP_RX_RING *prRxRing,
+	struct BUS_INFO *prBusInfo,
+	struct mt66xx_chip_info *prChipInfo,
+	uint32_t u4SwRingIdx)
+{
+	uint32_t offset = 0;
+
+	if (u4SwRingIdx >= WFDMA1_RX_RING_IDX_0) {
+#if (CFG_SUPPORT_CONNAC2X == 1)
+		if (prChipInfo->is_support_wfdma1) {
+			offset = (u4SwRingIdx - WFDMA1_RX_RING_IDX_0)
+					* MT_RINGREG_DIFF;
+			prRxRing->hw_desc_base =
+				prBusInfo->host_wfdma1_rx_ring_base
+					+ offset;
+			prRxRing->hw_cidx_addr =
+				prBusInfo->host_wfdma1_rx_ring_cidx_addr
+					+ offset;
+			prRxRing->hw_didx_addr =
+				prBusInfo->host_wfdma1_rx_ring_didx_addr
+					+ offset;
+			prRxRing->hw_cnt_addr =
+				prBusInfo->host_wfdma1_rx_ring_cnt_addr
+					+ offset;
+		} else
+#endif /* CFG_SUPPORT_CONNAC2X == 1 */
+			return FALSE;
+	} else {
+		offset = u4SwRingIdx * MT_RINGREG_DIFF;
+		prRxRing->hw_desc_base =
+			prBusInfo->host_rx_ring_base + offset;
+		prRxRing->hw_cidx_addr =
+			prBusInfo->host_rx_ring_cidx_addr + offset;
+		prRxRing->hw_didx_addr =
+			prBusInfo->host_rx_ring_didx_addr + offset;
+		prRxRing->hw_cnt_addr =
+			prBusInfo->host_rx_ring_cnt_addr + offset;
+	}
+
+	return TRUE;
+}
+
 void halWpdmaInitRxRing(IN struct GLUE_INFO *prGlueInfo)
 {
 	struct GL_HIF_INFO *prHifInfo = NULL;
 	struct RTMP_RX_RING *prRxRing = NULL;
-	uint32_t i = 0, offset = 0, phy_addr = 0;
+	uint32_t i = 0, phy_addr = 0;
 	struct BUS_INFO *prBusInfo = NULL;
 	struct mt66xx_chip_info *prChipInfo;
+	uint8_t rv;
 
 	ASSERT(prGlueInfo);
 	prHifInfo = &prGlueInfo->rHifInfo;
@@ -1786,37 +1804,14 @@ void halWpdmaInitRxRing(IN struct GLUE_INFO *prGlueInfo)
 	/* reset all RX Ring register */
 	for (i = 0; i < NUM_OF_RX_RING; i++) {
 		prRxRing = &prHifInfo->RxRing[i];
-		if (i >= WFDMA1_RX_RING_IDX_0) {
-#if (CFG_SUPPORT_CONNAC2X == 1)
-			if (prChipInfo->is_support_wfdma) {
-				offset = (i - WFDMA1_RX_RING_IDX_0)
-						* MT_RINGREG_DIFF;
-				prRxRing->hw_desc_base =
-					prBusInfo->host_wfdma1_rx_ring_base
-						+ offset;
-				prRxRing->hw_cidx_addr =
-					prBusInfo->host_wfdma1_rx_ring_cidx_addr
-						+ offset;
-				prRxRing->hw_didx_addr =
-					prBusInfo->host_wfdma1_rx_ring_didx_addr
-						+ offset;
-				prRxRing->hw_cnt_addr =
-					prBusInfo->host_wfdma1_rx_ring_cnt_addr
-						+ offset;
-			} else
-#endif /* CFG_SUPPORT_CONNAC2X == 1 */
-				break;
-		} else {
-		offset = i * MT_RINGREG_DIFF;
-			prRxRing->hw_desc_base =
-				prBusInfo->host_rx_ring_base + offset;
-			prRxRing->hw_cidx_addr =
-				prBusInfo->host_rx_ring_cidx_addr + offset;
-			prRxRing->hw_didx_addr =
-				prBusInfo->host_rx_ring_didx_addr + offset;
-			prRxRing->hw_cnt_addr =
-				prBusInfo->host_rx_ring_cnt_addr + offset;
-		}
+		if (prBusInfo->setRxRingHwAddr)
+			rv = prBusInfo->setRxRingHwAddr(prRxRing, prBusInfo, i);
+		else
+			rv = defaultSetRxRingHwAddr(
+				prRxRing, prBusInfo, prChipInfo, i);
+
+		if (!rv)
+			break;
 		phy_addr = ((uint64_t)prRxRing->Cell[0].AllocPa &
 			DMA_LOWER_32BITS_MASK);
 		prRxRing->RxCpuIdx = prRxRing->u4RingSize - 1;
