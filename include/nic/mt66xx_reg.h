@@ -960,6 +960,7 @@ enum enum_mt66xx_chip {
 struct mt66xx_chip_info {
 	P_BUS_INFO bus_info;
 	struct FWDL_OPS_T *fw_dl_ops;
+	struct TX_DESC_OPS_T *prTxDescOps;
 
 	const unsigned int chip_id;	/* chip id */
 	const unsigned int should_verify_chip_id;	/* verify chip id */
@@ -982,8 +983,6 @@ struct mt66xx_chip_info {
 
 	void (*asicCapInit)(IN P_ADAPTER_T prAdapter);
 	void (*asicEnableFWDownload)(IN P_ADAPTER_T prAdapter, IN BOOL fgEnable);
-	void (*fillTxDescAppend)(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduInfo, IN UINT_16 u4MsduId,
-				 IN dma_addr_t rDmaAddr, OUT PUINT_8 pucBuffer);
 	void (*fillHifTxDesc)(IN PUINT_8 *pDest, IN PUINT_16 pInfoBufLen);
 
 	const UINT_32 features;	/* feature bits */
