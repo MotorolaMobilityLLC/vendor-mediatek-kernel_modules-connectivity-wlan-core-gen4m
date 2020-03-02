@@ -7018,7 +7018,7 @@ void kalScanSsidLog(struct cfg80211_scan_request *request,
 		kalStrnCpy(logBuf+idx, request->ssids[i].ssid, len);
 		idx = idx + len;
 
-		kalStrnCpy(logBuf+idx, " ", 1);
+		kalMemCopy(logBuf+idx, " ", 1);
 		idx = idx + 1;
 	}
 	if (idx != 0) {
