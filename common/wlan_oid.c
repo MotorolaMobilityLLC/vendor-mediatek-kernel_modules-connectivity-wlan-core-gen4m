@@ -16036,7 +16036,7 @@ wlanoidShowDmaschInfo(IN struct ADAPTER *prAdapter,
 #if CFG_SUPPORT_LOWLATENCY_MODE
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief This routine is called to enable/disable low latency mode
+ * \brief This routine is called to enable/disable low latency mode from oid
  *
  * \param[in]  prAdapter       A pointer to the Adapter structure.
  * \param[in]  pvSetBuffer     A pointer to the buffer that holds the
@@ -16079,13 +16079,15 @@ uint32_t wlanoidSetLowLatencyMode(
 	kalMemCopy(&u4Events, pvSetBuffer, u4SetBufferLen);
 
 	/* Set low latency mode */
-	DBGLOG(OID, INFO, "LowLatency(oid) event:0x%x\n", u4Events);
+	DBGLOG(OID, INFO, "DPP LowLatencySet(from oid set) event:0x%x\n",
+		u4Events);
 	wlanSetLowLatencyMode(prAdapter, u4Events);
 
 	*pu4SetInfoLen = 0; /* We do not need to read */
 
 	return WLAN_STATUS_SUCCESS;
 }
+
 #endif /* CFG_SUPPORT_LOWLATENCY_MODE */
 
 uint32_t wlanoidGetWifiType(IN struct ADAPTER *prAdapter,

@@ -725,6 +725,9 @@ void wlanOnPreAllocAdapterMem(IN struct ADAPTER *prAdapter,
 				&prAdapter->rWifiVar.arBssInfoPool[i];
 		prAdapter->aprBssInfo[prAdapter->ucP2PDevBssIdx] =
 			&prAdapter->rWifiVar.rP2pDevInfo;
+	} else {
+		/* need to reset these values after the reset flow */
+		prAdapter->u4NoMoreRfb = 0;
 	}
 
 	prAdapter->u4OwnFailedCount = 0;
@@ -1064,6 +1067,8 @@ uint32_t wlanAdapterStart(IN struct ADAPTER *prAdapter,
 			prAdapter->u4OsPacketFilter
 				= PARAM_PACKET_FILTER_SUPPORTED;
 		}
+		/* set FALSE after wifi init flow or reset (not reinit WFDMA) */
+		prAdapter->fgIsFwDownloaded = FALSE;
 
 		DBGLOG(INIT, INFO,
 		       "wlanAdapterStart(): Acquiring LP-OWN\n");
@@ -1415,10 +1420,12 @@ void wlanIST(IN struct ADAPTER *prAdapter)
 
 	if (prAdapter->fgIsFwOwn == FALSE) {
 		u4Status = nicProcessIST(prAdapter);
-		if (u4Status != WLAN_STATUS_SUCCESS)
-			DBGLOG(REQ, INFO, "Fail: nicProcessIST! status [%d]\n",
+		if (u4Status != WLAN_STATUS_SUCCESS) {
+			DBGLOG(REQ, INFO, "Fail: nicProcessIST! status [%x]\n",
 			       u4Status);
-
+			/* dump log for check */
+			prAdapter->u4HifDbgFlag |= DEG_HIF_DEFAULT_DUMP;
+		}
 #if defined(CONFIG_ANDROID) && (CFG_ENABLE_WAKE_LOCK)
 		if (KAL_WAKE_LOCK_ACTIVE(prAdapter,
 					 &prAdapter->prGlueInfo->rIntrWakeLock))
@@ -1599,6 +1606,7 @@ uint32_t wlanProcessCommandQueue(IN struct ADAPTER
 			break;
 
 		case COMMAND_TYPE_SECURITY_FRAME:
+		case COMMAND_TYPE_DATA_FRAME:
 			/* inquire with QM */
 			prMsduInfo = prCmdInfo->prMsduInfo;
 
@@ -1670,7 +1678,9 @@ uint32_t wlanProcessCommandQueue(IN struct ADAPTER
 				if ((prCmdInfo->eCmdType !=
 				     COMMAND_TYPE_SECURITY_FRAME) &&
 				    (prCmdInfo->eCmdType !=
-				     COMMAND_TYPE_MANAGEMENT_FRAME))
+				     COMMAND_TYPE_MANAGEMENT_FRAME) &&
+				    (prCmdInfo->eCmdType !=
+					COMMAND_TYPE_DATA_FRAME))
 					break;
 			} else if (rStatus == WLAN_STATUS_PENDING) {
 				/* Do nothing */
@@ -1945,7 +1955,9 @@ uint32_t wlanSendCommandMthread(IN struct ADAPTER
 			if ((!prCmdInfo->fgSetQuery) ||
 			    (prCmdInfo->fgNeedResp) ||
 			    (prCmdInfo->eCmdType ==
-			    COMMAND_TYPE_SECURITY_FRAME)) {
+			    COMMAND_TYPE_SECURITY_FRAME ||
+			     prCmdInfo->eCmdType ==
+				COMMAND_TYPE_DATA_FRAME)) {
 				rStatus = WLAN_STATUS_PENDING;
 			}
 		}
@@ -2495,9 +2507,11 @@ void wlanReleaseCommand(IN struct ADAPTER *prAdapter,
 
 	case COMMAND_TYPE_SECURITY_FRAME:
 	case COMMAND_TYPE_MANAGEMENT_FRAME:
+	case COMMAND_TYPE_DATA_FRAME:
 		prMsduInfo = prCmdInfo->prMsduInfo;
 
-		if (prCmdInfo->eCmdType == COMMAND_TYPE_SECURITY_FRAME) {
+		if (prCmdInfo->eCmdType == COMMAND_TYPE_SECURITY_FRAME ||
+			prCmdInfo->eCmdType == COMMAND_TYPE_DATA_FRAME) {
 			kalSecurityFrameSendComplete(prAdapter->prGlueInfo,
 						     prCmdInfo->prPacket,
 						     WLAN_STATUS_FAILURE);
@@ -2506,16 +2520,16 @@ void wlanReleaseCommand(IN struct ADAPTER *prAdapter,
 		}
 
 		DBGLOG(INIT, INFO,
-		       "Free %s Frame: BSS[%u] WIDX:PID[%u:%u] SEQ[%u] STA[%u] RSP[%u] CMDSeq[%u]\n",
-		       prCmdInfo->eCmdType == COMMAND_TYPE_SECURITY_FRAME ?
-								"SEC" : "MGMT",
-		       prMsduInfo->ucBssIndex,
-		       prMsduInfo->ucWlanIndex,
-		       prMsduInfo->ucPID,
-		       prMsduInfo->ucTxSeqNum,
-		       prMsduInfo->ucStaRecIndex,
-		       prMsduInfo->pfTxDoneHandler ? TRUE : FALSE,
-		       prCmdInfo->ucCmdSeqNum);
+			"Free %s Frame: B[%u]W:P[%u:%u]TS[%u]STA[%u]RSP[%u]CS[%u]\n",
+			prCmdInfo->eCmdType ==
+			COMMAND_TYPE_MANAGEMENT_FRAME ?	"MGMT" : "DATA/SEC",
+		    prMsduInfo->ucBssIndex,
+		    prMsduInfo->ucWlanIndex,
+		    prMsduInfo->ucPID,
+		    prMsduInfo->ucTxSeqNum,
+		    prMsduInfo->ucStaRecIndex,
+		    prMsduInfo->pfTxDoneHandler ? TRUE : FALSE,
+		    prCmdInfo->ucCmdSeqNum);
 
 		/* invoke callbacks */
 		if (prMsduInfo->pfTxDoneHandler != NULL)
@@ -3969,7 +3983,8 @@ u_int8_t wlanProcessSecurityFrame(IN struct ADAPTER
 		prCmdInfo->prPacket = prPacket;
 		prCmdInfo->prMsduInfo = prMsduInfo;
 		prCmdInfo->pfCmdDoneHandler = wlanSecurityFrameTxDone;
-		prCmdInfo->pfCmdTimeoutHandler = wlanSecurityFrameTxTimeout;
+		prCmdInfo->pfCmdTimeoutHandler =
+				wlanSecurityAndCmdDataFrameTxTimeout;
 		prCmdInfo->fgIsOid = FALSE;
 		prCmdInfo->fgSetQuery = TRUE;
 		prCmdInfo->fgNeedResp = FALSE;
@@ -4012,6 +4027,89 @@ u_int8_t wlanProcessSecurityFrame(IN struct ADAPTER
 
 	return FALSE;
 }
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * @brief This function is called to send data frame via firmware and queued
+ *        into command queue
+ *
+ * @param prAdapter      Pointer of Adapter Data Structure
+ * @param prPacket       Pointer of native packet
+ *
+ * @return TRUE
+ *         FALSE
+ */
+/*----------------------------------------------------------------------------*/
+uint32_t wlanProcessCmdDataFrame(IN struct ADAPTER
+				  *prAdapter, IN void *prPacket)
+{
+	struct CMD_INFO *prCmdInfo;
+	struct MSDU_INFO *prMsduInfo;
+
+	ASSERT(prAdapter);
+	ASSERT(prPacket);
+
+	/* Allocate command buffer */
+	prCmdInfo = cmdBufAllocateCmdInfo(prAdapter, 0);
+	if (!prCmdInfo) {
+		DBGLOG_LIMITED(TX, INFO,
+			   "Failed to alloc CMD buffer for data frame!!\n");
+		return WLAN_STATUS_RESOURCES;
+	}
+
+	/* Get MSDU_INFO buffer */
+	prMsduInfo = cnmPktAlloc(prAdapter, 0);
+	if (!prMsduInfo) {
+		DBGLOG_LIMITED(TX, INFO,
+			   "Failed to alloc MSDU Info for data frame!!\n");
+
+		cmdBufFreeCmdInfo(prAdapter, prCmdInfo);
+		return WLAN_STATUS_RESOURCES;
+	}
+
+	/* Fill-up MSDU_INFO and TxD*/
+	prMsduInfo->eSrc = TX_PACKET_OS;
+	if (!nicTxFillMsduInfo(prAdapter, prMsduInfo, prPacket) ||
+		!nicTxProcessCmdDataPacket(prAdapter, prMsduInfo)) {
+
+		kalSendComplete(prAdapter->prGlueInfo, prPacket,
+				WLAN_STATUS_INVALID_PACKET);
+
+		cmdBufFreeCmdInfo(prAdapter, prCmdInfo);
+		cnmPktFree(prAdapter, prMsduInfo);
+
+		return WLAN_STATUS_INVALID_PACKET;
+	}
+
+	/* Prepare command and enqueue */
+	prCmdInfo->eCmdType = COMMAND_TYPE_DATA_FRAME;
+	prCmdInfo->u2InfoBufLen = prMsduInfo->u2FrameLength;
+	prCmdInfo->pucInfoBuffer = NULL;
+	prCmdInfo->prPacket = prMsduInfo->prPacket;
+	prCmdInfo->prMsduInfo = prMsduInfo;
+	prCmdInfo->pfCmdDoneHandler = wlanCmdDataFrameTxDone;
+	prCmdInfo->pfCmdTimeoutHandler = wlanSecurityAndCmdDataFrameTxTimeout;
+	prCmdInfo->fgIsOid = FALSE;
+	prCmdInfo->fgSetQuery = TRUE;
+	prCmdInfo->fgNeedResp = FALSE;
+	prCmdInfo->ucCmdSeqNum = prMsduInfo->ucTxSeqNum;
+
+	DBGLOG(TX, INFO,
+		"DPP EN-Q MSDU[0x%p] SEQ[%u] BSS[%u] STA[%u] Len[%u]to CMD Q\n",
+		prMsduInfo,
+		prMsduInfo->ucTxSeqNum,
+		prMsduInfo->ucBssIndex,
+		prMsduInfo->ucStaRecIndex,
+		prMsduInfo->u2FrameLength);
+
+	kalEnqueueCommand(prAdapter->prGlueInfo,
+			  (struct QUE_ENTRY *) prCmdInfo);
+
+	GLUE_SET_EVENT(prAdapter->prGlueInfo);
+
+	return WLAN_STATUS_SUCCESS;
+}
+
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -4069,6 +4167,30 @@ void wlanSecurityFrameTxDone(IN struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * @brief This function is called when command data frame has been
+ *        sent to firmware
+ *
+ * @param prAdapter      Pointer of Adapter Data Structure
+ * @param prCmdInfo      Pointer of CMD_INFO_T
+ * @param pucEventBuf    meaningless, only for API compatibility
+ *
+ * @return none
+ */
+/*----------------------------------------------------------------------------*/
+void wlanCmdDataFrameTxDone(IN struct ADAPTER *prAdapter,
+			     IN struct CMD_INFO *prCmdInfo,
+			     IN uint8_t *pucEventBuf)
+{
+
+	ASSERT(prAdapter);
+	ASSERT(prCmdInfo);
+
+	kalSecurityFrameSendComplete(prAdapter->prGlueInfo,
+				     prCmdInfo->prPacket, WLAN_STATUS_SUCCESS);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * @brief This function is called when 802.1x or Bluetooth-over-Wi-Fi
  *        security frames has failed sending to firmware
  *
@@ -4078,7 +4200,7 @@ void wlanSecurityFrameTxDone(IN struct ADAPTER *prAdapter,
  * @return none
  */
 /*----------------------------------------------------------------------------*/
-void wlanSecurityFrameTxTimeout(IN struct ADAPTER
+void wlanSecurityAndCmdDataFrameTxTimeout(IN struct ADAPTER
 				*prAdapter, IN struct CMD_INFO *prCmdInfo)
 {
 	ASSERT(prAdapter);
@@ -7367,7 +7489,18 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 			prAdapter, "LowLatencyModeReOrder", FEATURE_ENABLED);
 	prWifiVar->ucLowLatencyModePower = (uint32_t) wlanCfgGetUint32(
 			prAdapter, "LowLatencyModePower", FEATURE_ENABLED);
+	prWifiVar->ucLowLatencyPacketPriority = (uint32_t) wlanCfgGetUint32(
+			prAdapter, "LowLatencyPacketPriority", BITS(0, 1));
+	prWifiVar->ucLowLatencyCmdData = (uint8_t) wlanCfgGetUint32(
+			prAdapter, "LowLatencyCmdData", FEATURE_ENABLED);
+	prWifiVar->ucLowLatencyCmdDataAllPacket = (uint8_t) wlanCfgGetUint32(
+		prAdapter, "LowLatencyCmdDataAllPacket", FEATURE_DISABLED);
 #endif /* CFG_SUPPORT_LOWLATENCY_MODE */
+
+#if CFG_SUPPORT_SPE_IDX_CONTROL
+	prWifiVar->ucSpeIdxCtrl = (uint8_t) wlanCfgGetUint32(
+					prAdapter, "SpeIdxCtrl", 2);
+#endif
 
 	prWifiVar->u4MTU = wlanCfgGetUint32(prAdapter, "MTU", 0);
 
@@ -8545,7 +8678,9 @@ void wlanFeatureToFw(IN struct ADAPTER *prAdapter)
 		enum ENUM_VENDOR_DRIVER_EVENT eEvent = EVENT_SG_DISABLE;
 
 		KAL_REPORT_ERROR_EVENT(prAdapter,
-			eEvent, (uint16_t)sizeof(u_int8_t));
+			eEvent, (uint16_t)sizeof(u_int8_t),
+			0,
+			FALSE);
 	}
 	#endif /* CFG_SUPPORT_DATA_STALL */
 #endif
@@ -10553,7 +10688,37 @@ wlanAdapterStartForLowLatency(IN struct ADAPTER *prAdapter)
 	/* Default enable scan */
 	prAdapter->fgEnCfg80211Scan = TRUE;
 
+	/* Default disable duplicate detect */
+	prAdapter->fgEnTxDupDetect = FALSE;
+	prAdapter->fgTxDupCertificate = FALSE;
+
 	return u4Status;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief This is a private routine, which is used to initialize the variables
+ *        for low latency mode.
+ *
+ * \param prAdapter      Pointer of Adapter Data Structure
+ *
+ * \retval WLAN_STATUS_SUCCESS: Success
+ * \retval WLAN_STATUS_FAILURE: Failed
+ */
+/*----------------------------------------------------------------------------*/
+uint32_t
+wlanProbeSuccessForLowLatency(IN struct ADAPTER *prAdapter)
+{
+	DBGLOG(INIT, INFO, "LowLatency(ProbeOn)\n");
+
+	/* Reset certificate flag and query capability from firmware */
+	prAdapter->fgTxDupCertificate = FALSE;
+	wlanSetLowLatencyCommand(prAdapter,
+			FALSE,
+			prAdapter->fgEnTxDupDetect,
+			TRUE);
+
+	return WLAN_STATUS_SUCCESS;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -10584,8 +10749,53 @@ wlanConnectedForLowLatency(IN struct ADAPTER *prAdapter)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief This routine is called to enable/disable low latency mode
+ * \brief This routine is called to set enable/disable low latency mode to FW
  *
+ * \param[in]  prAdapter       A pointer to the Adapter structure.
+ *
+ * \retval WLAN_STATUS_SUCCESS
+ */
+/*----------------------------------------------------------------------------*/
+uint32_t wlanSetLowLatencyCommand(
+	IN struct ADAPTER *prAdapter,
+	IN u_int8_t fgEnLowLatencyMode,
+	IN u_int8_t fgEnTxDupDetect,
+	IN u_int8_t fgTxDupCertQuery)
+{
+	struct CMD_LOW_LATENCY_MODE_HEADER rModeHeader;
+
+	rModeHeader.ucVersion = LOW_LATENCY_MODE_CMD_V2;
+	rModeHeader.ucType = 0;
+	rModeHeader.ucMagicCode = LOW_LATENCY_MODE_MAGIC_CODE;
+	rModeHeader.ucBufferLen = sizeof(struct LOW_LATENCY_MODE_SETTING);
+	rModeHeader.rSetting.fgEnable = fgEnLowLatencyMode;
+	rModeHeader.rSetting.fgTxDupDetect = fgEnTxDupDetect;
+	rModeHeader.rSetting.fgTxDupCertQuery = fgTxDupCertQuery;
+
+	DBGLOG(AIS, INFO,
+		"Send Dpp Cmd to FW:en=%d, dup_Det=%d, CertQuery=%d\n",
+		fgEnLowLatencyMode, fgEnTxDupDetect, fgTxDupCertQuery);
+
+	wlanSendSetQueryCmd(prAdapter,	/* prAdapter */
+			    CMD_ID_SET_LOW_LATENCY_MODE,	/* ucCID */
+			    TRUE,	/* fgSetQuery */
+			    FALSE,	/* fgNeedResp */
+			    TRUE,	/* fgIsOid */
+			    NULL,	/* pfCmdDoneHandler */
+			    NULL,	/* pfCmdTimeoutHandler */
+			    sizeof(struct CMD_LOW_LATENCY_MODE_HEADER),
+			    (uint8_t *)&rModeHeader,	/* pucInfoBuffer */
+			    NULL,	/* pvSetQueryBuffer */
+			    0	/* u4SetQueryBufferLen */
+		);
+
+	return WLAN_STATUS_SUCCESS;
+}
+
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief This routine is called to enable/disable low latency mode
  * \param[in]  prAdapter       A pointer to the Adapter structure.
  * \param[in]  pvSetBuffer     A pointer to the buffer that holds the
  *                             OID-specific data to be set.
@@ -10602,6 +10812,7 @@ uint32_t wlanSetLowLatencyMode(
 	u_int8_t fgEnMode = FALSE; /* Low Latency Mode */
 	u_int8_t fgEnScan = FALSE; /* Scan management */
 	u_int8_t fgEnPM = FALSE; /* Power management */
+	u_int8_t fgEnTxDupDetect = FALSE; /* Tx Dup Detect */
 	uint32_t u4PowerFlag;
 	struct PARAM_POWER_MODE_ rPowerMode;
 	struct WIFI_VAR *prWifiVar = NULL;
@@ -10622,16 +10833,18 @@ uint32_t wlanSetLowLatencyMode(
 	/* Initialize */
 	prWifiVar = &prAdapter->rWifiVar;
 	DBGLOG(OID, INFO,
-		"LowLatency(gaming) event - gas:0x%x, net:0x%x, whitelist:0x%x, scan=%u, reorder=%u, power=%u\n",
+		"LowLatency(gaming/DPP) event - gas:0x%x, net:0x%x, whitelist:0x%x, txdup:0x%x, scan=%u, reorder=%u, power=%u, cmd data=%u\n",
 		(u4Events & GED_EVENT_GAS),
 		(u4Events & GED_EVENT_NETWORK),
 		(u4Events & GED_EVENT_DOPT_WIFI_SCAN),
+		(u4Events & GED_EVENT_TX_DUP_DETECT),
 		(uint32_t)prWifiVar->ucLowLatencyModeScan,
 		(uint32_t)prWifiVar->ucLowLatencyModeReOrder,
-		(uint32_t)prWifiVar->ucLowLatencyModePower);
+		(uint32_t)prWifiVar->ucLowLatencyModePower,
+		(uint32_t)prWifiVar->ucLowLatencyCmdData);
+
 	rPowerMode.ucBssIdx = prAisBssInfo->ucBssIndex;
-	u4PowerFlag =
-		prAdapter->rWlanInfo.u4PowerSaveFlag[rPowerMode.ucBssIdx];
+	u4PowerFlag = prAdapter->rWlanInfo.u4PowerSaveFlag[rPowerMode.ucBssIdx];
 
 	/* Enable/disable low latency mode decision:
 	 *
@@ -10641,7 +10854,7 @@ uint32_t wlanSetLowLatencyMode(
 	if ((u4Events & GED_EVENT_GAS) != 0
 		&& (u4Events & GED_EVENT_NETWORK) != 0
 		&& MEDIA_STATE_CONNECTED
-		== kalGetMediaStateIndicated(prAdapter->prGlueInfo,
+			== kalGetMediaStateIndicated(prAdapter->prGlueInfo,
 			prAisBssInfo->ucBssIndex))
 		fgEnMode = TRUE; /* It will enable low latency mode */
 
@@ -10650,8 +10863,7 @@ uint32_t wlanSetLowLatencyMode(
 	 * Enable if it will enable low latency mode.
 	 * Or, enable if it is a white list event.
 	 */
-	if (fgEnMode != TRUE
-	    || (u4Events & GED_EVENT_DOPT_WIFI_SCAN) != 0)
+	if (fgEnMode != TRUE || (u4Events & GED_EVENT_DOPT_WIFI_SCAN) != 0)
 		fgEnScan = TRUE; /* It will enable scan management */
 
 	/* Enable/disable power management decision:
@@ -10663,11 +10875,11 @@ uint32_t wlanSetLowLatencyMode(
 
 	/* Debug log for the actions */
 	if (fgEnMode != prAdapter->fgEnLowLatencyMode
-	    || fgEnScan != prAdapter->fgEnCfg80211Scan
-	    || fgEnPM != fgEnMode) {
+		|| fgEnScan != prAdapter->fgEnCfg80211Scan
+		|| fgEnPM != fgEnMode) {
 		DBGLOG(OID, INFO,
-		       "LowLatency(gaming) change (m:%d,s:%d,PM:%d,F:0x%x)\n",
-		       fgEnMode, fgEnScan, fgEnPM, u4PowerFlag);
+			"LowLatency(gaming/DPP) change (m:%d,s:%d,PM:%d,F:0x%x)\n",
+			fgEnMode, fgEnScan, fgEnPM, u4PowerFlag);
 	}
 
 	/* Scan management:
@@ -10713,20 +10925,64 @@ uint32_t wlanSetLowLatencyMode(
 
 		nicConfigPowerSaveProfile(prAdapter, rPowerMode.ucBssIdx,
 			rPowerMode.ePowerMode, FALSE, PS_CALLER_GPU);
+
 		#ifdef CFG_SUPPORT_SMART_GEAR
 		wlandioSetSGStatus(prAdapter,
 			fgEnMode, 0x00);
 		DBGLOG(OID, INFO,
-		       "[SG] SmartGear (%d) for gaming mode\n",
-		       fgEnMode);
+			"[SG] SmartGear (%d) for gaming mode\n",
+			fgEnMode);
 		#endif
+
+	}
+
+	/* Tx Duplicate Detect management:
+	 *
+	 * Disable/enable tx duplicate detect
+	 */
+	if ((u4Events & GED_EVENT_TX_DUP_DETECT) != 0)
+		fgEnTxDupDetect = TRUE;
+
+	DBGLOG(OID, INFO,
+		"EnTxDupDetect: Orig:[%d], New:[%d], CmdData:[%d], Cert:[%d]\n",
+		prAdapter->fgEnTxDupDetect,
+		fgEnTxDupDetect,
+		prAdapter->rWifiVar.ucLowLatencyCmdData,
+		prAdapter->fgTxDupCertificate);
+
+	if (prAdapter->fgEnTxDupDetect != fgEnTxDupDetect) {
+
+		prAdapter->fgEnTxDupDetect = fgEnTxDupDetect;
+
+#if CFG_TCP_IP_CHKSUM_OFFLOAD
+		if (prAdapter->fgIsSupportCsumOffload) {
+			if (prAdapter->fgEnTxDupDetect) {
+				/* Disable csum offload for command data */
+				prAdapter->prGlueInfo->
+					prDevHandler->features &=
+					~(NETIF_F_IP_CSUM | NETIF_F_IPV6_CSUM);
+			} else {
+				/* Enable csum offload for cut-through data */
+				prAdapter->prGlueInfo->
+					prDevHandler->features |=
+					(NETIF_F_IP_CSUM | NETIF_F_IPV6_CSUM);
+			}
+		}
+		DBGLOG(OID, INFO, "Checksum offload: [%llu]\n",
+			prAdapter->prGlueInfo->prDevHandler->features);
+#endif
+		/* Send command to firmware */
+		wlanSetLowLatencyCommand(prAdapter,
+				prAdapter->fgEnLowLatencyMode,
+				prAdapter->fgEnTxDupDetect,
+				FALSE);
 	}
 
 	return WLAN_STATUS_SUCCESS;
-
 }
 
 #endif /* CFG_SUPPORT_LOWLATENCY_MODE */
+
 
 int32_t wlanGetFileContent(struct ADAPTER *prAdapter,
 	const uint8_t *pcFileName, uint8_t *pucBuf,
@@ -11421,17 +11677,25 @@ void wlanCustomMonitorFunction(struct ADAPTER *prAdapter,
 		if (prLinkQualityInfo->u4CurTxRate <
 			prAdapter->rWifiVar.u4TxLowRateThreshole)
 			KAL_REPORT_ERROR_EVENT(prAdapter,
-				EVENT_TX_LOW_RATE, ucBssIdx);
+				EVENT_TX_LOW_RATE,
+				(uint16_t)sizeof(uint32_t),
+				ucBssIdx,
+				FALSE);
 		else if (prLinkQualityInfo->u4CurRxRate <
 			prAdapter->rWifiVar.u4RxLowRateThreshole)
 			KAL_REPORT_ERROR_EVENT(prAdapter,
-				EVENT_RX_LOW_RATE, ucBssIdx);
+				EVENT_RX_LOW_RATE,
+				(uint16_t)sizeof(uint32_t),
+				ucBssIdx,
+				FALSE);
 		else if (prLinkQualityInfo->u4CurTxPer >
 			prAdapter->rWifiVar.u4PerHighThreshole)
 			KAL_REPORT_ERROR_EVENT(prAdapter,
-				EVENT_PER_HIGH, ucBssIdx);
+				EVENT_PER_HIGH,
+				(uint16_t)sizeof(uint32_t),
+				ucBssIdx,
+				FALSE);
 	}
 }
 #endif
-
 

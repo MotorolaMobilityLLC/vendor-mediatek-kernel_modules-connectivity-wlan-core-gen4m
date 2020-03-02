@@ -303,6 +303,9 @@ enum ENUM_CMD_ID {
 	CMD_ID_GET_LTE_CHN = 0x87,          /* 0x87 (Query) */
 	CMD_ID_GET_BUG_REPORT = 0x89,       /* 0x89 (Query) */
 	CMD_ID_GET_NIC_CAPABILITY_V2 = 0x8A,/* 0x8A (Query) */
+#if CFG_SUPPORT_LOWLATENCY_MODE
+	CMD_ID_SET_LOW_LATENCY_MODE = 0x8B, /* 0x8B (Set) */
+#endif
 	CMD_ID_LOG_UI_INFO  = 0x8D,         /* 0x8D (Set / Query) */
 	/* Oshare mode*/
 	CMD_ID_SET_OSHARE_MODE = 0x8E,
@@ -456,6 +459,7 @@ enum ENUM_EVENT_ID {
 	EVENT_ID_MDDP_FILTER_RULE = 0x59,
 	/* 0x59 (Query - CMD_ID_SET_MDDP_FILTER_RULE) */
 	EVENT_ID_BA_FW_DROP_SN = 0x5A,          /* 0x5A (Unsolicited) */
+	EVENT_ID_LOW_LATENCY_INFO = 0x5B,	/* 0x5B (Unsolicited) */
 	EVENT_ID_RDD_REPORT = 0x60,
 	EVENT_ID_CSA_DONE = 0x61,
 

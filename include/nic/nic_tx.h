@@ -213,6 +213,11 @@
 
 #define NIC_TX_CRITICAL_DATA_TID                7
 
+/*Customization: sk_buff mark for special packet that need raise priority */
+#define NIC_TX_SKB_PRIORITY_MARK1	0x5a /* customer special value*/
+#define NIC_TX_SKB_PRIORITY_MARK_BIT	31 /*Mediatek define, 0x80000000*/
+#define NIC_TX_SKB_DUP_DETECT_MARK_BIT	30 /*Mediatek define, 0x40000000*/
+
 #define HW_MAC_TX_DESC_APPEND_T_LENGTH          44
 #define NIC_TX_HEAD_ROOM \
 	(NIC_TX_DESC_LONG_FORMAT_LENGTH + NIC_TX_DESC_PADDING_LENGTH \
@@ -1838,6 +1843,9 @@ uint32_t nicTxInitCmd(IN struct ADAPTER *prAdapter,
 
 uint32_t nicTxInitResetResource(IN struct ADAPTER *prAdapter);
 #endif
+
+u_int8_t nicTxProcessCmdDataPacket(IN struct ADAPTER *prAdapter,
+			       IN struct MSDU_INFO *prMsduInfo);
 
 uint32_t nicTxEnqueueMsdu(IN struct ADAPTER *prAdapter,
 	IN struct MSDU_INFO *prMsduInfo);
