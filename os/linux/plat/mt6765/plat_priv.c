@@ -24,6 +24,9 @@
 #else
 #include <linux/pm_qos.h>
 #include <helio-dvfsrc-opp.h>
+#ifdef CONFIG_MTK_EMI
+#include <mt_emi_api.h>
+#endif
 #endif
 
 #include "precomp.h"
