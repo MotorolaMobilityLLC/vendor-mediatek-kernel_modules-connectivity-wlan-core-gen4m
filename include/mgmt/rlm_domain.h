@@ -344,15 +344,19 @@
 #define UNII2C_LOWER_BOUND   100
 #define UNII2C_UPPER_BOUND   144
 #define UNII3_LOWER_BOUND    149
-#define UNII3_UPPER_BOUND    173
+#define UNII3_UPPER_BOUND    165
 
 #if CFG_SUPPORT_PWR_LIMIT_COUNTRY
 
 #define POWER_LIMIT_TABLE_NULL			0xFFFF
-#define MAX_TX_POWER					63
-#define MIN_TX_POWER					-64
-#define MAX_CMD_SUPPORT_CHANNEL_NUM	64
+#define MAX_TX_POWER				63
+#define MIN_TX_POWER				-64
 
+#define MAX_CMD_SUPPORT_160NC_CHANNEL_NUM	12 /* BW160NC combination NUM */
+#define MAX_CMD_SUPPORT_FCC_CHANNEL_NUM		60
+#define MAX_CMD_SUPPORT_CHANNEL_NUM		(MAX_CMD_SUPPORT_FCC_CHANNEL_NUM	\
+						+ MAX_CMD_SUPPORT_160NC_CHANNEL_NUM + 1)
+						/* FCC sub-band channel + BW160NC channel + CH50 for BW160C */
 #endif
 
 #if (CFG_SUPPORT_SINGLE_SKU == 1)
@@ -368,10 +372,14 @@
 
 typedef enum _ENUM_POWER_LIMIT_T {
 	PWR_LIMIT_CCK = 0,
-	PWR_LIMIT_20M = 1,
-	PWR_LIMIT_40M = 2,
-	PWR_LIMIT_80M = 3,
-	PWR_LIMIT_160M = 4,
+	PWR_LIMIT_20M_L = 1,
+	PWR_LIMIT_20M_H = 2,
+	PWR_LIMIT_40M_L = 3,
+	PWR_LIMIT_40M_H = 4,
+	PWR_LIMIT_80M_L = 5,
+	PWR_LIMIT_80M_H = 6,
+	PWR_LIMIT_160M_L = 7,
+	PWR_LIMIT_160M_H = 8,
 	PWR_LIMIT_NUM
 } ENUM_POWER_LIMIT_T, *P_ENUM_POWER_LIMIT_T;
 
@@ -527,6 +535,7 @@ struct tx_pwr_section {
 };
 #endif /*#if (CFG_SUPPORT_SINGLE_SKU == 1)*/
 
+#if 1 /*[TODO]To modify the following definition before using:  set power limit with high/low rate */
 /* CMD_SET_PWR_LIMIT_TABLE */
 typedef struct _CHANNEL_POWER_LIMIT {
 	UINT_8 ucCentralCh;
@@ -559,6 +568,7 @@ typedef struct _COUNTRY_CHANNEL_POWER_LIMIT {
 	.ucFlag                = (_ucFlag),                \
 	.aucReserved           = {0}                       \
 }
+#endif
 
 typedef struct _COUNTRY_POWER_LIMIT_TABLE_DEFAULT {
 	UINT_8 aucCountryCode[2];
@@ -582,7 +592,7 @@ typedef struct _SUBBAND_CHANNEL_T {
 	UINT_8 ucReserved;
 } SUBBAND_CHANNEL_T, *P_SUBBAND_CHANNEL_T;
 
-#endif
+#endif /* CFG_SUPPORT_PWR_LIMIT_COUNTRY */
 
 #if (CFG_SUPPORT_SINGLE_SKU == 1)
 /*
