@@ -1665,11 +1665,6 @@ static int wlanStop(struct net_device *prDev)
 	}
 	GLUE_RELEASE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
 
-	/* zero clear old acs information */
-	kalMemZero(&(prGlueInfo->prAdapter->rWifiVar.rChnLoadInfo),
-		sizeof(prGlueInfo->prAdapter->rWifiVar.rChnLoadInfo));
-	wlanInitChnLoadInfoChannelList(prGlueInfo->prAdapter);
-
 	netif_tx_stop_all_queues(prDev);
 
 	return 0;		/* success */
