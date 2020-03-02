@@ -215,6 +215,8 @@ p2pDevStateInit_CHNL_ON_HAND(IN struct ADAPTER *prAdapter,
 		 IN struct P2P_CHNL_REQ_INFO *prChnlReqInfo)
 {
 	do {
+		uint32_t u4TimeoutMs = 0;
+
 		ASSERT_BREAK((prAdapter != NULL)
 			&& (prP2pDevFsmInfo != NULL)
 			&& (prChnlReqInfo != NULL));
@@ -229,9 +231,18 @@ p2pDevStateInit_CHNL_ON_HAND(IN struct ADAPTER *prAdapter,
 		prP2pBssInfo->eBand = prChnlReqInfo->eBand;
 		prP2pBssInfo->eBssSCO = prChnlReqInfo->eChnlSco;
 
+		if (prAdapter->prP2pInfo->ucExtendChanFlag)
+			u4TimeoutMs = P2P_DEV_EXTEND_CHAN_TIME;
+		else
+			u4TimeoutMs = prChnlReqInfo->u4MaxInterval;
+
+		log_dbg(P2P, INFO,
+			"Start channel on hand timer, Cookie: 0x%llx, Interval: %d\n",
+			prChnlReqInfo->u8Cookie, u4TimeoutMs);
+
 		cnmTimerStartTimer(prAdapter,
 			&(prP2pDevFsmInfo->rP2pFsmTimeoutTimer),
-			prChnlReqInfo->u4MaxInterval);
+			u4TimeoutMs);
 
 		kalP2PIndicateChannelReady(prAdapter->prGlueInfo,
 					   prChnlReqInfo->u8Cookie,

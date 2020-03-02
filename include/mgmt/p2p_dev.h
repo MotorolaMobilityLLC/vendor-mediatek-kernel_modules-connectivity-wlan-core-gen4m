@@ -94,6 +94,8 @@ struct MSG_P2P_MGMT_TX_REQUEST {
 	u_int8_t fgIsWaitRsp;
 };
 
+#define P2P_DEV_EXTEND_CHAN_TIME	50
+
 #if CFG_SUPPORT_WFD
 
 #define WFD_FLAGS_DEV_INFO_VALID            BIT(0)

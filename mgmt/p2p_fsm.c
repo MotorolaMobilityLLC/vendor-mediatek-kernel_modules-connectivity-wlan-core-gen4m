@@ -165,6 +165,8 @@ void p2pFsmRunEventChGrant(IN struct ADAPTER *prAdapter,
 			GET_BSS_INFO_BY_INDEX(prAdapter,
 				prMsgChGrant->ucBssIndex);
 
+		prAdapter->prP2pInfo->ucExtendChanFlag = 0;
+
 		DBGLOG(P2P, TRACE, "P2P Run Event Channel Grant\n");
 
 #if CFG_SISO_SW_DEVELOP
