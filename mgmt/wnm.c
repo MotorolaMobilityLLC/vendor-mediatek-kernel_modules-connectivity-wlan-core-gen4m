@@ -50,60 +50,60 @@
  *
  *****************************************************************************/
 /*
-** Id: //Department/DaVinci/TRUNK/MT6620_5931_WiFi_Driver/mgmt/wnm.c#1
-*/
+ ** Id: //Department/DaVinci/TRUNK/MT6620_5931_WiFi_Driver/mgmt/wnm.c#1
+ */
 
 /*! \file   "wnm.c"
-*    \brief  This file includes the 802.11v default vale and functions.
-*/
+ *    \brief  This file includes the 802.11v default vale and functions.
+ */
 
 /*******************************************************************************
-*                         C O M P I L E R   F L A G S
-********************************************************************************
-*/
+ *                         C O M P I L E R   F L A G S
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                    E X T E R N A L   R E F E R E N C E S
-********************************************************************************
-*/
+ *                    E X T E R N A L   R E F E R E N C E S
+ *******************************************************************************
+ */
 #include "precomp.h"
 
 /*******************************************************************************
-*                              C O N S T A N T S
-********************************************************************************
-*/
+ *                              C O N S T A N T S
+ *******************************************************************************
+ */
 
 #define WNM_MAX_TOD_ERROR 0
 #define WNM_MAX_TOA_ERROR 0
 #define MICRO_TO_10NANO(x) ((x)*100)
 /*******************************************************************************
-*                             D A T A   T Y P E S
-********************************************************************************
-*/
+ *                             D A T A   T Y P E S
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                            P U B L I C   D A T A
-********************************************************************************
-*/
+ *                            P U B L I C   D A T A
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                           P R I V A T E   D A T A
-********************************************************************************
-*/
+ *                           P R I V A T E   D A T A
+ *******************************************************************************
+ */
 #if CFG_SUPPORT_802_11V_TIMING_MEASUREMENT
 static uint8_t ucTimingMeasToken;
 #endif
 static uint8_t ucBtmMgtToken = 1;
 
 /*******************************************************************************
-*                                 M A C R O S
-********************************************************************************
-*/
+ *                                 M A C R O S
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                   F U N C T I O N   D E C L A R A T I O N S
-********************************************************************************
-*/
+ *                   F U N C T I O N   D E C L A R A T I O N S
+ *******************************************************************************
+ */
 #if CFG_SUPPORT_802_11V_TIMING_MEASUREMENT
 static uint32_t
 wnmRunEventTimgingMeasTxDone(IN struct ADAPTER *prAdapter,
@@ -118,20 +118,20 @@ static void wnmTimingMeasRequest(IN struct ADAPTER *prAdapter,
 				 IN struct SW_RFB *prSwRfb);
 #endif
 /*******************************************************************************
-*                              F U N C T I O N S
-********************************************************************************
-*/
+ *                              F U N C T I O N S
+ *******************************************************************************
+ */
 
 /*----------------------------------------------------------------------------*/
 /*!
-*
-* \brief This routine is called to process the 802.11v wnm category action
-* frame.
-*
-*
-* \note
-*      Called by: Handle Rx mgmt request
-*/
+ *
+ * \brief This routine is called to process the 802.11v wnm category action
+ * frame.
+ *
+ *
+ * \note
+ *      Called by: Handle Rx mgmt request
+ */
 /*----------------------------------------------------------------------------*/
 void wnmWNMAction(IN struct ADAPTER *prAdapter, IN struct SW_RFB *prSwRfb)
 {
@@ -141,8 +141,10 @@ void wnmWNMAction(IN struct ADAPTER *prAdapter, IN struct SW_RFB *prSwRfb)
 	ASSERT(prSwRfb);
 
 	prRxFrame = (struct WLAN_ACTION_FRAME *)prSwRfb->pvHeader;
+
 	DBGLOG(WNM, TRACE, "WNM action frame: %d from " MACSTR "\n",
 	       prRxFrame->ucAction, MAC2STR(prRxFrame->aucSrcAddr));
+
 	switch (prRxFrame->ucAction) {
 #if CFG_SUPPORT_802_11V_TIMING_MEASUREMENT
 	case ACTION_WNM_TIMING_MEASUREMENT_REQUEST:
@@ -165,10 +167,10 @@ void wnmWNMAction(IN struct ADAPTER *prAdapter, IN struct SW_RFB *prSwRfb)
 #if CFG_SUPPORT_802_11V_TIMING_MEASUREMENT
 /*----------------------------------------------------------------------------*/
 /*!
-*
-* \brief This routine is called to report timing measurement data.
-*
-*/
+ *
+ * \brief This routine is called to report timing measurement data.
+ *
+ */
 /*----------------------------------------------------------------------------*/
 void wnmReportTimingMeas(IN struct ADAPTER *prAdapter, IN uint8_t ucStaRecIndex,
 			 IN uint32_t u4ToD, IN uint32_t u4ToA)
@@ -192,14 +194,14 @@ void wnmReportTimingMeas(IN struct ADAPTER *prAdapter, IN uint8_t ucStaRecIndex,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* @brief This function will handle TxDone(TimingMeasurement) Event.
-*
-* @param[in] prAdapter      Pointer to the Adapter structure.
-* @param[in] prMsduInfo     Pointer to the MSDU_INFO_T.
-* @param[in] rTxDoneStatus  Return TX status of the Timing Measurement frame.
-*
-* @retval WLAN_STATUS_SUCCESS
-*/
+ * @brief This function will handle TxDone(TimingMeasurement) Event.
+ *
+ * @param[in] prAdapter      Pointer to the Adapter structure.
+ * @param[in] prMsduInfo     Pointer to the MSDU_INFO_T.
+ * @param[in] rTxDoneStatus  Return TX status of the Timing Measurement frame.
+ *
+ * @retval WLAN_STATUS_SUCCESS
+ */
 /*----------------------------------------------------------------------------*/
 static uint32_t
 wnmRunEventTimgingMeasTxDone(IN struct ADAPTER *prAdapter,
@@ -217,8 +219,9 @@ wnmRunEventTimgingMeasTxDone(IN struct ADAPTER *prAdapter,
 	prStaRec = cnmGetStaRecByIndex(prAdapter, prMsduInfo->ucStaRecIndex);
 
 	if ((!prStaRec) || (!prStaRec->fgIsInUse))
-		/* For the case of replying ERROR STATUS CODE */
-		return WLAN_STATUS_SUCCESS;
+		return WLAN_STATUS_SUCCESS; /* For the case of replying ERROR
+					     * STATUS CODE
+					     */
 
 	DBGLOG(WNM, TRACE,
 	       "WNM: wnmRunEventTimgingMeasTxDone: ucDialog %d ucFollowUp %d u4ToD %x u4ToA %x",
@@ -238,13 +241,13 @@ wnmRunEventTimgingMeasTxDone(IN struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* @brief This function will compose the Timing Measurement frame.
-*
-* @param[in] prAdapter              Pointer to the Adapter structure.
-* @param[in] prStaRec               Pointer to the STA_RECORD_T.
-*
-* @return (none)
-*/
+ * @brief This function will compose the Timing Measurement frame.
+ *
+ * @param[in] prAdapter              Pointer to the Adapter structure.
+ * @param[in] prStaRec               Pointer to the STA_RECORD_T.
+ *
+ * @return (none)
+ */
 /*----------------------------------------------------------------------------*/
 static void wnmComposeTimingMeasFrame(IN struct ADAPTER *prAdapter,
 				      IN struct STA_RECORD *prStaRec,
@@ -308,14 +311,14 @@ static void wnmComposeTimingMeasFrame(IN struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
-*
-* \brief This routine is called to process the 802.11v timing measurement
-* request.
-*
-*
-* \note
-*      Handle Rx mgmt request
-*/
+ *
+ * \brief This routine is called to process the 802.11v timing measurement
+ * request.
+ *
+ *
+ * \note
+ *      Handle Rx mgmt request
+ */
 /*----------------------------------------------------------------------------*/
 static void wnmTimingMeasRequest(IN struct ADAPTER *prAdapter,
 				 IN struct SW_RFB *prSwRfb)
@@ -333,8 +336,9 @@ static void wnmTimingMeasRequest(IN struct ADAPTER *prAdapter,
 		return;
 
 	DBGLOG(WNM, TRACE,
-	       "WNM: Received Timing Measuremen Request from " MACSTR
-	       "\n", MAC2STR(prStaRec->aucMacAddr));
+	       "WNM: Received Timing Measuremen Request from " MACSTR "\n",
+	       MAC2STR(prStaRec->aucMacAddr));
+
 	/* reset timing msmt */
 	prStaRec->rWNMTimingMsmt.fgInitiator = TRUE;
 	prStaRec->rWNMTimingMsmt.ucTrigger = prRxFrame->ucTrigger;
@@ -354,8 +358,9 @@ void wnmTimingMeasUnitTest1(struct ADAPTER *prAdapter, uint8_t ucStaRecIndex)
 	prStaRec = cnmGetStaRecByIndex(prAdapter, ucStaRecIndex);
 	if ((!prStaRec) || (!prStaRec->fgIsInUse))
 		return;
-	DBGLOG(WNM, INFO, "WNM: Test Timing Measuremen Request from "
-	       MACSTR "\n", MAC2STR(prStaRec->aucMacAddr));
+	DBGLOG(WNM, INFO,
+	       "WNM: Test Timing Measuremen Request from " MACSTR "\n",
+	       MAC2STR(prStaRec->aucMacAddr));
 	prStaRec->rWNMTimingMsmt.fgInitiator = TRUE;
 	prStaRec->rWNMTimingMsmt.ucTrigger = 1;
 	prStaRec->rWNMTimingMsmt.ucDialogToken = ++ucTimingMeasToken;
@@ -372,20 +377,18 @@ uint8_t wnmGetBtmToken(void)
 	return ucBtmMgtToken++;
 }
 
-static uint32_t
-wnmBTMQueryTxDone(IN struct ADAPTER *prAdapter,
-		  IN struct MSDU_INFO *prMsduInfo,
-		  IN enum ENUM_TX_RESULT_CODE rTxDoneStatus)
+static uint32_t wnmBTMQueryTxDone(IN struct ADAPTER *prAdapter,
+				  IN struct MSDU_INFO *prMsduInfo,
+				  IN enum ENUM_TX_RESULT_CODE rTxDoneStatus)
 {
 	DBGLOG(WNM, INFO, "BTM: Query Frame Tx Done, Status %d\n",
 	       rTxDoneStatus);
 	return WLAN_STATUS_SUCCESS;
 }
 
-static uint32_t
-wnmBTMResponseTxDone(IN struct ADAPTER *prAdapter,
-		     IN struct MSDU_INFO *prMsduInfo,
-		     IN enum ENUM_TX_RESULT_CODE rTxDoneStatus)
+static uint32_t wnmBTMResponseTxDone(IN struct ADAPTER *prAdapter,
+				     IN struct MSDU_INFO *prMsduInfo,
+				     IN enum ENUM_TX_RESULT_CODE rTxDoneStatus)
 {
 	struct BSS_TRANSITION_MGT_PARAM_T *prBtm =
 		&prAdapter->rWifiVar.rAisSpecificBssInfo.rBTMParam;
@@ -403,17 +406,16 @@ wnmBTMResponseTxDone(IN struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* @brief This function will compose the BTM Response frame.
-*
-* @param[in] prAdapter              Pointer to the Adapter structure.
-* @param[in] prStaRec               Pointer to the STA_RECORD_T.
-*
-* @return (none)
-*/
+ * @brief This function will compose the BTM Response frame.
+ *
+ * @param[in] prAdapter              Pointer to the Adapter structure.
+ * @param[in] prStaRec               Pointer to the STA_RECORD_T.
+ *
+ * @return (none)
+ */
 /*----------------------------------------------------------------------------*/
-void
-wnmSendBTMResponseFrame(IN struct ADAPTER *prAdapter,
-			IN struct STA_RECORD *prStaRec)
+void wnmSendBTMResponseFrame(IN struct ADAPTER *prAdapter,
+			     IN struct STA_RECORD *prStaRec)
 {
 	struct MSDU_INFO *prMsduInfo = NULL;
 	struct BSS_INFO *prBssInfo = NULL;
@@ -432,13 +434,13 @@ wnmSendBTMResponseFrame(IN struct ADAPTER *prAdapter,
 	ASSERT(prBssInfo);
 
 	/* 1 Allocate MSDU Info */
-	prMsduInfo = (struct MSDU_INFO *)cnmMgtPktAlloc(prAdapter,
-							MAC_TX_RESERVED_FIELD +
-							PUBLIC_ACTION_MAX_LEN);
+	prMsduInfo = (struct MSDU_INFO *)cnmMgtPktAlloc(
+		prAdapter, MAC_TX_RESERVED_FIELD + PUBLIC_ACTION_MAX_LEN);
 	if (!prMsduInfo)
 		return;
-	prTxFrame = (struct ACTION_BTM_RSP_FRAME *)
-	    ((unsigned long)(prMsduInfo->prPacket) + MAC_TX_RESERVED_FIELD);
+	prTxFrame = (struct ACTION_BTM_RSP_FRAME
+			     *)((unsigned long)(prMsduInfo->prPacket) +
+				MAC_TX_RESERVED_FIELD);
 
 	/* 2 Compose The Mac Header. */
 	prTxFrame->u2FrameCtrl = MAC_FRAME_ACTION;
@@ -471,14 +473,11 @@ wnmSendBTMResponseFrame(IN struct ADAPTER *prAdapter,
 	}
 
 	/* 4 Update information of MSDU_INFO_T */
-	TX_SET_MMPDU(prAdapter,
-		     prMsduInfo,
-		     prStaRec->ucBssIndex,
-		     prStaRec->ucIndex,
-		     WLAN_MAC_MGMT_HEADER_LEN,
-			OFFSET_OF(struct ACTION_BTM_RSP_FRAME, aucOptInfo) +
-				u2PayloadLen,
-			wnmBTMResponseTxDone, MSDU_RATE_MODE_AUTO);
+	TX_SET_MMPDU(prAdapter, prMsduInfo, prStaRec->ucBssIndex,
+		     prStaRec->ucIndex, WLAN_MAC_MGMT_HEADER_LEN,
+		     OFFSET_OF(struct ACTION_BTM_RSP_FRAME, aucOptInfo) +
+			     u2PayloadLen,
+		     wnmBTMResponseTxDone, MSDU_RATE_MODE_AUTO);
 
 	/* 5 Enqueue the frame to send this action frame. */
 	nicTxEnqueueMsdu(prAdapter, prMsduInfo);
@@ -486,17 +485,16 @@ wnmSendBTMResponseFrame(IN struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* @brief This function will compose the BTM Query frame.
-*
-* @param[in] prAdapter              Pointer to the Adapter structure.
-* @param[in] prStaRec               Pointer to the STA_RECORD_T.
-*
-* @return (none)
-*/
+ * @brief This function will compose the BTM Query frame.
+ *
+ * @param[in] prAdapter              Pointer to the Adapter structure.
+ * @param[in] prStaRec               Pointer to the STA_RECORD_T.
+ *
+ * @return (none)
+ */
 /*----------------------------------------------------------------------------*/
-void
-wnmSendBTMQueryFrame(IN struct ADAPTER *prAdapter,
-		     IN struct STA_RECORD *prStaRec)
+void wnmSendBTMQueryFrame(IN struct ADAPTER *prAdapter,
+			  IN struct STA_RECORD *prStaRec)
 {
 	struct MSDU_INFO *prMsduInfo = NULL;
 	struct BSS_INFO *prBssInfo = NULL;
@@ -508,13 +506,13 @@ wnmSendBTMQueryFrame(IN struct ADAPTER *prAdapter,
 	ASSERT(prBssInfo);
 
 	/* 1 Allocate MSDU Info */
-	prMsduInfo = (struct MSDU_INFO *)cnmMgtPktAlloc(prAdapter,
-							MAC_TX_RESERVED_FIELD +
-							PUBLIC_ACTION_MAX_LEN);
+	prMsduInfo = (struct MSDU_INFO *)cnmMgtPktAlloc(
+		prAdapter, MAC_TX_RESERVED_FIELD + PUBLIC_ACTION_MAX_LEN);
 	if (!prMsduInfo)
 		return;
-	prTxFrame = (struct ACTION_BTM_QUERY_FRAME *)
-	    ((unsigned long)(prMsduInfo->prPacket) + MAC_TX_RESERVED_FIELD);
+	prTxFrame = (struct ACTION_BTM_QUERY_FRAME
+			     *)((unsigned long)(prMsduInfo->prPacket) +
+				MAC_TX_RESERVED_FIELD);
 
 	/* 2 Compose The Mac Header. */
 	prTxFrame->u2FrameCtrl = MAC_FRAME_ACTION;
@@ -537,14 +535,11 @@ wnmSendBTMQueryFrame(IN struct ADAPTER *prAdapter,
 	}
 
 	/* 4 Update information of MSDU_INFO_T */
-	TX_SET_MMPDU(prAdapter,
-		     prMsduInfo,
-		     prStaRec->ucBssIndex,
-		     prStaRec->ucIndex,
-		     WLAN_MAC_MGMT_HEADER_LEN,
+	TX_SET_MMPDU(prAdapter, prMsduInfo, prStaRec->ucBssIndex,
+		     prStaRec->ucIndex, WLAN_MAC_MGMT_HEADER_LEN,
 		     WLAN_MAC_MGMT_HEADER_LEN + 4 +
-		     prBtmParam->u2OurNeighborBssLen, wnmBTMQueryTxDone,
-		     MSDU_RATE_MODE_AUTO);
+			     prBtmParam->u2OurNeighborBssLen,
+		     wnmBTMQueryTxDone, MSDU_RATE_MODE_AUTO);
 
 	/* 5 Enqueue the frame to send this action frame. */
 	nicTxEnqueueMsdu(prAdapter, prMsduInfo);
@@ -552,13 +547,13 @@ wnmSendBTMQueryFrame(IN struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
-*
-* \brief This routine is called to process the 802.11v BTM request.
-*
-*
-* \note
-*      Handle Rx mgmt request
-*/
+ *
+ * \brief This routine is called to process the 802.11v BTM request.
+ *
+ *
+ * \note
+ *      Handle Rx mgmt request
+ */
 /*----------------------------------------------------------------------------*/
 void wnmRecvBTMRequest(IN struct ADAPTER *prAdapter, IN struct SW_RFB *prSwRfb)
 {
@@ -580,9 +575,9 @@ void wnmRecvBTMRequest(IN struct ADAPTER *prAdapter, IN struct SW_RFB *prSwRfb)
 		       "BTM: Request frame length is less than a standard BTM frame\n");
 		return;
 	}
-	prMsg = (struct MSG_AIS_BSS_TRANSITION_T *)
-	    cnmMemAlloc(prAdapter, RAM_TYPE_MSG,
-			sizeof(struct MSG_AIS_BSS_TRANSITION_T));
+	prMsg = (struct MSG_AIS_BSS_TRANSITION_T *)cnmMemAlloc(
+		prAdapter, RAM_TYPE_MSG,
+		sizeof(struct MSG_AIS_BSS_TRANSITION_T));
 	if (!prMsg) {
 		DBGLOG(WNM, WARN, "BTM: Msg Hdr is NULL\n");
 		return;

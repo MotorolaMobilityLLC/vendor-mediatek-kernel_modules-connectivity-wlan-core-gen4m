@@ -50,37 +50,37 @@
  *
  *****************************************************************************/
 /*
-** Id: //Department/DaVinci/BRANCHES/MT6620_WIFI_DRIVER_V2_3/mgmt/rlm.c#3
-*/
+ ** Id: //Department/DaVinci/BRANCHES/MT6620_WIFI_DRIVER_V2_3/mgmt/rlm.c#3
+ */
 
 /*! \file   "rlm.c"
-*    \brief
-*
-*/
+ *    \brief
+ *
+ */
 
 /*******************************************************************************
-*                         C O M P I L E R   F L A G S
-********************************************************************************
-*/
+ *                         C O M P I L E R   F L A G S
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                    E X T E R N A L   R E F E R E N C E S
-********************************************************************************
-*/
+ *                    E X T E R N A L   R E F E R E N C E S
+ *******************************************************************************
+ */
 #include "precomp.h"
 
 /*******************************************************************************
-*                              C O N S T A N T S
-********************************************************************************
-*/
+ *                              C O N S T A N T S
+ *******************************************************************************
+ */
 
 /* Retry limit of sending operation notification frame */
 #define OPERATION_NOTICATION_TX_LIMIT	2
 
 /*******************************************************************************
-*                             D A T A   T Y P E S
-********************************************************************************
-*/
+ *                             D A T A   T Y P E S
+ *******************************************************************************
+ */
 enum ENUM_OP_NOTIFY_STATE_T {
 	OP_NOTIFY_STATE_KEEP = 0, /* Won't change OP mode */
 	OP_NOTIFY_STATE_SENDING,  /* Sending OP notification frame */
@@ -90,14 +90,14 @@ enum ENUM_OP_NOTIFY_STATE_T {
 };
 
 /*******************************************************************************
-*                            P U B L I C   D A T A
-********************************************************************************
-*/
+ *                            P U B L I C   D A T A
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                           P R I V A T E   D A T A
-********************************************************************************
-*/
+ *                           P R I V A T E   D A T A
+ *******************************************************************************
+ */
 u_int8_t g_fgHasChannelSwitchIE = FALSE;
 
 #if CFG_SUPPORT_CAL_RESULT_BACKUP_TO_HOST
@@ -112,14 +112,14 @@ struct REF_TSF {
 };
 static struct REF_TSF rTsf;
 /*******************************************************************************
-*                                 M A C R O S
-********************************************************************************
-*/
+ *                                 M A C R O S
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                   F U N C T I O N   D E C L A R A T I O N S
-********************************************************************************
-*/
+ *                   F U N C T I O N   D E C L A R A T I O N S
+ *******************************************************************************
+ */
 static void rlmFillHtCapIE(struct ADAPTER *prAdapter,
 			   struct BSS_INFO *prBssInfo,
 			   struct MSDU_INFO *prMsduInfo);
@@ -192,18 +192,18 @@ static void rlmCollectBeaconReport(IN struct ADAPTER *prAdapter,
 				   struct RM_BEACON_REPORT_PARAMS *prRepParams);
 
 /*******************************************************************************
-*                              F U N C T I O N S
-********************************************************************************
-*/
+ *                              F U N C T I O N S
+ *******************************************************************************
+ */
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief
-*
-* \param[in]
-*
-* \return none
-*/
+ * \brief
+ *
+ * \param[in]
+ *
+ * \return none
+ */
 /*----------------------------------------------------------------------------*/
 void rlmFsmEventInit(struct ADAPTER *prAdapter)
 {
@@ -237,12 +237,12 @@ void rlmFsmEventInit(struct ADAPTER *prAdapter)
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief
-*
-* \param[in]
-*
-* \return none
-*/
+ * \brief
+ *
+ * \param[in]
+ *
+ * \return none
+ */
 /*----------------------------------------------------------------------------*/
 void rlmFsmEventUninit(struct ADAPTER *prAdapter)
 {
@@ -264,12 +264,12 @@ void rlmFsmEventUninit(struct ADAPTER *prAdapter)
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief For association request, power capability
-*
-* \param[in]
-*
-* \return none
-*/
+ * \brief For association request, power capability
+ *
+ * \param[in]
+ *
+ * \return none
+ */
 /*----------------------------------------------------------------------------*/
 void rlmReqGeneratePowerCapIE(struct ADAPTER *prAdapter,
 			      struct MSDU_INFO *prMsduInfo)
@@ -302,12 +302,12 @@ void rlmReqGeneratePowerCapIE(struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief For association request, supported channels
-*
-* \param[in]
-*
-* \return none
-*/
+ * \brief For association request, supported channels
+ *
+ * \param[in]
+ *
+ * \return none
+ */
 /*----------------------------------------------------------------------------*/
 void rlmReqGenerateSupportedChIE(struct ADAPTER *prAdapter,
 				 struct MSDU_INFO *prMsduInfo)
@@ -362,12 +362,12 @@ void rlmReqGenerateSupportedChIE(struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief For probe request, association request
-*
-* \param[in]
-*
-* \return none
-*/
+ * \brief For probe request, association request
+ *
+ * \param[in]
+ *
+ * \return none
+ */
 /*----------------------------------------------------------------------------*/
 void rlmReqGenerateHtCapIE(struct ADAPTER *prAdapter,
 			   struct MSDU_INFO *prMsduInfo)
@@ -392,12 +392,12 @@ void rlmReqGenerateHtCapIE(struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief For probe request, association request
-*
-* \param[in]
-*
-* \return none
-*/
+ * \brief For probe request, association request
+ *
+ * \param[in]
+ *
+ * \return none
+ */
 /*----------------------------------------------------------------------------*/
 void rlmReqGenerateExtCapIE(struct ADAPTER *prAdapter,
 			    struct MSDU_INFO *prMsduInfo)
@@ -426,12 +426,12 @@ void rlmReqGenerateExtCapIE(struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief For probe response (GO, IBSS) and association response
-*
-* \param[in]
-*
-* \return none
-*/
+ * \brief For probe response (GO, IBSS) and association response
+ *
+ * \param[in]
+ *
+ * \return none
+ */
 /*----------------------------------------------------------------------------*/
 void rlmRspGenerateHtCapIE(struct ADAPTER *prAdapter,
 			   struct MSDU_INFO *prMsduInfo)
@@ -469,12 +469,12 @@ void rlmRspGenerateHtCapIE(struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief For probe response (GO, IBSS) and association response
-*
-* \param[in]
-*
-* \return none
-*/
+ * \brief For probe response (GO, IBSS) and association response
+ *
+ * \param[in]
+ *
+ * \return none
+ */
 /*----------------------------------------------------------------------------*/
 void rlmRspGenerateExtCapIE(struct ADAPTER *prAdapter,
 			    struct MSDU_INFO *prMsduInfo)
@@ -510,12 +510,12 @@ void rlmRspGenerateExtCapIE(struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief For probe response (GO, IBSS) and association response
-*
-* \param[in]
-*
-* \return none
-*/
+ * \brief For probe response (GO, IBSS) and association response
+ *
+ * \param[in]
+ *
+ * \return none
+ */
 /*----------------------------------------------------------------------------*/
 void rlmRspGenerateHtOpIE(struct ADAPTER *prAdapter,
 			  struct MSDU_INFO *prMsduInfo)
@@ -553,12 +553,12 @@ void rlmRspGenerateHtOpIE(struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief For probe response (GO, IBSS) and association response
-*
-* \param[in]
-*
-* \return none
-*/
+ * \brief For probe response (GO, IBSS) and association response
+ *
+ * \param[in]
+ *
+ * \return none
+ */
 /*----------------------------------------------------------------------------*/
 void rlmRspGenerateErpIE(struct ADAPTER *prAdapter,
 			 struct MSDU_INFO *prMsduInfo)
@@ -619,12 +619,12 @@ void rlmRspGenerateErpIE(struct ADAPTER *prAdapter,
 #if CFG_SUPPORT_MTK_SYNERGY
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief This function is used to generate MTK Vendor Specific OUI
-*
-* \param[in]
-*
-* \return none
-*/
+ * \brief This function is used to generate MTK Vendor Specific OUI
+ *
+ * \param[in]
+ *
+ * \return none
+ */
 /*----------------------------------------------------------------------------*/
 void rlmGenerateMTKOuiIE(struct ADAPTER *prAdapter,
 			 struct MSDU_INFO *prMsduInfo)
@@ -674,12 +674,12 @@ void rlmGenerateMTKOuiIE(struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* @brief This function is used to check MTK Vendor Specific OUI
-*
-*
-* @return true:  correct MTK OUI
-*             false: incorrect MTK OUI
-*/
+ * @brief This function is used to check MTK Vendor Specific OUI
+ *
+ *
+ * @return true:  correct MTK OUI
+ *             false: incorrect MTK OUI
+ */
 /*----------------------------------------------------------------------------*/
 u_int8_t rlmParseCheckMTKOuiIE(IN struct ADAPTER *prAdapter, IN uint8_t *pucBuf,
 			       IN uint32_t *pu4Cap)
@@ -736,12 +736,12 @@ u_int8_t rlmParseCheckMTKOuiIE(IN struct ADAPTER *prAdapter, IN uint8_t *pucBuf,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief
-*
-* \param[in]
-*
-* \return none
-*/
+ * \brief
+ *
+ * \param[in]
+ *
+ * \return none
+ */
 /*----------------------------------------------------------------------------*/
 void rlmGenerateCsaIE(struct ADAPTER *prAdapter, struct MSDU_INFO *prMsduInfo)
 {
@@ -772,12 +772,12 @@ void rlmGenerateCsaIE(struct ADAPTER *prAdapter, struct MSDU_INFO *prMsduInfo)
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief
-*
-* \param[in]
-*
-* \return none
-*/
+ * \brief
+ *
+ * \param[in]
+ *
+ * \return none
+ */
 /*----------------------------------------------------------------------------*/
 static void rlmFillHtCapIE(struct ADAPTER *prAdapter,
 			   struct BSS_INFO *prBssInfo,
@@ -854,8 +854,7 @@ static void rlmFillHtCapIE(struct ADAPTER *prAdapter,
 	if (prBssInfo->ucNss <
 	    wlanGetSupportNss(prAdapter, prBssInfo->ucBssIndex))
 		prHtCap->u2HtCapInfo &=
-			~HT_CAP_INFO_SM_POWER_SAVE; /*Set as static power save
-						       */
+			~HT_CAP_INFO_SM_POWER_SAVE; /*Set as static power save*/
 
 	prHtCap->ucAmpduParam = AMPDU_PARAM_DEFAULT_VAL;
 
@@ -899,12 +898,12 @@ static void rlmFillHtCapIE(struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief
-*
-* \param[in]
-*
-* \return none
-*/
+ * \brief
+ *
+ * \param[in]
+ *
+ * \return none
+ */
 /*----------------------------------------------------------------------------*/
 static void rlmFillExtCapIE(struct ADAPTER *prAdapter,
 			    struct BSS_INFO *prBssInfo,
@@ -951,7 +950,8 @@ static void rlmFillExtCapIE(struct ADAPTER *prAdapter,
 	fgAppendVhtCap = FALSE;
 
 	/* Check append rule */
-	if (prAdapter->rWifiVar.ucAvailablePhyTypeSet & PHY_TYPE_SET_802_11AC) {
+	if (prAdapter->rWifiVar.ucAvailablePhyTypeSet
+		& PHY_TYPE_SET_802_11AC) {
 		/* Note: For AIS connecting state,
 		 * structure in BSS_INFO will not be inited
 		 *	 So, we check StaRec instead of BssInfo
@@ -1025,7 +1025,8 @@ static void rlmFillExtCapIE(struct ADAPTER *prAdapter,
 	fgAppendVhtCap = FALSE;
 
 	/* Check append rule */
-	if (prAdapter->rWifiVar.ucAvailablePhyTypeSet & PHY_TYPE_SET_802_11AC) {
+	if (prAdapter->rWifiVar.ucAvailablePhyTypeSet
+		& PHY_TYPE_SET_802_11AC) {
 		/* Note: For AIS connecting state,
 		 * structure in BSS_INFO will not be inited
 		 *       So, we check StaRec instead of BssInfo
@@ -1065,12 +1066,12 @@ static void rlmFillExtCapIE(struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief
-*
-* \param[in]
-*
-* \return none
-*/
+ * \brief
+ *
+ * \param[in]
+ *
+ * \return none
+ */
 /*----------------------------------------------------------------------------*/
 static void rlmFillHtOpIE(struct ADAPTER *prAdapter, struct BSS_INFO *prBssInfo,
 			  struct MSDU_INFO *prMsduInfo)
@@ -1133,12 +1134,12 @@ static void rlmFillHtOpIE(struct ADAPTER *prAdapter, struct BSS_INFO *prBssInfo,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief For probe request, association request
-*
-* \param[in]
-*
-* \return none
-*/
+ * \brief For probe request, association request
+ *
+ * \param[in]
+ *
+ * \return none
+ */
 /*----------------------------------------------------------------------------*/
 void rlmReqGenerateVhtCapIE(struct ADAPTER *prAdapter,
 			    struct MSDU_INFO *prMsduInfo)
@@ -1170,12 +1171,12 @@ void rlmReqGenerateVhtCapIE(struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief For probe response (GO, IBSS) and association response
-*
-* \param[in]
-*
-* \return none
-*/
+ * \brief For probe response (GO, IBSS) and association response
+ *
+ * \param[in]
+ *
+ * \return none
+ */
 /*----------------------------------------------------------------------------*/
 void rlmRspGenerateVhtCapIE(struct ADAPTER *prAdapter,
 			    struct MSDU_INFO *prMsduInfo)
@@ -1212,12 +1213,12 @@ void rlmRspGenerateVhtCapIE(struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief
-*
-* \param[in]
-*
-* \return none
-*/
+ * \brief
+ *
+ * \param[in]
+ *
+ * \return none
+ */
 /*----------------------------------------------------------------------------*/
 void rlmRspGenerateVhtOpIE(struct ADAPTER *prAdapter,
 			   struct MSDU_INFO *prMsduInfo)
@@ -1254,12 +1255,12 @@ void rlmRspGenerateVhtOpIE(struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief For probe request, association request
-*
-* \param[in]
-*
-* \return none
-*/
+ * \brief For probe request, association request
+ *
+ * \param[in]
+ *
+ * \return none
+ */
 /*----------------------------------------------------------------------------*/
 void rlmReqGenerateVhtOpNotificationIE(struct ADAPTER *prAdapter,
 				       struct MSDU_INFO *prMsduInfo)
@@ -1286,9 +1287,9 @@ void rlmReqGenerateVhtOpNotificationIE(struct ADAPTER *prAdapter,
 	     PHY_TYPE_SET_802_11AC) &&
 	    (!prStaRec || (prStaRec->ucPhyTypeSet & PHY_TYPE_SET_802_11AC))) {
 		/* Fill own capability in channel width field in OP mode element
-		* since we haven't filled in channel width info in BssInfo at
-		* current state
-		*/
+		 * since we haven't filled in channel width info in BssInfo at
+		 * current state
+		 */
 		rlmFillVhtOpNotificationIE(prAdapter, prBssInfo, prMsduInfo,
 					   TRUE);
 	}
@@ -1296,12 +1297,12 @@ void rlmReqGenerateVhtOpNotificationIE(struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief
-*
-* \param[in]
-*
-* \return none
-*/
+ * \brief
+ *
+ * \param[in]
+ *
+ * \return none
+ */
 /*----------------------------------------------------------------------------*/
 void rlmRspGenerateVhtOpNotificationIE(struct ADAPTER *prAdapter,
 				       struct MSDU_INFO *prMsduInfo)
@@ -1339,12 +1340,12 @@ void rlmRspGenerateVhtOpNotificationIE(struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief
-* add VHT operation notification IE for VHT-BW40 case specific
-* \param[in]
-*
-* \return none
-*/
+ * \brief
+ * add VHT operation notification IE for VHT-BW40 case specific
+ * \param[in]
+ *
+ * \return none
+ */
 /*----------------------------------------------------------------------------*/
 static void rlmFillVhtOpNotificationIE(struct ADAPTER *prAdapter,
 				       struct BSS_INFO *prBssInfo,
@@ -1400,12 +1401,12 @@ static void rlmFillVhtOpNotificationIE(struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief
-*
-* \param[in]
-*
-* \return none
-*/
+ * \brief
+ *
+ * \param[in]
+ *
+ * \return none
+ */
 /*----------------------------------------------------------------------------*/
 static void rlmFillVhtCapIE(struct ADAPTER *prAdapter,
 			    struct BSS_INFO *prBssInfo,
@@ -1548,13 +1549,16 @@ VHT_CAP_INFO_COMPRESSED_STEERING_NUMBER_OF_BEAMFORMER_ANTENNAS_4_SUP;
 	}
 
 #if 0
-	for (i = 0; i < wlanGetSupportNss(prAdapter, prBssInfo->ucBssIndex); i++) {
+	for (i = 0; i < wlanGetSupportNss(prAdapter,
+		prBssInfo->ucBssIndex); i++) {
 		uint8_t ucOffset = i * 2;
 
 		prVhtSupportedMcsSet->u2RxMcsMap &=
-			((VHT_CAP_INFO_MCS_MAP_MCS9 << ucOffset) & BITS(ucOffset, ucOffset + 1));
+			((VHT_CAP_INFO_MCS_MAP_MCS9 << ucOffset) &
+			BITS(ucOffset, ucOffset + 1));
 		prVhtSupportedMcsSet->u2TxMcsMap &=
-			((VHT_CAP_INFO_MCS_MAP_MCS9 << ucOffset) & BITS(ucOffset, ucOffset + 1));
+			((VHT_CAP_INFO_MCS_MAP_MCS9 << ucOffset) &
+			BITS(ucOffset, ucOffset + 1));
 	}
 #endif
 
@@ -1570,12 +1574,12 @@ VHT_CAP_INFO_COMPRESSED_STEERING_NUMBER_OF_BEAMFORMER_ANTENNAS_4_SUP;
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief
-*
-* \param[in]
-*
-* \return none
-*/
+ * \brief
+ *
+ * \param[in]
+ *
+ * \return none
+ */
 /*----------------------------------------------------------------------------*/
 void rlmFillVhtOpIE(struct ADAPTER *prAdapter, struct BSS_INFO *prBssInfo,
 		    struct MSDU_INFO *prMsduInfo)
@@ -1595,10 +1599,8 @@ void rlmFillVhtOpIE(struct ADAPTER *prAdapter, struct BSS_INFO *prBssInfo,
 
 	ASSERT(IE_SIZE(prVhtOp) <= (ELEM_HDR_LEN + ELEM_MAX_LEN_VHT_OP));
 
-	prVhtOp->ucVhtOperation[0] =
-		prBssInfo
-			->ucVhtChannelWidth; /* (UINT8)VHT_OP_CHANNEL_WIDTH_80;
-						*/
+	/* (UINT8)VHT_OP_CHANNEL_WIDTH_80; */
+	prVhtOp->ucVhtOperation[0] = prBssInfo->ucVhtChannelWidth;
 	prVhtOp->ucVhtOperation[1] = prBssInfo->ucVhtChannelFrequencyS1;
 	prVhtOp->ucVhtOperation[2] = prBssInfo->ucVhtChannelFrequencyS2;
 
@@ -1607,9 +1609,11 @@ void rlmFillVhtOpIE(struct ADAPTER *prAdapter, struct BSS_INFO *prBssInfo,
 		prVhtOp->ucVhtOperation[0] = VHT_OP_CHANNEL_WIDTH_20_40;
 		prVhtOp->ucVhtOperation[1] = 0;
 		prVhtOp->ucVhtOperation[2] = 0;
-	} else if (cnmGetBssMaxBw(prAdapter, prBssInfo->ucBssIndex) == MAX_BW_80MHZ) {
+	} else if (cnmGetBssMaxBw(prAdapter, prBssInfo->ucBssIndex) ==
+			MAX_BW_80MHZ) {
 		prVhtOp->ucVhtOperation[0] = VHT_OP_CHANNEL_WIDTH_80;
-		prVhtOp->ucVhtOperation[1] = nicGetVhtS1(prBssInfo->ucPrimaryChannel);
+		prVhtOp->ucVhtOperation[1] =
+			nicGetVhtS1(prBssInfo->ucPrimaryChannel);
 		prVhtOp->ucVhtOperation[2] = 0;
 	} else {
 		/* TODO: BW80 + 80/160 support */
@@ -1626,12 +1630,12 @@ void rlmFillVhtOpIE(struct ADAPTER *prAdapter, struct BSS_INFO *prBssInfo,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief
-*
-* \param[in]
-*
-* \return none
-*/
+ * \brief
+ *
+ * \param[in]
+ *
+ * \return none
+ */
 /*----------------------------------------------------------------------------*/
 void rlmGenerateCountryIE(struct ADAPTER *prAdapter,
 		struct MSDU_INFO *prMsduInfo)
@@ -1905,9 +1909,9 @@ void rlmModifyVhtBwPara(uint8_t *pucVhtChannelFrequencyS1,
 		     ucBW160Inteval)) {
 			/*C160 case*/
 
-			/*NEW spec should set central ch of bw80 at S1,
-			*set central ch of bw160 at S2
-			*/
+			/* NEW spec should set central ch of bw80 at S1,
+			 * set central ch of bw160 at S2
+			 */
 			for (i = 0; i < 2; i++) {
 
 				if (i == 0)
@@ -1956,14 +1960,14 @@ static void rlmRevisePreferBandwidthNss(struct ADAPTER *prAdapter,
 	eChannelWidth = prBssInfo->ucVhtChannelWidth;
 
 	/*
-	*Prefer setting modification
-	*80+80 1x1 and 80 2x2 have the same phy rate, choose the 80 2x2
-	*/
+	 * Prefer setting modification
+	 * 80+80 1x1 and 80 2x2 have the same phy rate, choose the 80 2x2
+	 */
 
 	if (AR_IS_STA_2SS_AC(prStaRec)) {
 		/*
-		*DBGLOG(RLM, WARN, "support 2ss\n");
-		*/
+		 * DBGLOG(RLM, WARN, "support 2ss\n");
+		 */
 
 		if ((eChannelWidth == CW_80P80MHZ &&
 		     prBssInfo->ucVhtChannelFrequencyS2 != 0)) {
@@ -1978,12 +1982,12 @@ static void rlmRevisePreferBandwidthNss(struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief Revise operating BW by own maximum bandwidth capability
-*
-* \param[in]
-*
-* \return none
-*/
+ * \brief Revise operating BW by own maximum bandwidth capability
+ *
+ * \param[in]
+ *
+ * \return none
+ */
 /*----------------------------------------------------------------------------*/
 void rlmReviseMaxBw(struct ADAPTER *prAdapter, uint8_t ucBssIndex,
 		    enum ENUM_CHNL_EXT *peExtend,
@@ -2018,10 +2022,10 @@ void rlmReviseMaxBw(struct ADAPTER *prAdapter, uint8_t ucBssIndex,
 				*peExtend = CHNL_EXT_SCN;
 		} else {
 			/* BW80, BW160, BW80P80
-			* ucMaxBandwidth Must be
-			* MAX_BW_80MHZ,MAX_BW_160MHZ,MAX_BW_80MHZ
-			* peExtend should not change
-			*/
+			 * ucMaxBandwidth Must be
+			 * MAX_BW_80MHZ,MAX_BW_160MHZ,MAX_BW_80MHZ
+			 * peExtend should not change
+			 */
 			*peChannelWidth = (ucMaxBandwidth - ucOffset);
 
 			if (ucMaxBandwidth == MAX_BW_80MHZ) {
@@ -2042,15 +2046,15 @@ void rlmReviseMaxBw(struct ADAPTER *prAdapter, uint8_t ucBssIndex,
 						*pucS1 = 122;
 					else if ((*pucPrimaryCh >= 132) &&
 						 (*pucPrimaryCh <= 144))
-						/*160 downgrade should not in
-						* this case
-						*/
+						/* 160 downgrade should not in
+						 * this case
+						 */
 						*pucS1 = 138;
 					else if ((*pucPrimaryCh >= 149) &&
 						 (*pucPrimaryCh <= 161))
-						/*160 downgrade should not in
-						* this case
-						*/
+						/* 160 downgrade should not in
+						 * this case
+						 */
 						*pucS1 = 155;
 					else
 						DBGLOG(RLM, INFO,
@@ -2071,13 +2075,13 @@ void rlmReviseMaxBw(struct ADAPTER *prAdapter, uint8_t ucBssIndex,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief Fill VHT Operation Information(VHT BW, S1, S2) by BSS operating channel
-* width
-*
-* \param[in]
-*
-* \return none
-*/
+ * \brief Fill VHT Operation Information(VHT BW, S1, S2) by BSS operating
+ *  channel width
+ *
+ * \param[in]
+ *
+ * \return none
+ */
 /*----------------------------------------------------------------------------*/
 void rlmFillVhtOpInfoByBssOpBw(struct BSS_INFO *prBssInfo, uint8_t ucBssOpBw)
 {
@@ -2109,13 +2113,13 @@ void rlmFillVhtOpInfoByBssOpBw(struct BSS_INFO *prBssInfo, uint8_t ucBssOpBw)
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief This function should be invoked to update parameters of associated AP.
-*        (Association response and Beacon)
-*
-* \param[in]
-*
-* \return none
-*/
+ * \brief This function should be invoked to update parameters of associated AP.
+ *        (Association response and Beacon)
+ *
+ * \param[in]
+ *
+ * \return none
+ */
 /*----------------------------------------------------------------------------*/
 static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 				     struct BSS_INFO *prBssInfo, uint8_t *pucIE,
@@ -2450,9 +2454,10 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 							  ->ucOpMode) &
 						 VHT_OP_MODE_RX_NSS) >>
 						VHT_OP_MODE_RX_NSS_OFFSET;
-				} else /* Let the further flow not to update
-					* VhtOpMode
-					*/
+				} else
+					/* Let the further flow not to update
+					 * VhtOpMode
+					 */
 					ucInitVhtOpMode = prStaRec->ucVhtOpMode;
 			}
 
@@ -2502,8 +2507,8 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 			if (!RLM_NET_IS_11N(prBssInfo))
 				break;
 			/* To do: store extended capability (PSMP, coexist) to
-			* BssInfo
-			*/
+			 * BssInfo
+			 */
 			break;
 
 		case ELEM_ID_ERP_INFO:
@@ -2537,7 +2542,8 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 			       prChannelSwitchAnnounceIE->ucChannelSwitchCount);
 #if 0
 			qmSetStaRecTxAllowed(prAdapter, prStaRec, FALSE);
-			DBGLOG(RLM, INFO, "[Ch] TxAllowed = %d\n", prStaRec->fgIsTxAllowed);
+			DBGLOG(RLM, INFO, "[Ch] TxAllowed = %d\n",
+			       prStaRec->fgIsTxAllowed);
 #endif
 			if (prChannelSwitchAnnounceIE->ucChannelSwitchMode ==
 			    1) {
@@ -2554,8 +2560,10 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 					fgHasChannelSwitchIE = TRUE;
 					g_fgHasChannelSwitchIE = TRUE;
 #if 0
-					qmSetStaRecTxAllowed(prAdapter, prStaRec, TRUE);
-					DBGLOG(RLM, INFO, "[Ch] After switching , TxAllowed = %d\n",
+					qmSetStaRecTxAllowed(prAdapter,
+					       prStaRec, TRUE);
+					DBGLOG(RLM, INFO,
+					       "[Ch] After switching , TxAllowed = %d\n",
 					       prStaRec->fgIsTxAllowed);
 #endif
 				}
@@ -2618,15 +2626,15 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 		ucPrimaryChannel = 0;
 #if CFG_SUPPORT_802_11AC
 	/* Check whether the Operation Mode IE is exist or not.
-	*  If exists, then the channel bandwidth of VHT operation field  is
-	* changed
-	*  with the channel bandwidth setting of Operation Mode field.
-	*  The channel bandwidth of OP Mode IE  is  0, represent as 20MHz.
-	*  The channel bandwidth of OP Mode IE  is  1, represent as 40MHz.
-	*  The channel bandwidth of OP Mode IE  is  2, represent as 80MHz.
-	*  The channel bandwidth of OP Mode IE  is  3, represent as
-	* 160/80+80MHz.
-	*/
+	 *  If exists, then the channel bandwidth of VHT operation field  is
+	 * changed
+	 *  with the channel bandwidth setting of Operation Mode field.
+	 *  The channel bandwidth of OP Mode IE  is  0, represent as 20MHz.
+	 *  The channel bandwidth of OP Mode IE  is  1, represent as 40MHz.
+	 *  The channel bandwidth of OP Mode IE  is  2, represent as 80MHz.
+	 *  The channel bandwidth of OP Mode IE  is  3, represent as
+	 * 160/80+80MHz.
+	 */
 	if (fgHasOPModeIE == TRUE) {
 		if (prStaRec->ucStaState == STA_STATE_3) {
 			/* 1. Modify channel width parameters */
@@ -2634,8 +2642,8 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 						prBssInfo);
 
 			/* 2. Update StaRec to FW (BssInfo will be updated after
-			* return from this function)
-			*/
+			 * return from this function)
+			 */
 			DBGLOG(RLM, INFO,
 			       "Update OpMode to 0x%x, to FW due to OpMode Notificaition",
 			       prStaRec->ucVhtOpMode);
@@ -2676,10 +2684,10 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 #endif
 
 #if CFG_SUPPORT_DFS
-	/*Check whether Channel Announcement IE, Secondary Offset IE &
-	 *  Wide Bandwidth Channel Switch IE exist or not. If exist, the
-	 priority is
-	 the highest.
+	/* Check whether Channel Announcement IE, Secondary Offset IE &
+	 * Wide Bandwidth Channel Switch IE exist or not. If exist, the
+	 * priority is
+	 * the highest.
 	 */
 
 	if (fgHasChannelSwitchIE != FALSE) {
@@ -2688,8 +2696,8 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 
 		prBssInfo->ucPrimaryChannel = ucChannelAnnouncePri;
 		/* Change to BW20 for certification issue due to signal sidelope
-		* leakage
-		*/
+		 * leakage
+		 */
 		prBssInfo->ucVhtChannelWidth = 0;
 		prBssInfo->ucVhtChannelFrequencyS1 = 0;
 		prBssInfo->ucVhtChannelFrequencyS2 = 0;
@@ -2760,10 +2768,10 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 
 	rlmRevisePreferBandwidthNss(prAdapter, prBssInfo->ucBssIndex, prStaRec);
 
-	/*printk("Modify ChannelWidth (%d) and Extend
-	* (%d)\n",prBssInfo->eBssSCO,
-	* prBssInfo->ucVhtChannelWidth);
-	*/
+	/* printk("Modify ChannelWidth (%d) and Extend
+	 * (%d)\n",prBssInfo->eBssSCO,
+	 * prBssInfo->ucVhtChannelWidth);
+	 */
 
 	if (!rlmDomainIsValidRfSetting(
 		    prAdapter, prBssInfo->eBand, prBssInfo->ucPrimaryChannel,
@@ -2819,12 +2827,12 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief Update parameters from channel width field in OP Mode IE/action frame
-*
-* \param[in]
-*
-* \return none
-*/
+ * \brief Update parameters from channel width field in OP Mode IE/action frame
+ *
+ * \param[in]
+ *
+ * \return none
+ */
 /*----------------------------------------------------------------------------*/
 static void rlmRecOpModeBwForClient(uint8_t ucVhtOpModeChannelWidth,
 				    struct BSS_INFO *prBssInfo)
@@ -2914,12 +2922,12 @@ static void rlmRecOpModeBwForClient(uint8_t ucVhtOpModeChannelWidth,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief Update parameters from Association Response frame
-*
-* \param[in]
-*
-* \return none
-*/
+ * \brief Update parameters from Association Response frame
+ *
+ * \param[in]
+ *
+ * \return none
+ */
 /*----------------------------------------------------------------------------*/
 static void rlmRecAssocRespIeInfoForClient(struct ADAPTER *prAdapter,
 					   struct BSS_INFO *prBssInfo,
@@ -2994,12 +3002,12 @@ static void rlmRecAssocRespIeInfoForClient(struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief AIS or P2P GC.
-*
-* \param[in]
-*
-* \return none
-*/
+ * \brief AIS or P2P GC.
+ *
+ * \param[in]
+ *
+ * \return none
+ */
 /*----------------------------------------------------------------------------*/
 static u_int8_t rlmRecBcnFromNeighborForClient(struct ADAPTER *prAdapter,
 					       struct BSS_INFO *prBssInfo,
@@ -3167,12 +3175,12 @@ static u_int8_t rlmRecBcnFromNeighborForClient(struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief AIS or P2P GC.
-*
-* \param[in]
-*
-* \return none
-*/
+ * \brief AIS or P2P GC.
+ *
+ * \param[in]
+ *
+ * \return none
+ */
 /*----------------------------------------------------------------------------*/
 static u_int8_t rlmRecBcnInfoForClient(struct ADAPTER *prAdapter,
 				       struct BSS_INFO *prBssInfo,
@@ -3191,11 +3199,11 @@ static u_int8_t rlmRecBcnInfoForClient(struct ADAPTER *prAdapter,
 
 #if 0 /* SW migration 2010/8/20 */
 	/* Note: we shall not update parameters when scanning, otherwise
-	 *       channel and bandwidth will not be correct or asserted failure
-	 *       during scanning.
-	 * Note: remove channel checking. All received Beacons should be processed
-	 *       if measurement or other actions are executed in adjacent channels
-	 *       and Beacon content checking mechanism is not disabled.
+	 * channel and bandwidth will not be correct or asserted failure
+	 * during scanning.
+	 * Note: remove channel checking. All received Beacons should be
+	 * processed if measurement or other actions are executed in adjacent
+	 * channels and Beacon content checking mechanism is not disabled.
 	 */
 	if (IS_SCAN_ACTIVE()
 	    /* || prBssInfo->ucPrimaryChannel != CHNL_NUM_BY_SWRFB(prSwRfb) */
@@ -3270,12 +3278,12 @@ static u_int8_t rlmRecBcnInfoForClient(struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief
-*
-* \param[in]
-*
-* \return none
-*/
+ * \brief
+ *
+ * \param[in]
+ *
+ * \return none
+ */
 /*----------------------------------------------------------------------------*/
 void rlmProcessBcn(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb,
 		   uint8_t *pucIE, uint16_t u2IELength)
@@ -3333,8 +3341,8 @@ void rlmProcessBcn(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb,
 				  prBssInfo->eCurrentOPMode ==
 					  OP_MODE_P2P_DEVICE)) {
 				/* AP scan to check if 20/40M bandwidth is
-				* permitted
-				*/
+				 * permitted
+				 */
 				rlmRecBcnFromNeighborForClient(
 					prAdapter, prBssInfo, prSwRfb, pucIE,
 					u2IELength);
@@ -3356,12 +3364,12 @@ void rlmProcessBcn(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief This function should be invoked after judging successful association.
-*
-* \param[in]
-*
-* \return none
-*/
+ * \brief This function should be invoked after judging successful association.
+ *
+ * \param[in]
+ *
+ * \return none
+ */
 /*----------------------------------------------------------------------------*/
 void rlmProcessAssocRsp(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb,
 			uint8_t *pucIE, uint16_t u2IELength)
@@ -3399,10 +3407,10 @@ void rlmProcessAssocRsp(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb,
 		rlmRecIeInfoForClient(prAdapter, prBssInfo, pucIE, u2IELength);
 
 	/*Update the parameters from Association Response only,
-	*if the parameters need to be updated by both Beacon and Association
-	*Response,
-	*user should use another function, rlmRecIeInfoForClient()
-	*/
+	 *if the parameters need to be updated by both Beacon and Association
+	 *Response,
+	 *user should use another function, rlmRecIeInfoForClient()
+	 */
 	rlmRecAssocRespIeInfoForClient(prAdapter, prBssInfo, pucIE, u2IELength);
 
 	if (prBssInfo->ucPrimaryChannel != ucPriChannel) {
@@ -3411,8 +3419,8 @@ void rlmProcessAssocRsp(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb,
 		       prBssInfo->ucPrimaryChannel, ucPriChannel);
 	}
 	/* Avoid wrong primary channel info in HT operation
-	* IE info when accept association response
-	*/
+	 * IE info when accept association response
+	 */
 #if 0
 	if (ucPriChannel > 0)
 		prBssInfo->ucPrimaryChannel = ucPriChannel;
@@ -3431,12 +3439,12 @@ void rlmProcessAssocRsp(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief
-*
-* \param[in]
-*
-* \return none
-*/
+ * \brief
+ *
+ * \param[in]
+ *
+ * \return none
+ */
 /*----------------------------------------------------------------------------*/
 void rlmProcessHtAction(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb)
 {
@@ -3464,9 +3472,9 @@ void rlmProcessHtAction(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb)
 		}
 
 		/* To do: depending regulation class 13 and 14 based on spec
-		* Note: (ucChannelWidth==1) shall restored back to original
-		* capability, not current setting to 40MHz BW here
-		*/
+		 * Note: (ucChannelWidth==1) shall restored back to original
+		 * capability, not current setting to 40MHz BW here
+		 */
 		/* 1. Update StaRec for AP/STA mode */
 		if (prRxFrame->ucChannelWidth == HT_NOTIFY_CHANNEL_WIDTH_20)
 			prStaRec->u2HtCapInfo &= ~HT_CAP_INFO_SUP_CHNL_WIDTH;
@@ -3486,7 +3494,7 @@ void rlmProcessHtAction(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb)
 				prBssInfo->eBssSCO = CHNL_EXT_SCN;
 			} else if (
 				prRxFrame->ucChannelWidth ==
-				HT_NOTIFY_CHANNEL_WIDTH_ANY_SUPPORT_CAHNNAEL_WIDTH)
+	HT_NOTIFY_CHANNEL_WIDTH_ANY_SUPPORT_CAHNNAEL_WIDTH)
 				prBssInfo->ucHtOpInfo1 |=
 					HT_OP_INFO1_STA_CHNL_WIDTH;
 
@@ -3514,8 +3522,8 @@ void rlmProcessHtAction(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb)
 		}
 
 		/* The SM power enable bit is different definition in HtCap and
-		* SMpower IE field
-		*/
+		 * SMpower IE field
+		 */
 		if (!(prRxSmpsFrame->ucSmPowerCtrl &
 		      (HT_SM_POWER_SAVE_CONTROL_ENABLED |
 		       HT_SM_POWER_SAVE_CONTROL_SM_MODE)))
@@ -3541,12 +3549,12 @@ void rlmProcessHtAction(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb)
 #if CFG_SUPPORT_802_11AC
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief
-*
-* \param[in]
-*
-* \return none
-*/
+ * \brief
+ *
+ * \param[in]
+ *
+ * \return none
+ */
 /*----------------------------------------------------------------------------*/
 void rlmProcessVhtAction(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb)
 {
@@ -3612,8 +3620,8 @@ void rlmProcessVhtAction(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb)
 			if (prBssInfo->eCurrentOPMode ==
 			    OP_MODE_INFRASTRUCTURE) {
 				/* 4.1 Revise by own OP BW if needed for STA
-				* mode only
-				*/
+				 * mode only
+				 */
 				if (prBssInfo->fgIsOpChangeChannelWidth) {
 					/* VHT */
 					if (rlmGetVhtOpBwByBssOpBw(
@@ -3647,9 +3655,9 @@ void rlmProcessVhtAction(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb)
 					DBGLOG(RLM, WARN,
 					       "rlmProcessVhtAction invalid RF settings\n");
 
-					/*Error Handling for Non-predicted IE -
-					* Fixed to set 20MHz
-					*/
+					/* Error Handling for Non-predicted IE -
+					 * Fixed to set 20MHz
+					 */
 					prBssInfo->ucVhtChannelWidth =
 						CW_20_40MHZ;
 					prBssInfo->ucVhtChannelFrequencyS1 = 0;
@@ -3674,12 +3682,12 @@ void rlmProcessVhtAction(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb)
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief This function should be invoked after judging successful association.
-*
-* \param[in]
-*
-* \return none
-*/
+ * \brief This function should be invoked after judging successful association.
+ *
+ * \param[in]
+ *
+ * \return none
+ */
 /*----------------------------------------------------------------------------*/
 void rlmFillSyncCmdParam(struct CMD_SET_BSS_RLM_PARAM *prCmdBody,
 			 struct BSS_INFO *prBssInfo)
@@ -3725,14 +3733,14 @@ void rlmFillSyncCmdParam(struct CMD_SET_BSS_RLM_PARAM *prCmdBody,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief This function will operation parameters based on situations of
-*        concurrent networks. Channel, bandwidth, protection mode, supported
-*        rate will be modified.
-*
-* \param[in]
-*
-* \return none
-*/
+ * \brief This function will operation parameters based on situations of
+ *        concurrent networks. Channel, bandwidth, protection mode, supported
+ *        rate will be modified.
+ *
+ * \param[in]
+ *
+ * \return none
+ */
 /*----------------------------------------------------------------------------*/
 void rlmSyncOperationParams(struct ADAPTER *prAdapter,
 			    struct BSS_INFO *prBssInfo)
@@ -3780,12 +3788,12 @@ void rlmSyncOperationParams(struct ADAPTER *prAdapter,
 #if CFG_SUPPORT_AAA
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief This function should be invoked after judging successful association.
-*
-* \param[in]
-*
-* \return none
-*/
+ * \brief This function should be invoked after judging successful association.
+ *
+ * \param[in]
+ *
+ * \return none
+ */
 /*----------------------------------------------------------------------------*/
 void rlmProcessAssocReq(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb,
 			uint8_t *pucIE, uint16_t u2IELength)
@@ -3979,8 +3987,8 @@ void rlmProcessAssocReq(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb,
 	}	 /* end of IE_FOR_EACH */
 #if CFG_SUPPORT_802_11AC
 	/*Fill by OP Mode IE after completing parsing all IE to make sure it
-	* won't be overwrite
-	*/
+	 * won't be overwrite
+	 */
 	if (fgHasOPModeIE == TRUE)
 		prStaRec->ucVhtOpMode = prOPModeNotification->ucOpMode;
 #endif
@@ -3989,12 +3997,12 @@ void rlmProcessAssocReq(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief It is for both STA and AP modes
-*
-* \param[in]
-*
-* \return none
-*/
+ * \brief It is for both STA and AP modes
+ *
+ * \param[in]
+ *
+ * \return none
+ */
 /*----------------------------------------------------------------------------*/
 void rlmBssInitForAPandIbss(struct ADAPTER *prAdapter,
 			    struct BSS_INFO *prBssInfo)
@@ -4011,12 +4019,12 @@ void rlmBssInitForAPandIbss(struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief It is for both STA and AP modes
-*
-* \param[in]
-*
-* \return none
-*/
+ * \brief It is for both STA and AP modes
+ *
+ * \param[in]
+ *
+ * \return none
+ */
 /*----------------------------------------------------------------------------*/
 void rlmBssAborted(struct ADAPTER *prAdapter, struct BSS_INFO *prBssInfo)
 {
@@ -4035,12 +4043,12 @@ void rlmBssAborted(struct ADAPTER *prAdapter, struct BSS_INFO *prBssInfo)
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief All RLM timers will also be stopped.
-*
-* \param[in]
-*
-* \return none
-*/
+ * \brief All RLM timers will also be stopped.
+ *
+ * \param[in]
+ *
+ * \return none
+ */
 /*----------------------------------------------------------------------------*/
 static void rlmBssReset(struct ADAPTER *prAdapter, struct BSS_INFO *prBssInfo)
 {
@@ -4094,12 +4102,12 @@ static void rlmBssReset(struct ADAPTER *prAdapter, struct BSS_INFO *prBssInfo)
 #if CFG_SUPPORT_TDLS
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief
-*
-* \param[in]
-*
-* \return none
-*/
+ * \brief
+ *
+ * \param[in]
+ *
+ * \return none
+ */
 /*----------------------------------------------------------------------------*/
 uint32_t rlmFillVhtCapIEByAdapter(struct ADAPTER *prAdapter,
 				  struct BSS_INFO *prBssInfo, uint8_t *pOutBuf)
@@ -4155,12 +4163,12 @@ uint32_t rlmFillVhtCapIEByAdapter(struct ADAPTER *prAdapter,
 #if CFG_SUPPORT_TDLS
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief
-*
-* \param[in]
-*
-* \return none
-*/
+ * \brief
+ *
+ * \param[in]
+ *
+ * \return none
+ */
 /*----------------------------------------------------------------------------*/
 uint32_t rlmFillHtCapIEByParams(u_int8_t fg40mAllowed,
 				u_int8_t fgShortGIDisabled,
@@ -4226,12 +4234,12 @@ uint32_t rlmFillHtCapIEByParams(u_int8_t fg40mAllowed,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief
-*
-* \param[in]
-*
-* \return none
-*/
+ * \brief
+ *
+ * \param[in]
+ *
+ * \return none
+ */
 /*----------------------------------------------------------------------------*/
 uint32_t rlmFillHtCapIEByAdapter(struct ADAPTER *prAdapter,
 				 struct BSS_INFO *prBssInfo, uint8_t *pOutBuf)
@@ -4301,13 +4309,13 @@ uint32_t rlmFillHtCapIEByAdapter(struct ADAPTER *prAdapter,
 #if CFG_SUPPORT_DFS
 /*----------------------------------------------------------------------------*/
 /*!
-* @brief This function will compose the TPC Report frame.
-*
-* @param[in] prAdapter              Pointer to the Adapter structure.
-* @param[in] prStaRec               Pointer to the STA_RECORD_T.
-*
-* @return (none)
-*/
+ * @brief This function will compose the TPC Report frame.
+ *
+ * @param[in] prAdapter              Pointer to the Adapter structure.
+ * @param[in] prStaRec               Pointer to the STA_RECORD_T.
+ *
+ * @return (none)
+ */
 /*----------------------------------------------------------------------------*/
 static void tpcComposeReportFrame(IN struct ADAPTER *prAdapter,
 				  IN struct STA_RECORD *prStaRec,
@@ -4373,13 +4381,13 @@ static void tpcComposeReportFrame(IN struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* @brief This function will compose the Measurement Report frame.
-*
-* @param[in] prAdapter              Pointer to the Adapter structure.
-* @param[in] prStaRec               Pointer to the STA_RECORD_T.
-*
-* @return (none)
-*/
+ * @brief This function will compose the Measurement Report frame.
+ *
+ * @param[in] prAdapter              Pointer to the Adapter structure.
+ * @param[in] prStaRec               Pointer to the STA_RECORD_T.
+ *
+ * @return (none)
+ */
 /*----------------------------------------------------------------------------*/
 static void msmtComposeReportFrame(IN struct ADAPTER *prAdapter,
 				   IN struct STA_RECORD *prStaRec,
@@ -4425,14 +4433,19 @@ static void msmtComposeReportFrame(IN struct ADAPTER *prAdapter,
 
 #if 0
 	if (prStaRec->ucSmMsmtRequestMode == ELEM_RM_TYPE_BASIC_REQ) {
-		prMeasurementRepIE->ucLength = sizeof(struct SM_BASIC_REPORT) + 3;
-		u2PayloadLen = ACTION_SM_MEASURE_REPORT_LEN+ACTION_SM_BASIC_REPORT_LEN;
+		prMeasurementRepIE->ucLength =
+		     sizeof(struct SM_BASIC_REPORT) + 3;
+		u2PayloadLen = ACTION_SM_MEASURE_REPORT_LEN+
+		     ACTION_SM_BASIC_REPORT_LEN;
 	} else if (prStaRec->ucSmMsmtRequestMode == ELEM_RM_TYPE_CCA_REQ) {
 		prMeasurementRepIE->ucLength = sizeof(struct SM_CCA_REPORT) + 3;
-		u2PayloadLen = ACTION_SM_MEASURE_REPORT_LEN+ACTION_SM_CCA_REPORT_LEN;
-	} else if (prStaRec->ucSmMsmtRequestMode == ELEM_RM_TYPE_RPI_HISTOGRAM_REQ) {
+		u2PayloadLen = ACTION_SM_MEASURE_REPORT_LEN+
+		     ACTION_SM_CCA_REPORT_LEN;
+	} else if (prStaRec->ucSmMsmtRequestMode ==
+		     ELEM_RM_TYPE_RPI_HISTOGRAM_REQ) {
 		prMeasurementRepIE->ucLength = sizeof(struct SM_RPI_REPORT) + 3;
-		u2PayloadLen = ACTION_SM_MEASURE_REPORT_LEN+ACTION_SM_PRI_REPORT_LEN;
+		u2PayloadLen = ACTION_SM_MEASURE_REPORT_LEN+
+		     ACTION_SM_PRI_REPORT_LEN;
 	} else {
 		prMeasurementRepIE->ucLength = 3;
 		u2PayloadLen = ACTION_SM_MEASURE_REPORT_LEN;
@@ -4466,12 +4479,12 @@ static void msmtComposeReportFrame(IN struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief This function handle spectrum management action frame
-*
-* \param[in]
-*
-* \return none
-*/
+ * \brief This function handle spectrum management action frame
+ *
+ * \param[in]
+ *
+ * \return none
+ */
 /*----------------------------------------------------------------------------*/
 void rlmProcessSpecMgtAction(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb)
 {
@@ -4668,12 +4681,12 @@ void rlmProcessSpecMgtAction(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb)
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief Send OpMode Norification frame (VHT action frame)
-*
-* \param[in] ucChannelWidth 0:20MHz, 1:40MHz, 2:80MHz, 3:160MHz or 80+80MHz
-*
-* \return none
-*/
+ * \brief Send OpMode Norification frame (VHT action frame)
+ *
+ * \param[in] ucChannelWidth 0:20MHz, 1:40MHz, 2:80MHz, 3:160MHz or 80+80MHz
+ *
+ * \return none
+ */
 /*----------------------------------------------------------------------------*/
 void rlmSendOpModeNotificationFrame(struct ADAPTER *prAdapter,
 				    struct STA_RECORD *prStaRec,
@@ -4743,12 +4756,12 @@ void rlmSendOpModeNotificationFrame(struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief Send SM Power Save frame (HT action frame)
-*
-* \param[in]
-*
-* \return none
-*/
+ * \brief Send SM Power Save frame (HT action frame)
+ *
+ * \param[in]
+ *
+ * \return none
+ */
 /*----------------------------------------------------------------------------*/
 void rlmSendSmPowerSaveFrame(struct ADAPTER *prAdapter,
 			     struct STA_RECORD *prStaRec, uint8_t ucNss)
@@ -4823,13 +4836,13 @@ void rlmSendSmPowerSaveFrame(struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief Send Notify Channel Width frame (HT action frame)
-*
-* \param[in] ucChannelWidth 0:20MHz, 1:Any channel width
-*  in the STA¡¦s Supported Channel Width Set subfield
-*
-* \return none
-*/
+ * \brief Send Notify Channel Width frame (HT action frame)
+ *
+ * \param[in] ucChannelWidth 0:20MHz, 1:Any channel width
+ *  in the STAs Supported Channel Width Set subfield
+ *
+ * \return none
+ */
 /*----------------------------------------------------------------------------*/
 void rlmSendNotifyChannelWidthFrame(struct ADAPTER *prAdapter,
 				    struct STA_RECORD *prStaRec,
@@ -4892,13 +4905,13 @@ void rlmSendNotifyChannelWidthFrame(struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief
-*
-* \param[in]
-*
-* \return none
-*
-*/
+ * \brief
+ *
+ * \param[in]
+ *
+ * \return none
+ *
+ */
 /*----------------------------------------------------------------------------*/
 uint32_t rlmNotifyVhtOpModeTxDone(IN struct ADAPTER *prAdapter,
 				  IN struct MSDU_INFO *prMsduInfo,
@@ -4922,12 +4935,12 @@ uint32_t rlmNotifyVhtOpModeTxDone(IN struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief
-*
-* \param[in]
-*
-* \return none
-*/
+ * \brief
+ *
+ * \param[in]
+ *
+ * \return none
+ */
 /*----------------------------------------------------------------------------*/
 uint32_t rlmSmPowerSaveTxDone(IN struct ADAPTER *prAdapter,
 			      IN struct MSDU_INFO *prMsduInfo,
@@ -4951,12 +4964,12 @@ uint32_t rlmSmPowerSaveTxDone(IN struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief
-*
-* \param[in]
-*
-* \return none
-*/
+ * \brief
+ *
+ * \param[in]
+ *
+ * \return none
+ */
 /*----------------------------------------------------------------------------*/
 uint32_t rlmNotifyChannelWidthtTxDone(IN struct ADAPTER *prAdapter,
 				      IN struct MSDU_INFO *prMsduInfo,
@@ -4980,12 +4993,12 @@ uint32_t rlmNotifyChannelWidthtTxDone(IN struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief Handle TX done for OP mode noritfication frame
-*
-* \param[in]
-*
-* \return none
-*/
+ * \brief Handle TX done for OP mode noritfication frame
+ *
+ * \param[in]
+ *
+ * \return none
+ */
 /*----------------------------------------------------------------------------*/
 static void rlmOpModeTxDoneHandler(IN struct ADAPTER *prAdapter,
 				   IN struct MSDU_INFO *prMsduInfo,
@@ -5042,8 +5055,8 @@ static void rlmOpModeTxDoneHandler(IN struct ADAPTER *prAdapter,
 		}
 
 		/* <2>Assign Op notification Type/State for HT notification
-		* frame
-		*/
+		 * frame
+		 */
 		if ((ucOpChangeType == OP_NOTIFY_TYPE_HT_BW) ||
 		    (ucOpChangeType == OP_NOTIFY_TYPE_HT_NSS)) {
 
@@ -5080,15 +5093,15 @@ static void rlmOpModeTxDoneHandler(IN struct ADAPTER *prAdapter,
 				*pucCurrOpState = OP_NOTIFY_STATE_SUCCESS;
 
 				/* Case1: Wait for both HT BW/Nss notification
-				* frame TX done
-				*/
+				 * frame TX done
+				 */
 				if (*pucRelatedOpState ==
 				    OP_NOTIFY_STATE_SENDING)
 					return;
 
 				/* Case2: Both BW and Nss notification TX done
-				* or only change either BW or Nss
-				*/
+				 * or only change either BW or Nss
+				 */
 				if ((*pucRelatedOpState ==
 				     OP_NOTIFY_STATE_KEEP) ||
 				    (*pucRelatedOpState ==
@@ -5096,10 +5109,10 @@ static void rlmOpModeTxDoneHandler(IN struct ADAPTER *prAdapter,
 					fgIsOpModeChangeSuccess = TRUE;
 
 					/* Case3: One of the notification TX
-					* failed,
-					* re-send a notification frame to
-					* rollback the successful one
-					*/
+					 * failed,
+					 * re-send a notification frame to
+					 * rollback the successful one
+					 */
 				} else if (*pucRelatedOpState ==
 					   OP_NOTIFY_STATE_FAIL) {
 					/*Rollback to keep the original BW/Nss
@@ -5132,8 +5145,8 @@ static void rlmOpModeTxDoneHandler(IN struct ADAPTER *prAdapter,
 				   OP_NOTIFY_STATE_KEEP) { /* Rollback OpMode */
 
 				/* Case4: Rollback success, keep original OP
-				* BW/Nss
-				*/
+				 * BW/Nss
+				 */
 				if (ucOpChangeType == OP_NOTIFY_TYPE_HT_BW)
 					rlmRollbackOpChangeParam(prBssInfo,
 								 TRUE, FALSE);
@@ -5197,16 +5210,16 @@ static void rlmOpModeTxDoneHandler(IN struct ADAPTER *prAdapter,
 								 FALSE, TRUE);
 
 				/* Case1: Wait for both HT BW/Nss notification
-				* frame TX done
-				*/
+				 * frame TX done
+				 */
 				if (*pucRelatedOpState ==
 				    OP_NOTIFY_STATE_SENDING) {
 					return;
 
 					/* Case2: Both BW and Nss notification
-					* TX done
-					* or only change either BW or Nss
-					*/
+					 * TX done
+					 * or only change either BW or Nss
+					 */
 				} else if ((*pucRelatedOpState ==
 					    OP_NOTIFY_STATE_KEEP) ||
 					   (*pucRelatedOpState ==
@@ -5214,10 +5227,10 @@ static void rlmOpModeTxDoneHandler(IN struct ADAPTER *prAdapter,
 					fgIsOpModeChangeSuccess = FALSE;
 
 					/* Case3: One of the notification TX
-					* failed,
-					* re-send a notification frame to
-					* rollback the successful one
-					*/
+					 * failed,
+					 * re-send a notification frame to
+					 * rollback the successful one
+					 */
 				} else if (*pucRelatedOpState ==
 					   OP_NOTIFY_STATE_SUCCESS) {
 					/*Rollback to keep the original BW/Nss
@@ -5251,8 +5264,8 @@ static void rlmOpModeTxDoneHandler(IN struct ADAPTER *prAdapter,
 			} else if (*pucCurrOpState ==
 				   OP_NOTIFY_STATE_KEEP) /* Rollback OpMode */
 				/* Case4: Rollback failed, keep changing OP
-				* BW/Nss
-				*/
+				 * BW/Nss
+				 */
 				fgIsOpModeChangeSuccess = FALSE;
 		} /* End of processing TX failed */
 
@@ -5264,12 +5277,12 @@ static void rlmOpModeTxDoneHandler(IN struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief
-*
-* \param[in]
-*
-* \return none
-*/
+ * \brief
+ *
+ * \param[in]
+ *
+ * \return none
+ */
 /*----------------------------------------------------------------------------*/
 static void rlmRollbackOpChangeParam(struct BSS_INFO *prBssInfo,
 				     u_int8_t fgIsRollbackBw,
@@ -5292,13 +5305,13 @@ static void rlmRollbackOpChangeParam(struct BSS_INFO *prBssInfo,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief Get BSS operating channel width by VHT and HT OP Info
-*
-* \param[in]
-*
-* \return ucBssOpBw 0:20MHz, 1:40MHz, 2:80MHz, 3:160MHz 4:80+80MHz
-*
-*/
+ * \brief Get BSS operating channel width by VHT and HT OP Info
+ *
+ * \param[in]
+ *
+ * \return ucBssOpBw 0:20MHz, 1:40MHz, 2:80MHz, 3:160MHz 4:80+80MHz
+ *
+ */
 /*----------------------------------------------------------------------------*/
 uint8_t rlmGetBssOpBwByVhtAndHtOpInfo(struct BSS_INFO *prBssInfo)
 {
@@ -5340,13 +5353,13 @@ uint8_t rlmGetBssOpBwByVhtAndHtOpInfo(struct BSS_INFO *prBssInfo)
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief
-*
-* \param[in]
-*
-* \return ucVhtOpBw 0:20M/40Hz, 1:80MHz, 2:160MHz, 3:80+80MHz
-*
-*/
+ * \brief
+ *
+ * \param[in]
+ *
+ * \return ucVhtOpBw 0:20M/40Hz, 1:80MHz, 2:160MHz, 3:80+80MHz
+ *
+ */
 /*----------------------------------------------------------------------------*/
 uint8_t rlmGetVhtOpBwByBssOpBw(uint8_t ucBssOpBw)
 {
@@ -5381,13 +5394,13 @@ uint8_t rlmGetVhtOpBwByBssOpBw(uint8_t ucBssOpBw)
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief Get operating notification channel width by VHT and HT operating Info
-*
-* \param[in]
-*
-* \return ucOpModeBw 0:20MHz, 1:40MHz, 2:80MHz, 3:160MHz/80+80MHz
-*
-*/
+ * \brief Get operating notification channel width by VHT and HT operating Info
+ *
+ * \param[in]
+ *
+ * \return ucOpModeBw 0:20MHz, 1:40MHz, 2:80MHz, 3:160MHz/80+80MHz
+ *
+ */
 /*----------------------------------------------------------------------------*/
 static uint8_t rlmGetOpModeBwByVhtAndHtOpInfo(struct BSS_INFO *prBssInfo)
 {
@@ -5420,12 +5433,12 @@ static uint8_t rlmGetOpModeBwByVhtAndHtOpInfo(struct BSS_INFO *prBssInfo)
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief
-*
-* \param[in]
-*
-* \return none
-*/
+ * \brief
+ *
+ * \param[in]
+ *
+ * \return none
+ */
 /*----------------------------------------------------------------------------*/
 static void rlmChangeOwnOpInfo(struct ADAPTER *prAdapter,
 			       struct BSS_INFO *prBssInfo)
@@ -5500,12 +5513,12 @@ static void rlmChangeOwnOpInfo(struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief
-*
-* \param[in]
-*
-* \return none
-*/
+ * \brief
+ *
+ * \param[in]
+ *
+ * \return none
+ */
 /*----------------------------------------------------------------------------*/
 static void rlmCompleteOpModeChange(struct ADAPTER *prAdapter,
 				    struct BSS_INFO *prBssInfo,
@@ -5524,8 +5537,8 @@ static void rlmCompleteOpModeChange(struct ADAPTER *prAdapter,
 		rlmSyncOperationParams(prAdapter, prBssInfo);
 
 		/* <3> Update BCN/Probe Resp IE to notify peers our OP info is
-		* changed (AP mode)
-		*/
+		 * changed (AP mode)
+		 */
 		if (prBssInfo->eCurrentOPMode == OP_MODE_ACCESS_POINT)
 			bssUpdateBeaconContent(prAdapter,
 					       prBssInfo->ucBssIndex);
@@ -5546,14 +5559,14 @@ static void rlmCompleteOpModeChange(struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief Change OpMode Nss/Channel Width
-*
-* \param[in] ucChannelWidth 0:20MHz, 1:40MHz, 2:80MHz, 3:160MHz 4:80+80MHz
-*
-* \return fgIsChangeOpMode
-*	TRUE: Can change/Don't need to change operation mode
-*	FALSE: Can't change operation mode
-*/
+ * \brief Change OpMode Nss/Channel Width
+ *
+ * \param[in] ucChannelWidth 0:20MHz, 1:40MHz, 2:80MHz, 3:160MHz 4:80+80MHz
+ *
+ * \return fgIsChangeOpMode
+ *	TRUE: Can change/Don't need to change operation mode
+ *	FALSE: Can't change operation mode
+ */
 /*----------------------------------------------------------------------------*/
 enum ENUM_OP_CHANGE_STATUS_T
 rlmChangeOperationMode(struct ADAPTER *prAdapter, uint8_t ucBssIndex,
@@ -5581,8 +5594,8 @@ rlmChangeOperationMode(struct ADAPTER *prAdapter, uint8_t ucBssIndex,
 		return OP_CHANGE_STATUS_INVALID;
 
 	/* <2>Check if OpMode notification is ongoing, if not, register the call
-	* back function
-	*/
+	 * back function
+	 */
 	if (prBssInfo->pfOpChangeHandler) {
 		DBGLOG(RLM, INFO,
 		       "BSS[%d] OpMode change notification is ongoing\n",
@@ -5593,8 +5606,8 @@ rlmChangeOperationMode(struct ADAPTER *prAdapter, uint8_t ucBssIndex,
 	prBssInfo->pfOpChangeHandler = pfOpChangeHandler;
 
 	/* <3>Check if the current operating BW/Nss is the same as the target
-	* one
-	*/
+	 * one
+	 */
 	if (ucChannelWidth == rlmGetBssOpBwByVhtAndHtOpInfo(prBssInfo))
 		fgIsChangeBw = FALSE;
 
@@ -5604,10 +5617,10 @@ rlmChangeOperationMode(struct ADAPTER *prAdapter, uint8_t ucBssIndex,
 	if ((!fgIsChangeBw) && (!fgIsChangeNss)) {
 		if (prBssInfo->pfOpChangeHandler) {
 			/* (1) Don't need to call callback at no need to change
-			* OP mode case
-			* (2) Clear callback to NULL when handling OP Mode
-			* change request done
-			*/
+			 * OP mode case
+			 * (2) Clear callback to NULL when handling OP Mode
+			 * change request done
+			 */
 			prBssInfo->pfOpChangeHandler = NULL;
 		}
 
@@ -5641,8 +5654,8 @@ rlmChangeOperationMode(struct ADAPTER *prAdapter, uint8_t ucBssIndex,
 		prStaRec = prBssInfo->prStaRecOfAP;
 
 		/* <5.1>Initialize OP mode change parameters related to
-		* notification Tx done handler (STA mode)
-		*/
+		 * notification Tx done handler (STA mode)
+		 */
 		if (prBssInfo->pfOpChangeHandler) {
 			for (i = 0; i < OP_NOTIFY_TYPE_NUM; i++) {
 				prBssInfo->aucOpModeChangeState[i] =
@@ -5809,10 +5822,11 @@ static u_int8_t rlmCheckOpChangeParamForClient(struct BSS_INFO *prBssInfo,
 				      HT_OP_INFO1_STA_CHNL_WIDTH) ||
 				    (!prBssInfo->fg40mBwAllowed)) {
 					DBGLOG(RLM, INFO,
-					"Can't change BSS[%d] OP BW to:%d for PeerOpBw:%d fg40mBwAllowed:%d\n",
-					prBssInfo->ucBssIndex,
-					ucChannelWidth,
-					(uint8_t)(prStaRec->ucHtPeerOpInfo1 &
+					       "Can't change BSS[%d] OP BW to:%d for PeerOpBw:%d fg40mBwAllowed:%d\n",
+					       prBssInfo->ucBssIndex,
+					       ucChannelWidth,
+					       (uint8_t)(
+					prStaRec->ucHtPeerOpInfo1 &
 					HT_OP_INFO1_STA_CHNL_WIDTH),
 					prBssInfo->fg40mBwAllowed);
 					return FALSE;
@@ -5874,7 +5888,7 @@ static u_int8_t rlmCheckOpChangeParamValid(struct ADAPTER *prAdapter,
 
 	/* <4>Check if target OP BW is valid for band and primary channel of
 	 * current BSS
-	*/
+	 */
 	if (prBssInfo->eBand == BAND_2G4) {
 		if ((ucChannelWidth != MAX_BW_20MHZ) &&
 		    (ucChannelWidth != MAX_BW_40MHZ)) {
@@ -6087,12 +6101,12 @@ void rlmComposeIncapableRmRep(struct RADIO_MEASUREMENT_REPORT_PARAMS *prRep,
 	prRep->u2ReportFrameLen += 5;
 }
 /* Purpose: Interative processing Measurement Request Element. If it is not the
-** first element,
-** will copy all collected report element to the report frame buffer. and
-** may tx the radio report frame.
-** prAdapter: pointer to the Adapter
-** fgNewStarted: if it is the first element in measurement request frame
-*/
+ ** first element,
+ ** will copy all collected report element to the report frame buffer. and
+ ** may tx the radio report frame.
+ ** prAdapter: pointer to the Adapter
+ ** fgNewStarted: if it is the first element in measurement request frame
+ */
 void rlmStartNextMeasurement(struct ADAPTER *prAdapter, u_int8_t fgNewStarted)
 {
 	struct RADIO_MEASUREMENT_REQ_PARAMS *prRmReq =
@@ -6122,10 +6136,10 @@ schedule_next:
 			rlmTxRadioMeasurementReport(prAdapter);
 
 			/* repeat measurement if repetitions is required and not
-			** only parallel measurements.
-			** otherwise, no need to repeat, it is not make sense to
-			** do that.
-			*/
+			 * only parallel measurements.
+			 * otherwise, no need to repeat, it is not make sense to
+			 * do that.
+			 */
 			if (prRmReq->u2Repetitions > 0) {
 				prRmReq->fgInitialLoop = FALSE;
 				prRmReq->u2Repetitions--;
@@ -6166,8 +6180,8 @@ schedule_next:
 		       "RRM: total %u report element for current request\n",
 		       prReportLink->u4NumElem);
 		/* copy collected report into the Measurement Report Frame
-		** Buffer.
-		*/
+		 ** Buffer.
+		 */
 		while (1) {
 			LINK_REMOVE_HEAD(prReportLink, prReportEntry,
 					 struct RM_MEASURE_REPORT_ENTRY *);
@@ -6175,8 +6189,8 @@ schedule_next:
 				break;
 			u2IeSize = IE_SIZE(prReportEntry->aucMeasReport);
 			/* if reach the max length of a MMPDU size, send a Rm
-			** report first
-			*/
+			 ** report first
+			 */
 			if (u2IeSize + prRmRep->u2ReportFrameLen >
 			    RM_REPORT_FRAME_MAX_LENGTH) {
 				rlmTxRadioMeasurementReport(prAdapter);
@@ -6209,8 +6223,8 @@ schedule_next:
 					prRmReq->u2ReqIeBufLen;
 			} else {
 				/* don't free radio measurement resource due to
-				** TSM is running
-				*/
+				 ** TSM is running
+				 */
 				if (!wmmTsmIsOngoing(prAdapter)) {
 					rlmFreeMeasurementResources(prAdapter);
 					DBGLOG(RLM, INFO,
@@ -6231,15 +6245,14 @@ schedule_next:
 
 	/* do specific measurement */
 	switch (prCurrReq->ucMeasurementType) {
-	case ELEM_RM_TYPE_BEACON_REQ:
-	{
+	case ELEM_RM_TYPE_BEACON_REQ: {
 		struct RM_BCN_REQ *prBeaconReq =
 			(struct RM_BCN_REQ *)&prCurrReq->aucRequestFields[0];
 
 		if (!prRmReq->fgInitialLoop) {
 			/* If this is the repeating measurement, then wait next
-			** scan done
-			*/
+			 ** scan done
+			 */
 			prRmReq->rBcnRmParam.eState = RM_WAITING;
 			break;
 		}
@@ -6274,17 +6287,17 @@ schedule_next:
 		struct ACTION_RM_REPORT_FRAME *prReportFrame = NULL;
 
 		/* In case of repeating measurement, no need to start
-		** triggered measurement again. According to current
-		** specification of Radio Measurement, only TSM has the
-		** triggered type of measurement.
-		*/
+		 ** triggered measurement again. According to current
+		 ** specification of Radio Measurement, only TSM has the
+		 ** triggered type of measurement.
+		 */
 		if ((prCurrReq->ucRequestMode & RM_REQ_MODE_ENABLE_BIT) &&
 			!prRmReq->fgInitialLoop)
 			goto schedule_next;
 
 		/* if enable bit is 1 and report bit is 0, need to stop all
-		** triggered TSM measurement
-		*/
+		 ** triggered TSM measurement
+		 */
 		if ((prCurrReq->ucRequestMode &
 			(RM_REQ_MODE_ENABLE_BIT|RM_REQ_MODE_REPORT_BIT)) ==
 			RM_REQ_MODE_ENABLE_BIT) {
@@ -6333,8 +6346,7 @@ schedule_next:
 		break;
 	}
 #endif
-	default:
-	{
+	default: {
 		if (prRmRep->u2ReportFrameLen + 5 > RM_REPORT_FRAME_MAX_LENGTH)
 			rlmTxRadioMeasurementReport(prAdapter);
 		rlmComposeIncapableRmRep(prRmRep, prCurrReq->ucToken,
@@ -6420,34 +6432,35 @@ u_int8_t rlmFillScanMsg(struct ADAPTER *prAdapter,
 
 			pucIE = prBssDesc->aucIEBuf;
 			u2IELength = prBssDesc->u2IELength;
-			IE_FOR_EACH(pucIE, u2IELength, u2Offset) {
-				if (IE_ID(pucIE) != ELEM_ID_AP_CHANNEL_REPORT)
-					continue;
-				pucChnl = ((struct IE_AP_CHNL_REPORT *)pucIE)
-						  ->aucChnlList;
-				ucChnlNum = pucIE[1] - 1;
-				DBGLOG(RLM, INFO,
-				       "BCN REQ: Channel number in latest AP channel report %d\n",
-				       ucChnlNum);
-				while (ucIndex < ucChnlNum &&
-				       prMsg->ucChannelListNum <
-					       MAXIMUM_OPERATION_CHANNEL_LIST) {
-					if (pucChnl[ucIndex] <= 14)
-						prChnlInfo
+			IE_FOR_EACH(pucIE, u2IELength, u2Offset)
+			{
+			if (IE_ID(pucIE) != ELEM_ID_AP_CHANNEL_REPORT)
+				continue;
+			pucChnl = ((struct IE_AP_CHNL_REPORT *)pucIE)
+				->aucChnlList;
+			ucChnlNum = pucIE[1] - 1;
+			DBGLOG(RLM, INFO,
+				"BCN REQ: Channel number in latest AP channel report %d\n",
+				ucChnlNum);
+			while (ucIndex < ucChnlNum &&
+				prMsg->ucChannelListNum <
+				MAXIMUM_OPERATION_CHANNEL_LIST) {
+				if (pucChnl[ucIndex] <= 14)
+					prChnlInfo
 						[prMsg->ucChannelListNum]
-								.eBand =
-							BAND_2G4;
-					else
-						prChnlInfo
+							.eBand =
+						BAND_2G4;
+				else
+					prChnlInfo
 						[prMsg->ucChannelListNum]
-								.eBand =
-							BAND_5G;
-					prChnlInfo[prMsg->ucChannelListNum]
-						.ucChannelNum =
-						pucChnl[ucIndex];
-					prMsg->ucChannelListNum++;
-					ucIndex++;
-				}
+							.eBand =
+						BAND_5G;
+				prChnlInfo[prMsg->ucChannelListNum]
+					.ucChannelNum =
+					pucChnl[ucIndex];
+				prMsg->ucChannelListNum++;
+				ucIndex++;
+			}
 			}
 		}
 	} else {
@@ -6468,8 +6481,8 @@ u_int8_t rlmFillScanMsg(struct ADAPTER *prAdapter,
 		switch (pucSubIE[0]) {
 		case 0: /* SSID */
 			/* length of sub-element ssid is 0 or first byte is 0,
-			** means wildcard ssid matching
-			*/
+			 ** means wildcard ssid matching
+			 */
 			if (!IE_LEN(pucSubIE) || !pucSubIE[2])
 				break;
 			prMsg->ucSSIDNum = 1;
@@ -6545,8 +6558,8 @@ void rlmDoBeaconMeasurement(struct ADAPTER *prAdapter, unsigned long ulParam)
 
 		kalMemZero(&rRepParams, sizeof(rRepParams));
 		/* if this is a one antenna only device, the antenna id is
-		** always 1. 7.3.2.40
-		*/
+		 ** always 1. 7.3.2.40
+		 */
 		rRepParams.ucAntennaID = 1;
 		rRepParams.ucRSNI =
 			255; /* 255 means RSNI not available. see 7.3.2.41 */
@@ -6584,7 +6597,7 @@ void rlmDoBeaconMeasurement(struct ADAPTER *prAdapter, unsigned long ulParam)
 }
 
 /*
-*/
+ */
 static u_int8_t rlmRmFrameIsValid(struct SW_RFB *prSwRfb)
 {
 	uint16_t u2ElemLen = 0;
@@ -6602,13 +6615,14 @@ static u_int8_t rlmRmFrameIsValid(struct SW_RFB *prSwRfb)
 	}
 	pucIE += u2Offset;
 	u2ElemLen = prSwRfb->u2PacketLen - u2Offset;
-	IE_FOR_EACH(pucIE, u2ElemLen, u2Offset) {
+	IE_FOR_EACH(pucIE, u2ElemLen, u2Offset)
+	{
 		u2IELen = IE_LEN(pucIE);
 
 		/* The minimum value of the Length field is 3 (based on a
-		** minimum length for the Measurement Request field
-		** of 0 octets
-		*/
+		 ** minimum length for the Measurement Request field
+		 ** of 0 octets
+		 */
 		if (u2IELen <= 3) {
 			DBGLOG(RLM, ERROR, "RRM: Abnormal RM IE length is %d\n",
 			       u2IELen);
@@ -6616,8 +6630,8 @@ static u_int8_t rlmRmFrameIsValid(struct SW_RFB *prSwRfb)
 		}
 
 		/* Check whether the length of each measurment request element
-		** is reasonable
-		*/
+		 ** is reasonable
+		 */
 		prCurrMeasElem = (struct IE_MEASUREMENT_REQ *)pucIE;
 		switch (prCurrMeasElem->ucMeasurementType) {
 		case ELEM_RM_TYPE_BEACON_REQ:
@@ -6655,7 +6669,7 @@ static u_int8_t rlmRmFrameIsValid(struct SW_RFB *prSwRfb)
 	return TRUE;
 }
 /*
-*/
+ */
 void rlmProcessRadioMeasurementRequest(struct ADAPTER *prAdapter,
 				       struct SW_RFB *prSwRfb)
 {
@@ -6779,11 +6793,8 @@ void rlmTxRadioMeasurementReport(struct ADAPTER *prAdapter)
 		   prRmRepParam->u2ReportFrameLen);
 
 	/* 2 Update information of MSDU_INFO_T */
-	TX_SET_MMPDU(prAdapter,
-		     prMsduInfo,
-		     prStaRec->ucBssIndex,
-		     prStaRec->ucIndex,
-		     WLAN_MAC_MGMT_HEADER_LEN,
+	TX_SET_MMPDU(prAdapter, prMsduInfo, prStaRec->ucBssIndex,
+		     prStaRec->ucIndex, WLAN_MAC_MGMT_HEADER_LEN,
 		     prRmRepParam->u2ReportFrameLen, NULL, MSDU_RATE_MODE_AUTO);
 	nicTxEnqueueMsdu(prAdapter, prMsduInfo);
 	/* reset u2ReportFrameLen after tx frame */
@@ -6902,20 +6913,20 @@ static void rlmCalibrateRepetions(struct RADIO_MEASUREMENT_REQ_PARAMS *prRmReq)
 	u2IeSize = IE_SIZE(prCurrReq);
 	while (u2RemainReqLen >= u2IeSize) {
 		/* 1. If all measurement request has enable bit, no need to
-		** repeat
-		** see 11.10.6 Measurement request elements with the enable bit
-		** set to 1 shall be processed once
-		** regardless of the value in the number of repetitions in the
-		** measurement request.
-		** 2. Due to we don't support parallel measurement, if all
-		** request has parallel bit, no need to repeat
-		** measurement, to avoid frequent composing incapable response
-		** IE and exhauste CPU resource
-		** and then cause watch dog timeout.
-		** 3. if all measurements are not supported, no need to repeat.
-		** currently we only support Beacon request
-		** on this chip.
-		*/
+		 ** repeat
+		 ** see 11.10.6 Measurement request elements with the enable bit
+		 ** set to 1 shall be processed once
+		 ** regardless of the value in the number of repetitions in the
+		 ** measurement request.
+		 ** 2. Due to we don't support parallel measurement, if all
+		 ** request has parallel bit, no need to repeat
+		 ** measurement, to avoid frequent composing incapable response
+		 ** IE and exhauste CPU resource
+		 ** and then cause watch dog timeout.
+		 ** 3. if all measurements are not supported, no need to repeat.
+		 ** currently we only support Beacon request
+		 ** on this chip.
+		 */
 		if (!(prCurrReq->ucRequestMode &
 		      (RM_REQ_MODE_ENABLE_BIT | RM_REQ_MODE_PARALLEL_BIT))) {
 			if (prCurrReq->ucMeasurementType ==
@@ -6995,9 +7006,9 @@ static void rlmCollectBeaconReport(IN struct ADAPTER *prAdapter,
 
 	pucIE = pucIEBuf;
 	/* Step1: parsing Beacon Request sub element field to get Report
-	** controlling information if match the channel that is in fixed
-	** field, no need to check AP channel report
-	*/
+	 ** controlling information if match the channel that is in fixed
+	 ** field, no need to check AP channel report
+	 */
 	if (prBcnReq->ucChannel == prRepParams->ucChannel)
 		fgValidChannel = TRUE;
 
@@ -7011,12 +7022,13 @@ static void rlmCollectBeaconReport(IN struct ADAPTER *prAdapter,
 		switch (pucSubIE[0]) {
 		case 0:
 			/* checking if SSID is matched
-			** length of sub-element ssid is 0 or first byte is 0,
-			** means wildcard ssid matching
-			*/
+			 ** length of sub-element ssid is 0 or first byte is 0,
+			 ** means wildcard ssid matching
+			 */
 			if (!IE_LEN(pucSubIE) || !pucSubIE[2])
 				break;
-			IE_FOR_EACH(pucIE, u2IELength, u2Offset) {
+			IE_FOR_EACH(pucIE, u2IELength, u2Offset)
+			{
 				if (IE_ID(pucIE) == ELEM_ID_SSID)
 					break;
 			}
@@ -7049,8 +7061,7 @@ static void rlmCollectBeaconReport(IN struct ADAPTER *prAdapter,
 			break;
 		case 10: /* Request Elements */
 		{
-			struct IE_REQUEST *prIe =
-				(struct IE_REQUEST *)pucSubIE;
+			struct IE_REQUEST *prIe = (struct IE_REQUEST *)pucSubIE;
 
 			pucReportIeIds = prIe->aucReqIds;
 			ucReportIeIdsLen = prIe->ucLength;
@@ -7099,8 +7110,8 @@ static void rlmCollectBeaconReport(IN struct ADAPTER *prAdapter,
 		break;
 	}
 	/* Step3: Compose Beacon Report in a temp buffer search in saved
-	** reported link, check if we have saved a report for this AP
-	*/
+	 ** reported link, check if we have saved a report for this AP
+	 */
 	LINK_FOR_EACH_ENTRY(prReportEntry, &prRmRep->rReportLink, rLinkEntry,
 			    struct RM_MEASURE_REPORT_ENTRY)
 	{
@@ -7114,11 +7125,12 @@ static void rlmCollectBeaconReport(IN struct ADAPTER *prAdapter,
 			break;
 		prBcnReport = NULL;
 	}
-	if (!prBcnReport) {/* not found a entry in collected report link */
+	/* not found a entry in collected report link */
+	if (!prBcnReport) {
 		LINK_REMOVE_HEAD(&prRmRep->rFreeReportLink, prReportEntry,
 				 struct RM_MEASURE_REPORT_ENTRY *);
-		if (!prReportEntry) { /* not found a entry in free report link
-					 */
+		/* not found a entry in free report link */
+		if (!prReportEntry) {
 			prReportEntry = kalMemAlloc(sizeof(*prReportEntry),
 						    VIR_MEM_TYPE);
 			if (!prReportEntry)/* no memory to allocate in OS */ {
@@ -7143,8 +7155,8 @@ static void rlmCollectBeaconReport(IN struct ADAPTER *prAdapter,
 	prBcnReport->ucChannel = prRepParams->ucChannel;
 	prBcnReport->u2Duration = prBcnReq->u2Duration;
 	/* ucReportInfo: Bit 0 is the type of frame, 0 means beacon/probe
-	** response, bit 1~7 means phy type
-	*/
+	 ** response, bit 1~7 means phy type
+	 */
 	prBcnReport->ucReportInfo = prRepParams->ucFrameInfo;
 	prBcnReport->ucRCPI = ucRSSI;
 	prBcnReport->ucRSNI =
@@ -7169,8 +7181,8 @@ static void rlmCollectBeaconReport(IN struct ADAPTER *prAdapter,
 	}
 	ucBcnReportLen = 0;
 	/* Optional Subelement Field all fixed length fields and IEs
-	** in Request Sub Elements should be reported
-	*/
+	 ** in Request Sub Elements should be reported
+	 */
 	if (ucReportDetail == 1 && ucReportIeIdsLen > 0) {
 		pucSubIE = &prBcnReport->aucOptElem[2];
 		kalMemCopy(pucSubIE, prRepParams->aucBcnFixedField,
@@ -7178,7 +7190,8 @@ static void rlmCollectBeaconReport(IN struct ADAPTER *prAdapter,
 		pucSubIE += BEACON_FIXED_FIELD_LENGTH;
 		ucBcnReportLen += BEACON_FIXED_FIELD_LENGTH;
 		pucIE = pucIEBuf;
-		IE_FOR_EACH(pucIE, u2IELength, u2Offset) {
+		IE_FOR_EACH(pucIE, u2IELength, u2Offset)
+		{
 			uint16_t i = 0;
 			uint8_t ucIncludedIESize = 0;
 
@@ -7188,8 +7201,8 @@ static void rlmCollectBeaconReport(IN struct ADAPTER *prAdapter,
 					break;
 				}
 			/* the length of sub-element should less than 225,
-			** and the included IE should be a complete one
-			*/
+			 ** and the included IE should be a complete one
+			 */
 			if (ucBcnReportLen + ucIncludedIESize >
 			    RM_BCN_REPORT_SUB_ELEM_MAX_LENGTH)
 				break;
@@ -7209,8 +7222,8 @@ static void rlmCollectBeaconReport(IN struct ADAPTER *prAdapter,
 		ucBcnReportLen += BEACON_FIXED_FIELD_LENGTH;
 		pucIE = pucIEBuf;
 		/* the length of sub-element should less than 225, and the
-		** included IE should be a complete one
-		*/
+		 ** included IE should be a complete one
+		 */
 		IE_FOR_EACH(pucIE, u2IELength, u2Offset)
 		{
 			if (ucBcnReportLen + IE_SIZE(pucIE) >
@@ -7252,7 +7265,8 @@ static uint8_t rlmGetChannel(struct HW_MAC_RX_DESC *prRxStatus, uint8_t *pucIE,
 	uint16_t u2Offset = 0;
 	enum ENUM_BAND eBand = HAL_RX_STATUS_GET_RF_BAND(prRxStatus);
 
-	IE_FOR_EACH(pucIE, u2IELen, u2Offset) {
+	IE_FOR_EACH(pucIE, u2IELen, u2Offset)
+	{
 		switch (IE_ID(pucIE)) {
 		case ELEM_ID_DS_PARAM_SET:
 			if (IE_LEN(pucIE) == ELEM_MAX_LEN_DS_PARAMETER_SET)
@@ -7291,8 +7305,8 @@ void rlmProcessBeaconAndProbeResp(struct ADAPTER *prAdapter,
 		u2IELen = CFG_IE_BUFFER_SIZE;
 
 	/* if this is a one antenna only device, the antenna id is always 1.
-	** 7.3.2.40
-	*/
+	 ** 7.3.2.40
+	 */
 	rRepParams.ucAntennaID = 1;
 	rRepParams.ucChannel = rlmGetChannel(
 		prSwRfb->prRxStatus, prWlanBeacon->aucInfoElem, u2IELen);
@@ -7321,4 +7335,3 @@ void rlmUpdateBssTimeTsf(struct ADAPTER *prAdapter, struct BSS_DESC *prBssDesc)
 	rTsf.rTime = prBssDesc->rUpdateTime;
 	kalMemCopy(&rTsf.au4Tsf[0], &prBssDesc->u8TimeStamp, 8);
 }
-
