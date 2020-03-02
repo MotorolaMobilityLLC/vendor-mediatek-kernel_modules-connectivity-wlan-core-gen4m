@@ -95,6 +95,9 @@
 *                            P U B L I C   D A T A
 ********************************************************************************
 */
+struct TIMER rSerSyncTimer = {
+	.rLinkEntry = {0}
+};
 
 /*******************************************************************************
 *                           P R I V A T E   D A T A
@@ -1332,6 +1335,30 @@ uint32_t halTxPollingResource(IN struct ADAPTER *prAdapter, IN uint8_t ucTC)
 
 void halSerHifReset(IN struct ADAPTER *prAdapter)
 {
+	uint32_t i;
+
+	/**
+	 * usb_reset_endpoint - Reset an endpoint's state.
+	 * @dev: the device whose endpoint is to be reset
+	 * @epaddr: the endpoint's address.  Endpoint number for output,
+	 *	endpoint number + USB_DIR_IN for input
+	 *
+	 * Resets any host-side endpoint state such as the toggle bit,
+	 * sequence number or current window.
+	 *
+	 * void usb_reset_endpoint(struct usb_device *dev, unsigned int epaddr);
+	 */
+
+	/* reset ALL BULK OUT endpoints */
+	for (i = USB_DATA_BULK_OUT_EP4; i <= USB_DATA_BULK_OUT_EP9; i++)
+		usb_reset_endpoint(prAdapter->prGlueInfo->rHifInfo.udev, i);
+	/* reset ALL BULK IN endpoints */
+	for (i = USB_DATA_BULK_IN_EP4; i <= USB_DATA_BULK_IN_EP5; i++)
+		usb_reset_endpoint(prAdapter->prGlueInfo->rHifInfo.udev,
+					i | USB_DIR_IN);
+
+	halEnableInterrupt(prAdapter);
+
 }
 
 void halProcessRxInterrupt(IN struct ADAPTER *prAdapter)
@@ -1592,3 +1619,108 @@ uint32_t halGetHifTxPageSize(IN struct ADAPTER *prAdapter)
 {
 	return HIF_TX_PAGE_SIZE;
 }
+
+void halSerSyncTimerHandler(IN struct ADAPTER *prAdapter,
+	IN unsigned long plParamPtr)
+{
+	static u_int8_t ucSerState = ERR_RECOV_STOP_IDLE;
+	uint32_t u4SerAction;
+	struct mt66xx_chip_info *prChipInfo;
+
+	prChipInfo = prAdapter->chip_info;
+
+	/* get MCU SER event */
+	kalDevRegRead(prAdapter->prGlueInfo, prChipInfo->u4SerUsbMcuEventAddr,
+			 &u4SerAction);
+
+	if (u4SerAction) {
+		DBGLOG(NIC, INFO, "%s u4SerAction=0x%08X\n", __func__,
+			 u4SerAction);
+
+		/* clear MCU SER event */
+		kalDevRegWrite(prAdapter->prGlueInfo,
+				prChipInfo->u4SerUsbMcuEventAddr, 0);
+	}
+
+	switch (ucSerState) {
+	case ERR_RECOV_STOP_IDLE:
+		if (u4SerAction == ERROR_DETECT_STOP_PDMA) {
+			DBGLOG(HAL, INFO,
+				"SER(E) Host stop HIF tx/rx operation\n");
+
+			/* change SER FSM to SER_STOP_HOST_TX_RX */
+			nicSerStopTxRx(prAdapter);
+			/* stop TX BULK OUT URB */
+			halTxCancelAllSending(prAdapter);
+			/* stop RX BULK IN URB */
+			halDisableInterrupt(prAdapter);
+
+			DBGLOG(HAL, INFO,
+			"SER(F) Host ACK HIF tx/rx stop operation done\n");
+
+			/* Send Host stops TX/RX done response to mcu */
+			kalDevRegWrite(prAdapter->prGlueInfo,
+					prChipInfo->u4SerUsbHostAckAddr,
+					MCU_INT_PDMA0_STOP_DONE);
+			ucSerState = ERR_RECOV_STOP_PDMA0;
+		} else {
+			/* do nothing */
+		}
+		break;
+
+	case ERR_RECOV_STOP_PDMA0:
+		if (u4SerAction == ERROR_DETECT_RESET_DONE) {
+			DBGLOG(HAL, INFO, "SER(L) Host re-initialize WFDMA\n");
+			DBGLOG(HAL, INFO, "SER(M) Host enable WFDMA\n");
+			if (prChipInfo->asicUsbInit)
+				prChipInfo->asicUsbInit(prAdapter, prChipInfo);
+
+			DBGLOG(HAL, INFO,
+				"SER(N) Host ACK WFDMA init done\n");
+			/* Send Host stops TX/RX done response to mcu */
+			kalDevRegWrite(prAdapter->prGlueInfo,
+					prChipInfo->u4SerUsbHostAckAddr,
+					MCU_INT_PDMA0_INIT_DONE);
+
+			ucSerState = ERR_RECOV_RESET_PDMA0;
+		} else {
+			/* do nothing */
+		}
+		break;
+	case ERR_RECOV_RESET_PDMA0:
+		if (u4SerAction == ERROR_DETECT_RECOVERY_DONE) {
+			DBGLOG(HAL, INFO,
+				"SER(Q) Host ACK MCU SER handle done\n");
+			/* Send Host stops TX/RX done response to mcu */
+			kalDevRegWrite(prAdapter->prGlueInfo,
+				prChipInfo->u4SerUsbHostAckAddr,
+				MCU_INT_PDMA0_RECOVERY_DONE);
+			ucSerState = ERR_RECOV_WAIT_MCU_NORMAL;
+		} else {
+			/* do nothing */
+		}
+		break;
+
+	case ERR_RECOV_WAIT_MCU_NORMAL:
+		if (u4SerAction == ERROR_DETECT_MCU_NORMAL_STATE) {
+
+			/* update Beacon frame if operating in AP mode. */
+			DBGLOG(HAL, INFO, "SER(T) Host re-initialize BCN\n");
+			nicSerReInitBeaconFrame(prAdapter);
+
+			DBGLOG(HAL, INFO,
+				"SER(U) Host reset TX/RX endpoint\n");
+			/* resume TX/RX */
+			nicSerStartTxRx(prAdapter);
+			ucSerState = ERR_RECOV_STOP_IDLE;
+		} else {
+			/* do nothing */
+		}
+		break;
+	}
+
+	cnmTimerStartTimer(prAdapter,
+		&rSerSyncTimer,
+		WIFI_SER_SYNC_TIMER_TIMEOUT_IN_MS);
+}
+

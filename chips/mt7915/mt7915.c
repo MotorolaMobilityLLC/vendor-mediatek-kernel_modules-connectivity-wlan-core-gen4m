@@ -71,6 +71,7 @@
 #include "precomp.h"
 
 #include "mt7915.h"
+#include "coda/mt7915/wf_cr_sw_def.h"
 
 /*******************************************************************************
 *                              C O N S T A N T S
@@ -383,6 +384,12 @@ struct mt66xx_chip_info mt66xx_chip_info_mt7915 = {
 	.top_hvr = CONNAC2X_TOP_HVR,
 	.top_fvr = CONNAC2X_TOP_FVR,
 	.asicCapInit = asicConnac2xCapInit,
+#if defined(_HIF_USB)
+	.asicUsbInit = asicConnac2xWfdmaInitForUSB,
+	.u4SerUsbMcuEventAddr = WF_SW_DEF_CR_USB_MCU_EVENT_ADD,
+	.u4SerUsbHostAckAddr = WF_SW_DEF_CR_USB_HOST_ACK_ADDR,
+#endif
+
 #if CFG_ENABLE_FW_DOWNLOAD
 	.asicEnableFWDownload = NULL,
 #endif				/* CFG_ENABLE_FW_DOWNLOAD */

@@ -4471,12 +4471,45 @@ u_int8_t nicIsEcoVerEqualOrLaterTo(IN struct ADAPTER
 
 void nicSerStopTxRx(IN struct ADAPTER *prAdapter)
 {
+#if defined(_HIF_USB)
+	unsigned long ulFlags;
+
+	/*TODO: multiple spinlocks seems risky.
+	* http://www.linuxgrill.com/anonymous/fire/netfilter/
+	*			    kernel-hacking-HOWTO-5.html
+	*/
+	/* 1. Make sure ucSerState is accessed sequentially.
+	*  2. Two scenario for race condition:
+	*    - When hif_thread is doing usb_submit_urb, SER occurs.
+	*	hif_thread acquires the lock first,
+	*	so nicSerSyncTimerHandler must wait hif_thread
+	*	until it completes current usb_submit_urb.
+	*	Then, nicSerSyncTimerHandler acquires the lock,
+	*	change ucSerState to prevent subsequent usb_submit_urb and
+	*	cancel ALL TX BULK OUT URB.
+	*    - When SER is triggered and executed,
+	*	hif_thread is prepared to do usb_submit_urb.
+	*	nicSerSyncTimerHandler acquires the lock first,
+	*	which guarantees ucSerState is accessed sequentially.
+	*	Then, hif_thread acquires the lock, knows that SER is ongoing,
+	*	and bypass usb_submit_urb.
+	*/
+	spin_lock_irqsave(&prAdapter->prGlueInfo->rHifInfo.rStateLock,
+				ulFlags);
+#endif
+
 	DBGLOG(NIC, WARN, "SER: Stop HIF Tx/Rx!\n");
 
 	prAdapter->ucSerState = SER_STOP_HOST_TX_RX;
 
 	/* Force own to FW as ACK and stop HIF */
 	prAdapter->fgWiFiInSleepyState = TRUE;
+
+#if defined(_HIF_USB)
+	spin_unlock_irqrestore(&prAdapter->prGlueInfo->rHifInfo.rStateLock,
+				ulFlags);
+#endif
+
 }
 
 void nicSerStopTx(IN struct ADAPTER *prAdapter)
@@ -4489,7 +4522,6 @@ void nicSerStopTx(IN struct ADAPTER *prAdapter)
 void nicSerStartTxRx(IN struct ADAPTER *prAdapter)
 {
 	DBGLOG(NIC, WARN, "SER: Start HIF T/R!\n");
-
 	halSerHifReset(prAdapter);
 	prAdapter->ucSerState = SER_IDLE_DONE;
 }
