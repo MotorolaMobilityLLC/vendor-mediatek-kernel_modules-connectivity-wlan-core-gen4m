@@ -2246,8 +2246,8 @@ void nicEventHifCtrl(IN struct ADAPTER *prAdapter,
 				 prEvent->aucBuffer);
 
 	DBGLOG(HAL, INFO, "%s: EVENT_ID_HIF_CTRL\n", __func__);
-	DBGLOG(HAL, INFO, "prEventHifCtrl->ucHifType = %hhu\n",
-	       prEventHifCtrl->ucHifType);
+	DBGLOG(HAL, INFO, "prEventHifCtrl->ucHifType = %hhu suspend %d\n",
+	       prEventHifCtrl->ucHifType, prEventHifCtrl->ucHifSuspend);
 	DBGLOG(HAL, INFO,
 	       "prEventHifCtrl->ucHifTxTrafficStatus, prEventHifCtrl->ucHifRxTrafficStatus = %hhu, %hhu\n",
 	       prEventHifCtrl->ucHifTxTrafficStatus,
