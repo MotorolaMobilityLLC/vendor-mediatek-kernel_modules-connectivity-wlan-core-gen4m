@@ -117,6 +117,8 @@
 #define HIF_TX_BUFF_COUNT_TC5           0
 
 #define HIF_TX_RESOURCE_CTRL            1 /* enable/disable TX resource control */
+#define HIF_TX_RESOURCE_CTRL_PLE        1 /* enable/disable TX resource control PLE */
+
 
 #define HIF_TX_PAGE_SIZE_IN_POWER_OF_2      11
 #define HIF_TX_PAGE_SIZE                    2048	/* in unit of bytes */
