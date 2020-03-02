@@ -4180,11 +4180,13 @@ void aisFsmRunEventCancelRemainOnChannel(IN struct ADAPTER *prAdapter, IN struct
 		aisFsmIsRequestPending(prAdapter, AIS_REQUEST_REMAIN_ON_CHANNEL, TRUE);
 
 		/* 4. decide which state to retreat */
-		if (prAisBssInfo->eConnectionState == PARAM_MEDIA_STATE_CONNECTED)
-			aisFsmSteps(prAdapter, AIS_STATE_NORMAL_TR);
-		else
-			aisFsmSteps(prAdapter, AIS_STATE_IDLE);
-
+		if (prAisFsmInfo->eCurrentState == AIS_STATE_REQ_REMAIN_ON_CHANNEL ||
+			prAisFsmInfo->eCurrentState == AIS_STATE_REMAIN_ON_CHANNEL) {
+			if (prAisBssInfo->eConnectionState == PARAM_MEDIA_STATE_CONNECTED)
+				aisFsmSteps(prAdapter, AIS_STATE_NORMAL_TR);
+			else
+				aisFsmSteps(prAdapter, AIS_STATE_IDLE);
+		}
 	}
 
 	/* 5. free message */
