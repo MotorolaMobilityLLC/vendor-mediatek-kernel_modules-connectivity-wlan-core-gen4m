@@ -113,6 +113,9 @@ void kalSetEmiMpuProtection(phys_addr_t emiPhyBase, bool enable)
 {
 	struct emi_region_info_t region_info;
 
+	DBGLOG(INIT, INFO, "emiPhyBase: 0x%x, enable: %d\n",
+			emiPhyBase, enable);
+
 	/*set MPU for EMI share Memory */
 	region_info.start = emiPhyBase + WIFI_EMI_MEM_OFFSET;
 	region_info.end = emiPhyBase + WIFI_EMI_MEM_OFFSET
@@ -132,6 +135,9 @@ void kalSetDrvEmiMpuProtection(phys_addr_t emiPhyBase, uint32_t offset,
 			       uint32_t size)
 {
 	struct emi_region_info_t region_info;
+
+	DBGLOG(INIT, INFO, "emiPhyBase: 0x%x, offset: %u, size: %u\n",
+			emiPhyBase, offset, size);
 
 	/*set MPU for EMI share Memory */
 	region_info.start = emiPhyBase + offset;
