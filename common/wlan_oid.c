@@ -4884,7 +4884,7 @@ wlanoidQueryMaxLinkSpeed(IN struct ADAPTER *prAdapter,
 	prLinkSpeed = (struct PARAM_LINK_SPEED_EX *)pvQueryBuffer;
 
 	if (kalGetMediaStateIndicated(prAdapter->prGlueInfo, ucBssIndex) !=
-	    PARAM_MEDIA_STATE_CONNECTED) {
+	    PARAM_MEDIA_STATE_CONNECTED || prStaRecOfAP == NULL) {
 		rv = WLAN_STATUS_ADAPTER_NOT_READY;
 	} else {
 		if (kalGetMaxTxRate(prAdapter, prBssInfo, prStaRecOfAP,
