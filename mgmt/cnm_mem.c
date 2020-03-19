@@ -588,9 +588,6 @@ void cnmStaRecInit(struct ADAPTER *prAdapter)
 
 		prStaRec->ucIndex = (uint8_t) i;
 		prStaRec->fgIsInUse = FALSE;
-#if DSCP_SUPPORT
-		prStaRec->qosMapSet = NULL;
-#endif
 	}
 }
 
@@ -654,6 +651,9 @@ struct STA_RECORD *cnmStaRecAlloc(struct ADAPTER *prAdapter,
 			prStaRec->u4MaxMpduLen = 0;
 			prStaRec->u4MinMpduLen = 0;
 
+#if DSCP_SUPPORT
+			qosMapSetInit(prStaRec);
+#endif
 			break;
 		}
 	}
@@ -709,12 +709,6 @@ void cnmStaRecFree(struct ADAPTER *prAdapter, struct STA_RECORD *prStaRec)
 
 	cnmStaSendRemoveCmd(prAdapter, STA_REC_CMD_ACTION_STA,
 		ucStaRecIndex, ucBssIndex);
-#if DSCP_SUPPORT
-	if (prStaRec->qosMapSet) {
-		QosMapSetRelease(prStaRec);
-		prStaRec->qosMapSet = NULL;
-	}
-#endif
 }
 
 /*----------------------------------------------------------------------------*/
