@@ -4734,8 +4734,18 @@ static int initWlan(void)
 	}
 	gPrDev = NULL;
 
+#if CFG_MTK_ANDROID_WMT
+	mtk_wcn_wmt_mpu_lock_aquire();
+#endif
 	ret = ((glRegisterBus(wlanProbe,
 			      wlanRemove) == WLAN_STATUS_SUCCESS) ? 0 : -EIO);
+#ifdef CONFIG_MTK_EMI
+	/* Set WIFI EMI protection to consys permitted on system boot up */
+	kalSetEmiMpuProtection(gConEmiPhyBase, true);
+#endif
+#if CFG_MTK_ANDROID_WMT
+	mtk_wcn_wmt_mpu_lock_release();
+#endif
 
 	if (ret == -EIO) {
 		kalUninitIOBuffer();
@@ -4758,10 +4768,6 @@ static int initWlan(void)
 #endif
 #endif
 
-#ifdef CONFIG_MTK_EMI
-	/* Set WIFI EMI protection to consys permitted on system boot up */
-	kalSetEmiMpuProtection(gConEmiPhyBase, true);
-#endif
 	return ret;
 }				/* end of initWlan() */
 
