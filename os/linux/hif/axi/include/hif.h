@@ -82,6 +82,8 @@ extern int mtk_wcn_wmt_wlan_reg(
 	struct MTK_WCN_WMT_WLAN_CB_INFO *pWmtWlanCbInfo);
 extern int mtk_wcn_wmt_wlan_unreg(void);
 extern int mtk_wcn_consys_hw_wifi_paldo_ctrl(unsigned int enable);
+extern int mtk_wcn_wmt_mpu_lock_aquire(void);
+extern int mtk_wcn_wmt_mpu_lock_release(void);
 #else
 struct MTK_WCN_WLAN_CB_INFO;
 extern int mtk_wcn_wlan_reg(
