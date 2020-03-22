@@ -355,7 +355,7 @@ void asicConnac2xWfdmaReInit(
 
 #if 0 /* Original Driver re-init Host WFDAM flow */
 	DBGLOG(INIT, INFO, "WFDMA host sw-reinit due to deep sleep\n");
-	halWpdmaInitRing(prAdapter->prGlueInfo);
+	halWpdmaInitRing(prAdapter->prGlueInfo, false);
 #else /* Do Driver re-init Host WFDMA flow with FW bk/sr solution */
 	{
 		struct GL_HIF_INFO *prHifInfo;
@@ -497,7 +497,8 @@ static void asicConnac2xWfdmaControl(
 
 void asicConnac2xWpdmaConfig(
 	struct GLUE_INFO *prGlueInfo,
-	u_int8_t enable)
+	u_int8_t enable,
+	bool fgResetHif)
 {
 	struct ADAPTER *prAdapter = prGlueInfo->prAdapter;
 	union WPDMA_GLO_CFG_STRUCT GloCfg[CONNAC2X_WFDMA_COUNT];

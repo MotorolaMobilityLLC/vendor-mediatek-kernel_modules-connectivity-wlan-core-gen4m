@@ -1038,7 +1038,8 @@ uint32_t asicConnac2xWfdmaHifRstAddrGet(
 	u_int8_t ucDmaIdx);
 void asicConnac2xWpdmaConfig(
 	struct GLUE_INFO *prGlueInfo,
-	uint8_t enable);
+	uint8_t enable,
+	bool fgResetHif);
 uint8_t asicConnac2xWfdmaWaitIdle(
 	struct GLUE_INFO *prGlueInfo,
 	uint8_t index,

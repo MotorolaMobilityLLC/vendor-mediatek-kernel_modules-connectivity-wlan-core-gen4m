@@ -163,7 +163,7 @@ struct BUS_INFO {
 
 #define HAL_WAKE_UP_WIFI(_prAdapter)
 
-#define halWpdmaInitRing(_glueinfo) \
+#define halWpdmaInitRing(_glueinfo, __fgResetHif) \
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
 
 uint8_t halTxRingDataSelect(IN struct ADAPTER *prAdapter,

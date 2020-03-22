@@ -977,7 +977,7 @@ bool halHifSwInfoInit(IN struct ADAPTER *prAdapter)
 	if (!halWpdmaAllocRing(prAdapter->prGlueInfo, true))
 		return false;
 
-	halWpdmaInitRing(prAdapter->prGlueInfo);
+	halWpdmaInitRing(prAdapter->prGlueInfo, true);
 	halInitMsduTokenInfo(prAdapter);
 	/* Initialize wfdma reInit handshake parameters */
 	prChipInfo = prAdapter->chip_info;
@@ -1529,8 +1529,8 @@ bool halWpdmaAllocRxRing(struct GLUE_INFO *prGlueInfo, uint32_t u4Num,
 
 static void halDefaultHifRst(struct GLUE_INFO *prGlueInfo)
 {
-	/* Reset dmashdl and wpdma */
-	kalDevRegWrite(prGlueInfo, CONN_HIF_RST, 0x00000000);
+	/* Reset Conn HIF logic */
+	kalDevRegWrite(prGlueInfo, CONN_HIF_RST, 0x00000020);
 	kalDevRegWrite(prGlueInfo, CONN_HIF_RST, 0x00000030);
 }
 
@@ -1719,7 +1719,7 @@ u_int8_t halWpdmaWaitIdle(struct GLUE_INFO *prGlueInfo,
 	return FALSE;
 }
 
-void halWpdmaInitRing(struct GLUE_INFO *prGlueInfo)
+void halWpdmaInitRing(struct GLUE_INFO *prGlueInfo, bool fgResetHif)
 {
 	struct GL_HIF_INFO *prHifInfo;
 	struct BUS_INFO *prBusInfo;
@@ -1731,7 +1731,7 @@ void halWpdmaInitRing(struct GLUE_INFO *prGlueInfo)
 
 	/* Set DMA global configuration except TX_DMA_EN and RX_DMA_EN bits */
 	if (prBusInfo->pdmaSetup)
-		prBusInfo->pdmaSetup(prGlueInfo, FALSE);
+		prBusInfo->pdmaSetup(prGlueInfo, FALSE, fgResetHif);
 
 	halWpdmaInitTxRing(prGlueInfo);
 
@@ -1742,7 +1742,7 @@ void halWpdmaInitRing(struct GLUE_INFO *prGlueInfo)
 		prBusInfo->wfdmaManualPrefetch(prGlueInfo);
 
 	if (prBusInfo->pdmaSetup)
-		prBusInfo->pdmaSetup(prGlueInfo, TRUE);
+		prBusInfo->pdmaSetup(prGlueInfo, TRUE, fgResetHif);
 
 	/* Write sleep mode magic num to dummy reg */
 	if (prBusInfo->setDummyReg)
@@ -2680,7 +2680,7 @@ void halHwRecoveryFromError(IN struct ADAPTER *prAdapter)
 			halResetMsduToken(prAdapter);
 
 			DBGLOG(HAL, INFO, "SER(M) Host enable PDMA\n");
-			halWpdmaInitRing(prGlueInfo);
+			halWpdmaInitRing(prGlueInfo, false);
 
 			DBGLOG(HAL, INFO,
 				"SER(N) Host interrupt MCU PDMA ring init done\n");
@@ -2880,4 +2880,39 @@ void halUpdateTxMaxQuota(IN struct ADAPTER *prAdapter)
 		}
 	}
 }
+
+void halEnableSlpProt(struct GLUE_INFO *prGlueInfo)
+{
+	uint32_t u4Val = 0;
+	uint32_t u4WaitDelay = 20000;
+
+	kalDevRegRead(prGlueInfo, CONN_HIF_PDMA_CSR_PDMA_SLP_PROT_ADDR, &u4Val);
+	u4Val |= CONN_HIF_PDMA_CSR_PDMA_SLP_PROT_PDMA_AXI_SLPPROT_ENABLE_MASK;
+	kalDevRegWrite(prGlueInfo, CONN_HIF_PDMA_CSR_PDMA_SLP_PROT_ADDR, u4Val);
+	while (TRUE) {
+		u4WaitDelay--;
+		kalDevRegRead(prGlueInfo, CONN_HIF_PDMA_CSR_PDMA_SLP_PROT_ADDR,
+			&u4Val);
+		if (CONN_HIF_PDMA_CSR_PDMA_SLP_PROT_PDMA_AXI_SLPPROT_RDY_MASK &
+				u4Val)
+			break;
+		if (u4WaitDelay == 0) {
+			DBGLOG(HAL, ERROR, "wait for sleep protect timeout.\n");
+			GL_RESET_TRIGGER(prGlueInfo->prAdapter,
+				RST_FLAG_CHIP_RESET);
+			break;
+		}
+		kalUdelay(1);
+	}
+}
+
+void halDisableSlpProt(struct GLUE_INFO *prGlueInfo)
+{
+	uint32_t u4Val = 0;
+
+	kalDevRegRead(prGlueInfo, CONN_HIF_PDMA_CSR_PDMA_SLP_PROT_ADDR, &u4Val);
+	u4Val &= ~CONN_HIF_PDMA_CSR_PDMA_SLP_PROT_PDMA_AXI_SLPPROT_ENABLE_MASK;
+	kalDevRegWrite(prGlueInfo, CONN_HIF_PDMA_CSR_PDMA_SLP_PROT_ADDR, u4Val);
+}
+
 

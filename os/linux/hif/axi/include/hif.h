@@ -280,7 +280,8 @@ struct BUS_INFO {
 	const uint32_t host_wfdma1_rx_ring_ext_ctrl_base;
 #endif /* CFG_SUPPORT_CONNAC2X == 1 */
 
-	void (*pdmaSetup)(struct GLUE_INFO *prGlueInfo, u_int8_t enable);
+	void (*pdmaSetup)(struct GLUE_INFO *prGlueInfo, u_int8_t enable,
+		bool fgResetHif);
 	uint32_t (*updateTxRingMaxQuota)(struct ADAPTER *prAdapter,
 		uint16_t u2Port, uint32_t u4MaxQuota);
 	void (*enableInterrupt)(struct ADAPTER *prAdapter);

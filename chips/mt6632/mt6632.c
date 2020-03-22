@@ -218,7 +218,8 @@ uint32_t mt6632GetFwDlInfo(struct ADAPTER *prAdapter,
 
 #if defined(_HIF_PCIE)
 
-void mt6632PdmaConfig(struct GLUE_INFO *prGlueInfo, u_int8_t enable)
+void mt6632PdmaConfig(struct GLUE_INFO *prGlueInfo, u_int8_t enable,
+		bool fgResetHif)
 {
 	struct BUS_INFO *prBusInfo = prGlueInfo->prAdapter->chip_info->bus_info;
 	union WPDMA_GLO_CFG_STRUCT GloCfg;
