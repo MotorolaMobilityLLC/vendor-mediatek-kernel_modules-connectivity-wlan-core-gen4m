@@ -4551,7 +4551,8 @@ static int32_t wlanProbe(void *pvData, void *pvDriverData)
 	if (fgSimplifyResetFlow) {
 		i4Status = wlanOnAtReset();
 #if CFG_MTK_MCIF_WIFI_SUPPORT
-		mddpNotifyWifiOnEnd();
+		if (i4Status == WLAN_STATUS_SUCCESS)
+			mddpNotifyWifiOnEnd();
 #endif
 		return i4Status;
 	}
@@ -4730,6 +4731,9 @@ static int32_t wlanProbe(void *pvData, void *pvDriverData)
 		       wlanGetSupportedFeatureSet(prGlueInfo),
 		       CFG_SUPPORT_PERSIST_NETDEV);
 		wlanOnP2pRegistration(prGlueInfo, prAdapter, prWdev);
+#if CFG_MTK_MCIF_WIFI_SUPPORT
+		mddpNotifyWifiOnEnd();
+#endif
 	} else {
 		DBGLOG(INIT, ERROR, "wlanProbe: probe failed, reason:%d\n",
 		       eFailReason);
@@ -4769,9 +4773,6 @@ static int32_t wlanProbe(void *pvData, void *pvDriverData)
 			break;
 		}
 	}
-#if CFG_MTK_MCIF_WIFI_SUPPORT
-	mddpNotifyWifiOnEnd();
-#endif
 	return i4Status;
 }				/* end of wlanProbe() */
 
