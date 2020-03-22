@@ -530,6 +530,7 @@ void aisFsmUninit(IN struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 	struct BSS_INFO *prAisBssInfo;
 	struct AIS_SPECIFIC_BSS_INFO *prAisSpecificBssInfo;
 	struct CONNECTION_SETTINGS *prConnSettings;
+	u_int8_t fgHalted = kalIsHalted();
 
 	DEBUGFUNC("aisFsmUninit()");
 	DBGLOG(SW1, INFO, "->aisFsmUninit(%d)\n", ucBssIndex);
@@ -552,8 +553,9 @@ void aisFsmUninit(IN struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 		/* call aisFsmRunEventScanDoneTimeOut()
 		 * to reset scan fsm
 		 */
-		aisFsmRunEventScanDoneTimeOut(prAdapter,
-			(unsigned long)ucBssIndex);
+		if (!fgHalted)
+			aisFsmRunEventScanDoneTimeOut(prAdapter,
+				(unsigned long)ucBssIndex);
 		cnmTimerStopTimer(prAdapter, &prAisFsmInfo->rScanDoneTimer);
 	}
 	cnmTimerStopTimer(prAdapter, &prAisFsmInfo->rChannelTimeoutTimer);
@@ -570,8 +572,9 @@ void aisFsmUninit(IN struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 		/* Deactivate BSS. */
 		UNSET_NET_ACTIVE(prAdapter,
 			prAisBssInfo->ucBssIndex);
-		nicDeactivateNetwork(prAdapter,
-			prAisBssInfo->ucBssIndex);
+		if (!fgHalted)
+			nicDeactivateNetwork(prAdapter,
+				prAisBssInfo->ucBssIndex);
 
 		if (prAisBssInfo->prBeacon) {
 			cnmMgtPktFree(prAdapter, prAisBssInfo->prBeacon);

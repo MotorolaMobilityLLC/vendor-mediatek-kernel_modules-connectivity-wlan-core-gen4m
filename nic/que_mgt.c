@@ -6742,6 +6742,9 @@ uint32_t qmDumpQueueStatus(IN struct ADAPTER *prAdapter,
 
 	LOGBUF(pucBuf, u4Max, u4Len,
 		"---------------------------------\n");
+	if (prGlueInfo->rCmdQueue.u4NumElem > 0)
+		cmdBufDumpCmdQueue(&prGlueInfo->rCmdQueue,
+				"waiting Tx CMD queue");
 
 	return u4Len;
 }
