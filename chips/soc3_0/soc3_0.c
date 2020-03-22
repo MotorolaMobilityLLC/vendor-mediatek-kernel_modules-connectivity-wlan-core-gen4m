@@ -2052,17 +2052,8 @@ int wf_pwr_on_consys_mcu(void)
 	value &= 0xFFFFFFFE;
 	wf_ioremap_write(WFSYS_CPU_SW_RST_B_ADDR, value);
 
-	/*enable BPLLL 0x18003008[21] = 1'b1*/
-	wf_ioremap_read(CONN_AFE_CTL_RG_DIG_EN_ADDR, &value);
-	value |= 0x00200000;
-	wf_ioremap_write(CONN_AFE_CTL_RG_DIG_EN_ADDR, value);
-	udelay(30);
-	/*enable WPLL 0x18003008[20] = 1b'1*/
-	wf_ioremap_read(CONN_AFE_CTL_RG_DIG_EN_ADDR, &value);
-	value |= 0x00100000;
-	wf_ioremap_write(CONN_AFE_CTL_RG_DIG_EN_ADDR, value);
-	udelay(50);
-
+	/* bus clock ctrl */
+	conninfra_bus_clock_ctrl(CONNDRV_TYPE_WIFI, CONNINFRA_BUS_CLOCK_ALL, 1);
 	/* Turn on wfsys_top_on
 	 * 0x18000000[31:16] = 0x57460000,
 	 * 0x18000000[7] = 1'b1
@@ -2253,15 +2244,8 @@ int wf_pwr_on_consys_mcu(void)
 
 	conninfra_config_setup();
 
-	/*disable WPLL 0x18003008[20] = 0*/
-	wf_ioremap_read(CONN_AFE_CTL_RG_DIG_EN_ADDR, &value);
-	value &= 0xFFEFFFFF;
-	wf_ioremap_write(CONN_AFE_CTL_RG_DIG_EN_ADDR, value);
-
-	/*disable BPLL 0x18003008[21] = 0*/
-	wf_ioremap_read(CONN_AFE_CTL_RG_DIG_EN_ADDR, &value);
-	value &= 0xFFDFFFFF;
-	wf_ioremap_write(CONN_AFE_CTL_RG_DIG_EN_ADDR, value);
+	/* bus clock ctrl */
+	conninfra_bus_clock_ctrl(CONNDRV_TYPE_WIFI, CONNINFRA_BUS_CLOCK_ALL, 0);
 
 	/* Disable conn_infra off domain force on 0x180601A4[0] = 1'b0 */
 	wf_ioremap_read(CONN_INFRA_WAKEUP_WF_ADDR, &value);
@@ -2418,15 +2402,8 @@ int wf_pwr_off_consys_mcu(void)
 		soc3_0_DumpWfsysInfo();
 		soc3_0_DumpWfsysdebugflag();
 	}
-	/*disable WPLL 0x18003008[20] = 0*/
-	wf_ioremap_read(CONN_AFE_CTL_RG_DIG_EN_ADDR, &value);
-	value &= 0xFFEFFFFF;
-	wf_ioremap_write(CONN_AFE_CTL_RG_DIG_EN_ADDR, value);
-
-	/*disable BPLL 0x18003008[21] = 0*/
-	wf_ioremap_read(CONN_AFE_CTL_RG_DIG_EN_ADDR, &value);
-	value &= 0xFFDFFFFF;
-	wf_ioremap_write(CONN_AFE_CTL_RG_DIG_EN_ADDR, value);
+	/* bus clock ctrl */
+	conninfra_bus_clock_ctrl(CONNDRV_TYPE_WIFI, CONNINFRA_BUS_CLOCK_ALL, 0);
 
 	/* Turn off wfsys_top_on
 	 * 0x18000000[31:16] = 0x57460000,
@@ -2637,6 +2614,25 @@ int soc3_0_Trigger_whole_chip_rst(char *reason)
 void soc3_0_Sw_interrupt_handler(struct ADAPTER *prAdapter)
 {
 	int value = 0;
+	struct GL_HIF_INFO *prHifInfo = NULL;
+
+	ASSERT(prAdapter);
+	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
+
+	if (!conninfra_reg_readable_no_lock()) {
+		DBGLOG(HAL, ERROR,
+			"conninfra_reg_readable fail\n");
+		disable_irq_nosync(prHifInfo->u4IrqId_1);
+#if (CFG_ANDORID_CONNINFRA_COREDUMP_SUPPORT == 1)
+		g_eWfRstSource = WF_RST_SOURCE_FW;
+#endif
+		DBGLOG(HAL, ERROR,
+			"FW trigger assert(0x%x).\n", value);
+		fgIsResetting = TRUE;
+		update_driver_reset_status(fgIsResetting);
+		kalSetRstEvent();
+		return;
+	}
 	HAL_MCR_WR(prAdapter,
 		   CONN_INFRA_CFG_AP2WF_REMAP_1_ADDR,
 		   CONN_MCU_CONFG_HS_BASE);
@@ -2736,7 +2732,7 @@ void soc3_0_icapRiseVcoreClockRate(void)
 {
 
 
-	int value;
+	int value = 0;
 
 	/*2 update Clork Rate*/
 	/*0x1000123C[20]=1,218Mhz*/
