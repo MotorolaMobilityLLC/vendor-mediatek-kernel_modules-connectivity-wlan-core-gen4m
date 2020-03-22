@@ -3080,9 +3080,22 @@ uint32_t nicTxInitResetResource(IN struct ADAPTER
 u_int8_t nicTxProcessCmdDataPacket(IN struct ADAPTER *prAdapter,
 			       IN struct MSDU_INFO *prMsduInfo)
 {
+#if (CFG_SUPPORT_CONNAC2X == 0)
+#define _SET_PKT_FORMAT HAL_MAC_TX_DESC_SET_PKT_FORMAT
+#define _SET_REMAINING_LIFE_TIME_IN_MS \
+	HAL_MAC_TX_DESC_SET_REMAINING_LIFE_TIME_IN_MS
+#define _SET_PID HAL_MAC_TX_DESC_SET_PID
+#define _TX_DESC struct HW_MAC_TX_DESC*
+#else
+#define _SET_PKT_FORMAT HAL_MAC_CONNAC2X_TXD_SET_PKT_FORMAT
+#define _SET_REMAINING_LIFE_TIME_IN_MS \
+	HAL_MAC_CONNAC2X_TXD_SET_REMAINING_LIFE_TIME_IN_MS
+#define _SET_PID HAL_MAC_CONNAC2X_TXD_SET_PID
+#define _TX_DESC struct HW_MAC_CONNAC2X_TX_DESC*
+#endif
 	struct BSS_INFO *prBssInfo;
 	struct STA_RECORD *prStaRec;
-	struct HW_MAC_CONNAC2X_TX_DESC *prConnac2xTxDesc;
+	_TX_DESC prTxDesc;
 
 	/* Sanity check */
 	if (!prMsduInfo->prPacket) {
@@ -3123,14 +3136,11 @@ u_int8_t nicTxProcessCmdDataPacket(IN struct ADAPTER *prAdapter,
 	/*
 	 * Adjust TxD for command data after fill description
 	 */
-	prConnac2xTxDesc =
-		(struct HW_MAC_CONNAC2X_TX_DESC *) prMsduInfo->aucTxDescBuffer;
+	prTxDesc = (_TX_DESC) prMsduInfo->aucTxDescBuffer;
 
-#if (CFG_SUPPORT_CONNAC2X == 1)
 	/* (1) Force set packet format to command for command data*/
 #if (UNIFIED_MAC_TX_FORMAT == 1)
-	HAL_MAC_CONNAC2X_TXD_SET_PKT_FORMAT(prConnac2xTxDesc,
-					TXD_PKT_FORMAT_COMMAND);
+	_SET_PKT_FORMAT(prTxDesc, TXD_PKT_FORMAT_COMMAND);
 #endif
 
 	/* (2) Set remaining TX time to no limit as cut-through data.
@@ -3139,9 +3149,8 @@ u_int8_t nicTxProcessCmdDataPacket(IN struct ADAPTER *prAdapter,
 	if (!(prMsduInfo->u4Option & MSDU_OPT_MANUAL_LIFE_TIME))
 		prMsduInfo->u4RemainingLifetime = TX_DESC_TX_TIME_NO_LIMIT;
 
-	HAL_MAC_CONNAC2X_TXD_SET_REMAINING_LIFE_TIME_IN_MS(prConnac2xTxDesc,
+	_SET_REMAINING_LIFE_TIME_IN_MS(prTxDesc,
 			prMsduInfo->u4RemainingLifetime);
-
 
 	/* (3) If prMsduInfo->pfTxDoneHandler is not set (ie. PID is not set)
 	 * Still set PID for command data packet for firmware usage. Driver
@@ -3151,10 +3160,13 @@ u_int8_t nicTxProcessCmdDataPacket(IN struct ADAPTER *prAdapter,
 		prMsduInfo->ucPID = nicTxAssignPID(prAdapter,
 					   prMsduInfo->ucWlanIndex);
 
-		HAL_MAC_CONNAC2X_TXD_SET_PID(prConnac2xTxDesc,
-				prMsduInfo->ucPID);
+		_SET_PID(prTxDesc, prMsduInfo->ucPID);
 	}
-#endif
+
+#undef _SET_PKT_FORMAT
+#undef _SET_REMAINING_LIFE_TIME_IN_MS
+#undef _SET_PID
+#undef _TX_DESC
 
 	return TRUE;
 }
