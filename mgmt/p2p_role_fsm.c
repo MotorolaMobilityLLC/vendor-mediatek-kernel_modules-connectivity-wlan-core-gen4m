@@ -3190,6 +3190,12 @@ void p2pRoleFsmRunEventBeaconUpdate(IN struct ADAPTER *prAdapter,
 
 	prBcnUpdateInfo = &(prRoleP2pFsmInfo->rBeaconUpdateInfo);
 
+	DBGLOG(P2P, TRACE, "Dump beacon content from supplicant.\n");
+	if (aucDebugModule[DBG_P2P_IDX] & DBG_CLASS_TRACE) {
+		dumpMemory8((uint8_t *) prBcnUpdateMsg->pucBcnBody,
+			(uint32_t) prBcnUpdateMsg->u4BcnBodyLen);
+	}
+
 	p2pFuncBeaconUpdate(prAdapter,
 		prP2pBssInfo,
 		prBcnUpdateInfo,
