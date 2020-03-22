@@ -488,4 +488,6 @@ void kalDumpRxRing(struct GLUE_INFO *prGlueInfo,
 		   struct RTMP_RX_RING *prRxRing,
 		   uint32_t u4Num, bool fgDumpContent);
 void haldumpPhyInfo(struct ADAPTER *prAdapter);
+int wf_ioremap_read(size_t addr, unsigned int *val);
+int wf_ioremap_write(phys_addr_t addr, unsigned int val);
 #endif /* HIF_PDMA_H__ */
