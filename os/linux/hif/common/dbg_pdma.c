@@ -839,7 +839,7 @@ void haldumpPhyInfo(struct ADAPTER *prAdapter)
 	for (i = 0; i < 20; i++) {
 		HAL_MCR_RD(prAdapter, 0x82072644, &value);
 		DBGLOG(HAL, INFO, "0x82072644: 0x%08x\n", value);
-		HAL_MCR_RD(prAdapter, 0x82072644, &value);
+		HAL_MCR_RD(prAdapter, 0x82072654, &value);
 		DBGLOG(HAL, INFO, "0x82072654: 0x%08x\n", value);
 		kalMdelay(1);
 	}
