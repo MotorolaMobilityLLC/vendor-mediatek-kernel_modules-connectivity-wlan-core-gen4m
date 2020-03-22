@@ -1170,6 +1170,7 @@ uint32_t halHifPowerOffWifi(IN struct ADAPTER *prAdapter);
 
 
 bool halHifSwInfoInit(IN struct ADAPTER *prAdapter);
+void halHifSwInfoUnInit(IN struct GLUE_INFO *prGlueInfo);
 void halRxProcessMsduReport(IN struct ADAPTER *prAdapter,
 	IN OUT struct SW_RFB *prSwRfb);
 uint32_t halTxGetPageCount(IN struct ADAPTER *prAdapter,
@@ -1202,7 +1203,6 @@ void halTxReturnFreeResource_v1(IN struct ADAPTER *prAdapter,
 uint8_t halTxRingDataSelect(IN struct ADAPTER *prAdapter,
 	IN struct MSDU_INFO *prMsduInfo);
 void halUpdateTxMaxQuota(IN struct ADAPTER *prAdapter);
-bool halCancelOngoingSer(IN struct ADAPTER *prAdapter);
 
 #if defined(_HIF_USB)
 void halSerSyncTimerHandler(IN struct ADAPTER *prAdapter);
