@@ -160,7 +160,7 @@ static void aisResetBssTranstionMgtParam(struct AIS_SPECIFIC_BSS_INFO
 uint8_t aisCheckPowerMatchERCondition(IN struct ADAPTER *prAdapter,
 	IN struct BSS_DESC *prBssDesc)
 {
-	int8_t txpwr;
+	int8_t txpwr = 0;
 	int8_t icBeaconRSSI;
 
 	icBeaconRSSI = RCPI_TO_dBm(prBssDesc->ucRCPI);
