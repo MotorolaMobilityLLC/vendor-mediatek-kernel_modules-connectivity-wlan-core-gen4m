@@ -55,6 +55,7 @@ static s_int32 mt_serv_init_op(struct test_operation *ops)
 	ops->op_set_fagc_rssi_path = mt_op_set_fagc_rssi_path;
 	ops->op_get_rx_stat_leg = mt_op_get_rx_stat_leg;
 	ops->op_get_rx_statistics_all = mt_op_get_rx_statistics_all;
+	ops->op_get_capability = mt_op_get_capability;
 	ops->op_calibration_test_mode = mt_op_calibration_test_mode;
 	ops->op_set_icap_start = mt_op_set_icap_start;
 	ops->op_get_icap_status = mt_op_get_icap_status;
@@ -1622,6 +1623,23 @@ error1:
 	SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_ERROR,
 		("%s: invalid band index for non-dbdc mode.\n",
 		__func__));
+	return ret;
+}
+
+s_int32 mt_serv_get_capability(
+	struct service_test *serv_test,
+	struct test_capability *capability)
+{
+	s_int32 ret = SERV_STATUS_SUCCESS;
+	struct test_operation *op = serv_test->test_op;
+	struct test_wlan_info *winfo = serv_test->test_winfo;
+
+	ret = op->op_get_capability(winfo, capability);
+
+	if (ret)
+		SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_ERROR,
+			("%s: err=0x%08x\n", __func__, ret));
+
 	return ret;
 }
 

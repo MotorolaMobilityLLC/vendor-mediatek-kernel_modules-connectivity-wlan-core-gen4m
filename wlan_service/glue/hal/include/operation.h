@@ -30,6 +30,7 @@ enum op_wlan_oid {
 	OP_WLAN_OID_GET_TEST_ICAP_MAX_DATA_LEN = 14,
 	OP_WLAN_OID_GET_TEST_ICAP_DATA = 15,
 	OP_WLAN_OID_RESET_RECAL_COUNT = 16,
+	OP_WLAN_OID_GET_CAPABILITY = 17,
 	OP_WLAN_OID_NUM
 };
 
@@ -249,6 +250,9 @@ s_int32 mt_op_get_tx_info(
 s_int32 mt_op_get_rx_statistics_all(
 	struct test_wlan_info *winfos,
 	struct hqa_comm_rx_stat *hqa_rx_stat);
+s_int32 mt_op_get_capability(
+	struct test_wlan_info *winfos,
+	struct test_capability *capability);
 s_int32 mt_op_calibration_test_mode(
 	struct test_wlan_info *winfos,
 	u_char mode);

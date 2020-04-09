@@ -746,6 +746,48 @@ struct GNU_PACKED hqa_comm_rx_stat {
 	} u;
 };
 
+/* Test capability */
+struct test_capability_ph_cap {
+	/* header */
+	u_int32 tag;		/* 1 */
+	u_int32 tag_len;	/* 16 */
+
+	/* content: 16 */
+
+	/* BIT0 : 11 a/b/g  BIT1: 11n , BIT2: 11ac , BIT3: 11ax */
+	u_int32 protocol;
+	/* 1:1x1, 2:2x2, ... */
+	u_int32 ant_num;
+	/* BIT0: DBDC support */
+	u_int32 dbdc;
+	/* BIT0: TxLDPC , BTI1 : RxLDPC , BIT2: TxSTBC , BIT3: RxSTBC */
+	u_int32 coding;
+	/* BIT0 : 2.4G  BIT1: 5G , BIT2: 6G */
+	u_int32 channel_band;
+	/* BIT0: BW20, BIT1:BW40, BIT2:BW80, BIT3:BW160, BIT4:BW80+80 */
+	u_int32 bandwidth;
+	u_int32 reserved[10];
+};
+
+struct test_capability_ext_cap {
+	/* header */
+	u_int32 tag;		/* 2 */
+	u_int32 tag_len;	/* 16 */
+
+	/* content: 16 */
+
+	/* BIT0: AntSwap */
+	u_int32 feature1;
+	u_int32 reserved[15];
+};
+
+struct test_capability {
+	u_int32 version;
+	u_int32 tag_num;
+	struct test_capability_ph_cap ph_cap;
+	struct test_capability_ext_cap ext_cap;
+};
+
 /* Test mps for service */
 struct test_mps_setting {
 	u_int32 tx_mode;
@@ -1218,6 +1260,9 @@ struct test_operation {
 	s_int32 (*op_get_rx_statistics_all)(
 		struct test_wlan_info *winfos,
 		struct hqa_comm_rx_stat *hqa_rx_stat);
+	s_int32 (*op_get_capability)(
+		struct test_wlan_info *winfos,
+		struct test_capability *capability);
 	s_int32 (*op_calibration_test_mode)(
 		struct test_wlan_info *winfos,
 		u_char mode);
