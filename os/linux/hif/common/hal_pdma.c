@@ -2773,7 +2773,6 @@ uint32_t halHifPowerOffWifi(IN struct ADAPTER *prAdapter)
 
 	DBGLOG(INIT, INFO, "Power off Wi-Fi!\n");
 
-	nicDisableInterrupt(prAdapter);
 	ACQUIRE_POWER_CONTROL_FROM_PM(prAdapter);
 
 	/* Power off Wi-Fi */
@@ -2785,6 +2784,9 @@ uint32_t halHifPowerOffWifi(IN struct ADAPTER *prAdapter)
 	RECLAIM_POWER_CONTROL_TO_PM(prAdapter, FALSE);
 
 	rStatus = wlanCheckWifiFunc(prAdapter, FALSE);
+
+	asicPdmaIntMaskConfig(prAdapter->prGlueInfo, FALSE);
+	nicDisableInterrupt(prAdapter);
 
 	return rStatus;
 }
