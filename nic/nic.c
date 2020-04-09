@@ -2713,14 +2713,14 @@ uint32_t nicQmUpdateWmmParms(IN struct ADAPTER *prAdapter,
 	ASSERT(prAdapter);
 	prChipInfo = prAdapter->chip_info;
 
-	DBGLOG(QM, INFO, "Update WMM parameters for BSS[%u]\n",
+	DBGLOG(QM, TRACE, "Update WMM parameters for BSS[%u]\n",
 	       ucBssIndex);
 
-	DBGLOG(QM, EVENT, "sizeof(struct AC_QUE_PARMS): %zu\n",
+	DBGLOG(QM, TRACE, "sizeof(struct AC_QUE_PARMS): %zu\n",
 	       sizeof(struct AC_QUE_PARMS));
-	DBGLOG(QM, EVENT, "sizeof(CMD_UPDATE_WMM_PARMS): %zu\n",
+	DBGLOG(QM, TRACE, "sizeof(CMD_UPDATE_WMM_PARMS): %zu\n",
 	       sizeof(struct CMD_UPDATE_WMM_PARMS));
-	DBGLOG(QM, EVENT, "u2CmdTxHdrSize: %u\n",
+	DBGLOG(QM, TRACE, "u2CmdTxHdrSize: %u\n",
 	       prChipInfo->u2CmdTxHdrSize);
 
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
