@@ -1187,8 +1187,6 @@ int mtk_cfg80211_vendor_get_version(struct wiphy *wiphy,
 				    struct wireless_dev *wdev,
 				    const void *data, int data_len)
 {
-#define STR_HELPER(x) #x
-#define STR(x) STR_HELPER(x)
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct sk_buff *skb = NULL;
 	struct nlattr *attrlist = NULL;

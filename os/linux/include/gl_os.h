@@ -349,6 +349,9 @@ extern void update_driver_loaded_status(uint8_t loaded);
 #define WAKE_LOCK_RX_TIMEOUT                            300	/* ms */
 #define WAKE_LOCK_THREAD_WAKEUP_TIMEOUT                 50	/* ms */
 
+#define STR_HELPER(x) #x
+#define STR(x) STR_HELPER(x)
+
 /*******************************************************************************
  *                             D A T A   T Y P E S
  *******************************************************************************
