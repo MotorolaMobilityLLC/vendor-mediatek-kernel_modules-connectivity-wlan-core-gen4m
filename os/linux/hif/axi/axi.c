@@ -254,6 +254,8 @@ static int hifAxiProbe(void)
 			WLAN_STATUS_SUCCESS) {
 		DBGLOG(INIT, INFO, "pfWlanProbe fail!\n");
 		ret = -1;
+		if (prChipInfo->wmmcupwroff)
+			prChipInfo->wmmcupwroff();
 		goto out;
 	}
 	g_fgDriverProbed = TRUE;
