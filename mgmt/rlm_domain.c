@@ -204,9 +204,9 @@ static const uint16_t g_u2CountryGroup12[] = { COUNTRY_CODE_AF };
 static const uint16_t g_u2CountryGroup13[] = { COUNTRY_CODE_NG };
 
 static const uint16_t g_u2CountryGroup14[] = {
-	COUNTRY_CODE_PK, COUNTRY_CODE_QA, COUNTRY_CODE_BF, COUNTRY_CODE_GY,
-	COUNTRY_CODE_HT, COUNTRY_CODE_JM, COUNTRY_CODE_MO, COUNTRY_CODE_MW,
-	COUNTRY_CODE_RW, COUNTRY_CODE_KN, COUNTRY_CODE_TZ, COUNTRY_CODE_BD
+	COUNTRY_CODE_PK, COUNTRY_CODE_BF, COUNTRY_CODE_GY, COUNTRY_CODE_HT,
+	COUNTRY_CODE_JM, COUNTRY_CODE_MO, COUNTRY_CODE_MW, COUNTRY_CODE_RW,
+	COUNTRY_CODE_KN, COUNTRY_CODE_TZ, COUNTRY_CODE_BD
 };
 
 static const uint16_t g_u2CountryGroup15[] = { COUNTRY_CODE_ID };
@@ -243,6 +243,10 @@ static const uint16_t g_u2CountryGroup20[] = {
 	COUNTRY_CODE_JE, COUNTRY_CODE_KP, COUNTRY_CODE_MH, COUNTRY_CODE_NU,
 	COUNTRY_CODE_NF, COUNTRY_CODE_PS, COUNTRY_CODE_PN, COUNTRY_CODE_PM,
 	COUNTRY_CODE_SS, COUNTRY_CODE_SD, COUNTRY_CODE_SY
+};
+
+static const uint16_t g_u2CountryGroup21[] = {
+	COUNTRY_CODE_QA
 };
 
 #if (CFG_SUPPORT_SINGLE_SKU == 1)
@@ -530,7 +534,6 @@ struct DOMAIN_INFO_ENTRY arSupportedRegDomains[] = {
 		{
 			{81, BAND_2G4, CHNL_SPAN_5, 1, 13, FALSE}
 			,			/* CH_SET_2G4_1_13 */
-
 			{115, BAND_NULL, 0, 0, 0, FALSE}
 			,			/* CH_SET_UNII_LOW_NA */
 			{118, BAND_NULL, 0, 0, 0, FALSE}
@@ -639,6 +642,23 @@ struct DOMAIN_INFO_ENTRY arSupportedRegDomains[] = {
 			,			/* CH_SET_UNII_MID_52_64 */
 			{121, BAND_5G, CHNL_SPAN_20, 100, 12, TRUE}
 			,			/* CH_SET_UNII_WW_100_144 */
+			{125, BAND_5G, CHNL_SPAN_20, 149, 5, FALSE}
+			,			/* CH_SET_UNII_UPPER_149_165 */
+			{0, BAND_NULL, 0, 0, 0, FALSE}
+		}
+	}
+	,
+	{
+		(uint16_t *) g_u2CountryGroup21, sizeof(g_u2CountryGroup21) / 2,
+		{
+			{81, BAND_2G4, CHNL_SPAN_5, 1, 13, FALSE}
+			,			/* CH_SET_2G4_1_13 */
+			{115, BAND_5G, CHNL_SPAN_20, 36, 4, FALSE}
+			,			/* CH_SET_UNII_LOW_36_48 */
+			{118, BAND_NULL, 0, 0, 0, FALSE}
+			,			/* CH_SET_UNII_MID_NA */
+			{121, BAND_NULL, 0, 0, 0, FALSE}
+			,			/* CH_SET_UNII_WW_NA */
 			{125, BAND_5G, CHNL_SPAN_20, 149, 5, FALSE}
 			,			/* CH_SET_UNII_UPPER_149_165 */
 			{0, BAND_NULL, 0, 0, 0, FALSE}
