@@ -344,10 +344,13 @@ void p2pFsmRunEventWfdSettingUpdate(IN struct ADAPTER *prAdapter,
 					&(prP2pRoleFsmInfo
 					->rP2pRoleFsmGetStatisticsTimer),
 					(3 * P2P_ROLE_GET_STATISTICS_TIME));
-			else
+			else {
 				cnmTimerStopTimer(prAdapter,
 					&prP2pRoleFsmInfo
 					->rP2pRoleFsmGetStatisticsTimer);
+				/* Reset linkscore */
+				prWfdCfgSettings->u4LinkScore = 0;
+			}
 		}
 #endif
 

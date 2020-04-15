@@ -2509,6 +2509,9 @@ void nicCmdEventQueryStaStatistics(IN struct ADAPTER
 			if (u4LinkScore > 100)
 				u4LinkScore = 100;
 
+			prAdapter->rWifiVar.rWfdConfigureSettings.u4LinkScore
+				= u4LinkScore;
+
 			log_dbg(P2P, INFO,
 				"[%u][%u] link_score=%u, rssi=%u, rate=%u, threshold_cnt=%u, fail_cnt=%u\n",
 				prEvent->ucNetworkTypeIndex,
@@ -4323,6 +4326,11 @@ bool nicBeaconTimeoutFilterPolicy(IN struct ADAPTER *prAdapter,
 	OS_SYSTIME	u4CurrentTime;
 	bool		bValid = true;
 	uint32_t	u4MonitorWindow;
+	struct BSS_INFO *prBssInfo = (struct BSS_INFO *) NULL;
+#if CFG_SUPPORT_WFD
+	struct WFD_CFG_SETTINGS *prWfdCfgSettings =
+		&prAdapter->rWifiVar.rWfdConfigureSettings;
+#endif
 
 	ASSERT(prAdapter);
 	u4MonitorWindow = CFG_BEACON_TIMEOUT_FILTER_DURATION_DEFAULT_VALUE;
@@ -4341,17 +4349,41 @@ bool nicBeaconTimeoutFilterPolicy(IN struct ADAPTER *prAdapter,
 			prRxCtrl->u4LastRxTime[ucBssIdx],
 			prTxCtrl->u4LastTxTime[ucBssIdx]);
 
-	/* Policy 1, if RX in the past duration (in ms)
-	 */
-	if (ucReason == BEACON_TIMEOUT_REASON_HIGH_PER) {
-		bValid = true;
-	} else if (!CHECK_FOR_TIMEOUT(u4CurrentTime,
-		prRxCtrl->u4LastRxTime[ucBssIdx],
-		SEC_TO_SYSTIME(MSEC_TO_SEC(u4MonitorWindow))) &&
-	    !scanBeaconTimeoutFilterPolicyForAis(prAdapter, ucBssIdx)) {
-		DBGLOG(NIC, INFO, "Policy 1 hit, RX in the past duration");
-		bValid = false;
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIdx);
+
+	if (IS_BSS_AIS(prBssInfo)) {
+		/* Policy 1, if RX in the past duration (in ms)
+		 */
+		if (ucReason == BEACON_TIMEOUT_REASON_HIGH_PER) {
+			bValid = true;
+		} else if (!CHECK_FOR_TIMEOUT(u4CurrentTime,
+			prRxCtrl->u4LastRxTime[ucBssIdx],
+			SEC_TO_SYSTIME(MSEC_TO_SEC(u4MonitorWindow))) &&
+		    !scanBeaconTimeoutFilterPolicyForAis(prAdapter, ucBssIdx)) {
+			DBGLOG(NIC, INFO,
+				"Policy 1 hit, RX in the past duration");
+			bValid = false;
+		}
 	}
+#if CFG_ENABLE_WIFI_DIRECT
+	else if (IS_BSS_P2P(prBssInfo)) {
+		if (!CHECK_FOR_TIMEOUT(u4CurrentTime,
+			prRxCtrl->u4LastRxTime[ucBssIdx],
+			SEC_TO_SYSTIME(MSEC_TO_SEC(u4MonitorWindow)))) {
+			DBGLOG(NIC, INFO,
+				"Policy 1 hit, RX in the past duration");
+			bValid = false;
+		}
+#if CFG_SUPPORT_WFD
+		else if (prWfdCfgSettings->ucWfdEnable &&
+			prWfdCfgSettings->u4LinkScore > 0) {
+			DBGLOG(NIC, INFO,
+				"Policy 2 hit, link score > 0 in WFD");
+			bValid = false;
+		}
+#endif /* CFG_SUPPORT_WFD */
+	}
+#endif /* CFG_ENABLE_WIFI_DIRECT */
 
 	DBGLOG(NIC, INFO, "valid beacon time out event?: %d", bValid);
 
