@@ -411,6 +411,76 @@ void nic_rxd_v2_check_wakeup_reason(
 		(uint8_t) HAL_MAC_CONNAC2X_RX_STATUS_GET_GROUP_VLD(prRxStatus);
 
 	switch (prSwRfb->ucPacketType) {
+	case RX_PKT_TYPE_SW_DEFINED:
+	if (prSwRfb->ucOFLD) {
+		DBGLOG(RX, INFO, "Need to treat as data frame.\n");
+		/*
+		 * In order to jump to case RX_PKT_TYPE_RX_DATA,
+		 * DO NOT ADD break here!!!
+		 */
+	} else {
+	/* HIF_RX_PKT_TYPE_EVENT */
+		if ((NIC_RX_GET_U2_SW_PKT_TYPE(prSwRfb->prRxStatus) &
+			CONNAC2X_RX_STATUS_PKT_TYPE_SW_BITMAP) ==
+			CONNAC2X_RX_STATUS_PKT_TYPE_SW_EVENT) {
+			prEvent = (struct WIFI_EVENT *)
+				(prSwRfb->pucRecvBuff + prChipInfo->rxd_size);
+			DBGLOG(RX, INFO, "Event 0x%02x wakeup host\n",
+				prEvent->ucEID);
+			break;
+		} else if ((NIC_RX_GET_U2_SW_PKT_TYPE(prSwRfb->prRxStatus) &
+			CONNAC2X_RX_STATUS_PKT_TYPE_SW_BITMAP) ==
+			CONNAC2X_RX_STATUS_PKT_TYPE_SW_FRAME) {
+			/* case HIF_RX_PKT_TYPE_MANAGEMENT: */
+			uint8_t ucSubtype;
+			struct WLAN_MAC_MGMT_HEADER *prWlanMgmtHeader;
+			uint16_t u2Temp = prChipInfo->rxd_size;
+
+			u2PktLen =
+				HAL_MAC_CONNAC2X_RX_STATUS_GET_RX_BYTE_CNT(
+				prRxStatus);
+
+			u4HeaderOffset = (uint32_t)
+				HAL_MAC_CONNAC2X_RX_STATUS_GET_HEADER_OFFSET(
+				prRxStatus);
+			if (prSwRfb->ucGroupVLD & BIT(RX_GROUP_VLD_4))
+				u2Temp += sizeof(struct HW_MAC_RX_STS_GROUP_4);
+			if (prSwRfb->ucGroupVLD & BIT(RX_GROUP_VLD_1))
+				u2Temp += sizeof(struct HW_MAC_RX_STS_GROUP_1);
+			if (prSwRfb->ucGroupVLD & BIT(RX_GROUP_VLD_2))
+				u2Temp += sizeof(struct HW_MAC_RX_STS_GROUP_2);
+			if (prSwRfb->ucGroupVLD & BIT(RX_GROUP_VLD_3))
+				u2Temp +=
+			    sizeof(struct HW_MAC_RX_STS_GROUP_3_V2);
+			pvHeader = (uint8_t *)
+				prRxStatus + u2Temp + u4HeaderOffset;
+				u2PktLen -= u2Temp + u4HeaderOffset;
+			if (!pvHeader) {
+				DBGLOG(RX, ERROR,
+				"Frame but pvHeader is NULL!\n");
+				break;
+			}
+			prWlanMgmtHeader =
+			(struct WLAN_MAC_MGMT_HEADER *)pvHeader;
+			ucSubtype = (prWlanMgmtHeader->u2FrameCtrl &
+				MASK_FC_SUBTYPE) >> OFFSET_OF_FC_SUBTYPE;
+			DBGLOG(RX, INFO,
+				"frame subtype: %d",
+				ucSubtype);
+				DBGLOG(RX, INFO,
+				" SeqCtrl %d wakeup host\n",
+				prWlanMgmtHeader->u2SeqCtrl);
+			DBGLOG_MEM8(RX, INFO,
+					pvHeader, u2PktLen > 50 ? 50:u2PktLen);
+		} else {
+			DBGLOG(RX, ERROR,
+			"[%s]: u2PktTYpe(0x%04X) is OUT OF DEF.!!!\n",
+			__func__,
+			NIC_RX_GET_U2_SW_PKT_TYPE(prSwRfb->prRxStatus));
+			ASSERT(0);
+		}
+		break;
+	}
 	case RX_PKT_TYPE_RX_DATA:
 	{
 		uint16_t u2Temp = 0;
@@ -428,7 +498,7 @@ void nic_rxd_v2_check_wakeup_reason(
 		if (prSwRfb->ucGroupVLD & BIT(RX_GROUP_VLD_2))
 			u2Temp += sizeof(struct HW_MAC_RX_STS_GROUP_2);
 		if (prSwRfb->ucGroupVLD & BIT(RX_GROUP_VLD_3))
-			u2Temp += sizeof(struct HW_MAC_RX_STS_GROUP_3);
+			u2Temp += sizeof(struct HW_MAC_RX_STS_GROUP_3_V2);
 		pvHeader = (uint8_t *)prRxStatus + u2Temp + u4HeaderOffset;
 		u2PktLen -= u2Temp + u4HeaderOffset;
 		if (!pvHeader) {
@@ -490,63 +560,7 @@ void nic_rxd_v2_check_wakeup_reason(
 		}
 		break;
 	}
-	case RX_PKT_TYPE_SW_DEFINED:
-		/* HIF_RX_PKT_TYPE_EVENT */
-		if ((NIC_RX_GET_U2_SW_PKT_TYPE(prSwRfb->prRxStatus) &
-			CONNAC2X_RX_STATUS_PKT_TYPE_SW_BITMAP) ==
-			CONNAC2X_RX_STATUS_PKT_TYPE_SW_EVENT) {
 
-			prEvent = (struct WIFI_EVENT *)
-				(prSwRfb->pucRecvBuff + prChipInfo->rxd_size);
-
-			DBGLOG(RX, INFO, "Event 0x%02x wakeup host\n",
-				prEvent->ucEID);
-			break;
-
-		} else if ((NIC_RX_GET_U2_SW_PKT_TYPE(prSwRfb->prRxStatus) &
-			CONNAC2X_RX_STATUS_PKT_TYPE_SW_BITMAP) ==
-			CONNAC2X_RX_STATUS_PKT_TYPE_SW_FRAME) {
-			/* case HIF_RX_PKT_TYPE_MANAGEMENT: */
-			uint8_t ucSubtype;
-			struct WLAN_MAC_MGMT_HEADER *prWlanMgmtHeader;
-			uint16_t u2Temp = prChipInfo->rxd_size;
-
-			u4HeaderOffset = (uint32_t)
-				HAL_MAC_CONNAC2X_RX_STATUS_GET_HEADER_OFFSET(
-					prRxStatus);
-			if (prSwRfb->ucGroupVLD & BIT(RX_GROUP_VLD_4))
-				u2Temp += sizeof(struct HW_MAC_RX_STS_GROUP_4);
-			if (prSwRfb->ucGroupVLD & BIT(RX_GROUP_VLD_1))
-				u2Temp += sizeof(struct HW_MAC_RX_STS_GROUP_1);
-			if (prSwRfb->ucGroupVLD & BIT(RX_GROUP_VLD_2))
-				u2Temp += sizeof(struct HW_MAC_RX_STS_GROUP_2);
-			if (prSwRfb->ucGroupVLD & BIT(RX_GROUP_VLD_3))
-				u2Temp += sizeof(struct HW_MAC_RX_STS_GROUP_3);
-			pvHeader = (uint8_t *)
-				prRxStatus + u2Temp + u4HeaderOffset;
-			if (!pvHeader) {
-				DBGLOG(RX, ERROR,
-					"Mgmt Frame but pvHeader is NULL!\n");
-				break;
-			}
-			prWlanMgmtHeader =
-				(struct WLAN_MAC_MGMT_HEADER *)pvHeader;
-			ucSubtype = (prWlanMgmtHeader->u2FrameCtrl &
-				MASK_FC_SUBTYPE) >> OFFSET_OF_FC_SUBTYPE;
-			DBGLOG(RX, INFO,
-				"MGMT frame subtype: %d",
-				ucSubtype);
-			DBGLOG(RX, INFO,
-				" SeqCtrl %d wakeup host\n",
-				prWlanMgmtHeader->u2SeqCtrl);
-		} else {
-			DBGLOG(RX, ERROR,
-				"[%s]: u2PktTYpe(0x%04X) is OUT OF DEF.!!!\n",
-				__func__,
-				NIC_RX_GET_U2_SW_PKT_TYPE(prSwRfb->prRxStatus));
-			ASSERT(0);
-		}
-		break;
 	default:
 		DBGLOG(RX, WARN, "Unknown Packet %d wakeup host\n",
 			prSwRfb->ucPacketType);
