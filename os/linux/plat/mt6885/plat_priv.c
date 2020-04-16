@@ -116,8 +116,3 @@ void kalSetEmiMpuProtection(phys_addr_t emiPhyBase, bool enable)
 }
 #endif
 
-int32_t kalGetFwFlavor(uint8_t *flavor)
-{
-	*flavor = 'a';
-	return 1;
-}
