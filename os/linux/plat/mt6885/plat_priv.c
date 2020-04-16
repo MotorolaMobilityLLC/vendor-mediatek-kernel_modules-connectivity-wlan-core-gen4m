@@ -101,6 +101,9 @@ void kalSetEmiMpuProtection(phys_addr_t emiPhyBase, bool enable)
 	unsigned long long end = emiPhyBase + WIFI_EMI_MEM_OFFSET
 		+ WIFI_EMI_MEM_SIZE - 1;
 
+	DBGLOG(INIT, INFO, "emiPhyBase: 0x%p, enable: %d\n",
+			emiPhyBase, enable);
+
 	mtk_emimpu_init_region(&region, REGION_WIFI);
 	mtk_emimpu_set_addr(&region, start, end);
 	mtk_emimpu_set_apc(&region, DOMAIN_AP, MTK_EMIMPU_NO_PROTECTION);
@@ -109,10 +112,36 @@ void kalSetEmiMpuProtection(phys_addr_t emiPhyBase, bool enable)
 		enable ? MTK_EMIMPU_LOCK:MTK_EMIMPU_UNLOCK);
 	mtk_emimpu_set_protection(&region);
 	mtk_emimpu_free_region(&region);
-
-	DBGLOG_LIMITED(INIT, WARN
-	  , "MPU for EMI PhyBase star:0x%x ,PhyBase end: 0x%x, Enable:%d\n"
-		, start, end, enable);
 }
+
+void kalSetDrvEmiMpuProtection(phys_addr_t emiPhyBase, uint32_t offset,
+			       uint32_t size)
+{
+	struct emimpu_region_t region;
+	unsigned long long start = emiPhyBase + offset;
+	unsigned long long end = emiPhyBase + offset + size - 1;
+	int ret;
+
+	DBGLOG(INIT, INFO, "emiPhyBase: 0x%p, offset: %d, size: %d\n",
+				emiPhyBase, offset, size);
+
+	ret = mtk_emimpu_init_region(&region, 18);
+	if (ret) {
+		DBGLOG(INIT, ERROR, "mtk_emimpu_init_region failed, ret: %d\n",
+				ret);
+		return;
+	}
+	mtk_emimpu_set_addr(&region, start, end);
+	mtk_emimpu_set_apc(&region, DOMAIN_AP, MTK_EMIMPU_NO_PROTECTION);
+	mtk_emimpu_set_apc(&region, DOMAIN_CONN, MTK_EMIMPU_NO_PROTECTION);
+	mtk_emimpu_lock_region(&region, MTK_EMIMPU_LOCK);
+	ret = mtk_emimpu_set_protection(&region);
+	if (ret)
+		DBGLOG(INIT, ERROR,
+			"mtk_emimpu_set_protection failed, ret: %d\n",
+			ret);
+	mtk_emimpu_free_region(&region);
+}
+
 #endif
 

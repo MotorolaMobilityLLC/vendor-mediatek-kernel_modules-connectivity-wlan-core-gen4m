@@ -865,20 +865,6 @@ KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
 #define KAL_ARCH_SETUP_DMA_OPS(_dev, _base, _size, _iommu, _coherent)
 #endif
 
-/*----------------------------------------------------------------------------*/
-/* Macros of show stack operations for using in Driver Layer                  */
-/*----------------------------------------------------------------------------*/
-#ifdef CONFIG_X86
-#define kal_show_stack(_adapter, _task, _sp)
-#else
-#define kal_show_stack(_adapter, _task, _sp) \
-{ \
-	if (_adapter->chip_info->showTaskStack) { \
-		_adapter->chip_info->showTaskStack(_task, _sp); \
-	} \
-}
-#endif
-
 /*******************************************************************************
  *                  F U N C T I O N   D E C L A R A T I O N S
  *******************************************************************************
