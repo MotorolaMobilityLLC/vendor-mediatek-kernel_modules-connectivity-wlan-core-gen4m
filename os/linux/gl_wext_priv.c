@@ -2905,6 +2905,8 @@ reqExtSetAcpiDevicePowerState(IN struct GLUE_INFO
 /* Mediatek private command */
 #define CMD_SET_MCR		"SET_MCR"
 #define CMD_GET_MCR		"GET_MCR"
+#define CMD_SET_NVRAM	"SET_NVRAM"
+#define CMD_GET_NVRAM	"GET_NVRAM"
 #define CMD_SET_DRV_MCR		"SET_DRV_MCR"
 #define CMD_GET_DRV_MCR		"GET_DRV_MCR"
 #define CMD_SET_SW_CTRL	        "SET_SW_CTRL"
@@ -12979,6 +12981,148 @@ static int priv_driver_calibration(
 	return i4BytesWritten;
 }
 
+static int priv_driver_get_nvram(IN struct net_device *prNetDev,
+			       IN char *pcCommand, IN int i4TotalLen)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	uint32_t rStatus = WLAN_STATUS_SUCCESS;
+	uint32_t u4BufLen = 0;
+	int32_t i4Argc = 0;
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
+	uint32_t u4Ret;
+	int32_t i4ArgNum = 2;
+	uint32_t u4Offset = 0;
+	uint16_t u2Index = 0;
+	struct PARAM_CUSTOM_EEPROM_RW_STRUCT rNvrRwInfo;
+	struct WIFI_CFG_PARAM_STRUCT *prNvSet;
+
+	ASSERT(prNetDev);
+	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
+		return -1;
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+	kalMemZero(&rNvrRwInfo, sizeof(rNvrRwInfo));
+
+	prNvSet = prGlueInfo->rRegInfo.prNvramSettings;
+	ASSERT(prNvSet);
+
+
+	DBGLOG(REQ, INFO, "command is %s\n", pcCommand);
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+	DBGLOG(REQ, INFO, "argc is %i\n", i4Argc);
+
+
+	if (i4Argc == i4ArgNum) {
+		u4Ret = kalkStrtou16(apcArgv[1], 0, &u2Index);
+
+		if (u4Ret)
+			DBGLOG(REQ, INFO,
+			       "parse get_nvram error (Index) u4Ret=%d\n",
+			       u4Ret);
+
+
+		DBGLOG(REQ, INFO, "Index is 0x%x\n", u2Index);
+
+		/* NVRAM Check */
+		if (prGlueInfo->fgNvramAvailable == TRUE)
+			u4Offset += snprintf(pcCommand + u4Offset,
+				(i4TotalLen - u4Offset),
+				"NVRAM Version is[%d.%d.%d]\n",
+				(prNvSet->u2Part1OwnVersion & 0x00FF),
+				(prNvSet->u2Part1OwnVersion & 0xFF00) >> 8,
+				(prNvSet->u2Part1PeerVersion & 0xFF));
+		else {
+			u4Offset += snprintf(pcCommand + u4Offset,
+				i4TotalLen - u4Offset,
+				"[WARNING] NVRAM is unavailable!\n");
+
+			return (int32_t) u4Offset;
+		}
+
+		rNvrRwInfo.ucMethod = PARAM_EEPROM_READ_NVRAM;
+		rNvrRwInfo.info.rNvram.u2NvIndex = u2Index;
+
+		rStatus = kalIoctl(prGlueInfo, wlanoidQueryNvramRead,
+				   &rNvrRwInfo, sizeof(rNvrRwInfo),
+				   TRUE, TRUE, TRUE, &u4BufLen);
+
+		DBGLOG(REQ, INFO, "rStatus %u\n", rStatus);
+		if (rStatus != WLAN_STATUS_SUCCESS)
+			return -1;
+
+		u4Offset += snprintf(pcCommand + u4Offset,
+			(i4TotalLen - u4Offset),
+			"NVRAM [0x%02X] = %d (0x%02X)\n",
+			(unsigned int)rNvrRwInfo.info.rNvram.u2NvIndex,
+			(unsigned int)rNvrRwInfo.info.rNvram.u2NvData,
+			(unsigned int)rNvrRwInfo.info.rNvram.u2NvData);
+
+		DBGLOG(REQ, INFO, "%s: command result is %s\n", __func__,
+		       pcCommand);
+	}
+
+	return (int32_t)u4Offset;
+
+}				/* priv_driver_get_nvram */
+
+int priv_driver_set_nvram(IN struct net_device *prNetDev, IN char *pcCommand,
+			IN int i4TotalLen)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	uint32_t rStatus = WLAN_STATUS_SUCCESS;
+	uint32_t u4BufLen = 0;
+	int32_t i4BytesWritten = 0;
+	int32_t i4Argc = 0;
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = { 0 };
+	uint32_t u4Ret;
+	int32_t i4ArgNum = 3;
+
+	struct PARAM_CUSTOM_EEPROM_RW_STRUCT rNvRwInfo;
+
+	ASSERT(prNetDev);
+	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
+		return -1;
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+
+	DBGLOG(REQ, INFO, "command is %s\n", pcCommand);
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+	DBGLOG(REQ, INFO, "argc is %i\n", i4Argc);
+
+	kalMemZero(&rNvRwInfo, sizeof(rNvRwInfo));
+
+	if (i4Argc >= i4ArgNum) {
+
+		rNvRwInfo.ucMethod = PARAM_EEPROM_WRITE_NVRAM;
+
+		u4Ret = kalkStrtou16(apcArgv[1], 0,
+			&(rNvRwInfo.info.rNvram.u2NvIndex));
+		if (u4Ret)
+			DBGLOG(REQ, ERROR,
+			       "parse set_nvram error (Add) Ret=%d\n",
+			       u4Ret);
+
+		u4Ret = kalkStrtou16(apcArgv[2], 0,
+			&(rNvRwInfo.info.rNvram.u2NvData));
+		if (u4Ret)
+			DBGLOG(REQ, ERROR,
+				"parse set_nvram error (Data) Ret=%d\n",
+				u4Ret);
+
+		rStatus = kalIoctl(prGlueInfo, wlanoidSetNvramWrite,
+				   &rNvRwInfo, sizeof(rNvRwInfo),
+				   FALSE, FALSE, TRUE, &u4BufLen);
+
+		if (rStatus != WLAN_STATUS_SUCCESS)
+			return -1;
+
+	} else
+		DBGLOG(INIT, ERROR,
+					   "[Error]iwpriv wlanXX driver set_nvram [addr] [value]\n");
+
+
+	return i4BytesWritten;
+
+}
+
 typedef int(*PRIV_CMD_FUNCTION) (
 		IN struct net_device *prNetDev,
 		IN char *pcCommand,
@@ -13124,6 +13268,8 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers[] = {
 	{CMD_RUN_HQA, priv_driver_run_hqa},
 	{CMD_CALIBRATION, priv_driver_calibration},
 	{CMD_SET_STA1NSS, priv_driver_set_sta1ss},
+	{CMD_SET_NVRAM, priv_driver_set_nvram},
+	{CMD_GET_NVRAM, priv_driver_get_nvram},
 };
 
 int32_t priv_driver_cmds(IN struct net_device *prNetDev, IN int8_t *pcCommand,
