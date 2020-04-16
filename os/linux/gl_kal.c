@@ -334,39 +334,61 @@ kalConstructDefaultFirmwarePrio(struct GLUE_INFO
 			prGlueInfo->prAdapter->chip_info;
 	uint32_t chip_id = prChipInfo->chip_id;
 	uint8_t sub_idx = 0;
+	int ret = 0;
 
 	for (sub_idx = 0; apucNameTable[sub_idx]; sub_idx++) {
-		if ((*pucNameIdx + 3) < ucMaxNameIdx) {
-			/* Type 1. WIFI_RAM_CODE_MTxxxx */
-			snprintf(*(apucName + (*pucNameIdx)), FILE_NAME_MAX,
-				"%s%x", apucNameTable[sub_idx], chip_id);
-			(*pucNameIdx) += 1;
-
-			/* Type 2. WIFI_RAM_CODE_MTxxxx.bin */
-			snprintf(*(apucName + (*pucNameIdx)), FILE_NAME_MAX,
-				 "%s%x.bin",
-				 apucNameTable[sub_idx], chip_id);
-			(*pucNameIdx) += 1;
-
-			/* Type 3. WIFI_RAM_CODE_MTxxxx_Ex */
-			snprintf(*(apucName + (*pucNameIdx)), FILE_NAME_MAX,
-				 "%s%x_E%u",
-				 apucNameTable[sub_idx], chip_id,
-				 wlanGetEcoVersion(prGlueInfo->prAdapter));
-			(*pucNameIdx) += 1;
-
-			/* Type 4. WIFI_RAM_CODE_MTxxxx_Ex.bin */
-			snprintf(*(apucName + (*pucNameIdx)), FILE_NAME_MAX,
-				 "%s%x_E%u.bin",
-				 apucNameTable[sub_idx], chip_id,
-				 wlanGetEcoVersion(prGlueInfo->prAdapter));
-			(*pucNameIdx) += 1;
-		} else {
+		if ((*pucNameIdx + 3) >= ucMaxNameIdx) {
 			/* the table is not large enough */
 			DBGLOG(INIT, ERROR,
 			       "kalFirmwareImageMapping >> file name array is not enough.\n");
 			ASSERT(0);
+			continue;
 		}
+
+		/* Type 1. WIFI_RAM_CODE_MTxxxx */
+		ret = kalSnprintf(*(apucName + (*pucNameIdx)), FILE_NAME_MAX,
+			"%s%x", apucNameTable[sub_idx], chip_id);
+		if (ret >= 0 && ret < CFG_FW_NAME_MAX_LEN)
+			(*pucNameIdx) += 1;
+		else
+			DBGLOG(INIT, ERROR,
+					"[%u] kalSnprintf failed, ret: %d\n",
+					__LINE__, ret);
+
+		/* Type 2. WIFI_RAM_CODE_MTxxxx.bin */
+		ret = kalSnprintf(*(apucName + (*pucNameIdx)), FILE_NAME_MAX,
+			 "%s%x.bin",
+			 apucNameTable[sub_idx], chip_id);
+		if (ret >= 0 && ret < CFG_FW_NAME_MAX_LEN)
+			(*pucNameIdx) += 1;
+		else
+			DBGLOG(INIT, ERROR,
+					"[%u] kalSnprintf failed, ret: %d\n",
+					__LINE__, ret);
+
+		/* Type 3. WIFI_RAM_CODE_MTxxxx_Ex */
+		ret = kalSnprintf(*(apucName + (*pucNameIdx)), FILE_NAME_MAX,
+			 "%s%x_E%u",
+			 apucNameTable[sub_idx], chip_id,
+			 wlanGetEcoVersion(prGlueInfo->prAdapter));
+		if (ret >= 0 && ret < CFG_FW_NAME_MAX_LEN)
+			(*pucNameIdx) += 1;
+		else
+			DBGLOG(INIT, ERROR,
+					"[%u] kalSnprintf failed, ret: %d\n",
+					__LINE__, ret);
+
+		/* Type 4. WIFI_RAM_CODE_MTxxxx_Ex.bin */
+		ret = kalSnprintf(*(apucName + (*pucNameIdx)), FILE_NAME_MAX,
+			 "%s%x_E%u.bin",
+			 apucNameTable[sub_idx], chip_id,
+				 wlanGetEcoVersion(prGlueInfo->prAdapter));
+		if (ret >= 0 && ret < CFG_FW_NAME_MAX_LEN)
+			(*pucNameIdx) += 1;
+		else
+			DBGLOG(INIT, ERROR,
+					"[%u] kalSnprintf failed, ret: %d\n",
+					__LINE__, ret);
 	}
 }
 
@@ -445,7 +467,7 @@ kalFirmwareImageMapping(IN struct GLUE_INFO *prGlueInfo,
 				prChipInfo->fw_dl_ops->constructPatchName(
 					prGlueInfo, apucName, &idx);
 			else
-				snprintf(apucName[idx], FILE_NAME_MAX,
+				kalSnprintf(apucName[idx], FILE_NAME_MAX,
 					"mt%x_patch_e%x_hdr.bin", chip_id,
 					wlanGetEcoVersion(
 						prGlueInfo->prAdapter));

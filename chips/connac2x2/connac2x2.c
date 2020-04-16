@@ -172,81 +172,85 @@ void connac2x2ConstructFirmwarePrio(struct GLUE_INFO *prGlueInfo,
 	uint8_t *pucNameIdx, uint8_t ucMaxNameIdx)
 {
 	uint8_t ucIdx = 0;
-	uint8_t ucFlavor = 0;
-	uint32_t u4IsFlavor = kalGetFwFlavor(&ucFlavor);
+	uint8_t aucFlavor[2] = {0};
+	int ret = 0;
 
+	kalGetFwFlavor(&aucFlavor[0]);
 	for (ucIdx = 0; apucConnac2x2FwName[ucIdx]; ucIdx++) {
-		if ((*pucNameIdx + 3) < ucMaxNameIdx) {
-			if (!u4IsFlavor) {
-				/* Type 1. WIFI_RAM_CODE_soc1_0_1_1.bin */
-				snprintf(*(apucName + (*pucNameIdx)),
-						CFG_FW_NAME_MAX_LEN,
-						"%s_%u_%u.bin",
-						apucConnac2x2FwName[ucIdx],
-						CFG_WIFI_IP_SET,
-						wlanGetEcoVersion(
-							prGlueInfo->prAdapter));
-				(*pucNameIdx) += 1;
-
-				/* Type 2. WIFI_RAM_CODE_soc1_0_1_1 */
-				snprintf(*(apucName + (*pucNameIdx)),
-						CFG_FW_NAME_MAX_LEN,
-						"%s_%u_%u",
-						apucConnac2x2FwName[ucIdx],
-						CFG_WIFI_IP_SET,
-						wlanGetEcoVersion(
-							prGlueInfo->prAdapter));
-				(*pucNameIdx) += 1;
-			} else {
-				/* Type 1. WIFI_RAM_CODE_soc1_0_1a_1.bin */
-				snprintf(*(apucName + (*pucNameIdx)),
-						CFG_FW_NAME_MAX_LEN,
-						"%s_%u%c_%u.bin",
-						apucConnac2x2FwName[ucIdx],
-						CFG_WIFI_IP_SET,
-						ucFlavor,
-						wlanGetEcoVersion(
-							prGlueInfo->prAdapter));
-				(*pucNameIdx) += 1;
-
-				/* Type 2. WIFI_RAM_CODE_soc1_0_1a_1 */
-				snprintf(*(apucName + (*pucNameIdx)),
-						CFG_FW_NAME_MAX_LEN,
-						"%s_%u%c_%u",
-						apucConnac2x2FwName[ucIdx],
-						CFG_WIFI_IP_SET,
-						ucFlavor,
-						wlanGetEcoVersion(
-							prGlueInfo->prAdapter));
-				(*pucNameIdx) += 1;
-			}
-
-			/* Type 3. WIFI_RAM_CODE_soc1_0 */
-			snprintf(*(apucName + (*pucNameIdx)),
-					CFG_FW_NAME_MAX_LEN, "%s",
-					apucConnac2x2FwName[ucIdx]);
-			(*pucNameIdx) += 1;
-
-			/* Type 4. WIFI_RAM_CODE_soc1_0.bin */
-			snprintf(*(apucName + (*pucNameIdx)),
-					CFG_FW_NAME_MAX_LEN, "%s.bin",
-					apucConnac2x2FwName[ucIdx]);
-			(*pucNameIdx) += 1;
-		} else {
+		if ((*pucNameIdx + 3) >= ucMaxNameIdx) {
 			/* the table is not large enough */
 			DBGLOG(INIT, ERROR,
 				"kalFirmwareImageMapping >> file name array is not enough.\n");
 			ASSERT(0);
+			continue;
 		}
+
+		/* Type 1. WIFI_RAM_CODE_soc1_0_1_1 */
+		ret = kalSnprintf(*(apucName + (*pucNameIdx)),
+				CFG_FW_NAME_MAX_LEN,
+				"%s_%u%s_%u",
+				apucConnac2x2FwName[ucIdx],
+				CFG_WIFI_IP_SET,
+				aucFlavor,
+				wlanGetEcoVersion(
+					prGlueInfo->prAdapter));
+		if (ret >= 0 && ret < CFG_FW_NAME_MAX_LEN)
+			(*pucNameIdx) += 1;
+		else
+			DBGLOG(INIT, ERROR,
+					"[%u] kalSnprintf failed, ret: %d\n",
+					__LINE__, ret);
+
+		/* Type 2. WIFI_RAM_CODE_soc1_0_1_1.bin */
+		ret = kalSnprintf(*(apucName + (*pucNameIdx)),
+				CFG_FW_NAME_MAX_LEN,
+				"%s_%u%s_%u.bin",
+				apucConnac2x2FwName[ucIdx],
+				CFG_WIFI_IP_SET,
+				aucFlavor,
+				wlanGetEcoVersion(
+					prGlueInfo->prAdapter));
+		if (ret >= 0 && ret < CFG_FW_NAME_MAX_LEN)
+			(*pucNameIdx) += 1;
+		else
+			DBGLOG(INIT, ERROR,
+					"[%u] kalSnprintf failed, ret: %d\n",
+					__LINE__, ret);
+
+		/* Type 3. WIFI_RAM_CODE_soc1_0 */
+		ret = kalSnprintf(*(apucName + (*pucNameIdx)),
+				CFG_FW_NAME_MAX_LEN, "%s",
+				apucConnac2x2FwName[ucIdx]);
+		if (ret >= 0 && ret < CFG_FW_NAME_MAX_LEN)
+			(*pucNameIdx) += 1;
+		else
+			DBGLOG(INIT, ERROR,
+					"[%u] kalSnprintf failed, ret: %d\n",
+					__LINE__, ret);
+
+		/* Type 4. WIFI_RAM_CODE_soc1_0.bin */
+		ret = kalSnprintf(*(apucName + (*pucNameIdx)),
+				CFG_FW_NAME_MAX_LEN, "%s.bin",
+				apucConnac2x2FwName[ucIdx]);
+		if (ret >= 0 && ret < CFG_FW_NAME_MAX_LEN)
+			(*pucNameIdx) += 1;
+		else
+			DBGLOG(INIT, ERROR,
+					"[%u] kalSnprintf failed, ret: %d\n",
+					__LINE__, ret);
 	}
 }
 
 void connac2x2ConstructPatchName(struct GLUE_INFO *prGlueInfo,
 	uint8_t **apucName, uint8_t *pucNameIdx)
 {
-	snprintf(apucName[(*pucNameIdx)],
+	int ret = 0;
+
+	ret = kalSnprintf(apucName[(*pucNameIdx)],
 		CFG_FW_NAME_MAX_LEN, "mtsoc1_0_patch_e%x_hdr.bin",
 		wlanGetEcoVersion(prGlueInfo->prAdapter));
+	if (ret < 0 || ret >= CFG_FW_NAME_MAX_LEN)
+		DBGLOG(INIT, ERROR, "kalSnprintf failed, ret: %d\n", ret);
 }
 
 void connac2x2wlanCalDebugCmd(uint32_t cmd, uint32_t para)

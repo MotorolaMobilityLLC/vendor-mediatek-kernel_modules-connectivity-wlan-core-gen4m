@@ -350,7 +350,7 @@ uint32_t halDumpHifStatus(IN struct ADAPTER *prAdapter,
 
 	LOGBUF(pucBuf, u4Max, u4Len, "MSDU Tok: Free[%u] Used[%u]\n",
 		halGetMsduTokenFreeCnt(prGlueInfo->prAdapter),
-		prGlueInfo->rHifInfo.rTokenInfo.i4UsedCnt);
+		prGlueInfo->rHifInfo.rTokenInfo.u4UsedCnt);
 	LOGBUF(pucBuf, u4Max, u4Len, "Pending QLen Normal[%u] Sec[%u]\n",
 		prGlueInfo->i4TxPendingFrameNum,
 		prGlueInfo->i4TxPendingSecurityFrameNum);
@@ -622,7 +622,8 @@ void halShowPdmaInfo(IN struct ADAPTER *prAdapter)
 		HAL_MCR_RD(prAdapter, WPDMA_TX_RING0_CTRL3 + offset,
 				&wfmda_tx_group[i].didx);
 
-		kalSprintf(buf, "%10s%10d  0x%08x  0x%016llx%10d%10d%10d",
+		kalSnprintf(buf, sizeof(buf),
+			"%10s%10d  0x%08x  0x%016llx%10d%10d%10d",
 			wfmda_tx_group[i].name,
 			wfmda_tx_group[i].ring_idx,
 			WPDMA_TX_RING0_CTRL0 + offset,
@@ -654,7 +655,8 @@ void halShowPdmaInfo(IN struct ADAPTER *prAdapter)
 		HAL_MCR_RD(prAdapter, WPDMA_RX_RING0_CTRL3 + offset,
 				&wfmda_rx_group[i].didx);
 
-		kalSprintf(buf, "%10s%10d  0x%08x  0x%016llx%10d%10d%10d",
+		kalSnprintf(buf, sizeof(buf),
+			"%10s%10d  0x%08x  0x%016llx%10d%10d%10d",
 			wfmda_rx_group[i].name,
 			wfmda_rx_group[i].ring_idx,
 			WPDMA_RX_RING0_CTRL0 + offset,
