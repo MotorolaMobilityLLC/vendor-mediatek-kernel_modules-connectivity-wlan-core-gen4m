@@ -963,11 +963,16 @@ static void glLoadNvram(struct GLUE_INFO *prGlueInfo,
 		(struct WIFI_CFG_PARAM_STRUCT *)&g_aucNvram[0];
 	prNvramSettings = prRegInfo->prNvramSettings;
 
+#if CFG_TC1_FEATURE
+		TC1_FAC_NAME(FacReadWifiMacAddr)(prRegInfo->aucMacAddr);
+		DBGLOG(INIT, INFO,
+			"MAC address: " MACSTR, MAC2STR(prRegInfo->aucMacAddr));
+#else
 	/* load MAC Address */
 	kalMemCopy(prRegInfo->aucMacAddr,
 			prNvramSettings->aucMacAddress,
 			PARAM_MAC_ADDR_LEN*sizeof(uint8_t));
-
+#endif
 		/* load country code */
 		/* cast to wide characters */
 		prRegInfo->au2CountryCode[0] =
