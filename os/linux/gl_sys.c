@@ -58,6 +58,7 @@
 static struct GLUE_INFO *g_prGlueInfo;
 static struct kobject *wifi_kobj;
 static uint8_t aucMacAddrOverride[] = "FF:FF:FF:FF:FF:FF";
+static uint8_t aucDefaultFWVersion[] = "Unknown";
 static u_int8_t fgIsMacAddrOverride = FALSE;
 static int32_t g_i4PM = -1;
 static char acVerInfo[MTK_INFO_MAX_SIZE];
@@ -329,7 +330,8 @@ void sysCreateWifiVer(void)
 	else {
 		ucOffset += kalSnprintf(acVerInfo + ucOffset
 			, MTK_INFO_MAX_SIZE - ucOffset
-			, "FW_VER: Unknown\n");
+			, "FW_VER: %s\n"
+			, aucDefaultFWVersion);
 	}
 
 	if (g_prGlueInfo) {
