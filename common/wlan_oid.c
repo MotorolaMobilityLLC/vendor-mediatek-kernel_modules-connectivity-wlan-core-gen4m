@@ -15151,6 +15151,47 @@ wlanoidQueryTxPowerInfo(IN struct ADAPTER *prAdapter,
 	return rWlanStatus;
 }
 #endif
+uint32_t
+wlanoidSetTxPowerByRateManual(IN struct ADAPTER *prAdapter,
+			   IN void *pvSetBuffer, IN uint32_t u4SetBufferLen,
+			   OUT uint32_t *pu4SetInfoLen) {
+
+	struct PARAM_TXPOWER_BY_RATE_SET_T *prPwrParam;
+	struct CMD_POWER_RATE_TXPOWER_CTRL_T rCmdPwrCtl;
+	uint32_t rWlanStatus = WLAN_STATUS_SUCCESS;
+
+	if (!prAdapter)
+		return WLAN_STATUS_FAILURE;
+	if (!pvSetBuffer)
+		return WLAN_STATUS_FAILURE;
+
+	prPwrParam = (struct PARAM_TXPOWER_BY_RATE_SET_T
+			 *) pvSetBuffer;
+
+	kalMemSet(&rCmdPwrCtl, 0,
+		  sizeof(struct CMD_POWER_RATE_TXPOWER_CTRL_T));
+
+	rCmdPwrCtl.u1PowerCtrlFormatId = TX_RATE_POWER_CTRL;
+	rCmdPwrCtl.u1PhyMode = prPwrParam->u1PhyMode;
+	rCmdPwrCtl.u1TxRate = prPwrParam->u1TxRate;
+	rCmdPwrCtl.u1BW = prPwrParam->u1BW;
+	rCmdPwrCtl.i1TxPower = prPwrParam->i1TxPower;
+
+	rWlanStatus = wlanSendSetQueryExtCmd(prAdapter,
+			     CMD_ID_LAYER_0_EXT_MAGIC_NUM,
+			     EXT_CMD_ID_TX_POWER_FEATURE_CTRL,
+			     TRUE, /* Query Bit: True->write False->read */
+			     FALSE,
+			     TRUE,
+			     nicCmdEventSetCommon,
+			     nicOidCmdTimeoutCommon,
+			     sizeof(rCmdPwrCtl),
+			     (uint8_t *) (&rCmdPwrCtl),
+			     NULL,
+			     0);
+
+	return rWlanStatus;
+}
 
 #if CFG_SUPPORT_MBO
 uint32_t

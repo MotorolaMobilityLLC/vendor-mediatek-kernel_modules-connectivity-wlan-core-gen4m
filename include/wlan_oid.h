@@ -242,9 +242,10 @@
 #define SER_USER_CMD_L3_BF_RECOVER       (308)
 
 
+#define TXPOWER_MAN_SET_INPUT_ARG_NUM 4
 
 #if (CFG_SUPPORT_TXPOWER_INFO == 1)
-#define TXPOWER_INPUT_ARG_NUM 2
+#define TXPOWER_INFO_INPUT_ARG_NUM 2
 #define TXPOWER_FORMAT_LEGACY 0
 #define TXPOWER_FORMAT_HE 1
 
@@ -2535,6 +2536,14 @@ struct PARAM_TXPOWER_ALL_RATE_POWER_INFO_T {
 };
 #endif
 
+
+struct PARAM_TXPOWER_BY_RATE_SET_T {
+	uint8_t u1PhyMode;
+	uint8_t u1TxRate;
+	uint8_t u1BW;
+	int8_t  i1TxPower;
+};
+
 #if CFG_SUPPORT_OSHARE
 /* OSHARE Mode */
 #define MAX_OSHARE_MODE_LENGTH		64
@@ -4008,6 +4017,11 @@ wlanoidShowDmaschInfo(IN struct ADAPTER *prAdapter,
 		      IN void *pvSetBuffer, IN uint32_t u4SetBufferLen,
 		      OUT uint32_t *pu4SetInfoLen);
 /* end Show Consys debug information*/
+
+uint32_t
+wlanoidSetTxPowerByRateManual(IN struct ADAPTER *prAdapter,
+			   IN void *pvSetBuffer, IN uint32_t u4SetBufferLen,
+			   OUT uint32_t *pu4SetInfoLen);
 
 #if (CFG_SUPPORT_TXPOWER_INFO == 1)
 uint32_t
