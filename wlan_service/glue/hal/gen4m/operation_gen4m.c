@@ -228,6 +228,8 @@ enum ENUM_RF_AT_FUNCID {
 	RF_AT_FUNCID_SET_MPS_PWR_GAIN = 132,
 	RF_AT_FUNCID_SET_MPS_NSS = 133,
 	RF_AT_FUNCID_SET_MPS_PACKAGE_BW = 134,
+
+	RF_AT_FUNCID_GET_CH_TX_PWR_OFFSET = 136,
 	/* Antenna swap feature*/
 	RF_AT_FUNCID_SET_ANT_SWP = 153,
 	RF_AT_FUNCID_SET_RX_MU_AID = 157,
@@ -2177,7 +2179,36 @@ s_int32 mt_op_get_tx_pwr(
 	u_char ant_idx,
 	u_int32 *power)
 {
-	return SERV_STATUS_SUCCESS;
+	s_int32 ret = SERV_STATUS_SUCCESS;
+	wlan_oid_handler_t pr_oid_funcptr = winfos->oid_funcptr;
+	struct param_mtk_wifi_test_struct rf_at_info;
+	u_int32 buf_len = 0;
+
+	if (pr_oid_funcptr == NULL)
+		return SERV_STATUS_HAL_OP_INVALID_NULL_POINTER;
+
+	tm_rftest_set_auto_test(winfos,
+		RF_AT_FUNCID_SET_DBDC_BAND_IDX, band_idx);
+
+	rf_at_info.func_idx = RF_AT_FUNCID_GET_CH_TX_PWR_OFFSET;
+	rf_at_info.func_data = 0;
+
+	ret = tm_rftest_query_auto_test(winfos,
+		&rf_at_info, &buf_len);
+
+	if (ret == SERV_STATUS_SUCCESS)	{
+		*power = rf_at_info.func_data;
+
+		SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_TRACE,
+			("%s: pwr:%u!\n",
+			__func__, *power));
+	} else {
+		SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_TRACE,
+			("%s:  fail!\n",
+			__func__));
+	}
+
+	return ret;
 }
 
 s_int32 mt_op_set_tx_pwr(
