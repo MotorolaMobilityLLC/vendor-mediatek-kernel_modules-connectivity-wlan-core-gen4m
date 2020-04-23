@@ -1292,6 +1292,7 @@ struct mt66xx_chip_info {
 #if (CFG_SUPPORT_802_11AX == 1)
 	const unsigned int arb_ac_mode_addr;
 #endif /* CFG_SUPPORT_802_11AX == 1 */
+	const unsigned int custom_oid_interface_version;
 
 	const struct ECO_INFO *eco_info;	/* chip version table */
 	uint8_t eco_ver;	/* chip version */
