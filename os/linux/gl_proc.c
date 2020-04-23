@@ -179,8 +179,8 @@ static ssize_t procDbgLevelRead(struct file *filp, char __user *buf,
 	    "Usage: Module Index:Module Level, such as 0x00:0xff\n\n"
 	    "Debug Module\tIndex\tLevel\tDebug Module\tIndex\tLevel\n\n";
 	u4StrLen = kalStrLen(str);
-	kalStrnCpy(temp, str, u4StrLen + 1);
-	temp += kalStrLen(temp);
+	kalStrnCpy(temp, str, u4StrLen);
+	temp += u4StrLen;
 
 	u2ModuleNum =
 	    (sizeof(aucDbModuleName) /
@@ -351,8 +351,8 @@ static ssize_t procCfgRead(struct file *filp, char __user *buf, size_t count,
 	    "'D': driver part current setting\n"
 	    "===================================\n";
 	u4StrLen = kalStrLen(str);
-	kalStrnCpy(temp, str, u4StrLen + 1);
-	temp += kalStrLen(temp);
+	kalStrnCpy(temp, str, u4StrLen);
+	temp += u4StrLen;
 
 	for (i = 0; i < WLAN_CFG_ENTRY_NUM_MAX; i++) {
 		prWlanCfgEntry =
@@ -863,8 +863,8 @@ static ssize_t procPktDelayDbgCfgRead(struct file *filp, char __user *buf,
 		"Print tx TCP delay more than 500us log,               such as: echo txLog 6 0 500 > pktDelay\n"
 		"Close log,                                            such as: echo reset 0 0 0 > pktDelay\n\n";
 	u4StrLen = kalStrLen(str);
-	kalStrnCpy(temp, str, u4StrLen + 1);
-	temp += kalStrLen(temp);
+	kalStrnCpy(temp, str, u4StrLen);
+	temp += u4StrLen;
 
 #if (CFG_SUPPORT_STATISTICS == 1)
 	StatsEnvGetPktDelay(&ucTxRxFlag, &ucTxIpProto, &u2TxUdpPort,
