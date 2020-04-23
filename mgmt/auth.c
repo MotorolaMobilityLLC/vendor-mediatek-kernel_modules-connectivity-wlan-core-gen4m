@@ -627,7 +627,8 @@ uint32_t authCheckRxAuthFrameTransSeq(IN struct ADAPTER *prAdapter,
 	switch (u2RxTransactionSeqNum) {
 	case AUTH_TRANSACTION_SEQ_2:
 	case AUTH_TRANSACTION_SEQ_4:
-		if (prStaRec && IS_STA_IN_P2P(prStaRec))
+		if (prStaRec && IS_STA_IN_P2P(prStaRec) &&
+			!IS_AP_STA(prStaRec))
 			aaaFsmRunEventRxAuth(prAdapter, prSwRfb);
 		else
 			saaFsmRunEventRxAuth(prAdapter, prSwRfb);
