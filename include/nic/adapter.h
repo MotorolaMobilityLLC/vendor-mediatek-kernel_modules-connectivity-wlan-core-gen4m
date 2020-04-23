@@ -1573,6 +1573,9 @@ struct ADAPTER {
 
 	struct WLAN_CFG_REC *prWlanCfgRec;
 	struct WLAN_CFG_REC rWlanCfgRec;
+
+	struct WLAN_CFG *prWlanCfgEm;
+	struct WLAN_CFG rWlanCfgEm;
 #endif
 
 #if CFG_M0VE_BA_TO_DRIVER

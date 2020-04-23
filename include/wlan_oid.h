@@ -1545,7 +1545,9 @@ struct PARAM_CUSTOM_CHIP_CONFIG_STRUCT {
 struct PARAM_CUSTOM_KEY_CFG_STRUCT {
 	uint8_t aucKey[WLAN_CFG_KEY_LEN_MAX];
 	uint8_t aucValue[WLAN_CFG_VALUE_LEN_MAX];
+	uint32_t u4Flag;
 };
+
 struct EEPROM_RW_INFO {
 	uint8_t ucEepromIndex;
 	uint8_t reserved;
