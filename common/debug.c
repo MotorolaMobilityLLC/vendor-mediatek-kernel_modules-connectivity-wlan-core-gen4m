@@ -697,6 +697,7 @@ void wlanDbgSetLogLevelImpl(IN struct ADAPTER *prAdapter,
 
 	wlanDbgGetGlobalLogLevel(ENUM_WIFI_LOG_MODULE_DRIVER, &u4DriverLevel);
 	wlanDbgGetGlobalLogLevel(ENUM_WIFI_LOG_MODULE_FW, &u4FwLevel);
+#if KERNEL_VERSION(4, 14, 0) >= LINUX_VERSION_CODE
 #if (CFG_BUILT_IN_DRIVER == 0) && (CFG_MTK_ANDROID_WMT == 1)
 	/*
 	 * The function definition of get_logtoomuch_enable() and
@@ -715,6 +716,7 @@ void wlanDbgSetLogLevelImpl(IN struct ADAPTER *prAdapter,
 		set_logtoomuch_enable(0);
 	}
 #endif
+#endif /* KERNEL_VERSION(4, 14, 0) >= LINUX_VERSION_CODE */
 }
 
 u_int8_t wlanDbgGetGlobalLogLevel(uint32_t u4Module, uint32_t *pu4Level)
