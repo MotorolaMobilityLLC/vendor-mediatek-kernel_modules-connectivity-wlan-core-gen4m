@@ -15819,19 +15819,9 @@ uint32_t wlanoidFwEventIT(struct ADAPTER *prAdapter, void *pvBuffer,
 
 	/* Firmware roaming Integration Test case */
 	if (!kalStrniCmp(pucCmd, "Roaming", 7)) {
-		uint8_t ucRCPI = 0;
-		uint8_t ucFrameType = 0;
-		uint32_t i = 0;
-		struct CMD_INFO *prCmdInfo;
-		struct GLUE_INFO *prGlueInfo = prAdapter->prGlueInfo;
-		struct WLAN_ACTION_FRAME *prAction = NULL;
-		struct QUE_ENTRY *prEntry = NULL;
-		struct QUE_ENTRY *prPreEntry = NULL;
 		struct CMD_ROAMING_TRANSIT rTransit = {0};
 		struct BSS_DESC *prBssDesc =
 			aisGetTargetBssDesc(prAdapter, ucBssIndex);
-
-		GLUE_SPIN_LOCK_DECLARATION();
 
 		if (prBssDesc)
 			rTransit.u2Data = prBssDesc->ucRCPI;
@@ -15839,89 +15829,6 @@ uint32_t wlanoidFwEventIT(struct ADAPTER *prAdapter, void *pvBuffer,
 		rTransit.eReason = ROAMING_REASON_POOR_RCPI;
 		rTransit.ucBssidx = ucBssIndex;
 		roamingFsmRunEventDiscovery(prAdapter, &rTransit);
-		/* Try to find the BTM query frame which is sent by
-		** roamingFsmRunEventDiscovery
-		*/
-		GLUE_ACQUIRE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_CMD_QUE);
-		for (prEntry = QUEUE_GET_HEAD(&prGlueInfo->rCmdQueue);
-			prEntry != NULL; prPreEntry = prEntry,
-			prEntry = QUEUE_GET_NEXT_ENTRY(&prCmdInfo->rQueEntry)) {
-			prCmdInfo = (struct CMD_INFO *)prEntry;
-			if (!prCmdInfo->prMsduInfo ||
-			    prCmdInfo->prMsduInfo->eSrc != TX_PACKET_MGMT ||
-				!prCmdInfo->prMsduInfo->prPacket)
-				continue;
-			prAction = (struct WLAN_ACTION_FRAME *)
-					   prCmdInfo->prMsduInfo->prPacket;
-			if (prAction->u2FrameCtrl != MAC_FRAME_ACTION)
-				continue;
-			if (prAction->ucCategory == CATEGORY_RM_ACTION &&
-				prAction->ucAction ==
-				ACTION_NEIGHBOR_REPORT_REQ) {
-				ucFrameType = 1;
-				break;
-			}
-			if (prAction->ucCategory == CATEGORY_WNM_ACTION &&
-			    prAction->ucAction ==
-				ACTION_WNM_BSS_TRANSITION_MANAGEMENT_QUERY) {
-				ucFrameType = 2;
-				break;
-			}
-		}
-		if (prEntry) {
-			if (prPreEntry) {
-				prPreEntry->prNext = prEntry->prNext;
-				prGlueInfo->rCmdQueue.u4NumElem--;
-			} else
-				QUEUE_INITIALIZE(&prGlueInfo->rCmdQueue);
-		}
-		GLUE_RELEASE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_CMD_QUE);
-		/* roamingFsmRunEventDiscovery has sent a btm query frame */
-		if (ucFrameType == 2) {
-			struct ACTION_BTM_QUERY_FRAME *prBtmQuery =
-				(struct ACTION_BTM_QUERY_FRAME *)prAction;
-
-			/* IT string may be "Roaming <btm request packet
-			** string>", to reuse btm it function,
-			** we need to replace Roaming with BTM-IT. Length of
-			** Roaming is 7 bytes, so pucCmd
-			** need to self add 1, and buffer length need to self
-			** minus 1, and copy BTM-IT to pucCmd.
-			*/
-			pucCmd++;
-			u4BufferLen--;
-			kalMemCopy(pucCmd, "BTM-IT", 6);
-
-			/* Find the diaglogToken string in <btm request packet
-			** string>, it follows "BTM-IT ", whose length is 7
-			*/
-			for (ucRCPI = 0, i = 7; i < u4BufferLen; i++) {
-				if (pucCmd[i] == ',')
-					ucRCPI++;
-				if (ucRCPI ==
-				    OFFSET_OF(struct ACTION_BTM_QUERY_FRAME,
-					      ucDialogToken))
-					break;
-			}
-			/* Replace diaglog token string with the token that is
-			** in query frame
-			*/
-			ucRCPI = prBtmQuery->ucDialogToken;
-			ucFrameType = (ucRCPI >> 4) & 0xf;
-			if (ucFrameType > 9)
-				pucCmd[++i] = ucFrameType + 'a' - 10;
-			else
-				pucCmd[++i] = ucFrameType + '0';
-			ucFrameType = ucRCPI & 0xf;
-			if (ucFrameType > 9)
-				pucCmd[++i] = ucFrameType + 'a' - 10;
-			else
-				pucCmd[++i] = ucFrameType + '0';
-			wlanoidPktProcessIT(prAdapter, (void *)pucCmd,
-					    u4BufferLen, pu4InfoLen);
-		} else if (ucFrameType == 1) {
-			/* Not support neighbor ap report request IT now */
-		}
 	} else {
 		DBGLOG(OID, ERROR, "Not supported Fw Event IT type %s\n",
 		       pucCmd);
