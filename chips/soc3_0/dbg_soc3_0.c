@@ -1218,8 +1218,10 @@ void show_wfdma_interrupt_info(
 {
 	uint32_t idx;
 	uint32_t u4hostBaseCrAddr;
-	uint32_t u4DmaCfgCrAddr, u4DmaCfgCrAddrByWFDMA[CONNAC2X_WFDMA_COUNT];
-	uint32_t u4RegValue, u4RegValueByWFDMA[CONNAC2X_WFDMA_COUNT];
+	uint32_t u4DmaCfgCrAddr = 0;
+	uint32_t u4DmaCfgCrAddrByWFDMA[CONNAC2X_WFDMA_COUNT];
+	uint32_t u4RegValue = 0;
+	uint32_t u4RegValueByWFDMA[CONNAC2X_WFDMA_COUNT];
 
 	/* Dump Interrupt Status info */
 	if (enum_wfdma_type == WFDMA_TYPE_HOST) {
@@ -1336,10 +1338,10 @@ void show_wfdma_ring_info(
 	uint32_t group_cnt;
 	uint32_t u4DmaCfgCrAddr;
 	struct wfdma_group_info *group;
-	uint32_t u4_hw_desc_base_value;
-	uint32_t u4_hw_cnt_value;
-	uint32_t u4_hw_cidx_value;
-	uint32_t u4_hw_didx_value;
+	uint32_t u4_hw_desc_base_value = 0;
+	uint32_t u4_hw_cnt_value = 0;
+	uint32_t u4_hw_cidx_value = 0;
+	uint32_t u4_hw_didx_value = 0;
 	uint32_t queue_cnt;
 
 	/* Dump All TX Ring Info */
@@ -1429,7 +1431,7 @@ static void dump_dbg_value(
 	IN uint32_t isMandatoryDump)
 {
 	uint32_t set_debug_cr, get_debug_cr;
-	uint32_t get_debug_value;
+	uint32_t get_debug_value = 0;
 
 	set_debug_cr = pdma_base_cr + 0x124;
 	get_debug_cr = pdma_base_cr + 0x128;
@@ -1574,7 +1576,7 @@ void soc3_0_show_wfdma_info_by_type(IN struct ADAPTER *prAdapter,
 
 void soc3_0_show_dmashdl_info(IN struct ADAPTER *prAdapter)
 {
-	uint32_t value;
+	uint32_t value = 0;
 	uint8_t idx;
 	uint32_t rsv_cnt = 0;
 	uint32_t src_cnt = 0;
