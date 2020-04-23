@@ -77,13 +77,7 @@
  */
 #if CFG_MTK_ANDROID_WMT
 #if (CFG_SUPPORT_CONNINFRA == 0)
-struct MTK_WCN_WMT_WLAN_CB_INFO;
-extern int mtk_wcn_wmt_wlan_reg(
-	struct MTK_WCN_WMT_WLAN_CB_INFO *pWmtWlanCbInfo);
-extern int mtk_wcn_wmt_wlan_unreg(void);
 extern int mtk_wcn_consys_hw_wifi_paldo_ctrl(unsigned int enable);
-extern int mtk_wcn_wmt_mpu_lock_aquire(void);
-extern int mtk_wcn_wmt_mpu_lock_release(void);
 #else
 struct MTK_WCN_WLAN_CB_INFO;
 extern int mtk_wcn_wlan_reg(
@@ -353,16 +347,7 @@ struct HIF_PREALLOC_MEM {
 };
 
 #if CFG_MTK_ANDROID_WMT
-#if (CFG_SUPPORT_CONNINFRA == 0)
-struct MTK_WCN_WMT_WLAN_CB_INFO {
-	int (*wlan_probe_cb)(void);
-	int (*wlan_remove_cb)(void);
-	int (*wlan_bus_cnt_get_cb)(void);
-	int (*wlan_bus_cnt_clr_cb)(void);
-	int (*wlan_emi_mpu_set_protection_cb)(bool);
-	int (*wlan_is_wifi_drv_own_cb)(void);
-};
-#else
+#if (CFG_SUPPORT_CONNINFRA == 1)
 struct MTK_WCN_WLAN_CB_INFO {
 	int (*wlan_probe_cb)(void);
 	int (*wlan_remove_cb)(void);
