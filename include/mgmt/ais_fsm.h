@@ -717,6 +717,10 @@ struct GL_DETECT_REPLAY_INFO *
 	IN uint8_t ucBssIndex);
 #endif
 
+uint8_t *
+	aisGetFsmState(
+	IN enum ENUM_AIS_STATE);
+
 struct FT_IES *
 	aisGetFtIe(
 	IN struct ADAPTER *prAdapter,

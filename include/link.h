@@ -423,7 +423,8 @@ static __KAL_INLINE__ void linkAddTail(IN struct LINK_ENTRY
 static __KAL_INLINE__ void __linkDel(IN struct LINK_ENTRY
 				     *prPrev, IN struct LINK_ENTRY *prNext)
 {
-	prNext->prPrev = prPrev;
+	if (prNext)
+		prNext->prPrev = prPrev;
 	prPrev->prNext = prNext;
 }				/* end of __linkDel() */
 
