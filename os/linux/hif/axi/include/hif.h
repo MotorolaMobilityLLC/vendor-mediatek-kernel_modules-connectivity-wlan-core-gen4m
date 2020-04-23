@@ -123,7 +123,7 @@ struct HIF_MEM_OPS {
 	void (*allocRxDesc)(struct GL_HIF_INFO *prHifInfo,
 			    struct RTMP_DMABUF *prDescRing,
 			    uint32_t u4Num);
-	void (*allocTxCmdBuf)(struct RTMP_DMABUF *prDmaBuf,
+	bool (*allocTxCmdBuf)(struct RTMP_DMABUF *prDmaBuf,
 			      uint32_t u4Num, uint32_t u4Idx);
 	void (*allocTxDataBuf)(struct MSDU_TOKEN_ENTRY *prToken,
 			       uint32_t u4Idx);

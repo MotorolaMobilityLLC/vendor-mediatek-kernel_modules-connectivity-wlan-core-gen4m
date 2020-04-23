@@ -192,7 +192,7 @@ static void axiAllocTxDesc(struct GL_HIF_INFO *prHifInfo,
 static void axiAllocRxDesc(struct GL_HIF_INFO *prHifInfo,
 			   struct RTMP_DMABUF *prDescRing,
 			   uint32_t u4Num);
-static void axiAllocTxCmdBuf(struct RTMP_DMABUF *prDmaBuf,
+static bool axiAllocTxCmdBuf(struct RTMP_DMABUF *prDmaBuf,
 			     uint32_t u4Num, uint32_t u4Idx);
 #else
 static void axiAllocDesc(struct GL_HIF_INFO *prHifInfo,
@@ -1138,11 +1138,10 @@ static void axiAllocTxDesc(struct GL_HIF_INFO *prHifInfo,
 {
 	prDescRing->AllocVa = grMem.rTxDesc[u4Num].va;
 	prDescRing->AllocPa = grMem.rTxDesc[u4Num].pa;
-	if (prDescRing->AllocVa == NULL) {
+	if (prDescRing->AllocVa == NULL)
 		DBGLOG(HAL, ERROR, "prDescRing->AllocVa is NULL\n");
-		/* TODO : Error handler, avoid kernel panic when VA = NULL */
-	}
-	memset(prDescRing->AllocVa, 0, prDescRing->AllocSize);
+	else
+		memset(prDescRing->AllocVa, 0, prDescRing->AllocSize);
 }
 
 static void axiAllocRxDesc(struct GL_HIF_INFO *prHifInfo,
@@ -1151,14 +1150,13 @@ static void axiAllocRxDesc(struct GL_HIF_INFO *prHifInfo,
 {
 	prDescRing->AllocVa = grMem.rRxDesc[u4Num].va;
 	prDescRing->AllocPa = grMem.rRxDesc[u4Num].pa;
-	if (prDescRing->AllocVa == NULL) {
+	if (prDescRing->AllocVa == NULL)
 		DBGLOG(HAL, ERROR, "prDescRing->AllocVa is NULL\n");
-		/* TODO : Error handler, avoid kernel panic when VA = NULL */
-	}
-	memset(prDescRing->AllocVa, 0, prDescRing->AllocSize);
+	else
+		memset(prDescRing->AllocVa, 0, prDescRing->AllocSize);
 }
 
-static void axiAllocTxCmdBuf(struct RTMP_DMABUF *prDmaBuf,
+static bool axiAllocTxCmdBuf(struct RTMP_DMABUF *prDmaBuf,
 			     uint32_t u4Num, uint32_t u4Idx)
 {
 	/* only for cmd & fw download ring */
@@ -1168,10 +1166,11 @@ static void axiAllocTxCmdBuf(struct RTMP_DMABUF *prDmaBuf,
 		prDmaBuf->AllocVa = grMem.rTxCmdBuf[u4Idx].va;
 		if (prDmaBuf->AllocVa  == NULL) {
 			DBGLOG(HAL, ERROR, "prDescRing->AllocVa is NULL\n");
-			/* TODO : Error handler, avoid kernel panic*/
-	      }
+			return false;
+		}
 		memset(prDmaBuf->AllocVa, 0, prDmaBuf->AllocSize);
 	}
+	return true;
 }
 
 static void axiAllocTxDataBuf(struct MSDU_TOKEN_ENTRY *prToken, uint32_t u4Idx)
@@ -1211,11 +1210,10 @@ static void *axiAllocRxBuf(struct GL_HIF_INFO *prHifInfo,
 		DBGLOG(RX, ERROR, "RX alloc fail error number=%d\n", u4Num);
 		return prDmaBuf->AllocVa;
 	}
-	if (prDmaBuf->AllocVa == NULL) {
+	if (prDmaBuf->AllocVa == NULL)
 		DBGLOG(HAL, ERROR, "prDmaBuf->AllocVa is NULL\n");
-		/* TODO : error handler, avoid kernel panic when VA = NULL */
-	}
-	memset(prDmaBuf->AllocVa, 0, prDmaBuf->AllocSize);
+	else
+		memset(prDmaBuf->AllocVa, 0, prDmaBuf->AllocSize);
 
 	return prDmaBuf->AllocVa;
 }
