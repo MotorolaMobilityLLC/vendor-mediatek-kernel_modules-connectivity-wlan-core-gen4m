@@ -4811,6 +4811,26 @@ static int std_set_priv(struct net_device *prDev,
 		char *pcExtra)
 {
 	DBGLOG(INIT, INFO, " mtk std ioctl is called.\n");
+#ifdef CONFIG_COMPAT
+	if (rIwReqInfo->flags & IW_REQUEST_FLAG_COMPAT) {
+		int ret = 0;
+		struct compat_iw_point *iwp_compat = NULL;
+		struct iw_point iwp;
+
+		iwp_compat = (struct compat_iw_point *) &prData->data;
+		iwp.pointer = compat_ptr(iwp_compat->pointer);
+		iwp.length = iwp_compat->length;
+		iwp.flags = iwp_compat->flags;
+
+		ret = wext_set_country(prDev, &iwp);
+
+		iwp_compat->pointer = ptr_to_compat(iwp.pointer);
+		iwp_compat->length = iwp.length;
+		iwp_compat->flags = iwp.flags;
+
+		return ret;
+	}
+#endif /* CONFIG_COMPAT */
 	return wext_set_country(prDev, &(prData->data));
 }
 
