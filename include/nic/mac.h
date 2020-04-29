@@ -1615,7 +1615,9 @@
 
 /* Epigram IE */
 #define VENDOR_IE_EPIGRAM_OUI                      0x00904c
-#define VENDOR_IE_EPIGRAM_VHTTYPE                  0x0408
+#define VENDOR_IE_EPIGRAM_VHTTYPE1                  0x0400
+#define VENDOR_IE_EPIGRAM_VHTTYPE2                  0x0408
+#define VENDOR_IE_EPIGRAM_VHTTYPE3                  0x0418
 
 #if CFG_SUPPORT_PASSPOINT
 #define VENDOR_OUI_TYPE_HS20                        16
