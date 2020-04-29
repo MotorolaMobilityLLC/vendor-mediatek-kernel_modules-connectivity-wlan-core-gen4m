@@ -1621,7 +1621,6 @@ struct ADAPTER {
 #if CFG_SUPPORT_DATA_STALL
 	OS_SYSTIME tmReportinterval;
 #endif
-	OS_SYSTIME tmGROFlushTimeout[MAX_BSSID_NUM];
 
 #ifdef CFG_SUPPORT_LINK_QUALITY_MONITOR
 	uint32_t u4LastLinkQuality;

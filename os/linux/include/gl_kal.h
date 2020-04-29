@@ -1589,7 +1589,8 @@ kalChannelFormatSwitch(IN struct cfg80211_chan_def *channel_def,
 		IN struct ieee80211_channel *channel,
 		IN struct RF_CHANNEL_INFO *prRfChnlInfo);
 uint32_t kal_is_skb_gro(struct ADAPTER *prAdapter, uint8_t ucBssIdx);
-void kal_gro_flush(struct ADAPTER *prAdapter, uint8_t ucBssIdx);
+
+void kal_gro_flush(struct ADAPTER *prAdapter, struct net_device *prDev);
 
 int kalExternalAuthRequest(IN struct ADAPTER *prAdapter,
 			   IN uint8_t uBssIndex);
