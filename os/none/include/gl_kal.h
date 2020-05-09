@@ -211,6 +211,7 @@ enum ENUM_SPIN_LOCK_CATEGORY_E {
 	SPIN_LOCK_CMD_SEQ_NUM,
 	SPIN_LOCK_TX_MSDU_INFO_LIST,
 	SPIN_LOCK_TXING_MGMT_LIST,
+	SPIN_LOCK_RECYCLING_MGMT_LIST,
 	SPIN_LOCK_TX_SEQ_NUM,
 	SPIN_LOCK_TX_COUNT,
 	SPIN_LOCK_TXS_COUNT,
@@ -1460,6 +1461,9 @@ void kalSetHifDbgEvent(struct GLUE_INFO *pr);
 
 #define kalSetRxProcessEvent(_pr) \
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__, _pr)
+
+#define kalSetMgmtTxRecyclingEvent2Hif(_pr) \
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__, _pr)
 #else
 void kalSetTxEvent2Hif(struct GLUE_INFO *pr);
 
@@ -1470,6 +1474,8 @@ void kalSetTxCmdEvent2Hif(struct GLUE_INFO *pr);
 void kalSetTxCmdDoneEvent(struct GLUE_INFO *pr);
 
 void kalSetRxProcessEvent(struct GLUE_INFO *pr);
+
+void kalSetMgmtTxRecyclingEvent2Hif(struct GLUE_INFO *pr);
 #endif
 #endif
 /*----------------------------------------------------------------------------*/

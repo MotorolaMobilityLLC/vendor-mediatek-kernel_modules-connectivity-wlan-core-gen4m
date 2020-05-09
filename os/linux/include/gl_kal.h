@@ -235,6 +235,7 @@ enum ENUM_SPIN_LOCK_CATEGORY_E {
 	SPIN_LOCK_CMD_SEQ_NUM,
 	SPIN_LOCK_TX_MSDU_INFO_LIST,
 	SPIN_LOCK_TXING_MGMT_LIST,
+	SPIN_LOCK_RECYCLING_MGMT_LIST,
 	SPIN_LOCK_TX_SEQ_NUM,
 	SPIN_LOCK_TX_COUNT,
 	SPIN_LOCK_TXS_COUNT,
@@ -1407,6 +1408,8 @@ void kalSetTxCmdEvent2Hif(struct GLUE_INFO *pr);
 void kalSetTxCmdDoneEvent(struct GLUE_INFO *pr);
 
 void kalSetRxProcessEvent(struct GLUE_INFO *pr);
+
+void kalSetMgmtTxRecyclingEvent2Hif(struct GLUE_INFO *pr);
 #endif
 /*----------------------------------------------------------------------------*/
 /* NVRAM/Registry Service                                                     */
