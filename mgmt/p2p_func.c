@@ -6528,6 +6528,9 @@ uint8_t p2pFunGetAcsBestCh(IN struct ADAPTER *prAdapter,
 	rPreferChannel.ucChannel = 0;
 	rPreferChannel.u4Dirtiness = 0xFFFFFFFF;
 
+	kalMemZero(aucChannelList,
+			sizeof(struct RF_CHANNEL_INFO) * MAX_CHN_NUM);
+
 	rlmDomainGetChnlList(prAdapter, eBand, TRUE, MAX_CHN_NUM,
 			&ucNumOfChannel, aucChannelList);
 
@@ -6708,6 +6711,9 @@ void p2pFunProcessAcsReport(IN struct ADAPTER *prAdapter,
 		uint8_t ucNumOfChannel;
 		uint8_t i;
 		u_int8_t fgIsMaskValid = FALSE;
+
+		kalMemZero(aucChannelList,
+			sizeof(struct RF_CHANNEL_INFO) * MAX_2G_BAND_CHN_NUM);
 
 		rlmDomainGetChnlList(prAdapter, eBand, TRUE,
 			MAX_2G_BAND_CHN_NUM, &ucNumOfChannel, aucChannelList);

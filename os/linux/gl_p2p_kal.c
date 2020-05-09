@@ -898,12 +898,17 @@ void kalP2PIndicateSDRequest(IN struct GLUE_INFO *prGlueInfo,
 {
 	union iwreq_data evt;
 	uint8_t aucBuffer[IW_CUSTOM_MAX];
+	uint32_t u4Offset = 0;
 
 	ASSERT(prGlueInfo);
 
 	memset(&evt, 0, sizeof(evt));
 
-	snprintf(aucBuffer, IW_CUSTOM_MAX - 1, "P2P_SD_REQ %d", ucSeqNum);
+	u4Offset =
+		snprintf(aucBuffer, IW_CUSTOM_MAX - 1,
+		"P2P_SD_REQ %d", ucSeqNum);
+	DBGLOG(INIT, LOUD, "u4Offset = [%u]\n", u4Offset);
+
 	evt.data.length = strlen(aucBuffer);
 
 	/* indicate IWEVP2PSDREQ event */
@@ -926,12 +931,16 @@ void kalP2PIndicateSDResponse(IN struct GLUE_INFO *prGlueInfo,
 {
 	union iwreq_data evt;
 	uint8_t aucBuffer[IW_CUSTOM_MAX];
+	uint32_t u4Offset = 0;
 
 	ASSERT(prGlueInfo);
 
 	memset(&evt, 0, sizeof(evt));
 
-	snprintf(aucBuffer, IW_CUSTOM_MAX - 1, "P2P_SD_RESP %d", ucSeqNum);
+	u4Offset =
+		snprintf(aucBuffer, IW_CUSTOM_MAX - 1,
+		"P2P_SD_RESP %d", ucSeqNum);
+	DBGLOG(INIT, LOUD, "u4Offset = [%u]\n", u4Offset);
 	evt.data.length = strlen(aucBuffer);
 
 	/* indicate IWEVP2PSDREQ event */
@@ -956,13 +965,17 @@ void kalP2PIndicateTXDone(IN struct GLUE_INFO *prGlueInfo,
 {
 	union iwreq_data evt;
 	uint8_t aucBuffer[IW_CUSTOM_MAX];
+	uint32_t u4Offset = 0;
 
 	ASSERT(prGlueInfo);
 
 	memset(&evt, 0, sizeof(evt));
 
-	snprintf(aucBuffer, IW_CUSTOM_MAX - 1,
+	u4Offset =
+		snprintf(aucBuffer, IW_CUSTOM_MAX - 1,
 		"P2P_SD_XMITTED: %d %d", ucSeqNum, ucStatus);
+	DBGLOG(INIT, LOUD, "u4Offset = [%u]\n", u4Offset);
+
 	evt.data.length = strlen(aucBuffer);
 
 	/* indicate IWEVP2PSDREQ event */
@@ -2215,6 +2228,11 @@ void kalP2pIndicateChnlSwitch(IN struct ADAPTER *prAdapter,
 		prP2PInfo->chandef = (struct cfg80211_chan_def *)
 				cnmMemAlloc(prAdapter, RAM_TYPE_BUF,
 				sizeof(struct cfg80211_chan_def));
+		if (!prP2PInfo->chandef) {
+			DBGLOG(P2P, WARN, "cfg80211_chan_def alloc fail\n");
+			return;
+		}
+
 		prP2PInfo->chandef->chan = (struct ieee80211_channel *)
 				cnmMemAlloc(prAdapter, RAM_TYPE_BUF,
 				sizeof(struct ieee80211_channel));
@@ -2311,8 +2329,7 @@ void kalP2pIndicateChnlSwitch(IN struct ADAPTER *prAdapter,
 	}
 
 	/* Ch notify */
-	if (prP2PInfo->chandef)
-		cfg80211_ch_switch_notify(
-			prP2PInfo->prDevHandler,
-			prP2PInfo->chandef);
+	cfg80211_ch_switch_notify(
+		prP2PInfo->prDevHandler,
+		prP2PInfo->chandef);
 }

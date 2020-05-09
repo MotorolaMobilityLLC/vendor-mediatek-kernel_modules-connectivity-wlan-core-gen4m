@@ -68,6 +68,15 @@ static uint8_t *apucDebugP2pRoleState[P2P_ROLE_STATE_NUM] = {
 #endif
 };
 
+uint8_t *
+	p2pRoleFsmGetFsmState(
+	IN enum ENUM_P2P_ROLE_STATE eCurrentState) {
+	if (eCurrentState >= 0 && eCurrentState < P2P_ROLE_STATE_NUM)
+		return apucDebugP2pRoleState[eCurrentState];
+
+	return (uint8_t *) DISP_STRING("UNKNOWN");
+}
+
 /*lint -restore */
 #endif /* DBG */
 
@@ -437,9 +446,9 @@ p2pRoleFsmStateTransition(IN struct ADAPTER *prAdapter,
 					"[P2P_ROLE][%d]TRANSITION(Bss%d): [%s] -> [%s]\n",
 					prP2pRoleFsmInfo->ucRoleIndex,
 					prP2pRoleFsmInfo->ucBssIndex,
-					apucDebugP2pRoleState
-					[prP2pRoleFsmInfo->eCurrentState],
-					apucDebugP2pRoleState[eNextState]);
+					p2pRoleFsmGetFsmState
+					(prP2pRoleFsmInfo->eCurrentState),
+					p2pRoleFsmGetFsmState(eNextState));
 
 			/* Transition into current state. */
 			prP2pRoleFsmInfo->eCurrentState = eNextState;
@@ -1696,7 +1705,7 @@ void p2pRoleFsmRunEventRadarDet(IN struct ADAPTER *prAdapter,
 			"Wrong prP2pRoleFsmInfo->eCurrentState \"%s\"!",
 			(prP2pRoleFsmInfo->eCurrentState < P2P_ROLE_STATE_NUM
 			? (const char *)
-			apucDebugP2pRoleState[prP2pRoleFsmInfo->eCurrentState]
+			p2pRoleFsmGetFsmState(prP2pRoleFsmInfo->eCurrentState)
 			: ""));
 		goto error;
 	}
@@ -3630,8 +3639,8 @@ p2pRoleHandleOffchnlTxReq(IN struct ADAPTER *prAdapter,
 		break;
 	default:
 		DBGLOG(P2P, WARN, "Unknown state (%s) for offchannel-tx.\n",
-				apucDebugP2pRoleState[
-				prP2pRoleFsmInfo->eCurrentState]);
+				p2pRoleFsmGetFsmState(
+				prP2pRoleFsmInfo->eCurrentState));
 		goto error;
 	}
 
