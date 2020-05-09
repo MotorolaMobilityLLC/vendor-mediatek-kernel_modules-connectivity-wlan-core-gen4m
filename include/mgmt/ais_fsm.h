@@ -196,7 +196,7 @@ struct AIS_BLACKLIST_ITEM {
 	uint8_t ucSSIDLen;
 	uint8_t aucSSID[32];
 	OS_SYSTIME rAddTime;
-	uint32_t u4DisapperTime;
+	u_int8_t fgDeauthLastTime;
 	u_int8_t fgIsInFWKBlacklist;
 };
 /* end Support AP Selection */
@@ -205,16 +205,10 @@ struct AIS_FSM_INFO {
 	enum ENUM_AIS_STATE ePreviousState;
 	enum ENUM_AIS_STATE eCurrentState;
 
-	u_int8_t fgTryScan;
-
 	u_int8_t fgIsScanning;
 
 	u_int8_t fgIsChannelRequested;
 	u_int8_t fgIsChannelGranted;
-
-#if CFG_SUPPORT_ROAMING
-	u_int8_t fgIsRoamingScanPending;
-#endif				/* CFG_SUPPORT_ROAMING */
 
 	uint8_t ucAvailableAuthTypes;	/* Used for AUTH_MODE_AUTO_SWITCH */
 
@@ -254,6 +248,7 @@ struct AIS_FSM_INFO {
 	uint32_t u4ChGrantedInterval;
 
 	uint8_t ucConnTrialCount;
+	uint8_t ucConnTrialCountLimit;
 
 	struct PARAM_SCAN_REQUEST_ADV rScanRequest;
 	uint8_t aucScanIEBuf[MAX_IE_LENGTH];
@@ -343,7 +338,10 @@ void aisFsmInit(IN struct ADAPTER *prAdapter, uint8_t ucBssIndex);
 
 void aisFsmUninit(IN struct ADAPTER *prAdapter, uint8_t ucBssIndex);
 
-bool aisFsmIsInProcessBeaconTimeout(IN struct ADAPTER *prAdapter,
+bool aisFsmIsInProcessPostpone(IN struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex);
+
+bool aisFsmIsInBeaconTimeout(IN struct ADAPTER *prAdapter,
 	uint8_t ucBssIndex);
 
 void aisFsmStateInit_JOIN(IN struct ADAPTER *prAdapter,
@@ -465,7 +463,8 @@ void aisBssBeaconTimeout(IN struct ADAPTER *prAdapter,
 	IN uint8_t ucBssIndex);
 
 void aisBssBeaconTimeout_impl(IN struct ADAPTER *prAdapter,
-	IN uint8_t ucReason, IN uint8_t ucBssIndex);
+	IN uint8_t ucBcnTimeoutReason, IN uint8_t ucDisconnectReason,
+	IN uint8_t ucBssIndex);
 
 void aisBssLinkDown(IN struct ADAPTER *prAdapter,
 	IN uint8_t ucBssIndex);
@@ -542,10 +541,21 @@ u_int8_t aisFsmIsRequestPending(IN struct ADAPTER *prAdapter,
 				IN u_int8_t bRemove,
 				IN uint8_t ucBssIndex);
 
+void aisFsmRemoveRoamingRequest(
+	IN struct ADAPTER *prAdapter, IN uint8_t ucBssIndex);
+
 struct AIS_REQ_HDR *aisFsmGetNextRequest(IN struct ADAPTER *prAdapter,
 				IN uint8_t ucBssIndex);
 
 u_int8_t aisFsmInsertRequest(IN struct ADAPTER *prAdapter,
+			     IN enum ENUM_AIS_REQUEST_TYPE eReqType,
+			     IN uint8_t ucBssIndex);
+
+u_int8_t aisFsmInsertRequestToHead(IN struct ADAPTER *prAdapter,
+			     IN enum ENUM_AIS_REQUEST_TYPE eReqType,
+			     IN uint8_t ucBssIndex);
+
+u_int8_t aisFsmClearRequest(IN struct ADAPTER *prAdapter,
 			     IN enum ENUM_AIS_REQUEST_TYPE eReqType,
 			     IN uint8_t ucBssIndex);
 
@@ -561,6 +571,11 @@ aisFuncTxMgmtFrame(IN struct ADAPTER *prAdapter,
 void aisFsmRunEventMgmtFrameTx(IN struct ADAPTER *prAdapter,
 				IN struct MSG_HDR *prMsgHdr);
 
+#if CFG_SUPPORT_NCHO
+void aisFsmRunEventNchoActionFrameTx(IN struct ADAPTER *prAdapter,
+				IN struct MSG_HDR *prMsgHdr);
+#endif
+
 void aisFuncValidateRxActionFrame(IN struct ADAPTER *prAdapter,
 				IN struct SW_RFB *prSwRfb);
 
@@ -571,7 +586,7 @@ void aisFsmRunEventCancelTxWait(IN struct ADAPTER *prAdapter,
 		IN struct MSG_HDR *prMsgHdr);
 
 enum ENUM_AIS_STATE aisFsmStateSearchAction(
-	IN struct ADAPTER *prAdapter, uint8_t ucPhase, uint8_t ucBssIndex);
+	IN struct ADAPTER *prAdapter, uint8_t ucBssIndex);
 #if defined(CFG_TEST_MGMT_FSM) && (CFG_TEST_MGMT_FSM != 0)
 void aisTest(void);
 #endif /* CFG_TEST_MGMT_FSM */

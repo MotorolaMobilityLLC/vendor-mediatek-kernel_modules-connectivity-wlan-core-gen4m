@@ -78,7 +78,8 @@
  *******************************************************************************
  */
 /* Roaming Discovery interval, SCAN result need to be updated */
-#define ROAMING_DISCOVERY_TIMEOUT_SEC               5	/* Seconds. */
+#define ROAMING_DISCOVER_TIMEOUT_SEC                10	/* Seconds. */
+#define ROAMING_INACTIVE_TIMEOUT_SEC                10	/* Seconds. */
 #if CFG_SUPPORT_ROAMING_SKIP_ONE_AP
 #define ROAMING_ONE_AP_SKIP_TIMES		3
 #endif
@@ -101,6 +102,7 @@ enum ENUM_ROAMING_EVENT {
 	ROAMING_EVENT_ROAM,
 	ROAMING_EVENT_FAIL,
 	ROAMING_EVENT_ABORT,
+	ROAMING_EVENT_THRESHOLD_UPDATE,
 	ROAMING_EVENT_NUM
 };
 
@@ -108,18 +110,23 @@ enum ENUM_ROAMING_REASON {
 	ROAMING_REASON_POOR_RCPI = 0,
 	ROAMING_REASON_TX_ERR, /*Lowest rate, high PER*/
 	ROAMING_REASON_RETRY,
+	ROAMING_REASON_IDLE,
+	ROAMING_REASON_BEACON_TIMEOUT,
+	ROAMING_REASON_INACTIVE,
+	ROAMING_REASON_SAA_FAIL,
 	ROAMING_REASON_NUM
 };
 
 struct CMD_ROAMING_TRANSIT {
-	uint16_t	u2Event;
-	uint16_t	u2Data;
-	uint16_t	u2RcpiLowThreshold;
-	uint8_t	ucIsSupport11B;
-	uint8_t	ucBssidx;
-	enum ENUM_ROAMING_REASON	eReason;
-	uint32_t	u4RoamingTriggerTime; /*sec in mcu*/
-	uint8_t aucReserved2[8];
+	uint16_t u2Event;
+	uint16_t u2Data;
+	uint16_t u2RcpiLowThreshold;
+	uint8_t ucIsSupport11B;
+	uint8_t ucBssidx;
+	enum ENUM_ROAMING_REASON eReason;
+	uint32_t u4RoamingTriggerTime; /*sec in mcu*/
+	uint16_t u2RcpiHighThreshold;
+	uint8_t aucReserved2[6];
 };
 
 
@@ -163,13 +170,8 @@ struct ROAMING_INFO {
 	struct TIMER rWaitCandidateTimer;
 	enum ENUM_ROAMING_REASON eReason;
 	uint8_t ucPER;
-};
-
-enum ROAM_TYPE {
-	ROAM_TYPE_RCPI,
-	ROAM_TYPE_PER,
-
-	ROAM_TYPE_NUM
+	uint8_t ucRcpi;
+	uint8_t ucThreshold;
 };
 
 /*******************************************************************************

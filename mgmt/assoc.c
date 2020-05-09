@@ -786,8 +786,10 @@ void assocGenerateConnIE(struct ADAPTER *prAdapter,
 	struct STA_RECORD *prStaRec;
 	uint8_t *pucBuffer, *cp;
 	const uint8_t *rsnConn;
+	const uint8_t *extCapConn;
 	uint8_t ucBssIndex;
 	uint32_t len, rsnIeLen;
+	uint32_t extCapIeLen;
 
 	prStaRec = cnmGetStaRecByIndex(prAdapter, prMsduInfo->ucStaRecIndex);
 	if (!prStaRec)
@@ -801,31 +803,43 @@ void assocGenerateConnIE(struct ADAPTER *prAdapter,
 	prConnSettings = aisGetConnSettings(prAdapter, ucBssIndex);
 
 	if (IS_STA_IN_AIS(prStaRec) && prConnSettings->assocIeLen > 0) {
+		kalMemCopy(cp, prConnSettings->pucAssocIEs,
+				   prConnSettings->assocIeLen);
+		cp += prConnSettings->assocIeLen;
+
 		rsnConn = kalFindIeMatchMask(ELEM_ID_RSN,
-				       prConnSettings->pucAssocIEs,
-				       prConnSettings->assocIeLen,
+				       pucBuffer,
+				       cp - pucBuffer,
 				       NULL, 0, 0, NULL);
 
-		if (!rsnConn) {
-			kalMemCopy(cp, prConnSettings->pucAssocIEs,
-				   prConnSettings->assocIeLen);
-			cp += prConnSettings->assocIeLen;
-			goto dump;
+		if (rsnConn) {
+			rsnIeLen = IE_SIZE(rsnConn);
+
+			len = cp - rsnConn - rsnIeLen;
+			/* copy to the start of RSN IE*/
+			cp = (char *) rsnConn;
+			/* jump to the end of RSN IE to copy Remaing IEs*/
+			kalMemCopy(cp, rsnConn + rsnIeLen, len);
+			cp += len;
 		}
 
-		rsnIeLen = ELEM_HDR_LEN + RSN_IE(rsnConn)->ucLength;
+		extCapConn = kalFindIeMatchMask(ELEM_ID_EXTENDED_CAP,
+				       pucBuffer,
+				       cp  - pucBuffer,
+				       NULL, 0, 0, NULL);
 
-		/* Copy data before RSN IE to assoc req */
-		len = rsnConn - prConnSettings->pucAssocIEs;
-		kalMemCopy(cp, prConnSettings->pucAssocIEs, len);
-		cp += len;
+		if (extCapConn) {
+			extCapIeLen = IE_SIZE(extCapConn);
 
-		/* jump to the end of RSN IE and copy Remaing IEs*/
-		len = prConnSettings->assocIeLen - len - rsnIeLen;
-		kalMemCopy(cp, rsnConn + rsnIeLen, len);
-		cp += len;
+			len = cp - extCapConn - extCapIeLen;
+			/* copy to the start of EXT CAP IE*/
+			cp = (char *) extCapConn;
+			/* jump to the end of EXT CAP IE to copy remaing IEs */
+			kalMemCopy(cp, extCapConn + extCapIeLen, len);
+			cp += len;
+		}
+
 	}
-dump:
 	prMsduInfo->u2FrameLength += cp - pucBuffer;
 	DBGLOG_MEM8(SAA, INFO, pucBuffer, cp - pucBuffer);
 }

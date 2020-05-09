@@ -5256,7 +5256,7 @@ void rlmDomainParsingChannel(IN struct wiphy *pWiphy)
 	/* Retrieve connected channel */
 	prGlueInfo = rlmDomainGetGlueInfo();
 	if (prGlueInfo && kalGetMediaStateIndicated(prGlueInfo) ==
-	    PARAM_MEDIA_STATE_CONNECTED) {
+	    MEDIA_STATE_CONNECTED) {
 		ucChannelNum =
 			wlanGetChannelNumberByNetwork(prGlueInfo->prAdapter,
 			   prGlueInfo->prAdapter->prAisBssInfo->ucBssIndex);
