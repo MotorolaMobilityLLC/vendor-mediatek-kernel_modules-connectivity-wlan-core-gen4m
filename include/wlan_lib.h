@@ -1320,7 +1320,8 @@ uint32_t wlanAdapterStart(IN struct ADAPTER *prAdapter,
 			  IN struct REG_INFO *prRegInfo,
 			  IN const u_int8_t bAtResetFlow);
 
-uint32_t wlanAdapterStop(IN struct ADAPTER *prAdapter);
+uint32_t wlanAdapterStop(IN struct ADAPTER *prAdapter,
+		IN const u_int8_t bAtResetFlow);
 
 void wlanCheckAsicCap(IN struct ADAPTER *prAdapter);
 
