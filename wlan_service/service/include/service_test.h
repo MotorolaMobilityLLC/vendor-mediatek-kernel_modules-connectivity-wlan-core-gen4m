@@ -268,6 +268,7 @@ s_int32 mt_serv_mps_set_power_gain(struct service_test *serv_test);
 s_int32 mt_serv_mps_set_seq_data(struct service_test *serv_test);
 s_int32 mt_serv_set_tmr(struct service_test *serv_test);
 s_int32 mt_serv_set_preamble(struct service_test *serv_test);
+s_int32 mt_serv_set_rate(struct service_test *serv_test);
 s_int32 mt_serv_set_system_bw(struct service_test *serv_test);
 s_int32 mt_serv_set_per_pkt_bw(struct service_test *serv_test);
 s_int32 mt_serv_dbdc_tx_tone(struct service_test *serv_test);

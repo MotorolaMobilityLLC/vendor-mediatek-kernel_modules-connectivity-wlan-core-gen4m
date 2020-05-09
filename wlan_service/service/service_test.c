@@ -48,6 +48,7 @@ static s_int32 mt_serv_init_op(struct test_operation *ops)
 	ops->op_set_channel = mt_op_set_channel;
 	ops->op_set_tx_content = mt_op_set_tx_content;
 	ops->op_set_preamble = mt_op_set_preamble;
+	ops->op_set_rate = mt_op_set_rate;
 	ops->op_set_system_bw = mt_op_set_system_bw;
 	ops->op_set_per_pkt_bw = mt_op_set_per_pkt_bw;
 	ops->op_reset_txrx_counter = mt_op_reset_txrx_counter;
@@ -2247,6 +2248,27 @@ s_int32 mt_serv_set_preamble(struct service_test *serv_test)
 		ret = serv_test->test_op->op_set_preamble(
 			serv_test->test_winfo,
 			tx_mode);
+	}
+
+	if (ret)
+		SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_ERROR,
+			("%s: err=0x%08x\n", __func__, ret));
+
+	return ret;
+}
+
+s_int32 mt_serv_set_rate(struct service_test *serv_test)
+{
+	s_int32 ret = SERV_STATUS_SUCCESS;
+	u_char ctrl_band_idx = serv_test->ctrl_band_idx;
+	u_char mcs = serv_test->test_config[ctrl_band_idx].mcs;
+
+	if (!serv_test->engine_offload) {
+
+	} else {
+		ret = serv_test->test_op->op_set_rate(
+			serv_test->test_winfo,
+			mcs);
 	}
 
 	if (ret)

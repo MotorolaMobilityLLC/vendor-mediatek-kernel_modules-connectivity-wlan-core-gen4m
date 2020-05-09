@@ -326,6 +326,7 @@ enum ENUM_ATE_CAP_TYPE {
 static struct hqa_m_rx_stat test_hqa_rx_stat;
 static struct test_rx_stat_band_info backup_band0_info;
 static struct test_rx_stat_band_info backup_band1_info;
+static u_char g_tx_mode;
 
 
 
@@ -1506,8 +1507,57 @@ s_int32 mt_op_set_preamble(
 	if (pr_oid_funcptr == NULL)
 		return SERV_STATUS_HAL_OP_INVALID_NULL_POINTER;
 
+	g_tx_mode = mode;
+
+	if (mode == TEST_MODE_OFDM)
+		mode = TEST_MODE_CCK;
+
+	SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_ERROR,
+			("%s: tx mode = %d\n",
+				__func__, mode));
+
 	ret = tm_rftest_set_auto_test(winfos,
 		RF_AT_FUNCID_PREAMBLE, mode);
+
+	return ret;
+}
+
+s_int32 mt_op_set_rate(
+	struct test_wlan_info *winfos,
+	u_char mcs)
+{
+	s_int32 ret = SERV_STATUS_SUCCESS;
+
+	wlan_oid_handler_t pr_oid_funcptr = winfos->oid_funcptr;
+
+	if (pr_oid_funcptr == NULL)
+		return SERV_STATUS_HAL_OP_INVALID_NULL_POINTER;
+
+	if (g_tx_mode == TEST_MODE_OFDM) {
+		g_tx_mode = TEST_MODE_CCK;
+		mcs += 4;
+	}
+
+	if (g_tx_mode == TEST_MODE_CCK)
+		mcs |= 0x00000000;
+	else if (g_tx_mode == TEST_MODE_OFDM) {
+		if (mcs == 9)
+			mcs = 1;
+		else if (mcs == 10)
+			mcs = 2;
+		else if (mcs == 11)
+			mcs = 3;
+		mcs |= 0x00000000;
+	} else if (g_tx_mode >= TEST_MODE_HTMIX &&
+	g_tx_mode <= TEST_MODE_HE_TB)
+		mcs |= 0x80000000;
+
+	SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_ERROR,
+			("%s: mcs = %d\n",
+				__func__, mcs));
+
+	ret = tm_rftest_set_auto_test(winfos,
+		RF_AT_FUNCID_RATE, mcs);
 
 	return ret;
 }
