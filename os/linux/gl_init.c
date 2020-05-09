@@ -3589,17 +3589,19 @@ uint32_t wlanServiceInit(struct GLUE_INFO *prGlueInfo)
 label_exit:
 
 	/* free memory */
-	if (prGlueInfo->rService.serv_handle != NULL)
+	if (prGlueInfo->rService.serv_handle != NULL) {
+
+		if (prServiceTest->test_winfo != NULL)
+			kalMemFree(prServiceTest->test_winfo, VIR_MEM_TYPE,
+				   sizeof(struct test_wlan_info));
+
+		if (prServiceTest->test_op != NULL)
+			kalMemFree(prServiceTest->test_op, VIR_MEM_TYPE,
+				   sizeof(struct test_operation));
+
 		kalMemFree(prGlueInfo->rService.serv_handle, VIR_MEM_TYPE,
 			sizeof(struct service_test));
-
-	if (prServiceTest->test_winfo != NULL)
-		kalMemFree(prServiceTest->test_winfo, VIR_MEM_TYPE,
-			   sizeof(struct test_wlan_info));
-
-	if (prServiceTest->test_op != NULL)
-		kalMemFree(prServiceTest->test_op, VIR_MEM_TYPE,
-			   sizeof(struct test_operation));
+	}
 
 	return WLAN_STATUS_FAILURE;
 }
