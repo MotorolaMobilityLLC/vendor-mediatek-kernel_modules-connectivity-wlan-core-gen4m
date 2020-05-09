@@ -219,6 +219,10 @@ void StatsEnvTxTime2Hif(IN struct ADAPTER *prAdapter,
 		return;
 	}
 
+	kalTraceEvent("Move id=0x%04x sn=%d",
+		GLUE_GET_PKT_IP_ID(prMsduInfo->prPacket),
+		GLUE_GET_PKT_SEQ_NO(prMsduInfo->prPacket));
+
 	pucEth = ((struct sk_buff *)prMsduInfo->prPacket)->data;
 
 	if (pucEth == NULL) {
@@ -616,6 +620,10 @@ void StatsRxPktInfoDisplay(struct SW_RFB *prSwRfb)
 		return;
 
 	statsParsePktInfo(pPkt, skb, 0, EVENT_RX);
+
+	kalTraceEvent("Pkt id=0x%04x sn=%d",
+		GLUE_GET_PKT_IP_ID(skb),
+		GLUE_GET_PKT_SEQ_NO(skb));
 }
 
 /*----------------------------------------------------------------------------*/
