@@ -2445,8 +2445,8 @@ s_int32 mt_op_get_recal_content(
 		OP_WLAN_OID_GET_RECAL_CONTENT,
 		NULL,
 		0,
-		content,
-		NULL);
+		NULL,
+		content);
 
 	return ret;
 }
