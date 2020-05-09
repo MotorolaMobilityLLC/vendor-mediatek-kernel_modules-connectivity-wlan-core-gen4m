@@ -445,6 +445,9 @@ uint32_t nicTxAcquireResourcePLE(IN struct ADAPTER
 	prTxCtrl = &prAdapter->rTxCtrl;
 	prTc = &prTxCtrl->rTc;
 
+	if (ucTC >= TC_NUM)
+		return WLAN_STATUS_FAILURE;
+
 	if (!nicTxResourceIsPleCtrlNeeded(prAdapter, ucTC))
 		return WLAN_STATUS_SUCCESS;
 
@@ -506,7 +509,7 @@ uint32_t nicTxAcquireResource(IN struct ADAPTER *prAdapter,
 	KAL_SPIN_LOCK_DECLARATION();
 
 	/* enable/disable TX resource control */
-	if (!prAdapter->rTxCtrl.fgIsTxResourceCtrl)
+	if (!prAdapter->rTxCtrl.fgIsTxResourceCtrl || ucTC >= TC_NUM)
 		return WLAN_STATUS_SUCCESS;
 
 	ASSERT(prAdapter);
@@ -668,7 +671,7 @@ u_int8_t nicTxReleaseResource(IN struct ADAPTER *prAdapter,
 
 	ASSERT(prAdapter);
 	/* enable/disable TX resource control */
-	if (!prAdapter->rTxCtrl.fgIsTxResourceCtrl)
+	if (!prAdapter->rTxCtrl.fgIsTxResourceCtrl || ucTc >= TC_NUM)
 		return TRUE;
 
 	/* No need to do PLE resource control */
@@ -2287,7 +2290,7 @@ uint32_t nicTxMsduQueue(IN struct ADAPTER *prAdapter,
 				&prMsduInfo->rLifetimeTimer,
 				NIC_TX_REMAINING_LIFE_TIME);
 		} else
-			wlanTxLifetimeTagPacket(prAdapter, prMsduInfo,
+			wlanTxProfilingTagMsdu(prAdapter, prMsduInfo,
 						TX_PROF_TAG_DRV_TX_DONE);
 
 #if (CFG_SUPPORT_STATISTICS == 1)

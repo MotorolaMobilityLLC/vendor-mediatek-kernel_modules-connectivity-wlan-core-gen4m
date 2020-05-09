@@ -176,7 +176,7 @@
 #define DHCP_MAGIC_NUMBER                       0x63825363
 
 #define ARP_OPERATION_OFFSET                    6
-#define ARP_SNEDER_MAC_OFFSET                   8
+#define ARP_SENDER_MAC_OFFSET                   8
 #define ARP_SENDER_IP_OFFSET                    14
 #define ARP_TARGET_MAC_OFFSET                   18
 #define ARP_TARGET_IP_OFFSET                    24

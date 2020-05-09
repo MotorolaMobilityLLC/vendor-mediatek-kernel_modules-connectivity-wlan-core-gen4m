@@ -4835,6 +4835,23 @@ void qmDelRxBaEntry(IN struct ADAPTER *prAdapter,
 #endif
 }
 
+u_int8_t qmIsIndependentPkt(IN struct SW_RFB *prSwRfb)
+{
+	struct sk_buff *skb = NULL;
+
+	if (prSwRfb->u2PacketLen <= ETHER_HEADER_LEN)
+		return FALSE;
+
+	skb = (struct sk_buff *)(prSwRfb->pvPacket);
+	if (!skb)
+		return FALSE;
+
+	if (GLUE_GET_INDEPENDENT_PKT(skb))
+		return TRUE;
+
+	return FALSE;
+}
+
 void mqmParseAssocReqWmmIe(IN struct ADAPTER *prAdapter,
 	IN uint8_t *pucIE, IN struct STA_RECORD *prStaRec)
 {
@@ -8142,6 +8159,13 @@ qmIsNoDropPacket(IN struct ADAPTER *prAdapter, IN struct SW_RFB *prSwRfb)
 		if (ucIpProto == IP_PRO_UDP || ucIpProto == IP_PRO_TCP)
 			return TRUE;
 	}
+
+	/* For some special packet, like DNS, DHCP,
+	 * do not drop evan fall behind.
+	 */
+	if (qmIsIndependentPkt(prSwRfb))
+		return TRUE;
+
 	return FALSE;
 }
 #endif /* CFG_SUPPORT_LOWLATENCY_MODE */
