@@ -5292,7 +5292,7 @@ void nicEventUpdateLowLatencyInfoStatus(IN struct ADAPTER *prAdapter,
 	struct timeval tv = { 0 };
 	uint8_t event[12];
 	uint32_t iEventTime;
-	int8_t i;
+	int8_t i, ret = 0;
 
 	ASSERT(prAdapter);
 
@@ -5317,10 +5317,14 @@ void nicEventUpdateLowLatencyInfoStatus(IN struct ADAPTER *prAdapter,
 			prEvtLowLatencyInfo->fgTxDupCert;
 
 #if CFG_SUPPORT_DATA_STALL
-		sprintf(event, "%03d%02d%06u",
+		ret = sprintf(event, "%03d%02d%06u",
 			EVENT_TX_DUP_CERT_CHANGE,
 			tm.tm_sec,
 			(unsigned int)tv.tv_usec);
+		if (ret < 0 || ret > sizeof(event)) {
+			DBGLOG_LIMITED(NIC, INFO, "sprintf failed:%d\n", ret);
+			return;
+		}
 
 		iEventTime = 0;
 		for (i = 0 ; i < 8 ; i++)
@@ -5340,15 +5344,20 @@ void nicEventUpdateLowLatencyInfoStatus(IN struct ADAPTER *prAdapter,
 		/* Indicate detect result to driver if detect on */
 		if (prAdapter->fgEnTxDupDetect) {
 			if (prEvtLowLatencyInfo->fgTxDupEnable) {
-				sprintf(event, "%03d%02d%06u",
+				ret = sprintf(event, "%03d%02d%06u",
 					EVENT_TX_DUP_ON,
 					tm.tm_sec,
 					(unsigned int)tv.tv_usec);
 			} else {
-				sprintf(event, "%03d%02d%06u",
+				ret = sprintf(event, "%03d%02d%06u",
 					EVENT_TX_DUP_OFF,
 					tm.tm_sec,
 					(unsigned int)tv.tv_usec);
+			}
+			if (ret < 0 || ret > sizeof(event)) {
+				DBGLOG_LIMITED(NIC, INFO,
+					"sprintf failed:%d\n", ret);
+				return;
 			}
 
 			/* Convert 11 byte string like '10121316927' to

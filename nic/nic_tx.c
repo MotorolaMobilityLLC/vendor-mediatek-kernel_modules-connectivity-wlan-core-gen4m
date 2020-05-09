@@ -5044,7 +5044,7 @@ end:
 
 void nicTxResourceUpdate_v1(IN struct ADAPTER *prAdapter)
 {
-	uint8_t string[128], idx, i, tc_num;
+	uint8_t string[128], idx, i, tc_num, ret = 0;
 	uint32_t u4share, u4remains;
 	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
 	uint32_t *pau4TcPageCount;
@@ -5127,13 +5127,17 @@ void nicTxResourceUpdate_v1(IN struct ADAPTER *prAdapter)
 
 		/* construct prefix: Tc0Page, Tc1Page... */
 		memset(string, 0, sizeof(string) / sizeof(uint8_t));
-		snprintf(string, sizeof(string) / sizeof(uint8_t),
+		ret = snprintf(string, sizeof(string) / sizeof(uint8_t),
 			 "Tc%xPage", idx);
-
-		/* update the final value */
-		prWifiVar->au4TcPageCount[idx] =
-			(uint32_t) wlanCfgGetUint32(prAdapter,
-	    string, prWifiVar->au4TcPageCount[idx]);
+		if (ret > (sizeof(string) / sizeof(uint8_t))) {
+			DBGLOG(NIC, INFO,
+			"sprintf failed of page count:%d\n", ret);
+		} else {
+			/* update the final value */
+			prWifiVar->au4TcPageCount[idx] =
+				(uint32_t) wlanCfgGetUint32(prAdapter,
+				string, prWifiVar->au4TcPageCount[idx]);
+		}
 	}
 
 #if QM_ADAPTIVE_TC_RESOURCE_CTRL
@@ -5142,13 +5146,17 @@ void nicTxResourceUpdate_v1(IN struct ADAPTER *prAdapter)
 
 		/* construct prefix: Tc0Grt, Tc1Grt... */
 		memset(string, 0, sizeof(string) / sizeof(uint8_t));
-		snprintf(string, sizeof(string) / sizeof(uint8_t),
+		ret = snprintf(string, sizeof(string) / sizeof(uint8_t),
 			 "Tc%xGrt", idx);
-
-		/* update the final value */
-		prQM->au4GuaranteedTcResource[idx] =
-			(uint32_t) wlanCfgGetUint32(prAdapter,
-	    string, prQM->au4GuaranteedTcResource[idx]);
+		if (ret > (sizeof(string) / sizeof(uint8_t))) {
+			DBGLOG(NIC, INFO,
+			"sprintf failed of guaranteed page count:%d\n", ret);
+		} else {
+			/* update the final value */
+			prQM->au4GuaranteedTcResource[idx] =
+				(uint32_t) wlanCfgGetUint32(prAdapter,
+				string, prQM->au4GuaranteedTcResource[idx]);
+		}
 	}
 #endif /* end of #if QM_ADAPTIVE_TC_RESOURCE_CTRL */
 #endif /* end of #if CFG_SUPPORT_CFG_FILE */
