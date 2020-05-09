@@ -1170,11 +1170,17 @@ int glSetupP2P(struct GLUE_INFO *prGlueInfo, struct wireless_dev *prP2pWdev,
 #if CFG_ENABLE_UNIFY_WIPHY
 		prNetDevPriv->ucIsP2p = FALSE;
 #endif
+#if CFG_MTK_MDDP_WH_SUPPORT
+		prNetDevPriv->ucMddpSupport = TRUE;
+#else
+		prNetDevPriv->ucMddpSupport = FALSE;
+#endif
 	} else {
 		prP2pWdev->iftype = NL80211_IFTYPE_P2P_CLIENT;
 #if CFG_ENABLE_UNIFY_WIPHY
 		prNetDevPriv->ucIsP2p = TRUE;
 #endif
+		prNetDevPriv->ucMddpSupport = FALSE;
 	}
 
 	/* register callback functions */
@@ -1817,20 +1823,17 @@ static int p2pStop(IN struct net_device *prDev)
 /*---------------------------------------------------------------------------*/
 struct net_device_stats *p2pGetStats(IN struct net_device *prDev)
 {
-#if CFG_MTK_MCIF_WIFI_SUPPORT
-	struct GLUE_INFO *prGlueInfo = NULL;
+	struct NETDEV_PRIVATE_GLUE_INFO *prNetDevPrivate;
 
-	prGlueInfo = (prDev != NULL)
-		? *((struct GLUE_INFO **) netdev_priv(prDev))
-		: NULL;
-
-	if (prGlueInfo && prGlueInfo->prAdapter
-		&& prGlueInfo->prAdapter->fgMddpActivated) {
-		mddpGetMdStats(prDev);
-	}
+	prNetDevPrivate = (struct NETDEV_PRIVATE_GLUE_INFO *)
+			netdev_priv(prDev);
+	kalMemCopy(&prNetDevPrivate->stats, &prDev->stats,
+			sizeof(struct net_device_stats));
+#if CFG_MTK_MDDP_WH_SUPPORT
+	mddpGetMdStats(prDev);
 #endif
 
-	return (struct net_device_stats *)kalGetStats(prDev);
+	return (struct net_device_stats *) kalGetStats(prDev);
 }				/* end of p2pGetStats() */
 
 static void p2pSetMulticastList(IN struct net_device *prDev)

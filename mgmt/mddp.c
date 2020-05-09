@@ -115,20 +115,44 @@ int32_t mddpRegisterCb(IN struct ADAPTER *prAdapter)
 
 int32_t mddpGetMdStats(IN struct net_device *prDev)
 {
+	struct NETDEV_PRIVATE_GLUE_INFO *prNetDevPrivate;
+	struct net_device_stats *prStats;
+	struct GLUE_INFO *prGlueInfo;
 	struct mddpw_net_stat_t mddpNetStats;
+	int32_t ret;
 
-	if (gMddpWFunc.get_net_stat) {
-		int32_t ret;
+	if (!gMddpWFunc.get_net_stat) {
+		DBGLOG(INIT, ERROR, "get_net_stat is NULL.\n");
+		return 0;
+	}
 
-		ret = gMddpWFunc.get_net_stat(&mddpNetStats);
-		prDev->stats.rx_packets += mddpNetStats.rx_packets;
-		prDev->stats.tx_packets += mddpNetStats.tx_packets;
-		prDev->stats.rx_bytes += mddpNetStats.rx_bytes;
-		prDev->stats.tx_bytes += mddpNetStats.tx_bytes;
-		prDev->stats.rx_errors += mddpNetStats.rx_errors;
-		prDev->stats.tx_errors += mddpNetStats.tx_errors;
-		DBGLOG(INIT, TRACE,
-			"rp[%u]tp[%u]rb[%u]tb[%u]re[%u]te[%u], ret: %d.\n",
+	prNetDevPrivate = (struct NETDEV_PRIVATE_GLUE_INFO *)
+			netdev_priv(prDev);
+	prStats = &prNetDevPrivate->stats;
+	prGlueInfo = prNetDevPrivate->prGlueInfo;
+
+	if (!prGlueInfo || !prGlueInfo->prAdapter ||
+			!prGlueInfo->prAdapter->fgMddpActivated)
+		return 0;
+
+	if (!prNetDevPrivate->ucMddpSupport)
+		return 0;
+
+	/* TODO: get stats by each netdev interface. */
+	ret = gMddpWFunc.get_net_stat(&mddpNetStats);
+	if (ret != 0) {
+		DBGLOG(INIT, ERROR, "get_net_stat fail, ret: %d.\n", ret);
+		return 0;
+	}
+
+	prStats->rx_packets += mddpNetStats.rx_packets;
+	prStats->tx_packets += mddpNetStats.tx_packets;
+	prStats->rx_bytes += mddpNetStats.rx_bytes;
+	prStats->tx_bytes += mddpNetStats.tx_bytes;
+	prStats->rx_errors += mddpNetStats.rx_errors;
+	prStats->tx_errors += mddpNetStats.tx_errors;
+	DBGLOG(INIT, TRACE, "name: %s, [%u, %u, %u, %u, %u, %u], ret: %d.\n",
+			prDev->name,
 			mddpNetStats.rx_packets,
 			mddpNetStats.tx_packets,
 			mddpNetStats.rx_bytes,
@@ -136,9 +160,6 @@ int32_t mddpGetMdStats(IN struct net_device *prDev)
 			mddpNetStats.rx_errors,
 			mddpNetStats.tx_errors,
 			ret);
-	} else {
-		DBGLOG(INIT, ERROR, "notify_drv_info is NULL.\n");
-	}
 
 	return 0;
 }
