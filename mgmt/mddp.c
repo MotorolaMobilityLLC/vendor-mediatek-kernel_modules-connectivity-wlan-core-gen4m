@@ -362,17 +362,19 @@ int32_t mddpNotifyDrvTxd(IN struct ADAPTER *prAdapter,
 
 	ret = gMddpWFunc.notify_drv_info(prNotifyInfo);
 
-	DBGLOG(NIC, INFO,
-		"ver:%d,idx:%d,w_idx:%d,mod:%d,bss:%d,wmm:%d,name:%s,act:%d\n",
-			prMddpTxd->version,
-			prMddpTxd->sta_idx,
-			prMddpTxd->wlan_idx,
-			prMddpTxd->sta_mode,
-			prMddpTxd->bss_id,
-			prMddpTxd->wmmset,
-			prMddpTxd->nw_if_name,
-			fgActivate);
-	DBGLOG(NIC, INFO, "ret: %d\n", ret);
+#define TEMP_LOG_TEMPLATE "ver:%d,idx:%d,w_idx:%d,mod:%d,bss:%d,wmm:%d," \
+		"name:%s,act:%d,ret:%d"
+	DBGLOG(NIC, INFO, TEMP_LOG_TEMPLATE,
+		prMddpTxd->version,
+		prMddpTxd->sta_idx,
+		prMddpTxd->wlan_idx,
+		prMddpTxd->sta_mode,
+		prMddpTxd->bss_id,
+		prMddpTxd->wmmset,
+		prMddpTxd->nw_if_name,
+		fgActivate,
+		ret);
+#undef TEMP_LOG_TEMPLATE
 
 exit:
 	if (buff)
@@ -427,9 +429,7 @@ int32_t mddpNotifyWifiStatus(IN enum mddp_drv_onoff_status wifiOnOffStatus)
 	struct mddpw_drv_info_t *prDrvInfo;
 	uint32_t u32BufSize = 0;
 	uint8_t *buff = NULL;
-
-	DBGLOG(INIT, INFO, "mddpNotifyWifiStatus power: %d.\n",
-			wifiOnOffStatus);
+	int32_t ret = 0;
 
 	if (gMddpWFunc.notify_drv_info) {
 		int32_t ret;
@@ -452,13 +452,15 @@ int32_t mddpNotifyWifiStatus(IN enum mddp_drv_onoff_status wifiOnOffStatus)
 		prDrvInfo->info[0] = wifiOnOffStatus;
 
 		ret = gMddpWFunc.notify_drv_info(prNotifyInfo);
-		DBGLOG(INIT, INFO, "ret: %d.\n", ret);
+		DBGLOG(INIT, INFO, "power: %d, ret: %d.\n",
+			wifiOnOffStatus, ret);
 		kalMemFree(buff, VIR_MEM_TYPE, u32BufSize);
 	} else {
 		DBGLOG(INIT, ERROR, "notify_drv_info is NULL.\n");
+		ret = -1;
 	}
 
-	return 0;
+	return ret;
 }
 
 void mddpNotifyWifiOnStart(void)
