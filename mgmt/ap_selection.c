@@ -912,7 +912,8 @@ struct BSS_DESC *scanSearchBssDescByScoreForAis(struct ADAPTER *prAdapter,
 	struct ROAMING_INFO *roam;
 	enum ROAM_TYPE eRoamType;
 
-	if (!prAdapter || eRoamReason >= ROAMING_REASON_NUM) {
+	if (!prAdapter ||
+	    eRoamReason >= ROAMING_REASON_NUM || eRoamReason < 0) {
 		log_dbg(SCN, ERROR,
 			"prAdapter %p, reason %d!\n", prAdapter, eRoamReason);
 		return NULL;
