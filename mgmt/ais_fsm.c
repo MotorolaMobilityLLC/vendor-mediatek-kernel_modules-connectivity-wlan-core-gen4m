@@ -1626,20 +1626,6 @@ void aisFsmSteps(IN struct ADAPTER *prAdapter,
 						nicActivateNetwork(prAdapter,
 						prAisBssInfo->ucBssIndex);
 					}
-
-					/* check for other pending request */
-					if (prAisReq && (aisFsmIsRequestPending
-							(prAdapter,
-							AIS_REQUEST_SCAN,
-							TRUE,
-							ucBssIndex)
-							== TRUE)) {
-						wlanClearScanningResult
-						    (prAdapter, ucBssIndex);
-						eNextState = AIS_STATE_SCAN;
-
-						fgIsTransition = TRUE;
-					}
 				}
 
 				if (prAisReq) {
