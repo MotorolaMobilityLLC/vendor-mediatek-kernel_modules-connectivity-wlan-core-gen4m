@@ -4615,6 +4615,7 @@ static int32_t wlanProbe(void *pvData, void *pvDriverData)
 		NET_REGISTER_FAIL,
 		PROC_INIT_FAIL,
 		FAIL_MET_INIT_PROCFS,
+		FAIL_BY_RESET,
 		FAIL_REASON_NUM
 	} eFailReason;
 	struct WLANDEV_INFO *prWlandevInfo = NULL;
@@ -4810,6 +4811,12 @@ static int32_t wlanProbe(void *pvData, void *pvDriverData)
 		}
 	} while (FALSE);
 
+	if (i4Status == 0 && kalIsResetting()) {
+		DBGLOG(INIT, WARN, "Fake wlan on success due to reset.\n");
+		eFailReason = FAIL_BY_RESET;
+		i4Status = WLAN_STATUS_FAILURE;
+	}
+
 	if (i4Status == 0) {
 		wlanOnWhenProbeSuccess(prGlueInfo, prAdapter, FALSE);
 		DBGLOG(INIT, INFO,
@@ -4824,6 +4831,7 @@ static int32_t wlanProbe(void *pvData, void *pvDriverData)
 		DBGLOG(INIT, ERROR, "wlanProbe: probe failed, reason:%d\n",
 		       eFailReason);
 		switch (eFailReason) {
+		case FAIL_BY_RESET:
 		case FAIL_MET_INIT_PROCFS:
 			kalMetRemoveProcfs();
 		case PROC_INIT_FAIL:
