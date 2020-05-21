@@ -1036,14 +1036,14 @@ do { \
 #if !CONFIG_WLAN_DRV_BUILD_IN
 
 #define kalTraceBegin(_fmt, ...) \
-	tracing_mark_write("B|%d|" _fmt "\n", current->pid, ##__VA_ARGS__)
+	tracing_mark_write("B|%d|" _fmt "\n", current->tgid, ##__VA_ARGS__)
 
 #define kalTraceEnd() \
-	tracing_mark_write("E|%d\n", current->pid)
+	tracing_mark_write("E|%d\n", current->tgid)
 
 #define kalTraceInt(_value, _fmt, ...) \
 	tracing_mark_write("C|%d|" _fmt "|%d\n", \
-		current->pid, ##__VA_ARGS__, _value)
+		current->tgid, ##__VA_ARGS__, _value)
 
 #define kalTraceCall() \
 	{ kalTraceBegin("%s", __func__); kalTraceEnd(); }
