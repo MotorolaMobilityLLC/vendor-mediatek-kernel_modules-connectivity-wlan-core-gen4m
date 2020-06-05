@@ -114,12 +114,15 @@
 
 void halShowPseInfo(IN struct ADAPTER *prAdapter)
 {
+#define BUF_SIZE 512
+
 	uint32_t pse_buf_ctrl = 0, pg_sz, pg_num;
 	uint32_t pse_stat = 0, pg_flow_ctrl[16] = {0};
 	uint32_t fpg_cnt, ffa_cnt, fpg_head, fpg_tail;
 	uint32_t max_q, min_q, rsv_pg, used_pg;
-	uint32_t i, page_offset, addr, value = 0;
+	uint32_t i, page_offset, addr, value = 0, pos = 0;
 	uint32_t txd_payload_info[16] = {0};
+	char *buf;
 
 	HAL_MCR_RD(prAdapter, PSE_PBUF_CTRL, &pse_buf_ctrl);
 	HAL_MCR_RD(prAdapter, PSE_QUEUE_EMPTY, &pse_stat);
@@ -357,26 +360,45 @@ void halShowPseInfo(IN struct ADAPTER *prAdapter)
 		}
 	}
 
-	for (i = 0; i < PSE_PEEK_CR_NUM; i++) {
-		addr = PSE_PEEK_CR_0 + PSE_PEEK_CR_OFFSET * i;
-		HAL_MCR_RD(prAdapter, addr, &value);
-		DBGLOG(HAL, INFO, "PSE_PEEK_CR_%u[0x%08x/0x%08x]\n",
-		       i, addr, value);
+	buf = (char *) kalMemAlloc(BUF_SIZE, VIR_MEM_TYPE);
+	if (buf) {
+		kalMemZero(buf, BUF_SIZE);
+		pos = 0;
+		for (i = 0; i < PSE_PEEK_CR_NUM; i++) {
+			addr = PSE_PEEK_CR_0 + PSE_PEEK_CR_OFFSET * i;
+			HAL_MCR_RD(prAdapter, addr, &value);
+			pos += kalSnprintf(buf + pos, 40,
+				"PSE_PEEK_CR_%u[0x%08x/0x%08x] ",
+				i, addr, value);
+		}
+		DBGLOG(HAL, INFO, "%s\n", buf);
+
+		kalMemZero(buf, BUF_SIZE);
+		pos = 0;
+		for (i = 0; i < PSE_ENDEQ_NUM; i++) {
+			addr = PSE_ENQ_0 + PSE_ENDEQ_OFFSET * i;
+			HAL_MCR_RD(prAdapter, addr, &value);
+			pos += kalSnprintf(buf + pos, 40,
+				"PSE_ENQ_%u[0x%08x/0x%08x] ",
+				i, addr, value);
+		}
+		DBGLOG(HAL, INFO, "%s\n", buf);
+
+		kalMemZero(buf, BUF_SIZE);
+		pos = 0;
+		for (i = 0; i < PSE_ENDEQ_NUM; i++) {
+			addr = PSE_DEQ_0 + PSE_ENDEQ_OFFSET * i;
+			HAL_MCR_RD(prAdapter, addr, &value);
+			pos += kalSnprintf(buf + pos, 40,
+				"PSE_DEQ_%u[0x%08x/0x%08x] ",
+				i, addr, value);
+		}
+		DBGLOG(HAL, INFO, "%s\n", buf);
+
+		kalMemFree(buf, VIR_MEM_TYPE, BUF_SIZE);
 	}
 
-	for (i = 0; i < PSE_ENDEQ_NUM; i++) {
-		addr = PSE_ENQ_0 + PSE_ENDEQ_OFFSET * i;
-		HAL_MCR_RD(prAdapter, addr, &value);
-		DBGLOG(HAL, INFO, "PSE_ENQ_%u[0x%08x/0x%08x]\n",
-		       i, addr, value);
-	}
-
-	for (i = 0; i < PSE_ENDEQ_NUM; i++) {
-		addr = PSE_DEQ_0 + PSE_ENDEQ_OFFSET * i;
-		HAL_MCR_RD(prAdapter, addr, &value);
-		DBGLOG(HAL, INFO, "PSE_DEQ_%u[0x%08x/0x%08x]\n",
-		       i, addr, value);
-	}
+#undef BUF_SIZE
 }
 
 #define UMAC_FID_FAULT	0xFFF
@@ -408,13 +430,16 @@ static struct EMPTY_QUEUE_INFO Queue_Empty_info[] = {
 void halShowPleInfo(IN struct ADAPTER *prAdapter,
 	u_int8_t fgDumpTxd)
 {
+#define BUF_SIZE 1024
+
 	uint32_t ple_buf_ctrl[3] = {0}, pg_sz, pg_num, bit_field_1, bit_field_2;
 	uint32_t ple_stat[17] = {0}, pg_flow_ctrl[6] = {0};
 	uint32_t sta_pause[4] = {0}, dis_sta_map[4] = {0};
 	uint32_t fpg_cnt, ffa_cnt, fpg_head, fpg_tail, hif_max_q, hif_min_q;
 	uint32_t rpg_hif, upg_hif, cpu_max_q, cpu_min_q, rpg_cpu, upg_cpu;
-	uint32_t i, j, addr, value = 0;
+	uint32_t i, j, addr, value = 0, pos = 0;
 	uint32_t txd_info[16] = {0};
+	char *buf;
 
 	HAL_MCR_RD(prAdapter, PLE_PBUF_CTRL, &ple_buf_ctrl[0]);
 	HAL_MCR_RD(prAdapter, PLE_RELEASE_CTRL, &ple_buf_ctrl[1]);
@@ -655,12 +680,22 @@ void halShowPleInfo(IN struct ADAPTER *prAdapter,
 		}
 	}
 
-	for (i = 0; i < PLE_PEEK_CR_NUM; i++) {
-		addr = PLE_PEEK_CR_0 + PLE_PEEK_CR_OFFSET * i;
-		HAL_MCR_RD(prAdapter, addr, &value);
-		DBGLOG(HAL, INFO, "PLE_PEEK_CR_%u[0x%08x/0x%08x]\n",
-		       i, addr, value);
+	buf = (char *) kalMemAlloc(BUF_SIZE, VIR_MEM_TYPE);
+	if (buf) {
+		kalMemZero(buf, BUF_SIZE);
+		for (i = 0; i < PLE_PEEK_CR_NUM; i++) {
+			addr = PLE_PEEK_CR_0 + PLE_PEEK_CR_OFFSET * i;
+			HAL_MCR_RD(prAdapter, addr, &value);
+			pos += kalSnprintf(buf + pos, 40,
+				"PLE_PEEK_CR_%u[0x%08x/0x%08x]%s",
+				i, addr, value,
+				i == (PLE_PEEK_CR_NUM - 1) ? "\n" : ", ");
+		}
+		DBGLOG(HAL, INFO, "%s\n", buf);
+		kalMemFree(buf, VIR_MEM_TYPE, BUF_SIZE);
 	}
+
+#undef BUF_SIZE
 }
 
 void halShowDmaschInfo(IN struct ADAPTER *prAdapter)

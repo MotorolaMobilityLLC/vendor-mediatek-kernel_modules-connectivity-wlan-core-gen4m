@@ -539,9 +539,11 @@ void kalDumpRxRing(struct GLUE_INFO *prGlueInfo,
 
 void halShowPdmaInfo(IN struct ADAPTER *prAdapter)
 {
-	uint32_t i = 0, u4Value = 0;
+#define BUF_SIZE 1024
+
+	uint32_t i = 0, u4Value = 0, pos = 0;
 	uint32_t offset, offset_ext, SwIdx;
-	char buf[100] = {0};
+	char *buf;
 	struct GL_HIF_INFO *prHifInfo = NULL;
 	struct BUS_INFO *prBus_info = prAdapter->chip_info->bus_info;
 	struct RTMP_TX_RING *prTxRing;
@@ -565,6 +567,8 @@ void halShowPdmaInfo(IN struct ADAPTER *prAdapter)
 		{"MD EVENT", 3, false},
 #endif
 	};
+
+	buf = (char *) kalMemAlloc(BUF_SIZE, VIR_MEM_TYPE);
 
 	/* PDMA HOST_INT */
 	HAL_MCR_RD(prAdapter, WPDMA_INT_STA, &u4Value);
@@ -607,80 +611,89 @@ void halShowPdmaInfo(IN struct ADAPTER *prAdapter)
 	DBGLOG(HAL, INFO, "%10s%10s%12s%20s%10s%10s%10s\n",
 		"Tx Ring", "Idx", "Reg", "Base", "Cnt", "CIDX", "DIDX");
 
-	for (i = 0; i < sizeof(wfmda_tx_group) /
-			sizeof(struct wfdma_ring_info); i++) {
-		int ret;
+	if (buf) {
+		kalMemZero(buf, BUF_SIZE);
+		for (i = 0; i < sizeof(wfmda_tx_group) /
+				sizeof(struct wfdma_ring_info); i++) {
+			int ret;
 
-		offset = wfmda_tx_group[i].ring_idx * MT_RINGREG_DIFF;
-		offset_ext = wfmda_tx_group[i].ring_idx * MT_RINGREG_EXT_DIFF;
+			offset = wfmda_tx_group[i].ring_idx *
+				MT_RINGREG_DIFF;
+			offset_ext = wfmda_tx_group[i].ring_idx *
+				MT_RINGREG_EXT_DIFF;
 
-		HAL_MCR_RD(prAdapter, WPDMA_TX_RING0_CTRL0 + offset,
-				&wfmda_tx_group[i].base);
-		HAL_MCR_RD(prAdapter, WPDMA_TX_RING0_BASE_PTR_EXT + offset_ext,
-				&wfmda_tx_group[i].base_ext);
-		HAL_MCR_RD(prAdapter, WPDMA_TX_RING0_CTRL1 + offset,
-				&wfmda_tx_group[i].cnt);
-		HAL_MCR_RD(prAdapter, WPDMA_TX_RING0_CTRL2 + offset,
-				&wfmda_tx_group[i].cidx);
-		HAL_MCR_RD(prAdapter, WPDMA_TX_RING0_CTRL3 + offset,
-				&wfmda_tx_group[i].didx);
+			HAL_MCR_RD(prAdapter, WPDMA_TX_RING0_CTRL0 + offset,
+					&wfmda_tx_group[i].base);
+			HAL_MCR_RD(prAdapter, WPDMA_TX_RING0_BASE_PTR_EXT +
+					offset_ext,
+					&wfmda_tx_group[i].base_ext);
+			HAL_MCR_RD(prAdapter, WPDMA_TX_RING0_CTRL1 + offset,
+					&wfmda_tx_group[i].cnt);
+			HAL_MCR_RD(prAdapter, WPDMA_TX_RING0_CTRL2 + offset,
+					&wfmda_tx_group[i].cidx);
+			HAL_MCR_RD(prAdapter, WPDMA_TX_RING0_CTRL3 + offset,
+					&wfmda_tx_group[i].didx);
 
-		ret = kalSnprintf(buf, sizeof(buf),
-			"%10s%10d  0x%08x  0x%016llx%10d%10d%10d",
-			wfmda_tx_group[i].name,
-			wfmda_tx_group[i].ring_idx,
-			WPDMA_TX_RING0_CTRL0 + offset,
-			(wfmda_tx_group[i].base + ((uint64_t)
-				wfmda_tx_group[i].base_ext << 32)),
-			wfmda_tx_group[i].cnt,
-			wfmda_tx_group[i].cidx,
-			wfmda_tx_group[i].didx);
-		if (ret >= 0 || ret < sizeof(buf))
-			DBGLOG(HAL, INFO, "%s\n", buf);
-		else
-			DBGLOG(INIT, ERROR,
+			ret = kalSnprintf(buf, BUF_SIZE,
+				"%10s%10d  0x%08x  0x%016llx%10d%10d%10d",
+				wfmda_tx_group[i].name,
+				wfmda_tx_group[i].ring_idx,
+				WPDMA_TX_RING0_CTRL0 + offset,
+				(wfmda_tx_group[i].base + ((uint64_t)
+					wfmda_tx_group[i].base_ext << 32)),
+				wfmda_tx_group[i].cnt,
+				wfmda_tx_group[i].cidx,
+				wfmda_tx_group[i].didx);
+			if (ret >= 0 || ret < BUF_SIZE)
+				DBGLOG(HAL, INFO, "%s\n", buf);
+			else
+				DBGLOG(INIT, ERROR,
 					"[%u] kalSnprintf failed, ret: %d\n",
-					__LINE__, ret);
-	}
+						__LINE__, ret);
+		}
 
-	DBGLOG(HAL, INFO, "Rx Ring configuration\n");
-	DBGLOG(HAL, INFO, "%10s%10s%12s%20s%10s%10s%10s\n",
-		"Rx Ring", "Idx", "Reg", "Base", "Cnt", "CIDX", "DIDX");
+		DBGLOG(HAL, INFO, "Rx Ring configuration\n");
+		DBGLOG(HAL, INFO, "%10s%10s%12s%20s%10s%10s%10s\n",
+			"Rx Ring", "Idx", "Reg", "Base", "Cnt", "CIDX", "DIDX");
 
-	for (i = 0; i < sizeof(wfmda_rx_group) /
-			sizeof(struct wfdma_ring_info); i++) {
-		int ret;
+		kalMemZero(buf, BUF_SIZE);
+		for (i = 0; i < sizeof(wfmda_rx_group) /
+				sizeof(struct wfdma_ring_info); i++) {
+			int ret;
 
-		offset = wfmda_rx_group[i].ring_idx * MT_RINGREG_DIFF;
-		offset_ext = wfmda_rx_group[i].ring_idx * MT_RINGREG_EXT_DIFF;
+			offset = wfmda_rx_group[i].ring_idx * MT_RINGREG_DIFF;
+			offset_ext = wfmda_rx_group[i].ring_idx *
+				MT_RINGREG_EXT_DIFF;
 
-		HAL_MCR_RD(prAdapter, WPDMA_RX_RING0_CTRL0 + offset,
-				&wfmda_rx_group[i].base);
-		HAL_MCR_RD(prAdapter, WPDMA_RX_RING0_BASE_PTR_EXT + offset_ext,
-				&wfmda_rx_group[i].base_ext);
-		HAL_MCR_RD(prAdapter, WPDMA_RX_RING0_CTRL1 + offset,
-				&wfmda_rx_group[i].cnt);
-		HAL_MCR_RD(prAdapter, WPDMA_RX_RING0_CTRL2 + offset,
-				&wfmda_rx_group[i].cidx);
-		HAL_MCR_RD(prAdapter, WPDMA_RX_RING0_CTRL3 + offset,
-				&wfmda_rx_group[i].didx);
+			HAL_MCR_RD(prAdapter, WPDMA_RX_RING0_CTRL0 + offset,
+					&wfmda_rx_group[i].base);
+			HAL_MCR_RD(prAdapter, WPDMA_RX_RING0_BASE_PTR_EXT +
+				offset_ext,
+					&wfmda_rx_group[i].base_ext);
+			HAL_MCR_RD(prAdapter, WPDMA_RX_RING0_CTRL1 + offset,
+					&wfmda_rx_group[i].cnt);
+			HAL_MCR_RD(prAdapter, WPDMA_RX_RING0_CTRL2 + offset,
+					&wfmda_rx_group[i].cidx);
+			HAL_MCR_RD(prAdapter, WPDMA_RX_RING0_CTRL3 + offset,
+					&wfmda_rx_group[i].didx);
 
-		ret = kalSnprintf(buf, sizeof(buf),
-			"%10s%10d  0x%08x  0x%016llx%10d%10d%10d",
-			wfmda_rx_group[i].name,
-			wfmda_rx_group[i].ring_idx,
-			WPDMA_RX_RING0_CTRL0 + offset,
-			(wfmda_rx_group[i].base + ((uint64_t)
-				wfmda_rx_group[i].base_ext << 32)),
-			wfmda_rx_group[i].cnt,
-			wfmda_rx_group[i].cidx,
-			wfmda_rx_group[i].didx);
-		if (ret >= 0 || ret < sizeof(buf))
-			DBGLOG(HAL, INFO, "%s\n", buf);
-		else
-			DBGLOG(INIT, ERROR,
+			ret = kalSnprintf(buf, BUF_SIZE,
+				"%10s%10d  0x%08x  0x%016llx%10d%10d%10d",
+				wfmda_rx_group[i].name,
+				wfmda_rx_group[i].ring_idx,
+				WPDMA_RX_RING0_CTRL0 + offset,
+				(wfmda_rx_group[i].base + ((uint64_t)
+					wfmda_rx_group[i].base_ext << 32)),
+				wfmda_rx_group[i].cnt,
+				wfmda_rx_group[i].cidx,
+				wfmda_rx_group[i].didx);
+			if (ret >= 0 || ret < BUF_SIZE)
+				DBGLOG(HAL, INFO, "%s\n", buf);
+			else
+				DBGLOG(INIT, ERROR,
 					"[%u] kalSnprintf failed, ret: %d\n",
-					__LINE__, ret);
+						__LINE__, ret);
+		}
 	}
 
 	/* PDMA Tx/Rx descriptor & packet content */
@@ -730,12 +743,19 @@ void halShowPdmaInfo(IN struct ADAPTER *prAdapter)
 
 	/* PDMA Debug Flag Info */
 	DBGLOG(HAL, INFO, "PDMA core dbg");
-	for (i = 0; i < 24; i++) {
-		u4Value = 256 + i;
-		HAL_MCR_WR(prAdapter, PDMA_DEBUG_EN, u4Value);
-		HAL_MCR_RD(prAdapter, PDMA_DEBUG_STATUS, &u4Value);
-		DBGLOG(HAL, INFO, "Set:0x%02x, result = 0x%08x\n", i, u4Value);
-		mdelay(1);
+	if (buf) {
+		kalMemZero(buf, BUF_SIZE);
+		pos = 0;
+		for (i = 0; i < 24; i++) {
+			u4Value = 256 + i;
+			HAL_MCR_WR(prAdapter, PDMA_DEBUG_EN, u4Value);
+			HAL_MCR_RD(prAdapter, PDMA_DEBUG_STATUS, &u4Value);
+			pos += kalSnprintf(buf + pos, 40,
+				"Set:0x%02x, result=0x%08x%s",
+				i, u4Value, i == 23 ? "\n" : "; ");
+			mdelay(1);
+		}
+		DBGLOG(HAL, INFO, "%s", buf);
 	}
 
 	/* AXI Debug Flag */
@@ -757,15 +777,25 @@ void halShowPdmaInfo(IN struct ADAPTER *prAdapter)
 	/* Rbus Bridge Debug Flag */
 	DBGLOG(HAL, INFO, "rbus dbg");
 	HAL_MCR_WR(prAdapter, PDMA_DEBUG_EN, RBUS_DEBUG_FLAG);
-	for (i = 0; i < 9; i++) {
-		u4Value = i << 16;
-		HAL_MCR_WR(prAdapter, AXI_DEBUG_DEBUG_EN, u4Value);
-		HAL_MCR_RD(prAdapter, PDMA_DEBUG_STATUS, &u4Value);
-		DBGLOG(HAL, INFO, "Set[19:16]:0x%02x, result = 0x%08x\n",
-		       i, u4Value);
+	if (buf) {
+		kalMemZero(buf, BUF_SIZE);
+		pos = 0;
+		for (i = 0; i < 9; i++) {
+			u4Value = i << 16;
+			HAL_MCR_WR(prAdapter, AXI_DEBUG_DEBUG_EN, u4Value);
+			HAL_MCR_RD(prAdapter, PDMA_DEBUG_STATUS, &u4Value);
+			pos += kalSnprintf(buf + pos, 40,
+				"Set[19:16]:0x%02x, result = 0x%08x%s",
+				i, u4Value, i == 8 ? "\n" : "; ");
+		}
+		DBGLOG(HAL, INFO, "%s", buf);
 	}
 	if (prAdapter->chip_info->prDebugOps->showHifInfo)
 		prAdapter->chip_info->prDebugOps->showHifInfo(prAdapter);
+	if (buf)
+		kalMemFree(buf, VIR_MEM_TYPE, BUF_SIZE);
+
+#undef BUF_SIZE
 }
 
 bool halShowHostCsrInfo(IN struct ADAPTER *prAdapter)
