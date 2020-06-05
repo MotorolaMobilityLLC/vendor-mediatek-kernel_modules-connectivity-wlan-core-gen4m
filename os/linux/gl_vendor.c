@@ -1786,7 +1786,7 @@ int mtk_cfg80211_vendor_get_features(struct wiphy *wiphy,
 #endif
 
 	for (i = 0; i < ((NUM_VENDOR_FEATURES + 7) / 8); i++) {
-		DBGLOG(REQ, INFO, "Dump feature flags[%d]=0x%x.\n", i,
+		DBGLOG(REQ, TRACE, "Dump feature flags[%d]=0x%x.\n", i,
 				feature_flags[i]);
 	}
 
