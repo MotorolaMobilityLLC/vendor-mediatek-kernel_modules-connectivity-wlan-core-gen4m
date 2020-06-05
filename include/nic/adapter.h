@@ -1139,6 +1139,10 @@ struct WIFI_VAR {
 
 	uint32_t u4DiscoverTimeout;
 	uint32_t u4InactiveTimeout;
+#if ARP_MONITER_ENABLE
+	uint32_t uArpMonitorNumber;
+	uint32_t uArpMonitorRxPktNum;
+#endif /* ARP_MONITER_ENABLE */
 };
 
 /* cnm_timer module */
