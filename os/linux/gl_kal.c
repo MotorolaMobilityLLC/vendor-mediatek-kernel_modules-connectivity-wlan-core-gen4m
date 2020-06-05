@@ -1103,8 +1103,21 @@ uint32_t kalRxIndicateOnePkt(IN struct GLUE_INFO
 
 #if 1
 
-	prNetDev = (struct net_device *)wlanGetNetInterfaceByBssIdx(
+	if (ucBssIdx < MAX_BSSID_NUM) {
+		prNetDev = (struct net_device *)wlanGetNetInterfaceByBssIdx(
 			   prGlueInfo, ucBssIdx);
+	} else {
+		DBGLOG(RX, WARN, "Error ucBssIdx =%x\n", ucBssIdx);
+		DBGLOG(RX, WARN, "Error pkt info =%x:%x:%x:%x:%x:%x:%x:%x\n",
+			GLUE_GET_PKT_TID(prSkb),
+			GLUE_IS_PKT_FLAG_SET(prSkb),
+			GLUE_GET_PKT_HEADER_LEN(prSkb),
+			GLUE_GET_PKT_FRAME_LEN(prSkb),
+			GLUE_GET_PKT_ARRIVAL_TIME(prSkb),
+			GLUE_GET_PKT_IP_ID(prSkb),
+			GLUE_GET_PKT_SEQ_NO(prSkb),
+			GLUE_GET_PKT_IS_PROF_MET(prSkb));
+	}
 	if (!prNetDev)
 		prNetDev = prGlueInfo->prDevHandler;
 #if CFG_SUPPORT_SNIFFER
