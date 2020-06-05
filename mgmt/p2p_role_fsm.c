@@ -2385,15 +2385,19 @@ void p2pRoleFsmRunEventJoinComplete(IN struct ADAPTER *prAdapter,
 
 				struct BSS_DESC *prBssDesc;
 
-				/* Increase Failure Count */
-				prStaRec->ucJoinFailureCount++;
-
 				prBssDesc = prJoinInfo->prTargetBssDesc;
 
-				ASSERT(prBssDesc);
-				ASSERT(prBssDesc->fgIsConnecting);
+				if (!prBssDesc) {
+					DBGLOG(P2P, WARN,
+						"prTargetBssDesc is NULL! Skip retry join\n");
+					goto error;
+				}
 
+				ASSERT(prBssDesc->fgIsConnecting);
 				prBssDesc->fgIsConnecting = FALSE;
+
+				/* Increase Failure Count */
+				prStaRec->ucJoinFailureCount++;
 
 				if (prStaRec->ucJoinFailureCount >=
 						P2P_SAA_RETRY_COUNT) {
