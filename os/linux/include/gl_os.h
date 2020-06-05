@@ -1330,6 +1330,11 @@ int set_p2p_mode_handler(struct net_device *netdev,
 const struct net_device_ops *wlanGetNdevOps(void);
 #endif
 
+#if CFG_MTK_ANDROID_WMT
+extern void connectivity_export_show_stack(struct task_struct *tsk,
+	unsigned long *sp);
+#endif
+
 int wlanHardStartXmit(struct sk_buff *prSkb, struct net_device *prDev);
 
 typedef uint8_t (*file_buf_handler) (void *ctx,

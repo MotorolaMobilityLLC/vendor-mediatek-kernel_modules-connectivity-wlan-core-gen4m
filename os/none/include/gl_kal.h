@@ -868,6 +868,11 @@ KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
 #endif
 
 /*----------------------------------------------------------------------------*/
+/* Macros of show stack operations for using in Driver Layer                  */
+/*----------------------------------------------------------------------------*/
+#define kal_show_stack(_adapter, _task, _sp)
+
+/*----------------------------------------------------------------------------*/
 /* Macros of systrace operations for using in Driver Layer                    */
 /*----------------------------------------------------------------------------*/
 #define kalTraceBegin(_fmt, ...)

@@ -1042,6 +1042,16 @@ do { \
 #endif
 
 /*----------------------------------------------------------------------------*/
+/* Macros of show stack operations for using in Driver Layer                  */
+/*----------------------------------------------------------------------------*/
+#if CFG_MTK_ANDROID_WMT
+#define kal_show_stack(_adapter, _task, _sp) \
+	connectivity_export_show_stack(_task, _sp)
+#else
+#define kal_show_stack(_adapter, _task, _sp)
+#endif
+
+/*----------------------------------------------------------------------------*/
 /* Macros of systrace operations for using in Driver Layer                    */
 /*----------------------------------------------------------------------------*/
 #if !CONFIG_WLAN_DRV_BUILD_IN
