@@ -267,7 +267,8 @@ void scnSendScanReqV2(IN struct ADAPTER *prAdapter)
 	prCmdScanReq->auVersion[0] = 1;
 	prCmdScanReq->ucScnFuncMask |= prScanParam->ucScnFuncMask;
 	if (kalIsValidMacAddr(prScanParam->aucRandomMac)) {
-		prCmdScanReq->ucScnFuncMask |= ENUM_SCN_RANDOM_MAC_EN;
+		prCmdScanReq->ucScnFuncMask |= (ENUM_SCN_RANDOM_MAC_EN |
+						ENUM_SCN_RANDOM_SN_EN);
 		kalMemCopy(prCmdScanReq->aucRandomMac,
 			prScanParam->aucRandomMac, MAC_ADDR_LEN);
 	}
