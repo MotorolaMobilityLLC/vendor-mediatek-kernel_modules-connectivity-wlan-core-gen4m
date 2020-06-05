@@ -2058,6 +2058,18 @@ bool halWpdmaWriteCmd(IN struct GLUE_INFO *prGlueInfo,
 	prTxRing = &prHifInfo->TxRing[u2Port];
 
 	u4TotalLen = prCmdInfo->u4TxdLen + prCmdInfo->u4TxpLen;
+#if (CFG_SUPPORT_CONNAC2X == 1)
+	if (u4TotalLen > prChipInfo->cmd_max_pkt_size) {
+		DBGLOG(HAL, ERROR, "Over CMD MAX PKT SIZE: %u>%u\n",
+				u4TotalLen,
+				prChipInfo->cmd_max_pkt_size);
+		DBGLOG_MEM32(HAL, ERROR, prCmdInfo->pucTxd,
+				prCmdInfo->u4TxdLen);
+		DBGLOG_MEM32(HAL, ERROR, prCmdInfo->pucTxp,
+				prCmdInfo->u4TxpLen);
+		return FALSE;
+	}
+#endif /* CFG_SUPPORT_CONNAC2X == 1 */
 	if (prMemOps->allocRuntimeMem)
 		pucSrc = prMemOps->allocRuntimeMem(u4TotalLen);
 
