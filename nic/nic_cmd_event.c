@@ -3074,8 +3074,11 @@ uint32_t nicCfgChipCapPhyCap(IN struct ADAPTER *prAdapter,
 
 	prAdapter->rWifiVar.ucStaVht &= prPhyCap->ucVht;
 	wlanCfgSetUint32(prAdapter, "StaVHT", prAdapter->rWifiVar.ucStaVht);
-	prAdapter->rWifiVar.ucApVht &= prPhyCap->ucVht;
-	wlanCfgSetUint32(prAdapter, "ApVHT", prAdapter->rWifiVar.ucApVht);
+	if (prAdapter->rWifiVar.ucApVht != FEATURE_FORCE_ENABLED) {
+		prAdapter->rWifiVar.ucApVht &= prPhyCap->ucVht;
+		wlanCfgSetUint32(prAdapter, "ApVHT",
+					prAdapter->rWifiVar.ucApVht);
+	}
 	prAdapter->rWifiVar.ucP2pGoVht &= prPhyCap->ucVht;
 	wlanCfgSetUint32(prAdapter, "P2pGoVHT", prAdapter->rWifiVar.ucP2pGoVht);
 	prAdapter->rWifiVar.ucP2pGcVht &= prPhyCap->ucVht;
