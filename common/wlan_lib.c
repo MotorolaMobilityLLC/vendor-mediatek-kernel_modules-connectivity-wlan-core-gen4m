@@ -5112,7 +5112,10 @@ uint32_t wlanLoadManufactureData(IN struct ADAPTER
 
 	struct CMD_NVRAM_SETTING *prCmdNvramSettings;
 
-
+	if (prRegInfo == NULL) {
+		DBGLOG(INIT, ERROR, "prRegInfo = NULL");
+		return WLAN_STATUS_FAILURE;
+	}
 	ASSERT(prAdapter);
 
 	fgSupportFragment = prAdapter->chip_info->is_support_nvram_fragment;
@@ -5708,6 +5711,11 @@ uint32_t wlanCheckSystemConfiguration(IN struct ADAPTER
 
 #if (CFG_SW_NVRAM_VERSION_CHECK == 1)
 	prRegInfo = kalGetConfiguration(prAdapter->prGlueInfo);
+
+	if (prRegInfo == NULL) {
+		DBGLOG(INIT, ERROR, "prRegInfo = NULL");
+		return WLAN_STATUS_FAILURE;
+	}
 
 #if (CFG_SUPPORT_PWR_LIMIT_COUNTRY == 1)
 	if (fgIsConfExist == TRUE
