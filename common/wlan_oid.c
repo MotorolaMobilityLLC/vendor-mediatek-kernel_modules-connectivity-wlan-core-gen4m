@@ -3026,14 +3026,16 @@ wlanoidSetAddKey(IN struct ADAPTER *prAdapter, IN void *pvSetBuffer,
 		       prCmdKey->ucAlgorithmId, prCmdKey->ucKeyId,
 		       prCmdKey->ucKeyLen);
 	DBGLOG_MEM8(RSN, INFO, prCmdKey->aucKeyMaterial, prCmdKey->ucKeyLen);
-	DBGLOG_LIMITED(RSN, INFO, "wepkeyUsed=%d,wepkeyWlanIdx=%d\n",
+	if (prCmdKey->ucKeyId < MAX_KEY_NUM) {
+		DBGLOG_LIMITED(RSN, INFO, "wepkeyUsed=%d,wepkeyWlanIdx=%d\n",
 		       prBssInfo->wepkeyUsed[prCmdKey->ucKeyId],
 		       prBssInfo->wepkeyWlanIdx);
 
-	DBGLOG_LIMITED(RSN, INFO,
+		DBGLOG_LIMITED(RSN, INFO,
 		       "ucBMCWlanIndexSUsed=%d,ucBMCWlanIndexS=%d\n",
 		       prBssInfo->ucBMCWlanIndexSUsed[prCmdKey->ucKeyId],
 		       prBssInfo->ucBMCWlanIndexS[prCmdKey->ucKeyId]);
+	}
 #endif
 	prAisSpecBssInfo->ucKeyAlgorithmId = prCmdKey->ucAlgorithmId;
 	/* insert into prCmdQueue */
