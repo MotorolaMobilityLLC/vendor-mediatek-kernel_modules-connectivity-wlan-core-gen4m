@@ -8264,7 +8264,8 @@ void qmReleaseCHAtFinishedDhcp(struct ADAPTER *prAdapter,
 	if (!timerPendingTimer(prTimer)) {
 		DBGLOG(QM, ERROR, "No channel occupation\n");
 	} else {
-		DBGLOG(QM, INFO, "Let the join timer count down.\n");
-		aisFsmReleaseCh(prAdapter, ucBssIndex);
+		DBGLOG(QM, INFO, "Dhcp done, stop join timer.\n");
+		cnmTimerStopTimer(prAdapter, prTimer);
+		aisFsmRunEventJoinTimeout(prAdapter, ucBssIndex);
 	}
 }
