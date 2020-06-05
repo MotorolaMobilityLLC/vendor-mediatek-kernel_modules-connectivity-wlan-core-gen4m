@@ -1728,6 +1728,11 @@ struct ADAPTER {
 #if CFG_SUPPORT_DATA_STALL
 	OS_SYSTIME tmReportinterval;
 #endif
+
+#if CFG_SUPPORT_BIGDATA_PIP
+	OS_SYSTIME tmDataPipReportinterval;
+#endif
+
 	int8_t cArpNoResponseIdx;
 
 	u_int8_t fgEnDbgPowerMode;

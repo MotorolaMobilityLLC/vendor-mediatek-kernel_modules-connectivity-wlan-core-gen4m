@@ -1562,6 +1562,91 @@ kalIndicateStatusAndComplete(IN struct GLUE_INFO
 
 			if (prBssInfo)
 				u2DeauthReason = prBssInfo->u2DeauthReason;
+
+#if CFG_SUPPORT_BIGDATA_PIP
+			{
+			struct _REPORT_DISCONNECT {
+				uint16_t	u2Id;
+				uint16_t	u2Len;
+				uint8_t  ucReasonType;
+				uint16_t  u2ReasonCode;
+				int8_t  cRssi;
+				uint16_t  u2DataRate;
+				uint8_t  ucChannelNo;
+			} __KAL_ATTRIB_PACKED__;
+
+			struct _REPORT_DISCONNECT rPayload = {0};
+			struct BSS_DESC *prTemp = NULL;
+			int8_t ret = 0;
+
+			/* u2Id: Define category of report data.
+			 * 0 - Antswp
+			 * 1 - GPS Blank On
+			 * 2 - Disconnect Reason
+			 * others - Reserved
+			 *
+			 * u2Len: length of data.
+			 * Report data format:
+			 * | u2Id | u2Len | data |
+			 */
+			rPayload.u2Id = 2;
+			rPayload.u2Len = 7;
+
+			if (eStatus ==
+			WLAN_STATUS_MEDIA_DISCONNECT_LOCALLY) {
+				rPayload.ucReasonType = 2;
+				rPayload.u2ReasonCode = 0;
+			} else if (u2DeauthReason >=
+				REASON_CODE_BEACON_TIMEOUT*100) {
+				rPayload.ucReasonType = 0;
+				rPayload.u2ReasonCode =
+				u2DeauthReason - REASON_CODE_BEACON_TIMEOUT*100;
+			} else {
+				rPayload.ucReasonType = 1;
+				rPayload.u2ReasonCode = u2DeauthReason;
+			}
+
+			if (prGlueInfo->prAdapter) {
+				rPayload.cRssi =
+					prGlueInfo->prAdapter->rLinkQuality
+					.rLq[ucBssIndex].cRssi;
+				rPayload.u2DataRate =
+					prGlueInfo->prAdapter->rLinkQuality
+					.rLq[ucBssIndex].u2LinkSpeed;
+
+				prTemp =
+					aisGetTargetBssDesc(
+						prGlueInfo->prAdapter,
+						ucBssIndex);
+
+				if (prTemp)
+					rPayload.ucChannelNo =
+						prTemp->ucChannelNum;
+
+				DBGLOG(INIT, TRACE,
+		    "[D2F]type(%u)-reason(%u)-rssi(%d)-speed(%u)-channel(%u)\n",
+					rPayload.ucReasonType,
+					rPayload.u2ReasonCode,
+					rPayload.cRssi,
+					rPayload.u2DataRate,
+					rPayload.ucChannelNo);
+
+				/* dumpMemory8((uint8_t *)&rPayload,
+				 * sizeof(rPayload));
+				 */
+
+				ret = kalBigDataPip(prGlueInfo->prAdapter,
+					(uint8_t *)&rPayload,
+					sizeof(rPayload));
+
+				if ((ret != 1) && (ret != -ETIME))
+					DBGLOG(INIT, ERROR,
+					"[D2F]data pip report fail(%d).\n",
+					ret);
+
+			}
+			}
+#endif
 			/* CFG80211 Indication */
 			DBGLOG(INIT, INFO,
 			    "[wifi]Indicate disconnection: Reason=%d Locally[%d]\n",
@@ -6611,6 +6696,53 @@ u_int8_t kalIndicateDriverEvent(struct ADAPTER *prAdapter,
 	DBGLOG(INIT, ERROR, "DPP event to cfg80211[id:%d][len:%d][F:%d]:%d\n",
 		WIFI_EVENT_DRIVER_ERROR,
 		dataLen, fgForceReport, event);
+
+	cfg80211_vendor_event(skb, GFP_KERNEL);
+	return TRUE;
+nla_put_failure:
+	kfree_skb(skb);
+	return FALSE;
+}
+#endif
+
+#if CFG_SUPPORT_BIGDATA_PIP
+int8_t kalBigDataPip(struct ADAPTER *prAdapter,
+					uint8_t *payload,
+					uint16_t dataLen)
+{
+	struct sk_buff *skb = NULL;
+	struct wiphy *wiphy;
+	struct wireless_dev *wdev;
+	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
+
+	wiphy = priv_to_wiphy(prAdapter->prGlueInfo);
+	wdev = ((prAdapter->prGlueInfo)->prDevHandler)->ieee80211_ptr;
+
+	if (!wiphy || !wdev || !prWifiVar || !payload)
+		return -EINVAL;
+
+	/* Max length of report data is discussed to 500.*/
+	if (dataLen > 500)
+		return -EINVAL;
+
+	if (prAdapter->tmDataPipReportinterval > 0 &&
+		!CHECK_FOR_TIMEOUT(kalGetTimeTick(),
+		prAdapter->tmDataPipReportinterval, 20)) {
+		return -ETIME;
+	}
+	GET_CURRENT_SYSTIME(&prAdapter->tmDataPipReportinterval);
+
+	skb = cfg80211_vendor_event_alloc(wiphy, wdev, dataLen,
+		WIFI_EVENT_BIGDATA_PIP, GFP_KERNEL);
+	if (!skb) {
+		DBGLOG(REQ, ERROR, "%s allocate skb failed\n", __func__);
+		return -ENOMEM;
+	}
+
+	if (dataLen > 0 &&
+		unlikely(nla_put(skb, WIFI_ATTRIBUTE_PIP_PAYLOAD
+		, dataLen, payload) < 0))
+		goto nla_put_failure;
 
 	cfg80211_vendor_event(skb, GFP_KERNEL);
 	return TRUE;

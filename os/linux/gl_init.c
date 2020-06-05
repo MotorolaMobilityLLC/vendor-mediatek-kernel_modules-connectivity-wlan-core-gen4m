@@ -785,10 +785,19 @@ static const struct nl80211_vendor_cmd_info
 		.subcmd = NL80211_VENDOR_SUBCMD_ACS
 	},
 #endif
+
 	{
 		.vendor_id = OUI_MTK,
 		.subcmd = WIFI_EVENT_GENERIC_RESPONSE
 	},
+
+#if CFG_SUPPORT_BIGDATA_PIP
+	{
+		.vendor_id = OUI_MTK,
+		.subcmd = WIFI_EVENT_BIGDATA_PIP
+	},
+#endif
+
 };
 #endif
 
