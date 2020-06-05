@@ -588,7 +588,7 @@
 #define SCAN_CMD_SSID_NUM                       (4)
 #define SCAN_CMD_CHNL_NUM                       (32)
 
-#if 1
+#if 0
 /* to be compatible with old FW, we set ssid num to 0 here,
  * we should set correct num when query of scan capability from FW is done
  */
