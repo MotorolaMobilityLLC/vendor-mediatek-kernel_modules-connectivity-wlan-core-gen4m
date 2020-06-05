@@ -801,8 +801,8 @@ int mtk_cfg80211_vendor_set_roaming_param(struct wiphy *wiphy,
 				 const void *data, int data_len)
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
-	struct nlattr *tb[QCA_ATTR_ROAMING_PARAM_MAX + 1];
-	struct nlattr *tb2[QCA_ATTR_ROAMING_PARAM_MAX + 1];
+	struct nlattr *tb[QCA_ATTR_ROAMING_PARAM_MAX + 1] = {};
+	struct nlattr *tb2[QCA_ATTR_ROAMING_PARAM_MAX + 1] = {};
 	struct nlattr *attr;
 	uint32_t rStatus, u4BufLen, cmd_type, count, index;
 	int tmp;
