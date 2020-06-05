@@ -535,7 +535,7 @@ uint32_t nicProcessISTWithSpecifiedCount(IN struct ADAPTER *prAdapter,
 	for (i = 0; i < u4HifIstLoopCount; i++) {
 
 		HAL_READ_INT_STATUS(prAdapter, &u4IntStatus);
-		/* DBGLOG(INIT, TRACE, ("u4IntStatus: 0x%x\n", u4IntStatus)); */
+		/* DBGLOG(INIT, TRACE, "u4IntStatus: 0x%x\n", u4IntStatus); */
 
 		if (u4IntStatus == 0) {
 			if (i == 0)
