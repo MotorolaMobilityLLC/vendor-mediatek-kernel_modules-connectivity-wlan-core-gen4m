@@ -121,7 +121,7 @@ struct APPEND_VAR_IE_ENTRY txAssocReqIETable[] = {
 	,			/*199 */
 #endif
 #if (CFG_SUPPORT_802_11AX == 1)
-	{(0), heRlmReqGetHeCapIELen, heRlmReqGenerateHeCapIE}
+	{(0), heRlmCalculateHeCapIELen, heRlmReqGenerateHeCapIE}
 	,			/* 255, EXT 35 */
 #endif
 #if CFG_SUPPORT_MTK_SYNERGY
@@ -167,6 +167,12 @@ struct APPEND_VAR_IE_ENTRY txAssocRespIETable[] = {
 	{(ELEM_HDR_LEN + ELEM_MAX_LEN_VHT_OP_MODE_NOTIFICATION), NULL,
 	 rlmRspGenerateVhtOpNotificationIE}
 	,			/*199 */
+#endif
+#if CFG_SUPPORT_802_11AX
+	{0, heRlmCalculateHeCapIELen, heRlmRspGenerateHeCapIE}
+	,			/* 255, EXT 35 */
+	{0, heRlmCalculateHeOpIELen, heRlmRspGenerateHeOpIE}
+	,			/* 255, EXT 36 */
 #endif
 	{(ELEM_HDR_LEN + ELEM_MAX_LEN_WMM_PARAM), NULL, mqmGenerateWmmParamIE}
 	,			/* 221 */
@@ -1551,6 +1557,12 @@ uint32_t assocProcessRxAssocReqFrame(IN struct ADAPTER *prAdapter,
 				return WLAN_STATUS_FAILURE;
 			}
 			break;
+#if (CFG_SUPPORT_802_11AX == 1)
+		case ELEM_ID_RESERVED:
+			if (IE_ID_EXT(pucIE) == ELEM_EXT_ID_HE_CAP)
+				prStaRec->ucPhyTypeSet |= PHY_TYPE_SET_802_11AX;
+			break;
+#endif
 		default:
 			for (i = 0;
 			     i <
