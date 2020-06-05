@@ -268,7 +268,7 @@
 #define CFG_SUPPORT_BIGDATA_PIP			0
 #endif
 
-#define CFG_SUPPORT_HE_ER               0
+#define CFG_SUPPORT_HE_ER               1
 
 /*------------------------------------------------------------------------------
  * Flags of Buffer mode SUPPORT
