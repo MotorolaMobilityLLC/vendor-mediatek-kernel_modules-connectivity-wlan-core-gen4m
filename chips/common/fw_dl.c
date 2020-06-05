@@ -2206,12 +2206,16 @@ uint32_t wlanConnacFormatDownload(IN struct ADAPTER
 	if (wlanGetConnacTailerInfo(prAdapter, prFwBuffer, u4FwSize,
 				    eDlIdx) != WLAN_STATUS_SUCCESS) {
 		DBGLOG(INIT, WARN, "Get tailer info error!\n");
-		return WLAN_STATUS_FAILURE;
+		rDlStatus = WLAN_STATUS_FAILURE;
+		goto exit;
 	}
 
 	if (prAdapter->chip_info->checkbushang) {
-		if (prAdapter->chip_info->checkbushang(prAdapter, TRUE) != 0)
-			return WLAN_STATUS_FAILURE;
+		if (prAdapter->chip_info->checkbushang(prAdapter, TRUE) != 0) {
+			DBGLOG(INIT, WARN, "Check bus hang failed.\n");
+			rDlStatus = WLAN_STATUS_FAILURE;
+			goto exit;
+		}
 	}
 
 	ucRegionNum = prAdapter->rVerInfo.rCommonTailer.ucRegionNum;
@@ -2234,6 +2238,7 @@ uint32_t wlanConnacFormatDownload(IN struct ADAPTER
 #endif
 /* To support dynamic memory map for WiFi RAM code download::End */
 
+exit:
 	kalFirmwareImageUnmapping(prAdapter->prGlueInfo, NULL,
 				  prFwBuffer);
 
