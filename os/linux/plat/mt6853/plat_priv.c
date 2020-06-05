@@ -4,6 +4,7 @@
  */
 
 #include "precomp.h"
+#include "wmt_exp.h"
 
 #ifdef CONFIG_MEDIATEK_EMI
 #include <memory/mediatek/emi.h>
@@ -76,15 +77,22 @@ void kalSetDrvEmiMpuProtection(phys_addr_t emiPhyBase, uint32_t offset,
 
 int32_t kalGetFwFlavor(uint8_t *flavor)
 {
-	int ret = 0;
+	int32_t ret = 1;
+	const uint32_t adie_chip_id = mtk_wcn_wmt_ic_info_get(WMTCHIN_ADIE);
 
-#ifdef CFG_WIFI_FLAVOR
-	ret = kalSnprintf(flavor, 2, "%s", STR(CFG_WIFI_FLAVOR));
-	if (ret < 0 || ret >= 2) {
-		DBGLOG(INIT, ERROR, "kalSnprintf failed, ret: %d\n", ret);
+	DBGLOG(INIT, INFO, "adie_chip_id: 0x%x\n", adie_chip_id);
+
+	switch (adie_chip_id) {
+	case 0x6631:
+		*flavor = 'c';
+		break;
+	case 0x6635:
+		*flavor = 'b';
+		break;
+	default:
 		ret = 0;
-	} else
-		ret = 1;
-#endif
+		break;
+	}
+
 	return ret;
 }
