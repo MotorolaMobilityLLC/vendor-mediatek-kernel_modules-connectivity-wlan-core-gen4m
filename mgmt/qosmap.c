@@ -220,7 +220,7 @@ void qosParseQosMapSet(IN struct ADAPTER *prAdapter,
 			continue;
 		}
 
-		for (dscp = lDscp; dscp < 64 && dscp < hDscp; dscp++) {
+		for (dscp = lDscp; dscp < 64 && dscp <= hDscp; dscp++) {
 			if (!excTable[dscp])
 				qosmapping[dscp] = i;
 		}
