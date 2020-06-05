@@ -159,7 +159,7 @@
 #endif
 
 #ifndef CFG_SUPPORT_PERF_IND
-#define CFG_SUPPORT_PERF_IND            1
+#define CFG_SUPPORT_PERF_IND            0
 #endif
 
 /* Support AP Selection */
@@ -1241,7 +1241,7 @@
  * Flags to force enable performance monitor even when screen is OFF
  *------------------------------------------------------------------------------
  */
-#define CFG_FORCE_ENABLE_PERF_MONITOR	1
+#define CFG_FORCE_ENABLE_PERF_MONITOR	0
 
 /*------------------------------------------------------------------------------
  * Flags to ignore invalid auth tsn issue (ex. ALPS03089071)
@@ -1407,7 +1407,7 @@
  *------------------------------------------------------------------------------
 */
 #ifndef CFG_SUPPORT_SMART_GEAR
-#define CFG_SUPPORT_SMART_GEAR 1
+#define CFG_SUPPORT_SMART_GEAR 0
 #endif
 
 /*------------------------------------------------------------------------------
