@@ -895,6 +895,12 @@ int8_t atoi(uint8_t ch);
 #define kalDevSetPowerState(prGlueInfo, ePowerMode)
 #endif
 
+#if CFG_MTK_ANDROID_WMT
+#define _kalRequestFirmware request_firmware_direct
+#else
+#define _kalRequestFirmware request_firmware
+#endif
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Notify OS with SendComplete event of the specific packet.
