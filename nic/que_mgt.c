@@ -7744,7 +7744,7 @@ void qmDetectArpNoResponse(struct ADAPTER *prAdapter,
 
 	if (arpOpCode == ARP_PRO_REQ) {
 		arpMoniter++;
-		if (arpMoniter > 20) {
+		if (arpMoniter > prAdapter->rWifiVar.u4ArpMoniterThreshold) {
 			DBGLOG(INIT, WARN,
 				"IOT Critical issue, arp no resp, check AP!\n");
 			if (prAisBssInfo)
