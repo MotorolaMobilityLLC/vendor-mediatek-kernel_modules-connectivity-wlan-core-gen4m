@@ -1498,7 +1498,8 @@ static void asicFillCmdTxdInfo(
 	if (pucSeqNum)
 		*pucSeqNum = prWifiCmd->ucSeqNum;
 
-	DBGLOG(INIT, INFO, "TX CMD: ID[0x%02X] SEQ[%u] SET[%u] LEN[%u]\n",
+	DBGLOG_LIMITED(INIT, INFO,
+			"TX CMD: ID[0x%02X] SEQ[%u] SET[%u] LEN[%u]\n",
 			prWifiCmd->ucCID, prWifiCmd->ucSeqNum,
 			prWifiCmd->ucSetQuery, prWifiCmd->u2Length);
 }
