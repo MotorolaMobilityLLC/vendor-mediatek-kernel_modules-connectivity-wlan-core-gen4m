@@ -256,6 +256,9 @@ cnmTimerInitTimerOption(IN struct ADAPTER *prAdapter,
 	if (prTimer->pfMgmtTimeOutFunc == pfFunc
 		&& prTimer->rLinkEntry.prNext) {
 		log_dbg(CNM, WARN, "re-init timer, func %p\n", pfFunc);
+		/* Remove dead timer to prevent infinite loop */
+		LINK_REMOVE_KNOWN_ENTRY(&prAdapter->rRootTimer.rLinkHead,
+			&prTimer->rLinkEntry);
 		dump_stack();
 	}
 
@@ -457,36 +460,41 @@ void cnmTimerDoTimeOutCheck(IN struct ADAPTER *prAdapter)
 
 		prTimer = LINK_ENTRY(prLinkEntry, struct TIMER, rLinkEntry);
 		ASSERT(prTimer);
-		if (prLinkEntry->prNext == NULL)
-			log_dbg(CNM, WARN, "timer was re-inited, func %p\n",
-				prTimer->pfMgmtTimeOutFunc);
 
 		/* Check if this entry is timeout. */
 		if (!TIME_BEFORE(rCurSysTime, prTimer->rExpiredSysTime)) {
-			cnmTimerStopTimer_impl(prAdapter, prTimer, FALSE);
+			if (timerPendingTimer(prTimer)) {
+				cnmTimerStopTimer_impl(prAdapter,
+					prTimer, FALSE);
 
-			pfMgmtTimeOutFunc = prTimer->pfMgmtTimeOutFunc;
-			ulTimeoutDataPtr = prTimer->ulDataPtr;
+				pfMgmtTimeOutFunc = prTimer->pfMgmtTimeOutFunc;
+				ulTimeoutDataPtr = prTimer->ulDataPtr;
 
-			if (prTimer->u2Minutes > 0) {
-				prTimer->u2Minutes--;
-				prTimer->rExpiredSysTime
-					= rCurSysTime
-						+ MSEC_TO_SYSTIME(MSEC_PER_MIN);
-				LINK_INSERT_TAIL(prTimerList,
+				if (prTimer->u2Minutes > 0) {
+					prTimer->u2Minutes--;
+					prTimer->rExpiredSysTime = rCurSysTime +
+						MSEC_TO_SYSTIME(MSEC_PER_MIN);
+					LINK_INSERT_TAIL(prTimerList,
+						&prTimer->rLinkEntry);
+				} else if (pfMgmtTimeOutFunc) {
+					KAL_RELEASE_SPIN_LOCK(prAdapter,
+						SPIN_LOCK_TIMER);
+				#ifdef UT_TEST_MODE
+					if (testTimerTimeout(prAdapter,
+							     pfMgmtTimeOutFunc,
+							     ulTimeoutDataPtr))
+				#endif
+					(pfMgmtTimeOutFunc) (prAdapter,
+						ulTimeoutDataPtr);
+					KAL_ACQUIRE_SPIN_LOCK(prAdapter,
+						SPIN_LOCK_TIMER);
+				}
+			} else {
+				log_dbg(CNM, WARN, "timer was re-inited, func %p\n",
+					prTimer->pfMgmtTimeOutFunc);
+				/* Remove dead timer to prevent infinite loop */
+				LINK_REMOVE_KNOWN_ENTRY(&prRootTimer->rLinkHead,
 					&prTimer->rLinkEntry);
-			} else if (pfMgmtTimeOutFunc) {
-				KAL_RELEASE_SPIN_LOCK(prAdapter,
-					SPIN_LOCK_TIMER);
-			#ifdef UT_TEST_MODE
-				if (testTimerTimeout(prAdapter,
-						     pfMgmtTimeOutFunc,
-						     ulTimeoutDataPtr))
-			#endif
-				(pfMgmtTimeOutFunc) (prAdapter,
-					ulTimeoutDataPtr);
-				KAL_ACQUIRE_SPIN_LOCK(prAdapter,
-					SPIN_LOCK_TIMER);
 			}
 
 			/* Search entire list again because of nest del and add
