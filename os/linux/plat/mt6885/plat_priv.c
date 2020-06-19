@@ -25,6 +25,12 @@
 #define MAX_CPU_FREQ (3 * 1024 * 1024) /* in kHZ */
 #define MAX_CLUSTER_NUM  3
 
+enum ENUM_CPU_BOOST_STATUS {
+	ENUM_CPU_BOOST_STATUS_INIT = 0,
+	ENUM_CPU_BOOST_STATUS_START,
+	ENUM_CPU_BOOST_STATUS_STOP,
+	ENUM_CPU_BOOST_STATUS_NUM
+};
 
 uint32_t kalGetCpuBoostThreshold(void)
 {
@@ -43,7 +49,7 @@ int32_t kalBoostCpu(IN struct ADAPTER *prAdapter,
 	int32_t i = 0, i4Freq = -1;
 
 	static struct pm_qos_request wifi_qos_request;
-	static u_int8_t fgRequested;
+	static u_int8_t fgRequested = ENUM_CPU_BOOST_STATUS_INIT;
 
 	uint32_t u4ClusterNum = topo_ctrl_get_nr_clusters();
 
@@ -54,6 +60,12 @@ int32_t kalBoostCpu(IN struct ADAPTER *prAdapter,
 	for (i = 0; i < u4ClusterNum; i++) {
 		freq_to_set[i].min = i4Freq;
 		freq_to_set[i].max = i4Freq;
+	}
+
+	if (fgRequested == ENUM_CPU_BOOST_STATUS_INIT) {
+		/* initially enable rps working at all cores */
+		kalSetRpsMap(prGlueInfo, 0xff);
+		fgRequested = ENUM_CPU_BOOST_STATUS_STOP;
 	}
 
 	if (u4TarPerfLevel >= u4BoostCpuTh) {
@@ -72,8 +84,8 @@ int32_t kalBoostCpu(IN struct ADAPTER *prAdapter,
 	update_userlimit_cpu_freq(CPU_KIR_WIFI, u4ClusterNum, freq_to_set);
 
 	if (u4TarPerfLevel >= u4BoostCpuTh) {
-		if (!fgRequested) {
-			fgRequested = 1;
+		if (fgRequested == ENUM_CPU_BOOST_STATUS_STOP) {
+			fgRequested = ENUM_CPU_BOOST_STATUS_START;
 			pm_qos_add_request(&wifi_qos_request,
 					   PM_QOS_DDR_OPP,
 					   DDR_OPP_0);
@@ -81,11 +93,11 @@ int32_t kalBoostCpu(IN struct ADAPTER *prAdapter,
 		pr_info("Max Dram Freq start\n");
 		pm_qos_update_request(&wifi_qos_request, DDR_OPP_0);
 
-	} else if (fgRequested) {
+	} else if (fgRequested == ENUM_CPU_BOOST_STATUS_START) {
 		pr_info("Max Dram Freq end\n");
 		pm_qos_update_request(&wifi_qos_request, DDR_OPP_UNREQ);
 		pm_qos_remove_request(&wifi_qos_request);
-		fgRequested = 0;
+		fgRequested = ENUM_CPU_BOOST_STATUS_STOP;
 	}
 
 	return 0;
