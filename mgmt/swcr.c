@@ -371,7 +371,7 @@ void dumpBss(struct ADAPTER *prAdapter,
 	     struct BSS_INFO *prBssInfo)
 {
 
-	DBGLOG(SW4, INFO, "SSID %s\n", prBssInfo->aucSSID);
+	DBGLOG(SW4, INFO, "SSID %s\n", HIDE(prBssInfo->aucSSID));
 	DBGLOG(SW4, INFO, "OWN " MACSTR "\n",
 	       MAC2STR(prBssInfo->aucOwnMacAddr));
 	DBGLOG(SW4, INFO, "BSSID " MACSTR "\n",

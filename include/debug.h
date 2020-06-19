@@ -337,6 +337,13 @@ enum WAKE_DATA_TYPE {
 		((_divisor) ? (_dividend) / (_divisor) : 0)
 #define DIV2DEC(_dividend, _divisor) \
 		((_divisor) ? (((_dividend) * 100) / (_divisor)) % 100 : 0)
+/* for HIDE some information for user load */
+#ifdef BUILD_QA_DBG
+#define HIDE(_str) _str
+#else
+#define HIDE(_str) "***"
+#endif
+
 /* Basiclly, we just do renaming of KAL functions although they should
  * be defined as "Nothing to do" if DBG=0. But in some compiler, the macro
  * syntax does not support  #define LOG_FUNC(x,...)

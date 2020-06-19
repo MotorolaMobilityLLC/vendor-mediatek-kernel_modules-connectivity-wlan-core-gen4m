@@ -1227,7 +1227,7 @@ p2pFuncStartGO(IN struct ADAPTER *prAdapter,
 			prP2pConnReqInfo->rSsidStruct.aucSsid,
 			prP2pConnReqInfo->rSsidStruct.ucSsidLen);
 
-		DBGLOG(P2P, TRACE, "GO SSID:%s\n", prBssInfo->aucSSID);
+		DBGLOG(P2P, TRACE, "GO SSID:%s\n", HIDE(prBssInfo->aucSSID));
 
 		/* 4 <1.2> Clear current AP's STA_RECORD_T and current AID */
 		prBssInfo->prStaRecOfAP = (struct STA_RECORD *) NULL;
