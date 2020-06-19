@@ -1814,6 +1814,8 @@ void wlanUpdateChannelTable(struct GLUE_INFO *prGlueInfo)
 	struct RF_CHANNEL_INFO aucChannelList[ARRAY_SIZE(
 			mtk_2ghz_channels) + ARRAY_SIZE(mtk_5ghz_channels)];
 
+	kalMemZero(aucChannelList, sizeof(aucChannelList));
+
 	/* 1. Disable all channels */
 	for (i = 0; i < ARRAY_SIZE(mtk_2ghz_channels); i++) {
 		mtk_2ghz_channels[i].flags |= IEEE80211_CHAN_DISABLED;
