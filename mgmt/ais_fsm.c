@@ -2053,6 +2053,7 @@ void aisFsmSteps(IN struct ADAPTER *prAdapter,
 					    prAisBssInfo->ucBssIndex,
 					    WLAN_STATUS_JOIN_FAILURE);
 
+			prAisFsmInfo->prTargetBssDesc = NULL;
 			eNextState = AIS_STATE_IDLE;
 			fgIsTransition = TRUE;
 
@@ -3369,12 +3370,14 @@ aisIndicationOfMediaStateToHost(IN struct ADAPTER *prAdapter,
 	struct CONNECTION_SETTINGS *prConnSettings;
 	struct BSS_INFO *prAisBssInfo;
 	struct AIS_FSM_INFO *prAisFsmInfo;
+	struct ROAMING_INFO *prRoamingFsmInfo;
 
 	DEBUGFUNC("aisIndicationOfMediaStateToHost()");
 
 	prConnSettings = aisGetConnSettings(prAdapter, ucBssIndex);
 	prAisBssInfo = aisGetAisBssInfo(prAdapter, ucBssIndex);
 	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
+	prRoamingFsmInfo = aisGetRoamingInfo(prAdapter, ucBssIndex);
 
 	DBGLOG(AIS, LOUD,
 	       "AIS%d indicate Media State to Host Current State [%d]\n",
@@ -3481,6 +3484,7 @@ aisIndicationOfMediaStateToHost(IN struct ADAPTER *prAdapter,
 			prAisFsmInfo->prTargetStaRec = NULL;
 			prAisFsmInfo->ucConnTrialCount = 0;
 			prAdapter->rAddRoamScnChnl.ucChannelListNum = 0;
+			prRoamingFsmInfo->eReason = ROAMING_REASON_POOR_RCPI;
 #if CFG_SUPPORT_NCHO
 			wlanNchoInit(prAdapter, TRUE);
 #endif
@@ -4100,13 +4104,7 @@ void aisFsmDisconnect(IN struct ADAPTER *prAdapter,
 		if (prAisBssInfo->ucReasonOfDisconnect ==
 			DISCONNECT_REASON_CODE_RADIO_LOST ||
 		    prAisBssInfo->ucReasonOfDisconnect ==
-			DISCONNECT_REASON_CODE_RADIO_LOST_TX_ERR ||
-		    (prAisBssInfo->ucReasonOfDisconnect ==
-			DISCONNECT_REASON_CODE_DEAUTHENTICATED &&
-			u2ReasonCode == REASON_CODE_DEAUTH_LEAVING_BSS) ||
-		    (prAisBssInfo->ucReasonOfDisconnect ==
-			DISCONNECT_REASON_CODE_DISASSOCIATED &&
-			u2ReasonCode == REASON_CODE_DISASSOC_LEAVING_BSS)) {
+			DISCONNECT_REASON_CODE_RADIO_LOST_TX_ERR) {
 			scanRemoveBssDescByBssid(prAdapter,
 						 prAisBssInfo->aucBSSID);
 
