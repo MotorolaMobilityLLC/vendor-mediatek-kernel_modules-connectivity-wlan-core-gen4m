@@ -1432,9 +1432,23 @@
  *       COUNTRY_CHANNEL_TXPOWER_LIMIT_TYPE_COMP_11AG_11N
  *------------------------------------------------------------------------------
  */
-#if CFG_TC1_FEATURE
-#define CFG_SUPPORT_DYNA_TX_PWR_CTRL_OFDM_SETTING
+#define CFG_SUPPORT_DYNA_TX_PWR_CTRL_OFDM_SETTING 0
+
+/*------------------------------------------------------------------------------
+ * tx power control:
+ * Support additional tx power setting for HE
+ *
+ * support power limit for RU26/RU52/RU104/RU242/RU484/RU996
+ *
+ * note: need to confirm firmware support HE (802.11AX)
+ *------------------------------------------------------------------------------
+ */
+#if (CFG_SUPPORT_802_11AX == 1)
+#define CFG_SUPPORT_PWR_LIMIT_HE		    1
+#else
+#define CFG_SUPPORT_PWR_LIMIT_HE		    0
 #endif
+
 /*******************************************************************************
  *                             D A T A   T Y P E S
  *******************************************************************************
