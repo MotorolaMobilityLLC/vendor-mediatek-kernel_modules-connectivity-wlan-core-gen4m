@@ -679,8 +679,6 @@ struct TX_CTRL {
 	/* to tracking management frames need TX done callback */
 	struct QUE rTxMgmtTxingQueue;
 
-	struct QUE rTxMgmtRecyclingQueue;
-
 #if CFG_HIF_STATISTICS
 	uint32_t u4TotalTxAccessNum;
 	uint32_t u4TotalTxPacketNum;

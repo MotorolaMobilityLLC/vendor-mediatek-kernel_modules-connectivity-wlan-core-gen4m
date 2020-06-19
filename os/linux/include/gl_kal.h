@@ -136,8 +136,7 @@ extern struct delayed_work sched_workq;
 	(GLUE_FLAG_HALT | GLUE_FLAG_INT | GLUE_FLAG_HIF_TX | \
 	GLUE_FLAG_HIF_TX_CMD | GLUE_FLAG_HIF_FW_OWN | \
 	GLUE_FLAG_HIF_PRT_HIF_DBG_INFO | \
-	GLUE_FLAG_UPDATE_WMM_QUOTA | \
-	GLUE_FLAG_HIF_RECYCLE_MGMT_TX_QUEUE)
+	GLUE_FLAG_UPDATE_WMM_QUOTA)
 
 #define GLUE_FLAG_RX_PROCESS (GLUE_FLAG_HALT | GLUE_FLAG_RX_TO_OS)
 #else
@@ -237,7 +236,6 @@ enum ENUM_SPIN_LOCK_CATEGORY_E {
 	SPIN_LOCK_CMD_SEQ_NUM,
 	SPIN_LOCK_TX_MSDU_INFO_LIST,
 	SPIN_LOCK_TXING_MGMT_LIST,
-	SPIN_LOCK_RECYCLING_MGMT_LIST,
 	SPIN_LOCK_TX_SEQ_NUM,
 	SPIN_LOCK_TX_COUNT,
 	SPIN_LOCK_TXS_COUNT,
@@ -1492,8 +1490,6 @@ void kalSetTxCmdEvent2Hif(struct GLUE_INFO *pr);
 void kalSetTxCmdDoneEvent(struct GLUE_INFO *pr);
 
 void kalSetRxProcessEvent(struct GLUE_INFO *pr);
-
-void kalSetMgmtTxRecyclingEvent2Hif(struct GLUE_INFO *pr);
 #endif
 /*----------------------------------------------------------------------------*/
 /* NVRAM/Registry Service                                                     */
