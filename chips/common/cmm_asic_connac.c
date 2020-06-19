@@ -604,6 +604,33 @@ void asicPdmaLoopBackConfig(struct GLUE_INFO *prGlueInfo, u_int8_t fgEnable)
 	kalDevRegWrite(prGlueInfo, WPDMA_GLO_CFG, GloCfg.word);
 }
 
+#if CFG_MTK_MCIF_WIFI_SUPPORT
+static void configPdmaRxRingThreshold(struct GLUE_INFO *prGlueInfo)
+{
+	uint32_t u4OldVal = 0, u4NewVal = 0;
+
+	if (!prGlueInfo)
+		return;
+
+	/* Config RX ring0 & ring1 */
+	kalDevRegRead(prGlueInfo, WPDMA_PAUSE_RX_Q_TH10, &u4OldVal);
+	u4NewVal += (WPDMA_PAUSE_RX_Q_TH0 << WPDMA_PAUSE_RX_Q_TH0_SHFT);
+	u4NewVal += (WPDMA_PAUSE_RX_Q_TH1 << WPDMA_PAUSE_RX_Q_TH1_SHFT);
+	kalDevRegWrite(prGlueInfo, WPDMA_PAUSE_RX_Q_TH10, u4NewVal);
+	DBGLOG(HAL, TRACE, "RX_RING[0, 1] TH(0x%x) from 0x%x to 0x%x\n",
+			WPDMA_PAUSE_RX_Q_TH10, u4OldVal, u4NewVal);
+
+	/* Config RX ring2 & ring3 */
+	u4OldVal = u4NewVal = 0;
+	kalDevRegRead(prGlueInfo, WPDMA_PAUSE_RX_Q_TH32, &u4OldVal);
+	u4NewVal += (WPDMA_PAUSE_RX_Q_TH2 << WPDMA_PAUSE_RX_Q_TH2_SHFT);
+	u4NewVal += (WPDMA_PAUSE_RX_Q_TH3 << WPDMA_PAUSE_RX_Q_TH3_SHFT);
+	kalDevRegWrite(prGlueInfo, WPDMA_PAUSE_RX_Q_TH32, u4NewVal);
+	DBGLOG(HAL, TRACE, "RX_RING[2, 3] TH(0x%x) from 0x%x to 0x%x\n",
+			WPDMA_PAUSE_RX_Q_TH32, u4OldVal, u4NewVal);
+}
+#endif
+
 void asicPdmaIntMaskConfig(struct GLUE_INFO *prGlueInfo, u_int8_t fgEnable)
 {
 	struct BUS_INFO *prBusInfo =
@@ -677,6 +704,9 @@ void asicPdmaConfig(struct GLUE_INFO *prGlueInfo, u_int8_t fgEnable,
 
 	if (fgEnable) {
 		kalDevRegWrite(prGlueInfo, WPDMA_PAUSE_TX_Q, 0);
+#if CFG_MTK_MCIF_WIFI_SUPPORT
+		configPdmaRxRingThreshold(prGlueInfo);
+#endif
 	} else {
 		halWpdmaWaitIdle(prGlueInfo, 100, 1000);
 		/* Reset DMA Index */

@@ -315,7 +315,7 @@ void mt7668PdmaConfig(struct GLUE_INFO *prGlueInfo, u_int8_t enable,
 
 	/* new PDMA */
 	/*  0x4260 = 0000_0005 */
-	kalDevRegWrite(prGlueInfo, MT_WPDMA_PAUSE_RX_Q, 0x5);
+	kalDevRegWrite(prGlueInfo, WPDMA_PAUSE_RX_Q_TH10, 0x5);
 
 	/*  0x4500 = 0000_0001*/
 	kalDevRegWrite(prGlueInfo, MT_WPDMA_GLO_CFG_1, 0x1);
