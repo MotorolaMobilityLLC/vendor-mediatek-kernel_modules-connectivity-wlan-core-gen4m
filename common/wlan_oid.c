@@ -13744,7 +13744,7 @@ uint32_t
 wlanoidSetNchoHeader(struct CMD_HEADER *prCmdHeader,
 		     struct CMD_FORMAT_V1 *pr_cmd_v1,
 		     char *pStr, uint32_t u4Len) {
-	prCmdHeader->cmdVersion = CMD_VER_2;
+	prCmdHeader->cmdVersion = CMD_VER_1_EXT;
 	prCmdHeader->cmdType = CMD_TYPE_QUERY;
 	prCmdHeader->itemNum = 1;
 	prCmdHeader->cmdBufferLen = sizeof(struct CMD_FORMAT_V1);
@@ -13913,7 +13913,6 @@ wlanoidSetNchoRoamScnPeriod(IN struct ADAPTER *prAdapter,
 			    OUT uint32_t *pu4SetInfoLen) {
 	uint32_t *pParam = NULL;
 	uint32_t rStatus = WLAN_STATUS_FAILURE;
-	char acCmd[NCHO_CMD_MAX_LENGTH] = {0};
 
 	DEBUGFUNC("wlanoidSetNchoRoamScnPeriod");
 	ASSERT(prAdapter);
