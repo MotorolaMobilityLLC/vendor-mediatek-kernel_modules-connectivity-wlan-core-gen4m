@@ -8122,6 +8122,13 @@ u_int8_t qmHandleRxReplay(struct ADAPTER *prAdapter,
 		return FALSE;
 	}
 
+	if (prWpaInfo->u4CipherGroup != IW_AUTH_CIPHER_TKIP &&
+		prWpaInfo->u4CipherGroup != IW_AUTH_CIPHER_CCMP) {
+		DBGLOG(QM, ERROR,
+			"RX status Chipher mode doens't match AP's setting\n");
+		return FALSE;
+	}
+
 	ucKeyID = prSwRfb->ucKeyID;
 	if (ucKeyID >= MAX_KEY_NUM) {
 		DBGLOG(QM, ERROR, "KeyID: %d error\n", ucKeyID);
