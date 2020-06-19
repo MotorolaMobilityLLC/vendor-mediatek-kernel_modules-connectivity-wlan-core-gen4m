@@ -1022,7 +1022,7 @@ void haldumpMacInfo(struct ADAPTER *prAdapter)
 	HAL_MCR_WR(prAdapter, 0x80025104, 0x02020202);
 	flag = 0x01010000;
 	for (i = 0; i < 64; i++) {
-		HAL_MCR_WR(prAdapter, 0x80025104, flag);
+		HAL_MCR_WR(prAdapter, 0x80025108, flag);
 		HAL_MCR_RD(prAdapter, 0x820f0024, &value);
 		DBGLOG(HAL, INFO, "write flag = 0x%08x, 0x820f0024: 0x%08x\n",
 		       flag, value);
@@ -1067,7 +1067,7 @@ void haldumpMacInfo(struct ADAPTER *prAdapter)
 	flag = 0x04040505;
 	HAL_MCR_WR(prAdapter, 0x820f3060, queue);
 	for (i = 0; i < 3; i++) {
-		HAL_MCR_WR(prAdapter, 0x80025104, flag);
+		HAL_MCR_WR(prAdapter, 0x80025108, flag);
 		HAL_MCR_RD(prAdapter, 0x820f0024, &value);
 		DBGLOG(HAL, INFO, "write flag = 0x%08x, 0x820f0024: 0x%08x\n",
 		       flag, value);
@@ -1088,7 +1088,7 @@ void haldumpMacInfo(struct ADAPTER *prAdapter)
 	HAL_MCR_WR(prAdapter, 0x80025104, 0x05050505);
 	flag = 0x01010000;
 	for (i = 0; i < 64; i++) {
-		HAL_MCR_WR(prAdapter, 0x80025104, flag);
+		HAL_MCR_WR(prAdapter, 0x80025108, flag);
 		HAL_MCR_RD(prAdapter, 0x820f0024, &value);
 		DBGLOG(HAL, INFO, "write flag = 0x%08x, 0x820f0024: 0x%08x\n",
 		       flag, value);
@@ -1099,7 +1099,7 @@ void haldumpMacInfo(struct ADAPTER *prAdapter)
 	HAL_MCR_WR(prAdapter, 0x80025104, 0x06060606);
 	flag = 0x01010000;
 	for (i = 0; i < 64; i++) {
-		HAL_MCR_WR(prAdapter, 0x80025104, flag);
+		HAL_MCR_WR(prAdapter, 0x80025108, flag);
 		HAL_MCR_RD(prAdapter, 0x820f0024, &value);
 		DBGLOG(HAL, INFO, "write flag = 0x%08x, 0x820f0024: 0x%08x\n",
 		       flag, value);
@@ -1110,12 +1110,49 @@ void haldumpMacInfo(struct ADAPTER *prAdapter)
 	HAL_MCR_WR(prAdapter, 0x80025104, 0x07070707);
 	flag = 0x01010000;
 	for (i = 0; i < 33; i++) {
-		HAL_MCR_WR(prAdapter, 0x80025104, flag);
+		HAL_MCR_WR(prAdapter, 0x80025108, flag);
 		HAL_MCR_RD(prAdapter, 0x820f0024, &value);
 		DBGLOG(HAL, INFO, "write flag = 0x%08x, 0x820f0024: 0x%08x\n",
 		       flag, value);
 		flag += 0x02020202;
 	}
+
+	DBGLOG(HAL, TRACE, "Dump extra ARB\n");
+	HAL_MCR_WR(prAdapter, 0x820f082C, 0xf);
+	HAL_MCR_WR(prAdapter, 0x80025100, 0x1f);
+	HAL_MCR_WR(prAdapter, 0x80025104, 0x04040404);
+	HAL_MCR_WR(prAdapter, 0x80025108, 0x7c7c6d6d);
+	HAL_MCR_RD(prAdapter, 0x820f0024, &value);
+	DBGLOG(HAL, TRACE, "Read 0x820f0024: 0x%08x\n", value);
+
+	DBGLOG(HAL, TRACE, "    -> check UMAC busy\n");
+	HAL_MCR_WR(prAdapter, 0x80025108, 0x40404141);
+	for (i = 0; i < 30; i++) {
+		HAL_MCR_RD(prAdapter, 0x820f0024, &value);
+		DBGLOG(HAL, TRACE, "    Read 0x820f0024: 0x%08x\n", value);
+	}
+	HAL_MCR_WR(prAdapter, 0x80025108, 0xe0e0e5e5);
+	for (i = 0; i < 30; i++) {
+		HAL_MCR_RD(prAdapter, 0x820f0024, &value);
+		DBGLOG(HAL, TRACE, "    Read 0x820f0024: 0x%08x\n", value);
+	}
+
+	DBGLOG(HAL, TRACE, "    -> check txq_num\n");
+	HAL_MCR_WR(prAdapter, 0x80025108, 0x4d4d3131);
+	for (i = 0; i < 30; i++) {
+		HAL_MCR_RD(prAdapter, 0x820f0024, &value);
+		DBGLOG(HAL, TRACE, "    Read 0x820f0024: 0x%08x\n", value);
+	}
+
+	DBGLOG(HAL, TRACE, "    -> check station pause\n");
+	HAL_MCR_RD(prAdapter, 0x82060360, &value);
+	DBGLOG(HAL, TRACE, "    Read 0x82060360: 0x%08x\n", value);
+	HAL_MCR_RD(prAdapter, 0x82060364, &value);
+	DBGLOG(HAL, TRACE, "    Read 0x82060364: 0x%08x\n", value);
+	HAL_MCR_RD(prAdapter, 0x82060368, &value);
+	DBGLOG(HAL, TRACE, "    Read 0x82060368: 0x%08x\n", value);
+	HAL_MCR_RD(prAdapter, 0x8206036C, &value);
+	DBGLOG(HAL, TRACE, "    Read 0x8206036C: 0x%08x\n", value);
 }
 
 static char *q_idx_mcu_str[] = {"RQ0", "RQ1", "RQ2", "RQ3", "Invalid"};
