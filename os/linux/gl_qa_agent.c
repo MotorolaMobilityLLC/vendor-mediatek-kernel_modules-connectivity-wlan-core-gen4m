@@ -9576,12 +9576,12 @@ int priv_qa_agent(IN struct net_device *prNetDev,
 	if (prGlueInfo->prAdapter->fgTestMode == FALSE)
 		MT_ATEStart(prNetDev, "ATESTART");
 
-	HqaCmdFrame = kmalloc(sizeof(*HqaCmdFrame), GFP_KERNEL);
-
 	if (!prIwReqData || prIwReqData->data.length == 0) {
 		i4Status = -EINVAL;
 		goto ERROR0;
 	}
+
+	HqaCmdFrame = kmalloc(sizeof(*HqaCmdFrame), GFP_KERNEL);
 
 	if (!HqaCmdFrame) {
 		i4Status = -ENOMEM;
