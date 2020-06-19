@@ -2089,25 +2089,14 @@ uint32_t wlanSendCommandMthread(IN struct ADAPTER
 void wlanTxCmdDoneCb(IN struct ADAPTER *prAdapter,
 		     IN struct CMD_INFO *prCmdInfo)
 {
-
 	KAL_SPIN_LOCK_DECLARATION();
 
 	if ((!prCmdInfo->fgSetQuery) || (prCmdInfo->fgNeedResp)) {
-#if 0
 		KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_CMD_PENDING);
 		QUEUE_INSERT_TAIL(&prAdapter->rPendingCmdQueue,
 				  (struct QUE_ENTRY *) prCmdInfo);
 		KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_CMD_PENDING);
-#endif
-	} else {
-		KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_CMD_DONE_QUE);
-		QUEUE_INSERT_TAIL(&prAdapter->rTxCmdDoneQueue,
-				  (struct QUE_ENTRY *) prCmdInfo);
-		KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_CMD_DONE_QUE);
 	}
-
-	/* call tx thread to work */
-	kalSetTxCmdDoneEvent(prAdapter->prGlueInfo);
 }
 
 uint32_t wlanTxCmdMthread(IN struct ADAPTER *prAdapter)
@@ -2167,16 +2156,12 @@ uint32_t wlanTxCmdMthread(IN struct ADAPTER *prAdapter)
 #endif
 
 		if ((!prCmdInfo->fgSetQuery) || (prCmdInfo->fgNeedResp)) {
-			KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_CMD_PENDING);
 #if CFG_DBG_MGT_BUF
 			if (prMemTrack) {
 				prMemTrack->u2CmdIdAndWhere &= 0x00FF;
 				prMemTrack->u2CmdIdAndWhere |= 0x0200;
 			}
 #endif
-			QUEUE_INSERT_TAIL(&(prAdapter->rPendingCmdQueue),
-					  (struct QUE_ENTRY *) prCmdInfo);
-			KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_CMD_PENDING);
 		} else {
 #if CFG_DBG_MGT_BUF
 			if (prMemTrack) {

@@ -458,7 +458,7 @@ u_int8_t halSetDynamicMapReg(IN struct GLUE_INFO *prGlueInfo,
 			     IN uint32_t u4Value);
 void halConnacWpdmaConfig(struct GLUE_INFO *prGlueInfo, u_int8_t enable);
 void halConnacEnableInterrupt(IN struct ADAPTER *prAdapter);
-bool halWpdmaWriteCmd(struct GLUE_INFO *prGlueInfo,
+enum ENUM_CMD_TX_RESULT halWpdmaWriteCmd(struct GLUE_INFO *prGlueInfo,
 		      struct CMD_INFO *prCmdInfo,
 		      uint8_t ucTC);
 bool halWpdmaWriteMsdu(struct GLUE_INFO *prGlueInfo,
