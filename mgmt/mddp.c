@@ -102,18 +102,23 @@ static void clear_md_wifi_on_bit(void);
 static bool wait_for_md_off_complete(void);
 static bool wait_for_md_on_complete(void);
 
-int32_t mddpRegisterCb(IN struct ADAPTER *prAdapter)
+static int32_t mddpRegisterCb(void)
 {
 	int32_t ret = 0;
 
 	gMddpFunc.wifi_handle = &gMddpWFunc;
 
 	ret = mddp_drv_attach(&gMddpDrvConf, &gMddpFunc);
-	DBGLOG(INIT, INFO, "MDDP Wlan callback reqister result: %d\n", ret);
-
-	prAdapter->fgMddpActivated = true;
+	DBGLOG(INIT, INFO, "mddp_drv_attach ret: %d\n", ret);
 
 	return ret;
+}
+
+static void mddpUnregisterCb(void)
+{
+	DBGLOG(INIT, INFO, "mddp_drv_detach\n");
+	mddp_drv_detach(&gMddpDrvConf, &gMddpFunc);
+	gMddpFunc.wifi_handle = NULL;
 }
 
 int32_t mddpGetMdStats(IN struct net_device *prDev)
@@ -472,6 +477,7 @@ int32_t mddpNotifyWifiStatus(IN enum mddp_drv_onoff_status wifiOnOffStatus)
 
 void mddpNotifyWifiOnStart(void)
 {
+	mddpRegisterCb();
 	mddpNotifyWifiStatus(MDDPW_DRV_INFO_WLAN_ON_START);
 }
 
@@ -485,13 +491,24 @@ int32_t mddpNotifyWifiOnEnd(void)
 		ret = wait_for_md_on_complete() ?
 				WLAN_STATUS_SUCCESS :
 				WLAN_STATUS_FAILURE;
+	if (ret == WLAN_STATUS_SUCCESS) {
+		struct GLUE_INFO *prGlueInfo = wlanGetGlueInfo();
+
+		if (prGlueInfo && prGlueInfo->u4ReadyFlag &&
+				prGlueInfo->prAdapter)
+			prGlueInfo->prAdapter->fgMddpActivated = true;
+	}
 	return ret;
 }
 
 void mddpNotifyWifiOffStart(void)
 {
 	int32_t ret;
+	struct GLUE_INFO *prGlueInfo = wlanGetGlueInfo();
 
+	if (prGlueInfo && prGlueInfo->u4ReadyFlag &&
+			prGlueInfo->prAdapter)
+		prGlueInfo->prAdapter->fgMddpActivated = false;
 	clear_md_wifi_off_bit();
 	ret = mddpNotifyWifiStatus(MDDPW_DRV_INFO_WLAN_OFF_START);
 	if (ret == 0)
@@ -501,6 +518,7 @@ void mddpNotifyWifiOffStart(void)
 void mddpNotifyWifiOffEnd(void)
 {
 	mddpNotifyWifiStatus(MDDPW_DRV_INFO_WLAN_OFF_END);
+	mddpUnregisterCb();
 }
 
 int32_t mddpMdNotifyInfo(struct mddpw_md_notify_info_t *prMdInfo)
