@@ -4985,6 +4985,11 @@ void nicEventDebugMsg(IN struct ADAPTER *prAdapter,
 
 	prEventDebugMsg = (struct EVENT_DEBUG_MSG *)(
 				  prEvent->aucBuffer);
+	if (!prEventDebugMsg) {
+		DBGLOG(RSN, WARN, "prEventDebugMsg is NULL\n");
+		return;
+	}
+
 	ucMsgType = prEventDebugMsg->ucMsgType;
 	u2MsgSize = prEventDebugMsg->u2MsgSize;
 	pucMsg = prEventDebugMsg->aucMsg;
@@ -5016,11 +5021,13 @@ void nicEventDebugMsg(IN struct ADAPTER *prAdapter,
 
 			prCalData = (struct EXT_EVENT_RECAL_DATA_T *)
 						    prTmpEvent->aucBuffer;
-			prCalData->u4FuncIndex = RE_CALIBRATION;
-			prCalData->u4Type = 0;
-			/* format: [XXXXXXXX][YYYYYYYY]ZZZZZZZZ */
-			kalMemCopy(prCalData->u.ucData, pucMsg + 7, 28);
-			nicRfTestEventHandler(prAdapter, prTmpEvent);
+			if (prCalData) {
+				prCalData->u4FuncIndex = RE_CALIBRATION;
+				prCalData->u4Type = 0;
+				/* format: [XXXXXXXX][YYYYYYYY]ZZZZZZZZ */
+				kalMemCopy(prCalData->u.ucData, pucMsg + 7, 28);
+				nicRfTestEventHandler(prAdapter, prTmpEvent);
+			}
 			kalMemFree(prTmpEvent, VIR_MEM_TYPE, u4Size);
 		}
 	}
