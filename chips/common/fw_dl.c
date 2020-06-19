@@ -1468,7 +1468,8 @@ uint32_t wlanConfigWifiFuncStatus(IN struct ADAPTER
 	ASSERT(prAdapter);
 	prChipInfo = prAdapter->chip_info;
 
-	u4EventSize = INIT_EVENT_RXD_LEN + prChipInfo->init_event_size +
+	u4EventSize = prChipInfo->init_evt_rxd_size +
+		prChipInfo->init_event_size +
 		sizeof(struct INIT_EVENT_CMD_RESULT);
 	aucBuffer = kalMemAlloc(u4EventSize, PHY_MEM_TYPE);
 	if (aucBuffer == NULL) {
@@ -1487,7 +1488,7 @@ uint32_t wlanConfigWifiFuncStatus(IN struct ADAPTER
 			u4Status = WLAN_STATUS_FAILURE;
 		} else {
 			prInitEvent = (struct INIT_WIFI_EVENT *)
-				(aucBuffer + INIT_EVENT_RXD_LEN);
+				(aucBuffer + prChipInfo->init_evt_rxd_size);
 
 			/* EID / SeqNum check */
 			if (prInitEvent->ucEID != INIT_EVENT_ID_CMD_RESULT)
