@@ -1571,12 +1571,20 @@ void nicTxMsduQueueByRR(struct ADAPTER *prAdapter)
 		if (QUEUE_IS_NOT_EMPTY(prTxQue)) {
 			QUEUE_REMOVE_HEAD(prTxQue, prMsduInfo,
 					  struct MSDU_INFO *);
-			ucPortIdx = halTxRingDataSelect(prAdapter, prMsduInfo);
-			prDataPort = (ucPortIdx == TX_RING_DATA1_IDX_1) ?
-				prDataPort1 : prDataPort0;
-			QUEUE_INSERT_TAIL(prDataPort,
-					  (struct QUE_ENTRY *) prMsduInfo);
-			au4TxCnt[u4Idx]++;
+			if (prMsduInfo != NULL) {
+				ucPortIdx = halTxRingDataSelect(
+					prAdapter, prMsduInfo);
+				prDataPort =
+					(ucPortIdx == TX_RING_DATA1_IDX_1) ?
+					prDataPort1 : prDataPort0;
+				QUEUE_INSERT_TAIL(prDataPort,
+					(struct QUE_ENTRY *) prMsduInfo);
+				au4TxCnt[u4Idx]++;
+			} else {
+				/* unset empty queue */
+				u4IsNotAllQueneEmpty &= ~BIT(u4Idx);
+				DBGLOG(NIC, WARN, "prMsduInfo is NULL\n");
+			}
 		} else {
 			/* unset empty queue */
 			u4IsNotAllQueneEmpty &= ~BIT(u4Idx);
@@ -2245,6 +2253,11 @@ uint32_t nicTxMsduQueue(IN struct ADAPTER *prAdapter,
 		u_int8_t fgTxDoneHandler;
 
 		QUEUE_REMOVE_HEAD(prQue, prMsduInfo, struct MSDU_INFO *);
+
+		if (prMsduInfo == NULL) {
+			DBGLOG(TX, WARN, "prMsduInfo is NULL\n");
+			break;
+		}
 
 		if (!halTxIsDataBufEnough(prAdapter, prMsduInfo)) {
 			QUEUE_INSERT_HEAD(prQue,
@@ -4869,6 +4882,11 @@ static uint32_t nicTxDirectStartXmitMain(struct sk_buff
 				&prAdapter->rTxDirectHifQueue[ucHifTc],
 				prQueueEntry, struct QUE_ENTRY *);
 			prMsduInfo = (struct MSDU_INFO *) prQueueEntry;
+			if (prMsduInfo == NULL) {
+				DBGLOG(TX, WARN,
+					"prMsduInfo is NULL\n");
+				break;
+			}
 		} else {
 			break;
 		}
