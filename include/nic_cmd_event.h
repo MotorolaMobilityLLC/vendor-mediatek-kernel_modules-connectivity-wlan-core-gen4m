@@ -1708,10 +1708,10 @@ struct CMD_SET_COUNTRY_CHANNEL_POWER_LIMIT {
 	union {
 		/*Channel power limit entries to be set*/
 		struct CMD_CHANNEL_POWER_LIMIT
-			rChannelPowerLimit[1];
+			rChannelPowerLimit[MAX_CMD_SUPPORT_CHANNEL_NUM];
 		/*Channel HE power limit entries to be set*/
 		struct CMD_CHANNEL_POWER_LIMIT_HE
-			rChPwrLimtHE[1];
+			rChPwrLimtHE[MAX_CMD_SUPPORT_CHANNEL_NUM];
 	} u;
 
 };

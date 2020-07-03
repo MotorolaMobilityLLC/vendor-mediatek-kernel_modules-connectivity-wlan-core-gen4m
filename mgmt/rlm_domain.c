@@ -2858,6 +2858,10 @@ rlmDomainBuildCmdByDefaultTable(struct CMD_SET_COUNTRY_CHANNEL_POWER_LIMIT
 				prPwrLimit++;
 
 			prCmd->ucNum++;
+
+			if (prCmd->ucNum >= MAX_CMD_SUPPORT_CHANNEL_NUM)
+				DBGLOG(RLM, WARN, "out of MAX CH Num\n");
+
 		}
 	}
 
@@ -2927,6 +2931,11 @@ void rlmDomainBuildCmdByConfigTable(struct ADAPTER *prAdapter,
 	/*Build power limit cmd by configuration table information */
 
 	for (k = 0; k < prCmd->ucNum; k++) {
+
+		if (k >= MAX_CMD_SUPPORT_CHANNEL_NUM) {
+			DBGLOG(RLM, ERROR, "out of MAX CH Num\n");
+			return;
+		}
 
 		if (eType == PWR_LIMIT_TYPE_COMP_11AX) {
 			prCmdPwrLimtHE = &prCmd->u.rChPwrLimtHE[k];
@@ -4739,6 +4748,11 @@ void rlmDomainShowPwrLimitPerCh(char *message,
 
 	for (i = 0; i < prCmd->ucNum; i++) {
 
+		if (i >= MAX_CMD_SUPPORT_CHANNEL_NUM) {
+			DBGLOG(RLM, ERROR, "out of MAX CH Num\n");
+			return;
+		}
+
 		kalMemZero(msgLimit, sizeof(char)*PWR_BUF_LEN);
 		msgOfs = 0;
 		if (eType == PWR_LIMIT_TYPE_COMP_11AX) {
@@ -4819,23 +4833,26 @@ void rlmDomainSendPwrLimitCmd(struct ADAPTER *prAdapter)
 
 
 	u4SetCmdTableMaxSize =
-	    sizeof(struct CMD_SET_COUNTRY_CHANNEL_POWER_LIMIT) +
-	    MAX_CMD_SUPPORT_CHANNEL_NUM *
-	    sizeof(struct CMD_CHANNEL_POWER_LIMIT);
+	    sizeof(struct CMD_SET_COUNTRY_CHANNEL_POWER_LIMIT);
 
 	u4SetCmdTableMaxSizeHE =
-	    sizeof(struct CMD_SET_COUNTRY_CHANNEL_POWER_LIMIT) +
-	    MAX_CMD_SUPPORT_CHANNEL_NUM *
-	    sizeof(struct CMD_CHANNEL_POWER_LIMIT_HE);
+	    sizeof(struct CMD_SET_COUNTRY_CHANNEL_POWER_LIMIT);
 
 
 	prCmd = cnmMemAlloc(prAdapter, RAM_TYPE_BUF, u4SetCmdTableMaxSize);
+
+	if (!prCmd) {
+		DBGLOG(RLM, ERROR, "Domain: Alloc cmd buffer failed\n");
+		goto err;
+	}
+
 	prCmdHE = cnmMemAlloc(prAdapter, RAM_TYPE_BUF, u4SetCmdTableMaxSizeHE);
 
-	if (!prCmd || !prCmdHE) {
+	if (!prCmdHE) {
 		DBGLOG(RLM, ERROR, "Domain: Alloc cmd buffer failed\n");
-		return;
+		goto err;
 	}
+
 	kalMemZero(prCmd, u4SetCmdTableMaxSize);
 	kalMemZero(prCmdHE, u4SetCmdTableMaxSize);
 
@@ -4846,7 +4863,7 @@ void rlmDomainSendPwrLimitCmd(struct ADAPTER *prAdapter)
 	if (u2DefaultTableIndex == POWER_LIMIT_TABLE_NULL) {
 		DBGLOG(RLM, ERROR,
 					   "Can't find any table index!\n");
-		return;
+		goto err;
 	}
 
 	WLAN_GET_FIELD_BE16(&g_rRlmPowerLimitDefault
@@ -4963,7 +4980,7 @@ void rlmDomainSendPwrLimitCmd(struct ADAPTER *prAdapter)
 	}
 
 	/* ASSERT(rStatus == WLAN_STATUS_PENDING); */
-
+err:
 	cnmMemFree(prAdapter, prCmd);
 	cnmMemFree(prAdapter, prCmdHE);
 
