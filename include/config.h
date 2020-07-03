@@ -965,7 +965,7 @@
 
 #define CFG_FIX_2_TX_PORT			0
 
-#define CFG_CHANGE_CRITICAL_PACKET_PRIORITY	0
+#define CFG_CHANGE_CRITICAL_PACKET_PRIORITY	1
 
 /*------------------------------------------------------------------------------
  * Flags of bus error tolerance
