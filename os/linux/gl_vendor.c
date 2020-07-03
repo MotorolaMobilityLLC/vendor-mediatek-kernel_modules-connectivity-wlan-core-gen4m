@@ -1961,6 +1961,7 @@ int mtk_cfg80211_vendor_driver_memory_dump(struct wiphy *wiphy,
 	i4Status = cfg80211_vendor_cmd_reply(skb);
 
 err_handle_label:
+	kfree_skb(skb);
 	return i4Status;
 }
 
