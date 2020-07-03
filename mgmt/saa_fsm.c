@@ -1161,6 +1161,8 @@ uint32_t saaFsmRunEventRxAssoc(IN struct ADAPTER *prAdapter,
 				prRetainedSwRfb = prSwRfb;
 				rStatus = WLAN_STATUS_PENDING;
 			} else {
+				cnmStaRecChangeState(prAdapter, prStaRec,
+						STA_STATE_1);
 				DBGLOG(SAA, INFO,
 				       "Assoc Req was rejected by [" MACSTR
 				       "], Status Code = %d\n",
