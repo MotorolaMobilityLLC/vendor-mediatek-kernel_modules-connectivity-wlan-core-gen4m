@@ -397,7 +397,7 @@ void sysCreateSoftap(void)
 	*/
 
 	if (g_prGlueInfo) {
-		prRegInfo = g_prGlueInfo->prRegInfo;
+		prRegInfo = &(g_prGlueInfo->rRegInfo);
 #if CFG_SUPPORT_DBDC
 		fgDbDcModeEn = g_prGlueInfo->prAdapter->rWifiVar.fgDbDcModeEn;
 #endif
