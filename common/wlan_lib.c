@@ -4887,8 +4887,8 @@ uint32_t wlanCheckSystemConfiguration(IN struct ADAPTER *prAdapter)
 	struct WLAN_BEACON_FRAME *prBeacon = NULL;
 	struct IE_SSID *prSsid = NULL;
 	uint32_t u4ErrCode = 0;
-	uint8_t aucErrMsg[32];
-	struct PARAM_SSID rSsid;
+//	uint8_t aucErrMsg[32];
+//	struct PARAM_SSID rSsid;
 	struct PARAM_802_11_CONFIG rConfiguration;
 	uint8_t rSupportedRates[PARAM_MAX_LEN_RATES_EX];
 #endif
@@ -4983,6 +4983,7 @@ uint32_t wlanCheckSystemConfiguration(IN struct ADAPTER *prAdapter)
 #define NVRAM_ERR_MSG "NVRAM WARNING: Err = 0x01"
 	if (kalIsConfigurationExist(prAdapter->prGlueInfo) ==
 	    FALSE) {
+#if 0
 		COPY_SSID(prSsid->aucSSID, prSsid->ucLength, NVRAM_ERR_MSG,
 			  (uint8_t) (strlen(NVRAM_ERR_MSG)));
 
@@ -5011,6 +5012,7 @@ uint32_t wlanCheckSystemConfiguration(IN struct ADAPTER *prAdapter)
 					WLAN_MAC_MGMT_HEADER_LEN,
 				 (uint8_t *) ((unsigned long) (prBeacon) +
 					WLAN_MAC_MGMT_HEADER_LEN));
+#endif
 	}
 #endif
 
@@ -5042,6 +5044,7 @@ uint32_t wlanCheckSystemConfiguration(IN struct ADAPTER *prAdapter)
 			u4ErrCode |= NVRAM_POWER_LIMIT_TABLE_INVALID;
 #endif
 		if (u4ErrCode != 0) {
+#if 0
 			sprintf(aucErrMsg, VER_ERR_MSG,
 				(unsigned int)u4ErrCode);
 			COPY_SSID(prSsid->aucSSID, prSsid->ucLength, aucErrMsg,
@@ -5067,6 +5070,7 @@ uint32_t wlanCheckSystemConfiguration(IN struct ADAPTER *prAdapter)
 						WLAN_MAC_MGMT_HEADER_LEN,
 					 (uint8_t *) ((unsigned long) (prBeacon)
 						+ WLAN_MAC_MGMT_HEADER_LEN));
+#endif
 		}
 	}
 #endif
