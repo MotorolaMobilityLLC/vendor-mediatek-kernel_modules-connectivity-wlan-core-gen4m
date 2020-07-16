@@ -3396,9 +3396,9 @@ int32_t soc3_0_wlanPowerOnInit(
 					DBGLOG_LIMITED(INIT, INFO,
 					"[Wi-Fi PWR On] EMI download End\n");
 				}
-			}
 
-			wlanWakeLockUninit(prGlueInfo);
+				wlanWakeLockUninit(prGlueInfo);
+			}
 
 			wlanNetDestroy(prWdev);
 			}

@@ -786,7 +786,7 @@ void glReset_timeinit(struct timeval *rNowTs, struct timeval *rLastTs)
 
 bool IsOverRstTimeThreshold(struct timeval *rNowTs, struct timeval *rLastTs)
 {
-	struct timeval rTimeout, rTime;
+	struct timeval rTimeout, rTime = {0};
 	bool fgIsTimeout = FALSE;
 
 	rTimeout.tv_sec = 30;
