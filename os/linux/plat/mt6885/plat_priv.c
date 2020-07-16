@@ -25,6 +25,8 @@
 #define MAX_CPU_FREQ (3 * 1024 * 1024) /* in kHZ */
 #define MAX_CLUSTER_NUM  3
 
+#define CONNSYS_VERSION_ID  0x20010000
+
 enum ENUM_CPU_BOOST_STATUS {
 	ENUM_CPU_BOOST_STATUS_INIT = 0,
 	ENUM_CPU_BOOST_STATUS_START,
@@ -156,4 +158,9 @@ void kalSetDrvEmiMpuProtection(phys_addr_t emiPhyBase, uint32_t offset,
 }
 
 #endif
+
+int32_t kalGetConnsysVerId(void)
+{
+	return CONNSYS_VERSION_ID;
+}
 
