@@ -6997,7 +6997,7 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 		prWifiVar->ucStaHe = (uint8_t)
 			wlanCfgGetUint32(prAdapter, "StaHE", FEATURE_ENABLED);
 		prWifiVar->ucApHe = (uint8_t)
-			wlanCfgGetUint32(prAdapter, "ApHE", FEATURE_DISABLED);
+			wlanCfgGetUint32(prAdapter, "ApHE", FEATURE_ENABLED);
 		prWifiVar->ucP2pGoHe = (uint8_t)
 			wlanCfgGetUint32(prAdapter, "P2pGoHE",
 					FEATURE_DISABLED);
