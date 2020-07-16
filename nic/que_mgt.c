@@ -7762,39 +7762,29 @@ void qmDetectArpNoResponse(struct ADAPTER *prAdapter,
 
 	if (arpOpCode == ARP_PRO_REQ) {
 		arpMoniter++;
-		if (arpMoniter > prAdapter->rWifiVar.u4ArpMoniterThreshold) {
-			DBGLOG(INIT, WARN,
-				"IOT Critical issue, arp no resp, check AP!\n");
-			if (prAisBssInfo)
-				prAisBssInfo->u2DeauthReason =
-					BEACON_TIMEOUT_DUE_2_APR_NO_RESPONSE;
-			prAdapter->cArpNoResponseIdx = prStaRec->ucBssIndex;
-			/* Record counts of RX Packets when Tx 1st ARP Req */
-			if (!last_rx_packets) {
-				last_rx_packets = prNetDev->stats.rx_packets;
-				latest_rx_packets = 0;
-			}
-			latest_rx_packets = prNetDev->stats.rx_packets;
-			if (arpMoniter > uArpMonitorNumber) {
-				if ((latest_rx_packets - last_rx_packets) <=
-					uArpMonitorRxPktNum) {
-					DBGLOG(INIT, WARN,
-						"IOT issue, arp no resp!\n");
-					if (prAisBssInfo)
-						prAisBssInfo->u2DeauthReason =
-					BEACON_TIMEOUT_DUE_2_APR_NO_RESPONSE;
-					prAdapter->cArpNoResponseIdx =
-					prStaRec->ucBssIndex;
-				} else
-					DBGLOG(INIT, WARN,
-						"ARP, still have %d pkts\n",
-						latest_rx_packets -
-						last_rx_packets);
-				arpMoniter = 0;
-				last_rx_packets = 0;
-				latest_rx_packets = 0;
-				kalMemZero(apIp, sizeof(apIp));
-			}
+		/* Record counts of RX Packets when Tx 1st ARP Req */
+		if (!last_rx_packets) {
+			last_rx_packets = prNetDev->stats.rx_packets;
+			latest_rx_packets = 0;
+		}
+		/* Record counts of RX Packets when TX ARP Req recently */
+		latest_rx_packets = prNetDev->stats.rx_packets;
+		if (arpMoniter > uArpMonitorNumber) {
+			if ((latest_rx_packets - last_rx_packets) <=
+				uArpMonitorRxPktNum) {
+				DBGLOG(INIT, WARN, "IOT issue, arp no resp!\n");
+				if (prAisBssInfo)
+					prAisBssInfo->u2DeauthReason =
+				BEACON_TIMEOUT_DUE_2_APR_NO_RESPONSE;
+				prAdapter->cArpNoResponseIdx =
+				prStaRec->ucBssIndex;
+			} else
+				DBGLOG(INIT, WARN, "ARP, still have %d pkts\n",
+					latest_rx_packets - last_rx_packets);
+			arpMoniter = 0;
+			last_rx_packets = 0;
+			latest_rx_packets = 0;
+			kalMemZero(apIp, sizeof(apIp));
 		}
 	}
 }
