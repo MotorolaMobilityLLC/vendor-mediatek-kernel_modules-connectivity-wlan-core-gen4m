@@ -4296,6 +4296,14 @@ int32_t wlanOnWhenProbeSuccess(struct GLUE_INFO *prGlueInfo,
 #if CFG_SUPPORT_LOWLATENCY_MODE
 	wlanProbeSuccessForLowLatency(prAdapter);
 #endif
+
+#if (CFG_SUPPORT_CONNINFRA == 1)
+	if (prAdapter->chip_info->checkbushang) {
+		fw_log_bug_hang_register(
+			(void *)prAdapter->chip_info->checkbushang);
+	}
+#endif
+
 	return 0;
 }
 
