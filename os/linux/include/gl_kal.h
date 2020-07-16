@@ -192,9 +192,10 @@ extern struct delayed_work sched_workq;
 				    RADIOTAP_FIELD_VENDOR)
 #endif
 
-#define PERF_MON_DISABLE_BIT    (0)
-#define PERF_MON_STOP_BIT       (1)
-#define PERF_MON_RUNNING_BIT    (2)
+#define PERF_MON_INIT_BIT       (0)
+#define PERF_MON_DISABLE_BIT    (1)
+#define PERF_MON_STOP_BIT       (2)
+#define PERF_MON_RUNNING_BIT    (3)
 
 #define PERF_MON_UPDATE_INTERVAL (1000)
 #define PERF_MON_TP_MAX_THRESHOLD (10)
