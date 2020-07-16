@@ -308,6 +308,9 @@ int hifAxiRemove(void)
 	}
 #endif
 
+	if (prChipInfo->coantVFE28Dis)
+		prChipInfo->coantVFE28Dis();
+
 	if (g_fgDriverProbed) {
 		pfWlanRemove();
 		DBGLOG(INIT, TRACE, "pfWlanRemove done\n");

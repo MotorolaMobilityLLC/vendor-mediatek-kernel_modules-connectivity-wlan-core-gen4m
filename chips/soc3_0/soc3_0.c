@@ -82,6 +82,9 @@
 #include "soc3_0.h"
 #include "hal_dmashdl_soc3_0.h"
 #include <linux/platform_device.h>
+#include <connectivity_build_in_adapter.h>
+#include <linux/mfd/mt6359p/registers.h>
+#include <linux/regmap.h>
 #if (CFG_SUPPORT_VCODE_VDFS == 1)
 #include <linux/pm_qos.h>
 #endif /*#ifndef CFG_BUILD_X86_PLATFORM*/
@@ -159,6 +162,8 @@ struct wireless_dev *grWdev;
 #if (CFG_SUPPORT_VCODE_VDFS == 1)
 static struct pm_qos_request wifi_req;
 #endif
+
+bool gCoAntVFE28En = FALSE;
 
 uint8_t *apucsoc3_0FwName[] = {
 	(uint8_t *) CFG_FW_FILENAME "_soc3_0",
@@ -897,6 +902,8 @@ struct mt66xx_chip_info mt66xx_chip_info_soc3_0 = {
 
 	.coantSetWiFi = wlanCoAntWiFi,
 	.coantSetMD = wlanCoAntMD,
+	.coantVFE28En = wlanCoAntVFE28En,
+	.coantVFE28Dis = wlanCoAntVFE28Dis,
 #if (CFG_SUPPORT_CONNINFRA == 1)
 	.coexpccifon = wlanConnacPccifon,
 	.coexpccifoff = wlanConnacPccifoff,
@@ -2515,6 +2522,62 @@ int hifWmmcuPwrOn(void)
 		"hifWmmcuPwrOn done\n");
 
 	return ret;
+}
+
+void wlanCoAntVFE28En(IN struct ADAPTER *prAdapter)
+{
+	struct WIFI_CFG_PARAM_STRUCT *prNvramSettings;
+	struct REG_INFO *prRegInfo;
+	u_int8_t fgCoAnt;
+
+	if (g_NvramFsm != NVRAM_STATE_READY) {
+		DBGLOG(INIT, INFO, "CoAntVFE28 NVRAM Not ready\n");
+		return;
+	}
+
+	ASSERT(prAdapter);
+	prRegInfo = &prAdapter->prGlueInfo->rRegInfo;
+	ASSERT(prRegInfo);
+	prNvramSettings = prRegInfo->prNvramSettings;
+	ASSERT(prNvramSettings);
+
+	fgCoAnt = prNvramSettings->ucSupportCoAnt;
+
+	if (fgCoAnt) {
+		if (gCoAntVFE28En == FALSE) {
+#if (KERNEL_VERSION(4, 15, 0) <= CFG80211_VERSION_CODE)
+			regmap_write(g_regmap,
+				MT6359_LDO_VFE28_OP_EN_SET, 0x1 << 8);
+			regmap_write(g_regmap,
+				MT6359_LDO_VFE28_OP_CFG_CLR, 0x1 << 8);
+#else
+			KERNEL_pmic_ldo_vfe28_lp(8, 0, 1, 0);
+#endif
+			DBGLOG(INIT, INFO, "CoAntVFE28 PMIC Enable\n");
+			gCoAntVFE28En = TRUE;
+		} else {
+			DBGLOG(INIT, INFO, "CoAntVFE28 PMIC Already Enable\n");
+		}
+	} else {
+		DBGLOG(INIT, INFO, "Not Support CoAnt Enable\n");
+	}
+}
+
+void wlanCoAntVFE28Dis(void)
+{
+	if (gCoAntVFE28En == TRUE) {
+#if (KERNEL_VERSION(4, 15, 0) <= CFG80211_VERSION_CODE)
+		regmap_write(g_regmap, MT6359_LDO_VFE28_OP_EN_CLR, 0x1 << 8);
+		regmap_write(g_regmap, MT6359_LDO_VFE28_OP_CFG_CLR, 0x1 << 8);
+		regmap_write(g_regmap, MT6359_LDO_VFE28_OP_CFG_CLR, 0x1 << 8);
+#else
+		KERNEL_pmic_ldo_vfe28_lp(8, 0, 0, 0);
+#endif
+		DBGLOG(INIT, INFO, "CoAntVFE28 PMIC Disable\n");
+		gCoAntVFE28En = FALSE;
+	} else {
+		DBGLOG(INIT, INFO, "CoAntVFE28 PMIC Already Disable\n");
+	}
 }
 
 void wlanCoAntWiFi(void)
