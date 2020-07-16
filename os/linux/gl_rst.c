@@ -495,7 +495,6 @@ int32_t glIsWmtCodeDump(void)
 	return mtk_wcn_stp_coredump_start_get();
 }
 
-#if (CFG_SUPPORT_CONNINFRA == 0)
 static void triggerHifDumpIfNeed(void)
 {
 	struct GLUE_INFO *prGlueInfo;
@@ -507,6 +506,7 @@ static void triggerHifDumpIfNeed(void)
 	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wlanGetWiphy());
 	if (!prGlueInfo || !prGlueInfo->u4ReadyFlag || !prGlueInfo->prAdapter)
 		return;
+
 	prAdapter = prGlueInfo->prAdapter;
 	prAdapter->u4HifDbgFlag |= DEG_HIF_DEFAULT_DUMP;
 	kalSetHifDbgEvent(prAdapter->prGlueInfo);
@@ -514,6 +514,7 @@ static void triggerHifDumpIfNeed(void)
 	kalMsleep(100);
 }
 
+#if (CFG_SUPPORT_CONNINFRA == 0)
 static void dumpWlanThreadsIfNeed(void)
 {
 	struct GLUE_INFO *prGlueInfo;
@@ -703,6 +704,9 @@ int glRstwlanPreWholeChipReset(enum consys_drv_type type, char *reason)
 		DBGLOG(REQ, WARN, "wifi driver is off now\n");
 		return bRet;
 	}
+
+	triggerHifDumpIfNeed();
+
 	g_WholeChipRstType = type;
 	g_WholeChipRstReason = reason;
 
