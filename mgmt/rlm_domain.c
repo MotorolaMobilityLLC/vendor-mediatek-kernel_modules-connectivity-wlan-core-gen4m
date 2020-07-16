@@ -4939,12 +4939,10 @@ void rlmDomainSendPwrLimitCmd(struct ADAPTER *prAdapter)
 
 
 	u4SetQueryInfoLen =
-		(sizeof(struct CMD_SET_COUNTRY_CHANNEL_POWER_LIMIT) +
-		(prCmd->ucNum) * sizeof(struct CMD_CHANNEL_POWER_LIMIT));
+		sizeof(struct CMD_SET_COUNTRY_CHANNEL_POWER_LIMIT);
 
 	u4SetQueryInfoLenHE =
-		(sizeof(struct CMD_SET_COUNTRY_CHANNEL_POWER_LIMIT) +
-		(prCmd->ucNum) * sizeof(struct CMD_CHANNEL_POWER_LIMIT_HE));
+		sizeof(struct CMD_SET_COUNTRY_CHANNEL_POWER_LIMIT);
 
 
 	/* Update domain info to chip */
