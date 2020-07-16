@@ -565,6 +565,11 @@ void halShowLitePleInfo(IN struct ADAPTER *prAdapter);
 void halShowTxdInfo(
 	struct ADAPTER *prAdapter,
 	u_int32_t fid);
+int32_t halShowStatInfo(struct ADAPTER *prAdapter,
+			IN char *pcCommand, IN int i4TotalLen,
+			struct PARAM_HW_WLAN_INFO *prHwWlanInfo,
+			struct PARAM_GET_STA_STATISTICS *prQueryStaStatistics,
+			u_int8_t fgResetCnt, uint32_t u4StatGroup);
 
 
 #if (CFG_SUPPORT_CONNAC2X == 1)

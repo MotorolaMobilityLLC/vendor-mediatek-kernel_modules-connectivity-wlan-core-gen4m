@@ -96,7 +96,18 @@
  *                           P R I V A T E   D A T A
  *******************************************************************************
  */
-
+#if (CFG_SUPPORT_RA_GEN == 0)
+static char *RATE_TBLE[] = {"B", "G", "N", "N_2SS", "AC", "AC_2SS", "N/A"};
+#else
+static char *RATE_TBLE[] = {"B", "G", "N", "N_2SS", "AC", "AC_2SS", "BG",
+			    "N/A"};
+static char *RA_STATUS_TBLE[] = {"INVALID", "POWER_SAVING", "SLEEP", "STANDBY",
+				 "RUNNING", "N/A"};
+static char *LT_MODE_TBLE[] = {"RSSI", "LAST_RATE", "TRACKING", "N/A"};
+static char *SGI_UNSP_STATE_TBLE[] = {"INITIAL", "PROBING", "SUCCESS",
+				      "FAILURE", "N/A"};
+static char *BW_STATE_TBLE[] = {"UNCHANGED", "DOWN", "N/A"};
+#endif
 /*******************************************************************************
  *                                 M A C R O S
  *******************************************************************************
@@ -1459,3 +1470,771 @@ void halShowTxdInfo(
 	halDumpTxdInfo(prAdapter, txd_info);
 }
 
+int32_t halShowStatInfo(struct ADAPTER *prAdapter,
+			IN char *pcCommand, IN int i4TotalLen,
+			struct PARAM_HW_WLAN_INFO *prHwWlanInfo,
+			struct PARAM_GET_STA_STATISTICS *prQueryStaStatistics,
+			u_int8_t fgResetCnt, uint32_t u4StatGroup)
+{
+	int32_t i4BytesWritten = 0;
+	int32_t rRssi;
+	uint16_t u2LinkSpeed;
+	uint32_t u4Per, u4RxPer[ENUM_BAND_NUM], u4AmpduPer[ENUM_BAND_NUM],
+		 u4InstantPer;
+	uint8_t ucDbdcIdx, ucSkipAr, ucStaIdx, ucNss;
+	static uint32_t u4TotalTxCnt, u4TotalFailCnt;
+	static uint32_t u4Rate1TxCnt, u4Rate1FailCnt;
+	static uint32_t au4RxMpduCnt[ENUM_BAND_NUM] = {0};
+	static uint32_t au4FcsError[ENUM_BAND_NUM] = {0};
+	static uint32_t au4RxFifoCnt[ENUM_BAND_NUM] = {0};
+	static uint32_t au4AmpduTxSfCnt[ENUM_BAND_NUM] = {0};
+	static uint32_t au4AmpduTxAckSfCnt[ENUM_BAND_NUM] = {0};
+	struct RX_CTRL *prRxCtrl;
+	uint32_t u4InstantRxPer[ENUM_BAND_NUM];
+	struct PARAM_CUSTOM_SW_CTRL_STRUCT rSwCtrlInfo;
+	uint32_t rStatus = WLAN_STATUS_SUCCESS;
+	int16_t i2Wf0AvgPwr = 0, i2Wf1AvgPwr = 0;
+	uint32_t u4BufLen = 0;
+#if (CFG_SUPPORT_RA_GEN == 1)
+	uint8_t ucRaTableNum = sizeof(RATE_TBLE) / sizeof(char *);
+	uint8_t ucRaStatusNum = sizeof(RA_STATUS_TBLE) / sizeof(char *);
+	uint8_t ucRaLtModeNum = sizeof(LT_MODE_TBLE) / sizeof(char *);
+	uint8_t ucRaSgiUnSpStateNum = sizeof(SGI_UNSP_STATE_TBLE) /
+								sizeof(char *);
+	uint8_t ucRaBwStateNum = sizeof(BW_STATE_TBLE) / sizeof(char *);
+	uint8_t ucAggRange[AGG_RANGE_SEL_NUM] = {0};
+	uint32_t u4RangeCtrl_0, u4RangeCtrl_1;
+	enum AGG_RANGE_TYPE_T eRangeType = ENUM_AGG_RANGE_TYPE_TX;
+#endif
+	uint8_t ucBssIndex = AIS_DEFAULT_INDEX;
+	struct PARAM_LINK_SPEED_EX rLinkSpeed;
+
+	ucSkipAr = prQueryStaStatistics->ucSkipAr;
+	prRxCtrl = &prAdapter->rRxCtrl;
+	ucNss = prAdapter->rWifiVar.ucNSS;
+
+	if (ucSkipAr) {
+#if (CFG_SUPPORT_RA_GEN == 1)
+		u4TotalTxCnt += prQueryStaStatistics->u4TransmitCount;
+		u4TotalFailCnt += prQueryStaStatistics->u4TransmitFailCount;
+		u4Rate1TxCnt += prQueryStaStatistics->u4Rate1TxCnt;
+		u4Rate1FailCnt += prQueryStaStatistics->u4Rate1FailCnt;
+
+		u4Per = (u4Rate1TxCnt == 0) ?
+			(0) : (1000 * (u4Rate1FailCnt) / (u4Rate1TxCnt));
+		u4InstantPer = (prQueryStaStatistics->u4Rate1TxCnt == 0) ?
+			(0) : (1000 * (prQueryStaStatistics->u4Rate1FailCnt) /
+			(prQueryStaStatistics->u4Rate1TxCnt));
+#else
+		u4TotalTxCnt += prHwWlanInfo->rWtblTxCounter.u2CurBwTxCnt +
+			prHwWlanInfo->rWtblTxCounter.u2OtherBwTxCnt;
+		u4TotalFailCnt += prHwWlanInfo->rWtblTxCounter.u2CurBwFailCnt +
+			prHwWlanInfo->rWtblTxCounter.u2OtherBwFailCnt;
+		u4Rate1TxCnt += prHwWlanInfo->rWtblTxCounter.u2Rate1TxCnt;
+		u4Rate1FailCnt += prHwWlanInfo->rWtblTxCounter.u2Rate1FailCnt;
+		u4Per = (prHwWlanInfo->rWtblTxCounter.u2Rate1TxCnt == 0) ?
+			(0) : (1000 * u4Rate1FailCnt / u4Rate1TxCnt);
+		u4InstantPer =
+			(prHwWlanInfo->rWtblTxCounter.u2Rate1TxCnt == 0) ? (0) :
+			(1000 * (prHwWlanInfo->rWtblTxCounter.u2Rate1FailCnt) /
+			(prHwWlanInfo->rWtblTxCounter.u2Rate1TxCnt));
+#endif
+	} else {
+		u4Per = (prQueryStaStatistics->u4Rate1TxCnt == 0) ?
+			(0) : (1000 * (prQueryStaStatistics->u4Rate1FailCnt) /
+			(prQueryStaStatistics->u4Rate1TxCnt));
+		u4InstantPer = (prQueryStaStatistics->ucPer == 0) ?
+			(0) : (prQueryStaStatistics->ucPer);
+	}
+
+	for (ucDbdcIdx = 0; ucDbdcIdx < ENUM_BAND_NUM; ucDbdcIdx++) {
+		au4RxMpduCnt[ucDbdcIdx] +=
+		    prQueryStaStatistics->rMibInfo[ucDbdcIdx].u4RxMpduCnt;
+		au4FcsError[ucDbdcIdx] +=
+		    prQueryStaStatistics->rMibInfo[ucDbdcIdx].u4FcsError;
+		au4RxFifoCnt[ucDbdcIdx] +=
+		    prQueryStaStatistics->rMibInfo[ucDbdcIdx].u4RxFifoFull;
+		au4AmpduTxSfCnt[ucDbdcIdx] +=
+		    prQueryStaStatistics->rMibInfo[ucDbdcIdx].u4AmpduTxSfCnt;
+		au4AmpduTxAckSfCnt[ucDbdcIdx] +=
+		    prQueryStaStatistics->rMibInfo[ucDbdcIdx].u4AmpduTxAckSfCnt;
+
+		u4RxPer[ucDbdcIdx] =
+		    ((au4RxMpduCnt[ucDbdcIdx] + au4FcsError[ucDbdcIdx]) == 0) ?
+			(0) : (1000 * au4FcsError[ucDbdcIdx] /
+			(au4RxMpduCnt[ucDbdcIdx] +
+			au4FcsError[ucDbdcIdx]));
+
+		u4AmpduPer[ucDbdcIdx] =
+		    (au4AmpduTxSfCnt[ucDbdcIdx] == 0) ?
+			(0) : (1000 * (au4AmpduTxSfCnt[ucDbdcIdx] -
+			au4AmpduTxAckSfCnt[ucDbdcIdx]) /
+			au4AmpduTxSfCnt[ucDbdcIdx]);
+
+		u4InstantRxPer[ucDbdcIdx] =
+			((prQueryStaStatistics->rMibInfo[ucDbdcIdx].u4RxMpduCnt
+			+ prQueryStaStatistics->rMibInfo[ucDbdcIdx].u4FcsError)
+			== 0) ? (0) : (1000 * prQueryStaStatistics->
+			rMibInfo[ucDbdcIdx].u4FcsError /
+			(prQueryStaStatistics->rMibInfo[ucDbdcIdx].u4RxMpduCnt +
+			prQueryStaStatistics->rMibInfo[ucDbdcIdx].u4FcsError));
+	}
+
+	rRssi = RCPI_TO_dBm(prQueryStaStatistics->ucRcpi);
+	u2LinkSpeed = (prQueryStaStatistics->u2LinkSpeed == 0) ? 0 :
+					prQueryStaStatistics->u2LinkSpeed / 2;
+
+	/* =========== Group 0x0001 =========== */
+	if (u4StatGroup & 0x0001) {
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten,
+			i4TotalLen - i4BytesWritten,
+			"%s", "\n----- STA Stat (Group 0x01) -----\n");
+
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten,
+			i4TotalLen - i4BytesWritten,
+			"%-20s%s%d\n", "CurrTemperature", " = ",
+			prQueryStaStatistics->ucTemperature);
+
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten,
+			i4TotalLen - i4BytesWritten,
+			"%-20s%s%d\n", "Tx Total cnt", " = ",
+			ucSkipAr ? (u4TotalTxCnt) :
+				(prQueryStaStatistics->u4TransmitCount));
+
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten,
+			i4TotalLen - i4BytesWritten,
+			"%-20s%s%d\n", "Tx Fail Cnt", " = ",
+			ucSkipAr ? (u4TotalFailCnt) :
+				(prQueryStaStatistics->u4TransmitFailCount));
+
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten,
+			i4TotalLen - i4BytesWritten,
+			"%-20s%s%d\n", "Rate1 Tx Cnt", " = ",
+			ucSkipAr ? (u4Rate1TxCnt) :
+				(prQueryStaStatistics->u4Rate1TxCnt));
+
+		if (ucSkipAr)
+			i4BytesWritten += kalScnprintf(
+				pcCommand + i4BytesWritten,
+				i4TotalLen - i4BytesWritten,
+				"%-20s%s%d, PER = %d.%1d%%, instant PER = %d.%1d%%\n",
+				"Rate1 Fail Cnt", " = ",
+				u4Rate1FailCnt, u4Per/10, u4Per%10,
+				u4InstantPer/10, u4InstantPer%10);
+		else
+			i4BytesWritten += kalScnprintf(
+				pcCommand + i4BytesWritten,
+				i4TotalLen - i4BytesWritten,
+				"%-20s%s%d, PER = %d.%1d%%, instant PER = %d%%\n",
+				"Rate1 Fail Cnt", " = ",
+				prQueryStaStatistics->u4Rate1FailCnt,
+				u4Per/10, u4Per%10, u4InstantPer);
+
+		if ((ucSkipAr) && (fgResetCnt)) {
+			u4TotalTxCnt = 0;
+			u4TotalFailCnt = 0;
+			u4Rate1TxCnt = 0;
+			u4Rate1FailCnt = 0;
+		}
+	}
+
+	/* =========== Group 0x0002 =========== */
+	if (u4StatGroup & 0x0002) {
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten,
+			i4TotalLen - i4BytesWritten,
+			"%s", "----- MIB Info (Group 0x02) -----\n");
+
+		for (ucDbdcIdx = 0; ucDbdcIdx < ENUM_BAND_NUM; ucDbdcIdx++) {
+			if (prAdapter->rWifiVar.fgDbDcModeEn)
+				i4BytesWritten += kalScnprintf(
+					pcCommand + i4BytesWritten,
+					i4TotalLen - i4BytesWritten,
+					"[DBDC_%d] :\n", ucDbdcIdx);
+
+			i4BytesWritten += kalScnprintf(
+				pcCommand + i4BytesWritten,
+				i4TotalLen - i4BytesWritten,
+				"%-20s%s%d\n", "RX Success", " = ",
+				au4RxMpduCnt[ucDbdcIdx]);
+
+			i4BytesWritten += kalScnprintf(
+				pcCommand + i4BytesWritten,
+				i4TotalLen - i4BytesWritten,
+				"%-20s%s%d, PER = %d.%1d%%, instant PER = %d.%1d%%\n",
+				"RX with CRC", " = ", au4FcsError[ucDbdcIdx],
+				u4RxPer[ucDbdcIdx] / 10,
+				u4RxPer[ucDbdcIdx] % 10,
+				u4InstantRxPer[ucDbdcIdx] / 10,
+				u4InstantRxPer[ucDbdcIdx] % 10);
+
+			i4BytesWritten += kalScnprintf(
+				pcCommand + i4BytesWritten,
+				i4TotalLen - i4BytesWritten,
+				"%-20s%s%d\n", "RX drop FIFO full", " = ",
+				au4RxFifoCnt[ucDbdcIdx]);
+
+			if (!prAdapter->rWifiVar.fgDbDcModeEn)
+				break;
+		}
+
+		if (fgResetCnt) {
+			kalMemZero(au4RxMpduCnt, sizeof(au4RxMpduCnt));
+			kalMemZero(au4FcsError, sizeof(au4RxMpduCnt));
+			kalMemZero(au4RxFifoCnt, sizeof(au4RxMpduCnt));
+			kalMemZero(au4AmpduTxSfCnt, sizeof(au4RxMpduCnt));
+			kalMemZero(au4AmpduTxAckSfCnt, sizeof(au4RxMpduCnt));
+		}
+	}
+
+	/* =========== Group 0x0004 =========== */
+	if (u4StatGroup & 0x0004) {
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten,
+			i4TotalLen - i4BytesWritten,
+			"%s", "----- Last Rx Info (Group 0x04) -----\n");
+
+		/* get Beacon RSSI */
+		ucBssIndex = secGetBssIdxByWlanIdx
+			(prAdapter, (uint8_t)(prHwWlanInfo->u4Index));
+
+		rStatus = kalIoctlByBssIdx(prAdapter->prGlueInfo,
+				   wlanoidQueryRssi, &rLinkSpeed,
+				   sizeof(rLinkSpeed), TRUE, TRUE, TRUE,
+				   &u4BufLen, ucBssIndex);
+		if (rStatus != WLAN_STATUS_SUCCESS)
+			DBGLOG(REQ, WARN, "unable to retrieve rssi\n");
+		if (ucBssIndex < BSSID_NUM)
+			rRssi = rLinkSpeed.rLq[ucBssIndex].cRssi;
+
+		rSwCtrlInfo.u4Data = 0;
+		rSwCtrlInfo.u4Id = CMD_SW_DBGCTL_ADVCTL_GET_ID + 1;
+#if (CFG_SUPPORT_RA_GEN == 0)
+		rStatus = kalIoctl(prAdapter->prGlueInfo,
+				   wlanoidQuerySwCtrlRead, &rSwCtrlInfo,
+				   sizeof(rSwCtrlInfo), TRUE, TRUE, TRUE,
+				   &u4BufLen);
+#endif
+		DBGLOG(REQ, LOUD, "rStatus %u, rSwCtrlInfo.u4Data 0x%x\n",
+		       rStatus, rSwCtrlInfo.u4Data);
+		if (rStatus == WLAN_STATUS_SUCCESS) {
+			i2Wf0AvgPwr = rSwCtrlInfo.u4Data & 0xFFFF;
+			i2Wf1AvgPwr = (rSwCtrlInfo.u4Data >> 16) & 0xFFFF;
+
+			i4BytesWritten += kalScnprintf(
+					pcCommand + i4BytesWritten,
+					i4TotalLen - i4BytesWritten,
+					"%-20s%s%d %d\n", "NOISE", " = ",
+					i2Wf0AvgPwr, i2Wf1AvgPwr);
+		}
+
+		/* Last RX Rate */
+		i4BytesWritten += nicGetRxRateInfo(prAdapter,
+			pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+			(uint8_t)(prHwWlanInfo->u4Index));
+
+		/* Last RX RSSI */
+		i4BytesWritten += nicRxGetLastRxRssi(prAdapter,
+			pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+			(uint8_t)(prHwWlanInfo->u4Index));
+
+		/* Last TX Resp RSSI */
+		if (ucNss > 2)
+			i4BytesWritten += kalScnprintf(
+				pcCommand + i4BytesWritten,
+				i4TotalLen - i4BytesWritten,
+				"%-20s%s%d %d %d %d\n",
+				"Tx Response RSSI", " = ",
+				RCPI_TO_dBm(
+				    prHwWlanInfo->rWtblRxCounter.ucRxRcpi0),
+				RCPI_TO_dBm(
+				    prHwWlanInfo->rWtblRxCounter.ucRxRcpi1),
+				RCPI_TO_dBm(
+				    prHwWlanInfo->rWtblRxCounter.ucRxRcpi2),
+				RCPI_TO_dBm(
+				    prHwWlanInfo->rWtblRxCounter.ucRxRcpi3));
+		else
+			i4BytesWritten += kalScnprintf(
+				pcCommand + i4BytesWritten,
+				i4TotalLen - i4BytesWritten,
+				"%-20s%s%d %d\n", "Tx Response RSSI", " = ",
+				RCPI_TO_dBm(
+				    prHwWlanInfo->rWtblRxCounter.ucRxRcpi0),
+				RCPI_TO_dBm(
+				    prHwWlanInfo->rWtblRxCounter.ucRxRcpi1));
+
+		/* Last Beacon RSSI */
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten,
+				i4TotalLen - i4BytesWritten,
+				"%-20s%s%d\n", "Beacon RSSI", " = ", rRssi);
+	}
+
+	/* =========== Group 0x0008 =========== */
+	if (u4StatGroup & 0x0008) {
+		/* TxV */
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten,
+			i4TotalLen - i4BytesWritten,
+			"%s", "----- Last TX Info (Group 0x08) -----\n");
+
+		for (ucDbdcIdx = 0; ucDbdcIdx < ENUM_BAND_NUM; ucDbdcIdx++) {
+			if (prAdapter->rWifiVar.fgDbDcModeEn)
+				i4BytesWritten += kalScnprintf(
+					pcCommand + i4BytesWritten,
+					i4TotalLen - i4BytesWritten,
+					"[DBDC_%d] :\n", ucDbdcIdx);
+
+			i4BytesWritten += nicTxGetVectorInfo(
+				pcCommand + i4BytesWritten,
+				i4TotalLen - i4BytesWritten,
+				&prQueryStaStatistics->rTxVector[ucDbdcIdx]);
+
+			if (prQueryStaStatistics->rTxVector[ucDbdcIdx]
+			    .u4TxV[0] == 0xFFFFFFFF)
+				i4BytesWritten += kalScnprintf(
+					pcCommand + i4BytesWritten,
+					i4TotalLen - i4BytesWritten,
+					"%-20s%s%s\n", "Chip Out TX Power",
+					" = ", "N/A");
+			else
+				i4BytesWritten += kalScnprintf(
+					pcCommand + i4BytesWritten,
+					i4TotalLen - i4BytesWritten,
+					"%-20s%s%ld.%1ld dBm\n",
+					"Chip Out TX Power", " = ",
+					TX_VECTOR_GET_TX_PWR(
+					    &prQueryStaStatistics->rTxVector[
+						ucDbdcIdx]) >> 1,
+					5 * (TX_VECTOR_GET_TX_PWR(
+					    &prQueryStaStatistics->rTxVector[
+						ucDbdcIdx]) % 2));
+
+			if (!prAdapter->rWifiVar.fgDbDcModeEn)
+				break;
+		}
+	}
+
+	/* =========== Group 0x0010 =========== */
+	if (u4StatGroup & 0x0010) {
+		/* RX Reorder */
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten,
+			i4TotalLen - i4BytesWritten,
+			"%s", "----- RX Reorder (Group 0x10) -----\n");
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten,
+			i4TotalLen - i4BytesWritten,
+			"%-20s%s%llu\n", "Rx reorder miss", " = ",
+			RX_GET_CNT(prRxCtrl, RX_DATA_REORDER_MISS_COUNT));
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten,
+			i4TotalLen - i4BytesWritten,
+			"%-20s%s%llu\n", "Rx reorder within", " = ",
+			RX_GET_CNT(prRxCtrl, RX_DATA_REORDER_WITHIN_COUNT));
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten,
+			i4TotalLen - i4BytesWritten,
+			"%-20s%s%llu\n", "Rx reorder ahead", " = ",
+			RX_GET_CNT(prRxCtrl, RX_DATA_REORDER_AHEAD_COUNT));
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten,
+			i4TotalLen - i4BytesWritten,
+			"%-20s%s%llu\n", "Rx reorder behind", " = ",
+			RX_GET_CNT(prRxCtrl, RX_DATA_REORDER_BEHIND_COUNT));
+	}
+
+	/* =========== Group 0x0020 =========== */
+	if (u4StatGroup & 0x0020) {
+		/* RA info */
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten,
+			i4TotalLen - i4BytesWritten,
+			"%s", "----- RA Info (Group 0x20) -----\n");
+
+		/* Last TX Rate */
+		i4BytesWritten += nicGetTxRateInfo(
+			pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+			FALSE, prHwWlanInfo, prQueryStaStatistics);
+
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten,
+			i4TotalLen - i4BytesWritten, "%-20s%s%d\n", "LinkSpeed",
+			" = ", u2LinkSpeed);
+
+		if (!prQueryStaStatistics->ucSkipAr) {
+			i4BytesWritten += kalScnprintf(
+				pcCommand + i4BytesWritten,
+				i4TotalLen - i4BytesWritten,
+				"%-20s%s%s\n", "RateTable", " = ",
+#if (CFG_SUPPORT_RA_GEN == 1)
+				prQueryStaStatistics->ucArTableIdx <
+				(ucRaTableNum - 1) ?
+				RATE_TBLE[prQueryStaStatistics->ucArTableIdx] :
+				RATE_TBLE[ucRaTableNum - 1]);
+#else
+				prQueryStaStatistics->ucArTableIdx < 6 ?
+				RATE_TBLE[prQueryStaStatistics->ucArTableIdx] :
+				RATE_TBLE[6]);
+#endif
+
+			if (wlanGetStaIdxByWlanIdx(prAdapter,
+				(uint8_t)(prHwWlanInfo->u4Index), &ucStaIdx) ==
+				WLAN_STATUS_SUCCESS) {
+				i4BytesWritten += kalScnprintf(
+					pcCommand + i4BytesWritten,
+					i4TotalLen - i4BytesWritten,
+					"%-20s%s%d\n", "2G Support 256QAM TX",
+					" = ",
+#if (CFG_SUPPORT_RA_GEN == 1)
+					((prAdapter->arStaRec[ucStaIdx].u4Flags
+					& MTK_SYNERGY_CAP_SUPPORT_24G_MCS89) ||
+					(prQueryStaStatistics->
+					ucDynamicGband256QAMState == 2)) ?
+					1 : 0);
+#else
+					(prAdapter->arStaRec[ucStaIdx].u4Flags &
+					MTK_SYNERGY_CAP_SUPPORT_24G_MCS89) ?
+					1 : 0);
+#endif
+			}
+
+#if (CFG_SUPPORT_RA_GEN == 0)
+			i4BytesWritten += kalScnprintf(
+				pcCommand + i4BytesWritten,
+				i4TotalLen - i4BytesWritten,
+				"%-20s%s%d%%\n", "Rate1 instantPer", " = ",
+				u4InstantPer);
+#endif
+
+			if (prQueryStaStatistics->ucAvePer == 0xFF) {
+				i4BytesWritten += kalScnprintf(
+					pcCommand + i4BytesWritten,
+					i4TotalLen - i4BytesWritten,
+					"%-20s%s%s\n", "Train Down", " = ",
+					"N/A");
+
+				i4BytesWritten += kalScnprintf(
+					pcCommand + i4BytesWritten,
+					i4TotalLen - i4BytesWritten,
+					"%-20s%s%s\n", "Train Up", " = ",
+					"N/A");
+			} else {
+				i4BytesWritten += kalScnprintf(
+					pcCommand + i4BytesWritten,
+					i4TotalLen - i4BytesWritten,
+					"%-20s%s%d -> %d\n", "Train Down",
+					" = ",
+					(uint16_t)
+					(prQueryStaStatistics->u2TrainDown
+						& BITS(0, 7)),
+					(uint16_t)
+					((prQueryStaStatistics->u2TrainDown >>
+						8) & BITS(0, 7)));
+
+				i4BytesWritten += kalScnprintf(
+					pcCommand + i4BytesWritten,
+					i4TotalLen - i4BytesWritten,
+					"%-20s%s%d -> %d\n", "Train Up", " = ",
+					(uint16_t)
+					(prQueryStaStatistics->u2TrainUp
+						& BITS(0, 7)),
+					(uint16_t)
+					((prQueryStaStatistics->u2TrainUp >> 8)
+						& BITS(0, 7)));
+			}
+
+			if (prQueryStaStatistics->fgIsForceTxStream == 0)
+				i4BytesWritten += kalScnprintf(
+					pcCommand + i4BytesWritten,
+					i4TotalLen - i4BytesWritten,
+					"%-20s%s%s\n", "Force Tx Stream",
+					" = ", "N/A");
+			else
+				i4BytesWritten += kalScnprintf(
+					pcCommand + i4BytesWritten,
+					i4TotalLen - i4BytesWritten,
+					"%-20s%s%d\n", "Force Tx Stream", " = ",
+					prQueryStaStatistics->
+						fgIsForceTxStream);
+
+			i4BytesWritten += kalScnprintf(
+				pcCommand + i4BytesWritten,
+				i4TotalLen - i4BytesWritten,
+				"%-20s%s%d\n", "Force SE off", " = ",
+				prQueryStaStatistics->fgIsForceSeOff);
+
+#if (CFG_SUPPORT_RA_GEN == 1)
+			i4BytesWritten += kalScnprintf(
+				pcCommand + i4BytesWritten,
+				i4TotalLen - i4BytesWritten,
+				"%-20s%s%s\n", "LtMode", " = ",
+				prQueryStaStatistics->ucLowTrafficMode <
+				(ucRaLtModeNum - 1) ?
+				LT_MODE_TBLE[prQueryStaStatistics->
+				ucLowTrafficMode] :
+				LT_MODE_TBLE[ucRaLtModeNum - 1]);
+
+			i4BytesWritten += kalScnprintf(
+				pcCommand + i4BytesWritten,
+				i4TotalLen - i4BytesWritten,
+				"%-20s%s%s\n", "SgiState", " = ",
+				prQueryStaStatistics->ucDynamicSGIState <
+				(ucRaSgiUnSpStateNum - 1) ?
+				SGI_UNSP_STATE_TBLE[prQueryStaStatistics->
+				ucDynamicSGIState] :
+				SGI_UNSP_STATE_TBLE[ucRaSgiUnSpStateNum - 1]);
+
+			i4BytesWritten += kalScnprintf(
+				pcCommand + i4BytesWritten,
+				i4TotalLen - i4BytesWritten,
+				"%-20s%s%s\n", "BwState", " = ",
+				prQueryStaStatistics->ucDynamicBWState <
+				(ucRaBwStateNum - 1) ?
+				BW_STATE_TBLE[prQueryStaStatistics->
+				ucDynamicBWState] :
+				BW_STATE_TBLE[ucRaBwStateNum - 1]);
+
+			i4BytesWritten += kalScnprintf(
+				pcCommand + i4BytesWritten,
+				i4TotalLen - i4BytesWritten,
+				"%-20s%s%s\n", "NonSpState", " = ",
+				prQueryStaStatistics->ucDynamicSGIState <
+				(ucRaSgiUnSpStateNum - 1) ?
+				SGI_UNSP_STATE_TBLE[prQueryStaStatistics->
+				ucVhtNonSpRateState] :
+				SGI_UNSP_STATE_TBLE[ucRaSgiUnSpStateNum - 1]);
+#endif
+		}
+
+#if (CFG_SUPPORT_RA_GEN == 1)
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten,
+			i4TotalLen - i4BytesWritten,
+			"%-20s%s%d\n", "RunningCnt", " = ",
+			prQueryStaStatistics->u2RaRunningCnt);
+
+		prQueryStaStatistics->ucRaStatus &= ~0x80;
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten,
+			i4TotalLen - i4BytesWritten,
+			"%-20s%s%s\n", "Status", " = ",
+			prQueryStaStatistics->ucRaStatus < (ucRaStatusNum - 1) ?
+			RA_STATUS_TBLE[prQueryStaStatistics->ucRaStatus] :
+			RA_STATUS_TBLE[ucRaStatusNum - 1]);
+
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten,
+			i4TotalLen - i4BytesWritten,
+			"%-20s%s%d\n", "MaxAF", " = ",
+			prHwWlanInfo->rWtblPeerCap.ucAmpduFactor);
+
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten,
+			i4TotalLen - i4BytesWritten,
+			"%-20s%s0x%x\n", "SpeIdx", " = ",
+			prHwWlanInfo->rWtblPeerCap.ucSpatialExtensionIndex);
+#endif
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten,
+			i4TotalLen - i4BytesWritten,
+			"%-20s%s%d\n", "CBRN", " = ",
+			prHwWlanInfo->rWtblPeerCap.ucChangeBWAfterRateN);
+
+		/* Rate1~Rate8 */
+		i4BytesWritten += nicGetTxRateInfo(
+			pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+			TRUE, prHwWlanInfo, prQueryStaStatistics);
+	}
+
+	/* =========== Group 0x0040 =========== */
+	if (u4StatGroup & 0x0040) {
+#if (CFG_SUPPORT_RA_GEN == 1)
+		u4RangeCtrl_0 = prQueryStaStatistics->u4AggRangeCtrl_0;
+		u4RangeCtrl_1 = prQueryStaStatistics->u4AggRangeCtrl_1;
+		eRangeType = (enum AGG_RANGE_TYPE_T)
+					prQueryStaStatistics->ucRangeType;
+
+		ucAggRange[0] = (((u4RangeCtrl_0) & AGG_RANGE_SEL_0_MASK) >>
+						AGG_RANGE_SEL_0_OFFSET);
+		ucAggRange[1] = (((u4RangeCtrl_0) & AGG_RANGE_SEL_1_MASK) >>
+						AGG_RANGE_SEL_1_OFFSET);
+		ucAggRange[2] = (((u4RangeCtrl_0) & AGG_RANGE_SEL_2_MASK) >>
+						AGG_RANGE_SEL_2_OFFSET);
+		ucAggRange[3] = (((u4RangeCtrl_0) & AGG_RANGE_SEL_3_MASK) >>
+						AGG_RANGE_SEL_3_OFFSET);
+		ucAggRange[4] = (((u4RangeCtrl_1) & AGG_RANGE_SEL_4_MASK) >>
+						AGG_RANGE_SEL_4_OFFSET);
+		ucAggRange[5] = (((u4RangeCtrl_1) & AGG_RANGE_SEL_5_MASK) >>
+						AGG_RANGE_SEL_5_OFFSET);
+		ucAggRange[6] = (((u4RangeCtrl_1) & AGG_RANGE_SEL_6_MASK) >>
+						AGG_RANGE_SEL_6_OFFSET);
+
+		/* Tx Agg */
+		i4BytesWritten += kalScnprintf(
+			pcCommand + i4BytesWritten,
+			i4TotalLen - i4BytesWritten,
+			"%s%s%s", "------ ",
+			(eRangeType) ? (
+				(eRangeType == ENUM_AGG_RANGE_TYPE_TRX) ?
+				("TRX") : ("RX")) : ("TX"),
+				" AGG (Group 0x40) -----\n");
+
+		if (eRangeType == ENUM_AGG_RANGE_TYPE_TRX) {
+			i4BytesWritten += kalScnprintf(
+				pcCommand + i4BytesWritten,
+				i4TotalLen - i4BytesWritten,
+				"%-6s%8d%5d%1s%2d%5d%1s%2d%5d%3s",
+				" TX  :", ucAggRange[0] + 1,
+				ucAggRange[0] + 2, "~", ucAggRange[1] + 1,
+				ucAggRange[1] + 2, "~", ucAggRange[2] + 1,
+				ucAggRange[2] + 2, "~64\n");
+
+			for (ucDbdcIdx = 0; ucDbdcIdx < ENUM_BAND_NUM;
+			     ucDbdcIdx++) {
+				i4BytesWritten += kalScnprintf(
+					pcCommand + i4BytesWritten,
+					i4TotalLen - i4BytesWritten,
+					"DBDC%d:", ucDbdcIdx);
+				i4BytesWritten += kalScnprintf(
+					pcCommand + i4BytesWritten,
+					i4TotalLen - i4BytesWritten,
+					"%8d%8d%8d%8d\n",
+					prQueryStaStatistics->
+					rMibInfo[ucDbdcIdx].au2TxRangeAmpduCnt[
+						0],
+					prQueryStaStatistics->
+					rMibInfo[ucDbdcIdx].au2TxRangeAmpduCnt[
+						1],
+					prQueryStaStatistics->
+					rMibInfo[ucDbdcIdx].au2TxRangeAmpduCnt[
+						2],
+					prQueryStaStatistics->
+					rMibInfo[ucDbdcIdx].au2TxRangeAmpduCnt[
+						3]);
+
+				if (!prAdapter->rWifiVar.fgDbDcModeEn)
+					break;
+			}
+
+			i4BytesWritten += kalScnprintf(
+				pcCommand + i4BytesWritten,
+				i4TotalLen - i4BytesWritten,
+				"%-6s%8d%5d%1s%2d%5d%1s%2d%5d%3s",
+				" RX  :", ucAggRange[3] + 1,
+				ucAggRange[3] + 2, "~", ucAggRange[4] + 1,
+				ucAggRange[4] + 2, "~", ucAggRange[5] + 1,
+				ucAggRange[5] + 2, "~64\n");
+
+			for (ucDbdcIdx = 0; ucDbdcIdx < ENUM_BAND_NUM;
+			     ucDbdcIdx++) {
+				i4BytesWritten += kalScnprintf(
+					pcCommand + i4BytesWritten,
+					i4TotalLen - i4BytesWritten,
+					"DBDC%d:", ucDbdcIdx);
+				i4BytesWritten += kalScnprintf(
+					pcCommand + i4BytesWritten,
+					i4TotalLen - i4BytesWritten,
+					"%8d%8d%8d%8d\n",
+					prQueryStaStatistics->
+					rMibInfo[ucDbdcIdx].au2TxRangeAmpduCnt[
+						4],
+					prQueryStaStatistics->
+					rMibInfo[ucDbdcIdx].au2TxRangeAmpduCnt[
+						5],
+					prQueryStaStatistics->
+					rMibInfo[ucDbdcIdx].au2TxRangeAmpduCnt[
+						6],
+					prQueryStaStatistics->
+					rMibInfo[ucDbdcIdx].au2TxRangeAmpduCnt[
+						7]);
+
+				if (!prAdapter->rWifiVar.fgDbDcModeEn)
+					break;
+			}
+		} else {
+			i4BytesWritten += kalScnprintf(
+			pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+				"%-6s%8d%5d%1s%2d%5d%1s%2d%5d%1s%2d%5d%1s%2d%5d%1s%2d%5d%1s%2d%5d%3s",
+				"Range:", ucAggRange[0] + 1,
+				ucAggRange[0] + 2, "~", ucAggRange[1] + 1,
+				ucAggRange[1] + 2, "~", ucAggRange[2] + 1,
+				ucAggRange[2] + 2, "~", ucAggRange[3] + 1,
+				ucAggRange[3] + 2, "~", ucAggRange[4] + 1,
+				ucAggRange[4] + 2, "~", ucAggRange[5] + 1,
+				ucAggRange[5] + 2, "~", ucAggRange[6] + 1,
+				ucAggRange[6] + 2, "~64\n");
+
+			for (ucDbdcIdx = 0; ucDbdcIdx < ENUM_BAND_NUM;
+			     ucDbdcIdx++) {
+				i4BytesWritten += kalScnprintf(
+					pcCommand + i4BytesWritten,
+					i4TotalLen - i4BytesWritten,
+					"DBDC%d:", ucDbdcIdx);
+				i4BytesWritten += kalScnprintf(
+					pcCommand + i4BytesWritten,
+					i4TotalLen - i4BytesWritten,
+					"%8d%8d%8d%8d%8d%8d%8d%8d\n",
+					prQueryStaStatistics->
+					rMibInfo[ucDbdcIdx].au2TxRangeAmpduCnt[
+						0],
+					prQueryStaStatistics->
+					rMibInfo[ucDbdcIdx].au2TxRangeAmpduCnt[
+						1],
+					prQueryStaStatistics->
+					rMibInfo[ucDbdcIdx].au2TxRangeAmpduCnt[
+						2],
+					prQueryStaStatistics->
+					rMibInfo[ucDbdcIdx].au2TxRangeAmpduCnt[
+						3],
+					prQueryStaStatistics->
+					rMibInfo[ucDbdcIdx].au2TxRangeAmpduCnt[
+						4],
+					prQueryStaStatistics->
+					rMibInfo[ucDbdcIdx].au2TxRangeAmpduCnt[
+						5],
+					prQueryStaStatistics->
+					rMibInfo[ucDbdcIdx].au2TxRangeAmpduCnt[
+						6],
+					prQueryStaStatistics->
+					rMibInfo[ucDbdcIdx].au2TxRangeAmpduCnt[
+						7]);
+
+				if (!prAdapter->rWifiVar.fgDbDcModeEn)
+					break;
+			}
+		}
+#else
+		/* Tx Agg */
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten,
+			i4TotalLen - i4BytesWritten,
+			"%s", "------ TX AGG (Group 0x40) -----\n");
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten,
+			i4TotalLen - i4BytesWritten,
+			"%-12s%s", "Range:",
+			"1     2~5     6~15    16~22    23~33    34~49    50~57    58~64\n");
+		for (ucDbdcIdx = 0; ucDbdcIdx < ENUM_BAND_NUM; ucDbdcIdx++) {
+			i4BytesWritten += kalScnprintf(
+				pcCommand + i4BytesWritten,
+				i4TotalLen - i4BytesWritten,
+				"DBDC%d:", ucDbdcIdx);
+			i4BytesWritten += kalScnprintf(
+				pcCommand + i4BytesWritten,
+				i4TotalLen - i4BytesWritten,
+				"%7d%8d%9d%9d%9d%9d%9d%9d\n",
+				prQueryStaStatistics->
+					rMibInfo[ucDbdcIdx].au2TxRangeAmpduCnt[
+					0],
+				prQueryStaStatistics->
+					rMibInfo[ucDbdcIdx].au2TxRangeAmpduCnt[
+						1],
+				prQueryStaStatistics->
+					rMibInfo[ucDbdcIdx].au2TxRangeAmpduCnt[
+						2],
+				prQueryStaStatistics->
+					rMibInfo[ucDbdcIdx].au2TxRangeAmpduCnt[
+						3],
+				prQueryStaStatistics->
+					rMibInfo[ucDbdcIdx].au2TxRangeAmpduCnt[
+						4],
+				prQueryStaStatistics->
+					rMibInfo[ucDbdcIdx].au2TxRangeAmpduCnt[
+						5],
+				prQueryStaStatistics->
+					rMibInfo[ucDbdcIdx].au2TxRangeAmpduCnt[
+						6],
+				prQueryStaStatistics->
+					rMibInfo[ucDbdcIdx].au2TxRangeAmpduCnt[
+						7]);
+			if (!prAdapter->rWifiVar.fgDbDcModeEn)
+				break;
+		}
+#endif
+	}
+
+	return i4BytesWritten;
+}
