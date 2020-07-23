@@ -620,10 +620,18 @@ uint32_t authCheckRxAuthFrameTransSeq(IN struct ADAPTER *prAdapter,
 	u2RxTransactionSeqNum = prAuthFrame->u2AuthTransSeqNo;
 	/* NOTE(Kevin): Optimized for ARM */
 
+	DBGLOG(SAA, LOUD,
+		   "Authentication Packet: Auth Trans Seq No = %d\n",
+		   u2RxTransactionSeqNum);
+
 	switch (u2RxTransactionSeqNum) {
 	case AUTH_TRANSACTION_SEQ_2:
 	case AUTH_TRANSACTION_SEQ_4:
-		saaFsmRunEventRxAuth(prAdapter, prSwRfb);
+		if (prStaRec && IS_STA_IN_P2P(prStaRec) &&
+			!IS_AP_STA(prStaRec))
+			aaaFsmRunEventRxAuth(prAdapter, prSwRfb);
+		else
+			saaFsmRunEventRxAuth(prAdapter, prSwRfb);
 		break;
 
 	case AUTH_TRANSACTION_SEQ_1:
@@ -1261,6 +1269,54 @@ authProcessRxAuth1Frame(IN struct ADAPTER *prAdapter,
 	return WLAN_STATUS_SUCCESS;
 
 }				/* end of authProcessRxAuth1Frame() */
+
+uint32_t
+authProcessRxAuthFrame(IN struct ADAPTER *prAdapter,
+			IN struct SW_RFB *prSwRfb,
+			IN struct BSS_INFO *prBssInfo,
+			OUT uint16_t *pu2ReturnStatusCode)
+{
+	struct WLAN_AUTH_FRAME *prAuthFrame;
+	uint16_t u2ReturnStatusCode = STATUS_CODE_SUCCESSFUL;
+
+	if (!prBssInfo)
+		return WLAN_STATUS_FAILURE;
+
+	/* 4 <1> locate the Authentication Frame. */
+	prAuthFrame = (struct WLAN_AUTH_FRAME *)prSwRfb->pvHeader;
+
+	/* 4 <2> Check the BSSID */
+	if (UNEQUAL_MAC_ADDR(prAuthFrame->aucBSSID,
+		prBssInfo->aucBSSID))
+		return WLAN_STATUS_FAILURE;	/* Just Ignore this MMPDU */
+
+	/* 4 <3> Check the SA, which should not be MC/BC */
+	if (prAuthFrame->aucSrcAddr[0] & BIT(0)) {
+		DBGLOG(P2P, WARN,
+		       "Invalid STA MAC with MC/BC bit set: " MACSTR "\n",
+		       MAC2STR(prAuthFrame->aucSrcAddr));
+		return WLAN_STATUS_FAILURE;
+	}
+
+	/* 4 <4> Parse the Fixed Fields of Authentication Frame Body. */
+	if (prAuthFrame->u2AuthAlgNum != AUTH_ALGORITHM_NUM_OPEN_SYSTEM &&
+		prAuthFrame->u2AuthAlgNum != AUTH_ALGORITHM_NUM_SAE)
+		u2ReturnStatusCode = STATUS_CODE_AUTH_ALGORITHM_NOT_SUPPORTED;
+	else if (prAuthFrame->u2AuthAlgNum == AUTH_ALGORITHM_NUM_OPEN_SYSTEM &&
+		prAuthFrame->u2AuthTransSeqNo != AUTH_TRANSACTION_SEQ_1)
+		u2ReturnStatusCode = STATUS_CODE_AUTH_OUT_OF_SEQ;
+	else if (prAuthFrame->u2AuthAlgNum == AUTH_ALGORITHM_NUM_SAE &&
+		prAuthFrame->u2AuthTransSeqNo != AUTH_TRANSACTION_SEQ_1 &&
+		prAuthFrame->u2AuthTransSeqNo != AUTH_TRANSACTION_SEQ_2)
+		u2ReturnStatusCode = STATUS_CODE_AUTH_OUT_OF_SEQ;
+
+	DBGLOG(AAA, LOUD, "u2ReturnStatusCode = %d\n", u2ReturnStatusCode);
+
+	*pu2ReturnStatusCode = u2ReturnStatusCode;
+
+	return WLAN_STATUS_SUCCESS;
+
+}
 
 /* ToDo: authAddRicIE, authHandleFtIEs, authAddTimeoutIE */
 

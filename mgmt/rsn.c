@@ -1540,12 +1540,40 @@ void rsnGenerateRSNIE(IN struct ADAPTER *prAdapter,
 
 		cp = pucBuffer + sizeof(struct RSN_INFO_ELEM);
 
-		WLAN_SET_FIELD_16(cp, 1);	/* AKM suite count */
-		cp += 2;
-		/* AKM suite */
-		WLAN_SET_FIELD_32(cp, GET_BSS_INFO_BY_INDEX(prAdapter,
-				    ucBssIndex)->u4RsnSelectedAKMSuite);
-		cp += 4;
+		if ((prBssInfo->eNetworkType == NETWORK_TYPE_P2P) &&
+			(prBssInfo->u4RsnSelectedAKMSuite ==
+			RSN_AKM_SUITE_SAE)) {
+			struct P2P_SPECIFIC_BSS_INFO *prP2pSpecBssInfo =
+				prAdapter->rWifiVar.prP2pSpecificBssInfo
+				[prBssInfo->u4PrivateData];
+			uint8_t i = 0;
+
+			/* AKM suite count */
+			WLAN_SET_FIELD_16(cp,
+				prP2pSpecBssInfo->u4KeyMgtSuiteCount);
+			cp += 2;
+
+			/* AKM suite */
+			for (i = 0;
+				i < prP2pSpecBssInfo->u4KeyMgtSuiteCount;
+				i++) {
+				DBGLOG(RSN, TRACE, "KeyMgtSuite 0x%04x\n",
+					prP2pSpecBssInfo->au4KeyMgtSuite[i]);
+				WLAN_SET_FIELD_32(cp,
+					prP2pSpecBssInfo->au4KeyMgtSuite[i]);
+				cp += 4;
+			}
+
+			RSN_IE(pucBuffer)->ucLength +=
+				(prP2pSpecBssInfo->u4KeyMgtSuiteCount - 1) * 4;
+		} else {
+			WLAN_SET_FIELD_16(cp, 1);	/* AKM suite count */
+			cp += 2;
+			/* AKM suite */
+			WLAN_SET_FIELD_32(cp, GET_BSS_INFO_BY_INDEX(prAdapter,
+			    ucBssIndex)->u4RsnSelectedAKMSuite);
+			cp += 4;
+		}
 
 		/* Capabilities */
 		WLAN_SET_FIELD_16(cp, GET_BSS_INFO_BY_INDEX(prAdapter,
@@ -1731,7 +1759,12 @@ void rsnParserCheckForRSNCCMPPSK(struct ADAPTER *prAdapter,
 			return;
 		}
 		if ((rRsnIe.u4AuthKeyMgtSuiteCount != 1)
-		    || (rRsnIe.au4AuthKeyMgtSuite[0] != RSN_AKM_SUITE_PSK)) {
+			|| ((rRsnIe.au4AuthKeyMgtSuite[0] != RSN_AKM_SUITE_PSK)
+#if CFG_SUPPORT_SOFTAP_WPA3
+			&& (rRsnIe.au4AuthKeyMgtSuite[0] != RSN_AKM_SUITE_SAE)
+#endif
+			)) {
+			DBGLOG(RSN, WARN, "RSN with invalid AKMP\n");
 			*pu2StatusCode = STATUS_CODE_INVALID_AKMP;
 			return;
 		}
@@ -1760,6 +1793,8 @@ void rsnParserCheckForRSNCCMPPSK(struct ADAPTER *prAdapter,
 		prStaRec->rPmfCfg.fgMfpr = (rRsnIe.u2RsnCap &
 					    ELEM_WPA_CAP_MFPR) ? 1 : 0;
 
+		prStaRec->rPmfCfg.fgSaeRequireMfp = FALSE;
+
 		for (i = 0; i < rRsnIe.u4AuthKeyMgtSuiteCount; i++) {
 			if ((rRsnIe.au4AuthKeyMgtSuite[i] ==
 			     RSN_AKM_SUITE_802_1X_SHA256) ||
@@ -1767,6 +1802,11 @@ void rsnParserCheckForRSNCCMPPSK(struct ADAPTER *prAdapter,
 			     RSN_AKM_SUITE_PSK_SHA256)) {
 				DBGLOG(RSN, INFO, "STA SHA256 support\n");
 				prStaRec->rPmfCfg.fgSha256 = TRUE;
+				break;
+			} else if (rRsnIe.au4AuthKeyMgtSuite[i] ==
+				RSN_AKM_SUITE_SAE) {
+				DBGLOG(RSN, INFO, "STA SAE support\n");
+				prStaRec->rPmfCfg.fgSaeRequireMfp = TRUE;
 				break;
 			}
 		}
@@ -2803,6 +2843,14 @@ uint16_t rsnPmfCapableValidation(IN struct ADAPTER
 
 		if (peerMfpr == TRUE) {
 			DBGLOG(RSN, ERROR, "PMF policy violation for case 7\n");
+			return STATUS_CODE_ROBUST_MGMT_FRAME_POLICY_VIOLATION;
+		}
+
+		if ((prBssInfo->u4RsnSelectedAKMSuite ==
+			RSN_AKM_SUITE_SAE) &&
+			prStaRec->rPmfCfg.fgSaeRequireMfp) {
+			DBGLOG(RSN, ERROR,
+				"PMF policy violation for case sae_require_mfp\n");
 			return STATUS_CODE_ROBUST_MGMT_FRAME_POLICY_VIOLATION;
 		}
 	}

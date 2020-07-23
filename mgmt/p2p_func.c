@@ -4027,7 +4027,11 @@ p2pFuncParseBeaconContent(IN struct ADAPTER *prAdapter,
 				prP2pBssInfo->rApPmfCfg.fgMfpr =
 					(rRsnIe.u2RsnCap
 						& ELEM_WPA_CAP_MFPR) ? 1 : 0;
-
+				prP2pSpecificBssInfo->u4KeyMgtSuiteCount
+					= (rRsnIe.u4AuthKeyMgtSuiteCount
+					< P2P_MAX_AKM_SUITES)
+					? rRsnIe.u4AuthKeyMgtSuiteCount
+					: P2P_MAX_AKM_SUITES;
 				for (i = 0;
 					i < rRsnIe.u4AuthKeyMgtSuiteCount;
 					i++) {
@@ -4048,13 +4052,24 @@ p2pFuncParseBeaconContent(IN struct ADAPTER *prAdapter,
 						->rApPmfCfg.fgSha256
 						= TRUE;
 						break;
+					} else if (rRsnIe.au4AuthKeyMgtSuite[i]
+					== RSN_AKM_SUITE_SAE)
+						prP2pBssInfo
+						->u4RsnSelectedAKMSuite
+						= rRsnIe.au4AuthKeyMgtSuite[i];
+
+					if (i < P2P_MAX_AKM_SUITES) {
+						prP2pSpecificBssInfo
+						->au4KeyMgtSuite[i]
+						= rRsnIe.au4AuthKeyMgtSuite[i];
 					}
 				}
 				DBGLOG(RSN, ERROR,
-					"bcn mfpc:%d, mfpr:%d, sha256:%d\n",
+					"bcn mfpc:%d, mfpr:%d, sha256:%d, 0x%04x\n",
 					prP2pBssInfo->rApPmfCfg.fgMfpc,
 					prP2pBssInfo->rApPmfCfg.fgMfpr,
-					prP2pBssInfo->rApPmfCfg.fgSha256);
+					prP2pBssInfo->rApPmfCfg.fgSha256,
+					prP2pBssInfo->u4RsnSelectedAKMSuite);
 #endif
 
 				break;
