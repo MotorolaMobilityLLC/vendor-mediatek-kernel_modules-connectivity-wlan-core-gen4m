@@ -217,6 +217,12 @@ ccflags-y += -I$(srctree)/drivers/misc/mediatek/sched/
 ccflags-y += -I$(srctree)/drivers/devfreq/
 ccflags-y += -I$(srctree)/net
 
+ifeq ($(CONFIG_WIFI_LATAM_HOTSPOT_FCC), y)
+    ccflags-y += -DCFG_WIFI_LATAM_HOTSPOT_FCC=1
+else
+    ccflags-y += -DCFG_WIFI_LATAM_HOTSPOT_FCC=0
+endif
+
 ifeq ($(CONFIG_MTK_COMBO_WIFI_HIF), sdio)
 ccflags-y += -I$(src)/os/linux/hif/sdio/include
 else ifeq ($(CONFIG_MTK_COMBO_WIFI_HIF), pcie)

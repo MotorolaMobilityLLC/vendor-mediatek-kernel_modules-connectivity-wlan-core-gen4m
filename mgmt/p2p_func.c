@@ -6596,7 +6596,7 @@ uint8_t p2pFunGetAcsBestCh(IN struct ADAPTER *prAdapter,
 				prGetChnLoad->rEachChnLoad[ucIdx].u4Dirtiness;
 		}
 	}
-
+	DBGLOG(P2P, INFO,"p2pFunGetAcsBestCh channel %d\n",rPreferChannel.ucChannel);
 	return rPreferChannel.ucChannel;
 }
 
@@ -6632,7 +6632,50 @@ void p2pFunProcessAcsReport(IN struct ADAPTER *prAdapter,
 		u4LteSafeChnMask_2G = prLteSafeChnList->au4SafeChannelBitmask[
 			NL80211_TESTMODE_AVAILABLE_CHAN_ATTR_2G_BASE_1 - 1];
 
-#if CFG_TC1_FEATURE
+#if CFG_WIFI_LATAM_HOTSPOT_FCC
+		/* Restrict 2.4G band channel selection range
+		 * to 1~11 per customer's request
+		 */
+		switch (prAdapter->rWifiVar.u2CountryCode) {
+		case COUNTRY_CODE_BR:
+		case COUNTRY_CODE_MX:
+		case COUNTRY_CODE_GT:
+		case COUNTRY_CODE_NI:
+		case COUNTRY_CODE_CR:
+		case COUNTRY_CODE_PA:
+		case COUNTRY_CODE_CU:
+		case COUNTRY_CODE_HT:
+		case COUNTRY_CODE_DO:
+		case COUNTRY_CODE_JM:
+		case COUNTRY_CODE_TT:
+		case COUNTRY_CODE_SR:
+		case COUNTRY_CODE_VE:
+		case COUNTRY_CODE_HN:
+		case COUNTRY_CODE_SV:
+		case COUNTRY_CODE_CO:
+		case COUNTRY_CODE_BB:
+		case COUNTRY_CODE_GD:
+		case COUNTRY_CODE_LC:
+		case COUNTRY_CODE_VC:
+		case COUNTRY_CODE_BS:
+		case COUNTRY_CODE_GF:
+		case COUNTRY_CODE_GY:
+		case COUNTRY_CODE_EC:
+		case COUNTRY_CODE_PE:
+		case COUNTRY_CODE_KN:
+		case COUNTRY_CODE_BO:
+		case COUNTRY_CODE_CL:
+		case COUNTRY_CODE_AR:
+		case COUNTRY_CODE_PY:
+		case COUNTRY_CODE_UY:
+		case COUNTRY_CODE_BZ:
+		case COUNTRY_CODE_AG:
+			u4LteSafeChnMask_2G &= 0x0FFE;
+			break;
+		default:
+			break;
+		}
+#elif CFG_TC1_FEATURE
 		/* Restrict 2.4G band channel selection range
 		 * to 1/6/11 per customer's request
 		 */
