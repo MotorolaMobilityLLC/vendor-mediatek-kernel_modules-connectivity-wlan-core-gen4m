@@ -1859,6 +1859,16 @@ void aisFsmSteps(IN struct ADAPTER *prAdapter,
 			prScanReqMsg->u2ChannelDwellTime = 0;
 			prScanReqMsg->u2ChannelMinDwellTime = 0;
 			prScanReqMsg->u2TimeoutValue = 0;
+			/* Reduce APP scan's dwell time, prevent it affecting
+			 * TX/RX performance
+			 */
+			if (prScanRequest->u4Flags &
+				NL80211_SCAN_FLAG_LOW_SPAN) {
+				prScanReqMsg->u2ChannelDwellTime =
+					SCAN_CHANNEL_DWELL_TIME_MSEC_APP;
+				prScanReqMsg->u2ChannelMinDwellTime =
+					SCAN_CHANNEL_MIN_DWELL_TIME_MSEC_APP;
+			}
 			/* check if tethering is running and need to fix on
 			 * specific channel
 			 */
@@ -1929,6 +1939,7 @@ void aisFsmSteps(IN struct ADAPTER *prAdapter,
 				scanSetRequestChannel(prAdapter,
 					prScanRequest->u4ChannelNum,
 					prScanRequest->arChannel,
+					prScanRequest->u4Flags,
 					prAisFsmInfo->eCurrentState ==
 					AIS_STATE_ONLINE_SCAN ||
 					wlanWfdEnabled(prAdapter),
@@ -1970,6 +1981,11 @@ void aisFsmSteps(IN struct ADAPTER *prAdapter,
 
 			/* Support AP Selection */
 			prAisFsmInfo->ucJoinFailCntAfterScan = 0;
+			/* Scan flags will be set in next scan triggered by
+			 * upper layer, reset to 0 to avoid next scan
+			 * is triggered by Driver
+			*/
+			prScanRequest->u4Flags = 0;
 			break;
 
 		case AIS_STATE_REQ_CHANNEL_JOIN:
