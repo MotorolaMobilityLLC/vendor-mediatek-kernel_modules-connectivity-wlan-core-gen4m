@@ -7678,12 +7678,15 @@ static uint32_t kalPerMonUpdate(IN struct ADAPTER *prAdapter)
 	}
 	pos++;
 	head4 = pos;
-	for (i = 0; i < MAX_BSSID_NUM; ++i) {
-		pos += kalSnprintf(pos, end - pos, "[%lu:%lu:%lu:%lu]",
-			ndev->stats.tx_dropped,
-			atomic_long_read(&ndev->tx_dropped),
-			ndev->stats.rx_dropped,
-			atomic_long_read(&ndev->rx_dropped));
+	for (i = 0; i < BSS_DEFAULT_NUM; ++i) {
+		ndev = wlanGetNetDev(glue, i);
+		if (ndev) {
+			pos += kalSnprintf(pos, end - pos, "[%lu:%lu:%lu:%lu]",
+				ndev->stats.tx_dropped,
+				atomic_long_read(&ndev->tx_dropped),
+				ndev->stats.rx_dropped,
+				atomic_long_read(&ndev->rx_dropped));
+		}
 	}
 
 #define TEMP_LOG_TEMPLATE \
