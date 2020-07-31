@@ -1849,6 +1849,7 @@ void p2pFuncDfsSwitchCh(IN struct ADAPTER *prAdapter,
 		(struct P2P_ROLE_FSM_INFO *) NULL;
 	struct CMD_RDD_ON_OFF_CTRL *prCmdRddOnOffCtrl;
 	uint8_t role_idx = 0;
+	u_int8_t fgIsCrossBand = FALSE;
 
 	DEBUGFUNC("p2pFuncDfsSwitchCh()");
 
@@ -1856,6 +1857,9 @@ void p2pFuncDfsSwitchCh(IN struct ADAPTER *prAdapter,
 		DBGLOG(P2P, ERROR, "prBssInfo shouldn't be NULL!\n");
 		return;
 	}
+
+	if (prBssInfo->eBand != rP2pChnlReqInfo.eBand)
+		fgIsCrossBand = TRUE;
 
 	/*  Setup Channel, Band */
 	prBssInfo->ucPrimaryChannel = rP2pChnlReqInfo.ucReqChnlNum;
@@ -1907,6 +1911,10 @@ void p2pFuncDfsSwitchCh(IN struct ADAPTER *prAdapter,
 
 	/* Reset HW TSF Update Mode and Beacon Mode */
 	nicUpdateBss(prAdapter, prBssInfo->ucBssIndex);
+
+	if (fgIsCrossBand)
+		nicPmIndicateBssCreated(prAdapter,
+			prBssInfo->ucBssIndex);
 
 	prCmdRddOnOffCtrl = (struct CMD_RDD_ON_OFF_CTRL *)
 		cnmMemAlloc(prAdapter, RAM_TYPE_MSG,
@@ -6194,6 +6202,49 @@ void p2pFunCleanQueuedMgmtFrame(IN struct ADAPTER *prAdapter,
 	prFrame->prHeader = NULL;
 }
 
+#if CFG_TC1_FEATURE
+static u_int8_t p2pFuncSwitchSapChannelToDbdc(
+	struct ADAPTER *prAdapter,
+	struct BSS_INFO *prP2pBssInfo,
+	uint8_t ucStaChannelNum,
+	uint8_t ucSapChannelNum,
+	enum ENUM_BAND eStaBand,
+	enum ENUM_BAND eSapBand)
+{
+#if CFG_SUPPORT_DBDC
+	if (prAdapter->rWifiVar.eDbdcMode ==
+		ENUM_DBDC_MODE_DISABLED)
+		return FALSE;
+
+	if (eStaBand == eSapBand &&
+		eSapBand == BAND_5G &&
+		ucStaChannelNum != 149) {
+
+		struct RF_CHANNEL_INFO rRfChnlInfo;
+
+		rRfChnlInfo.ucChannelNum = 6;
+		rRfChnlInfo.eBand = BAND_2G4;
+		rRfChnlInfo.ucChnlBw =
+			rlmGetBssOpBwByVhtAndHtOpInfo(prP2pBssInfo);
+
+		DBGLOG(P2P, INFO,
+			"[DBDC] StaCH(%d), SapCH(%d)\n",
+			ucStaChannelNum,
+			ucSapChannelNum);
+
+		cnmSapChannelSwitchReq(prAdapter,
+			&rRfChnlInfo,
+			prP2pBssInfo->u4PrivateData);
+
+		return TRUE;
+
+	}
+#endif
+
+	return FALSE;
+}
+#endif
+
 void p2pFuncSwitchSapChannel(
 		IN struct ADAPTER *prAdapter)
 {
@@ -6290,6 +6341,15 @@ void p2pFuncSwitchSapChannel(
 			goto exit;
 		}
 	}
+
+#if CFG_TC1_FEATURE
+	if (p2pFuncSwitchSapChannelToDbdc(
+			prAdapter, prP2pBssInfo,
+			ucStaChannelNum, ucSapChannelNum,
+			eStaBand, eSapBand)) {
+		goto exit;
+	}
+#endif
 
 #if CFG_SUPPORT_DBDC
 	fgDbDcModeEn = prAdapter->rWifiVar.fgDbDcModeEn;
