@@ -1108,7 +1108,7 @@ u_int8_t p2pNetUnregister(struct GLUE_INFO *prGlueInfo,
  */
 /*---------------------------------------------------------------------------*/
 int glSetupP2P(struct GLUE_INFO *prGlueInfo, struct wireless_dev *prP2pWdev,
-		struct net_device *prP2pDev, int u4Idx, u_int8_t fgIsApMode)
+		struct net_device *prP2pDev, uint8_t u4Idx, u_int8_t fgIsApMode)
 {
 	struct ADAPTER *prAdapter = NULL;
 	struct GL_P2P_INFO *prP2PInfo = NULL;
