@@ -224,7 +224,6 @@ u_int8_t p2pRemove(struct GLUE_INFO *prGlueInfo)
 		return FALSE;
 	}
 
-	DBGLOG(P2P, INFO, "fgIsP2PRegistered FALSE\n");
 	prGlueInfo->prAdapter->fgIsP2PRegistered = FALSE;
 	prGlueInfo->prAdapter->p2p_scan_report_all_bss = FALSE;
 

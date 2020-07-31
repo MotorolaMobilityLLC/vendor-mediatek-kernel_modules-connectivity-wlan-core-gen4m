@@ -7019,7 +7019,7 @@ int mtk_cfg_flush_pmksa(struct wiphy *wiphy,
 	}
 
 	if (mtk_IsP2PNetDevice(prGlueInfo, ndev) > 0) {
-		DBGLOG(REQ, WARN, "P2P/AP don't support this function\n");
+		DBGLOG(REQ, TRACE, "P2P/AP don't support this function\n");
 		return -EFAULT;
 	}
 
