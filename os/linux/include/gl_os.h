@@ -498,6 +498,9 @@ struct GL_SCAN_CACHE_INFO {
 
 	/* Bss index */
 	uint8_t ucBssIndex;
+
+	/* scan request flags */
+	uint32_t u4Flags;
 };
 #endif /* CFG_SUPPORT_SCAN_CACHE_RESULT */
 
