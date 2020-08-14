@@ -1756,6 +1756,13 @@ void p2pRoleFsmRunEventSetNewChannel(IN struct ADAPTER *prAdapter,
 		P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prAdapter,
 			prMsgP2pSetNewChannelMsg->ucRoleIdx);
 
+	if (!prP2pRoleFsmInfo) {
+		DBGLOG(P2P, ERROR,
+			"Corresponding P2P Role FSM empty: %d.\n",
+			prMsgP2pSetNewChannelMsg->ucRoleIdx);
+		goto error;
+	}
+
 	prP2pRoleFsmInfo->rChnlReqInfo.ucReqChnlNum =
 		prP2pRoleFsmInfo->rConnReqInfo.rChannelInfo.ucChannelNum;
 	prP2pRoleFsmInfo->rChnlReqInfo.eBand =
@@ -1769,6 +1776,7 @@ void p2pRoleFsmRunEventSetNewChannel(IN struct ADAPTER *prAdapter,
 
 	prP2pRoleFsmInfo->rChnlReqInfo.ucCenterFreqS2 = 0;
 
+error:
 	cnmMemFree(prAdapter, prMsgHdr);
 }				/*p2pRoleFsmRunEventSetNewChannel*/
 
