@@ -1354,8 +1354,8 @@ void show_wfdma_ring_info(
 	uint32_t queue_cnt;
 
 	/* Dump All TX Ring Info */
-	DBGLOG(HAL, TRACE, "----------- TX Ring Config -----------\n");
-	DBGLOG(HAL, TRACE, "%4s %16s %8s %10s %6s %6s %6s %6s\n",
+	DBGLOG(HAL, INFO, "----------- TX Ring Config -----------\n");
+	DBGLOG(HAL, INFO, "%4s %16s %8s %10s %6s %6s %6s %6s\n",
 		"Idx", "Attr", "Reg", "Base", "Cnt", "CIDX", "DIDX", "QCnt");
 
 	/* Dump TX Ring */
@@ -1393,8 +1393,8 @@ void show_wfdma_ring_info(
 	}
 
 	/* Dump All RX Ring Info */
-	DBGLOG(HAL, TRACE, "----------- RX Ring Config -----------\n");
-	DBGLOG(HAL, TRACE, "%4s %16s %8s %10s %6s %6s %6s %6s\n",
+	DBGLOG(HAL, INFO, "----------- RX Ring Config -----------\n");
+	DBGLOG(HAL, INFO, "%4s %16s %8s %10s %6s %6s %6s %6s\n",
 		"Idx", "Attr", "Reg", "Base", "Cnt", "CIDX", "DIDX", "QCnt");
 
 	/* Dump RX Ring */
@@ -1433,118 +1433,61 @@ void show_wfdma_ring_info(
 
 }
 
-static void dump_dbg_value(
-	IN struct ADAPTER *prAdapter,
-	IN uint32_t pdma_base_cr,
-	IN uint32_t set_value,
-	IN uint32_t isMandatoryDump)
-{
-	uint32_t set_debug_cr, get_debug_cr;
-	uint32_t get_debug_value = 0;
-
-	set_debug_cr = pdma_base_cr + 0x124;
-	get_debug_cr = pdma_base_cr + 0x128;
-
-	HAL_MCR_WR(prAdapter, set_debug_cr, set_value);
-	HAL_MCR_RD(prAdapter, get_debug_cr, &get_debug_value);
-
-	if (isMandatoryDump == 1) {
-		DBGLOG(INIT, INFO, "set(0x%08x):0x%08x, get(0x%08x):0x%08x\n",
-						set_debug_cr, set_value,
-						get_debug_cr, get_debug_value);
-	} else {
-		DBGLOG(INIT, TRACE, "set(0x%08x):0x%08x, get(0x%08x):0x%08x\n",
-						set_debug_cr, set_value,
-						get_debug_cr, get_debug_value);
-	}
-}
-
 static void dump_wfdma_dbg_value(
 	IN struct ADAPTER *prAdapter,
 	IN enum _ENUM_WFDMA_TYPE_T enum_wfdma_type,
-	IN uint32_t wfdma_idx,
-	IN uint32_t isMandatoryDump)
+	IN uint32_t wfdma_idx)
 {
+#define BUF_SIZE 1024
+
 	uint32_t pdma_base_cr;
 	uint32_t set_debug_flag_value;
+	char *buf;
+	uint32_t pos = 0;
+	uint32_t set_debug_cr, get_debug_cr, get_debug_value = 0;
 
 	if (enum_wfdma_type == WFDMA_TYPE_HOST) {
 		if (wfdma_idx == 0)
 			pdma_base_cr = CONNAC2X_HOST_WPDMA_0_BASE;
 		else
 			pdma_base_cr = CONNAC2X_HOST_WPDMA_1_BASE;
-	} else{
+	} else {
 		if (wfdma_idx == 0)
 			pdma_base_cr = CONNAC2X_MCU_WPDMA_0_BASE;
 		else
 			pdma_base_cr = CONNAC2X_MCU_WPDMA_1_BASE;
 	}
 
-	set_debug_flag_value = 0x100;
-	dump_dbg_value(prAdapter, pdma_base_cr,
-		set_debug_flag_value, isMandatoryDump);
-
-	set_debug_flag_value = 0x101;
-	dump_dbg_value(prAdapter, pdma_base_cr,
-		set_debug_flag_value, isMandatoryDump);
-
-	set_debug_flag_value = 0x102;
-	dump_dbg_value(prAdapter, pdma_base_cr,
-		set_debug_flag_value, isMandatoryDump);
-
-	set_debug_flag_value = 0x103;
-	dump_dbg_value(prAdapter, pdma_base_cr,
-		set_debug_flag_value, isMandatoryDump);
-
-	set_debug_flag_value = 0x104;
-	dump_dbg_value(prAdapter, pdma_base_cr,
-		set_debug_flag_value, isMandatoryDump);
-
-	set_debug_flag_value = 0x105;
-	dump_dbg_value(prAdapter, pdma_base_cr,
-		set_debug_flag_value, isMandatoryDump);
-
-	set_debug_flag_value = 0x107;
-	dump_dbg_value(prAdapter, pdma_base_cr,
-		set_debug_flag_value, isMandatoryDump);
-
-	set_debug_flag_value = 0x10A;
-	dump_dbg_value(prAdapter, pdma_base_cr,
-		set_debug_flag_value, isMandatoryDump);
-
-	set_debug_flag_value = 0x10D;
-	dump_dbg_value(prAdapter, pdma_base_cr,
-		set_debug_flag_value, isMandatoryDump);
-
-	set_debug_flag_value = 0x10E;
-	dump_dbg_value(prAdapter, pdma_base_cr,
-		set_debug_flag_value, isMandatoryDump);
-
-	set_debug_flag_value = 0x10F;
-	dump_dbg_value(prAdapter, pdma_base_cr,
-		set_debug_flag_value, isMandatoryDump);
-
-	set_debug_flag_value = 0x110;
-	dump_dbg_value(prAdapter, pdma_base_cr,
-		set_debug_flag_value, isMandatoryDump);
-
-	set_debug_flag_value = 0x111;
-	dump_dbg_value(prAdapter, pdma_base_cr,
-		set_debug_flag_value, isMandatoryDump);
-
-	set_debug_flag_value = 0x112;
-	dump_dbg_value(prAdapter, pdma_base_cr,
-		set_debug_flag_value, isMandatoryDump);
-
+	buf = (char *) kalMemAlloc(BUF_SIZE, VIR_MEM_TYPE);
+	if (!buf) {
+		DBGLOG(HAL, ERROR, "Mem allocation failed.\n");
+		return;
+	}
+	set_debug_cr = pdma_base_cr + 0x124;
+	get_debug_cr = pdma_base_cr + 0x128;
+	kalMemZero(buf, BUF_SIZE);
+	pos += kalSnprintf(buf + pos, 50,
+			"set_debug_cr:0x%08x get_debug_cr:0x%08x; ",
+			set_debug_cr, get_debug_cr);
+	for (set_debug_flag_value = 0x100; set_debug_flag_value <= 0x112;
+			set_debug_flag_value++) {
+		HAL_MCR_WR(prAdapter, set_debug_cr, set_debug_flag_value);
+		HAL_MCR_RD(prAdapter, get_debug_cr, &get_debug_value);
+		pos += kalSnprintf(buf + pos, 40, "Set:0x%03x, result=0x%08x%s",
+			set_debug_flag_value,
+			get_debug_value,
+			set_debug_flag_value == 0x112 ? "\n" : "; ");
+	}
+	DBGLOG(HAL, INFO, "%s", buf);
+	kalMemFree(buf, VIR_MEM_TYPE, BUF_SIZE);
 }
 
 void show_wfdma_dbg_flag_log(
 	IN struct ADAPTER *prAdapter,
-	IN enum _ENUM_WFDMA_TYPE_T enum_wfdma_type,
-	IN uint32_t isMandatoryDump)
+	IN enum _ENUM_WFDMA_TYPE_T enum_wfdma_type)
 {
-	dump_wfdma_dbg_value(prAdapter, enum_wfdma_type, 0, isMandatoryDump);
-	dump_wfdma_dbg_value(prAdapter, enum_wfdma_type, 1, isMandatoryDump);
+	dump_wfdma_dbg_value(prAdapter, enum_wfdma_type, 0);
+	dump_wfdma_dbg_value(prAdapter, enum_wfdma_type, 1);
 }
 
 void show_wfdma_dbg_log(
@@ -1565,8 +1508,8 @@ void soc3_0_show_wfdma_info(IN struct ADAPTER *prAdapter)
 	show_wfdma_dbg_log(prAdapter, WFDMA_TYPE_WM);
 
 	/* dump debug flag CR by host or WM*/
-	show_wfdma_dbg_flag_log(prAdapter, WFDMA_TYPE_HOST, FALSE);
-	show_wfdma_dbg_flag_log(prAdapter, WFDMA_TYPE_WM, FALSE);
+	show_wfdma_dbg_flag_log(prAdapter, WFDMA_TYPE_HOST);
+	show_wfdma_dbg_flag_log(prAdapter, WFDMA_TYPE_WM);
 
 	DumpPPDebugCr(prAdapter);
 }
@@ -1576,10 +1519,10 @@ void soc3_0_show_wfdma_info_by_type(IN struct ADAPTER *prAdapter,
 {
 	if (bShowWFDMA_type) {
 		show_wfdma_dbg_log(prAdapter, WFDMA_TYPE_WM);
-		show_wfdma_dbg_flag_log(prAdapter, WFDMA_TYPE_WM, TRUE);
+		show_wfdma_dbg_flag_log(prAdapter, WFDMA_TYPE_WM);
 	} else {
 		show_wfdma_dbg_log(prAdapter, WFDMA_TYPE_HOST);
-		show_wfdma_dbg_flag_log(prAdapter, WFDMA_TYPE_HOST, TRUE);
+		show_wfdma_dbg_flag_log(prAdapter, WFDMA_TYPE_HOST);
 	}
 }
 
