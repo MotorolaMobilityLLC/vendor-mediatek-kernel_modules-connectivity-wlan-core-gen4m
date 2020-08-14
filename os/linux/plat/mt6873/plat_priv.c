@@ -2,19 +2,31 @@
 /*
  * Copyright (c) 2019 MediaTek Inc.
  */
+
+#include <linux/version.h>	/* constant of kernel version */
+#if KERNEL_VERSION(5, 4, 0) <= LINUX_VERSION_CODE
+/*TODO kernel 5.4 boost CPU */
+#else
 #include <cpu_ctrl.h>
 #include <topo_ctrl.h>
-#include <linux/pm_qos.h>
 #include <helio-dvfsrc-opp.h>
+#endif
+#include <linux/pm_qos.h>
 #include "precomp.h"
 
-#ifdef CONFIG_MEDIATEK_EMI
+
+#if CONFIG_MTK_EMI
+#if KERNEL_VERSION(5, 4, 0) <= LINUX_VERSION_CODE
+#include <soc/mediatek/emi.h>
+#else
 #include <memory/mediatek/emi.h>
+#endif
 #define WIFI_EMI_MEM_OFFSET    0x1D0000
 #define WIFI_EMI_MEM_SIZE      0x140000
 #define	DOMAIN_AP	0
 #define	DOMAIN_CONN	2
 #endif
+
 
 #define MAX_CPU_FREQ (3 * 1024 * 1024) /* in kHZ */
 #define MAX_CLUSTER_NUM  3
@@ -51,6 +63,8 @@ int32_t kalCheckTputLoad(IN struct ADAPTER *prAdapter,
 	       TRUE : FALSE;
 }
 
+#if KERNEL_VERSION(5, 4, 0) <= LINUX_VERSION_CODE
+#else
 int32_t kalBoostCpu(IN struct ADAPTER *prAdapter,
 		    IN uint32_t u4TarPerfLevel,
 		    IN uint32_t u4BoostCpuTh)
@@ -124,8 +138,9 @@ int32_t kalBoostCpu(IN struct ADAPTER *prAdapter,
 
 	return 0;
 }
+#endif
 
-#ifdef CONFIG_MEDIATEK_EMI
+#ifdef CONFIG_MTK_EMI
 void kalSetEmiMpuProtection(phys_addr_t emiPhyBase, bool enable)
 {
 	struct emimpu_region_t region;

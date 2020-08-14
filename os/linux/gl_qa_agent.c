@@ -793,7 +793,7 @@ static int32_t HQA_SetRxPath(struct net_device *prNetDev,
 {
 	int32_t i4Ret = 0, value = 0;
 	uint8_t	band_idx = 0;
-	uint16_t rx_ant = 0;
+	uint32_t rx_ant = 0;
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct PARAM_MTK_WIFI_TEST_STRUCT rRfATInfo;
 	uint32_t u4BufLen = 0;
