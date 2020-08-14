@@ -1815,8 +1815,8 @@ void nicRxProcessDataPacket(IN struct ADAPTER *prAdapter,
 			do {
 #if (CFG_SUPPORT_MSP == 1)
 				/* collect RXV information */
-				if (prChipInfo->asicRxProcessRxvChkRst)
-					prChipInfo->asicRxProcessRxvChkRst(
+				if (prChipInfo->asicRxProcessRxvforMSP)
+					prChipInfo->asicRxProcessRxvforMSP(
 						prAdapter, prRetSwRfb);
 #endif /* CFG_SUPPORT_MSP == 1 */
 #if CFG_SUPPORT_PERF_IND

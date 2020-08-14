@@ -164,9 +164,7 @@ void asicInitTxdHook(
 void asicInitRxdHook(
 	struct RX_DESC_OPS_T *prRxDescOps);
 #if (CFG_SUPPORT_MSP == 1)
-void asicRxProcessRxvChkRst(IN struct ADAPTER *prAdapter,
-	IN OUT struct SW_RFB *prRetSwRfb);
-uint32_t asicRxProcessRxvforMSP(
+void asicRxProcessRxvforMSP(
 	IN struct ADAPTER *prAdapter,
 	IN OUT struct SW_RFB *prRetSwRfb);
 #endif /* CFG_SUPPORT_MSP == 1 */
