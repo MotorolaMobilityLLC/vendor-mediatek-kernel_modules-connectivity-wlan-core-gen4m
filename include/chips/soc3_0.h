@@ -269,6 +269,8 @@ void soc3_0_DumpWFDMACr(struct ADAPTER *prAdapter);
 
 void soc3_0_show_dmashdl_info(
 	IN struct ADAPTER *prAdapter);
+void soc3_0_dump_mac_info(
+	IN struct ADAPTER *prAdapter);
 void soc3_0EnableInterrupt(
 	struct ADAPTER *prAdapter);
 

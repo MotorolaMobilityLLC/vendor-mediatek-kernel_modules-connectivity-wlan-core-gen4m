@@ -441,6 +441,7 @@ struct CHIP_DBG_OPS mt6632_debug_ops = {
 	.showTxdInfo = NULL,
 	.showCsrInfo = NULL,
 	.showDmaschInfo = NULL,
+	.dumpMacInfo = NULL,
 	.showWtblInfo = NULL,
 	.showHifInfo = NULL,
 	.printHifDbgInfo = NULL,

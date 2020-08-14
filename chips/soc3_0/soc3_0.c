@@ -820,6 +820,7 @@ struct CHIP_DBG_OPS soc3_0_debug_ops = {
 	.showUmacFwtblInfo = connac2x_show_umac_wtbl_info,
 	.showCsrInfo = NULL,
 	.showDmaschInfo = soc3_0_show_dmashdl_info,
+	.dumpMacInfo = soc3_0_dump_mac_info,
 	.showHifInfo = NULL,
 	.printHifDbgInfo = NULL,
 	.show_rx_rate_info = connac2x_show_rx_rate_info,

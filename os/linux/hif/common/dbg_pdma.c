@@ -166,6 +166,10 @@ static void halCheckHifState(struct ADAPTER *prAdapter)
 
 				if (prDbgOps && prDbgOps->showDmaschInfo)
 					prDbgOps->showDmaschInfo(prAdapter);
+
+				if (prDbgOps && prDbgOps->dumpMacInfo)
+					prDbgOps->dumpMacInfo(prAdapter);
+
 			}
 		}
 	}
@@ -264,8 +268,10 @@ static void halDumpHifDebugLog(struct ADAPTER *prAdapter)
 			prDbgOps->showDmaschInfo(prAdapter);
 	}
 
-	if (prAdapter->u4HifDbgFlag & (DEG_HIF_ALL | DEG_HIF_MAC))
-		haldumpMacInfo(prAdapter);
+	if (prAdapter->u4HifDbgFlag & (DEG_HIF_ALL | DEG_HIF_MAC)) {
+		if (prDbgOps && prDbgOps->dumpMacInfo)
+			prDbgOps->dumpMacInfo(prAdapter);
+	}
 
 	if (prAdapter->u4HifDbgFlag & (DEG_HIF_ALL | DEG_HIF_PHY))
 		haldumpPhyInfo(prAdapter);
