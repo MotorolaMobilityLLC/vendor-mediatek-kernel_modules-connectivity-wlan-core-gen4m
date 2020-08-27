@@ -1401,7 +1401,7 @@ struct mt66xx_chip_info {
 	uint8_t* (*getCalResult)(OUT uint32_t *prCalSize);
 	void (*calDebugCmd)(uint32_t cmd, uint32_t para);
 	u_int8_t is_support_nvram_fragment;
-	int (*checkbushang)(struct ADAPTER *prAdapter,
+	int (*checkbushang)(void *prAdapter,
 		uint8_t ucWfResetEnable);
 	void (*dumpBusHangCr)(IN struct ADAPTER *prAdapter);
 };

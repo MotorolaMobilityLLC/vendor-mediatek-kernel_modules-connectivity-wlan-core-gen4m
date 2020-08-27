@@ -332,7 +332,7 @@ int wf_ioremap_read(size_t addr, unsigned int *val);
 
 int wf_ioremap_write(phys_addr_t addr, unsigned int val);
 int soc3_0_Trigger_fw_assert(void);
-int soc3_0_CheckBusHang(struct ADAPTER *prAdapter,
+int soc3_0_CheckBusHang(void *adapter,
 	uint8_t ucWfResetEnable);
 void soc3_0_DumpBusHangCr(struct ADAPTER *prAdapter);
 

@@ -1751,7 +1751,7 @@ uint32_t wlanRamCodeDynMemMapSendComplete(IN struct ADAPTER *prAdapter,
 		break;
 	};
 	if (prAdapter->chip_info->checkbushang)
-		prAdapter->chip_info->checkbushang(prAdapter, FALSE);
+		prAdapter->chip_info->checkbushang((void *) prAdapter, FALSE);
 
 	DBGLOG(INIT, INFO, "FW_START CMD send, waiting for RSP\n");
 
@@ -2212,7 +2212,8 @@ uint32_t wlanConnacFormatDownload(IN struct ADAPTER
 	}
 
 	if (prAdapter->chip_info->checkbushang) {
-		if (prAdapter->chip_info->checkbushang(prAdapter, TRUE) != 0) {
+		if (prAdapter->chip_info->checkbushang((void *) prAdapter,
+				TRUE) != 0) {
 			DBGLOG(INIT, WARN, "Check bus hang failed.\n");
 			rDlStatus = WLAN_STATUS_FAILURE;
 			goto exit;
