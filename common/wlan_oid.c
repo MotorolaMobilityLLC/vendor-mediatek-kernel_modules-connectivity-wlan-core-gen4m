@@ -15321,13 +15321,8 @@ wlanoidSetDrvRoamingPolicy(IN struct ADAPTER *prAdapter,
 		     || (aisGetCurrState(prAdapter, ucBssIndex) ==
 			 AIS_STATE_ONLINE_SCAN))
 		    && (prRoamingFsmInfo->eCurrentState == ROAMING_STATE_IDLE))
-			roamingFsmRunEventStart(prAdapter, ucBssIndex);
-
-		/* Change Connect by any , avoid to connect by BSSID on roaming
-		 * or beacon timeout!
-		 */
-		prConnSettings->eConnectionPolicy = CONNECT_BY_SSID_ANY;
-
+		prConnSettings->eConnectionPolicy = CONNECT_BY_SSID_BEST_RSSI;
+		roamingFsmRunEventStart(prAdapter, ucBssIndex);
 	} else {
 		if (prRoamingFsmInfo->eCurrentState != ROAMING_STATE_IDLE)
 			roamingFsmRunEventAbort(prAdapter, ucBssIndex);
@@ -15338,7 +15333,7 @@ wlanoidSetDrvRoamingPolicy(IN struct ADAPTER *prAdapter,
 	DBGLOG(REQ, INFO,
 	       "wlanoidSetDrvRoamingPolicy, RoamingPoily= %d, conn policy= [%d] -> [%d]\n",
 	       u4RoamingPoily, u4CurConPolicy,
-	       prRoamingFsmInfo->fgDrvRoamingAllow);
+	       prConnSettings->eConnectionPolicy);
 
 	return WLAN_STATUS_SUCCESS;
 }
