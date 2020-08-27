@@ -3964,7 +3964,7 @@ void p2pRoleFsmRunEventAcs(IN struct ADAPTER *prAdapter,
 
 	initAcsParams(prAdapter, prMsgAcsRequest, prAcsReqInfo);
 
-#if CFG_HOTSPOT_SUPPORT_ADJUST_SCC
+#if CFG_HOTSPOT_SUPPORT_FORCE_ACS_SCC
 	if (prAdapter->rWifiVar.eDbdcMode == ENUM_DBDC_MODE_DISABLED) {
 		struct BSS_INFO *prAisBssInfo;
 
