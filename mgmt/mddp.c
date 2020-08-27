@@ -99,7 +99,6 @@ uint8_t txd[0];
 
 static void clear_md_wifi_off_bit(void);
 static void clear_md_wifi_on_bit(void);
-static bool wait_for_md_off_complete(void);
 static bool wait_for_md_on_complete(void);
 
 static int32_t mddpRegisterCb(void)
@@ -513,8 +512,6 @@ void mddpNotifyWifiOffStart(void)
 		prGlueInfo->prAdapter->fgMddpActivated = false;
 	clear_md_wifi_off_bit();
 	ret = mddpNotifyWifiStatus(MDDPW_DRV_INFO_WLAN_OFF_START);
-	if (ret == 0)
-		wait_for_md_off_complete();
 }
 
 void mddpNotifyWifiOffEnd(void)
@@ -667,36 +664,6 @@ static void clear_md_wifi_on_bit(void)
 	wf_ioremap_read(MD_STATUS_SYNC_CR, &u4Value);
 	u4Value &= ~MD_STATUS_ON_SYNC_BIT;
 	wf_ioremap_write(MD_STATUS_SYNC_CR, u4Value);
-}
-
-static bool wait_for_md_off_complete(void)
-{
-	uint32_t u4Value = 0;
-	uint32_t u4StartTime, u4CurTime;
-	bool fgTimeout = false;
-
-	u4StartTime = kalGetTimeTick();
-
-	do {
-		wf_ioremap_read(MD_STATUS_SYNC_CR, &u4Value);
-
-		if ((u4Value & MD_STATUS_OFF_SYNC_BIT) == 0) {
-			DBGLOG(INIT, INFO, "md off end.\n");
-			break;
-		}
-
-		u4CurTime = kalGetTimeTick();
-		if (CHECK_FOR_TIMEOUT(u4CurTime, u4StartTime,
-				MD_ON_OFF_TIMEOUT)) {
-			DBGLOG(INIT, ERROR, "wait for md off timeout\n");
-			fgTimeout = true;
-			break;
-		}
-
-		kalMsleep(CFG_RESPONSE_POLLING_DELAY);
-	} while (TRUE);
-
-	return !fgTimeout;
 }
 
 static bool wait_for_md_on_complete(void)
