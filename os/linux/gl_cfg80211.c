@@ -297,8 +297,8 @@ mtk_cfg80211_add_key(struct wiphy *wiphy,
 	rKey.ucBssIdx = ucBssIndex;
 
 	rKey.u4KeyLength = params->key_len;
-	rKey.u4Length = ((unsigned long) &(((struct PARAM_KEY *)
-				     0)->aucKeyMaterial)) + rKey.u4KeyLength;
+	rKey.u4Length = OFFSET_OF(struct PARAM_KEY, aucKeyMaterial)
+				+ rKey.u4KeyLength;
 
 	rStatus = kalIoctl(prGlueInfo, wlanoidSetAddKey, &rKey,
 			   rKey.u4Length, FALSE, FALSE, TRUE, &u4BufLen);
