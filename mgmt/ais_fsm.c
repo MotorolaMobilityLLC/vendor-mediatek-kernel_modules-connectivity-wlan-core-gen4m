@@ -675,29 +675,6 @@ void aisFsmStateInit_JOIN(IN struct ADAPTER *prAdapter,
 	prWpaInfo = aisGetWpaInfo(prAdapter,
 		ucBssIndex);
 
-#if (CFG_SUPPORT_802_11AX == 1)
-	if (fgEfuseCtrlAxOn == 1) {
-	/* check prBssDesc, if HE_AP and TKIP/WEP, don't join */
-	if (prBssDesc->fgIsHEPresent &&
-		!((prConnSettings->eEncStatus ==
-			ENUM_ENCRYPTION3_ENABLED) ||
-		(prConnSettings->eEncStatus ==
-			ENUM_ENCRYPTION3_KEY_ABSENT)
-		|| (prConnSettings->eEncStatus ==
-			ENUM_ENCRYPTION_DISABLED)
-		|| (prConnSettings->eEncStatus ==
-			ENUM_ENCRYPTION4_ENABLED)
-		|| (prConnSettings->eEncStatus ==
-			ENUM_ENCRYPTION4_KEY_ABSENT)
-		)) {
-
-		/* Don't trigger SAA FSM */
-		DBGLOG(AIS, STATE, "Don't JOIN HE AP with TKIP/WEP\n");
-		return;
-		}
-	}
-#endif
-
 	/* 4 <1> We are going to connect to this BSS. */
 	prBssDesc->fgIsConnecting = TRUE;
 
