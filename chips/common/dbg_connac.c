@@ -362,7 +362,7 @@ void halShowPseInfo(IN struct ADAPTER *prAdapter)
 			HAL_MCR_RD(prAdapter, PSE_FL_QUE_CTRL_3,
 				&fl_que_ctrl[2]);
 			hfid = fl_que_ctrl[1] & 0xfff;
-			tfid = (fl_que_ctrl[1] & 0xfff << 16) >> 16;
+			tfid = (fl_que_ctrl[1] & 0xfff0000) >> 16;
 			pktcnt = fl_que_ctrl[2] & 0xfff;
 			DBGLOG(HAL, INFO,
 				"tail/head fid = 0x%03x/0x%03x, pkt cnt = %x\n",
@@ -407,6 +407,20 @@ void halShowPseInfo(IN struct ADAPTER *prAdapter)
 		DBGLOG(HAL, INFO, "%s\n", buf);
 
 		kalMemFree(buf, VIR_MEM_TYPE, BUF_SIZE);
+	}
+
+	for (i = 0; i < 320; i++) {
+		HAL_MCR_WR(prAdapter, PSE_RL_BUF_CTRL_0, i);
+		HAL_MCR_RD(prAdapter, PSE_RL_BUF_CTRL_1, &value);
+
+		/* Check valid FID */
+		if (((value & 0xFFF000) >> 12) == 0xFFF)
+			continue;
+		/* Check HIF 1 group */
+		else if (((value & 0xE00) >> 9) != 0x1)
+			continue;
+
+		halGetPsePayload(prAdapter, i, txd_payload_info);
 	}
 
 #undef BUF_SIZE
@@ -640,7 +654,7 @@ void halShowPleInfo(IN struct ADAPTER *prAdapter,
 			HAL_MCR_RD(prAdapter,
 				PLE_FL_QUE_CTRL_3, &fl_que_ctrl[2]);
 			hfid = fl_que_ctrl[1] & 0xfff;
-			tfid = (fl_que_ctrl[1] & 0xfff << 16) >> 16;
+			tfid = (fl_que_ctrl[1] & 0xfff0000) >> 16;
 			pktcnt = fl_que_ctrl[2] & 0xfff;
 			DBGLOG(HAL, INFO,
 				"tail/head fid = 0x%03x/0x%03x, pkt cnt = %x\n",
@@ -669,7 +683,7 @@ void halShowPleInfo(IN struct ADAPTER *prAdapter,
 				HAL_MCR_RD(prAdapter,
 					PLE_FL_QUE_CTRL_3, &fl_que_ctrl[2]);
 				hfid = fl_que_ctrl[1] & 0xfff;
-				tfid = (fl_que_ctrl[1] & 0xfff << 16) >> 16;
+				tfid = (fl_que_ctrl[1] & 0xfff0000) >> 16;
 				pktcnt = fl_que_ctrl[2] & 0xfff;
 				DBGLOG(HAL, INFO,
 				"tail/head fid = 0x%03x/0x%03x, pkt cnt = %x",
@@ -1184,42 +1198,37 @@ static char *q_idx_lmac_str[] = {"WMM0_AC0", "WMM0_AC1", "WMM0_AC2", "WMM0_AC3",
 	"Band1_ALTX", "Band1_BMC", "Band1_BNC", "Band1_PSMP",
 	"Invalid"};
 
-void halGetPsePayload(
-	IN struct ADAPTER *prAdapter, uint32_t fid, uint32_t *result) {
-	uint32_t u4Start_txd = 0;
-	uint32_t u4High_txd = 0;
-	uint32_t u4Remap_txd = 0;
-	uint32_t u4Pse_offset = 0;
-	uint32_t i = 0, value = 0;
+void halGetPsePayload(IN struct ADAPTER *prAdapter, uint32_t fid,
+		uint32_t *result)
+{
+	uint32_t i = 0, target = 0, remap = 0, remain = 0;
 
-	HAL_MCR_RD(prAdapter, 0x82060014, &value);
-	u4Pse_offset = (value & 0x3FF0000) << 10;
-	u4High_txd = (u4Pse_offset >> 16);
-	HAL_MCR_WR(prAdapter, 0x0000700C, u4High_txd);
-	u4Start_txd = 0x40000000 + u4Pse_offset + (fid << 7);
-	u4Remap_txd = 0x000D0000 + (u4Start_txd & 0xFFFF);
+	DBGLOG(HAL, INFO, "Dump fid=%u PSE payload\n", fid);
+	target = PSE_PAYLOAD_BASE + (fid << 16);
+	remain = (target & 0xFFFF);
+	HAL_MCR_RD(prAdapter, CONN_HIF_ON_ADDR_REMAP1, &remap);
+	remap = (remap & 0xFFFF0000) + (target >> 16);
+	HAL_MCR_WR(prAdapter, CONN_HIF_ON_ADDR_REMAP1, remap);
 	for (i = 0; i < 16; i++)
-		HAL_MCR_RD(prAdapter, u4Remap_txd + (i * 4), &result[i]);
-	DBGLOG(HAL, INFO, "Dump fid=%d PSE payload\n", fid);
+		HAL_MCR_RD(prAdapter, (AP2CONN_ADDR_MAP0 + remain + (i * 4)),
+				&result[i]);
 	dumpMemory32(result, 64);
 }
 
-void halGetPleTxdInfo(
-	IN struct ADAPTER *prAdapter, uint32_t fid, uint32_t *result) {
-	uint32_t u4Start_txd = 0;
-	uint32_t u4High_txd = 0;
-	uint32_t u4Remap_txd = 0;
-	uint32_t i = 0;
+void halGetPleTxdInfo(IN struct ADAPTER *prAdapter, uint32_t fid,
+		uint32_t *result)
+{
+	uint32_t i = 0, target = 0, remap = 0, remain = 0;
 
-	u4Start_txd = 0x40000000 + (fid << 6);
-	u4High_txd = (u4Start_txd >> 16);
-	HAL_MCR_WR(prAdapter, 0x0000700C, u4High_txd);
-	u4Remap_txd = 0x000D0000 + (fid << 6);
-	for (i = 0; i < 16; i++) {
-		HAL_MCR_RD(prAdapter,
-			u4Remap_txd + (i * 4), &result[i]);
-	}
-	DBGLOG(HAL, INFO, "Dump fid=%d PLE TXD\n", fid);
+	DBGLOG(HAL, INFO, "Dump fid=%u PLE TXD\n", fid);
+	target = PLE_PAYLOAD_BASE + (fid << 16);
+	remain = (target & 0xFFFF);
+	HAL_MCR_RD(prAdapter, CONN_HIF_ON_ADDR_REMAP1, &remap);
+	remap = (remap & 0xFFFF0000) + (target >> 16);
+	HAL_MCR_WR(prAdapter, CONN_HIF_ON_ADDR_REMAP1, remap);
+	for (i = 0; i < 16; i++)
+		HAL_MCR_RD(prAdapter, (AP2CONN_ADDR_MAP0 + remain + (i * 4)),
+				&result[i]);
 	dumpMemory32(result, 64);
 }
 
