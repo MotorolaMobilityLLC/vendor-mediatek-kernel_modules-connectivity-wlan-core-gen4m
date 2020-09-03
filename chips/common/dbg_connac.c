@@ -315,9 +315,11 @@ void halShowPseInfo(IN struct ADAPTER *prAdapter)
 		 pse_stat & 0x1, ((pse_stat & 0x2) >> 1),
 		 ((pse_stat & 0x4) >> 2), ((pse_stat & 0x8) >> 3));
 	DBGLOG(HAL, INFO,
-		"\t\tHIF Q0/1 empty=%d/%d\n",
+		"\t\tHIF Q0/1/2/3 empty=%d/%d/%d/%d\n",
 		 ((pse_stat & (0x1 << 16)) >> 16),
-		 ((pse_stat & (0x1 << 17)) >> 17));
+		 ((pse_stat & (0x1 << 17)) >> 17),
+		 ((pse_stat & (0x1 << 18)) >> 18),
+		 ((pse_stat & (0x1 << 19)) >> 19));
 	DBGLOG(HAL, INFO,
 		"\t\tLMAC TX Q empty=%d\n",
 		 ((pse_stat & (0x1 << 24)) >> 24));
@@ -343,6 +345,14 @@ void halShowPseInfo(IN struct ADAPTER *prAdapter)
 				DBGLOG(HAL, INFO, "\tHIF  Q1: ");
 				fl_que_ctrl[0] |= (0x0 << 14);
 				fl_que_ctrl[0] |= (0x1 << 8);
+			} else if (i == 18) {
+				DBGLOG(HAL, INFO, "\tHIF  Q2: ");
+				fl_que_ctrl[0] |= (0x0 << 14);
+				fl_que_ctrl[0] |= (0x10 << 8);
+			} else if (i == 19) {
+				DBGLOG(HAL, INFO, "\tHIF  Q3: ");
+				fl_que_ctrl[0] |= (0x0 << 14);
+				fl_que_ctrl[0] |= (0x11 << 8);
 			} else if (i == 24) {
 				DBGLOG(HAL, INFO, "\tLMAC TX Q: ");
 				fl_que_ctrl[0] |= (0x2 << 14);
