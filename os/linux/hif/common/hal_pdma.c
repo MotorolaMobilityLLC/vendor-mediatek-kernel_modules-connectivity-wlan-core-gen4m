@@ -2411,6 +2411,9 @@ bool halWpdmaWriteMsdu(struct GLUE_INFO *prGlueInfo,
 		list_del(prCurList);
 		prHifInfo->u4TxDataQLen--;
 	}
+	if (prMsduInfo && prMsduInfo->pfHifTxMsduDoneCb)
+		prMsduInfo->pfHifTxMsduDoneCb(prGlueInfo->prAdapter,
+				prMsduInfo);
 	halWpdamFreeMsdu(prGlueInfo, prMsduInfo, true);
 
 	return true;
@@ -2506,7 +2509,9 @@ bool halWpdmaWriteAmsdu(struct GLUE_INFO *prGlueInfo,
 
 		list_del(prCur);
 		prHifInfo->u4TxDataQLen--;
-
+		if (prMsduInfo && prMsduInfo->pfHifTxMsduDoneCb)
+			prMsduInfo->pfHifTxMsduDoneCb(prGlueInfo->prAdapter,
+					prMsduInfo);
 		halWpdamFreeMsdu(prGlueInfo, prMsduInfo, true);
 		prCur = prNext;
 	}
@@ -2793,6 +2798,9 @@ void halHwRecoveryFromError(IN struct ADAPTER *prAdapter)
 			DBGLOG(HAL, INFO, "SER(L) Host re-initialize PDMA\n");
 			/* only reset TXD & RXD */
 			halWpdmaAllocRing(prAdapter->prGlueInfo, false);
+			nicFreePendingTxMsduInfo(prAdapter, 0xFF,
+					MSDU_REMOVE_BY_ALL);
+			wlanClearPendingCommandQueue(prAdapter);
 			halResetMsduToken(prAdapter);
 
 			DBGLOG(HAL, INFO, "SER(M) Host enable PDMA\n");
@@ -2846,7 +2854,6 @@ void halHwRecoveryFromError(IN struct ADAPTER *prAdapter)
 			/* update Beacon frame if operating in AP mode. */
 			DBGLOG(HAL, INFO, "SER(T) Host re-initialize BCN\n");
 			nicSerReInitBeaconFrame(prAdapter);
-			wlanClearPendingCommandQueue(prAdapter);
 
 			kalDevKickCmd(prAdapter->prGlueInfo);
 			kalDevKickData(prAdapter->prGlueInfo);
