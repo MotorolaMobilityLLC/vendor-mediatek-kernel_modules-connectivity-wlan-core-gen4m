@@ -1534,7 +1534,8 @@ void p2pRoleFsmRunEventStopAP(IN struct ADAPTER *prAdapter,
 
 		LINK_FOR_EACH_ENTRY(prCurrStaRec,
 			prClientList, rLinkEntry, struct STA_RECORD) {
-			ASSERT(prCurrStaRec);
+			if (!prCurrStaRec)
+				break;
 			/* Do not restart timer if the timer is pending, */
 			/* (start in p2pRoleFsmRunEventConnectionAbort()) */
 			if (!timerPendingTimer(
@@ -2918,6 +2919,8 @@ void p2pRoleUpdateACLEntry(IN struct ADAPTER *prAdapter, IN uint8_t ucBssIdx)
 
 	LINK_FOR_EACH_ENTRY_SAFE(prCurrStaRec,
 		prNextStaRec, prClientList, rLinkEntry, struct STA_RECORD) {
+		if (!prCurrStaRec)
+			break;
 		bMatchACL = FALSE;
 		for (i = 0; i < prP2pBssInfo->rACL.u4Num; i++) {
 			if (EQUAL_MAC_ADDR(prCurrStaRec->aucMacAddr,
@@ -3420,6 +3423,8 @@ p2pRoleFsmGetStaStatistics(IN struct ADAPTER *prAdapter,
 			}
 			LINK_FOR_EACH_ENTRY(prCurrStaRec,
 				prClientList, rLinkEntry, struct STA_RECORD) {
+				if (!prCurrStaRec)
+					break;
 				COPY_MAC_ADDR(
 					prQueryStaStatistics->aucMacAddr,
 					prCurrStaRec->aucMacAddr);
