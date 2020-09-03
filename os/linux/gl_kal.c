@@ -162,6 +162,7 @@ static struct miscdevice wlan_object;
  *******************************************************************************
  */
 
+static void kalDumpHifStats(IN struct ADAPTER *prAdapter);
 static uint32_t kalPerMonUpdate(IN struct ADAPTER *prAdapter);
 
 /*******************************************************************************
@@ -3961,6 +3962,8 @@ int hif_thread(void *data)
 		if (test_and_clear_bit(GLUE_FLAG_HIF_FW_OWN_BIT,
 				       &prGlueInfo->ulFlag))
 			prAdapter->fgWiFiInSleepyState = TRUE;
+
+		kalDumpHifStats(prAdapter);
 
 		/* Release to FW own */
 		wlanReleasePowerControl(prAdapter);
@@ -8671,3 +8674,74 @@ void kal_do_gettimeofday(struct timeval *tv)
 }
 #endif
 
+static void kalDumpHifStats(IN struct ADAPTER *prAdapter)
+{
+	struct HIF_STATS *prHifStats;
+	struct PERF_MONITOR *prPerfMon;
+	struct GL_HIF_INFO *prHifInfo;
+	struct RTMP_TX_RING *prTxRing;
+	struct RTMP_RX_RING *prRxRing;
+	struct RX_CTRL *prRxCtrl;
+	uint8_t i = 0;
+	uint32_t u4BufferSize = 512, pos = 0;
+	char *buf;
+
+	if (!prAdapter)
+		return;
+
+	prHifStats = &prAdapter->rHifStats;
+	prPerfMon = &prAdapter->rPerMonitor;
+	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
+	prRxCtrl = &prAdapter->rRxCtrl;
+
+	if (time_before(jiffies, prHifStats->ulUpdatePeriod))
+		return;
+
+	buf = (char *) kalMemAlloc(u4BufferSize, VIR_MEM_TYPE);
+	if (!buf)
+		return;
+	kalMemZero(buf, u4BufferSize);
+
+	prHifStats->ulUpdatePeriod = jiffies +
+			prPerfMon->u4UpdatePeriod * HZ / 1000;
+
+	pos += kalSnprintf(buf + pos, u4BufferSize - pos,
+			"I[%u %u]",
+			GLUE_GET_REF_CNT(prHifStats->u4HwIsrCount),
+			GLUE_GET_REF_CNT(prHifStats->u4SwIsrCount));
+	pos += kalSnprintf(buf + pos, u4BufferSize - pos,
+			" T[%u %u %u / %u %u %u %u]",
+			GLUE_GET_REF_CNT(prHifStats->u4CmdInCount),
+			GLUE_GET_REF_CNT(prHifStats->u4CmdTxCount),
+			GLUE_GET_REF_CNT(prHifStats->u4CmdTxdoneCount),
+			GLUE_GET_REF_CNT(prHifStats->u4DataInCount),
+			GLUE_GET_REF_CNT(prHifStats->u4DataTxCount),
+			GLUE_GET_REF_CNT(prHifStats->u4DataTxdoneCount),
+			GLUE_GET_REF_CNT(prHifStats->u4DataMsduRptCount));
+	pos += kalSnprintf(buf + pos, u4BufferSize - pos,
+			" R[%u / %u]",
+			GLUE_GET_REF_CNT(prHifStats->u4DataRxCount),
+			GLUE_GET_REF_CNT(prHifStats->u4EventRxCount));
+	for (i = 0; i < NUM_OF_TX_RING; ++i) {
+		prTxRing = &prHifInfo->TxRing[i];
+		pos += kalSnprintf(buf + pos, u4BufferSize - pos, "%s%u%s",
+				(i == 0) ? " T_R[" : "",
+				prTxRing->u4UsedCnt,
+				(i == NUM_OF_TX_RING - 1) ? "] " : " ");
+	}
+	for (i = 0; i < NUM_OF_RX_RING; ++i) {
+		prRxRing = &prHifInfo->RxRing[i];
+		pos += kalSnprintf(buf + pos, u4BufferSize - pos, "%s%u%s",
+				(i == 0) ? " R_R[" : "",
+				prRxRing->u4PendingCnt,
+				(i == NUM_OF_RX_RING - 1) ? "]" : " ");
+	}
+	pos += kalSnprintf(buf + pos, u4BufferSize - pos,
+			" Tok[%u/%u] Rfb[%u/%u]",
+			prHifInfo->rTokenInfo.u4UsedCnt,
+			HIF_TX_MSDU_TOKEN_NUM,
+			prRxCtrl->rFreeSwRfbList.u4NumElem,
+			CFG_RX_MAX_PKT_NUM);
+	DBGLOG(HAL, INFO, "%s\n", buf);
+	kalMemFree(buf, VIR_MEM_TYPE, u4BufferSize);
+}

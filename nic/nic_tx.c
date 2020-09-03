@@ -1320,6 +1320,7 @@ uint32_t nicTxMsduInfoListMthread(IN struct ADAPTER
 				ASSERT(0);
 		}
 		nicTxFillDataDesc(prAdapter, prMsduInfo);
+		GLUE_INC_REF_CNT(prAdapter->rHifStats.u4DataInCount);
 
 		prMsduInfo = prNextMsduInfo;
 	}
@@ -3032,6 +3033,7 @@ uint32_t nicTxInitCmd(IN struct ADAPTER *prAdapter,
 	ASSERT(u2OverallBufferLength <=
 	       prAdapter->u4CoalescingBufCachedSize);
 
+	GLUE_INC_REF_CNT(prAdapter->rHifStats.u4CmdInCount);
 	/* <2> Write frame to data port */
 	HAL_WRITE_TX_PORT(prAdapter, u2Port/*NIC_TX_INIT_CMD_PORT*/,
 			  (uint32_t) u2OverallBufferLength,

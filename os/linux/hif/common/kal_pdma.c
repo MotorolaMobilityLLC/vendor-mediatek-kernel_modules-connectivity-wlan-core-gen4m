@@ -404,6 +404,8 @@ skip:
 	kalDevRegWrite(prGlueInfo, prRxRing->hw_cidx_addr, prRxRing->RxCpuIdx);
 	prRxRing->fgIsDumpLog = false;
 
+	GLUE_INC_REF_CNT(prGlueInfo->prAdapter->rHifStats.u4EventRxCount);
+
 	return fgRet;
 }
 
@@ -488,6 +490,8 @@ kalDevPortWrite(IN struct GLUE_INFO *prGlueInfo,
 	prTxRing->u4UsedCnt++;
 
 	kalDevRegWrite(prGlueInfo, prTxRing->hw_cidx_addr, prTxRing->TxCpuIdx);
+
+	GLUE_INC_REF_CNT(prGlueInfo->prAdapter->rHifStats.u4CmdTxCount);
 
 	return TRUE;
 }
@@ -958,6 +962,8 @@ skip:
 	prRxRing->RxCpuIdx = u4CpuIdx;
 	kalDevRegWrite(prGlueInfo, prRxRing->hw_cidx_addr, prRxRing->RxCpuIdx);
 	prRxRing->fgIsDumpLog = false;
+
+	GLUE_INC_REF_CNT(prGlueInfo->prAdapter->rHifStats.u4DataRxCount);
 
 #if CFG_TCP_IP_CHKSUM_OFFLOAD
 	if (fgRet)
