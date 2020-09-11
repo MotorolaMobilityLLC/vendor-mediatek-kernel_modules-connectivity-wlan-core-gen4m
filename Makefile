@@ -244,6 +244,12 @@ else
     ccflags-y += -DCFG_WIFI_LATAM_CHANNELS_NEW=0
 endif
 
+ifeq ($(findstring malta,$(CONFIG_ARCH_MTK_PROJECT)),malta)
+    ccflags-y += -DCFG_BANDEDGE_LIMIT_FCC_MALTA=1
+else
+    ccflags-y += -DCFG_BANDEDGE_LIMIT_FCC_MALTA=0
+endif
+
 ifneq ($(PLATFORM_FLAGS), )
     ccflags-y += $(PLATFORM_FLAGS)
 endif
