@@ -59,6 +59,7 @@
  *                   F U N C T I O N   D E C L A R A T I O N S
  *******************************************************************************
  */
+void mddpInit(void);
 int32_t mddpMdNotifyInfo(struct mddpw_md_notify_info_t *prMdInfo);
 int32_t mddpChangeState(enum mddp_state_e event, void *buf, uint32_t *buf_len);
 int32_t mddpGetMdStats(IN struct net_device *prDev);
