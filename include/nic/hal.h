@@ -531,6 +531,8 @@ do { \
 		prBusInfo->devReadIntStatus(_prAdapter, _pu4IntStatus); \
 	else \
 		kalDevReadIntStatus(_prAdapter, _pu4IntStatus);\
+	if (_prAdapter->u4NoMoreRfb != 0) \
+		*_pu4IntStatus |= WHISR_RX0_DONE_INT; \
 }
 
 #define HAL_HIF_INIT(prAdapter)
