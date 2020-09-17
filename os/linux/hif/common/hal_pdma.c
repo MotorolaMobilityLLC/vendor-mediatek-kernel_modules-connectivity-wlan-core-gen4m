@@ -2378,6 +2378,7 @@ bool halWpdmaWriteMsdu(struct GLUE_INFO *prGlueInfo,
 
 		/* Use MsduInfo to select TxRing */
 		prToken->prMsduInfo = prMsduInfo;
+		prToken->ucWlanIndex = prMsduInfo->ucWlanIndex;
 
 #if HIF_TX_PREALLOC_DATA_BUFFER
 		if (prMemOps->copyTxData)
@@ -2473,6 +2474,8 @@ bool halWpdmaWriteAmsdu(struct GLUE_INFO *prGlueInfo,
 
 		/* Use MsduInfo to select TxRing */
 		prToken->prMsduInfo = prMsduInfo;
+		prToken->ucWlanIndex = prMsduInfo->ucWlanIndex;
+
 #if HIF_TX_PREALLOC_DATA_BUFFER
 		if (prMemOps->copyTxData)
 			prMemOps->copyTxData(prToken, pucSrc, u4TotalLen);
