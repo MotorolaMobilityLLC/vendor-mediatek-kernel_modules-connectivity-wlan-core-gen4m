@@ -912,7 +912,7 @@ void nicFreePendingTxMsduInfo(IN struct ADAPTER *prAdapter,
 		return;
 	}
 
-	DBGLOG(NIC, INFO, "ucIndex: %d, ucFreeType: %d\n",
+	DBGLOG(NIC, TRACE, "ucIndex: %d, ucFreeType: %d\n",
 			ucIndex, ucFreeType);
 
 	KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_TXING_MGMT_LIST);
@@ -2823,11 +2823,10 @@ uint32_t nicRlmUpdateSRParams(IN struct ADAPTER *prAdapter,
 
 	ASSERT(prAdapter);
 
-	DBGLOG(RLM, INFO, "Update Spatial Reuse parameters for BSS[%u]\n",
-		ucBssIndex);
-
-	DBGLOG(RLM, EVENT, "sizeof(struct _CMD_RLM_UPDATE_SR_PARMS_T): %d\n",
-		sizeof(struct _CMD_RLM_UPDATE_SR_PARMS_T));
+	DBGLOG(RLM, INFO,
+		"Update Spatial Reuse parameters for BSS[%u] size: %d\n",
+			ucBssIndex,
+			sizeof(struct _CMD_RLM_UPDATE_SR_PARMS_T));
 
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
 	rCmdUpdateSRParms.ucBssIndex = ucBssIndex;
