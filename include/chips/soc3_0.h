@@ -142,6 +142,11 @@
 #define WMMCU_WIFI_ROM_EMI_DATE_ADDR 0xF027F0F0
 #define DATE_CODE_SIZE 16
 
+#if CFG_MTK_ANDROID_EMI
+extern phys_addr_t gConEmiPhyBaseFinal;
+extern unsigned long long gConEmiSizeFinal;
+#endif
+
 union soc3_0_WPDMA_INT_MASK {
 
 	struct {
