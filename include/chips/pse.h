@@ -55,6 +55,8 @@
 
 /* Queue Empty */
 #define PSE_QUEUE_EMPTY			(PSE_BASE + 0xb0)
+/* Queue Empty Mask */
+#define PSE_QUEUE_EMPTY_MASK		(PSE_BASE + 0xb4)
 
 /* Page Flow Control */
 #define PSE_FREEPG_CNT				(PSE_BASE + 0x100)

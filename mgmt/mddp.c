@@ -145,6 +145,11 @@ static int32_t mddpRegisterCb(void)
 	gMddpFunc.wifi_handle = &gMddpWFunc;
 
 	ret = mddp_drv_attach(&gMddpDrvConf, &gMddpFunc);
+
+#if (CFG_SUPPORT_CONNAC2X == 0)
+	mtk_ccci_register_md_state_cb(&mddpMdStateChangedCb);
+#endif
+
 	DBGLOG(INIT, INFO, "mddp_drv_attach ret: %d, g_fgMddpEnabled: %d\n",
 			ret, g_fgMddpEnabled);
 
@@ -546,6 +551,9 @@ void mddpNotifyWifiOffStart(void)
 	if (prGlueInfo && prGlueInfo->u4ReadyFlag &&
 			prGlueInfo->prAdapter)
 		prGlueInfo->prAdapter->fgMddpActivated = false;
+#if (CFG_SUPPORT_CONNAC2X == 0)
+	mtk_ccci_register_md_state_cb(NULL);
+#endif
 	clear_md_wifi_off_bit();
 	ret = mddpNotifyWifiStatus(MDDPW_DRV_INFO_WLAN_OFF_START);
 }
@@ -779,6 +787,39 @@ void mddpInit(void)
 
 	DBGLOG(INIT, INFO, "bootmode: 0x%x\n", tag->bootmode);
 	g_wifi_boot_mode = tag->bootmode;
+}
+
+static void notifyMdCrash2FW(void)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+
+	if (gPrDev == NULL) {
+		DBGLOG(INIT, ERROR, "gPrDev is NULL.\n");
+		return;
+	}
+
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(gPrDev));
+	if (!prGlueInfo || !prGlueInfo->u4ReadyFlag) {
+		DBGLOG(INIT, ERROR, "Invalid drv state.\n");
+		return;
+	}
+	kalSetMdCrashEvent(prGlueInfo);
+}
+
+void  mddpMdStateChangedCb(enum MD_STATE old_state,
+		enum MD_STATE new_state)
+{
+	DBGLOG(INIT, TRACE, "old_state: %d, new_state: %d.\n",
+			old_state, new_state);
+
+	switch (new_state) {
+	case GATED: /* MD off */
+	case EXCEPTION: /* MD crash */
+		notifyMdCrash2FW();
+		break;
+	default:
+		break;
+	}
 }
 
 #endif

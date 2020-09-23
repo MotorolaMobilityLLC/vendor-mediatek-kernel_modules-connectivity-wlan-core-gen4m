@@ -3958,6 +3958,11 @@ int hif_thread(void *data)
 					&prGlueInfo->ulFlag))
 			TRACE(halUpdateTxMaxQuota(prAdapter), "UPDATE_WMM");
 
+		/* Notify MD crash to FW */
+		if (test_and_clear_bit(GLUE_FLAG_NOTIFY_MD_CRASH_BIT,
+					&prGlueInfo->ulFlag))
+			halNotifyMdCrash(prAdapter);
+
 		/* Set FW own */
 		if (test_and_clear_bit(GLUE_FLAG_HIF_FW_OWN_BIT,
 				       &prGlueInfo->ulFlag))
@@ -5061,6 +5066,14 @@ void kalSetIntEvent(struct GLUE_INFO *pr)
 void kalSetWmmUpdateEvent(struct GLUE_INFO *pr)
 {
 	set_bit(GLUE_FLAG_UPDATE_WMM_QUOTA_BIT, &pr->ulFlag);
+#if CFG_SUPPORT_MULTITHREAD
+	wake_up_interruptible(&pr->waitq_hif);
+#endif
+}
+
+void kalSetMdCrashEvent(struct GLUE_INFO *pr)
+{
+	set_bit(GLUE_FLAG_NOTIFY_MD_CRASH_BIT, &pr->ulFlag);
 #if CFG_SUPPORT_MULTITHREAD
 	wake_up_interruptible(&pr->waitq_hif);
 #endif

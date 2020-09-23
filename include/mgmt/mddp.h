@@ -40,6 +40,7 @@
  */
 #include "mddp_export.h"
 #include "mddp.h"
+#include "mt-plat/mtk_ccci_common.h"
 /*******************************************************************************
  *                            P U B L I C   D A T A
  *******************************************************************************
@@ -79,6 +80,8 @@ int32_t mddpNotifyWifiOnEnd(void);
 void mddpNotifyWifiOffStart(void);
 void mddpNotifyWifiOffEnd(void);
 void setMddpSupportRegister(IN struct ADAPTER *prAdapter);
+void mddpMdStateChangedCb(enum MD_STATE old_state,
+		enum MD_STATE new_state);
 
 #endif
 #endif /* _MDDP_H */

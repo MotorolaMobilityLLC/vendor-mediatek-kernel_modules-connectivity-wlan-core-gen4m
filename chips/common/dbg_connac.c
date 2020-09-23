@@ -128,7 +128,7 @@ void halShowPseInfo(IN struct ADAPTER *prAdapter)
 #define BUF_SIZE 512
 
 	uint32_t pse_buf_ctrl = 0, pg_sz, pg_num;
-	uint32_t pse_stat = 0, pg_flow_ctrl[16] = {0};
+	uint32_t pse_stat = 0, pse_queue_empty_mask = 0, pg_flow_ctrl[16] = {0};
 	uint32_t fpg_cnt, ffa_cnt, fpg_head, fpg_tail;
 	uint32_t max_q, min_q, rsv_pg, used_pg;
 	uint32_t i, page_offset, addr, value = 0, pos = 0;
@@ -137,6 +137,7 @@ void halShowPseInfo(IN struct ADAPTER *prAdapter)
 
 	HAL_MCR_RD(prAdapter, PSE_PBUF_CTRL, &pse_buf_ctrl);
 	HAL_MCR_RD(prAdapter, PSE_QUEUE_EMPTY, &pse_stat);
+	HAL_MCR_RD(prAdapter, PSE_QUEUE_EMPTY_MASK, &pse_queue_empty_mask);
 	HAL_MCR_RD(prAdapter, PSE_FREEPG_CNT, &pg_flow_ctrl[0]);
 	HAL_MCR_RD(prAdapter, PSE_FREEPG_HEAD_TAIL, &pg_flow_ctrl[1]);
 	HAL_MCR_RD(prAdapter, PSE_PG_HIF0_GROUP, &pg_flow_ctrl[2]);
@@ -310,6 +311,8 @@ void halShowPseInfo(IN struct ADAPTER *prAdapter)
 	DBGLOG(HAL, INFO, "PSE Queue Empty Status:\n");
 	DBGLOG(HAL, INFO,
 		"\tQUEUE_EMPTY(0x820680b0): 0x%08x\n", pse_stat);
+	DBGLOG(HAL, INFO,
+		"\tQUEUE_EMPTY(0x820680b4): 0x%08x\n", pse_queue_empty_mask);
 	DBGLOG(HAL, INFO,
 		"\t\tCPU Q0/1/2/3 empty=%d/%d/%d/%d\n",
 		 pse_stat & 0x1, ((pse_stat & 0x2) >> 1),
