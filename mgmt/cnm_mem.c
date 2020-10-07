@@ -652,7 +652,7 @@ struct STA_RECORD *cnmStaRecAlloc(struct ADAPTER *prAdapter,
 				QUEUE_INITIALIZE(
 					&prStaRec->arPendingTxQueue[k]);
 				prStaRec->aprTargetQueue[k]
-					= &prStaRec->arTxQueue[k];
+					= &prStaRec->arPendingTxQueue[k];
 			}
 
 			prStaRec->ucAmsduEnBitmap = 0;
