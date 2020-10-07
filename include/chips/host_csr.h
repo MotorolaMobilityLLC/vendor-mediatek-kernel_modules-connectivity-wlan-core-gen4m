@@ -98,7 +98,7 @@
 * Mapping [0x1804_xxxx] to [ap2conn_addr_map2[15:0], xxxx]
 */
 #define CONN_HIF_ON_ADDR_REMAP2					0x7010
-#define AP2CONN_ADDR_MAP3					0x40000
-#define AP2CONN_ADDR_MAP4					0xF0000
+#define AP2CONN_ADDR_MAP2					0x40000
+#define AP2CONN_ADDR_MAP3					0xF0000
 
 #endif /* __HOST_CSR_H__ */
