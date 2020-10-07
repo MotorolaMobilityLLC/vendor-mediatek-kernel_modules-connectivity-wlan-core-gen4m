@@ -1917,8 +1917,8 @@ ibssProcessMatchedBeacon(IN struct ADAPTER *prAdapter,
 		struct MSG_AIS_IBSS_PEER_FOUND *prAisIbssPeerFoundMsg;
 
 		/* 4 <1> We will merge with to this BSS immediately. */
-		prBssDesc->fgIsConnecting = TRUE;
-		prBssDesc->fgIsConnected = FALSE;
+		prBssDesc->fgIsConnecting |= BIT(prBssInfo->ucBssIndex);
+		prBssDesc->fgIsConnected &= ~BIT(prBssInfo->ucBssIndex);
 
 		/* 4 <2> Setup corresponding STA_RECORD_T */
 		prStaRec = bssCreateStaRecFromBssDesc(prAdapter,
