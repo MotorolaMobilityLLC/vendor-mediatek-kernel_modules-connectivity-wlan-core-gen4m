@@ -4973,6 +4973,14 @@ static int32_t wlanProbe(void *pvData, void *pvDriverData)
 			wlanNetUnregister(prWdev);
 		case NET_REGISTER_FAIL:
 			set_bit(GLUE_FLAG_HALT_BIT, &prGlueInfo->ulFlag);
+#if CFG_SUPPORT_MULTITHREAD
+			wake_up_interruptible(&prGlueInfo->waitq_hif);
+			wait_for_completion_interruptible(
+				&prGlueInfo->rHifHaltComp);
+			wake_up_interruptible(&prGlueInfo->waitq_rx);
+			wait_for_completion_interruptible(
+				&prGlueInfo->rRxHaltComp);
+#endif
 			/* wake up main thread */
 			wake_up_interruptible(&prGlueInfo->waitq);
 			/* wait main thread stops */
