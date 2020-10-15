@@ -106,6 +106,11 @@
 
 #if CFG_MTK_ANDROID_EMI
 #define WIFI_EMI_ADDR_MASK     0xFFFFFF
+extern phys_addr_t gConEmiPhyBaseFinal;
+extern unsigned long long gConEmiSizeFinal;
+#endif
+
+#if (!defined(UT_TEST_MODE) || !defined(CFG_BUILD_X86_PLATFORM))
 extern phys_addr_t gConEmiPhyBase;
 extern unsigned long long gConEmiSize;
 #endif
