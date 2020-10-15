@@ -70,8 +70,11 @@ struct mddp_drv_handle_t gMddpFunc = {
 #define MD_STATUS_OFF_SYNC_BIT BIT(1)
 #define MD_STATUS_ON_SYNC_BIT BIT(2)
 
+#if (CFG_SUPPORT_CONNAC2X == 0)
+/* Use SER dummy register for mddp support flag */
 #define MDDP_SUPPORT_CR 0x820600d0
 #define MDDP_SUPPORT_CR_BIT BIT(23)
+#endif
 
 /*******************************************************************************
 *                           P R I V A T E   D A T A
@@ -754,6 +757,7 @@ static bool wait_for_md_on_complete(void)
 
 void setMddpSupportRegister(IN struct ADAPTER *prAdapter)
 {
+#if (CFG_SUPPORT_CONNAC2X == 0)
 	uint32_t u4Val = 0;
 
 	HAL_MCR_RD(prAdapter, MDDP_SUPPORT_CR, &u4Val);
@@ -762,6 +766,7 @@ void setMddpSupportRegister(IN struct ADAPTER *prAdapter)
 	else
 		u4Val &= ~MDDP_SUPPORT_CR_BIT;
 	HAL_MCR_WR(prAdapter, MDDP_SUPPORT_CR, u4Val);
+#endif
 }
 
 void mddpInit(void)
