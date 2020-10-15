@@ -2457,7 +2457,7 @@ struct CMD_SCHED_SCAN_REQ {
 	uint8_t fgStopAfterIndication;
 	uint8_t ucSsidNum;
 	uint8_t ucMatchSsidNum;
-	uint8_t aucPadding_0;
+	uint8_t ucBssIndex;
 	uint16_t u2IELen;
 	struct PARAM_SSID auSsid[10];
 	struct SSID_MATCH_SETS auMatchSsid[16];
