@@ -6013,10 +6013,9 @@ static void rlmCompleteOpModeChange(struct ADAPTER *prAdapter,
 	}
 
 	DBGLOG(RLM, INFO,
-		"Complete BSS[%d] OP Mode change to BW[%d] ",
+		"Complete BSS[%d] OP Mode change to BW[%d] RxNss[%d] TxNss[%d]",
 		prBssInfo->ucBssIndex,
-		rlmGetBssOpBwByVhtAndHtOpInfo(prBssInfo));
-	DBGLOG(RLM, INFO, "RxNss[%d] TxNss[%d]\n",
+		rlmGetBssOpBwByVhtAndHtOpInfo(prBssInfo),
 		prBssInfo->ucOpRxNss,
 		prBssInfo->ucOpTxNss);
 
@@ -6088,15 +6087,18 @@ rlmChangeOperationMode(
 	/* <3>Check if the current operating BW/Nss is the same as the target
 	 * one
 	 */
-	if (ucChannelWidth == rlmGetBssOpBwByVhtAndHtOpInfo(prBssInfo))
+	if (ucChannelWidth == rlmGetBssOpBwByVhtAndHtOpInfo(prBssInfo)) {
 		fgIsChangeBw = FALSE;
-
-	if (ucOpRxNss == prBssInfo->ucOpRxNss)
+		prBssInfo->fgIsOpChangeChannelWidth = FALSE;
+	}
+	if (ucOpRxNss == prBssInfo->ucOpRxNss) {
 		fgIsChangeRxNss = FALSE;
-
-	if (ucOpTxNss == prBssInfo->ucOpTxNss)
+		prBssInfo->fgIsOpChangeRxNss = FALSE;
+	}
+	if (ucOpTxNss == prBssInfo->ucOpTxNss) {
 		fgIsChangeTxNss = FALSE;
-
+		prBssInfo->fgIsOpChangeTxNss = FALSE;
+	}
 	if ((!fgIsChangeBw) && (!fgIsChangeRxNss) && (!fgIsChangeTxNss)) {
 		DBGLOG(RLM, INFO,
 			"BSS[%d] target OpMode BW[%d] RxNss[%d] TxNss[%d] No change, return\n",
