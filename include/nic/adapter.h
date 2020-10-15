@@ -1708,7 +1708,6 @@ struct ADAPTER {
 	uint8_t  ucTxTestUP;
 #endif /* CFG_SUPPORT_WIFI_SYSDVT */
 
-	bool fgEnHifDbgInfo;
 	uint32_t u4HifDbgFlag;
 	uint32_t u4HifChkFlag;
 	uint32_t u4NoMoreRfb;
