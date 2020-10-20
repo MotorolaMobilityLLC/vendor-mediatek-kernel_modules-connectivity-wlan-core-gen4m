@@ -239,7 +239,7 @@ struct BUS_INFO connac_bus_info = {
 	.tx_ring1_data_idx = 0, /* no used */
 	.fw_own_clear_addr = WPDMA_INT_STA,
 	.fw_own_clear_bit = WPDMA_FW_CLR_OWN_INT,
-	.max_static_map_addr = 0x000E0000,
+	.max_static_map_addr = 0x00040000,
 	.fgCheckDriverOwnInt = FALSE,
 	.u4DmaMask = 36,
 
