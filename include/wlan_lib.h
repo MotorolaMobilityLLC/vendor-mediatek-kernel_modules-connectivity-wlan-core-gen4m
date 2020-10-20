@@ -203,13 +203,13 @@
 #define WLAN_CFG_ARGV_MAX 20
 #endif
 #define WLAN_CFG_ARGV_MAX_LONG	22	/* for WOW, 2+20 */
-#define WLAN_CFG_ENTRY_NUM_MAX	200	/* 128 */
+#define WLAN_CFG_ENTRY_NUM_MAX	400	/* 128 */
 #define WLAN_CFG_KEY_LEN_MAX	32	/* include \x00  EOL */
 #define WLAN_CFG_VALUE_LEN_MAX	128	/* include \x00 EOL */
 #define WLAN_CFG_FLAG_SKIP_CB	BIT(0)
 #define WLAN_CFG_FILE_BUF_SIZE	2048
 
-#define WLAN_CFG_REC_ENTRY_NUM_MAX 200
+#define WLAN_CFG_REC_ENTRY_NUM_MAX 400
 
 
 
