@@ -3854,7 +3854,7 @@ void scanReqLog(struct CMD_SCAN_REQ_V2 *prCmdScanReq)
 		prCmdScanReq->u2ChannelDwellTime,
 		prCmdScanReq->u2ChannelMinDwellTime,
 		prCmdScanReq->ucScnFuncMask,
-		prCmdScanReq->aucRandomMac,
+		MAC2STR(prCmdScanReq->aucRandomMac),
 		strbuf != pos ? strbuf : "");
 #undef TEMP_LOG_TEMPLATE
 	kalMemFree(strbuf, VIR_MEM_TYPE, slen);

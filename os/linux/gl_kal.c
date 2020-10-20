@@ -8247,7 +8247,7 @@ u_int8_t kalScanParseRandomMac(const struct net_device *ndev,
 		if (kalIsValidMacAddr(request->bssid)) {
 			COPY_MAC_ADDR(pucRandomMac, request->bssid);
 			log_dbg(SCN, INFO, "random mac=" MACSTR "\n",
-				pucRandomMac);
+				MAC2STR(pucRandomMac));
 			return TRUE;
 		}
 	}
@@ -8635,7 +8635,7 @@ int kalExternalAuthRequest(IN struct ADAPTER *prAdapter,
 		  prBssDesc->aucSSID, prBssDesc->ucSSIDLen);
 	params.key_mgmt_suite = RSN_CIPHER_SUITE_SAE;
 	DBGLOG(AIS, INFO, "[WPA3] "MACSTR" %s %d %d %02x-%02x-%02x-%02x",
-	       params.bssid, params.ssid.ssid,
+	       MAC2STR(params.bssid), params.ssid.ssid,
 	       params.ssid.ssid_len, params.action,
 	       (uint8_t) (params.key_mgmt_suite & 0x000000FF),
 	       (uint8_t) ((params.key_mgmt_suite >> 8) & 0x000000FF),
