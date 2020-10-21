@@ -1846,3 +1846,6 @@ uint32_t wlanNchoSetFWScanPeriod(IN struct ADAPTER *prAdapter,
 #endif
 
 u_int8_t wlanWfdEnabled(struct ADAPTER *prAdapter);
+
+int wlanChipConfig(struct ADAPTER *prAdapter,
+	char *pcCommand, int i4TotalLen);
