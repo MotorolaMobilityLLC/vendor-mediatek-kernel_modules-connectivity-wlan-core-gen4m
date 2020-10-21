@@ -3612,8 +3612,6 @@ void aisPostponedEventOfDisconnTimeout(IN struct ADAPTER *prAdapter,
 	if (prAisFsmInfo->eCurrentState == AIS_STATE_LOOKING_FOR)
 		prAisFsmInfo->eCurrentState = AIS_STATE_IDLE;
 
-	prAisBssInfo->u2DeauthReason += REASON_CODE_BEACON_TIMEOUT*100;
-
 	/* 4 <3> Indicate Disconnected Event to Host immediately. */
 	aisIndicationOfMediaStateToHost(prAdapter,
 					MEDIA_STATE_DISCONNECTED, FALSE,
@@ -4920,6 +4918,7 @@ void aisBssBeaconTimeout_impl(IN struct ADAPTER *prAdapter,
 	/* 4 <2> invoke abort handler */
 	if (fgDoAbortIndication) {
 		prAisBssInfo->u2DeauthReason =
+			REASON_CODE_BEACON_TIMEOUT * 100 +
 			ucBcnTimeoutReason;
 
 		DBGLOG(AIS, EVENT, "aisBssBeaconTimeout\n");
