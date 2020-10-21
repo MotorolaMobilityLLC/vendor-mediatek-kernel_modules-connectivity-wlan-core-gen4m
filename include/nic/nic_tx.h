@@ -506,10 +506,7 @@ enum ENUM_MCU_Q_INDEX {
 	MCU_Q_NUM
 };
 
-/* +1 for DBDC */
-#define TX_PORT_NUM (TC_NUM + 1)
-
-#define TX_2G_WMM_PORT_NUM (TC_NUM)
+#define TX_PORT_NUM (TC_NUM)
 
 #define BMC_TC_INDEX TC1_INDEX
 

@@ -435,7 +435,11 @@
  */
 
 /*! Maximum number of SW TX packet queue */
+#if (CFG_SUPPORT_CONNAC2X == 1)
+#define CFG_TX_MAX_PKT_NUM                      2048
+#else
 #define CFG_TX_MAX_PKT_NUM                      1024
+#endif
 
 /*! Maximum number of SW TX CMD packet buffer */
 #define CFG_TX_MAX_CMD_PKT_NUM                  32
