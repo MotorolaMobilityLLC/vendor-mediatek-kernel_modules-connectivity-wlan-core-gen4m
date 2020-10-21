@@ -873,6 +873,15 @@ void twtPlannerGetTsfDone(
 		struct _TWT_FLOW_T *prTWTFlow = twtPlannerFlowFindById(prStaRec,
 					prGetTsfCtxt->ucTWTFlowId);
 
+		if (prTWTFlow == NULL) {
+			DBGLOG(TWT_PLANNER, ERROR, "prTWTFlow is NULL.\n");
+
+			kalMemFree(prGetTsfCtxt,
+				VIR_MEM_TYPE, sizeof(*prGetTsfCtxt));
+
+			return;
+		}
+
 		prGetTsfCtxt->rTWTParams.u8TWT =
 			u8CurTsf + TSF_OFFSET_FOR_AGRT_ADD;
 
