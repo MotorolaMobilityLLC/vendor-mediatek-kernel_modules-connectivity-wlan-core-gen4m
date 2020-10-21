@@ -1635,6 +1635,9 @@ struct ADAPTER {
 	/* COEX feature */
 	uint32_t u4FddMode;
 
+	/* host status EMI offset*/
+	uint32_t u4HostStatusEmiOffset;
+
 #if CFG_WOW_SUPPORT
 	struct WOW_CTRL	rWowCtrl;
 #endif
