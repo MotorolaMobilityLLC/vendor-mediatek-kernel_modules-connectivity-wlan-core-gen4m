@@ -2736,12 +2736,6 @@ void soc3_0_Sw_interrupt_handler(struct ADAPTER *prAdapter)
 				value);
 			complete(&g_triggerComp);
 		} else {
-			if (get_wifi_process_status() == 1) {
-				DBGLOG(HAL, ERROR,
-					"Wi-Fi on/off process is ongoing, ignore interrupt(0x%x).\n",
-					value);
-				return;
-			}
 #if (CFG_ANDORID_CONNINFRA_COREDUMP_SUPPORT == 1)
 			g_eWfRstSource = WF_RST_SOURCE_FW;
 #endif
@@ -2753,12 +2747,6 @@ void soc3_0_Sw_interrupt_handler(struct ADAPTER *prAdapter)
 		}
 	}
 	if (value & BIT(2)) {
-		if (get_wifi_process_status() == 1) {
-			DBGLOG(HAL, ERROR,
-				"Wi-Fi on/off process is ongoing, ignore interrupt(0x%x).\n",
-				value);
-			return;
-		}
 #if (CFG_ANDORID_CONNINFRA_COREDUMP_SUPPORT == 1)
 		g_eWfRstSource = WF_RST_SOURCE_FW;
 #endif
@@ -2770,12 +2758,6 @@ void soc3_0_Sw_interrupt_handler(struct ADAPTER *prAdapter)
 		kalSetRstEvent();
 	}
 	if (value & BIT(3)) {
-		if (get_wifi_process_status() == 1) {
-			DBGLOG(HAL, ERROR,
-				"Wi-Fi on/off process is ongoing, ignore interrupt(0x%x).\n",
-				value);
-			return;
-		}
 #if (CFG_ANDORID_CONNINFRA_COREDUMP_SUPPORT == 1)
 		g_eWfRstSource = WF_RST_SOURCE_FW;
 #endif
