@@ -240,6 +240,10 @@ extern u_int8_t fgIsResetting;
 extern u_int8_t g_fgRstRecover;
 extern struct regmap *g_regmap;
 #endif
+
+#if (CFG_ANDORID_CONNINFRA_COREDUMP_SUPPORT == 1)
+extern u_int8_t g_IsCoredumpOngoing;
+#endif
 /*******************************************************************************
 *                           P R I V A T E   D A T A
 ********************************************************************************
