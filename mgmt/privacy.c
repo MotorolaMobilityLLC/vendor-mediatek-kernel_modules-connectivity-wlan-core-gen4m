@@ -785,7 +785,7 @@ u_int8_t secPrivacySeekForEntry(
 	ucMaxIDX = prAdapter->ucTxDefaultWlanIndex - 1;
 
 	for (i = ucStartIDX; i <= ucMaxIDX; i++) {
-#if CFG_WIFI_WORKAROUND_HWITS00012836_WTBL_SEARCH_FAIL
+#if CFG_WIFI_SW_WTBL_SEARCH_FAIL
 	if (i % 8 == 0)
 		continue;
 #endif
@@ -803,7 +803,7 @@ u_int8_t secPrivacySeekForEntry(
 
 	if (i == (ucMaxIDX + 1)) {
 		for (i = ucStartIDX; i <= ucMaxIDX; i++) {
-#if CFG_WIFI_WORKAROUND_HWITS00012836_WTBL_SEARCH_FAIL
+#if CFG_WIFI_SW_WTBL_SEARCH_FAIL
 			if (i % 8 == 0)
 				continue;
 #endif
