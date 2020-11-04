@@ -2226,8 +2226,7 @@ int mtk_p2p_cfg80211_stop_ap(struct wiphy *wiphy, struct net_device *dev)
 			(struct MSG_HDR *) prP2pStopApMsg,
 			MSG_SEND_METHOD_BUF);
 
-		if (p2pFuncIsAPMode(prGlueInfo->prAdapter->rWifiVar.
-				prP2PConnSettings[ucRoleIdx])) {
+		if (1) { /* AP or GO */
 			uint32_t waitRet = 0;
 
 			waitRet = wait_for_completion_timeout(
