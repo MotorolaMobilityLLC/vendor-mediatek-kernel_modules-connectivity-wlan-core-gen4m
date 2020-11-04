@@ -5921,9 +5921,9 @@ int mtk_cfg80211_suspend(struct wiphy *wiphy,
 			&prGlueInfo->prAdapter->ulSuspendFlag);
 		set_bit(SUSPEND_FLAG_CLEAR_WHEN_RESUME,
 			&prGlueInfo->prAdapter->ulSuspendFlag);
+		if (prGlueInfo->prAdapter->u4HostStatusEmiOffset)
+			kalSetSuspendFlagToEMI(prGlueInfo->prAdapter, TRUE);
 	}
-	if (prGlueInfo->prAdapter->u4HostStatusEmiOffset)
-		kalSetSuspendFlagToEMI(prGlueInfo->prAdapter, TRUE);
 end:
 	kalHaltUnlock();
 
