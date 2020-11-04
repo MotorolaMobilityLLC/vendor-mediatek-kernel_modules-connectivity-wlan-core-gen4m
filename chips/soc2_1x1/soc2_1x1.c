@@ -1,63 +1,9 @@
-/******************************************************************************
- *
- * This file is provided under a dual license.  When you use or
- * distribute this software, you may choose to be licensed under
- * version 2 of the GNU General Public License ("GPLv2 License")
- * or BSD License.
- *
- * GPLv2 License
- *
- * Copyright(C) 2016 MediaTek Inc.
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of version 2 of the GNU General Public License as
- * published by the Free Software Foundation.
- *
- * This program is distributed in the hope that it will be useful, but
- * WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See http://www.gnu.org/licenses/gpl-2.0.html for more details.
- *
- * BSD LICENSE
- *
- * Copyright(C) 2016 MediaTek Inc. All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
- *
- *  * Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- *  * Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- *  * Neither the name of the copyright holder nor the names of its
- *    contributors may be used to endorse or promote products derived
- *    from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- *****************************************************************************/
-/*! \file   connac.c
- *  \brief  Internal driver stack will export the required procedures here
- *          for GLUE Layer.
- *
- *  This file contains all routines which are exported from MediaTek 802.11
- *  Wireless LAN driver stack to GLUE Layer.
+/* SPDX-License-Identifier: GPL-2.0 */
+/*
+ * Copyright (c) 2019 MediaTek Inc.
  */
 
-#ifdef CONNAC2X2
+#ifdef SOC2_1X1
 
 /*******************************************************************************
  *                         C O M P I L E R   F L A G S
@@ -70,26 +16,25 @@
  */
 #include "precomp.h"
 
-#include "connac2x2.h"
+#include "soc2_1x1.h"
 
 /*******************************************************************************
  *                              C O N S T A N T S
  *******************************************************************************
  */
-uint8_t *apucConnac2x2FwName[] = {
-	(uint8_t *) CFG_FW_FILENAME "_soc2_0",
+uint8_t *apucSoc2_1x1FwName[] = {
 	(uint8_t *) CFG_FW_FILENAME "_soc2_2",
 	NULL
 };
 
-struct ECO_INFO connac2x2_eco_table[] = {
+struct ECO_INFO soc2_1x1_eco_table[] = {
 	/* HW version,  ROM version,    Factory version */
 	{0x00, 0x00, 0xA, 0x1}, /* E1 */
 	{0x00, 0x00, 0x0, 0x0}	/* End of table */
 };
 
 #if defined(_HIF_PCIE) || defined(_HIF_AXI)
-struct PCIE_CHIP_CR_MAPPING connac2x2_bus2chip_cr_mapping[] = {
+struct PCIE_CHIP_CR_MAPPING soc2_1x1_bus2chip_cr_mapping[] = {
 	/* chip addr, bus addr, range */
 	{0x80000000, 0x00002000, 0x00001000}, /* MCU_CFG */
 
@@ -133,7 +78,7 @@ struct PCIE_CHIP_CR_MAPPING connac2x2_bus2chip_cr_mapping[] = {
 };
 #endif /* _HIF_PCIE || _HIF_AXI */
 
-void connac2x2ShowHifInfo(IN struct ADAPTER *prAdapter)
+void soc2_1x1ShowHifInfo(IN struct ADAPTER *prAdapter)
 {
 	uint32_t u4Value = 0;
 
@@ -168,7 +113,7 @@ void connac2x2ShowHifInfo(IN struct ADAPTER *prAdapter)
 	DBGLOG(HAL, INFO, "Conn_on_host debug flag: 0x%08x\n", u4Value);
 }
 
-void connac2x2ConstructFirmwarePrio(struct GLUE_INFO *prGlueInfo,
+void soc2_1x1ConstructFirmwarePrio(struct GLUE_INFO *prGlueInfo,
 	uint8_t **apucNameTable, uint8_t **apucName,
 	uint8_t *pucNameIdx, uint8_t ucMaxNameIdx)
 {
@@ -177,7 +122,7 @@ void connac2x2ConstructFirmwarePrio(struct GLUE_INFO *prGlueInfo,
 	int ret = 0;
 
 	kalGetFwFlavor(&aucFlavor[0]);
-	for (ucIdx = 0; apucConnac2x2FwName[ucIdx]; ucIdx++) {
+	for (ucIdx = 0; apucSoc2_1x1FwName[ucIdx]; ucIdx++) {
 		if ((*pucNameIdx + 3) >= ucMaxNameIdx) {
 			/* the table is not large enough */
 			DBGLOG(INIT, ERROR,
@@ -190,7 +135,7 @@ void connac2x2ConstructFirmwarePrio(struct GLUE_INFO *prGlueInfo,
 		ret = kalSnprintf(*(apucName + (*pucNameIdx)),
 				CFG_FW_NAME_MAX_LEN,
 				"%s_%u%s_%u.bin",
-				apucConnac2x2FwName[ucIdx],
+				apucSoc2_1x1FwName[ucIdx],
 				CFG_WIFI_IP_SET,
 				aucFlavor,
 				wlanGetEcoVersion(
@@ -206,7 +151,7 @@ void connac2x2ConstructFirmwarePrio(struct GLUE_INFO *prGlueInfo,
 		ret = kalSnprintf(*(apucName + (*pucNameIdx)),
 				CFG_FW_NAME_MAX_LEN,
 				"%s_%u%s_%u",
-				apucConnac2x2FwName[ucIdx],
+				apucSoc2_1x1FwName[ucIdx],
 				CFG_WIFI_IP_SET,
 				aucFlavor,
 				wlanGetEcoVersion(
@@ -221,7 +166,7 @@ void connac2x2ConstructFirmwarePrio(struct GLUE_INFO *prGlueInfo,
 		/* Type 3. WIFI_RAM_CODE_soc1_0 */
 		ret = kalSnprintf(*(apucName + (*pucNameIdx)),
 				CFG_FW_NAME_MAX_LEN, "%s",
-				apucConnac2x2FwName[ucIdx]);
+				apucSoc2_1x1FwName[ucIdx]);
 		if (ret >= 0 && ret < CFG_FW_NAME_MAX_LEN)
 			(*pucNameIdx) += 1;
 		else
@@ -232,7 +177,7 @@ void connac2x2ConstructFirmwarePrio(struct GLUE_INFO *prGlueInfo,
 		/* Type 4. WIFI_RAM_CODE_soc1_0.bin */
 		ret = kalSnprintf(*(apucName + (*pucNameIdx)),
 				CFG_FW_NAME_MAX_LEN, "%s.bin",
-				apucConnac2x2FwName[ucIdx]);
+				apucSoc2_1x1FwName[ucIdx]);
 		if (ret >= 0 && ret < CFG_FW_NAME_MAX_LEN)
 			(*pucNameIdx) += 1;
 		else
@@ -242,7 +187,7 @@ void connac2x2ConstructFirmwarePrio(struct GLUE_INFO *prGlueInfo,
 	}
 }
 
-void connac2x2ConstructPatchName(struct GLUE_INFO *prGlueInfo,
+void soc2_1x1ConstructPatchName(struct GLUE_INFO *prGlueInfo,
 	uint8_t **apucName, uint8_t *pucNameIdx)
 {
 	int ret = 0;
@@ -254,7 +199,7 @@ void connac2x2ConstructPatchName(struct GLUE_INFO *prGlueInfo,
 		DBGLOG(INIT, ERROR, "kalSnprintf failed, ret: %d\n", ret);
 }
 
-void connac2x2wlanCalDebugCmd(uint32_t cmd, uint32_t para)
+void soc2_1x1wlanCalDebugCmd(uint32_t cmd, uint32_t para)
 {
 	DBGLOG(RFTEST, INFO, "Cal CMD: (%d, %d) -> WMT reset\n", cmd, para);
 	mtk_wcn_wmt_do_reset_only(WMTDRV_TYPE_WIFI);
@@ -265,9 +210,9 @@ void connac2x2wlanCalDebugCmd(uint32_t cmd, uint32_t para)
 	} while (kalIsResetting());
 }
 
-struct BUS_INFO connac2x2_bus_info = {
+struct BUS_INFO soc2_1x1_bus_info = {
 #if defined(_HIF_PCIE) || defined(_HIF_AXI)
-	.top_cfg_base = CONNAC2X2_TOP_CFG_BASE,
+	.top_cfg_base = SOC2_1X1_TOP_CFG_BASE,
 	.host_tx_ring_base = MT_TX_RING_BASE,
 	.host_tx_ring_ext_ctrl_base = MT_TX_RING_BASE_EXT,
 	.host_tx_ring_cidx_addr = MT_TX_RING_CIDX,
@@ -279,7 +224,7 @@ struct BUS_INFO connac2x2_bus_info = {
 	.host_rx_ring_cidx_addr = MT_RX_RING_CIDX,
 	.host_rx_ring_didx_addr = MT_RX_RING_DIDX,
 	.host_rx_ring_cnt_addr = MT_RX_RING_CNT,
-	.bus2chip = connac2x2_bus2chip_cr_mapping,
+	.bus2chip = soc2_1x1_bus2chip_cr_mapping,
 	.tx_ring_fwdl_idx = 3,
 	.tx_ring_cmd_idx = 15,
 	.tx_ring0_data_idx = 0,
@@ -330,9 +275,9 @@ struct BUS_INFO connac2x2_bus_info = {
 #endif /* _HIF_USB */
 };
 
-struct FWDL_OPS_T connac2x2_fw_dl_ops = {
-	.constructFirmwarePrio = connac2x2ConstructFirmwarePrio,
-	.constructPatchName = connac2x2ConstructPatchName,
+struct FWDL_OPS_T soc2_1x1_fw_dl_ops = {
+	.constructFirmwarePrio = soc2_1x1ConstructFirmwarePrio,
+	.constructPatchName = soc2_1x1ConstructPatchName,
 #if !CFG_MTK_ANDROID_WMT
 	.downloadPatch = wlanDownloadPatch,
 #endif
@@ -343,17 +288,17 @@ struct FWDL_OPS_T connac2x2_fw_dl_ops = {
 	.phyAction = NULL,
 };
 
-struct TX_DESC_OPS_T connac2x2TxDescOps = {
+struct TX_DESC_OPS_T soc2_1x1TxDescOps = {
 	.fillNicAppend = fillNicTxDescAppend,
 	.fillHifAppend = fillTxDescAppendByHostV2,
 	.fillTxByteCount = fillTxDescTxByteCount,
 };
 
-struct RX_DESC_OPS_T connac2x2RxDescOps = {
+struct RX_DESC_OPS_T soc2_1x1RxDescOps = {
 };
 
 #if CFG_SUPPORT_QA_TOOL
-struct ATE_OPS_T connac2x2AteOps = {
+struct ATE_OPS_T soc2_1x1AteOps = {
 	.setICapStart = connacSetICapStart,
 	.getICapStatus = connacGetICapStatus,
 	.getICapIQData = connacGetICapIQData,
@@ -361,7 +306,7 @@ struct ATE_OPS_T connac2x2AteOps = {
 };
 #endif
 
-struct CHIP_DBG_OPS connac2x2_debug_ops = {
+struct CHIP_DBG_OPS soc2_1x1_debug_ops = {
 #if defined(_HIF_PCIE) || defined(_HIF_AXI)
 	.showPdmaInfo = halShowPdmaInfo,
 	.showPseInfo = halShowPseInfo,
@@ -370,7 +315,7 @@ struct CHIP_DBG_OPS connac2x2_debug_ops = {
 	.showCsrInfo = halShowHostCsrInfo,
 	.showDmaschInfo = halShowDmaschInfo,
 	.dumpMacInfo = haldumpMacInfo,
-	.showHifInfo = connac2x2ShowHifInfo,
+	.showHifInfo = soc2_1x1ShowHifInfo,
 #else
 	.showPdmaInfo = NULL,
 	.showPseInfo = NULL,
@@ -386,30 +331,30 @@ struct CHIP_DBG_OPS connac2x2_debug_ops = {
 	.show_stat_info = halShowStatInfo,
 };
 
-struct mt66xx_chip_info mt66xx_chip_info_connac2x2 = {
-	.bus_info = &connac2x2_bus_info,
-	.fw_dl_ops = &connac2x2_fw_dl_ops,
-	.prTxDescOps = &connac2x2TxDescOps,
-	.prRxDescOps = &connac2x2RxDescOps,
+struct mt66xx_chip_info mt66xx_chip_info_soc2_1x1 = {
+	.bus_info = &soc2_1x1_bus_info,
+	.fw_dl_ops = &soc2_1x1_fw_dl_ops,
+	.prTxDescOps = &soc2_1x1TxDescOps,
+	.prRxDescOps = &soc2_1x1RxDescOps,
 #if CFG_SUPPORT_QA_TOOL
-	.prAteOps = &connac2x2AteOps,
+	.prAteOps = &soc2_1x1AteOps,
 #endif
-	.prDebugOps = &connac2x2_debug_ops,
+	.prDebugOps = &soc2_1x1_debug_ops,
 
-	.chip_id = CONNAC2X2_CHIP_ID,
+	.chip_id = SOC2_1X1_CHIP_ID,
 	.should_verify_chip_id = FALSE,
-	.sw_sync0 = CONNAC2X2_SW_SYNC0,
+	.sw_sync0 = SOC2_1X1_SW_SYNC0,
 	.sw_ready_bits = WIFI_FUNC_NO_CR4_READY_BITS,
-	.sw_ready_bit_offset = CONNAC2X2_SW_SYNC0_RDY_OFFSET,
-	.patch_addr = CONNAC2X2_PATCH_START_ADDR,
+	.sw_ready_bit_offset = SOC2_1X1_SW_SYNC0_RDY_OFFSET,
+	.patch_addr = SOC2_1X1_PATCH_START_ADDR,
 	.is_support_cr4 = FALSE,
-	.txd_append_size = CONNAC2X2_TX_DESC_APPEND_LENGTH,
-	.rxd_size = CONNAC2X2_RX_DESC_LENGTH,
-	.init_evt_rxd_size = CONNAC2X2_RX_DESC_LENGTH,
+	.txd_append_size = SOC2_1X1_TX_DESC_APPEND_LENGTH,
+	.rxd_size = SOC2_1X1_RX_DESC_LENGTH,
+	.init_evt_rxd_size = SOC2_1X1_RX_DESC_LENGTH,
 	.pse_header_length = NIC_TX_PSE_HEADER_LENGTH,
-	.init_event_size = CONNAC2X2_RX_INIT_EVENT_LENGTH,
-	.event_hdr_size = CONNAC2X2_RX_EVENT_HDR_LENGTH,
-	.eco_info = connac2x2_eco_table,
+	.init_event_size = SOC2_1X1_RX_INIT_EVENT_LENGTH,
+	.event_hdr_size = SOC2_1X1_RX_EVENT_HDR_LENGTH,
+	.eco_info = soc2_1x1_eco_table,
 	.isNicCapV1 = FALSE,
 	.is_support_efuse = FALSE,
 
@@ -421,10 +366,10 @@ struct mt66xx_chip_info mt66xx_chip_info_connac2x2 = {
 	.asicEnableFWDownload = asicEnableFWDownload,
 	.asicGetChipID = asicGetChipID,
 	.downloadBufferBin = NULL,
-	.is_support_hw_amsdu = TRUE,
-	.ucMaxSwAmsduNum = 0,
-	/* Driver uses SOC to decide to use connac or connac2x2 configs
-	 * But sometimes one SOC may use connac2x2 on 1x1 chip
+	.is_support_hw_amsdu = FALSE,
+	.ucMaxSwAmsduNum = 4,
+	/* Driver uses SOC to decide to use connac or soc2_1x1 configs
+	 * But sometimes one SOC may use soc2_1x1 on 1x1 chip
 	 * So we have to update the related configs for compatibility
 	 */
 	.ucMaxSwapAntenna = 2,
@@ -436,11 +381,11 @@ struct mt66xx_chip_info mt66xx_chip_info_connac2x2 = {
 	.custom_oid_interface_version = MTK_CUSTOM_OID_INTERFACE_VERSION,
 	.em_interface_version = MTK_EM_INTERFACE_VERSION,
 
-	.calDebugCmd = connac2x2wlanCalDebugCmd,
+	.calDebugCmd = soc2_1x1wlanCalDebugCmd,
 };
 
-struct mt66xx_hif_driver_data mt66xx_driver_data_connac2x2 = {
-	.chip_info = &mt66xx_chip_info_connac2x2,
+struct mt66xx_hif_driver_data mt66xx_driver_data_soc2_1x1 = {
+	.chip_info = &mt66xx_chip_info_soc2_1x1,
 };
 
-#endif /* CONNAC2X2 */
+#endif /* SOC2_1X1 */

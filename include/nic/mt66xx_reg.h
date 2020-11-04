@@ -81,9 +81,12 @@ extern struct mt66xx_hif_driver_data mt66xx_driver_data_mt7663;
 #ifdef CONNAC
 extern struct mt66xx_hif_driver_data mt66xx_driver_data_connac;
 #endif /* CONNAC */
-#ifdef CONNAC2X2
-extern struct mt66xx_hif_driver_data mt66xx_driver_data_connac2x2;
-#endif /* CONNAC2X2 */
+#ifdef SOC2_1X1
+extern struct mt66xx_hif_driver_data mt66xx_driver_data_soc2_1x1;
+#endif /* SOC2_1X1 */
+#ifdef SOC2_2X2
+extern struct mt66xx_hif_driver_data mt66xx_driver_data_soc2_2x2;
+#endif /* SOC2_2X2 */
 #ifdef UT_TEST_MODE
 extern struct mt66xx_hif_driver_data mt66xx_driver_data_ut;
 #endif /* UT_TEST_MODE */
