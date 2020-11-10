@@ -1573,11 +1573,12 @@ void nicTxMsduQueueByRR(struct ADAPTER *prAdapter)
 		arTempQue[BSS_DEFAULT_NUM][TX_PORT_NUM];
 	struct QUE *prDataPort0, *prDataPort1, *prDataPort, *prTxQue;
 	struct MSDU_INFO *prMsduInfo;
-	uint32_t u4Idx, u4IsNotAllQueneEmpty, i;
+	uint32_t u4Idx, u4IsNotAllQueneEmpty, i, j;
 	uint8_t ucPortIdx;
 	uint32_t au4TxCnt[BSS_DEFAULT_NUM][TX_PORT_NUM], u4Offset = 0;
 	char aucLogBuf[512];
 	struct BSS_INFO	*prBssInfo;
+	struct QUE_MGT *prQM = &prAdapter->rQM;
 
 	KAL_SPIN_LOCK_DECLARATION();
 
@@ -1603,14 +1604,18 @@ void nicTxMsduQueueByRR(struct ADAPTER *prAdapter)
 		nicTxMsduPickHighPrioPkt(prAdapter, prDataPort0, prDataPort1);
 #endif /* CFG_SUPPORT_LOWLATENCY_MODE */
 
-	/* Dequeue each TCQ to dataQ by round-robin  */
-	/* Check each TCQ is empty or not */
-	u4IsNotAllQueneEmpty = BITS(0, TC_NUM);
-	while (u4IsNotAllQueneEmpty) {
-		for (i = 0; i < BSS_DEFAULT_NUM; i++) {
-			prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, i);
-			if (prBssInfo->fgIsNetAbsent)
-				continue;
+
+#if QM_FORWARDING_FAIRNESS
+	i = prQM->u4HeadBssInfoIndex;
+#else
+	i = 0;
+#endif
+	for (j = 0; j < BSS_DEFAULT_NUM; j++) {
+		prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, i);
+		/* Dequeue each TCQ to dataQ by round-robin  */
+		/* Check each TCQ is empty or not */
+		u4IsNotAllQueneEmpty = BITS(0, TC_NUM - 1);
+		while (!prBssInfo->fgIsNetAbsent && u4IsNotAllQueneEmpty) {
 			u4Idx = prAdapter->u4TxHifResCtlIdx;
 			prTxQue = &(prAdapter->rTxPQueue[i][u4Idx]);
 			if (QUEUE_IS_NOT_EMPTY(prTxQue)) {
@@ -1638,11 +1643,19 @@ void nicTxMsduQueueByRR(struct ADAPTER *prAdapter)
 			if (prAdapter->u4TxHifResCtlNum >=
 			    prAdapter->au4TxHifResCtl[u4Idx]) {
 				prAdapter->u4TxHifResCtlIdx++;
-				prAdapter->u4TxHifResCtlIdx %= TX_PORT_NUM;
+				prAdapter->u4TxHifResCtlIdx %= TC_NUM;
 				prAdapter->u4TxHifResCtlNum = 0;
 			}
+
 		}
+		i++;
+		i %= BSS_DEFAULT_NUM;
 	}
+#if QM_FORWARDING_FAIRNESS
+	prQM->u4HeadBssInfoIndex++;
+	prQM->u4HeadBssInfoIndex %= BSS_DEFAULT_NUM;
+#endif
+
 	KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_PORT_QUE);
 
 	nicTxMsduQueue(prAdapter, 0, prDataPort0);
