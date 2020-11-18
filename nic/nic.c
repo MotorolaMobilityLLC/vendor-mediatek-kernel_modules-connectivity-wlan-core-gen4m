@@ -1590,6 +1590,8 @@ uint32_t nicUpdateBss(IN struct ADAPTER *prAdapter,
 	ASSERT(prAdapter);
 	ASSERT(ucBssIndex <= prAdapter->ucHwBssIdNum);
 
+	halEnTxRingBssCtrl(prAdapter, cnmIsMccMode(prAdapter));
+
 	prBssInfo = prAdapter->aprBssInfo[ucBssIndex];
 
 	kalMemZero(&rCmdSetBssInfo,
