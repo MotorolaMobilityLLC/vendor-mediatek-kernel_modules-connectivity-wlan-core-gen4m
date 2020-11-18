@@ -331,6 +331,7 @@ u_int8_t nic_rxd_v1_sanity_check(
 			prSwRfb->fgFragFrame = TRUE;
 
 	} else {
+		DBGLOG(RX, TEMP, "Sanity check to drop\n");
 		fgDrop = TRUE;
 		if (!HAL_RX_STATUS_IS_ICV_ERROR(prRxStatus)
 		    && HAL_RX_STATUS_IS_TKIP_MIC_ERROR(prRxStatus)) {
