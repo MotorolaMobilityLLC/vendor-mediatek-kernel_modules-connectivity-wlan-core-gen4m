@@ -2511,10 +2511,11 @@ void aisFsmRunEventAbort(IN struct ADAPTER *prAdapter,
 	/* end Support AP Selection */
 
 	aisFsmClearRequest(prAdapter, AIS_REQUEST_RECONNECT, ucBssIndex);
-	if (ucReasonOfDisconnect != DISCONNECT_REASON_CODE_LOCALLY) {
+	if (ucReasonOfDisconnect == DISCONNECT_REASON_CODE_NEW_CONNECTION ||
+	    ucReasonOfDisconnect == DISCONNECT_REASON_CODE_REASSOCIATION ||
+	    ucReasonOfDisconnect == DISCONNECT_REASON_CODE_ROAMING)
 		aisFsmInsertRequestToHead(prAdapter,
 			AIS_REQUEST_RECONNECT, ucBssIndex);
-	}
 
 	if (prAisFsmInfo->eCurrentState != AIS_STATE_DISCONNECTING) {
 		if (ucReasonOfDisconnect !=
