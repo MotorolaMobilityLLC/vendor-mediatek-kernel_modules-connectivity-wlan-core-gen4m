@@ -3477,7 +3477,7 @@ int mtk_p2p_cfg80211_testmode_cmd(struct wiphy *wiphy,
 				wiphy, wdev->netdev, data, len);
 			break;
 		default:
-			i4Status = -EINVAL;
+			i4Status = -EOPNOTSUPP;
 			break;
 		}
 	}
