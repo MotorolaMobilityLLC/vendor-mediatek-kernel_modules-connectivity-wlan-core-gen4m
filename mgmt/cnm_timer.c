@@ -101,10 +101,55 @@
  */
 static void cnmTimerStopTimer_impl(IN struct ADAPTER *prAdapter,
 		IN struct TIMER *prTimer, IN u_int8_t fgAcquireSpinlock);
+static u_int8_t cnmTimerIsTimerValid(IN struct ADAPTER *prAdapter,
+		IN struct TIMER *prTimer);
+
 /*******************************************************************************
  *                              F U N C T I O N S
  *******************************************************************************
  */
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief This routine is called to check if a timer exists in timer list.
+ *
+ * \param[in] prTimer The timer to check
+ *
+ * \retval TRUE Valid timer
+ *         FALSE Invalid timer
+ *
+ */
+/*----------------------------------------------------------------------------*/
+static u_int8_t cnmTimerIsTimerValid(IN struct ADAPTER *prAdapter,
+		IN struct TIMER *prTimer)
+{
+	struct ROOT_TIMER *prRootTimer;
+	struct LINK *prTimerList;
+	struct LINK_ENTRY *prLinkEntry;
+	struct TIMER *prPendingTimer;
+
+	ASSERT(prAdapter);
+
+	prRootTimer = &prAdapter->rRootTimer;
+
+	/* Check if the timer is in timer list */
+	prTimerList = &(prAdapter->rRootTimer.rLinkHead);
+
+	LINK_FOR_EACH(prLinkEntry, prTimerList) {
+		if (prLinkEntry == NULL)
+			break;
+
+		prPendingTimer = LINK_ENTRY(prLinkEntry,
+			struct TIMER, rLinkEntry);
+
+		if (prPendingTimer == prTimer)
+			return TRUE;
+	}
+
+	log_dbg(CNM, WARN, "invalid pending timer %p func %pf\n",
+			prTimer, prTimer->pfMgmtTimeOutFunc);
+	return FALSE;
+}
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -157,6 +202,9 @@ static u_int8_t cnmTimerSetTimer(IN struct ADAPTER *prAdapter,
 void cnmTimerInitialize(IN struct ADAPTER *prAdapter)
 {
 	struct ROOT_TIMER *prRootTimer;
+	struct LINK *prTimerList;
+	struct LINK_ENTRY *prLinkEntry;
+	struct TIMER *prPendingTimer;
 
 	KAL_SPIN_LOCK_DECLARATION();
 
@@ -167,6 +215,23 @@ void cnmTimerInitialize(IN struct ADAPTER *prAdapter)
 	/* Note: glue layer have configured timer */
 
 	KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_TIMER);
+
+	log_dbg(CNM, WARN, "reset timer list\n");
+
+	/* Remove all pending timers */
+	prTimerList = &(prAdapter->rRootTimer.rLinkHead);
+
+	LINK_FOR_EACH(prLinkEntry, prTimerList) {
+		if (prLinkEntry == NULL)
+			break;
+
+		prPendingTimer = LINK_ENTRY(prLinkEntry,
+			struct TIMER, rLinkEntry);
+
+		/* Remove timer to prevent collapsing timer structure */
+		cnmTimerStopTimer_impl(prAdapter, prPendingTimer, FALSE);
+	}
+
 	LINK_INITIALIZE(&prRootTimer->rLinkHead);
 	KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_TIMER);
 
@@ -365,8 +430,8 @@ void cnmTimerStartTimer(IN struct ADAPTER *prAdapter, IN struct TIMER *prTimer,
 	ASSERT(prAdapter);
 	ASSERT(prTimer);
 
-	log_dbg(CNM, TRACE, "start timer, timer %p func %pf\n",
-		prTimer, prTimer->pfMgmtTimeOutFunc);
+	log_dbg(CNM, TRACE, "start timer, timer %p func %pf %d ms\n",
+		prTimer, prTimer->pfMgmtTimeOutFunc, u4TimeoutMs);
 
 #if (CFG_SUPPORT_STATISTICS == 1)
 	/* Do not print oid timer to avoid log too much.
@@ -422,8 +487,16 @@ void cnmTimerStartTimer(IN struct ADAPTER *prAdapter, IN struct TIMER *prTimer,
 	/* Add this timer to checking list */
 	prTimer->rExpiredSysTime = rExpiredSysTime;
 
-	if (!timerPendingTimer(prTimer))
+	if (!timerPendingTimer(prTimer)) {
 		LINK_INSERT_TAIL(prTimerList, &prTimer->rLinkEntry);
+	} else {
+		/* If the pending timer is not in timer list, we will have
+		 * to add the timer to timer list anyway. Otherwise, the timer
+		 * will never timeout.
+		 */
+		if (!cnmTimerIsTimerValid(prAdapter, prTimer))
+			LINK_INSERT_TAIL(prTimerList, &prTimer->rLinkEntry);
+	}
 
 	KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_TIMER);
 }
@@ -495,6 +568,9 @@ void cnmTimerDoTimeOutCheck(IN struct ADAPTER *prAdapter)
 							     pfMgmtTimeOutFunc,
 							     ulTimeoutDataPtr))
 				#endif
+				log_dbg(CNM, TRACE, "timer timeout, timer %p func %pf\n",
+					prTimer, prTimer->pfMgmtTimeOutFunc);
+
 					(pfMgmtTimeOutFunc) (prAdapter,
 						ulTimeoutDataPtr);
 					KAL_ACQUIRE_SPIN_LOCK(prAdapter,
