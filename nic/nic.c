@@ -73,6 +73,10 @@
  */
 #include "precomp.h"
 
+#if (CFG_TWT_SMART_STA == 1)
+#include "twt.h"
+#endif
+
 /*******************************************************************************
  *                              C O N S T A N T S
  *******************************************************************************
@@ -4316,6 +4320,11 @@ void nicUpdateLinkQuality(IN struct ADAPTER *prAdapter,
 	uint16_t u2AdjustRssi = 10;
 	struct LINK_SPEED_EX_ *prLq;
 
+#if (CFG_TWT_SMART_STA == 1)
+	struct _MSG_TWT_PARAMS_SET_T *prTWTParamSetMsg;
+	struct _TWT_CTRL_T rTWTCtrl;
+#endif
+
 	ASSERT(prAdapter);
 	ASSERT(ucBssIndex <= prAdapter->ucHwBssIdNum);
 	ASSERT(prEventLinkQuality);
@@ -4349,6 +4358,110 @@ void nicUpdateLinkQuality(IN struct ADAPTER *prAdapter,
 				nicUpdateRSSI(prAdapter, ucBssIndex, cRssi,
 					prEventLinkQuality->rLq[ucBssIndex].
 					cLinkQuality);
+
+#if (CFG_TWT_SMART_STA == 1)
+
+				DBGLOG(RLM, INFO,
+					"smarttwtreq=%d, smarttwtact=%d(%d)\n",
+					g_TwtSmartStaCtrl.
+					fgTwtSmartStaReq,
+					g_TwtSmartStaCtrl.
+					fgTwtSmartStaActivated,
+					g_TwtSmartStaCtrl.eState);
+
+				if ((cRssi >= (-35)) &&
+					(g_TwtSmartStaCtrl.u4TwtSwitch == 0) &&
+					((g_TwtSmartStaCtrl.
+					fgTwtSmartStaReq == TRUE) &&
+					(g_TwtSmartStaCtrl.
+					fgTwtSmartStaActivated == FALSE)
+					&& (g_TwtSmartStaCtrl.
+					eState ==
+					TWT_SMART_STA_STATE_IDLE))
+					) {
+					rTWTCtrl.ucBssIdx
+						= ucBssIndex;
+					rTWTCtrl.ucCtrlAction
+						= 4;
+					rTWTCtrl.ucTWTFlowId
+						= 0;
+					rTWTCtrl.rTWTParams.
+						fgReq = TRUE;
+					rTWTCtrl.rTWTParams.
+						ucSetupCmd = 1;
+					rTWTCtrl.rTWTParams.
+						fgTrigger = 0;
+					rTWTCtrl.rTWTParams.
+						fgUnannounced
+						= 1;
+					rTWTCtrl.rTWTParams.
+						ucWakeIntvalExponent
+						= 10;
+					rTWTCtrl.rTWTParams.
+						fgProtect = 0;
+					rTWTCtrl.rTWTParams.
+						ucMinWakeDur
+						= 255;
+					rTWTCtrl.rTWTParams.
+						u2WakeIntvalMantiss
+						= 512;
+
+					g_TwtSmartStaCtrl.eState =
+				TWT_SMART_STA_STATE_REQUESTING;
+
+					prTWTParamSetMsg =
+						cnmMemAlloc(prAdapter,
+						RAM_TYPE_MSG,
+						sizeof(struct
+					_MSG_TWT_REQFSM_RESUME_T));
+				}
+
+				if (((cRssi <= (-40)) ||
+					(g_TwtSmartStaCtrl.
+					fgTwtSmartStaTeardownReq
+					== TRUE)) &&
+					(g_TwtSmartStaCtrl.
+					fgTwtSmartStaActivated
+					== true)) {
+					rTWTCtrl.ucBssIdx
+						= ucBssIndex;
+					rTWTCtrl.ucCtrlAction
+						= 5;
+					rTWTCtrl.ucTWTFlowId
+						= g_TwtSmartStaCtrl.
+						ucFlowId;
+
+					DBGLOG(RLM, INFO,
+						"twtswitch=%d, rxrate=%d\n",
+						g_TwtSmartStaCtrl.u4TwtSwitch,
+						g_TwtSmartStaCtrl.u4LastTp);
+
+					prTWTParamSetMsg
+						= cnmMemAlloc(prAdapter,
+						RAM_TYPE_MSG,
+						sizeof(struct
+					_MSG_TWT_REQFSM_RESUME_T));
+					}
+
+				if (prTWTParamSetMsg) {
+					prTWTParamSetMsg->
+						rMsgHdr.eMsgId =
+						MID_TWT_PARAMS_SET;
+					kalMemCopy(
+						&prTWTParamSetMsg->
+						rTWTCtrl,
+						&rTWTCtrl,
+						sizeof(rTWTCtrl));
+
+					mboxSendMsg(prAdapter,
+						MBOX_ID_0,
+						(struct MSG_HDR *)
+						prTWTParamSetMsg,
+						MSG_SEND_METHOD_BUF);
+				}
+
+
+#endif
 			}
 
 			if (prLq->fgIsLinkRateValid == FALSE ||
