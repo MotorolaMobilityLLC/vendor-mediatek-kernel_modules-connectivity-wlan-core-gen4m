@@ -1445,8 +1445,9 @@ void p2pRoleFsmRunEventDelIface(IN struct ADAPTER *prAdapter,
 
 	/* The state is in disconnecting and can not change any BSS status */
 	if (IS_NET_PWR_STATE_IDLE(prAdapter, prP2pBssInfo->ucBssIndex) &&
-		IS_NET_ACTIVE(prAdapter, prP2pBssInfo->ucBssIndex)) {
-		DBGLOG(P2P, TRACE, "under deauth procedure, Quit.\n");
+		IS_NET_ACTIVE(prAdapter, prP2pBssInfo->ucBssIndex) &&
+		prP2pBssInfo->eConnectionState == MEDIA_STATE_CONNECTED) {
+		DBGLOG(P2P, INFO, "under deauth procedure, Quit.\n");
 	} else {
 		/*p2pFuncDissolve(prAdapter,
 		 * prP2pBssInfo, TRUE,
