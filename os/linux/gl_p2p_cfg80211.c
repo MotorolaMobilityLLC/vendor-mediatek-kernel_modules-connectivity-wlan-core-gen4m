@@ -2956,6 +2956,14 @@ int mtk_p2p_cfg80211_connect(struct wiphy *wiphy,
 		kalP2PSetCipher(prGlueInfo, IW_AUTH_CIPHER_NONE, ucRoleIdx);
 
 		if (sme->crypto.n_ciphers_pairwise) {
+			DBGLOG(REQ, TRACE,
+				"cipher pairwise (%d)\n",
+				sme->crypto.ciphers_pairwise[0]);
+			if (aucDebugModule[DBG_P2P_IDX] & DBG_CLASS_TRACE) {
+				dumpMemory8((uint8_t *) prConnReqMsg->aucIEBuf,
+					(uint32_t) prConnReqMsg->u4IELen);
+			}
+
 			switch (sme->crypto.ciphers_pairwise[0]) {
 			case WLAN_CIPHER_SUITE_WEP40:
 			case WLAN_CIPHER_SUITE_WEP104:
@@ -2981,6 +2989,8 @@ int mtk_p2p_cfg80211_connect(struct wiphy *wiphy,
 					cfg80211_put_bss(wiphy, bss);
 				return -EINVAL;
 			}
+		} else {
+			DBGLOG(REQ, WARN, "Null cipher pairwise\n");
 		}
 
 		kalChannelFormatSwitch(NULL, channel,
