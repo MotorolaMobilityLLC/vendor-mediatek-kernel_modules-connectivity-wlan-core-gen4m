@@ -3743,7 +3743,7 @@ void nicRxReturnRFB(IN struct ADAPTER *prAdapter,
 		if (prAdapter->u4NoMoreRfb != 0) {
 			DBGLOG_LIMITED(RX, INFO,
 				"Free rfb and set IntEvent!!!!!\n");
-			kalSetIntEvent(prAdapter->prGlueInfo);
+			kalSetDrvIntEvent(prAdapter->prGlueInfo);
 		}
 	} else {
 		/* QUEUE_INSERT_TAIL */
