@@ -3854,13 +3854,16 @@ void scanResultLog(struct ADAPTER *prAdapter,
 {
 	struct WLAN_BEACON_FRAME *pFrame =
 		(struct WLAN_BEACON_FRAME *) prSwRfb->pvHeader;
+	KAL_SPIN_LOCK_DECLARATION();
 
+	KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_BSSLIST_FW);
 	scanLogCacheAddBSS(
 		&(prAdapter->rWifiVar.rScanInfo.rScanLogCache.rBSSListFW),
 		prAdapter->rWifiVar.rScanInfo.rScanLogCache.arBSSListBufFW,
 		LOG_SCAN_RESULT_F2D,
 		pFrame->aucBSSID,
 		pFrame->u2SeqCtrl);
+	KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_BSSLIST_FW);
 }
 
 void scanLogCacheAddBSS(struct LINK *prList,
@@ -3989,13 +3992,21 @@ void scanLogCacheFlushBSS(struct LINK *prList, enum ENUM_SCAN_LOG_PREFIX prefix,
 	kalMemFree(prlogBuf, VIR_MEM_TYPE, logBufLen);
 }
 
-void scanLogCacheFlushAll(struct SCAN_LOG_CACHE *prScanLogCache,
+void scanLogCacheFlushAll(struct ADAPTER *prAdapter,
+	struct SCAN_LOG_CACHE *prScanLogCache,
 	enum ENUM_SCAN_LOG_PREFIX prefix, const uint16_t logBufLen)
 {
+	KAL_SPIN_LOCK_DECLARATION();
+
+	KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_BSSLIST_FW);
 	scanLogCacheFlushBSS(&(prScanLogCache->rBSSListFW),
 		prefix, logBufLen);
+	KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_BSSLIST_FW);
+
+	KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_BSSLIST_CFG);
 	scanLogCacheFlushBSS(&(prScanLogCache->rBSSListCFG),
 		prefix, logBufLen);
+	KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_BSSLIST_CFG);
 }
 
 /*----------------------------------------------------------------------------*/
