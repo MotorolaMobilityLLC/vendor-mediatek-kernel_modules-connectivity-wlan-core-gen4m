@@ -1049,6 +1049,7 @@ int mtk_p2p_cfg80211_scan(struct wiphy *wiphy,
 	struct ieee80211_channel *prChannel = NULL;
 	struct cfg80211_ssid *prSsid = NULL;
 	uint8_t ucBssIdx = 0;
+	uint8_t ucRoleIdx = 0;
 	u_int8_t fgIsFullChanScan = FALSE;
 
 	/* [-----Channel-----] [-----SSID-----][-----IE-----] */
@@ -1070,18 +1071,16 @@ int mtk_p2p_cfg80211_scan(struct wiphy *wiphy,
 			break;
 		}
 
-		DBGLOG(P2P, TRACE, "mtk_p2p_cfg80211_scan.\n");
+		DBGLOG(P2P, TRACE, "netdev: %p.\n", request->wdev->netdev);
 
 		if (prP2pGlueDevInfo->prScanRequest != NULL) {
 			/* There have been a scan request
 			 * on-going processing.
 			 */
-			DBGLOG(P2P, TRACE,
+			DBGLOG(P2P, ERROR,
 				"There have been a scan request on-going processing.\n");
 			break;
 		}
-
-		prP2pGlueDevInfo->prScanRequest = request;
 
 		/* Should find out why the n_channels so many? */
 		if (request->n_channels > MAXIMUM_OPERATION_CHANNEL_LIST) {
@@ -1090,11 +1089,27 @@ int mtk_p2p_cfg80211_scan(struct wiphy *wiphy,
 			DBGLOG(P2P, TRACE,
 				"Channel list exceed the maximun support.\n");
 		}
-		/* TODO: */
-		/* Find a way to distinct DEV port scan & ROLE port scan.
-		 */
-		ucBssIdx = prGlueInfo->prAdapter->ucP2PDevBssIdx;
-		DBGLOG(P2P, TRACE, "Device Port Scan.\n");
+
+		if (prP2pGlueInfo->aprRoleHandler !=
+				prP2pGlueInfo->prDevHandler) {
+			if (mtk_Netdev_To_RoleIdx(prGlueInfo,
+					request->wdev->netdev,
+					&ucRoleIdx) < 0) {
+				ucBssIdx =
+					prGlueInfo->prAdapter->ucP2PDevBssIdx;
+			} else {
+				ASSERT(ucRoleIdx < KAL_P2P_NUM);
+				if (p2pFuncRoleToBssIdx(prGlueInfo->prAdapter,
+						ucRoleIdx, &ucBssIdx) !=
+						WLAN_STATUS_SUCCESS) {
+					DBGLOG(P2P, ERROR,
+						"Can't find BSS index.\n");
+					break;
+				}
+			}
+		} else {
+			ucBssIdx = prGlueInfo->prAdapter->ucP2PDevBssIdx;
+		}
 
 		u4MsgSize = sizeof(struct MSG_P2P_SCAN_REQUEST) +
 		    (request->n_channels * sizeof(struct RF_CHANNEL_INFO)) +
@@ -1116,7 +1131,8 @@ int mtk_p2p_cfg80211_scan(struct wiphy *wiphy,
 		prMsgScanRequest->ucBssIdx = ucBssIdx;
 
 		DBGLOG(P2P, INFO,
-			"Requesting channel number:%d.\n", request->n_channels);
+			"[%u] Requesting channel number:%d.\n",
+				ucBssIdx, request->n_channels);
 
 		for (u4Idx = 0; u4Idx < request->n_channels; u4Idx++) {
 			/* Translate Freq from MHz to channel number. */
@@ -1196,6 +1212,8 @@ int mtk_p2p_cfg80211_scan(struct wiphy *wiphy,
 
 		DBGLOG(P2P, TRACE, "Finish IE Buffer.\n");
 
+		prP2pGlueDevInfo->prScanRequest = request;
+
 		mboxSendMsg(prGlueInfo->prAdapter,
 			MBOX_ID_0,
 			(struct MSG_HDR *) prMsgScanRequest,
@@ -1220,20 +1238,52 @@ int mtk_p2p_cfg80211_scan(struct wiphy *wiphy,
 	return i4RetRslt;
 }				/* mtk_p2p_cfg80211_scan */
 
-void mtk_p2p_cfg80211_abort_scan(struct wiphy *wiphy, struct wireless_dev *wdev)
+void mtk_p2p_cfg80211_abort_scan(struct wiphy *wiphy,
+		struct wireless_dev *wdev)
 {
 	uint32_t u4SetInfoLen = 0;
-	uint32_t u4Value = 0;
 	uint32_t rStatus;
+	struct GL_P2P_DEV_INFO *prP2pGlueDevInfo;
 	struct GLUE_INFO *prGlueInfo = NULL;
-
-	DBGLOG(P2P, INFO, "mtk_p2p_cfg80211_abort_scan\n");
+	struct GL_P2P_INFO *prP2pGlueInfo = NULL;
+	uint8_t ucBssIdx = 0;
+	uint8_t ucRoleIdx = 0;
 
 	P2P_WIPHY_PRIV(wiphy, prGlueInfo);
+	prP2pGlueInfo = prGlueInfo->prP2PInfo[0];
+	prP2pGlueDevInfo = prGlueInfo->prP2PDevInfo;
+
+	if (!prP2pGlueDevInfo->prScanRequest) {
+		DBGLOG(P2P, ERROR, "no pending scan request.\n");
+		return;
+	}
+
+	if (prP2pGlueInfo->aprRoleHandler !=
+			prP2pGlueInfo->prDevHandler) {
+		if (mtk_Netdev_To_RoleIdx(prGlueInfo, wdev->netdev,
+				&ucRoleIdx) < 0) {
+			/* Device Interface. */
+			ucBssIdx =
+				prGlueInfo->prAdapter->ucP2PDevBssIdx;
+		} else {
+			ASSERT(ucRoleIdx < KAL_P2P_NUM);
+			if (p2pFuncRoleToBssIdx(prGlueInfo->prAdapter,
+					ucRoleIdx, &ucBssIdx) !=
+					WLAN_STATUS_SUCCESS) {
+				DBGLOG(P2P, ERROR,
+					"Can't find BSS index.\n");
+				return;
+			}
+		}
+	} else {
+		ucBssIdx = prGlueInfo->prAdapter->ucP2PDevBssIdx;
+	}
+
+	DBGLOG(P2P, INFO, "netdev: %p, ucBssIdx: %u\n", wdev->netdev, ucBssIdx);
 
 	rStatus = kalIoctl(prGlueInfo,
 		wlanoidAbortP2pScan,
-		&u4Value, sizeof(u4Value),
+		&ucBssIdx, sizeof(ucBssIdx),
 		FALSE, FALSE, TRUE, &u4SetInfoLen);
 
 	if (rStatus != WLAN_STATUS_SUCCESS)
