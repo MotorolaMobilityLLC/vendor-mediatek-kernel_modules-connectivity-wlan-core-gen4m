@@ -333,11 +333,6 @@ struct EVENT_LTE_SAFE_CHN g_rLteSafeChInfo;
  *                   F U N C T I O N   D E C L A R A T I O N S
  *******************************************************************************
  */
-static u_int8_t
-cnmDBDCIsReqPeivilegeLock(
-	void
-);
-
 static void
 cnmDbdcFsmEntryFunc_DISABLE_IDLE(
 	IN struct ADAPTER *prAdapter
@@ -683,6 +678,7 @@ void cnmChMngrRequestPrivilege(struct ADAPTER
 {
 	struct MSG_CH_REQ *prMsgChReq;
 	struct CMD_CH_PRIVILEGE *prCmdBody;
+	struct BSS_INFO *prBssInfo = (struct BSS_INFO *) NULL;
 	uint32_t rStatus;
 #if CFG_SUPPORT_DBDC
 	OS_SYSTIME rChReqQueueTime;
@@ -730,6 +726,14 @@ void cnmChMngrRequestPrivilege(struct ADAPTER
 
 		cnmMemFree(prAdapter, prMsgHdr);
 		return;
+	}
+
+	/* Activate network if it's not activated yet */
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prMsgChReq->ucBssIndex);
+
+	if (!IS_BSS_ACTIVE(prBssInfo)) {
+		SET_NET_ACTIVE(prAdapter, prBssInfo->ucBssIndex);
+		nicActivateNetwork(prAdapter, prBssInfo->ucBssIndex);
 	}
 
 	log_dbg(CNM, INFO,
@@ -2483,7 +2487,7 @@ cnmDbdcFsmSteps(
 	}
 }
 
-static u_int8_t
+u_int8_t
 cnmDBDCIsReqPeivilegeLock(void)
 {
 	return g_rDbdcInfo.fgReqPrivelegeLock;
