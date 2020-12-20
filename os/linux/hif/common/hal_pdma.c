@@ -400,6 +400,8 @@ static void halDriverOwnTimeout(struct ADAPTER *prAdapter,
 		       LP_OWN_BACK_FAILED_LOG_SKIP_MS);
 		if (prAdapter->chip_info->dumpwfsyscpupcr)
 			prAdapter->chip_info->dumpwfsyscpupcr(prAdapter);
+		if (prAdapter->chip_info->checkbushang)
+			prAdapter->chip_info->checkbushang(prAdapter, FALSE);
 
 		prAdapter->u4OwnFailedLogCount++;
 		if (prAdapter->u4OwnFailedLogCount >

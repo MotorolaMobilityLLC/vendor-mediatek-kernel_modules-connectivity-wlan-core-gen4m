@@ -104,7 +104,7 @@ extern KAL_WAKE_LOCK_T *g_IntrWakeLock;
 #define AXI_WLAN_IRQ_NUMBER               16
 
 #if (CFG_SUPPORT_CONNINFRA == 1)
-#define WIFI_EMI_WFDMA_OFFSET      0x450000
+#define WIFI_EMI_WFDMA_OFFSET      0xa50000
 #define WIFI_EMI_WFDMA_SIZE        0xF20000
 #endif
 

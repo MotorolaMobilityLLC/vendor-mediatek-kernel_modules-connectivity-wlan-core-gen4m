@@ -14,7 +14,7 @@
 #ifdef CFG_MTK_ANDROID_EMI
 #include <memory/mediatek/emi.h>
 #define	REGION_WIFI	26
-#define WIFI_EMI_MEM_SIZE      0x140000
+#define WIFI_EMI_MEM_SIZE      0x440000
 #define WIFI_EMI_MEM_OFFSET    0x2B0000
 #define	DOMAIN_AP	0
 #define	DOMAIN_CONN	2

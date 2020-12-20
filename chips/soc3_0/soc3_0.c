@@ -1508,33 +1508,38 @@ static void soc3_0_DumpN10CoreReg(struct ADAPTER *prAdapter)
 	soc3_0_DumpMemory32(log, HANG_N10_CORE_LOG_NUM, "N10 core register");
 }
 
-static void soc3_0_DumpOtherCr(struct ADAPTER *prAdapter)
+static void soc3_0_DumpCrRange(struct ADAPTER *prAdapter,
+	uint32_t cr_start, uint32_t word_count, char *str)
 {
-#define	HANG_MAIL_BOX_LOG_NUM	2
-#define	HANG_DUMMY_CR_LOG_NUM	4
-#define	HANG_OTHER_LOG_TOTAL	(HANG_MAIL_BOX_LOG_NUM+HANG_DUMMY_CR_LOG_NUM)
+#define LOG_MAIX_ITEM 16
 
 	uint32_t u4Cr, i;
-	uint32_t log[HANG_OTHER_LOG_TOTAL];
+	uint32_t dummy[LOG_MAIX_ITEM] = {0};
 
-	DBGLOG(HAL, LOUD,
+	if (word_count > LOG_MAIX_ITEM)
+		word_count = LOG_MAIX_ITEM;
+
+	for (i = 0, u4Cr = cr_start; i < word_count; i++) {
+		soc3_0_CrRead(prAdapter, u4Cr, &dummy[i]);
+		u4Cr += 0x04;
+	}
+	soc3_0_DumpMemory32(dummy, word_count, str);
+}
+
+static void soc3_0_DumpOtherCr(struct ADAPTER *prAdapter)
+{
+#define	HANG_OTHER_LOG_NUM		2
+
+	DBGLOG(HAL, INFO,
 		"Host_CSR - mailbox and other CRs");
 
-	memset(log, 0, HANG_OTHER_LOG_TOTAL);
-
-	u4Cr = 0x18060260;
-	for (i = 0; i < HANG_MAIL_BOX_LOG_NUM; i++) {
-		soc3_0_CrRead(prAdapter, u4Cr, &log[i]);
-		u4Cr += 0x04;
-	}
-
-	u4Cr = 0x180602f0;
-	for (i = HANG_MAIL_BOX_LOG_NUM; i < HANG_OTHER_LOG_TOTAL; i++) {
-		soc3_0_CrRead(prAdapter, u4Cr, &log[i]);
-		u4Cr += 0x04;
-	}
-
-	soc3_0_DumpMemory32(log, HANG_OTHER_LOG_TOTAL, "mailbox and other CRs");
+	soc3_0_DumpCrRange(NULL, 0x18060260, HANG_OTHER_LOG_NUM,
+		"mailbox and other CRs");
+	soc3_0_DumpCrRange(NULL, 0x180602c0, 8, "DBG_DUMMY");
+	soc3_0_DumpCrRange(NULL, 0x180602e0, 4, "BT_CSR_DUMMY");
+	soc3_0_DumpCrRange(NULL, 0x180602f0, 4, "WF_CSR_DUMMY");
+	soc3_0_DumpCrRange(NULL, 0x18052900, 16, "conninfra Sysram BT");
+	soc3_0_DumpCrRange(NULL, 0x18053000, 16, "conninfra Sysram WF");
 }
 
 static void soc3_0_DumpSpecifiedWfTop(struct ADAPTER *prAdapter)
@@ -1877,6 +1882,7 @@ int soc3_0_CheckBusHang(void *adapter, uint8_t ucWfResetEnable)
 		} else {
 			DBGLOG(HAL, INFO,
 				"Before fgIsFwDownloaded\n");
+			soc3_0_DumpHostCr(prAdapter);
 		}
 
 /*
