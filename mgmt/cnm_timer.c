@@ -101,10 +101,91 @@
  */
 static void cnmTimerStopTimer_impl(IN struct ADAPTER *prAdapter,
 		IN struct TIMER *prTimer, IN u_int8_t fgAcquireSpinlock);
+static u_int8_t cnmTimerIsTimerValid(IN struct ADAPTER *prAdapter,
+		IN struct TIMER *prTimer);
+
 /*******************************************************************************
  *                              F U N C T I O N S
  *******************************************************************************
  */
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief This routine dump timer list for debug purpose
+ *
+ * \param[in]
+ *
+ * \retval
+ *
+ */
+/*----------------------------------------------------------------------------*/
+static void cnmTimerDumpTimer(IN struct ADAPTER *prAdapter)
+{
+	struct ROOT_TIMER *prRootTimer;
+	struct LINK_ENTRY *prLinkEntry;
+	struct TIMER *prTimerEntry;
+	struct LINK *prTimerList;
+
+	prRootTimer = &prAdapter->rRootTimer;
+	prTimerList = &prRootTimer->rLinkHead;
+
+	log_dbg(CNM, INFO, "Current time:%u\n", kalGetTimeTick());
+
+	LINK_FOR_EACH(prLinkEntry, prTimerList) {
+		if (prLinkEntry == NULL)
+			break;
+
+		prTimerEntry = LINK_ENTRY(prLinkEntry,
+			struct TIMER, rLinkEntry);
+
+		log_dbg(CNM, INFO, "timer:%p, func:%pf, ExpiredSysTime:%u\n",
+			prTimerEntry,
+			prTimerEntry->pfMgmtTimeOutFunc,
+			prTimerEntry->rExpiredSysTime);
+	}
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief This routine is called to check if a timer exists in timer list.
+ *
+ * \param[in] prTimer The timer to check
+ *
+ * \retval TRUE Valid timer
+ *         FALSE Invalid timer
+ *
+ */
+/*----------------------------------------------------------------------------*/
+static u_int8_t cnmTimerIsTimerValid(IN struct ADAPTER *prAdapter,
+		IN struct TIMER *prTimer)
+{
+	struct ROOT_TIMER *prRootTimer;
+	struct LINK *prTimerList;
+	struct LINK_ENTRY *prLinkEntry;
+	struct TIMER *prPendingTimer;
+
+	ASSERT(prAdapter);
+
+	prRootTimer = &prAdapter->rRootTimer;
+
+	/* Check if the timer is in timer list */
+	prTimerList = &(prAdapter->rRootTimer.rLinkHead);
+
+	LINK_FOR_EACH(prLinkEntry, prTimerList) {
+		if (prLinkEntry == NULL)
+			break;
+
+		prPendingTimer = LINK_ENTRY(prLinkEntry,
+			struct TIMER, rLinkEntry);
+
+		if (prPendingTimer == prTimer)
+			return TRUE;
+	}
+
+	log_dbg(CNM, WARN, "invalid pending timer %p func %pf\n",
+			prTimer, prTimer->pfMgmtTimeOutFunc);
+	return FALSE;
+}
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -157,6 +238,9 @@ static u_int8_t cnmTimerSetTimer(IN struct ADAPTER *prAdapter,
 void cnmTimerInitialize(IN struct ADAPTER *prAdapter)
 {
 	struct ROOT_TIMER *prRootTimer;
+	struct LINK *prTimerList;
+	struct LINK_ENTRY *prLinkEntry;
+	struct TIMER *prPendingTimer;
 
 	KAL_SPIN_LOCK_DECLARATION();
 
@@ -167,6 +251,23 @@ void cnmTimerInitialize(IN struct ADAPTER *prAdapter)
 	/* Note: glue layer have configured timer */
 
 	KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_TIMER);
+
+	log_dbg(CNM, WARN, "reset timer list\n");
+
+	/* Remove all pending timers */
+	prTimerList = &(prAdapter->rRootTimer.rLinkHead);
+
+	LINK_FOR_EACH(prLinkEntry, prTimerList) {
+		if (prLinkEntry == NULL)
+			break;
+
+		prPendingTimer = LINK_ENTRY(prLinkEntry,
+			struct TIMER, rLinkEntry);
+
+		/* Remove timer to prevent collapsing timer structure */
+		cnmTimerStopTimer_impl(prAdapter, prPendingTimer, FALSE);
+	}
+
 	LINK_INITIALIZE(&prRootTimer->rLinkHead);
 	KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_TIMER);
 
@@ -227,6 +328,11 @@ cnmTimerInitTimerOption(IN struct ADAPTER *prAdapter,
 {
 	struct LINK *prTimerList;
 	struct LINK_ENTRY *prLinkEntry;
+	struct LINK_ENTRY *prTempLinkEntry;
+	/* Previous valid timer before the dangling timer */
+	struct LINK_ENTRY *prPrevLinkEntry = NULL;
+	/* Next valid timer after the dangling timer */
+	struct LINK_ENTRY *prNextLinkEntry = NULL;
 	struct TIMER *prPendingTimer;
 
 	KAL_SPIN_LOCK_DECLARATION();
@@ -252,17 +358,59 @@ cnmTimerInitTimerOption(IN struct ADAPTER *prAdapter,
 			log_dbg(CNM, WARN, "re-init timer, timer %p func %pf\n",
 				prTimer, pfFunc);
 
-			/* Remove timer to prevent timer list collapse */
-			cnmTimerStopTimer_impl(prAdapter, prTimer, FALSE);
+			if (timerPendingTimer(prTimer)) {
+				/* Remove pending timer to prevent
+				 * collapsing timer list.
+				 */
+				cnmTimerStopTimer_impl(prAdapter,
+					prTimer, FALSE);
+				continue;
+			}
 
-			/* Search entire list again because of nest del and add
-			 * timers and current MGMT_TIMER could be volatile after
-			 * stopped
-			 */
-			prLinkEntry = (struct LINK_ENTRY *) prTimerList;
-			if (prLinkEntry == NULL)
-				break;
+			/* Timer structure was collapsed. Try to fix it. */
+			log_dbg(CNM, WARN, "timer was collapsed. fix it!\n");
+			LINK_FOR_EACH_PREV(prTempLinkEntry, prTimerList) {
+				if (prTempLinkEntry == NULL)
+					break;
+
+				prPendingTimer = LINK_ENTRY(
+					prTempLinkEntry,
+					struct TIMER, rLinkEntry);
+
+				if (prPendingTimer == prTimer) {
+					if (prNextLinkEntry == NULL) {
+						/* Link to head */
+						prNextLinkEntry =
+							(struct LINK_ENTRY *)
+							prTimerList;
+					}
+
+					/* Link to head */
+					if (prPrevLinkEntry == NULL) {
+						prTimerList->prNext =
+							prNextLinkEntry;
+						prNextLinkEntry->prPrev =
+							(struct LINK_ENTRY *)
+							prTimerList;
+						prTimerList->u4NumElem--;
+					} else { /* Link to previous entry */
+						prPrevLinkEntry->prNext =
+							prNextLinkEntry;
+						prNextLinkEntry->prPrev =
+							prPrevLinkEntry;
+						prTimerList->u4NumElem--;
+					}
+
+					/* Dump timer */
+					cnmTimerDumpTimer(prAdapter);
+					break;
+				}
+				/* Record next pending timer entry */
+				prNextLinkEntry = prTempLinkEntry;
+			}
 		}
+		/* Record previous pending timer entry */
+		prPrevLinkEntry = prLinkEntry;
 	}
 
 	LINK_ENTRY_INITIALIZE(&prTimer->rLinkEntry);
@@ -365,8 +513,8 @@ void cnmTimerStartTimer(IN struct ADAPTER *prAdapter, IN struct TIMER *prTimer,
 	ASSERT(prAdapter);
 	ASSERT(prTimer);
 
-	log_dbg(CNM, TRACE, "start timer, timer %p func %pf\n",
-		prTimer, prTimer->pfMgmtTimeOutFunc);
+	log_dbg(CNM, TRACE, "start timer, timer %p func %pf %d ms\n",
+		prTimer, prTimer->pfMgmtTimeOutFunc, u4TimeoutMs);
 
 #if (CFG_SUPPORT_STATISTICS == 1)
 	/* Do not print oid timer to avoid log too much.
@@ -422,8 +570,16 @@ void cnmTimerStartTimer(IN struct ADAPTER *prAdapter, IN struct TIMER *prTimer,
 	/* Add this timer to checking list */
 	prTimer->rExpiredSysTime = rExpiredSysTime;
 
-	if (!timerPendingTimer(prTimer))
+	if (!timerPendingTimer(prTimer)) {
 		LINK_INSERT_TAIL(prTimerList, &prTimer->rLinkEntry);
+	} else {
+		/* If the pending timer is not in timer list, we will have
+		 * to add the timer to timer list anyway. Otherwise, the timer
+		 * will never timeout.
+		 */
+		if (!cnmTimerIsTimerValid(prAdapter, prTimer))
+			LINK_INSERT_TAIL(prTimerList, &prTimer->rLinkEntry);
+	}
 
 	KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_TIMER);
 }
@@ -495,6 +651,9 @@ void cnmTimerDoTimeOutCheck(IN struct ADAPTER *prAdapter)
 							     pfMgmtTimeOutFunc,
 							     ulTimeoutDataPtr))
 				#endif
+				log_dbg(CNM, TRACE, "timer timeout, timer %p func %pf\n",
+					prTimer, prTimer->pfMgmtTimeOutFunc);
+
 					(pfMgmtTimeOutFunc) (prAdapter,
 						ulTimeoutDataPtr);
 					KAL_ACQUIRE_SPIN_LOCK(prAdapter,
