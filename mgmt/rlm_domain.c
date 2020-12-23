@@ -425,7 +425,10 @@ struct DOMAIN_INFO_ENTRY arSupportedRegDomains[] = {
 			{81, BAND_2G4, CHNL_SPAN_5, 1, 13, FALSE}
 			,			/* CH_SET_2G4_1_13 */
 
-			{115, BAND_5G, CHNL_SPAN_20, 36, 4, FALSE}
+			// Begin Motorola, liubin7, IKMTKP-1733, mark 5G B1 ( indoor channel ) as DFS channel for ETSI country ( since there is no way to mark channel as indoor channel on MTK platform )
+			{115, BAND_5G, CHNL_SPAN_20, 36, 4, TRUE}
+			//{115, BAND_5G, CHNL_SPAN_20, 36, 4, FALSE}
+			// END Motorola, liubin7, IKMTKP-1733
 			,			/* CH_SET_UNII_LOW_36_48 */
 			{118, BAND_5G, CHNL_SPAN_20, 52, 4, TRUE}
 			,			/* CH_SET_UNII_MID_52_64 */
