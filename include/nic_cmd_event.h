@@ -2464,7 +2464,7 @@ struct CMD_SCHED_SCAN_REQ {
 	uint8_t ucMatchSsidNum;
 	uint8_t aucPadding_0;
 	uint16_t u2IELen;
-	struct PARAM_SSID auSsid[10];
+	struct PARAM_SSID auSsid[16];
 	struct SSID_MATCH_SETS auMatchSsid[16];
 	uint8_t ucChannelType;
 	uint8_t ucChnlNum;

@@ -1044,7 +1044,7 @@
 #define SCHED_SCAN_CMD_VERSION             (1)
 
 /* this value should be aligned to auSsid in struct CMD_SCHED_SCAN_REQ */
-#define CFG_SCAN_HIDDEN_SSID_MAX_NUM       (10)
+#define CFG_SCAN_HIDDEN_SSID_MAX_NUM       (16)
 /* this value should be aligned to auMatchSsid in struct CMD_SCHED_SCAN_REQ */
 #define CFG_SCAN_SSID_MATCH_MAX_NUM        (16)
 
