@@ -1511,7 +1511,7 @@ u_int8_t wlanISR(IN struct ADAPTER *prAdapter,
  * \return (none)
  */
 /*----------------------------------------------------------------------------*/
-void wlanIST(IN struct ADAPTER *prAdapter)
+void wlanIST(IN struct ADAPTER *prAdapter, bool fgEnInt)
 {
 	uint32_t u4Status = WLAN_STATUS_SUCCESS;
 
@@ -1533,7 +1533,8 @@ void wlanIST(IN struct ADAPTER *prAdapter)
 #endif
 	}
 
-	nicEnableInterrupt(prAdapter);
+	if (fgEnInt)
+		nicEnableInterrupt(prAdapter);
 
 	RECLAIM_POWER_CONTROL_TO_PM(prAdapter, FALSE);
 
