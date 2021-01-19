@@ -1001,9 +1001,13 @@ bool halHifSwInfoInit(IN struct ADAPTER *prAdapter)
 	struct GL_HIF_INFO *prHifInfo = NULL;
 	struct BUS_INFO *prBusInfo = NULL;
 	struct mt66xx_chip_info *prChipInfo;
+	struct SW_WFDMA_INFO *prSwWfdmaInfo;
 
 	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
-	prBusInfo = prAdapter->chip_info->bus_info;
+	prChipInfo = prAdapter->chip_info;
+	prBusInfo = prChipInfo->bus_info;
+	prSwWfdmaInfo = &prBusInfo->rSwWfdmaInfo;
+
 	if (prBusInfo->DmaShdlInit)
 		prBusInfo->DmaShdlInit(prAdapter);
 
@@ -1013,7 +1017,6 @@ bool halHifSwInfoInit(IN struct ADAPTER *prAdapter)
 	halWpdmaInitRing(prAdapter->prGlueInfo, true);
 	halInitMsduTokenInfo(prAdapter);
 	/* Initialize wfdma reInit handshake parameters */
-	prChipInfo = prAdapter->chip_info;
 	if ((prChipInfo->asicWfdmaReInit)
 	    && (prChipInfo->asicWfdmaReInit_handshakeInit))
 		prChipInfo->asicWfdmaReInit_handshakeInit(prAdapter);
@@ -1046,16 +1049,26 @@ bool halHifSwInfoInit(IN struct ADAPTER *prAdapter)
 
 	prHifInfo->fgIsPowerOff = false;
 
+	if (prSwWfdmaInfo->rOps.init)
+		prSwWfdmaInfo->rOps.init(prSwWfdmaInfo);
+
 	return true;
 }
 
 void halHifSwInfoUnInit(IN struct GLUE_INFO *prGlueInfo)
 {
 #if defined(_HIF_PCIE) || defined(_HIF_AXI)
+	struct mt66xx_chip_info *prChipInfo;
+	struct BUS_INFO *prBusInfo = NULL;
 	struct GL_HIF_INFO *prHifInfo = &prGlueInfo->rHifInfo;
+	struct SW_WFDMA_INFO *prSwWfdmaInfo;
 	struct list_head *prCur, *prNext;
 	struct TX_CMD_REQ *prTxCmdReq;
 	struct TX_DATA_REQ *prTxDataReq;
+
+	prChipInfo = prGlueInfo->prAdapter->chip_info;
+	prBusInfo = prChipInfo->bus_info;
+	prSwWfdmaInfo = &prBusInfo->rSwWfdmaInfo;
 
 	del_timer_sync(&prHifInfo->rSerTimer);
 
@@ -1073,6 +1086,9 @@ void halHifSwInfoUnInit(IN struct GLUE_INFO *prGlueInfo)
 		list_del(prCur);
 		prHifInfo->u4TxDataQLen--;
 	}
+
+	if (prSwWfdmaInfo->rOps.uninit)
+		prSwWfdmaInfo->rOps.uninit(prSwWfdmaInfo);
 #endif
 }
 
@@ -1967,8 +1983,11 @@ void halWpdmaInitRxRing(IN struct GLUE_INFO *prGlueInfo)
 void halWpdmaProcessCmdDmaDone(IN struct GLUE_INFO *prGlueInfo,
 	IN uint16_t u2Port)
 {
+	struct mt66xx_chip_info *prChipInfo;
+	struct BUS_INFO *prBusInfo;
 	struct GL_HIF_INFO *prHifInfo = NULL;
 	struct HIF_MEM_OPS *prMemOps;
+	struct SW_WFDMA_INFO *prSwWfdmaInfo;
 	struct RTMP_TX_RING *prTxRing;
 	struct TXD_STRUCT *pTxD;
 	phys_addr_t PacketPa = 0;
@@ -1977,11 +1996,21 @@ void halWpdmaProcessCmdDmaDone(IN struct GLUE_INFO *prGlueInfo,
 
 	ASSERT(prGlueInfo);
 
+	prChipInfo = prGlueInfo->prAdapter->chip_info;
+	prBusInfo = prChipInfo->bus_info;
 	prHifInfo = &prGlueInfo->rHifInfo;
 	prMemOps = &prHifInfo->rMemOps;
+	prSwWfdmaInfo = &prBusInfo->rSwWfdmaInfo;
 	prTxRing = &prHifInfo->TxRing[u2Port];
 
-	kalDevRegRead(prGlueInfo, prTxRing->hw_didx_addr, &u4DmaIdx);
+	if (prSwWfdmaInfo->fgIsEnSwWfdma) {
+		if (prSwWfdmaInfo->rOps.getDidx)
+			prSwWfdmaInfo->rOps.getDidx(prGlueInfo, &u4DmaIdx);
+		else
+			DBGLOG(HAL, ERROR, "SwWfdma ops unsupported!");
+	} else
+		kalDevRegRead(prGlueInfo, prTxRing->hw_didx_addr, &u4DmaIdx);
+
 	u4SwIdx = prTxRing->TxSwUsedIdx;
 
 	do {
@@ -2085,28 +2114,30 @@ uint32_t halWpdmaGetRxDmaDoneCnt(IN struct GLUE_INFO *prGlueInfo,
 enum ENUM_CMD_TX_RESULT halWpdmaWriteCmd(IN struct GLUE_INFO *prGlueInfo,
 		      IN struct CMD_INFO *prCmdInfo, IN uint8_t ucTC)
 {
+	struct mt66xx_chip_info *prChipInfo;
+	struct BUS_INFO *prBusInfo;
 	struct GL_HIF_INFO *prHifInfo = NULL;
 	struct HIF_MEM_OPS *prMemOps;
+	struct SW_WFDMA_INFO *prSwWfdmaInfo;
 	struct RTMP_TX_RING *prTxRing;
 	struct RTMP_DMACB *pTxCell;
 	struct TXD_STRUCT *pTxD;
 	uint16_t u2Port = TX_RING_CMD_IDX_2;
 	uint32_t u4TotalLen;
 	void *pucSrc = NULL;
-#if (CFG_SUPPORT_CONNAC2X == 1)
-	struct mt66xx_chip_info *prChipInfo;
-#endif /* CFG_SUPPORT_CONNAC2 == 1 */
 
 	ASSERT(prGlueInfo);
 
-#if (CFG_SUPPORT_CONNAC2X == 1)
 	prChipInfo = prGlueInfo->prAdapter->chip_info;
+	prBusInfo = prChipInfo->bus_info;
+	prHifInfo = &prGlueInfo->rHifInfo;
+	prMemOps = &prHifInfo->rMemOps;
+	prSwWfdmaInfo = &prBusInfo->rSwWfdmaInfo;
+
+#if (CFG_SUPPORT_CONNAC2X == 1)
 	if (prChipInfo->is_support_wacpu)
 		u2Port = TX_RING_WA_CMD_IDX_4;
 #endif /* CFG_SUPPORT_CONNAC2X == 1 */
-
-	prHifInfo = &prGlueInfo->rHifInfo;
-	prMemOps = &prHifInfo->rMemOps;
 	prTxRing = &prHifInfo->TxRing[u2Port];
 
 	u4TotalLen = prCmdInfo->u4TxdLen + prCmdInfo->u4TxpLen;
@@ -2131,7 +2162,16 @@ enum ENUM_CMD_TX_RESULT halWpdmaWriteCmd(IN struct GLUE_INFO *prGlueInfo,
 	if (prMemOps->allocRuntimeMem)
 		pucSrc = prMemOps->allocRuntimeMem(u4TotalLen);
 
-	kalDevRegRead(prGlueInfo, prTxRing->hw_cidx_addr, &prTxRing->TxCpuIdx);
+	if (prSwWfdmaInfo->fgIsEnSwWfdma) {
+		if (prSwWfdmaInfo->rOps.getCidx)
+			prSwWfdmaInfo->rOps.
+				getCidx(prGlueInfo, &prTxRing->TxCpuIdx);
+		else
+			DBGLOG(HAL, ERROR, "SwWfdma ops unsupported!");
+	} else
+		kalDevRegRead(prGlueInfo, prTxRing->hw_cidx_addr,
+			      &prTxRing->TxCpuIdx);
+
 	if (prTxRing->TxCpuIdx >= TX_RING_SIZE) {
 		DBGLOG(HAL, ERROR, "Error TxCpuIdx[%u]\n", prTxRing->TxCpuIdx);
 		if (prMemOps->freeBuf)
@@ -2173,7 +2213,16 @@ enum ENUM_CMD_TX_RESULT halWpdmaWriteCmd(IN struct GLUE_INFO *prGlueInfo,
 	INC_RING_INDEX(prTxRing->TxCpuIdx, TX_RING_SIZE);
 
 	prTxRing->u4UsedCnt++;
-	kalDevRegWrite(prGlueInfo, prTxRing->hw_cidx_addr, prTxRing->TxCpuIdx);
+
+	if (prSwWfdmaInfo->fgIsEnSwWfdma) {
+		if (prSwWfdmaInfo->rOps.setCidx)
+			prSwWfdmaInfo->rOps.
+				setCidx(prGlueInfo, prTxRing->TxCpuIdx);
+		else
+			DBGLOG(HAL, ERROR, "SwWfdma ops unsupported!");
+	} else
+		kalDevRegWrite(prGlueInfo, prTxRing->hw_cidx_addr,
+			       prTxRing->TxCpuIdx);
 
 	GLUE_INC_REF_CNT(prGlueInfo->prAdapter->rHifStats.u4CmdTxCount);
 
@@ -2774,12 +2823,14 @@ void halHwRecoveryFromError(IN struct ADAPTER *prAdapter)
 	struct mt66xx_chip_info *prChipInfo;
 	struct GL_HIF_INFO *prHifInfo;
 	struct BUS_INFO *prBusInfo = NULL;
+	struct SW_WFDMA_INFO *prSwWfdmaInfo;
 	struct ERR_RECOVERY_CTRL_T *prErrRecoveryCtrl;
 	uint32_t u4Status = 0;
 
 	prGlueInfo = prAdapter->prGlueInfo;
 	prHifInfo = &prGlueInfo->rHifInfo;
 	prBusInfo = prGlueInfo->prAdapter->chip_info->bus_info;
+	prSwWfdmaInfo = &prBusInfo->rSwWfdmaInfo;
 	prErrRecoveryCtrl = &prHifInfo->rErrRecoveryCtl;
 
 	u4Status = prErrRecoveryCtrl->u4Status;
@@ -2837,6 +2888,13 @@ void halHwRecoveryFromError(IN struct ADAPTER *prAdapter)
 	case ERR_RECOV_STOP_PDMA0:
 		if (u4Status & ERROR_DETECT_RESET_DONE) {
 			DBGLOG(HAL, INFO, "SER(L) Host re-initialize PDMA\n");
+
+			if (prSwWfdmaInfo->rOps.backup)
+				prSwWfdmaInfo->rOps.backup(prGlueInfo);
+
+			if (prSwWfdmaInfo->rOps.reset)
+				prSwWfdmaInfo->rOps.reset(prSwWfdmaInfo);
+
 			/* only reset TXD & RXD */
 			halWpdmaAllocRing(prAdapter->prGlueInfo, false);
 			nicFreePendingTxMsduInfo(prAdapter, 0xFF,
@@ -2906,6 +2964,9 @@ void halHwRecoveryFromError(IN struct ADAPTER *prAdapter)
 			kalSetTxEvent2Hif(prAdapter->prGlueInfo);
 #endif
 			prErrRecoveryCtrl->eErrRecovState = ERR_RECOV_STOP_IDLE;
+
+			if (prSwWfdmaInfo->rOps.restore)
+				prSwWfdmaInfo->rOps.restore(prGlueInfo);
 		} else {
 			DBGLOG(HAL, ERROR, "SER CurStat=%u Event=%x\n",
 			       prErrRecoveryCtrl->eErrRecovState, u4Status);
@@ -2940,9 +3001,11 @@ uint32_t halHifPowerOffWifi(IN struct ADAPTER *prAdapter)
 	struct GL_HIF_INFO *prHifInfo = NULL;
 	uint32_t rStatus = WLAN_STATUS_SUCCESS;
 	struct BUS_INFO *prBusInfo = NULL;
+	struct SW_WFDMA_INFO *prSwWfdmaInfo;
 
 	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
 	prBusInfo = prAdapter->chip_info->bus_info;
+	prSwWfdmaInfo = &prBusInfo->rSwWfdmaInfo;
 
 	DBGLOG(INIT, INFO, "Power off Wi-Fi!\n");
 
@@ -2956,6 +3019,11 @@ uint32_t halHifPowerOffWifi(IN struct ADAPTER *prAdapter)
 #endif
 	/* Power off Wi-Fi */
 	wlanSendNicPowerCtrlCmd(prAdapter, TRUE);
+
+	if (prSwWfdmaInfo->fgIsEnSwWfdma && prSwWfdmaInfo->rOps.writeCmd) {
+		while (prSwWfdmaInfo->rOps.writeCmd(prAdapter->prGlueInfo))
+			DBGLOG(INIT, INFO, "Handle remaining cmd!\n");
+	}
 
 	prHifInfo->fgIsPowerOff = true;
 
