@@ -8423,7 +8423,7 @@ void kalScanLogCacheFlushBSS(struct ADAPTER *prAdapter,
 	KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_BSSLIST_CFG);
 	scanLogCacheFlushBSS(
 		&(prAdapter->rWifiVar.rScanInfo.rScanLogCache.rBSSListCFG),
-		LOG_SCAN_DONE_D2K, logBufLen);
+		LOG_SCAN_DONE_D2K);
 	KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_BSSLIST_CFG);
 }
 

@@ -394,7 +394,7 @@ void scnSendScanReqV2(IN struct ADAPTER *prAdapter)
 		MAC2STR(prCmdScanReq->aucRandomMac));
 
 	scanLogCacheFlushAll(prAdapter, &(prScanInfo->rScanLogCache),
-		LOG_SCAN_REQ_D2F, SCAN_LOG_MSG_MAX_LEN);
+		LOG_SCAN_REQ_D2F);
 	scanReqLog(prCmdScanReq);
 	if (prCmdScanReq->ucBssIndex == KAL_NETWORK_TYPE_AIS_INDEX)
 		scanInitEssResult(prAdapter);
@@ -818,7 +818,7 @@ void scnEventScanDone(IN struct ADAPTER *prAdapter,
 
 		KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_BSSLIST_FW);
 		scanLogCacheFlushBSS(&(prScanInfo->rScanLogCache.rBSSListFW),
-			LOG_SCAN_DONE_F2D, SCAN_LOG_MSG_MAX_LEN);
+			LOG_SCAN_DONE_F2D);
 		KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_BSSLIST_FW);
 
 		if (prScanDone->ucCurrentState != FW_SCAN_STATE_SCAN_DONE) {
