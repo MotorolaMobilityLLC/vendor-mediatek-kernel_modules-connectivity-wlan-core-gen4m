@@ -798,7 +798,7 @@ u_int8_t secPrivacySeekForEntry(
 
 	prWtbl = prAdapter->rWifiVar.arWtbl;
 
-	ucStartIDX = 1;
+	ucStartIDX = 0;
 	ucMaxIDX = prAdapter->ucTxDefaultWlanIndex - 1;
 
 	for (i = ucStartIDX; i <= ucMaxIDX; i++) {
@@ -1076,61 +1076,60 @@ secPrivacySeekForBcEntry(IN struct ADAPTER *prAdapter,
 	if (prBSSInfo->eCurrentOPMode == OP_MODE_ACCESS_POINT)
 		fgCheckKeyId = FALSE;
 
-	DBGLOG_LIMITED(INIT, INFO, "OpMode:%d, NetworkType:%d, CheckKeyId:%d\n",
-		prBSSInfo->eCurrentOPMode, prBSSInfo->eNetworkType,
-		fgCheckKeyId);
-
-	ucStartIDX = 1;
+	ucStartIDX = 0;
 	ucMaxIDX = prAdapter->ucTxDefaultWlanIndex - 1;
 
-	if (ucAlg == CIPHER_SUITE_BIP) {
-		ucEntry = 0;
-	} else {
-		for (i = ucStartIDX; i <= ucMaxIDX; i++) {
+	DBGLOG_LIMITED(INIT, INFO, "OpMode:%d, NetworkType:%d, CheckKeyId:%d\n",
+	       prBSSInfo->eCurrentOPMode, prBSSInfo->eNetworkType,
+	       fgCheckKeyId);
 
-			if (prWtbl[i].ucUsed && !prWtbl[i].ucPairwise
-				&& prWtbl[i].ucBssIndex == ucBssIndex) {
-				if (!fgCheckKeyId) {
-					ucEntry = i;
-					DBGLOG(RSN, TRACE,
-					    "[Wlan index]: Reuse entry #%d for open/wep/wpi\n",
-					    i);
-					break;
-				}
+	for (i = ucStartIDX; i <= ucMaxIDX; i++) {
 
-				if (fgCheckKeyId
-					&& (prWtbl[i].ucKeyId == ucKeyId
-						|| prWtbl[i].ucKeyId == 0xFF)) {
-					ucEntry = i;
-					DBGLOG(RSN, TRACE,
-					    "[Wlan index]: Reuse entry #%d\n",
-					    i);
-					break;
-				}
+		if (prWtbl[i].ucUsed && !prWtbl[i].ucPairwise
+		    && prWtbl[i].ucBssIndex == ucBssIndex) {
+
+			if (!fgCheckKeyId) {
+				ucEntry = i;
+				DBGLOG(RSN, TRACE,
+				       "[Wlan index]: Reuse entry #%d for open/wep/wpi\n",
+				       i);
+				break;
+			}
+
+			if (fgCheckKeyId && (prWtbl[i].ucKeyId == ucKeyId
+					     || prWtbl[i].ucKeyId == 0xFF)) {
+				ucEntry = i;
+				DBGLOG(RSN, TRACE,
+				       "[Wlan index]: Reuse entry #%d\n", i);
+				break;
 			}
 		}
+	}
 
-		if (i == (ucMaxIDX + 1)) {
-			for (i = ucStartIDX; i <= ucMaxIDX; i++) {
-				if (prWtbl[i].ucUsed == FALSE) {
-					ucEntry = i;
-					DBGLOG(RSN, TRACE,
-					    "[Wlan index]: Assign entry #%d\n",
-					    i);
-					break;
-				}
+	if (i == (ucMaxIDX + 1)) {
+		for (i = ucStartIDX; i <= ucMaxIDX; i++) {
+			if (prWtbl[i].ucUsed == FALSE) {
+				ucEntry = i;
+				DBGLOG(RSN, TRACE,
+				       "[Wlan index]: Assign entry #%d\n", i);
+				break;
 			}
 		}
 	}
 
 	if (ucEntry < prAdapter->ucTxDefaultWlanIndex) {
-		prWtbl[ucEntry].ucUsed = TRUE;
-		prWtbl[ucEntry].ucKeyId = ucKeyId;
-		prWtbl[ucEntry].ucBssIndex = ucBssIndex;
-		prWtbl[ucEntry].ucPairwise = 0;
-		kalMemCopy(prWtbl[ucEntry].aucMacAddr, pucAddr,
-				MAC_ADDR_LEN);
-		prWtbl[ucEntry].ucStaIndex = ucStaIdx;
+		if (ucAlg != CIPHER_SUITE_BIP) {
+			prWtbl[ucEntry].ucUsed = TRUE;
+			prWtbl[ucEntry].ucKeyId = ucKeyId;
+			prWtbl[ucEntry].ucBssIndex = ucBssIndex;
+			prWtbl[ucEntry].ucPairwise = 0;
+			kalMemCopy(prWtbl[ucEntry].aucMacAddr, pucAddr,
+				   MAC_ADDR_LEN);
+			prWtbl[ucEntry].ucStaIndex = ucStaIdx;
+		} else {
+			/* BIP no need to dump secCheckWTBLAssign */
+			return ucEntry;
+		}
 
 		DBGLOG_LIMITED(RSN, INFO,
 		       "[Wlan index] BSS#%d keyid#%d P=%d use WlanIndex#%d STAIdx=%d "
