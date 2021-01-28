@@ -602,7 +602,7 @@ wlanoidQueryP2pPowerSaveProfile(IN P_ADAPTER_T prAdapter,
 		ASSERT(pvQueryBuffer);
 		/* TODO: FIXME */
 		/* *(PPARAM_POWER_MODE) pvQueryBuffer =
-		 * (PARAM_POWER_MODE)(prAdapter->rWlanInfo.arPowerSaveMode[P2P_DEV_BSS_INDEX].ucPsProfile);
+		 * (PARAM_POWER_MODE)(prAdapter->rWlanInfo.arPowerSaveMode[prAdapter->ucP2PDevBssIdx].ucPsProfile);
 		 */
 		/* *pu4QueryInfoLen = sizeof(PARAM_POWER_MODE); */
 	}
@@ -667,7 +667,7 @@ wlanoidSetP2pPowerSaveProfile(IN P_ADAPTER_T prAdapter,
 		}
 	}
 
-	status = nicConfigPowerSaveProfile(prAdapter, P2P_DEV_BSS_INDEX,	/* TODO: FIXME */
+	status = nicConfigPowerSaveProfile(prAdapter, prAdapter->ucP2PDevBssIdx,	/* TODO: FIXME */
 					   ePowerMode, TRUE);
 	return status;
 }				/* end of wlanoidSetP2pPowerSaveProfile() */
@@ -846,10 +846,10 @@ wlanoidSetP2PMulticastList(IN P_ADAPTER_T prAdapter,
 	}
 
 	rCmdMacMcastAddr.u4NumOfGroupAddr = u4SetBufferLen / MAC_ADDR_LEN;
-	rCmdMacMcastAddr.ucBssIndex = P2P_DEV_BSS_INDEX;	/* TODO: */
+	rCmdMacMcastAddr.ucBssIndex = prAdapter->ucP2PDevBssIdx;	/* TODO: */
 	kalMemCopy(rCmdMacMcastAddr.arAddress, pvSetBuffer, u4SetBufferLen);
 
-	return wlanoidSendSetQueryP2PCmd(prAdapter, CMD_ID_MAC_MCAST_ADDR, P2P_DEV_BSS_INDEX,
+	return wlanoidSendSetQueryP2PCmd(prAdapter, CMD_ID_MAC_MCAST_ADDR, prAdapter->ucP2PDevBssIdx,
 				/* TODO: */
 				/* This CMD response is no need to complete the OID. Or the event would unsync. */
 					 TRUE, FALSE, FALSE,
@@ -1195,7 +1195,7 @@ wlanoidSetSecCheckRequest(IN P_ADAPTER_T prAdapter,
 #if 0  /* Comment it because CMD_ID_SEC_CHECK is not defined */
 	return wlanoidSendSetQueryP2PCmd(prAdapter,
 					 CMD_ID_SEC_CHECK,
-					 P2P_DEV_BSS_INDEX,
+					 prAdapter->ucP2PDevBssIdx,
 					 FALSE,
 					 TRUE,
 					 TRUE,
@@ -1538,7 +1538,7 @@ wlanoidSetP2pWPSmode(IN P_ADAPTER_T prAdapter,
 		else
 			prAdapter->rWifiVar.prP2PConnSettings[i]->fgIsWPSMode = 0;
 
-	status = nicUpdateBss(prAdapter, P2P_DEV_BSS_INDEX);
+	status = nicUpdateBss(prAdapter, prAdapter->ucP2PDevBssIdx);
 
 	return status;
 }				/* end of wlanoidSetP2pWPSmode() */

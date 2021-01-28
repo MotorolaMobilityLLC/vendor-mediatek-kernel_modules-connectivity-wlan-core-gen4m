@@ -543,7 +543,7 @@ WLAN_STATUS assocSendReAssocReqFrame(IN P_ADAPTER_T prAdapter, IN P_STA_RECORD_T
 	}
 #endif
 
-	ASSERT(prStaRec->ucBssIndex <= MAX_BSS_INDEX);
+	ASSERT(prStaRec->ucBssIndex <= prAdapter->ucHwBssIdNum);
 
 	u2EstimatedFrameLen += u2EstimatedExtraIELen;
 
@@ -960,7 +960,7 @@ WLAN_STATUS assocSendDisAssocFrame(IN P_ADAPTER_T prAdapter, IN P_STA_RECORD_T p
 	/* UINT_32 u4Status = WLAN_STATUS_SUCCESS; */
 
 	ASSERT(prStaRec);
-	ASSERT(prStaRec->ucBssIndex <= MAX_BSS_INDEX);
+	ASSERT(prStaRec->ucBssIndex <= prAdapter->ucHwBssIdNum);
 
 	/* 4 <1> Allocate a PKT_INFO_T for Disassociation Frame */
 	/* Init with MGMT Header Length + Length of Fixed Fields + IE Length */
@@ -1492,7 +1492,7 @@ WLAN_STATUS assocSendReAssocRespFrame(IN P_ADAPTER_T prAdapter, IN P_STA_RECORD_
 	UINT_32 i;
 
 	ASSERT(prStaRec);
-	ASSERT(prStaRec->ucBssIndex <= MAX_BSS_INDEX);
+	ASSERT(prStaRec->ucBssIndex <= prAdapter->ucHwBssIdNum);
 
 	/* 4 <1> Allocate a PKT_INFO_T for Authentication Frame */
 	fgIsReAssoc = prStaRec->fgIsReAssoc;

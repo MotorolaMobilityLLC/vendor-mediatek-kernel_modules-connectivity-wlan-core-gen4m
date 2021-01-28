@@ -117,7 +117,7 @@ VOID p2pFsmRunEventScanRequest(IN P_ADAPTER_T prAdapter, IN P_MSG_HDR_T prMsgHdr
 
 		prP2pScanReqMsg = (P_MSG_P2P_SCAN_REQUEST_T) prMsgHdr;
 
-		if (prP2pScanReqMsg->ucBssIdx == P2P_DEV_BSS_INDEX)
+		if (prP2pScanReqMsg->ucBssIdx == prAdapter->ucP2PDevBssIdx)
 			p2pDevFsmRunEventScanRequest(prAdapter, prMsgHdr);
 		else
 			p2pRoleFsmRunEventScanRequest(prAdapter, prMsgHdr);
@@ -164,12 +164,12 @@ VOID p2pFsmRunEventChGrant(IN P_ADAPTER_T prAdapter, IN P_MSG_HDR_T prMsgHdr)
 
 		switch (prP2pBssInfo->eCurrentOPMode) {
 		case OP_MODE_P2P_DEVICE:
-			ASSERT(prP2pBssInfo->ucBssIndex == P2P_DEV_BSS_INDEX);
+			ASSERT(prP2pBssInfo->ucBssIndex == prAdapter->ucP2PDevBssIdx);
 			p2pDevFsmRunEventChnlGrant(prAdapter, prMsgHdr, prAdapter->rWifiVar.prP2pDevFsmInfo);
 			break;
 		case OP_MODE_INFRASTRUCTURE:
 		case OP_MODE_ACCESS_POINT:
-			ASSERT(prP2pBssInfo->ucBssIndex < P2P_DEV_BSS_INDEX);
+			ASSERT(prP2pBssInfo->ucBssIndex < prAdapter->ucP2PDevBssIdx);
 			p2pRoleFsmRunEventChnlGrant(prAdapter, prMsgHdr,
 						    P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prAdapter,
 										   prP2pBssInfo->u4PrivateData));
@@ -313,12 +313,12 @@ VOID p2pFsmRunEventScanDone(IN P_ADAPTER_T prAdapter, IN P_MSG_HDR_T prMsgHdr)
 
 		switch (prP2pBssInfo->eCurrentOPMode) {
 		case OP_MODE_P2P_DEVICE:
-			ASSERT(prP2pBssInfo->ucBssIndex == P2P_DEV_BSS_INDEX);
+			ASSERT(prP2pBssInfo->ucBssIndex == prAdapter->ucP2PDevBssIdx);
 			p2pDevFsmRunEventScanDone(prAdapter, prMsgHdr, prAdapter->rWifiVar.prP2pDevFsmInfo);
 			break;
 		case OP_MODE_INFRASTRUCTURE:
 		case OP_MODE_ACCESS_POINT:
-			ASSERT(prP2pBssInfo->ucBssIndex < P2P_DEV_BSS_INDEX);
+			ASSERT(prP2pBssInfo->ucBssIndex < prAdapter->ucP2PDevBssIdx);
 			p2pRoleFsmRunEventScanDone(prAdapter, prMsgHdr,
 						   P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prAdapter,
 										  prP2pBssInfo->u4PrivateData));
