@@ -333,8 +333,6 @@ struct wireless_dev *mtk_p2p_cfg80211_add_iface(struct wiphy *wiphy,
 	struct mt66xx_chip_info *prChipInfo;
 	struct wireless_dev *prOrigWdev = NULL;
 
-	DBGLOG(P2P, INFO, "mtk_p2p_cfg80211_add_iface\n");
-
 	do {
 		P2P_WIPHY_PRIV(wiphy, prGlueInfo);
 
@@ -409,8 +407,8 @@ struct wireless_dev *mtk_p2p_cfg80211_add_iface(struct wiphy *wiphy,
 			break;
 		}
 
-		DBGLOG(P2P, TRACE,
-			"mtk_p2p_cfg80211_add_iface name = %s\n", name);
+		DBGLOG(P2P, INFO, "type: %d, name = %s, netdev: 0x%p\n",
+				type, name, prNewNetDevice);
 
 		prP2pInfo->aprRoleHandler = prNewNetDevice;
 		*((struct GLUE_INFO **) netdev_priv(prNewNetDevice)) =
@@ -3264,7 +3262,8 @@ void mtk_p2p_cfg80211_mgmt_frame_register(IN struct wiphy *wiphy,
 		if ((wiphy == NULL) || (wdev == NULL))
 			break;
 
-		DBGLOG(P2P, TRACE, "mtk_p2p_cfg80211_mgmt_frame_register\n");
+		DBGLOG(P2P, TRACE, "netdev: 0x%p, frame_type: 0x%x, reg: %d\n",
+				wdev->netdev, frame_type, reg);
 
 		P2P_WIPHY_PRIV(wiphy, prGlueInfo);
 
@@ -3278,12 +3277,8 @@ void mtk_p2p_cfg80211_mgmt_frame_register(IN struct wiphy *wiphy,
 		} else {
 			if (mtk_Netdev_To_RoleIdx(prGlueInfo,
 				wdev->netdev, &ucRoleIdx) < 0) {
-				/* P2P device*/
-				DBGLOG(P2P, WARN,
-					"mtk_p2p_cfg80211_mgmt_frame_register wireless dev match fail!\n");
-				pu4P2pPacketFilter =
-					&prGlueInfo->prP2PDevInfo
-						->u4OsMgmtFrameFilter;
+				DBGLOG(P2P, WARN, "wireless dev match fail!\n");
+				break;
 			} else {
 				/* Non P2P device*/
 				ASSERT(ucRoleIdx < KAL_P2P_NUM);
