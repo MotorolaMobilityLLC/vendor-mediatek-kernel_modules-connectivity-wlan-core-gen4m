@@ -676,6 +676,32 @@ P_USB_REQ_T glUsbDequeueReq(P_GL_HIF_INFO_T prHifInfo, struct list_head *prHead,
 
 /*----------------------------------------------------------------------------*/
 /*!
+* \brief This function borrow UsbReq from Tx data FFA queue to the spcified TC Tx data free queue
+*
+* \param[in] prGlueInfo Pointer to HIF info structure
+* \param[in] ucTc       Specify TC index
+*
+* \retval TRUE          operation success
+* \retval FALSE         operation fail
+*/
+/*----------------------------------------------------------------------------*/
+BOOLEAN glUsbBorrowFfaReq(P_GL_HIF_INFO_T prHifInfo, UINT_8 ucTc)
+{
+	P_USB_REQ_T prUsbReq;
+
+	if (list_empty(&prHifInfo->rTxDataFfaQ))
+		return FALSE;
+	prUsbReq = list_entry(prHifInfo->rTxDataFfaQ.next, struct _USB_REQ_T, list);
+	list_del_init(prHifInfo->rTxDataFfaQ.next);
+
+	*((PUINT_8)&prUsbReq->prPriv) = FFA_MASK | ucTc;
+	list_add_tail(&prUsbReq->list, &prHifInfo->rTxDataFreeQ[ucTc]);
+
+	return TRUE;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
 * \brief This function stores hif related info, which is initialized before.
 *
 * \param[in] prGlueInfo Pointer to glue info structure
@@ -740,10 +766,10 @@ VOID glSetHifInfo(P_GLUE_INFO_T prGlueInfo, ULONG ulCookie)
 	mutex_init(&prHifInfo->vendor_req_sem);
 
 #if CFG_USB_TX_AGG
-	prHifInfo->u4AggRsvSize = 0;
-
-	for (ucTc = 0; ucTc < USB_TC_NUM; ++ucTc)
+	for (ucTc = 0; ucTc < USB_TC_NUM; ++ucTc) {
+		prHifInfo->u4AggRsvSize[ucTc] = 0;
 		init_usb_anchor(&prHifInfo->rTxDataAnchor[ucTc]);
+	}
 #else
 	init_usb_anchor(&prHifInfo->rTxDataAnchor);
 #endif
@@ -772,9 +798,36 @@ VOID glSetHifInfo(P_GLUE_INFO_T prGlueInfo, ULONG ulCookie)
 
 	glUsbInitQ(prHifInfo, &prHifInfo->rTxCmdSendingQ, 0);
 
+	/* TX Data FFA */
+	prHifInfo->arTxDataFfaReqHead = glUsbInitQ(prHifInfo,
+							&prHifInfo->rTxDataFfaQ, USB_REQ_TX_DATA_FFA_CNT);
+	i = 0;
+	list_for_each_entry_safe(prUsbReq, prUsbReqNext, &prHifInfo->rTxDataFfaQ, list) {
+		QUEUE_INITIALIZE(&prUsbReq->rSendingDataMsduInfoList);
+		*((PUINT_8)&prUsbReq->prPriv) = FFA_MASK;
+		prUsbReq->prBufCtrl = &prHifInfo->rTxDataFfaBufCtrl[i];
+#if CFG_USB_CONSISTENT_DMA
+		prUsbReq->prBufCtrl->pucBuf =
+		    usb_alloc_coherent(prHifInfo->udev, USB_TX_DATA_BUFF_SIZE, GFP_ATOMIC,
+				       &prUsbReq->prUrb->transfer_dma);
+#else
+		prUsbReq->prBufCtrl->pucBuf = kmalloc(USB_TX_DATA_BUFF_SIZE, GFP_ATOMIC);
+#endif
+		if (prUsbReq->prBufCtrl->pucBuf == NULL) {
+			DBGLOG(HAL, ERROR, "kmalloc() reports error\n");
+			goto error;
+		}
+		prUsbReq->prBufCtrl->u4BufSize = USB_TX_DATA_BUFF_SIZE;
+		prUsbReq->prBufCtrl->u4WrIdx = 0;
+		++i;
+	}
+
 	/* TX Data */
 #if CFG_USB_TX_AGG
 	for (ucTc = 0; ucTc < USB_TC_NUM; ++ucTc) {
+		/* Only for TC0 ~ TC3 and DBDC1_TC */
+		if (ucTc >= TC4_INDEX && ucTc < USB_DBDC1_TC)
+			continue;
 		prHifInfo->arTxDataReqHead[ucTc] = glUsbInitQ(prHifInfo,
 								&prHifInfo->rTxDataFreeQ[ucTc], USB_REQ_TX_DATA_CNT);
 		i = 0;
@@ -892,6 +945,8 @@ VOID glClearHifInfo(P_GLUE_INFO_T prGlueInfo)
 
 #if CFG_USB_TX_AGG
 	for (ucTc = 0; ucTc < USB_TC_NUM; ++ucTc) {
+		if (ucTc >= TC4_INDEX && ucTc < USB_DBDC1_TC)
+			continue;
 		list_for_each_entry_safe(prUsbReq, prUsbReqNext, &prHifInfo->rTxDataFreeQ[ucTc], list) {
 #if CFG_USB_CONSISTENT_DMA
 			usb_free_coherent(prHifInfo->udev, USB_TX_DATA_BUFF_SIZE,
@@ -901,7 +956,6 @@ VOID glClearHifInfo(P_GLUE_INFO_T prGlueInfo)
 #endif
 			usb_free_urb(prUsbReq->prUrb);
 		}
-		kfree(prHifInfo->arTxDataReqHead[ucTc]);
 	}
 #else
 	list_for_each_entry_safe(prUsbReq, prUsbReqNext, &prHifInfo->rTxDataFreeQ, list) {
@@ -914,6 +968,16 @@ VOID glClearHifInfo(P_GLUE_INFO_T prGlueInfo)
 		usb_free_urb(prUsbReq->prUrb);
 	}
 #endif
+
+	list_for_each_entry_safe(prUsbReq, prUsbReqNext, &prHifInfo->rTxDataFfaQ, list) {
+#if CFG_USB_CONSISTENT_DMA
+		usb_free_coherent(prHifInfo->udev, USB_TX_DATA_BUFF_SIZE,
+			prUsbReq->prBufCtrl->pucBuf, prUsbReq->prUrb->transfer_dma);
+#else
+		kfree(prUsbReq->prBufCtrl->pucBuf);
+#endif
+		usb_free_urb(prUsbReq->prUrb);
+	}
 
 	list_for_each_entry_safe(prUsbReq, prUsbReqNext, &prHifInfo->rTxCmdFreeQ, list) {
 #if CFG_USB_CONSISTENT_DMA
@@ -966,6 +1030,9 @@ VOID glClearHifInfo(P_GLUE_INFO_T prGlueInfo)
 	}
 
 	kfree(prHifInfo->prTxCmdReqHead);
+	kfree(prHifInfo->arTxDataFfaReqHead);
+	for (ucTc = 0; ucTc < USB_TC_NUM; ++ucTc)
+		kfree(prHifInfo->arTxDataReqHead[ucTc]);
 	kfree(prHifInfo->prRxEventReqHead);
 	kfree(prHifInfo->prRxDataReqHead);
 
