@@ -460,6 +460,7 @@ OS_OBJS := 	$(OS_DIR)gl_init.o \
 		$(OS_DIR)gl_rst.o \
 		$(OS_DIR)gl_cfg80211.o \
 		$(OS_DIR)gl_proc.o \
+		$(OS_DIR)gl_sys.o \
 		$(OS_DIR)gl_vendor.o \
 		$(OS_DIR)platform.o
 endif
