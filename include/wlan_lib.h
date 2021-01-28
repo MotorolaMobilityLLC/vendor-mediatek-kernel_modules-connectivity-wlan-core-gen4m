@@ -141,6 +141,8 @@
 #define WIFI_FEATURE_SET_TX_POWER_LIMIT (0x4000000)
 /* Support Using Body/Head Proximity for SAR */
 #define WIFI_FEATURE_USE_BODY_HEAD_SAR  (0x8000000)
+/* Support Random P2P MAC */
+#define WIFI_FEATURE_P2P_RAND_MAC  (0x100000000L)
 
 /* note: WIFI_FEATURE_GSCAN be enabled just for ACTS test item: scanner */
 #define WIFI_HAL_FEATURE_SET ((WIFI_FEATURE_P2P) |\
@@ -149,7 +151,8 @@
 			      (WIFI_FEATURE_TDLS) |\
 			      (WIFI_FEATURE_RSSI_MONITOR) |\
 			      (WIFI_FEATURE_CONTROL_ROAMING) |\
-			      (WIFI_FEATURE_SET_TX_POWER_LIMIT)\
+			      (WIFI_FEATURE_SET_TX_POWER_LIMIT) |\
+			      (WIFI_FEATURE_P2P_RAND_MAC)\
 			      )
 
 #define MAX_NUM_GROUP_ADDR		32 /* max number of group addresses */
@@ -1678,7 +1681,7 @@ void wlanReleasePendingCmdById(struct ADAPTER *prAdapter, uint8_t ucCid);
 
 uint32_t wlanDecimalStr2Hexadecimals(uint8_t *pucDecimalStr, uint16_t *pu2Out);
 
-uint32_t wlanGetSupportedFeatureSet(IN struct GLUE_INFO *prGlueInfo);
+uint64_t wlanGetSupportedFeatureSet(IN struct GLUE_INFO *prGlueInfo);
 
 uint32_t
 wlanQueryLteSafeChannel(IN struct ADAPTER *prAdapter,
