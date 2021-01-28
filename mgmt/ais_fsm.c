@@ -2838,6 +2838,7 @@ void aisFsmStateAbort(IN struct ADAPTER *prAdapter,
 		break;
 
 	case AIS_STATE_REMAIN_ON_CHANNEL:
+	case AIS_STATE_OFF_CHNL_TX:
 		/* 1. release channel */
 		aisFsmReleaseCh(prAdapter, ucBssIndex);
 
