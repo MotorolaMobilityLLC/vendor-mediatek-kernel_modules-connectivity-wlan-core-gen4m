@@ -257,6 +257,13 @@ extern const struct ieee80211_iface_combination
 	*p_mtk_iface_combinations_p2p;
 extern const int32_t mtk_iface_combinations_p2p_num;
 
+#ifdef CONFIG_MTK_CONNSYS_DEDICATED_LOG_PATH
+typedef void (*wifi_fwlog_event_func_cb)(int, int);
+/* adaptor ko */
+extern int  wifi_fwlog_onoff_status(void);
+extern void wifi_fwlog_event_func_register(wifi_fwlog_event_func_cb pfFwlog);
+#endif
+
 /*******************************************************************************
  *                              C O N S T A N T S
  *******************************************************************************
