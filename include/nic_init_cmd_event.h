@@ -137,6 +137,8 @@ enum ENUM_INIT_CMD_ID {
 	INIT_CMD_ID_PATCH_START,
 	INIT_CMD_ID_PATCH_WRITE,
 	INIT_CMD_ID_PATCH_FINISH,
+	INIT_CMD_ID_PHY_ACTION,
+
 	INIT_CMD_ID_PATCH_SEMAPHORE_CONTROL = 0x10,
 	INIT_CMD_ID_HIF_LOOPBACK = 0x20,
 
@@ -155,7 +157,8 @@ enum ENUM_INIT_EVENT_ID {
 	INIT_EVENT_ID_CMD_RESULT = 1,
 	INIT_EVENT_ID_ACCESS_REG,
 	INIT_EVENT_ID_PENDING_ERROR,
-	INIT_EVENT_ID_PATCH_SEMA_CTRL
+	INIT_EVENT_ID_PATCH_SEMA_CTRL,
+	INIT_EVENT_ID_PHY_ACTION
 };
 
 enum ENUM_INIT_PATCH_STATUS {
@@ -231,6 +234,58 @@ struct INIT_CMD_ACCESS_REG {
 	uint32_t u4Address;
 	uint32_t u4Data;
 };
+
+#if (CFG_SUPPORT_PRE_ON_PHY_ACTION == 1)
+#define HAL_PHY_ACTION_MAGIC_NUM			0x556789AA
+#define HAL_PHY_ACTION_VERSION				0x01
+
+#define HAL_PHY_ACTION_CAL_FORCE_CAL_REQ	0x01
+#define HAL_PHY_ACTION_CAL_FORCE_CAL_RSP	0x81
+#define HAL_PHY_ACTION_CAL_USE_BACKUP_REQ	0x02
+#define HAL_PHY_ACTION_CAL_USE_BACKUP_RSP	0x82
+#define HAL_PHY_ACTION_ERROR                0xff
+
+enum ENUM_HAL_PHY_ACTION_CAL_STATUS {
+	HAL_PHY_ACTION_CAL_SUCCESS = 0x00,
+	HAL_PHY_ACTION_CAL_FAIL,
+	HAL_PHY_ACTION_CAL_RECAL,
+};
+
+struct INIT_CMD_PHY_ACTION_CAL {
+	uint8_t ucCmd;
+	uint8_t aucReserved[3];
+};
+
+struct INIT_EVENT_PHY_ACTION_CAL {
+	uint8_t ucEvent;
+	uint8_t ucStatus;
+	uint8_t aucReserved[2];
+	uint32_t u4EmiAddress;
+	uint32_t u4EmiLength;
+	uint32_t u4Temperatue;
+};
+
+enum ENUM_HAL_PHY_ACTION_TAG {
+	HAL_PHY_ACTION_TAG_FEM,
+	HAL_PHY_ACTION_TAG_CAL,
+
+	HAL_PHY_ACTION_TAG_NUM,
+};
+
+struct HAL_PHY_ACTION_TLV {
+	uint16_t u2Tag;
+	uint16_t u2BufLength;
+	uint8_t  aucBuffer[0];
+};
+
+struct HAL_PHY_ACTION_TLV_HEADER {
+	uint32_t u4MagicNum;
+	uint8_t  ucTagNums;
+	uint8_t  ucVersion;
+	uint16_t u2BufLength;
+	uint8_t  aucBuffer[0];
+};
+#endif /* (CFG_SUPPORT_PRE_ON_PHY_ACTION == 1) */
 
 /* Events */
 struct INIT_HIF_RX_HEADER {

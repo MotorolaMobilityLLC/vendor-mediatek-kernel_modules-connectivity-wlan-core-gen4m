@@ -1723,3 +1723,9 @@ void wlanCustomMonitorFunction(struct ADAPTER *prAdapter,
 	struct WIFI_LINK_QUALITY_INFO *prLinkQualityInfo, uint8_t ucBssIdx);
 #endif /* CFG_SUPPORT_DATA_STALL */
 
+#if (CFG_SUPPORT_PRE_ON_PHY_ACTION == 1)
+uint32_t wlanSendPhyAction(struct ADAPTER *prAdapter,
+	uint8_t ucCalCmd);
+#endif /* (CFG_SUPPORT_PRE_ON_PHY_ACTION == 1) */
+
+

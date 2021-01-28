@@ -212,7 +212,13 @@ int soc3_0_Trigger_fw_assert(void);
 #if (CFG_SUPPORT_CONNINFRA == 1)
 int soc3_0_Trigger_whole_chip_rst(char *reason);
 void soc3_0_Sw_interrupt_handler(struct ADAPTER *prAdapter);
+void soc3_0_Conninfra_cb_register(void);
 #endif
+
+#if (CFG_SUPPORT_PRE_ON_PHY_ACTION == 1)
+int soc3_0_wlanPreCal(void);
+#endif /* (CFG_SUPPORT_PRE_ON_PHY_ACTION == 1) */
+
 #endif /* _SOC3_0_H */
 
 #endif  /* soc3_0 */
