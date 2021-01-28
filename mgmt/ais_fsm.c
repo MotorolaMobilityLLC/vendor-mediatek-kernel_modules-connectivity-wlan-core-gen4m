@@ -4347,6 +4347,9 @@ static void aisFsmRunEventScanDoneTimeOut(IN struct ADAPTER *prAdapter,
 	DBGLOG(AIS, STATE, "aisFsmRunEventScanDoneTimeOut Current[%d] Seq=%u\n",
 	       prAisFsmInfo->eCurrentState, prAisFsmInfo->ucSeqNumOfScanReq);
 
+	prAdapter->u4HifDbgFlag |= DEG_HIF_DEFAULT_DUMP;
+	kalSetHifDbgEvent(prAdapter->prGlueInfo);
+
 	/* try to stop scan in CONNSYS */
 	aisFsmStateAbort_SCAN(prAdapter);
 }				/* end of aisFsmBGSleepTimeout() */
