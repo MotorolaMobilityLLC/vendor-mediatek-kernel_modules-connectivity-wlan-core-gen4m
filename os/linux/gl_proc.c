@@ -710,7 +710,9 @@ static ssize_t procMCRWrite(struct file *file, const char __user *buffer,
 
 	i4CopySize =
 	    (count < (sizeof(acBuf) - 1)) ? count : (sizeof(acBuf) - 1);
-	if (copy_from_user(acBuf, buffer, i4CopySize))
+	if (copy_from_user(acBuf, buffer, i4CopySize) ||
+		i4CopySize < 0 ||
+		i4CopySize > PROC_MCR_ACCESS_MAX_USER_INPUT_LEN)
 		return 0;
 	acBuf[i4CopySize] = '\0';
 

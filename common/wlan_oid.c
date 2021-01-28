@@ -8638,7 +8638,13 @@ wlanoidSet802dot11PowerSaveProfile(IN struct ADAPTER *
 					   prPowerMode->ePowerMode,
 					   TRUE, PS_CALLER_COMMON);
 
-	if (prPowerMode->ePowerMode < Param_PowerModeMax) {
+	if (prBssInfo->eNetworkType < 0 ||
+		prBssInfo->eNetworkType >= NETWORK_TYPE_NUM) {
+		DBGLOG(INIT, WARN,
+			   "Invalid eNetworkType: %d\n",
+			   prBssInfo->eNetworkType);
+	} else if (prPowerMode->ePowerMode >= 0 &&
+		prPowerMode->ePowerMode < Param_PowerModeMax) {
 		DBGLOG(INIT, TRACE,
 		       "Set %s Network BSS(%u) PS mode to %s (%d)\n",
 		       apucNetworkType[prBssInfo->eNetworkType],
