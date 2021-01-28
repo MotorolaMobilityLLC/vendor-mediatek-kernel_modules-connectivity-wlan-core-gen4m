@@ -6637,6 +6637,9 @@ static int priv_driver_get_version(IN struct net_device *prNetDev, IN char *pcCo
 	prAdapter = prGlueInfo->prAdapter;
 	prVerInfo = &prAdapter->rVerInfo;
 
+	u4Offset += snprintf(pcCommand + u4Offset, i4TotalLen - u4Offset,
+	"\nChip eco ver [%u]\n", prAdapter->chip_info->eco_ver);
+
 	wlanPrintVersion(prAdapter);
 
 	kalStrnCpy(aucBuf, prVerInfo->aucFwBranchInfo, 4);
