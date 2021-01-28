@@ -199,6 +199,7 @@ BUS_INFO mt6632_bus_info = {
 	.tx_ring_cmd_idx = 2,
 	.tx_ring_data_idx = 0,
 	.fgCheckDriverOwnInt = TRUE,
+	.fgInitPCIeInt = FALSE,
 
 	.pdmaSetup = halWpdmaConfig,
 	.lowPowerOwnRead = mt6632LowPowerOwnRead,
