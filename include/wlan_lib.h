@@ -248,6 +248,25 @@
 /* Define concurrent network channel number, using by CNM/CMD */
 #define MAX_OP_CHNL_NUM			3
 
+/* Stat CMD will have different format due to different algorithm support */
+#if (defined(MT6632) || defined(MT7668))
+#define CFG_SUPPORT_RA_GEN			0
+#define CFG_SUPPORT_TXPOWER_INFO		0
+#else
+#define CFG_SUPPORT_RA_GEN			1
+#define CFG_SUPPORT_TXPOWER_INFO		1
+#endif
+
+#if (CFG_SUPPORT_TXPOWER_INFO == 1)
+#define TX_POWER_SHOW_INFO			0x7
+#endif
+
+#if (CFG_SUPPORT_CONNAC2X == 1)
+#define AGG_RANGE_SEL_NUM		15
+#else
+#define AGG_RANGE_SEL_NUM		7
+#endif
+
 #if CFG_SUPPORT_EASY_DEBUG
 
 #define MAX_CMD_ITEM_MAX		4	/* Max item per cmd. */
@@ -742,9 +761,7 @@ struct WIFI_WMM_AC_STAT {
 };
 
 struct TX_VECTOR_BBP_LATCH {
-	uint32_t u4TxVector1;
-	uint32_t u4TxVector2;
-	uint32_t u4TxVector4;
+	uint32_t u4TxV[3];
 };
 
 struct MIB_INFO_STAT {
@@ -753,14 +770,7 @@ struct MIB_INFO_STAT {
 	uint32_t u4RxFifoFull;
 	uint32_t u4AmpduTxSfCnt;
 	uint32_t u4AmpduTxAckSfCnt;
-	uint16_t u2TxRange1AmpduCnt;
-	uint16_t u2TxRange2AmpduCnt;
-	uint16_t u2TxRange3AmpduCnt;
-	uint16_t u2TxRange4AmpduCnt;
-	uint16_t u2TxRange5AmpduCnt;
-	uint16_t u2TxRange6AmpduCnt;
-	uint16_t u2TxRange7AmpduCnt;
-	uint16_t u2TxRange8AmpduCnt;
+	uint16_t au2TxRangeAmpduCnt[AGG_RANGE_SEL_NUM + 1];
 };
 
 struct PARAM_GET_STA_STATISTICS {
@@ -851,7 +861,13 @@ struct PARAM_GET_STA_STATISTICS {
 	uint32_t u4AggRangeCtrl_0;
 	uint32_t u4AggRangeCtrl_1;
 	uint8_t ucRangeType;
+#if (CFG_SUPPORT_CONNAC2X == 0)
 	uint8_t aucReserved5[24];
+#else
+	uint32_t u4AggRangeCtrl_2;
+	uint32_t u4AggRangeCtrl_3;
+	uint8_t aucReserved5[16];
+#endif
 #endif
 	uint8_t ucArStateCurr;
 	uint8_t ucArStatePrev;
