@@ -4337,6 +4337,11 @@ static void rlmBssReset(struct ADAPTER *prAdapter, struct BSS_INFO *prBssInfo)
 
 	/* HE Operation */
 	memset(prBssInfo->ucHeOpParams, 0, HE_OP_BYTE_NUM);
+	/* set TXOP to 0x3FF (Spec. define default value) */
+	prBssInfo->ucHeOpParams[0]
+		|= HE_OP_PARAM0_TXOP_DUR_RTS_THRESHOLD_DEFAULT;
+	prBssInfo->ucHeOpParams[1]
+		|= HE_OP_PARAM1_TXOP_DUR_RTS_THRESHOLD_DEFAULT;
 	prBssInfo->ucBssColorInfo = 0;
 	prBssInfo->u2HeBasicMcsSet = 0;
 #endif
