@@ -219,13 +219,6 @@ struct CONNECTION_SETTINGS {
 
 	u_int8_t fgIsAdHocQoSEnable;
 
-	/* Indicates if OKC feature is enabled in wpa_supplicant for this ESS */
-	u_int8_t fgOkcEnabled;
-	/* Indicates that there's a PMKSA associated with this ESS
-	 ** in supplicant to generate PMKID for each BSS
-	 */
-	u_int8_t fgOkcPmksaReady;
-
 	enum ENUM_PARAM_PHY_CONFIG eDesiredPhyConfig;
 
 	/* Used for AP mode for desired channel and bandwidth */
@@ -635,10 +628,6 @@ struct AIS_SPECIFIC_BSS_INFO {
 
 	uint32_t u4RsnaLastMICFailTime;
 
-	/* Stored the current bss wpa rsn cap filed, used for roaming policy */
-	/* UINT_16                 u2RsnCap; */
-	struct TIMER rPreauthenticationTimer;
-
 	/* By the flow chart of 802.11i,
 	 *  wait 60 sec before associating to same AP
 	 *  or roaming to a new AP
@@ -655,11 +644,7 @@ struct AIS_SPECIFIC_BSS_INFO {
 
 	/* Buffer for WPA2 PMKID */
 	/* The PMKID cache lifetime is expire by media_disconnect_indication */
-	uint32_t u4PmkidCandicateCount;
-	struct PMKID_CANDICATE arPmkidCandicate[CFG_MAX_PMKID_CACHE];
-	uint32_t u4PmkidCacheCount;
-	struct PMKID_ENTRY arPmkidCache[CFG_MAX_PMKID_CACHE];
-	u_int8_t fgIndicatePMKID;
+	struct LINK rPmkidCache;
 #if CFG_SUPPORT_802_11W
 	u_int8_t fgMgmtProtection;
 	uint32_t u4SaQueryStart;
@@ -1293,11 +1278,6 @@ struct ADAPTER {
 
 	/* Timer for restarting RFB setup procedure */
 	struct TIMER rPacketDelaySetupTimer;
-
-	/* Buffer for Authentication Event */
-	/* <Todo> Move to glue layer and refine the kal function */
-	/* Reference to rsnGeneratePmkidIndication function at rsn.c */
-	uint8_t aucIndicationEventBuffer[(CFG_MAX_PMKID_CACHE * 20) + 8];
 
 	uint32_t u4IntStatus;
 
