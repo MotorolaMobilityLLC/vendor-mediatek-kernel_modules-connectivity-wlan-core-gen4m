@@ -608,7 +608,7 @@ static int compat_priv(IN struct net_device *prNetDev,
 	int ret = 0;
 #ifdef CONFIG_COMPAT
 	struct compat_iw_point *iwp_compat = NULL;
-	struct iw_point iwp;
+	struct iw_point iwp = {0};
 #endif
 
 	if (!prIwReqData)
