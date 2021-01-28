@@ -810,11 +810,6 @@ void *kalPacketAlloc(IN struct GLUE_INFO *prGlueInfo,
 
 		*ppucData = (uint8_t *) (prSkb->data);
 
-		/* DBGLOG(TDLS, INFO, "kalPacketAlloc, skb head[0x%x] data[0x%x]
-		 *        tail[0x%x] end[0x%x]\n",
-		 *        prSkb->head, prSkb->data, prSkb->tail, prSkb->end);
-		 */
-
 		kalResetPacket(prGlueInfo, (void *) prSkb);
 	}
 #if DBG
@@ -856,11 +851,6 @@ void *kalPacketAllocWithHeadroom(IN struct GLUE_INFO
 	skb_reserve(prSkb, NIC_TX_HEAD_ROOM);
 
 	*ppucData = (uint8_t *) (prSkb->data);
-
-	/* DBGLOG(TDLS, INFO, "kalPacketAllocWithHeadroom, skb head[0x%x]
-	 *        data[0x%x] tail[0x%x] end[0x%x]\n",
-	 *	  prSkb->head, prSkb->data, prSkb->tail, prSkb->end);
-	 */
 
 	kalResetPacket(prGlueInfo, (void *) prSkb);
 #if DBG
@@ -908,7 +898,11 @@ kalProcessRxPacket(IN struct GLUE_INFO *prGlueInfo,
 
 	if (skb->tail > skb->end) {
 		DBGLOG(RX, ERROR,
-		       "[skb:0x%p][skb->len:%d][skb->protocol:0x%02X] tail:%p, end:%p, data:%p\n",
+#ifdef NET_SKBUFF_DATA_USES_OFFSET
+			"[skb:0x%p][skb->len:%d][skb->protocol:0x%02X] tail:%u, end:%u, data:%p\n",
+#else
+			"[skb:0x%p][skb->len:%d][skb->protocol:0x%02X] tail:%p, end:%p, data:%p\n",
+#endif
 			(uint8_t *) skb,
 			skb->len,
 			skb->protocol,
@@ -1065,7 +1059,11 @@ uint32_t kalRxIndicateOnePkt(IN struct GLUE_INFO
 	/* DBGLOG(RX, EVENT, ("kalRxIndicatePkts len = %d\n", prSkb->len)); */
 	if (prSkb->tail > prSkb->end) {
 		DBGLOG(RX, ERROR,
-		       "kalRxIndicateOnePkt [prSkb = 0x%p][prSkb->len = %d][prSkb->protocol = 0x%02x] %d,%d\n",
+#ifdef NET_SKBUFF_DATA_USES_OFFSET
+		       "kalRxIndicateOnePkt [prSkb = 0x%p][prSkb->len = %d][prSkb->protocol = 0x%02x] %u,%u\n",
+#else
+		       "kalRxIndicateOnePkt [prSkb = 0x%p][prSkb->len = %d][prSkb->protocol = 0x%02x] %p,%p\n",
+#endif
 		       prSkb, prSkb->len, prSkb->protocol, prSkb->tail,
 		       prSkb->end);
 		DBGLOG_MEM32(RX, ERROR, (uint32_t *) prSkb->data,
