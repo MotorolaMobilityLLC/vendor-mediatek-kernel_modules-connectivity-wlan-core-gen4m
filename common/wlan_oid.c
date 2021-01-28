@@ -12763,6 +12763,7 @@ wlanoidSetP2pMode(IN struct ADAPTER *prAdapter,
 				       "wlanoidSetP2pMode Default enable ApUapsd\n");
 				setApUapsdEnable(prAdapter, TRUE);
 			}
+			prAdapter->u4P2pMode = prSetP2P->u4Mode;
 		} else {
 			DBGLOG(P2P, ERROR, "P2P Launch Failed\n");
 			status = WLAN_STATUS_FAILURE;
