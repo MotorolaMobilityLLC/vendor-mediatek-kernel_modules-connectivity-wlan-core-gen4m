@@ -640,6 +640,7 @@ typedef struct mtk_regd_control_t {
 	u8 n_channel_active_2g;
 	u8 n_channel_active_5g;
 	struct channel channels[MAX_SUPPORTED_CH_COUNT];
+	enum nl80211_dfs_regions dfs_region;
 } mtk_regd_control;
 
 #if (CFG_SUPPORT_SINGLE_SKU_LOCAL_DB == 1)
@@ -719,6 +720,8 @@ BOOLEAN rlmDomainIsCtrlStateEqualTo(enum regd_state state);
 BOOLEAN rlmDomainIsUsingLocalRegDomainDataBase(void);
 enum regd_state rlmDomainStateTransition(enum regd_state request_state, struct regulatory_request *pRequest);
 void rlmDomainSetCountryCode(char *alpha2, u8 size_of_alpha2);
+void rlmDomainSetDfsRegion(enum nl80211_dfs_regions dfs_region);
+enum nl80211_dfs_regions rlmDomainGetDfsRegion(void);
 void rlmDomainResetCtrlInfo(void);
 u32 rlmDomainSearchCountrySection(u32 country_code, const struct firmware *file);
 BOOLEAN rlmDomainIsTheEndOfCountrySection(u32 start_offset, const struct firmware *file);
