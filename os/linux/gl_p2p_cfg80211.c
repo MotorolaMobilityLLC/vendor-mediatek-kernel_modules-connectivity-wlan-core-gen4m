@@ -1033,11 +1033,12 @@ int mtk_p2p_cfg80211_get_station(struct wiphy *wiphy,
 	uint8_t ucRoleIdx = 0;
 	uint8_t ucBssIdx = 0;
 	uint32_t u4Rate = 0;
+	uint32_t u4BufLen = 0;
 	struct GLUE_INFO *prGlueInfo = (struct GLUE_INFO *) NULL;
 	struct GL_P2P_INFO *prP2pGlueInfo = (struct GL_P2P_INFO *) NULL;
 	struct P2P_STATION_INFO rP2pStaInfo;
 	struct BSS_INFO *prBssInfo;
-	struct PARAM_GET_STA_STATISTICS *prQuery;
+	struct PARAM_LINK_SPEED_EX rLinkSpeed;
 
 	ASSERT(wiphy);
 
@@ -1086,14 +1087,20 @@ int mtk_p2p_cfg80211_get_station(struct wiphy *wiphy,
 			return 0;
 		}
 
-		prQuery =
-			prGlueInfo->prAdapter->rWifiVar
-			.prP2pQueryStaStatistics[ucRoleIdx];
-		if (prQuery) {
-			u4Rate = prQuery->u2LinkSpeed * 5000;
-			i4Rssi = RCPI_TO_dBm(prQuery->ucRcpi);
+		kalIoctl(prGlueInfo,
+			wlanoidQueryLinkSpeedEx,
+			&rLinkSpeed, sizeof(rLinkSpeed),
+			TRUE, FALSE, FALSE, &u4BufLen);
+		if (ucBssIdx < BSSID_NUM) {
+			u4Rate = rLinkSpeed.rLq[ucBssIdx].u2LinkSpeed;
+			i4Rssi = rLinkSpeed.rLq[ucBssIdx].cRssi;
 		}
 
+		if (i4Rssi > PARAM_WHQL_RSSI_MAX_DBM)
+			i4Rssi = PARAM_WHQL_RSSI_MAX_DBM;
+		else if (i4Rssi < PARAM_WHQL_RSSI_MIN_DBM)
+			i4Rssi = PARAM_WHQL_RSSI_MIN_DBM;
+		/* convert from 100bps to 100kbps */
 		sinfo->txrate.legacy = u4Rate / 1000;
 		sinfo->signal = i4Rssi;
 

@@ -5034,6 +5034,36 @@ wlanoidQueryLinkSpeed(IN struct ADAPTER *prAdapter,
 	}
 } /* end of wlanoidQueryLinkSpeed() */
 
+uint32_t
+wlanoidQueryLinkSpeedEx(IN struct ADAPTER *prAdapter,
+			IN void *pvQueryBuffer, IN uint32_t u4QueryBufferLen,
+			OUT uint32_t *pu4QueryInfoLen)
+{
+	DEBUGFUNC("wlanoidQueryLinkSpeed");
+
+	ASSERT(prAdapter);
+	ASSERT(pu4QueryInfoLen);
+	if (u4QueryBufferLen)
+		ASSERT(pvQueryBuffer);
+
+	if (prAdapter->fgIsEnableLpdvt)
+		return WLAN_STATUS_NOT_SUPPORTED;
+
+	*pu4QueryInfoLen = sizeof(struct PARAM_LINK_SPEED_EX);
+
+	if (u4QueryBufferLen < sizeof(struct PARAM_LINK_SPEED_EX))
+		return WLAN_STATUS_BUFFER_TOO_SHORT;
+
+	return wlanSendSetQueryCmd(prAdapter,
+				CMD_ID_GET_LINK_QUALITY,
+				FALSE,
+				TRUE,
+				TRUE,
+				nicCmdEventQueryLinkSpeedEx,
+				nicOidCmdTimeoutCommon, 0, NULL,
+				pvQueryBuffer, u4QueryBufferLen);
+}
+
 #if CFG_SUPPORT_QA_TOOL
 #if CFG_SUPPORT_BUFFER_MODE
 uint32_t
