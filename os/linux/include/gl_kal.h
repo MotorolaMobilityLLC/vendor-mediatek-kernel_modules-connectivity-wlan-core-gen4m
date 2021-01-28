@@ -743,7 +743,10 @@ static inline void kalCfg80211ScanDone(struct cfg80211_scan_request *request,
 			pvAddr = kmalloc(u4Size, GFP_KERNEL);   \
 	} \
 	else { \
-		pvAddr = vmalloc(u4Size);   \
+		if (u4Size > PAGE_SIZE) \
+			pvAddr = vmalloc(u4Size);   \
+		else \
+			pvAddr = kmalloc(u4Size, GFP_KERNEL);   \
 	} \
 	if (pvAddr) {   \
 		allocatedMemSize += u4Size;   \
@@ -762,7 +765,10 @@ static inline void kalCfg80211ScanDone(struct cfg80211_scan_request *request,
 			pvAddr = kmalloc(u4Size, GFP_KERNEL);   \
 	} \
 	else { \
-		pvAddr = vmalloc(u4Size);   \
+		if (u4Size > PAGE_SIZE) \
+			pvAddr = vmalloc(u4Size);   \
+		else \
+			pvAddr = kmalloc(u4Size, GFP_KERNEL);   \
 	} \
 	if (!pvAddr) \
 		ASSERT_NOMEM(); \
@@ -789,22 +795,12 @@ static inline void kalCfg80211ScanDone(struct cfg80211_scan_request *request,
 		DBGLOG(INIT, INFO, "0x%p(%ld) freed (%s:%s)\n", \
 			pvAddr, (uint32_t)u4Size, __FILE__, __func__);  \
 	}   \
-	if (eMemType == PHY_MEM_TYPE) { \
-		kfree(pvAddr); \
-	} \
-	else { \
-		vfree(pvAddr); \
-	} \
+	kvfree(pvAddr); \
 }
 #else
 #define kalMemFree(pvAddr, eMemType, u4Size)  \
 {   \
-	if (eMemType == PHY_MEM_TYPE) { \
-		kfree(pvAddr); \
-	} \
-	else { \
-		vfree(pvAddr); \
-	} \
+	kvfree(pvAddr); \
 }
 #endif
 
