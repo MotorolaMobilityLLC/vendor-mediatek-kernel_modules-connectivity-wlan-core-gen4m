@@ -174,8 +174,10 @@ WLAN_STATUS
 halRxWaitResponse(IN P_ADAPTER_T prAdapter, IN UINT_8 ucPortIdx, OUT PUINT_8 pucRspBuffer,
 		  IN UINT_32 u4MaxRespBufferLen, OUT PUINT_32 pu4Length)
 {
+	P_GL_HIF_INFO_T prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
 	WLAN_STATUS u4Status = WLAN_STATUS_SUCCESS;
 	P_RX_CTRL_T prRxCtrl;
+	BOOL ret = FALSE;
 
 	DEBUGFUNC("halRxWaitResponse");
 
@@ -184,8 +186,47 @@ halRxWaitResponse(IN P_ADAPTER_T prAdapter, IN UINT_8 ucPortIdx, OUT PUINT_8 puc
 
 	prRxCtrl = &prAdapter->rRxCtrl;
 
-	HAL_PORT_RD(prAdapter, USB_EVENT_EP_IN, ALIGN_4(u4MaxRespBufferLen) + LEN_USB_RX_PADDING_CSO,
+	if (prHifInfo->fgEventEpDetected == FALSE) {
+		/* NOTE: This is temporary compatiable code with old/new CR4 FW to detect which EVENT endpoint that
+		 *       CR4 FW is using. If the new EP4IN-using CR4 FW works without any issue for a while,
+		 *       this code block will be removed.
+		 */
+		if (prAdapter->fgIsCr4FwDownloaded) {
+			ucPortIdx = USB_DATA_EP_IN;
+			ret = kalDevPortRead(prAdapter->prGlueInfo, ucPortIdx,
+				ALIGN_4(u4MaxRespBufferLen) + LEN_USB_RX_PADDING_CSO,
+				prRxCtrl->pucRxCoalescingBufPtr, HIF_RX_COALESCING_BUFFER_SIZE);
+
+			if (ret == TRUE) {
+				prHifInfo->eEventEpType = EVENT_EP_TYPE_DATA_EP;
+			} else {
+				ucPortIdx = USB_EVENT_EP_IN;
+				ret = kalDevPortRead(prAdapter->prGlueInfo, ucPortIdx,
+					ALIGN_4(u4MaxRespBufferLen) + LEN_USB_RX_PADDING_CSO,
+					prRxCtrl->pucRxCoalescingBufPtr, HIF_RX_COALESCING_BUFFER_SIZE);
+			}
+			prHifInfo->fgEventEpDetected = TRUE;
+
+			kalMemCopy(pucRspBuffer, prRxCtrl->pucRxCoalescingBufPtr, u4MaxRespBufferLen);
+			*pu4Length = u4MaxRespBufferLen;
+
+			return u4Status;
+		}
+
+		ucPortIdx = USB_EVENT_EP_IN;
+	} else {
+		if (prHifInfo->eEventEpType == EVENT_EP_TYPE_DATA_EP)
+			if (prAdapter->fgIsCr4FwDownloaded)
+				ucPortIdx = USB_DATA_EP_IN;
+			else
+				ucPortIdx = USB_EVENT_EP_IN;
+		else
+			ucPortIdx = USB_EVENT_EP_IN;
+
+	}
+	HAL_PORT_RD(prAdapter, ucPortIdx, ALIGN_4(u4MaxRespBufferLen) + LEN_USB_RX_PADDING_CSO,
 		prRxCtrl->pucRxCoalescingBufPtr, HIF_RX_COALESCING_BUFFER_SIZE);
+
 	kalMemCopy(pucRspBuffer, prRxCtrl->pucRxCoalescingBufPtr, u4MaxRespBufferLen);
 	*pu4Length = u4MaxRespBufferLen;
 
@@ -927,8 +968,9 @@ VOID halRxUSBProcessEventDataComplete(IN P_ADAPTER_T prAdapter,
 /*----------------------------------------------------------------------------*/
 VOID halEnableInterrupt(IN P_ADAPTER_T prAdapter)
 {
-	halRxUSBReceiveEvent(prAdapter, TRUE);
 	halRxUSBReceiveData(prAdapter);
+	if (prAdapter->prGlueInfo->rHifInfo.eEventEpType != EVENT_EP_TYPE_DATA_EP)
+		halRxUSBReceiveEvent(prAdapter, TRUE);
 } /* end of halEnableInterrupt() */
 
 /*----------------------------------------------------------------------------*/
