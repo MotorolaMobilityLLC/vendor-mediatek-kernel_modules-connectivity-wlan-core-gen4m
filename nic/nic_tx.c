@@ -274,6 +274,10 @@ void nicTxInitialize(IN struct ADAPTER *prAdapter)
 #endif
 
 	prTxCtrl->i4PendingFwdFrameCount = 0;
+	prTxCtrl->i4PendingFwdFrameWMMCount[WMM_AC_BE_INDEX] = 0;
+	prTxCtrl->i4PendingFwdFrameWMMCount[WMM_AC_BK_INDEX] = 0;
+	prTxCtrl->i4PendingFwdFrameWMMCount[WMM_AC_VI_INDEX] = 0;
+	prTxCtrl->i4PendingFwdFrameWMMCount[WMM_AC_VO_INDEX] = 0;
 
 	/* Assign init value */
 	/* Tx sequence number */
@@ -2605,6 +2609,9 @@ void nicTxFreePacket(IN struct ADAPTER *prAdapter,
 			cnmMemFree(prAdapter, prNativePacket);
 	} else if (prMsduInfo->eSrc == TX_PACKET_FORWARDING) {
 		GLUE_DEC_REF_CNT(prTxCtrl->i4PendingFwdFrameCount);
+		GLUE_DEC_REF_CNT(prTxCtrl
+			->i4PendingFwdFrameWMMCount[
+			aucACI2TxQIdx[aucTid2ACI[prMsduInfo->ucUserPriority]]]);
 	}
 }
 
