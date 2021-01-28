@@ -492,6 +492,12 @@ void p2pDevFsmRunEventTimeout(IN struct ADAPTER *prAdapter,
 			/* TODO: IDLE timeout for low power mode. */
 			break;
 		case P2P_DEV_STATE_CHNL_ON_HAND:
+			if (prAdapter->prP2pInfo->ucExtendChanFlag) {
+				prAdapter->prP2pInfo->ucExtendChanFlag = 0;
+				p2pDevFsmStateTransition(prAdapter,
+					prP2pDevFsmInfo, P2P_DEV_STATE_IDLE);
+				break;
+			}
 			switch (prAdapter->prP2pInfo->eConnState) {
 			case P2P_CNN_GO_NEG_REQ:
 			case P2P_CNN_GO_NEG_RESP:
@@ -501,6 +507,7 @@ void p2pDevFsmRunEventTimeout(IN struct ADAPTER *prAdapter,
 				DBGLOG(P2P, INFO,
 					"P2P: re-enter CHNL_ON_HAND with state: %d\n",
 					prAdapter->prP2pInfo->eConnState);
+				prAdapter->prP2pInfo->ucExtendChanFlag = 1;
 				p2pDevFsmStateTransition(prAdapter,
 					prP2pDevFsmInfo,
 					P2P_DEV_STATE_CHNL_ON_HAND);
