@@ -2314,8 +2314,8 @@ rlmRecOpModeBwForClient(uint8_t ucVhtOpModeChannelWidth, struct BSS_INFO *prBssI
 				"VHT_OP != OPmode:%d, follow VHT_OP to VHT_OP:%d HT_OP:%d\n",
 				ucVhtOpModeChannelWidth,
 				prBssInfo->ucVhtChannelWidth,
-				(prBssInfo->ucHtOpInfo1 & HT_OP_INFO1_STA_CHNL_WIDTH) >>
-				HT_OP_INFO1_STA_CHNL_WIDTH_OFFSET);
+				(uint8_t) (prBssInfo->ucHtOpInfo1 & HT_OP_INFO1_STA_CHNL_WIDTH)
+				>> HT_OP_INFO1_STA_CHNL_WIDTH_OFFSET);
 		} else
 #endif
 		{
@@ -2333,7 +2333,7 @@ rlmRecOpModeBwForClient(uint8_t ucVhtOpModeChannelWidth, struct BSS_INFO *prBssI
 				"VHT_OP != OPmode:%d, follow VHT_OP to VHT_OP:%d HT_OP:%d\n",
 				ucVhtOpModeChannelWidth,
 				prBssInfo->ucVhtChannelWidth,
-				(prBssInfo->ucHtOpInfo1 & HT_OP_INFO1_STA_CHNL_WIDTH) >>
+				(uint8_t) (prBssInfo->ucHtOpInfo1 & HT_OP_INFO1_STA_CHNL_WIDTH) >>
 				HT_OP_INFO1_STA_CHNL_WIDTH_OFFSET);
 		} else
 #endif
@@ -4610,7 +4610,7 @@ rlmChangeOwnOpInfo(struct ADAPTER *prAdapter, struct BSS_INFO *prBssInfo)
 
 			DBGLOG(RLM, INFO, "Update BSS[%d] HT Channel Width Info to bw=%d sco=%d\n",
 				prBssInfo->ucBssIndex,
-				((prBssInfo->ucHtOpInfo1 & HT_OP_INFO1_STA_CHNL_WIDTH)
+				(uint8_t) ((prBssInfo->ucHtOpInfo1 & HT_OP_INFO1_STA_CHNL_WIDTH)
 					>> HT_OP_INFO1_STA_CHNL_WIDTH_OFFSET),
 				prBssInfo->eBssSCO);
 		}
@@ -4866,7 +4866,7 @@ rlmCheckOpChangeParamForClient(struct BSS_INFO *prBssInfo, uint8_t ucChannelWidt
 				"Can't change BSS[%d] OP BW to:%d for PeerOpBw:%d fg40mBwAllowed:%d\n",
 					prBssInfo->ucBssIndex,
 					ucChannelWidth,
-					(prStaRec->ucHtPeerOpInfo1 & HT_OP_INFO1_STA_CHNL_WIDTH),
+					(uint8_t) (prStaRec->ucHtPeerOpInfo1 & HT_OP_INFO1_STA_CHNL_WIDTH),
 					prBssInfo->fg40mBwAllowed);
 				return FALSE;
 			}
@@ -4903,7 +4903,7 @@ rlmCheckOpChangeParamForClient(struct BSS_INFO *prBssInfo, uint8_t ucChannelWidt
 						"Can't change BSS[%d] OP BW to:%d for PeerOpBw:%d fg40mBwAllowed:%d\n",
 						prBssInfo->ucBssIndex,
 						ucChannelWidth,
-						(prStaRec->ucHtPeerOpInfo1 & HT_OP_INFO1_STA_CHNL_WIDTH),
+						(uint8_t) (prStaRec->ucHtPeerOpInfo1 & HT_OP_INFO1_STA_CHNL_WIDTH),
 						prBssInfo->fg40mBwAllowed);
 					return FALSE;
 				}
