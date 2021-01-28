@@ -450,6 +450,9 @@ u_int8_t kalP2PMaxClients(IN struct GLUE_INFO *prGlueInfo,
 
 #define kalP2pNotifyStopApComplete(_prAdapter, _ucRoleIndex) \
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
+
+#define kalP2pIndicateChnlSwitch(_prAdapter, _prBssInfo) \
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
 #else
 void kalP2pUnlinkBss(IN struct GLUE_INFO *prGlueInfo, IN uint8_t aucBSSID[]);
 
@@ -466,5 +469,8 @@ void kalP2pIndicateAcsResult(IN struct GLUE_INFO *prGlueInfo,
 
 void kalP2pNotifyStopApComplete(IN struct ADAPTER *prAdapter,
 		IN uint8_t ucRoleIndex);
+
+void kalP2pIndicateChnlSwitch(IN struct ADAPTER *prAdapter,
+		IN struct BSS_INFO *prBssInfo);
 #endif
 #endif /* _GL_P2P_KAL_H */
