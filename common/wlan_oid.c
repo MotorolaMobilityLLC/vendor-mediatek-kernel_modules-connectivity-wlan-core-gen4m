@@ -15624,6 +15624,8 @@ uint32_t wlanoidPktProcessIT(struct ADAPTER *prAdapter, void *pvBuffer,
 	if (fgBTMReq) {
 		struct HW_MAC_RX_DESC rRxStatus;
 
+		rRxStatus.ucChanFreq = 6;
+		rSwRfb.ucChnlNum = HAL_RX_STATUS_GET_CHNL_NUM(&rRxStatus);
 		rSwRfb.prRxStatus = (void *)&rRxStatus;
 		rSwRfb.ucChanFreq = 6;
 		wnmWNMAction(prAdapter, &rSwRfb);
