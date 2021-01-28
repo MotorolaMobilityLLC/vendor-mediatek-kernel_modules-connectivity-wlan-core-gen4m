@@ -3680,8 +3680,17 @@ void cnmOpModeCallbackDispatcher(
 	if (!prBssOpCtrl->rRunning.fgIsRunning) {
 		/* GO/AP run cb immediately. */
 		DBGLOG(CNM, INFO,
-			"CbOpMode, BSS[%d] none running\n",
-			ucBssIndex);
+			"CbOpMode, BSS[%d] none running, OpModeState[%d]\n",
+			ucBssIndex,
+			g_rDbdcInfo.eBssOpModeState[ucBssIndex]);
+		/* We have to callback op mode change done.
+		 * Otherwise, DBDC state machine won't continue.
+		 */
+		if (g_rDbdcInfo.eBssOpModeState[ucBssIndex] ==
+			ENUM_OPMODE_STATE_WAIT) {
+			cnmDbdcOpModeChangeDoneCallback(
+				prAdapter, ucBssIndex, fgSuccess);
+		}
 	} else {
 		switch (prBssOpCtrl->rRunning.eReqIdx) {
 		case CNM_OPMODE_REQ_DBDC:
