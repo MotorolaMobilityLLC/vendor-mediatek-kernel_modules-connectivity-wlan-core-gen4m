@@ -1243,6 +1243,11 @@ int mtk_p2p_cfg80211_start_ap(struct wiphy *wiphy, struct net_device *dev, struc
 		pucBuffer = prP2pBcnUpdateMsg->aucBuffer;
 		DBGLOG(P2P, INFO, "mtk_p2p_cfg80211_start_ap.(role %d)\n", ucRoleIdx);
 
+#if (CFG_SUPPORT_DFS_MASTER == 1)
+		if (p2pFuncGetDfsState() == DFS_STATE_DETECTED) {
+			p2pFuncSetDfsState(DFS_STATE_INACTIVE);
+		}
+#endif
 		if (settings->beacon.head_len != 0) {
 			kalMemCopy(pucBuffer, settings->beacon.head, settings->beacon.head_len);
 
@@ -1390,8 +1395,10 @@ static int mtk_p2p_cfg80211_start_radar_detection_impl(struct wiphy *wiphy, stru
 
 		DBGLOG(P2P, INFO, "mtk_p2p_cfg80211_start_radar_detection.(role %d)\n", ucRoleIdx);
 
+		p2pFuncSetDfsState(DFS_STATE_INACTIVE);
+
 		prP2pDfsCacMsg = (P_MSG_P2P_DFS_CAC_T) cnmMemAlloc(prGlueInfo->prAdapter,
-								RAM_TYPE_MSG, sizeof(MSG_P2P_DFS_CAC_T));
+								RAM_TYPE_MSG, sizeof(*prP2pDfsCacMsg));
 
 		if (prP2pDfsCacMsg == NULL) {
 			ASSERT(FALSE);
@@ -1502,6 +1509,8 @@ int mtk_p2p_cfg80211_channel_switch(struct wiphy *wiphy, struct net_device *dev,
 
 		DBGLOG(P2P, INFO, "mtk_p2p_cfg80211_channel_switch.(role %d)\n", ucRoleIdx);
 
+		p2pFuncSetDfsState(DFS_STATE_INACTIVE);
+
 		/* Set CSA IE parameters */
 		prGlueInfo->prAdapter->rWifiVar.fgCsaInProgress = TRUE;
 		prGlueInfo->prAdapter->rWifiVar.ucChannelSwitchMode = 1;
@@ -1511,7 +1520,7 @@ int mtk_p2p_cfg80211_channel_switch(struct wiphy *wiphy, struct net_device *dev,
 
 		/* Set new channel parameters */
 		prP2pSetNewChannelMsg = (P_MSG_P2P_SET_NEW_CHANNEL_T) cnmMemAlloc(prGlueInfo->prAdapter,
-								RAM_TYPE_MSG, sizeof(P_MSG_P2P_SET_NEW_CHANNEL_T));
+								RAM_TYPE_MSG, sizeof(*prP2pSetNewChannelMsg));
 
 		if (prP2pSetNewChannelMsg == NULL) {
 			ASSERT(FALSE);
