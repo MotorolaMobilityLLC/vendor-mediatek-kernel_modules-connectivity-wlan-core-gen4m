@@ -1588,28 +1588,33 @@ void aisFsmSteps(IN struct ADAPTER *prAdapter, enum ENUM_AIS_STATE eNextState)
 		case AIS_STATE_NORMAL_TR:
 			if (prAisFsmInfo->fgIsInfraChannelFinished == FALSE) {
 				/* Don't do anything when rJoinTimeoutTimer is still ticking */
-			} else {
-				/* 1. Process for pending scan */
-				if (aisFsmIsRequestPending(prAdapter, AIS_REQUEST_SCAN, TRUE) == TRUE) {
-					wlanClearScanningResult(prAdapter);
-					eNextState = AIS_STATE_ONLINE_SCAN;
-					fgIsTransition = TRUE;
-				}
-				/* 2. Process for pending roaming scan */
-				else if (aisFsmIsRequestPending(prAdapter, AIS_REQUEST_ROAMING_SEARCH, TRUE) == TRUE) {
-					eNextState = AIS_STATE_LOOKING_FOR;
-					fgIsTransition = TRUE;
-				}
-				/* 3. Process for pending roaming scan */
-				else if (aisFsmIsRequestPending(prAdapter, AIS_REQUEST_ROAMING_CONNECT, TRUE) == TRUE) {
-					eNextState = AIS_STATE_SEARCH;
-					fgIsTransition = TRUE;
-				} else
-				    if (aisFsmIsRequestPending
-					(prAdapter, AIS_REQUEST_REMAIN_ON_CHANNEL, TRUE) == TRUE) {
-					eNextState = AIS_STATE_REQ_REMAIN_ON_CHANNEL;
-					fgIsTransition = TRUE;
-				}
+				break;
+			}
+
+			/* 1. Process for pending roaming scan */
+			if (aisFsmIsRequestPending(prAdapter,
+				AIS_REQUEST_ROAMING_SEARCH, TRUE) == TRUE) {
+				eNextState = AIS_STATE_LOOKING_FOR;
+				fgIsTransition = TRUE;
+			}
+			/* 2. Process for pending roaming connect */
+			else if (aisFsmIsRequestPending(prAdapter,
+					AIS_REQUEST_ROAMING_CONNECT, TRUE)
+						== TRUE) {
+				eNextState = AIS_STATE_SEARCH;
+				fgIsTransition = TRUE;
+			}
+			/* 3. Process for pending scan */
+			else if (aisFsmIsRequestPending(prAdapter,
+					AIS_REQUEST_SCAN, TRUE) == TRUE) {
+				wlanClearScanningResult(prAdapter);
+				eNextState = AIS_STATE_ONLINE_SCAN;
+				fgIsTransition = TRUE;
+			} else if (aisFsmIsRequestPending(prAdapter,
+					AIS_REQUEST_REMAIN_ON_CHANNEL, TRUE)
+								== TRUE) {
+				eNextState = AIS_STATE_REQ_REMAIN_ON_CHANNEL;
+				fgIsTransition = TRUE;
 			}
 
 			break;
