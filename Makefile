@@ -221,10 +221,11 @@ MGMT_OBJS := $(MGMT_DIR)ais_fsm.o \
              $(MGMT_DIR)tkip_mic.o \
              $(MGMT_DIR)hs20.o \
              $(MGMT_DIR)tdls.o
-
 # ---------------------------------------------------
 # Chips Objects List
 # ---------------------------------------------------
+MGMT_OBJS += $(MGMT_DIR)stats.o
+
 
 CHIPS_OBJS += $(CHIPS)cmm_asic_connac.o
 ifneq ($(findstring 6632,$(MTK_COMBO_CHIP)),)
