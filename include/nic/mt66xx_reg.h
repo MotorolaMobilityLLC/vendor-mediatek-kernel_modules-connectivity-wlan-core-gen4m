@@ -1336,6 +1336,8 @@ struct mt66xx_chip_info {
 #if defined(_HIF_USB)
 	void (*asicUsbInit)(IN struct ADAPTER *prAdapter,
 			    IN struct mt66xx_chip_info *prChipInfo);
+	void (*asicUsbInit_ic_specific)(IN struct ADAPTER *prAdapter,
+			    IN struct mt66xx_chip_info *prChipInfo);
 	uint32_t u4SerUsbMcuEventAddr;
 	uint32_t u4SerUsbHostAckAddr;
 #endif

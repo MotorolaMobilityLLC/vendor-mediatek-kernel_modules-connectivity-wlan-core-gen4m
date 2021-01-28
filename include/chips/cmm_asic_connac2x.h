@@ -81,6 +81,8 @@
 #define CONNAC2X_WPDMA1_GLO_CFG_OMIT_TX_INFO           0x10000000
 /* OMIT_RX_INFO[27]*/
 #define CONNAC2X_WPDMA1_GLO_CFG_OMIT_RX_INFO           0x08000000
+/* OMIT_RX_INFO_PFET2[21]*/
+#define CONNAC2X_WPDMA1_GLO_CFG_OMIT_RX_INFO_PFET2     0x00200000
 /* FW_DWLD_Bypass_dmashdl[9] */
 #define CONNAC2X_WPDMA1_GLO_CFG_FW_DWLD_Bypass_dmashdl 0x00000200
 /* RX_DMA_BUSY[3] */
@@ -1009,6 +1011,10 @@ u_int8_t asicConnac2xUsbResume(IN struct ADAPTER *prAdapter,
 void asicConnac2xUdmaRxFlush(
 	struct ADAPTER *prAdapter,
 	u_int8_t bEnable);
+uint16_t asicConnac2xUsbRxByteCount(
+	struct ADAPTER *prAdapter,
+	struct BUS_INFO *prBusInfo,
+	uint8_t *pRXD);
 #endif /* _HIF_USB */
 
 void fillConnac2xTxDescTxByteCount(
