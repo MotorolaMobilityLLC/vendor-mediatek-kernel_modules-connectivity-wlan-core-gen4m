@@ -66,4 +66,9 @@
 /* Get mcu_cfg PC programming Counter log info 0x0_2450~0x0_24D0 */
 #define HOST_CSR_MCU_PROG_COUNT				0x2450
 
+#if (CFG_ENABLE_HOST_BUS_TIMEOUT == 1)
+#define HOST_CSR_BUS_TIMOUT_CTRL_ADDR	(HOST_CSR_DRIVER_OWN_INFO + 0x44)
+#define HOST_CSR_AP2CONN_AHB_HADDR	(HOST_CSR_DRIVER_OWN_INFO + 0x4C)
+#endif
+
 #endif /* __HOST_CSR_H__ */

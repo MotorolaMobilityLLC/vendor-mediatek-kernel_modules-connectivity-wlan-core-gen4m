@@ -814,6 +814,12 @@ bool halShowHostCsrInfo(IN struct ADAPTER *prAdapter)
 	DBGLOG(HAL, INFO, "Conn_cfg_on info: 0x%08x = 0x%08x\n",
 		HOST_CSR_CONN_CFG_ON, u4Value);
 
+#if (CFG_ENABLE_HOST_BUS_TIMEOUT == 1)
+	HAL_MCR_RD(prAdapter, HOST_CSR_AP2CONN_AHB_HADDR, &u4Value);
+	DBGLOG(HAL, INFO, "HOST_CSR_AP2CONN_AHB_HADDR: 0x%08x = 0x%08x\n",
+		HOST_CSR_AP2CONN_AHB_HADDR, u4Value);
+#endif
+
 	HAL_MCR_WR(prAdapter, HOST_CSR_DRIVER_OWN_INFO, 0x00030000);
 	kalUdelay(1);
 	HAL_MCR_RD(prAdapter, HOST_CSR_DRIVER_OWN_INFO, &u4Value);
