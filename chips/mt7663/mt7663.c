@@ -158,6 +158,7 @@ struct BUS_INFO mt7663_bus_info = {
 	.tx_ring_cmd_idx = 15,
 	.tx_ring0_data_idx = 0,
 	.tx_ring1_data_idx = 0,
+	.max_static_map_addr = 0x00040000,
 	.fgCheckDriverOwnInt = FALSE,
 	.fgInitPCIeInt = TRUE,
 	.u4DmaMask = 36,
