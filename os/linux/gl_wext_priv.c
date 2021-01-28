@@ -6719,9 +6719,17 @@ static int priv_driver_get_version(IN struct net_device *prNetDev, IN char *pcCo
 		"Patch platform %s version 0x%04X %s\n",
 		aucBuf, prVerInfo->rPatchHeader.u4PatchVersion, aucDate);
 
+#if 0
 	u4Offset += snprintf(pcCommand + u4Offset, i4TotalLen - u4Offset,
 		"Drv version %u.%u[DEC]", (prVerInfo->u2FwPeerVersion >> 8),
 		(prVerInfo->u2FwPeerVersion & BITS(0, 7)));
+#endif
+
+	u4Offset += snprintf(pcCommand + u4Offset, i4TotalLen - u4Offset,
+		"WiFi Driver Version %u.%u.%u\n",
+		NIC_DRIVER_MAJOR_VERSION,
+		NIC_DRIVER_MINOR_VERSION,
+		NIC_DRIVER_SERIAL_VERSION);
 
 	i4BytesWritten = (INT_32)u4Offset;
 
