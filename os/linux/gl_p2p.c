@@ -1071,7 +1071,8 @@ u_int8_t p2pNetUnregister(struct GLUE_INFO *prGlueInfo,
 		/* Here are the functions which need rtnl_lock */
 		if ((prRoleDev) && (prP2PInfo->prDevHandler != prRoleDev)) {
 			DBGLOG(INIT, INFO, "unregister p2p[%d]\n", ucRoleIdx);
-			unregister_netdev(prRoleDev);
+			if (prRoleDev->reg_state == NETREG_REGISTERED)
+				unregister_netdev(prRoleDev);
 
 			/* This ndev is created in mtk_p2p_cfg80211_add_iface(),
 			 * and unregister_netdev will also free the ndev.
@@ -1079,7 +1080,9 @@ u_int8_t p2pNetUnregister(struct GLUE_INFO *prGlueInfo,
 		}
 
 		DBGLOG(INIT, INFO, "unregister p2pdev[%d]\n", ucRoleIdx);
-		unregister_netdev(prP2PInfo->prDevHandler);
+		if (prP2PInfo->prDevHandler &&
+			prP2PInfo->prDevHandler->reg_state == NETREG_REGISTERED)
+			unregister_netdev(prP2PInfo->prDevHandler);
 
 		if (fgRollbackRtnlLock)
 			rtnl_lock();
