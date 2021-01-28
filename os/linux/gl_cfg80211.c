@@ -357,6 +357,7 @@ int mtk_cfg80211_del_key(struct wiphy *wiphy,
 			 const u8 *mac_addr)
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
+	struct BSS_INFO *prBssInfo;
 	uint32_t rStatus = WLAN_STATUS_SUCCESS;
 	struct PARAM_REMOVE_KEY rRemoveKey;
 	uint32_t u4BufLen = 0;
@@ -399,18 +400,22 @@ int mtk_cfg80211_del_key(struct wiphy *wiphy,
 
 	rRemoveKey.ucBssIdx = ucBssIndex;
 
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prGlueInfo->prAdapter,
+		ucBssIndex);
+#if CFG_SUPPORT_802_11W
 	/* if encrypted deauth frame is in process, pending remove key */
-	if (prGlueInfo->encryptedDeauthIsInProcess == TRUE) {
+	if (IS_BSS_INDEX_AIS(prGlueInfo->prAdapter, ucBssIndex)
+		&& prBssInfo->encryptedDeauthIsInProcess == TRUE) {
 		waitRet = wait_for_completion_timeout(
-				&prGlueInfo->rDeauthComp,
+				&prBssInfo->rDeauthComp,
 				MSEC_TO_JIFFIES(1000));
 		if (!waitRet) {
 			DBGLOG(RSN, WARN, "timeout\n");
-			prGlueInfo->encryptedDeauthIsInProcess = FALSE;
+			prBssInfo->encryptedDeauthIsInProcess = FALSE;
 		} else
 			DBGLOG(RSN, INFO, "complete\n");
 	}
-
+#endif
 	rStatus = kalIoctl(prGlueInfo, wlanoidSetRemoveKey, &rRemoveKey,
 			rRemoveKey.u4Length, FALSE, FALSE, TRUE, &u4BufLen);
 
