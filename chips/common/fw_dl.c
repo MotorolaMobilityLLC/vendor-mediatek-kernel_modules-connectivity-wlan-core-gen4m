@@ -461,7 +461,7 @@ uint32_t wlanDownloadEMISection(IN struct ADAPTER
 	request_mem_region(gConEmiPhyBase, gConEmiSize, "WIFI-EMI");
 	kalSetEmiMpuProtection(gConEmiPhyBase, false);
 	pucEmiBaseAddr = ioremap_nocache(gConEmiPhyBase, gConEmiSize);
-	DBGLOG(INIT, INFO,
+	DBGLOG_LIMITED(INIT, INFO,
 	       "EmiPhyBase:0x%llx offset:0x%x, ioremap region 0x%lX @ 0x%lX\n",
 	       (uint64_t)gConEmiPhyBase, u4Offset, gConEmiSize, pucEmiBaseAddr);
 	if (!pucEmiBaseAddr) {
@@ -631,7 +631,7 @@ uint32_t wlanImageSectionDownloadStage(
 				u4FwImageFileLength,
 				&u4DataMode,
 				&target);
-			DBGLOG(INIT, INFO,
+			DBGLOG_LIMITED(INIT, INFO,
 				"FormatV2 num_of_regoin[%d] datamode[0x%08x]\n",
 				target.num_of_region, u4DataMode);
 		} else {
@@ -640,7 +640,7 @@ uint32_t wlanImageSectionDownloadStage(
 					     u4FwImageFileLength,
 					     &u4Offset, &u4Addr,
 					     &u4Len, &u4DataMode);
-			DBGLOG(INIT, INFO,
+			DBGLOG_LIMITED(INIT, INFO,
 		"FormatV1 DL Offset[%u] addr[0x%08x] len[%u] datamode[0x%08x]\n",
 		       u4Offset, u4Addr, u4Len, u4DataMode);
 		}
@@ -675,7 +675,7 @@ uint32_t wlanImageSectionDownloadStage(
 				&u4Len, &u4DataMode, &fgIsEMIDownload,
 				&fgIsNotDownload);
 
-			DBGLOG(INIT, INFO,
+			DBGLOG_LIMITED(INIT, INFO,
 			       "DL Offset[%u] addr[0x%08x] len[%u] datamode[0x%08x]\n",
 			       u4Offset, u4Addr, u4Len, u4DataMode);
 
