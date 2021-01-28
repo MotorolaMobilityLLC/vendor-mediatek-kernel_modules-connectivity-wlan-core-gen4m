@@ -178,8 +178,6 @@
 /* Warning!! To use MAC header padding, every Tx packet must be decomposed */
 #define NIC_TX_DESC_HEADER_PADDING_LENGTH       0	/* in unit of bytes */
 
-#define NIC_TX_DEFAULT_WLAN_INDEX               31	/* For Tx packets to peer who has no WLAN table index. */
-
 #define NIC_TX_DESC_PID_RESERVED                0
 #define NIC_TX_DESC_DRIVER_PID_MIN              1
 #define NIC_TX_DESC_DRIVER_PID_MAX              127
