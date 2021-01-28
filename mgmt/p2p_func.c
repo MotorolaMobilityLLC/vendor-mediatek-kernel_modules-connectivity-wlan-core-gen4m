@@ -1893,7 +1893,7 @@ void p2pFuncDfsSwitchCh(IN struct ADAPTER *prAdapter,
 
 	prCmdRddOnOffCtrl->ucDfsCtrl = RDD_START_TXQ;
 
-	DBGLOG(P2P, INFO,
+	DBGLOG(P2P, TRACE,
 		"p2pFuncDfsSwitchCh: Start TXQ - DFS ctrl: %.d\n",
 		prCmdRddOnOffCtrl->ucDfsCtrl);
 
@@ -1915,15 +1915,112 @@ void p2pFuncDfsSwitchCh(IN struct ADAPTER *prAdapter,
 			prBssInfo->u4PrivateData);
 
 	prGlueInfo = prAdapter->prGlueInfo;
-
-	DBGLOG(P2P, INFO, "p2pFuncDfsSwitchCh: Update to OS\n");
 	role_idx = prP2pRoleFsmInfo->ucRoleIndex;
-	cfg80211_ch_switch_notify(
-		prGlueInfo->prP2PInfo[role_idx]->prDevHandler,
-		prGlueInfo->prP2PInfo[role_idx]->chandef);
-	DBGLOG(P2P, INFO, "p2pFuncDfsSwitchCh: Update to OS Done\n");
 
+	if (prGlueInfo->prP2PInfo[role_idx]->chandef == NULL) {
+		struct GL_P2P_INFO *prGlueP2pInfo =
+			prGlueInfo->prP2PInfo[role_idx];
+		if (!prGlueP2pInfo) {
+			DBGLOG(P2P, WARN, "p2p glue info is not active\n");
+			return;
+		}
+
+		prGlueP2pInfo->chandef =
+			(struct cfg80211_chan_def *)
+			cnmMemAlloc(prAdapter,
+			RAM_TYPE_BUF, sizeof(struct cfg80211_chan_def));
+		prGlueP2pInfo->chandef->chan =
+			(struct ieee80211_channel *)
+			cnmMemAlloc(prAdapter,
+			RAM_TYPE_BUF, sizeof(struct ieee80211_channel));
+		if (!prGlueP2pInfo->chandef->chan) {
+			DBGLOG(P2P, WARN,
+				"ieee80211_channel alloc fail\n");
+			return;
+		}
+		/* Fill chan def */
+		prGlueP2pInfo->chandef->chan->band
+			= (prBssInfo->eBand == BAND_5G)
+			? KAL_BAND_5GHZ : KAL_BAND_2GHZ;
+		prGlueP2pInfo->chandef->chan->center_freq
+			= nicChannelNum2Freq(prBssInfo->ucPrimaryChannel)
+			/ 1000;
+
+		if (rlmDomainIsLegalDfsChannel(prAdapter,
+			prBssInfo->eBand, prBssInfo->ucPrimaryChannel))
+			prGlueP2pInfo->chandef->
+				chan->dfs_state = NL80211_DFS_USABLE;
+		else
+			prGlueP2pInfo->chandef->
+				chan->dfs_state = NL80211_DFS_AVAILABLE;
+
+		switch (prBssInfo->ucVhtChannelWidth) {
+		case VHT_OP_CHANNEL_WIDTH_80P80:
+			prGlueP2pInfo->chandef->width
+				= NL80211_CHAN_WIDTH_80P80;
+			prGlueP2pInfo->chandef->center_freq1
+				= prBssInfo->ucVhtChannelFrequencyS1;
+			prGlueP2pInfo->chandef->center_freq2
+				= prBssInfo->ucVhtChannelFrequencyS2;
+			break;
+		case VHT_OP_CHANNEL_WIDTH_160:
+			prGlueP2pInfo->chandef->width
+				= NL80211_CHAN_WIDTH_160;
+			prGlueP2pInfo->chandef->center_freq1
+				= prBssInfo->ucVhtChannelFrequencyS1;
+			prGlueP2pInfo->chandef->center_freq2
+				= prBssInfo->ucVhtChannelFrequencyS2;
+			break;
+		case VHT_OP_CHANNEL_WIDTH_80:
+			prGlueP2pInfo->chandef->width
+				= NL80211_CHAN_WIDTH_80;
+			prGlueP2pInfo->chandef->center_freq1
+				= prBssInfo->ucVhtChannelFrequencyS1;
+			prGlueP2pInfo->chandef->center_freq2
+				= prBssInfo->ucVhtChannelFrequencyS2;
+			break;
+		case VHT_OP_CHANNEL_WIDTH_20_40:
+			prGlueP2pInfo->chandef->center_freq1
+				= prGlueP2pInfo->chandef->chan->center_freq;
+			if (prBssInfo->eBssSCO == CHNL_EXT_SCA) {
+				prGlueP2pInfo->chandef->width
+					= NL80211_CHAN_HT40MINUS;
+				prGlueP2pInfo->chandef->center_freq1 += 10;
+			} else if (prBssInfo->eBssSCO == CHNL_EXT_SCB) {
+				prGlueP2pInfo->chandef->width
+					= NL80211_CHAN_HT40PLUS;
+				prGlueP2pInfo->chandef->center_freq1 -= 10;
+			} else {
+				prGlueP2pInfo->chandef->width
+					= NL80211_CHAN_HT20;
+			}
+			prGlueP2pInfo->chandef->center_freq2 = 0;
+			break;
+		default:
+			prGlueP2pInfo->chandef->width
+				= NL80211_CHAN_WIDTH_20;
+			prGlueP2pInfo->chandef->center_freq1
+				= prGlueP2pInfo->chandef->chan->center_freq;
+			prGlueP2pInfo->chandef->center_freq2 = 0;
+			break;
+		}
+
+		DBGLOG(P2P, INFO,
+			"role(%d) b=%d f=%d w=%d s1=%d s2=%d\n",
+			role_idx,
+			prGlueP2pInfo->chandef->chan->band,
+			prGlueP2pInfo->chandef->chan->center_freq,
+			prGlueP2pInfo->chandef->width,
+			prGlueP2pInfo->chandef->center_freq1,
+			prGlueP2pInfo->chandef->center_freq2);
+	}
+
+	/* Ch notify */
 	if (prGlueInfo->prP2PInfo[role_idx]->chandef) {
+		cfg80211_ch_switch_notify(
+			prGlueInfo->prP2PInfo[role_idx]->prDevHandler,
+			prGlueInfo->prP2PInfo[role_idx]->chandef);
+
 		if (prGlueInfo->prP2PInfo[role_idx]->chandef->chan) {
 			cnmMemFree(prGlueInfo->prAdapter,
 			    prGlueInfo->prP2PInfo[role_idx]->chandef->chan);
@@ -6027,6 +6124,7 @@ void p2pFuncSwitchSapChannel(
 {
 	u_int8_t fgEnable = FALSE;
 	u_int8_t fgDbDcModeEn = FALSE;
+	u_int8_t fgIsSapDfs = FALSE;
 	struct BSS_INFO *prP2pBssInfo =
 		(struct BSS_INFO *) NULL;
 	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo =
@@ -6082,6 +6180,10 @@ void p2pFuncSwitchSapChannel(
 		goto exit;
 	}
 
+	if (eSapBand == BAND_5G)
+		fgIsSapDfs = rlmDomainIsLegalDfsChannel(prAdapter,
+			eSapBand, ucSapChannelNum);
+
 #if CFG_SUPPORT_DBDC
 	fgDbDcModeEn = prAdapter->rWifiVar.fgDbDcModeEn;
 #endif
@@ -6091,21 +6193,32 @@ void p2pFuncSwitchSapChannel(
 		/* Do nothing, i.e. SCC */
 		DBGLOG(P2P, INFO, "[SCC] Keep StaCH(%d)\n", ucStaChannelNum);
 		goto exit;
-	} else if (fgDbDcModeEn == TRUE && eStaBand != eSapBand) {
+	} else if (fgDbDcModeEn == TRUE
+		&& (eStaBand != eSapBand) && !fgIsSapDfs) {
 		/* Do nothing, i.e. DBDC */
 		DBGLOG(P2P, INFO,
-			"[DBDC] Keep StaCH(%d), SapCH(%d)\n",
-			ucStaChannelNum, ucSapChannelNum);
+			"[DBDC] Keep StaCH(%d), SapCH(%d)(dfs: %u)\n",
+			ucStaChannelNum, ucSapChannelNum, fgIsSapDfs);
 		goto exit;
 	} else {
 		/* Otherwise, switch to STA channel, i.e. SCC */
-		DBGLOG(P2P, INFO,
-			"[SCC] StaCH(%d), SapCH(%d)\n",
-			ucStaChannelNum, ucSapChannelNum);
 
-		cnmIdcCsaReq(prAdapter,
-			ucStaChannelNum,
+		struct RF_CHANNEL_INFO rRfChnlInfo;
+
+		/* Use sta ch info to do sap ch switch */
+		rRfChnlInfo.ucChannelNum = ucStaChannelNum;
+		rRfChnlInfo.eBand = eStaBand;
+		rRfChnlInfo.ucChnlBw =
+			rlmGetBssOpBwByVhtAndHtOpInfo(prP2pBssInfo);
+
+		DBGLOG(P2P, INFO,
+			"[SCC] StaCH(%d), SapCH(%d)(dfs: %u)\n",
+			ucStaChannelNum, ucSapChannelNum, fgIsSapDfs);
+
+		cnmSapChannelSwitchReq(prAdapter,
+			&rRfChnlInfo,
 			prP2pBssInfo->u4PrivateData);
+
 	}
 
 exit:
