@@ -67,6 +67,10 @@
  *                    E X T E R N A L   R E F E R E N C E S
  *******************************************************************************
  */
+#ifdef CONFIG_MTK_EMI
+extern phys_addr_t gConEmiPhyBase;
+extern unsigned long long gConEmiSize;
+#endif
 
 /*******************************************************************************
  *                              C O N S T A N T S
@@ -100,7 +104,7 @@
 #define HQA_CHIP_ID_7668	0x7668
 
 /* (4096(Samples/Bank) * 6Banks * 3(IQSamples/Sample) * 32bits)/96bits */
-#define MAX_ICAP_IQ_DATA_CNT					(4096 * 6)
+#define MAX_ICAP_IQ_DATA_CNT					(4096 * 8)
 #define ICAP_EVENT_DATA_SAMPLE					256
 
 
