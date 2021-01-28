@@ -357,9 +357,11 @@ endif
 # ---------------------------------------------------
 # Platform Objects List
 # ---------------------------------------------------
-ifeq ($(MTK_PLATFORM), mt6799)
+ifneq ($(MTK_PLATFORM),)
+ifneq ($(wildcard $(PLAT_DIR)plat_priv.c),)
 PLAT_OBJS := $(PLAT_DIR)plat_priv.o
 $(MODULE_NAME)-objs  += $(PLAT_OBJS)
+endif
 endif
 
 # ---------------------------------------------------
