@@ -1646,8 +1646,13 @@ static int wlanSetMacAddress(struct net_device *ndev, void *addr)
 	 */
 	sa = (struct sockaddr *)addr;
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(ndev));
-	prAdapter = prGlueInfo->prAdapter;
 
+	if (!prGlueInfo || !prGlueInfo->u4ReadyFlag) {
+		DBGLOG(REQ, WARN, "driver is not ready\n");
+		return -EFAULT;
+	}
+
+	prAdapter = prGlueInfo->prAdapter;
 	prAisBssInfo = aisGetAisBssInfo(prAdapter,
 		wlanGetBssIdx(ndev));
 
