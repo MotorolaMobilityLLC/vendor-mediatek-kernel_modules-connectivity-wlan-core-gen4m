@@ -124,8 +124,8 @@
 #define PHY_RATE_MCS9           0x9
 #define PHY_RATE_MCS32          0x20
 
-#define PHY_RATE_TONE_242       0x0
-#define PHY_RATE_TONE_106       0x1
+#define PHY_RATE_DCM			0x10
+#define PHY_RATE_TONE_106		0x20
 
 #define RATE_CCK_1M_LONG        (TX_MODE_CCK | PHY_RATE_1M)
 #define RATE_CCK_2M_LONG        (TX_MODE_CCK | PHY_RATE_2M)
@@ -177,8 +177,8 @@
 #define RATE_VHT_MCS_8          (TX_MODE_VHT | PHY_RATE_MCS8)
 #define RATE_VHT_MCS_9          (TX_MODE_VHT | PHY_RATE_MCS9)
 
-#define RATE_HE_ER_TONE_242     (TX_MODE_HE_ER_SU | PHY_RATE_TONE_242)
-#define RATE_HE_ER_TONE_106     (TX_MODE_HE_ER_SU | PHY_RATE_TONE_106)
+#define RATE_HE_ER_DCM_MCS_0	(TX_MODE_HE_ER_SU | PHY_RATE_DCM)
+#define RATE_HE_ER_TONE_106_MCS_0	(TX_MODE_HE_ER_SU | PHY_RATE_TONE_106)
 
 #define RATE_NSTS_MASK					BITS(9, 10)
 #define RATE_NSTS_OFFSET				9
@@ -409,6 +409,11 @@
 
 /* WMM-2.2.1 WMM Information Element */
 #define ELEM_MAX_LEN_WMM_INFO       7
+
+/* */
+#define RA_ER_Disable	0
+#define RA_DCM			1
+#define RA_ER_106		2
 
 /*******************************************************************************
  *                             D A T A   T Y P E S
