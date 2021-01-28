@@ -1,4 +1,4 @@
-/******************************************************************************
+/*******************************************************************************
  *
  * This file is provided under a dual license.  When you use or
  * distribute this software, you may choose to be licensed under
@@ -48,28 +48,28 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *****************************************************************************/
+ ******************************************************************************/
 /*
-** Id: @(#) gl_rst.c@@
-*/
+ ** Id: @(#) gl_rst.c@@
+ */
 
 /*! \file   gl_rst.c
-*    \brief  Main routines for supporintg MT6620 whole-chip reset mechanism
-*
-*    This file contains the support routines of Linux driver for MediaTek Inc. 802.11
-*    Wireless LAN Adapters.
-*/
+ *    \brief  Main routines for supporintg MT6620 whole-chip reset mechanism
+ *
+ *    This file contains the support routines of Linux driver for MediaTek Inc.
+ *    802.11 Wireless LAN Adapters.
+ */
 
 
 /*******************************************************************************
-*                         C O M P I L E R   F L A G S
-********************************************************************************
-*/
+ *                         C O M P I L E R   F L A G S
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                    E X T E R N A L   R E F E R E N C E S
-********************************************************************************
-*/
+ *                    E X T E R N A L   R E F E R E N C E S
+ *******************************************************************************
+ */
 #include <linux/kernel.h>
 #include <linux/workqueue.h>
 
@@ -77,9 +77,9 @@
 #include "gl_rst.h"
 
 /*******************************************************************************
-*                              F U N C T I O N S
-********************************************************************************
-*/
+ *                              F U N C T I O N S
+ *******************************************************************************
+ */
 /* Weak reference for those platform doesn't support wmt functions */
 u_int8_t __weak mtk_wcn_stp_coredump_start_get(void)
 {
@@ -96,37 +96,39 @@ u_int8_t glIsWmtCodeDump(void)
 #if CFG_CHIP_RESET_SUPPORT
 
 /*******************************************************************************
-*                              C O N S T A N T S
-********************************************************************************
-*/
+ *                              C O N S T A N T S
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                            P U B L I C   D A T A
-********************************************************************************
-*/
+ *                            P U B L I C   D A T A
+ *******************************************************************************
+ */
 static u_int8_t fgResetTriggered = FALSE;
 u_int8_t fgIsResetting = FALSE;
 /*******************************************************************************
-*                           P R I V A T E   D A T A
-********************************************************************************
-*/
+ *                           P R I V A T E   D A T A
+ *******************************************************************************
+ */
 static struct RESET_STRUCT wifi_rst;
 
 static void mtk_wifi_reset(struct work_struct *work);
-static void mtk_wifi_trigger_reset(struct work_struct *work);
+static void mtk_wifi_trigger_reset(struct work_struct
+				   *work);
 
 /*******************************************************************************
-*                   F U N C T I O N   D E C L A R A T I O N S
-********************************************************************************
-*/
+ *                   F U N C T I O N   D E C L A R A T I O N S
+ *******************************************************************************
+ */
 static void *glResetCallback(enum ENUM_WMTDRV_TYPE eSrcType,
 			     enum ENUM_WMTDRV_TYPE eDstType,
-			     enum ENUM_WMTMSG_TYPE eMsgType, void *prMsgBody, unsigned int u4MsgLength);
+			     enum ENUM_WMTMSG_TYPE eMsgType, void *prMsgBody,
+			     unsigned int u4MsgLength);
 
 /*******************************************************************************
-*                              F U N C T I O N S
-********************************************************************************
-*/
+ *                              F U N C T I O N S
+ *******************************************************************************
+ */
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -142,11 +144,13 @@ static void *glResetCallback(enum ENUM_WMTDRV_TYPE eSrcType,
 void glResetInit(void)
 {
 	/* 1. Register reset callback */
-	mtk_wcn_wmt_msgcb_reg(WMTDRV_TYPE_WIFI, (PF_WMT_CB) glResetCallback);
+	mtk_wcn_wmt_msgcb_reg(WMTDRV_TYPE_WIFI,
+			      (PF_WMT_CB) glResetCallback);
 
 	/* 2. Initialize reset work */
 	INIT_WORK(&(wifi_rst.rst_work), mtk_wifi_reset);
-	INIT_WORK(&(wifi_rst.rst_trigger_work), mtk_wifi_trigger_reset);
+	INIT_WORK(&(wifi_rst.rst_trigger_work),
+		  mtk_wifi_trigger_reset);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -181,12 +185,14 @@ void glResetUninit(void)
 /*----------------------------------------------------------------------------*/
 static void *glResetCallback(enum ENUM_WMTDRV_TYPE eSrcType,
 			     enum ENUM_WMTDRV_TYPE eDstType,
-			     enum ENUM_WMTMSG_TYPE eMsgType, void *prMsgBody, unsigned int u4MsgLength)
+			     enum ENUM_WMTMSG_TYPE eMsgType, void *prMsgBody,
+			     unsigned int u4MsgLength)
 {
 	switch (eMsgType) {
 	case WMTMSG_TYPE_RESET:
 		if (u4MsgLength == sizeof(enum ENUM_WMTRSTMSG_TYPE)) {
-			enum ENUM_WMTRSTMSG_TYPE *prRstMsg = (enum ENUM_WMTRSTMSG_TYPE *) prMsgBody;
+			enum ENUM_WMTRSTMSG_TYPE *prRstMsg =
+					(enum ENUM_WMTRSTMSG_TYPE *) prMsgBody;
 
 			switch (*prRstMsg) {
 			case WMTRSTMSG_RESET_START:
@@ -236,7 +242,8 @@ static void *glResetCallback(enum ENUM_WMTDRV_TYPE eSrcType,
 /*----------------------------------------------------------------------------*/
 static void mtk_wifi_reset(struct work_struct *work)
 {
-	struct RESET_STRUCT *rst = container_of(work, struct RESET_STRUCT, rst_work);
+	struct RESET_STRUCT *rst = container_of(work,
+						struct RESET_STRUCT, rst_work);
 
 	wifi_reset_end(rst->rst_data);
 }
@@ -273,24 +280,30 @@ u_int8_t kalIsResetting(void)
 static void mtk_wifi_trigger_reset(struct work_struct *work)
 {
 	u_int8_t fgResult = FALSE;
-	struct RESET_STRUCT *rst = container_of(work, struct RESET_STRUCT, rst_trigger_work);
+	struct RESET_STRUCT *rst = container_of(work,
+					struct RESET_STRUCT, rst_trigger_work);
 
 	fgResetTriggered = TRUE;
-	/* Set the power off flag to FALSE in WMT to prevent chip power off after
-	** wlanProbe return failure, because we need to do core dump afterward.
-	*/
+	/* Set the power off flag to FALSE in WMT to prevent chip power off
+	 * after wlanProbe return failure, because we need to do core dump
+	 * afterward.
+	 */
 	if (rst->rst_trigger_flag & RST_FLAG_PREVENT_POWER_OFF)
 		mtk_wcn_set_connsys_power_off_flag(FALSE);
 
-	if ((rst->rst_trigger_flag & RST_FLAG_DO_CORE_DUMP) && !fgIsBusAccessFailed)
-		fgResult = mtk_wcn_wmt_assert_timeout(WMTDRV_TYPE_WIFI, 0x40, 0);
+	if ((rst->rst_trigger_flag & RST_FLAG_DO_CORE_DUMP)
+	    && !fgIsBusAccessFailed)
+		fgResult = mtk_wcn_wmt_assert_timeout(WMTDRV_TYPE_WIFI,
+						      0x40, 0);
 	else
 		fgResult = mtk_wcn_wmt_do_reset(WMTDRV_TYPE_WIFI);
 
-	DBGLOG(INIT, INFO, "reset result %d, trigger flag 0x%x\n", fgResult, rst->rst_trigger_flag);
+	DBGLOG(INIT, INFO, "reset result %d, trigger flag 0x%x\n",
+	       fgResult, rst->rst_trigger_flag);
 }
 
-u_int8_t glResetTrigger(struct ADAPTER *prAdapter, uint32_t u4RstFlag, const uint8_t *pucFile, uint32_t u4Line)
+u_int8_t glResetTrigger(struct ADAPTER *prAdapter,
+		uint32_t u4RstFlag, const uint8_t *pucFile, uint32_t u4Line)
 {
 	u_int8_t fgResult = TRUE;
 
@@ -305,7 +318,8 @@ u_int8_t glResetTrigger(struct ADAPTER *prAdapter, uint32_t u4RstFlag, const uin
 		       (prAdapter->rVerInfo.u2FwOwnVersion & BITS(0, 7)),
 		       (prAdapter->rVerInfo.u2FwOwnVersion >> 8),
 		       (prAdapter->rVerInfo.u2FwOwnVersion & BITS(0, 7)),
-		       (prAdapter->rVerInfo.u2FwPeerVersion >> 8), (prAdapter->rVerInfo.u2FwPeerVersion & BITS(0, 7)));
+		       (prAdapter->rVerInfo.u2FwPeerVersion >> 8),
+		       (prAdapter->rVerInfo.u2FwPeerVersion & BITS(0, 7)));
 
 		fgResult = TRUE;
 	} else {
@@ -318,7 +332,8 @@ u_int8_t glResetTrigger(struct ADAPTER *prAdapter, uint32_t u4RstFlag, const uin
 		       (prAdapter->rVerInfo.u2FwOwnVersion & BITS(0, 7)),
 		       (prAdapter->rVerInfo.u2FwOwnVersion >> 8),
 		       (prAdapter->rVerInfo.u2FwOwnVersion & BITS(0, 7)),
-		       (prAdapter->rVerInfo.u2FwPeerVersion >> 8), (prAdapter->rVerInfo.u2FwPeerVersion & BITS(0, 7)));
+		       (prAdapter->rVerInfo.u2FwPeerVersion >> 8),
+		       (prAdapter->rVerInfo.u2FwPeerVersion & BITS(0, 7)));
 
 		wifi_rst.rst_trigger_flag = u4RstFlag;
 		schedule_work(&(wifi_rst.rst_trigger_work));
@@ -338,7 +353,8 @@ u_int8_t kalIsResetting(void)
 
 enum _ENUM_CHIP_RESET_REASON_TYPE_T eResetReason;
 uint64_t u8ResetTime;
-void glGetRstReason(enum _ENUM_CHIP_RESET_REASON_TYPE_T eReason)
+void glGetRstReason(enum _ENUM_CHIP_RESET_REASON_TYPE_T
+		    eReason)
 {
 	u8ResetTime = sched_clock();
 	eResetReason = eReason;
