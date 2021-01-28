@@ -1932,6 +1932,7 @@ uint32_t wlanSendCommand(IN struct ADAPTER *prAdapter,
 			DBGLOG(INIT, INFO, "NO Resource:%d\n", ucTC);
 			break;
 		}
+		GLUE_INC_REF_CNT(prAdapter->rHifStats.u4CmdInCount);
 		/* <1.3> Forward CMD_INFO_T to NIC Layer */
 		rStatus = nicTxCmd(prAdapter, prCmdInfo, ucTC);
 
@@ -2063,6 +2064,9 @@ uint32_t wlanSendCommandMthread(IN struct ADAPTER
 			}
 		}
 	} while (FALSE);
+
+	GLUE_ADD_REF_CNT(prTempCmdQue->u4NumElem,
+			prAdapter->rHifStats.u4CmdInCount);
 
 	KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_CMD_QUE);
 	QUEUE_CONCATENATE_QUEUES(&(prAdapter->rTxCmdQueue),
