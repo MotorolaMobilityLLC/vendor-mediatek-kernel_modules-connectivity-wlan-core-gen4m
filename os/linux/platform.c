@@ -325,6 +325,7 @@ static int nvram_read(char *filename, char *buf, ssize_t len, int offset)
 
 	if (IS_ERR(fd)) {
 		DBGLOG(INIT, INFO, "[nvram_read] : failed to open!!\n");
+		set_fs(old_fs);
 		return -1;
 	}
 
@@ -389,6 +390,7 @@ static int nvram_write(char *filename, char *buf, ssize_t len, int offset)
 
 	if (IS_ERR(fd)) {
 		DBGLOG(INIT, INFO, "[nvram_write] : failed to open!!\n");
+		set_fs(old_fs);
 		return -1;
 	}
 
