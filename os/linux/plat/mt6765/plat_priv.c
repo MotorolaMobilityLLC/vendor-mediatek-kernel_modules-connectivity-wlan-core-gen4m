@@ -11,7 +11,19 @@
 
 #include <cpu_ctrl.h>
 #include <topo_ctrl.h>
+
+#if KERNEL_VERSION(4, 19, 0) <= CFG80211_VERSION_CODE
 #include <linux/soc/mediatek/mtk-pm-qos.h>
+#define pm_qos_add_request(_req, _class, _value) \
+		mtk_pm_qos_add_request(_req, _class, _value)
+#define pm_qos_update_request(_req, _value) \
+		mtk_pm_qos_update_request(_req, _value)
+#define pm_qos_remove_request(_req) \
+		mtk_pm_qos_remove_request(_req)
+#else
+#include <linux/pm_qos.h>
+#include <helio-dvfsrc-opp.h>
+#endif
 
 #include "precomp.h"
 
@@ -46,14 +58,14 @@ int32_t kalBoostCpu(IN struct ADAPTER *prAdapter,
 	if (u4TarPerfLevel >= u4BoostCpuTh) {
 		if (!fgRequested) {
 			fgRequested = 1;
-			mtk_pm_qos_add_request(&wifi_qos_request,
+			pm_qos_add_request(&wifi_qos_request,
 					   PM_QOS_DDR_OPP,
 					   DDR_OPP_0);
 		}
-		mtk_pm_qos_update_request(&wifi_qos_request, DDR_OPP_0);
+		pm_qos_update_request(&wifi_qos_request, DDR_OPP_0);
 	} else if (fgRequested) {
-		mtk_pm_qos_update_request(&wifi_qos_request, DDR_OPP_UNREQ);
-		mtk_pm_qos_remove_request(&wifi_qos_request);
+		pm_qos_update_request(&wifi_qos_request, DDR_OPP_UNREQ);
+		pm_qos_remove_request(&wifi_qos_request);
 		fgRequested = 0;
 	}
 	return 0;
