@@ -156,13 +156,13 @@ u_int8_t halVerifyChipID(IN struct ADAPTER *prAdapter)
 	prChipInfo = prAdapter->chip_info;
 
 	HAL_MCR_RD(prAdapter, TOP_HCR, &u4CIR);
-	DBGLOG(INIT, TRACE, "Chip ID: 0x%lx\n", u4CIR);
+	DBGLOG(INIT, TRACE, "Chip ID: 0x%4x\n", u4CIR);
 
 	if (u4CIR != prChipInfo->chip_id)
 		return FALSE;
 
 	HAL_MCR_RD(prAdapter, TOP_HVR, &u4CIR);
-	DBGLOG(INIT, TRACE, "Revision ID: 0x%lx\n", u4CIR);
+	DBGLOG(INIT, TRACE, "Revision ID: 0x%4x\n", u4CIR);
 
 	prAdapter->ucRevID = (uint8_t) (u4CIR & 0xF);
 	prAdapter->fgIsReadRevID = TRUE;
