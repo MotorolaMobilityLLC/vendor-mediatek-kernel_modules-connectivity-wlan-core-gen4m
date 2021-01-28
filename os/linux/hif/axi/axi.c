@@ -141,6 +141,8 @@ static struct platform_driver mtk_axi_driver = {
 	.remove = NULL,
 };
 
+struct platform_device *g_prPlatDev;
+
 static struct GLUE_INFO *g_prGlueInfo;
 static void *CSRBaseAddress;
 static u64 g_u8CsrOffset;
@@ -794,6 +796,10 @@ uint32_t glRegisterBus(probe_card pfProbe, remove_card pfRemove)
 	ret = (platform_device_add(prPlatDev) == 0)
 		? WLAN_STATUS_SUCCESS : WLAN_STATUS_FAILURE;
 	DBGLOG(INIT, INFO, "platform_device_add ret = %d\n", ret);
+
+	if (ret == WLAN_STATUS_SUCCESS)
+		g_prPlatDev = prPlatDev;
+
 	return ret;
 }
 
