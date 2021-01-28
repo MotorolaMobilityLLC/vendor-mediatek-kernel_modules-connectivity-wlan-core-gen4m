@@ -1476,7 +1476,10 @@ cnmPeerAdd(struct ADAPTER *prAdapter, void *pvSetBuffer,
 		prStaRec->ucPhyTypeSet = prAisBssInfo->ucPhyTypeSet;
 		prStaRec->eStaType = prCmd->eStaType;
 
-		/* NOTE(Kevin): Better to change state here, not at TX Done */
+		/* Init lowest rate to prevent CCK in 5G band */
+		nicTxUpdateStaRecDefaultRate(prStaRec);
+
+		/* Better to change state here, not at TX Done */
 		cnmStaRecChangeState(prAdapter, prStaRec, STA_STATE_1);
 
 	} else {

@@ -152,7 +152,7 @@ uint32_t TdlsexLinkMgt(struct ADAPTER *prAdapter,
 	prCmd = (struct TDLS_CMD_LINK_MGT *) pvSetBuffer;
 	prBssInfo = prAdapter->prAisBssInfo;
 
-	/* printk("\n\n\n  TdlsexLinkMgt\n\n\n"); */
+	DBGLOG(TDLS, INFO, "u4SetBufferLen=%d", u4SetBufferLen);
 
 #if 1
 	/* AIS only */
@@ -164,6 +164,9 @@ uint32_t TdlsexLinkMgt(struct ADAPTER *prAdapter,
 		return -EINVAL;
 	}
 #endif
+
+	DBGLOG(TDLS, INFO, "prCmd->ucActionCode=%d, prCmd->ucDialogToken=%d",
+		prCmd->ucActionCode, prCmd->ucDialogToken);
 
 	prStaRec = prBssInfo->prStaRecOfAP;
 
@@ -311,8 +314,6 @@ uint32_t TdlsexLinkOper(struct ADAPTER *prAdapter,
 			void *pvSetBuffer, uint32_t u4SetBufferLen,
 			uint32_t *pu4SetInfoLen)
 {
-	/* printk("TdlsexLinkOper\n"); */
-
 	/* from supplicant -- wpa_supplicant_tdls_peer_addset() */
 	uint16_t i;
 	struct STA_RECORD *prStaRec;
@@ -320,6 +321,9 @@ uint32_t TdlsexLinkOper(struct ADAPTER *prAdapter,
 	struct TDLS_CMD_LINK_OPER *prCmd;
 
 	prCmd = (struct TDLS_CMD_LINK_OPER *) pvSetBuffer;
+
+	DBGLOG(TDLS, INFO, "prCmd->oper=%d, u4SetBufferLen=%d",
+		prCmd->oper, u4SetBufferLen);
 
 	switch (prCmd->oper) {
 
@@ -836,7 +840,7 @@ TdlsDataFrameSend_SETUP_REQ(struct ADAPTER *prAdapter,
 	/* 5. Update packet length */
 	prMsduInfo->len = u4PktLen;
 
-	DBGLOG(TDLS, INFO, "\n\n\n  wlanHardStartXmit\n\n\n");
+	DBGLOG(TDLS, INFO, "wlanHardStartXmit, u4PktLen=%d", u4PktLen);
 
 	/* 5. send the data frame */
 	wlanHardStartXmit(prMsduInfo, prMsduInfo->dev);
