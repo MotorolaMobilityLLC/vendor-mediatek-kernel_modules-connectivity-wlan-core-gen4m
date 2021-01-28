@@ -82,7 +82,7 @@ else
 endif
 
 ifneq ($(CFG_CFG80211_VERSION),)
-VERSION_STR = $(subst ",,$(subst ., , $(subst -, ,$(subst v,,$(CFG_CFG80211_VERSION)))))
+VERSION_STR = $(subst \",,$(subst ., , $(subst -, ,$(subst v,,$(CFG_CFG80211_VERSION)))))
 $(info VERSION_STR=$(VERSION_STR))
 X = $(firstword $(VERSION_STR))
 Y = $(word 2 ,$(VERSION_STR))
@@ -160,7 +160,6 @@ NIC_DIR     := nic/
 MGMT_DIR    := mgmt/
 CHIPS       := chips/
 
-
 # ---------------------------------------------------
 # Objects List
 # ---------------------------------------------------
@@ -227,18 +226,18 @@ MGMT_OBJS := $(MGMT_DIR)ais_fsm.o \
 MGMT_OBJS += $(MGMT_DIR)stats.o
 
 
-CHIPS_OBJS += $(CHIPS)cmm_asic_connac.o
+CHIPS_OBJS += $(CHIPS)common/cmm_asic_connac.o
 ifneq ($(findstring 6632,$(MTK_COMBO_CHIP)),)
-CHIPS_OBJS += $(CHIPS)mt6632.o
+CHIPS_OBJS += $(CHIPS)mt6632/mt6632.o
 endif
 ifneq ($(findstring 7668,$(MTK_COMBO_CHIP)),)
-CHIPS_OBJS += $(CHIPS)mt7668.o
+CHIPS_OBJS += $(CHIPS)mt7668/mt7668.o
 endif
 ifneq ($(findstring 7663,$(MTK_COMBO_CHIP)),)
-CHIPS_OBJS += $(CHIPS)mt7663.o
+CHIPS_OBJS += $(CHIPS)mt7663/mt7663.o
 endif
 ifneq ($(findstring CONNAC,$(MTK_COMBO_CHIP)),)
-CHIPS_OBJS += $(CHIPS)connac.o
+CHIPS_OBJS += $(CHIPS)connac/connac.o
 endif
 
 
