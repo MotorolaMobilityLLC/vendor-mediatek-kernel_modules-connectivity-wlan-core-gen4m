@@ -1585,6 +1585,7 @@ struct CMD_PERF_IND {
 struct CMD_SMART_GEAR_PARAM {
 	uint8_t ucSGEnable;/*0: disable, 1: Enable, 2: Action for ucSGSpcCmd*/
 	uint8_t ucSGSpcCmd;/* 1: Force 1x1, 2: Force 2x2, 0: Automatic*/
+	uint8_t ucNSSCap; /*NSS Capbility*/
 	uint8_t ucSGCfg;/* DON'T SET, IT IS USED FOR WIFI.CFG WIFI*/
 };
 

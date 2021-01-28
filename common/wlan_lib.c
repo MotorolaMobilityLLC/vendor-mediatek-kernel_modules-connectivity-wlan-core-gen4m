@@ -11054,7 +11054,7 @@ uint32_t wlanSetLowLatencyMode(
 
 		#ifdef CFG_SUPPORT_SMART_GEAR
 		wlandioSetSGStatus(prAdapter,
-			fgEnMode, 0x00);
+			fgEnMode, 0x00, 0x00);
 		DBGLOG(OID, INFO,
 			"[SG] SmartGear (%d) for gaming mode\n",
 			fgEnMode);

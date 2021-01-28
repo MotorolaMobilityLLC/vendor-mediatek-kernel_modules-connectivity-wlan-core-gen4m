@@ -3024,7 +3024,8 @@ wlanoidQueryCalBackupV2(IN struct ADAPTER *prAdapter,
 uint32_t
 wlandioSetSGStatus(IN struct ADAPTER *prAdapter,
 			IN uint8_t ucSGEnable,
-			IN uint8_t ucSGSpcCmd);
+			IN uint8_t ucSGSpcCmd,
+			IN uint8_t ucNSS);
 #endif
 
 uint32_t
