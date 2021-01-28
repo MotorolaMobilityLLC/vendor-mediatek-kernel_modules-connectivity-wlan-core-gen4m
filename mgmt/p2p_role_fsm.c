@@ -3934,6 +3934,22 @@ void p2pRoleFsmRunEventAcs(IN struct ADAPTER *prAdapter,
 
 	initAcsParams(prAdapter, prMsgAcsRequest, prAcsReqInfo);
 
+#if CFG_HOTSPOT_SUPPORT_ADJUST_SCC
+	if (prAdapter->rWifiVar.eDbdcMode == ENUM_DBDC_MODE_DISABLED) {
+		struct BSS_INFO *prAisBssInfo;
+
+		DBGLOG(P2P, INFO, "Report SCC channel\n");
+
+		prAisBssInfo = aisGetConnectedBssInfo(prAdapter);
+		if (prAisBssInfo) {
+			/* Force SCC, indicate channel directly */
+			indicateAcsResultByAisCh(prAdapter, prAcsReqInfo,
+			prAisBssInfo);
+			goto exit;
+		}
+	}
+#endif
+
 	if (prAcsReqInfo->eHwMode == P2P_VENDOR_ACS_HW_MODE_11ANY) {
 		struct BSS_INFO *prAisBssInfo;
 
