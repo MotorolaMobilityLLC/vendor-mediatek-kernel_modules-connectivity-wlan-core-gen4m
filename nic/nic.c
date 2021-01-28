@@ -2665,6 +2665,7 @@ uint32_t nicQmUpdateWmmParms(IN struct ADAPTER *prAdapter,
 	struct BSS_INFO *prBssInfo;
 	struct CMD_UPDATE_WMM_PARMS rCmdUpdateWmmParms;
 	struct mt66xx_chip_info *prChipInfo;
+	uint32_t u4TxHifRes = 0, u4Idx = 0;
 
 	ASSERT(prAdapter);
 	prChipInfo = prAdapter->chip_info;
@@ -2688,6 +2689,33 @@ uint32_t nicQmUpdateWmmParms(IN struct ADAPTER *prAdapter,
 	rCmdUpdateWmmParms.fgIsQBSS = prBssInfo->fgIsQBSS;
 	rCmdUpdateWmmParms.ucWmmSet = (uint8_t)
 				      prBssInfo->ucWmmQueSet;
+
+	/* If VI use worse parameter than BE, need to use round-robbin queue
+	 *   to enqueue data from HIF to HW.
+	 *  (Should revise if HIF can have separate queue for each AC)
+	 */
+	if (rCmdUpdateWmmParms.arACQueParms[AC1].u2Aifsn
+		< rCmdUpdateWmmParms.arACQueParms[AC2].u2Aifsn) {
+
+		/* Use round-robbin queuing in HIF */
+		prAdapter->rWifiVar.ucTxMsduQueue = 1;
+
+		/* The ratio of each AC is 1:1:1:1 in this case */
+		u4TxHifRes = 0x00111111;
+	} else {
+		/* Use default setting when wifi init */
+		prAdapter->rWifiVar.ucTxMsduQueue =
+			prAdapter->rWifiVar.ucTxMsduQueueInit;
+		u4TxHifRes = prAdapter->rWifiVar.u4TxHifRes;
+	}
+
+	DBGLOG_LIMITED(QM, INFO, "ucTxMsduQueue:[%u], u4TxHifRes[%d]",
+		prAdapter->rWifiVar.ucTxMsduQueue, u4TxHifRes);
+
+	for (u4Idx = 0; u4Idx < TX_PORT_NUM && u4TxHifRes; u4Idx++) {
+		prAdapter->au4TxHifResCtl[u4Idx] = u4TxHifRes & BITS(0, 3);
+		u4TxHifRes = u4TxHifRes >> 4;
+	}
 
 	return wlanSendSetQueryCmd(prAdapter,
 				   CMD_ID_UPDATE_WMM_PARMS,
