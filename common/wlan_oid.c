@@ -4512,6 +4512,65 @@ wlanoidSetEfusBufferMode(IN P_ADAPTER_T prAdapter, IN PVOID pvSetBuffer, IN UINT
 	return rWlanStatus;
 }
 
+WLAN_STATUS
+wlanoidConnacSetEfusBufferMode(IN P_ADAPTER_T prAdapter, IN PVOID pvSetBuffer, IN UINT_32 u4SetBufferLen,
+			 OUT PUINT_32 pu4SetInfoLen)
+{
+	struct PARAM_CUSTOM_EFUSE_BUFFER_MODE_CONNAC_T *prSetEfuseBufModeInfo;
+	struct CMD_EFUSE_BUFFER_MODE_CONNAC_T *prCmdSetEfuseBufModeInfo = NULL;
+	UINT_32 u4EfuseContentSize, u4QueryInfoLen;
+	WLAN_STATUS rWlanStatus = WLAN_STATUS_SUCCESS;
+
+	DEBUGFUNC("wlanoidSetEfusBufferMode");
+
+	ASSERT(prAdapter);
+	ASSERT(pu4SetInfoLen);
+	ASSERT(pvSetBuffer);
+
+	DBGLOG(OID, INFO, "u4SetBufferLen = %d\n", u4SetBufferLen);
+	/* get the buffer mode info */
+	prSetEfuseBufModeInfo = (struct PARAM_CUSTOM_EFUSE_BUFFER_MODE_CONNAC_T *) pvSetBuffer;
+
+	/* copy command header */
+	prCmdSetEfuseBufModeInfo = (struct CMD_EFUSE_BUFFER_MODE_CONNAC_T *)
+				   kalMemAlloc(sizeof(struct CMD_EFUSE_BUFFER_MODE_CONNAC_T), VIR_MEM_TYPE);
+	if (prCmdSetEfuseBufModeInfo == NULL)
+		return WLAN_STATUS_FAILURE;
+	kalMemZero(prCmdSetEfuseBufModeInfo, sizeof(struct CMD_EFUSE_BUFFER_MODE_CONNAC_T));
+	prCmdSetEfuseBufModeInfo->ucSourceMode = prSetEfuseBufModeInfo->ucSourceMode;
+	prCmdSetEfuseBufModeInfo->ucContentFormat = prSetEfuseBufModeInfo->ucContentFormat;
+	prCmdSetEfuseBufModeInfo->u2Count = prSetEfuseBufModeInfo->u2Count;
+
+	u4EfuseContentSize = prCmdSetEfuseBufModeInfo->u2Count;
+
+	u4QueryInfoLen = OFFSET_OF(struct CMD_EFUSE_BUFFER_MODE_CONNAC_T, aBinContent) + u4EfuseContentSize;
+
+	if (u4SetBufferLen < u4QueryInfoLen) {
+		kalMemFree(prCmdSetEfuseBufModeInfo, VIR_MEM_TYPE, sizeof(struct CMD_EFUSE_BUFFER_MODE_CONNAC_T));
+		return WLAN_STATUS_INVALID_LENGTH;
+	}
+
+	*pu4SetInfoLen = u4QueryInfoLen;
+	kalMemCopy(prCmdSetEfuseBufModeInfo->aBinContent, prSetEfuseBufModeInfo->aBinContent,
+		   u4EfuseContentSize);
+
+	rWlanStatus = wlanSendSetQueryExtCmd(prAdapter,
+					     CMD_ID_LAYER_0_EXT_MAGIC_NUM,
+					     EXT_CMD_ID_EFUSE_BUFFER_MODE,
+					     FALSE,
+					     TRUE,
+					     TRUE,
+					     NULL,
+					     nicOidCmdTimeoutCommon,
+					     u4QueryInfoLen,
+					     (PUINT_8) (prCmdSetEfuseBufModeInfo),
+					     pvSetBuffer, u4SetBufferLen);
+
+	kalMemFree(prCmdSetEfuseBufModeInfo, VIR_MEM_TYPE, sizeof(struct CMD_EFUSE_BUFFER_MODE_CONNAC_T));
+
+	return rWlanStatus;
+}
+
 /*#if (CFG_EEPROM_PAGE_ACCESS == 1)*/
 /*----------------------------------------------------------------------------*/
 /*!

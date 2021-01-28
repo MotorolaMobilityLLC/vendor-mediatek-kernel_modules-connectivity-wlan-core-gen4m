@@ -154,7 +154,7 @@
 
 #define EFUSE_BLOCK_SIZE 16
 #define EEPROM_SIZE 1184
-#define MAX_EEPROM_BUFFER_SIZE	1200
+#define MAX_EEPROM_BUFFER_SIZE	1450
 #endif /* CFG_SUPPORT_BUFFER_MODE */
 
 #if CFG_SUPPORT_TX_BF
@@ -642,6 +642,13 @@ typedef struct _PARAM_CUSTOM_EFUSE_BUFFER_MODE_T {
 	UINT_8 ucReserved;
 	UINT_8 aBinContent[MAX_EEPROM_BUFFER_SIZE];
 } PARAM_CUSTOM_EFUSE_BUFFER_MODE_T, *P_PARAM_CUSTOM_EFUSE_BUFFER_MODE_T;
+
+struct PARAM_CUSTOM_EFUSE_BUFFER_MODE_CONNAC_T {
+	UINT_8 ucSourceMode;
+	UINT_8 ucContentFormat;
+	UINT_16 u2Count;
+	UINT_8 aBinContent[MAX_EEPROM_BUFFER_SIZE];
+};
 
 /*#if (CFG_EEPROM_PAGE_ACCESS == 1)*/
 typedef struct _PARAM_CUSTOM_ACCESS_EFUSE_T {
@@ -2245,6 +2252,9 @@ wlanoidQueryLinkSpeed(IN P_ADAPTER_T prAdapter,
 #if CFG_SUPPORT_QA_TOOL
 #if CFG_SUPPORT_BUFFER_MODE
 WLAN_STATUS wlanoidSetEfusBufferMode(IN P_ADAPTER_T prAdapter,
+				     IN PVOID pvSetBuffer, IN UINT_32 u4SetBufferLen, OUT PUINT_32 pu4SetInfoLen);
+
+WLAN_STATUS wlanoidConnacSetEfusBufferMode(IN P_ADAPTER_T prAdapter,
 				     IN PVOID pvSetBuffer, IN UINT_32 u4SetBufferLen, OUT PUINT_32 pu4SetInfoLen);
 
 /*#if (CFG_EEPROM_PAGE_ACCESS == 1)*/

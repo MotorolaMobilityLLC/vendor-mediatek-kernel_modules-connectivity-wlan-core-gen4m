@@ -1023,6 +1023,10 @@ VOID wlanSetSuspendMode(P_GLUE_INFO_T prGlueInfo, BOOLEAN fgEnable);
 
 VOID wlanGetConfig(P_ADAPTER_T prAdapter);
 
+WLAN_STATUS wlanDownloadBufferBin(P_ADAPTER_T prAdapter);
+
+WLAN_STATUS wlanConnacDownloadBufferBin(P_ADAPTER_T prAdapter);
+
 /*******************************************************************************
 *			 E X T E R N A L   F U N C T I O N S / V A R I A B L E
 ********************************************************************************
