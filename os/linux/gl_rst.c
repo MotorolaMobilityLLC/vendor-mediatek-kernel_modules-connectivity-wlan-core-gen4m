@@ -291,7 +291,7 @@ static void mtk_wifi_trigger_reset(struct work_struct *work)
 	if (rst->rst_trigger_flag & RST_FLAG_PREVENT_POWER_OFF)
 		mtk_wcn_set_connsys_power_off_flag(FALSE);
 
-	fgResult = mtk_wcn_wmt_assert_timeout(WMTDRV_TYPE_WIFI, 0x40, 0);
+	fgResult = mtk_wcn_wmt_assert_timeout(WMTDRV_TYPE_WIFI, 40, 0);
 	DBGLOG(INIT, INFO, "reset result %d, trigger flag 0x%x\n",
 				fgResult, rst->rst_trigger_flag);
 }
