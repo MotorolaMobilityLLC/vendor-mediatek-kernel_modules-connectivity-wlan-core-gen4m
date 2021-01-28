@@ -79,11 +79,14 @@
 #include "mt_dmac.h"
 #include "wf_ple.h"
 #include "hal_dmashdl_soc3_0.h"
-
+#include "soc3_0.h"
 /*******************************************************************************
  *                              C O N S T A N T S
  *******************************************************************************
  */
+
+/* TODO : need to Merge related API with non-driver base */
+#define WFSYS_SUPPORT_BUS_HANG_READ_FROM_DRIVER_BASE 1
 
 /* define  WFDMA CODA here */
 #define WF_WFDMA_MCU_DMA0_WPDMA_TX_RING0_CTRL0_ADDR \
@@ -101,11 +104,7 @@
 #define WF_WFDMA_MCU_DMA1_WPDMA_RX_RING1_CTRL0_ADDR \
 			(CONNAC2X_MCU_WPDMA_1_BASE + 0x510)
 #define WF_WFDMA_MCU_DMA1_WPDMA_RX_RING2_CTRL0_ADDR \
-				(CONNAC2X_MCU_WPDMA_1_BASE + 0x520)
-#define WF_WFDMA_HOST_DMA0_WPDMA_TX_RING16_CTRL0_ADDR \
-			(WF_WFDMA_HOST_DMA0_BASE + 0x400)
-#define WF_WFDMA_HOST_DMA0_WPDMA_TX_RING17_CTRL0_ADDR \
-			(WF_WFDMA_HOST_DMA0_BASE + 0x410)
+			(CONNAC2X_MCU_WPDMA_1_BASE + 0x520)
 
 /* define PLE/PSE FSM CR here */
 #define WF_PLE_FSM_PEEK_CR_00 (WF_PLE_TOP_BASE + 0x03D0)
@@ -132,6 +131,69 @@
 #define WF_PSE_FSM_PEEK_CR_08 (WF_PSE_TOP_BASE + 0x03F0)
 #define WF_PSE_FSM_PEEK_CR_09 (WF_PSE_TOP_BASE + 0x03F4)
 
+#if WFSYS_SUPPORT_BUS_HANG_READ_FROM_DRIVER_BASE
+/* define for read Driver Base CR */
+#define CONNAC2X_MCU_WPDMA_0_DRIVER_BASE		0x18402000
+#define CONNAC2X_MCU_WPDMA_1_DRIVER_BASE		0x18403000
+#define CONNAC2X_HOST_WPDMA_0_DRIVER_BASE		0x18024000
+#define CONNAC2X_HOST_WPDMA_1_DRIVER_BASE		0x18025000
+
+#define CONNAC2X_HOST_EXT_CONN_HIF_WRAP_DRIVER_BASE	0x18027000
+#define CONNAC2X_MCU_INT_CONN_HIF_WRAP_DRIVER_BASE	0x18405000
+
+#define WF_WFDMA_HOST_DMA1_WPDMA_TX_RING0_CTRL0_ADDR_DRIVER_BASE \
+		(CONNAC2X_HOST_WPDMA_1_DRIVER_BASE + 0x300) /* 5300 */
+#define WF_WFDMA_HOST_DMA1_WPDMA_TX_RING0_CTRL1_ADDR_DRIVER_BASE \
+		(CONNAC2X_HOST_WPDMA_1_DRIVER_BASE + 0x304) /* 5304 */
+#define WF_WFDMA_HOST_DMA1_WPDMA_TX_RING16_CTRL0_ADDR_DRIVER_BASE \
+		(CONNAC2X_HOST_WPDMA_1_DRIVER_BASE + 0x400) /* 5400 */
+#define WF_WFDMA_HOST_DMA1_WPDMA_TX_RING8_CTRL0_ADDR_DRIVER_BASE \
+		(CONNAC2X_HOST_WPDMA_1_DRIVER_BASE + 0x380) /* 5380 */
+#define WF_WFDMA_HOST_DMA1_WPDMA_TX_RING17_CTRL0_ADDR_DRIVER_BASE \
+		(CONNAC2X_HOST_WPDMA_1_DRIVER_BASE + 0x410) /* 5410 */
+#define WF_WFDMA_HOST_DMA1_WPDMA_TX_RING18_CTRL0_ADDR_DRIVER_BASE \
+		(CONNAC2X_HOST_WPDMA_1_DRIVER_BASE + 0x420) /* 5420 */
+
+#define WF_WFDMA_HOST_DMA0_WPDMA_RX_RING0_CTRL0_ADDR_DRIVER_BASE \
+		(CONNAC2X_HOST_WPDMA_0_DRIVER_BASE + 0x500) /* 4500 */
+#define WF_WFDMA_HOST_DMA0_WPDMA_RX_RING1_CTRL0_ADDR_DRIVER_BASE \
+		(CONNAC2X_HOST_WPDMA_0_DRIVER_BASE + 0x510) /* 4510 */
+#define WF_WFDMA_HOST_DMA0_WPDMA_RX_RING2_CTRL0_ADDR_DRIVER_BASE \
+		(CONNAC2X_HOST_WPDMA_0_DRIVER_BASE + 0x520) /* 4520 */
+#define WF_WFDMA_HOST_DMA0_WPDMA_RX_RING3_CTRL0_ADDR_DRIVER_BASE \
+		(CONNAC2X_HOST_WPDMA_0_DRIVER_BASE + 0x530) /* 4530 */
+#define WF_WFDMA_HOST_DMA1_WPDMA_RX_RING0_CTRL0_ADDR_DRIVER_BASE \
+		(CONNAC2X_HOST_WPDMA_1_DRIVER_BASE + 0x500) /* 5500 */
+#define WF_WFDMA_HOST_DMA0_WPDMA_RX_RING4_CTRL0_ADDR_DRIVER_BASE \
+		(CONNAC2X_HOST_WPDMA_0_DRIVER_BASE + 0x540) /* 4540 */
+#define WF_WFDMA_HOST_DMA0_WPDMA_RX_RING5_CTRL0_ADDR_DRIVER_BASE \
+		(CONNAC2X_HOST_WPDMA_0_DRIVER_BASE + 0x550) /* 4550 */
+#define WF_WFDMA_HOST_DMA0_WPDMA_RX_RING6_CTRL0_ADDR_DRIVER_BASE \
+		(CONNAC2X_HOST_WPDMA_0_DRIVER_BASE + 0x560) /* 4560 */
+#define WF_WFDMA_HOST_DMA0_WPDMA_RX_RING7_CTRL0_ADDR_DRIVER_BASE \
+		(CONNAC2X_HOST_WPDMA_0_DRIVER_BASE + 0x570) /* 4570 */
+#define WF_WFDMA_HOST_DMA1_WPDMA_RX_RING1_CTRL0_ADDR_DRIVER_BASE \
+		(CONNAC2X_HOST_WPDMA_1_DRIVER_BASE + 0x510) /* 5510 */
+
+#define WF_WFDMA_MCU_DMA0_WPDMA_TX_RING0_CTRL0_ADDR_DRIVER_BASE \
+		(CONNAC2X_MCU_WPDMA_0_DRIVER_BASE + 0x300)
+#define WF_WFDMA_MCU_DMA1_WPDMA_TX_RING0_CTRL0_ADDR_DRIVER_BASE \
+		(CONNAC2X_MCU_WPDMA_0_DRIVER_BASE + 0x300)
+#define WF_WFDMA_MCU_DMA1_WPDMA_TX_RING1_CTRL0_ADDR_DRIVER_BASE \
+		(CONNAC2X_MCU_WPDMA_1_DRIVER_BASE + 0x310)
+#define WF_WFDMA_MCU_DMA0_WPDMA_RX_RING0_CTRL0_ADDR_DRIVER_BASE \
+		(CONNAC2X_MCU_WPDMA_1_DRIVER_BASE + 0x500)
+#define WF_WFDMA_MCU_DMA0_WPDMA_RX_RING1_CTRL0_ADDR_DRIVER_BASE \
+		(CONNAC2X_MCU_WPDMA_0_DRIVER_BASE + 0x510)
+#define WF_WFDMA_MCU_DMA1_WPDMA_RX_RING0_CTRL0_ADDR_DRIVER_BASE \
+		(CONNAC2X_MCU_WPDMA_1_DRIVER_BASE + 0x500)
+#define WF_WFDMA_MCU_DMA1_WPDMA_RX_RING1_CTRL0_ADDR_DRIVER_BASE \
+		(CONNAC2X_MCU_WPDMA_1_DRIVER_BASE + 0x510)
+#define WF_WFDMA_MCU_DMA1_WPDMA_RX_RING2_CTRL0_ADDR_DRIVER_BASE \
+		(CONNAC2X_MCU_WPDMA_1_DRIVER_BASE + 0x520)
+
+#endif /* WFSYS_SUPPORT_BUS_HANG_READ_FROM_DRIVER_BASE */
+
 /*******************************************************************************
  *                             D A T A   T Y P E S
  *******************************************************************************
@@ -142,18 +204,15 @@ struct pse_group_info {
 	u_int32_t pg_info_addr;
 };
 
-
 struct wfdma_group_info {
 	char name[20];
 	u_int32_t hw_desc_base;
 };
 
-
 enum _ENUM_WFDMA_TYPE_T {
 	WFDMA_TYPE_HOST = 0,
 	WFDMA_TYPE_WM
 };
-
 
 /*******************************************************************************
  *                            P U B L I C   D A T A
@@ -340,6 +399,68 @@ struct wfdma_group_info wfmda_wm_rx_group[] = {
 	{"P1R1:AP CMD", WF_WFDMA_MCU_DMA1_WPDMA_RX_RING1_CTRL0_ADDR},
 	{"P1R2:MD CMD", WF_WFDMA_MCU_DMA1_WPDMA_RX_RING2_CTRL0_ADDR},
 };
+
+#if WFSYS_SUPPORT_BUS_HANG_READ_FROM_DRIVER_BASE
+struct wfdma_group_info wfmda_host_tx_group_driver_base[] = {
+	{"P1T0:AP DATA0",
+		WF_WFDMA_HOST_DMA1_WPDMA_TX_RING0_CTRL0_ADDR_DRIVER_BASE},
+	{"P1T1:AP DATA1",
+		WF_WFDMA_HOST_DMA1_WPDMA_TX_RING0_CTRL0_ADDR_DRIVER_BASE},
+	{"P1T16:FWDL",
+		WF_WFDMA_HOST_DMA1_WPDMA_TX_RING16_CTRL0_ADDR_DRIVER_BASE},
+	{"P1T17:AP CMD",
+		WF_WFDMA_HOST_DMA1_WPDMA_TX_RING17_CTRL0_ADDR_DRIVER_BASE},
+	{"P1T8:MD DATA",
+		WF_WFDMA_HOST_DMA1_WPDMA_TX_RING8_CTRL0_ADDR_DRIVER_BASE},
+	{"P1T18:MD CMD",
+		WF_WFDMA_HOST_DMA1_WPDMA_TX_RING18_CTRL0_ADDR_DRIVER_BASE},
+};
+
+struct wfdma_group_info wfmda_host_rx_group_driver_base[] = {
+	{"P0R0:AP DATA0",
+		WF_WFDMA_HOST_DMA0_WPDMA_RX_RING0_CTRL0_ADDR_DRIVER_BASE},
+	{"P0R1:AP DATA1",
+		WF_WFDMA_HOST_DMA0_WPDMA_RX_RING1_CTRL0_ADDR_DRIVER_BASE},
+	{"P0R2:AP TDONE0",
+		WF_WFDMA_HOST_DMA0_WPDMA_RX_RING2_CTRL0_ADDR_DRIVER_BASE},
+	{"P0R3:AP TDONE1",
+		WF_WFDMA_HOST_DMA0_WPDMA_RX_RING3_CTRL0_ADDR_DRIVER_BASE},
+	{"P1R0:AP EVENT",
+		WF_WFDMA_HOST_DMA1_WPDMA_RX_RING0_CTRL0_ADDR_DRIVER_BASE},
+	{"P0R4:MD DATA0",
+		WF_WFDMA_HOST_DMA0_WPDMA_RX_RING4_CTRL0_ADDR_DRIVER_BASE},
+	{"P0R5:MD DATA1",
+		WF_WFDMA_HOST_DMA0_WPDMA_RX_RING5_CTRL0_ADDR_DRIVER_BASE},
+	{"P0R6:MD TDONE0",
+		WF_WFDMA_HOST_DMA0_WPDMA_RX_RING6_CTRL0_ADDR_DRIVER_BASE},
+	{"P0R7:MD TDONE1",
+		WF_WFDMA_HOST_DMA0_WPDMA_RX_RING7_CTRL0_ADDR_DRIVER_BASE},
+	{"P1R1:MD EVENT",
+		WF_WFDMA_HOST_DMA1_WPDMA_RX_RING1_CTRL0_ADDR_DRIVER_BASE},
+};
+
+struct wfdma_group_info wfmda_wm_tx_group_driver_base[] = {
+	{"P0T0:DATA",
+		WF_WFDMA_MCU_DMA0_WPDMA_TX_RING0_CTRL0_ADDR_DRIVER_BASE},
+	{"P1T0:AP EVENT",
+		WF_WFDMA_MCU_DMA1_WPDMA_TX_RING0_CTRL0_ADDR_DRIVER_BASE},
+	{"P1T1:MD EVENT",
+		WF_WFDMA_MCU_DMA1_WPDMA_TX_RING1_CTRL0_ADDR_DRIVER_BASE},
+};
+
+struct wfdma_group_info wfmda_wm_rx_group_driver_base[] = {
+	{"P0R0:DATA",
+		WF_WFDMA_MCU_DMA0_WPDMA_RX_RING0_CTRL0_ADDR_DRIVER_BASE},
+	{"P0R1:TXDONE",
+		WF_WFDMA_MCU_DMA0_WPDMA_RX_RING1_CTRL0_ADDR_DRIVER_BASE},
+	{"P1R0:FWDL",
+		WF_WFDMA_MCU_DMA1_WPDMA_RX_RING0_CTRL0_ADDR_DRIVER_BASE},
+	{"P1R1:AP CMD",
+		WF_WFDMA_MCU_DMA1_WPDMA_RX_RING1_CTRL0_ADDR_DRIVER_BASE},
+	{"P1R2:MD CMD",
+		WF_WFDMA_MCU_DMA1_WPDMA_RX_RING2_CTRL0_ADDR_DRIVER_BASE},
+};
+#endif /* WFSYS_SUPPORT_BUS_HANG_READ_FROM_DRIVER_BASE */
 
 /*******************************************************************************
  *                                 M A C R O S
@@ -1272,10 +1393,11 @@ void show_wfdma_ring_info(
 
 }
 
-void dump_dbg_value(
+static void dump_dbg_value(
 	IN struct ADAPTER *prAdapter,
 	IN uint32_t pdma_base_cr,
-	IN uint32_t set_value)
+	IN uint32_t set_value,
+	IN uint32_t isMandatoryDump)
 {
 	uint32_t set_debug_cr, get_debug_cr;
 	uint32_t get_debug_value;
@@ -1285,15 +1407,23 @@ void dump_dbg_value(
 
 	HAL_MCR_WR(prAdapter, set_debug_cr, set_value);
 	HAL_MCR_RD(prAdapter, get_debug_cr, &get_debug_value);
-	DBGLOG(INIT, TRACE, "set(0x%08x):0x%08x, get(0x%08x):0x%08x\n",
+
+	if (isMandatoryDump == 1) {
+		DBGLOG(INIT, INFO, "set(0x%08x):0x%08x, get(0x%08x):0x%08x\n",
 						set_debug_cr, set_value,
 						get_debug_cr, get_debug_value);
+	} else {
+		DBGLOG(INIT, TRACE, "set(0x%08x):0x%08x, get(0x%08x):0x%08x\n",
+						set_debug_cr, set_value,
+						get_debug_cr, get_debug_value);
+	}
 }
 
-void dump_wfdma_dbg_value(
+static void dump_wfdma_dbg_value(
 	IN struct ADAPTER *prAdapter,
 	IN enum _ENUM_WFDMA_TYPE_T enum_wfdma_type,
-	IN uint32_t wfdma_idx)
+	IN uint32_t wfdma_idx,
+	IN uint32_t isMandatoryDump)
 {
 	uint32_t pdma_base_cr;
 	uint32_t set_debug_flag_value;
@@ -1311,75 +1441,104 @@ void dump_wfdma_dbg_value(
 	}
 
 	set_debug_flag_value = 0x100;
-	dump_dbg_value(prAdapter, pdma_base_cr, set_debug_flag_value);
+	dump_dbg_value(prAdapter, pdma_base_cr,
+		set_debug_flag_value, isMandatoryDump);
 
 	set_debug_flag_value = 0x101;
-	dump_dbg_value(prAdapter, pdma_base_cr, set_debug_flag_value);
+	dump_dbg_value(prAdapter, pdma_base_cr,
+		set_debug_flag_value, isMandatoryDump);
 
 	set_debug_flag_value = 0x102;
-	dump_dbg_value(prAdapter, pdma_base_cr, set_debug_flag_value);
+	dump_dbg_value(prAdapter, pdma_base_cr,
+		set_debug_flag_value, isMandatoryDump);
 
 	set_debug_flag_value = 0x103;
-	dump_dbg_value(prAdapter, pdma_base_cr, set_debug_flag_value);
+	dump_dbg_value(prAdapter, pdma_base_cr,
+		set_debug_flag_value, isMandatoryDump);
 
 	set_debug_flag_value = 0x104;
-	dump_dbg_value(prAdapter, pdma_base_cr, set_debug_flag_value);
+	dump_dbg_value(prAdapter, pdma_base_cr,
+		set_debug_flag_value, isMandatoryDump);
 
 	set_debug_flag_value = 0x105;
-	dump_dbg_value(prAdapter, pdma_base_cr, set_debug_flag_value);
+	dump_dbg_value(prAdapter, pdma_base_cr,
+		set_debug_flag_value, isMandatoryDump);
 
 	set_debug_flag_value = 0x107;
-	dump_dbg_value(prAdapter, pdma_base_cr, set_debug_flag_value);
+	dump_dbg_value(prAdapter, pdma_base_cr,
+		set_debug_flag_value, isMandatoryDump);
 
 	set_debug_flag_value = 0x10A;
-	dump_dbg_value(prAdapter, pdma_base_cr, set_debug_flag_value);
+	dump_dbg_value(prAdapter, pdma_base_cr,
+		set_debug_flag_value, isMandatoryDump);
 
 	set_debug_flag_value = 0x10D;
-	dump_dbg_value(prAdapter, pdma_base_cr, set_debug_flag_value);
+	dump_dbg_value(prAdapter, pdma_base_cr,
+		set_debug_flag_value, isMandatoryDump);
 
 	set_debug_flag_value = 0x10E;
-	dump_dbg_value(prAdapter, pdma_base_cr, set_debug_flag_value);
+	dump_dbg_value(prAdapter, pdma_base_cr,
+		set_debug_flag_value, isMandatoryDump);
 
 	set_debug_flag_value = 0x10F;
-	dump_dbg_value(prAdapter, pdma_base_cr, set_debug_flag_value);
+	dump_dbg_value(prAdapter, pdma_base_cr,
+		set_debug_flag_value, isMandatoryDump);
 
 	set_debug_flag_value = 0x110;
-	dump_dbg_value(prAdapter, pdma_base_cr, set_debug_flag_value);
+	dump_dbg_value(prAdapter, pdma_base_cr,
+		set_debug_flag_value, isMandatoryDump);
 
 	set_debug_flag_value = 0x111;
-	dump_dbg_value(prAdapter, pdma_base_cr, set_debug_flag_value);
+	dump_dbg_value(prAdapter, pdma_base_cr,
+		set_debug_flag_value, isMandatoryDump);
 
 	set_debug_flag_value = 0x112;
-	dump_dbg_value(prAdapter, pdma_base_cr, set_debug_flag_value);
+	dump_dbg_value(prAdapter, pdma_base_cr,
+		set_debug_flag_value, isMandatoryDump);
 
 }
 
-void show_wfdma_dbg_flag_log(IN struct ADAPTER *prAdapter)
+void show_wfdma_dbg_flag_log(
+	IN struct ADAPTER *prAdapter,
+	IN enum _ENUM_WFDMA_TYPE_T enum_wfdma_type,
+	IN uint32_t isMandatoryDump)
 {
-	dump_wfdma_dbg_value(prAdapter, WFDMA_TYPE_HOST, 0);
-	dump_wfdma_dbg_value(prAdapter, WFDMA_TYPE_HOST, 1);
-	dump_wfdma_dbg_value(prAdapter, WFDMA_TYPE_WM, 0);
-	dump_wfdma_dbg_value(prAdapter, WFDMA_TYPE_WM, 1);
+	dump_wfdma_dbg_value(prAdapter, enum_wfdma_type, 0, isMandatoryDump);
+	dump_wfdma_dbg_value(prAdapter, enum_wfdma_type, 1, isMandatoryDump);
+}
+
+void show_wfdma_dbg_log(
+	IN struct ADAPTER *prAdapter,
+	IN enum _ENUM_WFDMA_TYPE_T enum_wfdma_type)
+{
+	/* Dump Host WFMDA info */
+	DBGLOG(HAL, TRACE, "WFMDA Configuration:\n");
+	show_wfdma_interrupt_info(prAdapter, enum_wfdma_type);
+	show_wfdma_glo_info(prAdapter, enum_wfdma_type);
+	show_wfdma_ring_info(prAdapter, enum_wfdma_type);
 }
 
 void soc3_0_show_wfdma_info(IN struct ADAPTER *prAdapter)
 {
+	/* dump WFDMA info by host or WM*/
+	show_wfdma_dbg_log(prAdapter, WFDMA_TYPE_HOST);
+	show_wfdma_dbg_log(prAdapter, WFDMA_TYPE_WM);
 
-	/* Dump Host WFMDA info */
-	DBGLOG(HAL, TRACE, "HOST WFMDA Configuration:\n");
-	show_wfdma_interrupt_info(prAdapter, WFDMA_TYPE_HOST);
-	show_wfdma_glo_info(prAdapter, WFDMA_TYPE_HOST);
-	show_wfdma_ring_info(prAdapter, WFDMA_TYPE_HOST);
+	/* dump debug flag CR by host or WM*/
+	show_wfdma_dbg_flag_log(prAdapter, WFDMA_TYPE_HOST, FALSE);
+	show_wfdma_dbg_flag_log(prAdapter, WFDMA_TYPE_WM, FALSE);
+}
 
-	/* Dump FW WFDMA info */
-	DBGLOG(HAL, TRACE, "WM WFMDA Configuration:\n");
-	show_wfdma_interrupt_info(prAdapter, WFDMA_TYPE_WM);
-	show_wfdma_glo_info(prAdapter, WFDMA_TYPE_WM);
-	show_wfdma_ring_info(prAdapter, WFDMA_TYPE_WM);
-
-	/* Dump WFDMA dbg flag log */
-	show_wfdma_dbg_flag_log(prAdapter);
-
+void soc3_0_show_wfdma_info_by_type(IN struct ADAPTER *prAdapter,
+	IN bool bShowWFDMA_type)
+{
+	if (bShowWFDMA_type) {
+		show_wfdma_dbg_log(prAdapter, WFDMA_TYPE_WM);
+		show_wfdma_dbg_flag_log(prAdapter, WFDMA_TYPE_WM, TRUE);
+	} else {
+		show_wfdma_dbg_log(prAdapter, WFDMA_TYPE_HOST);
+		show_wfdma_dbg_flag_log(prAdapter, WFDMA_TYPE_HOST, TRUE);
+	}
 }
 
 void soc3_0_show_dmashdl_info(IN struct ADAPTER *prAdapter)
@@ -1469,4 +1628,351 @@ void soc3_0_show_dmashdl_info(IN struct ADAPTER *prAdapter)
 	if (!is_mismatch)
 		DBGLOG(HAL, INFO, "DMASHDL: no counter mismatch\n");
 }
+
+#if WFSYS_SUPPORT_BUS_HANG_READ_FROM_DRIVER_BASE
+void show_wfdma_interrupt_info_without_adapter(
+	IN enum _ENUM_WFDMA_TYPE_T enum_wfdma_type)
+{
+	uint32_t idx;
+	uint32_t u4hostBaseCrAddr;
+	uint32_t u4DmaCfgCrAddr, u4DmaCfgCrAddrByWFDMA[CONNAC2X_WFDMA_COUNT];
+	uint32_t u4RegValue, u4RegValueByWFDMA[CONNAC2X_WFDMA_COUNT];
+
+	/* Dump Interrupt Status info */
+	if (enum_wfdma_type == WFDMA_TYPE_HOST) {
+		/* Dump Global Status CR only in WFMDA HOST*/
+		u4hostBaseCrAddr = CONNAC2X_HOST_EXT_CONN_HIF_WRAP_DRIVER_BASE;
+
+		u4DmaCfgCrAddr = CONNAC2X_WPDMA_EXT_INT_STA(u4hostBaseCrAddr);
+		wf_ioremap_read(u4DmaCfgCrAddr, &u4RegValue);
+	}
+
+	/* Dump PDMA Status CR */
+	for (idx = 0; idx < CONNAC2X_WFDMA_COUNT; idx++) {
+
+		if (enum_wfdma_type == WFDMA_TYPE_HOST)
+			u4hostBaseCrAddr = idx ?
+				CONNAC2X_HOST_WPDMA_1_DRIVER_BASE :
+				CONNAC2X_HOST_WPDMA_0_DRIVER_BASE;
+		else
+			u4hostBaseCrAddr = idx ?
+				CONNAC2X_MCU_WPDMA_1_DRIVER_BASE :
+				CONNAC2X_MCU_WPDMA_0_DRIVER_BASE;
+
+		u4DmaCfgCrAddrByWFDMA[idx] =
+			CONNAC2X_WPDMA_INT_STA(u4hostBaseCrAddr);
+
+		wf_ioremap_read(u4DmaCfgCrAddrByWFDMA[idx],
+			&u4RegValueByWFDMA[idx]);
+	}
+
+	DBGLOG(INIT, INFO,
+	"G_INT_S(0x%08x):0x%08x,W_%d(0x%08x):0x%08x, W_%d(0x%08x):0x%08x\n",
+		u4DmaCfgCrAddr, u4RegValue,
+		0, u4DmaCfgCrAddrByWFDMA[0], u4RegValueByWFDMA[0],
+		1, u4DmaCfgCrAddrByWFDMA[1], u4RegValueByWFDMA[1]);
+
+	/* Dump Interrupt Enable Info */
+	if (enum_wfdma_type == WFDMA_TYPE_HOST) {
+
+		/* Dump Global Enable CR */
+		u4hostBaseCrAddr = CONNAC2X_HOST_EXT_CONN_HIF_WRAP_DRIVER_BASE;
+
+		u4DmaCfgCrAddr = CONNAC2X_WPDMA_EXT_INT_MASK(u4hostBaseCrAddr);
+
+		wf_ioremap_read(u4DmaCfgCrAddr, &u4RegValue);
+	}
+
+	/* Dump PDMA Enable CR */
+	for (idx = 0; idx < CONNAC2X_WFDMA_COUNT; idx++) {
+
+		if (enum_wfdma_type == WFDMA_TYPE_HOST)
+			u4hostBaseCrAddr = idx ?
+				CONNAC2X_HOST_WPDMA_1_DRIVER_BASE :
+				CONNAC2X_HOST_WPDMA_0_DRIVER_BASE;
+		else
+			u4hostBaseCrAddr = idx ?
+				CONNAC2X_MCU_WPDMA_1_DRIVER_BASE :
+				CONNAC2X_MCU_WPDMA_0_DRIVER_BASE;
+
+		u4DmaCfgCrAddrByWFDMA[idx] =
+			CONNAC2X_WPDMA_INT_MASK(u4hostBaseCrAddr);
+
+		wf_ioremap_read(u4DmaCfgCrAddrByWFDMA[idx],
+			&u4RegValueByWFDMA[idx]);
+	}
+
+	DBGLOG(INIT, INFO,
+	"G_INT_E(0x%08x):0x%08x,W_%d(0x%08x):0x%08x, W_%d(0x%08x):0x%08x\n",
+		u4DmaCfgCrAddr, u4RegValue,
+		0, u4DmaCfgCrAddrByWFDMA[0], u4RegValueByWFDMA[0],
+		1, u4DmaCfgCrAddrByWFDMA[1], u4RegValueByWFDMA[1]);
+}
+
+void show_wfdma_glo_info_without_adapter(
+	IN enum _ENUM_WFDMA_TYPE_T enum_wfdma_type)
+{
+	uint32_t idx;
+	uint32_t u4hostBaseCrAddr;
+	uint32_t u4DmaCfgCrAddr = 0;
+	union WPDMA_GLO_CFG_STRUCT GloCfgValue;
+
+	for (idx = 0; idx < CONNAC2X_WFDMA_COUNT; idx++) {
+
+		if (enum_wfdma_type == WFDMA_TYPE_HOST)
+			u4hostBaseCrAddr = idx ?
+			CONNAC2X_HOST_WPDMA_1_DRIVER_BASE :
+			CONNAC2X_HOST_WPDMA_0_DRIVER_BASE;
+		else
+			u4hostBaseCrAddr = idx ?
+			CONNAC2X_MCU_WPDMA_1_DRIVER_BASE :
+			CONNAC2X_MCU_WPDMA_0_DRIVER_BASE;
+
+		u4DmaCfgCrAddr = CONNAC2X_WPDMA_GLO_CFG(u4hostBaseCrAddr);
+
+		wf_ioremap_read(u4DmaCfgCrAddr, &GloCfgValue.word);
+
+		DBGLOG(INIT, INFO,
+		"WFDMA_%d GLO(0x%08x):0x%08x,EN T/R=(%d/%d), Busy T/R=(%d/%d)\n",
+			idx, u4DmaCfgCrAddr, GloCfgValue.word,
+			GloCfgValue.field_conn2x.tx_dma_en,
+			GloCfgValue.field_conn2x.rx_dma_en,
+			GloCfgValue.field_conn2x.tx_dma_busy,
+			GloCfgValue.field_conn2x.rx_dma_busy);
+	}
+
+}
+
+void show_wfdma_ring_info_without_adapter(
+	IN enum _ENUM_WFDMA_TYPE_T enum_wfdma_type)
+{
+
+	uint32_t idx;
+	uint32_t group_cnt;
+	uint32_t u4DmaCfgCrAddr;
+	struct wfdma_group_info *group;
+	uint32_t u4_hw_desc_base_value;
+	uint32_t u4_hw_cnt_value;
+	uint32_t u4_hw_cidx_value;
+	uint32_t u4_hw_didx_value;
+	uint32_t queue_cnt;
+
+	/* Dump All TX Ring Info */
+	DBGLOG(HAL, TRACE, "----------- TX Ring Config -----------\n");
+	DBGLOG(HAL, TRACE, "%4s %16s %8s %10s %6s %6s %6s %6s\n",
+		"Idx", "Attr", "Reg", "Base", "Cnt", "CIDX", "DIDX", "QCnt");
+
+	/* Dump TX Ring */
+	if (enum_wfdma_type == WFDMA_TYPE_HOST)
+		group_cnt = sizeof(wfmda_host_tx_group_driver_base) /
+		sizeof(struct wfdma_group_info);
+	else
+		group_cnt = sizeof(wfmda_wm_tx_group_driver_base) /
+		sizeof(struct wfdma_group_info);
+
+	for (idx = 0; idx < group_cnt; idx++) {
+		if (enum_wfdma_type == WFDMA_TYPE_HOST)
+			group = &wfmda_host_tx_group_driver_base[idx];
+		else
+			group = &wfmda_wm_tx_group_driver_base[idx];
+
+		u4DmaCfgCrAddr = group->hw_desc_base;
+
+		wf_ioremap_read(u4DmaCfgCrAddr, &u4_hw_desc_base_value);
+		wf_ioremap_read(u4DmaCfgCrAddr+0x04, &u4_hw_cnt_value);
+		wf_ioremap_read(u4DmaCfgCrAddr+0x08, &u4_hw_cidx_value);
+		wf_ioremap_read(u4DmaCfgCrAddr+0x0c, &u4_hw_didx_value);
+
+		queue_cnt = (u4_hw_cidx_value >= u4_hw_didx_value) ?
+			(u4_hw_cidx_value - u4_hw_didx_value) :
+			(u4_hw_cidx_value - u4_hw_didx_value + u4_hw_cnt_value);
+
+		DBGLOG(HAL, INFO, "%4d %16s %8x %10x %6x %6x %6x %6x\n",
+					idx,
+					group->name,
+					u4DmaCfgCrAddr, u4_hw_desc_base_value,
+					u4_hw_cnt_value, u4_hw_cidx_value,
+					u4_hw_didx_value, queue_cnt);
+
+	}
+
+	/* Dump All RX Ring Info */
+	DBGLOG(HAL, TRACE, "----------- RX Ring Config -----------\n");
+	DBGLOG(HAL, TRACE, "%4s %16s %8s %10s %6s %6s %6s %6s\n",
+		"Idx", "Attr", "Reg", "Base", "Cnt", "CIDX", "DIDX", "QCnt");
+
+	/* Dump RX Ring */
+	if (enum_wfdma_type == WFDMA_TYPE_HOST)
+		group_cnt = sizeof(wfmda_host_rx_group_driver_base) /
+		sizeof(struct wfdma_group_info);
+	else
+		group_cnt = sizeof(wfmda_wm_rx_group_driver_base) /
+		sizeof(struct wfdma_group_info);
+
+	for (idx = 0; idx < group_cnt; idx++) {
+		if (enum_wfdma_type == WFDMA_TYPE_HOST)
+			group = &wfmda_host_rx_group_driver_base[idx];
+		else
+			group = &wfmda_wm_rx_group_driver_base[idx];
+
+		u4DmaCfgCrAddr = group->hw_desc_base;
+
+		wf_ioremap_read(u4DmaCfgCrAddr, &u4_hw_desc_base_value);
+		wf_ioremap_read(u4DmaCfgCrAddr+0x04, &u4_hw_cnt_value);
+		wf_ioremap_read(u4DmaCfgCrAddr+0x08, &u4_hw_cidx_value);
+		wf_ioremap_read(u4DmaCfgCrAddr+0x0c, &u4_hw_didx_value);
+
+		queue_cnt = (u4_hw_didx_value > u4_hw_cidx_value) ?
+			(u4_hw_didx_value - u4_hw_cidx_value - 1) :
+			(u4_hw_didx_value - u4_hw_cidx_value
+			+ u4_hw_cnt_value - 1);
+
+		DBGLOG(HAL, INFO, "%4d %16s %8x %10x %6x %6x %6x %6x\n",
+					idx,
+					group->name,
+					u4DmaCfgCrAddr, u4_hw_desc_base_value,
+					u4_hw_cnt_value, u4_hw_cidx_value,
+					u4_hw_didx_value, queue_cnt);
+	}
+
+}
+
+static void dump_dbg_value_without_adapter(
+	IN uint32_t pdma_base_cr,
+	IN uint32_t set_value,
+	IN uint32_t isMandatoryDump)
+{
+	uint32_t set_debug_cr, get_debug_cr;
+	uint32_t get_debug_value;
+
+	set_debug_cr = pdma_base_cr + 0x124;
+	get_debug_cr = pdma_base_cr + 0x128;
+
+	wf_ioremap_write(set_debug_cr, set_value);
+	wf_ioremap_read(get_debug_cr, &get_debug_value);
+
+	if (isMandatoryDump == 1) {
+		DBGLOG(INIT, INFO, "set(0x%08x):0x%08x, get(0x%08x):0x%08x,",
+						set_debug_cr, set_value,
+						get_debug_cr, get_debug_value);
+	} else {
+		DBGLOG(INIT, TRACE, "set(0x%08x):0x%08x, get(0x%08x):0x%08x,",
+						set_debug_cr, set_value,
+						get_debug_cr, get_debug_value);
+	}
+}
+
+static void dump_wfdma_dbg_value_without_adapter(
+	IN enum _ENUM_WFDMA_TYPE_T enum_wfdma_type,
+	IN uint32_t wfdma_idx,
+	IN uint32_t isMandatoryDump)
+{
+	uint32_t pdma_base_cr;
+	uint32_t set_debug_flag_value;
+
+	if (enum_wfdma_type == WFDMA_TYPE_HOST) {
+		if (wfdma_idx == 0)
+			pdma_base_cr = CONNAC2X_HOST_WPDMA_0_DRIVER_BASE;
+		else
+			pdma_base_cr = CONNAC2X_HOST_WPDMA_1_DRIVER_BASE;
+	} else{
+		if (wfdma_idx == 0)
+			pdma_base_cr = CONNAC2X_MCU_WPDMA_0_DRIVER_BASE;
+		else
+			pdma_base_cr = CONNAC2X_MCU_WPDMA_1_DRIVER_BASE;
+	}
+
+	set_debug_flag_value = 0x100;
+	dump_dbg_value_without_adapter(pdma_base_cr,
+		set_debug_flag_value, isMandatoryDump);
+
+	set_debug_flag_value = 0x101;
+	dump_dbg_value_without_adapter(pdma_base_cr,
+		set_debug_flag_value, isMandatoryDump);
+
+	set_debug_flag_value = 0x102;
+	dump_dbg_value_without_adapter(pdma_base_cr,
+		set_debug_flag_value, isMandatoryDump);
+
+	set_debug_flag_value = 0x103;
+	dump_dbg_value_without_adapter(pdma_base_cr,
+		set_debug_flag_value, isMandatoryDump);
+
+	set_debug_flag_value = 0x104;
+	dump_dbg_value_without_adapter(pdma_base_cr,
+		set_debug_flag_value, isMandatoryDump);
+
+	set_debug_flag_value = 0x105;
+	dump_dbg_value_without_adapter(pdma_base_cr,
+		set_debug_flag_value, isMandatoryDump);
+
+	set_debug_flag_value = 0x107;
+	dump_dbg_value_without_adapter(pdma_base_cr,
+		set_debug_flag_value, isMandatoryDump);
+
+	set_debug_flag_value = 0x10A;
+	dump_dbg_value_without_adapter(pdma_base_cr,
+		set_debug_flag_value, isMandatoryDump);
+
+	set_debug_flag_value = 0x10D;
+	dump_dbg_value_without_adapter(pdma_base_cr,
+		set_debug_flag_value, isMandatoryDump);
+
+	set_debug_flag_value = 0x10E;
+	dump_dbg_value_without_adapter(pdma_base_cr,
+		set_debug_flag_value, isMandatoryDump);
+
+	set_debug_flag_value = 0x10F;
+	dump_dbg_value_without_adapter(pdma_base_cr,
+		set_debug_flag_value, isMandatoryDump);
+
+	set_debug_flag_value = 0x110;
+	dump_dbg_value_without_adapter(pdma_base_cr,
+		set_debug_flag_value, isMandatoryDump);
+
+	set_debug_flag_value = 0x111;
+	dump_dbg_value_without_adapter(pdma_base_cr,
+		set_debug_flag_value, isMandatoryDump);
+
+	set_debug_flag_value = 0x112;
+	dump_dbg_value_without_adapter(pdma_base_cr,
+		set_debug_flag_value, isMandatoryDump);
+
+}
+
+static void show_wfdma_dbg_flag_log_without_adapter(
+	IN enum _ENUM_WFDMA_TYPE_T enum_wfdma_type,
+	IN uint32_t isMandatoryDump)
+{
+	dump_wfdma_dbg_value_without_adapter(
+		enum_wfdma_type, 0, isMandatoryDump);
+	dump_wfdma_dbg_value_without_adapter(
+		enum_wfdma_type, 1, isMandatoryDump);
+}
+
+static void show_wfdma_dbg_log_without_adapter(
+	IN enum _ENUM_WFDMA_TYPE_T enum_wfdma_type)
+{
+	/* Dump Host WFMDA info */
+	DBGLOG(HAL, TRACE, "WFMDA Configuration:\n");
+	show_wfdma_interrupt_info_without_adapter(enum_wfdma_type);
+	show_wfdma_glo_info_without_adapter(enum_wfdma_type);
+	show_wfdma_ring_info_without_adapter(enum_wfdma_type);
+}
+
+/* bIsHostDMA = 1 (how Host PDMA) else (WM PDMA) */
+void soc3_0_show_wfdma_info_by_type_without_adapter(
+	IN bool bShowWFDMA_type)
+{
+	if (bShowWFDMA_type) {
+		show_wfdma_dbg_log_without_adapter(WFDMA_TYPE_WM);
+		show_wfdma_dbg_flag_log_without_adapter(WFDMA_TYPE_WM, TRUE);
+	} else {
+		show_wfdma_dbg_log_without_adapter(WFDMA_TYPE_HOST);
+		show_wfdma_dbg_flag_log_without_adapter(WFDMA_TYPE_HOST, TRUE);
+	}
+}
+
+#endif /* WFSYS_SUPPORT_BUS_HANG_READ_FROM_DRIVER_BASE */
+
 #endif /* SOC3_0 */
