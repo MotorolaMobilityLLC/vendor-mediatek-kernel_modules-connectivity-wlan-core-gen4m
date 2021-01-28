@@ -78,6 +78,7 @@ void mddpNotifyWifiOnStart(void);
 void mddpNotifyWifiOnEnd(void);
 void mddpNotifyWifiOffStart(void);
 void mddpNotifyWifiOffEnd(void);
+void setMddpSupportRegister(IN struct ADAPTER *prAdapter);
 
 #endif
 #endif /* _MDDP_H */
