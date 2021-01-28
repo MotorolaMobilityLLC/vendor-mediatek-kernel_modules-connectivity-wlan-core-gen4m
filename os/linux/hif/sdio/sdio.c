@@ -139,6 +139,12 @@ static MTK_WCN_HIF_SDIO_CLTINFO cltInfo = {
 };
 
 #else
+/*
+ * function prototypes
+ *
+ */
+static int mtk_sdio_pm_suspend(struct device *pDev);
+static int mtk_sdio_pm_resume(struct device *pDev);
 
 static const struct sdio_device_id mtk_sdio_ids[] = {
 	{	SDIO_DEVICE(0x037a, 0x6602),
@@ -170,11 +176,20 @@ static probe_card pfWlanProbe;
 static remove_card pfWlanRemove;
 
 #if (MTK_WCN_HIF_SDIO == 0)
+static const struct dev_pm_ops mtk_sdio_pm_ops = {
+	.suspend = mtk_sdio_pm_suspend,
+	.resume = mtk_sdio_pm_resume,
+};
+
 static struct sdio_driver mtk_sdio_driver = {
 	.name = "wlan",		/* "MTK SDIO WLAN Driver" */
 	.id_table = mtk_sdio_ids,
 	.probe = NULL,
 	.remove = NULL,
+	.drv = {
+		.owner = THIS_MODULE,
+		.pm = &mtk_sdio_pm_ops,
+	}
 };
 #endif
 
@@ -182,6 +197,8 @@ static struct sdio_driver mtk_sdio_driver = {
 *                                 M A C R O S
 ********************************************************************************
 */
+#define dev_to_sdio_func(d)	container_of(d, struct sdio_func, dev)
+
 
 /*******************************************************************************
 *                   F U N C T I O N   D E C L A R A T I O N S
@@ -390,19 +407,67 @@ static void mtk_sdio_remove(struct sdio_func *func)
 #endif
 
 #if (MTK_WCN_HIF_SDIO == 0)
+static int mtk_sdio_pm_suspend(struct device *pDev)
+{
+	int ret = 0, wait = 0;
+	struct sdio_func *func;
+	P_GLUE_INFO_T prGlueInfo = NULL;
+
+	DBGLOG(HAL, STATE, "==>\n");
+
+	func = dev_to_sdio_func(pDev);
+	prGlueInfo = sdio_get_drvdata(func);
+
+	/* Wait for
+	*  1. The other unfinished ownership handshakes
+	*  2. FW own back
+	*/
+	while (1) {
+		if (wait > LP_OWN_BACK_FAILED_LOG_SKIP_MS) {
+			DBGLOG(HAL, ERROR, "Timeout !!\n");
+			break;
+		}
+		if (prGlueInfo->prAdapter->u4PwrCtrlBlockCnt == 0
+			&& prGlueInfo->prAdapter->fgIsFwOwn == TRUE) {
+			DBGLOG(HAL, STATE, "\n Entered SDIO Supsend ");
+			break;
+		}
+		wait++;
+		kalMsleep(LP_OWN_BACK_LOOP_DELAY_MS);
+	}
+
+	/* Ask kernel keeping SDIO bus power-on */
+	ret = sdio_set_host_pm_flags(func, MMC_PM_KEEP_POWER);
+	if (ret) {
+		DBGLOG(HAL, ERROR, "sdio_set_host_pm_flags err %d\n", ret);
+		goto out;
+	}
+
+out:
+	DBGLOG(HAL, STATE, "<==\n");
+	return ret;
+}
+
+static int mtk_sdio_pm_resume(struct device *pDev)
+{
+	DBGLOG(HAL, STATE, "==>\n");
+
+	return 0;
+}
+
 static int mtk_sdio_suspend(struct device *pDev, pm_message_t state)
 {
 	/* printk(KERN_INFO "mtk_sdio: mtk_sdio_suspend dev(0x%p)\n", pDev); */
 	/* printk(KERN_INFO "mtk_sdio: MediaTek SDIO WLAN driver\n"); */
 
-	return 0;
+	return mtk_sdio_pm_suspend(pDev);
 }
 
 int mtk_sdio_resume(struct device *pDev)
 {
 	/* printk(KERN_INFO "mtk_sdio: mtk_sdio_resume dev(0x%p)\n", pDev); */
 
-	return 0;
+	return mtk_sdio_pm_resume(pDev);
 }
 #endif
 
