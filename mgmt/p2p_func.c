@@ -3610,6 +3610,8 @@ p2pFuncParseBeaconContent(IN struct ADAPTER *prAdapter,
 				IW_AUTH_CIPHER_NONE,
 				(uint8_t) prP2pBssInfo->u4PrivateData);
 
+		prP2pBssInfo->ucCountryIELen = 0;
+
 		IE_FOR_EACH(pucIE, u4IELen, u2Offset) {
 			switch (IE_ID(pucIE)) {
 			case ELEM_ID_SSID:	/* 0 *//* V *//* Done */
@@ -3675,6 +3677,20 @@ p2pFuncParseBeaconContent(IN struct ADAPTER *prAdapter,
 					"TIM IE, Len:%d, DTIM:%d\n",
 					IE_LEN(pucIE),
 					TIM_IE(pucIE)->ucDTIMPeriod);
+				break;
+			case ELEM_ID_COUNTRY_INFO: /* 7 */
+				if (COUNTRY_IE(pucIE)->ucLength
+					>= ELEM_MIN_LEN_COUNTRY_INFO) {
+					prP2pBssInfo->ucCountryIELen =
+						COUNTRY_IE(pucIE)->ucLength;
+					kalMemCopy(
+					prP2pBssInfo->aucCountryStr,
+					COUNTRY_IE(pucIE)->aucCountryStr, 3);
+					kalMemCopy(
+					prP2pBssInfo->aucSubbandTriplet,
+					COUNTRY_IE(pucIE)->arCountryStr,
+					COUNTRY_IE(pucIE)->ucLength - 3);
+				}
 				break;
 			case ELEM_ID_ERP_INFO:	/* 42 *//* V */
 				{
