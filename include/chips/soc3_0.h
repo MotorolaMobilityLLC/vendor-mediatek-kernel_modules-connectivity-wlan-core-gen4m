@@ -271,6 +271,7 @@ int32_t soc3_0_wlanPowerOnInit(
 
 #if (CFG_SUPPORT_PRE_ON_PHY_ACTION == 1)
 uint32_t soc3_0_wlanPhyAction(IN struct ADAPTER *prAdapter);
+int soc3_0_wlanPreCalPwrOn(void);
 int soc3_0_wlanPreCal(void);
 #endif /* (CFG_SUPPORT_PRE_ON_PHY_ACTION == 1) */
 
