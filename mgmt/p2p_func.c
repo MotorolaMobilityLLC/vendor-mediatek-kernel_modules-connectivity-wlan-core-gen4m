@@ -1963,25 +1963,31 @@ void p2pFuncDfsSwitchCh(IN struct ADAPTER *prAdapter,
 			prGlueP2pInfo->chandef->width
 				= NL80211_CHAN_WIDTH_80P80;
 			prGlueP2pInfo->chandef->center_freq1
-				= prBssInfo->ucVhtChannelFrequencyS1;
+				= nicChannelNum2Freq(
+				prBssInfo->ucVhtChannelFrequencyS1) / 1000;
 			prGlueP2pInfo->chandef->center_freq2
-				= prBssInfo->ucVhtChannelFrequencyS2;
+				= nicChannelNum2Freq(
+				prBssInfo->ucVhtChannelFrequencyS2) / 1000;
 			break;
 		case VHT_OP_CHANNEL_WIDTH_160:
 			prGlueP2pInfo->chandef->width
 				= NL80211_CHAN_WIDTH_160;
 			prGlueP2pInfo->chandef->center_freq1
-				= prBssInfo->ucVhtChannelFrequencyS1;
+				= nicChannelNum2Freq(
+				prBssInfo->ucVhtChannelFrequencyS1) / 1000;
 			prGlueP2pInfo->chandef->center_freq2
-				= prBssInfo->ucVhtChannelFrequencyS2;
+				= nicChannelNum2Freq(
+				prBssInfo->ucVhtChannelFrequencyS2) / 1000;
 			break;
 		case VHT_OP_CHANNEL_WIDTH_80:
 			prGlueP2pInfo->chandef->width
 				= NL80211_CHAN_WIDTH_80;
 			prGlueP2pInfo->chandef->center_freq1
-				= prBssInfo->ucVhtChannelFrequencyS1;
+				= nicChannelNum2Freq(
+				prBssInfo->ucVhtChannelFrequencyS1) / 1000;
 			prGlueP2pInfo->chandef->center_freq2
-				= prBssInfo->ucVhtChannelFrequencyS2;
+				= nicChannelNum2Freq(
+				prBssInfo->ucVhtChannelFrequencyS2) / 1000;
 			break;
 		case VHT_OP_CHANNEL_WIDTH_20_40:
 			prGlueP2pInfo->chandef->center_freq1
