@@ -133,6 +133,9 @@ static struct cfg80211_ops mtk_p2p_ops = {
 	.del_virtual_intf = mtk_p2p_cfg80211_del_iface,
 	.change_bss = mtk_p2p_cfg80211_change_bss,
 	.scan = mtk_p2p_cfg80211_scan,
+#if KERNEL_VERSION(4, 5, 0) <= CFG80211_VERSION_CODE
+	.abort_scan = mtk_p2p_cfg80211_abort_scan,
+#endif
 	.remain_on_channel = mtk_p2p_cfg80211_remain_on_channel,
 	.cancel_remain_on_channel = mtk_p2p_cfg80211_cancel_remain_on_channel,
 	.mgmt_tx = mtk_p2p_cfg80211_mgmt_tx,
