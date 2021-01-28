@@ -388,7 +388,7 @@ bow_proc:
 	if (prStaRec) {
 		/* update RCPI */
 		ASSERT(prSwRfb->prRxStatusGroup3);
-		prStaRec->ucRCPI = nicRxGetRcpiValueFromRxv(RCPI_MODE_WF0, prSwRfb);
+		prStaRec->ucRCPI = nicRxGetRcpiValueFromRxv(RCPI_MODE_MAX, prSwRfb);
 	}
 	/* 4 <3> Update STA_RECORD_T and reply Auth_2(Response to Auth_1) Frame */
 	if (fgReplyAuth) {
@@ -503,7 +503,7 @@ WLAN_STATUS aaaFsmRunEventRxAssoc(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T prSwRf
 
 		/* update RCPI */
 		ASSERT(prSwRfb->prRxStatusGroup3);
-		prStaRec->ucRCPI = nicRxGetRcpiValueFromRxv(RCPI_MODE_WF0, prSwRfb);
+		prStaRec->ucRCPI = nicRxGetRcpiValueFromRxv(RCPI_MODE_MAX, prSwRfb);
 
 		/* 4 <2> Check P2P network conditions */
 #if CFG_ENABLE_WIFI_DIRECT
