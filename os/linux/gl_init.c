@@ -328,7 +328,7 @@ struct ieee80211_supported_band mtk_band_5ghz = {
 	.vht_cap = WLAN_VHT_CAP,
 };
 
-const UINT_32 mtk_cipher_suites[5] = {
+const UINT_32 mtk_cipher_suites[] = {
 	/* keep WEP first, it may be removed below */
 	WLAN_CIPHER_SUITE_WEP40,
 	WLAN_CIPHER_SUITE_WEP104,
@@ -336,7 +336,8 @@ const UINT_32 mtk_cipher_suites[5] = {
 	WLAN_CIPHER_SUITE_CCMP,
 
 	/* keep last -- depends on hw flags! */
-	WLAN_CIPHER_SUITE_AES_CMAC
+	WLAN_CIPHER_SUITE_AES_CMAC,
+	WLAN_CIPHER_SUITE_NO_GROUP_ADDR
 };
 
 static struct cfg80211_ops mtk_wlan_ops = {

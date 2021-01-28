@@ -704,29 +704,59 @@ static VOID rlmFillHtCapIE(P_ADAPTER_T prAdapter, P_BSS_INFO_T prBssInfo, P_MSDU
 /*----------------------------------------------------------------------------*/
 static VOID rlmFillExtCapIE(P_ADAPTER_T prAdapter, P_BSS_INFO_T prBssInfo, P_MSDU_INFO_T prMsduInfo)
 {
+#if CFG_SUPPORT_PASSPOINT
+	struct IE_HS20_EXT_CAP_T *prHsExtCap;
+#else
 	P_EXT_CAP_T prExtCap;
-	BOOLEAN fg40mAllowed, fgAppendVhtCap;
-	P_STA_RECORD_T prStaRec;
+#endif
+	BOOLEAN fg40mAllowed;
 
 	ASSERT(prAdapter);
 	ASSERT(prMsduInfo);
 
 	fg40mAllowed = prBssInfo->fgAssoc40mBwAllowed;
 
+#if CFG_SUPPORT_PASSPOINT
+	prHsExtCap = (struct IE_HS20_EXT_CAP_T *)
+	    (((PUINT_8) prMsduInfo->prPacket) + prMsduInfo->u2FrameLength);
+	prHsExtCap->ucId = ELEM_ID_EXTENDED_CAP;
+
+	if (prAdapter->prGlueInfo->fgConnectHS20AP == TRUE)
+		prHsExtCap->ucLength = ELEM_MAX_LEN_EXT_CAP;
+	else
+		prHsExtCap->ucLength = 3 - ELEM_HDR_LEN;
+
+	kalMemZero(prHsExtCap->aucCapabilities, sizeof(prHsExtCap->aucCapabilities));
+
+	prHsExtCap->aucCapabilities[0] = ELEM_EXT_CAP_DEFAULT_VAL;
+
+	if (!fg40mAllowed)
+		prHsExtCap->aucCapabilities[0] &= ~ELEM_EXT_CAP_20_40_COEXIST_SUPPORT;
+
+	if (prBssInfo->eCurrentOPMode != OP_MODE_INFRASTRUCTURE)
+		prHsExtCap->aucCapabilities[0] &= ~ELEM_EXT_CAP_PSMP_CAP;
+
+	if (prAdapter->prGlueInfo->fgConnectHS20AP == TRUE) {
+		SET_EXT_CAP(prHsExtCap->aucCapabilities, ELEM_MAX_LEN_EXT_CAP, ELEM_EXT_CAP_INTERWORKING_BIT);
+		SET_EXT_CAP(prHsExtCap->aucCapabilities, ELEM_MAX_LEN_EXT_CAP, ELEM_EXT_CAP_QOSMAPSET_BIT);
+
+		/* For R2 WNM-Notification */
+		SET_EXT_CAP(prHsExtCap->aucCapabilities, ELEM_MAX_LEN_EXT_CAP, ELEM_EXT_CAP_WNM_NOTIFICATION_BIT);
+	}
+
+	ASSERT(IE_SIZE(prHsExtCap) <= (ELEM_HDR_LEN + ELEM_MAX_LEN_EXT_CAP));
+
+	prMsduInfo->u2FrameLength += IE_SIZE(prHsExtCap);
+
+#else
 	/* Add Extended Capabilities IE */
 	prExtCap = (P_EXT_CAP_T)
 	    (((PUINT_8) prMsduInfo->prPacket) + prMsduInfo->u2FrameLength);
 
 	prExtCap->ucId = ELEM_ID_EXTENDED_CAP;
-#if 0				/* CFG_SUPPORT_HOTSPOT_2_0 */
-	if (prAdapter->prGlueInfo->fgConnectHS20AP == TRUE)
-		prExtCap->ucLength = ELEM_MAX_LEN_EXT_CAP;
-	else
-#endif
-		prExtCap->ucLength = 1;
 
-	/* Reset memory */
-	kalMemZero(prExtCap->aucCapabilities, ELEM_MAX_LEN_EXT_CAP);
+	prExtCap->ucLength = 3 - ELEM_HDR_LEN;
+	kalMemZero(prExtCap->aucCapabilities, sizeof(prExtCap->aucCapabilities));
 
 	prExtCap->aucCapabilities[0] = ELEM_EXT_CAP_DEFAULT_VAL;
 
@@ -736,48 +766,10 @@ static VOID rlmFillExtCapIE(P_ADAPTER_T prAdapter, P_BSS_INFO_T prBssInfo, P_MSD
 	if (prBssInfo->eCurrentOPMode != OP_MODE_INFRASTRUCTURE)
 		prExtCap->aucCapabilities[0] &= ~ELEM_EXT_CAP_PSMP_CAP;
 
-	prStaRec = cnmGetStaRecByIndex(prAdapter, prMsduInfo->ucStaRecIndex);
-
-#if CFG_SUPPORT_802_11AC
-	fgAppendVhtCap = FALSE;
-
-	/* Check append rule */
-	if (prAdapter->rWifiVar.ucAvailablePhyTypeSet & PHY_TYPE_SET_802_11AC) {
-		/* Note: For AIS connecting state, structure in BSS_INFO will not be inited */
-		/*       So, we check StaRec instead of BssInfo */
-		if (prStaRec) {
-			if (prStaRec->ucPhyTypeSet & PHY_TYPE_SET_802_11AC)
-				fgAppendVhtCap = TRUE;
-		} else if ((RLM_NET_IS_11AC(prBssInfo)) && (prBssInfo->eCurrentOPMode == OP_MODE_INFRASTRUCTURE))
-			fgAppendVhtCap = TRUE;
-	}
-
-	if (fgAppendVhtCap) {
-		if (prExtCap->ucLength < ELEM_MAX_LEN_EXT_CAP)
-			prExtCap->ucLength = ELEM_MAX_LEN_EXT_CAP;
-
-		SET_EXT_CAP(prExtCap->aucCapabilities, ELEM_MAX_LEN_EXT_CAP, ELEM_EXT_CAP_OP_MODE_NOTIFICATION_BIT);
-
-	}
-#endif
-
-#if CFG_SUPPORT_PASSPOINT
-	if (prAdapter->prGlueInfo->fgConnectHS20AP == TRUE) {
-
-		if (prExtCap->ucLength < ELEM_MAX_LEN_EXT_CAP)
-			prExtCap->ucLength = ELEM_MAX_LEN_EXT_CAP;
-
-		SET_EXT_CAP(prExtCap->aucCapabilities, ELEM_MAX_LEN_EXT_CAP, ELEM_EXT_CAP_INTERWORKING_BIT);
-
-		/* For R2 WNM-Notification */
-		SET_EXT_CAP(prExtCap->aucCapabilities, ELEM_MAX_LEN_EXT_CAP, ELEM_EXT_CAP_WNM_NOTIFICATION_BIT);
-		SET_EXT_CAP(prHsExtCap->aucCapabilities, ELEM_MAX_LEN_EXT_CAP, ELEM_EXT_CAP_QOSMAPSET_BIT);
-	}
-#endif /* CFG_SUPPORT_PASSPOINT */
-
 	ASSERT(IE_SIZE(prExtCap) <= (ELEM_HDR_LEN + ELEM_MAX_LEN_EXT_CAP));
 
 	prMsduInfo->u2FrameLength += IE_SIZE(prExtCap);
+#endif
 }
 
 /*----------------------------------------------------------------------------*/

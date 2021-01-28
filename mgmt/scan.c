@@ -1461,23 +1461,30 @@ P_BSS_DESC_T scanAddToBssDesc(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T prSwRfb)
 
 		case ELEM_ID_VENDOR:	/* ELEM_ID_P2P, ELEM_ID_WMM */
 			{
-				UINT_8 ucOuiType;
-				UINT_16 u2SubTypeVersion;
+			UINT_8 ucOuiType;
+			UINT_16 u2SubTypeVersion;
 
-				if (rsnParseCheckForWFAInfoElem(prAdapter, pucIE, &ucOuiType, &u2SubTypeVersion)) {
-					if ((ucOuiType == VENDOR_OUI_TYPE_WPA)
-					    && (u2SubTypeVersion == VERSION_WPA)
-					    && (rsnParseWpaIE(prAdapter, WPA_IE(pucIE), &prBssDesc->rWPAInfo))) {
-						prBssDesc->fgIEWPA = TRUE;
-					}
+			if (rsnParseCheckForWFAInfoElem(prAdapter, pucIE, &ucOuiType, &u2SubTypeVersion)) {
+				if ((ucOuiType == VENDOR_OUI_TYPE_WPA)
+				    && (u2SubTypeVersion == VERSION_WPA)
+				    && (rsnParseWpaIE(prAdapter, WPA_IE(pucIE), &prBssDesc->rWPAInfo))) {
+					prBssDesc->fgIEWPA = TRUE;
 				}
+			}
+#if CFG_SUPPORT_PASSPOINT
+			/* since OSEN is mutual exclusion with RSN, so we reuse RSN here */
+			if ((pucIE[1] >= 10)
+				&& (kalMemCmp(pucIE+2, "\x50\x6f\x9a\x12", 4) == 0)
+				&& (rsnParseOsenIE(prAdapter, (struct IE_WFA_OSEN *)pucIE, &prBssDesc->rRSNInfo)))
+				prBssDesc->fgIEOsen = TRUE;
+#endif
 #if CFG_ENABLE_WIFI_DIRECT
-				if (prAdapter->fgIsP2PRegistered) {
-					if ((p2pFuncParseCheckForP2PInfoElem(prAdapter, pucIE, &ucOuiType))
-					    && (ucOuiType == VENDOR_OUI_TYPE_P2P)) {
-						prBssDesc->fgIsP2PPresent = TRUE;
-					}
+			if (prAdapter->fgIsP2PRegistered) {
+				if ((p2pFuncParseCheckForP2PInfoElem(prAdapter, pucIE, &ucOuiType))
+				    && (ucOuiType == VENDOR_OUI_TYPE_P2P)) {
+					prBssDesc->fgIsP2PPresent = TRUE;
 				}
+			}
 #endif /* CFG_ENABLE_WIFI_DIRECT */
 			}
 			break;
