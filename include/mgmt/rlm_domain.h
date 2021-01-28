@@ -1012,6 +1012,9 @@ struct mtk_regdomain {
 struct DOMAIN_INFO_ENTRY *rlmDomainGetDomainInfo(
 	struct ADAPTER *prAdapter);
 
+u_int8_t rlmIsValidChnl(struct ADAPTER *prAdapter, uint8_t ucNumOfChannel,
+			enum ENUM_BAND eBand);
+
 void
 rlmDomainGetChnlList(struct ADAPTER *prAdapter,
 		     enum ENUM_BAND eSpecificBand, u_int8_t fgNoDfs,
