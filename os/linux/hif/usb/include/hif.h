@@ -219,6 +219,13 @@ enum usb_state {
 	USB_STATE_WIFI_OFF /* Hif power off wifi */
 };
 
+enum usb_submit_type {
+	SUBMIT_TYPE_TX_CMD,
+	SUBMIT_TYPE_TX_DATA,
+	SUBMIT_TYPE_RX_EVENT,
+	SUBMIT_TYPE_RX_DATA
+};
+
 enum EVENT_EP_TYPE {
 	EVENT_EP_TYPE_UNKONW,
 	EVENT_EP_TYPE_BULK,
@@ -244,6 +251,7 @@ struct GL_HIF_INFO {
 	spinlock_t rTxCmdQLock;
 	spinlock_t rRxEventQLock;
 	spinlock_t rRxDataQLock;
+	spinlock_t rStateLock;
 
 	void *prTxCmdReqHead;
 	void *arTxDataFfaReqHead;
@@ -263,17 +271,17 @@ struct GL_HIF_INFO {
 	struct list_head rTxDataFreeQ;
 	struct usb_anchor rTxDataAnchor;
 #endif
-	spinlock_t rTxDataFreeQLock;
+	/*spinlock_t rTxDataFreeQLock;*/
 	struct list_head rRxEventFreeQ;
-	spinlock_t rRxEventFreeQLock;
+	/*spinlock_t rRxEventFreeQLock;*/
 	struct usb_anchor rRxEventAnchor;
 	struct list_head rRxDataFreeQ;
-	spinlock_t rRxDataFreeQLock;
+	/*spinlock_t rRxDataFreeQLock;*/
 	struct usb_anchor rRxDataAnchor;
 	struct list_head rRxEventCompleteQ;
-	spinlock_t rRxEventCompleteQLock;
+	/*spinlock_t rRxEventCompleteQLock;*/
 	struct list_head rRxDataCompleteQ;
-	spinlock_t rRxDataCompleteQLock;
+	/*spinlock_t rRxDataCompleteQLock;*/
 	struct list_head rTxCmdCompleteQ;
 	struct list_head rTxDataCompleteQ;
 
@@ -369,6 +377,11 @@ void glUsbEnqueueReq(struct GL_HIF_INFO *prHifInfo, struct list_head *prHead, st
 		     spinlock_t *prLock, u_int8_t fgHead);
 struct USB_REQ *glUsbDequeueReq(struct GL_HIF_INFO *prHifInfo, struct list_head *prHead, spinlock_t *prLock);
 u_int8_t glUsbBorrowFfaReq(struct GL_HIF_INFO *prHifInfo, uint8_t ucTc);
+
+void glUsbSetState(IN struct GL_HIF_INFO *prHifInfo, enum usb_state state);
+
+int glUsbSubmitUrb(IN struct GL_HIF_INFO *prHifInfo, struct urb *urb,
+			enum usb_submit_type type);
 
 uint32_t halTxUSBSendCmd(IN struct GLUE_INFO *prGlueInfo, IN uint8_t ucTc, IN struct CMD_INFO *prCmdInfo);
 void halTxUSBSendCmdComplete(struct urb *urb);
