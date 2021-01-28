@@ -258,6 +258,7 @@ enum ENUM_P2P_ROLE_STATE {
 	P2P_ROLE_STATE_AP_CHNL_DETECTION,
 	/* Requesting Channel to Send Specific Frame. */
 	P2P_ROLE_STATE_GC_JOIN,
+	P2P_ROLE_STATE_OFF_CHNL_TX,
 #if (CFG_SUPPORT_DFS_MASTER == 1)
 	P2P_ROLE_STATE_DFS_CAC,
 	P2P_ROLE_STATE_SWITCH_CHANNEL,
@@ -327,6 +328,9 @@ struct P2P_ROLE_FSM_INFO {
 
 	/* Scan related. */
 	struct P2P_SCAN_REQ_INFO rScanReqInfo;
+
+	/* Mgmt tx related. */
+	struct P2P_MGMT_TX_REQ_INFO rMgmtTxInfo;
 
 	/* FSM Timer */
 	struct TIMER rP2pRoleFsmTimeoutTimer;
@@ -476,5 +480,11 @@ void p2pRoleFsmNotifyEapolTxStatus(IN struct ADAPTER *prAdapter,
 		IN uint8_t ucBssIndex,
 		IN enum ENUM_EAPOL_KEY_TYPE_T rEapolKeyType,
 		IN enum ENUM_TX_RESULT_CODE rTxDoneStatus);
+
+void p2pRoleFsmRunEventMgmtTx(IN struct ADAPTER *prAdapter,
+		IN struct MSG_HDR *prMsgHdr);
+
+void p2pRoleFsmRunEventTxCancelWait(IN struct ADAPTER *prAdapter,
+		IN struct MSG_HDR *prMsgHdr);
 
 #endif

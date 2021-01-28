@@ -1887,6 +1887,11 @@ static void wlanCreateWirelessDevice(void)
 			  WIPHY_FLAG_HAVE_AP_SME;
 	prWiphy->ap_sme_capa = 1;
 #endif
+
+#if CFG_ENABLE_OFFCHANNEL_TX
+	prWiphy->flags |= WIPHY_FLAG_OFFCHAN_TX;
+#endif /* CFG_ENABLE_OFFCHANNEL_TX */
+
 	if (wiphy_register(prWiphy) < 0) {
 		DBGLOG(INIT, ERROR, "wiphy_register error\n");
 		goto free_wiphy;

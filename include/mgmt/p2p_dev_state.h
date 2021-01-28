@@ -99,6 +99,7 @@ p2pDevStateInit_OFF_CHNL_TX(IN struct ADAPTER *prAdapter,
 
 void
 p2pDevStateAbort_OFF_CHNL_TX(IN struct ADAPTER *prAdapter,
+		IN struct P2P_DEV_FSM_INFO *prP2pDevFsmInfo,
 		IN struct P2P_MGMT_TX_REQ_INFO *prP2pMgmtTxInfo,
 		IN struct P2P_CHNL_REQ_INFO *prChnlReqInfo,
 		IN enum ENUM_P2P_DEV_STATE eNextState);

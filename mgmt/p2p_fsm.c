@@ -107,6 +107,44 @@
  *                              F U N C T I O N S
  ******************************************************************************
  */
+static u_int8_t p2pFsmUseRoleIf(IN struct ADAPTER *prAdapter,
+		uint8_t ucBssIdx)
+{
+	u_int8_t fgUseRoleInterface = FALSE;
+	struct BSS_INFO *prBssInfo = (struct BSS_INFO *) NULL;
+
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIdx);
+
+	if (prBssInfo == NULL) {
+		DBGLOG(P2P, ERROR, "can not get bss info by bssIdx: %d",
+				ucBssIdx);
+		return FALSE;
+	}
+
+	if (ucBssIdx != prAdapter->ucP2PDevBssIdx) {
+		if (IS_NET_ACTIVE(prAdapter, ucBssIdx)) {
+			fgUseRoleInterface = TRUE;
+			if (prBssInfo->eIftype != IFTYPE_P2P_CLIENT &&
+					prBssInfo->eIftype != IFTYPE_P2P_GO) {
+				DBGLOG(P2P, TRACE,
+					"force use dev interface.\n");
+				fgUseRoleInterface = FALSE;
+			}
+		} else {
+			fgUseRoleInterface = FALSE;
+		}
+	} else {
+		fgUseRoleInterface = FALSE;
+	}
+
+	DBGLOG(P2P, TRACE, "bss[%d %d], role: %d, use_role_if: %d\n",
+			ucBssIdx,
+			IS_NET_ACTIVE(prAdapter, ucBssIdx),
+			prBssInfo->eIftype,
+			fgUseRoleInterface);
+
+	return fgUseRoleInterface;
+}
 
 void p2pFsmRunEventScanRequest(IN struct ADAPTER *prAdapter,
 		IN struct MSG_HDR *prMsgHdr)
@@ -378,6 +416,48 @@ void p2pFsmRunEventScanDone(IN struct ADAPTER *prAdapter,
 	}
 }				/* p2pFsmRunEventScanDone */
 
+void p2pFsmRunEventMgmtFrameTx(IN struct ADAPTER *prAdapter,
+		IN struct MSG_HDR *prMsgHdr)
+{
+	struct MSG_MGMT_TX_REQUEST *prMgmtTxMsg =
+			(struct MSG_MGMT_TX_REQUEST *) NULL;
 
+	do {
+		if ((prAdapter == NULL) || (prMsgHdr == NULL))
+			break;
+
+		prMgmtTxMsg = (struct MSG_MGMT_TX_REQUEST *) prMsgHdr;
+
+		if (p2pFsmUseRoleIf(prAdapter, prMgmtTxMsg->ucBssIdx)) {
+			p2pRoleFsmRunEventMgmtTx(prAdapter, prMsgHdr);
+		} else {
+			prMgmtTxMsg->ucBssIdx = prAdapter->ucP2PDevBssIdx;
+			p2pDevFsmRunEventMgmtTx(prAdapter, prMsgHdr);
+		}
+	} while (FALSE);
+}				/* p2pFsmRunEventMgmtFrameTx */
+
+void p2pFsmRunEventTxCancelWait(IN struct ADAPTER *prAdapter,
+		IN struct MSG_HDR *prMsgHdr)
+{
+	struct MSG_CANCEL_TX_WAIT_REQUEST *prCancelTxWaitMsg =
+			(struct MSG_CANCEL_TX_WAIT_REQUEST *) NULL;
+
+	do {
+		if ((prAdapter == NULL) || (prMsgHdr == NULL))
+			break;
+
+		prCancelTxWaitMsg =
+				(struct MSG_CANCEL_TX_WAIT_REQUEST *) prMsgHdr;
+
+		if (p2pFsmUseRoleIf(prAdapter, prCancelTxWaitMsg->ucBssIdx)) {
+			p2pRoleFsmRunEventTxCancelWait(prAdapter, prMsgHdr);
+		} else {
+			prCancelTxWaitMsg->ucBssIdx = prAdapter->ucP2PDevBssIdx;
+			p2pDevFsmRunEventTxCancelWait(prAdapter, prMsgHdr);
+		}
+	} while (FALSE);
+
+}				/* p2pFsmRunEventTxCancelWait */
 
 #endif /* CFG_ENABLE_WIFI_DIRECT */

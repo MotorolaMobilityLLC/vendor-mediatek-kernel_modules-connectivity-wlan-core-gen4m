@@ -120,6 +120,7 @@
 
 #define P2P_SAA_RETRY_COUNT     5
 
+#define P2P_MIN_TX_DURATION_TIME_MS 100
 /******************************************************************************
  *                                 M A C R O S
  ******************************************************************************
@@ -156,9 +157,8 @@ enum ENUM_P2P_CONNECT_STATE {
 	P2P_CNN_DEV_DISC_REQ,
 	P2P_CNN_DEV_DISC_RESP,
 	P2P_CNN_PROV_DISC_REQ,
-	P2P_CNN_PROV_DISC_RES
+	P2P_CNN_PROV_DISC_RESP
 };
-
 
 struct P2P_INFO {
 	uint32_t u4DeviceNum;
@@ -337,6 +337,12 @@ struct P2P_QUEUED_ACTION_FRAME {
 	int32_t u4Freq;
 	uint8_t *prHeader;
 	uint16_t u2Length;
+};
+
+struct P2P_MGMT_TX_REQ_INFO {
+	struct LINK rTxReqLink;
+	struct MSDU_INFO *prMgmtTxMsdu;
+	u_int8_t fgIsWaitRsp;
 };
 
 /******************************************************************************
