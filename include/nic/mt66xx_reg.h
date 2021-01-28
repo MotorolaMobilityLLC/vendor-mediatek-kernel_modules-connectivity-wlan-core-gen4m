@@ -49,15 +49,11 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  *****************************************************************************/
-/*
-** Id:
-*/
-
 /*! \file   "mt66xx_reg.h"
  *   \brief  The common register definition of MT6630
  *
  *   N/A
-*/
+ */
 
 
 
@@ -65,14 +61,14 @@
 #define _MT66XX_REG_H
 
 /*******************************************************************************
-*                         C O M P I L E R   F L A G S
-********************************************************************************
-*/
+ *                         C O M P I L E R   F L A G S
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                    E X T E R N A L   R E F E R E N C E S
-********************************************************************************
-*/
+ *                    E X T E R N A L   R E F E R E N C E S
+ *******************************************************************************
+ */
 #ifdef MT6632
 extern struct mt66xx_hif_driver_data mt66xx_driver_data_mt6632;
 #endif /* MT6632 */
@@ -87,9 +83,9 @@ extern struct mt66xx_hif_driver_data mt66xx_driver_data_connac;
 #endif /* CONNAC */
 
 /*******************************************************************************
-*                              C O N S T A N T S
-********************************************************************************
-*/
+ *                              C O N S T A N T S
+ *******************************************************************************
+ */
 /* 1 MT6630 MCR Definition */
 
 /* 2 Host Interface */
@@ -150,9 +146,11 @@ extern struct mt66xx_hif_driver_data mt66xx_driver_data_connac;
 #define UMAC_PLE_CR_CFG_BASE_ADDR       0x82060000
 #define UMAC_PSE_CR_CFG_BASE_ADDR       0x82068000
 
-#define UMAC_PSE_PLE_CR_ADDR_DIFF       (UMAC_PSE_CR_CFG_BASE_ADDR - UMAC_PLE_CR_CFG_BASE_ADDR)
+#define UMAC_PSE_PLE_CR_ADDR_DIFF \
+	(UMAC_PSE_CR_CFG_BASE_ADDR - UMAC_PLE_CR_CFG_BASE_ADDR)
 #define UMAC_PSE_CR_BITMAP_OFFSET       15
-#define UMAC_PSE_PLE_ADDR_DIFF_MAR(_x)  (_x << UMAC_PSE_CR_BITMAP_OFFSET)
+#define UMAC_PSE_PLE_ADDR_DIFF_MAR(_x) \
+	(_x << UMAC_PSE_CR_BITMAP_OFFSET)
 
 
 #define UMAC_PLE_BASE_ADDRESS   (0xa << 28)
@@ -161,7 +159,8 @@ extern struct mt66xx_hif_driver_data mt66xx_driver_data_connac;
 
 #define UMAC_FID_SHIFT_16_BIT_VM_MAP    16
 
-#define UMAC_BASE(_x)                   (UMAC_PLE_CR_CFG_BASE_ADDR | (_x << UMAC_PSE_CR_BITMAP_OFFSET))
+#define UMAC_BASE(_x) \
+	(UMAC_PLE_CR_CFG_BASE_ADDR | (_x << UMAC_PSE_CR_BITMAP_OFFSET))
 
 #define UMAC_RESET(_x)                  (UMAC_BASE(_x) + 0x00000000)
 
@@ -208,8 +207,11 @@ extern struct mt66xx_hif_driver_data mt66xx_driver_data_connac;
 
 #define UMAC_QUEUE_EMPTY(_x)            (UMAC_BASE(_x) + 0x000000B0)
 
-/* 0x820680B4 QUEUE_EMPTY_MASK Queue empty status mask register, 7615 E3 eco item only PSE with this setting, but ple */
-#define UMAC_QUEUE_EMPTY_MASK           (UMAC_BASE(UMAC_PSE_CFG_POOL_INDEX) + 0x000000B4)
+/* 0x820680B4 QUEUE_EMPTY_MASK Queue empty status mask register,
+ * 7615 E3 eco item only PSE with this setting, but ple
+ */
+#define UMAC_QUEUE_EMPTY_MASK \
+	(UMAC_BASE(UMAC_PSE_CFG_POOL_INDEX) + 0x000000B4)
 
 #define UMAC_TO_CR4_INT(_x)             (UMAC_BASE(_x) + 0x000000e0)
 #define UMAC_TO_N9_INT(_x)              (UMAC_BASE(_x) + 0x000000f0)
@@ -311,51 +313,82 @@ extern struct mt66xx_hif_driver_data mt66xx_driver_data_connac;
 #define UMAC_AC3_QUEUE_EMPTY2(_x)       (UMAC_BASE(_x) + 0x00000338)
 #define UMAC_AC3_QUEUE_EMPTY3(_x)       (UMAC_BASE(_x) + 0x0000033C)
 
-#define UMAC_QUEUE_EMPTY_MASK           (UMAC_BASE(UMAC_PSE_CFG_POOL_INDEX) + 0x000000B4)
+#define UMAC_QUEUE_EMPTY_MASK \
+	(UMAC_BASE(UMAC_PSE_CFG_POOL_INDEX) + 0x000000B4)
 
 /* BSS PS INT */
-#define UMAC_N9_BSS_PS_INT_EN           (UMAC_BASE(UMAC_PLE_CFG_POOL_INDEX) + 0x000000F4)
-#define UMAC_N9_BSS_PS_INT_STS          (UMAC_BASE(UMAC_PLE_CFG_POOL_INDEX) + 0x000000F8)
+#define UMAC_N9_BSS_PS_INT_EN \
+	(UMAC_BASE(UMAC_PLE_CFG_POOL_INDEX) + 0x000000F4)
+#define UMAC_N9_BSS_PS_INT_STS \
+	(UMAC_BASE(UMAC_PLE_CFG_POOL_INDEX) + 0x000000F8)
 
 /* CR for VoW and BW Ctrl */
 
-#define UMAC_DRR_TABLE_CTRL0            (UMAC_BASE(UMAC_PLE_CFG_POOL_INDEX) + 0x00000388)
+#define UMAC_DRR_TABLE_CTRL0 \
+	(UMAC_BASE(UMAC_PLE_CFG_POOL_INDEX) + 0x00000388)
 
-#define UMAC_DRR_TABLE_WDATA0           (UMAC_BASE(UMAC_PLE_CFG_POOL_INDEX) + 0x00000340)
-#define UMAC_DRR_TABLE_WDATA1           (UMAC_BASE(UMAC_PLE_CFG_POOL_INDEX) + 0x00000344)
-#define UMAC_DRR_TABLE_WDATA2           (UMAC_BASE(UMAC_PLE_CFG_POOL_INDEX) + 0x00000348)
-#define UMAC_DRR_TABLE_WDATA3           (UMAC_BASE(UMAC_PLE_CFG_POOL_INDEX) + 0x0000034C)
+#define UMAC_DRR_TABLE_WDATA0 \
+	(UMAC_BASE(UMAC_PLE_CFG_POOL_INDEX) + 0x00000340)
+#define UMAC_DRR_TABLE_WDATA1 \
+	(UMAC_BASE(UMAC_PLE_CFG_POOL_INDEX) + 0x00000344)
+#define UMAC_DRR_TABLE_WDATA2 \
+	(UMAC_BASE(UMAC_PLE_CFG_POOL_INDEX) + 0x00000348)
+#define UMAC_DRR_TABLE_WDATA3 \
+	(UMAC_BASE(UMAC_PLE_CFG_POOL_INDEX) + 0x0000034C)
 
 
-#define UMAC_DRR_TABLE_RDATA0           (UMAC_BASE(UMAC_PLE_CFG_POOL_INDEX) + 0x00000350)
-#define UMAC_DRR_TABLE_RDATA1           (UMAC_BASE(UMAC_PLE_CFG_POOL_INDEX) + 0x00000354)
-#define UMAC_DRR_TABLE_RDATA2           (UMAC_BASE(UMAC_PLE_CFG_POOL_INDEX) + 0x00000358)
-#define UMAC_DRR_TABLE_RDATA3           (UMAC_BASE(UMAC_PLE_CFG_POOL_INDEX) + 0x0000035C)
+#define UMAC_DRR_TABLE_RDATA0 \
+	(UMAC_BASE(UMAC_PLE_CFG_POOL_INDEX) + 0x00000350)
+#define UMAC_DRR_TABLE_RDATA1 \
+	(UMAC_BASE(UMAC_PLE_CFG_POOL_INDEX) + 0x00000354)
+#define UMAC_DRR_TABLE_RDATA2 \
+	(UMAC_BASE(UMAC_PLE_CFG_POOL_INDEX) + 0x00000358)
+#define UMAC_DRR_TABLE_RDATA3 \
+	(UMAC_BASE(UMAC_PLE_CFG_POOL_INDEX) + 0x0000035C)
 
 
-#define UMAC_STATION_PAUSE_0            (UMAC_BASE(UMAC_PLE_CFG_POOL_INDEX) + 0x00000360)
-#define UMAC_STATION_PAUSE_1            (UMAC_BASE(UMAC_PLE_CFG_POOL_INDEX) + 0x00000364)
-#define UMAC_STATION_PAUSE_2            (UMAC_BASE(UMAC_PLE_CFG_POOL_INDEX) + 0x00000368)
-#define UMAC_STATION_PAUSE_3            (UMAC_BASE(UMAC_PLE_CFG_POOL_INDEX) + 0x0000036C)
-#define UMAC_VOW_ENABLE                 (UMAC_BASE(UMAC_PLE_CFG_POOL_INDEX) + 0x00000370)
-#define UMAC_AIR_TIME_DRR_SIZE          (UMAC_BASE(UMAC_PLE_CFG_POOL_INDEX) + 0x00000374)
-#define UMAC_CHECK_TIME_TOKEN           (UMAC_BASE(UMAC_PLE_CFG_POOL_INDEX) + 0x00000378)
-#define UMAC_CHECK_LENGTH_TOKEN         (UMAC_BASE(UMAC_PLE_CFG_POOL_INDEX) + 0x0000037C)
-#define UMAC_WDRR0                      (UMAC_BASE(UMAC_PLE_CFG_POOL_INDEX) + 0x00000380)
-#define UMAC_WDRR1                      (UMAC_BASE(UMAC_PLE_CFG_POOL_INDEX) + 0x00000384)
+#define UMAC_STATION_PAUSE_0 \
+	(UMAC_BASE(UMAC_PLE_CFG_POOL_INDEX) + 0x00000360)
+#define UMAC_STATION_PAUSE_1 \
+	(UMAC_BASE(UMAC_PLE_CFG_POOL_INDEX) + 0x00000364)
+#define UMAC_STATION_PAUSE_2 \
+	(UMAC_BASE(UMAC_PLE_CFG_POOL_INDEX) + 0x00000368)
+#define UMAC_STATION_PAUSE_3 \
+	(UMAC_BASE(UMAC_PLE_CFG_POOL_INDEX) + 0x0000036C)
+#define UMAC_VOW_ENABLE \
+	(UMAC_BASE(UMAC_PLE_CFG_POOL_INDEX) + 0x00000370)
+#define UMAC_AIR_TIME_DRR_SIZE \
+	(UMAC_BASE(UMAC_PLE_CFG_POOL_INDEX) + 0x00000374)
+#define UMAC_CHECK_TIME_TOKEN \
+	(UMAC_BASE(UMAC_PLE_CFG_POOL_INDEX) + 0x00000378)
+#define UMAC_CHECK_LENGTH_TOKEN \
+	(UMAC_BASE(UMAC_PLE_CFG_POOL_INDEX) + 0x0000037C)
+#define UMAC_WDRR0 \
+	(UMAC_BASE(UMAC_PLE_CFG_POOL_INDEX) + 0x00000380)
+#define UMAC_WDRR1 \
+	(UMAC_BASE(UMAC_PLE_CFG_POOL_INDEX) + 0x00000384)
 
-#define UMAC_VOW_CTRL1                  (UMAC_BASE(UMAC_PLE_CFG_POOL_INDEX) + 0x0000038C)
+#define UMAC_VOW_CTRL1 \
+	(UMAC_BASE(UMAC_PLE_CFG_POOL_INDEX) + 0x0000038C)
 
-#define UMAC_VOW_DBG_MUX                (UMAC_BASE(UMAC_PLE_CFG_POOL_INDEX) + 0x000003A0)
-#define UMAC_AIRTIME_DBG_INFO0          (UMAC_BASE(UMAC_PLE_CFG_POOL_INDEX) + 0x000003A4)
-#define UMAC_AIRTIME_DBG_INFO1          (UMAC_BASE(UMAC_PLE_CFG_POOL_INDEX) + 0x000003A8)
+#define UMAC_VOW_DBG_MUX \
+	(UMAC_BASE(UMAC_PLE_CFG_POOL_INDEX) + 0x000003A0)
+#define UMAC_AIRTIME_DBG_INFO0 \
+	(UMAC_BASE(UMAC_PLE_CFG_POOL_INDEX) + 0x000003A4)
+#define UMAC_AIRTIME_DBG_INFO1 \
+	(UMAC_BASE(UMAC_PLE_CFG_POOL_INDEX) + 0x000003A8)
 
-#define UMAC_BW_DBG_INFO                (UMAC_BASE(UMAC_PLE_CFG_POOL_INDEX) + 0x000003AC)
+#define UMAC_BW_DBG_INFO \
+	(UMAC_BASE(UMAC_PLE_CFG_POOL_INDEX) + 0x000003AC)
 
-#define UMAC_BW_WDRR0                   (UMAC_BASE(UMAC_PLE_CFG_POOL_INDEX) + 0x000003B0)
-#define UMAC_BW_WDRR1                   (UMAC_BASE(UMAC_PLE_CFG_POOL_INDEX) + 0x000003B4)
-#define UMAC_BW_WDRR2                   (UMAC_BASE(UMAC_PLE_CFG_POOL_INDEX) + 0x000003B8)
-#define UMAC_BW_WDRR3                   (UMAC_BASE(UMAC_PLE_CFG_POOL_INDEX) + 0x000003BC)
+#define UMAC_BW_WDRR0 \
+	(UMAC_BASE(UMAC_PLE_CFG_POOL_INDEX) + 0x000003B0)
+#define UMAC_BW_WDRR1 \
+	(UMAC_BASE(UMAC_PLE_CFG_POOL_INDEX) + 0x000003B4)
+#define UMAC_BW_WDRR2 \
+	(UMAC_BASE(UMAC_PLE_CFG_POOL_INDEX) + 0x000003B8)
+#define UMAC_BW_WDRR3 \
+	(UMAC_BASE(UMAC_PLE_CFG_POOL_INDEX) + 0x000003BC)
 /* UMAC Register */
 
 
@@ -424,9 +457,9 @@ extern struct mt66xx_hif_driver_data mt66xx_driver_data_connac;
 #define PCIE_NEW_HIF_BASE				0x7c030000
 
 /* HIF Sys Revision */
-#define HIF_SYS_REV						(PCIE_HIF_BASE + 0x0000)
+#define HIF_SYS_REV		(PCIE_HIF_BASE + 0x0000)
 
-#define CONN_HIF_RST					(PCIE_HIF_BASE + 0x0100)
+#define CONN_HIF_RST	(PCIE_HIF_BASE + 0x0100)
 
 #define WPDMA_FIFO_TEST_MOD				(PCIE_HIF_BASE + 0x0140)
 
@@ -958,13 +991,15 @@ struct ENHANCE_MODE_DATA_STRUCT {
 #define FEAT_BITS_LLC_VLAN_RX           BIT(1)
 
 /* Support features API */
-#define FEAT_SUP_LLC_VLAN_TX(__chip_info) ((__chip_info)->features & FEAT_BITS_LLC_VLAN_TX)
-#define FEAT_SUP_LLC_VLAN_RX(__chip_info) ((__chip_info)->features & FEAT_BITS_LLC_VLAN_RX)
+#define FEAT_SUP_LLC_VLAN_TX(__chip_info) \
+	((__chip_info)->features & FEAT_BITS_LLC_VLAN_TX)
+#define FEAT_SUP_LLC_VLAN_RX(__chip_info) \
+	((__chip_info)->features & FEAT_BITS_LLC_VLAN_RX)
 
 /*******************************************************************************
-*                             D A T A   T Y P E S
-********************************************************************************
-*/
+ *                             D A T A   T Y P E S
+ *******************************************************************************
+ */
 
 enum ENUM_WIFI_FUNC {
 	WIFI_FUNC_INIT_DONE = BIT(0),
@@ -1012,11 +1047,13 @@ struct mt66xx_chip_info {
 	uint16_t u2TxInitCmdPort;
 	uint16_t u2TxFwDlPort;
 	uint16_t u2HifTxdSize;
-	uint32_t u4ExtraTxByteCount;  /* Extra TXD Size for TX Byte Count field (in unit of Byte) */
+	/* Extra TXD Size for TX Byte Count field (in unit of Byte) */
+	uint32_t u4ExtraTxByteCount;
 	uint32_t u4HifDmaShdlBaseAddr;
 
 	void (*asicCapInit)(IN struct ADAPTER *prAdapter);
-	void (*asicEnableFWDownload)(IN struct ADAPTER *prAdapter, IN u_int8_t fgEnable);
+	void (*asicEnableFWDownload)(IN struct ADAPTER *prAdapter,
+		IN u_int8_t fgEnable);
 	void (*fillHifTxDesc)(IN uint8_t **pDest, IN uint16_t *pInfoBufLen);
 	uint32_t (*downloadBufferBin)(IN struct ADAPTER *prAdapter);
 
@@ -1030,27 +1067,27 @@ struct mt66xx_hif_driver_data {
 };
 
 /*******************************************************************************
-*                            P U B L I C   D A T A
-********************************************************************************
-*/
+ *                            P U B L I C   D A T A
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                           P R I V A T E   D A T A
-********************************************************************************
-*/
+ *                           P R I V A T E   D A T A
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                                 M A C R O S
-********************************************************************************
-*/
+ *                                 M A C R O S
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                   F U N C T I O N   D E C L A R A T I O N S
-********************************************************************************
-*/
+ *                   F U N C T I O N   D E C L A R A T I O N S
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                              F U N C T I O N S
-********************************************************************************
-*/
+ *                              F U N C T I O N S
+ *******************************************************************************
+ */
 #endif

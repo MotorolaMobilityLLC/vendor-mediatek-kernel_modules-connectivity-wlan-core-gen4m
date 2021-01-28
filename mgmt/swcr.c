@@ -50,38 +50,38 @@
  *
  *****************************************************************************/
 /*
-** Id: //Department/DaVinci/BRANCHES/MT6620_WIFI_DRIVER_V2_3/mgmt/swcr.c#1
-*/
+ ** Id: //Department/DaVinci/BRANCHES/MT6620_WIFI_DRIVER_V2_3/mgmt/swcr.c#1
+ */
 
 /*! \file   "swcr.c"
-*    \brief
-*
-*/
+ *    \brief
+ *
+ */
 
 
 /*******************************************************************************
-*                         C O M P I L E R   F L A G S
-********************************************************************************
-*/
+ *                         C O M P I L E R   F L A G S
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                    E X T E R N A L   R E F E R E N C E S
-********************************************************************************
-*/
+ *                    E X T E R N A L   R E F E R E N C E S
+ *******************************************************************************
+ */
 #include "precomp.h"
 #include "swcr.h"
 
 #if CFG_SUPPORT_SWCR
 
 /*******************************************************************************
-*                             D A T A   T Y P E S
-********************************************************************************
-*/
+ *                             D A T A   T Y P E S
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                            P U B L I C   D A T A
-********************************************************************************
-*/
+ *                            P U B L I C   D A T A
+ *******************************************************************************
+ */
 uint32_t g_au4SwCr[SWCR_CR_NUM];	/*: 0: command other: data */
 
 /* JB mDNS Filter*/
@@ -94,18 +94,18 @@ static enum ENUM_SWCR_DBG_TYPE g_ucSwcrDebugCheckType;
 static uint32_t g_u4SwcrDebugFrameDumpType;
 
 /*******************************************************************************
-*                           P R I V A T E   D A T A
-********************************************************************************
-*/
+ *                           P R I V A T E   D A T A
+ *******************************************************************************
+ */
 static const PFN_CMD_RW_T g_arSwCtrlCmd[] = {
 	swCtrlCmdCategory0,
 	swCtrlCmdCategory1
 #if TEST_PS
-	    , testPsCmdCategory0, testPsCmdCategory1
+	, testPsCmdCategory0, testPsCmdCategory1
 #endif
 #if CFG_SUPPORT_802_11V
 #if (CFG_SUPPORT_802_11V_TIMING_MEASUREMENT == 1) && (WNM_UNIT_TEST == 1)
-	    , testWNMCmdCategory0
+	, testWNMCmdCategory0
 #endif
 #endif
 };
@@ -116,9 +116,9 @@ const PFN_SWCR_RW_T g_arSwCrModHandle[] = {
 };
 
 /*******************************************************************************
-*                                 M A C R O S
-********************************************************************************
-*/
+ *                                 M A C R O S
+ *******************************************************************************
+ */
 
 enum {
 	SWCTRL_MAGIC,
@@ -199,14 +199,14 @@ enum {
 #define _SWCTRL_MAGIC 0x66201642
 
 /*******************************************************************************
-*                   F U N C T I O N   D E C L A R A T I O N S
-********************************************************************************
-*/
+ *                   F U N C T I O N   D E C L A R A T I O N S
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                              F U N C T I O N S
-********************************************************************************
-*/
+ *                              F U N C T I O N S
+ *******************************************************************************
+ */
 
 void dumpQueue(struct ADAPTER *prAdapter)
 {
@@ -226,12 +226,15 @@ void dumpQueue(struct ADAPTER *prAdapter)
 	for (i = TC0_INDEX; i < TC_NUM; i++) {
 		DBGLOG(SW4, INFO, "TC %u\n", i);
 		DBGLOG(SW4, INFO, "Max %u Free %u\n",
-		       prTxCtrl->rTc.au4MaxNumOfBuffer[i], prTxCtrl->rTc.au4FreeBufferCount[i]);
+		       prTxCtrl->rTc.au4MaxNumOfBuffer[i],
+		       prTxCtrl->rTc.au4FreeBufferCount[i]);
 
 		DBGLOG(SW4, INFO,
 		       "Average %u minReserved %u CurrentTcResource %u GuaranteedTcResource %u\n",
-		       QM_GET_TX_QUEUE_LEN(prAdapter, i), prQM->au4MinReservedTcResource[i],
-		       prQM->au4CurrentTcResource[i], prQM->au4GuaranteedTcResource[i]);
+		       QM_GET_TX_QUEUE_LEN(prAdapter, i),
+		       prQM->au4MinReservedTcResource[i],
+		       prQM->au4CurrentTcResource[i],
+		       prQM->au4GuaranteedTcResource[i]);
 
 	}
 #endif
@@ -239,28 +242,38 @@ void dumpQueue(struct ADAPTER *prAdapter)
 #if QM_FORWARDING_FAIRNESS
 	for (i = 0; i < NUM_OF_PER_STA_TX_QUEUES; i++) {
 		DBGLOG(SW4, INFO,
-		       "TC %u HeadStaIdx %u ForwardCount %u\n", i, prQM->au4HeadStaRecIndex[i],
+		       "TC %u HeadStaIdx %u ForwardCount %u\n", i,
+		       prQM->au4HeadStaRecIndex[i],
 		       prQM->au4ResourceUsedCount[i]);
 	}
 #endif
 
-	DBGLOG(SW4, INFO, "BMC or unknown TxQueue Len %u\n", prQM->arTxQueue[0].u4NumElem);
-	DBGLOG(SW4, INFO, "Pending %d\n", prGlueInfo->i4TxPendingFrameNum);
-	DBGLOG(SW4, INFO, "Pending Security %d\n", prGlueInfo->i4TxPendingSecurityFrameNum);
+	DBGLOG(SW4, INFO, "BMC or unknown TxQueue Len %u\n",
+	       prQM->arTxQueue[0].u4NumElem);
+	DBGLOG(SW4, INFO, "Pending %d\n",
+	       prGlueInfo->i4TxPendingFrameNum);
+	DBGLOG(SW4, INFO, "Pending Security %d\n",
+	       prGlueInfo->i4TxPendingSecurityFrameNum);
 #if defined(LINUX)
 	for (i = 0; i < 4; i++) {
 		for (j = 0; j < CFG_MAX_TXQ_NUM; j++) {
 			DBGLOG(SW4, INFO,
-			       "Pending Q[%u][%u] %d\n", i, j, prGlueInfo->ai4TxPendingFrameNumPerQueue[i][j]);
+			       "Pending Q[%u][%u] %d\n", i, j,
+			       prGlueInfo->ai4TxPendingFrameNumPerQueue[i][j]);
 		}
 	}
 #endif
 
-	DBGLOG(SW4, INFO, " rFreeSwRfbList %u\n", prAdapter->rRxCtrl.rFreeSwRfbList.u4NumElem);
-	DBGLOG(SW4, INFO, " rReceivedRfbList %u\n", prAdapter->rRxCtrl.rReceivedRfbList.u4NumElem);
-	DBGLOG(SW4, INFO, " rIndicatedRfbList %u\n", prAdapter->rRxCtrl.rIndicatedRfbList.u4NumElem);
-	DBGLOG(SW4, INFO, " ucNumIndPacket %u\n", prAdapter->rRxCtrl.ucNumIndPacket);
-	DBGLOG(SW4, INFO, " ucNumRetainedPacket %u\n", prAdapter->rRxCtrl.ucNumRetainedPacket);
+	DBGLOG(SW4, INFO, " rFreeSwRfbList %u\n",
+	       prAdapter->rRxCtrl.rFreeSwRfbList.u4NumElem);
+	DBGLOG(SW4, INFO, " rReceivedRfbList %u\n",
+	       prAdapter->rRxCtrl.rReceivedRfbList.u4NumElem);
+	DBGLOG(SW4, INFO, " rIndicatedRfbList %u\n",
+	       prAdapter->rRxCtrl.rIndicatedRfbList.u4NumElem);
+	DBGLOG(SW4, INFO, " ucNumIndPacket %u\n",
+	       prAdapter->rRxCtrl.ucNumIndPacket);
+	DBGLOG(SW4, INFO, " ucNumRetainedPacket %u\n",
+	       prAdapter->rRxCtrl.ucNumRetainedPacket);
 
 }
 
@@ -278,100 +291,161 @@ void dumpSTA(struct ADAPTER *prAdapter, struct STA_RECORD *prStaRec)
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prStaRec->ucBssIndex);
 	ASSERT(prBssInfo);
 
-	DBGLOG(SW4, INFO, "Mac address: " MACSTR " Rcpi %u\n", MAC2STR(prStaRec->aucMacAddr), prStaRec->ucRCPI);
+	DBGLOG(SW4, INFO, "Mac address: " MACSTR " Rcpi %u\n",
+	       MAC2STR(prStaRec->aucMacAddr), prStaRec->ucRCPI);
 
-	DBGLOG(SW4, INFO, "Idx %u Wtbl %u Used %u State %u Bss Phy 0x%x Sta DesiredPhy 0x%x\n",
+	DBGLOG(SW4, INFO,
+	       "Idx %u Wtbl %u Used %u State %u Bss Phy 0x%x Sta DesiredPhy 0x%x\n",
 	       prStaRec->ucIndex, ucWTEntry,
-	       prStaRec->fgIsInUse, prStaRec->ucStaState, prBssInfo->ucPhyTypeSet, prStaRec->ucDesiredPhyTypeSet);
+	       prStaRec->fgIsInUse, prStaRec->ucStaState,
+	       prBssInfo->ucPhyTypeSet, prStaRec->ucDesiredPhyTypeSet);
 
 	DBGLOG(SW4, INFO,
 	       "Sta Operation 0x%x  DesiredNontHtRateSet  0x%x Mcs 0x%x u2HtCapInfo 0x%x\n",
-	       prStaRec->u2OperationalRateSet, prStaRec->u2DesiredNonHTRateSet, prStaRec->ucMcsSet,
+	       prStaRec->u2OperationalRateSet,
+	       prStaRec->u2DesiredNonHTRateSet, prStaRec->ucMcsSet,
 	       prStaRec->u2HtCapInfo);
 
 	for (i = 0; i < NUM_OF_PER_STA_TX_QUEUES; i++)
-		DBGLOG(SW4, INFO, "TC %u Queue Len %u\n", i, prStaRec->aprTargetQueue[i]->u4NumElem);
+		DBGLOG(SW4, INFO, "TC %u Queue Len %u\n", i,
+		       prStaRec->aprTargetQueue[i]->u4NumElem);
 
-	DBGLOG(SW4, INFO, "BmpDeliveryAC %x\n", prStaRec->ucBmpDeliveryAC);
-	DBGLOG(SW4, INFO, "BmpTriggerAC  %x\n", prStaRec->ucBmpTriggerAC);
-	DBGLOG(SW4, INFO, "UapsdSpSupproted  %u\n", prStaRec->fgIsUapsdSupported);
+	DBGLOG(SW4, INFO, "BmpDeliveryAC %x\n",
+	       prStaRec->ucBmpDeliveryAC);
+	DBGLOG(SW4, INFO, "BmpTriggerAC  %x\n",
+	       prStaRec->ucBmpTriggerAC);
+	DBGLOG(SW4, INFO, "UapsdSpSupproted  %u\n",
+	       prStaRec->fgIsUapsdSupported);
 	DBGLOG(SW4, INFO, "IsQoS  %u\n", prStaRec->fgIsQoS);
 	DBGLOG(SW4, INFO, "AssocId %u\n", prStaRec->u2AssocId);
 
 	DBGLOG(SW4, INFO, "fgIsInPS %u\n", prStaRec->fgIsInPS);
-	DBGLOG(SW4, INFO, "ucFreeQuota %u\n", prStaRec->ucFreeQuota);
-	DBGLOG(SW4, INFO, "ucFreeQuotaForDelivery %u\n", prStaRec->ucFreeQuotaForDelivery);
-	DBGLOG(SW4, INFO, "ucFreeQuotaForNonDelivery %u\n", prStaRec->ucFreeQuotaForNonDelivery);
+	DBGLOG(SW4, INFO, "ucFreeQuota %u\n",
+	       prStaRec->ucFreeQuota);
+	DBGLOG(SW4, INFO, "ucFreeQuotaForDelivery %u\n",
+	       prStaRec->ucFreeQuotaForDelivery);
+	DBGLOG(SW4, INFO, "ucFreeQuotaForNonDelivery %u\n",
+	       prStaRec->ucFreeQuotaForNonDelivery);
 
 #if 0
-	DBGLOG(SW4, INFO, "IsQmmSup  %u\n", prStaRec->fgIsWmmSupported);
-	DBGLOG(SW4, INFO, "IsUapsdSup  %u\n", prStaRec->fgIsUapsdSupported);
-	DBGLOG(SW4, INFO, "AvailabaleDeliverPkts  %u\n", prStaRec->ucAvailableDeliverPkts);
-	DBGLOG(SW4, INFO, "BmpDeliverPktsAC  %u\n", prStaRec->u4BmpDeliverPktsAC);
-	DBGLOG(SW4, INFO, "BmpBufferAC  %u\n", prStaRec->u4BmpBufferAC);
-	DBGLOG(SW4, INFO, "BmpNonDeliverPktsAC  %u\n", prStaRec->u4BmpNonDeliverPktsAC);
+	DBGLOG(SW4, INFO, "IsQmmSup  %u\n",
+	       prStaRec->fgIsWmmSupported);
+	DBGLOG(SW4, INFO, "IsUapsdSup  %u\n",
+	       prStaRec->fgIsUapsdSupported);
+	DBGLOG(SW4, INFO, "AvailabaleDeliverPkts  %u\n",
+	       prStaRec->ucAvailableDeliverPkts);
+	DBGLOG(SW4, INFO, "BmpDeliverPktsAC  %u\n",
+	       prStaRec->u4BmpDeliverPktsAC);
+	DBGLOG(SW4, INFO, "BmpBufferAC  %u\n",
+	       prStaRec->u4BmpBufferAC);
+	DBGLOG(SW4, INFO, "BmpNonDeliverPktsAC  %u\n",
+	       prStaRec->u4BmpNonDeliverPktsAC);
 #endif
 
 	for (i = 0; i < CFG_RX_MAX_BA_TID_NUM; i++) {
 		if (prStaRec->aprRxReorderParamRefTbl[i]) {
-			DBGLOG(SW4, INFO, "RxReorder fgIsValid: %u\n", prStaRec->aprRxReorderParamRefTbl[i]->fgIsValid);
-			DBGLOG(SW4, INFO, "RxReorder Tid: %u\n", prStaRec->aprRxReorderParamRefTbl[i]->ucTid);
+			DBGLOG(SW4, INFO, "RxReorder fgIsValid: %u\n",
+				prStaRec->aprRxReorderParamRefTbl[i]->
+				fgIsValid);
+			DBGLOG(SW4, INFO, "RxReorder Tid: %u\n",
+				prStaRec->aprRxReorderParamRefTbl[i]->ucTid);
 			DBGLOG(SW4, INFO,
-			       "RxReorder rReOrderQue Len: %u\n",
-			       prStaRec->aprRxReorderParamRefTbl[i]->rReOrderQue.u4NumElem);
-			DBGLOG(SW4, INFO, "RxReorder WinStart: %u\n", prStaRec->aprRxReorderParamRefTbl[i]->u2WinStart);
-			DBGLOG(SW4, INFO, "RxReorder WinEnd: %u\n", prStaRec->aprRxReorderParamRefTbl[i]->u2WinEnd);
-			DBGLOG(SW4, INFO, "RxReorder WinSize: %u\n", prStaRec->aprRxReorderParamRefTbl[i]->u2WinSize);
+				"RxReorder rReOrderQue Len: %u\n",
+				prStaRec->aprRxReorderParamRefTbl[i]->
+				rReOrderQue.u4NumElem);
+			DBGLOG(SW4, INFO, "RxReorder WinStart: %u\n",
+				prStaRec->aprRxReorderParamRefTbl[i]->
+				u2WinStart);
+			DBGLOG(SW4, INFO, "RxReorder WinEnd: %u\n",
+				 prStaRec->aprRxReorderParamRefTbl[i]->
+				 u2WinEnd);
+			DBGLOG(SW4, INFO, "RxReorder WinSize: %u\n",
+				prStaRec->aprRxReorderParamRefTbl[i]->
+				u2WinSize);
 		}
 	}
 
 }
 
-void dumpBss(struct ADAPTER *prAdapter, struct BSS_INFO *prBssInfo)
+void dumpBss(struct ADAPTER *prAdapter,
+	     struct BSS_INFO *prBssInfo)
 {
 
 	DBGLOG(SW4, INFO, "SSID %s\n", prBssInfo->aucSSID);
-	DBGLOG(SW4, INFO, "OWN " MACSTR "\n", MAC2STR(prBssInfo->aucOwnMacAddr));
-	DBGLOG(SW4, INFO, "BSSID " MACSTR "\n", MAC2STR(prBssInfo->aucBSSID));
-	DBGLOG(SW4, INFO, "eNetworkType %u\n", prBssInfo->eNetworkType);
+	DBGLOG(SW4, INFO, "OWN " MACSTR "\n",
+	       MAC2STR(prBssInfo->aucOwnMacAddr));
+	DBGLOG(SW4, INFO, "BSSID " MACSTR "\n",
+	       MAC2STR(prBssInfo->aucBSSID));
+	DBGLOG(SW4, INFO, "eNetworkType %u\n",
+	       prBssInfo->eNetworkType);
 	DBGLOG(SW4, INFO, "ucBssIndex %u\n", prBssInfo->ucBssIndex);
-	DBGLOG(SW4, INFO, "eConnectionState %u\n", prBssInfo->eConnectionState);
-	DBGLOG(SW4, INFO, "eCurrentOPMode %u\n", prBssInfo->eCurrentOPMode);
+	DBGLOG(SW4, INFO, "eConnectionState %u\n",
+	       prBssInfo->eConnectionState);
+	DBGLOG(SW4, INFO, "eCurrentOPMode %u\n",
+	       prBssInfo->eCurrentOPMode);
 	DBGLOG(SW4, INFO, "fgIsQBSS %u\n", prBssInfo->fgIsQBSS);
-	DBGLOG(SW4, INFO, "fgIsShortPreambleAllowed %u\n", prBssInfo->fgIsShortPreambleAllowed);
-	DBGLOG(SW4, INFO, "fgUseShortPreamble %u\n", prBssInfo->fgUseShortPreamble);
-	DBGLOG(SW4, INFO, "fgUseShortSlotTime %u\n", prBssInfo->fgUseShortSlotTime);
-	DBGLOG(SW4, INFO, "ucNonHTBasicPhyType %x\n", prBssInfo->ucNonHTBasicPhyType);
-	DBGLOG(SW4, INFO, "u2OperationalRateSet %x\n", prBssInfo->u2OperationalRateSet);
-	DBGLOG(SW4, INFO, "u2BSSBasicRateSet %x\n", prBssInfo->u2BSSBasicRateSet);
-	DBGLOG(SW4, INFO, "ucPhyTypeSet %x\n", prBssInfo->ucPhyTypeSet);
-	DBGLOG(SW4, INFO, "rStaRecOfClientList %d\n", prBssInfo->rStaRecOfClientList.u4NumElem);
+	DBGLOG(SW4, INFO, "fgIsShortPreambleAllowed %u\n",
+	       prBssInfo->fgIsShortPreambleAllowed);
+	DBGLOG(SW4, INFO, "fgUseShortPreamble %u\n",
+	       prBssInfo->fgUseShortPreamble);
+	DBGLOG(SW4, INFO, "fgUseShortSlotTime %u\n",
+	       prBssInfo->fgUseShortSlotTime);
+	DBGLOG(SW4, INFO, "ucNonHTBasicPhyType %x\n",
+	       prBssInfo->ucNonHTBasicPhyType);
+	DBGLOG(SW4, INFO, "u2OperationalRateSet %x\n",
+	       prBssInfo->u2OperationalRateSet);
+	DBGLOG(SW4, INFO, "u2BSSBasicRateSet %x\n",
+	       prBssInfo->u2BSSBasicRateSet);
+	DBGLOG(SW4, INFO, "ucPhyTypeSet %x\n",
+	       prBssInfo->ucPhyTypeSet);
+	DBGLOG(SW4, INFO, "rStaRecOfClientList %d\n",
+	       prBssInfo->rStaRecOfClientList.u4NumElem);
 	DBGLOG(SW4, INFO, "u2CapInfo %x\n", prBssInfo->u2CapInfo);
-	DBGLOG(SW4, INFO, "u2ATIMWindow %x\n", prBssInfo->u2ATIMWindow);
+	DBGLOG(SW4, INFO, "u2ATIMWindow %x\n",
+	       prBssInfo->u2ATIMWindow);
 	DBGLOG(SW4, INFO, "u2AssocId %x\n", prBssInfo->u2AssocId);
-	DBGLOG(SW4, INFO, "ucDTIMPeriod %x\n", prBssInfo->ucDTIMPeriod);
-	DBGLOG(SW4, INFO, "ucDTIMCount %x\n", prBssInfo->ucDTIMCount);
-	DBGLOG(SW4, INFO, "fgIsNetAbsent %x\n", prBssInfo->fgIsNetAbsent);
+	DBGLOG(SW4, INFO, "ucDTIMPeriod %x\n",
+	       prBssInfo->ucDTIMPeriod);
+	DBGLOG(SW4, INFO, "ucDTIMCount %x\n",
+	       prBssInfo->ucDTIMCount);
+	DBGLOG(SW4, INFO, "fgIsNetAbsent %x\n",
+	       prBssInfo->fgIsNetAbsent);
 	DBGLOG(SW4, INFO, "eBand %d\n", prBssInfo->eBand);
-	DBGLOG(SW4, INFO, "ucPrimaryChannel %d\n", prBssInfo->ucPrimaryChannel);
-	DBGLOG(SW4, INFO, "ucHtOpInfo1 %d\n", prBssInfo->ucHtOpInfo1);
-	DBGLOG(SW4, INFO, "ucHtOpInfo2 %d\n", prBssInfo->u2HtOpInfo2);
-	DBGLOG(SW4, INFO, "ucHtOpInfo3 %d\n", prBssInfo->u2HtOpInfo3);
-	DBGLOG(SW4, INFO, "fgErpProtectMode %d\n", prBssInfo->fgErpProtectMode);
-	DBGLOG(SW4, INFO, "eHtProtectMode %d\n", prBssInfo->eHtProtectMode);
-	DBGLOG(SW4, INFO, "eGfOperationMode %d\n", prBssInfo->eGfOperationMode);
-	DBGLOG(SW4, INFO, "eRifsOperationMode %d\n", prBssInfo->eRifsOperationMode);
-	DBGLOG(SW4, INFO, "fgObssErpProtectMode %d\n", prBssInfo->fgObssErpProtectMode);
-	DBGLOG(SW4, INFO, "eObssHtProtectMode %d\n", prBssInfo->eObssHtProtectMode);
-	DBGLOG(SW4, INFO, "eObssGfProtectMode %d\n", prBssInfo->eObssGfOperationMode);
-	DBGLOG(SW4, INFO, "fgObssRifsOperationMode %d\n", prBssInfo->fgObssRifsOperationMode);
-	DBGLOG(SW4, INFO, "fgAssoc40mBwAllowed %d\n", prBssInfo->fgAssoc40mBwAllowed);
-	DBGLOG(SW4, INFO, "fg40mBwAllowed %d\n", prBssInfo->fg40mBwAllowed);
+	DBGLOG(SW4, INFO, "ucPrimaryChannel %d\n",
+	       prBssInfo->ucPrimaryChannel);
+	DBGLOG(SW4, INFO, "ucHtOpInfo1 %d\n",
+	       prBssInfo->ucHtOpInfo1);
+	DBGLOG(SW4, INFO, "ucHtOpInfo2 %d\n",
+	       prBssInfo->u2HtOpInfo2);
+	DBGLOG(SW4, INFO, "ucHtOpInfo3 %d\n",
+	       prBssInfo->u2HtOpInfo3);
+	DBGLOG(SW4, INFO, "fgErpProtectMode %d\n",
+	       prBssInfo->fgErpProtectMode);
+	DBGLOG(SW4, INFO, "eHtProtectMode %d\n",
+	       prBssInfo->eHtProtectMode);
+	DBGLOG(SW4, INFO, "eGfOperationMode %d\n",
+	       prBssInfo->eGfOperationMode);
+	DBGLOG(SW4, INFO, "eRifsOperationMode %d\n",
+	       prBssInfo->eRifsOperationMode);
+	DBGLOG(SW4, INFO, "fgObssErpProtectMode %d\n",
+	       prBssInfo->fgObssErpProtectMode);
+	DBGLOG(SW4, INFO, "eObssHtProtectMode %d\n",
+	       prBssInfo->eObssHtProtectMode);
+	DBGLOG(SW4, INFO, "eObssGfProtectMode %d\n",
+	       prBssInfo->eObssGfOperationMode);
+	DBGLOG(SW4, INFO, "fgObssRifsOperationMode %d\n",
+	       prBssInfo->fgObssRifsOperationMode);
+	DBGLOG(SW4, INFO, "fgAssoc40mBwAllowed %d\n",
+	       prBssInfo->fgAssoc40mBwAllowed);
+	DBGLOG(SW4, INFO, "fg40mBwAllowed %d\n",
+	       prBssInfo->fg40mBwAllowed);
 	DBGLOG(SW4, INFO, "eBssSCO %d\n", prBssInfo->eBssSCO);
 
 }
 
-void swCtrlCmdCategory0(struct ADAPTER *prAdapter, uint8_t ucCate, uint8_t ucAction, uint8_t ucOpt0, uint8_t ucOpt1)
+void swCtrlCmdCategory0(struct ADAPTER *prAdapter,
+			uint8_t ucCate, uint8_t ucAction, uint8_t ucOpt0,
+			uint8_t ucOpt1)
 {
 	uint8_t ucIndex, ucRead;
 	uint32_t i;
@@ -399,154 +473,201 @@ void swCtrlCmdCategory0(struct ADAPTER *prAdapter, uint8_t ucCate, uint8_t ucAct
 				prAdapter->rQM.au4QmDebugCounters[i] = 0;
 			break;
 		case SWCTRL_QM_DBG_CNT:
-			prAdapter->rQM.au4QmDebugCounters[ucOpt0] = g_au4SwCr[1];
+			prAdapter->rQM.au4QmDebugCounters[ucOpt0] =
+				g_au4SwCr[1];
 
 			break;
 #endif
 #if CFG_RX_PKTS_DUMP
 		case SWCTRL_RX_PKTS_DUMP:
-			/* DBGLOG(SW4, INFO,("SWCTRL_RX_PKTS_DUMP: mask %x\n", g_au4SwCr[1])); */
 			prAdapter->rRxCtrl.u4RxPktsDumpTypeMask = g_au4SwCr[1];
 			break;
 #endif
-		case SWCTRL_RX_FILTER:
-			{
-				uint32_t u4rxfilter;
-				u_int8_t fgUpdate = FALSE;
-				uint32_t rStatus = WLAN_STATUS_SUCCESS;
+		case SWCTRL_RX_FILTER: {
+			uint32_t u4rxfilter;
+			u_int8_t fgUpdate = FALSE;
+			uint32_t rStatus = WLAN_STATUS_SUCCESS;
 
-				if (ucOpt0 == SWCR_RX_FILTER_CMD_STOP) {
-					g_u4RXFilter &= ~(RX_FILTER_START);
-/* changed by jeffrey to align Android behavior */
+			if (ucOpt0 == SWCR_RX_FILTER_CMD_STOP) {
+				g_u4RXFilter &= ~(RX_FILTER_START);
+				/* changed by jeffrey to align
+				 * Android behavior
+				 */
 #if 0
-					if (prAdapter->fgAllMulicastFilter == FALSE)
-						prAdapter->u4OsPacketFilter &= ~PARAM_PACKET_FILTER_ALL_MULTICAST;
+				if (prAdapter->fgAllMulicastFilter == FALSE)
+					prAdapter->u4OsPacketFilter &=
+					~PARAM_PACKET_FILTER_ALL_MULTICAST;
 #endif
-					prAdapter->u4OsPacketFilter &= ~PARAM_PACKET_FILTER_MULTICAST;
-					u4rxfilter = prAdapter->u4OsPacketFilter;
-					fgUpdate = TRUE;
-				} else if (ucOpt0 == SWCR_RX_FILTER_CMD_START) {
-					g_u4RXFilter |= (RX_FILTER_START);
+				prAdapter->u4OsPacketFilter &=
+					~PARAM_PACKET_FILTER_MULTICAST;
+				u4rxfilter = prAdapter->u4OsPacketFilter;
+				fgUpdate = TRUE;
+			} else if (ucOpt0 == SWCR_RX_FILTER_CMD_START) {
+				g_u4RXFilter |= (RX_FILTER_START);
 
-					if ((g_u4RXFilter & RX_FILTER_IPV4) || (g_u4RXFilter & RX_FILTER_IPV6)) {
+				if ((g_u4RXFilter & RX_FILTER_IPV4)
+				    || (g_u4RXFilter & RX_FILTER_IPV6)) {
 #if 0
-						prAdapter->u4OsPacketFilter |= PARAM_PACKET_FILTER_ALL_MULTICAST;
+					prAdapter->u4OsPacketFilter |=
+					PARAM_PACKET_FILTER_ALL_MULTICAST;
 #endif
-						prAdapter->u4OsPacketFilter |= PARAM_PACKET_FILTER_MULTICAST;
-					}
-					u4rxfilter = prAdapter->u4OsPacketFilter;
-					fgUpdate = TRUE;
-				} else if (ucOpt0 == SWCR_RX_FILTER_CMD_ADD) {
-					if (ucOpt1 < 31)
-						g_u4RXFilter |= (1 << ucOpt1);
-				} else if (ucOpt0 == SWCR_RX_FILTER_CMD_REMOVE) {
-					if (ucOpt1 < 31)
-						g_u4RXFilter &= ~(1 << ucOpt1);
+					prAdapter->u4OsPacketFilter |=
+						PARAM_PACKET_FILTER_MULTICAST;
 				}
-
-				if (fgUpdate == TRUE) {
-					rSetRxPacketFilter.u4RxPacketFilter = u4rxfilter;
-					rStatus =
-					wlanoidSetPacketFilter(prAdapter, &rSetRxPacketFilter, FALSE, NULL, 0);
-				}
-				/* DBGLOG(SW4, INFO,("SWCTRL_RX_FILTER:
-				* g_u4RXFilter %x ucOpt0 %x ucOpt1 %x fgUpdate %x u4rxfilter %x, rStatus %x\n",
-				*/
-				/* g_u4RXFilter, ucOpt0, ucOpt1, fgUpdate, u4rxfilter, rStatus)); */
+				u4rxfilter = prAdapter->u4OsPacketFilter;
+				fgUpdate = TRUE;
+			} else if (ucOpt0 == SWCR_RX_FILTER_CMD_ADD) {
+				if (ucOpt1 < 31)
+					g_u4RXFilter |= (1 << ucOpt1);
+			} else if (ucOpt0 == SWCR_RX_FILTER_CMD_REMOVE) {
+				if (ucOpt1 < 31)
+					g_u4RXFilter &= ~(1 << ucOpt1);
 			}
-			break;
+
+			if (fgUpdate == TRUE) {
+				rSetRxPacketFilter.
+				u4RxPacketFilter = u4rxfilter;
+				rStatus =
+					wlanoidSetPacketFilter(
+						prAdapter, &rSetRxPacketFilter,
+						FALSE, NULL, 0);
+			}
+			/* DBGLOG(SW4, INFO,("SWCTRL_RX_FILTER:
+			 * g_u4RXFilter %x ucOpt0 %x ucOpt1 %x fgUpdate %x
+			 *  u4rxfilter %x, rStatus %x\n",
+			 * g_u4RXFilter, ucOpt0, ucOpt1,
+			 * fgUpdate, u4rxfilter, rStatus));
+			 */
+		}
+		break;
 
 #if CFG_INIT_ENABLE_PATTERN_FILTER_ARP
-		case SWCTRL_RX_ARP_OFFLOAD:
-			{
-				uint32_t rStatus = WLAN_STATUS_FAILURE;
-				uint32_t u4SetInfoLen = 0;
-				uint32_t u4Len = OFFSET_OF(struct PARAM_NETWORK_ADDRESS_LIST, arAddress);
-				uint32_t u4NumIPv4 = 0, u4NumIPv6 = 0;
-				uint32_t i = 0;
-				uint8_t *pucBufIpAddr = NULL;
-				struct PARAM_NETWORK_ADDRESS_LIST *prParamNetAddrList = NULL;
-				struct PARAM_NETWORK_ADDRESS_IP *prParamIpAddr = NULL;
-				uint8_t *pucIp = NULL;
-				/* PUINT_8                         pucIpv6 = NULL; */
-				uint32_t bufSize =
-				    u4Len + (OFFSET_OF(struct PARAM_NETWORK_ADDRESS, aucAddress) +
-					     sizeof(struct PARAM_NETWORK_ADDRESS_IP)) * 3;
-				struct PARAM_NETWORK_ADDRESS *prParamNetAddr = NULL;
+		case SWCTRL_RX_ARP_OFFLOAD: {
+			uint32_t rStatus = WLAN_STATUS_FAILURE;
+			uint32_t u4SetInfoLen = 0;
+			uint32_t u4Len = OFFSET_OF(struct
+				PARAM_NETWORK_ADDRESS_LIST, arAddress);
+			uint32_t u4NumIPv4 = 0, u4NumIPv6 = 0;
+			uint32_t i = 0;
+			uint8_t *pucBufIpAddr = NULL;
+			struct PARAM_NETWORK_ADDRESS_LIST *prParamNetAddrList =
+					NULL;
+			struct PARAM_NETWORK_ADDRESS_IP *prParamIpAddr = NULL;
+			uint8_t *pucIp = NULL;
+			/* PUINT_8                         pucIpv6 = NULL; */
+			uint32_t bufSize =
+				u4Len + (OFFSET_OF(struct PARAM_NETWORK_ADDRESS,
+				aucAddress) +
+				sizeof(
+				struct PARAM_NETWORK_ADDRESS_IP)) * 3;
+			struct PARAM_NETWORK_ADDRESS *prParamNetAddr = NULL;
 
-				/* <1> allocate IP address buffer */
-				pucBufIpAddr = kalMemAlloc(bufSize, VIR_MEM_TYPE);
-				pucIp = kalMemAlloc(3 * 4, VIR_MEM_TYPE);	/* TODO: replace 3 to macro */
+			/* <1> allocate IP address buffer */
+			pucBufIpAddr = kalMemAlloc(bufSize, VIR_MEM_TYPE);
+			/* TODO: replace 3 to macro */
+			pucIp = kalMemAlloc(3 * 4, VIR_MEM_TYPE);
 
-				prParamNetAddrList = (struct PARAM_NETWORK_ADDRESS_LIST *) pucBufIpAddr;
-				prParamNetAddr = prParamNetAddrList->arAddress;
-				/* <2> clear IP address buffer */
-				kalMemZero(pucBufIpAddr, bufSize);
-				kalMemZero(pucIp, 3 * 4);
+			prParamNetAddrList =
+				(struct PARAM_NETWORK_ADDRESS_LIST *)
+				pucBufIpAddr;
+			prParamNetAddr = prParamNetAddrList->arAddress;
+			/* <2> clear IP address buffer */
+			kalMemZero(pucBufIpAddr, bufSize);
+			kalMemZero(pucIp, 3 * 4);
 
-				/* <3> setup the number of IP address */
-				if (ucOpt1 == 1) {
-					if (wlanGetIPV4Address(prAdapter->prGlueInfo, pucIp, &u4NumIPv4) &&
-						u4NumIPv4 > 3)	/* TODO: repleace 3 to macro */
-						u4NumIPv4 = 3;
-				} else if (ucOpt1 == 0) {
-					u4NumIPv4 = u4NumIPv6 = 0;
-				}
-				DBGLOG(INIT, INFO, "u4Len:%d bufSize:%d u4NumIPv4:%d\n", u4Len, bufSize, u4NumIPv4);
+			/* <3> setup the number of IP address */
+			if (ucOpt1 == 1) {
+				/* TODO: repleace 3 to macro */
+				if (wlanGetIPV4Address(
+						prAdapter->prGlueInfo, pucIp,
+						&u4NumIPv4) && u4NumIPv4 > 3)
+					u4NumIPv4 = 3;
+			} else if (ucOpt1 == 0) {
+				u4NumIPv4 = u4NumIPv6 = 0;
+			}
+			DBGLOG(INIT, INFO, "u4Len:%d bufSize:%d u4NumIPv4:%d\n",
+			       u4Len, bufSize, u4NumIPv4);
 
-				prParamNetAddrList->u4AddressCount = u4NumIPv6 + u4NumIPv4;
-				prParamNetAddrList->u2AddressType = PARAM_PROTOCOL_ID_TCP_IP;
+			prParamNetAddrList->u4AddressCount =
+				u4NumIPv6 + u4NumIPv4;
+			prParamNetAddrList->u2AddressType =
+				PARAM_PROTOCOL_ID_TCP_IP;
 
-				for (i = 0; i < u4NumIPv4; i++) {
-					prParamNetAddr->u2AddressLength = sizeof(struct PARAM_NETWORK_ADDRESS_IP);
-					prParamNetAddr->u2AddressType = PARAM_PROTOCOL_ID_TCP_IP;
-					prParamIpAddr = (struct PARAM_NETWORK_ADDRESS_IP *) prParamNetAddr->aucAddress;
-					kalMemCopy(&prParamIpAddr->in_addr, pucIp + (i * 4), 4);
-					prParamNetAddr =
-					    (struct PARAM_NETWORK_ADDRESS *) ((uint32_t) prParamNetAddr +
-								       OFFSET_OF
-								       (struct PARAM_NETWORK_ADDRESS,
-									aucAddress) + sizeof(struct PARAM_NETWORK_ADDRESS_IP));
-					u4Len +=
-					    OFFSET_OF(struct PARAM_NETWORK_ADDRESS,
-						      aucAddress) + sizeof(struct PARAM_NETWORK_ADDRESS_IP);
-				}
+			for (i = 0; i < u4NumIPv4; i++) {
+				prParamNetAddr->u2AddressLength = sizeof(struct
+					PARAM_NETWORK_ADDRESS_IP);
+				prParamNetAddr->u2AddressType =
+					PARAM_PROTOCOL_ID_TCP_IP;
+				prParamIpAddr =
+					(struct PARAM_NETWORK_ADDRESS_IP *)
+					prParamNetAddr->aucAddress;
+				kalMemCopy(&prParamIpAddr->in_addr,
+					pucIp + (i * 4), 4);
+				prParamNetAddr =
+					(struct PARAM_NETWORK_ADDRESS *)
+						((uint32_t) prParamNetAddr +
+							OFFSET_OF
+							(struct
+							PARAM_NETWORK_ADDRESS,
+							aucAddress) +
+							sizeof(
+							struct
+							PARAM_NETWORK_ADDRESS_IP
+							));
+				u4Len +=
+					OFFSET_OF(struct PARAM_NETWORK_ADDRESS,
+						  aucAddress) +
+						  sizeof(
+						  struct
+						  PARAM_NETWORK_ADDRESS_IP);
+			}
 
 #if 0
 #ifdef CONFIG_IPV6
-				if (!wlanGetIPV6Address(prAdapter->prGlueInfo, pucIp, &u4NumIPv6)
-				    || (u4NumIPv6 + u4NumIPv4) > 3) {
-					goto bailout;
-				}
-
-				pucIpv6 = kalMemAlloc(u4NumIPv6 * 16, VIR_MEM_TYPE);
-
-				for (i = 0; i < u4NumIPv6; i++) {
-					prParamNetAddr->u2AddressLength = 6;
-					prParamNetAddr->u2AddressType = PARAM_PROTOCOL_ID_TCP_IP;
-					kalMemCopy(prParamNetAddr->aucAddress, pucIpv6 + (i * 16), 16);
-					prParamNetAddr =
-					    (struct PARAM_NETWORK_ADDRESS *) ((uint32_t) prParamNetAddr + sizeof(ip6));
-					u4Len += OFFSET_OF(struct PARAM_NETWORK_ADDRESS, aucAddress) + sizeof(ip6);
-				}
-#endif
-#endif
-
-				ASSERT(u4Len <= bufSize);
-
-				rStatus = wlanoidSetNetworkAddress(prAdapter,
-								   (void *) prParamNetAddrList, u4Len, &u4SetInfoLen);
-
-				if (rStatus != WLAN_STATUS_SUCCESS)
-					DBGLOG(INIT, INFO, "set HW packet filter fail 0x%1x\n", rStatus);
-
-				if (pucIp)
-					kalMemFree(pucIp, VIR_MEM_TYPE, 3 * 4);	/* TODO: replace 3 to marco */
-				if (pucBufIpAddr)
-					kalMemFree(pucBufIpAddr, VIR_MEM_TYPE, bufSize);
-
+			if (!wlanGetIPV6Address(prAdapter->prGlueInfo, pucIp,
+						&u4NumIPv6)
+			    || (u4NumIPv6 + u4NumIPv4) > 3) {
+				goto bailout;
 			}
-			break;
+
+			pucIpv6 = kalMemAlloc(u4NumIPv6 * 16, VIR_MEM_TYPE);
+
+			for (i = 0; i < u4NumIPv6; i++) {
+				prParamNetAddr->u2AddressLength = 6;
+				prParamNetAddr->u2AddressType =
+					PARAM_PROTOCOL_ID_TCP_IP;
+				kalMemCopy(prParamNetAddr->aucAddress,
+					pucIpv6 + (i * 16),
+					16);
+				prParamNetAddr =
+					(struct PARAM_NETWORK_ADDRESS *)
+					((uint32_t) prParamNetAddr +
+						sizeof(ip6));
+				u4Len += OFFSET_OF(struct PARAM_NETWORK_ADDRESS,
+						   aucAddress) + sizeof(ip6);
+			}
+#endif
+#endif
+
+			ASSERT(u4Len <= bufSize);
+
+			rStatus = wlanoidSetNetworkAddress(prAdapter,
+				(void *) prParamNetAddrList,
+				u4Len, &u4SetInfoLen);
+
+			if (rStatus != WLAN_STATUS_SUCCESS)
+				DBGLOG(INIT, INFO,
+					"set HW packet filter fail 0x%1x\n",
+				  rStatus);
+
+			/* TODO: replace 3 to marco */
+			if (pucIp)
+				kalMemFree(pucIp, VIR_MEM_TYPE, 3 * 4);
+			if (pucBufIpAddr)
+				kalMemFree(pucBufIpAddr, VIR_MEM_TYPE, bufSize);
+
+		}
+		break;
 #endif
 		case SWCTRL_PS_DTIM_SKIP:
 			break;
@@ -562,48 +683,58 @@ void swCtrlCmdCategory0(struct ADAPTER *prAdapter, uint8_t ucCate, uint8_t ucAct
 		case SWCTRL_MAGIC:
 			g_au4SwCr[1] = _SWCTRL_MAGIC;
 			break;
-		case SWCTRL_QM_INFO:
-			{
-				struct QUE_MGT *prQM = &prAdapter->rQM;
+		case SWCTRL_QM_INFO: {
+			struct QUE_MGT *prQM = &prAdapter->rQM;
 
-				switch (ucOpt0) {
-				case 0:
+			switch (ucOpt0) {
+			case 0:
 #if QM_ADAPTIVE_TC_RESOURCE_CTRL
-					g_au4SwCr[1] = (QM_GET_TX_QUEUE_LEN(prAdapter, ucOpt1));
-					g_au4SwCr[2] = prQM->au4MinReservedTcResource[ucOpt1];
-					g_au4SwCr[3] = prQM->au4CurrentTcResource[ucOpt1];
-					g_au4SwCr[4] = prQM->au4GuaranteedTcResource[ucOpt1];
+				g_au4SwCr[1] =
+					(QM_GET_TX_QUEUE_LEN(prAdapter,
+						ucOpt1));
+				g_au4SwCr[2] =
+					prQM->au4MinReservedTcResource[ucOpt1];
+				g_au4SwCr[3] =
+					prQM->au4CurrentTcResource[ucOpt1];
+				g_au4SwCr[4] =
+					prQM->au4GuaranteedTcResource[ucOpt1];
 #endif
-					break;
+				break;
 
-				case 1:
+			case 1:
 #if QM_FORWARDING_FAIRNESS
-					g_au4SwCr[1] = prQM->au4ResourceUsedCount[ucOpt1];
-					g_au4SwCr[2] = prQM->au4HeadStaRecIndex[ucOpt1];
+				g_au4SwCr[1] =
+					prQM->au4ResourceUsedCount[ucOpt1];
+				g_au4SwCr[2] = prQM->au4HeadStaRecIndex[ucOpt1];
 #endif
-					break;
+				break;
 
-				case 2:
-					g_au4SwCr[1] = prQM->arTxQueue[ucOpt1].u4NumElem;	/* only one */
+			case 2:
+				/* only one */
+				g_au4SwCr[1] =
+					prQM->arTxQueue[ucOpt1].u4NumElem;
 
-					break;
-				}
+				break;
 			}
-			break;
-		case SWCTRL_TX_CTRL_INFO:
-			{
-				struct TX_CTRL *prTxCtrl;
+		}
+		break;
+		case SWCTRL_TX_CTRL_INFO: {
+			struct TX_CTRL *prTxCtrl;
 
-				prTxCtrl = &prAdapter->rTxCtrl;
-				switch (ucOpt0) {
-				case 0:
-					g_au4SwCr[1] = prAdapter->rTxCtrl.rTc.au4FreeBufferCount[ucOpt1];
-					g_au4SwCr[2] = prAdapter->rTxCtrl.rTc.au4MaxNumOfBuffer[ucOpt1];
-					break;
-				}
-
+			prTxCtrl = &prAdapter->rTxCtrl;
+			switch (ucOpt0) {
+			case 0:
+				g_au4SwCr[1] =
+					prAdapter->rTxCtrl.rTc.
+					au4FreeBufferCount[ucOpt1];
+				g_au4SwCr[2] =
+					prAdapter->rTxCtrl.rTc.
+					au4MaxNumOfBuffer[ucOpt1];
+				break;
 			}
-			break;
+
+		}
+		break;
 		case SWCTRL_DUMP_QUEUE:
 			dumpQueue(prAdapter);
 
@@ -611,18 +742,20 @@ void swCtrlCmdCategory0(struct ADAPTER *prAdapter, uint8_t ucCate, uint8_t ucAct
 #if QM_DEBUG_COUNTER
 		case SWCTRL_DUMP_QM_DBG_CNT:
 			for (i = 0; i < QM_DBG_CNT_NUM; i++)
-				DBGLOG(SW4, INFO, "QM:DBG %u %u\n", i, prAdapter->rQM.au4QmDebugCounters[i]);
+				DBGLOG(SW4, INFO, "QM:DBG %u %u\n", i,
+				       prAdapter->rQM.au4QmDebugCounters[i]);
 			break;
 
 		case SWCTRL_QM_DBG_CNT:
-			g_au4SwCr[1] = prAdapter->rQM.au4QmDebugCounters[ucOpt0];
+			g_au4SwCr[1] =
+				prAdapter->rQM.au4QmDebugCounters[ucOpt0];
 			break;
 #endif
-		case SWCTRL_DUMP_BSS:
-			{
-				dumpBss(prAdapter, GET_BSS_INFO_BY_INDEX(prAdapter, ucOpt0));
-			}
-			break;
+		case SWCTRL_DUMP_BSS: {
+			dumpBss(prAdapter, GET_BSS_INFO_BY_INDEX(prAdapter,
+					ucOpt0));
+		}
+		break;
 
 		default:
 			break;
@@ -631,7 +764,9 @@ void swCtrlCmdCategory0(struct ADAPTER *prAdapter, uint8_t ucCate, uint8_t ucAct
 	}
 }
 
-void swCtrlCmdCategory1(struct ADAPTER *prAdapter, uint8_t ucCate, uint8_t ucAction, uint8_t ucOpt0, uint8_t ucOpt1)
+void swCtrlCmdCategory1(struct ADAPTER *prAdapter,
+			uint8_t ucCate, uint8_t ucAction, uint8_t ucOpt0,
+			uint8_t ucOpt1)
 {
 	uint8_t ucIndex, ucRead;
 	uint8_t ucWTEntry;
@@ -652,11 +787,10 @@ void swCtrlCmdCategory1(struct ADAPTER *prAdapter, uint8_t ucCate, uint8_t ucAct
 	} else {
 		/* Read */
 		switch (ucIndex) {
-		case SWCTRL_STA_QUE_INFO:
-			{
-				g_au4SwCr[1] = prStaRec->arTxQueue[ucOpt1].u4NumElem;
-			}
-			break;
+		case SWCTRL_STA_QUE_INFO: {
+			g_au4SwCr[1] = prStaRec->arTxQueue[ucOpt1].u4NumElem;
+		}
+		break;
 		case SWCTRL_STA_INFO:
 			switch (ucOpt1) {
 			case 0:
@@ -666,11 +800,10 @@ void swCtrlCmdCategory1(struct ADAPTER *prAdapter, uint8_t ucCate, uint8_t ucAct
 
 			break;
 
-		case SWCTRL_DUMP_STA:
-			{
-				dumpSTA(prAdapter, prStaRec);
-			}
-			break;
+		case SWCTRL_DUMP_STA: {
+			dumpSTA(prAdapter, prStaRec);
+		}
+		break;
 
 		default:
 
@@ -688,7 +821,8 @@ testPsSendQoSNullFrame(IN struct ADAPTER *prAdapter,
 		       IN uint8_t ucUP,
 		       IN uint8_t ucBssIndex,
 		       IN u_int8_t fgBMC,
-		       IN u_int8_t fgIsBurstEnd, IN u_int8_t ucPacketType, IN u_int8_t ucPsSessionID, IN u_int8_t fgSetEOSP)
+		       IN u_int8_t fgIsBurstEnd, IN u_int8_t ucPacketType,
+		       IN u_int8_t ucPsSessionID, IN u_int8_t fgSetEOSP)
 {
 	struct MSDU_INFO *prMsduInfo;
 	uint16_t u2EstimatedFrameLen;
@@ -699,31 +833,36 @@ testPsSendQoSNullFrame(IN struct ADAPTER *prAdapter,
 
 	/* 4 <1> Allocate a PKT_INFO_T for Null Frame */
 	/* Init with MGMT Header Length */
-	u2EstimatedFrameLen = MAC_TX_RESERVED_FIELD + WLAN_MAC_HEADER_QOS_LEN;
+	u2EstimatedFrameLen = MAC_TX_RESERVED_FIELD +
+			      WLAN_MAC_HEADER_QOS_LEN;
 
 	/* Allocate a MSDU_INFO_T */
 
 	prMsduInfo = cnmMgtPktAlloc(prAdapter, u2EstimatedFrameLen);
 
 	if (prMsduInfo == NULL) {
-		DBGLOG(SW4, WARN, "No PKT_INFO_T for sending Null Frame.\n");
+		DBGLOG(SW4, WARN,
+		       "No PKT_INFO_T for sending Null Frame.\n");
 		return;
 	}
 	/* 4 <2> Compose Null frame in MSDU_INfO_T. */
 	bssComposeQoSNullFrame(prAdapter,
-			       (uint8_t *) ((unsigned long) (prMsduInfo->prPacket) + MAC_TX_RESERVED_FIELD),
-			       prStaRec, ucUP, fgSetEOSP);
+		(uint8_t *) ((unsigned long) (prMsduInfo->prPacket) +
+		MAC_TX_RESERVED_FIELD),
+		prStaRec, ucUP, fgSetEOSP);
 
 	TX_SET_MMPDU(prAdapter,
 		     prMsduInfo,
 		     ucBssIndex,
-		     prStaRec->ucIndex, WLAN_MAC_HEADER_QOS_LEN, WLAN_MAC_HEADER_QOS_LEN, NULL, MSDU_RATE_MODE_AUTO);
+		     prStaRec->ucIndex, WLAN_MAC_HEADER_QOS_LEN,
+		     WLAN_MAC_HEADER_QOS_LEN, NULL, MSDU_RATE_MODE_AUTO);
 
 	prMsduInfo->ucUserPriority = ucUP;
 	prMsduInfo->ucPacketType = ucPacketType;
 
 	prQoSNullFrame = (struct WLAN_MAC_HEADER_QOS *) ((uint8_t *)
-						    ((unsigned long) (prMsduInfo->prPacket) + MAC_TX_RESERVED_FIELD));
+			 ((unsigned long) (prMsduInfo->prPacket) +
+			  MAC_TX_RESERVED_FIELD));
 
 	if (fgBMC)
 		prQoSNullFrame->aucAddr1[0] = 0xfd;
@@ -735,7 +874,8 @@ testPsSendQoSNullFrame(IN struct ADAPTER *prAdapter,
 
 }
 
-void testPsSetupBss(IN struct ADAPTER *prAdapter, IN uint8_t ucBssIndex)
+void testPsSetupBss(IN struct ADAPTER *prAdapter,
+		    IN uint8_t ucBssIndex)
 {
 	struct BSS_INFO *prBssInfo;
 	uint8_t _aucZeroMacAddr[] = NULL_MAC_ADDR;
@@ -751,15 +891,22 @@ void testPsSetupBss(IN struct ADAPTER *prAdapter, IN uint8_t ucBssIndex)
 	/* 4 <2> Initiate BSS_INFO_T - common part */
 	BSS_INFO_INIT(prAdapter, prBssInfo);
 
-	prBssInfo->eConnectionState = PARAM_MEDIA_STATE_DISCONNECTED;
-	prBssInfo->eConnectionStateIndicated = PARAM_MEDIA_STATE_DISCONNECTED;
+	prBssInfo->eConnectionState =
+		PARAM_MEDIA_STATE_DISCONNECTED;
+	prBssInfo->eConnectionStateIndicated =
+		PARAM_MEDIA_STATE_DISCONNECTED;
 	prBssInfo->eCurrentOPMode = OP_MODE_ACCESS_POINT;
 	prBssInfo->fgIsNetActive = TRUE;
 	prBssInfo->ucBssIndex = ucBssIndex;
-	prBssInfo->ucReasonOfDisconnect = DISCONNECT_REASON_CODE_RESERVED;
+	prBssInfo->ucReasonOfDisconnect =
+		DISCONNECT_REASON_CODE_RESERVED;
 
-	prBssInfo->ucPhyTypeSet = PHY_TYPE_SET_802_11BG;	/* Depend on eBand */
-	prBssInfo->ucConfigAdHocAPMode = AP_MODE_MIXED_11BG;	/* Depend on eCurrentOPMode and ucPhyTypeSet */
+	/* Depend on eBand */
+	prBssInfo->ucPhyTypeSet =
+		PHY_TYPE_SET_802_11BG;
+	/* Depend on eCurrentOPMode and ucPhyTypeSet */
+	prBssInfo->ucConfigAdHocAPMode =
+		AP_MODE_MIXED_11BG;
 	prBssInfo->u2BSSBasicRateSet = RATE_SET_ERP;
 	prBssInfo->u2OperationalRateSet = RATE_SET_OFDM;
 	prBssInfo->fgErpProtectMode = FALSE;
@@ -779,7 +926,8 @@ void testPsSetupBss(IN struct ADAPTER *prAdapter, IN uint8_t ucBssIndex)
 	prBssInfo->fgIsBeaconActivated = TRUE;
 	prBssInfo->u2HwDefaultFixedRateCode = RATE_CCK_1M_LONG;
 
-	COPY_MAC_ADDR(prBssInfo->aucOwnMacAddr, prAdapter->rWifiVar.aucMacAddress);
+	COPY_MAC_ADDR(prBssInfo->aucOwnMacAddr,
+		      prAdapter->rWifiVar.aucMacAddress);
 
 	/* 4 <3> Initiate BSS_INFO_T - private part */
 	/* TODO */
@@ -792,7 +940,9 @@ void testPsSetupBss(IN struct ADAPTER *prAdapter, IN uint8_t ucBssIndex)
 	/* prBssInfo->eGfOperationMode = eGfOperationMode; */
 
 	/* 4 <4> Allocate MSDU_INFO_T for Beacon */
-	prBssInfo->prBeacon = cnmMgtPktAlloc(prAdapter, OFFSET_OF(struct WLAN_BEACON_FRAME, aucInfoElem[0]) + MAX_IE_LENGTH);
+	prBssInfo->prBeacon = cnmMgtPktAlloc(prAdapter,
+		OFFSET_OF(struct WLAN_BEACON_FRAME,
+		aucInfoElem[0]) + MAX_IE_LENGTH);
 
 	if (prBssInfo->prBeacon) {
 		prBssInfo->prBeacon->eSrc = TX_PACKET_MGMT;
@@ -806,9 +956,12 @@ void testPsSetupBss(IN struct ADAPTER *prAdapter, IN uint8_t ucBssIndex)
 	prBssInfo->rPmProfSetupInfo.ucBmpTriggerAC = PM_UAPSD_ALL;
 	prBssInfo->rPmProfSetupInfo.ucUapsdSp = WMM_MAX_SP_LENGTH_2;
 #else
-	prBssInfo->rPmProfSetupInfo.ucBmpDeliveryAC = (uint8_t) prAdapter->u4UapsdAcBmp;
-	prBssInfo->rPmProfSetupInfo.ucBmpTriggerAC = (uint8_t) prAdapter->u4UapsdAcBmp;
-	prBssInfo->rPmProfSetupInfo.ucUapsdSp = (uint8_t) prAdapter->u4MaxSpLen;
+	prBssInfo->rPmProfSetupInfo.ucBmpDeliveryAC =
+		(uint8_t) prAdapter->u4UapsdAcBmp;
+	prBssInfo->rPmProfSetupInfo.ucBmpTriggerAC =
+		(uint8_t) prAdapter->u4UapsdAcBmp;
+	prBssInfo->rPmProfSetupInfo.ucUapsdSp = (uint8_t)
+						prAdapter->u4MaxSpLen;
 #endif
 
 #if 0
@@ -824,17 +977,22 @@ void testPsSetupBss(IN struct ADAPTER *prAdapter, IN uint8_t ucBssIndex)
 		       eAci, prBssInfo->arACQueParms[eAci].ucIsACMSet,
 		       prBssInfo->arACQueParms[eAci].u2Aifsn,
 		       prBssInfo->arACQueParms[eAci].u2CWmin,
-		       prBssInfo->arACQueParms[eAci].u2CWmax, prBssInfo->arACQueParms[eAci].u2TxopLimit);
+		       prBssInfo->arACQueParms[eAci].u2CWmax,
+		       prBssInfo->arACQueParms[eAci].u2TxopLimit);
 
 	}
 #endif
 
-	DBGLOG(SW4, INFO, "[2] ucBmpDeliveryAC:0x%x, ucBmpTriggerAC:0x%x, ucUapsdSp:0x%x",
+	DBGLOG(SW4, INFO,
+	       "[2] ucBmpDeliveryAC:0x%x, ucBmpTriggerAC:0x%x, ucUapsdSp:0x%x",
 	       prBssInfo->rPmProfSetupInfo.ucBmpDeliveryAC,
-	       prBssInfo->rPmProfSetupInfo.ucBmpTriggerAC, prBssInfo->rPmProfSetupInfo.ucUapsdSp);
+	       prBssInfo->rPmProfSetupInfo.ucBmpTriggerAC,
+	       prBssInfo->rPmProfSetupInfo.ucUapsdSp);
 }
 
-void testPsCmdCategory0(struct ADAPTER *prAdapter, uint8_t ucCate, uint8_t ucAction, uint8_t ucOpt0, uint8_t ucOpt1)
+void testPsCmdCategory0(struct ADAPTER *prAdapter,
+			uint8_t ucCate, uint8_t ucAction, uint8_t ucOpt0,
+			uint8_t ucOpt1)
 {
 	uint8_t ucIndex, ucRead;
 	struct STA_RECORD *prStaRec;
@@ -861,23 +1019,29 @@ void testPsCmdCategory0(struct ADAPTER *prAdapter, uint8_t ucCate, uint8_t ucAct
 		case TEST_PS_TRIGGER_BMC:
 			/* txmForwardQueuedBmcPkts (ucOpt0); */
 			break;
-		case TEST_PS_SEND_NULL:
-			{
+		case TEST_PS_SEND_NULL: {
 
-				testPsSendQoSNullFrame(prAdapter, prStaRec, (uint8_t) (g_au4SwCr[1] & 0xFF),	/* UP */
-						       ucOpt0, (u_int8_t) ((g_au4SwCr[1] >> 8) & 0xFF),	/* BMC */
-						       (u_int8_t) ((g_au4SwCr[1] >> 16) & 0xFF),	/* BurstEnd */
-						       (u_int8_t) ((g_au4SwCr[1] >> 24) & 0xFF),	/* Packet type */
-						       (uint8_t) ((g_au4SwCr[2]) & 0xFF), /* PS sesson ID 7: NOACK */
-						       FALSE	/* EOSP */
-				    );
-			}
-			break;
+			testPsSendQoSNullFrame(prAdapter, prStaRec,
+				/* UP */
+				(uint8_t) (g_au4SwCr[1] & 0xFF),
+				/* BMC */
+				ucOpt0, (u_int8_t) ((g_au4SwCr[1] >> 8) & 0xFF),
+				/* BurstEnd */
+				(u_int8_t) ((g_au4SwCr[1] >> 16) & 0xFF),
+				/* Packet type */
+				(u_int8_t) ((g_au4SwCr[1] >> 24) & 0xFF),
+				/* PS sesson ID 7: NOACK */
+				(uint8_t) ((g_au4SwCr[2]) & 0xFF),
+				/* EOSP */
+				FALSE
+				);
+		}
+		break;
 		case TEST_PS_BUFFER_BMC:
-			/* g_aprBssInfo[ucOpt0]->fgApToBufferBMC = (g_au4SwCr[1] & 0xFF); */
 			break;
 		case TEST_PS_UPDATE_BEACON:
-			bssUpdateBeaconContent(prAdapter, ucOpt0 /*networktype */);
+			bssUpdateBeaconContent(prAdapter,
+				ucOpt0 /*networktype */);
 			break;
 
 		default:
@@ -898,7 +1062,9 @@ void testPsCmdCategory0(struct ADAPTER *prAdapter, uint8_t ucCate, uint8_t ucAct
 
 #if TEST_PS
 
-void testPsCmdCategory1(struct ADAPTER *prAdapter, uint8_t ucCate, uint8_t ucAction, uint8_t ucOpt0, uint8_t ucOpt1)
+void testPsCmdCategory1(struct ADAPTER *prAdapter,
+			uint8_t ucCate, uint8_t ucAction, uint8_t ucOpt0,
+			uint8_t ucOpt1)
 {
 	uint8_t ucIndex, ucRead;
 	uint8_t ucWTEntry;
@@ -924,9 +1090,12 @@ void testPsCmdCategory1(struct ADAPTER *prAdapter, uint8_t ucCate, uint8_t ucAct
 		switch (ucIndex) {
 		case TEST_PS_STA_PS:
 			prStaRec->fgIsInPS = (u_int8_t) (g_au4SwCr[1] & 0x1);
-			prStaRec->fgIsQoS = (u_int8_t) (g_au4SwCr[1] >> 8 & 0xFF);
-			prStaRec->fgIsUapsdSupported = (u_int8_t) (g_au4SwCr[1] >> 16 & 0xFF);
-			prStaRec->ucBmpDeliveryAC = (u_int8_t) (g_au4SwCr[1] >> 24 & 0xFF);
+			prStaRec->fgIsQoS =
+				(u_int8_t) (g_au4SwCr[1] >> 8 & 0xFF);
+			prStaRec->fgIsUapsdSupported =
+				(u_int8_t) (g_au4SwCr[1] >> 16 & 0xFF);
+			prStaRec->ucBmpDeliveryAC =
+				(u_int8_t) (g_au4SwCr[1] >> 24 & 0xFF);
 			break;
 
 		}
@@ -945,7 +1114,9 @@ void testPsCmdCategory1(struct ADAPTER *prAdapter, uint8_t ucCate, uint8_t ucAct
 
 #if CFG_SUPPORT_802_11V
 #if (CFG_SUPPORT_802_11V_TIMING_MEASUREMENT == 1) && (WNM_UNIT_TEST == 1)
-void testWNMCmdCategory0(struct ADAPTER *prAdapter, uint8_t ucCate, uint8_t ucAction, uint8_t ucOpt0, uint8_t ucOpt1)
+void testWNMCmdCategory0(struct ADAPTER *prAdapter,
+			 uint8_t ucCate, uint8_t ucAction, uint8_t ucOpt0,
+			 uint8_t ucOpt1)
 {
 	uint8_t ucIndex, ucRead;
 	struct STA_RECORD *prStaRec;
@@ -972,7 +1143,8 @@ void testWNMCmdCategory0(struct ADAPTER *prAdapter, uint8_t ucCate, uint8_t ucAc
 #endif /* TEST_WNM */
 #endif /* CFG_SUPPORT_802_11V */
 
-void swCtrlSwCr(struct ADAPTER *prAdapter, uint8_t ucRead, uint16_t u2Addr, uint32_t *pu4Data)
+void swCtrlSwCr(struct ADAPTER *prAdapter, uint8_t ucRead,
+		uint16_t u2Addr, uint32_t *pu4Data)
 {
 	/* According other register STAIDX */
 	uint8_t ucOffset;
@@ -997,9 +1169,11 @@ void swCtrlSwCr(struct ADAPTER *prAdapter, uint8_t ucRead, uint16_t u2Addr, uint
 			ucCate = (uint8_t) (u4Cmd >> 24);
 			if (ucCate < ARRAY_SIZE(g_arSwCtrlCmd)) {
 				if (g_arSwCtrlCmd[ucCate] != NULL) {
-					g_arSwCtrlCmd[ucCate] (prAdapter, ucCate,
-							       (uint8_t) (u4Cmd >> 16 & 0xFF),
-							       (uint8_t) ((u4Cmd >> 8) & 0xFF), (uint8_t) (u4Cmd & 0xFF));
+					g_arSwCtrlCmd[ucCate] (
+						prAdapter, ucCate,
+						(uint8_t) (u4Cmd >> 16 & 0xFF),
+						(uint8_t) ((u4Cmd >> 8) & 0xFF),
+						(uint8_t) (u4Cmd & 0xFF));
 				}
 			}
 		}
@@ -1008,7 +1182,8 @@ void swCtrlSwCr(struct ADAPTER *prAdapter, uint8_t ucRead, uint16_t u2Addr, uint
 	}
 }
 
-void swCrReadWriteCmd(struct ADAPTER *prAdapter, uint8_t ucRead, uint16_t u2Addr, uint32_t *pu4Data)
+void swCrReadWriteCmd(struct ADAPTER *prAdapter,
+		      uint8_t ucRead, uint16_t u2Addr, uint32_t *pu4Data)
 {
 	uint8_t ucMod;
 
@@ -1017,17 +1192,20 @@ void swCrReadWriteCmd(struct ADAPTER *prAdapter, uint8_t ucRead, uint16_t u2Addr
 	/* Address [7:0] OFFSET */
 
 	DEBUGFUNC("swCrReadWriteCmd");
-	DBGLOG(SW4, INFO, "%u addr 0x%x data 0x%x\n", ucRead, u2Addr, *pu4Data);
+	DBGLOG(SW4, INFO, "%u addr 0x%x data 0x%x\n", ucRead,
+	       u2Addr, *pu4Data);
 
 	if (ucMod < (ARRAY_SIZE(g_arSwCrModHandle))) {
 
 		if (g_arSwCrModHandle[ucMod] != NULL)
-			g_arSwCrModHandle[ucMod] (prAdapter, ucRead, u2Addr, pu4Data);
+			g_arSwCrModHandle[ucMod] (prAdapter, ucRead, u2Addr,
+						  pu4Data);
 	}			/* ucMod */
 }
 
 /* Debug Support */
-void swCrFrameCheckEnable(struct ADAPTER *prAdapter, uint32_t u4DumpType)
+void swCrFrameCheckEnable(struct ADAPTER *prAdapter,
+			  uint32_t u4DumpType)
 {
 	g_u4SwcrDebugFrameDumpType = u4DumpType;
 #if CFG_RX_PKTS_DUMP
@@ -1043,10 +1221,13 @@ void swCrDebugInit(struct ADAPTER *prAdapter)
 	/* debug counter */
 	g_fgSwcrDebugTimer = FALSE;
 
-	cnmTimerInitTimer(prAdapter, &g_rSwcrDebugTimer, (PFN_MGMT_TIMEOUT_FUNC) swCrDebugCheckTimeout, (unsigned long) NULL);
+	cnmTimerInitTimer(prAdapter, &g_rSwcrDebugTimer,
+			  (PFN_MGMT_TIMEOUT_FUNC) swCrDebugCheckTimeout,
+			  (unsigned long) NULL);
 
 	if (g_u4SwcrDebugCheckTimeout)
-		swCrDebugCheckEnable(prAdapter, TRUE, g_ucSwcrDebugCheckType, g_u4SwcrDebugCheckTimeout);
+		swCrDebugCheckEnable(prAdapter, TRUE,
+			g_ucSwcrDebugCheckType, g_u4SwcrDebugCheckTimeout);
 }
 
 void swCrDebugUninit(struct ADAPTER *prAdapter)
@@ -1056,7 +1237,8 @@ void swCrDebugUninit(struct ADAPTER *prAdapter)
 	g_fgSwcrDebugTimer = FALSE;
 }
 
-void swCrDebugCheckEnable(struct ADAPTER *prAdapter, u_int8_t fgIsEnable, uint8_t ucType, uint32_t u4Timeout)
+void swCrDebugCheckEnable(struct ADAPTER *prAdapter,
+	u_int8_t fgIsEnable, uint8_t ucType, uint32_t u4Timeout)
 {
 	if (fgIsEnable) {
 		g_ucSwcrDebugCheckType = ucType;
@@ -1071,7 +1253,8 @@ void swCrDebugCheckEnable(struct ADAPTER *prAdapter, u_int8_t fgIsEnable, uint8_
 	g_fgSwcrDebugTimer = fgIsEnable;
 }
 
-void swCrDebugCheck(struct ADAPTER *prAdapter, struct CMD_SW_DBG_CTRL *prCmdSwCtrl)
+void swCrDebugCheck(struct ADAPTER *prAdapter,
+		    struct CMD_SW_DBG_CTRL *prCmdSwCtrl)
 {
 	struct RX_CTRL *prRxCtrl;
 	struct TX_CTRL *prTxCtrl;
@@ -1087,103 +1270,163 @@ void swCrDebugCheck(struct ADAPTER *prAdapter, struct CMD_SW_DBG_CTRL *prCmdSwCt
 
 			/* TX Counter from fw */
 			DBGLOG(SW4, INFO, "TX0\n"
-			       "%08x %08x %08x %08x\n"
-			       "%08x %08x %08x %08x\n",
-			       prCmdSwCtrl->u4DebugCnt[SWCR_DBG_ALL_TX_CNT],
-			       prCmdSwCtrl->u4DebugCnt[SWCR_DBG_ALL_TX_BCN_CNT],
-			       prCmdSwCtrl->u4DebugCnt[SWCR_DBG_ALL_TX_FAILED_CNT],
-			       prCmdSwCtrl->u4DebugCnt[SWCR_DBG_ALL_TX_RETRY_CNT],
-			       prCmdSwCtrl->u4DebugCnt[SWCR_DBG_ALL_TX_AGING_TIMEOUT_CNT],
-			       prCmdSwCtrl->u4DebugCnt[SWCR_DBG_ALL_TX_PS_OVERFLOW_CNT],
-			       prCmdSwCtrl->u4DebugCnt[SWCR_DBG_ALL_TX_MGNT_DROP_CNT],
-			       prCmdSwCtrl->u4DebugCnt[SWCR_DBG_ALL_TX_ERROR_CNT]);
+				"%08x %08x %08x %08x\n"
+				"%08x %08x %08x %08x\n",
+				prCmdSwCtrl->u4DebugCnt[
+				SWCR_DBG_ALL_TX_CNT],
+				prCmdSwCtrl->u4DebugCnt[
+				SWCR_DBG_ALL_TX_BCN_CNT],
+				prCmdSwCtrl->u4DebugCnt[
+				SWCR_DBG_ALL_TX_FAILED_CNT],
+				prCmdSwCtrl->u4DebugCnt[
+				SWCR_DBG_ALL_TX_RETRY_CNT],
+				prCmdSwCtrl->u4DebugCnt[
+				SWCR_DBG_ALL_TX_AGING_TIMEOUT_CNT],
+				prCmdSwCtrl->u4DebugCnt[
+				SWCR_DBG_ALL_TX_PS_OVERFLOW_CNT],
+				prCmdSwCtrl->u4DebugCnt[
+				SWCR_DBG_ALL_TX_MGNT_DROP_CNT],
+				prCmdSwCtrl->u4DebugCnt[
+				SWCR_DBG_ALL_TX_ERROR_CNT]);
 #if 1
 			/* TX Counter from drv */
 			DBGLOG(SW4, INFO, "TX1\n"
-			       "%08x %08x %08x %08x\n",
-			       (uint32_t) TX_GET_CNT(prTxCtrl, TX_INACTIVE_BSS_DROP),
-			       (uint32_t) TX_GET_CNT(prTxCtrl, TX_INACTIVE_STA_DROP),
-			       (uint32_t) TX_GET_CNT(prTxCtrl, TX_FORWARD_OVERFLOW_DROP),
-			       (uint32_t) TX_GET_CNT(prTxCtrl, TX_AP_BORADCAST_DROP));
+				"%08x %08x %08x %08x\n",
+				(uint32_t) TX_GET_CNT(prTxCtrl,
+				TX_INACTIVE_BSS_DROP),
+				(uint32_t) TX_GET_CNT(prTxCtrl,
+				TX_INACTIVE_STA_DROP),
+				(uint32_t) TX_GET_CNT(prTxCtrl,
+				TX_FORWARD_OVERFLOW_DROP),
+				(uint32_t) TX_GET_CNT(prTxCtrl,
+				TX_AP_BORADCAST_DROP));
 #endif
 
 			/* RX Counter */
 			DBGLOG(SW4, INFO, "RX0\n"
-			       "%08x %08x %08x %08x\n"
-			       "%08x %08x %08x %08x\n"
-			       "%08x %08x %08x %08x\n"
-			       "%08x %08x %08x %08x\n",
-			       prCmdSwCtrl->u4DebugCnt[SWCR_DBG_ALL_RX_CNT],
-			       prCmdSwCtrl->u4DebugCnt[SWCR_DBG_ALL_RX_DROP_CNT],
-			       prCmdSwCtrl->u4DebugCnt[SWCR_DBG_ALL_RX_DUP_DROP_CNT],
-			       prCmdSwCtrl->u4DebugCnt[SWCR_DBG_ALL_RX_TYPE_ERROR_DROP_CNT],
-			       prCmdSwCtrl->u4DebugCnt[SWCR_DBG_ALL_RX_CLASS_ERROR_DROP_CNT],
-			       prCmdSwCtrl->u4DebugCnt[SWCR_DBG_ALL_RX_AMPDU_ERROR_DROP_CNT],
-			       prCmdSwCtrl->u4DebugCnt[SWCR_DBG_ALL_RX_STATUS_ERROR_DROP_CNT],
-			       prCmdSwCtrl->u4DebugCnt[SWCR_DBG_ALL_RX_FORMAT_ERROR_DROP_CNT],
-			       prCmdSwCtrl->u4DebugCnt[SWCR_DBG_ALL_RX_ICV_ERROR_DROP_CNT],
-			       prCmdSwCtrl->u4DebugCnt[SWCR_DBG_ALL_RX_KEY_ERROR_DROP_CNT],
-			       prCmdSwCtrl->u4DebugCnt[SWCR_DBG_ALL_RX_TKIP_ERROR_DROP_CNT],
-			       prCmdSwCtrl->u4DebugCnt[SWCR_DBG_ALL_RX_MIC_ERROR_DROP_CNT],
-			       prCmdSwCtrl->u4DebugCnt[SWCR_DBG_ALL_RX_BIP_ERROR_DROP_CNT],
-			       prCmdSwCtrl->u4DebugCnt[SWCR_DBG_ALL_RX_FCSERR_CNT],
-			       prCmdSwCtrl->u4DebugCnt[SWCR_DBG_ALL_RX_FIFOFULL_CNT],
-			       prCmdSwCtrl->u4DebugCnt[SWCR_DBG_ALL_RX_PFDROP_CNT]);
+				"%08x %08x %08x %08x\n"
+				"%08x %08x %08x %08x\n"
+				"%08x %08x %08x %08x\n"
+				"%08x %08x %08x %08x\n",
+				prCmdSwCtrl->u4DebugCnt[
+				SWCR_DBG_ALL_RX_CNT],
+				prCmdSwCtrl->u4DebugCnt[
+				SWCR_DBG_ALL_RX_DROP_CNT],
+				prCmdSwCtrl->u4DebugCnt[
+				SWCR_DBG_ALL_RX_DUP_DROP_CNT],
+				prCmdSwCtrl->u4DebugCnt[
+				SWCR_DBG_ALL_RX_TYPE_ERROR_DROP_CNT],
+				prCmdSwCtrl->u4DebugCnt[
+				SWCR_DBG_ALL_RX_CLASS_ERROR_DROP_CNT],
+				prCmdSwCtrl->u4DebugCnt[
+				SWCR_DBG_ALL_RX_AMPDU_ERROR_DROP_CNT],
+				prCmdSwCtrl->u4DebugCnt[
+				SWCR_DBG_ALL_RX_STATUS_ERROR_DROP_CNT],
+				prCmdSwCtrl->u4DebugCnt[
+				SWCR_DBG_ALL_RX_FORMAT_ERROR_DROP_CNT],
+				prCmdSwCtrl->u4DebugCnt[
+				SWCR_DBG_ALL_RX_ICV_ERROR_DROP_CNT],
+				prCmdSwCtrl->u4DebugCnt[
+				SWCR_DBG_ALL_RX_KEY_ERROR_DROP_CNT],
+				prCmdSwCtrl->u4DebugCnt[
+				SWCR_DBG_ALL_RX_TKIP_ERROR_DROP_CNT],
+				prCmdSwCtrl->u4DebugCnt[
+				SWCR_DBG_ALL_RX_MIC_ERROR_DROP_CNT],
+				prCmdSwCtrl->u4DebugCnt[
+				SWCR_DBG_ALL_RX_BIP_ERROR_DROP_CNT],
+				prCmdSwCtrl->u4DebugCnt[
+				SWCR_DBG_ALL_RX_FCSERR_CNT],
+				prCmdSwCtrl->u4DebugCnt[
+				SWCR_DBG_ALL_RX_FIFOFULL_CNT],
+				prCmdSwCtrl->u4DebugCnt[
+				SWCR_DBG_ALL_RX_PFDROP_CNT]);
 
 			DBGLOG(SW4, INFO, "RX1\n"
-			       "%08x %08x %08x %08x\n"
-			       "%08x %08x %08x %08x\n",
-			       (uint32_t) RX_GET_CNT(prRxCtrl, RX_MPDU_TOTAL_COUNT),
-			       (uint32_t) RX_GET_CNT(prRxCtrl, RX_DATA_INDICATION_COUNT),
-			       (uint32_t) RX_GET_CNT(prRxCtrl, RX_DATA_RETURNED_COUNT),
-			       (uint32_t) RX_GET_CNT(prRxCtrl, RX_DATA_RETAINED_COUNT),
-			       (uint32_t) RX_GET_CNT(prRxCtrl, RX_DROP_TOTAL_COUNT),
-			       (uint32_t) RX_GET_CNT(prRxCtrl, RX_TYPE_ERR_DROP_COUNT),
-			       (uint32_t) RX_GET_CNT(prRxCtrl, RX_CLASS_ERR_DROP_COUNT),
-			       (uint32_t) RX_GET_CNT(prRxCtrl, RX_DST_NULL_DROP_COUNT));
+				"%08x %08x %08x %08x\n"
+				"%08x %08x %08x %08x\n",
+				(uint32_t) RX_GET_CNT(prRxCtrl,
+				RX_MPDU_TOTAL_COUNT),
+				(uint32_t) RX_GET_CNT(prRxCtrl,
+				RX_DATA_INDICATION_COUNT),
+				(uint32_t) RX_GET_CNT(prRxCtrl,
+				RX_DATA_RETURNED_COUNT),
+				(uint32_t) RX_GET_CNT(prRxCtrl,
+				RX_DATA_RETAINED_COUNT),
+				(uint32_t) RX_GET_CNT(prRxCtrl,
+				RX_DROP_TOTAL_COUNT),
+				(uint32_t) RX_GET_CNT(prRxCtrl,
+				RX_TYPE_ERR_DROP_COUNT),
+				(uint32_t) RX_GET_CNT(prRxCtrl,
+				RX_CLASS_ERR_DROP_COUNT),
+				(uint32_t) RX_GET_CNT(prRxCtrl,
+				RX_DST_NULL_DROP_COUNT));
 
 			DBGLOG(SW4, INFO, "PWR\n"
-			       "%08x %08x %08x %08x\n"
-			       "%08x %08x %08x %08x\n",
-			       prCmdSwCtrl->u4DebugCnt[SWCR_DBG_ALL_PWR_PS_POLL_CNT],
-			       prCmdSwCtrl->u4DebugCnt[SWCR_DBG_ALL_PWR_TRIGGER_NULL_CNT],
-			       prCmdSwCtrl->u4DebugCnt[SWCR_DBG_ALL_PWR_BCN_IND_CNT],
-			       prCmdSwCtrl->u4DebugCnt[SWCR_DBG_ALL_PWR_BCN_TIMEOUT_CNT],
-			       prCmdSwCtrl->u4DebugCnt[SWCR_DBG_ALL_PWR_PM_STATE0],
-			       prCmdSwCtrl->u4DebugCnt[SWCR_DBG_ALL_PWR_PM_STATE1],
-			       prCmdSwCtrl->u4DebugCnt[SWCR_DBG_ALL_PWR_CUR_PS_PROF0],
-			       prCmdSwCtrl->u4DebugCnt[SWCR_DBG_ALL_PWR_CUR_PS_PROF1]);
+				"%08x %08x %08x %08x\n"
+				"%08x %08x %08x %08x\n",
+				prCmdSwCtrl->u4DebugCnt[
+				SWCR_DBG_ALL_PWR_PS_POLL_CNT],
+				prCmdSwCtrl->u4DebugCnt[
+				SWCR_DBG_ALL_PWR_TRIGGER_NULL_CNT],
+				prCmdSwCtrl->u4DebugCnt[
+				SWCR_DBG_ALL_PWR_BCN_IND_CNT],
+				prCmdSwCtrl->u4DebugCnt[
+				SWCR_DBG_ALL_PWR_BCN_TIMEOUT_CNT],
+				prCmdSwCtrl->u4DebugCnt[
+				SWCR_DBG_ALL_PWR_PM_STATE0],
+				prCmdSwCtrl->u4DebugCnt[
+				SWCR_DBG_ALL_PWR_PM_STATE1],
+				prCmdSwCtrl->u4DebugCnt[
+				SWCR_DBG_ALL_PWR_CUR_PS_PROF0],
+				prCmdSwCtrl->u4DebugCnt[
+				SWCR_DBG_ALL_PWR_CUR_PS_PROF1]);
 
 			DBGLOG(SW4, INFO, "ARM\n"
-			       "%08x %08x %08x %08x\n"
-			       "%08x %08x\n",
-			       prCmdSwCtrl->u4DebugCnt[SWCR_DBG_ALL_AR_STA0_RATE],
-			       prCmdSwCtrl->u4DebugCnt[SWCR_DBG_ALL_AR_STA0_BWGI],
-			       prCmdSwCtrl->u4DebugCnt[SWCR_DBG_ALL_AR_STA0_RX_RATE_RCPI],
-			       prCmdSwCtrl->u4DebugCnt[SWCR_DBG_ALL_ROAMING_ENABLE],
-			       prCmdSwCtrl->u4DebugCnt[SWCR_DBG_ALL_ROAMING_ROAM_CNT],
-			       prCmdSwCtrl->u4DebugCnt[SWCR_DBG_ALL_ROAMING_INT_CNT]);
+				"%08x %08x %08x %08x\n"
+				"%08x %08x\n",
+				prCmdSwCtrl->u4DebugCnt[
+				SWCR_DBG_ALL_AR_STA0_RATE],
+				prCmdSwCtrl->u4DebugCnt[
+				SWCR_DBG_ALL_AR_STA0_BWGI],
+				prCmdSwCtrl->u4DebugCnt[
+				SWCR_DBG_ALL_AR_STA0_RX_RATE_RCPI],
+				prCmdSwCtrl->u4DebugCnt[
+				SWCR_DBG_ALL_ROAMING_ENABLE],
+				prCmdSwCtrl->u4DebugCnt[
+				SWCR_DBG_ALL_ROAMING_ROAM_CNT],
+				prCmdSwCtrl->u4DebugCnt[
+				SWCR_DBG_ALL_ROAMING_INT_CNT]);
 
 			DBGLOG(SW4, INFO, "BB\n"
-			       "%08x %08x %08x %08x\n"
-			       "%08x %08x %08x %08x\n",
-			       prCmdSwCtrl->u4DebugCnt[SWCR_DBG_ALL_BB_RX_MDRDY_CNT],
-			       prCmdSwCtrl->u4DebugCnt[SWCR_DBG_ALL_BB_RX_FCSERR_CNT],
-			       prCmdSwCtrl->u4DebugCnt[SWCR_DBG_ALL_BB_CCK_PD_CNT],
-			       prCmdSwCtrl->u4DebugCnt[SWCR_DBG_ALL_BB_OFDM_PD_CNT],
-			       prCmdSwCtrl->u4DebugCnt[SWCR_DBG_ALL_BB_CCK_SFDERR_CNT],
-			       prCmdSwCtrl->u4DebugCnt[SWCR_DBG_ALL_BB_CCK_SIGERR_CNT],
-			       prCmdSwCtrl->u4DebugCnt[SWCR_DBG_ALL_BB_OFDM_TAGERR_CNT],
-			       prCmdSwCtrl->u4DebugCnt[SWCR_DBG_ALL_BB_OFDM_SIGERR_CNT]);
+				"%08x %08x %08x %08x\n"
+				"%08x %08x %08x %08x\n",
+				prCmdSwCtrl->u4DebugCnt[
+				SWCR_DBG_ALL_BB_RX_MDRDY_CNT],
+				prCmdSwCtrl->u4DebugCnt[
+				SWCR_DBG_ALL_BB_RX_FCSERR_CNT],
+				prCmdSwCtrl->u4DebugCnt[
+				SWCR_DBG_ALL_BB_CCK_PD_CNT],
+				prCmdSwCtrl->u4DebugCnt[
+				SWCR_DBG_ALL_BB_OFDM_PD_CNT],
+				prCmdSwCtrl->u4DebugCnt[
+				SWCR_DBG_ALL_BB_CCK_SFDERR_CNT],
+				prCmdSwCtrl->u4DebugCnt[
+				SWCR_DBG_ALL_BB_CCK_SIGERR_CNT],
+				prCmdSwCtrl->u4DebugCnt[
+				SWCR_DBG_ALL_BB_OFDM_TAGERR_CNT],
+				prCmdSwCtrl->u4DebugCnt[
+				SWCR_DBG_ALL_BB_OFDM_SIGERR_CNT]);
 
 		}
 	}
 	/* start the next check */
 	if (g_u4SwcrDebugCheckTimeout)
-		cnmTimerStartTimer(prAdapter, &g_rSwcrDebugTimer, g_u4SwcrDebugCheckTimeout * MSEC_PER_SEC);
+		cnmTimerStartTimer(prAdapter, &g_rSwcrDebugTimer,
+				   g_u4SwcrDebugCheckTimeout * MSEC_PER_SEC);
 }
 
-void swCrDebugCheckTimeout(IN struct ADAPTER *prAdapter, unsigned long ulParamPtr)
+void swCrDebugCheckTimeout(IN struct ADAPTER *prAdapter,
+			   unsigned long ulParamPtr)
 {
 	struct CMD_SW_DBG_CTRL rCmdSwCtrl;
 	uint32_t rStatus;
@@ -1191,29 +1434,32 @@ void swCrDebugCheckTimeout(IN struct ADAPTER *prAdapter, unsigned long ulParamPt
 	rCmdSwCtrl.u4Id = (0xb000 << 16) + g_ucSwcrDebugCheckType;
 	rCmdSwCtrl.u4Data = 0;
 	rStatus = wlanSendSetQueryCmd(prAdapter,	/* prAdapter */
-				      CMD_ID_SW_DBG_CTRL,	/* ucCID */
-				      FALSE,	/* fgSetQuery */
-				      TRUE,	/* fgNeedResp */
-				      FALSE,	/* fgIsOid */
-				      swCrDebugQuery,	/* pfCmdDoneHandler */
-				      swCrDebugQueryTimeout,	/* pfCmdTimeoutHandler */
-				      sizeof(struct CMD_SW_DBG_CTRL),	/* u4SetQueryInfoLen */
-				      (uint8_t *) &rCmdSwCtrl,	/* pucInfoBuffer */
-				      NULL,	/* pvSetQueryBuffer */
-				      0	/* u4SetQueryBufferLen */
-	    );
+		CMD_ID_SW_DBG_CTRL,	/* ucCID */
+		FALSE,	/* fgSetQuery */
+		TRUE,	/* fgNeedResp */
+		FALSE,	/* fgIsOid */
+		swCrDebugQuery,	/* pfCmdDoneHandler */
+		swCrDebugQueryTimeout, /* pfCmdTimeoutHandler */
+		sizeof(struct CMD_SW_DBG_CTRL),	/* u4SetQueryInfoLen */
+		(uint8_t *) &rCmdSwCtrl, /* pucInfoBuffer */
+		NULL,	/* pvSetQueryBuffer */
+		0	/* u4SetQueryBufferLen */
+		);
 
 	ASSERT(rStatus == WLAN_STATUS_PENDING);
 }
 
-void swCrDebugQuery(IN struct ADAPTER *prAdapter, IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf)
+void swCrDebugQuery(IN struct ADAPTER *prAdapter,
+		    IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf)
 {
 	ASSERT(prAdapter);
 
-	swCrDebugCheck(prAdapter, (struct CMD_SW_DBG_CTRL *) (pucEventBuf));
+	swCrDebugCheck(prAdapter,
+		       (struct CMD_SW_DBG_CTRL *) (pucEventBuf));
 }
 
-void swCrDebugQueryTimeout(IN struct ADAPTER *prAdapter, IN struct CMD_INFO *prCmdInfo)
+void swCrDebugQueryTimeout(IN struct ADAPTER *prAdapter,
+			   IN struct CMD_INFO *prCmdInfo)
 {
 	ASSERT(prAdapter);
 

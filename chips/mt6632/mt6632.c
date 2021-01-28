@@ -50,29 +50,30 @@
  *
  *****************************************************************************/
 /*! \file   mt6632.c
-*    \brief  Internal driver stack will export the required procedures here for GLUE Layer.
-*
-*    This file contains all routines which are exported from MediaTek 802.11 Wireless
-*    LAN driver stack to GLUE Layer.
-*/
+ *    \brief  Internal driver stack will export the required procedures here
+ *            for GLUE Layer.
+ *
+ *    This file contains all routines which are exported from MediaTek 802.11
+ *    Wireless LAN driver stack to GLUE Layer.
+ */
 
 /*******************************************************************************
-*                         C O M P I L E R   F L A G S
-********************************************************************************
-*/
+ *                         C O M P I L E R   F L A G S
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                    E X T E R N A L   R E F E R E N C E S
-********************************************************************************
-*/
+ *                    E X T E R N A L   R E F E R E N C E S
+ *******************************************************************************
+ */
 #include "precomp.h"
 
 #include "mt6632.h"
 
 /*******************************************************************************
-*                              C O N S T A N T S
-********************************************************************************
-*/
+ *                              C O N S T A N T S
+ *******************************************************************************
+ */
 
 struct ECO_INFO mt6632_eco_table[] = {
 	/* HW version,  ROM version,    Factory version, Eco version */
@@ -124,9 +125,9 @@ struct PCIE_CHIP_CR_MAPPING mt6632_bus2chip_cr_mapping[] = {
 #endif /* _HIF_PCIE */
 
 /*******************************************************************************
-*                            P U B L I C   D A T A
-********************************************************************************
-*/
+ *                            P U B L I C   D A T A
+ *******************************************************************************
+ */
 
 void mt6632CapInit(IN struct ADAPTER *prAdapter)
 {
@@ -163,7 +164,8 @@ void mt6632CapInit(IN struct ADAPTER *prAdapter)
 	}
 }
 
-uint32_t mt6632GetFwDlInfo(struct ADAPTER *prAdapter, char *pcBuf, int i4TotalLen)
+uint32_t mt6632GetFwDlInfo(struct ADAPTER *prAdapter,
+	char *pcBuf, int i4TotalLen)
 {
 	struct WIFI_VER_INFO *prVerInfo = &prAdapter->rVerInfo;
 #if CFG_SUPPORT_COMPRESSION_FW_OPTION
@@ -226,7 +228,8 @@ void mt6632PdmaConfig(struct GLUE_INFO *prGlueInfo, u_int8_t enable)
 		IntMask.field.rx_done_0 = 1;
 		IntMask.field.rx_done_1 = 1;
 		IntMask.field.tx_done = BIT(prBusInfo->tx_ring_fwdl_idx) |
-			BIT(prBusInfo->tx_ring_cmd_idx) | BIT(prBusInfo->tx_ring_data_idx);
+			BIT(prBusInfo->tx_ring_cmd_idx) |
+			BIT(prBusInfo->tx_ring_data_idx);
 	} else {
 		GloCfg.field.EnableRxDMA = 0;
 		GloCfg.field.EnableTxDMA = 0;
@@ -242,7 +245,8 @@ void mt6632PdmaConfig(struct GLUE_INFO *prGlueInfo, u_int8_t enable)
 	kalDevRegWrite(prGlueInfo, WPDMA_GLO_CFG, GloCfg.word);
 }
 
-void mt6632LowPowerOwnRead(IN struct ADAPTER *prAdapter, OUT u_int8_t *pfgResult)
+void mt6632LowPowerOwnRead(IN struct ADAPTER *prAdapter,
+	OUT u_int8_t *pfgResult)
 {
 	uint32_t u4RegValue;
 
@@ -259,7 +263,8 @@ void mt6632LowPowerOwnSet(IN struct ADAPTER *prAdapter, OUT u_int8_t *pfgResult)
 	*pfgResult = (u4RegValue == 0);
 }
 
-void mt6632LowPowerOwnClear(IN struct ADAPTER *prAdapter, OUT u_int8_t *pfgResult)
+void mt6632LowPowerOwnClear(IN struct ADAPTER *prAdapter,
+	OUT u_int8_t *pfgResult)
 {
 	uint32_t u4RegValue;
 
@@ -290,7 +295,8 @@ struct BUS_INFO mt6632_bus_info = {
 	.u4UdmaWlCfg_0_Addr = UDMA_WLCFG_0,
 	.u4UdmaWlCfg_1_Addr = UDMA_WLCFG_1,
 	.u4UdmaWlCfg_0 =
-	    (UDMA_WLCFG_0_TX_EN(1) | UDMA_WLCFG_0_RX_EN(1) | UDMA_WLCFG_0_RX_MPSZ_PAD0(1)),
+		(UDMA_WLCFG_0_TX_EN(1) | UDMA_WLCFG_0_RX_EN(1) |
+		UDMA_WLCFG_0_RX_MPSZ_PAD0(1)),
 	.asicUsbSuspend = NULL,
 	.asicUsbEventEpDetected = NULL,
 #endif /* _HIF_USB */
