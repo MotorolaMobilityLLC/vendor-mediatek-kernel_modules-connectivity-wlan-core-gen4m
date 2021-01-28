@@ -1633,11 +1633,13 @@ struct CMD_SET_DOMAIN_INFO {
 
 #if CFG_SUPPORT_PWR_LIMIT_COUNTRY
 
-enum ENUM_COUNTRY_CHANNEL_TXPOWER_LIMIT_FORMAT {
-	COUNTRY_CHANNEL_TXPOWER_LIMIT_TYPE_COMP = 0,
-	COUNTRY_CHANNEL_TXPOWER_LIMIT_TYPE_COMP_11AG_11N = 1,
-	COUNTRY_CHANNEL_TXPOWER_LIMIT_TYPE_COMP_NUM,
+enum ENUM_PWR_LIMIT_TYPE {
+	PWR_LIMIT_TYPE_COMP_11AC = 0,
+	PWR_LIMIT_TYPE_COMP_11AG_11N = 1,
+	PWR_LIMIT_TYPE_COMP_11AX = 2,
+	PWR_LIMIT_TYPE_COMP_NUM,
 };
+
 
 /* CMD_SET_PWR_LIMIT_TABLE */
 struct CMD_CHANNEL_POWER_LIMIT {
@@ -1660,21 +1662,58 @@ struct CMD_CHANNEL_POWER_LIMIT {
 	uint8_t ucFlag; /*Not used in driver*/
 	uint8_t aucReserved[1];
 };
+struct CMD_CHANNEL_POWER_LIMIT_HE { /*HE SU design*/
+	uint8_t ucCentralCh;
+	int8_t cPwrLimitRU26L; /* MCS0~4 */
+	int8_t cPwrLimitRU26H; /* MCS5~9 */
+	int8_t cPwrLimitRU26U; /* MCS10~11 */
+
+	int8_t cPwrLimitRU52L; /* MCS0~4 */
+	int8_t cPwrLimitRU52H; /* MCS5~9 */
+	int8_t cPwrLimitRU52U; /* MCS10~11 */
+
+	int8_t cPwrLimitRU106L; /* MCS0~4 */
+	int8_t cPwrLimitRU106H; /* MCS5~9 */
+	int8_t cPwrLimitRU106U; /* MCS10~11 */
+	/*RU242/SU20*/
+	int8_t cPwrLimitRU242L; /* MCS0~4 */
+	int8_t cPwrLimitRU242H; /* MCS5~9 */
+	int8_t cPwrLimitRU242U; /* MCS10~11 */
+	/*RU484/SU40*/
+	int8_t cPwrLimitRU484L; /* MCS0~4 */
+	int8_t cPwrLimitRU484H; /* MCS5~9 */
+	int8_t cPwrLimitRU484U; /* MCS10~11 */
+	/*RU996/SU80*/
+	int8_t cPwrLimitRU996L; /* MCS0~4 */
+	int8_t cPwrLimitRU996H; /* MCS5~9 */
+	int8_t cPwrLimitRU996U; /* MCS10~11 */
+
+	uint8_t ucFlag;
+	uint8_t ucValid;
+
+};
 
 struct CMD_SET_COUNTRY_CHANNEL_POWER_LIMIT {
     /* D-WORD 0 */
 	uint16_t u2CountryCode;
-	uint8_t u1CountryFlag; /*Not used in driver*/
-	uint8_t u1ChPwrTblColNum; /*Numbers of channel to set power limit*/
+	uint8_t ucCountryFlag; /*Not used in driver*/
+	uint8_t ucNum; /*Numbers of channel to set power limit*/
 
 	/* D-WORD 1 */
 	u_int8_t fgPwrTblKeep;
-	uint8_t u1BandIdx;
+	uint8_t ucBandIdx;
 	/* u1LimitType: enum ENUM_COUNTRY_CHANNEL_TXPOWER_LIMIT_FORMAT */
-	uint8_t u1LimitType;
+	uint8_t ucLimitType;
 	uint8_t au1Reserved[1];
-	struct CMD_CHANNEL_POWER_LIMIT
-		rChannelPowerLimit[1]; /*Channel power limit entries to be set*/
+	union {
+		/*Channel power limit entries to be set*/
+		struct CMD_CHANNEL_POWER_LIMIT
+			rChannelPowerLimit[1];
+		/*Channel HE power limit entries to be set*/
+		struct CMD_CHANNEL_POWER_LIMIT_HE
+			rChPwrLimtHE[1];
+	} u;
+
 };
 
 #if (CFG_SUPPORT_SINGLE_SKU == 1)
