@@ -76,6 +76,7 @@
 /* 3 --------------- Constants for Ethernet/802.11 MAC --------------- */
 /* MAC Address */
 #define MAC_ADDR_LEN                            6
+#define MAC_OUI_LEN                             (3)
 
 #define MAC_ADDR_LOCAL_ADMIN                    BIT(1)
 
