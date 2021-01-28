@@ -4,6 +4,7 @@
  */
 #include "operation.h"
 
+#define CFG_WAIT_TSSI_READY 0
 extern s_int32 mt_engine_calc_phy(
 	struct test_ru_info *ru_info,
 	u_int32 apep_length,
@@ -1125,6 +1126,8 @@ s_int32 mt_op_start_tx(
 	u_int32 pkt_cnt = configs->tx_stat.tx_cnt;
 	s_int32 ret = SERV_STATUS_SUCCESS;
 	struct test_ru_info *ru_sta = &configs->ru_info_list[0];
+	struct param_mtk_wifi_test_struct rf_at_info;
+	u_int32 i, tx_cnt = 0, buf_len = 0;
 
 	if (pr_oid_funcptr == NULL)
 		return SERV_STATUS_HAL_OP_INVALID_NULL_POINTER;
@@ -1215,6 +1218,32 @@ s_int32 mt_op_start_tx(
 	tm_rftest_set_auto_test(winfos,
 		RF_AT_FUNCID_COMMAND, RF_AT_COMMAND_STARTTX);
 
+	/* For production line test, get tx count for wait calibration ready */
+	for (i = 0; i < 100; i++) {
+		if (band_idx == TEST_DBDC_BAND0)
+			rf_at_info.func_idx = RF_AT_FUNCID_TXED_COUNT;
+		else
+			rf_at_info.func_idx = RF_AT_FUNCID_TXED_COUNT | BIT(8);
+
+		rf_at_info.func_data = 0;
+		ret = tm_rftest_query_auto_test(winfos,
+			&rf_at_info, &buf_len);
+		if (ret == SERV_STATUS_SUCCESS)
+			tx_cnt = rf_at_info.func_data;
+
+#if (CFG_WAIT_TSSI_READY == 1)
+		/* For production line test,
+		 *  get tx count 16 for wait tssi ready
+		 */
+		if (tx_cnt >= 16)
+			break;
+
+		msleep(20);
+#else
+		break;
+#endif
+	}
+
 	return ret;
 }
 
@@ -1245,6 +1274,8 @@ s_int32 mt_op_start_rx(
 	wlan_oid_handler_t pr_oid_funcptr = winfos->oid_funcptr;
 	u_int32 func_data;
 	u_int8 nullAddr[] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+	struct param_mtk_wifi_test_struct rf_at_info;
+	u_int32 buf_len = 0;
 
 	if (pr_oid_funcptr == NULL)
 		return SERV_STATUS_HAL_OP_INVALID_NULL_POINTER;
@@ -1298,6 +1329,12 @@ s_int32 mt_op_start_rx(
 		RF_AT_FUNCID_SET_DBDC_BAND_IDX, band_idx);
 	ret = tm_rftest_set_auto_test(winfos,
 		RF_AT_FUNCID_COMMAND, RF_AT_COMMAND_STARTRX);
+
+	/* For production line test, get tx count for wait calibration ready */
+	rf_at_info.func_idx = RF_AT_FUNCID_TXED_COUNT;
+	rf_at_info.func_data = 0;
+	ret = tm_rftest_query_auto_test(winfos,
+		&rf_at_info, &buf_len);
 
 	return ret;
 }
