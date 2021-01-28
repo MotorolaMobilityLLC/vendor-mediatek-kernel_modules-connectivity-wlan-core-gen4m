@@ -367,6 +367,8 @@ p2pRoleStateAbort_GC_JOIN(IN struct ADAPTER *prAdapter,
 		if (prJoinInfo->fgIsJoinComplete == FALSE) {
 			struct MSG_SAA_FSM_ABORT *prJoinAbortMsg =
 				(struct MSG_SAA_FSM_ABORT *) NULL;
+			struct BSS_DESC *prBssDesc =
+				(struct BSS_DESC *) NULL;
 
 			prJoinAbortMsg =
 				(struct MSG_SAA_FSM_ABORT *) cnmMemAlloc(
@@ -383,6 +385,12 @@ p2pRoleStateAbort_GC_JOIN(IN struct ADAPTER *prAdapter,
 			prJoinAbortMsg->rMsgHdr.eMsgId = MID_P2P_SAA_FSM_ABORT;
 			prJoinAbortMsg->ucSeqNum = prJoinInfo->ucSeqNumOfReqMsg;
 			prJoinAbortMsg->prStaRec = prJoinInfo->prTargetStaRec;
+
+			/* Reset the flag to clear target BSS state */
+			prBssDesc = prJoinInfo->prTargetBssDesc;
+			if (prBssDesc != NULL) {
+				prBssDesc->fgIsConnecting = FALSE;
+			}
 
 			mboxSendMsg(prAdapter,
 				MBOX_ID_0,
