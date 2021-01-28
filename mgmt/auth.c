@@ -1307,8 +1307,6 @@ uint32_t authAddRSNIE_impl(IN struct ADAPTER *prAdapter,
 		(uint8_t *)prMsduInfo->prPacket + prMsduInfo->u2FrameLength;
 	uint32_t ucRSNIeSize = 0;
 	uint8_t ucBssIdx = prMsduInfo->ucBssIndex;
-	enum ENUM_PARAM_AUTH_MODE eAuthMode =
-	    aisGetAuthMode(prAdapter, ucBssIdx);
 	struct FT_IES *prFtIEs = aisGetFtIe(prAdapter, ucBssIdx);
 
 	if (!prFtIEs->prRsnIE ||
