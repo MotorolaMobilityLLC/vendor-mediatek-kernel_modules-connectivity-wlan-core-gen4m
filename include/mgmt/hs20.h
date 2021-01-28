@@ -84,7 +84,7 @@
 /*For GTK Frame Filter*/
 struct IPV4_NETWORK_ADDRESS_LIST {
 	uint8_t ucAddrCount;
-	struct IPV4_NETWORK_ADDRESS arNetAddr[1];
+	struct CMD_IPV4_NETWORK_ADDRESS arNetAddr[1];
 };
 #endif
 
@@ -141,7 +141,7 @@ struct HS20_INFO {
 				 OFFSET_OF(struct IPV4_NETWORK_ADDRESS_LIST,  \
 				 arNetAddr) +  \
 				 (((_prAddrList)->ucAddrCount) *  \
-				 sizeof(struct IPV4_NETWORK_ADDRESS));  \
+				 sizeof(struct CMD_IPV4_NETWORK_ADDRESS));  \
 		kalMemFree((_prAddrList), VIR_MEM_TYPE, u4Size);    \
 		(_prAddrList) = NULL;   \
 	}

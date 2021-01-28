@@ -382,9 +382,6 @@
 /* WMM-2.2.1 WMM Information Element */
 #define ELEM_MAX_LEN_WMM_INFO       7
 
-/* PF TCP/UDP max port number */
-#define MAX_TCP_UDP_PORT            20
-
 /*******************************************************************************
  *                             D A T A   T Y P E S
  *******************************************************************************

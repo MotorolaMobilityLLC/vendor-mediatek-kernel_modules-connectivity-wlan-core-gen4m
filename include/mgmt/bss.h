@@ -103,7 +103,7 @@ extern const uint8_t *apucNetworkType[NETWORK_TYPE_NUM];
 #define IS_BSS_ALIVE(_prAdapter, _prBssInfo) \
 	(_prBssInfo->fgIsInUse && \
 	_prBssInfo->fgIsNetActive && \
-	(_prBssInfo->eConnectionState == PARAM_MEDIA_STATE_CONNECTED || \
+	(_prBssInfo->eConnectionState == MEDIA_STATE_CONNECTED || \
 	(_prBssInfo->eCurrentOPMode == OP_MODE_ACCESS_POINT && \
 	IS_NET_PWR_STATE_ACTIVE(_prAdapter, \
 	_prBssInfo->ucBssIndex))))

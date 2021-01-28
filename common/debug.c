@@ -314,8 +314,8 @@ void wlanDbgSetLogLevelImpl(IN struct ADAPTER *prAdapter,
 
 			kalMemZero(&cmd,
 					sizeof(struct CMD_EVENT_LOG_UI_INFO));
-			cmd.u4Version = u4Version;
-			cmd.u4LogLevel = u4level;
+			cmd.ucVersion = u4Version;
+			cmd.ucLogLevel = u4level;
 
 			wlanSendSetQueryCmd(prAdapter,
 					CMD_ID_LOG_UI_INFO,

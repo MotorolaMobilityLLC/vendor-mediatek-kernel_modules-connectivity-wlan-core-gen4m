@@ -2694,7 +2694,7 @@ reqExtSetConfiguration(IN struct GLUE_INFO *prGlueInfo,
 	 * returned.
 	 */
 	if (prGlueInfo->eParamMediaStateIndicated ==
-	    PARAM_MEDIA_STATE_CONNECTED)
+	    MEDIA_STATE_CONNECTED)
 		return WLAN_STATUS_NOT_ACCEPTED;
 
 	ASSERT(pvSetBuffer);
@@ -2884,10 +2884,10 @@ reqExtSetAcpiDevicePowerState(IN struct GLUE_INFO
 #define MIRACAST_MCHAN_BW       25
 #endif
 
-#define	CMD_BAND_AUTO	0
-#define	CMD_BAND_5G		1
-#define	CMD_BAND_2G		2
-#define	CMD_BAND_ALL	3
+#define	CMD_BAND_TYPE_AUTO	0
+#define	CMD_BAND_TYPE_5G	1
+#define	CMD_BAND_TYPE_2G	2
+#define	CMD_BAND_TYPE_ALL	3
 
 /* Mediatek private command */
 #define CMD_SET_MCR		"SET_MCR"
@@ -3511,7 +3511,7 @@ static int priv_driver_get_bss_statistics(
 
 	/* 2. fill RSSI */
 	if (prGlueInfo->eParamMediaStateIndicated !=
-	    PARAM_MEDIA_STATE_CONNECTED) {
+	    MEDIA_STATE_CONNECTED) {
 		/* not connected */
 		DBGLOG(REQ, WARN, "not yet connected\n");
 		return WLAN_STATUS_SUCCESS;
@@ -9319,9 +9319,9 @@ int priv_driver_set_band(IN struct net_device *prNetDev, IN char *pcCommand,
 
 		ucBssIndex = wlanGetAisBssIndex(prGlueInfo->prAdapter);
 		eBand = BAND_NULL;
-		if (ucBand == CMD_BAND_5G)
+		if (ucBand == CMD_BAND_TYPE_5G)
 			eBand = BAND_5G;
-		else if (ucBand == CMD_BAND_2G)
+		else if (ucBand == CMD_BAND_TYPE_2G)
 			eBand = BAND_2G4;
 		prAdapter->aePreferBand[ucBssIndex] = eBand;
 		/* XXX call wlanSetPreferBandByNetwork directly in different
@@ -9587,7 +9587,7 @@ int priv_driver_get_channels(IN struct net_device *prNetDev,
 	int8_t *apcArgv[WLAN_CFG_ARGV_MAX];
 #if (CFG_SUPPORT_SINGLE_SKU == 1)
 	uint32_t ch_idx, start_idx, end_idx;
-	struct channel *pCh;
+	struct CMD_DOMAIN_CHANNEL *pCh;
 	uint32_t ch_num = 0;
 	uint8_t maxbw = 160;
 	uint32_t u4Ret = 0;
@@ -9634,15 +9634,15 @@ int priv_driver_get_channels(IN struct net_device *prNetDev,
 
 			pCh = (rlmDomainGetActiveChannels() + ch_idx);
 
-			if (ch_num && (ch_num != pCh->chNum))
+			if (ch_num && (ch_num != pCh->u2ChNum))
 				continue; /*show specific channel information*/
 
 			/* Channel number */
 			LOGBUF(pcCommand, i4TotalLen, i4BytesWritten, "CH-%d:",
-					pCh->chNum);
+					pCh->u2ChNum);
 
 			/* Active/Passive */
-			if (pCh->flags & IEEE80211_CHAN_PASSIVE_FLAG) {
+			if (pCh->eFlags & IEEE80211_CHAN_PASSIVE_FLAG) {
 				/* passive channel */
 				LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
 				       " " IEEE80211_CHAN_PASSIVE_STR);
@@ -9651,20 +9651,20 @@ int priv_driver_get_channels(IN struct net_device *prNetDev,
 				       " ACTIVE");
 
 			/* Max BW */
-			if ((pCh->flags & IEEE80211_CHAN_NO_160MHZ) ==
+			if ((pCh->eFlags & IEEE80211_CHAN_NO_160MHZ) ==
 			    IEEE80211_CHAN_NO_160MHZ)
 				maxbw = 80;
-			if ((pCh->flags & IEEE80211_CHAN_NO_80MHZ) ==
+			if ((pCh->eFlags & IEEE80211_CHAN_NO_80MHZ) ==
 			    IEEE80211_CHAN_NO_80MHZ)
 				maxbw = 40;
-			if ((pCh->flags & IEEE80211_CHAN_NO_HT40) ==
+			if ((pCh->eFlags & IEEE80211_CHAN_NO_HT40) ==
 			    IEEE80211_CHAN_NO_HT40)
 				maxbw = 20;
 			LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
 			       " BW_%dMHz", maxbw);
 			/* Channel flags */
 			LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
-			       "  (flags=0x%x)\n", pCh->flags);
+			       "  (flags=0x%x)\n", pCh->eFlags);
 		}
 	}
 #endif
@@ -11683,7 +11683,7 @@ static int priv_driver_get_cnm(IN struct net_device *prNetDev,
 		     ((eNetworkType == ENUM_CNM_NETWORK_TYPE_AIS ||
 		       eNetworkType == ENUM_CNM_NETWORK_TYPE_P2P_GC) &&
 		      (prCnmInfo->ucBssConnectState[ucBssIdx] ==
-		       PARAM_MEDIA_STATE_CONNECTED)))) {
+		       MEDIA_STATE_CONNECTED)))) {
 			ucOpRxNss = prBssInfo->ucOpRxNss;
 			if (eNetworkType == ENUM_CNM_NETWORK_TYPE_P2P_GO) {
 				struct STA_RECORD *prCurrStaRec =

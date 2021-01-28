@@ -1358,7 +1358,7 @@ struct ADAPTER {
 #if CFG_SUPPORT_P2P_RSSI_QUERY
 	OS_SYSTIME rP2pLinkQualityUpdateTime;
 	u_int8_t fgIsP2pLinkQualityValid;
-	struct EVENT_LINK_QUALITY rP2pLinkQuality;
+	struct LINK_QUALITY rP2pLinkQuality;
 #endif
 #endif
 
@@ -1383,7 +1383,7 @@ struct ADAPTER {
 	struct EVENT_WLAN_INFO rEventWlanInfo;
 #endif
 
-	struct EVENT_LINK_QUALITY rLinkQuality;
+	struct LINK_QUALITY rLinkQuality;
 	OS_SYSTIME rLinkQualityUpdateTime;
 	u_int8_t fgIsLinkQualityValid;
 	OS_SYSTIME rLinkRateUpdateTime;
@@ -1603,9 +1603,9 @@ struct ADAPTER {
 #define BSS_INFO_INIT(_prAdapter, _prBssInfo) \
 {   uint8_t _aucZeroMacAddr[] = NULL_MAC_ADDR; \
 	\
-	(_prBssInfo)->eConnectionState = PARAM_MEDIA_STATE_DISCONNECTED; \
+	(_prBssInfo)->eConnectionState = MEDIA_STATE_DISCONNECTED; \
 	(_prBssInfo)->eConnectionStateIndicated = \
-		PARAM_MEDIA_STATE_DISCONNECTED; \
+		MEDIA_STATE_DISCONNECTED; \
 	(_prBssInfo)->eCurrentOPMode = OP_MODE_INFRASTRUCTURE; \
 	(_prBssInfo)->ucReasonOfDisconnect = DISCONNECT_REASON_CODE_RESERVED; \
 	COPY_MAC_ADDR((_prBssInfo)->aucBSSID, _aucZeroMacAddr); \
