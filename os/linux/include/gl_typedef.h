@@ -209,6 +209,10 @@ typedef void(*remove_card) (void);
 #define ALIGN_4(_value)             (((_value) + 3) & ~3u)
 #endif /* ALIGN_4 */
 
+#ifndef ALIGN_8
+#define ALIGN_8(_value)             (((_value) + 7) & ~7u)
+#endif /* ALIGN_4 */
+
 /* This macro check the DW alignment of the input value.
  * _value - value of address need to check
  */
@@ -256,6 +260,51 @@ typedef void(*remove_card) (void);
 #define NTOHS(_x)
 
 #define HTONS(_x)
+
+#endif
+
+#define CPU_TO_LE16 cpu_to_le16
+#define CPU_TO_LE32 cpu_to_le32
+#define CPU_TO_LE64 cpu_to_le64
+
+#define LE16_TO_CPU le16_to_cpu
+#define LE32_TO_CPU le32_to_cpu
+#define LE64_TO_CPU le64_to_cpu
+
+#define SWAP32(x) \
+	((uint32_t) (\
+	(((uint32_t) (x) & (uint32_t) 0x000000ffUL) << 24) | \
+	(((uint32_t) (x) & (uint32_t) 0x0000ff00UL) << 8) | \
+	(((uint32_t) (x) & (uint32_t) 0x00ff0000UL) >> 8) | \
+	(((uint32_t) (x) & (uint32_t) 0xff000000UL) >> 24)))
+
+/* Endian byte swapping codes */
+#ifdef __LITTLE_ENDIAN
+#define LE48_TO_CPU(x) (x)
+#define CPU_TO_LE48(x) (x)
+#define cpu2le32(x) ((uint32_t)(x))
+#define le2cpu32(x) ((uint32_t)(x))
+#define cpu2be32(x) SWAP32((x))
+#define be2cpu32(x) SWAP32((x))
+
+#else
+
+
+#define SWAP48(x) \
+	((uint64_t)( \
+	(uint64_t)(((UINT_64)(x) & (uint64_t) 0x0000000000ffULL) << 40) | \
+	(uint64_t)(((UINT_64)(x) & (uint64_t) 0x00000000ff00ULL) << 24) | \
+	(uint64_t)(((UINT_64)(x) & (uint64_t) 0x000000ff0000ULL) << 8) | \
+	(uint64_t)(((UINT_64)(x) & (uint64_t) 0x0000ff000000ULL) >> 8) | \
+	(uint64_t)(((UINT_64)(x) & (uint64_t) 0x00ff00000000ULL) >> 24) | \
+	(uint64_t)(((UINT_64)(x) & (uint64_t) 0xff0000000000ULL) >> 40)))
+#define LE48_TO_CPU(x) SWAP48(x)
+#define CPU_TO_LE48(x) SWAP48(x)
+#define cpu2le32(x) SWAP32((x))
+#define le2cpu32(x) SWAP32((x))
+#define cpu2be32(x) ((uint32_t)(x))
+#define be2cpu32(x) ((uint32_t)(x))
+
 
 #endif
 
