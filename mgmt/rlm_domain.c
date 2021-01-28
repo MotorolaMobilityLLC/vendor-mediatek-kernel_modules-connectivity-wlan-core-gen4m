@@ -2841,10 +2841,12 @@ rlmDomainBuildCmdByDefaultTable(struct CMD_SET_COUNTRY_CHANNEL_POWER_LIMIT
 				cLmtBand += 6;
 				if (cLmtBand > MAX_TX_POWER)
 					cLmtBand = MAX_TX_POWER;
-				prPwrLimit->cPwrLimit160L = cLmtBand;
-				prPwrLimit->cPwrLimit160H = cLmtBand;
-
-
+				if (eType == PWR_LIMIT_TYPE_COMP_11AX) {
+					/* prPwrLmtHE do nothing */
+				} else {
+					prPwrLimit->cPwrLimit160L = cLmtBand;
+					prPwrLimit->cPwrLimit160H = cLmtBand;
+				}
 
 			}
 				/* save to power limit array per
@@ -4413,7 +4415,10 @@ void txPwrCtrlShowList(struct ADAPTER *prAdapter, uint8_t filterType,
 					    prChlSettingList->i8PwrLimitHE[k]);
 
 				/*message tail*/
-				msgLimit[msgOfs-1] = '\0';
+				if (msgOfs > 0)
+					msgLimit[msgOfs-1] = '\0';
+				else
+					msgLimit[0] = '\0';
 
 				DBGLOG(RLM, TRACE, "%s\n", msgLimit);
 			}
@@ -4767,7 +4772,10 @@ void rlmDomainShowPwrLimitPerCh(char *message,
 					*(prcRatePwr + j));
 
 			/*message tail*/
-			msgLimit[msgOfs-1] = '\0';
+			if (msgOfs > 0)
+				msgLimit[msgOfs-1] = '\0';
+			else
+				msgLimit[0] = '\0';
 
 			DBGLOG(RLM, TRACE, "%s:%s\n", message, msgLimit);
 		}
