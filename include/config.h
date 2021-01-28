@@ -1018,7 +1018,7 @@
  * if the value set to 2000, it means the duration of fitler is 2000 ms
  *------------------------------------------------------------------------------
  */
-#define CFG_BEACON_TIMEOUT_FILTER_DURATION_DEFAULT_VALUE	0
+#define CFG_BEACON_TIMEOUT_FILTER_DURATION_DEFAULT_VALUE	2000
 
 /*------------------------------------------------------------------------------
  * Flags of Random MAC support
