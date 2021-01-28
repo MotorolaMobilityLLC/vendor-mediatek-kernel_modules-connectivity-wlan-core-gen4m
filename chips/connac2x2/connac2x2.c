@@ -410,11 +410,7 @@ struct mt66xx_chip_info mt66xx_chip_info_connac2x2 = {
 	.asicEnableFWDownload = asicEnableFWDownload,
 	.asicGetChipID = asicGetChipID,
 	.downloadBufferBin = NULL,
-#if CFG_MTK_ANDROID_WMT
-	.showTaskStack = connectivity_export_show_stack,
-#else
 	.showTaskStack = NULL,
-#endif
 	.is_support_hw_amsdu = TRUE,
 	.ucMaxSwAmsduNum = 0,
 	/* Driver uses SOC to decide to use connac or connac2x2 configs

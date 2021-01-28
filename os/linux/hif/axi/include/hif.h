@@ -92,8 +92,6 @@ extern int mtk_wcn_wlan_unreg(void);
 #endif /*end of CFG_SUPPORT_CONNINFRA == 0*/
 #endif /*end of CFG_MTK_ANDROID_WMT */
 
-extern phys_addr_t gWifiRsvMemPhyBase;
-extern unsigned long long gWifiRsvMemSize;
 #if (CFG_SUPPORT_CONNINFRA == 1)
 extern wait_queue_head_t g_waitq_rst;
 extern unsigned long g_ulFlag;
@@ -154,8 +152,6 @@ struct HIF_MEM_OPS {
 			   struct RTMP_DMACB *pRxCell,
 			   struct RTMP_DMABUF *prDmaBuf,
 			   struct SW_RFB *prSwRfb);
-	void (*flushCache)(struct GL_HIF_INFO *prHifInfo,
-			   void *pucSrc, uint32_t u4Len);
 	phys_addr_t (*mapTxBuf)(struct GL_HIF_INFO *prHifInfo,
 			  void *pucBuf, uint32_t u4Offset, uint32_t u4Len);
 	phys_addr_t (*mapRxBuf)(struct GL_HIF_INFO *prHifInfo,
@@ -351,6 +347,7 @@ struct HIF_PREALLOC_MEM {
 	struct HIF_MEM rMsduBuf[HIF_TX_MSDU_TOKEN_NUM];
 #endif
 	phys_addr_t pucRsvMemBase;
+	void *pucRsvMemVirBase;
 	uint64_t u4RsvMemSize;
 	uint32_t u4Offset;
 };
