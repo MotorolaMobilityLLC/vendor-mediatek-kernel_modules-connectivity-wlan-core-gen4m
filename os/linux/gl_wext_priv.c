@@ -8687,14 +8687,10 @@ static int priv_driver_get_version(IN struct net_device *prNetDev, IN char *pcCo
 
 	ASSERT(prNetDev);
 
-	prGlueInfo = *((P_GLUE_INFO_T *) netdev_priv(prNetDev));
+	prGlueInfo = *((P_GLUE_INFO_T *)netdev_priv(prNetDev));
 	prAdapter = prGlueInfo->prAdapter;
 
-	u4Offset += snprintf(pcCommand + u4Offset, i4TotalLen - u4Offset,
-	"\nChip eco ver [%u]\n", prAdapter->chip_info->eco_ver);
-
-	wlanPrintVersion(prAdapter);
-
+	u4Offset += fwDlGetFwdlInfo(prAdapter, pcCommand, i4TotalLen);
 	u4Offset += snprintf(pcCommand + u4Offset, i4TotalLen - u4Offset,
 		"WiFi Driver Version %u.%u.%u\n",
 		NIC_DRIVER_MAJOR_VERSION,
