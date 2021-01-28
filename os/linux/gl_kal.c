@@ -2503,7 +2503,7 @@ kalArpFrameClassifier(IN struct GLUE_INFO *prGlueInfo,
 	WLAN_GET_FIELD_BE16(&pucIpHdr[ARP_OPERATION_OFFSET],
 			    &u2ArpOp);
 
-	DBGLOG_LIMITED(TX, INFO,
+	DBGLOG(TX, INFO,
 		"ARP %s PKT[0x%p] TAR MAC/IP["
 		MACSTR "]/[" IPV4STR "], SeqNo: %d\n",
 		u2ArpOp == ARP_OPERATION_REQUEST ? "REQ" : "RSP",
