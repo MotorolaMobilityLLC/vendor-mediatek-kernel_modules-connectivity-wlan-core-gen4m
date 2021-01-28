@@ -3470,7 +3470,7 @@ void nicRxProcessRFBs(IN struct ADAPTER *prAdapter)
 	struct SW_RFB *prSwRfb = (struct SW_RFB *) NULL;
 	struct QUE rTempRfbList;
 	struct QUE *prTempRfbList = &rTempRfbList;
-	uint32_t u4RxLoopCount;
+	uint32_t u4RxLoopCount, u4Tick;
 
 	KAL_SPIN_LOCK_DECLARATION();
 
@@ -3484,11 +3484,18 @@ void nicRxProcessRFBs(IN struct ADAPTER *prAdapter)
 	prRxCtrl->ucNumIndPacket = 0;
 	prRxCtrl->ucNumRetainedPacket = 0;
 	u4RxLoopCount = prAdapter->rWifiVar.u4TxRxLoopCount;
+	u4Tick = kalGetTimeTick();
 
 	QUEUE_INITIALIZE(prTempRfbList);
 
 	while (u4RxLoopCount--) {
 		while (QUEUE_IS_NOT_EMPTY(&prRxCtrl->rReceivedRfbList)) {
+
+			/* check process RFB timeout */
+			if ((kalGetTimeTick() - u4Tick) > RX_PROCESS_TIMEOUT) {
+				DBGLOG(RX, WARN, "Rx process RFBs timeout\n");
+				break;
+			}
 
 			KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_RX_QUE);
 			QUEUE_MOVE_ALL(prTempRfbList,
