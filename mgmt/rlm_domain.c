@@ -2240,18 +2240,20 @@ enum regd_state rlmDomainStateTransition(enum regd_state request_state, struct r
 	if (old_state == REGD_STATE_INVALID)
 		DBGLOG(RLM, ERROR, "%s(): invalid state. trasntion is not allowed.\n", __func__);
 
-
 	switch (request_state) {
 	case REGD_STATE_SET_WW_CORE:
-		if ((old_state == REGD_STATE_SET_WW_CORE) || (old_state == REGD_STATE_INIT))
+		if ((old_state == REGD_STATE_SET_WW_CORE) ||
+		    (old_state == REGD_STATE_INIT) ||
+		    (old_state == REGD_STATE_SET_COUNTRY_USER) ||
+		    (old_state == REGD_STATE_SET_COUNTRY_IE))
 			next_state = request_state;
-
 		break;
-
 	case REGD_STATE_SET_COUNTRY_USER:
 		/* Allow user to set multiple times */
-		if ((old_state == REGD_STATE_SET_WW_CORE) || (old_state == REGD_STATE_INIT)
-		    || old_state == REGD_STATE_SET_COUNTRY_USER)
+		if ((old_state == REGD_STATE_SET_WW_CORE) ||
+		    (old_state == REGD_STATE_INIT) ||
+		    (old_state == REGD_STATE_SET_COUNTRY_USER) ||
+		    (old_state == REGD_STATE_SET_COUNTRY_IE))
 			next_state = request_state;
 		else
 			DBGLOG(RLM, ERROR, "Invalid old state = %d\n", old_state);
@@ -2268,11 +2270,9 @@ enum regd_state rlmDomainStateTransition(enum regd_state request_state, struct r
 
 		next_state = request_state;
 		break;
-
 	case REGD_STATE_SET_COUNTRY_IE:
 		next_state = request_state;
 		break;
-
 	default:
 		break;
 	}
@@ -2326,16 +2326,6 @@ u_int8_t rlmDomainIsTheEndOfCountrySection(u32 start_offset, const struct firmwa
 		return TRUE;
 	else
 		return FALSE;
-}
-
-void rlmDomainSetRefWiphy(struct wiphy *pWiphy)
-{
-	g_mtk_regd_control.pRefWiphy = pWiphy;
-}
-
-struct wiphy *rlmDomainGetRefWiphy(void)
-{
-	return g_mtk_regd_control.pRefWiphy;
 }
 
 /**
@@ -2393,7 +2383,6 @@ void rlmDomainParsingChannel(IN struct wiphy *pWiphy)
 	 */
 
 	rlmDomainResetActiveChannel();
-	rlmDomainSetRefWiphy(pWiphy);
 
 	ch_count = 0;
 	for (band_idx = 0; band_idx < KAL_NUM_BANDS; band_idx++) {
@@ -2603,7 +2592,7 @@ u32 rlmDomainGetTempCountryCode(void)
 #endif
 }
 
-void rlmDomianAssert(u_int8_t cond)
+void rlmDomainAssert(u_int8_t cond)
 {
 	/* bypass this check because single sku is not enable */
 	if (!regd_is_single_sku_en())
