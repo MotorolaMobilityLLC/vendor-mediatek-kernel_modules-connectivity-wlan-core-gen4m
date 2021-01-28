@@ -224,6 +224,10 @@ cnmTimerInitTimerOption(IN struct ADAPTER *prAdapter,
 			IN unsigned long ulDataPtr,
 			IN enum ENUM_TIMER_WAKELOCK_TYPE_T eType)
 {
+	struct LINK *prTimerList;
+	struct LINK_ENTRY *prLinkEntry;
+	struct TIMER *prPendingTimer;
+
 	KAL_SPIN_LOCK_DECLARATION();
 	ASSERT(prAdapter);
 
@@ -231,36 +235,27 @@ cnmTimerInitTimerOption(IN struct ADAPTER *prAdapter,
 
 	ASSERT((eType >= TIMER_WAKELOCK_AUTO) && (eType < TIMER_WAKELOCK_NUM));
 
-#if DBG
-	/* Note: NULL function pointer is permitted for HEM POWER */
-	if (pfFunc == NULL)
-		log_dbg(CNM, WARN, "Init timer with NULL callback function!\n");
-
-	ASSERT(prAdapter->rRootTimer.rLinkHead.prNext);
-	{
-		struct LINK *prTimerList;
-		struct LINK_ENTRY *prLinkEntry;
-		struct TIMER *prPendingTimer;
-
-		prTimerList = &(prAdapter->rRootTimer.rLinkHead);
-
-		LINK_FOR_EACH(prLinkEntry, prTimerList) {
-			prPendingTimer = LINK_ENTRY(prLinkEntry,
-				struct TIMER, rLinkEntry);
-			ASSERT(prPendingTimer);
-			ASSERT(prPendingTimer != prTimer);
-		}
-	}
-#endif
 	KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_TIMER);
 
-	if (prTimer->pfMgmtTimeOutFunc == pfFunc
-		&& prTimer->rLinkEntry.prNext) {
-		log_dbg(CNM, WARN, "re-init timer, func %p\n", pfFunc);
-		/* Remove dead timer to prevent infinite loop */
-		LINK_REMOVE_KNOWN_ENTRY(&prAdapter->rRootTimer.rLinkHead,
-			&prTimer->rLinkEntry);
-		dump_stack();
+	/* Remove pending timer */
+	prTimerList = &(prAdapter->rRootTimer.rLinkHead);
+
+	LINK_FOR_EACH(prLinkEntry, prTimerList) {
+		if (prLinkEntry == NULL)
+			break;
+
+		prPendingTimer = LINK_ENTRY(prLinkEntry,
+			struct TIMER, rLinkEntry);
+
+		if (prPendingTimer == prTimer) {
+			log_dbg(CNM, WARN, "re-init timer, timer %p func %p\n",
+				prTimer, pfFunc);
+			/* Remove pending timer to prevent breaking list */
+			LINK_REMOVE_KNOWN_ENTRY(
+				&prAdapter->rRootTimer.rLinkHead,
+				&prTimer->rLinkEntry);
+			break;
+		}
 	}
 
 	LINK_ENTRY_INITIALIZE(&prTimer->rLinkEntry);
@@ -268,6 +263,7 @@ cnmTimerInitTimerOption(IN struct ADAPTER *prAdapter,
 	prTimer->pfMgmtTimeOutFunc = pfFunc;
 	prTimer->ulDataPtr = ulDataPtr;
 	prTimer->eType = eType;
+
 	KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_TIMER);
 }
 
@@ -333,6 +329,9 @@ void cnmTimerStopTimer(IN struct ADAPTER *prAdapter, IN struct TIMER *prTimer)
 	ASSERT(prAdapter);
 	ASSERT(prTimer);
 
+	log_dbg(CNM, TRACE, "stop timer, timer %p func %p\n",
+		prTimer, prTimer->pfMgmtTimeOutFunc);
+
 	cnmTimerStopTimer_impl(prAdapter, prTimer, TRUE);
 }
 
@@ -358,6 +357,9 @@ void cnmTimerStartTimer(IN struct ADAPTER *prAdapter, IN struct TIMER *prTimer,
 
 	ASSERT(prAdapter);
 	ASSERT(prTimer);
+
+	log_dbg(CNM, TRACE, "start timer, timer %p func %p\n",
+		prTimer, prTimer->pfMgmtTimeOutFunc);
 
 #if (CFG_SUPPORT_STATISTICS == 1)
 	/* Do not print oid timer to avoid log too much.
@@ -491,8 +493,8 @@ void cnmTimerDoTimeOutCheck(IN struct ADAPTER *prAdapter)
 						SPIN_LOCK_TIMER);
 				}
 			} else {
-				log_dbg(CNM, WARN, "timer was re-inited, func %p\n",
-					prTimer->pfMgmtTimeOutFunc);
+				log_dbg(CNM, WARN, "timer was re-inited, timer %p func %p\n",
+					prTimer, prTimer->pfMgmtTimeOutFunc);
 				break;
 			}
 
