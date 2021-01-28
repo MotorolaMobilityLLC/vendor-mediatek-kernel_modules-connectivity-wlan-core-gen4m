@@ -10532,3 +10532,15 @@ void wlanFinishCollectingLinkQuality(struct GLUE_INFO *prGlueInfo)
 }
 #endif /* CFG_SUPPORT_LINK_QUALITY_MONITOR */
 
+uint8_t wlanGetBssIdx(struct net_device *ndev)
+{
+	if (ndev) {
+		struct NETDEV_PRIVATE_GLUE_INFO *prNetDevPrivate
+			= (struct NETDEV_PRIVATE_GLUE_INFO *) netdev_priv(ndev);
+		DBGLOG(REQ, TRACE, "ucBssIndex = %d\n",
+			prNetDevPrivate->ucBssIdx);
+		return prNetDevPrivate->ucBssIdx;
+	}
+	return 0xff;
+}
+
