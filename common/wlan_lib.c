@@ -1292,6 +1292,9 @@ uint32_t wlanAdapterStart(IN struct ADAPTER *prAdapter,
 		}
 	}
 
+	if (prAdapter->chip_info->checkbushang)
+		prAdapter->chip_info->checkbushang(TRUE);
+
 	return u4Status;
 }				/* wlanAdapterStart */
 
