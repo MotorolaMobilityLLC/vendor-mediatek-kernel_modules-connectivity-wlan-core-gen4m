@@ -1443,15 +1443,19 @@ int rrmReportElem(struct RM_MEASURE_REPORT_ENTRY *reportEntry,
 	return 0;
 }
 
-int rrmAddBeaconRepElem(struct BCN_RM_PARAMS *data,
-			    struct BSS_DESC *bss,
-			    struct RM_MEASURE_REPORT_ENTRY *reportEntry,
-			    struct RM_BCN_REPORT *rep,
-			    uint8_t **ie, uint32_t *ie_len, uint8_t idx)
+int rrmAddBeaconRepElem(IN struct ADAPTER *prAdapter,
+			struct BCN_RM_PARAMS *data,
+			struct BSS_DESC *bss,
+			struct RM_MEASURE_REPORT_ENTRY *reportEntry,
+			struct RM_BCN_REPORT *rep,
+			uint8_t **ie, uint32_t *ie_len, uint8_t idx)
 {
 	int ret;
 	uint8_t *buf, *pos;
-	uint32_t subelems_len = REPORTED_FRAME_BODY_SUBELEM_LEN +
+	uint8_t ve = prAdapter->rWifiVar.u4SwTestMode ==
+		ENUM_SW_TEST_MODE_SIGMA_VOICE_ENT;
+	uint32_t subelems_len =
+		(!ve ? REPORTED_FRAME_BODY_SUBELEM_LEN : 0) +
 		(data->lastIndication ?
 		 BEACON_REPORT_LAST_INDICATION_SUBELEM_LEN : 0);
 	uint32_t size = sizeof(*rep) + 14 + *ie_len + subelems_len;
@@ -1477,24 +1481,28 @@ int rrmAddBeaconRepElem(struct BCN_RM_PARAMS *data,
 
 	pos = buf + ret + sizeof(*rep);
 
-	pos[0] = BEACON_REPORT_SUBELEM_FRAME_BODY_FRAGMENT_ID;
-	pos[1] = 2;
 
-	/*
-	 * Only one Beacon Report Measurement is supported at a time, so
-	 * the Beacon Report ID can always be set to 1.
-	 */
-	pos[2] = 1;
+	if (!ve) {
+		pos[0] = BEACON_REPORT_SUBELEM_FRAME_BODY_FRAGMENT_ID;
+		pos[1] = 2;
 
-	/* Fragment ID Number (bits 0..6) and More Frame Body Fragments (bit 7)
-	 */
-	pos[3] = idx;
-	if (data->reportDetail != BEACON_REPORT_DETAIL_NONE && *ie_len)
-		pos[3] |= REPORTED_FRAME_BODY_MORE_FRAGMENTS;
-	else
-		pos[3] &= ~REPORTED_FRAME_BODY_MORE_FRAGMENTS;
+		/*
+		 * Only one Beacon Report Measurement is supported at a time,
+		 * so the Beacon Report ID can always be set to 1.
+		 */
+		pos[2] = 1;
 
-	pos += REPORTED_FRAME_BODY_SUBELEM_LEN;
+		/* Fragment ID Number (bits 0..6) and
+		 * More Frame Body Fragments (bit 7)
+		 */
+		pos[3] = idx;
+		if (data->reportDetail != BEACON_REPORT_DETAIL_NONE && *ie_len)
+			pos[3] |= REPORTED_FRAME_BODY_MORE_FRAGMENTS;
+		else
+			pos[3] &= ~REPORTED_FRAME_BODY_MORE_FRAGMENTS;
+
+		pos += REPORTED_FRAME_BODY_SUBELEM_LEN;
+	}
 
 	if (data->lastIndication) {
 		pos[0] = BEACON_REPORT_SUBELEM_LAST_INDICATION;
@@ -1643,8 +1651,8 @@ static void rrmCollectBeaconReport(IN struct ADAPTER *prAdapter,
 	do {
 		int ret;
 
-		ret = rrmAddBeaconRepElem(data, prBssDesc, reportEntry, &rep,
-					       &pos, &ies_len, idx++);
+		ret = rrmAddBeaconRepElem(prAdapter, data, prBssDesc,
+			reportEntry, &rep, &pos, &ies_len, idx++);
 		if (ret)
 			break;
 	} while (data->reportDetail != BEACON_REPORT_DETAIL_NONE &&
