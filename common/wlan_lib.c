@@ -7706,6 +7706,14 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 
 #endif
 
+#if ARP_MONITER_ENABLE
+	prWifiVar->u4ArpMoniterThreshold = (uint32_t) wlanCfgGetUint32(
+			prAdapter, "ArpMoniterThreshold",
+			20); /*AP IOT issue: default=20*/
+	DBGLOG(INIT, TRACE,
+		"ArpMoniterThreshold=%d\n", prWifiVar->u4ArpMoniterThreshold);
+#endif
+
 	prWifiVar->fgReuseRSNIE = (uint32_t) wlanCfgGetUint32(
 			prAdapter, "ReuseRSNIE",
 			FEATURE_DISABLED);
