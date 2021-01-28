@@ -7755,6 +7755,7 @@ qmIsNoDropPacket(IN struct ADAPTER *prAdapter, IN struct SW_RFB *prSwRfb)
 #if CFG_SUPPORT_OSHARE
 	if (!fgCheckDrop &&
 		(prAdapter->fgEnOshareMode) &&
+		(ucBssIndex <= MAX_BSSID_NUM) &&
 		(GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex)->eNetworkType
 			== NETWORK_TYPE_P2P))
 		fgCheckDrop = TRUE;
