@@ -111,6 +111,8 @@
 /* for CFG80211 IE buffering mechanism */
 #define	CFG_CFG80211_IE_BUF_LEN		(512)
 #define	GLUE_INFO_WSCIE_LENGTH		(500)
+/* for non-wfa vendor specific IE buffer */
+#define NON_WFA_VENDOR_IE_MAX_LEN	(128)
 
 
 /*******************************************************************************
@@ -642,6 +644,14 @@ struct GLUE_INFO {
 
 	uint32_t u4ReqIeLength;
 	uint8_t aucReqIe[CFG_CFG80211_IE_BUF_LEN];
+
+	/*
+	 * Buffer to hold non-wfa vendor specific IEs set
+	 * from wpa_supplicant. This is used in sending
+	 * Association Request in AIS mode.
+	 */
+	uint16_t non_wfa_vendor_ie_len;
+	uint8_t non_wfa_vendor_ie_buf[NON_WFA_VENDOR_IE_MAX_LEN];
 
 #if CFG_SUPPORT_SDIO_READ_WRITE_PATTERN
 	u_int8_t fgEnSdioTestPattern;
