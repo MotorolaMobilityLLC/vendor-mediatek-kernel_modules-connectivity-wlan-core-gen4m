@@ -98,11 +98,8 @@
 */
 ECO_INFO_T mt7663_eco_table[] = {
 	/* HW version,  ROM version,    Factory version */
-#if 0 /* TODO: update after receive information */
-	{0x00, 0x00, 0xA},	/* E1 */
-	{0x10, 0x01, 0xB},	/* E2 */
-#endif /* if 0 */
-	{0x00, 0x00, 0x0}	/* End of table */
+	{0x00, 0x00, 0x0A, 0x01},	/* E1 */
+	{0x00, 0x00, 0x00, 0x00}	/* End of table */
 };
 
 #if defined(_HIF_PCIE)
@@ -224,6 +221,7 @@ struct mt66xx_chip_info mt66xx_chip_info_mt7663 = {
 	.asicEnableFWDownload = asicEnableFWDownload,
 	.downloadBufferBin = wlanConnacDownloadBufferBin,
 	.is_support_hw_amsdu = TRUE,
+	.workAround = BIT(WORKAROUND_MT7663_BRINGUP_20171205),
 };
 
 struct mt66xx_hif_driver_data mt66xx_driver_data_mt7663 = {
