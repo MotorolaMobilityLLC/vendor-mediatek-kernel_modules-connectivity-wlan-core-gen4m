@@ -1435,6 +1435,10 @@ void aisFsmSteps(IN struct ADAPTER *prAdapter, enum ENUM_AIS_STATE eNextState)
 			mboxSendMsg(prAdapter, MBOX_ID_0, (struct MSG_HDR *) prScanReqMsg, MSG_SEND_METHOD_BUF);
 
 			prAisFsmInfo->fgTryScan = FALSE;	/* Will enable background sleep for infrastructure */
+			prAisFsmInfo->u4ScanChannelNum = 0;
+			kalMemZero(prAisFsmInfo->arChannel,
+				sizeof(prAisFsmInfo->arChannel));
+
 			/* Support AP Selection */
 			prAisFsmInfo->ucJoinFailCntAfterScan = 0;
 
