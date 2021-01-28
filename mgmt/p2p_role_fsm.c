@@ -3299,12 +3299,12 @@ void p2pRoleFsmNotifyEapolTxStatus(IN struct ADAPTER *prAdapter,
 	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo =
 			(struct P2P_ROLE_FSM_INFO *) NULL;
 
-	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
-
-	if (prAdapter == NULL || prBssInfo == NULL)
+	if (prAdapter == NULL)
 		return;
 
-	if (prBssInfo->eNetworkType != NETWORK_TYPE_P2P)
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
+
+	if (prBssInfo == NULL || prBssInfo->eNetworkType != NETWORK_TYPE_P2P)
 		return;
 
 	prP2pRoleFsmInfo = P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prAdapter,
