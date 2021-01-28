@@ -3313,6 +3313,7 @@ p2pFuncValidateAuth(IN struct ADAPTER *prAdapter,
 			"Group Limit Full. (%d)\n",
 			bssGetClientCount(prAdapter, prP2pBssInfo));
 		cnmStaRecFree(prAdapter, prStaRec);
+		*pu2StatusCode = STATUS_CODE_ASSOC_DENIED_AP_OVERLOAD;
 		return TRUE;
 	}
 #if CFG_SUPPORT_HOTSPOT_WPS_MANAGER
