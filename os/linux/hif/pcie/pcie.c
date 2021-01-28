@@ -350,6 +350,8 @@ VOID glSetHifInfo(P_GLUE_INFO_T prGlueInfo, ULONG ulCookie)
 	halWpdmaInitRing(prGlueInfo);
 
 	spin_lock_init(&prHif->rDynMapRegLock);
+
+	prGlueInfo->u4InfType = MT_DEV_INF_PCIE;
 }
 
 /*----------------------------------------------------------------------------*/

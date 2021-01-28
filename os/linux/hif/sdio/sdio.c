@@ -587,6 +587,7 @@ VOID glSetHifInfo(P_GLUE_INFO_T prGlueInfo, ULONG ulCookie)
 	mutex_init(&prHif->rRxFreeBufQueMutex);
 	mutex_init(&prHif->rRxDeAggQueMutex);
 
+	prGlueInfo->u4InfType = MT_DEV_INF_SDIO;
 }				/* end of glSetHifInfo() */
 
 /*----------------------------------------------------------------------------*/
