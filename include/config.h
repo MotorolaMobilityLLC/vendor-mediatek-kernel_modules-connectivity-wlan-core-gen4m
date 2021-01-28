@@ -1294,8 +1294,25 @@
  * for some code flow in mobile gen4m.
  *------------------------------------------------------------------------------
  */
-#define CFG_SUPPORT_CONNINFRA 1
+#ifndef CFG_SUPPORT_CONNINFRA
+#define CFG_SUPPORT_CONNINFRA 0
+#endif
+
+#ifndef CFG_SUPPORT_PRE_ON_PHY_ACTION
 #define CFG_SUPPORT_PRE_ON_PHY_ACTION 0
+#endif
+
+#ifndef CFG_POWER_ON_DOWNLOAD_EMI_ROM_PATCH
+#define CFG_POWER_ON_DOWNLOAD_EMI_ROM_PATCH 0
+#endif
+
+#ifndef CFG_DOWNLOAD_DYN_MEMORY_MAP
+#define CFG_DOWNLOAD_DYN_MEMORY_MAP 0
+#endif
+
+#ifndef CFG_ROM_PATCH_NO_SEM_CTRL
+#define CFG_ROM_PATCH_NO_SEM_CTRL 0
+#endif
 
 /*------------------------------------------------------------------------------
  * Flags of Disconnect with disable channel based on REGD update
