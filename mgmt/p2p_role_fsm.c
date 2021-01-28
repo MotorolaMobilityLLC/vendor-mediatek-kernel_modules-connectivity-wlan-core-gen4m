@@ -2830,11 +2830,9 @@ p2pRoleFsmRunEventChnlGrant(IN struct ADAPTER *prAdapter,
 			break;
 		}
 	} else {
-		/* Channel requsted, but released. */
-		ASSERT(!prChnlReqInfo->fgIsChannelRequested);
-		if (prChnlReqInfo->fgIsChannelRequested)
-			DBGLOG(P2P, ERROR,
-				"Channel was requested, but released!\n");
+		DBGLOG(P2P, ERROR,
+			"p2pRoleFsmRunEventChnlGrant: Token mismatch, Chreq: %d, ChGrant: %d\n",
+			prChnlReqInfo->ucSeqNumOfChReq, ucTokenID);
 	}
 
 error:
