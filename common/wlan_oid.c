@@ -12285,3 +12285,18 @@ wlanoidLinkDown(IN P_ADAPTER_T prAdapter,
 	return WLAN_STATUS_SUCCESS;
 }				/* wlanoidSetDisassociate */
 
+WLAN_STATUS
+wlanoidAbortScan(IN P_ADAPTER_T prAdapter,
+			OUT PVOID pvQueryBuffer, IN UINT_32 u4QueryBufferLen,
+			OUT PUINT_32 pu4QueryInfoLen) {
+
+	P_AIS_FSM_INFO_T prAisFsmInfo = NULL;
+
+	prAisFsmInfo = &(prAdapter->rWifiVar.rAisFsmInfo);
+	if (prAisFsmInfo->eCurrentState == AIS_STATE_SCAN ||
+			prAisFsmInfo->eCurrentState == AIS_STATE_ONLINE_SCAN) {
+		DBGLOG(OID, INFO,  "wlanoidAbortScan\n");
+		aisFsmStateAbort_SCAN(prAdapter);
+	}
+	return WLAN_STATUS_SUCCESS;
+}
