@@ -1454,7 +1454,7 @@ void soc3_0_show_dmashdl_info(IN struct ADAPTER *prAdapter)
 		WF_HIF_DMASHDL_TOP_ERROR_FLAG_CTRL_ADDR, value);
 
 	for (idx = 0; idx < ENUM_MT6885_DMASHDL_GROUP_NUM; idx++) {
-		DBGLOG(HAL, INFO, "Group %d info:", idx);
+		DBGLOG(HAL, INFO, "Group %d info:\n", idx);
 		mt6885HalDmashdlGetGroupControl(prAdapter, idx);
 		rsv_cnt = mt6885HalDmashdlGetRsvCount(prAdapter, idx);
 		src_cnt = mt6885HalDmashdlGetSrcCount(prAdapter, idx);
@@ -1473,25 +1473,27 @@ void soc3_0_show_dmashdl_info(IN struct ADAPTER *prAdapter)
 	DBGLOG(HAL, INFO, "\tfree page cnt = 0x%03x, ffa cnt = 0x%03x\n",
 		free_pg_cnt, ffa_cnt);
 
-	DBGLOG(HAL, INFO, "\nCounter Check:\n");
+	DBGLOG(HAL, INFO, "==============================\n");
+	DBGLOG(HAL, INFO, "\nDMASHDL Counter Check:\n");
+	DBGLOG(HAL, INFO, "==============================\n");
 	HAL_MCR_RD(prAdapter, WF_PLE_TOP_HIF_PG_INFO_ADDR, &value);
 	ple_rpg_hif = (value & WF_PLE_TOP_HIF_PG_INFO_HIF_RSV_CNT_MASK) >>
 		  WF_PLE_TOP_HIF_PG_INFO_HIF_RSV_CNT_SHFT;
 	ple_upg_hif = (value & WF_PLE_TOP_HIF_PG_INFO_HIF_SRC_CNT_MASK) >>
 		  WF_PLE_TOP_HIF_PG_INFO_HIF_SRC_CNT_SHFT;
 	DBGLOG(HAL, INFO,
-		"PLE:\n\tThe used/reserved pages of PLE HIF group=0x%03x/0x%03x\n",
+		"\tPLE:The used/reserved pages of PLE HIF group=0x%03x/0x%03x\n",
 		 ple_upg_hif, ple_rpg_hif);
 	DBGLOG(HAL, INFO,
-		"DMASHDL:\n\tThe total used pages of group0~14=0x%03x",
+		"\tDMASHDL:The total used pages of group0~14=0x%03x\n",
 		total_src_cnt);
 
 	if (ple_upg_hif != total_src_cnt) {
-		DBGLOG(HAL, INFO, ", mismatch!");
+		DBGLOG(HAL, INFO,
+			"\tPLE used pages & total used pages mismatch!\n");
 		is_mismatch = TRUE;
 	}
 
-	DBGLOG(HAL, INFO, "\n");
 	DBGLOG(HAL, INFO,
 		"\tThe total reserved pages of group0~14=0x%03x\n",
 		total_rsv_cnt);
@@ -1499,21 +1501,20 @@ void soc3_0_show_dmashdl_info(IN struct ADAPTER *prAdapter)
 		"\tThe total ffa pages of group0~14=0x%03x\n",
 		ffa_cnt);
 	DBGLOG(HAL, INFO,
-		"\tThe total free pages of group0~14=0x%03x",
+		"\tThe total free pages of group0~14=0x%03x\n",
 		free_pg_cnt);
 
 	if (free_pg_cnt != total_rsv_cnt + ffa_cnt) {
 		DBGLOG(HAL, INFO,
-			", mismatch(total_rsv_cnt + ffa_cnt in DMASHDL)");
+			"\tmismatch(total_rsv_cnt + ffa_cnt in DMASHDL)\n");
 		is_mismatch = TRUE;
 	}
 
 	if (free_pg_cnt != ple_rpg_hif) {
-		DBGLOG(HAL, INFO, ", mismatch(reserved pages in PLE)");
+		DBGLOG(HAL, INFO, "\tmismatch(reserved pages in PLE)\n");
 		is_mismatch = TRUE;
 	}
 
-	DBGLOG(HAL, INFO, "\n");
 
 	if (!is_mismatch)
 		DBGLOG(HAL, INFO, "DMASHDL: no counter mismatch\n");
