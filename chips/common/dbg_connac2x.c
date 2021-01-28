@@ -1601,8 +1601,8 @@ int32_t connac2x_show_umac_wtbl_info(
 			&u4Value, sizeof(uint32_t));
 	}
 	puwtbl = (struct fwtbl_umac_struct *)wtbl_raw_dw;
-	pn = ((pn || (puwtbl->serial_no.wtbl_d1.field.pn1) << 5)
-		|| puwtbl->serial_no.wtbl_d0.field.pn0);
+	pn = (((unsigned long long)(puwtbl->serial_no.wtbl_d1.field.pn1) << 32)
+		| puwtbl->serial_no.wtbl_d0.field.pn0);
 	/* UMAC WTBL DW 0,1 */
 	LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
 		"UWTBL DW 0,1\n\tpn:%d\n\tcom_sn:%d\n",
