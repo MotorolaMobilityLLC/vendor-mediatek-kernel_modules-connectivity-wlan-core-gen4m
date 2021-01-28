@@ -2581,6 +2581,12 @@ static u_int8_t
 rlmRecBcnInfoForClient(struct ADAPTER *prAdapter,
 		       struct BSS_INFO *prBssInfo, struct SW_RFB *prSwRfb, uint8_t *pucIE, uint16_t u2IELength)
 {
+	/* For checking if syncing params are different from
+	 * last syncing and need to sync again
+	 */
+	struct CMD_SET_BSS_RLM_PARAM rBssRlmParam;
+	u_int8_t fgNewParameter = FALSE;
+
 	ASSERT(prAdapter);
 	ASSERT(prBssInfo && prSwRfb);
 	ASSERT(pucIE);
@@ -2605,9 +2611,53 @@ rlmRecBcnInfoForClient(struct ADAPTER *prAdapter,
 	prBssInfo->fgUseShortSlotTime = ((prBssInfo->u2CapInfo & CAP_INFO_SHORT_SLOT_TIME)
 					 || (prBssInfo->eBand != BAND_2G4)) ? TRUE : FALSE;
 
+	/* Check if syncing params are different from last syncing and need to sync again
+	 * If yes, return TRUE and sync with FW; Otherwise, return FALSE.
+	 */
+	rBssRlmParam.ucRfBand = (u_int8_t) prBssInfo->eBand;
+	rBssRlmParam.ucPrimaryChannel = prBssInfo->ucPrimaryChannel;
+	rBssRlmParam.ucRfSco = (u_int8_t) prBssInfo->eBssSCO;
+	rBssRlmParam.ucErpProtectMode = (u_int8_t) prBssInfo->fgErpProtectMode;
+	rBssRlmParam.ucHtProtectMode = (u_int8_t) prBssInfo->eHtProtectMode;
+	rBssRlmParam.ucGfOperationMode = (u_int8_t) prBssInfo->eGfOperationMode;
+	rBssRlmParam.ucTxRifsMode = (u_int8_t) prBssInfo->eRifsOperationMode;
+	rBssRlmParam.u2HtOpInfo3 = prBssInfo->u2HtOpInfo3;
+	rBssRlmParam.u2HtOpInfo2 = prBssInfo->u2HtOpInfo2;
+	rBssRlmParam.ucHtOpInfo1 = prBssInfo->ucHtOpInfo1;
+	rBssRlmParam.ucUseShortPreamble = prBssInfo->fgUseShortPreamble;
+	rBssRlmParam.ucUseShortSlotTime = prBssInfo->fgUseShortSlotTime;
+	rBssRlmParam.ucVhtChannelWidth = prBssInfo->ucVhtChannelWidth;
+	rBssRlmParam.ucVhtChannelFrequencyS1 = prBssInfo->ucVhtChannelFrequencyS1;
+	rBssRlmParam.ucVhtChannelFrequencyS2 = prBssInfo->ucVhtChannelFrequencyS2;
+	rBssRlmParam.u2VhtBasicMcsSet = prBssInfo->u2VhtBasicMcsSet;
+	rBssRlmParam.ucNss = prBssInfo->ucNss;
+
 	rlmRecIeInfoForClient(prAdapter, prBssInfo, pucIE, u2IELength);
 
-	return TRUE;
+	if (rBssRlmParam.ucRfBand != prBssInfo->eBand
+		|| rBssRlmParam.ucPrimaryChannel != prBssInfo->ucPrimaryChannel
+		|| rBssRlmParam.ucRfSco != prBssInfo->eBssSCO
+		|| rBssRlmParam.ucErpProtectMode != prBssInfo->fgErpProtectMode
+		|| rBssRlmParam.ucHtProtectMode != prBssInfo->eHtProtectMode
+		|| rBssRlmParam.ucGfOperationMode != prBssInfo->eGfOperationMode
+		|| rBssRlmParam.ucTxRifsMode != prBssInfo->eRifsOperationMode
+		|| rBssRlmParam.u2HtOpInfo3 != prBssInfo->u2HtOpInfo3
+		|| rBssRlmParam.u2HtOpInfo2 != prBssInfo->u2HtOpInfo2
+		|| rBssRlmParam.ucHtOpInfo1 != prBssInfo->ucHtOpInfo1
+		|| rBssRlmParam.ucUseShortPreamble != prBssInfo->fgUseShortPreamble
+		|| rBssRlmParam.ucUseShortSlotTime != prBssInfo->fgUseShortSlotTime
+		|| rBssRlmParam.ucVhtChannelWidth != prBssInfo->ucVhtChannelWidth
+		|| rBssRlmParam.ucVhtChannelFrequencyS1 != prBssInfo->ucVhtChannelFrequencyS1
+		|| rBssRlmParam.ucVhtChannelFrequencyS2 != prBssInfo->ucVhtChannelFrequencyS2
+		|| rBssRlmParam.u2VhtBasicMcsSet != prBssInfo->u2VhtBasicMcsSet
+		|| rBssRlmParam.ucNss != prBssInfo->ucNss)
+		fgNewParameter = TRUE;
+	else {
+		DBGLOG(RLM, TRACE, "prBssInfo's params are all the same! not to sync!\n");
+		fgNewParameter = FALSE;
+	}
+
+	return fgNewParameter;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -3988,7 +4038,7 @@ void rlmSendSmPowerSaveFrame(struct ADAPTER *prAdapter, struct STA_RECORD *prSta
 /*!
 * \brief Send Notify Channel Width frame (HT action frame)
 *
-* \param[in] ucChannelWidth 0:20MHz, 1:Any channel width in the STA¡¦s Supported Channel Width Set subfield
+* \param[in] ucChannelWidth 0:20MHz, 1:Any channel width in the STAÂ¡Â¦s Supported Channel Width Set subfield
 *
 * \return none
 */
