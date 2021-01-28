@@ -165,7 +165,7 @@ WLAN_STATUS
 halRxWaitResponse(IN P_ADAPTER_T prAdapter, IN UINT_8 ucPortIdx, OUT PUINT_8 pucRspBuffer,
 		  IN UINT_32 u4MaxRespBufferLen, OUT PUINT_32 pu4Length)
 {
-	UINT_32 u4Value = 0, u4PktLen = 0, i = 0;
+	UINT_32 u4Value = 0, u4PktLen = 0, i = 0, u4CpyLen;
 	WLAN_STATUS u4Status = WLAN_STATUS_SUCCESS;
 	UINT_32 u4Time, u4Current;
 	P_RX_CTRL_T prRxCtrl;
@@ -190,8 +190,6 @@ halRxWaitResponse(IN P_ADAPTER_T prAdapter, IN UINT_8 ucPortIdx, OUT PUINT_8 puc
 			u4PktLen = (u4Value >> 16) & 0xFFFF;
 			i = 1;
 		}
-		if (u4PktLen > u4MaxRespBufferLen)
-			return WLAN_STATUS_FAILURE;
 
 		if (u4PktLen == 0) {
 			/* timeout exceeding check */
@@ -208,10 +206,22 @@ halRxWaitResponse(IN P_ADAPTER_T prAdapter, IN UINT_8 ucPortIdx, OUT PUINT_8 puc
 
 #if (CFG_ENABLE_READ_EXTRA_4_BYTES == 1)
 #if CFG_SDIO_RX_AGG
+			/* decide copy length */
+			if (u4PktLen > u4MaxRespBufferLen)
+				u4CpyLen = u4MaxRespBufferLen;
+			else
+				u4CpyLen = u4PktLen;
+
+			/* read from SDIO to tmp. buffer */
 			HAL_PORT_RD(prAdapter, i == 0 ? MCR_WRDR0 : MCR_WRDR1,
 				ALIGN_4(u4PktLen + 4), prRxCtrl->pucRxCoalescingBufPtr,
 				HIF_RX_COALESCING_BUFFER_SIZE);
-			kalMemCopy(pucRspBuffer, prRxCtrl->pucRxCoalescingBufPtr, u4PktLen);
+
+			/* copy to destination buffer */
+			kalMemCopy(pucRspBuffer, prRxCtrl->pucRxCoalescingBufPtr, u4CpyLen);
+
+			/* update valid buffer count */
+			u4PktLen = u4CpyLen;
 #else
 #error "Please turn on RX coalescing"
 #endif
