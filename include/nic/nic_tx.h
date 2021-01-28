@@ -860,8 +860,11 @@ struct MSDU_INFO {
 	enum ENUM_EAPOL_KEY_TYPE_T eEapolKeyType;
 };
 
-#define HIT_PKT_FLAGS_CT_WITH_TXD			BIT(0)
+#define HIF_PKT_FLAGS_CT_INFO_APPLY_TXD            BIT(0)
 #define HIF_PKT_FLAGS_COPY_HOST_TXD_ALL		BIT(1)
+#define HIF_PKT_FLAGS_CT_INFO_MGN_FRAME            BIT(2)
+#define HIF_PKT_FLAGS_CT_INFO_NONE_CIPHER_FRAME    BIT(3)
+#define HIF_PKT_FLAGS_CT_INFO_HSR2_TX              BIT(4)
 
 #define MAX_BUF_NUM_PER_PKT	6
 
@@ -888,7 +891,8 @@ union HW_MAC_TX_DESC_APPEND {
 		uint16_t u2PktFlags;
 		uint16_t u2MsduToken;
 		uint8_t ucBssIndex;
-		uint8_t aucReserved[2];
+		uint8_t ucWtblIndex;
+		uint8_t aucReserved[1];
 		uint8_t ucBufNum;
 		uint32_t au4BufPtr[MAX_BUF_NUM_PER_PKT];
 		uint16_t au2BufLen[MAX_BUF_NUM_PER_PKT];
@@ -1004,7 +1008,7 @@ struct TX_DESC_OPS_T {
 		OUT uint8_t *pucBuffer);
 	void (*fillTxByteCount)(IN struct ADAPTER *prAdapter,
 		IN struct MSDU_INFO *prMsduInfo,
-		struct HW_MAC_TX_DESC *prTxDesc);
+		void *prTxDesc);
 
 	/* TXD Handle APIs */
 	uint8_t (*nic_txd_long_format_op)(

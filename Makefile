@@ -16,7 +16,7 @@ ccflags-y += -DDRIVER_BUILD_DATE='"$(DRIVER_BUILD_DATE)"'
 # ---------------------------------------------------
 # Compile Options
 # ---------------------------------------------------
-WLAN_CHIP_LIST:=-UMT6620 -UMT6628 -UMT5931 -UMT6630 -UMT6632 -UMT7663 -UCONNAC -UCONNAC2X2 -UUT_TEST_MODE
+WLAN_CHIP_LIST:=-UMT6620 -UMT6628 -UMT5931 -UMT6630 -UMT6632 -UMT7663 -UCONNAC -UCONNAC2X2 -UUT_TEST_MODE -UMT7915
 # '-D' and '-U' options are processed in the order they are given on the command line.
 # All '-imacros file' and '-include file' options are processed after all '-D' and '-U' options.
 ccflags-y += $(WLAN_CHIP_LIST)
@@ -65,6 +65,25 @@ endif
 ifneq ($(filter CONNAC2X2,$(MTK_COMBO_CHIP)),)
 ccflags-y:=$(filter-out -UCONNAC2X2,$(ccflags-y))
 ccflags-y += -DCONNAC2X2
+endif
+
+ifneq ($(findstring MT7915,$(MTK_COMBO_CHIP)),)
+ccflags-y:=$(filter-out -UMT7915,$(ccflags-y))
+ccflags-y += -DMT7915
+CONFIG_MTK_WIFI_CONNAC2X=y
+CONFIG_MTK_WIFI_11AX_SUPPORT=y
+endif
+
+ifeq ($(CONFIG_MTK_WIFI_CONNAC2X), y)
+    ccflags-y += -DCFG_SUPPORT_CONNAC2X=1
+else
+    ccflags-y += -DCFG_SUPPORT_CONNAC2X=0
+endif
+
+ifeq ($(CONFIG_MTK_WIFI_11AX_SUPPORT), y)
+    ccflags-y += -DCFG_SUPPORT_802_11AX=1
+else
+    ccflags-y += -DCFG_SUPPORT_802_11AX=0
 endif
 
 ifeq ($(WIFI_ENABLE_GCOV), y)
@@ -339,6 +358,10 @@ MGMT_OBJS += $(MGMT_DIR)stats.o
 
 
 CHIPS_OBJS += $(CHIPS_CMM)cmm_asic_connac.o
+ifeq ($(CONFIG_MTK_WIFI_CONNAC2X), y)
+CHIPS_OBJS += $(CHIPS_CMM)cmm_asic_connac2x.o
+CHIPS_OBJS += $(NIC_DIR)nic_ext_cmd_event.o
+endif
 CHIPS_OBJS += $(CHIPS_CMM)fw_dl.o
 
 ifneq ($(filter MT6632,$(MTK_COMBO_CHIP)),)
@@ -355,6 +378,9 @@ CHIPS_OBJS += $(CHIPS)connac/connac.o
 endif
 ifneq ($(filter CONNAC2X2,$(MTK_COMBO_CHIP)),)
 CHIPS_OBJS += $(CHIPS)connac2x2/connac2x2.o
+endif
+ifneq ($(findstring MT7915,$(MTK_COMBO_CHIP)),)
+CHIPS_OBJS += $(CHIPS)mt7915/mt7915.o
 endif
 
 # ---------------------------------------------------

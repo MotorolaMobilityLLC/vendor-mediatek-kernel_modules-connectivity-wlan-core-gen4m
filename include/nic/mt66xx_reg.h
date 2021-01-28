@@ -87,6 +87,9 @@ extern struct mt66xx_hif_driver_data mt66xx_driver_data_connac2x2;
 #ifdef UT_TEST_MODE
 extern struct mt66xx_hif_driver_data mt66xx_driver_data_ut;
 #endif /* UT_TEST_MODE */
+#ifdef MT7915
+extern struct mt66xx_hif_driver_data mt66xx_driver_data_mt7915;
+#endif /* MT7915 */
 
 /*******************************************************************************
  *                              C O N S T A N T S
@@ -1053,10 +1056,14 @@ struct mt66xx_chip_info {
 	const unsigned int is_support_wacpu;	/* support WA-CPU */
 	const unsigned int txd_append_size;	/* hw mac txd append */
 	const unsigned int rxd_size;	        /* hw mac rxd size */
+	const unsigned int pse_header_length;	/* NIC_TX_PSE_HEADER_LENGTH */
 	const unsigned int init_event_size;     /* init event w/o rxd size */
 	const unsigned int event_hdr_size;      /* event w/o rxd size */
 	const unsigned int isNicCapV1;
 	const unsigned int is_support_efuse; /* efuse support */
+	const unsigned int top_hcr; /* TOP_HCR */
+	const unsigned int top_hvr; /* TOP_HVR */
+	const unsigned int top_fvr; /* TOP_FVR */
 
 	const struct ECO_INFO *eco_info;	/* chip version table */
 	uint8_t eco_ver;	/* chip version */
@@ -1099,6 +1106,10 @@ struct mt66xx_chip_info {
 	uint32_t workAround;
 	char *prTxPwrLimitFile;
 	uint8_t ucTxPwrLimitBatchSize;
+	u_int8_t is_support_asic_lp;
+	u_int8_t is_support_wfdma;
+	u_int8_t is_support_dma_shdl;
+	u_int8_t rx_event_port;
 };
 
 struct mt66xx_hif_driver_data {

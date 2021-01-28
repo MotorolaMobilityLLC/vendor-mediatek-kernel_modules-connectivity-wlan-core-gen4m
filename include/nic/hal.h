@@ -976,12 +976,12 @@ do { \
 
 #define HAL_WIFI_FUNC_POWER_ON(_prAdapter) \
 	mtk_usb_vendor_request(_prAdapter->prGlueInfo, 0, \
-		DEVICE_VENDOR_REQUEST_OUT, \
+		_prAdapter->chip_info->bus_info->u4device_vender_request_out, \
 		VND_REQ_POWER_ON_WIFI, 0, 1, NULL, 0)
 
 #define HAL_WIFI_FUNC_CHIP_RESET(_prAdapter) \
 	mtk_usb_vendor_request(_prAdapter->prGlueInfo, 0, \
-		DEVICE_VENDOR_REQUEST_OUT, \
+		_prAdapter->chip_info->bus_info->u4device_vender_request_out, \
 		VND_REQ_POWER_ON_WIFI, 1, 1, NULL, 0)
 
 #define HAL_WIFI_FUNC_READY_CHECK(_prAdapter, _checkItem, _pfgResult) \

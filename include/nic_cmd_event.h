@@ -333,6 +333,7 @@ enum ENUM_EXT_CMD_ID {
 #endif /* CFG_SUPPORT_MU_MIMO */
 
 	EXT_CMD_ID_EFUSE_FREE_BLOCK = 0x4F,
+	EXT_CMD_ID_DUMP_MEM = 0x57,
 	EXT_CMD_ID_TX_POWER_FEATURE_CTRL = 0x58,
 	EXT_CMD_ID_SER = 0x81,
 };
@@ -2565,6 +2566,11 @@ struct EXT_EVENT_MAC_INFO_T {
 	uint16_t  u2MacInfoId;
 	uint8_t   aucReserved[2];
 	union MAC_INFO_RESULT_T rMacInfoResult;
+};
+
+struct EXT_CMD_EVENT_DUMP_MEM_T {
+	uint32_t u4MemAddr;
+	uint8_t ucData[64];
 };
 
 /*#endif*/
