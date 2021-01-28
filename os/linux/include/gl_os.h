@@ -442,6 +442,19 @@ enum ENUM_NVRAM_STATE {
 	NVRAM_STATE_NUM
 };
 
+/* WMM QOS user priority from 802.1D/802.11e */
+enum ENUM_WMM_UP {
+	WMM_UP_BE_INDEX = 0,
+	WMM_UP_BK_INDEX,
+	WMM_UP_RESV_INDEX,
+	WMM_UP_EE_INDEX,
+	WMM_UP_CL_INDEX,
+	WMM_UP_VI_INDEX,
+	WMM_UP_VO_INDEX,
+	WMM_UP_NC_INDEX,
+	WMM_UP_INDEX_NUM
+};
+
 struct GL_IO_REQ {
 	struct QUE_ENTRY rQueEntry;
 	/* wait_queue_head_t       cmdwait_q; */
@@ -1164,17 +1177,54 @@ static __KAL_INLINE__ void glPacketDataTypeCheck(void)
 		PACKET_PRIVATE_DATA) <= sizeof(((struct sk_buff *) 0)->cb));
 }
 
+static bool is_critical_packet(struct sk_buff *skb)
+{
+#if CFG_CHANGE_CRITICAL_PACKET_PRIORITY
+	uint8_t *pucPkt;
+	uint16_t u2EtherType;
+	bool is_critical = false;
+
+	if (!skb)
+		return false;
+
+	pucPkt = skb->data;
+	u2EtherType = (pucPkt[ETH_TYPE_LEN_OFFSET] << 8)
+			| (pucPkt[ETH_TYPE_LEN_OFFSET + 1]);
+
+	switch (u2EtherType) {
+	case ETH_P_ARP:
+	case ETH_P_1X:
+	case ETH_P_PRE_1X:
+#if CFG_SUPPORT_WAPI
+	case ETH_WPI_1X:
+#endif
+		is_critical = true;
+		break;
+	default:
+		is_critical = false;
+		break;
+	}
+	return is_critical;
+#else
+	return false;
+#endif
+}
+
 static inline u16 mtk_wlan_ndev_select_queue(
 	struct sk_buff *skb)
 {
 	static u16 ieee8021d_to_queue[8] = { 1, 0, 0, 1, 2, 2, 3, 3 };
 
-	/* cfg80211_classify8021d returns 0~7 */
+	if (is_critical_packet(skb)) {
+		skb->priority = WMM_UP_VO_INDEX;
+	} else {
+		/* cfg80211_classify8021d returns 0~7 */
 #if KERNEL_VERSION(3, 14, 0) > CFG80211_VERSION_CODE
-	skb->priority = cfg80211_classify8021d(skb);
+		skb->priority = cfg80211_classify8021d(skb);
 #else
-	skb->priority = cfg80211_classify8021d(skb, NULL);
+		skb->priority = cfg80211_classify8021d(skb, NULL);
 #endif
+	}
 	return ieee8021d_to_queue[skb->priority];
 }
 
