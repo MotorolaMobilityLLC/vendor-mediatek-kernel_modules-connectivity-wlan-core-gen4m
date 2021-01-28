@@ -15502,11 +15502,17 @@ uint32_t wlanoidSync11kCapabilities(struct ADAPTER *prAdapter,
 	rCmdRrmCapa.ucRrmEnable = 1;
 	rrmFillRrmCapa(&rCmdRrmCapa.ucCapabilities[0]);
 	rCmdRrmCapa.ucBssIndex = GET_IOCTL_BSSIDX(prAdapter);
-	return wlanSendSetQueryCmd(
-		prAdapter, CMD_ID_SET_RRM_CAPABILITY, TRUE, FALSE, TRUE,
-		nicCmdEventSetCommon, nicOidCmdTimeoutCommon,
-		sizeof(struct CMD_SET_RRM_CAPABILITY), (uint8_t *)&rCmdRrmCapa,
-		pvSetBuffer, u4SetBufferLen);
+	wlanSendSetQueryCmd(prAdapter,
+			    CMD_ID_SET_RRM_CAPABILITY,
+			    TRUE,
+			    FALSE,
+			    TRUE,
+			    NULL,
+			    nicOidCmdTimeoutCommon,
+			    sizeof(struct CMD_SET_RRM_CAPABILITY),
+			    (uint8_t *)&rCmdRrmCapa,
+			    pvSetBuffer, u4SetBufferLen);
+	return WLAN_STATUS_SUCCESS;
 }
 
 uint32_t wlanoidSendBTMQuery(struct ADAPTER *prAdapter, void *pvSetBuffer,
