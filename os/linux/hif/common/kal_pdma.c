@@ -318,9 +318,7 @@ u_int8_t kalDevPortRead(IN struct GLUE_INFO *prGlueInfo,
 	struct RTMP_DMACB *pRxCell;
 	struct RXD_STRUCT *pRxD;
 	struct RTMP_DMABUF *prDmaBuf;
-	spinlock_t *pRxRingLock;
 	u_int8_t fgRet = TRUE;
-	unsigned long flags = 0;
 	uint32_t u4CpuIdx = 0;
 
 	ASSERT(prGlueInfo);
@@ -331,7 +329,6 @@ u_int8_t kalDevPortRead(IN struct GLUE_INFO *prGlueInfo,
 	prHifInfo = &prGlueInfo->rHifInfo;
 	prMemOps = &prHifInfo->rMemOps;
 	prRxRing = &prHifInfo->RxRing[u2Port];
-	pRxRingLock = &prHifInfo->RxRingLock[u2Port];
 
 	kalDevRegRead(prGlueInfo, prRxRing->hw_cidx_addr, &prRxRing->RxCpuIdx);
 	u4CpuIdx = prRxRing->RxCpuIdx;
@@ -351,8 +348,6 @@ u_int8_t kalDevPortRead(IN struct GLUE_INFO *prGlueInfo,
 		prRxRing->fgIsDumpLog = true;
 		return FALSE;
 	}
-
-	spin_lock_irqsave(pRxRingLock, flags);
 
 	if (pRxD->LastSec0 == 0 || prRxRing->fgRxSegPkt) {
 		/* Rx segmented packet */
@@ -382,7 +377,6 @@ u_int8_t kalDevPortRead(IN struct GLUE_INFO *prGlueInfo,
 	if (prMemOps->copyEvent &&
 	    !prMemOps->copyEvent(prHifInfo, pRxCell, pRxD,
 				 prDmaBuf, pucBuf, u4Len)) {
-		spin_unlock_irqrestore(pRxRingLock, flags);
 		ASSERT(0);
 		return FALSE;
 	}
@@ -397,8 +391,6 @@ skip:
 	prRxRing->RxCpuIdx = u4CpuIdx;
 	kalDevRegWrite(prGlueInfo, prRxRing->hw_cidx_addr, prRxRing->RxCpuIdx);
 	prRxRing->fgIsDumpLog = false;
-
-	spin_unlock_irqrestore(pRxRingLock, flags);
 
 	return fgRet;
 }
@@ -428,8 +420,6 @@ kalDevPortWrite(IN struct GLUE_INFO *prGlueInfo,
 	struct RTMP_DMACB *pTxCell;
 	struct TXD_STRUCT *pTxD;
 	void *pucDst = NULL;
-	unsigned long flags = 0;
-	spinlock_t *prTxRingLock;
 
 	ASSERT(prGlueInfo);
 	ASSERT(pucBuf);
@@ -438,19 +428,15 @@ kalDevPortWrite(IN struct GLUE_INFO *prGlueInfo,
 	prHifInfo = &prGlueInfo->rHifInfo;
 	prMemOps = &prHifInfo->rMemOps;
 	prTxRing = &prHifInfo->TxRing[u2Port];
-	prTxRingLock = &prHifInfo->TxRingLock[u2Port];
 
 	if (prMemOps->allocRuntimeMem)
 		pucDst = prMemOps->allocRuntimeMem(u4Len);
-
-	spin_lock_irqsave((spinlock_t *)prTxRingLock, flags);
 
 	kalDevRegRead(prGlueInfo, prTxRing->hw_cidx_addr, &prTxRing->TxCpuIdx);
 	if (prTxRing->TxCpuIdx >= TX_RING_SIZE) {
 		DBGLOG(HAL, ERROR, "Error TxCpuIdx[%u]\n", prTxRing->TxCpuIdx);
 		if (prMemOps->freeBuf)
 			prMemOps->freeBuf(pucDst, u4Len);
-		spin_unlock_irqrestore((spinlock_t *)prTxRingLock, flags);
 		return FALSE;
 	}
 
@@ -465,7 +451,6 @@ kalDevPortWrite(IN struct GLUE_INFO *prGlueInfo,
 			       pucBuf, u4Len, NULL, 0)) {
 		if (prMemOps->freeBuf)
 			prMemOps->freeBuf(pucDst, u4Len);
-		spin_unlock_irqrestore((spinlock_t *)prTxRingLock, flags);
 		ASSERT(0);
 		return FALSE;
 	}
@@ -487,8 +472,6 @@ kalDevPortWrite(IN struct GLUE_INFO *prGlueInfo,
 	prTxRing->u4UsedCnt++;
 
 	kalDevRegWrite(prGlueInfo, prTxRing->hw_cidx_addr, prTxRing->TxCpuIdx);
-
-	spin_unlock_irqrestore((spinlock_t *)prTxRingLock, flags);
 
 	return TRUE;
 }
@@ -538,13 +521,11 @@ static bool kalDevWriteCmdByQueue(struct GLUE_INFO *prGlueInfo,
 {
 	struct GL_HIF_INFO *prHifInfo = NULL;
 	struct TX_CMD_REQ *prTxReq;
-	unsigned long flags = 0;
 
 	ASSERT(prGlueInfo);
 	prHifInfo = &prGlueInfo->rHifInfo;
 	prTxReq = kalMemAlloc(sizeof(struct TX_CMD_REQ), PHY_MEM_TYPE);
 
-	spin_lock_irqsave(&prHifInfo->rTxCmdQLock, flags);
 	if (prTxReq == NULL) {
 		DBGLOG(HAL, ERROR, "kmalloc() TX_CMD_REQ error\n");
 		halWpdmaWriteCmd(prGlueInfo, prCmdInfo, ucTC);
@@ -556,7 +537,6 @@ static bool kalDevWriteCmdByQueue(struct GLUE_INFO *prGlueInfo,
 	list_add_tail(&prTxReq->list, &prHifInfo->rTxCmdQ);
 
 error:
-	spin_unlock_irqrestore(&prHifInfo->rTxCmdQLock, flags);
 
 	return true;
 }
@@ -564,14 +544,11 @@ error:
 bool kalDevKickCmd(IN struct GLUE_INFO *prGlueInfo)
 {
 	struct GL_HIF_INFO *prHifInfo = NULL;
-	unsigned long flags = 0;
 	struct list_head *prCur, *prNext;
 	struct TX_CMD_REQ *prTxReq;
 
 	ASSERT(prGlueInfo);
 	prHifInfo = &prGlueInfo->rHifInfo;
-
-	spin_lock_irqsave(&prHifInfo->rTxCmdQLock, flags);
 
 	list_for_each_safe(prCur, prNext, &prHifInfo->rTxCmdQ) {
 		prTxReq = list_entry(prCur, struct TX_CMD_REQ, list);
@@ -581,8 +558,6 @@ bool kalDevKickCmd(IN struct GLUE_INFO *prGlueInfo)
 		list_del(prCur);
 		kfree(prTxReq);
 	}
-
-	spin_unlock_irqrestore(&prHifInfo->rTxCmdQLock, flags);
 
 	return true;
 }
@@ -638,20 +613,16 @@ static bool kalDevWriteDataByQueue(IN struct GLUE_INFO *prGlueInfo,
 				   IN struct MSDU_INFO *prMsduInfo)
 {
 	struct GL_HIF_INFO *prHifInfo = NULL;
-	unsigned long flags = 0;
 	struct TX_DATA_REQ *prTxReq;
 
 	ASSERT(prGlueInfo);
 	prHifInfo = &prGlueInfo->rHifInfo;
-
-	spin_lock_irqsave(&prHifInfo->rTxDataQLock, flags);
 
 	prTxReq = &prMsduInfo->rTxReq;
 	prTxReq->prMsduInfo = prMsduInfo;
 	list_add_tail(&prTxReq->list, &prHifInfo->rTxDataQ);
 	prHifInfo->u4TxDataQLen++;
 
-	spin_unlock_irqrestore(&prHifInfo->rTxDataQLock, flags);
 	return true;
 }
 
@@ -718,15 +689,12 @@ static bool kalDevKickMsduData(struct GLUE_INFO *prGlueInfo)
 	struct list_head *prCur, *prNext;
 	struct TX_DATA_REQ *prTxReq;
 	struct MSDU_INFO *prMsduInfo;
-	unsigned long flags = 0;
 	bool fgRet = true;
 
 	ASSERT(prGlueInfo);
 
 	prHifInfo = &prGlueInfo->rHifInfo;
 	prBusInfo = prGlueInfo->prAdapter->chip_info->bus_info;
-
-	spin_lock_irqsave(&prHifInfo->rTxDataQLock, flags);
 
 	list_for_each_safe(prCur, prNext, &prHifInfo->rTxDataQ) {
 		prTxReq = list_entry(prCur, struct TX_DATA_REQ, list);
@@ -737,8 +705,6 @@ static bool kalDevKickMsduData(struct GLUE_INFO *prGlueInfo)
 			break;
 		}
 	}
-
-	spin_unlock_irqrestore(&prHifInfo->rTxDataQLock, flags);
 
 	return fgRet;
 }
@@ -840,7 +806,6 @@ static bool kalDevKickAmsduData(struct GLUE_INFO *prGlueInfo)
 	struct list_head *prHead, *prCur, *prNext;
 	struct TX_DATA_REQ *prTxReq;
 	struct MSDU_INFO *prMsduInfo;
-	unsigned long flags = 0;
 	uint32_t u4Num = 0, u4Idx;
 	uint16_t u2Size = 0;
 	bool fgRet = true;
@@ -850,18 +815,13 @@ static bool kalDevKickAmsduData(struct GLUE_INFO *prGlueInfo)
 	prHifInfo = &prGlueInfo->rHifInfo;
 	prBusInfo = prGlueInfo->prAdapter->chip_info->bus_info;
 
-	spin_lock_irqsave(&prHifInfo->rTxDataQLock, flags);
-
 	prHead = &prHifInfo->rTxDataQ;
 	list_for_each_safe(prCur, prNext, prHead) {
 		prTxReq = list_entry(prCur, struct TX_DATA_REQ, list);
 		prMsduInfo = prTxReq->prMsduInfo;
 		if (!kalIsAggregatedMsdu(prGlueInfo, prMsduInfo)) {
-			if (!halWpdmaWriteMsdu(prGlueInfo, prMsduInfo, prCur)) {
-				spin_unlock_irqrestore(&prHifInfo->rTxDataQLock,
-						       flags);
+			if (!halWpdmaWriteMsdu(prGlueInfo, prMsduInfo, prCur))
 				return false;
-			}
 		}
 	}
 
@@ -885,8 +845,6 @@ static bool kalDevKickAmsduData(struct GLUE_INFO *prGlueInfo)
 			break;
 	}
 
-	spin_unlock_irqrestore(&prHifInfo->rTxDataQLock, flags);
-
 	return fgRet;
 }
 
@@ -900,9 +858,7 @@ bool kalDevReadData(struct GLUE_INFO *prGlueInfo, uint16_t u2Port,
 	struct RTMP_RX_RING *prRxRing;
 	struct RTMP_DMACB *pRxCell;
 	struct RTMP_DMABUF *prDmaBuf;
-	spinlock_t *pRxRingLock;
 	u_int8_t fgRet = TRUE;
-	unsigned long flags = 0;
 	uint32_t u4CpuIdx = 0;
 
 	ASSERT(prGlueInfo);
@@ -911,7 +867,6 @@ bool kalDevReadData(struct GLUE_INFO *prGlueInfo, uint16_t u2Port,
 	prHifInfo = &prGlueInfo->rHifInfo;
 	prMemOps = &prHifInfo->rMemOps;
 	prRxRing = &prHifInfo->RxRing[u2Port];
-	pRxRingLock = &prHifInfo->RxRingLock[u2Port];
 
 	kalDevRegRead(prGlueInfo, prRxRing->hw_cidx_addr, &prRxRing->RxCpuIdx);
 	u4CpuIdx = prRxRing->RxCpuIdx;
@@ -931,8 +886,6 @@ bool kalDevReadData(struct GLUE_INFO *prGlueInfo, uint16_t u2Port,
 		prRxRing->fgIsDumpLog = true;
 		return false;
 	}
-
-	spin_lock_irqsave(pRxRingLock, flags);
 
 	if (pRxD->LastSec0 == 0 || prRxRing->fgRxSegPkt) {
 		/* Rx segmented packet */
@@ -958,10 +911,8 @@ bool kalDevReadData(struct GLUE_INFO *prGlueInfo, uint16_t u2Port,
 				     pRxD->SDLen0);
 
 	if (prMemOps->copyRxData &&
-	    !prMemOps->copyRxData(prHifInfo, pRxCell, prDmaBuf, prSwRfb)) {
-		spin_unlock_irqrestore(pRxRingLock, flags);
+	    !prMemOps->copyRxData(prHifInfo, pRxCell, prDmaBuf, prSwRfb))
 		return FALSE;
-	}
 
 	prSwRfb->pucRecvBuff = ((struct sk_buff *)prSwRfb->pvPacket)->data;
 	prSwRfb->prRxStatus = (struct HW_MAC_RX_DESC *)prSwRfb->pucRecvBuff;
@@ -980,8 +931,6 @@ skip:
 	prRxRing->RxCpuIdx = u4CpuIdx;
 	kalDevRegWrite(prGlueInfo, prRxRing->hw_cidx_addr, prRxRing->RxCpuIdx);
 	prRxRing->fgIsDumpLog = false;
-
-	spin_unlock_irqrestore(pRxRingLock, flags);
 
 #if CFG_TCP_IP_CHKSUM_OFFLOAD
 	if (fgRet)
