@@ -6656,10 +6656,6 @@ wlanoidSetMcrWrite(IN struct ADAPTER *prAdapter,
 			}
 		}
 
-		if (prMcrWrInfo->u4McrData & 0x00000000) {
-			prStaRec->u2HtCapInfo &= ~HT_CAP_INFO_SUP_CHNL_WIDTH;
-			prBssInfo->eBssSCO = CHNL_EXT_SCN;
-		}
 		rlmBssInitForAPandIbss(prAdapter, prBssInfo);
 	}
 	/* 0xFFFFFFFB for HT Capability */
