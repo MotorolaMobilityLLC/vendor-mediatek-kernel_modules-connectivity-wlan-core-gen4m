@@ -6147,8 +6147,7 @@ rlmChangeOperationMode(
 		}
 
 #if CFG_SUPPORT_SMART_GEAR
-		/*CNM_OPMODE_REQ_SMARTGEAR_1T2R*/
-		if (eNewReq != 0x04) {
+		if (eNewReq != 0x04 /* CNM_OPMODE_REQ_SMARTGEAR_1T2R */) {
 #endif		/* <5.2> Send operating mode notification frame (STA mode)
 		 * No action frame is needed if we only changed OpTxNss.
 		 */
@@ -6207,6 +6206,9 @@ rlmChangeOperationMode(
 
 		/* <5.3> Change OP Info w/o waiting for notification Tx done */
 		if (prBssInfo->pfOpChangeHandler == NULL ||
+#if CFG_SUPPORT_SMART_GEAR
+			eNewReq == 0x04 /* CNM_OPMODE_REQ_SMARTGEAR_1T2R */ ||
+#endif
 			(!fgIsChangeBw && !fgIsChangeRxNss)) {
 			rlmCompleteOpModeChange(prAdapter, prBssInfo, TRUE);
 			/* No callback */
