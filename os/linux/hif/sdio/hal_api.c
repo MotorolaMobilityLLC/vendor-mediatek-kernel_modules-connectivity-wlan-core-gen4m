@@ -1750,6 +1750,32 @@ BOOLEAN halIsPendingRx(IN P_ADAPTER_T prAdapter)
 	return FALSE;
 }
 
+UINT_32 halGetValidCoalescingBufSize(IN P_ADAPTER_T prAdapter)
+{
+	P_GL_HIF_INFO_T prHifInfo;
+	UINT_32 u4BufSize;
+#if (MTK_WCN_HIF_SDIO == 0)
+	struct sdio_func *prSdioFunc;
+#endif
+
+	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
+
+	if (HIF_TX_COALESCING_BUFFER_SIZE > HIF_RX_COALESCING_BUFFER_SIZE)
+		u4BufSize = HIF_TX_COALESCING_BUFFER_SIZE;
+	else
+		u4BufSize = HIF_RX_COALESCING_BUFFER_SIZE;
+
+#if (MTK_WCN_HIF_SDIO == 0)
+	prSdioFunc = prHifInfo->func;
+
+	/* Check host capability */
+	if (u4BufSize > prSdioFunc->card->host->max_req_size)
+		u4BufSize = prSdioFunc->card->host->max_req_size;
+#endif
+
+	return u4BufSize;
+}
+
 WLAN_STATUS halAllocateIOBuffer(IN P_ADAPTER_T prAdapter)
 {
 	P_GL_HIF_INFO_T prHifInfo;
