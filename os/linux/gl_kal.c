@@ -3672,10 +3672,17 @@ kalUpdateRSSI(IN P_GLUE_INFO_T prGlueInfo,
 *           FALSE
 */
 /*----------------------------------------------------------------------------*/
-BOOLEAN kalInitIOBuffer(VOID)
+BOOLEAN kalInitIOBuffer(BOOLEAN is_pre_alloc)
 {
 	UINT_32 u4Size;
 
+	/* not pre-allocation for all memory usage */
+	if (!is_pre_alloc) {
+		pvIoBuffer = NULL;
+		return FALSE;
+	}
+
+	/* pre-allocation for all memory usage */
 	if (HIF_TX_COALESCING_BUFFER_SIZE > HIF_RX_COALESCING_BUFFER_SIZE)
 		u4Size = HIF_TX_COALESCING_BUFFER_SIZE;
 	else
@@ -3712,7 +3719,6 @@ VOID kalUninitIOBuffer(VOID)
 	pvIoBuffer = (PVOID) NULL;
 	pvIoBufferSize = 0;
 	pvIoBufferUsage = 0;
-
 }
 
 /*----------------------------------------------------------------------------*/
