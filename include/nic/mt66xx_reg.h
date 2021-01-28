@@ -548,6 +548,12 @@ extern struct mt66xx_hif_driver_data mt66xx_driver_data_mt7961;
 
 #define MT_PCIE_IRQ_ENABLE              (PCIE_NEW_HIF_BASE + 0x0188)
 
+#define MD_INT_STA					(PCIE_HIF_BASE + 0x01C0)
+#define MD_WPDMA_GLO_CFG				(PCIE_HIF_BASE + 0x01D0)
+#define MD_INT_ENA					(PCIE_HIF_BASE + 0x01D4)
+#define MD_WPDMA_DLY_INIT_CFG				(PCIE_HIF_BASE + 0x01D8)
+#define MD_WPDMA_MISC					(PCIE_HIF_BASE + 0x01DC)
+
 /* WPDMA_INT_STA */
 union WPDMA_INT_STA_STRUCT {
 	struct {
