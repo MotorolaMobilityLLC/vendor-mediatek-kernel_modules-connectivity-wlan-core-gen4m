@@ -8046,8 +8046,8 @@ u_int8_t wlanIsChipRstRecEnabled(IN struct ADAPTER
 
 u_int8_t wlanIsChipAssert(IN struct ADAPTER *prAdapter)
 {
-	return (prAdapter->rWifiVar.fgChipResetRecover
-		&& prAdapter->fgIsChipAssert);
+	return prAdapter->rWifiVar.fgChipResetRecover
+		&& prAdapter->fgIsChipAssert;
 }
 
 void wlanChipRstPreAct(IN struct ADAPTER *prAdapter)

@@ -363,7 +363,7 @@ static int32_t ResponseToQA(struct HQA_CMD_FRAME
 			 (uint8_t *) (HqaCmdFrame), prIwReqData->data.length)) {
 		DBGLOG(RFTEST, INFO, "QA_AGENT copy_to_user() fail in %s\n",
 		       __func__);
-		return (-EFAULT);
+		return -EFAULT;
 	}
 	DBGLOG(RFTEST, INFO,
 	       "QA_AGENT HQA command(0x%04x)[Magic number(0x%08x)] is done\n",

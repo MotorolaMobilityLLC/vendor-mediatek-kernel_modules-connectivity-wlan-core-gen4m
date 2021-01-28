@@ -397,7 +397,8 @@ void mt7668WakeUpWiFi(IN struct ADAPTER *prAdapter)
 			(TOP_CKGEN2_CR_PMIC_CK_MANUAL_MASK|u4Value));
 	HAL_MCR_RD(prAdapter, TOP_CKGEN2_CR_PMIC_CK_MANUAL, &u4Value);
 	DBGLOG(INIT, INFO, "PMIC SPI clock switch = %s\n",
-		(TOP_CKGEN2_CR_PMIC_CK_MANUAL_MASK&u4Value)?"SUCCESS":"FAIL");
+		(TOP_CKGEN2_CR_PMIC_CK_MANUAL_MASK&u4Value) ?
+		"SUCCESS" : "FAIL");
 #endif
 
 	ASSERT(prAdapter);
