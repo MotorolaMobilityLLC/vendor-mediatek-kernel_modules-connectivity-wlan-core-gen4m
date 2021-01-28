@@ -4828,6 +4828,9 @@ WLAN_STATUS wlanQueryNicCapability(IN P_ADAPTER_T prAdapter)
 	prAdapter->u4FwFeatureFlag0 = prEventNicCapability->u4FeatureFlag0;
 	prAdapter->u4FwFeatureFlag1 = prEventNicCapability->u4FeatureFlag1;
 
+	if (prEventNicCapability->ucHwSetNss1x1)
+		prAdapter->rWifiVar.ucNSS = 1;
+
 #if CFG_ENABLE_CAL_LOG
 	DBGLOG(INIT, TRACE, "RF CAL FAIL  = (%d),BB CAL FAIL  = (%d)\n",
 	       prEventNicCapability->ucRfCalFail, prEventNicCapability->ucBbCalFail);
