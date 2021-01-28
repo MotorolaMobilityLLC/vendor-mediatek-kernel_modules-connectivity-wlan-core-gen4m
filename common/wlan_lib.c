@@ -2470,8 +2470,11 @@ void wlanClearDataQueue(IN struct ADAPTER *prAdapter)
 
 		/* <1> Move whole list of CMD_INFO to temp queue */
 		KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_PORT_QUE);
-		for (i = 0; i < TX_PORT_NUM; i++)
+		for (i = 0; i < TX_PORT_NUM; i++) {
 			QUEUE_MOVE_ALL(prDataPort[i], &prAdapter->rTxPQueue[i]);
+			kalTraceEvent("Move TxPQueue%d %d", i,
+				prDataPort[i]->u4NumElem);
+		}
 		KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_PORT_QUE);
 
 		/* <2> Return sk buffer */
@@ -9735,10 +9738,6 @@ void wlanTxLifetimeTagPacket(IN struct ADAPTER *prAdapter,
 #endif
 		}
 		break;
-
-	case TX_PROF_TAG_MAC_TX_DONE:
-		break;
-
 	default:
 		break;
 	}
@@ -9748,9 +9747,32 @@ void wlanTxProfilingTagPacket(IN struct ADAPTER *prAdapter,
 			      IN void *prPacket,
 			      IN enum ENUM_TX_PROFILING_TAG eTag)
 {
+	if (!prPacket)
+		return;
+
 #if CFG_MET_PACKET_TRACE_SUPPORT
 	kalMetTagPacket(prAdapter->prGlueInfo, prPacket, eTag);
 #endif
+
+	switch (eTag) {
+	case TX_PROF_TAG_OS_TO_DRV:
+		kalTraceEvent("Xmit id=0x%04x sn=%d",
+			GLUE_GET_PKT_IP_ID(prPacket),
+			GLUE_GET_PKT_SEQ_NO(prPacket));
+		break;
+	case TX_PROF_TAG_DRV_ENQUE:
+		kalTraceEvent("Enq id=0x%04x sn=%d",
+			GLUE_GET_PKT_IP_ID(prPacket),
+			GLUE_GET_PKT_SEQ_NO(prPacket));
+		break;
+	case TX_PROF_TAG_DRV_FREE:
+		kalTraceEvent("Cmpl id=0x%04x sn=%d",
+			GLUE_GET_PKT_IP_ID(prPacket),
+			GLUE_GET_PKT_SEQ_NO(prPacket));
+		break;
+	default:
+		break;
+	}
 }
 
 void wlanTxProfilingTagMsdu(IN struct ADAPTER *prAdapter,
