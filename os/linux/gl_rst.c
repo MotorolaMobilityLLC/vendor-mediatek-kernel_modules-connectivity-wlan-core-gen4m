@@ -314,13 +314,15 @@ u_int8_t glResetTrigger(struct ADAPTER *prAdapter,
 		       MTK_CHIP_REV, wlanGetEcoVersion(prAdapter));
 		DBGLOG(INIT, ERROR,
 		       "FW Ver DEC[%u.%u] HEX[%x.%x], Driver Ver[%u.%u]\n",
-		       (prAdapter->rVerInfo.u2FwOwnVersion >> 8),
-		       (prAdapter->rVerInfo.u2FwOwnVersion & BITS(0, 7)),
-		       (prAdapter->rVerInfo.u2FwOwnVersion >> 8),
-		       (prAdapter->rVerInfo.u2FwOwnVersion & BITS(0, 7)),
-		       (prAdapter->rVerInfo.u2FwPeerVersion >> 8),
-		       (prAdapter->rVerInfo.u2FwPeerVersion & BITS(0, 7)));
-
+		       (uint16_t)(prAdapter->rVerInfo.u2FwOwnVersion >> 8),
+		       (uint16_t)(prAdapter->rVerInfo.u2FwOwnVersion &
+				  BITS(0, 7)),
+		       (uint16_t)(prAdapter->rVerInfo.u2FwOwnVersion >> 8),
+		       (uint16_t)(prAdapter->rVerInfo.u2FwOwnVersion &
+				  BITS(0, 7)),
+		       (uint16_t)(prAdapter->rVerInfo.u2FwPeerVersion >> 8),
+		       (uint16_t)(prAdapter->rVerInfo.u2FwPeerVersion &
+				  BITS(0, 7)));
 		fgResult = TRUE;
 	} else {
 		DBGLOG(INIT, ERROR,
@@ -328,13 +330,15 @@ u_int8_t glResetTrigger(struct ADAPTER *prAdapter,
 		       pucFile, u4Line,
 		       MTK_CHIP_REV,
 		       wlanGetEcoVersion(prAdapter),
-		       (prAdapter->rVerInfo.u2FwOwnVersion >> 8),
-		       (prAdapter->rVerInfo.u2FwOwnVersion & BITS(0, 7)),
-		       (prAdapter->rVerInfo.u2FwOwnVersion >> 8),
-		       (prAdapter->rVerInfo.u2FwOwnVersion & BITS(0, 7)),
-		       (prAdapter->rVerInfo.u2FwPeerVersion >> 8),
-		       (prAdapter->rVerInfo.u2FwPeerVersion & BITS(0, 7)));
-
+		       (uint16_t)(prAdapter->rVerInfo.u2FwOwnVersion >> 8),
+		       (uint16_t)(prAdapter->rVerInfo.u2FwOwnVersion &
+				  BITS(0, 7)),
+		       (uint16_t)(prAdapter->rVerInfo.u2FwOwnVersion >> 8),
+		       (uint16_t)(prAdapter->rVerInfo.u2FwOwnVersion &
+				  BITS(0, 7)),
+		       (uint16_t)(prAdapter->rVerInfo.u2FwPeerVersion >> 8),
+		       (uint16_t)(prAdapter->rVerInfo.u2FwPeerVersion &
+				  BITS(0, 7)));
 		wifi_rst.rst_trigger_flag = u4RstFlag;
 		schedule_work(&(wifi_rst.rst_trigger_work));
 	}
