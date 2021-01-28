@@ -5024,7 +5024,7 @@ void rlmProcessSpecMgtAction(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb)
  * \return none
  */
 /*----------------------------------------------------------------------------*/
-void rlmSendOpModeNotificationFrame(struct ADAPTER *prAdapter,
+uint32_t rlmSendOpModeNotificationFrame(struct ADAPTER *prAdapter,
 				    struct STA_RECORD *prStaRec,
 				    uint8_t ucChannelWidth, uint8_t ucOpRxNss)
 {
@@ -5037,11 +5037,11 @@ void rlmSendOpModeNotificationFrame(struct ADAPTER *prAdapter,
 
 	/* Sanity Check */
 	if (!prStaRec)
-		return;
+		return WLAN_STATUS_FAILURE;
 
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prStaRec->ucBssIndex);
 	if (!prBssInfo)
-		return;
+		return WLAN_STATUS_FAILURE;
 
 	/* Calculate MSDU buffer length */
 	u2EstimatedFrameLen = MAC_TX_RESERVED_FIELD +
@@ -5052,7 +5052,7 @@ void rlmSendOpModeNotificationFrame(struct ADAPTER *prAdapter,
 							u2EstimatedFrameLen);
 
 	if (!prMsduInfo)
-		return;
+		return WLAN_STATUS_FAILURE;
 
 	kalMemZero(prMsduInfo->prPacket, u2EstimatedFrameLen);
 
@@ -5089,6 +5089,8 @@ void rlmSendOpModeNotificationFrame(struct ADAPTER *prAdapter,
 
 	/* 4 Enqueue the frame to send this action frame. */
 	nicTxEnqueueMsdu(prAdapter, prMsduInfo);
+
+	return WLAN_STATUS_SUCCESS;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -5100,7 +5102,7 @@ void rlmSendOpModeNotificationFrame(struct ADAPTER *prAdapter,
  * \return none
  */
 /*----------------------------------------------------------------------------*/
-void rlmSendSmPowerSaveFrame(struct ADAPTER *prAdapter,
+uint32_t rlmSendSmPowerSaveFrame(struct ADAPTER *prAdapter,
 			     struct STA_RECORD *prStaRec, uint8_t ucOpRxNss)
 {
 	struct MSDU_INFO *prMsduInfo;
@@ -5111,11 +5113,11 @@ void rlmSendSmPowerSaveFrame(struct ADAPTER *prAdapter,
 
 	/* Sanity Check */
 	if (!prStaRec)
-		return;
+		return WLAN_STATUS_FAILURE;
 
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prStaRec->ucBssIndex);
 	if (!prBssInfo)
-		return;
+		return WLAN_STATUS_FAILURE;
 
 	/* Calculate MSDU buffer length */
 	u2EstimatedFrameLen = MAC_TX_RESERVED_FIELD +
@@ -5126,7 +5128,7 @@ void rlmSendSmPowerSaveFrame(struct ADAPTER *prAdapter,
 							u2EstimatedFrameLen);
 
 	if (!prMsduInfo)
-		return;
+		return WLAN_STATUS_FAILURE;
 
 	kalMemZero(prMsduInfo->prPacket, u2EstimatedFrameLen);
 
@@ -5151,7 +5153,7 @@ void rlmSendSmPowerSaveFrame(struct ADAPTER *prAdapter,
 		DBGLOG(RLM, WARN,
 		       "Can't switch to RxNss = %d since we don't support.\n",
 		       ucOpRxNss);
-		return;
+		return WLAN_STATUS_FAILURE;
 	}
 
 	/* Static SM power save mode */
@@ -5169,6 +5171,8 @@ void rlmSendSmPowerSaveFrame(struct ADAPTER *prAdapter,
 
 	/* 4 Enqueue the frame to send this action frame. */
 	nicTxEnqueueMsdu(prAdapter, prMsduInfo);
+
+	return WLAN_STATUS_SUCCESS;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -5181,7 +5185,7 @@ void rlmSendSmPowerSaveFrame(struct ADAPTER *prAdapter,
  * \return none
  */
 /*----------------------------------------------------------------------------*/
-void rlmSendNotifyChannelWidthFrame(struct ADAPTER *prAdapter,
+uint32_t rlmSendNotifyChannelWidthFrame(struct ADAPTER *prAdapter,
 				    struct STA_RECORD *prStaRec,
 				    uint8_t ucChannelWidth)
 {
@@ -5193,11 +5197,11 @@ void rlmSendNotifyChannelWidthFrame(struct ADAPTER *prAdapter,
 
 	/* Sanity Check */
 	if (!prStaRec)
-		return;
+		return WLAN_STATUS_FAILURE;
 
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prStaRec->ucBssIndex);
 	if (!prBssInfo)
-		return;
+		return WLAN_STATUS_FAILURE;
 
 	/* Calculate MSDU buffer length */
 	u2EstimatedFrameLen = MAC_TX_RESERVED_FIELD +
@@ -5208,7 +5212,7 @@ void rlmSendNotifyChannelWidthFrame(struct ADAPTER *prAdapter,
 							u2EstimatedFrameLen);
 
 	if (!prMsduInfo)
-		return;
+		return WLAN_STATUS_FAILURE;
 
 	kalMemZero(prMsduInfo->prPacket, u2EstimatedFrameLen);
 
@@ -5238,6 +5242,8 @@ void rlmSendNotifyChannelWidthFrame(struct ADAPTER *prAdapter,
 
 	/* 4 Enqueue the frame to send this action frame. */
 	nicTxEnqueueMsdu(prAdapter, prMsduInfo);
+
+	return WLAN_STATUS_SUCCESS;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -5342,6 +5348,7 @@ static void rlmOpModeTxDoneHandler(IN struct ADAPTER *prAdapter,
 				   IN uint8_t ucOpChangeType,
 				   IN u_int8_t fgIsSuccess)
 {
+	uint32_t u4Status = WLAN_STATUS_SUCCESS;
 	struct BSS_INFO *prBssInfo = NULL;
 	struct STA_RECORD *prStaRec = NULL;
 	u_int8_t fgIsOpModeChangeSuccess = FALSE; /* OP change result */
@@ -5455,12 +5462,14 @@ static void rlmOpModeTxDoneHandler(IN struct ADAPTER *prAdapter,
 					*pucCurrOpState = OP_NOTIFY_STATE_KEEP;
 					if (ucOpChangeType ==
 					    OP_NOTIFY_TYPE_HT_BW)
+						u4Status =
 						rlmSendNotifyChannelWidthFrame(
 						prAdapter, prStaRec,
 						rlmGetBssOpBwByVhtAndHtOpInfo(
 						prBssInfo));
 					else if (ucOpChangeType ==
 						 OP_NOTIFY_TYPE_HT_NSS)
+						u4Status =
 						rlmSendSmPowerSaveFrame(
 							prAdapter, prStaRec,
 							prBssInfo->ucOpRxNss);
@@ -5476,7 +5485,8 @@ static void rlmOpModeTxDoneHandler(IN struct ADAPTER *prAdapter,
 							(prBssInfo),
 						prBssInfo->ucOpRxNss);
 
-					return;
+					if (u4Status == WLAN_STATUS_SUCCESS)
+						return;
 				}
 			} else if (*pucCurrOpState ==
 				   OP_NOTIFY_STATE_KEEP) { /* Rollback OpMode */
@@ -5504,21 +5514,25 @@ static void rlmOpModeTxDoneHandler(IN struct ADAPTER *prAdapter,
 				    ->aucOpModeChangeRetryCnt[ucOpChangeType] <=
 			    OPERATION_NOTICATION_TX_LIMIT) {
 				if (ucOpChangeType == OP_NOTIFY_TYPE_VHT_NSS_BW)
+					u4Status =
 					rlmSendOpModeNotificationFrame(
 					prAdapter, prStaRec,
 					prBssInfo->ucOpChangeChannelWidth,
 					prBssInfo->ucOpChangeRxNss);
 				else if (ucOpChangeType ==
 					 OP_NOTIFY_TYPE_HT_NSS)
-					rlmSendSmPowerSaveFrame(
+					u4Status = rlmSendSmPowerSaveFrame(
 						prAdapter, prStaRec,
 						prBssInfo->ucOpChangeRxNss);
 				else if (ucOpChangeType == OP_NOTIFY_TYPE_HT_BW)
+					u4Status =
 					rlmSendNotifyChannelWidthFrame(
 						prAdapter, prStaRec,
 						prBssInfo
 						->ucOpChangeChannelWidth);
-				return;
+
+				if (u4Status == WLAN_STATUS_SUCCESS)
+					return;
 			}
 
 			/* Clear retry count when retry count > TX limit */
@@ -5578,12 +5592,14 @@ static void rlmOpModeTxDoneHandler(IN struct ADAPTER *prAdapter,
 
 					if (ucRelatedFrameType ==
 					    OP_NOTIFY_TYPE_HT_BW) {
+						u4Status =
 						rlmSendNotifyChannelWidthFrame(
 						prAdapter, prStaRec,
 						rlmGetBssOpBwByVhtAndHtOpInfo(
 						prBssInfo));
 					} else if (ucRelatedFrameType ==
 						   OP_NOTIFY_TYPE_HT_NSS)
+						u4Status =
 						rlmSendSmPowerSaveFrame(
 							prAdapter, prStaRec,
 							prBssInfo->ucOpRxNss);
@@ -5597,7 +5613,8 @@ static void rlmOpModeTxDoneHandler(IN struct ADAPTER *prAdapter,
 						       prBssInfo),
 					       prBssInfo->ucOpRxNss);
 
-					return;
+					if (u4Status == WLAN_STATUS_SUCCESS)
+						return;
 				}
 			} else if (*pucCurrOpState ==
 				   OP_NOTIFY_STATE_KEEP) /* Rollback OpMode */
@@ -5939,6 +5956,7 @@ rlmChangeOperationMode(
 		 fgIsChangeRxNss = TRUE, /* Indicate if need to change */
 		 fgIsChangeTxNss = TRUE;
 	uint8_t i;
+	uint32_t u4Status = WLAN_STATUS_SUCCESS;
 
 	/* Sanity check */
 	if (ucBssIndex >= prAdapter->ucHwBssIdNum)
@@ -6049,7 +6067,7 @@ rlmChangeOperationMode(
 			DBGLOG(RLM, INFO,
 				"Send VHT OP notification frame: BSS[%d] BW[%d] RxNss[%d]\n",
 				ucBssIndex, ucChannelWidth, ucOpRxNss);
-			rlmSendOpModeNotificationFrame(
+			u4Status = rlmSendOpModeNotificationFrame(
 				prAdapter, prStaRec,
 				ucChannelWidth, ucOpRxNss);
 		} else
@@ -6068,7 +6086,7 @@ rlmChangeOperationMode(
 							OP_NOTIFY_STATE_SENDING;
 				}
 				if (fgIsChangeRxNss) {
-					rlmSendSmPowerSaveFrame(
+					u4Status = rlmSendSmPowerSaveFrame(
 						prAdapter, prStaRec, ucOpRxNss);
 					DBGLOG(RLM, INFO,
 						"Send HT SM Power Save frame ");
@@ -6077,6 +6095,7 @@ rlmChangeOperationMode(
 						ucBssIndex, ucOpRxNss);
 				}
 				if (fgIsChangeBw) {
+					u4Status =
 					rlmSendNotifyChannelWidthFrame(
 						prAdapter, prStaRec,
 						ucChannelWidth);
@@ -6091,6 +6110,12 @@ rlmChangeOperationMode(
 #if CFG_SUPPORT_SMART_GEAR
 	}
 #endif
+		/* Error handling */
+		if (u4Status != WLAN_STATUS_SUCCESS) {
+			rlmCompleteOpModeChange(prAdapter, prBssInfo, FALSE);
+			return OP_CHANGE_STATUS_INVALID;
+		}
+
 		/* <5.3> Change OP Info w/o waiting for notification Tx done */
 		if (prBssInfo->pfOpChangeHandler == NULL ||
 			(!fgIsChangeBw && !fgIsChangeRxNss)) {
