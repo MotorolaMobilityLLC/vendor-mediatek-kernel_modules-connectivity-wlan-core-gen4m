@@ -6042,15 +6042,6 @@ rlmChangeOperationMode(
 		fgIsChangeTxNss = FALSE;
 
 	if ((!fgIsChangeBw) && (!fgIsChangeRxNss) && (!fgIsChangeTxNss)) {
-		if (prBssInfo->pfOpChangeHandler) {
-			/* (1) Don't need to call callback at no need to change
-			 * OP mode case
-			 * (2) Clear callback to NULL when handling OP Mode
-			 * change request done
-			 */
-			prBssInfo->pfOpChangeHandler = NULL;
-		}
-
 		DBGLOG(RLM, INFO,
 			"BSS[%d] target OpMode BW[%d] RxNss[%d] TxNss[%d] No change, return\n",
 			ucBssIndex, ucChannelWidth, ucOpRxNss, ucOpTxNss);
