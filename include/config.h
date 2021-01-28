@@ -430,7 +430,7 @@
 #define CFG_TX_MAX_PKT_NUM                      1024
 
 /*! Maximum number of SW TX CMD packet buffer */
-#define CFG_TX_MAX_CMD_PKT_NUM                  256
+#define CFG_TX_MAX_CMD_PKT_NUM                  32
 
 /*------------------------------------------------------------------------------
  * Flags and Parameters for RX path
