@@ -136,18 +136,18 @@ BOOL halVerifyChipID(IN P_ADAPTER_T prAdapter)
 
 	ASSERT(prAdapter);
 
-	if (prAdapter->fgIsReadRevID)
-		return TRUE;
-
 	prChipInfo = prAdapter->chip_info;
 	prBusInfo = prChipInfo->bus_info;
+
+	if (prAdapter->fgIsReadRevID || !prChipInfo->should_verify_chip_id)
+		return TRUE;
 
 	HAL_MCR_RD(prAdapter, prBusInfo->top_cfg_base + TOP_HW_CONTROL, &u4CIR);
 
 	DBGLOG(INIT, INFO, "WCIR_CHIP_ID = 0x%x, chip_id = 0x%x\n",
 		(u4CIR & WCIR_CHIP_ID), prChipInfo->chip_id);
 
-	if (((u4CIR & WCIR_CHIP_ID) != prChipInfo->chip_id) && (prChipInfo->chip_id != SKIP_CHIP_ID))
+	if ((u4CIR & WCIR_CHIP_ID) != prChipInfo->chip_id)
 		return FALSE;
 
 	HAL_MCR_RD(prAdapter, prBusInfo->top_cfg_base + TOP_HW_VERSION, &u4CIR);
@@ -1136,14 +1136,41 @@ VOID halWpdmaFreeRing(P_GLUE_INFO_T prGlueInfo)
 	}
 }
 
-static VOID halWpdmaSetup(P_GLUE_INFO_T prGlueInfo, BOOLEAN enable)
+VOID halConnacWpdmaConfig(P_GLUE_INFO_T prGlueInfo, BOOLEAN enable)
 {
 	P_BUS_INFO prBusInfo = prGlueInfo->prAdapter->chip_info->bus_info;
+	WPDMA_GLO_CFG_STRUCT GloCfg;
+	WPMDA_INT_MASK IntMask;
 
-	if (prBusInfo->is_pcie_32dw_read)
-		halWpdmaConfig(prGlueInfo, enable);
-	else
-		halEnhancedWpdmaConfig(prGlueInfo, enable);
+	kalDevRegRead(prGlueInfo, WPDMA_GLO_CFG, &GloCfg.word);
+	kalDevRegRead(prGlueInfo, WPDMA_INT_MSK, &IntMask.word);
+
+	if (enable == TRUE) {
+		GloCfg.field_conn.tx_dma_en = 1;
+		GloCfg.field_conn.rx_dma_en = 1;
+		GloCfg.field_conn.pdma_bt_size = 3;
+		GloCfg.field_conn.tx_wb_ddone = 1;
+		GloCfg.field_conn.multi_dma_en = 3;
+		GloCfg.field_conn.fifo_little_endian = 1;
+		GloCfg.field_conn.clk_gate_dis = 1;
+
+		IntMask.field.rx_done_0 = 1;
+		IntMask.field.rx_done_1 = 1;
+		IntMask.field.tx_done = BIT(prBusInfo->tx_ring_fwdl_idx) &
+			BIT(prBusInfo->tx_ring_cmd_idx) & BIT(prBusInfo->tx_ring_data_idx);
+		IntMask.field.tx_dly_int = 0;
+	} else {
+		GloCfg.field_conn.tx_dma_en = 0;
+		GloCfg.field_conn.rx_dma_en = 0;
+
+		IntMask.field.rx_done_0 = 0;
+		IntMask.field.rx_done_1 = 0;
+		IntMask.field.tx_done = 0;
+		IntMask.field.tx_dly_int = 0;
+	}
+
+	kalDevRegWrite(prGlueInfo, WPDMA_INT_MSK, IntMask.word);
+	kalDevRegWrite(prGlueInfo, WPDMA_GLO_CFG, GloCfg.word);
 }
 
 VOID halEnhancedWpdmaConfig(P_GLUE_INFO_T prGlueInfo, BOOLEAN enable)
@@ -1294,15 +1321,19 @@ static BOOLEAN halWpdmaWaitIdle(P_GLUE_INFO_T prGlueInfo, INT_32 round, INT_32 w
 
 VOID halWpdmaInitRing(P_GLUE_INFO_T prGlueInfo)
 {
-	P_BUS_INFO prBusInfo = prGlueInfo->prAdapter->chip_info->bus_info;
-	UINT_32 phy_addr, offset;
-	INT_32 i;
-	P_GL_HIF_INFO_T prHifInfo = &prGlueInfo->rHifInfo;
+	P_GL_HIF_INFO_T prHifInfo;
+	P_BUS_INFO prBusInfo;
 	RTMP_TX_RING *tx_ring;
 	RTMP_RX_RING *rx_ring;
+	UINT_32 phy_addr, offset, i;
+
+	ASSERT(prGlueInfo);
+
+	prHifInfo = &prGlueInfo->rHifInfo;
+	prBusInfo = prGlueInfo->prAdapter->chip_info->bus_info;
 
 	/* Set DMA global configuration except TX_DMA_EN and RX_DMA_EN bits */
-	halWpdmaSetup(prGlueInfo, FALSE);
+	prBusInfo->pdmaSetup(prGlueInfo, FALSE);
 
 	halWpdmaWaitIdle(prGlueInfo, 100, 1000);
 
@@ -1354,7 +1385,7 @@ VOID halWpdmaInitRing(P_GLUE_INFO_T prGlueInfo)
 			i, rx_ring->hw_desc_base, phy_addr, rx_ring->u4RingSize);
 	}
 
-	halWpdmaSetup(prGlueInfo, TRUE);
+	prBusInfo->pdmaSetup(prGlueInfo, TRUE);
 }
 
 VOID halWpdmaProcessCmdDmaDone(IN P_GLUE_INFO_T prGlueInfo, IN UINT_16 u2Port)
