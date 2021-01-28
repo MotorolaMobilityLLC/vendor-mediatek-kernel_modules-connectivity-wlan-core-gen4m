@@ -3619,42 +3619,74 @@ cfg80211_regd_set_wiphy(IN struct wiphy *prWiphy)
 
 int mtk_cfg80211_suspend(struct wiphy *wiphy, struct cfg80211_wowlan *wow)
 {
-	P_GLUE_INFO_T prGlueInfo;
-	ADAPTER_T *prAdapter;
-	UINT_32 u4BufLen;
-	WLAN_STATUS rStatus = WLAN_STATUS_SUCCESS;
+	P_GLUE_INFO_T prGlueInfo = NULL;
 
-	DBGLOG(REQ, INFO, "CFG80211 suspend CB\n");
-	if (!wlanGetGlueInfo()) {
-		DBGLOG(REQ, ERROR, "NIC does not exist!\n");
+	if (kalHaltTryLock())
 		return 0;
-	}
+
+	if (kalIsHalted() || !wiphy)
+		goto end;
 
 	prGlueInfo = (P_GLUE_INFO_T) wiphy_priv(wiphy);
-	ASSERT(prGlueInfo);
 
-	if (!prGlueInfo || !prGlueInfo->prAdapter) {
-		DBGLOG(REQ, ERROR, "prGlueInfo or prAdapter is NULL!\n");
-		return 0;
+	if (prGlueInfo && prGlueInfo->prAdapter) {
+		set_bit(SUSPEND_FLAG_FOR_WAKEUP_REASON, &prGlueInfo->prAdapter->ulSuspendFlag);
+		set_bit(SUSPEND_FLAG_CLEAR_WHEN_RESUME, &prGlueInfo->prAdapter->ulSuspendFlag);
 	}
-	prAdapter = prGlueInfo->prAdapter;
+end:
+	kalHaltUnlock();
 
-	DBGLOG(REQ, WARN, "Wow:%d, WowEnable:%d, state:%d\n",
-		prGlueInfo->prAdapter->rWifiVar.ucWow, prGlueInfo->prAdapter->rWowCtrl.fgWowEnable,
-		kalGetMediaStateIndicated(prGlueInfo));
-
-	/* 1) wifi cfg "Wow" must be true, 2) wow is disable 3) WIfI connected => execute link down flow */
-	if (prGlueInfo->prAdapter->rWifiVar.ucWow && !prGlueInfo->prAdapter->rWowCtrl.fgWowEnable) {
-		if (kalGetMediaStateIndicated(prGlueInfo) == PARAM_MEDIA_STATE_CONNECTED) {
-			DBGLOG(REQ, WARN, "CFG80211 suspend link down\n");
-			rStatus = kalIoctl(prGlueInfo, wlanoidLinkDown, NULL, 0, TRUE, FALSE, FALSE, &u4BufLen);
-		}
-	}
-
-	if (rStatus != WLAN_STATUS_SUCCESS) {
-		DBGLOG(REQ, WARN, "cfg 80211 suspend fail!\n");
-		return -EINVAL;
-	}
 	return 0;
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * @brief cfg80211 resume callback, will be invoked in wiphy_resume.
+ *
+ * @param wiphy: pointer to wiphy
+ *
+ * @retval 0:       successful
+ *         others:  failure
+ */
+/*----------------------------------------------------------------------------*/
+int mtk_cfg80211_resume(struct wiphy *wiphy)
+{
+	P_GLUE_INFO_T prGlueInfo = NULL;
+	P_BSS_DESC_T *pprBssDesc = NULL;
+	P_ADAPTER_T prAdapter = NULL;
+	UINT_8 i = 0;
+
+	if (kalHaltTryLock())
+		return 0;
+
+	if (kalIsHalted() || !wiphy)
+		goto end;
+
+	prGlueInfo = (P_GLUE_INFO_T) wiphy_priv(wiphy);
+	if (prGlueInfo)
+		prAdapter = prGlueInfo->prAdapter;
+	if (prAdapter == NULL)
+		goto end;
+
+	clear_bit(SUSPEND_FLAG_CLEAR_WHEN_RESUME, &prAdapter->ulSuspendFlag);
+	pprBssDesc = &prAdapter->rWifiVar.rScanInfo.rNloParam.aprPendingBssDescToInd[0];
+	for (; i < SCN_SSID_MATCH_MAX_NUM; i++) {
+		if (pprBssDesc[i] == NULL)
+			break;
+		if (pprBssDesc[i]->u2RawLength == 0)
+			continue;
+		kalIndicateBssInfo(prGlueInfo,
+					   (PUINT_8) pprBssDesc[i]->aucRawBuf,
+					   pprBssDesc[i]->u2RawLength,
+					   pprBssDesc[i]->ucChannelNum,
+					   RCPI_TO_dBm(pprBssDesc[i]->ucRCPI));
+	}
+	DBGLOG(SCN, INFO, "pending %d sched scan results\n", i);
+	if (i > 0)
+		kalMemZero(&pprBssDesc[0], i * sizeof(P_BSS_DESC_T));
+
+end:
+	kalHaltUnlock();
+
+	return 0;
+}
