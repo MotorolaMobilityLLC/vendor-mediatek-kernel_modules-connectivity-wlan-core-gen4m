@@ -729,6 +729,9 @@ UINT_32 halRxUSBEnqueueRFB(IN P_ADAPTER_T prAdapter, IN PUINT_8 pucBuf, IN UINT_
 	UINT_16 u2RxByteCount;
 	UINT_8 *pucRxFrame;
 	UINT_32 u4EnqCnt = 0;
+#if CFG_TCP_IP_CHKSUM_OFFLOAD
+	PUINT_32 pu4HwAppendDW;
+#endif /* CFG_TCP_IP_CHKSUM_OFFLOAD */
 
 	KAL_SPIN_LOCK_DECLARATION();
 
@@ -756,6 +759,11 @@ UINT_32 halRxUSBEnqueueRFB(IN P_ADAPTER_T prAdapter, IN PUINT_8 pucBuf, IN UINT_
 
 			prSwRfb->ucPacketType = (UINT_8) HAL_RX_STATUS_GET_PKT_TYPE(prRxStatus);
 			/* DBGLOG(RX, TRACE, ("ucPacketType = %d\n", prSwRfb->ucPacketType)); */
+#if CFG_TCP_IP_CHKSUM_OFFLOAD
+			pu4HwAppendDW = (PUINT_32) prRxStatus;
+			pu4HwAppendDW += (ALIGN_4(prRxStatus->u2RxByteCount) >> 2);
+			prSwRfb->u4TcpUdpIpCksStatus = *pu4HwAppendDW;
+#endif /* CFG_TCP_IP_CHKSUM_OFFLOAD */
 #if DBG
 			DBGLOG(RX, TRACE, "Rx status flag = %x wlan index = %d SecMode = %d\n",
 			       prRxStatus->u2StatusFlag, prRxStatus->ucWlanIdx, HAL_RX_STATUS_GET_SEC_MODE(prRxStatus));
