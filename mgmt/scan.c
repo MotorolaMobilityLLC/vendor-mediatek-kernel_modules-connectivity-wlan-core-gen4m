@@ -375,7 +375,7 @@ void scanSetRequestChannel(IN struct ADAPTER *prAdapter,
 		}
 	}
 
-	if (fgIsFull2Partial && u4ScanChannelNum == 0) {
+	if (u4ScanChannelNum == 0) {
 		/* We don't have channel info when u4ScanChannelNum is 0.
 		 * check full2partial bitmap and set scan channels
 		 */
@@ -408,9 +408,7 @@ void scanSetRequestChannel(IN struct ADAPTER *prAdapter,
 		prScanReqMsg->eScanChannel = SCAN_CHANNEL_SPECIFIED;
 	} else
 #endif /* CFG_SUPPORT_FULL2PARTIAL_SCAN */
-	if (u4ScanChannelNum == 0) {
-		prScanReqMsg->ucChannelListNum = 0;
-	} else {
+	{
 		u4Index = 0;
 		for (i = 0; i < u4ScanChannelNum; i++) {
 			u4Channel = arChannel[i].ucChannelNum;
@@ -436,8 +434,9 @@ void scanSetRequestChannel(IN struct ADAPTER *prAdapter,
 			u4Index++;
 		}
 		if (u4Index == 0) {
-			log_dbg(SCN, WARN, "No channel to scan\n");
+			log_dbg(SCN, WARN, "No channel to scan, set to full scan\n");
 			prScanReqMsg->ucChannelListNum = 0;
+			prScanReqMsg->eScanChannel = SCAN_CHANNEL_FULL;
 		} else {
 			prScanReqMsg->ucChannelListNum = u4Index;
 			prScanReqMsg->eScanChannel = SCAN_CHANNEL_SPECIFIED;
