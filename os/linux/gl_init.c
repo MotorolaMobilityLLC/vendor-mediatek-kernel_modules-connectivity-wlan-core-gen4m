@@ -2432,7 +2432,8 @@ static INT_32 wlanProbe(PVOID pvData, PVOID pvDriverData)
 
 		DBGLOG(INIT, LOUD, "wlanProbe: probe success\n");
 	} else {
-		glBusFreeIrq(prGlueInfo->prDevHandler, prGlueInfo);
+		if (prGlueInfo)
+			glBusFreeIrq(prGlueInfo->prDevHandler, prGlueInfo);
 		DBGLOG(INIT, LOUD, "wlanProbe: probe failed\n");
 	}
 
