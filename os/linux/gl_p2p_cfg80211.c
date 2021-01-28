@@ -784,6 +784,12 @@ int mtk_p2p_cfg80211_add_key(struct wiphy *wiphy,
 	DBGLOG_MEM8(RSN, TRACE, params->key, params->key_len);
 #endif
 
+	if (params->key_len > 32) {
+		DBGLOG(RSN, WARN, "key_len [%d] is invalid!\n",
+			params->key_len);
+		return -EINVAL;
+	}
+
 	/* Todo:: By Cipher to set the key */
 
 	kalMemZero(&rKey, sizeof(struct P2P_PARAM_KEY));
@@ -1762,12 +1768,20 @@ static int mtk_p2p_cfg80211_start_radar_detection_impl(struct wiphy *wiphy,
 					cnmMemAlloc(prGlueInfo->prAdapter,
 					RAM_TYPE_BUF,
 					sizeof(struct cfg80211_chan_def));
-
+			if (prGlueInfo->prP2PInfo[ucRoleIdx]->chandef == NULL) {
+				i4Rslt = -ENOMEM;
+				break;
+			}
 			prGlueInfo->prP2PInfo[ucRoleIdx]->chandef->chan =
 				(struct ieee80211_channel *)
 					cnmMemAlloc(prGlueInfo->prAdapter,
 					RAM_TYPE_BUF,
 					sizeof(struct ieee80211_channel));
+			if (prGlueInfo->prP2PInfo[ucRoleIdx]->chandef->chan
+				== NULL) {
+				i4Rslt = -ENOMEM;
+				break;
+			}
 		}
 
 		/* Copy chan def to local buffer*/
@@ -1898,11 +1912,19 @@ int mtk_p2p_cfg80211_channel_switch(struct wiphy *wiphy,
 				(struct cfg80211_chan_def *)
 				cnmMemAlloc(prGlueInfo->prAdapter,
 				RAM_TYPE_BUF, sizeof(struct cfg80211_chan_def));
-
+			if (prGlueInfo->prP2PInfo[ucRoleIdx]->chandef == NULL) {
+				i4Rslt = -ENOMEM;
+				break;
+			}
 			prGlueInfo->prP2PInfo[ucRoleIdx]->chandef->chan =
 				(struct ieee80211_channel *)
 				cnmMemAlloc(prGlueInfo->prAdapter,
 				RAM_TYPE_BUF, sizeof(struct ieee80211_channel));
+			if (prGlueInfo->prP2PInfo[ucRoleIdx]->chandef->chan
+				== NULL) {
+				i4Rslt = -ENOMEM;
+				break;
+			}
 		}
 		/* Copy chan def to local buffer*/
 		prGlueInfo->prP2PInfo[ucRoleIdx]
@@ -3732,6 +3754,12 @@ int mtk_p2p_cfg80211_testmode_p2p_sigma_pre_cmd(IN struct wiphy *wiphy,
 	int status = 0;
 	uint32_t u4Leng;
 	uint8_t ucBssIdx;
+
+	if (len > sizeof(struct NL80211_DRIVER_TEST_PRE_PARAMS)) {
+		DBGLOG(P2P, WARN, "len [%d] is invalid!\n",
+			len);
+		return -EINVAL;
+	}
 
 	ASSERT(wiphy);
 
