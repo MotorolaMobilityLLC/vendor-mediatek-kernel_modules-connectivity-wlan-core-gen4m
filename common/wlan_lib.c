@@ -7188,6 +7188,14 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 #if CFG_SUPPORT_SMART_GEAR
 	prWifiVar->ucSGCfg = (uint8_t) wlanCfgGetUint32(
 					prAdapter, "SGCfg", FEATURE_ENABLED);
+	/* 2.4G default is WF0 when enable SG SISO mode*/
+	prWifiVar->ucSG24GFavorANT = (uint8_t) wlanCfgGetUint32(
+					prAdapter, "SG24GFavorANT",
+					FEATURE_DISABLED);
+	/* 5G default is WF1 when enable SG SISO mode*/
+	prWifiVar->ucSG5GFavorANT = (uint8_t) wlanCfgGetUint32(
+					prAdapter, "SG5GFavorANT",
+					FEATURE_ENABLED);
 #endif
 	/* Tx Buffer Management */
 	prWifiVar->ucExtraTxDone = (uint32_t) wlanCfgGetUint32(
