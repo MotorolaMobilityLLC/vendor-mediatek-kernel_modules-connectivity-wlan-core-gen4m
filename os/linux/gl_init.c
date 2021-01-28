@@ -1413,7 +1413,7 @@ void p2pSetMulticastListWorkQueueWrapper(struct GLUE_INFO
  * \retval NETDEV_TX_BUSY - on failure, packet will be discarded by upper layer.
  */
 /*----------------------------------------------------------------------------*/
-int wlanHardStartXmit(struct sk_buff *prSkb,
+netdev_tx_t wlanHardStartXmit(struct sk_buff *prSkb,
 		      struct net_device *prDev)
 {
 	struct NETDEV_PRIVATE_GLUE_INFO *prNetDevPrivate =
