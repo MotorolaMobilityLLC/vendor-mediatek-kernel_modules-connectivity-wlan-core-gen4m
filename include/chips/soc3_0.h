@@ -233,6 +233,7 @@ extern struct completion g_triggerComp;
 extern bool g_IsTriggerTimeout;
 extern u_int8_t fgIsResetting;
 extern u_int8_t g_fgRstRecover;
+extern struct regmap *g_regmap;
 #endif
 /*******************************************************************************
 *                           P R I V A T E   D A T A
@@ -335,6 +336,8 @@ void soc3_0_DumpBusHangCr(struct ADAPTER *prAdapter);
 
 void wlanCoAntWiFi(void);
 void wlanCoAntMD(void);
+void wlanCoAntVFE28En(IN struct ADAPTER *prAdapter);
+void wlanCoAntVFE28Dis(void);
 
 #if (CFG_SUPPORT_CONNINFRA == 1)
 int wlanConnacPccifon(void);

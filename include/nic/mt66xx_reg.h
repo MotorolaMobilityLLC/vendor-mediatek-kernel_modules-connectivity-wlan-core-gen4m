@@ -1394,6 +1394,8 @@ struct mt66xx_chip_info {
 	int (*coexpccifoff)(void);
 	void (*coantSetWiFi)(void);
 	void (*coantSetMD)(void);
+	void (*coantVFE28En)(IN struct ADAPTER *prAdapter);
+	void (*coantVFE28Dis)(void);
 	int (*trigger_wholechiprst)(char *reason);
 	void (*sw_interrupt_handler)(IN struct ADAPTER *prAdapter);
 	void (*conninra_cb_register)(void);
