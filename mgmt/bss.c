@@ -142,6 +142,12 @@ struct APPEND_VAR_IE_ENTRY txBcnIETable[] = {
 	, {(ELEM_HDR_LEN + ELEM_MAX_LEN_VHT_OP_MODE_NOTIFICATION), NULL,
 	   rlmRspGenerateVhtOpNotificationIE}	/*199 */
 #endif
+#if CFG_SUPPORT_802_11AX
+	, {0, heRlmCalculateHeCapIELen,
+	   heRlmRspGenerateHeCapIE}    /* 255, EXT 35 */
+	, {0, heRlmCalculateHeOpIELen,
+	   heRlmRspGenerateHeOpIE}      /* 255, EXT 36 */
+#endif
 #if CFG_SUPPORT_MTK_SYNERGY
 	, {(ELEM_HDR_LEN + ELEM_MIN_LEN_MTK_OUI), NULL,
 	   rlmGenerateMTKOuiIE}	/* 221 */
@@ -183,6 +189,12 @@ struct APPEND_VAR_IE_ENTRY txProbRspIETable[] = {
 	   rlmRspGenerateVhtOpIE}	/*192 */
 	, {(ELEM_HDR_LEN + ELEM_MAX_LEN_VHT_OP_MODE_NOTIFICATION), NULL,
 	   rlmRspGenerateVhtOpNotificationIE}	/*199 */
+#endif
+#if CFG_SUPPORT_802_11AX
+	, {0, heRlmCalculateHeCapIELen,
+	   heRlmRspGenerateHeCapIE}    /* 255, EXT 35 */
+	, {0, heRlmCalculateHeOpIELen,
+	   heRlmRspGenerateHeOpIE}      /* 255, EXT 36 */
 #endif
 #if CFG_SUPPORT_MTK_SYNERGY
 	, {(ELEM_HDR_LEN + ELEM_MIN_LEN_MTK_OUI), NULL,
@@ -279,6 +291,10 @@ void bssDetermineStaRecPhyTypeSet(IN struct ADAPTER *prAdapter,
 	else if (prStaRec->eStaType == STA_TYPE_P2P_GO) {
 		ucHtOption = prWifiVar->ucP2pGcHt;
 		ucVhtOption = prWifiVar->ucP2pGcVht;
+#if (CFG_SUPPORT_802_11AX == 1)
+		ucHeOption = prWifiVar->ucP2pGcHe;
+#endif
+
 	}
 
 	/* Set HT/VHT capability from Feature Option */
@@ -329,16 +345,25 @@ void bssDetermineApBssInfoPhyTypeSet(IN struct ADAPTER *prAdapter,
 	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
 	uint8_t ucHtOption = FEATURE_ENABLED;
 	uint8_t ucVhtOption = FEATURE_ENABLED;
+#if (CFG_SUPPORT_802_11AX == 1)
+	uint8_t ucHeOption = FEATURE_ENABLED;
+#endif
 
 	/* Decide AP mode PHY type set */
 	if (fgIsPureAp) {
 		ucHtOption = prWifiVar->ucApHt;
 		ucVhtOption = prWifiVar->ucApVht;
+#if (CFG_SUPPORT_802_11AX == 1)
+		ucHeOption = prWifiVar->ucApHe;
+#endif
 	}
 	/* Decide P2P GO PHY type set */
 	else {
 		ucHtOption = prWifiVar->ucP2pGoHt;
 		ucVhtOption = prWifiVar->ucP2pGoVht;
+#if (CFG_SUPPORT_802_11AX == 1)
+		ucHeOption = prWifiVar->ucP2pGoHe;
+#endif
 	}
 
 	/* Set HT/VHT capability from Feature Option */
@@ -363,6 +388,15 @@ void bssDetermineApBssInfoPhyTypeSet(IN struct ADAPTER *prAdapter,
 			(prBssInfo->eBand == BAND_5G)) {
 		prBssInfo->ucPhyTypeSet |= PHY_TYPE_BIT_VHT;
 	}
+
+#if (CFG_SUPPORT_802_11AX == 1)
+	if (IS_FEATURE_DISABLED(ucHeOption))
+		prBssInfo->ucPhyTypeSet &= ~PHY_TYPE_BIT_HE;
+	else if (IS_FEATURE_FORCE_ENABLED(ucHeOption))
+		prBssInfo->ucPhyTypeSet |= PHY_TYPE_BIT_HE;
+	else if (!fgIsPureAp && IS_FEATURE_ENABLED(ucHeOption))
+		prBssInfo->ucPhyTypeSet |= PHY_TYPE_BIT_HE;
+#endif
 
 	prBssInfo->ucPhyTypeSet &= prAdapter->rWifiVar.ucAvailablePhyTypeSet;
 

@@ -4210,6 +4210,13 @@ void rlmProcessAssocReq(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb,
 			prStaRec->ucAselCap = prHtCap->ucAselCap;
 			break;
 
+#if (CFG_SUPPORT_802_11AX == 1)
+		case ELEM_ID_RESERVED:
+			if (IE_ID_EXT(pucIE) == ELEM_EXT_ID_HE_CAP)
+				heRlmRecHeCapInfo(prAdapter, prStaRec, pucIE);
+			break;
+#endif
+
 #if CFG_SUPPORT_802_11AC
 		case ELEM_ID_VHT_CAP:
 			if (!RLM_NET_IS_11AC(prBssInfo) ||

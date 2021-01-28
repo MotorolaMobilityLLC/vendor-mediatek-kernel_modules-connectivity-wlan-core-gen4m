@@ -3125,6 +3125,12 @@ uint32_t nicCfgChipCapPhyCap(IN struct ADAPTER *prAdapter,
 #if (CFG_SUPPORT_802_11AX == 1)
 	prAdapter->rWifiVar.ucStaHe &= prPhyCap->ucHe;
 	wlanCfgSetUint32(prAdapter, "StaHE", prAdapter->rWifiVar.ucStaHe);
+	prAdapter->rWifiVar.ucApHe &= prPhyCap->ucHe;
+	wlanCfgSetUint32(prAdapter, "ApHE", prAdapter->rWifiVar.ucApHe);
+	prAdapter->rWifiVar.ucP2pGoHe &= prPhyCap->ucHe;
+	wlanCfgSetUint32(prAdapter, "P2pGoHE", prAdapter->rWifiVar.ucP2pGoHe);
+	prAdapter->rWifiVar.ucP2pGcHe &= prPhyCap->ucHe;
+	wlanCfgSetUint32(prAdapter, "P2pGcHE", prAdapter->rWifiVar.ucP2pGcHe);
 	if (prAdapter->rWifiVar.ucStaHe & BIT(0)) { /* (wifi.cfg & chip cap) */
 		fgEfuseCtrlAxOn = 1; /* default is 0 */
 	}
