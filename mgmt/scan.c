@@ -2924,7 +2924,7 @@ uint32_t scanProcessBeaconAndProbeResp(IN struct ADAPTER *prAdapter,
 
 			/* for AIS, send to host */
 			prAdapter->rWlanInfo.u4ScanDbgTimes3++;
-			if (prConnSettings->fgIsScanReqIssued
+			if (prScanInfo->eCurrentState == SCAN_STATE_SCANNING
 				|| prScanInfo->fgSchedScanning) {
 				fgAddToScanResult
 					= scanCheckBssIsLegal(prAdapter,
