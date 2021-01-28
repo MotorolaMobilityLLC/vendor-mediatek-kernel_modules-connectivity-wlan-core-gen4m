@@ -863,11 +863,6 @@ int mtk_cfg80211_scan(struct wiphy *wiphy,
 	uint32_t old_num_ssid = 0;
 	uint32_t u4ValidIdx = 0;
 	uint32_t wildcard_flag = 0;
-#if CFG_SUPPORT_SCAN_CACHE_RESULT
-	OS_SYSTIME rCurrentTime;
-
-	GLUE_SPIN_LOCK_DECLARATION();
-#endif
 
 	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wiphy);
 	ASSERT(prGlueInfo);
@@ -898,32 +893,11 @@ int mtk_cfg80211_scan(struct wiphy *wiphy,
 #endif /* CFG_SUPPORT_LOWLATENCY_MODE */
 
 #if CFG_SUPPORT_SCAN_CACHE_RESULT
-	GET_CURRENT_SYSTIME(&rCurrentTime);
-	if (PARAM_MEDIA_STATE_CONNECTED
-		!= kalGetMediaStateIndicated(prGlueInfo)) {
-		prGlueInfo->u4LastScanTime = 0;
-		log_dbg(REQ, TRACE, "SCAN_CACHE: reset scan cache time\n");
-	} else if (prGlueInfo->u4LastScanTime != 0 &&
-		!CHECK_FOR_TIMEOUT(rCurrentTime, prGlueInfo->u4LastScanTime,
-		CFG_SCAN_CACHE_RESULT_PERIOD * 1000) &&
-		PARAM_MEDIA_STATE_CONNECTED
-		== kalGetMediaStateIndicated(prGlueInfo) &&
-		request->n_channels >= CFG_SCAN_CACHE_MIN_CHANNEL_NUM) {
-		log_limited_dbg(REQ, INFO, "SCAN_CACHE: Skip scan too frequently(%u, %u). Call cfg80211_scan_done directly\n",
-			rCurrentTime, prGlueInfo->u4LastScanTime);
-		kalUpdateBssTimestamp(prGlueInfo);
-		GLUE_ACQUIRE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
-		kalCfg80211ScanDone(request, FALSE);
-		GLUE_RELEASE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
+	prGlueInfo->scanCache.prGlueInfo = prGlueInfo;
+	prGlueInfo->scanCache.prRequest = request;
+	prGlueInfo->scanCache.n_channels = (uint32_t) request->n_channels;
+	if (isScanCacheDone(&prGlueInfo->scanCache) == TRUE)
 		return 0;
-	} else if (request->n_channels < CFG_SCAN_CACHE_MIN_CHANNEL_NUM) {
-		log_dbg(REQ, INFO, "SCAN_CACHE: Bypass partial scan with %u channels\n",
-			request->n_channels);
-	} else {
-		log_dbg(REQ, INFO, "SCAN_CACHE: set scan cache time(%u)\n",
-			rCurrentTime);
-		prGlueInfo->u4LastScanTime = rCurrentTime;
-	}
 #endif /* CFG_SUPPORT_SCAN_CACHE_RESULT */
 
 	prScanRequest = kalMemAlloc(sizeof(struct PARAM_SCAN_REQUEST_ADV),

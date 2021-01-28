@@ -225,65 +225,66 @@ endif
 # Objects List
 # ---------------------------------------------------
 
-COMMON_OBJS :=	$(COMMON_DIR)dump.o \
-	       		$(COMMON_DIR)wlan_lib.o \
-	       		$(COMMON_DIR)wlan_oid.o \
-			$(COMMON_DIR)wlan_bow.o \
-			$(COMMON_DIR)debug.o
+COMMON_OBJS := 	$(COMMON_DIR)dump.o \
+		$(COMMON_DIR)wlan_lib.o \
+		$(COMMON_DIR)wlan_oid.o \
+		$(COMMON_DIR)wlan_bow.o \
+		$(COMMON_DIR)debug.o
 
-NIC_OBJS := $(NIC_DIR)nic.o \
-			$(NIC_DIR)nic_tx.o \
-			$(NIC_DIR)nic_rx.o \
-			$(NIC_DIR)nic_pwr_mgt.o \
-            $(NIC_DIR)nic_rate.o \
-			$(NIC_DIR)cmd_buf.o \
-			$(NIC_DIR)que_mgt.o \
-			$(NIC_DIR)nic_cmd_event.o \
-			$(NIC_DIR)nic_umac.o
+NIC_OBJS := 	$(NIC_DIR)nic.o \
+		$(NIC_DIR)nic_tx.o \
+		$(NIC_DIR)nic_rx.o \
+		$(NIC_DIR)nic_pwr_mgt.o \
+		$(NIC_DIR)nic_rate.o \
+		$(NIC_DIR)cmd_buf.o \
+		$(NIC_DIR)que_mgt.o \
+		$(NIC_DIR)nic_cmd_event.o \
+		$(NIC_DIR)nic_umac.o
 
-OS_OBJS :=	$(OS_DIR)gl_init.o \
-			$(OS_DIR)gl_kal.o  \
-			$(OS_DIR)gl_bow.o \
-			$(OS_DIR)gl_wext.o \
-			$(OS_DIR)gl_wext_priv.o \
-			$(OS_DIR)gl_ate_agent.o \
-			$(OS_DIR)gl_qa_agent.o \
-			$(OS_DIR)gl_hook_api.o \
-			$(OS_DIR)gl_rst.o \
-			$(OS_DIR)gl_cfg80211.o \
-			$(OS_DIR)gl_proc.o \
-			$(OS_DIR)gl_vendor.o \
-			$(OS_DIR)platform.o
+OS_OBJS := 	$(OS_DIR)gl_init.o \
+		$(OS_DIR)gl_kal.o \
+		$(OS_DIR)gl_bow.o \
+		$(OS_DIR)gl_wext.o \
+		$(OS_DIR)gl_wext_priv.o \
+		$(OS_DIR)gl_ate_agent.o \
+		$(OS_DIR)gl_qa_agent.o \
+		$(OS_DIR)gl_hook_api.o \
+		$(OS_DIR)gl_rst.o \
+		$(OS_DIR)gl_cfg80211.o \
+		$(OS_DIR)gl_proc.o \
+		$(OS_DIR)gl_vendor.o \
+		$(OS_DIR)platform.o
 
-MGMT_OBJS := $(MGMT_DIR)ais_fsm.o \
-			 $(MGMT_DIR)aaa_fsm.o \
-			 $(MGMT_DIR)assoc.o \
-			 $(MGMT_DIR)auth.o \
-			 $(MGMT_DIR)bss.o \
-			 $(MGMT_DIR)cnm.o \
-			 $(MGMT_DIR)cnm_timer.o \
-			 $(MGMT_DIR)cnm_mem.o \
-			 $(MGMT_DIR)hem_mbox.o \
-			 $(MGMT_DIR)mib.o \
-			 $(MGMT_DIR)privacy.o  \
-			 $(MGMT_DIR)rate.o \
-			 $(MGMT_DIR)rlm.o \
-			 $(MGMT_DIR)rlm_domain.o \
-			 $(MGMT_DIR)reg_rule.o \
-			 $(MGMT_DIR)rlm_obss.o \
-			 $(MGMT_DIR)rlm_protection.o \
-			 $(MGMT_DIR)rsn.o \
-			 $(MGMT_DIR)saa_fsm.o \
-			 $(MGMT_DIR)scan.o \
-			 $(MGMT_DIR)scan_fsm.o \
-             $(MGMT_DIR)swcr.o \
-             $(MGMT_DIR)roaming_fsm.o \
-             $(MGMT_DIR)tkip_mic.o \
-             $(MGMT_DIR)hs20.o \
-             $(MGMT_DIR)tdls.o \
-			$(MGMT_DIR)wnm.o \
-			$(MGMT_DIR)qosmap.o \
-			$(MGMT_DIR)ap_selection.o
+MGMT_OBJS := 	$(MGMT_DIR)ais_fsm.o \
+		$(MGMT_DIR)aaa_fsm.o \
+		$(MGMT_DIR)assoc.o \
+		$(MGMT_DIR)auth.o \
+		$(MGMT_DIR)bss.o \
+		$(MGMT_DIR)cnm.o \
+		$(MGMT_DIR)cnm_timer.o \
+		$(MGMT_DIR)cnm_mem.o \
+		$(MGMT_DIR)hem_mbox.o \
+		$(MGMT_DIR)mib.o \
+		$(MGMT_DIR)privacy.o \
+		$(MGMT_DIR)rate.o \
+		$(MGMT_DIR)rlm.o \
+		$(MGMT_DIR)rlm_domain.o \
+		$(MGMT_DIR)reg_rule.o \
+		$(MGMT_DIR)rlm_obss.o \
+		$(MGMT_DIR)rlm_protection.o \
+		$(MGMT_DIR)rsn.o \
+		$(MGMT_DIR)saa_fsm.o \
+		$(MGMT_DIR)scan.o \
+		$(MGMT_DIR)scan_fsm.o \
+		$(MGMT_DIR)scan_cache.o \
+		$(MGMT_DIR)swcr.o \
+		$(MGMT_DIR)roaming_fsm.o \
+		$(MGMT_DIR)tkip_mic.o \
+		$(MGMT_DIR)hs20.o \
+		$(MGMT_DIR)tdls.o \
+		$(MGMT_DIR)wnm.o \
+		$(MGMT_DIR)qosmap.o \
+		$(MGMT_DIR)ap_selection.o
 
 # ---------------------------------------------------
 # Chips Objects List
