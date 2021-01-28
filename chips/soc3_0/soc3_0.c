@@ -1078,17 +1078,50 @@ uint32_t soc3_0_DownloadByDynMemMap(IN struct ADAPTER *prAdapter,
 #endif
 void soc3_0_DumpWfsyscpupcr(struct ADAPTER *prAdapter)
 {
-	uint32_t i = 0, u4Value = 0, u4Value_2 = 0;
+#define CPUPCR_LOG_NUM	5
+#define CPUPCR_BUF_SZ	50
+
+	uint32_t i = 0;
+	uint32_t var_pc = 0;
+	uint32_t var_lp = 0;
+	uint64_t log_sec = 0;
+	uint64_t log_nsec = 0;
+	char log_buf_pc[CPUPCR_LOG_NUM][CPUPCR_BUF_SZ];
+	char log_buf_lp[CPUPCR_LOG_NUM][CPUPCR_BUF_SZ];
 
 	if (prAdapter == NULL)
 		return;
 
-	for (i = 0; i < 5; i++) {
-		HAL_MCR_RD(prAdapter, WFSYS_CPUPCR_ADDR, &u4Value);
-		HAL_MCR_RD(prAdapter, WFSYS_LP_ADDR, &u4Value_2);
-		DBGLOG(HAL, INFO,
-			"wm pc=0x%08x, wm lp=0x%08x\n", u4Value, u4Value_2);
+	for (i = 0; i < CPUPCR_LOG_NUM; i++) {
+		log_sec = local_clock();
+		log_nsec = do_div(log_sec, 1000000000)/1000;
+		HAL_MCR_RD(prAdapter, WFSYS_CPUPCR_ADDR, &var_pc);
+		HAL_MCR_RD(prAdapter, WFSYS_LP_ADDR, &var_lp);
+
+		snprintf(log_buf_pc[i], CPUPCR_BUF_SZ, "%llu.%06lu/0x%08x;",
+					log_sec,
+					log_nsec,
+					var_pc);
+
+		snprintf(log_buf_lp[i], CPUPCR_BUF_SZ, "%llu.%06lu/0x%08x;",
+					log_sec,
+					log_nsec,
+					var_lp);
 	}
+
+	DBGLOG(HAL, INFO, "wm pc=%s%s%s%s%s\n",
+			log_buf_pc[0],
+			log_buf_pc[1],
+			log_buf_pc[2],
+			log_buf_pc[3],
+			log_buf_pc[4]);
+
+	DBGLOG(HAL, INFO, "wm lp=%s%s%s%s%s\n",
+			log_buf_lp[0],
+			log_buf_lp[1],
+			log_buf_lp[2],
+			log_buf_lp[3],
+			log_buf_lp[4]);
 }
 
 int wf_ioremap_read(size_t addr, unsigned int *val)
@@ -1730,6 +1763,7 @@ int soc3_0_CheckBusHang(struct ADAPTER *prAdapter,
 	uint8_t ucWfResetEnable)
 {
 	int ret = 1;
+	int conninfra_read_ret = 0;
 	int conninfra_hang_ret = 0;
 	uint8_t conninfra_reset = FALSE;
 	uint32_t u4Cr = 0;
@@ -1739,15 +1773,23 @@ int soc3_0_CheckBusHang(struct ADAPTER *prAdapter,
 	if (prAdapter == NULL)
 		DBGLOG(HAL, INFO, "prAdapter NULL\n");
 
+	/* if under wf bus hang reset, dump cr only */
+	if (g_IsWfsysBusHang) {
+		soc3_0_DumpHostCr(prAdapter);
+		return ret;
+	}
+
 	do {
 /*
 * 1. Check "AP2CONN_INFRA ON step is ok"
 *   & Check "AP2CONN_INFRA OFF step is ok"
 */
+		conninfra_read_ret = conninfra_reg_readable();
 
-		if (!conninfra_reg_readable()) {
+		if (!conninfra_read_ret) {
 			DBGLOG(HAL, ERROR,
-				"conninfra_reg_readable fail\n");
+				"conninfra_reg_readable fail(%d)\n",
+				conninfra_read_ret);
 
 			conninfra_hang_ret = conninfra_is_bus_hang();
 
