@@ -91,12 +91,10 @@
 #define PROC_DRV_STATUS                         "status"
 #define PROC_RX_STATISTICS                      "rx_statistics"
 #define PROC_TX_STATISTICS                      "tx_statistics"
-#define PROC_DBG_LEVEL_NAME                     "dbg_level"
+#define PROC_DBG_LEVEL_NAME                     "dbgLevel"
 #define PROC_DRIVER_CMD                         "driver"
 #define PROC_CFG                                "cfg"
 #define PROC_EFUSE_DUMP                         "efuse_dump"
-
-
 
 #define PROC_MCR_ACCESS_MAX_USER_INPUT_LEN      20
 #define PROC_RX_STATISTICS_MAX_USER_INPUT_LEN   10
@@ -115,7 +113,6 @@
 *                            P U B L I C   D A T A
 ********************************************************************************
 */
-
 
 /*******************************************************************************
 *                           P R I V A T E   D A T A
@@ -146,40 +143,41 @@ static UINT_32 g_u4NextDriverReadLen;
 */
 static ssize_t procDbgLevelRead(struct file *filp, char __user *buf, size_t count, loff_t *f_pos)
 {
-		UINT_8 *temp = &g_aucProcBuf[0];
-		UINT_32 u4CopySize = 0;
-		UINT_16 i;
-		UINT_16 u2ModuleNum = 0;
+	UINT_8 *temp = &g_aucProcBuf[0];
+	UINT_32 u4CopySize = 0;
+	UINT_16 i;
+	UINT_16 u2ModuleNum = 0;
 
-		/* if *f_ops>0, we should return 0 to make cat command exit */
-		if (*f_pos > 0)
-			return 0;
+	/* if *f_ops>0, we should return 0 to make cat command exit */
+	if (*f_pos > 0)
+		return 0;
 
-		kalStrCpy(temp, "\nERROR|WARN|STATE|EVENT|TRACE|INFO|LOUD|TEMP\n"
-				"bit0 |bit1|bit2 |bit3 |bit4 |bit5|bit6|bit7\n\n"
-				"Debug Module\tIndex\tLevel\tDebug Module\tIndex\tLevel\n\n");
-		temp += kalStrLen(temp);
+	kalStrCpy(temp, "\nTEMP|LOUD|INFO|TRACE | EVENT|STATE|WARN|ERROR\n"
+			"bit7|bit6|bit5|bit4 | bit3|bit2|bit1|bit0\n\n"
+			"Usage: Module Index:Module Level, such as 0x00:0xff\n\n"
+			"Debug Module\tIndex\tLevel\tDebug Module\tIndex\tLevel\n\n");
+	temp += kalStrLen(temp);
 
-		u2ModuleNum = (sizeof(aucDbModuleName) / PROC_DBG_LEVEL_MAX_DISPLAY_STR_LEN) & 0xfe;
-		for (i = 0; i < u2ModuleNum; i += 2)
-			SPRINTF(temp, ("DBG_%s_IDX\t(0x%02x):\t0x%02x\tDBG_%s_IDX\t(0x%02x):\t0x%02x\n",
-				&aucDbModuleName[i][0], i, aucDebugModule[i],
-					&aucDbModuleName[i+1][0], i+1, aucDebugModule[i+1]));
+	u2ModuleNum = (sizeof(aucDbModuleName) / PROC_DBG_LEVEL_MAX_DISPLAY_STR_LEN) & 0xfe;
+	for (i = 0; i < u2ModuleNum; i += 2)
+		SPRINTF(temp, ("DBG_%s_IDX\t(0x%02x):\t0x%02x\tDBG_%s_IDX\t(0x%02x):\t0x%02x\n",
+			&aucDbModuleName[i][0], i, aucDebugModule[i],
+				&aucDbModuleName[i+1][0], i+1, aucDebugModule[i+1]));
 
-		if ((sizeof(aucDbModuleName) / PROC_DBG_LEVEL_MAX_DISPLAY_STR_LEN) & 0x1)
-			SPRINTF(temp, ("DBG_%s_IDX\t(0x%02x):\t0x%02x\n",
-				&aucDbModuleName[u2ModuleNum][0], u2ModuleNum, aucDebugModule[u2ModuleNum]));
+	if ((sizeof(aucDbModuleName) / PROC_DBG_LEVEL_MAX_DISPLAY_STR_LEN) & 0x1)
+		SPRINTF(temp, ("DBG_%s_IDX\t(0x%02x):\t0x%02x\n",
+			&aucDbModuleName[u2ModuleNum][0], u2ModuleNum, aucDebugModule[u2ModuleNum]));
 
-		u4CopySize = kalStrLen(g_aucProcBuf);
-		if (u4CopySize > count)
-			u4CopySize = count;
-		if (copy_to_user(buf, g_aucProcBuf, u4CopySize)) {
-			pr_err("copy to user failed\n");
-			return -EFAULT;
-		}
+	u4CopySize = kalStrLen(g_aucProcBuf);
+	if (u4CopySize > count)
+		u4CopySize = count;
+	if (copy_to_user(buf, g_aucProcBuf, u4CopySize)) {
+		pr_err("copy to user failed\n");
+		return -EFAULT;
+	}
 
-		*f_pos += u4CopySize;
-		return (ssize_t)u4CopySize;
+	*f_pos += u4CopySize;
+	return (ssize_t)u4CopySize;
 }
 
 #if WLAN_INCLUDE_PROC
@@ -254,7 +252,6 @@ static int procEfuseDumpOpen(struct inode *inode, struct file *file)
 
 	return seq_open(file, &procEfuseDump_ops);
 }
-
 
 static ssize_t procCfgRead(struct file *filp, char __user *buf, size_t count, loff_t *f_pos)
 {
@@ -441,7 +438,6 @@ static ssize_t procDriverCmdWrite(struct file *file, const char __user *buffer,
 
 	return count;
 }
-
 #endif
 #endif
 
@@ -486,7 +482,6 @@ static ssize_t procDbgLevelWrite(struct file *file, const char __user *buffer,
 	}
 	return count;
 }
-
 
 static const struct file_operations dbglevel_ops = {
 	.owner = THIS_MODULE,
@@ -776,7 +771,7 @@ static const struct file_operations country_ops = {
 
 INT_32 procInitFs(VOID)
 {
-
+	struct proc_dir_entry *prEntry;
 	g_u4NextDriverReadLen = 0;
 
 	if (init_net.proc_net == (struct proc_dir_entry *)NULL) {
@@ -795,7 +790,12 @@ INT_32 procInitFs(VOID)
 	}
 	proc_set_user(gprProcRoot, KUIDT_INIT(PROC_UID_SHELL), KGIDT_INIT(PROC_GID_WIFI));
 
-
+	prEntry = proc_create(PROC_DBG_LEVEL_NAME, 0664, gprProcRoot, &dbglevel_ops);
+	if (prEntry == NULL) {
+		pr_err("Unable to create /proc entry dbgLevel\n\r");
+		return -1;
+	}
+	proc_set_user(prEntry, KUIDT_INIT(PROC_UID_SHELL), KGIDT_INIT(PROC_GID_WIFI));
 	return 0;
 }				/* end of procInitProcfs() */
 
@@ -803,8 +803,10 @@ INT_32 procUninitProcFs(VOID)
 {
 #if KERNEL_VERSION(3, 9, 0) <= LINUX_VERSION_CODE
 	remove_proc_subtree(PROC_ROOT_NAME, init_net.proc_net);
+	remove_proc_subtree(PROC_DBG_LEVEL_NAME, gprProcRoot);
 #else
 	remove_proc_entry(PROC_ROOT_NAME, init_net.proc_net);
+	remove_proc_entry(PROC_DBG_LEVEL_NAME, gprProcRoot);
 #endif
 
 	return 0;
@@ -824,7 +826,6 @@ INT_32 procRemoveProcfs(VOID)
 {
 	remove_proc_entry(PROC_MCR_ACCESS, gprProcRoot);
 	remove_proc_entry(PROC_DRIVER_CMD, gprProcRoot);
-	remove_proc_entry(PROC_DBG_LEVEL_NAME, gprProcRoot);
 	remove_proc_entry(PROC_CFG, gprProcRoot);
 	remove_proc_entry(PROC_EFUSE_DUMP, gprProcRoot);
 
@@ -863,10 +864,10 @@ INT_32 procCreateFsEntry(P_GLUE_INFO_T prGlueInfo)
 #if	CFG_SUPPORT_EASY_DEBUG
 
 	prEntry = proc_create(PROC_DRIVER_CMD, 0664, gprProcRoot, &drivercmd_ops);
-		if (prEntry == NULL) {
-			pr_err("Unable to create /proc entry for driver command\n\r");
-			return -1;
-		}
+	if (prEntry == NULL) {
+		pr_err("Unable to create /proc entry for driver command\n\r");
+		return -1;
+	}
 
 	prEntry = proc_create(PROC_CFG, 0664, gprProcRoot, &cfg_ops);
 	if (prEntry == NULL) {
@@ -880,12 +881,6 @@ INT_32 procCreateFsEntry(P_GLUE_INFO_T prGlueInfo)
 		return -1;
 	}
 #endif
-
-	prEntry = proc_create(PROC_DBG_LEVEL_NAME, 0664, gprProcRoot, &dbglevel_ops);
-		if (prEntry == NULL) {
-			pr_err("Unable to create /proc entry dbgLevel\n\r");
-			return -1;
-		}
 
 	return 0;
 }
