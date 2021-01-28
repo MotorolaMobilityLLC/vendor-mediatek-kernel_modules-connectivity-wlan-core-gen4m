@@ -1115,6 +1115,15 @@ p2pFuncTxMgmtFrame(IN struct ADAPTER *prAdapter,
 			nicTxConfigPktControlFlag(prMgmtTxMsdu,
 				MSDU_CONTROL_FLAG_FORCE_TX, TRUE);
 
+		/* Optimization for timing critical p2p frames */
+		if (p2pFuncIsTimingCriticalFrames(prAdapter,
+			eConnState, prMgmtTxMsdu)) {
+			nicTxSetPktLifeTime(prMgmtTxMsdu, 100);
+			nicTxSetPktRetryLimit(prMgmtTxMsdu,
+				TX_DESC_TX_COUNT_NO_LIMIT);
+			nicTxSetForceRts(prMgmtTxMsdu, TRUE);
+		}
+
 		nicTxEnqueueMsdu(prAdapter, prMgmtTxMsdu);
 
 
@@ -7178,5 +7187,49 @@ uint8_t p2pFuncIsBufferableMMPDU(IN struct ADAPTER *prAdapter,
 	}
 	DBGLOG(P2P, TRACE, "fgIsBufferableMMPDU = %u\n", fgIsBufferableMMPDU);
 	return fgIsBufferableMMPDU;
+}
+
+uint8_t p2pFuncIsTimingCriticalFrames(
+		IN struct ADAPTER *prAdapter,
+		IN enum ENUM_P2P_CONNECT_STATE eConnState,
+		IN struct MSDU_INFO *prMgmtTxMsdu)
+{
+	struct WLAN_MAC_HEADER *prWlanHdr = (struct WLAN_MAC_HEADER *) NULL;
+	uint16_t u2TxFrameCtrl;
+	uint8_t fgIsTimingCritical = FALSE;
+
+	prWlanHdr = (struct WLAN_MAC_HEADER *)
+		((unsigned long) prMgmtTxMsdu->prPacket +
+		MAC_TX_RESERVED_FIELD);
+
+	if (!prWlanHdr) {
+		DBGLOG(P2P, ERROR, "prWlanHdr is NULL\n");
+		return FALSE;
+	}
+	u2TxFrameCtrl = prWlanHdr->u2FrameCtrl & MASK_FRAME_TYPE;
+
+	switch (u2TxFrameCtrl) {
+	case MAC_FRAME_ACTION:
+		switch (eConnState) {
+		case P2P_CNN_GO_NEG_REQ:
+		case P2P_CNN_GO_NEG_RESP:
+		case P2P_CNN_GO_NEG_CONF:
+		case P2P_CNN_INVITATION_REQ:
+		case P2P_CNN_INVITATION_RESP:
+			fgIsTimingCritical = TRUE;
+			break;
+		default:
+			break;
+		}
+		break;
+	case MAC_FRAME_PROBE_REQ:
+	case MAC_FRAME_PROBE_RSP:
+		fgIsTimingCritical = TRUE;
+		break;
+	default:
+		break;
+	}
+
+	return fgIsTimingCritical;
 }
 
