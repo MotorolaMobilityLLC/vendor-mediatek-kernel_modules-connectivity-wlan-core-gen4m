@@ -809,7 +809,7 @@ struct WIFI_VAR {
 	uint8_t aucMacAddress[MAC_ADDR_LEN];
 	uint8_t aucMacAddress1[MAC_ADDR_LEN];
 	uint8_t aucDeviceAddress[MAC_ADDR_LEN];
-	uint8_t aucInterfaceAddress[MAC_ADDR_LEN];
+	uint8_t aucInterfaceAddress[KAL_P2P_NUM][MAC_ADDR_LEN];
 
 	uint8_t ucAvailablePhyTypeSet;
 
