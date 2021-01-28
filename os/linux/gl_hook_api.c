@@ -229,37 +229,45 @@ int32_t MT_ICAPCommand(struct net_device *prNetDev,
 	} else if (prInBuf[0] == '3') {
 		if (prAteOps->getICapIQData) {
 			buf = kalMemAlloc(1024, VIR_MEM_TYPE);
-			i4Status = prAteOps->getICapIQData(prGlueInfo,
+			if (buf) {
+				i4Status = prAteOps->getICapIQData(prGlueInfo,
 						(uint8_t *) buf, CAP_I_TYPE, 0);
-			dumpMemory32((uint32_t *)buf, i4Status);
-			kalMemFree(buf, VIR_MEM_TYPE, 1024);
+				dumpMemory32((uint32_t *)buf, i4Status);
+				kalMemFree(buf, VIR_MEM_TYPE, 1024);
+			}
 		} else
 			i4Status = 1;
 	} else if (prInBuf[0] == '4') {
 		if (prAteOps->getICapIQData) {
 			buf = (uint32_t *) kalMemAlloc(1024, VIR_MEM_TYPE);
-			i4Status = prAteOps->getICapIQData(prGlueInfo,
+			if (buf) {
+				i4Status = prAteOps->getICapIQData(prGlueInfo,
 						(uint8_t *) buf, CAP_Q_TYPE, 0);
-			dumpMemory32((uint32_t *)buf, i4Status);
-			kalMemFree(buf, VIR_MEM_TYPE, 1024);
+				dumpMemory32((uint32_t *)buf, i4Status);
+				kalMemFree(buf, VIR_MEM_TYPE, 1024);
+			}
 		} else
 			i4Status = 1;
 	} else if (prInBuf[0] == '5') {
 		if (prAteOps->getICapIQData) {
 			buf = (uint32_t *) kalMemAlloc(1024, VIR_MEM_TYPE);
-			i4Status = prAteOps->getICapIQData(prGlueInfo,
+			if (buf) {
+				i4Status = prAteOps->getICapIQData(prGlueInfo,
 						(uint8_t *) buf, CAP_I_TYPE, 1);
-			dumpMemory32((uint32_t *)buf, i4Status);
-			kalMemFree(buf, VIR_MEM_TYPE, 1024);
+				dumpMemory32((uint32_t *)buf, i4Status);
+				kalMemFree(buf, VIR_MEM_TYPE, 1024);
+			}
 		} else
 			i4Status = 1;
 	} else if (prInBuf[0] == '6') {
 		if (prAteOps->getICapIQData) {
 			buf = (uint32_t *) kalMemAlloc(1024, VIR_MEM_TYPE);
-			i4Status = prAteOps->getICapIQData(prGlueInfo,
+			if (buf) {
+				i4Status = prAteOps->getICapIQData(prGlueInfo,
 						(uint8_t *) buf, CAP_Q_TYPE, 1);
-			dumpMemory32((uint32_t *)buf, i4Status);
-			kalMemFree(buf, VIR_MEM_TYPE, 1024);
+				dumpMemory32((uint32_t *)buf, i4Status);
+				kalMemFree(buf, VIR_MEM_TYPE, 1024);
+			}
 		} else
 			i4Status = 1;
 	}
@@ -2761,6 +2769,10 @@ int32_t MT_ATEWriteEfuse(struct net_device *prNetDev,
 	uint8_t  u4Index = 0, u4Loop = 0;
 
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+	if (!prGlueInfo) {
+		log_dbg(RFTEST, ERROR, "prGlueInfo is NULL\n");
+		return -EFAULT;
+	}
 	kalMemSet(&rAccessEfuseInfoRead, 0,
 		  sizeof(struct PARAM_CUSTOM_ACCESS_EFUSE));
 	kalMemSet(&rAccessEfuseInfoWrite, 0,
@@ -3841,7 +3853,7 @@ int32_t TxBfProfilePnWrite(struct net_device *prNetDev,
 		BF_PN_WRITE;
 	rTxBfActionInfo.rProfilePnWrite.ucPfmuIdx = profileIdx;
 	rTxBfActionInfo.rProfilePnWrite.u2bw = u2bw;
-	memcpy(&rTxBfActionInfo.rProfilePnWrite.ucBuf[0], &au2XSTS,
+	memcpy(&rTxBfActionInfo.rProfilePnWrite.ucBuf[0], &au2XSTS[0],
 	       sizeof(uint16_t) * 12);
 
 	i4Status = kalIoctl(prGlueInfo, wlanoidTxBfAction, &rTxBfActionInfo,
