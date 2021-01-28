@@ -253,6 +253,9 @@ uint32_t nicAllocateAdapterMemory(IN struct ADAPTER
 		if (halAllocateIOBuffer(prAdapter) != WLAN_STATUS_SUCCESS)
 			break;
 
+#if CFG_DBG_MGT_BUF
+		LINK_INITIALIZE(&prAdapter->rMemTrackLink);
+#endif
 		status = WLAN_STATUS_SUCCESS;
 
 	} while (FALSE);
@@ -352,6 +355,24 @@ void nicReleaseAdapterMemory(IN struct ADAPTER *prAdapter)
 
 		if (!wlanIsChipNoAck(prAdapter)) {
 			/* Skip this ASSERT if chip is no ACK */
+			if (prAdapter->u4MemFreeDynamicCount !=
+					prAdapter->u4MemAllocDynamicCount) {
+				struct MEM_TRACK *prMemTrack = NULL;
+
+				DBGLOG(MEM, ERROR, "----- Memory Leak -----\n");
+				LINK_FOR_EACH_ENTRY(prMemTrack,
+						&prAdapter->rMemTrackLink,
+						rLinkEntry,
+						struct MEM_TRACK) {
+					DBGLOG(MEM, ERROR,
+						"file:line %s, cmd id: %u, where: %u\n",
+						prMemTrack->pucFileAndLine,
+						prMemTrack->u2CmdIdAndWhere &
+							0x00FF,
+						(prMemTrack->u2CmdIdAndWhere &
+							0xFF00) >> 8);
+				}
+			}
 			ASSERT(prAdapter->u4MemFreeDynamicCount ==
 			       prAdapter->u4MemAllocDynamicCount);
 		}
