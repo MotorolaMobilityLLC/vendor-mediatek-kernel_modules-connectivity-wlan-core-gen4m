@@ -311,6 +311,11 @@ void aisFsmInit(IN struct ADAPTER *prAdapter)
 			  (PFN_MGMT_TIMEOUT_FUNC) aisFsmRunEventJoinTimeout, (unsigned long) NULL);
 
 	cnmTimerInitTimer(prAdapter,
+			  &prAisFsmInfo->rChannelTimeoutTimer,
+			  (PFN_MGMT_TIMEOUT_FUNC) aisFsmRunEventChannelTimeout,
+				(unsigned long) NULL);
+
+	cnmTimerInitTimer(prAdapter,
 			  &prAisFsmInfo->rDeauthDoneTimer,
 			  (PFN_MGMT_TIMEOUT_FUNC) aisFsmRunEventDeauthTimeout, (unsigned long) NULL);
 
@@ -418,6 +423,7 @@ void aisFsmUninit(IN struct ADAPTER *prAdapter)
 	cnmTimerStopTimer(prAdapter, &prAisFsmInfo->rIbssAloneTimer);
 	cnmTimerStopTimer(prAdapter, &prAisFsmInfo->rJoinTimeoutTimer);
 	cnmTimerStopTimer(prAdapter, &prAisFsmInfo->rScanDoneTimer);
+	cnmTimerStopTimer(prAdapter, &prAisFsmInfo->rChannelTimeoutTimer);
 	cnmTimerStopTimer(prAdapter, &prAisFsmInfo->rWaitOkcPMKTimer);
 	cnmTimerStopTimer(prAdapter, &prAisFsmInfo->rSecModeChangeTimer);
 
