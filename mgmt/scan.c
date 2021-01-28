@@ -2599,7 +2599,7 @@ VOID scanReportBss2Cfg80211(IN P_ADAPTER_T prAdapter, IN ENUM_BSS_TYPE_T eBSSTyp
 
 		}
 #if CFG_AUTO_CHANNEL_SEL_SUPPORT
-		wlanCalculateChannelDirtyness(prAdapter);
+		wlanCalculateAllChannelDirtyness(prAdapter);
 		wlanSortChannel(prAdapter);
 
 		prAdapter->rWifiVar.rChnLoadInfo.fgDataReadyBit = TRUE;
