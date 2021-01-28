@@ -188,7 +188,8 @@ do { \
 				if (prBssInfo->eCurrentOPMode == \
 					OP_MODE_INFRASTRUCTURE) \
 					pucMicKey = \
-					&(prAdapter->rWifiVar.rAisSpecificBssInfo.aucRxMicKey[0]); \
+					&(prAdapter->rWifiVar.\
+					rAisSpecificBssInfo.aucRxMicKey[0]); \
 				else { \
 					ASSERT(FALSE); \
 				} \
@@ -206,7 +207,8 @@ do { \
 			if (fgMicErr) { \
 				/* bypass tkip frag */ \
 				if (!prCurrSwRfb->fgFragFrame) { \
-					log_dbg(RX, ERROR, "Mark NULL the Packet for TKIP Mic Error\n"); \
+					log_dbg(RX, ERROR, \
+					"Mark NULL for TKIP Mic Error\n"); \
 					RX_INC_CNT(&prAdapter->rRxCtrl, \
 					RX_MIC_ERROR_DROP_COUNT); \
 					prCurrSwRfb->eDst = \
@@ -2168,7 +2170,9 @@ u_int8_t qmAdjustTcQuotas(IN struct ADAPTER *prAdapter,
 				(int32_t) prQM->au4CurrentTcResource[i];
 
 			if (ai4ExtraQuota[i] > 0) {
-				/* The resource shall be reallocated to other TCs */
+				/* The resource shall be
+				 * reallocated to other TCs
+				 */
 				if (ai4ExtraQuota[i] >
 					prTcqStatus->au4FreeBufferCount[i]) {
 					ai4ExtraQuota[i] =
@@ -2839,10 +2843,14 @@ struct SW_RFB *qmHandleRxPackets(IN struct ADAPTER *prAdapter,
 						cnmGetStaRecByIndex(prAdapter,
 							prCurrSwRfb->
 							ucStaRecIdx);
-					log_dbg(QM, TRACE, "Re-search the staRec = %d, mac = " MACSTR ", byteCnt= %d\n",
+#define __STR_FMT__ \
+	"Re-search the staRec = %d, mac = " MACSTR ", byteCnt= %d\n"
+					log_dbg(QM, TRACE,
+						__STR_FMT__,
 						prCurrSwRfb->ucStaRecIdx,
 						MAC2STR(aucTaAddr),
 						prRxStatus->u2RxByteCount);
+#undef __STR_FMT__
 				}
 
 				if (prCurrSwRfb->prStaRec == NULL) {
@@ -2904,14 +2912,14 @@ struct SW_RFB *qmHandleRxPackets(IN struct ADAPTER *prAdapter,
 					OP_MODE_ACCESS_POINT) {
 					if (IS_BMCAST_MAC_ADDR(
 						pucEthDestAddr)) {
-						prCurrSwRfb->eDst =
-						RX_PKT_DESTINATION_HOST_WITH_FORWARD;
+					prCurrSwRfb->eDst =
+					RX_PKT_DESTINATION_HOST_WITH_FORWARD;
 					} else if (
 						secLookupStaRecIndexFromTA(
-							prAdapter,
-							pucEthDestAddr)
-							!=
-							STA_REC_INDEX_NOT_FOUND) {
+						prAdapter,
+						pucEthDestAddr)
+						!=
+						STA_REC_INDEX_NOT_FOUND) {
 
 						prCurrSwRfb->eDst =
 						RX_PKT_DESTINATION_FORWARD;

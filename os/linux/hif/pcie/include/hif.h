@@ -50,10 +50,10 @@
  *
  *****************************************************************************/
 /*! \file   "hif.h"
-*    \brief  Functions for the driver to register bus and setup the IRQ
-*
-*    Functions for the driver to register bus and setup the IRQ
-*/
+ *    \brief  Functions for the driver to register bus and setup the IRQ
+ *
+ *    Functions for the driver to register bus and setup the IRQ
+ */
 
 #ifndef _HIF_H
 #define _HIF_H
@@ -67,44 +67,50 @@
 #endif
 
 /*******************************************************************************
-*                         C O M P I L E R   F L A G S
-********************************************************************************
-*/
+ *                         C O M P I L E R   F L A G S
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                    E X T E R N A L   R E F E R E N C E S
-********************************************************************************
-*/
+ *                    E X T E R N A L   R E F E R E N C E S
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                              C O N S T A N T S
-********************************************************************************
-*/
+ *                              C O N S T A N T S
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                             D A T A   T Y P E S
-********************************************************************************
-*/
+ *                             D A T A   T Y P E S
+ *******************************************************************************
+ */
 
 /* host interface's private data structure, which is attached to os glue
-** layer info structure.
+ ** layer info structure.
  */
 struct GL_HIF_INFO {
 	struct pci_dev *pdev;
 	struct pci_dev *prDmaDev;
 
-	uint8_t *CSRBaseAddress;	/* PCI MMIO Base Address, all access will use */
+	/* PCI MMIO Base Address, all access will use */
+	uint8_t *CSRBaseAddress;
 
 	/* Shared memory of all 1st pre-allocated
 	 * TxBuf associated with each TXD
 	 */
-	struct RTMP_DMABUF TxDescRing[NUM_OF_TX_RING];	/* Shared memory for Tx descriptors */
-	struct RTMP_TX_RING TxRing[NUM_OF_TX_RING];	/* AC0~3 + HCCA */
-	spinlock_t TxRingLock[NUM_OF_TX_RING];	/* Rx Ring spinlock */
+	/* Shared memory for Tx descriptors */
+	struct RTMP_DMABUF TxDescRing[NUM_OF_TX_RING];
+	/* AC0~3 + HCCA */
+	struct RTMP_TX_RING TxRing[NUM_OF_TX_RING];
+	/* Rx Ring spinlock */
+	spinlock_t TxRingLock[NUM_OF_TX_RING];
 
-	struct RTMP_DMABUF RxDescRing[NUM_OF_RX_RING];	/* Shared memory for RX descriptors */
+	/* Shared memory for RX descriptors */
+	struct RTMP_DMABUF RxDescRing[NUM_OF_RX_RING];
 	struct RTMP_RX_RING RxRing[NUM_OF_RX_RING];
-	spinlock_t RxRingLock[NUM_OF_RX_RING];	/* Rx Ring spinlock */
+	/* Rx Ring spinlock */
+	spinlock_t RxRingLock[NUM_OF_RX_RING];
 
 	u_int8_t fgIntReadClear;
 	u_int8_t fgMbxReadClear;
@@ -139,30 +145,31 @@ struct BUS_INFO {
 	void (*enableInterrupt)(struct ADAPTER *prAdapter);
 	void (*lowPowerOwnRead)(struct ADAPTER *prAdapter, u_int8_t *pfgResult);
 	void (*lowPowerOwnSet)(struct ADAPTER *prAdapter, u_int8_t *pfgResult);
-	void (*lowPowerOwnClear)(struct ADAPTER *prAdapter, u_int8_t *pfgResult);
+	void (*lowPowerOwnClear)(struct ADAPTER *prAdapter,
+		u_int8_t *pfgResult);
 	void (*getMailboxStatus)(struct ADAPTER *prAdapter, uint32_t *pu4Val);
 };
 
 
 /*******************************************************************************
-*                            P U B L I C   D A T A
-********************************************************************************
-*/
+ *                            P U B L I C   D A T A
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                           P R I V A T E   D A T A
-********************************************************************************
-*/
+ *                           P R I V A T E   D A T A
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                                 M A C R O S
-********************************************************************************
-*/
+ *                                 M A C R O S
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                   F U N C T I O N   D E C L A R A T I O N S
-********************************************************************************
-*/
+ *                   F U N C T I O N   D E C L A R A T I O N S
+ *******************************************************************************
+ */
 
 uint32_t glRegisterBus(probe_card pfProbe, remove_card pfRemove);
 
@@ -191,38 +198,50 @@ void halWpdmaFreeRing(struct GLUE_INFO *prGlueInfo);
 void halWpdmaInitRing(struct GLUE_INFO *prGlueInfo);
 void halWpdmaInitTxRing(IN struct GLUE_INFO *prGlueInfo);
 void halWpdmaInitRxRing(IN struct GLUE_INFO *prGlueInfo);
-void halWpdmaProcessCmdDmaDone(IN struct GLUE_INFO *prGlueInfo, IN uint16_t u2Port);
-void halWpdmaProcessDataDmaDone(IN struct GLUE_INFO *prGlueInfo, IN uint16_t u2Port);
-uint32_t halWpdmaGetRxDmaDoneCnt(IN struct GLUE_INFO *prGlueInfo, IN uint8_t ucRingNum);
-void kalPciUnmapToDev(IN struct GLUE_INFO *prGlueInfo, IN dma_addr_t rDmaAddr, IN uint32_t u4Length);
+void halWpdmaProcessCmdDmaDone(IN struct GLUE_INFO *prGlueInfo,
+	IN uint16_t u2Port);
+void halWpdmaProcessDataDmaDone(IN struct GLUE_INFO *prGlueInfo,
+	IN uint16_t u2Port);
+uint32_t halWpdmaGetRxDmaDoneCnt(IN struct GLUE_INFO *prGlueInfo,
+	IN uint8_t ucRingNum);
+void kalPciUnmapToDev(IN struct GLUE_INFO *prGlueInfo,
+	IN dma_addr_t rDmaAddr, IN uint32_t u4Length);
 
 void halInitMsduTokenInfo(IN struct ADAPTER *prAdapter);
 void halUninitMsduTokenInfo(IN struct ADAPTER *prAdapter);
 uint32_t halGetMsduTokenFreeCnt(IN struct ADAPTER *prAdapter);
-struct MSDU_TOKEN_ENTRY *halGetMsduTokenEntry(IN struct ADAPTER *prAdapter, uint32_t u4TokenNum);
+struct MSDU_TOKEN_ENTRY *halGetMsduTokenEntry(IN struct ADAPTER *prAdapter,
+	uint32_t u4TokenNum);
 struct MSDU_TOKEN_ENTRY *halAcquireMsduToken(IN struct ADAPTER *prAdapter);
 void halReturnMsduToken(IN struct ADAPTER *prAdapter, uint32_t u4TokenNum);
 
-void halTxUpdateCutThroughDesc(struct GLUE_INFO *prGlueInfo, struct MSDU_INFO *prMsduInfo,
+void halTxUpdateCutThroughDesc(struct GLUE_INFO *prGlueInfo,
+	struct MSDU_INFO *prMsduInfo,
 	struct MSDU_TOKEN_ENTRY *prToken);
 u_int8_t halIsStaticMapBusAddr(IN uint32_t u4Addr);
-u_int8_t halChipToStaticMapBusAddr(IN struct BUS_INFO *prBusInfo, IN uint32_t u4ChipAddr, OUT uint32_t *pu4BusAddr);
-u_int8_t halGetDynamicMapReg(IN struct GLUE_INFO *prGlueInfo, IN uint32_t u4ChipAddr, OUT uint32_t *pu4Value);
-u_int8_t halSetDynamicMapReg(IN struct GLUE_INFO *prGlueInfo, IN uint32_t u4ChipAddr, IN uint32_t u4Value);
+u_int8_t halChipToStaticMapBusAddr(IN struct BUS_INFO *prBusInfo,
+	IN uint32_t u4ChipAddr, OUT uint32_t *pu4BusAddr);
+u_int8_t halGetDynamicMapReg(IN struct GLUE_INFO *prGlueInfo,
+	IN uint32_t u4ChipAddr, OUT uint32_t *pu4Value);
+u_int8_t halSetDynamicMapReg(IN struct GLUE_INFO *prGlueInfo,
+	IN uint32_t u4ChipAddr, IN uint32_t u4Value);
 void halConnacWpdmaConfig(struct GLUE_INFO *prGlueInfo, u_int8_t enable);
 void halConnacEnableInterrupt(IN struct ADAPTER *prAdapter);
 
-u_int8_t halWpdmaWriteCmd(IN struct GLUE_INFO *prGlueInfo, IN struct CMD_INFO *prCmdInfo, IN uint8_t ucTC);
-u_int8_t halWpdmaWriteData(IN struct GLUE_INFO *prGlueInfo, IN struct MSDU_INFO *prMsduInfo);
+u_int8_t halWpdmaWriteCmd(IN struct GLUE_INFO *prGlueInfo,
+	IN struct CMD_INFO *prCmdInfo, IN uint8_t ucTC);
+u_int8_t halWpdmaWriteData(IN struct GLUE_INFO *prGlueInfo,
+	IN struct MSDU_INFO *prMsduInfo);
 void halHwRecoveryFromError(IN struct ADAPTER *prAdapter);
 
 void kalCheckAndResetTXReg(IN struct GLUE_INFO *prGlueInfo, IN uint16_t u2Port);
 void kalCheckAndResetRXReg(IN struct GLUE_INFO *prGlueInfo, IN uint16_t u2Port);
-u_int8_t kalDevReadData(IN struct GLUE_INFO *prGlueInfo, IN uint16_t u2Port, IN OUT struct SW_RFB *prSwRfb);
+u_int8_t kalDevReadData(IN struct GLUE_INFO *prGlueInfo,
+	IN uint16_t u2Port, IN OUT struct SW_RFB *prSwRfb);
 u_int8_t kalDevKickCmd(IN struct GLUE_INFO *prGlueInfo);
 
 /*******************************************************************************
-*                              F U N C T I O N S
-********************************************************************************
-*/
+ *                              F U N C T I O N S
+ *******************************************************************************
+ */
 #endif /* _HIF_H */
