@@ -161,6 +161,9 @@ static struct RX_EVENT_HANDLER arEventTable[] = {
 	{EVENT_ID_ICAP_DONE, nicEventIcapDone},
 	{EVENT_ID_DEBUG_MSG, nicEventDebugMsg},
 	{EVENT_ID_TDLS, nicEventTdls},
+#if (CFG_SUPPORT_HE_ER == 1)
+	{EVENT_ID_BSS_ER_TX_MODE, bssProcessErTxModeEvent},
+#endif
 	{EVENT_ID_RSSI_MONITOR, nicEventRssiMonitor},
 	{EVENT_ID_DUMP_MEM, nicEventDumpMem},
 #if CFG_ASSERT_DUMP
@@ -1848,7 +1851,6 @@ void nicRxProcessEventPacket(IN struct ADAPTER *prAdapter,
 	ASSERT(prAdapter);
 	ASSERT(prSwRfb);
 	prChipInfo = prAdapter->chip_info;
-
 	prEvent = (struct WIFI_EVENT *)
 			(prSwRfb->pucRecvBuff + prChipInfo->rxd_size);
 	if (prEvent->ucEID != EVENT_ID_DEBUG_MSG

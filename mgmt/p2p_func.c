@@ -3151,7 +3151,7 @@ p2pFuncValidateAuth(IN struct ADAPTER *prAdapter,
 		prStaRec->ucPhyTypeSet = PHY_TYPE_SET_802_11GN;
 
 		/* Update default Tx rate */
-		nicTxUpdateStaRecDefaultRate(prStaRec);
+		nicTxUpdateStaRecDefaultRate(prAdapter, prStaRec);
 
 		/* NOTE(Kevin): Better to change state here, not at TX Done */
 		cnmStaRecChangeState(prAdapter, prStaRec, STA_STATE_1);
