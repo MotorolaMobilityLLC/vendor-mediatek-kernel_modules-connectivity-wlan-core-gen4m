@@ -757,8 +757,7 @@ int mtk_p2p_cfg80211_add_key(struct wiphy *wiphy,
 	if (params->key)
 		kalMemCopy(rKey.aucKeyMaterial, params->key, params->key_len);
 	rKey.u4KeyLength = params->key_len;
-	rKey.u4Length = ((unsigned long)
-		&(((struct P2P_PARAM_KEY *) 0)->aucKeyMaterial))
+	rKey.u4Length = OFFSET_OF(struct P2P_PARAM_KEY, aucKeyMaterial)
 		+ rKey.u4KeyLength;
 
 	rStatus = kalIoctl(prGlueInfo,
