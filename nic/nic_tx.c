@@ -1358,7 +1358,29 @@ uint32_t nicTxMsduQueueMthread(IN struct ADAPTER *prAdapter)
 	}
 #else
 
-	uint32_t u4TxLoopCount;
+	uint32_t u4TxLoopCount = prAdapter->rWifiVar.u4HifTxloopCount;
+
+	while (u4TxLoopCount--) {
+		if (prAdapter->rWifiVar.ucTxMsduQueue == 1)
+			nicTxMsduQueueByRR(prAdapter);
+		else
+			nicTxMsduQueueByPrio(prAdapter);
+	}
+#endif
+	return WLAN_STATUS_SUCCESS;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * @brief In this function, we'll write MSDU into HIF by TC priority
+ *
+ *
+ * @param prAdapter              Pointer to the Adapter structure.
+ *
+ */
+/*----------------------------------------------------------------------------*/
+void nicTxMsduQueueByPrio(struct ADAPTER *prAdapter)
+{
 	struct QUE qDataPort[TX_PORT_NUM];
 	struct QUE *prDataPort[TX_PORT_NUM];
 	int32_t i;
@@ -1370,38 +1392,83 @@ uint32_t nicTxMsduQueueMthread(IN struct ADAPTER *prAdapter)
 		QUEUE_INITIALIZE(prDataPort[i]);
 	}
 
-	u4TxLoopCount = prAdapter->rWifiVar.u4HifTxloopCount;
+	for (i = TC_NUM; i >= 0; i--) {
+		while (QUEUE_IS_NOT_EMPTY(&(prAdapter->rTxPQueue[i]))) {
+			KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_PORT_QUE);
+			QUEUE_MOVE_ALL(prDataPort[i],
+				&(prAdapter->rTxPQueue[i]));
+			KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_PORT_QUE);
 
-	while (u4TxLoopCount--) {
-		for (i = TC_NUM; i >= 0; i--) {
-			while (QUEUE_IS_NOT_EMPTY(&(prAdapter->rTxPQueue[i]))) {
+			nicTxMsduQueue(prAdapter, 0, prDataPort[i]);
+
+			if (QUEUE_IS_NOT_EMPTY(prDataPort[i])) {
 				KAL_ACQUIRE_SPIN_LOCK(
-					prAdapter, SPIN_LOCK_TX_PORT_QUE);
-				QUEUE_MOVE_ALL(
-					prDataPort[i],
-					&(prAdapter->rTxPQueue[i]));
-				KAL_RELEASE_SPIN_LOCK(
-					prAdapter, SPIN_LOCK_TX_PORT_QUE);
+					prAdapter,
+					SPIN_LOCK_TX_PORT_QUE);
+				QUEUE_CONCATENATE_QUEUES_HEAD(
+					&(prAdapter->rTxPQueue[i]),
+					prDataPort[i]);
+				KAL_RELEASE_SPIN_LOCK(prAdapter,
+						      SPIN_LOCK_TX_PORT_QUE);
 
-				nicTxMsduQueue(prAdapter, 0, prDataPort[i]);
-
-				if (QUEUE_IS_NOT_EMPTY(prDataPort[i])) {
-					KAL_ACQUIRE_SPIN_LOCK(
-						prAdapter,
-						SPIN_LOCK_TX_PORT_QUE);
-					QUEUE_CONCATENATE_QUEUES_HEAD(
-						&(prAdapter->rTxPQueue[i]),
-						prDataPort[i]);
-					KAL_RELEASE_SPIN_LOCK(prAdapter,
-						SPIN_LOCK_TX_PORT_QUE);
-
-					break;
-				}
+				break;
 			}
 		}
 	}
-#endif
-	return WLAN_STATUS_SUCCESS;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * @brief In this function, we'll write MSDU into HIF by Round-Robin
+ *
+ *
+ * @param prAdapter              Pointer to the Adapter structure.
+ *
+ */
+/*----------------------------------------------------------------------------*/
+void nicTxMsduQueueByRR(struct ADAPTER *prAdapter)
+{
+	struct QUE qDataPort;
+	struct QUE *prDataPort, *prTxQue;
+	struct MSDU_INFO *prMsduInfo;
+	bool fgIsAllQueneEmpty = false;
+	int32_t i;
+
+	KAL_SPIN_LOCK_DECLARATION();
+
+	prDataPort = &qDataPort;
+	QUEUE_INITIALIZE(prDataPort);
+
+	KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_PORT_QUE);
+	/* Dequeue each TCQ to dataQ by round-robin  */
+	/* Check each TCQ is empty or not */
+	while (!fgIsAllQueneEmpty) {
+		fgIsAllQueneEmpty = true;
+		for (i = TC_NUM; i >= 0; i--) {
+			prTxQue = &(prAdapter->rTxPQueue[i]);
+			if (QUEUE_IS_NOT_EMPTY(prTxQue)) {
+				QUEUE_REMOVE_HEAD(
+					prTxQue, prMsduInfo,
+					struct MSDU_INFO *);
+				QUEUE_INSERT_TAIL(
+					prDataPort,
+					(struct QUE_ENTRY *) prMsduInfo);
+				fgIsAllQueneEmpty = false;
+			}
+		}
+	}
+	KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_PORT_QUE);
+
+	nicTxMsduQueue(prAdapter, 0, prDataPort);
+
+	KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_PORT_QUE);
+	/* Enque from dataQ to TCQ if TX don't finish */
+	while (QUEUE_IS_NOT_EMPTY(prDataPort)) {
+		QUEUE_REMOVE_HEAD(prDataPort, prMsduInfo, struct MSDU_INFO *);
+		prTxQue = &(prAdapter->rTxPQueue[prMsduInfo->ucTC]);
+		QUEUE_INSERT_HEAD(prTxQue, (struct QUE_ENTRY *) prMsduInfo);
+	}
+	KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_PORT_QUE);
 }
 
 uint32_t nicTxGetMsduPendingCnt(IN struct ADAPTER
