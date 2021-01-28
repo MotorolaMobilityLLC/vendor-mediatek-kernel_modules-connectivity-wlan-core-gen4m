@@ -917,21 +917,8 @@ void cnmCsaDoneEvent(IN struct ADAPTER *prAdapter,
 			IN struct WIFI_EVENT *prEvent)
 {
 	struct BSS_INFO *prBssInfo;
-	struct MSG_P2P_CSA_DONE *prP2pCsaDoneMsg;
-	uint8_t ucBssIndex;
 
 	DBGLOG(CNM, INFO, "cnmCsaDoneEvent.\n");
-
-	prP2pCsaDoneMsg = (struct MSG_P2P_CSA_DONE *)
-			  cnmMemAlloc(
-				  prAdapter,
-				  RAM_TYPE_MSG, sizeof(*prP2pCsaDoneMsg));
-
-	if (!prP2pCsaDoneMsg) {
-		log_dbg(CNM, ERROR,
-		       "cnmMemAlloc for prP2pCsaDoneMsg failed!\n");
-		return;
-	}
 
 	if (prAdapter->rWifiVar.fgCsaInProgress == FALSE) {
 		DBGLOG(CNM, WARN, "Receive duplicate cnmCsaDoneEvent.\n");
@@ -940,24 +927,35 @@ void cnmCsaDoneEvent(IN struct ADAPTER *prAdapter,
 
 	prAdapter->rWifiVar.fgCsaInProgress = FALSE;
 
-	prP2pCsaDoneMsg->rMsgHdr.eMsgId = MID_CNM_P2P_CSA_DONE;
+	prBssInfo = cnmGetSapBssInfo(prAdapter);
 
-	for (ucBssIndex = 0; ucBssIndex < BSS_DEFAULT_NUM;
-	     ucBssIndex++) {
-		prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
-						  ucBssIndex);
+	if (prBssInfo) {
+		struct MSG_P2P_CSA_DONE *prP2pCsaDoneMsg;
 
-		if (prBssInfo &&
-			(prBssInfo->eCurrentOPMode == OP_MODE_ACCESS_POINT)) {
-			prP2pCsaDoneMsg->ucBssIndex = ucBssIndex;
-			break;
+		prP2pCsaDoneMsg = (struct MSG_P2P_CSA_DONE *)
+			cnmMemAlloc(
+			prAdapter,
+			RAM_TYPE_MSG, sizeof(*prP2pCsaDoneMsg));
+
+		if (!prP2pCsaDoneMsg) {
+			log_dbg(CNM, ERROR,
+			       "cnmMemAlloc for prP2pCsaDoneMsg failed!\n");
+			return;
 		}
-	}
-	DBGLOG(CNM, INFO, "cnmCsaDoneEvent.ucBssIndex=%d\n",
-		prP2pCsaDoneMsg->ucBssIndex);
 
-	mboxSendMsg(prAdapter, MBOX_ID_0,
-		    (struct MSG_HDR *)prP2pCsaDoneMsg, MSG_SEND_METHOD_BUF);
+		prP2pCsaDoneMsg->rMsgHdr.eMsgId = MID_CNM_P2P_CSA_DONE;
+
+		prP2pCsaDoneMsg->ucBssIndex
+			= prBssInfo->ucBssIndex;
+
+		DBGLOG(CNM, INFO,
+			"cnmCsaDoneEvent.ucBssIndex=%d\n",
+			prP2pCsaDoneMsg->ucBssIndex);
+
+		mboxSendMsg(prAdapter, MBOX_ID_0,
+		    (struct MSG_HDR *)prP2pCsaDoneMsg,
+		    MSG_SEND_METHOD_BUF);
+	}
 }
 #endif
 
@@ -3456,6 +3454,9 @@ uint8_t cnmSapChannelSwitchReq(IN struct ADAPTER *prAdapter,
 
 	/* Update Beacon */
 	bssUpdateBeaconContent(prAdapter, ucBssIdx);
+
+	/* Send Action Frame */
+	rlmSendChannelSwitchFrame(prAdapter, ucBssIdx);
 
 	return 0;
 
