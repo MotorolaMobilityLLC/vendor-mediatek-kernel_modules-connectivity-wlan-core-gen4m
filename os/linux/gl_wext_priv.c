@@ -5742,12 +5742,12 @@ int priv_driver_get_channels(IN struct net_device *prNetDev, IN char *pcCommand,
 	UINT_32 i4BytesWritten = 0;
 	INT_32 i4Argc = 0;
 	PCHAR apcArgv[WLAN_CFG_ARGV_MAX];
-	UINT_32 u4Ret = 0;
 #if (CFG_SUPPORT_SINGLE_SKU == 1)
 	UINT_32 ch_idx, start_idx, end_idx;
 	struct channel *pCh;
 	UINT_32 ch_num = 0;
 	UINT_8 maxbw = 160;
+	UINT_32 u4Ret = 0;
 #endif
 
 	ASSERT(prNetDev);
