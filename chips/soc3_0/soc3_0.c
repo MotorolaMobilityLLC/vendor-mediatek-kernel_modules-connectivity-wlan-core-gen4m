@@ -63,6 +63,7 @@
 *                         C O M P I L E R   F L A G S
 ********************************************************************************
 */
+#define CFG_SUPPORT_VCODE_VDFS 0
 
 /*******************************************************************************
 *                    E X T E R N A L   R E F E R E N C E S
@@ -81,7 +82,7 @@
 #include "soc3_0.h"
 #include "hal_dmashdl_soc3_0.h"
 #include <linux/platform_device.h>
-#ifndef CFG_BUILD_X86_PLATFORM
+#if (CFG_SUPPORT_VCODE_VDFS == 1)
 #include <linux/pm_qos.h>
 #endif /*#ifndef CFG_BUILD_X86_PLATFORM*/
 
@@ -141,7 +142,7 @@ static uint8_t *soc3_0_apucCr4FwName[] = {
 	unsigned long long gConEmiSize;
 #endif
 
-#ifndef CFG_BUILD_X86_PLATFORM
+#if (CFG_SUPPORT_VCODE_VDFS == 1)
 static struct pm_qos_request wifi_req;
 #endif
 
@@ -1412,47 +1413,54 @@ void soc3_0_Conninfra_cb_register(void)
 #endif
 void soc3_0_icapRiseVcoreClockRate(void)
 {
-#ifndef CFG_BUILD_X86_PLATFORM
+
 
 	u_int32 value;
-	/*Enable VCore to 0.725*/
-
-	/*init*/
-	pm_qos_add_request(&wifi_req, PM_QOS_VCORE_OPP,
-					PM_QOS_VCORE_OPP_DEFAULT_VALUE);
-
-	/*update Vcore*/
-	pm_qos_update_request(&wifi_req, 0);
 
 	/*2 update Clork Rate*/
 	/*0x1000123C[20]=1,218Mhz*/
 	wf_ioremap_read(WF_CONN_INFA_BUS_CLOCK_RATE, &value);
 	value |= 0x00010000;
 	wf_ioremap_write(WF_CONN_INFA_BUS_CLOCK_RATE, value);
+#if (CFG_SUPPORT_VCODE_VDFS == 1)
+	/*Enable VCore to 0.725*/
+
+	/*init*/
+	if (!pm_qos_request_active(&wifi_req))
+		pm_qos_add_request(&wifi_req, PM_QOS_VCORE_OPP,
+						PM_QOS_VCORE_OPP_DEFAULT_VALUE);
+
+	/*update Vcore*/
+	pm_qos_update_request(&wifi_req, 0);
 
 	DBGLOG(HAL, STATE, "icapRiseVcoreClockRate done\n");
-
+#else
+	DBGLOG(HAL, STATE, "icapRiseVcoreClockRate skip\n");
 #endif  /*#ifndef CFG_BUILD_X86_PLATFORM*/
 }
 
 void soc3_0_icapDownVcoreClockRate(void)
 {
-#ifndef CFG_BUILD_X86_PLATFORM
+
 
 	u_int32 value;
-
-	/*restore to default value*/
-	pm_qos_add_request(&wifi_req, PM_QOS_VCORE_OPP,
-					PM_QOS_VCORE_OPP_DEFAULT_VALUE);
 
 	/*2 update Clork Rate*/
 	/*0x1000123C[20]=0,156Mhz*/
 	wf_ioremap_read(WF_CONN_INFA_BUS_CLOCK_RATE, &value);
 	value &= ~(0x00010000);
 	wf_ioremap_write(WF_CONN_INFA_BUS_CLOCK_RATE, value);
+#if (CFG_SUPPORT_VCODE_VDFS == 1)
+
+	/*restore to default value*/
+	pm_qos_add_request(&wifi_req, PM_QOS_VCORE_OPP,
+					PM_QOS_VCORE_OPP_DEFAULT_VALUE);
 
 	/*disable VCore to normal setting*/
 	DBGLOG(HAL, STATE, "icapDownVcoreClockRate done!\n");
+#else
+	DBGLOG(HAL, STATE, "icapDownVcoreClockRate skip\n");
+
 #endif  /*#ifndef CFG_BUILD_X86_PLATFORM*/
 
 }

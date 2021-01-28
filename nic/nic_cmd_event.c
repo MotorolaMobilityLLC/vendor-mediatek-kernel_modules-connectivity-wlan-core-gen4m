@@ -1010,11 +1010,7 @@ void nicCmdEventEnterRfTest(IN struct ADAPTER *prAdapter,
 	ASSERT(prCmdInfo);
 
 	/* [driver-land] */
-	/* prAdapter->fgTestMode = TRUE; */
-	if (prAdapter->fgTestMode)
-		prAdapter->fgTestMode = FALSE;
-	else
-		prAdapter->fgTestMode = TRUE;
+	 prAdapter->fgTestMode = TRUE;
 
 	/* 0. always indicate disconnection */
 	for (u4Idx = 0; u4Idx < KAL_AIS_NUM; u4Idx++) {
@@ -1159,7 +1155,6 @@ void nicCmdEventLeaveRfTest(IN struct ADAPTER *prAdapter,
 
 	/* 6. set driver-land variable */
 	prAdapter->fgTestMode = FALSE;
-	prAdapter->fgIcapMode = FALSE;
 
 	/* 7. completion indication */
 	if (prCmdInfo->fgIsOid) {

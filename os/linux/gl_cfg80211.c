@@ -960,8 +960,13 @@ int mtk_cfg80211_scan(struct wiphy *wiphy,
 #endif
 
 #if CFG_SUPPORT_QA_TOOL
-	if (prAdapter->fgIcapMode) {
-		DBGLOG(REQ, ERROR, "prAdapter->fgIcapMode == TRUE\n");
+	if (prAdapter->fgTestMode) {
+		DBGLOG(REQ, ERROR, "skip scan, TestMode running\n");
+		return -EBUSY;
+	}
+	if (prAdapter->rIcapInfo.eIcapState != ICAP_STATE_INIT) {
+		DBGLOG(REQ, ERROR, "skip scan, ICAP In State(%d)\n",
+			prAdapter->rIcapInfo.eIcapState);
 		return -EBUSY;
 	}
 #endif

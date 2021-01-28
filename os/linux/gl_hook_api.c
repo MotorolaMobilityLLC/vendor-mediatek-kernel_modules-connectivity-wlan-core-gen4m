@@ -4227,6 +4227,47 @@ int32_t TxBfPseudoTagUpdate(struct net_device *prNetDev,
 #endif
 #endif /*CFG_SUPPORT_QA_TOOL */
 #if (CONFIG_WLAN_SERVICE == 1)
+uint32_t ServiceRfTestInit(void *winfos)
+{
+
+	uint32_t u4SetInfoLen = 0;
+	uint32_t rStatus = WLAN_STATUS_SUCCESS;
+	uint8_t ucBssIndex = 0;
+
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct ADAPTER *prAdapter = NULL;
+	struct test_wlan_info *prTestWinfo;
+
+
+	ASSERT(winfos);
+	prTestWinfo = (struct test_wlan_info *)winfos;
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prTestWinfo->net_dev));
+	ASSERT(prGlueInfo);
+	prAdapter = prGlueInfo->prAdapter;
+	ASSERT(prAdapter);
+
+	/*1. do abort Scan, reset AIS FSM to IDLE*/
+
+	ucBssIndex = wlanGetBssIdx(prTestWinfo->net_dev);
+
+	if (!IS_BSS_INDEX_VALID(ucBssIndex)) {
+		DBGLOG(REQ, WARN, "Test Abort SCAN invalid BssIndex\n");
+		return WLAN_STATUS_FAILURE;
+	}
+
+	DBGLOG(REQ, WARN, "Test Abort SCAN ucBssIndex = %d\n", ucBssIndex);
+
+	rStatus = kalIoctlByBssIdx(prGlueInfo,
+			   wlanoidAbortScan,
+			   NULL, 1, FALSE, FALSE, TRUE, &u4SetInfoLen,
+			   ucBssIndex);
+
+	if (rStatus != WLAN_STATUS_SUCCESS)
+		DBGLOG(REQ, ERROR, "wlanoidAbortScan fail 0x%x\n", rStatus);
+
+	return rStatus;
+
+}
 uint32_t ServiceIcapInit(struct ADAPTER *prAdapter)
 {
 	struct mt66xx_chip_info *prChipInfo = NULL;
@@ -4359,6 +4400,7 @@ uint32_t ServiceWlanOid(void *winfos,
 
 	switch (oidType) {
 	case OP_WLAN_OID_SET_TEST_MODE_START:
+		ServiceRfTestInit(winfos);
 		pfnOidHandler = wlanoidRftestSetTestMode;
 		break;
 	case OP_WLAN_OID_SET_TEST_MODE_ABORT:
