@@ -102,6 +102,7 @@
 #define AIS_JOIN_CH_GRANT_THRESHOLD         10
 #define AIS_JOIN_CH_REQUEST_INTERVAL        4000
 #define AIS_SCN_DONE_TIMEOUT_SEC            15 /* 15 for 2.4G + 5G */	/* 5 */
+#define AIS_SCN_REPORT_SEQ_NOT_SET          (0xFFFF)
 
 #define AIS_WAIT_OKC_PMKID_SEC              1000 /* unit: ms */
 /* Support AP Selection*/
@@ -240,6 +241,13 @@ struct AIS_FSM_INFO {
 	uint8_t ucSeqNumOfReqMsg;
 	uint8_t ucSeqNumOfChReq;
 	uint8_t ucSeqNumOfScanReq;
+
+	/* Save SeqNum for reporting scan done.
+	 * In order to distinguish seq num and default value, make sure that
+	 * sizeof(u2SeqNumOfScanReport) > sizeof(ucSeqNumOfScanReq).
+	 * Set AIS_SCN_REPORT_SEQ_NOT_SET as default value
+	 */
+	uint16_t u2SeqNumOfScanReport;
 
 	uint32_t u4ChGrantedInterval;
 
