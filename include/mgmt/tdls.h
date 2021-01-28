@@ -194,8 +194,6 @@ struct STATION_PRARAMETERS {
 	u8 supported_rates_len;
 	u8 plink_action;
 	u8 plink_state;
-	const struct ieee80211_ht_cap *ht_capa;
-	const struct ieee80211_vht_cap *vht_capa;
 	u8 uapsd_queues;
 	u8 max_sp;
 	/* enum nl80211_mesh_power_mode local_pm; */
@@ -226,8 +224,6 @@ struct PARAM_CUSTOM_TDLS_CMD_STRUCT {
 
 	/* Linux Kernel-3.10 */
 
-	struct ieee80211_ht_cap rHtCapa;
-	struct ieee80211_vht_cap rVhtCapa;
 	/* struct */
 	struct STATION_PRARAMETERS rPeerInfo;
 
