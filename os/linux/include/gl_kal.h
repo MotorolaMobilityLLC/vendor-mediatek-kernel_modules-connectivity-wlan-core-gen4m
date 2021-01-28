@@ -1828,6 +1828,8 @@ void tracing_mark_write(const char *fmt, ...);
 void kal_do_gettimeofday(struct timeval *tv);
 #endif
 
+uint32_t kalSetSuspendFlagToEMI(IN struct ADAPTER
+	*prAdapter, IN u_int8_t fgSuspend);
 
 #endif /* _GL_KAL_H */
 
