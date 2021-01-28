@@ -23,7 +23,6 @@
 #define WIFI_EMI_MEM_SIZE      0xBD000
 #endif
 
-
 #define MAX_CPU_FREQ (3 * 1024 * 1024) /* in kHZ */
 #define MAX_CLUSTER_NUM  3
 
