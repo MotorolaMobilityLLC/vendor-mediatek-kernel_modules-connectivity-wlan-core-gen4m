@@ -496,6 +496,23 @@ u_int8_t glIsWmtCodeDump(void)
 	return mtk_wcn_stp_coredump_start_get();
 }
 
+#if (CFG_SUPPORT_CONNINFRA == 0)
+static void triggerHifDumpIfNeed(void)
+{
+	struct ADAPTER *prAdapter;
+
+	if (!wifi_rst.prGlueInfo)
+		return;
+	if (fgIsResetting)
+		return;
+
+	prAdapter = wifi_rst.prGlueInfo->prAdapter;
+	prAdapter->u4HifDbgFlag |= DEG_HIF_DEFAULT_DUMP;
+	kalSetHifDbgEvent(prAdapter->prGlueInfo);
+	/* wait for hif_thread finish dump */
+	kalMsleep(100);
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
  * @brief This routine is invoked when there is reset messages indicated
@@ -509,7 +526,6 @@ u_int8_t glIsWmtCodeDump(void)
  * @retval
  */
 /*----------------------------------------------------------------------------*/
-#if (CFG_SUPPORT_CONNINFRA == 0)
 static void *glResetCallback(enum ENUM_WMTDRV_TYPE eSrcType,
 			     enum ENUM_WMTDRV_TYPE eDstType,
 			     enum ENUM_WMTMSG_TYPE eMsgType, void *prMsgBody,
@@ -524,6 +540,7 @@ static void *glResetCallback(enum ENUM_WMTDRV_TYPE eSrcType,
 			switch (*prRstMsg) {
 			case WMTRSTMSG_RESET_START:
 				DBGLOG(INIT, WARN, "Whole chip reset start!\n");
+				triggerHifDumpIfNeed();
 				fgIsResetting = TRUE;
 				fgSimplifyResetFlow = TRUE;
 				wifi_reset_start();
