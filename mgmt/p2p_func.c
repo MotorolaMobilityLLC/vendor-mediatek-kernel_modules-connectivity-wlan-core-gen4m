@@ -1349,9 +1349,9 @@ VOID p2pFuncStartRdd(IN P_ADAPTER_T prAdapter, IN UINT_8 ucBssIdx)
 	}
 
 	if (prCmdRddOnOffCtrl->ucRddIdx)
-		prCmdRddOnOffCtrl->ucRddInSel = RDD_IN_SEL_1;
+		prCmdRddOnOffCtrl->ucRddRxSel = RDD_IN_SEL_1;
 	else
-		prCmdRddOnOffCtrl->ucRddInSel = RDD_IN_SEL_0;
+		prCmdRddOnOffCtrl->ucRddRxSel = RDD_IN_SEL_0;
 
 	DBGLOG(P2P, INFO, "p2pFuncStartRdd: Start Radar detection - DFS ctrl: %d, RDD index: %d\n",
 			prCmdRddOnOffCtrl->ucDfsCtrl, prCmdRddOnOffCtrl->ucRddIdx);
@@ -1387,9 +1387,9 @@ VOID p2pFuncStopRdd(IN P_ADAPTER_T prAdapter, IN UINT_8 ucBssIdx)
 	prCmdRddOnOffCtrl->ucRddIdx = prAdapter->aprBssInfo[ucBssIdx]->eDBDCBand;
 
 	if (prCmdRddOnOffCtrl->ucRddIdx)
-		prCmdRddOnOffCtrl->ucRddInSel = RDD_IN_SEL_1;
+		prCmdRddOnOffCtrl->ucRddRxSel = RDD_IN_SEL_1;
 	else
-		prCmdRddOnOffCtrl->ucRddInSel = RDD_IN_SEL_0;
+		prCmdRddOnOffCtrl->ucRddRxSel = RDD_IN_SEL_0;
 
 	DBGLOG(P2P, INFO, "p2pFuncStopRdd: Stop Radar detection - DFS ctrl: %d, RDD index: %d\n",
 			prCmdRddOnOffCtrl->ucDfsCtrl, prCmdRddOnOffCtrl->ucRddIdx);
