@@ -117,9 +117,20 @@ uint8_t p2pDevFsmInit(IN struct ADAPTER *prAdapter)
 			else
 				prP2pBssInfo->ucWmmQueSet = DBDC_2G_WMM_INDEX;
 #endif
-			prP2pBssInfo->ucPhyTypeSet =
-				prAdapter->rWifiVar.ucAvailablePhyTypeSet
-				& PHY_TYPE_SET_802_11GN;
+
+#if CFG_SUPPORT_VHT_IE_IN_2G
+			if (prAdapter->rWifiVar.ucVhtIeIn2g)
+				prP2pBssInfo->ucPhyTypeSet =
+					prAdapter->rWifiVar.
+					ucAvailablePhyTypeSet
+					& (PHY_TYPE_SET_802_11GN |
+					PHY_TYPE_SET_802_11AC);
+			else
+#endif
+				prP2pBssInfo->ucPhyTypeSet =
+					prAdapter->rWifiVar.
+					ucAvailablePhyTypeSet
+					& PHY_TYPE_SET_802_11GN;
 
 			prP2pBssInfo->ucNonHTBasicPhyType = (uint8_t)
 			    rNonHTApModeAttributes
