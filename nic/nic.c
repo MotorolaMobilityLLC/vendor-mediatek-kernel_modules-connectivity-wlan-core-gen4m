@@ -1683,6 +1683,11 @@ uint32_t nicUpdateBss(IN struct ADAPTER *prAdapter,
 	else
 		rCmdSetBssInfo.ucStaRecIdxOfAP = STA_REC_INDEX_NOT_FOUND;
 
+#if (CFG_SUPPORT_802_11V_MBSSID == 1)
+	rCmdSetBssInfo.ucMaxBSSIDIndicator = prBssInfo->ucMaxBSSIDIndicator;
+	rCmdSetBssInfo.ucMBSSIDIndex = prBssInfo->ucMBSSIDIndex;
+#endif
+
 	DBGLOG(BSS, INFO,
 	       "Update Bss[%u] ConnState[%u] OPmode[%u] BSSID[" MACSTR
 	       "] AuthMode[%u] EncStatus[%u]\n", ucBssIndex,
