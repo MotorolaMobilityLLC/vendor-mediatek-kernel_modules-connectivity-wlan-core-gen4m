@@ -102,6 +102,8 @@
 #define AIS_JOIN_CH_REQUEST_INTERVAL        4000
 #define AIS_SCN_DONE_TIMEOUT_SEC            15 /* 15 for 2.4G + 5G */	/* 5 */
 
+#define AIS_WAIT_OKC_PMKID_SEC              1000 /* unit: ms */
+
 /*******************************************************************************
 *                             D A T A   T Y P E S
 ********************************************************************************
@@ -210,6 +212,8 @@ typedef struct _AIS_FSM_INFO_T {
 	TIMER_T rScanDoneTimer;
 
 	TIMER_T rDeauthDoneTimer;
+
+	TIMER_T rWaitOkcPMKTimer;
 
 	UINT_8 ucSeqNumOfReqMsg;
 	UINT_8 ucSeqNumOfChReq;
@@ -412,6 +416,8 @@ aisFuncTxMgmtFrame(IN P_ADAPTER_T prAdapter,
 VOID aisFsmRunEventMgmtFrameTx(IN P_ADAPTER_T prAdapter, IN P_MSG_HDR_T prMsgHdr);
 
 VOID aisFuncValidateRxActionFrame(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T prSwRfb);
+
+VOID aisFsmRunEventSetOkcPmk(IN P_ADAPTER_T prAdapter);
 
 enum _ENUM_AIS_STATE_T aisFsmStateSearchAction(IN struct _ADAPTER_T *prAdapter, UINT_8 ucPhase);
 #if defined(CFG_TEST_MGMT_FSM) && (CFG_TEST_MGMT_FSM != 0)
