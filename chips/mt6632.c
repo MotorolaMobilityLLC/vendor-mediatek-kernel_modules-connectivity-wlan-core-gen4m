@@ -212,6 +212,12 @@ BUS_INFO mt6632_bus_info = {
 	.u4UdmaWlCfg_0 =
 	    (UDMA_WLCFG_0_TX_EN(1) | UDMA_WLCFG_0_RX_EN(1) | UDMA_WLCFG_0_RX_MPSZ_PAD0(1)),
 #endif /* _HIF_USB */
+#if defined(_HIF_SDIO)
+	.halTxGetFreeResource = NULL,
+	.halTxReturnFreeResource = NULL,
+	.halRestoreTxResource = NULL,
+	.halUpdateTxDonePendingCount = NULL,
+#endif /* _HIF_SDIO */
 };
 
 struct firmware_download_operations mt6632_fw_dl_ops = {
