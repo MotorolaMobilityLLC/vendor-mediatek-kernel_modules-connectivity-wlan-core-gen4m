@@ -312,9 +312,11 @@ void aaaFsmRunEventRxAuth(IN struct ADAPTER *prAdapter,
 		prAuthFrame = (struct WLAN_AUTH_FRAME *) prSwRfb->pvHeader;
 
 		DBGLOG(AAA, INFO,
-			"SA: " MACSTR ", bssid: " MACSTR ", sta idx: %d\n",
+			"SA: " MACSTR ", bssid: " MACSTR ", %d %d sta: %d\n",
 			MAC2STR(prAuthFrame->aucSrcAddr),
 			MAC2STR(prAuthFrame->aucBSSID),
+			prAuthFrame->u2AuthTransSeqNo,
+			prAuthFrame->u2AuthAlgNum,
 			prSwRfb->ucStaRecIdx);
 
 #if CFG_ENABLE_WIFI_DIRECT
@@ -335,11 +337,9 @@ void aaaFsmRunEventRxAuth(IN struct ADAPTER *prAdapter,
 			 * by Auth Algorithm/Transation Seq
 			 */
 			if (WLAN_STATUS_SUCCESS ==
-				authProcessRxAuth1Frame(prAdapter,
+				authProcessRxAuthFrame(prAdapter,
 					prSwRfb,
-					prBssInfo->aucBSSID,
-					AUTH_ALGORITHM_NUM_OPEN_SYSTEM,
-					AUTH_TRANSACTION_SEQ_1,
+					prBssInfo,
 					&u2StatusCode)) {
 
 				if (u2StatusCode == STATUS_CODE_SUCCESSFUL) {
@@ -471,12 +471,23 @@ bow_proc:
 			/* Update Station Record - Status/Reason Code */
 			prStaRec->u2StatusCode = u2StatusCode;
 
-			prStaRec->ucAuthAlgNum = AUTH_ALGORITHM_NUM_OPEN_SYSTEM;
+			prStaRec->ucAuthAlgNum = prAuthFrame->u2AuthAlgNum;
 		} else {
 			/* NOTE(Kevin): We should have STA_RECORD_T
 			 * if the status code was successful
 			 */
 			ASSERT(!(u2StatusCode == STATUS_CODE_SUCCESSFUL));
+		}
+
+		if (prBssInfo->u4RsnSelectedAKMSuite ==
+			RSN_AKM_SUITE_SAE) {
+			kalP2PIndicateRxMgmtFrame(
+				prAdapter->prGlueInfo,
+				prSwRfb,
+				FALSE,
+				(uint8_t)prBssInfo->u4PrivateData);
+			DBGLOG(AAA, INFO, "Forward RxAuth\n");
+			return;
 		}
 
 		/* NOTE: Ignore the return status for AAA */

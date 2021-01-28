@@ -110,6 +110,11 @@
 #define RSN_AKM_SUITE_PSK_SHA256        0x06AC0F00
 #endif
 
+#define RSN_AKM_SUITE_SAE               0x08AC0F00
+#define RSN_AKM_SUITE_8021X_SUITE_B     0x0BAC0F00
+#define RSN_AKM_SUITE_8021X_SUITE_B_192 0x0CAC0F00
+#define RSN_AKM_SUITE_OWE               0x12AC0F00
+
 #define WPA_AKM_SUITE_NONE              0x00F25000
 #define WPA_AKM_SUITE_802_1X            0x01F25000
 #define WPA_AKM_SUITE_PSK               0x02F25000
