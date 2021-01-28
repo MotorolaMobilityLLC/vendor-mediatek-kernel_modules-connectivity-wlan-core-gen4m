@@ -2491,8 +2491,7 @@ static s_int32 hqa_mps_set_seq_data(
 	test_config = &serv_test->test_config[band_idx];
 	mps_cb = &test_config->mps_cb;
 
-	if (!mps_cb->mps_setting && !mps_cb->mps_cnt) {
-		mps_cb->mps_cnt = len;
+	if (mps_cb->mps_setting == NULL) {
 		ret = sys_ad_alloc_mem((u_char **)&mps_cb->mps_setting,
 				sizeof(struct test_mps_setting) * (len+1));
 		if (ret) {
@@ -2567,8 +2566,7 @@ static s_int32 hqa_mps_set_payload_length(
 	test_config = &serv_test->test_config[band_idx];
 	mps_cb = &test_config->mps_cb;
 
-	if (!mps_cb->mps_setting && !mps_cb->mps_cnt) {
-		mps_cb->mps_cnt = len;
+	if (mps_cb->mps_setting == NULL) {
 		ret = sys_ad_alloc_mem((u_char **)&mps_cb->mps_setting,
 				sizeof(struct test_mps_setting) * (len+1));
 		if (ret) {
@@ -2579,6 +2577,7 @@ static s_int32 hqa_mps_set_payload_length(
 				sizeof(struct test_mps_setting) * (len+1));
 	}
 
+	mps_cb->mps_cnt = len;
 	mps_setting = mps_cb->mps_setting;
 
 	for (idx = 0; idx < len; idx++) {
@@ -2645,8 +2644,7 @@ static s_int32 hqa_mps_set_packet_count(
 	test_config = &serv_test->test_config[band_idx];
 	mps_cb = &test_config->mps_cb;
 
-	if (!mps_cb->mps_setting && !mps_cb->mps_cnt) {
-		mps_cb->mps_cnt = len;
+	if (mps_cb->mps_setting == NULL) {
 		ret = sys_ad_alloc_mem((u_char **)&mps_cb->mps_setting,
 				sizeof(struct test_mps_setting) * (len+1));
 		if (ret) {
@@ -2657,6 +2655,7 @@ static s_int32 hqa_mps_set_packet_count(
 				sizeof(struct test_mps_setting) * (len+1));
 	}
 
+	mps_cb->mps_cnt = len;
 	mps_setting = mps_cb->mps_setting;
 
 	for (idx = 0; idx < len; idx++)
@@ -2718,8 +2717,7 @@ static s_int32 hqa_mps_set_power_gain(
 	test_config = &serv_test->test_config[band_idx];
 	mps_cb = &test_config->mps_cb;
 
-	if (!mps_cb->mps_setting && !mps_cb->mps_cnt) {
-		mps_cb->mps_cnt = len;
+	if (mps_cb->mps_setting == NULL) {
 		ret = sys_ad_alloc_mem((u_char **)&mps_cb->mps_setting,
 				sizeof(struct test_mps_setting) * (len+1));
 		if (ret) {
@@ -2730,6 +2728,7 @@ static s_int32 hqa_mps_set_power_gain(
 				sizeof(struct test_mps_setting) * (len+1));
 	}
 
+	mps_cb->mps_cnt = len;
 	mps_setting = mps_cb->mps_setting;
 
 	for (idx = 0; idx < len; idx++)
@@ -3029,8 +3028,7 @@ static s_int32 hqa_mps_set_nss(
 	test_config = &serv_test->test_config[band_idx];
 	mps_cb = &test_config->mps_cb;
 
-	if (!mps_cb->mps_setting && !mps_cb->mps_cnt) {
-		mps_cb->mps_cnt = len;
+	if (mps_cb->mps_setting == NULL) {
 		ret = sys_ad_alloc_mem((u_char **)&mps_cb->mps_setting,
 				sizeof(struct test_mps_setting) * (len+1));
 		if (ret) {
@@ -3041,6 +3039,7 @@ static s_int32 hqa_mps_set_nss(
 				sizeof(struct test_mps_setting) * (len+1));
 	}
 
+	mps_cb->mps_cnt = len;
 	mps_setting = mps_cb->mps_setting;
 
 	for (idx = 0; idx < len; idx++)
@@ -3137,8 +3136,7 @@ static s_int32 hqa_mps_set_per_packet_bw(
 	test_config = &serv_test->test_config[band_idx];
 	mps_cb = &test_config->mps_cb;
 
-	if (!mps_cb->mps_setting && !mps_cb->mps_cnt) {
-		mps_cb->mps_cnt = len;
+	if (mps_cb->mps_setting == NULL) {
 		ret = sys_ad_alloc_mem((u_char **)&mps_cb->mps_setting,
 				sizeof(struct test_mps_setting) * (len+1));
 		if (ret) {
@@ -3149,6 +3147,7 @@ static s_int32 hqa_mps_set_per_packet_bw(
 				sizeof(struct test_mps_setting) * (len+1));
 	}
 
+	mps_cb->mps_cnt = len;
 	mps_setting = mps_cb->mps_setting;
 
 	for (idx = 0; idx < len; idx++)
@@ -3683,7 +3682,7 @@ static s_int32 hqa_set_ru_info(
 {
 	s_int32 ret = SERV_STATUS_SUCCESS;
 	u_int32 resp_len = 2;
-	u_char band_idx = serv_test->ctrl_band_idx;
+	u_int32 band_idx = 0;
 	u_int32 len = 0, seg_sta_cnt[2] = {0}, sta_seq = 0, value = 0;
 	u_char param_cnt = 0, segment_idx = 0, param_loop = 0;
 	u_char *data = hqa_frame->data;
@@ -3930,27 +3929,28 @@ static s_int32 hqa_set_channel_ext(
 	get_param_and_shift_buf(TRUE, sizeof(param.out_band_freq),
 				&data, (u_char *)&param.out_band_freq);
 
-	if (param.band_idx >= TEST_DBDC_BAND_NUM)
+	if (param.band_idx < TEST_DBDC_BAND_NUM) {
+		/* Set parameters */
+		SERV_SET_PARAM(serv_test, ctrl_band_idx,
+				(u_char)param.band_idx);
+		CONFIG_SET_PARAM(serv_test, channel,
+				(u_char)param.central_ch0, param.band_idx);
+		CONFIG_SET_PARAM(serv_test, channel_2nd,
+				(u_char)param.central_ch1, param.band_idx);
+		CONFIG_SET_PARAM(serv_test, per_pkt_bw,
+				(u_char)param.perpkt_bw, param.band_idx);
+		CONFIG_SET_PARAM(serv_test, bw,
+				(u_char)param.sys_bw, param.band_idx);
+		CONFIG_SET_PARAM(serv_test, pri_sel,
+				(u_char)param.pri_sel, param.band_idx);
+		CONFIG_SET_PARAM(serv_test, ch_band,
+				(u_char)param.ch_band, param.band_idx);
+		CONFIG_SET_PARAM(serv_test, out_band_freq,
+				(u_int32)param.out_band_freq, param.band_idx);
+
+		ret = mt_serv_set_channel(serv_test);
+	} else
 		ret = SERV_STATUS_AGENT_INVALID_BANDIDX;
-
-	/* Set parameters */
-	SERV_SET_PARAM(serv_test, ctrl_band_idx, (u_char)param.band_idx);
-	CONFIG_SET_PARAM(serv_test, channel,
-			(u_char)param.central_ch0, param.band_idx);
-	CONFIG_SET_PARAM(serv_test, channel_2nd,
-			(u_char)param.central_ch1, param.band_idx);
-	CONFIG_SET_PARAM(serv_test, per_pkt_bw,
-			(u_char)param.perpkt_bw, param.band_idx);
-	CONFIG_SET_PARAM(serv_test, bw,
-			(u_char)param.sys_bw, param.band_idx);
-	CONFIG_SET_PARAM(serv_test, pri_sel,
-			(u_char)param.pri_sel, param.band_idx);
-	CONFIG_SET_PARAM(serv_test, ch_band,
-			(u_char)param.ch_band, param.band_idx);
-	CONFIG_SET_PARAM(serv_test, out_band_freq,
-			(u_int32)param.out_band_freq, param.band_idx);
-
-	ret = mt_serv_set_channel(serv_test);
 
 	SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_OFF,
 		("%s: band_idx: %d, ch0: %d, ch1: %d, sys_bw: %d, ",
@@ -5030,7 +5030,8 @@ s_int32 mt_agent_set_channel(
 s_int32 mt_agent_set_ru_cli(struct service_test *serv_test, u_char *arg)
 {
 	s_int32 ret = SERV_STATUS_AGENT_INVALID_PARAM;
-	u_char *value = NULL, i = 0, band_idx, input_cnt = 0;
+	s_int32 input_cnt = 0;
+	u_char *value = NULL, i = 0, band_idx;
 	struct test_ru_info *ru_info = NULL;
 
 	band_idx = SERV_GET_PARAM(serv_test, ctrl_band_idx);
