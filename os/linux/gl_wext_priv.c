@@ -6395,6 +6395,7 @@ int priv_driver_set_fixed_fallback(IN struct net_device *prNetDev,
 				   IN char *pcCommand, IN int i4TotalLen)
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
+	struct ADAPTER *prAdapter = NULL;
 	uint32_t rStatus = WLAN_STATUS_SUCCESS;
 	uint32_t u4BufLen = 0;
 	int32_t i4BytesWritten = 0;
@@ -6411,6 +6412,7 @@ int priv_driver_set_fixed_fallback(IN struct net_device *prNetDev,
 	uint32_t u4Id2 = 0xa0600000;
 	uint8_t u4Nsts = 1;
 	u_int8_t fgStatus = TRUE;
+	static uint8_t fgIsUseWCID = FALSE;
 
 	struct PARAM_CUSTOM_SW_CTRL_STRUCT rSwCtrlInfo;
 
@@ -6418,6 +6420,7 @@ int priv_driver_set_fixed_fallback(IN struct net_device *prNetDev,
 	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
 		return -1;
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+	prAdapter = prGlueInfo->prAdapter;
 
 	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
 	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
@@ -6432,6 +6435,12 @@ int priv_driver_set_fixed_fallback(IN struct net_device *prNetDev,
 
 	if (strnicmp(this_char, "auto", strlen("auto")) == 0) {
 		i4Recv = 1;
+	} else if (strnicmp(this_char, "UseWCID", strlen("UseWCID")) == 0) {
+		i4Recv = 2;
+		fgIsUseWCID = TRUE;
+	} else if (strnicmp(this_char, "ApplyAll", strlen("ApplyAll")) == 0) {
+		i4Recv = 3;
+		fgIsUseWCID = FALSE;
 	} else {
 		i4Recv = sscanf(this_char, "%d-%d-%d-%d-%d-%d-%d-%d-%d-%d-%d",
 				&(u4WCID), &(u4Mode), &(u4Bw), &(u4Mcs),
@@ -6446,6 +6455,8 @@ int priv_driver_set_fixed_fallback(IN struct net_device *prNetDev,
 		       u4Preamble, u4STBC);
 		DBGLOG(REQ, LOUD, "u4LDPC=%d\nu4SpeEn=%d\nu4Band=%d\n",
 		       u4LDPC, u4SpeEn, u4Band);
+		DBGLOG(REQ, LOUD, "fgIsUseWCID=%d\n\n",
+		       fgIsUseWCID);
 	}
 
 	if (i4Recv == 1) {
@@ -6458,9 +6469,23 @@ int priv_driver_set_fixed_fallback(IN struct net_device *prNetDev,
 
 		if (rStatus != WLAN_STATUS_SUCCESS)
 			return -1;
+	} else if (i4Recv == 2 || i4Recv == 3) {
+		i4BytesWritten = snprintf(pcCommand, i4TotalLen,
+			"Update fgIsUseWCID %d\n", fgIsUseWCID);
 	} else if (i4Recv == 11) {
 		rSwCtrlInfo.u4Id = u4Id;
 		rSwCtrlInfo.u4Data = u4Data;
+		if (fgIsUseWCID && u4WCID < WTBL_SIZE &&
+			prAdapter->rWifiVar.arWtbl[u4WCID].ucUsed) {
+			rSwCtrlInfo.u4Id |= u4WCID;
+			rSwCtrlInfo.u4Id |= BIT(8);
+			i4BytesWritten = snprintf(
+				pcCommand, i4TotalLen,
+				"Apply WCID %d\n", u4WCID);
+		} else {
+			i4BytesWritten = snprintf(
+				pcCommand, i4TotalLen, "Apply All\n");
+		}
 
 		if (u4SGI)
 			rSwCtrlInfo.u4Data |= BIT(30);
@@ -8471,6 +8496,7 @@ int priv_driver_set_fixed_rate(IN struct net_device *prNetDev,
 			       IN char *pcCommand, IN int i4TotalLen)
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
+	struct ADAPTER *prAdapter = NULL;
 	uint32_t rStatus = WLAN_STATUS_SUCCESS;
 	uint32_t u4BufLen = 0;
 	int32_t i4BytesWritten = 0;
@@ -8487,6 +8513,7 @@ int priv_driver_set_fixed_rate(IN struct net_device *prNetDev,
 	uint32_t u4Id2 = 0xa0600000;
 	uint8_t u4Nsts = 1;
 	u_int8_t fgStatus = TRUE;
+	static uint8_t fgIsUseWCID = FALSE;
 
 	struct PARAM_CUSTOM_SW_CTRL_STRUCT rSwCtrlInfo;
 
@@ -8494,6 +8521,7 @@ int priv_driver_set_fixed_rate(IN struct net_device *prNetDev,
 	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
 		return -1;
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+	prAdapter = prGlueInfo->prAdapter;
 
 	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
 	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
@@ -8508,6 +8536,12 @@ int priv_driver_set_fixed_rate(IN struct net_device *prNetDev,
 
 	if (strnicmp(this_char, "auto", strlen("auto")) == 0) {
 		i4Recv = 1;
+	} else if (strnicmp(this_char, "UseWCID", strlen("UseWCID")) == 0) {
+		i4Recv = 2;
+		fgIsUseWCID = TRUE;
+	} else if (strnicmp(this_char, "ApplyAll", strlen("ApplyAll")) == 0) {
+		i4Recv = 3;
+		fgIsUseWCID = FALSE;
 	} else {
 		i4Recv = sscanf(this_char, "%d-%d-%d-%d-%d-%d-%d-%d-%d-%d",
 				&(u4WCID), &(u4Mode), &(u4Bw), &(u4Mcs),
@@ -8520,7 +8554,8 @@ int priv_driver_set_fixed_rate(IN struct net_device *prNetDev,
 		       u4VhtNss, u4SGI);
 		DBGLOG(REQ, LOUD, "u4Preamble=%d\nu4STBC=%d\n", u4Preamble,
 		       u4STBC);
-		DBGLOG(REQ, LOUD, "u4LDPC=%d\nu4SpeEn=%d\n", u4LDPC, u4SpeEn);
+		DBGLOG(REQ, LOUD, "u4LDPC=%d\nu4SpeEn=%d\nfgIsUseWCID=%d\n",
+			u4LDPC, u4SpeEn, fgIsUseWCID);
 	}
 
 	if (i4Recv == 1) {
@@ -8533,9 +8568,23 @@ int priv_driver_set_fixed_rate(IN struct net_device *prNetDev,
 
 		if (rStatus != WLAN_STATUS_SUCCESS)
 			return -1;
+	} else if (i4Recv == 2 || i4Recv == 3) {
+		i4BytesWritten = snprintf(pcCommand, i4TotalLen,
+			"Update fgIsUseWCID %d\n", fgIsUseWCID);
 	} else if (i4Recv == 10) {
 		rSwCtrlInfo.u4Id = u4Id;
 		rSwCtrlInfo.u4Data = u4Data;
+		if (fgIsUseWCID && u4WCID < WTBL_SIZE &&
+			prAdapter->rWifiVar.arWtbl[u4WCID].ucUsed) {
+			rSwCtrlInfo.u4Id |= u4WCID;
+			rSwCtrlInfo.u4Id |= BIT(8);
+			i4BytesWritten = snprintf(
+				pcCommand, i4TotalLen,
+				"Apply WCID %d\n", u4WCID);
+		} else {
+			i4BytesWritten = snprintf(
+				pcCommand, i4TotalLen, "Apply All\n");
+		}
 
 		if (u4SGI)
 			rSwCtrlInfo.u4Data |= BIT(30);
