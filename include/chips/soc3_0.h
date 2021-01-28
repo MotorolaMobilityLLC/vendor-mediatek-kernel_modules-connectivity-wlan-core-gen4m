@@ -348,7 +348,7 @@ uint32_t soc3_0_wlanPhyAction(IN struct ADAPTER *prAdapter);
 int soc3_0_wlanPreCalPwrOn(void);
 int soc3_0_wlanPreCal(void);
 uint8_t *soc3_0_wlanGetCalResult(uint32_t *prCalSize);
-void soc3_0_wlanResetCalResult(void);
+void soc3_0_wlanCalDebugCmd(uint32_t cmd, uint32_t para);
 #endif /* (CFG_SUPPORT_PRE_ON_PHY_ACTION == 1) */
 
 void soc3_0_icapRiseVcoreClockRate(void);
