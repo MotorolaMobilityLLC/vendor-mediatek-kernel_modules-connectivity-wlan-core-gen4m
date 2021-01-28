@@ -464,8 +464,26 @@ static void axiAllocHifMem(struct platform_device *pdev)
 	if (!axiAllocRsvMem(RX_RING0_SIZE * RXD_SIZE, &grMem.rRxDesc[0], false))
 		DBGLOG(INIT, ERROR, "RxDesc[0] alloc fail\n");
 
+#if (CFG_SUPPORT_CONNAC2X == 1)
+
+	if (!axiAllocRsvMem(RX_RING0_SIZE * RXD_SIZE, &grMem.rRxDesc[1], false))
+		DBGLOG(INIT, ERROR, "RxDesc[1] alloc fail\n");
+
+	if (!axiAllocRsvMem(RX_RING1_SIZE * RXD_SIZE, &grMem.rRxDesc[2], false))
+		DBGLOG(INIT, ERROR, "RxDesc[2] alloc fail\n");
+
+	if (!axiAllocRsvMem(RX_RING1_SIZE * RXD_SIZE, &grMem.rRxDesc[3], false))
+		DBGLOG(INIT, ERROR, "RxDesc[3] alloc fail\n");
+
+	if (!axiAllocRsvMem(RX_RING1_SIZE * RXD_SIZE, &grMem.rRxDesc[4], false))
+		DBGLOG(INIT, ERROR, "RxDesc[4] alloc fail\n");
+
+#else
+
 	if (!axiAllocRsvMem(RX_RING1_SIZE * RXD_SIZE, &grMem.rRxDesc[1], false))
 		DBGLOG(INIT, ERROR, "RxDesc[1] alloc fail\n");
+
+#endif
 
 	for (u4Idx = 0; u4Idx < TX_RING_SIZE; u4Idx++) {
 		if (!axiAllocRsvMem(AXI_TX_CMD_BUFF_SIZE,
@@ -480,12 +498,44 @@ static void axiAllocHifMem(struct platform_device *pdev)
 			       "RxDataBuf[%u] alloc fail\n", u4Idx);
 	}
 
+#if (CFG_SUPPORT_CONNAC2X == 1)
+
+	for (u4Idx = 0; u4Idx < RX_RING0_SIZE; u4Idx++) {
+		if (!axiAllocRsvMem(RX_BUFFER_AGGRESIZE,
+				    &grMem.rRxEventBuf[u4Idx], false))
+			DBGLOG(INIT, ERROR,
+			       "RxEventBuf[%u] alloc fail\n", u4Idx);
+	}
+
+	for (u4Idx = 0; u4Idx < RX_RING1_SIZE; u4Idx++) {
+		if (!axiAllocRsvMem(RX_BUFFER_AGGRESIZE,
+				    &grMem.wfdma0_rx_ring_idx2[u4Idx], false))
+			DBGLOG(INIT, ERROR,
+			       "RxEventBuf[%u] alloc fail\n", u4Idx);
+	}
+
+	for (u4Idx = 0; u4Idx < RX_RING1_SIZE; u4Idx++) {
+		if (!axiAllocRsvMem(RX_BUFFER_AGGRESIZE,
+				    &grMem.wfdma0_rx_ring_idx3[u4Idx], false))
+			DBGLOG(INIT, ERROR,
+			       "RxEventBuf[%u] alloc fail\n", u4Idx);
+	}
+
+	for (u4Idx = 0; u4Idx < RX_RING1_SIZE; u4Idx++) {
+		if (!axiAllocRsvMem(RX_BUFFER_AGGRESIZE,
+				    &grMem.wfdma1_rx_ring_idx0[u4Idx], false))
+			DBGLOG(INIT, ERROR,
+			       "RxEventBuf[%u] alloc fail\n", u4Idx);
+	}
+#else
 	for (u4Idx = 0; u4Idx < RX_RING1_SIZE; u4Idx++) {
 		if (!axiAllocRsvMem(RX_BUFFER_AGGRESIZE,
 				    &grMem.rRxEventBuf[u4Idx], false))
 			DBGLOG(INIT, ERROR,
 			       "RxEventBuf[%u] alloc fail\n", u4Idx);
 	}
+
+#endif
 
 #if HIF_TX_PREALLOC_DATA_BUFFER
 	for (u4Idx = 0; u4Idx < HIF_TX_MSDU_TOKEN_NUM; u4Idx++) {
@@ -516,11 +566,33 @@ static void axiFreeHifMem(struct platform_device *pdev)
 		if (grMem.rRxDataBuf[u4Idx].va)
 			iounmap(grMem.rRxDataBuf[u4Idx].va);
 	}
+#if (CFG_SUPPORT_CONNAC2X == 1)
 
+	for (u4Idx = 0; u4Idx < RX_RING0_SIZE; u4Idx++) {
+		if (grMem.rRxEventBuf[u4Idx].va)
+			iounmap(grMem.rRxEventBuf[u4Idx].va);
+	}
+
+	for (u4Idx = 0; u4Idx < RX_RING1_SIZE; u4Idx++) {
+		if (grMem.wfdma0_rx_ring_idx2[u4Idx].va)
+			iounmap(grMem.wfdma0_rx_ring_idx2[u4Idx].va);
+	}
+
+	for (u4Idx = 0; u4Idx < RX_RING1_SIZE; u4Idx++) {
+		if (grMem.wfdma0_rx_ring_idx3[u4Idx].va)
+			iounmap(grMem.wfdma0_rx_ring_idx3[u4Idx].va);
+	}
+
+	for (u4Idx = 0; u4Idx < RX_RING1_SIZE; u4Idx++) {
+		if (grMem.wfdma1_rx_ring_idx0[u4Idx].va)
+			iounmap(grMem.wfdma1_rx_ring_idx0[u4Idx].va);
+	}
+#else
 	for (u4Idx = 0; u4Idx < RX_RING1_SIZE; u4Idx++) {
 		if (grMem.rRxEventBuf[u4Idx].va)
 			iounmap(grMem.rRxEventBuf[u4Idx].va);
 	}
+#endif
 
 #if HIF_TX_PREALLOC_DATA_BUFFER
 	for (u4Idx = 0; u4Idx < HIF_TX_MSDU_TOKEN_NUM; u4Idx++) {
@@ -1042,6 +1114,10 @@ static void axiAllocTxDesc(struct GL_HIF_INFO *prHifInfo,
 {
 	prDescRing->AllocVa = grMem.rTxDesc[u4Num].va;
 	prDescRing->AllocPa = grMem.rTxDesc[u4Num].pa;
+	if (prDescRing->AllocVa == NULL) {
+		DBGLOG(HAL, ERROR, "prDescRing->AllocVa is NULL\n");
+		/* TODO : Error handler, avoid kernel panic when VA = NULL */
+	}
 	memset_io(prDescRing->AllocVa, 0, prDescRing->AllocSize);
 }
 
@@ -1051,6 +1127,10 @@ static void axiAllocRxDesc(struct GL_HIF_INFO *prHifInfo,
 {
 	prDescRing->AllocVa = grMem.rRxDesc[u4Num].va;
 	prDescRing->AllocPa = grMem.rRxDesc[u4Num].pa;
+	if (prDescRing->AllocVa == NULL) {
+		DBGLOG(HAL, ERROR, "prDescRing->AllocVa is NULL\n");
+		/* TODO : Error handler, avoid kernel panic when VA = NULL */
+	}
 	memset_io(prDescRing->AllocVa, 0, prDescRing->AllocSize);
 }
 
@@ -1062,6 +1142,10 @@ static void axiAllocTxCmdBuf(struct RTMP_DMABUF *prDmaBuf,
 		prDmaBuf->AllocSize = AXI_TX_CMD_BUFF_SIZE;
 		prDmaBuf->AllocPa = grMem.rTxCmdBuf[u4Idx].pa;
 		prDmaBuf->AllocVa = grMem.rTxCmdBuf[u4Idx].va;
+		if (prDmaBuf->AllocVa  == NULL) {
+			DBGLOG(HAL, ERROR, "prDescRing->AllocVa is NULL\n");
+			/* TODO : Error handler, avoid kernel panic*/
+	      }
 		memset_io(prDmaBuf->AllocVa, 0, prDmaBuf->AllocSize);
 	}
 }
@@ -1080,9 +1164,32 @@ static void *axiAllocRxBuf(struct GL_HIF_INFO *prHifInfo,
 	if (u4Num == 0) {
 		prDmaBuf->AllocPa = grMem.rRxDataBuf[u4Idx].pa;
 		prDmaBuf->AllocVa = grMem.rRxDataBuf[u4Idx].va;
-	} else {
+	} else if (u4Num == 1) {
 		prDmaBuf->AllocPa = grMem.rRxEventBuf[u4Idx].pa;
 		prDmaBuf->AllocVa = grMem.rRxEventBuf[u4Idx].va;
+	}
+	/* Add for connac2x RX ring */
+#if (CFG_SUPPORT_CONNAC2X == 1)
+
+	else if (u4Num == 2) {
+		prDmaBuf->AllocPa = grMem.wfdma0_rx_ring_idx2[u4Idx].pa;
+		prDmaBuf->AllocVa = grMem.wfdma0_rx_ring_idx2[u4Idx].va;
+	} else if (u4Num == 3) {
+		prDmaBuf->AllocPa = grMem.wfdma0_rx_ring_idx3[u4Idx].pa;
+		prDmaBuf->AllocVa = grMem.wfdma0_rx_ring_idx3[u4Idx].va;
+	} else if (u4Num == 4) {
+		prDmaBuf->AllocPa = grMem.wfdma1_rx_ring_idx0[u4Idx].pa;
+		prDmaBuf->AllocVa = grMem.wfdma1_rx_ring_idx0[u4Idx].va;
+	}
+
+#endif
+	else {
+		DBGLOG(RX, ERROR, "RX alloc fail error number=%d\n", u4Num);
+		return prDmaBuf->AllocVa;
+	}
+	if (prDmaBuf->AllocVa == NULL) {
+		DBGLOG(HAL, ERROR, "prDmaBuf->AllocVa is NULL\n");
+		/* TODO : error handler, avoid kernel panic when VA = NULL */
 	}
 	memset_io(prDmaBuf->AllocVa, 0, prDmaBuf->AllocSize);
 
