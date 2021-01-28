@@ -792,7 +792,8 @@ u_int8_t secPrivacySeekForEntry(
 		if (prWtbl[i].ucUsed
 		    && EQUAL_MAC_ADDR(prSta->aucMacAddr, prWtbl[i].aucMacAddr)
 		    && prWtbl[i].ucPairwise
-		    /* This function for ucPairwise only */) {
+		    /* This function for ucPairwise only */
+		    && prWtbl[i].ucBssIndex == prSta->ucBssIndex) {
 			ucEntry = i;
 			DBGLOG(RSN, TRACE,
 			       "[Wlan index]: Reuse entry #%d\n", i);
@@ -930,7 +931,8 @@ void secPrivacyFreeSta(IN struct ADAPTER *prAdapter,
 		if (prWtbl[entry].ucUsed &&
 		    EQUAL_MAC_ADDR(prStaRec->aucMacAddr,
 				   prWtbl[entry].aucMacAddr)
-		    && prWtbl[entry].ucPairwise) {
+		    && prWtbl[entry].ucPairwise
+		    && prWtbl[entry].ucBssIndex == prStaRec->ucBssIndex) {
 #if 1				/* DBG */
 			DBGLOG(RSN, INFO, "Free STA entry (%d)!\n", entry);
 #endif
