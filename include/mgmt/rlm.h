@@ -549,7 +549,8 @@ rlmChangeOperationMode(
 	struct ADAPTER *prAdapter,
 	uint8_t ucBssIndex,
 	uint8_t ucChannelWidth,
-	uint8_t ucNss,
+	uint8_t ucOpRxNss,
+	uint8_t ucOpTxNss,
 	PFN_OPMODE_NOTIFY_DONE_FUNC pfOpChangeHandler
 );
 

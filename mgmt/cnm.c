@@ -174,6 +174,16 @@ struct DBDC_FSM_T {
 };
 #endif /*CFG_SUPPORT_DBDC*/
 
+struct BSS_OPTRX_BW_BY_SOURCE_T {
+	bool fgEnable;
+	uint8_t ucOpRxNss;
+	uint8_t ucOpTxNss;
+};
+
+struct BSS_OPTRX_BW_CONTROL_T {
+	struct BSS_OPTRX_BW_BY_SOURCE_T rOpTRxBw[BSS_OPTRX_BW_CHANGE_NUM];
+};
+
 /*******************************************************************************
  *                            P U B L I C   D A T A
  *******************************************************************************
@@ -193,6 +203,8 @@ static struct DBDC_INFO_T g_rDbdcInfo;
 #if CFG_SUPPORT_IDC_CH_SWITCH
 OS_SYSTIME g_rLastCsaSysTime;
 #endif
+
+static struct BSS_OPTRX_BW_CONTROL_T g_arBssOpTRxBwControl[BSS_DEFAULT_NUM];
 
 /*******************************************************************************
  *                                 M A C R O S
@@ -450,11 +462,16 @@ static struct DBDC_FSM_T arDdbcFsmActionTable[] = {
 void cnmInit(struct ADAPTER *prAdapter)
 {
 	struct CNM_INFO *prCnmInfo;
+	uint8_t i, j;
 
 	ASSERT(prAdapter);
 
 	prCnmInfo = &prAdapter->rCnmInfo;
 	prCnmInfo->fgChGranted = FALSE;
+	for (i = 0; i < prAdapter->ucHwBssIdNum; i++) {
+		for (j = 0; j < BSS_OPTRX_BW_CHANGE_NUM; j++)
+			g_arBssOpTRxBwControl[i].rOpTRxBw[j].fgEnable = false;
+	}
 #if CFG_SUPPORT_IDC_CH_SWITCH
 	g_rLastCsaSysTime = 0;
 #endif
@@ -2026,6 +2043,7 @@ void cnmFreeBssInfo(struct ADAPTER *prAdapter,
 /*----------------------------------------------------------------------------*/
 void cnmInitDbdcSetting(IN struct ADAPTER *prAdapter)
 {
+	struct BSS_OPTRX_BW_BY_SOURCE_T *prBssOpSourceCtrl;
 	uint8_t ucBssLoopIndex;
 
 	DBDC_SET_WMMBAND_FW_AUTO_DEFAULT();
@@ -2066,6 +2084,16 @@ void cnmInitDbdcSetting(IN struct ADAPTER *prAdapter)
 		break;
 
 	case ENUM_DBDC_MODE_STATIC:
+		for (ucBssLoopIndex = 0;
+		    ucBssLoopIndex < prAdapter->ucHwBssIdNum;
+		    ucBssLoopIndex++) {
+			prBssOpSourceCtrl =
+				&(g_arBssOpTRxBwControl[ucBssLoopIndex].
+				rOpTRxBw[BSS_OPTRX_BW_CHANGE_BY_DBDC]);
+			prBssOpSourceCtrl->fgEnable = TRUE;
+			prBssOpSourceCtrl->ucOpRxNss = 1;
+			prBssOpSourceCtrl->ucOpTxNss = 1;
+		}
 		cnmUpdateDbdcSetting(prAdapter, TRUE);
 		break;
 
@@ -2140,9 +2168,7 @@ static enum ENUM_DBDC_PROTOCOL_STATUS_T cnmDbdcOpmodeChangeAndWait(
 	IN u_int8_t fgDbdcEn)
 {
 	uint8_t ucBssIndex;
-	uint8_t ucWmmSetBitmap = 0;
-	uint8_t ucOpBw;
-	uint8_t ucNss;
+	uint8_t ucTRxNss;
 	struct BSS_INFO *prBssInfo;
 	enum ENUM_OP_CHANGE_STATUS_T eBssOpmodeChange;
 	enum ENUM_DBDC_PROTOCOL_STATUS_T eRetVar =
@@ -2151,33 +2177,26 @@ static enum ENUM_DBDC_PROTOCOL_STATUS_T cnmDbdcOpmodeChangeAndWait(
 #define IS_BSS_CLIENT(_prBssInfo) \
 (_prBssInfo->eCurrentOPMode == OP_MODE_INFRASTRUCTURE)
 
-	if (fgDbdcEn)
-		ucWmmSetBitmap |= BIT(DBDC_2G_WMM_INDEX);
-
 	for (ucBssIndex = 0;
 		ucBssIndex <= prAdapter->ucHwBssIdNum; ucBssIndex++) {
 		prBssInfo = prAdapter->aprBssInfo[ucBssIndex];
+		ucTRxNss = fgDbdcEn ?
+			1 : wlanGetSupportNss(prAdapter, ucBssIndex);
+
 		if (DBDC_IS_BSS_ALIVE(prBssInfo)) {
-
-			ucOpBw = rlmGetBssOpBwByVhtAndHtOpInfo(prBssInfo);
-			if (fgDbdcEn && ucOpBw > MAX_BW_80MHZ)
-				ucOpBw = MAX_BW_80MHZ;
-
-			ucNss = fgDbdcEn ? 1 : wlanGetSupportNss(prAdapter,
-					ucBssIndex);
-
-			eBssOpmodeChange = rlmChangeOperationMode(prAdapter,
+			eBssOpmodeChange = cnmSetOpTRxNssBw(prAdapter,
 					ucBssIndex,
-					ucOpBw,
-					ucNss,
+					BSS_OPTRX_BW_CHANGE_BY_DBDC,
+					fgDbdcEn,
+					ucTRxNss, /* [DBDC] RxNss = TxNss */
+					ucTRxNss,
 					IS_BSS_CLIENT(prBssInfo) ?
 					cnmDbdcOpModeChangeDoneCallback :
 					NULL);
 
-			log_dbg(CNM, INFO, "[DBDC] BSS index[%u] to BW %u NSS %u Mode:%s, status %u\n",
+			log_dbg(CNM, INFO, "[DBDC] BSS index[%u] to TRxNSS %u Mode:%s, status %u\n",
 				ucBssIndex,
-				ucOpBw,
-				ucNss,
+				ucTRxNss,
 				IS_BSS_CLIENT(prBssInfo) ? "Client" : "Master",
 				eBssOpmodeChange);
 
@@ -2215,6 +2234,17 @@ static enum ENUM_DBDC_PROTOCOL_STATUS_T cnmDbdcOpmodeChangeAndWait(
 				break;
 			}
 		} else {
+			/* When DBDC is enabled, we limit all BSSes' OpTRxNss.
+			 * Use the same API to update control table for
+			 * inactive BSS.
+			 */
+			cnmSetOpTRxNssBw(prAdapter,
+					ucBssIndex,
+					BSS_OPTRX_BW_CHANGE_BY_DBDC,
+					fgDbdcEn,
+					ucTRxNss, /* [DBDC] RxNss = TxNss */
+					ucTRxNss,
+					NULL);
 			g_rDbdcInfo.eBssOpModeState[ucBssIndex]
 				= ENUM_OPMODE_STATE_DONE;
 		}
@@ -2895,84 +2925,6 @@ cnmDbdcFsmExitFunc_WAIT_HW_ENABLE(
 
 /*----------------------------------------------------------------------------*/
 /*!
- * @brief    Get the connection capability.
- *
- * @param (none)
- *
- * @return (none)
- */
-/*----------------------------------------------------------------------------*/
-void cnmGetDbdcCapability(
-	IN struct ADAPTER *prAdapter,
-	IN uint8_t				ucBssIndex,
-	IN enum ENUM_BAND			eRfBand,
-	IN uint8_t				ucPrimaryChannel,
-	IN uint8_t				ucNss,
-	OUT struct CNM_DBDC_CAP *prDbdcCap)
-{
-	if (!prDbdcCap)
-		return;
-
-	/* BSS index */
-	prDbdcCap->ucBssIndex = ucBssIndex;
-
-#if (CFG_HW_WMM_BY_BSS == 0)
-	/* WMM set */
-	if (eRfBand == BAND_5G)
-		prDbdcCap->ucWmmSetIndex = DBDC_5G_WMM_INDEX;
-	else
-		prDbdcCap->ucWmmSetIndex =
-			(prAdapter->rWifiVar.eDbdcMode ==
-			 ENUM_DBDC_MODE_DISABLED) ?
-			DBDC_5G_WMM_INDEX : DBDC_2G_WMM_INDEX;
-#endif
-	/* Nss & band 0/1 */
-	switch (prAdapter->rWifiVar.eDbdcMode) {
-	case ENUM_DBDC_MODE_DISABLED:
-		/* DBDC is disabled, all BSS run on band 0 */
-		if (wlanGetSupportNss(prAdapter, ucBssIndex) < ucNss)
-			prDbdcCap->ucNss = wlanGetSupportNss(prAdapter,
-							     ucBssIndex);
-		else
-			prDbdcCap->ucNss = ucNss;
-		break;
-
-	case ENUM_DBDC_MODE_STATIC:
-		/* Static DBDC mode, 1SS only */
-		prDbdcCap->ucNss = 1;
-		break;
-
-	case ENUM_DBDC_MODE_DYNAMIC:
-		if (USE_DBDC_CAPABILITY()) {
-			prDbdcCap->ucNss = 1;
-		} else {
-			prDbdcCap->ucNss = wlanGetSupportNss(prAdapter,
-							     ucBssIndex);
-		}
-		break;
-
-	default:
-		break;
-	}
-
-	log_dbg(CNM, INFO,
-			"[DBDC] BSS%u RF%u CH%u Nss%u get Wmm%u Nss%u\n",
-			ucBssIndex,
-			eRfBand,
-			ucPrimaryChannel,
-			ucNss,
-#if (CFG_HW_WMM_BY_BSS == 0)
-			prDbdcCap->ucWmmSetIndex,
-#else
-			/*Wmm Selection varies from Bss instead of RfBand. */
-			0xFF,
-#endif
-			prDbdcCap->ucNss
-		);
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
  * @brief Get maximum bandwidth capability with considering DBDC mode
  *
  * @param (none)
@@ -3452,4 +3404,160 @@ error:
 	return -1;
 }
 
+static struct BSS_OPTRX_BW_BY_SOURCE_T*
+cnmGetOpTRxNssSourcePriority(
+	struct BSS_OPTRX_BW_CONTROL_T *prBssOpCtrl
+)
+{
+	struct BSS_OPTRX_BW_BY_SOURCE_T *prBssOpSourceCtrl;
 
+	/* Priority: DBDC > CoAnt */
+	if (prBssOpCtrl->rOpTRxBw[BSS_OPTRX_BW_CHANGE_BY_DBDC].fgEnable)
+		prBssOpSourceCtrl =
+			&prBssOpCtrl->rOpTRxBw[BSS_OPTRX_BW_CHANGE_BY_DBDC];
+	else if (prBssOpCtrl->rOpTRxBw[BSS_OPTRX_BW_CHANGE_BY_COANT].fgEnable)
+		prBssOpSourceCtrl =
+			&prBssOpCtrl->rOpTRxBw[BSS_OPTRX_BW_CHANGE_BY_COANT];
+	else
+		prBssOpSourceCtrl = NULL;
+
+	return prBssOpSourceCtrl;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * @brief Set the operation TRx Nss. (Not support BW change yet)
+ *        If failed to change OpRxNss, the OpTxNss will not change.
+ *        Besides, we do not clear the boundary set in previous.
+ *
+ *        If the BSS is not alive, just update to control table.
+ *
+ * @param prAdapter
+ * @param ucBssIndex
+ * @param eSource
+ * @param ucOpRxNss
+ * @param ucOpTxNss
+ * @param pfnCallback
+ *        If no TxAction frames are needed, we call this function immediately.
+ *
+ * @return ENUM_OP_CHANGE_STATUS_T
+ */
+/*----------------------------------------------------------------------------*/
+enum ENUM_OP_CHANGE_STATUS_T
+cnmSetOpTRxNssBw(
+	IN struct ADAPTER *prAdapter,
+	IN uint8_t ucBssIndex,
+	IN enum ENUM_BSS_OPTRX_BW_CHANGE_SOURCE_T eSource,
+	IN bool fgEnable,
+	IN uint8_t ucOpRxNss,
+	IN uint8_t ucOpTxNss,
+	IN PFN_OPMODE_NOTIFY_DONE_FUNC pfnCallback
+)
+{
+	struct BSS_INFO *prBssInfo;
+	struct BSS_OPTRX_BW_CONTROL_T *prBssOpCtrl;
+	struct BSS_OPTRX_BW_BY_SOURCE_T *prBssOpSourceCtrl;
+	uint8_t ucOpRxNssFinal, ucOpTxNssFinal, ucOpBwFinal;
+
+	if (ucBssIndex > prAdapter->ucHwBssIdNum ||
+		ucBssIndex >= BSS_DEFAULT_NUM) {
+		DBGLOG(CNM, INFO, "SetOpTRx invalid param,B[%d]\n", ucBssIndex);
+		return OP_CHANGE_STATUS_INVALID;
+	}
+
+	prBssInfo = prAdapter->aprBssInfo[ucBssIndex];
+	prBssOpCtrl = &g_arBssOpTRxBwControl[ucBssIndex];
+	prBssOpSourceCtrl = &prBssOpCtrl->rOpTRxBw[eSource];
+
+	ucOpRxNssFinal = ucOpTxNssFinal =
+		wlanGetSupportNss(prAdapter, ucBssIndex);
+
+	/* Step 1 Update control table */
+	prBssOpSourceCtrl->fgEnable = fgEnable;
+	if (fgEnable) {
+		prBssOpSourceCtrl->ucOpRxNss = ucOpRxNss;
+		prBssOpSourceCtrl->ucOpTxNss = ucOpTxNss;
+	}
+
+	/* Step 2 Select the control table with the highest priority */
+	prBssOpSourceCtrl = cnmGetOpTRxNssSourcePriority(prBssOpCtrl);
+	if (prBssOpSourceCtrl) {
+		ucOpRxNssFinal = prBssOpSourceCtrl->ucOpRxNss;
+		ucOpTxNssFinal = prBssOpSourceCtrl->ucOpTxNss;
+	}
+
+	/* Step 3. Special rule for BW change (DBDC)
+	 * We only bound OpBw @ BW80 for DBDC.
+	 * This function colud not restore to current peer's OpBw.
+	 * It's fine because below reasons(2018/08):
+	 *   1) No DBDC project supports BW160 or NW80+80.
+	 *   2) No feature wants to change OpBw.
+	 *
+	 * If you want to change OpBw in the future, please make sure
+	 * you can restore to current peer's OpBw.
+	 */
+	if (DBDC_IS_BSS_ALIVE(prBssInfo)) {
+		ucOpBwFinal = rlmGetBssOpBwByVhtAndHtOpInfo(prBssInfo);
+		if (prBssOpCtrl->rOpTRxBw[BSS_OPTRX_BW_CHANGE_BY_DBDC].fgEnable)
+			ucOpBwFinal = ucOpBwFinal > MAX_BW_80MHZ ?
+				MAX_BW_80MHZ : ucOpBwFinal;
+
+		return rlmChangeOperationMode(prAdapter,
+					ucBssIndex,
+					ucOpBwFinal,
+					ucOpRxNssFinal,
+					ucOpTxNssFinal,
+					pfnCallback);
+	} else
+		return OP_CHANGE_STATUS_VALID_CHANGE_CALLBACK_DONE;
+}
+
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * @brief Get the operation TRx Nss.
+ *        If DBDC is goning to enable or already enabled, return 1.
+ *        Else return MaxCapability.
+ *
+ * @param prAdapter
+ * @param ucBssIndex
+ * @param pucOpRxNss
+ * @param pucOpTxNss
+ *
+ * @return ucOpTRxNss
+ */
+/*----------------------------------------------------------------------------*/
+void cnmGetOpTRxNss(
+	IN struct ADAPTER *prAdapter,
+	IN uint8_t ucBssIndex,
+	OUT uint8_t *pucOpRxNss,
+	OUT uint8_t *pucOpTxNss)
+{
+	uint8_t ucOpRxNss, ucOpTxNss;
+	struct BSS_OPTRX_BW_CONTROL_T *prBssOpCtrl;
+	struct BSS_OPTRX_BW_BY_SOURCE_T *prBssOpSourceCtrl;
+
+	if (pucOpRxNss == NULL || pucOpTxNss == NULL) {
+		DBGLOG(CNM, INFO, "GetOpTRx invalid param\n");
+		return;
+	}
+
+	ucOpRxNss = ucOpTxNss = wlanGetSupportNss(prAdapter, ucBssIndex);
+	prBssOpCtrl = &g_arBssOpTRxBwControl[ucBssIndex];
+	prBssOpSourceCtrl = cnmGetOpTRxNssSourcePriority(prBssOpCtrl);
+
+	if (prBssOpSourceCtrl) {
+		/* Use the smallest one */
+		if (ucOpRxNss > prBssOpSourceCtrl->ucOpRxNss)
+			ucOpRxNss = prBssOpSourceCtrl->ucOpRxNss;
+		if (ucOpTxNss > prBssOpSourceCtrl->ucOpTxNss)
+			ucOpTxNss = prBssOpSourceCtrl->ucOpTxNss;
+	}
+
+	log_dbg(CNM, INFO,
+			"[CNM] BSS%u Op RxNss[%d]TxNss[%u]\n",
+			ucBssIndex, ucOpRxNss, ucOpTxNss);
+
+	*pucOpRxNss = ucOpRxNss;
+	*pucOpTxNss = ucOpTxNss;
+}
