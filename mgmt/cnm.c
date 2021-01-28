@@ -70,13 +70,15 @@
  *******************************************************************************
  */
 #include "precomp.h"
+#include "wsys_cmd_handler_fw.h"
 
 /*******************************************************************************
  *                              C O N S T A N T S
  *******************************************************************************
  */
 #if CFG_SUPPORT_DBDC
-#define DBDC_SWITCH_GUARD_TIME		(4*1000)	/* ms */
+#define DBDC_ENABLE_GUARD_TIME		(4*1000)	/* ms */
+#define DBDC_DISABLE_GUARD_TIME		(1*1000)	/* ms */
 #define DBDC_DISABLE_COUNTDOWN_TIME	(2*1000)	/* ms */
 #endif /* CFG_SUPPORT_DBDC */
 
@@ -131,7 +133,7 @@ struct DBDC_INFO_T {
 	uint8_t fgReqPrivelegeLock;
 	struct LINK rPendingMsgList;
 
-	uint8_t fgDbdcDisableOpmodeChangeDone;
+	bool fgDbdcDisableOpmodeChangeDone;
 	enum ENUM_OPMODE_STATE_T eBssOpModeState[BSSID_NUM];
 
 	/* Set DBDC setting for incoming network */
@@ -174,17 +176,46 @@ struct DBDC_FSM_T {
 };
 #endif /*CFG_SUPPORT_DBDC*/
 
-struct BSS_OPTRX_BW_BY_SOURCE_T {
+/* Priority Order !!!! */
+enum ENUM_CNM_OPMODE_REQ_T {
+	CNM_OPMODE_REQ_DBDC       = 0,
+	CNM_OPMODE_REQ_DBDC_SCAN  = 1,
+	CNM_OPMODE_REQ_SMARTGEAR  = 2,
+	CNM_OPMODE_REQ_COANT      = 3,
+	CNM_OPMODE_REQ_NUM        = 4,
+	CNM_OPMODE_REQ_MAX_CAP    = 5 /* just for coding */
+};
+
+enum ENUM_CNM_OPMODE_REQ_STATUS {
+	CNM_OPMODE_REQ_STATUS_SUCCESS,
+	CNM_OPMODE_REQ_STATUS_INVALID_PARAM,
+	CNM_OPMODE_REQ_STATUS_RUNNING,
+	CNM_OPMODE_REQ_STATUS_DEFER,
+	CNM_OPMODE_REQ_STATUS_NUM
+};
+
+struct CNM_OPMODE_BSS_REQ {
 	bool fgEnable;
+	bool fgNewRequest;
 	uint8_t ucOpRxNss;
 	uint8_t ucOpTxNss;
 };
 
-/* ENUM_EVENT_OPMODE_CHANGE_REASON */
-#define OPTRX_CHANGE_REASON_NUM 4
-struct BSS_OPTRX_BW_CONTROL_T {
-	struct BSS_OPTRX_BW_BY_SOURCE_T
-		rOpTRxBw[OPTRX_CHANGE_REASON_NUM];
+struct CNM_OPMODE_BSS_RUNNING_REQ {
+	/* Initiator */
+	enum ENUM_CNM_OPMODE_REQ_T eReqIdx;
+	/* Highest prioirty req */
+	enum ENUM_CNM_OPMODE_REQ_T eRunReq;
+	bool fgIsRunning;
+	uint8_t ucOpRxNss;
+	uint8_t ucOpTxNss;
+};
+
+struct CNM_OPMODE_BSS_CONTROL_T {
+	struct CNM_OPMODE_BSS_RUNNING_REQ
+		rRunning;
+	struct CNM_OPMODE_BSS_REQ
+		arReqPool[CNM_OPMODE_REQ_NUM];
 };
 
 /*******************************************************************************
@@ -196,29 +227,15 @@ struct EVENT_LTE_SAFE_CHN g_rLteSafeChInfo;
 #endif
 
 /*******************************************************************************
- *                           P R I V A T E   D A T A
- ******************************************************************************
- */
-#if CFG_SUPPORT_DBDC
-static struct DBDC_INFO_T g_rDbdcInfo;
-#endif
-
-#if CFG_SUPPORT_IDC_CH_SWITCH
-OS_SYSTIME g_rLastCsaSysTime;
-#endif
-
-static struct BSS_OPTRX_BW_CONTROL_T g_arBssOpTRxBwControl[BSS_DEFAULT_NUM];
-
-/*******************************************************************************
  *                                 M A C R O S
  *******************************************************************************
  */
 
 #if CFG_SUPPORT_DBDC
-#define DBDC_SET_GUARD_TIME(_prAdapter) { \
+#define DBDC_SET_GUARD_TIME(_prAdapter, _u4TimeoutMs) { \
 	cnmTimerStartTimer(_prAdapter, \
 		&g_rDbdcInfo.rDbdcGuardTimer, \
-		DBDC_SWITCH_GUARD_TIME); \
+		_u4TimeoutMs); \
 	g_rDbdcInfo.eDdbcGuardTimerType = \
 		ENUM_DBDC_GUARD_TIMER_SWITCH_GUARD_TIME; \
 }
@@ -365,6 +382,23 @@ cnmDbdcFsmExitFunc_WAIT_HW_ENABLE(
 	IN struct ADAPTER *prAdapter
 );
 
+static void
+cnmDbdcOpModeChangeDoneCallback(
+	IN struct ADAPTER *prAdapter,
+	IN uint8_t ucBssIndex,
+	IN bool fgSuccess
+);
+
+static enum ENUM_CNM_OPMODE_REQ_STATUS
+cnmOpModeSetTRxNss(
+	IN struct ADAPTER *prAdapter,
+	IN uint8_t ucBssIndex,
+	IN enum ENUM_CNM_OPMODE_REQ_T eNewReq,
+	IN bool fgEnable,
+	IN uint8_t ucOpRxNss,
+	IN uint8_t ucOpTxNss
+);
+
 /*******************************************************************************
  *                           P R I V A T E   D A T A 2
  *******************************************************************************
@@ -427,6 +461,32 @@ static struct DBDC_FSM_T arDdbcFsmActionTable[] = {
 	},
 };
 
+#if CFG_SUPPORT_DBDC
+static struct DBDC_INFO_T g_rDbdcInfo;
+#endif
+
+#if CFG_SUPPORT_IDC_CH_SWITCH
+OS_SYSTIME g_rLastCsaSysTime;
+#endif
+
+static struct CNM_OPMODE_BSS_CONTROL_T g_arBssOpControl[BSS_DEFAULT_NUM];
+static uint8_t *apucCnmOpModeReq[CNM_OPMODE_REQ_MAX_CAP+1] = {
+	(uint8_t *) DISP_STRING("DBDC"),
+	(uint8_t *) DISP_STRING("DBDC Scan"),
+	(uint8_t *) DISP_STRING("SmartGear"),
+	(uint8_t *) DISP_STRING("CoAnt"),
+	(uint8_t *) DISP_STRING("N/A"),
+	(uint8_t *) DISP_STRING("MAX_CAP")
+};
+
+static uint8_t *apucCnmOpModeReqStatus[CNM_OPMODE_REQ_STATUS_NUM+1] = {
+	(uint8_t *) DISP_STRING("Success"),
+	(uint8_t *) DISP_STRING("Invalid"),
+	(uint8_t *) DISP_STRING("Running"),
+	(uint8_t *) DISP_STRING("Defer"),
+	(uint8_t *) DISP_STRING("N/A")
+};
+
 /*******************************************************************************
  *                                 M A C R O S 2
  *******************************************************************************
@@ -453,16 +513,31 @@ static struct DBDC_FSM_T arDdbcFsmActionTable[] = {
 void cnmInit(struct ADAPTER *prAdapter)
 {
 	struct CNM_INFO *prCnmInfo;
-	uint8_t i, j;
+	struct CNM_OPMODE_BSS_CONTROL_T *prBssOpCtrl;
+	enum ENUM_CNM_OPMODE_REQ_T eReqIdx;
+	uint8_t ucBssIndex;
 
 	ASSERT(prAdapter);
 
 	prCnmInfo = &prAdapter->rCnmInfo;
 	prCnmInfo->fgChGranted = FALSE;
-	for (i = 0; i < prAdapter->ucHwBssIdNum; i++) {
-		for (j = 0; j < OPTRX_CHANGE_REASON_NUM; j++)
-			g_arBssOpTRxBwControl[i].rOpTRxBw[j].fgEnable = false;
+
+	if (prAdapter->ucHwBssIdNum > BSS_DEFAULT_NUM) {
+		/* Unexpected! out of bounds access may happen... */
+		DBGLOG(CNM, WARN,
+			"HwBssNum(%d) > BSS_DEFAULT_NUM !!!\n",
+			prAdapter->ucHwBssIdNum);
 	}
+
+	for (ucBssIndex = 0; ucBssIndex < prAdapter->ucHwBssIdNum;
+		ucBssIndex++) {
+		prBssOpCtrl = &(g_arBssOpControl[ucBssIndex]);
+		prBssOpCtrl->rRunning.fgIsRunning = false;
+		for (eReqIdx = CNM_OPMODE_REQ_DBDC;
+				eReqIdx < CNM_OPMODE_REQ_NUM; eReqIdx++)
+			prBssOpCtrl->arReqPool[eReqIdx].fgEnable = false;
+	}
+
 #if CFG_SUPPORT_IDC_CH_SWITCH
 	g_rLastCsaSysTime = 0;
 #endif
@@ -2028,7 +2103,7 @@ void cnmFreeBssInfo(struct ADAPTER *prAdapter,
 /*----------------------------------------------------------------------------*/
 void cnmInitDbdcSetting(IN struct ADAPTER *prAdapter)
 {
-	struct BSS_OPTRX_BW_BY_SOURCE_T *prBssOpSourceCtrl;
+	struct CNM_OPMODE_BSS_REQ *prOpModeReq;
 	uint8_t ucBssLoopIndex;
 
 	DBDC_SET_WMMBAND_FW_AUTO_DEFAULT();
@@ -2072,12 +2147,12 @@ void cnmInitDbdcSetting(IN struct ADAPTER *prAdapter)
 		for (ucBssLoopIndex = 0;
 		    ucBssLoopIndex < prAdapter->ucHwBssIdNum;
 		    ucBssLoopIndex++) {
-			prBssOpSourceCtrl =
-				&(g_arBssOpTRxBwControl[ucBssLoopIndex].
-				rOpTRxBw[EVENT_OPMODE_CHANGE_REASON_DBDC]);
-			prBssOpSourceCtrl->fgEnable = TRUE;
-			prBssOpSourceCtrl->ucOpRxNss = 1;
-			prBssOpSourceCtrl->ucOpTxNss = 1;
+			prOpModeReq =
+				&(g_arBssOpControl[ucBssLoopIndex].
+				arReqPool[CNM_OPMODE_REQ_DBDC]);
+			prOpModeReq->fgEnable = TRUE;
+			prOpModeReq->ucOpRxNss = 1;
+			prOpModeReq->ucOpTxNss = 1;
 		}
 		cnmUpdateDbdcSetting(prAdapter, TRUE);
 		break;
@@ -2155,7 +2230,7 @@ static enum ENUM_DBDC_PROTOCOL_STATUS_T cnmDbdcOpmodeChangeAndWait(
 	uint8_t ucBssIndex;
 	uint8_t ucTRxNss;
 	struct BSS_INFO *prBssInfo;
-	enum ENUM_OP_CHANGE_STATUS_T eBssOpmodeChange;
+	enum ENUM_CNM_OPMODE_REQ_STATUS eStatus;
 	enum ENUM_DBDC_PROTOCOL_STATUS_T eRetVar =
 		ENUM_DBDC_PROTOCOL_STATUS_DONE_SUCCESS;
 
@@ -2171,24 +2246,22 @@ static enum ENUM_DBDC_PROTOCOL_STATUS_T cnmDbdcOpmodeChangeAndWait(
 			1 : wlanGetSupportNss(prAdapter, ucBssIndex);
 
 		if (IS_BSS_ALIVE(prAdapter, prBssInfo)) {
-			eBssOpmodeChange = cnmSetOpTRxNssBw(prAdapter,
+			eStatus = cnmOpModeSetTRxNss(prAdapter,
 					ucBssIndex,
-					EVENT_OPMODE_CHANGE_REASON_DBDC,
+					CNM_OPMODE_REQ_DBDC,
 					fgDbdcEn,
 					ucTRxNss, /* [DBDC] RxNss = TxNss */
-					ucTRxNss,
-					IS_BSS_CLIENT(prBssInfo) ?
-					cnmDbdcOpModeChangeDoneCallback :
-					NULL);
+					ucTRxNss);
 
 			log_dbg(CNM, INFO, "[DBDC] BSS index[%u] to TRxNSS %u Mode:%s, status %u\n",
 				ucBssIndex,
 				ucTRxNss,
 				IS_BSS_CLIENT(prBssInfo) ? "Client" : "Master",
-				eBssOpmodeChange);
+				eStatus);
 
-			switch (eBssOpmodeChange) {
-			case OP_CHANGE_STATUS_VALID_CHANGE_CALLBACK_WAIT:
+			switch (eStatus) {
+			case CNM_OPMODE_REQ_STATUS_RUNNING:
+			case CNM_OPMODE_REQ_STATUS_DEFER:
 				g_rDbdcInfo.fgDbdcDisableOpmodeChangeDone
 					= FALSE;
 				g_rDbdcInfo.eBssOpModeState[ucBssIndex]
@@ -2197,13 +2270,12 @@ static enum ENUM_DBDC_PROTOCOL_STATUS_T cnmDbdcOpmodeChangeAndWait(
 
 				break;
 
-			case OP_CHANGE_STATUS_VALID_CHANGE_CALLBACK_DONE:
-			case OP_CHANGE_STATUS_VALID_NO_CHANGE:
+			case CNM_OPMODE_REQ_STATUS_SUCCESS:
 				g_rDbdcInfo.eBssOpModeState[ucBssIndex]
 					= ENUM_OPMODE_STATE_DONE;
 				break;
 
-			case OP_CHANGE_STATUS_INVALID:
+			case CNM_OPMODE_REQ_STATUS_INVALID_PARAM:
 				g_rDbdcInfo.eBssOpModeState[ucBssIndex]
 					= ENUM_OPMODE_STATE_FAIL;
 
@@ -2225,13 +2297,12 @@ static enum ENUM_DBDC_PROTOCOL_STATUS_T cnmDbdcOpmodeChangeAndWait(
 			 * Use the same API to update control table for
 			 * inactive BSS.
 			 */
-			cnmSetOpTRxNssBw(prAdapter,
+			cnmOpModeSetTRxNss(prAdapter,
 					ucBssIndex,
-					EVENT_OPMODE_CHANGE_REASON_DBDC,
+					CNM_OPMODE_REQ_DBDC,
 					fgDbdcEn,
 					ucTRxNss, /* [DBDC] RxNss = TxNss */
-					ucTRxNss,
-					NULL);
+					ucTRxNss);
 			g_rDbdcInfo.eBssOpModeState[ucBssIndex]
 				= ENUM_OPMODE_STATE_DONE;
 		}
@@ -2244,10 +2315,10 @@ static enum ENUM_DBDC_PROTOCOL_STATUS_T cnmDbdcOpmodeChangeAndWait(
 void cnmDbdcOpModeChangeDoneCallback(
 	IN struct ADAPTER *prAdapter,
 	IN uint8_t ucBssIndex,
-	IN u_int8_t fgSuccess)
+	IN bool fgSuccess)
 {
 	uint8_t ucBssLoopIndex;
-	u_int8_t fgIsAllActionFrameSuccess = TRUE;
+	bool fgIsAllActionFrameSuccess = true;
 
 	if (fgSuccess)
 		g_rDbdcInfo.eBssOpModeState[ucBssIndex] =
@@ -2272,9 +2343,9 @@ void cnmDbdcOpModeChangeDoneCallback(
 
 		if (g_rDbdcInfo.eBssOpModeState[ucBssLoopIndex] ==
 		    ENUM_OPMODE_STATE_FAIL &&
-		    fgIsAllActionFrameSuccess == TRUE) {
+		    fgIsAllActionFrameSuccess == true) {
 			/* Some OP mode change FAIL */
-			fgIsAllActionFrameSuccess = FALSE;
+			fgIsAllActionFrameSuccess = false;
 		}
 	}
 
@@ -2287,7 +2358,7 @@ void cnmDbdcOpModeChangeDoneCallback(
 				DBDC_FSM_EVENT_ACTION_FRAME_SOME_FAIL);
 		}
 
-		g_rDbdcInfo.fgDbdcDisableOpmodeChangeDone = TRUE;
+		g_rDbdcInfo.fgDbdcDisableOpmodeChangeDone = true;
 	}
 }
 
@@ -2303,9 +2374,9 @@ void cnmDbdcOpModeChangeDoneCallback(
 void cnmUpdateDbdcSetting(IN struct ADAPTER *prAdapter,
 			  IN u_int8_t fgDbdcEn)
 {
-	struct CMD_DBDC_SETTING		rDbdcSetting;
+	struct CMD_DBDC_SETTING rDbdcSetting;
 	struct CMD_DBDC_SETTING *prCmdBody;
-	uint32_t				rStatus = WLAN_STATUS_SUCCESS;
+	uint32_t rStatus = WLAN_STATUS_SUCCESS;
 
 	log_dbg(CNM, INFO, "[DBDC] %s\n",
 	       fgDbdcEn ? "Enable" : "Disable");
@@ -2499,7 +2570,7 @@ cnmDbdcFsmEntryFunc_ENABLE_GUARD(IN struct ADAPTER *prAdapter)
 		g_rDbdcInfo.eDdbcGuardTimerType =
 			ENUM_DBDC_GUARD_TIMER_NONE;
 	}
-	DBDC_SET_GUARD_TIME(prAdapter);
+	DBDC_SET_GUARD_TIME(prAdapter, DBDC_ENABLE_GUARD_TIME);
 }
 
 static void
@@ -2525,7 +2596,7 @@ cnmDbdcFsmEntryFunc_DISABLE_GUARD(IN struct ADAPTER *prAdapter)
 		g_rDbdcInfo.eDdbcGuardTimerType =
 			ENUM_DBDC_GUARD_TIMER_NONE;
 	}
-	DBDC_SET_GUARD_TIME(prAdapter);
+	DBDC_SET_GUARD_TIME(prAdapter, DBDC_DISABLE_GUARD_TIME);
 
 	cnmDbdcOpmodeChangeAndWait(prAdapter, FALSE);
 }
@@ -3033,7 +3104,7 @@ void cnmDbdcPreConnectionEnableDecision(
 					  &g_rDbdcInfo.rDbdcGuardTimer);
 			cnmTimerStartTimer(prAdapter,
 					   &g_rDbdcInfo.rDbdcGuardTimer,
-					   DBDC_SWITCH_GUARD_TIME);
+					   DBDC_ENABLE_GUARD_TIME);
 		}
 		/* The DBDC is already ON, so renew WMM band information only */
 		DBDC_SET_WMMBAND_FW_AUTO_BY_CHNL(ucPrimaryChannel, ucWmmQueIdx);
@@ -3095,7 +3166,7 @@ void cnmDbdcRuntimeCheckDecision(IN struct ADAPTER
 	 * If AGConcurrent status changes in ENABLE_GUARD, the FSM
 	 * will go through DISABLE_GUARD state. It could make sure
 	 * the interval of successive OPChange is larger than 4 sec
-	 * (DBDC_SWITCH_GUARD_TIME).
+	 * (DBDC_ENABLE_GUARD_TIME).
 	 */
 	if (timerPendingTimer(&g_rDbdcInfo.rDbdcGuardTimer) &&
 		g_rDbdcInfo.eDdbcGuardTimerType ==
@@ -3110,7 +3181,7 @@ void cnmDbdcRuntimeCheckDecision(IN struct ADAPTER
 					  &g_rDbdcInfo.rDbdcGuardTimer);
 			cnmTimerStartTimer(prAdapter,
 					   &g_rDbdcInfo.rDbdcGuardTimer,
-					   DBDC_SWITCH_GUARD_TIME);
+					   DBDC_ENABLE_GUARD_TIME);
 		} else
 			log_dbg(CNM, INFO,
 				"[DBDC] DBDC guard time, state %d\n",
@@ -3217,12 +3288,16 @@ void cnmDbdcEventHwSwitchDone(IN struct ADAPTER
 	/* Check DBDC state by FSM */
 	if (g_rDbdcInfo.eDbdcFsmCurrState ==
 	    ENUM_DBDC_FSM_STATE_WAIT_HW_ENABLE) {
-		fgDbdcEn = TRUE;
+		fgDbdcEn = true;
+		g_rDbdcInfo.fgHasSentCmd = false;
 	} else if (g_rDbdcInfo.eDbdcFsmCurrState ==
 		   ENUM_DBDC_FSM_STATE_WAIT_HW_DISABLE) {
-		fgDbdcEn = FALSE;
-	} else if (g_rDbdcInfo.fgHasSentCmd == TRUE) {
-		/* The "set_dbdc" test cmd may confuse original FSM */
+		fgDbdcEn = false;
+		g_rDbdcInfo.fgHasSentCmd = false;
+	} else if (g_rDbdcInfo.fgHasSentCmd == true) {
+		/* The "set_dbdc" test cmd may confuse original FSM.
+		 * Besides, we do not config TxQuota for the testing cmd.
+		 */
 		log_dbg(CNM, INFO,
 				"[DBDC] switch event from cmd happen in state %u\n",
 				g_rDbdcInfo.eDbdcFsmCurrState);
@@ -3258,64 +3333,6 @@ enum ENUM_CNM_NETWORK_TYPE_T cnmGetBssNetworkType(
 			return ENUM_CNM_NETWORK_TYPE_P2P_GO;
 	}
 	return ENUM_CNM_NETWORK_TYPE_OTHER;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
-* @brief    Search available HW WMM index.
-*
-* @param (none)
-*
-* @return
-*/
-/*----------------------------------------------------------------------------*/
-u_int8_t cnmWmmIndexDecision(
-	IN struct ADAPTER *prAdapter,
-	IN struct BSS_INFO *prBssInfo)
-{
-#if (CFG_HW_WMM_BY_BSS == 1)
-
-	u_int8_t ucWmmIndex;
-	for (ucWmmIndex = 0; ucWmmIndex < HW_WMM_NUM; ucWmmIndex++) {
-		if (prBssInfo && prBssInfo->fgIsInUse &&
-			prBssInfo->fgIsWmmInited == FALSE) {
-			if (!(prAdapter->ucHwWmmEnBit & BIT(ucWmmIndex))) {
-				prAdapter->ucHwWmmEnBit |= BIT(ucWmmIndex);
-				prBssInfo->fgIsWmmInited = TRUE;
-				break;
-			}
-		}
-	}
-	return (ucWmmIndex < HW_WMM_NUM) ? ucWmmIndex : MAX_HW_WMM_INDEX;
-
-#else
-	/* Follow the same rule with cnmUpdateDbdcSetting */
-	if (prBssInfo->eBand == BAND_5G)
-		return DBDC_5G_WMM_INDEX;
-	else
-		return (prAdapter->rWifiVar.eDbdcMode ==
-			 ENUM_DBDC_MODE_DISABLED) ?
-			DBDC_5G_WMM_INDEX : DBDC_2G_WMM_INDEX;
-#endif
-}
-/*----------------------------------------------------------------------------*/
-/*!
-* @brief    Free BSS HW WMM index.
-*
-* @param (none)
-*
-* @return None
-*/
-/*----------------------------------------------------------------------------*/
-void cnmFreeWmmIndex(
-	IN struct ADAPTER *prAdapter,
-	IN struct BSS_INFO *prBssInfo)
-{
-#if (CFG_HW_WMM_BY_BSS == 1)
-	prAdapter->ucHwWmmEnBit &= (~BIT(prBssInfo->ucWmmQueSet));
-#endif
-	prBssInfo->ucWmmQueSet = DEFAULT_HW_WMM_INDEX;
-	prBssInfo->fgIsWmmInited = FALSE;
 }
 
 u_int8_t cnmSapIsConcurrent(IN struct ADAPTER *prAdapter)
@@ -3467,125 +3484,332 @@ error:
 	return -1;
 }
 
-static struct BSS_OPTRX_BW_BY_SOURCE_T*
-cnmGetOpTRxNssSourcePriority(
-	struct BSS_OPTRX_BW_CONTROL_T *prBssOpCtrl
+/*----------------------------------------------------------------------------*/
+/*!
+* @brief    Search available HW WMM index.
+*
+* @param (none)
+*
+* @return
+*/
+/*----------------------------------------------------------------------------*/
+u_int8_t cnmWmmIndexDecision(
+	IN struct ADAPTER *prAdapter,
+	IN struct BSS_INFO *prBssInfo)
+{
+#if (CFG_HW_WMM_BY_BSS == 1)
+	u_int8_t ucWmmIndex;
+
+	for (ucWmmIndex = 0; ucWmmIndex < HW_WMM_NUM; ucWmmIndex++) {
+		if (prBssInfo && prBssInfo->fgIsInUse &&
+			prBssInfo->fgIsWmmInited == FALSE) {
+			if (!(prAdapter->ucHwWmmEnBit & BIT(ucWmmIndex))) {
+				prAdapter->ucHwWmmEnBit |= BIT(ucWmmIndex);
+				prBssInfo->fgIsWmmInited = TRUE;
+				break;
+			}
+		}
+	}
+	return (ucWmmIndex < HW_WMM_NUM) ? ucWmmIndex : MAX_HW_WMM_INDEX;
+
+#else
+	/* Follow the same rule with cnmUpdateDbdcSetting */
+	if (prBssInfo->eBand == BAND_5G)
+		return DBDC_5G_WMM_INDEX;
+	else
+		return (prAdapter->rWifiVar.eDbdcMode ==
+			 ENUM_DBDC_MODE_DISABLED) ?
+			DBDC_5G_WMM_INDEX : DBDC_2G_WMM_INDEX;
+#endif
+}
+/*----------------------------------------------------------------------------*/
+/*!
+* @brief    Free BSS HW WMM index.
+*
+* @param (none)
+*
+* @return None
+*/
+/*----------------------------------------------------------------------------*/
+void cnmFreeWmmIndex(
+	IN struct ADAPTER *prAdapter,
+	IN struct BSS_INFO *prBssInfo)
+{
+#if (CFG_HW_WMM_BY_BSS == 1)
+	prAdapter->ucHwWmmEnBit &= (~BIT(prBssInfo->ucWmmQueSet));
+#endif
+	prBssInfo->ucWmmQueSet = DEFAULT_HW_WMM_INDEX;
+	prBssInfo->fgIsWmmInited = FALSE;
+}
+
+enum ENUM_CNM_OPMODE_REQ_T
+cnmOpModeMapEvtReason(
+	enum ENUM_EVENT_OPMODE_CHANGE_REASON eEvt
 )
 {
-	struct BSS_OPTRX_BW_BY_SOURCE_T *prBssOpSourceCtrl;
+	enum ENUM_CNM_OPMODE_REQ_T eReqIdx;
 
-	/* Priority: DBDC > DBDC Scan > CoAnt */
-	if (prBssOpCtrl->
-		rOpTRxBw[EVENT_OPMODE_CHANGE_REASON_DBDC].fgEnable)
-		prBssOpSourceCtrl =
-			&prBssOpCtrl->
-			rOpTRxBw[EVENT_OPMODE_CHANGE_REASON_DBDC];
-	else if (prBssOpCtrl->
-		rOpTRxBw[EVENT_OPMODE_CHANGE_REASON_DBDC_SCAN].fgEnable)
-		prBssOpSourceCtrl =
-			&prBssOpCtrl->
-			rOpTRxBw[EVENT_OPMODE_CHANGE_REASON_DBDC_SCAN];
-	else if (prBssOpCtrl->
-		rOpTRxBw[EVENT_OPMODE_CHANGE_REASON_COANT].fgEnable)
-		prBssOpSourceCtrl =
-			&prBssOpCtrl->
-			rOpTRxBw[EVENT_OPMODE_CHANGE_REASON_COANT];
-	else
-		prBssOpSourceCtrl = NULL;
+	switch (eEvt) {
+	case EVENT_OPMODE_CHANGE_REASON_DBDC:
+		eReqIdx = CNM_OPMODE_REQ_DBDC;
+		break;
+	case EVENT_OPMODE_CHANGE_REASON_COANT:
+		eReqIdx = CNM_OPMODE_REQ_COANT;
+		break;
+	case EVENT_OPMODE_CHANGE_REASON_DBDC_SCAN:
+		eReqIdx = CNM_OPMODE_REQ_DBDC_SCAN;
+		break;
+	case EVENT_OPMODE_CHANGE_REASON_SMARTGEAR:
+		eReqIdx = CNM_OPMODE_REQ_SMARTGEAR;
+		break;
+	default:
+		eReqIdx = CNM_OPMODE_REQ_NUM;
+		break;
+	}
+	return eReqIdx;
+}
 
-	return prBssOpSourceCtrl;
+void cnmOpModeDump(
+	IN struct ADAPTER *prAdapter,
+	IN uint8_t ucBssIndex
+)
+{
+	struct BSS_INFO *prBssInfo;
+
+	prBssInfo = prAdapter->aprBssInfo[ucBssIndex];
+	DBGLOG(CNM, INFO,
+		"BSS[%d] DumpOpMode Tx(Cur:%x,Run:%x), Rx(Cur:%x,Run:%x)\n",
+		ucBssIndex,
+		prBssInfo->ucOpTxNss,
+		prBssInfo->fgIsOpChangeTxNss ?
+			prBssInfo->ucOpChangeTxNss : 0xFF,
+		prBssInfo->ucOpRxNss,
+		prBssInfo->fgIsOpChangeRxNss ?
+			prBssInfo->ucOpChangeRxNss : 0xFF);
+}
+
+void cnmOpModeCallbackDispatcher(
+	IN struct ADAPTER *prAdapter,
+	IN uint8_t ucBssIndex,
+	IN bool fgSuccess)
+{
+	struct CNM_OPMODE_BSS_CONTROL_T *prBssOpCtrl;
+	struct CNM_OPMODE_BSS_REQ *prReq;
+	enum ENUM_CNM_OPMODE_REQ_T eReqIdx;
+
+	if (prAdapter == NULL || ucBssIndex >= BSS_DEFAULT_NUM) {
+		DBGLOG(CNM, WARN,
+			"CbOpMode, invalid,B[%d]\n",
+			ucBssIndex);
+	}
+
+	/* Step 1. Run callback function */
+	prBssOpCtrl = &g_arBssOpControl[ucBssIndex];
+	if (!prBssOpCtrl->rRunning.fgIsRunning) {
+		/* GO/AP run cb immediately. */
+		DBGLOG(CNM, INFO,
+			"CbOpMode, BSS[%d] none running\n",
+			ucBssIndex);
+	} else {
+		switch (prBssOpCtrl->rRunning.eReqIdx) {
+		case CNM_OPMODE_REQ_DBDC:
+			cnmDbdcOpModeChangeDoneCallback(
+				prAdapter, ucBssIndex, fgSuccess);
+		default:
+			DBGLOG(CNM, INFO,
+				"CbOpMode,%s,Run,%s,T:%u,R:%u,%s\n",
+				apucCnmOpModeReq[prBssOpCtrl->rRunning.eReqIdx],
+				apucCnmOpModeReq[prBssOpCtrl->rRunning.eRunReq],
+				prBssOpCtrl->rRunning.ucOpTxNss,
+				prBssOpCtrl->rRunning.ucOpRxNss,
+				fgSuccess ? "OK" : "FAIL");
+			break;
+		}
+	}
+	prBssOpCtrl->rRunning.fgIsRunning = false;
+
+	/* Step 2. Check pending request */
+	for (eReqIdx = CNM_OPMODE_REQ_DBDC;
+		eReqIdx < CNM_OPMODE_REQ_NUM;
+		eReqIdx++) {
+		prReq = &(prBssOpCtrl->arReqPool[eReqIdx]);
+		if (prReq->fgNewRequest)
+			break;
+	}
+
+	if (eReqIdx != CNM_OPMODE_REQ_NUM) {
+		DBGLOG(CNM, INFO,
+			"CbOpMode,ReTrigger:%s,En,%u,Tx:%u,Rx:%u\n",
+			apucCnmOpModeReq[eReqIdx],
+			prReq->fgEnable,
+			prReq->ucOpTxNss,
+			prReq->ucOpRxNss);
+		cnmOpModeSetTRxNss(
+			prAdapter,
+			ucBssIndex,
+			eReqIdx,
+			prReq->fgEnable,
+			prReq->ucOpRxNss,
+			prReq->ucOpTxNss);
+	}
+}
+
+static enum ENUM_CNM_OPMODE_REQ_T
+cnmOpModeReqDispatcher(
+	struct CNM_OPMODE_BSS_CONTROL_T *prBssOpCtrl
+)
+{
+	struct CNM_OPMODE_BSS_REQ *prReq;
+	enum ENUM_CNM_OPMODE_REQ_T eReqIdx;
+	enum ENUM_CNM_OPMODE_REQ_T eReqFinal = CNM_OPMODE_REQ_MAX_CAP;
+
+	if (prBssOpCtrl->rRunning.fgIsRunning) {
+		DBGLOG(CNM, INFO,
+			"OpMode %s (Tx:%d,Rx:%d) is running %s, defer new request\n",
+			apucCnmOpModeReq[prBssOpCtrl->rRunning.eReqIdx],
+			apucCnmOpModeReq[prBssOpCtrl->rRunning.eRunReq],
+			prBssOpCtrl->rRunning.ucOpTxNss,
+			prBssOpCtrl->rRunning.ucOpRxNss);
+		return CNM_OPMODE_REQ_NUM;
+	}
+
+	for (eReqIdx = CNM_OPMODE_REQ_DBDC;
+		  eReqIdx < CNM_OPMODE_REQ_NUM; eReqIdx++) {
+		prReq = &(prBssOpCtrl->arReqPool[eReqIdx]);
+		prReq->fgNewRequest = false;
+		if (prReq->fgEnable && eReqIdx < eReqFinal)
+			eReqFinal = eReqIdx;
+	}
+
+	return eReqFinal;
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * @brief Set the operation TRx Nss. (Not support BW change yet)
+ * @brief Set the operating TRx Nss.
  *        If failed to change OpRxNss, the OpTxNss will not change.
- *        Besides, we do not clear the boundary set in previous.
- *
  *        If the BSS is not alive, just update to control table.
  *
  * @param prAdapter
  * @param ucBssIndex
- * @param eSource
+ * @param eNewReq
+ * @param fgEnable
  * @param ucOpRxNss
  * @param ucOpTxNss
- * @param pfnCallback
- *        If no TxAction frames are needed, we call this function immediately.
  *
- * @return ENUM_OP_CHANGE_STATUS_T
+ * @return ENUM_CNM_OPMODE_REQ_STATUS
  */
 /*----------------------------------------------------------------------------*/
-enum ENUM_OP_CHANGE_STATUS_T
-cnmSetOpTRxNssBw(
+enum ENUM_CNM_OPMODE_REQ_STATUS
+cnmOpModeSetTRxNss(
 	IN struct ADAPTER *prAdapter,
 	IN uint8_t ucBssIndex,
-	IN enum ENUM_EVENT_OPMODE_CHANGE_REASON eSource,
+	IN enum ENUM_CNM_OPMODE_REQ_T eNewReq,
 	IN bool fgEnable,
 	IN uint8_t ucOpRxNss,
-	IN uint8_t ucOpTxNss,
-	IN PFN_OPMODE_NOTIFY_DONE_FUNC pfnCallback
+	IN uint8_t ucOpTxNss
 )
 {
 	struct BSS_INFO *prBssInfo;
-	struct BSS_OPTRX_BW_CONTROL_T *prBssOpCtrl;
-	struct BSS_OPTRX_BW_BY_SOURCE_T *prBssOpSourceCtrl;
+	struct CNM_OPMODE_BSS_CONTROL_T *prBssOpCtrl;
+	struct CNM_OPMODE_BSS_REQ *prReq;
+	enum ENUM_OP_CHANGE_STATUS_T eRlmStatus;
+	enum ENUM_CNM_OPMODE_REQ_STATUS eStatus
+		= CNM_OPMODE_REQ_STATUS_SUCCESS;
 	uint8_t ucOpRxNssFinal, ucOpTxNssFinal, ucOpBwFinal;
+	enum ENUM_CNM_OPMODE_REQ_T eRunReq;
 
 	if (ucBssIndex > prAdapter->ucHwBssIdNum ||
-		ucBssIndex >= BSS_DEFAULT_NUM) {
-		DBGLOG(CNM, INFO, "SetOpTRx invalid param,B[%d]\n", ucBssIndex);
-		return OP_CHANGE_STATUS_INVALID;
+		ucBssIndex > BSS_DEFAULT_NUM) {
+		DBGLOG(CNM, WARN, "SetOpMode invalid BSS[%d]\n", ucBssIndex);
+		return CNM_OPMODE_REQ_STATUS_INVALID_PARAM;
 	}
 
 	prBssInfo = prAdapter->aprBssInfo[ucBssIndex];
-	prBssOpCtrl = &g_arBssOpTRxBwControl[ucBssIndex];
-	prBssOpSourceCtrl = &prBssOpCtrl->rOpTRxBw[eSource];
+	prBssOpCtrl = &g_arBssOpControl[ucBssIndex];
+	prReq = &(prBssOpCtrl->arReqPool[eNewReq]);
 
-	ucOpRxNssFinal = ucOpTxNssFinal =
+	/* Step 1 Update req pool */
+	prReq->fgEnable = fgEnable;
+	prReq->fgNewRequest = true;
+	prReq->ucOpRxNss = ucOpRxNss;
+	prReq->ucOpTxNss = ucOpTxNss;
+
+	/* Step 2 Select the highest priority req */
+	eRunReq = cnmOpModeReqDispatcher(prBssOpCtrl);
+	if (eRunReq == CNM_OPMODE_REQ_NUM) {
+		return CNM_OPMODE_REQ_STATUS_DEFER;
+	} else if (eRunReq == CNM_OPMODE_REQ_MAX_CAP) {
+		ucOpRxNssFinal = ucOpTxNssFinal =
 		wlanGetSupportNss(prAdapter, ucBssIndex);
-
-	/* Step 1 Update control table */
-	prBssOpSourceCtrl->fgEnable = fgEnable;
-	if (fgEnable) {
-		prBssOpSourceCtrl->ucOpRxNss = ucOpRxNss;
-		prBssOpSourceCtrl->ucOpTxNss = ucOpTxNss;
+	} else  {
+		prReq = &prBssOpCtrl->arReqPool[eRunReq];
+		ucOpRxNssFinal = prReq->ucOpRxNss;
+		ucOpTxNssFinal = prReq->ucOpTxNss;
 	}
 
-	/* Step 2 Select the control table with the highest priority */
-	prBssOpSourceCtrl = cnmGetOpTRxNssSourcePriority(prBssOpCtrl);
-	if (prBssOpSourceCtrl) {
-		ucOpRxNssFinal = prBssOpSourceCtrl->ucOpRxNss;
-		ucOpTxNssFinal = prBssOpSourceCtrl->ucOpTxNss;
-	}
-
-	/* Step 3. Special rule for BW change (DBDC)
-	 * We only bound OpBw @ BW80 for DBDC.
-	 * This function colud not restore to current peer's OpBw.
-	 * It's fine because below reasons(2018/08):
-	 *   1) No DBDC project supports BW160 or NW80+80.
-	 *   2) No feature wants to change OpBw.
-	 *
-	 * If you want to change OpBw in the future, please make sure
-	 * you can restore to current peer's OpBw.
-	 */
 	if (IS_BSS_ALIVE(prAdapter, prBssInfo)) {
+		/* Step 3. Special rule for BW change (DBDC)
+		 * We only bound OpBw @ BW80 for DBDC.
+		 * This function colud not restore to current peer's
+		 * OpBw. It's fine because below reasons(2018/08):
+		 *   1) No DBDC project supports BW160 or NW80+80.
+		 *   2) No feature wants to change OpBw.
+		 *
+		 * If you want to change OpBw in the future, please
+		 * make sure you can restore to current peer's OpBw.
+		 */
 		ucOpBwFinal = rlmGetBssOpBwByVhtAndHtOpInfo(prBssInfo);
-		if (prBssOpCtrl->
-				rOpTRxBw[EVENT_OPMODE_CHANGE_REASON_DBDC].
-				fgEnable) {
-			ucOpBwFinal = ucOpBwFinal > MAX_BW_80MHZ ?
-				MAX_BW_80MHZ : ucOpBwFinal;
+		if ((eRunReq ==  CNM_OPMODE_REQ_DBDC ||
+			eRunReq == CNM_OPMODE_REQ_DBDC_SCAN) &&
+			ucOpBwFinal > MAX_BW_80MHZ) {
+			DBGLOG(CNM, INFO,
+				"SetOpMode Bss[%d] %s override BW %d to MAX_BW_80MHZ\n",
+				ucBssIndex,
+				apucCnmOpModeReq[eRunReq],
+				ucOpBwFinal);
+			ucOpBwFinal = MAX_BW_80MHZ;
 		}
 
-		return rlmChangeOperationMode(prAdapter,
+		/* Step 4. Execute OpMode change function for alive BSS */
+		eRlmStatus = rlmChangeOperationMode(prAdapter,
 					ucBssIndex,
 					ucOpBwFinal,
 					ucOpRxNssFinal,
 					ucOpTxNssFinal,
-					pfnCallback);
-	} else {
-		return OP_CHANGE_STATUS_VALID_CHANGE_CALLBACK_DONE;
+					cnmOpModeCallbackDispatcher);
+
+		switch (eRlmStatus) {
+		case OP_CHANGE_STATUS_VALID_NO_CHANGE:
+		case OP_CHANGE_STATUS_VALID_CHANGE_CALLBACK_DONE:
+			eStatus = CNM_OPMODE_REQ_STATUS_SUCCESS;
+			break;
+		case OP_CHANGE_STATUS_VALID_CHANGE_CALLBACK_WAIT:
+			eStatus = CNM_OPMODE_REQ_STATUS_RUNNING;
+			prBssOpCtrl->rRunning.fgIsRunning = true;
+			prBssOpCtrl->rRunning.eReqIdx = eNewReq;
+			prBssOpCtrl->rRunning.eRunReq = eRunReq;
+			prBssOpCtrl->rRunning.ucOpTxNss = ucOpTxNssFinal;
+			prBssOpCtrl->rRunning.ucOpRxNss = ucOpRxNssFinal;
+			break;
+		case OP_CHANGE_STATUS_INVALID:
+		default:
+			eStatus = CNM_OPMODE_REQ_STATUS_INVALID_PARAM;
+			break;
+		}
 	}
+
+	/* Step 5. Dump result */
+	DBGLOG(CNM, INFO,
+		"SetOpMode Bss[%d] alive[%d] NewReq:%s %s RunReq:%s,%s\n",
+		ucBssIndex, IS_BSS_ALIVE(prAdapter, prBssInfo),
+		apucCnmOpModeReq[eNewReq],
+		fgEnable ? "En" : "Dis",
+		apucCnmOpModeReq[eRunReq],
+		apucCnmOpModeReqStatus[eStatus]);
+	cnmOpModeDump(prAdapter, ucBssIndex);
+
+	return eStatus;
 }
 
 
@@ -3603,44 +3827,62 @@ cnmSetOpTRxNssBw(
  * @return ucOpTRxNss
  */
 /*----------------------------------------------------------------------------*/
-void cnmGetOpTRxNss(
+void cnmOpModeGetTRxNss(
 	IN struct ADAPTER *prAdapter,
 	IN uint8_t ucBssIndex,
 	OUT uint8_t *pucOpRxNss,
 	OUT uint8_t *pucOpTxNss)
 {
+	struct CNM_OPMODE_BSS_CONTROL_T *prBssOpCtrl;
+	struct CNM_OPMODE_BSS_REQ *prReq;
+	enum ENUM_CNM_OPMODE_REQ_T eReqIdx;
+	enum ENUM_CNM_OPMODE_REQ_T eCurrMaxIdx = CNM_OPMODE_REQ_MAX_CAP;
 	uint8_t ucOpRxNss, ucOpTxNss;
-	struct BSS_OPTRX_BW_CONTROL_T *prBssOpCtrl;
-	struct BSS_OPTRX_BW_BY_SOURCE_T *prBssOpSourceCtrl;
 
-	if (pucOpRxNss == NULL || pucOpTxNss == NULL) {
-		DBGLOG(CNM, INFO, "GetOpTRx invalid param\n");
+	if (pucOpRxNss == NULL || pucOpTxNss == NULL ||
+		ucBssIndex >= BSS_DEFAULT_NUM) {
+		DBGLOG(CNM, WARN,
+			"GetOpMode invalid param B[%d]\n",
+			ucBssIndex);
 		return;
 	}
 
 	ucOpRxNss = ucOpTxNss = wlanGetSupportNss(prAdapter, ucBssIndex);
-	prBssOpCtrl = &g_arBssOpTRxBwControl[ucBssIndex];
-	prBssOpSourceCtrl = cnmGetOpTRxNssSourcePriority(prBssOpCtrl);
+	prBssOpCtrl = &g_arBssOpControl[ucBssIndex];
 
-	if (prBssOpSourceCtrl) {
-		/* Use the smallest one */
-		if (ucOpRxNss > prBssOpSourceCtrl->ucOpRxNss)
-			ucOpRxNss = prBssOpSourceCtrl->ucOpRxNss;
-		if (ucOpTxNss > prBssOpSourceCtrl->ucOpTxNss)
-			ucOpTxNss = prBssOpSourceCtrl->ucOpTxNss;
+	if (prBssOpCtrl->rRunning.fgIsRunning) {
+		eCurrMaxIdx = prBssOpCtrl->rRunning.eRunReq;
+		*pucOpTxNss = prBssOpCtrl->rRunning.ucOpTxNss;
+		*pucOpRxNss = prBssOpCtrl->rRunning.ucOpRxNss;
+		DBGLOG(CNM, INFO,
+			"GetOpMode,use running %s from %s\n",
+			apucCnmOpModeReq[eCurrMaxIdx],
+			apucCnmOpModeReq[prBssOpCtrl->rRunning.eReqIdx]);
+	} else {
+		for (eReqIdx = CNM_OPMODE_REQ_DBDC;
+			eReqIdx < CNM_OPMODE_REQ_NUM;
+			eReqIdx++) {
+			prReq = &(prBssOpCtrl->arReqPool[eReqIdx]);
+			if (prReq->fgEnable && !prReq->fgNewRequest) {
+				eCurrMaxIdx = eReqIdx;
+				*pucOpTxNss = (ucOpTxNss > prReq->ucOpTxNss) ?
+					prReq->ucOpTxNss : ucOpTxNss;
+				*pucOpRxNss = (ucOpRxNss > prReq->ucOpRxNss) ?
+					prReq->ucOpRxNss : ucOpRxNss;
+				break;
+			}
+		}
 	}
 
-	log_dbg(CNM, INFO,
-			"[CNM] BSS%u Op RxNss[%d]TxNss[%u]\n",
-			ucBssIndex, ucOpRxNss, ucOpTxNss);
-
-	*pucOpRxNss = ucOpRxNss;
-	*pucOpTxNss = ucOpTxNss;
+	DBGLOG(CNM, INFO,
+		"GetOpMode BSS[%u](%s) T:%d R:%u\n",
+		ucBssIndex, apucCnmOpModeReq[eCurrMaxIdx],
+		*pucOpTxNss, *pucOpRxNss);
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * @brief Handle OpMode Change event from FW.
+ * @brief Event handler for EVENT_ID_OPMODE_CHANGE
  *
  * @param prAdapter
  * @param prEvent
@@ -3648,40 +3890,48 @@ void cnmGetOpTRxNss(
  * @return
  */
 /*----------------------------------------------------------------------------*/
-void cnmEventOpmodeChange(
+void cnmOpmodeEventHandler(
 	IN struct ADAPTER *prAdapter,
 	IN struct WIFI_EVENT *prEvent)
 {
-	uint8_t	ucBssIndex;
-	struct EVENT_OPMODE_CHANGE *prOpChangeEvt;
+	struct EVENT_OPMODE_CHANGE *prEvtOpMode;
+	enum ENUM_CNM_OPMODE_REQ_T eReqIdx;
+	uint8_t ucBssIndex;
 
 	ASSERT(prAdapter);
-	prOpChangeEvt = (struct EVENT_OPMODE_CHANGE *)
+	prEvtOpMode = (struct EVENT_OPMODE_CHANGE *)
 		(prEvent->aucBuffer);
 
-	DBGLOG(CNM, INFO,
-		"Change OpMode, BssBitmap:0x%X, T:%u R:%u, caller:%u\n",
-		prOpChangeEvt->ucBssBitmap,
-		prOpChangeEvt->ucOpTxNss,
-		prOpChangeEvt->ucOpRxNss,
-		prOpChangeEvt->ucReason);
+	eReqIdx = cnmOpModeMapEvtReason(
+		(enum ENUM_EVENT_OPMODE_CHANGE_REASON)
+		prEvtOpMode->ucReason);
 
-	/* Update BSS TRXNss if BSS bit map is set.
-	 * NOTICE that if your feature needs TxDone from action frame,
-	 * Please add another hook by ucReason!!
-	 */
+	if (eReqIdx >= CNM_OPMODE_REQ_NUM) {
+		DBGLOG(CNM, WARN,
+			"EvtOpMode,WrongReaosn,%u,Evt,%u,igonre\n",
+			eReqIdx, prEvtOpMode->ucReason);
+		return;
+	}
+
+	DBGLOG(CNM, INFO,
+		"EvtOpMode, Req:%s BssBitmap:0x%x, En:%u T:%u R:%u\n",
+		apucCnmOpModeReq[eReqIdx],
+		prEvtOpMode->ucBssBitmap,
+		prEvtOpMode->ucEnable,
+		prEvtOpMode->ucOpTxNss,
+		prEvtOpMode->ucOpRxNss);
+
 	for (ucBssIndex = 0;
-		 ucBssIndex < (prAdapter->ucHwBssIdNum + 1);
+		 ucBssIndex < prAdapter->ucHwBssIdNum;
 		 ucBssIndex++) {
-		if (prOpChangeEvt->ucBssBitmap & BIT(ucBssIndex)) {
-			cnmSetOpTRxNssBw(
+		if (prEvtOpMode->ucBssBitmap & BIT(ucBssIndex)) {
+			cnmOpModeSetTRxNss(
 				prAdapter,
 				ucBssIndex,
-				prOpChangeEvt->ucReason,
-				prOpChangeEvt->ucEnable,
-				prOpChangeEvt->ucOpRxNss,
-				prOpChangeEvt->ucOpTxNss,
-				NULL
+				eReqIdx,
+				prEvtOpMode->ucEnable,
+				prEvtOpMode->ucOpRxNss,
+				prEvtOpMode->ucOpTxNss
 			);
 		}
 	}
