@@ -225,6 +225,11 @@ INT_32 StaRecBfUpdate(struct net_device *prNetDev,
 		      STA_REC_BF_UPD_ARGUMENT rStaRecBfUpdArg, UINT_8 aucMemRow[4], UINT_8 aucMemCol[4]
 );
 
+#if CFG_SUPPORT_TX_BF_FPGA
+INT_32 TxBfPseudoTagUpdate(struct net_device *prNetDev, UINT_8 ucLm, UINT_8 ucNr,
+				UINT_8 ucNc, UINT_8 ucBw, UINT_8 ucCodeBook, UINT_8 ucGroup);
+#endif
+
 #endif
 #endif /*CFG_SUPPORT_QA_TOOL */
 #endif /* _GL_HOOK_API_H */
