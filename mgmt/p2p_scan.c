@@ -329,7 +329,11 @@ struct BSS_DESC *scanP2pSearchDesc(IN struct ADAPTER *prAdapter,
 			if (!prBssDesc->fgIsP2PPresent) {
 				DBGLOG(P2P, ERROR,
 					"SSID, BSSID, BSSTYPE match, but no P2P IE present.\n");
+#if CFG_P2P_CONNECT_ALL_BSS
+				/* Force return */
+#else
 				continue;
+#endif
 			}
 
 			/* Final decision. */
