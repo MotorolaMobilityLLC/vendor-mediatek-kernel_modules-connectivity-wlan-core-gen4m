@@ -526,7 +526,9 @@ struct WIFI_CFG_PARAM_STRUCT {
 	uint8_t ucNeedCheckLDO;
 	uint8_t ucDefaultTestMode;
 	uint8_t ucSupportCoAnt;
-	uint8_t aucReserved0[12];
+	uint8_t aucReserved0[4];
+	uint8_t ucAFCCapId;
+	uint8_t aucReserved2[7];
 	/* NVRAM offset[256] ~ offset[255] */
 	/* uint8_t aucReserved0[256 - 241]; */
 
