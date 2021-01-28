@@ -223,7 +223,7 @@ void dumpQueue(P_ADAPTER_T prAdapter)
 	prQM = &prAdapter->rQM;
 	prGlueInfo = prAdapter->prGlueInfo;
 #if QM_ADAPTIVE_TC_RESOURCE_CTRL
-	for (i = TC0_INDEX; i <= TC5_INDEX; i++) {
+	for (i = TC0_INDEX; i < TC_NUM; i++) {
 		DBGLOG(SW4, INFO, "TC %u\n", i);
 		DBGLOG(SW4, INFO, "Max %u Free %u\n",
 		       prTxCtrl->rTc.au4MaxNumOfBuffer[i], prTxCtrl->rTc.au4FreeBufferCount[i]);

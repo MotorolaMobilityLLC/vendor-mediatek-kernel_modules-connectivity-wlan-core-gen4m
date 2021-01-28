@@ -1124,6 +1124,8 @@ typedef struct _EVENT_CONNECTION_STATUS {
 } EVENT_CONNECTION_STATUS, *P_EVENT_CONNECTION_STATUS;
 
 /* EVENT_NIC_CAPABILITY */
+#define FEATURE_FLAG0_NIC_CAPABILITY_V2 BIT(0)
+
 typedef struct _EVENT_NIC_CAPABILITY_T {
 	UINT_16 u2ProductID;
 	UINT_16 u2FwVersion;
@@ -1195,15 +1197,56 @@ typedef struct _NIC_EFUSE_ADDRESS_T {
 	UINT_32 u4EfuseEndAddress;   /* Efuse End Address */
 } NIC_EFUSE_ADDRESS_T, *P_NIC_EFUSE_ADDRESS_T;
 
+/*
+ * NIC_TX_RESOURCE_REPORT_EVENT related definition
+ */
+
+#define NIC_TX_RESOURCE_REPORT_VERSION_PREFIX (0x80000000)
+#define NIC_TX_RESOURCE_REPORT_VERSION_1 (NIC_TX_RESOURCE_REPORT_VERSION_PREFIX | 0x1)
+
+struct nicTxRsrcEvtHdlr {
+	UINT_32 u4Version;
+
+	WLAN_STATUS(*nicEventTxResource)(IN P_ADAPTER_T prAdapter, IN PUINT_8 pucEventBuf);
+	VOID (*nicTxResourceInit)(IN P_ADAPTER_T prAdapter);
+};
+
 typedef struct _NIC_TX_RESOURCE_T {
 	UINT_32 u4CmdTotalResource;  /* the total usable resource for MCU port */
 	UINT_32 u4CmdResourceUnit;   /* the unit of a MCU resource */
 	UINT_32 u4DataTotalResource; /* the total usable resource for LMAC port */
 	UINT_32 u4DataResourceUnit;  /* the unit of a LMAC resource */
-
-	/* Packet Processor 0x8206C000[15:8] * 4. Extra PSE resource is needed for HW.*/
-	UINT_8  ucPpTxAddCnt;
 } NIC_TX_RESOURCE_T, *P_NIC_TX_RESOURCE_T;
+
+struct tx_resource_report_v1 {
+	/*
+	 * u4Version: NIC_TX_RESOURCE_REPORT_VERSION_1
+	 */
+	UINT_32 u4Version;
+
+	/*
+	 * the followings are content for u4Verion = 0x80000001
+	 */
+	UINT_32 u4HifDataPsePageQuota;
+	UINT_32 u4HifCmdPsePageQuota;
+	UINT_32 u4HifDataPlePageQuota;
+	UINT_32 u4HifCmdPlePageQuota;
+
+	/*
+	 * u4PlePsePageSize: the unit of a page in PLE and PSE
+	 * [31:16] PLE page size
+	 * [15:0] PLE page size
+	 */
+	UINT_32 u4PlePsePageSize;
+
+	/*
+	 * ucPpTxAddCnt: the extra pse resource needed by HW
+	 */
+	UINT_8 ucPpTxAddCnt;
+
+	UINT_8 ucReserved[3];
+};
+
 
 /* modified version of WLAN_BEACON_FRAME_BODY_T for simplier buffering */
 typedef struct _WLAN_BEACON_FRAME_BODY_T_LOCAL {
@@ -2980,6 +3023,9 @@ VOID nicEventAssertDump(IN P_ADAPTER_T prAdapter, IN P_WIFI_EVENT_T prEvent);
 VOID nicEventHifCtrl(IN P_ADAPTER_T prAdapter, IN P_WIFI_EVENT_T prEvent);
 VOID nicEventRddSendPulse(IN P_ADAPTER_T prAdapter, IN P_WIFI_EVENT_T prEvent);
 VOID nicEventUpdateCoexPhyrate(IN P_ADAPTER_T prAdapter, IN P_WIFI_EVENT_T prEvent);
+WLAN_STATUS nicEventQueryTxResource_v1(IN P_ADAPTER_T prAdapter, IN PUINT_8 pucEventBuf);
+WLAN_STATUS nicEventQueryTxResourceEntry(IN P_ADAPTER_T prAdapter, IN PUINT_8 pucEventBuf);
+WLAN_STATUS nicEventQueryTxResource(IN P_ADAPTER_T prAdapter, IN PUINT_8 pucEventBuf);
 
 /*******************************************************************************
 *                              F U N C T I O N S

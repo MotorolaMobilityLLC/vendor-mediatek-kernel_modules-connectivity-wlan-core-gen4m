@@ -102,7 +102,6 @@ static const TX_RESOURCE_CONTROL_T arTcResourceControl[TC_NUM] = {
 	{PORT_INDEX_LMAC, MAC_TXQ_AC2_INDEX, HIF_TX_AC2_INDEX},
 	{PORT_INDEX_LMAC, MAC_TXQ_AC3_INDEX, HIF_TX_AC3_INDEX},
 	{PORT_INDEX_MCU, MCU_Q1_INDEX, HIF_TX_CPU_INDEX},
-	{PORT_INDEX_LMAC, MAC_TXQ_AC1_INDEX, HIF_TX_AC1_INDEX},
 
 	/* Second HW queue */
 #if NIC_TX_ENABLE_SECOND_HW_QUEUE
@@ -179,8 +178,6 @@ VOID nicTxInitialize(IN P_ADAPTER_T prAdapter)
 	ASSERT(prAdapter);
 	prTxCtrl = &prAdapter->rTxCtrl;
 
-	prTxCtrl->u4PageSize = halGetHifTxPageSize(prAdapter);
-	prTxCtrl->u4MaxPageCntPerFrame = nicTxGetMaxPageCntPerFrame(prAdapter);
 	/* 4 <1> Initialization of Traffic Class Queue Parameters */
 	nicTxResetResource(prAdapter);
 
@@ -619,7 +616,6 @@ WLAN_STATUS nicTxResetResource(IN P_ADAPTER_T prAdapter)
 {
 	P_TX_CTRL_T prTxCtrl;
 	UINT_8 ucIdx;
-	UINT_32 u4MaxPageCntPerFrame = prAdapter->rTxCtrl.u4MaxPageCntPerFrame;
 
 	KAL_SPIN_LOCK_DECLARATION();
 
@@ -627,6 +623,11 @@ WLAN_STATUS nicTxResetResource(IN P_ADAPTER_T prAdapter)
 
 	ASSERT(prAdapter);
 	prTxCtrl = &prAdapter->rTxCtrl;
+
+	/* Following two lines MUST be in order. */
+	prTxCtrl->u4PageSize = halGetHifTxPageSize(prAdapter);
+	prTxCtrl->u4MaxPageCntPerFrame = nicTxGetMaxPageCntPerFrame(prAdapter);
+
 
 	KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_RESOURCE);
 
@@ -637,17 +638,26 @@ WLAN_STATUS nicTxResetResource(IN P_ADAPTER_T prAdapter)
 	prTxCtrl->rTc.ucNextTcIdx = TC0_INDEX;
 	prTxCtrl->rTc.u4AvaliablePageCount = 0;
 
-	DBGLOG(TX, TRACE, "Default TCQ free resource [%u %u %u %u %u %u]\n",
+	DBGLOG(TX, TRACE, "Default TCQ free resource [%u %u %u %u %u]\n",
 	       prAdapter->rWifiVar.au4TcPageCount[TC0_INDEX],
 	       prAdapter->rWifiVar.au4TcPageCount[TC1_INDEX],
 	       prAdapter->rWifiVar.au4TcPageCount[TC2_INDEX],
 	       prAdapter->rWifiVar.au4TcPageCount[TC3_INDEX],
-	       prAdapter->rWifiVar.au4TcPageCount[TC4_INDEX], prAdapter->rWifiVar.au4TcPageCount[TC5_INDEX]);
+	       prAdapter->rWifiVar.au4TcPageCount[TC4_INDEX]);
 
+	/* Reset counter: PSE */
 	prAdapter->rTxCtrl.u4TotalPageNum = 0;
 	prAdapter->rTxCtrl.u4TotalTxRsvPageNum = 0;
+	/* Reset counter: PLE */
+	prAdapter->rTxCtrl.u4TotalPageNumPle = 0;
 
+	/* Assign resource for each TC according to prAdapter->rWifiVar */
 	for (ucIdx = TC0_INDEX; ucIdx < TC_NUM; ucIdx++) {
+
+		/*
+		 * PSE
+		 */
+
 		/* Page Count */
 		prTxCtrl->rTc.au4MaxNumOfPage[ucIdx] = prAdapter->rWifiVar.au4TcPageCount[ucIdx];
 		prTxCtrl->rTc.au4FreePageCount[ucIdx] = prAdapter->rWifiVar.au4TcPageCount[ucIdx];
@@ -659,10 +669,10 @@ WLAN_STATUS nicTxResetResource(IN P_ADAPTER_T prAdapter)
 
 		/* Buffer count */
 		prTxCtrl->rTc.au4MaxNumOfBuffer[ucIdx] =
-			(prTxCtrl->rTc.au4MaxNumOfPage[ucIdx] / u4MaxPageCntPerFrame);
+			(prTxCtrl->rTc.au4MaxNumOfPage[ucIdx] / (prTxCtrl->u4MaxPageCntPerFrame));
 
 		prTxCtrl->rTc.au4FreeBufferCount[ucIdx] =
-			(prTxCtrl->rTc.au4FreePageCount[ucIdx] / u4MaxPageCntPerFrame);
+			(prTxCtrl->rTc.au4FreePageCount[ucIdx] / (prTxCtrl->u4MaxPageCntPerFrame));
 
 
 		DBGLOG(TX, TRACE, "Set TC%u Default[%u] Buffer Max[%u] Free[%u]\n",
@@ -671,13 +681,44 @@ WLAN_STATUS nicTxResetResource(IN P_ADAPTER_T prAdapter)
 		       prTxCtrl->rTc.au4MaxNumOfBuffer[ucIdx], prTxCtrl->rTc.au4FreeBufferCount[ucIdx]);
 
 		prAdapter->rTxCtrl.u4TotalPageNum += prTxCtrl->rTc.au4MaxNumOfPage[ucIdx];
+
+
+		/*
+		 * PLE
+		 */
+		if (prAdapter->rTxCtrl.rTc.fgNeedPleCtrl) {
+			/* Page Count */
+			prTxCtrl->rTc.au4MaxNumOfPage_PLE[ucIdx] = prAdapter->rWifiVar.au4TcPageCountPle[ucIdx];
+			prTxCtrl->rTc.au4FreePageCount_PLE[ucIdx] = prAdapter->rWifiVar.au4TcPageCountPle[ucIdx];
+
+			DBGLOG(TX, TRACE, "[PLE]Set TC%u Default[%u] Max[%u] Free[%u]\n",
+				   ucIdx,
+				   prAdapter->rWifiVar.au4TcPageCountPle[ucIdx],
+				   prTxCtrl->rTc.au4MaxNumOfPage_PLE[ucIdx], prTxCtrl->rTc.au4FreePageCount_PLE[ucIdx]);
+
+			/* Buffer count */
+			prTxCtrl->rTc.au4MaxNumOfBuffer_PLE[ucIdx] =
+				(prTxCtrl->rTc.au4MaxNumOfPage_PLE[ucIdx] / NIX_TX_PLE_PAGE_CNT_PER_FRAME);
+
+			prTxCtrl->rTc.au4FreeBufferCount_PLE[ucIdx] =
+				(prTxCtrl->rTc.au4FreePageCount_PLE[ucIdx] / NIX_TX_PLE_PAGE_CNT_PER_FRAME);
+
+
+			DBGLOG(TX, TRACE, "[PLE]Set TC%u Default[%u] Buffer Max[%u] Free[%u]\n",
+				   ucIdx,
+				   prAdapter->rWifiVar.au4TcPageCountPle[ucIdx],
+				   prTxCtrl->rTc.au4MaxNumOfBuffer_PLE[ucIdx],
+				   prTxCtrl->rTc.au4FreeBufferCount_PLE[ucIdx]);
+
+			prAdapter->rTxCtrl.u4TotalPageNumPle += prTxCtrl->rTc.au4MaxNumOfPage_PLE[ucIdx];
+		}
 	}
 
 	KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_RESOURCE);
 
-	if (!prAdapter->fgIsNicTxReousrceValid)
+	if (!prAdapter->fgIsNicTxReousrceValid)/* use default value */
 		prAdapter->nicTxReousrce.ucPpTxAddCnt = NIC_TX_LEN_ADDING_LENGTH;
-	DBGLOG(TX, TRACE, "Reset TCQ free resource to Page:Buf [%u:%u %u:%u %u:%u %u:%u %u:%u %u:%u ]\n",
+	DBGLOG(TX, TRACE, "Reset TCQ free resource to Page <<PSE>>:Buf [%u:%u %u:%u %u:%u %u:%u %u:%u]\n",
 	       prTxCtrl->rTc.au4FreePageCount[TC0_INDEX],
 	       prTxCtrl->rTc.au4FreeBufferCount[TC0_INDEX],
 	       prTxCtrl->rTc.au4FreePageCount[TC1_INDEX],
@@ -687,10 +728,23 @@ WLAN_STATUS nicTxResetResource(IN P_ADAPTER_T prAdapter)
 	       prTxCtrl->rTc.au4FreePageCount[TC3_INDEX],
 	       prTxCtrl->rTc.au4FreeBufferCount[TC3_INDEX],
 	       prTxCtrl->rTc.au4FreePageCount[TC4_INDEX],
-	       prTxCtrl->rTc.au4FreeBufferCount[TC4_INDEX],
-	       prTxCtrl->rTc.au4FreePageCount[TC5_INDEX], prTxCtrl->rTc.au4FreeBufferCount[TC5_INDEX]);
+	       prTxCtrl->rTc.au4FreeBufferCount[TC4_INDEX]);
 
-	DBGLOG(TX, TRACE, "Reset TCQ MAX resource to Page:Buf [%u:%u %u:%u %u:%u %u:%u %u:%u %u:%u]\n",
+	if (prAdapter->rTxCtrl.rTc.fgNeedPleCtrl)
+		DBGLOG(TX, TRACE, "Reset TCQ free resource to Page <<PLE>>:Buf [%u:%u %u:%u %u:%u %u:%u %u:%u]\n",
+		       prTxCtrl->rTc.au4FreePageCount_PLE[TC0_INDEX],
+		       prTxCtrl->rTc.au4FreeBufferCount_PLE[TC0_INDEX],
+		       prTxCtrl->rTc.au4FreePageCount_PLE[TC1_INDEX],
+		       prTxCtrl->rTc.au4FreeBufferCount_PLE[TC1_INDEX],
+		       prTxCtrl->rTc.au4FreePageCount_PLE[TC2_INDEX],
+		       prTxCtrl->rTc.au4FreeBufferCount_PLE[TC2_INDEX],
+		       prTxCtrl->rTc.au4FreePageCount_PLE[TC3_INDEX],
+		       prTxCtrl->rTc.au4FreeBufferCount_PLE[TC3_INDEX],
+		       prTxCtrl->rTc.au4FreePageCount_PLE[TC4_INDEX],
+		       prTxCtrl->rTc.au4FreeBufferCount_PLE[TC4_INDEX]);
+
+
+	DBGLOG(TX, TRACE, "Reset TCQ MAX resource to Page <<PSE>>:Buf [%u:%u %u:%u %u:%u %u:%u %u:%u]\n",
 	       prTxCtrl->rTc.au4MaxNumOfPage[TC0_INDEX],
 	       prTxCtrl->rTc.au4MaxNumOfBuffer[TC0_INDEX],
 	       prTxCtrl->rTc.au4MaxNumOfPage[TC1_INDEX],
@@ -700,8 +754,20 @@ WLAN_STATUS nicTxResetResource(IN P_ADAPTER_T prAdapter)
 	       prTxCtrl->rTc.au4MaxNumOfPage[TC3_INDEX],
 	       prTxCtrl->rTc.au4MaxNumOfBuffer[TC3_INDEX],
 	       prTxCtrl->rTc.au4MaxNumOfPage[TC4_INDEX],
-	       prTxCtrl->rTc.au4MaxNumOfBuffer[TC4_INDEX],
-	       prTxCtrl->rTc.au4MaxNumOfPage[TC5_INDEX], prTxCtrl->rTc.au4MaxNumOfBuffer[TC5_INDEX]);
+	       prTxCtrl->rTc.au4MaxNumOfBuffer[TC4_INDEX]);
+
+	if (prAdapter->rTxCtrl.rTc.fgNeedPleCtrl)
+		DBGLOG(TX, TRACE, "Reset TCQ MAX resource to Page <<PLE>>:Buf [%u:%u %u:%u %u:%u %u:%u %u:%u]\n",
+		       prTxCtrl->rTc.au4MaxNumOfPage_PLE[TC0_INDEX],
+		       prTxCtrl->rTc.au4MaxNumOfBuffer_PLE[TC0_INDEX],
+		       prTxCtrl->rTc.au4MaxNumOfPage_PLE[TC1_INDEX],
+		       prTxCtrl->rTc.au4MaxNumOfBuffer_PLE[TC1_INDEX],
+		       prTxCtrl->rTc.au4MaxNumOfPage_PLE[TC2_INDEX],
+		       prTxCtrl->rTc.au4MaxNumOfBuffer_PLE[TC2_INDEX],
+		       prTxCtrl->rTc.au4MaxNumOfPage_PLE[TC3_INDEX],
+		       prTxCtrl->rTc.au4MaxNumOfBuffer_PLE[TC3_INDEX],
+		       prTxCtrl->rTc.au4MaxNumOfPage_PLE[TC4_INDEX],
+		       prTxCtrl->rTc.au4MaxNumOfBuffer_PLE[TC4_INDEX]);
 
 	return WLAN_STATUS_SUCCESS;
 }
@@ -829,7 +895,6 @@ WLAN_STATUS nicTxMsduInfoList(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduI
 		case TC1_INDEX:
 		case TC2_INDEX:
 		case TC3_INDEX:
-		case TC5_INDEX:	/* Broadcast/multicast data packets */
 			QUEUE_GET_NEXT_ENTRY((P_QUE_ENTRY_T) prMsduInfo) = NULL;
 			QUEUE_INSERT_TAIL(prDataPort0, (P_QUE_ENTRY_T) prMsduInfo);
 			status = nicTxAcquireResource(prAdapter, prMsduInfo->ucTC,
@@ -907,7 +972,6 @@ WLAN_STATUS nicTxMsduInfoListMthread(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T 
 		case TC1_INDEX:
 		case TC2_INDEX:
 		case TC3_INDEX:
-		case TC5_INDEX:	/* Broadcast/multicast data packets */
 			QUEUE_GET_NEXT_ENTRY((P_QUE_ENTRY_T) prMsduInfo) = NULL;
 			QUEUE_INSERT_TAIL(prDataPort0, (P_QUE_ENTRY_T) prMsduInfo);
 			break;
@@ -2336,7 +2400,7 @@ WLAN_STATUS nicTxAdjustTcq(IN P_ADAPTER_T prAdapter)
 		       prTcqStatus->au4FreePageCount[TC5_INDEX], prTcqStatus->au4FreeBufferCount[TC5_INDEX]);
 #endif
 		DBGLOG(TX, LOUD,
-		       "TCQ Status Max Page:Buf[%03u:%02u, %03u:%02u, %03u:%02u, %03u:%02u, %03u:%02u, %03u:%02u]\n",
+		       "TCQ Status Max Page:Buf[%03u:%02u, %03u:%02u, %03u:%02u, %03u:%02u, %03u:%02u]\n",
 		       prTcqStatus->au4MaxNumOfPage[TC0_INDEX],
 		       prTcqStatus->au4MaxNumOfBuffer[TC0_INDEX],
 		       prTcqStatus->au4MaxNumOfPage[TC1_INDEX],
@@ -2346,8 +2410,7 @@ WLAN_STATUS nicTxAdjustTcq(IN P_ADAPTER_T prAdapter)
 		       prTcqStatus->au4MaxNumOfPage[TC3_INDEX],
 		       prTcqStatus->au4MaxNumOfBuffer[TC3_INDEX],
 		       prTcqStatus->au4MaxNumOfPage[TC4_INDEX],
-		       prTcqStatus->au4MaxNumOfBuffer[TC4_INDEX],
-		       prTcqStatus->au4MaxNumOfPage[TC5_INDEX], prTcqStatus->au4MaxNumOfBuffer[TC5_INDEX]);
+		       prTcqStatus->au4MaxNumOfBuffer[TC4_INDEX]);
 
 	}
 #endif
@@ -2480,9 +2543,6 @@ WLAN_STATUS nicTxInitResetResource(IN P_ADAPTER_T prAdapter)
 
 	prTxCtrl->rTc.au4MaxNumOfPage[TC4_INDEX] = NIC_TX_INIT_PAGE_COUNT_TC4;
 	prTxCtrl->rTc.au4FreePageCount[TC4_INDEX] = NIC_TX_INIT_PAGE_COUNT_TC4;
-
-	prTxCtrl->rTc.au4MaxNumOfPage[TC5_INDEX] = NIC_TX_INIT_PAGE_COUNT_TC5;
-	prTxCtrl->rTc.au4FreePageCount[TC5_INDEX] = NIC_TX_INIT_PAGE_COUNT_TC5;
 
 	/* Buffer count */
 	for (ucIdx = TC0_INDEX; ucIdx < TC_NUM; ucIdx++) {
@@ -4040,3 +4100,156 @@ end:
 	return ret;
 }
 /* TX Direct functions : END */
+
+
+/*----------------------------------------------------------------------------*/
+/*
+* \brief Assign Tc resource to prWifiVar according to firmware's report
+*
+* \param[in] prSkb  Pointer of the sk_buff to be sent
+* \param[in] prGlueInfo  Pointer of prGlueInfo
+*
+*/
+/*----------------------------------------------------------------------------*/
+
+VOID nicTxResourceUpdate_v1(IN P_ADAPTER_T prAdapter)
+{
+	UINT_8 string[128], idx, i, tc_num;
+	UINT_32 u4share, u4remains;
+	P_WIFI_VAR_T prWifiVar = &prAdapter->rWifiVar;
+	UINT_32 *pau4TcPageCount;
+#if QM_ADAPTIVE_TC_RESOURCE_CTRL
+	P_QUE_MGT_T prQM = &prAdapter->rQM;
+#endif
+
+
+	/*
+	 * Use the settings in config file first,
+	 * else, use the settings reported from firmware.
+	 */
+
+
+	/*
+	 * 1. assign PSE/PLE free page count for each TC
+	 */
+
+	tc_num = (TC_NUM - 1); /* except TC4_INDEX */
+	for (i = 0; i < 2; i++) {
+		if (i == 0) {
+			/* PSE CMD*/
+			prWifiVar->au4TcPageCount[TC4_INDEX] =
+					prAdapter->nicTxReousrce.u4CmdTotalResource;
+
+			/* calculate PSE free page count for each TC, except TC_4 */
+			u4share = prAdapter->nicTxReousrce.u4DataTotalResource/tc_num;
+			u4remains = prAdapter->nicTxReousrce.u4DataTotalResource%tc_num;
+			pau4TcPageCount = prWifiVar->au4TcPageCount;
+		} else {
+			/* PLE CMD*/
+			prWifiVar->au4TcPageCountPle[TC4_INDEX] =
+					prAdapter->nicTxReousrce.u4CmdTotalResourcePle;
+
+			/* calculate PLE free page count for each TC, except TC_4 */
+			u4share = prAdapter->nicTxReousrce.u4DataTotalResourcePle/tc_num;
+			u4remains = prAdapter->nicTxReousrce.u4DataTotalResourcePle%tc_num;
+			pau4TcPageCount = prWifiVar->au4TcPageCountPle;
+		}
+
+		/* assign free page count for each TC, except TC_4 */
+		for (idx = TC0_INDEX; idx < TC_NUM; idx++) {
+			if (idx != TC4_INDEX)
+				pau4TcPageCount[idx] = u4share;
+		}
+		/* if there is remaings, give them to TC_3, which is VO */
+		pau4TcPageCount[TC3_INDEX] += u4remains;
+	}
+
+
+#if QM_ADAPTIVE_TC_RESOURCE_CTRL
+	/*
+	 * 2. assign guaranteed page count for each TC
+	 */
+
+	/* 2 1. update guaranteed page count in QM */
+	for (idx = 0; idx < TC_NUM; idx++)
+		prQM->au4GuaranteedTcResource[idx] = prWifiVar->au4TcPageCount[idx];
+#endif
+
+
+
+#if CFG_SUPPORT_CFG_FILE
+	/*
+	 * 3. Use the settings in config file first,
+	 *	  else, use the settings reported from firmware.
+	 */
+
+	/* 3 1. update for free page count */
+	for (idx = 0; idx < TC_NUM; idx++) {
+
+		/* construct prefix: Tc0Page, Tc1Page... */
+		memset(string, 0, sizeof(string)/sizeof(UINT_8));
+		snprintf(string, sizeof(string)/sizeof(UINT_8), "Tc%xPage", idx);
+
+		/* update the final value */
+		prWifiVar->au4TcPageCount[idx] =
+								(UINT_32) wlanCfgGetUint32(prAdapter,
+								string, prWifiVar->au4TcPageCount[idx]);
+	}
+
+#if QM_ADAPTIVE_TC_RESOURCE_CTRL
+	/* 3 2. update for guaranteed page count */
+	for (idx = 0; idx < TC_NUM; idx++) {
+
+		/* construct prefix: Tc0Grt, Tc1Grt... */
+		memset(string, 0, sizeof(string)/sizeof(UINT_8));
+		snprintf(string, sizeof(string)/sizeof(UINT_8), "Tc%xGrt", idx);
+
+		/* update the final value */
+		prQM->au4GuaranteedTcResource[idx] =
+									(UINT_32) wlanCfgGetUint32(prAdapter,
+									string, prQM->au4GuaranteedTcResource[idx]);
+	}
+#endif /* end of #if QM_ADAPTIVE_TC_RESOURCE_CTRL */
+#endif /* end of #if CFG_SUPPORT_CFG_FILE */
+
+
+
+
+	/*
+	 * 4. Peak throughput settings.
+	 *    Give most of the resource to TC1_INDEX.
+	 *    Reference to arNetwork2TcResource[], AC_BE uses TC1_INDEX.
+	 */
+	if (prAdapter->rWifiVar.ucTpTestMode == ENUM_TP_TEST_MODE_THROUGHPUT) {
+		UINT_32 u4psePageCnt, u4plePageCnt, u4pseRemain, u4pleRemain;
+		#define DEFAULT_PACKET_NUM 5
+
+
+		/* pse */
+		u4pseRemain = prAdapter->nicTxReousrce.u4DataTotalResource;
+		u4psePageCnt = DEFAULT_PACKET_NUM * nicTxGetMaxPageCntPerFrame(prAdapter);
+
+		/* ple */
+		u4pleRemain = prAdapter->nicTxReousrce.u4DataTotalResourcePle;
+		u4plePageCnt = DEFAULT_PACKET_NUM * NIX_TX_PLE_PAGE_CNT_PER_FRAME;
+
+		/* equally giving to each TC */
+		for (idx = 0; idx < TC_NUM; idx++) {
+			if (idx == TC4_INDEX)
+				continue;
+
+			/* pse */
+			prWifiVar->au4TcPageCount[idx] = u4psePageCnt;
+			u4pseRemain -= u4psePageCnt;
+
+			/* ple */
+			prWifiVar->au4TcPageCountPle[idx] = u4plePageCnt;
+			u4pleRemain -= u4plePageCnt;
+		}
+
+		/* remaings are to TC1_INDEX */
+		prWifiVar->au4TcPageCount[TC1_INDEX] += u4pseRemain;
+		prWifiVar->au4TcPageCountPle[TC1_INDEX] += u4pleRemain;
+	}
+}
+

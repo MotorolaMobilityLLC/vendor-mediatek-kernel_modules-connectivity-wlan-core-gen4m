@@ -202,8 +202,8 @@ typedef struct _SDIO_STAT_COUNTER_T {
 	UINT_32 u4CmdPktWriteCnt;
 
 	/* Tx done interrupt */
-	UINT_32 u4TxDoneCnt[16];
-	UINT_32 u4TxDoneIntCnt[16];
+	UINT_32 u4TxDoneCnt[HIF_TXC_IDX_NUM];
+	UINT_32 u4TxDoneIntCnt[HIF_TXC_IDX_NUM];
 	UINT_32 u4TxDoneIntTotCnt;
 	UINT_32 u4TxDonePendingPktCnt;
 
