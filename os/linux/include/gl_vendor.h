@@ -94,6 +94,7 @@
 #define NL80211_VENDOR_SUBCMD_GET_PREFER_FREQ_LIST 103
 #define NL80211_VENDOR_SUBCMD_ACS 54
 #define NL80211_VENDOR_SUBCMD_GET_FEATURES 55
+#define QCA_NL80211_VENDOR_SUBCMD_ROAM 64
 #define QCA_NL80211_VENDOR_SUBCMD_SETBAND 105
 
 #define WIFI_VENDOR_ATTR_FEATURE_FLAGS 7
@@ -267,6 +268,32 @@ enum QCA_SET_BAND {
 	QCA_SETBAND_AUTO,
 	QCA_SETBAND_5G,
 	QCA_SETBAND_2G,
+};
+
+enum QCA_ATTR_ROAM_SUBCMD {
+	QCA_ATTR_ROAM_SUBCMD_INVALID = 0,
+	QCA_ATTR_ROAM_SUBCMD_SET_BLACKLIST_BSSID = 6,
+
+	/* keep last */
+	QCA_ATTR_ROAM_SUBCMD_AFTER_LAST,
+	QCA_ATTR_ROAM_SUBCMD_MAX =
+	QCA_ATTR_ROAM_SUBCMD_AFTER_LAST - 1,
+};
+
+enum QCA_ATTR_ROAMING_PARAMS {
+	QCA_ATTR_ROAMING_PARAM_INVALID = 0,
+
+	QCA_ATTR_ROAMING_SUBCMD = 1,
+
+	/* Attribute for set_blacklist bssid params */
+	QCA_ATTR_ROAMING_PARAM_SET_BSSID_PARAMS = 18,
+	QCA_ATTR_ROAMING_PARAM_SET_BSSID_PARAMS_NUM_BSSID = 19,
+	QCA_ATTR_ROAMING_PARAM_SET_BSSID_PARAMS_BSSID = 20,
+
+	/* keep last */
+	QCA_ATTR_ROAMING_PARAM_AFTER_LAST,
+	QCA_ATTR_ROAMING_PARAM_MAX =
+	QCA_ATTR_ROAMING_PARAM_AFTER_LAST - 1,
 };
 
 enum WIFI_VENDOR_ATTR_PREFERRED_FREQ_LIST {
@@ -687,6 +714,12 @@ int mtk_cfg80211_vendor_set_band(struct wiphy *wiphy,
 int mtk_cfg80211_vendor_set_scan_mac_oui(struct wiphy *wiphy,
 				 struct wireless_dev *wdev,
 				 const void *data, int data_len);
+
+#if CFG_SUPPORT_MBO
+int mtk_cfg80211_vendor_set_roaming_param(
+	struct wiphy *wiphy, struct wireless_dev *wdev,
+	const void *data, int data_len);
+#endif
 
 int mtk_cfg80211_vendor_set_roaming_policy(
 	struct wiphy *wiphy, struct wireless_dev *wdev,

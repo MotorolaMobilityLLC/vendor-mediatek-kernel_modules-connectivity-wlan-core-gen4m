@@ -499,6 +499,28 @@ static u_int8_t scanSanityCheckBssDesc(struct ADAPTER *prAdapter,
 	struct BSS_DESC *prBssDesc, enum ENUM_BAND eBand, uint8_t ucChannel,
 		u_int8_t fgIsFixedChannel, uint8_t ucBssIndex)
 {
+#if CFG_SUPPORT_MBO
+	struct PARAM_BSS_DISALLOWED_LIST *disallow;
+	uint32_t i = 0;
+
+	disallow = &prAdapter->rWifiVar.rBssDisallowedList;
+	for (i = 0; i < disallow->u4NumBssDisallowed; ++i) {
+		uint32_t index = i * MAC_ADDR_LEN;
+
+		if (EQUAL_MAC_ADDR(prBssDesc->aucBSSID, &disallow[index])) {
+			log_dbg(SCN, WARN, MACSTR" disallowed list\n",
+				MAC2STR(prBssDesc->aucBSSID));
+			return FALSE;
+		}
+	}
+
+	if (prBssDesc->fgIsDisallowed) {
+		log_dbg(SCN, WARN, MACSTR" disallowed\n",
+			MAC2STR(prBssDesc->aucBSSID));
+		return FALSE;
+	}
+#endif
+
 	if (prBssDesc->prBlack &&
 		prBssDesc->prBlack->fgIsInFWKBlacklist == TRUE) {
 		log_dbg(SCN, WARN, MACSTR" in FW blacklist\n",

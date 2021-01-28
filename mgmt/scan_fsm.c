@@ -877,6 +877,9 @@ void scnEventScanDone(IN struct ADAPTER *prAdapter,
 
 	if (prScanInfo->eCurrentState == SCAN_STATE_SCANNING
 		&& prScanDone->ucSeqNum == prScanParam->ucSeqNum) {
+		scanRemoveBssDescsByPolicy(prAdapter,
+		       SCN_RM_POLICY_EXCLUDE_CONNECTED | SCN_RM_POLICY_TIMEOUT);
+
 		/* generate scan-done event for caller */
 		scnFsmGenerateScanDoneMsg(prAdapter, prScanParam->ucSeqNum,
 			prScanParam->ucBssIndex, SCAN_STATUS_DONE);
