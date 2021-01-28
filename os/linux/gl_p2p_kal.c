@@ -1307,8 +1307,12 @@ VOID kalP2PRddDetectUpdate(IN P_GLUE_INFO_T prGlueInfo, IN UINT_8 ucRoleIndex)
 		if (prGlueInfo->prP2PInfo[ucRoleIndex]->chandef->chan)
 			cnmMemFree(prGlueInfo->prAdapter, prGlueInfo->prP2PInfo[ucRoleIndex]->chandef->chan);
 
+		prGlueInfo->prP2PInfo[ucRoleIndex]->chandef->chan = NULL;
+
 		if (prGlueInfo->prP2PInfo[ucRoleIndex]->chandef)
 			cnmMemFree(prGlueInfo->prAdapter, prGlueInfo->prP2PInfo[ucRoleIndex]->chandef);
+
+		prGlueInfo->prP2PInfo[ucRoleIndex]->chandef = NULL;
 
 	} while (FALSE);
 
@@ -1331,13 +1335,6 @@ VOID kalP2PCacFinishedUpdate(IN P_GLUE_INFO_T prGlueInfo, IN UINT_8 ucRoleIndex)
 		cfg80211_cac_event(prGlueInfo->prP2PInfo[ucRoleIndex]->prDevHandler,
 				prGlueInfo->prP2PInfo[ucRoleIndex]->chandef, NL80211_RADAR_CAC_FINISHED, GFP_KERNEL);
 		DBGLOG(INIT, INFO, "kalP2PCacFinishedUpdate: Update to OS Done\n");
-
-		if (prGlueInfo->prP2PInfo[ucRoleIndex]->chandef->chan)
-			cnmMemFree(prGlueInfo->prAdapter, prGlueInfo->prP2PInfo[ucRoleIndex]->chandef->chan);
-
-		if (prGlueInfo->prP2PInfo[ucRoleIndex]->chandef)
-			cnmMemFree(prGlueInfo->prAdapter, prGlueInfo->prP2PInfo[ucRoleIndex]->chandef);
-
 
 	} while (FALSE);
 
