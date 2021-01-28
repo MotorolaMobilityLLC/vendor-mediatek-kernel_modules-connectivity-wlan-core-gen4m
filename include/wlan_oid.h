@@ -1282,7 +1282,7 @@ typedef struct _MU_SET_INIT_MCS_T {
 	UINT_8 ucPfMuIdOfUser0;	/* zero-base : for now, uesr0 use pf mu id 0 */
 	UINT_8 ucPfMuIdOfUser1;	/* zero-base : for now, uesr1 use pf mu id 1 */
 	UINT_8 ucNumOfTxer;	/* 0~3: mean use 1~4 anntain, for now, should fix 3 */
-	UINT_8 ucSpeIndex;	/*add new field to fill¡§special extension index¡¨which replace reserve */
+	UINT_8 ucSpeIndex;	/*add new field to fill"special extension index" which replace reserve */
 	UINT_32 u4GroupIndex;	/* 0~ :the index of group table entry for calculation */
 } MU_SET_INIT_MCS_T, *P_MU_SET_INIT_MCS_T;
 
@@ -1294,7 +1294,7 @@ typedef struct _MU_SET_CALC_LQ_T {
 	UINT_8 ucPfMuIdOfUser0;	/* zero-base : for now, uesr0 use pf mu id 0 */
 	UINT_8 ucPfMuIdOfUser1;	/* zero-base : for now, uesr1 use pf mu id 1 */
 	UINT_8 ucNumOfTxer;	/* 0~3: mean use 1~4 anntain, for now, should fix 3 */
-	UINT_8 ucSpeIndex;	/*add new field to fill¡§special extension index¡¨which replace reserve */
+	UINT_8 ucSpeIndex;	/*add new field to fill"special extension index" which replace reserve */
 	UINT_32 u4GroupIndex;	/* 0~ :the index of group table entry for calculation */
 } MU_SET_CALC_LQ_T, *P_MU_SET_CALC_LQ_T;
 
@@ -2930,5 +2930,8 @@ WLAN_STATUS
 wlanoidQueryTxPowerInfo(IN P_ADAPTER_T prAdapter, IN PVOID pvSetBuffer, IN UINT_32 u4SetBufferLen,
 				OUT PUINT_32 pu4SetInfoLen);
 #endif
+
+WLAN_STATUS wlanoidSetDrvRoamingPolicy(IN P_ADAPTER_T prAdapter,
+			IN PVOID pvSetBuffer, IN UINT_32 u4SetBufferLen, OUT PUINT_32 pu4SetInfoLen);
 
 #endif /* _WLAN_OID_H */
