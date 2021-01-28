@@ -508,6 +508,17 @@ void nicPCIEReadIntStatus(IN struct ADAPTER *prAdapter,
 /*----------------------------------------------------------------------------*/
 uint32_t nicProcessIST(IN struct ADAPTER *prAdapter)
 {
+	if (prAdapter == NULL) {
+		DBGLOG(REQ, ERROR, "prAdapter is NULL!!");
+		return WLAN_STATUS_FAILURE;
+	}
+	return nicProcessISTWithSpecifiedCount(prAdapter,
+		prAdapter->rWifiVar.u4HifIstLoopCount);
+}
+
+uint32_t nicProcessISTWithSpecifiedCount(IN struct ADAPTER *prAdapter,
+	IN uint32_t u4HifIstLoopCount)
+{
 	uint32_t u4Status = WLAN_STATUS_SUCCESS;
 	uint32_t u4IntStatus = 0;
 	uint32_t i;
@@ -521,8 +532,7 @@ uint32_t nicProcessIST(IN struct ADAPTER *prAdapter)
 		return WLAN_STATUS_ADAPTER_NOT_READY;
 	}
 
-	for (i = 0; i < prAdapter->rWifiVar.u4HifIstLoopCount;
-	     i++) {
+	for (i = 0; i < u4HifIstLoopCount; i++) {
 
 		HAL_READ_INT_STATUS(prAdapter, &u4IntStatus);
 		/* DBGLOG(INIT, TRACE, ("u4IntStatus: 0x%x\n", u4IntStatus)); */

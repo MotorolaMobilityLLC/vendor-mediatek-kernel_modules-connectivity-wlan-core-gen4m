@@ -205,6 +205,9 @@ void nicEnableInterrupt(IN struct ADAPTER *prAdapter);
 
 uint32_t nicProcessIST(IN struct ADAPTER *prAdapter);
 
+uint32_t nicProcessISTWithSpecifiedCount(IN struct ADAPTER *prAdapter,
+	IN uint32_t u4HifIstLoopCount);
+
 uint32_t nicProcessIST_impl(IN struct ADAPTER *prAdapter,
 			    IN uint32_t u4IntStatus);
 
