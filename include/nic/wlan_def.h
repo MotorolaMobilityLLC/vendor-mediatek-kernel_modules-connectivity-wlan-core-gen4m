@@ -775,6 +775,12 @@ enum ENUM_CHNL_SWITCH_POLICY {
 	CHNL_SWITCH_POLICY_CSA
 };
 
+enum ENUM_CHNL_SORT_POLICY {
+	CHNL_SORT_POLICY_NONE,
+	CHNL_SORT_POLICY_ALL_CN,
+	CHNL_SORT_POLICY_BY_CH_DOMAIN
+};
+
 /*----------------------------------------------------------------------------*/
 /* Information Element (IE) handlers                                          */
 /*----------------------------------------------------------------------------*/
