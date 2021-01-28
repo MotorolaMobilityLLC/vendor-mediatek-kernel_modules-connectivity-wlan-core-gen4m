@@ -4888,18 +4888,24 @@ void rlmDomainSendPwrLimitCmd(struct ADAPTER *prAdapter)
 		/* Initialize channel number */
 		prCmd->u1ChPwrTblColNum = 0;
 
-		if (prCmd->u2CountryCode != COUNTRY_CODE_NULL) {
-			/*<1>Command - default table information,
-			 *fill all subband
-			 */
-			rlmDomainBuildCmdByDefaultTable(prCmd,
-				u2DefaultTableIndex);
+		if (prCmd->u2CountryCode == COUNTRY_CODE_NULL)
+			DBGLOG(RLM, WARN,
+				   "CC={0x00,0x00},Power Limit use Default setting!");
 
-			/*<2>Command - configuration table information,
-			 * replace specified channel
-			 */
-			rlmDomainBuildCmdByConfigTable(prAdapter, prCmd);
-		}
+		/*<1>Command - default table information,
+		 *fill all subband
+		 */
+		rlmDomainBuildCmdByDefaultTable(prCmd,
+			u2DefaultTableIndex);
+
+		/*<2>Command - configuration table information,
+		 * replace specified channel
+		 */
+		rlmDomainBuildCmdByConfigTable(prAdapter, prCmd);
+
+	} else {
+		DBGLOG(RLM, WARN,
+			   "Can't find any table index!\n");
 	}
 
 	DBGLOG(RLM, INFO,
