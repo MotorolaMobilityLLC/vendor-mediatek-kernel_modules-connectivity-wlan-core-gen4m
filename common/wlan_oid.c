@@ -15645,6 +15645,7 @@ uint32_t wlanoidPktProcessIT(struct ADAPTER *prAdapter, void *pvBuffer,
 		       j);
 		return WLAN_STATUS_FAILURE;
 	}
+	kalMemZero(&rSwRfb, sizeof(rSwRfb));
 	rSwRfb.pvHeader = (void *)&aucPacket[0];
 	rSwRfb.u2PacketLen = j;
 	rSwRfb.u2HeaderLen = WLAN_MAC_MGMT_HEADER_LEN;
