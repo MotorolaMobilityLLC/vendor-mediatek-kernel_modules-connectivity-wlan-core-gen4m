@@ -2192,7 +2192,11 @@ struct CMD_NVRAM_SETTING {
 	struct WIFI_CFG_PARAM_STRUCT rNvramSettings;
 
 };
-
+struct CMD_NVRAM_FRAGMENT {
+	/*restrict NVRAM TX CMD size to 1500 bytes*/
+	/*because FW WFDMA MAX buf size is 1600 Byte*/
+	uint8_t aucReverse[1500];
+};
 #if CFG_SUPPORT_TDLS
 struct CMD_TDLS_CH_SW {
 	u_int8_t fgIsTDLSChSwProhibit;

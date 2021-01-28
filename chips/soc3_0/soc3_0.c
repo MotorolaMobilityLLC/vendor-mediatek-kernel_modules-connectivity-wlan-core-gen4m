@@ -668,6 +668,7 @@ struct mt66xx_chip_info mt66xx_chip_info_soc3_0 = {
 	.is_support_hw_amsdu = TRUE,
 	.is_support_asic_lp = TRUE,
 	.is_support_wfdma1 = TRUE,
+	.is_support_nvram_fragment = TRUE,
 	.asicWfdmaReInit = asicConnac2xWfdmaReInit,
 	.asicWfdmaReInit_handshakeInit = asicConnac2xWfdmaDummyCrWrite,
 	.group5_size = sizeof(struct HW_MAC_RX_STS_GROUP_5),
@@ -1575,7 +1576,7 @@ void soc3_0_icapRiseVcoreClockRate(void)
 {
 
 
-	u_int32 value;
+	int value;
 
 	/*2 update Clork Rate*/
 	/*0x1000123C[20]=1,218Mhz*/
@@ -1603,7 +1604,7 @@ void soc3_0_icapDownVcoreClockRate(void)
 {
 
 
-	u_int32 value;
+	int value;
 
 	/*2 update Clork Rate*/
 	/*0x1000123C[20]=0,156Mhz*/

@@ -98,6 +98,11 @@ struct CODE_MAPPING {
 	int32_t u4TxpowerOffset;
 };
 
+struct NVRAM_TAG_FRAGMENT_GROUP {
+	uint8_t u1StartTagID;
+	uint8_t u1EndTagID;
+};
+
 /*******************************************************************************
  *                            P U B L I C   D A T A
  *******************************************************************************
@@ -304,6 +309,7 @@ PFN_OID_HANDLER_FUNC apfnOidWOTimeoutCheck[] = {
 #define TX_RATE_MODE_HTMIX	2
 #define TX_RATE_MODE_HTGF	3
 #define TX_RATE_MODE_VHT	4
+#define NVRAM_TAG_HDR_SIZE  3 /*ID+Len MSB+Len LSB*/
 
 /*******************************************************************************
  *                                 M A C R O S
@@ -4395,15 +4401,38 @@ static int32_t wlanCal6628EfuseForm(IN struct ADAPTER
 uint32_t wlanLoadManufactureData(IN struct ADAPTER
 				 *prAdapter, IN struct REG_INFO *prRegInfo)
 {
+
 #if CFG_SUPPORT_RDD_TEST_MODE
 	struct CMD_RDD_CH rRddParam;
 #endif
+	uint8_t i = 0;
+	uint8_t index;
+	uint8_t *pu1Addr;
+	uint8_t u1TypeID;
+	uint8_t u1LenLSB;
+	uint8_t u1LenMSB;
+	uint8_t fgSupportFragment = FALSE;
+
+	uint32_t u4NvramStartOffset = 0, u4NvramOffset = 0;
+	uint32_t u4NvramFragmentSize = 0;
+	struct CMD_NVRAM_FRAGMENT *prCmdNvramFragment;
+	struct WIFI_NVRAM_TAG_FORMAT *prTagDataCurr;
+	struct NVRAM_TAG_FRAGMENT_GROUP arNvramTagGroup[] = {
+		{0, 2}, /*for tag0, tag1,tag2*/
+		{3, 3}, /*for tag3*/
+		{4, 4}, /*for tag4*/
+		{5, 5}, /*for tag5*/
+		{6, 6}, /*for tag6*/
+		{7, 11}, /*for tag7 ~ tag11*/
+	};
+
 	struct CMD_NVRAM_SETTING *prCmdNvramSettings;
 
+
 	ASSERT(prAdapter);
-	prCmdNvramSettings = (struct CMD_NVRAM_SETTING *)kalMemAlloc(
-			      sizeof(struct CMD_NVRAM_SETTING),
-			      VIR_MEM_TYPE);
+
+	fgSupportFragment = prAdapter->chip_info->is_support_nvram_fragment;
+
 
 	/* 1. Version Check */
 	if (prAdapter->prGlueInfo->fgNvramAvailable == TRUE) {
@@ -4440,20 +4469,121 @@ uint32_t wlanLoadManufactureData(IN struct ADAPTER
 	wlanUpdateChannelTable(prAdapter->prGlueInfo);
 
 	/* 9. Send the full Parameters of NVRAM to FW */
-	kalMemCopy(&prCmdNvramSettings->rNvramSettings,
+
+	/*NVRAM Parameter fragment, if NVRAM length is over 2048 bytes*/
+	/*Driver will split NVRAM by TLV Group ,each TX CMD is 1564 bytes*/
+	if (fgSupportFragment) {
+		prCmdNvramFragment = (struct CMD_NVRAM_FRAGMENT *)kalMemAlloc(
+					  sizeof(struct CMD_NVRAM_FRAGMENT),
+					  VIR_MEM_TYPE);
+
+		u4NvramStartOffset = 0;
+		pu1Addr = (uint8_t *)
+			&prRegInfo->prNvramSettings->u2Part1OwnVersion;
+
+		prTagDataCurr =
+			(struct WIFI_NVRAM_TAG_FORMAT *)(pu1Addr
+			+ OFFSET_OF(struct WIFI_CFG_PARAM_STRUCT, ucTypeID0));
+		u1TypeID = prTagDataCurr->u1NvramTypeID;
+		u1LenLSB = prTagDataCurr->u1NvramTypeLenLsb;
+		u1LenMSB = prTagDataCurr->u1NvramTypeLenMsb;
+		u4NvramOffset +=
+			OFFSET_OF(struct WIFI_CFG_PARAM_STRUCT, ucTypeID0);
+
+		DBGLOG(INIT, INFO,
+			   "NVRAM-Frag Startofs[0x%08X]ID[%d][0x%08X]Len:%d\n"
+			    , u4NvramStartOffset
+			    , u1TypeID
+			    , u4NvramOffset
+			    , (u1LenMSB << 8) | (u1LenLSB));
+
+		for (i = 0 ; i < (sizeof(arNvramTagGroup) /
+				sizeof(struct NVRAM_TAG_FRAGMENT_GROUP)); i++) {
+
+			for (index = arNvramTagGroup[i].u1StartTagID;
+				index <= arNvramTagGroup[i].u1EndTagID;
+				index++) {
+				/*sanity check*/
+				if ((u1TypeID == 0) &&
+					(u1LenLSB == 0) && (u1LenMSB == 0)) {
+					DBGLOG(INIT, WARN, "TVL is Null\n");
+					break;
+				}
+				/*check Type ID is exist on NVRAM*/
+				if (u1TypeID != index) {
+					DBGLOG(INIT, ERROR,
+						   "NVRAM tag(%d) isn't exist! current idx:%d\n",
+						   u1TypeID, index);
+					continue;
+				}
+
+				u4NvramOffset += NVRAM_TAG_HDR_SIZE;
+				u4NvramOffset += (u1LenMSB << 8) | (u1LenLSB);
+
+				/*get the nex TLV format*/
+				prTagDataCurr = (struct WIFI_NVRAM_TAG_FORMAT *)
+					(pu1Addr + u4NvramOffset);
+
+				u1TypeID = prTagDataCurr->u1NvramTypeID;
+				u1LenLSB = prTagDataCurr->u1NvramTypeLenLsb;
+				u1LenMSB = prTagDataCurr->u1NvramTypeLenMsb;
+
+				DBGLOG(INIT, INFO,
+				   "(%d,%d)CurOfs[0x%08X]:Next(%d)Len:%d\n",
+				   i, index,
+				   u4NvramOffset,
+				   u1TypeID,
+				   (u1LenMSB << 8) | (u1LenLSB));
+
+			}
+			u4NvramFragmentSize = u4NvramOffset-u4NvramStartOffset;
+
+			DBGLOG(INIT, INFO,
+			       "NVRAM Fragement(%d)Startofs[0x%08X]Len:%d\n",
+			       i, u4NvramStartOffset, u4NvramFragmentSize);
+
+			kalMemCopy(prCmdNvramFragment,
+					   (pu1Addr + u4NvramStartOffset),
+					   u4NvramFragmentSize);
+
+			wlanSendSetQueryCmd(prAdapter,
+				CMD_ID_SET_NVRAM_SETTINGS,
+				TRUE,
+				FALSE,
+				FALSE, NULL, NULL,
+				sizeof(struct CMD_NVRAM_FRAGMENT),
+				(uint8_t *) prCmdNvramFragment, NULL, 0);
+
+			/*update the next Fragment group start offset*/
+			u4NvramStartOffset = u4NvramOffset;
+			kalMemZero(prCmdNvramFragment,
+				 sizeof(struct CMD_NVRAM_FRAGMENT));
+
+		}
+
+		kalMemFree(prCmdNvramFragment, VIR_MEM_TYPE,
+			 sizeof(struct CMD_NVRAM_FRAGMENT));
+
+	} else {
+
+		prCmdNvramSettings = (struct CMD_NVRAM_SETTING *)kalMemAlloc(
+				      sizeof(struct CMD_NVRAM_SETTING),
+				      VIR_MEM_TYPE);
+
+		kalMemCopy(&prCmdNvramSettings->rNvramSettings,
 			   &prRegInfo->prNvramSettings->u2Part1OwnVersion,
-			   sizeof(struct WIFI_CFG_PARAM_STRUCT));
-	ASSERT(sizeof(struct WIFI_CFG_PARAM_STRUCT) == 2048);
-	wlanSendSetQueryCmd(prAdapter,
-			    CMD_ID_SET_NVRAM_SETTINGS,
-			    TRUE,
-			    FALSE,
-			    FALSE, NULL, NULL, sizeof(*prCmdNvramSettings),
-			    (uint8_t *) prCmdNvramSettings, NULL, 0);
-
-	kalMemFree(prCmdNvramSettings, VIR_MEM_TYPE,
 			   sizeof(struct CMD_NVRAM_SETTING));
-
+		ASSERT(sizeof(struct WIFI_CFG_PARAM_STRUCT) == 2048);
+		wlanSendSetQueryCmd(prAdapter,
+				    CMD_ID_SET_NVRAM_SETTINGS,
+				    TRUE,
+				    FALSE,
+				    FALSE, NULL, NULL,
+				    sizeof(*prCmdNvramSettings),
+				    (uint8_t *) prCmdNvramSettings, NULL, 0);
+		kalMemFree(prCmdNvramSettings, VIR_MEM_TYPE,
+				   sizeof(struct CMD_NVRAM_SETTING));
+	}
 	return WLAN_STATUS_SUCCESS;
 }
 
