@@ -1472,20 +1472,28 @@ static u_int32 mt_engine_add_allocation(
 				/* D3.1, Table 28-24, 0xc8 is 484-tone
 				 * D3.1, Table 28-24, 0x72 is 484-empty-tone
 				 */
-				 if (sub_band_idx > 7)
+				 if (((sub_band_idx+1) >= 0)
+					&& ((sub_band_idx+1) < 8))
+					alloc_info->
+						sub20[sub_band_idx+1] = 0x72;
+				 else
 					return SERV_STATUS_ENGINE_INVALID_PARAM;
 
-				alloc_info->sub20[sub_band_idx+1] = 0x72;
 			} else if (allocation == 0xd0) {
 				/* D3.1, Table 28-24, 0xd0 is 996-tone
 				 * D3.1, Table 28-24, 0x73 is 484-empty-tone
 				 */
-				if ((sub_band_idx+3) > 7)
+				if (((sub_band_idx+1) >= 0)
+					&& ((sub_band_idx+3) < 8)) {
+					alloc_info->
+						sub20[sub_band_idx+1] = 0x73;
+					alloc_info->
+						sub20[sub_band_idx+2] = 0x73;
+					alloc_info->
+						sub20[sub_band_idx+3] = 0x73;
+				} else
 					return SERV_STATUS_ENGINE_INVALID_PARAM;
 
-				alloc_info->sub20[sub_band_idx+1] = 0x73;
-				alloc_info->sub20[sub_band_idx+2] = 0x73;
-				alloc_info->sub20[sub_band_idx+3] = 0x73;
 			}
 		}
 	}
