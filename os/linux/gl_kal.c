@@ -3831,24 +3831,6 @@ void kalProcessTxReq(struct GLUE_INFO *prGlueInfo,
 }
 
 #if CFG_SUPPORT_MULTITHREAD
-#define HIF_THREAD_TIMEOUT_TIME_MS	20
-static void hif_thread_timeout_func(IN struct ADAPTER *prAdapter,
-		IN unsigned long ulParamPtr)
-{
-	struct GLUE_INFO *prGlueInfo;
-
-	if (!prAdapter)
-		return;
-
-	prGlueInfo = prAdapter->prGlueInfo;
-	DBGLOG(INIT, INFO, "prGlueInfo->ulFlag: 0x%lx\n", prGlueInfo->ulFlag);
-
-	if (prGlueInfo->hif_thread) {
-		DBGLOG(INIT, INFO, "Show backtrace of hif_thread.\n");
-		kal_show_stack(prAdapter, prGlueInfo->hif_thread,
-				NULL);
-	}
-}
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -3869,7 +3851,6 @@ int hif_thread(void *data)
 					 netdev_priv(dev));
 	struct ADAPTER *prAdapter = prGlueInfo->prAdapter;
 	int ret = 0;
-	struct TIMER rTimeoutTimer;
 #if defined(CONFIG_ANDROID) && (CFG_ENABLE_WAKE_LOCK)
 	KAL_WAKE_LOCK_T *prHifThreadWakeLock;
 
@@ -3884,10 +3865,6 @@ int hif_thread(void *data)
 	prGlueInfo->u4HifThreadPid = KAL_GET_CURRENT_THREAD_ID();
 
 	set_user_nice(current, prAdapter->rWifiVar.cThreadNice);
-	cnmTimerInitTimer(prAdapter,
-			&(rTimeoutTimer),
-			(PFN_MGMT_TIMEOUT_FUNC) hif_thread_timeout_func,
-			(unsigned long) NULL);
 
 	while (TRUE) {
 
@@ -3916,8 +3893,6 @@ int hif_thread(void *data)
 		} while (ret != 0);
 
 		kalTraceBegin("hif_thread");
-		cnmTimerStartTimer(prAdapter, &rTimeoutTimer,
-				SEC_TO_MSEC(HIF_THREAD_TIMEOUT_TIME_MS));
 
 #if defined(CONFIG_ANDROID) && (CFG_ENABLE_WAKE_LOCK)
 		if (!KAL_WAKE_LOCK_ACTIVE(prGlueInfo->prAdapter,
@@ -3931,7 +3906,6 @@ int hif_thread(void *data)
 			       "Only FW OWN request, but now already done FW OWN\n");
 			clear_bit(GLUE_FLAG_HIF_FW_OWN_BIT,
 				  &prGlueInfo->ulFlag);
-			cnmTimerStopTimer(prAdapter, &rTimeoutTimer);
 			continue;
 		}
 		wlanAcquirePowerControl(prAdapter);
@@ -3990,7 +3964,6 @@ int hif_thread(void *data)
 
 		/* Release to FW own */
 		wlanReleasePowerControl(prAdapter);
-		cnmTimerStopTimer(prAdapter, &rTimeoutTimer);
 		kalTraceEnd(); /* hif_thread */
 	}
 
