@@ -554,7 +554,8 @@ static const struct wiphy_vendor_command
 			.subcmd = WIFI_SUBCMD_SET_PNO_RANDOM_MAC_OUI
 		},
 		.flags = WIPHY_VENDOR_CMD_NEED_WDEV
-			| WIPHY_VENDOR_CMD_NEED_NETDEV,
+			| WIPHY_VENDOR_CMD_NEED_NETDEV
+			| WIPHY_VENDOR_CMD_NEED_RUNNING,
 		.doit = mtk_cfg80211_vendor_set_scan_mac_oui
 	},
 	{
@@ -1055,12 +1056,8 @@ static int wlanGetDevIdx(struct net_device *prDev)
 			return i;
 		}
 #if CFG_SUPPORT_PERSIST_NETDEV
-		else if (arWlanDevInfo[i].prDev == prDev) {
-			DBGLOG(INIT, INFO,
-				"PERSIST_NETDEV: found existed prDev!, return arWlanDevInfo[%d]\n",
-				i);
+		else if (arWlanDevInfo[i].prDev == prDev)
 			return i;
-		}
 #endif
 	}
 
@@ -2003,12 +2000,8 @@ static int32_t wlanNetRegister(struct wireless_dev *prWdev)
 				     u4Idx,
 				     (void *)gprWdev[u4Idx]->netdev);
 #if CFG_SUPPORT_PERSIST_NETDEV
-			if (gprNetdev[u4Idx]->reg_state == NETREG_REGISTERED) {
-				DBGLOG(INIT, INFO,
-					"PERSIST_NETDEV[%d]: Already registered netdev.\n",
-					u4Idx);
+			if (gprNetdev[u4Idx]->reg_state == NETREG_REGISTERED)
 				continue;
-			}
 #endif
 			if (register_netdev(gprWdev[u4Idx]->netdev)
 				< 0) {
@@ -2050,14 +2043,18 @@ static void wlanNetUnregister(struct wireless_dev *prWdev)
 	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(prWdev->wiphy);
 
 #if !CFG_SUPPORT_PERSIST_NETDEV
-	for (u4Idx = 0; u4Idx < KAL_AIS_NUM; u4Idx++) {
-		if (gprWdev[u4Idx] && gprWdev[u4Idx]->netdev) {
-			wlanClearDevIdx(gprWdev[u4Idx]->netdev);
-			unregister_netdev(gprWdev[u4Idx]->netdev);
-		}
-	}
+	{
+		uint32_t u4Idx = 0;
 
-	prGlueInfo->fgIsRegistered = FALSE;
+		for (u4Idx = 0; u4Idx < KAL_AIS_NUM; u4Idx++) {
+			if (gprWdev[u4Idx] && gprWdev[u4Idx]->netdev) {
+				wlanClearDevIdx(gprWdev[u4Idx]->netdev);
+				unregister_netdev(gprWdev[u4Idx]->netdev);
+			}
+		}
+
+		prGlueInfo->fgIsRegistered = FALSE;
+	}
 #endif
 
 #if CFG_SUPPORT_SNIFFER
@@ -2607,7 +2604,6 @@ struct wireless_dev *wlanNetCreate(void *pvData,
 
 #if CFG_SUPPORT_PERSIST_NETDEV
 		if (!gprNetdev[i]) {
-			DBGLOG(INIT, INFO, "netdev not allocated yet.\n");
 			prDevHandler = alloc_netdev_mq(
 				sizeof(struct NETDEV_PRIVATE_GLUE_INFO),
 				prInfName,
@@ -2617,12 +2613,8 @@ struct wireless_dev *wlanNetCreate(void *pvData,
 				ether_setup,
 				CFG_MAX_TXQ_NUM);
 			gprNetdev[i] = prDevHandler;
-		} else {
-			DBGLOG(INIT, INFO,
-				"PERSIST_NETDEV[%d]: netdev already allocated.\n",
-				i);
+		} else
 			prDevHandler = gprNetdev[i];
-		}
 #else
 		prDevHandler = alloc_netdev_mq(
 			sizeof(struct NETDEV_PRIVATE_GLUE_INFO),
@@ -4688,8 +4680,9 @@ static int32_t wlanProbe(void *pvData, void *pvDriverData)
 	if (i4Status == 0) {
 		wlanOnWhenProbeSuccess(prGlueInfo, prAdapter, FALSE);
 		DBGLOG(INIT, INFO,
-		       "wlanProbe: probe success, feature set: 0x%llx\n",
-		       wlanGetSupportedFeatureSet(prGlueInfo));
+		       "wlanProbe: probe success, feature set: 0x%llx, persistNetdev: %d\n",
+		       wlanGetSupportedFeatureSet(prGlueInfo),
+		       CFG_SUPPORT_PERSIST_NETDEV);
 	} else {
 		DBGLOG(INIT, ERROR, "wlanProbe: probe failed, reason:%d\n",
 		       eFailReason);
@@ -4782,7 +4775,6 @@ static void wlanRemove(void)
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct ADAPTER *prAdapter = NULL;
 	u_int8_t fgResult = FALSE;
-	uint32_t u4Idx = 0;
 
 	DBGLOG(INIT, INFO, "Remove wlan!\n");
 
@@ -4977,10 +4969,16 @@ static void wlanRemove(void)
 	glUnregisterEarlySuspend(&wlan_early_suspend_desc);
 #endif
 
-	for (u4Idx = 0; u4Idx < KAL_AIS_NUM; u4Idx++) {
-		if (gprWdev[u4Idx] && gprWdev[u4Idx]->netdev)
-			gprWdev[u4Idx]->netdev = NULL;
+#if !CFG_SUPPORT_PERSIST_NETDEV
+	{
+		uint32_t u4Idx = 0;
+
+		for (u4Idx = 0; u4Idx < KAL_AIS_NUM; u4Idx++) {
+			if (gprWdev[u4Idx] && gprWdev[u4Idx]->netdev)
+				gprWdev[u4Idx]->netdev = NULL;
+		}
 	}
+#endif
 
 	/* 4 <9> Unregister notifier callback */
 	wlanUnregisterInetAddrNotifier();
