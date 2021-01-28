@@ -11974,7 +11974,7 @@ int wlanGetRxRate(IN struct GLUE_INFO *prGlueInfo,
 		WLAN_STATUS_SUCCESS) {
 		u4RxVector0 = prAdapter->arStaRec[ucStaIdx].u4RxVector0;
 		u4RxVector1 = prAdapter->arStaRec[ucStaIdx].u4RxVector1;
-		if ((u4RxVector0 == 0) || (u4RxVector1 == 0)) {
+		if ((u4RxVector0 == 0) && (u4RxVector1 == 0)) {
 			/* soc3_0 known issue */
 			DBGLOG(SW4, TRACE, "u4RxVector0 or u4RxVector1 is 0\n");
 			goto errhandle;
