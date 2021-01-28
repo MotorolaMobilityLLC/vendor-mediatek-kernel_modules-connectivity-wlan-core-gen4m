@@ -1594,6 +1594,8 @@ int mtk_cfg80211_connect(struct wiphy *wiphy,
 		}
 	}
 
+	/* Avoid dangling pointer, set defatul all zero */
+	kalMemZero(&rNewSsid, sizeof(rNewSsid));
 	rNewSsid.u4CenterFreq = sme->channel ?
 				sme->channel->center_freq : 0;
 	rNewSsid.pucBssid = (uint8_t *)sme->bssid;
