@@ -1218,6 +1218,10 @@ struct _ADAPTER_T {
 	UINT_8 ucSerState;
 
 	WIFI_FEM_CFG_T rWifiFemCfg;
+
+	/* Smar Gear */
+	UINT_8 ucSmarGearSupportSisoOnly;
+	UINT_8 ucSmartGearWfPathSupport;
 };				/* end of _ADAPTER_T */
 
 /*******************************************************************************
@@ -1312,6 +1316,12 @@ struct _ADAPTER_T {
 #define IS_WIFI_5G_SISO(_prAdapter) \
 	((IS_WIFI_5G_WF0_SUPPORT(_prAdapter) && !(IS_WIFI_5G_WF1_SUPPORT(_prAdapter))) || \
 	(IS_WIFI_5G_WF1_SUPPORT(_prAdapter) && !(IS_WIFI_5G_WF0_SUPPORT(_prAdapter))))
+
+#define IS_WIFI_SMART_GEAR_SUPPORT_WF0_SISO(_prAdapter) \
+	((_prAdapter)->ucSmarGearSupportSisoOnly && ((_prAdapter)->ucSmartGearWfPathSupport == BIT(ANTENNA_WF0)))
+
+#define IS_WIFI_SMART_GEAR_SUPPORT_WF1_SISO(_prAdapter) \
+	((_prAdapter)->ucSmarGearSupportSisoOnly && ((_prAdapter)->ucSmartGearWfPathSupport == BIT(ANTENNA_WF1)))
 
 /*******************************************************************************
 *                  F U N C T I O N   D E C L A R A T I O N S
