@@ -91,6 +91,8 @@
 ********************************************************************************
 */
 
+#define USB_ACCESS_RETRY_LIMIT           1
+
 /*******************************************************************************
 *                              F U N C T I O N S
 ********************************************************************************
@@ -1076,6 +1078,113 @@ void asicConnac2xWfdmaInitForUSB(
 		HAL_MCR_WR(prAdapter, u4WfdmaAddr, u4WfdmaCr);
 	}
 
+}
+
+static void asicConnac2xUsbRxEvtEP4Setting(
+	struct ADAPTER *prAdapter,
+	u_int8_t fgEnable)
+{
+	struct GLUE_INFO *prGlueInfo;
+	struct BUS_INFO *prBusInfo;
+	uint32_t u4Value = 0;
+	uint32_t u4WfdmaValue = 0;
+	uint32_t i = 0;
+
+	ASSERT(prAdapter);
+
+	prGlueInfo = prAdapter->prGlueInfo;
+	prBusInfo = prAdapter->chip_info->bus_info;
+
+	HAL_MCR_RD(prAdapter, CONNAC2X_WFDMA_HOST_CONFIG_ADDR, &u4WfdmaValue);
+	if (fgEnable)
+		u4WfdmaValue |= CONNAC2X_WFDMA_HOST_CONFIG_USB_RXEVT_EP4_EN;
+	else
+		u4WfdmaValue &= ~CONNAC2X_WFDMA_HOST_CONFIG_USB_RXEVT_EP4_EN;
+	do {
+		HAL_MCR_RD(prAdapter,
+			CONNAC2X_WPDMA_GLO_CFG(CONNAC2X_HOST_WPDMA_1_BASE),
+			&u4Value);
+		if ((u4Value & CONNAC2X_WPDMA1_GLO_CFG_RX_DMA_BUSY) == 0) {
+			u4Value &= ~CONNAC2X_WPDMA1_GLO_CFG_RX_DMA_EN;
+			HAL_MCR_WR(prAdapter,
+				CONNAC2X_WPDMA_GLO_CFG(
+					CONNAC2X_HOST_WPDMA_1_BASE),
+				u4Value);
+			break;
+		}
+		kalUdelay(1000);
+	} while ((i++) < 100);
+	if (i > 100)
+		DBGLOG(HAL, ERROR, "WFDMA1 RX keep busy....\n");
+	else {
+		HAL_MCR_WR(prAdapter,
+				CONNAC2X_WFDMA_HOST_CONFIG_ADDR,
+				u4WfdmaValue);
+		HAL_MCR_RD(prAdapter,
+			CONNAC2X_WPDMA_GLO_CFG(CONNAC2X_HOST_WPDMA_1_BASE),
+			&u4Value);
+		u4Value |= CONNAC2X_WPDMA1_GLO_CFG_RX_DMA_EN;
+		HAL_MCR_WR(prAdapter,
+			CONNAC2X_WPDMA_GLO_CFG(CONNAC2X_HOST_WPDMA_1_BASE),
+			u4Value);
+	}
+}
+
+
+uint8_t asicConnac2xUsbEventEpDetected(IN struct ADAPTER *prAdapter)
+{
+	struct GL_HIF_INFO *prHifInfo = NULL;
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct BUS_INFO *prBusInfo = NULL;
+	int32_t ret = 0;
+	uint8_t ucRetryCount = 0;
+	u_int8_t ucEp5Disable = FALSE;
+
+	ASSERT(FALSE == 0);
+	prGlueInfo = prAdapter->prGlueInfo;
+	prHifInfo = &prGlueInfo->rHifInfo;
+	prBusInfo = prGlueInfo->prAdapter->chip_info->bus_info;
+
+	if (prHifInfo->fgEventEpDetected == FALSE) {
+		prHifInfo->fgEventEpDetected = TRUE;
+		do {
+			ret = mtk_usb_vendor_request(prGlueInfo, 0,
+				prBusInfo->u4device_vender_request_in,
+				VND_REQ_EP5_IN_INFO,
+				0, 0, &ucEp5Disable,
+				sizeof(ucEp5Disable));
+			if (ret || ucRetryCount)
+				DBGLOG(HAL, ERROR,
+				       "usb_control_msg() status: %x retry: %u\n",
+				       (unsigned int)ret, ucRetryCount);
+			ucRetryCount++;
+			if (ucRetryCount > USB_ACCESS_RETRY_LIMIT)
+				break;
+		} while (ret);
+
+		if (ret) {
+			kalSendAeeWarning(HIF_USB_ERR_TITLE_STR,
+				HIF_USB_ERR_DESC_STR
+				"USB() reports error: %x retry: %u",
+				ret, ucRetryCount);
+			DBGLOG(HAL, ERROR,
+			  "usb_readl() reports error: %x retry: %u\n", ret,
+			  ucRetryCount);
+		} else {
+			DBGLOG(HAL, INFO,
+				"%s: Get ucEp5Disable = %d\n", __func__,
+			  ucEp5Disable);
+			if (ucEp5Disable)
+				prHifInfo->eEventEpType = EVENT_EP_TYPE_DATA_EP;
+		}
+	}
+
+	if (prHifInfo->eEventEpType == EVENT_EP_TYPE_DATA_EP) {
+		asicConnac2xUsbRxEvtEP4Setting(prAdapter, TRUE);
+		return USB_DATA_EP_IN;
+	}
+	asicConnac2xUsbRxEvtEP4Setting(prAdapter, FALSE);
+	return USB_EVENT_EP_IN;
 }
 
 void asicConnac2xEnableUsbCmdTxRing(
