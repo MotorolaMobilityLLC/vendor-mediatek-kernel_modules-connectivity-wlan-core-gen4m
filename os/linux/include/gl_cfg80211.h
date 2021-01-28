@@ -242,11 +242,14 @@ mtk_cfg80211_testmode_get_sta_statistics(IN struct wiphy *wiphy,
 					 IN void *data, IN int len, IN P_GLUE_INFO_T prGlueInfo);
 
 int mtk_cfg80211_testmode_get_scan_done(IN struct wiphy *wiphy, IN void *data, IN int len, IN P_GLUE_INFO_T prGlueInfo);
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 16, 0)
-int mtk_cfg80211_testmode_cmd(IN struct wiphy *wiphy, IN struct wireless_dev *wdev, IN void *data, IN int len);
+
+#if KERNEL_VERSION(3, 12, 0) <= LINUX_VERSION_CODE
+int mtk_cfg80211_testmode_cmd(struct wiphy *wiphy, struct wireless_dev *wdev,
+			      void *data, int len);
 #else
-int mtk_cfg80211_testmode_cmd(IN struct wiphy *wiphy, IN void *data, IN int len);
+int mtk_cfg80211_testmode_cmd(struct wiphy *wiphy, void *data, int len);
 #endif
+
 int mtk_cfg80211_testmode_sw_cmd(IN struct wiphy *wiphy, IN void *data, IN int len);
 
 #if CFG_SUPPORT_PASSPOINT
