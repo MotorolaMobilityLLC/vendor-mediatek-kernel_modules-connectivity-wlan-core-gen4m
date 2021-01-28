@@ -614,6 +614,10 @@
 
 #define CFG_ENABLE_FW_DOWNLOAD_ACK              1
 
+#ifndef CFG_WIFI_IP_SET
+#define CFG_WIFI_IP_SET                         1
+#endif
+
 /*------------------------------------------------------------------------------
  * Flags of Bluetooth-over-WiFi (BT 3.0 + HS) support
  *------------------------------------------------------------------------------
