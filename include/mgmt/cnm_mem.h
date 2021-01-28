@@ -71,7 +71,7 @@
 *                    E X T E R N A L   R E F E R E N C E S
 ********************************************************************************
 */
-
+#include "qosmap.h"
 /*******************************************************************************
 *                              C O N S T A N T S
 ********************************************************************************
@@ -235,7 +235,24 @@ struct STA_PMF_CFG {
 	UINT_8 ucSAQueryTimedOut; /* retry more than 1000ms */
 	TIMER_T rSAQueryTimer;
 	UINT_16 u2TransactionID;
+};
+#endif
 
+#ifdef DSCP_SUPPORT
+struct _DSCP_EXCEPTION {
+	UINT_8 dscp;
+	UINT_8 userPriority;
+};
+
+struct _DSCP_RANGE {
+	UINT_8 lDscp;
+	UINT_8 hDscp;
+};
+
+struct _QOS_MAP_SET {
+	struct _DSCP_RANGE dscpRange[8];
+	UINT_8 dscpExceptionNum;
+	struct _DSCP_EXCEPTION dscpException[1];
 };
 #endif
 
@@ -556,6 +573,9 @@ struct _STA_RECORD_T {
 #if CFG_SUPPORT_802_11W
 	/* AP PMF */
 	struct STA_PMF_CFG rPmfCfg;
+#endif
+#ifdef DSCP_SUPPORT
+	struct _QOS_MAP_SET *qosMapSet;
 #endif
 };
 
