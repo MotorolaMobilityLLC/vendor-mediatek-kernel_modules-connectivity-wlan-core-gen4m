@@ -463,6 +463,10 @@ u_int8_t kalP2PGetCcmpCipher(IN struct GLUE_INFO *prGlueInfo,
 	ASSERT(prGlueInfo);
 	ASSERT(prGlueInfo->prP2PInfo[ucRoleIdx]);
 
+	DBGLOG(P2P, TRACE,
+		"P2P get ccmp cipher: %d\n",
+		prGlueInfo->prP2PInfo[ucRoleIdx]->u4CipherPairwise);
+
 	if (prGlueInfo->prP2PInfo[ucRoleIdx]->u4CipherPairwise
 		== IW_AUTH_CIPHER_CCMP)
 		return TRUE;
