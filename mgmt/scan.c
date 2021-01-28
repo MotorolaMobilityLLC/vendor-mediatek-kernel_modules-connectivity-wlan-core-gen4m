@@ -3954,7 +3954,7 @@ void scanLogCacheFlushBSS(struct LINK *prList, enum ENUM_SCAN_LOG_PREFIX prefix,
 		}
 		return;
 	}
-	idx += kalSprintf(logBuf, "%u: ", prList->u4NumElem);
+	idx += kalSnprintf(logBuf, sizeof(logBuf), "%u: ", prList->u4NumElem);
 
 	while (!LINK_IS_EMPTY(prList)) {
 		if (idx+dataLen+1 > logBufLen) {
