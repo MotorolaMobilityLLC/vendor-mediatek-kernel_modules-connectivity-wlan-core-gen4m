@@ -86,13 +86,13 @@ struct ECO_INFO connac_eco_table[] = {
 	{0x00, 0x00, 0x0}	/* End of table */
 };
 
-#if defined(_HIF_PCIE)
+#if defined(_HIF_PCIE) || defined(_HIF_AXI)
 struct PCIE_CHIP_CR_MAPPING connac_bus2chip_cr_mapping[] = {
 	/* chip addr, bus addr, range */
 	{0x80000000, 0x00002000, 0x00001000}, /* MCU_CFG */
 
 	{0x50000000, 0x00004000, 0x00004000}, /* CONN_HIF (PDMA) */
-	{0x50005000, 0x00005000, 0x00001000}, /* CONN_HIF (Reserved) */
+	{0x50002000, 0x00005000, 0x00001000}, /* CONN_HIF (Reserved) */
 	{0x5000A000, 0x00006000, 0x00001000}, /* CONN_HIF (DMASHDL) */
 	{0x000E0000, 0x00007000, 0x00001000}, /* CONN_HIF_ON (HOST_CSR) */
 
@@ -126,8 +126,6 @@ struct PCIE_CHIP_CR_MAPPING connac_bus2chip_cr_mapping[] = {
 
 	{0x80020000, 0x000B0000, 0x00010000}, /* CONN_TOP_MISC_OFF */
 	{0x81020000, 0x000C0000, 0x00010000}, /* CONN_TOP_MISC_ON */
-
-	{0x000E0000, 0x000E0000, 0x00010000}, /* HOST_CSR */
 
 	{0x0, 0x0, 0x0}
 };
@@ -176,7 +174,7 @@ void connacConstructPatchName(struct GLUE_INFO *prGlueInfo, uint8_t **apucName, 
 }
 
 struct BUS_INFO connac_bus_info = {
-#if defined(_HIF_PCIE)
+#if defined(_HIF_PCIE) || defined(_HIF_AXI)
 	.top_cfg_base = CONNAC_TOP_CFG_BASE,
 	.bus2chip = connac_bus2chip_cr_mapping,
 	.tx_ring_fwdl_idx = 3,

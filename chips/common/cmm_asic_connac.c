@@ -148,8 +148,9 @@ void asicCapInit(IN struct ADAPTER *prAdapter)
 	prChipInfo->u4ExtraTxByteCount = 0;
 
 	switch (prGlueInfo->u4InfType) {
-#if defined(_HIF_PCIE)
+#if defined(_HIF_PCIE) || defined(_HIF_AXI)
 	case MT_DEV_INF_PCIE:
+	case MT_DEV_INF_AXI:
 		prChipInfo->u2TxInitCmdPort = TX_RING_FWDL_IDX_3;
 		prChipInfo->u2TxFwDlPort = TX_RING_FWDL_IDX_3;
 		prChipInfo->ucPacketFormat = TXD_PKT_FORMAT_TXD;
@@ -211,8 +212,9 @@ void asicEnableFWDownload(IN struct ADAPTER *prAdapter, IN u_int8_t fgEnable)
 	prGlueInfo = prAdapter->prGlueInfo;
 
 	switch (prGlueInfo->u4InfType) {
-#if defined(_HIF_PCIE)
+#if defined(_HIF_PCIE) || defined(_HIF_AXI)
 	case MT_DEV_INF_PCIE:
+	case MT_DEV_INF_AXI:
 	{
 		union WPDMA_GLO_CFG_STRUCT GloCfg;
 
@@ -374,7 +376,7 @@ void fillTxDescTxByteCountWithCR4(IN struct ADAPTER *prAdapter, IN struct MSDU_I
 	HAL_MAC_TX_DESC_SET_TX_BYTE_COUNT(prTxDesc, u4TxByteCount);
 }
 
-#if defined(_HIF_PCIE)
+#if defined(_HIF_PCIE) || defined(_HIF_AXI)
 void asicPcieDmaShdlInit(IN struct ADAPTER *prAdapter)
 {
 	uint32_t u4BaseAddr, u4MacVal;

@@ -50,12 +50,12 @@
  *
  *****************************************************************************/
 /******************************************************************************
-*[File]             hif_api.c
+*[File]             hif_pdma.c
 *[Version]          v1.0
 *[Revision Date]    2015-09-08
 *[Author]
 *[Description]
-*    The program provides PCIE HIF APIs
+*    The program provides PDMA HIF APIs
 *[Copyright]
 *    Copyright (C) 2015 MediaTek Incorporation. All Rights Reserved.
 ******************************************************************************/
@@ -71,7 +71,7 @@
 */
 #include "precomp.h"
 
-#include "hif_pci.h"
+#include "hif_pdma.h"
 
 #include <linux/mm.h>
 #ifndef CONFIG_X86
@@ -322,7 +322,7 @@ u_int8_t halSetDriverOwn(IN struct ADAPTER *prAdapter)
 	u4CurrTick = kalGetTimeTick();
 	i = 0;
 
-	/* PCIE need to do clear own, then could start polling status */
+	/* PCIE/AXI need to do clear own, then could start polling status */
 	HAL_LP_OWN_CLR(prAdapter, &fgResult);
 	fgResult = FALSE;
 
@@ -653,7 +653,7 @@ struct MSDU_TOKEN_ENTRY *halAcquireMsduToken(IN struct ADAPTER *prAdapter)
 
 	spin_unlock_irqrestore(&prTokenInfo->rTokenLock, flags);
 
-	DBGLOG(HAL, TRACE, "Acquire Entry[0x%p] Tok[%u] Buf[%u] Len[%u]\n", prToken,
+	DBGLOG(HAL, TRACE, "Acquire Entry[0x%p] Tok[%u] Buf[%p] Len[%u]\n", prToken,
 		prToken->u4Token, prToken->prPacket, prToken->u4DmaLength);
 
 	return prToken;
@@ -748,7 +748,6 @@ void halTxUpdateCutThroughDesc(struct GLUE_INFO *prGlueInfo, struct MSDU_INFO *p
 	struct MSDU_TOKEN_ENTRY *prToken)
 {
 	struct GL_HIF_INFO *prHifInfo = &prGlueInfo->rHifInfo;
-	struct pci_dev *pdev = prHifInfo->pdev;
 	struct mt66xx_chip_info *prChipInfo;
 	struct TX_DESC_OPS_T *prTxDescOps;
 	uint8_t *pucBufferTxD;
@@ -760,10 +759,10 @@ void halTxUpdateCutThroughDesc(struct GLUE_INFO *prGlueInfo, struct MSDU_INFO *p
 	pucBufferTxD = prToken->prPacket;
 	u4TxHeadRoomSize = NIC_TX_DESC_AND_PADDING_LENGTH + prChipInfo->txd_append_size;
 
-	rDmaAddr = pci_map_single(pdev, pucBufferTxD + u4TxHeadRoomSize, prMsduInfo->u2FrameLength,
-		PCI_DMA_TODEVICE);
-	if (pci_dma_mapping_error(pdev, rDmaAddr)) {
-		DBGLOG(HAL, ERROR, "pci_map_single() error!\n");
+	rDmaAddr = KAL_DMA_MAP_SINGLE(prHifInfo->prDmaDev, pucBufferTxD + u4TxHeadRoomSize,
+				      prMsduInfo->u2FrameLength, KAL_DMA_TO_DEVICE);
+	if (KAL_DMA_MAPPING_ERROR(prHifInfo->prDmaDev, rDmaAddr)) {
+		DBGLOG(HAL, ERROR, "KAL_DMA_MAP_SINGLE() error!\n");
 		return;
 	}
 
@@ -789,7 +788,7 @@ void halSerHifReset(IN struct ADAPTER *prAdapter)
 {
 }
 
-void halRxPCIeReceiveRFBs(IN struct ADAPTER *prAdapter, uint32_t u4Port)
+void halRxReceiveRFBs(IN struct ADAPTER *prAdapter, uint32_t u4Port)
 {
 	struct RX_CTRL *prRxCtrl;
 	struct SW_RFB *prSwRfb = (struct SW_RFB *) NULL;
@@ -877,20 +876,19 @@ void halProcessRxInterrupt(IN struct ADAPTER *prAdapter)
 	rIntrStatus = (union WPDMA_INT_STA_STRUCT)prHifInfo->u4IntStatus;
 
 	if (rIntrStatus.field.rx_done_1)
-		halRxPCIeReceiveRFBs(prAdapter, RX_RING_EVT_IDX_1);
+		halRxReceiveRFBs(prAdapter, RX_RING_EVT_IDX_1);
 
 	if (rIntrStatus.field.rx_done_0)
-		halRxPCIeReceiveRFBs(prAdapter, RX_RING_DATA_IDX_0);
+		halRxReceiveRFBs(prAdapter, RX_RING_DATA_IDX_0);
 }
 
 static int32_t halWpdmaAllocRingDesc(struct GLUE_INFO *prGlueInfo, struct RTMP_DMABUF *pDescRing, int32_t size)
 {
 	struct GL_HIF_INFO *prHifInfo = &prGlueInfo->rHifInfo;
-	struct pci_dev *pdev = prHifInfo->pdev;
 
 	pDescRing->AllocSize = size;
-
-	pDescRing->AllocVa = (void *) pci_alloc_consistent(pdev, pDescRing->AllocSize, &pDescRing->AllocPa);
+	pDescRing->AllocVa = (void *)KAL_DMA_ALLOC_COHERENT(prHifInfo->prDmaDev,
+				pDescRing->AllocSize, &pDescRing->AllocPa);
 
 	if (pDescRing->AllocVa == NULL) {
 		DBGLOG(HAL, ERROR, "Failed to allocate a big buffer\n");
@@ -906,10 +904,10 @@ static int32_t halWpdmaAllocRingDesc(struct GLUE_INFO *prGlueInfo, struct RTMP_D
 static int32_t halWpdmaFreeRingDesc(struct GLUE_INFO *prGlueInfo, struct RTMP_DMABUF *pDescRing)
 {
 	struct GL_HIF_INFO *prHifInfo = &prGlueInfo->rHifInfo;
-	struct pci_dev *pdev = prHifInfo->pdev;
 
 	if (pDescRing->AllocVa)
-		pci_free_consistent(pdev, pDescRing->AllocSize, pDescRing->AllocVa, pDescRing->AllocPa);
+		KAL_DMA_FREE_COHERENT(prHifInfo->prDmaDev, pDescRing->AllocSize,
+				      pDescRing->AllocVa, pDescRing->AllocPa);
 
 	kalMemZero(pDescRing, sizeof(struct RTMP_DMABUF));
 
@@ -929,7 +927,7 @@ static void *halWpdmaAllocRxPacketBuff(IN void *pPciDev, IN unsigned long Length
 
 	if (pkt) {
 		*VirtualAddress = (void *) pkt->data;
-		*phy_addr = pci_map_single(pPciDev, *VirtualAddress, Length, PCI_DMA_FROMDEVICE);
+		*phy_addr = KAL_DMA_MAP_SINGLE(pPciDev, *VirtualAddress, Length, KAL_DMA_TO_DEVICE);
 	} else {
 		*VirtualAddress = (void *) NULL;
 		*phy_addr = (dma_addr_t) 0;
@@ -953,7 +951,7 @@ void halWpdmaAllocRxRing(struct GLUE_INFO *prGlueInfo, uint32_t u4Num, uint32_t 
 	/* Alloc RxRingDesc memory except Tx ring allocated eariler */
 	halWpdmaAllocRingDesc(prGlueInfo, &prHifInfo->RxDescRing[u4Num], u4Size * u4DescSize);
 	if (prHifInfo->RxDescRing[u4Num].AllocVa == NULL) {
-		DBGLOG(HAL, ERROR, "\n\n\nRxDescRing[%p] allocation failed!!\n\n\n");
+		DBGLOG(HAL, ERROR, "\n\n\nRxDescRing allocation failed!!\n\n\n");
 		return;
 	}
 
@@ -982,7 +980,7 @@ void halWpdmaAllocRxRing(struct GLUE_INFO *prGlueInfo, uint32_t u4Num, uint32_t 
 		/* Setup Rx associated Buffer size & allocate share memory */
 		pDmaBuf = &dma_cb->DmaBuf;
 		pDmaBuf->AllocSize = u4BufSize;
-		pPacket = halWpdmaAllocRxPacketBuff(prHifInfo->pdev, pDmaBuf->AllocSize,
+		pPacket = halWpdmaAllocRxPacketBuff(prHifInfo->prDmaDev, pDmaBuf->AllocSize,
 			FALSE, &pDmaBuf->AllocVa, &pDmaBuf->AllocPa);
 
 		/* keep allocated rx packet */
@@ -1088,7 +1086,6 @@ void halWpdmaFreeRing(struct GLUE_INFO *prGlueInfo)
 	void *pPacket, *pBuffer;
 	struct RTMP_DMACB *dma_cb;
 	struct GL_HIF_INFO *prHifInfo = &prGlueInfo->rHifInfo;
-	struct pci_dev *pdev = prHifInfo->pdev;
 
 	/* Free Tx Ring Packet */
 	for (index = 0; index < NUM_OF_TX_RING; index++) {
@@ -1101,7 +1098,8 @@ void halWpdmaFreeRing(struct GLUE_INFO *prGlueInfo)
 			pBuffer = pTxRing->Cell[j].pBuffer;
 
 			if (pPacket || pBuffer)
-				pci_unmap_single(pdev, pTxD->SDPtr0, pTxD->SDLen0, PCI_DMA_TODEVICE);
+				KAL_DMA_UNMAP_SINGLE(prHifInfo->prDmaDev, pTxD->SDPtr0,
+						     pTxD->SDLen0, KAL_DMA_TO_DEVICE);
 
 			pTxRing->Cell[j].pPacket = NULL;
 
@@ -1116,8 +1114,8 @@ void halWpdmaFreeRing(struct GLUE_INFO *prGlueInfo)
 		for (index = prHifInfo->RxRing[j].u4RingSize - 1; index >= 0; index--) {
 			dma_cb = &prHifInfo->RxRing[j].Cell[index];
 			if ((dma_cb->DmaBuf.AllocVa) && (dma_cb->pPacket)) {
-				pci_unmap_single(pdev, dma_cb->DmaBuf.AllocPa,
-					dma_cb->DmaBuf.AllocSize, PCI_DMA_FROMDEVICE);
+				KAL_DMA_UNMAP_SINGLE(prHifInfo->prDmaDev, dma_cb->DmaBuf.AllocPa,
+					dma_cb->DmaBuf.AllocSize, KAL_DMA_TO_DEVICE);
 
 				kalPacketFree(prGlueInfo, dma_cb->pPacket);
 			}
@@ -1199,7 +1197,9 @@ void halWpdmaInitRing(struct GLUE_INFO *prGlueInfo)
 	for (i = 0; i < NUM_OF_RX_RING; i++)
 		spin_lock_init((spinlock_t *) (&prHifInfo->RxRingLock[i]));
 
+	KAL_FLUSH_DCACHE();
 	prBusInfo->pdmaSetup(prGlueInfo, TRUE);
+	KAL_FLUSH_DCACHE();
 }
 
 void halWpdmaInitTxRing(IN struct GLUE_INFO *prGlueInfo)
@@ -1284,13 +1284,11 @@ void halWpdmaProcessCmdDmaDone(IN struct GLUE_INFO *prGlueInfo, IN uint16_t u2Po
 	struct RTMP_TX_RING *prTxRing;
 	struct TXD_STRUCT *pTxD;
 	void *pBuffer = NULL;
-	struct pci_dev *pdev;
 	unsigned long flags = 0;
 
 	ASSERT(prGlueInfo);
 
 	prHifInfo = &prGlueInfo->rHifInfo;
-	pdev = prHifInfo->pdev;
 	prTxRing = &prHifInfo->TxRing[u2Port];
 
 	spin_lock_irqsave(&prHifInfo->TxRingLock[u2Port], flags);
@@ -1310,10 +1308,10 @@ void halWpdmaProcessCmdDmaDone(IN struct GLUE_INFO *prGlueInfo, IN uint16_t u2Po
 			u4DmaIdx, u4SwIdx, pTxD->DMADONE, prTxRing->Cell[u4SwIdx].pPacket, prTxRing->u4UsedCnt);
 
 		if (pTxD->SDPtr0)
-			pci_unmap_single(pdev, pTxD->SDPtr0, pTxD->SDLen0, PCI_DMA_TODEVICE);
+			KAL_DMA_UNMAP_SINGLE(prHifInfo->prDmaDev, pTxD->SDPtr0, pTxD->SDLen0, KAL_DMA_TO_DEVICE);
 
 		if (pTxD->SDPtr1)
-			pci_unmap_single(pdev, pTxD->SDPtr1, pTxD->SDLen1, PCI_DMA_TODEVICE);
+			KAL_DMA_UNMAP_SINGLE(prHifInfo->prDmaDev, pTxD->SDPtr1, pTxD->SDLen1, KAL_DMA_TO_DEVICE);
 
 		pTxD->DMADONE = 0;
 		kalMemFree(prTxRing->Cell[u4SwIdx].pBuffer, PHY_MEM_TYPE, 0);
@@ -1399,7 +1397,6 @@ u_int8_t halWpdmaWriteCmd(IN struct GLUE_INFO *prGlueInfo, IN struct CMD_INFO *p
 	struct RTMP_TX_RING *prTxRing;
 	spinlock_t *prTxRingLock;
 	struct TXD_STRUCT *pTxD;
-	struct pci_dev *pdev = NULL;
 	uint16_t u2Port = TX_RING_CMD_IDX_2;
 	uint32_t u4TotalLen;
 	uint8_t *pucSrc = NULL;
@@ -1407,7 +1404,6 @@ u_int8_t halWpdmaWriteCmd(IN struct GLUE_INFO *prGlueInfo, IN struct CMD_INFO *p
 	ASSERT(prGlueInfo);
 	prHifInfo = &prGlueInfo->rHifInfo;
 
-	pdev = prHifInfo->pdev;
 	prTxRing = &prHifInfo->TxRing[u2Port];
 	prTxRingLock = &prHifInfo->TxRingLock[u2Port];
 
@@ -1426,9 +1422,10 @@ u_int8_t halWpdmaWriteCmd(IN struct GLUE_INFO *prGlueInfo, IN struct CMD_INFO *p
 
 	prTxRing->Cell[SwIdx].pPacket = (void *)prCmdInfo;
 	prTxRing->Cell[SwIdx].pBuffer = pucSrc;
-	prTxRing->Cell[SwIdx].PacketPa = pci_map_single(pdev, pucSrc, u4TotalLen, PCI_DMA_TODEVICE);
-	if (pci_dma_mapping_error(pdev, prTxRing->Cell[SwIdx].PacketPa)) {
-		DBGLOG(HAL, ERROR, "pci_map_single() error!\n");
+	prTxRing->Cell[SwIdx].PacketPa = KAL_DMA_MAP_SINGLE(prHifInfo->prDmaDev,
+							    pucSrc, u4TotalLen, KAL_DMA_TO_DEVICE);
+	if (KAL_DMA_MAPPING_ERROR(prHifInfo->prDmaDev, prTxRing->Cell[SwIdx].PacketPa)) {
+		DBGLOG(HAL, ERROR, "KAL_DMA_MAP_SINGLE() error!\n");
 		kalMemFree(pucSrc, PHY_MEM_TYPE, u4TotalLen);
 		spin_unlock_irqrestore((spinlock_t *)prTxRingLock, flags);
 		ASSERT(0);
@@ -1450,6 +1447,7 @@ u_int8_t halWpdmaWriteCmd(IN struct GLUE_INFO *prGlueInfo, IN struct CMD_INFO *p
 
 	prTxRing->u4UsedCnt++;
 	kalDevRegWrite(prGlueInfo, prTxRing->hw_cidx_addr, prTxRing->TxCpuIdx);
+	KAL_FLUSH_DCACHE();
 
 	spin_unlock_irqrestore((spinlock_t *)prTxRingLock, flags);
 
@@ -1468,7 +1466,6 @@ u_int8_t halWpdmaWriteData(IN struct GLUE_INFO *prGlueInfo, IN struct MSDU_INFO 
 	struct RTMP_TX_RING *prTxRing;
 	spinlock_t *prTxRingLock;
 	struct TXD_STRUCT *pTxD;
-	struct pci_dev *pdev = NULL;
 	uint16_t u2Port = TX_RING_DATA0_IDX_0;
 	uint32_t u4TotalLen;
 	struct sk_buff *skb;
@@ -1480,7 +1477,6 @@ u_int8_t halWpdmaWriteData(IN struct GLUE_INFO *prGlueInfo, IN struct MSDU_INFO 
 	prHifInfo = &prGlueInfo->rHifInfo;
 	prChipInfo = prGlueInfo->prAdapter->chip_info;
 
-	pdev = prHifInfo->pdev;
 	prTxRing = &prHifInfo->TxRing[u2Port];
 	prTxRingLock = &prHifInfo->TxRingLock[u2Port];
 
@@ -1503,9 +1499,10 @@ u_int8_t halWpdmaWriteData(IN struct GLUE_INFO *prGlueInfo, IN struct MSDU_INFO 
 	/* Update Tx descriptor */
 	halTxUpdateCutThroughDesc(prGlueInfo, prMsduInfo, prToken);
 
-	prToken->rDmaAddr = pci_map_single(pdev, prToken->prPacket, prToken->u4DmaLength, PCI_DMA_TODEVICE);
-	if (pci_dma_mapping_error(pdev, prToken->rDmaAddr)) {
-		DBGLOG(HAL, ERROR, "pci_map_single() error!\n");
+	prToken->rDmaAddr = KAL_DMA_MAP_SINGLE(prHifInfo->prDmaDev, prToken->prPacket,
+					       prToken->u4DmaLength, KAL_DMA_TO_DEVICE);
+	if (KAL_DMA_MAPPING_ERROR(prHifInfo->prDmaDev, prToken->rDmaAddr)) {
+		DBGLOG(HAL, ERROR, "KAL_DMA_MAP_SINGLE() error!\n");
 		halReturnMsduToken(prGlueInfo->prAdapter, prToken->u4Token);
 		ASSERT(0);
 		return FALSE;
@@ -1535,6 +1532,7 @@ u_int8_t halWpdmaWriteData(IN struct GLUE_INFO *prGlueInfo, IN struct MSDU_INFO 
 
 	prTxRing->u4UsedCnt++;
 	kalDevRegWrite(prGlueInfo, prTxRing->hw_cidx_addr, prTxRing->TxCpuIdx);
+	KAL_FLUSH_DCACHE();
 
 	spin_unlock_irqrestore((spinlock_t *)prTxRingLock, flags);
 

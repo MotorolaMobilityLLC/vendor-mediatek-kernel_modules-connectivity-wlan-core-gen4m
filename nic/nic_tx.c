@@ -2799,7 +2799,7 @@ void nicTxProcessTxDoneEvent(IN struct ADAPTER *prAdapter, IN struct WIFI_EVENT 
 
 		if (prMsduInfo->eSrc == TX_PACKET_MGMT)
 			cnmMgtPktFree(prAdapter, prMsduInfo);
-#if defined(_HIF_PCIE)
+#if defined(_HIF_PCIE) || defined(_HIF_AXI)
 		else if (prMsduInfo->prToken)
 			prMsduInfo->pfTxDoneHandler = NULL;
 #endif
