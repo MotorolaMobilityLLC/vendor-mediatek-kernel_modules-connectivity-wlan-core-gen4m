@@ -2489,6 +2489,108 @@ void kalOidClearance(IN struct GLUE_INFO *prGlueInfo)
 
 }
 
+void kalGetLocalTime(unsigned long long *sec, unsigned long *nsec)
+{
+	if (sec != NULL && nsec != NULL) {
+		*sec = local_clock();
+		*nsec = do_div(*sec, 1000000000)/1000;
+	} else
+		DBGLOG(INIT, ERROR,
+			"The input parameters error when get local time\n");
+}
+
+/*
+ * kalThreadSchedRetrieve
+ * Retrieve thread's current scheduling statistics and
+ * stored in output "sched".
+ * Return value:
+ *	 0 : Schedstats successfully retrieved
+ *	-1 : Kernel's schedstats feature not enabled
+ *	-2 : pThread not yet initialized or sched is a NULL pointer
+ */
+static int32_t kalThreadSchedRetrieve(struct task_struct *pThread,
+					struct KAL_THREAD_SCHEDSTATS *pSched)
+{
+#ifdef CONFIG_SCHEDSTATS
+	struct sched_entity se;
+	unsigned long long sec;
+	unsigned long usec;
+
+	if (!pSched)
+		return -2;
+
+	/* always clear sched to simplify error handling at caller side */
+	memset(pSched, 0, sizeof(struct KAL_THREAD_SCHEDSTATS));
+
+	if (!pThread)
+		return -2;
+
+	memcpy(&se, &pThread->se, sizeof(struct sched_entity));
+	kalGetLocalTime(&sec, &usec);
+
+	pSched->time = sec*1000 + usec/1000;
+	pSched->exec = se.sum_exec_runtime;
+	pSched->runnable = se.statistics.wait_sum;
+	pSched->iowait = se.statistics.iowait_sum;
+
+	return 0;
+#else
+	/* always clear sched to simplify error handling at caller side */
+	if (pSched)
+		memset(pSched, 0, sizeof(struct KAL_THREAD_SCHEDSTATS));
+	return -1;
+#endif
+}
+
+/*
+ * kalThreadSchedMark
+ * Record the thread's current schedstats and stored in
+ * output "schedstats" parameter for profiling at later time.
+ * Return value:
+ *	 0 : Schedstats successfully recorded
+ *	-1 : Kernel's schedstats feature not enabled
+ *	-2 : pThread not yet initialized or invalid parameters
+ */
+int32_t kalThreadSchedMark(struct task_struct *pThread,
+				struct KAL_THREAD_SCHEDSTATS *pSchedstats)
+{
+	return kalThreadSchedRetrieve(pThread, pSchedstats);
+}
+
+/*
+ * kalThreadSchedUnmark
+ * Calculate scheduling statistics against the previously marked point.
+ * The result will be filled back into the schedstats output parameter.
+ * Return value:
+ *	 0 : Schedstats successfully calculated
+ *	-1 : Kernel's schedstats feature not enabled
+ *	-2 : pThread not yet initialized or invalid parameters
+ */
+int32_t kalThreadSchedUnmark(struct task_struct *pThread,
+				struct KAL_THREAD_SCHEDSTATS *pSchedstats)
+{
+	int32_t ret;
+	struct KAL_THREAD_SCHEDSTATS sched_now;
+
+	if (unlikely(!pSchedstats)) {
+		ret = -2;
+	} else {
+		ret = kalThreadSchedRetrieve(pThread, &sched_now);
+		if (ret == 0) {
+			pSchedstats->time =
+				sched_now.time - pSchedstats->time;
+			pSchedstats->exec =
+				sched_now.exec - pSchedstats->exec;
+			pSchedstats->runnable =
+				sched_now.runnable - pSchedstats->runnable;
+			pSchedstats->iowait =
+				sched_now.iowait - pSchedstats->iowait;
+		}
+	}
+	return ret;
+}
+
+
 /*----------------------------------------------------------------------------*/
 /*!
  * @brief This function is used to transfer linux ioctl to OID, and  we
@@ -2523,7 +2625,9 @@ kalIoctl(IN struct GLUE_INFO *prGlueInfo,
 	 OUT uint32_t *pu4QryInfoLen)
 {
 	struct GL_IO_REQ *prIoReq = NULL;
+	struct KAL_THREAD_SCHEDSTATS schedstats;
 	uint32_t ret = WLAN_STATUS_SUCCESS;
+	uint32_t waitRet = 0;
 
 #if CFG_CHIP_RESET_SUPPORT
 	if (kalIsResetting())
@@ -2591,11 +2695,14 @@ kalIoctl(IN struct GLUE_INFO *prGlueInfo,
 	/* <8> Wake up tx thread to handle kick start the I/O request */
 	wake_up_interruptible(&prGlueInfo->waitq);
 
-	/* <9> Block and wait for event or timeout, current the timeout is 2
-	 *     secs
+	/* <9> Block and wait for event or timeout,
+	 * current the timeout is 30 secs
 	 */
-	wait_for_completion(&prGlueInfo->rPendComp);
-	{
+	kalThreadSchedMark(prGlueInfo->main_thread, &schedstats);
+	waitRet = wait_for_completion_timeout(&prGlueInfo->rPendComp,
+				MSEC_TO_JIFFIES(30*1000));
+	kalThreadSchedUnmark(prGlueInfo->main_thread, &schedstats);
+	if (waitRet > 0) {
 		/* Case 1: No timeout. */
 		/* if return WLAN_STATUS_PENDING, the status of cmd is stored
 		 * in prGlueInfo
@@ -2606,18 +2713,27 @@ kalIoctl(IN struct GLUE_INFO *prGlueInfo,
 			ret = prIoReq->rStatus;
 		if (ret != WLAN_STATUS_SUCCESS)
 			DBGLOG(OID, WARN, "kalIoctl: ret ErrCode: %d\n", ret);
-	}
+	} else {
+
 #if 0
-	{
 		/* Case 2: timeout */
 		/* clear pending OID's cmd in CMD queue */
 		if (fgCmd) {
 			prGlueInfo->u4TimeoutFlag = 1;
 			wlanReleasePendingOid(prGlueInfo->prAdapter, 0);
 		}
+#endif
+		DBGLOG(OID, WARN,
+			"duration:%llums, sched(x%llu/r%llu/i%llu)\n",
+			schedstats.time, schedstats.exec,
+			schedstats.runnable, schedstats.iowait);
+		DBGLOG(OID, ERROR,
+				"wait main_thread timeout, show backtrace:\n");
+
+		kal_show_stack(prGlueInfo->prAdapter,
+			prGlueInfo->main_thread, NULL);
 		ret = WLAN_STATUS_FAILURE;
 	}
-#endif
 
 	/* <10> Clear bit for error handling */
 	clear_bit(GLUE_FLAG_OID_BIT, &prGlueInfo->ulFlag);
@@ -5994,7 +6110,7 @@ void kalFreeTxMsdu(struct ADAPTER *prAdapter,
 int32_t kalHaltLock(uint32_t waitMs)
 {
 	int32_t i4Ret = 0;
-
+	struct GLUE_INFO *prGlueInfo = NULL;
 	if (waitMs) {
 		i4Ret = down_timeout(&rHaltCtrl.lock,
 				     MSEC_TO_JIFFIES(waitMs));
@@ -6002,20 +6118,23 @@ int32_t kalHaltLock(uint32_t waitMs)
 			goto success;
 		if (i4Ret != -ETIME)
 			return i4Ret;
-		if (rHaltCtrl.fgHeldByKalIoctl) {
-			struct GLUE_INFO *prGlueInfo = wlanGetGlueInfo();
 
+		prGlueInfo = wlanGetGlueInfo();
+		if (rHaltCtrl.fgHeldByKalIoctl) {
 			DBGLOG(INIT, ERROR,
 			       "kalIoctl was executed longer than %u ms, show backtrace of tx_thread!\n",
 			       kalGetTimeTick() - rHaltCtrl.u4HoldStart);
 			if (prGlueInfo)
-				kal_show_stack(prGlueInfo->main_thread, NULL);
+				kal_show_stack(prGlueInfo->prAdapter,
+					prGlueInfo->main_thread, NULL);
 		} else {
 			DBGLOG(INIT, ERROR,
 			       "halt lock held by %s pid %d longer than %u ms!\n",
 			       rHaltCtrl.owner->comm, rHaltCtrl.owner->pid,
 			       kalGetTimeTick() - rHaltCtrl.u4HoldStart);
-			kal_show_stack(rHaltCtrl.owner, NULL);
+			if (prGlueInfo)
+				kal_show_stack(prGlueInfo->prAdapter,
+					rHaltCtrl.owner, NULL);
 		}
 		return i4Ret;
 	}
