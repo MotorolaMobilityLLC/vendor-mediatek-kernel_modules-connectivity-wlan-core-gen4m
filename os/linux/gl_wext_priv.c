@@ -704,6 +704,7 @@ int priv_support_ioctl(IN struct net_device *prNetDev,
 
 #if (CFG_SUPPORT_QA_TOOL)
 	case IOCTL_QA_TOOL_DAEMON:
+	case SIOCDEVPRIVATE+2:
 		return priv_qa_agent(prNetDev, &rIwReqInfo, &(prIwReq->u),
 				     (char *) &(prIwReq->u));
 #endif
