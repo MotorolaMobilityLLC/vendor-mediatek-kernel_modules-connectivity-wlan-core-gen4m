@@ -1051,6 +1051,8 @@ int mtk_p2p_cfg80211_scan(struct wiphy *wiphy,
 	uint8_t ucBssIdx = 0;
 	uint8_t ucRoleIdx = 0;
 	u_int8_t fgIsFullChanScan = FALSE;
+	uint32_t u4SetInfoLen = 0;
+	uint32_t rStatus;
 
 	/* [-----Channel-----] [-----SSID-----][-----IE-----] */
 
@@ -1211,6 +1213,17 @@ int mtk_p2p_cfg80211_scan(struct wiphy *wiphy,
 		}
 
 		DBGLOG(P2P, TRACE, "Finish IE Buffer.\n");
+
+		/* Abort previous scan */
+		rStatus = kalIoctl(prGlueInfo,
+			wlanoidAbortP2pScan,
+			&ucBssIdx, sizeof(ucBssIdx),
+			FALSE, FALSE, TRUE, &u4SetInfoLen);
+
+		if (rStatus != WLAN_STATUS_SUCCESS)
+			DBGLOG(REQ, ERROR,
+				"mtk_p2p_cfg80211_scan abort scan fail 0x%x\n",
+				rStatus);
 
 		prP2pGlueDevInfo->prScanRequest = request;
 
