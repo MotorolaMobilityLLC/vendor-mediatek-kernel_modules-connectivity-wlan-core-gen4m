@@ -4400,8 +4400,7 @@ int32_t wlanOnWhenProbeSuccess(struct GLUE_INFO *prGlueInfo,
 
 #if (CFG_SUPPORT_CONNINFRA == 1)
 	if (prAdapter->chip_info->checkbushang) {
-		fw_log_bug_hang_register(
-			(void *)prAdapter->chip_info->checkbushang);
+		fw_log_bug_hang_register(prAdapter->chip_info->checkbushang);
 	}
 #endif
 
