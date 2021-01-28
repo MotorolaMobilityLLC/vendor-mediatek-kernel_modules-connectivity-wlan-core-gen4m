@@ -3056,7 +3056,11 @@ kalIoctlByBssIdx(IN struct GLUE_INFO *prGlueInfo,
 	/* <6> Check if we use the command queue */
 	prIoReq->u4Flag = fgCmd;
 
-	/* <7> schedule the OID bit */
+	/* <7> schedule the OID bit
+	 * Use memory barrier to ensure OidEntry is written done and then set
+	 * bit.
+	 */
+	smp_mb();
 	set_bit(GLUE_FLAG_OID_BIT, &prGlueInfo->ulFlag);
 
 	/* <7.1> Hold wakelock to ensure OS won't be suspended */
@@ -3064,7 +3068,11 @@ kalIoctlByBssIdx(IN struct GLUE_INFO *prGlueInfo,
 		&prGlueInfo->rTimeoutWakeLock, MSEC_TO_JIFFIES(
 		prGlueInfo->prAdapter->rWifiVar.u4WakeLockThreadWakeup));
 
-	/* <8> Wake up tx thread to handle kick start the I/O request */
+	/* <8> Wake up main thread to handle kick start the I/O request.
+	 * Use memory barrier to ensure set bit is done and then wake up main
+	 * thread.
+	 */
+	smp_mb();
 	wake_up_interruptible(&prGlueInfo->waitq);
 
 	/* <9> Block and wait for event or timeout,
