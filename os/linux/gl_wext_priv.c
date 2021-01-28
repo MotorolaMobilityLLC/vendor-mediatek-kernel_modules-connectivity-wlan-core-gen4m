@@ -2315,6 +2315,9 @@ reqExtSetAcpiDevicePowerState(IN P_GLUE_INFO_T prGlueInfo,
 
 #define CMD_GET_CNM_INFO		"GET_CNM"
 
+#if CFG_SUPPORT_ADVANCE_CONTROL
+#define CMD_SET_POP           "SET_POP"
+#endif
 static UINT_8 g_ucMiracastMode = MIRACAST_MODE_OFF;
 
 typedef struct cmd_tlv {
@@ -7714,6 +7717,63 @@ efuse_op_invalid:
 	return (INT_32)u4Offset;
 }
 
+#if CFG_SUPPORT_ADVANCE_CONTROL
+static int priv_driver_set_pop(IN struct net_device *prNetDev, IN char *pcCommand, IN int i4TotalLen)
+{
+	P_GLUE_INFO_T prGlueInfo = NULL;
+	WLAN_STATUS rStatus = WLAN_STATUS_SUCCESS;
+	UINT_32 u4BufLen = 0;
+	INT_32 i4BytesWritten = 0;
+	INT_32 i4Argc = 0;
+	PCHAR apcArgv[WLAN_CFG_ARGV_MAX] = { 0 };
+	INT_32 u4Ret = 0;
+	UINT_32 u4Id = 0xa1260002;
+	UINT_32 u4Sel = 0, u4CckTh = 0, u4OfdmTh = 0;
+	PARAM_CUSTOM_SW_CTRL_STRUCT_T rSwCtrlInfo;
+
+	ASSERT(prNetDev);
+	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
+		return -1;
+	prGlueInfo = *((P_GLUE_INFO_T *) netdev_priv(prNetDev));
+
+	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+	DBGLOG(REQ, LOUD, "argc is %i\n", i4Argc);
+
+	rSwCtrlInfo.u4Id = u4Id;
+
+	if (i4Argc <= 3) {
+		DBGLOG(REQ, ERROR, "Argc(%d) ERR: SET_POP <Sel> <CCK TH> <OFDM TH>\n", i4Argc);
+		return -1;
+	}
+
+	u4Ret = kalkStrtou32(apcArgv[1], 0, &(u4Sel));
+	if (u4Ret)
+		DBGLOG(REQ, LOUD, "parse rSwCtrlInfo error u4Ret=%d\n", u4Ret);
+	u4Ret = kalkStrtou32(apcArgv[2], 0, &(u4CckTh));
+	if (u4Ret)
+		DBGLOG(REQ, LOUD, "parse rSwCtrlInfo error u4Ret=%d\n", u4Ret);
+	u4Ret = kalkStrtou32(apcArgv[3], 0, &(u4OfdmTh));
+	if (u4Ret)
+		DBGLOG(REQ, LOUD, "parse rSwCtrlInfo error u4Ret=%d\n", u4Ret);
+
+	rSwCtrlInfo.u4Data = (u4CckTh | (u4OfdmTh<<8) | (u4Sel<<30));
+	DBGLOG(REQ, LOUD, "u4Enable=%d u4CckTh=%d u4OfdmTh=%d, u4Data=0x%x,\n",
+		u4Sel, u4CckTh, u4OfdmTh, rSwCtrlInfo.u4Data);
+	rStatus = kalIoctl(prGlueInfo,
+			   wlanoidSetSwCtrlWrite,
+			   &rSwCtrlInfo, sizeof(rSwCtrlInfo), FALSE, FALSE, TRUE, &u4BufLen);
+
+	if (rStatus != WLAN_STATUS_SUCCESS) {
+		DBGLOG(REQ, ERROR, "ERR: kalIoctl fail (%d)\n", rStatus);
+		return -1;
+	}
+
+	return i4BytesWritten;
+
+}
+
+#endif
 
 INT_32 priv_driver_cmds(IN struct net_device *prNetDev, IN PCHAR pcCommand, IN INT_32 i4TotalLen)
 {
@@ -7922,6 +7982,10 @@ INT_32 priv_driver_cmds(IN struct net_device *prNetDev, IN PCHAR pcCommand, IN I
 #endif
 		else if (strnicmp(pcCommand, CMD_EFUSE, sizeof(CMD_EFUSE)-1) == 0)
 			i4BytesWritten = priv_driver_efuse_ops(prNetDev, pcCommand, i4TotalLen);
+#if CFG_SUPPORT_ADVANCE_CONTROL
+		else if (strnicmp(pcCommand, CMD_SET_POP, strlen(CMD_SET_POP)) == 0)
+			i4BytesWritten = priv_driver_set_pop(prNetDev, pcCommand, i4TotalLen);
+#endif
 		else
 			i4CmdFound = 0;
 	}
