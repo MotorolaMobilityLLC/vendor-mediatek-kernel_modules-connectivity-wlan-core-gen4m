@@ -3929,6 +3929,53 @@ VOID rlmSendNotifyChannelWidthFrame(P_ADAPTER_T prAdapter, P_STA_RECORD_T prStaR
 
 /*----------------------------------------------------------------------------*/
 /*!
+* \brief Get BSS operating channel width by VHT and HT OP Info
+*
+* \param[in]
+*
+* \return ucBssOpBw 0:20MHz, 1:40MHz, 2:80MHz, 3:160MHz 4:80+80MHz
+*
+*/
+/*----------------------------------------------------------------------------*/
+UINT_8
+rlmGetBssOpBwByVhtAndHtOpInfo(P_BSS_INFO_T prBssInfo) {
+
+	UINT_8 ucBssOpBw = MAX_BW_20MHZ;
+
+	ASSERT(prBssInfo);
+
+
+	switch (prBssInfo->ucVhtChannelWidth) {
+	case VHT_OP_CHANNEL_WIDTH_80P80:
+		ucBssOpBw = MAX_BW_80_80_MHZ;
+		break;
+
+	case VHT_OP_CHANNEL_WIDTH_160:
+		ucBssOpBw = MAX_BW_160MHZ;
+		break;
+
+	case VHT_OP_CHANNEL_WIDTH_80:
+		ucBssOpBw = MAX_BW_80MHZ;
+		break;
+
+	case VHT_OP_CHANNEL_WIDTH_20_40:
+		if (prBssInfo->eBssSCO != CHNL_EXT_SCN)
+			ucBssOpBw = MAX_BW_40MHZ;
+		break;
+	default:
+		DBGLOG(RLM, WARN, "%s: unexpected VHT channel width: %d\n", __func__, prBssInfo->ucVhtChannelWidth);
+#if CFG_SUPPORT_802_11AC
+		if (RLM_NET_IS_11AC(prBssInfo))
+			ucBssOpBw = MAX_BW_80MHZ; /*VHT default should support BW 80*/
+#endif
+		break;
+	}
+
+	return ucBssOpBw;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
 * \brief Change OpMode Nss/Channel Width
 *
 * \param[in] ucChannelWidth 0:20MHz, 1:40MHz, 2:80MHz, 3:160MHz 4:80+80MHz
