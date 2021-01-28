@@ -4124,8 +4124,11 @@ void scanCheckEpigramVhtIE(IN uint8_t *pucBuf, IN struct BSS_DESC *prBssDesc)
 	u2IELength = prEpiIE->ucLength;
 	WLAN_GET_FIELD_BE24(prEpiIE->aucOui, &u4EpigramOui);
 	WLAN_GET_FIELD_BE16(prEpiIE->aucVendorType, &u2EpigramVendorType);
-	if (u4EpigramOui != VENDOR_IE_EPIGRAM_OUI ||
-	    u2EpigramVendorType != VENDOR_IE_EPIGRAM_VHTTYPE)
+	if (u4EpigramOui != VENDOR_IE_EPIGRAM_OUI)
+		return;
+	if (u2EpigramVendorType != VENDOR_IE_EPIGRAM_VHTTYPE1 &&
+	    u2EpigramVendorType != VENDOR_IE_EPIGRAM_VHTTYPE2 &&
+	    u2EpigramVendorType != VENDOR_IE_EPIGRAM_VHTTYPE3)
 		return;
 
 	pucIE = prEpiIE->pucData;
