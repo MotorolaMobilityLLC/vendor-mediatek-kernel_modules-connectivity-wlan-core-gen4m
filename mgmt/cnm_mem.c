@@ -624,6 +624,13 @@ struct STA_RECORD *cnmStaRecAlloc(struct ADAPTER *prAdapter,
 		prStaRec = &prAdapter->arStaRec[i];
 
 		if (!prStaRec->fgIsInUse) {
+
+			/* remove pending msdu when sta_rec alloc */
+			if (prStaRec)
+				nicFreePendingTxMsduInfo(prAdapter,
+					prStaRec->ucWlanIndex,
+					MSDU_REMOVE_BY_WLAN_INDEX);
+
 			kalMemZero(prStaRec, sizeof(struct STA_RECORD));
 			prStaRec->ucIndex = (uint8_t) i;
 			prStaRec->ucBssIndex = ucBssIndex;
@@ -682,11 +689,6 @@ struct STA_RECORD *cnmStaRecAlloc(struct ADAPTER *prAdapter,
 	} else {
 		prStaRec = NULL;
 	}
-
-	/* remove pending msdu when sta_rec alloc */
-	if (prStaRec)
-		nicFreePendingTxMsduInfo(prAdapter,
-			prStaRec->ucWlanIndex, MSDU_REMOVE_BY_WLAN_INDEX);
 
 	return prStaRec;
 }
