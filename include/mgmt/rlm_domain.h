@@ -722,7 +722,7 @@ enum regd_state rlmDomainStateTransition(enum regd_state request_state, struct r
 void rlmDomainSetCountryCode(char *alpha2, u8 size_of_alpha2);
 void rlmDomainSetDfsRegion(enum nl80211_dfs_regions dfs_region);
 enum nl80211_dfs_regions rlmDomainGetDfsRegion(void);
-void rlmDomainResetCtrlInfo(void);
+void rlmDomainResetCtrlInfo(BOOLEAN force);
 u32 rlmDomainSearchCountrySection(u32 country_code, const struct firmware *file);
 BOOLEAN rlmDomainIsTheEndOfCountrySection(u32 start_offset, const struct firmware *file);
 void rlmDomainAddActiveChannel(u8 band);

@@ -2258,9 +2258,13 @@ void rsnStopSaQuery(IN P_ADAPTER_T prAdapter)
 	ASSERT(prBssSpecInfo);
 
 	cnmTimerStopTimer(prAdapter, &prBssSpecInfo->rSaQueryTimer);
-	kalMemFree(prBssSpecInfo->pucSaQueryTransId, VIR_MEM_TYPE,
-		   prBssSpecInfo->u4SaQueryCount * ACTION_SA_QUERY_TR_ID_LEN);
-	prBssSpecInfo->pucSaQueryTransId = NULL;
+
+	if (prBssSpecInfo->pucSaQueryTransId) {
+		kalMemFree(prBssSpecInfo->pucSaQueryTransId, VIR_MEM_TYPE,
+		     prBssSpecInfo->u4SaQueryCount * ACTION_SA_QUERY_TR_ID_LEN);
+		prBssSpecInfo->pucSaQueryTransId = NULL;
+	}
+
 	prBssSpecInfo->u4SaQueryCount = 0;
 }
 

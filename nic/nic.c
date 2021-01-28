@@ -1420,7 +1420,8 @@ WLAN_STATUS nicUpdateBss(IN P_ADAPTER_T prAdapter, IN UINT_8 ucBssIndex)
 
 	rCmdSetBssInfo.ucWapiMode = (UINT_8) FALSE;
 
-	if (rCmdSetBssInfo.ucBssIndex == prAdapter->prAisBssInfo->ucBssIndex) {
+	if ((prAdapter->prAisBssInfo != NULL) &&
+	   (rCmdSetBssInfo.ucBssIndex == prAdapter->prAisBssInfo->ucBssIndex)) {
 		P_CONNECTION_SETTINGS_T prConnSettings = &(prAdapter->rWifiVar.rConnSettings);
 #if CFG_SUPPORT_PASSPOINT
 		/* mapping OSEN to WPA2, due to firmware no need to know current is OSEN */
@@ -1477,8 +1478,10 @@ WLAN_STATUS nicUpdateBss(IN P_ADAPTER_T prAdapter, IN UINT_8 ucBssIndex)
 #endif
 	}
 
-	if (ucBssIndex == prAdapter->prAisBssInfo->ucBssIndex &&
-	    prBssInfo->eCurrentOPMode == OP_MODE_INFRASTRUCTURE && prBssInfo->prStaRecOfAP != NULL) {
+	if ((prAdapter->prAisBssInfo != NULL) &&
+	    (ucBssIndex == prAdapter->prAisBssInfo->ucBssIndex) &&
+	    (prBssInfo->eCurrentOPMode == OP_MODE_INFRASTRUCTURE) &&
+	    (prBssInfo->prStaRecOfAP != NULL)) {
 		rCmdSetBssInfo.ucStaRecIdxOfAP = prBssInfo->prStaRecOfAP->ucIndex;
 
 		cnmAisInfraConnectNotify(prAdapter);
@@ -1687,8 +1690,11 @@ nicConfigPowerSaveProfile(IN P_ADAPTER_T prAdapter,
 	prAdapter->rWlanInfo.arPowerSaveMode[ucBssIndex].ucBssIndex = ucBssIndex;
 	prAdapter->rWlanInfo.arPowerSaveMode[ucBssIndex].ucPsProfile = (UINT_8) ePwrMode;
 
-	if ((ucBssIndex == prAdapter->prAisBssInfo->ucBssIndex) && prAdapter->rWlanInfo.fgEnSpecPwrMgt)
+	if ((prAdapter->prAisBssInfo != NULL) &&
+	    (ucBssIndex == prAdapter->prAisBssInfo->ucBssIndex) &&
+	    prAdapter->rWlanInfo.fgEnSpecPwrMgt) {
 		return WLAN_STATUS_SUCCESS;
+	}
 
 	return wlanSendSetQueryCmd(prAdapter,
 				   CMD_ID_POWER_SAVE_MODE,

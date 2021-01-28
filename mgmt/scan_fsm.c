@@ -913,6 +913,9 @@ scnFsmSchedScanRequest(IN P_ADAPTER_T prAdapter,
 
 	DBGLOG(SCN, INFO, "scnFsmSchedScanRequest\n");
 
+	if (prAdapter->prAisBssInfo == NULL)
+		return FALSE;
+
 	prScanInfo = &(prAdapter->rWifiVar.rScanInfo);
 	prNloParam = &prScanInfo->rNloParam;
 	prScanParam = &prNloParam->rScanParam;
@@ -1059,6 +1062,9 @@ BOOLEAN scnFsmSchedScanStopRequest(IN P_ADAPTER_T prAdapter)
 
 	ASSERT(prAdapter);
 	DBGLOG(SCN, INFO, "scnFsmSchedScanStopRequest\n");
+
+	if (prAdapter->prAisBssInfo == NULL)
+		return FALSE;
 
 	prScanInfo = &(prAdapter->rWifiVar.rScanInfo);
 	prNloParam = &prScanInfo->rNloParam;
