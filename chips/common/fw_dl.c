@@ -1749,6 +1749,8 @@ uint32_t wlanRamCodeDynMemMapSendComplete(IN struct ADAPTER *prAdapter,
 
 		break;
 	};
+	if (prAdapter->chip_info->checkbushang)
+		prAdapter->chip_info->checkbushang(prAdapter, FALSE);
 
 	DBGLOG(INIT, INFO, "FW_START CMD send, waiting for RSP\n");
 
@@ -2206,6 +2208,8 @@ uint32_t wlanConnacFormatDownload(IN struct ADAPTER
 		DBGLOG(INIT, WARN, "Get tailer info error!\n");
 		return WLAN_STATUS_FAILURE;
 	}
+	if (prAdapter->chip_info->checkbushang)
+		prAdapter->chip_info->checkbushang(prAdapter, FALSE);
 
 	ucRegionNum = prAdapter->rVerInfo.rCommonTailer.ucRegionNum;
 	ucPDA = (eDlIdx == IMG_DL_IDX_N9_FW) ? PDA_N9 : PDA_CR4;
@@ -2279,6 +2283,13 @@ uint32_t wlanDownloadFW(IN struct ADAPTER *prAdapter)
 		prFwDlOps->phyAction(prAdapter);
 
 	DBGLOG(INIT, INFO, "FW download Start\n");
+#if (CFG_SUPPORT_CONNINFRA == 1)
+	if (prChipInfo->coexpccifon) {
+		rPccifstatus = prChipInfo->coexpccifon();
+		if (rPccifstatus != 0)
+			DBGLOG(INIT, WARN, "pccif on fail\n");
+	}
+#endif
 
 	if (prFwDlOps->downloadFirmware) {
 		rStatus = prFwDlOps->downloadFirmware(prAdapter,
@@ -2299,13 +2310,7 @@ uint32_t wlanDownloadFW(IN struct ADAPTER *prAdapter)
 	DBGLOG(INIT, INFO, "FW download End\n");
 
 	HAL_ENABLE_FWDL(prAdapter, FALSE);
-#if (CFG_SUPPORT_CONNINFRA == 1)
-	if (prChipInfo->coexpccifon) {
-		rPccifstatus = prChipInfo->coexpccifon();
-		if (rPccifstatus != 0)
-			DBGLOG(INIT, WARN, "pccif on fail\n");
-	}
-#endif
+
 
 	return rStatus;
 }
