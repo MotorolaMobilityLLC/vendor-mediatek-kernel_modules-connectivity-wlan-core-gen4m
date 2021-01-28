@@ -133,14 +133,14 @@ struct ECO_INFO g_eco_info = {0xFF};
  */
 #define LOCAL_NIC_ALLOCATE_MEMORY(pucMem, u4Size, eMemType, pucComment) \
 	{ \
-		DBGLOG(INIT, INFO, "Allocating %ld bytes for %s.\n", u4Size, pucComment); \
+		DBGLOG(INIT, INFO, "Allocating %u bytes for %s.\n", u4Size, (char *) pucComment); \
 		pucMem = (uint8_t *)kalMemAlloc(u4Size, eMemType); \
 		if (pucMem == (uint8_t *)NULL) { \
-			DBGLOG(INIT, ERROR, "Could not allocate %ld bytes for %s.\n", u4Size, pucComment); \
+			DBGLOG(INIT, ERROR, "Could not allocate %u bytes for %s.\n", u4Size, (char *) pucComment); \
 			break; \
 		} \
 		ASSERT(((unsigned long)pucMem % 4) == 0); \
-		DBGLOG(INIT, INFO, "Virtual Address = 0x%p for %s.\n", (unsigned long)pucMem, pucComment); \
+		DBGLOG(INIT, INFO, "Virtual Address = 0x%p for %s.\n", (void *) pucMem, (char *) pucComment); \
 	}
 
 /*******************************************************************************
@@ -218,7 +218,7 @@ uint32_t nicAllocateAdapterMemory(IN struct ADAPTER *prAdapter)
 		prAdapter->pucCoalescingBufCached = kalAllocateIOBuffer(prAdapter->u4CoalescingBufCachedSize);
 
 		if (prAdapter->pucCoalescingBufCached == NULL) {
-			DBGLOG(INIT, ERROR, "Could not allocate %ld bytes for coalescing buffer.\n",
+			DBGLOG(INIT, ERROR, "Could not allocate %u bytes for coalescing buffer.\n",
 				prAdapter->u4CoalescingBufCachedSize);
 			break;
 		}
@@ -504,8 +504,9 @@ uint32_t nicProcessIST_impl(IN struct ADAPTER *prAdapter, IN uint32_t u4IntStatu
 				apfnEventFuncTable[prIntEventMap->u4Event] (prAdapter);
 			} else {
 				DBGLOG(INTR, WARN,
-				       "Empty INTR handler! ISAR bit#: %ld, event:%lu, func: 0x%x\n",
-				       prIntEventMap->u4Int, prIntEventMap->u4Event,
+				       "Empty INTR handler! ISAR bit#: %u, event:%u, func: 0x%p\n",
+				       prIntEventMap->u4Int,
+				       prIntEventMap->u4Event,
 				       apfnEventFuncTable[prIntEventMap->u4Event]);
 
 				ASSERT(0);	/* to trap any NULL interrupt handler */
@@ -2235,9 +2236,9 @@ uint32_t nicQmUpdateWmmParms(IN struct ADAPTER *prAdapter, IN uint8_t ucBssIndex
 
 	DBGLOG(QM, INFO, "Update WMM parameters for BSS[%u]\n", ucBssIndex);
 
-	DBGLOG(QM, EVENT, "sizeof(struct AC_QUE_PARMS): %d\n", sizeof(struct AC_QUE_PARMS));
-	DBGLOG(QM, EVENT, "sizeof(CMD_UPDATE_WMM_PARMS): %d\n", sizeof(struct CMD_UPDATE_WMM_PARMS));
-	DBGLOG(QM, EVENT, "sizeof(struct WIFI_CMD): %d\n", sizeof(struct WIFI_CMD));
+	DBGLOG(QM, EVENT, "sizeof(struct AC_QUE_PARMS): %zu\n", sizeof(struct AC_QUE_PARMS));
+	DBGLOG(QM, EVENT, "sizeof(CMD_UPDATE_WMM_PARMS): %zu\n", sizeof(struct CMD_UPDATE_WMM_PARMS));
+	DBGLOG(QM, EVENT, "sizeof(struct WIFI_CMD): %zu\n", sizeof(struct WIFI_CMD));
 
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
 	rCmdUpdateWmmParms.ucBssIndex = (uint8_t) ucBssIndex;
@@ -3394,7 +3395,7 @@ nicRlmArUpdateParms(IN struct ADAPTER *prAdapter,
 	ucArPerH = (uint8_t) (((u4ArSysParam1 >> 16) & BITS(0, 7)));
 	ucArPerL = (uint8_t) (((u4ArSysParam1 >> 24) & BITS(0, 7)));
 
-	DBGLOG(INIT, INFO, "ArParam %ld %ld %ld %ld\n", u4ArSysParam0, u4ArSysParam1, u4ArSysParam2, u4ArSysParam3);
+	DBGLOG(INIT, INFO, "ArParam %u %u %u %u\n", u4ArSysParam0, u4ArSysParam1, u4ArSysParam2, u4ArSysParam3);
 	DBGLOG(INIT, INFO, "ArVer %u AbwVer %u AgiVer %u\n", ucArVer, ucAbwVer, ucAgiVer);
 	DBGLOG(INIT, INFO, "HtMask %x LegacyMask %x\n", u2HtClrMask, u2LegacyClrMask);
 	DBGLOG(INIT, INFO,
