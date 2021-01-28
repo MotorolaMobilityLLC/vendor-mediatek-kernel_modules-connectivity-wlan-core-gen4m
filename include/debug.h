@@ -229,6 +229,7 @@ struct CHIP_DBG_OPS {
 	void (*showTxdInfo)(struct ADAPTER *prAdapter, u_int32_t fid);
 	bool (*showCsrInfo)(struct ADAPTER *prAdapter);
 	void (*showDmaschInfo)(struct ADAPTER *prAdapter);
+	void (*dumpMacInfo)(struct ADAPTER *prAdapter);
 	int32_t (*showWtblInfo)(
 		struct ADAPTER *prAdapter,
 		uint32_t u4Index,

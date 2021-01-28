@@ -367,6 +367,7 @@ struct CHIP_DBG_OPS connac2x2_debug_ops = {
 	.showTxdInfo = halShowTxdInfo,
 	.showCsrInfo = halShowHostCsrInfo,
 	.showDmaschInfo = halShowDmaschInfo,
+	.dumpMacInfo = haldumpMacInfo,
 	.showHifInfo = connac2x2ShowHifInfo,
 #else
 	.showPdmaInfo = NULL,
@@ -375,6 +376,7 @@ struct CHIP_DBG_OPS connac2x2_debug_ops = {
 	.showTxdInfo = NULL,
 	.showCsrInfo = NULL,
 	.showDmaschInfo = NULL,
+	.dumpMacInfo = NULL,
 	.showHifInfo = NULL,
 #endif
 	.showWtblInfo = NULL,

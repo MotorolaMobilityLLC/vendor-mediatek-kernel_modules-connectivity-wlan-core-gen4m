@@ -1614,6 +1614,123 @@ void soc3_0_show_dmashdl_info(IN struct ADAPTER *prAdapter)
 		DBGLOG(HAL, INFO, "DMASHDL: no counter mismatch\n");
 }
 
+void soc3_0_dump_mac_info(IN struct ADAPTER *prAdapter)
+{
+#define BUF_SIZE 1024
+#define CR_COUNT 12
+#define LOOP_COUNT 30
+
+	uint32_t i = 0, j = 0, pos = 0;
+	uint32_t value = 0;
+	uint32_t cr_band0[] = {
+			0x820ED020,
+			0x820E4120,
+			0x820E4128,
+			0x820E22F0,
+			0x820E22F4,
+			0x820E22F8,
+			0x820E22FC,
+			0x820E3190,
+			0x820C0220,
+			0x820C0114,
+			0x820C0154,
+			0x820E0024
+	};
+	uint32_t cr_band1[] = {
+			0x820FD020,
+			0x820F4120,
+			0x820F4128,
+			0x820F22F0,
+			0x820F22F4,
+			0x820F22F8,
+			0x820F22FC,
+			0x820F3190,
+			0x820C0220,
+			0x820C0114,
+			0x820C0154,
+			0x820F0024
+	};
+
+	char *buf = (char *) kalMemAlloc(BUF_SIZE, VIR_MEM_TYPE);
+
+	DBGLOG(HAL, INFO, "Dump for band0\n");
+	HAL_MCR_WR(prAdapter, 0x7C006100, 0x1F);
+	HAL_MCR_WR(prAdapter, 0x7C006104, 0x07070707);
+	HAL_MCR_WR(prAdapter, 0x7C006108, 0x0A0A0909);
+	HAL_MCR_RD(prAdapter, 0x820D0000, &value);
+	DBGLOG(HAL, INFO, "Dump CR: 0x820D0000 = 0x%08x\n", value);
+	HAL_MCR_RD(prAdapter, 0x820E3080, &value);
+	DBGLOG(HAL, INFO, "Dump CR: 0x820E3080 = 0x%08x\n", value);
+	HAL_MCR_RD(prAdapter, 0x820C0028, &value);
+	DBGLOG(HAL, INFO, "Dump CR: 0x820C0028 = 0x%08x\n", value);
+	HAL_MCR_RD(prAdapter, 0x820C8028, &value);
+	DBGLOG(HAL, INFO, "Dump CR: 0x820C8028 = 0x%08x\n", value);
+	HAL_MCR_RD(prAdapter, 0x820C8030, &value);
+	DBGLOG(HAL, INFO, "Dump CR: 0x820C8030 = 0x%08x\n", value);
+	/* Band 0 TXV_C and TXV_P */
+	for (i = 0x820E412C; i < 0x820E4160; i += 4) {
+		HAL_MCR_RD(prAdapter, i, &value);
+		DBGLOG(HAL, INFO, "Dump CR: 0x%08x = 0x%08x\n", i, value);
+		kalMdelay(1);
+	}
+	HAL_MCR_RD(prAdapter, 0x820E206C, &value);
+	DBGLOG(HAL, INFO, "Dump CR: 0x820E206C = 0x%08x\n", value);
+
+	if (buf) {
+		kalMemZero(buf, BUF_SIZE);
+		for (i = 0; i < LOOP_COUNT; i++) {
+			for (j = 0; j < CR_COUNT; j++) {
+				HAL_MCR_RD(prAdapter, cr_band0[j], &value);
+				pos += kalSnprintf(buf + pos, 25,
+					"0x%08x = 0x%08x%s", cr_band0[j], value,
+					j == CR_COUNT - 1 ? ";" : ",");
+			}
+			DBGLOG(HAL, INFO, "Dump CR: %s\n", buf);
+			pos = 0;
+		}
+	}
+
+	DBGLOG(HAL, INFO, "Dump for band1\n");
+	HAL_MCR_WR(prAdapter, 0x7C006400, 0x1F);
+	HAL_MCR_WR(prAdapter, 0x7C006404, 0x07070707);
+	HAL_MCR_WR(prAdapter, 0x7C006408, 0x0A0A0909);
+	HAL_MCR_RD(prAdapter, 0x820D0000, &value);
+	DBGLOG(HAL, INFO, "Dump CR: 0x820D0000 = 0x%08x\n", value);
+	HAL_MCR_RD(prAdapter, 0x820F3080, &value);
+	DBGLOG(HAL, INFO, "Dump CR: 0x820F3080 = 0x%08x\n", value);
+	HAL_MCR_RD(prAdapter, 0x820C0028, &value);
+	DBGLOG(HAL, INFO, "Dump CR: 0x820C0028 = 0x%08x\n", value);
+	HAL_MCR_RD(prAdapter, 0x820C8028, &value);
+	DBGLOG(HAL, INFO, "Dump CR: 0x820C8028 = 0x%08x\n", value);
+	HAL_MCR_RD(prAdapter, 0x820C8030, &value);
+	DBGLOG(HAL, INFO, "Dump CR: 0x820C8030 = 0x%08x\n", value);
+	/* Band 0 TXV_C and TXV_P */
+	for (i = 0x820F412C; i < 0x820F4160; i += 4) {
+		HAL_MCR_RD(prAdapter, i, &value);
+		DBGLOG(HAL, INFO, "Dump CR: 0x%08x = 0x%08x\n", i, value);
+		kalMdelay(1);
+	}
+	HAL_MCR_RD(prAdapter, 0x820F206C, &value);
+	DBGLOG(HAL, INFO, "Dump CR: 0x820F206C = 0x%08x\n", value);
+
+	if (buf) {
+		kalMemZero(buf, BUF_SIZE);
+		for (i = 0; i < LOOP_COUNT; i++) {
+			for (j = 0; j < CR_COUNT; j++) {
+				HAL_MCR_RD(prAdapter, cr_band1[j], &value);
+				pos += kalSnprintf(buf + pos, 25,
+					"0x%08x = 0x%08x%s", cr_band1[j], value,
+					j == CR_COUNT - 1 ? ";" : ",");
+			}
+			DBGLOG(HAL, INFO, "Dump CR: %s\n", buf);
+			pos = 0;
+		}
+	}
+
+	if (buf)
+		kalMemFree(buf, VIR_MEM_TYPE, BUF_SIZE);
+}
+
 #if WFSYS_SUPPORT_BUS_HANG_READ_FROM_DRIVER_BASE
 void show_wfdma_interrupt_info_without_adapter(
 	IN enum _ENUM_WFDMA_TYPE_T enum_wfdma_type)

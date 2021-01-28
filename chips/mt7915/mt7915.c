@@ -530,6 +530,7 @@ struct CHIP_DBG_OPS mt7915_debug_ops = {
 	.showUmacFwtblInfo = connac2x_show_umac_wtbl_info,
 	.showCsrInfo = NULL,
 	.showDmaschInfo = NULL,
+	.dumpMacInfo = NULL,
 	.showHifInfo = NULL,
 	.printHifDbgInfo = NULL,
 	.show_rx_rate_info = connac2x_show_rx_rate_info,
