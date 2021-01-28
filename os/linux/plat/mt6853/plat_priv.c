@@ -201,7 +201,7 @@ int32_t kalGetFwFlavor(uint8_t *flavor)
 		*flavor = 'c';
 		break;
 	case 0x6635:
-		*flavor = 'b';
+		*flavor = 'd';
 		break;
 	default:
 		ret = 0;
