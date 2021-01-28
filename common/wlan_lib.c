@@ -297,6 +297,9 @@ void wlanAdapterDestroy(IN struct ADAPTER *prAdapter)
 	if (!prAdapter)
 		return;
 
+	scanLogCacheFlushAll(&(prAdapter->rWifiVar.rScanInfo.rScanLogCache),
+		LOG_SCAN_D2D, SCAN_LOG_MSG_MAX_LEN);
+
 	kalMemFree(prAdapter, VIR_MEM_TYPE, sizeof(struct ADAPTER));
 }
 
