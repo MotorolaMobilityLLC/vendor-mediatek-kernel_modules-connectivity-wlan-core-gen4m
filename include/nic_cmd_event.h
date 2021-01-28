@@ -2072,16 +2072,34 @@ struct CMD_CHANNEL_POWER_LIMIT_V2 {
 	uint8_t tx_pwr_lg_80;
 
 	uint8_t tx_pwr_1ss_delta;
-	uint8_t ucReserved_1[3];
+	uint8_t ucReserved_1[2];
 };
 
 struct CMD_SET_COUNTRY_CHANNEL_POWER_LIMIT_V2 {
 	uint8_t ucNum;
 	uint8_t eband; /*ENUM_BAND_T*/
-	uint32_t countryCode;
 	uint8_t usReserved[2];
+	uint32_t countryCode;
 	struct CMD_CHANNEL_POWER_LIMIT_V2 rChannelPowerLimit[0];
 };
+
+#define TX_PWR_LIMIT_SECTION_NUM 5
+#define TX_PWR_LIMIT_ELEMENT_NUM 7
+#define TX_PWR_LIMIT_COUNTRY_STR_MAX_LEN 4
+#define TX_PWR_LIMIT_MAX_VAL 63
+
+struct CHANNEL_TX_PWR_LIMIT {
+	uint8_t ucChannel;
+	int8_t rTxPwrLimitValue[TX_PWR_LIMIT_SECTION_NUM]
+		[TX_PWR_LIMIT_ELEMENT_NUM];
+};
+
+struct TX_PWR_LIMIT_DATA {
+	uint32_t countryCode;
+	uint32_t ucChNum;
+	struct CHANNEL_TX_PWR_LIMIT *rChannelTxPwrLimit;
+};
+
 #endif
 
 #endif
