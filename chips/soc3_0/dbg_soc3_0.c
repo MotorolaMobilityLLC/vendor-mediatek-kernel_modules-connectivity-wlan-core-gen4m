@@ -367,7 +367,7 @@ void soc3_0_show_ple_info(
 	u_int32_t rpg_hif, upg_hif, cpu_max_q, cpu_min_q, rpg_cpu, upg_cpu;
 	u_int32_t i, j;
 	u_int32_t ple_peek[12] = {0};
-	u_int32_t ple_mask;
+	u_int32_t ple_empty, ple_txd_empty;
 
 #if 0
 	u_int32_t ple_txcmd_stat;
@@ -375,7 +375,8 @@ void soc3_0_show_ple_info(
 
 	HAL_MCR_RD(prAdapter, WF_PLE_TOP_INT_N9_ERR_STS_ADDR, &int_n9_err);
 	HAL_MCR_RD(prAdapter, WF_PLE_TOP_INT_N9_ERR_STS_1_ADDR, &int_n9_err1);
-	HAL_MCR_RD(prAdapter, WF_PLE_TOP_QUEUE_EMPTY_ADDR, &ple_mask);
+	HAL_MCR_RD(prAdapter, WF_PLE_TOP_QUEUE_EMPTY_ADDR, &ple_empty);
+	HAL_MCR_RD(prAdapter, WF_PLE_TOP_TXD_QUEUE_EMPTY_ADDR, &ple_txd_empty);
 
 	HAL_MCR_RD(prAdapter, WF_PLE_TOP_PBUF_CTRL_ADDR, &ple_buf_ctrl);
 	HAL_MCR_RD(prAdapter, WF_PLE_TOP_QUEUE_EMPTY_ADDR, &ple_stat[0]);
@@ -462,11 +463,13 @@ void soc3_0_show_ple_info(
 	HAL_MCR_RD(prAdapter, WF_PLE_FSM_PEEK_CR_11, &ple_peek[11]);
 
 	/* Error Status Info */
-	DBGLOG(HAL, INFO, "PLE Error Status and FSM Info:\n");
+	DBGLOG(HAL, INFO, "PLE Error Status:\n");
 	DBGLOG(HAL, INFO, "\tPLE Error Status(0x%08x): 0x%08x\n",
 			WF_PLE_TOP_INT_N9_ERR_STS_ADDR, int_n9_err);
 	DBGLOG(HAL, INFO, "\tPLE Error 1 Status(0x%08x): 0x%08x\n",
 			WF_PLE_TOP_INT_N9_ERR_STS_1_ADDR, int_n9_err1);
+
+	DBGLOG(HAL, INFO, "PLE FSM Info:\n");
 	DBGLOG(HAL, INFO, "\tPLE FSM_PEEK_00(0x%08x): 0x%08x\n",
 			WF_PLE_FSM_PEEK_CR_00, ple_peek[0]);
 	DBGLOG(HAL, INFO, "\tPLE FSM_PEEK_01(0x%08x): 0x%08x\n",
@@ -659,8 +662,10 @@ void soc3_0_show_ple_info(
 
 	/* Queue Empty Status */
 	DBGLOG(HAL, INFO, "PLE Queue Empty Status:\n");
-	DBGLOG(HAL, INFO, "\tQUEUE_EMPTY(0x%08x): 0x%08x\n",
-		WF_PLE_TOP_QUEUE_EMPTY_ADDR, ple_mask);
+	DBGLOG(HAL, INFO, "\t QUEUE_EMPTY(0x%08x): 0x%08x\n",
+			WF_PLE_TOP_QUEUE_EMPTY_ADDR, ple_empty);
+	DBGLOG(HAL, INFO, "\t TXD QUEUE_EMPTY(0x%08x): 0x%08x\n",
+			WF_PLE_TOP_TXD_QUEUE_EMPTY_ADDR, ple_txd_empty);
 
 	/* Nonempty Queue Status */
 	DBGLOG(HAL, INFO, "Nonempty Q info:\n");
