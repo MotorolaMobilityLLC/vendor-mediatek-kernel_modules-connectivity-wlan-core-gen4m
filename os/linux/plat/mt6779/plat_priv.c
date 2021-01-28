@@ -70,7 +70,7 @@ void kalSetEmiMpuProtection(phys_addr_t emiPhyBase, bool enable)
 	DBGLOG(INIT, INFO, "emiPhyBase: 0x%p, enable: %d\n",
 			emiPhyBase, enable);
 
-	mtk_emimpu_init_region(&region, REGION_WIFI);
+	ret = mtk_emimpu_init_region(&region, REGION_WIFI);
 	if (ret) {
 		DBGLOG(INIT, ERROR, "mtk_emimpu_init_region(%u) failed %d\n",
 				REGION_WIFI, ret);
@@ -81,7 +81,7 @@ void kalSetEmiMpuProtection(phys_addr_t emiPhyBase, bool enable)
 	mtk_emimpu_set_apc(&region, DOMAIN_CONN, MTK_EMIMPU_NO_PROTECTION);
 	mtk_emimpu_lock_region(&region,
 		enable ? MTK_EMIMPU_LOCK : MTK_EMIMPU_UNLOCK);
-	mtk_emimpu_set_protection(&region);
+	ret = mtk_emimpu_set_protection(&region);
 	if (ret)
 		DBGLOG(INIT, ERROR,
 			"mtk_emimpu_set_protection(%u) failed %d\n",
