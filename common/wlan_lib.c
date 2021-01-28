@@ -6924,9 +6924,9 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 	prWifiVar->ucAmsduInAmpduTx = (uint8_t) wlanCfgGetUint32(prAdapter,
 					"AmsduInAmpduTx", FEATURE_ENABLED);
 	prWifiVar->ucHtAmsduInAmpduRx = (uint8_t) wlanCfgGetUint32(prAdapter,
-					"HtAmsduInAmpduRx", FEATURE_DISABLED);
+					"HtAmsduInAmpduRx", FEATURE_ENABLED);
 	prWifiVar->ucHtAmsduInAmpduTx = (uint8_t) wlanCfgGetUint32(prAdapter,
-					"HtAmsduInAmpduTx", FEATURE_DISABLED);
+					"HtAmsduInAmpduTx", FEATURE_ENABLED);
 	prWifiVar->ucVhtAmsduInAmpduRx = (uint8_t) wlanCfgGetUint32(prAdapter,
 					"VhtAmsduInAmpduRx", FEATURE_ENABLED);
 	prWifiVar->ucVhtAmsduInAmpduTx = (uint8_t) wlanCfgGetUint32(prAdapter,
