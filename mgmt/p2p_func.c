@@ -1281,6 +1281,7 @@ VOID p2pFuncAcquireCh(IN P_ADAPTER_T prAdapter, IN UINT_8 ucBssIdx, IN P_P2P_CHN
 VOID p2pFuncStartRdd(IN P_ADAPTER_T prAdapter, IN UINT_8 ucBssIdx)
 {
 	P_CMD_RDD_ON_OFF_CTRL_T prCmdRddOnOffCtrl;
+	UINT_8 ucCountryChar[2];
 
 	DEBUGFUNC("p2pFuncStartRdd()");
 
@@ -1294,12 +1295,17 @@ VOID p2pFuncStartRdd(IN P_ADAPTER_T prAdapter, IN UINT_8 ucBssIdx)
 
 		prCmdRddOnOffCtrl->ucRddIdx = prAdapter->aprBssInfo[ucBssIdx]->eDBDCBand;
 
+		ucCountryChar[0] = (UINT_8) prAdapter->rWifiVar.rConnSettings.u2CountryCode;
+		ucCountryChar[1] = (UINT_8) (prAdapter->rWifiVar.rConnSettings.u2CountryCode >> 8);
+		prCmdRddOnOffCtrl->u2CountryCode = (((UINT_16) ucCountryChar[0]) << 8) | ((UINT_16) ucCountryChar[1]);
+		DBGLOG(P2P, INFO, "Country code =  %x\n", prCmdRddOnOffCtrl->u2CountryCode);
+
 		if (prCmdRddOnOffCtrl->ucRddIdx)
 			prCmdRddOnOffCtrl->ucRddInSel = RDD_IN_SEL_1;
 		else
 			prCmdRddOnOffCtrl->ucRddInSel = RDD_IN_SEL_0;
 
-		DBGLOG(P2P, INFO, "p2pFuncStartRdd: Start Radar detection - DFS ctrl: %.d, RDD index: %d\n",
+		DBGLOG(P2P, INFO, "p2pFuncStartRdd: Start Radar detection - DFS ctrl: %d, RDD index: %d\n",
 				prCmdRddOnOffCtrl->ucDfsCtrl, prCmdRddOnOffCtrl->ucRddIdx);
 
 		wlanSendSetQueryCmd(prAdapter,

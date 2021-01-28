@@ -1578,8 +1578,9 @@ typedef struct _CMD_BT_OVER_WIFI {
 typedef struct _CMD_RDD_ON_OFF_CTRL_T {
 	UINT_8 ucDfsCtrl;
 	UINT_8 ucRddIdx;
+	UINT_16 u2CountryCode;
 	UINT_8 ucRddInSel;
-	UINT_8 ucReserve[1];
+	UINT_8 ucReserve[3];
 } CMD_RDD_ON_OFF_CTRL_T, *P_CMD_RDD_ON_OFF_CTRL_T;
 #endif
 

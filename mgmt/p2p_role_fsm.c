@@ -1187,7 +1187,8 @@ VOID p2pRoleFsmRunEventDfsCac(IN P_ADAPTER_T prAdapter, IN P_MSG_HDR_T prMsgHdr)
 
 
 	} while (FALSE);
-
+	if (prMsgHdr)
+		cnmMemFree(prAdapter, prMsgHdr);
 }				/*p2pRoleFsmRunEventDfsCac*/
 
 VOID p2pRoleFsmRunEventRadarDet(IN P_ADAPTER_T prAdapter, IN P_MSG_HDR_T prMsgHdr)
@@ -1219,7 +1220,8 @@ VOID p2pRoleFsmRunEventRadarDet(IN P_ADAPTER_T prAdapter, IN P_MSG_HDR_T prMsgHd
 		kalP2PRddDetectUpdate(prAdapter->prGlueInfo, prP2pRoleFsmInfo->ucRoleIndex);
 
 	} while (FALSE);
-
+	if (prMsgHdr)
+		cnmMemFree(prAdapter, prMsgHdr);
 }				/*p2pRoleFsmRunEventRadarDet*/
 
 VOID p2pRoleFsmRunEventSetNewChannel(IN P_ADAPTER_T prAdapter, IN P_MSG_HDR_T prMsgHdr)
@@ -1250,7 +1252,8 @@ VOID p2pRoleFsmRunEventSetNewChannel(IN P_ADAPTER_T prAdapter, IN P_MSG_HDR_T pr
 
 
 	} while (FALSE);
-
+	if (prMsgHdr)
+		cnmMemFree(prAdapter, prMsgHdr);
 }				/*p2pRoleFsmRunEventCsaDone*/
 
 VOID p2pRoleFsmRunEventCsaDone(IN P_ADAPTER_T prAdapter, IN P_MSG_HDR_T prMsgHdr)
@@ -1274,7 +1277,8 @@ VOID p2pRoleFsmRunEventCsaDone(IN P_ADAPTER_T prAdapter, IN P_MSG_HDR_T prMsgHdr
 
 
 	} while (FALSE);
-
+	if (prMsgHdr)
+		cnmMemFree(prAdapter, prMsgHdr);
 }				/*p2pRoleFsmRunEventCsaDone*/
 #endif
 
@@ -1977,11 +1981,10 @@ p2pRoleFsmRunEventChnlGrant(IN P_ADAPTER_T prAdapter,
 			case P2P_ROLE_STATE_DFS_CAC:
 				p2pFuncStartRdd(prAdapter, prMsgChGrant->ucBssIndex);
 				cnmTimerStartTimer(prAdapter, &(prP2pRoleFsmInfo->rP2pRoleFsmTimeoutTimer),
-					prAdapter->prGlueInfo->prP2PInfo[prP2pRoleFsmInfo->ucRoleIndex]->cac_time_ms);
+					prP2pRoleFsmInfo->rChnlReqInfo.u4MaxInterval);
 
 				DBGLOG(P2P, INFO, "p2pRoleFsmRunEventChnlGrant: CAC time = %ds\n",
-					prAdapter->prGlueInfo->prP2PInfo[prP2pRoleFsmInfo->ucRoleIndex]->
-					cac_time_ms/1000);
+					prP2pRoleFsmInfo->rChnlReqInfo.u4MaxInterval/1000);
 				break;
 			case P2P_ROLE_STATE_SWITCH_CHANNEL:
 				p2pFuncDfsSwitchCh(prAdapter, prP2pBssInfo, prP2pRoleFsmInfo->rChnlReqInfo);

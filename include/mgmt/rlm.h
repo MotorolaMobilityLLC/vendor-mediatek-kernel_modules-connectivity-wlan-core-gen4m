@@ -289,9 +289,7 @@ VOID rlmGenerateMTKOuiIE(P_ADAPTER_T prAdapter, P_MSDU_INFO_T prMsduInfo);
 
 BOOLEAN rlmParseCheckMTKOuiIE(IN P_ADAPTER_T prAdapter, IN PUINT_8 pucBuf, IN PUINT_32 pu4Cap);
 
-#if (CFG_SUPPORT_DFS_MASTER == 1)
 VOID rlmGenerateCsaIE(P_ADAPTER_T prAdapter, P_MSDU_INFO_T prMsduInfo);
-#endif
 
 VOID rlmProcessBcn(P_ADAPTER_T prAdapter, P_SW_RFB_T prSwRfb, PUINT_8 pucIE, UINT_16 u2IELength);
 

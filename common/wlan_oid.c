@@ -11959,9 +11959,6 @@ wlanoidQuerySetRddReport(IN P_ADAPTER_T prAdapter, IN PVOID pvSetBuffer, IN UINT
 
 	*pu4SetInfoLen = sizeof(P_PARAM_CUSTOM_SET_RDD_REPORT_T);
 
-	/*if (u4SetBufferLen < sizeof(P_PARAM_CUSTOM_SET_RDD_REPORT_T))*/
-		/*return WLAN_STATUS_INVALID_LENGTH;*/
-
 	ASSERT(pvSetBuffer);
 
 	prSetRddReport = (P_PARAM_CUSTOM_SET_RDD_REPORT_T) pvSetBuffer;
@@ -11985,11 +11982,11 @@ wlanoidQuerySetRddReport(IN P_ADAPTER_T prAdapter, IN PVOID pvSetBuffer, IN UINT
 					CMD_ID_RDD_ON_OFF_CTRL,
 					TRUE,   /* fgSetQuery Bit:  True->write  False->read*/
 					FALSE,   /* fgNeedResp */
-					FALSE,   /* fgIsOid*/
-					NULL,
-					NULL,
+					TRUE,   /* fgIsOid*/
+					nicCmdEventSetCommon, /* REF: wlanoidSetDbdcEnable */
+					nicOidCmdTimeoutCommon,
 					sizeof(CMD_RDD_ON_OFF_CTRL_T),
-					(PUINT_8) (prCmdRddOnOffCtrl), NULL, 0);
+					(PUINT_8) (prCmdRddOnOffCtrl), pvSetBuffer, u4SetBufferLen);
 
 	return rWlanStatus;
 }
