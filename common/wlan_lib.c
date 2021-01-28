@@ -7874,7 +7874,7 @@ uint32_t wlanCfgParse(IN struct ADAPTER *prAdapter,
 						       i);
 						break;
 					}
-					u4RetSize = scnprintf(pucCurrBuf,
+					u4RetSize = kalScnprintf(pucCurrBuf,
 							      u4CurrSize, "%s ",
 							      ppcArgs[i]);
 					pucCurrBuf += u4RetSize;
@@ -9719,7 +9719,7 @@ uint32_t wlanDecimalStr2Hexadecimals(uint8_t *pucDecimalStr, uint16_t *pu2Out)
 	while (*pucDecimalPart == '0')
 		pucDecimalPart++;
 
-	u4Ret = kstrtou32(pucDecimalPart, 0, &u4Remain);
+	u4Ret = kalkStrtou32(pucDecimalPart, 0, &u4Remain);
 	if (u4Ret) {
 		DBGLOG(INIT, ERROR, "Parse decimal str %s error, degree %u\n",
 			   pucDecimalPart, u4Degree);
@@ -9742,7 +9742,7 @@ uint32_t wlanDecimalStr2Hexadecimals(uint8_t *pucDecimalStr, uint16_t *pu2Out)
 	u4Remain = 0;
 
 integer_part:
-	u4Ret = kstrtou32(aucDecimalStr, 0, &u4Remain);
+	u4Ret = kalkStrtou32(aucDecimalStr, 0, &u4Remain);
 	u4Result |= u4Remain << 13;
 
 	if (u4Ret)
