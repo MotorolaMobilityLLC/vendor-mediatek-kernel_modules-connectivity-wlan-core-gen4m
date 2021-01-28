@@ -50,8 +50,8 @@
  *
  *****************************************************************************/
 /*
-** Id: include/mgmt/privacy.h#1
-*/
+ * Id: include/mgmt/privacy.h#1
+ */
 
 /*! \file   privacy.h
  *  \brief This file contains the function declaration for privacy.c.
@@ -63,17 +63,17 @@
 
 /*******************************************************************************
  *                         C O M P I L E R   F L A G S
- ********************************************************************************
+ *******************************************************************************
  */
 
 /*******************************************************************************
  *                    E X T E R N A L   R E F E R E N C E S
- ********************************************************************************
+ *******************************************************************************
  */
 
 /*******************************************************************************
  *                              C O N S T A N T S
- ********************************************************************************
+ *******************************************************************************
  */
 #define MAX_KEY_NUM                             4
 #define WEP_40_LEN                              5
@@ -122,7 +122,7 @@
 
 /*******************************************************************************
  *                         D A T A   T Y P E S
- ********************************************************************************
+ *******************************************************************************
  */
 
 struct IEEE_802_1X_HDR {
@@ -163,94 +163,125 @@ struct PMKID_ENTRY {
 
 /*******************************************************************************
  *                            P U B L I C   D A T A
- ********************************************************************************
+ *******************************************************************************
  */
 
 /*******************************************************************************
  *                           P R I V A T E   D A T A
- ********************************************************************************
+ *******************************************************************************
  */
 
 /*******************************************************************************
  *                                 M A C R O S
- ********************************************************************************
+ *******************************************************************************
  */
 
 /*******************************************************************************
  *                  F U N C T I O N   D E C L A R A T I O N S
- ********************************************************************************
+ *******************************************************************************
  */
 
-void secInit(IN struct ADAPTER *prAdapter, IN uint8_t ucBssIndex);
+void secInit(IN struct ADAPTER *prAdapter,
+	     IN uint8_t ucBssIndex);
 
-void secSetPortBlocked(IN struct ADAPTER *prAdapter, IN struct STA_RECORD *prSta, IN u_int8_t fgPort);
+void secSetPortBlocked(IN struct ADAPTER *prAdapter,
+		       IN struct STA_RECORD *prSta, IN u_int8_t fgPort);
 
-u_int8_t secCheckClassError(IN struct ADAPTER *prAdapter, IN struct SW_RFB *prSwRfb, IN struct STA_RECORD *prStaRec);
+u_int8_t secCheckClassError(IN struct ADAPTER *prAdapter,
+			    IN struct SW_RFB *prSwRfb,
+			    IN struct STA_RECORD *prStaRec);
 
-u_int8_t secTxPortControlCheck(IN struct ADAPTER *prAdapter, IN struct MSDU_INFO *prMsduInfo, IN struct STA_RECORD *prStaRec);
+u_int8_t secTxPortControlCheck(IN struct ADAPTER *prAdapter,
+			       IN struct MSDU_INFO *prMsduInfo,
+			       IN struct STA_RECORD *prStaRec);
 
-u_int8_t secRxPortControlCheck(IN struct ADAPTER *prAdapter, IN struct SW_RFB *prSWRfb);
+u_int8_t secRxPortControlCheck(IN struct ADAPTER *prAdapter,
+			       IN struct SW_RFB *prSWRfb);
 
-void secSetCipherSuite(IN struct ADAPTER *prAdapter, IN uint32_t u4CipherSuitesFlags);
+void secSetCipherSuite(IN struct ADAPTER *prAdapter,
+		       IN uint32_t u4CipherSuitesFlags);
 
-u_int8_t secIsProtectedFrame(IN struct ADAPTER *prAdapter, IN struct MSDU_INFO *prMsdu, IN struct STA_RECORD *prStaRec);
+u_int8_t secIsProtectedFrame(IN struct ADAPTER *prAdapter,
+			     IN struct MSDU_INFO *prMsdu,
+			     IN struct STA_RECORD *prStaRec);
 
 void secClearPmkid(IN struct ADAPTER *prAdapter);
 
-u_int8_t secRsnKeyHandshakeEnabled(IN struct ADAPTER *prAdapter);
+u_int8_t secRsnKeyHandshakeEnabled(IN struct ADAPTER
+				   *prAdapter);
 
-uint8_t secGetBmcWlanIndex(IN struct ADAPTER *prAdapter, IN enum ENUM_NETWORK_TYPE eNetType, IN struct STA_RECORD *prStaRec);
+uint8_t secGetBmcWlanIndex(IN struct ADAPTER *prAdapter,
+			   IN enum ENUM_NETWORK_TYPE eNetType,
+			   IN struct STA_RECORD *prStaRec);
 
-u_int8_t secTransmitKeyExist(IN struct ADAPTER *prAdapter, IN struct STA_RECORD *prSta);
+u_int8_t secTransmitKeyExist(IN struct ADAPTER *prAdapter,
+			     IN struct STA_RECORD *prSta);
 
 u_int8_t secEnabledInAis(IN struct ADAPTER *prAdapter);
 
-u_int8_t secPrivacySeekForEntry(IN struct ADAPTER *prAdapter, IN struct STA_RECORD *prSta);
+u_int8_t secPrivacySeekForEntry(IN struct ADAPTER
+				*prAdapter, IN struct STA_RECORD *prSta);
 
-void secPrivacyFreeForEntry(IN struct ADAPTER *prAdapter, IN uint8_t ucEntry);
+void secPrivacyFreeForEntry(IN struct ADAPTER *prAdapter,
+			    IN uint8_t ucEntry);
 
-void secPrivacyFreeSta(IN struct ADAPTER *prAdapter, IN struct STA_RECORD *prStaRec);
+void secPrivacyFreeSta(IN struct ADAPTER *prAdapter,
+		       IN struct STA_RECORD *prStaRec);
 
-void secRemoveBssBcEntry(IN struct ADAPTER *prAdapter, IN struct BSS_INFO *prBssInfo, IN u_int8_t fgRoam);
+void secRemoveBssBcEntry(IN struct ADAPTER *prAdapter,
+			 IN struct BSS_INFO *prBssInfo, IN u_int8_t fgRoam);
 
 uint8_t
 secPrivacySeekForBcEntry(IN struct ADAPTER *prAdapter,
 			 IN uint8_t ucBssIndex,
-			 IN uint8_t *pucAddr, IN uint8_t ucStaIdx, IN uint8_t ucAlg, IN uint8_t ucKeyId);
+			 IN uint8_t *pucAddr, IN uint8_t ucStaIdx,
+			 IN uint8_t ucAlg, IN uint8_t ucKeyId);
 
-uint8_t secGetStaIdxByWlanIdx(IN struct ADAPTER *prAdapter, IN uint8_t ucWlanIdx);
+uint8_t secGetStaIdxByWlanIdx(IN struct ADAPTER *prAdapter,
+			      IN uint8_t ucWlanIdx);
 
-uint8_t secGetBssIdxByWlanIdx(IN struct ADAPTER *prAdapter, IN uint8_t ucWlanIdx);
+uint8_t secGetBssIdxByWlanIdx(IN struct ADAPTER *prAdapter,
+			      IN uint8_t ucWlanIdx);
 
-uint8_t secLookupStaRecIndexFromTA(struct ADAPTER *prAdapter, uint8_t *pucMacAddress);
+uint8_t secLookupStaRecIndexFromTA(struct ADAPTER
+				   *prAdapter, uint8_t *pucMacAddress);
 
 void secPrivacyDumpWTBL(IN struct ADAPTER *prAdapter);
 
 u_int8_t secCheckWTBLAssign(IN struct ADAPTER *prAdapter);
 
-u_int8_t secIsProtected1xFrame(IN struct ADAPTER *prAdapter, IN struct STA_RECORD *prStaRec);
+u_int8_t secIsProtected1xFrame(IN struct ADAPTER *prAdapter,
+			       IN struct STA_RECORD *prStaRec);
 
-u_int8_t secIsProtectedBss(IN struct ADAPTER *prAdapter, IN struct BSS_INFO *prBssInfo);
+u_int8_t secIsProtectedBss(IN struct ADAPTER *prAdapter,
+			   IN struct BSS_INFO *prBssInfo);
 
-u_int8_t secIsWepBss(IN struct ADAPTER *prAdapter, IN struct BSS_INFO *prBssInfo);
+u_int8_t secIsWepBss(IN struct ADAPTER *prAdapter,
+			IN struct BSS_INFO *prBssInfo);
 
-u_int8_t tkipMicDecapsulate(IN struct SW_RFB *prSwRfb, IN uint8_t *pucMicKey);
+u_int8_t tkipMicDecapsulate(IN struct SW_RFB *prSwRfb,
+			    IN uint8_t *pucMicKey);
 
-u_int8_t tkipMicDecapsulateInRxHdrTransMode(IN struct SW_RFB *prSwRfb, IN uint8_t *pucMicKey);
+u_int8_t tkipMicDecapsulateInRxHdrTransMode(
+	IN struct SW_RFB *prSwRfb, IN uint8_t *pucMicKey);
 
-void secPostUpdateAddr(IN struct ADAPTER *prAdapter, IN struct BSS_INFO *prBssInfo);
+void secPostUpdateAddr(IN struct ADAPTER *prAdapter,
+		       IN struct BSS_INFO *prBssInfo);
 
-enum ENUM_EAPOL_KEY_TYPE_T secGetEapolKeyType(uint8_t *pucPacket);
+enum ENUM_EAPOL_KEY_TYPE_T secGetEapolKeyType(
+	uint8_t *pucPacket);
 
-void secHandleRxEapolPacket(IN struct ADAPTER *prAdapter, IN struct SW_RFB *prRetSwRfb,
-		IN struct STA_RECORD *prStaRec);
+void secHandleRxEapolPacket(IN struct ADAPTER *prAdapter,
+			    IN struct SW_RFB *prRetSwRfb,
+			    IN struct STA_RECORD *prStaRec);
 
-void secHandleEapolTxStatus(IN struct ADAPTER *prAdapter, IN struct MSDU_INFO *prMsduInfo,
-		IN enum ENUM_TX_RESULT_CODE rTxDoneStatus);
+void secHandleEapolTxStatus(IN struct ADAPTER *prAdapter,
+			    IN struct MSDU_INFO *prMsduInfo,
+			    IN enum ENUM_TX_RESULT_CODE rTxDoneStatus);
 
 /*******************************************************************************
  *                              F U N C T I O N S
- ********************************************************************************
+ *******************************************************************************
  */
 
 #endif /* _PRIVACY_H */
