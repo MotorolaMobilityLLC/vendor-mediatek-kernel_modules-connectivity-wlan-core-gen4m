@@ -1154,26 +1154,57 @@ void rlmReqGenerateVhtCapIE(struct ADAPTER *prAdapter,
 {
 	struct BSS_INFO *prBssInfo;
 	struct STA_RECORD *prStaRec;
+#if CFG_SUPPORT_VHT_IE_IN_2G
+	struct BSS_DESC *prBssDesc = NULL;
+	u_int8_t fgIsVHTPresent = FALSE;
+#endif
 
 	ASSERT(prAdapter);
 	ASSERT(prMsduInfo);
 
-	prBssInfo = prAdapter->aprBssInfo[prMsduInfo->ucBssIndex];
-	if (!prBssInfo)
+	if (prAdapter) {
+		prBssInfo = prAdapter->aprBssInfo[prMsduInfo->ucBssIndex];
+#if CFG_SUPPORT_VHT_IE_IN_2G
+		prBssDesc = prAdapter->rWifiVar.rAisFsmInfo.prTargetBssDesc;
+		if (prBssDesc) {
+			fgIsVHTPresent = prBssDesc->fgIsVHTPresent;
+			DBGLOG(RLM, TRACE,
+				"fgIsVHTPresent=%d", fgIsVHTPresent);
+		}
+#endif
+	} else {
+		DBGLOG(RLM, ERROR, "prAdapter is NULL, return!");
 		return;
+	}
+
+	if (!prBssInfo) {
+		DBGLOG(RLM, ERROR, "prBssInfo is NULL, return!");
+		return;
+	}
 
 	prStaRec = cnmGetStaRecByIndex(prAdapter, prMsduInfo->ucStaRecIndex);
 
-	if ((prAdapter->rWifiVar.ucAvailablePhyTypeSet &
-	     PHY_TYPE_SET_802_11AC) &&
-	    (!prStaRec || (prStaRec->ucPhyTypeSet & PHY_TYPE_SET_802_11AC)))
+	if (!prStaRec) {
+		DBGLOG(RLM, ERROR, "prStaRec is NULL, return!");
+		return;
+	}
+
+	if ((prAdapter->rWifiVar.ucAvailablePhyTypeSet & PHY_TYPE_SET_802_11AC)
+		&& (prStaRec->ucPhyTypeSet & PHY_TYPE_SET_802_11AC))
 		rlmFillVhtCapIE(prAdapter, prBssInfo, prMsduInfo);
 #if CFG_SUPPORT_VHT_IE_IN_2G
 	else if ((prBssInfo->eBand == BAND_2G4) &&
-		 (!prStaRec ||
-		  (prStaRec->ucPhyTypeSet & PHY_TYPE_SET_802_11N)) &&
-		 (prAdapter->rWifiVar.ucVhtIeIn2g == FEATURE_ENABLED))
+			(prStaRec->ucPhyTypeSet & PHY_TYPE_SET_802_11N) &&
+			((prAdapter->rWifiVar.ucVhtIeIn2g
+				==  FEATURE_FORCE_ENABLED) ||
+			((prAdapter->rWifiVar.ucVhtIeIn2g
+				== FEATURE_ENABLED) && fgIsVHTPresent))) {
+		DBGLOG(RLM, TRACE,
+			"Add VHT IE in 2.4G, ucPhyTypeSet=%02x, ucVhtIeIn2g=%02x",
+			prStaRec->ucPhyTypeSet,
+			prAdapter->rWifiVar.ucVhtIeIn2g);
 		rlmFillVhtCapIE(prAdapter, prBssInfo, prMsduInfo);
+	}
 #endif
 }
 
