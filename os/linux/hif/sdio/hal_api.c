@@ -368,6 +368,7 @@ BOOLEAN halSetDriverOwn(IN P_ADAPTER_T prAdapter)
 	BOOLEAN fgResult;
 	BOOLEAN fgReady = FALSE;
 	UINT_32 u4DriverOwnTime = 0, u4Cr4ReadyTime = 0;
+	P_GL_HIF_INFO_T prHifInfo;
 
 	ASSERT(prAdapter);
 
@@ -375,6 +376,8 @@ BOOLEAN halSetDriverOwn(IN P_ADAPTER_T prAdapter)
 
 	if (prAdapter->fgIsFwOwn == FALSE)
 		return fgStatus;
+
+	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
 
 	DBGLOG(INIT, TRACE, "DRIVER OWN\n");
 
@@ -513,8 +516,11 @@ BOOLEAN halSetDriverOwn(IN P_ADAPTER_T prAdapter)
 			kalUsleep_range(LP_OWN_BACK_LOOP_DELAY_MIN_US, LP_OWN_BACK_LOOP_DELAY_MAX_US);
 		}
 
+		halTagIntLog(prAdapter, SDIO_INT_DRV_OWN);
 		HAL_MCR_RD(prAdapter, MCR_D2HRM1R, &j);
+
 		if (j == 0x77889901) {
+
 			struct mt66xx_chip_info *prChipInfo = prAdapter->chip_info;
 
 			if (halIsPendingTxDone(prAdapter)) {
@@ -528,6 +534,7 @@ BOOLEAN halSetDriverOwn(IN P_ADAPTER_T prAdapter)
 			/* Workaround for dummy command which is not count in Tx done count */
 			if (prChipInfo->is_support_cr4)
 				prAdapter->prGlueInfo->rHifInfo.au4PendingTxDoneCount[TC4_INDEX]--;
+			halTagIntLog(prAdapter, SDIO_INT_WAKEUP_DSLP);
 		}
 		u4Cr4ReadyTime = ((kalGetTimeTick() >= u4CurrTick) ?
 				(kalGetTimeTick() - u4CurrTick) : (kalGetTimeTick() + (~u4CurrTick)));
@@ -1452,6 +1459,8 @@ VOID halRxSDIOAggReceiveRFBs(IN P_ADAPTER_T prAdapter)
 
 		prRxBuf->u4PktTotalLength = u4RxAggLength - sizeof(ENHANCE_MODE_DATA_STRUCT_T);
 
+		prRxBuf->u4IntLogIdx = prHifInfo->u4IntLogIdx;
+
 		SDIO_REC_TIME_START();
 		HAL_READ_RX_PORT(prAdapter, rxNum, u4RxAggLength,
 			prRxBuf->pvRxCoalescingBuf, HIF_RX_COALESCING_BUFFER_SIZE);
@@ -1543,6 +1552,7 @@ UINT_32 halDumpHifStatus(IN P_ADAPTER_T prAdapter, IN PUINT_8 pucBuf, IN UINT_32
 	P_GL_HIF_INFO_T prHifInfo = &prGlueInfo->rHifInfo;
 	P_SDIO_STAT_COUNTER_T prStatCnt = &prHifInfo->rStatCounter;
 	UINT_32 u4Len = 0;
+	UINT_32 u4Idx;
 
 	/* Print out counter */
 	LOGBUF(pucBuf, u4Max, u4Len, "\n");
@@ -1660,8 +1670,48 @@ UINT_32 halDumpHifStatus(IN P_ADAPTER_T prAdapter, IN PUINT_8 pucBuf, IN UINT_32
 
 	LOGBUF(pucBuf, u4Max, u4Len, "---------------------------------\n");
 
+	for (u4Idx = 0; u4Idx < CFG_SDIO_INT_LOG_CNT; u4Idx++) {
+		struct SDIO_INT_LOG_T *prIntLog = &prHifInfo->arIntLog[u4Idx];
+		P_SDIO_CTRL_T prIntSts = (P_SDIO_CTRL_T)&prIntLog->aucIntSts[0];
+		UINT_8 ucPktIdx;
+
+		LOGBUF(pucBuf, u4Max, u4Len, "INT IDX[%u] STS[0x%08x] FG[0x%08x] Rx Pkt[%u] Sts0/1[%u:%u]\n",
+			prIntLog->u4Idx, prIntSts->u4WHISR, prIntLog->u4Flag, prIntLog->ucRxPktCnt,
+			prIntSts->rRxInfo.u.u2NumValidRx0Len, prIntSts->rRxInfo.u.u2NumValidRx1Len);
+
+		if (prIntLog->ucRxPktCnt) {
+			LOGBUF(pucBuf, u4Max, u4Len, "RxDAggLen[");
+			for (ucPktIdx = 0; ucPktIdx < prIntLog->ucRxPktCnt; ucPktIdx++)
+				LOGBUF(pucBuf, u4Max, u4Len, "%4u:", prIntLog->au2RxPktLen[ucPktIdx]);
+			LOGBUF(pucBuf, u4Max, u4Len, "]\n");
+
+			LOGBUF(pucBuf, u4Max, u4Len, "RxDAggSn [");
+			for (ucPktIdx = 0; ucPktIdx < prIntLog->ucRxPktCnt; ucPktIdx++)
+				LOGBUF(pucBuf, u4Max, u4Len, "0x%08x: ", prIntLog->au4RxPktInfo[ucPktIdx]);
+			LOGBUF(pucBuf, u4Max, u4Len, "]\n");
+		}
+
+		if (prIntSts->rRxInfo.u.u2NumValidRx0Len) {
+			LOGBUF(pucBuf, u4Max, u4Len, "Rx0StsLen[");
+			for (ucPktIdx = 0; ucPktIdx < prIntSts->rRxInfo.u.u2NumValidRx0Len; ucPktIdx++)
+				LOGBUF(pucBuf, u4Max, u4Len, "%4u:", prIntSts->rRxInfo.u.au2Rx0Len[ucPktIdx]);
+			LOGBUF(pucBuf, u4Max, u4Len, "]\n");
+		}
+
+		if (prIntSts->rRxInfo.u.u2NumValidRx1Len) {
+			LOGBUF(pucBuf, u4Max, u4Len, "Rx1StsLen[");
+			for (ucPktIdx = 0; ucPktIdx < HIF_RX_MAX_AGG_NUM; ucPktIdx++)
+				LOGBUF(pucBuf, u4Max, u4Len, "%4u:", prIntSts->rRxInfo.u.au2Rx1Len[ucPktIdx]);
+			LOGBUF(pucBuf, u4Max, u4Len, "]\n");
+		}
+	}
+
+	LOGBUF(pucBuf, u4Max, u4Len, "---------------------------------\n");
+
 	/* Reset statistic counter */
 	kalMemZero(prStatCnt, sizeof(SDIO_STAT_COUNTER_T));
+
+	halDumpIntLog(prAdapter);
 
 	return u4Len;
 }
@@ -1980,6 +2030,36 @@ VOID halDumpIntLog(IN P_ADAPTER_T prAdapter)
 	DBGLOG(INTR, ERROR, "---------------------------------\n");
 }
 
+VOID halTagIntLog(IN P_ADAPTER_T prAdapter, IN enum HIF_SDIO_INT_STS eTag)
+{
+	P_GL_HIF_INFO_T prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
+
+	prHifInfo->arIntLog[prHifInfo->ucIntLogEntry].u4Flag |= BIT(eTag);
+}
+
+VOID halRecIntLog(IN P_ADAPTER_T prAdapter, IN P_SDIO_CTRL_T prSDIOCtrl)
+{
+	struct SDIO_INT_LOG_T *prIntLog;
+	UINT_8 ucLogEntry;
+	P_GL_HIF_INFO_T prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
+
+	prHifInfo->u4IntLogIdx++;
+	ucLogEntry = prHifInfo->u4IntLogIdx % CFG_SDIO_INT_LOG_CNT;
+	prIntLog = &prHifInfo->arIntLog[ucLogEntry];
+	kalMemZero(prIntLog, sizeof(struct SDIO_INT_LOG_T));
+
+	prIntLog->u4Idx = prHifInfo->u4IntLogIdx;
+	prHifInfo->ucIntLogEntry = ucLogEntry;
+	kalMemCopy(&prIntLog->aucIntSts[0], prSDIOCtrl, sizeof(SDIO_CTRL_T));
+}
+
+struct SDIO_INT_LOG_T *halGetIntLog(IN P_ADAPTER_T prAdapter, IN UINT_32 u4Idx)
+{
+	P_GL_HIF_INFO_T prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
+
+	return &prHifInfo->arIntLog[u4Idx % CFG_SDIO_INT_LOG_CNT];
+}
+
 VOID halProcessAbnormalInterrupt(IN P_ADAPTER_T prAdapter)
 {
 	UINT_32 u4Data = 0;
@@ -2111,6 +2191,7 @@ VOID halDeAggRxPktWorker(struct work_struct *work)
 	PUINT_32 pu4HwAppendDW;
 #endif /* CFG_TCP_IP_CHKSUM_OFFLOAD */
 	BOOLEAN fgDeAggErr = FALSE;
+	struct SDIO_INT_LOG_T *prIntLog;
 	UINT_64 u8Current = 0;
 
 	KAL_SPIN_LOCK_DECLARATION();
@@ -2165,7 +2246,9 @@ VOID halDeAggRxPktWorker(struct work_struct *work)
 		pucSrcAddr = prRxBuf->pvRxCoalescingBuf;
 		fgDeAggErr = FALSE;
 
+		prIntLog = halGetIntLog(prAdapter, prRxBuf->u4IntLogIdx);
 		u8Current = sched_clock();
+
 		SDIO_REC_TIME_START();
 		for (i = 0; i < prRxBuf->u4PktCount; i++) {
 			/* Rx de-aggregation check */
@@ -2175,6 +2258,8 @@ VOID halDeAggRxPktWorker(struct work_struct *work)
 			}
 
 			u2PktLength = HAL_RX_STATUS_GET_RX_BYTE_CNT((P_HW_MAC_RX_DESC_T)pucSrcAddr);
+
+			prIntLog->au2RxPktLen[i] = u2PktLength;
 
 			QUEUE_REMOVE_HEAD(prTempFreeRfbList, prSwRfb, P_SW_RFB_T);
 			kalMemCopy(prSwRfb->pucRecvBuff, pucSrcAddr, ALIGN_4(u2PktLength + HIF_RX_HW_APPENDED_LEN));
@@ -2188,6 +2273,8 @@ VOID halDeAggRxPktWorker(struct work_struct *work)
 			DBGLOG(RX, TRACE, "u4TcpUdpIpCksStatus[0x%02x]\n", prSwRfb->u4TcpUdpIpCksStatus);
 #endif /* CFG_TCP_IP_CHKSUM_OFFLOAD */
 
+			kalMemCopy(&prIntLog->au4RxPktInfo[i], pucSrcAddr + ALIGN_4(u2PktLength), sizeof(UINT32));
+
 			GLUE_RX_SET_PKT_INT_TIME(prSwRfb->pvPacket, prAdapter->prGlueInfo->u8HifIntTime);
 
 			GLUE_RX_SET_PKT_RX_TIME(prSwRfb->pvPacket, u8Current);
@@ -2199,12 +2286,16 @@ VOID halDeAggRxPktWorker(struct work_struct *work)
 		SDIO_REC_TIME_END();
 		SDIO_ADD_TIME_INTERVAL(prHifInfo->rStatCounter.u4RxDataCpTime);
 
+		prIntLog->ucRxPktCnt = i;
+
 		if (fgDeAggErr) {
 			/* Rx de-aggregation error */
 			/* Dump current Rx buffer */
 			DBGLOG(RX, ERROR, "Rx de-aggregation error!, INT sts: total len[%u] pkt cnt[%u]\n",
 				prRxBuf->u4PktTotalLength, prRxBuf->u4PktCount);
 			DBGLOG_MEM32(RX, ERROR, prRxBuf->pvRxCoalescingBuf, prRxBuf->u4PktTotalLength);
+
+			halDumpIntLog(prAdapter);
 
 			/* Free all de-aggregated SwRfb */
 			QUEUE_CONCATENATE_QUEUES(prTempFreeRfbList, prTempRxRfbList);
