@@ -7940,7 +7940,7 @@ wlanoidRssiMonitor(IN struct ADAPTER *prAdapter,
 	if (kalGetMediaStateIndicated(prAdapter->prGlueInfo,
 		ucBssIndex) ==
 	    MEDIA_STATE_DISCONNECTED) {
-		DBGLOG(OID, INFO,
+		DBGLOG(OID, TRACE,
 			"Set RSSI monitor when disconnected, enable=%d\n",
 			rRssi.enable);
 		if (rRssi.enable)
@@ -7953,7 +7953,7 @@ wlanoidRssiMonitor(IN struct ADAPTER *prAdapter,
 		rRssi.min_rssi_value = 0;
 	}
 
-	DBGLOG(OID, INFO,
+	DBGLOG(OID, TRACE,
 	       "enable=%d, max_rssi_value=%d, min_rssi_value=%d, orig_max_rssi_value=%d, orig_min_rssi_value=%d\n",
 	       rRssi.enable, rRssi.max_rssi_value, rRssi.min_rssi_value,
 	       orig_max_rssi_value, orig_min_rssi_value);
