@@ -13001,8 +13001,8 @@ int priv_driver_send_ncho_reassoc(IN struct net_device *prNetDev,
 		rReAssoc.u4CenterFreq = nicChannelNum2Freq(u4Param);
 		CmdStringMacParse(apcArgv[1], (uint8_t **)&apcArgv[1],
 				  &u4SetInfoLen, rReAssoc.aucBssid);
-		DBGLOG(INIT, TRACE, "NCHO Bssid %pM to roam\n",
-		       rReAssoc.aucBssid);
+		DBGLOG(INIT, TRACE, "NCHO Bssid " MACSTR " to roam\n",
+		       MAC2STR(rReAssoc.aucBssid));
 		rParamConn.pucBssid = (uint8_t *)rReAssoc.aucBssid;
 		rParamConn.pucSsid = (uint8_t *)rReAssoc.aucSsid;
 		rParamConn.u4SsidLen = rReAssoc.u4SsidLen;
@@ -13186,7 +13186,8 @@ priv_driver_send_ncho_action_frame(IN struct net_device *prNetDev,
 		return -1;
 	}
 
-	DBGLOG(INIT, TRACE, "NCHO MAC is %pM\n", rParamActionFrame.aucBssid);
+	DBGLOG(INIT, TRACE, "NCHO MAC is " MACSTR "\n",
+		MAC2STR(rParamActionFrame.aucBssid));
 	rStatus = kalIoctl(prGlueInfo,
 			   wlanoidSendNchoActionFrameStart,
 			   &rParamActionFrame,

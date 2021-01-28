@@ -414,6 +414,7 @@ int mtk_cfg80211_vendor_config_roaming(struct wiphy *wiphy,
 	struct BSS_DESC *prBssDesc = NULL;
 	uint32_t len_shift = 0;
 	uint32_t numOfList[2] = { 0 };
+	uint8_t *aucBSSID = NULL;
 	int i;
 
 	DBGLOG(REQ, INFO,
@@ -466,18 +467,20 @@ int mtk_cfg80211_vendor_config_roaming(struct wiphy *wiphy,
 				(struct nlattr *)((uint8_t *) data + len_shift);
 
 			if (prBssDesc == NULL) {
-				DBGLOG(REQ, ERROR,
-					"Cannot find the blacklist BSS=%pM\n",
-					nla_data(attrlist));
+				aucBSSID = nla_data(attrlist);
+				DBGLOG(REQ, ERROR, "No found blacklist BSS="
+					MACSTR "\n",
+					MAC2STR(aucBSSID));
 				continue;
 			}
 
 			prBlackList = aisAddBlacklist(prGlueInfo->prAdapter,
 						      prBssDesc);
 			prBlackList->fgIsInFWKBlacklist = TRUE;
-			DBGLOG(REQ, INFO,
-			       "Receives roaming blacklist SSID=%s addr=%pM\n",
-			       prBssDesc->aucSSID, prBssDesc->aucBSSID);
+			DBGLOG(REQ, INFO, "Gets roaming blacklist SSID=%s addr="
+				MACSTR "\n",
+				prBssDesc->aucSSID,
+				MAC2STR(prBssDesc->aucBSSID));
 		}
 	}
 
