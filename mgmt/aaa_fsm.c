@@ -428,7 +428,11 @@ bow_proc:
 
 
 		/*sta_rec might be removed when client list full, skip timer setting*/
-		if (prStaRec) {
+		/*
+		 * check if prStaRec valid as authSendAuthFrame may free
+		 * StaRec when TX resource is not enough
+		 */
+		if (prStaRec && prStaRec->fgIsInUse) {
 			cnmTimerStopTimer(prAdapter, &prStaRec->rTxReqDoneOrRxRespTimer);
 			/*ToDo:Init Timer to check get Auth Txdone avoid sta_rec not clear*/
 			cnmTimerInitTimer(prAdapter,
