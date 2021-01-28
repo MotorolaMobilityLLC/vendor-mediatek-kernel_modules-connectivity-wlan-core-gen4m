@@ -4614,7 +4614,7 @@ void kalSetMediaStateIndicated(IN struct GLUE_INFO
 			       IN uint8_t ucBssIndex)
 {
 	ASSERT(prGlueInfo);
-
+	ASSERT(ucBssIndex >= 0 && ucBssIndex < KAL_AIS_NUM)
 	prGlueInfo->eParamMediaStateIndicated[ucBssIndex] =
 		eParamMediaStateIndicate;
 }
