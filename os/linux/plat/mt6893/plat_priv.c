@@ -12,7 +12,6 @@
 #include "precomp.h"
 
 #ifdef CFG_MTK_ANDROID_EMI
-#include <mt_emi_api.h>
 #include <memory/mediatek/emi.h>
 #define	REGION_WIFI	26
 #define WIFI_EMI_MEM_SIZE      0x140000
@@ -25,6 +24,7 @@
 #define MAX_CPU_FREQ (3 * 1024 * 1024) /* in kHZ */
 #define MAX_CLUSTER_NUM  3
 
+/* TODO: Need change to 0x20010101 for mt6893 */
 #define CONNSYS_VERSION_ID  0x20010000
 
 enum ENUM_CPU_BOOST_STATUS {
