@@ -495,6 +495,14 @@ void rlmGenerateMTKOuiIE(struct ADAPTER *prAdapter, struct MSDU_INFO *prMsduInfo
 	MTK_OUI_IE(pucBuffer)->aucCapability[2] = MTK_SYNERGY_CAP2 & (prAdapter->rWifiVar.aucMtkFeature[2]);
 	MTK_OUI_IE(pucBuffer)->aucCapability[3] = MTK_SYNERGY_CAP3 & (prAdapter->rWifiVar.aucMtkFeature[3]);
 
+	/* Disable the 2.4G 256QAM feature bit if chip doesn't support AC*/
+	if (prAdapter->rWifiVar.ucHwNotSupportAC) {
+		MTK_OUI_IE(pucBuffer)->aucCapability[0] &=
+			~(MTK_SYNERGY_CAP_SUPPORT_24G_MCS89);
+		DBGLOG(INIT, WARN,
+			"Disable 2.4G 256QAM support if N only chip\n");
+	}
+
 	prMsduInfo->u2FrameLength += IE_SIZE(pucBuffer);
 	pucBuffer += IE_SIZE(pucBuffer);
 }				/* rlmGenerateMTKOuiIE */
@@ -530,6 +538,16 @@ u_int8_t rlmParseCheckMTKOuiIE(IN struct ADAPTER *prAdapter, IN uint8_t *pucBuf,
 		prMtkOuiIE->aucCapability[1] = prMtkOuiIE->aucCapability[1] & (prAdapter->rWifiVar.aucMtkFeature[1]);
 		prMtkOuiIE->aucCapability[2] = prMtkOuiIE->aucCapability[2] & (prAdapter->rWifiVar.aucMtkFeature[2]);
 		prMtkOuiIE->aucCapability[3] = prMtkOuiIE->aucCapability[3] & (prAdapter->rWifiVar.aucMtkFeature[3]);
+
+		/* Disable the 2.4G 256QAM feature bit if chip doesn't support
+		 * AC. Otherwise, FW would choose wrong max rate of auto rate.
+		 */
+		if (prAdapter->rWifiVar.ucHwNotSupportAC) {
+			prMtkOuiIE->aucCapability[0] &=
+				~(MTK_SYNERGY_CAP_SUPPORT_24G_MCS89);
+			DBGLOG(INIT, WARN,
+				"Disable 2.4G 256QAM support if N only chip\n");
+		}
 
 		kalMemCopy(pu4Cap, prMtkOuiIE->aucCapability, sizeof(uint32_t));
 
