@@ -10,8 +10,6 @@ ifeq ($(MTK_COMBO_CHIP),)
 MTK_COMBO_CHIP = MT6632
 endif
 
-#WLAN_CHIP_ID=$(MTK_COMBO_CHIP)
-#WLAN_CHIP_ID=MT6632
 WLAN_CHIP_ID=$(word 1, $(MTK_COMBO_CHIP))
 
 ccflags-y += -DCFG_SUPPORT_DEBUG_FS=0
@@ -44,6 +42,12 @@ ccflags-y:=$(filter-out -UCONNAC,$(ccflags-y))
 ccflags-y += -DCONNAC
 endif
 
+ifeq ($(MTK_ANDROID_WMT), yes)
+    ccflags-y += -DCFG_MTK_ANDROID_WMT=1
+else
+    ccflags-y += -DCFG_MTK_ANDROID_WMT=0
+endif
+
 CONFIG_MTK_WIFI_MCC_SUPPORT=y
 ifeq ($(CONFIG_MTK_WIFI_MCC_SUPPORT), y)
     ccflags-y += -DCFG_SUPPORT_CHNL_CONFLICT_REVISE=0
@@ -65,18 +69,15 @@ else
 endif
 
 ifeq ($(CONFIG_MTK_COMBO_WIFI),y)
-    ccflags-y += -DCFG_BUILT_IN_DRIVER=1
-	ccflags-y += -DCFG_WPS_DISCONNECT=1
-else
-    ccflags-y += -DCFG_BUILT_IN_DRIVER=0
+    ccflags-y += -DCFG_WPS_DISCONNECT=1
 endif
 
 ifeq ($(CONFIG_MTK_COMBO_WIFI_HIF), sdio)
-	ccflags-y += -D_HIF_SDIO=1
+    ccflags-y += -D_HIF_SDIO=1
 else ifeq ($(CONFIG_MTK_COMBO_WIFI_HIF), pcie)
     ccflags-y += -D_HIF_PCIE=1
 else ifeq ($(CONFIG_MTK_COMBO_WIFI_HIF), usb)
-	ccflags-y += -D_HIF_USB=1
+    ccflags-y += -D_HIF_USB=1
 else
     $(error Unsuppoted HIF=$(CONFIG_MTK_COMBO_WIFI_HIF)!!)
 endif
@@ -156,6 +157,7 @@ else
 obj-$(CONFIG_MTK_COMBO_WIFI) += $(MODULE_NAME).o
 #obj-y += $(MODULE_NAME).o
 endif
+obj-m += $(MODULE_NAME).o
 
 # ---------------------------------------------------
 # Directory List
