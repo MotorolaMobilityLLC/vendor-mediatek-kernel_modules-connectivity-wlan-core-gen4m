@@ -501,9 +501,6 @@ BOOLEAN p2PAllocInfo(IN P_GLUE_INFO_T prGlueInfo, IN UINT_8 ucIdex)
 	ASSERT(prWifiVar);
 
 	do {
-		if (prGlueInfo == NULL)
-			break;
-
 		if (prGlueInfo->prP2PInfo[ucIdex] == NULL) {
 			/*alloc memory for p2p info */
 #if CFG_ENABLE_UNIFY_WIPHY
