@@ -76,6 +76,23 @@
 #include "precomp.h"
 #include "gl_rst.h"
 
+/*******************************************************************************
+*                              F U N C T I O N S
+********************************************************************************
+*/
+/* Weak reference for those platform doesn't support wmt functions */
+u_int8_t __weak mtk_wcn_stp_coredump_start_get(void)
+{
+	return FALSE;
+}
+
+
+/*0= f/w assert flag is not set, others=f/w assert flag is set */
+u_int8_t glIsWmtCodeDump(void)
+{
+	return mtk_wcn_stp_coredump_start_get();
+}
+
 #if CFG_CHIP_RESET_SUPPORT
 
 /*******************************************************************************
@@ -110,18 +127,6 @@ static void *glResetCallback(enum ENUM_WMTDRV_TYPE eSrcType,
 *                              F U N C T I O N S
 ********************************************************************************
 */
-/* Weak reference for those platform doesn't support wmt functions */
-u_int8_t __weak mtk_wcn_stp_coredump_start_get(void)
-{
-	return FALSE;
-}
-
-
-/*0= f/w assert flag is not set, others=f/w assert flag is set */
-u_int8_t glIsWmtCodeDump(void)
-{
-	return mtk_wcn_stp_coredump_start_get();
-}
 
 /*----------------------------------------------------------------------------*/
 /*!
