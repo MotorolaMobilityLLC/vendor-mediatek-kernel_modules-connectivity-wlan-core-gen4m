@@ -6173,7 +6173,7 @@ void p2pFuncSwitchSapChannel(
 	if (!prAdapter
 		|| !cnmSapIsConcurrent(prAdapter)
 		|| !fgEnable) {
-		DBGLOG(P2P, WARN, "Not support concurrent STA + SAP\n");
+		DBGLOG(P2P, TRACE, "Not support concurrent STA + SAP\n");
 		goto exit;
 	}
 
