@@ -2552,6 +2552,21 @@ struct EVENT_UPDATE_COEX_PHYRATE {
 	uint8_t aucReserved2[2];    /* 4 byte alignment */
 };
 
+struct TSF_RESULT_T {
+	uint32_t u4TsfBitsLow;
+	uint32_t u4TsfBitsHigh;
+};
+
+union MAC_INFO_RESULT_T {
+	struct TSF_RESULT_T rTsfResult;
+};
+
+struct EXT_EVENT_MAC_INFO_T {
+	uint16_t  u2MacInfoId;
+	uint8_t   aucReserved[2];
+	union MAC_INFO_RESULT_T rMacInfoResult;
+};
+
 /*#endif*/
 struct CMD_TDLS_PS_T {
 	/* 0: disable tdls power save; 1: enable tdls power save */
@@ -2624,22 +2639,6 @@ struct EXT_EVENT_MAX_AMSDU_LENGTH_UPDATE {
 		ASSERT(__prChipInfo->asicFillCmdTxd); \
 		__prChipInfo->asicFillCmdTxd(__prAd, &(__wifi_cmd_info), \
 			__pucSeqNum, (void **)__ppCmdBuf); \
-	} \
-}
-
-#define NIC_PARSE_EVEMT_RX_HDR(__prAd, __pucInfoBuffer, \
-	__pr_wifi_event_info, __bucInitEvent) \
-{ \
-	struct mt66xx_chip_info *__prChipInfo; \
-	__prChipInfo = __prAd->chip_info; \
-	if (__bucInitEvent) { \
-		ASSERT(__prChipInfo->asicParseInitEventRxInfo); \
-		__prChipInfo->asicParseInitEventRxInfo(__prAd,\
-		__pucInfoBuffer, __pr_wifi_event_info); \
-	} else { \
-		ASSERT(__prChipInfo->asicParseEventRxInfo); \
-		__prChipInfo->asicParseEventRxInfo(__prAd,\
-		__pucInfoBuffer, __pr_wifi_event_info); \
 	} \
 }
 

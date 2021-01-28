@@ -2463,17 +2463,17 @@ nicUpdateBeaconIETemplate(IN struct ADAPTER *prAdapter,
 			  IN uint8_t *aucIe, IN uint16_t u2IELen)
 {
 	struct CMD_BEACON_TEMPLATE_UPDATE *prCmdBcnUpdate;
-	uint16_t u2CmdBufLen = 0;
+	uint16_t u2CmdBufLen = 0, cmd_size;
 	struct GLUE_INFO *prGlueInfo;
 	struct CMD_INFO *prCmdInfo;
-	struct WIFI_CMD *prWifiCmd;
-	uint8_t ucCmdSeqNum;
+	struct mt66xx_chip_info *prChipInfo;
 
 	DEBUGFUNC("wlanUpdateBeaconIETemplate");
 	DBGLOG(INIT, LOUD, "\n");
 
 	ASSERT(prAdapter);
 	prGlueInfo = prAdapter->prGlueInfo;
+	prChipInfo = prAdapter->chip_info;
 
 	if (u2IELen > MAX_IE_LENGTH)
 		return WLAN_STATUS_INVALID_DATA;
@@ -2498,42 +2498,35 @@ nicUpdateBeaconIETemplate(IN struct ADAPTER *prAdapter,
 	}
 
 	/* prepare command info */
-	prCmdInfo = cmdBufAllocateCmdInfo(prAdapter,
-					  (CMD_HDR_SIZE + u2CmdBufLen));
+	cmd_size = prChipInfo->u2CmdTxHdrSize + u2CmdBufLen;
+	prCmdInfo = cmdBufAllocateCmdInfo(prAdapter, cmd_size);
 	if (!prCmdInfo) {
 		DBGLOG(INIT, ERROR, "Allocate CMD_INFO_T ==> FAILED.\n");
 		return WLAN_STATUS_FAILURE;
 	}
-	/* increase command sequence number */
-	ucCmdSeqNum = nicIncreaseCmdSeqNum(prAdapter);
-	DBGLOG(REQ, TRACE, "ucCmdSeqNum =%d\n", ucCmdSeqNum);
 
 	/* Setup common CMD Info Packet */
 	prCmdInfo->eCmdType = COMMAND_TYPE_NETWORK_IOCTL;
-	prCmdInfo->u2InfoBufLen = (uint16_t) (CMD_HDR_SIZE +
-					      u2CmdBufLen);
+	prCmdInfo->u2InfoBufLen = cmd_size;
 	prCmdInfo->pfCmdDoneHandler = NULL;	/* @FIXME */
 	prCmdInfo->pfCmdTimeoutHandler = NULL;	/* @FIXME */
 	prCmdInfo->fgIsOid = FALSE;
 	prCmdInfo->ucCID = CMD_ID_UPDATE_BEACON_CONTENT;
 	prCmdInfo->fgSetQuery = TRUE;
 	prCmdInfo->fgNeedResp = FALSE;
-	prCmdInfo->ucCmdSeqNum = ucCmdSeqNum;
 	prCmdInfo->u4SetInfoLen = u2CmdBufLen;
 	prCmdInfo->pvInformationBuffer = NULL;
 	prCmdInfo->u4InformationBufferLength = 0;
 
 	/* Setup WIFI_CMD_T (no payload) */
-	prWifiCmd = (struct WIFI_CMD *) (prCmdInfo->pucInfoBuffer);
-	prWifiCmd->u2TxByteCount = prCmdInfo->u2InfoBufLen;
-	prWifiCmd->u2PQ_ID = CMD_PQ_ID;
-	prWifiCmd->ucPktTypeID = CMD_PACKET_TYPE_ID;
-	prWifiCmd->ucCID = prCmdInfo->ucCID;
-	prWifiCmd->ucSetQuery = prCmdInfo->fgSetQuery;
-	prWifiCmd->ucSeqNum = prCmdInfo->ucCmdSeqNum;
-
-	prCmdBcnUpdate = (struct CMD_BEACON_TEMPLATE_UPDATE *) (
-				 prWifiCmd->aucBuffer);
+	NIC_FILL_CMD_TX_HDR(prAdapter,
+		prCmdInfo->pucInfoBuffer,
+		prCmdInfo->u2InfoBufLen,
+		prCmdInfo->ucCID,
+		CMD_PACKET_TYPE_ID,
+		&prCmdInfo->ucCmdSeqNum,
+		prCmdInfo->fgSetQuery,
+		&prCmdBcnUpdate, FALSE, 0, S2D_INDEX_CMD_H2N);
 
 	/* fill beacon updating command */
 	prCmdBcnUpdate->ucUpdateMethod = (uint8_t) eIeUpdMethod;
@@ -2603,8 +2596,10 @@ uint32_t nicQmUpdateWmmParms(IN struct ADAPTER *prAdapter,
 {
 	struct BSS_INFO *prBssInfo;
 	struct CMD_UPDATE_WMM_PARMS rCmdUpdateWmmParms;
+	struct mt66xx_chip_info *prChipInfo;
 
 	ASSERT(prAdapter);
+	prChipInfo = prAdapter->chip_info;
 
 	DBGLOG(QM, INFO, "Update WMM parameters for BSS[%u]\n",
 	       ucBssIndex);
@@ -2613,8 +2608,8 @@ uint32_t nicQmUpdateWmmParms(IN struct ADAPTER *prAdapter,
 	       sizeof(struct AC_QUE_PARMS));
 	DBGLOG(QM, EVENT, "sizeof(CMD_UPDATE_WMM_PARMS): %zu\n",
 	       sizeof(struct CMD_UPDATE_WMM_PARMS));
-	DBGLOG(QM, EVENT, "sizeof(struct WIFI_CMD): %zu\n",
-	       sizeof(struct WIFI_CMD));
+	DBGLOG(QM, EVENT, "u2CmdTxHdrSize: %zu\n",
+	       prChipInfo->u2CmdTxHdrSize);
 
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
 	rCmdUpdateWmmParms.ucBssIndex = (uint8_t) ucBssIndex;
