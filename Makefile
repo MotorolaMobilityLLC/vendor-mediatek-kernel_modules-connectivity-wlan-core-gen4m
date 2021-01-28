@@ -1,4 +1,20 @@
 # ---------------------------------------------------
+# OS option
+# ---------------------------------------------------
+os=$(CONFIG_MTK_SUPPORT_OS)
+
+ifeq ($(os),)
+os=linux
+endif
+
+ifeq ($(os), none)
+ccflags-y += -I/usr/include/
+ccflags-y += -DCFG_VIRTUAL_OS
+ccflags-y += -DCFG_REMIND_IMPLEMENT
+endif
+
+$(info os option: $(os))
+# ---------------------------------------------------
 # ALPS Setting
 # ---------------------------------------------------
 ifneq ($(KERNEL_OUT),)
@@ -12,7 +28,6 @@ endif
 
 DRIVER_BUILD_DATE=$(shell date +%Y%m%d%H%M%S)
 ccflags-y += -DDRIVER_BUILD_DATE='"$(DRIVER_BUILD_DATE)"'
-
 # ---------------------------------------------------
 # Compile Options
 # ---------------------------------------------------
@@ -40,6 +55,8 @@ ccflags-y += -DARP_MONITER_ENABLE=1
 ccflags-y += -Werror
 #ccflags-y:=$(filter-out -U$(WLAN_CHIP_ID),$(ccflags-y))
 #ccflags-y += -DLINUX -D$(WLAN_CHIP_ID)
+#workaround: also needed for none LINUX system
+# because some of common part code is surrounded with this flag
 ccflags-y += -DLINUX
 
 ifneq ($(filter MT6632,$(MTK_COMBO_CHIP)),)
@@ -156,6 +173,8 @@ else ifeq ($(CONFIG_MTK_COMBO_WIFI_HIF), axi)
 else ifeq ($(CONFIG_MTK_COMBO_WIFI_HIF), ut)
     # Increase frame size to 2048 because of 'cfg80211_connect_result' exceed stack size
     ccflags-y += -D_HIF_UT=1 -Wno-unused-function -Wno-unused-variable -Wframe-larger-than=2048
+else ifeq ($(CONFIG_MTK_COMBO_WIFI_HIF), virtual)
+	ccflags-y += -D_HIF_VIRTUAL=1
 else
     $(error Unsuppoted HIF=$(CONFIG_MTK_COMBO_WIFI_HIF)!!)
 endif
@@ -215,7 +234,7 @@ ifeq ($(MODULE_NAME),)
 endif
 
 ccflags-y += -DDBG=0
-ccflags-y += -I$(src)/os -I$(src)/os/linux/include
+ccflags-y += -I$(src)/os -I$(src)/os/$(os)/include
 ccflags-y += -I$(src)/include -I$(src)/include/nic -I$(src)/include/mgmt -I$(src)/include/chips
 ccflags-y += -I$(srctree)/drivers/misc/mediatek/base/power/include/
 ccflags-y += -I$(srctree)/drivers/misc/mediatek/include/mt-plat/
@@ -226,17 +245,19 @@ ccflags-y += -I$(srctree)/drivers/devfreq/
 ccflags-y += -I$(srctree)/net
 
 ifeq ($(CONFIG_MTK_COMBO_WIFI_HIF), sdio)
-ccflags-y += -I$(src)/os/linux/hif/sdio/include
+ccflags-y += -I$(src)/os/$(os)/hif/sdio/include
 else ifeq ($(CONFIG_MTK_COMBO_WIFI_HIF), pcie)
-ccflags-y += -I$(src)/os/linux/hif/common/include
-ccflags-y += -I$(src)/os/linux/hif/pcie/include
+ccflags-y += -I$(src)/os/$(os)/hif/common/include
+ccflags-y += -I$(src)/os/$(os)/hif/pcie/include
 else ifeq ($(CONFIG_MTK_COMBO_WIFI_HIF), axi)
-ccflags-y += -I$(src)/os/linux/hif/common/include
-ccflags-y += -I$(src)/os/linux/hif/axi/include
+ccflags-y += -I$(src)/os/$(os)/hif/common/include
+ccflags-y += -I$(src)/os/$(os)/hif/axi/include
 else ifeq ($(CONFIG_MTK_COMBO_WIFI_HIF), usb)
-ccflags-y += -I$(src)/os/linux/hif/usb/include
+ccflags-y += -I$(src)/os/$(os)/hif/usb/include
 else ifeq ($(CONFIG_MTK_COMBO_WIFI_HIF), ut)
 ccflags-y += -I$(src)/test -I$(src)/test/lib/include -I$(src)/test/testcases -I$(src)/test/lib/hif
+else ifeq ($(CONFIG_MTK_COMBO_WIFI_HIF), virtual)
+ccflags-y += -I$(src)/os/$(os)/hif/virtual/include
 endif
 
 ifneq ($(PLATFORM_FLAGS), )
@@ -262,18 +283,20 @@ endif
 # Directory List
 # ---------------------------------------------------
 COMMON_DIR  := common/
-OS_DIR      := os/linux/
+OS_DIR      := os/$(os)/
 HIF_COMMON_DIR := $(OS_DIR)hif/common/
 ifeq ($(CONFIG_MTK_COMBO_WIFI_HIF), sdio)
-HIF_DIR	    := os/linux/hif/sdio/
+HIF_DIR	    := os/$(os)/hif/sdio/
 else ifeq ($(CONFIG_MTK_COMBO_WIFI_HIF), pcie)
-HIF_DIR     := os/linux/hif/pcie/
+HIF_DIR     := os/$(os)/hif/pcie/
 else ifeq ($(CONFIG_MTK_COMBO_WIFI_HIF), axi)
-HIF_DIR	    := os/linux/hif/axi/
+HIF_DIR	    := os/$(os)/hif/axi/
 else ifeq ($(CONFIG_MTK_COMBO_WIFI_HIF), usb)
-HIF_DIR	    := os/linux/hif/usb/
+HIF_DIR	    := os/$(os)/hif/usb/
 else ifeq ($(CONFIG_MTK_COMBO_WIFI_HIF), ut)
 HIF_DIR	    := test/lib/hif/
+else ifeq ($(CONFIG_MTK_COMBO_WIFI_HIF), virtual)
+HIF_DIR	    := os/$(os)/hif/virtual/
 endif
 NIC_DIR     := nic/
 MGMT_DIR    := mgmt/
@@ -281,7 +304,7 @@ CHIPS       := chips/
 CHIPS_CMM   := $(CHIPS)common/
 
 ifneq ($(MTK_PLATFORM),)
-PLAT_DIR    := os/linux/plat/$(MTK_PLATFORM)/
+PLAT_DIR    := os/$(os)/plat/$(MTK_PLATFORM)/
 endif
 
 # ---------------------------------------------------
@@ -306,6 +329,13 @@ NIC_OBJS := 	$(NIC_DIR)nic.o \
 		$(NIC_DIR)nic_cmd_event.o \
 		$(NIC_DIR)nic_umac.o
 
+ifeq ($(os), none)
+OS_OBJS := 	$(OS_DIR)gl_dependent.o \
+		$(OS_DIR)gl_init.o \
+		$(OS_DIR)gl_kal.o \
+		$(OS_DIR)gl_ate_agent.o \
+		$(OS_DIR)gl_qa_agent.o
+else
 OS_OBJS := 	$(OS_DIR)gl_init.o \
 		$(OS_DIR)gl_kal.o \
 		$(OS_DIR)gl_bow.o \
@@ -319,6 +349,7 @@ OS_OBJS := 	$(OS_DIR)gl_init.o \
 		$(OS_DIR)gl_proc.o \
 		$(OS_DIR)gl_vendor.o \
 		$(OS_DIR)platform.o
+endif
 
 MGMT_OBJS := 	$(MGMT_DIR)ais_fsm.o \
 		$(MGMT_DIR)aaa_fsm.o \
@@ -394,10 +425,12 @@ COMMON_OBJS += $(COMMON_DIR)wlan_p2p.o
 
 NIC_OBJS += $(NIC_DIR)p2p_nic.o
 
+ifneq ($(os), none)
 OS_OBJS += $(OS_DIR)gl_p2p.o \
            $(OS_DIR)gl_p2p_cfg80211.o \
            $(OS_DIR)gl_p2p_init.o \
            $(OS_DIR)gl_p2p_kal.o
+endif
 
 MGMT_OBJS += $(MGMT_DIR)p2p_dev_fsm.o\
             $(MGMT_DIR)p2p_dev_state.o\
@@ -436,8 +469,9 @@ HIF_OBJS :=  $(HIF_DIR)usb.o \
 else ifeq ($(CONFIG_MTK_COMBO_WIFI_HIF), ut)
 HIF_OBJS :=  $(HIF_DIR)ut.o \
              $(HIF_DIR)hal_api.o
+else ifeq ($(CONFIG_MTK_COMBO_WIFI_HIF), virtual)
+HIF_OBJS :=  $(HIF_DIR)virt.o
 endif
-
 # ---------------------------------------------------
 # Platform Objects List
 # ---------------------------------------------------
