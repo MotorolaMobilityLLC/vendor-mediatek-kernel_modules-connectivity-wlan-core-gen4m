@@ -262,6 +262,9 @@ u_int8_t secIsProtectedBss(IN struct ADAPTER *prAdapter,
 u_int8_t secIsRobustActionFrame(IN struct ADAPTER *prAdapter,
 			   IN void *prPacket);
 
+u_int8_t secIsRobustMgmtFrame(IN struct ADAPTER *prAdapter,
+			IN void *prPacket);
+
 u_int8_t secIsWepBss(IN struct ADAPTER *prAdapter,
 			IN struct BSS_INFO *prBssInfo);
 
