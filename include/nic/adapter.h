@@ -503,6 +503,8 @@ struct _BSS_INFO_T {
 	/* AP PMF */
 	struct AP_PMF_CFG rApPmfCfg;
 #endif
+
+	enum ENUM_KEY_ACTION_TYPE_T eKeyAction;
 };
 
 struct _AIS_SPECIFIC_BSS_INFO_T {
