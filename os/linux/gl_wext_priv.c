@@ -2927,6 +2927,7 @@ reqExtSetAcpiDevicePowerState(IN struct GLUE_INFO
  */
 #define CMD_GET_MU_RX_PKTCNT	"hqa_get_murx_pktcnt"
 #define CMD_RUN_HQA	"hqa"
+#define CMD_CALIBRATION	"cal"
 
 #if CFG_WOW_SUPPORT
 #define CMD_WOW_START		"WOW_START"
@@ -12905,6 +12906,57 @@ static int priv_driver_run_hqa(
 
 }
 
+static int priv_driver_calibration(
+	struct net_device *prNetDev,
+	char *pcCommand,
+	int i4TotalLen)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct mt66xx_chip_info *prChipInfo;
+	int32_t i4BytesWritten = 0;
+	int32_t i4Argc = 0;
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
+	uint32_t u4Ret, u4GetInput;
+	int32_t i4ArgNum = 2;
+
+	ASSERT(prNetDev);
+	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
+		return -1;
+
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+	prChipInfo = prGlueInfo->prAdapter->chip_info;
+
+	DBGLOG(RFTEST, INFO, "command is %s\n", pcCommand);
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+	DBGLOG(RFTEST, INFO, "argc is %i\n", i4Argc);
+
+	if (i4Argc >= i4ArgNum) {
+		u4Ret = kalkStrtou32(apcArgv[1], 0, &u4GetInput);
+		if (u4Ret) {
+			DBGLOG(RFTEST, INFO,
+				   "%s: Parsing Fail\n", __func__);
+		} else if (u4GetInput == 0) {
+			i4BytesWritten = snprintf(pcCommand,
+				i4TotalLen,
+				"reset calibration result\n");
+
+			if (prChipInfo->resetCalResult)
+				prChipInfo->resetCalResult();
+		}
+	} else {
+		i4BytesWritten = snprintf(pcCommand,
+			i4TotalLen,
+			"support parameter as below:\n");
+
+		i4BytesWritten += snprintf(
+			pcCommand + i4BytesWritten,
+			i4TotalLen - i4BytesWritten,
+			"0: reset calibration result\n");
+	}
+
+	return i4BytesWritten;
+}
+
 typedef int(*PRIV_CMD_FUNCTION) (
 		IN struct net_device *prNetDev,
 		IN char *pcCommand,
@@ -13052,6 +13104,7 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers[] = {
 	{CMD_SHOW_TXD_INFO, priv_driver_show_txd_info},
 	{CMD_GET_MU_RX_PKTCNT, priv_driver_show_rx_stat},
 	{CMD_RUN_HQA, priv_driver_run_hqa},
+	{CMD_CALIBRATION, priv_driver_calibration},
 };
 
 int32_t priv_driver_cmds(IN struct net_device *prNetDev, IN int8_t *pcCommand,
