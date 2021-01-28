@@ -2476,3 +2476,36 @@ uint32_t halGetHifTxPageSize(IN struct ADAPTER *prAdapter)
 {
 	return HIF_TX_PAGE_SIZE;
 }
+
+/*----------------------------------------------------------------------------*/
+/*!
+* @brief Check if HIF state is READY for upper layer cfg80211
+*
+* @param prAdapter      Pointer to the Adapter structure.
+*
+* @return (TRUE: ready, FALSE: not ready)
+*/
+/*----------------------------------------------------------------------------*/
+bool halIsHifStateReady(IN struct ADAPTER *prAdapter, uint8_t *pucState)
+{
+	/* PCIE owner should implement this function */
+
+	return TRUE;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+* @brief Check if HIF state is during supend process
+*
+* @param prAdapter      Pointer to the Adapter structure.
+*
+* @return (TRUE: suspend, reject the caller action. FALSE: not suspend)
+*/
+/*----------------------------------------------------------------------------*/
+bool halIsHifStateSuspend(IN struct ADAPTER *prAdapter)
+{
+	/* PCIE owner should implement this function */
+
+	return FALSE;
+}
+

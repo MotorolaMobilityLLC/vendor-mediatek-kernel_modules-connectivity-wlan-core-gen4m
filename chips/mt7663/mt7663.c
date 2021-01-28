@@ -187,6 +187,7 @@ struct BUS_INFO mt7663_bus_info = {
 	.u4device_vender_request_in = DEVICE_VENDOR_REQUEST_IN,
 	.u4device_vender_request_out = DEVICE_VENDOR_REQUEST_OUT,
 	.asicUsbSuspend = asicUsbSuspend,
+	.asicUsbResume = NULL,
 	.asicUsbEventEpDetected = asicUsbEventEpDetected,
 	.asicUsbRxByteCount = NULL,
 #endif /* _HIF_USB */
