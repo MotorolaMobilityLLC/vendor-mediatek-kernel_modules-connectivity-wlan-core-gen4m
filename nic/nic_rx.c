@@ -3035,6 +3035,7 @@ void nicRxProcessEventPacket(IN struct ADAPTER *prAdapter,
 void nicRxProcessMgmtPacket(IN struct ADAPTER *prAdapter,
 	IN OUT struct SW_RFB *prSwRfb)
 {
+	struct GLUE_INFO *prGlueInfo;
 	uint8_t ucSubtype;
 #if CFG_SUPPORT_802_11W
 	/* BOOL   fgMfgDrop = FALSE; */
@@ -3095,7 +3096,11 @@ void nicRxProcessMgmtPacket(IN struct ADAPTER *prAdapter,
 
 	if (prAdapter->fgTestMode == FALSE) {
 #if CFG_MGMT_FRAME_HANDLING
-		if (apfnProcessRxMgtFrame[ucSubtype]) {
+		prGlueInfo = prAdapter->prGlueInfo;
+		if ((prGlueInfo == NULL) || (prGlueInfo->u4ReadyFlag == 0)) {
+			DBGLOG(RX, WARN,
+			   "Bypass this mgmt frame without wlanProbe done\n");
+		} else if (apfnProcessRxMgtFrame[ucSubtype]) {
 			switch (apfnProcessRxMgtFrame[ucSubtype] (prAdapter,
 					prSwRfb)) {
 			case WLAN_STATUS_PENDING:
