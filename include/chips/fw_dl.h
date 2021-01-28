@@ -82,7 +82,7 @@
 #define COMPRESSION_OPTION_MASK     BIT(4)
 #endif
 
-#if CFG_MTK_ANDROID_WMT
+#if CFG_MTK_ANDROID_EMI
 extern phys_addr_t gConEmiPhyBase;
 extern unsigned long long gConEmiSize;
 #endif
