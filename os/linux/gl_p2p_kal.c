@@ -493,7 +493,7 @@ UINT_16 kalP2PCalWSC_IELen(IN P_GLUE_INFO_T prGlueInfo, IN UINT_8 ucType, IN UIN
 {
 	ASSERT(prGlueInfo);
 
-	ASSERT(ucType < 3);
+	ASSERT(ucType < 4);
 
 	return prGlueInfo->prP2PInfo[ucRoleIdx]->u2WSCIELen[ucType];
 }
@@ -514,7 +514,7 @@ VOID kalP2PGenWSC_IE(IN P_GLUE_INFO_T prGlueInfo, IN UINT_8 ucType, IN PUINT_8 p
 	P_GL_P2P_INFO_T prGlP2pInfo = (P_GL_P2P_INFO_T) NULL;
 
 	do {
-		if ((prGlueInfo == NULL) || (ucType >= 3) || (pucBuffer == NULL))
+		if ((prGlueInfo == NULL) || (ucType >= 4) || (pucBuffer == NULL))
 			break;
 
 		prGlP2pInfo = prGlueInfo->prP2PInfo[ucRoleIdx];
@@ -531,7 +531,7 @@ VOID kalP2PUpdateWSC_IE(IN P_GLUE_INFO_T prGlueInfo, IN UINT_8 ucType, IN PUINT_
 	P_GL_P2P_INFO_T prGlP2pInfo = (P_GL_P2P_INFO_T) NULL;
 
 	do {
-		if ((prGlueInfo == NULL) || (ucType >= 3) || ((u2BufferLength > 0) && (pucBuffer == NULL)))
+		if ((prGlueInfo == NULL) || (ucType >= 4) || ((u2BufferLength > 0) && (pucBuffer == NULL)))
 			break;
 
 		if (u2BufferLength > 400) {
