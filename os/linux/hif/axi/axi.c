@@ -743,8 +743,7 @@ static int mtk_axi_probe(IN struct platform_device *pdev)
 	int ret = 0;
 #if CFG_MTK_ANDROID_WMT
 #if (CFG_SUPPORT_CONNINFRA == 0)
-	struct MTK_WCN_WMT_WLAN_CB_INFO rWmtCb;
-
+	struct _MTK_WCN_WMT_WLAN_CB_INFO rWmtCb;
 #else
 	struct MTK_WCN_WLAN_CB_INFO rWlanCb;
 #endif
@@ -773,7 +772,7 @@ static int mtk_axi_probe(IN struct platform_device *pdev)
 
 #if CFG_MTK_ANDROID_WMT
 #if (CFG_SUPPORT_CONNINFRA == 0)
-	memset(&rWmtCb, 0, sizeof(struct MTK_WCN_WMT_WLAN_CB_INFO));
+	memset(&rWmtCb, 0, sizeof(struct _MTK_WCN_WMT_WLAN_CB_INFO));
 	rWmtCb.wlan_probe_cb = hifAxiProbe;
 	rWmtCb.wlan_remove_cb = hifAxiRemove;
 	rWmtCb.wlan_bus_cnt_get_cb = hifAxiGetBusCnt;

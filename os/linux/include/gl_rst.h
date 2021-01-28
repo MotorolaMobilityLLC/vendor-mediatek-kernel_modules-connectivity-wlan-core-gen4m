@@ -73,6 +73,10 @@
  */
 #include "gl_typedef.h"
 
+#if CFG_MTK_ANDROID_WMT && (CFG_SUPPORT_CONNINFRA == 0)
+#include "wmt_exp.h"
+#endif
+
 #if 0
 #include "mtk_porting.h"
 #endif
@@ -141,6 +145,7 @@ struct RESET_STRUCT {
 };
 
 #if CFG_WMT_RESET_API_SUPPORT
+#if (CFG_SUPPORT_CONNINFRA == 1)
 /* duplicated from wmt_exp.h for better driver isolation */
 enum ENUM_WMTDRV_TYPE {
 	WMTDRV_TYPE_BT = 0,
@@ -173,25 +178,13 @@ enum ENUM_WMTRSTMSG_TYPE {
 	WMTRSTMSG_RESET_INVALID = 0xff
 };
 
-typedef void (*PF_WMT_CB) (enum ENUM_WMTDRV_TYPE, /* Source driver type */
-			   enum ENUM_WMTDRV_TYPE, /* Destination driver type */
-			   enum ENUM_WMTMSG_TYPE, /* Message type */
-			   /* READ-ONLY buffer. Buffer is allocated and
-			    * freed by WMT_drv. Client can't touch this
-			    * buffer after this function return.
-			    */
-			   void *,
-			   unsigned int); /* Buffer size in unit of byte */
-
-#endif
-
-#if (CFG_SUPPORT_CONNINFRA == 1)
 enum ENUM_WF_RST_SOURCE {
 	WF_RST_SOURCE_NONE = 0x0,
 	WF_RST_SOURCE_DRIVER = 0x1,
 	WF_RST_SOURCE_FW = 0x2,
 	WF_RST_SOURCE_MAX
 };
+#endif
 #endif
 
 /*******************************************************************************
@@ -200,19 +193,9 @@ enum ENUM_WF_RST_SOURCE {
  */
 #if CFG_CHIP_RESET_SUPPORT
 
-
 #if CFG_WMT_RESET_API_SUPPORT
-#if (CFG_SUPPORT_CONNINFRA == 0)
-extern int mtk_wcn_wmt_assert(enum ENUM_WMTDRV_TYPE type,
-			      uint32_t reason);
-extern int mtk_wcn_wmt_msgcb_reg(enum ENUM_WMTDRV_TYPE
-				 eType, PF_WMT_CB pCb);
-extern int mtk_wcn_wmt_msgcb_unreg(enum ENUM_WMTDRV_TYPE
-				   eType);
-#endif /*end of CFG_SUPPORT_CONNINFRA == 0*/
 extern int wifi_reset_start(void);
 extern int wifi_reset_end(enum ENUM_RESET_STATUS);
-
 
 #if (CFG_SUPPORT_CONNINFRA == 1)
 extern int hifAxiRemove(void);
@@ -220,15 +203,10 @@ extern void kalSetRstEvent(void);
 extern void update_driver_reset_status(uint8_t fgIsResetting);
 extern int32_t get_wifi_process_status(void);
 extern int32_t get_wifi_powered_status(void);
+#endif /* CFG_SUPPORT_CONNINFRA */
 
-#endif
-
-#if CFG_ENABLE_KEYWORD_EXCEPTION_MECHANISM
-extern int mtk_wcn_wmt_assert_keyword(enum ENUM_WMTDRV_TYPE type,
-	unsigned char *keyword);
-#endif
-#endif
-#endif
+#endif /* CFG_WMT_RESET_API_SUPPORT */
+#endif /* CFG_CHIP_RESET_SUPPORT */
 
 /*******************************************************************************
  *                            P U B L I C   D A T A
@@ -293,17 +271,6 @@ extern u_int8_t fgIsResetHangState;
 extern uint64_t u8ResetTime;
 extern u_int8_t fgSimplifyResetFlow;
 extern char *g_reason;
-#if CFG_WMT_RESET_API_SUPPORT
-#if (CFG_SUPPORT_CONNINFRA == 0)
-extern int mtk_wcn_set_connsys_power_off_flag(int value);
-extern int mtk_wcn_wmt_assert_timeout(enum ENUM_WMTDRV_TYPE
-				      type, uint32_t reason, int timeout);
-extern int mtk_wcn_wmt_do_reset(enum ENUM_WMTDRV_TYPE type);
-extern int mtk_wcn_wmt_do_reset_only(enum ENUM_WMTDRV_TYPE type);
-#endif /*end of CFG_SUPPORT_CONNINFRA == 0*/
-/* WMT Core Dump Support */
-extern u_int8_t mtk_wcn_stp_coredump_start_get(void);
-#endif /*end of CFG_WMT_RESET_API_SUPPORT*/
 #else
 
 #endif
@@ -328,7 +295,7 @@ u_int8_t glResetTrigger(struct ADAPTER *prAdapter,
 			uint32_t u4Line);
 
 #if CFG_WMT_RESET_API_SUPPORT
-u_int8_t glIsWmtCodeDump(void);
+int32_t glIsWmtCodeDump(void);
 #endif
 #if (CFG_SUPPORT_CONNINFRA == 1)
 

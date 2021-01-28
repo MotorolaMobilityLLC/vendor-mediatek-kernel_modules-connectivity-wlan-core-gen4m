@@ -159,9 +159,9 @@ enum ENUM_WF_RST_SOURCE g_eWfRstSource = WF_RST_SOURCE_NONE;
 #if (CFG_SUPPORT_CONNINFRA == 0)
 static void mtk_wifi_reset(struct work_struct *work);
 static void mtk_wifi_trigger_reset(struct work_struct *work);
-static void glResetCallback(enum ENUM_WMTDRV_TYPE eSrcType,
-			     enum ENUM_WMTDRV_TYPE eDstType,
-			     enum ENUM_WMTMSG_TYPE eMsgType, void *prMsgBody,
+static void glResetCallback(enum _ENUM_WMTDRV_TYPE_T eSrcType,
+			     enum _ENUM_WMTDRV_TYPE_T eDstType,
+			     enum _ENUM_WMTMSG_TYPE_T eMsgType, void *prMsgBody,
 			     unsigned int u4MsgLength);
 #endif /*end of CFG_SUPPORT_CONNINFRA == 0*/
 #else
@@ -227,8 +227,7 @@ void glResetInit(struct GLUE_INFO *prGlueInfo)
 #if CFG_WMT_RESET_API_SUPPORT
 	/* 1. Register reset callback */
 #if (CFG_SUPPORT_CONNINFRA == 0)
-	mtk_wcn_wmt_msgcb_reg(WMTDRV_TYPE_WIFI,
-			      (PF_WMT_CB) glResetCallback);
+	mtk_wcn_wmt_msgcb_reg(WMTDRV_TYPE_WIFI, glResetCallback);
 	/* 2. Initialize reset work */
 	INIT_WORK(&(wifi_rst.rst_trigger_work),
 		  mtk_wifi_trigger_reset);
@@ -484,14 +483,14 @@ static void mtk_wifi_trigger_reset(struct work_struct *work)
 }
 #endif
 /* Weak reference for those platform doesn't support wmt functions */
-u_int8_t __weak mtk_wcn_stp_coredump_start_get(void)
+int32_t __weak mtk_wcn_stp_coredump_start_get(void)
 {
 	return FALSE;
 }
 
 
 /*0= f/w assert flag is not set, others=f/w assert flag is set */
-u_int8_t glIsWmtCodeDump(void)
+int32_t glIsWmtCodeDump(void)
 {
 	return mtk_wcn_stp_coredump_start_get();
 }
@@ -528,16 +527,16 @@ static void triggerHifDumpIfNeed(void)
  * @retval
  */
 /*----------------------------------------------------------------------------*/
-static void glResetCallback(enum ENUM_WMTDRV_TYPE eSrcType,
-			     enum ENUM_WMTDRV_TYPE eDstType,
-			     enum ENUM_WMTMSG_TYPE eMsgType, void *prMsgBody,
+static void glResetCallback(enum _ENUM_WMTDRV_TYPE_T eSrcType,
+			     enum _ENUM_WMTDRV_TYPE_T eDstType,
+			     enum _ENUM_WMTMSG_TYPE_T eMsgType, void *prMsgBody,
 			     unsigned int u4MsgLength)
 {
 	switch (eMsgType) {
 	case WMTMSG_TYPE_RESET:
-		if (u4MsgLength == sizeof(enum ENUM_WMTRSTMSG_TYPE)) {
-			enum ENUM_WMTRSTMSG_TYPE *prRstMsg =
-					(enum ENUM_WMTRSTMSG_TYPE *) prMsgBody;
+		if (u4MsgLength == sizeof(enum _ENUM_WMTRSTMSG_TYPE_T)) {
+			enum _ENUM_WMTRSTMSG_TYPE_T *prRstMsg =
+				(enum _ENUM_WMTRSTMSG_TYPE_T *) prMsgBody;
 
 			switch (*prRstMsg) {
 			case WMTRSTMSG_RESET_START:
