@@ -186,7 +186,6 @@ UINT_8 p2pRoleFsmInit(IN P_ADAPTER_T prAdapter, IN UINT_8 ucRoleIdx)
 		prP2pBssInfo->eBand = BAND_2G4;
 		prP2pBssInfo->eBssSCO = CHNL_EXT_SCN;
 		prP2pBssInfo->ucNss = wlanGetSupportNss(prAdapter, prP2pBssInfo->ucBssIndex);
-		prP2pBssInfo->eDBDCBand = ENUM_BAND_0;
 		prP2pBssInfo->ucWmmQueSet = (prAdapter->rWifiVar.eDbdcMode ==
 			ENUM_DBDC_MODE_DISABLED) ? DBDC_5G_WMM_INDEX : DBDC_2G_WMM_INDEX;
 

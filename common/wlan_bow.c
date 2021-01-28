@@ -2853,7 +2853,7 @@ VOID bowRequestCh(IN P_ADAPTER_T prAdapter)
 
 		/* FIXME : where to call cnmGetDbdcCapability in BOW? */
 		/*prMsgChReq->eDBDCBand = (prAdapter->aprBssInfo[prMsgChReq->ucBssIndex])->eDBDCBand;*/
-		prMsgChReq->eDBDCBand = ENUM_BAND_0;
+		prMsgChReq->eDBDCBand = ENUM_BAND_AUTO;
 
 		/* To do: check if 80/160MHz bandwidth is needed here */
 		prMsgChReq->eRfChannelWidth = 0;
@@ -2906,7 +2906,7 @@ VOID bowReleaseCh(IN P_ADAPTER_T prAdapter)
 
 		/* FIXME : where to call cnmGetDbdcCapability in BOW? */
 		/*prMsgChAbort->eDBDCBand = (prAdapter->aprBssInfo[prMsgChAbort->ucBssIndex])->eDBDCBand;*/
-		prMsgChAbort->eDBDCBand = ENUM_BAND_0;
+		prMsgChAbort->eDBDCBand = ENUM_BAND_AUTO;
 
 		mboxSendMsg(prAdapter, MBOX_ID_0, (P_MSG_HDR_T) prMsgChAbort, MSG_SEND_METHOD_BUF);
 	}
