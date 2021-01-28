@@ -1463,8 +1463,8 @@ static u_int32 mt_engine_add_allocation(
 				/* D3.1, Table 28-24, 0xc8 is 484-tone
 				 * D3.1, Table 28-24, 0x72 is 484-empty-tone
 				 */
-				 if (((sub_band_idx+1) >= 0)
-					&& ((sub_band_idx+1) < 8))
+				 if ((sub_band_idx >= 0)
+					&& (sub_band_idx < 7))
 					alloc_info->
 						sub20[sub_band_idx+1] = 0x72;
 				 else
@@ -1474,8 +1474,8 @@ static u_int32 mt_engine_add_allocation(
 				/* D3.1, Table 28-24, 0xd0 is 996-tone
 				 * D3.1, Table 28-24, 0x73 is 484-empty-tone
 				 */
-				if (((sub_band_idx+1) >= 0)
-					&& ((sub_band_idx+3) < 8)) {
+				if ((sub_band_idx >= 0)
+					&& (sub_band_idx < 5)) {
 					alloc_info->
 						sub20[sub_band_idx+1] = 0x73;
 					alloc_info->
