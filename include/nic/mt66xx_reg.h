@@ -76,6 +76,9 @@
 
 extern struct mt66xx_hif_driver_data mt66xx_driver_data_mt6632;
 extern struct mt66xx_hif_driver_data mt66xx_driver_data_mt7668;
+#ifdef MT7663
+extern struct mt66xx_hif_driver_data mt66xx_driver_data_mt7663;
+#endif /* MT7663 */
 
 /*******************************************************************************
 *                              C O N S T A N T S
@@ -921,6 +924,7 @@ typedef struct _ENHANCE_MODE_DATA_STRUCT_T {
 typedef enum _ENUM_WIFI_FUNC_T {
 	WIFI_FUNC_INIT_DONE = BIT(0),
 	WIFI_FUNC_N9_DONE = BIT(1),
+	WIFI_FUNC_NO_CR4_READY_BITS = BITS(0, 1),
 	WIFI_FUNC_CR4_READY = BIT(2),
 	WIFI_FUNC_READY_BITS = BITS(0, 2),
 	WIFI_FUNC_DUMMY_REQ = BIT(3)
@@ -936,6 +940,7 @@ enum enum_mt66xx_chip {
 struct mt66xx_chip_info {
 	const unsigned int chip_id;	/* chip id */
 	const unsigned int sw_sync0;	/* sw_sync0 address */
+	const unsigned int sw_ready_bits;	/* sw_sync0 ready bits */
 	const unsigned int sw_ready_bit_offset;	/* sw_sync0 ready bit offset */
 	const unsigned int patch_addr;	/* patch download start address */
 	const unsigned char is_pcie_32dw_read;	/* diff PDMA config */
