@@ -12940,6 +12940,12 @@ int android_private_support_driver_cmd(IN struct net_device *prNetDev,
 
 	bytes_written = priv_driver_cmds(prNetDev, command, priv_cmd.total_len);
 
+	if (bytes_written == -EOPNOTSUPP) {
+		/* Report positive status */
+		bytes_written = kalSnprintf(command, priv_cmd.total_len,
+						"%s", "NotSupport");
+	}
+
 	if (bytes_written >= 0) {
 		/* priv_cmd in but no response */
 		if ((bytes_written == 0) && (priv_cmd.total_len > 0))
