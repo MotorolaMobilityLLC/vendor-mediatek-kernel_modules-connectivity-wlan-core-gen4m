@@ -5090,9 +5090,21 @@ void aisFsmReleaseCh(IN struct ADAPTER *prAdapter, IN uint8_t ucBssIndex)
 /*----------------------------------------------------------------------------*/
 void aisBssBeaconTimeout(IN struct ADAPTER *prAdapter,
 	IN uint8_t ucBssIndex)
+
+{
+	/* trigger by driver, use dummy reason code */
+	aisBssBeaconTimeout_impl(prAdapter,
+		BEACON_TIMEOUT_REASON_NUM, ucBssIndex);
+}
+
+void aisBssBeaconTimeout_impl(IN struct ADAPTER *prAdapter,
+	IN uint8_t ucReason,
+	IN uint8_t ucBssIndex)
 {
 	struct BSS_INFO *prAisBssInfo;
 	u_int8_t fgDoAbortIndication = FALSE;
+	u_int8_t fgIsReasonPER =
+		(ucReason == BEACON_TIMEOUT_REASON_HIGH_PER);
 	struct CONNECTION_SETTINGS *prConnSettings;
 
 	DBGLOG(AIS, LOUD, "ucBssIndex = %d\n", ucBssIndex);
@@ -5115,7 +5127,11 @@ void aisBssBeaconTimeout(IN struct ADAPTER *prAdapter,
 	}
 	/* 4 <2> invoke abort handler */
 	if (fgDoAbortIndication) {
-		prConnSettings->fgIsDisconnectedByNonRequest = FALSE;
+		prConnSettings->fgIsDisconnectedByNonRequest =
+			fgIsReasonPER;
+		prAisBssInfo->u2DeauthReason =
+			REASON_CODE_BEACON_TIMEOUT;
+
 		if (prConnSettings->eReConnectLevel <
 			RECONNECT_LEVEL_USER_SET) {
 			prConnSettings->eReConnectLevel =
@@ -5123,8 +5139,11 @@ void aisBssBeaconTimeout(IN struct ADAPTER *prAdapter,
 			prConnSettings->fgIsConnReqIssued = TRUE;
 		}
 		DBGLOG(AIS, EVENT, "aisBssBeaconTimeout\n");
-		aisFsmStateAbort(prAdapter, DISCONNECT_REASON_CODE_RADIO_LOST,
-				 TRUE, ucBssIndex);
+
+		aisFsmStateAbort(prAdapter,
+			DISCONNECT_REASON_CODE_RADIO_LOST,
+			!fgIsReasonPER,
+			ucBssIndex);
 	}
 }				/* end of aisBssBeaconTimeout() */
 
