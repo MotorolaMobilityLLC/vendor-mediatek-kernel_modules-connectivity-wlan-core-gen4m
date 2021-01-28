@@ -480,15 +480,18 @@ WLAN_STATUS halTxUSBSendData(IN P_GLUE_INFO_T prGlueInfo, IN P_MSDU_INFO_T prMsd
 	UINT_8 ucTc;
 	UINT_8 *pucBuf;
 	UINT_32 u4Length;
+	UINT_32 u4TotalLen;
 #if CFG_USB_TX_AGG
 	unsigned long flags;
 #endif
 
+	prChipInfo = prGlueInfo->prAdapter->chip_info;
 	skb = (struct sk_buff *)prMsduInfo->prPacket;
 	pucBuf = skb->data;
 	u4Length = skb->len;
+	u4TotalLen = u4Length + prChipInfo->u2HifTxdSize;
 	ucTc = USB_TRANS_MSDU_TC(prMsduInfo);
-	prChipInfo = prGlueInfo->prAdapter->chip_info;
+
 #if CFG_USB_TX_AGG
 	spin_lock_irqsave(&prHifInfo->rTxDataFreeQLock, flags);
 
@@ -501,11 +504,11 @@ WLAN_STATUS halTxUSBSendData(IN P_GLUE_INFO_T prGlueInfo, IN P_MSDU_INFO_T prMsd
 	prUsbReq = list_entry(prHifInfo->rTxDataFreeQ[ucTc].next, struct _USB_REQ_T, list);
 	prBufCtrl = prUsbReq->prBufCtrl;
 
-	if (prHifInfo->u4AggRsvSize < ALIGN_4(u4Length))
-		DBGLOG(HAL, ERROR, "u4AggRsvSize count FAIL (%u, %u)\n", prHifInfo->u4AggRsvSize, u4Length);
-	prHifInfo->u4AggRsvSize -= ALIGN_4(u4Length);
+	if (prHifInfo->u4AggRsvSize < ALIGN_4(u4TotalLen))
+		DBGLOG(HAL, ERROR, "u4AggRsvSize count FAIL (%u, %u)\n", prHifInfo->u4AggRsvSize, u4TotalLen);
+	prHifInfo->u4AggRsvSize -= ALIGN_4(u4TotalLen);
 
-	if (prBufCtrl->u4WrIdx + ALIGN_4(u4Length) + LEN_USB_UDMA_TX_TERMINATOR > prBufCtrl->u4BufSize) {
+	if (prBufCtrl->u4WrIdx + ALIGN_4(u4TotalLen) + LEN_USB_UDMA_TX_TERMINATOR > prBufCtrl->u4BufSize) {
 		halTxUSBSendAggData(prHifInfo, ucTc, prUsbReq);
 
 		if (list_empty(&prHifInfo->rTxDataFreeQ[ucTc])) {
@@ -524,7 +527,7 @@ WLAN_STATUS halTxUSBSendData(IN P_GLUE_INFO_T prGlueInfo, IN P_MSDU_INFO_T prMsd
 	memcpy(prBufCtrl->pucBuf + prBufCtrl->u4WrIdx, pucBuf, u4Length);
 	prBufCtrl->u4WrIdx += u4Length;
 
-	u4PaddingLength = (ALIGN_4(u4Length+prChipInfo->u2HifTxdSize) - (u4Length+prChipInfo->u2HifTxdSize));
+	u4PaddingLength = (ALIGN_4(u4TotalLen) - u4TotalLen);
 	if (u4PaddingLength) {
 		memset(prBufCtrl->pucBuf + prBufCtrl->u4WrIdx, 0, u4PaddingLength);
 		prBufCtrl->u4WrIdx += u4PaddingLength;
@@ -554,7 +557,7 @@ WLAN_STATUS halTxUSBSendData(IN P_GLUE_INFO_T prGlueInfo, IN P_MSDU_INFO_T prMsd
 	memcpy(prBufCtrl->pucBuf + prChipInfo->u2HifTxdSize, pucBuf, u4Length);
 	prBufCtrl->u4WrIdx += u4Length;
 
-	u4PaddingLength = (ALIGN_4(u4Length + prChipInfo->u2HifTxdSize) - u4Length);
+	u4PaddingLength = (ALIGN_4(u4TotalLen) - u4TotalLen);
 	if (u4PaddingLength) {
 		memset(prBufCtrl->pucBuf + prBufCtrl->u4WrIdx, 0, u4PaddingLength);
 		prBufCtrl->u4WrIdx += u4PaddingLength;
@@ -925,7 +928,7 @@ VOID halRxUSBReceiveDataComplete(struct urb *urb)
 	}
 
 #if CFG_USB_RX_HANDLE_IN_HIF_THREAD
-	glUsbEnqueueReq(prHifInfo, &prHifInfo->rRxDataCompleteQ, prUsbReq, FALSE);
+	glUsbEnqueueReq(prHifInfo, &prHifInfo->rRxDataCompleteQ, prUsbReq, &prHifInfo->rRxDataQLock, FALSE);
 
 	kalSetIntEvent(prGlueInfo);
 #else
