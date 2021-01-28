@@ -800,7 +800,7 @@
 #endif
 
 #define CFG_SUPPORT_AIS_5GHZ                    1
-#define CFG_SUPPORT_BEACON_CHANGE_DETECTION     0
+#define CFG_SUPPORT_DETECT_SECURITY_MODE_CHANGE 0
 
 /*------------------------------------------------------------------------------
  * Option for NVRAM and Version Checking

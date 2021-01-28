@@ -252,7 +252,9 @@ void aisInitializeConnectionSettings(IN struct ADAPTER *prAdapter,
 	/* Features */
 	prConnSettings->fgIsEnableRoaming = FALSE;
 
+#if CFG_SUPPORT_DETECT_SECURITY_MODE_CHANGE
 	prConnSettings->fgSecModeChangeStartTimer = FALSE;
+#endif
 
 #if CFG_SUPPORT_ROAMING
 #if 0
@@ -404,11 +406,13 @@ void aisFsmInit(IN struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 			  (PFN_MGMT_TIMEOUT_FUNC) aisFsmRunEventDeauthTimeout,
 			  (unsigned long)ucBssIndex);
 
+#if CFG_SUPPORT_DETECT_SECURITY_MODE_CHANGE
 	cnmTimerInitTimer(prAdapter,
 			  &prAisFsmInfo->rSecModeChangeTimer,
 			  (PFN_MGMT_TIMEOUT_FUNC)
 			  aisFsmRunEventSecModeChangeTimeout,
 			  (unsigned long)ucBssIndex);
+#endif
 
 	prMgmtTxReqInfo = &prAisFsmInfo->rMgmtTxInfo;
 	LINK_INITIALIZE(&prMgmtTxReqInfo->rTxReqLink);
@@ -549,8 +553,9 @@ void aisFsmUninit(IN struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 		cnmTimerStopTimer(prAdapter, &prAisFsmInfo->rScanDoneTimer);
 	}
 	cnmTimerStopTimer(prAdapter, &prAisFsmInfo->rChannelTimeoutTimer);
+#if CFG_SUPPORT_DETECT_SECURITY_MODE_CHANGE
 	cnmTimerStopTimer(prAdapter, &prAisFsmInfo->rSecModeChangeTimer);
-
+#endif
 	/* 4 <2> flush pending request */
 	aisFsmFlushRequest(prAdapter, ucBssIndex);
 	aisResetBssTranstionMgtParam(prAisSpecificBssInfo);
@@ -2466,8 +2471,10 @@ void aisFsmRunEventAbort(IN struct ADAPTER *prAdapter,
 	/* to support user space triggered roaming */
 	if (ucReasonOfDisconnect == DISCONNECT_REASON_CODE_ROAMING &&
 	    prAisFsmInfo->eCurrentState != AIS_STATE_DISCONNECTING) {
+#if CFG_SUPPORT_DETECT_SECURITY_MODE_CHANGE
 		cnmTimerStopTimer(prAdapter,
 				  &prAisFsmInfo->rSecModeChangeTimer);
+#endif
 		prAisBssInfo->ucReasonOfDisconnect = ucReasonOfDisconnect;
 		if (prAisFsmInfo->eCurrentState == AIS_STATE_NORMAL_TR) {
 			/* 1. release channel */
@@ -2756,7 +2763,9 @@ enum ENUM_AIS_STATE aisFsmJoinCompleteAction(IN struct ADAPTER *prAdapter,
 	do {
 		/* 4 <1> JOIN was successful */
 		if (prJoinCompMsg->rJoinStatus == WLAN_STATUS_SUCCESS) {
+#if CFG_SUPPORT_DETECT_SECURITY_MODE_CHANGE
 			prConnSettings->fgSecModeChangeStartTimer = FALSE;
+#endif
 
 			/* 1. Reset retry count */
 			prAisFsmInfo->ucConnTrialCount = 0;
@@ -4063,8 +4072,10 @@ void aisFsmDisconnect(IN struct ADAPTER *prAdapter,
 	twtPlannerReset(prAdapter, prAisBssInfo);
 #endif
 
+#if CFG_SUPPORT_DETECT_SECURITY_MODE_CHANGE
 	cnmTimerStopTimer(prAdapter,
 		aisGetSecModeChangeTimer(prAdapter, ucBssIndex));
+#endif
 	nicPmIndicateBssAbort(prAdapter, prAisBssInfo->ucBssIndex);
 
 #if CFG_SUPPORT_ADHOC
@@ -4445,6 +4456,7 @@ void aisFsmRunEventDeauthTimeout(IN struct ADAPTER *prAdapter,
 	aisDeauthXmitCompleteBss(prAdapter, ucBssIndex, TX_RESULT_LIFE_TIMEOUT);
 }
 
+#if CFG_SUPPORT_DETECT_SECURITY_MODE_CHANGE
 void aisFsmRunEventSecModeChangeTimeout(IN struct ADAPTER *prAdapter,
 					unsigned long ulParamPtr)
 {
@@ -4456,6 +4468,7 @@ void aisFsmRunEventSecModeChangeTimeout(IN struct ADAPTER *prAdapter,
 
 	aisBssSecurityChanged(prAdapter, ucBssIndex);
 }
+#endif
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -4883,6 +4896,7 @@ void aisBssBeaconTimeout_impl(IN struct ADAPTER *prAdapter,
 	}
 }				/* end of aisBssBeaconTimeout() */
 
+#if CFG_SUPPORT_DETECT_SECURITY_MODE_CHANGE
 void aisBssSecurityChanged(struct ADAPTER *prAdapter,
 	IN uint8_t ucBssIndex)
 {
@@ -4890,6 +4904,7 @@ void aisBssSecurityChanged(struct ADAPTER *prAdapter,
 	aisFsmStateAbort(prAdapter, DISCONNECT_REASON_CODE_DEAUTHENTICATED,
 			 FALSE, ucBssIndex);
 }
+#endif
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -6698,6 +6713,7 @@ uint8_t aisGetTargetBssDescChannel(
 		.rAisFsmInfo[ucBssIndex].prTargetBssDesc->ucChannelNum;
 }
 
+#if CFG_SUPPORT_DETECT_SECURITY_MODE_CHANGE
 struct TIMER *aisGetSecModeChangeTimer(
 	IN struct ADAPTER *prAdapter,
 	IN uint8_t ucBssIndex) {
@@ -6712,6 +6728,7 @@ struct TIMER *aisGetSecModeChangeTimer(
 		&prAdapter->rWifiVar
 		.rAisFsmInfo[ucBssIndex].rSecModeChangeTimer;
 }
+#endif
 
 struct TIMER *aisGetScanDoneTimer(
 	IN struct ADAPTER *prAdapter,
