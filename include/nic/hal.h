@@ -1202,6 +1202,7 @@ void halTxReturnFreeResource_v1(IN struct ADAPTER *prAdapter,
 uint8_t halTxRingDataSelect(IN struct ADAPTER *prAdapter,
 	IN struct MSDU_INFO *prMsduInfo);
 void halUpdateTxMaxQuota(IN struct ADAPTER *prAdapter);
+bool halCancelOngoingSer(IN struct ADAPTER *prAdapter);
 
 #if defined(_HIF_USB)
 void halSerSyncTimerHandler(IN struct ADAPTER *prAdapter);
