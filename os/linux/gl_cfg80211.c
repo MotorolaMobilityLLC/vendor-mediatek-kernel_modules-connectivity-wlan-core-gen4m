@@ -6396,8 +6396,6 @@ int mtk_cfg_change_iface(struct wiphy *wiphy,
 	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wiphy);
 	ASSERT(prGlueInfo);
 
-	DBGLOG(P2P, INFO, "ndev=%p, new type=%d\n", ndev, type);
-
 	if ((!prGlueInfo) || (prGlueInfo->u4ReadyFlag == 0)) {
 		DBGLOG(REQ, WARN, "driver is not ready\n");
 		return -EFAULT;
@@ -6420,6 +6418,8 @@ int mtk_cfg_change_iface(struct wiphy *wiphy,
 						     flags, params);
 	}
 #endif /* CFG_ENABLE_WIFI_DIRECT_CFG_80211 */
+
+	DBGLOG(P2P, INFO, "ndev=%p, new type=%d\n", ndev, type);
 
 	prAdapter = prGlueInfo->prAdapter;
 

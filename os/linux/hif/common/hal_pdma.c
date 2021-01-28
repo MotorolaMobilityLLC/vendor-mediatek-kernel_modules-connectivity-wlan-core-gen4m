@@ -1275,7 +1275,8 @@ void halRxReceiveRFBs(IN struct ADAPTER *prAdapter, uint32_t u4Port,
 		KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_RX_FREE_QUE);
 
 		if (!prSwRfb) {
-			DBGLOG(RX, WARN, "No More RFB for P[%u]\n", u4Port);
+			DBGLOG_LIMITED(RX, WARN, "No More RFB for P[%u]\n",
+					u4Port);
 			prAdapter->u4NoMoreRfb |= BIT(u4Port);
 			break;
 		}
