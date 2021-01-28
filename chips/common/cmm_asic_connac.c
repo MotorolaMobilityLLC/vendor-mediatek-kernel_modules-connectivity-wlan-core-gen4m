@@ -629,7 +629,8 @@ static void configPdmaRxRingThreshold(struct GLUE_INFO *prGlueInfo)
 }
 #endif
 
-void asicPdmaIntMaskConfig(struct GLUE_INFO *prGlueInfo, u_int8_t fgEnable)
+void asicPdmaIntMaskConfig(struct GLUE_INFO *prGlueInfo,
+		u_int8_t fgEnable)
 {
 	struct BUS_INFO *prBusInfo =
 			prGlueInfo->prAdapter->chip_info->bus_info;

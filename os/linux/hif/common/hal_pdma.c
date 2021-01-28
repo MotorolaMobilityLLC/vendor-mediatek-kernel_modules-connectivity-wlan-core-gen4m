@@ -2862,8 +2862,10 @@ uint32_t halHifPowerOffWifi(IN struct ADAPTER *prAdapter)
 {
 	struct GL_HIF_INFO *prHifInfo = NULL;
 	uint32_t rStatus = WLAN_STATUS_SUCCESS;
+	struct BUS_INFO *prBusInfo = NULL;
 
 	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
+	prBusInfo = prAdapter->chip_info->bus_info;
 
 	DBGLOG(INIT, INFO, "Power off Wi-Fi!\n");
 
@@ -2885,7 +2887,8 @@ uint32_t halHifPowerOffWifi(IN struct ADAPTER *prAdapter)
 
 	rStatus = wlanCheckWifiFunc(prAdapter, FALSE);
 
-	asicPdmaIntMaskConfig(prAdapter->prGlueInfo, FALSE);
+	if (prBusInfo->setPdmaIntMask)
+		prBusInfo->setPdmaIntMask(prAdapter->prGlueInfo, FALSE);
 	nicDisableInterrupt(prAdapter);
 
 	return rStatus;
