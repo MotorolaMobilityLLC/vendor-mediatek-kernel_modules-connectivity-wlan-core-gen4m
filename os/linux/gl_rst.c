@@ -647,7 +647,7 @@ int wlan_reset_thread_main(void *data)
 				KAL_WAKE_UNLOCK(NULL, &g_IntrWakeLock);
 
 #if (CFG_ANDORID_CONNINFRA_COREDUMP_SUPPORT == 1)
-			fw_log_connsys_coredump_start();
+			fw_log_connsys_coredump_start(NULL);
 #endif
 
 			if (g_IsWholeChipRst) {
@@ -665,7 +665,6 @@ int wlan_reset_thread_main(void *data)
 						WMTRSTMSG_0P5RESET_START);
 				glResetMsgHandler(WMTMSG_TYPE_RESET,
 						WMTRSTMSG_RESET_END);
-
 #else
 				if (g_SubsysRstCnt < 3) {
 					g_SubsysRstCnt++;
