@@ -447,12 +447,14 @@ void halWpdamFreeMsdu(struct GLUE_INFO *prGlueInfo,
 		      struct MSDU_INFO *prMsduInfo,
 		      bool fgSetEvent);
 
-void halSetDrvSer(struct ADAPTER *prAdapter);
-void halHwRecoveryFromError(IN struct ADAPTER *prAdapter);
-
 bool kalDevReadData(struct GLUE_INFO *prGlueInfo, uint16_t u2Port,
 		    struct SW_RFB *prSwRfb);
 bool kalDevKickCmd(struct GLUE_INFO *prGlueInfo);
+
+/* SER functions */
+void halSetDrvSer(struct ADAPTER *prAdapter);
+void halHwRecoveryTimeout(unsigned long arg);
+void halHwRecoveryFromError(IN struct ADAPTER *prAdapter);
 
 /* Debug functions */
 int halTimeCompare(struct timeval *prTs1, struct timeval *prTs2);

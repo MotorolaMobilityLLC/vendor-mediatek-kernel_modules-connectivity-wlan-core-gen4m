@@ -1668,7 +1668,7 @@ void halWpdmaProcessDataDmaDone(IN struct GLUE_INFO *prGlueInfo,
 			prTxRing->u4UsedCnt = 0;
 	}
 
-	DBGLOG(HAL, TRACE,
+	DBGLOG_LIMITED(HAL, TRACE,
 		"DMA done: port[%u] dma[%u] idx[%u] used[%u]\n", u2Port,
 		u4DmaIdx, u4SwIdx, prTxRing->u4UsedCnt);
 
@@ -2194,7 +2194,7 @@ void halProcessSoftwareInterrupt(IN struct ADAPTER *prAdapter)
 	}
 }
 
-static void halHwRecoveryTimeout(unsigned long arg)
+void halHwRecoveryTimeout(unsigned long arg)
 {
 	struct GLUE_INFO *prGlueInfo = (struct GLUE_INFO *)arg;
 	struct ADAPTER *prAdapter = NULL;
@@ -2220,21 +2220,15 @@ void halSetDrvSer(struct ADAPTER *prAdapter)
 		       MCU_INT_DRIVER_SER);
 }
 
-void halInitSerTimer(IN struct ADAPTER *prAdapter)
+static void halStartSerTimer(IN struct ADAPTER *prAdapter)
 {
 	struct GLUE_INFO *prGlueInfo;
 	struct GL_HIF_INFO *prHifInfo;
 
 	prGlueInfo = prAdapter->prGlueInfo;
 	prHifInfo = &prGlueInfo->rHifInfo;
-
-	init_timer(&prHifInfo->rSerTimer);
-	prHifInfo->rSerTimer.function = halHwRecoveryTimeout;
-	prHifInfo->rSerTimer.data = (unsigned long)prGlueInfo;
-	prHifInfo->rSerTimer.expires =
-		jiffies + HIF_SER_TIMEOUT * HZ / MSEC_PER_SEC;
-	add_timer(&prHifInfo->rSerTimer);
-
+	mod_timer(&prHifInfo->rSerTimer,
+		  jiffies + HIF_SER_TIMEOUT * HZ / MSEC_PER_SEC);
 	DBGLOG(HAL, INFO, "Start SER timer\n");
 }
 
@@ -2260,7 +2254,7 @@ void halHwRecoveryFromError(IN struct ADAPTER *prAdapter)
 		if (u4Status & ERROR_DETECT_STOP_PDMA) {
 			if (!prHifInfo->fgIsErrRecovery) {
 				prHifInfo->fgIsErrRecovery = TRUE;
-				halInitSerTimer(prAdapter);
+				halStartSerTimer(prAdapter);
 			}
 
 			DBGLOG(HAL, INFO,
@@ -2325,7 +2319,7 @@ void halHwRecoveryFromError(IN struct ADAPTER *prAdapter)
 
 	case ERR_RECOV_WAIT_N9_NORMAL:
 		if (u4Status & ERROR_DETECT_N9_NORMAL_STATE) {
-			del_timer(&prHifInfo->rSerTimer);
+			del_timer_sync(&prHifInfo->rSerTimer);
 
 			/* update Beacon frame if operating in AP mode. */
 			DBGLOG(HAL, INFO, "SER(T) Host re-initialize BCN\n");
