@@ -264,7 +264,10 @@ struct wireless_dev *mtk_p2p_cfg80211_add_iface(struct wiphy *wiphy,
 #endif
 
 #if CFG_TCP_IP_CHKSUM_OFFLOAD
-		prNewNetDevice->features = NETIF_F_IP_CSUM;
+		/* set HW checksum offload */
+		if (prAdapter->fgIsSupportCsumOffload)
+			prNewNetDevice->features = NETIF_F_IP_CSUM | NETIF_F_IPV6_CSUM |
+						   NETIF_F_RXCSUM;
 #endif /* CFG_TCP_IP_CHKSUM_OFFLOAD */
 
 		kalResetStats(prNewNetDevice);

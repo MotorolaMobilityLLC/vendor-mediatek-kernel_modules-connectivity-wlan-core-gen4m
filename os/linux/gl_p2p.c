@@ -912,7 +912,10 @@ BOOLEAN glRegisterP2P(P_GLUE_INFO_T prGlueInfo, const char *prDevName, const cha
 #endif
 
 #if CFG_TCP_IP_CHKSUM_OFFLOAD
-		prGlueInfo->prP2PInfo[i]->prDevHandler->features = NETIF_F_IP_CSUM;
+		/* set HW checksum offload */
+		if (prAdapter->fgIsSupportCsumOffload)
+			prGlueInfo->prP2PInfo[i]->prDevHandler->features = NETIF_F_IP_CSUM | NETIF_F_IPV6_CSUM |
+									   NETIF_F_RXCSUM;
 #endif /* CFG_TCP_IP_CHKSUM_OFFLOAD */
 
 		kalResetStats(prGlueInfo->prP2PInfo[i]->prDevHandler);
