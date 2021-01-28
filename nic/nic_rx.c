@@ -4217,11 +4217,11 @@ uint32_t nicRxProcessActionFrame(IN struct ADAPTER *
 				aisFuncValidateRxActionFrame(prAdapter,
 					prSwRfb);
 #else
-			rlmProcessRadioMeasurementRequest(prAdapter, prSwRfb);
+			rrmProcessRadioMeasurementRequest(prAdapter, prSwRfb);
 #endif
 			break;
 		case RM_ACTION_REIGHBOR_RESPONSE:
-			rlmProcessNeighborReportResonse(prAdapter, prActFrame,
+			rrmProcessNeighborReportResonse(prAdapter, prActFrame,
 							prSwRfb);
 			break;
 		}

@@ -204,6 +204,7 @@
 #include "rlm_obss.h"
 #include "rate.h"
 #include "wnm.h"
+#include "rrm.h"
 
 #include "qosmap.h"
 
