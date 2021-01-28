@@ -1,13 +1,13 @@
 /*
-* This program is free software; you can redistribute it and/or modify
-* it under the terms of the GNU General Public License version 2 as
-* published by the Free Software Foundation.
-*
-* This program is distributed in the hope that it will be useful,
-* but WITHOUT ANY WARRANTY; without even the implied warranty of
-* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-* See http://www.gnu.org/licenses/gpl-2.0.html for more details.
-*/
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 as
+ * published by the Free Software Foundation.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See http://www.gnu.org/licenses/gpl-2.0.html for more details.
+ */
 
 
 /*******************************************************************************
@@ -237,15 +237,15 @@ struct BSS_DESC *scanSearchBssDescByBssid(IN struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* @brief Set scan channel to scanReqMsg.
-*
-* @param[in]  u4ScanChannelNum  number of input channels
-* @param[in]  arChannel  channel list
-* @param[out] prScanReqMsg  scan request msg. Set channel number and
-*             channel list for output
-*
-* @return
-*/
+ * @brief Set scan channel to scanReqMsg.
+ *
+ * @param[in]  u4ScanChannelNum  number of input channels
+ * @param[in]  arChannel  channel list
+ * @param[out] prScanReqMsg  scan request msg. Set channel number and
+ *             channel list for output
+ *
+ * @return
+ */
 /*----------------------------------------------------------------------------*/
 void scanSetRequestChannel(IN uint32_t u4ScanChannelNum,
 		IN struct RF_CHANNEL_INFO arChannel[],
@@ -833,7 +833,8 @@ void scanRemoveBssDescsByPolicy(IN struct ADAPTER *prAdapter,
 				if (!prBssDesc->prBlack)
 					aisQueryBlackList(prAdapter, prBssDesc);
 				if (prBssDesc->prBlack)
-					prBssDesc->prBlack->u4DisapperTime = (uint32_t)kalGetBootTime();
+					prBssDesc->prBlack->u4DisapperTime =
+						(uint32_t)kalGetBootTime();
 				/* end Support AP Selection */
 
 				/* Remove this BSS Desc from
@@ -843,8 +844,11 @@ void scanRemoveBssDescsByPolicy(IN struct ADAPTER *prAdapter,
 					prBssDesc);
 
 				/* Support AP Selection */
-				/* Remove this BSS Desc from the Ess Desc List */
-				if (LINK_ENTRY_IS_VALID(&prBssDesc->rLinkEntryEss))
+				/* Remove this BSS Desc from the
+				 * Ess Desc List
+				 */
+				if (LINK_ENTRY_IS_VALID(&prBssDesc->
+					rLinkEntryEss))
 					LINK_REMOVE_KNOWN_ENTRY(prEssList,
 						&prBssDesc->rLinkEntryEss);
 				/* end Support AP Selection */
@@ -901,15 +905,18 @@ void scanRemoveBssDescsByPolicy(IN struct ADAPTER *prAdapter,
 			if (!prBssDescOldest->prBlack)
 				aisQueryBlackList(prAdapter, prBssDescOldest);
 			if (prBssDescOldest->prBlack)
-				prBssDescOldest->prBlack->u4DisapperTime = (uint32_t)kalGetBootTime();
+				prBssDescOldest->prBlack->u4DisapperTime =
+					(uint32_t)kalGetBootTime();
 			/* end Support AP Selection */
 
 			/* Remove this BSS Desc from the BSS Desc list */
-			LINK_REMOVE_KNOWN_ENTRY(prBSSDescList, prBssDescOldest);
+			LINK_REMOVE_KNOWN_ENTRY(prBSSDescList,
+				prBssDescOldest);
 
 			/* Support AP Selection */
 			/* Remove this BSS Desc from the Ess Desc List */
-			if (LINK_ENTRY_IS_VALID(&prBssDescOldest->rLinkEntryEss))
+			if (LINK_ENTRY_IS_VALID(&prBssDescOldest->
+				rLinkEntryEss))
 				LINK_REMOVE_KNOWN_ENTRY(prEssList,
 					&prBssDescOldest->rLinkEntryEss);
 			/* end Support AP Selection */
@@ -986,7 +993,8 @@ void scanRemoveBssDescsByPolicy(IN struct ADAPTER *prAdapter,
 			if (!prBssDescWeakest->prBlack)
 				aisQueryBlackList(prAdapter, prBssDescWeakest);
 			if (prBssDescWeakest->prBlack)
-				prBssDescWeakest->prBlack->u4DisapperTime = (uint32_t)kalGetBootTime();
+				prBssDescWeakest->prBlack->u4DisapperTime =
+					(uint32_t)kalGetBootTime();
 			/* end Support AP Selection */
 
 			/* Remove this BSS Desc from the BSS Desc list */
@@ -995,7 +1003,8 @@ void scanRemoveBssDescsByPolicy(IN struct ADAPTER *prAdapter,
 
 			/* Support AP Selection */
 			/* Remove this BSS Desc from the Ess Desc List */
-			if (LINK_ENTRY_IS_VALID(&prBssDescWeakest->rLinkEntryEss))
+			if (LINK_ENTRY_IS_VALID(&prBssDescWeakest->
+				rLinkEntryEss))
 				LINK_REMOVE_KNOWN_ENTRY(prEssList,
 					&prBssDescWeakest->rLinkEntryEss);
 			/* end Support AP Selection */
@@ -1034,7 +1043,8 @@ void scanRemoveBssDescsByPolicy(IN struct ADAPTER *prAdapter,
 			/* Support AP Selection */
 			/* Remove this BSS Desc from the Ess Desc List */
 			if (LINK_ENTRY_IS_VALID(&prBssDesc->rLinkEntryEss))
-				LINK_REMOVE_KNOWN_ENTRY(prEssList, &prBssDesc->rLinkEntryEss);
+				LINK_REMOVE_KNOWN_ENTRY(prEssList,
+					&prBssDesc->rLinkEntryEss);
 			/* end Support AP Selection */
 
 			/* Return this BSS Desc to the free BSS Desc list. */
@@ -1084,14 +1094,16 @@ void scanRemoveBssDescByBssid(IN struct ADAPTER *prAdapter,
 			if (!prBssDesc->prBlack)
 				aisQueryBlackList(prAdapter, prBssDesc);
 			if (prBssDesc->prBlack)
-				prBssDesc->prBlack->u4DisapperTime = (uint32_t)kalGetBootTime();
+				prBssDesc->prBlack->u4DisapperTime =
+					(uint32_t)kalGetBootTime();
 
 			/* Remove this BSS Desc from the BSS Desc list */
 			LINK_REMOVE_KNOWN_ENTRY(prBSSDescList, prBssDesc);
 
 			/* Remove this BSS Desc from the Ess Desc List */
 			if (LINK_ENTRY_IS_VALID(&prBssDesc->rLinkEntryEss))
-				LINK_REMOVE_KNOWN_ENTRY(prEssList, &prBssDesc->rLinkEntryEss);
+				LINK_REMOVE_KNOWN_ENTRY(prEssList,
+					&prBssDesc->rLinkEntryEss);
 
 			/* Return this BSS Desc to the free BSS Desc list. */
 			LINK_INSERT_TAIL(prFreeBSSDescList,
@@ -1176,20 +1188,22 @@ void scanRemoveBssDescByBandAndNetwork(IN struct ADAPTER *prAdapter,
 
 		if (fgToRemove == TRUE) {
 			/* Support AP Selection */
-			struct LINK *prEssList = &prAdapter->rWifiVar.rAisSpecificBssInfo.
-				rCurEssLink;
+			struct LINK *prEssList = &prAdapter->
+				rWifiVar.rAisSpecificBssInfo.rCurEssLink;
 
 			if (!prBssDesc->prBlack)
 				aisQueryBlackList(prAdapter, prBssDesc);
 			if (prBssDesc->prBlack)
-				prBssDesc->prBlack->u4DisapperTime = (uint32_t)kalGetBootTime();
+				prBssDesc->prBlack->u4DisapperTime =
+					(uint32_t)kalGetBootTime();
 
 			/* Remove this BSS Desc from the BSS Desc list */
 			LINK_REMOVE_KNOWN_ENTRY(prBSSDescList, prBssDesc);
 
 			/* Remove this BSS Desc from the Ess Desc List */
 			if (LINK_ENTRY_IS_VALID(&prBssDesc->rLinkEntryEss))
-				LINK_REMOVE_KNOWN_ENTRY(prEssList, &prBssDesc->rLinkEntryEss);
+				LINK_REMOVE_KNOWN_ENTRY(prEssList,
+					&prBssDesc->rLinkEntryEss);
 
 			/* Return this BSS Desc to the free BSS Desc list. */
 			LINK_INSERT_TAIL(prFreeBSSDescList,
@@ -1324,12 +1338,15 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 	/* PUINT_8 pucDumpIE; */
 	enum ENUM_BAND eHwBand = BAND_NULL;
 	u_int8_t fgBandMismatch = FALSE;
+	uint8_t ucSubtype;
 
 	ASSERT(prAdapter);
 	ASSERT(prSwRfb);
 
 	eHwBand = HAL_RX_STATUS_GET_RF_BAND(prSwRfb->prRxStatus);
 	prWlanBeaconFrame = (struct WLAN_BEACON_FRAME *) prSwRfb->pvHeader;
+	ucSubtype = (*(uint8_t *) (prSwRfb->pvHeader) &
+			MASK_FC_SUBTYPE) >> OFFSET_OF_FC_SUBTYPE;
 
 	WLAN_GET_FIELD_16(&prWlanBeaconFrame->u2CapInfo, &u2CapInfo);
 	WLAN_GET_FIELD_64(&prWlanBeaconFrame->au4Timestamp[0], &u8Timestamp);
@@ -1453,6 +1470,10 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 #undef __STR_FMT__
 		return NULL;
 	}
+
+	DBGLOG(SCN, LOUD, "Receive type %u in chnl %u %u %u\n",
+		ucSubtype, ucIeDsChannelNum, ucIeHtChannelNum,
+		HAL_RX_STATUS_GET_CHNL_NUM(prSwRfb->prRxStatus));
 
 	/* 4 <1.2> Replace existing BSS_DESC structure or allocate a new one */
 	prBssDesc = scanSearchExistingBssDescWithSsid(
@@ -1753,8 +1774,8 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 					ucSpatial++;
 			}
 
-			prBssDesc->fgMultiAnttenaAndSTBC =
-				((ucSpatial > 1) && (prHtCap->u2HtCapInfo & HT_CAP_INFO_TX_STBC));
+			prBssDesc->fgMultiAnttenaAndSTBC = ((ucSpatial > 1) &&
+				(prHtCap->u2HtCapInfo & HT_CAP_INFO_TX_STBC));
 			/* end Support AP Selection */
 
 			break;
@@ -1773,8 +1794,10 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 		case ELEM_ID_VHT_CAP:
 		{
 			/* Support AP Selection*/
-			struct IE_VHT_CAP *prVhtCap = (struct IE_VHT_CAP *)pucIE;
-			uint16_t u2TxMcsSet = prVhtCap->rVhtSupportedMcsSet.u2TxMcsMap;
+			struct IE_VHT_CAP *prVhtCap =
+				(struct IE_VHT_CAP *)pucIE;
+			uint16_t u2TxMcsSet =
+				prVhtCap->rVhtSupportedMcsSet.u2TxMcsMap;
 			uint8_t ucSpatial = 0;
 			uint8_t i = 0;
 			/* end Support AP Selection */
@@ -1834,10 +1857,12 @@ VHT_CAP_INFO_NUMBER_OF_SOUNDING_DIMENSIONS_OFFSET
 		/* Support AP Selection */
 		case ELEM_ID_BSS_LOAD:
 		{
-			struct IE_BSS_LOAD *prBssLoad = (struct IE_BSS_LOAD *)pucIE;
+			struct IE_BSS_LOAD *prBssLoad =
+				(struct IE_BSS_LOAD *)pucIE;
 
 			prBssDesc->u2StaCnt = prBssLoad->u2StaCnt;
-			prBssDesc->ucChnlUtilization = prBssLoad->ucChnlUtilizaion;
+			prBssDesc->ucChnlUtilization =
+				prBssLoad->ucChnlUtilizaion;
 			prBssDesc->u2AvaliableAC = prBssLoad->u2AvailabeAC;
 			prBssDesc->fgExsitBssLoadIE = TRUE;
 			break;
@@ -2049,13 +2074,16 @@ VHT_CAP_INFO_NUMBER_OF_SOUNDING_DIMENSIONS_OFFSET
 
 	/* Support AP Selection */
 	/* update update-index and reset seen-probe-response */
-	if (prBssDesc->u4UpdateIdx != prAdapter->rWifiVar.rScanInfo.u4ScanUpdateIdx) {
+	if (prBssDesc->u4UpdateIdx !=
+		prAdapter->rWifiVar.rScanInfo.u4ScanUpdateIdx) {
 		prBssDesc->fgSeenProbeResp = FALSE;
-		prBssDesc->u4UpdateIdx = prAdapter->rWifiVar.rScanInfo.u4ScanUpdateIdx;
+		prBssDesc->u4UpdateIdx =
+			prAdapter->rWifiVar.rScanInfo.u4ScanUpdateIdx;
 	}
 
 	/* check if it is a probe response frame */
-	if ((prWlanBeaconFrame->u2FrameCtrl & MASK_FRAME_TYPE) == MAC_FRAME_PROBE_RSP)
+	if ((prWlanBeaconFrame->u2FrameCtrl & MASK_FRAME_TYPE) ==
+		MAC_FRAME_PROBE_RSP)
 		prBssDesc->fgSeenProbeResp = TRUE;
 	/* end Support AP Selection */
 	/* 4 <7> Update BSS_DESC_T's Last Update TimeStamp. */
