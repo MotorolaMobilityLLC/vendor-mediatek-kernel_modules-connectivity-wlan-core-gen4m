@@ -1802,6 +1802,9 @@ int kalExternalAuthRequest(IN struct ADAPTER *prAdapter,
 			   IN uint8_t uBssIndex);
 #endif
 
+int kalWlanUeventInit(void);
+void kalWlanUeventDeinit(void);
+
 int _kalSnprintf(char *buf, size_t size, const char *fmt, ...);
 int _kalSprintf(char *buf, const char *fmt, ...);
 
