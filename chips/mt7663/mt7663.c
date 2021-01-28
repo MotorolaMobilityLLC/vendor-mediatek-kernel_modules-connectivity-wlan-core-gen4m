@@ -195,10 +195,17 @@ struct FWDL_OPS_T mt7663_fw_dl_ops = {
 	.getFwInfo = wlanGetConnacFwInfo,
 };
 
+struct TX_DESC_OPS_T mt7663TxDescOps = {
+	.fillNicAppend = fillNicTxDescAppend,
+	.fillHifAppend = fillTxDescAppendByHostV2,
+	.fillTxByteCount = fillTxDescTxByteCount,
+};
+
 /* Litien code refine to support multi chip */
 struct mt66xx_chip_info mt66xx_chip_info_mt7663 = {
 	.bus_info = &mt7663_bus_info,
 	.fw_dl_ops = &mt7663_fw_dl_ops,
+	.prTxDescOps = &mt7663TxDescOps,
 
 	.chip_id = MT7663_CHIP_ID,
 	.should_verify_chip_id = FALSE,
@@ -212,7 +219,6 @@ struct mt66xx_chip_info mt66xx_chip_info_mt7663 = {
 
 	.asicCapInit = asicCapInit,
 	.asicEnableFWDownload = asicEnableFWDownload,
-	.fillTxDescAppend = fillTxDescAppendByHostV2,
 	.is_support_hw_amsdu = TRUE,
 };
 

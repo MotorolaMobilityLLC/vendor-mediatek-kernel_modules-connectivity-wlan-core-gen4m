@@ -1203,16 +1203,10 @@ UINT_32 nicTxGetMsduPendingCnt(IN P_ADAPTER_T prAdapter)
 VOID nicTxComposeDescAppend(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduInfo,
 	OUT PUINT_8 prTxDescBuffer)
 {
-	P_HW_MAC_TX_DESC_APPEND_T prHwTxDescAppend;
 	struct mt66xx_chip_info *prChipInfo = prAdapter->chip_info;
 
-	/* Fill TxD append */
-	prHwTxDescAppend = (P_HW_MAC_TX_DESC_APPEND_T)prTxDescBuffer;
-	kalMemZero(prHwTxDescAppend, prChipInfo->txd_append_size);
-	if (prChipInfo->is_support_cr4) {
-		prHwTxDescAppend->CR4_APPEND.u2PktFlags = HIT_PKT_FLAGS_CT_WITH_TXD;
-		prHwTxDescAppend->CR4_APPEND.ucBssIndex = prMsduInfo->ucBssIndex;
-	}
+	if (prChipInfo->prTxDescOps->fillNicAppend)
+		prChipInfo->prTxDescOps->fillNicAppend(prAdapter, prMsduInfo, prTxDescBuffer);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1527,12 +1521,11 @@ VOID
 nicTxFillDesc(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduInfo,
 	OUT PUINT_8 prTxDescBuffer, OUT PUINT_32 pu4TxDescLength)
 {
+	struct mt66xx_chip_info *prChipInfo = prAdapter->chip_info;
 	P_HW_MAC_TX_DESC_T prTxDesc = (P_HW_MAC_TX_DESC_T) prTxDescBuffer;
 	P_HW_MAC_TX_DESC_T prTxDescTemplate = NULL;
 	P_STA_RECORD_T prStaRec = cnmGetStaRecByIndex(prAdapter, prMsduInfo->ucStaRecIndex);
-	UINT_32 u4TxDescLength, u4TxDescAppendLength;
-	UINT_32 u4ExtraTxDLen;
-	struct mt66xx_chip_info *prChipInfo = prAdapter->chip_info;
+	UINT_32 u4TxDescLength;
 #if CFG_TCP_IP_CHKSUM_OFFLOAD
 	UINT_8 ucChksumFlag = 0;
 #endif
@@ -1542,28 +1535,22 @@ nicTxFillDesc(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduInfo,
 * Fill up common fileds
 *------------------------------------------------------------------------------
 */
-	/* Decide TxD append length */
-	if (prMsduInfo->ucPacketType == TX_PACKET_TYPE_DATA) {
-		u4TxDescAppendLength = prChipInfo->txd_append_size;
-		u4ExtraTxDLen = prChipInfo->u4ExtraTxByteCount;
-	} else {
-		u4TxDescAppendLength = 0;
-		u4ExtraTxDLen = 0;
-	}
+	u4TxDescLength = NIC_TX_DESC_LONG_FORMAT_LENGTH;
 
 	/* Get TXD from pre-allocated template */
 	if (nicTxIsTXDTemplateAllowed(prAdapter, prMsduInfo, prStaRec)) {
 		prTxDescTemplate = prStaRec->aprTxDescTemplate[prMsduInfo->ucUserPriority];
-		u4TxDescLength = NIC_TX_DESC_LONG_FORMAT_LENGTH;
 
-		kalMemCopy(prTxDesc, prTxDescTemplate, u4TxDescLength + u4TxDescAppendLength);
+		if (prMsduInfo->ucPacketType == TX_PACKET_TYPE_DATA)
+			kalMemCopy(prTxDesc, prTxDescTemplate, u4TxDescLength + prChipInfo->txd_append_size);
+		else
+			kalMemCopy(prTxDesc, prTxDescTemplate, u4TxDescLength);
 
 		/* Overwrite fields for EOSP or More data */
 		nicTxFillDescByPktOption(prMsduInfo, prTxDesc);
 	}
 	/* Compose TXD by Msdu info */
 	else {
-		u4TxDescLength = NIC_TX_DESC_LONG_FORMAT_LENGTH;
 #if (UNIFIED_MAC_TX_FORMAT == 1)
 		if (prMsduInfo->eSrc == TX_PACKET_MGMT)
 			prMsduInfo->ucPacketFormat = TXD_PKT_FORMAT_COMMAND;
@@ -1582,13 +1569,8 @@ nicTxFillDesc(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduInfo,
 * Fill up remaining parts, per-packet variant fields
 *------------------------------------------------------------------------------
 */
-	/* Calculate Tx byte count */
-	if (prChipInfo->is_support_cr4)
-		HAL_MAC_TX_DESC_SET_TX_BYTE_COUNT(prTxDesc,
-			u4TxDescLength + u4TxDescAppendLength + prMsduInfo->u2FrameLength);
-	else
-		HAL_MAC_TX_DESC_SET_TX_BYTE_COUNT(prTxDesc,
-			u4TxDescLength + u4ExtraTxDLen + prMsduInfo->u2FrameLength);
+	if (prChipInfo->prTxDescOps->fillTxByteCount)
+		prChipInfo->prTxDescOps->fillTxByteCount(prAdapter, prMsduInfo, prTxDesc);
 
 	/* Checksum offload */
 #if CFG_TCP_IP_CHKSUM_OFFLOAD

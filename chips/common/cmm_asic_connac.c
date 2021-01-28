@@ -232,6 +232,30 @@ VOID asicEnableFWDownload(IN P_ADAPTER_T prAdapter, IN BOOL fgEnable)
 	}
 }
 
+VOID fillNicTxDescAppend(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduInfo,
+	OUT PUINT_8 prTxDescBuffer)
+{
+	struct mt66xx_chip_info *prChipInfo = prAdapter->chip_info;
+	P_HW_MAC_TX_DESC_APPEND_T prHwTxDescAppend;
+
+	/* Fill TxD append */
+	prHwTxDescAppend = (P_HW_MAC_TX_DESC_APPEND_T)prTxDescBuffer;
+	kalMemZero(prHwTxDescAppend, prChipInfo->txd_append_size);
+}
+
+VOID fillNicTxDescAppendWithCR4(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduInfo,
+	OUT PUINT_8 prTxDescBuffer)
+{
+	struct mt66xx_chip_info *prChipInfo = prAdapter->chip_info;
+	P_HW_MAC_TX_DESC_APPEND_T prHwTxDescAppend;
+
+	/* Fill TxD append */
+	prHwTxDescAppend = (P_HW_MAC_TX_DESC_APPEND_T)prTxDescBuffer;
+	kalMemZero(prHwTxDescAppend, prChipInfo->txd_append_size);
+	prHwTxDescAppend->CR4_APPEND.u2PktFlags = HIT_PKT_FLAGS_CT_WITH_TXD;
+	prHwTxDescAppend->CR4_APPEND.ucBssIndex = prMsduInfo->ucBssIndex;
+}
+
 VOID fillTxDescAppendByHost(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduInfo, IN UINT_16 u4MsduId,
 			    IN dma_addr_t rDmaAddr, OUT PUINT_8 pucBuffer)
 {
@@ -265,6 +289,46 @@ VOID fillTxDescAppendByCR4(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduInfo
 	prHwTxDescAppend->CR4_APPEND.ucBufNum = 1;
 	prHwTxDescAppend->CR4_APPEND.au4BufPtr[0] = rDmaAddr;
 	prHwTxDescAppend->CR4_APPEND.au2BufLen[0] = prMsduInfo->u2FrameLength;
+}
+
+VOID fillTxDescTxByteCount(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduInfo,
+			   P_HW_MAC_TX_DESC_T prTxDesc)
+{
+	struct mt66xx_chip_info *prChipInfo;
+	UINT_32 u4TxByteCount = NIC_TX_DESC_LONG_FORMAT_LENGTH;
+
+	ASSERT(prAdapter);
+	ASSERT(prMsduInfo);
+	ASSERT(prTxDesc);
+
+	prChipInfo = prAdapter->chip_info;
+	u4TxByteCount += prMsduInfo->u2FrameLength;
+
+	if (prMsduInfo->ucPacketType == TX_PACKET_TYPE_DATA)
+		u4TxByteCount += prChipInfo->u4ExtraTxByteCount;
+
+	/* Calculate Tx byte count */
+	HAL_MAC_TX_DESC_SET_TX_BYTE_COUNT(prTxDesc, u4TxByteCount);
+}
+
+VOID fillTxDescTxByteCountWithCR4(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduInfo,
+				  P_HW_MAC_TX_DESC_T prTxDesc)
+{
+	struct mt66xx_chip_info *prChipInfo;
+	UINT_32 u4TxByteCount = NIC_TX_DESC_LONG_FORMAT_LENGTH;
+
+	ASSERT(prAdapter);
+	ASSERT(prMsduInfo);
+	ASSERT(prTxDesc);
+
+	prChipInfo = prAdapter->chip_info;
+	u4TxByteCount += prMsduInfo->u2FrameLength;
+
+	if (prMsduInfo->ucPacketType == TX_PACKET_TYPE_DATA)
+		u4TxByteCount += prChipInfo->txd_append_size;
+
+	/* Calculate Tx byte count */
+	HAL_MAC_TX_DESC_SET_TX_BYTE_COUNT(prTxDesc, u4TxByteCount);
 }
 
 #if defined(_HIF_PCIE)
