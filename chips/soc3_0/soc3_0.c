@@ -1121,6 +1121,7 @@ int soc3_0_Trigger_fw_assert(void)
 				MSEC_TO_JIFFIES(WIFI_TRIGGER_ASSERT_TIMEOUT));
 		if (waitRet > 0) {
 		/* Case 1: No timeout. */
+			soc3_0_DumpWfsysInfo();
 			DBGLOG(INIT, INFO, "Trigger assert successfully.\n");
 		} else {
 		/* Case 2: timeout */
@@ -1130,9 +1131,7 @@ int soc3_0_Trigger_fw_assert(void)
 			soc3_0_DumpWfsysdebugflag();
 			g_IsTriggerTimeout = TRUE;
 		}
-		fgIsResetting = TRUE;
 #if (CFG_SUPPORT_CONNINFRA == 1)
-		update_driver_reset_status(fgIsResetting);
 		kalSetRstEvent();
 #endif
 		wf_ioremap_read(WF_TRIGGER_AP2CONN_EINT, &value);
@@ -1806,8 +1805,17 @@ void soc3_0_Sw_interrupt_handler(struct ADAPTER *prAdapter)
 		fw_log_wifi_irq_handler();
 #endif
 	if (value & (BIT(1) | BIT(2))) {
-
-		complete(&g_triggerComp);
+		if (kalIsResetting()) {
+			DBGLOG(HAL, ERROR,
+				"Wi-Fi Driver trigger, need do complete.\n");
+			complete(&g_triggerComp);
+		} else {
+			DBGLOG(HAL, ERROR,
+				"FW trigger assert.\n");
+			fgIsResetting = TRUE;
+			update_driver_reset_status(fgIsResetting);
+			kalSetRstEvent();
+		}
 	}
 
 }
