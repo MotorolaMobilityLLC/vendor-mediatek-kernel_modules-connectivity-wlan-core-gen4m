@@ -9635,10 +9635,9 @@ uint32_t rftestSetATInfo(IN struct ADAPTER *prAdapter,
 	pCmdTestCtrl->u.rRfATInfo.u4FuncData = u4FuncData;
 
 	if ((u4FuncIndex == RF_AT_FUNCID_COMMAND)
-	    && (u4FuncData == RF_AT_COMMAND_ICAP)) {
-		prAdapter->rIcapInfo.fgIcapEnable = TRUE;
-		prAdapter->rIcapInfo.fgCaptureDone = FALSE;
-	}
+	    && (u4FuncData == RF_AT_COMMAND_ICAP))
+		prAdapter->rIcapInfo.eIcapState = ICAP_STATE_START;
+
 	/* ICAP dump name Reset */
 	if ((u4FuncIndex == RF_AT_FUNCID_COMMAND)
 	    && (u4FuncData == RF_AT_COMMAND_RESET_DUMP_NAME))
@@ -9688,8 +9687,7 @@ uint32_t wlanoidExtRfTestICapStart(IN struct ADAPTER *prAdapter,
 	kalMemCopy(prCmdICapInfo, &(prRfATInfo->Data.rICapInfo),
 		   sizeof(struct RBIST_CAP_START_T));
 
-	prAdapter->rIcapInfo.fgIcapEnable = TRUE;
-	prAdapter->rIcapInfo.fgCaptureDone = FALSE;
+	prAdapter->rIcapInfo.eIcapState = ICAP_STATE_START;
 
 	rStatus = wlanSendSetQueryExtCmd(prAdapter,
 			 CMD_ID_LAYER_0_EXT_MAGIC_NUM,
@@ -9778,14 +9776,94 @@ void wlanoidRfTestICapRawDataProc(IN struct ADAPTER *
 				 EXT_CMD_ID_RF_TEST,
 				 FALSE, /* Query Bit: True->write False->read */
 				 TRUE,
-				 TRUE,
+				 FALSE, /*fgIsOid = FALSE, main thread trigger*/
 				 NULL,
 				 nicOidCmdTimeoutCommon,
 				 sizeof(struct CMD_TEST_CTRL_EXT_T),
 				 (uint8_t *)(&rCmdTestCtrl),
 				 pvSetBuffer, u4SetBufferLen);
+
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief wifi driver response IQ data for QA agent
+ *
+ * \param[in] prAdapter          Pointer to the Adapter structure.
+ * \param[in] ucCID              Command ID
+ * \param[in] fgSetQuery         Set or Query
+ * \param[in] fgNeedResp         Need for response
+ * \param[in] pfCmdDoneHandler   Function pointer when command is done
+ * \param[in] u4SetQueryInfoLen  The length of the set/query buffer
+ * \param[in] pucInfoBuffer      Pointer to set/query buffer
+ *
+ *
+ * \retval WLAN_STATUS_PENDING
+ * \retval WLAN_STATUS_FAILURE
+ */
+/*----------------------------------------------------------------------------*/
+
+uint32_t wlanoidRfTestICapGetIQData(IN struct ADAPTER *prAdapter,
+				    OUT void *pvSetBuffer,
+				    IN uint32_t u4SetBufferLen,
+				    OUT uint32_t *pu4SetInfoLen)
+{
+	uint32_t rStatus = WLAN_STATUS_SUCCESS;
+	struct _RBIST_IQ_DATA_T *prIQArray = NULL;
+	struct ICAP_INFO_T *prICapInfo = NULL;
+	struct RBIST_DUMP_IQ_T *prRbistDump = NULL;
+	int32_t i = 0;
+	uint32_t u4MaxIQDataCount = 0;
+	uint32_t u4DumpIndex = 0;
+	uint32_t u4Value, u4DataLen = 0;
+	uint32_t u4WFNum = 0, u4IQType = 0;
+	uint8_t *pData;
+
+	ASSERT(prAdapter);
+	ASSERT(pvSetBuffer);
+	ASSERT(pu4SetInfoLen);
+
+	prICapInfo = &prAdapter->rIcapInfo;
+	prIQArray = prICapInfo->prIQArray;
+	prRbistDump = (struct RBIST_DUMP_IQ_T *)pvSetBuffer;
+	u4WFNum = prRbistDump->u4WfNum;
+	u4IQType = prRbistDump->u4IQType;
+	pData = prRbistDump->pucIcapData;
+
+	u4DumpIndex = prICapInfo->au4ICapDumpIndex[u4WFNum][u4IQType];
+
+	/* 1. Maximum 1KB = ICAP_EVENT_DATA_SAMPLE (256) slots */
+	u4MaxIQDataCount = prICapInfo->u4IQArrayIndex - u4DumpIndex;
+	if (u4MaxIQDataCount > ICAP_EVENT_DATA_SAMPLE)
+		u4MaxIQDataCount = ICAP_EVENT_DATA_SAMPLE;
+
+	/* 2. update IQ Sample Count*/
+	prRbistDump->u4IcapCnt = u4MaxIQDataCount;
+
+	/* 3. Copy to buffer */
+	for (i = 0; i < u4MaxIQDataCount; i++) {
+		u4Value = prIQArray[u4DumpIndex++].u4IQArray[u4WFNum][u4IQType];
+		kalMemCopy(pData + u4DataLen, (uint8_t *) &u4Value,
+						sizeof(u4Value));
+		u4DataLen += sizeof(u4Value);
+	}
+
+	/* 4. update response IQ data length */
+	prRbistDump->u4IcapDataLen = u4DataLen;
+
+
+	prICapInfo->au4ICapDumpIndex[u4WFNum][u4IQType] = u4DumpIndex;
+
+	DBGLOG(RFTEST, INFO, "CurrICapDumpIndex[WF%d][%c]=%d,IQCnt=%d,len=%d\n",
+						u4WFNum,
+						(u4IQType == CAP_I_TYPE) ?
+						'I' : 'Q',
+						u4DumpIndex,
+						u4MaxIQDataCount,
+						u4DataLen);
+
+	return rStatus;
+}
 uint32_t
 rftestQueryATInfo(IN struct ADAPTER *prAdapter,
 		  uint32_t u4FuncIndex, uint32_t u4FuncData,
@@ -15862,7 +15940,7 @@ uint32_t wlanoidSetAmsduSize(IN struct ADAPTER *prAdapter,
 	prWifiVar = &prAdapter->rWifiVar;
 	prWifiVar->u4TxMaxAmsduInAmpduLen = *((uint32_t *)pvSetBuffer);
 	DBGLOG(OID, INFO, "Set SW AMSDU max Size: %d\n",
-	       prWifiVar->u4TxMaxAmsduInAmpduLen);
+	   prWifiVar->u4TxMaxAmsduInAmpduLen);
 	return 0;
 }
 

@@ -2051,8 +2051,7 @@ void nicEventQueryMemDump(IN struct ADAPTER *prAdapter,
 		/* The request is finished or firmware response a error */
 		/* Reply time tick to iwpriv */
 
-		prAdapter->rIcapInfo.fgIcapEnable = FALSE;
-		prAdapter->rIcapInfo.fgCaptureDone = TRUE;
+		prAdapter->rIcapInfo.eIcapState = ICAP_STATE_FW_DUMP_DONE;
 
 		sprintf(aucPath_done, "/file_dump_done.txt");
 		if (kalCheckPath(aucPath_done) == -1) {
@@ -2168,8 +2167,8 @@ void nicCmdEventQueryMemDump(IN struct ADAPTER *prAdapter,
 				/* the oid would be complete only in oid-trigger
 				 * mode, that is no need to if the event-trigger
 				 */
-				if (prAdapter->rIcapInfo.fgIcapEnable
-						== FALSE) {
+				if (prAdapter->rIcapInfo.eIcapState
+						== ICAP_STATE_FW_DUMPING) {
 					*((uint32_t *)
 					  prCmdInfo->pvInformationBuffer)
 						= u4CurTimeTick;
@@ -2179,8 +2178,10 @@ void nicCmdEventQueryMemDump(IN struct ADAPTER *prAdapter,
 						WLAN_STATUS_SUCCESS);
 				}
 			}
-			prAdapter->rIcapInfo.fgIcapEnable = FALSE;
-			prAdapter->rIcapInfo.fgCaptureDone = TRUE;
+
+			prAdapter->rIcapInfo.eIcapState
+				= ICAP_STATE_FW_DUMP_DONE;
+
 #if defined(LINUX)
 
 			prAdapter->rIcapInfo.u2DumpIndex++;
@@ -3757,7 +3758,8 @@ void nicExtEventICapIQData(IN struct ADAPTER *prAdapter,
 	       prICapEvent->u4PktNum);
 	if (prICapEvent->u4PktNum > prIcapInfo->u4ICapEventCnt) {
 		if (prICapEvent->u4DataLength == 0)
-			prAdapter->rIcapInfo.fgCaptureDone = TRUE;
+			prIcapInfo->eIcapState = ICAP_STATE_FW_DUMP_DONE;
+
 		DBGLOG(RFTEST, ERROR,
 		       "Packet out of order: Pkt num %d, EventCnt %d\n",
 		       prICapEvent->u4PktNum, prIcapInfo->u4ICapEventCnt);
@@ -3816,11 +3818,12 @@ void nicExtEventICapIQData(IN struct ADAPTER *prAdapter,
 	if ((prICapEvent->u4DataLength == 0)
 	    && (prICapEvent->u4PktNum == prIcapInfo->u4ICapEventCnt)) {
 		/* Reset ICapEventCnt */
-		prAdapter->rIcapInfo.fgIcapEnable = FALSE;
-		prAdapter->rIcapInfo.fgCaptureDone = TRUE;
+		prAdapter->rIcapInfo.eIcapState = ICAP_STATE_FW_DUMP_DONE;
 		prIcapInfo->u4ICapEventCnt = 0;
 		DBGLOG(INIT, INFO, ": ==> gen done_file\n");
-	}
+	} else
+		prAdapter->rIcapInfo.eIcapState = ICAP_STATE_FW_DUMPING;
+
 }
 
 void nicExtEventQueryMemDump(IN struct ADAPTER *prAdapter,
@@ -3891,8 +3894,7 @@ void nicExtEventQueryMemDump(IN struct ADAPTER *prAdapter,
 		/* The request is finished or firmware response a error */
 		/* Reply time tick to iwpriv */
 
-		prAdapter->rIcapInfo.fgIcapEnable = FALSE;
-		prAdapter->rIcapInfo.fgCaptureDone = TRUE;
+		prAdapter->rIcapInfo.eIcapState = ICAP_STATE_FW_DUMP_DONE;
 
 		sprintf(aucPath_done, "/file_dump_done.txt");
 		if (kalCheckPath(aucPath_done) == -1) {
@@ -3922,16 +3924,19 @@ uint32_t nicRfTestEventHandler(IN struct ADAPTER *prAdapter,
 	struct EXT_EVENT_RBIST_CAP_STATUS_T *prCapStatus;
 	struct mt66xx_chip_info *prChipInfo = NULL;
 	struct ATE_OPS_T *prAteOps = NULL;
+	struct ICAP_INFO_T *prIcapInfo;
 
 	ASSERT(prAdapter);
 	prChipInfo = prAdapter->chip_info;
 	ASSERT(prChipInfo);
 	prAteOps = prChipInfo->prAteOps;
 	ASSERT(prAteOps);
+	prIcapInfo = &prAdapter->rIcapInfo;
 
 	prResult = (struct EXT_EVENT_RF_TEST_RESULT_T *)
 		   prEvent->aucBuffer;
-	DBGLOG(RFTEST, INFO, "prResult->u4FuncIndex = %d\n",
+	DBGLOG(RFTEST, INFO, "%s funcID = %d\n",
+			__func__,
 	       prResult->u4FuncIndex);
 	switch (prResult->u4FuncIndex) {
 	case GET_ICAP_CAPTURE_STATUS:
@@ -3940,20 +3945,24 @@ uint32_t nicRfTestEventHandler(IN struct ADAPTER *prAdapter,
 		prCapStatus = (struct EXT_EVENT_RBIST_CAP_STATUS_T *)
 			      prEvent->aucBuffer;
 
-		DBGLOG(RFTEST, INFO, "prCapStatus->u4CapDone = %d\n",
-		       prCapStatus->u4CapDone);
+		DBGLOG(RFTEST, INFO, "%s iCapDone = %d , icap state=%d\n",
+				__func__,
+		       prCapStatus->u4CapDone,
+		       prAdapter->rIcapInfo.eIcapState);
 		if (prCapStatus->u4CapDone &&
-		    !prAdapter->rIcapInfo.fgCaptureDone)
+		    prIcapInfo->eIcapState != ICAP_STATE_FW_DUMP_DONE) {
 			wlanoidRfTestICapRawDataProc(prAdapter,
-		     0 /*prCapStatus->u4CapStartAddr*/,
-		     0 /*prCapStatus->u4TotalBufferSize*/);
+			 0 /*prCapStatus->u4CapStartAddr*/,
+			 0 /*prCapStatus->u4TotalBufferSize*/);
+			prIcapInfo->eIcapState = ICAP_STATE_FW_DUMPING;
+		}
 		break;
 
 	case GET_ICAP_RAW_DATA:
 		if (prAteOps->getRbistDataDumpEvent) {
 			prAteOps->getRbistDataDumpEvent(prAdapter,
 						prEvent->aucBuffer);
-			if (!prAdapter->rIcapInfo.fgCaptureDone)
+			if (prIcapInfo->eIcapState != ICAP_STATE_FW_DUMP_DONE)
 				wlanoidRfTestICapRawDataProc(prAdapter,
 				0 /*prCapStatus->u4CapStartAddr*/,
 				0 /*prCapStatus->u4TotalBufferSize*/);
@@ -4093,13 +4102,12 @@ void nicEventLayer0ExtMagic(IN struct ADAPTER *prAdapter,
 	}
 
 	if (prCmdInfo != NULL) {
-		if ((prCmdInfo->fgIsOid) != 0) {
+		if ((prCmdInfo->fgIsOid) != 0)
 			kalOidComplete(prAdapter->prGlueInfo,
 				prCmdInfo->fgSetQuery,
 				u4QueryInfoLen, WLAN_STATUS_SUCCESS);
-			/* return prCmdInfo */
-			cmdBufFreeCmdInfo(prAdapter, prCmdInfo);
-		}
+		/* return prCmdInfo */
+		cmdBufFreeCmdInfo(prAdapter, prCmdInfo);
 	}
 #if (CFG_SUPPORT_TXPOWER_INFO == 1)
 	else if ((prEvent->ucExtenEID) ==

@@ -1049,6 +1049,12 @@ struct test_wlan_info {
 	/*========== gen4m only ==========*/
 	/* wlan oid handler */
 	wlan_oid_handler_t oid_funcptr;
+
+	/*connsys emi phy memory start addr*/
+	phys_addr_t emi_phy_base;
+
+	/*connsys emi total phy memory size*/
+	unsigned long long emi_phy_size;
 };
 
 /* Test control register read/write for service */
