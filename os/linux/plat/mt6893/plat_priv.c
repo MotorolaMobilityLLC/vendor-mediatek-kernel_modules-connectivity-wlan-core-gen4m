@@ -158,6 +158,12 @@ void kalSetDrvEmiMpuProtection(phys_addr_t emiPhyBase, uint32_t offset,
 
 #endif
 
+int32_t kalGetFwFlavor(uint8_t *flavor)
+{
+	*flavor = 'a';
+	return 1;
+}
+
 int32_t kalGetConnsysVerId(void)
 {
 	return CONNSYS_VERSION_ID;
