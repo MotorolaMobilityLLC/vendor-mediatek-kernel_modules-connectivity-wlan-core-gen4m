@@ -418,6 +418,13 @@ enum ENUM_WLAN_DRV_BUF_TYPE_T {
 	ENUM_BUF_TYPE_NUM
 };
 
+enum ENUM_NVRAM_STATE {
+	NVRAM_STATE_INIT = 0,
+	NVRAM_STATE_READY, /*power on or update*/
+	NVRAM_STATE_SEND_TO_FW,
+	NVRAM_STATE_NUM
+};
+
 struct GL_IO_REQ {
 	struct QUE_ENTRY rQueEntry;
 	/* wait_queue_head_t       cmdwait_q; */
@@ -1293,5 +1300,9 @@ extern const uint8_t *kalFindIeMatchMask(uint8_t eid,
 				const uint8_t *match,
 				int match_len, int match_offset,
 				const uint8_t *match_mask);
+
+
+void wlanNvramSetState(enum ENUM_NVRAM_STATE state);
+enum ENUM_NVRAM_STATE wlanNvramGetState(void);
 
 #endif /* _GL_OS_H */
