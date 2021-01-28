@@ -7787,11 +7787,6 @@ wlanoidRssiMonitor(IN struct ADAPTER *prAdapter,
 		return WLAN_STATUS_BUFFER_TOO_SHORT;
 	}
 
-	if (kalGetMediaStateIndicated(prAdapter->prGlueInfo,
-		ucBssIndex) ==
-	    MEDIA_STATE_DISCONNECTED)
-		rStatus1 = WLAN_STATUS_ADAPTER_NOT_READY;
-
 	kalMemZero(&rRssi, sizeof(struct PARAM_RSSI_MONITOR_T));
 
 	orig_max_rssi_value = rRssi.max_rssi_value;
@@ -7799,6 +7794,18 @@ wlanoidRssiMonitor(IN struct ADAPTER *prAdapter,
 
 	kalMemCopy(&rRssi, pvQueryBuffer,
 		   sizeof(struct PARAM_RSSI_MONITOR_T));
+
+	if (kalGetMediaStateIndicated(prAdapter->prGlueInfo,
+		ucBssIndex) ==
+	    MEDIA_STATE_DISCONNECTED) {
+		DBGLOG(OID, INFO,
+			"Set RSSI monitor when disconnected, enable=%d\n",
+			rRssi.enable);
+		if (rRssi.enable)
+			return WLAN_STATUS_ADAPTER_NOT_READY;
+		rStatus1 = WLAN_STATUS_ADAPTER_NOT_READY;
+	}
+
 	if (!rRssi.enable) {
 		rRssi.max_rssi_value = 0;
 		rRssi.min_rssi_value = 0;
