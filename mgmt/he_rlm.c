@@ -407,7 +407,8 @@ static void heRlmFillHeCapIE(
 	/* PHY capabilities */
 	HE_RESET_PHY_CAP(prHeCap->ucHePhyCap);
 
-	if (prWifiVar->ucSta2gBandwidth >= MAX_BW_40MHZ)
+	if (prWifiVar->ucSta2gBandwidth >= MAX_BW_40MHZ
+		&& prBssInfo->fgAssoc40mBwAllowed)
 		HE_SET_PHY_CAP_CHAN_WIDTH_SET_BW40_2G(prHeCap->ucHePhyCap);
 
 	if (prWifiVar->ucSta5gBandwidth >= MAX_BW_40MHZ)
