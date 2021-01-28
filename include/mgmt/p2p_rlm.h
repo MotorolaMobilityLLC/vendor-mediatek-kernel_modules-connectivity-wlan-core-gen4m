@@ -71,6 +71,7 @@
  *                              C O N S T A N T S
  ********************************************************************************
  */
+#define CHANNEL_SPAN_20 20
 
 /*******************************************************************************
  *                                 M A C R O S
@@ -116,5 +117,10 @@ rlmFuncFindAvailableChannel(IN P_ADAPTER_T prAdapter, IN UINT_8 ucCheckChnl, IN 
 			    fgIsSocialChannel, IN BOOLEAN fgIsDefaultChannel);
 
 ENUM_CHNL_EXT_T rlmDecideScoForAP(P_ADAPTER_T prAdapter, P_BSS_INFO_T prBssInfo);
+
+ENUM_CHNL_EXT_T rlmGetScoForAP(P_ADAPTER_T prAdapter, P_BSS_INFO_T prBssInfo);
+
+UINT_8 rlmGetVhtS1ForAP(P_ADAPTER_T prAdapter, P_BSS_INFO_T prBssInfo);
+
 
 #endif

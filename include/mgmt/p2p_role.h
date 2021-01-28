@@ -260,6 +260,18 @@ typedef struct _P2P_CONNECTION_REQ_INFO_T {
 	RF_CHANNEL_INFO_T rChannelInfo;
 	ENUM_CHNL_EXT_T eChnlExt;
 
+	/* To record channel bandwidth from CFG80211 */
+	ENUM_MAX_BANDWIDTH_SETTING eChnlBw;
+
+	/* To record primary channel frequency (MHz) from CFG80211 */
+	UINT_16 u2PriChnlFreq;
+
+	/* To record Channel Center Frequency Segment 0 (MHz) from CFG80211 */
+	UINT_32 u4CenterFreq1;
+
+	/* To record Channel Center Frequency Segment 1 (MHz) from CFG80211 */
+	UINT_32 u4CenterFreq2;
+
 	/* For ASSOC Req. */
 	UINT_32 u4BufLength;
 	UINT_8 aucIEBuf[MAX_IE_LENGTH];
