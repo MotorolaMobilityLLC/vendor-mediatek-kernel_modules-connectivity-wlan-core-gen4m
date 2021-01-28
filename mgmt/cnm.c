@@ -424,6 +424,11 @@ cnmDbdcFsmExitFunc_WAIT_HW_ENABLE(
 );
 
 static void
+cnmDbdcFsmExitFunc_WAIT_HW_DISABLE(
+	IN struct ADAPTER *prAdapter
+);
+
+static void
 cnmDbdcOpModeChangeDoneCallback(
 	IN struct ADAPTER *prAdapter,
 	IN uint8_t ucBssIndex,
@@ -499,7 +504,7 @@ static struct DBDC_FSM_T arDdbcFsmActionTable[] = {
 	{
 		cnmDbdcFsmEntryFunc_WAIT_HW_DISABLE,
 		cnmDbdcFsmEventHandler_WAIT_HW_DISABLE,
-		NULL
+		cnmDbdcFsmExitFunc_WAIT_HW_DISABLE
 	},
 
 	/* ENUM_DBDC_FSM_STATE_DISABLE_GUARD */
@@ -2499,7 +2504,6 @@ cnmDbdcFsmEntryFunc_DISABLE_IDLE(IN struct ADAPTER *prAdapter)
 {
 	uint8_t ucWmmIndex;
 
-	cnmDBDCFsmActionReqPeivilegeUnLock(prAdapter);
 	for (ucWmmIndex = 0; ucWmmIndex < prAdapter->ucWmmSetNum;
 		ucWmmIndex++) {
 		cnmWmmQuotaSetMaxQuota(
@@ -3090,6 +3094,14 @@ cnmDbdcFsmExitFunc_WAIT_HW_ENABLE(
 {
 	cnmDBDCFsmActionReqPeivilegeUnLock(prAdapter);
 }
+
+static void
+cnmDbdcFsmExitFunc_WAIT_HW_DISABLE(
+	IN struct ADAPTER *prAdapter)
+{
+	cnmDBDCFsmActionReqPeivilegeUnLock(prAdapter);
+}
+
 
 /*----------------------------------------------------------------------------*/
 /*!
