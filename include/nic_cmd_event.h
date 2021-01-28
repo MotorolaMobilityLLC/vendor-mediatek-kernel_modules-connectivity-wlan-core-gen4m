@@ -1808,7 +1808,8 @@ typedef struct _EVENT_TX_DONE_T {
 
 	UINT_8 ucBandwidth;
 	UINT_8 ucTxPower;
-	UINT_8 aucReserved0[2];
+	UINT_8 ucFlushReason;
+	UINT_8 aucReserved0[1];
 
 	UINT_32 u4TxDelay;
 	UINT_32 u4Timestamp;
