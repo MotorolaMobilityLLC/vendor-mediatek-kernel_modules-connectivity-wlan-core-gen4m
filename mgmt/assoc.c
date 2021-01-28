@@ -1598,6 +1598,11 @@ uint32_t assocSendReAssocRespFrame(IN struct ADAPTER *prAdapter, IN struct STA_R
 	/* 4 <6> Enqueue the frame to send this (Re)Association request frame. */
 	nicTxEnqueueMsdu(prAdapter, prMsduInfo);
 
+	DBGLOG(SAA, INFO,
+			"Send Assoc Resp to " MACSTR ", Seq: %d\n",
+			MAC2STR(prStaRec->aucMacAddr),
+			prMsduInfo->ucTxSeqNum);
+
 	return WLAN_STATUS_SUCCESS;
 
 }				/* end of assocSendReAssocRespFrame() */

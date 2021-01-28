@@ -3144,6 +3144,7 @@ p2pFuncValidateAuth(IN struct ADAPTER *prAdapter,
 		if (kalP2PCmpBlackList(prAdapter->prGlueInfo,
 			prAuthFrame->aucSrcAddr,
 			(uint8_t) prP2pBssInfo->u4PrivateData)) {
+			DBGLOG(P2P, WARN, "in black list.\n");
 			return FALSE;
 		}
 
