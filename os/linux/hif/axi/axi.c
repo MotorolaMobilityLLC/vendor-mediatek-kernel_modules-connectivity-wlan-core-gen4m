@@ -268,6 +268,13 @@ int hifAxiRemove(void)
 
 	ASSERT(prPlatDev);
 
+#if (CFG_SUPPORT_CONNINFRA == 1)
+	if (prChipInfo->coexpccifoff) {
+		prChipInfo->coexpccifoff();
+		DBGLOG(INIT, TRACE, "pccif off\n");
+	}
+#endif
+
 	if (g_fgDriverProbed)
 		pfWlanRemove();
 
@@ -277,13 +284,6 @@ int hifAxiRemove(void)
 #if (CFG_SUPPORT_CONNINFRA == 0)
 	mtk_wcn_consys_hw_wifi_paldo_ctrl(0);
 #endif
-#endif
-
-#if (CFG_SUPPORT_CONNINFRA == 1)
-	if (prChipInfo->coexpccifoff) {
-		prChipInfo->coexpccifoff();
-		DBGLOG(INIT, TRACE, "pccif off\n");
-	}
 #endif
 	g_fgDriverProbed = FALSE;
 

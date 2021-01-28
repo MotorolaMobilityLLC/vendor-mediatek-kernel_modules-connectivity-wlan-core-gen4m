@@ -2278,14 +2278,6 @@ uint32_t wlanDownloadFW(IN struct ADAPTER *prAdapter)
 	if (prFwDlOps->phyAction)
 		prFwDlOps->phyAction(prAdapter);
 
-#if (CFG_SUPPORT_CONNINFRA == 1)
-	if (prChipInfo->coexpccifon) {
-		rPccifstatus = prChipInfo->coexpccifon();
-		if (rPccifstatus != 0)
-			DBGLOG(INIT, WARN, "pccif on fail\n");
-	}
-#endif
-
 	DBGLOG(INIT, INFO, "FW download Start\n");
 
 	if (prFwDlOps->downloadFirmware) {
@@ -2307,6 +2299,13 @@ uint32_t wlanDownloadFW(IN struct ADAPTER *prAdapter)
 	DBGLOG(INIT, INFO, "FW download End\n");
 
 	HAL_ENABLE_FWDL(prAdapter, FALSE);
+#if (CFG_SUPPORT_CONNINFRA == 1)
+	if (prChipInfo->coexpccifon) {
+		rPccifstatus = prChipInfo->coexpccifon();
+		if (rPccifstatus != 0)
+			DBGLOG(INIT, WARN, "pccif on fail\n");
+	}
+#endif
 
 	return rStatus;
 }
