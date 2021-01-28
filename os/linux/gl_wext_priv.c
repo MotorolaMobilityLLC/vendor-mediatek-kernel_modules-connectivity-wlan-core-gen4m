@@ -7624,6 +7624,7 @@ static int priv_driver_efuse_ops(IN struct net_device *prNetDev, IN char *pcComm
 	enum EFUSE_OP_MODE {
 		EFUSE_READ,
 		EFUSE_WRITE,
+		EFUSE_FREE,
 		EFUSE_INVALID,
 	};
 	UINT_8 ucOpMode = EFUSE_INVALID;
@@ -7654,6 +7655,8 @@ static int priv_driver_efuse_ops(IN struct net_device *prNetDev, IN char *pcComm
 		ucOpMode = EFUSE_READ;
 	else if ((i4Argc == 4) && (ucOpChar == 'w' || ucOpChar == 'W'))
 		ucOpMode = EFUSE_WRITE;
+	else if ((ucOpChar == 'f' || ucOpChar == 'F'))
+		ucOpMode = EFUSE_FREE;
 
 	/* Print out help if input format is wrong */
 	if (ucOpMode == EFUSE_INVALID)
@@ -7705,6 +7708,22 @@ static int priv_driver_efuse_ops(IN struct net_device *prNetDev, IN char *pcComm
 						, u4Efuse_addr
 						, ucEfuse_value);
 		}
+	} else if (ucOpMode == EFUSE_FREE) {
+		PARAM_CUSTOM_EFUSE_FREE_BLOCK_T rEfuseFreeBlock = {};
+
+		if (prGlueInfo->prAdapter->fgIsSupportGetFreeEfuseBlockCount == FALSE) {
+			u4Offset += snprintf(pcCommand + u4Offset,
+						i4TotalLen - u4Offset, "Cannot read free block size\n");
+			return (INT_32)u4Offset;
+		}
+		rStatus = kalIoctl(prGlueInfo,
+					wlanoidQueryEfuseFreeBlock,
+					&rEfuseFreeBlock,
+					sizeof(PARAM_CUSTOM_EFUSE_FREE_BLOCK_T), TRUE, TRUE, TRUE, &u4BufLen);
+		if (rStatus == WLAN_STATUS_SUCCESS) {
+			u4Offset += snprintf(pcCommand + u4Offset, i4TotalLen - u4Offset,
+						"Free block size 0x%X\n", prGlueInfo->prAdapter->u4FreeBlockNum);
+		}
 	}
 #else
 	u4Offset += snprintf(pcCommand + u4Offset, i4TotalLen - u4Offset,
@@ -7721,6 +7740,8 @@ efuse_op_invalid:
 				"\tRead:\t\"efuse read addr_hex\"\n");
 	u4Offset += snprintf(pcCommand + u4Offset, i4TotalLen - u4Offset,
 				"\tWrite:\t\"efuse write addr_hex val_hex\"\n");
+	u4Offset += snprintf(pcCommand + u4Offset, i4TotalLen - u4Offset,
+				"\tFree Blocks:\t\"efuse free\"\n");
 	return (INT_32)u4Offset;
 }
 
