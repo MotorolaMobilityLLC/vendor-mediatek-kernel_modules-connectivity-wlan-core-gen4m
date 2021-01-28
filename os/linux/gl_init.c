@@ -1307,7 +1307,7 @@ static void wlanSetMulticastListWorkQueue(
 		netif_addr_lock_bh(prDev);
 
 		netdev_for_each_mc_addr(ha, prDev) {
-			if (i < MAX_NUM_GROUP_ADDR && (ha != NULL)) {
+			if (i < MAX_NUM_GROUP_ADDR) {
 				kalMemCopy((prMCAddrList + i * ETH_ALEN),
 					   GET_ADDR(ha), ETH_ALEN);
 				i++;
@@ -2934,7 +2934,7 @@ void wlanSetSuspendMode(struct GLUE_INFO *prGlueInfo,
 			netif_addr_lock_bh(prDev);
 
 			netdev_for_each_mc_addr(ha, prDev) {
-				if ((i < MAX_NUM_GROUP_ADDR) && (ha != NULL)) {
+				if (i < MAX_NUM_GROUP_ADDR) {
 					kalMemCopy(
 						(prMCAddrList + i * ETH_ALEN),
 						ha->addr, ETH_ALEN);
