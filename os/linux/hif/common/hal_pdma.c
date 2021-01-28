@@ -957,6 +957,7 @@ bool halHifSwInfoInit(IN struct ADAPTER *prAdapter)
 {
 	struct GL_HIF_INFO *prHifInfo = NULL;
 	struct BUS_INFO *prBusInfo = NULL;
+	struct mt66xx_chip_info *prChipInfo;
 
 	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
 	prBusInfo = prAdapter->chip_info->bus_info;
@@ -968,6 +969,11 @@ bool halHifSwInfoInit(IN struct ADAPTER *prAdapter)
 
 	halWpdmaInitRing(prAdapter->prGlueInfo);
 	halInitMsduTokenInfo(prAdapter);
+	/* Initialize wfdma reInit handshake parameters */
+	prChipInfo = prAdapter->chip_info;
+	if ((prChipInfo->asicWfdmaReInit)
+	    && (prChipInfo->asicWfdmaReInit_handshakeInit))
+		prChipInfo->asicWfdmaReInit_handshakeInit(prAdapter);
 
 	prHifInfo->fgIsPowerOff = false;
 
