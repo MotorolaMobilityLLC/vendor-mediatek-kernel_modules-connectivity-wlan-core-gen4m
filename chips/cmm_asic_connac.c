@@ -349,8 +349,8 @@ VOID asicLowPowerOwnRead(IN P_ADAPTER_T prAdapter, OUT PBOOLEAN pfgResult)
 {
 	UINT_32 u4RegValue;
 
-	HAL_MCR_RD(prAdapter, CONN_HIF_ON_IRQ_STAT, &u4RegValue);
-	*pfgResult = (u4RegValue == 0) ? TRUE : FALSE;
+	HAL_MCR_RD(prAdapter, CONN_HIF_ON_LPCTL, &u4RegValue);
+	*pfgResult = (u4RegValue & PCIE_LPCR_HOST_SET_OWN) == 0 ? TRUE : FALSE;
 }
 
 VOID asicLowPowerOwnSet(IN P_ADAPTER_T prAdapter, OUT PBOOLEAN pfgResult)
