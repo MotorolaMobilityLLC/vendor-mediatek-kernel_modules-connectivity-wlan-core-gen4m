@@ -21,6 +21,8 @@
 
 #define MAX_CPU_FREQ (3 * 1024 * 1024) /* in kHZ */
 #define MAX_CLUSTER_NUM  3
+#define CPU_BIG_CORE (0xc0)
+#define CPU_SMALL_CORE (0xff - CPU_BIG_CORE)
 
 enum ENUM_CPU_BOOST_STATUS {
 	ENUM_CPU_BOOST_STATUS_INIT = 0,
@@ -78,7 +80,7 @@ int32_t kalBoostCpu(IN struct ADAPTER *prAdapter,
 
 	if (fgRequested == ENUM_CPU_BOOST_STATUS_INIT) {
 		/* initially enable rps working at small cores */
-		kalSetRpsMap(prGlueInfo, 0x0f);
+		kalSetRpsMap(prGlueInfo, CPU_SMALL_CORE);
 		fgRequested = ENUM_CPU_BOOST_STATUS_STOP;
 	}
 
@@ -91,7 +93,7 @@ int32_t kalBoostCpu(IN struct ADAPTER *prAdapter,
 			set_task_util_min_pct(prGlueInfo->u4TxThreadPid, 100);
 			set_task_util_min_pct(prGlueInfo->u4RxThreadPid, 100);
 			set_task_util_min_pct(prGlueInfo->u4HifThreadPid, 100);
-			kalSetRpsMap(prGlueInfo, 0xf0); /* big cores */
+			kalSetRpsMap(prGlueInfo, CPU_BIG_CORE);
 			update_userlimit_cpu_freq(CPU_KIR_WIFI,
 				u4ClusterNum, freq_to_set);
 
@@ -112,7 +114,7 @@ int32_t kalBoostCpu(IN struct ADAPTER *prAdapter,
 			set_task_util_min_pct(prGlueInfo->u4TxThreadPid, 0);
 			set_task_util_min_pct(prGlueInfo->u4RxThreadPid, 0);
 			set_task_util_min_pct(prGlueInfo->u4HifThreadPid, 0);
-			kalSetRpsMap(prGlueInfo, 0x0f); /* small cores */
+			kalSetRpsMap(prGlueInfo, CPU_SMALL_CORE);
 			update_userlimit_cpu_freq(CPU_KIR_WIFI,
 				u4ClusterNum, freq_to_set);
 
