@@ -5059,7 +5059,11 @@ s_int32 mt_agent_set_ru_cli(struct service_test *serv_test, u_char *arg)
 					&ru_info[i].mpdu_length,
 					&ru_info[i].alpha);
 
-			if (strlen(value) > 0 && input_cnt == 9) {
+			if (input_cnt < 0) {
+				SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_ERROR,
+					("Invalid format, %s ignored!\n", arg));
+				goto err_out;
+			} else if (strlen(value) > 0 && input_cnt == 9) {
 				ru_info[i].valid = TRUE;
 
 				if (ru_info[i].mpdu_length == 0)
