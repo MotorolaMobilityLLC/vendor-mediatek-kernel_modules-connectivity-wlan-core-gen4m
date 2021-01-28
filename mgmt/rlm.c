@@ -839,7 +839,7 @@ static void rlmFillHtCapIE(struct ADAPTER *prAdapter,
 
 	/* prSupMcsSet->aucRxMcsBitmask[0] = BITS(0, 7); */
 
-	if (fg40mAllowed)
+	if (fg40mAllowed && IS_FEATURE_ENABLED(prAdapter->rWifiVar.ucMCS32))
 		prSupMcsSet->aucRxMcsBitmask[32 / 8] = BIT(0); /* MCS32 */
 	prSupMcsSet->u2RxHighestSupportedRate = SUP_MCS_RX_DEFAULT_HIGHEST_RATE;
 	prSupMcsSet->u4TxRateInfo = SUP_MCS_TX_DEFAULT_VAL;
@@ -4188,7 +4188,7 @@ uint32_t rlmFillHtCapIEByAdapter(struct ADAPTER *prAdapter,
 
 	prSupMcsSet->aucRxMcsBitmask[0] = BITS(0, 7);
 
-	if (fg40mAllowed)
+	if (fg40mAllowed && IS_FEATURE_ENABLED(prAdapter->rWifiVar.ucMCS32))
 		prSupMcsSet->aucRxMcsBitmask[32 / 8] = BIT(0); /* MCS32 */
 	prSupMcsSet->u2RxHighestSupportedRate = SUP_MCS_RX_DEFAULT_HIGHEST_RATE;
 	prSupMcsSet->u4TxRateInfo = SUP_MCS_TX_DEFAULT_VAL;
