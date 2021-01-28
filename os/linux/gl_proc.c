@@ -255,7 +255,11 @@ static int procEfuseDump_show(struct seq_file *s, void *v)
 	prGlueInfo = g_prGlueInfo_proc;
 
 #if  (CFG_EEPROM_PAGE_ACCESS == 1)
-	ASSERT(prGlueInfo);
+	if (prGlueInfo == NULL) {
+		seq_puts(s, "prGlueInfo is null\n");
+		return -EPERM;
+	}
+
 	if (prGlueInfo->prAdapter &&
 	    prGlueInfo->prAdapter->chip_info &&
 	    !prGlueInfo->prAdapter->chip_info->is_support_efuse) {
