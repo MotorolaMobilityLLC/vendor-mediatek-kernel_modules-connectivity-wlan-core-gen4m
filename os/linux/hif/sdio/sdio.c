@@ -1621,7 +1621,8 @@ u_int8_t kalDevKickData(IN struct GLUE_INFO *prGlueInfo)
 * \retval FALSE         operation fail
 */
 /*----------------------------------------------------------------------------*/
-u_int8_t kalDevWriteCmd(IN struct GLUE_INFO *prGlueInfo, IN struct CMD_INFO *prCmdInfo, IN uint8_t ucTC)
+enum ENUM_CMD_TX_RESULT kalDevWriteCmd(IN struct GLUE_INFO *prGlueInfo,
+		IN struct CMD_INFO *prCmdInfo, IN uint8_t ucTC)
 {
 	struct ADAPTER *prAdapter = prGlueInfo->prAdapter;
 /*	P_GL_HIF_INFO_T prHifInfo = &prGlueInfo->rHifInfo; */
@@ -1636,7 +1637,7 @@ u_int8_t kalDevWriteCmd(IN struct GLUE_INFO *prGlueInfo, IN struct CMD_INFO *prC
 	if (TFCB_FRAME_PAD_TO_DW(prCmdInfo->u4TxdLen + prCmdInfo->u4TxpLen) >
 		prAdapter->u4CoalescingBufCachedSize) {
 		DBGLOG(HAL, ERROR, "Command TX buffer underflow!\n");
-		return FALSE;
+		return CMD_TX_RESULT_FAILED;
 	}
 
 	if (prCmdInfo->u4TxdLen) {
@@ -1670,7 +1671,7 @@ u_int8_t kalDevWriteCmd(IN struct GLUE_INFO *prGlueInfo, IN struct CMD_INFO *prC
 				   (prCmdInfo->u4TxdLen + prCmdInfo->u4TxpLen));
 
 	prGlueInfo->rHifInfo.rStatCounter.u4CmdPktWriteCnt++;
-	return TRUE;
+	return CMD_TX_RESULT_SUCCESS;
 }
 
 void glGetDev(void *ctx, struct device **dev)
