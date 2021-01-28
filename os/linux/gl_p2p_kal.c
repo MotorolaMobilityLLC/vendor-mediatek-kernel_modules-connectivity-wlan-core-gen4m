@@ -1816,38 +1816,40 @@ u_int8_t kalP2PSetBlackList(IN struct GLUE_INFO *prGlueInfo,
 		IN uint8_t ucRoleIndex)
 {
 	uint8_t aucNullAddr[] = NULL_MAC_ADDR;
-	u_int8_t fgIsValid = FALSE;
 	uint32_t i;
 
 	ASSERT(prGlueInfo);
-	/*ASSERT(prGlueInfo->prP2PInfo[ucRoleIndex]);*/
-
 
 	/*if only one ap mode register, prGlueInfo->prP2PInfo[1] would be null*/
 	if (!prGlueInfo->prP2PInfo[ucRoleIndex])
-		return fgIsValid;
+		return FALSE;
 
+	if (EQUAL_MAC_ADDR(rbssid, aucNullAddr))
+		return FALSE;
 
 	if (fgIsblock) {
 		for (i = 0; i < P2P_MAXIMUM_CLIENT_COUNT; i++) {
-			if (UNEQUAL_MAC_ADDR(rbssid, aucNullAddr)) {
-				if (UNEQUAL_MAC_ADDR(
-					&(prGlueInfo->prP2PInfo[ucRoleIndex]
-					->aucblackMACList[i]), rbssid)) {
-					if (EQUAL_MAC_ADDR(
-						&(prGlueInfo->prP2PInfo
-						[ucRoleIndex]
-						->aucblackMACList[i]),
-						aucNullAddr)) {
-						COPY_MAC_ADDR(
-							&(prGlueInfo->prP2PInfo
-							[ucRoleIndex]
-							->aucblackMACList[i]),
-							rbssid);
-						fgIsValid = FALSE;
-						return fgIsValid;
-					}
-				}
+			if (EQUAL_MAC_ADDR(
+				&(prGlueInfo->prP2PInfo[ucRoleIndex]
+				->aucblackMACList[i]), rbssid)) {
+				DBGLOG(P2P, WARN, MACSTR
+					" already in black list\n",
+					MAC2STR(rbssid));
+				return FALSE;
+			}
+		}
+		for (i = 0; i < P2P_MAXIMUM_CLIENT_COUNT; i++) {
+			if (EQUAL_MAC_ADDR(
+				&(prGlueInfo->prP2PInfo
+				[ucRoleIndex]
+				->aucblackMACList[i]),
+				aucNullAddr)) {
+				COPY_MAC_ADDR(
+					&(prGlueInfo->prP2PInfo
+					[ucRoleIndex]
+					->aucblackMACList[i]),
+					rbssid);
+				return FALSE;
 			}
 		}
 	} else {
@@ -1859,13 +1861,12 @@ u_int8_t kalP2PSetBlackList(IN struct GLUE_INFO *prGlueInfo,
 					&(prGlueInfo->prP2PInfo[ucRoleIndex]
 					->aucblackMACList[i]), aucNullAddr);
 
-				fgIsValid = FALSE;
-				return fgIsValid;
+				return FALSE;
 			}
 		}
 	}
 
-	return fgIsValid;
+	return FALSE;
 
 }
 
