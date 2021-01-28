@@ -1338,7 +1338,7 @@ struct NIC_EFUSE_ADDRESS {
 	uint32_t u4EfuseEndAddress;   /* Efuse End Address */
 };
 
-struct CAP_HW_VERSION_T {
+struct CAP_HW_VERSION {
 	uint16_t u2ProductID; /* CHIP ID */
 	uint8_t ucEcoVersion; /* ECO version */
 	uint8_t ucReserved;
@@ -1348,19 +1348,19 @@ struct CAP_HW_VERSION_T {
 	uint32_t u4ConfigId;  /* Configuration ID */
 };
 
-struct CAP_SW_VERSION_T {
+struct CAP_SW_VERSION {
 	uint16_t u2FwVersion; /* FW version <major.minor> */
 	uint16_t u2FwBuildNumber; /* FW build number */
 	uint8_t aucBranchInfo[4]; /* Branch name in ASCII */
 	uint8_t aucDateCode[16]; /* FW build data code */
 };
 
-struct CAP_MAC_ADDR_T {
+struct CAP_MAC_ADDR {
 	uint8_t aucMacAddr[6];
 	uint8_t aucReserved[2];
 };
 
-struct CAP_PHY_CAP_T {
+struct CAP_PHY_CAP {
 	uint8_t ucHt; /* 1:support, 0:not*/
 	uint8_t ucVht; /* 1:support, 0:not*/
 	uint8_t uc5gBand; /* 1:support, 0:not*/
@@ -1375,14 +1375,14 @@ struct CAP_PHY_CAP_T {
 	uint8_t aucReserved[2];
 };
 
-struct CAP_MAC_CAP_T {
+struct CAP_MAC_CAP {
 	uint8_t ucHwBssIdNum; /* HW BSSID number */
 	uint8_t ucWmmSet; /* 1: AC0~3, 2: AC0~3 and AC10~13, ... */
 	uint8_t ucWtblEntryNum; /* WTBL entry number */
 	uint8_t ucReserved;
 };
 
-struct CAP_FRAME_BUF_CAP_T {
+struct CAP_FRAME_BUF_CAP {
 	/* 1: support in-chip Tx AMSDU (HW or CR4) */
 	uint8_t ucChipTxAmsdu;
 	/* 2: support 2 MSDU in AMSDU, 3:support 3 MSDU in AMSDU,...*/
@@ -1396,7 +1396,7 @@ struct CAP_FRAME_BUF_CAP_T {
 	uint32_t u4PacketBufSize;
 };
 
-struct CAP_BEAMFORM_CAP_T {
+struct CAP_BEAMFORM_CAP {
 	uint8_t ucBFer; /* Tx beamformer, 1:support, 0:not*/
 	uint8_t ucIBFer; /* Tx implicit beamformer 1:support, 0:not*/
 	uint8_t ucBFee; /* Rx beamformee, 1:support, 0:not */
@@ -1405,12 +1405,12 @@ struct CAP_BEAMFORM_CAP_T {
 	uint32_t u4BFeeCap; /* Rx beamformee cap */
 };
 
-struct CAP_LOCATION_CAP_T {
+struct CAP_LOCATION_CAP {
 	uint8_t ucTOAE; /* 1:support, 0:not */
 	uint8_t aucReserved[3];
 };
 
-struct CAP_MUMIMO_CAP_T {
+struct CAP_MUMIMO_CAP {
 	uint8_t ucMuMimoRx; /* 1:support, 0:not */
 	uint8_t ucMuMimoTx; /* 1:support, 0:not */
 	uint8_t aucReserved[2];
