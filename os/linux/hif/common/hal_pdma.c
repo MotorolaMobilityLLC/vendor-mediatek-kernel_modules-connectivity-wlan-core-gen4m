@@ -2565,8 +2565,9 @@ void halHwRecoveryFromError(IN struct ADAPTER *prAdapter)
 				prChipInfo->asicDumpSerDummyCR(prAdapter);
 			halStartSerTimer(prAdapter);
 			DBGLOG(HAL, INFO,
-				"SER(E) Host stop PDMA tx/rx ring operation\n");
+				"SER(E) Host stop PDMA tx/rx ring operation & receive\n");
 			nicSerStopTxRx(prAdapter);
+			nicRxProcessRFBs(prAdapter);
 
 			DBGLOG(HAL, INFO,
 				"SER(F) Host ACK PDMA tx/rx ring stop operation\n");
