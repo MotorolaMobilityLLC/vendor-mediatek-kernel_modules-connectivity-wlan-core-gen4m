@@ -2975,8 +2975,6 @@ typedef struct _EVENT_WIFI_RDD_TEST_T {
 	UINT_32 u4FuncLength;
 	UINT_32 u4Prefix;
 	UINT_32 u4Count;
-	UINT_32 u4SubBandRssi0;
-	UINT_32 u4SubBandRssi1;
 	UINT_8 ucRddIdx;
 	UINT_8 aucReserve[3];
 	UINT_8 aucBuffer[0];
