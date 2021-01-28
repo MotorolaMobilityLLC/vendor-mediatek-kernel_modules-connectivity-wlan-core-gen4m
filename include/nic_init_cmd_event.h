@@ -239,6 +239,11 @@ typedef struct _INIT_CMD_PATCH_SEMA_CONTROL {
 	UINT_8 aucReserved[3];
 } INIT_CMD_PATCH_SEMA_CONTROL, *P_INIT_CMD_PATCH_SEMA_CONTROL;
 
+struct INIT_CMD_PATCH_FINISH {
+	UINT_8 ucCheckCrc;
+	UINT_8 aucReserved[3];
+};
+
 typedef struct _INIT_CMD_ACCESS_REG {
 	UINT_8 ucSetQuery;
 	UINT_8 aucReserved[3];
