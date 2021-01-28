@@ -6323,6 +6323,7 @@ void rlmProcessNeighborReportResonse(struct ADAPTER *prAdapter,
 		ucBssIndex,
 		MAC2STR(prNeighborResponse->aucSrcAddr),
 		prNeighborResponse->ucDialogToken);
+#if CFG_SUPPORT_802_11K
 	aisCollectNeighborAP(
 		prAdapter, &prNeighborResponse->aucInfoElem[0],
 		prSwRfb->u2PacketLen
@@ -6330,6 +6331,7 @@ void rlmProcessNeighborReportResonse(struct ADAPTER *prAdapter,
 			aucInfoElem),
 		0,
 		ucBssIndex);
+#endif
 }
 
 void rlmTxNeighborReportRequest(struct ADAPTER *prAdapter,
