@@ -141,9 +141,10 @@ void scnInit(IN struct ADAPTER *prAdapter)
 	/* reset freest channel information */
 	prScanInfo->fgIsSparseChannelValid = FALSE;
 
+	prScanInfo->fgIsScanForFull2Partial = FALSE;
+
 	/* reset Sched scan state */
 	prScanInfo->fgSchedScanning = FALSE;
-
 	/*Support AP Selection */
 	prScanInfo->u4ScanUpdateIdx = 0;
 }	/* end of scnInit() */
@@ -234,58 +235,217 @@ struct BSS_DESC *scanSearchBssDescByBssid(IN struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * @brief Check if the bit of the given bitmap is set
+ * The bitmap should be unsigned int based, which means that this function
+ * doesn't support other format bitmap, e.g. char array or short array
+ *
+ * @param[in] bit          which bit to check.
+ * @param[in] bitMap       bitmap array
+ * @param[in] bitMapSize   bytes of bitmap
+ *
+ * @return   TRUE if the bit of the given bitmap is set, FALSE otherwise
+ */
+/*----------------------------------------------------------------------------*/
+u_int8_t scanIsBitSet(IN uint32_t bit, IN uint32_t bitMap[],
+		IN uint32_t bitMapSize)
+{
+	if (bit >= bitMapSize * BITS_OF_BYTE) {
+		log_dbg(SCN, WARN, "bit %u is out of array range(%u bits)\n",
+			bit, bitMapSize * BITS_OF_BYTE);
+		return FALSE;
+	} else {
+		return (bitMap[bit/BITS_OF_UINT] &
+			(1 << (bit % BITS_OF_UINT))) ? TRUE : FALSE;
+	}
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * @brief Set the bit of the given bitmap.
+ * The bitmap should be unsigned int based, which means that this function
+ * doesn't support other format bitmap, e.g. char array or short array
+ *
+ * @param[in] bit          which bit to set.
+ * @param[out] bitMap      bitmap array
+ * @param[in] bitMapSize   bytes of bitmap
+ *
+ * @return   void
+ */
+/*----------------------------------------------------------------------------*/
+void scanSetBit(IN uint32_t bit, OUT uint32_t bitMap[], IN uint32_t bitMapSize)
+{
+	if (bit >= bitMapSize * BITS_OF_BYTE) {
+		log_dbg(SCN, WARN, "set bit %u to array(%u bits) failed\n",
+			bit, bitMapSize * BITS_OF_BYTE);
+	} else
+		bitMap[bit/BITS_OF_UINT] |= 1 << (bit % BITS_OF_UINT);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * @brief Return number of bit which is set to 1 in the given bitmap.
+ * The bitmap should be unsigned int based, which means that this function
+ * doesn't support other format bitmap, e.g. char array or short array
+ *
+ * @param[in] bitMap       bitmap array
+ * @param[in] bitMapSize   bytes of bitmap
+ *
+ * @return   number of bit which is set to 1
+ */
+/*----------------------------------------------------------------------------*/
+
+uint32_t scanCountBits(IN uint32_t bitMap[], IN uint32_t bitMapSize)
+{
+	uint32_t count = 0;
+	uint32_t value;
+	int32_t arrayLen = bitMapSize/sizeof(uint32_t);
+	int32_t i;
+
+	for (i = arrayLen - 1; i >= 0; i--) {
+		value = bitMap[i];
+		log_dbg(SCN, TRACE, "array[%d]:%08X\n", i, value);
+		while (value) {
+			count += (value & 1);
+			value >>= 1;
+		}
+	}
+	return count;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * @brief Set scan channel to scanReqMsg.
  *
- * @param[in]  u4ScanChannelNum  number of input channels
- * @param[in]  arChannel  channel list
- * @param[out] prScanReqMsg  scan request msg. Set channel number and
- *             channel list for output
+ * @param[in]  prAdapter           Pointer to the Adapter structure.
+ * @param[in]  u4ScanChannelNum    number of input channels
+ * @param[in]  arChannel           channel list
+ * @param[in]  fgIsOnlineScan      online scan or not
+ * @param[out] prScanReqMsg        scan request msg. Set channel number and
+ *                                 channel list for output
  *
  * @return
  */
 /*----------------------------------------------------------------------------*/
-void scanSetRequestChannel(IN uint32_t u4ScanChannelNum,
+void scanSetRequestChannel(IN struct ADAPTER *prAdapter,
+		IN uint32_t u4ScanChannelNum,
 		IN struct RF_CHANNEL_INFO arChannel[],
+		IN uint8_t fgIsOnlineScan,
 		OUT struct MSG_SCN_SCAN_REQ_V2 *prScanReqMsg)
 {
 	uint32_t i, u4Channel, eBand, u4Index;
-	uint32_t auChannelBitMap[8];
+	/*print channel info for debugging */
+	uint32_t au4ChannelBitMap[SCAN_CHANNEL_BITMAP_ARRAY_LEN];
+	uint8_t fgIsFull2Partial = FALSE;
+	struct SCAN_INFO *prScanInfo;
 
-	if (u4ScanChannelNum == 0 ||
-		u4ScanChannelNum > MAXIMUM_OPERATION_CHANNEL_LIST) {
+	ASSERT(u4ScanChannelNum <= MAXIMUM_OPERATION_CHANNEL_LIST);
+
+	prScanInfo = &(prAdapter->rWifiVar.rScanInfo);
+	i = u4Index = 0;
+	kalMemZero(au4ChannelBitMap, sizeof(au4ChannelBitMap));
+
+#if CFG_SUPPORT_FULL2PARTIAL_SCAN
+	/* fgIsCheckingFull2Partial should be true if it's an online scan.
+	 * Next, enable full2partial if channel number to scan is
+	 * larger than SCAN_FULL2PARTIAL_CHANNEL_NUM
+	 */
+	if (fgIsOnlineScan && (u4ScanChannelNum == 0 ||
+		u4ScanChannelNum > SCAN_FULL2PARTIAL_CHANNEL_NUM)) {
+		OS_SYSTIME rCurrentTime;
+
+		GET_CURRENT_SYSTIME(&rCurrentTime);
+
+		if (((prScanInfo->u4LastFullScanTime == 0) ||
+			(CHECK_FOR_TIMEOUT(rCurrentTime,
+			prScanInfo->u4LastFullScanTime,
+			SEC_TO_SYSTIME(CFG_SCAN_FULL2PARTIAL_PERIOD))))) {
+			prScanInfo->fgIsScanForFull2Partial = TRUE;
+			prScanInfo->ucFull2PartialSeq = prScanReqMsg->ucSeqNum;
+			prScanInfo->u4LastFullScanTime = rCurrentTime;
+			kalMemZero(prScanInfo->au4ChannelBitMap,
+				sizeof(prScanInfo->au4ChannelBitMap));
+			log_dbg(SCN, INFO,
+				"Full2partial: 1st full scan start\n");
+		} else {
+			log_dbg(SCN, INFO,
+				"Full2partial: enable full2partial\n");
+			fgIsFull2Partial = TRUE;
+		}
+	}
+#endif /* CFG_SUPPORT_FULL2PARTIAL_SCAN */
+
+	if (fgIsFull2Partial && u4ScanChannelNum == 0) {
+		/* We don't have channel info when u4ScanChannelNum is 0.
+		 * check full2partial bitmap and set scan channels
+		 */
+		uint32_t start = 1;
+		uint32_t end = HW_CHNL_NUM_MAX_4G_5G;
+
+		if (prScanReqMsg->eScanChannel == SCAN_CHANNEL_2G4)
+			end = HW_CHNL_NUM_MAX_2G4;
+		else if (prScanReqMsg->eScanChannel == SCAN_CHANNEL_5G)
+			start = HW_CHNL_NUM_MAX_2G4 + 1;
+
+		u4Index = 0;
+		for (u4Channel = start; u4Channel <= end; u4Channel++) {
+			if (scanIsBitSet(u4Channel,
+					prScanInfo->au4ChannelBitMap,
+					sizeof(prScanInfo->au4ChannelBitMap))) {
+				eBand = (u4Channel <= HW_CHNL_NUM_MAX_2G4) ?
+					BAND_2G4 : BAND_5G;
+				prScanReqMsg->arChnlInfoList[u4Index].
+					ucChannelNum = u4Channel;
+				prScanReqMsg->arChnlInfoList[u4Index].
+					eBand = eBand;
+				scanSetBit(u4Channel, au4ChannelBitMap,
+					sizeof(au4ChannelBitMap));
+				u4Index++;
+			}
+		}
+
+		prScanReqMsg->ucChannelListNum = u4Index;
+		prScanReqMsg->eScanChannel = SCAN_CHANNEL_SPECIFIED;
+	} else if (u4ScanChannelNum == 0) {
 		prScanReqMsg->ucChannelListNum = 0;
-		log_dbg(SCN, TRACE, "scan channel num(%u==>0)\n",
-			u4ScanChannelNum);
-		return;
+	} else {
+		u4Index = 0;
+		for (i = 0; i < u4ScanChannelNum; i++) {
+			u4Channel = arChannel[i].ucChannelNum;
+			eBand = arChannel[i].eBand;
+			if (prScanReqMsg->eScanChannel == SCAN_CHANNEL_2G4 &&
+				eBand != BAND_2G4)
+				continue;
+			else if (prScanReqMsg->eScanChannel ==
+				SCAN_CHANNEL_5G && eBand != BAND_5G)
+				continue;
+			if (fgIsFull2Partial && !scanIsBitSet(u4Channel,
+				prScanInfo->au4ChannelBitMap,
+				sizeof(prScanInfo->au4ChannelBitMap)))
+				continue;
+			kalMemCopy(&prScanReqMsg->arChnlInfoList[u4Index],
+					&arChannel[i],
+					sizeof(struct RF_CHANNEL_INFO));
+			scanSetBit(u4Channel, au4ChannelBitMap,
+				sizeof(au4ChannelBitMap));
+
+			u4Index++;
+		}
+		if (u4Index == 0) {
+			log_dbg(SCN, WARN, "No channel to scan\n");
+			prScanReqMsg->ucChannelListNum = 0;
+		} else {
+			prScanReqMsg->ucChannelListNum = u4Index;
+			prScanReqMsg->eScanChannel = SCAN_CHANNEL_SPECIFIED;
+		}
 	}
-
-	u4Index = 0;
-	kalMemZero(auChannelBitMap, sizeof(auChannelBitMap));
-
-	for (i = 0; i < u4ScanChannelNum; i++) {
-		u4Channel = arChannel[i].ucChannelNum;
-		eBand = arChannel[i].eBand;
-		if (prScanReqMsg->eScanChannel == SCAN_CHANNEL_2G4 &&
-			eBand != BAND_2G4)
-			continue;
-		else if (prScanReqMsg->eScanChannel == SCAN_CHANNEL_5G &&
-			eBand != BAND_5G)
-			continue;
-		kalMemCopy(&prScanReqMsg->arChnlInfoList[u4Index],
-				&arChannel[i], sizeof(struct RF_CHANNEL_INFO));
-		auChannelBitMap[u4Channel>>5] |= 1 << (u4Channel&31);
-
-		u4Index++;
-	}
-	prScanReqMsg->ucChannelListNum = u4Index;
-	prScanReqMsg->eScanChannel = SCAN_CHANNEL_SPECIFIED;
 
 	log_dbg(SCN, INFO,
-		"channel num(%u) %08X %08X %08X %08X %08X %08X %08X %08X\n",
-		u4Index, auChannelBitMap[7], auChannelBitMap[6],
-		auChannelBitMap[5], auChannelBitMap[4],
-		auChannelBitMap[3], auChannelBitMap[2],
-		auChannelBitMap[1], auChannelBitMap[0]);
+		"channel num(%u=>%u) %08X %08X %08X %08X %08X %08X %08X %08X\n",
+		u4ScanChannelNum, prScanReqMsg->ucChannelListNum,
+		au4ChannelBitMap[7], au4ChannelBitMap[6],
+		au4ChannelBitMap[5], au4ChannelBitMap[4],
+		au4ChannelBitMap[3], au4ChannelBitMap[2],
+		au4ChannelBitMap[1], au4ChannelBitMap[0]);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -837,11 +997,10 @@ void scanRemoveBssDescsByPolicy(IN struct ADAPTER *prAdapter,
 					prBssDesc);
 
 				/* Support AP Selection */
-				/* Remove this BSS Desc from the
-				 * Ess Desc List
+				/* Remove this BSS Desc from the Ess Desc List
 				 */
-				if (LINK_ENTRY_IS_VALID(&prBssDesc->
-					rLinkEntryEss))
+				if (LINK_ENTRY_IS_VALID
+					(&prBssDesc->rLinkEntryEss))
 					LINK_REMOVE_KNOWN_ENTRY(prEssList,
 						&prBssDesc->rLinkEntryEss);
 				/* end Support AP Selection */
@@ -895,17 +1054,16 @@ void scanRemoveBssDescsByPolicy(IN struct ADAPTER *prAdapter,
 				aisQueryBlackList(prAdapter, prBssDescOldest);
 			if (prBssDescOldest->prBlack)
 				prBssDescOldest->prBlack->u4DisapperTime =
-					(uint32_t)kalGetBootTime();
+				(uint32_t)kalGetBootTime();
 			/* end Support AP Selection */
 
 			/* Remove this BSS Desc from the BSS Desc list */
-			LINK_REMOVE_KNOWN_ENTRY(prBSSDescList,
-				prBssDescOldest);
+			LINK_REMOVE_KNOWN_ENTRY(prBSSDescList, prBssDescOldest);
 
 			/* Support AP Selection */
 			/* Remove this BSS Desc from the Ess Desc List */
-			if (LINK_ENTRY_IS_VALID(&prBssDescOldest->
-				rLinkEntryEss))
+			if (LINK_ENTRY_IS_VALID
+				(&prBssDescOldest->rLinkEntryEss))
 				LINK_REMOVE_KNOWN_ENTRY(prEssList,
 					&prBssDescOldest->rLinkEntryEss);
 			/* end Support AP Selection */
@@ -979,7 +1137,7 @@ void scanRemoveBssDescsByPolicy(IN struct ADAPTER *prAdapter,
 				aisQueryBlackList(prAdapter, prBssDescWeakest);
 			if (prBssDescWeakest->prBlack)
 				prBssDescWeakest->prBlack->u4DisapperTime =
-					(uint32_t)kalGetBootTime();
+				(uint32_t)kalGetBootTime();
 			/* end Support AP Selection */
 
 			/* Remove this BSS Desc from the BSS Desc list */
@@ -988,8 +1146,8 @@ void scanRemoveBssDescsByPolicy(IN struct ADAPTER *prAdapter,
 
 			/* Support AP Selection */
 			/* Remove this BSS Desc from the Ess Desc List */
-			if (LINK_ENTRY_IS_VALID(&prBssDescWeakest->
-				rLinkEntryEss))
+			if (LINK_ENTRY_IS_VALID
+				(&prBssDescWeakest->rLinkEntryEss))
 				LINK_REMOVE_KNOWN_ENTRY(prEssList,
 					&prBssDescWeakest->rLinkEntryEss);
 			/* end Support AP Selection */
@@ -1029,7 +1187,7 @@ void scanRemoveBssDescsByPolicy(IN struct ADAPTER *prAdapter,
 			/* Remove this BSS Desc from the Ess Desc List */
 			if (LINK_ENTRY_IS_VALID(&prBssDesc->rLinkEntryEss))
 				LINK_REMOVE_KNOWN_ENTRY(prEssList,
-					&prBssDesc->rLinkEntryEss);
+				&prBssDesc->rLinkEntryEss);
 			/* end Support AP Selection */
 
 			/* Return this BSS Desc to the free BSS Desc list. */
@@ -1080,7 +1238,7 @@ void scanRemoveBssDescByBssid(IN struct ADAPTER *prAdapter,
 				aisQueryBlackList(prAdapter, prBssDesc);
 			if (prBssDesc->prBlack)
 				prBssDesc->prBlack->u4DisapperTime =
-					(uint32_t)kalGetBootTime();
+				(uint32_t)kalGetBootTime();
 
 			/* Remove this BSS Desc from the BSS Desc list */
 			LINK_REMOVE_KNOWN_ENTRY(prBSSDescList, prBssDesc);
@@ -1173,8 +1331,9 @@ void scanRemoveBssDescByBandAndNetwork(IN struct ADAPTER *prAdapter,
 
 		if (fgToRemove == TRUE) {
 			/* Support AP Selection */
-			struct LINK *prEssList = &prAdapter->
-				rWifiVar.rAisSpecificBssInfo.rCurEssLink;
+			struct LINK *prEssList =
+				&prAdapter->rWifiVar.
+				rAisSpecificBssInfo.rCurEssLink;
 
 			if (!prBssDesc->prBlack)
 				aisQueryBlackList(prAdapter, prBssDesc);
@@ -1359,6 +1518,7 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 #endif
 
 	default:
+		log_dbg(SCN, WARN, "Skip unknown bss type(%u)\n", u2CapInfo);
 		return NULL;
 	}
 
@@ -1779,7 +1939,8 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 					ucSpatial++;
 			}
 
-			prBssDesc->fgMultiAnttenaAndSTBC = ((ucSpatial > 1) &&
+			prBssDesc->fgMultiAnttenaAndSTBC =
+				((ucSpatial > 1) &&
 				(prHtCap->u2HtCapInfo & HT_CAP_INFO_TX_STBC));
 			/* end Support AP Selection */
 
@@ -2406,6 +2567,15 @@ uint32_t scanProcessBeaconAndProbeResp(IN struct ADAPTER *prAdapter,
 	prAdapter->rWlanInfo.u4ScanDbgTimes1++;
 
 	if (prBssDesc) {
+		/* Full2Partial: save channel info for later scan */
+		if (prScanInfo->fgIsScanForFull2Partial) {
+			log_dbg(SCN, TRACE, "Full2Partial: set channel=%d\n",
+					prBssDesc->ucChannelNum);
+			scanSetBit(prBssDesc->ucChannelNum,
+				prScanInfo->au4ChannelBitMap,
+				sizeof(prScanInfo->au4ChannelBitMap));
+		}
+
 		/* 4 <1.1> Beacon Change Detection for Connected BSS */
 		if ((prAisBssInfo != NULL) &&
 		    (prAisBssInfo->eConnectionState ==
@@ -3278,8 +3448,7 @@ void scanReportBss2Cfg80211(IN struct ADAPTER *prAdapter,
 				return;
 			}
 
-			log_dbg(SCN, TRACE,
-				"Report specific SSID[%s] ValidSSID[%u]\n",
+			log_dbg(SCN, TRACE, "Report specific SSID[%s] ValidSSID[%u]\n",
 				SpecificprBssDesc->aucSSID,
 				SpecificprBssDesc->fgIsValidSSID);
 
