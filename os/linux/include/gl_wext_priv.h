@@ -1,4 +1,4 @@
-/******************************************************************************
+/*******************************************************************************
  *
  * This file is provided under a dual license.  When you use or
  * distribute this software, you may choose to be licensed under
@@ -48,22 +48,23 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *****************************************************************************/
+ ******************************************************************************/
 /*
-** Id: //Department/DaVinci/BRANCHES/MT6620_WIFI_DRIVER_V2_3/os/linux/include/gl_wext_priv.h#3
-*/
+ * Id: //Department/DaVinci/BRANCHES/MT6620_WIFI_DRIVER_V2_3/os/linux/include
+       /gl_wext_priv.h#3
+ */
 
 /*! \file   gl_wext_priv.h
-*    \brief  This file includes private ioctl support.
-*/
+ *    \brief  This file includes private ioctl support.
+ */
 
 
 #ifndef _GL_WEXT_PRIV_H
 #define _GL_WEXT_PRIV_H
 /*******************************************************************************
-*                         C O M P I L E R   F L A G S
-********************************************************************************
-*/
+ *                         C O M P I L E R   F L A G S
+ *******************************************************************************
+ */
 /* If it is set to 1, iwpriv will support register read/write */
 #define CFG_SUPPORT_PRIV_MCR_RW         1
 
@@ -77,14 +78,14 @@
 #endif
 
 /*******************************************************************************
-*                    E X T E R N A L   R E F E R E N C E S
-********************************************************************************
-*/
+ *			E X T E R N A L   R E F E R E N C E S
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                              C O N S T A N T S
-********************************************************************************
-*/
+ *                              C O N S T A N T S
+ *******************************************************************************
+ */
 /* New wireless extensions API - SET/GET convention (even ioctl numbers are
  * root only)
  */
@@ -273,17 +274,19 @@
 #define AGG_RANGE_SEL_6_OFFSET                          AGG_RANGE_SEL_2_OFFSET
 
 /*******************************************************************************
-*                             D A T A   T Y P E S
-********************************************************************************
-*/
+ *                             D A T A   T Y P E S
+ *******************************************************************************
+ */
 /* NIC BBCR configuration entry structure */
 struct PRIV_CONFIG_ENTRY {
 	uint8_t ucOffset;
 	uint8_t ucValue;
 };
 
-typedef uint32_t(*PFN_OID_HANDLER_FUNC_REQ) (IN void *prAdapter,
-						IN OUT void *pvBuf, IN uint32_t u4BufLen, OUT uint32_t *pu4OutInfoLen);
+typedef uint32_t(*PFN_OID_HANDLER_FUNC_REQ) (
+	IN void *prAdapter,
+	IN OUT void *pvBuf, IN uint32_t u4BufLen,
+	OUT uint32_t *pu4OutInfoLen);
 
 enum ENUM_OID_METHOD {
 	ENUM_OID_GLUE_ONLY,
@@ -299,8 +302,8 @@ struct WLAN_REQ_ENTRY {
 	u_int8_t fgSetBufLenChecking;
 	enum ENUM_OID_METHOD eOidMethod;
 	uint32_t u4InfoBufLen;
-	PFN_OID_HANDLER_FUNC_REQ pfOidQueryHandler;	/*  PFN_OID_HANDLER_FUNC */
-	PFN_OID_HANDLER_FUNC_REQ pfOidSetHandler;	/* PFN_OID_HANDLER_FUNC */
+	PFN_OID_HANDLER_FUNC_REQ pfOidQueryHandler; /* PFN_OID_HANDLER_FUNC */
+	PFN_OID_HANDLER_FUNC_REQ pfOidSetHandler; /* PFN_OID_HANDLER_FUNC */
 };
 
 struct NDIS_TRANSPORT_STRUCT {
@@ -317,74 +320,87 @@ enum AGG_RANGE_TYPE_T {
 };
 
 /*******************************************************************************
-*                            P U B L I C   D A T A
-********************************************************************************
-*/
+ *			P U B L I C   D A T A
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                           P R I V A T E   D A T A
-********************************************************************************
-*/
+ *			P R I V A T E   D A T A
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                                 M A C R O S
-********************************************************************************
-*/
+ *			M A C R O S
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                  F U N C T I O N   D E C L A R A T I O N S
-********************************************************************************
-*/
+ *			F U N C T I O N   D E C L A R A T I O N S
+ *******************************************************************************
+ */
 
 int
 priv_set_int(IN struct net_device *prNetDev,
-	     IN struct iw_request_info *prIwReqInfo, IN union iwreq_data *prIwReqData, IN char *pcExtra);
+	     IN struct iw_request_info *prIwReqInfo,
+	     IN union iwreq_data *prIwReqData, IN char *pcExtra);
 
 int
 priv_get_int(IN struct net_device *prNetDev,
-	     IN struct iw_request_info *prIwReqInfo, IN union iwreq_data *prIwReqData, IN OUT char *pcExtra);
+	     IN struct iw_request_info *prIwReqInfo,
+	     IN union iwreq_data *prIwReqData, IN OUT char *pcExtra);
 
 int
 priv_set_ints(IN struct net_device *prNetDev,
-	      IN struct iw_request_info *prIwReqInfo, IN union iwreq_data *prIwReqData, IN char *pcExtra);
+	      IN struct iw_request_info *prIwReqInfo,
+	      IN union iwreq_data *prIwReqData, IN char *pcExtra);
 
 int
 priv_get_ints(IN struct net_device *prNetDev,
-	      IN struct iw_request_info *prIwReqInfo, IN union iwreq_data *prIwReqData, IN OUT char *pcExtra);
+	      IN struct iw_request_info *prIwReqInfo,
+	      IN union iwreq_data *prIwReqData, IN OUT char *pcExtra);
 
 int
 priv_set_struct(IN struct net_device *prNetDev,
-		IN struct iw_request_info *prIwReqInfo, IN union iwreq_data *prIwReqData, IN char *pcExtra);
+		IN struct iw_request_info *prIwReqInfo,
+		IN union iwreq_data *prIwReqData, IN char *pcExtra);
 
 int
 priv_get_struct(IN struct net_device *prNetDev,
-		IN struct iw_request_info *prIwReqInfo, IN union iwreq_data *prIwReqData, IN OUT char *pcExtra);
+		IN struct iw_request_info *prIwReqInfo,
+		IN union iwreq_data *prIwReqData, IN OUT char *pcExtra);
 
 #if CFG_SUPPORT_NCHO
-uint8_t CmdString2HexParse(IN uint8_t *InStr, OUT uint8_t **OutStr, OUT uint8_t *OutLen);
+uint8_t CmdString2HexParse(IN uint8_t *InStr,
+			   OUT uint8_t **OutStr, OUT uint8_t *OutLen);
 #endif
 
 int
 priv_set_driver(IN struct net_device *prNetDev,
-		IN struct iw_request_info *prIwReqInfo, IN union iwreq_data *prIwReqData, IN OUT char *pcExtra);
+		IN struct iw_request_info *prIwReqInfo,
+		IN union iwreq_data *prIwReqData, IN OUT char *pcExtra);
 
-int priv_support_ioctl(IN struct net_device *prDev, IN OUT struct ifreq *prReq, IN int i4Cmd);
+int priv_support_ioctl(IN struct net_device *prDev,
+		       IN OUT struct ifreq *prReq, IN int i4Cmd);
 
-int priv_support_driver_cmd(IN struct net_device *prDev, IN OUT struct ifreq *prReq, IN int i4Cmd);
+int priv_support_driver_cmd(IN struct net_device *prDev,
+			    IN OUT struct ifreq *prReq, IN int i4Cmd);
 
-int32_t priv_driver_cmds(IN struct net_device *prNetDev, IN int8_t *pcCommand, IN int32_t i4TotalLen);
+int32_t priv_driver_cmds(IN struct net_device *prNetDev,
+			 IN int8_t *pcCommand, IN int32_t i4TotalLen);
 
-int priv_driver_set_cfg(IN struct net_device *prNetDev, IN char *pcCommand, IN int i4TotalLen);
+int priv_driver_set_cfg(IN struct net_device *prNetDev,
+			IN char *pcCommand, IN int i4TotalLen);
 
 #if CFG_SUPPORT_QA_TOOL
 int
 priv_ate_set(IN struct net_device *prNetDev,
-	     IN struct iw_request_info *prIwReqInfo, IN union iwreq_data *prIwReqData, IN char *pcExtra);
+	     IN struct iw_request_info *prIwReqInfo,
+	     IN union iwreq_data *prIwReqData, IN char *pcExtra);
 #endif
 
 /*******************************************************************************
-*                              F U N C T I O N S
-********************************************************************************
-*/
+ *                              F U N C T I O N S
+ *******************************************************************************
+ */
 
 #endif /* _GL_WEXT_PRIV_H */

@@ -1,4 +1,4 @@
-/******************************************************************************
+/*******************************************************************************
  *
  * This file is provided under a dual license.  When you use or
  * distribute this software, you may choose to be licensed under
@@ -50,35 +50,36 @@
  *
  *****************************************************************************/
 /*
-** Id: //Department/DaVinci/BRANCHES/MT6620_WIFI_DRIVER_V2_3/os/linux/include/gl_rst.h#1
-*/
+ * Id: //Department/DaVinci/BRANCHES/MT6620_WIFI_DRIVER_V2_3/os/linux/include
+ *     /gl_rst.h#1
+ */
 
 /*! \file   gl_rst.h
-*    \brief  Declaration of functions and finite state machine for
-*	    MT6620 Whole-Chip Reset Mechanism
-*/
+ *    \brief  Declaration of functions and finite state machine for
+ *	    MT6620 Whole-Chip Reset Mechanism
+ */
 
 #ifndef _GL_RST_H
 #define _GL_RST_H
 
 /*******************************************************************************
-*                         C O M P I L E R   F L A G S
-********************************************************************************
-*/
+ *                         C O M P I L E R   F L A G S
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                    E X T E R N A L   R E F E R E N C E S
-********************************************************************************
-*/
+ *                    E X T E R N A L   R E F E R E N C E S
+ *******************************************************************************
+ */
 #include "gl_typedef.h"
 
 #if 0
 #include "mtk_porting.h"
 #endif
 /*******************************************************************************
-*                              C O N S T A N T S
-********************************************************************************
-*/
+ *                              C O N S T A N T S
+ *******************************************************************************
+ */
 #if (MTK_WCN_HIF_SDIO)
 #define CFG_WMT_RESET_API_SUPPORT   1
 #else
@@ -89,9 +90,9 @@
 #define RST_FLAG_DO_CORE_DUMP      BIT(0)
 #define RST_FLAG_PREVENT_POWER_OFF BIT(1)
 /*******************************************************************************
-*                             D A T A   T Y P E S
-********************************************************************************
-*/
+ *                             D A T A   T Y P E S
+ *******************************************************************************
+ */
 enum ENUM_RESET_STATUS {
 	RESET_FAIL,
 	RESET_SUCCESS
@@ -144,47 +145,52 @@ enum _ENUM_CHIP_RESET_REASON_TYPE_T {
 	RST_REASON_MAX
 };
 
-typedef void (*PF_WMT_CB) (enum ENUM_WMTDRV_TYPE,	/* Source driver type */
-			   enum ENUM_WMTDRV_TYPE,	/* Destination driver type */
-			   enum ENUM_WMTMSG_TYPE,	/* Message type */
-			   void *,
-			   /* READ-ONLY buffer. Buffer is allocated and freed by WMT_drv. Client
-			    * can't touch this buffer after this function return.
+typedef void (*PF_WMT_CB) (enum ENUM_WMTDRV_TYPE, /* Source driver type */
+			   enum ENUM_WMTDRV_TYPE, /* Destination driver type */
+			   enum ENUM_WMTMSG_TYPE, /* Message type */
+			   /* READ-ONLY buffer. Buffer is allocated and
+			    * freed by WMT_drv. Client can't touch this
+			    * buffer after this function return.
 			    */
-			   unsigned int);	/* Buffer size in unit of byte */
+			   void *,
+			   unsigned int); /* Buffer size in unit of byte */
 
 
 /*******************************************************************************
-*                    E X T E R N A L   F U N C T I O N S
-********************************************************************************
-*/
+ *                    E X T E R N A L   F U N C T I O N S
+ *******************************************************************************
+ */
 
 #if CFG_CHIP_RESET_SUPPORT
 
-extern int mtk_wcn_wmt_assert(enum ENUM_WMTDRV_TYPE type, uint32_t reason);
-extern int mtk_wcn_wmt_msgcb_reg(enum ENUM_WMTDRV_TYPE eType, PF_WMT_CB pCb);
-extern int mtk_wcn_wmt_msgcb_unreg(enum ENUM_WMTDRV_TYPE eType);
+extern int mtk_wcn_wmt_assert(enum ENUM_WMTDRV_TYPE type,
+			      uint32_t reason);
+extern int mtk_wcn_wmt_msgcb_reg(enum ENUM_WMTDRV_TYPE
+				 eType, PF_WMT_CB pCb);
+extern int mtk_wcn_wmt_msgcb_unreg(enum ENUM_WMTDRV_TYPE
+				   eType);
 extern int wifi_reset_start(void);
 extern int wifi_reset_end(enum ENUM_RESET_STATUS);
 #endif
 
 /*******************************************************************************
-*                            P U B L I C   D A T A
-********************************************************************************
-*/
+ *                            P U B L I C   D A T A
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                           P R I V A T E   D A T A
-********************************************************************************
-*/
+ *                           P R I V A T E   D A T A
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                                 M A C R O S
-********************************************************************************
-*/
+ *                                 M A C R O S
+ *******************************************************************************
+ */
 #if CFG_CHIP_RESET_SUPPORT
 #define GL_RESET_TRIGGER(_prAdapter, _u4Flags) \
-	glResetTrigger(_prAdapter, (_u4Flags), (const uint8_t *)__FILE__, __LINE__)
+	glResetTrigger(_prAdapter, (_u4Flags), \
+	(const uint8_t *)__FILE__, __LINE__)
 #else
 #define GL_RESET_TRIGGER(_prAdapter, _u4Flags) \
 	DBGLOG(INIT, INFO, "DO NOT support chip reset\n")
@@ -193,24 +199,23 @@ extern int wifi_reset_end(enum ENUM_RESET_STATUS);
 extern uint64_t u8ResetTime;
 extern enum _ENUM_CHIP_RESET_REASON_TYPE_T eResetReason;
 /*******************************************************************************
-*                  F U N C T I O N   D E C L A R A T I O N S
-********************************************************************************
-*/
+ *                  F U N C T I O N   D E C L A R A T I O N S
+ *******************************************************************************
+ */
 #if CFG_WMT_RESET_API_SUPPORT
 extern int mtk_wcn_set_connsys_power_off_flag(int value);
-extern int mtk_wcn_wmt_assert_timeout(enum ENUM_WMTDRV_TYPE type, uint32_t reason, int timeout);
+extern int mtk_wcn_wmt_assert_timeout(enum ENUM_WMTDRV_TYPE
+				      type, uint32_t reason, int timeout);
 extern int mtk_wcn_wmt_do_reset(enum ENUM_WMTDRV_TYPE type);
 #endif
 
-/*----------------------------------------------------------------------------*/
-/* WMT Core Dump Support                                                                */
-/*----------------------------------------------------------------------------*/
+/* WMT Core Dump Support */
 extern u_int8_t mtk_wcn_stp_coredump_start_get(void);
 
 /*******************************************************************************
-*                              F U N C T I O N S
-********************************************************************************
-*/
+ *                              F U N C T I O N S
+ *******************************************************************************
+ */
 void glResetInit(void);
 
 void glResetUninit(void);
@@ -221,8 +226,11 @@ u_int8_t kalIsResetting(void);
 
 u_int8_t glIsWmtCodeDump(void);
 
-u_int8_t glResetTrigger(struct ADAPTER *prAdapter, uint32_t u4RstFlag, const uint8_t *pucFile, uint32_t u4Line);
+u_int8_t glResetTrigger(struct ADAPTER *prAdapter,
+			uint32_t u4RstFlag, const uint8_t *pucFile,
+			uint32_t u4Line);
 
-void glGetRstReason(enum _ENUM_CHIP_RESET_REASON_TYPE_T eReason);
+void glGetRstReason(enum _ENUM_CHIP_RESET_REASON_TYPE_T
+		    eReason);
 
 #endif /* _GL_RST_H */
