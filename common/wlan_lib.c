@@ -12388,3 +12388,57 @@ u_int8_t wlanWfdEnabled(struct ADAPTER *prAdapter)
 	return FALSE;
 }
 
+int wlanChipConfig(struct ADAPTER *prAdapter,
+	char *pcCommand, int i4TotalLen)
+{
+	uint32_t rStatus = WLAN_STATUS_SUCCESS;
+	int32_t i4BytesWritten = 0;
+	uint32_t u4BufLen = 0;
+	uint32_t u2MsgSize = 0;
+	uint32_t u4CmdLen = 0;
+	struct PARAM_CUSTOM_CHIP_CONFIG_STRUCT rChipConfigInfo = {0};
+
+	if (prAdapter == NULL) {
+		DBGLOG(REQ, ERROR, "prAdapter null");
+		return -1;
+	}
+	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
+
+	u4CmdLen = kalStrnLen(pcCommand, i4TotalLen);
+
+	rChipConfigInfo.ucType = CHIP_CONFIG_TYPE_ASCII;
+	rChipConfigInfo.u2MsgSize = u4CmdLen;
+	kalStrnCpy(rChipConfigInfo.aucCmd, pcCommand,
+		   CHIP_CONFIG_RESP_SIZE - 1);
+	rChipConfigInfo.aucCmd[CHIP_CONFIG_RESP_SIZE - 1] = '\0';
+	rStatus = kalIoctl(prAdapter->prGlueInfo, wlanoidQueryChipConfig,
+		&rChipConfigInfo, sizeof(rChipConfigInfo),
+		TRUE, TRUE, TRUE, &u4BufLen);
+
+	if (rStatus != WLAN_STATUS_SUCCESS) {
+		DBGLOG(REQ, ERROR, "%s: kalIoctl ret=%d\n", __func__,
+		       rStatus);
+		return -1;
+	}
+	rChipConfigInfo.aucCmd[CHIP_CONFIG_RESP_SIZE - 1] = '\0';
+
+	/* Check respType */
+	u2MsgSize = rChipConfigInfo.u2MsgSize;
+	DBGLOG(REQ, INFO, "%s: RespTyep  %u\n", __func__,
+	       rChipConfigInfo.ucRespType);
+	DBGLOG(REQ, INFO, "%s: u2MsgSize %u\n", __func__,
+	       rChipConfigInfo.u2MsgSize);
+
+	if (rChipConfigInfo.ucRespType != CHIP_CONFIG_TYPE_ASCII) {
+		DBGLOG(REQ, WARN, "only return as ASCII");
+		return -1;
+	}
+	if (u2MsgSize > sizeof(rChipConfigInfo.aucCmd)) {
+		DBGLOG(REQ, INFO, "%s: u2MsgSize error ret=%u\n",
+		       __func__, rChipConfigInfo.u2MsgSize);
+		return -1;
+	}
+	i4BytesWritten = snprintf(pcCommand, i4TotalLen, "%s",
+		     rChipConfigInfo.aucCmd);
+	return i4BytesWritten;
+}
