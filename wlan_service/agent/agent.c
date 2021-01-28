@@ -3705,7 +3705,8 @@ static s_int32 hqa_set_ru_info(
 	struct test_ru_allocatoin *ru_allocation = NULL;
 	struct test_ru_info *ru_info = NULL;
 
-	len = SERV_OS_NTOHS(hqa_frame->length);
+	len = hqa_frame->length;
+
 	get_param_and_shift_buf(TRUE,
 				   sizeof(u_int32),
 				   &data,
@@ -3725,10 +3726,10 @@ static s_int32 hqa_set_ru_info(
 
 	len /= (seg_sta_cnt[0]+seg_sta_cnt[1]);	/* per ru length */
 	param_cnt = len/sizeof(u_int32);	/* param count */
-	SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_ERROR,
+	SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_TRACE,
 		 ("%s: Band:%d [ru_segment 0]:%d, [ru_segment 1]:%d\n",
 		 __func__, band_idx, seg_sta_cnt[0], seg_sta_cnt[1]));
-	SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_ERROR,
+	SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_TRACE,
 		 ("\t\tparameters count:%d\n", param_cnt));
 
 	mpdu_length = CONFIG_GET_PARAM(serv_test, tx_len, band_idx);
@@ -3820,7 +3821,8 @@ static s_int32 hqa_set_ru_info(
 						   (u_char *)&value);
 			param_loop--;
 			ru_info[sta_seq].alpha = value;
-		}
+		} else
+			ru_info[sta_seq].alpha = 1; /* default value */
 
 		if (param_loop) {
 			get_param_and_shift_buf(TRUE,
@@ -3829,25 +3831,26 @@ static s_int32 hqa_set_ru_info(
 						   (u_char *)&value);
 			param_loop--;
 			ru_info[sta_seq].ru_mu_nss = value;
-		}
+		} else
+			ru_info[sta_seq].ru_mu_nss = 1; /* default value */
 
-		SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_OFF,
+		SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_TRACE,
 			 ("%s: ru_segment[%d][0x%x]: ru_idx:%d\n",
 			 __func__, segment_idx,
 			 ru_info[sta_seq].allocation,
 			 ru_info[sta_seq].ru_index >> 1));
-		SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_OFF,
+		SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_TRACE,
 			 ("\t\t\t\trate:%x, ldpc:%d\n",
 			 ru_info[sta_seq].rate,
 			 ru_info[sta_seq].ldpc));
-		SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_OFF,
+		SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_TRACE,
 			 ("\t\t\t\tnss:%d, mimo nss:%d\n",
 			 ru_info[sta_seq].nss,
 			 ru_info[sta_seq].ru_mu_nss));
-		SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_OFF,
+		SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_TRACE,
 			 ("\t\t\t\t start spatial stream:%d,\n",
 			 ru_info[sta_seq].start_sp_st));
-		SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_OFF,
+		SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_TRACE,
 			 ("\t\t\t\tmpdu length=%d, alpha:%d\n",
 			 ru_info[sta_seq].mpdu_length,
 			 ru_info[sta_seq].alpha));
