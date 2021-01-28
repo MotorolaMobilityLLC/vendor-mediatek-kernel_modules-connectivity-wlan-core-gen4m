@@ -291,6 +291,8 @@ void rlmReqGenerateSupportedChIE(struct ADAPTER *prAdapter,
 	uint8_t ucIdx = 0;
 
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prMsduInfo->ucBssIndex);
+	kalMemZero(&auc2gChannelList[0], sizeof(auc2gChannelList));
+	kalMemZero(&auc5gChannelList[0], sizeof(auc5gChannelList));
 
 	/* We should add supported channels IE in assoc/reassoc request
 	 * if the spectrum management bit is set to 1 in Capability Info
@@ -4997,14 +4999,19 @@ void rlmProcessSpecMgtAction(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb)
 
 			/* Check SAP channel */
 			p2pFuncSwitchSapChannel(prAdapter);
-
-			prBssDesc->ucChannelNum = prBssInfo->ucPrimaryChannel;
-			prBssDesc->eChannelWidth = prBssInfo->
-							ucVhtChannelWidth;
-			prBssDesc->ucCenterFreqS1 = prBssInfo->
-							ucVhtChannelFrequencyS1;
-			prBssDesc->ucCenterFreqS2 = prBssInfo->
-							ucVhtChannelFrequencyS2;
+			if (prBssDesc) {
+				prBssDesc->ucChannelNum =
+						prBssInfo->ucPrimaryChannel;
+				prBssDesc->eChannelWidth =
+						prBssInfo->ucVhtChannelWidth;
+				prBssDesc->ucCenterFreqS1 = prBssInfo->
+					ucVhtChannelFrequencyS1;
+				prBssDesc->ucCenterFreqS2 = prBssInfo->
+					ucVhtChannelFrequencyS2;
+			} else {
+				DBGLOG(RLM, WARN,
+				"[Mgt Action] BssDesc is not found!\n");
+			}
 		}
 		nicUpdateBss(prAdapter, prBssInfo->ucBssIndex);
 		break;
@@ -5413,7 +5420,13 @@ static void rlmOpModeTxDoneHandler(IN struct ADAPTER *prAdapter,
 			pucRelatedOpState =
 				(enum ENUM_OP_NOTIFY_STATE_T *)&prBssInfo
 					->aucOpModeChangeState
-						[ucRelatedFrameType];
+					[ucRelatedFrameType];
+		}
+
+		/* Coverity, should never happen */
+		if ((*pucCurrOpState >= OP_NOTIFY_STATE_NUM) ||
+		(*pucRelatedOpState >= OP_NOTIFY_STATE_NUM)) {
+			return;
 		}
 
 		/* <3.1>handle TX done - SUCCESS */

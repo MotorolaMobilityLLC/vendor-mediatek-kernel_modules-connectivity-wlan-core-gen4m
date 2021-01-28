@@ -132,10 +132,12 @@ void scnFsmSteps(IN struct ADAPTER *prAdapter,
 	prScanParam = &prScanInfo->rScanParam;
 
 	do {
-		log_dbg(SCN, STATE, "[SCAN]TRANSITION: [%s] -> [%s]\n",
-			apucDebugScanState[prScanInfo->eCurrentState],
-			apucDebugScanState[eNextState]);
-
+		/* Coverity */
+		if (prScanInfo->eCurrentState >= 0) {
+			log_dbg(SCN, STATE, "[SCAN]TRANSITION: [%s] -> [%s]\n",
+				apucDebugScanState[prScanInfo->eCurrentState],
+				apucDebugScanState[eNextState]);
+		}
 		/* NOTE(Kevin): This is the only place to change the
 		 * eCurrentState(except initial)
 		 */
