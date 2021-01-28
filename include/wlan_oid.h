@@ -3000,6 +3000,13 @@ wlanoidQueryCalBackupV2(IN struct ADAPTER *prAdapter,
 			OUT uint32_t *pu4QueryInfoLen);
 #endif
 
+#if CFG_SUPPORT_SMART_GEAR
+uint32_t
+wlandioSetSGStatus(IN struct ADAPTER *prAdapter,
+			IN uint8_t ucSGEnable,
+			IN uint8_t ucSGSpcCmd);
+#endif
+
 uint32_t
 wlanoidQueryMcrRead(IN struct ADAPTER *prAdapter,
 		    IN void *pvQueryBuffer,
