@@ -129,7 +129,8 @@ extern struct delayed_work sched_workq;
 #define GLUE_FLAG_MAIN_PROCESS \
 	(GLUE_FLAG_HALT | GLUE_FLAG_SUB_MOD_MULTICAST | \
 	GLUE_FLAG_TX_CMD_DONE | GLUE_FLAG_TXREQ | GLUE_FLAG_TIMEOUT | \
-	GLUE_FLAG_FRAME_FILTER | GLUE_FLAG_OID | GLUE_FLAG_RX)
+	GLUE_FLAG_FRAME_FILTER | GLUE_FLAG_OID | GLUE_FLAG_RX | \
+	GLUE_FLAG_SER_TIMEOUT)
 
 #define GLUE_FLAG_HIF_PROCESS \
 	(GLUE_FLAG_HALT | GLUE_FLAG_INT | GLUE_FLAG_HIF_TX | \
@@ -1340,6 +1341,8 @@ uint32_t kalRandomNumber(void);
 void kalTimeoutHandler(unsigned long arg);
 
 void kalSetEvent(struct GLUE_INFO *pr);
+
+void kalSetSerTimeoutEvent(struct GLUE_INFO *pr);
 
 void kalSetIntEvent(struct GLUE_INFO *pr);
 

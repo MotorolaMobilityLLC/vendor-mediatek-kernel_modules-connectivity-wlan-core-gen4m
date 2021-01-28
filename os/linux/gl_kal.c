@@ -4319,6 +4319,11 @@ int main_thread(void *data)
 #ifdef UT_TEST_MODE
 		testThreadEnd(prGlueInfo->prAdapter);
 #endif
+#if (CFG_SUPPORT_CONNINFRA == 1)
+	if (test_and_clear_bit(GLUE_FLAG_SER_TIMEOUT_BIT,
+			&prGlueInfo->ulFlag))
+		GL_RESET_TRIGGER(prGlueInfo->prAdapter, RST_FLAG_DO_CORE_DUMP);
+#endif
 	}
 
 #if 0
@@ -4905,6 +4910,12 @@ void kalTimeoutHandler(unsigned long arg)
 void kalSetEvent(struct GLUE_INFO *pr)
 {
 	set_bit(GLUE_FLAG_TXREQ_BIT, &pr->ulFlag);
+	wake_up_interruptible(&pr->waitq);
+}
+
+void kalSetSerTimeoutEvent(struct GLUE_INFO *pr)
+{
+	set_bit(GLUE_FLAG_SER_TIMEOUT_BIT, &pr->ulFlag);
 	wake_up_interruptible(&pr->waitq);
 }
 
