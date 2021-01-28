@@ -3042,30 +3042,24 @@ wlanoidSetAddKey(IN struct ADAPTER *prAdapter, IN void *pvSetBuffer,
 		}
 	}
 #if 1
-	DBGLOG_LIMITED(RSN, INFO, "Add key cmd to wlan index %d:",
-	       prCmdKey->ucWlanIndex);
-	DBGLOG_LIMITED(RSN, INFO,
-		"(BSS = %d) " MACSTR "\n", prCmdKey->ucBssIdx,
-	       MAC2STR(prCmdKey->aucPeerAddr));
-	DBGLOG_LIMITED(RSN, INFO,
-		"Tx = %d type = %d Auth = %d\n", prCmdKey->ucTxKey,
-	       prCmdKey->ucKeyType,
-	       prCmdKey->ucIsAuthenticator);
-	DBGLOG_LIMITED(RSN, INFO, "cipher = %d keyid = %d keylen = %d\n",
-	       prCmdKey->ucAlgorithmId, prCmdKey->ucKeyId,
-	       prCmdKey->ucKeyLen);
+	DBGLOG_LIMITED(RSN, INFO, "Add key to wlanIdx %d,BSS=%d," MACSTR
+		       "Tx=%d,type=%d,Auth=%d,cipher=%d,keyid=%d,keylen=%d\n",
+		       prCmdKey->ucWlanIndex, prCmdKey->ucBssIdx,
+		       MAC2STR(prCmdKey->aucPeerAddr), prCmdKey->ucTxKey,
+		       prCmdKey->ucKeyType, prCmdKey->ucIsAuthenticator,
+		       prCmdKey->ucAlgorithmId, prCmdKey->ucKeyId,
+		       prCmdKey->ucKeyLen);
 	DBGLOG_MEM8(RSN, INFO, prCmdKey->aucKeyMaterial, prCmdKey->ucKeyLen);
-	DBGLOG_LIMITED(RSN, INFO, "wepkeyUsed = %d\n",
-	       prBssInfo->wepkeyUsed[prCmdKey->ucKeyId]);
+	DBGLOG_LIMITED(RSN, INFO, "wepkeyUsed=%d,wepkeyWlanIdx=%d\n",
+		       prBssInfo->wepkeyUsed[prCmdKey->ucKeyId],
+		       prBssInfo->wepkeyWlanIdx);
+
 	DBGLOG_LIMITED(RSN, INFO,
-		"wepkeyWlanIdx = %d:", prBssInfo->wepkeyWlanIdx);
-	DBGLOG_LIMITED(RSN, INFO, "ucBMCWlanIndexSUsed = %d\n",
-	       prBssInfo->ucBMCWlanIndexSUsed[prCmdKey->ucKeyId]);
-	DBGLOG_LIMITED(RSN, INFO, "ucBMCWlanIndexS = %d:",
-	       prBssInfo->ucBMCWlanIndexS[prCmdKey->ucKeyId]);
+		       "ucBMCWlanIndexSUsed=%d,ucBMCWlanIndexS=%d\n",
+		       prBssInfo->ucBMCWlanIndexSUsed[prCmdKey->ucKeyId],
+		       prBssInfo->ucBMCWlanIndexS[prCmdKey->ucKeyId]);
 #endif
-	prAisSpecBssInfo->ucKeyAlgorithmId =
-							prCmdKey->ucAlgorithmId;
+	prAisSpecBssInfo->ucKeyAlgorithmId = prCmdKey->ucAlgorithmId;
 	/* insert into prCmdQueue */
 	kalEnqueueCommand(prGlueInfo, (struct QUE_ENTRY *) prCmdInfo);
 	/* wakeup txServiceThread later */

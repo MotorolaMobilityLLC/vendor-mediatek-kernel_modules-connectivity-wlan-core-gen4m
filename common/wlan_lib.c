@@ -10591,7 +10591,7 @@ IN enum ENUM_CHNL_SORT_POLICY ucSortType)
 	}
 
 	for (ucIdx = 0; ucIdx < MAX_CHN_NUM; ++ucIdx) {
-		DBGLOG(SCN, INFO, "[ACS]channel=%d,dirtiness=%d\n",
+		DBGLOG(SCN, TRACE, "[ACS]channel=%d,dirtiness=%d\n",
 		       prChnLoadInfo->rChnRankList[ucIdx].ucChannel,
 		       prChnLoadInfo->rChnRankList[ucIdx].u4Dirtiness);
 	}
