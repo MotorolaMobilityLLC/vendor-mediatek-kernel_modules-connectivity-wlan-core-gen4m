@@ -2123,6 +2123,11 @@ nicUpdateBeaconIETemplate(IN struct ADAPTER *prAdapter,
 		u2CmdBufLen = OFFSET_OF(struct CMD_BEACON_TEMPLATE_UPDATE, aucIE) + u2IELen;
 	} else if (eIeUpdMethod == IE_UPD_METHOD_DELETE_ALL) {
 		u2CmdBufLen = OFFSET_OF(struct CMD_BEACON_TEMPLATE_UPDATE, u2IELen);
+#if CFG_SUPPORT_P2P_GO_OFFLOAD_PROBE_RSP
+	} else if (eIeUpdMethod == IE_UPD_METHOD_UPDATE_PROBE_RSP) {
+		u2CmdBufLen = OFFSET_OF(struct CMD_BEACON_TEMPLATE_UPDATE, aucIE) + u2IELen;
+		DBGLOG(NIC, INFO, "update for probe response offload to firmware\n");
+#endif
 	} else {
 		ASSERT(0);
 		return WLAN_STATUS_FAILURE;

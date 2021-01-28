@@ -705,6 +705,8 @@
 
 #define CFG_SUPPORT_P2P_RSSI_QUERY        0
 
+#define CFG_SUPPORT_P2P_GO_OFFLOAD_PROBE_RSP       0
+
 #define CFG_SHOW_MACADDR_SOURCE     1
 
 #define CFG_SUPPORT_802_11V                    0	/* Support 802.11v Wireless Network Management */

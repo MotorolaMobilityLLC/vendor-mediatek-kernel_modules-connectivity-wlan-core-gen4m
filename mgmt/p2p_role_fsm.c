@@ -2477,6 +2477,13 @@ void p2pRoleFsmRunEventBeaconUpdate(IN struct ADAPTER *prAdapter, IN struct MSG_
 
 		bssUpdateBeaconContent(prAdapter, prRoleP2pFsmInfo->ucBssIndex);
 
+#if CFG_SUPPORT_P2P_GO_OFFLOAD_PROBE_RSP
+		if (p2pFuncProbeRespUpdate(prAdapter,
+			prP2pBssInfo,
+			prBcnUpdateMsg->pucProbeRespIE,
+			prBcnUpdateMsg->u4ProbeRespLen) == WLAN_STATUS_FAILURE)
+			DBGLOG(P2P, ERROR, "Update extra IEs for probe resp fail!\n");
+#endif
 		/* nicPmIndicateBssCreated(prAdapter, NETWORK_TYPE_P2P_INDEX); */
 	}
 error:
