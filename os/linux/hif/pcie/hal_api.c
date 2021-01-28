@@ -301,7 +301,7 @@ BOOLEAN halSetDriverOwn(IN P_ADAPTER_T prAdapter)
 {
 	P_BUS_INFO prBusInfo;
 	BOOLEAN fgStatus = TRUE;
-	UINT_32 i, u4CurrTick;
+	UINT_32 i, u4CurrTick, u4WriteTick, u4WriteTickTemp;
 	BOOLEAN fgTimeout;
 	BOOLEAN fgResult;
 	BOOLEAN fgReady = FALSE;
@@ -318,6 +318,7 @@ BOOLEAN halSetDriverOwn(IN P_ADAPTER_T prAdapter)
 
 	DBGLOG(INIT, INFO, "DRIVER OWN\n");
 
+	u4WriteTick = 0;
 	u4CurrTick = kalGetTimeTick();
 	i = 0;
 
@@ -379,9 +380,11 @@ BOOLEAN halSetDriverOwn(IN P_ADAPTER_T prAdapter)
 			break;
 		}
 
-		if ((i & (LP_OWN_BACK_CLR_OWN_ITERATION - 1)) == 0) {
-			/* Software get LP ownership - per 256 iterations */
+		u4WriteTickTemp = kalGetTimeTick();
+		if ((i == 0) || TIME_AFTER(u4WriteTickTemp, (u4WriteTick + LP_OWN_REQ_CLR_INTERVAL_MS))) {
+			/* Driver get LP ownership per 200 ms, to avoid iteration time not accurate */
 			HAL_LP_OWN_CLR(prAdapter, &fgResult);
+			u4WriteTick = u4WriteTickTemp;
 		}
 
 		/* Delay for LP engine to complete its operation. */
