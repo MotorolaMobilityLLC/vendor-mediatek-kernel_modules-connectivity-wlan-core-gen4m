@@ -925,7 +925,7 @@
 
 
 /*------------------------------------------------------------------------------
- * Advance Control for HW
+ * Direct Control for RF/PHY/BB/MAC for Manual Configuration via command/api
  *------------------------------------------------------------------------------
  */
 #define CFG_SUPPORT_ADVANCE_CONTROL 1
