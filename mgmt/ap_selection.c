@@ -749,6 +749,8 @@ u_int8_t scanApOverload(uint16_t status, uint16_t reason)
 	case STATUS_CODE_ASSOC_DENIED_AP_OVERLOAD:
 	case STATUS_CODE_ASSOC_DENIED_BANDWIDTH:
 	case STATUS_CODE_ASSOC_DENIED_OUTSIDE_STANDARD:
+	case STATUS_CODE_AUTH_TIMEOUT:
+	case STATUS_CODE_ASSOC_TIMEOUT:
 		return TRUE;
 	}
 	switch (reason) {
