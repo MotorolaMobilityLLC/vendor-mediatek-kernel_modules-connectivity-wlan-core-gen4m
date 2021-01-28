@@ -103,6 +103,31 @@
 #define WF_WFDMA_HOST_DMA0_WPDMA_TX_RING17_CTRL0_ADDR \
 			(WF_WFDMA_HOST_DMA0_BASE + 0x410)
 
+/* define PLE/PSE FSM CR here */
+#define WF_PLE_FSM_PEEK_CR_00 (WF_PLE_TOP_BASE + 0x03D0)
+#define WF_PLE_FSM_PEEK_CR_01 (WF_PLE_TOP_BASE + 0x03D4)
+#define WF_PLE_FSM_PEEK_CR_02 (WF_PLE_TOP_BASE + 0x03D8)
+#define WF_PLE_FSM_PEEK_CR_03 (WF_PLE_TOP_BASE + 0x03DC)
+#define WF_PLE_FSM_PEEK_CR_04 (WF_PLE_TOP_BASE + 0x03E0)
+#define WF_PLE_FSM_PEEK_CR_05 (WF_PLE_TOP_BASE + 0x03E4)
+#define WF_PLE_FSM_PEEK_CR_06 (WF_PLE_TOP_BASE + 0x03E8)
+#define WF_PLE_FSM_PEEK_CR_07 (WF_PLE_TOP_BASE + 0x03EC)
+#define WF_PLE_FSM_PEEK_CR_08 (WF_PLE_TOP_BASE + 0x03F0)
+#define WF_PLE_FSM_PEEK_CR_09 (WF_PLE_TOP_BASE + 0x03F4)
+#define WF_PLE_FSM_PEEK_CR_10 (WF_PLE_TOP_BASE + 0x03F8)
+#define WF_PLE_FSM_PEEK_CR_11 (WF_PLE_TOP_BASE + 0x03FC)
+
+#define WF_PSE_FSM_PEEK_CR_00 (WF_PSE_TOP_BASE + 0x03D0)
+#define WF_PSE_FSM_PEEK_CR_01 (WF_PSE_TOP_BASE + 0x03D4)
+#define WF_PSE_FSM_PEEK_CR_02 (WF_PSE_TOP_BASE + 0x03D8)
+#define WF_PSE_FSM_PEEK_CR_03 (WF_PSE_TOP_BASE + 0x03DC)
+#define WF_PSE_FSM_PEEK_CR_04 (WF_PSE_TOP_BASE + 0x03E0)
+#define WF_PSE_FSM_PEEK_CR_05 (WF_PSE_TOP_BASE + 0x03E4)
+#define WF_PSE_FSM_PEEK_CR_06 (WF_PSE_TOP_BASE + 0x03E8)
+#define WF_PSE_FSM_PEEK_CR_07 (WF_PSE_TOP_BASE + 0x03EC)
+#define WF_PSE_FSM_PEEK_CR_08 (WF_PSE_TOP_BASE + 0x03F0)
+#define WF_PSE_FSM_PEEK_CR_09 (WF_PSE_TOP_BASE + 0x03F4)
+
 /*******************************************************************************
  *                             D A T A   T Y P E S
  *******************************************************************************
@@ -323,12 +348,13 @@ void soc3_0_show_ple_info(
 {
 	u_int32_t int_n9_err, int_n9_err1;
 	u_int32_t ple_buf_ctrl, pg_sz, pg_num;
-	u_int32_t ple_stat[25] = {0}, pg_flow_ctrl[8] = {0};
+	u_int32_t ple_stat[25] = {0}, pg_flow_ctrl[10] = {0};
 	u_int32_t sta_pause[6] = {0}, dis_sta_map[6] = {0};
 	u_int32_t fpg_cnt, ffa_cnt, fpg_head, fpg_tail, hif_max_q, hif_min_q;
 	u_int32_t rpg_hif, upg_hif, cpu_max_q, cpu_min_q, rpg_cpu, upg_cpu;
 	u_int32_t i, j;
-
+	u_int32_t ple_peek[12] = {0};
+	u_int32_t ple_mask;
 
 #if 0
 	u_int32_t ple_txcmd_stat;
@@ -336,6 +362,7 @@ void soc3_0_show_ple_info(
 
 	HAL_MCR_RD(prAdapter, WF_PLE_TOP_INT_N9_ERR_STS_ADDR, &int_n9_err);
 	HAL_MCR_RD(prAdapter, WF_PLE_TOP_INT_N9_ERR_STS_1_ADDR, &int_n9_err1);
+	HAL_MCR_RD(prAdapter, WF_PLE_TOP_QUEUE_EMPTY_ADDR, &ple_mask);
 
 	HAL_MCR_RD(prAdapter, WF_PLE_TOP_PBUF_CTRL_ADDR, &ple_buf_ctrl);
 	HAL_MCR_RD(prAdapter, WF_PLE_TOP_QUEUE_EMPTY_ADDR, &ple_stat[0]);
@@ -386,6 +413,11 @@ void soc3_0_show_ple_info(
 		   &pg_flow_ctrl[6]);
 	HAL_MCR_RD(prAdapter, WF_PLE_TOP_HIF_TXCMD_PG_INFO_ADDR,
 		   &pg_flow_ctrl[7]);
+	HAL_MCR_RD(prAdapter, WF_PLE_TOP_PG_HIF_WMTXD_GROUP_ADDR,
+		   &pg_flow_ctrl[8]);
+	HAL_MCR_RD(prAdapter, WF_PLE_TOP_HIF_WMTXD_PG_INFO_ADDR,
+		   &pg_flow_ctrl[9]);
+
 	HAL_MCR_RD(prAdapter, WF_PLE_TOP_DIS_STA_MAP0_ADDR, &dis_sta_map[0]);
 #if 0
 	HAL_MCR_RD(prAdapter, WF_PLE_TOP_DIS_STA_MAP1_ADDR, &dis_sta_map[1]);
@@ -403,15 +435,49 @@ void soc3_0_show_ple_info(
 	HAL_MCR_RD(prAdapter, WF_PLE_TOP_STATION_PAUSE5_ADDR, &sta_pause[5]);
 #endif
 
+	HAL_MCR_RD(prAdapter, WF_PLE_FSM_PEEK_CR_00, &ple_peek[0]);
+	HAL_MCR_RD(prAdapter, WF_PLE_FSM_PEEK_CR_01, &ple_peek[1]);
+	HAL_MCR_RD(prAdapter, WF_PLE_FSM_PEEK_CR_02, &ple_peek[2]);
+	HAL_MCR_RD(prAdapter, WF_PLE_FSM_PEEK_CR_03, &ple_peek[3]);
+	HAL_MCR_RD(prAdapter, WF_PLE_FSM_PEEK_CR_04, &ple_peek[4]);
+	HAL_MCR_RD(prAdapter, WF_PLE_FSM_PEEK_CR_05, &ple_peek[5]);
+	HAL_MCR_RD(prAdapter, WF_PLE_FSM_PEEK_CR_06, &ple_peek[6]);
+	HAL_MCR_RD(prAdapter, WF_PLE_FSM_PEEK_CR_07, &ple_peek[7]);
+	HAL_MCR_RD(prAdapter, WF_PLE_FSM_PEEK_CR_08, &ple_peek[8]);
+	HAL_MCR_RD(prAdapter, WF_PLE_FSM_PEEK_CR_09, &ple_peek[9]);
+	HAL_MCR_RD(prAdapter, WF_PLE_FSM_PEEK_CR_10, &ple_peek[10]);
+	HAL_MCR_RD(prAdapter, WF_PLE_FSM_PEEK_CR_11, &ple_peek[11]);
 
 	/* Error Status Info */
-	DBGLOG(HAL, INFO, "PLE Error Status Info:\n");
+	DBGLOG(HAL, INFO, "PLE Error Status and FSM Info:\n");
 	DBGLOG(HAL, INFO, "\tPLE Error Status(0x%08x): 0x%08x\n",
-			WF_PLE_TOP_INT_N9_ERR_STS_ADDR,
-			int_n9_err);
+			WF_PLE_TOP_INT_N9_ERR_STS_ADDR, int_n9_err);
 	DBGLOG(HAL, INFO, "\tPLE Error 1 Status(0x%08x): 0x%08x\n",
-			WF_PLE_TOP_INT_N9_ERR_STS_1_ADDR,
-			int_n9_err1);
+			WF_PLE_TOP_INT_N9_ERR_STS_1_ADDR, int_n9_err1);
+	DBGLOG(HAL, INFO, "\tPLE FSM_PEEK_00(0x%08x): 0x%08x\n",
+			WF_PLE_FSM_PEEK_CR_00, ple_peek[0]);
+	DBGLOG(HAL, INFO, "\tPLE FSM_PEEK_01(0x%08x): 0x%08x\n",
+			WF_PLE_FSM_PEEK_CR_01, ple_peek[1]);
+	DBGLOG(HAL, INFO, "\tPLE FSM_PEEK_02(0x%08x): 0x%08x\n",
+			WF_PLE_FSM_PEEK_CR_02, ple_peek[2]);
+	DBGLOG(HAL, INFO, "\tPLE FSM_PEEK_03(0x%08x): 0x%08x\n",
+			WF_PLE_FSM_PEEK_CR_03, ple_peek[3]);
+	DBGLOG(HAL, INFO, "\tPLE FSM_PEEK_04(0x%08x): 0x%08x\n",
+			WF_PLE_FSM_PEEK_CR_04, ple_peek[4]);
+	DBGLOG(HAL, INFO, "\tPLE FSM_PEEK_05(0x%08x): 0x%08x\n",
+			WF_PLE_FSM_PEEK_CR_05, ple_peek[5]);
+	DBGLOG(HAL, INFO, "\tPLE FSM_PEEK_06(0x%08x): 0x%08x\n",
+			WF_PLE_FSM_PEEK_CR_06, ple_peek[6]);
+	DBGLOG(HAL, INFO, "\tPLE FSM_PEEK_07(0x%08x): 0x%08x\n",
+			WF_PLE_FSM_PEEK_CR_07, ple_peek[7]);
+	DBGLOG(HAL, INFO, "\tPLE FSM_PEEK_08(0x%08x): 0x%08x\n",
+			WF_PLE_FSM_PEEK_CR_08, ple_peek[8]);
+	DBGLOG(HAL, INFO, "\tPLE FSM_PEEK_09(0x%08x): 0x%08x\n",
+			WF_PLE_FSM_PEEK_CR_09, ple_peek[9]);
+	DBGLOG(HAL, INFO, "\tPLE FSM_PEEK_10(0x%08x): 0x%08x\n",
+			WF_PLE_FSM_PEEK_CR_10, ple_peek[10]);
+	DBGLOG(HAL, INFO, "\tPLE FSM_PEEK_11(0x%08x): 0x%08x\n",
+			WF_PLE_FSM_PEEK_CR_11, ple_peek[11]);
 
 	/* Configuration Info */
 	DBGLOG(HAL, INFO, "PLE Configuration Info:\n");
@@ -430,7 +496,7 @@ void soc3_0_show_ple_info(
 		 WF_PLE_TOP_PBUF_CTRL_TOTAL_PAGE_NUM_SHFT;
 	DBGLOG(HAL, INFO, "\t\tTotal Page=%d pages\n", pg_num);
 
-	/* Page Flow Control */
+	/* Flow-Control: Page Flow Control */
 	DBGLOG(HAL, INFO, "PLE Page Flow Control:\n");
 	DBGLOG(HAL, INFO, "\tFree page counter(0x%08x): 0x%08x\n",
 		WF_PLE_TOP_FREEPG_CNT_ADDR,
@@ -454,6 +520,8 @@ void soc3_0_show_ple_info(
 	DBGLOG(HAL, INFO,
 	       "\t\tThe tail/head page of free page list=0x%03x/0x%03x\n",
 	       fpg_tail, fpg_head);
+
+	/* Flow-Control: Show PLE HIF Group information */
 	DBGLOG(HAL, INFO,
 		"\tReserved page counter of HIF group(0x%08x): 0x%08x\n",
 		WF_PLE_TOP_PG_HIF_GROUP_ADDR,
@@ -478,32 +546,7 @@ void soc3_0_show_ple_info(
 	       "\t\tThe used/reserved pages of HIF group=0x%03x/0x%03x\n",
 	       upg_hif, rpg_hif);
 
-	DBGLOG(HAL, INFO,
-	"\tReserved page counter of HIF_TXCMD group(0x%08x): 0x%08x\n",
-	WF_PLE_TOP_PG_HIF_WMTXD_GROUP_ADDR,
-	pg_flow_ctrl[6]);
-	DBGLOG(HAL, INFO, "\tHIF_TXCMD group page status(0x%08x): 0x%08x\n",
-		WF_PLE_TOP_HIF_WMTXD_PG_INFO_ADDR,
-		pg_flow_ctrl[7]);
-	cpu_min_q = (pg_flow_ctrl[6] &
-		     WF_PLE_TOP_PG_HIF_TXCMD_GROUP_HIF_TXCMD_MIN_QUOTA_MASK) >>
-		    WF_PLE_TOP_PG_HIF_TXCMD_GROUP_HIF_TXCMD_MIN_QUOTA_SHFT;
-	cpu_max_q = (pg_flow_ctrl[6] &
-		     WF_PLE_TOP_PG_HIF_TXCMD_GROUP_HIF_TXCMD_MAX_QUOTA_MASK) >>
-		    WF_PLE_TOP_PG_HIF_TXCMD_GROUP_HIF_TXCMD_MAX_QUOTA_SHFT;
-	DBGLOG(HAL, INFO,
-	       "\t\tThe max/min quota pages of HIF_TXCMD group=0x%03x/0x%03x\n",
-	       cpu_max_q, cpu_min_q);
-	rpg_cpu = (pg_flow_ctrl[7] &
-		   WF_PLE_TOP_HIF_TXCMD_PG_INFO_HIF_TXCMD_SRC_CNT_MASK) >>
-		  WF_PLE_TOP_HIF_TXCMD_PG_INFO_HIF_TXCMD_SRC_CNT_SHFT;
-	upg_cpu = (pg_flow_ctrl[7] &
-		   WF_PLE_TOP_HIF_TXCMD_PG_INFO_HIF_TXCMD_RSV_CNT_MASK) >>
-		  WF_PLE_TOP_HIF_TXCMD_PG_INFO_HIF_TXCMD_RSV_CNT_SHFT;
-	DBGLOG(HAL, INFO,
-	       "\t\tThe used/reserved pages of HIF_TXCMD group=0x%03x/0x%03x\n",
-	       upg_cpu, rpg_cpu);
-
+	/* Flow-Control: Show PLE CPU Group information */
 	DBGLOG(HAL, INFO,
 		"\tReserved page counter of CPU group(0x%08x): 0x%08x\n",
 		WF_PLE_TOP_PG_CPU_GROUP_ADDR,
@@ -528,6 +571,60 @@ void soc3_0_show_ple_info(
 	       "\t\tThe used/reserved pages of CPU group=0x%03x/0x%03x\n",
 	       upg_cpu, rpg_cpu);
 
+	/* Flow-Control: Show PLE WMTXD Group information */
+	DBGLOG(HAL, INFO,
+	"\tReserved page counter of HIF_WMTXD group(0x%08x): 0x%08x\n",
+	WF_PLE_TOP_PG_HIF_WMTXD_GROUP_ADDR,
+	pg_flow_ctrl[8]);
+	DBGLOG(HAL, INFO, "\tHIF_WMTXD group page status(0x%08x): 0x%08x\n",
+		WF_PLE_TOP_HIF_WMTXD_PG_INFO_ADDR,
+		pg_flow_ctrl[9]);
+	cpu_min_q = (pg_flow_ctrl[8] &
+		     WF_PLE_TOP_PG_HIF_WMTXD_GROUP_HIF_WMTXD_MIN_QUOTA_MASK) >>
+		    WF_PLE_TOP_PG_HIF_WMTXD_GROUP_HIF_WMTXD_MIN_QUOTA_SHFT;
+	cpu_max_q = (pg_flow_ctrl[8] &
+		     WF_PLE_TOP_PG_HIF_WMTXD_GROUP_HIF_WMTXD_MAX_QUOTA_MASK) >>
+		    WF_PLE_TOP_PG_HIF_WMTXD_GROUP_HIF_WMTXD_MAX_QUOTA_SHFT;
+	DBGLOG(HAL, INFO,
+	       "\t\tThe max/min quota pages of HIF_WMTXD group=0x%03x/0x%03x\n",
+	       cpu_max_q, cpu_min_q);
+	rpg_cpu = (pg_flow_ctrl[9] &
+		   WF_PLE_TOP_HIF_WMTXD_PG_INFO_HIF_WMTXD_SRC_CNT_MASK) >>
+		  WF_PLE_TOP_HIF_WMTXD_PG_INFO_HIF_WMTXD_SRC_CNT_SHFT;
+	upg_cpu = (pg_flow_ctrl[9] &
+		   WF_PLE_TOP_HIF_WMTXD_PG_INFO_HIF_WMTXD_RSV_CNT_MASK) >>
+		  WF_PLE_TOP_HIF_WMTXD_PG_INFO_HIF_WMTXD_RSV_CNT_SHFT;
+	DBGLOG(HAL, INFO,
+	       "\t\tThe used/reserved pages of HIF_WMTXD group=0x%03x/0x%03x\n",
+	       upg_cpu, rpg_cpu);
+
+	/* Flow-Control: Show PLE TXCMD Group information */
+	DBGLOG(HAL, INFO,
+	"\tReserved page counter of HIF_TXCMD group(0x%08x): 0x%08x\n",
+	WF_PLE_TOP_PG_HIF_TXCMD_GROUP_ADDR,
+	pg_flow_ctrl[6]);
+	DBGLOG(HAL, INFO, "\tHIF_TXCMD group page status(0x%08x): 0x%08x\n",
+		WF_PLE_TOP_HIF_TXCMD_PG_INFO_ADDR,
+		pg_flow_ctrl[7]);
+	cpu_min_q = (pg_flow_ctrl[6] &
+		     WF_PLE_TOP_PG_HIF_TXCMD_GROUP_HIF_TXCMD_MIN_QUOTA_MASK) >>
+		    WF_PLE_TOP_PG_HIF_TXCMD_GROUP_HIF_TXCMD_MIN_QUOTA_SHFT;
+	cpu_max_q = (pg_flow_ctrl[6] &
+		     WF_PLE_TOP_PG_HIF_TXCMD_GROUP_HIF_TXCMD_MAX_QUOTA_MASK) >>
+		    WF_PLE_TOP_PG_HIF_TXCMD_GROUP_HIF_TXCMD_MAX_QUOTA_SHFT;
+	DBGLOG(HAL, INFO,
+	       "\t\tThe max/min quota pages of HIF_TXCMD group=0x%03x/0x%03x\n",
+	       cpu_max_q, cpu_min_q);
+	rpg_cpu = (pg_flow_ctrl[7] &
+		   WF_PLE_TOP_HIF_TXCMD_PG_INFO_HIF_TXCMD_SRC_CNT_MASK) >>
+		  WF_PLE_TOP_HIF_TXCMD_PG_INFO_HIF_TXCMD_SRC_CNT_SHFT;
+	upg_cpu = (pg_flow_ctrl[7] &
+		   WF_PLE_TOP_HIF_TXCMD_PG_INFO_HIF_TXCMD_RSV_CNT_MASK) >>
+		  WF_PLE_TOP_HIF_TXCMD_PG_INFO_HIF_TXCMD_RSV_CNT_SHFT;
+	DBGLOG(HAL, INFO,
+	       "\t\tThe used/reserved pages of HIF_TXCMD group=0x%03x/0x%03x\n",
+	       upg_cpu, rpg_cpu);
+
 	if ((ple_stat[0] & WF_PLE_TOP_QUEUE_EMPTY_ALL_AC_EMPTY_MASK) == 0) {
 		for (j = 0; j < 24; j = j + 6) {
 			if (j % 6 == 0) {
@@ -547,6 +644,12 @@ void soc3_0_show_ple_info(
 		DBGLOG(HAL, INFO, "\n");
 	}
 
+	/* Queue Empty Status */
+	DBGLOG(HAL, INFO, "PLE Queue Empty Status:\n");
+	DBGLOG(HAL, INFO, "\tQUEUE_EMPTY(0x%08x): 0x%08x\n",
+		WF_PLE_TOP_QUEUE_EMPTY_ADDR, ple_mask);
+
+	/* Nonempty Queue Status */
 	DBGLOG(HAL, INFO, "Nonempty Q info:\n");
 
 	for (i = 0; i < 31; i++) {
@@ -714,16 +817,18 @@ void soc3_0_show_pse_info(
 {
 	u_int32_t int_n9_err, int_n9_err1;
 	u_int32_t pse_buf_ctrl, pg_sz, pg_num;
-	u_int32_t pse_stat;
+	u_int32_t pse_stat, pse_stat_mask;
 	u_int32_t fpg_cnt, ffa_cnt, fpg_head, fpg_tail;
 	u_int32_t max_q, min_q, rsv_pg, used_pg;
 	u_int32_t i, group_cnt;
-	u_int32_t group_quota, group_info, freepg_cnt, freepg_head_tail;
+	u_int32_t group_squota, group_info, freepg_cnt, freepg_head_tail;
 	struct pse_group_info *group;
 	char *str;
+	u_int32_t pse_peek[10] = {0};
 
 	HAL_MCR_RD(prAdapter, WF_PSE_TOP_PBUF_CTRL_ADDR, &pse_buf_ctrl);
 	HAL_MCR_RD(prAdapter, WF_PSE_TOP_QUEUE_EMPTY_ADDR, &pse_stat);
+	HAL_MCR_RD(prAdapter, WF_PSE_TOP_QUEUE_EMPTY_MASK_ADDR, &pse_stat_mask);
 	HAL_MCR_RD(prAdapter, WF_PSE_TOP_FREEPG_CNT_ADDR, &freepg_cnt);
 	HAL_MCR_RD(prAdapter, WF_PSE_TOP_FREEPG_HEAD_TAIL_ADDR,
 		   &freepg_head_tail);
@@ -731,15 +836,45 @@ void soc3_0_show_pse_info(
 	HAL_MCR_RD(prAdapter, WF_PSE_TOP_INT_N9_ERR_STS_ADDR, &int_n9_err);
 	HAL_MCR_RD(prAdapter, WF_PSE_TOP_INT_N9_ERR1_STS_ADDR, &int_n9_err1);
 
+	HAL_MCR_RD(prAdapter, WF_PSE_FSM_PEEK_CR_00, &pse_peek[0]);
+	HAL_MCR_RD(prAdapter, WF_PSE_FSM_PEEK_CR_01, &pse_peek[1]);
+	HAL_MCR_RD(prAdapter, WF_PSE_FSM_PEEK_CR_02, &pse_peek[2]);
+	HAL_MCR_RD(prAdapter, WF_PSE_FSM_PEEK_CR_03, &pse_peek[3]);
+	HAL_MCR_RD(prAdapter, WF_PSE_FSM_PEEK_CR_04, &pse_peek[4]);
+	HAL_MCR_RD(prAdapter, WF_PSE_FSM_PEEK_CR_05, &pse_peek[5]);
+	HAL_MCR_RD(prAdapter, WF_PSE_FSM_PEEK_CR_06, &pse_peek[6]);
+	HAL_MCR_RD(prAdapter, WF_PSE_FSM_PEEK_CR_07, &pse_peek[7]);
+	HAL_MCR_RD(prAdapter, WF_PSE_FSM_PEEK_CR_08, &pse_peek[8]);
+	HAL_MCR_RD(prAdapter, WF_PSE_FSM_PEEK_CR_09, &pse_peek[9]);
+
 	/* Error Status Info */
-	DBGLOG(HAL, INFO, "PSE Error Status Info:\n");
+	DBGLOG(HAL, INFO, "PSE Error Status and FSM Info:\n");
 	DBGLOG(HAL, INFO, "\tPSE Error Status(0x%08x): 0x%08x\n",
 			WF_PSE_TOP_INT_N9_ERR_STS_ADDR,
 			int_n9_err);
 	DBGLOG(HAL, INFO, "\tPSE Error 1 Status(0x%08x): 0x%08x\n",
 			WF_PSE_TOP_INT_N9_ERR1_STS_ADDR,
 			int_n9_err1);
-
+	DBGLOG(HAL, INFO, "\tPSE FSM_PEEK_00(0x%08x): 0x%08x\n",
+				WF_PSE_FSM_PEEK_CR_00, pse_peek[0]);
+	DBGLOG(HAL, INFO, "\tPSE FSM_PEEK_01(0x%08x): 0x%08x\n",
+				WF_PSE_FSM_PEEK_CR_01, pse_peek[1]);
+	DBGLOG(HAL, INFO, "\tPSE FSM_PEEK_02(0x%08x): 0x%08x\n",
+				WF_PSE_FSM_PEEK_CR_02, pse_peek[2]);
+	DBGLOG(HAL, INFO, "\tPSE FSM_PEEK_03(0x%08x): 0x%08x\n",
+				WF_PSE_FSM_PEEK_CR_03, pse_peek[3]);
+	DBGLOG(HAL, INFO, "\tPSE FSM_PEEK_04(0x%08x): 0x%08x\n",
+				WF_PSE_FSM_PEEK_CR_04, pse_peek[4]);
+	DBGLOG(HAL, INFO, "\tPSE FSM_PEEK_05(0x%08x): 0x%08x\n",
+				WF_PSE_FSM_PEEK_CR_05, pse_peek[5]);
+	DBGLOG(HAL, INFO, "\tPSE FSM_PEEK_06(0x%08x): 0x%08x\n",
+				WF_PSE_FSM_PEEK_CR_06, pse_peek[6]);
+	DBGLOG(HAL, INFO, "\tPSE FSM_PEEK_07(0x%08x): 0x%08x\n",
+				WF_PSE_FSM_PEEK_CR_07, pse_peek[7]);
+	DBGLOG(HAL, INFO, "\tPSE FSM_PEEK_08(0x%08x): 0x%08x\n",
+				WF_PSE_FSM_PEEK_CR_08, pse_peek[8]);
+	DBGLOG(HAL, INFO, "\tPSE FSM_PEEK_09(0x%08x): 0x%08x\n",
+				WF_PSE_FSM_PEEK_CR_09, pse_peek[9]);
 
 	/* Configuration Info */
 	DBGLOG(HAL, INFO, "PSE Configuration Info:\n");
@@ -815,6 +950,10 @@ void soc3_0_show_pse_info(
 	DBGLOG(HAL, INFO, "\tQUEUE_EMPTY(0x%08x): 0x%08x\n",
 		WF_PSE_TOP_QUEUE_EMPTY_ADDR,
 		pse_stat);
+	DBGLOG(HAL, INFO, "\tQUEUE_EMPTY_MASK(0x%08x): 0x%08x\n",
+		WF_PSE_TOP_QUEUE_EMPTY_MASK_ADDR,
+		pse_stat_mask);
+
 	DBGLOG(HAL, INFO, "\t\tCPU Q0/1/2/3 empty=%d/%d/%d/%d\n",
 	       (pse_stat & WF_PSE_TOP_QUEUE_EMPTY_CPU_Q0_EMPTY_MASK) >>
 		       WF_PSE_TOP_QUEUE_EMPTY_CPU_Q0_EMPTY_SHFT,
@@ -891,8 +1030,9 @@ void soc3_0_show_pse_info(
 	DBGLOG(HAL, INFO, "\t\tRLS Q empty=%d\n",
 	       ((pse_stat & WF_PSE_TOP_QUEUE_EMPTY_RLS_Q_EMTPY_MASK) >>
 		WF_PSE_TOP_QUEUE_EMPTY_RLS_Q_EMTPY_SHFT));
-	DBGLOG(HAL, INFO, "Nonempty Q info:\n");
 
+	/* Nonempty Queue Status */
+	DBGLOG(HAL, INFO, "Nonempty Q info:\n");
 	for (i = 0; i < 31; i++) {
 		if (((pse_stat & (0x1 << i)) >> i) == 0) {
 			uint32_t hfid, tfid, pktcnt, fl_que_ctrl[3] = {0};
