@@ -1555,6 +1555,7 @@ static struct wireless_dev *wlanNetCreate(PVOID pvData, PVOID pvDriverData)
 	UINT_32 i;
 	struct device *prDev;
 	P_NETDEV_PRIVATE_GLUE_INFO prNetDevPrivate = (P_NETDEV_PRIVATE_GLUE_INFO) NULL;
+	struct mt66xx_chip_info *prChipInfo;
 
 	PUCHAR prInfName = NULL;
 
@@ -1581,7 +1582,8 @@ static struct wireless_dev *wlanNetCreate(PVOID pvData, PVOID pvDriverData)
 		goto netcreate_err;
 	}
 
-	prAdapter->chip_info = ((struct mt66xx_hif_driver_data *) pvDriverData)->chip_info;
+	prChipInfo = ((struct mt66xx_hif_driver_data *) pvDriverData)->chip_info;
+	prAdapter->chip_info = prChipInfo;
 	prGlueInfo->prAdapter = prAdapter;
 
 	/* 4 <3> Initialize Glue structure */
@@ -1620,7 +1622,7 @@ static struct wireless_dev *wlanNetCreate(PVOID pvData, PVOID pvDriverData)
 #else
 	*((P_GLUE_INFO_T *) netdev_priv(prGlueInfo->prDevHandler)) = prGlueInfo;
 #endif
-	prGlueInfo->prDevHandler->needed_headroom += NIC_TX_HEAD_ROOM;
+	prGlueInfo->prDevHandler->needed_headroom += NIC_TX_DESC_AND_PADDING_LENGTH + prChipInfo->txd_append_size;
 	prGlueInfo->prDevHandler->netdev_ops = &wlan_netdev_ops;
 #ifdef CONFIG_WIRELESS_EXT
 	prGlueInfo->prDevHandler->wireless_handlers = &wext_handler_def;

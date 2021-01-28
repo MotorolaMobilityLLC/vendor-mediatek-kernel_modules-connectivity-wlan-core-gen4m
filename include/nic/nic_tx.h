@@ -190,10 +190,6 @@
 
 #define NIC_TX_CRITICAL_DATA_TID                7
 
-#define HW_MAC_TX_DESC_APPEND_T_LENGTH          44
-#define NIC_TX_HEAD_ROOM                        (NIC_TX_DESC_LONG_FORMAT_LENGTH + NIC_TX_DESC_PADDING_LENGTH \
-						 + HW_MAC_TX_DESC_APPEND_T_LENGTH)
-
 /*------------------------------------------------------------------------*/
 /* Tx status related information                                          */
 /*------------------------------------------------------------------------*/
@@ -791,16 +787,34 @@ struct _MSDU_INFO_T {
 
 #define MAX_BUF_NUM_PER_PKT	6
 
-typedef struct _HW_MAC_TX_DESC_APPEND_T {
-	UINT_16 u2PktFlags;
-	UINT_16 u2MsduToken;
-	UINT_8 ucBssIndex;
-	UINT_8 aucReserved[2];
-	UINT_8 ucBufNum;
+#define NUM_OF_MSDU_ID_IN_TXD   4
+#define TXD_MAX_BUF_NUM         4
+#define TXD_MSDU_ID_VLD         BIT(15)     /* MSDU valid */
+#define TXD_LEN_AL              BIT(15)     /* A-MSDU last */
+#define TXD_LEN_ML              BIT(14)     /* MSDU last */
 
-	UINT_32 au4BufPtr[MAX_BUF_NUM_PER_PKT];
-	UINT_16 au2BufLen[MAX_BUF_NUM_PER_PKT];
-	UINT_8 aucPktContent[0];
+typedef struct _TXD_PTR_LEN_T {
+	UINT_32 u4Ptr0;
+	UINT_16 u2Len0;         /* Bit15: AL, Bit14: ML */
+	UINT_16 u2Len1;         /* Bit15: AL, Bit14: ML */
+	UINT_32 u4Ptr1;
+} TXD_PTR_LEN_T, *P_TXD_PTR_LEN_T;
+
+typedef union _HW_MAC_TX_DESC_APPEND_T {
+	struct {
+		UINT_16 u2PktFlags;
+		UINT_16 u2MsduToken;
+		UINT_8 ucBssIndex;
+		UINT_8 aucReserved[2];
+		UINT_8 ucBufNum;
+		UINT_32 au4BufPtr[MAX_BUF_NUM_PER_PKT];
+		UINT_16 au2BufLen[MAX_BUF_NUM_PER_PKT];
+	} CR4_APPEND;
+
+	struct {
+		UINT_16 au2MsduId[NUM_OF_MSDU_ID_IN_TXD];   /* Bit15 indicate valid */
+		TXD_PTR_LEN_T arPtrLen[TXD_MAX_BUF_NUM / 2];
+	} CONNAC_APPEND;
 } HW_MAC_TX_DESC_APPEND_T, *P_HW_MAC_TX_DESC_APPEND_T;
 
 /*!A data structure which is identical with HW MAC TX DMA Descriptor */
@@ -1441,9 +1455,9 @@ BOOLEAN nicTxIsMgmtResourceEnough(IN P_ADAPTER_T prAdapter);
 
 UINT_32 nicTxGetFreeCmdCount(IN P_ADAPTER_T prAdapter);
 
-UINT_32 nicTxGetPageCount(IN UINT_32 u4FrameLength, IN BOOLEAN fgIncludeDesc);
+UINT_32 nicTxGetPageCount(IN P_ADAPTER_T prAdapter, IN UINT_32 u4FrameLength, IN BOOLEAN fgIncludeDesc);
 
-UINT_32 nicTxGetCmdPageCount(IN P_CMD_INFO_T prCmdInfo);
+UINT_32 nicTxGetCmdPageCount(IN P_ADAPTER_T prAdapter, IN P_CMD_INFO_T prCmdInfo);
 
 WLAN_STATUS nicTxGenerateDescTemplate(IN P_ADAPTER_T prAdapter, IN P_STA_RECORD_T prStaRec);
 

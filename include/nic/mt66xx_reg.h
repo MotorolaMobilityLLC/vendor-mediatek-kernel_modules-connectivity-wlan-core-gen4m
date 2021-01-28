@@ -946,6 +946,8 @@ struct mt66xx_chip_info {
 	const unsigned int sw_ready_bits;	/* sw_sync0 ready bits */
 	const unsigned int sw_ready_bit_offset;	/* sw_sync0 ready bit offset */
 	const unsigned int patch_addr;	/* patch download start address */
+	const unsigned int is_support_cr4;	/* support CR4 */
+	const unsigned int txd_append_size;	/* hw mac txd append */
 
 	const P_ECO_INFO_T eco_info;	/* chip version table */
 	UINT_8 eco_ver;	/* chip version */

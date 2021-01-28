@@ -1057,6 +1057,7 @@ BOOLEAN kalInitBowDevice(IN P_GLUE_INFO_T prGlueInfo, IN const char *prDevName)
 	P_GL_HIF_INFO_T prHif;
 	PARAM_MAC_ADDRESS rMacAddr;
 	P_NETDEV_PRIVATE_GLUE_INFO prNetDevPriv = (P_NETDEV_PRIVATE_GLUE_INFO) NULL;
+	struct mt66xx_chip_info *prChipInfo;
 
 	ASSERT(prGlueInfo);
 	ASSERT(prGlueInfo->rBowInfo.fgIsRegistered == TRUE);
@@ -1066,6 +1067,8 @@ BOOLEAN kalInitBowDevice(IN P_GLUE_INFO_T prGlueInfo, IN const char *prDevName)
 
 	prHif = &prGlueInfo->rHifInfo;
 	ASSERT(prHif);
+
+	prChipInfo = prGlueInfo->prAdapter->chip_info;
 
 	if (prGlueInfo->rBowInfo.fgIsNetRegistered == FALSE) {
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 18, 0)
@@ -1093,7 +1096,8 @@ BOOLEAN kalInitBowDevice(IN P_GLUE_INFO_T prGlueInfo, IN const char *prDevName)
 			   prGlueInfo->rBowInfo.prDevHandler->dev_addr, ETH_ALEN);
 
 		/* 1.3 register callback functions */
-		prGlueInfo->rBowInfo.prDevHandler->needed_headroom += NIC_TX_HEAD_ROOM;
+		prGlueInfo->rBowInfo.prDevHandler->needed_headroom +=
+			NIC_TX_DESC_AND_PADDING_LENGTH + prChipInfo->txd_append_size;
 		prGlueInfo->rBowInfo.prDevHandler->netdev_ops = &bow_netdev_ops;
 
 #if defined(_HIF_SDIO) && (MTK_WCN_HIF_SDIO == 0)

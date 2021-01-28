@@ -362,7 +362,7 @@ VOID halTxUSBProcessCmdComplete(IN P_ADAPTER_T prAdapter, P_USB_REQ_T prUsbReq)
 	glUsbEnqueueReq(prHifInfo, &prHifInfo->rTxCmdFreeQ, prUsbReq, FALSE);
 
 	u4SentDataSize = urb->actual_length - LEN_USB_UDMA_TX_TERMINATOR;
-	nicTxReleaseResource(prAdapter, TC4_INDEX, nicTxGetPageCount(u4SentDataSize, TRUE), TRUE);
+	nicTxReleaseResource(prAdapter, TC4_INDEX, nicTxGetPageCount(prAdapter, u4SentDataSize, TRUE), TRUE);
 }
 
 VOID halTxCancelSendingCmd(IN P_ADAPTER_T prAdapter, IN P_CMD_INFO_T prCmdInfo)
@@ -638,7 +638,8 @@ VOID halTxUSBProcessMsduDone(IN P_GLUE_INFO_T prGlueInfo, P_USB_REQ_T prUsbReq)
 		g_pfTxDataDoneCb(prGlueInfo, prFreeQueue);
 
 	u4SentDataSize = urb->actual_length - LEN_USB_UDMA_TX_TERMINATOR;
-	nicTxReleaseResource(prGlueInfo->prAdapter, ucTc, nicTxGetPageCount(u4SentDataSize, TRUE), TRUE);
+	nicTxReleaseResource(prGlueInfo->prAdapter, ucTc,
+		nicTxGetPageCount(prGlueInfo->prAdapter, u4SentDataSize, TRUE), TRUE);
 }
 
 VOID halTxUSBProcessDataComplete(IN P_ADAPTER_T prAdapter, P_USB_REQ_T prUsbReq)
@@ -1225,11 +1226,13 @@ VOID halRxProcessMsduReport(IN P_ADAPTER_T prAdapter, IN OUT P_SW_RFB_T prSwRfb)
 
 }
 
-UINT_32 halTxGetPageCount(IN UINT_32 u4FrameLength, IN BOOLEAN fgIncludeDesc)
+UINT_32 halTxGetPageCount(IN P_ADAPTER_T prAdapter, IN UINT_32 u4FrameLength, IN BOOLEAN fgIncludeDesc)
 {
 #if CFG_USB_TX_AGG
+	struct mt66xx_chip_info *prChipInfo = prAdapter->chip_info;
 	UINT_32 u4RequiredBufferSize;
 	UINT_32 u4PageCount;
+	UINT_32 u4TxHeadRoomSize = NIC_TX_DESC_AND_PADDING_LENGTH + prChipInfo->txd_append_size;
 
 	/* Frame Buffer
 	 *  |<--Tx Descriptor-->|<--Tx descriptor padding-->|
@@ -1239,7 +1242,7 @@ UINT_32 halTxGetPageCount(IN UINT_32 u4FrameLength, IN BOOLEAN fgIncludeDesc)
 	if (fgIncludeDesc)
 		u4RequiredBufferSize = u4FrameLength;
 	else
-		u4RequiredBufferSize = NIC_TX_HEAD_ROOM + u4FrameLength;
+		u4RequiredBufferSize = u4TxHeadRoomSize + u4FrameLength;
 
 	u4RequiredBufferSize = ALIGN_4(u4RequiredBufferSize);
 

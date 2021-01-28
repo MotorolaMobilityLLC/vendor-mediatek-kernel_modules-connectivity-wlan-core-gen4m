@@ -101,7 +101,8 @@ UINT_8 p2pDevFsmInit(IN P_ADAPTER_T prAdapter)
 
 		prP2pBssInfo->eBand = BAND_2G4;
 		prP2pBssInfo->eDBDCBand = ENUM_BAND_0;
-		prP2pBssInfo->ucWmmQueSet = DBDC_2G_WMM_INDEX;
+		prP2pBssInfo->ucWmmQueSet =
+			(prAdapter->rWifiVar.ucDbdcMode == DBDC_MODE_DISABLED) ? DBDC_5G_WMM_INDEX : DBDC_2G_WMM_INDEX;
 
 		prP2pBssInfo->ucPhyTypeSet = prAdapter->rWifiVar.ucAvailablePhyTypeSet & PHY_TYPE_SET_802_11GN;
 
