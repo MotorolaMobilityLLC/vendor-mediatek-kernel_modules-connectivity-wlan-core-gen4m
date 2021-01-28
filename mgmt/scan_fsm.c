@@ -86,10 +86,6 @@
  *                            P U B L I C   D A T A
  *******************************************************************************
  */
-uint8_t g_aucScanChannelNum[SCN_SCAN_DONE_PRINT_BUFFER_LENGTH];
-uint8_t g_aucScanChannelIdleTime[SCN_SCAN_DONE_PRINT_BUFFER_LENGTH];
-uint8_t g_aucScanChannelMDRDY[SCN_SCAN_DONE_PRINT_BUFFER_LENGTH];
-uint8_t g_aucScanChannelBeacon[SCN_SCAN_DONE_PRINT_BUFFER_LENGTH];
 
 /*******************************************************************************
  *                           P R I V A T E   D A T A
@@ -375,21 +371,6 @@ void scnSendScanReqV2(IN struct ADAPTER *prAdapter)
 	if (prScanParam->u2IELen)
 		kalMemCopy(prCmdScanReq->aucIE, prScanParam->aucIE,
 			sizeof(uint8_t) * prCmdScanReq->u2IELen);
-
-	log_dbg(SCN, INFO, "ScanReqV2: ScanType=%d,SSIDType=%d,Num=%u,Ext=%u,ChannelType=%d,Num=%d,Ext=%u,Seq=%u,Ver=%u,Dw=%u,Min=%u,Func=0x%X,Mac="
-		MACSTR "\n",
-		prCmdScanReq->ucScanType,
-		prCmdScanReq->ucSSIDType,
-		prCmdScanReq->ucSSIDNum,
-		prCmdScanReq->ucSSIDExtNum,
-		prCmdScanReq->ucChannelType,
-		prCmdScanReq->ucChannelListNum,
-		prCmdScanReq->ucChannelListExtNum,
-		prCmdScanReq->ucSeqNum, prCmdScanReq->auVersion[0],
-		prCmdScanReq->u2ChannelDwellTime,
-		prCmdScanReq->u2ChannelMinDwellTime,
-		prCmdScanReq->ucScnFuncMask,
-		prCmdScanReq->aucRandomMac);
 
 	scanLogCacheFlushAll(&(prScanInfo->rScanLogCache),
 		LOG_SCAN_REQ_D2F, SCAN_LOG_MSG_MAX_LEN);
@@ -805,18 +786,10 @@ void scnEventScanDone(IN struct ADAPTER *prAdapter,
 {
 	struct SCAN_INFO *prScanInfo;
 	struct SCAN_PARAM *prScanParam;
-	uint32_t u4ChCnt;
-	uint32_t u4PrintfIdx = 0;
+	uint32_t u4ChCnt = 0;
 
 	prScanInfo = &(prAdapter->rWifiVar.rScanInfo);
 	prScanParam = &prScanInfo->rScanParam;
-
-#define __LOCAL_VAR__ SCN_SCAN_DONE_PRINT_BUFFER_LENGTH
-	kalMemZero(g_aucScanChannelNum, __LOCAL_VAR__);
-	kalMemZero(g_aucScanChannelIdleTime, __LOCAL_VAR__);
-	kalMemZero(g_aucScanChannelMDRDY, __LOCAL_VAR__);
-	kalMemZero(g_aucScanChannelBeacon, __LOCAL_VAR__);
-#undef __LOCAL_VAR__
 
 	if (fgIsNewVersion) {
 		scanlog_dbg(LOG_SCAN_DONE_F2D, INFO, "scnEventScanDone Version%u!size of ScanDone%zu,ucCompleteChanCount[%u],ucCurrentState%u, u4ScanDurBcnCnt[%u],Seq[%u]\n",
@@ -845,75 +818,42 @@ void scnEventScanDone(IN struct ADAPTER *prAdapter,
 
 	/* buffer empty channel information */
 	if (prScanDone->ucSparseChannelValid) {
+		int num = 0;
+		char strbuf[SCN_SCAN_DONE_PRINT_BUFFER_LENGTH];
+
 		prScanInfo->fgIsSparseChannelValid = TRUE;
 		prScanInfo->rSparseChannel.eBand
 			= (enum ENUM_BAND) prScanDone->rSparseChannel.ucBand;
 		prScanInfo->rSparseChannel.ucChannelNum
 			= prScanDone->rSparseChannel.ucChannelNum;
-		prScanInfo->ucSparseChannelArrayValidNum
+		num = prScanInfo->ucSparseChannelArrayValidNum
 			= prScanDone->ucSparseChannelArrayValidNum;
 		log_dbg(SCN, INFO, "Country Code = %c%c, Detected_Channel_Num = %d\n",
 			((prAdapter->rWifiVar.rConnSettings
 				.u2CountryCode & 0xff00) >> 8),
 			(prAdapter->rWifiVar.rConnSettings
-				.u2CountryCode & 0x00ff),
-			prScanInfo->ucSparseChannelArrayValidNum);
+				.u2CountryCode & 0x00ff), num);
 
-		for (u4ChCnt = 0; u4ChCnt < prScanInfo
-			->ucSparseChannelArrayValidNum; u4ChCnt++) {
-			prScanInfo->aucChannelNum[u4ChCnt]
-				= prScanDone->aucChannelNum[u4ChCnt];
-			prScanInfo->au2ChannelIdleTime[u4ChCnt]
-				= prScanDone->au2ChannelIdleTime[u4ChCnt];
-			prScanInfo->aucChannelMDRDYCnt[u4ChCnt]
-				= prScanDone->aucChannelMDRDYCnt[u4ChCnt];
-			prScanInfo->aucChannelBAndPCnt[u4ChCnt]
-				= prScanDone->aucChannelBAndPCnt[u4ChCnt];
+#define print_info(_Mod, _Clz, _Fmt, var) \
+		do { \
+			int written = 0; \
+		    int totalLen = SCN_SCAN_DONE_PRINT_BUFFER_LENGTH; \
+			for (u4ChCnt = 0; u4ChCnt < num; u4ChCnt++) { \
+				prScanInfo->var[u4ChCnt] \
+					= prScanDone->var[u4ChCnt]; \
+				written += kalSnprintf(strbuf + written, \
+					totalLen - written, "%7d", \
+					prScanInfo->var[u4ChCnt]); \
+			} \
+			log_dbg(_Mod, _Clz, _Fmt, strbuf); \
+		} while (0)
 
-			if (u4PrintfIdx % 10 == 0 && u4PrintfIdx != 0) {
-				log_fw_dbg(SCN, INFO, "Channel  : %s\n",
-					g_aucScanChannelNum);
-				log_fw_dbg(SCN, LOUD, "IdleTime : %s\n",
-					g_aucScanChannelIdleTime);
-				log_fw_dbg(SCN, LOUD, "MdrdyCnt : %s\n",
-					g_aucScanChannelMDRDY);
-				log_fw_dbg(SCN, INFO, "BAndPCnt : %s\n",
-					g_aucScanChannelBeacon);
-				log_fw_dbg(SCN, INFO, "==================================================================================\n");
+		print_info(SCN, INFO, "Channel  : %s\n", aucChannelNum);
+		print_info(SCN, LOUD, "IdleTime : %s\n", au2ChannelIdleTime);
+		print_info(SCN, LOUD, "MdrdyCnt : %s\n", aucChannelMDRDYCnt);
+		print_info(SCN, INFO, "BAndPCnt : %s\n", aucChannelBAndPCnt);
 
-#define __LOCAL_VAR__ SCN_SCAN_DONE_PRINT_BUFFER_LENGTH
-				kalMemZero(g_aucScanChannelNum, __LOCAL_VAR__);
-				kalMemZero(g_aucScanChannelIdleTime,
-					__LOCAL_VAR__);
-				kalMemZero(g_aucScanChannelMDRDY,
-					__LOCAL_VAR__);
-				kalMemZero(g_aucScanChannelBeacon,
-					__LOCAL_VAR__);
-#undef __LOCAL_VAR__
-				u4PrintfIdx = 0;
-			}
-			kalSprintf(g_aucScanChannelNum + u4PrintfIdx*7, "%7d",
-				prScanInfo->aucChannelNum[u4ChCnt]);
-			kalSprintf(g_aucScanChannelIdleTime
-				+ u4PrintfIdx*7, "%7d",
-				prScanInfo->au2ChannelIdleTime[u4ChCnt]);
-			kalSprintf(g_aucScanChannelMDRDY
-				+ u4PrintfIdx*7, "%7d",
-				prScanInfo->aucChannelMDRDYCnt[u4ChCnt]);
-			kalSprintf(g_aucScanChannelBeacon
-				+ u4PrintfIdx*7, "%7d",
-				prScanInfo->aucChannelBAndPCnt[u4ChCnt]);
-			u4PrintfIdx++;
-		}
-
-		log_fw_dbg(SCN, INFO, "Channel  : %s\n",
-			g_aucScanChannelNum);
-		log_fw_dbg(SCN, LOUD, "IdleTime : %s\n",
-			g_aucScanChannelIdleTime);
-		log_fw_dbg(SCN, LOUD, "MdrdyCnt : %s\n",
-			g_aucScanChannelMDRDY);
-		log_fw_dbg(SCN, INFO, "BAndPCnt : %s\n",
-			g_aucScanChannelBeacon);
+#undef	print_scan_info
 	} else {
 		prScanInfo->fgIsSparseChannelValid = FALSE;
 	}
