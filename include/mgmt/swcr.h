@@ -50,12 +50,13 @@
  *
  *****************************************************************************/
 /*
-** Id: //Department/DaVinci/BRANCHES/MT6620_WIFI_DRIVER_V2_3/include/mgmt/swcr.h#1
-*/
+ ** Id: //Department/DaVinci/BRANCHES/
+ *      MT6620_WIFI_DRIVER_V2_3/include/mgmt/swcr.h#1
+ */
 
 /*! \file   "swcr.h"
-*    \brief
-*/
+ *    \brief
+ */
 
 /*
  *
@@ -67,19 +68,19 @@
 #include "nic_cmd_event.h"
 
 /*******************************************************************************
-*                         C O M P I L E R   F L A G S
-********************************************************************************
-*/
+ *                         C O M P I L E R   F L A G S
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                    E X T E R N A L   R E F E R E N C E S
-********************************************************************************
-*/
+ *                    E X T E R N A L   R E F E R E N C E S
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                              C O N S T A N T S
-********************************************************************************
-*/
+ *                              C O N S T A N T S
+ *******************************************************************************
+ */
 #define TEST_PS 1
 
 #define SWCR_VAR(x) ((void *)&x)
@@ -106,8 +107,11 @@ do { \
 
 extern uint32_t g_au4SwCr[];	/*: 0: command other: data */
 
-typedef void(*PFN_SWCR_RW_T) (struct ADAPTER *prAdapter, uint8_t ucRead, uint16_t u2Addr, uint32_t *pu4Data);
-typedef void(*PFN_CMD_RW_T) (struct ADAPTER *prAdapter, uint8_t ucCate, uint8_t ucAction, uint8_t ucOpt0, uint8_t ucOpt1);
+typedef void(*PFN_SWCR_RW_T) (struct ADAPTER *prAdapter,
+	uint8_t ucRead, uint16_t u2Addr, uint32_t *pu4Data);
+typedef void(*PFN_CMD_RW_T) (struct ADAPTER *prAdapter,
+			     uint8_t ucCate, uint8_t ucAction, uint8_t ucOpt0,
+			     uint8_t ucOpt1);
 
 struct SWCR_MAP_ENTRY {
 	uint16_t u2Type;
@@ -186,62 +190,80 @@ enum ENUM_SWCR_DBG_ALL {
 };
 
 /*******************************************************************************
-*                             D A T A   T Y P E S
-********************************************************************************
-*/
+ *                             D A T A   T Y P E S
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                            P U B L I C   D A T A
-********************************************************************************
-*/
+ *                            P U B L I C   D A T A
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                           P R I V A T E   D A T A
-********************************************************************************
-*/
+ *                           P R I V A T E   D A T A
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                                 M A C R O S
-********************************************************************************
-*/
+ *                                 M A C R O S
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                   F U N C T I O N   D E C L A R A T I O N S
-********************************************************************************
-*/
+ *                   F U N C T I O N   D E C L A R A T I O N S
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                              F U N C T I O N S
-********************************************************************************
-*/
+ *                              F U N C T I O N S
+ *******************************************************************************
+ */
 
-void swCrReadWriteCmd(struct ADAPTER *prAdapter, uint8_t ucRead, uint16_t u2Addr, uint32_t *pu4Data);
+void swCrReadWriteCmd(struct ADAPTER *prAdapter,
+		      uint8_t ucRead, uint16_t u2Addr, uint32_t *pu4Data);
 
 /* Debug Support */
-void swCrFrameCheckEnable(struct ADAPTER *prAdapter, uint32_t u4DumpType);
+void swCrFrameCheckEnable(struct ADAPTER *prAdapter,
+			  uint32_t u4DumpType);
 void swCrDebugInit(struct ADAPTER *prAdapter);
-void swCrDebugCheckEnable(struct ADAPTER *prAdapter, u_int8_t fgIsEnable, uint8_t ucType, uint32_t u4Timeout);
+void swCrDebugCheckEnable(struct ADAPTER *prAdapter,
+	u_int8_t fgIsEnable, uint8_t ucType, uint32_t u4Timeout);
 void swCrDebugUninit(struct ADAPTER *prAdapter);
 
 #if CFG_SUPPORT_SWCR
-void swCtrlCmdCategory0(struct ADAPTER *prAdapter, uint8_t ucCate, uint8_t ucAction, uint8_t ucOpt0, uint8_t ucOpt1);
-void swCtrlCmdCategory1(struct ADAPTER *prAdapter, uint8_t ucCate, uint8_t ucAction, uint8_t ucOpt0, uint8_t ucOpt1);
+void swCtrlCmdCategory0(struct ADAPTER *prAdapter,
+			uint8_t ucCate, uint8_t ucAction, uint8_t ucOpt0,
+			uint8_t ucOpt1);
+void swCtrlCmdCategory1(struct ADAPTER *prAdapter,
+			uint8_t ucCate, uint8_t ucAction, uint8_t ucOpt0,
+			uint8_t ucOpt1);
 #if TEST_PS
-void testPsCmdCategory0(struct ADAPTER *prAdapter, uint8_t ucCate, uint8_t ucAction, uint8_t ucOpt0, uint8_t ucOpt1);
-void testPsCmdCategory1(struct ADAPTER *prAdapter, uint8_t ucCate, uint8_t ucAction, uint8_t ucOpt0, uint8_t ucOpt1);
+void testPsCmdCategory0(struct ADAPTER *prAdapter,
+			uint8_t ucCate, uint8_t ucAction, uint8_t ucOpt0,
+			uint8_t ucOpt1);
+void testPsCmdCategory1(struct ADAPTER *prAdapter,
+			uint8_t ucCate, uint8_t ucAction, uint8_t ucOpt0,
+			uint8_t ucOpt1);
 #endif
 #if CFG_SUPPORT_802_11V
 #if (CFG_SUPPORT_802_11V_TIMING_MEASUREMENT == 1) && (WNM_UNIT_TEST == 1)
-void testWNMCmdCategory0(struct ADAPTER *prAdapter, uint8_t ucCate, uint8_t ucAction, uint8_t ucOpt0, uint8_t ucOpt1);
+void testWNMCmdCategory0(struct ADAPTER *prAdapter,
+			 uint8_t ucCate, uint8_t ucAction, uint8_t ucOpt0,
+			 uint8_t ucOpt1);
 #endif
 #endif
-void swCtrlSwCr(struct ADAPTER *prAdapter, uint8_t ucRead, uint16_t u2Addr, uint32_t *pu4Data);
+void swCtrlSwCr(struct ADAPTER *prAdapter, uint8_t ucRead,
+		uint16_t u2Addr, uint32_t *pu4Data);
 
 /* Support Debug */
-void swCrDebugCheck(struct ADAPTER *prAdapter, struct CMD_SW_DBG_CTRL *prCmdSwCtrl);
-void swCrDebugCheckTimeout(IN struct ADAPTER *prAdapter, unsigned long ulParamPtr);
-void swCrDebugQuery(IN struct ADAPTER *prAdapter, IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf);
-void swCrDebugQueryTimeout(IN struct ADAPTER *prAdapter, IN struct CMD_INFO *prCmdInfo);
+void swCrDebugCheck(struct ADAPTER *prAdapter,
+		    struct CMD_SW_DBG_CTRL *prCmdSwCtrl);
+void swCrDebugCheckTimeout(IN struct ADAPTER *prAdapter,
+			   unsigned long ulParamPtr);
+void swCrDebugQuery(IN struct ADAPTER *prAdapter,
+		    IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf);
+void swCrDebugQueryTimeout(IN struct ADAPTER *prAdapter,
+			   IN struct CMD_INFO *prCmdInfo);
 #endif
 
 #endif
