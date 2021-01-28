@@ -1114,9 +1114,10 @@ int soc3_0_Trigger_fw_assert(void)
 	int value;
 	uint32_t waitRet = 0;
 
-	ret = soc3_0_CheckBusHang(FALSE);
+	ret = soc3_0_CheckBusHang(TRUE);
 
 	if (ret != 0) {
+		DBGLOG(INIT, INFO, "Do nothing due to bus hang.\n");
 		g_IsWfsysBusHang = TRUE;
 		return ret;
 	} else {
@@ -1549,12 +1550,15 @@ int soc3_0_CheckBusHang(uint8_t ucWfResetEnable)
 			(conninfra_hang_ret != CONNINFRA_AP2CONN_CLK_ERR))
 			soc3_0_DumpHostCr();
 
-		if (conninfra_reset)
+		if (conninfra_reset) {
+			g_IsWfsysBusHang = TRUE;
 			conninfra_trigger_whole_chip_rst(CONNDRV_TYPE_WIFI,
 				"bus hang");
-		else if (ucWfResetEnable)
+		} else if (ucWfResetEnable) {
+			g_IsWfsysBusHang = TRUE;
 			conninfra_trigger_whole_chip_rst(CONNDRV_TYPE_WIFI,
 				"wifi bus hang");
+		}
 	}
 
 	return ret;
