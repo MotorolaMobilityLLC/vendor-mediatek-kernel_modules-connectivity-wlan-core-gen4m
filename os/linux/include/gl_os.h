@@ -324,7 +324,10 @@ extern void wifi_fwlog_event_func_register(wifi_fwlog_event_func_cb pfFwlog);
 #define GLUE_FLAG_HIF_PRT_HIF_DBG_INFO_BIT	(16)
 #define GLUE_FLAG_UPDATE_WMM_QUOTA			(17)
 #endif
-
+#if (CFG_SUPPORT_CONNINFRA == 1)
+#define GLUE_FLAG_RST_START BIT(18)
+#define GLUE_FLAG_RST_START_BIT 18
+#endif
 #define GLUE_BOW_KFIFO_DEPTH        (1024)
 /* #define GLUE_BOW_DEVICE_NAME        "MT6620 802.11 AMP" */
 #define GLUE_BOW_DEVICE_NAME        "ampc0"

@@ -76,16 +76,27 @@
  *******************************************************************************
  */
 #if CFG_MTK_ANDROID_WMT
+#if (CFG_SUPPORT_CONNINFRA == 0)
 struct MTK_WCN_WMT_WLAN_CB_INFO;
 extern int mtk_wcn_wmt_wlan_reg(
 	struct MTK_WCN_WMT_WLAN_CB_INFO *pWmtWlanCbInfo);
 extern int mtk_wcn_wmt_wlan_unreg(void);
 extern int mtk_wcn_consys_hw_wifi_paldo_ctrl(unsigned int enable);
-#endif
+#else
+struct MTK_WCN_WLAN_CB_INFO;
+extern int mtk_wcn_wlan_reg(
+	struct MTK_WCN_WLAN_CB_INFO *pWlanCbInfo);
+extern int mtk_wcn_wlan_unreg(void);
+#endif /*end of CFG_SUPPORT_CONNINFRA == 0*/
+#endif /*end of CFG_MTK_ANDROID_WMT */
 
 extern phys_addr_t gWifiRsvMemPhyBase;
 extern unsigned long long gWifiRsvMemSize;
-
+#if (CFG_SUPPORT_CONNINFRA == 1)
+extern wait_queue_head_t g_waitq_rst;
+extern unsigned long g_ulFlag;
+extern KAL_WAKE_LOCK_T g_IntrWakeLock;
+#endif
 /*******************************************************************************
  *                              C O N S T A N T S
  *******************************************************************************
@@ -166,6 +177,9 @@ struct GL_HIF_INFO {
 	struct HIF_MEM_OPS rMemOps;
 
 	uint32_t u4IrqId;
+#if (CFG_SUPPORT_CONNINFRA == 1)
+	uint32_t u4IrqId_1;
+#endif
 	int32_t u4HifCnt;
 
 	/* AXI MMIO Base Address, all access will use */
@@ -316,6 +330,7 @@ struct HIF_PREALLOC_MEM {
 };
 
 #if CFG_MTK_ANDROID_WMT
+#if (CFG_SUPPORT_CONNINFRA == 0)
 struct MTK_WCN_WMT_WLAN_CB_INFO {
 	int (*wlan_probe_cb)(void);
 	int (*wlan_remove_cb)(void);
@@ -324,7 +339,14 @@ struct MTK_WCN_WMT_WLAN_CB_INFO {
 	int (*wlan_emi_mpu_set_protection_cb)(bool);
 	int (*wlan_is_wifi_drv_own_cb)(void);
 };
-#endif
+#else
+struct MTK_WCN_WLAN_CB_INFO {
+	int (*wlan_probe_cb)(void);
+	int (*wlan_remove_cb)(void);
+};
+
+#endif /*end of CFG_SUPPORT_CONNINFRA == 0*/
+#endif /*end of CFG_MTK_ANDROID_WMT */
 
 /*******************************************************************************
  *                            P U B L I C   D A T A
