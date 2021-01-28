@@ -155,6 +155,7 @@ extern struct platform_device *g_prPlatDev;
 #if (CFG_SUPPORT_CONNINFRA == 1)
 extern u_int8_t g_IsConninfraBusHang;
 extern u_int8_t g_IsWfsysBusHang;
+extern struct completion g_triggerComp;
 #endif
 /*******************************************************************************
 *                           P R I V A T E   D A T A
