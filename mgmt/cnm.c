@@ -435,6 +435,8 @@ VOID cnmRadarDetectEvent(IN P_ADAPTER_T prAdapter, IN P_WIFI_EVENT_T prEvent)
 		}
 	}
 
+	p2pFuncRadarInfoInit();
+
 	g_rP2pRadarInfo.ucRadarReportMode = prEventBody->ucRadarReportMode;
 	g_rP2pRadarInfo.ucRddIdx = prEventBody->ucRddIdx;
 	g_rP2pRadarInfo.ucLongDetected = prEventBody->ucLongDetected;
@@ -447,7 +449,7 @@ VOID cnmRadarDetectEvent(IN P_ADAPTER_T prAdapter, IN P_WIFI_EVENT_T prEvent)
 	g_rP2pRadarInfo.ucPRICountM1TH = prEventBody->ucPRICountM1TH;
 	g_rP2pRadarInfo.ucPRICountM2 = prEventBody->ucPRICountM2;
 	g_rP2pRadarInfo.ucPRICountM2TH = prEventBody->ucPRICountM2TH;
-	g_rP2pRadarInfo.u4PRI1st = prEventBody->u4PRI1st;
+	g_rP2pRadarInfo.u4PRI1stUs = prEventBody->u4PRI1stUs;
 	kalMemCopy(&g_rP2pRadarInfo.arLpbContent[0], &prEventBody->arLpbContent[0],
 				prEventBody->ucLPBNum*sizeof(LONG_PULSE_BUFFER_T));
 	kalMemCopy(&g_rP2pRadarInfo.arPpbContent[0], &prEventBody->arPpbContent[0],
