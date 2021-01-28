@@ -1896,6 +1896,9 @@ int32_t connac2x_show_stat_info(
 	uint32_t u4BufLen = 0;
 	uint8_t ucRaTableNum = sizeof(RATE_TBLE) / sizeof(char *);
 	uint8_t ucRaStatusNum = sizeof(RA_STATUS_TBLE) / sizeof(char *);
+	uint8_t ucBssIndex = AIS_DEFAULT_INDEX;
+	struct PARAM_LINK_SPEED_EX rLinkSpeed;
+
 #if 0
 	uint8_t ucRaLtModeNum = sizeof(LT_MODE_TBLE) / sizeof(char *);
 	uint8_t ucRaSgiUnSpStateNum = sizeof(SGI_UNSP_STATE_TBLE) /
@@ -2128,12 +2131,20 @@ int32_t connac2x_show_stat_info(
 			"%s", "----- Last Rx Info (Group 0x04) -----\n");
 
 		/* get Beacon RSSI */
-		rStatus = kalIoctl(prAdapter->prGlueInfo,
-				   wlanoidQueryRssi, &rRssi,
-				   sizeof(rRssi), TRUE, TRUE, TRUE,
-				   &u4BufLen);
+		ucBssIndex = secGetBssIdxByWlanIdx
+			(prAdapter, (uint8_t)(prHwWlanInfo->u4Index));
+
+		rStatus = kalIoctlByBssIdx(prAdapter->prGlueInfo,
+				   wlanoidQueryRssi,
+				   &rLinkSpeed, sizeof(rLinkSpeed),
+				   TRUE, TRUE, TRUE,
+				   &u4BufLen, ucBssIndex);
+
 		if (rStatus != WLAN_STATUS_SUCCESS)
 			DBGLOG(REQ, WARN, "unable to retrieve rssi\n");
+
+		if (IS_BSS_INDEX_VALID(ucBssIndex))
+			rRssi = rLinkSpeed.rLq[ucBssIndex].cRssi;
 
 		rSwCtrlInfo.u4Data = 0;
 		rSwCtrlInfo.u4Id = CMD_SW_DBGCTL_ADVCTL_GET_ID + 1;
