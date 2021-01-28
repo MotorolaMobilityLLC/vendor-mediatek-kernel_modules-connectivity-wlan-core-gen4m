@@ -980,6 +980,78 @@ nla_put_failure:
 	return i4Status;
 }
 
+int mtk_cfg80211_vendor_get_version(struct wiphy *wiphy,
+				    struct wireless_dev *wdev,
+				    const void *data, int data_len)
+{
+#define STR_HELPER(x) #x
+#define STR(x) STR_HELPER(x)
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct sk_buff *skb = NULL;
+	struct nlattr *attrlist = NULL;
+	char aucVersionBuf[256];
+	uint16_t u2CopySize = 0;
+	uint16_t u2Len = 0;
+
+	ASSERT(wiphy);
+	ASSERT(wdev);
+
+	if ((data == NULL) || !data_len)
+		return -ENOMEM;
+
+	kalMemZero(aucVersionBuf, 256);
+	attrlist = (struct nlattr *)((uint8_t *) data);
+	if (attrlist->nla_type == LOGGER_ATTRIBUTE_DRIVER_VER) {
+		char aucDriverVersionStr[] = STR(NIC_DRIVER_MAJOR_VERSION) "_"
+					     STR(NIC_DRIVER_MINOR_VERSION) "_"
+					     STR(NIC_DRIVER_SERIAL_VERSION) "-"
+					     DRIVER_BUILD_DATE;
+
+		u2Len = kalStrLen(aucDriverVersionStr);
+		DBGLOG(REQ, INFO, "Get driver version len: %d\n", u2Len);
+		u2CopySize = (u2Len >= 256) ? 255 : u2Len;
+		if (u2CopySize > 0)
+			kalMemCopy(aucVersionBuf, &aucDriverVersionStr[0],
+				u2CopySize);
+	} else if (attrlist->nla_type == LOGGER_ATTRIBUTE_FW_VER) {
+		struct ADAPTER *prAdapter;
+
+		prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wiphy);
+		ASSERT(prGlueInfo);
+		prAdapter = prGlueInfo->prAdapter;
+		if (prAdapter) {
+			u2Len = kalStrLen(
+					prAdapter->rVerInfo.aucReleaseManifest);
+			DBGLOG(REQ, INFO,
+				"Get FW manifest version len: %d\n", u2Len);
+			u2CopySize = (u2Len >= 256) ? 255 : u2Len;
+			if (u2CopySize > 0)
+				kalMemCopy(aucVersionBuf,
+					prAdapter->rVerInfo.aucReleaseManifest,
+					u2CopySize);
+		}
+	}
+
+	if (u2CopySize <= 0)
+		return -EFAULT;
+
+	skb = cfg80211_vendor_cmd_alloc_reply_skb(wiphy, u2CopySize);
+	if (!skb) {
+		DBGLOG(REQ, ERROR, "Allocate skb failed\n");
+		return -ENOMEM;
+	}
+
+	DBGLOG(REQ, INFO, "Get version(%d)=[%s]\n", u2CopySize, aucVersionBuf);
+	if (unlikely(nla_put_nohdr(skb, u2CopySize, &aucVersionBuf[0]) < 0))
+		goto nla_put_failure;
+
+	return cfg80211_vendor_cmd_reply(skb);
+
+nla_put_failure:
+	kfree_skb(skb);
+	return -EFAULT;
+}
+
 int mtk_cfg80211_vendor_event_rssi_beyond_range(
 	struct wiphy *wiphy, struct wireless_dev *wdev, int rssi)
 {
