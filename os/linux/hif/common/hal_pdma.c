@@ -1433,9 +1433,18 @@ bool halWpdmaAllocTxRing(struct GLUE_INFO *prGlueInfo, uint32_t u4Num,
 		RingBasePa += u4DescSize;
 		RingBaseVa += u4DescSize;
 
-		if (fgAllocMem && prMemOps->allocTxCmdBuf)
-			prMemOps->allocTxCmdBuf(&prTxCell->DmaBuf,
+		if (fgAllocMem && prMemOps->allocTxCmdBuf) {
+			bool ret;
+
+			ret = prMemOps->allocTxCmdBuf(&prTxCell->DmaBuf,
 						u4Num, u4Idx);
+			if (ret == false) {
+				DBGLOG(HAL, ERROR,
+					"TxRing[%u] TxCmd[%u] alloc failed\n",
+					u4Num, u4Idx);
+				return false;
+			}
+		}
 	}
 
 	DBGLOG(HAL, TRACE, "TxRing[%d]: total %d entry allocated\n",
