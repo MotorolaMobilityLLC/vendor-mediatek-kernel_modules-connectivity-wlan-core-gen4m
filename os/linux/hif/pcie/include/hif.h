@@ -176,6 +176,7 @@ typedef struct _BUS_INFO {
 	const unsigned int tx_ring_data_idx;
 	const BOOLEAN fgCheckDriverOwnInt;
 	const BOOLEAN fgInitPCIeInt;
+	const UINT_32 u4DmaMask;
 
 	VOID (*pdmaSetup)(P_GLUE_INFO_T prGlueInfo, BOOLEAN enable);
 	VOID (*lowPowerOwnRead)(P_ADAPTER_T prAdapter, PBOOLEAN pfgResult);
