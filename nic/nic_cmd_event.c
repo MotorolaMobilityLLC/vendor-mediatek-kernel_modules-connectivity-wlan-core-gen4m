@@ -702,28 +702,6 @@ void nicCmdEventSetCommon(IN struct ADAPTER *prAdapter,
 
 }
 
-void nicCmdEventSetDisassociate(IN struct ADAPTER
-				*prAdapter, IN struct CMD_INFO *prCmdInfo,
-				IN uint8_t *pucEventBuf)
-{
-	ASSERT(prAdapter);
-	ASSERT(prCmdInfo);
-
-	if (prCmdInfo->fgIsOid) {
-		/* Update Set Information Length */
-		kalOidComplete(prAdapter->prGlueInfo, prCmdInfo->fgSetQuery,
-			       0, WLAN_STATUS_SUCCESS);
-	}
-
-	kalIndicateStatusAndComplete(prAdapter->prGlueInfo,
-				     WLAN_STATUS_MEDIA_DISCONNECT, NULL, 0);
-
-#if !defined(LINUX)
-	prAdapter->fgIsRadioOff = TRUE;
-#endif
-
-}
-
 void nicCmdEventSetIpAddress(IN struct ADAPTER *prAdapter,
 	IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf)
 {
@@ -797,8 +775,8 @@ void nicCmdEventQueryLinkQuality(IN struct ADAPTER
 	/* ranged from (-128 ~ 30) in unit of dBm */
 	rRssi = (int32_t)	prLinkQuality->cRssi;
 
-	if (prAdapter->prAisBssInfo->eConnectionState ==
-	    MEDIA_STATE_CONNECTED) {
+	if (aisGetAisBssInfo(prAdapter, AIS_DEFAULT_INDEX)
+		->eConnectionState == MEDIA_STATE_CONNECTED) {
 		if (rRssi > PARAM_WHQL_RSSI_MAX_DBM)
 			rRssi = PARAM_WHQL_RSSI_MAX_DBM;
 		else if (rRssi < PARAM_WHQL_RSSI_MIN_DBM)
@@ -1026,6 +1004,8 @@ void nicCmdEventQueryBugReport(IN struct ADAPTER *prAdapter,
 void nicCmdEventEnterRfTest(IN struct ADAPTER *prAdapter,
 	IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf)
 {
+	uint32_t u4Idx = 0;
+
 	ASSERT(prAdapter);
 	ASSERT(prCmdInfo);
 
@@ -1037,10 +1017,16 @@ void nicCmdEventEnterRfTest(IN struct ADAPTER *prAdapter,
 		prAdapter->fgTestMode = TRUE;
 
 	/* 0. always indicate disconnection */
-	if (kalGetMediaStateIndicated(prAdapter->prGlueInfo) !=
-	    MEDIA_STATE_DISCONNECTED)
-		kalIndicateStatusAndComplete(prAdapter->prGlueInfo,
-			WLAN_STATUS_MEDIA_DISCONNECT, NULL, 0);
+	for (u4Idx = 0; u4Idx < KAL_AIS_NUM; u4Idx++) {
+		if (kalGetMediaStateIndicated(
+			prAdapter->prGlueInfo,
+			u4Idx) !=
+		    MEDIA_STATE_DISCONNECTED)
+			kalIndicateStatusAndComplete(
+				prAdapter->prGlueInfo,
+				WLAN_STATUS_MEDIA_DISCONNECT,
+				NULL, 0, u4Idx);
+	}
 	/* 1. Remove pending TX */
 	nicTxRelease(prAdapter, TRUE);
 
@@ -1126,6 +1112,8 @@ void nicCmdEventEnterRfTest(IN struct ADAPTER *prAdapter,
 void nicCmdEventLeaveRfTest(IN struct ADAPTER *prAdapter,
 	IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf)
 {
+	uint32_t u4Idx = 0;
+
 	/* Block until firmware completed leaving from RF test mode */
 	kalMsleep(500);
 
@@ -1182,13 +1170,20 @@ void nicCmdEventLeaveRfTest(IN struct ADAPTER *prAdapter,
 	}
 
 	/* 8. Indicate as disconnected */
-	if (kalGetMediaStateIndicated(prAdapter->prGlueInfo) !=
-	    MEDIA_STATE_DISCONNECTED) {
+	for (u4Idx = 0; u4Idx < KAL_AIS_NUM; u4Idx++) {
+		if (kalGetMediaStateIndicated(
+			prAdapter->prGlueInfo,
+			u4Idx) !=
+		    MEDIA_STATE_DISCONNECTED) {
 
-		kalIndicateStatusAndComplete(prAdapter->prGlueInfo,
-			WLAN_STATUS_MEDIA_DISCONNECT, NULL, 0);
+			kalIndicateStatusAndComplete(
+				prAdapter->prGlueInfo,
+				WLAN_STATUS_MEDIA_DISCONNECT,
+				NULL, 0, u4Idx);
 
-		prAdapter->rWlanInfo.u4SysTime = kalGetTimeTick();
+			prAdapter->rWlanInfo.u4SysTime =
+				kalGetTimeTick();
+		}
 	}
 #if CFG_SUPPORT_NVRAM
 	/* 9. load manufacture data */
@@ -1301,7 +1296,8 @@ void nicCmdEventSetMediaStreamMode(IN struct ADAPTER
 	kalIndicateStatusAndComplete(prAdapter->prGlueInfo,
 		WLAN_STATUS_MEDIA_SPECIFIC_INDICATION,
 		(void *)&rParamMediaStreamIndication,
-		sizeof(struct PARAM_MEDIA_STREAMING_INDICATION));
+		sizeof(struct PARAM_MEDIA_STREAMING_INDICATION),
+		AIS_DEFAULT_INDEX);
 }
 
 void nicCmdEventSetStopSchedScan(IN struct ADAPTER
@@ -3239,6 +3235,7 @@ void nicEventLinkQuality(IN struct ADAPTER *prAdapter,
 {
 	struct mt66xx_chip_info *prChipInfo = NULL;
 	struct CMD_INFO *prCmdInfo;
+	uint8_t ucBssIndex = AIS_DEFAULT_INDEX;
 
 	ASSERT(prAdapter);
 	prChipInfo = prAdapter->chip_info;
@@ -3271,7 +3268,6 @@ void nicEventLinkQuality(IN struct ADAPTER *prAdapter,
 #else
 	/*only support ais query */
 	{
-		uint8_t ucBssIndex;
 		struct BSS_INFO *prBssInfo;
 
 		for (ucBssIndex = 0; ucBssIndex < prAdapter->ucHwBssIdNum;
@@ -3323,7 +3319,8 @@ void nicEventLinkQuality(IN struct ADAPTER *prAdapter,
 		kalIndicateStatusAndComplete(prAdapter->prGlueInfo,
 			WLAN_STATUS_MEDIA_SPECIFIC_INDICATION,
 			(void *) &(prAdapter->rWlanInfo.rRssiTriggerValue),
-			sizeof(int32_t));
+			sizeof(int32_t),
+			ucBssIndex);
 	} else if (prAdapter->rWlanInfo.eRssiTriggerType ==
 		   ENUM_RSSI_TRIGGER_LESS &&
 		   prAdapter->rWlanInfo.rRssiTriggerValue <= (int32_t) (
@@ -3335,7 +3332,8 @@ void nicEventLinkQuality(IN struct ADAPTER *prAdapter,
 		kalIndicateStatusAndComplete(prAdapter->prGlueInfo,
 			WLAN_STATUS_MEDIA_SPECIFIC_INDICATION,
 			(void *) &(prAdapter->rWlanInfo.rRssiTriggerValue),
-			sizeof(int32_t));
+			sizeof(int32_t),
+			ucBssIndex);
 	}
 #endif
 }
@@ -4138,17 +4136,21 @@ void nicEventLayer0ExtMagic(IN struct ADAPTER *prAdapter,
 void nicEventMicErrorInfo(IN struct ADAPTER *prAdapter,
 			  IN struct WIFI_EVENT *prEvent)
 {
+	uint8_t ucBssIndex = AIS_DEFAULT_INDEX;
 	struct EVENT_MIC_ERR_INFO *prMicError;
 	/* P_PARAM_AUTH_EVENT_T prAuthEvent; */
 	struct STA_RECORD *prStaRec;
+	struct PARAM_BSSID_EX *prCurrBssid =
+		aisGetCurrBssId(prAdapter,
+		ucBssIndex);
 
 	DBGLOG(RSN, EVENT, "EVENT_ID_MIC_ERR_INFO\n");
 
 	prMicError = (struct EVENT_MIC_ERR_INFO *) (
 			     prEvent->aucBuffer);
 	prStaRec = cnmGetStaRecByAddress(prAdapter,
-			 prAdapter->prAisBssInfo->ucBssIndex,
-			 prAdapter->rWlanInfo.rCurrBssId.arMacAddress);
+			 ucBssIndex,
+			 prCurrBssid->arMacAddress);
 	ASSERT(prStaRec);
 
 	if (prStaRec)
@@ -4438,11 +4440,10 @@ void nicEventBeaconTimeout(IN struct ADAPTER *prAdapter,
 		prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
 			prEventBssBeaconTimeout->ucBssIndex);
 
-		if ((prAdapter->prAisBssInfo != NULL) &&
-		    (prEventBssBeaconTimeout->ucBssIndex ==
-		     prAdapter->prAisBssInfo->ucBssIndex)) {
+		if (IS_BSS_AIS(prBssInfo)) {
 			if (nicBeaconTimeoutFilterPolicy(prAdapter))
-				aisBssBeaconTimeout(prAdapter);
+				aisBssBeaconTimeout(prAdapter,
+					prBssInfo->ucBssIndex);
 		}
 #if CFG_ENABLE_WIFI_DIRECT
 		else if (prBssInfo->eNetworkType == NETWORK_TYPE_P2P)
@@ -4543,6 +4544,14 @@ void nicEventRoamingStatus(IN struct ADAPTER *prAdapter,
 	prTransit = (struct CMD_ROAMING_TRANSIT *) (
 			    prEvent->aucBuffer);
 
+	/* Default path */
+	if (!IS_BSS_INDEX_AIS(prAdapter, prTransit->ucBssidx)) {
+		DBGLOG(NIC, LOUD,
+			"Use default, invalid index = %d\n",
+			prTransit->ucBssidx);
+		prTransit->ucBssidx = AIS_DEFAULT_INDEX;
+	}
+
 	roamingFsmProcessEvent(prAdapter, prTransit);
 #endif /* CFG_SUPPORT_ROAMING */
 }
@@ -4603,7 +4612,8 @@ void nicEventUpdateBwcsStatus(IN struct ADAPTER *prAdapter,
 
 	kalIndicateStatusAndComplete(prAdapter->prGlueInfo,
 		WLAN_STATUS_BWCS_UPDATE,
-		(void *) prEventBwcsStatus, sizeof(struct PTA_IPC));
+		(void *) prEventBwcsStatus, sizeof(struct PTA_IPC),
+		AIS_DEFAULT_INDEX);
 }
 
 void nicEventUpdateBcmDebug(IN struct ADAPTER *prAdapter,
@@ -4641,8 +4651,9 @@ void nicEventAddPkeyDone(IN struct ADAPTER *prAdapter,
 					 prKeyDone->aucStaAddr);
 
 	if (!prStaRec) {
-		ucKeyId =	prAdapter->rWifiVar.
-			rAisSpecificBssInfo.ucKeyAlgorithmId;
+		ucKeyId =
+			aisGetAisSpecBssInfo(prAdapter,
+			prKeyDone->ucBSSIndex)->ucKeyAlgorithmId;
 		if ((ucKeyId == CIPHER_SUITE_WEP40)
 		    || (ucKeyId == CIPHER_SUITE_WEP104)) {
 			DBGLOG(RX, INFO, "WEP, ucKeyAlgorithmId= %d\n",
@@ -4813,7 +4824,8 @@ void nicEventRssiMonitor(IN struct ADAPTER *prAdapter,
 	DBGLOG(RX, TRACE, "EVENT_ID_RSSI_MONITOR value=%d\n", rssi);
 #if KERNEL_VERSION(3, 16, 0) <= LINUX_VERSION_CODE
 	mtk_cfg80211_vendor_event_rssi_beyond_range(wiphy,
-		prGlueInfo->prDevHandler->ieee80211_ptr, rssi);
+		wlanGetNetDev(prAdapter->prGlueInfo,
+			AIS_DEFAULT_INDEX)->ieee80211_ptr, rssi);
 #endif
 }
 
@@ -5042,17 +5054,24 @@ void nicCmdEventSetAddKey(IN struct ADAPTER *prAdapter,
 	}
 
 	prGlueInfo = prAdapter->prGlueInfo;
-	prDetRplyInfo = &prGlueInfo->prDetRplyInfo;
+
 	if (pucEventBuf) {
 		prWifiCmd = (struct WIFI_CMD *) (pucEventBuf);
 		prCmdKey = (struct CMD_802_11_KEY *) (prWifiCmd->aucBuffer);
 
+		if (!IS_BSS_INDEX_AIS(prAdapter,
+			prCmdKey->ucBssIdx))
+			return;
+
+		/* AIS only */
 		if (!prCmdKey->ucKeyType &&
 			prCmdKey->ucKeyId >= 0 && prCmdKey->ucKeyId < 4) {
 			/* Only save data broadcast key info.
 			*  ucKeyType == 1 means unicast key
 			*  ucKeyId == 4 or ucKeyId == 5 means it is a PMF key
 			*/
+			prDetRplyInfo = aisGetDetRplyInfo(prAdapter,
+				prCmdKey->ucBssIdx);
 
 			prDetRplyInfo->ucCurKeyId = prCmdKey->ucKeyId;
 			prDetRplyInfo->ucKeyType = prCmdKey->ucKeyType;
@@ -5060,8 +5079,10 @@ void nicCmdEventSetAddKey(IN struct ADAPTER *prAdapter,
 				prCmdKey->ucKeyId].fgRekey = TRUE;
 			prDetRplyInfo->arReplayPNInfo[
 				prCmdKey->ucKeyId].fgFirstPkt = TRUE;
-			DBGLOG(NIC, TRACE, "Keyid is %d, ucKeyType is %d\n",
-			       prCmdKey->ucKeyId, prCmdKey->ucKeyType);
+			DBGLOG(NIC, TRACE,
+				"[%d] Keyid is %d, ucKeyType is %d\n",
+				prCmdKey->ucBssIdx,
+				prCmdKey->ucKeyId, prCmdKey->ucKeyType);
 		}
 	}
 }

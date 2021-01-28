@@ -267,7 +267,8 @@ uint8_t getUpFromDscp(IN struct GLUE_INFO *prGlueInfo, IN int type, IN int dscp)
 
 	int i, j = 0;
 
-	prAisBssInfo = prGlueInfo->prAdapter->prAisBssInfo;
+	prAisBssInfo = aisGetAisBssInfo(
+		prGlueInfo->prAdapter, type);
 	if (prAisBssInfo)
 		prStaRec = prAisBssInfo->prStaRecOfAP;
 	else {

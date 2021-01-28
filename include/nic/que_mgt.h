@@ -1220,6 +1220,9 @@ void qmMoveStaTxQueue(struct STA_RECORD *prSrcStaRec,
 		      struct STA_RECORD *prDstStaRec);
 void qmHandleDelTspec(struct ADAPTER *prAdapter, struct STA_RECORD *prStaRec,
 		      enum ENUM_ACI eAci);
+void qmReleaseCHAtFinishedDhcp(struct ADAPTER *prAdapter,
+			       struct TIMER *prTimer,
+			       uint8_t ucBssIndex);
 /*******************************************************************************
  *                              F U N C T I O N S
  *******************************************************************************

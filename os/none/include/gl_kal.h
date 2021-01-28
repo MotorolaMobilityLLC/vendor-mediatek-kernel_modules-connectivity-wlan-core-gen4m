@@ -100,6 +100,8 @@ extern int g_u4HaltFlag;
 /* Define how many concurrent operation networks. */
 #define KAL_BSS_NUM             4
 
+#define KAL_AIS_NUM           1
+
 #if CFG_DUAL_P2PLIKE_INTERFACE
 #define KAL_P2P_NUM             2
 #else
@@ -963,14 +965,16 @@ uint32_t kalRxIndicatePkts(IN struct GLUE_INFO *prGlueInfo,
 #define kalRxIndicateOnePkt(_prGlueInfo, _pvPkt) \
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
 
-#define kalIndicateStatusAndComplete(_prGlInfo, _eStatus, _pvBuf, _u4BufLen) \
+#define kalIndicateStatusAndComplete(_prGlInfo, _eStatus, _pvBuf, _u4BufLen, \
+	_ucBssIndex) \
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
 
 #define kalUpdateReAssocReqInfo(_prGlueInfo, _pucFrameBody, _u4FrameBodyLen, \
-	_fgReassocRequest) \
+	_fgReassocRequest, _ucBssIndex) \
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
 
-#define kalUpdateReAssocRspInfo(_prGlueInfo, _pucFrameBody, _u4FrameBodyLen) \
+#define kalUpdateReAssocRspInfo(_prGlueInfo, _pucFrameBody, _u4FrameBodyLen, \
+	_ucBssIndex) \
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
 #else
 uint32_t kalRxIndicateOnePkt(IN struct GLUE_INFO
@@ -980,17 +984,20 @@ void
 kalIndicateStatusAndComplete(IN struct GLUE_INFO
 			     *prGlueInfo,
 			     IN uint32_t eStatus, IN void *pvBuf,
-			     IN uint32_t u4BufLen);
+			     IN uint32_t u4BufLen,
+			     IN uint8_t ucBssIndex);
 
 void
 kalUpdateReAssocReqInfo(IN struct GLUE_INFO *prGlueInfo,
 			IN uint8_t *pucFrameBody, IN uint32_t u4FrameBodyLen,
-			IN u_int8_t fgReassocRequest);
+			IN u_int8_t fgReassocRequest,
+			IN uint8_t ucBssIndex);
 
 void kalUpdateReAssocRspInfo(IN struct GLUE_INFO
 			     *prGlueInfo,
 			     IN uint8_t *pucFrameBody,
-			     IN uint32_t u4FrameBodyLen);
+			     IN uint32_t u4FrameBodyLen,
+			     IN uint8_t ucBssIndex);
 #endif
 
 #if CFG_TX_FRAGMENT
@@ -1027,18 +1034,18 @@ void kalUpdateRxCSUMOffloadParam(IN void *pvPacket,
 KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__, _prGlueInfo, _prMacAddr)
 
 #define kalReadyOnChannel(_prGlueInfo, _u8Cookie, _eBand, _eSco, \
-	_ucChannelNum, _u4DurationMs) \
+	_ucChannelNum, _u4DurationMs, _ucBssIndex) \
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__, _prGlueInfo)
 
 #define kalRemainOnChannelExpired(_prGlueInfo, _u8Cookie, _eBand, \
-	_eSco, _ucChannelNum) \
+	_eSco, _ucChannelNum, _ucBssIndex) \
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__, _prGlueInfo)
 
 #define kalIndicateMgmtTxStatus(_prGlueInfo, _u8Cookie, _fgIsAck, \
-	_pucFrameBuf, _u4FrameLen) \
+	_pucFrameBuf, _u4FrameLen, _ucBssIndex) \
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__, _prGlueInfo)
 
-#define kalIndicateRxMgmtFrame(_prGlueInfo, _prSwRfb) \
+#define kalIndicateRxMgmtFrame(_prGlueInfo, _prSwRfb, _ucBssIndex) \
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__, _prGlueInfo)
 #else
 u_int8_t kalRetrieveNetworkAddress(IN struct GLUE_INFO *prGlueInfo,
@@ -1048,20 +1055,24 @@ void
 kalReadyOnChannel(IN struct GLUE_INFO *prGlueInfo,
 		  IN uint64_t u8Cookie,
 		  IN enum ENUM_BAND eBand, IN enum ENUM_CHNL_EXT eSco,
-		  IN uint8_t ucChannelNum, IN uint32_t u4DurationMs);
+		  IN uint8_t ucChannelNum, IN uint32_t u4DurationMs,
+		  IN uint8_t ucBssIndex);
 
 void
 kalRemainOnChannelExpired(IN struct GLUE_INFO *prGlueInfo,
 			  IN uint64_t u8Cookie, IN enum ENUM_BAND eBand,
-			  IN enum ENUM_CHNL_EXT eSco, IN uint8_t ucChannelNum);
+			  IN enum ENUM_CHNL_EXT eSco, IN uint8_t ucChannelNum,
+			  IN uint8_t ucBssIndex);
 
 void
 kalIndicateMgmtTxStatus(IN struct GLUE_INFO *prGlueInfo,
 			IN uint64_t u8Cookie, IN u_int8_t fgIsAck,
-			IN uint8_t *pucFrameBuf, IN uint32_t u4FrameLen);
+			IN uint8_t *pucFrameBuf, IN uint32_t u4FrameLen,
+			IN uint8_t ucBssIndex);
 
 void kalIndicateRxMgmtFrame(IN struct GLUE_INFO *prGlueInfo,
-			    IN struct SW_RFB *prSwRfb);
+			    IN struct SW_RFB *prSwRfb,
+			    IN uint8_t ucBssIndex);
 #endif
 /*----------------------------------------------------------------------------*/
 /* Routines in interface - ehpi/sdio.c                                        */
@@ -1141,6 +1152,20 @@ uint32_t kalReadExtCfg(IN struct GLUE_INFO *prGlueInfo);
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__, _pr, \
 	_pfnOidHandler, _pvInfoBuf, _u4InfoBufLen, \
 	_fgRead, _fgWaitResp, _fgCmd, _pu4QryInfoLen)
+
+#define kalIoctlByBssIdx(_pr, _pfnOidHandler, _pvInfoBuf, _u4InfoBufLen, \
+	_fgRead, _fgWaitResp, _fgCmd, _pu4QryInfoLen, _ucBssIndex) \
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__, _pr, \
+	_pfnOidHandler, _pvInfoBuf, _u4InfoBufLen, \
+	_fgRead, _fgWaitResp, _fgCmd, _pu4QryInfoLen, _ucBssIndex)
+
+#define SET_IOCTL_BSSIDX(_pr, _ucBssIndex) \
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__, _pr, \
+	_ucBssIndex)
+
+#define GET_IOCTL_BSSIDX(_pr) \
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__, _pr)
+
 #else
 u_int8_t
 kalQoSFrameClassifierAndPacketInfo(IN struct GLUE_INFO
@@ -1164,6 +1189,23 @@ kalIoctl(IN struct GLUE_INFO *prGlueInfo,
 	 IN uint32_t u4InfoBufLen, IN u_int8_t fgRead,
 	 IN u_int8_t fgWaitResp,
 	 IN u_int8_t fgCmd, OUT uint32_t *pu4QryInfoLen);
+
+uint32_t
+kalIoctlByBssIdx(IN struct GLUE_INFO *prGlueInfo,
+	 IN PFN_OID_HANDLER_FUNC pfnOidHandler,
+	 IN void *pvInfoBuf,
+	 IN uint32_t u4InfoBufLen, IN u_int8_t fgRead,
+	 IN u_int8_t fgWaitResp, IN u_int8_t fgCmd,
+	 OUT uint32_t *pu4QryInfoLen,
+	 IN uint8_t ucBssIndex);
+
+void SET_IOCTL_BSSIDX(
+	 IN struct ADAPTER *prAdapter,
+	 IN uint8_t ucBssIndex);
+
+uint8_t GET_IOCTL_BSSIDX(
+	 IN struct ADAPTER *prAdapter);
+
 #endif
 
 void kalHandleAssocInfo(IN struct GLUE_INFO *prGlueInfo,
@@ -1213,18 +1255,21 @@ void kalFlushPendingTxPackets(IN struct GLUE_INFO
 /* Media State Indication                                                     */
 /*----------------------------------------------------------------------------*/
 #ifdef CFG_REMIND_IMPLEMENT
-#define kalGetMediaStateIndicated(_prGlueInfo) \
+#define kalGetMediaStateIndicated(_prGlueInfo, _ucBssIndex) \
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__, _prGlueInfo)
 
-#define kalSetMediaStateIndicated(_prGlueInfo, _eParamMediaStateIndicate) \
+#define kalSetMediaStateIndicated(_prGlueInfo, _eParamMediaStateIndicate, \
+	_ucBssIndex) \
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__, _prGlueInfo)
 #else
 enum ENUM_PARAM_MEDIA_STATE kalGetMediaStateIndicated(
 	IN struct GLUE_INFO
-	*prGlueInfo);
+	*prGlueInfo,
+	IN uint8_t ucBssIndex);
 
 void kalSetMediaStateIndicated(IN struct GLUE_INFO *prGlueInfo,
-		IN enum ENUM_PARAM_MEDIA_STATE eParamMediaStateIndicate);
+		IN enum ENUM_PARAM_MEDIA_STATE eParamMediaStateIndicate,
+		IN uint8_t ucBssIndex);
 #endif
 
 /*----------------------------------------------------------------------------*/
@@ -1518,13 +1563,15 @@ u_int8_t kalIsAPmode(IN struct GLUE_INFO *prGlueInfo);
 /* 802.11W                                                                    */
 /*----------------------------------------------------------------------------*/
 #ifdef CFG_REMIND_IMPLEMENT
-#define kalGetMfpSetting(_prGlueInfo) \
+#define kalGetMfpSetting(_prGlueInfo, _ucBssIndex) \
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
-#define kalGetRsnIeMfpCap(_prGlueInfo) \
+#define kalGetRsnIeMfpCap(_prGlueInfo, _ucBssIndex) \
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
 #else
-uint32_t kalGetMfpSetting(IN struct GLUE_INFO *prGlueInfo);
-uint8_t kalGetRsnIeMfpCap(IN struct GLUE_INFO *prGlueInfo);
+uint32_t kalGetMfpSetting(IN struct GLUE_INFO *prGlueInfo,
+	IN uint8_t ucBssIndex);
+uint8_t kalGetRsnIeMfpCap(IN struct GLUE_INFO *prGlueInfo,
+	IN uint8_t ucBssIndex);
 #endif
 #endif
 

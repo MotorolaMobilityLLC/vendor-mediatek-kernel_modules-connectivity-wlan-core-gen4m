@@ -246,8 +246,10 @@ ibssProcessMatchedBeacon(IN struct ADAPTER *prAdapter,
 			 IN struct BSS_INFO *prBssInfo,
 			 IN struct BSS_DESC *prBssDesc, IN uint8_t ucRCPI);
 
-uint32_t ibssCheckCapabilityForAdHocMode(IN struct ADAPTER
-		*prAdapter, IN struct BSS_DESC *prBssDesc);
+uint32_t ibssCheckCapabilityForAdHocMode(
+		IN struct ADAPTER *prAdapter,
+		IN struct BSS_DESC *prBssDesc,
+		IN uint8_t uBssIndex);
 
 void ibssInitForAdHoc(IN struct ADAPTER *prAdapter,
 		      IN struct BSS_INFO *prBssInfo);

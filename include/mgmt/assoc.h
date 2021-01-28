@@ -139,10 +139,11 @@ uint32_t assocSendReAssocRespFrame(IN struct ADAPTER
 uint16_t assocBuildCapabilityInfo(IN struct ADAPTER
 				*prAdapter, IN struct STA_RECORD *prStaRec);
 
-uint16_t assoc_get_nonwfa_vend_ie_len(struct ADAPTER *prAdapter);
+uint16_t assoc_get_nonwfa_vend_ie_len(struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex);
 
 void assoc_build_nonwfa_vend_ie(struct ADAPTER *prAdapter,
-			   struct MSDU_INFO *prMsduInfo);
+	struct MSDU_INFO *prMsduInfo);
 
 void assocGenerateMDIE(IN struct ADAPTER *prAdapter,
 		       IN OUT struct MSDU_INFO *prMsduInfo);

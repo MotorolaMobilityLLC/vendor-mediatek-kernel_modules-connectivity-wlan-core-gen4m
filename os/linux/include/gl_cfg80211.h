@@ -312,6 +312,7 @@ int mtk_cfg80211_remain_on_channel(struct wiphy *wiphy,
 
 int mtk_cfg80211_cancel_remain_on_channel(
 	struct wiphy *wiphy, struct wireless_dev *wdev, u64 cookie);
+
 #if KERNEL_VERSION(3, 14, 0) <= CFG80211_VERSION_CODE
 int mtk_cfg80211_mgmt_tx(struct wiphy *wiphy,
 			 struct wireless_dev *wdev,
@@ -348,20 +349,25 @@ int mtk_cfg80211_testmode_cmd(struct wiphy *wiphy,
 			      void *data, int len);
 #else
 int mtk_cfg80211_testmode_cmd(struct wiphy *wiphy,
+			      struct wireless_dev *wdev,
 			      void *data, int len);
 #endif
 
 int mtk_cfg80211_testmode_sw_cmd(IN struct wiphy *wiphy,
-				 IN void *data, IN int len);
+					IN struct wireless_dev *wdev,
+					IN void *data, IN int len);
 
 #if CFG_SUPPORT_PASSPOINT
 int mtk_cfg80211_testmode_hs20_cmd(IN struct wiphy *wiphy,
-				   IN void *data, IN int len);
+					IN struct wireless_dev *wdev,
+					IN void *data, IN int len);
 #endif /* CFG_SUPPORT_PASSPOINT */
 
 #if CFG_SUPPORT_WAPI
 int mtk_cfg80211_testmode_set_key_ext(IN struct wiphy
-				      *wiphy, IN void *data, IN int len);
+				      *wiphy,
+				    IN struct wireless_dev *wdev,
+					IN void *data, IN int len);
 #endif
 #if CFG_SUPPORT_NFC_BEAM_PLUS
 int mtk_cfg80211_testmode_get_scan_done(IN struct wiphy *wiphy,
@@ -456,7 +462,9 @@ int mtk_cfg80211_tdls_oper(struct wiphy *wiphy,
 #endif
 
 int32_t mtk_cfg80211_process_str_cmd(struct GLUE_INFO
-				     *prGlueInfo, uint8_t *cmd, int32_t len);
+				     *prGlueInfo,
+			struct wireless_dev *wdev,
+			uint8_t *cmd, int32_t len);
 
 void mtk_reg_notify(IN struct wiphy *pWiphy,
 		    IN struct regulatory_request *pRequest);
@@ -654,8 +662,10 @@ int mtk_cfg_remain_on_channel(struct wiphy *wiphy,
 			      u64 *cookie);
 int mtk_cfg_cancel_remain_on_channel(struct wiphy *wiphy,
 				     struct wireless_dev *wdev, u64 cookie);
-uint16_t cfg80211_get_non_wfa_vendor_ie(struct GLUE_INFO
-		*prGlueInfo, uint8_t *ies, int32_t len);
+uint16_t cfg80211_get_non_wfa_vendor_ie(
+	struct GLUE_INFO *prGlueInfo,
+	uint8_t *ies, int32_t len,
+	uint8_t ucBssIndex);
 
 #if KERNEL_VERSION(3, 14, 0) <= CFG80211_VERSION_CODE
 int mtk_cfg_mgmt_tx(struct wiphy *wiphy,

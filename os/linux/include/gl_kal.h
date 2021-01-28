@@ -112,6 +112,8 @@ extern struct delayed_work sched_workq;
 /* Define how many concurrent operation networks. */
 #define KAL_BSS_NUM             4
 
+#define KAL_AIS_NUM           1
+
 #if CFG_DUAL_P2PLIKE_INTERFACE
 #define KAL_P2P_NUM             2
 #else
@@ -1006,17 +1008,20 @@ void
 kalIndicateStatusAndComplete(IN struct GLUE_INFO
 			     *prGlueInfo,
 			     IN uint32_t eStatus, IN void *pvBuf,
-			     IN uint32_t u4BufLen);
+			     IN uint32_t u4BufLen,
+			     IN uint8_t ucBssIndex);
 
 void
 kalUpdateReAssocReqInfo(IN struct GLUE_INFO *prGlueInfo,
 			IN uint8_t *pucFrameBody, IN uint32_t u4FrameBodyLen,
-			IN u_int8_t fgReassocRequest);
+			IN u_int8_t fgReassocRequest,
+			IN uint8_t ucBssIndex);
 
 void kalUpdateReAssocRspInfo(IN struct GLUE_INFO
 			     *prGlueInfo,
 			     IN uint8_t *pucFrameBody,
-			     IN uint32_t u4FrameBodyLen);
+			     IN uint32_t u4FrameBodyLen,
+			     IN uint8_t ucBssIndex);
 
 #if CFG_TX_FRAGMENT
 u_int8_t
@@ -1044,20 +1049,24 @@ void
 kalReadyOnChannel(IN struct GLUE_INFO *prGlueInfo,
 		  IN uint64_t u8Cookie,
 		  IN enum ENUM_BAND eBand, IN enum ENUM_CHNL_EXT eSco,
-		  IN uint8_t ucChannelNum, IN uint32_t u4DurationMs);
+		  IN uint8_t ucChannelNum, IN uint32_t u4DurationMs,
+		  IN uint8_t ucBssIndex);
 
 void
 kalRemainOnChannelExpired(IN struct GLUE_INFO *prGlueInfo,
 			  IN uint64_t u8Cookie, IN enum ENUM_BAND eBand,
-			  IN enum ENUM_CHNL_EXT eSco, IN uint8_t ucChannelNum);
+			  IN enum ENUM_CHNL_EXT eSco, IN uint8_t ucChannelNum,
+			  IN uint8_t ucBssIndex);
 
 void
 kalIndicateMgmtTxStatus(IN struct GLUE_INFO *prGlueInfo,
 			IN uint64_t u8Cookie, IN u_int8_t fgIsAck,
-			IN uint8_t *pucFrameBuf, IN uint32_t u4FrameLen);
+			IN uint8_t *pucFrameBuf, IN uint32_t u4FrameLen,
+			IN uint8_t ucBssIndex);
 
 void kalIndicateRxMgmtFrame(IN struct GLUE_INFO *prGlueInfo,
-			    IN struct SW_RFB *prSwRfb);
+			    IN struct SW_RFB *prSwRfb,
+			    IN uint8_t ucBssIndex);
 
 /*----------------------------------------------------------------------------*/
 /* Routines in interface - ehpi/sdio.c                                        */
@@ -1123,6 +1132,22 @@ kalIoctl(IN struct GLUE_INFO *prGlueInfo,
 	 IN u_int8_t fgWaitResp,
 	 IN u_int8_t fgCmd, OUT uint32_t *pu4QryInfoLen);
 
+uint32_t
+kalIoctlByBssIdx(IN struct GLUE_INFO *prGlueInfo,
+	IN PFN_OID_HANDLER_FUNC pfnOidHandler,
+	IN void *pvInfoBuf,
+	IN uint32_t u4InfoBufLen, IN u_int8_t fgRead,
+	IN u_int8_t fgWaitResp, IN u_int8_t fgCmd,
+	OUT uint32_t *pu4QryInfoLen,
+	IN uint8_t ucBssIndex);
+
+void SET_IOCTL_BSSIDX(
+	IN struct ADAPTER *prAdapter,
+	IN uint8_t ucBssIndex);
+
+uint8_t GET_IOCTL_BSSIDX(
+	IN struct ADAPTER *prAdapter);
+
 void kalHandleAssocInfo(IN struct GLUE_INFO *prGlueInfo,
 			IN struct EVENT_ASSOC_INFO *prAssocInfo);
 
@@ -1156,10 +1181,11 @@ void kalFlushPendingTxPackets(IN struct GLUE_INFO
 /*----------------------------------------------------------------------------*/
 enum ENUM_PARAM_MEDIA_STATE kalGetMediaStateIndicated(
 	IN struct GLUE_INFO
-	*prGlueInfo);
+	*prGlueInfo, IN uint8_t ucBssIndex);
 
 void kalSetMediaStateIndicated(IN struct GLUE_INFO *prGlueInfo,
-		IN enum ENUM_PARAM_MEDIA_STATE eParamMediaStateIndicate);
+		IN enum ENUM_PARAM_MEDIA_STATE eParamMediaStateIndicate,
+		IN uint8_t ucBssIndex);
 
 /*----------------------------------------------------------------------------*/
 /* OID handling                                                               */
@@ -1252,7 +1278,7 @@ u_int8_t kalSetTimer(IN struct GLUE_INFO *prGlueInfo,
 u_int8_t kalCancelTimer(IN struct GLUE_INFO *prGlueInfo);
 
 void kalScanDone(IN struct GLUE_INFO *prGlueInfo,
-		 IN enum ENUM_KAL_NETWORK_TYPE_INDEX eNetTypeIdx,
+		 IN uint8_t ucBssIndex,
 		 IN uint32_t status);
 
 #if CFG_SUPPORT_SCAN_CACHE_RESULT
@@ -1303,12 +1329,6 @@ u_int8_t kalCfgDataWrite16(IN struct GLUE_INFO *prGlueInfo,
 			   IN uint32_t u4Offset, IN uint16_t u2Data);
 
 /*----------------------------------------------------------------------------*/
-/* WSC Connection                                                     */
-/*----------------------------------------------------------------------------*/
-u_int8_t kalWSCGetActiveState(IN struct GLUE_INFO
-			      *prGlueInfo);
-
-/*----------------------------------------------------------------------------*/
 /* RSSI Updating                                                              */
 /*----------------------------------------------------------------------------*/
 void
@@ -1341,8 +1361,10 @@ u_int8_t kalIsAPmode(IN struct GLUE_INFO *prGlueInfo);
 /*----------------------------------------------------------------------------*/
 /* 802.11W                                                                    */
 /*----------------------------------------------------------------------------*/
-uint32_t kalGetMfpSetting(IN struct GLUE_INFO *prGlueInfo);
-uint8_t kalGetRsnIeMfpCap(IN struct GLUE_INFO *prGlueInfo);
+uint32_t kalGetMfpSetting(IN struct GLUE_INFO *prGlueInfo,
+	IN uint8_t ucBssIndex);
+uint8_t kalGetRsnIeMfpCap(IN struct GLUE_INFO *prGlueInfo,
+	IN uint8_t ucBssIndex);
 #endif
 
 /*----------------------------------------------------------------------------*/
