@@ -364,7 +364,6 @@ static struct cfg80211_ops mtk_wlan_ops = {
 	.set_rekey_data = mtk_cfg80211_set_rekey_data,
 #endif
 	.suspend = mtk_cfg80211_suspend,
-	.resume = CFG80211_Resume,
 
 	.assoc = mtk_cfg80211_assoc,
 
@@ -1462,6 +1461,7 @@ static void wlanCreateWirelessDevice(void)
 		DBGLOG(INIT, ERROR, "Allocating memory to wiphy device failed\n");
 		goto free_wdev;
 	}
+
 	/* 4 <1.3> configure wireless_dev & wiphy */
 	prWdev->iftype = NL80211_IFTYPE_STATION;
 	prWiphy->iface_combinations = p_mtk_iface_combinations_sta;
@@ -1515,6 +1515,9 @@ static void wlanCreateWirelessDevice(void)
 	/* 4 <1.5> Use wireless extension to replace IOCTL */
 	prWiphy->wext = &wext_handler_def;
 #endif
+	/* initialize semaphore for halt control */
+	sema_init(&g_halt_sem, 1);
+
 	if (wiphy_register(prWiphy) < 0) {
 		DBGLOG(INIT, ERROR, "wiphy_register error\n");
 		goto free_wiphy;
@@ -1719,9 +1722,6 @@ static struct wireless_dev *wlanNetCreate(PVOID pvData, PVOID pvDriverData)
 	prGlueInfo->fgEnSdioTestPattern = FALSE;
 	prGlueInfo->fgIsSdioTestInitialized = FALSE;
 #endif
-
-	/* initialize semaphore for halt control */
-	sema_init(&g_halt_sem, 1);
 
 	/* 4 <8> Init Queues */
 	init_waitqueue_head(&prGlueInfo->waitq);
