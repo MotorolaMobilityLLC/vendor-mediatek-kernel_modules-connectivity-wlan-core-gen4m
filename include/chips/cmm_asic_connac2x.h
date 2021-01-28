@@ -249,7 +249,7 @@
  * MACRO for WTBL INFO GET
  *------------------------------------------------------------------------------
  */
-#define CONNAC2X_WIFI_LWTBL_BASE 0x820d0000
+#define CONNAC2X_WIFI_LWTBL_BASE 0x820d4000
 #define CONNAC2X_WIFI_LWTBL_GROUP_MASK 0x00000007 /* GROUP[2..0] */
 #define CONNAC2X_WIFI_LWTBL_GROUP_SHFT 0
 
@@ -275,7 +275,7 @@
 		<< CONNAC2X_WIFI_LWTBL_GROUP_SHFT)
 
 #define CONNAC2X_LWTBL_IDX2BASE(_wlanIdx, _DW) \
-	(CONNAC2X_WIFI_LWTBL_BASE | 0x8000 | \
+	((CONNAC2X_WIFI_LWTBL_BASE  & 0xFFFF0000) | 0x8000 | \
 	((_wlanIdx & 0x7F) << 8) | (_DW & 0x3F) << 2)
 
 #define CONNAC2X_UWTBL_CONFIG(_pAd, _wlanIdx) \
@@ -284,7 +284,7 @@
 		<< CONNAC2X_WIFI_UWTBL_GROUP_SHFT)
 
 #define CONNAC2X_UWTBL_IDX2BASE(_wlanIdx, _DW) \
-	(CONNAC2X_WIFI_UWTBL_BASE | 0x2000 | \
+	((CONNAC2X_WIFI_UWTBL_BASE & 0XFFFFC000) | 0x2000 | \
 	((_wlanIdx & 0x7F) << 6) | (_DW & 0xF) << 2)
 
 #define CONNAC2X_KEYTBL_CONFIG(_pAd, _key_loc) \
@@ -294,7 +294,7 @@
 		<< CONNAC2X_WIFI_UWTBL_GROUP_SHFT)))
 
 #define CONNAC2X_KEYTBL_IDX2BASE(_key_loc, _DW) \
-	(CONNAC2X_WIFI_UWTBL_BASE | 0x2000 | \
+	((CONNAC2X_WIFI_UWTBL_BASE & 0XFFFFC000) | 0x2000 | \
 	((_key_loc & 0x7F) << 6) | (_DW & 0xF) << 2)
 
 /*------------------------------------------------------------------------------

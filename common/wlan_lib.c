@@ -835,6 +835,9 @@ uint32_t wlanAdapterStart(IN struct ADAPTER *prAdapter,
 		if (u4Status != WLAN_STATUS_SUCCESS)
 			break;
 
+		/* recheck Asic capability depends on ECO version */
+		wlanCheckAsicCap(prAdapter);
+
 #if CFG_ENABLE_FW_DOWNLOAD
 		/* 4 <8> FW/patch download */
 
@@ -1114,6 +1117,18 @@ void wlanClearPendingInterrupt(IN struct ADAPTER *prAdapter)
 	       && nicProcessIST(prAdapter) != WLAN_STATUS_NOT_INDICATING) {
 		i++;
 	};
+}
+
+void wlanCheckAsicCap(IN struct ADAPTER *prAdapter)
+{
+	struct mt66xx_chip_info *prChipInfo;
+
+	ASSERT(prAdapter);
+
+	prChipInfo = prAdapter->chip_info;
+
+	if (prChipInfo->wlanCheckAsicCap)
+		prChipInfo->wlanCheckAsicCap(prAdapter);
 }
 
 uint32_t wlanCheckWifiFunc(IN struct ADAPTER *prAdapter,
