@@ -1772,8 +1772,10 @@ void p2pRoleFsmRunEventCsaDone(IN struct ADAPTER *prAdapter,
 
 	prGlueInfo = prAdapter->prGlueInfo;
 	role_idx = prP2pRoleFsmInfo->ucRoleIndex;
-	/* Skip channel request/abort for STA+SAP concurrent case */
-	if (prAisBssInfo) {
+	/* Skip channel request/abort for STA+SAP/MCC concurrent case */
+	if (prAisBssInfo &&
+		(prAisBssInfo->ucPrimaryChannel !=
+		prP2pBssInfo->ucPrimaryChannel)) {
 		p2pFuncDfsSwitchCh(prAdapter,
 			prP2pBssInfo,
 			prP2pRoleFsmInfo->rChnlReqInfo);
