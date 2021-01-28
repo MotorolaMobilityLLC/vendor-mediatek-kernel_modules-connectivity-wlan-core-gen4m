@@ -737,6 +737,14 @@ static const struct nl80211_vendor_cmd_info
 		.subcmd = NL80211_VENDOR_SUBCMD_ACS
 	},
 #endif
+#if CFG_SUPPORT_DATA_STALL
+	{
+		.vendor_id = OUI_MTK,
+		.subcmd = WIFI_EVENT_DRIVER_ERROR
+	},
+#endif
+
+
 };
 #endif
 
