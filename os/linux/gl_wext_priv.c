@@ -3796,7 +3796,7 @@ INT_32 priv_driver_tx_rate_info(IN char *pcCommand, IN int i4TotalLen, BOOLEAN f
 
 		if (txmode == TX_RATE_MODE_CCK)
 			i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-				"%s, ", rate < 4 ? HW_TX_RATE_CCK_STR[rate] : HW_TX_RATE_CCK_STR[4]);
+				"%s, ", HW_TX_RATE_CCK_STR[rate & 0x3]);
 		else if (txmode == TX_RATE_MODE_OFDM)
 			i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 				"%s, ", hw_rate_ofdm_str(rate));
