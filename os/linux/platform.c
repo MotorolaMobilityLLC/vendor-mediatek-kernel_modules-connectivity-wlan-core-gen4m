@@ -454,7 +454,36 @@ static int nvram_write(char *filename, char *buf, ssize_t len, int offset)
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief API for reading data on NVRAM
+* \brief API for reading data on NVRAM with flexible length.
+*
+* \param[in]
+*           prGlueInfo
+*           u4Offset
+*           len
+* \param[out]
+*           pu2Data
+* \return
+*           TRUE
+*           FALSE
+*/
+/*----------------------------------------------------------------------------*/
+u_int8_t kalCfgDataRead(IN struct GLUE_INFO *prGlueInfo, IN uint32_t u4Offset,
+			IN ssize_t len, OUT uint16_t *pu2Data)
+{
+	if (pu2Data == NULL)
+		return FALSE;
+
+	if (nvram_read(WIFI_NVRAM_FILE_NAME,
+		       (char *)pu2Data, len, u4Offset) != len) {
+		return FALSE;
+	} else {
+		return TRUE;
+	}
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+* \brief API for reading data on NVRAM with 2 bytes fixed length.
 *
 * \param[in]
 *           prGlueInfo
@@ -481,7 +510,7 @@ u_int8_t kalCfgDataRead16(IN struct GLUE_INFO *prGlueInfo, IN uint32_t u4Offset,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief API for writing data on NVRAM
+* \brief API for writing data on NVRAM with 2 bytes fixed length.
 *
 * \param[in]
 *           prGlueInfo

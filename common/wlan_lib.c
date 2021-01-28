@@ -3692,11 +3692,16 @@ uint32_t wlanLoadManufactureData(IN struct ADAPTER *prAdapter, IN struct REG_INF
 	ASSERT(prAdapter);
 
 	/* 1. Version Check */
-	kalGetConfigurationVersion(prAdapter->prGlueInfo,
-				   &(prAdapter->rVerInfo.u2Part1CfgOwnVersion),
-				   &(prAdapter->rVerInfo.u2Part1CfgPeerVersion),
-				   &(prAdapter->rVerInfo.u2Part2CfgOwnVersion),
-				   &(prAdapter->rVerInfo.u2Part2CfgPeerVersion));
+	if (prAdapter->prGlueInfo->fgNvramAvailable == TRUE) {
+		prAdapter->rVerInfo.u2Part1CfgOwnVersion =
+			prRegInfo->prNvramSettings->u2Part1OwnVersion;
+		prAdapter->rVerInfo.u2Part1CfgPeerVersion =
+			prRegInfo->prNvramSettings->u2Part1PeerVersion;
+		prAdapter->rVerInfo.u2Part2CfgOwnVersion =
+			prRegInfo->prNvramSettings->u2Part2OwnVersion;
+		prAdapter->rVerInfo.u2Part2CfgPeerVersion =
+			prRegInfo->prNvramSettings->u2Part2PeerVersion;
+	}
 
 #if (CFG_SW_NVRAM_VERSION_CHECK == 1)
 	if (prAdapter->rVerInfo.u2Part1CfgPeerVersion > CFG_DRV_OWN_VERSION
