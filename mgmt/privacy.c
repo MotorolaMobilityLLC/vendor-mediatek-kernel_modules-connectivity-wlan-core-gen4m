@@ -664,6 +664,22 @@ u_int8_t secIsProtectedBss(IN struct ADAPTER *prAdapter, IN struct BSS_INFO *prB
 	return FALSE;
 }
 
+u_int8_t secIsWepBss(IN struct ADAPTER *prAdapter, IN struct BSS_INFO *prBssInfo)
+{
+	ASSERT(prBssInfo);
+
+	if (prBssInfo->eNetworkType == NETWORK_TYPE_AIS) {
+		if (prAdapter->rWifiVar.rConnSettings.eEncStatus == ENUM_ENCRYPTION1_ENABLED)
+			return TRUE;
+	}
+#if CFG_ENABLE_WIFI_DIRECT
+	else if (prBssInfo->eNetworkType == NETWORK_TYPE_P2P)
+		return kalP2PGetWepCipher(prAdapter->prGlueInfo, (uint8_t) prBssInfo->u4PrivateData);
+#endif
+
+	return FALSE;
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
 * \brief This routine is used before add/update a WLAN entry.
