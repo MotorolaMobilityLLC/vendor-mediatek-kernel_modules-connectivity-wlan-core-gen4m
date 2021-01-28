@@ -53,11 +53,11 @@ struct serv_os_task {
 typedef s_int32(*SERV_OS_TASK_CALLBACK) (u_long);
 
 /*gen4m wlan oid call back function*/
-typedef s_int32 (*wlan_oid_handler_t) (void *winfos,
+typedef uint32_t (*wlan_oid_handler_t) (void *winfos,
 	uint32_t oid_type,
 	void *param,
 	uint32_t param_len,
-	void *rsp,
+	uint32_t *rsp_len,
 	void *rsp_data);
 
 /*****************************************************************************
