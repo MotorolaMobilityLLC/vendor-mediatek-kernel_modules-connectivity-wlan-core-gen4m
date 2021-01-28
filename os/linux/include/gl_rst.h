@@ -299,6 +299,7 @@ extern int mtk_wcn_set_connsys_power_off_flag(int value);
 extern int mtk_wcn_wmt_assert_timeout(enum ENUM_WMTDRV_TYPE
 				      type, uint32_t reason, int timeout);
 extern int mtk_wcn_wmt_do_reset(enum ENUM_WMTDRV_TYPE type);
+extern int mtk_wcn_wmt_do_reset_only(enum ENUM_WMTDRV_TYPE type);
 #endif /*end of CFG_SUPPORT_CONNINFRA == 0*/
 /* WMT Core Dump Support */
 extern u_int8_t mtk_wcn_stp_coredump_start_get(void);
