@@ -718,9 +718,7 @@ static ssize_t procMCRWrite(struct file *file, const char __user *buffer,
 		 */
 		/* if (IS_ALIGN_4(rMcrInfo.u4McrOffset)) */
 		{
-			prGlueInfo =
-			    (struct GLUE_INFO *)
-			    netdev_priv((struct net_device *)data);
+			prGlueInfo = g_prGlueInfo_proc;
 
 			u4McrOffset = rMcrInfo.u4McrOffset;
 
