@@ -290,6 +290,61 @@ struct BSS_DESC *scanSearchBssDescByBssid(IN struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
+* @brief Set scan channel to scanReqMsg.
+*
+* @param[in]  u4ScanChannelNum  number of input channels
+* @param[in]  arChannel  channel list
+* @param[out] prScanReqMsg  scan request msg. Set channel number and
+*             channel list for output
+*
+* @return
+*/
+/*----------------------------------------------------------------------------*/
+void scanSetRequestChannel(IN uint32_t u4ScanChannelNum,
+		IN struct RF_CHANNEL_INFO arChannel[],
+		OUT struct MSG_SCN_SCAN_REQ_V2 *prScanReqMsg)
+{
+	uint32_t i, u4Channel, eBand, u4Index;
+	uint32_t auChannelBitMap[8];
+
+	if (u4ScanChannelNum == 0 ||
+		u4ScanChannelNum > MAXIMUM_OPERATION_CHANNEL_LIST) {
+		prScanReqMsg->ucChannelListNum = 0;
+		DBGLOG(SCN, TRACE, "scan channel num(%u==>0)\n", u4ScanChannelNum);
+		return;
+	}
+
+	u4Index = 0;
+	kalMemZero(auChannelBitMap, sizeof(auChannelBitMap));
+
+	for (i = 0; i < u4ScanChannelNum; i++) {
+		u4Channel = arChannel[i].ucChannelNum;
+		eBand = arChannel[i].eBand;
+		if (prScanReqMsg->eScanChannel == SCAN_CHANNEL_2G4 &&
+			eBand != BAND_2G4)
+			continue;
+		else if (prScanReqMsg->eScanChannel == SCAN_CHANNEL_5G &&
+			eBand != BAND_5G)
+			continue;
+		kalMemCopy(&prScanReqMsg->arChnlInfoList[u4Index],
+				&arChannel[i], sizeof(struct RF_CHANNEL_INFO));
+		auChannelBitMap[u4Channel>>5] |= 1 << (u4Channel&31);
+
+		u4Index++;
+	}
+	prScanReqMsg->ucChannelListNum = u4Index;
+	prScanReqMsg->eScanChannel = SCAN_CHANNEL_SPECIFIED;
+
+	DBGLOG(SCN, INFO,
+		"channel num(%u) %08X %08X %08X %08X %08X %08X %08X %08X\n",
+		u4Index, auChannelBitMap[7], auChannelBitMap[6],
+		auChannelBitMap[5], auChannelBitMap[4],
+		auChannelBitMap[3], auChannelBitMap[2],
+		auChannelBitMap[1], auChannelBitMap[0]);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * @brief Find the corresponding BSS Descriptor according to given BSSID
  *
  * @param[in] prAdapter          Pointer to the Adapter structure.
