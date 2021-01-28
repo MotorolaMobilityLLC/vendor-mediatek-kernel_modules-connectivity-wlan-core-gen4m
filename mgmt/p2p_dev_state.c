@@ -324,19 +324,18 @@ p2pDevStateAbort_OFF_CHNL_TX(IN P_ADAPTER_T prAdapter,
 {
 	P_P2P_OFF_CHNL_TX_REQ_INFO_T prP2pOffChnlTxPkt = (P_P2P_OFF_CHNL_TX_REQ_INFO_T) NULL;
 
-	do {
-		ASSERT_BREAK((prAdapter != NULL) && (prP2pMgmtTxInfo != NULL) && (prChnlReqInfo != NULL));
+	if (eNextState != P2P_DEV_STATE_OFF_CHNL_TX) {
+		while (!LINK_IS_EMPTY(&(prP2pMgmtTxInfo->rP2pTxReqLink))) {
+			LINK_REMOVE_HEAD(&(prP2pMgmtTxInfo->rP2pTxReqLink),
+					 prP2pOffChnlTxPkt, P_P2P_OFF_CHNL_TX_REQ_INFO_T);
 
-		if (eNextState != P2P_DEV_STATE_OFF_CHNL_TX) {
-			while (!LINK_IS_EMPTY(&(prP2pMgmtTxInfo->rP2pTxReqLink))) {
-				LINK_REMOVE_HEAD(&(prP2pMgmtTxInfo->rP2pTxReqLink),
-						 prP2pOffChnlTxPkt, P_P2P_OFF_CHNL_TX_REQ_INFO_T);
-
+			if (prP2pOffChnlTxPkt)
 				kalP2PIndicateMgmtTxStatus(prAdapter->prGlueInfo,
 							   prP2pOffChnlTxPkt->prMgmtTxMsdu, FALSE);
-			}
+			else
+				DBGLOG(P2P, INFO, "No packet for indicating Tx status!\n");
 
 			p2pFuncReleaseCh(prAdapter, prAdapter->ucP2PDevBssIdx, prChnlReqInfo);
 		}
-	} while (FALSE);
+	}
 }				/* p2pDevSateAbort_OFF_CHNL_TX */
