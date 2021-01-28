@@ -162,6 +162,12 @@ int SetATETxMcs(struct net_device *prNetDev,
 		uint8_t *prInBuf);
 int SetATEIpg(struct net_device *prNetDev,
 	      uint8_t *prInBuf);
+int SetATETxVhtNss(struct net_device *prNetDev,
+	      uint8_t *prInBuf);
+int SetATETxPath(struct net_device *prNetDev,
+	      uint8_t *prInBuf);
+int SetATERxPath(struct net_device *prNetDev,
+	      uint8_t *prInBuf);
 #if CFG_SUPPORT_ANT_SWAP
 int SetATEAntSwp(struct net_device *prNetDev,
 	      uint8_t *prInBuf);
