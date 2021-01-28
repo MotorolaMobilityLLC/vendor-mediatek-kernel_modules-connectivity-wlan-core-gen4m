@@ -1894,13 +1894,6 @@ void halWpdmaProcessCmdDmaDone(IN struct GLUE_INFO *prGlueInfo,
 		prTxRing->Cell[u4SwIdx].pPacket = NULL;
 		prTxRing->u4UsedCnt--;
 
-		if (u2Port == TX_RING_CMD_IDX_2 ||
-			u2Port == TX_RING_WA_CMD_IDX_4)
-			nicTxReleaseResource_PSE(prGlueInfo->prAdapter,
-				TC4_INDEX,
-				nicTxGetPageCount(prGlueInfo->prAdapter,
-					pTxD->SDLen0, TRUE), TRUE);
-
 		INC_RING_INDEX(u4SwIdx, TX_RING_SIZE);
 	} while (u4SwIdx != u4DmaIdx);
 
@@ -2044,6 +2037,14 @@ bool halWpdmaWriteCmd(IN struct GLUE_INFO *prGlueInfo,
 	       prCmdInfo->pucTxp, prCmdInfo->u4TxpLen,
 	       prTxRing->TxCpuIdx, prTxRing->u4UsedCnt);
 	DBGLOG_MEM32(HAL, TRACE, prCmdInfo->pucTxd, prCmdInfo->u4TxdLen);
+
+	if (u2Port == TX_RING_CMD_IDX_2 || u2Port == TX_RING_WA_CMD_IDX_4)
+		nicTxReleaseResource_PSE(prGlueInfo->prAdapter,
+			TC4_INDEX,
+			nicTxGetPageCount(prGlueInfo->prAdapter,
+				pTxD->SDLen0,
+				TRUE),
+			TRUE);
 
 	return TRUE;
 }
