@@ -1802,8 +1802,7 @@ uint32_t wlanProcessCommandQueue(IN struct ADAPTER
 				/* Do nothing */
 				/* Do nothing */
 			} else if (rStatus == WLAN_STATUS_SUCCESS) {
-				/* Do nothing */
-				/* Do nothing */
+				prAdapter->fgEnHifDbgInfo = true;
 			} else {
 				struct CMD_INFO *prCmdInfo = (struct CMD_INFO *)
 							     prQueueEntry;
@@ -11323,7 +11322,7 @@ uint32_t wlanSetLowLatencyMode(
 		nicConfigPowerSaveProfile(prAdapter, rPowerMode.ucBssIdx,
 			rPowerMode.ePowerMode, FALSE, PS_CALLER_GPU);
 
-		#ifdef CFG_SUPPORT_SMART_GEAR
+		#if CFG_SUPPORT_SMART_GEAR
 		wlandioSetSGStatus(prAdapter,
 			fgEnMode, 0x00, 0x00);
 		DBGLOG(OID, INFO,
