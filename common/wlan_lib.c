@@ -6022,7 +6022,7 @@ uint32_t wlanCfgSet(IN struct ADAPTER *prAdapter, const int8_t *pucKey, int8_t *
 	}
 	/* prWlanCfgEntry */
 	if (prWlanCfgEntry) {
-		DBGLOG(INIT, INFO, "Set wifi config exist %u \'%s\' \'%s\'\n",
+		DBGLOG(INIT, LOUD, "Set wifi config exist %u \'%s\' \'%s\'\n",
 		       ucExist, prWlanCfgEntry->aucKey, prWlanCfgEntry->aucValue);
 		return WLAN_STATUS_SUCCESS;
 	}
