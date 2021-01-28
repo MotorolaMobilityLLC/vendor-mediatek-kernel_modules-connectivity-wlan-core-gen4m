@@ -864,7 +864,7 @@ void asicConnac2xLowPowerOwnSet(
 				CONNAC2X_BN0_LPCTL_ADDR,
 				&u4RegValue);
 		*pfgResult = (u4RegValue &
-			PCIE_LPCR_AP_HOST_OWNER_STATE_SYNC) == 1;
+			PCIE_LPCR_AP_HOST_OWNER_STATE_SYNC) == 0x4;
 	} else
 		*pfgResult = TRUE;
 }

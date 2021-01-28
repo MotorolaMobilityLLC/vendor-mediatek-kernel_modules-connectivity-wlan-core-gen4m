@@ -7473,6 +7473,8 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 	prWifiVar->fgEnableSer = (uint8_t)wlanCfgGetUint32(prAdapter,
 						"SerEnable", FEATURE_ENABLED);
 
+	prWifiVar->fgRstRecover = (uint8_t) wlanCfgGetUint32(prAdapter,
+					"RstRecover", FEATURE_DISABLED);
 	/*
 	 * For Certification purpose,forcibly set
 	 * "Compressed Steering Number of Beamformer Antennas Supported" to our
