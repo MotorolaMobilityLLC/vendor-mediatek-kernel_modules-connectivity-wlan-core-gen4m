@@ -732,6 +732,7 @@ int mtk_cfg80211_vendor_packet_keep_alive_start(
 	const void *data, int data_len)
 {
 	uint32_t rStatus = WLAN_STATUS_SUCCESS;
+	unsigned short u2IpPktLen = 0;
 	uint32_t u4BufLen = 0;
 	struct GLUE_INFO *prGlueInfo = NULL;
 
@@ -777,8 +778,10 @@ int mtk_cfg80211_vendor_packet_keep_alive_start(
 				prPkt->u2IpPktLen = nla_get_u16(attr[i]);
 				break;
 			case MKEEP_ALIVE_ATTRIBUTE_IP_PKT:
-				kalMemCopy(prPkt->pIpPkt,
-					nla_data(attr[i]), prPkt->u2IpPktLen);
+				u2IpPktLen = prPkt->u2IpPktLen <= 256
+					? prPkt->u2IpPktLen : 256;
+				kalMemCopy(prPkt->pIpPkt, nla_data(attr[i]),
+					u2IpPktLen);
 				break;
 			case MKEEP_ALIVE_ATTRIBUTE_SRC_MAC_ADDR:
 				kalMemCopy(prPkt->ucSrcMacAddr,
