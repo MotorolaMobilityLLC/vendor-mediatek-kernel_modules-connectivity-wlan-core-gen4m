@@ -568,9 +568,10 @@ static u_int8_t scanSanityCheckBssDesc(struct ADAPTER *prAdapter,
 	}
 
 	/* roaming case */
-	if (prAisBssInfo->eConnectionState == MEDIA_STATE_CONNECTED ||
-	    aisFsmIsInProcessPostpone(prAdapter, ucBssIndex)) {
-		int8_t r1, r2;
+	if (target &&
+	   (prAisBssInfo->eConnectionState == MEDIA_STATE_CONNECTED ||
+	    aisFsmIsInProcessPostpone(prAdapter, ucBssIndex))) {
+		int32_t r1, r2;
 
 		r1 = RCPI_TO_dBm(target->ucRCPI);
 		r2 = RCPI_TO_dBm(prBssDesc->ucRCPI);
