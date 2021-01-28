@@ -1064,6 +1064,9 @@ struct WIFI_VAR {
 	uint32_t u4PerfMonTpTh[PERF_MON_TP_MAX_THRESHOLD];
 	uint32_t	u4BoostCpuTh;
 
+	uint32_t u4PerfMonPendingTh;
+	uint32_t u4PerfMonUsedTh;
+
 	u_int8_t fgTdlsBufferSTASleep; /* Support TDLS 5.5.4.2 optional case */
 	u_int8_t fgChipResetRecover;
 	enum PARAM_POWER_MODE ePowerMode;
