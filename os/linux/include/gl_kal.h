@@ -1447,6 +1447,10 @@ u_int8_t kalCfgDataRead16(IN struct GLUE_INFO *prGlueInfo,
 u_int8_t kalCfgDataWrite16(IN struct GLUE_INFO *prGlueInfo,
 			   IN uint32_t u4Offset, IN uint16_t u2Data);
 
+u_int8_t kalCfgDataWrite8(IN struct GLUE_INFO *prGlueInfo,
+			   IN uint32_t u4Offset, IN uint8_t u2Data);
+
+
 /*----------------------------------------------------------------------------*/
 /* RSSI Updating                                                              */
 /*----------------------------------------------------------------------------*/

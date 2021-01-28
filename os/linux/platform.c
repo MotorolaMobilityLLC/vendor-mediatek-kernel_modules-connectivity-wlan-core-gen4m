@@ -612,6 +612,31 @@ u_int8_t kalCfgDataWrite16(IN struct GLUE_INFO *prGlueInfo,
 	}
 #endif
 }
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief API for writing data on NVRAM with 1 bytes fixed length.
+ *
+ * \param[in]
+ *           prGlueInfo
+ *           u4Offset
+ *           u1Data
+ * \return
+ *           TRUE
+ *           FALSE
+ */
+/*----------------------------------------------------------------------------*/
+
+u_int8_t kalCfgDataWrite8(IN struct GLUE_INFO *prGlueInfo,
+			   IN uint32_t u4Offset, IN uint8_t u1Data)
+{
+	if (u4Offset + sizeof(unsigned char) > MAX_CFG_FILE_WIFI_REC_SIZE)
+		return FALSE;
+
+	kalMemCopy(&g_aucNvram[u4Offset], &u1Data,
+		sizeof(unsigned char));
+	return TRUE;
+
+}
 
 static int wlan_netdev_notifier_call(struct notifier_block *nb,
 		unsigned long state, void *ndev)

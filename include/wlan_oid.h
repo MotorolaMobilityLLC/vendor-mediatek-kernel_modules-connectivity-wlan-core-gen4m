@@ -94,8 +94,12 @@
 #define PARAM_AUTH_REQUEST_PAIRWISE_ERROR       0x06
 #define PARAM_AUTH_REQUEST_GROUP_ERROR          0x0E
 
-#define PARAM_EEPROM_READ_METHOD_READ           1
+
 #define PARAM_EEPROM_READ_METHOD_GETSIZE        0
+#define PARAM_EEPROM_READ_METHOD_READ           1
+#define PARAM_EEPROM_READ_NVRAM					2
+#define PARAM_EEPROM_WRITE_NVRAM				3
+
 
 #define PARAM_WHQL_RSSI_MAX_DBM                 (-10)
 #define PARAM_WHQL_RSSI_INITIAL_DBM             (-50)
@@ -1539,12 +1543,22 @@ struct PARAM_CUSTOM_KEY_CFG_STRUCT {
 	uint8_t aucKey[WLAN_CFG_KEY_LEN_MAX];
 	uint8_t aucValue[WLAN_CFG_VALUE_LEN_MAX];
 };
-
-struct PARAM_CUSTOM_EEPROM_RW_STRUCT {
-	uint8_t ucEepromMethod;	/* For read only read: 1, query size: 0 */
+struct EEPROM_RW_INFO {
 	uint8_t ucEepromIndex;
 	uint8_t reserved;
 	uint16_t u2EepromData;
+};
+struct NVRAM_RW_INFO {
+	uint16_t u2NvIndex;
+	uint16_t u2NvData;
+};
+
+struct PARAM_CUSTOM_EEPROM_RW_STRUCT {
+	uint8_t ucMethod;
+	union {
+		struct EEPROM_RW_INFO rEeprom;
+		struct NVRAM_RW_INFO rNvram;
+	} info;
 };
 
 struct PARAM_CUSTOM_WMM_PS_TEST_STRUCT {
@@ -2517,7 +2531,7 @@ struct PARAM_TXPOWER_ALL_RATE_POWER_INFO_T {
 	/* tx Power Max/Min Limit info */
 	int8_t icPwrMaxBnd;
 	int8_t icPwrMinBnd;
-	uint8_t ucReserved2;
+	int8_t ucReserved2;
 };
 #endif
 
