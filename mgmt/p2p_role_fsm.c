@@ -3119,7 +3119,7 @@ void p2pRoleFsmRunEventBeaconUpdate(IN struct ADAPTER *prAdapter,
 		DBGLOG(P2P, TRACE,
 			"Copy extra IEs for assoc resp (Length= %d)\n",
 			prBcnUpdateMsg->u4AssocRespLen);
-		DBGLOG_MEM8(P2P, INFO,
+		DBGLOG_MEM8(P2P, TRACE,
 			prBcnUpdateMsg->pucAssocRespIE,
 			prBcnUpdateMsg->u4AssocRespLen);
 
