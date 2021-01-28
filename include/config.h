@@ -184,7 +184,9 @@
 /* DFS (802.11h) */
 #define CFG_SUPPORT_DFS		1
 #ifndef CFG_SUPPORT_DFS_MASTER
-#define CFG_SUPPORT_DFS_MASTER	1
+#define CFG_SUPPORT_DFS_MASTER		1
+/* SoftAp Cross Band Channel Switch */
+#define CFG_SUPPORT_IDC_CH_SWITCH	1
 #endif
 
 #if (CFG_SUPPORT_DFS == 1)	/* Add by Enlai */

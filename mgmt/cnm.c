@@ -80,6 +80,10 @@
 #define DBDC_DISABLE_COUNTDOWN_TIME	(2*1000)	/* ms */
 #endif /* CFG_SUPPORT_DBDC */
 
+#if CFG_SUPPORT_IDC_CH_SWITCH
+#define IDC_CSA_GUARD_TIME			(60)	/* 60 Sec */
+#endif
+
 /*******************************************************************************
  *                             D A T A   T Y P E S
  *******************************************************************************
@@ -174,6 +178,9 @@ struct DBDC_FSM_T {
  *                            P U B L I C   D A T A
  *******************************************************************************
  */
+#if CFG_SUPPORT_IDC_CH_SWITCH
+struct EVENT_LTE_SAFE_CHN g_rLteSafeChInfo;
+#endif
 
 /*******************************************************************************
  *                           P R I V A T E   D A T A
@@ -181,6 +188,10 @@ struct DBDC_FSM_T {
  */
 #if CFG_SUPPORT_DBDC
 static struct DBDC_INFO_T g_rDbdcInfo;
+#endif
+
+#if CFG_SUPPORT_IDC_CH_SWITCH
+OS_SYSTIME g_rLastCsaSysTime;
 #endif
 
 /*******************************************************************************
@@ -444,6 +455,9 @@ void cnmInit(struct ADAPTER *prAdapter)
 
 	prCnmInfo = &prAdapter->rCnmInfo;
 	prCnmInfo->fgChGranted = FALSE;
+#if CFG_SUPPORT_IDC_CH_SWITCH
+	g_rLastCsaSysTime = 0;
+#endif
 }	/* end of cnmInit()*/
 
 /*----------------------------------------------------------------------------*/
@@ -814,7 +828,7 @@ void cnmChMngrHandleChEvent(struct ADAPTER *prAdapter,
 
 #if (CFG_SUPPORT_DFS_MASTER == 1)
 void cnmRadarDetectEvent(IN struct ADAPTER *prAdapter,
-			 IN struct WIFI_EVENT *prEvent)
+			IN struct WIFI_EVENT *prEvent)
 {
 	struct EVENT_RDD_REPORT *prEventBody;
 	struct BSS_INFO *prBssInfo;
@@ -890,13 +904,13 @@ void cnmRadarDetectEvent(IN struct ADAPTER *prAdapter,
 }
 
 void cnmCsaDoneEvent(IN struct ADAPTER *prAdapter,
-		     IN struct WIFI_EVENT *prEvent)
+			IN struct WIFI_EVENT *prEvent)
 {
 	struct BSS_INFO *prBssInfo;
 	struct MSG_P2P_CSA_DONE *prP2pCsaDoneMsg;
 	uint8_t ucBssIndex;
 
-	log_dbg(CNM, INFO, "cnmCsaDoneEvent.\n");
+	DBGLOG(CNM, INFO, "cnmCsaDoneEvent.\n");
 
 	prP2pCsaDoneMsg = (struct MSG_P2P_CSA_DONE *)
 			  cnmMemAlloc(
@@ -918,14 +932,459 @@ void cnmCsaDoneEvent(IN struct ADAPTER *prAdapter,
 		prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
 						  ucBssIndex);
 
-		if (prBssInfo && prBssInfo->fgIsDfsActive) {
+		if (prBssInfo &&
+			(prBssInfo->eCurrentOPMode == OP_MODE_ACCESS_POINT)) {
 			prP2pCsaDoneMsg->ucBssIndex = ucBssIndex;
 			break;
 		}
 	}
+	DBGLOG(CNM, INFO, "cnmCsaDoneEvent.ucBssIndex=%d\n",
+		prP2pCsaDoneMsg->ucBssIndex);
 
 	mboxSendMsg(prAdapter, MBOX_ID_0,
 		    (struct MSG_HDR *)prP2pCsaDoneMsg, MSG_SEND_METHOD_BUF);
+}
+#endif
+
+#define CFG_SUPPORT_IDC_CROSS_BAND_SWITCH   1
+
+#if CFG_SUPPORT_IDC_CH_SWITCH
+uint8_t cnmDecideSapNewChannel(
+	IN struct GLUE_INFO *prGlueInfo, uint8_t ucCurrentChannel)
+{
+
+	u_int8_t fgIsReady = FALSE;
+	struct RF_CHANNEL_INFO aucChannelList2G[MAX_2G_BAND_CHN_NUM];
+	struct RF_CHANNEL_INFO aucChannelList5G[MAX_5G_BAND_CHN_NUM];
+	uint8_t ucNumOfChannel, i, ucIdx, ucSwitchMode;
+	uint16_t u2APNumScore = 0, u2UpThreshold = 0,
+		u2LowThreshold = 0, ucInnerIdx = 0;
+	uint32_t u4LteSafeChnBitMask_2G  = 0, u4LteSafeChnBitMask_5G_1 = 0,
+		u4LteSafeChnBitMask_5G_2 = 0;
+
+	struct PARAM_GET_CHN_INFO *prGetChnLoad;
+	struct PARAM_PREFER_CHN_INFO rPreferChannel = { 0, 0xFFFF, 0 };
+	struct PARAM_PREFER_CHN_INFO
+		arChannelDirtyScore_2G[MAX_2G_BAND_CHN_NUM];
+
+	if (!prGlueInfo) {
+		DBGLOG(P2P, ERROR, "prGlueInfo is NULL\n");
+		return -EFAULT;
+	}
+
+	ASSERT(ucCurrentChannel);
+
+	if (ucCurrentChannel <= 14)
+		ucSwitchMode = CH_SWITCH_2G;
+	else {
+		ucSwitchMode = CH_SWITCH_5G;
+		DBGLOG(P2P, WARN,
+			"Switch to 5G channel instead\n");
+	}
+	/*
+	*  Get LTE safe channels
+	*/
+	if (g_rLteSafeChInfo.u4Flags & BIT(0)) {
+		u4LteSafeChnBitMask_2G = g_rLteSafeChInfo
+			.rLteSafeChn.au4SafeChannelBitmask[0];
+		u4LteSafeChnBitMask_5G_1 = g_rLteSafeChInfo
+			.rLteSafeChn.au4SafeChannelBitmask[1];
+		u4LteSafeChnBitMask_5G_2 = g_rLteSafeChInfo
+			.rLteSafeChn.au4SafeChannelBitmask[2];
+	}
+
+	if ((ucSwitchMode == CH_SWITCH_2G)
+			&& (!(u4LteSafeChnBitMask_2G & BITS(1, 14)))) {
+		DBGLOG(P2P, WARN,
+			"FW report 2.4G all channels unsafe!?\n");
+		u4LteSafeChnBitMask_2G = BITS(1, 14);
+#if CFG_SUPPORT_IDC_CROSS_BAND_SWITCH
+		/* Choose 5G non-RDD Channel */
+		if (u4LteSafeChnBitMask_5G_1 || u4LteSafeChnBitMask_5G_2) {
+			ucSwitchMode = CH_SWITCH_5G;
+			DBGLOG(P2P, WARN,
+				"Switch to 5G channel instead\n");
+		} else {
+			/* not to switch channel*/
+			return 0;
+		}
+#endif
+	}
+
+	if (ucSwitchMode == CH_SWITCH_2G) {
+		/*
+		* 1. Get 2.4G Band channel list in current regulatory domain
+		*/
+		rlmDomainGetChnlList(prGlueInfo->prAdapter, BAND_2G4, TRUE,
+			MAX_2G_BAND_CHN_NUM, &ucNumOfChannel, aucChannelList2G);
+
+		fgIsReady = prGlueInfo->prAdapter->rWifiVar
+				.rChnLoadInfo.fgDataReadyBit;
+
+		if (fgIsReady == TRUE) {
+			/*
+			* 2. Calculate each channel's dirty score
+			*/
+			prGetChnLoad = &(prGlueInfo->prAdapter->rWifiVar
+				.rChnLoadInfo);
+
+			for (i = 0; i < ucNumOfChannel; i++) {
+				ucIdx = aucChannelList2G[i]
+					.ucChannelNum - 1;
+
+				/* Current channel's dirty score */
+				u2APNumScore =
+					prGetChnLoad->rEachChnLoad[ucIdx]
+					.u2APNum * CHN_DIRTY_WEIGHT_UPPERBOUND;
+				u2LowThreshold = u2UpThreshold = 3;
+
+				if (ucIdx < 3) {
+					u2LowThreshold = ucIdx;
+					u2UpThreshold = 3;
+				} else if (ucIdx >= (ucNumOfChannel - 3)) {
+					u2LowThreshold = 3;
+					u2UpThreshold =
+						ucNumOfChannel - (ucIdx + 1);
+				}
+
+				/* Lower channel's dirty score */
+				for (ucInnerIdx = 0;
+					ucInnerIdx < u2LowThreshold;
+					ucInnerIdx++) {
+					u2APNumScore +=
+					(prGetChnLoad->rEachChnLoad
+					[ucIdx - ucInnerIdx - 1].u2APNum *
+					(CHN_DIRTY_WEIGHT_UPPERBOUND - 1
+					- ucInnerIdx));
+				}
+
+				/* Upper channel's dirty score */
+				for (ucInnerIdx = 0;
+					ucInnerIdx < u2UpThreshold;
+					ucInnerIdx++) {
+					u2APNumScore +=
+					(prGetChnLoad->rEachChnLoad
+					[ucIdx + ucInnerIdx + 1].u2APNum *
+					(CHN_DIRTY_WEIGHT_UPPERBOUND - 1
+					- ucInnerIdx));
+				}
+
+				arChannelDirtyScore_2G[i].ucChannel =
+					aucChannelList2G[i].ucChannelNum;
+				arChannelDirtyScore_2G[i].u2APNumScore
+					= u2APNumScore;
+			}
+		}
+
+		/* 4. Find best channel, skip unsafe*/
+		for (i = 0; i < ucNumOfChannel; i++) {
+			if (!(u4LteSafeChnBitMask_2G
+				& BIT(arChannelDirtyScore_2G[i].ucChannel)))
+				continue;
+
+			if (rPreferChannel.u2APNumScore
+				>= arChannelDirtyScore_2G[i].u2APNumScore) {
+				rPreferChannel.ucChannel =
+					arChannelDirtyScore_2G[i].ucChannel;
+				rPreferChannel.u2APNumScore =
+					arChannelDirtyScore_2G[i].u2APNumScore;
+			}
+		}
+	} else if (ucSwitchMode == CH_SWITCH_5G) {
+
+		rlmDomainGetChnlList(prGlueInfo->prAdapter, BAND_5G, TRUE,
+			MAX_5G_BAND_CHN_NUM, &ucNumOfChannel, aucChannelList5G);
+
+		/* 4. Find best channel, skip unsafe*/
+		for (i = 0; i < ucNumOfChannel; i++) {
+			if ((aucChannelList5G[i].ucChannelNum >= 36)
+				&& (aucChannelList5G[i].ucChannelNum <= 144)) {
+				ucIdx = (aucChannelList5G[i]
+					.ucChannelNum - 36) / 4;
+				if (u4LteSafeChnBitMask_5G_1 & BIT(ucIdx)) {
+					rPreferChannel.ucChannel =
+						aucChannelList5G[i]
+						.ucChannelNum;
+					break;
+				}
+			} else if ((aucChannelList5G[i].ucChannelNum >= 149)
+				&& (aucChannelList5G[i].ucChannelNum <= 181)) {
+				ucIdx = (aucChannelList5G[i]
+					.ucChannelNum - 149) / 4;
+				if (u4LteSafeChnBitMask_5G_2 & BIT(ucIdx)) {
+					rPreferChannel.ucChannel =
+						aucChannelList5G[i]
+						.ucChannelNum;
+					break;
+				}
+			}
+		}
+	} else {
+		/* Should not be here */
+		DBGLOG(P2P, ERROR,
+			"ERROR!! ucSwitchMode = %d\n", ucSwitchMode);
+		ASSERT(0);
+	}
+
+	DBGLOG(P2P, INFO, "rPreferChannel = %d, u2APNumScore = %d\n",
+		rPreferChannel.ucChannel, rPreferChannel.u2APNumScore);
+
+	return rPreferChannel.ucChannel;
+
+}
+
+uint8_t cnmIdcCsaReq(IN struct ADAPTER *prAdapter,
+	IN uint8_t ch_num, IN uint8_t ucRoleIdx)
+{
+	struct GLUE_INFO *prGlueInfo = prAdapter->prGlueInfo;
+	struct BSS_INFO *prBssInfo = NULL;
+	uint8_t ucBssIdx = 0;
+	struct RF_CHANNEL_INFO rRfChnlInfo;
+	struct MSG_P2P_SET_NEW_CHANNEL *prP2pSetNewChannelMsg =
+		(struct MSG_P2P_SET_NEW_CHANNEL *) NULL;
+	struct MSG_P2P_BEACON_UPDATE *prP2pBcnUpdateMsg =
+		(struct MSG_P2P_BEACON_UPDATE *) NULL;
+
+	ASSERT(ch_num);
+	ASSERT(prGlueInfo);
+
+	if (p2pFuncRoleToBssIdx(
+		prAdapter, ucRoleIdx, &ucBssIdx) !=
+		WLAN_STATUS_SUCCESS)
+		return -1;
+
+	DBGLOG(REQ, INFO,
+		"[CSA]RoleIdx = %d ,CH = %d BssIdx = %d\n",
+		ucRoleIdx, ch_num, ucBssIdx);
+
+	prBssInfo = prAdapter->aprBssInfo[ucBssIdx];
+
+
+	if (prBssInfo->ucPrimaryChannel != ch_num) {
+
+		/* allocate chandef buffer to inform Kernel */
+		if (prGlueInfo->prP2PInfo[ucRoleIdx]->chandef == NULL) {
+			prGlueInfo->prP2PInfo[ucRoleIdx]->chandef =
+				(struct cfg80211_chan_def *)
+				cnmMemAlloc(prAdapter,
+				RAM_TYPE_BUF, sizeof(struct cfg80211_chan_def));
+
+			prGlueInfo->prP2PInfo[ucRoleIdx]->chandef->chan =
+				(struct ieee80211_channel *)
+				cnmMemAlloc(prAdapter,
+				RAM_TYPE_BUF, sizeof(struct ieee80211_channel));
+		}
+
+		/* Build New CH Info */
+		rRfChnlInfo.ucChannelNum = ch_num;
+		rRfChnlInfo.eBand =
+			(rRfChnlInfo.ucChannelNum <= 14)
+			? BAND_2G4 : BAND_5G;
+
+		/* Heritage BW from Old connection*/
+		rRfChnlInfo.ucChnlBw = CW_20_40MHZ;
+		rRfChnlInfo.u2PriChnlFreq =
+			nicChannelNum2Freq((uint32_t)ch_num) / 1000;
+		rRfChnlInfo.u4CenterFreq1 =
+			nicGetVhtS1(rRfChnlInfo.ucChannelNum,
+				prBssInfo->ucVhtChannelWidth);
+		rRfChnlInfo.u4CenterFreq2 = 0;
+
+		DBGLOG(REQ, INFO,
+		"[CSA]CH=%d,Band=%d,BW=%d,PriFreq=%d,S1=%d\n",
+			rRfChnlInfo.ucChannelNum,
+			rRfChnlInfo.eBand,
+			rRfChnlInfo.ucChnlBw,
+			rRfChnlInfo.u2PriChnlFreq,
+			rRfChnlInfo.u4CenterFreq1);
+
+		/* fill in chinfo to chandef */
+
+		prGlueInfo->prP2PInfo[ucRoleIdx]->chandef->chan->center_freq
+			= rRfChnlInfo.u2PriChnlFreq;
+		prGlueInfo->prP2PInfo[ucRoleIdx]
+			->chandef->center_freq1 = rRfChnlInfo.u4CenterFreq1;
+		prGlueInfo->prP2PInfo[ucRoleIdx]
+			->chandef->center_freq2 = rRfChnlInfo.u4CenterFreq2;
+
+		if (rRfChnlInfo.ucChnlBw == MAX_BW_20MHZ)
+			prGlueInfo->prP2PInfo[ucRoleIdx]->chandef->width
+				= NL80211_CHAN_WIDTH_20;
+		else if (rRfChnlInfo.ucChnlBw == MAX_BW_40MHZ)
+			prGlueInfo->prP2PInfo[ucRoleIdx]->chandef->width
+				= NL80211_CHAN_WIDTH_40;
+		else if (rRfChnlInfo.ucChnlBw == MAX_BW_80MHZ)
+			prGlueInfo->prP2PInfo[ucRoleIdx]->chandef->width
+				= NL80211_CHAN_WIDTH_80;
+		else
+			prGlueInfo->prP2PInfo[ucRoleIdx]->chandef->width
+				= NL80211_CHAN_WIDTH_20;
+
+		if (rRfChnlInfo.eBand == BAND_5G)
+			prGlueInfo->prP2PInfo[ucRoleIdx]->chandef->
+				chan->band = KAL_BAND_5GHZ;
+		else
+			prGlueInfo->prP2PInfo[ucRoleIdx]->chandef->
+				chan->band = KAL_BAND_2GHZ;
+
+		/* Copy NEW CHINFO to Adapter */
+		p2pFuncSetChannel(prAdapter,
+			ucRoleIdx, &rRfChnlInfo);
+
+		p2pFuncSetDfsState(DFS_STATE_INACTIVE);
+
+		/* Set CSA IE parameters */
+		prAdapter->rWifiVar.fgCsaInProgress = TRUE;
+		prAdapter->rWifiVar.ucChannelSwitchMode = 1;
+		prAdapter->rWifiVar.ucNewChannelNumber =
+			rRfChnlInfo.ucChannelNum;
+		prAdapter->rWifiVar.ucChannelSwitchCount = 5;
+
+		/* Set new channel parameters */
+		prP2pSetNewChannelMsg = (struct MSG_P2P_SET_NEW_CHANNEL *)
+			cnmMemAlloc(prAdapter,
+			RAM_TYPE_MSG, sizeof(*prP2pSetNewChannelMsg));
+
+		if (prP2pSetNewChannelMsg == NULL) {
+			ASSERT(FALSE);
+			return -1;
+		}
+
+		prP2pSetNewChannelMsg->rMsgHdr.eMsgId =
+			MID_MNY_P2P_SET_NEW_CHANNEL;
+
+		prP2pSetNewChannelMsg->eChannelWidth = rRfChnlInfo.ucChnlBw;
+
+		prP2pSetNewChannelMsg->ucRoleIdx = ucRoleIdx;
+
+		prP2pSetNewChannelMsg->ucBssIndex = ucBssIdx;
+
+		mboxSendMsg(prAdapter,
+			MBOX_ID_0,
+			(struct MSG_HDR *) prP2pSetNewChannelMsg,
+			MSG_SEND_METHOD_BUF);
+
+		/* Update beacon */
+		prP2pBcnUpdateMsg = (struct MSG_P2P_BEACON_UPDATE *)
+			cnmMemAlloc(prAdapter,
+			RAM_TYPE_MSG,
+			sizeof(struct MSG_P2P_BEACON_UPDATE));
+
+		if (prP2pBcnUpdateMsg == NULL) {
+			ASSERT(FALSE);
+			return -1;
+		}
+
+		prP2pBcnUpdateMsg->ucRoleIndex = ucRoleIdx;
+		prP2pBcnUpdateMsg->rMsgHdr.eMsgId =
+			MID_MNY_P2P_BEACON_UPDATE;
+
+		prP2pBcnUpdateMsg->u4BcnHdrLen = 0;
+		prP2pBcnUpdateMsg->pucBcnHdr = NULL;
+
+		prP2pBcnUpdateMsg->u4BcnBodyLen = 0;
+		prP2pBcnUpdateMsg->pucBcnBody = NULL;
+
+
+		kalP2PSetRole(prGlueInfo, 2, ucRoleIdx);
+
+		mboxSendMsg(prAdapter,
+			MBOX_ID_0,
+			(struct MSG_HDR *) prP2pBcnUpdateMsg,
+			MSG_SEND_METHOD_BUF);
+
+		/* Record Last Channel Switch Time */
+		GET_CURRENT_SYSTIME(&g_rLastCsaSysTime);
+
+		return 0; /* Return Success */
+
+	} else {
+		DBGLOG(CNM, INFO,
+			"[CSA]Req CH = cur CH:%d, Stop Req\n",
+			prBssInfo->ucPrimaryChannel);
+		return -1;
+	}
+}
+
+void cnmIdcDetectHandler(IN struct ADAPTER *prAdapter,
+			IN struct WIFI_EVENT *prEvent)
+{
+
+	struct EVENT_LTE_SAFE_CHN *prEventBody;
+	uint8_t ucBssIndex, ucIdx;
+	struct BSS_INFO *prBssInfo;
+	uint8_t ucRoleIdx = 0;
+	struct GLUE_INFO *prGlueInfo = prAdapter->prGlueInfo;
+	uint8_t ucNewChannel = 0;
+	uint32_t u4Ret = 0;
+	OS_SYSTIME rCurrentTime = 0;
+	bool fgCsaCoolDown = FALSE;
+
+	prEventBody = (struct EVENT_LTE_SAFE_CHN *)(
+		prEvent->aucBuffer);
+
+	g_rLteSafeChInfo.ucVersion = prEventBody->ucVersion;
+	g_rLteSafeChInfo.u4Flags = prEventBody->u4Flags;
+
+	/* Statistics from FW is valid */
+	if (prEventBody->u4Flags & BIT(0)) {
+		for (ucIdx = 0;
+			ucIdx < NL80211_TESTMODE_AVAILABLE_CHAN_ATTR_MAX;
+				ucIdx++) {
+			g_rLteSafeChInfo.rLteSafeChn.
+				au4SafeChannelBitmask[ucIdx]
+				= prEventBody->rLteSafeChn.
+				au4SafeChannelBitmask[ucIdx];
+
+			DBGLOG(P2P, INFO,
+				"[CSA]LTE safe channels[%d]=0x%08x\n",
+				ucIdx,
+				prEventBody->rLteSafeChn.
+				au4SafeChannelBitmask[ucIdx]);
+		}
+	}
+
+	/* Only allow to switch channel once each minute*/
+	GET_CURRENT_SYSTIME(&rCurrentTime);
+	if ((CHECK_FOR_TIMEOUT(rCurrentTime,
+			g_rLastCsaSysTime,
+			SEC_TO_SYSTIME(IDC_CSA_GUARD_TIME)))
+			|| (g_rLastCsaSysTime == 0)) {
+		fgCsaCoolDown = TRUE;
+	}
+
+	if (!fgCsaCoolDown) {
+		DBGLOG(CNM, INFO,
+			"[CSA]CsaCoolDown not Finish yet,rCurrentTime=%d,g_rLastCsaSysTime=%d,IDC_CSA_GUARD_TIME=%d\n",
+			rCurrentTime,
+			g_rLastCsaSysTime,
+			SEC_TO_SYSTIME(IDC_CSA_GUARD_TIME));
+		return;
+	}
+
+	/* Choose New Ch & Start CH Swtich*/
+	for (ucBssIndex = 0; ucBssIndex < BSS_DEFAULT_NUM;
+		ucBssIndex++) {
+
+		prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
+		if (prBssInfo &&
+			(prBssInfo->eCurrentOPMode == OP_MODE_ACCESS_POINT)) {
+			DBGLOG(CNM, INFO, "[CSA]BssIdx=%d,CurCH=%d\n",
+				prBssInfo->ucPrimaryChannel);
+			ucNewChannel = cnmDecideSapNewChannel(prGlueInfo,
+				prBssInfo->ucPrimaryChannel);
+			if (ucNewChannel) {
+				u4Ret = cnmIdcCsaReq(prAdapter, ucNewChannel,
+							ucRoleIdx);
+				DBGLOG(CNM, INFO, "[CSA]BssIdx=%d,NewCH=%d\n",
+					ucBssIndex, ucNewChannel);
+			} else {
+				DBGLOG(CNM, INFO,
+					"[CSA]No Safe channel,not switch CH\n");
+			}
+			break;
+		}
+	}
 }
 #endif
 
