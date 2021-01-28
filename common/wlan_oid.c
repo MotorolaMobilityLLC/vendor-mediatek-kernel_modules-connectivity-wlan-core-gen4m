@@ -4842,7 +4842,8 @@ wlanSendSetQueryExtCmd(
 	DEBUGFUNC("wlanSendSetQueryCmd");
 
 	if (!prCmdInfo) {
-		DBGLOG(INIT, ERROR, "Allocate CMD_INFO_T ==> FAILED.\n");
+		DBGLOG(INIT, ERROR, "Allocate CMD_INFO_T FAILED ID[0x%x]\n",
+			ucCID);
 		return WLAN_STATUS_FAILURE;
 	}
 
@@ -10132,7 +10133,8 @@ wlanSendSetQueryCmd(IN struct ADAPTER *prAdapter,
 	DEBUGFUNC("wlanSendSetQueryCmd");
 
 	if (!prCmdInfo) {
-		DBGLOG(INIT, ERROR, "Allocate CMD_INFO_T ==> FAILED.\n");
+		DBGLOG(INIT, ERROR, "Allocate CMD_INFO_T FAILED ID[0x%x]\n",
+			ucCID);
 		return WLAN_STATUS_FAILURE;
 	}
 
