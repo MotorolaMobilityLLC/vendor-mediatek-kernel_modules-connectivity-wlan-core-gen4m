@@ -1466,6 +1466,10 @@ u_int8_t bssRemoveClient(IN struct ADAPTER *prAdapter,
 	LINK_FOR_EACH_ENTRY(prCurrStaRec, prClientList, rLinkEntry,
 			    struct STA_RECORD) {
 
+		/* Break to check client list */
+		if (!prCurrStaRec)
+			break;
+
 		if (prCurrStaRec == prStaRec) {
 
 			LINK_REMOVE_KNOWN_ENTRY(prClientList,
