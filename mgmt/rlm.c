@@ -2853,6 +2853,11 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 		/* Check SAP channel */
 		if (cnmSapIsActive(prAdapter))
 			p2pFuncSwitchSapChannel(prAdapter);
+#if CFG_SUPPORT_SAP_DFS_CHANNEL
+		if (cnmSapIsConcurrent(prAdapter))
+			wlanUpdateDfsChannelTable(prAdapter->prGlueInfo,
+				prBssInfo->ucPrimaryChannel);
+#endif
 	}
 #if CFG_SUPPORT_QUIET && 0
 	if (!fgHasQuietIE)
@@ -4744,6 +4749,11 @@ void rlmProcessSpecMgtAction(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb)
 			/* Check SAP channel */
 			if (cnmSapIsActive(prAdapter))
 				p2pFuncSwitchSapChannel(prAdapter);
+#if CFG_SUPPORT_SAP_DFS_CHANNEL
+			if (cnmSapIsConcurrent(prAdapter))
+				wlanUpdateDfsChannelTable(prAdapter->prGlueInfo,
+					prBssInfo->ucPrimaryChannel);
+#endif
 		}
 		nicUpdateBss(prAdapter, prBssInfo->ucBssIndex);
 		break;

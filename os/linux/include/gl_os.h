@@ -1222,6 +1222,10 @@ void kalMetInit(IN struct GLUE_INFO *prGlueInfo);
 
 void wlanUpdateChannelTable(struct GLUE_INFO *prGlueInfo);
 
+#if CFG_SUPPORT_SAP_DFS_CHANNEL
+void wlanUpdateDfsChannelTable(struct GLUE_INFO *prGlueInfo, uint8_t ucChannel);
+#endif
+
 #if (CFG_MTK_ANDROID_WMT || WLAN_INCLUDE_PROC)
 int set_p2p_mode_handler(struct net_device *netdev,
 			 struct PARAM_CUSTOM_P2P_SET_STRUCT p2pmode);

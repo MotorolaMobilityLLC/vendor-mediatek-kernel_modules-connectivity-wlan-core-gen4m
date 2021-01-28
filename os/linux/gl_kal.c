@@ -1339,7 +1339,11 @@ kalIndicateStatusAndComplete(IN struct GLUE_INFO
 
 			/* Check SAP channel */
 			p2pFuncSwitchSapChannel(prGlueInfo->prAdapter);
-
+#if CFG_SUPPORT_SAP_DFS_CHANNEL
+			if (cnmSapIsConcurrent(prGlueInfo->prAdapter))
+				wlanUpdateDfsChannelTable(prGlueInfo,
+					ucChannelNum);
+#endif
 		}
 
 		break;
@@ -1428,6 +1432,10 @@ kalIndicateStatusAndComplete(IN struct GLUE_INFO
 		prGlueInfo->eParamMediaStateIndicated =
 			MEDIA_STATE_DISCONNECTED;
 
+#if CFG_SUPPORT_SAP_DFS_CHANNEL
+		if (cnmSapIsConcurrent(prGlueInfo->prAdapter))
+			wlanUpdateDfsChannelTable(prGlueInfo, 0);
+#endif
 		break;
 
 	case WLAN_STATUS_SCAN_COMPLETE:
@@ -1588,6 +1596,12 @@ kalIndicateStatusAndComplete(IN struct GLUE_INFO
 				GFP_KERNEL);
 		prGlueInfo->eParamMediaStateIndicated =
 			MEDIA_STATE_DISCONNECTED;
+
+#if CFG_SUPPORT_SAP_DFS_CHANNEL
+		if (cnmSapIsConcurrent(prGlueInfo->prAdapter))
+			wlanUpdateDfsChannelTable(prGlueInfo, 0);
+#endif
+
 		break;
 	}
 	default:
