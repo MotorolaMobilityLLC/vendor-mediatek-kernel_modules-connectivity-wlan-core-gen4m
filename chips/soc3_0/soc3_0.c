@@ -3779,6 +3779,14 @@ int soc3_0_wlanPreCalPwrOn(void)
 
 	/* wf driver power on */
 	ret = wf_pwr_on_consys_mcu();
+	if (ret != 0)
+		return ret;
+
+	/* set FW own after power on consys mcu to
+	 * keep Driver/FW/HW state sync
+	 */
+	wf_ioremap_write(CONN_HOST_CSR_TOP_BASE_ADDR + 0x0010,
+		PCIE_LPCR_HOST_SET_OWN);
 
 	return ret;
 }
