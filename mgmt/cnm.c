@@ -412,11 +412,14 @@ VOID cnmChMngrHandleChEvent(P_ADAPTER_T prAdapter, P_WIFI_EVENT_T prEvent)
 #if (CFG_SUPPORT_DFS_MASTER == 1)
 VOID cnmRadarDetectEvent(IN P_ADAPTER_T prAdapter, IN P_WIFI_EVENT_T prEvent)
 {
+	P_EVENT_RDD_REPORT_T prEventBody;
 	P_BSS_INFO_T prBssInfo;
 	P_MSG_P2P_RADAR_DETECT_T prP2pRddDetMsg;
 	UINT_8 ucBssIndex;
 
 	DBGLOG(CNM, INFO, "cnmRadarDetectEvent.\n");
+
+	prEventBody = (P_EVENT_RDD_REPORT_T)(prEvent->aucBuffer);
 
 	prP2pRddDetMsg = (P_MSG_P2P_RADAR_DETECT_T) cnmMemAlloc(prAdapter,
 					RAM_TYPE_MSG, sizeof(P_MSG_P2P_RADAR_DETECT_T));
@@ -431,6 +434,24 @@ VOID cnmRadarDetectEvent(IN P_ADAPTER_T prAdapter, IN P_WIFI_EVENT_T prEvent)
 			break;
 		}
 	}
+
+	g_rP2pRadarInfo.ucRadarReportMode = prEventBody->ucRadarReportMode;
+	g_rP2pRadarInfo.ucRddIdx = prEventBody->ucRddIdx;
+	g_rP2pRadarInfo.ucLongDetected = prEventBody->ucLongDetected;
+	g_rP2pRadarInfo.ucPeriodicDetected = prEventBody->ucPeriodicDetected;
+	g_rP2pRadarInfo.ucLPBNum = prEventBody->ucLPBNum;
+	g_rP2pRadarInfo.ucPPBNum = prEventBody->ucPPBNum;
+	g_rP2pRadarInfo.ucLPBPeriodValid = prEventBody->ucLPBPeriodValid;
+	g_rP2pRadarInfo.ucLPBWidthValid = prEventBody->ucLPBWidthValid;
+	g_rP2pRadarInfo.ucPRICountM1 = prEventBody->ucPRICountM1;
+	g_rP2pRadarInfo.ucPRICountM1TH = prEventBody->ucPRICountM1TH;
+	g_rP2pRadarInfo.ucPRICountM2 = prEventBody->ucPRICountM2;
+	g_rP2pRadarInfo.ucPRICountM2TH = prEventBody->ucPRICountM2TH;
+	g_rP2pRadarInfo.u4PRI1st = prEventBody->u4PRI1st;
+	kalMemCopy(&g_rP2pRadarInfo.arLpbContent[0], &prEventBody->arLpbContent[0],
+				prEventBody->ucLPBNum*sizeof(LONG_PULSE_BUFFER_T));
+	kalMemCopy(&g_rP2pRadarInfo.arPpbContent[0], &prEventBody->arPpbContent[0],
+				prEventBody->ucPPBNum*sizeof(PERIODIC_PULSE_BUFFER_T));
 
 	mboxSendMsg(prAdapter, MBOX_ID_0, (P_MSG_HDR_T)prP2pRddDetMsg, MSG_SEND_METHOD_BUF);
 }

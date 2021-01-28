@@ -56,6 +56,10 @@
 
 #define P2P_OFF_CHNL_TX_DEFAULT_TIME_MS                      1000
 
+#if (CFG_SUPPORT_DFS_MASTER == 1)
+extern P2P_RADAR_INFO_T g_rP2pRadarInfo;
+#endif
+
 /*******************************************************************************
  *                                 M A C R O S
  ********************************************************************************
@@ -150,6 +154,14 @@ INT_32 p2pFuncSetManualCacTime(IN UINT_32 u4ManualCacTime);
 UINT_32 p2pFuncGetManualCacTime(VOID);
 
 BOOLEAN p2pFuncIsManualCac(VOID);
+
+VOID p2pFuncRadarInfoInit(VOID);
+
+VOID p2pFuncShowRadarInfo(IN P_ADAPTER_T prAdapter, IN UINT_8 ucBssIdx);
+
+PUINT_8 p2pFuncJpW53RadarType(VOID);
+
+PUINT_8 p2pFuncJpW56RadarType(VOID);
 #endif
 
 VOID p2pFuncSetChannel(IN P_ADAPTER_T prAdapter, IN UINT_8 ucRoleIdx, IN P_RF_CHANNEL_INFO_T prRfChannelInfo);
