@@ -104,7 +104,7 @@ uint8_t g_aucNvram[MAX_CFG_FILE_WIFI_REC_SIZE];
 struct wireless_dev *gprWdev[KAL_AIS_NUM];
 
 #if CFG_SUPPORT_PERSIST_NETDEV
-static u_int8_t g_fgAisNetdevRegistered;
+struct net_device *gprNetdev[KAL_AIS_NUM] = {};
 #endif
 /*******************************************************************************
  *                             D A T A   T Y P E S
@@ -1175,6 +1175,18 @@ struct net_device *gPrDev;
 
 static void wlanSetMulticastList(struct net_device *prDev)
 {
+	struct GLUE_INFO *prGlueInfo;
+
+	if (!prDev)
+		return;
+
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prDev));
+
+	if (!prGlueInfo || !prGlueInfo->u4ReadyFlag) {
+		DBGLOG(REQ, WARN, "driver is not ready\n");
+		return;
+	}
+
 	/* Allow to receive all multicast for WOW */
 	DBGLOG(INIT, TRACE, "flags: 0x%x\n", prDev->flags);
 	prDev->flags |= (IFF_MULTICAST | IFF_ALLMULTI);
@@ -1628,10 +1640,6 @@ static int wlanOpen(struct net_device *prDev)
 
 	netif_tx_start_all_queues(prDev);
 
-#ifdef CONFIG_WIRELESS_EXT
-	prDev->wireless_handlers = &wext_handler_def;
-#endif
-
 	return 0;		/* success */
 }				/* end of wlanOpen() */
 
@@ -1669,10 +1677,6 @@ static int wlanStop(struct net_device *prDev)
 	wlanInitChnLoadInfoChannelList(prGlueInfo->prAdapter);
 
 	netif_tx_stop_all_queues(prDev);
-
-#ifdef CONFIG_WIRELESS_EXT
-	prDev->wireless_handlers = NULL;
-#endif
 
 	return 0;		/* success */
 }				/* end of wlanStop() */
@@ -2002,7 +2006,7 @@ static int32_t wlanNetRegister(struct wireless_dev *prWdev)
 				     u4Idx,
 				     (void *)gprWdev[u4Idx]->netdev);
 #if CFG_SUPPORT_PERSIST_NETDEV
-			if (g_fgAisNetdevRegistered) {
+			if (gprNetdev[u4Idx]) {
 				DBGLOG(INIT, INFO,
 					"PERSIST_NETDEV[%d]: Already registered netdev.\n",
 					u4Idx);
@@ -2018,16 +2022,14 @@ static int32_t wlanNetRegister(struct wireless_dev *prWdev)
 					gprWdev[u4Idx]->netdev);
 				i4DevIdx = -1;
 			}
+#if CFG_SUPPORT_PERSIST_NETDEV
+			else
+				gprNetdev[u4Idx] = gprWdev[u4Idx]->netdev;
+#endif
 		}
 
 		if (i4DevIdx != -1)
 			prGlueInfo->fgIsRegistered = TRUE;
-#if CFG_SUPPORT_PERSIST_NETDEV
-		if (i4DevIdx != -1)
-			g_fgAisNetdevRegistered = TRUE;
-		else
-			g_fgAisNetdevRegistered = FALSE;
-#endif
 	} while (FALSE);
 
 	return i4DevIdx;	/* success */
@@ -2046,9 +2048,7 @@ static int32_t wlanNetRegister(struct wireless_dev *prWdev)
 static void wlanNetUnregister(struct wireless_dev *prWdev)
 {
 	struct GLUE_INFO *prGlueInfo;
-#if !CFG_SUPPORT_PERSIST_NETDEV
 	uint32_t u4Idx = 0;
-#endif
 
 	if (!prWdev) {
 		DBGLOG(INIT, ERROR, "The device context is NULL\n");
@@ -2057,7 +2057,14 @@ static void wlanNetUnregister(struct wireless_dev *prWdev)
 
 	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(prWdev->wiphy);
 
-#if !CFG_SUPPORT_PERSIST_NETDEV
+#if CFG_SUPPORT_PERSIST_NETDEV
+#ifdef CONFIG_WIRELESS_EXT
+	for (u4Idx = 0; u4Idx < KAL_AIS_NUM; u4Idx++) {
+		if (gprWdev[u4Idx] && gprWdev[u4Idx]->netdev)
+			gprWdev[u4Idx]->netdev->wireless_handlers = NULL;
+	}
+#endif
+#else
 	for (u4Idx = 0; u4Idx < KAL_AIS_NUM; u4Idx++) {
 		if (gprWdev[u4Idx] && gprWdev[u4Idx]->netdev) {
 			wlanClearDevIdx(gprWdev[u4Idx]->netdev);
@@ -2550,19 +2557,17 @@ struct wireless_dev *wlanNetCreate(void *pvData,
 	 * disconnection occur. That cause some issue.
 	 */
 	prWiphy = prWdev->wiphy;
-#if CFG_SUPPORT_PERSIST_NETDEV
-	if (!g_fgAisNetdevRegistered) {
-#endif
 	for (i = 0; i < KAL_AIS_NUM; i++) {
-		if (gprWdev[i]) {
+		if (gprWdev[i]
+#if CFG_SUPPORT_PERSIST_NETDEV
+			&& !gprNetdev[i]
+#endif
+			) {
 			memset(gprWdev[i], 0, sizeof(struct wireless_dev));
 			gprWdev[i]->wiphy = prWiphy;
 			gprWdev[i]->iftype = NL80211_IFTYPE_STATION;
 		}
 	}
-#if CFG_SUPPORT_PERSIST_NETDEV
-	}
-#endif
 
 #if (CFG_SUPPORT_SINGLE_SKU == 1)
 	/* XXX: ref from cfg80211_regd_set_wiphy().
@@ -2621,7 +2626,7 @@ struct wireless_dev *wlanNetCreate(void *pvData,
 		struct net_device *prDevHandler;
 
 #if CFG_SUPPORT_PERSIST_NETDEV
-		if (!g_fgAisNetdevRegistered) {
+		if (!gprNetdev[i]) {
 			DBGLOG(INIT, INFO, "netdev not allocated yet.\n");
 			prDevHandler = alloc_netdev_mq(
 				sizeof(struct NETDEV_PRIVATE_GLUE_INFO),
@@ -2635,7 +2640,7 @@ struct wireless_dev *wlanNetCreate(void *pvData,
 			DBGLOG(INIT, INFO,
 				"PERSIST_NETDEV[%d]: netdev already allocated.\n",
 				i);
-			prDevHandler = gprWdev[i]->netdev;
+			prDevHandler = gprNetdev[i];
 		}
 #else
 		prDevHandler = alloc_netdev_mq(
@@ -2670,6 +2675,10 @@ struct wireless_dev *wlanNetCreate(void *pvData,
 			NIC_TX_DESC_AND_PADDING_LENGTH +
 			prChipInfo->txd_append_size;
 		prDevHandler->netdev_ops = &wlan_netdev_ops;
+#ifdef CONFIG_WIRELESS_EXT
+		prDevHandler->wireless_handlers =
+			&wext_handler_def;
+#endif
 		netif_carrier_off(prDevHandler);
 		netif_tx_stop_all_queues(prDevHandler);
 		kalResetStats(prDevHandler);
@@ -4967,14 +4976,8 @@ static void wlanRemove(void)
 #endif
 
 	for (u4Idx = 0; u4Idx < KAL_AIS_NUM; u4Idx++) {
-#if CFG_SUPPORT_PERSIST_NETDEV
-		if (gprWdev[u4Idx] && gprWdev[u4Idx]->netdev == NULL)
-			DBGLOG(INIT, INFO,
-				"gprWdev[%d]->netdev is NULL.\n", u4Idx);
-#else
 		if (gprWdev[u4Idx] && gprWdev[u4Idx]->netdev)
 			gprWdev[u4Idx]->netdev = NULL;
-#endif /* CFG_SUPPORT_PERSIST_NETDEV */
 	}
 
 	/* 4 <9> Unregister notifier callback */
@@ -5023,10 +5026,6 @@ static int initWlan(void)
 
 
 	DBGLOG(INIT, INFO, "initWlan\n");
-
-#if CFG_SUPPORT_PERSIST_NETDEV
-	g_fgAisNetdevRegistered = FALSE;
-#endif
 
 #ifdef CFG_DRIVER_INF_NAME_CHANGE
 
@@ -5115,18 +5114,18 @@ static void exitWlan(void)
 	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wiphy);
 
 	for (u4Idx = 0; u4Idx < KAL_AIS_NUM; u4Idx++) {
-		if (gprWdev[u4Idx] && gprWdev[u4Idx]->netdev) {
+		if (gprNetdev[u4Idx]) {
 			wlanClearDevIdx(gprWdev[u4Idx]->netdev);
 			DBGLOG(INIT, INFO, "Unregister wlan%d netdev start.\n",
 					u4Idx);
 			unregister_netdev(gprWdev[u4Idx]->netdev);
 			DBGLOG(INIT, INFO, "Unregister wlan%d netdev end.\n",
 					u4Idx);
+			gprWdev[u4Idx]->netdev = gprNetdev[u4Idx] = NULL;
 		}
 	}
 
 	prGlueInfo->fgIsRegistered = FALSE;
-	g_fgAisNetdevRegistered = FALSE;
 
 	DBGLOG(INIT, INFO, "Free wlan device..\n");
 	wlanFreeNetDev();
