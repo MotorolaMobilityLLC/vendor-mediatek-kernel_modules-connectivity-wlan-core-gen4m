@@ -979,10 +979,6 @@ int soc3_0_Trigger_fw_assert(void)
 		wf_ioremap_read(WF_TRIGGER_AP2CONN_EINT, &value);
 		value &= 0xFFFFFF7F;
 		ret = wf_ioremap_write(WF_TRIGGER_AP2CONN_EINT, value);
-		udelay(1000);
-		wf_ioremap_read(WF_TRIGGER_AP2CONN_EINT, &value);
-		value |= 0x80;
-		ret = wf_ioremap_write(WF_TRIGGER_AP2CONN_EINT, value);
 		waitRet = wait_for_completion_timeout(&g_triggerComp,
 				MSEC_TO_JIFFIES(WIFI_TRIGGER_ASSERT_TIMEOUT));
 		if (waitRet > 0) {
@@ -994,8 +990,12 @@ int soc3_0_Trigger_fw_assert(void)
 				"Trigger assert more than 2 seconds, need to trigger rst self\n");
 			soc3_0_DumpWfsysInfo();
 			soc3_0_DumpWfsysdebugflag();
+			g_IsTriggerTimeout = TRUE;
 			kalSetRstEvent();
 		}
+		wf_ioremap_read(WF_TRIGGER_AP2CONN_EINT, &value);
+		value |= 0x80;
+		ret = wf_ioremap_write(WF_TRIGGER_AP2CONN_EINT, value);
 	}
 	return ret;
 }
@@ -1318,6 +1318,11 @@ int wf_pwr_on_consys_mcu(void)
 	wf_ioremap_write(CONN_CFG_AP2WF_REMAP_1_ADDR, CONN_MCU_CONFG_HS_BASE);
 	wf_ioremap_write(WF_DYNAMIC_BASE+MCU_EMI_ENTRY_OFFSET, 0x00000000);
 	wf_ioremap_write(WF_DYNAMIC_BASE+WF_EMI_ENTRY_OFFSET, 0x00000000);
+
+	/* Reset WFSYS semaphore 0x18000018[0] = 1'b0 */
+	wf_ioremap_read(WFSYS_SW_RST_B_ADDR, &value);
+	value &= 0xFFFFFFFE;
+	wf_ioremap_write(WFSYS_SW_RST_B_ADDR, value);
 
 	/* De-assert WFSYS CPU SW reset 0x18000010[0] = 1'b1 */
 	wf_ioremap_read(WFSYS_CPU_SW_RST_B_ADDR, &value);
