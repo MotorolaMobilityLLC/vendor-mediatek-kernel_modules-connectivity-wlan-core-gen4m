@@ -656,7 +656,7 @@ void p2pDevFsmRunEventScanRequest(IN struct ADAPTER *prAdapter,
 }				/* p2pDevFsmRunEventScanRequest */
 
 void p2pDevFsmRunEventScanAbort(IN struct ADAPTER *prAdapter,
-		IN struct MSG_HDR *prMsgHdr)
+		IN uint8_t ucBssIdx)
 {
 	struct P2P_DEV_FSM_INFO *prP2pDevFsmInfo =
 		(struct P2P_DEV_FSM_INFO *) NULL;
@@ -680,10 +680,6 @@ void p2pDevFsmRunEventScanAbort(IN struct ADAPTER *prAdapter,
 		}
 
 	} while (FALSE);
-
-	if (prMsgHdr)
-		cnmMemFree(prAdapter, prMsgHdr);
-
 }				/* p2pDevFsmRunEventScanAbort */
 
 void
