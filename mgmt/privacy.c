@@ -959,7 +959,7 @@ void secRemoveBssBcEntry(IN struct ADAPTER *prAdapter,
 	if (!prBssInfo)
 		return;
 
-	DBGLOG_LIMITED(RSN, INFO, "remove all the key related with BSS!");
+	DBGLOG_LIMITED(RSN, TRACE, "remove all the key related with BSS!");
 
 	if (fgRoam) {
 		struct CONNECTION_SETTINGS *prConnSettings =
