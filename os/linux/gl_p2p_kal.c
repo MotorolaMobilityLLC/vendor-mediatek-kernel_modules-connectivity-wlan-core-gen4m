@@ -1426,8 +1426,10 @@ void kalP2PCacFinishedUpdate(IN struct GLUE_INFO *prGlueInfo, IN uint8_t ucRoleI
 	DBGLOG(INIT, INFO, "CAC Finished event\n");
 
 	do {
-		if (prGlueInfo == NULL)
+		if (prGlueInfo == NULL) {
 			ASSERT(FALSE);
+			break;
+		}
 
 		if (prGlueInfo->prP2PInfo[ucRoleIndex]->chandef == NULL) {
 			ASSERT(FALSE);
