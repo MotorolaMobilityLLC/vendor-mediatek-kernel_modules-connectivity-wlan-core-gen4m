@@ -2333,8 +2333,13 @@ wlanoidSetAddKey(IN struct ADAPTER *prAdapter, IN void *pvSetBuffer, IN uint32_t
 	/* compose CMD_802_11_KEY cmd pkt */
 	prCmdInfo->eCmdType = COMMAND_TYPE_NETWORK_IOCTL;
 	prCmdInfo->u2InfoBufLen = CMD_HDR_SIZE + sizeof(struct CMD_802_11_KEY);
+#if CFG_SUPPORT_REPLAY_DETECTION
+	prCmdInfo->pfCmdDoneHandler = nicCmdEventSetAddKey;
+	prCmdInfo->pfCmdTimeoutHandler = nicOidCmdTimeoutSetAddKey;
+#else
 	prCmdInfo->pfCmdDoneHandler = nicCmdEventSetCommon;
 	prCmdInfo->pfCmdTimeoutHandler = nicOidCmdTimeoutCommon;
+#endif
 	prCmdInfo->fgIsOid = TRUE;
 	prCmdInfo->ucCID = CMD_ID_ADD_REMOVE_KEY;
 	prCmdInfo->fgSetQuery = TRUE;
