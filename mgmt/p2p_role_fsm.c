@@ -2183,7 +2183,7 @@ void p2pRoleFsmRunEventJoinComplete(IN struct ADAPTER *prAdapter,
 	DBGLOG(P2P, INFO,
 		"P2P BSS %d [" MACSTR "], Join Complete, status: %d\n",
 		prStaRec->ucBssIndex,
-		prStaRec->aucMacAddr,
+		MAC2STR(prStaRec->aucMacAddr),
 		prJoinCompMsg->rJoinStatus);
 
 	ASSERT(prStaRec->ucBssIndex < prAdapter->ucP2PDevBssIdx);
