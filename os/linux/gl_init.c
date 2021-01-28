@@ -3486,6 +3486,9 @@ void wlanOnPreAdapterStart(struct GLUE_INFO *prGlueInfo,
 	struct mt66xx_chip_info **pprChipInfo)
 {
 	uint32_t u4Idx = 0;
+#if CFG_WMT_WIFI_PATH_SUPPORT
+	int32_t i4RetVal = 0;
+#endif
 
 	DBGLOG(INIT, TRACE, "start.\n");
 	prGlueInfo->u4ReadyFlag = 0;
@@ -3509,7 +3512,7 @@ void wlanOnPreAdapterStart(struct GLUE_INFO *prGlueInfo,
 			WLAN_FLAG_2G4_WF0 | WLAN_FLAG_5G_WF0 |
 			WLAN_FLAG_2G4_WF1 | WLAN_FLAG_5G_WF1);
 
-#if (MTK_WCN_HIF_SDIO && CFG_WMT_WIFI_PATH_SUPPORT)
+#if CFG_WMT_WIFI_PATH_SUPPORT
 	i4RetVal = mtk_wcn_wmt_wifi_fem_cfg_report((
 				void *)&prAdapter->rWifiFemCfg);
 	if (i4RetVal)
@@ -4231,9 +4234,6 @@ static int32_t wlanProbe(void *pvData, void *pvDriverData)
 	struct REG_INFO *prRegInfo;
 	struct mt66xx_chip_info *prChipInfo;
 	struct WIFI_VAR *prWifiVar;
-#if (MTK_WCN_HIF_SDIO && CFG_WMT_WIFI_PATH_SUPPORT)
-	int32_t i4RetVal = 0;
-#endif
 	uint32_t u4Idx = 0;
 
 #if CFG_CHIP_RESET_SUPPORT

@@ -10126,6 +10126,9 @@ wlanGetSupportNss(IN struct ADAPTER *prAdapter,
 #endif
 
 	uint8_t ucRetValNss = prAdapter->rWifiVar.ucNSS;
+#if CFG_SISO_SW_DEVELOP
+	enum ENUM_BAND eBand = BAND_NULL;
+#endif
 
 	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
@@ -10159,29 +10162,7 @@ wlanGetSupportNss(IN struct ADAPTER *prAdapter,
 	if (ucRetValNss > prAdapter->rWifiVar.ucNSS)
 		ucRetValNss = prAdapter->rWifiVar.ucNSS;
 
-	return ucRetValNss;
-
-#if 0 /* CFG_SISO_SW_DEVELOP */
-	/* The feature CFG_SISO_SW_DEVELOP is used to config "2x2 IC"
-	 * into special "1x1" settings. The "2x2 IC" has four different
-	 * physical ports, called WF0A/WF0G/WF1A/WF1G. According to OEM
-	 * layout, it is possible to only connect WF0A and WF1G to
-	 * antenna, ex MT6632 for Meizu. In this case, Meizu has DBDC
-	 * (WF0A + WF1G) but only support 1x1 capability. It is not ideal
-	 * configs due to downgrading 2x2 IC into 1x1 usage, but some
-	 * benefit from the marketing aspect.
-	 *
-	 * However, this feature uses the WMT forwarding config to
-	 * firmware before Wi-Fi driver is on for power on calibration
-	 * in MT6632. The related flows, such as IS_WIFI_2G4_SISO,
-	 * IS_WIFI_5G_SISO, do not implement in the gen4m driver.
-	 * Therefore, we comment out the blocks for CFG_SISO_SW_DEVELOP
-	 * implement reference.
-	 */
-
-	struct BSS_INFO *prBssInfo;
-	enum ENUM_BAND eBand = BAND_NULL;
-
+#if CFG_SISO_SW_DEVELOP
 	if (ucBssIndex > prAdapter->ucHwBssIdNum) {
 		DBGLOG(SW4, INFO, "Invalid BssInfo index[%u], skip dump!\n",
 		       ucBssIndex);
@@ -10203,10 +10184,9 @@ wlanGetSupportNss(IN struct ADAPTER *prAdapter,
 		ucRetValNss = 1;
 	DBGLOG(INIT, INFO, "Nss=%d,G=%d,B=%d,Bss=%d\n",
 	       ucRetValNss, prBssInfo->fgIsGranted, eBand, ucBssIndex);
-
-	return ucRetValNss;
 #endif
 
+	return ucRetValNss;
 }
 
 #if CFG_SUPPORT_LOWLATENCY_MODE
