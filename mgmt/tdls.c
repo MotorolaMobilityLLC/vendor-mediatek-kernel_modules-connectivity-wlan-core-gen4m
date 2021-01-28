@@ -153,14 +153,11 @@ UINT_32 TdlsexLinkMgt(P_ADAPTER_T prAdapter, PVOID pvSetBuffer, UINT_32 u4SetBuf
 	}
 #endif
 
-	prStaRec = prBssInfo->prStaRecOfAP;
 
 	switch (prCmd->ucActionCode) {
 
 	case TDLS_FRM_ACTION_DISCOVERY_REQ:
 		/* printk("\n\n\n  TDLS_FRM_ACTION_DISCOVERY_REQ\n\n\n"); */
-		if (prStaRec == NULL)
-			return 0;
 		if (TdlsDataFrameSend_DISCOVERY_REQ(prAdapter,
 						    prStaRec,
 						    prCmd->aucPeer,
@@ -176,8 +173,6 @@ UINT_32 TdlsexLinkMgt(P_ADAPTER_T prAdapter, PVOID pvSetBuffer, UINT_32 u4SetBuf
 
 	case TDLS_FRM_ACTION_SETUP_REQ:
 		/* printk("\n\n\n  TDLS_FRM_ACTION_SETUP_REQ\n\n\n"); */
-		if (prStaRec == NULL)
-			return 0;
 		prStaRec = cnmGetTdlsPeerByAddress(prAdapter, prAdapter->prAisBssInfo->ucBssIndex, prCmd->aucPeer);
 		g_arTdlsLink[prStaRec->ucTdlsIndex] = 0;
 		if (TdlsDataFrameSend_SETUP_REQ(prAdapter,
@@ -928,7 +923,7 @@ TdlsDataFrameSend_SETUP_RSP(ADAPTER_T *prAdapter,
 
 	if (pAppendIe != NULL) {
 		if ((ucActionCode != TDLS_FRM_ACTION_TEARDOWN) ||
-		    ((ucActionCode == TDLS_FRM_ACTION_TEARDOWN) && (prStaRec != NULL))) {
+		    ((ucActionCode == TDLS_FRM_ACTION_TEARDOWN))) {
 			kalMemCopy(pPkt, pAppendIe, AppendIeLen);
 			LR_TDLS_FME_FIELD_FILL(AppendIeLen);
 		}
@@ -1919,9 +1914,9 @@ VOID TdlsBssExtCapParse(P_STA_RECORD_T prStaRec, P_UINT_8 pucIE)
 	pucIeExtCap = pucIE + 2;
 	pucIeExtCap += 4;	/* shift to the byte we care about */
 
-	if ((*pucIeExtCap) && BIT(38 - 32))
+	if ((*pucIeExtCap) & BIT(38 - 32))
 		prStaRec->fgTdlsIsProhibited = TRUE;
-	if ((*pucIeExtCap) && BIT(39 - 32))
+	if ((*pucIeExtCap) & BIT(39 - 32))
 		prStaRec->fgTdlsIsChSwProhibited = TRUE;
 
 }
