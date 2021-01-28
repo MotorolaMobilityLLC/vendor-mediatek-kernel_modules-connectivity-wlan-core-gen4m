@@ -16404,7 +16404,7 @@ wlanoidExternalAuthDone(IN struct ADAPTER *prAdapter,
 	prStaRec = cnmGetStaRecByAddress(prAdapter, ucBssIndex, params->bssid);
 	if (!prStaRec) {
 		DBGLOG(REQ, WARN, "SAE-confirm failed with bssid:" MACSTR "\n",
-		       params->bssid);
+		       MAC2STR(params->bssid));
 		return WLAN_STATUS_INVALID_DATA;
 	}
 

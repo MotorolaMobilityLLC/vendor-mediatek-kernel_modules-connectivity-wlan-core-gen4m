@@ -257,8 +257,8 @@ void scnSendScanReqV2(IN struct ADAPTER *prAdapter)
 	/* Modify channelList number from 32 to 54 */
 	COPY_MAC_ADDR(prCmdScanReq->aucBSSID, prScanParam->aucBSSID);
 	if (!EQUAL_MAC_ADDR(prCmdScanReq->aucBSSID, "\xff\xff\xff\xff\xff\xff"))
-		DBGLOG(SCN, INFO, "Include BSSID %pM in probe request\n",
-		       prCmdScanReq->aucBSSID);
+		DBGLOG(SCN, INFO, "Include BSSID "MACSTR" in probe request\n",
+			MAC2STR(prCmdScanReq->aucBSSID));
 
 	prCmdScanReq->ucSeqNum = prScanParam->ucSeqNum;
 	prCmdScanReq->ucBssIndex = prScanParam->ucBssIndex;
@@ -391,7 +391,7 @@ void scnSendScanReqV2(IN struct ADAPTER *prAdapter)
 		prCmdScanReq->u2ChannelDwellTime,
 		prCmdScanReq->u2ChannelMinDwellTime,
 		prCmdScanReq->ucScnFuncMask,
-		prCmdScanReq->aucRandomMac);
+		MAC2STR(prCmdScanReq->aucRandomMac));
 
 	scanLogCacheFlushAll(&(prScanInfo->rScanLogCache),
 		LOG_SCAN_REQ_D2F, SCAN_LOG_MSG_MAX_LEN);
