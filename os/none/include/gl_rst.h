@@ -142,9 +142,10 @@ enum ENUM_WMTRSTMSG_TYPE {
 enum _ENUM_CHIP_RESET_REASON_TYPE_T {
 	RST_PROCESS_ABNORMAL_INT = 1,
 	RST_DRV_OWN_FAIL,
-	RST_GROUP3_NULL,
-	RST_GROUP4_NULL,
+	RST_FW_ASSERT,
+	RST_BT_TRIGGER,
 	RST_OID_TIMEOUT,
+	RST_CMD_TRIGGER,
 	RST_REASON_MAX
 };
 
@@ -205,7 +206,6 @@ extern int mtk_wcn_wmt_assert_keyword(enum ENUM_WMTDRV_TYPE type,
 #endif
 
 extern uint64_t u8ResetTime;
-extern enum _ENUM_CHIP_RESET_REASON_TYPE_T eResetReason;
 /*******************************************************************************
  *                  F U N C T I O N   D E C L A R A T I O N S
  *******************************************************************************
@@ -232,16 +232,23 @@ void glSendResetRequest(void);
 
 u_int8_t glIsWmtCodeDump(void);
 
+#ifdef CFG_REMIND_IMPLEMENT
+#define glSetRstReason(_eReason) \
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
+
+#define glGetRstReason() \
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
+
+#define glResetTrigger(prAdapter, u4RstFlag, pucFile, u4Line) \
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
+#else
+void glSetRstReason(enum _ENUM_CHIP_RESET_REASON_TYPE_T
+		    eReason);
+
+int glSetRstReason(void);
 u_int8_t glResetTrigger(struct ADAPTER *prAdapter,
 			uint32_t u4RstFlag, const uint8_t *pucFile,
 			uint32_t u4Line);
-
-#ifdef CFG_REMIND_IMPLEMENT
-#define glGetRstReason(_eReason) \
-	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
-#else
-void glGetRstReason(enum _ENUM_CHIP_RESET_REASON_TYPE_T
-		    eReason);
 #endif
 
 #endif /* _GL_RST_H */

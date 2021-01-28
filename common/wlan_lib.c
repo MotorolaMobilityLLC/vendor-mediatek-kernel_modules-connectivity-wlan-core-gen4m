@@ -2201,7 +2201,7 @@ void wlanReleasePendingOid(IN struct ADAPTER *prAdapter,
 				       "No response from chip for %u times, set NoAck flag!\n",
 				       prAdapter->ucOidTimeoutCount);
 #if 0
-				glGetRstReason(RST_OID_TIMEOUT);
+				glSetRstReason(RST_OID_TIMEOUT);
 				GL_RESET_TRIGGER(prAdapter,
 						 RST_FLAG_CHIP_RESET);
 #endif
@@ -9048,6 +9048,23 @@ wlanPktTxDone(IN struct ADAPTER *prAdapter,
 }
 
 #if CFG_ASSERT_DUMP
+void wlanCorDumpTimerInit(IN struct ADAPTER *prAdapter,
+				u_int8_t fgIsResetN9)
+{
+	if (fgIsResetN9) {
+		cnmTimerInitTimer(prAdapter,
+				  &prAdapter->rN9CorDumpTimer,
+				  (PFN_MGMT_TIMEOUT_FUNC) wlanN9CorDumpTimeOut,
+				  (unsigned long) NULL);
+
+	} else {
+		cnmTimerInitTimer(prAdapter,
+				  &prAdapter->rCr4CorDumpTimer,
+				  (PFN_MGMT_TIMEOUT_FUNC) wlanCr4CorDumpTimeOut,
+				  (unsigned long) NULL);
+	}
+}
+
 void wlanCorDumpTimerReset(IN struct ADAPTER *prAdapter,
 			   u_int8_t fgIsResetN9)
 {
@@ -9082,6 +9099,11 @@ void wlanN9CorDumpTimeOut(IN struct ADAPTER *prAdapter,
 		kalCloseCorDumpFile(TRUE);
 		prAdapter->fgN9CorDumpFileOpend = FALSE;
 	}
+
+	/* Trigger RESET */
+	glSetRstReason(RST_FW_ASSERT);
+	GL_RESET_TRIGGER(prAdapter, RST_FLAG_CHIP_RESET);
+
 }
 
 void wlanCr4CorDumpTimeOut(IN struct ADAPTER *prAdapter,
@@ -9094,6 +9116,10 @@ void wlanCr4CorDumpTimeOut(IN struct ADAPTER *prAdapter,
 		kalCloseCorDumpFile(FALSE);
 		prAdapter->fgCr4CorDumpFileOpend = FALSE;
 	}
+
+	/* Trigger RESET */
+	glSetRstReason(RST_FW_ASSERT);
+	GL_RESET_TRIGGER(prAdapter, RST_FLAG_CHIP_RESET);
 }
 #endif
 
