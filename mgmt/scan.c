@@ -1483,6 +1483,7 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 	enum ENUM_BAND eHwBand = BAND_NULL;
 	u_int8_t fgBandMismatch = FALSE;
 	uint8_t ucSubtype;
+	u_int8_t fgIsProbeResp = FALSE;
 
 	ASSERT(prAdapter);
 	ASSERT(prSwRfb);
@@ -1626,14 +1627,17 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 		(uint8_t *) prWlanBeaconFrame->aucSrcAddr,
 		fgIsValidSsid, fgIsValidSsid == TRUE ? &rSsid : NULL);
 
+	if ((prWlanBeaconFrame->u2FrameCtrl & MASK_FRAME_TYPE)
+			== MAC_FRAME_PROBE_RSP)
+		fgIsProbeResp = TRUE;
+
 	if (prBssDesc == (struct BSS_DESC *) NULL) {
 		fgIsNewBssDesc = TRUE;
 
 		do {
 			/* check if it is a beacon frame */
-			if (((prWlanBeaconFrame->u2FrameCtrl & MASK_FRAME_TYPE)
-				== MAC_FRAME_BEACON) && !fgIsValidSsid) {
-				log_dbg(SCN, INFO, "scanAddToBssDescssid is NULL Beacon, don't add hidden BSS(%pM)\n",
+			if (!fgIsProbeResp && !fgIsValidSsid) {
+				log_dbg(SCN, TRACE, "scanAddToBssDescssid is NULL Beacon, don't add hidden BSS(%pM)\n",
 					(uint8_t *)prWlanBeaconFrame->aucBSSID);
 				return NULL;
 			}
@@ -1740,14 +1744,13 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 	}
 
 	prBssDesc->fgIsValidSSID = fgIsValidSsid;
-
-#if 1
 	prBssDesc->u2RawLength = prSwRfb->u2PacketLen;
 	if (prBssDesc->u2RawLength > CFG_RAW_BUFFER_SIZE)
 		prBssDesc->u2RawLength = CFG_RAW_BUFFER_SIZE;
-	kalMemCopy(prBssDesc->aucRawBuf, prWlanBeaconFrame,
-		prBssDesc->u2RawLength);
-#endif
+	if (fgIsProbeResp || fgIsValidSsid) {
+		kalMemCopy(prBssDesc->aucRawBuf, prWlanBeaconFrame,
+			prBssDesc->u2RawLength);
+	}
 
 	/* NOTE: Keep consistency of Scan Record during JOIN process */
 	if (fgIsNewBssDesc == FALSE && prBssDesc->fgIsConnecting)
@@ -1779,9 +1782,10 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 	}
 	prBssDesc->u2IELength = u2IELength;
 
-	kalMemCopy(prBssDesc->aucIEBuf, prWlanBeaconFrame->aucInfoElem,
+	if (fgIsProbeResp || fgIsValidSsid) {
+		kalMemCopy(prBssDesc->aucIEBuf, prWlanBeaconFrame->aucInfoElem,
 		u2IELength);
-
+	}
 	/* 4 <2.2> reset prBssDesc variables in case that AP
 	 * has been reconfigured
 	 */
@@ -1848,9 +1852,7 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 						  prBssDesc->ucSSIDLen,
 						  SSID_IE(pucIE)->aucSSID,
 						  SSID_IE(pucIE)->ucLength);
-				} else if ((prWlanBeaconFrame->u2FrameCtrl &
-					MASK_FRAME_TYPE) ==
-					MAC_FRAME_PROBE_RSP) {
+				} else if (fgIsProbeResp) {
 					/* SSID should be updated
 					 * if it is ProbeResp
 					 */
@@ -2248,12 +2250,12 @@ VHT_CAP_INFO_NUMBER_OF_SOUNDING_DIMENSIONS_OFFSET
 	}
 
 	/* check if it is a probe response frame */
-	if ((prWlanBeaconFrame->u2FrameCtrl & MASK_FRAME_TYPE) ==
-		MAC_FRAME_PROBE_RSP)
+	if (fgIsProbeResp)
 		prBssDesc->fgSeenProbeResp = TRUE;
 	/* end Support AP Selection */
 	/* 4 <7> Update BSS_DESC_T's Last Update TimeStamp. */
-	GET_CURRENT_SYSTIME(&prBssDesc->rUpdateTime);
+	if (fgIsProbeResp || fgIsValidSsid)
+		GET_CURRENT_SYSTIME(&prBssDesc->rUpdateTime);
 
 	return prBssDesc;
 }
