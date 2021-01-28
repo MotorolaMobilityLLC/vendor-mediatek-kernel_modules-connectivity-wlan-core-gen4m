@@ -73,10 +73,7 @@
  *                            P U B L I C   D A T A
  *******************************************************************************
  */
-#if CFG_MTK_ANDROID_EMI
-phys_addr_t gConEmiPhyBase;
-unsigned long long gConEmiSize;
-#endif
+
 
 /*******************************************************************************
  *                           P R I V A T E   D A T A
