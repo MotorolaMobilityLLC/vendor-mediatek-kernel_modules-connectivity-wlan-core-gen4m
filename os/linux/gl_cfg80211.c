@@ -3516,7 +3516,7 @@ DOMAIN_SEND_CMD:
 	 * Send commands to firmware
 	 */
 	prAdapter->rWifiVar.rConnSettings.u2CountryCode = (UINT_16)rlmDomainGetCountryCode();
-	rlmDomainSendCmd(prAdapter, FALSE);
+	rlmDomainSendCmd(prAdapter);
 }
 
 void

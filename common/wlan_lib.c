@@ -5286,7 +5286,7 @@ WLAN_STATUS wlanLoadManufactureData(IN P_ADAPTER_T prAdapter, IN P_REG_INFO_T pr
 #endif
 
 	/* 6. Set domain and channel information to chip */
-	rlmDomainSendCmd(prAdapter, FALSE);
+	rlmDomainSendCmd(prAdapter);
 
 	/* Update supported channel list in channel table */
 	wlanUpdateChannelTable(prAdapter->prGlueInfo);
@@ -7182,9 +7182,9 @@ VOID wlanCfgSetCountryCode(IN P_ADAPTER_T prAdapter)
 			return;
 		}
 
-		/* Force to re-search country code in country domains */
+		/* Force to re-search country code in regulatory domains */
 		prAdapter->prDomainInfo = NULL;
-		rlmDomainSendCmd(prAdapter, FALSE);
+		rlmDomainSendCmd(prAdapter);
 
 		/* Update supported channel list in channel table based on current country domain */
 		wlanUpdateChannelTable(prAdapter->prGlueInfo);
