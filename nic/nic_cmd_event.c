@@ -2712,6 +2712,39 @@ VOID nicCmdEventQueryNicCapabilityV2(IN P_ADAPTER_T prAdapter, IN PUINT_8 pucEve
 
 }
 
+#if (CFG_SUPPORT_TXPOWER_INFO == 1)
+VOID nicCmdEventQueryTxPowerInfo(IN P_ADAPTER_T prAdapter, IN P_CMD_INFO_T prCmdInfo, IN PUINT_8 pucEventBuf)
+{
+	struct EXT_EVENT_TXPOWER_ALL_RATE_POWER_INFO_T *prEvent = NULL;
+	struct PARAM_TXPOWER_ALL_RATE_POWER_INFO_T *prTxPowerInfo = NULL;
+	UINT_32 u4QueryInfoLen;
+	P_GLUE_INFO_T prGlueInfo = prAdapter->prGlueInfo;
+
+	if (!prAdapter)
+		return;
+	if (!prCmdInfo)
+		return;
+	if (!pucEventBuf)
+		return;
+	if (!(prCmdInfo->pvInformationBuffer))
+		return;
+
+	if (prCmdInfo->fgIsOid) {
+		prEvent = (struct EXT_EVENT_TXPOWER_ALL_RATE_POWER_INFO_T *) pucEventBuf;
+
+		if (prEvent->ucTxPowerCategory == TXPOWER_EVENT_SHOW_ALL_RATE_TXPOWER_INFO) {
+			prEvent = (struct EXT_EVENT_TXPOWER_ALL_RATE_POWER_INFO_T *) pucEventBuf;
+			prTxPowerInfo = (struct PARAM_TXPOWER_ALL_RATE_POWER_INFO_T *) prCmdInfo->pvInformationBuffer;
+			u4QueryInfoLen = sizeof(struct PARAM_TXPOWER_ALL_RATE_POWER_INFO_T);
+
+			kalMemCopy(prTxPowerInfo, prEvent, sizeof(struct EXT_EVENT_TXPOWER_ALL_RATE_POWER_INFO_T));
+		}
+
+		kalOidComplete(prGlueInfo, prCmdInfo->fgSetQuery, u4QueryInfoLen, WLAN_STATUS_SUCCESS);
+	}
+}
+#endif
+
 VOID nicEventLinkQuality(IN P_ADAPTER_T prAdapter, IN P_WIFI_EVENT_T prEvent)
 {
 	P_CMD_INFO_T prCmdInfo;
@@ -2856,6 +2889,24 @@ VOID nicEventLayer0ExtMagic(IN P_ADAPTER_T prAdapter, IN P_WIFI_EVENT_T prEvent)
 			}
 		}
 	}
+#if (CFG_SUPPORT_TXPOWER_INFO == 1)
+	else if ((prEvent->ucExtenEID) == EXT_EVENT_ID_TX_POWER_FEATURE_CTRL) {
+		u4QueryInfoLen = sizeof(struct PARAM_TXPOWER_ALL_RATE_POWER_INFO_T);
+		/* command response handling */
+		prCmdInfo = nicGetPendingCmdInfo(prAdapter, prEvent->ucSeqNum);
+
+		if (prCmdInfo != NULL) {
+			if (prCmdInfo->pfCmdDoneHandler)
+				prCmdInfo->pfCmdDoneHandler(prAdapter, prCmdInfo, prEvent->aucBuffer);
+			else if (prCmdInfo->fgIsOid)
+				kalOidComplete(prAdapter->prGlueInfo, prCmdInfo->fgSetQuery,
+								u4QueryInfoLen, WLAN_STATUS_SUCCESS);
+
+			/* return prCmdInfo */
+			cmdBufFreeCmdInfo(prAdapter, prCmdInfo);
+		}
+	}
+#endif
 }
 
 VOID nicEventMicErrorInfo(IN P_ADAPTER_T prAdapter, IN P_WIFI_EVENT_T prEvent)
