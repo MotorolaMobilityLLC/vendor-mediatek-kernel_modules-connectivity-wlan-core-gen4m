@@ -7476,6 +7476,13 @@ int priv_driver_set_chip_config(IN struct net_device *prNetDev,
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 	prAdapter = prGlueInfo->prAdapter;
 
+	if ((!prGlueInfo) ||
+	    (prGlueInfo->u4ReadyFlag == 0) ||
+	    kalIsResetting()) {
+		DBGLOG(REQ, WARN, "driver is not ready\n");
+		return -1;
+	}
+
 	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
 	/* wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv); */
 	/* DBGLOG(REQ, LOUD,("argc is %i\n",i4Argc)); */
