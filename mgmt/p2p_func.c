@@ -2831,6 +2831,12 @@ p2pFuncDisconnect(IN struct ADAPTER *prAdapter,
 			kalP2PGOStationUpdate(prAdapter->prGlueInfo,
 				prP2pRoleFsmInfo->ucRoleIndex, prStaRec, FALSE);
 		} else {
+			struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo =
+			    P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prAdapter,
+					prP2pBssInfo->u4PrivateData);
+
+			prP2pRoleFsmInfo->rJoinInfo.prTargetBssDesc = NULL;
+
 			scanRemoveConnFlagOfBssDescByBssid(prAdapter,
 				prP2pBssInfo->aucBSSID);
 		}
