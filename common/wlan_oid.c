@@ -534,17 +534,20 @@ wlanoidSetBssidListScan(IN P_ADAPTER_T prAdapter,
 	DEBUGFUNC("wlanoidSetBssidListScan()");
 
 	if (prAdapter->rAcpiState == ACPI_STATE_D3) {
-		DBGLOG(REQ, WARN,
+		DBGLOG(OID, WARN,
 		       "Fail in set BSSID list scan! (Adapter not ready). ACPI=D%d, Radio=%d\n",
 		       prAdapter->rAcpiState, prAdapter->fgIsRadioOff);
 		return WLAN_STATUS_ADAPTER_NOT_READY;
+	} else if (prAdapter->fgTestMode) {
+		DBGLOG(OID, WARN, "didn't support Scan in test mode\n");
+		return WLAN_STATUS_FAILURE;
 	}
 
 	ASSERT(pu4SetInfoLen);
 	*pu4SetInfoLen = 0;
 
 	if (prAdapter->fgIsRadioOff) {
-		DBGLOG(REQ, WARN, "Return from BSSID list scan! (radio off). ACPI=D%d, Radio=%d\n",
+		DBGLOG(OID, WARN, "Return from BSSID list scan! (radio off). ACPI=D%d, Radio=%d\n",
 		       prAdapter->rAcpiState, prAdapter->fgIsRadioOff);
 		return WLAN_STATUS_SUCCESS;
 	}
@@ -609,10 +612,13 @@ wlanoidSetBssidListScanExt(IN P_ADAPTER_T prAdapter,
 	DEBUGFUNC("wlanoidSetBssidListScanExt()");
 
 	if (prAdapter->rAcpiState == ACPI_STATE_D3) {
-		DBGLOG(REQ, WARN,
+		DBGLOG(OID, WARN,
 		       "Fail in set BSSID list scan! (Adapter not ready). ACPI=D%d, Radio=%d\n",
 		       prAdapter->rAcpiState, prAdapter->fgIsRadioOff);
 		return WLAN_STATUS_ADAPTER_NOT_READY;
+	} else if (prAdapter->fgTestMode) {
+		DBGLOG(OID, WARN, "didn't support Scan in test mode\n");
+		return WLAN_STATUS_FAILURE;
 	}
 
 	ASSERT(pu4SetInfoLen);
@@ -622,11 +628,11 @@ wlanoidSetBssidListScanExt(IN P_ADAPTER_T prAdapter,
 		return WLAN_STATUS_INVALID_LENGTH;
 
 	if (prAdapter->fgIsRadioOff) {
-		DBGLOG(REQ, WARN, "Return from BSSID list scan! (radio off). ACPI=D%d, Radio=%d\n",
+		DBGLOG(OID, WARN, "Return from BSSID list scan! (radio off). ACPI=D%d, Radio=%d\n",
 		       prAdapter->rAcpiState, prAdapter->fgIsRadioOff);
 		return WLAN_STATUS_SUCCESS;
 	}
-	DBGLOG(AIS, INFO, "ScanEX\n");
+	DBGLOG(OID, TRACE, "ScanEX\n");
 	if (pvSetBuffer != NULL && u4SetBufferLen != 0) {
 		prScanRequest = (P_PARAM_SCAN_REQUEST_EXT_T) pvSetBuffer;
 		prSsid = &(prScanRequest->rSsid);
@@ -694,10 +700,13 @@ wlanoidSetBssidListScanAdv(IN P_ADAPTER_T prAdapter,
 	DEBUGFUNC("wlanoidSetBssidListScanAdv()");
 
 	if (prAdapter->rAcpiState == ACPI_STATE_D3) {
-		DBGLOG(REQ, WARN,
+		DBGLOG(OID, WARN,
 		       "Fail in set BSSID list scan! (Adapter not ready). ACPI=D%d, Radio=%d\n",
 		       prAdapter->rAcpiState, prAdapter->fgIsRadioOff);
 		return WLAN_STATUS_ADAPTER_NOT_READY;
+	} else if (prAdapter->fgTestMode) {
+		DBGLOG(OID, WARN, "didn't support Scan in test mode\n");
+		return WLAN_STATUS_FAILURE;
 	}
 
 	ASSERT(pu4SetInfoLen);
@@ -709,7 +718,7 @@ wlanoidSetBssidListScanAdv(IN P_ADAPTER_T prAdapter,
 		return WLAN_STATUS_INVALID_DATA;
 
 	if (prAdapter->fgIsRadioOff) {
-		DBGLOG(REQ, WARN, "Return from BSSID list scan! (radio off). ACPI=D%d, Radio=%d\n",
+		DBGLOG(OID, WARN, "Return from BSSID list scan! (radio off). ACPI=D%d, Radio=%d\n",
 		       prAdapter->rAcpiState, prAdapter->fgIsRadioOff);
 		return WLAN_STATUS_SUCCESS;
 	}
@@ -719,7 +728,7 @@ wlanoidSetBssidListScanAdv(IN P_ADAPTER_T prAdapter,
 	ucSsidNum = (UINT_8) (prScanRequest->u4SsidNum);
 	for (i = 0; i < prScanRequest->u4SsidNum; i++) {
 		if (prScanRequest->rSsid[i].u4SsidLen > ELEM_MAX_LEN_SSID) {
-			DBGLOG(REQ, ERROR,
+			DBGLOG(OID, ERROR,
 			       "[%s] SSID(%s) Length(%ld) is over than ELEM_MAX_LEN_SSID(%d)\n",
 			       __func__, prScanRequest->rSsid[i].aucSsid,
 			       prScanRequest->rSsid[i].u4SsidLen, ELEM_MAX_LEN_SSID);
