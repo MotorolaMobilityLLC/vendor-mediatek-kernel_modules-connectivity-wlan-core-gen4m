@@ -1128,8 +1128,21 @@ UINT_64 kalGetBootTime(VOID);
 
 int kalMetInitProcfs(IN P_GLUE_INFO_T prGlueInfo);
 int kalMetRemoveProcfs(void);
-#endif /* _GL_KAL_H */
 
 VOID kalFreeTxMsduWorker(struct work_struct *work);
 VOID kalFreeTxMsdu(P_ADAPTER_T prAdapter, P_MSDU_INFO_T prMsduInfo);
 
+#if KERNEL_VERSION(3, 0, 0) <= LINUX_VERSION_CODE
+/* since: 0b5c9db1b11d3175bb42b80663a9f072f801edf5 */
+static inline void kal_skb_reset_mac_len(struct sk_buff *skb)
+{
+	skb_reset_mac_len(skb);
+}
+#else
+static inline void kal_skb_reset_mac_len(struct sk_buff *skb)
+{
+	skb->mac_len = skb->network_header - skb->mac_header;
+}
+#endif
+
+#endif /* _GL_KAL_H */
