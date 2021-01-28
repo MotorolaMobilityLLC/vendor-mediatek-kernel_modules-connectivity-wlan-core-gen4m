@@ -898,16 +898,19 @@ void kalP2PIndicateSDRequest(IN struct GLUE_INFO *prGlueInfo,
 {
 	union iwreq_data evt;
 	uint8_t aucBuffer[IW_CUSTOM_MAX];
-	uint32_t u4Offset = 0;
+	int32_t i4Ret = 0;
 
 	ASSERT(prGlueInfo);
 
 	memset(&evt, 0, sizeof(evt));
 
-	u4Offset =
+	i4Ret =
 		snprintf(aucBuffer, IW_CUSTOM_MAX - 1,
 		"P2P_SD_REQ %d", ucSeqNum);
-	DBGLOG(INIT, LOUD, "u4Offset = [%u]\n", u4Offset);
+	if (i4Ret < 0) {
+		DBGLOG(INIT, WARN, "sprintf failed:%d\n", i4Ret);
+		return;
+	}
 
 	evt.data.length = strlen(aucBuffer);
 
@@ -931,16 +934,19 @@ void kalP2PIndicateSDResponse(IN struct GLUE_INFO *prGlueInfo,
 {
 	union iwreq_data evt;
 	uint8_t aucBuffer[IW_CUSTOM_MAX];
-	uint32_t u4Offset = 0;
+	int32_t i4Ret = 0;
 
 	ASSERT(prGlueInfo);
 
 	memset(&evt, 0, sizeof(evt));
 
-	u4Offset =
+	i4Ret =
 		snprintf(aucBuffer, IW_CUSTOM_MAX - 1,
 		"P2P_SD_RESP %d", ucSeqNum);
-	DBGLOG(INIT, LOUD, "u4Offset = [%u]\n", u4Offset);
+	if (i4Ret < 0) {
+		DBGLOG(INIT, WARN, "sprintf failed:%d\n", i4Ret);
+		return;
+	}
 	evt.data.length = strlen(aucBuffer);
 
 	/* indicate IWEVP2PSDREQ event */
@@ -965,17 +971,19 @@ void kalP2PIndicateTXDone(IN struct GLUE_INFO *prGlueInfo,
 {
 	union iwreq_data evt;
 	uint8_t aucBuffer[IW_CUSTOM_MAX];
-	uint32_t u4Offset = 0;
+	int32_t i4Ret = 0;
 
 	ASSERT(prGlueInfo);
 
 	memset(&evt, 0, sizeof(evt));
 
-	u4Offset =
+	i4Ret =
 		snprintf(aucBuffer, IW_CUSTOM_MAX - 1,
 		"P2P_SD_XMITTED: %d %d", ucSeqNum, ucStatus);
-	DBGLOG(INIT, LOUD, "u4Offset = [%u]\n", u4Offset);
-
+	if (i4Ret < 0) {
+		DBGLOG(INIT, WARN, "sprintf failed:%d\n", i4Ret);
+		return;
+	}
 	evt.data.length = strlen(aucBuffer);
 
 	/* indicate IWEVP2PSDREQ event */
