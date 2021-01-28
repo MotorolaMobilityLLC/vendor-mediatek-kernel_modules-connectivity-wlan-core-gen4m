@@ -110,7 +110,8 @@ void kalSetEmiMpuProtection(phys_addr_t emiPhyBase, bool enable)
 	mtk_emimpu_set_protection(&region);
 	mtk_emimpu_free_region(&region);
 
-	pr_info("MPU for EMI PhyBase star:0x%x ,PhyBase end: 0x%x, Enable:%d\n"
+	DBGLOG_LIMITED(INIT, WARN
+	  , "MPU for EMI PhyBase star:0x%x ,PhyBase end: 0x%x, Enable:%d\n"
 		, start, end, enable);
 }
 #endif
