@@ -3997,8 +3997,8 @@ mtk_cfg80211_change_station(struct wiphy *wiphy,
 	 * In supplicant, only recognize WLAN_EID_QOS 46, not 0xDD WMM
 	 * So force to support UAPSD here.
 	 */
-	rCmdUpdate.UapsdBitmap = 0x0F;	/*params->uapsd_queues; */
-	rCmdUpdate.UapsdMaxSp = 0;	/*params->max_sp; */
+	rCmdUpdate.UapsdBitmap = params->uapsd_queues;
+	rCmdUpdate.UapsdMaxSp = params->max_sp;
 
 	rCmdUpdate.u2Capability = params->capability;
 

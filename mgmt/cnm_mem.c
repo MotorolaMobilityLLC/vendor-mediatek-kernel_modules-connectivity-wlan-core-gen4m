@@ -1649,7 +1649,8 @@ cnmPeerUpdate(struct ADAPTER *prAdapter, void *pvSetBuffer,
 	prStaRec->u2AssocId = 0;		/* no use */
 	prStaRec->u2ListenInterval = 0;		/* unknown */
 	prStaRec->fgIsQoS = TRUE;
-	prStaRec->fgIsUapsdSupported = (prCmd->UapsdBitmap == 0) ? FALSE : TRUE;
+	prStaRec->fgIsUapsdSupported
+		= ((1 << 4) & prCmd->aucExtCap[3]) ? TRUE : FALSE;
 	prStaRec->u4TxBeamformingCap = 0;	/* no use */
 	prStaRec->ucAselCap = 0;		/* no use */
 	prStaRec->ucRCPI = 120;
