@@ -2707,12 +2707,20 @@ void halHwRecoveryTimeout(unsigned long arg)
 
 void halSetDrvSer(struct ADAPTER *prAdapter)
 {
+	struct BUS_INFO *prBusInfo = NULL;
+
 	ASSERT(prAdapter);
 	ASSERT(prAdapter->prGlueInfo);
 
+	prBusInfo = prAdapter->chip_info->bus_info;
+
 	DBGLOG(HAL, INFO, "Set Driver Ser\n");
-	kalDevRegWrite(prAdapter->prGlueInfo, HOST2MCU_SW_INT_SET,
-		       MCU_INT_DRIVER_SER);
+	if (prBusInfo->softwareInterruptMcu)
+		prBusInfo->softwareInterruptMcu(prAdapter,
+				MCU_INT_DRIVER_SER);
+	else
+		kalDevRegWrite(prAdapter->prGlueInfo, HOST2MCU_SW_INT_SET,
+				MCU_INT_DRIVER_SER);
 }
 
 static void halStartSerTimer(IN struct ADAPTER *prAdapter)
