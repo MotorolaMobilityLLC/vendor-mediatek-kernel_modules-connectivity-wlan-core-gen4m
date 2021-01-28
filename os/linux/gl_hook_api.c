@@ -4555,6 +4555,14 @@ uint32_t ServiceWlanOid(void *winfos,
 
 		return WLAN_STATUS_SUCCESS;
 #endif
+	case OP_WLAN_OID_RESET_RECAL_COUNT:
+		kalMemSet(&prReCalInfo->prCalArray[0], 0,
+		(prReCalInfo->u4Count * sizeof(struct RECAL_DATA_T)));
+
+		prReCalInfo->u4Count = 0;
+
+		return WLAN_STATUS_SUCCESS;
+
 	case OP_WLAN_OID_NUM:
 	default:
 		return WLAN_STATUS_FAILURE;
