@@ -98,6 +98,7 @@
 /* #define MAX_IOREQ_NUM   10 */
 struct semaphore g_halt_sem;
 int g_u4HaltFlag;
+int g_u4WlanInitFlag;
 static enum ENUM_NVRAM_STATE g_NvramFsm = NVRAM_STATE_INIT;
 
 uint8_t g_aucNvram[MAX_CFG_FILE_WIFI_REC_SIZE];
@@ -5084,6 +5085,7 @@ static int initWlan(void)
 	kalSetEmiMpuProtection(gConEmiPhyBase, true);
 #endif
 
+	g_u4WlanInitFlag = 1;
 	DBGLOG(INIT, INFO, "initWlan::End\n");
 
 	return ret;
@@ -5151,6 +5153,8 @@ static void exitWlan(void)
 #if defined(UT_TEST_MODE) && defined(CFG_BUILD_X86_PLATFORM)
 	kfree((const void *)gConEmiPhyBase);
 #endif
+
+	g_u4WlanInitFlag = 0;
 	DBGLOG(INIT, INFO, "exitWlan\n");
 
 }				/* end of exitWlan() */

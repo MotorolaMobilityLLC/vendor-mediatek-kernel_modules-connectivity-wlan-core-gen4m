@@ -92,6 +92,7 @@ extern int allocatedMemSize;
 #endif
 
 extern int g_u4HaltFlag;
+extern int g_u4WlanInitFlag;
 
 /*******************************************************************************
  *                              C O N S T A N T S

@@ -102,6 +102,7 @@ extern int allocatedMemSize;
 
 extern struct semaphore g_halt_sem;
 extern int g_u4HaltFlag;
+extern int g_u4WlanInitFlag;
 
 extern struct delayed_work sched_workq;
 
