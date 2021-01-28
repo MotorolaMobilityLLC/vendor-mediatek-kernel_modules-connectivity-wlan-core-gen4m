@@ -110,6 +110,10 @@
 #define PROC_UID_SHELL							2000
 #define PROC_GID_WIFI							1010
 
+/* notice: str only can be an array */
+#define SNPRINTF(buf, str, arg)   {buf += \
+	snprintf((char *)(buf), sizeof(str)-kalStrLen(str), PRINTF_ARG arg); }
+
 /*******************************************************************************
  *                             D A T A   T Y P E S
  *******************************************************************************
@@ -176,7 +180,7 @@ static ssize_t procDbgLevelRead(struct file *filp, char __user *buf,
 	    (sizeof(aucDbModuleName) /
 	     PROC_DBG_LEVEL_MAX_DISPLAY_STR_LEN) & 0xfe;
 	for (i = 0; i < u2ModuleNum; i += 2)
-		SNPRINTF(temp,
+		SNPRINTF(temp, g_aucProcBuf,
 			("DBG_%s_IDX\t(0x%02x):\t0x%02x\t"
 			 "DBG_%s_IDX\t(0x%02x):\t0x%02x\n",
 			 &aucDbModuleName[i][0], i, aucDebugModule[i],
@@ -185,7 +189,7 @@ static ssize_t procDbgLevelRead(struct file *filp, char __user *buf,
 
 	if ((sizeof(aucDbModuleName) /
 	     PROC_DBG_LEVEL_MAX_DISPLAY_STR_LEN) & 0x1)
-		SNPRINTF(temp,
+		SNPRINTF(temp, g_aucProcBuf,
 			 ("DBG_%s_IDX\t(0x%02x):\t0x%02x\n",
 			  &aucDbModuleName[u2ModuleNum][0], u2ModuleNum,
 			  aucDebugModule[u2ModuleNum]));
@@ -328,7 +332,7 @@ static ssize_t procCfgRead(struct file *filp, char __user *buf, size_t count,
 		(sizeof(aucDbModuleName) /
 		PROC_DBG_LEVEL_MAX_DISPLAY_STR_LEN) & 0xfe;
 	for (i = 0; i < u2ModuleNum; i += 2)
-		SNPRINTF(temp,
+		SNPRINTF(temp, g_aucProcBuf,
 			("DBG_%s_IDX\t(0x%02x):\t0x%02x\t"
 			 "DBG_%s_IDX\t(0x%02x):\t0x%02x\n",
 			 &aucDbModuleName[i][0], i, aucDebugModule[i],
@@ -337,7 +341,7 @@ static ssize_t procCfgRead(struct file *filp, char __user *buf, size_t count,
 
 	if ((sizeof(aucDbModuleName) /
 	     PROC_DBG_LEVEL_MAX_DISPLAY_STR_LEN) & 0x1)
-		SNPRINTF(temp,
+		SNPRINTF(temp, g_aucProcBuf,
 			("DBG_%s_IDX\t(0x%02x):\t0x%02x\n",
 			&aucDbModuleName[u2ModuleNum][0], u2ModuleNum,
 			aucDebugModule[u2ModuleNum]));
@@ -358,7 +362,7 @@ static ssize_t procCfgRead(struct file *filp, char __user *buf, size_t count,
 		if ((!prWlanCfgEntry) || (prWlanCfgEntry->aucKey[0] == '\0'))
 			break;
 
-		SNPRINTF(temp,
+		SNPRINTF(temp, g_aucProcBuf,
 			("%s|%s\n", prWlanCfgEntry->aucKey,
 			prWlanCfgEntry->aucValue));
 
@@ -374,7 +378,7 @@ static ssize_t procCfgRead(struct file *filp, char __user *buf, size_t count,
 		if ((!prWlanCfgEntry) || (prWlanCfgEntry->aucKey[0] == '\0'))
 			break;
 
-		SNPRINTF(temp,
+		SNPRINTF(temp, g_aucProcBuf,
 			("D:%s|%s\n", prWlanCfgEntry->aucKey,
 			prWlanCfgEntry->aucValue));
 
@@ -418,7 +422,7 @@ static ssize_t procCfgWrite(struct file *file, const char __user *buffer,
 		u4CopySize = count;
 
 	pucTmp = g_aucProcBuf;
-	SNPRINTF(pucTmp, ("%s ", "set_cfg"));
+	SNPRINTF(pucTmp, g_aucProcBuf, ("%s ", "set_cfg"));
 
 	if (copy_from_user(pucTmp, buffer, u4CopySize)) {
 		pr_err("error of copy from user\n");
@@ -623,7 +627,7 @@ static ssize_t procMCRRead(struct file *filp, char __user *buf,
 		wlanoidQueryMcrRead, (void *)&rMcrInfo,
 		sizeof(rMcrInfo), TRUE, TRUE, TRUE, &u4BufLen);
 	kalMemZero(g_aucProcBuf, sizeof(g_aucProcBuf));
-	SNPRINTF(temp,
+	SNPRINTF(temp, g_aucProcBuf,
 		("MCR (0x%08xh): 0x%08x\n", rMcrInfo.u4McrOffset,
 		rMcrInfo.u4McrData));
 
@@ -824,19 +828,20 @@ static ssize_t procPktDelayDbgCfgRead(struct file *filp, char __user *buf,
 			&u4RxDelayThreshold);
 
 	if (ucTxRxFlag & BIT(0)) {
-		SNPRINTF(temp,
+		SNPRINTF(temp, g_aucProcBuf,
 			("txLog %x %d %d\n", ucTxIpProto, u2TxUdpPort,
 			u4TxDelayThreshold));
 		temp += kalStrLen(temp);
 	}
 	if (ucTxRxFlag & BIT(1)) {
-		SNPRINTF(temp,
+		SNPRINTF(temp, g_aucProcBuf,
 			("rxLog %x %d %d\n", ucRxIpProto, u2RxUdpPort,
 			u4RxDelayThreshold));
 		temp += kalStrLen(temp);
 	}
 	if (ucTxRxFlag == 0)
-		SNPRINTF(temp, ("reset 0 0 0, there is no tx/rx delay log\n"));
+		SNPRINTF(temp, g_aucProcBuf,
+			("reset 0 0 0, there is no tx/rx delay log\n"));
 
 	u4CopySize = kalStrLen(g_aucProcBuf);
 	if (u4CopySize > count)
@@ -862,7 +867,7 @@ static ssize_t procPktDelayDbgCfgWrite(struct file *file, const char *buffer,
 	uint8_t *temp = &g_aucProcBuf[0];
 	uint8_t aucModule[MODULE_NAME_LENGTH];
 	uint32_t u4DelayThreshold = 0;
-	uint16_t u4PortNum = 0;
+	uint32_t u4PortNum = 0;
 	uint32_t u4IpProto = 0;
 	uint8_t aucResetArray[MODULE_NAME_LENGTH] = "reset";
 	uint8_t aucTxArray[MODULE_NAME_LENGTH] = "txLog";
@@ -1351,10 +1356,10 @@ static int procDrvStatusRead(char *page, char **start, off_t off, int count,
 	if (off != 0)
 		return 0;	/* To indicate end of file. */
 
-	SNPRINTF(p, ("GLUE LAYER STATUS:"));
-	SNPRINTF(p, ("\n=================="));
+	SNPRINTF(p, page, ("GLUE LAYER STATUS:"));
+	SNPRINTF(p, page, ("\n=================="));
 
-	SNPRINTF(p,
+	SNPRINTF(p, page,
 		("\n* Number of Pending Frames: %ld\n",
 		prGlueInfo->u4TxPendingFrameNum));
 
@@ -1402,8 +1407,8 @@ static int procRxStatisticsRead(char *page, char **start, off_t off, int count,
 	if (off != 0)
 		return 0;	/* To indicate end of file. */
 
-	SNPRINTF(p, ("RX STATISTICS (Write 1 to clear):"));
-	SNPRINTF(p, ("\n=================================\n"));
+	SNPRINTF(p, page, ("RX STATISTICS (Write 1 to clear):"));
+	SNPRINTF(p, page, ("\n=================================\n"));
 
 	GLUE_ACQUIRE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_FSM);
 
@@ -1497,8 +1502,8 @@ static int procTxStatisticsRead(char *page, char **start, off_t off, int count,
 	if (off != 0)
 		return 0;	/* To indicate end of file. */
 
-	SNPRINTF(p, ("TX STATISTICS (Write 1 to clear):"));
-	SNPRINTF(p, ("\n=================================\n"));
+	SNPRINTF(p, page, ("TX STATISTICS (Write 1 to clear):"));
+	SNPRINTF(p, page, ("\n=================================\n"));
 
 	GLUE_ACQUIRE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_FSM);
 
@@ -1588,7 +1593,8 @@ static ssize_t cfgRead(struct file *filp, char __user *buf, size_t count,
 
 	kalMemSet(aucCfgOutputBuf, 0, MAX_CFG_OUTPUT_BUF_LENGTH);
 
-	SNPRINTF(temp, ("\nprocCfgRead() %s:\n", aucCfgQueryKey));
+	SNPRINTF(temp, aucCfgOutputBuf,
+		("\nprocCfgRead() %s:\n", aucCfgQueryKey));
 
 	/* send to FW */
 	cmdV1Header.cmdVersion = CMD_VER_1;
@@ -1611,7 +1617,8 @@ static ssize_t cfgRead(struct file *filp, char __user *buf, size_t count,
 			"kalIoctl wlanoidQueryCfgRead fail 0x%x\n",
 			rStatus);
 
-	SNPRINTF(temp, ("%s\n", cmdV1Header.buffer));
+	SNPRINTF(temp, aucCfgOutputBuf,
+		("%s\n", cmdV1Header.buffer));
 
 	u4CopySize = kalStrLen(aucCfgOutputBuf);
 	if (u4CopySize > count)
