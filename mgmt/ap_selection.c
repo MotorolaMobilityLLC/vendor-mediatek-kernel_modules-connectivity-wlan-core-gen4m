@@ -1106,7 +1106,7 @@ uint8_t scanCheckNeedDriverRoaming(
 	roam = aisGetRoamingInfo(prAdapter, ucBssIndex);
 	ais = aisGetAisFsmInfo(prAdapter, ucBssIndex);
 	setting = aisGetConnSettings(prAdapter, ucBssIndex);
-	rssi = prAdapter->rLinkQuality.cRssi;
+	rssi = prAdapter->rLinkQuality.rLq[ucBssIndex].cRssi;
 
 	GET_CURRENT_SYSTIME(&roam->rRoamingDiscoveryUpdateTime);
 
@@ -1152,7 +1152,7 @@ uint8_t scanBeaconTimeoutFilterPolicyForAis(struct ADAPTER *prAdapter,
 
 	roam = aisGetRoamingInfo(prAdapter, ucBssIndex);
 	reason = roam->eReason;
-	rssi = prAdapter->rLinkQuality.cRssi;
+	rssi = prAdapter->rLinkQuality.rLq[ucBssIndex].cRssi;
 
 	if (scanInDecidingRoaming(prAdapter, ucBssIndex) &&
 	    rssi > GOOD_RSSI_FOR_HT_VHT - 5) {
