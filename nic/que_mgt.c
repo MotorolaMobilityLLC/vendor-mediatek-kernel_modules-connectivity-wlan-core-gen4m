@@ -69,7 +69,9 @@
  */
 #include "precomp.h"
 #include "queue.h"
-
+#if CFG_MTK_MCIF_WIFI_SUPPORT
+#include "mddp.h"
+#endif
 /*******************************************************************************
  *                              C O N S T A N T S
  *******************************************************************************
@@ -583,6 +585,11 @@ void qmActivateStaRec(IN struct ADAPTER *prAdapter,
 		(prStaRec->aprRxReorderParamRefTbl)[i] = NULL;
 #endif
 
+#if CFG_MTK_MCIF_WIFI_SUPPORT
+	if (prAdapter->fgMddpActivated)
+		mddpNotifyDrvTxd(prAdapter, prStaRec, TRUE);
+#endif
+
 	DBGLOG(QM, INFO, "QM: +STA[%d]\n", prStaRec->ucIndex);
 }
 
@@ -637,6 +644,13 @@ void qmDeactivateStaRec(IN struct ADAPTER *prAdapter,
 	nicTxFreeDescTemplate(prAdapter, prStaRec);
 
 	qmUpdateStaRec(prAdapter, prStaRec);
+
+#if CFG_MTK_MCIF_WIFI_SUPPORT
+	if (prStaRec->eStaType == STA_TYPE_LEGACY_CLIENT
+		&& prAdapter->fgMddpActivated) {
+		mddpNotifyDrvTxd(prAdapter, prStaRec, FALSE);
+	}
+#endif
 
 	DBGLOG(QM, INFO, "QM: -STA[%u]\n", prStaRec->ucIndex);
 }
