@@ -863,8 +863,10 @@ assocCheckRxReAssocRspFrameStatus(IN struct ADAPTER *prAdapter,
 	ASSERT(pu2StatusCode);
 
 	if ((prSwRfb->u2PacketLen - prSwRfb->u2HeaderLen) <
-	    (CAP_INFO_FIELD_LEN + STATUS_CODE_FIELD_LEN + AID_FIELD_LEN)) {
-		ASSERT(0);
+	    (CAP_INFO_FIELD_LEN +
+	     STATUS_CODE_FIELD_LEN +
+	     AID_FIELD_LEN)) {
+		DBGLOG(SAA, WARN, "Invalid AssocRsp length!");
 		return WLAN_STATUS_FAILURE;
 	}
 
@@ -1200,7 +1202,7 @@ assocProcessRxDisassocFrame(IN struct ADAPTER *prAdapter,
 	/* 4 <2> Parse the Header of Disassociation Frame. */
 	if ((prSwRfb->u2PacketLen - prSwRfb->u2HeaderLen) <
 	    REASON_CODE_FIELD_LEN) {
-		ASSERT(0);
+		DBGLOG(SAA, LOUD, "Invalid DisAssoc packet length!");
 		return WLAN_STATUS_FAILURE;
 	}
 
@@ -1501,7 +1503,8 @@ uint32_t assocProcessRxAssocReqFrame(IN struct ADAPTER *prAdapter,
 			/* Update default Tx rate */
 			nicTxUpdateStaRecDefaultRate(prStaRec);
 		} else {
-			ASSERT(0);
+			DBGLOG(SAA, WARN,
+				"No SupportedRate & ExtendedSupportedRate.\n");
 			u2StatusCode =
 			    STATUS_CODE_ASSOC_DENIED_RATE_NOT_SUPPORTED;
 			break;
