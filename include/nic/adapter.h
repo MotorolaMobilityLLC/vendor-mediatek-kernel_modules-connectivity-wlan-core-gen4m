@@ -1573,6 +1573,11 @@ struct ADAPTER {
 #if CFG_SUPPORT_RX_GRO
 	OS_SYSTIME tmGROFlushTimeout;
 #endif
+
+#if defined(CFG_REPORT_MAX_TX_RATE) && (CFG_REPORT_MAX_TX_RATE == 1)
+	uint32_t u4StaMaxTxRate;
+#endif /* CFG_REPORT_MAX_TX_RATE */
+
 };				/* end of _ADAPTER_T */
 
 /*******************************************************************************
