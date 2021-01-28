@@ -2648,153 +2648,216 @@ void nicCmdEventQueryStaStatistics(IN struct ADAPTER
 	ASSERT(pucEventBuf);
 	ASSERT(prCmdInfo->pvInformationBuffer);
 
-	if (prCmdInfo->fgIsOid) {
-		prGlueInfo = prAdapter->prGlueInfo;
-		prEvent = (struct EVENT_STA_STATISTICS *) pucEventBuf;
-		prStaStatistics = (struct PARAM_GET_STA_STATISTICS *)
-				  prCmdInfo->pvInformationBuffer;
+	prGlueInfo = prAdapter->prGlueInfo;
+	prEvent = (struct EVENT_STA_STATISTICS *) pucEventBuf;
+	prStaStatistics = (struct PARAM_GET_STA_STATISTICS *)
+			  prCmdInfo->pvInformationBuffer;
 
-		u4QueryInfoLen = sizeof(struct PARAM_GET_STA_STATISTICS);
+	u4QueryInfoLen = sizeof(struct PARAM_GET_STA_STATISTICS);
 
-		/* Statistics from FW is valid */
-		if (prEvent->u4Flags & BIT(0)) {
-			prStaStatistics->ucPer = prEvent->ucPer;
-			prStaStatistics->ucRcpi = prEvent->ucRcpi;
-			prStaStatistics->u4PhyMode = prEvent->u4PhyMode;
-			prStaStatistics->u2LinkSpeed = prEvent->u2LinkSpeed;
+	/* Statistics from FW is valid */
+	if (prEvent->u4Flags & BIT(0)) {
+		prStaStatistics->ucPer = prEvent->ucPer;
+		prStaStatistics->ucRcpi = prEvent->ucRcpi;
+		prStaStatistics->u4PhyMode = prEvent->u4PhyMode;
+		prStaStatistics->u2LinkSpeed = prEvent->u2LinkSpeed;
 
-			prStaStatistics->u4TxFailCount = prEvent->u4TxFailCount;
-			prStaStatistics->u4TxLifeTimeoutCount =
-				prEvent->u4TxLifeTimeoutCount;
-			prStaStatistics->u4TransmitCount =
-				prEvent->u4TransmitCount;
-			prStaStatistics->u4TransmitFailCount =
-				prEvent->u4TransmitFailCount;
-			prStaStatistics->u4Rate1TxCnt = prEvent->u4Rate1TxCnt;
-			prStaStatistics->u4Rate1FailCnt =
-				prEvent->u4Rate1FailCnt;
+		prStaStatistics->u4TxFailCount = prEvent->u4TxFailCount;
+		prStaStatistics->u4TxLifeTimeoutCount =
+			prEvent->u4TxLifeTimeoutCount;
+		prStaStatistics->u4TransmitCount =
+			prEvent->u4TransmitCount;
+		prStaStatistics->u4TransmitFailCount =
+			prEvent->u4TransmitFailCount;
+		prStaStatistics->u4Rate1TxCnt = prEvent->u4Rate1TxCnt;
+		prStaStatistics->u4Rate1FailCnt =
+			prEvent->u4Rate1FailCnt;
 
-			prStaStatistics->ucTemperature = prEvent->ucTemperature;
-			prStaStatistics->ucSkipAr = prEvent->ucSkipAr;
-			prStaStatistics->ucArTableIdx = prEvent->ucArTableIdx;
-			prStaStatistics->ucRateEntryIdx =
-				prEvent->ucRateEntryIdx;
-			prStaStatistics->ucRateEntryIdxPrev =
-				prEvent->ucRateEntryIdxPrev;
-			prStaStatistics->ucTxSgiDetectPassCnt =
-				prEvent->ucTxSgiDetectPassCnt;
-			prStaStatistics->ucAvePer = prEvent->ucAvePer;
+		prStaStatistics->ucTemperature = prEvent->ucTemperature;
+		prStaStatistics->ucSkipAr = prEvent->ucSkipAr;
+		prStaStatistics->ucArTableIdx = prEvent->ucArTableIdx;
+		prStaStatistics->ucRateEntryIdx =
+			prEvent->ucRateEntryIdx;
+		prStaStatistics->ucRateEntryIdxPrev =
+			prEvent->ucRateEntryIdxPrev;
+		prStaStatistics->ucTxSgiDetectPassCnt =
+			prEvent->ucTxSgiDetectPassCnt;
+		prStaStatistics->ucAvePer = prEvent->ucAvePer;
 #if (CFG_SUPPORT_RA_GEN == 0)
-			kalMemCopy(prStaStatistics->aucArRatePer,
-				   prEvent->aucArRatePer,
-				   sizeof(prEvent->aucArRatePer));
-			kalMemCopy(prStaStatistics->aucRateEntryIndex,
-				   prEvent->aucRateEntryIndex,
-				   sizeof(prEvent->aucRateEntryIndex));
+		kalMemCopy(prStaStatistics->aucArRatePer,
+			   prEvent->aucArRatePer,
+			   sizeof(prEvent->aucArRatePer));
+		kalMemCopy(prStaStatistics->aucRateEntryIndex,
+			   prEvent->aucRateEntryIndex,
+			   sizeof(prEvent->aucRateEntryIndex));
 #else
-			prStaStatistics->u4AggRangeCtrl_0 =
-				prEvent->u4AggRangeCtrl_0;
-			prStaStatistics->u4AggRangeCtrl_1 =
-				prEvent->u4AggRangeCtrl_1;
-			prStaStatistics->ucRangeType = prEvent->ucRangeType;
-			kalMemCopy(prStaStatistics->aucReserved5,
-				   prEvent->aucReserved5,
-				   sizeof(prEvent->aucReserved5));
+		prStaStatistics->u4AggRangeCtrl_0 =
+			prEvent->u4AggRangeCtrl_0;
+		prStaStatistics->u4AggRangeCtrl_1 =
+			prEvent->u4AggRangeCtrl_1;
+		prStaStatistics->ucRangeType = prEvent->ucRangeType;
+		kalMemCopy(prStaStatistics->aucReserved5,
+			   prEvent->aucReserved5,
+			   sizeof(prEvent->aucReserved5));
 #endif
-			prStaStatistics->ucArStateCurr = prEvent->ucArStateCurr;
-			prStaStatistics->ucArStatePrev = prEvent->ucArStatePrev;
-			prStaStatistics->ucArActionType =
-				prEvent->ucArActionType;
-			prStaStatistics->ucHighestRateCnt =
-				prEvent->ucHighestRateCnt;
-			prStaStatistics->ucLowestRateCnt =
-				prEvent->ucLowestRateCnt;
-			prStaStatistics->u2TrainUp = prEvent->u2TrainUp;
-			prStaStatistics->u2TrainDown = prEvent->u2TrainDown;
-			kalMemCopy(&prStaStatistics->rTxVector,
-				&prEvent->rTxVector,
-				sizeof(prEvent->rTxVector));
-			kalMemCopy(&prStaStatistics->rMibInfo,
-				&prEvent->rMibInfo,
-				sizeof(prEvent->rMibInfo));
-			prStaStatistics->fgIsForceTxStream =
-				prEvent->fgIsForceTxStream;
-			prStaStatistics->fgIsForceSeOff =
-				prEvent->fgIsForceSeOff;
+		prStaStatistics->ucArStateCurr = prEvent->ucArStateCurr;
+		prStaStatistics->ucArStatePrev = prEvent->ucArStatePrev;
+		prStaStatistics->ucArActionType =
+			prEvent->ucArActionType;
+		prStaStatistics->ucHighestRateCnt =
+			prEvent->ucHighestRateCnt;
+		prStaStatistics->ucLowestRateCnt =
+			prEvent->ucLowestRateCnt;
+		prStaStatistics->u2TrainUp = prEvent->u2TrainUp;
+		prStaStatistics->u2TrainDown = prEvent->u2TrainDown;
+		kalMemCopy(&prStaStatistics->rTxVector,
+			&prEvent->rTxVector,
+			sizeof(prEvent->rTxVector));
+		kalMemCopy(&prStaStatistics->rMibInfo,
+			&prEvent->rMibInfo,
+			sizeof(prEvent->rMibInfo));
+		prStaStatistics->fgIsForceTxStream =
+			prEvent->fgIsForceTxStream;
+		prStaStatistics->fgIsForceSeOff =
+			prEvent->fgIsForceSeOff;
 #if (CFG_SUPPORT_RA_GEN == 0)
-			kalMemCopy(prStaStatistics->aucReserved6,
-				   prEvent->aucReserved6,
-				   sizeof(prEvent->aucReserved6));
+		kalMemCopy(prStaStatistics->aucReserved6,
+			   prEvent->aucReserved6,
+			   sizeof(prEvent->aucReserved6));
 #else
-			prStaStatistics->u2RaRunningCnt =
-				prEvent->u2RaRunningCnt;
-			prStaStatistics->ucRaStatus = prEvent->ucRaStatus;
-			prStaStatistics->ucFlag = prEvent->ucFlag;
-			kalMemCopy(&prStaStatistics->aucTxQuality,
-				   &prEvent->aucTxQuality,
-				   sizeof(prEvent->aucTxQuality));
-			prStaStatistics->ucTxRateUpPenalty =
-				prEvent->ucTxRateUpPenalty;
-			prStaStatistics->ucLowTrafficMode =
-				prEvent->ucLowTrafficMode;
-			prStaStatistics->ucLowTrafficCount =
-				prEvent->ucLowTrafficCount;
-			prStaStatistics->ucLowTrafficDashBoard =
-				prEvent->ucLowTrafficDashBoard;
-			prStaStatistics->ucDynamicSGIState =
-				prEvent->ucDynamicSGIState;
-			prStaStatistics->ucDynamicSGIScore =
-				prEvent->ucDynamicSGIScore;
-			prStaStatistics->ucDynamicBWState =
-				prEvent->ucDynamicBWState;
-			prStaStatistics->ucDynamicGband256QAMState =
-				prEvent->ucDynamicGband256QAMState;
-			prStaStatistics->ucVhtNonSpRateState =
-				prEvent->ucVhtNonSpRateState;
+		prStaStatistics->u2RaRunningCnt =
+			prEvent->u2RaRunningCnt;
+		prStaStatistics->ucRaStatus = prEvent->ucRaStatus;
+		prStaStatistics->ucFlag = prEvent->ucFlag;
+		kalMemCopy(&prStaStatistics->aucTxQuality,
+			   &prEvent->aucTxQuality,
+			   sizeof(prEvent->aucTxQuality));
+		prStaStatistics->ucTxRateUpPenalty =
+			prEvent->ucTxRateUpPenalty;
+		prStaStatistics->ucLowTrafficMode =
+			prEvent->ucLowTrafficMode;
+		prStaStatistics->ucLowTrafficCount =
+			prEvent->ucLowTrafficCount;
+		prStaStatistics->ucLowTrafficDashBoard =
+			prEvent->ucLowTrafficDashBoard;
+		prStaStatistics->ucDynamicSGIState =
+			prEvent->ucDynamicSGIState;
+		prStaStatistics->ucDynamicSGIScore =
+			prEvent->ucDynamicSGIScore;
+		prStaStatistics->ucDynamicBWState =
+			prEvent->ucDynamicBWState;
+		prStaStatistics->ucDynamicGband256QAMState =
+			prEvent->ucDynamicGband256QAMState;
+		prStaStatistics->ucVhtNonSpRateState =
+			prEvent->ucVhtNonSpRateState;
 #endif
-			prStaRec = cnmGetStaRecByIndex(prAdapter,
-						       prEvent->ucStaRecIdx);
+		prStaRec = cnmGetStaRecByIndex(prAdapter,
+					       prEvent->ucStaRecIdx);
 
-			if (prStaRec) {
-				/*link layer statistics */
-				for (eAci = 0; eAci < WMM_AC_INDEX_NUM;
-					eAci++) {
-					prStaStatistics->arLinkStatistics[eAci].
-					u4TxFailMsdu =
-						prEvent->arLinkStatistics[eAci].
-						u4TxFailMsdu;
-					prStaStatistics->arLinkStatistics[eAci].
-					u4TxRetryMsdu =
-						prEvent->arLinkStatistics[eAci].
-						u4TxRetryMsdu;
+		if (prStaRec) {
+			/*link layer statistics */
+			for (eAci = 0; eAci < WMM_AC_INDEX_NUM;
+				eAci++) {
+				prStaStatistics->arLinkStatistics[eAci].
+				u4TxFailMsdu =
+					prEvent->arLinkStatistics[eAci].
+					u4TxFailMsdu;
+				prStaStatistics->arLinkStatistics[eAci].
+				u4TxRetryMsdu =
+					prEvent->arLinkStatistics[eAci].
+					u4TxRetryMsdu;
 
-					/*for dump bss statistics */
-					prStaRec->arLinkStatistics[eAci].
-					u4TxFailMsdu =
-						prEvent->arLinkStatistics[eAci].
-						u4TxFailMsdu;
-					prStaRec->arLinkStatistics[eAci].
-					u4TxRetryMsdu =
-						prEvent->arLinkStatistics[eAci].
-						u4TxRetryMsdu;
-				}
-			}
-			if (prEvent->u4TxCount) {
-				uint32_t u4TxDoneAirTimeMs =
-					USEC_TO_MSEC(prEvent->u4TxDoneAirTime *
-					32);
-
-				prStaStatistics->u4TxAverageAirTime =
-					(u4TxDoneAirTimeMs /
-					prEvent->u4TxCount);
-			} else {
-				prStaStatistics->u4TxAverageAirTime = 0;
+				/*for dump bss statistics */
+				prStaRec->arLinkStatistics[eAci].
+				u4TxFailMsdu =
+					prEvent->arLinkStatistics[eAci].
+					u4TxFailMsdu;
+				prStaRec->arLinkStatistics[eAci].
+				u4TxRetryMsdu =
+					prEvent->arLinkStatistics[eAci].
+					u4TxRetryMsdu;
 			}
 		}
+		if (prEvent->u4TxCount) {
+			uint32_t u4TxDoneAirTimeMs =
+				USEC_TO_MSEC(prEvent->u4TxDoneAirTime *
+				32);
 
-		kalOidComplete(prGlueInfo, prCmdInfo->fgSetQuery,
-			       u4QueryInfoLen, WLAN_STATUS_SUCCESS);
+			prStaStatistics->u4TxAverageAirTime =
+				(u4TxDoneAirTimeMs /
+				prEvent->u4TxCount);
+		} else {
+			prStaStatistics->u4TxAverageAirTime = 0;
+		}
+
+#if CFG_ENABLE_PER_STA_STATISTICS_LOG
+#if CFG_SUPPORT_WFD
+		/* dump statistics for WFD */
+		if (prAdapter->rWifiVar
+			.rWfdConfigureSettings.ucWfdEnable == 1) {
+			uint32_t u4LinkScore = 0;
+			uint32_t u4TotalError =
+				prStaStatistics->u4TxFailCount +
+				prStaStatistics->u4TxLifeTimeoutCount;
+			uint32_t u4TxExceedThresholdCount =
+				prStaStatistics->u4TxExceedThresholdCount;
+			uint32_t u4TxTotalCount =
+				prStaStatistics->u4TxTotalCount;
+
+			/* Calcute Link Score
+			 * u4LinkScore 10~100 ,
+			 * ExceedThreshold ratio 0~90 only
+			 * u4LinkScore 0~9
+			 * Drop packet ratio 0~9 and
+			 * all packets exceed threshold
+			 */
+			if (u4TxTotalCount) {
+				if (u4TxExceedThresholdCount <= u4TxTotalCount)
+					u4LinkScore = (90 -
+						((u4TxExceedThresholdCount * 90)
+						/ u4TxTotalCount));
+				else
+					u4LinkScore = 0;
+			} else
+				u4LinkScore = 90;
+
+			u4LinkScore += 10;
+			if (u4LinkScore == 10) {
+				if (u4TotalError <= u4TxTotalCount)
+					u4LinkScore = (10 -
+						((u4TotalError * 10) /
+						u4TxTotalCount));
+				else
+					u4LinkScore = 0;
+			}
+
+			if (u4LinkScore > 100)
+				u4LinkScore = 100;
+
+			log_dbg(P2P, INFO,
+				"[%u][%u] link_score=%u, rssi=%u, rate=%u, threshold_cnt=%u, fail_cnt=%u\n",
+				prEvent->ucNetworkTypeIndex,
+				prEvent->ucStaRecIdx,
+				u4LinkScore,
+				prStaStatistics->ucRcpi,
+				prStaStatistics->u2LinkSpeed,
+				prStaStatistics->u4TxExceedThresholdCount,
+				prStaStatistics->u4TxFailCount);
+			log_dbg(P2P, INFO, "timeout_cnt=%u, apt=%u, aat=%u, total_cnt=%u\n",
+				prStaStatistics->u4TxLifeTimeoutCount,
+				prStaStatistics->u4TxAverageProcessTime,
+				prStaStatistics->u4TxAverageAirTime,
+				prStaStatistics->u4TxTotalCount);
+		}
+#endif
+#endif
 	}
+
+	if (prCmdInfo->fgIsOid)
+		kalOidComplete(prGlueInfo,
+			prCmdInfo->fgSetQuery,
+			u4QueryInfoLen,
+			WLAN_STATUS_SUCCESS);
 
 }
 

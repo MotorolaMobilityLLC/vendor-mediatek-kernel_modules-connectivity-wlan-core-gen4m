@@ -52,6 +52,8 @@
 #ifndef _P2P_ROLE_H
 #define _P2P_ROLE_H
 
+#define P2P_ROLE_GET_STATISTICS_TIME	    5000
+
 enum ENUM_BUFFER_TYPE {
 	ENUM_FRAME_TYPE_EXTRA_IE_BEACON,
 	ENUM_FRAME_TYPE_EXTRA_IE_ASSOC_RSP,
@@ -327,6 +329,11 @@ struct P2P_ROLE_FSM_INFO {
 	/* FSM Timer */
 	struct TIMER rP2pRoleFsmTimeoutTimer;
 
+#if	CFG_ENABLE_PER_STA_STATISTICS_LOG
+	/* Get statistics Timer */
+	struct TIMER rP2pRoleFsmGetStatisticsTimer;
+#endif
+
 #if (CFG_SUPPORT_DFS_MASTER == 1)
 	struct TIMER rDfsShutDownTimer;
 #endif
@@ -457,5 +464,10 @@ void
 p2pProcessEvent_UpdateNOAParam(IN struct ADAPTER *prAdapter,
 		IN uint8_t ucBssIdx,
 		IN struct EVENT_UPDATE_NOA_PARAMS *prEventUpdateNoaParam);
+
+#if	CFG_ENABLE_PER_STA_STATISTICS_LOG
+void p2pRoleFsmGetStaStatistics(IN struct ADAPTER *prAdapter,
+		IN unsigned long ulParamPtr);
+#endif
 
 #endif
