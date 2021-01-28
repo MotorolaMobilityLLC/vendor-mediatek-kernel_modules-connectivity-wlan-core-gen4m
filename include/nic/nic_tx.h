@@ -840,6 +840,7 @@ struct MSDU_INFO {
 #if (CFG_SUPPORT_DMASHDL_SYSDVT)
 	uint8_t ucTarQueue;
 #endif
+	uint8_t fgMgmtUseDataQ;
 };
 
 #define HIF_PKT_FLAGS_CT_INFO_APPLY_TXD            BIT(0)
@@ -1714,6 +1715,21 @@ do { \
 
 #define nicTxReleaseResource_PLE(prAdapter, ucTc, u4PageCount, fgReqLock) \
 	nicTxReleaseResource(prAdapter, ucTc, u4PageCount, fgReqLock, TRUE)
+
+#if (CFG_SUPPORT_802_11AX == 1)
+#define NIC_TX_PPDU_ENABLE(__pAd) \
+	HAL_MCR_WR( \
+		__pAd, \
+		__pAd->chip_info->arb_ac_mode_addr, \
+		0x0)
+
+#define NIC_TX_PPDU_DISABLE(__pAd) \
+	HAL_MCR_WR( \
+		__pAd, \
+		__pAd->chip_info->arb_ac_mode_addr, \
+		0xFFFFFFFF)
+#endif /* CFG_SUPPORT_802_11AX == 1 */
+
 /*******************************************************************************
  *                  F U N C T I O N   D E C L A R A T I O N S
  *******************************************************************************

@@ -383,6 +383,23 @@ struct STA_RECORD {
 	uint16_t u2VhtTxHighestSupportedDataRate;
 	uint8_t ucVhtOpMode;
 #endif
+
+#if (CFG_SUPPORT_802_11AX == 1)
+	/*--------------------------------------------------------------------*/
+	/* HE capability if (prStaRec->ucPhyTypeSet & PHY_TYPE_BIT_HE) is set */
+	/* They have the same definition with fields of information element   */
+	/*--------------------------------------------------------------------*/
+	uint8_t ucHeMacCapInfo[HE_MAC_CAP_BYTE_NUM];
+	uint8_t ucHePhyCapInfo[HE_PHY_CAP_BYTE_NUM];
+
+	uint16_t u2HeRxMcsMapBW80;
+	uint16_t u2HeTxMcsMapBW80;
+	uint16_t u2HeRxMcsMapBW160;
+	uint16_t u2HeTxMcsMapBW160;
+	uint16_t u2HeRxMcsMapBW80P80;
+	uint16_t u2HeTxMcsMapBW80P80;
+#endif
+
 	/*----------------------------------------------------------------------
 	 * 802.11ac  HT operation info when (prStaRec->ucPhyTypeSet &
 	 * PHY_TYPE_BIT_HT) is true. They have the same definition with fields
@@ -549,6 +566,11 @@ struct STA_RECORD {
 
 	u_int8_t afgAcmRequired[ACI_NUM];
 
+#if (CFG_SUPPORT_802_11AX == 1)
+	/* If the peer supports MU EDCA, set to TRUE (for association)*/
+	u_int8_t fgIsMuEdcaSupported;
+#endif
+
 	/*----------------------------------------------------------------------
 	 * P2P related fields
 	 *----------------------------------------------------------------------
@@ -696,6 +718,15 @@ struct STA_RECORD {
 #if DSCP_SUPPORT
 	struct _QOS_MAP_SET *qosMapSet;
 #endif
+#if (CFG_SUPPORT_TWT == 1)
+	/* TWT Requester state */
+	enum _ENUM_TWT_REQUESTER_STATE_T aeTWTReqState;
+	struct _TWT_FLOW_T arTWTFlow[TWT_MAX_FLOW_NUM];
+#endif
+#if (CFG_SUPPORT_802_11AX == 1)
+	struct HE_A_CTRL_OM_T arHeACtrlOm;
+#endif
+
 	u_int8_t fgSupportBTM; /* Indicates whether to support BTM */
 
 	/*

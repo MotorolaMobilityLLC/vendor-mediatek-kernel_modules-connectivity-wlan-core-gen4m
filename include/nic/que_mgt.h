@@ -668,6 +668,18 @@ struct AC_QUE_PARMS {
 	uint8_t ucIsACMSet;
 };
 
+#if (CFG_SUPPORT_802_11AX == 1)
+/* MU EDCA parameters for each AC */
+struct _CMD_MU_EDCA_PARAMS_T {
+	uint8_t ucECWmin;	/* CWmin */
+	uint8_t ucECWmax;	/* CWmax */
+	uint8_t ucAifsn;		/* AIFSN */
+	uint8_t ucIsACMSet;
+	uint8_t ucMUEdcaTimer;
+	uint8_t aucPadding[3];
+};
+#endif
+
 /* WMM ACI (AC index) */
 enum ENUM_WMM_ACI {
 	WMM_AC_BE_INDEX = 0,
@@ -705,6 +717,24 @@ struct CMD_UPDATE_WMM_PARMS {
 	uint8_t ucWmmSet;
 	uint8_t aucReserved;
 };
+
+#if (CFG_SUPPORT_802_11AX == 1)
+struct _CMD_MQM_UPDATE_MU_EDCA_PARMS_T {
+	/* DWORD_0 - Common Part */
+	uint8_t  ucCmdVer;
+	uint8_t  aucPadding0[1];
+	uint16_t u2CmdLen;       /* Cmd size including common part and body */
+
+	/* DWORD_1 afterwards - Command Body */
+	uint8_t ucBssIndex;
+	uint8_t fgIsQBSS;
+	uint8_t ucWmmSet;
+	uint8_t aucPadding1[1];
+
+	struct _CMD_MU_EDCA_PARAMS_T arMUEdcaParams[AC_NUM];
+	uint8_t aucPadding[32];
+};
+#endif
 
 struct CMD_TX_AMPDU {
 	u_int8_t fgEnable;
@@ -1046,6 +1076,20 @@ void mqmProcessAssocRsp(IN struct ADAPTER *prAdapter,
 void mqmProcessBcn(IN struct ADAPTER *prAdapter,
 		   IN struct SW_RFB *prSwRfb, IN uint8_t *pucIE,
 		   IN uint16_t u2IELength);
+
+#if (CFG_SUPPORT_802_11AX == 1)
+u_int8_t mqmCompareMUEdcaParameters(
+	struct _IE_MU_EDCA_PARAM_T *prIeMUEdcaParam,
+	struct BSS_INFO *prBssInfo);
+
+u_int8_t
+mqmParseMUEdcaParams(
+	struct ADAPTER *prAdapter,
+	struct SW_RFB *prSwRfb,
+	u_int8_t *pucIE,
+	u_int16_t u2IELength,
+	u_int8_t fgForceOverride);
+#endif
 
 u_int8_t
 mqmParseEdcaParameters(IN struct ADAPTER *prAdapter,

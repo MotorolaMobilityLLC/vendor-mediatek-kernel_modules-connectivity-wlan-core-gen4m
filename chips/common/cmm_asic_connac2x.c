@@ -128,6 +128,12 @@ void asicConnac2xCapInit(
 	prAdapter->u2TxTestCount = 0;
 	prAdapter->ucTxTestUP = TX_TEST_UP_UNDEF;
 #endif /* CFG_SUPPORT_WIFI_SYSDVT */
+
+#if (CFG_SUPPORT_802_11AX == 1)
+	prAdapter->fgEnShowHETrigger = FALSE;
+	heRlmInitHeHtcACtrlOMAndUPH(prAdapter);
+#endif
+
 	switch (prGlueInfo->u4InfType) {
 #if defined(_HIF_PCIE) || defined(_HIF_AXI)
 	case MT_DEV_INF_PCIE:

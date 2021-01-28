@@ -73,6 +73,11 @@
  *******************************************************************************
  */
 #include "gl_vendor.h"
+
+#if (CFG_SUPPORT_802_11AX == 1)
+#include "he_ie.h"
+#endif
+
 #include "wsys_cmd_handler_fw.h"
 
 /*******************************************************************************
@@ -328,6 +333,7 @@ enum ENUM_EXT_CMD_ID {
 	EXT_CMD_ID_VOW_FEATURE_CTRL = 0x38,
 	EXT_CMD_ID_PKT_PROCESSOR_CTRL = 0x39,
 	EXT_CMD_ID_PALLADIUM = 0x3A,
+	EXT_CMD_ID_GET_MAC_INFO = 0x3C,
 #if CFG_SUPPORT_MU_MIMO
 	EXT_CMD_ID_MU_CTRL = 0x40,
 #endif /* CFG_SUPPORT_MU_MIMO */
@@ -336,6 +342,9 @@ enum ENUM_EXT_CMD_ID {
 	EXT_CMD_ID_DUMP_MEM = 0x57,
 	EXT_CMD_ID_TX_POWER_FEATURE_CTRL = 0x58,
 	EXT_CMD_ID_SER = 0x81,
+#if (CFG_SUPPORT_TWT == 1)
+	EXT_CMD_ID_TWT_AGRT_UPDATE = 0x94,
+#endif
 	EXT_CMD_ID_SYSDVT_TEST = 0x99,
 	EXT_CMD_ID_CR4_DMASHDL_DVT = 0xAB
 };
@@ -682,6 +691,43 @@ struct CMD_RX_PACKET_FILTER {
 #define SCHED_SCAN_CHANNEL_TYPE_DUAL_BAND      (1)
 #define SCHED_SCAN_CHANNEL_TYPE_2G4_ONLY       (2)
 #define SCHED_SCAN_CHANNEL_TYPE_5G_ONLY        (3)
+
+#if (CFG_SUPPORT_TWT == 1)
+/* TWT related definitions */
+#define TWT_AGRT_MAX_NUM        16
+#define TWT_GRP_MAX_NUM         8
+#define TWT_GRP_MAX_MEMBER_CNT  8
+
+/*
+ * Bitmap definition for ucAgrtParaBitmap field
+ * in struct _EXT_CMD_TWT_ARGT_UPDATE_T
+ */
+#define TWT_AGRT_PARA_BITMAP_IS_TRIGGER			BIT(0)
+#define TWT_AGRT_PARA_BITMAP_IS_ANNOUNCE		BIT(1)
+#define TWT_AGRT_PARA_BITMAP_IS_PROTECT			BIT(2)
+
+#define TWT_AGRT_PARA_BITMAP_TRIGGER_OFFSET		0
+#define TWT_AGRT_PARA_BITMAP_ANNCE_OFFSET		1
+#define TWT_AGRT_PARA_BITMAP_PROTECT_OFFSET		2
+
+enum _TWT_AGRT_CTRL_CODE_T {
+	TWT_AGRT_CTRL_ADD = 0,
+	TWT_AGRT_CTRL_MODIFY,
+	TWT_AGRT_CTRL_DELETE,
+	TWT_AGRT_CTRL_TEARDOWN,
+	TWT_AGRT_CTRL_RESET
+};
+#endif
+
+/* ID for different MAC Info */
+enum {
+	MAC_INFO_TYPE_RESERVE = 0,
+	MAC_INFO_TYPE_CHANNEL_BUSY_CNT = 0x1,
+	MAC_INFO_TYPE_TSF = 0x2,
+	MAC_INFO_TYPE_MIB = 0x3,
+	MAC_INFO_TYPE_EDCA = 0x4,
+	MAC_INFO_TYPE_WIFI_INT_CNT = 0x5,
+};
 
 /*******************************************************************************
  *                             D A T A   T Y P E S
@@ -1706,6 +1752,12 @@ enum ENUM_RTS_POLICY {
 	RTS_POLICY_NO_RTS
 };
 
+enum _ENUM_CMD_UPDATE_STA_RECORD_VER_T {
+	CMD_UPDATE_STAREC_VER0 = 0,
+	CMD_UPDATE_STAREC_VER1,
+	CMD_UPDATE_STAREC_VER_MAX
+};
+
 struct CMD_BEACON_TEMPLATE_UPDATE {
 	/* 0: update randomly,
 	 * 1: update all,
@@ -2550,6 +2602,88 @@ struct EVENT_UPDATE_COEX_PHYRATE {
 	uint8_t ucWfPathSupport;
 	uint8_t aucReserved2[2];    /* 4 byte alignment */
 };
+
+#if (CFG_SUPPORT_TWT == 1)
+/*
+ * Important: Used for Communication between Host and WM-CPU,
+ * should be packed and DW-aligned and in little-endian format
+ */
+struct _EXT_CMD_TWT_ARGT_UPDATE_T {
+	/* DW0 */
+	uint8_t ucAgrtTblIdx;
+	uint8_t ucAgrtCtrlFlag;
+	uint8_t ucOwnMacId;
+	uint8_t ucFlowId;
+	/* DW1 */
+	/* Specify the peer ID (MSB=0) or group ID (MSB=1)
+	 * (10 bits for StaIdx, MSB to identify if it is for groupId)
+	 */
+	uint16_t u2PeerIdGrpId;
+
+	/* Same as SPEC definition. 8 bits, in unit of 256 us */
+	uint8_t  ucAgrtSpDuration;
+	/* So that we know which BSS TSF should be used for this AGRT */
+	uint8_t  ucBssIndex;
+	/* DW2, DW3, DW4 */
+	uint32_t u4AgrtSpStartTsfLow;
+	uint32_t u4AgrtSpStartTsfHigh;
+	uint16_t u2AgrtSpWakeIntvlMantissa;
+	uint8_t  ucAgrtSpWakeIntvlExponent;
+	uint8_t  ucIsRoleAp;		/* 1: AP, 0: STA */
+	/* DW5 */
+	/* For Bitmap definition, please refer to
+	* TWT_AGRT_PARA_BITMAP_IS_TRIGGER and etc
+	*/
+	uint8_t  ucAgrtParaBitmap;
+	uint8_t  ucReserved_a;
+	/* Following field is valid ONLY when peerIdGrpId is a group ID */
+	uint16_t u2Reserved_b;
+	/* DW6 */
+	uint8_t  ucGrpMemberCnt;
+	uint8_t  ucReserved_c;
+	uint16_t u2Reserved_d;
+	/* DW7 ~ DW10 */
+	uint16_t au2StaList[TWT_GRP_MAX_MEMBER_CNT];
+};
+#endif
+
+#if (CFG_SUPPORT_802_11AX == 1)
+struct _CMD_RLM_UPDATE_SR_PARMS_T {
+	/* DWORD_0 - Common Part */
+	uint8_t  ucCmdVer;
+	uint8_t  aucPadding0[1];
+	uint16_t u2CmdLen;       /* Cmd size including common part and body */
+
+	/* DWORD_1 afterwards - Command Body */
+	uint8_t  ucBssIndex;
+	uint8_t  ucSRControl;
+	uint8_t  ucNonSRGObssPdMaxOffset;
+	uint8_t  ucSRGObssPdMinOffset;
+	uint8_t  ucSRGObssPdMaxOffset;
+	uint8_t  aucPadding1[3];
+	uint32_t u4SRGBSSColorBitmapLow;
+	uint32_t u4SRGBSSColorBitmapHigh;
+	uint32_t u4SRGPartialBSSIDBitmapLow;
+	uint32_t u4SRGPartialBSSIDBitmapHigh;
+
+	uint8_t  aucPadding2[32];
+};
+
+struct _EXTRA_ARG_TSF_T {
+	uint8_t  ucHwBssidIndex;
+	uint8_t  aucReserved[3];
+};
+
+union _EXTRA_ARG_MAC_INFO_T {
+	struct _EXTRA_ARG_TSF_T rTsfArg;
+};
+
+struct _EXT_CMD_GET_MAC_INFO_T {
+	uint16_t u2MacInfoId;
+	uint8_t  aucReserved[2];
+	union _EXTRA_ARG_MAC_INFO_T rExtraArgument;
+};
+#endif
 
 struct TSF_RESULT_T {
 	uint32_t u4TsfBitsLow;

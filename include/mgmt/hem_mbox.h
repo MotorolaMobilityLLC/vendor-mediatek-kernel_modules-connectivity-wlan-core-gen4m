@@ -230,6 +230,21 @@ enum ENUM_MSG_ID {
 	MID_MNY_AIS_NCHO_ACTION_FRAME,
 #endif
 	MID_MNY_P2P_ACS,
+#if (CFG_SUPPORT_TWT == 1)
+	/*--------------------------------------------------*/
+	/* TWT Requester Support                            */
+	/*--------------------------------------------------*/
+	MID_TWT_REQ_FSM_START,
+	MID_TWT_REQ_FSM_TEARDOWN,
+	MID_TWT_REQ_FSM_SUSPEND,
+	MID_TWT_REQ_FSM_RESUME,
+	MID_TWT_REQ_IND_RESULT,
+	MID_TWT_REQ_IND_SUSPEND_DONE,
+	MID_TWT_REQ_IND_RESUME_DONE,
+	MID_TWT_REQ_IND_TEARDOWN_DONE,
+	MID_TWT_REQ_IND_INFOFRM,
+	MID_TWT_PARAMS_SET,
+#endif
 	MID_TOTAL_NUM
 };
 
@@ -318,6 +333,52 @@ struct MSG_MGMT_TX_REQUEST {
 	u_int8_t fgIsWaitRsp;
 	uint32_t u4Duration;
 };
+
+#if (CFG_SUPPORT_TWT == 1)
+struct _MSG_TWT_REQFSM_START_T {
+	struct MSG_HDR rMsgHdr;	/* Must be the first member */
+	struct STA_RECORD *prStaRec;
+	u_int8_t ucTWTFlowId;
+};
+
+struct _MSG_TWT_REQFSM_IND_RESULT_T {
+	struct MSG_HDR rMsgHdr;	/* Must be the first member */
+	struct STA_RECORD *prStaRec;
+	u_int8_t ucTWTFlowId;
+};
+
+struct _MSG_TWT_REQFSM_TEARDOWN_T {
+	struct MSG_HDR rMsgHdr;	/* Must be the first member */
+	struct STA_RECORD *prStaRec;
+	u_int8_t ucTWTFlowId;
+};
+
+struct _MSG_TWT_REQFSM_SUSPEND_T {
+	struct MSG_HDR rMsgHdr;	/* Must be the first member */
+	struct STA_RECORD *prStaRec;
+	u_int8_t ucTWTFlowId;
+};
+
+struct _MSG_TWT_REQFSM_RESUME_T {
+	struct MSG_HDR rMsgHdr;	/* Must be the first member */
+	struct STA_RECORD *prStaRec;
+	u_int8_t ucTWTFlowId;
+	u_int8_t ucNextTWTSize;
+	u_int64_t u8NextTWT;
+};
+
+struct _MSG_TWT_REQFSM_IND_INFOFRM_T {
+	struct MSG_HDR rMsgHdr;	/* Must be the first member */
+	struct STA_RECORD *prStaRec;
+	u_int8_t ucTWTFlowId;
+	struct _NEXT_TWT_INFO_T rNextTWTInfo;
+};
+
+struct _MSG_TWT_PARAMS_SET_T {
+	struct MSG_HDR rMsgHdr;	/* Must be the first member */
+	struct _TWT_CTRL_T rTWTCtrl;
+};
+#endif
 
 struct MSG_CANCEL_TX_WAIT_REQUEST {
 	struct MSG_HDR rMsgHdr;	/* Must be the first member */

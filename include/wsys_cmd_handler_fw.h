@@ -348,7 +348,7 @@ enum ENUM_CMD_ID {
 	CMD_ID_SET_TDLS_CH_SW = 0xFB,
 
 	CMD_ID_SET_MONITOR = 0xFC,          /* 0xfc (Set) */
-
+	CMD_ID_SET_CCK_1M_PWR = 0xFD,	/* 0xFC (Set) */
 	CMD_ID_END
 };
 
@@ -493,8 +493,11 @@ enum ENUM_EVENT_ID {
 	EVENT_ID_END
 };
 
+/* commands */
+
 /* already define at wifi_task.h!!! */
-/*chiahsuan:  ReStart Download Firmware Request/Response Start. (duplicated one.
+/*chiahsuan:  ReStart Download Firmware
+ *Request/Response Start. (duplicated one.
  * it is copy from ROM)
  */
 struct INIT_WIFI_CMD {
@@ -593,7 +596,10 @@ enum ENUM_WEP_STATUS {
 	ENUM_ENCRYPTION2_ENABLED,
 	ENUM_ENCRYPTION2_KEY_ABSENT,
 	ENUM_ENCRYPTION3_ENABLED,
-	ENUM_ENCRYPTION3_KEY_ABSENT
+	ENUM_ENCRYPTION3_KEY_ABSENT,
+	ENUM_ENCRYPTION4_ENABLED,
+	ENUM_ENCRYPTION4_KEY_ABSENT,
+	ENUM_ENCRYPTION_NUM
 };
 
 /*---------------------------------------------------------------------------*/
@@ -916,6 +922,7 @@ struct CMD_UPDATE_STA_RECORD {
 	uint8_t aucPadding2[2];
 	uint32_t u4TxMaxAmsduInAmpduLen;
 
+#if CFG_SUPPORT_802_11AX
 	/* These fields can only be accessed if ucVersion = 1*/
 	uint8_t  ucHeMacCapInfo[HE_MAC_CAP_BYTE_NUM];
 	uint8_t  ucHePhyCapInfo[HE_PHY_CAP_BYTE_NUM];
@@ -926,7 +933,7 @@ struct CMD_UPDATE_STA_RECORD {
 	uint16_t u2HeTxMcsMapBW160;
 	uint16_t u2HeRxMcsMapBW80P80;
 	uint16_t u2HeTxMcsMapBW80P80;
-
+#endif
 	uint8_t  aucPadding4[32];
 };
 

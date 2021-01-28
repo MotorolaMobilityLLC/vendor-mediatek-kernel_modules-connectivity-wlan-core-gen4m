@@ -447,6 +447,23 @@ struct BSS_INFO {
 	/* For AP mode, broadcast the value */
 	struct AC_QUE_PARMS arACQueParmsForBcast[WMM_AC_INDEX_NUM];
 	uint8_t ucWmmQueSet;
+#if (CFG_SUPPORT_802_11AX == 1)
+	uint8_t ucMUEdcaUpdateCnt;
+	/*
+	 *  Store MU EDCA params for each ACs in BSS info
+	 *  Use the same format as the update cmd for memory copy
+	 */
+	struct _CMD_MU_EDCA_PARAMS_T arMUEdcaParams[WMM_AC_INDEX_NUM];
+
+	/* Spatial Reuse Parameter Set for the BSS */
+	uint8_t ucSRControl;
+	uint8_t ucNonSRGObssPdMaxOffset;
+	uint8_t ucSRGObssPdMinOffset;
+	uint8_t ucSRGObssPdMaxOffset;
+	uint64_t u8SRGBSSColorBitmap;
+	uint64_t u8SRGPartialBSSIDBitmap;
+#endif
+
 #if (CFG_HW_WMM_BY_BSS == 1)
 	u_int8_t fgIsWmmInited;
 #endif
@@ -474,6 +491,11 @@ struct BSS_INFO {
 	uint8_t ucVhtChannelFrequencyS1;
 	uint8_t ucVhtChannelFrequencyS2;
 	uint16_t u2VhtBasicMcsSet;
+#endif
+#if (CFG_SUPPORT_802_11AX == 1)
+	uint8_t  ucHeOpParams[HE_OP_BYTE_NUM];
+	uint8_t  ucBssColorInfo;
+	uint16_t u2HeBasicMcsSet;
 #endif
 
 #if (CFG_SUPPORT_802_11V_MBSSID == 1)
@@ -792,6 +814,9 @@ struct WIFI_VAR {
 
 	uint8_t ucStaHt;
 	uint8_t ucStaVht;
+#if (CFG_SUPPORT_802_11AX == 1)
+	uint8_t ucStaHe;
+#endif
 	uint8_t ucApHt;
 	uint8_t ucApVht;
 	uint8_t ucP2pGoHt;
@@ -810,6 +835,18 @@ struct WIFI_VAR {
 	uint8_t ucHtAmsduInAmpduRx;
 	uint8_t ucVhtAmsduInAmpduTx;
 	uint8_t ucVhtAmsduInAmpduRx;
+#if (CFG_SUPPORT_802_11AX == 1)
+	uint8_t ucHeAmsduInAmpduTx;
+	uint8_t ucHeAmsduInAmpduRx;
+	uint8_t ucHeCertForceAmsdu;
+	uint8_t ucTrigMacPadDur;
+	uint8_t ucStaHeBfee;
+#endif
+#if (CFG_SUPPORT_TWT == 1)
+	uint8_t ucTWTRequester;
+	uint8_t ucTWTResponder;
+#endif
+
 	uint8_t ucTspec;
 	uint8_t ucUapsd;
 	uint8_t ucStaUapsd;
@@ -1544,6 +1581,20 @@ struct ADAPTER {
 	u_int8_t fgEnLowLatencyMode;
 	u_int8_t fgEnCfg80211Scan;
 #endif /* CFG_SUPPORT_LOWLATENCY_MODE */
+
+#if (CFG_SUPPORT_802_11AX == 1)
+	struct __HE_CFG_INFO_T rHeCfg;
+	uint8_t ucMcsMapSetFromSigma;
+	u_int8_t fgMcsMapBeenSet;
+	u_int8_t fgMuEdcaOverride;
+	uint32_t u4MBACount;
+	uint32_t u4HeHtcOM;
+	uint8_t  fgEnShowHETrigger;
+	uint8_t fgTxPPDU;
+#endif /* CFG_SUPPORT_802_11AX == 1 */
+#if (CFG_SUPPORT_TWT == 1)
+	struct _TWT_PLANNER_T rTWTPlanner;
+#endif
 
 #if CFG_SUPPORT_WIFI_SYSDVT
 	struct AUTOMATION_DVT *auto_dvt;
