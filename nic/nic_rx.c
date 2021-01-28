@@ -845,9 +845,7 @@ VOID nicRxProcessPktWithoutReorder(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T prSwR
 	BOOL fgIsRetained = FALSE;
 	UINT_32 u4CurrentRxBufferCount;
 	/* P_STA_RECORD_T prStaRec = (P_STA_RECORD_T)NULL; */
-#if CFG_SUPPORT_MULTITHREAD
-	KAL_SPIN_LOCK_DECLARATION();
-#endif
+
 	DEBUGFUNC("nicRxProcessPktWithoutReorder");
 	/* DBGLOG(RX, TRACE, ("\n")); */
 
@@ -901,12 +899,22 @@ VOID nicRxProcessPktWithoutReorder(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T prSwR
 	}
 
 #if CFG_SUPPORT_MULTITHREAD
-	KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_RX_TO_OS_QUE);
-	QUEUE_INSERT_TAIL(&(prAdapter->rRxQueue), (P_QUE_ENTRY_T) GLUE_GET_PKT_QUEUE_ENTRY(prSwRfb->pvPacket));
-	KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_RX_TO_OS_QUE);
+	if (HAL_IS_RX_DIRECT(prAdapter)) {
+		kalRxIndicateOnePkt(prAdapter->prGlueInfo,
+				    (PVOID) GLUE_GET_PKT_DESCRIPTOR(GLUE_GET_PKT_QUEUE_ENTRY(prSwRfb->pvPacket)));
+		RX_ADD_CNT(prRxCtrl, RX_DATA_INDICATION_COUNT, 1);
+		if (fgIsRetained)
+			RX_ADD_CNT(prRxCtrl, RX_DATA_RETAINED_COUNT, 1);
+	} else {
+		KAL_SPIN_LOCK_DECLARATION();
 
-	prRxCtrl->ucNumIndPacket++;
-	kalSetTxEvent2Rx(prAdapter->prGlueInfo);
+		KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_RX_TO_OS_QUE);
+		QUEUE_INSERT_TAIL(&(prAdapter->rRxQueue), (P_QUE_ENTRY_T) GLUE_GET_PKT_QUEUE_ENTRY(prSwRfb->pvPacket));
+		KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_RX_TO_OS_QUE);
+
+		prRxCtrl->ucNumIndPacket++;
+		kalSetTxEvent2Rx(prAdapter->prGlueInfo);
+	}
 #else
 	prRxCtrl->apvIndPacket[prRxCtrl->ucNumIndPacket] = prSwRfb->pvPacket;
 	prRxCtrl->ucNumIndPacket++;
@@ -2751,7 +2759,13 @@ VOID nicRxProcessRFBs(IN P_ADAPTER_T prAdapter)
 						break;
 					}
 #endif
-					nicRxProcessDataPacket(prAdapter, prSwRfb);
+					if (HAL_IS_RX_DIRECT(prAdapter)) {
+						spin_lock_bh(&prAdapter->prGlueInfo->rSpinLock[SPIN_LOCK_RX_DIRECT]);
+						nicRxProcessDataPacket(prAdapter, prSwRfb);
+						spin_unlock_bh(&prAdapter->prGlueInfo->rSpinLock[SPIN_LOCK_RX_DIRECT]);
+					} else {
+						nicRxProcessDataPacket(prAdapter, prSwRfb);
+					}
 					break;
 
 				case RX_PKT_TYPE_SW_DEFINED:
