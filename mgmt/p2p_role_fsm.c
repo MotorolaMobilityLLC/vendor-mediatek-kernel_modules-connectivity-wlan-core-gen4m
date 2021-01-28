@@ -425,13 +425,15 @@ p2pRoleFsmStateTransition(IN struct ADAPTER *prAdapter,
 		fgIsTransitionOut = fgIsTransitionOut ? FALSE : TRUE;
 
 		if (!fgIsTransitionOut) {
-			DBGLOG(P2P, STATE,
-				"[P2P_ROLE][%d]TRANSITION(Bss%d): [%s] -> [%s]\n",
-				prP2pRoleFsmInfo->ucRoleIndex,
-				prP2pRoleFsmInfo->ucBssIndex,
-				apucDebugP2pRoleState
+			/* Print log with state changed */
+			if (prP2pRoleFsmInfo->eCurrentState != eNextState)
+				DBGLOG(P2P, STATE,
+					"[P2P_ROLE][%d]TRANSITION(Bss%d): [%s] -> [%s]\n",
+					prP2pRoleFsmInfo->ucRoleIndex,
+					prP2pRoleFsmInfo->ucBssIndex,
+					apucDebugP2pRoleState
 					[prP2pRoleFsmInfo->eCurrentState],
-				apucDebugP2pRoleState[eNextState]);
+					apucDebugP2pRoleState[eNextState]);
 
 			/* Transition into current state. */
 			prP2pRoleFsmInfo->eCurrentState = eNextState;
