@@ -36,13 +36,11 @@ endif
 ifneq ($(findstring 7663,$(MTK_COMBO_CHIP)),)
 ccflags-y:=$(filter-out -UMT7663,$(ccflags-y))
 ccflags-y += -DMT7663
-CONFIG_CONNAC_MAC=y
 endif
 
 ifneq ($(findstring CONNAC,$(MTK_COMBO_CHIP)),)
 ccflags-y:=$(filter-out -UCONNAC,$(ccflags-y))
 ccflags-y += -DCONNAC
-CONFIG_CONNAC_MAC=y
 endif
 
 CONFIG_MTK_WIFI_MCC_SUPPORT=y
@@ -223,9 +221,7 @@ MGMT_OBJS := $(MGMT_DIR)ais_fsm.o \
 # Chips Objects List
 # ---------------------------------------------------
 
-ifeq ($(CONFIG_CONNAC_MAC),y)
 CHIPS_OBJS += $(CHIPS)cmm_asic_connac.o
-endif
 ifneq ($(findstring 6632,$(MTK_COMBO_CHIP)),)
 CHIPS_OBJS += $(CHIPS)mt6632.o
 endif
