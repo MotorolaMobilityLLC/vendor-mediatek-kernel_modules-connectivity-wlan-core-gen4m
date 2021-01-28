@@ -1069,6 +1069,12 @@ struct PACKET_PRIVATE_RX_DATA {
 #define GLUE_GET_PKT_XTIME(_p)    \
 	(GLUE_GET_PKT_PRIVATE_DATA(_p)->u8ArriveTime)
 
+#define GLUE_GET_INDEPENDENT_PKT(_p)    \
+	(GLUE_GET_PKT_PRIVATE_DATA(_p)->fgIsIndependentPkt)
+
+#define GLUE_SET_INDEPENDENT_PKT(_p, _fgIsIndePkt) \
+	(GLUE_GET_PKT_PRIVATE_DATA(_p)->fgIsIndependentPkt = _fgIsIndePkt)
+
 #define GLUE_GET_PKT_PRIVATE_RX_DATA(_p) \
 	((struct PACKET_PRIVATE_RX_DATA *)(&(((struct sk_buff *)(_p))->cb[24])))
 
