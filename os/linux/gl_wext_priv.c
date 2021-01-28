@@ -9893,7 +9893,7 @@ int priv_support_driver_cmd(IN struct net_device *prNetDev, IN OUT struct ifreq 
 
 	i4TotalLen = priv_cmd->total_len;
 
-	if (i4TotalLen <= 0 || i4TotalLen >= sizeof(priv_cmd->buf)) {
+	if (i4TotalLen <= 0 || i4TotalLen > PRIV_CMD_SIZE) {
 		ret = -EINVAL;
 		DBGLOG(REQ, INFO, "%s: i4TotalLen invalid\n", __func__);
 		goto exit;
