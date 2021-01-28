@@ -1430,7 +1430,7 @@ INT_32 GetIQData(INT_32 **prIQAry, UINT_32 *prDataLen, UINT_32 u4IQ, UINT_32 u4G
 	*prIQAry = g_au4IQData;
 
 	/* sprintf(aucPath, "/pattern.txt");             // CSD's Pattern */
-	sprintf(aucPath, "/dump_out_%05ld_WF%d.txt", (g_u2DumpIndex - 1), u4GetWf1);
+	sprintf(aucPath, "/tmp/dump_out_%05ld_WF%d.txt", (g_u2DumpIndex - 1), u4GetWf1);
 	DBGLOG(INIT, INFO, "iCap Read Dump File dump_out_%05ld_WF%d.txt\n", (g_u2DumpIndex - 1), u4GetWf1);
 
 	file = kalFileOpen(aucPath, O_RDONLY, 0);
@@ -1533,8 +1533,8 @@ UINT_32 TsfRawData2IqFmt(P_EVENT_DUMP_MEM_T prEventDumpMem)
 #if defined(LINUX)
 
 		/*if blbist mkdir undre /data/blbist, the dump files wouls put on it */
-		scnprintf(aucPathWF0, sizeof(aucPathWF0), "/dump_out_%05ld_WF0.txt", g_u2DumpIndex);
-		scnprintf(aucPathWF1, sizeof(aucPathWF1), "/dump_out_%05ld_WF1.txt", g_u2DumpIndex);
+		scnprintf(aucPathWF0, sizeof(aucPathWF0), "/tmp/dump_out_%05ld_WF0.txt", g_u2DumpIndex);
+		scnprintf(aucPathWF1, sizeof(aucPathWF1), "/tmp/dump_out_%05ld_WF1.txt", g_u2DumpIndex);
 		if (kalCheckPath(aucPathWF0) == -1) {
 			kalMemSet(aucPathWF0, 0x00, sizeof(aucPathWF0));
 			scnprintf(aucPathWF0, sizeof(aucPathWF0), "/data/dump_out_%05ld_WF0.txt", g_u2DumpIndex);

@@ -6473,7 +6473,7 @@ static INT_32 HQA_CapWiFiSpectrum(struct net_device *prNetDev,
 	} else {
 		ResponseToQA(HqaCmdFrame, prIwReqData, 2, i4Ret);
 	}
-	return -EFAULT;
+	return rStatus;
 }
 
 static HQA_CMD_HANDLER HQA_ICAP_CMDS[] = {
