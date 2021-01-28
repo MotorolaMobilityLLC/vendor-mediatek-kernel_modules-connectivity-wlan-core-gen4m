@@ -939,4 +939,13 @@ void scanLogCacheFlushBSS(struct LINK *prList, enum ENUM_SCAN_LOG_PREFIX prefix,
 void scanLogCacheFlushAll(struct SCAN_LOG_CACHE *prScanLogCache,
 	enum ENUM_SCAN_LOG_PREFIX prefix, const uint16_t logBufLen);
 
+void scanRemoveBssDescFromList(IN struct LINK *prBSSDescList,
+			       IN struct BSS_DESC *prBssDesc,
+			       IN struct ADAPTER *prAdapter);
+void scanInsertBssDescToList(IN struct LINK *prBSSDescList,
+			     IN struct BSS_DESC *prBssDesc,
+			     IN u_int8_t init);
+void scanResetBssDesc(IN struct ADAPTER *prAdapter,
+		      IN struct BSS_DESC *prBssDesc);
+
 #endif /* _SCAN_H */
