@@ -1867,7 +1867,6 @@ VOID TdlsEventTearDown(GLUE_INFO_T *prGlueInfo, UINT_8 *prInBuf, UINT_32 u4InBuf
 
 	}
 
-	DBGLOG(TDLS, INFO, "\n\n u2ReasonCode = %u\n\n", u2ReasonCode);
 
 	/*
 	 *  modify the value when supplicant sends tear down to us in TdlsexMgmtCtrl(), not here
