@@ -2174,7 +2174,7 @@ struct BSS_DESC *scanSearchBssDescByPolicy(IN struct ADAPTER *prAdapter, IN uint
 					if (prStaRec->ucJoinFailureCount >= JOIN_MAX_RETRY_FAILURE_COUNT)
 						prStaRec->ucJoinFailureCount = 0;
 					DBGLOG(SCN, INFO,
-					       "SEARCH:Try to join BSS again,Status Code=%d(Curr=%ld/Last Join=%ld)\n",
+					       "SEARCH:Try to join BSS again,Status Code=%u(Curr=%u/Last Join=%u)\n",
 					       prStaRec->u2StatusCode, rCurrentTime, prStaRec->rLastJoinTime);
 				} else {
 					DBGLOG(SCN, INFO,
@@ -2231,7 +2231,7 @@ struct BSS_DESC *scanSearchBssDescByPolicy(IN struct ADAPTER *prAdapter, IN uint
 				if (CHECK_FOR_TIMEOUT(rCurrentTime, prBssDesc->rUpdateTime,
 						      SEC_TO_SYSTIME(u4ScnAdhocBssDescTimeout))) {
 					DBGLOG(SCN, LOUD,
-					       "SEARCH: Now(%zd) Skip old record of BSS Descriptor(%zd) - BSSID:["
+					       "SEARCH: Now(%u) Skip old record of BSS Descriptor(%u) - BSSID:["
 					       MACSTR "]\n\n",
 					       rCurrentTime,
 					       prBssDesc->rUpdateTime,
