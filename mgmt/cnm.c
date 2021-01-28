@@ -124,11 +124,19 @@ struct DBDC_INFO_T {
 	struct TIMER rDbdcGuardTimer;
 	enum ENUM_DBDC_GUARD_TIMER_T eDdbcGuardTimerType;
 
-	u_int8_t fgReqPrivelegeLock;
+	uint8_t fgReqPrivelegeLock;
 	struct LINK rPendingMsgList;
 
-	u_int8_t fgDbdcDisableOpmodeChangeDone;
+	uint8_t fgDbdcDisableOpmodeChangeDone;
 	enum ENUM_OPMODE_STATE_T eBssOpModeState[BSSID_NUM];
+
+	/* Set DBDC setting for incoming network */
+	uint8_t ucPrimaryChannel;
+	uint8_t ucWmmQueIdx;
+
+	/* Used for iwpriv to force enable DBDC*/
+	bool fgHasSentCmd;
+	bool fgCmdEn;
 };
 
 enum ENUM_DBDC_FSM_EVENT_T {
@@ -229,6 +237,25 @@ static struct DBDC_INFO_T g_rDbdcInfo;
 		== ENUM_DBDC_FSM_STATE_ENABLE_GUARD || \
 	g_rDbdcInfo.eDbdcFsmCurrState \
 		== ENUM_DBDC_FSM_STATE_ENABLE_IDLE)?TRUE:FALSE)
+
+#define DBDC_SET_WMMBAND_FW_AUTO_BY_CHNL(_ucPrimaryChannel, _ucWmmQueIdx) \
+	{ \
+		g_rDbdcInfo.ucPrimaryChannel = (_ucPrimaryChannel);\
+		g_rDbdcInfo.ucWmmQueIdx = (_ucWmmQueIdx);\
+	}
+
+#define DBDC_SET_WMMBAND_FW_AUTO_DEFAULT() \
+	{ \
+		g_rDbdcInfo.ucPrimaryChannel = 0; \
+		g_rDbdcInfo.ucWmmQueIdx = 0;\
+	}
+
+#define DBDC_UPDATE_CMD_WMMBAND_FW_AUTO(_prCmdBody) \
+	{ \
+		(_prCmdBody)->ucPrimaryChannel = g_rDbdcInfo.ucPrimaryChannel; \
+		(_prCmdBody)->ucWmmQueIdx = g_rDbdcInfo.ucWmmQueIdx; \
+		DBDC_SET_WMMBAND_FW_AUTO_DEFAULT(); \
+	}
 
 #endif
 
@@ -1606,6 +1633,9 @@ void cnmInitDbdcSetting(IN struct ADAPTER *prAdapter)
 {
 	uint8_t ucBssLoopIndex;
 
+	DBDC_SET_WMMBAND_FW_AUTO_DEFAULT();
+	g_rDbdcInfo.fgHasSentCmd = FALSE;
+
 	/* Parameter decision */
 	switch (prAdapter->rWifiVar.eDbdcMode) {
 	case ENUM_DBDC_MODE_DISABLED:
@@ -1909,6 +1939,17 @@ void cnmUpdateDbdcSetting(IN struct ADAPTER *prAdapter,
 	if (fgDbdcEn)
 		prCmdBody->ucWmmBandBitmap |= BIT(DBDC_2G_WMM_INDEX);
 #endif
+
+	/* FW uses ucWmmBandBitmap from driver if it does not support ver 1*/
+	prCmdBody->ucCmdVer = 0x1;
+	prCmdBody->u2CmdLen = sizeof(struct CMD_DBDC_SETTING);
+	DBDC_UPDATE_CMD_WMMBAND_FW_AUTO(prCmdBody);
+
+	if (g_rDbdcInfo.fgHasSentCmd == TRUE)
+		log_dbg(CNM, WARN, "Not event came back for DBDC\n");
+
+	g_rDbdcInfo.fgHasSentCmd = TRUE;
+	g_rDbdcInfo.fgCmdEn = fgDbdcEn;
 
 	rStatus = wlanSendSetQueryCmd(prAdapter,	/* prAdapter */
 				      CMD_ID_SET_DBDC_PARMS,	/* ucCID */
@@ -2575,7 +2616,9 @@ uint8_t cnmGetDbdcBwCapability(IN struct ADAPTER
 void cnmDbdcEnableDecision(
 	IN struct ADAPTER *prAdapter,
 	IN uint8_t		ucChangedBssIndex,
-	IN enum ENUM_BAND	eRfBand)
+	IN enum ENUM_BAND	eRfBand,
+	IN uint8_t ucPrimaryChannel,
+	IN uint8_t ucWmmQueIdx)
 {
 	log_dbg(CNM, INFO, "[DBDC] BSS %u Rf %u", ucChangedBssIndex, eRfBand);
 
@@ -2599,6 +2642,7 @@ void cnmDbdcEnableDecision(
 					   DBDC_SWITCH_GUARD_TIME);
 		}
 		/* The DBDC is already ON, so renew WMM band information only */
+		DBDC_SET_WMMBAND_FW_AUTO_BY_CHNL(ucPrimaryChannel, ucWmmQueIdx);
 		cnmUpdateDbdcSetting(prAdapter, TRUE);
 		return;
 	}
@@ -2615,9 +2659,11 @@ void cnmDbdcEnableDecision(
 		return;
 	}
 
-	if (cnmDbdcIsAGConcurrent(prAdapter, eRfBand))
+	if (cnmDbdcIsAGConcurrent(prAdapter, eRfBand)) {
+		DBDC_SET_WMMBAND_FW_AUTO_BY_CHNL(ucPrimaryChannel, ucWmmQueIdx);
 		DBDC_FSM_EVENT_HANDLER(prAdapter,
 			DBDC_FSM_EVENT_BSS_CONNECTING_ENTER_AG);
+	}
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2763,6 +2809,13 @@ void cnmDbdcEventHwSwitchDone(IN struct ADAPTER
 	} else if (g_rDbdcInfo.eDbdcFsmCurrState ==
 		   ENUM_DBDC_FSM_STATE_WAIT_HW_DISABLE) {
 		fgDbdcEn = FALSE;
+	} else if (g_rDbdcInfo.fgHasSentCmd == TRUE) {
+		log_dbg(CNM, INFO,
+				"[DBDC] switch event from cmd happen in state %u\n",
+				g_rDbdcInfo.eDbdcFsmCurrState);
+		g_rDbdcInfo.fgHasSentCmd = FALSE;
+		prAdapter->rWifiVar.fgDbDcModeEn = g_rDbdcInfo.fgCmdEn;
+		return;
 	} else {
 		log_dbg(CNM, ERROR,
 		       "[DBDC] switch event happen in state %u\n",
@@ -2800,7 +2853,6 @@ enum ENUM_CNM_NETWORK_TYPE_T cnmGetBssNetworkType(
 	return ENUM_CNM_NETWORK_TYPE_OTHER;
 }
 
-#if (CFG_HW_WMM_BY_BSS == 1)
 /*----------------------------------------------------------------------------*/
 /*!
 * @brief    Search available HW WMM index.
@@ -2814,8 +2866,9 @@ u_int8_t cnmWmmIndexDecision(
 	IN struct ADAPTER *prAdapter,
 	IN struct BSS_INFO *prBssInfo)
 {
-	u_int8_t ucWmmIndex;
+#if (CFG_HW_WMM_BY_BSS == 1)
 
+	u_int8_t ucWmmIndex;
 	for (ucWmmIndex = 0; ucWmmIndex < HW_WMM_NUM; ucWmmIndex++) {
 		if (prBssInfo && prBssInfo->fgIsInUse &&
 			prBssInfo->fgIsWmmInited == FALSE) {
@@ -2827,6 +2880,16 @@ u_int8_t cnmWmmIndexDecision(
 		}
 	}
 	return (ucWmmIndex < HW_WMM_NUM) ? ucWmmIndex : MAX_HW_WMM_INDEX;
+
+#else
+	/* Follow the same rule with cnmUpdateDbdcSetting */
+	if (prBssInfo->eBand == BAND_5G)
+		return DBDC_5G_WMM_INDEX;
+	else
+		return (prAdapter->rWifiVar.eDbdcMode ==
+			 ENUM_DBDC_MODE_DISABLED) ?
+			DBDC_5G_WMM_INDEX : DBDC_2G_WMM_INDEX;
+#endif
 }
 /*----------------------------------------------------------------------------*/
 /*!
@@ -2841,9 +2904,11 @@ void cnmFreeWmmIndex(
 	IN struct ADAPTER *prAdapter,
 	IN struct BSS_INFO *prBssInfo)
 {
+#if (CFG_HW_WMM_BY_BSS == 1)
 	prAdapter->ucHwWmmEnBit &= (~BIT(prBssInfo->ucWmmQueSet));
+#endif
 	prBssInfo->ucWmmQueSet = DEFAULT_HW_WMM_INDEX;
 	prBssInfo->fgIsWmmInited = FALSE;
 }
-#endif /* #if (CFG_HW_WMM_BY_BSS == 1) */
+
 

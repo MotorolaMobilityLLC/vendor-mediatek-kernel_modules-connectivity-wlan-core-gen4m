@@ -1079,24 +1079,27 @@ void aisFsmSteps(IN struct ADAPTER *prAdapter, enum ENUM_AIS_STATE eNextState)
 					prAisBssInfo->u4RsnSelectedPairwiseCipher =
 					    prBssDesc->u4RsnSelectedPairwiseCipher;
 					prAisBssInfo->u4RsnSelectedAKMSuite = prBssDesc->u4RsnSelectedAKMSuite;
-#if (CFG_HW_WMM_BY_BSS == 1)
 					prAisBssInfo->eBand = prBssDesc->eBand;
 					if (prAisBssInfo->fgIsWmmInited
 						== FALSE)
 						prAisBssInfo->ucWmmQueSet =
 						cnmWmmIndexDecision(prAdapter,
 						prAisBssInfo);
-#endif
 #if CFG_SUPPORT_DBDC
-					cnmDbdcEnableDecision(prAdapter, prAisBssInfo->ucBssIndex, prBssDesc->eBand);
-					cnmGetDbdcCapability(prAdapter, prAisBssInfo->ucBssIndex,
-						prBssDesc->eBand, prBssDesc->ucChannelNum,
-						wlanGetSupportNss(prAdapter, prAisBssInfo->ucBssIndex), &rDbdcCap);
+					cnmDbdcEnableDecision(prAdapter,
+						prAisBssInfo->ucBssIndex,
+						prBssDesc->eBand,
+						prBssDesc->ucChannelNum,
+						prAisBssInfo->ucWmmQueSet);
+					cnmGetDbdcCapability(prAdapter,
+						prAisBssInfo->ucBssIndex,
+						prBssDesc->eBand,
+						prBssDesc->ucChannelNum,
+						wlanGetSupportNss(prAdapter,
+						    prAisBssInfo->ucBssIndex),
+						&rDbdcCap);
 
 					prAisBssInfo->ucNss = rDbdcCap.ucNss;
-#if (CFG_HW_WMM_BY_BSS == 0)
-					prAisBssInfo->ucWmmQueSet = rDbdcCap.ucWmmSetIndex;
-#endif
 #endif /*CFG_SUPPORT_DBDC*/
 					/* 4 <B> Do STATE transition and update current Operation Mode. */
 					if (prBssDesc->eBSSType == BSS_TYPE_INFRASTRUCTURE) {
