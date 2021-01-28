@@ -2904,13 +2904,17 @@ wlanoidSetAddKey(IN struct ADAPTER *prAdapter, IN void *pvSetBuffer,
 						prCmdKey->ucAlgorithmId,
 						prCmdKey->ucKeyId);
 			} else {
-				prCmdKey->ucWlanIndex =
-				    secPrivacySeekForBcEntry(prAdapter,
-					    prBssInfo->ucBssIndex,
-					    prBssInfo->prStaRecOfAP->aucMacAddr,
-					    prBssInfo->prStaRecOfAP->ucIndex,
-					    prCmdKey->ucAlgorithmId,
-					    prCmdKey->ucKeyId);
+				if (prBssInfo->prStaRecOfAP) {
+					prCmdKey->ucWlanIndex =
+					    secPrivacySeekForBcEntry(prAdapter,
+						    prBssInfo->ucBssIndex,
+						    prBssInfo->prStaRecOfAP
+							->aucMacAddr,
+						    prBssInfo->prStaRecOfAP
+							->ucIndex,
+						    prCmdKey->ucAlgorithmId,
+						    prCmdKey->ucKeyId);
+				}
 			}
 
 			DBGLOG_LIMITED(RSN, INFO, "BIP BC wtbl index:%d\n",
