@@ -729,6 +729,7 @@ wlanoidSetBssidListScanAdv(IN struct ADAPTER *prAdapter,
 	struct PARAM_SSID rSsid[CFG_SCAN_SSID_MAX_NUM];
 	uint8_t *pucIe;
 	uint8_t ucSsidNum;
+	enum ENUM_SCAN_TYPE eScanType;
 	uint32_t i, u4IeLength;
 
 	DEBUGFUNC("wlanoidSetBssidListScanAdv()");
@@ -772,6 +773,7 @@ wlanoidSetBssidListScanAdv(IN struct ADAPTER *prAdapter,
 		COPY_SSID(rSsid[i].aucSsid,
 			  rSsid[i].u4SsidLen, prScanRequest->rSsid[i].aucSsid, prScanRequest->rSsid[i].u4SsidLen);
 	}
+	eScanType = (enum ENUM_SCAN_TYPE)prScanRequest->ucScanType;
 
 	pucIe = prScanRequest->pucIE;
 	u4IeLength = prScanRequest->u4IELength;
@@ -780,7 +782,8 @@ wlanoidSetBssidListScanAdv(IN struct ADAPTER *prAdapter,
 	if (prAdapter->prGlueInfo->rRegInfo.u4RddTestMode) {
 		if ((prAdapter->fgEnOnlineScan == TRUE) && (prAdapter->ucRddStatus)) {
 			if (kalGetMediaStateIndicated(prAdapter->prGlueInfo) != PARAM_MEDIA_STATE_CONNECTED)
-				aisFsmScanRequestAdv(prAdapter, ucSsidNum, rSsid, pucIe, u4IeLength);
+				aisFsmScanRequestAdv(prAdapter, ucSsidNum,
+					rSsid, eScanType, pucIe, u4IeLength);
 			else
 				return WLAN_STATUS_FAILURE;
 		} else
@@ -789,9 +792,11 @@ wlanoidSetBssidListScanAdv(IN struct ADAPTER *prAdapter,
 #endif
 	{
 		if (prAdapter->fgEnOnlineScan == TRUE)
-			aisFsmScanRequestAdv(prAdapter, ucSsidNum, rSsid, pucIe, u4IeLength);
+			aisFsmScanRequestAdv(prAdapter, ucSsidNum, rSsid,
+						eScanType, pucIe, u4IeLength);
 		else if (kalGetMediaStateIndicated(prAdapter->prGlueInfo) != PARAM_MEDIA_STATE_CONNECTED)
-			aisFsmScanRequestAdv(prAdapter, ucSsidNum, rSsid, pucIe, u4IeLength);
+			aisFsmScanRequestAdv(prAdapter, ucSsidNum, rSsid,
+						eScanType, pucIe, u4IeLength);
 		else
 			return WLAN_STATUS_FAILURE;
 	}
