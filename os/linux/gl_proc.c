@@ -144,7 +144,7 @@ static uint8_t g_aucProcBuf[3000];
 /* This u32 is only for DriverCmdRead/Write,
  * should not be used by other function
  */
-static uint32_t g_u4NextDriverReadLen;
+static int32_t g_i4NextDriverReadLen;
 /*******************************************************************************
  *                                 M A C R O S
  *******************************************************************************
@@ -463,11 +463,11 @@ static ssize_t procCfgWrite(struct file *file, const char __user *buffer,
 	}
 
 	prGlueInfo = g_prGlueInfo_proc;
-	/* if g_u4NextDriverReadLen >0,
+	/* if g_i4NextDriverReadLen >0,
 	 * the content for next DriverCmdRead will be
-	 * in : g_aucProcBuf with length : g_u4NextDriverReadLen
+	 * in : g_aucProcBuf with length : g_i4NextDriverReadLen
 	 */
-	g_u4NextDriverReadLen =
+	g_i4NextDriverReadLen =
 		priv_driver_set_cfg(prGlueInfo->prDevHandler, g_aucProcBuf,
 		sizeof(g_aucProcBuf));
 
@@ -489,8 +489,8 @@ static ssize_t procDriverCmdRead(struct file *filp, char __user *buf,
 	if (*f_pos > 0 || buf == NULL)
 		return 0;
 
-	if (g_u4NextDriverReadLen > 0)	/* Detect content to show */
-		u4CopySize = g_u4NextDriverReadLen;
+	if (g_i4NextDriverReadLen > 0)	/* Detect content to show */
+		u4CopySize = g_i4NextDriverReadLen;
 
 	if (u4CopySize > count) {
 		pr_err("count is too small: u4CopySize=%u, count=%u\n",
@@ -502,7 +502,7 @@ static ssize_t procDriverCmdRead(struct file *filp, char __user *buf,
 		pr_err("copy to user failed\n");
 		return -EFAULT;
 	}
-	g_u4NextDriverReadLen = 0;
+	g_i4NextDriverReadLen = 0;
 
 	*f_pos += u4CopySize;
 	return (ssize_t) u4CopySize;
@@ -535,7 +535,7 @@ static ssize_t procDriverCmdWrite(struct file *file, const char __user *buffer,
 	 * the content for next DriverCmdRead will be
 	 *  in : g_aucProcBuf with length : g_u4NextDriverReadLen
 	 */
-	g_u4NextDriverReadLen =
+	g_i4NextDriverReadLen =
 		priv_driver_cmds(prGlueInfo->prDevHandler, g_aucProcBuf,
 		sizeof(g_aucProcBuf));
 
@@ -1192,7 +1192,7 @@ int32_t procInitFs(void)
 {
 	struct proc_dir_entry *prEntry;
 
-	g_u4NextDriverReadLen = 0;
+	g_i4NextDriverReadLen = 0;
 
 	if (init_net.proc_net == (struct proc_dir_entry *)NULL) {
 		pr_err("init proc fs fail: proc_net == NULL\n");
