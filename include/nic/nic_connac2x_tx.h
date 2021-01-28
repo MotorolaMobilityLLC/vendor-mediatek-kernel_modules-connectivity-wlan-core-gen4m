@@ -232,6 +232,13 @@
 #define CONNAC2X_TX_DESC_TXD_LENGTH_MASK                 BITS(30, 31)
 #define CONNAC2X_TX_DESC_TXD_LENGTH_OFFSET               30
 
+/* For Debug Information Use */
+#define CONNAC2X_TX_DESC_PSE_FID_MASK                    BITS(16, 27)
+#define CONNAC2X_TX_DESC_PSE_FID_OFFSET                  16
+#define CONNAC2X_TX_DESC_CTXD_CNT_MASK                   BITS(23, 25)
+#define CONNAC2X_TX_DESC_CTXD_CNT_OFFSET                 23
+#define CONNAC2X_TX_DESC_CTXD                            BIT(26)
+
 /*******************************************************************************
 *                             D A T A   T Y P E S
 ********************************************************************************
