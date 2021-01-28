@@ -753,13 +753,6 @@ enum ENUM_EAPOL_KEY_TYPE_T {
 	EAPOL_KEY_NUM
 };
 
-enum ENUM_KEY_ACTION_TYPE_T {
-	SEC_DROP_KEY_COMMAND  = 0,
-	SEC_QUEUE_KEY_COMMAND,
-	SEC_TX_KEY_COMMAND,
-	SEC_ACTION_KEY_NUM
-};
-
 /* TX transactions could be divided into 4 kinds:
  *
  * 1) 802.1X / Bluetooth-over-Wi-Fi Security Frames
