@@ -3375,6 +3375,47 @@ VOID qmHandleMailboxRxMessage(IN MAILBOX_MSG_T prMailboxRxMsg)
 
 /*----------------------------------------------------------------------------*/
 /*!
+* \brief Handle ADD TX BA Event from the FW
+*
+* \param[in] prAdapter Adapter pointer
+* \param[in] prEvent The event packet from the FW
+*
+* \return (none)
+*/
+/*----------------------------------------------------------------------------*/
+VOID qmHandleEventTxAddBa(IN P_ADAPTER_T prAdapter, IN P_WIFI_EVENT_T prEvent)
+{
+	struct mt66xx_chip_info *prChipInfo = prAdapter->chip_info;
+	struct _EVENT_TX_ADDBA_T *prEventTxAddBa;
+	P_STA_RECORD_T prStaRec;
+	UINT_8 ucTid;
+
+	DBGLOG(QM, INFO, "QM:Event +TxBa\n");
+
+	if (prChipInfo->is_support_hw_amsdu) {
+		prEventTxAddBa = (struct _EVENT_TX_ADDBA_T *) (prEvent->aucBuffer);
+		prStaRec = QM_GET_STA_REC_PTR_FROM_INDEX(prAdapter, prEventTxAddBa->ucStaRecIdx);
+
+		if (!prStaRec) {
+			/* Invalid STA_REC index, discard the event packet */
+			/* ASSERT(0); */
+			DBGLOG(QM, INFO, "QM: (Warning) TX ADDBA Event for a NULL STA_REC\n");
+			return;
+		}
+
+		for (ucTid = 0; ucTid < TX_DESC_TID_NUM; ucTid++) {
+			if ((prStaRec->ucAmsduEnBitmap & BIT(ucTid)) != (prEventTxAddBa->ucAmsduEnBitmap & BIT(ucTid)))
+				nicTxSetHwAmsduDescTemplate(prAdapter, prStaRec, ucTid,
+							(prEventTxAddBa->ucAmsduEnBitmap & BIT(ucTid))>>ucTid);
+		}
+		prStaRec->ucAmsduEnBitmap = prEventTxAddBa->ucAmsduEnBitmap;
+		DBGLOG(QM, INFO, "QM:Event +TxBa Update bitmap 0x%x\n", prStaRec->ucAmsduEnBitmap);
+	} else
+		DBGLOG(QM, INFO, "QM:Event +TxBa but chip is not support\n");
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
 * \brief Handle ADD RX BA Event from the FW
 *
 * \param[in] prAdapter Adapter pointer
