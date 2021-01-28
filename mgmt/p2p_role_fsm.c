@@ -2062,6 +2062,21 @@ void p2pRoleFsmRunEventConnectionAbort(IN struct ADAPTER *prAdapter,
 
 			if (!prP2pBssInfo->prStaRecOfAP) {
 				DBGLOG(P2P, TRACE, "GO's StaRec is NULL\n");
+				/* Receive disconnection request during GC join.
+				  * Abort GC join to prevent STA record leak.
+				  */
+				prJoinInfo = &(prP2pRoleFsmInfo->rJoinInfo);
+				if (prJoinInfo->prTargetStaRec) {
+					p2pFuncDisconnect(prAdapter,
+						prP2pBssInfo,
+						prJoinInfo->prTargetStaRec,
+						FALSE,
+						REASON_CODE_DEAUTH_LEAVING_BSS);
+
+					p2pRoleFsmStateTransition(prAdapter,
+						prP2pRoleFsmInfo,
+						P2P_ROLE_STATE_IDLE);
+				}
 				break;
 			}
 			if (UNEQUAL_MAC_ADDR(
