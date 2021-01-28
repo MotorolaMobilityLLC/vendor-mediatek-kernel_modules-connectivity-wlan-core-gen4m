@@ -326,8 +326,11 @@ struct wireless_dev *mtk_p2p_cfg80211_add_iface(struct wiphy *wiphy,
 		prWdev->iftype = type;
 		prNewNetDevice->ieee80211_ptr = prWdev;
 		/* register destructor function for virtual interface */
+#if KERNEL_VERSION(4, 14, 0) <= CFG80211_VERSION_CODE
+		prNewNetDevice->priv_destructor = mtk_vif_destructor;
+#else
 		prNewNetDevice->destructor = mtk_vif_destructor;
-
+#endif
 		/* The prOrigWdev is used to do error handle. If return fail,
 		 * set the gprP2pRoleWdev[u4Idx] to original value.
 		 * Expect that the gprP2pRoleWdev[0] = gprP2pWdev, and the

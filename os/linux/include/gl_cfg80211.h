@@ -380,8 +380,14 @@ mtk_cfg80211_sched_scan_start(IN struct wiphy *wiphy,
 			      IN struct net_device *ndev,
 			      IN struct cfg80211_sched_scan_request *request);
 
+#if KERNEL_VERSION(4, 12, 0) <= CFG80211_VERSION_CODE
+int mtk_cfg80211_sched_scan_stop(IN struct wiphy *wiphy,
+				 IN struct net_device *ndev,
+				 IN u64 reqid);
+#else
 int mtk_cfg80211_sched_scan_stop(IN struct wiphy *wiphy,
 				 IN struct net_device *ndev);
+#endif
 #endif /* CFG_SUPPORT_SCHED_SCAN */
 
 int mtk_cfg80211_assoc(struct wiphy *wiphy,
@@ -463,7 +469,13 @@ int mtk_cfg80211_resume(struct wiphy *wiphy);
 
 /* cfg80211 wrapper hooks */
 #if CFG_ENABLE_UNIFY_WIPHY
-#if KERNEL_VERSION(4, 1, 0) <= CFG80211_VERSION_CODE
+#if KERNEL_VERSION(4, 12, 0) <= CFG80211_VERSION_CODE
+struct wireless_dev *mtk_cfg_add_iface(struct wiphy *wiphy,
+				       const char *name,
+				       unsigned char name_assign_type,
+				       enum nl80211_iftype type,
+				       struct vif_params *params);
+#elif KERNEL_VERSION(4, 1, 0) <= CFG80211_VERSION_CODE
 struct wireless_dev *mtk_cfg_add_iface(struct wiphy *wiphy,
 				       const char *name,
 				       unsigned char name_assign_type,
@@ -478,10 +490,17 @@ struct wireless_dev *mtk_cfg_add_iface(struct wiphy *wiphy,
 #endif
 int mtk_cfg_del_iface(struct wiphy *wiphy,
 		      struct wireless_dev *wdev);
+#if KERNEL_VERSION(4, 12, 0) <= CFG80211_VERSION_CODE
+int mtk_cfg_change_iface(struct wiphy *wiphy,
+			 struct net_device *ndev,
+			 enum nl80211_iftype type,
+			 struct vif_params *params);
+#else
 int mtk_cfg_change_iface(struct wiphy *wiphy,
 			 struct net_device *ndev,
 			 enum nl80211_iftype type, u32 *flags,
 			 struct vif_params *params);
+#endif
 int mtk_cfg_add_key(struct wiphy *wiphy,
 		    struct net_device *ndev, u8 key_index,
 		    bool pairwise, const u8 *mac_addr,
@@ -584,8 +603,15 @@ int mtk_cfg_sched_scan_start(IN struct wiphy *wiphy,
 			     IN struct net_device *ndev,
 			     IN struct cfg80211_sched_scan_request *request);
 
+#if KERNEL_VERSION(4, 12, 0) <= CFG80211_VERSION_CODE
+int mtk_cfg_sched_scan_stop(IN struct wiphy *wiphy,
+			    IN struct net_device *ndev,
+			    IN u64 reqid);
+#else
 int mtk_cfg_sched_scan_stop(IN struct wiphy *wiphy,
 			    IN struct net_device *ndev);
+#endif
+
 #endif /* CFG_SUPPORT_SCHED_SCAN */
 
 int mtk_cfg_connect(struct wiphy *wiphy,
