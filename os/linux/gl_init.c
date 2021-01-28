@@ -3674,7 +3674,7 @@ uint32_t wlanServiceExit(struct GLUE_INFO *prGlueInfo)
 #define FW_LOG_CMD_ON_OFF        0
 #define FW_LOG_CMD_SET_LEVEL     1
 static uint32_t u4LogOnOffCache;
-static uint32_t u4LogLevelCache;
+static uint32_t u4LogLevelCache = -1;
 
 struct CMD_CONNSYS_FW_LOG {
 	int32_t fgCmd;
@@ -4276,8 +4276,10 @@ int32_t wlanOnWhenProbeSuccess(struct GLUE_INFO *prGlueInfo,
 	/* sync log status with firmware */
 	consys_log_event_notification((int)FW_LOG_CMD_ON_OFF,
 		u4LogOnOffCache);
-	consys_log_event_notification((int)FW_LOG_CMD_SET_LEVEL,
-		u4LogLevelCache);
+	if (u4LogLevelCache != -1) {
+		consys_log_event_notification((int)FW_LOG_CMD_SET_LEVEL,
+			u4LogLevelCache);
+	}
 #endif
 
 #if CFG_CHIP_RESET_HANG
