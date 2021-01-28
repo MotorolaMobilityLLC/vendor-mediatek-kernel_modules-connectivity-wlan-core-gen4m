@@ -346,8 +346,7 @@ struct BUS_INFO {
 	uint8_t (*asicUsbEventEpDetected)(IN struct ADAPTER *prAdapter);
 	uint16_t (*asicUsbRxByteCount)(IN struct ADAPTER *prAdapter,
 		IN struct BUS_INFO *prBusInfo,
-		IN uint8_t *pRXD,
-		IN struct list_head *prCompleteQ);
+		IN uint8_t *pRXD);
 };
 
 /* USB_REQ_T prPriv field for TxData */
