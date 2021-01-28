@@ -5332,9 +5332,11 @@ void nicEventUpdateLowLatencyInfoStatus(IN struct ADAPTER *prAdapter,
 	struct EVENT_LOW_LATENCY_INFO *prEvtLowLatencyInfo;
 	struct rtc_time tm;
 	struct timeval tv = { 0 };
+#if CFG_SUPPORT_DATA_STALL
 	uint8_t event[12];
 	uint32_t iEventTime;
 	int8_t i, ret = 0;
+#endif
 
 	ASSERT(prAdapter);
 
