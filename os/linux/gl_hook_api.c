@@ -4427,6 +4427,7 @@ uint32_t ServiceWlanOid(void *winfos,
 	struct mt66xx_chip_info *prChipInfo = NULL;
 #endif
 	struct ICAP_INFO_T *prIcapInfo = NULL;
+	struct test_capability *capability = NULL;
 
 	ASSERT(winfos);
 
@@ -4500,6 +4501,48 @@ uint32_t ServiceWlanOid(void *winfos,
 		fgWaitResp = TRUE;
 		fgCmd = TRUE;
 		break;
+	case OP_WLAN_OID_GET_CAPABILITY:
+		capability = (struct test_capability *)rsp_data;
+		kalMemSet(capability, 0, sizeof(struct test_capability));
+
+		capability->ph_cap.protocol = BIT(0);
+		if (prAdapter->rWifiVar.ucStaHt)
+			capability->ph_cap.protocol |= BIT(1);
+		if (prAdapter->rWifiVar.ucStaVht)
+			capability->ph_cap.protocol |= BIT(2);
+#if (CFG_SUPPORT_802_11AX == 1)
+		if (prAdapter->rWifiVar.ucStaHe)
+			capability->ph_cap.protocol |= BIT(3);
+#endif /* (CFG_SUPPORT_802_11AX == 1) */
+
+		capability->ph_cap.ant_num = prAdapter->rWifiVar.ucNSS;
+
+		if (prAdapter->rWifiVar.eDbdcMode != ENUM_DBDC_MODE_DISABLED)
+			capability->ph_cap.dbdc |= BIT(0);
+
+		if (prAdapter->rWifiVar.ucTxLdpc)
+			capability->ph_cap.coding |= BIT(0);
+		if (prAdapter->rWifiVar.ucRxLdpc)
+			capability->ph_cap.coding |= BIT(1);
+		if (prAdapter->rWifiVar.ucTxStbc)
+			capability->ph_cap.coding |= BIT(2);
+		if (prAdapter->rWifiVar.ucRxStbc)
+			capability->ph_cap.coding |= BIT(3);
+
+		capability->ph_cap.channel_band = BIT(0);
+		if (!prAdapter->fgIsHw5GBandDisabled)
+			capability->ph_cap.channel_band |= BIT(1);
+
+		capability->ph_cap.bandwidth = BITS(0, 1);
+		if (prAdapter->rWifiVar.ucStaVht)
+			capability->ph_cap.bandwidth |= BIT(2);
+
+#if CFG_SUPPORT_ANT_SWAP
+		if (prAdapter->fgIsSupportAntSwp)
+			capability->ext_cap.feature1 |= BIT(0);
+#endif /* CFG_SUPPORT_ANT_SWAP */
+
+		return WLAN_STATUS_SUCCESS;
 	/* ICAP Operation Function -- Start*/
 	case OP_WLAN_OID_SET_TEST_ICAP_MODE:
 		pfnOidHandler = wlanoidRftestSetTestIcapMode;

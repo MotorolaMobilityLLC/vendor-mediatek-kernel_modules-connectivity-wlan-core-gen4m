@@ -233,6 +233,9 @@ s_int32 mt_serv_set_fagc_rssi_path(
 s_int32 mt_serv_get_rx_stat_leg(
 	struct service_test *serv_test,
 	struct test_rx_stat_leg *rx_stat);
+s_int32 mt_serv_get_capability(
+	struct service_test *serv_test,
+	struct test_capability *capability);
 s_int32 mt_serv_calibration_test_mode(
 	struct service_test *serv_test, u_char mode);
 s_int32 mt_serv_do_cal_item(

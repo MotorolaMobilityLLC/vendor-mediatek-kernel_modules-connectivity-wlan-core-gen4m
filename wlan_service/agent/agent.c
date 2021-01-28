@@ -2298,6 +2298,42 @@ error2:
 	return ret;
 }
 
+static s_int32 hqa_get_capability(
+	struct service_test *serv_test, struct hqa_frame *hqa_frame)
+{
+	s_int32 ret = SERV_STATUS_SUCCESS;
+	u_int8 *ptr = hqa_frame->data + 2;
+	struct test_capability capability;
+	u_int32 convert, i, *cast = NULL;
+	u_int32 item_num = sizeof(struct test_capability) / 4;
+
+	SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_TRACE, ("%s\n", __func__));
+
+	/* get content */
+	ret = mt_serv_get_capability(serv_test, &capability);
+
+	/* fill header */
+	capability.version = 0x0001;
+	capability.tag_num = 2;
+	capability.ph_cap.tag = 1;
+	capability.ph_cap.tag_len = 16;
+	capability.ext_cap.tag = 2;
+	capability.ext_cap.tag_len = 16;
+
+	cast = (u_int32 *)&capability;
+
+	/* convert and put data */
+	for (i = 0; i < item_num; i++) {
+		convert = SERV_OS_HTONL(cast[i]);
+		sys_ad_move_mem(ptr, &convert, sizeof(convert));
+		ptr += sizeof(convert);
+	}
+
+	/* Update hqa_frame with response: status (2 bytes) */
+	update_hqa_frame(hqa_frame, (item_num*4) + 2, ret);
+	return ret;
+}
+
 static s_int32 hqa_calibration_test_mode(
 	struct service_test *serv_test, struct hqa_frame *hqa_frame)
 {
@@ -3833,6 +3869,7 @@ static struct hqa_cmd_entry CMD_SET5[] = {
 	{0x19,	hqa_mps_start},
 	{0x1a,	hqa_mps_stop},
 	{0x1c,	hqa_get_rx_statistics_all},
+	{0x1d,	hqa_get_capability},
 	{0x21,	legacy_function},
 	{0x22,	hqa_check_efuse_mode_type},
 	{0x23,	hqa_check_efuse_nativemode_type},
@@ -4529,6 +4566,8 @@ static struct priv_hqa_cmd_id_mapping priv_hqa_cmd_mapping[] = {
 	{4, 4, 4, 4, 4, 4, 4, 4, 4, 6, 6, 6} },
 	{"GetRXStatisticsAllNew", 0x151c,
 	{4, 4} },
+	{"GetChipCapability", 0x151d,
+	{0} },
 	{"ResetTxRxCounter", 0x1200,
 	{0} },
 	{"CalibrationTestMode", 0x1509,
