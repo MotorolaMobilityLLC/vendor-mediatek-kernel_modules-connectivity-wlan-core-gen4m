@@ -7404,7 +7404,8 @@ inline int32_t kalPerMonInit(IN struct GLUE_INFO
 #if CFG_SUPPORT_PERF_IND
 	kalPerfIndReset(prGlueInfo->prAdapter);
 #endif
-
+	/* enable rps on all cpu cores */
+	kalSetRpsMap(prGlueInfo, 0xff);
 	KAL_SET_BIT(PERF_MON_INIT_BIT, prPerMonitor->ulPerfMonFlag);
 	DBGLOG(SW4, INFO, "exit %s\n", __func__);
 	return 0;
