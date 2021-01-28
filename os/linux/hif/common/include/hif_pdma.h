@@ -84,10 +84,17 @@
 /* Event/MSDU_report Rx ring */
 #define RX_RING1_SIZE				16
 #else
+#ifdef CONNAC2X2
+#define TX_RING_SIZE				512
+#define RX_RING_SIZE				512	/* Max Rx ring size */
+/* Data Rx ring */
+#define RX_RING0_SIZE				512
+#else
 #define TX_RING_SIZE				256
 #define RX_RING_SIZE				256	/* Max Rx ring size */
 /* Data Rx ring */
 #define RX_RING0_SIZE				256
+#endif /* CONNAC2X2 */
 /* Event/MSDU_report Rx ring */
 #define RX_RING1_SIZE				16
 #endif
