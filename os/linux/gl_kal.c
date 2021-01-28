@@ -1128,6 +1128,7 @@ kalIndicateStatusAndComplete(IN struct GLUE_INFO
 	struct cfg80211_bss *bss = NULL;
 	uint8_t ucChannelNum;
 	struct BSS_DESC *prBssDesc = NULL;
+	uint8_t fgScanAborted = FALSE;
 
 	GLUE_SPIN_LOCK_DECLARATION();
 
@@ -1382,13 +1383,17 @@ kalIndicateStatusAndComplete(IN struct GLUE_INFO
 		break;
 
 	case WLAN_STATUS_SCAN_COMPLETE:
+		if (pvBuf && u4BufLen == sizeof(uint8_t))
+			fgScanAborted = *(uint8_t *)pvBuf;
+
 		/* indicate scan complete event */
 		wext_indicate_wext_event(prGlueInfo, SIOCGIWSCAN, NULL, 0);
 
 		/* 1. reset first for newly incoming request */
 		GLUE_ACQUIRE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
 		if (prGlueInfo->prScanRequest != NULL) {
-			kalCfg80211ScanDone(prGlueInfo->prScanRequest, FALSE);
+			kalCfg80211ScanDone(prGlueInfo->prScanRequest,
+				fgScanAborted);
 			prGlueInfo->prScanRequest = NULL;
 		}
 		GLUE_RELEASE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
@@ -4017,6 +4022,7 @@ void kalScanDone(IN struct GLUE_INFO *prGlueInfo,
 		 IN enum ENUM_KAL_NETWORK_TYPE_INDEX eNetTypeIdx,
 		 IN uint32_t status)
 {
+	uint8_t fgAborted = (status != WLAN_STATUS_SUCCESS) ? TRUE : FALSE;
 	ASSERT(prGlueInfo);
 
 	scanLogEssResult(prGlueInfo->prAdapter);
@@ -4029,8 +4035,8 @@ void kalScanDone(IN struct GLUE_INFO *prGlueInfo,
 	 */
 	wlanCheckSystemConfiguration(prGlueInfo->prAdapter);
 
-	kalIndicateStatusAndComplete(prGlueInfo,
-				     WLAN_STATUS_SCAN_COMPLETE, NULL, 0);
+	kalIndicateStatusAndComplete(prGlueInfo, WLAN_STATUS_SCAN_COMPLETE,
+		&fgAborted, sizeof(fgAborted));
 }
 
 /*----------------------------------------------------------------------------*/
