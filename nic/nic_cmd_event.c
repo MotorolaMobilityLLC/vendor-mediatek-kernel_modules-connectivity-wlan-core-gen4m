@@ -3296,7 +3296,7 @@ uint32_t nicEventQueryTxResource(IN struct ADAPTER
 
 	i_max = sizeof(nicTxRsrcEvtHdlrTbl) / sizeof(
 			struct nicTxRsrcEvtHdlr);
-	for (i = 0; i < i_max; i++) {
+	for (i = 0; i < i_max; i += 2) {
 		if (version == nicTxRsrcEvtHdlrTbl[i].u4Version) {
 			/* assign callback to do the resource init. */
 			prAdapter->nicTxReousrce.txResourceInit =
@@ -3305,9 +3305,6 @@ uint32_t nicEventQueryTxResource(IN struct ADAPTER
 			return nicTxRsrcEvtHdlrTbl[i].nicEventTxResource(
 				prAdapter, pucEventBuf);
 		}
-
-		/* move to next index*/
-		i++;
 	}
 
 	/* invalid version, cannot find the handler */
