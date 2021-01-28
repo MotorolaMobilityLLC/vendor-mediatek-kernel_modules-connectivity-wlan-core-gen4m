@@ -1008,18 +1008,10 @@ void scnEventSchedScanDone(IN struct ADAPTER *prAdapter,
 	prSchedScanParam = &prScanInfo->rSchedScanParam;
 
 	if (prScanInfo->fgSchedScanning == TRUE) {
-
 		scanlog_dbg(LOG_SCHED_SCAN_DONE_F2D, INFO, "scnEventSchedScanDone seq %u\n",
 			prSchedScanDone->ucSeqNum);
 
 		kalSchedScanResults(prAdapter->prGlueInfo);
-
-		if (prSchedScanParam->fgStopAfterIndication == TRUE) {
-#if CFG_SUPPORT_PNO
-			prAdapter->prAisBssInfo->fgIsPNOEnable = FALSE;
-#endif
-			prScanInfo->fgSchedScanning = FALSE;
-		}
 	} else {
 		scanlog_dbg(LOG_SCHED_SCAN_DONE_F2D, INFO, "Unexpected SCHEDSCANDONE event: Seq = %u, Current State = %d\n",
 			prSchedScanDone->ucSeqNum, prScanInfo->eCurrentState);
@@ -1048,7 +1040,6 @@ scnFsmSchedScanRequest(IN struct ADAPTER *prAdapter,
 	uint32_t i;
 	uint16_t u2IeLen;
 	enum ENUM_BAND ePreferedChnl = BAND_NULL;
-	u_int8_t fgRet = TRUE;
 
 	ASSERT(prAdapter);
 	ASSERT(prRequest);
@@ -1176,24 +1167,23 @@ scnFsmSchedScanRequest(IN struct ADAPTER *prAdapter,
 	do {
 		if (!scnFsmSchedScanSetCmd(prAdapter, prSchedScanCmd)) {
 			log_dbg(SCN, TRACE, "scnFsmSchedScanSetCmd failed\n");
-			fgRet = FALSE;
 			break;
 		}
 		if (!scnFsmSchedScanSetAction(prAdapter,
 				SCHED_SCAN_ACT_ENABLE)) {
 			log_dbg(SCN, TRACE, "scnFsmSchedScanSetAction failed\n");
-			fgRet = FALSE;
 			break;
 		}
-#if CFG_SUPPORT_PNO
-		prAdapter->prAisBssInfo->fgIsPNOEnable = TRUE;
-#endif
 		prScanInfo->fgSchedScanning = TRUE;
 	} while (0);
 
+	if (!prScanInfo->fgSchedScanning)
+		nicDeactivateNetwork(prAdapter,
+			prAdapter->prAisBssInfo->ucBssIndex);
+
 	cnmMemFree(prAdapter, (void *) prSchedScanCmd);
 
-	return fgRet;
+	return prScanInfo->fgSchedScanning;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1219,9 +1209,7 @@ u_int8_t scnFsmSchedScanStopRequest(IN struct ADAPTER *prAdapter)
 		log_dbg(SCN, TRACE, "scnFsmSchedScanSetAction failed\n");
 		return FALSE;
 	}
-#if CFG_SUPPORT_PNO
-	prAdapter->prAisBssInfo->fgIsPNOEnable = FALSE;
-#endif
+
 	prAdapter->rWifiVar.rScanInfo.fgSchedScanning = FALSE;
 
 	return TRUE;

@@ -1276,10 +1276,7 @@ void aisFsmSteps(IN struct ADAPTER *prAdapter, enum ENUM_AIS_STATE eNextState)
 
 					SET_NET_PWR_STATE_ACTIVE(prAdapter,
 					prAdapter->prAisBssInfo->ucBssIndex);
-#if CFG_SUPPORT_PNO
-					prAisBssInfo->fgIsNetRequestInActive =
-					    FALSE;
-#endif
+
 					/* reset trial count */
 					prAisFsmInfo->ucConnTrialCount = 0;
 
@@ -1289,21 +1286,7 @@ void aisFsmSteps(IN struct ADAPTER *prAdapter, enum ENUM_AIS_STATE eNextState)
 					SET_NET_PWR_STATE_IDLE(prAdapter,
 					prAdapter->prAisBssInfo->ucBssIndex);
 
-					/* sync with firmware */
-#if CFG_SUPPORT_PNO
-					prAisBssInfo->fgIsNetRequestInActive =
-					    TRUE;
-					if (prAisBssInfo->fgIsPNOEnable) {
-						DBGLOG(BSS, INFO,
-						       "[BSSidx][Network]=%d PNOEnable&&OP_MODE_INFRASTRUCTURE,KEEP ACTIVE\n",
-						prAisBssInfo->ucBssIndex);
-					} else
-#endif
-					if (IS_NET_ACTIVE
-					    (prAdapter,
-					     prAdapter->
-					     prAisBssInfo->ucBssIndex) &&
-					    !prAdapter->rWifiVar.rScanInfo.
+					if (!prAdapter->rWifiVar.rScanInfo.
 						fgSchedScanning) {
 						UNSET_NET_ACTIVE(prAdapter,
 						prAdapter->prAisBssInfo->
@@ -1722,9 +1705,6 @@ void aisFsmSteps(IN struct ADAPTER *prAdapter, enum ENUM_AIS_STATE eNextState)
 				nicActivateNetwork(prAdapter,
 						   prAdapter->
 						   prAisBssInfo->ucBssIndex);
-#if CFG_SUPPORT_PNO
-				prAisBssInfo->fgIsNetRequestInActive = FALSE;
-#endif
 			}
 			prScanRequest = &(prAisFsmInfo->rScanRequest);
 
@@ -2295,9 +2275,7 @@ void aisFsmSteps(IN struct ADAPTER *prAdapter, enum ENUM_AIS_STATE eNextState)
 						   prAdapter->
 						   prAisBssInfo->ucBssIndex);
 			}
-#if CFG_SUPPORT_PNO
-			prAisBssInfo->fgIsNetRequestInActive = FALSE;
-#endif
+
 			break;
 
 		case AIS_STATE_OFF_CHNL_TX:
@@ -4306,14 +4284,19 @@ void aisFsmDisconnect(IN struct ADAPTER *prAdapter,
 		}
 
 		if (prAisBssInfo->ucReasonOfDisconnect ==
-		    DISCONNECT_REASON_CODE_RADIO_LOST) {
+		    DISCONNECT_REASON_CODE_RADIO_LOST ||
+		    prAisBssInfo->ucReasonOfDisconnect ==
+				DISCONNECT_REASON_CODE_DISASSOCIATED) {
 			scanRemoveBssDescByBssid(prAdapter,
 						 prAisBssInfo->aucBSSID);
 
 			/* remove from scanning results as well */
 			wlanClearBssInScanningResult(prAdapter,
 						     prAisBssInfo->aucBSSID);
+		}
 
+		if (prAisBssInfo->ucReasonOfDisconnect ==
+		    DISCONNECT_REASON_CODE_RADIO_LOST) {
 			/* trials for re-association */
 			if (fgDelayIndication) {
 				aisFsmIsRequestPending(prAdapter,
