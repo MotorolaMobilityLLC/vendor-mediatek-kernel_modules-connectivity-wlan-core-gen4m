@@ -603,41 +603,8 @@ void asicPdmaLoopBackConfig(struct GLUE_INFO *prGlueInfo, u_int8_t fgEnable)
 	kalDevRegWrite(prGlueInfo, WPDMA_GLO_CFG, GloCfg.word);
 }
 
-static void _enableSlpProt(struct GLUE_INFO *prGlueInfo)
-{
-	uint32_t u4Val = 0;
-	uint32_t u4WaitDelay = 20000;
-
-	kalDevRegRead(prGlueInfo, CONN_HIF_PDMA_CSR_PDMA_SLP_PROT_ADDR, &u4Val);
-	u4Val |= CONN_HIF_PDMA_CSR_PDMA_SLP_PROT_PDMA_AXI_SLPPROT_ENABLE_MASK;
-	kalDevRegWrite(prGlueInfo, CONN_HIF_PDMA_CSR_PDMA_SLP_PROT_ADDR, u4Val);
-	while (TRUE) {
-		u4WaitDelay--;
-		kalDevRegRead(prGlueInfo, CONN_HIF_PDMA_CSR_PDMA_SLP_PROT_ADDR,
-			&u4Val);
-		if (CONN_HIF_PDMA_CSR_PDMA_SLP_PROT_PDMA_AXI_SLPPROT_RDY_MASK &
-				u4Val)
-			break;
-		if (u4WaitDelay == 0) {
-			DBGLOG(HAL, ERROR, "wait for sleep protect timeout.\n");
-			GL_RESET_TRIGGER(prGlueInfo->prAdapter,
-				RST_FLAG_CHIP_RESET);
-			break;
-		}
-		kalUdelay(1);
-	}
-}
-
-static void _disableSlpProt(struct GLUE_INFO *prGlueInfo)
-{
-	uint32_t u4Val = 0;
-
-	kalDevRegRead(prGlueInfo, CONN_HIF_PDMA_CSR_PDMA_SLP_PROT_ADDR, &u4Val);
-	u4Val &= ~CONN_HIF_PDMA_CSR_PDMA_SLP_PROT_PDMA_AXI_SLPPROT_ENABLE_MASK;
-	kalDevRegWrite(prGlueInfo, CONN_HIF_PDMA_CSR_PDMA_SLP_PROT_ADDR, u4Val);
-}
-
-void asicPdmaConfig(struct GLUE_INFO *prGlueInfo, u_int8_t fgEnable)
+void asicPdmaConfig(struct GLUE_INFO *prGlueInfo, u_int8_t fgEnable,
+		bool fgResetHif)
 {
 	struct BUS_INFO *prBusInfo =
 			prGlueInfo->prAdapter->chip_info->bus_info;
@@ -702,9 +669,13 @@ void asicPdmaConfig(struct GLUE_INFO *prGlueInfo, u_int8_t fgEnable)
 		halWpdmaWaitIdle(prGlueInfo, 100, 1000);
 		/* Reset DMA Index */
 		kalDevRegWrite(prGlueInfo, WPDMA_RST_PTR, 0xFFFFFFFF);
-		_enableSlpProt(prGlueInfo);
-		halHifRst(prGlueInfo);
-		_disableSlpProt(prGlueInfo);
+#if CFG_MTK_MCIF_WIFI_SUPPORT
+		if (fgResetHif) {
+			halEnableSlpProt(prGlueInfo);
+			halHifRst(prGlueInfo);
+			halDisableSlpProt(prGlueInfo);
+		}
+#endif
 	}
 }
 

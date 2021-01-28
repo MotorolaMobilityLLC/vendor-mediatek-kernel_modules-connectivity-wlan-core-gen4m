@@ -423,7 +423,7 @@ struct ERR_RECOVERY_CTRL_T {
 void halHifRst(struct GLUE_INFO *prGlueInfo);
 bool halWpdmaAllocRing(struct GLUE_INFO *prGlueInfo, bool fgAllocMem);
 void halWpdmaFreeRing(struct GLUE_INFO *prGlueInfo);
-void halWpdmaInitRing(struct GLUE_INFO *prGlueInfo);
+void halWpdmaInitRing(struct GLUE_INFO *prGlueInfo, bool fgResetHif);
 void halWpdmaInitTxRing(IN struct GLUE_INFO *prGlueInfo);
 void halWpdmaInitRxRing(IN struct GLUE_INFO *prGlueInfo);
 void halWpdmaProcessCmdDmaDone(IN struct GLUE_INFO *prGlueInfo,
@@ -497,4 +497,6 @@ void kalDumpRxRing(struct GLUE_INFO *prGlueInfo,
 void haldumpPhyInfo(struct ADAPTER *prAdapter);
 int wf_ioremap_read(size_t addr, unsigned int *val);
 int wf_ioremap_write(phys_addr_t addr, unsigned int val);
+void halEnableSlpProt(struct GLUE_INFO *prGlueInfo);
+void halDisableSlpProt(struct GLUE_INFO *prGlueInfo);
 #endif /* HIF_PDMA_H__ */
