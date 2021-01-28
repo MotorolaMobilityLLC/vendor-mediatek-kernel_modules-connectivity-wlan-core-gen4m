@@ -1080,8 +1080,7 @@ u_int8_t p2pNetUnregister(struct GLUE_INFO *prGlueInfo,
 		}
 
 		DBGLOG(INIT, INFO, "unregister p2pdev[%d]\n", ucRoleIdx);
-		if (prP2PInfo->prDevHandler &&
-			prP2PInfo->prDevHandler->reg_state == NETREG_REGISTERED)
+		if (prP2PInfo->prDevHandler->reg_state == NETREG_REGISTERED)
 			unregister_netdev(prP2PInfo->prDevHandler);
 
 		if (fgRollbackRtnlLock)
