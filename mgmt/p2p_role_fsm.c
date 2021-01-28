@@ -682,89 +682,92 @@ VOID p2pRoleFsmRunEventRxDisassociation(IN P_ADAPTER_T prAdapter, IN P_STA_RECOR
 	P_BSS_INFO_T prP2pBssInfo = (P_BSS_INFO_T) NULL;
 	UINT_16 u2ReasonCode = 0;
 
-	do {
-		ASSERT_BREAK((prAdapter != NULL) && (prSwRfb != NULL));
 
-		if (prStaRec == NULL)
-			prStaRec = cnmGetStaRecByIndex(prAdapter, prSwRfb->ucStaRecIdx);
+	if (prStaRec == NULL)
+		prStaRec = cnmGetStaRecByIndex(prAdapter, prSwRfb->ucStaRecIdx);
 
-		prP2pBssInfo = prAdapter->aprBssInfo[prStaRec->ucBssIndex];
+	if (!prStaRec) {
+		DBGLOG(P2P, ERROR, "prStaRec of prSwRfb->ucStaRecIdx %d is NULL!\n",
+			prSwRfb->ucStaRecIdx);
+		return;
+	}
 
-		if (prStaRec->ucStaState == STA_STATE_1)
-			break;
+	prP2pBssInfo = prAdapter->aprBssInfo[prStaRec->ucBssIndex];
 
-		DBGLOG(P2P, TRACE, "RX Disassoc\n");
+	if (prStaRec->ucStaState == STA_STATE_1)
+		return;
 
-		switch (prP2pBssInfo->eCurrentOPMode) {
-		case OP_MODE_INFRASTRUCTURE:
-			if (assocProcessRxDisassocFrame(prAdapter,
-							prSwRfb,
-							prStaRec->aucMacAddr,
-							&prStaRec->u2ReasonCode) == WLAN_STATUS_SUCCESS) {
-				P_WLAN_DISASSOC_FRAME_T prDisassocFrame = (P_WLAN_DISASSOC_FRAME_T) prSwRfb->pvHeader;
-				UINT_16 u2IELength = 0;
+	DBGLOG(P2P, TRACE, "RX Disassoc\n");
 
-				ASSERT(prP2pBssInfo->prStaRecOfAP == prStaRec);
+	switch (prP2pBssInfo->eCurrentOPMode) {
+	case OP_MODE_INFRASTRUCTURE:
+		if (assocProcessRxDisassocFrame(prAdapter,
+						prSwRfb,
+						prStaRec->aucMacAddr,
+						&prStaRec->u2ReasonCode) == WLAN_STATUS_SUCCESS) {
+			P_WLAN_DISASSOC_FRAME_T prDisassocFrame = (P_WLAN_DISASSOC_FRAME_T) prSwRfb->pvHeader;
+			UINT_16 u2IELength = 0;
 
-				if (prP2pBssInfo->prStaRecOfAP != prStaRec)
-					break;
+			ASSERT(prP2pBssInfo->prStaRecOfAP == prStaRec);
 
-				u2IELength = prSwRfb->u2PacketLen - (WLAN_MAC_HEADER_LEN + REASON_CODE_FIELD_LEN);
+			if (prP2pBssInfo->prStaRecOfAP != prStaRec)
+				break;
+
+			u2IELength = prSwRfb->u2PacketLen - (WLAN_MAC_HEADER_LEN + REASON_CODE_FIELD_LEN);
 
 #if CFG_WPS_DISCONNECT || (KERNEL_VERSION(4, 4, 0) <= CFG80211_VERSION_CODE)
-				/* Indicate disconnect to Host. */
-				kalP2PGCIndicateConnectionStatus(prAdapter->prGlueInfo,
-					(UINT_8) prP2pBssInfo->u4PrivateData, NULL,
-					prDisassocFrame->aucInfoElem,
-					u2IELength, prStaRec->u2ReasonCode,
-					WLAN_STATUS_MEDIA_DISCONNECT);
+			/* Indicate disconnect to Host. */
+			kalP2PGCIndicateConnectionStatus(prAdapter->prGlueInfo,
+				(UINT_8) prP2pBssInfo->u4PrivateData, NULL,
+				prDisassocFrame->aucInfoElem,
+				u2IELength, prStaRec->u2ReasonCode,
+				WLAN_STATUS_MEDIA_DISCONNECT);
 
 #else
-				/* Indicate disconnect to Host. */
-				kalP2PGCIndicateConnectionStatus(prAdapter->prGlueInfo,
-					(UINT_8) prP2pBssInfo->u4PrivateData, NULL,
-					prDisassocFrame->aucInfoElem,
-					u2IELength, prStaRec->u2ReasonCode);
+			/* Indicate disconnect to Host. */
+			kalP2PGCIndicateConnectionStatus(prAdapter->prGlueInfo,
+				(UINT_8) prP2pBssInfo->u4PrivateData, NULL,
+				prDisassocFrame->aucInfoElem,
+				u2IELength, prStaRec->u2ReasonCode);
 #endif
 
-				prP2pBssInfo->prStaRecOfAP = NULL;
+			prP2pBssInfo->prStaRecOfAP = NULL;
 
-				p2pFuncDisconnect(prAdapter, prP2pBssInfo, prStaRec, FALSE, prStaRec->u2ReasonCode);
+			p2pFuncDisconnect(prAdapter, prP2pBssInfo, prStaRec, FALSE, prStaRec->u2ReasonCode);
 
-				p2pFuncStopComplete(prAdapter, prP2pBssInfo);
+			p2pFuncStopComplete(prAdapter, prP2pBssInfo);
 
-				SET_NET_PWR_STATE_IDLE(prAdapter, prP2pBssInfo->ucBssIndex);
+			SET_NET_PWR_STATE_IDLE(prAdapter, prP2pBssInfo->ucBssIndex);
 
-				p2pRoleFsmStateTransition(prAdapter,
-							  P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prAdapter,
-											 prP2pBssInfo->u4PrivateData),
-							  P2P_ROLE_STATE_IDLE);
-			}
-			break;
-		case OP_MODE_ACCESS_POINT:
-			/* Delete client from client list. */
-			if (assocProcessRxDisassocFrame(prAdapter,
-							prSwRfb,
-							prP2pBssInfo->aucBSSID, &u2ReasonCode) == WLAN_STATUS_SUCCESS) {
-				if (bssRemoveClient(prAdapter, prP2pBssInfo, prStaRec)) {
-					/* Indicate disconnect to Host. */
-					p2pFuncDisconnect(prAdapter, prP2pBssInfo, prStaRec, FALSE, u2ReasonCode);
-					/* Deactive BSS if PWR is IDLE and no peer */
-					if (IS_NET_PWR_STATE_IDLE(prAdapter, prP2pBssInfo->ucBssIndex) &&
-						(bssGetClientCount(prAdapter, prP2pBssInfo) == 0)) {
-						/* All Peer disconnected !! Stop BSS now!! */
-						p2pFuncStopComplete(prAdapter, prP2pBssInfo);
-					}
+			p2pRoleFsmStateTransition(prAdapter,
+						  P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prAdapter,
+										 prP2pBssInfo->u4PrivateData),
+						  P2P_ROLE_STATE_IDLE);
+		}
+		break;
+	case OP_MODE_ACCESS_POINT:
+		/* Delete client from client list. */
+		if (assocProcessRxDisassocFrame(prAdapter,
+						prSwRfb,
+						prP2pBssInfo->aucBSSID, &u2ReasonCode) == WLAN_STATUS_SUCCESS) {
+			if (bssRemoveClient(prAdapter, prP2pBssInfo, prStaRec)) {
+				/* Indicate disconnect to Host. */
+				p2pFuncDisconnect(prAdapter, prP2pBssInfo, prStaRec, FALSE, u2ReasonCode);
+				/* Deactive BSS if PWR is IDLE and no peer */
+				if (IS_NET_PWR_STATE_IDLE(prAdapter, prP2pBssInfo->ucBssIndex) &&
+					(bssGetClientCount(prAdapter, prP2pBssInfo) == 0)) {
+					/* All Peer disconnected !! Stop BSS now!! */
+					p2pFuncStopComplete(prAdapter, prP2pBssInfo);
 				}
 			}
-			break;
-		case OP_MODE_P2P_DEVICE:
-		default:
-			ASSERT(FALSE);
-			break;
 		}
+		break;
+	case OP_MODE_P2P_DEVICE:
+	default:
+		ASSERT(FALSE);
+		break;
+	}
 
-	} while (FALSE);
 }				/* p2pRoleFsmRunEventRxDisassociation */
 
 VOID p2pRoleFsmRunEventBeaconTimeout(IN P_ADAPTER_T prAdapter, IN P_BSS_INFO_T prP2pBssInfo)
