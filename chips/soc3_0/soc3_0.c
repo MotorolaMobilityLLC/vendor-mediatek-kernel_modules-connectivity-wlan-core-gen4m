@@ -1129,8 +1129,12 @@ int soc3_0_Trigger_fw_assert(void)
 			soc3_0_DumpWfsysInfo();
 			soc3_0_DumpWfsysdebugflag();
 			g_IsTriggerTimeout = TRUE;
-			kalSetRstEvent();
 		}
+		fgIsResetting = TRUE;
+#if (CFG_SUPPORT_CONNINFRA == 1)
+		update_driver_reset_status(fgIsResetting);
+		kalSetRstEvent();
+#endif
 		wf_ioremap_read(WF_TRIGGER_AP2CONN_EINT, &value);
 		value |= 0x80;
 		ret = wf_ioremap_write(WF_TRIGGER_AP2CONN_EINT, value);
@@ -1802,7 +1806,7 @@ void soc3_0_Sw_interrupt_handler(struct ADAPTER *prAdapter)
 		fw_log_wifi_irq_handler();
 #endif
 	if (value & (BIT(1) | BIT(2))) {
-		kalSetRstEvent();
+
 		complete(&g_triggerComp);
 	}
 
