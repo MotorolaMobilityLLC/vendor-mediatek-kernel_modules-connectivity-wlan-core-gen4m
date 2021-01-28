@@ -8814,7 +8814,7 @@ wlanAddDirtinessToAffectedChannels(struct ADAPTER *prAdapter,
 		ucRightNeighborChannel = 0;
 	}
 
-	log_dbg(SCN, LOUD, "central ch %u\n", ucCentralChannel);
+	log_dbg(SCN, TEMP, "central ch %u\n", ucCentralChannel);
 
 	ucStart = wlanGetChannelIndex(ucLeftestCoveredChannel);
 	ucEnd = wlanGetChannelIndex(ucRightestCoveredChannel);
@@ -8822,7 +8822,7 @@ wlanAddDirtinessToAffectedChannels(struct ADAPTER *prAdapter,
 	for (ucIdx = ucStart; ucIdx <= ucEnd; ucIdx++) {
 		prGetChnLoad->rEachChnLoad[ucIdx].u4Dirtiness +=
 			u4Dirtiness;
-		log_dbg(SCN, LOUD, "Add dirtiness %d, to covered ch %d\n",
+		log_dbg(SCN, TEMP, "Add dirtiness %d, to covered ch %d\n",
 		       u4Dirtiness,
 		       prGetChnLoad->rEachChnLoad[ucIdx].ucChannel);
 	}
@@ -8831,7 +8831,7 @@ wlanAddDirtinessToAffectedChannels(struct ADAPTER *prAdapter,
 		ucIdx = wlanGetChannelIndex(ucLeftNeighborChannel);
 		prGetChnLoad->rEachChnLoad[ucIdx].u4Dirtiness +=
 			(u4Dirtiness >> 1);
-		log_dbg(SCN, LOUD, "Add dirtiness %d, to neighbor ch %d\n",
+		log_dbg(SCN, TEMP, "Add dirtiness %d, to neighbor ch %d\n",
 		       u4Dirtiness >> 1,
 		       prGetChnLoad->rEachChnLoad[ucIdx].ucChannel);
 	}
@@ -8840,7 +8840,7 @@ wlanAddDirtinessToAffectedChannels(struct ADAPTER *prAdapter,
 		ucIdx = wlanGetChannelIndex(ucRightNeighborChannel);
 		prGetChnLoad->rEachChnLoad[ucIdx].u4Dirtiness +=
 			(u4Dirtiness >> 1);
-		log_dbg(SCN, LOUD, "Add dirtiness %d, to neighbor ch %d\n",
+		log_dbg(SCN, TEMP, "Add dirtiness %d, to neighbor ch %d\n",
 		       u4Dirtiness >> 1,
 		       prGetChnLoad->rEachChnLoad[ucIdx].ucChannel);
 	}
@@ -8850,7 +8850,7 @@ wlanAddDirtinessToAffectedChannels(struct ADAPTER *prAdapter,
 			ucIdx = wlanGetChannelIndex(ucLeftNeighborChannel2);
 			prGetChnLoad->rEachChnLoad[ucIdx].u4Dirtiness +=
 				(u4Dirtiness >> 1);
-			log_dbg(SCN, LOUD,
+			log_dbg(SCN, TEMP,
 			       "Add dirtiness %d, to neighbor ch %d\n",
 			       u4Dirtiness >> 1,
 			       prGetChnLoad->rEachChnLoad[ucIdx].ucChannel);
@@ -8860,7 +8860,7 @@ wlanAddDirtinessToAffectedChannels(struct ADAPTER *prAdapter,
 			ucIdx = wlanGetChannelIndex(ucRightNeighborChannel2);
 			prGetChnLoad->rEachChnLoad[ucIdx].u4Dirtiness +=
 				(u4Dirtiness >> 1);
-			log_dbg(SCN, LOUD,
+			log_dbg(SCN, TEMP,
 			       "Add dirtiness %d, to neighbor ch %d\n",
 			       u4Dirtiness >> 1,
 			       prGetChnLoad->rEachChnLoad[ucIdx].ucChannel);
@@ -8888,39 +8888,39 @@ wlanCalculateChannelDirtiness(IN struct ADAPTER *prAdapter,
 		ucCentralChannel2 = 0;
 
 	if (bIsIndexOne) {
-		DBGLOG(SCN, TRACE, "Process dirtiness index 1\n");
+		DBGLOG(SCN, TEMP, "Process dirtiness index 1\n");
 		ucCentralChannel = prBssDesc->ucChannelNum;
 		ucCoveredRange = 2;
 	} else {
-		DBGLOG(SCN, TRACE, "Process dirtiness index 2, ");
+		DBGLOG(SCN, TEMP, "Process dirtiness index 2, ");
 		switch (prBssDesc->eChannelWidth) {
 		case CW_20_40MHZ:
 			if (prBssDesc->eSco == CHNL_EXT_SCA) {
-				DBGLOG(SCN, TRACE, "BW40\n");
+				DBGLOG(SCN, TEMP, "BW40\n");
 				ucCentralChannel = prBssDesc->ucChannelNum + 2;
 				ucCoveredRange = 4;
 			} else if (prBssDesc->eSco == CHNL_EXT_SCB) {
-				DBGLOG(SCN, TRACE, "BW40\n");
+				DBGLOG(SCN, TEMP, "BW40\n");
 				ucCentralChannel = prBssDesc->ucChannelNum - 2;
 				ucCoveredRange = 4;
 			} else {
-				DBGLOG(SCN, TRACE, "BW20\n");
+				DBGLOG(SCN, TEMP, "BW20\n");
 				ucCentralChannel = prBssDesc->ucChannelNum;
 				ucCoveredRange = 2;
 			}
 			break;
 		case CW_80MHZ:
-			DBGLOG(SCN, TRACE, "BW80\n");
+			DBGLOG(SCN, TEMP, "BW80\n");
 			ucCentralChannel = prBssDesc->ucCenterFreqS1;
 			ucCoveredRange = 8;
 			break;
 		case CW_160MHZ:
-			DBGLOG(SCN, TRACE, "BW160\n");
+			DBGLOG(SCN, TEMP, "BW160\n");
 			ucCentralChannel = prBssDesc->ucCenterFreqS1;
 			ucCoveredRange = 16;
 			break;
 		case CW_80P80MHZ:
-			DBGLOG(SCN, TRACE, "BW8080\n");
+			DBGLOG(SCN, TEMP, "BW8080\n");
 			ucCentralChannel = prBssDesc->ucCenterFreqS1;
 			ucCentralChannel2 = prBssDesc->ucCenterFreqS2;
 			ucCoveredRange = 8;
@@ -8979,7 +8979,7 @@ wlanCalculateAllChannelDirtiness(IN struct ADAPTER
 		else
 			u4Dirtiness = ACS_DIRTINESS_LEVEL_LOW;
 
-		DBGLOG(SCN, TRACE, "Found an AP(%s), primary ch %d\n",
+		DBGLOG(SCN, TEMP, "Found an AP(%s), primary ch %d\n",
 		       prBssDesc->aucSSID, prBssDesc->ucChannelNum);
 
 		/* dirtiness index1 */
@@ -9108,7 +9108,7 @@ wlanSortChannel(IN struct ADAPTER *prAdapter)
 	}
 
 	for (ucIdx = 0; ucIdx < MAX_CHN_NUM; ++ucIdx)
-		log_dbg(P2P, LOUD, "[ACS]channel=%d, dirtiness=%d\n",
+		log_dbg(P2P, TEMP, "[ACS]channel=%d, dirtiness=%d\n",
 		       prChnLoadInfo->rChnRankList[ucIdx].ucChannel,
 		       prChnLoadInfo->rChnRankList[ucIdx].u4Dirtiness);
 
