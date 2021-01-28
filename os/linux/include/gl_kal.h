@@ -1635,7 +1635,7 @@ kalChannelFormatSwitch(IN struct cfg80211_chan_def *channel_def,
 
 #if CFG_SUPPORT_RX_GRO
 uint32_t kal_is_skb_gro(struct ADAPTER *prAdapter, uint8_t ucBssIdx);
-void kal_gro_flush(struct ADAPTER *prAdapter, uint8_t ucBssIdx);
+void kal_gro_flush(struct ADAPTER *prAdapter, struct net_device *prDev);
 #endif
 
 void kalRemoveBss(struct GLUE_INFO *prGlueInfo,
