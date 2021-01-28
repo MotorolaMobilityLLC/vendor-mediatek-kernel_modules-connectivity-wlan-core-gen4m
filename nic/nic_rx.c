@@ -345,102 +345,14 @@ void nicRxUninitialize(IN struct ADAPTER *prAdapter)
 void nicRxFillRFB(IN struct ADAPTER *prAdapter,
 		  IN OUT struct SW_RFB *prSwRfb)
 {
-	struct mt66xx_chip_info *prChipInfo;
-	struct HW_MAC_RX_DESC *prRxStatus;
+	struct RX_DESC_OPS_T *prRxDescOps = prAdapter->chip_info->prRxDescOps;
 
-	uint32_t u4PktLen = 0;
-	/* UINT_32 u4MacHeaderLen; */
-	uint32_t u4HeaderOffset;
-	uint16_t u2RxStatusOffset;
-
-	DEBUGFUNC("nicRxFillRFB");
-
-	ASSERT(prAdapter);
-	ASSERT(prSwRfb);
-
-	prChipInfo = prAdapter->chip_info;
-	prRxStatus = prSwRfb->prRxStatus;
-	ASSERT(prRxStatus);
-
-	u4PktLen = (uint32_t) HAL_RX_STATUS_GET_RX_BYTE_CNT(
-			   prRxStatus);
-	u4HeaderOffset = (uint32_t) (
-				 HAL_RX_STATUS_GET_HEADER_OFFSET(prRxStatus));
-
-	u2RxStatusOffset = prChipInfo->rxd_size;
-	prSwRfb->ucGroupVLD = (uint8_t) HAL_RX_STATUS_GET_GROUP_VLD(
-		prRxStatus);
-	if (prSwRfb->ucGroupVLD & BIT(RX_GROUP_VLD_4)) {
-		prSwRfb->prRxStatusGroup4 = (struct HW_MAC_RX_STS_GROUP_4 *)
-			((uint8_t *) prRxStatus + u2RxStatusOffset);
-		u2RxStatusOffset += sizeof(struct HW_MAC_RX_STS_GROUP_4);
-
-	}
-	if (prSwRfb->ucGroupVLD & BIT(RX_GROUP_VLD_1)) {
-		prSwRfb->prRxStatusGroup1 = (struct HW_MAC_RX_STS_GROUP_1 *)
-			((uint8_t *) prRxStatus + u2RxStatusOffset);
-		u2RxStatusOffset += sizeof(struct HW_MAC_RX_STS_GROUP_1);
-
-	}
-	if (prSwRfb->ucGroupVLD & BIT(RX_GROUP_VLD_2)) {
-		prSwRfb->prRxStatusGroup2 = (struct HW_MAC_RX_STS_GROUP_2 *)
-			((uint8_t *) prRxStatus + u2RxStatusOffset);
-		u2RxStatusOffset += sizeof(struct HW_MAC_RX_STS_GROUP_2);
-
-	}
-	if (prSwRfb->ucGroupVLD & BIT(RX_GROUP_VLD_3)) {
-		prSwRfb->prRxStatusGroup3 = (struct HW_MAC_RX_STS_GROUP_3 *)
-			((uint8_t *) prRxStatus + u2RxStatusOffset);
-		u2RxStatusOffset += sizeof(struct HW_MAC_RX_STS_GROUP_3);
-	}
-
-	prSwRfb->u2RxStatusOffst = u2RxStatusOffset;
-	prSwRfb->pvHeader = (uint8_t *) prRxStatus +
-		u2RxStatusOffset + u4HeaderOffset;
-	prSwRfb->u2PacketLen = (uint16_t) (u4PktLen -
-		(u2RxStatusOffset + u4HeaderOffset));
-	prSwRfb->u2HeaderLen = (uint16_t)
-		HAL_RX_STATUS_GET_HEADER_LEN(prRxStatus);
-	prSwRfb->ucWlanIdx = (uint8_t) HAL_RX_STATUS_GET_WLAN_IDX(
-		prRxStatus);
-	prSwRfb->ucStaRecIdx = secGetStaIdxByWlanIdx(prAdapter,
-		(uint8_t) HAL_RX_STATUS_GET_WLAN_IDX(prRxStatus));
-	prSwRfb->prStaRec = cnmGetStaRecByIndex(prAdapter,
-		prSwRfb->ucStaRecIdx);
-	prSwRfb->ucTid = (uint8_t) HAL_RX_STATUS_GET_TID(
-		prRxStatus);
-
-#if 0
-	if (prHifRxHdr->ucReorder &
-	    HIF_RX_HDR_80211_HEADER_FORMAT) {
-		prSwRfb->u4HifRxHdrFlag |= HIF_RX_HDR_FLAG_802_11_FORMAT;
-		DBGLOG(RX, TRACE, "HIF_RX_HDR_FLAG_802_11_FORMAT\n");
-	}
-
-	if (prHifRxHdr->ucReorder & HIF_RX_HDR_DO_REORDER) {
-		prSwRfb->u4HifRxHdrFlag |= HIF_RX_HDR_FLAG_DO_REORDERING;
-		DBGLOG(RX, TRACE, "HIF_RX_HDR_FLAG_DO_REORDERING\n");
-
-		/* Get Seq. No and TID, Wlan Index info */
-		if (prHifRxHdr->u2SeqNoTid & HIF_RX_HDR_BAR_FRAME) {
-			prSwRfb->u4HifRxHdrFlag |= HIF_RX_HDR_FLAG_BAR_FRAME;
-			DBGLOG(RX, TRACE, "HIF_RX_HDR_FLAG_BAR_FRAME\n");
-		}
-
-		prSwRfb->u2SSN = prHifRxHdr->u2SeqNoTid &
-				 HIF_RX_HDR_SEQ_NO_MASK;
-		prSwRfb->ucTid = (uint8_t) ((prHifRxHdr->u2SeqNoTid &
-					     HIF_RX_HDR_TID_MASK)
-					    >> HIF_RX_HDR_TID_OFFSET);
-		DBGLOG(RX, TRACE, "u2SSN = %d, ucTid = %d\n",
-		       prSwRfb->u2SSN, prSwRfb->ucTid);
-	}
-
-	if (prHifRxHdr->ucReorder & HIF_RX_HDR_WDS) {
-		prSwRfb->u4HifRxHdrFlag |= HIF_RX_HDR_FLAG_AMP_WDS;
-		DBGLOG(RX, TRACE, "HIF_RX_HDR_FLAG_AMP_WDS\n");
-	}
-#endif
+	if (prRxDescOps->nic_rxd_fill_rfb)
+		prRxDescOps->nic_rxd_fill_rfb(prAdapter, prSwRfb);
+	else
+		DBGLOG(RX, ERROR,
+			"%s:: no nic_rxd_fill_rfb??\n",
+			__func__);
 }
 
 #if CFG_TCP_IP_CHKSUM_OFFLOAD || CFG_TCP_IP_CHKSUM_OFFLOAD_NDIS_60
@@ -585,7 +497,7 @@ struct SW_RFB *nicRxDefragMPDU(IN struct ADAPTER *prAdapter,
 	u_int8_t fgLast = FALSE;
 	OS_SYSTIME rCurrentTime;
 	struct WLAN_MAC_HEADER *prWlanHeader = NULL;
-	struct HW_MAC_RX_DESC *prRxStatus = NULL;
+	void *prRxStatus = NULL;
 	struct HW_MAC_RX_STS_GROUP_4 *prRxStatusGroup4 = NULL;
 
 	DEBUGFUNC("nicRx: rxmDefragMPDU\n");
@@ -597,7 +509,7 @@ struct SW_RFB *nicRxDefragMPDU(IN struct ADAPTER *prAdapter,
 	prRxStatus = prSWRfb->prRxStatus;
 	ASSERT(prRxStatus);
 
-	if (HAL_RX_STATUS_IS_HEADER_TRAN(prRxStatus) == FALSE) {
+	if (prSWRfb->fgHdrTran == FALSE) {
 		prWlanHeader = (struct WLAN_MAC_HEADER *) prSWRfb->pvHeader;
 		u2FrameCtrl = prWlanHeader->u2FrameCtrl;
 	} else {
@@ -715,13 +627,11 @@ struct SW_RFB *nicRxDefragMPDU(IN struct ADAPTER *prAdapter,
 	ASSERT(prFragInfo);
 
 	/* retrieve Rx payload */
-	prSWRfb->u2HeaderLen = HAL_RX_STATUS_GET_HEADER_LEN(
-				       prRxStatus);
 	prSWRfb->pucPayload = (uint8_t *) ((
 		(unsigned long) prSWRfb->pvHeader) +
 		prSWRfb->u2HeaderLen);
 	prSWRfb->u2PayloadLength =
-		(uint16_t) (HAL_RX_STATUS_GET_RX_BYTE_CNT(prRxStatus) - ((
+		(uint16_t) (prSWRfb->u2RxByteCount - ((
 		unsigned long) prSWRfb->pucPayload -
 		(unsigned long) prRxStatus));
 
@@ -736,7 +646,7 @@ struct SW_RFB *nicRxDefragMPDU(IN struct ADAPTER *prAdapter,
 
 		prFragInfo->pucNextFragStart =
 			(uint8_t *) prSWRfb->pucRecvBuff +
-			HAL_RX_STATUS_GET_RX_BYTE_CNT(prRxStatus);
+			prSWRfb->u2RxByteCount;
 
 		prFragInfo->u2NextFragSeqCtrl = u2SeqCtrl + 1;
 		DBGLOG(RX, LOUD,
@@ -746,10 +656,10 @@ struct SW_RFB *nicRxDefragMPDU(IN struct ADAPTER *prAdapter,
 		/* prSWRfb->fgFragmented = TRUE; */
 		/* whsu: todo for checksum */
 	} else {
-		prFragInfo->pr1stFrag->prRxStatus->u2RxByteCount +=
+		prFragInfo->pr1stFrag->u2RxByteCount +=
 			prSWRfb->u2PayloadLength;
 
-		if (prFragInfo->pr1stFrag->prRxStatus->u2RxByteCount >
+		if (prFragInfo->pr1stFrag->u2RxByteCount >
 		    CFG_RX_MAX_PKT_SIZE) {
 
 			prFragInfo->pr1stFrag->eDst = RX_PKT_DESTINATION_NULL;
@@ -817,7 +727,7 @@ u_int8_t nicRxIsDuplicateFrame(IN OUT struct SW_RFB
 	uint16_t u2SequenceControl, u2FrameCtrl;
 	u_int8_t fgIsDuplicate = FALSE, fgIsAmsduSubframe = FALSE;
 	struct WLAN_MAC_HEADER *prWlanHeader = NULL;
-	struct HW_MAC_RX_DESC *prRxStatus = NULL;
+	void *prRxStatus = NULL;
 	struct HW_MAC_RX_STS_GROUP_4 *prRxStatusGroup4 = NULL;
 
 	DEBUGFUNC("nicRx: Enter rxmIsDuplicateFrame()\n");
@@ -834,9 +744,8 @@ u_int8_t nicRxIsDuplicateFrame(IN OUT struct SW_RFB
 	prRxStatus = prSwRfb->prRxStatus;
 	ASSERT(prRxStatus);
 
-	fgIsAmsduSubframe = HAL_RX_STATUS_GET_PAYLOAD_FORMAT(
-				    prRxStatus);
-	if (HAL_RX_STATUS_IS_HEADER_TRAN(prRxStatus) == FALSE) {
+	fgIsAmsduSubframe = prSwRfb->ucPayloadFormat;
+	if (prSwRfb->fgHdrTran == FALSE) {
 		prWlanHeader = (struct WLAN_MAC_HEADER *) prSwRfb->pvHeader;
 		u2SequenceControl = prSwRfb->u2SequenceControl;
 		u2FrameCtrl = prWlanHeader->u2FrameCtrl;
@@ -1186,7 +1095,6 @@ void nicRxProcessGOBroadcastPkt(IN struct ADAPTER
 	struct SW_RFB *prSwRfbDuplicated;
 	struct TX_CTRL *prTxCtrl;
 	struct RX_CTRL *prRxCtrl;
-	struct HW_MAC_RX_DESC *prRxStatus;
 
 	KAL_SPIN_LOCK_DECLARATION();
 
@@ -1197,9 +1105,6 @@ void nicRxProcessGOBroadcastPkt(IN struct ADAPTER
 
 	prTxCtrl = &prAdapter->rTxCtrl;
 	prRxCtrl = &prAdapter->rRxCtrl;
-
-	prRxStatus = prSwRfb->prRxStatus;
-	ASSERT(prRxStatus);
 
 	ASSERT(CFG_NUM_OF_QM_RX_PKT_NUM >= 16);
 
@@ -1216,7 +1121,7 @@ void nicRxProcessGOBroadcastPkt(IN struct ADAPTER
 		if (prSwRfbDuplicated) {
 			kalMemCopy(prSwRfbDuplicated->pucRecvBuff,
 				   prSwRfb->pucRecvBuff,
-				   ALIGN_4(prRxStatus->u2RxByteCount +
+				   ALIGN_4(prSwRfb->u2RxByteCount +
 					   HIF_RX_HW_APPENDED_LEN));
 
 			prSwRfbDuplicated->ucPacketType = RX_PKT_TYPE_RX_DATA;
@@ -1393,7 +1298,7 @@ void nicRxProcessMonitorPacket(IN struct ADAPTER *prAdapter,
 {
 	struct sk_buff *prSkb = NULL;
 	struct RX_CTRL *prRxCtrl;
-	struct HW_MAC_RX_DESC *prRxStatus;
+	void *prRxStatus;
 	struct HW_MAC_RX_STS_GROUP_2 *prRxStatusGroup2;
 	struct HW_MAC_RX_STS_GROUP_3 *prRxStatusGroup3;
 	struct MONITOR_RADIOTAP rMonitorRadiotap;
@@ -1405,11 +1310,13 @@ void nicRxProcessMonitorPacket(IN struct ADAPTER *prAdapter,
 	uint8_t aucMtkOui[] = VENDOR_OUI_MTK;
 	uint8_t ucRxRate;
 	uint8_t ucRxMode;
-	uint8_t ucChanNum;
+	uint8_t ucChanNum = 0;
 	uint8_t ucMcs;
 	uint8_t ucFrMode;
 	uint8_t ucShortGI;
 	uint32_t u4PhyRate;
+	struct RX_DESC_OPS_T *prRxDescOps;
+	enum ENUM_BAND eBand = 0;
 
 #if CFG_SUPPORT_MULTITHREAD
 	KAL_SPIN_LOCK_DECLARATION();
@@ -1419,6 +1326,7 @@ void nicRxProcessMonitorPacket(IN struct ADAPTER *prAdapter,
 
 	ASSERT(prAdapter);
 	ASSERT(prSwRfb);
+	prRxDescOps = prAdapter->chip_info->prRxDescOps;
 
 	prRxCtrl = &prAdapter->rRxCtrl;
 
@@ -1479,10 +1387,10 @@ void nicRxProcessMonitorPacket(IN struct ADAPTER *prAdapter,
 		(prRxStatusGroup2->u4Timestamp);
 
 	/* Bit Number 1 FLAGS */
-	if (HAL_RX_STATUS_IS_FRAG(prRxStatus) == TRUE)
+	if (prSwRfb->fgIsFrag)
 		rMonitorRadiotap.ucFlags |= BIT(3);
 
-	if (HAL_RX_STATUS_IS_FCS_ERROR(prRxStatus) == TRUE)
+	if (prSwRfb->fgIsFCS)
 		rMonitorRadiotap.ucFlags |= BIT(6);
 
 	/* Bit Number 2 RATE */
@@ -1515,8 +1423,9 @@ void nicRxProcessMonitorPacket(IN struct ADAPTER *prAdapter,
 	else			/* OFDM */
 		rMonitorRadiotap.u2ChFlags |= BIT(6);
 
-	ucChanNum = HAL_RX_STATUS_GET_CHNL_NUM(prRxStatus);
-	if (HAL_RX_STATUS_GET_RF_BAND(prRxStatus) == BAND_2G4) {
+	RX_STATUS_GET(prRxDescOps, ucChanNum, get_ch_num, prRxStatus);
+	RX_STATUS_GET(prRxDescOps, eBand, get_rf_band, prRxStatus);
+	if (eBand == BAND_2G4) {
 		rMonitorRadiotap.u2ChFlags |= BIT(7);
 		rMonitorRadiotap.u2ChFrequency = (ucChanNum * 5 + 2407);
 	} else {		/* BAND_5G */
@@ -1543,8 +1452,8 @@ void nicRxProcessMonitorPacket(IN struct ADAPTER *prAdapter,
 		nicRxFillRadiotapMCS(&rMonitorRadiotap, prRxStatusGroup3);
 
 	/* Bit Number 20 AMPDU */
-	if (HAL_RX_STATUS_IS_AMPDU_SUB_FRAME(prRxStatus)) {
-		if (HAL_RX_STATUS_GET_RXV_SEQ_NO(prRxStatus))
+	if (prSwRfb->fgIsAmpdu) {
+		if (prSwRfb->ucRxvSeqNo)
 			++prRxCtrl->u4AmpduRefNum;
 		rMonitorRadiotap.u4AmpduRefNum = prRxCtrl->u4AmpduRefNum;
 	}
@@ -1631,11 +1540,11 @@ void nicRxProcessDataPacket(IN struct ADAPTER *prAdapter,
 {
 	struct RX_CTRL *prRxCtrl;
 	struct SW_RFB *prRetSwRfb, *prNextSwRfb;
-	struct HW_MAC_RX_DESC *prRxStatus;
 	u_int8_t fgDrop;
 	uint8_t ucBssIndex = 0;
 	struct mt66xx_chip_info *prChipInfo;
 	struct STA_RECORD *prStaRec;
+	struct RX_DESC_OPS_T *prRxDescOps;
 
 	DEBUGFUNC("nicRxProcessDataPacket");
 	/* DBGLOG(INIT, TRACE, ("\n")); */
@@ -1645,69 +1554,22 @@ void nicRxProcessDataPacket(IN struct ADAPTER *prAdapter,
 
 	fgDrop = FALSE;
 
-	prRxStatus = prSwRfb->prRxStatus;
 	prRxCtrl = &prAdapter->rRxCtrl;
 	prChipInfo = prAdapter->chip_info;
+	prRxDescOps = prChipInfo->prRxDescOps;
 
 	/* Check AMPDU_nERR_Bitmap */
 	prSwRfb->fgDataFrame = TRUE;
 	prSwRfb->fgFragFrame = FALSE;
 	prSwRfb->fgReorderBuffer = FALSE;
 
-	/* BA session */
-	if ((prRxStatus->u2StatusFlag & RXS_DW2_AMPDU_nERR_BITMAP)
-	    == RXS_DW2_AMPDU_nERR_VALUE)
-		prSwRfb->fgReorderBuffer = TRUE;
-	/* non BA session */
-	else if ((prRxStatus->u2StatusFlag & RXS_DW2_RX_nERR_BITMAP)
-		 == RXS_DW2_RX_nERR_VALUE) {
-		if ((prRxStatus->u2StatusFlag & RXS_DW2_RX_nDATA_BITMAP) ==
-		    RXS_DW2_RX_nDATA_VALUE)
-			prSwRfb->fgDataFrame = FALSE;
-
-		if ((prRxStatus->u2StatusFlag & RXS_DW2_RX_FRAG_BITMAP) ==
-		    RXS_DW2_RX_FRAG_VALUE)
-			prSwRfb->fgFragFrame = TRUE;
-
-	} else {
+	if (prRxDescOps->nic_rxd_sanity_check)
+		fgDrop = prRxDescOps->nic_rxd_sanity_check(
+			prAdapter, prSwRfb);
+	else {
+		DBGLOG(RX, ERROR,
+			"%s:: no nic_rxd_sanity_check??\n", __func__);
 		fgDrop = TRUE;
-		if (!HAL_RX_STATUS_IS_ICV_ERROR(prRxStatus)
-		    && HAL_RX_STATUS_IS_TKIP_MIC_ERROR(prRxStatus)) {
-			struct STA_RECORD *prStaRec;
-
-			prStaRec = cnmGetStaRecByAddress(prAdapter,
-				prAdapter->prAisBssInfo->ucBssIndex,
-				prAdapter->rWlanInfo.rCurrBssId.arMacAddress);
-			if (prStaRec) {
-				DBGLOG(RSN, EVENT, "MIC_ERR_PKT\n");
-				rsnTkipHandleMICFailure(prAdapter, prStaRec, 0);
-			}
-		}
-#if UNIFIED_MAC_RX_FORMAT
-		else if (HAL_RX_STATUS_IS_LLC_MIS(prRxStatus)
-			 && !HAL_RX_STATUS_IS_ERROR(prRxStatus)
-			 && !FEAT_SUP_LLC_VLAN_RX(prChipInfo)) {
-			uint16_t *pu2EtherType;
-
-			nicRxFillRFB(prAdapter, prSwRfb);
-
-			pu2EtherType = (uint16_t *)
-				((uint8_t *)prSwRfb->pvHeader +
-				2 * MAC_ADDR_LEN);
-
-			/* If ethernet type is VLAN, do not drop it.
-			 * Pass up to driver process
-			 */
-			if (prSwRfb->u2HeaderLen >= ETH_HLEN
-			    && *pu2EtherType == NTOHS(ETH_P_VLAN))
-				fgDrop = FALSE;
-		}
-#else
-		else if (HAL_RX_STATUS_IS_LLC_MIS(prRxStatus)) {
-			DBGLOG(RSN, EVENT, ("LLC_MIS_ERR\n"));
-			fgDrop = TRUE;	/* Drop after send de-auth  */
-		}
-#endif
 	}
 
 #if CFG_TCP_IP_CHKSUM_OFFLOAD || CFG_TCP_IP_CHKSUM_OFFLOAD_NDIS_60
@@ -1730,46 +1592,12 @@ void nicRxProcessDataPacket(IN struct ADAPTER *prAdapter,
 		if (prRetSwRfb != NULL) {
 			GET_CURRENT_SYSTIME(&prRxCtrl->u4LastRxTime);
 			do {
-#if CFG_SUPPORT_MSP
-				if (prRetSwRfb->ucGroupVLD
-					& BIT(RX_GROUP_VLD_3)) {
-					prAdapter->arStaRec[
-					prRetSwRfb->ucStaRecIdx].
-						u4RxVector0 =
-						HAL_RX_VECTOR_GET_RX_VECTOR(
-							prRetSwRfb->
-							prRxStatusGroup3,
-							0);
-
-					prAdapter->arStaRec[
-					prRetSwRfb->ucStaRecIdx].u4RxVector1 =
-						HAL_RX_VECTOR_GET_RX_VECTOR(
-							prRetSwRfb->
-							prRxStatusGroup3,
-							1);
-
-					prAdapter->arStaRec[
-					prRetSwRfb->ucStaRecIdx].u4RxVector2 =
-						HAL_RX_VECTOR_GET_RX_VECTOR(
-							prRetSwRfb->
-							prRxStatusGroup3,
-							2);
-
-					prAdapter->arStaRec[
-					prRetSwRfb->ucStaRecIdx].u4RxVector3 =
-						HAL_RX_VECTOR_GET_RX_VECTOR(
-							prRetSwRfb->
-							prRxStatusGroup3,
-							3);
-
-					prAdapter->arStaRec[
-					prRetSwRfb->ucStaRecIdx].u4RxVector4 =
-						HAL_RX_VECTOR_GET_RX_VECTOR(
-							prRetSwRfb->
-							prRxStatusGroup3,
-							4);
-				}
-#endif
+#if (CFG_SUPPORT_MSP == 1)
+				/* collect RXV information */
+				if (prChipInfo->asicRxProcessRxvforMSP)
+					prChipInfo->asicRxProcessRxvforMSP(
+						prAdapter, prRetSwRfb);
+#endif /* CFG_SUPPORT_MSP == 1 */
 				/* save next first */
 				prNextSwRfb = (struct SW_RFB *)
 					QUEUE_GET_NEXT_ENTRY(
@@ -3246,9 +3074,8 @@ void nicRxProcessMgmtPacket(IN struct ADAPTER *prAdapter,
 	}
 #endif
 #if CFG_SUPPORT_802_11W
-	if (HAL_RX_STATUS_IS_ICV_ERROR(prSwRfb->prRxStatus)) {
-		if (HAL_RX_STATUS_GET_SEC_MODE(prSwRfb->prRxStatus) ==
-		    CIPHER_SUITE_BIP)
+	if (prSwRfb->fgIcvErr) {
+		if (prSwRfb->ucSecMode == CIPHER_SUITE_BIP)
 			DBGLOG(RSN, INFO, "[MFP] RX with BIP ICV ERROR\n");
 		else
 			DBGLOG(RSN, INFO, "[MFP] RX with ICV ERROR\n");
@@ -3295,161 +3122,138 @@ void nicRxProcessMsduReport(IN struct ADAPTER *prAdapter,
 static void nicRxCheckWakeupReason(struct ADAPTER *prAdapter,
 				   struct SW_RFB *prSwRfb)
 {
+	struct RX_DESC_OPS_T *prRxDescOps;
+
+	prRxDescOps = prAdapter->chip_info->prRxDescOps;
+	if (prRxDescOps->nic_rxd_check_wakeup_reason)
+		prRxDescOps->nic_rxd_check_wakeup_reason(prAdapter, prSwRfb);
+	else
+		DBGLOG(RX, ERROR,
+			"%s:: no nic_rxd_check_wakeup_reason??\n",
+			__func__);
+}
+#endif /* CFG_SUPPORT_WAKEUP_REASON_DEBUG */
+
+static void nicRxProcessPacketType(
+	struct ADAPTER *prAdapter,
+	struct SW_RFB *prSwRfb)
+{
+	struct RX_CTRL *prRxCtrl;
 	struct mt66xx_chip_info *prChipInfo;
-	struct WIFI_EVENT *prEvent;
-	uint8_t *pvHeader = NULL;
-	struct HW_MAC_RX_DESC *prRxStatus;
-	uint16_t u2PktLen = 0;
-	uint32_t u4HeaderOffset;
 
-	ASSERT(prAdapter);
+	prRxCtrl = &prAdapter->rRxCtrl;
 	prChipInfo = prAdapter->chip_info;
-
-	if (!prSwRfb)
-		return;
-
-	prRxStatus = prSwRfb->prRxStatus;
-	if (!prRxStatus)
-		return;
-
-	prSwRfb->ucGroupVLD = (uint8_t) HAL_RX_STATUS_GET_GROUP_VLD(prRxStatus);
-
 	switch (prSwRfb->ucPacketType) {
 	case RX_PKT_TYPE_RX_DATA:
-	{
-		uint16_t u2Temp = 0;
-
-		u2PktLen = HAL_RX_STATUS_GET_RX_BYTE_CNT(prRxStatus);
-		u4HeaderOffset = (uint32_t)
-			(HAL_RX_STATUS_GET_HEADER_OFFSET(prRxStatus));
-		u2Temp = prChipInfo->rxd_size;
-		if (prSwRfb->ucGroupVLD & BIT(RX_GROUP_VLD_4))
-			u2Temp += sizeof(struct HW_MAC_RX_STS_GROUP_4);
-		if (prSwRfb->ucGroupVLD & BIT(RX_GROUP_VLD_1))
-			u2Temp += sizeof(struct HW_MAC_RX_STS_GROUP_1);
-		if (prSwRfb->ucGroupVLD & BIT(RX_GROUP_VLD_2))
-			u2Temp += sizeof(struct HW_MAC_RX_STS_GROUP_2);
-		if (prSwRfb->ucGroupVLD & BIT(RX_GROUP_VLD_3))
-			u2Temp += sizeof(struct HW_MAC_RX_STS_GROUP_3);
-		pvHeader = (uint8_t *)prRxStatus + u2Temp + u4HeaderOffset;
-		u2PktLen -= u2Temp + u4HeaderOffset;
-		if (!pvHeader) {
-			DBGLOG(RX, ERROR,
-				"data packet but pvHeader is NULL!\n");
+		if (HAL_IS_RX_DIRECT(prAdapter)
+			&& HAL_MON_EN(prAdapter)) {
+			spin_lock_bh(
+				&prAdapter->prGlueInfo->
+				rSpinLock[
+				SPIN_LOCK_RX_DIRECT]);
+			nicRxProcessMonitorPacket(
+				prAdapter, prSwRfb);
+			spin_unlock_bh(
+				&prAdapter->prGlueInfo->
+				rSpinLock[
+				SPIN_LOCK_RX_DIRECT]);
+			break;
+		} else if (HAL_MON_EN(prAdapter)) {
+			nicRxProcessMonitorPacket(
+				prAdapter, prSwRfb);
 			break;
 		}
-		if ((prRxStatus->u2StatusFlag & (RXS_DW2_RX_nERR_BITMAP |
-			RXS_DW2_RX_nDATA_BITMAP)) == RXS_DW2_RX_nDATA_VALUE) {
-			struct WLAN_MAC_HEADER *prWlanMacHeader =
-				(struct WLAN_MAC_HEADER *)pvHeader;
-
-			if ((prWlanMacHeader->u2FrameCtrl & MASK_FRAME_TYPE) ==
-				MAC_FRAME_BLOCK_ACK_REQ) {
-				DBGLOG(RX, INFO,
-					"BAR frame[SSN:%d, TID:%d] wakeup host\n",
-					prSwRfb->u2SSN, prSwRfb->ucTid);
-				break;
-			}
-		}
-		u2Temp = (pvHeader[ETH_TYPE_LEN_OFFSET] << 8) |
-			 (pvHeader[ETH_TYPE_LEN_OFFSET + 1]);
-
-		switch (u2Temp) {
-		case ETH_P_IPV4:
-			u2Temp = *(uint16_t *) &pvHeader[ETH_HLEN + 4];
-			DBGLOG(RX, INFO,
-				"IP Packet from:%d.%d.%d.%d, IP ID 0x%04x wakeup host\n",
-				pvHeader[ETH_HLEN + 12],
-				pvHeader[ETH_HLEN + 13],
-				pvHeader[ETH_HLEN + 14],
-				pvHeader[ETH_HLEN + 15], u2Temp);
-			break;
-		case ETH_P_ARP:
-			break;
-		case ETH_P_1X:
-		case ETH_P_PRE_1X:
-#if CFG_SUPPORT_WAPI
-		case ETH_WPI_1X:
-#endif
-		case ETH_P_AARP:
-		case ETH_P_IPV6:
-		case ETH_P_IPX:
-		case 0x8100: /* VLAN */
-		case 0x890d: /* TDLS */
-			DBGLOG(RX, INFO,
-				"Data Packet, EthType 0x%04x wakeup host\n",
-				u2Temp);
-			break;
-		default:
-			DBGLOG(RX, WARN,
-				"abnormal packet, EthType 0x%04x wakeup host\n",
-				u2Temp);
-			DBGLOG_MEM8(RX, INFO,
-				pvHeader, u2PktLen > 50 ? 50:u2PktLen);
-			break;
+		if (HAL_IS_RX_DIRECT(prAdapter)) {
+			spin_lock_bh(
+				&prAdapter->prGlueInfo->
+				rSpinLock[
+				SPIN_LOCK_RX_DIRECT]);
+			nicRxProcessDataPacket(
+				prAdapter,
+				prSwRfb);
+			spin_unlock_bh(
+				&prAdapter->prGlueInfo->
+				rSpinLock[
+				SPIN_LOCK_RX_DIRECT]);
+		} else {
+			nicRxProcessDataPacket(
+				prAdapter,
+				prSwRfb);
 		}
 		break;
-	}
+
 	case RX_PKT_TYPE_SW_DEFINED:
 		/* HIF_RX_PKT_TYPE_EVENT */
-		if ((prSwRfb->prRxStatus->u2PktTYpe &
-			RXM_RXD_PKT_TYPE_SW_BITMAP) ==
-			RXM_RXD_PKT_TYPE_SW_EVENT) {
-
-			prEvent = (struct WIFI_EVENT *)
-				(prSwRfb->pucRecvBuff + prChipInfo->rxd_size);
-
-			DBGLOG(RX, INFO, "Event 0x%02x wakeup host\n",
-				prEvent->ucEID);
-			break;
-
+		if ((NIC_RX_GET_U2_SW_PKT_TYPE(
+			prSwRfb->prRxStatus) &
+		     prChipInfo->u2RxSwPktBitMap) ==
+		    prChipInfo->u2RxSwPktEvent) {
+			nicRxProcessEventPacket(
+				prAdapter,
+				prSwRfb);
 		}
 		/* case HIF_RX_PKT_TYPE_MANAGEMENT: */
-		else if ((prSwRfb->prRxStatus->u2PktTYpe &
-			RXM_RXD_PKT_TYPE_SW_BITMAP) ==
-			RXM_RXD_PKT_TYPE_SW_FRAME) {
-			uint8_t ucSubtype;
-			struct WLAN_MAC_MGMT_HEADER *prWlanMgmtHeader;
-			uint16_t u2Temp = prChipInfo->rxd_size;
-
-			u4HeaderOffset = (uint32_t)
-				(HAL_RX_STATUS_GET_HEADER_OFFSET(prRxStatus));
-			if (prSwRfb->ucGroupVLD & BIT(RX_GROUP_VLD_4))
-				u2Temp += sizeof(struct HW_MAC_RX_STS_GROUP_4);
-			if (prSwRfb->ucGroupVLD & BIT(RX_GROUP_VLD_1))
-				u2Temp += sizeof(struct HW_MAC_RX_STS_GROUP_1);
-			if (prSwRfb->ucGroupVLD & BIT(RX_GROUP_VLD_2))
-				u2Temp += sizeof(struct HW_MAC_RX_STS_GROUP_2);
-			if (prSwRfb->ucGroupVLD & BIT(RX_GROUP_VLD_3))
-				u2Temp += sizeof(struct HW_MAC_RX_STS_GROUP_3);
-			pvHeader = (uint8_t *)
-				prRxStatus + u2Temp + u4HeaderOffset;
-			if (!pvHeader) {
-				DBGLOG(RX, ERROR,
-					"Mgmt Frame but pvHeader is NULL!\n");
-				break;
-			}
-			prWlanMgmtHeader =
-				(struct WLAN_MAC_MGMT_HEADER *)pvHeader;
-			ucSubtype = (prWlanMgmtHeader->u2FrameCtrl &
-				MASK_FC_SUBTYPE) >> OFFSET_OF_FC_SUBTYPE;
-			DBGLOG(RX, INFO,
-				"MGMT frame subtype: %d SeqCtrl %d wakeup host\n",
-				ucSubtype, prWlanMgmtHeader->u2SeqCtrl);
+		else if ((NIC_RX_GET_U2_SW_PKT_TYPE(
+				prSwRfb->prRxStatus)
+			& prChipInfo->u2RxSwPktBitMap)
+			== prChipInfo->u2RxSwPktFrame){
+			/* OFLD pkts should go data flow
+			 * 1: EAPOL
+			 * 2: ARP / NS
+			 * 3: TDLS
+			 */
+			RX_STATUS_GET(
+				prChipInfo->prRxDescOps,
+				prSwRfb->ucOFLD,
+				get_ofld,
+				prSwRfb->prRxStatus);
+			if (prSwRfb->ucOFLD)
+				nicRxProcessDataPacket(
+				prAdapter, prSwRfb);
+			else
+				nicRxProcessMgmtPacket(
+				prAdapter, prSwRfb);
 		} else {
 			DBGLOG(RX, ERROR,
-				"[%s]ERROR: u2PktTYpe(0x%04X) is OUT OF DEF.!!!\n",
-				__func__, prSwRfb->prRxStatus->u2PktTYpe);
-			ASSERT(0);
+				"u2PktTYpe(0x%04X) is OUT OF DEF.!!!\n",
+			  NIC_RX_GET_U2_SW_PKT_TYPE(
+				prSwRfb->prRxStatus));
+			DBGLOG_MEM8(RX, ERROR,
+				prSwRfb->pucRecvBuff,
+				prSwRfb->u2RxByteCount);
+
+			/*ASSERT(0);*/
+			nicRxReturnRFB(prAdapter,
+				prSwRfb);
+			RX_INC_CNT(prRxCtrl,
+				RX_TYPE_ERR_DROP_COUNT);
+			RX_INC_CNT(prRxCtrl,
+				RX_DROP_TOTAL_COUNT);
+
 		}
 		break;
+
+	case RX_PKT_TYPE_MSDU_REPORT:
+		nicRxProcessMsduReport(prAdapter,
+			prSwRfb);
+		break;
+
+	/* case HIF_RX_PKT_TYPE_TX_LOOPBACK: */
+	/* case HIF_RX_PKT_TYPE_MANAGEMENT: */
+	case RX_PKT_TYPE_TX_STATUS:
+	case RX_PKT_TYPE_RX_VECTOR:
+	case RX_PKT_TYPE_TM_REPORT:
 	default:
-		DBGLOG(RX, WARN, "Unknown Packet %d wakeup host\n",
-			prSwRfb->ucPacketType);
+		nicRxReturnRFB(prAdapter, prSwRfb);
+		RX_INC_CNT(prRxCtrl,
+			RX_TYPE_ERR_DROP_COUNT);
+		RX_INC_CNT(prRxCtrl,
+			RX_DROP_TOTAL_COUNT);
+		DBGLOG(RX, ERROR, "ucPacketType = %d\n",
+		       prSwRfb->ucPacketType);
 		break;
 	}
 }
-#endif
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -3467,7 +3271,6 @@ void nicRxProcessRFBs(IN struct ADAPTER *prAdapter)
 	struct QUE rTempRfbList;
 	struct QUE *prTempRfbList = &rTempRfbList;
 	uint32_t u4RxLoopCount, u4Tick;
-	struct mt66xx_chip_info *prChipInfo;
 
 	KAL_SPIN_LOCK_DECLARATION();
 
@@ -3511,114 +3314,10 @@ void nicRxProcessRFBs(IN struct ADAPTER *prAdapter)
 							       prSwRfb);
 #endif
 
-				switch (prSwRfb->ucPacketType) {
-				case RX_PKT_TYPE_RX_DATA:
-					if (HAL_IS_RX_DIRECT(prAdapter)
-						&& HAL_MON_EN(prAdapter)) {
-						spin_lock_bh(
-							&prAdapter->prGlueInfo->
-							rSpinLock[
-							SPIN_LOCK_RX_DIRECT]);
-						nicRxProcessMonitorPacket(
-							prAdapter, prSwRfb);
-						spin_unlock_bh(
-							&prAdapter->prGlueInfo->
-							rSpinLock[
-							SPIN_LOCK_RX_DIRECT]);
-						break;
-					} else if (HAL_MON_EN(prAdapter)) {
-						nicRxProcessMonitorPacket(
-							prAdapter, prSwRfb);
-						break;
-					}
-					if (HAL_IS_RX_DIRECT(prAdapter)) {
-						spin_lock_bh(
-							&prAdapter->prGlueInfo->
-							rSpinLock[
-							SPIN_LOCK_RX_DIRECT]);
-						nicRxProcessDataPacket(
-							prAdapter,
-							prSwRfb);
-						spin_unlock_bh(
-							&prAdapter->prGlueInfo->
-							rSpinLock[
-							SPIN_LOCK_RX_DIRECT]);
-					} else {
-						nicRxProcessDataPacket(
-							prAdapter,
-							prSwRfb);
-					}
-					break;
-
-				case RX_PKT_TYPE_SW_DEFINED:
-					/* HIF_RX_PKT_TYPE_EVENT */
-					prChipInfo = prAdapter->chip_info;
-					if ((prSwRfb->prRxStatus->u2PktTYpe &
-					     prChipInfo->u2RxSwPktBitMap) ==
-					    prChipInfo->u2RxSwPktEvent) {
-						nicRxProcessEventPacket(
-							prAdapter,
-							prSwRfb);
-					}
-					/* case HIF_RX_PKT_TYPE_MANAGEMENT: */
-					else if (
-						(prSwRfb->prRxStatus->u2PktTYpe
-						& prChipInfo->u2RxSwPktBitMap)
-						== prChipInfo->u2RxSwPktFrame){
-						/* OFLD pkts should go data flow
-						 * 1: EAPOL
-						 * 2: ARP / NS
-						 * 3: TDLS
-						 */
-						if (HAL_RX_STATUS_GET_OFLD(
-							prSwRfb->prRxStatus))
-							nicRxProcessDataPacket(
-							prAdapter, prSwRfb);
-						else
-							nicRxProcessMgmtPacket(
-							prAdapter, prSwRfb);
-					} else {
-						DBGLOG(RX, ERROR,
-							"u2PktTYpe(0x%04X) is OUT OF DEF.!!!\n",
-						  prSwRfb->prRxStatus->
-						  u2PktTYpe);
-						DBGLOG_MEM8(RX, ERROR,
-							prSwRfb->pucRecvBuff,
-							prSwRfb->prRxStatus->
-							u2RxByteCount);
-
-						/*ASSERT(0);*/
-						nicRxReturnRFB(prAdapter,
-							prSwRfb);
-						RX_INC_CNT(prRxCtrl,
-							RX_TYPE_ERR_DROP_COUNT);
-						RX_INC_CNT(prRxCtrl,
-							RX_DROP_TOTAL_COUNT);
-
-					}
-					break;
-
-				case RX_PKT_TYPE_MSDU_REPORT:
-					nicRxProcessMsduReport(prAdapter,
-						prSwRfb);
-					break;
-
-				/* case HIF_RX_PKT_TYPE_TX_LOOPBACK: */
-				/* case HIF_RX_PKT_TYPE_MANAGEMENT: */
-				case RX_PKT_TYPE_TX_STATUS:
-				case RX_PKT_TYPE_RX_VECTOR:
-				case RX_PKT_TYPE_TM_REPORT:
-				default:
-					nicRxReturnRFB(prAdapter, prSwRfb);
-					RX_INC_CNT(prRxCtrl,
-						RX_TYPE_ERR_DROP_COUNT);
-					RX_INC_CNT(prRxCtrl,
-						RX_DROP_TOTAL_COUNT);
-					DBGLOG(RX, ERROR, "ucPacketType = %d\n",
-					       prSwRfb->ucPacketType);
-					break;
-				}
-
+				/* Too many leading tabs -
+				 * consider code refactoring
+				 */
+				nicRxProcessPacketType(prAdapter, prSwRfb);
 			}
 
 			if (prRxCtrl->ucNumIndPacket > 0) {
@@ -3680,8 +3379,7 @@ uint32_t nicRxSetupRFB(IN struct ADAPTER *prAdapter,
 					   prRxStatus)));
 	}
 
-	prSwRfb->prRxStatus = (struct HW_MAC_RX_DESC *) (
-				      prSwRfb->pucRecvBuff);
+	prSwRfb->prRxStatus = prSwRfb->pucRecvBuff;
 
 	return WLAN_STATUS_SUCCESS;
 
@@ -4111,15 +3809,13 @@ uint32_t nicRxProcessActionFrame(IN struct ADAPTER *
 				   (prAdapter->rWifiVar.rAisSpecificBssInfo);
 
 		DBGLOG(RSN, INFO,
-		       "[Rx]RobustAction %x %x %x\n",
-		       prSwRfb->prRxStatus->u2StatusFlag,
-		       prSwRfb->prRxStatus->ucWlanIdx,
-		       prSwRfb->prRxStatus->ucTidSecMode);
+		       "[Rx]RobustAction %x %x\n",
+		       prSwRfb->ucWlanIdx,
+		       prSwRfb->ucSecMode);
 
 		if (prAisSpecBssInfo->fgMgmtProtection
 		    && (!(prActFrame->u2FrameCtrl & MASK_FC_PROTECTED_FRAME)
-			&& (HAL_RX_STATUS_GET_SEC_MODE(prSwRfb->prRxStatus) ==
-			    CIPHER_SUITE_CCMP))) {
+			&& (prSwRfb->ucSecMode == CIPHER_SUITE_CCMP))) {
 			DBGLOG(RSN, INFO,
 			       "[MFP] Not handle and drop un-protected robust action frame!!\n");
 			return WLAN_STATUS_INVALID_PACKET;
@@ -4305,85 +4001,20 @@ uint32_t nicRxProcessActionFrame(IN struct ADAPTER *
  * @retval
  */
 /*----------------------------------------------------------------------------*/
-uint8_t
-nicRxGetRcpiValueFromRxv(IN uint8_t ucRcpiMode,
-	IN struct SW_RFB *prSwRfb) {
-	uint8_t ucRcpi0, ucRcpi1;
-	uint8_t ucRcpiValue = 0;
-	uint8_t ucRxNum;
+uint8_t nicRxGetRcpiValueFromRxv(
+	IN struct ADAPTER *prAdapter,
+	IN uint8_t ucRcpiMode,
+	IN struct SW_RFB *prSwRfb)
+{
+	struct mt66xx_chip_info *prChipInfo;
 
-	ASSERT(prSwRfb);
-
-	if (ucRcpiMode >= RCPI_MODE_NUM) {
-		DBGLOG(RX, WARN,
-		       "Rcpi Mode = %d is invalid for getting uint8_t value from RXV\n",
-		       ucRcpiMode);
+	prChipInfo = prAdapter->chip_info;
+	if (prChipInfo->asicRxGetRcpiValueFromRxv)
+		return prChipInfo->asicRxGetRcpiValueFromRxv(
+				ucRcpiMode, prSwRfb);
+	else {
+		DBGLOG(RX, ERROR, "%s: no asicRxGetRcpiValueFromRxv ??\n",
+			__func__);
 		return 0;
 	}
-
-	ucRcpi0 = HAL_RX_STATUS_GET_RCPI0(
-			  prSwRfb->prRxStatusGroup3);
-	ucRcpi1 = HAL_RX_STATUS_GET_RCPI1(
-			  prSwRfb->prRxStatusGroup3);
-	ucRxNum = HAL_RX_STATUS_GET_RX_NUM(
-			  prSwRfb->prRxStatusGroup3);
-
-	if (ucRxNum == 0)
-		ucRcpiValue =
-			ucRcpi0; /*0:1R, BBP always report RCPI0 at 1R mode*/
-
-	else if (ucRxNum == 1) {
-		switch (ucRcpiMode) {
-		case RCPI_MODE_WF0:
-			ucRcpiValue = ucRcpi0;
-			break;
-
-		case RCPI_MODE_WF1:
-			ucRcpiValue = ucRcpi1;
-			break;
-
-		case RCPI_MODE_WF2:
-		case RCPI_MODE_WF3:
-			DBGLOG(RX, WARN,
-			       "Rcpi Mode = %d is invalid for device with only 2 antenna, use default rcpi0\n",
-			       ucRcpiMode);
-			ucRcpiValue = ucRcpi0;
-			break;
-
-		case RCPI_MODE_AVG: /*Not recommended for CBW80+80*/
-			if (ucRcpi0 <= RCPI_HIGH_BOUND &&
-				ucRcpi1 <= RCPI_HIGH_BOUND)
-				ucRcpiValue = (ucRcpi0 + ucRcpi1) / 2;
-			else
-				ucRcpiValue = ucRcpi0 <= RCPI_HIGH_BOUND ?
-					(ucRcpi0) : (ucRcpi1);
-			break;
-
-		case RCPI_MODE_MAX:
-			if (ucRcpi0 <= RCPI_HIGH_BOUND &&
-				ucRcpi1 <= RCPI_HIGH_BOUND)
-				ucRcpiValue =
-					(ucRcpi0 > ucRcpi1) ?
-					(ucRcpi0) : (ucRcpi1);
-			else
-				ucRcpiValue = ucRcpi0 <= RCPI_HIGH_BOUND ?
-					(ucRcpi0) : (ucRcpi1);
-			break;
-
-		case RCPI_MODE_MIN:
-			ucRcpiValue =
-				(ucRcpi0 < ucRcpi1) ? (ucRcpi0) : (ucRcpi1);
-			break;
-
-		default:
-			break;
-		}
-	} else {
-		DBGLOG(RX, WARN,
-		       "RX_NUM = %d is invalid for getting uint8_t value from RXV\n",
-		       ucRxNum);
-		return 0;
-	}
-
-	return ucRcpiValue;
 }

@@ -187,6 +187,7 @@ struct BUS_INFO mt7663_bus_info = {
 	.u4device_vender_request_out = DEVICE_VENDOR_REQUEST_OUT,
 	.asicUsbSuspend = asicUsbSuspend,
 	.asicUsbEventEpDetected = asicUsbEventEpDetected,
+	.asicUsbRxByteCount = NULL,
 #endif /* _HIF_USB */
 #if defined(_HIF_SDIO)
 	.halTxGetFreeResource = halTxGetFreeResource_v1,
@@ -208,6 +209,9 @@ struct TX_DESC_OPS_T mt7663TxDescOps = {
 	.fillNicAppend = fillNicTxDescAppend,
 	.fillHifAppend = fillTxDescAppendByHostV2,
 	.fillTxByteCount = fillTxDescTxByteCount,
+};
+
+struct RX_DESC_OPS_T mt7663RxDescOps = {
 };
 
 #if CFG_SUPPORT_QA_TOOL
@@ -241,6 +245,7 @@ struct mt66xx_chip_info mt66xx_chip_info_mt7663 = {
 	.bus_info = &mt7663_bus_info,
 	.fw_dl_ops = &mt7663_fw_dl_ops,
 	.prTxDescOps = &mt7663TxDescOps,
+	.prRxDescOps = &mt7663RxDescOps,
 #if CFG_SUPPORT_QA_TOOL
 	.prAteOps = &mt7663AteOps,
 #endif

@@ -1291,10 +1291,12 @@ uint32_t bssProcessProbeRequest(IN struct ADAPTER *prAdapter,
 	u_int8_t fgIsBcBssid;
 	u_int8_t fgReplyProbeResp;
 	uint32_t u4CtrlFlagsForProbeResp = 0;
-	enum ENUM_BAND eBand;
-	uint8_t ucHwChannelNum;
+	enum ENUM_BAND eBand = 0;
+	uint8_t ucHwChannelNum = 0;
+	struct RX_DESC_OPS_T *prRxDescOps;
 
 	ASSERT(prSwRfb);
+	prRxDescOps = prAdapter->chip_info->prRxDescOps;
 
 	/* 4 <1> Parse Probe Req and Get BSSID */
 	prMgtHdr = (struct WLAN_MAC_MGMT_HEADER *)prSwRfb->pvHeader;
@@ -1320,9 +1322,17 @@ uint32_t bssProcessProbeRequest(IN struct ADAPTER *prAdapter,
 					prMgtHdr->aucBSSID))
 			continue;
 
-		eBand = HAL_RX_STATUS_GET_RF_BAND(prSwRfb->prRxStatus);
-		ucHwChannelNum =
-		    HAL_RX_STATUS_GET_CHNL_NUM(prSwRfb->prRxStatus);
+		RX_STATUS_GET(
+			prRxDescOps,
+			eBand,
+			get_rf_band,
+			prSwRfb->prRxStatus);
+
+		RX_STATUS_GET(
+			prRxDescOps,
+			ucHwChannelNum,
+			get_ch_num,
+			prSwRfb->prRxStatus);
 
 		if (prBssInfo->eBand != eBand)
 			continue;

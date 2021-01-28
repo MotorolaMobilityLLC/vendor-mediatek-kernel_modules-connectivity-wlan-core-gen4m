@@ -720,7 +720,9 @@ static void wmmRemoveTSM(struct ADAPTER *prAdapter,
 			return;
 		}
 		prStaRec = prAdapter->prAisBssInfo->prStaRecOfAP;
-		nicTxChangeDataPortByAc(prStaRec, prActiveTsm->prTsmReq->ucACI,
+		nicTxChangeDataPortByAc(prAdapter,
+					prStaRec,
+					prActiveTsm->prTsmReq->ucACI,
 					FALSE);
 		rTsmStatistics.ucBssIdx = prAdapter->prAisBssInfo->ucBssIndex;
 		rTsmStatistics.ucEnabled = FALSE;
@@ -805,7 +807,10 @@ void wmmStartTsmMeasurement(struct ADAPTER *prAdapter, unsigned long ulParam)
 			if (prActiveTsmReq->prTsmReq->u2Duration ||
 			    prActiveTsmReq->prTsmReq->ucACI != prTsmReq->ucACI)
 				continue;
-			nicTxChangeDataPortByAc(prStaRec, prTsmReq->ucACI,
+			nicTxChangeDataPortByAc(
+				prAdapter,
+				prStaRec,
+				prTsmReq->ucACI,
 						FALSE);
 			rTsmStatistics.ucBssIdx =
 				prAdapter->prAisBssInfo->ucBssIndex;
@@ -855,7 +860,7 @@ void wmmStartTsmMeasurement(struct ADAPTER *prAdapter, unsigned long ulParam)
 			prTsmReq->rTriggerCond.ucDelayThreshold;
 		rTsmStatistics.ucBin0Range = prTsmReq->ucB0Range;
 	}
-	nicTxChangeDataPortByAc(prStaRec, prTsmReq->ucACI, TRUE);
+	nicTxChangeDataPortByAc(prAdapter, prStaRec, prTsmReq->ucACI, TRUE);
 	prActiveTsmReq->prTsmReq = prTsmReq;
 	rTsmStatistics.ucBssIdx = prAdapter->prAisBssInfo->ucBssIndex;
 	rTsmStatistics.ucAcIndex = prTsmReq->ucACI;
@@ -1192,6 +1197,7 @@ void wmmComposeTsmRpt(struct ADAPTER *prAdapter, struct CMD_INFO *prCmdInfo,
 				continue;
 
 			nicTxChangeDataPortByAc(
+				prAdapter,
 				prAdapter->prAisBssInfo->prStaRecOfAP,
 				prTsmReq->ucACI, TRUE);
 			kalMemZero(&rTsmStatistics, sizeof(rTsmStatistics));

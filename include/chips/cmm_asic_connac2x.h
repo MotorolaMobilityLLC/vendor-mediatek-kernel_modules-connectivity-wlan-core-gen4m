@@ -223,8 +223,7 @@
 #define CONNAC2X_USB_CMDPKT2WM	0
 #define CONNAC2X_USB_CMDPKT2WA	1
 
-#define CONNAC2X_LEN_USB_RX_PADDING_CSO          (0)	/*HW design spec */
-#define CONNAC2X_LEN_USB_RX_PADDING_RX_INFO      (4)	/*HW design spec */
+#define CONNAC2X_LEN_USB_RX_PADDING_CSO          (4)	/*HW design spec */
 #endif /* _HIF_USB */
 
 /*------------------------------------------------------------------------*/
@@ -995,7 +994,17 @@ void fillTxDescTxByteCountWithWaCpu(
 	struct ADAPTER *prAdapter,
 	struct MSDU_INFO *prMsduInfo,
 	void *prTxDesc);
-
+void asicConnac2xInitTxdHook(
+	struct TX_DESC_OPS_T *prTxDescOps);
+void asicConnac2xInitRxdHook(
+	struct RX_DESC_OPS_T *prRxDescOps);
+#if (CFG_SUPPORT_MSP == 1)
+void asicConnac2xRxProcessRxvforMSP(IN struct ADAPTER *prAdapter,
+	IN OUT struct SW_RFB *prRetSwRfb);
+#endif /* CFG_SUPPORT_MSP == 1 */
+uint8_t asicConnac2xRxGetRcpiValueFromRxv(
+	IN uint8_t ucRcpiMode,
+	IN struct SW_RFB *prSwRfb);
 /*******************************************************************************
 *                  D E B U G F U N C T I O N   D E C L A R A T I O N S
 ********************************************************************************
@@ -1053,7 +1062,6 @@ u_int32_t asic_connac2x_show_rx_rssi_info(
 	char *pcCommand,
 	int32_t i4TotalLen,
 	uint8_t ucStaIdx);
-
 #endif /* CFG_SUPPORT_CONNAC2X == 1 */
 #endif /* _CMM_ASIC_CONNAC2X_H */
 

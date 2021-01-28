@@ -1098,9 +1098,10 @@ void halRxReceiveRFBs(IN struct ADAPTER *prAdapter, uint32_t u4Port)
 	struct RX_CTRL *prRxCtrl;
 	struct SW_RFB *prSwRfb = (struct SW_RFB *) NULL;
 	uint8_t *pucBuf = NULL;
-	struct HW_MAC_RX_DESC *prRxStatus;
+	void *prRxStatus;
 	u_int8_t fgStatus;
 	uint32_t u4RxCnt;
+	struct RX_DESC_OPS_T *prRxDescOps;
 
 	KAL_SPIN_LOCK_DECLARATION();
 
@@ -1110,6 +1111,13 @@ void halRxReceiveRFBs(IN struct ADAPTER *prAdapter, uint32_t u4Port)
 
 	prRxCtrl = &prAdapter->rRxCtrl;
 	ASSERT(prRxCtrl);
+	prRxDescOps = prAdapter->chip_info->prRxDescOps;
+	ASSERT(prRxDescOps->nic_rxd_get_rx_byte_count);
+	ASSERT(prRxDescOps->nic_rxd_get_pkt_type);
+	ASSERT(prRxDescOps->nic_rxd_get_wlan_idx);
+#if DBG
+	ASSERT(prRxDescOps->nic_rxd_get_sec_mode);
+#endif /* DBG */
 
 	u4RxCnt = halWpdmaGetRxDmaDoneCnt(prAdapter->prGlueInfo, u4Port);
 
@@ -1151,12 +1159,14 @@ void halRxReceiveRFBs(IN struct ADAPTER *prAdapter, uint32_t u4Port)
 		prRxStatus = prSwRfb->prRxStatus;
 		ASSERT(prRxStatus);
 
-		prSwRfb->ucPacketType = (uint8_t)
-			HAL_RX_STATUS_GET_PKT_TYPE(prRxStatus);
+		prSwRfb->ucPacketType =
+			prRxDescOps->nic_rxd_get_pkt_type(prRxStatus);
+#if DBG
 		DBGLOG_LIMITED(RX, LOUD, "ucPacketType = %u, ucSecMode = %u\n",
 				  prSwRfb->ucPacketType,
-				  (uint8_t)HAL_RX_STATUS_GET_SEC_MODE(
+				  prRxDescOps->nic_rxd_get_sec_mode(
 					prRxStatus));
+#endif /* DBG */
 
 		if (prSwRfb->ucPacketType == RX_PKT_TYPE_MSDU_REPORT) {
 			nicRxProcessMsduReport(prAdapter, prSwRfb);
@@ -1169,9 +1179,9 @@ void halRxReceiveRFBs(IN struct ADAPTER *prAdapter, uint32_t u4Port)
 		GLUE_RX_SET_PKT_RX_TIME(prSwRfb->pvPacket, sched_clock());
 
 		prSwRfb->ucStaRecIdx =
-			secGetStaIdxByWlanIdx(prAdapter,
-				(uint8_t)HAL_RX_STATUS_GET_WLAN_IDX(
-				prRxStatus));
+			secGetStaIdxByWlanIdx(
+				prAdapter,
+				prRxDescOps->nic_rxd_get_wlan_idx(prRxStatus));
 
 		KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_RX_QUE);
 		QUEUE_INSERT_TAIL(&prRxCtrl->rReceivedRfbList,

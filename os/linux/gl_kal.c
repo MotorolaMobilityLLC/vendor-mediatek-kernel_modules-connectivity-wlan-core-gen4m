@@ -5312,8 +5312,7 @@ void kalIndicateRxMgmtFrame(IN struct GLUE_INFO *prGlueInfo,
 			break;
 		}
 
-		ucChnlNum = (uint8_t) HAL_RX_STATUS_GET_CHNL_NUM(
-							prSwRfb->prRxStatus);
+		ucChnlNum = prSwRfb->ucChnlNum;
 
 		i4Freq = nicChannelNum2Freq(ucChnlNum) / 1000;
 
@@ -5327,6 +5326,7 @@ void kalIndicateRxMgmtFrame(IN struct GLUE_INFO *prGlueInfo,
 		cfg80211_rx_mgmt(prGlueInfo->prDevHandler->ieee80211_ptr,
 			i4Freq,	/* in MHz */
 			RCPI_TO_dBm((uint8_t) nicRxGetRcpiValueFromRxv(
+			prGlueInfo->prAdapter,
 			RCPI_MODE_MAX, prSwRfb)),
 			prSwRfb->pvHeader, prSwRfb->u2PacketLen,
 			NL80211_RXMGMT_FLAG_ANSWERED);
@@ -5335,7 +5335,8 @@ void kalIndicateRxMgmtFrame(IN struct GLUE_INFO *prGlueInfo,
 		cfg80211_rx_mgmt(prGlueInfo->prDevHandler->ieee80211_ptr,
 			i4Freq,	/* in MHz */
 			RCPI_TO_dBm((uint8_t)
-			nicRxGetRcpiValueFromRxv(RCPI_MODE_WF0, prSwRfb)),
+			nicRxGetRcpiValueFromRxv(
+				prGlueInfo->prAdapter, RCPI_MODE_WF0, prSwRfb)),
 			prSwRfb->pvHeader, prSwRfb->u2PacketLen,
 			NL80211_RXMGMT_FLAG_ANSWERED,
 			GFP_ATOMIC);
@@ -5343,7 +5344,8 @@ void kalIndicateRxMgmtFrame(IN struct GLUE_INFO *prGlueInfo,
 		cfg80211_rx_mgmt(prGlueInfo->prDevHandler->ieee80211_ptr,
 			i4Freq,	/* in MHz */
 			RCPI_TO_dBm((uint8_t)
-			nicRxGetRcpiValueFromRxv(RCPI_MODE_WF0, prSwRfb)),
+			nicRxGetRcpiValueFromRxv(
+				prGlueInfo->prAdapter, RCPI_MODE_WF0, prSwRfb)),
 			prSwRfb->pvHeader, prSwRfb->u2PacketLen,
 			GFP_ATOMIC);
 #endif

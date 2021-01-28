@@ -326,8 +326,6 @@ struct BUS_INFO {
 	const uint32_t u4usb_tx_cmd_queue_mask;
 	uint32_t u4UdmaWlCfg_0;
 	uint32_t u4UdmaTxTimeout; /* UDMA Tx time out limit, unit: us */
-	uint32_t u4RxPaddingCSO;
-	uint32_t u4RxPaddingRxInfo;
 	u_int8_t (*asicUsbSuspend)(IN struct ADAPTER *prAdapter, IN struct GLUE_INFO *prGlueInfo);
 	uint8_t (*asicUsbEventEpDetected)(IN struct ADAPTER *prAdapter);
 	uint16_t (*asicUsbRxByteCount)(IN struct ADAPTER *prAdapter,
@@ -409,8 +407,12 @@ void halTxUSBSendDataComplete(struct urb *urb);
 void halTxUSBProcessMsduDone(IN struct GLUE_INFO *prGlueInfo, struct USB_REQ *prUsbReq);
 void halTxUSBProcessDataComplete(IN struct ADAPTER *prAdapter, struct USB_REQ *prUsbReq);
 
-uint32_t halRxUSBEnqueueRFB(IN struct ADAPTER *prAdapter, IN uint8_t *pucBuf, IN uint32_t u4Length,
-	IN uint32_t u4MinRfbCnt);
+uint32_t halRxUSBEnqueueRFB(
+	IN struct ADAPTER *prAdapter,
+	IN uint8_t *pucBuf,
+	IN uint32_t u4Length,
+	IN uint32_t u4MinRfbCnt,
+	IN struct list_head *prCompleteQ);
 uint32_t halRxUSBReceiveEvent(IN struct ADAPTER *prAdapter, IN u_int8_t fgFillUrb);
 void halRxUSBReceiveEventComplete(struct urb *urb);
 uint32_t halRxUSBReceiveData(IN struct ADAPTER *prAdapter);
