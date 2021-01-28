@@ -167,8 +167,6 @@ void asicCapInit(IN struct ADAPTER *prAdapter)
 	asicInitTxdHook(prChipInfo->prTxDescOps);
 	asicInitRxdHook(prChipInfo->prRxDescOps);
 #if (CFG_SUPPORT_MSP == 1)
-	prChipInfo->asicRxProcessRxvChkRst
-		= asicRxProcessRxvChkRst;
 	prChipInfo->asicRxProcessRxvforMSP = asicRxProcessRxvforMSP;
 #endif /* CFG_SUPPORT_MSP == 1 */
 	prChipInfo->asicRxGetRcpiValueFromRxv =	asicRxGetRcpiValueFromRxv;
@@ -1623,23 +1621,7 @@ void asicInitRxdHook(
 }
 
 #if (CFG_SUPPORT_MSP == 1)
-void asicRxProcessRxvChkRst(IN struct ADAPTER *prAdapter,
-	IN OUT struct SW_RFB *prRetSwRfb) {
-	uint32_t u4RetV;
-	struct RX_CTRL *prRxCtrl;
-	struct mt66xx_chip_info *prChipInfo;
-
-	prRxCtrl = &prAdapter->rRxCtrl;
-	prChipInfo = prAdapter->chip_info;
-
-	if (prChipInfo->asicRxProcessRxvforMSP) {
-		u4RetV =
-			prChipInfo->asicRxProcessRxvforMSP(
-				prAdapter, prRetSwRfb);
-	}
-}
-
-uint32_t asicRxProcessRxvforMSP(
+void asicRxProcessRxvforMSP(
 	IN struct ADAPTER *prAdapter,
 	IN OUT struct SW_RFB *prRetSwRfb)
 {
@@ -1649,7 +1631,7 @@ uint32_t asicRxProcessRxvforMSP(
 		DBGLOG(RX, LOUD,
 		"prRetSwRfb->ucStaRecIdx(%d) >= CFG_STA_REC_NUM(%d)\n",
 			prRetSwRfb->ucStaRecIdx, CFG_STA_REC_NUM);
-		return WLAN_STATUS_FAILURE;
+		return;
 	}
 	prGroup3 =
 		(struct HW_MAC_RX_STS_GROUP_3 *)prRetSwRfb->prRxStatusGroup3;
@@ -1679,7 +1661,6 @@ uint32_t asicRxProcessRxvforMSP(
 			HAL_RX_VECTOR_GET_RX_VECTOR(
 			prGroup3, 4);
 	}
-	return WLAN_STATUS_SUCCESS;
 }
 #endif /* CFG_SUPPORT_MSP */
 
