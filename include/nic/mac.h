@@ -394,8 +394,6 @@
 #define CH_13                                   0xd
 #define CH_14                                   0xe
 
-#define MAXIMUM_OPERATION_CHANNEL_LIST          32
-
 /* 3 --------------- IEEE 802.11 PICS --------------- */
 /* Annex D - dot11OperationEntry 2 */
 #define DOT11_RTS_THRESHOLD_MIN                 0
