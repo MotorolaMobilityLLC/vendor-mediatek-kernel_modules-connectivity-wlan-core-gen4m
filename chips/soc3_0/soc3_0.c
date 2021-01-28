@@ -86,6 +86,10 @@
 #include <linux/pm_qos.h>
 #endif /*#ifndef CFG_BUILD_X86_PLATFORM*/
 
+#ifdef CONFIG_MTK_CONNSYS_DEDICATED_LOG_PATH
+#include "fw_log_wifi.h"
+#endif /* CONFIG_MTK_CONNSYS_DEDICATED_LOG_PATH */
+
 /*******************************************************************************
 *                              C O N S T A N T S
 ********************************************************************************
@@ -1532,7 +1536,16 @@ void soc3_0_Sw_interrupt_handler(struct ADAPTER *prAdapter)
 	HAL_MCR_WR(prAdapter,
 		  (CONN_INFRA_CFG_AP2WF_BUS_ADDR + 0xc8),
 		  value);
-	complete(&g_triggerComp);
+
+#ifdef CONFIG_MTK_CONNSYS_DEDICATED_LOG_PATH
+	if (value & BIT(0))
+		fw_log_wifi_irq_handler();
+#endif
+	if (value & (BIT(1) | BIT(2))) {
+		kalSetRstEvent();
+		complete(&g_triggerComp);
+	}
+
 }
 
 void soc3_0_Conninfra_cb_register(void)
