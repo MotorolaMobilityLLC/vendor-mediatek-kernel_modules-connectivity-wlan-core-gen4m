@@ -6296,11 +6296,12 @@ static u_int8_t rlmCheckOpChangeParamValid(struct ADAPTER *prAdapter,
 			return FALSE;
 		}
 	} else {
-		if (prBssInfo->ucPrimaryChannel ==
-		    165) { /*It can only use BW20 for CH165*/
+		/* It can only use BW20 for CH165 */
+		if ((ucChannelWidth != MAX_BW_20MHZ) &&
+			(prBssInfo->ucPrimaryChannel == 165)) {
 			DBGLOG(RLM, WARN,
-			       "Can't change BSS[%d] OP BW for CH165\n",
-			       prBssInfo->ucBssIndex);
+			       "Can't change BSS[%d] OP BW to:%d for CH165\n",
+			       prBssInfo->ucBssIndex, ucChannelWidth);
 			return FALSE;
 		}
 
