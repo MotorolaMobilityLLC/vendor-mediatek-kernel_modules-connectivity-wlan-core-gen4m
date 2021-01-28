@@ -7767,12 +7767,22 @@ wlanoidSetMulticastList(IN struct ADAPTER *prAdapter,
 		return WLAN_STATUS_ADAPTER_NOT_READY;
 	}
 
+	kalMemZero(&rCmdMacMcastAddr, sizeof(rCmdMacMcastAddr));
 	rCmdMacMcastAddr.u4NumOfGroupAddr = u4SetBufferLen /
 					    MAC_ADDR_LEN;
 	rCmdMacMcastAddr.ucBssIndex =
 		ucBssIndex;
 	kalMemCopy(rCmdMacMcastAddr.arAddress, pvSetBuffer,
 		   u4SetBufferLen);
+	DBGLOG(OID, INFO,
+		"MCAST white list: total=%d MAC0="MACSTR" MAC1="MACSTR
+		" MAC2="MACSTR" MAC3="MACSTR" MAC4="MACSTR"\n",
+		rCmdMacMcastAddr.u4NumOfGroupAddr,
+		MAC2STR(rCmdMacMcastAddr.arAddress[0]),
+		MAC2STR(rCmdMacMcastAddr.arAddress[1]),
+		MAC2STR(rCmdMacMcastAddr.arAddress[2]),
+		MAC2STR(rCmdMacMcastAddr.arAddress[3]),
+		MAC2STR(rCmdMacMcastAddr.arAddress[4]));
 
 	return wlanSendSetQueryCmd(prAdapter,
 				   CMD_ID_MAC_MCAST_ADDR,
@@ -7959,7 +7969,7 @@ wlanoidSetCurrentPacketFilter(IN struct ADAPTER *prAdapter,
 						 &rSetRxPacketFilter,
 						 TRUE, pvSetBuffer,
 						 u4SetBufferLen);
-		DBGLOG(OID, TRACE, "[MC debug] u4OsPacketFilter=%x\n",
+		DBGLOG(OID, TRACE, "[MC debug] u4OsPacketFilter=0x%x\n",
 		       prAdapter->u4OsPacketFilter);
 		return rResult;
 	} else {
@@ -7975,11 +7985,18 @@ uint32_t wlanoidSetPacketFilter(struct ADAPTER *prAdapter,
 
 	prSetRxPacketFilter = (struct CMD_RX_PACKET_FILTER *)
 			      pvPacketFiltr;
-#if CFG_SUPPORT_DROP_MC_PACKET
+#if CFG_SUPPORT_DROP_ALL_MC_PACKET
 	if (prAdapter->prGlueInfo->fgIsInSuspendMode)
 		prSetRxPacketFilter->u4RxPacketFilter &=
 			~(PARAM_PACKET_FILTER_MULTICAST |
 			  PARAM_PACKET_FILTER_ALL_MULTICAST);
+#else
+	if (prAdapter->prGlueInfo->fgIsInSuspendMode) {
+		prSetRxPacketFilter->u4RxPacketFilter &=
+			~(PARAM_PACKET_FILTER_ALL_MULTICAST);
+		prSetRxPacketFilter->u4RxPacketFilter |=
+			(PARAM_PACKET_FILTER_MULTICAST);
+	}
 #endif
 	DBGLOG(OID, INFO,
 	       "[MC debug] u4PacketFilter=%x, IsSuspend=%d\n",
