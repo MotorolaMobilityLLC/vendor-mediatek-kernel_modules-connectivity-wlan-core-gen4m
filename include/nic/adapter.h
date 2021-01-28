@@ -1142,7 +1142,7 @@ struct WIFI_VAR {
 struct ROOT_TIMER {
 	struct LINK rLinkHead;
 	OS_SYSTIME rNextExpiredSysTime;
-	KAL_WAKE_LOCK_T rWakeLock;
+	KAL_WAKE_LOCK_T *rWakeLock;
 	u_int8_t fgWakeLocked;
 };
 

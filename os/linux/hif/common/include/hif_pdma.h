@@ -470,7 +470,11 @@ bool kalDevKickCmd(struct GLUE_INFO *prGlueInfo);
 
 /* SER functions */
 void halSetDrvSer(struct ADAPTER *prAdapter);
+#if KERNEL_VERSION(4, 15, 0) <= LINUX_VERSION_CODE
+void halHwRecoveryTimeout(struct timer_list *timer);
+#else
 void halHwRecoveryTimeout(unsigned long arg);
+#endif
 void halHwRecoveryFromError(IN struct ADAPTER *prAdapter);
 
 /* Debug functions */

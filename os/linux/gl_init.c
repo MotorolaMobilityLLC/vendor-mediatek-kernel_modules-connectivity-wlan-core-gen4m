@@ -894,7 +894,15 @@ unsigned int _cfg80211_classify8021d(struct sk_buff *skb)
 }
 #endif
 
-#if KERNEL_VERSION(3, 14, 0) <= LINUX_VERSION_CODE
+
+#if KERNEL_VERSION(4, 19, 0) <= LINUX_VERSION_CODE
+u16 wlanSelectQueue(struct net_device *dev,
+		    struct sk_buff *skb,
+		    struct net_device *sb_dev, select_queue_fallback_t fallback)
+{
+	return mtk_wlan_ndev_select_queue(skb);
+}
+#elif KERNEL_VERSION(3, 14, 0) <= LINUX_VERSION_CODE
 u16 wlanSelectQueue(struct net_device *dev,
 		    struct sk_buff *skb,
 		    void *accel_priv, select_queue_fallback_t fallback)
@@ -2466,9 +2474,9 @@ static void wlanDestroyAllWdev(void)
 void wlanWakeLockInit(struct GLUE_INFO *prGlueInfo)
 {
 #ifdef CONFIG_ANDROID
-	KAL_WAKE_LOCK_INIT(NULL, &prGlueInfo->rIntrWakeLock,
+	KAL_WAKE_LOCK_INIT(NULL, prGlueInfo->rIntrWakeLock,
 			   "WLAN interrupt");
-	KAL_WAKE_LOCK_INIT(NULL, &prGlueInfo->rTimeoutWakeLock,
+	KAL_WAKE_LOCK_INIT(NULL, prGlueInfo->rTimeoutWakeLock,
 			   "WLAN timeout");
 #endif
 }
@@ -2476,14 +2484,14 @@ void wlanWakeLockInit(struct GLUE_INFO *prGlueInfo)
 void wlanWakeLockUninit(struct GLUE_INFO *prGlueInfo)
 {
 #if defined(CONFIG_ANDROID) && (CFG_ENABLE_WAKE_LOCK)
-	if (KAL_WAKE_LOCK_ACTIVE(NULL, &prGlueInfo->rIntrWakeLock))
-		KAL_WAKE_UNLOCK(NULL, &prGlueInfo->rIntrWakeLock);
-	KAL_WAKE_LOCK_DESTROY(NULL, &prGlueInfo->rIntrWakeLock);
+	if (KAL_WAKE_LOCK_ACTIVE(NULL, prGlueInfo->rIntrWakeLock))
+		KAL_WAKE_UNLOCK(NULL, prGlueInfo->rIntrWakeLock);
+	KAL_WAKE_LOCK_DESTROY(NULL, prGlueInfo->rIntrWakeLock);
 
 	if (KAL_WAKE_LOCK_ACTIVE(NULL,
-				 &prGlueInfo->rTimeoutWakeLock))
-		KAL_WAKE_UNLOCK(NULL, &prGlueInfo->rTimeoutWakeLock);
-	KAL_WAKE_LOCK_DESTROY(NULL, &prGlueInfo->rTimeoutWakeLock);
+				 prGlueInfo->rTimeoutWakeLock))
+		KAL_WAKE_UNLOCK(NULL, prGlueInfo->rTimeoutWakeLock);
+	KAL_WAKE_LOCK_DESTROY(NULL, prGlueInfo->rTimeoutWakeLock);
 #endif
 }
 
@@ -3820,7 +3828,12 @@ void wlanOnPostAdapterStart(struct ADAPTER *prAdapter,
 		if (!prAdapter->fgTxDirectInited) {
 			skb_queue_head_init(
 					&prAdapter->rTxDirectSkbQueue);
-
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 15, 0))
+			timer_setup(&prAdapter->rTxDirectSkbTimer,
+					nicTxDirectTimerCheckSkbQ, 0);
+			timer_setup(&prAdapter->rTxDirectHifTimer,
+					nicTxDirectTimerCheckHifQ, 0);
+#else
 			init_timer(&prAdapter->rTxDirectSkbTimer);
 			prAdapter->rTxDirectSkbTimer.data =
 					(unsigned long)prGlueInfo;
@@ -3832,7 +3845,7 @@ void wlanOnPostAdapterStart(struct ADAPTER *prAdapter,
 					(unsigned long)prGlueInfo;
 			prAdapter->rTxDirectHifTimer.function =
 				nicTxDirectTimerCheckHifQ;
-
+#endif
 			prAdapter->fgTxDirectInited = TRUE;
 		}
 	}
