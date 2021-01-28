@@ -83,7 +83,7 @@ ECO_INFO_T connac_eco_table[] = {
 };
 
 #if defined(_HIF_PCIE)
-PCIE_CHIP_CR_MAPPING arBus2ChipCrMapping[] = {
+PCIE_CHIP_CR_MAPPING connac_bus2chip_cr_mapping[] = {
 	/* chip addr, bus addr, range */
 	{0x82060000, 0x00008000, 0x00000450}, /* WF_PLE */
 	{0x82068000, 0x0000c000, 0x00000450}, /* WF_PSE */
@@ -150,6 +150,7 @@ BUS_INFO bus_info_connac = {
 #if defined(_HIF_PCIE)
 	.top_cfg_base = CONNAC_TOP_CFG_BASE,
 	.is_pcie_32dw_read = CONNAC_IS_PCIE_32DW_READ, /* Litien */
+	.bus2chip = connac_bus2chip_cr_mapping,
 	.tx_ring_fwdl_idx = 3,
 	.tx_ring_cmd_idx = 15,
 	.tx_ring_data_idx = 0,
