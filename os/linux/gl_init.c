@@ -137,7 +137,7 @@ module_param_named(ap, gprifnameap, charp, 0);
 #endif
 
 uint8_t aucDebugModule[DBG_MODULE_NUM];
-
+uint32_t au4LogLevel[ENUM_WIFI_LOG_MODULE_NUM] = {ENUM_WIFI_LOG_LEVEL_DEFAULT};
 
 /* 4 2007/06/26, mikewu, now we don't use this, we just fix the number of wlan device to 1 */
 static struct WLANDEV_INFO arWlanDevInfo[CFG_MAX_WLAN_DEVICES] = { {0} };
@@ -1171,62 +1171,20 @@ struct net_device_stats *wlanGetStats(IN struct net_device *prDev)
 
 void wlanDebugInit(void)
 {
-	uint8_t i;
-
 	/* Set the initial debug level of each module */
 #if DBG
-	for (i = 0; i < DBG_MODULE_NUM; i++)
-		aucDebugModule[i] = DBG_CLASS_MASK;	/* enable all */
+	/* enable all */
+	wlanSetDriverDbgLevel(DBG_ALL_MODULE_IDX, DBG_CLASS_MASK);
 #else
 #ifdef CFG_DEFAULT_DBG_LEVEL
-	for (i = 0; i < DBG_MODULE_NUM; i++)
-		aucDebugModule[i] = CFG_DEFAULT_DBG_LEVEL;
+	wlanSetDriverDbgLevel(DBG_ALL_MODULE_IDX, CFG_DEFAULT_DBG_LEVEL);
 #else
-	for (i = 0; i < DBG_MODULE_NUM; i++) {
-		aucDebugModule[i] = DBG_CLASS_ERROR |
-			DBG_CLASS_WARN | DBG_CLASS_STATE | DBG_CLASS_EVENT | DBG_CLASS_INFO;
-	}
-	aucDebugModule[DBG_TX_IDX] &= ~(DBG_CLASS_EVENT | DBG_CLASS_INFO);
-	aucDebugModule[DBG_RX_IDX] &= ~(DBG_CLASS_EVENT | DBG_CLASS_INFO);
-	aucDebugModule[DBG_REQ_IDX] &= ~(DBG_CLASS_EVENT | DBG_CLASS_INFO);
-	aucDebugModule[DBG_INTR_IDX] = 0;
-	aucDebugModule[DBG_MEM_IDX] = DBG_CLASS_ERROR | DBG_CLASS_WARN;
-	aucDebugModule[DBG_REQ_IDX] = DBG_CLASS_MASK;
-
+	wlanSetDriverDbgLevel(DBG_ALL_MODULE_IDX, DBG_LOG_LEVEL_DEFAULT);
 #endif
 #endif /* DBG */
 
 	LOG_FUNC("Reset ALL DBG module log level to DEFAULT!");
 
-}
-
-uint32_t wlanSetDebugLevel(IN uint32_t u4DbgIdx, IN uint32_t u4DbgMask)
-{
-	uint32_t u4Idx;
-	uint32_t fgStatus = WLAN_STATUS_SUCCESS;
-
-	if (u4DbgIdx == DBG_ALL_MODULE_IDX) {
-		for (u4Idx = 0; u4Idx < DBG_MODULE_NUM; u4Idx++)
-			aucDebugModule[u4Idx] = (uint8_t) u4DbgMask;
-		LOG_FUNC("Set ALL DBG module log level to [0x%02x]\n", u4DbgMask);
-	} else if (u4DbgIdx < DBG_MODULE_NUM) {
-		aucDebugModule[u4DbgIdx] = (uint8_t) u4DbgMask;
-		LOG_FUNC("Set DBG module[%u] log level to [0x%02x]\n", u4DbgIdx, u4DbgMask);
-	} else {
-		fgStatus = WLAN_STATUS_FAILURE;
-	}
-
-	return fgStatus;
-}
-
-uint32_t wlanGetDebugLevel(IN uint32_t u4DbgIdx, OUT uint32_t *pu4DbgMask)
-{
-	if (u4DbgIdx < DBG_MODULE_NUM) {
-		*pu4DbgMask = aucDebugModule[u4DbgIdx];
-		return WLAN_STATUS_SUCCESS;
-	}
-
-	return WLAN_STATUS_FAILURE;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2558,6 +2516,7 @@ static int32_t wlanProbe(void *pvData, void *pvDriverData)
 #if (MTK_WCN_HIF_SDIO && CFG_WMT_WIFI_PATH_SUPPORT)
 	int32_t i4RetVal = 0;
 #endif
+	int32_t u4LogLevel = ENUM_WIFI_LOG_LEVEL_DEFAULT;
 
 #if 0
 		uint8_t *pucConfigBuf = NULL, pucCfgBuf = NULL;
@@ -2891,6 +2850,12 @@ static int32_t wlanProbe(void *pvData, void *pvDriverData)
 		prGlueInfo->u4ReadyFlag = 1;
 
 		kalSetHalted(FALSE);
+		wlanDbgGetGlobalLogLevel(ENUM_WIFI_LOG_MODULE_FW, &u4LogLevel);
+		if (u4LogLevel > ENUM_WIFI_LOG_LEVEL_DEFAULT)
+			wlanDbgSetLogLevelImpl(prAdapter,
+					       ENUM_WIFI_LOG_LEVEL_VERSION_V1,
+					       ENUM_WIFI_LOG_MODULE_FW,
+					       u4LogLevel);
 		DBGLOG(INIT, INFO, "wlanProbe: probe success\n");
 	} else {
 		DBGLOG(INIT, ERROR, "wlanProbe: probe failed, reason:%d\n", eFailReason);
