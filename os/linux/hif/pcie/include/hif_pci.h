@@ -71,8 +71,6 @@
 #define NUM_OF_TX_RING				4
 #define NUM_OF_RX_RING				2
 
-#define TX_DMA_1ST_BUFFER_SIZE		128	/* only the 1st physical buffer is pre-allocated */
-
 #define TX_RING_SIZE				4095
 #define RX_RING_SIZE				256	/* Max Rx ring size */
 
