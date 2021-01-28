@@ -222,14 +222,22 @@ uint32_t halRxWaitResponse(IN struct ADAPTER *prAdapter, IN uint8_t ucPortIdx,
 	struct GLUE_INFO *prGlueInfo;
 	uint32_t u4PktLen = 0, u4Value = 0, u4Time;
 	u_int8_t fgStatus;
+	struct mt66xx_chip_info *prChipInfo;
 
 	DEBUGFUNC("nicRxWaitResponse");
 
 	ASSERT(prAdapter);
 	prGlueInfo = prAdapter->prGlueInfo;
+	prChipInfo = prAdapter->chip_info;
 	ASSERT(prGlueInfo);
 	ASSERT(pucRspBuffer);
-	ASSERT(ucPortIdx < 2);
+
+	if (prChipInfo->is_support_wfdma)
+		ucPortIdx = prChipInfo->rx_event_port;
+	else {
+		ASSERT(ucPortIdx < 2);
+		ucPortIdx = HIF_IMG_DL_STATUS_PORT_IDX;
+	}
 
 	u4Time = kalGetTimeTick();
 	u4PktLen = u4MaxRespBufferLen;
@@ -241,7 +249,7 @@ uint32_t halRxWaitResponse(IN struct ADAPTER *prAdapter, IN uint8_t ucPortIdx,
 		}
 
 		fgStatus = kalDevPortRead(
-			prGlueInfo, HIF_IMG_DL_STATUS_PORT_IDX, u4PktLen,
+			prGlueInfo, ucPortIdx, u4PktLen,
 			pucRspBuffer, HIF_RX_COALESCING_BUFFER_SIZE);
 		if (fgStatus) {
 			*pu4Length = u4PktLen;
@@ -367,6 +375,8 @@ static u_int8_t halDriverOwnCheckCR4(struct ADAPTER *prAdapter)
 static void halDriverOwnTimeout(struct ADAPTER *prAdapter,
 				uint32_t u4CurrTick, u_int8_t fgTimeout)
 {
+	struct CHIP_DBG_OPS *prChipDbgOps = prAdapter->chip_info->prDebugOps;
+
 	if ((prAdapter->u4OwnFailedCount == 0) ||
 	    CHECK_FOR_TIMEOUT(u4CurrTick, prAdapter->rLastOwnFailedLogTime,
 			      MSEC_TO_SYSTIME(LP_OWN_BACK_FAILED_LOG_SKIP_MS))
@@ -390,7 +400,8 @@ static void halDriverOwnTimeout(struct ADAPTER *prAdapter,
 		prAdapter->u4OwnFailedLogCount++;
 		if (prAdapter->u4OwnFailedLogCount >
 		    LP_OWN_BACK_FAILED_RESET_CNT) {
-			halShowHostCsrInfo(prAdapter);
+			if (prChipDbgOps->showCsrInfo)
+				prChipDbgOps->showCsrInfo(prAdapter);
 #if CFG_CHIP_RESET_SUPPORT
 			/* Trigger RESET */
 			glGetRstReason(RST_DRV_OWN_FAIL);
@@ -455,8 +466,9 @@ u_int8_t halSetDriverOwn(IN struct ADAPTER *prAdapter)
 		if (fgResult) {
 			/* Check WPDMA FW own interrupt status and clear */
 			if (prBusInfo->fgCheckDriverOwnInt)
-				HAL_MCR_WR(prAdapter, WPDMA_INT_STA,
-					   WPDMA_FW_CLR_OWN_INT);
+				HAL_MCR_WR(prAdapter,
+					prBusInfo->fw_own_clear_addr,
+					prBusInfo->fw_own_clear_bit);
 			prAdapter->fgIsFwOwn = FALSE;
 			prAdapter->u4OwnFailedCount = 0;
 			prAdapter->u4OwnFailedLogCount = 0;
@@ -597,7 +609,7 @@ u_int8_t halTxIsDataBufEnough(IN struct ADAPTER *prAdapter,
 	return FALSE;
 }
 
-void halProcessTxInterrupt(IN struct ADAPTER *prAdapter)
+static void halDefaultProcessTxInterrupt(IN struct ADAPTER *prAdapter)
 {
 	struct BUS_INFO *prBusInfo = prAdapter->chip_info->bus_info;
 	struct GL_HIF_INFO *prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
@@ -630,6 +642,18 @@ void halProcessTxInterrupt(IN struct ADAPTER *prAdapter)
 	if (fgIsSetHifTxEvent)
 		kalSetTxEvent2Hif(prAdapter->prGlueInfo);
 }
+
+
+void halProcessTxInterrupt(IN struct ADAPTER *prAdapter)
+{
+	struct BUS_INFO *prBusInfo = prAdapter->chip_info->bus_info;
+
+	if (prBusInfo->processTxInterrupt)
+		prBusInfo->processTxInterrupt(prAdapter);
+	else
+		halDefaultProcessTxInterrupt(prAdapter);
+}
+
 
 void halInitMsduTokenInfo(IN struct ADAPTER *prAdapter)
 {
@@ -923,10 +947,12 @@ void halReturnTimeoutMsduToken(struct ADAPTER *prAdapter)
 bool halHifSwInfoInit(IN struct ADAPTER *prAdapter)
 {
 	struct GL_HIF_INFO *prHifInfo = NULL;
+	struct BUS_INFO *prBusInfo = NULL;
 
 	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
-
-	asicPcieDmaShdlInit(prAdapter);
+	prBusInfo = prAdapter->chip_info->bus_info;
+	if (prBusInfo->pcieDmaShdlInit)
+		prBusInfo->pcieDmaShdlInit(prAdapter);
 
 	if (!halWpdmaAllocRing(prAdapter->prGlueInfo, true))
 		return false;
@@ -953,8 +979,9 @@ void halRxProcessMsduReport(IN struct ADAPTER *prAdapter,
 #endif
 	struct QUE rFreeQueue;
 	struct QUE *prFreeQueue;
-	uint16_t u2TokenCnt;
+	uint16_t u2TokenCnt, u2TotalTokenCnt;
 	uint32_t u4Idx, u4Token;
+	uint8_t ucVer;
 
 	ASSERT(prAdapter);
 	ASSERT(prAdapter->prGlueInfo);
@@ -966,15 +993,41 @@ void halRxProcessMsduReport(IN struct ADAPTER *prAdapter,
 	QUEUE_INITIALIZE(prFreeQueue);
 
 	prMsduReport = (struct HW_MAC_MSDU_REPORT *)prSwRfb->pucRecvBuff;
-	u2TokenCnt = prMsduReport->u2MsduCount;
+	ucVer = prMsduReport->DW1.field.u4Ver;
+	if (ucVer == TFD_EVT_VER_3)
+		u2TotalTokenCnt = prMsduReport->DW0.field_v3.u2MsduCount;
+	else
+		u2TotalTokenCnt = prMsduReport->DW0.field.u2MsduCount;
 
-	for (u4Idx = 0; u4Idx < u2TokenCnt; u4Idx++) {
-		if (prMsduReport->u4Ver == 0)
+	u4Idx = u2TokenCnt = 0;
+	while (u2TokenCnt < u2TotalTokenCnt) {
+		/* Format version of this tx done event.
+		 *	0: MT7615
+		 *	1: MT7622, CONNAC (X18/P18/MT7663)
+		 *	2: MT7915 E1/Petrus
+		 *      3: MT7915 E2/Buzzard
+		 */
+		if (ucVer == TFD_EVT_VER_0)
 			u4Token = prMsduReport->au4MsduToken[u4Idx >> 1].
-				rFormatV1.u2MsduID[u4Idx & 1];
-		else
+				rFormatV0.u2MsduID[u4Idx & 1];
+		else if (ucVer == TFD_EVT_VER_1)
+			u4Token = prMsduReport->au4MsduToken[u4Idx].
+				rFormatV1.u2MsduID;
+		else if (ucVer == TFD_EVT_VER_2)
 			u4Token = prMsduReport->au4MsduToken[u4Idx].
 				rFormatV2.u2MsduID;
+		else {
+			if (!prMsduReport->au4MsduToken[u4Idx].
+				rFormatV3.rP0.u4Pair)
+				u4Token = prMsduReport->au4MsduToken[u4Idx].
+						rFormatV3.rP0.u4MsduID;
+			else {
+				u4Idx++;
+				continue;
+			}
+		}
+		u4Idx++;
+		u2TokenCnt++;
 
 		if (u4Token >= HIF_TX_MSDU_TOKEN_NUM) {
 			DBGLOG(HAL, ERROR, "Error MSDU report[%u]\n", u4Token);
@@ -1086,6 +1139,7 @@ uint32_t halTxGetPageCount(IN struct ADAPTER *prAdapter,
 
 uint32_t halTxPollingResource(IN struct ADAPTER *prAdapter, IN uint8_t ucTC)
 {
+	nicTxReleaseResource(prAdapter, ucTC, 1, TRUE, FALSE);
 	return WLAN_STATUS_SUCCESS;
 }
 
@@ -1093,7 +1147,8 @@ void halSerHifReset(IN struct ADAPTER *prAdapter)
 {
 }
 
-void halRxReceiveRFBs(IN struct ADAPTER *prAdapter, uint32_t u4Port)
+void halRxReceiveRFBs(IN struct ADAPTER *prAdapter, uint32_t u4Port,
+	uint8_t fgRxData)
 {
 	struct RX_CTRL *prRxCtrl;
 	struct SW_RFB *prSwRfb = (struct SW_RFB *) NULL;
@@ -1136,7 +1191,7 @@ void halRxReceiveRFBs(IN struct ADAPTER *prAdapter, uint32_t u4Port)
 		/* unset no more rfb port bit */
 		prAdapter->u4NoMoreRfb &= ~BIT(u4Port);
 
-		if (u4Port == RX_RING_DATA_IDX_0) {
+		if (fgRxData) {
 			fgStatus = kalDevReadData(prAdapter->prGlueInfo,
 				u4Port, prSwRfb);
 		} else {
@@ -1192,6 +1247,23 @@ void halRxReceiveRFBs(IN struct ADAPTER *prAdapter, uint32_t u4Port)
 
 }
 
+static void halDefaultProcessRxInterrupt(IN struct ADAPTER *prAdapter)
+{
+	struct GL_HIF_INFO *prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
+	union WPDMA_INT_STA_STRUCT rIntrStatus;
+
+	rIntrStatus = (union WPDMA_INT_STA_STRUCT)prHifInfo->u4IntStatus;
+	prAdapter->prGlueInfo->u8HifIntTime = sched_clock();
+
+	if (rIntrStatus.field.rx_done_1 ||
+	    (prAdapter->u4NoMoreRfb & BIT(RX_RING_EVT_IDX_1)))
+		halRxReceiveRFBs(prAdapter, RX_RING_EVT_IDX_1, FALSE);
+
+	if (rIntrStatus.field.rx_done_0 ||
+	    (prAdapter->u4NoMoreRfb & BIT(RX_RING_DATA_IDX_0)))
+		halRxReceiveRFBs(prAdapter, RX_RING_DATA_IDX_0, TRUE);
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
  * @brief Read frames from the data port for PCIE
@@ -1204,19 +1276,12 @@ void halRxReceiveRFBs(IN struct ADAPTER *prAdapter, uint32_t u4Port)
 /*----------------------------------------------------------------------------*/
 void halProcessRxInterrupt(IN struct ADAPTER *prAdapter)
 {
-	struct GL_HIF_INFO *prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
-	union WPDMA_INT_STA_STRUCT rIntrStatus;
+	struct BUS_INFO *prBusInfo = prAdapter->chip_info->bus_info;
 
-	rIntrStatus = (union WPDMA_INT_STA_STRUCT)prHifInfo->u4IntStatus;
-	prAdapter->prGlueInfo->u8HifIntTime = sched_clock();
-
-	if (rIntrStatus.field.rx_done_1 ||
-	    (prAdapter->u4NoMoreRfb & BIT(RX_RING_EVT_IDX_1)))
-		halRxReceiveRFBs(prAdapter, RX_RING_EVT_IDX_1);
-
-	if (rIntrStatus.field.rx_done_0 ||
-	    (prAdapter->u4NoMoreRfb & BIT(RX_RING_DATA_IDX_0)))
-		halRxReceiveRFBs(prAdapter, RX_RING_DATA_IDX_0);
+	if (prBusInfo->processRxInterrupt)
+		prBusInfo->processRxInterrupt(prAdapter);
+	else
+		halDefaultProcessRxInterrupt(prAdapter);
 }
 
 static int32_t halWpdmaFreeRingDesc(struct GLUE_INFO *prGlueInfo,
@@ -1382,20 +1447,41 @@ bool halWpdmaAllocRxRing(struct GLUE_INFO *prGlueInfo, uint32_t u4Num,
 	return true;
 }
 
-void halHifRst(struct GLUE_INFO *prGlueInfo)
+static void halDefaultHifRst(struct GLUE_INFO *prGlueInfo)
 {
 	/* Reset dmashdl and wpdma */
 	kalDevRegWrite(prGlueInfo, CONN_HIF_RST, 0x00000000);
 	kalDevRegWrite(prGlueInfo, CONN_HIF_RST, 0x00000030);
 }
 
+void halHifRst(struct GLUE_INFO *prGlueInfo)
+{
+	struct ADAPTER *prAdapter;
+	struct BUS_INFO *prBusInfo;
+
+	prAdapter = prGlueInfo->prAdapter;
+	prBusInfo = prAdapter->chip_info->bus_info;
+
+	/* Reset dmashdl and wpdma */
+	if (prBusInfo->hifRst)
+		prBusInfo->hifRst(prGlueInfo);
+	else
+		halDefaultHifRst(prGlueInfo);
+}
+
 bool halWpdmaAllocRing(struct GLUE_INFO *prGlueInfo, bool fgAllocMem)
 {
 	struct GL_HIF_INFO *prHifInfo;
 	int32_t u4Num, u4Index;
+#if (CFG_SUPPORT_CONNAC2X == 1)
+	struct mt66xx_chip_info *prChipInfo;
+#endif /* CFG_SUPPORT_CONNAC2X == 1 */
 
 	ASSERT(prGlueInfo);
 	prHifInfo = &prGlueInfo->rHifInfo;
+#if (CFG_SUPPORT_CONNAC2X == 1)
+	prChipInfo = prGlueInfo->prAdapter->chip_info;
+#endif /* CFG_SUPPORT_CONNAC2X == 1  */
 
 	/*
 	 *   Allocate all ring descriptors, include TxD, RxD, MgmtD.
@@ -1417,6 +1503,9 @@ bool halWpdmaAllocRing(struct GLUE_INFO *prGlueInfo, bool fgAllocMem)
 		DBGLOG(HAL, ERROR, "AllocRxRing[0] fail\n");
 		return false;
 	}
+
+	/* For connac & old ic: Event Rx path */
+	/* For falcon: TxFreeDoneEvent to Host Rx path */
 	/* Event Rx path */
 	if (!halWpdmaAllocRxRing(prGlueInfo, RX_RING_EVT_IDX_1,
 				 RX_RING1_SIZE, RXD_SIZE,
@@ -1424,6 +1513,41 @@ bool halWpdmaAllocRing(struct GLUE_INFO *prGlueInfo, bool fgAllocMem)
 		DBGLOG(HAL, ERROR, "AllocRxRing[1] fail\n");
 		return false;
 	}
+
+#if (CFG_SUPPORT_CONNAC2X == 1)
+	if (prChipInfo->is_support_wfdma) {
+		if (!halWpdmaAllocRxRing(prGlueInfo, WFDMA0_RX_RING_IDX_2,
+				RX_RING1_SIZE, RXD_SIZE, RX_BUFFER_AGGRESIZE,
+				fgAllocMem)) {
+			DBGLOG(HAL, ERROR, "AllocWfdmaRxRing fail\n");
+			return false;
+		}
+		if (!halWpdmaAllocRxRing(prGlueInfo, WFDMA0_RX_RING_IDX_3,
+				RX_RING1_SIZE, RXD_SIZE, RX_BUFFER_AGGRESIZE,
+				fgAllocMem)) {
+			DBGLOG(HAL, ERROR, "AllocWfdmaRxRing fail\n");
+			return false;
+		}
+		if (!halWpdmaAllocRxRing(prGlueInfo, WFDMA1_RX_RING_IDX_0,
+				RX_RING1_SIZE, RXD_SIZE, RX_BUFFER_AGGRESIZE,
+				fgAllocMem)) {
+			DBGLOG(HAL, ERROR, "AllocWfdmaRxRing fail\n");
+			return false;
+		}
+		if (!halWpdmaAllocRxRing(prGlueInfo, WFDMA1_RX_RING_IDX_1,
+				RX_RING_SIZE, RXD_SIZE, RX_BUFFER_AGGRESIZE,
+				fgAllocMem)) {
+			DBGLOG(HAL, ERROR, "AllocWfdmaRxRing fail\n");
+			return false;
+		}
+		if (!halWpdmaAllocRxRing(prGlueInfo, WFDMA1_RX_RING_IDX_2,
+				RX_RING_SIZE, RXD_SIZE, RX_BUFFER_AGGRESIZE,
+				fgAllocMem)) {
+			DBGLOG(HAL, ERROR, "AllocWfdmaRxRing fail\n");
+			return false;
+		}
+	}
+#endif /* CFG_SUPPORT_CONNAC2X == 1 */
 
 	/* Initialize all transmit related software queues */
 
@@ -1509,7 +1633,7 @@ void halEnableFWDownload(IN struct ADAPTER *prAdapter, IN u_int8_t fgEnable)
 		prChipInfo->asicEnableFWDownload(prAdapter, fgEnable);
 }
 
-static u_int8_t halWpdmaWaitIdle(struct GLUE_INFO *prGlueInfo,
+u_int8_t halWpdmaWaitIdle(struct GLUE_INFO *prGlueInfo,
 	int32_t round, int32_t wait_us)
 {
 	int32_t i = 0;
@@ -1545,15 +1669,13 @@ void halWpdmaInitRing(struct GLUE_INFO *prGlueInfo)
 	if (prBusInfo->pdmaSetup)
 		prBusInfo->pdmaSetup(prGlueInfo, FALSE);
 
-	halWpdmaWaitIdle(prGlueInfo, 100, 1000);
-
-	/* Reset DMA Index */
-	kalDevRegWrite(prGlueInfo, WPDMA_RST_PTR, 0xFFFFFFFF);
-
 	halWpdmaInitTxRing(prGlueInfo);
 
 	/* Init RX Ring0 Base/Size/Index pointer CSR */
 	halWpdmaInitRxRing(prGlueInfo);
+
+	if (prBusInfo->wfdmaManualPrefetch)
+		prBusInfo->wfdmaManualPrefetch(prGlueInfo);
 
 	if (prBusInfo->pdmaSetup)
 		prBusInfo->pdmaSetup(prGlueInfo, TRUE);
@@ -1570,39 +1692,62 @@ void halWpdmaInitTxRing(IN struct GLUE_INFO *prGlueInfo)
 	struct RTMP_TX_RING *prTxRing = NULL;
 	struct RTMP_DMACB *prTxCell;
 	uint32_t i = 0, offset = 0, phy_addr = 0;
-	uint32_t phy_addr_ext = 0, ext_offset = 0;
+#if (CFG_SUPPORT_CONNAC2X == 1)
+	uint32_t idx = 0;
+#endif /* CFG_SUPPORT_CONNAC2X == 1 */
+	struct mt66xx_chip_info *prChipInfo;
 
 	prHifInfo = &prGlueInfo->rHifInfo;
 	prBusInfo = prGlueInfo->prAdapter->chip_info->bus_info;
+	prChipInfo = prGlueInfo->prAdapter->chip_info;
 
 	/* reset all TX Ring register */
 	for (i = 0; i < NUM_OF_TX_RING; i++) {
 		prTxRing = &prHifInfo->TxRing[i];
 		prTxCell = &prTxRing->Cell[0];
+
 		if (i == TX_RING_CMD_IDX_2)
 			offset = prBusInfo->tx_ring_cmd_idx * MT_RINGREG_DIFF;
+		else if (i == TX_RING_FWDL_IDX_3)
+			offset = prBusInfo->tx_ring_fwdl_idx * MT_RINGREG_DIFF;
+#if (CFG_SUPPORT_CONNAC2X == 1)
+		else if (prChipInfo->is_support_wacpu) {
+			if (i == TX_RING_DATA0_IDX_0)
+				idx = prBusInfo->tx_ring0_data_idx;
+			if (i == TX_RING_DATA1_IDX_1)
+				idx = prBusInfo->tx_ring1_data_idx;
+			if (i == TX_RING_WA_CMD_IDX_4)
+				idx = prBusInfo->tx_ring_wa_cmd_idx;
+			offset = idx * MT_RINGREG_DIFF;
+		}
+#endif /* CFG_SUPPORT_CONNAC2X == 1 */
 		else
 			offset = i * MT_RINGREG_DIFF;
+
 		phy_addr = ((uint64_t)prTxCell->AllocPa) &
 			DMA_LOWER_32BITS_MASK;
-		phy_addr_ext = (((uint64_t)prTxCell->AllocPa >>
-			DMA_BITS_OFFSET) & DMA_HIGHER_4BITS_MASK);
-		ext_offset = i * MT_RINGREG_EXT_DIFF;
 		prTxRing->TxSwUsedIdx = 0;
 		prTxRing->u4UsedCnt = 0;
 		prTxRing->TxCpuIdx = 0;
-		prTxRing->hw_desc_base = MT_TX_RING_BASE + offset;
-		prTxRing->hw_desc_base_ext = MT_TX_RING_BASE_EXT + ext_offset;
-		prTxRing->hw_cidx_addr = MT_TX_RING_CIDX + offset;
-		prTxRing->hw_didx_addr = MT_TX_RING_DIDX + offset;
-		prTxRing->hw_cnt_addr = MT_TX_RING_CNT + offset;
+
+		prTxRing->hw_desc_base =
+			prBusInfo->host_tx_ring_base + offset;
+
+		prTxRing->hw_cidx_addr =
+			prBusInfo->host_tx_ring_cidx_addr + offset;
+		prTxRing->hw_didx_addr =
+			prBusInfo->host_tx_ring_didx_addr + offset;
+		prTxRing->hw_cnt_addr =
+			prBusInfo->host_tx_ring_cnt_addr + offset;
+
 		kalDevRegWrite(prGlueInfo, prTxRing->hw_desc_base, phy_addr);
-		kalDevRegWrite(prGlueInfo, prTxRing->hw_desc_base_ext,
-			phy_addr_ext);
 		kalDevRegWrite(prGlueInfo, prTxRing->hw_cidx_addr,
 			prTxRing->TxCpuIdx);
 		kalDevRegWrite(prGlueInfo, prTxRing->hw_cnt_addr,
 			TX_RING_SIZE);
+
+		if (prBusInfo->tx_ring_ext_ctrl)
+			prBusInfo->tx_ring_ext_ctrl(prGlueInfo, prTxRing, i);
 
 		DBGLOG(HAL, TRACE, "-->TX_RING_%d[0x%x]: Base=0x%x, Cnt=%d!\n",
 			i, prHifInfo->TxRing[i].hw_desc_base,
@@ -1615,33 +1760,59 @@ void halWpdmaInitRxRing(IN struct GLUE_INFO *prGlueInfo)
 	struct GL_HIF_INFO *prHifInfo = NULL;
 	struct RTMP_RX_RING *prRxRing = NULL;
 	uint32_t i = 0, offset = 0, phy_addr = 0;
-	uint32_t phy_addr_ext = 0, ext_offset = 0;
+	struct BUS_INFO *prBusInfo = NULL;
+	struct mt66xx_chip_info *prChipInfo;
 
 	ASSERT(prGlueInfo);
 	prHifInfo = &prGlueInfo->rHifInfo;
+	prChipInfo = prGlueInfo->prAdapter->chip_info;
+	prBusInfo = prChipInfo->bus_info;
 
 	/* reset all RX Ring register */
 	for (i = 0; i < NUM_OF_RX_RING; i++) {
 		prRxRing = &prHifInfo->RxRing[i];
+		if (i >= WFDMA1_RX_RING_IDX_0) {
+#if (CFG_SUPPORT_CONNAC2X == 1)
+			if (prChipInfo->is_support_wfdma) {
+				offset = (i - WFDMA1_RX_RING_IDX_0)
+						* MT_RINGREG_DIFF;
+				prRxRing->hw_desc_base =
+					prBusInfo->host_wfdma1_rx_ring_base
+						+ offset;
+				prRxRing->hw_cidx_addr =
+					prBusInfo->host_wfdma1_rx_ring_cidx_addr
+						+ offset;
+				prRxRing->hw_didx_addr =
+					prBusInfo->host_wfdma1_rx_ring_didx_addr
+						+ offset;
+				prRxRing->hw_cnt_addr =
+					prBusInfo->host_wfdma1_rx_ring_cnt_addr
+						+ offset;
+			} else
+#endif /* CFG_SUPPORT_CONNAC2X == 1 */
+				break;
+		} else {
 		offset = i * MT_RINGREG_DIFF;
+			prRxRing->hw_desc_base =
+				prBusInfo->host_rx_ring_base + offset;
+			prRxRing->hw_cidx_addr =
+				prBusInfo->host_rx_ring_cidx_addr + offset;
+			prRxRing->hw_didx_addr =
+				prBusInfo->host_rx_ring_didx_addr + offset;
+			prRxRing->hw_cnt_addr =
+				prBusInfo->host_rx_ring_cnt_addr + offset;
+		}
 		phy_addr = ((uint64_t)prRxRing->Cell[0].AllocPa &
 			DMA_LOWER_32BITS_MASK);
-		phy_addr_ext = (((uint64_t)prRxRing->Cell[0].AllocPa >>
-			DMA_BITS_OFFSET) & DMA_HIGHER_4BITS_MASK);
-		ext_offset = i * MT_RINGREG_EXT_DIFF;
 		prRxRing->RxCpuIdx = prRxRing->u4RingSize - 1;
-		prRxRing->hw_desc_base = MT_RX_RING_BASE + offset;
-		prRxRing->hw_desc_base_ext = MT_RX_RING_BASE_EXT + ext_offset;
-		prRxRing->hw_cidx_addr = MT_RX_RING_CIDX + offset;
-		prRxRing->hw_didx_addr = MT_RX_RING_DIDX + offset;
-		prRxRing->hw_cnt_addr = MT_RX_RING_CNT + offset;
 		kalDevRegWrite(prGlueInfo, prRxRing->hw_desc_base, phy_addr);
-		kalDevRegWrite(prGlueInfo, prRxRing->hw_desc_base_ext,
-			phy_addr_ext);
 		kalDevRegWrite(prGlueInfo, prRxRing->hw_cidx_addr,
 			prRxRing->RxCpuIdx);
 		kalDevRegWrite(prGlueInfo, prRxRing->hw_cnt_addr,
 			prRxRing->u4RingSize);
+
+		if (prBusInfo->rx_ring_ext_ctrl)
+			prBusInfo->rx_ring_ext_ctrl(prGlueInfo, prRxRing, i);
 
 		prRxRing->fgIsDumpLog = false;
 
@@ -1693,7 +1864,8 @@ void halWpdmaProcessCmdDmaDone(IN struct GLUE_INFO *prGlueInfo,
 		prTxRing->Cell[u4SwIdx].pPacket = NULL;
 		prTxRing->u4UsedCnt--;
 
-		if (u2Port == TX_RING_CMD_IDX_2)
+		if (u2Port == TX_RING_CMD_IDX_2 ||
+			u2Port == TX_RING_WA_CMD_IDX_4)
 			nicTxReleaseResource_PSE(prGlueInfo->prAdapter,
 				TC4_INDEX,
 				nicTxGetPageCount(prGlueInfo->prAdapter,
@@ -1776,8 +1948,17 @@ bool halWpdmaWriteCmd(IN struct GLUE_INFO *prGlueInfo,
 	uint16_t u2Port = TX_RING_CMD_IDX_2;
 	uint32_t u4TotalLen;
 	void *pucSrc = NULL;
+#if (CFG_SUPPORT_CONNAC2X == 1)
+	struct mt66xx_chip_info *prChipInfo;
+#endif /* CFG_SUPPORT_CONNAC2 == 1 */
 
 	ASSERT(prGlueInfo);
+
+#if (CFG_SUPPORT_CONNAC2X == 1)
+	prChipInfo = prGlueInfo->prAdapter->chip_info;
+	if (prChipInfo->is_support_wacpu)
+		u2Port = TX_RING_WA_CMD_IDX_4;
+#endif /* CFG_SUPPORT_CONNAC2X == 1 */
 
 	prHifInfo = &prGlueInfo->rHifInfo;
 	prMemOps = &prHifInfo->rMemOps;
@@ -2244,15 +2425,16 @@ void halProcessAbnormalInterrupt(IN struct ADAPTER *prAdapter)
 
 }
 
-void halProcessSoftwareInterrupt(IN struct ADAPTER *prAdapter)
+static void halDefaultProcessSoftwareInterrupt(
+	IN struct ADAPTER *prAdapter)
 {
 	struct GLUE_INFO *prGlueInfo;
 	struct GL_HIF_INFO *prHifInfo;
 	struct ERR_RECOVERY_CTRL_T *prErrRecoveryCtrl;
 	uint32_t u4Status = 0;
 
-	if (prAdapter == NULL || prAdapter->prGlueInfo == NULL) {
-		DBGLOG(HAL, ERROR, "prAdapter or prGlueInfo is NULL\n");
+	if (prAdapter->prGlueInfo == NULL) {
+		DBGLOG(HAL, ERROR, "prGlueInfo is NULL\n");
 		return;
 	}
 
@@ -2267,6 +2449,23 @@ void halProcessSoftwareInterrupt(IN struct ADAPTER *prAdapter)
 			ERROR_DETECT_MASK);
 		halHwRecoveryFromError(prAdapter);
 	}
+}
+
+void halProcessSoftwareInterrupt(IN struct ADAPTER *prAdapter)
+{
+	struct BUS_INFO *prBusInfo = NULL;
+
+	if (prAdapter == NULL) {
+		DBGLOG(HAL, ERROR, "prAdapter is NULL\n");
+		return;
+	}
+
+	prBusInfo = prAdapter->chip_info->bus_info;
+
+	if (prBusInfo->processSoftwareInterrupt)
+		prBusInfo->processSoftwareInterrupt(prAdapter);
+	else
+		halDefaultProcessSoftwareInterrupt(prAdapter);
 }
 
 void halHwRecoveryTimeout(unsigned long arg)
@@ -2404,8 +2603,8 @@ void halHwRecoveryFromError(IN struct ADAPTER *prAdapter)
 
 			kalDevKickCmd(prAdapter->prGlueInfo);
 			kalDevKickData(prAdapter->prGlueInfo);
-			halRxReceiveRFBs(prAdapter, RX_RING_EVT_IDX_1);
-			halRxReceiveRFBs(prAdapter, RX_RING_DATA_IDX_0);
+			halRxReceiveRFBs(prAdapter, RX_RING_EVT_IDX_1, FALSE);
+			halRxReceiveRFBs(prAdapter, RX_RING_DATA_IDX_0, TRUE);
 			prHifInfo->fgIsErrRecovery = FALSE;
 			nicSerStartTxRx(prAdapter);
 			prErrRecoveryCtrl->eErrRecovState = ERR_RECOV_STOP_IDLE;
