@@ -554,10 +554,16 @@ static irqreturn_t mtk_axi_interrupt(int irq, void *dev_instance)
 /*----------------------------------------------------------------------------*/
 static int mtk_axi_probe(IN struct platform_device *pdev)
 {
+	struct mt66xx_chip_info *prChipInfo;
+
 #if CFG_MTK_ANDROID_WMT
 	struct MTK_WCN_WMT_WLAN_CB_INFO rWmtCb;
 	memset(&rWmtCb, 0, sizeof(struct MTK_WCN_WMT_WLAN_CB_INFO));
 #endif
+
+	prChipInfo = ((struct mt66xx_hif_driver_data *)
+		mtk_axi_ids[0].driver_data)->chip_info;
+	prChipInfo->pdev = (void *)pdev;
 
 	axiDmaSetup(pdev);
 	axiCsrIoremap(pdev);
