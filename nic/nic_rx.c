@@ -1587,6 +1587,27 @@ void nicRxProcessDataPacket(IN struct ADAPTER *prAdapter,
 		GLUE_SET_PKT_BSS_IDX(prSwRfb->pvPacket, ucBssIndex);
 		STATS_RX_PKT_INFO_DISPLAY(prSwRfb);
 
+#if (CFG_SUPPORT_802_11AX == 1)
+		if (prAdapter->fgEnShowHETrigger) {
+			uint16_t u2TxFrameCtrl;
+
+			u2TxFrameCtrl = (*(uint8_t *) (prSwRfb->pvHeader) &
+				 MASK_FRAME_TYPE);
+			if (RXM_IS_TRIGGER_FRAME(u2TxFrameCtrl)) {
+				DBGLOG(NIC, STATE,
+					"\n%s: HE Trigger --------------\n",
+					__func__);
+				dumpMemory8((uint8_t *)prSwRfb->prRxStatus,
+					prSwRfb->u2RxByteCount);
+				DBGLOG(NIC, STATE,
+					"%s: HE Trigger end --------------\n",
+					__func__);
+				nicRxReturnRFB(prAdapter, prSwRfb);
+				return;
+			}
+		}
+#endif /* CFG_SUPPORT_802_11AX == 1 */
+
 		prRetSwRfb = qmHandleRxPackets(prAdapter, prSwRfb);
 		if (prRetSwRfb != NULL) {
 			GET_CURRENT_SYSTIME(&prRxCtrl->u4LastRxTime);
@@ -3067,7 +3088,7 @@ void nicRxProcessMgmtPacket(IN struct ADAPTER *prAdapter,
 			DBGLOG(NIC, STATE,
 					"HE Trigger --------------\n");
 			dumpMemory8((uint8_t *)prSwRfb->prRxStatus,
-				NIC_RX_GET_RX_BYTE_CNT(prSwRfb->prRxStatus));
+				prSwRfb->u2RxByteCount);
 			DBGLOG(NIC, STATE,
 					"HE Trigger end --------------\n");
 		}

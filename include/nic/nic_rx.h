@@ -999,7 +999,7 @@ struct RX_DESC_OPS_T {
  *******************************************************************************
  */
 #define NIC_RX_GET_U2_SW_PKT_TYPE(__rx_status) \
-	((*(uint32_t *)(__rx_status) & (BITS(16, 31))) >> (16))
+	(uint16_t)((*(uint32_t *)(__rx_status) & (BITS(16, 31))) >> (16))
 
 #define RATE_INFO(_RateCode, _Bw20, _Bw20SGI, _Bw40, _BW40SGI, \
 	_Bw80, _Bw80SGI, _Bw160, _Bw160SGI) \
@@ -1274,6 +1274,17 @@ struct RX_DESC_OPS_T {
 
 #define RXM_IS_DATA_FRAME(_u2FrameCtrl) \
 	(((_u2FrameCtrl & MASK_FC_TYPE) == MAC_FRAME_TYPE_DATA) ? TRUE : FALSE)
+
+#define RXM_IS_CTRL_FRAME(_u2FrameCtrl) \
+	(((_u2FrameCtrl & MASK_FC_TYPE) == MAC_FRAME_TYPE_CTRL) ? TRUE : FALSE)
+
+#define RXM_IS_TRIGGER_FRAME(_u2FrameCtrl) \
+	(((_u2FrameCtrl & MASK_FRAME_TYPE) == MAC_FRAME_HE_TRIGGER) ?\
+		TRUE : FALSE)
+
+#define RXM_IS_BLOCK_ACK_FRAME(_u2FrameCtrl) \
+	(((_u2FrameCtrl & MASK_FRAME_TYPE) == MAC_FRAME_BLOCK_ACK) ?\
+		TRUE : FALSE)
 
 /*******************************************************************************
  *                   F U N C T I O N   D E C L A R A T I O N S
