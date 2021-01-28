@@ -3643,6 +3643,7 @@ uint32_t wlanServiceExit(struct GLUE_INFO *prGlueInfo)
 #define FW_LOG_CMD_ON_OFF        0
 #define FW_LOG_CMD_SET_LEVEL     1
 static uint32_t u4LogOnOffCache;
+static uint32_t u4LogLevelCache;
 
 struct CMD_CONNSYS_FW_LOG {
 	int32_t fgCmd;
@@ -3724,7 +3725,33 @@ connsysFwLogControl(struct ADAPTER *prAdapter, void *pvSetBuffer,
 		/*ENG_LOAD_OFFSET 1*/
 		/*USERDEBUG_LOAD_OFFSET 2 */
 		/*USER_LOAD_OFFSET 3 */
-		DBGLOG(INIT, INFO, "FW_LOG_CMD_SET_LEVEL\n");
+		int32_t u4LogLevel = ENUM_WIFI_LOG_LEVEL_DEFAULT;
+
+		DBGLOG(INIT, INFO, "FW_LOG_CMD_SET_LEVEL %d\n", prCmd->fgValue);
+		switch (prCmd->fgValue) {
+		case 0:
+			u4LogLevel = ENUM_WIFI_LOG_LEVEL_DEFAULT;
+			break;
+		case 1:
+			u4LogLevel = ENUM_WIFI_LOG_LEVEL_MORE;
+			break;
+		case 2:
+			u4LogLevel = ENUM_WIFI_LOG_LEVEL_EXTREME;
+			break;
+		default:
+			u4LogLevel = ENUM_WIFI_LOG_LEVEL_DEFAULT;
+			break;
+		}
+		wlanDbgSetLogLevelImpl(prAdapter,
+					   ENUM_WIFI_LOG_LEVEL_VERSION_V1,
+					   ENUM_WIFI_LOG_MODULE_DRIVER,
+					   u4LogLevel);
+		wlanDbgSetLogLevelImpl(prAdapter,
+					   ENUM_WIFI_LOG_LEVEL_VERSION_V1,
+					   ENUM_WIFI_LOG_MODULE_FW,
+					   u4LogLevel);
+		/* keep in cache */
+		u4LogLevelCache = prCmd->fgValue;
 	} else {
 		DBGLOG(INIT, INFO, "command can not parse\n");
 	}
@@ -3743,8 +3770,12 @@ static void consys_log_event_notification(int cmd, int value)
 	DBGLOG(INIT, INFO, "gPrDev=%p, cmd=%d, value=%d\n",
 		gPrDev, cmd, value);
 
-	if (kalIsHalted()) { /* power-off */
+	if (cmd == FW_LOG_CMD_ON_OFF)
 		u4LogOnOffCache = value;
+	if (cmd == FW_LOG_CMD_SET_LEVEL)
+		u4LogLevelCache = value;
+
+	if (kalIsHalted()) { /* power-off */
 		DBGLOG(INIT, INFO,
 			"Power off return, u4LogOnOffCache=%d\n",
 				u4LogOnOffCache);
@@ -3755,7 +3786,6 @@ static void consys_log_event_notification(int cmd, int value)
 		*((struct GLUE_INFO **) netdev_priv(prDev)) : NULL;
 	DBGLOG(INIT, TRACE, "prGlueInfo=%p\n", prGlueInfo);
 	if (!prGlueInfo) {
-		u4LogOnOffCache = value;
 		DBGLOG(INIT, INFO,
 			"prGlueInfo == NULL return, u4LogOnOffCache=%d\n",
 				u4LogOnOffCache);
@@ -3764,7 +3794,6 @@ static void consys_log_event_notification(int cmd, int value)
 	prAdapter = prGlueInfo->prAdapter;
 	DBGLOG(INIT, TRACE, "prAdapter=%p\n", prAdapter);
 	if (!prAdapter) {
-		u4LogOnOffCache = value;
 		DBGLOG(INIT, INFO,
 			"prAdapter == NULL return, u4LogOnOffCache=%d\n",
 				u4LogOnOffCache);
@@ -4225,6 +4254,8 @@ int32_t wlanOnWhenProbeSuccess(struct GLUE_INFO *prGlueInfo,
 	/* sync log status with firmware */
 	consys_log_event_notification((int)FW_LOG_CMD_ON_OFF,
 		u4LogOnOffCache);
+	consys_log_event_notification((int)FW_LOG_CMD_SET_LEVEL,
+		u4LogLevelCache);
 #endif
 
 #if CFG_CHIP_RESET_HANG
