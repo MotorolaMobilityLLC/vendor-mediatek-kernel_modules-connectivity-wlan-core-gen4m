@@ -50,8 +50,8 @@
  *
  *****************************************************************************/
 /*
-** Id: //Department/DaVinci/TRUNK/WiFi_P2P_Driver/include/nic/p2p_mac.h#2
-*/
+ ** Id: //Department/DaVinci/TRUNK/WiFi_P2P_Driver/include/nic/p2p_mac.h#2
+ */
 
 /*! \file   "p2p_mac.h"
  *  \brief  Brief description.
@@ -62,19 +62,19 @@
 #ifndef _P2P_MAC_H
 #define _P2P_MAC_H
 
-/*******************************************************************************
+/******************************************************************************
  *                         C O M P I L E R   F L A G S
- ********************************************************************************
+ ******************************************************************************
  */
 
-/*******************************************************************************
+/******************************************************************************
  *                    E X T E R N A L   R E F E R E N C E S
- ********************************************************************************
+ ******************************************************************************
  */
 
-/*******************************************************************************
+/******************************************************************************
  *                              C O N S T A N T S
- ********************************************************************************
+ ******************************************************************************
  */
 
 #define ACTION_PUBLIC_WIFI_DIRECT                   9
@@ -100,37 +100,38 @@
 #define P2P_ACTION_P2P_PRESENCE_RSP                 2
 #define P2P_ACTION_GO_DISCOVER_REQ                  3
 
-#define P2P_PUBLIC_ACTION_FRAME_LEN                (WLAN_MAC_MGMT_HEADER_LEN + 8)
-#define P2P_ACTION_FRAME_LEN                       (WLAN_MAC_MGMT_HEADER_LEN + 7)
+#define P2P_PUBLIC_ACTION_FRAME_LEN (WLAN_MAC_MGMT_HEADER_LEN + 8)
+#define P2P_ACTION_FRAME_LEN         (WLAN_MAC_MGMT_HEADER_LEN + 7)
 
-/*******************************************************************************
+/******************************************************************************
  *                                 M A C R O S
- ********************************************************************************
+ ******************************************************************************
  */
 
-/*******************************************************************************
+/******************************************************************************
  *                             D A T A   T Y P E S
- ********************************************************************************
+ ******************************************************************************
  */
 
-/*******************************************************************************
+/******************************************************************************
  *                            P U B L I C   D A T A
- ********************************************************************************
+ ******************************************************************************
  */
 
-/*******************************************************************************
+/******************************************************************************
  *                           P R I V A T E   D A T A
- ********************************************************************************
+ ******************************************************************************
  */
 
-/*******************************************************************************
+/******************************************************************************
  *                  F U N C T I O N   D E C L A R A T I O N S
- ********************************************************************************
+ ******************************************************************************
  */
 
 /* --------------- WPS Data Element Definitions --------------- */
 /* P2P 4.2.2 - General WSC Attribute */
-#define WSC_ATTRI_HDR_LEN                                   4	/* ID(2 octet) + Length(2 octets) */
+#define WSC_ATTRI_HDR_LEN                                   4
+/* ID(2 octet) + Length(2 octets) */
 #define WSC_ATTRI_MAX_LEN_VERSION                           1
 #define WSC_ATTRI_MAX_LEN_DEVICE_PASSWORD_ID                2
 #define WSC_ATTRI_LEN_CONFIG_METHOD                         2
@@ -139,10 +140,10 @@
 /* P2P 4.1.1 - P2P IE format */
 #define P2P_OUI_TYPE_LEN                            4
 /* == OFFSET_OF(IE_P2P_T, aucP2PAttributes[0]) */
-#define P2P_IE_OUI_HDR                              (ELEM_HDR_LEN + P2P_OUI_TYPE_LEN)
+#define P2P_IE_OUI_HDR (ELEM_HDR_LEN + P2P_OUI_TYPE_LEN)
 
 /* P2P 4.1.1 - General P2P Attribute */
-#define P2P_ATTRI_HDR_LEN                           3	/* ID(1 octet) + Length(2 octets) */
+#define P2P_ATTRI_HDR_LEN  3	/* ID(1 octet) + Length(2 octets) */
 
 /* P2P 4.1.1 - P2P Attribute ID definitions */
 #define P2P_ATTRI_ID_STATUS                                 0
@@ -178,7 +179,7 @@
 #define P2P_ATTRI_MAX_LEN_EXT_LISTEN_TIMING                 4	/* 8 */
 #define P2P_ATTRI_MAX_LEN_INTENDED_P2P_IF_ADDR              6	/* 9 */
 #define P2P_ATTRI_MAX_LEN_P2P_MANAGEABILITY                 1	/* 10 */
-/* #define P2P_ATTRI_MAX_LEN_CHANNEL_LIST                      3 + (n* (2 + num_of_ch)) *//* 11 */
+/* #define P2P_ATTRI_MAX_LEN_CHANNEL_LIST 3 + (n* (2 + num_of_ch)) *//* 11 */
 #define P2P_ATTRI_LEN_CHANNEL_LIST                                  3	/* 11 */
 #define P2P_ATTRI_LEN_CHANNEL_ENTRY                                  2	/* 11 */
 
@@ -290,7 +291,9 @@ struct P2P_PUBLIC_ACTION_FRAME {
 	uint8_t ucAction;	/* Action Value, 0x09 */
 	uint8_t aucOui[3];	/* 0x50, 0x6F, 0x9A */
 	uint8_t ucOuiType;	/* 0x09 */
-	uint8_t ucOuiSubtype;	/* GO Nego Req/Rsp/Cfm, P2P Invittion Req/Rsp, Device Discoverability Req/Rsp */
+	uint8_t ucOuiSubtype;
+	/* GO Nego Req/Rsp/Cfm, P2P Invittion Req/Rsp, */
+	/* Device Discovery Req/Rsp */
 	uint8_t ucDialogToken;	/* Dialog Token. */
 	uint8_t aucInfoElem[1];	/* P2P IE, WSC IE. */
 } __KAL_ATTRIB_PACKED__;
@@ -343,7 +346,8 @@ struct GAS_PUBLIC_ACTION_INITIAL_RESPONSE_FRAME {
 	uint8_t ucAction;	/* Action Value, 0x09 */
 	uint8_t ucDialogToken;	/* Dialog Token. */
 	uint16_t u2StatusCode;	/* Initial Response. */
-	uint16_t u2ComebackDelay;	/* Initial Response. *//* In unit of TU. */
+	uint16_t u2ComebackDelay;
+	/* Initial Response. *//* In unit of TU. */
 	uint8_t aucInfoElem[1];	/* Advertisement IE. */
 } __KAL_ATTRIB_PACKED__;
 
