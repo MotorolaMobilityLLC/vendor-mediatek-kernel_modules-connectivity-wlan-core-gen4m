@@ -1578,13 +1578,12 @@ static int wlanInit(struct net_device *prDev)
 
 #if CFG_SUPPORT_RX_GRO
 	/* Register GRO function to kernel */
-	spin_lock_init(&prGlueInfo->napi_spinlock);
-
 	ucBssIndex = wlanGetBssIdx(prDev);
 	prDev->features |= NETIF_F_GRO;
 	prDev->hw_features |= NETIF_F_GRO;
 	prNetDevPrivate = (struct NETDEV_PRIVATE_GLUE_INFO *)
 		netdev_priv(prDev);
+	spin_lock_init(&prNetDevPrivate->napi_spinlock);
 	prNetDevPrivate->napi.dev = prDev;
 	netif_napi_add(prNetDevPrivate->napi.dev,
 		&prNetDevPrivate->napi, kal_napi_poll, 64);
