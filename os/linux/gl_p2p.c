@@ -586,7 +586,7 @@ u_int8_t p2PAllocInfo(IN struct GLUE_INFO *prGlueInfo, IN uint8_t ucIdex)
 					sizeof(struct P2P_SPECIFIC_BSS_INFO),
 					VIR_MEM_TYPE);
 #if CFG_ENABLE_PER_STA_STATISTICS_LOG
-			prWifiVar->prP2pQueryStaStatistics =
+			prWifiVar->prP2pQueryStaStatistics[ucIdex] =
 				kalMemAlloc(
 					sizeof(struct PARAM_GET_STA_STATISTICS),
 					VIR_MEM_TYPE);
@@ -616,8 +616,8 @@ u_int8_t p2PAllocInfo(IN struct GLUE_INFO *prGlueInfo, IN uint8_t ucIdex)
 		kalMemZero(prWifiVar->prP2pSpecificBssInfo[ucIdex],
 			sizeof(struct P2P_SPECIFIC_BSS_INFO));
 #if CFG_ENABLE_PER_STA_STATISTICS_LOG
-		if (prWifiVar->prP2pQueryStaStatistics)
-			kalMemZero(prWifiVar->prP2pQueryStaStatistics,
+		if (prWifiVar->prP2pQueryStaStatistics[ucIdex])
+			kalMemZero(prWifiVar->prP2pQueryStaStatistics[ucIdex],
 				sizeof(struct PARAM_GET_STA_STATISTICS));
 #endif
 	} while (FALSE);
@@ -655,11 +655,11 @@ u_int8_t p2PAllocInfo(IN struct GLUE_INFO *prGlueInfo, IN uint8_t ucIdex)
 	}
 
 #if CFG_ENABLE_PER_STA_STATISTICS_LOG
-	if (prWifiVar->prP2pQueryStaStatistics) {
-		kalMemFree(prWifiVar->prP2pQueryStaStatistics,
+	if (prWifiVar->prP2pQueryStaStatistics[ucIdex]) {
+		kalMemFree(prWifiVar->prP2pQueryStaStatistics[ucIdex],
 			VIR_MEM_TYPE,
 			sizeof(struct PARAM_GET_STA_STATISTICS));
-		prWifiVar->prP2pQueryStaStatistics = NULL;
+		prWifiVar->prP2pQueryStaStatistics[ucIdex] = NULL;
 	}
 #endif
 
@@ -748,10 +748,10 @@ u_int8_t p2PFreeInfo(struct GLUE_INFO *prGlueInfo, uint8_t ucIdx)
 		prAdapter->rWifiVar.prP2pSpecificBssInfo[ucIdx] = NULL;
 
 #if CFG_ENABLE_PER_STA_STATISTICS_LOG
-		kalMemFree(prAdapter->rWifiVar.prP2pQueryStaStatistics,
+		kalMemFree(prAdapter->rWifiVar.prP2pQueryStaStatistics[ucIdx],
 			VIR_MEM_TYPE,
 			sizeof(struct PARAM_GET_STA_STATISTICS));
-		prAdapter->rWifiVar.prP2pQueryStaStatistics = NULL;
+		prAdapter->rWifiVar.prP2pQueryStaStatistics[ucIdx] = NULL;
 #endif
 
 		kalMemFree(prGlueInfo->prP2PInfo[ucIdx],
