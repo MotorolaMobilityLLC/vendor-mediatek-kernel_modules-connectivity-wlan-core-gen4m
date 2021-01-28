@@ -125,6 +125,8 @@ static uint8_t *apucDebugAisState[AIS_STATE_NUM] = {
 */
 static void aisFsmRunEventScanDoneTimeOut(IN struct ADAPTER *prAdapter, unsigned long ulParam);
 static void aisFsmSetOkcTimeout(IN struct ADAPTER *prAdapter, unsigned long ulParam);
+/* Support AP Selection*/
+static void aisRemoveDisappearedBlacklist(struct ADAPTER *prAdapter);
 
 /*******************************************************************************
 *                              F U N C T I O N S
@@ -287,6 +289,8 @@ void aisFsmInit(IN struct ADAPTER *prAdapter)
 	prAisFsmInfo->fgIsChannelRequested = FALSE;
 	prAisFsmInfo->fgIsChannelGranted = FALSE;
 	prAisFsmInfo->u4PostponeIndStartTime = 0;
+	/* Support AP Selection */
+	prAisFsmInfo->ucJoinFailCntAfterScan = 0;
 
 	/* 4 <1.1> Initiate FSM - Timer INIT */
 	cnmTimerInitTimer(prAdapter,
@@ -368,6 +372,12 @@ void aisFsmInit(IN struct ADAPTER *prAdapter)
 	/* request list initialization */
 	LINK_INITIALIZE(&prAisFsmInfo->rPendingReqList);
 
+	/* Support AP Selection */
+	LINK_MGMT_INIT(&prAdapter->rWifiVar.rConnSettings.rBlackList);
+		kalMemZero(&prAisSpecificBssInfo->arCurEssChnlInfo[0],
+		sizeof(prAisSpecificBssInfo->arCurEssChnlInfo));
+	LINK_INITIALIZE(&prAisSpecificBssInfo->rCurEssLink);
+	/* end Support AP Selection */
 	/* DBGPRINTF("[2] ucBmpDeliveryAC:0x%x, ucBmpTriggerAC:0x%x, ucUapsdSp:0x%x", */
 	/* prAisBssInfo->rPmProfSetupInfo.ucBmpDeliveryAC, */
 	/* prAisBssInfo->rPmProfSetupInfo.ucBmpTriggerAC, */
@@ -428,6 +438,10 @@ void aisFsmUninit(IN struct ADAPTER *prAdapter)
 #if CFG_SUPPORT_802_11W
 	rsnStopSaQuery(prAdapter);
 #endif
+		/* Support AP Selection */
+		LINK_MGMT_UNINIT(&prAdapter->rWifiVar.rConnSettings.rBlackList,
+			struct AIS_BLACKLIST_ITEM, VIR_MEM_TYPE);
+		/* end Support AP Selection */
 }				/* end of aisFsmUninit() */
 
 /*----------------------------------------------------------------------------*/
@@ -997,13 +1011,26 @@ void aisFsmSteps(IN struct ADAPTER *prAdapter, enum ENUM_AIS_STATE eNextState)
 #if CFG_SLT_SUPPORT
 			prBssDesc = prAdapter->rWifiVar.rSltInfo.prPseudoBssDesc;
 #else
-			prBssDesc = scanSearchBssDescByPolicy(prAdapter, prAdapter->prAisBssInfo->ucBssIndex);
+			/* Support AP Selection */
+			if (prAisFsmInfo->ucJoinFailCntAfterScan >= SCN_BSS_JOIN_FAIL_THRESOLD) {
+				prBssDesc = NULL;
+				DBGLOG(AIS, STATE,
+					"Failed to connect %s more than 4 times after last scan, scan again\n",
+					prConnSettings->aucSSID);
+			} else {
+#if CFG_SELECT_BSS_BASE_ON_MULTI_PARAM
+				prBssDesc = scanSearchBssDescByScoreForAis(prAdapter);
+#else
+				prBssDesc = scanSearchBssDescByPolicy(prAdapter, NETWORK_TYPE_AIS_INDEX);
 #endif
-
+			}
+#endif
 			/* we are under Roaming Condition. */
 			if (prAisBssInfo->eConnectionState == PARAM_MEDIA_STATE_CONNECTED) {
 				if (prAisFsmInfo->ucConnTrialCount > AIS_ROAMING_CONNECTION_TRIAL_LIMIT) {
 #if CFG_SUPPORT_ROAMING
+					DBGLOG(AIS, STATE,
+						"Roaming retry count :%d fail!\n", prAisFsmInfo->ucConnTrialCount);
 					roamingFsmRunEventFail(prAdapter, ROAMING_FAIL_REASON_CONNLIMIT);
 #endif /* CFG_SUPPORT_ROAMING */
 					/* reset retry count */
@@ -1372,6 +1399,8 @@ void aisFsmSteps(IN struct ADAPTER *prAdapter, enum ENUM_AIS_STATE eNextState)
 			mboxSendMsg(prAdapter, MBOX_ID_0, (struct MSG_HDR *) prScanReqMsg, MSG_SEND_METHOD_BUF);
 
 			prAisFsmInfo->fgTryScan = FALSE;	/* Will enable background sleep for infrastructure */
+			/* Support AP Selection */
+			prAisFsmInfo->ucJoinFailCntAfterScan = 0;
 
 			break;
 
@@ -1695,7 +1724,11 @@ void aisFsmRunEventScanDone(IN struct ADAPTER *prAdapter, IN struct MSG_HDR *prM
 #if CFG_SUPPORT_AGPS_ASSIST
 			scanReportScanResultToAgps(prAdapter);
 #endif
-
+/* Support AP Selection */
+#if CFG_SELECT_BSS_BASE_ON_MULTI_PARAM
+			scanGetCurrentEssChnlList(prAdapter);
+#endif
+/* end Support AP Selection */
 			break;
 
 		case AIS_STATE_LOOKING_FOR:
@@ -1704,6 +1737,11 @@ void aisFsmRunEventScanDone(IN struct ADAPTER *prAdapter, IN struct MSG_HDR *prM
 #else
 			eNextState = AIS_STATE_SEARCH;
 #endif /* CFG_SUPPORT_ROAMING */
+/* Support AP Selection */
+#if CFG_SELECT_BSS_BASE_ON_MULTI_PARAM
+			scanGetCurrentEssChnlList(prAdapter);
+#endif
+/* ebd Support AP Selection */
 			break;
 
 		default:
@@ -1754,9 +1792,24 @@ void aisFsmRunEventAbort(IN struct ADAPTER *prAdapter, IN struct MSG_HDR *prMsgH
 	GET_CURRENT_SYSTIME(&(prAisFsmInfo->rJoinReqTime));
 
 	/* 4 <2> clear previous pending connection request and insert new one */
-	if (ucReasonOfDisconnect == DISCONNECT_REASON_CODE_DEAUTHENTICATED
-	    || ucReasonOfDisconnect == DISCONNECT_REASON_CODE_DISASSOCIATED) {
+	/* Support AP Selection */
+	if (ucReasonOfDisconnect == DISCONNECT_REASON_CODE_DEAUTHENTICATED ||
+		ucReasonOfDisconnect == DISCONNECT_REASON_CODE_DISASSOCIATED) {
+		struct STA_RECORD *prSta = prAisFsmInfo->prTargetStaRec;
+		struct BSS_DESC *prBss = prAisFsmInfo->prTargetBssDesc;
+
+		if (prSta && prBss && prSta->u2ReasonCode ==
+			REASON_CODE_DISASSOC_AP_OVERLOAD) {
+			struct AIS_BLACKLIST_ITEM *prBlackList =
+				aisAddBlacklist(prAdapter, prBss);
+
+			if (prBlackList)
+				prBlackList->u2DeauthReason = prSta->u2ReasonCode;
+		}
+		if (prAisFsmInfo->prTargetBssDesc)
+			prAisFsmInfo->prTargetBssDesc->fgDeauthLastTime = TRUE;
 		prConnSettings->fgIsDisconnectedByNonRequest = TRUE;
+	/* end Support AP Selection */
 	} else {
 		prConnSettings->fgIsDisconnectedByNonRequest = FALSE;
 	}
@@ -1780,6 +1833,11 @@ void aisFsmRunEventAbort(IN struct ADAPTER *prAdapter, IN struct MSG_HDR *prMsgH
 		}
 		return;
 	}
+	/* Support AP Selection */
+#if CFG_SELECT_BSS_BASE_ON_MULTI_PARAM
+	scanGetCurrentEssChnlList(prAdapter);
+#endif
+	/* end Support AP Selection */
 
 	aisFsmIsRequestPending(prAdapter, AIS_REQUEST_RECONNECT, TRUE);
 	aisFsmInsertRequest(prAdapter, AIS_REQUEST_RECONNECT);
@@ -1991,6 +2049,10 @@ void aisFsmRunEventJoinComplete(IN struct ADAPTER *prAdapter, IN struct MSG_HDR 
 			DBGLOG(AIS, WARN, "SEQ NO of AIS JOIN COMP MSG is not matched.\n");
 #endif /* DBG */
 	}
+	/* Support AP Selection*/
+	/* try to remove timeout blacklist item */
+		aisRemoveDisappearedBlacklist(prAdapter);
+	/* end Support AP Selection*/
 	if (eNextState != prAisFsmInfo->eCurrentState)
 		aisFsmSteps(prAdapter, eNextState);
 
@@ -2093,6 +2155,11 @@ enum ENUM_AIS_STATE aisFsmJoinCompleteAction(IN struct ADAPTER *prAdapter, IN st
 			if (aisFsmIsRequestPending(prAdapter, AIS_REQUEST_ROAMING_CONNECT, FALSE) == FALSE)
 				prAisFsmInfo->rJoinReqTime = 0;
 
+			/* Support AP Selection */
+			prAisFsmInfo->prTargetBssDesc->fgDeauthLastTime = FALSE;
+			prAisFsmInfo->ucJoinFailCntAfterScan = 0;
+			/* end Support AP Selection */
+
 			/* 4 <1.7> Set the Next State of AIS FSM */
 			eNextState = AIS_STATE_NORMAL_TR;
 		}
@@ -2118,6 +2185,8 @@ enum ENUM_AIS_STATE aisFsmJoinCompleteAction(IN struct ADAPTER *prAdapter, IN st
 
 				/* 3.2 reset local variable */
 				prAisFsmInfo->fgIsInfraChannelFinished = TRUE;
+				/* Support AP Selection */
+				prAisFsmInfo->ucJoinFailCntAfterScan++;
 
 				kalMemZero(&rSsid, sizeof(struct PARAM_SSID));
 				if (prBssDesc)
@@ -2143,13 +2212,20 @@ enum ENUM_AIS_STATE aisFsmJoinCompleteAction(IN struct ADAPTER *prAdapter, IN st
 				/* ASSERT(prBssDesc->fgIsConnecting); */
 				prBssDesc->u2JoinStatus = prStaRec->u2StatusCode;
 				prBssDesc->ucJoinFailureCount++;
-				if (prBssDesc->ucJoinFailureCount > SCN_BSS_JOIN_FAIL_THRESOLD) {
+				if (prBssDesc->ucJoinFailureCount >= SCN_BSS_JOIN_FAIL_THRESOLD) {
+					/* Support AP Selection */
+					aisAddBlacklist(prAdapter, prBssDesc);
+
 					GET_CURRENT_SYSTIME(&prBssDesc->rJoinFailTime);
 					DBGLOG(AIS, INFO,
 					       "Bss " MACSTR " join fail %d times, temp disable it at time: %u\n",
 					       MAC2STR(prBssDesc->aucBSSID), SCN_BSS_JOIN_FAIL_THRESOLD,
 					       prBssDesc->rJoinFailTime);
 				}
+
+				/* Support AP Selection */
+				if (prBssDesc->prBlack)
+					prBssDesc->prBlack->u2AuthStatus = prStaRec->u2StatusCode;
 
 				if (prBssDesc)
 					prBssDesc->fgIsConnecting = FALSE;
@@ -2730,6 +2806,8 @@ void aisUpdateBssInfoForJOIN(IN struct ADAPTER *prAdapter, struct STA_RECORD *pr
 		prBssDesc->fgIsConnecting = FALSE;
 		prBssDesc->fgIsConnected = TRUE;
 		prBssDesc->ucJoinFailureCount = 0;
+
+		aisRemoveBlackList(prAdapter, prBssDesc);
 		/* 4 <4.1> Setup MIB for current BSS */
 		prAisBssInfo->u2BeaconInterval = prBssDesc->u2BeaconInterval;
 	} else {
@@ -2935,6 +3013,8 @@ void aisUpdateBssInfoForMergeIBSS(IN struct ADAPTER *prAdapter, IN struct STA_RE
 	if (prBssDesc) {
 		prBssDesc->fgIsConnecting = FALSE;
 		prBssDesc->fgIsConnected = TRUE;
+		/* Support AP Selection */
+		aisRemoveBlackList(prAdapter, prBssDesc);
 
 		/* 4 <4.1> Setup BSSID */
 		COPY_MAC_ADDR(prAisBssInfo->aucBSSID, prBssDesc->aucBSSID);
@@ -3173,6 +3253,11 @@ static void aisFsmRunEventScanDoneTimeOut(IN struct ADAPTER *prAdapter, unsigned
 #else
 		eNextState = AIS_STATE_NORMAL_TR;
 #endif /* CFG_SUPPORT_ROAMING */
+/* Support AP Selection */
+#if CFG_SELECT_BSS_BASE_ON_MULTI_PARAM
+		scanGetCurrentEssChnlList(prAdapter);
+#endif
+/* end Support AP Selection */
 		break;
 	default:
 		break;
@@ -3306,6 +3391,8 @@ void aisFsmRunEventJoinTimeout(IN struct ADAPTER *prAdapter, unsigned long ulPar
 		aisFsmStateAbort_JOIN(prAdapter);
 
 		/* 2. Increase Join Failure Count */
+		/* Support AP Selection */
+		aisAddBlacklist(prAdapter, prAisFsmInfo->prTargetBssDesc);
 		prAisFsmInfo->prTargetBssDesc->ucJoinFailureCount++;
 
 		if (prAisFsmInfo->prTargetBssDesc->ucJoinFailureCount < JOIN_MAX_RETRY_FAILURE_COUNT) {
@@ -4523,3 +4610,210 @@ void aisFuncValidateRxActionFrame(IN struct ADAPTER *prAdapter, IN struct SW_RFB
 	return;
 
 }				/* aisFuncValidateRxActionFrame */
+
+/* Support AP Selection */
+void aisRefreshFWKBlacklist(struct ADAPTER *prAdapter)
+{
+	struct CONNECTION_SETTINGS *prConnSettings =
+		&prAdapter->rWifiVar.rConnSettings;
+	struct AIS_BLACKLIST_ITEM *prEntry = NULL;
+	struct LINK *prBlackList = &prConnSettings->rBlackList.rUsingLink;
+
+	DBGLOG(AIS, INFO, "Refresh all the BSSes' fgIsInFWKBlacklist to FALSE\n");
+	LINK_FOR_EACH_ENTRY(prEntry, prBlackList, rLinkEntry,
+		struct AIS_BLACKLIST_ITEM) {
+		prEntry->fgIsInFWKBlacklist = FALSE;
+	}
+}
+
+
+struct AIS_BLACKLIST_ITEM *
+aisAddBlacklist(struct ADAPTER *prAdapter, struct BSS_DESC *prBssDesc)
+{
+	struct CONNECTION_SETTINGS *prConnSettings =
+		&prAdapter->rWifiVar.rConnSettings;
+	struct AIS_BLACKLIST_ITEM *prEntry = NULL;
+	struct LINK *prFreeList = &prConnSettings->rBlackList.rFreeLink;
+	struct LINK *prBlackList = &prConnSettings->rBlackList.rUsingLink;
+
+	if (!prBssDesc) {
+		DBGLOG(AIS, ERROR, "bss descriptor is NULL\n");
+		return NULL;
+	}
+	if (prBssDesc->prBlack) {
+		GET_CURRENT_SYSTIME(&prBssDesc->prBlack->rAddTime);
+		prBssDesc->prBlack->ucCount++;
+		if (prBssDesc->prBlack->ucCount > 10)
+			prBssDesc->prBlack->ucCount = 10;
+		DBGLOG(AIS, INFO, "update blacklist for %pM, count %d\n",
+			prBssDesc->aucBSSID, prBssDesc->prBlack->ucCount);
+		return prBssDesc->prBlack;
+	}
+
+	prEntry = aisQueryBlackList(prAdapter, prBssDesc);
+
+	if (prEntry) {
+		GET_CURRENT_SYSTIME(&prEntry->rAddTime);
+		prBssDesc->prBlack = prEntry;
+		prEntry->ucCount++;
+		if (prEntry->ucCount > 10)
+			prEntry->ucCount = 10;
+		DBGLOG(AIS, INFO, "update blacklist for %pM, count %d\n",
+			prBssDesc->aucBSSID, prEntry->ucCount);
+		return prEntry;
+	}
+
+	LINK_REMOVE_HEAD(prFreeList, prEntry, struct AIS_BLACKLIST_ITEM *);
+	if (!prEntry)
+		prEntry = kalMemAlloc(sizeof(struct AIS_BLACKLIST_ITEM), VIR_MEM_TYPE);
+	if (!prEntry) {
+		DBGLOG(AIS, WARN, "No memory to allocate\n");
+		return NULL;
+	}
+	kalMemZero(prEntry, sizeof(*prEntry));
+	prEntry->ucCount = 1;
+	/* Support AP Selection */
+	prEntry->fgIsInFWKBlacklist = FALSE;
+	COPY_MAC_ADDR(prEntry->aucBSSID, prBssDesc->aucBSSID);
+	COPY_SSID(prEntry->aucSSID, prEntry->ucSSIDLen, prBssDesc->aucSSID,
+		prBssDesc->ucSSIDLen);
+	GET_CURRENT_SYSTIME(&prEntry->rAddTime);
+	LINK_INSERT_HEAD(prBlackList, &prEntry->rLinkEntry);
+	prBssDesc->prBlack = prEntry;
+
+	DBGLOG(AIS, INFO, "Add %pM to black List\n", prBssDesc->aucBSSID);
+	return prEntry;
+}
+
+void aisRemoveBlackList(struct ADAPTER *prAdapter, struct BSS_DESC *prBssDesc)
+{
+	struct CONNECTION_SETTINGS *prConnSettings =
+		&prAdapter->rWifiVar.rConnSettings;
+	struct AIS_BLACKLIST_ITEM *prEntry = NULL;
+	struct LINK *prFreeList = &prConnSettings->rBlackList.rFreeLink;
+	struct LINK *prBlackList = &prConnSettings->rBlackList.rUsingLink;
+
+	prEntry = aisQueryBlackList(prAdapter, prBssDesc);
+	if (!prEntry)
+		return;
+	LINK_REMOVE_KNOWN_ENTRY(prBlackList, &prEntry->rLinkEntry);
+	LINK_INSERT_HEAD(prFreeList, &prEntry->rLinkEntry);
+	prBssDesc->prBlack = NULL;
+	DBGLOG(AIS, INFO, "Remove %pM from blacklist\n", prBssDesc->aucBSSID);
+}
+
+struct AIS_BLACKLIST_ITEM *
+aisQueryBlackList(struct ADAPTER *prAdapter, struct BSS_DESC *prBssDesc)
+{
+	struct CONNECTION_SETTINGS *prConnSettings =
+		&prAdapter->rWifiVar.rConnSettings;
+	struct AIS_BLACKLIST_ITEM *prEntry = NULL;
+	struct LINK *prBlackList = &prConnSettings->rBlackList.rUsingLink;
+
+	if (!prBssDesc)
+		return NULL;
+	else if (prBssDesc->prBlack)
+		return prBssDesc->prBlack;
+
+	LINK_FOR_EACH_ENTRY(prEntry, prBlackList, rLinkEntry,
+		struct AIS_BLACKLIST_ITEM) {
+		if (EQUAL_MAC_ADDR(prBssDesc->aucBSSID, prEntry) &&
+			EQUAL_SSID(prBssDesc->aucSSID, prBssDesc->ucSSIDLen,
+			prEntry->aucSSID, prEntry->ucSSIDLen)) {
+			prBssDesc->prBlack = prEntry;
+			return prEntry;
+		}
+	}
+	DBGLOG(AIS, TRACE, "%pM is not in blacklist\n", prBssDesc->aucBSSID);
+	return NULL;
+}
+
+void aisRemoveTimeoutBlacklist(struct ADAPTER *prAdapter)
+{
+	struct CONNECTION_SETTINGS *prConnSettings =
+		&prAdapter->rWifiVar.rConnSettings;
+	struct AIS_BLACKLIST_ITEM *prEntry = NULL;
+	struct AIS_BLACKLIST_ITEM *prNextEntry = NULL;
+	struct LINK *prBlackList = &prConnSettings->rBlackList.rUsingLink;
+	struct LINK *prFreeList = &prConnSettings->rBlackList.rFreeLink;
+	OS_SYSTIME rCurrent;
+
+	GET_CURRENT_SYSTIME(&rCurrent);
+
+	LINK_FOR_EACH_ENTRY_SAFE(prEntry, prNextEntry, prBlackList, rLinkEntry,
+		struct AIS_BLACKLIST_ITEM) {
+			/* Support AP Selection */
+			if (prEntry->fgIsInFWKBlacklist == TRUE)
+				continue;
+			/* end Support AP Selection */
+			if (!CHECK_FOR_TIMEOUT(rCurrent, prEntry->rAddTime,
+				SEC_TO_MSEC(AIS_BLACKLIST_TIMEOUT)))
+				continue;
+			LINK_REMOVE_KNOWN_ENTRY(prBlackList, &prEntry->rLinkEntry);
+			LINK_INSERT_HEAD(prFreeList, &prEntry->rLinkEntry);
+	}
+}
+
+static void aisRemoveDisappearedBlacklist(struct ADAPTER *prAdapter)
+{
+	struct CONNECTION_SETTINGS *prConnSettings =
+		&prAdapter->rWifiVar.rConnSettings;
+	struct AIS_BLACKLIST_ITEM *prEntry = NULL;
+	struct AIS_BLACKLIST_ITEM *prNextEntry = NULL;
+	struct LINK *prBlackList = &prConnSettings->rBlackList.rUsingLink;
+	struct LINK *prFreeList = &prConnSettings->rBlackList.rFreeLink;
+	struct BSS_DESC *prBssDesc = NULL;
+	struct LINK *prBSSDescList = &prAdapter->rWifiVar.rScanInfo.rBSSDescList;
+	uint32_t u4Current = (uint32_t)kalGetBootTime();
+	u_int8_t fgDisappeared = TRUE;
+
+	LINK_FOR_EACH_ENTRY_SAFE(prEntry, prNextEntry, prBlackList, rLinkEntry,
+		struct AIS_BLACKLIST_ITEM) {
+		fgDisappeared = TRUE;
+		LINK_FOR_EACH_ENTRY(prBssDesc, prBSSDescList, rLinkEntry,
+			struct BSS_DESC) {
+			if (prBssDesc->prBlack == prEntry ||
+				(EQUAL_MAC_ADDR(prBssDesc->aucBSSID, prEntry) &&
+				EQUAL_SSID(prBssDesc->aucSSID, prBssDesc->ucSSIDLen,
+				prEntry->aucSSID, prEntry->ucSSIDLen))) {
+				fgDisappeared = FALSE;
+				break;
+			}
+		}
+		if (!fgDisappeared || (u4Current - prEntry->u4DisapperTime) < 600 * USEC_PER_SEC)
+			continue;
+		DBGLOG(AIS, INFO, "Remove disappeared blacklist %s %pM\n",
+			prEntry->aucSSID, prEntry->aucBSSID);
+		LINK_REMOVE_KNOWN_ENTRY(prBlackList, &prEntry->rLinkEntry);
+		LINK_INSERT_HEAD(prFreeList, &prEntry->rLinkEntry);
+	}
+}
+
+u_int8_t aisApOverload(struct AIS_BLACKLIST_ITEM *prBlack)
+{
+	switch (prBlack->u2AuthStatus) {
+	case STATUS_CODE_ASSOC_DENIED_AP_OVERLOAD:
+	case STATUS_CODE_ASSOC_DENIED_BANDWIDTH:
+		return TRUE;
+	}
+	switch (prBlack->u2DeauthReason) {
+	case REASON_CODE_DISASSOC_LACK_OF_BANDWIDTH:
+	case REASON_CODE_DISASSOC_AP_OVERLOAD:
+		return TRUE;
+	}
+	return FALSE;
+}
+
+uint16_t aisCalculateBlackListScore(struct ADAPTER *prAdapter,
+	struct BSS_DESC *prBssDesc)
+{
+	if (!prBssDesc->prBlack)
+		prBssDesc->prBlack = aisQueryBlackList(prAdapter, prBssDesc);
+
+	if (!prBssDesc->prBlack)
+		return 100;
+	else if (aisApOverload(prBssDesc->prBlack) ||
+		prBssDesc->prBlack->ucCount >= 10)
+		return 0;
+	return 100 - prBssDesc->prBlack->ucCount * 10;
+}

@@ -249,6 +249,9 @@ struct CONNECTION_SETTINGS {
 	struct RSN_INFO rRsnInfo;
 
 	u_int8_t fgSecModeChangeStartTimer;
+
+	/* Support AP Selection */
+	struct LINK_MGMT rBlackList;
 };
 
 struct BSS_INFO {
@@ -544,6 +547,14 @@ struct BSS_INFO {
 	enum ENUM_KEY_ACTION_TYPE_T eKeyAction;
 };
 
+/* Support AP Selection */
+struct ESS_CHNL_INFO {
+	uint8_t ucChannel;
+	uint8_t ucUtilization;
+	uint8_t ucApNum;
+};
+/* end Support AP Selection */
+
 struct AIS_SPECIFIC_BSS_INFO {
 	/* This value indicate the roaming type used in AIS_JOIN */
 	uint8_t ucRoamingAuthTypes;
@@ -607,6 +618,12 @@ struct AIS_SPECIFIC_BSS_INFO {
 	u_int8_t fgBipKeyInstalled;
 #endif
 	uint8_t ucKeyAlgorithmId;
+
+	/* Support AP Selection */
+	struct ESS_CHNL_INFO arCurEssChnlInfo[CFG_MAX_NUM_OF_CHNL_INFO];
+	uint8_t ucCurEssChnlInfoNum;
+	struct LINK rCurEssLink;
+	/* end Support AP Selection */
 };
 
 struct BOW_SPECIFIC_BSS_INFO {

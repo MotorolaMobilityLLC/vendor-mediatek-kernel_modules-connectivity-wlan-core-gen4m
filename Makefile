@@ -268,7 +268,9 @@ MGMT_OBJS := $(MGMT_DIR)ais_fsm.o \
              $(MGMT_DIR)hs20.o \
              $(MGMT_DIR)tdls.o \
 			$(MGMT_DIR)wnm.o \
-			$(MGMT_DIR)qosmap.o
+			$(MGMT_DIR)qosmap.o \
+			$(MGMT_DIR)ap_selection.o
+
 # ---------------------------------------------------
 # Chips Objects List
 # ---------------------------------------------------

@@ -2096,6 +2096,15 @@ struct IE_SUP_OPERATING_CLASS {
 	uint8_t ucSup[255];
 } __KAL_ATTRIB_PACKED__;
 
+/* 8.4.2.30 BSS Load element */
+struct IE_BSS_LOAD {
+	uint8_t ucId;
+	uint8_t ucLength;
+	uint16_t u2StaCnt;
+	uint8_t ucChnlUtilizaion;
+	uint16_t u2AvailabeAC;
+} __KAL_ATTRIB_PACKED__;
+
 struct SM_BASIC_REQ {
 	uint8_t ucChannel;
 	uint32_t au4StartTime[2];
