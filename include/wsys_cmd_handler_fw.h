@@ -1467,7 +1467,8 @@ struct EVENT_STATISTICS {
 	union LARGE_INTEGER rFCSErrorCount;
 	union LARGE_INTEGER rMdrdyCnt;
 	union LARGE_INTEGER rChnlIdleCnt;
-	uint32_t au4Padding3[16];
+	union LARGE_INTEGER rHwMacAwakeDuration;
+	uint32_t au4Padding3[14];
 
 	/* wifi_radio_stat */
 	int32_t      i4RadioIdx;
