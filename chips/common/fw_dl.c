@@ -1588,12 +1588,15 @@ uint32_t wlanGetConnacTailerInfo(IN struct ADAPTER
 	struct WIFI_VER_INFO *prVerInfo = &prAdapter->rVerInfo;
 	struct TAILER_COMMON_FORMAT_T *prComTailer;
 	struct TAILER_REGION_FORMAT_T *prRegTailer;
+	uint8_t *pucImgPtr;
+	uint8_t *pucTailertPtr;
 	uint8_t *pucStartPtr;
 	uint32_t u4SecIdx;
 	uint8_t aucBuf[32];
 
-	pucStartPtr = prFwBuffer + u4FwSize - sizeof(
-			      struct TAILER_COMMON_FORMAT_T);
+	pucImgPtr = prFwBuffer;
+	pucStartPtr = prFwBuffer + u4FwSize -
+			sizeof(struct TAILER_COMMON_FORMAT_T);
 	prComTailer = (struct TAILER_COMMON_FORMAT_T *) pucStartPtr;
 	kalMemCopy(&prVerInfo->rCommonTailer, prComTailer,
 		   sizeof(struct TAILER_COMMON_FORMAT_T));
@@ -1618,10 +1621,10 @@ uint32_t wlanGetConnacTailerInfo(IN struct ADAPTER
 		return WLAN_STATUS_FAILURE;
 	}
 
-	pucStartPtr -= (prComTailer->ucRegionNum * sizeof(
-				struct TAILER_REGION_FORMAT_T));
-	for (u4SecIdx = 0; u4SecIdx < prComTailer->ucRegionNum;
-	     u4SecIdx++) {
+	pucStartPtr -= (prComTailer->ucRegionNum *
+			sizeof(struct TAILER_REGION_FORMAT_T));
+	pucTailertPtr = pucStartPtr;
+	for (u4SecIdx = 0; u4SecIdx < prComTailer->ucRegionNum; u4SecIdx++) {
 		prRegTailer = (struct TAILER_REGION_FORMAT_T *) pucStartPtr;
 		kalMemCopy(&prVerInfo->rRegionTailers[u4SecIdx],
 			   prRegTailer, sizeof(struct TAILER_REGION_FORMAT_T));
@@ -1635,8 +1638,12 @@ uint32_t wlanGetConnacTailerInfo(IN struct ADAPTER
 		       "uncompress_crc[0x%08X] uncompress_size[0x%08X] block_size[0x%08X]\n",
 		       prRegTailer->u4CRC, prRegTailer->u4RealSize,
 		       prRegTailer->u4BlockSize);
+		pucImgPtr += prRegTailer->u4Len;
 		pucStartPtr += sizeof(struct TAILER_REGION_FORMAT_T);
 	}
+
+	if (prComTailer->ucFormatFlag && pucImgPtr < pucTailertPtr)
+		fwDlGetReleaseInfoSection(prAdapter, pucImgPtr);
 
 	return WLAN_STATUS_SUCCESS;
 }
@@ -1931,7 +1938,8 @@ uint32_t fwDlGetFwdlInfo(struct ADAPTER *prAdapter,
 	u4Offset += snprintf(pcBuf + u4Offset,
 			     i4TotalLen - u4Offset,
 			     "\nN9 FW version %s-%u.%u.%u[DEC] (%s)\n",
-			     aucBuf, (prVerInfo->u2FwOwnVersion >> 8),
+			     aucBuf,
+			     (uint32_t)(prVerInfo->u2FwOwnVersion >> 8),
 			     (prVerInfo->u2FwOwnVersion & BITS(0, 7)),
 			     prVerInfo->ucFwBuildNumber, aucDate);
 
@@ -1958,12 +1966,57 @@ uint32_t fwDlGetFwdlInfo(struct ADAPTER *prAdapter,
 			     aucBuf, prVerInfo->rPatchHeader.u4PatchVersion,
 			     aucDate);
 
-	u4Offset += snprintf(pcBuf + u4Offset,
-			     i4TotalLen - u4Offset,
+	u4Offset += snprintf(pcBuf + u4Offset, i4TotalLen - u4Offset,
 			     "Drv version %u.%u[DEC]\n",
-			     (prVerInfo->u2FwPeerVersion >> 8),
+			     (uint32_t)(prVerInfo->u2FwPeerVersion >> 8),
 			     (prVerInfo->u2FwPeerVersion & BITS(0, 7)));
 	return u4Offset;
+}
+
+void fwDlGetReleaseInfoSection(struct ADAPTER *prAdapter, uint8_t *pucStartPtr)
+{
+	struct HEADER_RELEASE_INFO *prFirstInfo;
+	struct HEADER_RELEASE_INFO *prRelInfo;
+	uint8_t *pucCurPtr = pucStartPtr + RELEASE_INFO_SEPARATOR_LEN;
+	uint16_t u2Len = 0, u2Offset = 0;
+
+	prFirstInfo = (struct HEADER_RELEASE_INFO *)pucCurPtr;
+	DBGLOG(INIT, INFO, "Release info tag[%u] len[%u]\n",
+	       prFirstInfo->ucTag, prFirstInfo->u2Len);
+
+	pucCurPtr += sizeof(struct HEADER_RELEASE_INFO);
+	while (u2Offset < prFirstInfo->u2Len) {
+		prRelInfo = (struct HEADER_RELEASE_INFO *)pucCurPtr;
+		DBGLOG(INIT, INFO, "Release info tag[%u] len[%u] padding[%u]\n",
+		       prRelInfo->ucTag, prRelInfo->u2Len,
+		       prRelInfo->ucPaddingLen);
+
+		pucCurPtr += sizeof(struct HEADER_RELEASE_INFO);
+		switch (prRelInfo->ucTag) {
+		case 0x01:
+			fwDlGetReleaseManifest(prAdapter, prRelInfo, pucCurPtr);
+			break;
+		default:
+			DBGLOG(INIT, WARN, "Not support release info tag[%u]\n",
+			       prRelInfo->ucTag);
+		}
+
+		u2Len = prRelInfo->u2Len + prRelInfo->ucPaddingLen;
+		pucCurPtr += u2Len;
+		u2Offset += u2Len + sizeof(struct HEADER_RELEASE_INFO);
+	}
+}
+
+void fwDlGetReleaseManifest(struct ADAPTER *prAdapter,
+			    struct HEADER_RELEASE_INFO *prRelInfo,
+			    uint8_t *pucStartPtr)
+{
+	kalMemZero(&prAdapter->rVerInfo.aucReleaseManifest,
+		   sizeof(prAdapter->rVerInfo.aucReleaseManifest));
+	kalMemCopy(&prAdapter->rVerInfo.aucReleaseManifest,
+		   pucStartPtr, prRelInfo->u2Len);
+	DBGLOG(INIT, INFO, "Release manifest: %s\n",
+	       prAdapter->rVerInfo.aucReleaseManifest);
 }
 
 #endif  /* CFG_ENABLE_FW_DOWNLOAD */
