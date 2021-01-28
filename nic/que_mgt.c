@@ -814,6 +814,10 @@ P_QUE_T qmDetermineStaTxQueue(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduI
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prMsduInfo->ucBssIndex);
 	prStaRec = QM_GET_STA_REC_PTR_FROM_INDEX(prAdapter, prMsduInfo->ucStaRecIndex);
 
+	if (!prStaRec) {
+		DBGLOG(QM, ERROR, "prStaRec is null.\n");
+		return NULL;
+	}
 	if (prMsduInfo->ucUserPriority < 8) {
 		QM_DBG_CNT_INC(&prAdapter->rQM, prMsduInfo->ucUserPriority + 15);
 		/* QM_DBG_CNT_15 *//* QM_DBG_CNT_16 *//* QM_DBG_CNT_17 *//* QM_DBG_CNT_18 */
@@ -851,6 +855,11 @@ P_QUE_T qmDetermineStaTxQueue(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduI
 
 	} while (fgCheckACMAgain);
 
+	if (ucQueIdx >= NUM_OF_PER_STA_TX_QUEUES) {
+		DBGLOG(QM, ERROR,
+		       "ucQueIdx = %u, needs 0~3 to avoid out-of-bounds.\n", ucQueIdx);
+		return NULL;
+	}
 	if (prStaRec->fgIsTxAllowed) {
 		/* non protected BSS or protected BSS with key set */
 		prTxQue = prStaRec->aprTargetQueue[ucQueIdx];
@@ -4630,7 +4639,7 @@ qmGetFrameAction(IN P_ADAPTER_T prAdapter, IN UINT_8 ucBssIndex,
 
 		/* 4 <3> Queue, if BSS is absent, drop probe response */
 		if (prBssInfo->fgIsNetAbsent) {
-			if (isProbeResponse(prMsduInfo)) {
+			if (prMsduInfo && isProbeResponse(prMsduInfo)) {
 				DBGLOG(TX, TRACE, "Drop probe response (BSS[%u] Absent)\n",
 					prBssInfo->ucBssIndex);
 
