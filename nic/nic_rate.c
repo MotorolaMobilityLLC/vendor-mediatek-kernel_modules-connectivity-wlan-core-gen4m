@@ -219,7 +219,9 @@ const uint8_t aucHwRate2PhyRate[] = {
  *******************************************************************************
  */
 
-char *HW_TX_MODE_STR[] = {"CCK", "OFDM", "MM", "GF", "VHT", "N/A"};
+char *HW_TX_MODE_STR[] = {
+	"CCK", "OFDM", "MM", "GF", "VHT", "N/A",
+	"N/A", "N/A", "HE_SU", "HE_ER", "HE_TRIG", "HE_MU"};
 char *HW_TX_RATE_CCK_STR[] = {"1M", "2M", "5.5M", "11M", "N/A"};
 char *HW_TX_RATE_OFDM_STR[] = {"6M", "9M", "12M", "18M", "24M", "36M",
 				      "48M", "54M", "N/A"};
