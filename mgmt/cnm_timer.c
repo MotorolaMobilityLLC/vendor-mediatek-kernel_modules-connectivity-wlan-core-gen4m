@@ -492,9 +492,7 @@ void cnmTimerDoTimeOutCheck(IN struct ADAPTER *prAdapter)
 			} else {
 				log_dbg(CNM, WARN, "timer was re-inited, func %p\n",
 					prTimer->pfMgmtTimeOutFunc);
-				/* Remove dead timer to prevent infinite loop */
-				LINK_REMOVE_KNOWN_ENTRY(&prRootTimer->rLinkHead,
-					&prTimer->rLinkEntry);
+				break;
 			}
 
 			/* Search entire list again because of nest del and add
