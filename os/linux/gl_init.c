@@ -1742,23 +1742,20 @@ static void wlanCreateWirelessDevice(void)
 	prWiphy->signal_type = CFG80211_SIGNAL_TYPE_MBM;
 	prWiphy->cipher_suites = (const u32 *)mtk_cipher_suites;
 	prWiphy->n_cipher_suites = ARRAY_SIZE(mtk_cipher_suites);
+	prWiphy->flags = WIPHY_FLAG_HAS_REMAIN_ON_CHANNEL
+			| u4SupportSchedScanFlag;
+
+#if (CFG_SUPPORT_ROAMING == 1)
+	prWiphy->flags |= WIPHY_FLAG_SUPPORTS_FW_ROAM;
+#endif /* CFG_SUPPORT_ROAMING */
+
 #if KERNEL_VERSION(3, 14, 0) > CFG80211_VERSION_CODE
-	prWiphy->flags = WIPHY_FLAG_CUSTOM_REGULATORY
-			 | WIPHY_FLAG_SUPPORTS_FW_ROAM
-			 | WIPHY_FLAG_HAS_REMAIN_ON_CHANNEL
-			 | u4SupportSchedScanFlag;
+	prWiphy->flags |= WIPHY_FLAG_CUSTOM_REGULATORY;
 #else
+	prWiphy->regulatory_flags |= REGULATORY_CUSTOM_REG;
 #if (CFG_SUPPORT_DFS_MASTER == 1)
-	prWiphy->flags = WIPHY_FLAG_SUPPORTS_FW_ROAM
-			 | WIPHY_FLAG_HAS_REMAIN_ON_CHANNEL
-			 | WIPHY_FLAG_HAS_CHANNEL_SWITCH
-			 | u4SupportSchedScanFlag;
-#else
-	prWiphy->flags = WIPHY_FLAG_SUPPORTS_FW_ROAM
-			 | WIPHY_FLAG_HAS_REMAIN_ON_CHANNEL
-			 | u4SupportSchedScanFlag;
+	prWiphy->flags |= WIPHY_FLAG_HAS_CHANNEL_SWITCH;
 #endif
-	prWiphy->regulatory_flags = REGULATORY_CUSTOM_REG;
 #endif
 
 	cfg80211_regd_set_wiphy(prWiphy);
