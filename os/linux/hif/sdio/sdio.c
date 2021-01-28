@@ -423,6 +423,8 @@ static void mtk_sdio_remove(struct sdio_func *func)
 static int mtk_sdio_pm_suspend(struct device *pDev)
 {
 	int ret = 0, wait = 0;
+	int pm_caps, set_flag;
+	const char *func_id;
 	struct sdio_func *func;
 	struct GLUE_INFO *prGlueInfo = NULL;
 
@@ -449,16 +451,32 @@ static int mtk_sdio_pm_suspend(struct device *pDev)
 		kalMsleep(LP_OWN_BACK_LOOP_DELAY_MS);
 	}
 
+	pm_caps = sdio_get_host_pm_caps(func);
+	func_id = sdio_func_id(func);
+
 	/* Ask kernel keeping SDIO bus power-on */
-	ret = sdio_set_host_pm_flags(func, MMC_PM_KEEP_POWER);
+	set_flag = MMC_PM_KEEP_POWER;
+	ret = sdio_set_host_pm_flags(func, set_flag);
 	if (ret) {
-		DBGLOG(HAL, ERROR, "sdio_set_host_pm_flags err %d\n", ret);
-		goto out;
+		DBGLOG(HAL, ERROR, "set flag %d err %d\n", set_flag, ret);
+		DBGLOG(HAL, ERROR,
+			"%s: cannot remain alive(0x%X)\n", func_id, pm_caps);
 	}
 
-out:
+	/* If wow enable, ask kernel accept SDIO IRQ in suspend mode */
+	if (prGlueInfo->prAdapter->rWifiVar.ucWow &&
+		prGlueInfo->prAdapter->rWowCtrl.fgWowEnable) {
+		set_flag = MMC_PM_WAKE_SDIO_IRQ;
+		ret = sdio_set_host_pm_flags(func, set_flag);
+		if (ret) {
+			DBGLOG(HAL, ERROR, "set flag %d err %d\n", set_flag, ret);
+			DBGLOG(HAL, ERROR,
+				"%s: cannot sdio wake-irq(0x%X)\n", func_id, pm_caps);
+		}
+	}
+
 	DBGLOG(HAL, STATE, "<==\n");
-	return ret;
+	return 0;
 }
 
 static int mtk_sdio_pm_resume(struct device *pDev)
