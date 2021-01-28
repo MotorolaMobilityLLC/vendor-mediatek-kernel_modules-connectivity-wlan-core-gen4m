@@ -1134,6 +1134,15 @@ int soc3_0_Trigger_fw_assert(void)
 	int ret = 0;
 	int value;
 	uint32_t waitRet = 0;
+#if (CFG_SUPPORT_CONNINFRA == 1)
+	if (get_wifi_process_status() == 1) {
+		DBGLOG(HAL, ERROR,
+			"Wi-Fi on/off process is ongoing, ignore assert request.\n");
+		fgIsResetting = FALSE;
+		update_driver_reset_status(fgIsResetting);
+		return 0;
+	}
+#endif
 	soc3_0_CheckBusHang(NULL, FALSE);
 	if (g_IsWfsysBusHang == TRUE) {
 		DBGLOG(HAL, INFO,
@@ -1159,7 +1168,7 @@ int soc3_0_Trigger_fw_assert(void)
 			g_IsTriggerTimeout = TRUE;
 	}
 #if (CFG_SUPPORT_CONNINFRA == 1)
-	kalSetRstEvent();
+		kalSetRstEvent();
 #endif
 	wf_ioremap_read(WF_TRIGGER_AP2CONN_EINT, &value);
 	value |= 0x80;
@@ -2449,7 +2458,7 @@ void soc3_0_Sw_interrupt_handler(struct ADAPTER *prAdapter)
 		  (CONN_INFRA_CFG_AP2WF_BUS_ADDR + 0xc0),
 		  &value);
 
-	DBGLOG(HAL, TRACE, "SW INT happended!!!!!(0x%x)\n", value);
+	DBGLOG(HAL, TRACE, "SW INT happened!!!!!(0x%x)\n", value);
 	HAL_MCR_WR(prAdapter,
 		  (CONN_INFRA_CFG_AP2WF_BUS_ADDR + 0xc8),
 		  value);
@@ -2458,12 +2467,7 @@ void soc3_0_Sw_interrupt_handler(struct ADAPTER *prAdapter)
 	if (value & BIT(0))
 		fw_log_wifi_irq_handler();
 #endif
-	if (get_wifi_process_status() == 1) {
-		DBGLOG(HAL, ERROR,
-			"Wi-Fi on/off process is ongoing, ignore interrupt(0x%x).\n",
-			value);
-		return;
-	}
+
 	if (value & BIT(1)) {
 		if (kalIsResetting()) {
 #if (CFG_ANDORID_CONNINFRA_COREDUMP_SUPPORT == 1)
@@ -2474,6 +2478,12 @@ void soc3_0_Sw_interrupt_handler(struct ADAPTER *prAdapter)
 				value);
 			complete(&g_triggerComp);
 		} else {
+			if (get_wifi_process_status() == 1) {
+				DBGLOG(HAL, ERROR,
+					"Wi-Fi on/off process is ongoing, ignore interrupt(0x%x).\n",
+					value);
+				return;
+			}
 #if (CFG_ANDORID_CONNINFRA_COREDUMP_SUPPORT == 1)
 			g_eWfRstSource = WF_RST_SOURCE_FW;
 #endif
@@ -2485,6 +2495,12 @@ void soc3_0_Sw_interrupt_handler(struct ADAPTER *prAdapter)
 		}
 	}
 	if (value & BIT(2)) {
+		if (get_wifi_process_status() == 1) {
+			DBGLOG(HAL, ERROR,
+				"Wi-Fi on/off process is ongoing, ignore interrupt(0x%x).\n",
+				value);
+			return;
+		}
 #if (CFG_ANDORID_CONNINFRA_COREDUMP_SUPPORT == 1)
 		g_eWfRstSource = WF_RST_SOURCE_FW;
 #endif
