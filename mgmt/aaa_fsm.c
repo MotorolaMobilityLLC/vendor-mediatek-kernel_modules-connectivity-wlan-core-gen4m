@@ -549,12 +549,6 @@ uint32_t aaaFsmRunEventRxAssoc(IN struct ADAPTER *prAdapter,
 		prAssocReqFrame =
 			(struct WLAN_ASSOC_REQ_FRAME *) prSwRfb->pvHeader;
 
-		DBGLOG(AAA, INFO,
-			"SA: " MACSTR ", bssid: " MACSTR ", sta idx: %d\n",
-			MAC2STR(prAssocReqFrame->aucSrcAddr),
-			MAC2STR(prAssocReqFrame->aucBSSID),
-			prSwRfb->ucStaRecIdx);
-
 		/* 4 <1> Check if we have the STA_RECORD_T
 		 * for incoming Assoc Req
 		 */
@@ -562,20 +556,21 @@ uint32_t aaaFsmRunEventRxAssoc(IN struct ADAPTER *prAdapter,
 
 		/* We should have the corresponding Sta Record. */
 		if ((!prStaRec) || (!prStaRec->fgIsInUse)) {
-			uint16_t i;
-
 			/* Not to reply association response
 			 * with failure code due to lack of STA_REC
 			 */
-			DBGLOG(AAA, ERROR,
+			DBGLOG(AAA, TRACE,
 				"get sta fail, wlan idx: %d, sta index: %d\n",
 				prSwRfb->ucWlanIdx,
 				prSwRfb->ucStaRecIdx);
-
-			for (i = 0; i < CFG_STA_REC_NUM; i++)
-				cnmDumpStaRec(prAdapter, i);
 			break;
 		}
+
+		DBGLOG(AAA, INFO,
+			"SA: " MACSTR ", bssid: " MACSTR ", sta idx: %d\n",
+			MAC2STR(prAssocReqFrame->aucSrcAddr),
+			MAC2STR(prAssocReqFrame->aucBSSID),
+			prSwRfb->ucStaRecIdx);
 
 		if (!IS_CLIENT_STA(prStaRec)) {
 			DBGLOG(AAA, ERROR,
