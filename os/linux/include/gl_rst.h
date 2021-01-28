@@ -185,6 +185,15 @@ typedef void (*PF_WMT_CB) (enum ENUM_WMTDRV_TYPE, /* Source driver type */
 
 #endif
 
+#if (CFG_SUPPORT_CONNINFRA == 1)
+enum ENUM_WF_RST_SOURCE {
+	WF_RST_SOURCE_NONE = 0x0,
+	WF_RST_SOURCE_DRIVER = 0x1,
+	WF_RST_SOURCE_FW = 0x2,
+	WF_RST_SOURCE_MAX
+};
+#endif
+
 /*******************************************************************************
  *                    E X T E R N A L   F U N C T I O N S
  *******************************************************************************
@@ -224,6 +233,9 @@ extern int mtk_wcn_wmt_assert_keyword(enum ENUM_WMTDRV_TYPE type,
  */
 #if CFG_CHIP_RESET_SUPPORT
 extern u_int8_t fgIsResetting;
+#if (CFG_SUPPORT_CONNINFRA == 1)
+extern enum ENUM_WF_RST_SOURCE g_eWfRstSource;
+#endif
 
 #if CFG_CHIP_RESET_HANG
 extern u_int8_t fgIsResetHangState;
