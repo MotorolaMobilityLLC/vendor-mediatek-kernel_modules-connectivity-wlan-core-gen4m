@@ -160,7 +160,7 @@ static struct cfg80211_ops mtk_p2p_ops = {
 	.set_power_mgmt = mtk_p2p_cfg80211_set_power_mgmt,
 #if (CFG_SUPPORT_DFS_MASTER == 1)
 	.start_radar_detection = mtk_p2p_cfg80211_start_radar_detection,
-#if KERNEL_VERSION(3, 13, 0) <= LINUX_VERSION_CODE
+#if KERNEL_VERSION(3, 13, 0) <= CFG80211_VERSION_CODE
 	.channel_switch = mtk_p2p_cfg80211_channel_switch,
 #endif
 #endif
@@ -169,7 +169,7 @@ static struct cfg80211_ops mtk_p2p_ops = {
 #endif
 #endif
 };
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 18, 0)
+#if KERNEL_VERSION(3, 18, 0) <= CFG80211_VERSION_CODE
 
 static const struct wiphy_vendor_command mtk_p2p_vendor_ops[] = {
 	{
@@ -334,7 +334,7 @@ static const struct ieee80211_iface_limit mtk_p2p_sta_go_limits[] = {
 	},
 };
 
-#if ((CFG_SUPPORT_DFS_MASTER == 1) && (KERNEL_VERSION(3, 17, 0) > LINUX_VERSION_CODE))
+#if ((CFG_SUPPORT_DFS_MASTER == 1) && (KERNEL_VERSION(3, 17, 0) > CFG80211_VERSION_CODE))
 static const struct ieee80211_iface_limit mtk_ap_limits[] = {
 	{
 		.max = 1,
@@ -371,7 +371,7 @@ mtk_iface_combinations_p2p[] = {
 		.limits = mtk_p2p_sta_go_limits,
 		.n_limits = ARRAY_SIZE(mtk_p2p_sta_go_limits), /* include p2p */
 	},
-#if ((CFG_SUPPORT_DFS_MASTER == 1) && (KERNEL_VERSION(3, 17, 0) > LINUX_VERSION_CODE))
+#if ((CFG_SUPPORT_DFS_MASTER == 1) && (KERNEL_VERSION(3, 17, 0) > CFG80211_VERSION_CODE))
 	/* ONLY for passing checks in cfg80211_can_use_iftype_chan before linux-3.17.0 */
 	{
 		.num_different_channels = 1,
@@ -1057,7 +1057,7 @@ BOOLEAN glP2pCreateWirelessDevice(P_GLUE_INFO_T prGlueInfo)
 	prWiphy->max_remain_on_channel_duration = 5000;
 	prWiphy->n_cipher_suites = 5;
 	prWiphy->cipher_suites = mtk_cipher_suites;
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 14, 0)
+#if KERNEL_VERSION(3, 14, 0) > CFG80211_VERSION_CODE
 	prWiphy->flags = WIPHY_FLAG_CUSTOM_REGULATORY | WIPHY_FLAG_HAS_REMAIN_ON_CHANNEL | WIPHY_FLAG_HAVE_AP_SME;
 #else
 #if (CFG_SUPPORT_DFS_MASTER == 1)
@@ -1072,13 +1072,13 @@ BOOLEAN glP2pCreateWirelessDevice(P_GLUE_INFO_T prGlueInfo)
 	prWiphy->max_scan_ssids = MAX_SCAN_LIST_NUM;
 	prWiphy->max_scan_ie_len = MAX_SCAN_IE_LEN;
 	prWiphy->signal_type = CFG80211_SIGNAL_TYPE_MBM;
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 18, 0)
+#if KERNEL_VERSION(3, 18, 0) <= CFG80211_VERSION_CODE
 	prWiphy->vendor_commands = mtk_p2p_vendor_ops;
 	prWiphy->n_vendor_commands = sizeof(mtk_p2p_vendor_ops) / sizeof(struct wiphy_vendor_command);
 #endif
 
 #ifdef CONFIG_PM
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 9, 0)
+#if KERNEL_VERSION(3, 9, 0) > CFG80211_VERSION_CODE
 	prWiphy->wowlan = &mtk_p2p_wowlan_support;
 #endif
 #endif

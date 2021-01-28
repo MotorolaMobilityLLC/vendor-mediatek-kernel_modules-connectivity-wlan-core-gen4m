@@ -2091,7 +2091,7 @@ p2pFuncDissolve(IN P_ADAPTER_T prAdapter,
 		case OP_MODE_INFRASTRUCTURE:
 			/* Reset station record status. */
 			if (prP2pBssInfo->prStaRecOfAP) {
-#if CFG_WPS_DISCONNECT || (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 4, 0))
+#if CFG_WPS_DISCONNECT || (KERNEL_VERSION(4, 4, 0) <= CFG80211_VERSION_CODE)
 				kalP2PGCIndicateConnectionStatus(prAdapter->prGlueInfo,
 								 (UINT_8) prP2pBssInfo->u4PrivateData, NULL, NULL, 0,
 								 REASON_CODE_DEAUTH_LEAVING_BSS,

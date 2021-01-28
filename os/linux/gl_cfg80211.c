@@ -426,7 +426,7 @@ mtk_cfg80211_set_default_key(struct wiphy *wiphy, struct net_device *ndev, u8 ke
  *         others:  failure
  */
 /*----------------------------------------------------------------------------*/
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 16, 0)
+#if KERNEL_VERSION(3, 16, 0) <= CFG80211_VERSION_CODE
 int mtk_cfg80211_get_station(struct wiphy *wiphy, struct net_device *ndev, const u8 *mac, struct station_info *sinfo)
 {
 	P_GLUE_INFO_T prGlueInfo = NULL;
@@ -461,7 +461,7 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy, struct net_device *ndev, const
 		rStatus = kalIoctl(prGlueInfo,
 				   wlanoidQueryLinkSpeed, &u4Rate, sizeof(u4Rate), TRUE, FALSE, FALSE, &u4BufLen);
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 4, 0)
+#if KERNEL_VERSION(4, 4, 0) <= CFG80211_VERSION_CODE
 		sinfo->filled |= BIT(NL80211_STA_INFO_TX_BITRATE);
 #else
 		sinfo->filled |= STATION_INFO_TX_BITRATE;
@@ -489,7 +489,7 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy, struct net_device *ndev, const
 		rStatus = kalIoctl(prGlueInfo,
 				   wlanoidQueryRssi, &i4Rssi, sizeof(i4Rssi), TRUE, FALSE, FALSE, &u4BufLen);
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 4, 0)
+#if KERNEL_VERSION(4, 4, 0) <= CFG80211_VERSION_CODE
 		sinfo->filled |= BIT(NL80211_STA_INFO_SIGNAL);
 #else
 		sinfo->filled |= STATION_INFO_SIGNAL;
@@ -510,7 +510,7 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy, struct net_device *ndev, const
 
 	if (prDevStats) {
 		/* 4. fill RX_PACKETS */
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 4, 0)
+#if KERNEL_VERSION(4, 4, 0) <= CFG80211_VERSION_CODE
 		sinfo->filled |= BIT(NL80211_STA_INFO_RX_PACKETS);
 #else
 		sinfo->filled |= STATION_INFO_RX_PACKETS;
@@ -518,7 +518,7 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy, struct net_device *ndev, const
 		sinfo->rx_packets = prDevStats->rx_packets;
 
 		/* 5. fill TX_PACKETS */
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 4, 0)
+#if KERNEL_VERSION(4, 4, 0) <= CFG80211_VERSION_CODE
 		sinfo->filled |= BIT(NL80211_STA_INFO_TX_PACKETS);
 #else
 		sinfo->filled |= STATION_INFO_TX_PACKETS;
@@ -544,7 +544,7 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy, struct net_device *ndev, const
 			u4TotalError = rQueryStaStatistics.u4TxFailCount + rQueryStaStatistics.u4TxLifeTimeoutCount;
 			prDevStats->tx_errors += u4TotalError;
 		}
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 4, 0)
+#if KERNEL_VERSION(4, 4, 0) <= CFG80211_VERSION_CODE
 		sinfo->filled |= BIT(NL80211_STA_INFO_TX_FAILED);
 #else
 		sinfo->filled |= STATION_INFO_TX_FAILED;
@@ -1727,7 +1727,7 @@ int mtk_cfg80211_cancel_remain_on_channel(struct wiphy *wiphy, struct wireless_d
  *         others:  failure
  */
 /*----------------------------------------------------------------------------*/
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 14, 0)
+#if KERNEL_VERSION(3, 14, 0) <= CFG80211_VERSION_CODE
 int mtk_cfg80211_mgmt_tx(struct wiphy *wiphy,
 			struct wireless_dev *wdev,
 			struct cfg80211_mgmt_tx_params *params,
@@ -2314,7 +2314,7 @@ static int mtk_wlan_cfg_testmode_cmd(struct wiphy *wiphy, void *data, int len)
 	return i4Status;
 }
 
-#if KERNEL_VERSION(3, 12, 0) <= LINUX_VERSION_CODE
+#if KERNEL_VERSION(3, 12, 0) <= CFG80211_VERSION_CODE
 int mtk_cfg80211_testmode_cmd(struct wiphy *wiphy, struct wireless_dev *wdev,
 			      void *data, int len)
 {
@@ -2375,7 +2375,7 @@ mtk_cfg80211_sched_scan_start(IN struct wiphy *wiphy,
 	if (request->ie_len > 0)
 		prSchedScanRequest->pucIE = (PUINT_8) (request->ie);
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 4, 0)
+#if KERNEL_VERSION(4, 4, 0) <= CFG80211_VERSION_CODE
 	prSchedScanRequest->u2ScanInterval = (UINT_16) (request->scan_plans->interval);
 #else
 	prSchedScanRequest->u2ScanInterval = (UINT_16) (request->interval);
@@ -2577,7 +2577,7 @@ nla_put_failure:
  *         others:  failure
  */
 /*----------------------------------------------------------------------------*/
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 16, 0)
+#if KERNEL_VERSION(3, 16, 0) <= CFG80211_VERSION_CODE
 int
 mtk_cfg80211_change_station(struct wiphy *wiphy, struct net_device *ndev, const u8 *mac,
 			    struct station_parameters *params)
@@ -2795,7 +2795,7 @@ mtk_cfg80211_change_station(struct wiphy *wiphy, struct net_device *ndev, u8 *ma
  *         others:  failure
  */
 /*----------------------------------------------------------------------------*/
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 16, 0)
+#if KERNEL_VERSION(3, 16, 0) <= CFG80211_VERSION_CODE
 int mtk_cfg80211_add_station(struct wiphy *wiphy, struct net_device *ndev,
 			     const u8 *mac, struct station_parameters *params)
 {
@@ -2882,8 +2882,8 @@ int mtk_cfg80211_add_station(struct wiphy *wiphy, struct net_device *ndev, u8 *m
  *		must implement if you have add_station().
  */
 /*----------------------------------------------------------------------------*/
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 16, 0)
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 19, 0)
+#if KERNEL_VERSION(3, 16, 0) <= CFG80211_VERSION_CODE
+#if KERNEL_VERSION(3, 19, 0) <= CFG80211_VERSION_CODE
 static const u8 bcast_addr[ETH_ALEN] = { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff };
 int mtk_cfg80211_del_station(struct wiphy *wiphy, struct net_device *ndev, struct station_del_parameters *params)
 {
@@ -2979,7 +2979,7 @@ int mtk_cfg80211_del_station(struct wiphy *wiphy, struct net_device *ndev, u8 *m
 * \retval WLAN_STATUS_INVALID_LENGTH
 */
 /*----------------------------------------------------------------------------*/
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 18, 0)
+#if KERNEL_VERSION(3, 18, 0) <= CFG80211_VERSION_CODE
 int
 mtk_cfg80211_tdls_mgmt(struct wiphy *wiphy, struct net_device *dev,
 		       const u8 *peer, u8 action_code, u8 dialog_token,
@@ -3013,7 +3013,7 @@ mtk_cfg80211_tdls_mgmt(struct wiphy *wiphy, struct net_device *dev,
 	return 0;
 
 }
-#elif LINUX_VERSION_CODE >= KERNEL_VERSION(3, 16, 0)
+#elif KERNEL_VERSION(3, 16, 0) <= CFG80211_VERSION_CODE
 int
 mtk_cfg80211_tdls_mgmt(struct wiphy *wiphy, struct net_device *dev,
 		       const u8 *peer, u8 action_code, u8 dialog_token,
@@ -3098,7 +3098,7 @@ mtk_cfg80211_tdls_mgmt(struct wiphy *wiphy, struct net_device *dev,
 * \retval WLAN_STATUS_INVALID_LENGTH
 */
 /*----------------------------------------------------------------------------*/
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 16, 0)
+#if KERNEL_VERSION(3, 16, 0) <= CFG80211_VERSION_CODE
 int mtk_cfg80211_tdls_oper(struct wiphy *wiphy, struct net_device *dev,
 			   const u8 *peer, enum nl80211_tdls_operation oper)
 {
@@ -3281,7 +3281,7 @@ mtk_reg_notify(IN struct wiphy *pWiphy,
 	 * Ignore the CORE's WW setting when using local data base of regulatory rules
 	 */
 	if ((pRequest->initiator == NL80211_REGDOM_SET_BY_CORE) &&
-#if KERNEL_VERSION(3, 14, 0) > LINUX_VERSION_CODE
+#if KERNEL_VERSION(3, 14, 0) > CFG80211_VERSION_CODE
 		(pWiphy->flags & WIPHY_FLAG_CUSTOM_REGULATORY))
 #else
 		(pWiphy->regulatory_flags & REGULATORY_CUSTOM_REG))
@@ -3431,7 +3431,7 @@ cfg80211_regd_set_wiphy(IN struct wiphy *prWiphy)
 	/*
 	 * clear REGULATORY_CUSTOM_REG flag
 	 */
-#if KERNEL_VERSION(3, 14, 0) > LINUX_VERSION_CODE
+#if KERNEL_VERSION(3, 14, 0) > CFG80211_VERSION_CODE
 	/*tells kernel that assign WW as default*/
 	prWiphy->flags &= ~(WIPHY_FLAG_CUSTOM_REGULATORY);
 #else
@@ -3446,7 +3446,7 @@ cfg80211_regd_set_wiphy(IN struct wiphy *prWiphy)
 	 * set REGULATORY_CUSTOM_REG flag
 	 */
 #if (CFG_SUPPORT_SINGLE_SKU_LOCAL_DB == 1)
-#if KERNEL_VERSION(3, 14, 0) > LINUX_VERSION_CODE
+#if KERNEL_VERSION(3, 14, 0) > CFG80211_VERSION_CODE
 	/*tells kernel that assign WW as default*/
 	prWiphy->flags |= (WIPHY_FLAG_CUSTOM_REGULATORY);
 #else

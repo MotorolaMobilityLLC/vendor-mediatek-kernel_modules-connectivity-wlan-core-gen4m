@@ -178,6 +178,12 @@
 #include <net/iw_handler.h>
 #endif
 
+#ifdef CFG_CFG80211_VERSION
+#define CFG80211_VERSION_CODE CFG_CFG80211_VERSION
+#else
+#define CFG80211_VERSION_CODE LINUX_VERSION_CODE
+#endif
+
 #include "version.h"
 #include "config.h"
 
@@ -200,7 +206,7 @@
 #include <net/addrconf.h>
 #endif /* CFG_SUPPORT_PASSPOINT */
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 8, 0)
+#if KERNEL_VERSION(3, 8, 0) <= CFG80211_VERSION_CODE
 #include <uapi/linux/nl80211.h>
 #endif
 
@@ -884,7 +890,7 @@ static inline u16 mtk_wlan_ndev_select_queue(struct sk_buff *skb)
 	static u16 ieee8021d_to_queue[8] = { 1, 0, 0, 1, 2, 2, 3, 3 };
 
 	/* cfg80211_classify8021d returns 0~7 */
-#if KERNEL_VERSION(3, 14, 0) > LINUX_VERSION_CODE
+#if KERNEL_VERSION(3, 14, 0) > CFG80211_VERSION_CODE
 	skb->priority = cfg80211_classify8021d(skb);
 #else
 	skb->priority = cfg80211_classify8021d(skb, NULL);
