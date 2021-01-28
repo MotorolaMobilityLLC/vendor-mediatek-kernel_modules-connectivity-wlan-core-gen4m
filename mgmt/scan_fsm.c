@@ -1019,42 +1019,41 @@ u_int8_t scnQuerySparseChannel(IN struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief        Event handler for NLO done event
+ * \brief        Event handler for schedule scan done event
  *
  * \param[in]
  *
  * \return none
  */
 /*----------------------------------------------------------------------------*/
-void scnEventNloDone(IN struct ADAPTER *prAdapter,
-	IN struct EVENT_NLO_DONE *prNloDone)
+void scnEventSchedScanDone(IN struct ADAPTER *prAdapter,
+	IN struct EVENT_SCHED_SCAN_DONE *prSchedScanDone)
 {
 	struct SCAN_INFO *prScanInfo;
-	struct NLO_PARAM *prNloParam;
+	struct SCHED_SCAN_PARAM *prSchedScanParam;
 
 	prScanInfo = &(prAdapter->rWifiVar.rScanInfo);
-	prNloParam = &prScanInfo->rNloParam;
+	prSchedScanParam = &prScanInfo->rSchedScanParam;
 
-	if (prScanInfo->fgNloScanning == TRUE
-		&& prNloDone->ucSeqNum == prNloParam->ucSeqNum) {
+	if (prScanInfo->fgSchedScanning == TRUE) {
 
-		DBGLOG(SCN, INFO, "scnEventNloDone reporting to upper layer\n");
+		DBGLOG(SCN, INFO, "scnEventSchedScanDone seq %u\n",
+			prSchedScanDone->ucSeqNum);
 
 		kalSchedScanResults(prAdapter->prGlueInfo);
 
-		if (prNloParam->fgStopAfterIndication == TRUE) {
+		if (prSchedScanParam->fgStopAfterIndication == TRUE) {
 #if CFG_SUPPORT_PNO
 			prAdapter->prAisBssInfo->fgIsPNOEnable = FALSE;
 #endif
-			prScanInfo->fgNloScanning = FALSE;
+			prScanInfo->fgSchedScanning = FALSE;
 		}
 	} else {
 #define __STR_FMT__ \
-"Unexpected NLO-DONE event: SeqNum = %d, Current State = %d\n"
+"Unexpected SCHEDSCANDONE event: Seq = %u, Current State = %d\n"
 
 		DBGLOG(SCN, INFO, __STR_FMT__,
-			prNloDone->ucSeqNum,
-			prScanInfo->eCurrentState);
+			prSchedScanDone->ucSeqNum, prScanInfo->eCurrentState);
 #undef __STR_FMT__
 	}
 }
@@ -1062,7 +1061,7 @@ void scnEventNloDone(IN struct ADAPTER *prAdapter,
 #if CFG_SUPPORT_SCHED_SCAN
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief        handler for starting scheduled scan
+ * \brief        handler for starting schedule scan
  *
  * \param[in]
  *
@@ -1071,24 +1070,22 @@ void scnEventNloDone(IN struct ADAPTER *prAdapter,
 /*----------------------------------------------------------------------------*/
 u_int8_t
 scnFsmSchedScanRequest(IN struct ADAPTER *prAdapter,
-	IN struct PARAM_SCHED_SCAN_REQUEST *prSchedScanRequest)
+	IN struct PARAM_SCHED_SCAN_REQUEST *prRequest)
 {
 	struct SCAN_INFO *prScanInfo;
-	struct NLO_PARAM *prNloParam;
-	struct CMD_SET_PSCAN_PARAM *prPscanParam = NULL;
-	struct CMD_NLO_REQ *prCmdNloReq = NULL;
-	struct NLO_NETWORK *prNetwork = NULL;
-	struct NLO_SSID_MATCH_SETS *prMatchSets = NULL;
-	uint32_t i, j;
-	uint32_t u4SsidNum = prSchedScanRequest->u4SsidNum;
-	uint32_t u4MatchSsidNum = prSchedScanRequest->u4MatchSsidNum;
+	struct SCHED_SCAN_PARAM *prSchedScanParam;
+	struct CMD_SCHED_SCAN_REQ *prSchedScanCmd = NULL;
+	struct SSID_MATCH_SETS *prMatchSets = NULL;
+	struct PARAM_SSID *prSsid = NULL;
+	uint32_t i;
 	uint16_t u2IeLen;
 	enum ENUM_BAND ePreferedChnl = BAND_NULL;
-	uint8_t ucNetworkIndex = 0;
-	u_int8_t fgIsAdded[CFG_SCAN_HIDDEN_SSID_MAX_NUM];
 	u_int8_t fgRet = TRUE;
 
 	ASSERT(prAdapter);
+	ASSERT(prRequest);
+	ASSERT(prRequest->u4SsidNum <= CFG_SCAN_HIDDEN_SSID_MAX_NUM);
+	ASSERT(prRequest->u4MatchSsidNum <= CFG_SCAN_SSID_MATCH_MAX_NUM);
 	DBGLOG(SCN, TRACE, "scnFsmSchedScanRequest\n");
 
 	if (prAdapter->prAisBssInfo == NULL) {
@@ -1096,54 +1093,40 @@ scnFsmSchedScanRequest(IN struct ADAPTER *prAdapter,
 		return FALSE;
 	}
 
-	if (u4SsidNum > CFG_SCAN_HIDDEN_SSID_MAX_NUM ||
-		u4MatchSsidNum > CFG_SCAN_SSID_MATCH_MAX_NUM) {
-		DBGLOG(SCN, WARN, "Invalid ssid num(%d) of match num(%d)\n");
-		return FALSE;
-	}
-
 	prScanInfo = &(prAdapter->rWifiVar.rScanInfo);
-	prNloParam = &prScanInfo->rNloParam;
+	prSchedScanParam = &prScanInfo->rSchedScanParam;
 
-	if (prScanInfo->fgNloScanning) {
+	if (prScanInfo->fgSchedScanning) {
 #define __STR_FMT__ \
-"prScanInfo->fgNloScanning = TRUE already scanning\n"
+"prScanInfo->fgSchedScanning = TRUE already scanning\n"
 
 		DBGLOG(SCN, WARN, __STR_FMT__);
-#undef __STR_FMT
+#undef __STR_FMT__
+
 		return FALSE;
 	}
 
-	/* 0. allocate memory for Pscan Param */
-#if CFG_SUPPORT_SCHED_SCAN_IE
-	if (prSchedScanRequest->u4IELength <= MAX_IE_LENGTH)
-		u2IeLen = (uint16_t)prSchedScanRequest->u4IELength;
+	/* 0. allocate memory for schedule scan command */
+	if (prRequest->u4IELength <= MAX_IE_LENGTH)
+		u2IeLen = (uint16_t)prRequest->u4IELength;
 	else
 		u2IeLen = MAX_IE_LENGTH;
-#else
-	if (prSchedScanRequest->u4IELength) {
-		DBGLOG(SCN, WARN, "Not support IE. len(%u)\n",
-			prSchedScanRequest->u4IELength);
-	}
-	u2IeLen = 0;
-#endif
-	prPscanParam = (struct CMD_SET_PSCAN_PARAM *) cnmMemAlloc(prAdapter,
-				RAM_TYPE_BUF,
-				sizeof(struct CMD_SET_PSCAN_PARAM) + u2IeLen);
-	if (!prPscanParam) {
-		DBGLOG(SCN, ERROR, "alloc CMD_SET_PSCAN_PARAM (%d+%d) fail\n",
-			sizeof(struct CMD_SET_PSCAN_PARAM), u2IeLen);
+
+	prSchedScanCmd = (struct CMD_SCHED_SCAN_REQ *) cnmMemAlloc(prAdapter,
+		RAM_TYPE_BUF, sizeof(struct CMD_SCHED_SCAN_REQ) + u2IeLen);
+	if (!prSchedScanCmd) {
+		DBGLOG(SCN, ERROR, "alloc CMD_SCHED_SCAN_REQ (%d+%d) fail\n",
+			sizeof(struct CMD_SCHED_SCAN_REQ), u2IeLen);
 		return FALSE;
 	}
-	kalMemZero(prPscanParam, sizeof(struct CMD_SET_PSCAN_PARAM) + u2IeLen);
-	prCmdNloReq = &(prPscanParam->rCmdNloReq);
-	prNetwork = &(prCmdNloReq->rNLONetwork);
-	prMatchSets = &(prCmdNloReq->rNLONetwork.arMatchSets[0]);
+	kalMemZero(prSchedScanCmd, sizeof(struct CMD_SCHED_SCAN_REQ) + u2IeLen);
+	prMatchSets = &(prSchedScanCmd->auMatchSsid[0]);
+	prSsid = &(prSchedScanCmd->auSsid[0]);
 
-	/* 1 Set NLO Param parameters */
-	prNloParam->ucSeqNum++;
-	prNloParam->ucBssIndex = prAdapter->prAisBssInfo->ucBssIndex;
-	prNloParam->fgStopAfterIndication = FALSE;
+	/* 1 Set Sched scan param parameters */
+	prSchedScanParam->ucSeqNum++;
+	prSchedScanParam->ucBssIndex = prAdapter->prAisBssInfo->ucBssIndex;
+	prSchedScanParam->fgStopAfterIndication = FALSE;
 
 	if (!IS_NET_ACTIVE(prAdapter, prAdapter->prAisBssInfo->ucBssIndex)) {
 		SET_NET_ACTIVE(prAdapter, prAdapter->prAisBssInfo->ucBssIndex);
@@ -1152,146 +1135,98 @@ scnFsmSchedScanRequest(IN struct ADAPTER *prAdapter,
 			prAdapter->prAisBssInfo->ucBssIndex);
 	}
 
-	/* 2.1 Prepare command. Set FW struct NLO_SSID_MATCH_SETS */
+	/* 2.1 Prepare command. Set FW struct SSID_MATCH_SETS */
 	/* ssid in ssid list will be send in probe request in advance */
-	for (i = 0; i < u4SsidNum
-			&& ucNetworkIndex < CFG_SCAN_SSID_MATCH_MAX_NUM; i++) {
-		struct PARAM_SSID *prSsid = &(prSchedScanRequest->arSsid[i]);
-
-		COPY_SSID(prMatchSets[ucNetworkIndex].aucSSID,
-				prMatchSets[ucNetworkIndex].ucSSIDLength,
-				prSsid->aucSsid, (uint8_t)prSsid->u4SsidLen);
-		DBGLOG(SCN, TRACE, "ssid set(%d) %s\n", ucNetworkIndex,
-				prMatchSets[ucNetworkIndex].aucSSID);
-		prMatchSets[ucNetworkIndex].cRssiThresold
-			= prSchedScanRequest->i4MinRssiThold;
-		ucNetworkIndex++;
+	prSchedScanCmd->ucSsidNum = prRequest->u4SsidNum;
+	for (i = 0; i < prSchedScanCmd->ucSsidNum; i++) {
+		kalMemCopy(&(prSsid[i]), &(prRequest->arSsid[i]),
+			sizeof(struct PARAM_SSID));
+		DBGLOG(SCN, TRACE, "ssid set(%d) %s\n", i, prSsid[i].aucSsid);
 	}
 
-	kalMemZero(fgIsAdded, sizeof(fgIsAdded));
-	for (i = 0; i < u4MatchSsidNum
-			&& ucNetworkIndex < CFG_SCAN_SSID_MATCH_MAX_NUM; i++) {
-		struct PARAM_SSID *prSsid, *prMatchSsid;
-
-		prMatchSsid = &(prSchedScanRequest->arMatchSsid[i]);
-		for (j = 0; j < u4SsidNum; j++) {
-			prSsid = &(prSchedScanRequest->arSsid[j]);
-			if (fgIsAdded[j])
-				continue;
-			if (EQUAL_SSID(prSsid->aucSsid,
-				(uint8_t)prSsid->u4SsidLen,
-				prMatchSsid->aucSsid,
-				(uint8_t)prMatchSsid->u4SsidLen)) {
-				prMatchSets[j].cRssiThresold
-					= prSchedScanRequest->acRssiThold[i];
-				fgIsAdded[j] = TRUE;
-				break;
-			}
-		}
-		/* continue if match_ssid is already in ssid set */
-		if (j != u4SsidNum)
-			continue;
-
-		COPY_SSID(prMatchSets[ucNetworkIndex].aucSSID,
-			prMatchSets[ucNetworkIndex].ucSSIDLength,
-			prSchedScanRequest->arMatchSsid[i].aucSsid,
-			(uint8_t)prSchedScanRequest->arMatchSsid[i].u4SsidLen);
+	prSchedScanCmd->ucMatchSsidNum = prRequest->u4MatchSsidNum;
+	for (i = 0; i < prSchedScanCmd->ucMatchSsidNum; i++) {
+		COPY_SSID(prMatchSets[i].aucSsid, prMatchSets[i].ucSsidLen,
+			prRequest->arMatchSsid[i].aucSsid,
+			prRequest->arMatchSsid[i].u4SsidLen);
 		DBGLOG(SCN, TRACE, "Match set(%d) %s\n",
-				i, prMatchSets[ucNetworkIndex].aucSSID);
-		prMatchSets[ucNetworkIndex].cRssiThresold
-				= prSchedScanRequest->acRssiThold[i];
-		ucNetworkIndex++;
+				i, prMatchSets[i].aucSsid);
+		prMatchSets[i].i4RssiThresold = prRequest->acRssiThold[i];
 	}
 
-	prNloParam->ucMatchSSIDNum = ucNetworkIndex;
-
-	if (i != u4MatchSsidNum) {
-		DBGLOG(SCN, WARN,
-		"valid(%d)<ssid(%d)+match(%d), break at match id(%d)\n",
-				ucNetworkIndex, u4SsidNum, u4MatchSsidNum, i);
-	}
-
-	/* 2.2 Prepare command. Set FW struct NLO_NETWORK */
-	if (prSchedScanRequest->ucChnlNum > sizeof(prNetwork->aucChannel))
-		prSchedScanRequest->ucChnlNum = sizeof(prNetwork->aucChannel);
+	/* 2.2 Prepare command. Set channel */
 
 	ePreferedChnl
 		= prAdapter->aePreferBand[prAdapter->prAisBssInfo->ucBssIndex];
 	if (ePreferedChnl == BAND_2G4) {
-		prNetwork->ucChannelType = NLO_CHANNEL_TYPE_2G4_ONLY;
-		prNetwork->ucChnlNum = 0;
+		prSchedScanCmd->ucChannelType =
+			SCHED_SCAN_CHANNEL_TYPE_2G4_ONLY;
+		prSchedScanCmd->ucChnlNum = 0;
 	} else if (ePreferedChnl == BAND_5G) {
-		prNetwork->ucChannelType = NLO_CHANNEL_TYPE_5G_ONLY;
-		prNetwork->ucChnlNum = 0;
-	} else if (prSchedScanRequest->ucChnlNum > 0) {
-		prNetwork->ucChannelType = NLO_CHANNEL_TYPE_SPECIFIED;
-		prNetwork->ucChnlNum = prSchedScanRequest->ucChnlNum;
-		kalMemCopy(prNetwork->aucChannel,
-				prSchedScanRequest->pucChannels,
-				prSchedScanRequest->ucChnlNum);
+		prSchedScanCmd->ucChannelType =
+			SCHED_SCAN_CHANNEL_TYPE_5G_ONLY;
+		prSchedScanCmd->ucChnlNum = 0;
+	} else if (prRequest->ucChnlNum > 0 &&
+		prRequest->ucChnlNum <= MAXIMUM_OPERATION_CHANNEL_LIST) {
+		prSchedScanCmd->ucChannelType =
+			SCHED_SCAN_CHANNEL_TYPE_SPECIFIED;
+		prSchedScanCmd->ucChnlNum = prRequest->ucChnlNum;
+		for (i = 0; i < prRequest->ucChnlNum; i++) {
+			prSchedScanCmd->aucChannel[i].ucChannelNum =
+				prRequest->pucChannels[i];
+			prSchedScanCmd->aucChannel[i].ucBand =
+				(prSchedScanCmd->aucChannel[i].ucChannelNum <=
+				HW_CHNL_NUM_MAX_2G4) ? BAND_2G4 : BAND_5G;
+		}
 	} else {
-		prNetwork->ucChnlNum = 0;
-		prNetwork->ucChannelType = NLO_CHANNEL_TYPE_DUAL_BAND;
+		prSchedScanCmd->ucChnlNum = 0;
+		prSchedScanCmd->ucChannelType =
+			SCHED_SCAN_CHANNEL_TYPE_DUAL_BAND;
 	}
 
-	/* 2.3 Prepare command: CMD_NLO_REQ and CMD_SET_PSCAN_PARAM */
-	prCmdNloReq->ucSeqNum = prNloParam->ucSeqNum;
-	prCmdNloReq->ucBssIndex = prNloParam->ucBssIndex;
-	prCmdNloReq->fgStopAfterIndication = prNloParam->fgStopAfterIndication;
-	prCmdNloReq->ucEntryNum = prNloParam->ucMatchSSIDNum;
+	prSchedScanCmd->ucSeqNum = prSchedScanParam->ucSeqNum;
+	prSchedScanCmd->fgStopAfterIndication =
+		prSchedScanParam->fgStopAfterIndication;
+	prSchedScanCmd->u2IELen = u2IeLen;
+	prSchedScanCmd->ucVersion = SCHED_SCAN_CMD_VERSION;
+	if (prSchedScanCmd->u2IELen) {
+		kalMemCopy(prSchedScanCmd->aucIE, prRequest->pucIE,
+				prSchedScanCmd->u2IELen);
+	}
 
-#ifdef LINUX
-	prCmdNloReq->ucFlag = SCAN_NLO_CHECK_SSID_ONLY;
-	DBGLOG(SCN, TRACE, "LINUX only check SSID\n");
-#endif
-	/**
-	 * we set this bit to notify firmware that
-	 * they should using the new NLO network design
-	 */
-	prCmdNloReq->ucEntryNum |= BIT(7);
+	scnSetSchedScanPlan(prAdapter, prSchedScanCmd);
 
-#define __STR_FMT__\
-"Id(%u)chT(%u)chN(%u)F(0x%X)N(0x%X)ssid/match(%u/%u)sz(%u)IE(%u/%u)\n"
+#define __STR_FMT__ \
+"V(%u)seq(%u)sz(%u)chT(%u)chN(%u)ssid(%u)match(%u)IE(%u=>%u)MSP(%u)\n"
 
-	DBGLOG(SCN, INFO, __STR_FMT__,
-		prCmdNloReq->ucSeqNum, prNetwork->ucChannelType,
-		prNetwork->ucChnlNum, prCmdNloReq->ucFlag,
-		prCmdNloReq->ucEntryNum, u4SsidNum, u4MatchSsidNum,
-		sizeof(struct CMD_SET_PSCAN_PARAM),
-		u2IeLen, prSchedScanRequest->u4IELength);
+	DBGLOG(SCN, INFO, __STR_FMT__, prSchedScanCmd->ucVersion,
+		prSchedScanCmd->ucSeqNum, sizeof(struct CMD_SCHED_SCAN_REQ),
+		prSchedScanCmd->ucChannelType, prSchedScanCmd->ucChnlNum,
+		prSchedScanCmd->ucSsidNum, prSchedScanCmd->ucMatchSsidNum,
+		prRequest->u4IELength, prSchedScanCmd->u2IELen,
+		prSchedScanCmd->ucMspEntryNum);
 #undef __STR_FMT__
 
-	prCmdNloReq->u2IELen = u2IeLen;
-
-	if (prCmdNloReq->u2IELen) {
-		kalMemCopy(prCmdNloReq->aucIE, prSchedScanRequest->pucIE,
-				prCmdNloReq->u2IELen);
-	}
-
-	prPscanParam->ucVersion = PSCAN_VERSION;
-	prPscanParam->fgNLOScnEnable = TRUE;
-
-	scnSetSchedScanPlanIntoPSCN(prAdapter, prPscanParam);
-
-	/* 3. send command packet for NLO operation */
+	/* 3. send command packet to FW */
 	do {
-		if (!scnFsmPSCNSetParam(prAdapter, prPscanParam)) {
-			DBGLOG(SCN, TRACE, "scnFsmPSCNSetParam failed\n");
+		if (!scnFsmSchedScanSetCmd(prAdapter, prSchedScanCmd)) {
+			DBGLOG(SCN, TRACE, "scnFsmSchedScanSetCmd failed\n");
 			fgRet = FALSE;
 			break;
 		}
-		if (!scnFsmPSCNAction(prAdapter, PSCAN_ACT_ENABLE)) {
-			DBGLOG(SCN, TRACE, "scnFsmPSCNAction failed\n");
+		if (!scnFsmSchedScanSetAction(prAdapter,
+				SCHED_SCAN_ACT_ENABLE)) {
+			DBGLOG(SCN, TRACE, "scnFsmSchedScanSetAction failed\n");
 			fgRet = FALSE;
 			break;
 		}
 #if CFG_SUPPORT_PNO
 		prAdapter->prAisBssInfo->fgIsPNOEnable = TRUE;
 #endif
-		prScanInfo->fgNloScanning = TRUE;
+		prScanInfo->fgSchedScanning = TRUE;
 	} while (0);
 
-	cnmMemFree(prAdapter, (void *) prPscanParam);
+	cnmMemFree(prAdapter, (void *) prSchedScanCmd);
 
 	return fgRet;
 }
@@ -1315,119 +1250,115 @@ u_int8_t scnFsmSchedScanStopRequest(IN struct ADAPTER *prAdapter)
 		return FALSE;
 	}
 
-	if (!scnFsmPSCNAction(prAdapter, PSCAN_ACT_DISABLE)) {
-		DBGLOG(SCN, TRACE, "scnFsmPSCNAction failed\n");
+	if (!scnFsmSchedScanSetAction(prAdapter, SCHED_SCAN_ACT_DISABLE)) {
+		DBGLOG(SCN, TRACE, "scnFsmSchedScanSetAction failed\n");
 		return FALSE;
 	}
 #if CFG_SUPPORT_PNO
 	prAdapter->prAisBssInfo->fgIsPNOEnable = FALSE;
 #endif
-	prAdapter->rWifiVar.rScanInfo.fgNloScanning = FALSE;
+	prAdapter->rWifiVar.rScanInfo.fgSchedScanning = FALSE;
 
 	return TRUE;
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief             handler for Set PSCN action
- * \param prAdapter   adapter
- * \param ucPscanAct  pscan action. set enable/disable to FW,
+ * \brief handler for setting schedule scan action
+ * \param prAdapter       adapter
+ * \param ucSchedScanAct  schedule scan action. set enable/disable to FW
  *
- * \return            TRUE if send query command successfully. FALSE otherwise
+ * \return TRUE if send query command successfully. FALSE otherwise
  */
 /*----------------------------------------------------------------------------*/
 u_int8_t
-scnFsmPSCNAction(IN struct ADAPTER *prAdapter,
-		 IN enum ENUM_PSCAN_ACT ucPscanAct)
+scnFsmSchedScanSetAction(IN struct ADAPTER *prAdapter,
+		 IN enum ENUM_SCHED_SCAN_ACT ucSchedScanAct)
 {
-	struct SCAN_INFO *prScanInfo;
-	struct CMD_SET_PSCAN_ENABLE rCmdPscnAction;
+	struct CMD_SET_SCHED_SCAN_ENABLE rCmdSchedScanAction;
 	uint32_t rStatus;
 
-	DBGLOG(SCN, INFO, "scnFsmPSCNAction Act = %d\n", ucPscanAct);
-
-	kalMemZero(&rCmdPscnAction, sizeof(struct CMD_SET_PSCAN_ENABLE));
-
 	ASSERT(prAdapter);
-	prScanInfo = &(prAdapter->rWifiVar.rScanInfo);
-	if (ucPscanAct == PSCAN_ACT_ENABLE)
-		rCmdPscnAction.ucPscanAct = 0;
-	else
-		rCmdPscnAction.ucPscanAct = 1; /* 1:disable, 0:enable */
+
+	kalMemZero(&rCmdSchedScanAction,
+		sizeof(struct CMD_SET_SCHED_SCAN_ENABLE));
+
+	/* 0:enable, 1:disable */
+	rCmdSchedScanAction.ucSchedScanAct = ucSchedScanAct;
+
+	DBGLOG(SCN, INFO, "sched scan action = %d\n",
+		rCmdSchedScanAction.ucSchedScanAct);
 
 	rStatus = wlanSendSetQueryCmd(prAdapter,
-			    CMD_ID_SET_PSCAN_ENABLE,
+			    CMD_ID_SET_SCHED_SCAN_ENABLE,
 			    TRUE,
 			    FALSE,
 			    FALSE,
 			    nicCmdEventSetCommon,
 			    nicOidCmdTimeoutCommon,
-			    sizeof(struct CMD_SET_PSCAN_ENABLE),
-			    (uint8_t *)&rCmdPscnAction, NULL, 0);
+			    sizeof(struct CMD_SET_SCHED_SCAN_ENABLE),
+			    (uint8_t *)&rCmdSchedScanAction, NULL, 0);
 
 	return (rStatus != WLAN_STATUS_FAILURE) ? TRUE : FALSE;
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief                 handler for Set PSCN param
+ * \brief                 handler for setting schedule scan command
  * \param prAdapter       adapter
- * \param prCmdPscnParam  pscan paramenter
+ * \param prSchedScanCmd  schedule scan command
  *
  * \return                TRUE if send query command successfully.
  *                        FAIL otherwise
  */
 /*----------------------------------------------------------------------------*/
 u_int8_t
-scnFsmPSCNSetParam(IN struct ADAPTER *prAdapter,
-		IN struct CMD_SET_PSCAN_PARAM *prCmdPscnParam)
+scnFsmSchedScanSetCmd(IN struct ADAPTER *prAdapter,
+		IN struct CMD_SCHED_SCAN_REQ *prSchedScanCmd)
 {
-	uint32_t u4IeSize = 0;
+	uint16_t u2IeSize = 0;
 	uint32_t rStatus;
 
 	ASSERT(prAdapter);
 
-	DBGLOG(SCN, TRACE, "NLO=%d\n", prCmdPscnParam->fgNLOScnEnable);
+	DBGLOG(SCN, TRACE, "--> %s()\n", __func__);
 
-	if (prCmdPscnParam)
-		u4IeSize = prCmdPscnParam->rCmdNloReq.u2IELen;
+	if (prSchedScanCmd)
+		u2IeSize = prSchedScanCmd->u2IELen;
 	rStatus = wlanSendSetQueryCmd(prAdapter,
-			    CMD_ID_SET_PSCAN_PARAM,
+			    CMD_ID_SET_SCHED_SCAN_REQ,
 			    TRUE,
 			    FALSE,
 			    FALSE,
 			    nicCmdEventSetCommon,
 			    nicOidCmdTimeoutCommon,
-			    sizeof(struct CMD_SET_PSCAN_PARAM) + u4IeSize,
-			    (uint8_t *) prCmdPscnParam, NULL, 0);
+			    sizeof(struct CMD_SCHED_SCAN_REQ) + u2IeSize,
+			    (uint8_t *) prSchedScanCmd, NULL, 0);
 
 	return (rStatus != WLAN_STATUS_FAILURE) ? TRUE : FALSE;
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief                 Set schedule scan multiple scan plan (scan interval)
+ * \param prAdapter       adapter
+ * \param prSchedScanCmd  schedule scan command request
+ *
+ * \return                void
+ */
+/*----------------------------------------------------------------------------*/
 void
-scnSetSchedScanPlanIntoPSCN(IN struct ADAPTER *prAdapter,
-		IN struct CMD_SET_PSCAN_PARAM *prCmdPscnParam)
+scnSetSchedScanPlan(IN struct ADAPTER *prAdapter,
+		IN struct CMD_SCHED_SCAN_REQ *prSchedScanCmd)
 {
-#if CFG_SUPPORT_SCHED_SCAN_IE
-	/* only the new Pscan format can support IE and NLOMsp params */
+	/* Set Multiple Scan Plan here */
 	DBGLOG(SCN, TRACE, "--> %s()\n", __func__);
 
 	ASSERT(prAdapter);
 
-	/* quick test configuration */
-	prCmdPscnParam->rCmdNloReq.fgNLOMspEnable = FALSE;
-	prCmdPscnParam->rCmdNloReq.ucNLOMspEntryNum = 0;
-	prCmdPscnParam->rCmdNloReq.au2NLOMspList[0] = 0;
-	prCmdPscnParam->rCmdNloReq.au2NLOMspList[1] = 0;
-	prCmdPscnParam->rCmdNloReq.au2NLOMspList[2] = 0;
-	prCmdPscnParam->rCmdNloReq.au2NLOMspList[3] = 0;
-	prCmdPscnParam->rCmdNloReq.au2NLOMspList[4] = 0;
-	prCmdPscnParam->rCmdNloReq.au2NLOMspList[5] = 0;
-	prCmdPscnParam->rCmdNloReq.au2NLOMspList[6] = 0;
-	prCmdPscnParam->rCmdNloReq.au2NLOMspList[7] = 0;
-	prCmdPscnParam->rCmdNloReq.au2NLOMspList[8] = 0;
-	prCmdPscnParam->rCmdNloReq.au2NLOMspList[9] = 0;
-#endif
+	prSchedScanCmd->ucMspEntryNum = 0;
+	kalMemZero(prSchedScanCmd->au2MspList,
+			sizeof(prSchedScanCmd->au2MspList));
 }
 
 #endif /* CFG_SUPPORT_SCHED_SCAN */
