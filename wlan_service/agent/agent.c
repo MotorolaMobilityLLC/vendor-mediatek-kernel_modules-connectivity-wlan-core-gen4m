@@ -422,6 +422,9 @@ static s_int32 hqa_set_rx_path(
 				&data, (u_char *)&value);
 		band_idx = value;
 
+		/* Set Band idx */
+		SERV_SET_PARAM(serv_test, ctrl_band_idx, (u_char)band_idx);
+
 		if (band_idx && rx_ant > 0x3)
 			rx_ant >>= 2;
 
