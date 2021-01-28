@@ -446,6 +446,10 @@ struct BSS_DESC {
 	/* end Support AP Selection */
 	int8_t cPowerLimit;
 	uint8_t aucRrmCap[5];
+#if CFG_SUPPORT_HE_ER
+	uint8_t fgIsERSUDisable;
+	uint8_t ucDCMMaxConRx;
+#endif
 };
 
 struct SCAN_PARAM {	/* Used by SCAN FSM */
