@@ -11982,6 +11982,11 @@ wlanoidSetTxPower(IN struct ADAPTER *prAdapter,
 
 	prCmd = cnmMemAlloc(prAdapter, RAM_TYPE_BUF,
 			    sizeof(struct SET_TXPWR_CTRL));
+
+	if (!prCmd) {
+		DBGLOG(REQ, ERROR, "prCmd not available\n");
+		return WLAN_STATUS_FAILURE;
+	}
 	kalMemZero(prCmd, sizeof(struct SET_TXPWR_CTRL));
 	prCmd->c2GLegacyStaPwrOffset =
 		pTxPwr->c2GLegacyStaPwrOffset;
