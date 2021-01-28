@@ -2795,12 +2795,12 @@ p2pFuncParseBeaconContent(IN P_ADAPTER_T prAdapter,
 			case ELEM_ID_SUP_RATES:	/* 1 *//* V *//* Done */
 				{
 					DBGLOG(P2P, TRACE, "Support Rate IE\n");
+					if ((SUP_RATES_IE(pucIE)->ucLength) > ELEM_MAX_LEN_SUP_RATES)
+						SUP_RATES_IE(pucIE)->ucLength = ELEM_MAX_LEN_SUP_RATES;
 					kalMemCopy(prP2pBssInfo->aucAllSupportedRates,
 						   SUP_RATES_IE(pucIE)->aucSupportedRates,
 						   SUP_RATES_IE(pucIE)->ucLength);
-
 					prP2pBssInfo->ucAllSupportedRatesLen = SUP_RATES_IE(pucIE)->ucLength;
-
 					DBGLOG_MEM8(P2P, TRACE,
 						    SUP_RATES_IE(pucIE)->aucSupportedRates,
 						    SUP_RATES_IE(pucIE)->ucLength);
