@@ -1372,7 +1372,6 @@ uint32_t nicUpdateBss(IN struct ADAPTER *prAdapter, IN uint8_t ucBssIndex)
 	uint32_t u4Status = WLAN_STATUS_NOT_ACCEPTED;
 	struct BSS_INFO *prBssInfo;
 	struct CMD_SET_BSS_INFO rCmdSetBssInfo;
-	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
 
 	ASSERT(prAdapter);
 	ASSERT(ucBssIndex <= prAdapter->ucHwBssIdNum);
@@ -1469,16 +1468,14 @@ uint32_t nicUpdateBss(IN struct ADAPTER *prAdapter, IN uint8_t ucBssIndex)
 			rCmdSetBssInfo.ucIsApMode =
 				p2pFuncIsAPMode(prAdapter->rWifiVar.prP2PConnSettings[prBssInfo->u4PrivateData]);
 
-			if (rCmdSetBssInfo.ucIsApMode)
-				rCmdSetBssInfo.ucDisconnectDetectTh = prWifiVar->ucApDisconnectDetectTh;
-			else
-				rCmdSetBssInfo.ucDisconnectDetectTh = prWifiVar->ucP2pDisconnectDetectTh;
 		}
 #else
 		rCmdSetBssInfo.ucAuthMode = (uint8_t) AUTH_MODE_WPA2_PSK;
 		rCmdSetBssInfo.ucEncStatus = (uint8_t) ENUM_ENCRYPTION3_KEY_ABSENT;
 #endif
 	}
+
+	rCmdSetBssInfo.ucDisconnectDetectTh = 0;
 
 	if ((prAdapter->prAisBssInfo != NULL) &&
 	    (ucBssIndex == prAdapter->prAisBssInfo->ucBssIndex) &&

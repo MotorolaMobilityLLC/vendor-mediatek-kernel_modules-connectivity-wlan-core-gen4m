@@ -769,10 +769,6 @@ struct WIFI_VAR {
 	uint8_t ucRxHtBaSize;
 	uint8_t ucRxVhtBaSize;
 
-	uint8_t ucStaDisconnectDetectTh;
-	uint8_t ucApDisconnectDetectTh;
-	uint8_t ucP2pDisconnectDetectTh;
-
 	uint8_t ucThreadScheduling;
 	uint8_t ucThreadPriority;
 	int8_t cThreadNice;
