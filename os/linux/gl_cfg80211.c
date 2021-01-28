@@ -1231,6 +1231,9 @@ int mtk_cfg80211_connect(struct wiphy *wiphy,
 			prGlueInfo->rWpaInfo.u4CipherPairwise =
 							IW_AUTH_CIPHER_CCMP;
 			break;
+		case WLAN_CIPHER_SUITE_NO_GROUP_ADDR:
+			DBGLOG(REQ, INFO, "WLAN_CIPHER_SUITE_NO_GROUP_ADDR\n");
+			break;
 		default:
 			DBGLOG(REQ, WARN, "invalid cipher pairwise (%d)\n",
 			       sme->crypto.ciphers_pairwise[0]);
@@ -1406,6 +1409,15 @@ int mtk_cfg80211_connect(struct wiphy *wiphy,
 					"[HS20] set HS20 assoc info error:%x\n",
 					rStatus);
 #endif
+		} else if (wextSrchDesiredOsenIE(pucIEStart, sme->ie_len,
+					(uint8_t **) &prDesiredIE)) {
+			/* we can reuse aucHS20AssocInfoIE because hs20
+			 * indication IE is not present when OSEN exist
+			 */
+			kalMemCopy(prGlueInfo->aucHS20AssocInfoIE,
+					prDesiredIE, IE_SIZE(prDesiredIE));
+			prGlueInfo->u2HS20AssocInfoIELen =
+						(uint16_t)IE_SIZE(prDesiredIE);
 		}
 		if (wextSrchDesiredInterworkingIE(pucIEStart, sme->ie_len,
 						  (uint8_t **) &prDesiredIE)) {
