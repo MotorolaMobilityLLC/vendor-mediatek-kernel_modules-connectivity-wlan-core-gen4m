@@ -58,8 +58,8 @@
 #ifndef _HIF_H
 #define _HIF_H
 
-#if defined(_HIF_VIRTUAL)
-#define HIF_NAME "VIRTUAL"
+#if defined(_HIF_NONE)
+#define HIF_NAME "NONE"
 #else
 #error "No HIF defined!"
 #endif
