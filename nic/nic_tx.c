@@ -3945,10 +3945,10 @@ void nicTxDirectClearHifQ(IN struct ADAPTER *prAdapter)
 	QUEUE_INITIALIZE(prNeedToFreeQue);
 
 	for (ucHifTc = 0; ucHifTc < TX_PORT_NUM; ucHifTc++) {
+		spin_lock_bh(
+			 &prGlueInfo->rSpinLock[SPIN_LOCK_TX_DIRECT]);
 		if (QUEUE_IS_NOT_EMPTY(
 			    &prAdapter->rTxDirectHifQueue[ucHifTc])) {
-			spin_lock_bh(
-				&prGlueInfo->rSpinLock[SPIN_LOCK_TX_DIRECT]);
 			QUEUE_MOVE_ALL(prNeedToFreeQue,
 				       &prAdapter->rTxDirectHifQueue[ucHifTc]);
 			spin_unlock_bh(
@@ -3957,6 +3957,9 @@ void nicTxDirectClearHifQ(IN struct ADAPTER *prAdapter)
 			wlanProcessQueuedMsduInfo(prAdapter,
 				(struct MSDU_INFO *)
 					QUEUE_GET_HEAD(prNeedToFreeQue));
+		} else {
+			spin_unlock_bh(
+				&prGlueInfo->rSpinLock[SPIN_LOCK_TX_DIRECT]);
 		}
 	}
 }
@@ -3969,16 +3972,17 @@ void nicTxDirectClearStaPsQ(IN struct ADAPTER *prAdapter,
 	struct QUE *prNeedToFreeQue = &rNeedToFreeQue;
 
 	QUEUE_INITIALIZE(prNeedToFreeQue);
-
+	spin_lock_bh(&prGlueInfo->rSpinLock[SPIN_LOCK_TX_DIRECT]);
 	if (QUEUE_IS_NOT_EMPTY(
 		    &prAdapter->rStaPsQueue[ucStaRecIndex])) {
-		spin_lock_bh(&prGlueInfo->rSpinLock[SPIN_LOCK_TX_DIRECT]);
 		QUEUE_MOVE_ALL(prNeedToFreeQue,
 			       &prAdapter->rStaPsQueue[ucStaRecIndex]);
 		spin_unlock_bh(&prGlueInfo->rSpinLock[SPIN_LOCK_TX_DIRECT]);
 
 		wlanProcessQueuedMsduInfo(prAdapter,
 			(struct MSDU_INFO *) QUEUE_GET_HEAD(prNeedToFreeQue));
+	} else {
+	    spin_unlock_bh(&prGlueInfo->rSpinLock[SPIN_LOCK_TX_DIRECT]);
 	}
 }
 
@@ -3990,16 +3994,17 @@ void nicTxDirectClearBssAbsentQ(IN struct ADAPTER
 	struct QUE *prNeedToFreeQue = &rNeedToFreeQue;
 
 	QUEUE_INITIALIZE(prNeedToFreeQue);
-
+	spin_lock_bh(&prGlueInfo->rSpinLock[SPIN_LOCK_TX_DIRECT]);
 	if (QUEUE_IS_NOT_EMPTY(
 		    &prAdapter->rBssAbsentQueue[ucBssIndex])) {
-		spin_lock_bh(&prGlueInfo->rSpinLock[SPIN_LOCK_TX_DIRECT]);
 		QUEUE_MOVE_ALL(prNeedToFreeQue,
 			       &prAdapter->rBssAbsentQueue[ucBssIndex]);
 		spin_unlock_bh(&prGlueInfo->rSpinLock[SPIN_LOCK_TX_DIRECT]);
 
 		wlanProcessQueuedMsduInfo(prAdapter,
 			(struct MSDU_INFO *) QUEUE_GET_HEAD(prNeedToFreeQue));
+	} else {
+	    spin_unlock_bh(&prGlueInfo->rSpinLock[SPIN_LOCK_TX_DIRECT]);
 	}
 }
 
