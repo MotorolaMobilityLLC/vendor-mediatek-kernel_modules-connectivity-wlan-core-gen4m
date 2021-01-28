@@ -460,10 +460,10 @@ int mtk_cfg80211_vendor_get_roaming_capabilities(struct wiphy *wiphy,
 		return -ENOMEM;
 	}
 
-	if (unlikely(nla_put(skb, WIFI_ATTRIBUTE_ROAMING_CAPABILITIES,
+	if (unlikely(nla_put(skb, WIFI_ATTRIBUTE_ROAMING_BLACKLIST_NUM,
 				sizeof(uint32_t), &maxNumOfList[0]) < 0))
 		goto nla_put_failure;
-	if (unlikely(nla_put(skb, WIFI_ATTRIBUTE_ROAMING_CAPABILITIES,
+	if (unlikely(nla_put(skb, WIFI_ATTRIBUTE_ROAMING_WHITELIST_NUM,
 				sizeof(uint32_t), &maxNumOfList[1]) < 0))
 		goto nla_put_failure;
 
