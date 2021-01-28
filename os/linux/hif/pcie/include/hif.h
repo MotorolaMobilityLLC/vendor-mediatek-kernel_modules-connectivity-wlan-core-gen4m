@@ -114,6 +114,8 @@
 
 #define HIF_TX_PAYLOAD_LENGTH				72
 
+#define HIF_SER_TIMEOUT				10000
+
 /*******************************************************************************
 *                             D A T A   T Y P E S
 ********************************************************************************
@@ -137,6 +139,21 @@ typedef struct _MSDU_TOKEN_INFO_T {
 
 	MSDU_TOKEN_ENTRY_T arToken[HIF_TX_MSDU_TOKEN_NUM];
 } MSDU_TOKEN_INFO_T, *P_MSDU_TOKEN_INFO_T;
+
+enum ERR_RECOVERY_STATE {
+	ERR_RECOV_STOP_IDLE = 0,
+	ERR_RECOV_STOP_PDMA0,
+	ERR_RECOV_RESET_PDMA0,
+	ERR_RECOV_STOP_IDLE_DONE,
+	ERR_RECOV_WAIT_N9_NORMAL,
+	ERR_RECOV_EVENT_REENTRY,
+	ERR_RECOV_STATE_NUM
+};
+
+struct ERR_RECOVERY_CTRL_T {
+	enum ERR_RECOVERY_STATE eErrRecovState;
+	UINT_32 u4Status;
+};
 
 /* host interface's private data structure, which is attached to os glue
 ** layer info structure.
@@ -166,7 +183,27 @@ typedef struct _GL_HIF_INFO_T {
 	MSDU_TOKEN_INFO_T rTokenInfo;
 
 	spinlock_t rDynMapRegLock;
+
+	struct ERR_RECOVERY_CTRL_T rErrRecoveryCtl;
+	BOOLEAN fgIsErrRecovery;
+	spinlock_t rSerLock;
+	struct timer_list rSerTimer;
+	struct list_head rTxCmdQ;
+	struct list_head rTxDataQ;
+	spinlock_t rTxCmdQLock;
+	spinlock_t rTxDataQLock;
 } GL_HIF_INFO_T, *P_GL_HIF_INFO_T;
+
+struct TX_CMD_REQ_T {
+	P_CMD_INFO_T prCmdInfo;
+	UINT_8 ucTC;
+	struct list_head list;
+};
+
+struct TX_DATA_REQ_T {
+	P_MSDU_INFO_T prMsduInfo;
+	struct list_head list;
+};
 
 typedef struct _BUS_INFO {
 	const unsigned int top_cfg_base;	/* TOP_CFG_BASE address */
@@ -179,10 +216,12 @@ typedef struct _BUS_INFO {
 	const UINT_32 u4DmaMask;
 
 	VOID (*pdmaSetup)(P_GLUE_INFO_T prGlueInfo, BOOLEAN enable);
+	VOID (*enableInterrupt)(P_ADAPTER_T prAdapter);
 	VOID (*lowPowerOwnRead)(P_ADAPTER_T prAdapter, PBOOLEAN pfgResult);
 	VOID (*lowPowerOwnSet)(P_ADAPTER_T prAdapter, PBOOLEAN pfgResult);
 	VOID (*lowPowerOwnClear)(P_ADAPTER_T prAdapter, PBOOLEAN pfgResult);
 } BUS_INFO, *P_BUS_INFO;
+
 
 /*******************************************************************************
 *                            P U B L I C   D A T A
@@ -229,6 +268,8 @@ VOID halHifRst(P_GLUE_INFO_T prGlueInfo);
 VOID halWpdmaAllocRing(P_GLUE_INFO_T prGlueInfo);
 VOID halWpdmaFreeRing(P_GLUE_INFO_T prGlueInfo);
 VOID halWpdmaInitRing(P_GLUE_INFO_T prGlueInfo);
+VOID halWpdmaInitTxRing(IN P_GLUE_INFO_T prGlueInfo);
+VOID halWpdmaInitRxRing(IN P_GLUE_INFO_T prGlueInfo);
 VOID halWpdmaProcessCmdDmaDone(IN P_GLUE_INFO_T prGlueInfo, IN UINT_16 u2Port);
 VOID halWpdmaProcessDataDmaDone(IN P_GLUE_INFO_T prGlueInfo, IN UINT_16 u2Port);
 UINT_32 halWpdmaGetRxDmaDoneCnt(IN P_GLUE_INFO_T prGlueInfo, IN UINT_8 ucRingNum);
@@ -248,10 +289,16 @@ BOOLEAN halChipToStaticMapBusAddr(IN P_BUS_INFO prBusInfo, IN UINT_32 u4ChipAddr
 BOOLEAN halGetDynamicMapReg(IN P_GLUE_INFO_T prGlueInfo, IN UINT_32 u4ChipAddr, OUT PUINT_32 pu4Value);
 BOOLEAN halSetDynamicMapReg(IN P_GLUE_INFO_T prGlueInfo, IN UINT_32 u4ChipAddr, IN UINT_32 u4Value);
 VOID halConnacWpdmaConfig(P_GLUE_INFO_T prGlueInfo, BOOLEAN enable);
-VOID halEnhancedWpdmaConfig(P_GLUE_INFO_T prGlueInfo, BOOLEAN enable);
-VOID halWpdmaConfig(P_GLUE_INFO_T prGlueInfo, BOOLEAN enable);
+VOID halConnacEnableInterrupt(IN P_ADAPTER_T prAdapter);
 
+BOOL halWpdmaWriteCmd(IN P_GLUE_INFO_T prGlueInfo, IN P_CMD_INFO_T prCmdInfo, IN UINT_8 ucTC);
+BOOL halWpdmaWriteData(IN P_GLUE_INFO_T prGlueInfo, IN P_MSDU_INFO_T prMsduInfo);
+VOID halHwRecoveryFromError(IN P_ADAPTER_T prAdapter);
+
+VOID kalCheckAndResetTXReg(IN P_GLUE_INFO_T prGlueInfo, IN UINT_16 u2Port);
+VOID kalCheckAndResetRXReg(IN P_GLUE_INFO_T prGlueInfo, IN UINT_16 u2Port);
 BOOL kalDevReadData(IN P_GLUE_INFO_T prGlueInfo, IN UINT_16 u2Port, IN OUT P_SW_RFB_T prSwRfb);
+BOOL kalDevKickCmd(IN P_GLUE_INFO_T prGlueInfo);
 
 /*******************************************************************************
 *                              F U N C T I O N S

@@ -3855,3 +3855,13 @@ BOOLEAN nicSerIsRxStop(IN P_ADAPTER_T prAdapter)
 	}
 }
 
+VOID nicSerReInitBeaconFrame(IN P_ADAPTER_T prAdapter)
+{
+	P_P2P_ROLE_FSM_INFO_T prRoleP2pFsmInfo;
+
+	prRoleP2pFsmInfo = P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prAdapter, 0);
+	if (prRoleP2pFsmInfo != NULL) {
+		bssUpdateBeaconContent(prAdapter, prRoleP2pFsmInfo->ucBssIndex);
+		DBGLOG(NIC, INFO, "SER beacon frame is updated\n");
+	}
+}

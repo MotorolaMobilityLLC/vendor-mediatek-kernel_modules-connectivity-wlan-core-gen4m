@@ -186,7 +186,8 @@ BUS_INFO connac_bus_info = {
 	.fgInitPCIeInt = FALSE,
 	.u4DmaMask = 36,
 
-	.pdmaSetup = halConnacWpdmaConfig,
+	.pdmaSetup = asicPdmaConfig,
+	.enableInterrupt = asicEnableInterrupt,
 	.lowPowerOwnRead = asicLowPowerOwnRead,
 	.lowPowerOwnSet = asicLowPowerOwnSet,
 	.lowPowerOwnClear = asicLowPowerOwnClear,

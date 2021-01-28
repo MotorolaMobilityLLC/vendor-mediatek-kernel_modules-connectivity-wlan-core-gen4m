@@ -542,6 +542,23 @@ typedef union _WPDMA_INT_MASK {
 		UINT_32 fw_clr_own:1;
 	} field;
 
+	struct {
+		UINT_32 rx_done_0:1;
+		UINT_32 rx_done_1:1;
+		UINT_32 err_det_int_0:1;
+		UINT_32 err_det_int_1:1;
+		UINT_32 tx_done:16;
+		UINT_32 rx_coherent:1;
+		UINT_32 tx_coherent:1;
+		UINT_32 rx_dly_int:1;
+		UINT_32 tx_dly_int:1;
+		UINT_32 wpdma2host_err_int_ena:1;
+		UINT_32 rsv_25_27:3;
+		UINT_32 subsys_int_ena:1;
+		UINT_32 mcu2host_sw_int_ena:1;
+		UINT_32 rsv_30_31:2;
+	} field_conn;
+
 	UINT_32 word;
 } WPMDA_INT_MASK;
 

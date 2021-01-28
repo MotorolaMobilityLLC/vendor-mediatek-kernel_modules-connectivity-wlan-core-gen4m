@@ -903,6 +903,10 @@ priv_set_int(IN struct net_device *prNetDev,
 		break;
 
 #endif
+	case PRIV_CMD_SET_SER:
+		kalIoctl(prGlueInfo, wlanoidSetSer, (PVOID)&pu4IntBuf[1],
+			sizeof(UINT_32), FALSE, FALSE, TRUE, &u4BufLen);
+		break;
 
 	default:
 		return -EOPNOTSUPP;
