@@ -6792,6 +6792,7 @@ VOID wlanInitFeatureOption(IN P_ADAPTER_T prAdapter)
 	prWifiVar->aucMtkFeature[1] = 0xff;
 	prWifiVar->aucMtkFeature[2] = 0xff;
 	prWifiVar->aucMtkFeature[3] = 0xff;
+	prWifiVar->ucGbandProbe256QAM = (UINT_8) wlanCfgGetUint32(prAdapter, "Probe256QAM", 0);
 #endif
 
 	prWifiVar->ucCmdRsvResource = (UINT_8) wlanCfgGetUint32(prAdapter, "TxCmdRsv", QM_CMD_RESERVED_THRESHOLD);
