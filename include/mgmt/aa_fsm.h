@@ -114,6 +114,7 @@ enum ENUM_AA_STATE {
 	SAA_STATE_WAIT_AUTH2,
 	SAA_STATE_SEND_AUTH3,
 	SAA_STATE_WAIT_AUTH4,
+	SAA_STATE_EXTERNAL_AUTH,
 	SAA_STATE_SEND_ASSOC1,
 	SAA_STATE_WAIT_ASSOC2,
 	AAA_STATE_SEND_AUTH2,
@@ -211,6 +212,9 @@ saaSendDisconnectMsgHandler(IN struct ADAPTER *prAdapter,
 
 void saaFsmRunEventFTContinue(IN struct ADAPTER *prAdapter,
 			      IN struct MSG_HDR *prMsgHdr);
+
+void saaFsmRunEventExternalAuthDone(IN struct ADAPTER *prAdapter,
+				    IN struct MSG_HDR *prMsgHdr);
 
 /*----------------------------------------------------------------------------*/
 /* Routines in aaa_fsm.c                                                      */
