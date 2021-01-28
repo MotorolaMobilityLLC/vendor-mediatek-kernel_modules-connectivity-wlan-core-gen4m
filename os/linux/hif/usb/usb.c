@@ -283,6 +283,9 @@ int mtk_usb_suspend(struct usb_interface *intf, pm_message_t message)
 
 	DBGLOG(HAL, STATE, "mtk_usb_suspend()\n");
 
+	/* Stop upper layers calling the device hard_start_xmit routine. */
+	netif_tx_stop_all_queues(prGlueInfo->prDevHandler);
+
 	if (prGlueInfo->prAdapter->rWifiVar.ucWow) {
 		DBGLOG(HAL, EVENT, "enter WOW flow\n");
 		kalWowProcess(prGlueInfo, TRUE);
@@ -337,6 +340,9 @@ int mtk_usb_resume(struct usb_interface *intf)
 	}
 
 	DBGLOG(HAL, STATE, "mtk_usb_resume() done!\n");
+
+	/* Allow upper layers to call the device hard_start_xmit routine. */
+	netif_tx_start_all_queues(prGlueInfo->prDevHandler);
 
 	/* TODO */
 	return 0;
