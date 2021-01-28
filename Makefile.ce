@@ -126,6 +126,10 @@ CFG_P2P_SCAN_REPORT_ALL_BSS=0
 # eg. insmod wlan_mt76x8_usb.ko sta=wlan p2p=p2p ap=ap
 CFG_DRIVER_INF_NAME_CHANGE=n
 
+# 1: Enable SDIO RX Tasklet De-Aggregation
+# 0: Disable (default)
+CFG_SDIO_RX_AGG_TASKLET=0
+
 #/***** Platform dependent part ******/
 ifeq ($(PLATFORM),MT53XX)
 CFG_SUPPORT_ROAMING=0
@@ -194,6 +198,10 @@ endif
 
 ifeq ($(CFG_ANDROID_AOSP_PRIV_CMD), y)
 PLATFORM_FLAGS += -DCFG_ANDROID_AOSP_PRIV_CMD
+endif
+
+ifneq ($(CFG_SDIO_RX_AGG_TASKLET),)
+PLATFORM_FLAGS += -DCFG_SDIO_RX_AGG_TASKLET=$(CFG_SDIO_RX_AGG_TASKLET)
 endif
 
 ##############################################################

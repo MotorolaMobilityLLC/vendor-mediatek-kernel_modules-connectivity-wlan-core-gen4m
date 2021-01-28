@@ -319,6 +319,13 @@
  */
 #define CFG_SDIO_RX_AGG                              1
 
+/* 1: Enable SDIO RX Tasklet De-Aggregation
+ * 0(default): Disable
+ */
+#ifndef CFG_SDIO_RX_AGG_TASKLET
+#define CFG_SDIO_RX_AGG_TASKLET                      0
+#endif
+
 #if (CFG_SDIO_RX_AGG == 1) && (CFG_SDIO_INTR_ENHANCE == 0)
 #error \
 	"CFG_SDIO_INTR_ENHANCE should be 1 once CFG_SDIO_RX_AGG equals to 1"
