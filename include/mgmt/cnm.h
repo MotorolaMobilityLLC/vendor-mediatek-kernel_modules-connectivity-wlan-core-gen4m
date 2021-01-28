@@ -89,6 +89,9 @@ typedef enum _ENUM_CH_REQ_TYPE_T {
 	CH_REQ_TYPE_P2P_LISTEN,
 	CH_REQ_TYPE_OFFCHNL_TX,
 	CH_REQ_TYPE_GO_START_BSS,
+#if (CFG_SUPPORT_DFS_MASTER == 1)
+	CH_REQ_TYPE_DFS_CAC,
+#endif
 	CH_REQ_TYPE_NUM
 } ENUM_CH_REQ_TYPE_T, *P_ENUM_CH_REQ_TYPE_T;
 
@@ -210,6 +213,12 @@ VOID cnmChMngrRequestPrivilege(P_ADAPTER_T prAdapter, P_MSG_HDR_T prMsgHdr);
 VOID cnmChMngrAbortPrivilege(P_ADAPTER_T prAdapter, P_MSG_HDR_T prMsgHdr);
 
 VOID cnmChMngrHandleChEvent(P_ADAPTER_T prAdapter, P_WIFI_EVENT_T prEvent);
+
+#if (CFG_SUPPORT_DFS_MASTER == 1)
+VOID cnmRadarDetectEvent(P_ADAPTER_T prAdapter, P_WIFI_EVENT_T prEvent);
+
+VOID cnmCsaDoneEvent(P_ADAPTER_T prAdapter, P_WIFI_EVENT_T prEvent);
+#endif
 
 BOOLEAN
 cnmPreferredChannel(P_ADAPTER_T prAdapter, P_ENUM_BAND_T prBand, PUINT_8 pucPrimaryChannel, P_ENUM_CHNL_EXT_T prBssSCO);

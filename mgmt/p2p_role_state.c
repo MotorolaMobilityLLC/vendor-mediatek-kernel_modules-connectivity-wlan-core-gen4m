@@ -301,6 +301,54 @@ p2pRoleStateAbort_GC_JOIN(IN P_ADAPTER_T prAdapter,
 	} while (FALSE);
 }
 
+#if (CFG_SUPPORT_DFS_MASTER == 1)
+VOID
+p2pRoleStateInit_DFS_CAC(IN P_ADAPTER_T prAdapter, IN UINT_8 ucBssIdx, IN P_P2P_CHNL_REQ_INFO_T prChnlReqInfo)
+{
+
+	do {
+		ASSERT_BREAK((prAdapter != NULL) && (prChnlReqInfo != NULL));
+
+		p2pFuncAcquireCh(prAdapter, ucBssIdx, prChnlReqInfo);
+	} while (FALSE);
+}				/* p2pRoleStateInit_DFS_CAC */
+
+VOID
+p2pRoleStateAbort_DFS_CAC(IN P_ADAPTER_T prAdapter,
+				 IN P_BSS_INFO_T prP2pRoleBssInfo,
+				 IN P_P2P_ROLE_FSM_INFO_T prP2pRoleFsmInfo, IN ENUM_P2P_ROLE_STATE_T eNextState)
+{
+	do {
+		cnmTimerStopTimer(prAdapter, &(prP2pRoleFsmInfo->rP2pRoleFsmTimeoutTimer));
+
+		p2pFuncReleaseCh(prAdapter, prP2pRoleFsmInfo->ucBssIndex,
+					&(prP2pRoleFsmInfo->rChnlReqInfo));
+	} while (FALSE);
+}				/* p2pRoleStateAbort_DFS_CAC */
+
+VOID
+p2pRoleStateInit_SWITCH_CHANNEL(IN P_ADAPTER_T prAdapter, IN UINT_8 ucBssIdx, IN P_P2P_CHNL_REQ_INFO_T prChnlReqInfo)
+{
+
+	do {
+		ASSERT_BREAK((prAdapter != NULL) && (prChnlReqInfo != NULL));
+
+		p2pFuncAcquireCh(prAdapter, ucBssIdx, prChnlReqInfo);
+	} while (FALSE);
+}				/* p2pRoleStateInit_SWITCH_CHANNEL */
+
+VOID
+p2pRoleStateAbort_SWITCH_CHANNEL(IN P_ADAPTER_T prAdapter,
+				 IN P_BSS_INFO_T prP2pRoleBssInfo,
+				 IN P_P2P_ROLE_FSM_INFO_T prP2pRoleFsmInfo, IN ENUM_P2P_ROLE_STATE_T eNextState)
+{
+	do {
+		p2pFuncReleaseCh(prAdapter, prP2pRoleFsmInfo->ucBssIndex,
+					&(prP2pRoleFsmInfo->rChnlReqInfo));
+	} while (FALSE);
+}				/* p2pRoleStateAbort_SWITCH_CHANNEL */
+#endif
+
 VOID
 p2pRoleStatePrepare_To_REQING_CHANNEL_STATE(IN P_ADAPTER_T prAdapter,
 					    IN P_BSS_INFO_T prBssInfo,
@@ -373,3 +421,62 @@ p2pRoleStatePrepare_To_REQING_CHANNEL_STATE(IN P_ADAPTER_T prAdapter,
 		prBssInfo->eBssSCO = eSCOBackup;
 	} while (FALSE);
 }
+
+#if (CFG_SUPPORT_DFS_MASTER == 1)
+VOID
+p2pRoleStatePrepare_To_DFS_CAC_STATE(IN P_ADAPTER_T prAdapter,
+					IN P_BSS_INFO_T prBssInfo,
+					IN ENUM_CHANNEL_WIDTH_T rChannelWidth,
+					IN P_P2P_CONNECTION_REQ_INFO_T prConnReqInfo,
+					OUT P_P2P_CHNL_REQ_INFO_T prChnlReqInfo)
+{
+	ENUM_BAND_T eBand;
+	UINT_8 ucChannel;
+	ENUM_CHNL_EXT_T eSCO;
+	ENUM_BAND_T eBandBackup;
+	UINT_8 ucChannelBackup;
+	ENUM_CHNL_EXT_T eSCOBackup;
+	P_P2P_ROLE_FSM_INFO_T prP2pRoleFsmInfo = (P_P2P_ROLE_FSM_INFO_T) NULL;
+
+	do {
+
+		eBandBackup = prBssInfo->eBand;
+		ucChannelBackup = prBssInfo->ucPrimaryChannel;
+		eSCOBackup = prBssInfo->eBssSCO;
+
+		prBssInfo->ucPrimaryChannel = prConnReqInfo->rChannelInfo.ucChannelNum;
+		prBssInfo->eBand = prConnReqInfo->rChannelInfo.eBand;
+
+		if (cnmPreferredChannel(prAdapter, &eBand, &ucChannel, &eSCO) &&
+			eSCO != CHNL_EXT_SCN && ucChannel == prBssInfo->ucPrimaryChannel && eBand == prBssInfo->eBand) {
+			prBssInfo->eBssSCO = eSCO;
+		} else {
+			prBssInfo->eBssSCO = rlmDecideScoForAP(prAdapter, prBssInfo);
+		}
+
+		prP2pRoleFsmInfo = P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prAdapter, prBssInfo->u4PrivateData);
+
+		ASSERT_BREAK((prAdapter != NULL) && (prConnReqInfo != NULL) && (prChnlReqInfo != NULL));
+		prChnlReqInfo->u8Cookie = 0;
+		prChnlReqInfo->ucReqChnlNum = prConnReqInfo->rChannelInfo.ucChannelNum;
+		prChnlReqInfo->eBand = prConnReqInfo->rChannelInfo.eBand;
+		prChnlReqInfo->eChnlSco = prBssInfo->eBssSCO;
+		prChnlReqInfo->u4MaxInterval =
+				prAdapter->prGlueInfo->prP2PInfo[prP2pRoleFsmInfo->ucRoleIndex]->cac_time_ms;
+		prChnlReqInfo->eChnlReqType = CH_REQ_TYPE_DFS_CAC;
+
+		prChnlReqInfo->eChannelWidth = rChannelWidth;
+
+		prChnlReqInfo->ucCenterFreqS1 =
+			nicGetVhtS1(prBssInfo->ucPrimaryChannel, prChnlReqInfo->eChannelWidth);
+		prChnlReqInfo->ucCenterFreqS2 = 0;
+
+		DBGLOG(P2P, TRACE, "p2pRoleStatePrepare_To_REQING_CHANNEL_STATE\n");
+
+		/* Reset */
+		prBssInfo->ucPrimaryChannel = ucChannelBackup;
+		prBssInfo->eBand = eBandBackup;
+		prBssInfo->eBssSCO = eSCOBackup;
+	} while (FALSE);
+}
+#endif

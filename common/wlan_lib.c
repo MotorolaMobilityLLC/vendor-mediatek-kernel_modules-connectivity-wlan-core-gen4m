@@ -165,6 +165,9 @@ PFN_OID_HANDLER_FUNC apfnOidWOTimeoutCheck[] = {
 	wlanoidRftestSetTestMode,
 	wlanoidRftestSetAbortTestMode,
 	wlanoidSetAcpiDevicePowerState,
+#if (CFG_SUPPORT_DFS_MASTER == 1)
+	wlanoidQuerySetRddReport,
+#endif
 };
 #if CFG_SUPPORT_COMPRESSION_FW_OPTION
 #define COMPRESSION_OPTION_OFFSET   4

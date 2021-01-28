@@ -187,6 +187,10 @@ int Set_MUTriggerTx(struct net_device *prNetDev, UINT_8 *prInBuf);
 int WriteEfuse(struct net_device *prNetDev, UINT_8 *prInBuf);
 int SetTxTargetPower(struct net_device *prNetDev, UINT_8 *prInBuf);
 
+#if (CFG_SUPPORT_DFS_MASTER == 1)
+int SetRddReport(struct net_device *prNetDev, UINT_8 *prInBuf);
+#endif
+
 
 int AteCmdSetHandle(struct net_device *prNetDev, UINT_8 *prInBuf, UINT_32 u4InBufLen);
 #endif /*CFG_SUPPORT_QA_TOOL */

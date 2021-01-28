@@ -2572,7 +2572,45 @@ INT_32 MT_ATESetTxTargetPower(struct net_device *prNetDev, UINT_8 ucTxTargetPowe
 	return i4Status;
 }
 
+#if (CFG_SUPPORT_DFS_MASTER == 1)
+/*----------------------------------------------------------------------------*/
+/*!
+* \brief  Hook API for Set Rdd Report.
+*
+* \param[in] prNetDev		 Pointer to the Net Device
+* \param[in] ucDbdcIdx         Dbdc Index
+* \param[out] None
+*
+* \retval 0				On success.
+* \retval -EFAULT			If kalIoctl return nonzero.
+* \retval -EINVAL			If invalid argument.
+*/
+/*----------------------------------------------------------------------------*/
+INT_32 MT_ATESetRddReport(struct net_device *prNetDev, UINT_8 ucDbdcIdx)
+{
+	UINT_32 u4BufLen = 0;
+	PARAM_CUSTOM_SET_RDD_REPORT_T rSetRddReport;
+	P_GLUE_INFO_T prGlueInfo = NULL;
+	WLAN_STATUS i4Status = WLAN_STATUS_SUCCESS;
 
+	prGlueInfo = *((P_GLUE_INFO_T *) netdev_priv(prNetDev));
+	kalMemSet(&rSetRddReport, 0, sizeof(PARAM_CUSTOM_SET_RDD_REPORT_T));
+
+	/* Set Rdd Report */
+	DBGLOG(INIT, INFO, "MT6632 : QA_AGENT Set RDD Report - Band: %d\n", ucDbdcIdx);
+	rSetRddReport.ucDbdcIdx = ucDbdcIdx;
+
+	i4Status = kalIoctl(prGlueInfo,
+				wlanoidQuerySetRddReport,
+				&rSetRddReport,
+				sizeof(PARAM_CUSTOM_SET_RDD_REPORT_T), FALSE, FALSE, TRUE, &u4BufLen);
+
+	if (i4Status != WLAN_STATUS_SUCCESS)
+		return -EFAULT;
+
+	return i4Status;
+}
+#endif
 
 #if CFG_SUPPORT_TX_BF
 INT_32 TxBfProfileTag_InValid(struct net_device *prNetDev, P_PFMU_PROFILE_TAG1 prPfmuTag1, UINT_8 ucInValid)

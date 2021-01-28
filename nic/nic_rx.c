@@ -174,7 +174,13 @@ static RX_EVENT_HANDLER_T arEventTable[] = {
 #endif
 	{EVENT_ID_HIF_CTRL,					nicEventHifCtrl},
 	{EVENT_ID_RDD_SEND_PULSE,			nicEventRddSendPulse},
-	{EVENT_ID_UPDATE_COEX_PHYRATE,		nicEventUpdateCoexPhyrate}
+#if (CFG_SUPPORT_DFS_MASTER == 1)
+	{EVENT_ID_UPDATE_COEX_PHYRATE,		nicEventUpdateCoexPhyrate},
+	{EVENT_ID_RDD_REPORT,			cnmRadarDetectEvent},
+	{EVENT_ID_CSA_DONE,			cnmCsaDoneEvent},
+#else
+	{EVENT_ID_UPDATE_COEX_PHYRATE,		nicEventUpdateCoexPhyrate},
+#endif
 };
 
 /*******************************************************************************

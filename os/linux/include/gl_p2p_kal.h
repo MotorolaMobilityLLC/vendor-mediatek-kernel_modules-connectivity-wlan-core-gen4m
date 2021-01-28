@@ -249,6 +249,14 @@ VOID
 kalP2PGOStationUpdate(IN P_GLUE_INFO_T prGlueInfo,
 		      IN UINT_8 ucRoleIndex, IN P_STA_RECORD_T prCliStaRec, IN BOOLEAN fgIsNew);
 
+#if (CFG_SUPPORT_DFS_MASTER == 1)
+VOID
+kalP2PRddDetectUpdate(IN P_GLUE_INFO_T prGlueInfo, IN UINT_8 ucRoleIndex);
+
+VOID
+kalP2PCacFinishedUpdate(IN P_GLUE_INFO_T prGlueInfo, IN UINT_8 ucRoleIndex);
+#endif
+
 #if CFG_SUPPORT_HOTSPOT_WPS_MANAGER
 
 BOOLEAN kalP2PSetBlackList(IN P_GLUE_INFO_T prGlueInfo, IN PARAM_MAC_ADDRESS rbssid, IN BOOLEAN fgIsblock,
