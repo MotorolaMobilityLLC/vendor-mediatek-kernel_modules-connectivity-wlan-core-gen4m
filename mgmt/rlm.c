@@ -1429,7 +1429,8 @@ VHT_CAP_INFO_COMPRESSED_STEERING_NUMBER_OF_BEAMFORMER_ANTENNAS_4_SUP;
 	}
 #endif
 	if (IS_FEATURE_ENABLED(prAdapter->rWifiVar.ucRxShortGI)) {
-		prVhtCap->u4VhtCapInfo |= VHT_CAP_INFO_SHORT_GI_80;
+		if (ucMaxBw >= MAX_BW_80MHZ)
+			prVhtCap->u4VhtCapInfo |= VHT_CAP_INFO_SHORT_GI_80;
 
 		if (ucMaxBw >= MAX_BW_160MHZ)
 			prVhtCap->u4VhtCapInfo |=

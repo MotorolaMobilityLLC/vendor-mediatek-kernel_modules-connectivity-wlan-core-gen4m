@@ -3126,6 +3126,37 @@ bool rlmDomainIsEfuseUsed(void)
 {
 	return g_mtk_regd_control.isEfuseCountryCodeUsed;
 }
+
+uint8_t rlmDomainGetChannelBw(uint8_t channelNum)
+{
+	uint32_t ch_idx = 0, start_idx = 0, end_idx = 0;
+	uint8_t channelBw = MAX_BW_80_80_MHZ;
+	struct channel *pCh;
+
+	end_idx = rlmDomainGetActiveChannelCount(KAL_BAND_2GHZ)
+			+ rlmDomainGetActiveChannelCount(KAL_BAND_5GHZ);
+
+	for (ch_idx = start_idx; ch_idx < end_idx; ch_idx++) {
+		pCh = (rlmDomainGetActiveChannels() + ch_idx);
+
+		if (pCh->chNum != channelNum)
+			continue;
+
+		/* Max BW */
+		if ((pCh->flags & IEEE80211_CHAN_NO_160MHZ)
+						== IEEE80211_CHAN_NO_160MHZ)
+			channelBw = MAX_BW_80MHZ;
+		if ((pCh->flags & IEEE80211_CHAN_NO_80MHZ)
+						== IEEE80211_CHAN_NO_80MHZ)
+			channelBw = MAX_BW_40MHZ;
+		if ((pCh->flags & IEEE80211_CHAN_NO_HT40)
+						== IEEE80211_CHAN_NO_HT40)
+			channelBw = MAX_BW_20MHZ;
+	}
+
+	DBGLOG(RLM, INFO, "ch=%d, BW=%d\n", channelNum, channelBw);
+	return channelBw;
+}
 #endif
 
 uint32_t rlmDomainExtractSingleSkuInfoFromFirmware(IN struct ADAPTER *prAdapter, IN uint8_t *pucEventBuf)
