@@ -296,6 +296,7 @@ void aaaFsmRunEventRxAuth(IN struct ADAPTER *prAdapter, IN struct SW_RFB *prSwRf
 	struct WLAN_AUTH_FRAME *prAuthFrame = (struct WLAN_AUTH_FRAME *) NULL;
 
 	ASSERT(prAdapter);
+	DBGLOG(AAA, INFO, "aaaFsmRunEventRxAuth\n");
 
 	do {
 		prAuthFrame = (struct WLAN_AUTH_FRAME *) prSwRfb->pvHeader;
