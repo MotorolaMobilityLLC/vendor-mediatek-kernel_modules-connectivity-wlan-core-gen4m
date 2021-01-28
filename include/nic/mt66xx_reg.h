@@ -1045,6 +1045,9 @@ struct mt66xx_chip_info {
 	const unsigned int patch_addr;	/* patch download start address */
 	const unsigned int is_support_cr4;	/* support CR4 */
 	const unsigned int txd_append_size;	/* hw mac txd append */
+	const unsigned int rxd_size;	        /* hw mac rxd size */
+	const unsigned int init_event_size;     /* init event w/o rxd size */
+	const unsigned int event_hdr_size;      /* event w/o rxd size */
 	const unsigned int isNicCapV1;
 	const unsigned int is_support_efuse; /* efuse support */
 

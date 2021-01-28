@@ -671,7 +671,7 @@ static void *pcieAllocRxBuf(struct GL_HIF_INFO *prHifInfo,
 	dma_addr_t rAddr;
 
 	if (!pkt) {
-		DBGLOG(HAL, ERROR, "can't allocate rx %u size packet\n",
+		DBGLOG(HAL, ERROR, "can't allocate rx %lu size packet\n",
 		       prDmaBuf->AllocSize);
 		prDmaBuf->AllocPa = 0;
 		prDmaBuf->AllocVa = NULL;
@@ -864,21 +864,6 @@ static void pcieDumpTx(struct GL_HIF_INFO *prHifInfo,
 		       struct RTMP_TX_RING *prTxRing,
 		       uint32_t u4Idx, uint32_t u4DumpLen)
 {
-	struct RTMP_DMACB *prTxCell;
-	struct RTMP_DMABUF *prDmaBuf;
-
-	prTxCell = &prTxRing->Cell[u4Idx];
-
-	if (!prTxCell->pPacket)
-		return;
-
-	prDmaBuf = &prTxCell->DmaBuf;
-	pcieUnmapTxBuf(prHifInfo, prDmaBuf->AllocPa, prDmaBuf->AllocSize);
-
-	DBGLOG_MEM32(HAL, INFO, prTxCell->pPacket, u4DumpLen);
-
-	prDmaBuf->AllocPa = pcieMapTxBuf(prHifInfo, prDmaBuf->AllocVa,
-					0, prDmaBuf->AllocSize);
 }
 
 static void pcieDumpRx(struct GL_HIF_INFO *prHifInfo,
