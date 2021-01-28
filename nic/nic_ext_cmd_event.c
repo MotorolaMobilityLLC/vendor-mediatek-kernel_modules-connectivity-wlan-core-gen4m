@@ -331,6 +331,47 @@ uint32_t CmdExtStaRecUpdate2WA(
 	return rWlanStatus;
 }
 
+#if (CFG_SUPPORT_DMASHDL_SYSDVT)
+/* Inform DVT item to WA */
+uint32_t CmdExtDmaShdlDvt2WA(
+	struct ADAPTER *pAd,
+	uint8_t ucItemNo,
+	uint8_t ucSubItemNo)
+{
+	uint32_t rWlanStatus = WLAN_STATUS_SUCCESS;
+	uint32_t size;
+	struct EXT_CMD_CR4_DMASHDL_DVT_T *prCmdContent;
+
+	size = sizeof(struct EXT_CMD_CR4_DMASHDL_DVT_T);
+
+	prCmdContent = cnmMemAlloc(pAd, RAM_TYPE_BUF, size);
+	if (!prCmdContent) {
+		log_dbg(MEM, WARN,
+			"%s: command allocation failed\n",
+			__func__);
+
+		return WLAN_STATUS_RESOURCES;
+	}
+
+	prCmdContent->ucItemNo = ucItemNo;
+	prCmdContent->ucSubItemNo = ucSubItemNo;
+
+	rWlanStatus = wlanSendSetQueryExtCmd2WA(pAd,
+						CMD_ID_LAYER_0_EXT_MAGIC_NUM,
+						EXT_CMD_ID_CR4_DMASHDL_DVT,
+						TRUE,
+						FALSE,
+						TRUE,
+						NULL,
+						nicOidCmdTimeoutCommon,
+						size,
+						(uint8_t *) (prCmdContent),
+						NULL, 0);
+	cnmMemFree(pAd, prCmdContent);
+	return rWlanStatus;
+}
+#endif /* CFG_SUPPORT_DMASHDL_SYSDVT */
+
 uint32_t CmdExtBssInfoUpdate2WA(
 	struct ADAPTER *pAd,
 	uint8_t ucBssIndex)

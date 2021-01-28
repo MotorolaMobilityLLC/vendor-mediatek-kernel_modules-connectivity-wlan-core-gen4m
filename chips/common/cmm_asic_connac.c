@@ -167,6 +167,11 @@ void asicCapInit(IN struct ADAPTER *prAdapter)
 	prChipInfo->asicRxProcessRxvforMSP = asicRxProcessRxvforMSP;
 #endif /* CFG_SUPPORT_MSP == 1 */
 	prChipInfo->asicRxGetRcpiValueFromRxv =	asicRxGetRcpiValueFromRxv;
+#if CFG_SUPPORT_WIFI_SYSDVT
+	prAdapter->u2TxTest = TX_TEST_UNLIMITIED;
+	prAdapter->u2TxTestCount = 0;
+	prAdapter->ucTxTestUP = TX_TEST_UP_UNDEF;
+#endif /* CFG_SUPPORT_WIFI_SYSDVT */
 
 	switch (prGlueInfo->u4InfType) {
 #if defined(_HIF_PCIE) || defined(_HIF_AXI)

@@ -3145,6 +3145,25 @@ reqExtSetAcpiDevicePowerState(IN struct GLUE_INFO
 #define CMD_SET_MAX_RFGAIN	"SET_MAX_RFGAIN"
 #endif
 
+#if CFG_SUPPORT_WIFI_SYSDVT
+#define CMD_WIFI_SYSDVT         "DVT"
+#define CMD_SET_TXS_TEST        "TXS_TEST"
+#define CMD_SET_TXS_TEST_RESULT "TXS_RESULT"
+#define CMD_SET_RXV_TEST        "RXV_TEST"
+#define CMD_SET_RXV_TEST_RESULT        "RXV_RESULT"
+#if CFG_TCP_IP_CHKSUM_OFFLOAD
+#define CMD_SET_CSO_TEST        "CSO_TEST"
+#endif /* CFG_TCP_IP_CHKSUM_OFFLOAD */
+#define CMD_SET_TX_TEST          "TX_TEST"
+#define CMD_SET_TX_AC_TEST       "TX_AC_TEST"
+#define CMD_SET_SKIP_CH_CHECK   "SKIP_CH_CHECK"
+
+#if (CFG_SUPPORT_DMASHDL_SYSDVT)
+#define CMD_SET_DMASHDL_DUMP    "DMASHDL_DUMP_MEM"
+#define CMD_SET_DMASHDL_DVT_ITEM "DMASHDL_DVT_ITEM"
+#endif /* CFG_SUPPORT_DMASHDL_SYSDVT */
+#endif /* CFG_SUPPORT_WIFI_SYSDVT */
+
 #define CMD_SET_SW_AMSDU_NUM      "SET_SW_AMSDU_NUM"
 #define CMD_SET_SW_AMSDU_SIZE      "SET_SW_AMSDU_SIZE"
 
@@ -13349,6 +13368,59 @@ int32_t priv_driver_cmds(IN struct net_device *prNetDev, IN int8_t *pcCommand,
 				 FALSE, FALSE, TRUE, &i4BytesWritten);
 #endif
 		}
+#if CFG_SUPPORT_WIFI_SYSDVT
+		else if (strnicmp(pcCommand, CMD_SET_TXS_TEST,
+			strlen(CMD_SET_TXS_TEST)) == 0)
+			i4BytesWritten =
+			priv_driver_txs_test(prNetDev, pcCommand, i4TotalLen);
+		else if (strnicmp(pcCommand, CMD_SET_TXS_TEST_RESULT,
+			strlen(CMD_SET_TXS_TEST_RESULT)) == 0)
+			i4BytesWritten =
+			priv_driver_txs_test_result(prNetDev,
+				pcCommand, i4TotalLen);
+		else if (strnicmp(pcCommand, CMD_SET_RXV_TEST,
+			strlen(CMD_SET_RXV_TEST)) == 0)
+			i4BytesWritten =
+			priv_driver_rxv_test(prNetDev, pcCommand, i4TotalLen);
+		else if (strnicmp(pcCommand, CMD_SET_RXV_TEST_RESULT,
+			strlen(CMD_SET_RXV_TEST_RESULT)) == 0)
+			i4BytesWritten =
+			priv_driver_rxv_test_result(prNetDev,
+				pcCommand, i4TotalLen);
+#if CFG_TCP_IP_CHKSUM_OFFLOAD
+		else if (strnicmp(pcCommand, CMD_SET_CSO_TEST,
+			strlen(CMD_SET_CSO_TEST)) == 0)
+			i4BytesWritten =
+			priv_driver_cso_test(prNetDev, pcCommand, i4TotalLen);
+#endif
+		else if (strnicmp(pcCommand, CMD_SET_TX_AC_TEST,
+			strlen(CMD_SET_TX_AC_TEST)) == 0)
+			i4BytesWritten =
+			priv_driver_set_tx_test_ac(prNetDev,
+				pcCommand, i4TotalLen);
+		else if (strnicmp(pcCommand, CMD_SET_TX_TEST,
+			strlen(CMD_SET_TX_TEST)) == 0)
+			i4BytesWritten =
+			priv_driver_set_tx_test(prNetDev,
+				pcCommand, i4TotalLen);
+		else if (strnicmp(pcCommand, CMD_SET_SKIP_CH_CHECK,
+			strlen(CMD_SET_SKIP_CH_CHECK)) == 0)
+			i4BytesWritten =
+			priv_driver_skip_legal_ch_check(prNetDev,
+				pcCommand, i4TotalLen);
+#if (CFG_SUPPORT_DMASHDL_SYSDVT)
+		else if (strnicmp(pcCommand, CMD_SET_DMASHDL_DUMP,
+			strlen(CMD_SET_DMASHDL_DUMP)) == 0)
+			i4BytesWritten =
+			priv_driver_show_dmashdl_allcr(prNetDev,
+				pcCommand, i4TotalLen);
+		else if (strnicmp(pcCommand, CMD_SET_DMASHDL_DVT_ITEM,
+			strlen(CMD_SET_DMASHDL_DVT_ITEM)) == 0)
+			i4BytesWritten =
+			priv_driver_dmashdl_dvt_item(prNetDev,
+				pcCommand, i4TotalLen);
+#endif /* CFG_SUPPORT_DMASHDL_SYSDVT */
+#endif /* CFG_SUPPORT_WIFI_SYSDVT */
 		else if (strnicmp(pcCommand, CMD_DBG_SHOW_TR_INFO,
 				strlen(CMD_DBG_SHOW_TR_INFO)) == 0) {
 			kalIoctl(prGlueInfo,

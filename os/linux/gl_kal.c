@@ -1863,10 +1863,12 @@ kalHardStartXmit(struct sk_buff *prOrgSkb,
 	uint32_t u4SkbLen = 0;
 	struct mt66xx_chip_info *prChipInfo;
 	uint32_t u4TxHeadRoomSize = 0;
+	struct ADAPTER *prAdapter = NULL;
 
 	ASSERT(prOrgSkb);
 	ASSERT(prGlueInfo);
 
+	prAdapter = prGlueInfo->prAdapter;
 	prChipInfo = prGlueInfo->prAdapter->chip_info;
 	u4TxHeadRoomSize = NIC_TX_DESC_AND_PADDING_LENGTH +
 		prChipInfo->txd_append_size;
@@ -1882,6 +1884,18 @@ kalHardStartXmit(struct sk_buff *prOrgSkb,
 		dev_kfree_skb(prOrgSkb);
 		return WLAN_STATUS_NOT_ACCEPTED;
 	}
+
+#if CFG_SUPPORT_WIFI_SYSDVT
+	if (prAdapter->u2TxTest != TX_TEST_UNLIMITIED) {
+		if (prAdapter->u2TxTestCount < prAdapter->u2TxTest) {
+			DBGLOG(INIT, STATE,
+				"DVT TX Test enable, skip this frame\n");
+			dev_kfree_skb(prOrgSkb);
+			return WLAN_STATUS_SUCCESS;
+		}
+		prAdapter->u2TxTestCount++;
+	}
+#endif /* CFG_SUPPORT_WIFI_SYSDVT */
 
 	if (skb_headroom(prOrgSkb) < u4TxHeadRoomSize) {
 		/*
@@ -2223,6 +2237,11 @@ kalIPv4FrameClassifier(IN struct GLUE_INFO *prGlueInfo,
 	uint16_t u2DstPort, u2IcmpId, u2IcmpSeq;
 	struct BOOTP_PROTOCOL *prBootp;
 	uint32_t u4DhcpMagicCode;
+#if CFG_SUPPORT_WIFI_SYSDVT
+#if (CFG_TCP_IP_CHKSUM_OFFLOAD)
+	struct ADAPTER *prAdapter = NULL;
+#endif
+#endif /* Automation */
 
 	/* IPv4 version check */
 	ucIpVersion = (pucIpHdr[0] & IP_VERSION_MASK) >>
@@ -2235,8 +2254,32 @@ kalIPv4FrameClassifier(IN struct GLUE_INFO *prGlueInfo,
 
 	ucIpProto = pucIpHdr[IPV4_HDR_IP_PROTOCOL_OFFSET];
 
+#if CFG_SUPPORT_WIFI_SYSDVT
+#if (CFG_TCP_IP_CHKSUM_OFFLOAD)
+	prAdapter = prGlueInfo->prAdapter;
+
+	/* set IP CHECKSUM to 0xff for verify CSO function */
+	if (prAdapter->u4CSUMFlags & CSUM_OFFLOAD_EN_TX_IP
+		&& CSO_TX_IPV4_ENABLED(prAdapter)) {
+		pucIpHdr[IPV4_HDR_IP_CSUM_OFFSET] = 0xff;
+		pucIpHdr[IPV4_HDR_IP_CSUM_OFFSET+1] = 0xff;
+	}
+#endif /* CFG_TCP_IP_CHKSUM_OFFLOAD */
+#endif /* Automation */
+
 	if (ucIpProto == IP_PRO_UDP) {
 		pucUdpHdr = &pucIpHdr[IPV4_HDR_LEN];
+
+#if CFG_SUPPORT_WIFI_SYSDVT
+#if (CFG_TCP_IP_CHKSUM_OFFLOAD)
+		/* set UDP CHECKSUM to 0xff for verify CSO function */
+		if (prAdapter->u4CSUMFlags & CSUM_OFFLOAD_EN_TX_UDP
+			&& CSO_TX_UDP_ENABLED(prAdapter)) {
+			pucUdpHdr[UDP_HDR_UDP_CSUM_OFFSET] = 0xff;
+			pucUdpHdr[UDP_HDR_UDP_CSUM_OFFSET+1] = 0xff;
+		}
+#endif /* CFG_TCP_IP_CHKSUM_OFFLOAD */
+#endif /* Automation */
 
 		/* Get UDP DST port */
 		WLAN_GET_FIELD_BE16(&pucUdpHdr[UDP_HDR_DST_PORT_OFFSET],
@@ -2302,9 +2345,65 @@ kalIPv4FrameClassifier(IN struct GLUE_INFO *prGlueInfo,
 			u2IpId, ucIcmpType, u2IcmpId, u2IcmpSeq, ucSeqNo);
 		prTxPktInfo->u2Flag |= BIT(ENUM_PKT_ICMP);
 	}
+#if CFG_SUPPORT_WIFI_SYSDVT
+#if (CFG_TCP_IP_CHKSUM_OFFLOAD)
+	else if (ucIpProto == IP_PRO_TCP) {
+		uint8_t *pucTcpHdr;
+
+		pucTcpHdr = &pucIpHdr[IPV4_HDR_LEN];
+		/* set TCP CHECKSUM to 0xff for verify CSO function */
+		if (prAdapter->u4CSUMFlags & CSUM_OFFLOAD_EN_TX_TCP
+			&& CSO_TX_TCP_ENABLED(prAdapter)) {
+			pucTcpHdr[TCP_HDR_TCP_CSUM_OFFSET] = 0xff;
+			pucTcpHdr[TCP_HDR_TCP_CSUM_OFFSET+1] = 0xff;
+		}
+	}
+#endif /* CFG_TCP_IP_CHKSUM_OFFLOAD */
+#endif /* Automation */
+
 	return TRUE;
 }
 
+u_int8_t
+kalIPv6FrameClassifier(IN struct GLUE_INFO *prGlueInfo,
+		       IN void *prPacket, IN uint8_t *pucIpv6Hdr,
+		       OUT struct TX_PACKET_INFO *prTxPktInfo)
+{
+	uint8_t ucIpv6Proto;
+	uint8_t *pucL3Hdr;
+	struct ADAPTER *prAdapter = NULL;
+
+	prAdapter = prGlueInfo->prAdapter;
+	ucIpv6Proto = pucIpv6Hdr[IPV6_HDR_IP_PROTOCOL_OFFSET];
+
+	if (ucIpv6Proto == IP_PRO_UDP) {
+		pucL3Hdr = &pucIpv6Hdr[IPV6_HDR_LEN];
+#if CFG_SUPPORT_WIFI_SYSDVT
+#if (CFG_TCP_IP_CHKSUM_OFFLOAD)
+		/* set UDP CHECKSUM to 0xff for verify CSO function */
+		if ((prAdapter->u4CSUMFlags & CSUM_OFFLOAD_EN_TX_UDP)
+			&& CSO_TX_UDP_ENABLED(prAdapter)) {
+			pucL3Hdr[UDP_HDR_UDP_CSUM_OFFSET] = 0xff;
+			pucL3Hdr[UDP_HDR_UDP_CSUM_OFFSET+1] = 0xff;
+		}
+#endif /* CFG_TCP_IP_CHKSUM_OFFLOAD */
+#endif /* Automation */
+	} else if (ucIpv6Proto == IP_PRO_TCP) {
+		pucL3Hdr = &pucIpv6Hdr[IPV6_HDR_LEN];
+#if CFG_SUPPORT_WIFI_SYSDVT
+#if (CFG_TCP_IP_CHKSUM_OFFLOAD)
+		/* set TCP CHECKSUM to 0xff for verify CSO function */
+		if ((prAdapter->u4CSUMFlags & CSUM_OFFLOAD_EN_TX_TCP)
+			&& CSO_TX_TCP_ENABLED(prAdapter)) {
+			pucL3Hdr[TCP_HDR_TCP_CSUM_OFFSET] = 0xff;
+			pucL3Hdr[TCP_HDR_TCP_CSUM_OFFSET+1] = 0xff;
+		}
+#endif /* CFG_TCP_IP_CHKSUM_OFFLOAD */
+#endif /* Automation */
+	}
+
+	return TRUE;
+}
 
 u_int8_t
 kalArpFrameClassifier(IN struct GLUE_INFO *prGlueInfo,
@@ -2538,6 +2637,14 @@ kalQoSFrameClassifierAndPacketInfo(IN struct GLUE_INFO *prGlueInfo,
 		kalTdlsFrameClassifier(prGlueInfo, prPacket,
 				       pucNextProtocol, prTxPktInfo);
 		break;
+#if CFG_SUPPORT_WIFI_SYSDVT
+#if (CFG_TCP_IP_CHKSUM_OFFLOAD)
+	case ETH_P_IPV6:
+		kalIPv6FrameClassifier(prGlueInfo, prPacket,
+				       pucNextProtocol, prTxPktInfo);
+		break;
+#endif
+#endif
 	default:
 		/* 4 <4> Handle 802.3 format if LEN <= 1500 */
 		if (u2EtherTypeLen <= ETH_802_3_MAX_LEN)
