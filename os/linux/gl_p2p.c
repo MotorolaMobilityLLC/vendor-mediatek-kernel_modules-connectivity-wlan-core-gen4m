@@ -1758,6 +1758,11 @@ void mtk_p2p_wext_set_Multicastlist(struct GLUE_INFO *prGlueInfo)
 
 		netdev_for_each_mc_addr(ha, prDev) {
 			/* If ha is null, it will break the loop. */
+			/* Check mc count before accessing to ha to
+			 * prevent from kernel crash.
+			 */
+			if (i == u4McCount || !ha)
+				break;
 			if (i < MAX_NUM_GROUP_ADDR) {
 				COPY_MAC_ADDR(
 					&(prGlueInfo->prP2PDevInfo
