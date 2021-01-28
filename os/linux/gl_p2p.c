@@ -666,6 +666,12 @@ BOOLEAN p2PFreeInfo(P_GLUE_INFO_T prGlueInfo, UINT_8 ucIdx)
 		return FALSE;
 	}
 
+	/* Expect that prAdapter->prP2pInfo must be existing. */
+	if (prAdapter->prP2pInfo == NULL) {
+		DBGLOG(P2P, ERROR, "prAdapter->prP2pInfo is NULL\n");
+		return FALSE;
+	}
+
 	/* TODO: how can I sure that the specific P2P device can be freed?
 	 * The original check is that prGlueInfo->prAdapter->fgIsP2PRegistered.
 	 */
@@ -688,11 +694,11 @@ BOOLEAN p2PFreeInfo(P_GLUE_INFO_T prGlueInfo, UINT_8 ucIdx)
 
 	if (prAdapter->prP2pInfo->u4DeviceNum == 0) {
 		/* all prP2PInfo are freed, and free the general part now */
-		if (prAdapter->prP2pInfo) {
-			kalMemFree(prAdapter->prP2pInfo, VIR_MEM_TYPE,
-				sizeof(P2P_INFO_T));
-			prAdapter->prP2pInfo = NULL;
-		}
+
+		kalMemFree(prAdapter->prP2pInfo, VIR_MEM_TYPE,
+			sizeof(P2P_INFO_T));
+		prAdapter->prP2pInfo = NULL;
+
 		if (prGlueInfo->prP2PDevInfo) {
 			kalMemFree(prGlueInfo->prP2PDevInfo, VIR_MEM_TYPE,
 				sizeof(GL_P2P_DEV_INFO_T));
@@ -704,7 +710,7 @@ BOOLEAN p2PFreeInfo(P_GLUE_INFO_T prGlueInfo, UINT_8 ucIdx)
 			prAdapter->rWifiVar.prP2pDevFsmInfo = NULL;
 		}
 
-		/*Reomve p2p bss scan list */
+		/* Reomve p2p bss scan list */
 		scanRemoveAllP2pBssDesc(prAdapter);
 	}
 
@@ -1021,16 +1027,20 @@ int glSetupP2P(P_GLUE_INFO_T prGlueInfo, struct wireless_dev *prP2pWdev,
 
 	DBGLOG(INIT, INFO, "setup the p2p dev\n");
 
-	prHif = &prGlueInfo->rHifInfo;
-	prAdapter = prGlueInfo->prAdapter;
-
 	if ((prGlueInfo == NULL) ||
-	    (prAdapter == NULL) ||
-	    (prHif == NULL) ||
 	    (prP2pWdev == NULL) ||
 	    (prP2pWdev->wiphy == NULL) ||
 	    (prP2pDev == NULL)) {
 		DBGLOG(INIT, ERROR, "parameter is NULL!!\n");
+		return -1;
+	}
+
+	prHif = &prGlueInfo->rHifInfo;
+	prAdapter = prGlueInfo->prAdapter;
+
+	if ((prAdapter == NULL) ||
+	    (prHif == NULL)) {
+		DBGLOG(INIT, ERROR, "prAdapter/prHif is NULL!!\n");
 		return -1;
 	}
 
@@ -1485,7 +1495,7 @@ BOOLEAN glP2pCreateWirelessDevice(P_GLUE_INFO_T prGlueInfo)
 	prWdev->wiphy = prWiphy;
 
 	gprP2pRoleWdev[i] = prWdev;
-	DBGLOG(INIT, INFO, "glP2pCreateWirelessDevice (%x)\n",
+	DBGLOG(INIT, INFO, "glP2pCreateWirelessDevice (%p)\n",
 			gprP2pRoleWdev[i]->wiphy);
 
 	return TRUE;
