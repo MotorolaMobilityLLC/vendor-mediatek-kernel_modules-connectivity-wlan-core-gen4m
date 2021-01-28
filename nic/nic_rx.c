@@ -3453,8 +3453,7 @@ void nicProcessRxInterrupt(IN struct ADAPTER *prAdapter)
 	halProcessRxInterrupt(prAdapter);
 
 #if CFG_SUPPORT_MULTITHREAD
-	set_bit(GLUE_FLAG_RX_BIT, &(prAdapter->prGlueInfo->ulFlag));
-	wake_up_interruptible(&(prAdapter->prGlueInfo->waitq));
+	kalSetRxProcessEvent(prAdapter->prGlueInfo);
 #else
 	nicRxProcessRFBs(prAdapter);
 #endif
