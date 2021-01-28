@@ -1584,8 +1584,8 @@ static void rrmCollectBeaconReport(IN struct ADAPTER *prAdapter,
 		       min_t(uint8_t, prBssDesc->ucSSIDLen, ELEM_MAX_LEN_SSID));
 		DBGLOG(RRM, TRACE,
 		       "%pM SSID mismatch, req(%d, %s), bcn(%d, %s)\n",
-		       bssid, data->ssidLen, reqSsid,
-		       prBssDesc->ucSSIDLen, bcnSsid);
+		       bssid, data->ssidLen, HIDE(reqSsid),
+		       prBssDesc->ucSSIDLen, HIDE(bcnSsid));
 		return;
 	}
 
