@@ -7978,7 +7978,8 @@ static int32_t HQA_CapWiFiSpectrum(struct net_device
 						&HqaCmdFrame->Data[2 + 4 * 4],
 						u4IQ,
 						u4WFNum);
-			u4TempLen = u4DataLen;
+			/* tool want data count instead of buff length */
+			u4TempLen = u4DataLen / 4;
 			u4Control = ntohl(u4Control);
 			kalMemCopy(HqaCmdFrame->Data + 2 + 4 * 0,
 					   (uint8_t *)&u4Control,
@@ -7991,10 +7992,10 @@ static int32_t HQA_CapWiFiSpectrum(struct net_device
 			kalMemCopy(HqaCmdFrame->Data + 2 + 4 * 2,
 					   (uint8_t *)&u4IQ,
 					   sizeof(u4IQ));
-			u4TempLen = ntohl(u4DataLen);
+			u4TempLen = ntohl(u4TempLen);
 			kalMemCopy(HqaCmdFrame->Data + 2 + 4 * 3,
 					   (uint8_t *)&u4TempLen,
-					   sizeof(u4DataLen));
+					   sizeof(u4TempLen));
 
 		}
 
