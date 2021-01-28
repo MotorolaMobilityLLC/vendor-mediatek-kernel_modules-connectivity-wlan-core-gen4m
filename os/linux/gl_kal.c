@@ -1737,8 +1737,6 @@ kalHardStartXmit(struct sk_buff *prOrgSkb,
 	struct sk_buff *prSkbNew = NULL;
 	struct sk_buff *prSkb = NULL;
 
-	GLUE_SPIN_LOCK_DECLARATION();
-
 	ASSERT(prOrgSkb);
 	ASSERT(prGlueInfo);
 
@@ -1798,9 +1796,13 @@ kalHardStartXmit(struct sk_buff *prOrgSkb,
 		return WLAN_STATUS_INVALID_PACKET;
 	}
 
-	GLUE_ACQUIRE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_TX_QUE);
-	QUEUE_INSERT_TAIL(prTxQueue, prQueueEntry);
-	GLUE_RELEASE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_TX_QUE);
+	if (!HAL_IS_TX_DIRECT(prGlueInfo->prAdapter)) {
+		GLUE_SPIN_LOCK_DECLARATION();
+
+		GLUE_ACQUIRE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_TX_QUE);
+		QUEUE_INSERT_TAIL(prTxQueue, prQueueEntry);
+		GLUE_RELEASE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_TX_QUE);
+	}
 
 	GLUE_INC_REF_CNT(prGlueInfo->i4TxPendingFrameNum);
 	GLUE_INC_REF_CNT(
@@ -1832,6 +1834,9 @@ kalHardStartXmit(struct sk_buff *prOrgSkb,
 	       GLUE_GET_REF_CNT(
 		       prGlueInfo->ai4TxPendingFrameNumPerQueue[ucBssIndex]
 		       [u2QueueIdx]));
+
+	if (HAL_IS_TX_DIRECT(prGlueInfo->prAdapter))
+		return nicTxDirectStartXmit(prSkb, prGlueInfo);
 
 	kalSetEvent(prGlueInfo);
 

@@ -4420,7 +4420,7 @@ static void nicTxDirectCheckBssAbsentQ(IN struct ADAPTER
 			DBGLOG(TX, INFO, "fgIsNetAbsent END!\n");
 		QUEUE_INSERT_TAIL(prQue, (struct QUE_ENTRY *) prMsduInfo);
 		if (QUEUE_IS_NOT_EMPTY(
-			&prAdapter->rBssAbsentQueue[prMsduInfo->ucStaRecIndex]))
+			&prAdapter->rBssAbsentQueue[ucBssIndex]))
 			QUEUE_CONCATENATE_QUEUES(prQue,
 				&prAdapter->rBssAbsentQueue[ucBssIndex]);
 	}
