@@ -367,7 +367,6 @@ uint32_t TdlsFrameGeneralIeAppend(struct ADAPTER *prAdapter,
 	struct GLUE_INFO *prGlueInfo;
 	struct BSS_INFO *prBssInfo;
 	struct PM_PROFILE_SETUP_INFO *prPmProfSetupInfo;
-	uint32_t u4NonHTPhyType;
 	uint16_t u2SupportedRateSet;
 	uint8_t aucAllSupportedRates[RATE_NUM_SW] = { 0 };
 	uint8_t ucAllSupportedRatesLen;
@@ -390,9 +389,7 @@ uint32_t TdlsFrameGeneralIeAppend(struct ADAPTER *prAdapter,
 
 	/* 3. Frame Formation - (5) Supported Rates element */
 	/* use all sup rate we can support */
-	u4NonHTPhyType = prStaRec->ucNonHTBasicPhyType;
-	u2SupportedRateSet =
-		rNonHTPhyAttributes[u4NonHTPhyType].u2SupportedRateSet;
+	u2SupportedRateSet = prStaRec->u2OperationalRateSet;
 	rateGetDataRatesFromRateSet(u2SupportedRateSet, 0,
 				    aucAllSupportedRates,
 				    &ucAllSupportedRatesLen);
@@ -749,12 +746,14 @@ TdlsDataFrameSend_SETUP_REQ(struct ADAPTER *prAdapter,
 		u4IeLen = rlmFillHtCapIEByAdapter(prAdapter, prBssInfo, pPkt);
 		LR_TDLS_FME_FIELD_FILL(u4IeLen);
 	}
+#if 0 /* TODO: VHT support */
 #if CFG_SUPPORT_802_11AC
 	if (prAdapter->rWifiVar.ucAvailablePhyTypeSet &
 		PHY_TYPE_SET_802_11AC) {
 		u4IeLen = rlmFillVhtCapIEByAdapter(prAdapter, prBssInfo, pPkt);
 		LR_TDLS_FME_FIELD_FILL(u4IeLen);
 	}
+#endif
 #endif
 
 	/* 3.16 20/40 BSS Coexistence */
@@ -935,6 +934,7 @@ TdlsDataFrameSend_SETUP_RSP(struct ADAPTER *prAdapter,
 							  pPkt);
 			LR_TDLS_FME_FIELD_FILL(u4IeLen);
 		}
+#if 0 /* TODO: VHT support */
 #if CFG_SUPPORT_802_11AC
 		if (prAdapter->rWifiVar.ucAvailablePhyTypeSet &
 		    PHY_TYPE_SET_802_11AC) {
@@ -942,6 +942,7 @@ TdlsDataFrameSend_SETUP_RSP(struct ADAPTER *prAdapter,
 							   pPkt);
 			LR_TDLS_FME_FIELD_FILL(u4IeLen);
 		}
+#endif
 #endif
 
 		/* 3.17 20/40 BSS Coexistence */
@@ -1368,11 +1369,14 @@ TdlsDataFrameSend_DISCOVERY_RSP(struct ADAPTER *prAdapter,
 		u4IeLen = rlmFillHtCapIEByAdapter(prAdapter, prBssInfo, pPkt);
 		LR_TDLS_FME_FIELD_FILL(u4IeLen);
 	}
+
+#if 0 /* TODO: VHT support */
 #if CFG_SUPPORT_802_11AC
 	if (prAdapter->rWifiVar.ucAvailablePhyTypeSet & PHY_TYPE_SET_802_11AC) {
 		u4IeLen = rlmFillVhtCapIEByAdapter(prAdapter, prBssInfo, pPkt);
 		LR_TDLS_FME_FIELD_FILL(u4IeLen);
 	}
+#endif
 #endif
 
 	/* 3.14 20/40 BSS Coexistence */
