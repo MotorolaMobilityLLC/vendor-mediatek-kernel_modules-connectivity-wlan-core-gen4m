@@ -245,6 +245,7 @@ struct wireless_dev *mtk_p2p_cfg80211_add_iface(struct wiphy *wiphy,
 				break;
 			if (prP2pInfo->aprRoleHandler == NULL) {
 				p2pRoleFsmInit(prGlueInfo->prAdapter, u4Idx);
+				init_completion(&prP2pInfo->rStopApComp);
 				break;
 			}
 		}
@@ -2179,60 +2180,19 @@ int mtk_p2p_cfg80211_change_beacon(struct wiphy *wiphy,
 	return i4Rslt;
 }				/* mtk_p2p_cfg80211_change_beacon */
 
-uint32_t
-mtk_p2p_cfg80211_stop_ap_oid(struct ADAPTER *prAdapter,
-	void *pvSetBuffer,
-	uint32_t u4SetBufferLen,
-	uint32_t *pu4SetInfoLen)
-{
-	struct MSG_P2P_SWITCH_OP_MODE *prP2pSwitchMode =
-		(struct MSG_P2P_SWITCH_OP_MODE *) NULL;
-	uint8_t ucRoleIdx = 0;
-
-	if ((prAdapter == NULL) || (pvSetBuffer == NULL)
-		|| (pu4SetInfoLen == NULL))
-		return WLAN_STATUS_FAILURE;
-
-	/* init */
-	*pu4SetInfoLen = sizeof(unsigned char);
-	if (u4SetBufferLen < sizeof(unsigned char))
-		return WLAN_STATUS_INVALID_LENGTH;
-
-	ASSERT(pvSetBuffer);
-	ucRoleIdx = *(uint8_t *) pvSetBuffer;
-
-	DBGLOG(INIT, INFO, "ucRoleIdx = %d\n", ucRoleIdx);
-
-	/* Switch OP MOde. */
-	prP2pSwitchMode = cnmMemAlloc(prAdapter,
-		RAM_TYPE_MSG, sizeof(struct MSG_P2P_SWITCH_OP_MODE));
-
-	if (prP2pSwitchMode == NULL)
-		return WLAN_STATUS_RESOURCES;
-
-	prP2pSwitchMode->rMsgHdr.eMsgId = MID_MNY_P2P_STOP_AP;
-	prP2pSwitchMode->ucRoleIdx = ucRoleIdx;
-
-	p2pRoleFsmRunEventStopAP(prAdapter,
-		(struct MSG_HDR *) prP2pSwitchMode);
-
-	return 0;
-
-}
-
 int mtk_p2p_cfg80211_stop_ap(struct wiphy *wiphy, struct net_device *dev)
 {
 	struct GLUE_INFO *prGlueInfo = (struct GLUE_INFO *) NULL;
 	int32_t i4Rslt = -EINVAL;
+	struct MSG_P2P_STOP_AP *prP2pStopApMsg =
+			(struct MSG_P2P_STOP_AP *) NULL;
 	uint8_t ucRoleIdx = 0;
-	uint32_t rStatus;
-	uint32_t u4BufLen;
 
 	do {
 		if (wiphy == NULL)
 			break;
 
-		DBGLOG(P2P, TRACE, "mtk_p2p_cfg80211_stop_ap.\n");
+		DBGLOG(P2P, INFO, "mtk_p2p_cfg80211_stop_ap.\n");
 
 		P2P_WIPHY_PRIV(wiphy, prGlueInfo);
 
@@ -2246,15 +2206,42 @@ int mtk_p2p_cfg80211_stop_ap(struct wiphy *wiphy, struct net_device *dev)
 		if (mtk_Netdev_To_RoleIdx(prGlueInfo, dev, &ucRoleIdx) < 0)
 			break;
 
-		rStatus = kalIoctl(prGlueInfo,
-					mtk_p2p_cfg80211_stop_ap_oid,
-					&ucRoleIdx,
-					sizeof(uint8_t),
-					FALSE, FALSE, FALSE,
-					&u4BufLen);
+		prP2pStopApMsg = cnmMemAlloc(prGlueInfo->prAdapter,
+			RAM_TYPE_MSG, sizeof(struct MSG_P2P_STOP_AP));
 
-		if (rStatus != WLAN_STATUS_SUCCESS)
-			return -EINVAL;
+		if (prP2pStopApMsg == NULL) {
+			ASSERT(FALSE);
+			i4Rslt = -ENOMEM;
+			break;
+		}
+
+		prP2pStopApMsg->rMsgHdr.eMsgId = MID_MNY_P2P_STOP_AP;
+		prP2pStopApMsg->ucRoleIdx = ucRoleIdx;
+
+		mboxSendMsg(prGlueInfo->prAdapter,
+			MBOX_ID_0,
+			(struct MSG_HDR *) prP2pStopApMsg,
+			MSG_SEND_METHOD_BUF);
+
+		if (p2pFuncIsAPMode(prGlueInfo->prAdapter->rWifiVar.
+				prP2PConnSettings[ucRoleIdx])) {
+			uint32_t waitRet = 0;
+			struct GL_P2P_INFO *prP2PInfo;
+
+			prP2PInfo = prGlueInfo->prP2PInfo[ucRoleIdx];
+#if KERNEL_VERSION(3, 13, 0) <= CFG80211_VERSION_CODE
+			reinit_completion(&prP2PInfo->rStopApComp);
+#else
+			prP2PInfo->rStopApComp.done = 0;
+#endif
+			waitRet = wait_for_completion_timeout(
+				&prP2PInfo->rStopApComp,
+				MSEC_TO_JIFFIES(P2P_DEAUTH_TIMEOUT_TIME_MS));
+			if (!waitRet)
+				DBGLOG(P2P, WARN, "timeout\n");
+			else
+				DBGLOG(P2P, INFO, "complete\n");
+		}
 
 		i4Rslt = 0;
 	} while (FALSE);
