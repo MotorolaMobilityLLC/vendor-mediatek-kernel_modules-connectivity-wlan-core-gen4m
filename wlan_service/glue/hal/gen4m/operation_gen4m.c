@@ -2472,6 +2472,7 @@ s_int32 mt_op_get_rx_stat_path(
 		rx_st_path->inst_wb_rssi =
 			SERV_OS_NTOHL(test_hqa_rx_stat.inst_wb_RSSSI1);
 		break;
+
 	default:
 		ret = SERV_STATUS_HAL_OP_FAIL;
 		break;
