@@ -744,6 +744,7 @@ extern const struct mtk_regdomain *g_prRegRuleTable[];
 
 #endif
 
+const struct ieee80211_regdomain *rlmDomainGetLocalDefaultRegd(void);
 void rlmDomainSendInfoToFirmware(IN P_ADAPTER_T prAdapter);
 WLAN_STATUS rlmDomainExtractSingleSkuInfoFromFirmware(IN P_ADAPTER_T prAdapter, IN PUINT_8 pucEventBuf);
 BOOLEAN regd_is_single_sku_en(void);
