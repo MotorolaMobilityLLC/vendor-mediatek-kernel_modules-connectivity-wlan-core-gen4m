@@ -271,7 +271,7 @@ s_int32 mt_op_get_icap_data(
 	u_int32 iq_type);
 s_int32 mt_op_do_cal_item(
 	struct test_wlan_info *winfos,
-	u_char item,
+	u_int32 item,
 	u_char band_idx);
 s_int32 mt_op_set_band_mode(
 	struct test_wlan_info *winfos,
