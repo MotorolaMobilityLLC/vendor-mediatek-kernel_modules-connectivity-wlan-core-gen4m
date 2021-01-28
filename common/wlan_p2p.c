@@ -177,6 +177,11 @@ wlanoidSendSetQueryP2PCmd(IN struct ADAPTER *prAdapter,
 	/* Setup WIFI_CMD_T (no payload) */
 	prWifiCmd = (struct WIFI_CMD *) (prCmdInfo->pucInfoBuffer);
 	prWifiCmd->u2TxByteCount = prCmdInfo->u2InfoBufLen;
+	prWifiCmd->u2PQ_ID = CMD_PQ_ID;
+	prWifiCmd->u2Length = prCmdInfo->u2InfoBufLen -
+		(uint16_t) OFFSET_OF(struct WIFI_CMD, u2Length);
+	prWifiCmd->u2PqId = CMD_PQ_ID;
+	prWifiCmd->ucPktTypeID = CMD_PACKET_TYPE_ID;
 	prWifiCmd->ucCID = prCmdInfo->ucCID;
 	prWifiCmd->ucSetQuery = prCmdInfo->fgSetQuery;
 	prWifiCmd->ucSeqNum = prCmdInfo->ucCmdSeqNum;
@@ -1357,6 +1362,7 @@ wlanoidSetNoaParam(IN struct ADAPTER *prAdapter,
 	rCmdNoaParam.u4NoaDurationMs = prNoaParam->u4NoaDurationMs;
 	rCmdNoaParam.u4NoaIntervalMs = prNoaParam->u4NoaIntervalMs;
 	rCmdNoaParam.u4NoaCount = prNoaParam->u4NoaCount;
+	rCmdNoaParam.ucBssIdx = prNoaParam->ucBssIdx;
 
 #if 0
 	return wlanSendSetQueryCmd(prAdapter,
@@ -1415,6 +1421,7 @@ wlanoidSetOppPsParam(IN struct ADAPTER *prAdapter,
 	kalMemZero(&rCmdOppPsParam,
 		sizeof(struct CMD_CUSTOM_OPPPS_PARAM_STRUCT));
 	rCmdOppPsParam.u4CTwindowMs = prOppPsParam->u4CTwindowMs;
+	rCmdOppPsParam.ucBssIdx = prOppPsParam->ucBssIdx;
 
 #if 0
 	return wlanSendSetQueryCmd(prAdapter,
@@ -1476,7 +1483,7 @@ wlanoidSetUApsdParam(IN struct ADAPTER *prAdapter,
 	prPmProfSetupInfo = &prBssInfo->rPmProfSetupInfo;
 
 	kalMemZero(&rCmdUapsdParam,
-		sizeof(struct CMD_CUSTOM_OPPPS_PARAM_STRUCT));
+		sizeof(struct CMD_CUSTOM_UAPSD_PARAM_STRUCT));
 
 	rCmdUapsdParam.fgEnAPSD = prUapsdParam->fgEnAPSD;
 
@@ -1508,7 +1515,7 @@ wlanoidSetUApsdParam(IN struct ADAPTER *prAdapter,
 				TRUE,
 				nicCmdEventSetCommon,
 				nicOidCmdTimeoutCommon,
-				sizeof(struct CMD_CUSTOM_OPPPS_PARAM_STRUCT),
+				sizeof(struct CMD_CUSTOM_UAPSD_PARAM_STRUCT),
 				(uint8_t *) &rCmdUapsdParam,
 				pvSetBuffer,
 				u4SetBufferLen);
@@ -1521,7 +1528,7 @@ wlanoidSetUApsdParam(IN struct ADAPTER *prAdapter,
 				TRUE,
 				NULL,
 				nicOidCmdTimeoutCommon,
-				sizeof(struct CMD_CUSTOM_OPPPS_PARAM_STRUCT),
+				sizeof(struct CMD_CUSTOM_UAPSD_PARAM_STRUCT),
 				(uint8_t *) &rCmdUapsdParam,
 				pvSetBuffer,
 				u4SetBufferLen);
