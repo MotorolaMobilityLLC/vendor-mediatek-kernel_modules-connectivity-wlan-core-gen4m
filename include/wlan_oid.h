@@ -2806,10 +2806,10 @@ wlanSortChannel(IN P_ADAPTER_T prAdapter);
 WLAN_STATUS
 wlanoidLinkDown(IN P_ADAPTER_T prAdapter,
 		       IN PVOID pvSetBuffer, IN UINT_32 u4SetBufferLen, OUT PUINT_32 pu4SetInfoLen);
-/*******************************************************************************
-*                              F U N C T I O N S
-********************************************************************************
-*/
+
+WLAN_STATUS
+wlanoidDisableTdlsPs(IN P_ADAPTER_T prAdapter,
+			 IN PVOID pvSetBuffer, IN UINT_32 u4SetBufferLen, OUT PUINT_32 pu4SetInfoLen);
 
 WLAN_STATUS
 wlanoidAbortScan(IN P_ADAPTER_T prAdapter,
