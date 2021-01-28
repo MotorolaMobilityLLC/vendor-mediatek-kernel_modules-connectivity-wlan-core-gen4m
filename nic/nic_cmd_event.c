@@ -2681,6 +2681,14 @@ void nicCmdEventQueryLteSafeChn(IN struct ADAPTER *prAdapter,
 	}
 	prP2pRoleFsmInfo = P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prAdapter,
 			prLteSafeChnInfo->ucRoleIndex);
+	if (prP2pRoleFsmInfo == NULL) {
+		DBGLOG(P2P, ERROR,
+			"Corresponding P2P Role FSM empty: %d.\n",
+			prLteSafeChnInfo->ucRoleIndex);
+		kalMemFree(prLteSafeChnInfo, VIR_MEM_TYPE,
+				sizeof(struct PARAM_GET_CHN_INFO));
+		return;
+	}
 
 	/* Statistics from FW is valid */
 	if (prEvent->u4Flags & BIT(0)) {
