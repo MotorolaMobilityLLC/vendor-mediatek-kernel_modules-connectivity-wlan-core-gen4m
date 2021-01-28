@@ -1649,10 +1649,10 @@ int mtk_cfg80211_remain_on_channel(struct wiphy *wiphy,
 		prMsgChnlReq->ucChannelNum = nicFreq2ChannelNum(chan->center_freq * 1000);
 
 		switch (chan->band) {
-		case IEEE80211_BAND_2GHZ:
+		case KAL_BAND_2GHZ:
 			prMsgChnlReq->eBand = BAND_2G4;
 			break;
-		case IEEE80211_BAND_5GHZ:
+		case KAL_BAND_5GHZ:
 			prMsgChnlReq->eBand = BAND_5G;
 			break;
 		default:
@@ -3201,17 +3201,7 @@ mtk_apply_custom_regulatory(IN struct wiphy *pWiphy,
 	DBGLOG(RLM, INFO, "%s()\n", __func__);
 
 	/* to reset cha->flags*/
-	for (band_idx = 0; band_idx < IEEE80211_NUM_BANDS; band_idx++) {
-		/**
-		 * enum nl80211_band - Frequency band
-		 * @NL80211_BAND_2GHZ: 2.4 GHz ISM band
-		 * @NL80211_BAND_5GHZ: around 5 GHz band (4.9 - 5.7 GHz)
-		 * @NL80211_BAND_60GHZ: around 60 GHz band (58.32 - 64.80 GHz)
-		 * @NUM_NL80211_BANDS: number of bands, avoid using this in userspace
-		 *	 since newer kernel versions may support more bands
-		 */
-
-		/*select band*/
+	for (band_idx = 0; band_idx < KAL_NUM_BANDS; band_idx++) {
 		sband = pWiphy->bands[band_idx];
 		if (!sband)
 			continue;
