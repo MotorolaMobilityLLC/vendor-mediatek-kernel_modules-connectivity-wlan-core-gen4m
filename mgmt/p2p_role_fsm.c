@@ -1806,7 +1806,9 @@ void p2pRoleFsmRunEventCsaDone(IN struct ADAPTER *prAdapter,
 	/* Skip channel request/abort for STA+SAP/MCC concurrent case */
 	if (prAisBssInfo &&
 		(prAisBssInfo->ucPrimaryChannel !=
-		prP2pBssInfo->ucPrimaryChannel)) {
+		prP2pBssInfo->ucPrimaryChannel) &&
+		(prAisBssInfo->eConnectionState ==
+		MEDIA_STATE_CONNECTED)) {
 		p2pFuncDfsSwitchCh(prAdapter,
 			prP2pBssInfo,
 			prP2pRoleFsmInfo->rChnlReqInfo);
