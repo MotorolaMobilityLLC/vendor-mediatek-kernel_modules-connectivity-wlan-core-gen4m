@@ -3259,6 +3259,12 @@ uint32_t soc3_0_wlanPowerOnDownload(
 		soc3_0_kalFirmwareImageMapping(prAdapter->prGlueInfo,
 			&prFwBuffer, &u4FwSize, IMG_DL_IDX_MCU_ROM_EMI);
 
+		if (prFwBuffer == NULL) {
+			DBGLOG(INIT, WARN, "FW[%u] load error!\n",
+			       IMG_DL_IDX_MCU_ROM_EMI);
+			return WLAN_STATUS_FAILURE;
+		}
+
 		u4Status = soc3_0_wlanImageSectionDownloadStage(
 			prAdapter, prFwBuffer, u4FwSize, 1,
 			IMG_DL_IDX_MCU_ROM_EMI);
@@ -3274,6 +3280,12 @@ uint32_t soc3_0_wlanPowerOnDownload(
 			soc3_0_kalFirmwareImageMapping(prAdapter->prGlueInfo,
 				&prFwBuffer, &u4FwSize,
 				IMG_DL_IDX_WIFI_ROM_EMI);
+
+			if (prFwBuffer == NULL) {
+				DBGLOG(INIT, WARN, "FW[%u] load error!\n",
+				       IMG_DL_IDX_WIFI_ROM_EMI);
+				return WLAN_STATUS_FAILURE;
+			}
 
 			u4Status = soc3_0_wlanImageSectionDownloadStage(
 				prAdapter, prFwBuffer, u4FwSize, 1,
