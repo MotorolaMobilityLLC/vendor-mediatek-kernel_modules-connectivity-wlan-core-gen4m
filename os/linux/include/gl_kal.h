@@ -75,7 +75,6 @@
  */
 #include "config.h"
 #include "gl_typedef.h"
-#include "gl_os.h"
 #include "gl_wext_priv.h"
 #include "link.h"
 #include "nic/mac.h"

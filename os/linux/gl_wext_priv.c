@@ -1567,8 +1567,11 @@ priv_get_struct(IN struct net_device *prNetDev,
 			return -EFAULT;
 		}
 
-		if (copy_from_user(&prNdisReq->ndisOidContent[0], prIwReqData->data.pointer,
-			prIwReqData->data.length)) {
+		/* if (copy_from_user(&prNdisReq->ndisOidContent[0], prIwReqData->data.pointer, */
+		/* Coverity uanble to detect real size of ndisOidContent, it's 4084 bytes instead of 16 bytes */
+		if (copy_from_user(&aucOidBuf[OFFSET_OF(struct NDIS_TRANSPORT_STRUCT, ndisOidContent)],
+							prIwReqData->data.pointer,
+							prIwReqData->data.length)) {
 			DBGLOG(REQ, INFO, "priv_get_struct() copy_from_user oidBuf fail\n");
 			return -EFAULT;
 		}
