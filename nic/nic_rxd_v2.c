@@ -341,6 +341,7 @@ u_int8_t nic_rxd_v2_sanity_check(
 			secGetBssIdxByWlanIdx(prAdapter,
 			HAL_MAC_CONNAC2X_RX_STATUS_GET_WLAN_IDX(prRxStatus));
 
+		DBGLOG(RX, TEMP, "Sanity check to drop\n");
 		fgDrop = TRUE;
 		if (!HAL_MAC_CONNAC2X_RX_STATUS_IS_ICV_ERROR(prRxStatus)
 		    && HAL_MAC_CONNAC2X_RX_STATUS_IS_TKIP_MIC_ERROR(
