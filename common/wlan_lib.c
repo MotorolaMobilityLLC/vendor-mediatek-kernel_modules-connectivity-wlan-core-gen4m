@@ -457,7 +457,11 @@ uint32_t wlanAdapterStart(IN struct ADAPTER *prAdapter,
 		HAL_ENABLE_FWDL(prAdapter, TRUE);
 
 		/* 4 <7> Get ECO Version */
-		wlanSetChipEcoInfo(prAdapter);
+		u4Status = wlanSetChipEcoInfo(prAdapter);
+
+		if (u4Status != WLAN_STATUS_SUCCESS)
+			break;
+
 
 #if CFG_ENABLE_FW_DOWNLOAD
 		/* 4 <8> FW/patch download */
@@ -2636,12 +2640,13 @@ u_int8_t wlanIsHandlerAllowedInRFTest(IN PFN_OID_HANDLER_FUNC pfnOidHandler,
  */
 /*----------------------------------------------------------------------------*/
 
-void wlanSetChipEcoInfo(IN struct ADAPTER *prAdapter)
+uint32_t wlanSetChipEcoInfo(IN struct ADAPTER *prAdapter)
 {
 	uint32_t hw_version, sw_version = 0;
 	struct mt66xx_chip_info *prChipInfo = prAdapter->chip_info;
 	uint32_t chip_id = prChipInfo->chip_id;
 	/* WLAN_STATUS status; */
+	uint32_t u4Status = WLAN_STATUS_SUCCESS;
 
 	DEBUGFUNC("wlanSetChipEcoInfo.\n");
 
@@ -2649,10 +2654,12 @@ void wlanSetChipEcoInfo(IN struct ADAPTER *prAdapter)
 	    WLAN_STATUS_SUCCESS) {
 		DBGLOG(INIT, ERROR,
 		       "wlanSetChipEcoInfo >> get TOP_HVR failed.\n");
+		u4Status = WLAN_STATUS_FAILURE;
 	} else if (wlanAccessRegister(prAdapter, TOP_FVR, &sw_version, 0, 0) !=
 	    WLAN_STATUS_SUCCESS) {
 		DBGLOG(INIT, ERROR,
 		       "wlanSetChipEcoInfo >> get TOP_FVR failed.\n");
+		u4Status = WLAN_STATUS_FAILURE;
 	} else {
 		/* success */
 		nicSetChipHwVer((uint8_t)(GET_HW_VER(hw_version) & 0xFF));
@@ -2668,6 +2675,8 @@ void wlanSetChipEcoInfo(IN struct ADAPTER *prAdapter)
 	       "Chip ID[%04X] Version[E%u] HW[0x%08x] SW[0x%08x]\n",
 	       chip_id, prAdapter->chip_info->eco_ver, hw_version,
 	       sw_version);
+
+	return u4Status;
 }
 
 /*----------------------------------------------------------------------------*/
