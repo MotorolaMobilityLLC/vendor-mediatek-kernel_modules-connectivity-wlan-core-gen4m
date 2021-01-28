@@ -1137,6 +1137,8 @@ struct WIFI_VAR {
 	uint8_t ucP2pGoACS;
 #endif
 
+	uint8_t fgReuseRSNIE;
+
 };
 
 /* cnm_timer module */
