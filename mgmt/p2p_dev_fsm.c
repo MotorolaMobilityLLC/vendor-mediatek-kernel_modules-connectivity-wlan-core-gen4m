@@ -844,7 +844,8 @@ void p2pDevFsmRunEventChannelAbort(IN struct ADAPTER *prAdapter,
 		 * it may due to channel is released.
 		 */
 		if ((prChnlAbortMsg->u8Cookie == prChnlReqInfo->u8Cookie)
-			&& (prChnlReqInfo->fgIsChannelRequested)) {
+			&& (prChnlReqInfo->fgIsChannelRequested) &&
+			prChnlReqInfo->eChnlReqType == CH_REQ_TYPE_ROC) {
 			ASSERT(
 				(prP2pDevFsmInfo->eCurrentState
 					== P2P_DEV_STATE_REQING_CHANNEL) ||
