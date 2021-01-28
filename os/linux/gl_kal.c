@@ -8745,3 +8745,7 @@ static void kalDumpHifStats(IN struct ADAPTER *prAdapter)
 	DBGLOG(HAL, INFO, "%s\n", buf);
 	kalMemFree(buf, VIR_MEM_TYPE, u4BufferSize);
 }
+
+#if KERNEL_VERSION(5, 4, 0) <= CFG80211_VERSION_CODE
+MODULE_IMPORT_NS(VFS_internal_I_am_really_a_filesystem_and_am_NOT_a_driver);
+#endif
