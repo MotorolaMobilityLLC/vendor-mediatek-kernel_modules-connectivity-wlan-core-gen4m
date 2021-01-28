@@ -3139,7 +3139,11 @@ int hif_thread(void *data)
 
 	while (TRUE) {
 
-		if (prGlueInfo->ulFlag & GLUE_FLAG_HALT) {
+		if (prGlueInfo->ulFlag & GLUE_FLAG_HALT
+#if CFG_CHIP_RESET_SUPPORT
+		    || kalIsResetting()
+#endif
+		    ) {
 			DBGLOG(INIT, INFO, "hif_thread should stop now...\n");
 			break;
 		}
@@ -3184,7 +3188,11 @@ int hif_thread(void *data)
 			 * interrupt later
 			 */
 			prGlueInfo->prAdapter->fgIsIntEnable = FALSE;
-			if (prGlueInfo->ulFlag & GLUE_FLAG_HALT) {
+			if (prGlueInfo->ulFlag & GLUE_FLAG_HALT
+#if CFG_CHIP_RESET_SUPPORT
+			    || kalIsResetting()
+#endif
+			   ) {
 				/* Should stop now... skip pending interrupt */
 				DBGLOG(INIT, INFO,
 				       "ignore pending interrupt\n");
@@ -3272,9 +3280,12 @@ int rx_thread(void *data)
 
 	while (TRUE) {
 
-		if (prGlueInfo->ulFlag & GLUE_FLAG_HALT) {
-			DBGLOG(INIT, INFO,
-				"rx_thread should stop now...\n");
+		if (prGlueInfo->ulFlag & GLUE_FLAG_HALT
+#if CFG_CHIP_RESET_SUPPORT
+		    || kalIsResetting()
+#endif
+		   ) {
+			DBGLOG(INIT, INFO, "rx_thread should stop now...\n");
 			break;
 		}
 
