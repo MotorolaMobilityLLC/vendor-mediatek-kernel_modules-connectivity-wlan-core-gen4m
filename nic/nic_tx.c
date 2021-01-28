@@ -3387,6 +3387,11 @@ void nicTxProcessTxDoneEvent(IN struct ADAPTER *prAdapter,
 #endif
 
 	if (prMsduInfo) {
+		if (prMsduInfo->pfTxDoneHandler) {
+			prMsduInfo->pfTxDoneHandler(prAdapter, prMsduInfo,
+				(enum ENUM_TX_RESULT_CODE) prTxDone->ucStatus);
+			prMsduInfo->pfTxDoneHandler = NULL;
+		}
 		if (prTxDone->ucStatus == 0 &&
 			prMsduInfo->ucBssIndex < MAX_BSSID_NUM)
 			GET_CURRENT_SYSTIME(
