@@ -85,6 +85,9 @@
 #define CFG_WMT_RESET_API_SUPPORT   0
 #endif
 
+#define RST_FLAG_CHIP_RESET        0
+#define RST_FLAG_DO_CORE_DUMP      BIT(0)
+#define RST_FLAG_PREVENT_POWER_OFF BIT(1)
 /*******************************************************************************
 *                             D A T A   T Y P E S
 ********************************************************************************
@@ -98,6 +101,7 @@ typedef struct _RESET_STRUCT_T {
 	ENUM_RESET_STATUS_T rst_data;
 	struct work_struct rst_work;
 	struct work_struct rst_trigger_work;
+	UINT_32 rst_trigger_flag;
 } RESET_STRUCT_T;
 
 /* duplicated from wmt_exp.h for better driver isolation */
@@ -143,7 +147,6 @@ typedef void (*PF_WMT_CB) (ENUM_WMTDRV_TYPE_T,	/* Source driver type */
 typedef int MTK_WCN_BOOL;
 typedef unsigned int UINT32, *PUINT32;
 
-
 /*******************************************************************************
 *                    E X T E R N A L   F U N C T I O N S
 ********************************************************************************
@@ -173,11 +176,11 @@ extern int wifi_reset_end(ENUM_RESET_STATUS_T);
 ********************************************************************************
 */
 #if CFG_CHIP_RESET_SUPPORT
-#define glDoCoreDump() \
-		do { \
-			DBGLOG(JOIN, INFO, "do core dump in %s\n", __func__); \
-			mtk_wcn_wmt_assert(WMTDRV_TYPE_WIFI, 40); \
-		} while (0)
+#define GL_RESET_TRIGGER(_prAdapter, _u4Flags) \
+	glResetTrigger(_prAdapter, (_u4Flags), (const PUINT_8)__FILE__, __LINE__)
+#else
+#define GL_RESET_TRIGGER(_prAdapter, _u4Flags) \
+	DBGLOG(INIT, INFO, "DO NOT support chip reset\n")
 #endif
 
 /*******************************************************************************
@@ -185,6 +188,8 @@ extern int wifi_reset_end(ENUM_RESET_STATUS_T);
 ********************************************************************************
 */
 #if CFG_WMT_RESET_API_SUPPORT
+extern MTK_WCN_BOOL mtk_wcn_set_connsys_power_off_flag(MTK_WCN_BOOL value);
+extern MTK_WCN_BOOL mtk_wcn_wmt_assert_timeout(ENUM_WMTDRV_TYPE_T type, UINT32 reason, int timeout);
 extern MTK_WCN_BOOL mtk_wcn_wmt_do_reset(ENUM_WMTDRV_TYPE_T type);
 #endif
 /*******************************************************************************
@@ -200,6 +205,6 @@ VOID glSendResetRequest(VOID);
 
 BOOLEAN kalIsResetting(VOID);
 
-BOOLEAN glResetTrigger(P_ADAPTER_T prAdapter);
+BOOLEAN glResetTrigger(P_ADAPTER_T prAdapter, UINT_32 u4RstFlag, const PUINT_8 pucFile, UINT_32 u4Line);
 
 #endif /* _GL_RST_H */
