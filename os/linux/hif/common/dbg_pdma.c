@@ -408,7 +408,6 @@ static bool halIsTxHang(struct ADAPTER *prAdapter)
 {
 	struct MSDU_TOKEN_INFO *prTokenInfo;
 	struct MSDU_TOKEN_ENTRY *prToken;
-	struct MSDU_INFO *prMsduInfo;
 	struct timeval rNowTs, rTime, rLongest, rTimeout;
 	uint32_t u4Idx = 0, u4TokenId = 0;
 	bool fgIsTimeout = false;
@@ -428,13 +427,7 @@ static bool halIsTxHang(struct ADAPTER *prAdapter)
 
 	for (u4Idx = 0; u4Idx < HIF_TX_MSDU_TOKEN_NUM; u4Idx++) {
 		prToken = &prTokenInfo->arToken[u4Idx];
-		prMsduInfo = prToken->prMsduInfo;
-		if (!prToken->fgInUsed || !prMsduInfo)
-			continue;
-
-		/* check tx hang is enabled */
-		if ((prAdapter->u4TxHangFlag &
-		      BIT(prMsduInfo->ucBssIndex)) == 0)
+		if (!prToken->fgInUsed)
 			continue;
 
 		/* Ignore now time < token time */
@@ -461,9 +454,11 @@ static bool halIsTxHang(struct ADAPTER *prAdapter)
 	}
 
 	if (fgIsTimeout) {
-		DBGLOG(HAL, INFO, "TokenId[%u] timeout[sec:%ld, usec:%ld]\n",
-		       u4TokenId, rLongest.tv_sec, rLongest.tv_usec);
 		prToken = &prTokenInfo->arToken[u4TokenId];
+		DBGLOG(HAL, INFO, "TokenId[%u] Wlan_Idx[%u] timeout[sec:%ld]\n",
+				u4TokenId,
+				prToken->ucWlanIndex,
+				rLongest.tv_sec);
 		if (prToken->prPacket)
 			DBGLOG_MEM32(HAL, INFO, prToken->prPacket, 64);
 	}
