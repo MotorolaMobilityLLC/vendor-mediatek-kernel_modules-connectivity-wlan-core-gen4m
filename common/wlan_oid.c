@@ -15123,6 +15123,10 @@ uint32_t wlanoidPktProcessIT(struct ADAPTER *prAdapter, void *pvBuffer,
 		process_func = wnmRecvBTMRequest;
 		pucSavedPtr += 7;
 		fgBTMReq = TRUE;
+	} else if (!kalStrniCmp(pucSavedPtr, "BT-IT ", 6)) {
+		DBGLOG(OID, INFO, "Simulate beacon timeout!!!\n");
+		aisBssBeaconTimeout(prAdapter);
+		return WLAN_STATUS_SUCCESS;
 	} else {
 		pucSavedPtr[10] = 0;
 		DBGLOG(OID, ERROR, "IT type %s is not supported\n",
