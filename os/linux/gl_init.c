@@ -538,6 +538,10 @@ static const struct wiphy_vendor_command
 		.flags = WIPHY_VENDOR_CMD_NEED_WDEV |
 			 WIPHY_VENDOR_CMD_NEED_NETDEV,
 		.doit = mtk_cfg80211_vendor_get_channel_list
+#if KERNEL_VERSION(5, 4, 0) <= LINUX_VERSION_CODE
+		,
+		.policy = VENDOR_CMD_RAW_DATA
+#endif
 	},
 	{
 		{
@@ -547,6 +551,10 @@ static const struct wiphy_vendor_command
 		.flags = WIPHY_VENDOR_CMD_NEED_WDEV |
 			 WIPHY_VENDOR_CMD_NEED_NETDEV,
 		.doit = mtk_cfg80211_vendor_set_country_code
+#if KERNEL_VERSION(5, 4, 0) <= LINUX_VERSION_CODE
+		,
+		.policy = VENDOR_CMD_RAW_DATA
+#endif
 	},
 	{
 		{
@@ -557,6 +565,10 @@ static const struct wiphy_vendor_command
 			| WIPHY_VENDOR_CMD_NEED_NETDEV
 			| WIPHY_VENDOR_CMD_NEED_RUNNING,
 		.doit = mtk_cfg80211_vendor_set_scan_mac_oui
+#if KERNEL_VERSION(5, 4, 0) <= LINUX_VERSION_CODE
+		,
+		.policy = VENDOR_CMD_RAW_DATA
+#endif
 	},
 	{
 		{
@@ -566,6 +578,10 @@ static const struct wiphy_vendor_command
 		.flags = WIPHY_VENDOR_CMD_NEED_WDEV |
 			 WIPHY_VENDOR_CMD_NEED_NETDEV,
 		.doit = mtk_cfg80211_vendor_set_band
+#if KERNEL_VERSION(5, 4, 0) <= LINUX_VERSION_CODE
+		,
+		.policy = VENDOR_CMD_RAW_DATA
+#endif
 	},
 #if CFG_SUPPORT_MBO
 	{
@@ -576,6 +592,11 @@ static const struct wiphy_vendor_command
 		.flags = WIPHY_VENDOR_CMD_NEED_WDEV |
 			 WIPHY_VENDOR_CMD_NEED_NETDEV,
 		.doit = mtk_cfg80211_vendor_set_roaming_param
+#if KERNEL_VERSION(5, 4, 0) <= LINUX_VERSION_CODE
+		,
+		.policy = VENDOR_CMD_RAW_DATA
+#endif
+
 	},
 #endif
 	{
@@ -586,6 +607,10 @@ static const struct wiphy_vendor_command
 		.flags = WIPHY_VENDOR_CMD_NEED_WDEV |
 			 WIPHY_VENDOR_CMD_NEED_NETDEV,
 		.doit = mtk_cfg80211_vendor_set_roaming_policy
+#if KERNEL_VERSION(5, 4, 0) <= LINUX_VERSION_CODE
+		,
+		.policy = VENDOR_CMD_RAW_DATA
+#endif
 	},
 	{
 		{
@@ -595,6 +620,10 @@ static const struct wiphy_vendor_command
 		.flags = WIPHY_VENDOR_CMD_NEED_WDEV |
 			 WIPHY_VENDOR_CMD_NEED_NETDEV,
 		.doit = mtk_cfg80211_vendor_get_roaming_capabilities
+#if KERNEL_VERSION(5, 4, 0) <= LINUX_VERSION_CODE
+		,
+		.policy = VENDOR_CMD_RAW_DATA
+#endif
 	},
 	{
 		{
@@ -604,6 +633,10 @@ static const struct wiphy_vendor_command
 		.flags = WIPHY_VENDOR_CMD_NEED_WDEV |
 			 WIPHY_VENDOR_CMD_NEED_NETDEV,
 		.doit = mtk_cfg80211_vendor_config_roaming
+#if KERNEL_VERSION(5, 4, 0) <= LINUX_VERSION_CODE
+		,
+		.policy = VENDOR_CMD_RAW_DATA
+#endif
 	},
 	{
 		{
@@ -613,6 +646,10 @@ static const struct wiphy_vendor_command
 		.flags = WIPHY_VENDOR_CMD_NEED_WDEV |
 			 WIPHY_VENDOR_CMD_NEED_NETDEV,
 		.doit = mtk_cfg80211_vendor_enable_roaming
+#if KERNEL_VERSION(5, 4, 0) <= LINUX_VERSION_CODE
+		,
+		.policy = VENDOR_CMD_RAW_DATA
+#endif
 	},
 	/* RTT */
 	{
@@ -623,6 +660,10 @@ static const struct wiphy_vendor_command
 		.flags = WIPHY_VENDOR_CMD_NEED_WDEV |
 		WIPHY_VENDOR_CMD_NEED_NETDEV,
 		.doit = mtk_cfg80211_vendor_get_rtt_capabilities
+#if KERNEL_VERSION(5, 4, 0) <= LINUX_VERSION_CODE
+		,
+		.policy = VENDOR_CMD_RAW_DATA
+#endif
 	},
 	/* Link Layer Statistics */
 	{
@@ -633,6 +674,10 @@ static const struct wiphy_vendor_command
 		.flags = WIPHY_VENDOR_CMD_NEED_WDEV |
 		WIPHY_VENDOR_CMD_NEED_NETDEV,
 		.doit = mtk_cfg80211_vendor_llstats_get_info
+#if KERNEL_VERSION(5, 4, 0) <= LINUX_VERSION_CODE
+		,
+		.policy = VENDOR_CMD_RAW_DATA
+#endif
 	},
 	/* RSSI Monitoring */
 	{
@@ -643,6 +688,10 @@ static const struct wiphy_vendor_command
 		.flags = WIPHY_VENDOR_CMD_NEED_WDEV |
 		WIPHY_VENDOR_CMD_NEED_NETDEV,
 		.doit = mtk_cfg80211_vendor_set_rssi_monitoring
+#if KERNEL_VERSION(5, 4, 0) <= LINUX_VERSION_CODE
+		,
+		.policy = VENDOR_CMD_RAW_DATA
+#endif
 	},
 	/* Packet Keep Alive */
 	{
@@ -653,6 +702,10 @@ static const struct wiphy_vendor_command
 		.flags = WIPHY_VENDOR_CMD_NEED_WDEV |
 		WIPHY_VENDOR_CMD_NEED_NETDEV,
 		.doit = mtk_cfg80211_vendor_packet_keep_alive_start
+#if KERNEL_VERSION(5, 4, 0) <= LINUX_VERSION_CODE
+		,
+		.policy = VENDOR_CMD_RAW_DATA
+#endif
 	},
 	{
 		{
@@ -662,6 +715,10 @@ static const struct wiphy_vendor_command
 		.flags = WIPHY_VENDOR_CMD_NEED_WDEV |
 		WIPHY_VENDOR_CMD_NEED_NETDEV,
 		.doit = mtk_cfg80211_vendor_packet_keep_alive_stop
+#if KERNEL_VERSION(5, 4, 0) <= LINUX_VERSION_CODE
+		,
+		.policy = VENDOR_CMD_RAW_DATA
+#endif
 	},
 	/* Get Driver Version or Firmware Version */
 	{
@@ -672,6 +729,10 @@ static const struct wiphy_vendor_command
 		.flags = WIPHY_VENDOR_CMD_NEED_WDEV |
 				WIPHY_VENDOR_CMD_NEED_NETDEV,
 		.doit = mtk_cfg80211_vendor_get_version
+#if KERNEL_VERSION(5, 4, 0) <= LINUX_VERSION_CODE
+		,
+		.policy = VENDOR_CMD_RAW_DATA
+#endif
 	},
 	/* Get Supported Feature Set */
 	{
@@ -682,6 +743,11 @@ static const struct wiphy_vendor_command
 		.flags = WIPHY_VENDOR_CMD_NEED_WDEV |
 				WIPHY_VENDOR_CMD_NEED_NETDEV,
 		.doit = mtk_cfg80211_vendor_get_supported_feature_set
+#if KERNEL_VERSION(5, 4, 0) <= LINUX_VERSION_CODE
+		,
+		.policy = VENDOR_CMD_RAW_DATA
+#endif
+
 	},
 	/* Set Tx Power Scenario */
 	{
@@ -692,6 +758,10 @@ static const struct wiphy_vendor_command
 		.flags = WIPHY_VENDOR_CMD_NEED_WDEV |
 				WIPHY_VENDOR_CMD_NEED_NETDEV,
 		.doit = mtk_cfg80211_vendor_set_tx_power_scenario
+#if KERNEL_VERSION(5, 4, 0) <= LINUX_VERSION_CODE
+		,
+		.policy = VENDOR_CMD_RAW_DATA
+#endif
 	},
 #if CFG_SUPPORT_P2P_PREFERRED_FREQ_LIST
 	/* P2P get preferred freq list */
@@ -704,6 +774,10 @@ static const struct wiphy_vendor_command
 				| WIPHY_VENDOR_CMD_NEED_NETDEV
 				| WIPHY_VENDOR_CMD_NEED_RUNNING,
 		.doit = mtk_cfg80211_vendor_get_preferred_freq_list
+#if KERNEL_VERSION(5, 4, 0) <= LINUX_VERSION_CODE
+		,
+		.policy = VENDOR_CMD_RAW_DATA
+#endif
 	},
 #endif /* CFG_SUPPORT_P2P_PREFERRED_FREQ_LIST */
 #if CFG_AUTO_CHANNEL_SEL_SUPPORT
@@ -716,6 +790,10 @@ static const struct wiphy_vendor_command
 				| WIPHY_VENDOR_CMD_NEED_NETDEV
 				| WIPHY_VENDOR_CMD_NEED_RUNNING,
 		.doit = mtk_cfg80211_vendor_acs
+#if KERNEL_VERSION(5, 4, 0) <= LINUX_VERSION_CODE
+		,
+		.policy = VENDOR_CMD_RAW_DATA
+#endif
 	},
 #endif
 	{
@@ -726,6 +804,11 @@ static const struct wiphy_vendor_command
 		.flags = WIPHY_VENDOR_CMD_NEED_WDEV
 				| WIPHY_VENDOR_CMD_NEED_NETDEV,
 		.doit = mtk_cfg80211_vendor_get_features
+#if KERNEL_VERSION(5, 4, 0) <= LINUX_VERSION_CODE
+		,
+		.policy = VENDOR_CMD_RAW_DATA
+#endif
+
 	},
 	/* Get Driver Memory Dump */
 	{
@@ -736,6 +819,10 @@ static const struct wiphy_vendor_command
 		.flags = WIPHY_VENDOR_CMD_NEED_WDEV |
 				WIPHY_VENDOR_CMD_NEED_NETDEV,
 		.doit = mtk_cfg80211_vendor_driver_memory_dump
+#if KERNEL_VERSION(5, 4, 0) <= LINUX_VERSION_CODE
+		,
+		.policy = VENDOR_CMD_RAW_DATA
+#endif
 	}
 };
 
@@ -913,8 +1000,14 @@ unsigned int _cfg80211_classify8021d(struct sk_buff *skb)
 }
 #endif
 
-
-#if KERNEL_VERSION(4, 19, 0) <= LINUX_VERSION_CODE
+#if KERNEL_VERSION(5, 4, 0) <= LINUX_VERSION_CODE
+u16 wlanSelectQueue(struct net_device *dev,
+		    struct sk_buff *skb,
+		    struct net_device *sb_dev)
+{
+	return mtk_wlan_ndev_select_queue(skb);
+}
+#elif KERNEL_VERSION(4, 19, 0) <= LINUX_VERSION_CODE
 u16 wlanSelectQueue(struct net_device *dev,
 		    struct sk_buff *skb,
 		    struct net_device *sb_dev, select_queue_fallback_t fallback)
@@ -4013,6 +4106,7 @@ static int32_t wlanOnPreNetRegister(struct GLUE_INFO *prGlueInfo,
 	 * the scheduling method
 	 */
 	if (prGlueInfo->prAdapter->rWifiVar.ucThreadPriority > 0) {
+#if KERNEL_VERSION(4, 19, 0) >= LINUX_VERSION_CODE
 		struct sched_param param = {
 			.sched_priority = prGlueInfo->prAdapter
 			->rWifiVar.ucThreadPriority
@@ -4027,6 +4121,7 @@ static int32_t wlanOnPreNetRegister(struct GLUE_INFO *prGlueInfo,
 		sched_setscheduler(prGlueInfo->rx_thread,
 					prGlueInfo->prAdapter->rWifiVar
 					.ucThreadScheduling, &param);
+#endif
 #endif
 		DBGLOG(INIT, INFO,
 		       "Set pri = %d, sched = %d\n",

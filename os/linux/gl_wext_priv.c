@@ -2501,7 +2501,7 @@ priv_set_driver(IN struct net_device *prNetDev,
 
 	ASSERT(IW_IS_GET(u2Cmd));
 	if (prIwReqData->data.length != 0) {
-		if (!access_ok(VERIFY_READ, prIwReqData->data.pointer,
+		if (!kal_access_ok(VERIFY_READ, prIwReqData->data.pointer,
 			       prIwReqData->data.length)) {
 			DBGLOG(REQ, INFO,
 			       "%s access_ok Read fail written = %d\n",
@@ -9070,7 +9070,7 @@ __priv_set_ap(IN struct net_device *prNetDev,
 
 	ASSERT(IW_IS_GET(u2Cmd));
 	if (prIwReqData->data.length != 0) {
-		if (!access_ok(VERIFY_READ, prIwReqData->data.pointer,
+		if (!kal_access_ok(VERIFY_READ, prIwReqData->data.pointer,
 			prIwReqData->data.length)) {
 			DBGLOG(REQ, INFO,
 				"%s access_ok Read fail written = %d\n",
