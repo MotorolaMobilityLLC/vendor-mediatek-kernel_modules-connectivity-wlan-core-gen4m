@@ -3198,7 +3198,7 @@ void nicTxProcessTxDoneEvent(IN struct ADAPTER *prAdapter,
 			  *(pu4RawTxs + 6));
 		}
 	} else {
-		DBGLOG(NIC, INFO,
+		DBGLOG(NIC, TRACE,
 		       "EVENT_ID_TX_DONE WIDX:PID[%u:%u] Status[%u:%s] SN[%u]\n",
 		       prTxDone->ucWlanIndex, prTxDone->ucPacketSeq,
 		       prTxDone->ucStatus,
