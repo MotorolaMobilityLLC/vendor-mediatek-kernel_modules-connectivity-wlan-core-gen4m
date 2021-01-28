@@ -5740,6 +5740,136 @@ void wlanSetNicResourceParameters(IN struct ADAPTER
 }
 
 
+#if CFG_SUPPORT_IOT_AP_BLACKLIST
+void wlanCfgDumpIotApRule(IN struct ADAPTER *prAdapter)
+{
+	uint8_t ucRuleIdx;
+	struct WLAN_IOT_AP_RULE_T *prIotApRule;
+
+	ASSERT(prAdapter);
+	for (ucRuleIdx = 0; ucRuleIdx < CFG_IOT_AP_RULE_MAX_CNT; ucRuleIdx++) {
+		prIotApRule = &prAdapter->rIotApRule[ucRuleIdx];
+		if (!prIotApRule->u2MatchFlag)
+			continue;
+		DBGLOG(INIT, TRACE, "IOTAP%d is valid rule\n", ucRuleIdx);
+		DBGLOG(INIT, TRACE, "IOTAP%d Flag:0x%X Ver:0x%X\n",
+			ucRuleIdx, prIotApRule->u2MatchFlag,
+			prIotApRule->ucVersion);
+		DBGLOG(INIT, TRACE, "IOTAP%d OUI:%02X:%02X:%02X\n",
+			ucRuleIdx,
+			prIotApRule->aVendorOui[0],
+			prIotApRule->aVendorOui[1],
+			prIotApRule->aVendorOui[2]);
+		DBGLOG(INIT, TRACE, "IOTAP%d Data:"MACSTR" Mask:"MACSTR"\n",
+			ucRuleIdx, MAC2STR(prIotApRule->aVendorData),
+			MAC2STR(prIotApRule->aVendorDataMask));
+		DBGLOG(INIT, TRACE, "IOTAP%d aBssid:"MACSTR" Mask:"MACSTR"\n",
+			ucRuleIdx, MAC2STR(prIotApRule->aBssid),
+			MAC2STR(prIotApRule->aBssidMask));
+		DBGLOG(INIT, TRACE, "IOTAP%d NSS:%X HT:%X Band:%X Act:%X\n",
+			ucRuleIdx, prIotApRule->ucNss,
+			prIotApRule->ucHtType,
+			prIotApRule->ucBand,
+			prIotApRule->ucAction);
+	}
+}
+
+
+void wlanCfgLoadIotApRule(IN struct ADAPTER *prAdapter)
+{
+	uint8_t  ucCnt;
+	uint8_t  *pOffset;
+	uint8_t  *pCurTok;
+	uint8_t  ucTokId;
+	uint8_t  *pNexTok;
+	uint8_t  ucStatus;
+	uint8_t  aucCfgKey[WLAN_CFG_KEY_LEN_MAX];
+	uint8_t  aucCfgVal[WLAN_CFG_VALUE_LEN_MAX];
+	struct WLAN_IOT_AP_RULE_T *prIotApRule = NULL;
+	int8_t  aucEleSize[] = {
+		sizeof(prIotApRule->ucVersion),
+		sizeof(prIotApRule->aVendorOui),
+		sizeof(prIotApRule->aVendorData),
+		sizeof(prIotApRule->aVendorDataMask),
+		sizeof(prIotApRule->aBssid),
+		sizeof(prIotApRule->aBssidMask),
+		sizeof(prIotApRule->ucNss),
+		sizeof(prIotApRule->ucHtType),
+		sizeof(prIotApRule->ucBand),
+		sizeof(prIotApRule->ucAction)
+		};
+
+	ASSERT(prAdapter);
+	ASSERT(prAdapter->rIotApRule);
+
+	DBGLOG(INIT, INFO, "IOTAP: Start Parsing Rules\n");
+	for (ucCnt = 0; ucCnt < CFG_IOT_AP_RULE_MAX_CNT; ucCnt++) {
+		prIotApRule = &prAdapter->rIotApRule[ucCnt];
+		kalMemSet(prIotApRule, '\0', sizeof(struct WLAN_IOT_AP_RULE_T));
+		kalMemSet(aucCfgVal, '\0', WLAN_CFG_VALUE_LEN_MAX);
+		kalMemSet(aucCfgKey, '\0', WLAN_CFG_KEY_LEN_MAX);
+		pOffset = (uint8_t *)prIotApRule +
+			OFFSET_OF(struct WLAN_IOT_AP_RULE_T, ucVersion);
+		pCurTok = &aucCfgVal[0];
+		pNexTok = &aucCfgVal[0];
+		kalSprintf(aucCfgKey, "IOTAP%d", ucCnt);
+		ucStatus = wlanCfgGet(prAdapter, aucCfgKey, aucCfgVal, NULL, 0);
+		/*Skip empty rule*/
+		if (ucStatus != WLAN_STATUS_SUCCESS)
+			continue;
+
+		/*Rule String Check*/
+		ucStatus = 0;
+		while (*pCurTok != '\0') {
+			if (*pCurTok == ':')
+				ucStatus++;
+			else if (wlanHexToNum(*pCurTok) == -1) {
+				ucStatus = -EINVAL;
+				break;
+			}
+			pCurTok++;
+		}
+		if (ucStatus != WLAN_IOT_AP_FG_MAX-1) {
+			DBGLOG(INIT, INFO,
+				"Invalid rule IOTAP%d with status %d\n",
+				ucCnt, ucStatus);
+			continue;
+		}
+
+		for (ucTokId = 0; ucTokId < WLAN_IOT_AP_FG_MAX; ucTokId++) {
+			pCurTok = kalStrSep((char **)&pNexTok, ":");
+			ucStatus = wlanHexToArrayR(pCurTok, pOffset,
+				aucEleSize[ucTokId]);
+			DBGLOG(INIT, TRACE,
+				"IOTAP%d tok:%d Str:%s status:%d len:%d flag:0x%x\n",
+				ucCnt, ucTokId, pCurTok, ucStatus,
+				aucEleSize[ucTokId], prIotApRule->u2MatchFlag);
+
+			if (ucStatus) {
+				prIotApRule->u2MatchFlag |= BIT(ucTokId);
+				/*Record vendor data length*/
+				if (ucTokId == WLAN_IOT_AP_FG_DATA)
+					prIotApRule->ucDataLen = ucStatus;
+				if (ucTokId == WLAN_IOT_AP_FG_DATA_MASK)
+					prIotApRule->ucDataMaskLen = ucStatus;
+			}
+			pOffset += aucEleSize[ucTokId];
+		}
+		/*Rule Check*/
+		if (prIotApRule->ucDataMaskLen &&
+			prIotApRule->ucDataMaskLen != prIotApRule->ucDataLen)
+			prIotApRule->u2MatchFlag = 0;
+		if (prIotApRule->ucAction >= WLAN_IOT_AP_ACT_MAX)
+			prIotApRule->u2MatchFlag = 0;
+		if (prIotApRule->u2MatchFlag == 0)
+			DBGLOG(INIT, INFO, "Invalid Rule IOTAP%d\n", ucCnt);
+	}
+
+}
+#endif
+
+
+
 /*----------------------------------------------------------------------------*/
 /*!
  * @brief This function is to re-assign tx resource based on firmware's report
@@ -5915,6 +6045,10 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 #endif
 
 	/* Feature options will be filled by config file */
+
+	prWifiVar->fgEnDefaultIotApRule = (uint8_t) wlanCfgGetUint32(prAdapter,
+					"EnDefaultIotApRule",
+					FEATURE_ENABLED);
 
 	prWifiVar->ucQoS = (uint8_t) wlanCfgGetUint32(prAdapter, "Qos",
 					FEATURE_ENABLED);
@@ -7470,6 +7604,8 @@ void wlanFeatureToFw(IN struct ADAPTER *prAdapter)
 			/*send string format to firmware */
 			rCmd_v1.itemStringLength = kalStrLen(
 							prWlanCfgEntry->aucKey);
+			if (rCmd_v1.itemStringLength > MAX_CMD_NAME_MAX_LENGTH)
+				continue;
 			kalMemZero(rCmd_v1.itemString, MAX_CMD_NAME_MAX_LENGTH);
 			kalMemCopy(rCmd_v1.itemString, prWlanCfgEntry->aucKey,
 				   rCmd_v1.itemStringLength);
@@ -7477,6 +7613,8 @@ void wlanFeatureToFw(IN struct ADAPTER *prAdapter)
 
 			rCmd_v1.itemValueLength = kalStrLen(
 						  prWlanCfgEntry->aucValue);
+			if (rCmd_v1.itemValueLength > MAX_CMD_VALUE_MAX_LENGTH)
+				continue;
 			kalMemZero(rCmd_v1.itemValue, MAX_CMD_VALUE_MAX_LENGTH);
 			kalMemCopy(rCmd_v1.itemValue, prWlanCfgEntry->aucValue,
 				   rCmd_v1.itemValueLength);
@@ -8086,6 +8224,54 @@ int32_t wlanHexToByte(int8_t *hex)
 		return -1;
 	return (a << 4) | b;
 }
+
+int32_t wlanHexToArray(int8_t *hexString, int8_t *hexArray, uint8_t arrayLen)
+{
+		int8_t index = 0;
+		uint8_t converted = 0;
+		int strLen = strlen(hexString);
+		int8_t result;
+
+		for (index = strLen-1;
+		converted < min(arrayLen*2, strLen); index--) {
+			if ((strLen-converted) >= 2) {
+				index--;
+				result = wlanHexToByte(hexString+index);
+				converted += 2;
+			} else {
+				result = wlanHexToNum(*(hexString+index));
+				converted++;
+			}
+			if (result == -1)
+				return 0;
+			hexArray[(converted-1)/2] = result;
+		}
+		return converted;
+}
+
+int32_t wlanHexToArrayR(int8_t *hexString, int8_t *hexArray, uint8_t arrayLen)
+{
+	int8_t converted = 0;
+	int len = strlen(hexString)/2;
+	int8_t result;
+
+	len = arrayLen < len ? arrayLen : len;
+	if (*(hexString+1) == '\0') {
+		result = wlanHexToNum(*(hexString));
+		if (result != -1) {
+			hexArray[converted] = result;
+			converted++;
+		}
+	} else {
+		for (converted = 0; converted < len; converted++) {
+			result = wlanHexToByte(hexString + converted*2);
+			hexArray[converted] = result;
+		}
+	}
+	return converted;
+}
+
+
 
 int32_t wlanHwAddrToBin(int8_t *txt, uint8_t *addr)
 {

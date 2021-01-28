@@ -6536,3 +6536,25 @@ int mtk_cfg80211_update_ft_ies(struct wiphy *wiphy, struct net_device *dev,
 	return 0;
 }
 
+const uint8_t *mtk_cfg80211_find_ie_match_mask(uint8_t eid,
+	const uint8_t *ies, int len, const uint8_t *match, int match_len,
+	int match_offset, const uint8_t *match_mask)
+{
+	/* match_offset can't be smaller than 2, unless match_len is
+	 * zero, in which case match_offset must be zero as well.
+	 */
+	if (WARN_ON((match_len && match_offset < 2) ||
+		(!match_len && match_offset)))
+		return NULL;
+	while (len >= 2 && len >= ies[1] + 2) {
+		if ((ies[0] == eid) &&
+			(ies[1] + 2 >= match_offset + match_len) &&
+			!kalMaskMemCmp(ies + match_offset,
+			match, match_mask, match_len))
+			return ies;
+		len -= ies[1] + 2;
+		ies += ies[1] + 2;
+	}
+	return NULL;
+}
+
