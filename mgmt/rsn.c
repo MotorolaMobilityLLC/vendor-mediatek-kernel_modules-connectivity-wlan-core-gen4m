@@ -670,7 +670,7 @@ u_int8_t rsnIsSuitableBSS(IN struct ADAPTER *prAdapter,
 
 	if ((s & 0x000000FF) != GET_SELECTOR_TYPE(k)) {
 		DBGLOG(RSN, WARN, "Break by GroupKey s=0x%x k=0x%x\n",
-			SWAP32(s), SWAP32(k));
+			s, SWAP32(k));
 		return FALSE;
 	}
 
@@ -683,7 +683,7 @@ u_int8_t rsnIsSuitableBSS(IN struct ADAPTER *prAdapter,
 			break;
 		} else if (i == c - 1) {
 			DBGLOG(RSN, WARN, "Break by PairwisKey s=0x%x k=0x%x\n",
-				SWAP32(s), SWAP32(k));
+				s, SWAP32(k));
 			return FALSE;
 		}
 	}
@@ -697,7 +697,7 @@ u_int8_t rsnIsSuitableBSS(IN struct ADAPTER *prAdapter,
 			break;
 		} else if (i == c - 1) {
 			DBGLOG(RSN, WARN, "Break by AuthKey s=0x%x k=0x%x\n",
-				SWAP32(s), SWAP32(k));
+				s, SWAP32(k));
 			return FALSE;
 		}
 	}
