@@ -262,8 +262,10 @@
 
 #if KERNEL_VERSION(4, 4, 0) <= LINUX_VERSION_CODE
 #define CFG_SUPPORT_DATA_STALL			1
+#define CFG_SUPPORT_BIGDATA_PIP			1
 #else
 #define CFG_SUPPORT_DATA_STALL			0
+#define CFG_SUPPORT_BIGDATA_PIP			0
 #endif
 
 #define CFG_SUPPORT_HE_ER               0
