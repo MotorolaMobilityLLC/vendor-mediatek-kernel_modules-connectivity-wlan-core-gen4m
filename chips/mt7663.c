@@ -159,6 +159,7 @@ BUS_INFO mt7663_bus_info = {
 	.tx_ring_fwdl_idx = 3,
 	.tx_ring_cmd_idx = 15,
 	.tx_ring_data_idx = 0,
+	.fgCheckDriverOwnInt = FALSE,
 
 	.pdmaSetup = halConnacWpdmaConfig,
 	.lowPowerOwnRead = asicLowPowerOwnRead,
