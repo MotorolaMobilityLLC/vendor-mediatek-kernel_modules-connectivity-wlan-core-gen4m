@@ -308,7 +308,7 @@ WLAN_STATUS halTxUSBSendCmd(IN P_GLUE_INFO_T prGlueInfo, IN UINT_8 ucTc, IN P_CM
 	spin_lock_irqsave(&prHifInfo->rTxCmdQLock, flags);
 	u4Status = usb_submit_urb(prUsbReq->prUrb, GFP_ATOMIC);
 	if (u4Status) {
-		DBGLOG(HAL, ERROR, "usb_submit_urb() reports error (%d)\n", u4Status);
+		DBGLOG(HAL, ERROR, "usb_submit_urb() reports error (%d)(EP%d OUT)\n", u4Status, arTcToUSBEP[ucTc]);
 		/* glUsbEnqueueReq(prHifInfo, &prHifInfo->rTxCmdFreeQ, &prHifInfo->rTxCmdQLock, prUsbReq); */
 		list_add_tail(&prUsbReq->list, &prHifInfo->rTxCmdFreeQ);
 		spin_unlock_irqrestore(&prHifInfo->rTxCmdQLock, flags);
@@ -455,7 +455,8 @@ WLAN_STATUS halTxUSBSendAggData(IN P_GL_HIF_INFO_T prHifInfo, IN UINT_8 ucTc, IN
 	usb_anchor_urb(prUsbReq->prUrb, &prHifInfo->rTxDataAnchor[ucTc]);
 	u4Status = usb_submit_urb(prUsbReq->prUrb, GFP_ATOMIC);
 	if (u4Status) {
-		DBGLOG(HAL, ERROR, "usb_submit_urb() reports error (%d) [%s]\n", u4Status, __func__);
+		DBGLOG(HAL, ERROR, "usb_submit_urb() reports error (%d) [%s] (EP%d OUT)\n",
+			u4Status, __func__, arTcToUSBEP[ucTc]);
 		halTxUSBProcessMsduDone(prHifInfo->prGlueInfo, prUsbReq);
 		prBufCtrl->u4WrIdx = 0;
 		usb_unanchor_urb(prUsbReq->prUrb);
@@ -523,7 +524,7 @@ WLAN_STATUS halTxUSBSendData(IN P_GLUE_INFO_T prGlueInfo, IN P_MSDU_INFO_T prMsd
 	memcpy(prBufCtrl->pucBuf + prBufCtrl->u4WrIdx, pucBuf, u4Length);
 	prBufCtrl->u4WrIdx += u4Length;
 
-	u4PaddingLength = (ALIGN_4(u4Length) - u4Length);
+	u4PaddingLength = (ALIGN_4(u4Length+prChipInfo->u2HifTxdSize) - (u4Length+prChipInfo->u2HifTxdSize));
 	if (u4PaddingLength) {
 		memset(prBufCtrl->pucBuf + prBufCtrl->u4WrIdx, 0, u4PaddingLength);
 		prBufCtrl->u4WrIdx += u4PaddingLength;
@@ -578,7 +579,8 @@ WLAN_STATUS halTxUSBSendData(IN P_GLUE_INFO_T prGlueInfo, IN P_MSDU_INFO_T prMsd
 	usb_anchor_urb(prUsbReq->prUrb, &prHifInfo->rTxDataAnchor);
 	u4Status = usb_submit_urb(prUsbReq->prUrb, GFP_ATOMIC);
 	if (u4Status) {
-		DBGLOG(HAL, ERROR, "usb_submit_urb() reports error (%d) [%s]\n", u4Status, __func__);
+		DBGLOG(HAL, ERROR, "usb_submit_urb() reports error (%d) [%s] (EP%d OUT)\n",
+				u4Status, __func__, arTcToUSBEP[ucTc]);
 		halTxUSBProcessMsduDone(prHifInfo->prGlueInfo, prUsbReq);
 		prBufCtrl->u4WrIdx = 0;
 		usb_unanchor_urb(prUsbReq->prUrb);
@@ -805,7 +807,8 @@ WLAN_STATUS halRxUSBReceiveEvent(IN P_ADAPTER_T prAdapter, IN BOOLEAN fgFillUrb)
 		u4Status = usb_submit_urb(prUsbReq->prUrb, GFP_ATOMIC);
 
 		if (u4Status) {
-			DBGLOG(HAL, ERROR, "usb_submit_urb() reports error (%d) [%s]\n", u4Status, __func__);
+			DBGLOG(HAL, ERROR, "usb_submit_urb() reports error (%d) [%s] (EP%d IN)\n",
+				u4Status, __func__, (USB_EVENT_EP_IN & 0x0F));
 			usb_unanchor_urb(prUsbReq->prUrb);
 			glUsbEnqueueReq(prHifInfo, &prHifInfo->rRxEventFreeQ, prUsbReq,
 					&prHifInfo->rRxEventQLock, FALSE);
