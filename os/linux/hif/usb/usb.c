@@ -1409,7 +1409,10 @@ BOOL kalDevWriteCmd(IN P_GLUE_INFO_T prGlueInfo, IN P_CMD_INFO_T prCmdInfo, IN U
 
 void glGetDev(PVOID ctx, struct device **dev)
 {
-	*dev = &(interface_to_usbdev((struct usb_interface *)ctx)->dev);
+	struct usb_interface *prUsbIntf = (struct usb_interface *) ctx;
+	struct usb_device *prUsbDev = interface_to_usbdev(prUsbIntf);
+
+	*dev = &prUsbDev->dev;
 }
 
 void glGetHifDev(P_GL_HIF_INFO_T prHif, struct device **dev)
