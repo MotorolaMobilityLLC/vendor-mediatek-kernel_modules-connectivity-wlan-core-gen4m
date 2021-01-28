@@ -3620,6 +3620,24 @@ void qmInsertReorderPkt(IN struct ADAPTER *prAdapter,
 	DBGLOG_LIMITED(QM, LOUD, "QM:(R)[%u](%u){%u,%u}\n", prSwRfb->ucTid,
 		u4SeqNo, u4WinStart, u4WinEnd);
 
+	if (prReorderQueParm->fgNoDrop) {
+		if (!qmCompareSnIsLessThan(u4SeqNo,
+			prReorderQueParm->u2WinStart)) {
+			/* Fall behind SSN pkts started to Fall within
+			 * StartWin
+			 */
+			prReorderQueParm->u4SNOverlapCount++;
+			if (prReorderQueParm->u4SNOverlapCount > 10) {
+				/*  Set threshold as 10 to make sure
+				 *  the SSN is really falling within StartWin
+				 */
+				prReorderQueParm->u4SNOverlapCount = 0;
+				prReorderQueParm->fgNoDrop = FALSE;
+				DBGLOG(QM, INFO, "NO drop = FALSE, [%d][%d]\n",
+					u4SeqNo, prReorderQueParm->u2WinStart);
+			}
+		}
+	}
 	/* Case 1: Fall within */
 	if			/* 0 - start - sn - end - 4095 */
 	(((u4WinStart <= u4SeqNo) && (u4SeqNo <= u4WinEnd))
@@ -3709,11 +3727,26 @@ void qmInsertReorderPkt(IN struct ADAPTER *prAdapter,
 
 		RX_ADD_CNT(&prAdapter->rRxCtrl, RX_DATA_REORDER_MISS_COUNT,
 			u4MissingCount);
+		/* If the SSN jump over 1024,
+		  *  we consider it as an abnormal jump and
+		  *  temporally reserve the fall behind packets until
+		  *  the pkt SSN is really falling within StartWin
+		  */
+		if (u2Delta > QUARTER_SEQ_NO_COUNT) {
+			prReorderQueParm->fgNoDrop = TRUE;
+			prReorderQueParm->u4SNOverlapCount = 0;
+			DBGLOG_LIMITED(QM, INFO,
+				"QM: SSN jump over 1024:[%d]\n", u2Delta);
+		}
+		DBGLOG_LIMITED(QM, TRACE, "QM: Miss Count:[%d]\n",
+			RX_GET_CNT(&prAdapter->rRxCtrl,
+			RX_DATA_REORDER_MISS_COUNT));
 	}
 	/* Case 3: Fall behind */
 	else {
 #if CFG_SUPPORT_LOWLATENCY_MODE || CFG_SUPPORT_OSHARE
-		if (qmIsNoDropPacket(prAdapter, prSwRfb)) {
+		if (qmIsNoDropPacket(prAdapter, prSwRfb) ||
+			prReorderQueParm->fgNoDrop) {
 			DBGLOG(QM, LOUD, "QM: No drop packet:[%d](%d){%d,%d}\n",
 				prSwRfb->ucTid, u4SeqNo, u4WinStart, u4WinEnd);
 
