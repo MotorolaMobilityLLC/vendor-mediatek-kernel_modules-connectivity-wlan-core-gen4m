@@ -646,6 +646,7 @@ u_int8_t rsnSearchSupportedCipher(IN struct ADAPTER *prAdapter,
  */
 /*----------------------------------------------------------------------------*/
 u_int8_t rsnIsSuitableBSS(IN struct ADAPTER *prAdapter,
+			  IN struct BSS_DESC *prBss,
 			  IN struct RSN_INFO *prBssRsnInfo,
 			  IN uint8_t ucBssIndex)
 {
@@ -685,10 +686,14 @@ u_int8_t rsnIsSuitableBSS(IN struct ADAPTER *prAdapter,
 		return TRUE;
 	}
 
+	/* check akm */
+	s = prConnSettings->rRsnInfo.au4AuthKeyMgtSuite[0];
+	if (prBss->ucIsAdaptive11r &&
+	   (s == WLAN_AKM_SUITE_FT_8021X || s == WLAN_AKM_SUITE_FT_PSK))
+		return TRUE;
+
 	c = prBssRsnInfo->u4AuthKeyMgtSuiteCount;
 	for (i = 0; i < c; i++) {
-		s = prConnSettings->
-			rRsnInfo.au4AuthKeyMgtSuite[0];
 		k = prBssRsnInfo->au4AuthKeyMgtSuite[i];
 		if ((s & 0x000000FF) == GET_SELECTOR_TYPE(k)) {
 			break;
@@ -899,8 +904,7 @@ u_int8_t rsnPerformPolicySelection(
 		return TRUE;
 	}
 
-	if (!rsnIsSuitableBSS(prAdapter, prBssRsnInfo,
-		ucBssIndex)) {
+	if (!rsnIsSuitableBSS(prAdapter, prBss, prBssRsnInfo, ucBssIndex)) {
 #if CFG_SUPPORT_RSN_SCORE
 		prBss->fgIsRSNSuitableBss = FALSE;
 	} else
@@ -2113,7 +2117,7 @@ void rsnCheckPmkidCache(IN struct ADAPTER *prAdapter, IN struct BSS_DESC *prBss,
 	 */
 	if ((prAisBssInfo->eConnectionState == MEDIA_STATE_CONNECTED ||
 	    (prAisBssInfo->eConnectionState == MEDIA_STATE_DISCONNECTED &&
-		 aisFsmIsInProcessBeaconTimeout(prAdapter, ucBssIndex))) &&
+		 aisFsmIsInProcessPostpone(prAdapter, ucBssIndex))) &&
 	    prConnSettings->eAuthMode == AUTH_MODE_WPA2 &&
 	    EQUAL_SSID(prBss->aucSSID, prBss->ucSSIDLen,
 		prConnSettings->aucSSID, prConnSettings->ucSSIDLen) &&
@@ -2762,9 +2766,10 @@ void rsnSaQueryAction(IN struct ADAPTER *prAdapter, IN struct SW_RFB *prSwRfb)
 #endif
 
 static u_int8_t rsnCheckWpaRsnInfo(struct BSS_INFO *prBss,
+				   struct BSS_DESC *prBssDesc,
 				   struct RSN_INFO *prWpaRsnInfo)
 {
-	uint32_t i = 0;
+	uint32_t i = 0, s;
 
 	if (prWpaRsnInfo->u4GroupKeyCipherSuite !=
 	    prBss->u4RsnSelectedGroupCipher) {
@@ -2774,10 +2779,18 @@ static u_int8_t rsnCheckWpaRsnInfo(struct BSS_INFO *prBss,
 		       prWpaRsnInfo->u4GroupKeyCipherSuite);
 		return TRUE;
 	}
+
+	/* check akm */
+	s = SWAP32(prBss->u4RsnSelectedAKMSuite);
+	if (prBssDesc->ucIsAdaptive11r &&
+	   (s == WLAN_AKM_SUITE_FT_8021X || s == WLAN_AKM_SUITE_FT_PSK))
+		return FALSE;
+
 	for (; i < prWpaRsnInfo->u4AuthKeyMgtSuiteCount; i++)
 		if (prBss->u4RsnSelectedAKMSuite ==
 		    prWpaRsnInfo->au4AuthKeyMgtSuite[i])
 			break;
+
 	if (i == prWpaRsnInfo->u4AuthKeyMgtSuiteCount) {
 		DBGLOG(RSN, INFO,
 		       "KeyMgmt change, not find 0x%04x in new beacon\n",
@@ -2838,8 +2851,8 @@ u_int8_t rsnCheckSecurityModeChanged(
 	case AUTH_MODE_WPA_PSK:
 	case AUTH_MODE_WPA_NONE:
 		if (prBssDesc->fgIEWPA)
-			return rsnCheckWpaRsnInfo(prBssInfo,
-				&prBssDesc->rWPAInfo);
+			return rsnCheckWpaRsnInfo(prBssInfo, prBssDesc,
+						&prBssDesc->rWPAInfo);
 		DBGLOG(RSN, INFO, "security change, WPA->%s\n",
 		       prBssDesc->fgIERSN ? "WPA2" :
 		       (prBssDesc->u2CapInfo & CAP_INFO_PRIVACY ?
@@ -2851,8 +2864,8 @@ u_int8_t rsnCheckSecurityModeChanged(
 	case AUTH_MODE_WPA2_FT_PSK:
 	case AUTH_MODE_WPA3_SAE:
 		if (prBssDesc->fgIERSN)
-			return rsnCheckWpaRsnInfo(prBssInfo,
-				&prBssDesc->rRSNInfo);
+			return rsnCheckWpaRsnInfo(prBssInfo, prBssDesc,
+						&prBssDesc->rRSNInfo);
 		DBGLOG(RSN, INFO, "security change, WPA2->%s\n",
 		       prBssDesc->fgIEWPA ? "WPA" :
 		       (prBssDesc->u2CapInfo & CAP_INFO_PRIVACY ?

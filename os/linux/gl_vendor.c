@@ -1254,6 +1254,35 @@ nla_put_failure:
 	return -EFAULT;
 }
 
+int mtk_cfg80211_vendor_event_generic_response(
+	struct wiphy *wiphy, struct wireless_dev *wdev,
+	uint32_t len, uint8_t *data)
+{
+	struct sk_buff *skb;
+
+	if (!wiphy || !wdev || !data || len <= 0) {
+		DBGLOG(REQ, ERROR, "%s wrong input parameters\n", __func__);
+		return -EINVAL;
+	}
+
+	skb = cfg80211_vendor_event_alloc(wiphy, wdev, len,
+				  WIFI_EVENT_GENERIC_RESPONSE, GFP_KERNEL);
+	if (!skb) {
+		DBGLOG(REQ, ERROR, "%s allocate skb failed\n", __func__);
+		return -ENOMEM;
+	}
+
+	/* Do not use nla_put_nohdr because it aligns buffer
+	 *
+	 * if (unlikely(nla_put_nohdr(skb, len, data) < 0))
+	 *	goto nla_put_failure;
+	 */
+	kalMemCopy(skb_put(skb, len), data, len);
+
+	cfg80211_vendor_event(skb, GFP_KERNEL);
+	return 0;
+}
+
 int mtk_cfg80211_vendor_get_supported_feature_set(struct wiphy *wiphy,
 		struct wireless_dev *wdev, const void *data, int data_len)
 {

@@ -935,9 +935,8 @@ wlanoidSetBssid(IN struct ADAPTER *prAdapter,
 	pAddr = (uint8_t *) pvSetBuffer;
 
 	/* re-association check */
-	if (kalGetMediaStateIndicated(prGlueInfo,
-		ucBssIndex) ==
-	    MEDIA_STATE_CONNECTED) {
+	if (kalGetMediaStateIndicated(prGlueInfo, ucBssIndex) ==
+			MEDIA_STATE_CONNECTED) {
 		if (EQUAL_MAC_ADDR(
 		    prCurrBssid->arMacAddress, pAddr)) {
 			kalSetMediaStateIndicated(prGlueInfo,
@@ -979,7 +978,6 @@ wlanoidSetBssid(IN struct ADAPTER *prAdapter,
 	}
 
 	/* Set Connection Request Issued Flag */
-	prConnSettings->fgIsConnReqIssued = TRUE;
 	prConnSettings->eConnectionPolicy =
 		CONNECT_BY_BSSID;
 
@@ -1081,9 +1079,8 @@ wlanoidSetSsid(IN struct ADAPTER *prAdapter,
 
 	/* prepare for CMD_BUILD_CONNECTION & CMD_GET_CONNECTION_STATUS */
 	/* re-association check */
-	if (kalGetMediaStateIndicated(prGlueInfo,
-		ucBssIndex) ==
-				MEDIA_STATE_CONNECTED) {
+	if (kalGetMediaStateIndicated(prGlueInfo, ucBssIndex) ==
+			MEDIA_STATE_CONNECTED) {
 		if (EQUAL_SSID(prCurrBssid->rSsid.aucSsid,
 			       prCurrBssid->rSsid.u4SsidLen,
 			       pParamSsid->aucSsid, pParamSsid->u4SsidLen)) {
@@ -1139,8 +1136,6 @@ wlanoidSetSsid(IN struct ADAPTER *prAdapter,
 
 	/* Set Connection Request Issued Flag */
 	if (fgIsValidSsid) {
-		prConnSettings->fgIsConnReqIssued = TRUE;
-
 		if (pParamSsid->u4SsidLen)
 			prConnSettings->eConnectionPolicy =
 				CONNECT_BY_SSID_BEST_RSSI;
@@ -1148,8 +1143,7 @@ wlanoidSetSsid(IN struct ADAPTER *prAdapter,
 			/* wildcard SSID */
 			prConnSettings->eConnectionPolicy =
 				CONNECT_BY_SSID_ANY;
-	} else
-		prConnSettings->fgIsConnReqIssued = FALSE;
+	}
 
 	/* Send AIS Abort Message */
 	prAisAbortMsg = (struct MSG_AIS_ABORT *) cnmMemAlloc(
@@ -1421,14 +1415,6 @@ wlanoidSetConnect(IN struct ADAPTER *prAdapter,
 				       "pParamConn->pucSsid is NULL\n");
 			}
 		}
-	}
-
-	/* Set Connection Request Issued Flag */
-	if (fgIsValidSsid)
-		prConnSettings->fgIsConnReqIssued = TRUE;
-	else {
-		prConnSettings->eReConnectLevel = RECONNECT_LEVEL_USER_SET;
-		prConnSettings->fgIsConnReqIssued = FALSE;
 	}
 
 	if (fgEqualSsid || fgEqualBssid)
@@ -8420,6 +8406,7 @@ wlanoidSetDisassociate(IN struct ADAPTER *prAdapter,
 	uint32_t u4DisconnectReason;
 	struct CONNECTION_SETTINGS *prConnSettings;
 	uint8_t ucBssIndex = 0;
+	struct AIS_FSM_INFO *prAisFsmInfo = NULL;
 
 	DEBUGFUNC("wlanoidSetDisassociate");
 
@@ -8442,11 +8429,6 @@ wlanoidSetDisassociate(IN struct ADAPTER *prAdapter,
 	prConnSettings =
 		aisGetConnSettings(prAdapter, ucBssIndex);
 
-	/* prepare message to AIS */
-	prConnSettings->fgIsConnReqIssued = FALSE;
-	prConnSettings->eReConnectLevel =
-		RECONNECT_LEVEL_USER_SET;
-
 	/* Send AIS Abort Message */
 	prAisAbortMsg = (struct MSG_AIS_ABORT *) cnmMemAlloc(
 						prAdapter, RAM_TYPE_MSG,
@@ -8459,12 +8441,18 @@ wlanoidSetDisassociate(IN struct ADAPTER *prAdapter,
 	prAisAbortMsg->rMsgHdr.eMsgId = MID_OID_AIS_FSM_JOIN_REQ;
 	if (pvSetBuffer == NULL)
 		prAisAbortMsg->ucReasonOfDisconnect =
-			DISCONNECT_REASON_CODE_NEW_CONNECTION;
+			DISCONNECT_REASON_CODE_LOCALLY;
 	else {
 		u4DisconnectReason = *((uint32_t *)pvSetBuffer);
 		prAisAbortMsg->ucReasonOfDisconnect =
 			u4DisconnectReason;
 	}
+
+	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
+	if (prAisFsmInfo->eCurrentState == AIS_STATE_SCAN ||
+			prAisFsmInfo->eCurrentState == AIS_STATE_ONLINE_SCAN)
+		prAisFsmInfo->fgIsScanOidAborted = TRUE;
+
 	prAisAbortMsg->fgDelayIndication = FALSE;
 	prAisAbortMsg->ucBssIndex = ucBssIndex;
 	mboxSendMsg(prAdapter, MBOX_ID_0,
@@ -13745,20 +13733,12 @@ wlanoidLinkDown(IN struct ADAPTER *prAdapter,
 } /* wlanoidSetDisassociate */
 
 #if CFG_SUPPORT_NCHO
-#define FW_CFG_KEY_NCHO_ENABLE			"NCHOEnable"
-#define FW_CFG_KEY_NCHO_ROAM_RCPI		"RoamingRCPIValue"
-#define FW_CFG_KEY_NCHO_SCN_CHANNEL_TIME	"NCHOScnChannelTime"
-#define FW_CFG_KEY_NCHO_SCN_HOME_TIME		"NCHOScnHomeTime"
-#define FW_CFG_KEY_NCHO_SCN_HOME_AWAY_TIME	"NCHOScnHomeAwayTime"
-#define FW_CFG_KEY_NCHO_SCN_NPROBES		"NCHOScnNumProbs"
-#define FW_CFG_KEY_NCHO_WES_MODE		"NCHOWesMode"
-#define FW_CFG_KEY_NCHO_SCAN_DFS_MODE		"NCHOScnDfsMode"
 
 uint32_t
 wlanoidSetNchoHeader(struct CMD_HEADER *prCmdHeader,
 		     struct CMD_FORMAT_V1 *pr_cmd_v1,
 		     char *pStr, uint32_t u4Len) {
-	prCmdHeader->cmdVersion = CMD_VER_1_EXT;
+	prCmdHeader->cmdVersion = CMD_VER_2;
 	prCmdHeader->cmdType = CMD_TYPE_QUERY;
 	prCmdHeader->itemNum = 1;
 	prCmdHeader->cmdBufferLen = sizeof(struct CMD_FORMAT_V1);
@@ -13778,7 +13758,6 @@ wlanoidSetNchoRoamTrigger(IN struct ADAPTER *prAdapter,
 			  IN void *pvSetBuffer, IN uint32_t u4SetBufferLen,
 			  OUT uint32_t *pu4SetInfoLen) {
 	int32_t *pi4Param = NULL;
-	char acCmd[NCHO_CMD_MAX_LENGTH] = {0};
 	uint32_t rStatus = WLAN_STATUS_FAILURE;
 
 	DEBUGFUNC("wlanoidSetNchoRoamTrigger");
@@ -13791,8 +13770,10 @@ wlanoidSetNchoRoamTrigger(IN struct ADAPTER *prAdapter,
 	if (u4SetBufferLen < sizeof(int32_t))
 		return WLAN_STATUS_INVALID_LENGTH;
 
+	if (prAdapter->rNchoInfo.fgNCHOEnabled == FALSE)
+		return WLAN_STATUS_INVALID_DATA;
+
 	pi4Param = (int32_t *) pvSetBuffer;
-	*pi4Param = dBm_TO_RCPI(*pi4Param);		/* DB to RCPI */
 	if (*pi4Param < RCPI_LOW_BOUND
 	    || *pi4Param > RCPI_HIGH_BOUND) {
 		DBGLOG(INIT, ERROR, "NCHO roam trigger invalid %d\n",
@@ -13800,11 +13781,9 @@ wlanoidSetNchoRoamTrigger(IN struct ADAPTER *prAdapter,
 		return WLAN_STATUS_INVALID_DATA;
 	}
 
-	kalSprintf(acCmd, "%s %d", FW_CFG_KEY_NCHO_ROAM_RCPI,
-		   *pi4Param);
-	rStatus =  wlanFwCfgParse(prAdapter, acCmd);
+	rStatus = wlanNchoSetFWRssiTrigger(prAdapter, *pi4Param);
 	if (rStatus == WLAN_STATUS_SUCCESS) {
-		prAdapter->rNchoInfo.i4RoamTrigger = RCPI_TO_dBm(*pi4Param);
+		prAdapter->rNchoInfo.i4RoamTrigger = *pi4Param;
 		DBGLOG(INIT, TRACE, "NCHO roam trigger is %d\n",
 		       prAdapter->rNchoInfo.i4RoamTrigger);
 	}
@@ -13834,7 +13813,7 @@ wlanoidQueryNchoRoamTrigger(IN struct ADAPTER *prAdapter,
 	if (u4QueryBufferLen < sizeof(struct CMD_HEADER))
 		return WLAN_STATUS_BUFFER_TOO_SHORT;
 
-	if (prAdapter->rNchoInfo.fgECHOEnabled == FALSE)
+	if (prAdapter->rNchoInfo.fgNCHOEnabled == FALSE)
 		return WLAN_STATUS_INVALID_DATA;
 
 	prCmdV1 = (struct CMD_FORMAT_V1 *) prCmdV1Header->buffer;
@@ -13880,6 +13859,9 @@ wlanoidSetNchoRoamDelta(IN struct ADAPTER *prAdapter,
 	if (u4SetBufferLen < sizeof(int32_t))
 		return WLAN_STATUS_INVALID_LENGTH;
 
+	if (prAdapter->rNchoInfo.fgNCHOEnabled == FALSE)
+		return WLAN_STATUS_INVALID_DATA;
+
 	pi4Param = (int32_t *) pvSetBuffer;
 	if (*pi4Param > 100) {
 		DBGLOG(INIT, ERROR, "NCHO roam delta invalid %d\n",
@@ -13906,10 +13888,10 @@ wlanoidQueryNchoRoamDelta(IN struct ADAPTER *prAdapter,
 	if (u4QueryBufferLen)
 		ASSERT(pvQueryBuffer);
 
-	if (u4QueryBufferLen < sizeof(int32_t *))
+	if (u4QueryBufferLen < sizeof(int32_t))
 		return WLAN_STATUS_BUFFER_TOO_SHORT;
 
-	if (prAdapter->rNchoInfo.fgECHOEnabled == FALSE)
+	if (prAdapter->rNchoInfo.fgNCHOEnabled == FALSE)
 		return WLAN_STATUS_INVALID_DATA;
 
 	pParam = (int32_t *) pvQueryBuffer;
@@ -13925,6 +13907,7 @@ wlanoidSetNchoRoamScnPeriod(IN struct ADAPTER *prAdapter,
 			    OUT uint32_t *pu4SetInfoLen) {
 	uint32_t *pParam = NULL;
 	uint32_t rStatus = WLAN_STATUS_FAILURE;
+	char acCmd[NCHO_CMD_MAX_LENGTH] = {0};
 
 	DEBUGFUNC("wlanoidSetNchoRoamScnPeriod");
 	ASSERT(prAdapter);
@@ -13936,12 +13919,15 @@ wlanoidSetNchoRoamScnPeriod(IN struct ADAPTER *prAdapter,
 	if (u4SetBufferLen < sizeof(uint32_t))
 		return WLAN_STATUS_INVALID_LENGTH;
 
-	pParam = (uint32_t *) pvSetBuffer;
+	if (prAdapter->rNchoInfo.fgNCHOEnabled == FALSE)
+		return WLAN_STATUS_INVALID_DATA;
 
-	prAdapter->rNchoInfo.u4RoamScanPeriod = *pParam;
-	DBGLOG(INIT, TRACE, "NCHO roam scan period is %d\n",
-	       *pParam);
-	rStatus = WLAN_STATUS_SUCCESS;
+	pParam = (uint32_t *) pvSetBuffer;
+	rStatus = wlanNchoSetFWScanPeriod(prAdapter, *pParam);
+	if (rStatus == WLAN_STATUS_SUCCESS) {
+		prAdapter->rNchoInfo.u4RoamScanPeriod = *pParam;
+		DBGLOG(INIT, TRACE, "NCHO roam scan period is %d\n", *pParam);
+	}
 
 	return rStatus;
 }
@@ -13950,8 +13936,12 @@ uint32_t
 wlanoidQueryNchoRoamScnPeriod(IN struct ADAPTER *prAdapter,
 			      OUT void *pvQueryBuffer,
 			      IN uint32_t u4QueryBufferLen,
-			      OUT uint32_t *pu4QueryInfoLen) {
-	uint32_t *pParam = NULL;
+			      OUT uint32_t *pu4QueryInfoLen)
+{
+	uint32_t rStatus = WLAN_STATUS_FAILURE;
+	struct CMD_HEADER cmdV1Header;
+	struct CMD_HEADER *prCmdV1Header = (struct CMD_HEADER *)pvQueryBuffer;
+	struct CMD_FORMAT_V1 *prCmdV1 = NULL;
 
 	DEBUGFUNC("wlanoidQueryNchoRoamScnPeriod");
 	ASSERT(prAdapter);
@@ -13962,55 +13952,106 @@ wlanoidQueryNchoRoamScnPeriod(IN struct ADAPTER *prAdapter,
 	if (u4QueryBufferLen < sizeof(uint32_t))
 		return WLAN_STATUS_BUFFER_TOO_SHORT;
 
-	if (prAdapter->rNchoInfo.fgECHOEnabled == FALSE)
+	if (prAdapter->rNchoInfo.fgNCHOEnabled == FALSE)
 		return WLAN_STATUS_INVALID_DATA;
 
-	pParam = (uint32_t *) pvQueryBuffer;
-	*pParam = prAdapter->rNchoInfo.u4RoamScanPeriod;
-	DBGLOG(INIT, TRACE, "NCHO roam scan period is %d\n",
-	       *pParam);
-
-	return WLAN_STATUS_SUCCESS;
+	prCmdV1 = (struct CMD_FORMAT_V1 *) prCmdV1Header->buffer;
+	rStatus = wlanoidSetNchoHeader(prCmdV1Header,
+					prCmdV1,
+					FW_CFG_KEY_NCHO_SCAN_PERIOD,
+					kalStrLen(FW_CFG_KEY_NCHO_SCAN_PERIOD));
+	if (rStatus != WLAN_STATUS_SUCCESS) {
+		DBGLOG(REQ, ERROR, "NCHO no enough memory\n");
+		return rStatus;
+	}
+	kalMemCopy(&cmdV1Header, prCmdV1Header, sizeof(struct CMD_HEADER));
+	rStatus = wlanSendSetQueryCmd(
+			prAdapter,
+			CMD_ID_GET_SET_CUSTOMER_CFG,
+			FALSE,
+			TRUE,
+			TRUE,
+			nicCmdEventQueryCfgRead,
+			nicOidCmdTimeoutCommon,
+			sizeof(struct CMD_HEADER),
+			(uint8_t *)&cmdV1Header,
+			pvQueryBuffer,
+			u4QueryBufferLen);
+	return rStatus;
 }
 
 uint32_t
 wlanoidSetNchoRoamScnChnl(IN struct ADAPTER *prAdapter,
 			  IN void *pvSetBuffer, IN uint32_t u4SetBufferLen,
-			  OUT uint32_t *pu4SetInfoLen) {
-	struct _CFG_NCHO_SCAN_CHNL_T *prRoamScnChnl = NULL;
-	uint32_t rStatus = WLAN_STATUS_FAILURE;
+			  OUT uint32_t *pu4SetInfoLen)
+{
+	struct CFG_NCHO_SCAN_CHNL *prRoamScnChnl = NULL;
 
 	DEBUGFUNC("wlanoidSetNchoRoamScnChnl");
 	ASSERT(prAdapter);
 	ASSERT(pu4SetInfoLen);
 	ASSERT(pvSetBuffer);
 
-	*pu4SetInfoLen = sizeof(struct _CFG_NCHO_SCAN_CHNL_T);
+	*pu4SetInfoLen = sizeof(struct CFG_NCHO_SCAN_CHNL);
 
-	if (u4SetBufferLen < sizeof(struct _CFG_NCHO_SCAN_CHNL_T))
+	if (u4SetBufferLen < sizeof(struct CFG_NCHO_SCAN_CHNL))
 		return WLAN_STATUS_INVALID_LENGTH;
 
-	prRoamScnChnl = (struct _CFG_NCHO_SCAN_CHNL_T *)
-			pvSetBuffer;
+	if (prAdapter->rNchoInfo.fgNCHOEnabled == FALSE)
+		return WLAN_STATUS_INVALID_DATA;
+
+	prRoamScnChnl = (struct CFG_NCHO_SCAN_CHNL *) pvSetBuffer;
 
 	kalMemCopy(&prAdapter->rNchoInfo.rRoamScnChnl,
 		   prRoamScnChnl, *pu4SetInfoLen);
-	prAdapter->rNchoInfo.u4RoamScanControl = TRUE;
 	DBGLOG(INIT, TRACE,
 	       "NCHO set roam scan channel num is %d\n",
 	       prRoamScnChnl->ucChannelListNum);
-	rStatus = WLAN_STATUS_SUCCESS;
 
+	prAdapter->rNchoInfo.u4RoamScanControl = 1;
 
-	return rStatus;
+	return WLAN_STATUS_SUCCESS;
+}
+
+uint32_t
+wlanoidAddNchoRoamScnChnl(IN struct ADAPTER *prAdapter,
+			  IN void *pvSetBuffer, IN uint32_t u4SetBufferLen,
+			  OUT uint32_t *pu4SetInfoLen)
+{
+	struct CFG_NCHO_SCAN_CHNL *prRoamScnChnl = NULL;
+
+	DEBUGFUNC("wlanoidSetNchoRoamScnChnl");
+	ASSERT(prAdapter);
+	ASSERT(pu4SetInfoLen);
+	ASSERT(pvSetBuffer);
+
+	*pu4SetInfoLen = sizeof(struct CFG_NCHO_SCAN_CHNL);
+
+	if (u4SetBufferLen < sizeof(struct CFG_NCHO_SCAN_CHNL))
+		return WLAN_STATUS_INVALID_LENGTH;
+
+	if (prAdapter->rNchoInfo.fgNCHOEnabled == FALSE)
+		return WLAN_STATUS_INVALID_DATA;
+
+	prRoamScnChnl = (struct CFG_NCHO_SCAN_CHNL *) pvSetBuffer;
+
+	kalMemCopy(&prAdapter->rNchoInfo.rAddRoamScnChnl,
+		   prRoamScnChnl, *pu4SetInfoLen);
+	DBGLOG(INIT, TRACE,
+	       "NCHO set roam scan channel num is %d\n",
+	       prRoamScnChnl->ucChannelListNum);
+
+	return WLAN_STATUS_SUCCESS;
 }
 
 uint32_t
 wlanoidQueryNchoRoamScnChnl(IN struct ADAPTER *prAdapter,
 			    OUT void *pvQueryBuffer,
 			    IN uint32_t u4QueryBufferLen,
-			    OUT uint32_t *pu4QueryInfoLen) {
-	struct _CFG_NCHO_SCAN_CHNL_T *prRoamScnChnl = NULL;
+			    OUT uint32_t *pu4QueryInfoLen)
+{
+	struct CFG_NCHO_SCAN_CHNL *prRoamScnChnl = NULL;
+	struct CFG_NCHO_SCAN_CHNL *chnl;
 
 	DEBUGFUNC("wlanoidQueryNchoRoamScnChnl");
 	ASSERT(prAdapter);
@@ -14018,18 +14059,23 @@ wlanoidQueryNchoRoamScnChnl(IN struct ADAPTER *prAdapter,
 	if (u4QueryBufferLen)
 		ASSERT(pvQueryBuffer);
 
-	if (u4QueryBufferLen < sizeof(struct _CFG_NCHO_SCAN_CHNL_T))
+	if (u4QueryBufferLen < sizeof(struct CFG_NCHO_SCAN_CHNL))
 		return WLAN_STATUS_BUFFER_TOO_SHORT;
 
-	if (prAdapter->rNchoInfo.fgECHOEnabled == FALSE)
+	if (prAdapter->rNchoInfo.fgNCHOEnabled == FALSE)
 		return WLAN_STATUS_INVALID_DATA;
 
-	prRoamScnChnl = (struct _CFG_NCHO_SCAN_CHNL_T *)
-			pvQueryBuffer;
-	kalMemCopy(prRoamScnChnl,
-		   &prAdapter->rNchoInfo.rRoamScnChnl, u4QueryBufferLen);
-	DBGLOG(INIT, TRACE, "NCHO roam scan channel num is %d\n",
-	       prRoamScnChnl->ucChannelListNum);
+	prRoamScnChnl = (struct CFG_NCHO_SCAN_CHNL *) pvQueryBuffer;
+
+	if (prAdapter->rNchoInfo.u4RoamScanControl)
+		chnl = &prAdapter->rNchoInfo.rRoamScnChnl;
+	else
+		chnl = &prAdapter->rNchoInfo.rAddRoamScnChnl;
+
+	kalMemCopy(prRoamScnChnl, chnl, u4QueryBufferLen);
+	DBGLOG(INIT, TRACE, "NCHO roam scan channel num is %d, ctrl %d\n",
+	       prRoamScnChnl->ucChannelListNum,
+	       prAdapter->rNchoInfo.u4RoamScanControl);
 
 	return WLAN_STATUS_SUCCESS;
 }
@@ -14082,7 +14128,7 @@ wlanoidQueryNchoRoamScnCtrl(IN struct ADAPTER *prAdapter,
 	if (u4QueryBufferLen < sizeof(uint32_t))
 		return WLAN_STATUS_BUFFER_TOO_SHORT;
 
-	if (prAdapter->rNchoInfo.fgECHOEnabled == FALSE)
+	if (prAdapter->rNchoInfo.fgNCHOEnabled == FALSE)
 		return WLAN_STATUS_INVALID_DATA;
 
 	pParam = (uint32_t *) pvQueryBuffer;
@@ -14153,7 +14199,7 @@ wlanoidQueryNchoScnChnlTime(IN struct ADAPTER *prAdapter,
 	if (u4QueryBufferLen < sizeof(struct CMD_HEADER))
 		return WLAN_STATUS_BUFFER_TOO_SHORT;
 
-	if (prAdapter->rNchoInfo.fgECHOEnabled == FALSE)
+	if (prAdapter->rNchoInfo.fgNCHOEnabled == FALSE)
 		return WLAN_STATUS_INVALID_DATA;
 
 	prCmdV1 = (struct CMD_FORMAT_V1 *) prCmdV1Header->buffer;
@@ -14241,7 +14287,7 @@ wlanoidQueryNchoScnHomeTime(IN struct ADAPTER *prAdapter,
 	if (u4QueryBufferLen < sizeof(struct CMD_HEADER))
 		return WLAN_STATUS_BUFFER_TOO_SHORT;
 
-	if (prAdapter->rNchoInfo.fgECHOEnabled == FALSE)
+	if (prAdapter->rNchoInfo.fgNCHOEnabled == FALSE)
 		return WLAN_STATUS_INVALID_DATA;
 
 	prCmdV1 = (struct CMD_FORMAT_V1 *) prCmdV1Header->buffer;
@@ -14329,7 +14375,7 @@ wlanoidQueryNchoScnHomeAwayTime(IN struct ADAPTER *prAdapter,
 	if (u4QueryBufferLen < sizeof(struct CMD_HEADER))
 		return WLAN_STATUS_BUFFER_TOO_SHORT;
 
-	if (prAdapter->rNchoInfo.fgECHOEnabled == FALSE)
+	if (prAdapter->rNchoInfo.fgNCHOEnabled == FALSE)
 		return WLAN_STATUS_INVALID_DATA;
 
 	prCmdV1 = (struct CMD_FORMAT_V1 *) prCmdV1Header->buffer;
@@ -14415,7 +14461,7 @@ wlanoidQueryNchoScnNprobes(IN struct ADAPTER *prAdapter,
 	if (u4QueryBufferLen < sizeof(struct CMD_HEADER))
 		return WLAN_STATUS_BUFFER_TOO_SHORT;
 
-	if (prAdapter->rNchoInfo.fgECHOEnabled == FALSE)
+	if (prAdapter->rNchoInfo.fgNCHOEnabled == FALSE)
 		return WLAN_STATUS_INVALID_DATA;
 
 	prCmdV1 = (struct CMD_FORMAT_V1 *) prCmdV1Header->buffer;
@@ -14459,7 +14505,7 @@ wlanoidGetNchoReassocInfo(IN struct ADAPTER *prAdapter,
 	ASSERT(pvQueryBuffer);
 
 	prParamConn = (struct PARAM_CONNECT *)pvQueryBuffer;
-	if (prAdapter->rNchoInfo.fgECHOEnabled == TRUE) {
+	if (prAdapter->rNchoInfo.fgNCHOEnabled == TRUE) {
 		prBssDesc = scanSearchBssDescByBssid(prAdapter,
 						     prParamConn->pucBssid);
 		if (prBssDesc != NULL) {
@@ -14478,11 +14524,11 @@ uint32_t
 wlanoidSendNchoActionFrameStart(IN struct ADAPTER *prAdapter,
 				IN void *pvSetBuffer,
 				IN uint32_t u4SetBufferLen,
-				OUT uint32_t *pu4SetInfoLen) {
+				OUT uint32_t *pu4SetInfoLen)
+{
 	uint32_t rStatus = WLAN_STATUS_FAILURE;
-	struct _NCHO_INFO_T *prNchoInfo = NULL;
-	struct _NCHO_ACTION_FRAME_PARAMS_T *prParamActionFrame =
-			NULL;
+	struct NCHO_INFO *prNchoInfo = NULL;
+	struct NCHO_ACTION_FRAME_PARAMS *prParamActionFrame = NULL;
 
 	DEBUGFUNC("wlanoidSendNchoActionFrameStart");
 	ASSERT(prAdapter);
@@ -14491,18 +14537,15 @@ wlanoidSendNchoActionFrameStart(IN struct ADAPTER *prAdapter,
 
 
 	prNchoInfo = &prAdapter->rNchoInfo;
-	prParamActionFrame = (struct _NCHO_ACTION_FRAME_PARAMS_T *)
-			     pvSetBuffer;
+	prParamActionFrame = (struct NCHO_ACTION_FRAME_PARAMS *)pvSetBuffer;
 	prNchoInfo->fgIsSendingAF = TRUE;
 	prNchoInfo->fgChGranted = FALSE;
 	COPY_MAC_ADDR(prNchoInfo->rParamActionFrame.aucBssid,
-		      prParamActionFrame->aucBssid);
-	prNchoInfo->rParamActionFrame.i4channel =
-		prParamActionFrame->i4channel;
+					prParamActionFrame->aucBssid);
+	prNchoInfo->rParamActionFrame.i4channel = prParamActionFrame->i4channel;
 	prNchoInfo->rParamActionFrame.i4DwellTime =
-		prParamActionFrame->i4DwellTime;
-	prNchoInfo->rParamActionFrame.i4len =
-		prParamActionFrame->i4len;
+					prParamActionFrame->i4DwellTime;
+	prNchoInfo->rParamActionFrame.i4len = prParamActionFrame->i4len;
 	kalMemCopy(prNchoInfo->rParamActionFrame.aucData,
 		   prParamActionFrame->aucData,
 		   prParamActionFrame->i4len);
@@ -14577,7 +14620,7 @@ wlanoidQueryNchoWesMode(IN struct ADAPTER *prAdapter,
 	if (u4QueryBufferLen < sizeof(uint32_t))
 		return WLAN_STATUS_BUFFER_TOO_SHORT;
 
-	if (prAdapter->rNchoInfo.fgECHOEnabled == FALSE)
+	if (prAdapter->rNchoInfo.fgNCHOEnabled == FALSE)
 		return WLAN_STATUS_INVALID_DATA;
 
 	pParam = (uint32_t *) pvQueryBuffer;
@@ -14629,7 +14672,7 @@ wlanoidSetNchoBand(IN struct ADAPTER *prAdapter,
 	}
 
 	DBGLOG(INIT, INFO, "NCHO enabled:%d ,band:%d,status:%d\n"
-	       , prAdapter->rNchoInfo.fgECHOEnabled, *pParam, rStatus);
+	       , prAdapter->rNchoInfo.fgNCHOEnabled, *pParam, rStatus);
 
 
 	return rStatus;
@@ -14650,7 +14693,7 @@ wlanoidQueryNchoBand(IN struct ADAPTER *prAdapter,
 	if (u4QueryBufferLen < sizeof(uint32_t))
 		return WLAN_STATUS_BUFFER_TOO_SHORT;
 
-	if (prAdapter->rNchoInfo.fgECHOEnabled == FALSE)
+	if (prAdapter->rNchoInfo.fgNCHOEnabled == FALSE)
 		return WLAN_STATUS_INVALID_DATA;
 
 	pParam = (uint32_t *) pvQueryBuffer;
@@ -14720,7 +14763,7 @@ wlanoidQueryNchoDfsScnMode(IN struct ADAPTER *prAdapter,
 	if (u4QueryBufferLen < sizeof(struct CMD_HEADER))
 		return WLAN_STATUS_BUFFER_TOO_SHORT;
 
-	if (prAdapter->rNchoInfo.fgECHOEnabled == FALSE)
+	if (prAdapter->rNchoInfo.fgNCHOEnabled == FALSE)
 		return WLAN_STATUS_INVALID_DATA;
 
 	prCmdV1 = (struct CMD_FORMAT_V1 *) prCmdV1Header->buffer;
@@ -14753,7 +14796,6 @@ wlanoidSetNchoEnable(IN struct ADAPTER *prAdapter,
 		     IN void *pvSetBuffer, IN uint32_t u4SetBufferLen,
 		     OUT uint32_t *pu4SetInfoLen) {
 	uint32_t *pParam = NULL;
-	char acCmd[NCHO_CMD_MAX_LENGTH] = { 0 };
 	uint32_t rStatus = WLAN_STATUS_FAILURE;
 
 	DEBUGFUNC("wlanoidSetNchoEnable");
@@ -14775,10 +14817,10 @@ wlanoidSetNchoEnable(IN struct ADAPTER *prAdapter,
 		return WLAN_STATUS_INVALID_DATA;
 	}
 
-	kalSprintf(acCmd, "%s %d", FW_CFG_KEY_NCHO_ENABLE, *pParam);
-	rStatus = wlanFwCfgParse(prAdapter, acCmd);
+	rStatus = wlanNchoSetFWEnable(prAdapter, *pParam);
 	if (rStatus == WLAN_STATUS_SUCCESS) {
-		prAdapter->rNchoInfo.fgECHOEnabled = *pParam;
+		wlanNchoInit(prAdapter, FALSE);
+		prAdapter->rNchoInfo.fgNCHOEnabled = *pParam;
 		DBGLOG(INIT, INFO, "NCHO enable is %d\n", *pParam);
 	}
 
@@ -14867,6 +14909,27 @@ uint32_t wlanoidSetFwParam(IN struct ADAPTER *prAdapter,
 	return wlanFwCfgParse(prAdapter, (uint8_t *)pvSetBuffer);
 }
 #endif /* CFG_SUPPORT_EASY_DEBUG */
+
+uint32_t
+wlanoidAddRoamScnChnl(IN struct ADAPTER *prAdapter,
+			  IN void *pvSetBuffer, IN uint32_t u4SetBufferLen,
+			  OUT uint32_t *pu4SetInfoLen)
+{
+	struct CFG_SCAN_CHNL *prRoamScnChnl = NULL;
+
+	*pu4SetInfoLen = sizeof(struct CFG_SCAN_CHNL);
+
+	if (u4SetBufferLen < sizeof(struct CFG_SCAN_CHNL))
+		return WLAN_STATUS_INVALID_LENGTH;
+
+	prRoamScnChnl = (struct CFG_SCAN_CHNL *) pvSetBuffer;
+
+	kalMemCopy(&prAdapter->rAddRoamScnChnl, prRoamScnChnl, *pu4SetInfoLen);
+	DBGLOG(INIT, TRACE, "set roam scan channel num is %d\n",
+	       prRoamScnChnl->ucChannelListNum);
+
+	return WLAN_STATUS_SUCCESS;
+}
 
 uint32_t
 wlanoidAbortScan(IN struct ADAPTER *prAdapter,
@@ -15690,14 +15753,14 @@ uint32_t wlanoidPktProcessIT(struct ADAPTER *prAdapter, void *pvBuffer,
 		return WLAN_STATUS_FAILURE;
 	}
 
-	if (!kalStrniCmp(pucSavedPtr, "RM-IT ", 6)) {
+	if (!kalStrniCmp(pucSavedPtr, "RM-IT", 5)) {
 		process_func = rrmProcessRadioMeasurementRequest;
-		pucSavedPtr += 6;
-	} else if (!kalStrniCmp(pucSavedPtr, "BTM-IT ", 7)) {
+		pucSavedPtr += 5;
+	} else if (!kalStrniCmp(pucSavedPtr, "BTM-IT", 6)) {
 		process_func = wnmRecvBTMRequest;
-		pucSavedPtr += 7;
+		pucSavedPtr += 6;
 		fgBTMReq = TRUE;
-	} else if (!kalStrniCmp(pucSavedPtr, "BT-IT ", 6)) {
+	} else if (!kalStrniCmp(pucSavedPtr, "BT-IT", 5)) {
 		DBGLOG(OID, INFO, "Simulate beacon timeout!!!\n");
 		aisBssBeaconTimeout(prAdapter, ucBssIndex);
 		return WLAN_STATUS_SUCCESS;

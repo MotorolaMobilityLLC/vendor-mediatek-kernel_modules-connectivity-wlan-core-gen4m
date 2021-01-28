@@ -204,6 +204,7 @@ u_int8_t rsnSearchSupportedCipher(IN struct ADAPTER
 				  IN uint8_t ucBssIndex);
 
 u_int8_t rsnIsSuitableBSS(IN struct ADAPTER *prAdapter,
+			  IN struct BSS_DESC *prBss,
 			  IN struct RSN_INFO *prBssRsnInfo,
 			  IN uint8_t ucBssIndex);
 
