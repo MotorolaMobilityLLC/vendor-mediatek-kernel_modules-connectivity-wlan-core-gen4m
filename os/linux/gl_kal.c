@@ -5386,12 +5386,16 @@ kalGetIPv4Address(IN struct net_device *prDev,
 	/* 4 <2> copy the IPv4 address */
 	while ((u4NumIPv4 < u4MaxNumOfAddr) && prIfa) {
 		kalMemCopy(&pucIpv4Addrs[u4NumIPv4 * u4AddrLen],
-			   &prIfa->ifa_local, u4AddrLen);
+			&prIfa->ifa_local, u4AddrLen);
+		kalMemCopy(&pucIpv4Addrs[(u4NumIPv4+1) * u4AddrLen],
+			&prIfa->ifa_mask, u4AddrLen);
 		prIfa = prIfa->ifa_next;
 
 		DBGLOG(INIT, INFO,
-		       "IPv4 addr [%u][" IPV4STR "]\n", u4NumIPv4,
-		       IPV4TOSTR(&pucIpv4Addrs[u4NumIPv4 * u4AddrLen]));
+			"IPv4 addr [%u][" IPV4STR "] mask [" IPV4STR "]\n",
+			u4NumIPv4,
+			IPV4TOSTR(&pucIpv4Addrs[u4NumIPv4*u4AddrLen]),
+			IPV4TOSTR(&pucIpv4Addrs[(u4NumIPv4+1)*u4AddrLen]));
 
 		u4NumIPv4++;
 	}
@@ -5458,7 +5462,7 @@ kalSetNetAddress(IN struct GLUE_INFO *prGlueInfo,
 	/* 4 <1> Calculate buffer size */
 	/* IPv4 */
 	u4Len += (((sizeof(struct PARAM_NETWORK_ADDRESS) - 1) +
-		   IPV4_ADDR_LEN) * u4NumIPv4Addr);
+		IPV4_ADDR_LEN) * u4NumIPv4Addr * 2);
 	/* IPv6 */
 	u4Len += (((sizeof(struct PARAM_NETWORK_ADDRESS) - 1) +
 		   IPV6_ADDR_LEN) * u4NumIPv6Addr);
@@ -5486,12 +5490,12 @@ kalSetNetAddress(IN struct GLUE_INFO *prGlueInfo,
 		prParamNetAddr->u2AddressType = PARAM_PROTOCOL_ID_TCP_IP;
 		prParamNetAddr->u2AddressLength = u4AddrLen;
 		kalMemCopy(prParamNetAddr->aucAddress,
-			   &pucIPv4Addr[i * u4AddrLen], u4AddrLen);
+			&pucIPv4Addr[i*u4AddrLen*2], u4AddrLen*2);
 
-		prParamNetAddr = (struct PARAM_NETWORK_ADDRESS *) ((
-			unsigned long) prParamNetAddr + (unsigned long) (
-			u4AddrLen + OFFSET_OF(
-			struct PARAM_NETWORK_ADDRESS, aucAddress)));
+		prParamNetAddr = (struct PARAM_NETWORK_ADDRESS *)
+			((unsigned long) prParamNetAddr +
+			(unsigned long) (u4AddrLen*2 +
+			OFFSET_OF(struct PARAM_NETWORK_ADDRESS, aucAddress)));
 	}
 	prParamNetAddrList->u4AddressCount += u4NumIPv4Addr;
 
@@ -5528,8 +5532,8 @@ void kalSetNetAddressFromInterface(IN struct GLUE_INFO
 		   *prGlueInfo, IN struct net_device *prDev, IN u_int8_t fgSet)
 {
 	uint32_t u4NumIPv4, u4NumIPv6;
-	uint8_t pucIPv4Addr[IPV4_ADDR_LEN * CFG_PF_ARP_NS_MAX_NUM],
-		pucIPv6Addr[IPV6_ADDR_LEN * CFG_PF_ARP_NS_MAX_NUM];
+	uint8_t pucIPv4Addr[IPV4_ADDR_LEN * CFG_PF_ARP_NS_MAX_NUM*2];
+	uint8_t pucIPv6Addr[IPV6_ADDR_LEN * CFG_PF_ARP_NS_MAX_NUM];
 	struct NETDEV_PRIVATE_GLUE_INFO *prNetDevPrivate =
 		(struct NETDEV_PRIVATE_GLUE_INFO *) NULL;
 
