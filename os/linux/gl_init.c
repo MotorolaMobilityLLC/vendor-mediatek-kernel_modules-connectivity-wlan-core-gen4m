@@ -80,6 +80,9 @@
 #if CFG_SUPPORT_AGPS_ASSIST
 #include "gl_kal.h"
 #endif
+#if CFG_TC1_FEATURE
+#include <tc1_partition.h>
+#endif
 #include "gl_vendor.h"
 
 /*******************************************************************************
@@ -836,10 +839,16 @@ static void glLoadNvram(IN struct GLUE_INFO *prGlueInfo,
 			   sizeof(prRegInfo->aucEFUSE));
 #endif
 
+#if CFG_TC1_FEATURE
+		TC1_FAC_NAME(FacReadWifiMacAddr)(prRegInfo->aucMacAddr);
+		DBGLOG(INIT, INFO,
+			"MAC address: " MACSTR, MAC2STR(prRegInfo->aucMacAddr));
+#else
 		/* load MAC Address */
 		kalMemCopy(prRegInfo->aucMacAddr,
 			   prNvramSettings->aucMacAddress,
 			   PARAM_MAC_ADDR_LEN * sizeof(uint8_t));
+#endif
 
 		/* load country code */
 		/* cast to wide characters */
