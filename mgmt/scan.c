@@ -1704,8 +1704,6 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 		 * on the folding frequency
 		 */
 
-		prBssDesc->fgIsValidSSID = fgIsValidSsid;
-
 		GET_CURRENT_SYSTIME(&rCurrentTime);
 
 		ASSERT(prSwRfb->prRxStatusGroup3);
