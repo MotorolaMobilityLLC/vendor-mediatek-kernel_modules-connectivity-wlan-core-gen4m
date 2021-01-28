@@ -329,6 +329,7 @@ int wf_ioremap_write(phys_addr_t addr, unsigned int val);
 int soc3_0_Trigger_fw_assert(void);
 int soc3_0_CheckBusHang(struct ADAPTER *prAdapter,
 	uint8_t ucWfResetEnable);
+void soc3_0_DumpBusHangCr(struct ADAPTER *prAdapter);
 
 void wlanCoAntWiFi(void);
 void wlanCoAntMD(void);
@@ -341,7 +342,9 @@ void soc3_0_Sw_interrupt_handler(struct ADAPTER *prAdapter);
 void soc3_0_Conninfra_cb_register(void);
 extern void update_driver_reset_status(uint8_t fgIsResetting);
 extern int32_t get_wifi_process_status(void);
-
+extern int32_t get_wifi_powered_status(void);
+extern void update_pre_cal_status(uint8_t fgIsPreCal);
+extern int8_t get_pre_cal_status(void);
 #endif
 void soc3_0_DumpWfsysdebugflag(void);
 #if (CFG_POWER_ON_DOWNLOAD_EMI_ROM_PATCH == 1)

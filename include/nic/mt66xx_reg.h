@@ -1388,6 +1388,7 @@ struct mt66xx_chip_info {
 	u_int8_t is_support_nvram_fragment;
 	int (*checkbushang)(struct ADAPTER *prAdapter,
 		uint8_t ucWfResetEnable);
+	void (*dumpBusHangCr)(IN struct ADAPTER *prAdapter);
 };
 
 struct mt66xx_hif_driver_data {
