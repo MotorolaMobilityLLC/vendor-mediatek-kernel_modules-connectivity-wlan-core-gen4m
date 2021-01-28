@@ -147,6 +147,7 @@ endif
 ifeq ($(CONFIG_MTK_WIFI_CONNINFRA_SUPPORT), y)
 	ccflags-y += -DCFG_SUPPORT_CONNINFRA=1
 	ccflags-y += -DCFG_SUPPORT_PRE_ON_PHY_ACTION=1
+	ccflags-y += -I$(TOP)/vendor/mediatek/kernel_modules/connectivity/conninfra/include
 else
 	ccflags-y += -DCFG_SUPPORT_CONNINFRA=0
 	ccflags-y += -DCFG_SUPPORT_PRE_ON_PHY_ACTION=0

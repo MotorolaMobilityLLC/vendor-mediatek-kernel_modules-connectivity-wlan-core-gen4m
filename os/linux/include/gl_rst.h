@@ -272,7 +272,7 @@ extern u_int8_t fgIsResetHangState;
 #if CFG_CHIP_RESET_SUPPORT
 extern uint64_t u8ResetTime;
 extern u_int8_t fgSimplifyResetFlow;
-
+extern char *g_reason;
 #if CFG_WMT_RESET_API_SUPPORT
 #if (CFG_SUPPORT_CONNINFRA == 0)
 extern int mtk_wcn_set_connsys_power_off_flag(int value);
@@ -315,6 +315,7 @@ int wlan_reset_thread_main(void *data);
 int glRstwlanPreWholeChipReset(void);
 int glRstwlanPostWholeChipReset(void);
 u_int8_t kalIsWholeChipResetting(void);
+void glSetRstReasonString(char *reason);
 
 #endif /*end of CFG_SUPPORT_CONNINFRA == 0*/
 
