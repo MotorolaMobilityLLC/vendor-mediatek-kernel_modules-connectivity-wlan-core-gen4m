@@ -109,6 +109,9 @@ struct task_struct *wlan_reset_thread;
 static int g_rst_data;
 u_int8_t g_IsWholeChipRst = FALSE;
 u_int8_t g_SubsysRstCnt;
+int g_SubsysRstTotalCnt;
+int g_WholeChipRstTotalCnt;
+
 u_int8_t g_IsSubsysRstOverThreshold = FALSE;
 u_int8_t g_IsWfsysBusHang = FALSE;
 char *g_reason;
@@ -595,11 +598,89 @@ u_int8_t kalIsWholeChipResetting(void)
 	return FALSE;
 #endif
 }
+void glReset_timeinit(struct timeval *rNowTs, struct timeval *rLastTs)
+{
+	rNowTs->tv_sec = 0;
+	rNowTs->tv_usec = 0;
+	rLastTs->tv_sec = 0;
+	rLastTs->tv_usec = 0;
+}
+bool IsOverRstTimeThreshold(struct timeval *rNowTs, struct timeval *rLastTs)
+{
+	struct timeval rTimeout, rTime;
+	bool fgIsTimeout = FALSE;
 
+	rTimeout.tv_sec = 30;
+	rTimeout.tv_usec = 0;
+	do_gettimeofday(rNowTs);
+	DBGLOG(INIT, INFO,
+		"Reset happen time :%d.%d, last happen time :%d.%d\n",
+		rNowTs->tv_sec,
+		rNowTs->tv_usec,
+		rLastTs->tv_sec,
+		rLastTs->tv_usec);
+	if (rLastTs->tv_sec != 0) {
+		/* Ignore now time < token time */
+		if (halTimeCompare(rNowTs, rLastTs) > 0) {
+			rTime.tv_sec = rNowTs->tv_sec - rLastTs->tv_sec;
+			rTime.tv_usec = rNowTs->tv_usec;
+			if (rLastTs->tv_usec > rNowTs->tv_usec) {
+				rTime.tv_sec -= 1;
+				rTime.tv_usec += SEC_TO_USEC(1);
+			}
+			rTime.tv_usec -= rLastTs->tv_usec;
+			if (halTimeCompare(&rTime, &rTimeout) >= 0)
+				fgIsTimeout = TRUE;
+			else
+				fgIsTimeout = FALSE;
+		}
+		DBGLOG(INIT, INFO,
+			"Reset rTimeout :%d.%d, calculate time :%d.%d\n",
+			rTimeout.tv_sec,
+			rTimeout.tv_usec,
+			rTime.tv_sec,
+			rTime.tv_usec);
+	}
+	return fgIsTimeout;
+}
+void glResetSubsysRstProcedure(struct ADAPTER *prAdapter, bool fgIsTimeout)
+{
+	if (g_SubsysRstCnt > 3) {
+		if (fgIsTimeout == TRUE) {
+		/*
+		 * g_SubsysRstCnt > 3, > 30 sec,
+		 * need to update rLastTs, still do wfsys reset
+		 */
+			glResetMsgHandler(WMTMSG_TYPE_RESET,
+					  WMTRSTMSG_0P5RESET_START);
+			glResetMsgHandler(WMTMSG_TYPE_RESET,
+					  WMTRSTMSG_RESET_END);
+			g_SubsysRstTotalCnt++;
+			g_SubsysRstCnt = 1;
+		} else {
+			/*g_SubsysRstCnt > 3, < 30 sec, do whole chip reset */
+			g_IsSubsysRstOverThreshold = TRUE;
+			glSetRstReasonString(
+				"subsys reset more than 3 times");
+			GL_RESET_TRIGGER(prAdapter, RST_FLAG_WHOLE_RESET);
+		}
+	} else {
+		glResetMsgHandler(WMTMSG_TYPE_RESET,
+				  WMTRSTMSG_0P5RESET_START);
+		glResetMsgHandler(WMTMSG_TYPE_RESET,
+				  WMTRSTMSG_RESET_END);
+		g_SubsysRstTotalCnt++;
+		/*g_SubsysRstCnt < 3, but >30 sec,need to update rLastTs*/
+		if (fgIsTimeout == TRUE)
+			g_SubsysRstCnt = 1;
+	}
+}
 int wlan_reset_thread_main(void *data)
 {
 	int ret = 0;
 	struct GLUE_INFO *prGlueInfo = NULL;
+	struct timeval rNowTs, rLastTs;
+	bool fgIsTimeout = false;
 
 #if defined(CONFIG_ANDROID) && (CFG_ENABLE_WAKE_LOCK)
 	KAL_WAKE_LOCK_T *prWlanRstThreadWakeLock;
@@ -616,6 +697,10 @@ int wlan_reset_thread_main(void *data)
 			   prWlanRstThreadWakeLock, "WLAN rst_thread");
 	KAL_WAKE_LOCK(NULL, prWlanRstThreadWakeLock);
 #endif
+
+	glReset_timeinit(&rNowTs, &rLastTs);
+
+
 	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wlanGetWiphy());
 
 	DBGLOG(INIT, INFO, "%s:%u starts running...\n",
@@ -655,36 +740,27 @@ int wlan_reset_thread_main(void *data)
 							WMTRSTMSG_RESET_START);
 				g_IsSubsysRstOverThreshold = FALSE;
 				g_SubsysRstCnt = 0;
+				glReset_timeinit(&rNowTs, &rLastTs);
+				fgIsTimeout = FALSE;
+				g_WholeChipRstTotalCnt++;
 			} else {
-#if 1
 				g_SubsysRstCnt++;
+				fgIsTimeout = IsOverRstTimeThreshold(&rNowTs,
+								     &rLastTs);
 				DBGLOG(INIT, INFO,
-					"WF reset count = %d\n",
+					"WF reset count = %d.\n",
 					g_SubsysRstCnt);
-				glResetMsgHandler(WMTMSG_TYPE_RESET,
-						WMTRSTMSG_0P5RESET_START);
-				glResetMsgHandler(WMTMSG_TYPE_RESET,
-						WMTRSTMSG_RESET_END);
-#else
-				if (g_SubsysRstCnt < 3) {
-					g_SubsysRstCnt++;
-					DBGLOG(INIT, INFO,
-						"WF reset count = %d\n",
-						g_SubsysRstCnt);
-					glResetMsgHandler(WMTMSG_TYPE_RESET,
-						WMTRSTMSG_0P5RESET_START);
-					glResetMsgHandler(WMTMSG_TYPE_RESET,
-							WMTRSTMSG_RESET_END);
-				} else {
-					g_SubsysRstCnt = 0;
-					g_IsSubsysRstOverThreshold = TRUE;
-					glSetRstReasonString(
-							"subsys reset more than 3 times");
-					GL_RESET_TRIGGER(prGlueInfo->prAdapter,
-							RST_FLAG_WHOLE_RESET);
+				glResetSubsysRstProcedure(prGlueInfo->prAdapter,
+							fgIsTimeout);
+				if (g_SubsysRstCnt == 1) {
+					rLastTs.tv_sec = rNowTs.tv_sec;
+					rLastTs.tv_usec = rNowTs.tv_usec;
 				}
-#endif
 			}
+			DBGLOG(INIT, INFO,
+			"Whole Chip rst count /WF reset total count = (%d)/(%d).\n",
+				g_WholeChipRstTotalCnt,
+				g_SubsysRstTotalCnt);
 		}
 		if (test_and_clear_bit(GLUE_FLAG_HALT_BIT, &g_ulFlag)) {
 			DBGLOG(INIT, INFO, "rst_thread should stop now...\n");
