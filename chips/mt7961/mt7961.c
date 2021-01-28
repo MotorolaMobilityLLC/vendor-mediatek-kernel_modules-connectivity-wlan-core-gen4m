@@ -111,7 +111,8 @@
 
 struct ECO_INFO mt7961_eco_table[] = {
 	/* HW version,  ROM version,    Factory version */
-	{0x00, 0x00, 0x0} /* End of table */
+	{0x00, 0x00, 0xA, 0x1},	/* E1 */
+	{0x00, 0x00, 0x0, 0x0}	/* End of table */
 };
 
 #if defined(_HIF_PCIE) || defined(_HIF_AXI)
@@ -509,7 +510,7 @@ struct BUS_INFO mt7961_bus_info = {
 struct FWDL_OPS_T mt7961_fw_dl_ops = {
 	.constructFirmwarePrio = NULL,
 	.constructPatchName = NULL,
-	.downloadPatch = NULL, /*wlanDownloadPatch,*/
+	.downloadPatch = wlanDownloadPatch,
 	.downloadFirmware = wlanConnacFormatDownload,
 	.getFwInfo = wlanGetConnacFwInfo,
 	.getFwDlInfo = asicGetFwDlInfo,
