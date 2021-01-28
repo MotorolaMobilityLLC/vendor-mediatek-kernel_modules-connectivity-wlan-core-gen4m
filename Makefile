@@ -51,6 +51,7 @@ endif
 
 $(info $$MTK_PLATFORM is [${MTK_PLATFORM}])
 $(info $$WLAN_CHIP_ID is [${WLAN_CHIP_ID}])
+$(info $$MTK_COMBO_CHIP is [${MTK_COMBO_CHIP}])
 
 ifneq ($(CONFIG_MTK_EMI),)
 ccflags-y += -DCONFIG_MTK_EMI=1

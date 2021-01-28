@@ -68,8 +68,8 @@
  *******************************************************************************
  */
 #if CFG_MTK_ANDROID_EMI
-extern phys_addr_t gConEmiPhyBase;
-extern unsigned long long gConEmiSize;
+extern phys_addr_t gConEmiPhyBaseFinal;
+extern unsigned long long gConEmiSizeFinal;
 #endif
 
 /*******************************************************************************
