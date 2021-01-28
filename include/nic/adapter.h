@@ -175,6 +175,7 @@ struct CONNECTION_SETTINGS {
 
 	u_int8_t fgIsConnByBssidIssued;
 	uint8_t aucBSSID[MAC_ADDR_LEN];
+	uint8_t aucBSSIDHint[MAC_ADDR_LEN];
 
 	u_int8_t fgIsConnReqIssued;
 	u_int8_t fgIsDisconnectedByNonRequest;
