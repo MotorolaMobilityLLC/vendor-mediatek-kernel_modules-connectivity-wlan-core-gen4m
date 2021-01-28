@@ -6069,6 +6069,7 @@ wlanoidQuerySwCtrlRead(IN P_ADAPTER_T prAdapter,
 							  nicOidCmdTimeoutCommon,
 							  sizeof(CMD_SW_DBG_CTRL_T),
 							  (PUINT_8) &rCmdSwCtrl, pvQueryBuffer, u4QueryBufferLen);
+			return rWlanStatus;
 		}
 	}			/* switch(u2Id) */
 
