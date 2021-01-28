@@ -279,16 +279,16 @@ u_int8_t secCheckClassError(IN struct ADAPTER *prAdapter,
 		&& prAdapter->prAisBssInfo->eConnectionState ==
 		MEDIA_STATE_DISCONNECTED)) {
 
-		DBGLOG(RSN, ERROR,
+		DBGLOG_LIMITED(RSN, WARN,
 			"RX_CLASSERR: prStaRec=%p PktTYpe=0x%x, WlanIdx=%d,",
 			prStaRec,
 			prSwRfb->ucPacketType, prSwRfb->ucWlanIdx);
-		DBGLOG(RSN, ERROR,
+		DBGLOG_LIMITED(RSN, WARN,
 			"StaRecIdx=%d, eDst=%d, prStaRec->eStaType=%d\n",
 			prSwRfb->ucStaRecIdx,
 			prSwRfb->eDst, prStaRec->eStaType);
 
-		DBGLOG_MEM8(RX, WARN, prSwRfb->pucRecvBuff,
+		DBGLOG_MEM8(RX, TRACE, prSwRfb->pucRecvBuff,
 			    (prSwRfb->u2RxByteCount > 64) ? 64 :
 			    prSwRfb->u2RxByteCount);
 
