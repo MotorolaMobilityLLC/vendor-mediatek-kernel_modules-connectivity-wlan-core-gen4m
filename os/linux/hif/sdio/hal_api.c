@@ -2152,3 +2152,15 @@ VOID halTxResourceResetHwTQCounter(IN P_ADAPTER_T prAdapter)
 		HAL_READ_TX_RELEASED_COUNT(prAdapter, au2TxCount);
 }
 
+UINT_32 halGetHifTxPageSize(IN P_ADAPTER_T prAdapter)
+{
+	if (!prAdapter->chip_info->is_support_cr4) {
+		if (prAdapter->fgIsNicTxReousrceValid)
+			return prAdapter->nicTxReousrce.u4LmacResourceUnit;
+		else
+			return HIF_TX_PAGE_SIZE_STORED_FORWARD;
+	}
+
+    /*cr4 mode*/
+	return HIF_TX_PAGE_SIZE;
+}

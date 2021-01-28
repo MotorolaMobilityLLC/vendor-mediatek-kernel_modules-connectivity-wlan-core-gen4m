@@ -122,17 +122,6 @@ static const struct usb_device_id mtk_usb_ids[] = {
 
 MODULE_DEVICE_TABLE(usb, mtk_usb_ids);
 
-#if CFG_USB_TX_AGG
-/* TODO */
-const UINT_32 USB_TX_DATA_BUF_SIZE[TC_NUM] = { NIC_TX_PAGE_COUNT_TC0 / (USB_REQ_TX_DATA_CNT - 1),
-	NIC_TX_PAGE_COUNT_TC1 / (USB_REQ_TX_DATA_CNT - 1),
-	NIC_TX_PAGE_COUNT_TC2 / (USB_REQ_TX_DATA_CNT - 1),
-	NIC_TX_PAGE_COUNT_TC3 / (USB_REQ_TX_DATA_CNT - 1),
-	NIC_TX_PAGE_COUNT_TC4 / (USB_REQ_TX_DATA_CNT - 1),
-	NIC_TX_PAGE_COUNT_TC5 / (USB_REQ_TX_DATA_CNT - 1),
-};
-#endif
-
 /*******************************************************************************
 *                             D A T A   T Y P E S
 ********************************************************************************
