@@ -6814,15 +6814,12 @@ cont:
 int mtk_cfg80211_update_ft_ies(struct wiphy *wiphy, struct net_device *dev,
 				 struct cfg80211_update_ft_ies_params *ftie)
 {
+#if CFG_SUPPORT_802_11R
 	struct GLUE_INFO *prGlueInfo = NULL;
 	uint32_t u4InfoBufLen = 0;
 	uint32_t rStatus = WLAN_STATUS_FAILURE;
 	uint8_t ucBssIndex = 0;
 
-#if !CFG_SUPPORT_802_11R
-	DBGLOG(OID, INFO, "FT: 802.11R is not enabled\n");
-	return 0;
-#endif
 	if (!wiphy)
 		return -1;
 	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wiphy);
@@ -6838,6 +6835,10 @@ int mtk_cfg80211_update_ft_ies(struct wiphy *wiphy, struct net_device *dev,
 			   ucBssIndex);
 	if (rStatus != WLAN_STATUS_SUCCESS)
 		DBGLOG(OID, INFO, "FT: update Ft IE failed\n");
+#else
+	DBGLOG(OID, INFO, "FT: 802.11R is not enabled\n");
+#endif
+
 	return 0;
 }
 
