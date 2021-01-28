@@ -3767,13 +3767,14 @@ void kalProcessTxReq(struct GLUE_INFO *prGlueInfo,
 							  prQueueEntry);
 					break;
 				}
+
+				if (wlanGetTxPendingFrameCount(
+					    prGlueInfo->prAdapter) > 0)
+					wlanTxPendingPackets(
+						prGlueInfo->prAdapter,
+						pfgNeedHwAccess);
 			}
 			kalTraceEnd();
-
-			if (wlanGetTxPendingFrameCount(
-			    prGlueInfo->prAdapter) > 0)
-				wlanTxPendingPackets(prGlueInfo->prAdapter,
-						     pfgNeedHwAccess);
 
 			/* Enqueue packet back into TxQueue if resource is not
 			 * enough
