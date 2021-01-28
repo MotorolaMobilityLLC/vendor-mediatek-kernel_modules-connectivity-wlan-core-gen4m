@@ -326,7 +326,6 @@ extern void update_driver_loaded_status(uint8_t loaded);
 #define GLUE_FLAG_HIF_FW_OWN			BIT(15)
 #define GLUE_FLAG_HIF_PRT_HIF_DBG_INFO		BIT(16)
 #define GLUE_FLAG_UPDATE_WMM_QUOTA		BIT(17)
-#define GLUE_FLAG_HIF_RECYCLE_MGMT_TX_QUEUE	BIT(18)
 
 #define GLUE_FLAG_RX_BIT				(10)
 #define GLUE_FLAG_TX_CMD_DONE_BIT			(11)
@@ -336,7 +335,6 @@ extern void update_driver_loaded_status(uint8_t loaded);
 #define GLUE_FLAG_HIF_FW_OWN_BIT			(15)
 #define GLUE_FLAG_HIF_PRT_HIF_DBG_INFO_BIT		(16)
 #define GLUE_FLAG_UPDATE_WMM_QUOTA_BIT			(17)
-#define GLUE_FLAG_HIF_RECYCLE_MGMT_TX_QUEUE_BIT		(18)
 #endif
 #if (CFG_SUPPORT_CONNINFRA == 1)
 #define GLUE_FLAG_RST_START BIT(18)
