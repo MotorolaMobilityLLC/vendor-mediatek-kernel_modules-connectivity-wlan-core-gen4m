@@ -189,6 +189,7 @@ int SetTxTargetPower(struct net_device *prNetDev, UINT_8 *prInBuf);
 
 #if (CFG_SUPPORT_DFS_MASTER == 1)
 int SetRddReport(struct net_device *prNetDev, UINT_8 *prInBuf);
+int SetByPassCac(struct net_device *prNetDev, UINT_8 *prInBuf);
 #endif
 
 

@@ -174,6 +174,7 @@ ATE_PRIV_CMD rAtePrivCmdTable[] = {
 	{"TxPower", SetTxTargetPower},
 #if (CFG_SUPPORT_DFS_MASTER == 1)
 	{"RDDReport", SetRddReport},
+	{"ByPassCac", SetByPassCac},
 #endif
 
 	{NULL,}
@@ -2016,7 +2017,7 @@ int SetTxTargetPower(struct net_device *prNetDev, UINT_8 *prInBuf)
 #if (CFG_SUPPORT_DFS_MASTER == 1)
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief  This routine is called to Set Tx Power.
+* \brief  This routine is called to Set RDD Report
 *
 * \param[in] prNetDev		Pointer to the Net Device
 * \param[in] prInBuf		A pointer to the command string buffer
@@ -2050,6 +2051,44 @@ int SetRddReport(struct net_device *prNetDev, UINT_8 *prInBuf)
 
 	return i4Status;
 }
+
+
+/*----------------------------------------------------------------------------*/
+/*!
+* \brief  This routine is called to Set By Pass CAC.
+*
+* \param[in] prNetDev		Pointer to the Net Device
+* \param[in] prInBuf		A pointer to the command string buffer
+* \param[out] None
+*
+* \retval 0				On success.
+* \retval -EINVAL			If invalid argument.
+*/
+/*----------------------------------------------------------------------------*/
+int SetByPassCac(struct net_device *prNetDev, UINT_8 *prInBuf)
+{
+	INT_32 i4Status;
+	INT_32 rv;
+	int byPassCacTime;
+	UINT_8 ucByPassCacTime;
+
+	DBGLOG(REQ, INFO, "MT6632 : ATE_AGENT iwpriv Set By Pass Cac, buf: %s\n", prInBuf);
+
+	rv = kstrtoint(prInBuf, 0, &byPassCacTime);
+
+	DBGLOG(REQ, INFO, "MT6632 : ATE_AGENT iwpriv Set By Pass Cac, prInBuf: %s\n", prInBuf);
+	DBGLOG(INIT, ERROR, "MT6632 : ATE_AGENT iwpriv Set By Pass Cac : %dsec\n", byPassCacTime);
+
+	ucByPassCacTime = (UINT_8) byPassCacTime;
+
+	if (rv == 0)
+		i4Status = p2pFuncSetManualCacTime(ucByPassCacTime);
+	else
+		return -EINVAL;
+
+	return i4Status;
+}
+
 #endif
 
 /*----------------------------------------------------------------------------*/
