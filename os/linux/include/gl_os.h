@@ -1,3 +1,4 @@
+
 /*******************************************************************************
  *
  * This file is provided under a dual license.  When you use or
@@ -1206,7 +1207,7 @@ const struct net_device_ops *wlanGetNdevOps(void);
 #endif
 
 #if CFG_MTK_ANDROID_WMT
-extern void connectivity_inner_flush_dcache_all(void);
+extern void connectivity_flush_dcache_area(void *addr, size_t len);
 extern void connectivity_arch_setup_dma_ops(
 	struct device *dev, u64 dma_base,
 	u64 size, struct iommu_ops *iommu,

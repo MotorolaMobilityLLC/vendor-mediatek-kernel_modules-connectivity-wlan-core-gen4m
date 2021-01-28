@@ -4408,40 +4408,52 @@ void qmHandleMailboxRxMessage(IN struct MAILBOX_MSG prMailboxRxMsg)
 void qmHandleEventTxAddBa(IN struct ADAPTER *prAdapter,
 	IN struct WIFI_EVENT *prEvent)
 {
-	struct mt66xx_chip_info *prChipInfo = prAdapter->chip_info;
-	struct _EVENT_TX_ADDBA_T *prEventTxAddBa;
+	struct mt66xx_chip_info *prChipInfo;
+	struct EVENT_TX_ADDBA *prEventTxAddBa;
 	struct STA_RECORD *prStaRec;
+	uint8_t ucStaRecIdx;
 	uint8_t ucTid;
+
+	ASSERT(prAdapter);
+	prChipInfo = prAdapter->chip_info;
 
 	DBGLOG(QM, INFO, "QM:Event +TxBa\n");
 
-	if (prChipInfo->is_support_hw_amsdu) {
-		prEventTxAddBa = (struct _EVENT_TX_ADDBA_T *) (
-			prEvent->aucBuffer);
-		prStaRec = QM_GET_STA_REC_PTR_FROM_INDEX(prAdapter,
-			prEventTxAddBa->ucStaRecIdx);
-
-		if (!prStaRec) {
-			/* Invalid STA_REC index, discard the event packet */
-			/* ASSERT(0); */
-			DBGLOG(QM, INFO,
-				"QM: (Warning) TX ADDBA Event for a NULL STA_REC\n");
-			return;
-		}
-
-		for (ucTid = 0; ucTid < TX_DESC_TID_NUM; ucTid++) {
-			if ((prStaRec->ucAmsduEnBitmap & BIT(ucTid)) !=
-			    (prEventTxAddBa->ucAmsduEnBitmap & BIT(ucTid)))
-				nicTxSetHwAmsduDescTemplate(prAdapter,
-					prStaRec, ucTid,
-					(prEventTxAddBa->ucAmsduEnBitmap &
-					BIT(ucTid)) >> ucTid);
-		}
-		prStaRec->ucAmsduEnBitmap = prEventTxAddBa->ucAmsduEnBitmap;
-		DBGLOG(QM, INFO, "QM:Event +TxBa Update bitmap 0x%x\n",
-			prStaRec->ucAmsduEnBitmap);
-	} else
+	if (!prChipInfo->is_support_hw_amsdu &&
+	    prChipInfo->ucMaxSwAmsduNum <= 1) {
 		DBGLOG(QM, INFO, "QM:Event +TxBa but chip is not support\n");
+		return;
+	}
+
+	prEventTxAddBa = (struct EVENT_TX_ADDBA *) (prEvent->aucBuffer);
+	ucStaRecIdx = prEventTxAddBa->ucStaRecIdx;
+	prStaRec = QM_GET_STA_REC_PTR_FROM_INDEX(prAdapter, ucStaRecIdx);
+	if (!prStaRec) {
+		/* Invalid STA_REC index, discard the event packet */
+		/* ASSERT(0); */
+		DBGLOG(QM, INFO,
+		       "QM: (Warning) TX ADDBA Event for a NULL STA_REC\n");
+		return;
+	}
+
+	for (ucTid = 0; ucTid < TX_DESC_TID_NUM; ucTid++) {
+		uint8_t ucStaEn = prStaRec->ucAmsduEnBitmap & BIT(ucTid);
+		uint8_t ucEvtEn = prEventTxAddBa->ucAmsduEnBitmap & BIT(ucTid);
+
+		if (prChipInfo->is_support_hw_amsdu && ucStaEn != ucEvtEn)
+			nicTxSetHwAmsduDescTemplate(prAdapter, prStaRec, ucTid,
+						    ucEvtEn >> ucTid);
+	}
+
+	prStaRec->ucAmsduEnBitmap = prEventTxAddBa->ucAmsduEnBitmap;
+	prStaRec->ucMaxMpduCount = prEventTxAddBa->ucMaxMpduCount;
+	prStaRec->u4MaxMpduLen = prEventTxAddBa->u4MaxMpduLen;
+	prStaRec->u4MinMpduLen = prEventTxAddBa->u4MinMpduLen;
+
+	DBGLOG(QM, INFO,
+	       "QM:Event +TxBa bitmap[0x%x] count[%u] MaxLen[%u] MinLen[%u]\n",
+	       prStaRec->ucAmsduEnBitmap, prStaRec->ucMaxMpduCount,
+	       prStaRec->u4MaxMpduLen, prStaRec->u4MinMpduLen);
 }
 
 /*----------------------------------------------------------------------------*/

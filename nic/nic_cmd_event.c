@@ -4064,12 +4064,10 @@ void nicEventLayer0ExtMagic(IN struct ADAPTER *prAdapter,
 {
 	uint32_t u4QueryInfoLen = 0;
 	struct CMD_INFO *prCmdInfo = NULL;
-	struct EVENT_ACCESS_EFUSE *prEventEfuseAccess;
-	struct EXT_EVENT_EFUSE_FREE_BLOCK *prEventGetFreeBlock;
-	struct EXT_EVENT_GET_TX_POWER *prEventGetTXPower;
+
+	log_dbg(NIC, INFO, "prEvent->ucExtenEID = %x\n", prEvent->ucExtenEID);
 
 	switch (prEvent->ucExtenEID) {
-
 	case EXT_EVENT_ID_CMD_RESULT:
 		u4QueryInfoLen = sizeof(struct
 					PARAM_CUSTOM_EFUSE_BUFFER_MODE);
@@ -4078,6 +4076,9 @@ void nicEventLayer0ExtMagic(IN struct ADAPTER *prAdapter,
 		break;
 
 	case EXT_EVENT_ID_EFUSE_ACCESS:
+	{
+		struct EVENT_ACCESS_EFUSE *prEventEfuseAccess;
+
 		u4QueryInfoLen = sizeof(struct PARAM_CUSTOM_ACCESS_EFUSE);
 		prCmdInfo = nicGetPendingCmdInfo(prAdapter,
 						 prEvent->ucSeqNum);
@@ -4088,6 +4089,7 @@ void nicEventLayer0ExtMagic(IN struct ADAPTER *prAdapter,
 		kalMemCopy(prAdapter->aucEepromVaule,
 			   prEventEfuseAccess->aucData, 16);
 		break;
+	}
 
 	case EXT_EVENT_ID_RF_TEST:
 		u4QueryInfoLen = nicRfTestEventHandler(prAdapter, prEvent);
@@ -4096,6 +4098,9 @@ void nicEventLayer0ExtMagic(IN struct ADAPTER *prAdapter,
 		break;
 
 	case EXT_EVENT_ID_GET_TX_POWER:
+	{
+		struct EXT_EVENT_GET_TX_POWER *prEventGetTXPower;
+
 		u4QueryInfoLen = sizeof(struct PARAM_CUSTOM_GET_TX_POWER);
 		prCmdInfo = nicGetPendingCmdInfo(prAdapter,
 						 prEvent->ucSeqNum);
@@ -4105,8 +4110,12 @@ void nicEventLayer0ExtMagic(IN struct ADAPTER *prAdapter,
 		prAdapter->u4GetTxPower =
 			prEventGetTXPower->ucTx0TargetPower;
 		break;
+	}
 
 	case EXT_EVENT_ID_EFUSE_FREE_BLOCK:
+	{
+		struct EXT_EVENT_EFUSE_FREE_BLOCK *prEventGetFreeBlock;
+
 		u4QueryInfoLen = sizeof(struct
 					PARAM_CUSTOM_EFUSE_FREE_BLOCK);
 		prCmdInfo = nicGetPendingCmdInfo(prAdapter,
@@ -4116,6 +4125,31 @@ void nicEventLayer0ExtMagic(IN struct ADAPTER *prAdapter,
 		prAdapter->u4FreeBlockNum =
 			prEventGetFreeBlock->u2FreeBlockNum;
 		break;
+	}
+
+	case EXT_EVENT_ID_MAX_AMSDU_LENGTH_UPDATE:
+	{
+		struct EXT_EVENT_MAX_AMSDU_LENGTH_UPDATE *prEventAmsdu;
+		struct STA_RECORD *prStaRec;
+		uint8_t ucStaRecIndex;
+
+		prEventAmsdu = (struct EXT_EVENT_MAX_AMSDU_LENGTH_UPDATE *)
+			(prEvent->aucBuffer);
+
+		ucStaRecIndex = secGetStaIdxByWlanIdx(
+			prAdapter, prEventAmsdu->ucWlanIdx);
+		prStaRec = cnmGetStaRecByIndex(prAdapter, ucStaRecIndex);
+
+		if (prStaRec->ucMaxMpduCount == 0 ||
+		    prStaRec->ucMaxMpduCount > prEventAmsdu->ucAmsduLen)
+			prStaRec->ucMaxMpduCount = prEventAmsdu->ucAmsduLen;
+
+		DBGLOG(NIC, INFO,
+		       "Amsdu update event ucWlanIdx[%u] ucLen[%u] ucMaxMpduCount[%u]\n",
+		       prEventAmsdu->ucWlanIdx, prEventAmsdu->ucAmsduLen,
+		       prStaRec->ucMaxMpduCount);
+		break;
+	}
 
 	default:
 		break;

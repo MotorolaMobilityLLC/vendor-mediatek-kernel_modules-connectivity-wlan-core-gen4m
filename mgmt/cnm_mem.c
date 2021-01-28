@@ -614,6 +614,11 @@ struct STA_RECORD *cnmStaRecAlloc(struct ADAPTER *prAdapter,
 					= &prStaRec->arTxQueue[k];
 			}
 
+			prStaRec->ucAmsduEnBitmap = 0;
+			prStaRec->ucMaxMpduCount = 0;
+			prStaRec->u4MaxMpduLen = 0;
+			prStaRec->u4MinMpduLen = 0;
+
 			break;
 		}
 	}
