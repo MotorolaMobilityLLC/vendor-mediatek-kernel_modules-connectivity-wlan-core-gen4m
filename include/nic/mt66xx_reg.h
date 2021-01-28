@@ -848,6 +848,8 @@ typedef struct _ENHANCE_MODE_DATA_STRUCT_T {
 #define WCIR_REVISION_ID                BITS(16, 19)
 #define WCIR_CHIP_ID                    BITS(0, 15)
 
+#define SKIP_CHIP_ID                    0x0001
+
 #define MTK_CHIP_REV                    0x00006632
 #define MTK_CHIP_MP_REVERSION_ID        0x0
 
@@ -956,6 +958,8 @@ struct mt66xx_chip_info {
 	PPUINT_8 apucName, PUINT_8 pucNameIdx, UINT_8 ucMaxNameIdx);/* load firmware bin priority */
 	void (*asicEnableFWDownload)(IN P_ADAPTER_T prAdapter, IN BOOL fgEnable);
 	void (*asicDevInit)(IN P_ADAPTER_T prAdapter);
+	void (*fillTxDescAppend)(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduInfo, IN UINT_16 u4MsduId,
+				 IN dma_addr_t rDmaAddr, OUT PUINT_8 pucBuffer);
 };
 
 struct mt66xx_hif_driver_data {

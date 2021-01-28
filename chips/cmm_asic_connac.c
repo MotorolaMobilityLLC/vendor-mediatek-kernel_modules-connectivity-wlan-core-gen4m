@@ -159,3 +159,38 @@ VOID asicDevInit(IN P_ADAPTER_T prAdapter)
 		break;
 	}
 }
+
+VOID fillTxDescAppendByHost(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduInfo, IN UINT_16 u4MsduId,
+			    IN dma_addr_t rDmaAddr, OUT PUINT_8 pucBuffer)
+{
+	P_HW_MAC_TX_DESC_APPEND_T prHwTxDescAppend;
+
+	prHwTxDescAppend = (P_HW_MAC_TX_DESC_APPEND_T) (pucBuffer + NIC_TX_DESC_LONG_FORMAT_LENGTH);
+	prHwTxDescAppend->CONNAC_APPEND.au2MsduId[0] = u4MsduId | TXD_MSDU_ID_VLD;
+	prHwTxDescAppend->CONNAC_APPEND.arPtrLen[0].u4Ptr0 = rDmaAddr;
+	prHwTxDescAppend->CONNAC_APPEND.arPtrLen[0].u2Len0 = prMsduInfo->u2FrameLength | TXD_LEN_AL | TXD_LEN_ML;
+}
+
+VOID fillTxDescAppendByHostV2(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduInfo, IN UINT_16 u4MsduId,
+			      IN dma_addr_t rDmaAddr, OUT PUINT_8 pucBuffer)
+{
+	P_HW_MAC_TX_DESC_APPEND_T prHwTxDescAppend;
+
+	prHwTxDescAppend = (P_HW_MAC_TX_DESC_APPEND_T) (pucBuffer + NIC_TX_DESC_LONG_FORMAT_LENGTH);
+	prHwTxDescAppend->CONNAC_APPEND.au2MsduId[0] = u4MsduId | TXD_MSDU_ID_VLD;
+	prHwTxDescAppend->CONNAC_APPEND.arPtrLen[0].u4Ptr0 = rDmaAddr;
+	prHwTxDescAppend->CONNAC_APPEND.arPtrLen[0].u2Len0 = (prMsduInfo->u2FrameLength & TXD_LEN_MASK_V2) |
+		((rDmaAddr >> TXD_ADDR2_OFFSET) & TXD_ADDR2_MASK) | TXD_LEN_ML_V2;
+}
+
+VOID fillTxDescAppendByCR4(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduInfo, IN UINT_16 u4MsduId,
+			   IN dma_addr_t rDmaAddr, OUT PUINT_8 pucBuffer)
+{
+	P_HW_MAC_TX_DESC_APPEND_T prHwTxDescAppend;
+
+	prHwTxDescAppend = (P_HW_MAC_TX_DESC_APPEND_T) (pucBuffer + NIC_TX_DESC_LONG_FORMAT_LENGTH);
+	prHwTxDescAppend->CR4_APPEND.u2MsduToken = u4MsduId;
+	prHwTxDescAppend->CR4_APPEND.ucBufNum = 1;
+	prHwTxDescAppend->CR4_APPEND.au4BufPtr[0] = rDmaAddr;
+	prHwTxDescAppend->CR4_APPEND.au2BufLen[0] = prMsduInfo->u2FrameLength;
+}
