@@ -591,10 +591,10 @@ int mtk_p2p_cfg80211_add_key(struct wiphy *wiphy,
 #if DBG
 	DBGLOG(RSN, TRACE, "mtk_p2p_cfg80211_add_key\n");
 	if (mac_addr) {
-		DBGLOG(RSN, TRACE,
+		DBGLOG(RSN, INFO,
 		       "keyIdx = %d pairwise = %d mac = " MACSTR "\n", key_index, pairwise, MAC2STR(mac_addr));
 	} else {
-		DBGLOG(RSN, TRACE, "keyIdx = %d pairwise = %d null mac\n", key_index, pairwise);
+		DBGLOG(RSN, INFO, "keyIdx = %d pairwise = %d null mac\n", key_index, pairwise);
 	}
 	DBGLOG(RSN, TRACE, "Cipher = %x\n", params->cipher);
 	DBGLOG_MEM8(RSN, TRACE, params->key, params->key_len);
@@ -791,6 +791,23 @@ mtk_p2p_cfg80211_set_default_key(struct wiphy *wiphy,
 
 
 	return i4Rst;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * @brief This routine is responsible for setting the default mgmt key index
+ *
+ * @param
+ *
+ * @retval 0:       successful
+ *         others:  failure
+ */
+/*----------------------------------------------------------------------------*/
+int mtk_p2p_cfg80211_set_mgmt_key(struct wiphy *wiphy, struct net_device *dev, u8 key_index)
+{
+	DBGLOG(RSN, INFO, "mtk_p2p_cfg80211_set_mgmt_key, kid:%d\n", key_index);
+
+	return 0;
 }
 
 #if KERNEL_VERSION(3, 16, 0) <= CFG80211_VERSION_CODE

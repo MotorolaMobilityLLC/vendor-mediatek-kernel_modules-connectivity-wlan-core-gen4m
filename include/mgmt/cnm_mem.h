@@ -211,6 +211,34 @@ typedef struct _FRAG_INFO_T {
 	OS_SYSTIME rReceiveLifetimeLimit;	/* The receive time of 1st fragment */
 } FRAG_INFO_T, *P_FRAG_INFO_T;
 
+#if CFG_SUPPORT_802_11W
+/* AP PMF */
+struct AP_PMF_CFG {
+	BOOLEAN fgMfpc;
+	BOOLEAN fgMfpr;
+	BOOLEAN fgSha256;
+	BOOLEAN fgAPApplyPmfReq;
+	BOOLEAN fgBipKeyInstalled;
+};
+
+struct STA_PMF_CFG {
+	BOOLEAN fgMfpc;
+	BOOLEAN fgMfpr;
+	BOOLEAN fgSha256;
+	BOOLEAN fgApplyPmf;
+	BOOLEAN fgBipKeyInstalled;
+	BOOLEAN fgRxDeauthResp; /* for certification 4.3.3.1, 4.3.3.2 TX unprotected deauth */
+
+	/* For PMF SA query TX request retry a timer */
+	UINT_32 u4SAQueryStart; /* record the start time of 1st SAQ request */
+	UINT_32 u4SAQueryCount;
+	UINT_8 ucSAQueryTimedOut; /* retry more than 1000ms */
+	TIMER_T rSAQueryTimer;
+	UINT_16 u2TransactionID;
+
+};
+#endif
+
 /* Define STA record structure */
 struct _STA_RECORD_T {
 	LINK_ENTRY_T rLinkEntry;
@@ -518,8 +546,11 @@ struct _STA_RECORD_T {
 	UINT_8 ucSmDialogToken;	/* Spectrum Mngt Dialog Token */
 	UINT_8 ucSmMsmtRequestMode; /* Measurement Request Mode */
 	UINT_8 ucSmMsmtToken; /* Measurement Request Token */
-
 	UINT_8 ucAmsduEnBitmap; /* Tid bit mask of AMSDU enable */
+#if CFG_SUPPORT_802_11W
+	/* AP PMF */
+	struct STA_PMF_CFG rPmfCfg;
+#endif
 };
 
 #if 0
