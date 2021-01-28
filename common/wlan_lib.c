@@ -882,7 +882,7 @@ void wlanNchoInit(IN struct ADAPTER *prAdapter, IN uint8_t fgFwSync)
 	uint8_t sync = fgFwSync && prAdapter->rNchoInfo.fgNCHOEnabled;
 
 	/* NCHO Initialization */
-	prAdapter->rNchoInfo.fgECHOEnabled = 0;
+	prAdapter->rNchoInfo.fgNCHOEnabled = 0;
 	prAdapter->rNchoInfo.eBand = NCHO_BAND_AUTO;
 	prAdapter->rNchoInfo.fgChGranted = FALSE;
 	prAdapter->rNchoInfo.fgIsSendingAF = FALSE;
