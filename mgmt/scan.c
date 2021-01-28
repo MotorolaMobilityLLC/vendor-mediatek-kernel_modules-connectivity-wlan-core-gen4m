@@ -1226,7 +1226,7 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 	uint8_t ucHwChannelNum = 0;
 	uint8_t ucIeDsChannelNum = 0;
 	uint8_t ucIeHtChannelNum = 0;
-	u_int8_t fgIsValidSsid = FALSE, fgEscape = FALSE;
+	u_int8_t fgIsValidSsid = FALSE;
 	struct PARAM_SSID rSsid;
 	uint64_t u8Timestamp;
 	u_int8_t fgIsNewBssDesc = FALSE;
@@ -1234,10 +1234,13 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 	uint32_t i;
 	uint8_t ucSSIDChar;
 	/* PUINT_8 pucDumpIE; */
+	enum ENUM_BAND eHwBand = BAND_NULL;
+	u_int8_t fgBandMismatch = FALSE;
 
 	ASSERT(prAdapter);
 	ASSERT(prSwRfb);
 
+	eHwBand = HAL_RX_STATUS_GET_RF_BAND(prSwRfb->prRxStatus);
 	prWlanBeaconFrame = (struct WLAN_BEACON_FRAME *) prSwRfb->pvHeader;
 
 	WLAN_GET_FIELD_16(&prWlanBeaconFrame->u2CapInfo, &u2CapInfo);
@@ -1269,7 +1272,7 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 		return NULL;
 	}
 
-	/* 4 <1.1> Pre-parse SSID IE */
+	/* 4 <1.1> Pre-parse SSID IE and channel info */
 	pucIE = prWlanBeaconFrame->aucInfoElem;
 	u2IELength = (prSwRfb->u2PacketLen - prSwRfb->u2HeaderLen) -
 	    (uint16_t) OFFSET_OF(struct WLAN_BEACON_FRAME_BODY, aucInfoElem[0]);
@@ -1315,14 +1318,52 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 						  SSID_IE(pucIE)->ucLength);
 				}
 			}
-			fgEscape = TRUE;
+			break;
+		case ELEM_ID_DS_PARAM_SET:
+			if (IE_LEN(pucIE)
+				== ELEM_MAX_LEN_DS_PARAMETER_SET) {
+				ucIeDsChannelNum
+					= DS_PARAM_IE(pucIE)->ucCurrChnl;
+			}
+			break;
+
+		case ELEM_ID_HT_OP:
+			if (IE_LEN(pucIE) == (sizeof(struct IE_HT_OP) - 2))
+				ucIeHtChannelNum = ((struct IE_HT_OP *) pucIE)
+					->ucPrimaryChannel;
 			break;
 		default:
 			break;
 		}
+	}
 
-		if (fgEscape == TRUE)
-			break;
+	/**
+	 * Set band mismatch flag if we receive Beacon/ProbeResp in 2.4G band,
+	 * but the channel num in IE info is 5G, and vice versa
+	 * We can get channel num from different IE info, we select
+	 * ELEM_ID_DS_PARAM_SET first, and then ELEM_ID_HT_OP
+	 * If we don't have any channel info, we set it as HW channel, which is
+	 * the channel we get this Beacon/ProbeResp from.
+	 */
+	if (ucIeDsChannelNum > 0) {
+		if (ucIeDsChannelNum <= HW_CHNL_NUM_MAX_2G4)
+			fgBandMismatch = (eHwBand != BAND_2G4);
+		else if (ucIeDsChannelNum < HW_CHNL_NUM_MAX_4G_5G)
+			fgBandMismatch = (eHwBand != BAND_5G);
+	} else if (ucIeHtChannelNum > 0) {
+		if (ucIeHtChannelNum <= HW_CHNL_NUM_MAX_2G4)
+			fgBandMismatch = (eHwBand != BAND_2G4);
+		else if (ucIeHtChannelNum < HW_CHNL_NUM_MAX_4G_5G)
+			fgBandMismatch = (eHwBand != BAND_5G);
+	}
+
+	if (fgBandMismatch) {
+#define __STR_FMT__ "%pM Band mismatch, HW band %d, DS chnl %d, HT chnl %d\n"
+		DBGLOG(SCN, INFO, __STR_FMT__,
+		       prWlanBeaconFrame->aucBSSID, eHwBand,
+		       ucIeDsChannelNum, ucIeHtChannelNum);
+#undef __STR_FMT__
+		return NULL;
 	}
 
 	/* 4 <1.2> Replace existing BSS_DESC structure or allocate a new one */
@@ -1558,14 +1599,6 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 				prIeSupportedRate = SUP_RATES_IE(pucIE);
 			break;
 
-		case ELEM_ID_DS_PARAM_SET:
-			if (IE_LEN(pucIE)
-				== ELEM_MAX_LEN_DS_PARAMETER_SET) {
-				ucIeDsChannelNum
-					= DS_PARAM_IE(pucIE)->ucCurrChnl;
-			}
-			break;
-
 		case ELEM_ID_TIM:
 			if (IE_LEN(pucIE) <= ELEM_MAX_LEN_TIM) {
 				prBssDesc->ucDTIMPeriod
@@ -1624,9 +1657,6 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 				    (((struct IE_HT_OP *) pucIE)->ucInfo1
 				    & HT_OP_INFO1_SCO);
 			}
-			ucIeHtChannelNum
-				= ((struct IE_HT_OP *) pucIE)->ucPrimaryChannel;
-
 			break;
 		case ELEM_ID_VHT_CAP:
 			prBssDesc->fgIsVHTPresent = TRUE;
@@ -1753,7 +1783,7 @@ VHT_CAP_INFO_NUMBER_OF_SOUNDING_DIMENSIONS_OFFSET
 		prBssDesc->fgIsLargerTSF = HAL_RX_STATUS_GET_TCL(prRxStatus);
 
 		/* 4 <4.2> Get Band information */
-		prBssDesc->eBand = HAL_RX_STATUS_GET_RF_BAND(prRxStatus);
+		prBssDesc->eBand = eHwBand;
 
 		/* 4 <4.2> Get channel and RCPI information */
 		ucHwChannelNum = HAL_RX_STATUS_GET_CHNL_NUM(prRxStatus);
