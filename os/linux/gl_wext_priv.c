@@ -6579,103 +6579,16 @@ static int priv_driver_get_version(IN struct net_device *prNetDev, IN char *pcCo
 	P_ADAPTER_T prAdapter;
 	INT_32 i4BytesWritten = 0;
 	UINT_32 u4Offset = 0;
-	P_WIFI_VER_INFO_T prVerInfo;
-	tailer_format_t *prTailer;
-	UINT_8 aucBuf[32], aucDate[32];
 
 	ASSERT(prNetDev);
 
 	prGlueInfo = *((P_GLUE_INFO_T *) netdev_priv(prNetDev));
 	prAdapter = prGlueInfo->prAdapter;
-	prVerInfo = &prAdapter->rVerInfo;
 
 	u4Offset += snprintf(pcCommand + u4Offset, i4TotalLen - u4Offset,
 	"\nChip eco ver [%u]\n", prAdapter->chip_info->eco_ver);
 
 	wlanPrintVersion(prAdapter);
-
-	kalStrnCpy(aucBuf, prVerInfo->aucFwBranchInfo, 4);
-	aucBuf[4] = '\0';
-	kalStrnCpy(aucDate, prVerInfo->aucFwDateCode, 16);
-	aucDate[16] = '\0';
-	u4Offset += snprintf(pcCommand + u4Offset, i4TotalLen - u4Offset,
-	"\nN9 FW version %s-%u.%u.%u[DEC] (%s)\n", aucBuf, (prVerInfo->u2FwOwnVersion >> 8),
-	(prVerInfo->u2FwOwnVersion & BITS(0, 7)), prVerInfo->ucFwBuildNumber, aucDate);
-#if CFG_SUPPORT_COMPRESSION_FW_OPTION
-	if (prVerInfo->fgIsN9CompressedFW) {
-		tailer_format_t_2 *prTailer;
-
-		prTailer = &prVerInfo->rN9Compressedtailer;
-		kalMemCopy(aucBuf, prTailer->ram_version, 10);
-		aucBuf[10] = '\0';
-		u4Offset += snprintf(pcCommand + u4Offset, i4TotalLen - u4Offset,
-		"N9  tailer version %s (%s) info %u:E%u\n",
-		aucBuf, prTailer->ram_built_date, prTailer->chip_info,
-		prTailer->eco_code + 1);
-	} else {
-		prTailer = &prVerInfo->rN9tailer;
-		kalMemCopy(aucBuf, prTailer->ram_version, 10);
-		aucBuf[10] = '\0';
-		u4Offset += snprintf(pcCommand + u4Offset, i4TotalLen - u4Offset,
-		"N9  tailer version %s (%s) info %u:E%u\n",
-		aucBuf, prTailer->ram_built_date, prTailer->chip_info,
-		prTailer->eco_code + 1);
-	}
-	if (prVerInfo->fgIsCR4CompressedFW) {
-		tailer_format_t_2 *prTailer;
-
-		prTailer = &prVerInfo->rCR4Compressedtailer;
-		kalMemCopy(aucBuf, prTailer->ram_version, 10);
-		aucBuf[10] = '\0';
-		u4Offset += snprintf(pcCommand + u4Offset, i4TotalLen - u4Offset,
-		"CR4 tailer version %s (%s) info %u:E%u\n",
-		aucBuf, prTailer->ram_built_date, prTailer->chip_info,
-		prTailer->eco_code + 1);
-	} else {
-		prTailer = &prVerInfo->rCR4tailer;
-		kalMemCopy(aucBuf, prTailer->ram_version, 10);
-		aucBuf[10] = '\0';
-		u4Offset += snprintf(pcCommand + u4Offset, i4TotalLen - u4Offset,
-		"CR4 tailer version %s (%s) info %u:E%u\n",
-		aucBuf, prTailer->ram_built_date, prTailer->chip_info,
-		prTailer->eco_code + 1);
-	}
-#else
-		prTailer = &prVerInfo->rN9tailer;
-		kalMemCopy(aucBuf, prTailer->ram_version, 10);
-		aucBuf[10] = '\0';
-		u4Offset += snprintf(pcCommand + u4Offset, i4TotalLen - u4Offset,
-		"N9  tailer version %s (%s) info %u:E%u\n",
-		aucBuf, prTailer->ram_built_date, prTailer->chip_info,
-		prTailer->eco_code + 1);
-
-		prTailer = &prVerInfo->rCR4tailer;
-		kalMemCopy(aucBuf, prTailer->ram_version, 10);
-		aucBuf[10] = '\0';
-		u4Offset += snprintf(pcCommand + u4Offset, i4TotalLen - u4Offset,
-		"CR4 tailer version %s (%s) info %u:E%u\n",
-		aucBuf, prTailer->ram_built_date, prTailer->chip_info,
-		prTailer->eco_code + 1);
-#endif
-	if (!prVerInfo->fgPatchIsDlByDrv) {
-		u4Offset += snprintf(pcCommand + u4Offset, i4TotalLen - u4Offset,
-			"Patch is not downloaded by driver, read patch binary\n");
-		wlanGetPatchInfo(prAdapter);
-	}
-
-	kalStrnCpy(aucBuf, prVerInfo->rPatchHeader.aucPlatform, 4);
-	aucBuf[4] = '\0';
-	kalStrnCpy(aucDate, prVerInfo->rPatchHeader.aucBuildDate, 16);
-	aucDate[16] = '\0';
-	u4Offset += snprintf(pcCommand + u4Offset, i4TotalLen - u4Offset,
-		"Patch platform %s version 0x%04X %s\n",
-		aucBuf, prVerInfo->rPatchHeader.u4PatchVersion, aucDate);
-
-#if 0
-	u4Offset += snprintf(pcCommand + u4Offset, i4TotalLen - u4Offset,
-		"Drv version %u.%u[DEC]", (prVerInfo->u2FwPeerVersion >> 8),
-		(prVerInfo->u2FwPeerVersion & BITS(0, 7)));
-#endif
 
 	u4Offset += snprintf(pcCommand + u4Offset, i4TotalLen - u4Offset,
 		"WiFi Driver Version %u.%u.%u\n",

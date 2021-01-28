@@ -161,7 +161,7 @@ VOID mt6632CapInit(IN P_ADAPTER_T prAdapter)
 	}
 }
 
-BUS_INFO bus_info_mt6632 = {
+BUS_INFO mt6632_bus_info = {
 #if defined(_HIF_PCIE)
 	.top_cfg_base = MT6632_TOP_CFG_BASE,
 	.is_pcie_32dw_read = MT6632_IS_PCIE_32DW_READ, /* Litien */
@@ -176,9 +176,18 @@ BUS_INFO bus_info_mt6632 = {
 #endif /* _HIF_USB */
 };
 
+struct firmware_download_operations mt6632_fw_dl_ops = {
+	.tailer_format = HARVARD_TAILER_FORMAT,
+	.constructFirmwarePrio = NULL,
+	.downloadFirmware = wlanHarvardFormatDownload,
+	.getFwInfo = wlanGetHarvardFwInfo,
+};
+
 /* Litien code refine to support multi chip */
 struct mt66xx_chip_info mt66xx_chip_info_mt6632 = {
-	.bus_info = &bus_info_mt6632,
+	.bus_info = &mt6632_bus_info,
+	.fw_dl_ops = &mt6632_fw_dl_ops,
+
 	.chip_id = MT6632_CHIP_ID,
 	.sw_sync0 = MT6632_SW_SYNC0,
 	.sw_ready_bits = WIFI_FUNC_READY_BITS,
