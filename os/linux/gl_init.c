@@ -4381,7 +4381,6 @@ static int32_t wlanOnAtReset(void)
 	prAdapter = prGlueInfo->prAdapter;
 	if (prAdapter == NULL) {
 		DBGLOG(INIT, INFO, "prAdapter is NULL\n");
-		wlanFreeNetDev();
 		return WLAN_STATUS_FAILURE;
 	}
 
