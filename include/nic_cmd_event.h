@@ -1632,8 +1632,8 @@ typedef struct _CMD_RDD_ON_OFF_CTRL_T {
 	UINT_8 ucDfsCtrl;
 	UINT_8 ucRddIdx;
 	UINT_8 ucRddRxSel;
-	UINT_8 ucRegDomain;
-	UINT_8 ucRadarDetectMode;
+	UINT_8 ucSetVal;
+	UINT_8 aucReserve[4];
 } CMD_RDD_ON_OFF_CTRL_T, *P_CMD_RDD_ON_OFF_CTRL_T;
 #endif
 
