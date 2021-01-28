@@ -683,6 +683,15 @@ s_int32 mt_op_set_preamble(
 	return ret;
 }
 
+s_int32 mt_op_set_rate(
+	struct test_wlan_info *winfos,
+	u_char mcs)
+{
+	s_int32 ret = SERV_STATUS_SUCCESS;
+
+	return ret;
+}
+
 s_int32 mt_op_set_system_bw(
 	struct test_wlan_info *winfos,
 	u_char sys_bw)
