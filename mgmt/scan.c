@@ -3888,8 +3888,15 @@ void scanLogCacheAddBSS(struct LINK *prList,
 
 	LINK_FOR_EACH_ENTRY(pSavedBss, prList,
 		rLinkEntry, struct SCAN_LOG_ELEM_BSS) {
-		if (EQUAL_MAC_ADDR(pSavedBss->aucBSSID, bssId))
+		if (pSavedBss && bssId) {
+			if (EQUAL_MAC_ADDR(pSavedBss->aucBSSID, bssId))
+				return;
+		} else {
+			scanlog_dbg(prefix, ERROR,
+				"pSavedBss(0x%x) or bssid(0x%x) is NULL\n",
+				pSavedBss, bssId);
 			return;
+		}
 	}
 
 	if (prList->u4NumElem < SCAN_LOG_BUFF_SIZE) {
