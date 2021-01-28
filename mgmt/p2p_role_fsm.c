@@ -1756,6 +1756,7 @@ void p2pRoleFsmRunEventCsaDone(IN struct ADAPTER *prAdapter,
 	struct BSS_INFO *prP2pBssInfo = (struct BSS_INFO *) NULL;
 	struct MSG_P2P_CSA_DONE *prMsgP2pCsaDoneMsg;
 	uint8_t role_idx = 0;
+	struct BSS_INFO *prAisBssInfo;
 
 	DBGLOG(P2P, TRACE, "p2pRoleFsmRunEventCsaDone\n");
 
@@ -1763,6 +1764,7 @@ void p2pRoleFsmRunEventCsaDone(IN struct ADAPTER *prAdapter,
 
 	prP2pBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
 		prMsgP2pCsaDoneMsg->ucBssIndex);
+	prAisBssInfo = aisGetConnectedBssInfo(prAdapter);
 
 	prP2pRoleFsmInfo =
 		P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prAdapter,
@@ -1770,7 +1772,8 @@ void p2pRoleFsmRunEventCsaDone(IN struct ADAPTER *prAdapter,
 
 	prGlueInfo = prAdapter->prGlueInfo;
 	role_idx = prP2pRoleFsmInfo->ucRoleIndex;
-	if (prGlueInfo->prP2PInfo[role_idx]->chandef == NULL) {
+	/* Skip channel request/abort for STA+SAP concurrent case */
+	if (prAisBssInfo) {
 		p2pFuncDfsSwitchCh(prAdapter,
 			prP2pBssInfo,
 			prP2pRoleFsmInfo->rChnlReqInfo);
