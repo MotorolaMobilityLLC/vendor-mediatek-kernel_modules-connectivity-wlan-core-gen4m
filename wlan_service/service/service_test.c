@@ -364,8 +364,10 @@ s_int32 mt_serv_init_test(struct service_test *serv_test)
 		/* Init test mode rx statistic data struct */
 		sys_ad_zero_mem(&serv_test->test_bstat,
 			sizeof(struct test_band_state));
+	} else {
+		serv_test->test_winfo->dbdc_mode = TEST_DBDC_DISABLE;
+		serv_test->test_winfo->hw_tx_enable = TEST_HWTX_DISABLE;
 	}
-
 	ret = mt_serv_init_op(serv_test->test_op);
 
 	/* Init test mode control register data struct */
