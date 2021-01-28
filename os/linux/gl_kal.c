@@ -247,7 +247,7 @@ uint32_t kalFirmwareOpen(IN struct GLUE_INFO *prGlueInfo,
 		 *               "/firmware/image"
 		 * Linux path: "/lib/firmware", "/lib/firmware/update"
 		 */
-		ret = request_firmware(&fw_entry, apucNameTable[ucNameIdx],
+		ret = _kalRequestFirmware(&fw_entry, apucNameTable[ucNameIdx],
 				       prGlueInfo->prDev);
 
 		if (ret) {
@@ -5505,7 +5505,7 @@ int32_t kalRequestFirmware(const uint8_t *pucPath,
 	 * Android path: "/etc/firmware", "/vendor/firmware", "/firmware/image"
 	 * Linux path: "/lib/firmware", "/lib/firmware/update"
 	 */
-	ret = request_firmware(&fw, pucPath, dev);
+	ret = _kalRequestFirmware(&fw, pucPath, dev);
 
 	if (ret != 0) {
 		DBGLOG(INIT, TRACE, "kalRequestFirmware %s Fail, errno[%d]!!\n",
