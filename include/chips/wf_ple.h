@@ -59,6 +59,7 @@
 #define PLE_GC				(PLE_BASE)
 #define PLE_INT_STS			(PLE_BASE + 0x24)
 #define PLE_INT_ERR_STS			(PLE_BASE + 0x28)
+#define PLE_QUEUE_CMD_ERR_STS           (PLE_BASE + 0x550)
 
 /* HIF Report Control */
 #define PLE_HIF_REPORT				(PLE_BASE + 0x34)
