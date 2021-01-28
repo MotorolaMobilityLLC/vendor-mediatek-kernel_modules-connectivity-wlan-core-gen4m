@@ -282,7 +282,9 @@ static MSG_HNDL_ENTRY_T arMsgMapTable[] = {
 	{MID_MNY_AIS_REMAIN_ON_CHANNEL, aisFsmRunEventRemainOnChannel},
 	{MID_MNY_AIS_CANCEL_REMAIN_ON_CHANNEL, aisFsmRunEventCancelRemainOnChannel},
 	{MID_MNY_AIS_MGMT_TX, aisFsmRunEventMgmtFrameTx}
-
+#if CFG_SUPPORT_NCHO
+	{MID_MNY_AIS_NCHO_ACTION_FRAME, aisFsmRunEventNchoActionFrameTx},
+#endif
 };
 
 /*******************************************************************************

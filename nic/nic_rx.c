@@ -1644,8 +1644,10 @@ VOID nicRxProcessEventPacket(IN P_ADAPTER_T prAdapter, IN OUT P_SW_RFB_T prSwRfb
 		nicRxReturnRFB(prAdapter, prSwRfb);
 		RX_INC_CNT(&prAdapter->rRxCtrl, RX_DROP_TOTAL_COUNT);
 #if 0
+#if CFG_CHIP_RESET_SUPPORT
 		glGetRstReason(RST_GROUP3_NULL);
-		GL_RESET_TRIGGER(prAdapter, RST_FLAG_DO_CORE_DUMP);
+		glResetTrigger(prAdapter);
+#endif
 #endif
 	    ) {
 		DBGLOG(INIT, INFO, "RX EVENT: ID[0x%02X] SEQ[%u] LEN[%u]\n",
@@ -3333,6 +3335,19 @@ WLAN_STATUS nicRxProcessActionFrame(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T prSw
 					(UINT_8) prBssInfo->u4PrivateData);
 			else
 				p2pFuncValidateRxActionFrame(prAdapter, prSwRfb, TRUE, 0);
+		}
+#endif
+#if CFG_SUPPORT_NCHO
+		{
+		P_BSS_INFO_T prBssInfo;
+
+		prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prSwRfb->prStaRec->ucBssIndex);
+		if (prBssInfo->eNetworkType == NETWORK_TYPE_AIS) {
+			if (prAdapter->rNchoInfo.fgECHOEnabled == TRUE && prAdapter->rNchoInfo.u4WesMode == TRUE) {
+				aisFuncValidateRxActionFrame(prAdapter, prSwRfb);
+				DBGLOG(INIT, INFO, "NCHO CATEGORY_VENDOR_SPECIFIC_ACTION\n");
+			}
+		}
 		}
 #endif
 		break;

@@ -492,6 +492,11 @@ struct _GLUE_INFO_T {
 	UINT_32 u4RxThreadPid;
 	UINT_32 u4HifThreadPid;
 #endif
+
+#if CFG_SUPPORT_NCHO
+	struct completion rAisChGrntComp;	/* indicate Ais channel grant complete */
+#endif
+
 	WLAN_STATUS rPendStatus;
 
 	QUE_T rTxQueue;
