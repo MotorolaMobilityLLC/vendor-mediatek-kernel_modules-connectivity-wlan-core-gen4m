@@ -133,7 +133,7 @@ void scnFsmSteps(IN struct ADAPTER *prAdapter,
 
 	do {
 		/* Coverity */
-		if (prScanInfo->eCurrentState >= 0) {
+		if (prScanInfo->eCurrentState >= 0 && eNextState >= 0) {
 			log_dbg(SCN, STATE, "[SCAN]TRANSITION: [%s] -> [%s]\n",
 				apucDebugScanState[prScanInfo->eCurrentState],
 				apucDebugScanState[eNextState]);
