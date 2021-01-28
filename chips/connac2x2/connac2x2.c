@@ -379,6 +379,7 @@ struct CHIP_DBG_OPS connac2x2_debug_ops = {
 #endif
 	.showWtblInfo = NULL,
 	.printHifDbgInfo = halPrintHifDbgInfo,
+	.show_stat_info = halShowStatInfo,
 };
 
 struct mt66xx_chip_info mt66xx_chip_info_connac2x2 = {
