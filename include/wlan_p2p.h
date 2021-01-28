@@ -239,10 +239,6 @@ wlanoidSetP2pSetNetworkAddress(IN P_ADAPTER_T prAdapter,
 			       IN PVOID pvSetBuffer, IN UINT_32 u4SetBufferLen, OUT PUINT_32 pu4SetInfoLen);
 
 WLAN_STATUS
-wlanoidQueryP2pOpChannel(IN P_ADAPTER_T prAdapter,
-			 IN PVOID pvQueryBuffer, IN UINT_32 u4QueryBufferLen, OUT PUINT_32 pu4QueryInfoLen);
-
-WLAN_STATUS
 wlanoidQueryP2pVersion(IN P_ADAPTER_T prAdapter,
 		       IN PVOID pvQueryBuffer, IN UINT_32 u4QueryBufferLen, OUT PUINT_32 pu4QueryInfoLen);
 

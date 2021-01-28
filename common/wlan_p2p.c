@@ -1435,44 +1435,6 @@ wlanoidSetUApsdParam(IN P_ADAPTER_T prAdapter,
 }
 
 WLAN_STATUS
-wlanoidQueryP2pOpChannel(IN P_ADAPTER_T prAdapter,
-			 IN PVOID pvQueryBuffer, IN UINT_32 u4QueryBufferLen, OUT PUINT_32 pu4QueryInfoLen)
-{
-
-	WLAN_STATUS rResult = WLAN_STATUS_FAILURE;
-/* PUINT_8 pucOpChnl = (PUINT_8)pvQueryBuffer; */
-
-	do {
-		if ((prAdapter == NULL) || (pu4QueryInfoLen == NULL))
-			break;
-
-		if ((u4QueryBufferLen) && (pvQueryBuffer == NULL))
-			break;
-
-		if (u4QueryBufferLen < sizeof(UINT_8)) {
-			*pu4QueryInfoLen = sizeof(UINT_8);
-			rResult = WLAN_STATUS_BUFFER_TOO_SHORT;
-			break;
-		}
-#if 0
-		if (!p2pFuncGetCurrentOpChnl(prAdapter, pucOpChnl)) {
-			rResult = WLAN_STATUS_INVALID_DATA;
-			break;
-		}
-#else
-		rResult = WLAN_STATUS_INVALID_DATA;
-		break;
-#endif
-
-		*pu4QueryInfoLen = sizeof(UINT_8);
-		rResult = WLAN_STATUS_SUCCESS;
-
-	} while (FALSE);
-
-	return rResult;
-}				/* wlanoidQueryP2pOpChannel */
-
-WLAN_STATUS
 wlanoidQueryP2pVersion(IN P_ADAPTER_T prAdapter,
 		       IN PVOID pvQueryBuffer, IN UINT_32 u4QueryBufferLen, OUT PUINT_32 pu4QueryInfoLen)
 {
