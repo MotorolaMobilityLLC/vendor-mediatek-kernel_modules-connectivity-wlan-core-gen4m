@@ -4327,13 +4327,6 @@ static int32_t wlanOnAtReset(void)
 		prAdapter->rWifiVar.rScanInfo.fgSchedScanning = FALSE;
 #if CFG_SUPPORT_SCHED_SCAN
 		if (prGlueInfo->prSchedScanRequest) {
-			uint8_t ucBssIndex =
-				prAdapter->prGlueInfo->
-				prSchedScanRequest->ucBssIndex;
-			struct CONNECTION_SETTINGS *prConnSettings =
-				aisGetConnSettings(prAdapter, ucBssIndex);
-
-			prConnSettings->fgIsScanReqIssued = FALSE;
 			rStatus = kalIoctl(prGlueInfo, wlanoidSetStartSchedScan,
 					prGlueInfo->prSchedScanRequest,
 					sizeof(struct PARAM_SCHED_SCAN_REQUEST),
@@ -4348,9 +4341,12 @@ static int32_t wlanOnAtReset(void)
 		for (u4Idx = 0; u4Idx < KAL_AIS_NUM; u4Idx++) {
 			struct FT_IES *prFtIEs =
 				aisGetFtIe(prAdapter, u4Idx);
+			struct CONNECTION_SETTINGS *prConnSettings =
+				aisGetConnSettings(prAdapter, u4Idx);
 
 			kalMemZero(prFtIEs,
 				sizeof(*prFtIEs));
+			prConnSettings->fgIsScanReqIssued = FALSE;
 		}
 
 	} while (FALSE);
