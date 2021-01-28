@@ -1669,16 +1669,6 @@ free_wdev:
 	kfree(prWdev);
 }
 
-#if (CFG_ENABLE_UNIFY_WIPHY == 0)
-static void wlanDestroyWirelessDevice(void)
-{
-	wiphy_unregister(gprWdev->wiphy);
-	wiphy_free(gprWdev->wiphy);
-	kfree(gprWdev);
-	gprWdev = NULL;
-}
-#endif
-
 /*----------------------------------------------------------------------------*/
 /*!
 * \brief Destroy all wdev (including the P2P device), and unregister wiphy
@@ -1689,52 +1679,83 @@ static void wlanDestroyWirelessDevice(void)
 *
 */
 /*----------------------------------------------------------------------------*/
-#if CFG_ENABLE_UNIFY_WIPHY
 static void wlanDestroyAllWdev(void)
 {
+#if CFG_ENABLE_UNIFY_WIPHY
+	/* There is only one wiphy, avoid that double free the wiphy */
 	struct wiphy *wiphy = NULL;
+#endif
+#if CFG_ENABLE_WIFI_DIRECT
 	int i = 0;
-
-	/* There is only one wiphy, avoid the double free the wiphy */
+#endif
 
 #if CFG_ENABLE_WIFI_DIRECT
 	/* free P2P wdev */
 	for (i = 0; i < KAL_P2P_NUM; i++) {
 		if (gprP2pRoleWdev[i] == NULL)
 			continue;
-		if (gprP2pRoleWdev[i] == gprWdev) /* This is AIS/AP Interface */
+		if (gprP2pRoleWdev[i] == gprWdev) {
+			/* This is AIS/AP Interface */
+			gprP2pRoleWdev[i] = NULL;
 			continue;
-		if (gprP2pRoleWdev[i] == gprP2pWdev) /* handle later */
-			continue;
+		}
 
+		/* Do wiphy_unregister here. Take care the case that the
+		 * gprP2pRoleWdev[i] is created by the cfg80211 add iface ops,
+		 * And the base P2P dev is in the gprP2pWdev.
+		 * Expect that new created gprP2pRoleWdev[i] is freed in
+		 * unregister_netdev/mtk_vif_destructor. And gprP2pRoleWdev[i]
+		 * is reset as gprP2pWdev in mtk_vif_destructor.
+		 */
+		if (gprP2pRoleWdev[i] == gprP2pWdev)
+			gprP2pWdev = NULL;
+
+#if CFG_ENABLE_UNIFY_WIPHY
 		wiphy = gprP2pRoleWdev[i]->wiphy;
+#else
+		/* Trunk doesn't set_wiphy_dev for AIS, but does that for P2P */
+		set_wiphy_dev(gprP2pRoleWdev[i]->wiphy, NULL);
+		wiphy_unregister(gprP2pRoleWdev[i]->wiphy);
+		wiphy_free(gprP2pRoleWdev[i]->wiphy);
+#endif
 
 		kfree(gprP2pRoleWdev[i]);
 		gprP2pRoleWdev[i] = NULL;
 	}
 
 	if (gprP2pWdev != NULL) {
-		/* In initWlan(), the gprP2pRoleWdev[0] is created &
-		 * (gprP2pWdev = gprP2pRoleWdev[0]).
-		 * But in the mtk_p2p_cfg80211_add_iface alloc new prWdev,
-		 * and gprP2pRoleWdev[0]=prWdev.
-		 * For (gprP2pWdev != gprP2pRoleWdev[0]), we must free
-		 * gprP2pWdev & take care double free case.
+		/* This case is that gprP2pWdev isn't equal to gprP2pRoleWdev[0]
+		 * . The gprP2pRoleWdev[0] is created in the p2p cfg80211 add
+		 * iface ops. The two wdev use the same wiphy. Don't double
+		 * free the same wiphy.
+		 * This part isn't expect occur. Because p2pNetUnregister should
+		 * unregister_netdev the new created wdev, and gprP2pRoleWdev[0]
+		 * is reset as gprP2pWdev.
 		 */
+#if CFG_ENABLE_UNIFY_WIPHY
 		wiphy = gprP2pWdev->wiphy;
+#endif
 
 		kfree(gprP2pWdev);
 		gprP2pWdev = NULL;
 	}
-#endif
+#endif	/* CFG_ENABLE_WIFI_DIRECT */
 
 	/* free AIS wdev */
 	if (gprWdev) {
+#if CFG_ENABLE_UNIFY_WIPHY
 		wiphy = gprWdev->wiphy;
+#else
+		/* trunk doesn't do set_wiphy_dev, but trunk-ce1 does. */
+		/* set_wiphy_dev(gprWdev->wiphy, NULL); */
+		wiphy_unregister(gprWdev->wiphy);
+		wiphy_free(gprWdev->wiphy);
+#endif
 		kfree(gprWdev);
 		gprWdev = NULL;
 	}
 
+#if CFG_ENABLE_UNIFY_WIPHY
 	/* unregister & free wiphy */
 	if (wiphy) {
 		/* set_wiphy_dev(wiphy, NULL): set the wiphy->dev->parent = NULL
@@ -1744,8 +1765,8 @@ static void wlanDestroyAllWdev(void)
 		wiphy_unregister(wiphy);
 		wiphy_free(wiphy);
 	}
+#endif
 }
-#endif /* CFG_ENABLE_UNIFY_WIPHY */
 
 void wlanWakeLockInit(struct GLUE_INFO *prGlueInfo)
 {
@@ -1817,7 +1838,7 @@ static struct wireless_dev *wlanNetCreate(void *pvData, void *pvDriverData)
 	 */
 	rlmDomainResetCtrlInfo(TRUE);
 #endif
-#endif
+#endif	/* CFG_ENABLE_UNIFY_WIPHY */
 
 	/* 4 <1.3> co-relate wiphy & prDev */
 	glGetDev(pvData, &prDev);
@@ -3168,12 +3189,13 @@ static void exitWlan(void)
 
 	/* free pre-allocated memory */
 	kalUninitIOBuffer();
-#if CFG_ENABLE_UNIFY_WIPHY
+
+	/* For single wiphy case, it's hardly to free wdev & wiphy in 2 func.
+	 * So that, use wlanDestroyAllWdev to replace wlanDestroyWirelessDevice
+	 * and glP2pDestroyWirelessDevice.
+	 */
 	wlanDestroyAllWdev();
-#else
-	wlanDestroyWirelessDevice();
-	glP2pDestroyWirelessDevice();
-#endif
+
 #if WLAN_INCLUDE_PROC
 	procUninitProcFs();
 #endif
