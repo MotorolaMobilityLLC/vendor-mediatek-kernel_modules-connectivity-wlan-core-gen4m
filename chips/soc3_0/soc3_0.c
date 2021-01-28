@@ -1038,11 +1038,13 @@ int soc3_0_CheckWfBusHang(void)
 			"Bus hang WF dump: 0x1806021c = 0x%08x\n",
 			u4Value);
 
-		isHang = 1;
+		isHang = 0;	/* always return 0 for development */
 	} else {
 		DBGLOG(HAL, INFO,
 			"Bus hang WF dump: 0x1806021c = 0x%08x\n",
 			u4Value);
+
+		isHang = 0;	/* always return 0 for development */
 	}
 
 	return isHang;
@@ -1096,18 +1098,16 @@ int soc3_0_CheckBusHang(void)
 		return ret;
 	}
 
-	if (ret == CONNINFRA_ERR_RST_ONGOING) {
-		DBGLOG(HAL, ERROR,
-			"conninfra_is_bus_hang, CONNINFRA_ERR_RST_ONGOING\n");
-	}
-
 	ret = soc3_0_CheckWfBusHang();
 
 	if (ret != 0) {
 		DBGLOG(HAL, ERROR,
 			"soc3_0_CheckWfBusHang, WFSYS reset\n");
 
-		conninfra_trigger_whole_chip_rst(CONNDRV_TYPE_WIFI, "bus hang");
+		conninfra_trigger_whole_chip_rst(
+			CONNDRV_TYPE_WIFI,
+			"wifi bus hang");
+
 		return ret;
 	}
 
