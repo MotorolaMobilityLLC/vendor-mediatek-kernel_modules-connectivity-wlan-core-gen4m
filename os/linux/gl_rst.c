@@ -656,6 +656,17 @@ int wlan_reset_thread_main(void *data)
 				g_IsSubsysRstOverThreshold = FALSE;
 				g_SubsysRstCnt = 0;
 			} else {
+#if 1
+				g_SubsysRstCnt++;
+				DBGLOG(INIT, INFO,
+					"WF reset count = %d\n",
+					g_SubsysRstCnt);
+				glResetMsgHandler(WMTMSG_TYPE_RESET,
+						WMTRSTMSG_0P5RESET_START);
+				glResetMsgHandler(WMTMSG_TYPE_RESET,
+						WMTRSTMSG_RESET_END);
+
+#else
 				if (g_SubsysRstCnt < 3) {
 					g_SubsysRstCnt++;
 					DBGLOG(INIT, INFO,
@@ -673,6 +684,7 @@ int wlan_reset_thread_main(void *data)
 					GL_RESET_TRIGGER(prGlueInfo->prAdapter,
 							RST_FLAG_WHOLE_RESET);
 				}
+#endif
 			}
 		}
 		if (test_and_clear_bit(GLUE_FLAG_HALT_BIT, &g_ulFlag)) {
