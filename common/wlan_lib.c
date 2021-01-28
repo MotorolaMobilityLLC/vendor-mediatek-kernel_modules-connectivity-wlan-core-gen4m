@@ -714,8 +714,11 @@ uint32_t wlanAdapterStart(IN struct ADAPTER *prAdapter,
 #endif
 #endif
 
-		/* Enable 5G band by default */
-		prAdapter->fgEnable5GBand = TRUE;
+		/* Check hardware 5g band support */
+		if (prAdapter->fgIsHw5GBandDisabled)
+			prAdapter->fgEnable5GBand = FALSE;
+		else
+			prAdapter->fgEnable5GBand = TRUE;
 
 #if CFG_SUPPORT_NVRAM
 		/* load manufacture data */
