@@ -1488,7 +1488,9 @@ uint32_t nicDeactivateNetwork(IN struct ADAPTER *prAdapter,
 	nicFreePendingTxMsduInfoByBssIdx(prAdapter, ucBssIndex);
 	kalClearSecurityFramesByBssIdx(prAdapter->prGlueInfo,
 				       ucBssIndex);
-
+#if (CFG_HW_WMM_BY_BSS == 1)
+	cnmFreeWmmIndex(prAdapter, prBssInfo);
+#endif
 	return u4Status;
 }
 
