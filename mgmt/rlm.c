@@ -98,7 +98,13 @@ enum ENUM_OP_NOTIFY_STATE_T {
  *                           P R I V A T E   D A T A
  *******************************************************************************
  */
+/*
+** Should Not Force to BW 20 after Channel Switch.
+** Enable for DFS Certification
+*/
+#ifdef CFG_DFS_CHSW_FORCE_BW20
 u_int8_t g_fgHasChannelSwitchIE = FALSE;
+#endif
 
 #if CFG_SUPPORT_CAL_RESULT_BACKUP_TO_HOST
 struct RLM_CAL_RESULT_ALL_V2 g_rBackupCalDataAllV2;
@@ -224,7 +230,9 @@ void rlmFsmEventInit(struct ADAPTER *prAdapter)
 	rlmDomainCheckCountryPowerLimitTable(prAdapter);
 #endif
 
+#ifdef CFG_DFS_CHSW_FORCE_BW20
 	g_fgHasChannelSwitchIE = FALSE;
+#endif
 
 	for (i = 0; i < KAL_AIS_NUM; i++) {
 		struct RADIO_MEASUREMENT_REQ_PARAMS *prRmReqParam =
@@ -2680,7 +2688,9 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 						prChannelSwitchAnnounceIE
 							->ucNewChannelNum;
 					fgHasChannelSwitchIE = TRUE;
+#ifdef CFG_DFS_CHSW_FORCE_BW20
 					g_fgHasChannelSwitchIE = TRUE;
+#endif
 #if 0
 					qmSetStaRecTxAllowed(prAdapter,
 					       prStaRec, TRUE);
@@ -2689,6 +2699,7 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 					       prStaRec->fgIsTxAllowed);
 #endif
 				}
+#ifdef CFG_DFS_CHSW_FORCE_BW20
 				if (RLM_NET_IS_11AC(prBssInfo)) {
 					DBGLOG(RLM, INFO,
 					       "Send Operation Action Frame");
@@ -2700,6 +2711,7 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 					DBGLOG(RLM, INFO,
 					       "Skip Send Operation Action Frame");
 				}
+#endif
 			}
 
 			break;
@@ -2901,6 +2913,7 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 #endif
 
 #if CFG_SUPPORT_DFS
+#ifdef CFG_DFS_CHSW_FORCE_BW20
 	/*DFS Certification for Channel Bandwidth 20MHz */
 	DBGLOG(RLM, INFO, "Ch : SwitchIE = %d\n", g_fgHasChannelSwitchIE);
 	if (g_fgHasChannelSwitchIE == TRUE) {
@@ -2912,6 +2925,7 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 			~(HT_OP_INFO1_SCO | HT_OP_INFO1_STA_CHNL_WIDTH);
 		DBGLOG(RLM, INFO, "Ch : DFS has Appeared\n");
 	}
+#endif
 #endif
 	rlmReviseMaxBw(prAdapter, prBssInfo->ucBssIndex, &prBssInfo->eBssSCO,
 		       (enum ENUM_CHANNEL_WIDTH *)&prBssInfo->ucVhtChannelWidth,
@@ -4346,6 +4360,9 @@ static void rlmBssReset(struct ADAPTER *prAdapter, struct BSS_INFO *prBssInfo)
 	prBssInfo->u2HeBasicMcsSet = 0;
 #endif
 
+#ifdef CFG_DFS_CHSW_FORCE_BW20
+	g_fgHasChannelSwitchIE = FALSE;
+#endif
 }
 
 #if CFG_SUPPORT_TDLS
