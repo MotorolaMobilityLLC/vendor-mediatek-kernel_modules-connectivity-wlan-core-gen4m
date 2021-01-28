@@ -1660,6 +1660,11 @@ int mtk_cfg80211_vendor_acs(struct wiphy *wiphy,
 
 		ch_list_count = nla_len(tb[WIFI_VENDOR_ATTR_ACS_CH_LIST]);
 		if (ch_list_count) {
+			if (ch_list_count > MAX_CHN_NUM) {
+				DBGLOG(REQ, ERROR, "Invalid channel count.\n");
+				rStatus = -EINVAL;
+				goto exit;
+			}
 			ch_list = kalMemAlloc(sizeof(uint8_t) * ch_list_count,
 					VIR_MEM_TYPE);
 			if (ch_list == NULL) {
@@ -1677,6 +1682,11 @@ int mtk_cfg80211_vendor_acs(struct wiphy *wiphy,
 		ch_list_count = nla_len(tb[WIFI_VENDOR_ATTR_ACS_FREQ_LIST]) /
 				sizeof(uint32_t);
 		if (ch_list_count) {
+			if (ch_list_count > MAX_CHN_NUM) {
+				DBGLOG(REQ, ERROR, "Invalid freq count.\n");
+				rStatus = -EINVAL;
+				goto exit;
+			}
 			ch_list = kalMemAlloc(sizeof(uint8_t) * ch_list_count,
 					VIR_MEM_TYPE);
 			if (ch_list == NULL) {
