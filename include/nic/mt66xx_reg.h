@@ -954,12 +954,17 @@ struct mt66xx_chip_info {
 	const P_ECO_INFO_T eco_info;	/* chip version table */
 	UINT_8 eco_ver;	/* chip version */
 
+	UINT_16 u2TxInitCmdPort;
+	UINT_16 u2TxFwDlPort;
+	UINT_16 u2HifTxdSize;
+
 	void (*constructFirmwarePrio)(P_GLUE_INFO_T prGlueInfo, PPUINT_8 apucNameTable,
 	PPUINT_8 apucName, PUINT_8 pucNameIdx, UINT_8 ucMaxNameIdx);/* load firmware bin priority */
+	void (*asicCapInit)(IN P_ADAPTER_T prAdapter);
 	void (*asicEnableFWDownload)(IN P_ADAPTER_T prAdapter, IN BOOL fgEnable);
-	void (*asicDevInit)(IN P_ADAPTER_T prAdapter);
 	void (*fillTxDescAppend)(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduInfo, IN UINT_16 u4MsduId,
 				 IN dma_addr_t rDmaAddr, OUT PUINT_8 pucBuffer);
+	void (*fillHifTxDesc)(IN PUINT_8 *pDest, IN PUINT_16 pInfoBufLen);
 };
 
 struct mt66xx_hif_driver_data {

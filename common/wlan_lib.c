@@ -2718,8 +2718,10 @@ WLAN_STATUS wlanPatchSendSemaControl(IN P_ADAPTER_T prAdapter, OUT PUINT_8 pucSe
 	P_INIT_HIF_TX_HEADER_T prInitHifTxHeader;
 	WLAN_STATUS u4Status = WLAN_STATUS_SUCCESS;
 	P_INIT_CMD_PATCH_SEMA_CONTROL prPatchSemaControl;
+	struct mt66xx_chip_info *prChipInfo;
 
 	ASSERT(prAdapter);
+	prChipInfo = prAdapter->chip_info;
 
 	DEBUGFUNC("wlanImagePatchSemaphoreCheck");
 
@@ -2754,7 +2756,7 @@ WLAN_STATUS wlanPatchSendSemaControl(IN P_ADAPTER_T prAdapter, OUT PUINT_8 pucSe
 	prPatchSemaControl->ucGetSemaphore = PATCH_GET_SEMA_CONTROL;
 
 	/* 4. Send FW_Download command */
-	if (nicTxInitCmd(prAdapter, prCmdInfo) != WLAN_STATUS_SUCCESS) {
+	if (nicTxInitCmd(prAdapter, prCmdInfo, prChipInfo->u2TxInitCmdPort) != WLAN_STATUS_SUCCESS) {
 		u4Status = WLAN_STATUS_FAILURE;
 		DBGLOG(INIT, ERROR, "Fail to transmit image download command\n");
 	}
@@ -2812,8 +2814,10 @@ WLAN_STATUS wlanPatchSendComplete(IN P_ADAPTER_T prAdapter)
 	P_INIT_HIF_TX_HEADER_T prInitHifTxHeader;
 	UINT_8 ucTC, ucCmdSeqNum;
 	WLAN_STATUS u4Status = WLAN_STATUS_SUCCESS;
+	struct mt66xx_chip_info *prChipInfo;
 
 	ASSERT(prAdapter);
+	prChipInfo = prAdapter->chip_info;
 
 	/* 1. Allocate CMD Info Packet and its Buffer. */
 	prCmdInfo = cmdBufAllocateCmdInfo(prAdapter, sizeof(INIT_HIF_TX_HEADER_T));
@@ -2864,7 +2868,7 @@ WLAN_STATUS wlanPatchSendComplete(IN P_ADAPTER_T prAdapter)
 
 		}
 		/* 5.2 Send CMD Info Packet */
-		if (nicTxInitCmd(prAdapter, prCmdInfo) != WLAN_STATUS_SUCCESS) {
+		if (nicTxInitCmd(prAdapter, prCmdInfo, prChipInfo->u2TxInitCmdPort) != WLAN_STATUS_SUCCESS) {
 			u4Status = WLAN_STATUS_FAILURE;
 			DBGLOG(INIT, ERROR, "Fail to transmit WIFI start command\n");
 		}
@@ -2912,8 +2916,10 @@ WLAN_STATUS wlanImageSectionConfig(IN P_ADAPTER_T prAdapter,
 	P_INIT_CMD_DOWNLOAD_CONFIG prInitCmdDownloadConfig;
 	UINT_8 ucTC, ucCmdSeqNum;
 	WLAN_STATUS u4Status = WLAN_STATUS_SUCCESS;
+	struct mt66xx_chip_info *prChipInfo;
 
 	ASSERT(prAdapter);
+	prChipInfo = prAdapter->chip_info;
 
 	DEBUGFUNC("wlanImageSectionConfig");
 
@@ -2979,7 +2985,7 @@ WLAN_STATUS wlanImageSectionConfig(IN P_ADAPTER_T prAdapter,
 
 		}
 		/* 6.2 Send CMD Info Packet */
-		if (nicTxInitCmd(prAdapter, prCmdInfo) != WLAN_STATUS_SUCCESS) {
+		if (nicTxInitCmd(prAdapter, prCmdInfo, prChipInfo->u2TxInitCmdPort) != WLAN_STATUS_SUCCESS) {
 			u4Status = WLAN_STATUS_FAILURE;
 			DBGLOG(INIT, ERROR, "Fail to transmit image download command\n");
 		}
@@ -3012,12 +3018,15 @@ WLAN_STATUS wlanImageSectionDownload(IN P_ADAPTER_T prAdapter, IN UINT_32 u4ImgS
 	P_CMD_INFO_T prCmdInfo;
 	P_INIT_HIF_TX_HEADER_T prInitHifTxHeader;
 	WLAN_STATUS u4Status = WLAN_STATUS_SUCCESS;
+	struct mt66xx_chip_info *prChipInfo;
 
 	ASSERT(prAdapter);
 	ASSERT(pucImgSecBuf);
 	ASSERT(u4ImgSecSize <= CMD_PKT_SIZE_FOR_IMAGE);
 
 	DEBUGFUNC("wlanImageSectionDownload");
+
+	prChipInfo = prAdapter->chip_info;
 
 	if (u4ImgSecSize == 0)
 		return WLAN_STATUS_SUCCESS;
@@ -3046,7 +3055,7 @@ WLAN_STATUS wlanImageSectionDownload(IN P_ADAPTER_T prAdapter, IN UINT_32 u4ImgS
 	kalMemCopy(prInitHifTxHeader->rInitWifiCmd.aucBuffer, pucImgSecBuf, u4ImgSecSize);
 
 	/* 4. Send FW_Download command */
-	if (nicTxInitCmd(prAdapter, prCmdInfo) != WLAN_STATUS_SUCCESS) {
+	if (nicTxInitCmd(prAdapter, prCmdInfo, prChipInfo->u2TxFwDlPort) != WLAN_STATUS_SUCCESS) {
 		u4Status = WLAN_STATUS_FAILURE;
 		DBGLOG(INIT, ERROR, "Fail to transmit image download command\n");
 	}
@@ -3075,8 +3084,10 @@ WLAN_STATUS wlanImageQueryStatus(IN P_ADAPTER_T prAdapter)
 	P_INIT_EVENT_PENDING_ERROR prEventPendingError;
 	WLAN_STATUS u4Status = WLAN_STATUS_SUCCESS;
 	UINT_8 ucTC, ucCmdSeqNum;
+	struct mt66xx_chip_info *prChipInfo;
 
 	ASSERT(prAdapter);
+	prChipInfo = prAdapter->chip_info;
 
 	DEBUGFUNC("wlanImageQueryStatus");
 
@@ -3129,7 +3140,7 @@ WLAN_STATUS wlanImageQueryStatus(IN P_ADAPTER_T prAdapter)
 
 		}
 		/* 5.2 Send CMD Info Packet */
-		if (nicTxInitCmd(prAdapter, prCmdInfo) != WLAN_STATUS_SUCCESS) {
+		if (nicTxInitCmd(prAdapter, prCmdInfo, prChipInfo->u2TxInitCmdPort) != WLAN_STATUS_SUCCESS) {
 			u4Status = WLAN_STATUS_FAILURE;
 			DBGLOG(INIT, ERROR, "Fail to transmit image download command\n");
 		}
@@ -3244,8 +3255,10 @@ WLAN_STATUS wlanConfigWifiFunc(IN P_ADAPTER_T prAdapter,
 	P_INIT_CMD_WIFI_START prInitCmdWifiStart;
 	UINT_8 ucTC, ucCmdSeqNum;
 	WLAN_STATUS u4Status = WLAN_STATUS_SUCCESS;
+	struct mt66xx_chip_info *prChipInfo;
 
 	ASSERT(prAdapter);
+	prChipInfo = prAdapter->chip_info;
 
 	DEBUGFUNC("wlanConfigWifiFunc");
 
@@ -3314,7 +3327,7 @@ WLAN_STATUS wlanConfigWifiFunc(IN P_ADAPTER_T prAdapter,
 
 		}
 		/* 5.2 Send CMD Info Packet */
-		if (nicTxInitCmd(prAdapter, prCmdInfo) != WLAN_STATUS_SUCCESS) {
+		if (nicTxInitCmd(prAdapter, prCmdInfo, prChipInfo->u2TxInitCmdPort) != WLAN_STATUS_SUCCESS) {
 			u4Status = WLAN_STATUS_FAILURE;
 			DBGLOG(INIT, ERROR, "Fail to transmit WIFI start command\n");
 		}
@@ -3347,8 +3360,11 @@ wlanCompressedFWConfigWifiFunc(IN P_ADAPTER_T prAdapter, IN BOOLEAN fgEnable,
 	P_INIT_CMD_WIFI_DECOMPRESSION_START prInitCmdWifiStart;
 	UINT_8 ucTC, ucCmdSeqNum;
 	WLAN_STATUS u4Status = WLAN_STATUS_SUCCESS;
+	struct mt66xx_chip_info *prChipInfo;
 
 	ASSERT(prAdapter);
+	prChipInfo = prAdapter->chip_info;
+
 	DEBUGFUNC("wlanConfigWifiFunc");
 	/* 1. Allocate CMD Info Packet and its Buffer. */
 	prCmdInfo = cmdBufAllocateCmdInfo(prAdapter,
@@ -3422,7 +3438,7 @@ wlanCompressedFWConfigWifiFunc(IN P_ADAPTER_T prAdapter, IN BOOLEAN fgEnable,
 
 		}
 		/* 5.2 Send CMD Info Packet */
-		if (nicTxInitCmd(prAdapter, prCmdInfo) != WLAN_STATUS_SUCCESS) {
+		if (nicTxInitCmd(prAdapter, prCmdInfo, prChipInfo->u2TxInitCmdPort) != WLAN_STATUS_SUCCESS) {
 			u4Status = WLAN_STATUS_FAILURE;
 			DBGLOG(INIT, ERROR, "Fail to transmit WIFI start command\n");
 		}
@@ -3773,8 +3789,10 @@ WLAN_STATUS wlanAccessRegister(IN P_ADAPTER_T prAdapter,
 	UINT_16 cmd_size;
 	UINT_8 aucBuffer[sizeof(INIT_HIF_RX_HEADER_T) + sizeof(INIT_CMD_ACCESS_REG)];
 	WLAN_STATUS u4Status = WLAN_STATUS_SUCCESS;
+	struct mt66xx_chip_info *prChipInfo;
 
 	ASSERT(prAdapter);
+	prChipInfo = prAdapter->chip_info;
 
 	DEBUGFUNC("wlanAccessRegister");
 
@@ -3837,7 +3855,7 @@ WLAN_STATUS wlanAccessRegister(IN P_ADAPTER_T prAdapter,
 
 		}
 		/* 6.2 Send CMD Info Packet */
-		if (nicTxInitCmd(prAdapter, prCmdInfo) != WLAN_STATUS_SUCCESS) {
+		if (nicTxInitCmd(prAdapter, prCmdInfo, prChipInfo->u2TxInitCmdPort) != WLAN_STATUS_SUCCESS) {
 			u4Status = WLAN_STATUS_FAILURE;
 			DBGLOG(INIT, ERROR, "Fail to transmit image download command\n");
 		}

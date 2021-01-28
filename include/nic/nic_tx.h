@@ -1447,7 +1447,7 @@ WLAN_STATUS nicTxAdjustTcq(IN P_ADAPTER_T prAdapter);
 WLAN_STATUS nicTxFlush(IN P_ADAPTER_T prAdapter);
 
 #if CFG_ENABLE_FW_DOWNLOAD
-WLAN_STATUS nicTxInitCmd(IN P_ADAPTER_T prAdapter, IN P_CMD_INFO_T prCmdInfo);
+WLAN_STATUS nicTxInitCmd(IN P_ADAPTER_T prAdapter, IN P_CMD_INFO_T prCmdInfo, IN UINT_16 u2Port);
 
 WLAN_STATUS nicTxInitResetResource(IN P_ADAPTER_T prAdapter);
 #endif

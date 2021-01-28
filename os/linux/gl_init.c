@@ -2114,6 +2114,7 @@ static INT_32 wlanProbe(PVOID pvData, PVOID pvDriverData)
 	INT_32 i4Status = 0;
 	BOOL bRet = FALSE;
 	P_REG_INFO_T prRegInfo;
+	struct mt66xx_chip_info *prChipInfo;
 #if (MTK_WCN_HIF_SDIO && CFG_WMT_WIFI_PATH_SUPPORT)
 	INT_32 i4RetVal = 0;
 #endif
@@ -2165,6 +2166,11 @@ static INT_32 wlanProbe(PVOID pvData, PVOID pvDriverData)
 		prGlueInfo->i4DevIdx = i4DevIdx;
 
 		prAdapter = prGlueInfo->prAdapter;
+
+		/* Init Chip Capability */
+		prChipInfo = prAdapter->chip_info;
+		if (prChipInfo->asicCapInit)
+			prChipInfo->asicCapInit(prAdapter);
 
 		prGlueInfo->u4ReadyFlag = 0;
 
