@@ -258,6 +258,9 @@ struct BSS_DESC {
 	 */
 	u_int8_t fgIsConnected;
 
+	/* This flag is TRUE if the SSID is not hidden */
+	u_int8_t fgIsValidSSID;
+
 	/* When this flag is TRUE, means the SSID of this
 	 * BSS is not known yet.
 	 */
