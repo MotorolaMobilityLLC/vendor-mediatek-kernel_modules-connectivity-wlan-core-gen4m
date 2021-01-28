@@ -489,16 +489,7 @@ struct PARAM_CUSTOM_KEY_CFG_STRUCT g_rDefaulteSetting[] = {
 	*/
 	{"AdapScan", "0x0", WLAN_CFG_DEFAULT},
 #if CFG_SUPPORT_IOT_AP_BLACKLIST
-	/*IOT AP, Ralink/MTK AP*/
-	{"IOTAP27", "80:000c43:::::2::1:1", WLAN_CFG_DEFAULT},
-	/*IOT AP, Athreros/Qcom AP*/
-	{"IOTAP28", "80:00037f:::::3:2:1:1", WLAN_CFG_DEFAULT},
-	{"IOTAP29", "80:00037f:::::4:2:1:1", WLAN_CFG_DEFAULT},
-	/*IOT AP, Broadcom AP*/
-	{"IOTAP30", "80:001018:02fff02c0000:ff00ffffffff:::2::1:1",
-		WLAN_CFG_DEFAULT},
-	{"IOTAP31", "80:001018:02ff040c0000:ff00ffffffff:::2::1:1",
-		WLAN_CFG_DEFAULT},
+	/*Fill Iot AP blacklist here*/
 #endif
 #if CFG_TC3_FEATURE
 	{"ScreenOnBeaconTimeoutCount", "20"},
@@ -6993,7 +6984,7 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 
 	prWifiVar->fgEnDefaultIotApRule = (uint8_t) wlanCfgGetUint32(prAdapter,
 					"EnDefaultIotApRule",
-					FEATURE_DISABLED);
+					FEATURE_ENABLED);
 
 	prWifiVar->ucQoS = (uint8_t) wlanCfgGetUint32(prAdapter, "Qos",
 					FEATURE_ENABLED);
