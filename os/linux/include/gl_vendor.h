@@ -77,7 +77,6 @@
 #include <net/cfg80211.h>
 #include <linux/can/netlink.h>
 #include <net/netlink.h>
-#include "gl_os.h"
 #include "wlan_lib.h"
 #include "gl_wext.h"
 
