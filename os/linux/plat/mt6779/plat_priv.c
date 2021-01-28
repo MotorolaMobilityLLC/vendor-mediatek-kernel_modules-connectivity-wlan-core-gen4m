@@ -10,6 +10,7 @@
 */
 
 #include "precomp.h"
+#include "wmt_exp.h"
 
 #ifdef CONFIG_MTK_EMI
 #include <mt_emi_api.h>
@@ -61,10 +62,21 @@ void kalSetDrvEmiMpuProtection(phys_addr_t emiPhyBase, uint32_t offset,
 }
 #endif
 
-#if (CFG_FLAVOR_FIRMWARE)
 int32_t kalGetFwFlavor(uint8_t *flavor)
 {
-	*flavor = 'a';
-	return 1;
+	int32_t ret = 1;
+	const uint32_t adie_chip_id = mtk_wcn_wmt_ic_info_get(WMTCHIN_ADIE);
+
+	DBGLOG(INIT, INFO, "adie_chip_id: 0x%x\n", adie_chip_id);
+
+	switch (adie_chip_id) {
+	case 0x6631:
+		*flavor = 'a';
+		break;
+	default:
+		ret = 0;
+		break;
+	}
+
+	return ret;
 }
-#endif

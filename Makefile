@@ -234,10 +234,6 @@ else
     ccflags-y += -DCFG_MTK_ANDROID_EMI=0
 endif
 
-ifneq ($(strip $(WIFI_FLAVOR)),)
-    ccflags-y += -DCFG_WIFI_FLAVOR=$(WIFI_FLAVOR)
-endif
-
 ifneq ($(WIFI_IP_SET),)
     ccflags-y += -DCFG_WIFI_IP_SET=$(WIFI_IP_SET)
 else
@@ -354,16 +350,6 @@ ifeq ($(CONFIG_MTK_TC1_FEATURE), y)
     ccflags-y += -DCFG_TC1_FEATURE=1
 else
     ccflags-y += -DCFG_TC1_FEATURE=0
-endif
-
-ifneq ($(filter 6779, $(WLAN_CHIP_ID)),)
-    ifneq ($(filter MT6631, $(MTK_CONSYS_ADIE)),)
-        ccflags-y += -DCFG_FLAVOR_FIRMWARE=1
-    else
-        ccflags-y += -DCFG_FLAVOR_FIRMWARE=0
-    endif
-else
-    ccflags-y += -DCFG_FLAVOR_FIRMWARE=0
 endif
 
 ifeq ($(MODULE_NAME),)
