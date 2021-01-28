@@ -1810,6 +1810,7 @@ void p2pFuncDfsSwitchCh(IN struct ADAPTER *prAdapter,
 	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo =
 		(struct P2P_ROLE_FSM_INFO *) NULL;
 	struct CMD_RDD_ON_OFF_CTRL *prCmdRddOnOffCtrl;
+	uint8_t role_idx = 0;
 
 	DEBUGFUNC("p2pFuncDfsSwitchCh()");
 
@@ -1868,27 +1869,23 @@ void p2pFuncDfsSwitchCh(IN struct ADAPTER *prAdapter,
 	prGlueInfo = prAdapter->prGlueInfo;
 
 	DBGLOG(P2P, INFO, "p2pFuncDfsSwitchCh: Update to OS\n");
+	role_idx = prP2pRoleFsmInfo->ucRoleIndex;
 	cfg80211_ch_switch_notify(
-		prGlueInfo->prP2PInfo
-			[prP2pRoleFsmInfo->ucRoleIndex]->prDevHandler,
-		prGlueInfo->prP2PInfo[prP2pRoleFsmInfo->ucRoleIndex]->chandef);
+		prGlueInfo->prP2PInfo[role_idx]->prDevHandler,
+		prGlueInfo->prP2PInfo[role_idx]->chandef);
 	DBGLOG(P2P, INFO, "p2pFuncDfsSwitchCh: Update to OS Done\n");
 
-	if (prGlueInfo->prP2PInfo[prP2pRoleFsmInfo->ucRoleIndex]->chandef->chan)
+	if (prGlueInfo->prP2PInfo[role_idx]->chandef) {
+		if (prGlueInfo->prP2PInfo[role_idx]->chandef->chan) {
+			cnmMemFree(prGlueInfo->prAdapter,
+			    prGlueInfo->prP2PInfo[role_idx]->chandef->chan);
+			prGlueInfo->prP2PInfo[role_idx]->chandef->chan = NULL;
+		}
 		cnmMemFree(prGlueInfo->prAdapter,
-			prGlueInfo->prP2PInfo
-				[prP2pRoleFsmInfo->ucRoleIndex]->chandef->chan);
-
-	prGlueInfo->prP2PInfo
-		[prP2pRoleFsmInfo->ucRoleIndex]->chandef->chan = NULL;
-
-	if (prGlueInfo->prP2PInfo[prP2pRoleFsmInfo->ucRoleIndex]->chandef)
-		cnmMemFree(prGlueInfo->prAdapter,
-			prGlueInfo->prP2PInfo
-				[prP2pRoleFsmInfo->ucRoleIndex]->chandef);
-
-	prGlueInfo->prP2PInfo[prP2pRoleFsmInfo->ucRoleIndex]->chandef = NULL;
-}				/* p2pFuncDfsSwitchCh */
+			prGlueInfo->prP2PInfo[role_idx]->chandef);
+		prGlueInfo->prP2PInfo[role_idx]->chandef = NULL;
+	}
+} /* p2pFuncDfsSwitchCh */
 
 u_int8_t p2pFuncCheckWeatherRadarBand(
 		IN struct P2P_CHNL_REQ_INFO *prChnlReqInfo)
