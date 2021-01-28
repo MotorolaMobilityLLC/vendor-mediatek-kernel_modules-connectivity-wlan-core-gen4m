@@ -3887,9 +3887,10 @@ void cnmEventSGStatus(
 	DBGLOG(CNM,  INFO,
 			"[SG]cnmEventSGStatus,%u,%u,%u\n",
 			prSGState->fgIsEnable, prSGState->u4StateIdx, eEvent);
-
 	KAL_REPORT_ERROR_EVENT(prAdapter,
-			eEvent, (uint16_t)sizeof(u_int8_t));
+			eEvent, (uint16_t)sizeof(u_int8_t),
+			0,
+			FALSE);
 	#endif /* CFG_SUPPORT_DATA_STALL */
 }
 #endif
