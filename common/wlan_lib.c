@@ -3536,6 +3536,37 @@ WLAN_STATUS wlanGetConnacTailerInfo(IN P_ADAPTER_T prAdapter, IN PVOID prFwBuffe
 	return WLAN_STATUS_SUCCESS;
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+* @brief This function is used to extract the wifi ram code start address
+*
+* @param prVerInfo      Pointer to the P_WIFI_VER_INFO_T structure.
+*
+* @return addr          The ram code entry address.
+*                       0: use firmware defaut setting
+*                       others: use it as the start address
+*/
+/*----------------------------------------------------------------------------*/
+
+UINT_32 wlanDetectRamEntry(IN P_WIFI_VER_INFO_T prVerInfo)
+{
+	UINT_32 addr = 0;
+	UINT_32 u4SecIdx;
+	TAILER_COMMON_FORMAT_T *prComTailer = &prVerInfo->rCommonTailer;
+	TAILER_REGION_FORMAT_T *prRegTailer;
+
+	for (u4SecIdx = 0; u4SecIdx < prComTailer->ucRegionNum; u4SecIdx++) {
+		prRegTailer = &(prVerInfo->rRegionTailers[u4SecIdx]);
+
+		if (prRegTailer->ucFeatureSet & DOWNLOAD_CONFIG_VALID_RAM_ENTRY) {
+			addr = prRegTailer->u4Addr;
+			break;
+		}
+	}
+
+	return addr;
+}
+
 WLAN_STATUS wlanHarvardFormatDownload(IN P_ADAPTER_T prAdapter, IN ENUM_IMG_DL_IDX_T eDlIdx)
 {
 	UINT_32 u4FwSize = 0;
@@ -3591,6 +3622,7 @@ WLAN_STATUS wlanConnacFormatDownload(IN P_ADAPTER_T prAdapter, IN ENUM_IMG_DL_ID
 {
 	PVOID prFwBuffer = NULL;
 	UINT_32 u4FwSize = 0;
+	UINT_32 ram_entry = 0;
 	WLAN_STATUS rDlStatus = 0;
 	WLAN_STATUS rCfgStatus = 0;
 	UINT_8 ucRegionNum;
@@ -3611,7 +3643,10 @@ WLAN_STATUS wlanConnacFormatDownload(IN P_ADAPTER_T prAdapter, IN ENUM_IMG_DL_ID
 	ucPDA = (eDlIdx == IMG_DL_IDX_N9_FW) ? PDA_N9 : PDA_CR4;
 
 	rDlStatus = wlanImageSectionDownloadStage(prAdapter, prFwBuffer, u4FwSize, ucRegionNum, eDlIdx);
-	rCfgStatus = wlanConfigWifiFunc(prAdapter, FALSE, 0, ucPDA);
+
+	ram_entry = wlanDetectRamEntry(&prAdapter->rVerInfo);
+	rCfgStatus = wlanConfigWifiFunc(prAdapter, (ram_entry == 0)?FALSE:TRUE, ram_entry, ucPDA);
+
 	kalFirmwareImageUnmapping(prAdapter->prGlueInfo, NULL, prFwBuffer);
 
 	if ((rDlStatus != WLAN_STATUS_SUCCESS) || (rCfgStatus != WLAN_STATUS_SUCCESS))
