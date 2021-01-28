@@ -346,7 +346,7 @@ PPUINT_8 apucName, PUINT_8 pucNameIdx, UINT_8 ucMaxNameIdx)
 
 PVOID
 kalFirmwareImageMapping(IN P_GLUE_INFO_T prGlueInfo,
-			OUT PPVOID ppvMapFileBuf, OUT PUINT_32 pu4FileLength, IN ENUM_IMG_DL_IDX_T eDlIdx)
+			OUT PPVOID ppvMapFileBuf, OUT PUINT_32 pu4FileLength, IN enum ENUM_IMG_DL_IDX_T eDlIdx)
 {
 	PPUINT_8 apucNameTable = NULL;
 	PUINT_8 apucName[FILE_NAME_TOTAL + 1]; /* extra +1, for the purpose of detecting the end of the array */
