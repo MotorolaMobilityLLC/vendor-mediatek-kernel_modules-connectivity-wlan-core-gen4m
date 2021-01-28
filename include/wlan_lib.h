@@ -210,7 +210,7 @@
 #define WLAN_CFG_FILE_BUF_SIZE	2048
 
 #define WLAN_CFG_REC_ENTRY_NUM_MAX 200
-#define WLAN_CFG_REC_FLAG_BIT BIT(0)
+
 
 
 #define WLAN_CFG_SET_CHIP_LEN_MAX 10
@@ -317,6 +317,13 @@ enum ENUM_AIS_REQUEST_TYPE {
 enum CMD_TYPE {
 	CMD_TYPE_QUERY,
 	CMD_TYPE_SET
+};
+
+enum WLAN_CFG_TPYE {
+	 WLAN_CFG_DEFAULT = 0x00,
+	 WLAN_CFG_REC = 0x01,
+	 WLAN_CFG_EM = 0x02,
+	 WLAN_CFG_NUM
 };
 
 enum POWER_ACTION_CATEGORY {
@@ -1564,7 +1571,7 @@ void wlanCfgSetCountryCode(IN struct ADAPTER *prAdapter);
 
 struct WLAN_CFG_ENTRY *wlanCfgGetEntry(IN struct ADAPTER *prAdapter,
 				       const int8_t *pucKey,
-				       u_int8_t fgGetCfgRec);
+				       uint32_t u4Flags);
 
 uint32_t
 wlanCfgGet(IN struct ADAPTER *prAdapter, const int8_t *pucKey, int8_t *pucValue,
@@ -1590,7 +1597,7 @@ uint32_t wlanCfgSetCb(IN struct ADAPTER *prAdapter, const int8_t *pucKey,
 
 uint32_t wlanCfgParse(IN struct ADAPTER *prAdapter, uint8_t *pucConfigBuf,
 		      uint32_t u4ConfigBufLen, u_int8_t isFwConfig);
-void wlanFeatureToFw(IN struct ADAPTER *prAdapter);
+void wlanFeatureToFw(IN struct ADAPTER *prAdapter, uint32_t u4Flag);
 #endif
 
 void wlanLoadDefaultCustomerSetting(IN struct ADAPTER *prAdapter);
@@ -1662,6 +1669,10 @@ uint8_t *wlanGetStaAddrByWlanIdx(IN struct ADAPTER *prAdapter,
 struct WLAN_CFG_ENTRY *wlanCfgGetEntryByIndex(IN struct ADAPTER *prAdapter,
 					      const uint8_t ucIdx,
 					      uint32_t flag);
+
+uint32_t wlanCfgGetTotalCfgNum(
+	IN struct ADAPTER *prAdapter, uint32_t flag);
+
 
 uint32_t wlanGetStaIdxByWlanIdx(IN struct ADAPTER *prAdapter,
 				IN uint8_t ucIndex, OUT uint8_t *pucStaIdx);
@@ -1802,3 +1813,12 @@ void wlanCustomMonitorFunction(struct ADAPTER *prAdapter,
 #endif /* CFG_SUPPORT_DATA_STALL */
 uint32_t wlanSetForceRTS(IN struct ADAPTER *prAdapter,
 	IN u_int8_t fgEnForceRTS);
+
+void
+wlanBackupEmCfgSetting(IN struct ADAPTER *prAdapter);
+
+void
+wlanResoreEmCfgSetting(IN struct ADAPTER *prAdapter);
+
+void
+wlanCleanAllEmCfgSetting(IN struct ADAPTER *prAdapter);
