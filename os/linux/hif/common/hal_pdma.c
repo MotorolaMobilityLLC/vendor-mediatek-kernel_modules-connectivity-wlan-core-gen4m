@@ -961,8 +961,8 @@ bool halHifSwInfoInit(IN struct ADAPTER *prAdapter)
 
 	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
 	prBusInfo = prAdapter->chip_info->bus_info;
-	if (prBusInfo->pcieDmaShdlInit)
-		prBusInfo->pcieDmaShdlInit(prAdapter);
+	if (prBusInfo->DmaShdlInit)
+		prBusInfo->DmaShdlInit(prAdapter);
 
 	if (!halWpdmaAllocRing(prAdapter->prGlueInfo, true))
 		return false;
