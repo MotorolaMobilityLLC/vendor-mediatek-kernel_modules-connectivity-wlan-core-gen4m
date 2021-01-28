@@ -6319,7 +6319,7 @@ void qmHandleEventBssAbsencePresence(IN struct ADAPTER *prAdapter,
 	prBssInfo->fgIsNetAbsent = prEventBssStatus->ucIsAbsent;
 	prBssInfo->ucBssFreeQuota = prEventBssStatus->ucBssFreeQuota;
 
-	DBGLOG(QM, INFO, "NAF=%d,%d,%d\n",
+	DBGLOG_LIMITED(QM, INFO, "NAF=%d,%d,%d\n",
 		prEventBssStatus->ucBssIndex, prBssInfo->fgIsNetAbsent,
 		prBssInfo->ucBssFreeQuota);
 
