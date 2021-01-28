@@ -7628,7 +7628,7 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 	prWifiVar->ucChannelSwtichColdownTime = (uint8_t) wlanCfgGetUint32(
 			prAdapter, "CSACdTime", 60);/*Second*/
 	prWifiVar->fgCrossBandSwitchEn = (uint8_t) wlanCfgGetUint32(
-			prAdapter, "SapCrossBandSwitchEn", 1);
+			prAdapter, "SapCrossBandSwitchEn", 0);
 #endif
 #if CFG_SUPPORT_PERF_IND
 	prWifiVar->fgPerfIndicatorEn = (uint8_t) wlanCfgGetUint32(
