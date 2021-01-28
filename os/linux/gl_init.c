@@ -4364,11 +4364,7 @@ static int32_t wlanOffAtReset(void)
 
 	wlanOffStopWlanThreads(prGlueInfo);
 
-/* wlanAdapterStop Section Start */
-	wlanOffClearAllQueues(prAdapter);
-
-	wlanOffUninitNicModule(prAdapter, TRUE);
-/* wlanAdapterStop Section End */
+	wlanAdapterStop(prAdapter, TRUE);
 
 	/* 4 <x> Stopping handling interrupt and free IRQ */
 	glBusFreeIrq(prDev, prGlueInfo);
@@ -4806,7 +4802,7 @@ static int32_t wlanProbe(void *pvData, void *pvDriverData)
 			/* wait main thread stops */
 			wait_for_completion_interruptible(
 							&prGlueInfo->rHaltComp);
-			wlanAdapterStop(prAdapter);
+			wlanAdapterStop(prAdapter, FALSE);
 		/* fallthrough */
 		case ADAPTER_START_FAIL:
 			glBusFreeIrq(prWdev->netdev,
@@ -5047,7 +5043,7 @@ static void wlanRemove(void)
 			      0);
 #endif
 
-	wlanAdapterStop(prAdapter);
+	wlanAdapterStop(prAdapter, FALSE);
 
 	HAL_LP_OWN_SET(prAdapter, &fgResult);
 	DBGLOG(INIT, INFO, "HAL_LP_OWN_SET(%d)\n",
