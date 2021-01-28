@@ -187,25 +187,20 @@ VOID p2pFsmRunEventNetDeviceRegister(IN P_ADAPTER_T prAdapter, IN P_MSG_HDR_T pr
 {
 	P_MSG_P2P_NETDEV_REGISTER_T prNetDevRegisterMsg = (P_MSG_P2P_NETDEV_REGISTER_T) NULL;
 
-	do {
-		ASSERT_BREAK((prAdapter != NULL) && (prMsgHdr != NULL));
+	DBGLOG(P2P, TRACE, "p2pFsmRunEventNetDeviceRegister\n");
 
-		DBGLOG(P2P, TRACE, "p2pFsmRunEventNetDeviceRegister\n");
+	prNetDevRegisterMsg = (P_MSG_P2P_NETDEV_REGISTER_T) prMsgHdr;
 
-		prNetDevRegisterMsg = (P_MSG_P2P_NETDEV_REGISTER_T) prMsgHdr;
+	if (prNetDevRegisterMsg->fgIsEnable) {
+		p2pSetMode((prNetDevRegisterMsg->ucMode == 1) ? TRUE : FALSE);
+		if (p2pLaunch(prAdapter->prGlueInfo))
+			ASSERT(prAdapter->fgIsP2PRegistered);
+	} else {
+		if (prAdapter->fgIsP2PRegistered)
+			p2pRemove(prAdapter->prGlueInfo);
+	}
 
-		if (prNetDevRegisterMsg->fgIsEnable) {
-			p2pSetMode((prNetDevRegisterMsg->ucMode == 1) ? TRUE : FALSE);
-			if (p2pLaunch(prAdapter->prGlueInfo))
-				ASSERT(prAdapter->fgIsP2PRegistered);
-		} else {
-			if (prAdapter->fgIsP2PRegistered)
-				p2pRemove(prAdapter->prGlueInfo);
-		}
-	} while (FALSE);
-
-	if (prMsgHdr)
-		cnmMemFree(prAdapter, prMsgHdr);
+	cnmMemFree(prAdapter, prMsgHdr);
 }				/* p2pFsmRunEventNetDeviceRegister */
 
 VOID p2pFsmRunEventUpdateMgmtFrame(IN P_ADAPTER_T prAdapter, IN P_MSG_HDR_T prMsgHdr)
