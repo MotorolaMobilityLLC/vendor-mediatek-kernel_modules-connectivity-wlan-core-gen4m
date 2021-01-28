@@ -291,15 +291,9 @@ static void mtk_wifi_trigger_reset(struct work_struct *work)
 	if (rst->rst_trigger_flag & RST_FLAG_PREVENT_POWER_OFF)
 		mtk_wcn_set_connsys_power_off_flag(FALSE);
 
-	if ((rst->rst_trigger_flag & RST_FLAG_DO_CORE_DUMP)
-	    && !fgIsBusAccessFailed)
-		fgResult = mtk_wcn_wmt_assert_timeout(WMTDRV_TYPE_WIFI,
-						      0x40, 0);
-	else
-		fgResult = mtk_wcn_wmt_do_reset(WMTDRV_TYPE_WIFI);
-
+	fgResult = mtk_wcn_wmt_assert_timeout(WMTDRV_TYPE_WIFI, 0x40, 0);
 	DBGLOG(INIT, INFO, "reset result %d, trigger flag 0x%x\n",
-	       fgResult, rst->rst_trigger_flag);
+				fgResult, rst->rst_trigger_flag);
 }
 
 u_int8_t glResetTrigger(struct ADAPTER *prAdapter,

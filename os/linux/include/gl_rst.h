@@ -80,7 +80,7 @@
  *                              C O N S T A N T S
  *******************************************************************************
  */
-#if (MTK_WCN_HIF_SDIO)
+#if (MTK_WCN_HIF_SDIO == 1) || (MTK_WCN_HIF_AXI == 1)
 #define CFG_WMT_RESET_API_SUPPORT   1
 #else
 #define CFG_WMT_RESET_API_SUPPORT   0
