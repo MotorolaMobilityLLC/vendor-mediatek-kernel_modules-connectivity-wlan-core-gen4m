@@ -114,6 +114,8 @@ const struct NIC_CAPABILITY_V2_REF_TABLE
  *******************************************************************************
  */
 struct MIB_INFO_STAT g_arMibInfo[ENUM_BAND_NUM];
+uint8_t fgEfuseCtrlAxOn; /* run time control if support AX by efuse */
+
 
 /*******************************************************************************
  *                            F U N C T I O N   D A T A
@@ -3044,11 +3046,25 @@ uint32_t nicCfgChipCapPhyCap(IN struct ADAPTER *prAdapter,
 	prAdapter->rWifiVar.ucRxStbc &= prPhyCap->ucRxStbc;
 	wlanCfgSetUint32(prAdapter, "StbcRx", prAdapter->rWifiVar.ucRxStbc);
 
+
+	if ((prPhyCap->ucWifiPath != 0xF) && (prPhyCap->ucWifiPath != 0x3)) {
+		/* May be legal settings in the future */
+		DBGLOG(INIT, ERROR, "illegle ucWifiPath %x\n",
+			prPhyCap->ucWifiPath);
+	} else { /* 0xF = 2*2, 0x3 = 1*1 */
+		 DBGLOG(INIT, TRACE, "ucWifiPath %x\n",
+			prPhyCap->ucWifiPath);
+	}
+	/* Overwirte driver default setting here */
 	prAdapter->rWifiFemCfg.u2WifiPath = prPhyCap->ucWifiPath;
+
 
 #if (CFG_SUPPORT_802_11AX == 1)
 	prAdapter->rWifiVar.ucStaHe &= prPhyCap->ucHe;
 	wlanCfgSetUint32(prAdapter, "StaHE", prAdapter->rWifiVar.ucStaHe);
+	if (prAdapter->rWifiVar.ucStaHe & BIT(0)) { /* (wifi.cfg & chip cap) */
+		fgEfuseCtrlAxOn = 1; /* default is 0 */
+	}
 #endif
 
 	DBGLOG(INIT, TRACE,
