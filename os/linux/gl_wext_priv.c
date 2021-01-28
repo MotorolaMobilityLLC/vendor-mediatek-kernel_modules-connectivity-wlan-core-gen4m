@@ -586,6 +586,16 @@ static struct WLAN_REQ_ENTRY arWlanOidReqTable[] = {
 		(PFN_OID_HANDLER_FUNC_REQ) wlanoidSetWifiLogLevel
 	}
 	,
+#if CFG_SUPPORT_ANT_SWAP
+	{
+	OID_CUSTOM_QUERY_ANT_SWAP_CAPABILITY,	/* 0xFFA0CD00 */
+	DISP_STRING("OID_CUSTOM_QUERY_ANT_SWAP_CAPABILITY"),
+	FALSE, FALSE, ENUM_OID_DRIVER_CORE, sizeof(uint32_t),
+	(PFN_OID_HANDLER_FUNC_REQ) wlanoidQueryAntennaSwap,
+	NULL
+	}
+	,
+#endif
 };
 
 /*******************************************************************************
