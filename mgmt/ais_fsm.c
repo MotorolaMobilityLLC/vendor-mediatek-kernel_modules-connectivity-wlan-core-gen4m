@@ -318,8 +318,8 @@ VOID aisFsmInit(IN P_ADAPTER_T prAdapter)
 	prAisBssInfo->prStaRecOfAP = (P_STA_RECORD_T) NULL;
 	prAisBssInfo->ucNss = wlanGetSupportNss(prAdapter, prAisBssInfo->ucBssIndex);
 	prAisBssInfo->eDBDCBand = ENUM_BAND_0;
-	prAisBssInfo->ucWmmQueSet =
-			(prAdapter->rWifiVar.ucDbdcMode == DBDC_MODE_DISABLED) ? DBDC_5G_WMM_INDEX : DBDC_2G_WMM_INDEX;
+	prAisBssInfo->ucWmmQueSet = (prAdapter->rWifiVar.eDbdcMode ==
+		ENUM_DBDC_MODE_DISABLED) ? DBDC_5G_WMM_INDEX : DBDC_2G_WMM_INDEX;
 
 	/* 4 <4> Allocate MSDU_INFO_T for Beacon */
 	prAisBssInfo->prBeacon = cnmMgtPktAlloc(prAdapter,
@@ -854,6 +854,7 @@ VOID aisFsmSteps(IN P_ADAPTER_T prAdapter, ENUM_AIS_STATE_T eNextState)
 #if CFG_SUPPORT_DBDC
 	CNM_DBDC_CAP_T rDbdcCap;
 #endif /*CFG_SUPPORT_DBDC*/
+	UINT_8 ucRfBw;
 
 	DEBUGFUNC("aisFsmSteps()");
 
@@ -1311,9 +1312,20 @@ VOID aisFsmSteps(IN P_ADAPTER_T prAdapter, ENUM_AIS_STATE_T eNextState)
 			prMsgChReq->eDBDCBand = prAisBssInfo->eDBDCBand;
 #endif /*CFG_SUPPORT_DBDC*/
 			/* To do: check if 80/160MHz bandwidth is needed here */
-			prMsgChReq->eRfChannelWidth = prAisFsmInfo->prTargetBssDesc->eChannelWidth;
-			prMsgChReq->ucRfCenterFreqSeg1 = prAisFsmInfo->prTargetBssDesc->ucCenterFreqS1;
-			prMsgChReq->ucRfCenterFreqSeg2 = prAisFsmInfo->prTargetBssDesc->ucCenterFreqS2;
+			/* Decide RF BW by own OP and Peer OP BW */
+			ucRfBw = cnmGetDbdcBwCapability(prAdapter, prAisBssInfo->ucBssIndex);
+			ucRfBw = rlmGetVhtOpBwByBssOpBw(ucRfBw); /* Revise to VHT OP BW */
+			if (ucRfBw > prAisFsmInfo->prTargetBssDesc->eChannelWidth)
+				ucRfBw = prAisFsmInfo->prTargetBssDesc->eChannelWidth;
+
+			prMsgChReq->eRfChannelWidth = ucRfBw;
+			/* TODO: BW80+80 support */
+			prMsgChReq->ucRfCenterFreqSeg1 =
+				nicGetVhtS1(prMsgChReq->ucPrimaryChannel, prMsgChReq->eRfChannelWidth);
+			DBGLOG(RLM, INFO, "AIS req CH for CH:%d, Bw:%d, s1=%d\n",
+				prAisBssInfo->ucPrimaryChannel, prMsgChReq->eRfChannelWidth,
+				prMsgChReq->ucRfCenterFreqSeg1);
+			prMsgChReq->ucRfCenterFreqSeg2 = 0;
 
 			rlmReviseMaxBw(prAdapter, prAisBssInfo->ucBssIndex, &prMsgChReq->eRfSco,
 					(P_ENUM_CHANNEL_WIDTH_P)&prMsgChReq->eRfChannelWidth,

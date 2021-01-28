@@ -118,6 +118,7 @@
 VOID rlmBssInitForAP(P_ADAPTER_T prAdapter, P_BSS_INFO_T prBssInfo)
 {
 	UINT_8 i;
+	UINT_8 ucMaxBw = 0;
 
 	ASSERT(prAdapter);
 	ASSERT(prBssInfo);
@@ -157,18 +158,8 @@ VOID rlmBssInitForAP(P_ADAPTER_T prAdapter, P_BSS_INFO_T prBssInfo)
 			prBssInfo->u2VhtBasicMcsSet |= BITS(2 * i, (2 * i + 1));
 		prBssInfo->u2VhtBasicMcsSet &= (VHT_CAP_INFO_MCS_MAP_MCS9 << VHT_CAP_INFO_MCS_1SS_OFFSET);
 
-		prBssInfo->ucVhtChannelWidth = cnmGetBssMaxBwToChnlBW(prAdapter, prBssInfo->ucBssIndex);
-		if (prBssInfo->ucVhtChannelWidth == VHT_OP_CHANNEL_WIDTH_80P80) {
-			/* TODO: BW80+80 support */
-			DBGLOG(RLM, WARN, "BW80+80 not support. Fallback  to VHT_OP_CHANNEL_WIDTH_20_40\n");
-			prBssInfo->ucVhtChannelWidth = VHT_OP_CHANNEL_WIDTH_20_40;
-			prBssInfo->ucVhtChannelFrequencyS1 = 0;
-			prBssInfo->ucVhtChannelFrequencyS2 = 0;
-		} else {
-			prBssInfo->ucVhtChannelFrequencyS1 =
-				rlmGetVhtS1ForAP(prAdapter, prBssInfo);
-			prBssInfo->ucVhtChannelFrequencyS2 = 0;
-		}
+		ucMaxBw = cnmGetDbdcBwCapability(prAdapter, prBssInfo->ucBssIndex);
+		rlmFillVhtOpInfoByBssOpBw(prBssInfo, ucMaxBw);
 
 		/* If the S1 is invalid, force to change bandwidth */
 		if (prBssInfo->ucVhtChannelFrequencyS1 == 0)
