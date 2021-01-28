@@ -1110,7 +1110,7 @@ void cnmStaSendUpdateCmd(struct ADAPTER *prAdapter, struct STA_RECORD *prStaRec,
 	} else
 		prCmdContent->ucRtsPolicy = RTS_POLICY_LEGACY;
 
-	log_dbg(REQ, INFO, "Update StaRec[%u] WIDX[%u] State[%u] Type[%u] BssIdx[%u] AID[%u]\n",
+	log_dbg(REQ, TRACE, "Update StaRec[%u] WIDX[%u] State[%u] Type[%u] BssIdx[%u] AID[%u]\n",
 		prCmdContent->ucStaIndex,
 		prCmdContent->ucWlanIndex,
 		prCmdContent->ucStaState,
@@ -1118,7 +1118,7 @@ void cnmStaSendUpdateCmd(struct ADAPTER *prAdapter, struct STA_RECORD *prStaRec,
 		prCmdContent->ucBssIndex,
 		prCmdContent->u2AssocId);
 
-	log_dbg(REQ, INFO, "Update StaRec[%u] QoS[%u] UAPSD[%u]\n",
+	log_dbg(REQ, TRACE, "Update StaRec[%u] QoS[%u] UAPSD[%u]\n",
 		prCmdContent->ucStaIndex,
 		prCmdContent->ucIsQoS,
 		prCmdContent->ucIsUapsdSupported);
