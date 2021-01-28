@@ -927,9 +927,9 @@ void aisFsmSteps(IN struct ADAPTER *prAdapter, enum ENUM_AIS_STATE eNextState)
 					}
 
 					SET_NET_PWR_STATE_ACTIVE(prAdapter, prAdapter->prAisBssInfo->ucBssIndex);
-
+#if CFG_SUPPORT_PNO
 					prAisBssInfo->fgIsNetRequestInActive = FALSE;
-
+#endif
 					/* reset trial count */
 					prAisFsmInfo->ucConnTrialCount = 0;
 
@@ -1218,7 +1218,9 @@ void aisFsmSteps(IN struct ADAPTER *prAdapter, enum ENUM_AIS_STATE eNextState)
 
 				/* sync with firmware */
 				nicActivateNetwork(prAdapter, prAdapter->prAisBssInfo->ucBssIndex);
+#if CFG_SUPPORT_PNO
 				prAisBssInfo->fgIsNetRequestInActive = FALSE;
+#endif
 			}
 
 			/* IE length decision */
@@ -1504,7 +1506,9 @@ void aisFsmSteps(IN struct ADAPTER *prAdapter, enum ENUM_AIS_STATE eNextState)
 
 			/* sync with firmware */
 			nicActivateNetwork(prAdapter, prAdapter->prAisBssInfo->ucBssIndex);
+#if CFG_SUPPORT_PNO
 			prAisBssInfo->fgIsNetRequestInActive = FALSE;
+#endif
 			break;
 
 		default:

@@ -2512,39 +2512,42 @@ void nicUninitMGMT(IN struct ADAPTER *prAdapter)
 
 /*----------------------------------------------------------------------------*/
 /*!
-* @brief This function is invoked to buffer scan result
-*
-* @param prAdapter          Pointer to the Adapter structure.
-* @param rMacAddr           BSSID
-* @param prSsid             Pointer to SSID
-* @param u4Privacy          Privacy settings (0: Open / 1: WEP/WPA/WPA2 enabled)
-* @param rRssi              Received Strength (-10 ~ -200 dBm)
-* @param eNetworkType       Network Type (a/b/g)
-* @param prConfiguration    Network Parameter
-* @param eOpMode            Infra/Ad-Hoc
-* @param rSupportedRates    Supported basic rates
-* @param u2IELength         IE Length
-* @param pucIEBuf           Pointer to Information Elements(IEs)
-*
-* @return (none)
-*/
+ * @brief This function is invoked to buffer scan result
+ *
+ * @param prAdapter          Pointer to the Adapter structure.
+ * @param rMacAddr           BSSID
+ * @param prSsid             Pointer to SSID
+ * @param u2CapInfo          Capability settings
+ * @param rRssi              Received Strength (-10 ~ -200 dBm)
+ * @param eNetworkType       Network Type (a/b/g)
+ * @param prConfiguration    Network Parameter
+ * @param eOpMode            Infra/Ad-Hoc
+ * @param rSupportedRates    Supported basic rates
+ * @param u2IELength         IE Length
+ * @param pucIEBuf           Pointer to Information Elements(IEs)
+ *
+ * @return (none)
+ */
 /*----------------------------------------------------------------------------*/
 void
 nicAddScanResult(IN struct ADAPTER *prAdapter,
 		 IN uint8_t rMacAddr[PARAM_MAC_ADDR_LEN],
 		 IN struct PARAM_SSID *prSsid,
-		 IN uint32_t u4Privacy,
+		 IN uint16_t u2CapInfo,
 		 IN int32_t rRssi,
 		 IN enum ENUM_PARAM_NETWORK_TYPE eNetworkType,
 		 IN struct PARAM_802_11_CONFIG *prConfiguration,
 		 IN enum ENUM_PARAM_OP_MODE eOpMode,
-		 IN uint8_t rSupportedRates[PARAM_MAX_LEN_RATES_EX], IN uint16_t u2IELength, IN uint8_t *pucIEBuf)
+		 IN uint8_t rSupportedRates[PARAM_MAX_LEN_RATES_EX],
+		 IN uint16_t u2IELength, IN uint8_t *pucIEBuf)
 {
 	u_int8_t bReplace;
 	uint32_t i;
 	uint32_t u4IdxWeakest = 0;
 	int32_t rWeakestRssi;
 	uint32_t u4BufferSize;
+	/* Privicy setting 0: Open / 1: WEP/WPA/WPA2 enabled */
+	uint32_t u4Privacy = u2CapInfo & CAP_INFO_PRIVACY ? 1 : 0;
 
 	ASSERT(prAdapter);
 

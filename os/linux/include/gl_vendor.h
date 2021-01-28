@@ -150,23 +150,6 @@ enum WIFI_SUB_COMMAND {
 
 };
 
-enum GSCAN_SUB_COMMAND {
-	GSCAN_SUBCMD_GET_CAPABILITIES = ANDROID_NL80211_SUBCMD_GSCAN_RANGE_START,
-
-	GSCAN_SUBCMD_SET_CONFIG,						  /* 0x1001 */
-	GSCAN_SUBCMD_SET_SCAN_CONFIG,					  /* 0x1002 */
-	GSCAN_SUBCMD_ENABLE_GSCAN,						  /* 0x1003 */
-	GSCAN_SUBCMD_GET_SCAN_RESULTS,					  /* 0x1004 */
-	GSCAN_SUBCMD_SCAN_RESULTS,						  /* 0x1005 */
-
-	GSCAN_SUBCMD_SET_HOTLIST,						  /* 0x1006 */
-
-	GSCAN_SUBCMD_SET_SIGNIFICANT_CHANGE_CONFIG,	  /* 0x1007 */
-	GSCAN_SUBCMD_ENABLE_FULL_SCAN_RESULTS,			  /* 0x1008 */
-	/* Add more sub commands here */
-
-};
-
 enum LSTATS_SUB_COMMAND {
 	LSTATS_SUBCMD_GET_INFO = ANDROID_NL80211_SUBCMD_LSTATS_RANGE_START,
 };
@@ -194,68 +177,8 @@ enum WIFI_ATTRIBUTE {
 
 };
 
-enum GSCAN_ATTRIBUTE {
-	GSCAN_ATTRIBUTE_CAPABILITIES = 1,
-
-	GSCAN_ATTRIBUTE_NUM_BUCKETS = 10,
-	GSCAN_ATTRIBUTE_BASE_PERIOD,
-	GSCAN_ATTRIBUTE_BUCKETS_BAND,
-	GSCAN_ATTRIBUTE_BUCKET_ID,
-	GSCAN_ATTRIBUTE_BUCKET_PERIOD,
-	GSCAN_ATTRIBUTE_BUCKET_NUM_CHANNELS,
-	GSCAN_ATTRIBUTE_BUCKET_CHANNELS,
-	GSCAN_ATTRIBUTE_NUM_AP_PER_SCAN,
-	GSCAN_ATTRIBUTE_REPORT_THRESHOLD,
-	GSCAN_ATTRIBUTE_NUM_SCANS_TO_CACHE,
-
-	GSCAN_ATTRIBUTE_ENABLE_FEATURE = 20,
-	GSCAN_ATTRIBUTE_SCAN_RESULTS_COMPLETE,	/* indicates no more results */
-	GSCAN_ATTRIBUTE_FLUSH_FEATURE,	/* Flush all the configs */
-	GSCAN_ENABLE_FULL_SCAN_RESULTS,
-	GSCAN_ATTRIBUTE_REPORT_EVENTS,
-
-	GSCAN_ATTRIBUTE_NUM_OF_RESULTS = 30,
-	GSCAN_ATTRIBUTE_FLUSH_RESULTS,
-	GSCAN_ATTRIBUTE_SCAN_RESULTS,	/* flat array of wifi_scan_result */
-	GSCAN_ATTRIBUTE_SCAN_ID,	/* indicates scan number */
-	GSCAN_ATTRIBUTE_SCAN_FLAGS, /* indicates if scan was aborted */
-	GSCAN_ATTRIBUTE_AP_FLAGS,	/* flags on significant change event */
-
-	GSCAN_ATTRIBUTE_SSID = 40,
-	GSCAN_ATTRIBUTE_BSSID,
-	GSCAN_ATTRIBUTE_CHANNEL,
-	GSCAN_ATTRIBUTE_RSSI,
-	GSCAN_ATTRIBUTE_TIMESTAMP,
-	GSCAN_ATTRIBUTE_RTT,
-	GSCAN_ATTRIBUTE_RTTSD,
-
-	GSCAN_ATTRIBUTE_HOTLIST_BSSIDS = 50,
-	GSCAN_ATTRIBUTE_RSSI_LOW,
-	GSCAN_ATTRIBUTE_RSSI_HIGH,
-	GSCAN_ATTRIBUTE_HOTLIST_ELEM,
-	GSCAN_ATTRIBUTE_HOTLIST_FLUSH,
-
-	GSCAN_ATTRIBUTE_RSSI_SAMPLE_SIZE = 60,
-	GSCAN_ATTRIBUTE_LOST_AP_SAMPLE_SIZE,
-	GSCAN_ATTRIBUTE_MIN_BREACHING,
-	GSCAN_ATTRIBUTE_NUM_AP,
-	GSCAN_ATTRIBUTE_SIGNIFICANT_CHANGE_BSSIDS,
-	GSCAN_ATTRIBUTE_SIGNIFICANT_CHANGE_FLUSH
-
-};
-
 enum LSTATS_ATTRIBUTE {
 	LSTATS_ATTRIBUTE_STATS = 2,
-};
-
-enum WIFI_BAND {
-	WIFI_BAND_UNSPECIFIED,
-	WIFI_BAND_BG = 1,		/* 2.4 GHz */
-	WIFI_BAND_A = 2,		/* 5 GHz without DFS */
-	WIFI_BAND_A_DFS = 4,		/* 5 GHz DFS only */
-	WIFI_BAND_A_WITH_DFS = 6,	/* 5 GHz with DFS */
-	WIFI_BAND_ABG = 3,		/* 2.4 GHz + 5 GHz; no DFS */
-	WIFI_BAND_ABG_WITH_DFS = 7, /* 2.4 GHz + 5 GHz with DFS */
 };
 
 enum WIFI_SCAN_EVENT {
@@ -269,30 +192,6 @@ enum QCA_SET_BAND {
 	QCA_SETBAND_5G,
 	QCA_SETBAND_2G,
 };
-
-#define GSCAN_MAX_REPORT_THRESHOLD   1024000
-#define GSCAN_MAX_CHANNELS                 8
-#define GSCAN_MAX_BUCKETS                  8
-#define MAX_HOTLIST_APS                   16
-#define MAX_SIGNIFICANT_CHANGE_APS        16
-#define PSCAN_MAX_SCAN_CACHE_SIZE         16
-#define PSCAN_MAX_AP_CACHE_PER_SCAN       16
-#define PSCAN_VERSION                      1
-
-#define MAX_BUFFERED_GSCN_RESULTS 5
-
-
-
-#define GSCAN_MAX_REPORT_THRESHOLD   1024000
-#define GSCAN_MAX_CHANNELS                 8
-#define GSCAN_MAX_BUCKETS                  8
-#define MAX_HOTLIST_APS                   16
-#define MAX_SIGNIFICANT_CHANGE_APS        16
-#define PSCAN_MAX_SCAN_CACHE_SIZE         16
-#define PSCAN_MAX_AP_CACHE_PER_SCAN       16
-#define PSCAN_VERSION                      1
-
-#define MAX_BUFFERED_GSCN_RESULTS 5
 
 /*******************************************************************************
 *                             D A T A   T Y P E S
@@ -346,86 +245,6 @@ enum QCA_SET_BAND {
 *				P R I V A T E   D A T A
 *
 ********************************************************************************/
-
-struct PARAM_WIFI_GSCAN_GET_RESULT_PARAMS {
-	uint32_t get_num;
-	uint8_t flush;
-};
-
-struct PARAM_WIFI_GSCAN_ACTION_CMD_PARAMS {
-	uint8_t ucPscanAct;
-	uint8_t aucReserved[3];
-};
-
-struct PARAM_WIFI_GSCAN_CAPABILITIES_STRUCT {
-	uint32_t max_scan_cache_size;	/*total space allocated for scan (in bytes) */
-	uint32_t max_scan_buckets;	/*maximum number of channel buckets */
-	uint32_t max_ap_cache_per_scan;	/*maximum number of APs that can be stored per scan */
-	uint32_t max_rssi_sample_size;	/*number of RSSI samples used for averaging RSSI */
-	uint32_t max_scan_reporting_threshold;	/*max possible report_threshold as described in wifi_scan_cmd_params */
-	uint32_t max_hotlist_aps;	/*maximum number of entries for hotlist APs */
-	uint32_t max_significant_wifi_change_aps;	/*maximum number of entries for significant wifi change APs */
-	uint32_t max_bssid_history_entries;	/*number of BSSID/RSSI entries that device can hold */
-};
-
-struct PARAM_WIFI_GSCAN_CHANNEL_SPEC {
-	uint32_t channel;
-	uint32_t dwellTimeMs;
-	uint32_t passive;
-	/* Add channel class */
-};
-
-struct PARAM_WIFI_GSCAN_BUCKET_SPEC {
-	uint32_t bucket;		/* bucket index, 0 based */
-	enum WIFI_BAND band;		/*when UNSPECIFIED, use channel lis */
-	uint32_t period;	/* desired period, in millisecond; if this is too  low, the firmware should choose to generate
-			 *  results as fast as it can instead of failing the command
-			 */
-	/* report_events semantics -
-	 *  0 => report only when scan history is % full
-	 *  1 => same as 0 + report a scan completion event after scanning this bucket
-	 *  2 => same as 1 + forward scan results (beacons/probe responses + IEs) in real time to HAL
-	 *  3 => same as 2 + forward scan results (beacons/probe responses + IEs) in real time to
-	 *  supplicant as well (optional) .
-	 */
-	uint8_t report_events;
-
-	uint32_t num_channels;
-	struct PARAM_WIFI_GSCAN_CHANNEL_SPEC channels[GSCAN_MAX_CHANNELS];
-	/* channels to scan; these may include DFS channels */
-};
-
-struct PARAM_WIFI_GSCAN_CMD_PARAMS {
-	uint32_t base_period;	/* base timer period in ms */
-	uint32_t max_ap_per_scan;
-	/* number of APs to store in each scan in the
-	* BSSID/RSSI history buffer (keep the highest RSSI APs)
-	*/
-	uint32_t report_threshold;	/* in %, when scan buffer is this much full, wake up AP */
-	uint32_t num_scans;
-	uint32_t num_buckets;
-	struct PARAM_WIFI_GSCAN_BUCKET_SPEC buckets[GSCAN_MAX_BUCKETS];
-};
-
-struct PARAM_WIFI_GSCAN_RESULT {
-	uint64_t ts;	/* time since boot (in microsecond) when the result was */
-	/* retrieved */
-	uint8_t ssid[32 + 1];	/* null terminated */
-	uint8_t bssid[6];
-	uint32_t channel;	/* channel frequency in MHz */
-	int32_t rssi;		/* in db */
-	uint64_t rtt;	/* in nanoseconds */
-	uint64_t rtt_sd;	/* standard deviation in rtt */
-	uint16_t beacon_period;	/* period advertised in the beacon */
-	uint16_t capability;	/* capabilities advertised in the beacon */
-	uint32_t ie_length;	/* size of the ie_data blob */
-	uint8_t ie_data[1];	/* blob of all the information elements found in the */
-	/* beacon; this data should be a packed list of */
-	/* wifi_information_element objects, one after the other. */
-	/* other fields */
-};
-
-
 struct PARAM_WIFI_CHANGE_RESULT {
 	uint16_t flags;
 	uint16_t channel;
@@ -438,20 +257,6 @@ struct PARAM_AP_THRESHOLD {
 	int32_t low;	/* low threshold */
 	int32_t high;	/* high threshold */
 	uint32_t channel;	/* channel hint */
-};
-
-struct PARAM_WIFI_BSSID_HOTLIST {
-	uint32_t lost_ap_sample_size;
-	uint32_t num_ap;	/* number of hotlist APs */
-	struct PARAM_AP_THRESHOLD ap[MAX_HOTLIST_APS];	/* hotlist APs */
-};
-
-struct PARAM_WIFI_SIGNIFICANT_CHANGE {
-	uint16_t rssi_sample_size;	/* number of samples for averaging RSSI */
-	uint16_t lost_ap_sample_size;	/* number of samples to confirm AP loss */
-	uint16_t min_breaching;	/* number of APs breaching threshold */
-	uint16_t num_ap;	/* max 64 */
-	struct PARAM_AP_THRESHOLD ap[MAX_SIGNIFICANT_CHANGE_APS];
 };
 
 /* channel operating width */
@@ -678,24 +483,6 @@ int mtk_cfg80211_vendor_set_country_code(struct wiphy *wiphy, struct wireless_de
 
 int mtk_cfg80211_vendor_llstats_get_info(struct wiphy *wiphy, struct wireless_dev *wdev,
 					const void *data, int data_len);
-
-int mtk_cfg80211_vendor_event_complete_scan(struct wiphy *wiphy, struct wireless_dev *wdev,
-					enum WIFI_SCAN_EVENT complete);
-
-int mtk_cfg80211_vendor_event_scan_results_available(struct wiphy *wiphy, struct wireless_dev *wdev,
-					uint32_t num);
-
-int mtk_cfg80211_vendor_event_full_scan_results(struct wiphy *wiphy, struct wireless_dev *wdev,
-					struct PARAM_WIFI_GSCAN_RESULT *pdata, uint32_t data_len);
-
-int mtk_cfg80211_vendor_event_significant_change_results(struct wiphy *wiphy, struct wireless_dev *wdev,
-					struct PARAM_WIFI_CHANGE_RESULT *pdata, uint32_t data_len);
-
-int mtk_cfg80211_vendor_event_hotlist_ap_found(struct wiphy *wiphy, struct wireless_dev *wdev,
-					struct PARAM_WIFI_GSCAN_RESULT *pdata, uint32_t data_len);
-
-int mtk_cfg80211_vendor_event_hotlist_ap_lost(struct wiphy *wiphy, struct wireless_dev *wdev,
-					struct PARAM_WIFI_GSCAN_RESULT *pdata, uint32_t data_len);
 
 int mtk_cfg80211_vendor_set_band(struct wiphy *wiphy, struct wireless_dev *wdev,
 					const void *data, int data_len);
