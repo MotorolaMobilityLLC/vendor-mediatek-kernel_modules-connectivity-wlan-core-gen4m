@@ -2307,6 +2307,7 @@ reqExtSetAcpiDevicePowerState(IN P_GLUE_INFO_T prGlueInfo,
 #define CMD_DEL_ACL_ENTRY       "DEL_ACL_ENTRY"
 #define CMD_SHOW_ACL_ENTRY      "SHOW_ACL_ENTRY"
 #define CMD_CLEAR_ACL_ENTRY     "CLEAR_ACL_ENTRY"
+#define CMD_SET_RA_DBG		    "RADEBUG"
 
 #if CFG_WOW_SUPPORT
 #define CMD_WOW_START			"WOW_START"
@@ -4773,7 +4774,10 @@ static INT_32 priv_driver_dump_stat_info(P_ADAPTER_T prAdapter, IN char *pcComma
 			RA_STATUS_TBLE[ucRaStatusNum - 1]);
 
 		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-			"%-20s%s%d\n", "MaxAF", " = ", prQueryStaStatistics->ucMaxAmpduFactor);
+			"%-20s%s%d\n", "MaxAF", " = ", prHwWlanInfo->rWtblPeerCap.ucAmpduFactor);
+
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+			"%-20s%s0x%x\n", "SpeIdx", " = ", prHwWlanInfo->rWtblPeerCap.ucSpatialExtensionIndex);
 
 		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 			"%-20s%s%d\n", "CBRN", " = ", prHwWlanInfo->rWtblPeerCap.ucChangeBWAfterRateN);
@@ -4811,6 +4815,68 @@ static INT_32 priv_driver_dump_stat_info(P_ADAPTER_T prAdapter, IN char *pcComma
 				break;
 		}
 	}
+
+	return i4BytesWritten;
+}
+
+static INT_32 priv_driver_set_ra_debug_proc(IN struct net_device *prNetDev, IN char *pcCommand, IN int i4TotalLen)
+{
+	P_GLUE_INFO_T prGlueInfo = NULL;
+	WLAN_STATUS rStatus = WLAN_STATUS_SUCCESS;
+	UINT_32 u4BufLen = 0;
+	INT_32 i4BytesWritten = 0;
+	INT_32 i4Argc = 0;
+	PCHAR apcArgv[WLAN_CFG_ARGV_MAX] = {0};
+	CHAR *this_char = NULL;
+	INT_32 i4Recv = 0;
+	UINT_32 u4WCID = 0, u4DebugType = 0;
+	UINT_32 u4Id = 0xa0650000;
+	P_PARAM_CUSTOM_SW_CTRL_STRUCT_T prSwCtrlInfo;
+
+	ASSERT(prNetDev);
+	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
+		return -1;
+	prGlueInfo = *((P_GLUE_INFO_T *) netdev_priv(prNetDev));
+
+	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+	DBGLOG(REQ, LOUD, "argc is %d, apcArgv[0] = %s\n\n", i4Argc, *apcArgv);
+
+	this_char = kalStrStr(*apcArgv, "=");
+	if (!this_char)
+		return -1;
+	this_char++;
+
+	DBGLOG(REQ, LOUD, "string = %s\n", this_char);
+
+	i4Recv = sscanf(this_char, "%d:%d", &(u4WCID), &(u4DebugType));
+
+	prSwCtrlInfo =
+		(P_PARAM_CUSTOM_SW_CTRL_STRUCT_T)kalMemAlloc(sizeof(PARAM_CUSTOM_SW_CTRL_STRUCT_T), VIR_MEM_TYPE);
+	if (!prSwCtrlInfo)
+		return -1;
+
+	if (i4Recv == 2) {
+		prSwCtrlInfo->u4Id = u4Id;
+		prSwCtrlInfo->u4Data = u4WCID | ((u4DebugType & BITS(0, 15)) << 16);
+
+		rStatus = kalIoctl(prGlueInfo,
+					wlanoidSetSwCtrlWrite,
+					prSwCtrlInfo, sizeof(PARAM_CUSTOM_SW_CTRL_STRUCT_T),
+					FALSE, FALSE, TRUE, &u4BufLen);
+
+		if (rStatus != WLAN_STATUS_SUCCESS) {
+			kalMemFree(prSwCtrlInfo, VIR_MEM_TYPE, sizeof(PARAM_CUSTOM_SW_CTRL_STRUCT_T));
+			return -1;
+		}
+
+		DBGLOG(REQ, LOUD, "WlanIdx=%d\nDebugType=%d\nu4Data=0x%08x\n",
+			u4WCID, u4DebugType, prSwCtrlInfo->u4Data);
+	} else {
+		DBGLOG(INIT, ERROR, "iwpriv wlanXX driver RaDebug=[wlanIdx]:[debugType]\n");
+	}
+
+	kalMemFree(prSwCtrlInfo, VIR_MEM_TYPE, sizeof(PARAM_CUSTOM_SW_CTRL_STRUCT_T));
 
 	return i4BytesWritten;
 }
@@ -6227,6 +6293,8 @@ int priv_driver_set_fixed_rate(IN struct net_device *prNetDev, IN char *pcComman
 	DBGLOG(REQ, LOUD, "argc is %d, apcArgv[0] = %s\n\n", i4Argc, *apcArgv);
 
 	this_char = kalStrStr(*apcArgv, "=");
+	if (!this_char)
+		return -1;
 	this_char++;
 
 	DBGLOG(REQ, LOUD, "string = %s\n", this_char);
@@ -6252,6 +6320,9 @@ int priv_driver_set_fixed_rate(IN struct net_device *prNetDev, IN char *pcComman
 					wlanoidSetSwCtrlWrite,
 					&rSwCtrlInfo, sizeof(rSwCtrlInfo),
 					FALSE, FALSE, TRUE, &u4BufLen);
+
+		if (rStatus != WLAN_STATUS_SUCCESS)
+			return -1;
 	} else if (i4Recv == 10) {
 		rSwCtrlInfo.u4Id = u4Id;
 		rSwCtrlInfo.u4Data = u4Data;
@@ -8958,6 +9029,10 @@ INT_32 priv_driver_cmds(IN struct net_device *prNetDev, IN PCHAR pcCommand, IN I
 			i4BytesWritten = priv_driver_get_sta_stat(prNetDev, pcCommand, i4TotalLen);
 		} else if (strnicmp(pcCommand, CMD_GET_STA_RX_STAT, strlen(CMD_GET_STA_RX_STAT)) == 0) {
 			i4BytesWritten = priv_driver_show_rx_stat(prNetDev, pcCommand, i4TotalLen);
+#if (CFG_SUPPORT_RA_GEN == 1)
+		} else if (strnicmp(pcCommand,  CMD_SET_RA_DBG, strlen(CMD_SET_RA_DBG)) == 0) {
+			i4BytesWritten = priv_driver_set_ra_debug_proc(prNetDev, pcCommand, i4TotalLen);
+#endif
 		} else if (strnicmp(pcCommand, CMD_SET_ACL_POLICY, strlen(CMD_SET_ACL_POLICY)) == 0) {
 			i4BytesWritten = priv_driver_set_acl_policy(prNetDev, pcCommand, i4TotalLen);
 		} else if (strnicmp(pcCommand, CMD_ADD_ACL_ENTRY, strlen(CMD_ADD_ACL_ENTRY)) == 0) {
