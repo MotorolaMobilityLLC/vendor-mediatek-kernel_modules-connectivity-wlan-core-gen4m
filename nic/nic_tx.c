@@ -3168,7 +3168,7 @@ VOID nicTxUpdateBssDefaultRate(P_BSS_INFO_T prBssInfo)
 	if (rateGetLowestRateIndexFromRateSet(prBssInfo->u2BSSBasicRateSet, &ucLowestBasicRateIndex)) {
 		nicRateIndex2RateCode(PREAMBLE_DEFAULT_LONG_NONE, ucLowestBasicRateIndex,
 				      &prBssInfo->u2HwDefaultFixedRateCode);
-#ifdef CONNAC
+#if defined(CONNAC) || defined(MT7663)
 		/* CONNAC workaround */
 		if ((prBssInfo->u2HwDefaultFixedRateCode == RATE_CCK_1M_LONG) ||
 		    (prBssInfo->u2HwDefaultFixedRateCode == RATE_CCK_2M_LONG))
@@ -3182,7 +3182,7 @@ VOID nicTxUpdateBssDefaultRate(P_BSS_INFO_T prBssInfo)
 			break;
 
 		default:
-#ifdef CONNAC
+#if defined(CONNAC) || defined(MT7663)
 			/* CONNAC workaround */
 			prBssInfo->u2HwDefaultFixedRateCode = RATE_CCK_5_5M_LONG;
 #else
@@ -3212,7 +3212,7 @@ VOID nicTxUpdateStaRecDefaultRate(P_STA_RECORD_T prStaRec)
 	if (rateGetLowestRateIndexFromRateSet(prStaRec->u2BSSBasicRateSet, &ucLowestBasicRateIndex)) {
 		nicRateIndex2RateCode(PREAMBLE_DEFAULT_LONG_NONE,
 				      ucLowestBasicRateIndex, &prStaRec->u2HwDefaultFixedRateCode);
-#ifdef CONNAC
+#if defined(CONNAC) || defined(MT7663)
 		/* CONNAC workaround */
 		if ((prStaRec->u2HwDefaultFixedRateCode == RATE_CCK_1M_LONG) ||
 		    (prStaRec->u2HwDefaultFixedRateCode == RATE_CCK_2M_LONG))
@@ -3220,7 +3220,7 @@ VOID nicTxUpdateStaRecDefaultRate(P_STA_RECORD_T prStaRec)
 #endif /* CONNAC */
 	} else {
 		if (prStaRec->ucDesiredPhyTypeSet & PHY_TYPE_SET_802_11B)
-#ifdef CONNAC
+#if defined(CONNAC) || defined(MT7663)
 			/* CONNAC workaround */
 			prStaRec->u2HwDefaultFixedRateCode = RATE_CCK_5_5M_LONG;
 #else
