@@ -5381,6 +5381,10 @@ static int initWlan(void)
 	wifi_fwlog_event_func_register(consys_log_event_notification);
 #endif
 
+#if CFG_MTK_MCIF_WIFI_SUPPORT
+	mddpInit();
+#endif
+
 	g_u4WlanInitFlag = 1;
 	DBGLOG(INIT, INFO, "initWlan::End\n");
 
