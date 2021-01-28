@@ -2111,6 +2111,7 @@ VOID halDeAggRxPktWorker(struct work_struct *work)
 	PUINT_32 pu4HwAppendDW;
 #endif /* CFG_TCP_IP_CHKSUM_OFFLOAD */
 	BOOLEAN fgDeAggErr = FALSE;
+	UINT_64 u8Current = 0;
 
 	KAL_SPIN_LOCK_DECLARATION();
 	SDIO_TIME_INTERVAL_DEC();
@@ -2164,6 +2165,7 @@ VOID halDeAggRxPktWorker(struct work_struct *work)
 		pucSrcAddr = prRxBuf->pvRxCoalescingBuf;
 		fgDeAggErr = FALSE;
 
+		u8Current = sched_clock();
 		SDIO_REC_TIME_START();
 		for (i = 0; i < prRxBuf->u4PktCount; i++) {
 			/* Rx de-aggregation check */
@@ -2185,6 +2187,10 @@ VOID halDeAggRxPktWorker(struct work_struct *work)
 			prSwRfb->u4TcpUdpIpCksStatus = *pu4HwAppendDW;
 			DBGLOG(RX, TRACE, "u4TcpUdpIpCksStatus[0x%02x]\n", prSwRfb->u4TcpUdpIpCksStatus);
 #endif /* CFG_TCP_IP_CHKSUM_OFFLOAD */
+
+			GLUE_RX_SET_PKT_INT_TIME(prSwRfb->pvPacket, prAdapter->prGlueInfo->u8HifIntTime);
+
+			GLUE_RX_SET_PKT_RX_TIME(prSwRfb->pvPacket, u8Current);
 
 			QUEUE_INSERT_TAIL(prTempRxRfbList, &prSwRfb->rQueEntry);
 
