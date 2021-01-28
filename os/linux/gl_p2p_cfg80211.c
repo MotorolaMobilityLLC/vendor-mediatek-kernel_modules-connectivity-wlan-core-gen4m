@@ -345,7 +345,7 @@ struct wireless_dev *mtk_p2p_cfg80211_add_iface(struct wiphy *wiphy,
 #if CFG_TCP_IP_CHKSUM_OFFLOAD
 		/* set HW checksum offload */
 		if (prAdapter->fgIsSupportCsumOffload)
-			prNewNetDevice->features = NETIF_F_IP_CSUM
+			prNewNetDevice->features |= NETIF_F_IP_CSUM
 				| NETIF_F_IPV6_CSUM | NETIF_F_RXCSUM;
 #endif /* CFG_TCP_IP_CHKSUM_OFFLOAD */
 
@@ -354,7 +354,6 @@ struct wireless_dev *mtk_p2p_cfg80211_add_iface(struct wiphy *wiphy,
 
 		/* register for net device */
 		if (register_netdevice(prP2pInfo->aprRoleHandler) < 0) {
-			DBGLOG(P2P, TRACE, "mtk_p2p_cfg80211_add_iface 456\n");
 			DBGLOG(INIT, WARN,
 				"unable to register netdevice for p2p\n");
 			break;
