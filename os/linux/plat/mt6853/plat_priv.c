@@ -76,11 +76,15 @@ void kalSetDrvEmiMpuProtection(phys_addr_t emiPhyBase, uint32_t offset,
 
 int32_t kalGetFwFlavor(uint8_t *flavor)
 {
+	int ret = 0;
+
 #ifdef CFG_WIFI_FLAVOR
-	snprintf(flavor, 2, "%s",
-			STR(CFG_WIFI_FLAVOR));
-	return 1;
-#else
-	return 0;
+	ret = kalSnprintf(flavor, 2, "%s", STR(CFG_WIFI_FLAVOR));
+	if (ret < 0 || ret >= 2) {
+		DBGLOG(INIT, ERROR, "kalSnprintf failed, ret: %d\n", ret);
+		ret = 0;
+	} else
+		ret = 1;
 #endif
+	return ret;
 }
