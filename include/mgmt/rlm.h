@@ -166,6 +166,29 @@ extern uint32_t g_au4IQData[256];
 #define CONFIG_BW_20_40M            0
 #define CONFIG_BW_20M               1	/* 20MHz only */
 
+/* Radio Measurement Request Mode definition */
+#define RM_REQ_MODE_PARALLEL_BIT                    BIT(0)
+#define RM_REQ_MODE_ENABLE_BIT                      BIT(1)
+#define RM_REQ_MODE_REQUEST_BIT                     BIT(2)
+#define RM_REQ_MODE_REPORT_BIT                      BIT(3)
+#define RM_REQ_MODE_DURATION_MANDATORY_BIT          BIT(4)
+#define RM_REP_MODE_LATE                            BIT(0)
+#define RM_REP_MODE_INCAPABLE                       BIT(1)
+#define RM_REP_MODE_REFUSED                         BIT(2)
+
+/* Radio Measurement Report Frame Max Length */
+#define RM_REPORT_FRAME_MAX_LENGTH                  1600
+#define RM_BCN_REPORT_SUB_ELEM_MAX_LENGTH           224
+/* beacon request mode definition */
+#define RM_BCN_REQ_PASSIVE_MODE                     0
+#define RM_BCN_REQ_ACTIVE_MODE                      1
+#define RM_BCN_REQ_TABLE_MODE                       2
+
+#define RLM_INVALID_POWER_LIMIT                     -127 /* dbm */
+
+#define RLM_MAX_TX_PWR		20	/* dbm */
+#define RLM_MIN_TX_PWR		8	/* dbm */
+
 #if CFG_SUPPORT_802_11AC
 #if CFG_SUPPORT_BFEE
 #define FIELD_VHT_CAP_INFO_BFEE \
@@ -241,6 +264,80 @@ enum ENUM_OP_CHANGE_STATUS_T {
 	OP_CHANGE_STATUS_NUM
 };
 
+struct SUB_ELEMENT_LIST {
+	struct SUB_ELEMENT_LIST *prNext;
+	struct SUB_ELEMENT rSubIE;
+};
+
+enum BCN_RM_STATE {
+	RM_NO_REQUEST,
+	RM_ON_GOING,
+	RM_WAITING, /*waiting normal scan done */
+};
+
+enum RM_REQ_PRIORITY {
+	RM_PRI_BROADCAST,
+	RM_PRI_MULTICAST,
+	RM_PRI_UNICAST
+};
+
+struct NORMAL_SCAN_PARAMS {
+	u_int8_t fgExist;
+	struct PARAM_SCAN_REQUEST_ADV rScanRequest;
+	uint8_t aucScanIEBuf[MAX_IE_LENGTH];
+};
+
+/* Beacon RM related parameters */
+struct BCN_RM_PARAMS {
+	u_int8_t fgExistBcnReq;
+	enum BCN_RM_STATE eState;
+	struct NORMAL_SCAN_PARAMS rNormalScan;
+};
+
+struct RM_BEACON_REPORT_PARAMS {
+	uint8_t ucChannel;
+	uint8_t ucRCPI;
+	uint8_t ucRSNI;
+	uint8_t ucAntennaID;
+	uint8_t ucFrameInfo;
+	uint8_t aucBcnFixedField[12];
+};
+
+struct RM_MEASURE_REPORT_ENTRY {
+	struct LINK_ENTRY rLinkEntry;
+	/* should greater than sizeof(struct RM_BCN_REPORT) +
+	** sizeof(struct IE_MEASUREMENT_REPORT) +
+	** RM_BCN_REPORT_SUB_ELEM_MAX_LENGTH
+	*/
+	uint8_t aucMeasReport[260];
+};
+
+struct RADIO_MEASUREMENT_REQ_PARAMS {
+	/* Remain Request Elements Length, started at prMeasElem. if it is 0,
+	** means RM is done
+	*/
+	uint16_t u2RemainReqLen;
+	uint16_t u2ReqIeBufLen;
+	struct IE_MEASUREMENT_REQ *prCurrMeasElem;
+	OS_SYSTIME rStartTime;
+	uint16_t u2Repetitions;
+	uint8_t *pucReqIeBuf;
+	enum RM_REQ_PRIORITY ePriority;
+	u_int8_t fgRmIsOngoing;
+	u_int8_t fgInitialLoop;
+
+	struct BCN_RM_PARAMS rBcnRmParam;
+};
+
+struct RADIO_MEASUREMENT_REPORT_PARAMS {
+	/* the total length of Measurement Report elements */
+	uint16_t u2ReportFrameLen;
+	uint8_t *pucReportFrameBuff;
+	/* Variables to collect report */
+	struct LINK rReportLink; /* a link to save received report entry */
+	struct LINK rFreeReportLink;
+};
+
 /*******************************************************************************
  *                            P U B L I C   D A T A
  *******************************************************************************
@@ -255,6 +352,11 @@ enum ENUM_OP_CHANGE_STATUS_T {
  *                                 M A C R O S
  *******************************************************************************
  */
+
+#define RM_EXIST_REPORT(_prRmReportParam) \
+	(((struct RADIO_MEASUREMENT_REPORT_PARAMS *)_prRmReportParam)          \
+		 ->u2ReportFrameLen ==                                         \
+	OFFSET_OF(struct ACTION_RM_REPORT_FRAME, aucInfoElem))
 
 /* It is used for RLM module to judge if specific network is valid
  * Note: Ad-hoc mode of AIS is not included now. (TBD)
@@ -481,6 +583,63 @@ void rlmReviseMaxBw(
 	enum ENUM_CHANNEL_WIDTH *peChannelWidth,
 	uint8_t *pucS1,
 	uint8_t *pucPrimaryCh);
+
+void rlmProcessNeighborReportResonse(struct ADAPTER *prAdapter,
+				     struct WLAN_ACTION_FRAME *prAction,
+				     uint16_t u2PacketLen);
+void rlmTxNeighborReportRequest(struct ADAPTER *prAdapter,
+				struct STA_RECORD *prStaRec,
+				struct SUB_ELEMENT_LIST *prSubIEs);
+
+void rlmGenerateRRMEnabledCapIE(IN struct ADAPTER *prAdapter,
+				IN struct MSDU_INFO *prMsduInfo);
+
+void rlmGeneratePowerCapIE(IN struct ADAPTER *prAdapter,
+			   IN struct MSDU_INFO *prMsduInfo);
+
+void rlmProcessRadioMeasurementRequest(struct ADAPTER *prAdapter,
+				       struct SW_RFB *prSwRfb);
+
+void rlmProcessLinkMeasurementRequest(struct ADAPTER *prAdapter,
+				      struct WLAN_ACTION_FRAME *prAction);
+
+void rlmProcessNeighborReportResonse(struct ADAPTER *prAdapter,
+				     struct WLAN_ACTION_FRAME *prAction,
+				     uint16_t u2PacketLen);
+
+void rlmFillRrmCapa(uint8_t *pucCapa);
+
+void rlmSetMaxTxPwrLimit(IN struct ADAPTER *prAdapter, int8_t cLimit,
+			 uint8_t ucEnable);
+
+void rlmStartNextMeasurement(struct ADAPTER *prAdapter, u_int8_t fgNewStarted);
+
+u_int8_t rlmBcnRmRunning(struct ADAPTER *prAdapter);
+
+u_int8_t rlmFillScanMsg(struct ADAPTER *prAdapter,
+			struct MSG_SCN_SCAN_REQ_V2 *prMsg);
+
+void rlmDoBeaconMeasurement(struct ADAPTER *prAdapter, unsigned long ulParam);
+
+void rlmTxNeighborReportRequest(struct ADAPTER *prAdapter,
+				struct STA_RECORD *prStaRec,
+				struct SUB_ELEMENT_LIST *prSubIEs);
+
+void rlmTxRadioMeasurementReport(struct ADAPTER *prAdapter);
+
+void rlmFreeMeasurementResources(struct ADAPTER *prAdapter);
+
+enum RM_REQ_PRIORITY rlmGetRmRequestPriority(uint8_t *pucDestAddr);
+
+void rlmRunEventProcessNextRm(struct ADAPTER *prAdapter,
+			      struct MSG_HDR *prMsgHdr);
+
+void rlmScheduleNextRm(struct ADAPTER *prAdapter);
+
+void rlmProcessBeaconAndProbeResp(struct ADAPTER *prAdapter,
+				  IN struct SW_RFB *prSwRfb);
+
+void rlmUpdateBssTimeTsf(struct ADAPTER *prAdapter, struct BSS_DESC *prBssDesc);
 
 /*******************************************************************************
  *                              F U N C T I O N S

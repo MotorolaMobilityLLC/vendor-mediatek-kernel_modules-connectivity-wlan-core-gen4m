@@ -145,6 +145,10 @@ enum ENUM_MSG_ID {
 	MID_OID_AIS_FSM_ABORT,
 	/* AIS notify SAA for Starting authentication/association fsm */
 	MID_AIS_SAA_FSM_START,
+	/* OID notify SAA to continue to do authentication/association fsm for
+	** FT
+	*/
+	MID_OID_SAA_FSM_CONTINUE,
 	/* AIS notify SAA for Aborting authentication/association fsm */
 	MID_AIS_SAA_FSM_ABORT,
 	/* SAA notify AIS for indicating join complete */
@@ -217,6 +221,9 @@ enum ENUM_MSG_ID {
 	MID_MNY_AIS_REMAIN_ON_CHANNEL,
 	MID_MNY_AIS_CANCEL_REMAIN_ON_CHANNEL,
 	MID_MNY_AIS_MGMT_TX,
+	MID_WNM_AIS_BSS_TRANSITION,
+	MID_OID_WMM_TSPEC_OPERATE,
+	MID_RLM_RM_SCHEDULE,
 #if CFG_SUPPORT_NCHO
 	MID_MNY_AIS_NCHO_ACTION_FRAME,
 #endif
@@ -301,6 +308,15 @@ struct MSG_MGMT_TX_REQUEST {
 	uint64_t u8Cookie;	/* For indication. */
 	u_int8_t fgNoneCckRate;
 	u_int8_t fgIsWaitRsp;
+};
+
+struct MSG_SAA_FT_CONTINUE {
+	struct MSG_HDR rMsgHdr;
+	struct STA_RECORD *prStaRec;
+	/* if fgFTRicRequest is TRUE, then will do FT Resource
+	** Request Protocol
+	*/
+	u_int8_t fgFTRicRequest;
 };
 
 /* specific message data types */

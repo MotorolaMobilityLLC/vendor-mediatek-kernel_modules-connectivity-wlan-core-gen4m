@@ -4232,16 +4232,17 @@ uint32_t nicRxProcessActionFrame(IN struct ADAPTER *
 	}
 	break;
 #endif
-#if (CFG_SUPPORT_802_11V || CFG_SUPPORT_PPR2)
 	case CATEGORY_WNM_ACTION: {
-		if (prSwRfb->ucStaRecIdx == KAL_NETWORK_TYPE_AIS_INDEX) {
+		if (prSwRfb->prStaRec &&
+		    GET_BSS_INFO_BY_INDEX(prAdapter,
+					  prSwRfb->prStaRec->ucBssIndex)
+				    ->eNetworkType == NETWORK_TYPE_AIS) {
 			DBGLOG(RX, INFO, "WNM action frame: %d\n", __LINE__);
 			wnmWNMAction(prAdapter, prSwRfb);
 		} else
 			DBGLOG(RX, INFO, "WNM action frame: %d\n", __LINE__);
 	}
 	break;
-#endif
 
 #if CFG_SUPPORT_DFS
 	case CATEGORY_SPEC_MGT: {
@@ -4260,6 +4261,22 @@ uint32_t nicRxProcessActionFrame(IN struct ADAPTER *
 		break;
 #endif
 
+#if CFG_SUPPORT_802_11K
+	case CATEGORY_RM_ACTION:
+		switch (prActFrame->ucAction) {
+		case RM_ACTION_RM_REQUEST:
+			rlmProcessRadioMeasurementRequest(prAdapter, prSwRfb);
+			break;
+		case RM_ACTION_REIGHBOR_RESPONSE:
+			rlmProcessNeighborReportResonse(prAdapter, prActFrame,
+							prSwRfb->u2PacketLen);
+			break;
+		}
+		break;
+#endif
+	case CATEGORY_WME_MGT_NOTIFICATION:
+		wmmParseQosAction(prAdapter, prSwRfb);
+		break;
 	default:
 		break;
 	}			/* end of switch case */
