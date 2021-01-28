@@ -791,6 +791,9 @@ union DELAY_INT_CFG_STRUCT {
 /* 4 Device to Host Receive Mailbox 1 Register */
 #define MCR_D2HRM1R                         0x007c
 
+/* 4 Device to Host Receive Mailbox 2 Register */
+#define MCR_D2HRM2R                         0x0080
+
 /* 4 WLAN RX Packet Length Register */
 #define MCR_WRPLR                           0x0090
 
