@@ -2320,6 +2320,7 @@ reqExtSetAcpiDevicePowerState(IN P_GLUE_INFO_T prGlueInfo,
 #define CMD_SET_POP           "SET_POP"
 #define CMD_SET_ED            "SET_ED"
 #define CMD_SET_PD            "SET_PD"
+#define CMD_SET_MAX_RFGAIN        "SET_MAX_RFGAIN"
 #endif
 static UINT_8 g_ucMiracastMode = MIRACAST_MODE_OFF;
 
@@ -7891,6 +7892,70 @@ static int priv_driver_set_pd(IN struct net_device *prNetDev, IN char *pcCommand
 
 	return i4BytesWritten;
 }
+
+static int priv_driver_set_maxrfgain(IN struct net_device *prNetDev, IN char *pcCommand, IN int i4TotalLen)
+{
+	P_GLUE_INFO_T prGlueInfo = NULL;
+	WLAN_STATUS rStatus = WLAN_STATUS_SUCCESS;
+	UINT_32 u4BufLen = 0;
+	INT_32 i4BytesWritten = 0;
+	INT_32 i4Argc = 0;
+	PCHAR apcArgv[WLAN_CFG_ARGV_MAX] = { 0 };
+	INT_32 u4Ret = 0;
+	UINT_32 u4Id = CMD_SW_DBGCTL_ADVCTL_ID + 5;
+	UINT_32 u4Sel = 0;
+	INT_32 u4Wf0Gain = 0, u4Wf1Gain = 0;
+	PARAM_CUSTOM_SW_CTRL_STRUCT_T rSwCtrlInfo;
+
+	ASSERT(prNetDev);
+	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
+		return -1;
+	prGlueInfo = *((P_GLUE_INFO_T *) netdev_priv(prNetDev));
+
+	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+	DBGLOG(REQ, LOUD, "argc is %i\n", i4Argc);
+
+	rSwCtrlInfo.u4Id = u4Id;
+
+	if (i4Argc <= 1) {
+		DBGLOG(REQ, ERROR, "Argc(%d) ERR: SET_RFGAIN <Sel> <WF0 Gain> <WF1 Gain>\n", i4Argc);
+		return -1;
+	}
+
+	u4Ret = kalkStrtou32(apcArgv[1], 0, &u4Sel);
+	if (u4Ret)
+		DBGLOG(REQ, ERROR, "parse rSwCtrlInfo error u4Ret=%d\n", u4Ret);
+
+	if (u4Sel == 1) {
+		if (i4Argc <= 3) {
+			DBGLOG(REQ, ERROR, "Argc(%d) ERR: SET_RFGAIN 1 <WF0 Gain> <WF1 Gain>\n", i4Argc);
+			return -1;
+		}
+		u4Ret = kalkStrtos32(apcArgv[2], 0, &u4Wf0Gain);
+		if (u4Ret)
+			DBGLOG(REQ, ERROR, "parse rSwCtrlInfo error u4Ret=%d\n", u4Ret);
+		u4Ret = kalkStrtos32(apcArgv[3], 0, &u4Wf1Gain);
+		if (u4Ret)
+			DBGLOG(REQ, ERROR, "parse rSwCtrlInfo error u4Ret=%d\n", u4Ret);
+	}
+
+	rSwCtrlInfo.u4Data = ((u4Wf0Gain & 0xFF) | ((u4Wf1Gain & 0xFF) << 8) | (u4Sel << 31));
+	DBGLOG(REQ, LOUD, "u4Sel=%d u4Wf0Gain=%d, u4Wf1Gain=%d, u4Data=0x%x,\n",
+		u4Sel, u4Wf0Gain, u4Wf1Gain, rSwCtrlInfo.u4Data);
+
+	rStatus = kalIoctl(prGlueInfo,
+			   wlanoidSetSwCtrlWrite,
+			   &rSwCtrlInfo, sizeof(rSwCtrlInfo), FALSE, FALSE, TRUE, &u4BufLen);
+
+	if (rStatus != WLAN_STATUS_SUCCESS) {
+		DBGLOG(REQ, ERROR, "ERR: kalIoctl fail (%d)\n", rStatus);
+		return -1;
+	}
+
+	return i4BytesWritten;
+}
+
 #endif
 
 INT_32 priv_driver_cmds(IN struct net_device *prNetDev, IN PCHAR pcCommand, IN INT_32 i4TotalLen)
@@ -8107,6 +8172,8 @@ INT_32 priv_driver_cmds(IN struct net_device *prNetDev, IN PCHAR pcCommand, IN I
 			i4BytesWritten = priv_driver_set_ed(prNetDev, pcCommand, i4TotalLen);
 		else if (strnicmp(pcCommand, CMD_SET_PD, strlen(CMD_SET_PD)) == 0)
 			i4BytesWritten = priv_driver_set_pd(prNetDev, pcCommand, i4TotalLen);
+		else if (strnicmp(pcCommand, CMD_SET_MAX_RFGAIN, strlen(CMD_SET_MAX_RFGAIN)) == 0)
+			i4BytesWritten = priv_driver_set_maxrfgain(prNetDev, pcCommand, i4TotalLen);
 #endif
 		else
 			i4CmdFound = 0;
