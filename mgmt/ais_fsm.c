@@ -1297,7 +1297,8 @@ void aisFsmSteps(IN struct ADAPTER *prAdapter, enum ENUM_AIS_STATE eNextState)
 						prAisBssInfo);
 #if CFG_SUPPORT_DBDC
 					/* DBDC decsion.may change OpNss */
-					cnmDbdcEnableDecision(prAdapter,
+					cnmDbdcPreConnectionEnableDecision(
+						prAdapter,
 						prAisBssInfo->ucBssIndex,
 						prBssDesc->eBand,
 						prBssDesc->ucChannelNum,
