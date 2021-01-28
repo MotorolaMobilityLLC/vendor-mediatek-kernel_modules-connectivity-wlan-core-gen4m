@@ -2320,7 +2320,7 @@ VOID wlanGetConnacFwInfo(IN P_ADAPTER_T prAdapter, IN UINT_8 u4SecIdx, IN ENUM_I
 	*pu4Addr = prTailer->u4Addr;
 	*pu4Len = prTailer->u4Len;
 	*pu4DataMode = wlanGetDataMode(prAdapter, eDlIdx, prTailer->ucFeatureSet);
-	*pfgIsEMIDownload = prTailer->ucFeatureSet & DOWNLOAD_CONFIT_EMI;
+	*pfgIsEMIDownload = prTailer->ucFeatureSet & DOWNLOAD_CONFIG_EMI;
 }
 
 #if CFG_SUPPORT_COMPRESSION_FW_OPTION
