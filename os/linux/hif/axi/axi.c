@@ -1035,17 +1035,18 @@ static void axiDumpTx(struct GL_HIF_INFO *prHifInfo,
 {
 	struct RTMP_DMACB *prTxCell;
 	struct RTMP_DMABUF *prDmaBuf;
+	void *prAddr = NULL;
 
 	prTxCell = &prTxRing->Cell[u4Idx];
 	prDmaBuf = &prTxCell->DmaBuf;
 
-	if (prTxCell->pPacket) {
-		DBGLOG(HAL, INFO, "prTxCell->pPacket\n");
-		DBGLOG_MEM32(HAL, INFO, prTxCell->pPacket, u4DumpLen);
-	} else if (prDmaBuf->AllocVa) {
-		DBGLOG(HAL, INFO, "prDmaBuf->AllocVa\n");
-		DBGLOG_MEM32(HAL, INFO, prDmaBuf->AllocVa, u4DumpLen);
-	}
+	if (prTxCell->prToken)
+		prAddr = prTxCell->prToken->prPacket;
+	else if (prDmaBuf->AllocVa)
+		prAddr = prDmaBuf->AllocVa;
+
+	if (prAddr)
+		DBGLOG_MEM32(HAL, INFO, prAddr, u4DumpLen);
 }
 
 static void axiDumpRx(struct GL_HIF_INFO *prHifInfo,
@@ -1285,20 +1286,17 @@ static void axiDumpTx(struct GL_HIF_INFO *prHifInfo,
 		      uint32_t u4Idx, uint32_t u4DumpLen)
 {
 	struct RTMP_DMACB *prTxCell;
-	struct RTMP_DMABUF *prDmaBuf;
+	void *prAddr = NULL;
 
 	prTxCell = &prTxRing->Cell[u4Idx];
 
-	if (!prTxCell->pPacket)
-		return;
+	if (prTxCell->prToken)
+		prAddr = prTxCell->prToken->prPacket;
+	else
+		prAddr = prTxCell->pBuffer;
 
-	prDmaBuf = &prTxCell->DmaBuf;
-	axiUnmapTxBuf(prHifInfo, prDmaBuf->AllocPa, prDmaBuf->AllocSize);
-
-	DBGLOG_MEM32(HAL, INFO, prTxCell->pPacket, u4DumpLen);
-
-	prDmaBuf->AllocPa = axiMapTxBuf(prHifInfo, prDmaBuf->AllocVa,
-					0, prDmaBuf->AllocSize);
+	if (prAddr)
+		DBGLOG_MEM32(HAL, INFO, prAddr, u4DumpLen);
 }
 
 static void axiDumpRx(struct GL_HIF_INFO *prHifInfo,
