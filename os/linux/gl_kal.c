@@ -4661,21 +4661,39 @@ u_int8_t kalIsAPmode(IN struct GLUE_INFO *prGlueInfo)
 #if CFG_SUPPORT_802_11W
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief to check if the MFP is active or not
+ * \brief to check if the MFP is DISABLD/OPTIONAL/REQUIRED
  *
  * \param[in]
  *           prGlueInfo
  *
  * \return
- *           TRUE
- *           FALSE
+ *	 RSN_AUTH_MFP_DISABLED
+ *	 RSN_AUTH_MFP_OPTIONAL
+ *	 RSN_AUTH_MFP_DISABLED
  */
 /*----------------------------------------------------------------------------*/
 uint32_t kalGetMfpSetting(IN struct GLUE_INFO *prGlueInfo)
 {
+	uint32_t u4RsnMfp = RSN_AUTH_MFP_DISABLED;
+
 	ASSERT(prGlueInfo);
 
-	return prGlueInfo->rWpaInfo.u4Mfp;
+	switch (prGlueInfo->rWpaInfo.u4Mfp) {
+	case IW_AUTH_MFP_DISABLED:
+		u4RsnMfp = RSN_AUTH_MFP_DISABLED;
+		break;
+	case IW_AUTH_MFP_OPTIONAL:
+		u4RsnMfp = RSN_AUTH_MFP_OPTIONAL;
+		break;
+	case IW_AUTH_MFP_REQUIRED:
+		u4RsnMfp = RSN_AUTH_MFP_REQUIRED;
+		break;
+	default:
+		u4RsnMfp = RSN_AUTH_MFP_DISABLED;
+		break;
+	}
+
+	return u4RsnMfp;
 }
 
 /*----------------------------------------------------------------------------*/
