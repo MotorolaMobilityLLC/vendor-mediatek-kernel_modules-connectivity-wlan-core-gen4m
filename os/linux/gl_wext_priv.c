@@ -1316,9 +1316,20 @@ priv_get_int(IN struct net_device *prNetDev,
 		uint16_t i, j = 0;
 		uint8_t NumOfChannel = 50;
 		uint8_t ucMaxChannelNum = 50;
-		struct RF_CHANNEL_INFO aucChannelList[50];
+		struct RF_CHANNEL_INFO *aucChannelList;
 
 		DBGLOG(RLM, INFO, "Domain: Query Channel List.\n");
+		aucChannelList = (struct RF_CHANNEL_INFO *)
+			kalMemAlloc(sizeof(struct RF_CHANNEL_INFO)*50,
+				VIR_MEM_TYPE);
+		if (!aucChannelList) {
+			DBGLOG(REQ, ERROR,
+				"Can not alloc memory for rf channel info\n");
+			return -ENOMEM;
+		}
+		kalMemZero(aucChannelList,
+			sizeof(struct RF_CHANNEL_INFO)*50);
+
 		kalGetChannelList(prGlueInfo, BAND_NULL, ucMaxChannelNum,
 				  &NumOfChannel, aucChannelList);
 		if (NumOfChannel > 50)
@@ -1340,6 +1351,8 @@ priv_get_int(IN struct net_device *prNetDev,
 			for (j = 0; j < NumOfChannel; j++)
 				ch[j] = (int32_t)aucChannelList[j].ucChannelNum;
 		}
+		kalMemFree(aucChannelList, VIR_MEM_TYPE,
+			sizeof(struct RF_CHANNEL_INFO)*50);
 
 		prIwReqData->data.length = j;
 		if (copy_to_user(prIwReqData->data.pointer, ch,
