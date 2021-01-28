@@ -1674,6 +1674,9 @@ nicConfigPowerSaveProfile(IN P_ADAPTER_T prAdapter,
 	prAdapter->rWlanInfo.arPowerSaveMode[ucBssIndex].ucBssIndex = ucBssIndex;
 	prAdapter->rWlanInfo.arPowerSaveMode[ucBssIndex].ucPsProfile = (UINT_8) ePwrMode;
 
+	if ((ucBssIndex == prAdapter->prAisBssInfo->ucBssIndex) && prAdapter->rWlanInfo.fgEnSpecPwrMgt)
+		return WLAN_STATUS_SUCCESS;
+
 	return wlanSendSetQueryCmd(prAdapter,
 				   CMD_ID_POWER_SAVE_MODE,
 				   TRUE,
@@ -1687,6 +1690,47 @@ nicConfigPowerSaveProfile(IN P_ADAPTER_T prAdapter,
 	    );
 
 }				/* end of wlanoidSetAcpiDevicePowerStateMode() */
+
+WLAN_STATUS
+nicConfigProcSetCamCfgWrite(IN P_ADAPTER_T prAdapter, IN BOOLEAN enabled)
+{
+	PARAM_POWER_MODE ePowerMode;
+	UINT_8 ucBssIndex;
+	CMD_PS_PROFILE_T rPowerSaveMode;
+
+	if ((!prAdapter) || (!prAdapter->prAisBssInfo))
+		return WLAN_STATUS_FAILURE;
+
+	ucBssIndex = prAdapter->prAisBssInfo->ucBssIndex;
+	if (ucBssIndex >= BSS_DEFAULT_NUM)
+		return WLAN_STATUS_FAILURE;
+	rPowerSaveMode.ucBssIndex = ucBssIndex;
+
+	if (enabled) {
+		prAdapter->rWlanInfo.fgEnSpecPwrMgt = TRUE;
+		ePowerMode = Param_PowerModeCAM;
+		rPowerSaveMode.ucPsProfile = (UINT_8) ePowerMode;
+		DBGLOG(INIT, INFO, "Enable CAM BssIndex:%d, PowerMode:%d\n",
+		       ucBssIndex, rPowerSaveMode.ucPsProfile);
+	} else {
+		prAdapter->rWlanInfo.fgEnSpecPwrMgt = FALSE;
+		rPowerSaveMode.ucPsProfile =
+				prAdapter->rWlanInfo.arPowerSaveMode[ucBssIndex].ucPsProfile;
+		DBGLOG(INIT, INFO, "Disable CAM BssIndex:%d, PowerMode:%d\n",
+		       ucBssIndex, rPowerSaveMode.ucPsProfile);
+	}
+
+	return wlanSendSetQueryCmd(prAdapter,
+				CMD_ID_POWER_SAVE_MODE,
+				TRUE,
+				FALSE,
+				FALSE,
+				NULL,
+				NULL,
+				sizeof(CMD_PS_PROFILE_T),
+				(PUINT_8) & rPowerSaveMode,
+				NULL, 0);
+}
 
 WLAN_STATUS nicEnterCtiaMode(IN P_ADAPTER_T prAdapter, BOOLEAN fgEnterCtia, BOOLEAN fgEnCmdEvent)
 {
