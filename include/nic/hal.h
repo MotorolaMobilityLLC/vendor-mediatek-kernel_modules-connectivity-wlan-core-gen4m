@@ -392,37 +392,37 @@ do { \
 
 /* Polling interrupt status bit due to CFG_PCIE_LPCR_HOST status bit not work when chip sleep */
 #define HAL_LP_OWN_RD(_prAdapter, _pfgResult) \
-{ \
-	UINT_32 u4RegValue; \
-	*_pfgResult = FALSE; \
-	HAL_MCR_RD(prAdapter, WPDMA_INT_STA, &u4RegValue); \
-	*_pfgResult = HAL_IS_FW_OWNBACK_INTR(u4RegValue);\
-}
+do { \
+	struct mt66xx_chip_info *prChipInfo; \
+	P_BUS_INFO prBusInfo; \
+	if (!_prAdapter->chip_info || !_prAdapter->chip_info->bus_info) \
+		ASSERT(0); \
+	prChipInfo = _prAdapter->chip_info; \
+	prBusInfo = prChipInfo->bus_info; \
+	prBusInfo->lowPowerOwnRead(_prAdapter, _pfgResult); \
+} while (0)
 
 #define HAL_LP_OWN_SET(_prAdapter, _pfgResult) \
-{ \
-	UINT_32 u4RegValue; \
-	*_pfgResult = FALSE; \
-	HAL_MCR_WR(_prAdapter, CFG_PCIE_LPCR_HOST, PCIE_LPCR_HOST_SET_OWN); \
-	HAL_MCR_RD(_prAdapter, CFG_PCIE_LPCR_HOST, &u4RegValue); \
-	if (u4RegValue == 0) { \
-		*_pfgResult = TRUE; \
-	} \
-}
+do { \
+	struct mt66xx_chip_info *prChipInfo; \
+	P_BUS_INFO prBusInfo; \
+	if (!_prAdapter->chip_info || !_prAdapter->chip_info->bus_info) \
+		ASSERT(0); \
+	prChipInfo = _prAdapter->chip_info; \
+	prBusInfo = prChipInfo->bus_info; \
+	prBusInfo->lowPowerOwnSet(_prAdapter, _pfgResult); \
+} while (0)
 
 #define HAL_LP_OWN_CLR(_prAdapter, _pfgResult) \
-{ \
-	UINT_32 u4RegValue; \
-	*_pfgResult = FALSE; \
-	/* Software get LP ownership */ \
-	HAL_MCR_WR(_prAdapter, \
-			CFG_PCIE_LPCR_HOST, \
-			PCIE_LPCR_HOST_CLR_OWN); \
-	HAL_MCR_RD(_prAdapter, CFG_PCIE_LPCR_HOST, &u4RegValue); \
-	if (u4RegValue == 0) { \
-		*_pfgResult = TRUE; \
-	} \
-}
+do { \
+	struct mt66xx_chip_info *prChipInfo; \
+	P_BUS_INFO prBusInfo; \
+	if (!_prAdapter->chip_info || !_prAdapter->chip_info->bus_info) \
+		ASSERT(0); \
+	prChipInfo = _prAdapter->chip_info; \
+	prBusInfo = prChipInfo->bus_info; \
+	prBusInfo->lowPowerOwnClear(_prAdapter, _pfgResult); \
+} while (0)
 
 #define HAL_GET_ABNORMAL_INTERRUPT_REASON_CODE(_prAdapter, pu4AbnormalReason)
 
@@ -459,8 +459,7 @@ do { \
 
 #define HAL_IS_ABNORMAL_INTR(u4IntrStatus)
 
-#define HAL_IS_FW_OWNBACK_INTR(u4IntrStatus) \
-	((u4IntrStatus & WPDMA_FW_CLR_OWN_INT) ? TRUE : FALSE)
+#define HAL_IS_FW_OWNBACK_INTR(u4IntrStatus)
 
 #define HAL_PUT_MAILBOX(prAdapter, u4MboxId, u4Data)
 

@@ -4863,7 +4863,7 @@ WLAN_STATUS wlanQueryNicCapability(IN P_ADAPTER_T prAdapter)
 	if (prEventNicCapability->ucHwNotSupportDBDC)
 		prAdapter->rWifiVar.ucDbdcMode = DBDC_MODE_DISABLED;
 #endif
-	if (prEventNicCapability->ucHwBssIdNum > 0 && prEventNicCapability->ucHwBssIdNum != BSS_DEFAULT_NUM) {
+	if (prEventNicCapability->ucHwBssIdNum > 0 && prEventNicCapability->ucHwBssIdNum <= MAX_BSSID_NUM) {
 		prAdapter->ucHwBssIdNum = prEventNicCapability->ucHwBssIdNum;
 		prAdapter->ucP2PDevBssIdx = prAdapter->ucHwBssIdNum;
 		prAdapter->aprBssInfo[prAdapter->ucP2PDevBssIdx] = &prAdapter->rWifiVar.rP2pDevInfo;

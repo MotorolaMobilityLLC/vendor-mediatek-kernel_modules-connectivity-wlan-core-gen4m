@@ -81,6 +81,9 @@ VOID fillTxDescAppendByCR4(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduInfo
 #if defined(_HIF_PCIE)
 /* DMS Scheduler Init */
 VOID asicPcieDmaShdlInit(IN P_ADAPTER_T prAdapter);
+VOID asicLowPowerOwnRead(IN P_ADAPTER_T prAdapter, OUT PBOOLEAN pfgResult);
+VOID asicLowPowerOwnSet(IN P_ADAPTER_T prAdapter, OUT PBOOLEAN pfgResult);
+VOID asicLowPowerOwnClear(IN P_ADAPTER_T prAdapter, OUT PBOOLEAN pfgResult);
 #endif /* _HIF_PCIE */
 
 #if defined(_HIF_USB)
