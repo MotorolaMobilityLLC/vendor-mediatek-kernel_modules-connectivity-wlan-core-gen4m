@@ -263,6 +263,7 @@ struct CHIP_DBG_OPS connac_debug_ops = {
 	.showCsrInfo = NULL,
 	.showDmaschInfo = NULL,
 #endif
+	.showHifInfo = NULL,
 };
 
 struct mt66xx_chip_info mt66xx_chip_info_connac = {

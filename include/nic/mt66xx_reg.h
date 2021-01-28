@@ -475,6 +475,8 @@ extern struct mt66xx_hif_driver_data mt66xx_driver_data_mt7915;
 
 #define WPDMA_FIFO_TEST_MOD				(PCIE_HIF_BASE + 0x0140)
 
+#define WPDMA_APSRC_ACK_LOCK_SLPPROT                    (PCIE_HIF_BASE + 0x0160)
+
 /* HIF Low Power Control Host Register */
 #define CFG_PCIE_LPCR_HOST				(PCIE_HIF_BASE + 0x01F0)
 
