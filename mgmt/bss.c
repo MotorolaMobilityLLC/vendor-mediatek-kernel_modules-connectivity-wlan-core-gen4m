@@ -2401,7 +2401,6 @@ void bssDumpBssInfo(IN struct ADAPTER *prAdapter, IN uint8_t ucBssIndex)
 	DBGLOG(SW4, INFO, "============== Dump Done ==============\n");
 }
 
-#if CFG_SUPPORT_IOT_AP_BLACKLIST
 int8_t bssGetRxNss(IN struct ADAPTER *prAdapter,
 	IN struct BSS_DESC *prBssDesc)
 {
@@ -2437,6 +2436,7 @@ int8_t bssGetRxNss(IN struct ADAPTER *prAdapter,
 
 	return ucBssNss;
 }
+#if CFG_SUPPORT_IOT_AP_BLACKLIST
 /*----------------------------------------------------------------------------*/
 /*!
  * @brief get IOT AP handle action.
