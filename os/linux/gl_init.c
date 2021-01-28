@@ -1287,6 +1287,7 @@ static void wlanSetMulticastListWorkQueue(
 					   VIR_MEM_TYPE);
 		if (!prMCAddrList) {
 			DBGLOG(INIT, WARN, "prMCAddrList memory alloc fail!\n");
+			up(&g_halt_sem);
 			return;
 		}
 
@@ -2888,7 +2889,8 @@ void wlanSetSuspendMode(struct GLUE_INFO *prGlueInfo,
 			if (!prMCAddrList) {
 				DBGLOG(INIT, WARN,
 					"prMCAddrList memory alloc fail!\n");
-				return;
+				up(&g_halt_sem);
+				continue;
 			}
 
 			/* Avoid race condition with kernel net subsystem */
