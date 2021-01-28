@@ -283,9 +283,24 @@ u_int8_t secCheckClassError(IN struct ADAPTER *prAdapter,
 			prSwRfb->ucStaRecIdx,
 			prSwRfb->eDst, prStaRec->eStaType);
 
-		DBGLOG_MEM8(RX, TRACE, prSwRfb->pucRecvBuff,
+		DBGLOG_MEM8(RX, ERROR, prSwRfb->pucRecvBuff,
 			    (prSwRfb->u2RxByteCount > 64) ? 64 :
 			    prSwRfb->u2RxByteCount);
+
+		if (prSwRfb->ucGroupVLD & BIT(RX_GROUP_VLD_4)) {
+			DBGLOG(RX, ERROR,
+				"secchk:%04x:%04x:%04x:%04x:%04x:%04x:%04x:%04x:%04x:%04x\n",
+				prSwRfb->prRxStatusGroup4->u2FrameCtl,
+				prSwRfb->prRxStatusGroup4->aucTA[0],
+				prSwRfb->prRxStatusGroup4->aucTA[1],
+				prSwRfb->prRxStatusGroup4->aucTA[2],
+				prSwRfb->prRxStatusGroup4->aucTA[3],
+				prSwRfb->prRxStatusGroup4->aucTA[4],
+				prSwRfb->prRxStatusGroup4->aucTA[5],
+				prSwRfb->prRxStatusGroup4->u2SeqFrag,
+				prSwRfb->prRxStatusGroup4->u2Qos,
+				prSwRfb->prRxStatusGroup4->u4HTC);
+		}
 
 		if (EAPOL_KEY_NOT_KEY !=
 			secGetEapolKeyType((uint8_t *) prSwRfb->pvHeader)) {
