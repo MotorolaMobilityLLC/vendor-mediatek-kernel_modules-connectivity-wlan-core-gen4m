@@ -1,4 +1,4 @@
-/******************************************************************************
+/*******************************************************************************
  *
  * This file is provided under a dual license.  When you use or
  * distribute this software, you may choose to be licensed under
@@ -48,34 +48,36 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *****************************************************************************/
+ ******************************************************************************/
 /*
-** Id: //Department/DaVinci/BRANCHES/MT6620_WIFI_DRIVER_V2_3/include/config.h#3
-*/
+ ** Id: //Department/DaVinci/BRANCHES/MT6620_WIFI_DRIVER_V2_3/include/config.h#3
+ */
 
 /*! \file   "config.h"
-*   \brief  This file includes the various configurable parameters for customers
-*
-*    This file ncludes the configurable parameters except the parameters indicate the turning-on/off of some features
-*/
+ *   \brief  This file includes the various configurable parameters for
+ *           customers
+ *
+ *    This file ncludes the configurable parameters except the parameters
+ *    indicate the turning-on/off of some features
+ */
 
 #ifndef _CONFIG_H
 #define _CONFIG_H
 
 /*******************************************************************************
-*                         C O M P I L E R   F L A G S
-********************************************************************************
-*/
+ *                         C O M P I L E R   F L A G S
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                    E X T E R N A L   R E F E R E N C E S
-********************************************************************************
-*/
+ *                    E X T E R N A L   R E F E R E N C E S
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                              C O N S T A N T S
-********************************************************************************
-*/
+ *                              C O N S T A N T S
+ *******************************************************************************
+ */
 /* 2 Flags for OS capability */
 
 #if defined(_HIF_SDIO)
@@ -116,13 +118,13 @@
 #define CFG_ENABLE_NET_DEV_NOTIFY		1
 
 /* 2 Flags for Driver Features */
-#define CFG_TX_FRAGMENT                 1	/*!< 1: Enable TX fragmentation */
-						/* 0: Disable */
-#define CFG_SUPPORT_PERFORMANCE_TEST    0	/*Only for performance Test */
+#define CFG_TX_FRAGMENT                 1 /*!< 1: Enable TX fragmentation */
+/* 0: Disable */
+#define CFG_SUPPORT_PERFORMANCE_TEST    0 /*Only for performance Test */
 
-#define CFG_COUNTRY_CODE                NULL	/* "US" */
-#define CFG_SUPPORT_DEBUG_FS			0
-#define CFG_SUPPORT_SET_CAM_BY_PROC		1	/*Enable/disable powersave mode*/
+#define CFG_COUNTRY_CODE                NULL /* "US" */
+#define CFG_SUPPORT_DEBUG_FS		0
+#define CFG_SUPPORT_SET_CAM_BY_PROC	1 /*Enable/disable powersave mode*/
 
 #ifndef LINUX
 #define CFG_FW_FILENAME                 L"WIFI_RAM_CODE"
@@ -133,7 +135,7 @@
 #endif
 
 #ifndef CFG_MET_PACKET_TRACE_SUPPORT
-#define CFG_MET_PACKET_TRACE_SUPPORT    0	/*move to wlan/MAKEFILE */
+#define CFG_MET_PACKET_TRACE_SUPPORT    0 /*move to wlan/MAKEFILE */
 #endif
 
 #ifndef CFG_MET_TAG_SUPPORT
@@ -141,9 +143,9 @@
 #endif
 
 /* Support AP Selection */
-#define CFG_SUPPORT_RSN_SCORE		1
-#define CFG_SELECT_BSS_BASE_ON_MULTI_PARAM		1
-#define CFG_MAX_NUM_OF_CHNL_INFO				50
+#define CFG_SUPPORT_RSN_SCORE			1
+#define CFG_SELECT_BSS_BASE_ON_MULTI_PARAM	1
+#define CFG_MAX_NUM_OF_CHNL_INFO		50
 #define CFG_SUPPORT_CHNL_CONFLICT_REVISE	0
 
 
@@ -153,60 +155,78 @@
  */
 
 #ifndef LINUX
-#define CFG_SUPPORT_CFG_FILE     0
+#define CFG_SUPPORT_CFG_FILE	0
 #else
-#define CFG_SUPPORT_CFG_FILE     1
+#define CFG_SUPPORT_CFG_FILE	1
 #endif
 
-#define CFG_SUPPORT_802_11D             1	/*!< 1(default): Enable 802.11d */
-						/* 0: Disable */
+/*!< 1(default): Enable 802.11d */
+#define CFG_SUPPORT_802_11D	1
+/* 0: Disable */
 
-#define CFG_SUPPORT_RRM             0	/* Radio Reasource Measurement (802.11k) */
-#define CFG_SUPPORT_DFS             1	/* DFS (802.11h) */
+/* Radio Reasource Measurement (802.11k) */
+#define CFG_SUPPORT_RRM		0
+
+/* DFS (802.11h) */
+#define CFG_SUPPORT_DFS		1
 #ifndef CFG_SUPPORT_DFS_MASTER
-#define CFG_SUPPORT_DFS_MASTER      1
+#define CFG_SUPPORT_DFS_MASTER	1
 #endif
 
 #if (CFG_SUPPORT_DFS == 1)	/* Add by Enlai */
-#define CFG_SUPPORT_QUIET           0	/* Quiet (802.11h) */
-#define CFG_SUPPORT_SPEC_MGMT       0	/* Spectrum Management (802.11h): TPC and DFS */
+/* Quiet (802.11h) */
+#define CFG_SUPPORT_QUIET	0
+/* Spectrum Management (802.11h): TPC and DFS */
+#define CFG_SUPPORT_SPEC_MGMT	0
 #else
-#define CFG_SUPPORT_QUIET           0	/* Quiet (802.11h) */
-#define CFG_SUPPORT_SPEC_MGMT       0	/* Spectrum Management (802.11h): TPC and DFS */
+/* Quiet (802.11h) */
+#define CFG_SUPPORT_QUIET	0
+/* Spectrum Management (802.11h): TPC and DFS */
+#define CFG_SUPPORT_SPEC_MGMT	0
 #endif
 
-#define CFG_SUPPORT_RX_RDG          0	/* 11n feature. RX RDG capability */
-#define CFG_SUPPORT_MFB             0	/* 802.11n MCS Feedback responder */
-#define CFG_SUPPORT_RX_STBC         1	/* 802.11n RX STBC (1SS) */
-#define CFG_SUPPORT_RX_SGI          1	/* 802.11n RX short GI for both 20M and 40M BW */
-#define CFG_SUPPORT_RX_HT_GF        1	/* 802.11n RX HT green-field capability */
-#define CFG_SUPPORT_BFER            0
-#define CFG_SUPPORT_BFEE            1
-#define CFG_SUPPORT_WAPI            1
+/* 11n feature. RX RDG capability */
+#define CFG_SUPPORT_RX_RDG	0
+
+/* 802.11n MCS Feedback responder */
+#define CFG_SUPPORT_MFB		0
+
+/* 802.11n RX STBC (1SS) */
+#define CFG_SUPPORT_RX_STBC	1
+
+/* 802.11n RX short GI for both 20M and 40M BW */
+#define CFG_SUPPORT_RX_SGI	1
+
+/* 802.11n RX HT green-field capability */
+#define CFG_SUPPORT_RX_HT_GF	1
+
+#define CFG_SUPPORT_BFER	0
+#define CFG_SUPPORT_BFEE	1
+#define CFG_SUPPORT_WAPI	1
 
 /* Enable QA Tool Support */
-#define CFG_SUPPORT_QA_TOOL			1
+#define CFG_SUPPORT_QA_TOOL	1
 
 /* Enable TX BF Support */
-#define CFG_SUPPORT_TX_BF			1
+#define CFG_SUPPORT_TX_BF	1
 
-#define CFG_SUPPORT_TX_BF_FPGA      1
+#define CFG_SUPPORT_TX_BF_FPGA	1
 
 /* Enable MU MIMO Support */
-#define CFG_SUPPORT_MU_MIMO			1
+#define CFG_SUPPORT_MU_MIMO	1
 
 /* Enable WOW Support */
-#define CFG_WOW_SUPPORT			1
+#define CFG_WOW_SUPPORT		1
 
 /* Enable A-MSDU RX Reordering Support */
-#define CFG_SUPPORT_RX_AMSDU		1
+#define CFG_SUPPORT_RX_AMSDU	1
 
 /* Enable Android wake_lock operations */
 #ifndef CFG_ENABLE_WAKE_LOCK
-#define CFG_ENABLE_WAKE_LOCK		1
+#define CFG_ENABLE_WAKE_LOCK	1
 #endif
 
-#define CFG_SUPPORT_OSHARE		1
+#define CFG_SUPPORT_OSHARE	1
 
 #define CFG_SUPPORT_LOWLATENCY_MODE	1
 
@@ -220,14 +240,17 @@
  * SLT Option
  *------------------------------------------------------------------------------
  */
-#define CFG_SLT_SUPPORT                             0
+#define CFG_SLT_SUPPORT				0
 
 #ifdef NDIS60_MINIPORT
 #define CFG_NATIVE_802_11                       1
 
 #define CFG_TX_MAX_PKT_SIZE                     2304
-#define CFG_TCP_IP_CHKSUM_OFFLOAD_NDIS_60       0	/* !< 1: Enable TCP/IP header checksum offload */
-							/* 0: Disable */
+
+/* !< 1: Enable TCP/IP header checksum offload */
+#define CFG_TCP_IP_CHKSUM_OFFLOAD_NDIS_60       0
+
+/* 0: Disable */
 #define CFG_TCP_IP_CHKSUM_OFFLOAD               0
 #define CFG_WHQL_DOT11_STATISTICS               1
 #define CFG_WHQL_ADD_REMOVE_KEY                 1
@@ -283,16 +306,21 @@
 #define CFG_SDIO_RX_AGG                              1
 
 #if (CFG_SDIO_RX_AGG == 1) && (CFG_SDIO_INTR_ENHANCE == 0)
-#error "CFG_SDIO_INTR_ENHANCE should be 1 once CFG_SDIO_RX_AGG equals to 1"
-#elif (CFG_SDIO_INTR_ENHANCE == 1 || CFG_SDIO_RX_ENHANCE == 1) && (CFG_SDIO_RX_AGG == 0)
-#error "CFG_SDIO_RX_AGG should be 1 once CFG_SDIO_INTR_ENHANCE and/or CFG_SDIO_RX_ENHANCE equals to 1"
+#error \
+	"CFG_SDIO_INTR_ENHANCE should be 1 once CFG_SDIO_RX_AGG equals to 1"
+#elif (CFG_SDIO_INTR_ENHANCE == 1 || CFG_SDIO_RX_ENHANCE == 1) && \
+	(CFG_SDIO_RX_AGG == 0)
+#error \
+	"CFG_SDIO_RX_AGG should be 1 once CFG_SDIO_INTR_ENHANCE and/or CFG_SDIO_RX_ENHANCE equals to 1"
 #endif
 
 #ifdef WINDOWS_CE
-#define CFG_SDIO_PATHRU_MODE                    1	/*!< 1: Support pass through (PATHRU) mode */
-							/* 0: Disable */
+/*!< 1: Support pass through (PATHRU) mode */
+#define CFG_SDIO_PATHRU_MODE                    1
+/* 0: Disable */
 #else
-#define CFG_SDIO_PATHRU_MODE                    0	/*!< 0: Always disable if WINDOWS_CE is not defined */
+/*!< 0: Always disable if WINDOWS_CE is not defined */
+#define CFG_SDIO_PATHRU_MODE                    0
 #endif
 
 #define CFG_SDIO_ACCESS_N9_REGISTER_BY_MAILBOX      0
@@ -315,20 +343,20 @@
  *------------------------------------------------------------------------------
  */
 
-#define CFG_MULTI_ECOVER_SUPPORT    1
+#define CFG_MULTI_ECOVER_SUPPORT	1
 
-#define CFG_ENABLE_CAL_LOG          1
-#define CFG_REPORT_RFBB_VERSION     1
+#define CFG_ENABLE_CAL_LOG		1
+#define CFG_REPORT_RFBB_VERSION		1
 
-#define MAX_BSSID_NUM               4	/* MAX BSSID number */
+#define MAX_BSSID_NUM			4	/* MAX BSSID number */
 
 #if (MTK_WCN_HIF_SDIO)
-#define CFG_CHIP_RESET_SUPPORT          1
+#define CFG_CHIP_RESET_SUPPORT		1
 #else
-#define CFG_CHIP_RESET_SUPPORT          0
+#define CFG_CHIP_RESET_SUPPORT		0
 #endif
 
-#define HW_BSSID_NUM                4	/* HW BSSID number by chip */
+#define HW_BSSID_NUM			4	/* HW BSSID number by chip */
 
 /*------------------------------------------------------------------------------
  * Flags for workaround
@@ -339,9 +367,9 @@
  * Flags for driver version
  *------------------------------------------------------------------------------
  */
-#define CFG_DRV_OWN_VERSION                     ((uint16_t)((NIC_DRIVER_MAJOR_VERSION << 8) | \
-	(NIC_DRIVER_MINOR_VERSION)))
-#define CFG_DRV_PEER_VERSION                    ((uint16_t)0x0000)
+#define CFG_DRV_OWN_VERSION	((uint16_t)((NIC_DRIVER_MAJOR_VERSION << 8) | \
+				(NIC_DRIVER_MINOR_VERSION)))
+#define CFG_DRV_PEER_VERSION	((uint16_t)0x0000)
 
 /*------------------------------------------------------------------------------
  * Flags and Parameters for TX path
@@ -360,11 +388,11 @@
  */
 
 /*------------------------------------------------------------------------------
-* CONFIG_TITLE : Move BA from FW to Driver
-* OWNER            : Puff Wen
-* Description  : Move BA from FW to Driver
-*------------------------------------------------------------------------------
-*/
+ * CONFIG_TITLE : Move BA from FW to Driver
+ * OWNER            : Puff Wen
+ * Description  : Move BA from FW to Driver
+ *------------------------------------------------------------------------------
+ */
 #define CFG_M0VE_BA_TO_DRIVER                   0
 
 /*! Max. descriptor number - sync. with firmware */
@@ -379,13 +407,15 @@
 #define CFG_NUM_OF_QM_RX_PKT_NUM                HIF_NUM_OF_QM_RX_PKT_NUM
 
 /*! Maximum number of SW RX packet buffer */
-#define CFG_RX_MAX_PKT_NUM                      ((CFG_NUM_OF_RX0_HIF_DESC + CFG_NUM_OF_RX1_HIF_DESC) * 3 \
+#define CFG_RX_MAX_PKT_NUM                      ((CFG_NUM_OF_RX0_HIF_DESC + \
+						CFG_NUM_OF_RX1_HIF_DESC) * 3 \
 						+ CFG_NUM_OF_QM_RX_PKT_NUM)
 
 #define CFG_RX_REORDER_Q_THRESHOLD              8
 
 #ifndef LINUX
-#define CFG_RX_RETAINED_PKT_THRESHOLD           (CFG_NUM_OF_RX0_HIF_DESC + CFG_NUM_OF_RX1_HIF_DESC \
+#define CFG_RX_RETAINED_PKT_THRESHOLD           (CFG_NUM_OF_RX0_HIF_DESC + \
+						CFG_NUM_OF_RX1_HIF_DESC \
 						+ CFG_NUM_OF_QM_RX_PKT_NUM)
 #else
 #define CFG_RX_RETAINED_PKT_THRESHOLD           0
@@ -394,10 +424,10 @@
 /*! Maximum RX packet size, if exceed this value, drop incoming packet */
 /* 7.2.3 Maganement frames */
 /* TODO: it should be 4096 under emulation mode */
-#define CFG_RX_MAX_PKT_SIZE                     (28 + 2312 + 12 /*HIF_RX_HEADER_T*/)
+#define CFG_RX_MAX_PKT_SIZE	(28 + 2312 + 12 /*HIF_RX_HEADER_T*/)
 
 /*! Minimum RX packet size, if lower than this value, drop incoming packet */
-#define CFG_RX_MIN_PKT_SIZE                     10	/*!< 802.11 Control Frame is 10 bytes */
+#define CFG_RX_MIN_PKT_SIZE	10 /*!< 802.11 Control Frame is 10 bytes */
 
 /*! RX BA capability */
 #define CFG_NUM_OF_RX_BA_AGREEMENTS             8
@@ -410,9 +440,9 @@
 
 #define CFG_PF_ARP_NS_MAX_NUM                   3
 
-#define CFG_COMPRESSION_DEBUG					0
-#define CFG_DECOMPRESSION_TMP_ADDRESS			0
-#define CFG_SUPPORT_COMPRESSION_FW_OPTION		0
+#define CFG_COMPRESSION_DEBUG			0
+#define CFG_DECOMPRESSION_TMP_ADDRESS		0
+#define CFG_SUPPORT_COMPRESSION_FW_OPTION	0
 
 /*------------------------------------------------------------------------------
  * Flags and Parameters for CMD/RESPONSE
@@ -442,16 +472,21 @@
  */
 #define CFG_ENABLE_FULL_PM                      1
 #define CFG_ENABLE_WAKEUP_ON_LAN                0
-#define CFG_SUPPORT_WAKEUP_REASON_DEBUG         1	/* debug which packet wake up host */
-#define CFG_INIT_POWER_SAVE_PROF                    ENUM_PSP_FAST_SWITCH
 
-#define CFG_INIT_ENABLE_PATTERN_FILTER_ARP                    0
+/* debug which packet wake up host */
+#define CFG_SUPPORT_WAKEUP_REASON_DEBUG         1
 
-#define CFG_INIT_UAPSD_AC_BMP                    0	/* (BIT(3) | BIT(2) | BIT(1) | BIT(0)) */
+#define CFG_INIT_POWER_SAVE_PROF		ENUM_PSP_FAST_SWITCH
 
-/* #define CFG_SUPPORT_WAPI                        0 */
-#define CFG_SUPPORT_WPS                          1
-#define CFG_SUPPORT_WPS2                         1
+#define CFG_INIT_ENABLE_PATTERN_FILTER_ARP	0
+
+/* (BIT(3) | BIT(2) | BIT(1) | BIT(0)) */
+#define CFG_INIT_UAPSD_AC_BMP			0
+
+/* #define CFG_SUPPORT_WAPI			0 */
+#define CFG_SUPPORT_WPS				1
+#define CFG_SUPPORT_WPS2			1
+
 /*------------------------------------------------------------------------------
  * Flags of drop multicast packet when device suspend
  *------------------------------------------------------------------------------
@@ -466,13 +501,15 @@
 #define CFG_MAX_PMKID_CACHE                     16
 
 /*------------------------------------------------------------------------------
-  * Auto Channel Selection maximun channel number
-  *------------------------------------------------------------------------------
-  */
-#define MAX_CHN_NUM                             49 /* ARRAY_SIZE(mtk_5ghz_channels) + ARRAY_SIZE(mtk_2ghz_channels) */
-#define MAX_2G_BAND_CHN_NUM                     14
-#define MAX_5G_BAND_CHN_NUM                     (MAX_CHN_NUM - MAX_2G_BAND_CHN_NUM)
-#define ACS_PRINT_BUFFER_LEN                   200
+ * Auto Channel Selection maximun channel number
+ *------------------------------------------------------------------------------
+ */
+/* ARRAY_SIZE(mtk_5ghz_channels) + ARRAY_SIZE(mtk_2ghz_channels) */
+#define MAX_CHN_NUM			49
+
+#define MAX_2G_BAND_CHN_NUM		14
+#define MAX_5G_BAND_CHN_NUM		(MAX_CHN_NUM - MAX_2G_BAND_CHN_NUM)
+#define ACS_PRINT_BUFFER_LEN		200
 
 /*------------------------------------------------------------------------------
  * Flags and Parameters for Ad-Hoc
@@ -525,7 +562,8 @@
 
 /* 2 Flags for Driver Debug Options */
 /*------------------------------------------------------------------------------
- * Flags of TX Debug Option. NOTE(Kevin): Confirm with SA before modifying following flags.
+ * Flags of TX Debug Option. NOTE(Kevin): Confirm with SA before modifying
+ * following flags.
  *------------------------------------------------------------------------------
  */
 /*!< 1: Debug statistics usage of MGMT Buffer */
@@ -585,7 +623,10 @@
 #define CONFIG_SUPPORT_GTK_REKEY        1
 #else
 #define CFG_ENABLE_WIFI_DIRECT          1
-#define CFG_SUPPORT_802_11W             1	/*!< 0(default): Disable 802.11W */
+
+/*!< 0(default): Disable 802.11W */
+#define CFG_SUPPORT_802_11W             1
+
 #define CONFIG_SUPPORT_GTK_REKEY        1
 #endif
 #else /* !LINUX */
@@ -687,9 +728,9 @@
 
 #define LINT_RESTORE		/*lint -restore */
 
-#define LINT_EXT_HEADER_BEGIN                   LINT_SAVE_AND_DISABLE
+#define LINT_EXT_HEADER_BEGIN		LINT_SAVE_AND_DISABLE
 
-#define LINT_EXT_HEADER_END                     LINT_RESTORE
+#define LINT_EXT_HEADER_END		LINT_RESTORE
 
 /*------------------------------------------------------------------------------
  * Flags of Features
@@ -698,22 +739,28 @@
 
 #define CFG_SUPPORT_TDLS		1
 
-#define CFG_SUPPORT_QOS             1	/* Enable/disable QoS TX, AMPDU */
-#define CFG_SUPPORT_AMPDU_TX        1
-#define CFG_SUPPORT_AMPDU_RX        1
-#define CFG_SUPPORT_TSPEC           0	/* Enable/disable TS-related Action frames handling */
-#define CFG_SUPPORT_UAPSD           1
-#define CFG_SUPPORT_UL_PSMP         0
+/* Enable/disable QoS TX, AMPDU */
+#define CFG_SUPPORT_QOS			1
 
-#define CFG_SUPPORT_ROAMING         1	/* Roaming System */
+#define CFG_SUPPORT_AMPDU_TX		1
+#define CFG_SUPPORT_AMPDU_RX		1
+
+/* Enable/disable TS-related Action frames handling */
+#define CFG_SUPPORT_TSPEC		0
+#define CFG_SUPPORT_UAPSD		1
+#define CFG_SUPPORT_UL_PSMP		0
+
+/* Roaming System */
+#define CFG_SUPPORT_ROAMING		1
+
 #if (CFG_SUPPORT_ROAMING == 1)
 
 /* Roaming feature: skip roaming when only one ESSID AP
-*  Need Android background scan
-*  if no roaming event occurred
-*  to trigger roaming scan
-*  after skip roaming in one ESSID AP case
-*/
+ * Need Android background scan
+ * if no roaming event occurred
+ * to trigger roaming scan
+ * after skip roaming in one ESSID AP case
+ */
 #define CFG_SUPPORT_ROAMING_SKIP_ONE_AP		1
 #if CFG_SUPPORT_ROAMING_SKIP_ONE_AP
 #define CFG_MAX_NUM_ROAM_BSS_LIST		64
@@ -723,50 +770,57 @@
 
 #endif /* CFG_SUPPORT_ROAMING */
 
-#define CFG_SUPPORT_SWCR            1
+#define CFG_SUPPORT_SWCR			1
 
-#define CFG_SUPPORT_ANTI_PIRACY     1
+#define CFG_SUPPORT_ANTI_PIRACY			1
 
-#define CFG_SUPPORT_OSC_SETTING     1
+#define CFG_SUPPORT_OSC_SETTING			1
 
-#define CFG_SUPPORT_P2P_RSSI_QUERY        0
+#define CFG_SUPPORT_P2P_RSSI_QUERY		0
 
-#define CFG_SUPPORT_P2P_GO_OFFLOAD_PROBE_RSP       0
+#define CFG_SUPPORT_P2P_GO_OFFLOAD_PROBE_RSP	0
 
-#define CFG_SHOW_MACADDR_SOURCE     1
+#define CFG_SHOW_MACADDR_SOURCE			1
 
-#define CFG_SUPPORT_802_11V                    0	/* Support 802.11v Wireless Network Management */
-#define CFG_SUPPORT_802_11V_TIMING_MEASUREMENT 0
-#if (CFG_SUPPORT_802_11V_TIMING_MEASUREMENT == 1) && (CFG_SUPPORT_802_11V == 0)
-#error "CFG_SUPPORT_802_11V should be 1 once CFG_SUPPORT_802_11V_TIMING_MEASUREMENT equals to 1"
+/* Support 802.11v Wireless Network Management */
+#define CFG_SUPPORT_802_11V			0
+
+#define CFG_SUPPORT_802_11V_TIMING_MEASUREMENT	0
+
+#if (CFG_SUPPORT_802_11V_TIMING_MEASUREMENT == 1) && \
+	(CFG_SUPPORT_802_11V == 0)
+#error \
+"CFG_SUPPORT_802_11V should be 1 once CFG_SUPPORT_802_11V_TIMING_MEASUREMENT equals to 1"
 #endif
+
 #if (CFG_SUPPORT_802_11V == 0)
-#define WNM_UNIT_TEST 0
+#define WNM_UNIT_TEST				0
 #endif
 
-#define CFG_SUPPORT_PPR2	1
-#define CFG_DRIVER_COMPOSE_ASSOC_REQ        1
-#define CFG_SUPPORT_802_11AC                1
-#define CFG_STRICT_CHECK_CAPINFO_PRIVACY    0
+#define CFG_SUPPORT_PPR2			1
+#define CFG_DRIVER_COMPOSE_ASSOC_REQ		1
+#define CFG_SUPPORT_802_11AC			1
+#define CFG_STRICT_CHECK_CAPINFO_PRIVACY	0
 
-#define CFG_SUPPORT_WFD                     1
-#define CFG_SUPPORT_WFD_COMPOSE_IE          1
+#define CFG_SUPPORT_WFD				1
+#define CFG_SUPPORT_WFD_COMPOSE_IE		1
 
-#define CFG_SUPPORT_HOTSPOT_WPS_MANAGER     1
-#define CFG_SUPPORT_NFC_BEAM_PLUS           1
+#define CFG_SUPPORT_HOTSPOT_WPS_MANAGER		1
+#define CFG_SUPPORT_NFC_BEAM_PLUS		1
 
 /* Refer to CONFIG_MTK_STAGE_SCAN */
-#define CFG_MTK_STAGE_SCAN					1
+#define CFG_MTK_STAGE_SCAN			1
 
-#define CFG_SUPPORT_MULTITHREAD             1	/* Enable driver support multicore */
+/* Enable driver support multicore */
+#define CFG_SUPPORT_MULTITHREAD			1
 
-#define CFG_SUPPORT_MTK_SYNERGY             1
+#define CFG_SUPPORT_MTK_SYNERGY			1
 
-#define CFG_SUPPORT_VHT_IE_IN_2G             1
+#define CFG_SUPPORT_VHT_IE_IN_2G		1
 
-#define CFG_SUPPORT_PWR_LIMIT_COUNTRY       1
+#define CFG_SUPPORT_PWR_LIMIT_COUNTRY		1
 
-#define CFG_FIX_2_TX_PORT					0
+#define CFG_FIX_2_TX_PORT			0
 
 /*------------------------------------------------------------------------------
  * Flags of bus error tolerance
@@ -952,10 +1006,13 @@
 #define CFG_SISO_SW_DEVELOP			0
 
 /*------------------------------------------------------------------------------
- * Flags for a Goal for MT6632 : Cal Result Backup in Host or NVRam when Android Boot
+ * Flags for a Goal for MT6632 : Cal Result Backup in Host or NVRam when Android
+ *                               Boot
  *------------------------------------------------------------------------------
  */
-#if 0 /*(MTK_WCN_HIF_SDIO) : 20161003 Default Off, later will enable by MTK_WCN_HIF_SDIO */
+#if 0 /*(MTK_WCN_HIF_SDIO) : 20161003 Default Off, later will enable
+       *                     by MTK_WCN_HIF_SDIO
+       */
 #define CFG_SUPPORT_CAL_RESULT_BACKUP_TO_HOST				1
 #define CFG_SUPPORT_CAL_RESULT_BACKUP_TO_HOST_DBGLOG		0
 #else
@@ -1017,32 +1074,32 @@
 
 
 /*******************************************************************************
-*                             D A T A   T Y P E S
-********************************************************************************
-*/
+ *                             D A T A   T Y P E S
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                            P U B L I C   D A T A
-********************************************************************************
-*/
+ *                            P U B L I C   D A T A
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                           P R I V A T E   D A T A
-********************************************************************************
-*/
+ *                           P R I V A T E   D A T A
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                                 M A C R O S
-********************************************************************************
-*/
+ *                                 M A C R O S
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                   F U N C T I O N   D E C L A R A T I O N S
-********************************************************************************
-*/
+ *                   F U N C T I O N   D E C L A R A T I O N S
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                              F U N C T I O N S
-********************************************************************************
-*/
+ *                              F U N C T I O N S
+ *******************************************************************************
+ */
 #endif /* _CONFIG_H */
