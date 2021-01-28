@@ -1095,7 +1095,9 @@ uint32_t kalRxIndicateOnePkt(IN struct GLUE_INFO
 	}
 #endif
 
+#if (CFG_SUPPORT_STATISTICS == 1)
 	StatsEnvRxTime2Host(prGlueInfo->prAdapter, prSkb);
+#endif
 
 #if KERNEL_VERSION(4, 11, 0) <= CFG80211_VERSION_CODE
 	/* ToDo jiffies assignment */
@@ -1371,8 +1373,9 @@ kalIndicateStatusAndComplete(IN struct GLUE_INFO
 				}
 			}
 
+#if (CFG_SUPPORT_STATISTICS == 1)
 			StatsResetTxRx();
-
+#endif
 			/* remove all bsses that before and only channel
 			 * different with the current connected one
 			 * if without this patch, UI will show channel A is
@@ -2681,6 +2684,9 @@ kalQoSFrameClassifierAndPacketInfo(IN struct GLUE_INFO *prGlueInfo,
 	/* 4 <3> Handle ethernet format */
 	switch (u2EtherTypeLen) {
 	case ETH_P_IPV4:
+#if (CFG_SUPPORT_STATISTICS == 1)
+		wlanLogTxData(WLAN_WAKE_IPV4);
+#endif
 		/* IPv4 header length check */
 		if (u4PacketLen < (ucEthTypeLenOffset + ETHER_TYPE_LEN +
 				   IPV4_HDR_LEN)) {
@@ -2702,6 +2708,9 @@ kalQoSFrameClassifierAndPacketInfo(IN struct GLUE_INFO *prGlueInfo,
 		break;
 
 	case ETH_P_ARP:
+#if (CFG_SUPPORT_STATISTICS == 1)
+		wlanLogTxData(WLAN_WAKE_ARP);
+#endif
 		kalArpFrameClassifier(prGlueInfo, prPacket, pucNextProtocol,
 				      prTxPktInfo);
 		break;
@@ -2711,24 +2720,39 @@ kalQoSFrameClassifierAndPacketInfo(IN struct GLUE_INFO *prGlueInfo,
 #if CFG_SUPPORT_WAPI
 	case ETH_WPI_1X:
 #endif
+#if (CFG_SUPPORT_STATISTICS == 1)
+		wlanLogTxData(WLAN_WAKE_1X);
+#endif
 		kalSecurityFrameClassifier(prGlueInfo, prPacket,
 			pucNextProtocol, u2EtherTypeLen, aucLookAheadBuf,
 			prTxPktInfo);
 		break;
 
 	case ETH_PRO_TDLS:
+#if (CFG_SUPPORT_STATISTICS == 1)
+		wlanLogTxData(WLAN_WAKE_TDLS);
+#endif
 		kalTdlsFrameClassifier(prGlueInfo, prPacket,
 				       pucNextProtocol, prTxPktInfo);
 		break;
+
+	case ETH_P_IPV6:
 #if CFG_SUPPORT_WIFI_SYSDVT
 #if (CFG_TCP_IP_CHKSUM_OFFLOAD)
-	case ETH_P_IPV6:
 		kalIPv6FrameClassifier(prGlueInfo, prPacket,
 				       pucNextProtocol, prTxPktInfo);
+#endif
+#endif
+
+#if (CFG_SUPPORT_STATISTICS == 1)
+		wlanLogTxData(WLAN_WAKE_IPV6);
+#endif
 		break;
-#endif
-#endif
+
 	default:
+#if (CFG_SUPPORT_STATISTICS == 1)
+		wlanLogTxData(WLAN_WAKE_OTHER);
+#endif
 		/* 4 <4> Handle 802.3 format if LEN <= 1500 */
 		if (u2EtherTypeLen <= ETH_802_3_MAX_LEN)
 			prTxPktInfo->u2Flag |= BIT(ENUM_PKT_802_3);
