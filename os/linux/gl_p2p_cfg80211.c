@@ -1211,6 +1211,7 @@ int mtk_p2p_cfg80211_start_ap(struct wiphy *wiphy, struct net_device *dev, struc
 				prWifiVar = &prAdapter->rWifiVar;
 
 				if ((prWifiVar->ucApChannel != 0) &&
+					(prWifiVar->ucApChnlDefFromCfg != 0) &&
 					(prWifiVar->ucApChannel != rRfChnlInfo.ucChannelNum)) {
 					rRfChnlInfo.ucChannelNum = prWifiVar->ucApChannel;
 					rRfChnlInfo.eBand =
