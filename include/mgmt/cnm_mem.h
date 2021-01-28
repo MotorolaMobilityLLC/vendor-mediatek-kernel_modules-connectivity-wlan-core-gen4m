@@ -236,6 +236,7 @@ struct STA_PMF_CFG {
 	u_int8_t fgMfpc;
 	u_int8_t fgMfpr;
 	u_int8_t fgSha256;
+	u_int8_t fgSaeRequireMfp;
 	u_int8_t fgApplyPmf;
 	u_int8_t fgBipKeyInstalled;
 
