@@ -1330,3 +1330,6 @@ uint8_t wlanGetSpeIdx(IN struct ADAPTER *prAdapter, IN uint8_t ucBssIndex);
 
 uint8_t wlanGetSupportNss(IN struct ADAPTER *prAdapter, IN uint8_t ucBssIndex);
 
+#if CFG_SUPPORT_LOWLATENCY_MODE
+uint32_t wlanAdapterStartForLowLatency(IN struct ADAPTER *prAdapter);
+#endif /* CFG_SUPPORT_LOWLATENCY_MODE */

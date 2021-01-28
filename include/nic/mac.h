@@ -200,6 +200,7 @@
 
 #define IPVERSION                               4
 #define IP_HEADER_LEN                           20
+#define IP_PROTO_HLEN                           9
 
 #define IPVH_VERSION_OFFSET                     4	/* For Little-Endian */
 #define IPVH_VERSION_MASK                       0xF0
