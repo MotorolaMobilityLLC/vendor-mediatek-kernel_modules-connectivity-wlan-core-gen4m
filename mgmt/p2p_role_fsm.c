@@ -774,6 +774,10 @@ p2pRoleFsmDeauthComplete(IN struct ADAPTER *prAdapter,
 			&& (bssGetClientCount(prAdapter, prP2pBssInfo) == 0)) {
 			/* All Peer disconnected !! Stop BSS now!! */
 			p2pFuncStopComplete(prAdapter, prP2pBssInfo);
+
+			p2pRoleFsmStateTransition(prAdapter,
+				prP2pRoleFsmInfo,
+				P2P_ROLE_STATE_IDLE);
 		} else if (eOriMediaStatus != prP2pBssInfo->eConnectionState)
 			/* Update the Media State if necessary */
 			nicUpdateBss(prAdapter, prP2pBssInfo->ucBssIndex);
@@ -1594,9 +1598,19 @@ void p2pRoleFsmRunEventStopAP(IN struct ADAPTER *prAdapter,
 
 	SET_NET_PWR_STATE_IDLE(prAdapter, prP2pBssInfo->ucBssIndex);
 
-	p2pRoleFsmStateTransition(prAdapter,
-		prP2pRoleFsmInfo,
-		P2P_ROLE_STATE_IDLE);
+	/* Postpone entering idle state if sending deauth frames. This is to
+	 * prevent releasing channel too early and cause unnecessary cnm
+	 * time when starting and stopping AP quickly.
+	 */
+	if (IS_NET_ACTIVE(prAdapter, prP2pBssInfo->ucBssIndex) &&
+		prP2pBssInfo->eConnectionState == MEDIA_STATE_CONNECTED) {
+		DBGLOG(P2P, INFO,
+			"postpone entering idle state for deauth process\n");
+	} else {
+		p2pRoleFsmStateTransition(prAdapter,
+			prP2pRoleFsmInfo,
+			P2P_ROLE_STATE_IDLE);
+	}
 
 error:
 	cnmMemFree(prAdapter, prMsgHdr);
