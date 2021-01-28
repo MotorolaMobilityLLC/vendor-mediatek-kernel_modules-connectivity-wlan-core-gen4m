@@ -10673,7 +10673,7 @@ IN enum ENUM_CHNL_SORT_POLICY ucSortType)
 	int8_t ucIdx = 0, ucRoot = 0, ucChild = 0;
 #if (CFG_SUPPORT_P2PGO_ACS == 1)
 	uint8_t i = 0, ucBandIdx = 0, ucNumOfChannel = 0, uc2gChNum = 0;
-	struct RF_CHANNEL_INFO aucChannelList[MAX_CHN_NUM];
+	struct RF_CHANNEL_INFO aucChannelList[MAX_CHN_NUM] = { 0 };
 #endif
 	struct PARAM_CHN_RANK_INFO rChnRankInfo;
 	/* prepare unsorted ch rank list */
