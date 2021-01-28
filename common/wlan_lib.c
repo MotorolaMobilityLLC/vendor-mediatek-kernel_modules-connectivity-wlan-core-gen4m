@@ -1311,7 +1311,7 @@ uint32_t wlanAdapterStart(IN struct ADAPTER *prAdapter,
 
 void wlanOffClearAllQueues(IN struct ADAPTER *prAdapter)
 {
-	DBGLOG(INIT, INFO, "wlanClearQueues(): start.\n");
+	DBGLOG(INIT, INFO, "wlanOffClearAllQueues(): start.\n");
 
 	/* Release all CMD/MGMT/SEC frame in command queue */
 	kalClearCommandQueue(prAdapter->prGlueInfo);
@@ -1336,8 +1336,7 @@ void wlanOffClearAllQueues(IN struct ADAPTER *prAdapter)
 void wlanOffUninitNicModule(IN struct ADAPTER *prAdapter,
 	IN const u_int8_t bAtResetFlow)
 {
-	DBGLOG(INIT, INFO, "wlanClearQueues(): start.\n")
-;
+	DBGLOG(INIT, INFO, "wlanOffUninitNicModule(): start.\n");
 	nicRxUninitialize(prAdapter);
 
 	nicTxRelease(prAdapter, FALSE);
@@ -1386,6 +1385,7 @@ uint32_t wlanAdapterStop(IN struct ADAPTER *prAdapter)
 		wlanPowerOffWifi(prAdapter);
 	 }
 
+	halHifSwInfoUnInit(prAdapter->prGlueInfo);
 	wlanOffUninitNicModule(prAdapter, FALSE);
 
 	return u4Status;
