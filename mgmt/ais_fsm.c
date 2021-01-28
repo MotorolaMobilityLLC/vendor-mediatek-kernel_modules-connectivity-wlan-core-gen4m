@@ -4272,7 +4272,9 @@ void aisFsmRunEventRemainOnChannel(IN struct ADAPTER *prAdapter, IN struct MSG_H
 	prAisFsmInfo->rChReqInfo.u4DurationMs = prRemainOnChannel->u4DurationMs;
 	prAisFsmInfo->rChReqInfo.u8Cookie = prRemainOnChannel->u8Cookie;
 
-	if (prAisFsmInfo->eCurrentState == AIS_STATE_IDLE || prAisFsmInfo->eCurrentState == AIS_STATE_NORMAL_TR) {
+	if ((prAisFsmInfo->eCurrentState == AIS_STATE_IDLE) ||
+		(prAisFsmInfo->eCurrentState == AIS_STATE_NORMAL_TR
+		&& prAisFsmInfo->fgIsInfraChannelFinished == TRUE)){
 		/* transit to next state */
 		aisFsmSteps(prAdapter, AIS_STATE_REQ_REMAIN_ON_CHANNEL);
 	} else {
