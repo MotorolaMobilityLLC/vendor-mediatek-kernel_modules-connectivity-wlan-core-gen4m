@@ -882,6 +882,7 @@ struct WIFI_VAR {
 #if (CFG_SUPPORT_TWT == 1)
 	uint8_t ucTWTRequester;
 	uint8_t ucTWTResponder;
+	uint8_t ucTWTStaBandBitmap;
 #endif
 
 	uint8_t ucTspec;

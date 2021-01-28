@@ -6992,6 +6992,10 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 		wlanCfgGetUint32(prAdapter, "TWTRequester", FEATURE_ENABLED);
 	prWifiVar->ucTWTResponder = (uint8_t)
 		wlanCfgGetUint32(prAdapter, "TWTResponder", FEATURE_DISABLED);
+	prWifiVar->ucTWTStaBandBitmap = (uint8_t)
+		wlanCfgGetUint32(prAdapter,
+			"TWTStaBandBitmap",
+			BAND_2G4|BAND_5G);
 #endif
 
 	prWifiVar->ucSigTaRts = (uint8_t) wlanCfgGetUint32(prAdapter,

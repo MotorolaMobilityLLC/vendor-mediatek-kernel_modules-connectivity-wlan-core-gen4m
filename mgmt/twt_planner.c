@@ -1027,6 +1027,16 @@ void twtPlannerSetParams(
 		return;
 	}
 
+	/* For COEX concern, suppose only 5G is allowed */
+	if ((prAdapter->rWifiVar.ucTWTStaBandBitmap & prBssInfo->eBand)
+		!= prBssInfo->eBand) {
+		DBGLOG(TWT_PLANNER, ERROR,
+			"TWT BAND support bitmaps(%u)!=%u\n",
+			prAdapter->rWifiVar.ucTWTStaBandBitmap,
+			prBssInfo->eBand);
+		return;
+	}
+
 	ucFlowId = prTWTCtrl->ucTWTFlowId;
 
 	switch (prTWTCtrl->ucCtrlAction) {
