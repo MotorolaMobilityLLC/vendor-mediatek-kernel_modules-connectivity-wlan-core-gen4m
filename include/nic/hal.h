@@ -1051,6 +1051,8 @@ BOOLEAN halIsPendingRx(IN P_ADAPTER_T prAdapter);
 WLAN_STATUS halAllocateIOBuffer(IN P_ADAPTER_T prAdapter);
 WLAN_STATUS halReleaseIOBuffer(IN P_ADAPTER_T prAdapter);
 VOID halDeAggRxPktWorker(struct work_struct *work);
+VOID halRxTasklet(unsigned long data);
+VOID halTxCompleteTasklet(unsigned long data);
 VOID halPrintHifDbgInfo(IN P_ADAPTER_T prAdapter);
 BOOLEAN halIsTxResourceControlEn(IN P_ADAPTER_T prAdapter);
 #endif /* _HAL_H */
