@@ -91,18 +91,18 @@
 *                           P R I V A T E   D A T A
 ********************************************************************************
 */
-static PUINT_8 apucDebugRoamingState[ROAMING_STATE_NUM] = {
-	(PUINT_8) DISP_STRING("IDLE"),
-	(PUINT_8) DISP_STRING("DECISION"),
-	(PUINT_8) DISP_STRING("DISCOVERY"),
-	(PUINT_8) DISP_STRING("ROAM")
+static uint8_t *apucDebugRoamingState[ROAMING_STATE_NUM] = {
+	(uint8_t *) DISP_STRING("IDLE"),
+	(uint8_t *) DISP_STRING("DECISION"),
+	(uint8_t *) DISP_STRING("DISCOVERY"),
+	(uint8_t *) DISP_STRING("ROAM")
 };
 
 #if 0
-static PUINT_8 apucDebugRoamingReason[ROAMING_REASON_NUM] = {
-	(PUINT_8) DISP_STRING("ROAMING_REASON_POOR_RCPI"),
-	(PUINT_8) DISP_STRING("ROAMING_REASON_TX_ERR"),
-	(PUINT_8) DISP_STRING("ROAMING_REASON_RETRY")
+static uint8_t *apucDebugRoamingReason[ROAMING_REASON_NUM] = {
+	(uint8_t *) DISP_STRING("ROAMING_REASON_POOR_RCPI"),
+	(uint8_t *) DISP_STRING("ROAMING_REASON_TX_ERR"),
+	(uint8_t *) DISP_STRING("ROAMING_REASON_RETRY")
 };
 #endif
 /*******************************************************************************
@@ -129,14 +129,14 @@ static PUINT_8 apucDebugRoamingReason[ROAMING_REASON_NUM] = {
 * @return (none)
 */
 /*----------------------------------------------------------------------------*/
-VOID roamingFsmInit(IN P_ADAPTER_T prAdapter)
+void roamingFsmInit(IN struct ADAPTER *prAdapter)
 {
-	P_ROAMING_INFO_T prRoamingFsmInfo;
-	P_CONNECTION_SETTINGS_T prConnSettings;
+	struct ROAMING_INFO *prRoamingFsmInfo;
+	struct CONNECTION_SETTINGS *prConnSettings;
 
 	DBGLOG(ROAMING, LOUD, "->roamingFsmInit(): Current Time = %ld\n", kalGetTimeTick());
 
-	prRoamingFsmInfo = (P_ROAMING_INFO_T) &(prAdapter->rWifiVar.rRoamingInfo);
+	prRoamingFsmInfo = (struct ROAMING_INFO *) &(prAdapter->rWifiVar.rRoamingInfo);
 	prConnSettings = &(prAdapter->rWifiVar.rConnSettings);
 
 	/* 4 <1> Initiate FSM */
@@ -155,13 +155,13 @@ VOID roamingFsmInit(IN P_ADAPTER_T prAdapter)
 * @return (none)
 */
 /*----------------------------------------------------------------------------*/
-VOID roamingFsmUninit(IN P_ADAPTER_T prAdapter)
+void roamingFsmUninit(IN struct ADAPTER *prAdapter)
 {
-	P_ROAMING_INFO_T prRoamingFsmInfo;
+	struct ROAMING_INFO *prRoamingFsmInfo;
 
 	DBGLOG(ROAMING, LOUD, "->roamingFsmUninit(): Current Time = %ld\n", kalGetTimeTick());
 
-	prRoamingFsmInfo = (P_ROAMING_INFO_T) &(prAdapter->rWifiVar.rRoamingInfo);
+	prRoamingFsmInfo = (struct ROAMING_INFO *) &(prAdapter->rWifiVar.rRoamingInfo);
 
 	prRoamingFsmInfo->eCurrentState = ROAMING_STATE_IDLE;
 }				/* end of roamingFsmUninit() */
@@ -176,14 +176,14 @@ VOID roamingFsmUninit(IN P_ADAPTER_T prAdapter)
 * @return (none)
 */
 /*----------------------------------------------------------------------------*/
-VOID roamingFsmSendCmd(IN P_ADAPTER_T prAdapter, IN P_CMD_ROAMING_TRANSIT_T prTransit)
+void roamingFsmSendCmd(IN struct ADAPTER *prAdapter, IN struct CMD_ROAMING_TRANSIT *prTransit)
 {
-	P_ROAMING_INFO_T prRoamingFsmInfo;
-	WLAN_STATUS rStatus;
+	struct ROAMING_INFO *prRoamingFsmInfo;
+	uint32_t rStatus;
 
 	DBGLOG(ROAMING, LOUD, "->roamingFsmSendCmd(): Current Time = %ld\n", kalGetTimeTick());
 
-	prRoamingFsmInfo = (P_ROAMING_INFO_T) &(prAdapter->rWifiVar.rRoamingInfo);
+	prRoamingFsmInfo = (struct ROAMING_INFO *) &(prAdapter->rWifiVar.rRoamingInfo);
 
 	rStatus = wlanSendSetQueryCmd(prAdapter,	/* prAdapter */
 				      CMD_ID_ROAMING_TRANSIT,	/* ucCID */
@@ -192,8 +192,8 @@ VOID roamingFsmSendCmd(IN P_ADAPTER_T prAdapter, IN P_CMD_ROAMING_TRANSIT_T prTr
 				      FALSE,	/* fgIsOid */
 				      NULL,	/* pfCmdDoneHandler */
 				      NULL,	/* pfCmdTimeoutHandler */
-				      sizeof(CMD_ROAMING_TRANSIT_T),	/* u4SetQueryInfoLen */
-				      (PUINT_8) prTransit,	/* pucInfoBuffer */
+				      sizeof(struct CMD_ROAMING_TRANSIT),	/* u4SetQueryInfoLen */
+				      (uint8_t *) prTransit,	/* pucInfoBuffer */
 				      NULL,	/* pvSetQueryBuffer */
 				      0	/* u4SetQueryBufferLen */
 	    );
@@ -210,11 +210,11 @@ VOID roamingFsmSendCmd(IN P_ADAPTER_T prAdapter, IN P_CMD_ROAMING_TRANSIT_T prTr
 * @return none
 */
 /*----------------------------------------------------------------------------*/
-VOID roamingFsmScanResultsUpdate(IN P_ADAPTER_T prAdapter)
+void roamingFsmScanResultsUpdate(IN struct ADAPTER *prAdapter)
 {
-	P_ROAMING_INFO_T prRoamingFsmInfo;
+	struct ROAMING_INFO *prRoamingFsmInfo;
 
-	prRoamingFsmInfo = (P_ROAMING_INFO_T) &(prAdapter->rWifiVar.rRoamingInfo);
+	prRoamingFsmInfo = (struct ROAMING_INFO *) &(prAdapter->rWifiVar.rRoamingInfo);
 
 	/* Check Roaming Conditions */
 	if (!(prRoamingFsmInfo->fgIsEnableRoaming))
@@ -236,27 +236,27 @@ VOID roamingFsmScanResultsUpdate(IN P_ADAPTER_T prAdapter)
 * @return
 */
 /*----------------------------------------------------------------------------*/
-static BOOLEAN roamingFsmIsNeedScan(IN P_ADAPTER_T prAdapter)
+static u_int8_t roamingFsmIsNeedScan(IN struct ADAPTER *prAdapter)
 {
-	P_SCAN_INFO_T prScanInfo;
-	P_LINK_T prRoamBSSDescList;
-	P_ROAM_BSS_DESC_T prRoamBssDesc;
-	P_BSS_INFO_T prAisBssInfo;
-	P_BSS_DESC_T prBssDesc;
+	struct SCAN_INFO *prScanInfo;
+	struct LINK *prRoamBSSDescList;
+	struct ROAM_BSS_DESC *prRoamBssDesc;
+	struct BSS_INFO *prAisBssInfo;
+	struct BSS_DESC *prBssDesc;
 	/*CMD_SW_DBG_CTRL_T rCmdSwCtrl;*/
-	CMD_ROAMING_SKIP_ONE_AP_T rCmdRoamingSkipOneAP;
-	BOOLEAN fgIsNeedScan, fgIsRoamingSSID;
+	struct CMD_ROAMING_SKIP_ONE_AP rCmdRoamingSkipOneAP;
+	u_int8_t fgIsNeedScan, fgIsRoamingSSID;
 
 	fgIsNeedScan = FALSE;
 	fgIsRoamingSSID = FALSE; /*Whether there's roaming candidate in RoamBssDescList*/
 
-	kalMemZero(&rCmdRoamingSkipOneAP, sizeof(CMD_ROAMING_SKIP_ONE_AP_T));
+	kalMemZero(&rCmdRoamingSkipOneAP, sizeof(struct CMD_ROAMING_SKIP_ONE_AP));
 
 	prAisBssInfo = prAdapter->prAisBssInfo;
 	prScanInfo = &(prAdapter->rWifiVar.rScanInfo);
 	prRoamBSSDescList = &prScanInfo->rRoamBSSDescList;
 	/* <1> Count same BSS Desc from current SCAN result list. */
-	LINK_FOR_EACH_ENTRY(prRoamBssDesc, prRoamBSSDescList, rLinkEntry, ROAM_BSS_DESC_T) {
+	LINK_FOR_EACH_ENTRY(prRoamBssDesc, prRoamBSSDescList, rLinkEntry, struct ROAM_BSS_DESC) {
 		if (EQUAL_SSID(prRoamBssDesc->aucSSID,
 				       prRoamBssDesc->ucSSIDLen,
 				       prAisBssInfo->aucSSID, prAisBssInfo->ucSSIDLen)) {
@@ -311,8 +311,8 @@ static BOOLEAN roamingFsmIsNeedScan(IN P_ADAPTER_T prAdapter)
 						    CMD_ID_SET_ROAMING_SKIP,
 						    TRUE,
 						    FALSE,
-						    FALSE, NULL, NULL, sizeof(CMD_ROAMING_SKIP_ONE_AP_T),
-						    (PUINT_8)&rCmdRoamingSkipOneAP, NULL, 0);
+						    FALSE, NULL, NULL, sizeof(struct CMD_ROAMING_SKIP_ONE_AP),
+						    (uint8_t *)&rCmdRoamingSkipOneAP, NULL, 0);
 		} else
 			DBGLOG(ROAMING, WARN, "Target BssDesc in AisFsmInfo is NULL\n");
 	}
@@ -331,18 +331,18 @@ static BOOLEAN roamingFsmIsNeedScan(IN P_ADAPTER_T prAdapter)
 * @return (none)
 */
 /*----------------------------------------------------------------------------*/
-VOID roamingFsmSteps(IN P_ADAPTER_T prAdapter, IN ENUM_ROAMING_STATE_T eNextState)
+void roamingFsmSteps(IN struct ADAPTER *prAdapter, IN enum ENUM_ROAMING_STATE eNextState)
 {
-	P_ROAMING_INFO_T prRoamingFsmInfo;
-	ENUM_ROAMING_STATE_T ePreviousState;
-	BOOLEAN fgIsTransition = (BOOLEAN) FALSE;
-	BOOLEAN fgIsNeedScan = FALSE;
+	struct ROAMING_INFO *prRoamingFsmInfo;
+	enum ENUM_ROAMING_STATE ePreviousState;
+	u_int8_t fgIsTransition = (u_int8_t) FALSE;
+	u_int8_t fgIsNeedScan = FALSE;
 #if CFG_SUPPORT_NCHO
-	UINT32 u4ScnResultsTimeout = ROAMING_DISCOVERY_TIMEOUT_SEC;
-	UINT_32 u4ReqScan = FALSE;
+	uint32_t u4ScnResultsTimeout = ROAMING_DISCOVERY_TIMEOUT_SEC;
+	uint32_t u4ReqScan = FALSE;
 #endif
 
-	prRoamingFsmInfo = (P_ROAMING_INFO_T) &(prAdapter->rWifiVar.rRoamingInfo);
+	prRoamingFsmInfo = (struct ROAMING_INFO *) &(prAdapter->rWifiVar.rRoamingInfo);
 
 	do {
 
@@ -354,7 +354,7 @@ VOID roamingFsmSteps(IN P_ADAPTER_T prAdapter, IN ENUM_ROAMING_STATE_T eNextStat
 		ePreviousState = prRoamingFsmInfo->eCurrentState;
 		prRoamingFsmInfo->eCurrentState = eNextState;
 
-		fgIsTransition = (BOOLEAN) FALSE;
+		fgIsTransition = (u_int8_t) FALSE;
 
 		/* Do tasks of the State that we just entered */
 		switch (prRoamingFsmInfo->eCurrentState) {
@@ -426,14 +426,14 @@ VOID roamingFsmSteps(IN P_ADAPTER_T prAdapter, IN ENUM_ROAMING_STATE_T eNextStat
 * @return none
 */
 /*----------------------------------------------------------------------------*/
-VOID roamingFsmRunEventStart(IN P_ADAPTER_T prAdapter)
+void roamingFsmRunEventStart(IN struct ADAPTER *prAdapter)
 {
-	P_ROAMING_INFO_T prRoamingFsmInfo;
-	ENUM_ROAMING_STATE_T eNextState;
-	P_BSS_INFO_T prAisBssInfo;
-	CMD_ROAMING_TRANSIT_T rTransit;
+	struct ROAMING_INFO *prRoamingFsmInfo;
+	enum ENUM_ROAMING_STATE eNextState;
+	struct BSS_INFO *prAisBssInfo;
+	struct CMD_ROAMING_TRANSIT rTransit;
 
-	prRoamingFsmInfo = (P_ROAMING_INFO_T) &(prAdapter->rWifiVar.rRoamingInfo);
+	prRoamingFsmInfo = (struct ROAMING_INFO *) &(prAdapter->rWifiVar.rRoamingInfo);
 
 	/* Check Roaming Conditions */
 	if (!(prRoamingFsmInfo->fgIsEnableRoaming))
@@ -456,7 +456,7 @@ VOID roamingFsmRunEventStart(IN P_ADAPTER_T prAdapter)
 	if (eNextState != prRoamingFsmInfo->eCurrentState) {
 		rTransit.u2Event = ROAMING_EVENT_START;
 		rTransit.u2Data = prAisBssInfo->ucBssIndex;
-		roamingFsmSendCmd(prAdapter, (P_CMD_ROAMING_TRANSIT_T) & rTransit);
+		roamingFsmSendCmd(prAdapter, (struct CMD_ROAMING_TRANSIT *) & rTransit);
 
 		/* Step to next state */
 		roamingFsmSteps(prAdapter, eNextState);
@@ -472,12 +472,12 @@ VOID roamingFsmRunEventStart(IN P_ADAPTER_T prAdapter)
 * @return none
 */
 /*----------------------------------------------------------------------------*/
-VOID roamingFsmRunEventDiscovery(IN P_ADAPTER_T prAdapter, IN P_CMD_ROAMING_TRANSIT_T prTransit)
+void roamingFsmRunEventDiscovery(IN struct ADAPTER *prAdapter, IN struct CMD_ROAMING_TRANSIT *prTransit)
 {
-	P_ROAMING_INFO_T prRoamingFsmInfo;
-	ENUM_ROAMING_STATE_T eNextState;
+	struct ROAMING_INFO *prRoamingFsmInfo;
+	enum ENUM_ROAMING_STATE eNextState;
 
-	prRoamingFsmInfo = (P_ROAMING_INFO_T) &(prAdapter->rWifiVar.rRoamingInfo);
+	prRoamingFsmInfo = (struct ROAMING_INFO *) &(prAdapter->rWifiVar.rRoamingInfo);
 
 	/* Check Roaming Conditions */
 	if (!(prRoamingFsmInfo->fgIsEnableRoaming))
@@ -493,14 +493,14 @@ VOID roamingFsmRunEventDiscovery(IN P_ADAPTER_T prAdapter, IN P_CMD_ROAMING_TRAN
 	eNextState = ROAMING_STATE_DISCOVERY;
 	/* DECISION -> DISCOVERY */
 	if (eNextState != prRoamingFsmInfo->eCurrentState) {
-		P_BSS_INFO_T prAisBssInfo;
-		P_BSS_DESC_T prBssDesc;
-		PARAM_MAC_ADDRESS arBssid;
-		PARAM_SSID_T rSsid;
-		P_AIS_FSM_INFO_T prAisFsmInfo;
-		P_CONNECTION_SETTINGS_T prConnSettings;
+		struct BSS_INFO *prAisBssInfo;
+		struct BSS_DESC *prBssDesc;
+		uint8_t arBssid[PARAM_MAC_ADDR_LEN];
+		struct PARAM_SSID rSsid;
+		struct AIS_FSM_INFO *prAisFsmInfo;
+		struct CONNECTION_SETTINGS *prConnSettings;
 
-		kalMemZero(&rSsid, sizeof(PARAM_SSID_T));
+		kalMemZero(&rSsid, sizeof(struct PARAM_SSID));
 		prAisFsmInfo = &(prAdapter->rWifiVar.rAisFsmInfo);
 		prConnSettings = &(prAdapter->rWifiVar.rConnSettings);
 
@@ -516,8 +516,8 @@ VOID roamingFsmRunEventDiscovery(IN P_ADAPTER_T prAdapter, IN P_CMD_ROAMING_TRAN
 		}
 		prBssDesc = scanSearchBssDescByBssidAndSsid(prAdapter, arBssid, TRUE, &rSsid);
 		if (prBssDesc) {
-			prBssDesc->ucRCPI = (UINT_8) (prTransit->u2Data & 0xff);
-			DBGLOG(ROAMING, INFO, "RCPI %u\n", prBssDesc->ucRCPI);
+			prBssDesc->ucRCPI = (uint8_t) (prTransit->u2Data & 0xff);
+			DBGLOG(ROAMING, INFO, "uint8_t %u\n", prBssDesc->ucRCPI);
 		}
 		roamingFsmSteps(prAdapter, eNextState);
 	}
@@ -532,13 +532,13 @@ VOID roamingFsmRunEventDiscovery(IN P_ADAPTER_T prAdapter, IN P_CMD_ROAMING_TRAN
 * @return none
 */
 /*----------------------------------------------------------------------------*/
-VOID roamingFsmRunEventRoam(IN P_ADAPTER_T prAdapter)
+void roamingFsmRunEventRoam(IN struct ADAPTER *prAdapter)
 {
-	P_ROAMING_INFO_T prRoamingFsmInfo;
-	ENUM_ROAMING_STATE_T eNextState;
-	CMD_ROAMING_TRANSIT_T rTransit;
+	struct ROAMING_INFO *prRoamingFsmInfo;
+	enum ENUM_ROAMING_STATE eNextState;
+	struct CMD_ROAMING_TRANSIT rTransit;
 
-	prRoamingFsmInfo = (P_ROAMING_INFO_T) &(prAdapter->rWifiVar.rRoamingInfo);
+	prRoamingFsmInfo = (struct ROAMING_INFO *) &(prAdapter->rWifiVar.rRoamingInfo);
 
 	/* Check Roaming Conditions */
 	if (!(prRoamingFsmInfo->fgIsEnableRoaming))
@@ -556,7 +556,7 @@ VOID roamingFsmRunEventRoam(IN P_ADAPTER_T prAdapter)
 	/* DISCOVERY -> ROAM */
 	if (eNextState != prRoamingFsmInfo->eCurrentState) {
 		rTransit.u2Event = ROAMING_EVENT_ROAM;
-		roamingFsmSendCmd(prAdapter, (P_CMD_ROAMING_TRANSIT_T) & rTransit);
+		roamingFsmSendCmd(prAdapter, (struct CMD_ROAMING_TRANSIT *) & rTransit);
 
 		/* Step to next state */
 		roamingFsmSteps(prAdapter, eNextState);
@@ -572,13 +572,13 @@ VOID roamingFsmRunEventRoam(IN P_ADAPTER_T prAdapter)
 * @return none
 */
 /*----------------------------------------------------------------------------*/
-VOID roamingFsmRunEventFail(IN P_ADAPTER_T prAdapter, IN UINT_32 u4Param)
+void roamingFsmRunEventFail(IN struct ADAPTER *prAdapter, IN uint32_t u4Param)
 {
-	P_ROAMING_INFO_T prRoamingFsmInfo;
-	ENUM_ROAMING_STATE_T eNextState;
-	CMD_ROAMING_TRANSIT_T rTransit;
+	struct ROAMING_INFO *prRoamingFsmInfo;
+	enum ENUM_ROAMING_STATE eNextState;
+	struct CMD_ROAMING_TRANSIT rTransit;
 
-	prRoamingFsmInfo = (P_ROAMING_INFO_T) &(prAdapter->rWifiVar.rRoamingInfo);
+	prRoamingFsmInfo = (struct ROAMING_INFO *) &(prAdapter->rWifiVar.rRoamingInfo);
 
 	/* Check Roaming Conditions */
 	if (!(prRoamingFsmInfo->fgIsEnableRoaming))
@@ -596,8 +596,8 @@ VOID roamingFsmRunEventFail(IN P_ADAPTER_T prAdapter, IN UINT_32 u4Param)
 	/* ROAM -> DECISION */
 	if (eNextState != prRoamingFsmInfo->eCurrentState) {
 		rTransit.u2Event = ROAMING_EVENT_FAIL;
-		rTransit.u2Data = (UINT_16) (u4Param & 0xffff);
-		roamingFsmSendCmd(prAdapter, (P_CMD_ROAMING_TRANSIT_T) & rTransit);
+		rTransit.u2Data = (uint16_t) (u4Param & 0xffff);
+		roamingFsmSendCmd(prAdapter, (struct CMD_ROAMING_TRANSIT *) & rTransit);
 
 		/* Step to next state */
 		roamingFsmSteps(prAdapter, eNextState);
@@ -613,13 +613,13 @@ VOID roamingFsmRunEventFail(IN P_ADAPTER_T prAdapter, IN UINT_32 u4Param)
 * @return none
 */
 /*----------------------------------------------------------------------------*/
-VOID roamingFsmRunEventAbort(IN P_ADAPTER_T prAdapter)
+void roamingFsmRunEventAbort(IN struct ADAPTER *prAdapter)
 {
-	P_ROAMING_INFO_T prRoamingFsmInfo;
-	ENUM_ROAMING_STATE_T eNextState;
-	CMD_ROAMING_TRANSIT_T rTransit;
+	struct ROAMING_INFO *prRoamingFsmInfo;
+	enum ENUM_ROAMING_STATE eNextState;
+	struct CMD_ROAMING_TRANSIT rTransit;
 
-	prRoamingFsmInfo = (P_ROAMING_INFO_T) &(prAdapter->rWifiVar.rRoamingInfo);
+	prRoamingFsmInfo = (struct ROAMING_INFO *) &(prAdapter->rWifiVar.rRoamingInfo);
 
 	/* Check Roaming Conditions */
 	if (!(prRoamingFsmInfo->fgIsEnableRoaming))
@@ -632,7 +632,7 @@ VOID roamingFsmRunEventAbort(IN P_ADAPTER_T prAdapter)
 	/* IDLE, DECISION, DISCOVERY, ROAM -> IDLE */
 	if (eNextState != prRoamingFsmInfo->eCurrentState) {
 		rTransit.u2Event = ROAMING_EVENT_ABORT;
-		roamingFsmSendCmd(prAdapter, (P_CMD_ROAMING_TRANSIT_T) & rTransit);
+		roamingFsmSendCmd(prAdapter, (struct CMD_ROAMING_TRANSIT *) & rTransit);
 
 		/* Step to next state */
 		roamingFsmSteps(prAdapter, eNextState);
@@ -649,7 +649,7 @@ VOID roamingFsmRunEventAbort(IN P_ADAPTER_T prAdapter)
 * @return none
 */
 /*----------------------------------------------------------------------------*/
-WLAN_STATUS roamingFsmProcessEvent(IN P_ADAPTER_T prAdapter, IN P_CMD_ROAMING_TRANSIT_T prTransit)
+uint32_t roamingFsmProcessEvent(IN struct ADAPTER *prAdapter, IN struct CMD_ROAMING_TRANSIT *prTransit)
 {
 	DBGLOG(ROAMING, LOUD, "ROAMING Process Events: Current Time = %ld\n", kalGetTimeTick());
 

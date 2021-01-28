@@ -94,22 +94,22 @@
 #ifdef CONFIG_NL80211_TESTMODE
 #if CFG_SUPPORT_NFC_BEAM_PLUS
 
-typedef struct _NL80211_DRIVER_SET_NFC_PARAMS {
-	NL80211_DRIVER_TEST_MODE_PARAMS hdr;
-	UINT_32 NFC_Enable;
+struct NL80211_DRIVER_SET_NFC_PARAMS {
+	struct NL80211_DRIVER_TEST_MODE_PARAMS hdr;
+	uint32_t NFC_Enable;
 
-} NL80211_DRIVER_SET_NFC_PARAMS, *P_NL80211_DRIVER_SET_NFC_PARAMS;
+};
 
 #endif
 
 
 
-typedef struct _NL80211_DRIVER_GET_STA_STATISTICS_PARAMS {
-	NL80211_DRIVER_TEST_MODE_PARAMS hdr;
-	UINT_32 u4Version;
-	UINT_32 u4Flag;
-	UINT_8 aucMacAddr[MAC_ADDR_LEN];
-} NL80211_DRIVER_GET_STA_STATISTICS_PARAMS, *P_NL80211_DRIVER_GET_STA_STATISTICS_PARAMS;
+struct NL80211_DRIVER_GET_STA_STATISTICS_PARAMS {
+	struct NL80211_DRIVER_TEST_MODE_PARAMS hdr;
+	uint32_t u4Version;
+	uint32_t u4Flag;
+	uint8_t aucMacAddr[MAC_ADDR_LEN];
+};
 
 enum _ENUM_TESTMODE_LINK_DETECTION_ATTR {
 	NL80211_TESTMODE_LINK_INVALID = 0,
@@ -135,7 +135,7 @@ enum _ENUM_TESTMODE_LINK_DETECTION_ATTR {
 	NL80211_TESTMODE_LINK_DETECT_NUM
 };
 
-typedef enum _ENUM_TESTMODE_STA_STATISTICS_ATTR {
+enum ENUM_TESTMODE_STA_STATISTICS_ATTR {
 	NL80211_TESTMODE_STA_STATISTICS_INVALID = 0,
 	NL80211_TESTMODE_STA_STATISTICS_VERSION,
 	NL80211_TESTMODE_STA_STATISTICS_MAC,
@@ -205,7 +205,7 @@ typedef enum _ENUM_TESTMODE_STA_STATISTICS_ATTR {
 	NL80211_TESTMODE_STA_STATISTICS_RESERVED_ARRAY,
 
 	NL80211_TESTMODE_STA_STATISTICS_NUM
-} ENUM_TESTMODE_STA_STATISTICS_ATTR;
+};
 #endif
 /*******************************************************************************
 *                            P U B L I C   D A T A
@@ -306,9 +306,9 @@ int mtk_cfg80211_mgmt_tx_cancel_wait(struct wiphy *wiphy, struct wireless_dev *w
 #ifdef CONFIG_NL80211_TESTMODE
 int
 mtk_cfg80211_testmode_get_sta_statistics(IN struct wiphy *wiphy,
-					 IN void *data, IN int len, IN P_GLUE_INFO_T prGlueInfo);
+					 IN void *data, IN int len, IN struct GLUE_INFO *prGlueInfo);
 
-int mtk_cfg80211_testmode_get_scan_done(IN struct wiphy *wiphy, IN void *data, IN int len, IN P_GLUE_INFO_T prGlueInfo);
+int mtk_cfg80211_testmode_get_scan_done(IN struct wiphy *wiphy, IN void *data, IN int len, IN struct GLUE_INFO *prGlueInfo);
 
 #if KERNEL_VERSION(3, 12, 0) <= CFG80211_VERSION_CODE
 int mtk_cfg80211_testmode_cmd(struct wiphy *wiphy, struct wireless_dev *wdev,
@@ -327,7 +327,7 @@ int mtk_cfg80211_testmode_hs20_cmd(IN struct wiphy *wiphy, IN void *data, IN int
 int mtk_cfg80211_testmode_set_key_ext(IN struct wiphy *wiphy, IN void *data, IN int len);
 #endif
 #if CFG_SUPPORT_NFC_BEAM_PLUS
-int mtk_cfg80211_testmode_get_scan_done(IN struct wiphy *wiphy, IN void *data, IN int len, IN P_GLUE_INFO_T prGlueInfo);
+int mtk_cfg80211_testmode_get_scan_done(IN struct wiphy *wiphy, IN void *data, IN int len, IN struct GLUE_INFO *prGlueInfo);
 #endif
 #else
 /* IGNORE KERNEL DEPENCY ERRORS*/
@@ -386,7 +386,7 @@ mtk_cfg80211_tdls_mgmt(struct wiphy *wiphy,
 int mtk_cfg80211_tdls_oper(struct wiphy *wiphy, struct net_device *dev, u8 *peer, enum nl80211_tdls_operation oper);
 #endif
 
-INT_32 mtk_cfg80211_process_str_cmd(P_GLUE_INFO_T prGlueInfo, PUINT_8 cmd, INT_32 len);
+int32_t mtk_cfg80211_process_str_cmd(struct GLUE_INFO *prGlueInfo, uint8_t *cmd, int32_t len);
 
 void mtk_reg_notify(IN struct wiphy *pWiphy, IN struct regulatory_request *pRequest);
 void cfg80211_regd_set_wiphy(IN struct wiphy *pWiphy);

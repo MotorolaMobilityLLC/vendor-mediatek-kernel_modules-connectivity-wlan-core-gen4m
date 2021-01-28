@@ -104,44 +104,44 @@
 /*----------------------------------------------------------------------------*/
 /* Routines in auth.c                                                         */
 /*----------------------------------------------------------------------------*/
-VOID authAddIEChallengeText(IN P_ADAPTER_T prAdapter, IN OUT P_MSDU_INFO_T prMsduInfo);
+void authAddIEChallengeText(IN struct ADAPTER *prAdapter, IN OUT struct MSDU_INFO *prMsduInfo);
 
 #if !CFG_SUPPORT_AAA
-WLAN_STATUS authSendAuthFrame(IN P_ADAPTER_T prAdapter, IN P_STA_RECORD_T prStaRec, IN UINT_16 u2TransactionSeqNum);
+uint32_t authSendAuthFrame(IN struct ADAPTER *prAdapter, IN struct STA_RECORD *prStaRec, IN uint16_t u2TransactionSeqNum);
 #else
-WLAN_STATUS
-authSendAuthFrame(IN P_ADAPTER_T prAdapter,
-		  IN P_STA_RECORD_T prStaRec,
-		  IN UINT_8 uBssIndex,
-		  IN P_SW_RFB_T prFalseAuthSwRfb, IN UINT_16 u2TransactionSeqNum, IN UINT_16 u2StatusCode);
+uint32_t
+authSendAuthFrame(IN struct ADAPTER *prAdapter,
+		  IN struct STA_RECORD *prStaRec,
+		  IN uint8_t uBssIndex,
+		  IN struct SW_RFB *prFalseAuthSwRfb, IN uint16_t u2TransactionSeqNum, IN uint16_t u2StatusCode);
 #endif /* CFG_SUPPORT_AAA */
 
-WLAN_STATUS authCheckTxAuthFrame(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduInfo, IN UINT_16 u2TransactionSeqNum);
+uint32_t authCheckTxAuthFrame(IN struct ADAPTER *prAdapter, IN struct MSDU_INFO *prMsduInfo, IN uint16_t u2TransactionSeqNum);
 
-WLAN_STATUS authCheckRxAuthFrameTransSeq(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T prSwRfb);
+uint32_t authCheckRxAuthFrameTransSeq(IN struct ADAPTER *prAdapter, IN struct SW_RFB *prSwRfb);
 
-WLAN_STATUS
-authCheckRxAuthFrameStatus(IN P_ADAPTER_T prAdapter,
-			   IN P_SW_RFB_T prSwRfb, IN UINT_16 u2TransactionSeqNum, OUT PUINT_16 pu2StatusCode);
+uint32_t
+authCheckRxAuthFrameStatus(IN struct ADAPTER *prAdapter,
+			   IN struct SW_RFB *prSwRfb, IN uint16_t u2TransactionSeqNum, OUT uint16_t *pu2StatusCode);
 
-VOID authHandleIEChallengeText(P_ADAPTER_T prAdapter, P_SW_RFB_T prSwRfb, P_IE_HDR_T prIEHdr);
+void authHandleIEChallengeText(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb, struct IE_HDR *prIEHdr);
 
-WLAN_STATUS authProcessRxAuth2_Auth4Frame(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T prSwRfb);
+uint32_t authProcessRxAuth2_Auth4Frame(IN struct ADAPTER *prAdapter, IN struct SW_RFB *prSwRfb);
 
-WLAN_STATUS
-authSendDeauthFrame(IN P_ADAPTER_T prAdapter,
-		    IN P_BSS_INFO_T prBssInfo,
-		    IN P_STA_RECORD_T prStaRec,
-		    IN P_SW_RFB_T prClassErrSwRfb, IN UINT_16 u2ReasonCode, IN PFN_TX_DONE_HANDLER pfTxDoneHandler);
+uint32_t
+authSendDeauthFrame(IN struct ADAPTER *prAdapter,
+		    IN struct BSS_INFO *prBssInfo,
+		    IN struct STA_RECORD *prStaRec,
+		    IN struct SW_RFB *prClassErrSwRfb, IN uint16_t u2ReasonCode, IN PFN_TX_DONE_HANDLER pfTxDoneHandler);
 
-WLAN_STATUS authProcessRxDeauthFrame(IN P_SW_RFB_T prSwRfb, IN UINT_8 aucBSSID[], OUT PUINT_16 pu2ReasonCode);
+uint32_t authProcessRxDeauthFrame(IN struct SW_RFB *prSwRfb, IN uint8_t aucBSSID[], OUT uint16_t *pu2ReasonCode);
 
-WLAN_STATUS
-authProcessRxAuth1Frame(IN P_ADAPTER_T prAdapter,
-			IN P_SW_RFB_T prSwRfb,
-			IN UINT_8 aucExpectedBSSID[],
-			IN UINT_16 u2ExpectedAuthAlgNum,
-			IN UINT_16 u2ExpectedTransSeqNum, OUT PUINT_16 pu2ReturnStatusCode);
+uint32_t
+authProcessRxAuth1Frame(IN struct ADAPTER *prAdapter,
+			IN struct SW_RFB *prSwRfb,
+			IN uint8_t aucExpectedBSSID[],
+			IN uint16_t u2ExpectedAuthAlgNum,
+			IN uint16_t u2ExpectedTransSeqNum, OUT uint16_t *pu2ReturnStatusCode);
 
 /*******************************************************************************
 *                              F U N C T I O N S

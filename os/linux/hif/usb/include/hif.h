@@ -63,14 +63,14 @@
 #include "wlan_typedef.h"
 #include "nic_tx.h"
 
-typedef enum _ENUM_USB_END_POINT_T {
+enum ENUM_USB_END_POINT {
 	USB_DATA_BULK_OUT_EP4 = 4,
 	USB_DATA_BULK_OUT_EP5,
 	USB_DATA_BULK_OUT_EP6,
 	USB_DATA_BULK_OUT_EP7,
 	USB_DATA_BULK_OUT_EP8,
 	USB_DATA_BULK_OUT_EP9,
-} ENUM_USB_END_POINT_T;
+};
 
 /*******************************************************************************
 *                         C O M P I L E R   F L A G S
@@ -219,25 +219,25 @@ enum usb_state {
 	USB_STATE_WIFI_OFF /* Hif power off wifi */
 };
 
-typedef enum _EVENT_EP_TYPE {
+enum EVENT_EP_TYPE {
 	EVENT_EP_TYPE_UNKONW,
 	EVENT_EP_TYPE_BULK,
 	EVENT_EP_TYPE_INTR,
 	EVENT_EP_TYPE_DATA_EP
-} EVENT_EP_TYPE;
+};
 
-typedef struct _BUF_CTRL_T {
-	UINT_8 *pucBuf;
-	UINT_32 u4BufSize;
-	UINT_32 u4WrIdx;
-	UINT_32 u4ReadSize;
-} BUF_CTRL_T, *P_BUF_CTRL_T;
+struct BUF_CTRL {
+	uint8_t *pucBuf;
+	uint32_t u4BufSize;
+	uint32_t u4WrIdx;
+	uint32_t u4ReadSize;
+};
 
-typedef struct _GL_HIF_INFO_T {
+struct GL_HIF_INFO {
 	struct usb_interface *intf;
 	struct usb_device *udev;
 
-	P_GLUE_INFO_T prGlueInfo;
+	struct GLUE_INFO *prGlueInfo;
 	enum usb_state state;
 
 	spinlock_t rTxDataQLock;
@@ -245,18 +245,18 @@ typedef struct _GL_HIF_INFO_T {
 	spinlock_t rRxEventQLock;
 	spinlock_t rRxDataQLock;
 
-	PVOID prTxCmdReqHead;
-	PVOID arTxDataFfaReqHead;
-	PVOID arTxDataReqHead[USB_TC_NUM];
-	PVOID prRxEventReqHead;
-	PVOID prRxDataReqHead;
+	void *prTxCmdReqHead;
+	void *arTxDataFfaReqHead;
+	void *arTxDataReqHead[USB_TC_NUM];
+	void *prRxEventReqHead;
+	void *prRxDataReqHead;
 	struct list_head rTxCmdFreeQ;
 	spinlock_t rTxCmdFreeQLock;
 	struct list_head rTxCmdSendingQ;
 	spinlock_t rTxCmdSendingQLock;
 	struct list_head rTxDataFfaQ;
 #if CFG_USB_TX_AGG
-	UINT_32 u4AggRsvSize[USB_TC_NUM];
+	uint32_t u4AggRsvSize[USB_TC_NUM];
 	struct list_head rTxDataFreeQ[USB_TC_NUM];
 	struct usb_anchor rTxDataAnchor[USB_TC_NUM];
 #else
@@ -277,40 +277,40 @@ typedef struct _GL_HIF_INFO_T {
 	struct list_head rTxCmdCompleteQ;
 	struct list_head rTxDataCompleteQ;
 
-	BUF_CTRL_T rTxCmdBufCtrl[USB_REQ_TX_CMD_CNT];
-	BUF_CTRL_T rTxDataFfaBufCtrl[USB_REQ_TX_DATA_FFA_CNT];
+	struct BUF_CTRL rTxCmdBufCtrl[USB_REQ_TX_CMD_CNT];
+	struct BUF_CTRL rTxDataFfaBufCtrl[USB_REQ_TX_DATA_FFA_CNT];
 #if CFG_USB_TX_AGG
-	BUF_CTRL_T rTxDataBufCtrl[USB_TC_NUM][USB_REQ_TX_DATA_CNT];
+	struct BUF_CTRL rTxDataBufCtrl[USB_TC_NUM][USB_REQ_TX_DATA_CNT];
 #else
-	BUF_CTRL_T rTxDataBufCtrl[USB_REQ_TX_DATA_CNT];
+	struct BUF_CTRL rTxDataBufCtrl[USB_REQ_TX_DATA_CNT];
 #endif
-	BUF_CTRL_T rRxEventBufCtrl[USB_REQ_RX_EVENT_CNT];
-	BUF_CTRL_T rRxDataBufCtrl[USB_REQ_RX_DATA_CNT];
+	struct BUF_CTRL rRxEventBufCtrl[USB_REQ_RX_EVENT_CNT];
+	struct BUF_CTRL rRxDataBufCtrl[USB_REQ_RX_DATA_CNT];
 
 	struct mutex vendor_req_sem;
-	BOOLEAN fgIntReadClear;
-	BOOLEAN fgMbxReadClear;
-	BOOLEAN fgEventEpDetected;
-	EVENT_EP_TYPE eEventEpType;
-} GL_HIF_INFO_T, *P_GL_HIF_INFO_T;
+	u_int8_t fgIntReadClear;
+	u_int8_t fgMbxReadClear;
+	u_int8_t fgEventEpDetected;
+	enum EVENT_EP_TYPE eEventEpType;
+};
 
-typedef struct _USB_REQ_T {
+struct USB_REQ {
 	struct list_head list;
 	struct urb *prUrb;
-	P_BUF_CTRL_T prBufCtrl;
-	P_GL_HIF_INFO_T prHifInfo;
-	PVOID prPriv;
-	QUE_T rSendingDataMsduInfoList;
-} USB_REQ_T, *P_USB_REQ_T;
+	struct BUF_CTRL *prBufCtrl;
+	struct GL_HIF_INFO *prHifInfo;
+	void *prPriv;
+	struct QUE rSendingDataMsduInfoList;
+};
 
-typedef struct _BUS_INFO {
-	const UINT_32 u4UdmaWlCfg_0_Addr;
-	const UINT_32 u4UdmaWlCfg_1_Addr;
-	UINT_32 u4UdmaWlCfg_0;
-	UINT_32 u4UdmaTxTimeout; /* UDMA Tx time out limit, unit: us */
-	BOOLEAN (*asicUsbSuspend)(IN P_ADAPTER_T prAdapter, IN P_GLUE_INFO_T prGlueInfo);
-	UINT_8 (*asicUsbEventEpDetected)(IN P_ADAPTER_T prAdapter);
-} BUS_INFO, *P_BUS_INFO;
+struct BUS_INFO {
+	const uint32_t u4UdmaWlCfg_0_Addr;
+	const uint32_t u4UdmaWlCfg_1_Addr;
+	uint32_t u4UdmaWlCfg_0;
+	uint32_t u4UdmaTxTimeout; /* UDMA Tx time out limit, unit: us */
+	u_int8_t (*asicUsbSuspend)(IN struct ADAPTER *prAdapter, IN struct GLUE_INFO *prGlueInfo);
+	uint8_t (*asicUsbEventEpDetected)(IN struct ADAPTER *prAdapter);
+};
 
 /* USB_REQ_T prPriv field for TxData */
 #define FFA_MASK                        BIT(7)           /* Indicate if this UsbReq is from FFA queue. */
@@ -338,71 +338,71 @@ typedef struct _BUS_INFO {
 ********************************************************************************
 */
 
-WLAN_STATUS glRegisterBus(probe_card pfProbe, remove_card pfRemove);
+uint32_t glRegisterBus(probe_card pfProbe, remove_card pfRemove);
 
-VOID glUnregisterBus(remove_card pfRemove);
+void glUnregisterBus(remove_card pfRemove);
 
-VOID glSetHifInfo(P_GLUE_INFO_T prGlueInfo, ULONG ulCookie);
+void glSetHifInfo(struct GLUE_INFO *prGlueInfo, unsigned long ulCookie);
 
-VOID glClearHifInfo(P_GLUE_INFO_T prGlueInfo);
+void glClearHifInfo(struct GLUE_INFO *prGlueInfo);
 
-BOOL glBusInit(PVOID pvData);
+u_int8_t glBusInit(void *pvData);
 
-VOID glBusRelease(PVOID pData);
+void glBusRelease(void *pData);
 
-INT_32 glBusSetIrq(PVOID pvData, PVOID pfnIsr, PVOID pvCookie);
+int32_t glBusSetIrq(void *pvData, void *pfnIsr, void *pvCookie);
 
-VOID glBusFreeIrq(PVOID pvData, PVOID pvCookie);
+void glBusFreeIrq(void *pvData, void *pvCookie);
 
-VOID glSetPowerState(IN P_GLUE_INFO_T prGlueInfo, IN UINT_32 ePowerMode);
+void glSetPowerState(IN struct GLUE_INFO *prGlueInfo, IN uint32_t ePowerMode);
 
-VOID glUdmaTxRxEnable(P_GLUE_INFO_T prGlueInfo, BOOLEAN enable);
+void glUdmaTxRxEnable(struct GLUE_INFO *prGlueInfo, u_int8_t enable);
 
-VOID glUdmaRxAggEnable(P_GLUE_INFO_T prGlueInfo, BOOLEAN enable);
+void glUdmaRxAggEnable(struct GLUE_INFO *prGlueInfo, u_int8_t enable);
 
-BOOL mtk_usb_vendor_request(IN P_GLUE_INFO_T prGlueInfo, IN UCHAR uEndpointAddress, IN UCHAR RequestType,
-			    IN UCHAR Request, IN UINT_16 Value, IN UINT_16 Index, IN PVOID TransferBuffer,
-			    IN UINT_32 TransferBufferLength);
+u_int8_t mtk_usb_vendor_request(IN struct GLUE_INFO *prGlueInfo, IN uint8_t uEndpointAddress, IN uint8_t RequestType,
+			    IN uint8_t Request, IN uint16_t Value, IN uint16_t Index, IN void *TransferBuffer,
+			    IN uint32_t TransferBufferLength);
 
-VOID glUsbEnqueueReq(P_GL_HIF_INFO_T prHifInfo, struct list_head *prHead, P_USB_REQ_T prUsbReq,
-		     spinlock_t *prLock, BOOLEAN fgHead);
-P_USB_REQ_T glUsbDequeueReq(P_GL_HIF_INFO_T prHifInfo, struct list_head *prHead, spinlock_t *prLock);
-BOOLEAN glUsbBorrowFfaReq(P_GL_HIF_INFO_T prHifInfo, UINT_8 ucTc);
+void glUsbEnqueueReq(struct GL_HIF_INFO *prHifInfo, struct list_head *prHead, struct USB_REQ *prUsbReq,
+		     spinlock_t *prLock, u_int8_t fgHead);
+struct USB_REQ *glUsbDequeueReq(struct GL_HIF_INFO *prHifInfo, struct list_head *prHead, spinlock_t *prLock);
+u_int8_t glUsbBorrowFfaReq(struct GL_HIF_INFO *prHifInfo, uint8_t ucTc);
 
-WLAN_STATUS halTxUSBSendCmd(IN P_GLUE_INFO_T prGlueInfo, IN UINT_8 ucTc, IN P_CMD_INFO_T prCmdInfo);
-VOID halTxUSBSendCmdComplete(struct urb *urb);
-VOID halTxUSBProcessCmdComplete(IN P_ADAPTER_T prAdapter, P_USB_REQ_T prUsbReq);
+uint32_t halTxUSBSendCmd(IN struct GLUE_INFO *prGlueInfo, IN uint8_t ucTc, IN struct CMD_INFO *prCmdInfo);
+void halTxUSBSendCmdComplete(struct urb *urb);
+void halTxUSBProcessCmdComplete(IN struct ADAPTER *prAdapter, struct USB_REQ *prUsbReq);
 
-WLAN_STATUS halTxUSBSendData(IN P_GLUE_INFO_T prGlueInfo, IN P_MSDU_INFO_T prMsduInfo);
-WLAN_STATUS halTxUSBKickData(IN P_GLUE_INFO_T prGlueInfo);
-VOID halTxUSBSendDataComplete(struct urb *urb);
-VOID halTxUSBProcessMsduDone(IN P_GLUE_INFO_T prGlueInfo, P_USB_REQ_T prUsbReq);
-VOID halTxUSBProcessDataComplete(IN P_ADAPTER_T prAdapter, P_USB_REQ_T prUsbReq);
+uint32_t halTxUSBSendData(IN struct GLUE_INFO *prGlueInfo, IN struct MSDU_INFO *prMsduInfo);
+uint32_t halTxUSBKickData(IN struct GLUE_INFO *prGlueInfo);
+void halTxUSBSendDataComplete(struct urb *urb);
+void halTxUSBProcessMsduDone(IN struct GLUE_INFO *prGlueInfo, struct USB_REQ *prUsbReq);
+void halTxUSBProcessDataComplete(IN struct ADAPTER *prAdapter, struct USB_REQ *prUsbReq);
 
-UINT_32 halRxUSBEnqueueRFB(IN P_ADAPTER_T prAdapter, IN PUINT_8 pucBuf, IN UINT_32 u4Length,
-	IN UINT_32 u4MinRfbCnt);
-WLAN_STATUS halRxUSBReceiveEvent(IN P_ADAPTER_T prAdapter, IN BOOLEAN fgFillUrb);
-VOID halRxUSBReceiveEventComplete(struct urb *urb);
-WLAN_STATUS halRxUSBReceiveData(IN P_ADAPTER_T prAdapter);
-VOID halRxUSBReceiveDataComplete(struct urb *urb);
-VOID halRxUSBProcessEventDataComplete(IN P_ADAPTER_T prAdapter,
-	struct list_head *prCompleteQ, struct list_head *prFreeQ, UINT_32 u4MinRfbCnt);
+uint32_t halRxUSBEnqueueRFB(IN struct ADAPTER *prAdapter, IN uint8_t *pucBuf, IN uint32_t u4Length,
+	IN uint32_t u4MinRfbCnt);
+uint32_t halRxUSBReceiveEvent(IN struct ADAPTER *prAdapter, IN u_int8_t fgFillUrb);
+void halRxUSBReceiveEventComplete(struct urb *urb);
+uint32_t halRxUSBReceiveData(IN struct ADAPTER *prAdapter);
+void halRxUSBReceiveDataComplete(struct urb *urb);
+void halRxUSBProcessEventDataComplete(IN struct ADAPTER *prAdapter,
+	struct list_head *prCompleteQ, struct list_head *prFreeQ, uint32_t u4MinRfbCnt);
 
-VOID halUSBPreSuspendCmd(IN P_ADAPTER_T prAdapter);
-VOID halUSBPreSuspendDone(IN P_ADAPTER_T prAdapter, IN P_CMD_INFO_T prCmdInfo, IN PUINT_8 pucEventBuf);
-VOID halUSBPreSuspendTimeout(IN P_ADAPTER_T prAdapter, IN P_CMD_INFO_T prCmdInfo);
+void halUSBPreSuspendCmd(IN struct ADAPTER *prAdapter);
+void halUSBPreSuspendDone(IN struct ADAPTER *prAdapter, IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf);
+void halUSBPreSuspendTimeout(IN struct ADAPTER *prAdapter, IN struct CMD_INFO *prCmdInfo);
 
-void glGetDev(PVOID ctx, struct device **dev);
-void glGetHifDev(P_GL_HIF_INFO_T prHif, struct device **dev);
+void glGetDev(void *ctx, struct device **dev);
+void glGetHifDev(struct GL_HIF_INFO *prHif, struct device **dev);
 
-VOID halGetCompleteStatus(IN P_ADAPTER_T prAdapter, OUT PUINT_32 pu4IntStatus);
+void halGetCompleteStatus(IN struct ADAPTER *prAdapter, OUT uint32_t *pu4IntStatus);
 
-UINT_16 glGetUsbDeviceVendorId(struct usb_device *dev);
-UINT_16 glGetUsbDeviceProductId(struct usb_device *dev);
+uint16_t glGetUsbDeviceVendorId(struct usb_device *dev);
+uint16_t glGetUsbDeviceProductId(struct usb_device *dev);
 
-INT_32 glGetUsbDeviceManufacturerName(struct usb_device *dev, UCHAR *buffer, UINT_32 bufLen);
-INT_32 glGetUsbDeviceProductName(struct usb_device *dev, UCHAR *buffer, UINT_32 bufLen);
-INT_32 glGetUsbDeviceSerialNumber(struct usb_device *dev, UCHAR *buffer, UINT_32 bufLen);
+int32_t glGetUsbDeviceManufacturerName(struct usb_device *dev, uint8_t *buffer, uint32_t bufLen);
+int32_t glGetUsbDeviceProductName(struct usb_device *dev, uint8_t *buffer, uint32_t bufLen);
+int32_t glGetUsbDeviceSerialNumber(struct usb_device *dev, uint8_t *buffer, uint32_t bufLen);
 
 
 /*******************************************************************************

@@ -87,13 +87,13 @@
 *                            P U B L I C   D A T A
 ********************************************************************************
 */
-static BOOLEAN fgResetTriggered = FALSE;
-BOOLEAN fgIsResetting = FALSE;
+static u_int8_t fgResetTriggered = FALSE;
+u_int8_t fgIsResetting = FALSE;
 /*******************************************************************************
 *                           P R I V A T E   D A T A
 ********************************************************************************
 */
-static RESET_STRUCT_T wifi_rst;
+static struct RESET_STRUCT wifi_rst;
 
 static void mtk_wifi_reset(struct work_struct *work);
 static void mtk_wifi_trigger_reset(struct work_struct *work);
@@ -102,23 +102,23 @@ static void mtk_wifi_trigger_reset(struct work_struct *work);
 *                   F U N C T I O N   D E C L A R A T I O N S
 ********************************************************************************
 */
-static void *glResetCallback(ENUM_WMTDRV_TYPE_T eSrcType,
-			     ENUM_WMTDRV_TYPE_T eDstType,
-			     ENUM_WMTMSG_TYPE_T eMsgType, void *prMsgBody, unsigned int u4MsgLength);
+static void *glResetCallback(enum ENUM_WMTDRV_TYPE eSrcType,
+			     enum ENUM_WMTDRV_TYPE eDstType,
+			     enum ENUM_WMTMSG_TYPE eMsgType, void *prMsgBody, unsigned int u4MsgLength);
 
 /*******************************************************************************
 *                              F U N C T I O N S
 ********************************************************************************
 */
 /* Weak reference for those platform doesn't support wmt functions */
-BOOLEAN __weak mtk_wcn_stp_coredump_start_get(VOID)
+u_int8_t __weak mtk_wcn_stp_coredump_start_get(void)
 {
 	return FALSE;
 }
 
 
 /*0= f/w assert flag is not set, others=f/w assert flag is set */
-BOOLEAN glIsWmtCodeDump(VOID)
+u_int8_t glIsWmtCodeDump(void)
 {
 	return mtk_wcn_stp_coredump_start_get();
 }
@@ -134,7 +134,7 @@ BOOLEAN glIsWmtCodeDump(VOID)
  * @retval none
  */
 /*----------------------------------------------------------------------------*/
-VOID glResetInit(VOID)
+void glResetInit(void)
 {
 	/* 1. Register reset callback */
 	mtk_wcn_wmt_msgcb_reg(WMTDRV_TYPE_WIFI, (PF_WMT_CB) glResetCallback);
@@ -154,7 +154,7 @@ VOID glResetInit(VOID)
  * @retval none
  */
 /*----------------------------------------------------------------------------*/
-VOID glResetUninit(VOID)
+void glResetUninit(void)
 {
 	/* 1. Deregister reset callback */
 	mtk_wcn_wmt_msgcb_unreg(WMTDRV_TYPE_WIFI);
@@ -174,14 +174,14 @@ VOID glResetUninit(VOID)
  * @retval
  */
 /*----------------------------------------------------------------------------*/
-static void *glResetCallback(ENUM_WMTDRV_TYPE_T eSrcType,
-			     ENUM_WMTDRV_TYPE_T eDstType,
-			     ENUM_WMTMSG_TYPE_T eMsgType, void *prMsgBody, unsigned int u4MsgLength)
+static void *glResetCallback(enum ENUM_WMTDRV_TYPE eSrcType,
+			     enum ENUM_WMTDRV_TYPE eDstType,
+			     enum ENUM_WMTMSG_TYPE eMsgType, void *prMsgBody, unsigned int u4MsgLength)
 {
 	switch (eMsgType) {
 	case WMTMSG_TYPE_RESET:
-		if (u4MsgLength == sizeof(ENUM_WMTRSTMSG_TYPE_T)) {
-			P_ENUM_WMTRSTMSG_TYPE_T prRstMsg = (P_ENUM_WMTRSTMSG_TYPE_T) prMsgBody;
+		if (u4MsgLength == sizeof(enum ENUM_WMTRSTMSG_TYPE)) {
+			enum ENUM_WMTRSTMSG_TYPE *prRstMsg = (enum ENUM_WMTRSTMSG_TYPE *) prMsgBody;
 
 			switch (*prRstMsg) {
 			case WMTRSTMSG_RESET_START:
@@ -231,7 +231,7 @@ static void *glResetCallback(ENUM_WMTDRV_TYPE_T eSrcType,
 /*----------------------------------------------------------------------------*/
 static void mtk_wifi_reset(struct work_struct *work)
 {
-	RESET_STRUCT_T *rst = container_of(work, RESET_STRUCT_T, rst_work);
+	struct RESET_STRUCT *rst = container_of(work, struct RESET_STRUCT, rst_work);
 
 	wifi_reset_end(rst->rst_data);
 }
@@ -245,7 +245,7 @@ static void mtk_wifi_reset(struct work_struct *work)
  * @retval  None
  */
 /*----------------------------------------------------------------------------*/
-VOID glSendResetRequest(VOID)
+void glSendResetRequest(void)
 {
 	/* WMT thread would trigger whole chip reset itself */
 }
@@ -260,15 +260,15 @@ VOID glSendResetRequest(VOID)
  *          FALSE
  */
 /*----------------------------------------------------------------------------*/
-BOOLEAN kalIsResetting(VOID)
+u_int8_t kalIsResetting(void)
 {
 	return fgIsResetting;
 }
 
 static void mtk_wifi_trigger_reset(struct work_struct *work)
 {
-	BOOLEAN fgResult = FALSE;
-	RESET_STRUCT_T *rst = container_of(work, RESET_STRUCT_T, rst_trigger_work);
+	u_int8_t fgResult = FALSE;
+	struct RESET_STRUCT *rst = container_of(work, struct RESET_STRUCT, rst_trigger_work);
 
 	fgResetTriggered = TRUE;
 	/* Set the power off flag to FALSE in WMT to prevent chip power off after
@@ -285,9 +285,9 @@ static void mtk_wifi_trigger_reset(struct work_struct *work)
 	DBGLOG(INIT, INFO, "reset result %d, trigger flag 0x%x\n", fgResult, rst->rst_trigger_flag);
 }
 
-BOOLEAN glResetTrigger(P_ADAPTER_T prAdapter, UINT_32 u4RstFlag, const PUINT_8 pucFile, UINT_32 u4Line)
+u_int8_t glResetTrigger(struct ADAPTER *prAdapter, uint32_t u4RstFlag, const uint8_t *pucFile, uint32_t u4Line)
 {
-	BOOLEAN fgResult = TRUE;
+	u_int8_t fgResult = TRUE;
 
 	if (kalIsResetting() || fgResetTriggered) {
 		DBGLOG(INIT, ERROR,
@@ -324,7 +324,7 @@ BOOLEAN glResetTrigger(P_ADAPTER_T prAdapter, UINT_32 u4RstFlag, const PUINT_8 p
 
 #else
 
-BOOLEAN kalIsResetting(VOID)
+u_int8_t kalIsResetting(void)
 {
 	return FALSE;
 }
@@ -332,8 +332,8 @@ BOOLEAN kalIsResetting(VOID)
 #endif
 
 enum _ENUM_CHIP_RESET_REASON_TYPE_T eResetReason;
-UINT_64 u8ResetTime;
-VOID glGetRstReason(enum _ENUM_CHIP_RESET_REASON_TYPE_T eReason)
+uint64_t u8ResetTime;
+void glGetRstReason(enum _ENUM_CHIP_RESET_REASON_TYPE_T eReason)
 {
 	u8ResetTime = sched_clock();
 	eResetReason = eReason;

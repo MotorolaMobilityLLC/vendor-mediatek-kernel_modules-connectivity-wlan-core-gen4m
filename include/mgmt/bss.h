@@ -73,7 +73,7 @@
 ********************************************************************************
 */
 #include "wlan_def.h"
-extern const PUINT_8 apucNetworkType[NETWORK_TYPE_NUM];
+extern const uint8_t *apucNetworkType[NETWORK_TYPE_NUM];
 
 /*******************************************************************************
 *                              C O N S T A N T S
@@ -131,103 +131,103 @@ extern const PUINT_8 apucNetworkType[NETWORK_TYPE_NUM];
 /*----------------------------------------------------------------------------*/
 /* Routines for all Operation Modes                                           */
 /*----------------------------------------------------------------------------*/
-P_STA_RECORD_T
-bssCreateStaRecFromBssDesc(IN P_ADAPTER_T prAdapter,
-			   IN ENUM_STA_TYPE_T eStaType, IN UINT_8 uBssIndex, IN P_BSS_DESC_T prBssDesc);
+struct STA_RECORD *
+bssCreateStaRecFromBssDesc(IN struct ADAPTER *prAdapter,
+			   IN enum ENUM_STA_TYPE eStaType, IN uint8_t uBssIndex, IN struct BSS_DESC *prBssDesc);
 
-VOID bssComposeNullFrame(IN P_ADAPTER_T prAdapter, IN PUINT_8 pucBuffer, IN P_STA_RECORD_T prStaRec);
+void bssComposeNullFrame(IN struct ADAPTER *prAdapter, IN uint8_t *pucBuffer, IN struct STA_RECORD *prStaRec);
 
-VOID
-bssComposeQoSNullFrame(IN P_ADAPTER_T prAdapter,
-		       IN PUINT_8 pucBuffer, IN P_STA_RECORD_T prStaRec, IN UINT_8 ucUP, IN BOOLEAN fgSetEOSP);
+void
+bssComposeQoSNullFrame(IN struct ADAPTER *prAdapter,
+		       IN uint8_t *pucBuffer, IN struct STA_RECORD *prStaRec, IN uint8_t ucUP, IN u_int8_t fgSetEOSP);
 
-WLAN_STATUS
-bssSendNullFrame(IN P_ADAPTER_T prAdapter, IN P_STA_RECORD_T prStaRec, IN PFN_TX_DONE_HANDLER pfTxDoneHandler);
+uint32_t
+bssSendNullFrame(IN struct ADAPTER *prAdapter, IN struct STA_RECORD *prStaRec, IN PFN_TX_DONE_HANDLER pfTxDoneHandler);
 
-WLAN_STATUS
-bssSendQoSNullFrame(IN P_ADAPTER_T prAdapter,
-		    IN P_STA_RECORD_T prStaRec, IN UINT_8 ucUP, IN PFN_TX_DONE_HANDLER pfTxDoneHandler);
+uint32_t
+bssSendQoSNullFrame(IN struct ADAPTER *prAdapter,
+		    IN struct STA_RECORD *prStaRec, IN uint8_t ucUP, IN PFN_TX_DONE_HANDLER pfTxDoneHandler);
 
-VOID bssDumpBssInfo(IN P_ADAPTER_T prAdapter, IN UINT_8 ucBssIndex);
+void bssDumpBssInfo(IN struct ADAPTER *prAdapter, IN uint8_t ucBssIndex);
 
-VOID bssDetermineApBssInfoPhyTypeSet(IN P_ADAPTER_T prAdapter, IN BOOLEAN fgIsPureAp, OUT P_BSS_INFO_T prBssInfo);
+void bssDetermineApBssInfoPhyTypeSet(IN struct ADAPTER *prAdapter, IN u_int8_t fgIsPureAp, OUT struct BSS_INFO *prBssInfo);
 
 /*----------------------------------------------------------------------------*/
 /* Routines for both IBSS(AdHoc) and BSS(AP)                                  */
 /*----------------------------------------------------------------------------*/
-VOID bssGenerateExtSuppRate_IE(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduInfo);
+void bssGenerateExtSuppRate_IE(IN struct ADAPTER *prAdapter, IN struct MSDU_INFO *prMsduInfo);
 
-VOID
-bssBuildBeaconProbeRespFrameCommonIEs(IN P_MSDU_INFO_T prMsduInfo, IN P_BSS_INFO_T prBssInfo, IN PUINT_8 pucDestAddr);
+void
+bssBuildBeaconProbeRespFrameCommonIEs(IN struct MSDU_INFO *prMsduInfo, IN struct BSS_INFO *prBssInfo, IN uint8_t *pucDestAddr);
 
-VOID
-bssComposeBeaconProbeRespFrameHeaderAndFF(IN PUINT_8 pucBuffer,
-					  IN PUINT_8 pucDestAddr,
-					  IN PUINT_8 pucOwnMACAddress,
-					  IN PUINT_8 pucBSSID, IN UINT_16 u2BeaconInterval, IN UINT_16 u2CapInfo);
+void
+bssComposeBeaconProbeRespFrameHeaderAndFF(IN uint8_t *pucBuffer,
+					  IN uint8_t *pucDestAddr,
+					  IN uint8_t *pucOwnMACAddress,
+					  IN uint8_t *pucBSSID, IN uint16_t u2BeaconInterval, IN uint16_t u2CapInfo);
 
-WLAN_STATUS
-bssSendBeaconProbeResponse(IN P_ADAPTER_T prAdapter,
-			   IN UINT_8 uBssIndex, IN PUINT_8 pucDestAddr, IN UINT_32 u4ControlFlags);
+uint32_t
+bssSendBeaconProbeResponse(IN struct ADAPTER *prAdapter,
+			   IN uint8_t uBssIndex, IN uint8_t *pucDestAddr, IN uint32_t u4ControlFlags);
 
-WLAN_STATUS bssProcessProbeRequest(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T prSwRfb);
+uint32_t bssProcessProbeRequest(IN struct ADAPTER *prAdapter, IN struct SW_RFB *prSwRfb);
 
-VOID bssInitializeClientList(IN P_ADAPTER_T prAdapter, IN P_BSS_INFO_T prBssInfo);
+void bssInitializeClientList(IN struct ADAPTER *prAdapter, IN struct BSS_INFO *prBssInfo);
 
-VOID bssAddClient(IN P_ADAPTER_T prAdapter, IN P_BSS_INFO_T prBssInfo, IN P_STA_RECORD_T prStaRec);
+void bssAddClient(IN struct ADAPTER *prAdapter, IN struct BSS_INFO *prBssInfo, IN struct STA_RECORD *prStaRec);
 
-BOOLEAN bssRemoveClient(IN P_ADAPTER_T prAdapter, IN P_BSS_INFO_T prBssInfo, IN P_STA_RECORD_T prStaRec);
+u_int8_t bssRemoveClient(IN struct ADAPTER *prAdapter, IN struct BSS_INFO *prBssInfo, IN struct STA_RECORD *prStaRec);
 
-P_STA_RECORD_T bssRemoveClientByMac(IN P_ADAPTER_T prAdapter, IN P_BSS_INFO_T prBssInfo, IN PUINT_8 pucMac);
+struct STA_RECORD *bssRemoveClientByMac(IN struct ADAPTER *prAdapter, IN struct BSS_INFO *prBssInfo, IN uint8_t *pucMac);
 
-P_STA_RECORD_T bssGetClientByMac(IN P_ADAPTER_T prAdapter, IN P_BSS_INFO_T prBssInfo, IN PUINT_8 pucMac);
+struct STA_RECORD *bssGetClientByMac(IN struct ADAPTER *prAdapter, IN struct BSS_INFO *prBssInfo, IN uint8_t *pucMac);
 
-P_STA_RECORD_T bssRemoveHeadClient(IN P_ADAPTER_T prAdapter, IN P_BSS_INFO_T prBssInfo);
+struct STA_RECORD *bssRemoveHeadClient(IN struct ADAPTER *prAdapter, IN struct BSS_INFO *prBssInfo);
 
-UINT_32 bssGetClientCount(IN P_ADAPTER_T prAdapter, IN P_BSS_INFO_T prBssInfo);
+uint32_t bssGetClientCount(IN struct ADAPTER *prAdapter, IN struct BSS_INFO *prBssInfo);
 
-VOID bssDumpClientList(IN P_ADAPTER_T prAdapter, IN P_BSS_INFO_T prBssInfo);
+void bssDumpClientList(IN struct ADAPTER *prAdapter, IN struct BSS_INFO *prBssInfo);
 
-VOID bssCheckClientList(IN P_ADAPTER_T prAdapter, IN P_BSS_INFO_T prBssInfo);
+void bssCheckClientList(IN struct ADAPTER *prAdapter, IN struct BSS_INFO *prBssInfo);
 
 /*----------------------------------------------------------------------------*/
 /* Routines for IBSS(AdHoc) only                                              */
 /*----------------------------------------------------------------------------*/
-VOID
-ibssProcessMatchedBeacon(IN P_ADAPTER_T prAdapter,
-			 IN P_BSS_INFO_T prBssInfo, IN P_BSS_DESC_T prBssDesc, IN UINT_8 ucRCPI);
+void
+ibssProcessMatchedBeacon(IN struct ADAPTER *prAdapter,
+			 IN struct BSS_INFO *prBssInfo, IN struct BSS_DESC *prBssDesc, IN uint8_t ucRCPI);
 
-WLAN_STATUS ibssCheckCapabilityForAdHocMode(IN P_ADAPTER_T prAdapter, IN P_BSS_DESC_T prBssDesc);
+uint32_t ibssCheckCapabilityForAdHocMode(IN struct ADAPTER *prAdapter, IN struct BSS_DESC *prBssDesc);
 
-VOID ibssInitForAdHoc(IN P_ADAPTER_T prAdapter, IN P_BSS_INFO_T prBssInfo);
+void ibssInitForAdHoc(IN struct ADAPTER *prAdapter, IN struct BSS_INFO *prBssInfo);
 
-WLAN_STATUS bssUpdateBeaconContent(IN P_ADAPTER_T prAdapter, IN UINT_8 uBssIndex);
+uint32_t bssUpdateBeaconContent(IN struct ADAPTER *prAdapter, IN uint8_t uBssIndex);
 
 /*----------------------------------------------------------------------------*/
 /* Routines for BSS(AP) only                                                  */
 /*----------------------------------------------------------------------------*/
-VOID bssInitForAP(IN P_ADAPTER_T prAdapter, IN P_BSS_INFO_T prBssInfo, IN BOOLEAN fgIsRateUpdate);
+void bssInitForAP(IN struct ADAPTER *prAdapter, IN struct BSS_INFO *prBssInfo, IN u_int8_t fgIsRateUpdate);
 
-VOID bssUpdateDTIMCount(IN P_ADAPTER_T prAdapter, IN UINT_8 uBssIndex);
+void bssUpdateDTIMCount(IN struct ADAPTER *prAdapter, IN uint8_t uBssIndex);
 
-VOID bssSetTIMBitmap(IN P_ADAPTER_T prAdapter, IN P_BSS_INFO_T prBssInfo, IN UINT_16 u2AssocId);
+void bssSetTIMBitmap(IN struct ADAPTER *prAdapter, IN struct BSS_INFO *prBssInfo, IN uint16_t u2AssocId);
 
 /*link function to p2p module for txBcnIETable*/
 
 /* WMM-2.2.2 WMM ACI to AC coding */
-typedef enum _ENUM_ACI_T {
+enum ENUM_ACI {
 	ACI_BE = 0,
 	ACI_BK = 1,
 	ACI_VI = 2,
 	ACI_VO = 3,
 	ACI_NUM
-} ENUM_ACI_T, *P_ENUM_ACI_T;
+};
 
-typedef enum _ENUM_AC_PRIORITY_T {
+enum ENUM_AC_PRIORITY {
 	AC_BK_PRIORITY = 0,
 	AC_BE_PRIORITY,
 	AC_VI_PRIORITY,
 	AC_VO_PRIORITY
-} ENUM_AC_PRIORITY_T, *P_ENUM_AC_PRIORITY_T;
+};
 
 #endif /* _BSS_H */

@@ -337,35 +337,35 @@
 /* DMASHDL_REFILL_CONTROL */
 union _DMASHDL_REFILL_CONTROL {
 	struct {
-		UINT_32 PRIORITY:16;
-		UINT_32 DISABLE:16;
+		uint32_t PRIORITY:16;
+		uint32_t DISABLE:16;
 	} field;
 
-	UINT_32 word;
+	uint32_t word;
 };
 
 /* DMASHDL_PACKET_MAX_SIZE */
 union _DMASHDL_PACKET_MAX_SIZE {
 	struct {
-		UINT_32 PLE_SIZE:12;
-		UINT_32 RSV_12_15:4;
-		UINT_32 PSE_SIZE:12;
-		UINT_32 RSV_28_31:4;
+		uint32_t PLE_SIZE:12;
+		uint32_t RSV_12_15:4;
+		uint32_t PSE_SIZE:12;
+		uint32_t RSV_28_31:4;
 	} field;
 
-	UINT_32 word;
+	uint32_t word;
 };
 
 /* DMASHDL_GROUP_CONTROL */
 union _DMASHDL_GROUP_CONTROL {
 	struct {
-		UINT_32 MIN_QUOTAE:12;
-		UINT_32 RSV_12_15:4;
-		UINT_32 MAX_QUOTAE:12;
-		UINT_32 RSV_28_31:4;
+		uint32_t MIN_QUOTAE:12;
+		uint32_t RSV_12_15:4;
+		uint32_t MAX_QUOTAE:12;
+		uint32_t RSV_28_31:4;
 	} field;
 
-	UINT_32 word;
+	uint32_t word;
 };
 #endif /* _HIF_PCIE */
 

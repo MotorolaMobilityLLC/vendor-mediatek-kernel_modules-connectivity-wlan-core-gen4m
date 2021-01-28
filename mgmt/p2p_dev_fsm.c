@@ -55,23 +55,23 @@
 
 #if 1
 /*lint -save -e64 Type mismatch */
-static PUINT_8 apucDebugP2pDevState[P2P_DEV_STATE_NUM] = {
-	(PUINT_8) DISP_STRING("P2P_DEV_STATE_IDLE"),
-	(PUINT_8) DISP_STRING("P2P_DEV_STATE_SCAN"),
-	(PUINT_8) DISP_STRING("P2P_DEV_STATE_REQING_CHANNEL"),
-	(PUINT_8) DISP_STRING("P2P_DEV_STATE_CHNL_ON_HAND"),
-	(PUINT_8) DISP_STRING("P2P_DEV_STATE_NUM")
+static uint8_t *apucDebugP2pDevState[P2P_DEV_STATE_NUM] = {
+	(uint8_t *) DISP_STRING("P2P_DEV_STATE_IDLE"),
+	(uint8_t *) DISP_STRING("P2P_DEV_STATE_SCAN"),
+	(uint8_t *) DISP_STRING("P2P_DEV_STATE_REQING_CHANNEL"),
+	(uint8_t *) DISP_STRING("P2P_DEV_STATE_CHNL_ON_HAND"),
+	(uint8_t *) DISP_STRING("P2P_DEV_STATE_NUM")
 };
 
 /*lint -restore */
 #endif /* DBG */
 
-UINT_8 p2pDevFsmInit(IN P_ADAPTER_T prAdapter)
+uint8_t p2pDevFsmInit(IN struct ADAPTER *prAdapter)
 {
-	P_P2P_DEV_FSM_INFO_T prP2pDevFsmInfo = (P_P2P_DEV_FSM_INFO_T) NULL;
-	P_P2P_CHNL_REQ_INFO_T prP2pChnlReqInfo = (P_P2P_CHNL_REQ_INFO_T) NULL;
-	P_P2P_MGMT_TX_REQ_INFO_T prP2pMgmtTxReqInfo = (P_P2P_MGMT_TX_REQ_INFO_T) NULL;
-	P_BSS_INFO_T prP2pBssInfo = (P_BSS_INFO_T) NULL;
+	struct P2P_DEV_FSM_INFO *prP2pDevFsmInfo = (struct P2P_DEV_FSM_INFO *) NULL;
+	struct P2P_CHNL_REQ_INFO *prP2pChnlReqInfo = (struct P2P_CHNL_REQ_INFO *) NULL;
+	struct P2P_MGMT_TX_REQ_INFO *prP2pMgmtTxReqInfo = (struct P2P_MGMT_TX_REQ_INFO *) NULL;
+	struct BSS_INFO *prP2pBssInfo = (struct BSS_INFO *) NULL;
 
 	do {
 		ASSERT_BREAK(prAdapter != NULL);
@@ -80,13 +80,13 @@ UINT_8 p2pDevFsmInit(IN P_ADAPTER_T prAdapter)
 
 		ASSERT_BREAK(prP2pDevFsmInfo != NULL);
 
-		kalMemZero(prP2pDevFsmInfo, sizeof(P2P_DEV_FSM_INFO_T));
+		kalMemZero(prP2pDevFsmInfo, sizeof(struct P2P_DEV_FSM_INFO));
 
 		prP2pDevFsmInfo->eCurrentState = P2P_DEV_STATE_IDLE;
 
 		cnmTimerInitTimer(prAdapter,
 				  &(prP2pDevFsmInfo->rP2pFsmTimeoutTimer),
-				  (PFN_MGMT_TIMEOUT_FUNC) p2pDevFsmRunEventTimeout, (ULONG) prP2pDevFsmInfo);
+				  (PFN_MGMT_TIMEOUT_FUNC) p2pDevFsmRunEventTimeout, (unsigned long) prP2pDevFsmInfo);
 
 		prP2pBssInfo = cnmGetBssInfoAndInit(prAdapter, NETWORK_TYPE_P2P, TRUE);
 
@@ -108,7 +108,7 @@ UINT_8 p2pDevFsmInit(IN P_ADAPTER_T prAdapter)
 
 			prP2pBssInfo->ucPhyTypeSet = prAdapter->rWifiVar.ucAvailablePhyTypeSet & PHY_TYPE_SET_802_11GN;
 
-			prP2pBssInfo->ucNonHTBasicPhyType = (UINT_8)
+			prP2pBssInfo->ucNonHTBasicPhyType = (uint8_t)
 			    rNonHTApModeAttributes[prP2pBssInfo->ucConfigAdHocAPMode].ePhyTypeIndex;
 			prP2pBssInfo->u2BSSBasicRateSet =
 			    rNonHTApModeAttributes[prP2pBssInfo->ucConfigAdHocAPMode].u2BSSBasicRateSet;
@@ -151,7 +151,7 @@ UINT_8 p2pDevFsmInit(IN P_ADAPTER_T prAdapter)
 
 		cnmTimerInitTimer(prAdapter,
 				  &(prP2pFsmInfo->rP2pFsmTimeoutTimer),
-				  (PFN_MGMT_TIMEOUT_FUNC) p2pFsmRunEventFsmTimeout, (ULONG) prP2pFsmInfo);
+				  (PFN_MGMT_TIMEOUT_FUNC) p2pFsmRunEventFsmTimeout, (unsigned long) prP2pFsmInfo);
 
 		/* 4 <2> Initiate BSS_INFO_T - common part */
 		BSS_INFO_INIT(prAdapter, NETWORK_TYPE_P2P_INDEX);
@@ -160,7 +160,7 @@ UINT_8 p2pDevFsmInit(IN P_ADAPTER_T prAdapter)
 		prP2pBssInfo->ucConfigAdHocAPMode = AP_MODE_11G_P2P;
 		prP2pBssInfo->ucHwDefaultFixedRateCode = RATE_OFDM_6M;
 
-		prP2pBssInfo->ucNonHTBasicPhyType = (UINT_8)
+		prP2pBssInfo->ucNonHTBasicPhyType = (uint8_t)
 		    rNonHTApModeAttributes[prP2pBssInfo->ucConfigAdHocAPMode].ePhyTypeIndex;
 		prP2pBssInfo->u2BSSBasicRateSet =
 		    rNonHTApModeAttributes[prP2pBssInfo->ucConfigAdHocAPMode].u2BSSBasicRateSet;
@@ -173,7 +173,7 @@ UINT_8 p2pDevFsmInit(IN P_ADAPTER_T prAdapter)
 					    prP2pBssInfo->aucAllSupportedRates, &prP2pBssInfo->ucAllSupportedRatesLen);
 
 		prP2pBssInfo->prBeacon = cnmMgtPktAlloc(prAdapter,
-							OFFSET_OF(WLAN_BEACON_FRAME_T, aucInfoElem[0]) + MAX_IE_LENGTH);
+							OFFSET_OF(struct WLAN_BEACON_FRAME, aucInfoElem[0]) + MAX_IE_LENGTH);
 
 		if (prP2pBssInfo->prBeacon) {
 			prP2pBssInfo->prBeacon->eSrc = TX_PACKET_MGMT;
@@ -207,10 +207,10 @@ UINT_8 p2pDevFsmInit(IN P_ADAPTER_T prAdapter)
 #endif
 }				/* p2pDevFsmInit */
 
-VOID p2pDevFsmUninit(IN P_ADAPTER_T prAdapter)
+void p2pDevFsmUninit(IN struct ADAPTER *prAdapter)
 {
-	P_P2P_DEV_FSM_INFO_T prP2pDevFsmInfo = (P_P2P_DEV_FSM_INFO_T) NULL;
-	P_BSS_INFO_T prP2pBssInfo = (P_BSS_INFO_T) NULL;
+	struct P2P_DEV_FSM_INFO *prP2pDevFsmInfo = (struct P2P_DEV_FSM_INFO *) NULL;
+	struct BSS_INFO *prP2pBssInfo = (struct BSS_INFO *) NULL;
 
 	do {
 		ASSERT_BREAK(prAdapter != NULL);
@@ -246,8 +246,8 @@ VOID p2pDevFsmUninit(IN P_ADAPTER_T prAdapter)
 	} while (FALSE);
 
 #if 0
-	P_P2P_FSM_INFO_T prP2pFsmInfo = (P_P2P_FSM_INFO_T) NULL;
-	P_BSS_INFO_T prP2pBssInfo = (P_BSS_INFO_T) NULL;
+	struct P2P_FSM_INFO *prP2pFsmInfo = (struct P2P_FSM_INFO *) NULL;
+	struct BSS_INFO *prP2pBssInfo = (struct BSS_INFO *) NULL;
 
 	do {
 		ASSERT_BREAK(prAdapter != NULL);
@@ -294,11 +294,11 @@ VOID p2pDevFsmUninit(IN P_ADAPTER_T prAdapter)
 #endif
 }				/* p2pDevFsmUninit */
 
-VOID
-p2pDevFsmStateTransition(IN P_ADAPTER_T prAdapter,
-			 IN P_P2P_DEV_FSM_INFO_T prP2pDevFsmInfo, IN ENUM_P2P_DEV_STATE_T eNextState)
+void
+p2pDevFsmStateTransition(IN struct ADAPTER *prAdapter,
+			 IN struct P2P_DEV_FSM_INFO *prP2pDevFsmInfo, IN enum ENUM_P2P_DEV_STATE eNextState)
 {
-	BOOLEAN fgIsLeaveState = (BOOLEAN) FALSE;
+	u_int8_t fgIsLeaveState = (u_int8_t) FALSE;
 
 	ASSERT(prP2pDevFsmInfo);
 	if (!prP2pDevFsmInfo) {
@@ -394,7 +394,7 @@ p2pDevFsmStateTransition(IN P_ADAPTER_T prAdapter,
 	} while (fgIsLeaveState);
 }				/* p2pDevFsmStateTransition */
 
-VOID p2pDevFsmRunEventAbort(IN P_ADAPTER_T prAdapter, IN P_P2P_DEV_FSM_INFO_T prP2pDevFsmInfo)
+void p2pDevFsmRunEventAbort(IN struct ADAPTER *prAdapter, IN struct P2P_DEV_FSM_INFO *prP2pDevFsmInfo)
 {
 	do {
 		ASSERT_BREAK((prAdapter != NULL) && (prP2pDevFsmInfo != NULL));
@@ -409,9 +409,9 @@ VOID p2pDevFsmRunEventAbort(IN P_ADAPTER_T prAdapter, IN P_P2P_DEV_FSM_INFO_T pr
 	} while (FALSE);
 }				/* p2pDevFsmRunEventAbort */
 
-VOID p2pDevFsmRunEventTimeout(IN P_ADAPTER_T prAdapter, IN ULONG ulParamPtr)
+void p2pDevFsmRunEventTimeout(IN struct ADAPTER *prAdapter, IN unsigned long ulParamPtr)
 {
-	P_P2P_DEV_FSM_INFO_T prP2pDevFsmInfo = (P_P2P_DEV_FSM_INFO_T) ulParamPtr;
+	struct P2P_DEV_FSM_INFO *prP2pDevFsmInfo = (struct P2P_DEV_FSM_INFO *) ulParamPtr;
 
 	do {
 		ASSERT_BREAK((prAdapter != NULL) && (prP2pDevFsmInfo != NULL));
@@ -454,13 +454,13 @@ VOID p2pDevFsmRunEventTimeout(IN P_ADAPTER_T prAdapter, IN ULONG ulParamPtr)
 }				/* p2pDevFsmRunEventTimeout */
 
 /*================ Message Event =================*/
-VOID p2pDevFsmRunEventScanRequest(IN P_ADAPTER_T prAdapter, IN P_MSG_HDR_T prMsgHdr)
+void p2pDevFsmRunEventScanRequest(IN struct ADAPTER *prAdapter, IN struct MSG_HDR *prMsgHdr)
 {
-	P_MSG_P2P_SCAN_REQUEST_T prP2pScanReqMsg = (P_MSG_P2P_SCAN_REQUEST_T) NULL;
-	P_P2P_DEV_FSM_INFO_T prP2pDevFsmInfo = (P_P2P_DEV_FSM_INFO_T) NULL;
-	P_P2P_SCAN_REQ_INFO_T prScanReqInfo = (P_P2P_SCAN_REQ_INFO_T) NULL;
-	UINT_32 u4ChnlListSize = 0;
-	P_P2P_SSID_STRUCT_T prP2pSsidStruct = (P_P2P_SSID_STRUCT_T) NULL;
+	struct MSG_P2P_SCAN_REQUEST *prP2pScanReqMsg = (struct MSG_P2P_SCAN_REQUEST *) NULL;
+	struct P2P_DEV_FSM_INFO *prP2pDevFsmInfo = (struct P2P_DEV_FSM_INFO *) NULL;
+	struct P2P_SCAN_REQ_INFO *prScanReqInfo = (struct P2P_SCAN_REQ_INFO *) NULL;
+	uint32_t u4ChnlListSize = 0;
+	struct P2P_SSID_STRUCT *prP2pSsidStruct = (struct P2P_SSID_STRUCT *) NULL;
 
 	do {
 		ASSERT_BREAK((prAdapter != NULL) && (prMsgHdr != NULL));
@@ -473,7 +473,7 @@ VOID p2pDevFsmRunEventScanRequest(IN P_ADAPTER_T prAdapter, IN P_MSG_HDR_T prMsg
 		if (prP2pDevFsmInfo->eCurrentState != P2P_DEV_STATE_IDLE)
 			p2pDevFsmRunEventAbort(prAdapter, prP2pDevFsmInfo);
 
-		prP2pScanReqMsg = (P_MSG_P2P_SCAN_REQUEST_T) prMsgHdr;
+		prP2pScanReqMsg = (struct MSG_P2P_SCAN_REQUEST *) prMsgHdr;
 		prScanReqInfo = &(prP2pDevFsmInfo->rScanReqInfo);
 
 		DBGLOG(P2P, TRACE, "p2pDevFsmRunEventScanRequest\n");
@@ -500,7 +500,7 @@ VOID p2pDevFsmRunEventScanRequest(IN P_ADAPTER_T prAdapter, IN P_MSG_HDR_T prMsg
 				prScanReqInfo->ucNumChannelList = MAXIMUM_OPERATION_CHANNEL_LIST;
 			}
 
-			u4ChnlListSize = sizeof(RF_CHANNEL_INFO_T) * prScanReqInfo->ucNumChannelList;
+			u4ChnlListSize = sizeof(struct RF_CHANNEL_INFO) * prScanReqInfo->ucNumChannelList;
 			kalMemCopy(prScanReqInfo->arScanChannelList,
 				   prP2pScanReqMsg->arChannelListInfo, u4ChnlListSize);
 		} else {
@@ -534,9 +534,9 @@ VOID p2pDevFsmRunEventScanRequest(IN P_ADAPTER_T prAdapter, IN P_MSG_HDR_T prMsg
 		cnmMemFree(prAdapter, prMsgHdr);
 }				/* p2pDevFsmRunEventScanRequest */
 
-VOID p2pDevFsmRunEventScanAbort(IN P_ADAPTER_T prAdapter, IN P_MSG_HDR_T prMsgHdr)
+void p2pDevFsmRunEventScanAbort(IN struct ADAPTER *prAdapter, IN struct MSG_HDR *prMsgHdr)
 {
-	P_P2P_DEV_FSM_INFO_T prP2pDevFsmInfo = (P_P2P_DEV_FSM_INFO_T) NULL;
+	struct P2P_DEV_FSM_INFO *prP2pDevFsmInfo = (struct P2P_DEV_FSM_INFO *) NULL;
 
 	do {
 		ASSERT_BREAK(prAdapter != NULL);
@@ -546,7 +546,7 @@ VOID p2pDevFsmRunEventScanAbort(IN P_ADAPTER_T prAdapter, IN P_MSG_HDR_T prMsgHd
 		prP2pDevFsmInfo = prAdapter->rWifiVar.prP2pDevFsmInfo;
 
 		if (prP2pDevFsmInfo->eCurrentState == P2P_DEV_STATE_SCAN) {
-			P_P2P_SCAN_REQ_INFO_T prScanReqInfo = &(prP2pDevFsmInfo->rScanReqInfo);
+			struct P2P_SCAN_REQ_INFO *prScanReqInfo = &(prP2pDevFsmInfo->rScanReqInfo);
 
 			prScanReqInfo->fgIsAbort = TRUE;
 
@@ -560,11 +560,11 @@ VOID p2pDevFsmRunEventScanAbort(IN P_ADAPTER_T prAdapter, IN P_MSG_HDR_T prMsgHd
 
 }				/* p2pDevFsmRunEventScanAbort */
 
-VOID
-p2pDevFsmRunEventScanDone(IN P_ADAPTER_T prAdapter, IN P_MSG_HDR_T prMsgHdr, IN P_P2P_DEV_FSM_INFO_T prP2pDevFsmInfo)
+void
+p2pDevFsmRunEventScanDone(IN struct ADAPTER *prAdapter, IN struct MSG_HDR *prMsgHdr, IN struct P2P_DEV_FSM_INFO *prP2pDevFsmInfo)
 {
-	P_MSG_SCN_SCAN_DONE prScanDoneMsg = (P_MSG_SCN_SCAN_DONE) prMsgHdr;
-	P_P2P_SCAN_REQ_INFO_T prP2pScanReqInfo = (P_P2P_SCAN_REQ_INFO_T) NULL;
+	struct MSG_SCN_SCAN_DONE *prScanDoneMsg = (struct MSG_SCN_SCAN_DONE *) prMsgHdr;
+	struct P2P_SCAN_REQ_INFO *prP2pScanReqInfo = (struct P2P_SCAN_REQ_INFO *) NULL;
 
 	do {
 		ASSERT_BREAK((prAdapter != NULL) && (prMsgHdr != NULL) && (prP2pDevFsmInfo != NULL));
@@ -595,11 +595,11 @@ p2pDevFsmRunEventScanDone(IN P_ADAPTER_T prAdapter, IN P_MSG_HDR_T prMsgHdr, IN 
 		cnmMemFree(prAdapter, prMsgHdr);
 }				/* p2pDevFsmRunEventScanDone */
 
-VOID p2pDevFsmRunEventChannelRequest(IN P_ADAPTER_T prAdapter, IN P_MSG_HDR_T prMsgHdr)
+void p2pDevFsmRunEventChannelRequest(IN struct ADAPTER *prAdapter, IN struct MSG_HDR *prMsgHdr)
 {
-	P_P2P_DEV_FSM_INFO_T prP2pDevFsmInfo = (P_P2P_DEV_FSM_INFO_T) NULL;
-	P_P2P_CHNL_REQ_INFO_T prChnlReqInfo = (P_P2P_CHNL_REQ_INFO_T) NULL;
-	BOOLEAN fgIsChnlFound = FALSE;
+	struct P2P_DEV_FSM_INFO *prP2pDevFsmInfo = (struct P2P_DEV_FSM_INFO *) NULL;
+	struct P2P_CHNL_REQ_INFO *prChnlReqInfo = (struct P2P_CHNL_REQ_INFO *) NULL;
+	u_int8_t fgIsChnlFound = FALSE;
 
 	do {
 		ASSERT_BREAK((prAdapter != NULL) && (prMsgHdr != NULL));
@@ -618,12 +618,12 @@ VOID p2pDevFsmRunEventChannelRequest(IN P_ADAPTER_T prAdapter, IN P_MSG_HDR_T pr
 		/* printk("p2pDevFsmRunEventChannelRequest check cookie =%lld\n",prChnlReqInfo->u8Cookie); */
 
 		if (!LINK_IS_EMPTY(&prChnlReqInfo->rP2pChnlReqLink)) {
-			P_LINK_ENTRY_T prLinkEntry = (P_LINK_ENTRY_T) NULL;
-			P_MSG_P2P_CHNL_REQUEST_T prP2pMsgChnlReq = (P_MSG_P2P_CHNL_REQUEST_T) NULL;
+			struct LINK_ENTRY *prLinkEntry = (struct LINK_ENTRY *) NULL;
+			struct MSG_P2P_CHNL_REQUEST *prP2pMsgChnlReq = (struct MSG_P2P_CHNL_REQUEST *) NULL;
 
 			LINK_FOR_EACH(prLinkEntry, &prChnlReqInfo->rP2pChnlReqLink) {
 				prP2pMsgChnlReq =
-				    (P_MSG_P2P_CHNL_REQUEST_T) LINK_ENTRY(prLinkEntry, MSG_HDR_T, rLinkEntry);
+				    (struct MSG_P2P_CHNL_REQUEST *) LINK_ENTRY(prLinkEntry, struct MSG_HDR, rLinkEntry);
 
 				if (prP2pMsgChnlReq->eChnlReqType == CH_REQ_TYPE_P2P_LISTEN) {
 					LINK_REMOVE_KNOWN_ENTRY(&prChnlReqInfo->rP2pChnlReqLink, prLinkEntry);
@@ -662,16 +662,16 @@ VOID p2pDevFsmRunEventChannelRequest(IN P_ADAPTER_T prAdapter, IN P_MSG_HDR_T pr
 		cnmMemFree(prAdapter, prMsgHdr);
 }				/* p2pDevFsmRunEventChannelRequest */
 
-VOID p2pDevFsmRunEventChannelAbort(IN P_ADAPTER_T prAdapter, IN P_MSG_HDR_T prMsgHdr)
+void p2pDevFsmRunEventChannelAbort(IN struct ADAPTER *prAdapter, IN struct MSG_HDR *prMsgHdr)
 {
-	P_P2P_DEV_FSM_INFO_T prP2pDevFsmInfo = (P_P2P_DEV_FSM_INFO_T) NULL;
-	P_MSG_P2P_CHNL_ABORT_T prChnlAbortMsg = (P_MSG_P2P_CHNL_ABORT_T) NULL;
-	P_P2P_CHNL_REQ_INFO_T prChnlReqInfo = (P_P2P_CHNL_REQ_INFO_T) NULL;
+	struct P2P_DEV_FSM_INFO *prP2pDevFsmInfo = (struct P2P_DEV_FSM_INFO *) NULL;
+	struct MSG_P2P_CHNL_ABORT *prChnlAbortMsg = (struct MSG_P2P_CHNL_ABORT *) NULL;
+	struct P2P_CHNL_REQ_INFO *prChnlReqInfo = (struct P2P_CHNL_REQ_INFO *) NULL;
 
 	do {
 		ASSERT_BREAK((prAdapter != NULL) && (prMsgHdr != NULL));
 
-		prChnlAbortMsg = (P_MSG_P2P_CHNL_ABORT_T) prMsgHdr;
+		prChnlAbortMsg = (struct MSG_P2P_CHNL_ABORT *) prMsgHdr;
 
 		prP2pDevFsmInfo = prAdapter->rWifiVar.prP2pDevFsmInfo;
 
@@ -708,12 +708,12 @@ VOID p2pDevFsmRunEventChannelAbort(IN P_ADAPTER_T prAdapter, IN P_MSG_HDR_T prMs
 
 			break;
 		} else if (!LINK_IS_EMPTY(&prChnlReqInfo->rP2pChnlReqLink)) {
-			P_LINK_ENTRY_T prLinkEntry = (P_LINK_ENTRY_T) NULL;
-			P_MSG_P2P_CHNL_REQUEST_T prP2pMsgChnlReq = (P_MSG_P2P_CHNL_REQUEST_T) NULL;
+			struct LINK_ENTRY *prLinkEntry = (struct LINK_ENTRY *) NULL;
+			struct MSG_P2P_CHNL_REQUEST *prP2pMsgChnlReq = (struct MSG_P2P_CHNL_REQUEST *) NULL;
 
 			LINK_FOR_EACH(prLinkEntry, &prChnlReqInfo->rP2pChnlReqLink) {
 				prP2pMsgChnlReq =
-				    (P_MSG_P2P_CHNL_REQUEST_T) LINK_ENTRY(prLinkEntry, MSG_HDR_T, rLinkEntry);
+				    (struct MSG_P2P_CHNL_REQUEST *) LINK_ENTRY(prLinkEntry, struct MSG_HDR, rLinkEntry);
 
 				if (prP2pMsgChnlReq->u8Cookie == prChnlAbortMsg->u8Cookie) {
 					LINK_REMOVE_KNOWN_ENTRY(&prChnlReqInfo->rP2pChnlReqLink, prLinkEntry);
@@ -746,18 +746,18 @@ VOID p2pDevFsmRunEventChannelAbort(IN P_ADAPTER_T prAdapter, IN P_MSG_HDR_T prMs
 		cnmMemFree(prAdapter, prMsgHdr);
 }				/* p2pDevFsmRunEventChannelAbort */
 
-VOID
-p2pDevFsmRunEventChnlGrant(IN P_ADAPTER_T prAdapter, IN P_MSG_HDR_T prMsgHdr, IN P_P2P_DEV_FSM_INFO_T prP2pDevFsmInfo)
+void
+p2pDevFsmRunEventChnlGrant(IN struct ADAPTER *prAdapter, IN struct MSG_HDR *prMsgHdr, IN struct P2P_DEV_FSM_INFO *prP2pDevFsmInfo)
 {
-	P_MSG_CH_GRANT_T prMsgChGrant = (P_MSG_CH_GRANT_T) NULL;
-	P_P2P_CHNL_REQ_INFO_T prChnlReqInfo = (P_P2P_CHNL_REQ_INFO_T) NULL;
+	struct MSG_CH_GRANT *prMsgChGrant = (struct MSG_CH_GRANT *) NULL;
+	struct P2P_CHNL_REQ_INFO *prChnlReqInfo = (struct P2P_CHNL_REQ_INFO *) NULL;
 
 	do {
 		ASSERT((prAdapter != NULL) && (prMsgHdr != NULL) && (prP2pDevFsmInfo != NULL));
 		if ((prAdapter == NULL) || (prMsgHdr == NULL) || (prP2pDevFsmInfo == NULL))
 			break;
 
-		prMsgChGrant = (P_MSG_CH_GRANT_T) prMsgHdr;
+		prMsgChGrant = (struct MSG_CH_GRANT *) prMsgHdr;
 		prChnlReqInfo = &(prP2pDevFsmInfo->rChnlReqInfo);
 
 		if ((prMsgChGrant->ucTokenID != prChnlReqInfo->ucSeqNumOfChReq) ||
@@ -782,14 +782,14 @@ p2pDevFsmRunEventChnlGrant(IN P_ADAPTER_T prAdapter, IN P_MSG_HDR_T prMsgHdr, IN
 		cnmMemFree(prAdapter, prMsgHdr);
 }				/* p2pDevFsmRunEventChnlGrant */
 
-VOID p2pDevFsmRunEventMgmtTx(IN P_ADAPTER_T prAdapter, IN P_MSG_HDR_T prMsgHdr)
+void p2pDevFsmRunEventMgmtTx(IN struct ADAPTER *prAdapter, IN struct MSG_HDR *prMsgHdr)
 {
-	P_P2P_DEV_FSM_INFO_T prP2pDevFsmInfo = (P_P2P_DEV_FSM_INFO_T) NULL;
-	P_MSG_P2P_MGMT_TX_REQUEST_T prMgmtTxMsg = (P_MSG_P2P_MGMT_TX_REQUEST_T) NULL;
-	P_P2P_CHNL_REQ_INFO_T prP2pChnlReqInfo = (P_P2P_CHNL_REQ_INFO_T) NULL;
-	P_P2P_MGMT_TX_REQ_INFO_T prP2pMgmtTxReqInfo = (P_P2P_MGMT_TX_REQ_INFO_T) NULL;
+	struct P2P_DEV_FSM_INFO *prP2pDevFsmInfo = (struct P2P_DEV_FSM_INFO *) NULL;
+	struct MSG_P2P_MGMT_TX_REQUEST *prMgmtTxMsg = (struct MSG_P2P_MGMT_TX_REQUEST *) NULL;
+	struct P2P_CHNL_REQ_INFO *prP2pChnlReqInfo = (struct P2P_CHNL_REQ_INFO *) NULL;
+	struct P2P_MGMT_TX_REQ_INFO *prP2pMgmtTxReqInfo = (struct P2P_MGMT_TX_REQ_INFO *) NULL;
 
-	prMgmtTxMsg = (P_MSG_P2P_MGMT_TX_REQUEST_T) prMsgHdr;
+	prMgmtTxMsg = (struct MSG_P2P_MGMT_TX_REQUEST *) prMsgHdr;
 
 	if ((prMgmtTxMsg->ucBssIdx != prAdapter->ucP2PDevBssIdx) &&
 		(IS_NET_ACTIVE(prAdapter, prMgmtTxMsg->ucBssIdx))) {
@@ -821,9 +821,9 @@ VOID p2pDevFsmRunEventMgmtTx(IN P_ADAPTER_T prAdapter, IN P_MSG_HDR_T prMsgHdr)
 				   prP2pDevFsmInfo->ucBssIndex,
 				   prMgmtTxMsg->prMgmtMsduInfo, prMgmtTxMsg->fgNoneCckRate);
 	} else {
-		P_P2P_OFF_CHNL_TX_REQ_INFO_T prOffChnlTxReq = (P_P2P_OFF_CHNL_TX_REQ_INFO_T) NULL;
+		struct P2P_OFF_CHNL_TX_REQ_INFO *prOffChnlTxReq = (struct P2P_OFF_CHNL_TX_REQ_INFO *) NULL;
 
-		prOffChnlTxReq = cnmMemAlloc(prAdapter, RAM_TYPE_MSG, sizeof(P2P_OFF_CHNL_TX_REQ_INFO_T));
+		prOffChnlTxReq = cnmMemAlloc(prAdapter, RAM_TYPE_MSG, sizeof(struct P2P_OFF_CHNL_TX_REQ_INFO));
 
 		if (prOffChnlTxReq == NULL) {
 			DBGLOG(P2P, ERROR, "Can not serve TX request due to MSG buffer not enough\n");
@@ -834,7 +834,7 @@ VOID p2pDevFsmRunEventMgmtTx(IN P_ADAPTER_T prAdapter, IN P_MSG_HDR_T prMsgHdr)
 		prOffChnlTxReq->prMgmtTxMsdu = prMgmtTxMsg->prMgmtMsduInfo;
 		prOffChnlTxReq->fgNoneCckRate = prMgmtTxMsg->fgNoneCckRate;
 		kalMemCopy(&prOffChnlTxReq->rChannelInfo, &prMgmtTxMsg->rChannelInfo,
-			   sizeof(RF_CHANNEL_INFO_T));
+			   sizeof(struct RF_CHANNEL_INFO));
 		prOffChnlTxReq->eChnlExt = prMgmtTxMsg->eChnlExt;
 		prOffChnlTxReq->fgIsWaitRsp = prMgmtTxMsg->fgIsWaitRsp;
 
@@ -842,9 +842,9 @@ VOID p2pDevFsmRunEventMgmtTx(IN P_ADAPTER_T prAdapter, IN P_MSG_HDR_T prMsgHdr)
 
 		/* Channel Request if needed. */
 		if (prP2pDevFsmInfo->eCurrentState != P2P_DEV_STATE_OFF_CHNL_TX) {
-			P_MSG_P2P_CHNL_REQUEST_T prP2pMsgChnlReq = (P_MSG_P2P_CHNL_REQUEST_T) NULL;
+			struct MSG_P2P_CHNL_REQUEST *prP2pMsgChnlReq = (struct MSG_P2P_CHNL_REQUEST *) NULL;
 
-			prP2pMsgChnlReq = cnmMemAlloc(prAdapter, RAM_TYPE_MSG, sizeof(MSG_P2P_CHNL_REQUEST_T));
+			prP2pMsgChnlReq = cnmMemAlloc(prAdapter, RAM_TYPE_MSG, sizeof(struct MSG_P2P_CHNL_REQUEST));
 
 			if (prP2pMsgChnlReq == NULL) {
 				cnmMemFree(prAdapter, prOffChnlTxReq);
@@ -861,10 +861,10 @@ VOID p2pDevFsmRunEventMgmtTx(IN P_ADAPTER_T prAdapter, IN P_MSG_HDR_T prMsgHdr)
 			prP2pMsgChnlReq->u4Duration = P2P_OFF_CHNL_TX_DEFAULT_TIME_MS;
 
 			kalMemCopy(&prP2pMsgChnlReq->rChannelInfo,
-				   &prMgmtTxMsg->rChannelInfo, sizeof(RF_CHANNEL_INFO_T));
+				   &prMgmtTxMsg->rChannelInfo, sizeof(struct RF_CHANNEL_INFO));
 			prP2pMsgChnlReq->eChnlSco = prMgmtTxMsg->eChnlExt;
 
-			p2pDevFsmRunEventChannelRequest(prAdapter, (P_MSG_HDR_T) prP2pMsgChnlReq);
+			p2pDevFsmRunEventChannelRequest(prAdapter, (struct MSG_HDR *) prP2pMsgChnlReq);
 		}
 	}
 
@@ -872,13 +872,13 @@ error:
 	cnmMemFree(prAdapter, prMsgHdr);
 }				/* p2pDevFsmRunEventMgmtTx */
 
-WLAN_STATUS
-p2pDevFsmRunEventMgmtFrameTxDone(IN P_ADAPTER_T prAdapter,
-				 IN P_MSDU_INFO_T prMsduInfo, IN ENUM_TX_RESULT_CODE_T rTxDoneStatus)
+uint32_t
+p2pDevFsmRunEventMgmtFrameTxDone(IN struct ADAPTER *prAdapter,
+				 IN struct MSDU_INFO *prMsduInfo, IN enum ENUM_TX_RESULT_CODE rTxDoneStatus)
 {
-	BOOLEAN fgIsSuccess = FALSE;
-	P_P2P_DEV_FSM_INFO_T prP2pDevFsmInfo = (P_P2P_DEV_FSM_INFO_T) NULL;
-	PUINT_64 pu8GlCookie = (PUINT_64) NULL;
+	u_int8_t fgIsSuccess = FALSE;
+	struct P2P_DEV_FSM_INFO *prP2pDevFsmInfo = (struct P2P_DEV_FSM_INFO *) NULL;
+	uint64_t *pu8GlCookie = (uint64_t *) NULL;
 
 	do {
 		ASSERT_BREAK((prAdapter != NULL) && (prMsduInfo != NULL));
@@ -889,8 +889,8 @@ p2pDevFsmRunEventMgmtFrameTxDone(IN P_ADAPTER_T prAdapter,
 		}
 
 		pu8GlCookie =
-			(PUINT_64) ((ULONG) prMsduInfo->prPacket +
-				(ULONG) prMsduInfo->u2FrameLength + MAC_TX_RESERVED_FIELD);
+			(uint64_t *) ((unsigned long) prMsduInfo->prPacket +
+				(unsigned long) prMsduInfo->u2FrameLength + MAC_TX_RESERVED_FIELD);
 
 		prP2pDevFsmInfo = prAdapter->rWifiVar.prP2pDevFsmInfo;
 
@@ -911,7 +911,7 @@ p2pDevFsmRunEventMgmtFrameTxDone(IN P_ADAPTER_T prAdapter,
 	return WLAN_STATUS_SUCCESS;
 }				/* p2pDevFsmRunEventMgmtFrameTxDone */
 
-VOID p2pDevFsmRunEventMgmtFrameRegister(IN P_ADAPTER_T prAdapter, IN P_MSG_HDR_T prMsgHdr)
+void p2pDevFsmRunEventMgmtFrameRegister(IN struct ADAPTER *prAdapter, IN struct MSG_HDR *prMsgHdr)
 {
 	/* TODO: RX Filter Management. */
 
@@ -919,9 +919,9 @@ VOID p2pDevFsmRunEventMgmtFrameRegister(IN P_ADAPTER_T prAdapter, IN P_MSG_HDR_T
 		cnmMemFree(prAdapter, prMsgHdr);
 }				/* p2pDevFsmRunEventMgmtFrameRegister */
 
-VOID p2pDevFsmRunEventActiveDevBss(IN P_ADAPTER_T prAdapter, IN P_MSG_HDR_T prMsgHdr)
+void p2pDevFsmRunEventActiveDevBss(IN struct ADAPTER *prAdapter, IN struct MSG_HDR *prMsgHdr)
 {
-	P_P2P_DEV_FSM_INFO_T prP2pDevFsmInfo = (P_P2P_DEV_FSM_INFO_T) NULL;
+	struct P2P_DEV_FSM_INFO *prP2pDevFsmInfo = (struct P2P_DEV_FSM_INFO *) NULL;
 
 	do {
 		ASSERT_BREAK((prAdapter != NULL) && (prMsgHdr != NULL));

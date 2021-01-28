@@ -49,20 +49,20 @@ enum EVENT_TYPE {
 ********************************************************************************
 */
 
-UINT_32 u4TotalTx;
-UINT_32 u4NoDelayTx;
-UINT_32 u4TotalRx;
-UINT_32 u4NoDelayRx;
+uint32_t u4TotalTx;
+uint32_t u4NoDelayTx;
+uint32_t u4TotalRx;
+uint32_t u4NoDelayRx;
 
-static UINT_8 g_ucTxRxFlag;
-static UINT_8 g_ucTxIpProto;
-static UINT_16 g_u2TxUdpPort;
-static UINT_32 g_u4TxDelayThreshold;
-static UINT_8 g_ucRxIpProto;
-static UINT_16 g_u2RxUdpPort;
-static UINT_32 g_u4RxDelayThreshold;
+static uint8_t g_ucTxRxFlag;
+static uint8_t g_ucTxIpProto;
+static uint16_t g_u2TxUdpPort;
+static uint32_t g_u4TxDelayThreshold;
+static uint8_t g_ucRxIpProto;
+static uint16_t g_u2RxUdpPort;
+static uint32_t g_u4RxDelayThreshold;
 
-VOID StatsResetTxRx(VOID)
+void StatsResetTxRx(void)
 {
 	u4TotalRx = 0;
 	u4TotalTx = 0;
@@ -70,18 +70,18 @@ VOID StatsResetTxRx(VOID)
 	u4NoDelayTx = 0;
 }
 
-UINT_64 StatsEnvTimeGet(VOID)
+uint64_t StatsEnvTimeGet(void)
 {
-	UINT_64 u8Clk;
+	uint64_t u8Clk;
 
 	u8Clk = sched_clock();	/* unit: naro seconds */
 
-	return (UINT_64) u8Clk;	/* sched_clock *//* jiffies size = 4B */
+	return (uint64_t) u8Clk;	/* sched_clock *//* jiffies size = 4B */
 }
 
-VOID StatsEnvGetPktDelay(OUT PUINT_8 pucTxRxFlag, OUT PUINT_8 pucTxIpProto, OUT PUINT_16 pu2TxUdpPort,
-	OUT PUINT_32 pu4TxDelayThreshold, OUT PUINT_8 pucRxIpProto,
-	OUT PUINT_16 pu2RxUdpPort, OUT PUINT_32 pu4RxDelayThreshold)
+void StatsEnvGetPktDelay(OUT uint8_t *pucTxRxFlag, OUT uint8_t *pucTxIpProto, OUT uint16_t *pu2TxUdpPort,
+	OUT uint32_t *pu4TxDelayThreshold, OUT uint8_t *pucRxIpProto,
+	OUT uint16_t *pu2RxUdpPort, OUT uint32_t *pu4RxDelayThreshold)
 {
 	*pucTxRxFlag = g_ucTxRxFlag;
 	*pucTxIpProto = g_ucTxIpProto;
@@ -92,7 +92,7 @@ VOID StatsEnvGetPktDelay(OUT PUINT_8 pucTxRxFlag, OUT PUINT_8 pucTxIpProto, OUT 
 	*pu4RxDelayThreshold = g_u4RxDelayThreshold;
 }
 
-VOID StatsEnvSetPktDelay(IN UINT_8 ucTxOrRx, IN UINT_8 ucIpProto, IN UINT_16 u2UdpPort, UINT_32 u4DelayThreshold)
+void StatsEnvSetPktDelay(IN uint8_t ucTxOrRx, IN uint8_t ucIpProto, IN uint16_t u2UdpPort, uint32_t u4DelayThreshold)
 {
 #define MODULE_RESET 0
 #define MODULE_TX 1
@@ -119,18 +119,18 @@ VOID StatsEnvSetPktDelay(IN UINT_8 ucTxOrRx, IN UINT_8 ucIpProto, IN UINT_16 u2U
 	}
 }
 
-VOID StatsEnvRxTime2Host(IN P_ADAPTER_T prAdapter, struct sk_buff *prSkb)
+void StatsEnvRxTime2Host(IN struct ADAPTER *prAdapter, struct sk_buff *prSkb)
 {
-	PUINT_8 pucEth = prSkb->data;
-	UINT_16 u2EthType = 0;
-	UINT_8 ucIpVersion = 0;
-	UINT_8 ucIpProto = 0;
-	UINT_16 u2IPID = 0;
-	UINT_16 u2UdpDstPort = 0;
-	UINT_16 u2UdpSrcPort = 0;
-	UINT_64 u8IntTime = 0;
-	UINT_64 u8RxTime = 0;
-	UINT_32 u4Delay = 0;
+	uint8_t *pucEth = prSkb->data;
+	uint16_t u2EthType = 0;
+	uint8_t ucIpVersion = 0;
+	uint8_t ucIpProto = 0;
+	uint16_t u2IPID = 0;
+	uint16_t u2UdpDstPort = 0;
+	uint16_t u2UdpSrcPort = 0;
+	uint64_t u8IntTime = 0;
+	uint64_t u8RxTime = 0;
+	uint32_t u4Delay = 0;
 	struct timeval tval;
 	struct rtc_time tm;
 
@@ -151,7 +151,7 @@ VOID StatsEnvRxTime2Host(IN P_ADAPTER_T prAdapter, struct sk_buff *prSkb)
 		return;
 	u2IPID = pucEth[4] << 8 | pucEth[5];
 	u8IntTime = GLUE_RX_GET_PKT_INT_TIME(prSkb);
-	u4Delay = ((UINT_32)(sched_clock() - u8IntTime))/NSEC_PER_USEC;
+	u4Delay = ((uint32_t)(sched_clock() - u8IntTime))/NSEC_PER_USEC;
 	u8RxTime = GLUE_RX_GET_PKT_RX_TIME(prSkb);
 	do_gettimeofday(&tval);
 	rtc_time_to_tm(tval.tv_sec, &tm);
@@ -172,7 +172,7 @@ VOID StatsEnvRxTime2Host(IN P_ADAPTER_T prAdapter, struct sk_buff *prSkb)
 		DBGLOG(RX, INFO,
 	"IPID 0x%04x src %d dst %d UP %d,delay %u us,int2rx %lu us,IntTime %llu,%u/%u,leave at %02d:%02d:%02d.%06ld\n",
 			u2IPID, u2UdpSrcPort, u2UdpDstPort, ((pucEth[1] & IPTOS_PREC_MASK) >> IPTOS_PREC_OFFSET),
-			u4Delay, ((UINT_32)(u8RxTime - u8IntTime))/NSEC_PER_USEC, u8IntTime, u4NoDelayRx, u4TotalRx,
+			u4Delay, ((uint32_t)(u8RxTime - u8IntTime))/NSEC_PER_USEC, u8IntTime, u4NoDelayRx, u4TotalRx,
 			tm.tm_hour, tm.tm_min, tm.tm_sec, tval.tv_usec);
 		break;
 	default:
@@ -180,20 +180,20 @@ VOID StatsEnvRxTime2Host(IN P_ADAPTER_T prAdapter, struct sk_buff *prSkb)
 	}
 }
 
-VOID StatsEnvTxTime2Hif(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduInfo)
+void StatsEnvTxTime2Hif(IN struct ADAPTER *prAdapter, IN struct MSDU_INFO *prMsduInfo)
 {
-	UINT_64 u8SysTime, u8SysTimeIn;
-	UINT32 u4TimeDiff;
-	PUINT_8 pucEth = ((struct sk_buff *)prMsduInfo->prPacket)->data;
-	UINT_32 u4PacketLen = ((struct sk_buff *)prMsduInfo->prPacket)->len;
-	UINT_8 ucIpVersion = 0;
-	UINT_8 ucIpProto = 0;
-	PUINT_8 pucEthBody = NULL;
-	UINT_16 u2EthType = 0;
-	PUINT_8 pucAheadBuf = NULL;
-	UINT_16 u2IPID = 0;
-	UINT_16 u2UdpDstPort = 0;
-	UINT_16 u2UdpSrcPort = 0;
+	uint64_t u8SysTime, u8SysTimeIn;
+	uint32_t u4TimeDiff;
+	uint8_t *pucEth = ((struct sk_buff *)prMsduInfo->prPacket)->data;
+	uint32_t u4PacketLen = ((struct sk_buff *)prMsduInfo->prPacket)->len;
+	uint8_t ucIpVersion = 0;
+	uint8_t ucIpProto = 0;
+	uint8_t *pucEthBody = NULL;
+	uint16_t u2EthType = 0;
+	uint8_t *pucAheadBuf = NULL;
+	uint16_t u2IPID = 0;
+	uint16_t u2UdpDstPort = 0;
+	uint16_t u2UdpSrcPort = 0;
 
 	u8SysTime = StatsEnvTimeGet();
 	u8SysTimeIn = GLUE_GET_PKT_XTIME(prMsduInfo->prPacket);
@@ -220,7 +220,7 @@ VOID StatsEnvTxTime2Hif(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduInfo)
 		return;
 	u2IPID = pucEthBody[4]<<8 | pucEthBody[5];
 	u8SysTime = u8SysTime - u8SysTimeIn;
-	u4TimeDiff = (UINT32) u8SysTime;
+	u4TimeDiff = (uint32_t) u8SysTime;
 	u4TimeDiff = u4TimeDiff / 1000;	/* ns to us */
 
 	switch (ucIpProto) {
@@ -247,16 +247,16 @@ VOID StatsEnvTxTime2Hif(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduInfo)
 	}
 }
 
-static VOID statsParsePktInfo(PUINT_8 pucPkt, struct sk_buff *skb, UINT_8 status, UINT_8 eventType)
+static void statsParsePktInfo(uint8_t *pucPkt, struct sk_buff *skb, uint8_t status, uint8_t eventType)
 {
 	/* get ethernet protocol */
-	UINT_16 u2EtherType = (pucPkt[ETH_TYPE_LEN_OFFSET] << 8) | (pucPkt[ETH_TYPE_LEN_OFFSET + 1]);
-	PUINT_8 pucEthBody = &pucPkt[ETH_HLEN];
+	uint16_t u2EtherType = (pucPkt[ETH_TYPE_LEN_OFFSET] << 8) | (pucPkt[ETH_TYPE_LEN_OFFSET + 1]);
+	uint8_t *pucEthBody = &pucPkt[ETH_HLEN];
 
 	switch (u2EtherType) {
 	case ETH_P_ARP:
 	{
-		UINT_16 u2OpCode = (pucEthBody[6] << 8) | pucEthBody[7];
+		uint16_t u2OpCode = (pucEthBody[6] << 8) | pucEthBody[7];
 
 		switch (eventType) {
 		case EVENT_RX:
@@ -280,9 +280,9 @@ static VOID statsParsePktInfo(PUINT_8 pucPkt, struct sk_buff *skb, UINT_8 status
 	}
 	case ETH_P_IPV4:
 	{
-		UINT_8 ucIpProto = pucEthBody[9]; /* IP header without options */
-		UINT_8 ucIpVersion = (pucEthBody[0] & IPVH_VERSION_MASK) >> IPVH_VERSION_OFFSET;
-		UINT_16 u2IpId = *(UINT_16 *) &pucEthBody[4];
+		uint8_t ucIpProto = pucEthBody[9]; /* IP header without options */
+		uint8_t ucIpVersion = (pucEthBody[0] & IPVH_VERSION_MASK) >> IPVH_VERSION_OFFSET;
+		uint16_t u2IpId = *(uint16_t *) &pucEthBody[4];
 
 		if (ucIpVersion != IPVERSION)
 			break;
@@ -290,15 +290,15 @@ static VOID statsParsePktInfo(PUINT_8 pucPkt, struct sk_buff *skb, UINT_8 status
 		case IP_PRO_ICMP:
 		{
 			/* the number of ICMP packets is seldom so we print log here */
-			UINT_8 ucIcmpType;
-			UINT_16 u2IcmpId, u2IcmpSeq;
-			PUINT_8 pucIcmp = &pucEthBody[20];
+			uint8_t ucIcmpType;
+			uint16_t u2IcmpId, u2IcmpSeq;
+			uint8_t *pucIcmp = &pucEthBody[20];
 
 			ucIcmpType = pucIcmp[0];
 			if (ucIcmpType == 3) /* don't log network unreachable packet */
 				break;
-			u2IcmpId = *(UINT_16 *) &pucIcmp[4];
-			u2IcmpSeq = *(UINT_16 *) &pucIcmp[6];
+			u2IcmpId = *(uint16_t *) &pucIcmp[4];
+			u2IcmpSeq = *(uint16_t *) &pucIcmp[6];
 			switch (eventType) {
 			case EVENT_RX:
 				DBGLOG(RX, TRACE, "<RX> ICMP: Type %d, Id BE 0x%04x, Seq BE 0x%04x\n",
@@ -314,11 +314,11 @@ static VOID statsParsePktInfo(PUINT_8 pucPkt, struct sk_buff *skb, UINT_8 status
 		case IP_PRO_UDP:
 		{
 			/* the number of DHCP packets is seldom so we print log here */
-			PUINT_8 pucUdp = &pucEthBody[20];
-			PUINT_8 pucBootp = &pucUdp[8];
-			UINT_16 u2UdpDstPort;
-			UINT_16 u2UdpSrcPort;
-			UINT_32 u4TransID;
+			uint8_t *pucUdp = &pucEthBody[20];
+			uint8_t *pucBootp = &pucUdp[8];
+			uint16_t u2UdpDstPort;
+			uint16_t u2UdpSrcPort;
+			uint32_t u4TransID;
 
 			u2UdpDstPort = (pucUdp[2] << 8) | pucUdp[3];
 			u2UdpSrcPort = (pucUdp[0] << 8) | pucUdp[1];
@@ -335,7 +335,7 @@ static VOID statsParsePktInfo(PUINT_8 pucPkt, struct sk_buff *skb, UINT_8 status
 					break;
 				}
 			} else if (u2UdpSrcPort == UDP_PORT_DNS) { /* tx dns */
-				UINT_16 u2TransId = (pucBootp[0] << 8) | pucBootp[1];
+				uint16_t u2TransId = (pucBootp[0] << 8) | pucBootp[1];
 
 				if (eventType == EVENT_RX) {
 					DBGLOG(RX, INFO,
@@ -349,8 +349,8 @@ static VOID statsParsePktInfo(PUINT_8 pucPkt, struct sk_buff *skb, UINT_8 status
 	}
 	case ETH_P_IPV6:
 	{
-		UINT_8 ucIpv6Proto = pucEthBody[IPV6_HDR_LEN]; /* IPv6 header without options */
-		UINT_8 ucIpVersion = (pucEthBody[0] & IPVH_VERSION_MASK) >> IPVH_VERSION_OFFSET;
+		uint8_t ucIpv6Proto = pucEthBody[IPV6_HDR_LEN]; /* IPv6 header without options */
+		uint8_t ucIpVersion = (pucEthBody[0] & IPVH_VERSION_MASK) >> IPVH_VERSION_OFFSET;
 
 		if (ucIpVersion != IP_VERSION_6)
 			break;
@@ -400,8 +400,8 @@ static VOID statsParsePktInfo(PUINT_8 pucPkt, struct sk_buff *skb, UINT_8 status
 	}
 	case ETH_P_1X:
 	{
-		PUINT_8 pucEapol = pucEthBody;
-		UINT_8 ucEapolType = pucEapol[1];
+		uint8_t *pucEapol = pucEthBody;
+		uint8_t ucEapolType = pucEapol[1];
 
 		switch (ucEapolType) {
 		case 0: /* eap packet */
@@ -430,11 +430,11 @@ static VOID statsParsePktInfo(PUINT_8 pucPkt, struct sk_buff *skb, UINT_8 status
 			switch (eventType) {
 			case EVENT_RX:
 				DBGLOG(RX, INFO, "<RX> EAPOL: key, KeyInfo 0x%04x\n",
-						*((PUINT_16)(&pucEapol[5])));
+						*((uint16_t *)(&pucEapol[5])));
 				break;
 			case EVENT_TX:
 				DBGLOG(TX, INFO, "<TX> EAPOL: key, KeyInfo 0x%04x\n",
-						*((PUINT_16)(&pucEapol[5])));
+						*((uint16_t *)(&pucEapol[5])));
 				break;
 			}
 
@@ -445,9 +445,9 @@ static VOID statsParsePktInfo(PUINT_8 pucPkt, struct sk_buff *skb, UINT_8 status
 #if CFG_SUPPORT_WAPI
 	case ETH_WPI_1X:
 	{
-		UINT_8 ucSubType = pucEthBody[3]; /* sub type filed*/
-		UINT_16 u2Length = *(PUINT_16)&pucEthBody[6];
-		UINT_16 u2Seq = *(PUINT_16)&pucEthBody[8];
+		uint8_t ucSubType = pucEthBody[3]; /* sub type filed*/
+		uint16_t u2Length = *(uint16_t *)&pucEthBody[6];
+		uint16_t u2Seq = *(uint16_t *)&pucEthBody[8];
 
 		switch (eventType) {
 		case EVENT_RX:
@@ -487,9 +487,9 @@ static VOID statsParsePktInfo(PUINT_8 pucPkt, struct sk_buff *skb, UINT_8 status
 * \retval None
 */
 /*----------------------------------------------------------------------------*/
-VOID StatsRxPktInfoDisplay(P_SW_RFB_T prSwRfb)
+void StatsRxPktInfoDisplay(struct SW_RFB *prSwRfb)
 {
-	PUINT_8 pPkt = NULL;
+	uint8_t *pPkt = NULL;
 	struct sk_buff *skb = NULL;
 
 	if (prSwRfb->u2PacketLen <= ETHER_HEADER_LEN)
@@ -515,9 +515,9 @@ VOID StatsRxPktInfoDisplay(P_SW_RFB_T prSwRfb)
 * \retval None
 */
 /*----------------------------------------------------------------------------*/
-VOID StatsTxPktInfoDisplay(UINT_8 *pPkt)
+void StatsTxPktInfoDisplay(uint8_t *pPkt)
 {
-	UINT_16 u2EtherTypeLen;
+	uint16_t u2EtherTypeLen;
 
 	u2EtherTypeLen = (pPkt[ETH_TYPE_LEN_OFFSET] << 8) | (pPkt[ETH_TYPE_LEN_OFFSET + 1]);
 	statsParsePktInfo(pPkt, NULL, 0, EVENT_TX);

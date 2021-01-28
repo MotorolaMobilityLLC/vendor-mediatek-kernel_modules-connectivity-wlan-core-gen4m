@@ -479,7 +479,7 @@
 *                             D A T A   T Y P E S
 ********************************************************************************
 */
-typedef enum _ENUM_RX_STATISTIC_COUNTER_T {
+enum ENUM_RX_STATISTIC_COUNTER {
 	RX_MPDU_TOTAL_COUNT = 0,
 	RX_SIZE_ERR_DROP_COUNT,
 
@@ -523,18 +523,18 @@ typedef enum _ENUM_RX_STATISTIC_COUNTER_T {
 	RX_IP_V6_PKT_CCOUNT,
 #endif
 	RX_STATISTIC_COUNTER_NUM
-} ENUM_RX_STATISTIC_COUNTER_T;
+};
 
-typedef enum _ENUM_RX_PKT_DESTINATION_T {
+enum ENUM_RX_PKT_DESTINATION {
 	RX_PKT_DESTINATION_HOST,	/* to OS */
 	RX_PKT_DESTINATION_FORWARD,	/* to TX queue for forward, AP mode */
 	RX_PKT_DESTINATION_HOST_WITH_FORWARD,	/* to both TX and OS, AP mode broadcast packet */
 	RX_PKT_DESTINATION_NULL,	/* packet to be freed */
 	RX_PKT_DESTINATION_NUM
-} ENUM_RX_PKT_DESTINATION_T;
+};
 
 /* Used for MAC RX */
-typedef enum _ENUM_MAC_RX_PKT_TYPE_T {
+enum ENUM_MAC_RX_PKT_TYPE {
 	RX_PKT_TYPE_TX_STATUS = 0,
 	RX_PKT_TYPE_RX_VECTOR,
 	RX_PKT_TYPE_RX_DATA,
@@ -542,22 +542,22 @@ typedef enum _ENUM_MAC_RX_PKT_TYPE_T {
 	RX_PKT_TYPE_TM_REPORT,
 	RX_PKT_TYPE_MSDU_REPORT = 6,
 	RX_PKT_TYPE_SW_DEFINED = 7
-} ENUM_MAC_RX_PKT_TYPE_T;
+};
 
-typedef enum _ENUM_MAC_RX_GROUP_VLD_T {
+enum ENUM_MAC_RX_GROUP_VLD {
 	RX_GROUP_VLD_1 = 0,
 	RX_GROUP_VLD_2,
 	RX_GROUP_VLD_3,
 	RX_GROUP_VLD_4,
 	RX_GROUP_VLD_NUM
-} ENUM_MAC_RX_GROUP_VLD_T;
+};
 
-typedef enum _ENUM_MAC_GI_INFO_T {
+enum ENUM_MAC_GI_INFO {
 	MAC_GI_NORMAL = 0,
 	MAC_GI_SHORT
-} ENUM_MAC_GI_INFO_T, *P_ENUM_MAC_GI_INFO_T;
+};
 
-typedef enum _ENUM_RXPI_MODE_T {
+enum ENUM_RXPI_MODE {
 	RCPI_MODE_WF0 = 0,
 	RCPI_MODE_WF1,
 	RCPI_MODE_WF2,
@@ -566,7 +566,7 @@ typedef enum _ENUM_RXPI_MODE_T {
 	RCPI_MODE_MAX,
 	RCPI_MODE_MIN,
 	RCPI_MODE_NUM
-} ENUM_RXPI_MODE_T;
+};
 
 #define RXM_RXD_PKT_TYPE_SW_BITMAP 0xE00F
 #define RXM_RXD_PKT_TYPE_SW_EVENT  0xE000
@@ -594,223 +594,223 @@ typedef enum _ENUM_RXPI_MODE_T {
 */
 
 /*! A data structure which is identical with MAC RX DMA Descriptor */
-typedef struct _HW_MAC_RX_DESC_T {
-	UINT_16 u2RxByteCount;	/* DW 0 */
-	UINT_16 u2PktTYpe;
-	UINT_8 ucMatchPacket;	/* DW 1 */
-	UINT_8 ucChanFreq;
-	UINT_8 ucHeaderLen;
-	UINT_8 ucBssid;
-	UINT_8 ucWlanIdx;	/* DW 2 */
-	UINT_8 ucTidSecMode;
-	UINT_16 u2StatusFlag;
-	UINT_32 u4PatternFilterInfo;	/* DW 3 */
-} HW_MAC_RX_DESC_T, *P_HW_MAC_RX_DESC_T;
+struct HW_MAC_RX_DESC {
+	uint16_t u2RxByteCount;	/* DW 0 */
+	uint16_t u2PktTYpe;
+	uint8_t ucMatchPacket;	/* DW 1 */
+	uint8_t ucChanFreq;
+	uint8_t ucHeaderLen;
+	uint8_t ucBssid;
+	uint8_t ucWlanIdx;	/* DW 2 */
+	uint8_t ucTidSecMode;
+	uint16_t u2StatusFlag;
+	uint32_t u4PatternFilterInfo;	/* DW 3 */
+};
 
-typedef struct _HW_MAC_RX_STS_GROUP_1_T {
-	UINT_8 aucPN[16];
-} HW_MAC_RX_STS_GROUP_1_T, *P_HW_MAC_RX_STS_GROUP_1_T;
+struct HW_MAC_RX_STS_GROUP_1 {
+	uint8_t aucPN[16];
+};
 
-typedef struct _HW_MAC_RX_STS_GROUP_2_T {
-	UINT_32 u4Timestamp;	/* DW 12 */
-	UINT_32 u4CRC;		/* DW 13 */
-} HW_MAC_RX_STS_GROUP_2_T, *P_HW_MAC_RX_STS_GROUP_2_T;
+struct HW_MAC_RX_STS_GROUP_2 {
+	uint32_t u4Timestamp;	/* DW 12 */
+	uint32_t u4CRC;		/* DW 13 */
+};
 
-typedef struct _HW_MAC_RX_STS_GROUP_4_T {
+struct HW_MAC_RX_STS_GROUP_4 {
 	/* For HDR_TRAN */
-	UINT_16 u2FrameCtl;	/* DW 4 */
-	UINT_8 aucTA[6];	/* DW 4~5 */
-	UINT_16 u2SeqFrag;	/* DW 6 */
-	UINT_16 u2Qos;		/* DW 6 */
-	UINT_32 u4HTC;		/* DW 7 */
-} HW_MAC_RX_STS_GROUP_4_T, *P_HW_MAC_RX_STS_GROUP_4_T;
+	uint16_t u2FrameCtl;	/* DW 4 */
+	uint8_t aucTA[6];	/* DW 4~5 */
+	uint16_t u2SeqFrag;	/* DW 6 */
+	uint16_t u2Qos;		/* DW 6 */
+	uint32_t u4HTC;		/* DW 7 */
+};
 
-typedef struct _HW_MAC_RX_STS_GROUP_3_T {
+struct HW_MAC_RX_STS_GROUP_3 {
 	/*!  RX Vector Info */
-	UINT_32 u4RxVector[6];	/* DW 14~19 */
-} HW_MAC_RX_STS_GROUP_3_T, *P_HW_MAC_RX_STS_GROUP_3_T;
+	uint32_t u4RxVector[6];	/* DW 14~19 */
+};
 
-typedef struct _HW_MAC_RX_TMRI_PKT_FORMAT_T {
-	UINT_8 ucPID;
-	UINT_8 ucStatus;
-	UINT_16 u2PktTYpe;
-	UINT_32 u4Reserved[2];
-	UINT_32 u4ToA;
-	UINT_32 u4ToD;
-} HW_MAC_RX_TMRI_PKT_FORMAT_T, *P_HW_MAC_RX_TMRI_PKT_FORMAT_T;
+struct HW_MAC_RX_TMRI_PKT_FORMAT {
+	uint8_t ucPID;
+	uint8_t ucStatus;
+	uint16_t u2PktTYpe;
+	uint32_t u4Reserved[2];
+	uint32_t u4ToA;
+	uint32_t u4ToD;
+};
 
-typedef struct _HW_MAC_RX_TMRR_PKT_FORMAT_T {
-	UINT_8 ucVtSeq;
-	UINT_8 ucStatus;
-	UINT_16 u2PktTYpe;
-	UINT_8 aucTALow[2];
-	UINT_16 u2SnField;
-	UINT_8 aucTAHigh[4];
-	UINT_32 u4ToA;
-	UINT_32 u4ToD;
-} HW_MAC_RX_TMRR_PKT_FORMAT_T, *P_HW_MAC_RX_TMRR_PKT_FORMAT_T;
+struct HW_MAC_RX_TMRR_PKT_FORMAT {
+	uint8_t ucVtSeq;
+	uint8_t ucStatus;
+	uint16_t u2PktTYpe;
+	uint8_t aucTALow[2];
+	uint16_t u2SnField;
+	uint8_t aucTAHigh[4];
+	uint32_t u4ToA;
+	uint32_t u4ToD;
+};
 
 /*! A data structure which is identical with MAC RX Vector DMA Descriptor */
-typedef struct _HW_RX_VECTOR_DESC_T {
-	UINT_8 aucTA[6];	/* DW 0~1 */
-	UINT_8 ucRxVtSeqNo;
+struct HW_RX_VECTOR_DESC {
+	uint8_t aucTA[6];	/* DW 0~1 */
+	uint8_t ucRxVtSeqNo;
 	/*!  RX Vector Info */
-	UINT_32 u4RxVector[9];	/* DW 2~10 */
+	uint32_t u4RxVector[9];	/* DW 2~10 */
 
-} HW_RX_VECTOR_DESC_T, *P_HW_RX_VECTOR_DESC_T;
+};
 
 union HW_MAC_MSDU_TOKEN_T {
 	struct {
-		UINT_16         u2MsduID[2];
+		uint16_t         u2MsduID[2];
 	} rFormatV1;
 	struct {
-		UINT_16         u2MsduID;
-		UINT_16         u2WlanID:10;
-		UINT_16         u2Rsv:1;
-		UINT_16         u2QueIdx:5;
+		uint16_t         u2MsduID;
+		uint16_t         u2WlanID:10;
+		uint16_t         u2Rsv:1;
+		uint16_t         u2QueIdx:5;
 	} rFormatV2;
 };
 
-typedef struct _HW_MAC_MSDU_REPORT_T {
+struct HW_MAC_MSDU_REPORT {
 	/* DW 0 */
-	UINT_32         u2BufByteCount:16;
-	UINT_32         u2MsduCount:7;
-	UINT_32         u2DoneEventType:6;
-	UINT_32         u2PktType:3;
+	uint32_t         u2BufByteCount:16;
+	uint32_t         u2MsduCount:7;
+	uint32_t         u2DoneEventType:6;
+	uint32_t         u2PktType:3;
 	/* DW 1 */
-	UINT_32         u4TxdCount:8;
-	UINT_32         u4Rsv1:8;
-	UINT_32         u4Ver:3;
-	UINT_32         u4Rsv2:13;
+	uint32_t         u4TxdCount:8;
+	uint32_t         u4Rsv1:8;
+	uint32_t         u4Ver:3;
+	uint32_t         u4Rsv2:13;
 	/* MSDU token array */
 	union HW_MAC_MSDU_TOKEN_T au4MsduToken[0];
-} HW_MAC_MSDU_REPORT_T, *P_HW_MAC_MSDU_REPORT_T;
+};
 
-struct _SW_RFB_T {
-	QUE_ENTRY_T rQueEntry;
-	PVOID pvPacket;		/*!< ptr to rx Packet Descriptor */
-	PUINT_8 pucRecvBuff;	/*!< ptr to receive data buffer */
+struct SW_RFB {
+	struct QUE_ENTRY rQueEntry;
+	void *pvPacket;		/*!< ptr to rx Packet Descriptor */
+	uint8_t *pucRecvBuff;	/*!< ptr to receive data buffer */
 
 	/* add fot mt6630 */
-	UINT_8 ucGroupVLD;
-	UINT_16 u2RxStatusOffst;
-	P_HW_MAC_RX_DESC_T prRxStatus;
-	P_HW_MAC_RX_STS_GROUP_1_T prRxStatusGroup1;
-	P_HW_MAC_RX_STS_GROUP_2_T prRxStatusGroup2;
-	P_HW_MAC_RX_STS_GROUP_3_T prRxStatusGroup3;
-	P_HW_MAC_RX_STS_GROUP_4_T prRxStatusGroup4;
+	uint8_t ucGroupVLD;
+	uint16_t u2RxStatusOffst;
+	struct HW_MAC_RX_DESC *prRxStatus;
+	struct HW_MAC_RX_STS_GROUP_1 *prRxStatusGroup1;
+	struct HW_MAC_RX_STS_GROUP_2 *prRxStatusGroup2;
+	struct HW_MAC_RX_STS_GROUP_3 *prRxStatusGroup3;
+	struct HW_MAC_RX_STS_GROUP_4 *prRxStatusGroup4;
 
 	/* rx data information */
-	PVOID pvHeader;
-	UINT_16 u2PacketLen;
-	UINT_16 u2HeaderLen;
+	void *pvHeader;
+	uint16_t u2PacketLen;
+	uint16_t u2HeaderLen;
 
-	PUINT_8 pucPayload;
-	UINT_16 u2PayloadLength;
+	uint8_t *pucPayload;
+	uint16_t u2PayloadLength;
 
-	P_STA_RECORD_T prStaRec;
+	struct STA_RECORD *prStaRec;
 
-	UINT_8 ucPacketType;
+	uint8_t ucPacketType;
 
 	/* rx sta record */
-	UINT_8 ucWlanIdx;
-	UINT_8 ucStaRecIdx;
+	uint8_t ucWlanIdx;
+	uint8_t ucStaRecIdx;
 
-	BOOLEAN fgReorderBuffer;
-	BOOLEAN fgDataFrame;
-	BOOLEAN fgFragFrame;
+	u_int8_t fgReorderBuffer;
+	u_int8_t fgDataFrame;
+	u_int8_t fgFragFrame;
 	/* duplicate detection */
-	UINT_16 u2FrameCtrl;
-	UINT_16 u2SequenceControl;
-	UINT_16 u2SSN;
-	UINT_8 ucTid;
+	uint16_t u2FrameCtrl;
+	uint16_t u2SequenceControl;
+	uint16_t u2SSN;
+	uint8_t ucTid;
 
 #if CFG_TCP_IP_CHKSUM_OFFLOAD
-	UINT_32 u4TcpUdpIpCksStatus;
+	uint32_t u4TcpUdpIpCksStatus;
 #endif /* CFG_TCP_IP_CHKSUM_OFFLOAD */
 
-	ENUM_CSUM_RESULT_T aeCSUM[CSUM_TYPE_NUM];
-	ENUM_RX_PKT_DESTINATION_T eDst;
-	ENUM_TRAFFIC_CLASS_INDEX_T eTC;	/* only valid when eDst == FORWARD */
+	enum ENUM_CSUM_RESULT aeCSUM[CSUM_TYPE_NUM];
+	enum ENUM_RX_PKT_DESTINATION eDst;
+	enum ENUM_TRAFFIC_CLASS_INDEX eTC;	/* only valid when eDst == FORWARD */
 #if 0
 	/* RX reorder for one MSDU in AMSDU issue */
 	/*QUE_T rAmsduQue;*/
 #endif
-	UINT_64 rIntTime;
+	uint64_t rIntTime;
 };
 
 #if CFG_TCP_IP_CHKSUM_OFFLOAD
 struct RX_CSO_REPORT_T {
-	UINT_32 u4IpV4CksStatus:1;
-	UINT_32 u4Reserved1:1;
-	UINT_32 u4TcpCksStatus:1;
-	UINT_32 u4UdpCksStatus:1;
-	UINT_32 u4IpV4CksType:1;
-	UINT_32 u4IpV6CksType:1;
-	UINT_32 u4TcpCksType:1;
-	UINT_32 u4UdpCksType:1;
-	UINT_32 u4IpDataLenMismatch:1;
-	UINT_32 u4IpFragPkg:1;
-	UINT_32 u4UnknowNextHeader:1;
-	UINT_32 u4Reserved2:21;
+	uint32_t u4IpV4CksStatus:1;
+	uint32_t u4Reserved1:1;
+	uint32_t u4TcpCksStatus:1;
+	uint32_t u4UdpCksStatus:1;
+	uint32_t u4IpV4CksType:1;
+	uint32_t u4IpV6CksType:1;
+	uint32_t u4TcpCksType:1;
+	uint32_t u4UdpCksType:1;
+	uint32_t u4IpDataLenMismatch:1;
+	uint32_t u4IpFragPkg:1;
+	uint32_t u4UnknowNextHeader:1;
+	uint32_t u4Reserved2:21;
 };
 #endif /* CFG_TCP_IP_CHKSUM_OFFLOAD */
 
 /*! RX configuration type structure */
-typedef struct _RX_CTRL_T {
-	UINT_32 u4RxCachedSize;
-	PUINT_8 pucRxCached;
-	QUE_T rFreeSwRfbList;
-	QUE_T rReceivedRfbList;
-	QUE_T rIndicatedRfbList;
+struct RX_CTRL {
+	uint32_t u4RxCachedSize;
+	uint8_t *pucRxCached;
+	struct QUE rFreeSwRfbList;
+	struct QUE rReceivedRfbList;
+	struct QUE rIndicatedRfbList;
 
 #if CFG_SDIO_RX_AGG
-	PUINT_8 pucRxCoalescingBufPtr;
+	uint8_t *pucRxCoalescingBufPtr;
 #endif
 
-	PVOID apvIndPacket[CFG_RX_MAX_PKT_NUM];
-	PVOID apvRetainedPacket[CFG_RX_MAX_PKT_NUM];
+	void *apvIndPacket[CFG_RX_MAX_PKT_NUM];
+	void *apvRetainedPacket[CFG_RX_MAX_PKT_NUM];
 
-	UINT_8 ucNumIndPacket;
-	UINT_8 ucNumRetainedPacket;
-	UINT_64 au8Statistics[RX_STATISTIC_COUNTER_NUM];	/*!< RX Counters */
+	uint8_t ucNumIndPacket;
+	uint8_t ucNumRetainedPacket;
+	uint64_t au8Statistics[RX_STATISTIC_COUNTER_NUM];	/*!< RX Counters */
 
 #if CFG_HIF_STATISTICS
-	UINT_32 u4TotalRxAccessNum;
-	UINT_32 u4TotalRxPacketNum;
+	uint32_t u4TotalRxAccessNum;
+	uint32_t u4TotalRxPacketNum;
 #endif
 
 #if CFG_HIF_RX_STARVATION_WARNING
-	UINT_32 u4QueuedCnt;
-	UINT_32 u4DequeuedCnt;
+	uint32_t u4QueuedCnt;
+	uint32_t u4DequeuedCnt;
 #endif
 
 #if CFG_RX_PKTS_DUMP
-	UINT_32 u4RxPktsDumpTypeMask;
+	uint32_t u4RxPktsDumpTypeMask;
 #endif
 
 #if CFG_SUPPORT_SNIFFER
-	UINT_32 u4AmpduRefNum;
+	uint32_t u4AmpduRefNum;
 #endif
-} RX_CTRL_T, *P_RX_CTRL_T;
+};
 
-typedef struct _RX_MAILBOX_T {
-	UINT_32 u4RxMailbox[2];	/* for Device-to-Host Mailbox */
-} RX_MAILBOX_T, *P_RX_MAILBOX_T;
+struct RX_MAILBOX {
+	uint32_t u4RxMailbox[2];	/* for Device-to-Host Mailbox */
+};
 
-typedef WLAN_STATUS(*PROCESS_RX_MGT_FUNCTION) (P_ADAPTER_T, P_SW_RFB_T);
+typedef uint32_t(*PROCESS_RX_MGT_FUNCTION) (struct ADAPTER *, struct SW_RFB *);
 
-typedef VOID(*PROCESS_RX_EVENT_FUNCTION) (P_ADAPTER_T, P_WIFI_EVENT_T);
+typedef void(*PROCESS_RX_EVENT_FUNCTION) (struct ADAPTER *, struct WIFI_EVENT *);
 
-typedef struct _RX_EVENT_HANDLER_T {
-	ENUM_EVENT_ID_T eEID;
+struct RX_EVENT_HANDLER {
+	enum ENUM_EVENT_ID eEID;
 	PROCESS_RX_EVENT_FUNCTION pfnHandler;
-} RX_EVENT_HANDLER_T, *P_RX_EVENT_HANDLER_T;
+};
 
-typedef struct _EMU_MAC_RATE_INFO_T {
-	UINT_8 ucPhyRateCode;
-	UINT_32 u4PhyRate[4][2];
-} EMU_MAC_RATE_INFO_T, *P_EMU_MAC_RATE_INFO_T;
+struct EMU_MAC_RATE_INFO {
+	uint8_t ucPhyRateCode;
+	uint32_t u4PhyRate[4][2];
+};
 
 /*******************************************************************************
 *                           P R I V A T E   D A T A
@@ -835,19 +835,19 @@ typedef struct _EMU_MAC_RATE_INFO_T {
 	    }
 
 #define RX_INC_CNT(prRxCtrl, eCounter)              \
-	{((P_RX_CTRL_T)prRxCtrl)->au8Statistics[eCounter]++; }
+	{((struct RX_CTRL *)prRxCtrl)->au8Statistics[eCounter]++; }
 
 #define RX_ADD_CNT(prRxCtrl, eCounter, u8Amount)    \
-	{((P_RX_CTRL_T)prRxCtrl)->au8Statistics[eCounter] += (UINT_64)u8Amount; }
+	{((struct RX_CTRL *)prRxCtrl)->au8Statistics[eCounter] += (uint64_t)u8Amount; }
 
 #define RX_GET_CNT(prRxCtrl, eCounter)              \
-	(((P_RX_CTRL_T)prRxCtrl)->au8Statistics[eCounter])
+	(((struct RX_CTRL *)prRxCtrl)->au8Statistics[eCounter])
 
 #define RX_RESET_ALL_CNTS(prRxCtrl)                 \
 	{kalMemZero(&prRxCtrl->au8Statistics[0], sizeof(prRxCtrl->au8Statistics)); }
 
 #define RX_STATUS_TEST_MORE_FLAG(flag)	\
-	((BOOL)((flag & RX_STATUS_FLAG_MORE_PACKET) ? TRUE : FALSE))
+	((u_int8_t)((flag & RX_STATUS_FLAG_MORE_PACKET) ? TRUE : FALSE))
 
 /*------------------------------------------------------------------------------
  * MACRO for HW_MAC_RX_DESC_T
@@ -1021,66 +1021,66 @@ typedef struct _EMU_MAC_RATE_INFO_T {
 ********************************************************************************
 */
 
-VOID nicRxInitialize(IN P_ADAPTER_T prAdapter);
+void nicRxInitialize(IN struct ADAPTER *prAdapter);
 
-VOID nicRxUninitialize(IN P_ADAPTER_T prAdapter);
+void nicRxUninitialize(IN struct ADAPTER *prAdapter);
 
-VOID nicRxProcessRFBs(IN P_ADAPTER_T prAdapter);
+void nicRxProcessRFBs(IN struct ADAPTER *prAdapter);
 
-VOID nicRxProcessMsduReport(IN P_ADAPTER_T prAdapter, IN OUT P_SW_RFB_T prSwRfb);
+void nicRxProcessMsduReport(IN struct ADAPTER *prAdapter, IN OUT struct SW_RFB *prSwRfb);
 
-WLAN_STATUS nicRxSetupRFB(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T prRfb);
+uint32_t nicRxSetupRFB(IN struct ADAPTER *prAdapter, IN struct SW_RFB *prRfb);
 
-VOID nicRxReturnRFB(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T prRfb);
+void nicRxReturnRFB(IN struct ADAPTER *prAdapter, IN struct SW_RFB *prRfb);
 
-VOID nicProcessRxInterrupt(IN P_ADAPTER_T prAdapter);
+void nicProcessRxInterrupt(IN struct ADAPTER *prAdapter);
 
-VOID nicRxProcessPktWithoutReorder(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T prSwRfb);
+void nicRxProcessPktWithoutReorder(IN struct ADAPTER *prAdapter, IN struct SW_RFB *prSwRfb);
 
-VOID nicRxProcessForwardPkt(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T prSwRfb);
+void nicRxProcessForwardPkt(IN struct ADAPTER *prAdapter, IN struct SW_RFB *prSwRfb);
 
-VOID nicRxProcessGOBroadcastPkt(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T prSwRfb);
+void nicRxProcessGOBroadcastPkt(IN struct ADAPTER *prAdapter, IN struct SW_RFB *prSwRfb);
 
-VOID nicRxFillRFB(IN P_ADAPTER_T prAdapter, IN OUT P_SW_RFB_T prSwRfb);
+void nicRxFillRFB(IN struct ADAPTER *prAdapter, IN OUT struct SW_RFB *prSwRfb);
 
-P_SW_RFB_T nicRxDefragMPDU(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T prSWRfb, OUT P_QUE_T prReturnedQue);
+struct SW_RFB *nicRxDefragMPDU(IN struct ADAPTER *prAdapter, IN struct SW_RFB *prSWRfb, OUT struct QUE *prReturnedQue);
 
-BOOLEAN nicRxIsDuplicateFrame(IN OUT P_SW_RFB_T prSwRfb);
+u_int8_t nicRxIsDuplicateFrame(IN OUT struct SW_RFB *prSwRfb);
 
 #if CFG_SUPPORT_SNIFFER
-VOID nicRxProcessMonitorPacket(IN P_ADAPTER_T prAdapter, IN OUT P_SW_RFB_T prSwRfb);
+void nicRxProcessMonitorPacket(IN struct ADAPTER *prAdapter, IN OUT struct SW_RFB *prSwRfb);
 #endif
 
-VOID nicRxProcessDataPacket(IN P_ADAPTER_T prAdapter, IN OUT P_SW_RFB_T prSwRfb);
+void nicRxProcessDataPacket(IN struct ADAPTER *prAdapter, IN OUT struct SW_RFB *prSwRfb);
 
-VOID nicRxProcessEventPacket(IN P_ADAPTER_T prAdapter, IN OUT P_SW_RFB_T prSwRfb);
+void nicRxProcessEventPacket(IN struct ADAPTER *prAdapter, IN OUT struct SW_RFB *prSwRfb);
 
-VOID nicRxProcessMgmtPacket(IN P_ADAPTER_T prAdapter, IN OUT P_SW_RFB_T prSwRfb);
+void nicRxProcessMgmtPacket(IN struct ADAPTER *prAdapter, IN OUT struct SW_RFB *prSwRfb);
 
 #if CFG_TCP_IP_CHKSUM_OFFLOAD
-VOID nicRxFillChksumStatus(IN P_ADAPTER_T prAdapter, IN OUT P_SW_RFB_T prSwRfb);
+void nicRxFillChksumStatus(IN struct ADAPTER *prAdapter, IN OUT struct SW_RFB *prSwRfb);
 
-VOID nicRxUpdateCSUMStatistics(IN P_ADAPTER_T prAdapter, IN const ENUM_CSUM_RESULT_T aeCSUM[]);
+void nicRxUpdateCSUMStatistics(IN struct ADAPTER *prAdapter, IN const enum ENUM_CSUM_RESULT aeCSUM[]);
 #endif /* CFG_TCP_IP_CHKSUM_OFFLOAD */
 
-VOID nicRxQueryStatus(IN P_ADAPTER_T prAdapter, IN PUINT_8 pucBuffer, OUT PUINT_32 pu4Count);
+void nicRxQueryStatus(IN struct ADAPTER *prAdapter, IN uint8_t *pucBuffer, OUT uint32_t *pu4Count);
 
-VOID nicRxClearStatistics(IN P_ADAPTER_T prAdapter);
+void nicRxClearStatistics(IN struct ADAPTER *prAdapter);
 
-VOID nicRxQueryStatistics(IN P_ADAPTER_T prAdapter, IN PUINT_8 pucBuffer, OUT PUINT_32 pu4Count);
+void nicRxQueryStatistics(IN struct ADAPTER *prAdapter, IN uint8_t *pucBuffer, OUT uint32_t *pu4Count);
 
-WLAN_STATUS
-nicRxWaitResponse(IN P_ADAPTER_T prAdapter,
-		  IN UINT_8 ucPortIdx, OUT PUINT_8 pucRspBuffer, IN UINT_32 u4MaxRespBufferLen, OUT PUINT_32 pu4Length);
+uint32_t
+nicRxWaitResponse(IN struct ADAPTER *prAdapter,
+		  IN uint8_t ucPortIdx, OUT uint8_t *pucRspBuffer, IN uint32_t u4MaxRespBufferLen, OUT uint32_t *pu4Length);
 
-VOID nicRxEnablePromiscuousMode(IN P_ADAPTER_T prAdapter);
+void nicRxEnablePromiscuousMode(IN struct ADAPTER *prAdapter);
 
-VOID nicRxDisablePromiscuousMode(IN P_ADAPTER_T prAdapter);
+void nicRxDisablePromiscuousMode(IN struct ADAPTER *prAdapter);
 
-WLAN_STATUS nicRxFlush(IN P_ADAPTER_T prAdapter);
+uint32_t nicRxFlush(IN struct ADAPTER *prAdapter);
 
-WLAN_STATUS nicRxProcessActionFrame(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T prSwRfb);
+uint32_t nicRxProcessActionFrame(IN struct ADAPTER *prAdapter, IN struct SW_RFB *prSwRfb);
 
-UINT_8 nicRxGetRcpiValueFromRxv(IN UINT_8 ucRcpiMode, IN P_SW_RFB_T prSwRfb);
+uint8_t nicRxGetRcpiValueFromRxv(IN uint8_t ucRcpiMode, IN struct SW_RFB *prSwRfb);
 
 #endif /* _NIC_RX_H */

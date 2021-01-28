@@ -80,39 +80,39 @@
 *                             D A T A   T Y P E S
 ********************************************************************************
 */
-typedef enum _ENUM_SYS_PROTECT_MODE_T {
+enum ENUM_SYS_PROTECT_MODE {
 	SYS_PROTECT_MODE_NONE = 0,	/* Mode 0 */
 	SYS_PROTECT_MODE_ERP,	/* Mode 1 */
 	SYS_PROTECT_MODE_NON_HT,	/* Mode 2 */
 	SYS_PROTECT_MODE_20M,	/* Mode 3 */
 
 	SYS_PROTECT_MODE_NUM
-} ENUM_SYS_PROTECT_MODE_T, *P_ENUM_SYS_PROTECT_MODE_T;
+};
 
 /* This definition follows HT Protection field of HT Operation IE */
-typedef enum _ENUM_HT_PROTECT_MODE_T {
+enum ENUM_HT_PROTECT_MODE {
 	HT_PROTECT_MODE_NONE = 0,
 	HT_PROTECT_MODE_NON_MEMBER,
 	HT_PROTECT_MODE_20M,
 	HT_PROTECT_MODE_NON_HT,
 
 	HT_PROTECT_MODE_NUM
-} ENUM_HT_PROTECT_MODE_T, *P_ENUM_HT_PROTECT_MODE_T;
+};
 
-typedef enum _ENUM_GF_MODE_T {
+enum ENUM_GF_MODE {
 	GF_MODE_NORMAL = 0,
 	GF_MODE_PROTECT,
 	GF_MODE_DISALLOWED,
 
 	GF_MODE_NUM
-} ENUM_GF_MODE_T, *P_ENUM_GF_MODE_T;
+};
 
-typedef enum _ENUM_RIFS_MODE_T {
+enum ENUM_RIFS_MODE {
 	RIFS_MODE_NORMAL = 0,
 	RIFS_MODE_DISALLOWED,
 
 	RIFS_MODE_NUM
-} ENUM_RIFS_MODE_T, *P_ENUM_RIFS_MODE_T;
+};
 
 /*******************************************************************************
 *                            P U B L I C   D A T A

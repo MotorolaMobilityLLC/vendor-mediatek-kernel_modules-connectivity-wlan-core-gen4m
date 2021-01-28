@@ -108,9 +108,9 @@
 
 #include "precomp.h"
 
-static UINT_8 rlmObssChnlLevelIn2G4(P_BSS_INFO_T prBssInfo, UINT_8 ucPriChannel, ENUM_CHNL_EXT_T eExtend);
+static uint8_t rlmObssChnlLevelIn2G4(struct BSS_INFO *prBssInfo, uint8_t ucPriChannel, enum ENUM_CHNL_EXT eExtend);
 
-static UINT_8 rlmObssChnlLevelIn5G(P_BSS_INFO_T prBssInfo, UINT_8 ucPriChannel, ENUM_CHNL_EXT_T eExtend);
+static uint8_t rlmObssChnlLevelIn5G(struct BSS_INFO *prBssInfo, uint8_t ucPriChannel, enum ENUM_CHNL_EXT eExtend);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -127,9 +127,9 @@ static UINT_8 rlmObssChnlLevelIn5G(P_BSS_INFO_T prBssInfo, UINT_8 ucPriChannel, 
 * \return none
 */
 /*----------------------------------------------------------------------------*/
-UINT_8 rlmObssChnlLevel(P_BSS_INFO_T prBssInfo, ENUM_BAND_T eBand, UINT_8 ucPriChannel, ENUM_CHNL_EXT_T eExtend)
+uint8_t rlmObssChnlLevel(struct BSS_INFO *prBssInfo, enum ENUM_BAND eBand, uint8_t ucPriChannel, enum ENUM_CHNL_EXT eExtend)
 {
-	UINT_8 ucChannelLevel;
+	uint8_t ucChannelLevel;
 
 	ASSERT(prBssInfo);
 
@@ -163,11 +163,11 @@ UINT_8 rlmObssChnlLevel(P_BSS_INFO_T prBssInfo, ENUM_BAND_T eBand, UINT_8 ucPriC
 * \return none
 */
 /*----------------------------------------------------------------------------*/
-static UINT_8 rlmObssChnlLevelIn2G4(P_BSS_INFO_T prBssInfo, UINT_8 ucPriChannel, ENUM_CHNL_EXT_T eExtend)
+static uint8_t rlmObssChnlLevelIn2G4(struct BSS_INFO *prBssInfo, uint8_t ucPriChannel, enum ENUM_CHNL_EXT eExtend)
 {
-	UINT_8 i, ucChannelLevel;
-	UINT_8 ucSecChannel, ucCenterChannel;
-	UINT_8 ucAffectedChnl_L, ucAffectedChnl_H;
+	uint8_t i, ucChannelLevel;
+	uint8_t ucSecChannel, ucCenterChannel;
+	uint8_t ucAffectedChnl_L, ucAffectedChnl_H;
 
 	ASSERT(prBssInfo);
 
@@ -252,10 +252,10 @@ L_2G4_level_end:
 * \return none
 */
 /*----------------------------------------------------------------------------*/
-static UINT_8 rlmObssChnlLevelIn5G(P_BSS_INFO_T prBssInfo, UINT_8 ucPriChannel, ENUM_CHNL_EXT_T eExtend)
+static uint8_t rlmObssChnlLevelIn5G(struct BSS_INFO *prBssInfo, uint8_t ucPriChannel, enum ENUM_CHNL_EXT eExtend)
 {
-	UINT_8 i, ucChannelLevel;
-	UINT_8 ucSecChannel;
+	uint8_t i, ucChannelLevel;
+	uint8_t ucSecChannel;
 
 	ASSERT(prBssInfo);
 
@@ -318,24 +318,24 @@ L_5G_level_end:
 * \return none
 */
 /*----------------------------------------------------------------------------*/
-VOID rlmObssScanExemptionRsp(P_ADAPTER_T prAdapter, P_BSS_INFO_T prBssInfo, P_SW_RFB_T prSwRfb)
+void rlmObssScanExemptionRsp(struct ADAPTER *prAdapter, struct BSS_INFO *prBssInfo, struct SW_RFB *prSwRfb)
 {
-	P_MSDU_INFO_T prMsduInfo;
-	P_ACTION_20_40_COEXIST_FRAME prTxFrame;
+	struct MSDU_INFO *prMsduInfo;
+	struct ACTION_20_40_COEXIST_FRAME *prTxFrame;
 
 	/* To do: need an algorithm to do judgement. Now always reject request */
 
-	prMsduInfo = (P_MSDU_INFO_T)
+	prMsduInfo = (struct MSDU_INFO *)
 	    cnmMgtPktAlloc(prAdapter, PUBLIC_ACTION_MAX_LEN);
 	if (prMsduInfo == NULL)
 		return;
 
 	DBGLOG(RLM, INFO, "Send 20/40 coexistence rsp frame!\n");
 
-	prTxFrame = (P_ACTION_20_40_COEXIST_FRAME) prMsduInfo->prPacket;
+	prTxFrame = (struct ACTION_20_40_COEXIST_FRAME *) prMsduInfo->prPacket;
 
 	prTxFrame->u2FrameCtrl = MAC_FRAME_ACTION;
-	COPY_MAC_ADDR(prTxFrame->aucDestAddr, ((P_ACTION_20_40_COEXIST_FRAME) prSwRfb->pvHeader)->aucSrcAddr);
+	COPY_MAC_ADDR(prTxFrame->aucDestAddr, ((struct ACTION_20_40_COEXIST_FRAME *) prSwRfb->pvHeader)->aucSrcAddr);
 	COPY_MAC_ADDR(prTxFrame->aucSrcAddr, prBssInfo->aucOwnMacAddr);
 	COPY_MAC_ADDR(prTxFrame->aucBSSID, prBssInfo->aucBSSID);
 
