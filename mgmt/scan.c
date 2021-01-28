@@ -1841,8 +1841,15 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 	/* Support AP Selection */
 	prBssDesc->fgExsitBssLoadIE = FALSE;
 	prBssDesc->fgMultiAnttenaAndSTBC = FALSE;
-	prBssDesc->fgTIMPresent = FALSE;
-	prBssDesc->ucDTIMPeriod = 0;
+
+	if (fgIsProbeResp == FALSE) {
+		/* Probe response doesn't have TIM IE. Thus, we should
+		 * reset TIM when handling beacon frame only.
+		 */
+		prBssDesc->fgTIMPresent = FALSE;
+		prBssDesc->ucDTIMPeriod = 0;
+	}
+
 	/* 4 <3.1> Full IE parsing on SW_RFB_T */
 	pucIE = prWlanBeaconFrame->aucInfoElem;
 	/* pucDumpIE = pucIE; */
