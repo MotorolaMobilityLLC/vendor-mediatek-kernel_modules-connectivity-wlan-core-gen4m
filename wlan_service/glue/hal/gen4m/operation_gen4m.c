@@ -1988,6 +1988,106 @@ s_int32 mt_op_get_chipid(
 	return SERV_STATUS_SUCCESS;
 }
 
+s_int32 mt_op_mps_start(
+	struct test_wlan_info *winfos,
+	u_char band_idx)
+{
+	s_int32 ret = SERV_STATUS_SUCCESS;
+
+	tm_rftest_set_auto_test(winfos,
+		RF_AT_FUNCID_SET_DBDC_BAND_IDX, band_idx);
+
+	tm_rftest_set_auto_test(winfos,
+		RF_AT_FUNCID_COMMAND, RF_AT_COMMAND_STARTTX);
+
+	return ret;
+}
+
+s_int32 mt_op_mps_set_nss(
+	struct test_wlan_info *winfos,
+	u_int32 len,
+	struct test_mps_setting *mps_setting)
+{
+	u_int32 i;
+	s_int32 ret = SERV_STATUS_SUCCESS;
+
+	for (i = 0; i < len; i++) {
+		tm_rftest_set_auto_test(winfos,
+			(RF_AT_FUNCID_SET_MPS_NSS | (i << 16)),
+			mps_setting[i+1].nss);
+	}
+
+	return ret;
+}
+
+s_int32 mt_op_mps_set_per_packet_bw(
+	struct test_wlan_info *winfos,
+	u_int32 len,
+	struct test_mps_setting *mps_setting)
+{
+	u_int32 i;
+	s_int32 ret = SERV_STATUS_SUCCESS;
+
+	for (i = 0; i < len; i++) {
+		tm_rftest_set_auto_test(winfos,
+			(RF_AT_FUNCID_SET_MPS_PACKAGE_BW | (i << 16)),
+			mps_setting[i+1].pkt_bw);
+	}
+
+	return ret;
+}
+
+s_int32 mt_op_mps_set_packet_count(
+	struct test_wlan_info *winfos,
+	u_int32 len,
+	struct test_mps_setting *mps_setting)
+{
+	u_int32 i;
+	s_int32 ret = SERV_STATUS_SUCCESS;
+
+	for (i = 0; i < len; i++) {
+		tm_rftest_set_auto_test(winfos,
+			(RF_AT_FUNCID_SET_MPS_PKT_CNT | (i << 16)),
+			mps_setting[i+1].pkt_cnt);
+	}
+
+	return ret;
+}
+
+s_int32 mt_op_mps_set_payload_length(
+	struct test_wlan_info *winfos,
+	u_int32 len,
+	struct test_mps_setting *mps_setting)
+{
+	u_int32 i;
+	s_int32 ret = SERV_STATUS_SUCCESS;
+
+	for (i = 0; i < len; i++) {
+		tm_rftest_set_auto_test(winfos,
+			(RF_AT_FUNCID_SET_MPS_PAYLOAD_LEN | (i << 16)),
+			mps_setting[i+1].pkt_len);
+	}
+
+	return ret;
+}
+
+s_int32 mt_op_mps_set_power_gain(
+	struct test_wlan_info *winfos,
+	u_int32 len,
+	struct test_mps_setting *mps_setting)
+{
+	u_int32 i;
+	s_int32 ret = SERV_STATUS_SUCCESS;
+
+	for (i = 0; i < len; i++) {
+		tm_rftest_set_auto_test(winfos,
+			(RF_AT_FUNCID_SET_MPS_PWR_GAIN | (i << 16)),
+			mps_setting[i+1].pwr);
+	}
+
+	return ret;
+}
+
 s_int32 mt_op_mps_set_seq_data(
 	struct test_wlan_info *winfos,
 	u_int32 len,
@@ -2005,9 +2105,9 @@ s_int32 mt_op_mps_set_seq_data(
 		return SERV_STATUS_HAL_OP_INVALID_NULL_POINTER;
 
 	for (i = 0; i < len; i++) {
-		mode = mps_setting[i].tx_mode;
-		mcs = mps_setting[i].mcs;
-		tx_path = mps_setting[i].tx_ant;
+		mode = mps_setting[i+1].tx_mode;
+		mcs = mps_setting[i+1].mcs;
+		tx_path = mps_setting[i+1].tx_ant;
 
 		if (mode == 1) {
 			mode = 0;
