@@ -947,7 +947,7 @@ static int compat_priv(IN struct net_device *prNetDev,
 	int ret = 0;
 #ifdef CONFIG_COMPAT
 	struct compat_iw_point *iwp_compat = NULL;
-	struct iw_point iwp;
+	struct iw_point iwp ;
 #endif
 
 	if (!prIwReqData)
@@ -960,21 +960,19 @@ static int compat_priv(IN struct net_device *prNetDev,
 		iwp.length = iwp_compat->length;
 		iwp.flags = iwp_compat->flags;
 		prIwp = &iwp;
-	} else
-#endif
-	prIwp = &prIwReqData->data;
-
-
-	ret = priv_func(prNetDev, prIwReqInfo,
+          	ret = priv_func(prNetDev, prIwReqInfo,
 				(union iwreq_data *)prIwp, pcExtra);
-
-#ifdef CONFIG_COMPAT
-	if (prIwReqInfo->flags & IW_REQUEST_FLAG_COMPAT) {
 		iwp_compat->pointer = ptr_to_compat(iwp.pointer);
 		iwp_compat->length = iwp.length;
 		iwp_compat->flags = iwp.flags;
-	}
+	} else
 #endif
+	{
+		prIwp = &prIwReqData->data;
+
+		ret = priv_func(prNetDev, prIwReqInfo,
+				(union iwreq_data *)prIwp, pcExtra);
+        }
 	return ret;
 }
 
