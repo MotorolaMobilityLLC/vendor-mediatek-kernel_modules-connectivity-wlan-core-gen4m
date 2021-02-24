@@ -7631,9 +7631,14 @@ static uint32_t kalPerMonUpdate(IN struct ADAPTER *prAdapter)
 		if (txDiffBytes[i] < 0 || rxDiffBytes[i] < 0) {
 			/* overflow should not happen */
 			DBGLOG(SW4, WARN,
-				"[i]wrong bytes: tx[%lu][%ld][%ld], rx[%lu][%ld][%ld],\n",
-				i, currentTxBytes, lastTxBytes, txDiffBytes[i],
-				currentRxBytes, lastRxBytes, rxDiffBytes[i]);
+				"[i]wrong bytes: tx[%llu][%lld][%lld], rx[%llu][%lld][%lld],\n",
+				i,
+				(unsigned long long) currentTxBytes,
+				(long long) lastTxBytes,
+				(long long) txDiffBytes[i],
+				(unsigned long long) currentRxBytes,
+				(long long) lastRxBytes,
+				(long long) rxDiffBytes[i]);
 			goto fail;
 		}
 
@@ -7650,16 +7655,16 @@ static uint32_t kalPerMonUpdate(IN struct ADAPTER *prAdapter)
 
 	/* The length should include
 	 * 1. "[%ld:%ld:%ld:%ld]" for each bss, %ld range is
-	 *    [-2147483647, +2147483647]
+	 *    [-9223372036854775807, +9223372036854775807]
 	 * 2. "[%d:...:%d]" for pending frame num, %d range is [-32767, 32767]
 	 * 3. "[%u]" for each TX ring, %u range is [0, 65536]
 	 * 4. ["%lu:%lu:%lu:%lu] dropped packets by each ndev, "%lu" range is
-	 *    [0, 4294967295]
+	 *    [0, 18446744073709551615]
 	 */
-	slen = (11 * 4 + 5) * BSS_DEFAULT_NUM + 1 +
+	slen = (20 * 4 + 5) * BSS_DEFAULT_NUM + 1 +
 	       (6 * CFG_MAX_TXQ_NUM + 2 - 1) * MAX_BSSID_NUM + 1 +
 	       (5 + 2) * NUM_OF_TX_RING + 1 +
-	       (10 * 4 + 5) * BSS_DEFAULT_NUM + 1;
+	       (20 * 4 + 5) * BSS_DEFAULT_NUM + 1;
 	pos = buf = kalMemAlloc(slen, VIR_MEM_TYPE);
 	if (pos == NULL) {
 		DBGLOG(SW4, INFO, "Can't allocate memory\n");
@@ -7669,9 +7674,11 @@ static uint32_t kalPerMonUpdate(IN struct ADAPTER *prAdapter)
 	end = buf + slen;
 	head1 = pos;
 	for (i = 0; i < BSS_DEFAULT_NUM; ++i) {
-		pos += kalSnprintf(pos, end - pos, "[%ld:%ld:%ld:%ld]",
-			txDiffBytes[i], txDiffPkts[i],
-			rxDiffBytes[i], rxDiffPkts[i]);
+		pos += kalSnprintf(pos, end - pos, "[%lld:%lld:%lld:%lld]",
+			(long long) txDiffBytes[i],
+			(long long) txDiffPkts[i],
+			(long long) rxDiffBytes[i],
+			(long long) rxDiffPkts[i]);
 	}
 	pos++;
 	head2 = pos;
@@ -7695,33 +7702,39 @@ static uint32_t kalPerMonUpdate(IN struct ADAPTER *prAdapter)
 	for (i = 0; i < BSS_DEFAULT_NUM; ++i) {
 		ndev = wlanGetNetDev(glue, i);
 		if (ndev) {
-			pos += kalSnprintf(pos, end - pos, "[%lu:%lu:%lu:%lu]",
-				ndev->stats.tx_dropped,
-				atomic_long_read(&ndev->tx_dropped),
-				ndev->stats.rx_dropped,
-				atomic_long_read(&ndev->rx_dropped));
+			pos += kalSnprintf(pos, end - pos,
+				"[%llu:%llu:%llu:%llu]",
+				(unsigned long long) ndev->stats.tx_dropped,
+				(unsigned long long)
+					atomic_long_read(&ndev->tx_dropped),
+				(unsigned long long) ndev->stats.rx_dropped,
+				(unsigned long long)
+					atomic_long_read(&ndev->rx_dropped));
 		}
 	}
 
 #define TEMP_LOG_TEMPLATE \
-	"<%dms> Tput: %llu(%lu.%03lumbps) %s Pending: %d/%d %s Used: " \
-	"%u/%d/%d %s LQ[%lu:%lu:%lu] Drop: %s lv:%u th:%u fg:0x%lx\n"
+	"<%dms> Tput: %llu(%llu.%03llumbps) %s Pending:%d/%d %s Used:" \
+	"%u/%d/%d %s LQ[%llu:%llu:%llu] Ndev%s lv:%u th:%u fg:0x%lx\n"
 	DBGLOG(SW4, INFO, TEMP_LOG_TEMPLATE,
-		period,	perf->ulThroughput,
-		(unsigned long) (perf->ulThroughput >> 20),
-		(unsigned long) ((perf->ulThroughput >> 10) & BITS(0, 9)),
+		period,	(unsigned long long) perf->ulThroughput,
+		(unsigned long long) (perf->ulThroughput >> 20),
+		(unsigned long long) ((perf->ulThroughput >> 10) & BITS(0, 9)),
 		head1, GLUE_GET_REF_CNT(glue->i4TxPendingFrameNum),
 		prAdapter->rWifiVar.u4NetifStopTh, head2,
 		hif->rTokenInfo.u4UsedCnt, HIF_TX_MSDU_TOKEN_NUM,
-		TX_RING_SIZE, head3, lq->u8TxTotalCount, lq->u8RxTotalCount,
-		lq->u8DiffIdleSlotCount, head4, perf->u4CurrPerfLevel,
+		TX_RING_SIZE, head3,
+		(unsigned long long) lq->u8TxTotalCount,
+		(unsigned long long) lq->u8RxTotalCount,
+		(unsigned long long) lq->u8DiffIdleSlotCount,
+		head4, perf->u4CurrPerfLevel,
 		prAdapter->rWifiVar.u4BoostCpuTh,
 		perf->ulPerfMonFlag);
 #undef TEMP_LOG_TEMPLATE
 
-	kalTraceEvent("Tput: %lu.%03lumbps",
-		(unsigned long) (perf->ulThroughput >> 20),
-		(unsigned long) ((perf->ulThroughput >> 10) & BITS(0, 9)));
+	kalTraceEvent("Tput: %llu.%03llumbps",
+		(unsigned long long) (perf->ulThroughput >> 20),
+		(unsigned long long) ((perf->ulThroughput >> 10) & BITS(0, 9)));
 	kalMemFree(buf, VIR_MEM_TYPE, slen);
 	return WLAN_STATUS_SUCCESS;
 fail:
