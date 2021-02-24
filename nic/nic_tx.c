@@ -3487,7 +3487,7 @@ void nicTxProcessTxDoneEvent(IN struct ADAPTER *prAdapter,
 
 		if (prTxDone->ucStatus == 0 &&
 			prMsduInfo->ucBssIndex < MAX_BSSID_NUM)
-			GET_CURRENT_SYSTIME(
+			GET_BOOT_SYSTIME(
 				&prTxCtrl->u4LastTxTime
 				[prMsduInfo->ucBssIndex]);
 	}
