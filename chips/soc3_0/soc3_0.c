@@ -3463,7 +3463,7 @@ int32_t soc3_0_wlanPowerOnInit(
 		POWER_ON_INIT_DONE,
 		FAIL_REASON_NUM
 	} eFailReason;
-	uint32_t i = 0;
+	uint32_t i = 0, j = 0;
 	int32_t i4DevIdx = 0;
 	struct wireless_dev *prWdev = NULL;
 	struct GLUE_INFO *prGlueInfo = NULL;
@@ -3639,8 +3639,9 @@ int32_t soc3_0_wlanPowerOnInit(
 		QUEUE_INITIALIZE(&prAdapter->rTxP0Queue);
 		QUEUE_INITIALIZE(&prAdapter->rTxP1Queue);
 #else
-		for (i = 0; i < TX_PORT_NUM; i++)
-			QUEUE_INITIALIZE(&prAdapter->rTxPQueue[i]);
+		for (i = 0; i < BSS_DEFAULT_NUM; i++)
+			for (j = 0; j < TX_PORT_NUM; j++)
+				QUEUE_INITIALIZE(&prAdapter->rTxPQueue[i][j]);
 #endif
 		QUEUE_INITIALIZE(&prAdapter->rRxQueue);
 		QUEUE_INITIALIZE(&prAdapter->rTxDataDoneQueue);
@@ -4464,7 +4465,7 @@ int soc3_0_wlanPreCalPwrOn(void)
 		ROM_PATCH_DOWNLOAD_FAIL,
 		POWER_ON_INIT_DONE
 	} eFailReason;
-	uint32_t i = 0;
+	uint32_t i = 0, j = 0;
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct ADAPTER *prAdapter = NULL;
 	struct mt66xx_chip_info *prChipInfo;
@@ -4571,8 +4572,9 @@ int soc3_0_wlanPreCalPwrOn(void)
 		QUEUE_INITIALIZE(&prAdapter->rTxP0Queue);
 		QUEUE_INITIALIZE(&prAdapter->rTxP1Queue);
 #else
-		for (i = 0; i < TX_PORT_NUM; i++)
-			QUEUE_INITIALIZE(&prAdapter->rTxPQueue[i]);
+		for (i = 0; i < BSS_DEFAULT_NUM; i++)
+			for (j = 0; j < TX_PORT_NUM; j++)
+				QUEUE_INITIALIZE(&prAdapter->rTxPQueue[i][j]);
 #endif
 		QUEUE_INITIALIZE(&prAdapter->rRxQueue);
 		QUEUE_INITIALIZE(&prAdapter->rTxDataDoneQueue);
