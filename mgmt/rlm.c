@@ -6114,6 +6114,10 @@ rlmChangeOperationMode(
 		return OP_CHANGE_STATUS_VALID_NO_CHANGE;
 	}
 
+	/* Indicate operation mode changes */
+	kalIndicateOpModeChange(prAdapter, ucBssIndex,
+		ucChannelWidth, ucOpTxNss, ucOpRxNss);
+
 	DBGLOG(RLM, INFO,
 		"Intend to change BSS[%d] OP Mode to BW[%d] RxNss[%d] TxNss[%d]\n",
 		ucBssIndex, ucChannelWidth, ucOpRxNss, ucOpTxNss);
