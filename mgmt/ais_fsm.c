@@ -1484,6 +1484,16 @@ enum ENUM_AIS_STATE aisSearchHandleBssDesc(IN struct ADAPTER *prAdapter,
 		prAisFsmInfo->ucConnTrialCount++;
 		prAisFsmInfo->fgTargetChnlScanIssued = FALSE;
 
+#if CFG_SUPPORT_DBDC
+		/* DBDC decsion.may change OpNss */
+		cnmDbdcPreConnectionEnableDecision(
+			prAdapter,
+			prAisBssInfo->ucBssIndex,
+			prBssDesc->eBand,
+			prBssDesc->ucChannelNum,
+			prAisBssInfo->ucWmmQueSet);
+#endif /*CFG_SUPPORT_DBDC*/
+
 		return AIS_STATE_REQ_CHANNEL_JOIN;
 	}
 }
