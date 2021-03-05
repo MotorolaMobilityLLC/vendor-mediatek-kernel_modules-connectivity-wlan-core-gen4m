@@ -133,6 +133,7 @@ static uint8_t *apucRstReason[RST_REASON_MAX] = {
 	(uint8_t *) DISP_STRING("RST_OID_TIMEOUT"),
 	(uint8_t *) DISP_STRING("RST_CMD_TRIGGER"),
 };
+u_int8_t g_IsCoredumpOngoing = FALSE;
 #endif
 
 /*******************************************************************************
@@ -866,12 +867,15 @@ void glResetSubsysRstProcedure(
 			if (g_fgRstRecover == TRUE)
 				g_fgRstRecover = FALSE;
 			else {
-			if (g_eWfRstSource == WF_RST_SOURCE_FW)
-				fw_log_connsys_coredump_start(-1, NULL);
-			else
-				fw_log_connsys_coredump_start(
+				g_IsCoredumpOngoing = TRUE;
+				if (g_eWfRstSource == WF_RST_SOURCE_FW)
+					fw_log_connsys_coredump_start(
+						-1, NULL);
+				else
+					fw_log_connsys_coredump_start(
 						CONNDRV_TYPE_WIFI,
 						apucRstReason[eResetReason]);
+				g_IsCoredumpOngoing = FALSE;
 			}
 #endif
 			if (prGlueInfo && prGlueInfo->u4ReadyFlag) {
@@ -903,12 +907,14 @@ void glResetSubsysRstProcedure(
 		if (g_fgRstRecover == TRUE)
 			g_fgRstRecover = FALSE;
 		else {
+			g_IsCoredumpOngoing = TRUE;
 			if (g_eWfRstSource == WF_RST_SOURCE_FW)
 				fw_log_connsys_coredump_start(-1, NULL);
 			else
-			fw_log_connsys_coredump_start(
+				fw_log_connsys_coredump_start(
 					CONNDRV_TYPE_WIFI,
 					apucRstReason[eResetReason]);
+			g_IsCoredumpOngoing = FALSE;
 		}
 
 #endif
@@ -984,9 +990,11 @@ int wlan_reset_thread_main(void *data)
 #if (CFG_ANDORID_CONNINFRA_COREDUMP_SUPPORT == 1)
 				if (eResetReason >= RST_REASON_MAX)
 					eResetReason = 0;
+				g_IsCoredumpOngoing = TRUE;
 				fw_log_connsys_coredump_start(
 					g_WholeChipRstType,
 					g_WholeChipRstReason);
+				g_IsCoredumpOngoing = FALSE;
 #endif
 				if (prGlueInfo && prGlueInfo->u4ReadyFlag) {
 					glResetMsgHandler(WMTMSG_TYPE_RESET,
