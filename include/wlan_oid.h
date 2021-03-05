@@ -2745,6 +2745,12 @@ wlanoidSetAuthMode(IN struct ADAPTER *prAdapter,
 		   IN uint32_t u4SetBufferLen,
 		   OUT uint32_t *pu4SetInfoLen);
 
+uint32_t
+wlanoidSetAuthorized(IN struct ADAPTER *prAdapter,
+		   IN void *pvSetBuffer,
+		   IN uint32_t u4SetBufferLen,
+		   OUT uint32_t *pu4SetInfoLen);
+
 #if 0
 uint32_t
 wlanoidQueryPrivacyFilter(IN struct ADAPTER *prAdapter,
