@@ -435,7 +435,12 @@ static struct cfg80211_ops mtk_wlan_ops = {
 	.cancel_remain_on_channel = mtk_cfg80211_cancel_remain_on_channel,
 	.mgmt_tx = mtk_cfg80211_mgmt_tx,
 	/* .mgmt_tx_cancel_wait        = mtk_cfg80211_mgmt_tx_cancel_wait, */
+#if KERNEL_VERSION(5, 8, 0) > CFG80211_VERSION_CODE
 	.mgmt_frame_register = mtk_cfg80211_mgmt_frame_register,
+#endif
+#if KERNEL_VERSION(5, 8, 0) <= CFG80211_VERSION_CODE
+	.update_mgmt_frame_registrations = mtk_cfg_mgmt_frame_update,
+#endif
 
 #ifdef CONFIG_NL80211_TESTMODE
 	.testmode_cmd = mtk_cfg80211_testmode_cmd,
@@ -504,6 +509,9 @@ static struct cfg80211_ops mtk_cfg_ops = {
 	/* .mgmt_tx_cancel_wait        = mtk_cfg80211_mgmt_tx_cancel_wait, */
 #if KERNEL_VERSION(5, 8, 0) > CFG80211_VERSION_CODE
 	.mgmt_frame_register = mtk_cfg_mgmt_frame_register,
+#endif
+#if KERNEL_VERSION(5, 8, 0) <= CFG80211_VERSION_CODE
+	.update_mgmt_frame_registrations = mtk_cfg_mgmt_frame_update,
 #endif
 
 #ifdef CONFIG_NL80211_TESTMODE
@@ -803,7 +811,8 @@ static const struct wiphy_vendor_command
 		.doit = mtk_cfg80211_vendor_acs
 #if KERNEL_VERSION(5, 4, 0) <= LINUX_VERSION_CODE
 		,
-		.policy = VENDOR_CMD_RAW_DATA
+		.policy = nla_get_acs_policy,
+		.maxattr = WIFI_VENDOR_ATTR_ACS_MAX
 #endif
 	},
 #endif

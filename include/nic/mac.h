@@ -469,7 +469,7 @@
 #define OFFSET_OF_FC_SUBTYPE                    4
 
 /* 7.1.3.1.2 MAC frame types and subtypes */
-#define MAC_FRAME_TYPE_MGT                      0
+#define MAC_FRAME_TYPE_MGT                      0x0000
 #define MAC_FRAME_TYPE_CTRL                     BIT(2)
 #define MAC_FRAME_TYPE_DATA                     BIT(3)
 #define MAC_FRAME_TYPE_QOS_DATA \
@@ -488,6 +488,21 @@
 #define MAC_FRAME_DEAUTH                        (MAC_FRAME_TYPE_MGT | 0x00C0)
 #define MAC_FRAME_ACTION                        (MAC_FRAME_TYPE_MGT | 0x00D0)
 #define MAC_FRAME_ACTION_NO_ACK                 (MAC_FRAME_TYPE_MGT | 0x00E0)
+
+#define MASK_MAC_FRAME_ASSOC_REQ                BIT(MAC_FRAME_ASSOC_REQ >> 4)
+#define MASK_MAC_FRAME_ASSOC_RSP                BIT(MAC_FRAME_ASSOC_RSP >> 4)
+#define MASK_MAC_FRAME_REASSOC_REQ              BIT(MAC_FRAME_REASSOC_REQ >> 4)
+#define MASK_MAC_FRAME_REASSOC_RSP              BIT(MAC_FRAME_REASSOC_RSP >> 4)
+#define MASK_MAC_FRAME_PROBE_REQ                BIT(MAC_FRAME_PROBE_REQ >> 4)
+#define MASK_MAC_FRAME_PROBE_RSP                BIT(MAC_FRAME_PROBE_RSP >> 4)
+#define MASK_MAC_FRAME_BEACON                   BIT(MAC_FRAME_BEACON >> 4)
+#define MASK_MAC_FRAME_ATIM                     BIT(MAC_FRAME_ATIM >> 4)
+#define MASK_MAC_FRAME_DISASSOC                 BIT(MAC_FRAME_DISASSOC >> 4)
+#define MASK_MAC_FRAME_AUTH                     BIT(MAC_FRAME_AUTH >> 4)
+#define MASK_MAC_FRAME_DEAUTH                   BIT(MAC_FRAME_DEAUTH >> 4)
+#define MASK_MAC_FRAME_ACTION                   BIT(MAC_FRAME_ACTION >> 4)
+#define MASK_MAC_FRAME_ACTION_NO_ACK \
+	BIT(MAC_FRAME_ACTION_NO_ACK >> 4)
 
 #define MAC_FRAME_HE_TRIGGER                    (MAC_FRAME_TYPE_CTRL | 0x0020)
 #define MAC_FRAME_CONTRL_WRAPPER                (MAC_FRAME_TYPE_CTRL | 0x0070)

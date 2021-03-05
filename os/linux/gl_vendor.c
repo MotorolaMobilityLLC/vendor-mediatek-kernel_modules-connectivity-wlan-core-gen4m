@@ -134,7 +134,7 @@ static struct nla_policy nla_get_preferred_freq_list_policy[
 	[WIFI_VENDOR_ATTR_PREFERRED_FREQ_LIST_IFACE_TYPE] = {.type = NLA_U32},
 };
 
-static const struct nla_policy nla_get_acs_policy[
+const struct nla_policy nla_get_acs_policy[
 		WIFI_VENDOR_ATTR_ACS_MAX + 1] = {
 	[WIFI_VENDOR_ATTR_ACS_HW_MODE] = { .type = NLA_U8 },
 	[WIFI_VENDOR_ATTR_ACS_HT_ENABLED] = { .type = NLA_FLAG },
