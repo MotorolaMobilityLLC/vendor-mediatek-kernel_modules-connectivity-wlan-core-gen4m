@@ -820,8 +820,8 @@ do { \
 #define MSEC_TO_JIFFIES(_msec) KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
 
 #define KAL_TIME_INTERVAL_DECLARATION()     uint32_t timeval __rTs, __rTe
-#define KAL_REC_TIME_START()                do_gettimeofday(&__rTs)
-#define KAL_REC_TIME_END()                  do_gettimeofday(&__rTe)
+#define KAL_REC_TIME_START()                ktime_get_ts64(&__rTs)
+#define KAL_REC_TIME_END()                  ktime_get_ts64(&__rTe)
 #define KAL_GET_TIME_INTERVAL() \
 	((SEC_TO_USEC(__rTe.tv_sec) + __rTe.tv_usec) - \
 	(SEC_TO_USEC(__rTs.tv_sec) + __rTs.tv_usec))

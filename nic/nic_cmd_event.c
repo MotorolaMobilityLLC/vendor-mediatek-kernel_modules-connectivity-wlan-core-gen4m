@@ -5366,7 +5366,7 @@ void nicEventUpdateLowLatencyInfoStatus(IN struct ADAPTER *prAdapter,
 {
 	struct EVENT_LOW_LATENCY_INFO *prEvtLowLatencyInfo;
 	struct rtc_time tm;
-	struct timeval tv = { 0 };
+	struct timespec64 tv = { 0 };
 #if CFG_SUPPORT_DATA_STALL
 	uint8_t event[12];
 	uint32_t iEventTime;
@@ -5378,8 +5378,8 @@ void nicEventUpdateLowLatencyInfoStatus(IN struct ADAPTER *prAdapter,
 	prEvtLowLatencyInfo =
 		(struct EVENT_LOW_LATENCY_INFO *)(prEvent->aucBuffer);
 
-	do_gettimeofday(&tv);
-	rtc_time_to_tm(tv.tv_sec, &tm);
+	ktime_get_ts64(&tv);
+	rtc_time64_to_tm(tv.tv_sec, &tm);
 
 	DBGLOG_LIMITED(NIC, INFO,
 	       "Low Latency DPP Info: drv cert=[%d], evt cert=[%d], evt dup=[%d] drv det=[%d] %02d-%02d %02d:%02d:%02d.%06u\n",
@@ -5388,8 +5388,7 @@ void nicEventUpdateLowLatencyInfoStatus(IN struct ADAPTER *prAdapter,
 	       prEvtLowLatencyInfo->fgTxDupEnable,
 	       prAdapter->fgEnTxDupDetect,
 	       tm.tm_mon + 1, tm.tm_mday, tm.tm_hour,
-	       tm.tm_min, tm.tm_sec, (unsigned int)tv.tv_usec);
-
+	       tm.tm_min, tm.tm_sec, (unsigned int)NSEC_TO_USEC(tv.tv_nsec));
 	if (prAdapter->fgTxDupCertificate != prEvtLowLatencyInfo->fgTxDupCert) {
 
 		prAdapter->fgTxDupCertificate =
@@ -5399,7 +5398,7 @@ void nicEventUpdateLowLatencyInfoStatus(IN struct ADAPTER *prAdapter,
 		ret = sprintf(event, "%03d%02d%06u",
 			EVENT_TX_DUP_CERT_CHANGE,
 			tm.tm_sec,
-			(unsigned int)tv.tv_usec);
+			(unsigned int)NSEC_TO_USEC(tv.tv_nsec));
 		if (ret < 0 || ret > sizeof(event)) {
 			DBGLOG_LIMITED(NIC, INFO, "sprintf failed:%d\n", ret);
 			return;
@@ -5426,12 +5425,12 @@ void nicEventUpdateLowLatencyInfoStatus(IN struct ADAPTER *prAdapter,
 				ret = sprintf(event, "%03d%02d%06u",
 					EVENT_TX_DUP_ON,
 					tm.tm_sec,
-					(unsigned int)tv.tv_usec);
+					(unsigned int)NSEC_TO_USEC(tv.tv_nsec));
 			} else {
 				ret = sprintf(event, "%03d%02d%06u",
 					EVENT_TX_DUP_OFF,
 					tm.tm_sec,
-					(unsigned int)tv.tv_usec);
+					(unsigned int)NSEC_TO_USEC(tv.tv_nsec));
 			}
 			if (ret < 0 || ret > sizeof(event)) {
 				DBGLOG_LIMITED(NIC, INFO,

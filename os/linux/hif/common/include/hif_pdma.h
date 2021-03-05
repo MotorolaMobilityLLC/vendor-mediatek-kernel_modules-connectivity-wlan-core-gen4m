@@ -366,7 +366,7 @@ struct PCIE_CHIP_CR_MAPPING {
 struct MSDU_TOKEN_ENTRY {
 	uint32_t u4Token;
 	u_int8_t fgInUsed;
-	struct timeval rTs;	/* token tx timestamp */
+	struct timespec64 rTs;	/* token tx timestamp */
 	uint32_t u4CpuIdx;	/* tx ring cell index */
 	struct MSDU_INFO *prMsduInfo;
 	void *prPacket;
@@ -487,7 +487,7 @@ void halHwRecoveryTimeout(unsigned long arg);
 void halHwRecoveryFromError(IN struct ADAPTER *prAdapter);
 
 /* Debug functions */
-int halTimeCompare(struct timeval *prTs1, struct timeval *prTs2);
+int halTimeCompare(struct timespec64 *prTs1, struct timespec64 *prTs2);
 void halShowPdmaInfo(IN struct ADAPTER *prAdapter);
 bool halShowHostCsrInfo(IN struct ADAPTER *prAdapter);
 void kalDumpTxRing(struct GLUE_INFO *prGlueInfo,

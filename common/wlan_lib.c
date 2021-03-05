@@ -7837,7 +7837,7 @@ void wlanCfgSetChip(IN struct ADAPTER *prAdapter)
 /* Send kernel time to FW */
 void wlanCfgSetChipSyncTime(IN struct ADAPTER *prAdapter)
 {
-	struct timeval time;
+	struct timespec64 time;
 	unsigned int second, usecond;
 
 	int8_t aucKey[WLAN_CFG_VALUE_LEN_MAX];
@@ -7848,9 +7848,11 @@ void wlanCfgSetChipSyncTime(IN struct ADAPTER *prAdapter)
 	struct GLUE_INFO *prGlueInfo = prAdapter->prGlueInfo;
 	struct PARAM_CUSTOM_CHIP_CONFIG_STRUCT rChipConfigInfo;
 
-	do_gettimeofday(&time);
-	second = (unsigned int)time.tv_sec; /* UTC time second unit */
-	usecond = (unsigned int)time.tv_usec; /* UTC time microsecond unit */
+	ktime_get_ts64(&time);
+	/* UTC time second unit */
+	second = (unsigned int)time.tv_sec;
+	/* UTC time microsecond unit */
+	usecond = (unsigned int)NSEC_TO_USEC(time.tv_nsec);
 
 	kalMemZero(aucValue, WLAN_CFG_VALUE_LEN_MAX);
 	kalMemZero(aucKey, WLAN_CFG_VALUE_LEN_MAX);
