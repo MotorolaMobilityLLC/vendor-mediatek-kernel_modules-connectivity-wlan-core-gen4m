@@ -2177,6 +2177,17 @@ void p2pRoleFsmRunEventConnectionAbort(IN struct ADAPTER *prAdapter,
 				break;
 			}
 
+			if (IS_NET_PWR_STATE_IDLE(prAdapter,
+				prP2pBssInfo->ucBssIndex) &&
+				IS_NET_ACTIVE(prAdapter,
+					prP2pBssInfo->ucBssIndex) &&
+				prP2pBssInfo->eConnectionState ==
+					MEDIA_STATE_CONNECTED) {
+				DBGLOG(P2P, INFO,
+					"under deauth, ignore disconnection procedure\n");
+				break;
+			}
+
 			prStaRec = prP2pBssInfo->prStaRecOfAP;
 
 			/* Stop rejoin timer if it is started. */
