@@ -242,7 +242,7 @@ extern struct regmap *g_regmap;
 #endif
 
 #if (CFG_ANDORID_CONNINFRA_COREDUMP_SUPPORT == 1)
-extern u_int8_t g_IsCoredumpOngoing;
+extern u_int8_t g_IsNeedWaitCoredump;
 #endif
 /*******************************************************************************
 *                           P R I V A T E   D A T A

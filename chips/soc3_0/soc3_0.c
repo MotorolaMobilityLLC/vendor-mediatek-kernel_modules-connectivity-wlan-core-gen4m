@@ -1220,15 +1220,12 @@ int soc3_0_Trigger_fw_assert(void)
 	int ret = 0;
 	int value = 0;
 	uint32_t waitRet = 0;
-#if (CFG_SUPPORT_CONNINFRA == 1)
-	if (get_wifi_process_status() == 1) {
-		DBGLOG(HAL, ERROR,
-			"Wi-Fi on/off process is ongoing, ignore assert request.\n");
-		fgIsResetting = FALSE;
-		update_driver_reset_status(fgIsResetting);
-		return 0;
-	}
-#endif
+	struct ADAPTER *prAdapter = NULL;
+	struct GLUE_INFO *prGlueInfo = NULL;
+
+	prGlueInfo = (struct GLUE_INFO *)wiphy_priv(wlanGetWiphy());
+	prAdapter = prGlueInfo->prAdapter;
+
 	soc3_0_CheckBusHang(NULL, FALSE);
 	if (g_IsWfsysBusHang == TRUE) {
 		DBGLOG(HAL, INFO,
@@ -1252,6 +1249,10 @@ int soc3_0_Trigger_fw_assert(void)
 			soc3_0_DumpWfsysInfo();
 			soc3_0_DumpWfsysdebugflag();
 			g_IsTriggerTimeout = TRUE;
+#if (CFG_ANDORID_CONNINFRA_COREDUMP_SUPPORT == 1)
+		if (!prAdapter->prGlueInfo->u4ReadyFlag)
+			g_IsNeedWaitCoredump = TRUE;
+#endif
 	}
 #if (CFG_SUPPORT_CONNINFRA == 1)
 		kalSetRstEvent();
@@ -2291,7 +2292,7 @@ int wf_pwr_off_consys_mcu(void)
 	int retryCount = 0;
 
 #if (CFG_ANDORID_CONNINFRA_COREDUMP_SUPPORT == 1)
-	while (g_IsCoredumpOngoing) {
+	while (g_IsNeedWaitCoredump) {
 		kalMsleep(100);
 		retryCount++;
 		if (retryCount >= MAX_WAIT_COREDUMP_COUNT) {
@@ -2725,6 +2726,8 @@ void soc3_0_Sw_interrupt_handler(struct ADAPTER *prAdapter)
 		disable_irq_nosync(prHifInfo->u4IrqId_1);
 #if (CFG_ANDORID_CONNINFRA_COREDUMP_SUPPORT == 1)
 		g_eWfRstSource = WF_RST_SOURCE_FW;
+		if (!prAdapter->prGlueInfo->u4ReadyFlag)
+			g_IsNeedWaitCoredump = TRUE;
 #endif
 		DBGLOG(HAL, ERROR,
 			"FW trigger assert(0x%x).\n", value);
@@ -2762,6 +2765,8 @@ void soc3_0_Sw_interrupt_handler(struct ADAPTER *prAdapter)
 		} else {
 #if (CFG_ANDORID_CONNINFRA_COREDUMP_SUPPORT == 1)
 			g_eWfRstSource = WF_RST_SOURCE_FW;
+			if (!prAdapter->prGlueInfo->u4ReadyFlag)
+				g_IsNeedWaitCoredump = TRUE;
 #endif
 			DBGLOG(HAL, ERROR,
 				"FW trigger assert(0x%x).\n", value);
@@ -2773,6 +2778,8 @@ void soc3_0_Sw_interrupt_handler(struct ADAPTER *prAdapter)
 	if (value & BIT(2)) {
 #if (CFG_ANDORID_CONNINFRA_COREDUMP_SUPPORT == 1)
 		g_eWfRstSource = WF_RST_SOURCE_FW;
+		if (!prAdapter->prGlueInfo->u4ReadyFlag)
+			g_IsNeedWaitCoredump = TRUE;
 #endif
 		DBGLOG(HAL, ERROR,
 			"FW trigger whole chip reset(0x%x).\n", value);
@@ -2784,6 +2791,8 @@ void soc3_0_Sw_interrupt_handler(struct ADAPTER *prAdapter)
 	if (value & BIT(3)) {
 #if (CFG_ANDORID_CONNINFRA_COREDUMP_SUPPORT == 1)
 		g_eWfRstSource = WF_RST_SOURCE_FW;
+		if (!prAdapter->prGlueInfo->u4ReadyFlag)
+			g_IsNeedWaitCoredump = TRUE;
 #endif
 		g_fgRstRecover = TRUE;
 		fgIsResetting = TRUE;
