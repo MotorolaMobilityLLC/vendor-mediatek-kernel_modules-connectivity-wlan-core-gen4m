@@ -3441,24 +3441,7 @@ void cnmDbdcEventHwSwitchDone(IN struct ADAPTER
 			      *prAdapter,
 			      IN struct WIFI_EVENT *prEvent)
 {
-	struct CMD_INFO *prCmdInfo;
 	u_int8_t fgDbdcEn;
-
-	/* command response handling */
-	prCmdInfo = nicGetPendingCmdInfo(prAdapter,
-					 prEvent->ucSeqNum);
-
-	if (prCmdInfo != NULL) {
-		if (prCmdInfo->pfCmdDoneHandler)
-			prCmdInfo->pfCmdDoneHandler(prAdapter, prCmdInfo,
-						    prEvent->aucBuffer);
-		else if (prCmdInfo->fgIsOid)
-			kalOidComplete(prAdapter->prGlueInfo,
-				       prCmdInfo->fgSetQuery,
-				       0, WLAN_STATUS_SUCCESS);
-		/* return prCmdInfo */
-		cmdBufFreeCmdInfo(prAdapter, prCmdInfo);
-	}
 
 	/* Check DBDC state by FSM */
 	if (g_rDbdcInfo.eDbdcFsmCurrState ==
