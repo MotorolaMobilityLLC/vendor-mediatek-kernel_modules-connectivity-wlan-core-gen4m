@@ -993,6 +993,11 @@ struct RX_DESC_OPS_T {
 #endif /* CFG_SUPPORT_WAKEUP_REASON_DEBUG */
 };
 
+struct ACTION_FRAME_SIZE_MAP {
+	uint16_t u2Index; /* High byte for Action, low byte for Category */
+	size_t len;
+};
+
 /*******************************************************************************
  *                           P R I V A T E   D A T A
  *******************************************************************************

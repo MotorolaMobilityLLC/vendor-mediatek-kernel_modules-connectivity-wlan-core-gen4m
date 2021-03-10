@@ -1687,6 +1687,8 @@ enum BEACON_REPORT_DETAIL {
 /* 7.4.7 Public Action frame details */
 /* 20/40 BSS coexistence */
 #define ACTION_PUBLIC_20_40_COEXIST                 0
+/* 20/40 BSS coexistence */
+#define ACTION_PUBLIC_VENDOR_SPECIFIC               9
 
 #if CFG_SUPPORT_802_11W
 /* SA Query Action frame (IEEE 802.11w/D8.0, 7.4.9) */
