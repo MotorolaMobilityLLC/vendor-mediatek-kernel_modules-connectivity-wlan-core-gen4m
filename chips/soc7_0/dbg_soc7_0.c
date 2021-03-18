@@ -3,7 +3,7 @@
  * Copyright (c) 2020 MediaTek Inc.
  */
 /******************************************************************************
- *[File]             dbg_soc5_0.c
+ *[File]             dbg_soc7_0.c
  *[Version]          v1.0
  *[Revision Date]    2020-05-22
  *[Author]
@@ -13,13 +13,12 @@
  *    Copyright (C) 2015 MediaTek Incorporation. All Rights Reserved.
  ******************************************************************************/
 
-#ifdef SOC5_0
+#ifdef SOC7_0
 
 #include "precomp.h"
-#include "soc5_0.h"
-#include "coda/soc5_0/wf_wfdma_host_dma0.h"
-#include "coda/soc5_0/wf_wfdma_mcu_dma0.h"
-#include "coda/soc5_0/wf_hif_dmashdl_top.h"
+#include "soc7_0.h"
+#include "coda/soc7_0/wf_wfdma_host_dma0.h"
+#include "coda/soc7_0/wf_hif_dmashdl_top.h"
 
 /*******************************************************************************
  *                         C O M P I L E R   F L A G S
@@ -51,19 +50,28 @@
  *******************************************************************************
  */
 
-void soc5_0_show_ple_info(struct ADAPTER *prAdapter, u_int8_t fgDumpTxd)
+void soc7_0_show_ple_info(struct ADAPTER *prAdapter, u_int8_t fgDumpTxd)
 {
 	if (!prAdapter)
 		return;
 }
 
-void soc5_0_show_pse_info(struct ADAPTER *prAdapter)
+void soc7_0_show_pse_info(struct ADAPTER *prAdapter)
 {
+	uint32_t u4DmaCfgCr = 0;
+	uint32_t u4RegValue = 0;
+
 	if (!prAdapter)
 		return;
+
+	u4DmaCfgCr = 0x820C80B0;
+	HAL_MCR_RD(prAdapter, u4DmaCfgCr, &u4RegValue);
+	DBGLOG(INIT, INFO, "QUEUE_EMPTY(0x%08x): 0x%08x\n",
+			u4DmaCfgCr,
+			u4RegValue);
 }
 
-bool soc5_0_show_host_csr_info(struct ADAPTER *prAdapter)
+bool soc7_0_show_host_csr_info(struct ADAPTER *prAdapter)
 {
 	if (!prAdapter)
 		return false;
@@ -71,24 +79,22 @@ bool soc5_0_show_host_csr_info(struct ADAPTER *prAdapter)
 	return true;
 }
 
-void soc5_0_show_wfdma_dbg_probe_info(IN struct ADAPTER *prAdapter,
+void soc7_0_show_wfdma_dbg_probe_info(IN struct ADAPTER *prAdapter,
 	IN enum _ENUM_WFDMA_TYPE_T enum_wfdma_type)
 {
-	uint32_t dbg_cr_idx[] = {0x0, 0x1, 0x31, 0x2D, 0x2, 0x3, 0x54, 0x4,
-		0x29, 0x30, 0x5, 0x7, 0xA, 0xB, 0xC};
+	uint32_t dbg_cr_idx[] = {0x0, 0x1, 0x2, 0x3, 0x30, 0x5, 0x7, 0xA, 0xB,
+		0xC};
 	uint32_t i = 0, u4DbgIdxAddr = 0, u4DbgProbeAddr = 0, u4DbgIdxValue = 0,
 		u4DbgProbeValue = 0;
 
 	if (!prAdapter)
 		return;
 
-	if (enum_wfdma_type == WFDMA_TYPE_HOST) {
-		u4DbgIdxAddr = WF_WFDMA_HOST_DMA0_WPDMA_DBG_IDX_ADDR;
-		u4DbgProbeAddr = WF_WFDMA_HOST_DMA0_WPDMA_DBG_PROBE_ADDR;
-	} else {
-		u4DbgIdxAddr = WF_WFDMA_MCU_DMA0_WPDMA_DBG_IDX_ADDR;
-		u4DbgProbeAddr = WF_WFDMA_MCU_DMA0_WPDMA_DBG_PROBE_ADDR;
-	}
+	if (enum_wfdma_type != WFDMA_TYPE_HOST)
+		return;
+
+	u4DbgIdxAddr = WF_WFDMA_HOST_DMA0_WPDMA_DBG_IDX_ADDR;
+	u4DbgProbeAddr = WF_WFDMA_HOST_DMA0_WPDMA_DBG_PROBE_ADDR;
 
 	for (i = 0; i < ARRAY_SIZE(dbg_cr_idx); i++) {
 		u4DbgIdxValue = 0x100 + dbg_cr_idx[i];
@@ -99,7 +105,7 @@ void soc5_0_show_wfdma_dbg_probe_info(IN struct ADAPTER *prAdapter,
 	}
 }
 
-void soc5_0_show_wfdma_wrapper_info(IN struct ADAPTER *prAdapter,
+void soc7_0_show_wfdma_wrapper_info(IN struct ADAPTER *prAdapter,
 	IN enum _ENUM_WFDMA_TYPE_T enum_wfdma_type)
 {
 	uint32_t u4DmaCfgCr = 0;
@@ -126,25 +132,13 @@ void soc5_0_show_wfdma_wrapper_info(IN struct ADAPTER *prAdapter,
 		DBGLOG(INIT, INFO, "WFDMA_AXI_SLPPROT0_CTRL(0x%08x): 0x%08x\n",
 				u4DmaCfgCr,
 				u4RegValue);
-	} else {
-		u4DmaCfgCr = 0x57000044;
-		HAL_MCR_RD(prAdapter, u4DmaCfgCr, &u4RegValue);
-		DBGLOG(INIT, INFO, "WFDMA_HIF_BUSY(0x%08x): 0x%08x\n",
-				u4DmaCfgCr,
-				u4RegValue);
 
-		u4DmaCfgCr = 0x57000050;
+		u4DmaCfgCr = 0x7c02707C;
 		HAL_MCR_RD(prAdapter, u4DmaCfgCr, &u4RegValue);
-		DBGLOG(INIT, INFO, "WFDMA_AXI_SLPPROT_CTRL(0x%08x): 0x%08x\n",
-				u4DmaCfgCr,
-				u4RegValue);
-
-		u4DmaCfgCr = 0x57000078;
-		HAL_MCR_RD(prAdapter, u4DmaCfgCr, &u4RegValue);
-		DBGLOG(INIT, INFO, "WFDMA_AXI_SLPPROT0_CTRL(0x%08x): 0x%08x\n",
+		DBGLOG(INIT, INFO, "WFDMA_AXI_SLPPROT1_CTRL(0x%08x): 0x%08x\n",
 				u4DmaCfgCr,
 				u4RegValue);
 	}
 }
 
-#endif /* SOC5_0 */
+#endif /* SOC7_0 */

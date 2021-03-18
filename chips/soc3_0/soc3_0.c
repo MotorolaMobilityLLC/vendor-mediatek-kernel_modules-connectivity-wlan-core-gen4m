@@ -72,6 +72,8 @@
 
 #include "coda/soc3_0/wf_wfdma_host_dma0.h"
 #include "coda/soc3_0/wf_wfdma_host_dma1.h"
+#include "coda/soc3_0/wf_wfdma_mcu_dma0.h"
+#include "coda/soc3_0/wf_wfdma_mcu_dma1.h"
 
 #include "coda/soc3_0/conn_infra_cfg.h"
 
@@ -285,6 +287,42 @@ struct PCIE_CHIP_CR_MAPPING soc3_0_bus2chip_cr_mapping[] = {
 	{0x0, 0x0, 0x0} /* End */
 };
 #endif
+
+struct wfdma_group_info wfmda_host_tx_group[] = {
+	{"P1T0:AP DATA0", WF_WFDMA_HOST_DMA1_WPDMA_TX_RING0_CTRL0_ADDR},
+	{"P1T1:AP DATA1", WF_WFDMA_HOST_DMA1_WPDMA_TX_RING1_CTRL0_ADDR},
+	{"P1T16:FWDL", WF_WFDMA_HOST_DMA1_WPDMA_TX_RING16_CTRL0_ADDR},
+	{"P1T17:AP CMD", WF_WFDMA_HOST_DMA1_WPDMA_TX_RING17_CTRL0_ADDR},
+	{"P1T8:MD DATA", WF_WFDMA_HOST_DMA1_WPDMA_TX_RING8_CTRL0_ADDR},
+	{"P1T18:MD CMD", WF_WFDMA_HOST_DMA1_WPDMA_TX_RING18_CTRL0_ADDR},
+};
+
+struct wfdma_group_info wfmda_host_rx_group[] = {
+	{"P0R0:AP DATA0", WF_WFDMA_HOST_DMA0_WPDMA_RX_RING0_CTRL0_ADDR},
+	{"P0R1:AP DATA1", WF_WFDMA_HOST_DMA0_WPDMA_RX_RING1_CTRL0_ADDR},
+	{"P0R2:AP TDONE0", WF_WFDMA_HOST_DMA0_WPDMA_RX_RING2_CTRL0_ADDR},
+	{"P0R3:AP TDONE1", WF_WFDMA_HOST_DMA0_WPDMA_RX_RING3_CTRL0_ADDR},
+	{"P1R0:AP EVENT", WF_WFDMA_HOST_DMA1_WPDMA_RX_RING0_CTRL0_ADDR},
+	{"P0R4:MD DATA0", WF_WFDMA_HOST_DMA0_WPDMA_RX_RING4_CTRL0_ADDR},
+	{"P0R5:MD DATA1", WF_WFDMA_HOST_DMA0_WPDMA_RX_RING5_CTRL0_ADDR},
+	{"P0R6:MD TDONE0", WF_WFDMA_HOST_DMA0_WPDMA_RX_RING6_CTRL0_ADDR},
+	{"P0R7:MD TDONE1", WF_WFDMA_HOST_DMA0_WPDMA_RX_RING7_CTRL0_ADDR},
+	{"P1R1:MD EVENT", WF_WFDMA_HOST_DMA1_WPDMA_RX_RING1_CTRL0_ADDR},
+};
+
+struct wfdma_group_info wfmda_wm_tx_group[] = {
+	{"P0T0:DATA", WF_WFDMA_MCU_DMA0_WPDMA_TX_RING0_CTRL0_ADDR},
+	{"P1T0:AP EVENT", WF_WFDMA_MCU_DMA1_WPDMA_TX_RING0_CTRL0_ADDR},
+	{"P1T1:MD EVENT", WF_WFDMA_MCU_DMA1_WPDMA_TX_RING1_CTRL0_ADDR},
+};
+
+struct wfdma_group_info wfmda_wm_rx_group[] = {
+	{"P0R0:DATA", WF_WFDMA_MCU_DMA0_WPDMA_RX_RING0_CTRL0_ADDR},
+	{"P0R1:TXDONE", WF_WFDMA_MCU_DMA0_WPDMA_RX_RING1_CTRL0_ADDR},
+	{"P1R0:FWDL", WF_WFDMA_MCU_DMA1_WPDMA_RX_RING0_CTRL0_ADDR},
+	{"P1R1:AP CMD", WF_WFDMA_MCU_DMA1_WPDMA_RX_RING1_CTRL0_ADDR},
+	{"P1R2:MD CMD", WF_WFDMA_MCU_DMA1_WPDMA_RX_RING2_CTRL0_ADDR},
+};
 
 static bool soc3_0WfdmaAllocRxRing(
 	struct GLUE_INFO *prGlueInfo,
@@ -778,6 +816,14 @@ struct BUS_INFO soc3_0_bus_info = {
 	.pcie2ap_remap_2 = CONN_INFRA_CFG_PCIE2AP_REMAP_2_ADDR,
 #endif
 	.ap2wf_remap_1 = CONN_INFRA_CFG_AP2WF_REMAP_1_ADDR,
+	.wfmda_host_tx_group = wfmda_host_tx_group,
+	.wfmda_host_tx_group_len = ARRAY_SIZE(wfmda_host_tx_group),
+	.wfmda_host_rx_group = wfmda_host_rx_group,
+	.wfmda_host_rx_group_len = ARRAY_SIZE(wfmda_host_rx_group),
+	.wfmda_wm_tx_group = wfmda_wm_tx_group,
+	.wfmda_wm_tx_group_len = ARRAY_SIZE(wfmda_wm_tx_group),
+	.wfmda_wm_rx_group = wfmda_wm_rx_group,
+	.wfmda_wm_rx_group_len = ARRAY_SIZE(wfmda_wm_rx_group),
 	.pdmaSetup = soc3_0asicConnac2xWpdmaConfig,
 	.enableInterrupt = asicConnac2xEnablePlatformIRQ,
 	.disableInterrupt = asicConnac2xDisablePlatformIRQ,
@@ -858,7 +904,7 @@ struct RX_DESC_OPS_T soc3_0_RxDescOps = {
 };
 
 struct CHIP_DBG_OPS soc3_0_debug_ops = {
-	.showPdmaInfo = soc3_0_show_wfdma_info,
+	.showPdmaInfo = connac2x_show_wfdma_info,
 	.showPseInfo = soc3_0_show_pse_info,
 	.showPleInfo = soc3_0_show_ple_info,
 	.showTxdInfo = connac2x_show_txd_Info,
@@ -872,6 +918,7 @@ struct CHIP_DBG_OPS soc3_0_debug_ops = {
 	.show_rx_rate_info = connac2x_show_rx_rate_info,
 	.show_rx_rssi_info = connac2x_show_rx_rssi_info,
 	.show_stat_info = connac2x_show_stat_info,
+	.show_wfdma_dbg_probe_info = soc3_0_show_wfdma_dbg_probe_info,
 };
 
 #if CFG_SUPPORT_QA_TOOL

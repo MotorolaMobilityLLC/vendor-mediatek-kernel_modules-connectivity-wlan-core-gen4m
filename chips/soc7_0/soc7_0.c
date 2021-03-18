@@ -2,7 +2,7 @@
 /*
  * Copyright (c) 2020 MediaTek Inc.
  */
-/*! \file   soc5_0.c
+/*! \file   soc7_0.c
 *    \brief  Internal driver stack will export
 *    the required procedures here for GLUE Layer.
 *
@@ -10,13 +10,12 @@
      from MediaTek 802.11 Wireless LAN driver stack to GLUE Layer.
 */
 
-#ifdef SOC5_0
+#ifdef SOC7_0
 
 #include "precomp.h"
-#include "soc5_0.h"
-#include "coda/soc5_0/wf_wfdma_host_dma0.h"
-#include "coda/soc5_0/wf_wfdma_mcu_dma0.h"
-#include "hal_dmashdl_soc5_0.h"
+#include "soc7_0.h"
+#include "coda/soc7_0/wf_wfdma_host_dma0.h"
+#include "hal_dmashdl_soc7_0.h"
 
 /*******************************************************************************
 *                         C O M P I L E R   F L A G S
@@ -37,33 +36,35 @@
 *                   F U N C T I O N   D E C L A R A T I O N S
 ********************************************************************************
 */
-static void soc5_0_ConstructFirmwarePrio(struct GLUE_INFO *prGlueInfo,
+static void soc7_0_ConstructFirmwarePrio(struct GLUE_INFO *prGlueInfo,
 	uint8_t **apucNameTable, uint8_t **apucName,
 	uint8_t *pucNameIdx, uint8_t ucMaxNameIdx);
 
-static uint8_t soc5_0SetRxRingHwAddr(struct RTMP_RX_RING *prRxRing,
+static uint8_t soc7_0SetRxRingHwAddr(struct RTMP_RX_RING *prRxRing,
 		struct BUS_INFO *prBusInfo, uint32_t u4SwRingIdx);
 
-static bool soc5_0WfdmaAllocRxRing(struct GLUE_INFO *prGlueInfo,
+static bool soc7_0WfdmaAllocRxRing(struct GLUE_INFO *prGlueInfo,
 		bool fgAllocMem);
 
-static void soc5_0asicConnac2xProcessTxInterrupt(
+static void soc7_0asicConnac2xProcessTxInterrupt(
 		struct ADAPTER *prAdapter);
 
-static void soc5_0asicConnac2xProcessRxInterrupt(
+static void soc7_0asicConnac2xProcessRxInterrupt(
 	struct ADAPTER *prAdapter);
 
-static void soc5_0asicConnac2xWfdmaManualPrefetch(
+static void soc7_0asicConnac2xWfdmaManualPrefetch(
 	struct GLUE_INFO *prGlueInfo);
 
-static void soc5_0ReadIntStatus(struct ADAPTER *prAdapter,
+static void soc7_0ReadIntStatus(struct ADAPTER *prAdapter,
 		uint32_t *pu4IntStatus);
 
 static void configIntMask(struct GLUE_INFO *prGlueInfo,
 		u_int8_t enable);
 
-static void soc5_0asicConnac2xWpdmaConfig(struct GLUE_INFO *prGlueInfo,
-		u_int8_t enable, bool fgResetHif);
+static void soc7_0asicConnac2xWpdmaConfig(struct GLUE_INFO *prGlueInfo,
+		u_int8_t enable);
+
+static void soc7_0EnableFwDlMode(struct ADAPTER *prAdapter);
 
 /*******************************************************************************
 *                              F U N C T I O N S
@@ -75,19 +76,19 @@ static void soc5_0asicConnac2xWpdmaConfig(struct GLUE_INFO *prGlueInfo,
 ********************************************************************************
 */
 
-struct ECO_INFO soc5_0_eco_table[] = {
+struct ECO_INFO soc7_0_eco_table[] = {
 	/* HW version,  ROM version,    Factory version */
 	{0x00, 0x00, 0xA, 0x1},	/* E1 */
 	{0x00, 0x00, 0x0, 0x0}	/* End of table */
 };
 
-uint8_t *apucsoc5_0FwName[] = {
-	(uint8_t *) CFG_FW_FILENAME "_soc5_0",
+uint8_t *apucsoc7_0FwName[] = {
+	(uint8_t *) CFG_FW_FILENAME "_soc7_0",
 	NULL
 };
 
 #if defined(_HIF_PCIE)
-struct PCIE_CHIP_CR_MAPPING soc5_0_bus2chip_cr_mapping[] = {
+struct PCIE_CHIP_CR_MAPPING soc7_0_bus2chip_cr_mapping[] = {
 	/* chip addr, bus addr, range */
 	{0x830c0000, 0x00000, 0x1000}, /* WF_MCU_BUS_CR_REMAP */
 	{0x54000000, 0x02000, 0x1000},  /* WFDMA PCIE0 MCU DMA0 */
@@ -139,11 +140,9 @@ struct PCIE_CHIP_CR_MAPPING soc5_0_bus2chip_cr_mapping[] = {
 	{0x7c500000, 0x50000, 0x10000}, /* CONN_INFRA, dyn mem map */
 	{0x7c060000, 0xe0000, 0x10000}, /* CONN_INFRA, conn_host_csr_top */
 	{0x7c000000, 0xf0000, 0x10000}, /* CONN_INFRA */
-	{0x74030000, 0x10000, 0x10000},
-	{0x7c400000, 0x00000, 0x10000},
 };
 #elif defined(_HIF_AXI)
-struct PCIE_CHIP_CR_MAPPING soc5_0_bus2chip_cr_mapping[] = {
+struct PCIE_CHIP_CR_MAPPING soc7_0_bus2chip_cr_mapping[] = {
 	/* chip addr, bus addr, range */
 	{0x830c0000, 0x400000, 0x1000}, /* WF_MCU_BUS_CR_REMAP */
 	{0x54000000, 0x402000, 0x1000},  /* WFDMA PCIE0 MCU DMA0 */
@@ -173,7 +172,7 @@ struct PCIE_CHIP_CR_MAPPING soc5_0_bus2chip_cr_mapping[] = {
 	{0x820d0000, 0x430000, 0x10000}, /* WF_LMAC_TOP (WF_WTBLON) */
 	{0x40000000, 0x470000, 0x10000}, /* WF_UMAC_SYSRAM */
 	{0x00400000, 0x480000, 0x10000}, /* WF_MCU_SYSRAM */
-	{0x00410000, 0x490000, 0x10000}, /* WF_MCU_SYSRAM (config register) */
+	{0x00410000, 0x490000, 0x10000}, /* WF_MCU_SYSRAM (configure register)*/
 	{0x820f0000, 0x4a0000, 0x0400},  /* WF_LMAC_TOP BN1 (WF_CFG) */
 	{0x820f1000, 0x4a0600, 0x0200},  /* WF_LMAC_TOP BN1 (WF_TRB) */
 	{0x820f2000, 0x4a0800, 0x0400},  /* WF_LMAC_TOP BN1 (WF_AGG) */
@@ -191,10 +190,10 @@ struct PCIE_CHIP_CR_MAPPING soc5_0_bus2chip_cr_mapping[] = {
 	{0x820b0000, 0x4ae000, 0x1000},  /* [APB2] WFSYS_ON */
 	{0x80020000, 0x4b0000, 0x10000}, /* WF_TOP_MISC_OFF */
 	{0x81020000, 0x4c0000, 0x10000}, /* WF_TOP_MISC_ON */
-	{0x7c020000, 0x20000,  0x10000}, /* CONN_INFRA, wfdma */
+	{0x7c020000, 0x4d0000, 0x10000}, /* CONN_INFRA, wfdma */
 	{0x7c500000, 0x500000, 0x10000}, /* CONN_INFRA, dyn mem map */
-	{0x7c060000, 0x60000,  0x10000}, /* CONN_INFRA, conn_host_csr_top */
-	{0x7c000000, 0x00000,  0x10000}, /* CONN_INFRA */
+	{0x7c060000, 0x4e0000, 0x10000}, /* CONN_INFRA, conn_host_csr_top */
+	{0x7c000000, 0x4f0000, 0x10000}, /* CONN_INFRA */
 };
 #endif
 
@@ -202,34 +201,19 @@ struct wfdma_group_info wfmda_host_tx_group[] = {
 	{"P0T0:AP DATA0", WF_WFDMA_HOST_DMA0_WPDMA_TX_RING0_CTRL0_ADDR},
 	{"P0T1:AP DATA1", WF_WFDMA_HOST_DMA0_WPDMA_TX_RING1_CTRL0_ADDR},
 	{"P0T16:FWDL", WF_WFDMA_HOST_DMA0_WPDMA_TX_RING16_CTRL0_ADDR},
-	{"P0T17:AP CMD", WF_WFDMA_HOST_DMA0_WPDMA_TX_RING17_CTRL0_ADDR},
+	{"P0T15:AP CMD", WF_WFDMA_HOST_DMA0_WPDMA_TX_RING15_CTRL0_ADDR},
 };
 
 struct wfdma_group_info wfmda_host_rx_group[] = {
-	{"P0R0:AP EVENT", WF_WFDMA_HOST_DMA0_WPDMA_RX_RING0_CTRL0_ADDR},
-	{"P0R2:AP DATA0", WF_WFDMA_HOST_DMA0_WPDMA_RX_RING2_CTRL0_ADDR},
-	{"P0R3:AP DATA1", WF_WFDMA_HOST_DMA0_WPDMA_RX_RING3_CTRL0_ADDR},
-	{"P0R4:AP TDONE0", WF_WFDMA_HOST_DMA0_WPDMA_RX_RING4_CTRL0_ADDR},
-	{"P0R5:AP TDONE1", WF_WFDMA_HOST_DMA0_WPDMA_RX_RING5_CTRL0_ADDR},
+	{"P0R0:AP DATA0", WF_WFDMA_HOST_DMA0_WPDMA_RX_RING0_CTRL0_ADDR},
+	{"P0R1:AP DATA1", WF_WFDMA_HOST_DMA0_WPDMA_RX_RING1_CTRL0_ADDR},
+	{"P0R2:AP TDONE0", WF_WFDMA_HOST_DMA0_WPDMA_RX_RING2_CTRL0_ADDR},
+	{"P0R3:AP TDONE1", WF_WFDMA_HOST_DMA0_WPDMA_RX_RING3_CTRL0_ADDR},
 };
 
-struct wfdma_group_info wfmda_wm_tx_group[] = {
-	{"P0T0:AP EVENT", WF_WFDMA_MCU_DMA0_WPDMA_TX_RING0_CTRL0_ADDR},
-	{"P0T2:DATA", WF_WFDMA_MCU_DMA0_WPDMA_TX_RING2_CTRL0_ADDR},
-	{"P0T3:SW TX Command", WF_WFDMA_MCU_DMA0_WPDMA_TX_RING3_CTRL0_ADDR},
-};
-
-struct wfdma_group_info wfmda_wm_rx_group[] = {
-	{"P0R0:FWDL", WF_WFDMA_MCU_DMA0_WPDMA_RX_RING0_CTRL0_ADDR},
-	{"P0R1:AP CMD", WF_WFDMA_MCU_DMA0_WPDMA_RX_RING1_CTRL0_ADDR},
-	{"P0R3:DATA", WF_WFDMA_MCU_DMA0_WPDMA_RX_RING3_CTRL0_ADDR},
-	{"P0R4:TXDONE", WF_WFDMA_MCU_DMA0_WPDMA_RX_RING4_CTRL0_ADDR},
-	{"P0R5:RPT", WF_WFDMA_MCU_DMA0_WPDMA_RX_RING5_CTRL0_ADDR},
-};
-
-struct BUS_INFO soc5_0_bus_info = {
+struct BUS_INFO soc7_0_bus_info = {
 #if defined(_HIF_PCIE) || defined(_HIF_AXI)
-	.top_cfg_base = SOC5_0_TOP_CFG_BASE,
+	.top_cfg_base = SOC7_0_TOP_CFG_BASE,
 
 	/* host_dma0 for TXP */
 	.host_dma0_base = WF_WFDMA_HOST_DMA0_BASE,
@@ -238,13 +222,10 @@ struct BUS_INFO soc5_0_bus_info = {
 	.host_int_txdone_bits =
 		(CONNAC2X_WFDMA_TX_DONE_INT0 | CONNAC2X_WFDMA_TX_DONE_INT1 |
 		CONNAC2X_WFDMA_TX_DONE_INT2 | CONNAC2X_WFDMA_TX_DONE_INT3 |
-		CONNAC2X_WFDMA_TX_DONE_INT4 | CONNAC2X_WFDMA_TX_DONE_INT5 |
-		CONNAC2X_WFDMA_TX_DONE_INT6 | CONNAC2X_WFDMA_TX_DONE_INT16 |
-		CONNAC2X_WFDMA_TX_DONE_INT17),
+		CONNAC2X_WFDMA_TX_DONE_INT16 | CONNAC2X_WFDMA_TX_DONE_INT17),
 	.host_int_rxdone_bits =
-		(CONNAC2X_WFDMA_RX_DONE_INT0 | CONNAC2X_WFDMA_RX_DONE_INT0 |
-		 CONNAC2X_WFDMA_RX_DONE_INT2 | CONNAC2X_WFDMA_RX_DONE_INT3 |
-		 CONNAC2X_WFDMA_RX_DONE_INT4 | CONNAC2X_WFDMA_RX_DONE_INT5),
+		(CONNAC2X_WFDMA_RX_DONE_INT0 | CONNAC2X_WFDMA_RX_DONE_INT1 |
+		 CONNAC2X_WFDMA_RX_DONE_INT2 | CONNAC2X_WFDMA_RX_DONE_INT3),
 
 	.host_tx_ring_base = WF_WFDMA_HOST_DMA0_WPDMA_TX_RING0_CTRL0_ADDR,
 	.host_tx_ring_ext_ctrl_base =
@@ -260,11 +241,11 @@ struct BUS_INFO soc5_0_bus_info = {
 	.host_rx_ring_didx_addr = WF_WFDMA_HOST_DMA0_WPDMA_RX_RING0_CTRL3_ADDR,
 	.host_rx_ring_cnt_addr = WF_WFDMA_HOST_DMA0_WPDMA_RX_RING0_CTRL1_ADDR,
 
-	.bus2chip = soc5_0_bus2chip_cr_mapping,
+	.bus2chip = soc7_0_bus2chip_cr_mapping,
 	.max_static_map_addr = 0x000f0000,
 
 	.tx_ring_fwdl_idx = CONNAC2X_FWDL_TX_RING_IDX,
-	.tx_ring_cmd_idx = CONNAC2X_CMD_TX_RING_IDX,
+	.tx_ring_cmd_idx = 15,
 	.tx_ring0_data_idx = 0,
 	.tx_ring1_data_idx = 1,
 	.fw_own_clear_addr = CONNAC2X_BN0_IRQ_STAT_ADDR,
@@ -279,19 +260,19 @@ struct BUS_INFO soc5_0_bus_info = {
 	.wfmda_host_tx_group_len = ARRAY_SIZE(wfmda_host_tx_group),
 	.wfmda_host_rx_group = wfmda_host_rx_group,
 	.wfmda_host_rx_group_len = ARRAY_SIZE(wfmda_host_rx_group),
-	.wfmda_wm_tx_group = wfmda_wm_tx_group,
-	.wfmda_wm_tx_group_len = ARRAY_SIZE(wfmda_wm_tx_group),
-	.wfmda_wm_rx_group = wfmda_wm_rx_group,
-	.wfmda_wm_rx_group_len = ARRAY_SIZE(wfmda_wm_rx_group),
-	.pdmaSetup = soc5_0asicConnac2xWpdmaConfig,
+	.wfmda_wm_tx_group = NULL,
+	.wfmda_wm_tx_group_len = 0,
+	.wfmda_wm_rx_group = NULL,
+	.wfmda_wm_rx_group_len = 0,
+	.pdmaSetup = soc7_0asicConnac2xWpdmaConfig,
 	.enableInterrupt = asicConnac2xEnablePlatformIRQ,
 	.disableInterrupt = asicConnac2xDisablePlatformIRQ,
-	.processTxInterrupt = soc5_0asicConnac2xProcessTxInterrupt,
-	.processRxInterrupt = soc5_0asicConnac2xProcessRxInterrupt,
+	.processTxInterrupt = soc7_0asicConnac2xProcessTxInterrupt,
+	.processRxInterrupt = soc7_0asicConnac2xProcessRxInterrupt,
 	.tx_ring_ext_ctrl = asicConnac2xWfdmaTxRingExtCtrl,
 	.rx_ring_ext_ctrl = asicConnac2xWfdmaRxRingExtCtrl,
 	/* null wfdmaManualPrefetch if want to disable manual mode */
-	.wfdmaManualPrefetch = soc5_0asicConnac2xWfdmaManualPrefetch,
+	.wfdmaManualPrefetch = soc7_0asicConnac2xWfdmaManualPrefetch,
 	.lowPowerOwnRead = asicConnac2xLowPowerOwnRead,
 	.lowPowerOwnSet = asicConnac2xLowPowerOwnSet,
 	.lowPowerOwnClear = asicConnac2xLowPowerOwnClear,
@@ -300,16 +281,17 @@ struct BUS_INFO soc5_0_bus_info = {
 	.softwareInterruptMcu = asicConnac2xSoftwareInterruptMcu,
 	.hifRst = asicConnac2xHifRst,
 	.initPcieInt = NULL,
-	.devReadIntStatus = soc5_0ReadIntStatus,
-	.DmaShdlInit = soc5_0DmashdlInit,
-	.setRxRingHwAddr = soc5_0SetRxRingHwAddr,
-	.wfdmaAllocRxRing = soc5_0WfdmaAllocRxRing,
+	.devReadIntStatus = soc7_0ReadIntStatus,
+	.DmaShdlInit = soc7_0DmashdlInit,
+	.setRxRingHwAddr = soc7_0SetRxRingHwAddr,
+	.wfdmaAllocRxRing = soc7_0WfdmaAllocRxRing,
+	.enableFwDlMode = soc7_0EnableFwDlMode,
 #endif /*_HIF_PCIE || _HIF_AXI */
 };
 
 #if CFG_ENABLE_FW_DOWNLOAD
-struct FWDL_OPS_T soc5_0_fw_dl_ops = {
-	.constructFirmwarePrio = soc5_0_ConstructFirmwarePrio,
+struct FWDL_OPS_T soc7_0_fw_dl_ops = {
+	.constructFirmwarePrio = soc7_0_ConstructFirmwarePrio,
 	.constructPatchName = NULL,
 	.downloadPatch = NULL,
 	.downloadFirmware = wlanConnacFormatDownload,
@@ -323,59 +305,60 @@ struct FWDL_OPS_T soc5_0_fw_dl_ops = {
 };
 #endif /* CFG_ENABLE_FW_DOWNLOAD */
 
-struct TX_DESC_OPS_T soc5_0_TxDescOps = {
+struct TX_DESC_OPS_T soc7_0_TxDescOps = {
 	.fillNicAppend = fillNicTxDescAppend,
 	.fillHifAppend = fillTxDescAppendByHostV2,
 	.fillTxByteCount = fillConnac2xTxDescTxByteCount,
 };
 
-struct RX_DESC_OPS_T soc5_0_RxDescOps = {};
+struct RX_DESC_OPS_T soc7_0_RxDescOps = {};
 
-struct CHIP_DBG_OPS soc5_0_DebugOps = {
+struct CHIP_DBG_OPS soc7_0_DebugOps = {
 	.showPdmaInfo = connac2x_show_wfdma_info,
-	.showPseInfo = soc5_0_show_pse_info,
-	.showPleInfo = soc5_0_show_ple_info,
+	.showPseInfo = NULL,
+	.showPleInfo = NULL,
 	.showTxdInfo = connac2x_show_txd_Info,
 	.showWtblInfo = connac2x_show_wtbl_info,
 	.showUmacFwtblInfo = connac2x_show_umac_wtbl_info,
-	.showCsrInfo = soc5_0_show_host_csr_info,
+	.showCsrInfo = soc7_0_show_host_csr_info,
 	.showDmaschInfo = NULL,
 	.showHifInfo = NULL,
 	.printHifDbgInfo = NULL,
 	.show_rx_rate_info = connac2x_show_rx_rate_info,
 	.show_rx_rssi_info = connac2x_show_rx_rssi_info,
 	.show_stat_info = connac2x_show_stat_info,
-	.show_wfdma_dbg_probe_info = soc5_0_show_wfdma_dbg_probe_info,
-	.show_wfdma_wrapper_info = soc5_0_show_wfdma_wrapper_info,
+	.show_mcu_debug_info = NULL,
+	.show_wfdma_dbg_probe_info = soc7_0_show_wfdma_dbg_probe_info,
+	.show_wfdma_wrapper_info = soc7_0_show_wfdma_wrapper_info,
 };
 
-struct mt66xx_chip_info mt66xx_chip_info_soc5_0 = {
-	.bus_info = &soc5_0_bus_info,
+struct mt66xx_chip_info mt66xx_chip_info_soc7_0 = {
+	.bus_info = &soc7_0_bus_info,
 #if CFG_ENABLE_FW_DOWNLOAD
-	.fw_dl_ops = &soc5_0_fw_dl_ops,
+	.fw_dl_ops = &soc7_0_fw_dl_ops,
 #endif /* CFG_ENABLE_FW_DOWNLOAD */
-	.prTxDescOps = &soc5_0_TxDescOps,
-	.prRxDescOps = &soc5_0_RxDescOps,
-	.prDebugOps = &soc5_0_DebugOps,
-	.chip_id = SOC5_0_CHIP_ID,
+	.prTxDescOps = &soc7_0_TxDescOps,
+	.prRxDescOps = &soc7_0_RxDescOps,
+	.prDebugOps = &soc7_0_DebugOps,
+	.chip_id = SOC7_0_CHIP_ID,
 	.should_verify_chip_id = FALSE,
 	.sw_sync0 = CONNAC2x_CONN_CFG_ON_CONN_ON_MISC_ADDR,
 	.sw_ready_bits = WIFI_FUNC_NO_CR4_READY_BITS,
 	.sw_ready_bit_offset =
 		CONNAC2x_CONN_CFG_ON_CONN_ON_MISC_DRV_FM_STAT_SYNC_SHFT,
-	.patch_addr = SOC5_0_PATCH_START_ADDR,
+	.patch_addr = SOC7_0_PATCH_START_ADDR,
 	.is_support_cr4 = FALSE,
 	.is_support_wacpu = FALSE,
-	.txd_append_size = SOC5_0_TX_DESC_APPEND_LENGTH,
-	.rxd_size = SOC5_0_RX_DESC_LENGTH,
+	.txd_append_size = SOC7_0_TX_DESC_APPEND_LENGTH,
+	.rxd_size = SOC7_0_RX_DESC_LENGTH,
 	.pse_header_length = CONNAC2X_NIC_TX_PSE_HEADER_LENGTH,
 	.init_event_size = CONNAC2X_RX_INIT_EVENT_LENGTH,
-	.eco_info = soc5_0_eco_table,
+	.eco_info = soc7_0_eco_table,
 	.isNicCapV1 = FALSE,
 	.top_hcr = CONNAC2X_TOP_HCR,
 	.top_hvr = CONNAC2X_TOP_HVR,
 	.top_fvr = CONNAC2X_TOP_FVR,
-	.arb_ac_mode_addr = 0x820E315C, /* ben todo */
+	.arb_ac_mode_addr = 0x820E315C,
 	.asicCapInit = asicConnac2xCapInit,
 #if CFG_ENABLE_FW_DOWNLOAD
 	.asicEnableFWDownload = NULL,
@@ -391,18 +374,18 @@ struct mt66xx_chip_info mt66xx_chip_info_soc5_0 = {
 	.u4UmacWtblDUAddr = CONNAC2X_WIFI_LWTBL_BASE,
 };
 
-struct mt66xx_hif_driver_data mt66xx_driver_data_soc5_0 = {
-	.chip_info = &mt66xx_chip_info_soc5_0,
+struct mt66xx_hif_driver_data mt66xx_driver_data_soc7_0 = {
+	.chip_info = &mt66xx_chip_info_soc7_0,
 };
 
-static void soc5_0_ConstructFirmwarePrio(struct GLUE_INFO *prGlueInfo,
+static void soc7_0_ConstructFirmwarePrio(struct GLUE_INFO *prGlueInfo,
 	uint8_t **apucNameTable, uint8_t **apucName,
 	uint8_t *pucNameIdx, uint8_t ucMaxNameIdx)
 {
 	int ret = 0;
 	uint8_t ucIdx = 0;
 
-	for (ucIdx = 0; apucsoc5_0FwName[ucIdx]; ucIdx++) {
+	for (ucIdx = 0; apucsoc7_0FwName[ucIdx]; ucIdx++) {
 		if ((*pucNameIdx + 3) >= ucMaxNameIdx) {
 			/* the table is not large enough */
 			DBGLOG(INIT, ERROR,
@@ -411,10 +394,10 @@ static void soc5_0_ConstructFirmwarePrio(struct GLUE_INFO *prGlueInfo,
 			continue;
 		}
 
-		/* Type 1. WIFI_RAM_CODE_soc5_0_1_1.bin */
+		/* Type 1. WIFI_RAM_CODE_soc7_0_1_1.bin */
 		ret = kalSnprintf(*(apucName + (*pucNameIdx)),
 				CFG_FW_NAME_MAX_LEN, "%s_%u_%u.bin",
-				apucsoc5_0FwName[ucIdx],
+				apucsoc7_0FwName[ucIdx],
 				CFG_WIFI_IP_SET,
 				wlanGetEcoVersion(
 					prGlueInfo->prAdapter));
@@ -427,29 +410,27 @@ static void soc5_0_ConstructFirmwarePrio(struct GLUE_INFO *prGlueInfo,
 	}
 }
 
-static uint8_t soc5_0SetRxRingHwAddr(struct RTMP_RX_RING *prRxRing,
+static uint8_t soc7_0SetRxRingHwAddr(struct RTMP_RX_RING *prRxRing,
 		struct BUS_INFO *prBusInfo, uint32_t u4SwRingIdx)
 {
 	uint32_t offset = 0;
 
 	/*
-	 * RX_RING_EVT_IDX_1    (RX_Ring0) - Rx Event
-	 * RX_RING_DATA_IDX_0   (RX_Ring2) - Band0 Rx Data
-	 * WFDMA0_RX_RING_IDX_2 (RX_Ring3) - Band1 Rx Data
-	 * WFDMA0_RX_RING_IDX_3 (RX_Ring4) - Band0 Tx Free Done Event
-	 * WFDMA1_RX_RING_IDX_0 (RX_Ring5) - Band1 Tx Free Done Event
+	 * RX_RING_DATA_IDX_0   (RX_Ring0) - Band0 Rx Data
+	 * WFDMA0_RX_RING_IDX_2 (RX_Ring1) - Band1 Rx Data
+	 * RX_RING_EVT_IDX_1    (RX_Ring2) - Band0 Tx Free Done Event / Rx Event
+	 * WFDMA0_RX_RING_IDX_3 (RX_Ring3) - Band1 Tx Free Done Event
 	*/
 	switch (u4SwRingIdx) {
 	case RX_RING_EVT_IDX_1:
-		offset = 0;
-		break;
-	case RX_RING_DATA_IDX_0:
-		offset = RX_DATA_RING_BASE_IDX * MT_RINGREG_DIFF;
+		offset = 2 * MT_RINGREG_DIFF;
 		break;
 	case WFDMA0_RX_RING_IDX_2:
+		offset = 1 * MT_RINGREG_DIFF;
+		break;
+	case RX_RING_DATA_IDX_0:
 	case WFDMA0_RX_RING_IDX_3:
-	case WFDMA1_RX_RING_IDX_0:
-		offset = (u4SwRingIdx + 1) * MT_RINGREG_DIFF;
+		offset = u4SwRingIdx * MT_RINGREG_DIFF;
 		break;
 	default:
 		return FALSE;
@@ -463,34 +444,27 @@ static uint8_t soc5_0SetRxRingHwAddr(struct RTMP_RX_RING *prRxRing,
 	return TRUE;
 }
 
-static bool soc5_0WfdmaAllocRxRing(struct GLUE_INFO *prGlueInfo,
+static bool soc7_0WfdmaAllocRxRing(struct GLUE_INFO *prGlueInfo,
 		bool fgAllocMem)
 {
 	/* Band1 Data Rx path */
 	if (!halWpdmaAllocRxRing(prGlueInfo,
 			WFDMA0_RX_RING_IDX_2, RX_RING0_SIZE,
 			RXD_SIZE, CFG_RX_MAX_PKT_SIZE, fgAllocMem)) {
-		DBGLOG(HAL, ERROR, "AllocRxRing[0] fail\n");
+		DBGLOG(HAL, ERROR, "AllocRxRing[2] fail\n");
 		return false;
 	}
 	/* Band0 Tx Free Done Event */
 	if (!halWpdmaAllocRxRing(prGlueInfo,
 			WFDMA0_RX_RING_IDX_3, RX_RING1_SIZE,
 			RXD_SIZE, RX_BUFFER_AGGRESIZE, fgAllocMem)) {
-		DBGLOG(HAL, ERROR, "AllocRxRing[1] fail\n");
-		return false;
-	}
-	/* Band1 Tx Free Done Event */
-	if (!halWpdmaAllocRxRing(prGlueInfo,
-			WFDMA1_RX_RING_IDX_0, RX_RING1_SIZE,
-			RXD_SIZE, RX_BUFFER_AGGRESIZE, fgAllocMem)) {
-		DBGLOG(HAL, ERROR, "AllocRxRing[1] fail\n");
+		DBGLOG(HAL, ERROR, "AllocRxRing[3] fail\n");
 		return false;
 	}
 	return true;
 }
 
-static void soc5_0asicConnac2xProcessTxInterrupt(
+static void soc7_0asicConnac2xProcessTxInterrupt(
 		struct ADAPTER *prAdapter)
 {
 	struct GL_HIF_INFO *prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
@@ -518,30 +492,28 @@ static void soc5_0asicConnac2xProcessTxInterrupt(
 	}
 }
 
-static void soc5_0asicConnac2xProcessRxInterrupt(
+static void soc7_0asicConnac2xProcessRxInterrupt(
 	struct ADAPTER *prAdapter)
 {
 	struct GL_HIF_INFO *prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
 	union WPDMA_INT_STA_STRUCT rIntrStatus;
 
 	rIntrStatus = (union WPDMA_INT_STA_STRUCT)prHifInfo->u4IntStatus;
-	if (rIntrStatus.field_conn2x_single.wfdma0_rx_done_0)
-		halRxReceiveRFBs(prAdapter, RX_RING_EVT_IDX_1, FALSE);
 
-	if (rIntrStatus.field_conn2x_single.wfdma0_rx_done_2)
+	if (rIntrStatus.field_conn2x_single.wfdma0_rx_done_0)
 		halRxReceiveRFBs(prAdapter, RX_RING_DATA_IDX_0, TRUE);
 
-	if (rIntrStatus.field_conn2x_single.wfdma0_rx_done_3)
+	if (rIntrStatus.field_conn2x_single.wfdma0_rx_done_1)
 		halRxReceiveRFBs(prAdapter, WFDMA0_RX_RING_IDX_2, TRUE);
 
-	if (rIntrStatus.field_conn2x_single.wfdma0_rx_done_4)
-		halRxReceiveRFBs(prAdapter, WFDMA0_RX_RING_IDX_3, TRUE);
+	if (rIntrStatus.field_conn2x_single.wfdma0_rx_done_2)
+		halRxReceiveRFBs(prAdapter, RX_RING_EVT_IDX_1, FALSE);
 
-	if (rIntrStatus.field_conn2x_single.wfdma0_rx_done_5)
-		halRxReceiveRFBs(prAdapter, WFDMA1_RX_RING_IDX_0, TRUE);
+	if (rIntrStatus.field_conn2x_single.wfdma0_rx_done_3)
+		halRxReceiveRFBs(prAdapter, WFDMA0_RX_RING_IDX_3, FALSE);
 }
 
-static void soc5_0asicConnac2xWfdmaManualPrefetch(
+static void soc7_0asicConnac2xWfdmaManualPrefetch(
 	struct GLUE_INFO *prGlueInfo)
 {
 	struct ADAPTER *prAdapter = prGlueInfo->prAdapter;
@@ -555,42 +527,44 @@ static void soc5_0asicConnac2xWfdmaManualPrefetch(
 
 	HAL_MCR_WR(prAdapter, WF_WFDMA_HOST_DMA0_WPDMA_RX_RING0_EXT_CTRL_ADDR,
 	     0x00000004);
-	HAL_MCR_WR(prAdapter, WF_WFDMA_HOST_DMA0_WPDMA_RX_RING2_EXT_CTRL_ADDR,
+	HAL_MCR_WR(prAdapter, WF_WFDMA_HOST_DMA0_WPDMA_RX_RING1_EXT_CTRL_ADDR,
 	     0x00400004);
-	HAL_MCR_WR(prAdapter, WF_WFDMA_HOST_DMA0_WPDMA_RX_RING3_EXT_CTRL_ADDR,
+	HAL_MCR_WR(prAdapter, WF_WFDMA_HOST_DMA0_WPDMA_RX_RING2_EXT_CTRL_ADDR,
 	     0x00800004);
+	HAL_MCR_WR(prAdapter, WF_WFDMA_HOST_DMA0_WPDMA_RX_RING3_EXT_CTRL_ADDR,
+	     0x00C00004);
 	HAL_MCR_WR(prAdapter, WF_WFDMA_HOST_DMA0_WPDMA_RX_RING4_EXT_CTRL_ADDR,
-	     0x00c00004);
-	HAL_MCR_WR(prAdapter, WF_WFDMA_HOST_DMA0_WPDMA_RX_RING5_EXT_CTRL_ADDR,
 	     0x01000004);
+	HAL_MCR_WR(prAdapter, WF_WFDMA_HOST_DMA0_WPDMA_RX_RING5_EXT_CTRL_ADDR,
+	     0x01400004);
+	HAL_MCR_WR(prAdapter, WF_WFDMA_HOST_DMA0_WPDMA_RX_RING6_EXT_CTRL_ADDR,
+	     0x01800004);
+	HAL_MCR_WR(prAdapter, WF_WFDMA_HOST_DMA0_WPDMA_RX_RING7_EXT_CTRL_ADDR,
+	     0x01C00004);
 
 	HAL_MCR_WR(prAdapter, WF_WFDMA_HOST_DMA0_WPDMA_TX_RING0_EXT_CTRL_ADDR,
-	     0x01400004);
-	HAL_MCR_WR(prAdapter, WF_WFDMA_HOST_DMA0_WPDMA_TX_RING1_EXT_CTRL_ADDR,
-	     0x01800004);
-	HAL_MCR_WR(prAdapter, WF_WFDMA_HOST_DMA0_WPDMA_TX_RING2_EXT_CTRL_ADDR,
-	     0x01c00004);
-
-	HAL_MCR_WR(prAdapter, WF_WFDMA_HOST_DMA0_WPDMA_TX_RING3_EXT_CTRL_ADDR,
 	     0x02000004);
-	HAL_MCR_WR(prAdapter, WF_WFDMA_HOST_DMA0_WPDMA_TX_RING4_EXT_CTRL_ADDR,
+	HAL_MCR_WR(prAdapter, WF_WFDMA_HOST_DMA0_WPDMA_TX_RING1_EXT_CTRL_ADDR,
 	     0x02400004);
-	HAL_MCR_WR(prAdapter, WF_WFDMA_HOST_DMA0_WPDMA_TX_RING5_EXT_CTRL_ADDR,
+	HAL_MCR_WR(prAdapter, WF_WFDMA_HOST_DMA0_WPDMA_TX_RING2_EXT_CTRL_ADDR,
 	     0x02800004);
-	HAL_MCR_WR(prAdapter, WF_WFDMA_HOST_DMA0_WPDMA_TX_RING6_EXT_CTRL_ADDR,
-	     0x02c00004);
-
-	HAL_MCR_WR(prAdapter, WF_WFDMA_HOST_DMA0_WPDMA_TX_RING16_EXT_CTRL_ADDR,
+	HAL_MCR_WR(prAdapter, WF_WFDMA_HOST_DMA0_WPDMA_TX_RING3_EXT_CTRL_ADDR,
+	     0x02C00004);
+	HAL_MCR_WR(prAdapter, WF_WFDMA_HOST_DMA0_WPDMA_TX_RING4_EXT_CTRL_ADDR,
+	     0x03000004);
+	HAL_MCR_WR(prAdapter, WF_WFDMA_HOST_DMA0_WPDMA_TX_RING5_EXT_CTRL_ADDR,
 	     0x03400004);
-	HAL_MCR_WR(prAdapter, WF_WFDMA_HOST_DMA0_WPDMA_TX_RING17_EXT_CTRL_ADDR,
+	HAL_MCR_WR(prAdapter, WF_WFDMA_HOST_DMA0_WPDMA_TX_RING15_EXT_CTRL_ADDR,
 	     0x03800004);
+	HAL_MCR_WR(prAdapter, WF_WFDMA_HOST_DMA0_WPDMA_TX_RING16_EXT_CTRL_ADDR,
+	     0x03C00004);
 
 	/* reset dma idx */
 	HAL_MCR_WR(prAdapter,
 		WF_WFDMA_HOST_DMA0_WPDMA_RST_DTX_PTR_ADDR, 0xFFFFFFFF);
 }
 
-static void soc5_0ReadIntStatus(struct ADAPTER *prAdapter,
+static void soc7_0ReadIntStatus(struct ADAPTER *prAdapter,
 		uint32_t *pu4IntStatus)
 {
 	uint32_t u4RegValue;
@@ -630,14 +604,13 @@ static void configIntMask(struct GLUE_INFO *prGlueInfo,
 			WF_WFDMA_HOST_DMA0_HOST_INT_ENA_ADDR, &IntMask.word);
 		IntMask.word = 0;
 		IntMask.field_conn2x_single.wfdma0_rx_done_0 = 1;
+		IntMask.field_conn2x_single.wfdma0_rx_done_1 = 1;
 		IntMask.field_conn2x_single.wfdma0_rx_done_2 = 1;
 		IntMask.field_conn2x_single.wfdma0_rx_done_3 = 1;
-		IntMask.field_conn2x_single.wfdma0_rx_done_4 = 1;
-		IntMask.field_conn2x_single.wfdma0_rx_done_5 = 1;
 		IntMask.field_conn2x_single.wfdma0_tx_done_0 = 1;
 		IntMask.field_conn2x_single.wfdma0_tx_done_1 = 1;
-		IntMask.field_conn2x_single.wfdma0_tx_done_16 = 1;
 		IntMask.field_conn2x_single.wfdma0_tx_done_17 = 1;
+		IntMask.field_conn2x_single.wfdma0_tx_done_16 = 1;
 		IntMask.field_conn2x_single.wfdma0_mcu2host_sw_int_en = 1;
 
 		IntMask.field_conn2x_single.wfdma0_rx_coherent = 0;
@@ -662,9 +635,8 @@ static void configIntMask(struct GLUE_INFO *prGlueInfo,
 	}
 }
 
-
-static void soc5_0asicConnac2xWpdmaConfig(struct GLUE_INFO *prGlueInfo,
-		u_int8_t enable, bool fgResetHif)
+static void soc7_0asicConnac2xWpdmaConfig(struct GLUE_INFO *prGlueInfo,
+		u_int8_t enable)
 {
 	struct ADAPTER *prAdapter = prGlueInfo->prAdapter;
 	union WPDMA_GLO_CFG_STRUCT GloCfg[CONNAC2X_WFDMA_COUNT];
@@ -695,4 +667,13 @@ static void soc5_0asicConnac2xWpdmaConfig(struct GLUE_INFO *prGlueInfo,
 	}
 }
 
-#endif  /* soc5_0 */
+static void soc7_0EnableFwDlMode(struct ADAPTER *prAdapter)
+{
+	u_int32_t val = 0;
+
+	HAL_MCR_RD(prAdapter, WF_WFDMA_HOST_DMA0_PDA_CONFG_ADDR, &val);
+	val |= (BIT(0) << 31);
+	HAL_MCR_WR(prAdapter, WF_WFDMA_HOST_DMA0_PDA_CONFG_ADDR, val);
+}
+
+#endif  /* soc7_0 */
