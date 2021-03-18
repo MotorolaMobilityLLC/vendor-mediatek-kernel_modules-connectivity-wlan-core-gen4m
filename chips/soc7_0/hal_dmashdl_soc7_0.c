@@ -294,7 +294,7 @@ void soc7_0DmashdlInit(struct ADAPTER *prAdapter)
 	asicConnac2xDmashdlSetPsePktMaxPage(prAdapter,
 					 rSOC7_0_DmashdlCfg.u2PktPseMaxPage);
 
-	for (idx = 0; idx < ENUM_SOC7_0_DMASHDL_GROUP_NUM; idx++) {
+	for (idx = 0; idx < ENUM_DMASHDL_GROUP_NUM; idx++) {
 		asicConnac2xDmashdlSetRefill(
 			prAdapter, idx,
 			rSOC7_0_DmashdlCfg.afgRefillEn[idx]);
