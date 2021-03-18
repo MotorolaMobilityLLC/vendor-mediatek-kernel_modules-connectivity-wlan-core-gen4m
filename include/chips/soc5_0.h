@@ -231,6 +231,14 @@ uint32_t soc5_0_wlanPowerOnDownload(
 int32_t soc5_0_wlanPowerOnInit(void);
 #endif
 
+#if (CFG_SUPPORT_PRE_ON_PHY_ACTION == 1)
+extern struct platform_device *g_prPlatDev;
+uint32_t soc5_0_wlanPhyAction(IN struct ADAPTER *prAdapter);
+int soc5_0_wlanPreCalPwrOn(void);
+int soc5_0_wlanPreCal(void);
+uint8_t *soc5_0_wlanGetCalResult(uint32_t *prCalSize);
+void soc5_0_wlanCalDebugCmd(uint32_t cmd, uint32_t para);
+#endif /* (CFG_SUPPORT_PRE_ON_PHY_ACTION == 1) */
 #endif /* _SOC5_0_H */
 
 #endif  /* soc5_0 */
