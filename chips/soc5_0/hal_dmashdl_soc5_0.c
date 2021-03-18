@@ -170,6 +170,9 @@ struct SOC5_0_DMASHDL_CFG rSOC5_0_DmashdlCfg = {
 		SOC5_0_DMASHDL_PRIORITY14_GROUP,
 		SOC5_0_DMASHDL_PRIORITY15_GROUP,
 	},
+
+	.u2HifAckCntTh = SOC5_0_DMASHDL_HIF_ACK_CNT_TH,
+	.u2HifGupActMap = SOC5_0_DMASHDL_HIF_GUP_ACT_MAP,
 };
 
 
@@ -328,6 +331,26 @@ void soc5_0HalDmashdlSetUserDefinedPriority(struct ADAPTER *prAdapter,
 	HAL_MCR_WR(prAdapter, u4Addr, u4Val);
 }
 
+void soc5_0HalDmashdlSetOptionalControl(struct ADAPTER *prAdapter,
+		uint16_t u2HifAckCntTh, uint16_t u2HifGupActMap)
+{
+	uint32_t u4Addr, u4Val;
+
+	u4Addr = WF_HIF_DMASHDL_TOP_OPTIONAL_CONTROL_ADDR;
+
+	HAL_MCR_RD(prAdapter, u4Addr, &u4Val);
+
+	u4Val &= ~WF_HIF_DMASHDL_TOP_OPTIONAL_CONTROL_CR_HIF_ACK_CNT_TH_MASK;
+	u4Val |= (u2HifAckCntTh <<
+		WF_HIF_DMASHDL_TOP_OPTIONAL_CONTROL_CR_HIF_ACK_CNT_TH_SHFT);
+
+	u4Val &= ~WF_HIF_DMASHDL_TOP_OPTIONAL_CONTROL_CR_HIF_GUP_ACT_MAP_MASK;
+	u4Val |= (u2HifGupActMap <<
+		WF_HIF_DMASHDL_TOP_OPTIONAL_CONTROL_CR_HIF_GUP_ACT_MAP_SHFT);
+
+	HAL_MCR_WR(prAdapter, u4Addr, u4Val);
+}
+
 void soc5_0DmashdlInit(struct ADAPTER *prAdapter)
 {
 	uint32_t idx;
@@ -359,6 +382,10 @@ void soc5_0DmashdlInit(struct ADAPTER *prAdapter)
 
 	soc5_0HalDmashdlSetSlotArbiter(prAdapter,
 				       rSOC5_0_DmashdlCfg.fgSlotArbiterEn);
+
+	soc5_0HalDmashdlSetOptionalControl(prAdapter,
+		rSOC5_0_DmashdlCfg.u2HifAckCntTh,
+		rSOC5_0_DmashdlCfg.u2HifGupActMap);
 }
 
 #endif /* defined(_HIF_PCIE) || defined(_HIF_AXI) */
