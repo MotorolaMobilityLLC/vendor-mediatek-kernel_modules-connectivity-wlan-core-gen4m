@@ -164,7 +164,6 @@ void asicConnac2xCapInit(
 			TX_RING_FWDL_IDX_3; /* Ring16 for FWDL */
 		prChipInfo->ucPacketFormat = TXD_PKT_FORMAT_TXD;
 		prChipInfo->u4HifDmaShdlBaseAddr = CONNAC2X_HIF_DMASHDL_BASE;
-		prChipInfo->rx_event_port = WFDMA1_RX_RING_IDX_0;
 
 		HAL_MCR_WR(prAdapter,
 				CONNAC2X_BN0_IRQ_ENA_ADDR,
@@ -368,8 +367,8 @@ void asicConnac2xWfdmaReInit(
 		}
 
 		if (halWpdmaGetRxDmaDoneCnt(prAdapter->prGlueInfo,
-			WFDMA1_RX_RING_IDX_0)) {
-			prAdapter->u4NoMoreRfb |= BIT(WFDMA1_RX_RING_IDX_0);
+			RX_RING_EVT_IDX_1)) {
+			prAdapter->u4NoMoreRfb |= BIT(RX_RING_EVT_IDX_1);
 		}
 	}
 #endif
@@ -600,22 +599,43 @@ void asicConnac2xWfdmaRxRingExtCtrl(
 	struct RTMP_RX_RING *rx_ring,
 	u_int32_t index)
 {
+	struct ADAPTER *prAdapter;
+	struct mt66xx_chip_info *prChipInfo;
 	struct BUS_INFO *prBusInfo;
 	uint32_t ext_offset;
-	struct ADAPTER *prAdapter = prGlueInfo->prAdapter;
+	bool fgIsWfdma1 = false;
 
-	prBusInfo = prGlueInfo->prAdapter->chip_info->bus_info;
+	prAdapter = prGlueInfo->prAdapter;
+	prChipInfo = prAdapter->chip_info;
+	prBusInfo = prChipInfo->bus_info;
 
-	if (index >= WFDMA1_RX_RING_IDX_0) {
-		ext_offset = (index - WFDMA1_RX_RING_IDX_0) * 4;
-		rx_ring->hw_desc_base_ext =
-			prBusInfo->host_wfdma1_rx_ring_ext_ctrl_base +
-			ext_offset;
-	} else {
-		ext_offset = index * 4;
-		rx_ring->hw_desc_base_ext =
-			prBusInfo->host_rx_ring_ext_ctrl_base + ext_offset;
+	fgIsWfdma1 = prChipInfo->is_support_wfdma1 ||
+		prChipInfo->is_support_wacpu;
+
+	switch (index) {
+	case RX_RING_EVT_IDX_1:
+		ext_offset = 0;
+		break;
+	case RX_RING_DATA_IDX_0:
+		ext_offset = fgIsWfdma1 ? 0 : (index + 2) * 4;
+		break;
+	case RX_RING_DATA1_IDX_2:
+	case RX_RING_TXDONE0_IDX_3:
+	case RX_RING_TXDONE1_IDX_4:
+		ext_offset = fgIsWfdma1 ? (index - 1) * 4 : (index + 1) * 4;
+		break;
+	case RX_RING_WAEVT0_IDX_5:
+	case RX_RING_WAEVT1_IDX_6:
+		ext_offset = (index - 4) * 4;
+		break;
+	default:
+		DBGLOG(RX, ERROR, "Error index=%d\n", index);
+		return;
 	}
+
+	rx_ring->hw_desc_base_ext = fgIsWfdma1 ?
+		prBusInfo->host_wfdma1_rx_ring_ext_ctrl_base + ext_offset :
+		prBusInfo->host_rx_ring_ext_ctrl_base + ext_offset;
 
 	HAL_MCR_WR(prAdapter, rx_ring->hw_desc_base_ext,
 		   CONNAC2X_RX_RING_DISP_MAX_CNT);
@@ -1027,19 +1047,19 @@ void asicConnac2xProcessRxInterrupt(
 
 	rIntrStatus = (union WPDMA_INT_STA_STRUCT)prHifInfo->u4IntStatus;
 	if (rIntrStatus.field_conn2x_ext.wfdma1_rx_done_0)
-		halRxReceiveRFBs(prAdapter, WFDMA1_RX_RING_IDX_0, FALSE);
+		halRxReceiveRFBs(prAdapter, RX_RING_EVT_IDX_1, FALSE);
 	if (rIntrStatus.field_conn2x_ext.wfdma1_rx_done_1)
-		halRxReceiveRFBs(prAdapter, WFDMA1_RX_RING_IDX_1, FALSE);
+		halRxReceiveRFBs(prAdapter, RX_RING_WAEVT0_IDX_5, FALSE);
 	if (rIntrStatus.field_conn2x_ext.wfdma1_rx_done_2)
-		halRxReceiveRFBs(prAdapter, WFDMA1_RX_RING_IDX_2, FALSE);
+		halRxReceiveRFBs(prAdapter, RX_RING_WAEVT1_IDX_6, FALSE);
 	if (rIntrStatus.field_conn2x_ext.wfdma0_rx_done_0)
 		halRxReceiveRFBs(prAdapter, RX_RING_DATA_IDX_0, TRUE);
 	if (rIntrStatus.field_conn2x_ext.wfdma0_rx_done_1)
-		halRxReceiveRFBs(prAdapter, RX_RING_EVT_IDX_1, TRUE);
+		halRxReceiveRFBs(prAdapter, RX_RING_DATA1_IDX_2, TRUE);
 	if (rIntrStatus.field_conn2x_ext.wfdma0_rx_done_2)
-		halRxReceiveRFBs(prAdapter, WFDMA0_RX_RING_IDX_2, TRUE);
+		halRxReceiveRFBs(prAdapter, RX_RING_TXDONE0_IDX_3, TRUE);
 	if (rIntrStatus.field_conn2x_ext.wfdma0_rx_done_3)
-		halRxReceiveRFBs(prAdapter, WFDMA0_RX_RING_IDX_3, TRUE);
+		halRxReceiveRFBs(prAdapter, RX_RING_TXDONE1_IDX_4, TRUE);
 }
 #endif /* _HIF_PCIE */
 
