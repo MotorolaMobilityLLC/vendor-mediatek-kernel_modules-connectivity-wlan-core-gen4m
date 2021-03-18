@@ -920,16 +920,19 @@ void asicConnac2xProcessSoftwareInterrupt(
 		CONNAC2X_WPDMA_MCU2HOST_SW_INT_STA(u4HostWpdamBase),
 		&u4Status);
 
+	prErrRecoveryCtrl->u4BackupStatus = u4Status;
 	if (u4Status & ERROR_DETECT_MASK) {
 		prErrRecoveryCtrl->u4Status = u4Status;
 		kalDevRegWrite(prGlueInfo,
 			CONNAC2X_WPDMA_MCU2HOST_SW_INT_STA(u4HostWpdamBase),
 			u4Status);
 		halHwRecoveryFromError(prAdapter);
-	} else
+	} else {
 		kalDevRegWrite(prGlueInfo,
 			CONNAC2X_WPDMA_MCU2HOST_SW_INT_STA(u4HostWpdamBase),
 			u4Status);
+		DBGLOG(HAL, ERROR, "undefined SER status[0x%x].\n", u4Status);
+	}
 }
 
 

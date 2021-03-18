@@ -2741,12 +2741,14 @@ static void halDefaultProcessSoftwareInterrupt(
 	prErrRecoveryCtrl = &prHifInfo->rErrRecoveryCtl;
 
 	kalDevRegRead(prGlueInfo, MCU2HOST_SW_INT_STA, &u4Status);
+	prErrRecoveryCtrl->u4BackupStatus = u4Status;
 	if (u4Status & ERROR_DETECT_MASK) {
 		prErrRecoveryCtrl->u4Status = u4Status;
 		kalDevRegWrite(prGlueInfo, MCU2HOST_SW_INT_STA,
 			ERROR_DETECT_MASK);
 		halHwRecoveryFromError(prAdapter);
-	}
+	} else
+		DBGLOG(HAL, ERROR, "undefined SER status[0x%x].\n", u4Status);
 }
 
 void halProcessSoftwareInterrupt(IN struct ADAPTER *prAdapter)
@@ -2778,12 +2780,21 @@ void halHwRecoveryTimeout(unsigned long arg)
 	struct GLUE_INFO *prGlueInfo = (struct GLUE_INFO *)arg;
 #endif
 	struct ADAPTER *prAdapter = NULL;
+	struct GL_HIF_INFO *prHifInfo;
+	struct ERR_RECOVERY_CTRL_T *prErrRecoveryCtrl;
 
 	ASSERT(prGlueInfo);
 	prAdapter = prGlueInfo->prAdapter;
 	ASSERT(prAdapter);
 
-	DBGLOG(HAL, ERROR, "SER timer Timeout\n");
+	prHifInfo = &prGlueInfo->rHifInfo;
+	prErrRecoveryCtrl = &prHifInfo->rErrRecoveryCtl;
+
+	DBGLOG(HAL, ERROR,
+	       "SER timer Timeout. ErrState[%d] Status[0x%x] Backup[0x%x]\n",
+	       prErrRecoveryCtrl->eErrRecovState,
+	       prErrRecoveryCtrl->u4Status,
+	       prErrRecoveryCtrl->u4BackupStatus);
 
 #if CFG_CHIP_RESET_SUPPORT
 #if (CFG_SUPPORT_CONNINFRA == 0)
