@@ -741,9 +741,9 @@ void halInitMsduTokenInfo(IN struct ADAPTER *prAdapter)
 		prTokenInfo->aprTokenStack[u4Idx] = prToken;
 	}
 
-	prTokenInfo->fgIsEnTxRingBssCtrl = false;
+	prTokenInfo->u4MaxBssFreeCnt = HIF_TX_MSDU_TOKEN_NUM;
 	for (u4Idx = 0; u4Idx < MAX_BSSID_NUM; u4Idx++)
-		prTokenInfo->i4TxBssCnt[u4Idx] = 0;
+		prTokenInfo->u4TxBssCnt[u4Idx] = 0;
 
 	spin_lock_init(&prTokenInfo->rTokenLock);
 
@@ -796,9 +796,9 @@ void halUninitMsduTokenInfo(IN struct ADAPTER *prAdapter)
 
 	prTokenInfo->u4UsedCnt = 0;
 
-	prTokenInfo->fgIsEnTxRingBssCtrl = false;
+	prTokenInfo->u4MaxBssFreeCnt = HIF_DEFAULT_BSS_FREE_CNT;
 	for (u4Idx = 0; u4Idx < MAX_BSSID_NUM; u4Idx++)
-		prTokenInfo->i4TxBssCnt[u4Idx] = 0;
+		prTokenInfo->u4TxBssCnt[u4Idx] = 0;
 
 	DBGLOG(HAL, INFO, "Msdu Token Uninit: Tot[%u] Used[%u]\n",
 		HIF_TX_MSDU_TOKEN_NUM, prTokenInfo->u4UsedCnt);
@@ -847,7 +847,7 @@ struct MSDU_TOKEN_ENTRY *halAcquireMsduToken(IN struct ADAPTER *prAdapter,
 
 	if (ucBssIndex < BSS_DEFAULT_NUM) {
 		prToken->ucBssIndex = ucBssIndex;
-		prTokenInfo->i4TxBssCnt[ucBssIndex]++;
+		prTokenInfo->u4TxBssCnt[ucBssIndex]++;
 	}
 
 	spin_unlock_irqrestore(&prTokenInfo->rTokenLock, flags);
@@ -906,10 +906,8 @@ static void halResetMsduToken(IN struct ADAPTER *prAdapter)
 		prTokenInfo->aprTokenStack[u4Idx] = prToken;
 	}
 	prTokenInfo->u4UsedCnt = 0;
-
-	prTokenInfo->fgIsEnTxRingBssCtrl = false;
 	for (u4Idx = 0; u4Idx < MAX_BSSID_NUM; u4Idx++)
-		prTokenInfo->i4TxBssCnt[u4Idx] = 0;
+		prTokenInfo->u4TxBssCnt[u4Idx] = 0;
 }
 
 void halReturnMsduToken(IN struct ADAPTER *prAdapter, uint32_t u4TokenNum)
@@ -936,8 +934,13 @@ void halReturnMsduToken(IN struct ADAPTER *prAdapter, uint32_t u4TokenNum)
 
 	spin_lock_irqsave(&prTokenInfo->rTokenLock, flags);
 
-	if (prToken->ucBssIndex < BSS_DEFAULT_NUM)
-		prTokenInfo->i4TxBssCnt[prToken->ucBssIndex]--;
+	if (prToken->ucBssIndex < BSS_DEFAULT_NUM) {
+		if (prTokenInfo->u4TxBssCnt[prToken->ucBssIndex] == 0)
+			DBGLOG(HAL, ERROR, "TxBssCnt is zero[%u]\n",
+			       prToken->ucBssIndex);
+		else
+			prTokenInfo->u4TxBssCnt[prToken->ucBssIndex]--;
+	}
 	prToken->ucBssIndex = BSS_DEFAULT_NUM;
 
 	prToken->fgInUsed = FALSE;
@@ -3225,16 +3228,16 @@ bool halIsTxBssCntFull(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
 	prTokenInfo = &prHifInfo->rTokenInfo;
 
-	if (!prTokenInfo->fgIsEnTxRingBssCtrl || ucBssIndex >= MAX_BSSID_NUM ||
-	    prTokenInfo->i4TxBssCnt[ucBssIndex] < HIF_DEFAULT_BSS_FREE_CNT)
+	if (ucBssIndex >= MAX_BSSID_NUM ||
+	    prTokenInfo->u4TxBssCnt[ucBssIndex] < prTokenInfo->u4MaxBssFreeCnt)
 		return false;
 
 	kalMemZero(aucStrBuf, MAX_BSSID_NUM * 20);
 	for (u4Idx = 0; u4Idx < MAX_BSSID_NUM; u4Idx++) {
 		u4Offset += kalSprintf(
 			aucStrBuf + u4Offset,
-			u4Idx == 0 ? "%d" : ":%d",
-			prTokenInfo->i4TxBssCnt[u4Idx]);
+			u4Idx == 0 ? "%u" : ":%u",
+			prTokenInfo->u4TxBssCnt[u4Idx]);
 	}
 
 	DBGLOG(HAL, TRACE, "Bss[%d] tx full, Cnt[%s]\n", ucBssIndex, aucStrBuf);
@@ -3242,7 +3245,7 @@ bool halIsTxBssCntFull(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 	return true;
 }
 
-void halEnTxRingBssCtrl(struct ADAPTER *prAdapter, bool fgEn)
+void halSetTxRingBssTokenCnt(struct ADAPTER *prAdapter, uint32_t u4Cnt)
 {
 	struct GL_HIF_INFO *prHifInfo = NULL;
 	struct MSDU_TOKEN_INFO *prTokenInfo;
@@ -3253,8 +3256,8 @@ void halEnTxRingBssCtrl(struct ADAPTER *prAdapter, bool fgEn)
 	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
 	prTokenInfo = &prHifInfo->rTokenInfo;
 
-	if (prTokenInfo->fgIsEnTxRingBssCtrl != fgEn)
-		DBGLOG(HAL, INFO, "IsEnTxRingBssCtrl=[%d].\n", fgEn);
+	prTokenInfo->u4MaxBssFreeCnt = u4Cnt ? u4Cnt : HIF_TX_MSDU_TOKEN_NUM;
 
-	prTokenInfo->fgIsEnTxRingBssCtrl = fgEn;
+	DBGLOG(HAL, INFO, "SetTxRingBssTokenCnt=[%u].\n",
+	       prTokenInfo->u4MaxBssFreeCnt);
 }
