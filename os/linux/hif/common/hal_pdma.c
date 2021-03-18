@@ -2748,7 +2748,7 @@ static void halDefaultProcessSoftwareInterrupt(
 			ERROR_DETECT_MASK);
 		halHwRecoveryFromError(prAdapter);
 	} else
-		DBGLOG(HAL, ERROR, "undefined SER status[0x%x].\n", u4Status);
+		DBGLOG(HAL, TRACE, "undefined SER status[0x%x].\n", u4Status);
 }
 
 void halProcessSoftwareInterrupt(IN struct ADAPTER *prAdapter)
