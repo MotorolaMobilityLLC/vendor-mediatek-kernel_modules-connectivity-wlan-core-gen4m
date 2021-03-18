@@ -3388,20 +3388,27 @@ void wlanGetConfig(struct ADAPTER *prAdapter)
 	kalMemZero(pucConfigBuf, WLAN_CFG_FILE_BUF_SIZE);
 	u4ConfigReadLen = 0;
 	if (pucConfigBuf) {
-		if (kalRequestFirmware("wifi.cfg", pucConfigBuf,
-			   WLAN_CFG_FILE_BUF_SIZE, &u4ConfigReadLen,
-			   prAdapter->prGlueInfo->prDev) == 0) {
-			/* ToDo:: Nothing */
-		} else if (kalReadToFile("/data/misc/wifi/wifi.cfg",
+#ifdef BUILD_QA_DBG
+		if (kalReadToFile("/data/misc/wifi/wifi.cfg",
 			   pucConfigBuf, WLAN_CFG_FILE_BUF_SIZE,
 			   &u4ConfigReadLen) == 0) {
+			/* ToDo:: Nothing */
+		} else if (kalRequestFirmware("wifi.cfg", pucConfigBuf,
+			   WLAN_CFG_FILE_BUF_SIZE, &u4ConfigReadLen,
+			   prAdapter->prGlueInfo->prDev) == 0) {
 			/* ToDo:: Nothing */
 		} else if (kalReadToFile("/storage/sdcard0/wifi.cfg",
 			   pucConfigBuf, WLAN_CFG_FILE_BUF_SIZE,
 			   &u4ConfigReadLen) == 0) {
 			/* ToDo:: Nothing */
 		}
-
+#else
+		if (kalRequestFirmware("wifi.cfg", pucConfigBuf,
+			   WLAN_CFG_FILE_BUF_SIZE, &u4ConfigReadLen,
+			   prAdapter->prGlueInfo->prDev) == 0) {
+			/* ToDo:: Nothing */
+		}
+#endif
 		if (pucConfigBuf[0] != '\0' && u4ConfigReadLen > 0)
 			wlanCfgInit(prAdapter,
 				pucConfigBuf, u4ConfigReadLen, 0);
