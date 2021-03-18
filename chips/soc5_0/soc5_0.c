@@ -19,20 +19,30 @@
 #include "coda/soc5_0/wf_pse_top.h"
 #include "hal_dmashdl_soc5_0.h"
 
+#ifdef CONFIG_MTK_CONNSYS_DEDICATED_LOG_PATH
+#include "fw_log_wifi.h"
+#endif /* CONFIG_MTK_CONNSYS_DEDICATED_LOG_PATH */
+
 /*******************************************************************************
 *                         C O M P I L E R   F L A G S
 ********************************************************************************
 */
 
 /*******************************************************************************
+*                              C O N S T A N T S
+********************************************************************************
+*/
+#define SOC5_0_FILE_NAME_TOTAL 8
+#define SOC5_0_FILE_NAME_MAX 64
+
+/*******************************************************************************
 *                                 M A C R O S
 ********************************************************************************
 */
 
-/*******************************************************************************
-*                   F U N C T I O N   D E C L A R A T I O N S
-********************************************************************************
-*/
+#if (CFG_SUPPORT_CONNINFRA == 1)
+static struct sub_drv_ops_cb g_conninfra_wf_cb;
+#endif
 
 /*******************************************************************************
 *                   F U N C T I O N   D E C L A R A T I O N S
@@ -76,6 +86,17 @@ static void soc5_0_DumpBusHangCr(struct ADAPTER *prAdapter);
 *                              F U N C T I O N S
 ********************************************************************************
 */
+#if (CFG_POWER_ON_DOWNLOAD_EMI_ROM_PATCH == 1)
+static uint8_t *soc5_0_apucFwName[] = {
+	(uint8_t *) CFG_FW_FILENAME "_MT",
+	NULL
+};
+
+static uint8_t *soc5_0_apucCr4FwName[] = {
+	(uint8_t *) CFG_CR4_FW_FILENAME "_MT",
+	NULL
+};
+#endif
 
 /*******************************************************************************
 *                            P U B L I C   D A T A
@@ -454,6 +475,7 @@ struct mt66xx_chip_info mt66xx_chip_info_soc5_0 = {
 	.is_support_wacpu = FALSE,
 	.txd_append_size = SOC5_0_TX_DESC_APPEND_LENGTH,
 	.rxd_size = SOC5_0_RX_DESC_LENGTH,
+	.init_evt_rxd_size = SOC5_0_RX_DESC_LENGTH,
 	.pse_header_length = CONNAC2X_NIC_TX_PSE_HEADER_LENGTH,
 	.init_event_size = CONNAC2X_RX_INIT_EVENT_LENGTH,
 	.eco_info = soc5_0_eco_table,
@@ -462,19 +484,39 @@ struct mt66xx_chip_info mt66xx_chip_info_soc5_0 = {
 	.top_hvr = CONNAC2X_TOP_HVR,
 	.top_fvr = CONNAC2X_TOP_FVR,
 	.arb_ac_mode_addr = SOC5_0_ARB_AC_MODE_ADDR,
+	.custom_oid_interface_version = MTK_CUSTOM_OID_INTERFACE_VERSION,
+	.em_interface_version = MTK_EM_INTERFACE_VERSION,
 	.asicCapInit = asicConnac2xCapInit,
 #if CFG_ENABLE_FW_DOWNLOAD
 	.asicEnableFWDownload = NULL,
 #endif /* CFG_ENABLE_FW_DOWNLOAD */
+	.asicGetChipID = asicGetChipID,
 	.downloadBufferBin = NULL,
 	.is_support_hw_amsdu = TRUE,
 	.is_support_asic_lp = TRUE,
 	.is_support_wfdma1 = FALSE,
+	.is_support_nvram_fragment = TRUE,
 	.asicWfdmaReInit = asicConnac2xWfdmaReInit,
 	.asicWfdmaReInit_handshakeInit = asicConnac2xWfdmaDummyCrWrite,
 	.group5_size = sizeof(struct HW_MAC_RX_STS_GROUP_5),
 	.u4LmacWtblDUAddr = CONNAC2X_WIFI_LWTBL_BASE,
-	.u4UmacWtblDUAddr = CONNAC2X_WIFI_UWTBL_BASE,
+	.u4UmacWtblDUAddr = CONNAC2X_WIFI_LWTBL_BASE,
+	.wmmcupwron = hifWmmcuPwrOn,
+	.wmmcupwroff = hifWmmcuPwrOff,
+#if (CFG_POWER_ON_DOWNLOAD_EMI_ROM_PATCH == 1)
+	.pwrondownload = soc5_0_wlanPowerOnDownload,
+#else
+	.pwrondownload = NULL,
+#endif
+	.triggerfwassert = soc5_0_Trigger_fw_assert,
+
+#if (CFG_SUPPORT_CONNINFRA == 1)
+	.coexpccifon = wlanConnacPccifon,
+	.coexpccifoff = wlanConnacPccifoff,
+	.trigger_wholechiprst = soc5_0_Trigger_whole_chip_rst,
+	.sw_interrupt_handler = soc5_0_Sw_interrupt_handler,
+	.conninra_cb_register = soc5_0_Conninfra_cb_register,
+#endif
 	.checkbushang = soc5_0_CheckBusHang,
 	.dumpBusHangCr = soc5_0_DumpBusHangCr,
 	.cmd_max_pkt_size = CFG_TX_MAX_PKT_SIZE, /* size 1600 */
@@ -1089,6 +1131,13 @@ int wf_pwr_on_consys_mcu(void)
 	wf_ioremap_write(WF_MCU_BUS_CR_AP2WF_REMAP_1,
 		WF_MCUSYS_INFRA_BUS_FULL_U_DEBUG_CTRL_AO_BASE);
 
+	/* enable debug clock (debug ctrl ao)
+	 * 0x1850_0000[3] = 1'b1
+	 */
+	wf_ioremap_read(DEBUG_CTRL_AO_WFMCU_PWA_CTRL0, &value);
+	value |= 0x00000008;
+	wf_ioremap_write(DEBUG_CTRL_AO_WFMCU_PWA_CTRL0, value);
+
 	/* rest wfsys bus timeout value (debug ctrl ao)
 	 * 0x1850_0000[9] = 1'b1
 	 * 0x1850_0000[9] = 1'b0
@@ -1107,6 +1156,13 @@ int wf_pwr_on_consys_mcu(void)
 	value &= 0x0000FFFF;
 	value |= 0x03AA0000;
 	wf_ioremap_write(DEBUG_CTRL_AO_WFMCU_PWA_CTRL0, value);
+
+	/* mask wfdma+umac busy signal (debug ctrl ao)
+	 * 0x1850_000C[16] = 1'b1
+	 */
+	wf_ioremap_read(DEBUG_CTRL_AO_WFMCU_PWA_CTRL3, &value);
+	value |= 0x00010000;
+	wf_ioremap_write(DEBUG_CTRL_AO_WFMCU_PWA_CTRL3, value);
 
 	/* enable wfsys bus timeout (debug ctrl ao)
 	 * 0x1850_0000[4] = 1'b1
@@ -1128,14 +1184,14 @@ int wf_pwr_on_consys_mcu(void)
 	wf_ioremap_write(WFSYS_CPU_SW_RST_B_ADDR, value);
 
 	/* Check CONNSYS power-on completion
-	 * Polling "100 times" and each polling interval is "1ms"
+	 * Polling "1000 times" and each polling interval is "1ms"
 	 * Polling 0x81021604[31:0] = 0x00001D1E
 	 */
 	wf_ioremap_read(WF_ROM_CODE_INDEX_ADDR, &value);
 	check = 0;
 	polling_count = 0;
 	while (value != CONNSYS_ROM_DONE_CHECK) {
-		if (polling_count > 100) {
+		if (polling_count > 1000) {
 			check = -1;
 			ret = -1;
 			break;
@@ -1504,6 +1560,10 @@ int soc5_0_Trigger_whole_chip_rst(char *reason)
 void soc5_0_Sw_interrupt_handler(struct ADAPTER *prAdapter)
 {
 	int value = 0;
+	int ret = 0;
+	int check;
+	unsigned int polling_count;
+	u_int8_t needWakeup = FALSE;
 	struct GL_HIF_INFO *prHifInfo = NULL;
 	struct BUS_INFO *prBusInfo = NULL;
 	struct SW_WFDMA_INFO *prSwWfdmaInfo = NULL;
@@ -1513,28 +1573,73 @@ void soc5_0_Sw_interrupt_handler(struct ADAPTER *prAdapter)
 	prBusInfo = prAdapter->chip_info->bus_info;
 	prSwWfdmaInfo = &prBusInfo->rSwWfdmaInfo;
 
-	if (!conninfra_reg_readable_no_lock()) {
-		DBGLOG(HAL, ERROR,
-			"conninfra_reg_readable fail\n");
-		disable_irq_nosync(prHifInfo->u4IrqId_1);
-#if (CFG_ANDORID_CONNINFRA_COREDUMP_SUPPORT == 1)
-		g_eWfRstSource = WF_RST_SOURCE_FW;
-		if (!prAdapter->prGlueInfo->u4ReadyFlag)
-			g_IsNeedWaitCoredump = TRUE;
-#endif
-		DBGLOG(HAL, ERROR,
-			"FW trigger assert(0x%x).\n", value);
-		fgIsResetting = TRUE;
-		update_driver_reset_status(fgIsResetting);
-		kalSetRstEvent();
-		return;
+	/* Wakeup conn_infra off write 0x180601A4[0] = 1'b1 */
+	HAL_MCR_RD(prAdapter, CONN_INFRA_WAKEUP_WF_ADDR_CONNCYS_VIEW, &value);
+	if (value & 0x1 != 0x1) {
+		DBGLOG(HAL, INFO, "Need wakeup conn_infra off first.\n");
+		needWakeup = TRUE;
+	}
+	if (needWakeup) {
+		value |= 0x00000001;
+		HAL_MCR_WR(prAdapter, CONN_INFRA_WAKEUP_WF_ADDR_CONNCYS_VIEW,
+			value);
 	}
 
-	/* wf_ioremap_read(AP2WF_PCCIF_RCHNUM, &value); */
-	HAL_MCR_RD(prAdapter, AP2WF_PCCIF_RCHNUM_, &value);
+	/* Check CONNSYS version ID
+	 * (polling "10 times" and each polling interval is "1ms")
+	 * Address: 0x1800_1000[31:0]
+	 * Data: 0x02060002
+	 * Action: polling
+	 */
+	HAL_MCR_RD(prAdapter, CONN_HW_VER_ADDR_CONNCYS_VIEW, &value);
+	check = 0;
+	polling_count = 0;
+	while (value != CONNSYS_VERSION_ID) {
+		if (polling_count > 10) {
+			check = -1;
+			ret = -1;
+			break;
+		}
+		udelay(1000);
+		HAL_MCR_RD(prAdapter, CONN_HW_VER_ADDR_CONNCYS_VIEW, &value);
+		polling_count++;
+	}
+	if (check != 0) {
+		DBGLOG(HAL, ERROR, "Polling CONNSYS version ID fail.\n");
+
+		if (!conninfra_reg_readable_no_lock()) {
+			DBGLOG(HAL, ERROR,
+				"conninfra_reg_readable fail\n");
+			/* check for dump log */
+			conninfra_is_bus_hang();
+
+			disable_irq_nosync(prHifInfo->u4IrqId_1);
+#if (CFG_ANDORID_CONNINFRA_COREDUMP_SUPPORT == 1)
+			g_eWfRstSource = WF_RST_SOURCE_FW;
+			if (!prAdapter->prGlueInfo->u4ReadyFlag)
+				g_IsNeedWaitCoredump = TRUE;
+#endif
+			DBGLOG(HAL, ERROR,
+				"FW trigger assert(0x%x).\n", value);
+			fgIsResetting = TRUE;
+			update_driver_reset_status(fgIsResetting);
+			kalSetRstEvent();
+			return;
+		}
+	}
+
+	HAL_MCR_RD(prAdapter, AP2WF_PCCIF_RCHNUM_CONNCYS_VIEW, &value);
 	DBGLOG(HAL, TRACE, "SW INT happened!!!!!(0x%x)\n", value);
-	/* wf_ioremap_write(AP2WF_PCCIF_ACK, value);*/
-	HAL_MCR_WR(prAdapter, AP2WF_PCCIF_ACK_, value);
+	HAL_MCR_WR(prAdapter, AP2WF_PCCIF_ACK_CONNCYS_VIEW, value);
+
+	/* Disable conn_infra off domain force on 0x180601A4[0] = 1'b0 */
+	if (needWakeup) {
+		HAL_MCR_RD(prAdapter, CONN_INFRA_WAKEUP_WF_ADDR_CONNCYS_VIEW,
+			&value);
+		value &= 0xFFFFFFFE;
+		HAL_MCR_WR(prAdapter, CONN_INFRA_WAKEUP_WF_ADDR_CONNCYS_VIEW,
+			value);
+	}
 
 #ifdef CONFIG_MTK_CONNSYS_DEDICATED_LOG_PATH
 	if (value & BIT(0))
