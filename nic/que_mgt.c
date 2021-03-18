@@ -4539,6 +4539,10 @@ void qmHandleEventTxAddBa(IN struct ADAPTER *prAdapter,
 	prStaRec->u4MaxMpduLen = prEventTxAddBa->u4MaxMpduLen;
 	prStaRec->u4MinMpduLen = prEventTxAddBa->u4MinMpduLen;
 
+#if CFG_MTK_MCIF_WIFI_SUPPORT
+	mddpNotifyDrvTxd(prAdapter, prStaRec, TRUE);
+#endif
+
 	DBGLOG(QM, INFO,
 	       "QM:Event +TxBa bitmap[0x%x] count[%u] MaxLen[%u] MinLen[%u]\n",
 	       prStaRec->ucAmsduEnBitmap, prStaRec->ucMaxMpduCount,
