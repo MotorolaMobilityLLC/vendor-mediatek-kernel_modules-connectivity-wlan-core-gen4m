@@ -53,7 +53,7 @@
 ********************************************************************************
 */
 
-struct SOC5_0_DMASHDL_CFG rSOC5_0_DmashdlCfg = {
+struct DMASHDL_CFG rSOC5_0_DmashdlCfg = {
 	.fgSlotArbiterEn = SOC5_0_DMASHDL_SLOT_ARBITER_EN,
 
 	.u2PktPleMaxPage = SOC5_0_DMASHDL_PKT_PLE_MAX_PAGE,
@@ -173,217 +173,157 @@ struct SOC5_0_DMASHDL_CFG rSOC5_0_DmashdlCfg = {
 
 	.u2HifAckCntTh = SOC5_0_DMASHDL_HIF_ACK_CNT_TH,
 	.u2HifGupActMap = SOC5_0_DMASHDL_HIF_GUP_ACT_MAP,
+	.u4GroupNum = ENUM_DMASHDL_GROUP_NUM,
+
+	.rPlePacketMaxSize = {
+		WF_HIF_DMASHDL_TOP_PACKET_MAX_SIZE_ADDR,
+		WF_HIF_DMASHDL_TOP_PACKET_MAX_SIZE_PLE_PACKET_MAX_SIZE_MASK,
+		WF_HIF_DMASHDL_TOP_PACKET_MAX_SIZE_PLE_PACKET_MAX_SIZE_SHFT
+	},
+
+	.rPsePacketMaxSize = {
+		WF_HIF_DMASHDL_TOP_PACKET_MAX_SIZE_ADDR,
+		WF_HIF_DMASHDL_TOP_PACKET_MAX_SIZE_PSE_PACKET_MAX_SIZE_MASK,
+		WF_HIF_DMASHDL_TOP_PACKET_MAX_SIZE_PSE_PACKET_MAX_SIZE_SHFT
+	},
+
+	.rGroup0RefillDisable = {
+		WF_HIF_DMASHDL_TOP_REFILL_CONTROL_ADDR,
+		WF_HIF_DMASHDL_TOP_REFILL_CONTROL_GROUP0_REFILL_DISABLE_MASK,
+		0
+	},
+
+	.rGroup0ControlMaxQuota = {
+		WF_HIF_DMASHDL_TOP_GROUP0_CONTROL_ADDR,
+		WF_HIF_DMASHDL_TOP_GROUP0_CONTROL_GROUP0_MAX_QUOTA_MASK,
+		WF_HIF_DMASHDL_TOP_GROUP0_CONTROL_GROUP0_MAX_QUOTA_SHFT
+	},
+
+	.rGroup0ControlMinQuota = {
+		WF_HIF_DMASHDL_TOP_GROUP0_CONTROL_ADDR,
+		WF_HIF_DMASHDL_TOP_GROUP0_CONTROL_GROUP0_MIN_QUOTA_MASK,
+		WF_HIF_DMASHDL_TOP_GROUP0_CONTROL_GROUP0_MIN_QUOTA_SHFT
+	},
+
+	.rQueueMapping0Queue0 = {
+		WF_HIF_DMASHDL_TOP_QUEUE_MAPPING0_ADDR,
+		WF_HIF_DMASHDL_TOP_QUEUE_MAPPING0_QUEUE0_MAPPING_MASK,
+		WF_HIF_DMASHDL_TOP_QUEUE_MAPPING0_QUEUE0_MAPPING_SHFT
+	},
+
+	.rPageSettingGroupSeqOrderType = {
+		WF_HIF_DMASHDL_TOP_PAGE_SETTING_ADDR,
+		WF_HIF_DMASHDL_TOP_PAGE_SETTING_GROUP_SEQUENCE_ORDER_TYPE_MASK,
+		WF_HIF_DMASHDL_TOP_PAGE_SETTING_GROUP_SEQUENCE_ORDER_TYPE_SHFT,
+	},
+
+	.rSchdulerSetting0Priority0Group = {
+		WF_HIF_DMASHDL_TOP_HIF_SCHEDULER_SETTING0_ADDR,
+		WF_HIF_DMASHDL_TOP_HIF_SCHEDULER_SETTING0_PRIORITY0_GROUP_MASK,
+		WF_HIF_DMASHDL_TOP_HIF_SCHEDULER_SETTING0_PRIORITY0_GROUP_SHFT
+	},
+
+	.rStatusRdGp0RsvCnt = {
+		WF_HIF_DMASHDL_TOP_STATUS_RD_GP0_ADDR,
+		WF_HIF_DMASHDL_TOP_STATUS_RD_GP0_G0_RSV_CNT_MASK,
+		WF_HIF_DMASHDL_TOP_STATUS_RD_GP0_G0_RSV_CNT_SHFT
+	},
+
+	.rStatusRdGp0SrcCnt = {
+		WF_HIF_DMASHDL_TOP_STATUS_RD_GP0_ADDR,
+		WF_HIF_DMASHDL_TOP_STATUS_RD_GP0_G0_SRC_CNT_MASK,
+		WF_HIF_DMASHDL_TOP_STATUS_RD_GP0_G0_SRC_CNT_SHFT
+	},
+
+	.rRdGroupPktCnt0 = {
+		WF_HIF_DMASHDL_TOP_RD_GROUP_PKT_CNT0_ADDR,
+		0,
+		0
+	},
+
+	.rOptionalControlCrHifAckCntTh = {
+		WF_HIF_DMASHDL_TOP_OPTIONAL_CONTROL_ADDR,
+		WF_HIF_DMASHDL_TOP_OPTIONAL_CONTROL_CR_HIF_ACK_CNT_TH_MASK,
+		WF_HIF_DMASHDL_TOP_OPTIONAL_CONTROL_CR_HIF_ACK_CNT_TH_SHFT
+	},
+
+	.rOptionalControlCrHifGupActMap = {
+		WF_HIF_DMASHDL_TOP_OPTIONAL_CONTROL_ADDR,
+		WF_HIF_DMASHDL_TOP_OPTIONAL_CONTROL_CR_HIF_GUP_ACT_MAP_MASK,
+		WF_HIF_DMASHDL_TOP_OPTIONAL_CONTROL_CR_HIF_GUP_ACT_MAP_SHFT,
+	},
+
+	.rErrorFlagCtrl = {
+		WF_HIF_DMASHDL_TOP_ERROR_FLAG_CTRL_ADDR,
+		0,
+		0
+	},
+
+	.rStatusRdFfaCnt = {
+		WF_HIF_DMASHDL_TOP_STATUS_RD_ADDR,
+		WF_HIF_DMASHDL_TOP_STATUS_RD_FFA_CNT_MASK,
+		WF_HIF_DMASHDL_TOP_STATUS_RD_FFA_CNT_SHFT
+	},
+
+	.rStatusRdFreePageCnt = {
+		WF_HIF_DMASHDL_TOP_STATUS_RD_ADDR,
+		WF_HIF_DMASHDL_TOP_STATUS_RD_FREE_PAGE_CNT_MASK,
+		WF_HIF_DMASHDL_TOP_STATUS_RD_FREE_PAGE_CNT_SHFT
+	},
+
+	.rHifPgInfoHifRsvCnt = {
+		WF_PLE_TOP_HIF_PG_INFO_ADDR,
+		WF_PLE_TOP_HIF_PG_INFO_HIF_RSV_CNT_MASK,
+		WF_PLE_TOP_HIF_PG_INFO_HIF_RSV_CNT_SHFT
+	},
+
+	.rHifPgInfoHifSrcCnt = {
+		WF_PLE_TOP_HIF_PG_INFO_ADDR,
+		WF_PLE_TOP_HIF_PG_INFO_HIF_SRC_CNT_MASK,
+		WF_PLE_TOP_HIF_PG_INFO_HIF_SRC_CNT_SHFT
+	},
 };
-
-
-void soc5_0HalDmashdlSetPlePktMaxPage(struct ADAPTER *prAdapter,
-				      uint16_t u2MaxPage)
-{
-	uint32_t u4Val;
-
-	HAL_MCR_RD(prAdapter, WF_HIF_DMASHDL_TOP_PACKET_MAX_SIZE_ADDR, &u4Val);
-
-	u4Val &= ~WF_HIF_DMASHDL_TOP_PACKET_MAX_SIZE_PLE_PACKET_MAX_SIZE_MASK;
-	u4Val |= (u2MaxPage <<
-		  WF_HIF_DMASHDL_TOP_PACKET_MAX_SIZE_PLE_PACKET_MAX_SIZE_SHFT) &
-		 WF_HIF_DMASHDL_TOP_PACKET_MAX_SIZE_PLE_PACKET_MAX_SIZE_MASK;
-
-	HAL_MCR_WR(prAdapter, WF_HIF_DMASHDL_TOP_PACKET_MAX_SIZE_ADDR, u4Val);
-}
-
-void soc5_0HalDmashdlSetPsePktMaxPage(struct ADAPTER *prAdapter,
-				      uint16_t u2MaxPage)
-{
-	uint32_t u4Val;
-
-	HAL_MCR_RD(prAdapter, WF_HIF_DMASHDL_TOP_PACKET_MAX_SIZE_ADDR, &u4Val);
-
-	u4Val &= ~WF_HIF_DMASHDL_TOP_PACKET_MAX_SIZE_PSE_PACKET_MAX_SIZE_MASK;
-	u4Val |= (u2MaxPage <<
-		  WF_HIF_DMASHDL_TOP_PACKET_MAX_SIZE_PSE_PACKET_MAX_SIZE_SHFT) &
-		 WF_HIF_DMASHDL_TOP_PACKET_MAX_SIZE_PSE_PACKET_MAX_SIZE_MASK;
-
-	HAL_MCR_WR(prAdapter, WF_HIF_DMASHDL_TOP_PACKET_MAX_SIZE_ADDR, u4Val);
-}
-
-void soc5_0HalDmashdlSetRefill(struct ADAPTER *prAdapter, uint8_t ucGroup,
-			       u_int8_t fgEnable)
-{
-	uint32_t u4Val, u4Mask;
-
-	if (ucGroup >= ENUM_SOC5_0_DMASHDL_GROUP_NUM)
-		ASSERT(0);
-
-	u4Mask = WF_HIF_DMASHDL_TOP_REFILL_CONTROL_GROUP0_REFILL_DISABLE_MASK
-		<< ucGroup;
-
-	HAL_MCR_RD(prAdapter, WF_HIF_DMASHDL_TOP_REFILL_CONTROL_ADDR, &u4Val);
-
-	if (fgEnable)
-		u4Val &= ~u4Mask;
-	else
-		u4Val |= u4Mask;
-
-	HAL_MCR_WR(prAdapter, WF_HIF_DMASHDL_TOP_REFILL_CONTROL_ADDR, u4Val);
-}
-
-void soc5_0HalDmashdlSetMaxQuota(struct ADAPTER *prAdapter, uint8_t ucGroup,
-				 uint16_t u2MaxQuota)
-{
-	uint32_t u4Addr, u4Val;
-
-	if (ucGroup >= ENUM_SOC5_0_DMASHDL_GROUP_NUM)
-		ASSERT(0);
-
-	u4Addr = WF_HIF_DMASHDL_TOP_GROUP0_CONTROL_ADDR + (ucGroup << 2);
-
-	HAL_MCR_RD(prAdapter, u4Addr, &u4Val);
-
-	u4Val &= ~WF_HIF_DMASHDL_TOP_GROUP0_CONTROL_GROUP0_MAX_QUOTA_MASK;
-	u4Val |= (u2MaxQuota <<
-		  WF_HIF_DMASHDL_TOP_GROUP0_CONTROL_GROUP0_MAX_QUOTA_SHFT) &
-		 WF_HIF_DMASHDL_TOP_GROUP0_CONTROL_GROUP0_MAX_QUOTA_MASK;
-
-	HAL_MCR_WR(prAdapter, u4Addr, u4Val);
-}
-
-void soc5_0HalDmashdlSetMinQuota(struct ADAPTER *prAdapter, uint8_t ucGroup,
-				 uint16_t u2MinQuota)
-{
-	uint32_t u4Addr, u4Val;
-
-	if (ucGroup >= ENUM_SOC5_0_DMASHDL_GROUP_NUM)
-		ASSERT(0);
-
-	u4Addr = WF_HIF_DMASHDL_TOP_GROUP0_CONTROL_ADDR + (ucGroup << 2);
-
-	HAL_MCR_RD(prAdapter, u4Addr, &u4Val);
-
-	u4Val &= ~WF_HIF_DMASHDL_TOP_GROUP0_CONTROL_GROUP0_MIN_QUOTA_MASK;
-	u4Val |= (u2MinQuota <<
-		  WF_HIF_DMASHDL_TOP_GROUP0_CONTROL_GROUP0_MIN_QUOTA_SHFT) &
-		 WF_HIF_DMASHDL_TOP_GROUP0_CONTROL_GROUP0_MIN_QUOTA_MASK;
-
-	HAL_MCR_WR(prAdapter, u4Addr, u4Val);
-}
-
-void soc5_0HalDmashdlSetQueueMapping(struct ADAPTER *prAdapter, uint8_t ucQueue,
-				     uint8_t ucGroup)
-{
-	uint32_t u4Addr, u4Val, u4Mask, u4Shft;
-
-	if (ucQueue >= 32)
-		ASSERT(0);
-
-	if (ucGroup >= ENUM_SOC5_0_DMASHDL_GROUP_NUM)
-		ASSERT(0);
-
-	u4Addr = WF_HIF_DMASHDL_TOP_QUEUE_MAPPING0_ADDR +
-		 ((ucQueue >> 3) << 2);
-	u4Mask = WF_HIF_DMASHDL_TOP_QUEUE_MAPPING0_QUEUE0_MAPPING_MASK <<
-		 ((ucQueue % 8) << 2);
-	u4Shft = (ucQueue % 8) << 2;
-
-	HAL_MCR_RD(prAdapter, u4Addr, &u4Val);
-
-	u4Val &= ~u4Mask;
-	u4Val |= (ucGroup << u4Shft) & u4Mask;
-
-	HAL_MCR_WR(prAdapter, u4Addr, u4Val);
-}
-
-void soc5_0HalDmashdlSetSlotArbiter(struct ADAPTER *prAdapter,
-				    u_int8_t fgEnable)
-{
-	uint32_t u4Val;
-
-	HAL_MCR_RD(prAdapter, WF_HIF_DMASHDL_TOP_PAGE_SETTING_ADDR, &u4Val);
-
-	if (fgEnable)
-		u4Val |=
-		 WF_HIF_DMASHDL_TOP_PAGE_SETTING_GROUP_SEQUENCE_ORDER_TYPE_MASK;
-	else
-		u4Val &=
-		~WF_HIF_DMASHDL_TOP_PAGE_SETTING_GROUP_SEQUENCE_ORDER_TYPE_MASK;
-
-	HAL_MCR_WR(prAdapter, WF_HIF_DMASHDL_TOP_PAGE_SETTING_ADDR, u4Val);
-}
-
-void soc5_0HalDmashdlSetUserDefinedPriority(struct ADAPTER *prAdapter,
-					    uint8_t ucPriority, uint8_t ucGroup)
-{
-	uint32_t u4Addr, u4Val, u4Mask, u4Shft;
-
-	ASSERT(ucPriority < 16);
-	ASSERT(ucGroup < ENUM_SOC5_0_DMASHDL_GROUP_NUM);
-
-	u4Addr = WF_HIF_DMASHDL_TOP_HIF_SCHEDULER_SETTING0_ADDR +
-		((ucPriority >> 3) << 2);
-	u4Mask = WF_HIF_DMASHDL_TOP_HIF_SCHEDULER_SETTING0_PRIORITY0_GROUP_MASK
-		 << ((ucPriority % 8) << 2);
-	u4Shft = (ucPriority % 8) << 2;
-
-	HAL_MCR_RD(prAdapter, u4Addr, &u4Val);
-
-	u4Val &= ~u4Mask;
-	u4Val |= (ucGroup << u4Shft) & u4Mask;
-
-	HAL_MCR_WR(prAdapter, u4Addr, u4Val);
-}
-
-void soc5_0HalDmashdlSetOptionalControl(struct ADAPTER *prAdapter,
-		uint16_t u2HifAckCntTh, uint16_t u2HifGupActMap)
-{
-	uint32_t u4Addr, u4Val;
-
-	u4Addr = WF_HIF_DMASHDL_TOP_OPTIONAL_CONTROL_ADDR;
-
-	HAL_MCR_RD(prAdapter, u4Addr, &u4Val);
-
-	u4Val &= ~WF_HIF_DMASHDL_TOP_OPTIONAL_CONTROL_CR_HIF_ACK_CNT_TH_MASK;
-	u4Val |= (u2HifAckCntTh <<
-		WF_HIF_DMASHDL_TOP_OPTIONAL_CONTROL_CR_HIF_ACK_CNT_TH_SHFT);
-
-	u4Val &= ~WF_HIF_DMASHDL_TOP_OPTIONAL_CONTROL_CR_HIF_GUP_ACT_MAP_MASK;
-	u4Val |= (u2HifGupActMap <<
-		WF_HIF_DMASHDL_TOP_OPTIONAL_CONTROL_CR_HIF_GUP_ACT_MAP_SHFT);
-
-	HAL_MCR_WR(prAdapter, u4Addr, u4Val);
-}
 
 void soc5_0DmashdlInit(struct ADAPTER *prAdapter)
 {
 	uint32_t idx;
 
-	soc5_0HalDmashdlSetPlePktMaxPage(prAdapter,
-					 rSOC5_0_DmashdlCfg.u2PktPleMaxPage);
+	asicConnac2xDmashdlSetPlePktMaxPage(
+		prAdapter, rSOC5_0_DmashdlCfg.u2PktPleMaxPage);
 
-	soc5_0HalDmashdlSetPsePktMaxPage(prAdapter,
-					 rSOC5_0_DmashdlCfg.u2PktPseMaxPage);
+	asicConnac2xDmashdlSetPsePktMaxPage(
+		prAdapter, rSOC5_0_DmashdlCfg.u2PktPseMaxPage);
 
-	for (idx = 0; idx < ENUM_SOC5_0_DMASHDL_GROUP_NUM; idx++) {
-		soc5_0HalDmashdlSetRefill(prAdapter, idx,
-					  rSOC5_0_DmashdlCfg.afgRefillEn[idx]);
+	for (idx = 0; idx < ENUM_DMASHDL_GROUP_NUM; idx++) {
+		asicConnac2xDmashdlSetRefill(
+			prAdapter, idx,
+			rSOC5_0_DmashdlCfg.afgRefillEn[idx]);
 
-		soc5_0HalDmashdlSetMaxQuota(prAdapter, idx,
-					rSOC5_0_DmashdlCfg.au2MaxQuota[idx]);
+		asicConnac2xDmashdlSetMaxQuota(
+			prAdapter, idx,
+			rSOC5_0_DmashdlCfg.au2MaxQuota[idx]);
 
-		soc5_0HalDmashdlSetMinQuota(prAdapter, idx,
-					rSOC5_0_DmashdlCfg.au2MinQuota[idx]);
+		asicConnac2xDmashdlSetMinQuota(
+			prAdapter, idx,
+			rSOC5_0_DmashdlCfg.au2MinQuota[idx]);
 	}
 
 	for (idx = 0; idx < 32; idx++)
-		soc5_0HalDmashdlSetQueueMapping(prAdapter, idx,
-				rSOC5_0_DmashdlCfg.aucQueue2Group[idx]);
+		asicConnac2xDmashdlSetQueueMapping(
+			prAdapter, idx,
+			rSOC5_0_DmashdlCfg.aucQueue2Group[idx]);
 
 	for (idx = 0; idx < 16; idx++)
-		soc5_0HalDmashdlSetUserDefinedPriority(prAdapter, idx,
-				rSOC5_0_DmashdlCfg.aucPriority2Group[idx]);
+		asicConnac2xDmashdlSetUserDefinedPriority(
+			prAdapter, idx,
+			rSOC5_0_DmashdlCfg.aucPriority2Group[idx]);
 
-	soc5_0HalDmashdlSetSlotArbiter(prAdapter,
-				       rSOC5_0_DmashdlCfg.fgSlotArbiterEn);
+	asicConnac2xDmashdlSetSlotArbiter(
+		prAdapter,
+		rSOC5_0_DmashdlCfg.fgSlotArbiterEn);
 
-	soc5_0HalDmashdlSetOptionalControl(prAdapter,
+	asicConnac2xDmashdlSetOptionalControl(
+		prAdapter,
 		rSOC5_0_DmashdlCfg.u2HifAckCntTh,
 		rSOC5_0_DmashdlCfg.u2HifGupActMap);
 }
