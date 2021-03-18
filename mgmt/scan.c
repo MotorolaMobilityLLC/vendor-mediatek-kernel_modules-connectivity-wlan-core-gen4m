@@ -115,6 +115,14 @@ void scnInit(IN struct ADAPTER *prAdapter)
 	/* 4 <1> Reset STATE and Message List */
 	prScanInfo->eCurrentState = SCAN_STATE_IDLE;
 
+#if CFG_SUPPORT_SCAN_NO_AP_RECOVERY
+	prScanInfo->ucScnZeroMdrdyTimes = 0;
+	prScanInfo->ucScnZeroMdrdySerCnt = 0;
+	prScanInfo->ucScnZeroMdrdySubsysResetCnt = 0;
+	prScanInfo->ucScnTimeoutTimes = 0;
+	prScanInfo->ucScnTimeoutSubsysResetCnt = 0;
+#endif
+
 	prScanInfo->rLastScanCompletedTime = (OS_SYSTIME) 0;
 
 	LINK_INITIALIZE(&prScanInfo->rPendingMsgList);
@@ -206,6 +214,14 @@ void scnUninit(IN struct ADAPTER *prAdapter)
 
 	/* 4 <1> Reset STATE and Message List */
 	prScanInfo->eCurrentState = SCAN_STATE_IDLE;
+
+#if CFG_SUPPORT_SCAN_NO_AP_RECOVERY
+	prScanInfo->ucScnZeroMdrdyTimes = 0;
+	prScanInfo->ucScnZeroMdrdySerCnt = 0;
+	prScanInfo->ucScnZeroMdrdySubsysResetCnt = 0;
+	prScanInfo->ucScnTimeoutTimes = 0;
+	prScanInfo->ucScnTimeoutSubsysResetCnt = 0;
+#endif
 
 	prScanInfo->rLastScanCompletedTime = (OS_SYSTIME) 0;
 

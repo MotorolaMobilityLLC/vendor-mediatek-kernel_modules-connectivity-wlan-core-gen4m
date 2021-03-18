@@ -1153,6 +1153,11 @@ struct WIFI_VAR {
 	uint32_t uArpMonitorNumber;
 	uint32_t uArpMonitorRxPktNum;
 #endif /* ARP_MONITER_ENABLE */
+#if CFG_SUPPORT_SCAN_NO_AP_RECOVERY
+	uint8_t ucScanNoApRecover;
+	uint8_t ucScanNoApRecoverTh;
+#endif /* CFG_SUPPORT_LOWLATENCY_MODE */
+
 };
 
 /* cnm_timer module */
