@@ -7047,10 +7047,10 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 			wlanCfgGetUint32(prAdapter, "ApHE", FEATURE_ENABLED);
 		prWifiVar->ucP2pGoHe = (uint8_t)
 			wlanCfgGetUint32(prAdapter, "P2pGoHE",
-					FEATURE_DISABLED);
+					FEATURE_ENABLED);
 		prWifiVar->ucP2pGcHe = (uint8_t)
 			wlanCfgGetUint32(prAdapter, "P2pGcHE",
-					FEATURE_DISABLED);
+					FEATURE_ENABLED);
 
 		prWifiVar->ucApSelAxWeight = (uint8_t)
 		wlanCfgGetUint32(prAdapter, "ApSelAxWeight", AX_SEL_DEF_WEIGHT);
