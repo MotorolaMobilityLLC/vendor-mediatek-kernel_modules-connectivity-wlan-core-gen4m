@@ -1173,6 +1173,34 @@ int wf_pwr_on_consys_mcu(void)
 	value |= 0x0000001C;
 	wf_ioremap_write(DEBUG_CTRL_AO_WFMCU_PWA_CTRL0, value);
 
+	/* enable debug control bus timeout feature (axi layer)
+	 * 0x1801_D000[9] = 1'b1
+	 * 0x1801_D000[31:16] = 16'h30E0
+	 * 0x1801_D000[2] = 1'b1
+	 * 0x1801_D000[3] = 1'b1
+	 * 0x1801_D000[4] = 1'b1
+	 * 0x1801_D000[9] = 1'b0
+	 */
+	wf_ioremap_read(DEBUG_CTRL_AO_CONN_INFRA_CTRL0, &value);
+	value |= 0x00000200;
+	wf_ioremap_write(DEBUG_CTRL_AO_CONN_INFRA_CTRL0, value);
+	wf_ioremap_read(DEBUG_CTRL_AO_CONN_INFRA_CTRL0, &value);
+	value &= 0x0000FFFF;
+	value |= 0x30E00000;
+	wf_ioremap_write(DEBUG_CTRL_AO_CONN_INFRA_CTRL0, value);
+	wf_ioremap_read(DEBUG_CTRL_AO_CONN_INFRA_CTRL0, &value);
+	value |= 0x00000004;
+	wf_ioremap_write(DEBUG_CTRL_AO_CONN_INFRA_CTRL0, value);
+	wf_ioremap_read(DEBUG_CTRL_AO_CONN_INFRA_CTRL0, &value);
+	value |= 0x00000008;
+	wf_ioremap_write(DEBUG_CTRL_AO_CONN_INFRA_CTRL0, value);
+	wf_ioremap_read(DEBUG_CTRL_AO_CONN_INFRA_CTRL0, &value);
+	value |= 0x00000010;
+	wf_ioremap_write(DEBUG_CTRL_AO_CONN_INFRA_CTRL0, value);
+	wf_ioremap_read(DEBUG_CTRL_AO_CONN_INFRA_CTRL0, &value);
+	value &= 0xFFFFFDFF;
+	wf_ioremap_write(DEBUG_CTRL_AO_CONN_INFRA_CTRL0, value);
+
 	/* Setup CONNSYS firmware in EMI */
 #if (CFG_POWER_ON_DOWNLOAD_EMI_ROM_PATCH == 1)
 	soc5_0_wlanPowerOnInit();
@@ -1366,12 +1394,12 @@ int wf_pwr_off_consys_mcu(void)
 		return ret;
 	}
 
-	/* Reset WFSYS semaphore 0x18000018[0] = 1'b0 */
+	/* Reset WFSYS semaphore 0x18000140[0] = 1'b0 */
 	wf_ioremap_read(WFSYS_SW_RST_B_ADDR, &value);
 	value &= 0xFFFFFFFE;
 	wf_ioremap_write(WFSYS_SW_RST_B_ADDR, value);
 
-	/* de-assert reset WFSYS semaphore 0x18000018[0] = 1'b1 */
+	/* de-assert reset WFSYS semaphore 0x18000140[0] = 1'b1 */
 	wf_ioremap_read(WFSYS_SW_RST_B_ADDR, &value);
 	value |= 0x00000001;
 	wf_ioremap_write(WFSYS_SW_RST_B_ADDR, value);
