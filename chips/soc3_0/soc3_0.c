@@ -79,6 +79,7 @@
 
 #include "precomp.h"
 #include "gl_rst.h"
+#include "gl_kal.h"
 #include "soc3_0.h"
 #include "hal_dmashdl_soc3_0.h"
 #include <linux/platform_device.h>
@@ -2832,6 +2833,8 @@ void soc3_0_Conninfra_cb_register(void)
 	g_conninfra_wf_cb.pre_cal_cb.do_cal_cb = soc3_0_wlanPreCal;
 	update_pre_cal_status(0);
 #endif /* (CFG_SUPPORT_PRE_ON_PHY_ACTION == 1) */
+
+	g_conninfra_wf_cb.time_change_notify = kalSyncTimeToFWByIoctl;
 
 	conninfra_sub_drv_ops_register(CONNDRV_TYPE_WIFI,
 		&g_conninfra_wf_cb);
