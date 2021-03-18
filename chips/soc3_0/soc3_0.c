@@ -784,11 +784,15 @@ void soc3_0asicConnac2xWfdmaManualPrefetch(
 
 	soc3_0SetMDRXRingPriorityInterrupt(prAdapter);
 
-	/* reset dma idx */
+	/* reset dma TRX idx */
 	HAL_MCR_WR(prAdapter,
 		WF_WFDMA_HOST_DMA0_WPDMA_RST_DTX_PTR_ADDR, 0xFFFFFFFF);
 	HAL_MCR_WR(prAdapter,
 		WF_WFDMA_HOST_DMA1_WPDMA_RST_DTX_PTR_ADDR, 0xFFFFFFFF);
+	HAL_MCR_WR(prAdapter,
+		WF_WFDMA_HOST_DMA0_WPDMA_RST_DRX_PTR_ADDR, 0xFFFFFFFF);
+	HAL_MCR_WR(prAdapter,
+		WF_WFDMA_HOST_DMA1_WPDMA_RST_DRX_PTR_ADDR, 0xFFFFFFFF);
 
 #if defined(_HIF_AXI)
     /*Bypass BID check*/
