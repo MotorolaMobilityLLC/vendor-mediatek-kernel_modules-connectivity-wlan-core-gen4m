@@ -675,41 +675,33 @@ static void configIntMask(struct GLUE_INFO *prGlueInfo,
 		u_int8_t enable)
 {
 	union WPDMA_INT_MASK IntMask;
+	uint32_t u4Addr = 0, u4Val = 0;
 
-	if (enable) {
-		HAL_MCR_RD(prGlueInfo->prAdapter,
-			WF_WFDMA_HOST_DMA0_HOST_INT_ENA_ADDR, &IntMask.word);
-		IntMask.word = 0;
-		IntMask.field_conn2x_single.wfdma0_rx_done_0 = 1;
-		IntMask.field_conn2x_single.wfdma0_rx_done_1 = 1;
-		IntMask.field_conn2x_single.wfdma0_rx_done_2 = 1;
-		IntMask.field_conn2x_single.wfdma0_rx_done_3 = 1;
-		IntMask.field_conn2x_single.wfdma0_tx_done_0 = 1;
-		IntMask.field_conn2x_single.wfdma0_tx_done_1 = 1;
-		IntMask.field_conn2x_single.wfdma0_tx_done_17 = 1;
-		IntMask.field_conn2x_single.wfdma0_tx_done_16 = 1;
-		IntMask.field_conn2x_single.wfdma0_mcu2host_sw_int_en = 1;
+	u4Addr = enable ? WF_WFDMA_HOST_DMA0_HOST_INT_ENA_SET_ADDR :
+		WF_WFDMA_HOST_DMA0_HOST_INT_ENA_CLR_ADDR;
 
-		IntMask.field_conn2x_single.wfdma0_rx_coherent = 0;
-		IntMask.field_conn2x_single.wfdma0_tx_coherent = 0;
-		HAL_MCR_WR(prGlueInfo->prAdapter,
-			WF_WFDMA_HOST_DMA0_HOST_INT_ENA_ADDR, IntMask.word);
+	IntMask.word = 0;
+	IntMask.field_conn2x_single.wfdma0_rx_done_0 = 1;
+	IntMask.field_conn2x_single.wfdma0_rx_done_1 = 1;
+	IntMask.field_conn2x_single.wfdma0_rx_done_2 = 1;
+	IntMask.field_conn2x_single.wfdma0_rx_done_3 = 1;
+	IntMask.field_conn2x_single.wfdma0_tx_done_0 = 1;
+	IntMask.field_conn2x_single.wfdma0_tx_done_1 = 1;
+	IntMask.field_conn2x_single.wfdma0_tx_done_17 = 1;
+	IntMask.field_conn2x_single.wfdma0_tx_done_16 = 1;
+	IntMask.field_conn2x_single.wfdma0_mcu2host_sw_int_en = 1;
 
-		DBGLOG(HAL, TRACE, "HOST_INT_STA(0x%08x):0x%08x\n",
-			WF_WFDMA_HOST_DMA0_HOST_INT_ENA_ADDR,
-			IntMask.word);
-	} else {
-		IntMask.word = 0;
+	HAL_MCR_WR(prGlueInfo->prAdapter, u4Addr, IntMask.word);
 
-		HAL_MCR_WR(prGlueInfo->prAdapter,
-			WF_WFDMA_HOST_DMA0_HOST_INT_ENA_ADDR, IntMask.word);
-		HAL_MCR_RD(prGlueInfo->prAdapter,
-			WF_WFDMA_HOST_DMA0_HOST_INT_ENA_ADDR, &IntMask.word);
+	HAL_MCR_RD(prGlueInfo->prAdapter,
+		   WF_WFDMA_HOST_DMA0_HOST_INT_ENA_ADDR, &u4Val);
 
-		DBGLOG(HAL, TRACE, "HOST_INT_STA(0x%08x):0x%08x\n",
-			WF_WFDMA_HOST_DMA0_HOST_INT_ENA_ADDR,
-			IntMask.word);
-	}
+	DBGLOG(HAL, TRACE,
+	       "HOST_INT_STA(0x%08x):0x%08x, En:%u, Word:0x%08x\n",
+	       WF_WFDMA_HOST_DMA0_HOST_INT_ENA_ADDR,
+	       u4Val,
+	       enable,
+	       IntMask.word);
 }
 
 static void soc7_0asicConnac2xWpdmaConfig(struct GLUE_INFO *prGlueInfo,
