@@ -73,9 +73,7 @@
 #include "coda/soc3_0/wf_wfdma_host_dma0.h"
 #include "coda/soc3_0/wf_wfdma_host_dma1.h"
 
-#if (CFG_SUPPORT_CONNINFRA == 1)
 #include "coda/soc3_0/conn_infra_cfg.h"
-#endif
 
 #include "precomp.h"
 #include "gl_rst.h"
@@ -776,10 +774,13 @@ struct BUS_INFO soc3_0_bus_info = {
 	.fw_own_clear_bit = PCIE_LPCR_FW_CLR_OWN,
 	.fgCheckDriverOwnInt = FALSE,
 	.u4DmaMask = 32,
+#if defined(_HIF_PCIE)
+	.pcie2ap_remap_2 = CONN_INFRA_CFG_PCIE2AP_REMAP_2_ADDR,
+#endif
+	.ap2wf_remap_1 = CONN_INFRA_CFG_AP2WF_REMAP_1_ADDR,
 	.pdmaSetup = soc3_0asicConnac2xWpdmaConfig,
 	.enableInterrupt = asicConnac2xEnablePlatformIRQ,
 	.disableInterrupt = asicConnac2xDisablePlatformIRQ,
-
 	.processTxInterrupt = soc3_0asicConnac2xProcessTxInterrupt,
 	.processRxInterrupt = soc3_0asicConnac2xProcessRxInterrupt,
 	.tx_ring_ext_ctrl = asicConnac2xWfdmaTxRingExtCtrl,
@@ -833,7 +834,7 @@ struct FWDL_OPS_T soc3_0_fw_dl_ops = {
 	.downloadPatch = wlanDownloadPatch,
 	.downloadFirmware = wlanConnacFormatDownload,
 #if (CFG_DOWNLOAD_DYN_MEMORY_MAP == 1)
-	.downloadByDynMemMap = soc3_0_DownloadByDynMemMap,
+	.downloadByDynMemMap = downloadImgByDynMemMap,
 #else
 	.downloadByDynMemMap = NULL,
 #endif
@@ -970,175 +971,6 @@ struct mt66xx_hif_driver_data mt66xx_driver_data_soc3_0 = {
 	.chip_info = &mt66xx_chip_info_soc3_0,
 };
 
-#if (CFG_DOWNLOAD_DYN_MEMORY_MAP == 1)
-uint32_t soc3_0_DownloadByDynMemMap(IN struct ADAPTER *prAdapter,
-	IN uint32_t u4Addr, IN uint32_t u4Len,
-	IN uint8_t *pucStartPtr, IN enum ENUM_IMG_DL_IDX_T eDlIdx)
-{
-#if 0
-	uint32_t u4Val = 0;
-	uint32_t u4Idx = 0;
-	uint32_t u4NonZeroMemCnt = 0;
-#endif
-#if defined(_HIF_AXI)
-	struct GL_HIF_INFO *prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
-#endif
-
-#if defined(_HIF_PCIE)
-	struct GL_HIF_INFO *prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
-#endif
-
-	if ((eDlIdx == IMG_DL_IDX_PATCH) || (eDlIdx == IMG_DL_IDX_N9_FW)) {
-/*#pragma message("wlanDownloadSectionByDynMemMap()::SOC3_0")*/
-#if defined(_HIF_AXI)
-		/* AXI workable version by bytes of u4Len in one movement */
-		/* for PCIe WLAN drv, use 0x7C000000 based;
-		 * for AXI, also use 0x7C000000 based
-		 */
-		HAL_MCR_WR(prAdapter,
-			CONN_INFRA_CFG_AP2WF_REMAP_1_ADDR,
-			u4Addr);
-
-#if 0
-		if (eDlIdx == IMG_DL_IDX_PATCH) {
-			do {
-				u4Val = 0;
-
-				kalMemCopy(
-					(void *)&u4Val,
-					(void *)(
-						prHifInfo->CSRBaseAddress+
-						0x500000+(u4Idx * 4)),
-					4);
-
-				if (u4Val != 0)
-					u4NonZeroMemCnt++;
-			} while (u4Idx++ < 20);
-
-			if (u4NonZeroMemCnt != 0) {
-				DBGLOG(INIT, WARN,
-					"[MJ]ROM patch exists(%d)!\n",
-					u4NonZeroMemCnt);
-
-				return WLAN_STATUS_NOT_ACCEPTED;
-			}
-		}
-#endif
-
-		memcpy_toio((void *)(prHifInfo->CSRBaseAddress+0x500000),
-			(void *)pucStartPtr, u4Len);
-#endif
-
-#if defined(_HIF_PCIE)
-		HAL_MCR_RD(prAdapter,
-			CONN_INFRA_CFG_PCIE2AP_REMAP_2_ADDR, &u4Val);
-
-		DBGLOG(INIT, WARN, "[MJ]ORIG(0x%08x) = 0x%08x\n",
-			CONN_INFRA_CFG_PCIE2AP_REMAP_2_ADDR, u4Val);
-
-		/*
-		 * 0x18=0x7C
-		 * 0x18001120[31:0] = 0x00100000
-		 * 0x18500000  (AP) is 0x00100000(MCU)
-		 * 0x18001198[31:16] = 0x1850
-		 * 0x18001198 = 0x1850|Value[15:0]
-
-		u4Val = ((~BITS(31,16) & u4Val) | ((0x1850) << 16));
-		*/
-
-		/* this hard code is verified with DE for SOC3_0 */
-		u4Val = CONN_INFRA_CFG_PCIE2AP_REMAP_2_ADDR_DE_HARDCODE;
-
-		HAL_MCR_WR(prAdapter,
-			CONN_INFRA_CFG_PCIE2AP_REMAP_2_ADDR, u4Val);
-
-		HAL_MCR_RD(prAdapter,
-			CONN_INFRA_CFG_PCIE2AP_REMAP_2_ADDR, &u4Val);
-
-		DBGLOG(INIT, WARN, "[MJ]NEW(0x%08x) = 0x%08x\n",
-			CONN_INFRA_CFG_PCIE2AP_REMAP_2_ADDR, u4Val);
-
-#if 1
-		/* PCIe workable version by bytes of u4Len in one movement */
-		/* for PCIe WLAN drv, use 0x7C000000 based;
-		 * for AXI, use 0x18000000 based
-		 */
-		HAL_MCR_WR(prAdapter,
-			CONN_INFRA_CFG_AP2WF_REMAP_1_ADDR,
-			u4Addr);
-
-#if 0
-		if (eDlIdx == IMG_DL_IDX_PATCH) {
-			do {
-				u4Val = 0;
-
-				HAL_MCR_RD(prAdapter,
-				(CONN_INFRA_CFG_AP2WF_BUS_ADDR +
-				(u4Idx * 4)),	&u4Val);
-
-				if (u4Val != 0)
-					u4NonZeroMemCnt++;
-			} while (u4Idx++ < 20);
-
-			if (u4NonZeroMemCnt != 0) {
-				DBGLOG(INIT, WARN,
-					"[MJ]ROM patch exists(%d)!\n",
-					u4NonZeroMemCnt);
-
-				return WLAN_STATUS_NOT_ACCEPTED;
-			}
-		}
-#endif
-
-		/* because
-		* soc3_0_bus2chip_cr_mapping =
-		*	{0x7c500000, 0x50000, 0x10000}
-		*/
-		kalMemCopy((void *)(prHifInfo->CSRBaseAddress+0x50000),
-			(void *)pucStartPtr, u4Len);
-#else
-		/* PCIe workable version by 4 bytes in one movement */
-		/* for PCIe WLAN drv, use 0x7C000000 based;
-		 * for AXI, use 0x18000000 based
-		 */
-		HAL_MCR_WR(prAdapter,
-			CONN_INFRA_CFG_AP2WF_REMAP_1_ADDR,
-			u4Addr);
-
-		for (u4Offset = 0; u4Len > 0; u4Offset += u4RemapSize) {
-			if (u4Len > 4)
-				u4RemapSize = 4;
-			else
-				u4RemapSize = u4Len;
-
-			u4Len -= u4RemapSize;
-
-			HAL_MCR_WR(prAdapter,
-			(CONN_INFRA_CFG_AP2WF_BUS_ADDR + u4Offset),
-			(uint32_t)
-			(*(uint32_t *)((uint8_t *)pucStartPtr + u4Offset)));
-
-			HAL_MCR_RD(prAdapter,
-			(CONN_INFRA_CFG_AP2WF_BUS_ADDR + u4Offset), &u4Val);
-
-			/* You can uncomment it to see what is downloaded
-			*if (u4Idx++ < 20) {
-			*DBGLOG(INIT, WARN, "[MJ]0x%08x(%08x) = 0x%08x\n",
-			*(0x7C500000 + u4Offset), u4Val,
-			*(uint32_t)(*(uint32_t *)
-			*((uint8_t *)pucStartPtr + u4Offset)));
-			*}
-			*/
-		}
-#endif
-#endif /* _HIF_PCIE */
-	} else {
-		return WLAN_STATUS_NOT_SUPPORTED;
-	}
-
-	return WLAN_STATUS_SUCCESS;
-}
-#endif
 void soc3_0_DumpWfsyscpupcr(struct ADAPTER *prAdapter)
 {
 #define CPUPCR_LOG_NUM	5
@@ -2792,7 +2624,7 @@ void soc3_0_Sw_interrupt_handler(struct ADAPTER *prAdapter)
 		return;
 	}
 	HAL_MCR_WR(prAdapter,
-		   CONN_INFRA_CFG_AP2WF_REMAP_1_ADDR,
+		   prBusInfo->ap2wf_remap_1,
 		   CONN_MCU_CONFG_HS_BASE);
 	HAL_MCR_RD(prAdapter,
 		  (CONN_INFRA_CFG_AP2WF_BUS_ADDR + 0xc0),

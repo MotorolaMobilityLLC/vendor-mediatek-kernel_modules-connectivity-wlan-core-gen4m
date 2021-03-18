@@ -62,7 +62,7 @@ static void configIntMask(struct GLUE_INFO *prGlueInfo,
 		u_int8_t enable);
 
 static void soc5_0asicConnac2xWpdmaConfig(struct GLUE_INFO *prGlueInfo,
-		u_int8_t enable);
+		u_int8_t enable, bool fgResetHif);
 
 static void soc5_0pcieInit(struct GLUE_INFO *prGlueInfo);
 
@@ -90,6 +90,7 @@ uint8_t *apucsoc5_0FwName[] = {
 #if defined(_HIF_PCIE)
 struct PCIE_CHIP_CR_MAPPING soc5_0_bus2chip_cr_mapping[] = {
 	/* chip addr, bus addr, range */
+	{0x830c0000, 0x00000, 0x1000}, /* WF_MCU_BUS_CR_REMAP */
 	{0x54000000, 0x02000, 0x1000},  /* WFDMA PCIE0 MCU DMA0 */
 	{0x55000000, 0x03000, 0x1000},  /* WFDMA PCIE0 MCU DMA1 */
 	{0x56000000, 0x04000, 0x1000},  /* WFDMA reserved */
@@ -136,12 +137,14 @@ struct PCIE_CHIP_CR_MAPPING soc5_0_bus2chip_cr_mapping[] = {
 	{0x80020000, 0xb0000, 0x10000}, /* WF_TOP_MISC_OFF */
 	{0x81020000, 0xc0000, 0x10000}, /* WF_TOP_MISC_ON */
 	{0x7c020000, 0xd0000, 0x10000}, /* CONN_INFRA, wfdma */
+	{0x7c500000, 0x50000, 0x10000}, /* CONN_INFRA, dyn mem map */
 	{0x7c060000, 0xe0000, 0x10000}, /* CONN_INFRA, conn_host_csr_top */
 	{0x7c000000, 0xf0000, 0x10000}, /* CONN_INFRA */
 };
 #elif defined(_HIF_AXI)
 struct PCIE_CHIP_CR_MAPPING soc5_0_bus2chip_cr_mapping[] = {
 	/* chip addr, bus addr, range */
+	{0x830c0000, 0x400000, 0x1000}, /* WF_MCU_BUS_CR_REMAP */
 	{0x54000000, 0x402000, 0x1000},  /* WFDMA PCIE0 MCU DMA0 */
 	{0x55000000, 0x403000, 0x1000},  /* WFDMA PCIE0 MCU DMA1 */
 	{0x56000000, 0x404000, 0x1000},  /* WFDMA reserved */
@@ -238,6 +241,10 @@ struct BUS_INFO soc5_0_bus_info = {
 	.fw_own_clear_bit = PCIE_LPCR_FW_CLR_OWN,
 	.fgCheckDriverOwnInt = FALSE,
 	.u4DmaMask = 32,
+#if defined(_HIF_PCIE)
+	.pcie2ap_remap_2 = CONN_INFRA_CFG_PCIE2AP_REMAP_2_ADDR,
+#endif
+	.ap2wf_remap_1 = CONN_INFRA_CFG_AP2WF_REMAP_1_ADDR,
 	.pdmaSetup = soc5_0asicConnac2xWpdmaConfig,
 	.enableInterrupt = asicConnac2xEnablePlatformIRQ,
 	.disableInterrupt = asicConnac2xDisablePlatformIRQ,
@@ -268,6 +275,11 @@ struct FWDL_OPS_T soc5_0_fw_dl_ops = {
 	.constructPatchName = NULL,
 	.downloadPatch = NULL,
 	.downloadFirmware = wlanConnacFormatDownload,
+#if (CFG_DOWNLOAD_DYN_MEMORY_MAP == 1)
+	.downloadByDynMemMap = downloadImgByDynMemMap,
+#else
+	.downloadByDynMemMap = NULL,
+#endif
 	.getFwInfo = wlanGetConnacFwInfo,
 	.getFwDlInfo = asicGetFwDlInfo,
 };
@@ -612,7 +624,7 @@ static void configIntMask(struct GLUE_INFO *prGlueInfo,
 
 
 static void soc5_0asicConnac2xWpdmaConfig(struct GLUE_INFO *prGlueInfo,
-		u_int8_t enable)
+		u_int8_t enable, bool fgResetHif)
 {
 	struct ADAPTER *prAdapter = prGlueInfo->prAdapter;
 	union WPDMA_GLO_CFG_STRUCT GloCfg[CONNAC2X_WFDMA_COUNT];

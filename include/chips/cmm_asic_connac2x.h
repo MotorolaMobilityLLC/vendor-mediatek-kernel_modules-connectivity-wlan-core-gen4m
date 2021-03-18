@@ -239,6 +239,8 @@
 #define CONNAC2X_LEN_USB_RX_PADDING_CSO          (4)	/*HW design spec */
 #endif /* _HIF_USB */
 
+#define CONN_INFRA_CFG_AP2WF_BUS_ADDR                          0x7C500000
+
 /*------------------------------------------------------------------------*/
 /* Rx descriptor field related information                                */
 /*------------------------------------------------------------------------*/
@@ -1208,6 +1210,13 @@ void asicConnac2xWfdmaControl(
 	struct GLUE_INFO *prGlueInfo,
 	u_int8_t ucDmaIdx,
 	u_int8_t enable);
+
+#if (CFG_DOWNLOAD_DYN_MEMORY_MAP == 1)
+uint32_t downloadImgByDynMemMap(IN struct ADAPTER *prAdapter,
+	IN uint32_t u4Addr, IN uint32_t u4Len,
+	IN uint8_t *pucStartPtr, IN enum ENUM_IMG_DL_IDX_T eDlIdx);
+#endif
+
 #endif /* CFG_SUPPORT_CONNAC2X == 1 */
 #endif /* _CMM_ASIC_CONNAC2X_H */
 
