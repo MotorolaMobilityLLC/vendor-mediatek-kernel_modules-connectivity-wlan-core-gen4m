@@ -16,6 +16,7 @@
 #include "soc5_0.h"
 #include "coda/soc5_0/wf_wfdma_host_dma0.h"
 #include "coda/soc5_0/wf_wfdma_mcu_dma0.h"
+#include "coda/soc5_0/wf_pse_top.h"
 #include "hal_dmashdl_soc5_0.h"
 
 /*******************************************************************************
@@ -206,7 +207,7 @@ struct PCIE_CHIP_CR_MAPPING soc5_0_bus2chip_cr_mapping[] = {
 };
 #endif
 
-struct wfdma_group_info wfmda_host_tx_group[] = {
+struct wfdma_group_info soc5_0_wfmda_host_tx_group[] = {
 	{"P0T0:AP DATA0", WF_WFDMA_HOST_DMA0_WPDMA_TX_RING0_CTRL0_ADDR, true},
 	{"P0T1:AP DATA1", WF_WFDMA_HOST_DMA0_WPDMA_TX_RING1_CTRL0_ADDR, true},
 	{"P0T17:AP CMD", WF_WFDMA_HOST_DMA0_WPDMA_TX_RING17_CTRL0_ADDR, true},
@@ -216,7 +217,7 @@ struct wfdma_group_info wfmda_host_tx_group[] = {
 	{"P0T18:MD CMD", WF_WFDMA_HOST_DMA0_WPDMA_TX_RING18_CTRL0_ADDR},
 };
 
-struct wfdma_group_info wfmda_host_rx_group[] = {
+struct wfdma_group_info soc5_0_wfmda_host_rx_group[] = {
 	{"P0R2:AP DATA0", WF_WFDMA_HOST_DMA0_WPDMA_RX_RING2_CTRL0_ADDR, true},
 	{"P0R0:AP EVENT", WF_WFDMA_HOST_DMA0_WPDMA_RX_RING0_CTRL0_ADDR, true},
 	{"P0R3:AP DATA1", WF_WFDMA_HOST_DMA0_WPDMA_RX_RING3_CTRL0_ADDR, true},
@@ -229,18 +230,49 @@ struct wfdma_group_info wfmda_host_rx_group[] = {
 	{"P0R1:MD EVENT", WF_WFDMA_HOST_DMA0_WPDMA_RX_RING1_CTRL0_ADDR},
 };
 
-struct wfdma_group_info wfmda_wm_tx_group[] = {
+struct wfdma_group_info soc5_0_wfmda_wm_tx_group[] = {
 	{"P0T0:AP EVENT", WF_WFDMA_MCU_DMA0_WPDMA_TX_RING0_CTRL0_ADDR},
 	{"P0T2:DATA", WF_WFDMA_MCU_DMA0_WPDMA_TX_RING2_CTRL0_ADDR},
 	{"P0T3:SW TX CMD", WF_WFDMA_MCU_DMA0_WPDMA_TX_RING3_CTRL0_ADDR},
 };
 
-struct wfdma_group_info wfmda_wm_rx_group[] = {
+struct wfdma_group_info soc5_0_wfmda_wm_rx_group[] = {
 	{"P0R0:FWDL", WF_WFDMA_MCU_DMA0_WPDMA_RX_RING0_CTRL0_ADDR},
 	{"P0R1:AP CMD", WF_WFDMA_MCU_DMA0_WPDMA_RX_RING1_CTRL0_ADDR},
 	{"P0R3:DATA", WF_WFDMA_MCU_DMA0_WPDMA_RX_RING3_CTRL0_ADDR},
 	{"P0R4:TXDONE", WF_WFDMA_MCU_DMA0_WPDMA_RX_RING4_CTRL0_ADDR},
 	{"P0R5:RPT", WF_WFDMA_MCU_DMA0_WPDMA_RX_RING5_CTRL0_ADDR},
+};
+
+struct pse_group_info rSoc5_0_pse_group[] = {
+	{"HIF0(TX data)", WF_PSE_TOP_PG_HIF0_GROUP_ADDR,
+		WF_PSE_TOP_HIF0_PG_INFO_ADDR},
+	{"HIF1(Talos CMD)", WF_PSE_TOP_PG_HIF1_GROUP_ADDR,
+		WF_PSE_TOP_HIF1_PG_INFO_ADDR},
+#if 0
+	{"HIF2", WF_PSE_TOP_PG_HIF2_GROUP_ADDR,
+		WF_PSE_TOP_HIF2_PG_INFO_ADDR},
+#endif
+	{"CPU(I/O r/w)",  WF_PSE_TOP_PG_CPU_GROUP_ADDR,
+		WF_PSE_TOP_CPU_PG_INFO_ADDR},
+	{"PLE(host report)",  WF_PSE_TOP_PG_PLE_GROUP_ADDR,
+		WF_PSE_TOP_PLE_PG_INFO_ADDR},
+	{"LMAC0(RX data)", WF_PSE_TOP_PG_LMAC0_GROUP_ADDR,
+			WF_PSE_TOP_LMAC0_PG_INFO_ADDR},
+	{"LMAC1(RX_VEC)", WF_PSE_TOP_PG_LMAC1_GROUP_ADDR,
+			WF_PSE_TOP_LMAC1_PG_INFO_ADDR},
+	{"LMAC2(TXS)", WF_PSE_TOP_PG_LMAC2_GROUP_ADDR,
+			WF_PSE_TOP_LMAC2_PG_INFO_ADDR},
+	{"LMAC3(TXCMD/RXRPT)", WF_PSE_TOP_PG_LMAC3_GROUP_ADDR,
+			WF_PSE_TOP_LMAC3_PG_INFO_ADDR},
+	{"MDP",  WF_PSE_TOP_PG_MDP_GROUP_ADDR,
+			WF_PSE_TOP_MDP_PG_INFO_ADDR},
+#if 0
+	{"MDP1", WF_PSE_TOP_PG_MDP1_GROUP_ADDR,
+		WF_PSE_TOP_MDP1_PG_INFO_ADDR},
+	{"MDP2", WF_PSE_TOP_PG_MDP2_GROUP_ADDR,
+		WF_PSE_TOP_MDP2_PG_INFO_ADDR},
+#endif
 };
 
 struct BUS_INFO soc5_0_bus_info = {
@@ -291,15 +323,19 @@ struct BUS_INFO soc5_0_bus_info = {
 	.pcie2ap_remap_2 = CONN_INFRA_CFG_PCIE2AP_REMAP_2_ADDR,
 #endif
 	.ap2wf_remap_1 = CONN_INFRA_CFG_AP2WF_REMAP_1_ADDR,
-	.wfmda_host_tx_group = wfmda_host_tx_group,
-	.wfmda_host_tx_group_len = ARRAY_SIZE(wfmda_host_tx_group),
-	.wfmda_host_rx_group = wfmda_host_rx_group,
-	.wfmda_host_rx_group_len = ARRAY_SIZE(wfmda_host_rx_group),
-	.wfmda_wm_tx_group = wfmda_wm_tx_group,
-	.wfmda_wm_tx_group_len = ARRAY_SIZE(wfmda_wm_tx_group),
-	.wfmda_wm_rx_group = wfmda_wm_rx_group,
-	.wfmda_wm_rx_group_len = ARRAY_SIZE(wfmda_wm_rx_group),
+	.wfmda_host_tx_group = soc5_0_wfmda_host_tx_group,
+	.wfmda_host_tx_group_len = ARRAY_SIZE(soc5_0_wfmda_host_tx_group),
+	.wfmda_host_rx_group = soc5_0_wfmda_host_rx_group,
+	.wfmda_host_rx_group_len = ARRAY_SIZE(soc5_0_wfmda_host_rx_group),
+	.wfmda_wm_tx_group = soc5_0_wfmda_wm_tx_group,
+	.wfmda_wm_tx_group_len = ARRAY_SIZE(soc5_0_wfmda_wm_tx_group),
+	.wfmda_wm_rx_group = soc5_0_wfmda_wm_rx_group,
+	.wfmda_wm_rx_group_len = ARRAY_SIZE(soc5_0_wfmda_wm_rx_group),
 	.prDmashdlCfg = &rSOC5_0_DmashdlCfg,
+	.prPleTopCr = &rSoc5_0_PleTopCr,
+	.prPseTopCr = &rSoc5_0_PseTopCr,
+	.prPseGroup = rSoc5_0_pse_group,
+	.u4PseGroupLen = ARRAY_SIZE(rSoc5_0_pse_group),
 	.pdmaSetup = soc5_0asicConnac2xWpdmaConfig,
 	.enableInterrupt = asicConnac2xEnablePlatformIRQ,
 	.disableInterrupt = asicConnac2xDisablePlatformIRQ,
@@ -382,12 +418,12 @@ struct RX_DESC_OPS_T soc5_0_RxDescOps = {};
 
 struct CHIP_DBG_OPS soc5_0_DebugOps = {
 	.showPdmaInfo = connac2x_show_wfdma_info,
-	.showPseInfo = soc5_0_show_pse_info,
-	.showPleInfo = soc5_0_show_ple_info,
+	.showPseInfo = connac2x_show_pse_info,
+	.showPleInfo = connac2x_show_ple_info,
 	.showTxdInfo = connac2x_show_txd_Info,
 	.showWtblInfo = connac2x_show_wtbl_info,
 	.showUmacFwtblInfo = connac2x_show_umac_wtbl_info,
-	.showCsrInfo = soc5_0_show_host_csr_info,
+	.showCsrInfo = NULL,
 	.showDmaschInfo = connac2x_show_dmashdl_info,
 	.showHifInfo = NULL,
 	.printHifDbgInfo = NULL,
@@ -2233,7 +2269,7 @@ static void soc5_0_DumpOtherCr(struct ADAPTER *prAdapter)
 		DBGLOG(HAL, ERROR,
 		       "\tW0x18060164=[0x%08x], 0x18060168=[0x%08x]\n",
 		       u4WrVal, u4Val);
-		u4WrVal += 0x0001000;
+		u4WrVal += 0x00010000;
 	}
 	u4WrVal = 0x00010002;
 	connac2x_DbgCrWrite(prAdapter, 0x18060164, u4WrVal);
