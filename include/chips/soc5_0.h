@@ -99,6 +99,9 @@
 #define CONN_INFRA_CFG_PCIE2AP_REMAP_2_ADDR \
 	(0x7C00E000 + 0x24C)
 
+#define WF_CONN_INFA_BUS_CLOCK_RATE 0x18009A00
+
+
 /*******************************************************************************
 *                         D A T A   T Y P E S
 ********************************************************************************
@@ -239,6 +242,10 @@ int soc5_0_wlanPreCal(void);
 uint8_t *soc5_0_wlanGetCalResult(uint32_t *prCalSize);
 void soc5_0_wlanCalDebugCmd(uint32_t cmd, uint32_t para);
 #endif /* (CFG_SUPPORT_PRE_ON_PHY_ACTION == 1) */
+
+void soc5_0_icapRiseVcoreClockRate(void);
+void soc5_0_icapDownVcoreClockRate(void);
+
 #endif /* _SOC5_0_H */
 
 #endif  /* soc5_0 */

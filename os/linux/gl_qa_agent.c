@@ -8290,6 +8290,7 @@ int32_t connacSetICapStart(struct GLUE_INFO *prGlueInfo,
 	prICapInfo->u4EnBitWidth = 0;
 	prICapInfo->u4Architech = 1;
 	prICapInfo->u4PhyIdx = 0;
+	prICapInfo->u4CapSource = 0;
 #if (CFG_MTK_ANDROID_EMI == 1)
 	prICapInfo->u4EmiStartAddress =
 		(uint32_t) (gConEmiPhyBaseFinal & 0xFFFFFFFF);
