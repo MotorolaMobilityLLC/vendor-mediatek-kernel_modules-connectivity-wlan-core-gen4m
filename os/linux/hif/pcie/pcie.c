@@ -99,6 +99,7 @@
 #define NIC7915_PCIe_DEVICE_ID	0x7915
 #define NICSOC3_0_PCIe_DEVICE_ID  0x0789
 #define NIC7961_PCIe_DEVICE_ID	0x7961
+#define NICSOC5_0_PCIe_DEVICE_ID  0x0789
 
 static const struct pci_device_id mtk_pci_ids[] = {
 #ifdef MT6632
@@ -138,6 +139,10 @@ static const struct pci_device_id mtk_pci_ids[] = {
 	{	PCI_DEVICE(MTK_PCI_VENDOR_ID, NIC7961_PCIe_DEVICE_ID),
 		.driver_data = (kernel_ulong_t)&mt66xx_driver_data_mt7961},
 #endif /* MT7961 */
+#ifdef SOC5_0
+	{	PCI_DEVICE(MTK_PCI_VENDOR_ID, NICSOC5_0_PCIe_DEVICE_ID),
+		.driver_data = (kernel_ulong_t)&mt66xx_driver_data_soc5_0},
+#endif /* SOC5_0 */
 	{ /* end: all zeroes */ },
 };
 

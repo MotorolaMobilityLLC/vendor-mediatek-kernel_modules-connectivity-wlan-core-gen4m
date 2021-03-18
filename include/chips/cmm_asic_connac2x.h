@@ -1204,6 +1204,10 @@ u_int32_t asic_connac2x_show_rx_rssi_info(
 	char *pcCommand,
 	int32_t i4TotalLen,
 	uint8_t ucStaIdx);
+void asicConnac2xWfdmaControl(
+	struct GLUE_INFO *prGlueInfo,
+	u_int8_t ucDmaIdx,
+	u_int8_t enable);
 #endif /* CFG_SUPPORT_CONNAC2X == 1 */
 #endif /* _CMM_ASIC_CONNAC2X_H */
 
