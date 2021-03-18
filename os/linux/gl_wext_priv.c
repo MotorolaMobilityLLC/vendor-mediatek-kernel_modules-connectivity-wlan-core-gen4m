@@ -14345,7 +14345,9 @@ static int priv_driver_set_sw_wfdma(
 		}
 
 		DBGLOG(REQ, INFO, "SwWfdma=%d\n", u4CfgSetNum);
-		prSwWfdmaInfo->fgIsEnSwWfdma = u4CfgSetNum != 0;
+		if (prSwWfdmaInfo->rOps.enable)
+			prSwWfdmaInfo->rOps.enable(
+				prGlueInfo, u4CfgSetNum != 0);
 	}
 	return i4BytesWritten;
 }				/* priv_driver_set_sw_wfdma */

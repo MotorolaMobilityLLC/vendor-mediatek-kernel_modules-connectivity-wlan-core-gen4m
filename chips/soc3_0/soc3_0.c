@@ -124,6 +124,8 @@ static struct sub_drv_ops_cb g_conninfra_wf_cb;
 *                   F U N C T I O N   D E C L A R A T I O N S
 ********************************************************************************
 */
+static void soc3_0_triggerInt(struct GLUE_INFO *prGlueInfo);
+static void soc3_0_getIntSta(struct GLUE_INFO *prGlueInfo,  uint32_t *pu4Sta);
 
 
 /*******************************************************************************
@@ -281,9 +283,10 @@ struct PCIE_CHIP_CR_MAPPING soc3_0_bus2chip_cr_mapping[] = {
 	{0x80020000, 0x4b0000, 0x10000}, /* WF_TOP_MISC_OFF */
 	{0x81020000, 0x4c0000, 0x10000}, /* WF_TOP_MISC_ON */
 	{0x7c500000, 0x500000, 0x10000}, /* CONN_INFRA, dyn mem map */
-	{0x7c020000, 0x20000, 0x10000}, /* CONN_INFRA, wfdma */
-	{0x7c060000, 0x60000, 0x10000}, /* CONN_INFRA, conn_host_csr_top */
-	{0x7c000000, 0x00000, 0x10000}, /* CONN_INFRA, conn_infra_on */
+	{0x7c000000, 0x00000,  0x10000}, /* CONN_INFRA, conn_infra_on */
+	{0x7c020000, 0x20000,  0x10000}, /* CONN_INFRA, wfdma */
+	{0x7c050000, 0x50000,  0x10000}, /* CONN_INFRA, conn infra sysram */
+	{0x7c060000, 0x60000,  0x10000}, /* CONN_INFRA, conn_host_csr_top */
 	{0x0, 0x0, 0x0} /* End */
 };
 #endif
@@ -854,6 +857,7 @@ struct BUS_INFO soc3_0_bus_info = {
 		.rOps = {
 			.init = halSwWfdmaInit,
 			.uninit = halSwWfdmaUninit,
+			.enable = halSwWfdmaEn,
 			.reset = halSwWfdmaReset,
 			.backup = halSwWfdmaBackup,
 			.restore = halSwWfdmaRestore,
@@ -862,10 +866,19 @@ struct BUS_INFO soc3_0_bus_info = {
 			.getDidx = halSwWfdmaGetDidx,
 			.writeCmd = halSwWfdmaWriteCmd,
 			.processDmaDone = halSwWfdmaProcessDmaDone,
+			.triggerInt = soc3_0_triggerInt,
+			.getIntSta = soc3_0_getIntSta,
 			.dumpDebugLog = halSwWfdmaDumpDebugLog,
 		},
-		.fgIsSupportSwWfdma = false,
 		.fgIsEnSwWfdma = false,
+		.fgIsEnAfterFwdl = false,
+		.u4EmiOffsetAddr = 0x7c0537fc,
+		.u4EmiOffsetBase = 0,
+		.u4EmiOffsetMask = 0xFFFFFF,
+		.u4EmiOffset = 0x974FFC,
+		.u4CcifStartAddr = 0x1024D008,
+		.u4CcifTchnumAddr = 0x1024D00C,
+		.u4CcifChlNum = 4,
 		.u4CpuIdx = 0,
 		.u4DmaIdx = 0,
 		.u4MaxCnt = TX_RING_SIZE,
@@ -4801,5 +4814,34 @@ void soc3_0_wlanCalDebugCmd(uint32_t cmd, uint32_t para)
 }
 
 #endif /* (CFG_SUPPORT_PRE_ON_PHY_ACTION == 1) */
+
+static void soc3_0_triggerInt(struct GLUE_INFO *prGlueInfo)
+{
+	struct mt66xx_chip_info *prChipInfo;
+	struct BUS_INFO *prBusInfo;
+	struct SW_WFDMA_INFO *prSwWfdmaInfo;
+
+	prChipInfo = prGlueInfo->prAdapter->chip_info;
+	prBusInfo = prChipInfo->bus_info;
+	prSwWfdmaInfo = &prBusInfo->rSwWfdmaInfo;
+
+	/* trigger ccif interrupt */
+	if (wf_ioremap_write(prSwWfdmaInfo->u4CcifTchnumAddr,
+			     prSwWfdmaInfo->u4CcifChlNum))
+		DBGLOG(HAL, ERROR, "ioremap write fail!\n");
+}
+
+static void soc3_0_getIntSta(struct GLUE_INFO *prGlueInfo,  uint32_t *pu4Sta)
+{
+	struct mt66xx_chip_info *prChipInfo;
+	struct BUS_INFO *prBusInfo;
+	struct SW_WFDMA_INFO *prSwWfdmaInfo;
+
+	prChipInfo = prGlueInfo->prAdapter->chip_info;
+	prBusInfo = prChipInfo->bus_info;
+	prSwWfdmaInfo = &prBusInfo->rSwWfdmaInfo;
+
+	wf_ioremap_read(prSwWfdmaInfo->u4CcifStartAddr, pu4Sta);
+}
 
 #endif				/* soc3_0 */

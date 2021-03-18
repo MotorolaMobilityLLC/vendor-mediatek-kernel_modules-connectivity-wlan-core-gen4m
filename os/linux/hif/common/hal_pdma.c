@@ -1054,7 +1054,7 @@ bool halHifSwInfoInit(IN struct ADAPTER *prAdapter)
 	prHifInfo->fgIsPowerOff = false;
 
 	if (prSwWfdmaInfo->rOps.init)
-		prSwWfdmaInfo->rOps.init(prSwWfdmaInfo);
+		prSwWfdmaInfo->rOps.init(prAdapter->prGlueInfo);
 
 	return true;
 }
@@ -1092,7 +1092,7 @@ void halHifSwInfoUnInit(IN struct GLUE_INFO *prGlueInfo)
 	}
 
 	if (prSwWfdmaInfo->rOps.uninit)
-		prSwWfdmaInfo->rOps.uninit(prSwWfdmaInfo);
+		prSwWfdmaInfo->rOps.uninit(prGlueInfo);
 #endif
 }
 
