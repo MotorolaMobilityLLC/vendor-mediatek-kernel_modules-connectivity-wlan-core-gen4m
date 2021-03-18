@@ -1111,6 +1111,8 @@ uint32_t wlanAdapterStart(IN struct ADAPTER *prAdapter,
 					IN struct REG_INFO *prRegInfo,
 					IN const u_int8_t bAtResetFlow)
 {
+	struct BUS_INFO *prBusInfo = NULL;
+	struct SW_WFDMA_INFO *prSwWfdmaInfo = NULL;
 	uint32_t u4Status = WLAN_STATUS_SUCCESS;
 	enum ENUM_ADAPTER_START_FAIL_REASON {
 		ALLOC_ADAPTER_MEM_FAIL,
@@ -1126,6 +1128,13 @@ uint32_t wlanAdapterStart(IN struct ADAPTER *prAdapter,
 	ASSERT(prAdapter);
 
 	DEBUGFUNC("wlanAdapterStart");
+
+	prBusInfo = prAdapter->chip_info->bus_info;
+	prSwWfdmaInfo = &prBusInfo->rSwWfdmaInfo;
+
+	/* disable sw wfdma for init cmd */
+	if (prSwWfdmaInfo->fgIsSupportSwWfdma)
+		prSwWfdmaInfo->fgIsEnSwWfdma = FALSE;
 
 	eFailReason = FAIL_REASON_MAX;
 
@@ -1233,6 +1242,10 @@ uint32_t wlanAdapterStart(IN struct ADAPTER *prAdapter,
 			break;
 		}
 #endif
+
+		/* enable sw wfdma after fw dl */
+		if (prSwWfdmaInfo->fgIsSupportSwWfdma)
+			prSwWfdmaInfo->fgIsEnSwWfdma = TRUE;
 
 		DBGLOG(INIT, INFO, "Waiting for Ready bit..\n");
 
