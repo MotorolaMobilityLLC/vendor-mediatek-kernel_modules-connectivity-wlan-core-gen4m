@@ -2,9 +2,9 @@
 /*
  * Copyright (c) 2019 MediaTek Inc.
  */
+#include "gl_os.h"
 
-#include <linux/version.h>	/* constant of kernel version */
-#if KERNEL_VERSION(5, 4, 0) <= LINUX_VERSION_CODE
+#if KERNEL_VERSION(5, 4, 0) <= CFG80211_VERSION_CODE
 /*TODO kernel 5.4 boost CPU */
 #else
 #include <cpu_ctrl.h>
@@ -16,7 +16,7 @@
 
 
 #if CONFIG_MTK_EMI
-#if KERNEL_VERSION(5, 4, 0) <= LINUX_VERSION_CODE
+#if KERNEL_VERSION(5, 4, 0) <= CFG80211_VERSION_CODE
 #include <soc/mediatek/emi.h>
 #else
 #include <memory/mediatek/emi.h>
@@ -63,7 +63,7 @@ int32_t kalCheckTputLoad(IN struct ADAPTER *prAdapter,
 	       TRUE : FALSE;
 }
 
-#if KERNEL_VERSION(5, 4, 0) <= LINUX_VERSION_CODE
+#if KERNEL_VERSION(5, 4, 0) <= CFG80211_VERSION_CODE
 #else
 int32_t kalBoostCpu(IN struct ADAPTER *prAdapter,
 		    IN uint32_t u4TarPerfLevel,

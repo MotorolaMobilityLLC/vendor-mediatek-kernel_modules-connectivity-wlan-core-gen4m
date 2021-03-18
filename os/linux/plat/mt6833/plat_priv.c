@@ -2,17 +2,26 @@
 /*
  * Copyright (c) 2019 MediaTek Inc.
  */
+#include "gl_os.h"
 
+#if KERNEL_VERSION(5, 4, 0) <= CFG80211_VERSION_CODE
+/*TODO kernel 5.4 boost CPU */
+#else
 #include <cpu_ctrl.h>
 #include <topo_ctrl.h>
-#include <linux/pm_qos.h>
 #include <helio-dvfsrc-opp.h>
+#endif
+#include <linux/pm_qos.h>
 
 #include "precomp.h"
 #include "wmt_exp.h"
 
 #ifdef CONFIG_MEDIATEK_EMI
+#if KERNEL_VERSION(5, 4, 0) <= CFG80211_VERSION_CODE
+#include <soc/mediatek/emi.h>
+#else
 #include <memory/mediatek/emi.h>
+#endif
 #define WIFI_EMI_MEM_OFFSET    0x2A0000
 #define WIFI_EMI_MEM_SIZE      0x160000
 #define DOMAIN_AP	0
@@ -56,6 +65,8 @@ int32_t kalCheckTputLoad(IN struct ADAPTER *prAdapter,
 	       TRUE : FALSE;
 }
 
+#if KERNEL_VERSION(5, 4, 0) <= CFG80211_VERSION_CODE
+#else
 int32_t kalBoostCpu(IN struct ADAPTER *prAdapter,
 		    IN uint32_t u4TarPerfLevel,
 		    IN uint32_t u4BoostCpuTh)
@@ -129,7 +140,7 @@ int32_t kalBoostCpu(IN struct ADAPTER *prAdapter,
 
 	return 0;
 }
-
+#endif
 #ifdef CONFIG_MEDIATEK_EMI
 void kalSetEmiMpuProtection(phys_addr_t emiPhyBase, bool enable)
 {
