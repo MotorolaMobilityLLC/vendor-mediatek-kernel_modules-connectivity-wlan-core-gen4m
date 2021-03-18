@@ -3860,7 +3860,7 @@ void scanReqLog(struct CMD_SCAN_REQ_V2 *prCmdScanReq)
 #define TEMP_LOG_TEMPLATE \
 	"ScanReqV2: ScanType=%d,BSS=%u,SSIDType=%d,Num=%u,Ext=%u," \
 	"ChannelType=%d,Num=%d,Ext=%u,Seq=%u,Ver=%u,Dw=%u,Min=%u," \
-	"Func=0x%X,Mac="MACSTR"%s\n"
+	"Func=0x%X,D=%u,Mac="MACSTR",BSSID="MACSTR",%s\n"
 	scanlog_dbg(LOG_SCAN_REQ_D2F, INFO, TEMP_LOG_TEMPLATE,
 		prCmdScanReq->ucScanType,
 		prCmdScanReq->ucBssIndex,
@@ -3874,7 +3874,9 @@ void scanReqLog(struct CMD_SCAN_REQ_V2 *prCmdScanReq)
 		prCmdScanReq->u2ChannelDwellTime,
 		prCmdScanReq->u2ChannelMinDwellTime,
 		prCmdScanReq->ucScnFuncMask,
+		prCmdScanReq->u2ProbeDelayTime,
 		MAC2STR(prCmdScanReq->aucRandomMac),
+		MAC2STR(prCmdScanReq->aucBSSID),
 		strbuf != pos ? strbuf : "");
 #undef TEMP_LOG_TEMPLATE
 	kalMemFree(strbuf, VIR_MEM_TYPE, slen);

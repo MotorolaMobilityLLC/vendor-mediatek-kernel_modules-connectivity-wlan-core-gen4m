@@ -368,6 +368,13 @@ void scnSendScanReqV2(IN struct ADAPTER *prAdapter)
 		prScanParam->u2ChannelMinDwellTime;
 	prCmdScanReq->u2TimeoutValue = prScanParam->u2TimeoutValue;
 
+	/* If ProbeDelayTime bigger than MinDwellTime,
+	 * reset ProbeDelayTime to 0
+	 */
+	if (prCmdScanReq->u2ProbeDelayTime >
+	    prCmdScanReq->u2ChannelMinDwellTime)
+		prCmdScanReq->u2ProbeDelayTime = 0;
+
 	if (prScanParam->u2IELen <= MAX_IE_LENGTH)
 		prCmdScanReq->u2IELen = prScanParam->u2IELen;
 	else
