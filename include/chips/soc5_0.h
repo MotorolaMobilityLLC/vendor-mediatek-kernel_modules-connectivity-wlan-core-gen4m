@@ -203,8 +203,6 @@ extern void wlanNetDestroy(
 */
 int hifWmmcuPwrOn(void);
 int hifWmmcuPwrOff(void);
-int wf_ioremap_read(size_t addr, unsigned int *val);
-int wf_ioremap_write(phys_addr_t addr, unsigned int val);
 int soc5_0_Trigger_fw_assert(void);
 
 #if (CFG_SUPPORT_CONNINFRA == 1)

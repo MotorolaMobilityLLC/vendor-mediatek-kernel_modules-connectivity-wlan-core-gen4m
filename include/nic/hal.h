@@ -278,18 +278,26 @@ do { \
 #else /* #if defined(_HIF_SDIO) */
 #define HAL_MCR_RD(_prAdapter, _u4Offset, _pu4Value) \
 { \
-	if (_prAdapter->rAcpiState == ACPI_STATE_D3) { \
-		ASSERT(0); \
+	if (_prAdapter == NULL) { \
+		kalDevRegRead(NULL, _u4Offset, _pu4Value); \
+	} else { \
+		if (_prAdapter->rAcpiState == ACPI_STATE_D3) {	\
+			ASSERT(0); \
+		} \
+		kalDevRegRead(_prAdapter->prGlueInfo, _u4Offset, _pu4Value); \
 	} \
-	kalDevRegRead(_prAdapter->prGlueInfo, _u4Offset, _pu4Value); \
 }
 
 #define HAL_MCR_WR(_prAdapter, _u4Offset, _u4Value) \
 { \
-	if (_prAdapter->rAcpiState == ACPI_STATE_D3) { \
-		ASSERT(0); \
+	if (_prAdapter == NULL) { \
+		kalDevRegWrite(NULL, _u4Offset, _u4Value); \
+	} else { \
+		if (_prAdapter->rAcpiState == ACPI_STATE_D3) {	\
+			ASSERT(0); \
+		} \
+		kalDevRegWrite(_prAdapter->prGlueInfo, _u4Offset, _u4Value); \
 	} \
-	kalDevRegWrite(_prAdapter->prGlueInfo, _u4Offset, _u4Value); \
 }
 
 #define HAL_PORT_RD(_prAdapter, _u4Port, _u4Len, _pucBuf, _u4ValidBufSize) \

@@ -425,6 +425,8 @@ void glGetDev(void *ctx, struct device **dev);
 
 void glGetHifDev(struct GL_HIF_INFO *prHif, struct device **dev);
 
+void glGetChipInfo(void **prChipInfo);
+
 /*******************************************************************************
  *                              F U N C T I O N S
  *******************************************************************************
