@@ -913,6 +913,10 @@ void glResetSubsysRstProcedure(
 				glResetMsgHandler(WMTMSG_TYPE_RESET,
 						  WMTRSTMSG_RESET_END);
 			} else {
+				fgIsResetting = FALSE;
+#if (CFG_SUPPORT_CONNINFRA == 1)
+				update_driver_reset_status(fgIsResetting);
+#endif
 				DBGLOG(INIT, INFO,
 					"Don't trigger subsys reset due to driver is not ready\n");
 			}
@@ -951,6 +955,10 @@ void glResetSubsysRstProcedure(
 			glResetMsgHandler(WMTMSG_TYPE_RESET,
 					  WMTRSTMSG_RESET_END);
 		} else {
+			fgIsResetting = FALSE;
+#if (CFG_SUPPORT_CONNINFRA == 1)
+			update_driver_reset_status(fgIsResetting);
+#endif
 			DBGLOG(INIT, INFO,
 				"Don't trigger subsys reset due to driver is not ready\n");
 		}
