@@ -310,7 +310,9 @@
 /* BSS Selector - Clause 22. HT PHY */
 #define RATE_VHT_PHY                            126
 /* BSS Selector - Clause 20. HT PHY */
-#define RATE_HT_PHY                             127
+#define RATE_HT_PHY         127
+/* BSS Selector - Hash to Element only */
+#define RATE_H2E_ONLY                           123
 /* mask bits for the rate */
 #define RATE_MASK                               BITS(0, 6)
 /* mask bit for the rate belonging to the BSSBasicRateSet */
