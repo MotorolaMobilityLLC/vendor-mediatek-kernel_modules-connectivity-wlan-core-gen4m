@@ -973,6 +973,27 @@ static void configIntMask(struct GLUE_INFO *prGlueInfo,
 	       IntMask.word);
 }
 
+static void configWfdmaRxRingThreshold(struct ADAPTER *prAdapter)
+{
+	uint32_t u4OldVal = 0, u4NewVal = 0;
+
+	if (!prAdapter)
+		return;
+
+	HAL_MCR_RD(prAdapter, WF_WFDMA_HOST_DMA0_WPDMA_PAUSE_RX_Q_TH10_ADDR,
+		&u4OldVal);
+	u4NewVal = u4OldVal &
+		WF_WFDMA_HOST_DMA0_WPDMA_PAUSE_RX_Q_TH10_RX_DMAD_TH1_MASK;
+	u4NewVal += (4 <<
+		WF_WFDMA_HOST_DMA0_WPDMA_PAUSE_RX_Q_TH10_RX_DMAD_TH0_SHFT);
+	HAL_MCR_WR(prAdapter, WF_WFDMA_HOST_DMA0_WPDMA_PAUSE_RX_Q_TH10_ADDR,
+		u4NewVal);
+	DBGLOG(HAL, TRACE, "RX_RING[0, 1] TH(0x%x) from 0x%x to 0x%x\n",
+			WF_WFDMA_HOST_DMA0_WPDMA_PAUSE_RX_Q_TH10_ADDR,
+			u4OldVal,
+			u4NewVal);
+}
+
 static void soc5_0asicConnac2xWpdmaConfig(struct GLUE_INFO *prGlueInfo,
 		u_int8_t enable, bool fgResetHif)
 {
@@ -991,6 +1012,7 @@ static void soc5_0asicConnac2xWpdmaConfig(struct GLUE_INFO *prGlueInfo,
 		GloCfg.field_conn2x.tx_dma_en = 1;
 		GloCfg.field_conn2x.rx_dma_en = 1;
 		HAL_MCR_WR(prAdapter, u4DmaCfgCr, GloCfg.word);
+		configWfdmaRxRingThreshold(prAdapter);
 	}
 }
 
