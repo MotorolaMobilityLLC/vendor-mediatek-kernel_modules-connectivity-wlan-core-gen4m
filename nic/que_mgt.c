@@ -3247,14 +3247,6 @@ struct SW_RFB *qmHandleRxPackets(IN struct ADAPTER *prAdapter,
 			continue;
 		}
 
-		if (prCurrSwRfb->fgIsFirstSubAMSDULLCMS) {
-			prCurrSwRfb->eDst = RX_PKT_DESTINATION_NULL;
-			QUEUE_INSERT_TAIL(prReturnedQue,
-				(struct QUE_ENTRY *) prCurrSwRfb);
-			DBGLOG(QM, INFO, "drop LLC_MIS First SubAMSDU\n");
-			continue;
-		}
-
 		if (prCurrSwRfb->fgDataFrame && prCurrSwRfb->prStaRec &&
 			qmDetectRxInvalidEAPOL(prAdapter, prCurrSwRfb)) {
 			prCurrSwRfb->eDst = RX_PKT_DESTINATION_NULL;
@@ -3521,6 +3513,7 @@ u_int8_t qmAmsduAttackDetection(IN struct ADAPTER *prAdapter,
 	uint16_t u2FrameCtrl, u2SSN;
 	struct WLAN_MAC_HEADER *prWlanHeader = NULL;
 	uint8_t ucTid;
+	uint8_t *pucPaylod = NULL;
 
 	DEBUGFUNC("qmAmsduAttackDetection");
 
@@ -3537,11 +3530,13 @@ u_int8_t qmAmsduAttackDetection(IN struct ADAPTER *prAdapter,
 				prSwRfb->prRxStatusGroup4);
 		HAL_RX_STATUS_GET_TA(prSwRfb->prRxStatusGroup4, aucTaAddr);
 		pucTaAddr = &aucTaAddr[0];
+		pucPaylod = prSwRfb->pvHeader;
 	} else {
 		prWlanHeader = (struct WLAN_MAC_HEADER *) prSwRfb->pvHeader;
 		u2SSN = prWlanHeader->u2SeqCtrl >> MASK_SC_SEQ_NUM_OFFSET;
 		u2FrameCtrl = prWlanHeader->u2FrameCtrl;
 		pucTaAddr = prWlanHeader->aucAddr2;
+		pucPaylod = prSwRfb->pvHeader + prSwRfb->u2HeaderLen;
 	}
 
 	/* 802.11 header RA */
@@ -3550,8 +3545,8 @@ u_int8_t qmAmsduAttackDetection(IN struct ADAPTER *prAdapter,
 	pucRaAddr = &prBssInfo->aucOwnMacAddr[0];
 
 	/* DA and SA */
-	pucDaAddr = prSwRfb->pvHeader;
-	pucSaAddr = prSwRfb->pvHeader + MAC_ADDR_LEN;
+	pucDaAddr = pucPaylod;
+	pucSaAddr = pucPaylod + MAC_ADDR_LEN;
 
 	if (RXM_IS_QOS_DATA_FRAME(u2FrameCtrl)) {
 		ucTid = prSwRfb->ucTid;
@@ -3580,23 +3575,46 @@ u_int8_t qmAmsduAttackDetection(IN struct ADAPTER *prAdapter,
 			pucAmsduAddr = pucTaAddr;
 		}
 
-		if (UNEQUAL_MAC_ADDR(pucCmpAddr, pucAmsduAddr)) {
-			/* mark to drop amsdu with same SeqNo */
+		/* mark to drop amsdu with same SeqNo */
+		if (prSwRfb->fgIsFirstSubAMSDULLCMS) {
 			fgDrop = TRUE;
+			DBGLOG(QM, TRACE,
+				"QM: AMSDU Attack LLC Mismatch.");
+		} else {
+			if (prSwRfb->fgHdrTran) {
+				if (prSwRfb->u2PacketLen <= ETH_HLEN)
+					fgDrop = TRUE;
+			} else {
+				if (prSwRfb->u2PacketLen
+					<= prSwRfb->u2HeaderLen + ETH_HLEN)
+					fgDrop = TRUE;
+			}
+
+			if (fgDrop == TRUE)
+				DBGLOG(QM, TRACE,
+					"QM: AMSDU Attack Unexpected HLen.");
 		}
+
+		if (fgDrop == FALSE &&
+			pucCmpAddr != NULL && pucAmsduAddr != NULL) {
+			if (UNEQUAL_MAC_ADDR(pucCmpAddr, pucAmsduAddr))
+				fgDrop = TRUE;
 
 #define __STR_FMT__ \
 	"QM: FromDS:%d ToDS:%d TID:%u SN:%u PF:%u" \
 	" TA:" MACSTR " RA:" MACSTR " DA:" MACSTR " SA:" MACSTR " Drop:%d"
-		DBGLOG(QM, TRACE,
-			__STR_FMT__,
-			RXM_IS_FROM_DS(u2FrameCtrl), RXM_IS_TO_DS(u2FrameCtrl),
-			ucTid, prSwRfb->u2SSN, prSwRfb->ucPayloadFormat,
-			MAC2STR(pucTaAddr), MAC2STR(pucRaAddr),
-			MAC2STR(pucDaAddr), MAC2STR(pucSaAddr),
-			fgDrop
-			);
+			DBGLOG(QM, TRACE,
+				__STR_FMT__,
+				RXM_IS_FROM_DS(u2FrameCtrl),
+				RXM_IS_TO_DS(u2FrameCtrl),
+				ucTid, prSwRfb->u2SSN,
+				prSwRfb->ucPayloadFormat,
+				MAC2STR(pucTaAddr), MAC2STR(pucRaAddr),
+				MAC2STR(pucDaAddr), MAC2STR(pucSaAddr),
+				fgDrop
+				);
 #undef __STR_FMT__
+		}
 
 		prStaRec->afgIsAmsduInvalid[ucTid] = fgDrop;
 		prStaRec->au2AmsduInvalidSN[ucTid] = u2SSN;
