@@ -1006,9 +1006,7 @@ void secRemoveBssBcEntry(IN struct ADAPTER *prAdapter,
 			if (prBssInfo->wepkeyUsed[i])
 				secPrivacyFreeForEntry(prAdapter,
 					       prBssInfo->wepkeyWlanIdx);
-			prBssInfo->wepkeyUsed[i] = FALSE;
 		}
-		prBssInfo->wepkeyWlanIdx = WTBL_RESERVED_ENTRY;
 		prBssInfo->fgBcDefaultKeyExist = FALSE;
 		prBssInfo->ucBcDefaultKeyIdx = 0xff;
 	}
