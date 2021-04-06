@@ -3193,6 +3193,11 @@ wlanoidSetRemoveKey(IN struct ADAPTER *prAdapter,
 						u4KeyIndex] < WTBL_SIZE);
 				ucRemoveBCKeyAtIdx =
 					prBssInfo->ucBMCWlanIndexS[u4KeyIndex];
+
+				prBssInfo->ucBMCWlanIndexSUsed[u4KeyIndex]
+					= FALSE;
+				prBssInfo->ucBMCWlanIndexS[u4KeyIndex]
+					= WTBL_RESERVED_ENTRY;
 			}
 		}
 
