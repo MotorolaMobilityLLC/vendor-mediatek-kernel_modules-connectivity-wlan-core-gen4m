@@ -1909,10 +1909,10 @@ kalIndicateStatusAndComplete(IN struct GLUE_INFO
 					"JOIN Failure: remove WEP wlanidx: %d, keyid: %d",
 					prBssInfo->wepkeyWlanIdx,
 					rRemoveKey.u4KeyIndex);
-				wlanoidSetRemoveKey(prAdapter,
+				wlanSetRemoveKey(prAdapter,
 					(void *)&rRemoveKey,
 					sizeof(struct PARAM_REMOVE_KEY),
-					&u4SetLen);
+					&u4SetLen, FALSE);
 			}
 		}
 
