@@ -16,7 +16,7 @@
 #include "precomp.h"
 #include "wmt_exp.h"
 
-#ifdef CONFIG_MEDIATEK_EMI
+#ifdef CONFIG_MTK_EMI
 #if KERNEL_VERSION(5, 4, 0) <= CFG80211_VERSION_CODE
 #include <soc/mediatek/emi.h>
 #else
@@ -141,7 +141,7 @@ int32_t kalBoostCpu(IN struct ADAPTER *prAdapter,
 	return 0;
 }
 #endif
-#ifdef CONFIG_MEDIATEK_EMI
+#ifdef CONFIG_MTK_EMI
 void kalSetEmiMpuProtection(phys_addr_t emiPhyBase, bool enable)
 {
 }
