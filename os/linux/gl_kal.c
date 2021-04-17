@@ -2942,7 +2942,7 @@ u_int8_t kalGetEthDestAddr(IN struct GLUE_INFO *prGlueInfo,
 
 void
 kalOidComplete(IN struct GLUE_INFO *prGlueInfo,
-	       IN u_int8_t fgSetQuery, IN uint32_t u4SetQueryInfoLen,
+	       IN struct CMD_INFO *prCmdInfo, IN uint32_t u4SetQueryInfoLen,
 	       IN uint32_t rOidStatus)
 {
 
@@ -2955,6 +2955,9 @@ kalOidComplete(IN struct GLUE_INFO *prGlueInfo,
 	prGlueInfo->u4OidCompleteFlag = 1;
 	/* complete ONLY if there are waiters */
 	if (!completion_done(&prGlueInfo->rPendComp)) {
+		kalUpdateCompHdlrRec(prGlueInfo->prAdapter,
+			NULL, prCmdInfo);
+
 		complete(&prGlueInfo->rPendComp);
 	} else {
 		DBGLOG(INIT, WARN, "SKIP multiple OID complete!\n");
@@ -3166,6 +3169,7 @@ kalIoctlByBssIdx(IN struct GLUE_INFO *prGlueInfo,
 {
 	struct GL_IO_REQ *prIoReq = NULL;
 	struct KAL_THREAD_SCHEDSTATS schedstats;
+	struct ADAPTER *prAdapter = prGlueInfo->prAdapter;
 	uint32_t ret = WLAN_STATUS_SUCCESS;
 	uint32_t waitRet = 0;
 
@@ -3239,6 +3243,34 @@ kalIoctlByBssIdx(IN struct GLUE_INFO *prGlueInfo,
 	 * Use memory barrier to ensure OidEntry is written done and then set
 	 * bit.
 	 */
+	if (prGlueInfo->rPendComp.done != 0) {
+		uint32_t wIdx, cIdx;
+		int i;
+
+		for (i = OID_HDLR_REC_NUM - 1,
+				wIdx = prAdapter->u4WaitRecIdx,
+				cIdx = prAdapter->u4CompRecIdx;
+				i >= 0; i--) {
+			DBGLOG(OID, WARN, "%dth last wait OID hdlr: %s\n",
+				OID_HDLR_REC_NUM - i,
+				prAdapter->arPrevWaitHdlrRec[
+					(wIdx + i) % OID_HDLR_REC_NUM].aucName);
+			DBGLOG(OID, WARN, "%dth last comp OID hdlr: %s\n",
+				OID_HDLR_REC_NUM - i,
+				prAdapter->arPrevCompHdlrRec[
+					(cIdx + i) % OID_HDLR_REC_NUM].aucName);
+		}
+		DBGLOG(OID, WARN, "Current wait OID hdlr: %pf\n",
+			pfnOidHandler);
+	}
+	kalSnprintf(prAdapter->arPrevWaitHdlrRec[
+			prAdapter->u4WaitRecIdx].aucName,
+			sizeof(prAdapter->arPrevWaitHdlrRec[
+			prAdapter->u4WaitRecIdx].aucName),
+			"%pf", pfnOidHandler);
+	prAdapter->u4WaitRecIdx = (prAdapter->u4WaitRecIdx + 1)
+					% OID_HDLR_REC_NUM;
+
 	smp_mb();
 	set_bit(GLUE_FLAG_OID_BIT, &prGlueInfo->ulFlag);
 
@@ -4404,10 +4436,15 @@ int main_thread(void *data)
 			if (prIoReq->rStatus != WLAN_STATUS_PENDING) {
 				/* complete ONLY if there are waiters */
 				if (!completion_done(
-					&prGlueInfo->rPendComp))
+					&prGlueInfo->rPendComp)) {
+					kalUpdateCompHdlrRec(
+						prGlueInfo->prAdapter,
+						prIoReq->pfnOidHandler,
+						NULL);
+
 					complete(
 						&prGlueInfo->rPendComp);
-				else
+				} else
 					DBGLOG(INIT, WARN,
 						"SKIP multiple OID complete!\n"
 					       );
@@ -4765,7 +4802,7 @@ void kalOidCmdClearance(IN struct GLUE_INFO *prGlueInfo)
 			prCmdInfo->pfCmdTimeoutHandler(prGlueInfo->prAdapter,
 						       prCmdInfo);
 		else
-			kalOidComplete(prGlueInfo, prCmdInfo->fgSetQuery, 0,
+			kalOidComplete(prGlueInfo, prCmdInfo, 0,
 				       WLAN_STATUS_NOT_ACCEPTED);
 
 		prGlueInfo->u4OidCompleteFlag = 1;
@@ -9096,6 +9133,35 @@ kalSyncTimeToFWByIoctl(void)
 #endif
 }
 #endif /* (CFG_SUPPORT_CONNINFRA == 1) */
+
+void kalUpdateCompHdlrRec(IN struct ADAPTER *prAdapter,
+				IN PFN_OID_HANDLER_FUNC pfnOidHandler,
+				IN struct CMD_INFO *prCmdInfo) {
+	if (pfnOidHandler)
+		kalSnprintf(prAdapter->arPrevCompHdlrRec[
+					prAdapter->u4CompRecIdx].aucName,
+				sizeof(prAdapter->arPrevCompHdlrRec[
+					prAdapter->u4CompRecIdx].aucName),
+				"%pf", pfnOidHandler);
+	else {
+		if (prCmdInfo)
+			kalSnprintf(prAdapter->arPrevCompHdlrRec[
+					prAdapter->u4CompRecIdx].aucName,
+					sizeof(prAdapter->arPrevCompHdlrRec[
+					prAdapter->u4CompRecIdx].aucName),
+					"[CID 0x%x] %pf", prCmdInfo->ucCID,
+					__builtin_return_address(0));
+		else
+			kalSnprintf(prAdapter->arPrevCompHdlrRec[
+					prAdapter->u4CompRecIdx].aucName,
+					sizeof(prAdapter->arPrevCompHdlrRec[
+					prAdapter->u4CompRecIdx].aucName),
+					"%pf", __builtin_return_address(0));
+	}
+
+	prAdapter->u4CompRecIdx = (prAdapter->u4CompRecIdx + 1)
+					% OID_HDLR_REC_NUM;
+}
 
 #if KERNEL_VERSION(5, 4, 0) <= CFG80211_VERSION_CODE
 MODULE_IMPORT_NS(VFS_internal_I_am_really_a_filesystem_and_am_NOT_a_driver);

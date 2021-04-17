@@ -150,7 +150,7 @@ void nicCmdEventQueryMcrRead(IN struct ADAPTER *prAdapter,
 		prMcrRdInfo->u4McrOffset = prCmdAccessReg->u4Address;
 		prMcrRdInfo->u4McrData = prCmdAccessReg->u4Data;
 
-		kalOidComplete(prGlueInfo, prCmdInfo->fgSetQuery,
+		kalOidComplete(prGlueInfo, prCmdInfo,
 			       u4QueryInfoLen, WLAN_STATUS_SUCCESS);
 	}
 
@@ -181,7 +181,7 @@ void nicCmdEventQueryCfgRead(IN struct ADAPTER *prAdapter,
 		kalMemCopy(prOutCfgHeader, prInCfgHeader,
 			sizeof(struct CMD_HEADER));
 
-		kalOidComplete(prGlueInfo, prCmdInfo->fgSetQuery,
+		kalOidComplete(prGlueInfo, prCmdInfo,
 			       u4QueryInfoLen, WLAN_STATUS_SUCCESS);
 	}
 }
@@ -255,7 +255,7 @@ void nicCmdEventQueryRxStatistics(IN struct ADAPTER
 		       (unsigned int)prEventAccessRxStat->au4Buffer[65],
 		       (unsigned int)prEventAccessRxStat->au4Buffer[22]);
 
-		kalOidComplete(prGlueInfo, prCmdInfo->fgSetQuery,
+		kalOidComplete(prGlueInfo, prCmdInfo,
 			       u4QueryInfoLen, WLAN_STATUS_SUCCESS);
 	}
 
@@ -363,7 +363,7 @@ void nicCmdEventPfmuTagRead(IN struct ADAPTER *prAdapter,
 	g_rPfmuTag1 = prPfumTagRead->ru4TxBfPFMUTag1;
 	g_rPfmuTag2 = prPfumTagRead->ru4TxBfPFMUTag2;
 
-	kalOidComplete(prGlueInfo, prCmdInfo->fgSetQuery,
+	kalOidComplete(prGlueInfo, prCmdInfo,
 		       u4QueryInfoLen, WLAN_STATUS_SUCCESS);
 
 	DBGLOG(INIT, INFO,
@@ -496,7 +496,7 @@ void nicCmdEventGetQd(IN struct ADAPTER *prAdapter,
 	/* g_rPfmuTag1 = prPfumTagRead->ru4TxBfPFMUTag1; */
 	/* g_rPfmuTag2 = prPfumTagRead->ru4TxBfPFMUTag2; */
 
-	kalOidComplete(prGlueInfo, prCmdInfo->fgSetQuery,
+	kalOidComplete(prGlueInfo, prCmdInfo,
 		       u4QueryInfoLen, WLAN_STATUS_SUCCESS);
 
 	DBGLOG(INIT, INFO, " event id : %x\n", prGetQd->u4EventId);
@@ -550,7 +550,7 @@ void nicCmdEventGetCalcLq(IN struct ADAPTER *prAdapter,
 	/* g_rPfmuTag1 = prPfumTagRead->ru4TxBfPFMUTag1; */
 	/* g_rPfmuTag2 = prPfumTagRead->ru4TxBfPFMUTag2; */
 
-	kalOidComplete(prGlueInfo, prCmdInfo->fgSetQuery,
+	kalOidComplete(prGlueInfo, prCmdInfo,
 		       u4QueryInfoLen, WLAN_STATUS_SUCCESS);
 
 
@@ -608,7 +608,7 @@ void nicCmdEventGetCalcInitMcs(IN struct ADAPTER *prAdapter,
 	/* g_rPfmuTag1 = prPfumTagRead->ru4TxBfPFMUTag1; */
 	/* g_rPfmuTag2 = prPfumTagRead->ru4TxBfPFMUTag2; */
 
-	kalOidComplete(prGlueInfo, prCmdInfo->fgSetQuery,
+	kalOidComplete(prGlueInfo, prCmdInfo,
 		       u4QueryInfoLen, WLAN_STATUS_SUCCESS);
 
 
@@ -666,7 +666,7 @@ void nicCmdEventQuerySwCtrlRead(IN struct ADAPTER
 		prSwCtrlInfo->u4Id = prCmdSwCtrl->u4Id;
 		prSwCtrlInfo->u4Data = prCmdSwCtrl->u4Data;
 
-		kalOidComplete(prGlueInfo, prCmdInfo->fgSetQuery,
+		kalOidComplete(prGlueInfo, prCmdInfo,
 			       u4QueryInfoLen, WLAN_STATUS_SUCCESS);
 	}
 
@@ -718,7 +718,7 @@ void nicCmdEventQueryChipConfig(IN struct ADAPTER
 #endif
 		kalMemCopy(prChipConfigInfo->aucCmd,
 		   prCmdChipConfig->aucCmd, prChipConfigInfo->u2MsgSize);
-		kalOidComplete(prGlueInfo, prCmdInfo->fgSetQuery,
+		kalOidComplete(prGlueInfo, prCmdInfo,
 		   u4QueryInfoLen, WLAN_STATUS_SUCCESS);
 	}
 
@@ -732,7 +732,7 @@ void nicCmdEventSetCommon(IN struct ADAPTER *prAdapter,
 
 	if (prCmdInfo->fgIsOid) {
 		/* Update Set Information Length */
-		kalOidComplete(prAdapter->prGlueInfo, prCmdInfo->fgSetQuery,
+		kalOidComplete(prAdapter->prGlueInfo, prCmdInfo,
 	    prCmdInfo->u4InformationBufferLength, WLAN_STATUS_SUCCESS);
 	}
 
@@ -753,7 +753,7 @@ void nicCmdEventSetIpAddress(IN struct ADAPTER *prAdapter,
 	if (prCmdInfo->fgIsOid) {
 		/* Update Set Information Length */
 		kalOidComplete(prAdapter->prGlueInfo,
-			prCmdInfo->fgSetQuery,
+			prCmdInfo,
 			OFFSET_OF(struct PARAM_NETWORK_ADDRESS_LIST,
 			arAddress) + u4Count *
 			(OFFSET_OF(struct PARAM_NETWORK_ADDRESS, aucAddress) +
@@ -779,7 +779,7 @@ void nicCmdEventSetIpv6Address(IN struct ADAPTER *prAdapter,
 	if (prCmdInfo->fgIsOid) {
 		/* Update Set Information Length */
 		kalOidComplete(prAdapter->prGlueInfo,
-			prCmdInfo->fgSetQuery,
+			prCmdInfo,
 			OFFSET_OF(struct PARAM_NETWORK_ADDRESS_LIST,
 			arAddress) + u4Count *
 			(OFFSET_OF(struct PARAM_NETWORK_ADDRESS, aucAddress) +
@@ -815,7 +815,7 @@ void nicCmdEventQueryRfTestATInfo(IN struct ADAPTER
 		u4QueryInfoLen = sizeof(union EVENT_TEST_STATUS);
 
 		/* Update Query Information Length */
-		kalOidComplete(prGlueInfo, prCmdInfo->fgSetQuery,
+		kalOidComplete(prGlueInfo, prCmdInfo,
 			       u4QueryInfoLen, WLAN_STATUS_SUCCESS);
 	}
 
@@ -856,7 +856,7 @@ void nicCmdEventQueryLinkQuality(IN struct ADAPTER
 
 	if (prCmdInfo->fgIsOid) {
 		prGlueInfo = prAdapter->prGlueInfo;
-		kalOidComplete(prGlueInfo, prCmdInfo->fgSetQuery,
+		kalOidComplete(prGlueInfo, prCmdInfo,
 			       u4QueryInfoLen, WLAN_STATUS_SUCCESS);
 	}
 }
@@ -892,7 +892,7 @@ void nicCmdEventQueryLinkSpeed(IN struct ADAPTER *prAdapter,
 	u4QueryInfoLen = sizeof(uint32_t);
 
 	if (prCmdInfo->fgIsOid)
-		kalOidComplete(prGlueInfo, prCmdInfo->fgSetQuery,
+		kalOidComplete(prGlueInfo, prCmdInfo,
 			       u4QueryInfoLen, WLAN_STATUS_SUCCESS);
 }
 
@@ -932,7 +932,7 @@ void nicCmdEventQueryLinkSpeedEx(IN struct ADAPTER *prAdapter,
 
 		u4QueryInfoLen = sizeof(struct PARAM_LINK_SPEED_EX);
 
-		kalOidComplete(prGlueInfo, prCmdInfo->fgSetQuery,
+		kalOidComplete(prGlueInfo, prCmdInfo,
 			u4QueryInfoLen, WLAN_STATUS_SUCCESS);
 	}
 }
@@ -1039,7 +1039,7 @@ void nicCmdEventQueryStatistics(IN struct ADAPTER
 #endif
 
 	if (prCmdInfo->fgIsOid)
-		kalOidComplete(prGlueInfo, prCmdInfo->fgSetQuery,
+		kalOidComplete(prGlueInfo, prCmdInfo,
 			       u4QueryInfoLen, WLAN_STATUS_SUCCESS);
 }
 
@@ -1070,7 +1070,7 @@ void nicCmdEventQueryBugReport(IN struct ADAPTER *prAdapter,
 				prEventStatistics, u4QueryInfoLen);
 		}
 
-		kalOidComplete(prGlueInfo, prCmdInfo->fgSetQuery,
+		kalOidComplete(prGlueInfo, prCmdInfo,
 			       u4QueryInfoLen, WLAN_STATUS_SUCCESS);
 	}
 }
@@ -1134,7 +1134,7 @@ void nicCmdEventEnterRfTest(IN struct ADAPTER *prAdapter,
 			if (prCmdInfo->fgIsOid) {
 				/* Update Set Information Length */
 				kalOidComplete(prAdapter->prGlueInfo,
-					prCmdInfo->fgSetQuery,
+					prCmdInfo,
 					prCmdInfo->u4SetInfoLen,
 					WLAN_STATUS_NOT_SUPPORTED);
 
@@ -1164,7 +1164,7 @@ void nicCmdEventEnterRfTest(IN struct ADAPTER *prAdapter,
 	if (prCmdInfo->fgIsOid) {
 		/* Update Set Information Length */
 		kalOidComplete(prAdapter->prGlueInfo,
-			       prCmdInfo->fgSetQuery, prCmdInfo->u4SetInfoLen,
+			       prCmdInfo, prCmdInfo->u4SetInfoLen,
 			       WLAN_STATUS_SUCCESS);
 	}
 #if CFG_SUPPORT_NVRAM
@@ -1207,7 +1207,7 @@ void nicCmdEventLeaveRfTest(IN struct ADAPTER *prAdapter,
 			if (prCmdInfo->fgIsOid) {
 				/* Update Set Information Length */
 				kalOidComplete(prAdapter->prGlueInfo,
-					prCmdInfo->fgSetQuery,
+					prCmdInfo,
 					prCmdInfo->u4SetInfoLen,
 					WLAN_STATUS_NOT_SUPPORTED);
 
@@ -1234,7 +1234,7 @@ void nicCmdEventLeaveRfTest(IN struct ADAPTER *prAdapter,
 	if (prCmdInfo->fgIsOid) {
 		/* Update Set Information Length */
 		kalOidComplete(prAdapter->prGlueInfo,
-			       prCmdInfo->fgSetQuery, prCmdInfo->u4SetInfoLen,
+			       prCmdInfo, prCmdInfo->u4SetInfoLen,
 			       WLAN_STATUS_SUCCESS);
 	}
 
@@ -1291,7 +1291,7 @@ void nicCmdEventQueryMcastAddr(IN struct ADAPTER *prAdapter,
 
 		/* buffer length check */
 		if (prCmdInfo->u4InformationBufferLength < u4QueryInfoLen) {
-			kalOidComplete(prGlueInfo, prCmdInfo->fgSetQuery,
+			kalOidComplete(prGlueInfo, prCmdInfo,
 				u4QueryInfoLen, WLAN_STATUS_BUFFER_TOO_SHORT);
 		} else {
 			kalMemCopy(prCmdInfo->pvInformationBuffer,
@@ -1299,7 +1299,7 @@ void nicCmdEventQueryMcastAddr(IN struct ADAPTER *prAdapter,
 				prEventMacMcastAddr->u4NumOfGroupAddr *
 					MAC_ADDR_LEN);
 
-			kalOidComplete(prGlueInfo, prCmdInfo->fgSetQuery,
+			kalOidComplete(prGlueInfo, prCmdInfo,
 				       u4QueryInfoLen, WLAN_STATUS_SUCCESS);
 		}
 	}
@@ -1334,7 +1334,7 @@ void nicCmdEventQueryEepromRead(IN struct ADAPTER
 		prEepromRdInfo->info.rEeprom.u2EepromData =
 			prEventAccessEeprom->u2Data;
 
-		kalOidComplete(prGlueInfo, prCmdInfo->fgSetQuery,
+		kalOidComplete(prGlueInfo, prCmdInfo,
 			       u4QueryInfoLen, WLAN_STATUS_SUCCESS);
 	}
 
@@ -1353,7 +1353,7 @@ void nicCmdEventSetMediaStreamMode(IN struct ADAPTER
 	if (prCmdInfo->fgIsOid) {
 		/* Update Set Information Length */
 		kalOidComplete(prAdapter->prGlueInfo,
-			       prCmdInfo->fgSetQuery, prCmdInfo->u4SetInfoLen,
+			       prCmdInfo, prCmdInfo->u4SetInfoLen,
 			       WLAN_STATUS_SUCCESS);
 	}
 
@@ -1385,7 +1385,7 @@ void nicCmdEventSetStopSchedScan(IN struct ADAPTER
 	if (prCmdInfo->fgIsOid) {
 		/* Update Set Information Length */
 		kalOidComplete(prAdapter->prGlueInfo,
-			prCmdInfo->fgSetQuery,
+			prCmdInfo,
 			prCmdInfo->u4InformationBufferLength,
 			WLAN_STATUS_SUCCESS);
 	}
@@ -1417,7 +1417,7 @@ void nicOidCmdTimeoutCommon(IN struct ADAPTER *prAdapter,
 	ASSERT(prAdapter);
 
 	if (prCmdInfo->fgIsOid)
-		kalOidComplete(prAdapter->prGlueInfo, prCmdInfo->fgSetQuery,
+		kalOidComplete(prAdapter->prGlueInfo, prCmdInfo,
 			       0, WLAN_STATUS_FAILURE);
 }
 
@@ -1464,7 +1464,7 @@ void nicOidCmdEnterRFTestTimeout(IN struct ADAPTER
 	kalFlushPendingTxPackets(prAdapter->prGlueInfo);
 
 	/* 2. indicate for OID failure */
-	kalOidComplete(prAdapter->prGlueInfo, prCmdInfo->fgSetQuery,
+	kalOidComplete(prAdapter->prGlueInfo, prCmdInfo,
 		       0, WLAN_STATUS_FAILURE);
 }
 
@@ -1926,7 +1926,7 @@ void nicCmdEventQueryCalBackupV2(IN struct ADAPTER
 			prEventCalBackupDataV2->u4ThermalValue;
 		g_rBackupCalDataAllV2.u4ThermalInfo =
 			prEventCalBackupDataV2->u4ThermalValue;
-		kalOidComplete(prGlueInfo, prCmdInfo->fgSetQuery,
+		kalOidComplete(prGlueInfo, prCmdInfo,
 			       u4QueryInfoLen, WLAN_STATUS_SUCCESS);
 	} else if (prEventCalBackupDataV2->ucReason == 0
 		   && prEventCalBackupDataV2->ucAction == 1) {
@@ -1942,7 +1942,7 @@ void nicCmdEventQueryCalBackupV2(IN struct ADAPTER
 			g_rBackupCalDataAllV2.u4ValidRamCalDataLength =
 				prEventCalBackupDataV2->u4Length;
 
-		kalOidComplete(prGlueInfo, prCmdInfo->fgSetQuery,
+		kalOidComplete(prGlueInfo, prCmdInfo,
 			       u4QueryInfoLen, WLAN_STATUS_SUCCESS);
 	} else if (prEventCalBackupDataV2->ucReason == 2
 		   && prEventCalBackupDataV2->ucAction == 4) {
@@ -2025,7 +2025,7 @@ void nicCmdEventQueryCalBackupV2(IN struct ADAPTER
 
 		if (prEventCalBackupDataV2->u4RemainLength == 0
 		    || prEventCalBackupDataV2->u4Address == 0xFFFFFFFF) {
-			kalOidComplete(prGlueInfo, prCmdInfo->fgSetQuery,
+			kalOidComplete(prGlueInfo, prCmdInfo,
 				       u4QueryInfoLen, WLAN_STATUS_SUCCESS);
 		} else {
 			wlanoidSendCalBackupV2Cmd(prAdapter,
@@ -2033,7 +2033,7 @@ void nicCmdEventQueryCalBackupV2(IN struct ADAPTER
 				prCmdInfo->u4InformationBufferLength);
 		}
 	} else {
-		kalOidComplete(prGlueInfo, prCmdInfo->fgSetQuery,
+		kalOidComplete(prGlueInfo, prCmdInfo,
 			       u4QueryInfoLen, WLAN_STATUS_SUCCESS);
 	}
 
@@ -2243,7 +2243,7 @@ void nicCmdEventQueryMemDump(IN struct ADAPTER *prAdapter,
 					  prCmdInfo->pvInformationBuffer)
 						= u4CurTimeTick;
 					kalOidComplete(prGlueInfo,
-						prCmdInfo->fgSetQuery,
+						prCmdInfo,
 						u4QueryInfoLen,
 						WLAN_STATUS_SUCCESS);
 				}
@@ -2317,7 +2317,7 @@ void nicCmdEventBatchScanResult(IN struct ADAPTER
 		kalMemCopy(prCmdInfo->pvInformationBuffer,
 			prEventBatchResult, sizeof(struct EVENT_BATCH_RESULT));
 
-		kalOidComplete(prGlueInfo, prCmdInfo->fgSetQuery,
+		kalOidComplete(prGlueInfo, prCmdInfo,
 			       u4QueryInfoLen, WLAN_STATUS_SUCCESS);
 	}
 
@@ -2427,7 +2427,7 @@ void nicCmdEventBuildDateCode(IN struct ADAPTER *prAdapter,
 		kalMemCopy(prCmdInfo->pvInformationBuffer,
 			   prEvent->aucDateCode, sizeof(uint8_t) * 16);
 
-		kalOidComplete(prGlueInfo, prCmdInfo->fgSetQuery,
+		kalOidComplete(prGlueInfo, prCmdInfo,
 			       u4QueryInfoLen, WLAN_STATUS_SUCCESS);
 	}
 
@@ -2710,7 +2710,7 @@ void nicCmdEventQueryStaStatistics(IN struct ADAPTER
 
 	if (prCmdInfo->fgIsOid)
 		kalOidComplete(prGlueInfo,
-			prCmdInfo->fgSetQuery,
+			prCmdInfo,
 			u4QueryInfoLen,
 			WLAN_STATUS_SUCCESS);
 
@@ -2888,7 +2888,7 @@ void nicCmdEventQueryWlanInfo(IN struct ADAPTER *prAdapter,
 	}
 
 	if (prCmdInfo->fgIsOid)
-		kalOidComplete(prGlueInfo, prCmdInfo->fgSetQuery,
+		kalOidComplete(prGlueInfo, prCmdInfo,
 			       u4QueryInfoLen, WLAN_STATUS_SUCCESS);
 }
 
@@ -2926,7 +2926,7 @@ void nicCmdEventQueryMibInfo(IN struct ADAPTER *prAdapter,
 	}
 
 	if (prCmdInfo->fgIsOid)
-		kalOidComplete(prGlueInfo, prCmdInfo->fgSetQuery,
+		kalOidComplete(prGlueInfo, prCmdInfo,
 			       u4QueryInfoLen, WLAN_STATUS_SUCCESS);
 }
 #endif
@@ -3440,7 +3440,7 @@ void nicCmdEventQueryTxPowerInfo(IN struct ADAPTER *prAdapter,
 			struct EXT_EVENT_TXPOWER_ALL_RATE_POWER_INFO_T));
 		}
 
-		kalOidComplete(prGlueInfo, prCmdInfo->fgSetQuery,
+		kalOidComplete(prGlueInfo, prCmdInfo,
 			       u4QueryInfoLen, WLAN_STATUS_SUCCESS);
 	}
 }
@@ -3510,7 +3510,7 @@ void nicEventLinkQuality(IN struct ADAPTER *prAdapter,
 						    prEvent->aucBuffer);
 		else if (prCmdInfo->fgIsOid)
 			kalOidComplete(prAdapter->prGlueInfo,
-				prCmdInfo->fgSetQuery,
+				prCmdInfo,
 				0, WLAN_STATUS_SUCCESS);
 		/* return prCmdInfo */
 		cmdBufFreeCmdInfo(prAdapter, prCmdInfo);
@@ -4273,7 +4273,7 @@ void nicEventLayer0ExtMagic(IN struct ADAPTER *prAdapter,
 	if (prCmdInfo != NULL) {
 		if ((prCmdInfo->fgIsOid) != 0)
 			kalOidComplete(prAdapter->prGlueInfo,
-				prCmdInfo->fgSetQuery,
+				prCmdInfo,
 				u4QueryInfoLen, WLAN_STATUS_SUCCESS);
 		/* return prCmdInfo */
 		cmdBufFreeCmdInfo(prAdapter, prCmdInfo);
@@ -4293,7 +4293,7 @@ void nicEventLayer0ExtMagic(IN struct ADAPTER *prAdapter,
 					prCmdInfo, prEvent->aucBuffer);
 			else if (prCmdInfo->fgIsOid)
 				kalOidComplete(prAdapter->prGlueInfo,
-					prCmdInfo->fgSetQuery,
+					prCmdInfo,
 				  u4QueryInfoLen, WLAN_STATUS_SUCCESS);
 
 			/* return prCmdInfo */
@@ -4317,7 +4317,7 @@ void nicEventLayer0ExtMagic(IN struct ADAPTER *prAdapter,
 			} else if ((prCmdInfo->fgIsOid) != 0)
 				kalOidComplete(
 					prAdapter->prGlueInfo,
-					prCmdInfo->fgSetQuery,
+					prCmdInfo,
 					u4QueryInfoLen,
 					WLAN_STATUS_SUCCESS);
 			/* return prCmdInfo */
@@ -4339,7 +4339,7 @@ void nicEventLayer0ExtMagic(IN struct ADAPTER *prAdapter,
 			} else if ((prCmdInfo->fgIsOid) != 0)
 				kalOidComplete(
 					prAdapter->prGlueInfo,
-					prCmdInfo->fgSetQuery,
+					prCmdInfo,
 					u4QueryInfoLen,
 					WLAN_STATUS_SUCCESS);
 			/* return prCmdInfo */
@@ -4512,7 +4512,7 @@ void nicEventStatistics(IN struct ADAPTER *prAdapter,
 						    prEvent->aucBuffer);
 		else if (prCmdInfo->fgIsOid)
 			kalOidComplete(prAdapter->prGlueInfo,
-				prCmdInfo->fgSetQuery,
+				prCmdInfo,
 				0, WLAN_STATUS_SUCCESS);
 		/* return prCmdInfo */
 		cmdBufFreeCmdInfo(prAdapter, prCmdInfo);
@@ -4540,7 +4540,7 @@ void nicEventWlanInfo(IN struct ADAPTER *prAdapter,
 						    prEvent->aucBuffer);
 		else if (prCmdInfo->fgIsOid)
 			kalOidComplete(prAdapter->prGlueInfo,
-							prCmdInfo->fgSetQuery,
+							prCmdInfo,
 							0, WLAN_STATUS_SUCCESS);
 		/* return prCmdInfo */
 		cmdBufFreeCmdInfo(prAdapter, prCmdInfo);
@@ -4568,7 +4568,7 @@ void nicEventMibInfo(IN struct ADAPTER *prAdapter,
 						    prEvent->aucBuffer);
 		else if (prCmdInfo->fgIsOid)
 			kalOidComplete(prAdapter->prGlueInfo,
-				prCmdInfo->fgSetQuery,
+				prCmdInfo,
 				0, WLAN_STATUS_SUCCESS);
 		/* return prCmdInfo */
 		cmdBufFreeCmdInfo(prAdapter, prCmdInfo);
@@ -5138,7 +5138,7 @@ void nicEventDumpMem(IN struct ADAPTER *prAdapter,
 						    prEvent->aucBuffer);
 		else if (prCmdInfo->fgIsOid)
 			kalOidComplete(prAdapter->prGlueInfo,
-				prCmdInfo->fgSetQuery, 0, WLAN_STATUS_SUCCESS);
+				prCmdInfo, 0, WLAN_STATUS_SUCCESS);
 		/* return prCmdInfo */
 		cmdBufFreeCmdInfo(prAdapter, prCmdInfo);
 	} else {
@@ -5298,7 +5298,7 @@ void nicCmdEventQueryCnmInfo(IN struct ADAPTER *prAdapter,
 
 		prGlueInfo = prAdapter->prGlueInfo;
 		u4QueryInfoLen = sizeof(struct PARAM_GET_CNM_T);
-		kalOidComplete(prGlueInfo, prCmdInfo->fgSetQuery,
+		kalOidComplete(prGlueInfo, prCmdInfo,
 			       u4QueryInfoLen, WLAN_STATUS_SUCCESS);
 	}
 }
@@ -5318,7 +5318,7 @@ void nicEventCnmInfo(IN struct ADAPTER *prAdapter,
 						    prEvent->aucBuffer);
 		else if (prCmdInfo->fgIsOid)
 			kalOidComplete(prAdapter->prGlueInfo,
-							prCmdInfo->fgSetQuery,
+							prCmdInfo,
 							0, WLAN_STATUS_SUCCESS);
 		/* return prCmdInfo */
 		cmdBufFreeCmdInfo(prAdapter, prCmdInfo);
@@ -5340,7 +5340,7 @@ void nicCmdEventSetAddKey(IN struct ADAPTER *prAdapter,
 	if (prCmdInfo->fgIsOid) {
 		/* Update Set Information Length */
 		kalOidComplete(prAdapter->prGlueInfo,
-			       prCmdInfo->fgSetQuery,
+			       prCmdInfo,
 			       prCmdInfo->u4InformationBufferLength,
 			       WLAN_STATUS_SUCCESS);
 	}
@@ -5385,7 +5385,7 @@ void nicOidCmdTimeoutSetAddKey(IN struct ADAPTER *prAdapter,
 
 	DBGLOG(NIC, WARN, "Wlan setaddkey timeout.\n");
 	if (prCmdInfo->fgIsOid)
-		kalOidComplete(prAdapter->prGlueInfo, prCmdInfo->fgSetQuery,
+		kalOidComplete(prAdapter->prGlueInfo, prCmdInfo,
 			       0, WLAN_STATUS_FAILURE);
 }
 #endif
