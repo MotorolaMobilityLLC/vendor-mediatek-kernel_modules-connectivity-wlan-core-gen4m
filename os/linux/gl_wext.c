@@ -1825,6 +1825,12 @@ wext_get_scan(IN struct net_device *prNetDev,
 	pcEnd = pcExtra + prData->length;	/* end of extra buffer */
 
 	/* Allocate another query buffer with the same size of extra buffer */
+	if (prData->length == 0) {
+		DBGLOG(INIT, INFO, "[wifi] buffer size is %d for scan list\n",
+		       prData->length);
+		ret = -E2BIG;
+		goto error;
+	}
 	u4AllocBufLen = prData->length;
 	prList = kalMemAlloc(u4AllocBufLen, VIR_MEM_TYPE);
 	if (prList == NULL) {
