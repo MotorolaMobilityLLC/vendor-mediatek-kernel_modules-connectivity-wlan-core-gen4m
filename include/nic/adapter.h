@@ -592,6 +592,7 @@ struct BSS_INFO {
 	struct WIFI_WMM_AC_STAT arLinkStatistics[WMM_AC_INDEX_NUM];
 
 	uint32_t u4CoexPhyRateLimit;
+	enum ENUM_COEX_MODE eCoexMode;
 
 	u_int8_t fgIsGranted;
 	enum ENUM_BAND eBandGranted;

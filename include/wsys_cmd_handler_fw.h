@@ -488,6 +488,7 @@ enum ENUM_EVENT_ID {
 
 	EVENT_ID_LOG_UI_INFO  = 0x8D,           /* 0x8D (Set / Query) */
 	EVENT_ID_UPDATE_COEX_PHYRATE = 0x90,    /* 0x90 (Unsolicited) */
+	EVENT_ID_UPDATE_COEX_STATUS = 0x91,
 
 	EVENT_ID_RSSI_MONITOR = 0xA1,       /* Event ID for Rssi monitoring */
 	EVENT_ID_CAL_BACKUP_IN_HOST_V2 = 0xAE,
