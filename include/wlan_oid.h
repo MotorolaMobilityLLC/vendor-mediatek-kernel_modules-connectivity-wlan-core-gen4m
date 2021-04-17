@@ -1959,6 +1959,15 @@ struct PARAM_NETWORK_ADDRESS_IP {
 	uint8_t sin_zero[8];
 };
 
+/* fos_change begin */
+#if CFG_SUPPORT_SET_IPV6_NETWORK
+struct PARAM_NETWORK_ADDRESS_IPV6 {
+	uint16_t sin_port;
+	uint8_t addr[16];
+};
+#endif /* fos_change end */
+
+
 struct PARAM_NETWORK_ADDRESS {
 	uint16_t u2AddressLength;/* length in bytes of Address[] in this */
 	uint16_t u2AddressType;	/* type of this address
@@ -3385,6 +3394,15 @@ wlanoidSetNetworkAddress(IN struct ADAPTER *prAdapter,
 			 IN void *pvSetBuffer,
 			 IN uint32_t u4SetBufferLen,
 			 OUT uint32_t *pu4SetInfoLen);
+/* fos_change begin */
+#if CFG_SUPPORT_SET_IPV6_NETWORK
+uint32_t
+wlanoidSetIPv6NetworkAddress(IN struct ADAPTER *prAdapter,
+			 IN void *pvSetBuffer,
+			 IN uint32_t u4SetBufferLen,
+			 OUT uint32_t *pu4SetInfoLen);
+#endif /* fos_change end */
+
 
 uint32_t
 wlanoidQueryMaxFrameSize(IN struct ADAPTER *prAdapter,
