@@ -196,22 +196,31 @@ struct MSG_P2P_RADAR_DETECT {
 };
 
 struct P2P_RADAR_INFO {
-	uint8_t ucRadarReportMode;
-	/*0: Only report radar detected;   1:  Add parameter reports*/
-	uint8_t ucRddIdx;
-	uint8_t ucLongDetected;
-	uint8_t ucPeriodicDetected;
-	uint8_t ucLPBNum;
-	uint8_t ucPPBNum;
-	uint8_t ucLPBPeriodValid;
-	uint8_t ucLPBWidthValid;
-	uint8_t ucPRICountM1;
-	uint8_t ucPRICountM1TH;
-	uint8_t ucPRICountM2;
-	uint8_t ucPRICountM2TH;
-	uint32_t u4PRI1stUs;
-	struct LONG_PULSE_BUFFER arLpbContent[32];
-	struct PERIODIC_PULSE_BUFFER arPpbContent[32];
+	uint8_t u1RddIdx;
+	uint8_t u1LongDetected;
+	uint8_t u1ConstantPRFDetected;
+	uint8_t u1StaggeredPRFDetected;
+	uint8_t u1RadarTypeIdx;
+	uint8_t u1PeriodicPulseNum;
+	uint8_t u1LongPulseNum;
+	uint8_t u1HwPulseNum;
+	uint8_t u1OutLPN;	 /* Long Pulse Number */
+	uint8_t u1OutSPN;	 /* Short Pulse Number */
+	uint8_t u1OutCRPN;
+	uint8_t u1OutCRPW;	 /* Constant PRF Radar: Pulse Number */
+	uint8_t u1OutCRBN;	 /* Constant PRF Radar: Burst Number */
+	uint8_t u1OutSTGPN;  /* Staggered PRF radar: Staggered pulse number */
+	uint8_t u1OutSTGPW;  /* Staggered PRF radar: maximum pulse width */
+	uint8_t u1Reserve;
+	uint32_t u4OutPRI_CONST;
+	uint32_t u4OutPRI_STG1;
+	uint32_t u4OutPRI_STG2;
+	uint32_t u4OutPRI_STG3;
+	uint32_t u4OutPRIStgDmin;
+	/* Staggered PRF radar: min PRI Difference between 1st and 2nd  */
+	struct LONG_PULSE_BUFFER arLongPulse[32];
+	struct PERIODIC_PULSE_BUFFER arPeriodicPulse[32];
+	struct WH_RDD_PULSE_CONTENT arContent[32];
 };
 
 struct MSG_P2P_SET_NEW_CHANNEL {
