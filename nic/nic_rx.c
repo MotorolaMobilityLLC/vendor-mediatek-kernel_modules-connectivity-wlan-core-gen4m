@@ -2187,7 +2187,7 @@ void nicRxProcessEventPacket(IN struct ADAPTER *prAdapter,
 			(prSwRfb->pucRecvBuff + prChipInfo->rxd_size);
 	if (prEvent->ucEID != EVENT_ID_DEBUG_MSG
 	    && prEvent->ucEID != EVENT_ID_ASSERT_DUMP) {
-		DBGLOG_LIMITED(NIC, TRACE,
+		DBGLOG(NIC, TRACE,
 			"RX EVENT: ID[0x%02X] SEQ[%u] LEN[%u]\n",
 			prEvent->ucEID, prEvent->ucSeqNum,
 			prEvent->u2PacketLength);
@@ -3860,7 +3860,10 @@ void nicRxProcessRFBs(IN struct ADAPTER *prAdapter)
 
 			/* check process RFB timeout */
 			if ((kalGetTimeTick() - u4Tick) > RX_PROCESS_TIMEOUT) {
-				DBGLOG(RX, WARN, "Rx process RFBs timeout\n");
+				DBGLOG(RX, WARN,
+					"Process RFBs timeout, pending count: %u\n",
+					prRxCtrl->rReceivedRfbList.u4NumElem);
+				kalSetRxProcessEvent(prAdapter->prGlueInfo);
 				break;
 			}
 
