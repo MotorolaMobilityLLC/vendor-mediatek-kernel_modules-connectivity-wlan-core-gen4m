@@ -11394,7 +11394,7 @@ static int priv_driver_get_capab_rsdb(IN struct net_device *prNetDev,
 
 	if (prGlueInfo->prAdapter->rWifiFemCfg.u2WifiPath ==
 	    (WLAN_FLAG_2G4_WF0 | WLAN_FLAG_5G_WF1))
-		fgDbDcModeEn = FALSE;
+		fgDbDcModeEn = TRUE;
 #endif
 
 	DBGLOG(REQ, INFO, "RSDB:%d\n", fgDbDcModeEn);
