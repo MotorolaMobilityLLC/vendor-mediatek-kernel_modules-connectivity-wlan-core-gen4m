@@ -43,6 +43,8 @@ enum ENUM_CPU_BOOST_STATUS {
 	ENUM_CPU_BOOST_STATUS_NUM
 };
 
+static uint32_t u4EmiMetOffset = 0x247000;
+
 uint32_t kalGetCpuBoostThreshold(void)
 {
 	DBGLOG(SW4, TRACE, "enter kalGetCpuBoostThreshold\n");
@@ -145,6 +147,16 @@ int32_t kalBoostCpu(IN struct ADAPTER *prAdapter,
 	return 0;
 }
 #endif
+
+uint32_t kalGetEmiMetOffset(void)
+{
+	return u4EmiMetOffset;
+}
+
+void kalSetEmiMetOffset(uint32_t newEmiMetOffset)
+{
+	u4EmiMetOffset = newEmiMetOffset;
+}
 
 #ifdef CONFIG_MTK_EMI
 void kalSetEmiMpuProtection(phys_addr_t emiPhyBase, bool enable)
