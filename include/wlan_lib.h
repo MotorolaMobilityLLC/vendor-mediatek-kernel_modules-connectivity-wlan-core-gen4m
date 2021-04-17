@@ -235,6 +235,13 @@
 #define WLAN_TX_STATS_LOG_TIMEOUT			30000
 #define WLAN_TX_STATS_LOG_DURATION			1500
 
+#define WLAN_TYPE_UNKNOWN 0
+#define WLAN_TYPE_LEGACY 1
+#define WLAN_TYPE_HE 2
+
+#define WLAN_LEGACY_MAX_BA_SIZE 64
+#define WLAN_HE_MAX_BA_SIZE 256
+
 /* Define for wifi path usage */
 #define WLAN_FLAG_2G4_WF0		BIT(0)	/*1: support, 0: NOT support */
 #define WLAN_FLAG_5G_WF0		BIT(1)	/*1: support, 0: NOT support */
@@ -1849,3 +1856,8 @@ u_int8_t wlanWfdEnabled(struct ADAPTER *prAdapter);
 
 int wlanChipConfig(struct ADAPTER *prAdapter,
 	char *pcCommand, int i4TotalLen);
+
+uint32_t wlanSetRxBaSize(IN struct GLUE_INFO *prGlueInfo,
+	int8_t i4Type, uint16_t u2BaSize);
+uint32_t wlanSetTxBaSize(IN struct GLUE_INFO *prGlueInfo,
+	int8_t i4Type, uint16_t u2BaSize);

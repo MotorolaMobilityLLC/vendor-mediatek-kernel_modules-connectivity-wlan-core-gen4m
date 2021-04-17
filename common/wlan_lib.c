@@ -7330,17 +7330,22 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 	prWifiVar->u4NetifStopThBackup = prWifiVar->u4NetifStopTh;
 	prWifiVar->u4NetifStartThBackup = prWifiVar->u4NetifStartTh;
 	prWifiVar->ucTxBaSize = (uint8_t) wlanCfgGetUint32(
-					prAdapter, "TxBaSize", 64);
+					prAdapter, "TxBaSize",
+					WLAN_LEGACY_MAX_BA_SIZE);
 	prWifiVar->ucRxHtBaSize = (uint8_t) wlanCfgGetUint32(
-					prAdapter, "RxHtBaSize", 64);
+					prAdapter, "RxHtBaSize",
+					WLAN_LEGACY_MAX_BA_SIZE);
 	prWifiVar->ucRxVhtBaSize = (uint8_t) wlanCfgGetUint32(
-					prAdapter, "RxVhtBaSize", 64);
+					prAdapter, "RxVhtBaSize",
+					WLAN_LEGACY_MAX_BA_SIZE);
 #if (CFG_SUPPORT_802_11AX == 1)
 	if (fgEfuseCtrlAxOn == 1) {
 		prWifiVar->u2RxHeBaSize = (uint8_t)
-			wlanCfgGetUint32(prAdapter, "RxHeBaSize", 256);
+			wlanCfgGetUint32(prAdapter, "RxHeBaSize",
+				WLAN_HE_MAX_BA_SIZE);
 		prWifiVar->u2TxHeBaSize = (uint8_t)
-			wlanCfgGetUint32(prAdapter, "TxHeBaSize", 256);
+			wlanCfgGetUint32(prAdapter, "TxHeBaSize",
+				WLAN_HE_MAX_BA_SIZE);
 	}
 #endif
 
@@ -12490,4 +12495,82 @@ int wlanChipConfig(struct ADAPTER *prAdapter,
 	i4BytesWritten = snprintf(pcCommand, i4TotalLen, "%s",
 		     rChipConfigInfo.aucCmd);
 	return i4BytesWritten;
+}
+
+uint32_t wlanSetRxBaSize(IN struct GLUE_INFO *prGlueInfo,
+	int8_t i4Type, uint16_t u2BaSize)
+{
+	struct ADAPTER *prAdapter;
+	uint32_t i;
+	struct STA_RECORD *prStaRec;
+	struct CMD_ADDBA_REJECT rAddbaReject;
+	uint32_t rStatus = WLAN_STATUS_SUCCESS;
+	uint32_t u4BufLen = 0;
+
+	prAdapter = prGlueInfo->prAdapter;
+#if (CFG_SUPPORT_802_11AX == 1)
+	if (i4Type == WLAN_TYPE_HE)
+		prAdapter->rWifiVar.u2RxHeBaSize = u2BaSize;
+	else
+#endif
+	{
+		prAdapter->rWifiVar.ucRxHtBaSize = (uint8_t) u2BaSize;
+		prAdapter->rWifiVar.ucRxVhtBaSize = (uint8_t) u2BaSize;
+	}
+
+	for (i = 0; i < CFG_STA_REC_NUM; i++) {
+		prStaRec = &prAdapter->arStaRec[i];
+		if (prStaRec->fgIsInUse)
+			cnmStaSendUpdateCmd(prAdapter, prStaRec, NULL, FALSE);
+	}
+
+	rAddbaReject.fgEnable = FALSE;
+	rAddbaReject.fgApply = TRUE;
+
+	rStatus = kalIoctl(prGlueInfo,
+		wlanoidSetAddbaReject, &rAddbaReject,
+		sizeof(struct CMD_ADDBA_REJECT),
+		FALSE, FALSE, TRUE, &u4BufLen);
+
+	DBGLOG(OID, INFO, "%s i4Type:%d BaSize:%d\n",
+		__func__, i4Type, u2BaSize);
+
+	return rStatus;
+}
+
+uint32_t wlanSetTxBaSize(IN struct GLUE_INFO *prGlueInfo,
+	int8_t i4Type, uint16_t u2BaSize)
+{
+	struct ADAPTER *prAdapter;
+	uint32_t i;
+	struct STA_RECORD *prStaRec;
+	struct CMD_TX_AMPDU rTxAmpdu;
+	uint32_t rStatus = WLAN_STATUS_SUCCESS;
+	uint32_t u4BufLen = 0;
+
+	prAdapter = prGlueInfo->prAdapter;
+#if (CFG_SUPPORT_802_11AX == 1)
+	if (i4Type == WLAN_TYPE_HE)
+		prAdapter->rWifiVar.u2TxHeBaSize = u2BaSize;
+	else
+#endif
+		prAdapter->rWifiVar.ucTxBaSize = (uint8_t) u2BaSize;
+
+	for (i = 0; i < CFG_STA_REC_NUM; i++) {
+		prStaRec = &prAdapter->arStaRec[i];
+		if (prStaRec->fgIsInUse)
+			cnmStaSendUpdateCmd(prAdapter, prStaRec, NULL, FALSE);
+	}
+
+	rTxAmpdu.fgEnable = TRUE;
+	rTxAmpdu.fgApply = TRUE;
+
+	rStatus = kalIoctl(prGlueInfo,
+		wlanoidSetTxAmpdu, &rTxAmpdu, sizeof(struct CMD_TX_AMPDU),
+		FALSE, FALSE, TRUE, &u4BufLen);
+
+	DBGLOG(OID, INFO, "%s i4Type:%d BaSize:%d\n",
+		__func__, i4Type, u2BaSize);
+
+	return rStatus;
 }
