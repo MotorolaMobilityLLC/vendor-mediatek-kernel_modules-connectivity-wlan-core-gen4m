@@ -899,7 +899,7 @@
 
 #define CFG_SHOW_MACADDR_SOURCE			1
 
-#ifdef BUILD_QA_DBG
+#if BUILD_QA_DBG
 #define CFG_SHOW_FULL_MACADDR     1
 #else
 #define CFG_SHOW_FULL_MACADDR     0
