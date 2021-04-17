@@ -1149,6 +1149,30 @@ void rlmDomainGetDfsChnls(struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Check whether input is dfs channel
+ *
+ * \param[in/out] ucChannel: channel to check
+ *
+ * \return true if dfs channel
+ */
+/*----------------------------------------------------------------------------*/
+u_int8_t rlmDomainIsDfsChnls(struct ADAPTER *prAdapter, uint8_t ucChannel)
+{
+	uint8_t ucNumOfChannel = 0;
+	struct RF_CHANNEL_INFO aucChannelList[64] = {};
+	uint8_t ucCount = 0;
+
+	rlmDomainGetDfsChnls(prAdapter, 64, &ucNumOfChannel, aucChannelList);
+	for (; ucCount < ucNumOfChannel; ucCount++) {
+		if (ucChannel == aucChannelList[ucCount].ucChannelNum)
+			return TRUE;
+	}
+
+	return FALSE;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * @brief
  *
  * @param[in]

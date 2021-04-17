@@ -1021,6 +1021,9 @@ void wlanOnPostFirmwareReady(IN struct ADAPTER *prAdapter,
 	/* Enable Short Slot Time */
 	prAdapter->rWifiVar.fgIsShortSlotTimeOptionEnable = TRUE;
 
+	/* Disable skip dfs during scan*/
+	prAdapter->rWifiVar.rScanInfo.fgSkipDFS = 0;
+
 	/* configure available PHY type set */
 	nicSetAvailablePhyTypeSet(prAdapter);
 

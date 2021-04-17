@@ -7611,6 +7611,8 @@ inline int32_t kalPerMonInit(IN struct GLUE_INFO
 				prDevHandler->stats.tx_packets;
 			prPerMonitor->ulLastRxPackets[i] =
 				prDevHandler->stats.rx_packets;
+			prPerMonitor->ulTxPacketsDiffLastSec[i] = 0;
+			prPerMonitor->ulRxPacketsDiffLastSec[i] = 0;
 		}
 	}
 
@@ -7809,6 +7811,8 @@ static uint32_t kalPerMonUpdate(IN struct ADAPTER *prAdapter)
 		perf->ulLastRxPackets[i] = currentRxPkts;
 		txDiffPkts[i] = (signed long) currentTxPkts - lastTxPkts;
 		rxDiffPkts[i] = (signed long) currentRxPkts - lastRxPkts;
+		perf->ulTxPacketsDiffLastSec[i] = txDiffPkts[i];
+		perf->ulRxPacketsDiffLastSec[i] = rxDiffPkts[i];
 
 		if (txDiffBytes[i] < 0 || rxDiffBytes[i] < 0) {
 			/* overflow should not happen */
