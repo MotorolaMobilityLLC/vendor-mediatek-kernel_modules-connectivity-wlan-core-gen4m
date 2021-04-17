@@ -159,6 +159,26 @@ enum ENUM_REMOVE_BY_MSDU_TPYE {
 	ENUM_REMOVE_BY_MSDU_TPYE_NUM
 };
 
+/* fos_change begin */
+#if CFG_SUPPORT_WAKEUP_STATISTICS
+enum WAKEUP_TYPE {
+	ABNORMAL_INT,
+	SOFTWARE_INT,
+	TX_INT,
+	RX_DATA_INT,
+	RX_EVENT_INT,
+	RX_MGMT_INT,
+	RX_OTHERS_INT,
+	WAKEUP_TYPE_NUM
+};
+struct WAKEUP_STATISTIC {
+	uint16_t u2Count;
+	uint16_t u2TimePerHundred;
+	OS_SYSTIME rStartTime;
+};
+#endif /* fos_change end */
+
+
 /* Test mode bitmask of disable flag */
 #define TEST_MODE_DISABLE_ONLINE_SCAN  BIT(0)
 #define TEST_MODE_DISABLE_ROAMING      BIT(1)
@@ -483,5 +503,11 @@ u_int8_t nicSerIsRxStop(IN struct ADAPTER *prAdapter);
 void nicSerReInitBeaconFrame(IN struct ADAPTER *prAdapter);
 void nicSerInit(IN struct ADAPTER *prAdapter);
 void nicSerDeInit(IN struct ADAPTER *prAdapter);
+
+/* fos_change begin */
+#if CFG_SUPPORT_WAKEUP_STATISTICS
+void nicUpdateWakeupStatistics(IN struct ADAPTER *prAdapter,
+	IN enum WAKEUP_TYPE intType);
+#endif /* fos_change end */
 
 #endif /* _NIC_H */

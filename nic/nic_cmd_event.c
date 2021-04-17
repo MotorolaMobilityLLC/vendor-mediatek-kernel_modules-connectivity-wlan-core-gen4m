@@ -4682,6 +4682,18 @@ void nicEventBeaconTimeout(IN struct ADAPTER *prAdapter,
 
 		DBGLOG(NIC, INFO, "Reason code: %d\n",
 		       prEventBssBeaconTimeout->ucReasonCode);
+/* fos_change begin */
+#if CFG_SUPPORT_EXCEPTION_STATISTICS
+		prAdapter->total_beacon_timeout_count++;
+		if (prEventBssBeaconTimeout->ucReasonCode >=
+			BEACON_TIMEOUT_DUE_2_NUM) {
+			DBGLOG(RX, WARN, "Invaild Beacon Timeout Reason: %d\n",
+				prEventBssBeaconTimeout->ucReasonCode);
+		} else {
+			prAdapter->beacon_timeout_count
+				[prEventBssBeaconTimeout->ucReasonCode]++;
+		}
+#endif /* fos_change end */
 
 		prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
 			prEventBssBeaconTimeout->ucBssIndex);
