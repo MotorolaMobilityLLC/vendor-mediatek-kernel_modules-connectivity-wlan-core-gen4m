@@ -249,6 +249,9 @@
 /* Enable Detection for 2021 Frag/AGG Attack from WFA */
 /* #define CFG_SUPPORT_FRAG_AGG_ATTACK_DETECTION 1 */
 
+/* Enable handling BA Request advance SSN before data in previous window */
+#define CFG_SUPPORT_RX_OOR_BAR	1
+
 /* Enable Android wake_lock operations */
 #ifndef CFG_ENABLE_WAKE_LOCK
 #define CFG_ENABLE_WAKE_LOCK	1
