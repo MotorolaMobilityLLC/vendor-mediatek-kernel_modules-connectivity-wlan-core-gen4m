@@ -106,6 +106,8 @@
 
 /* Support AP Selection*/
 #define AIS_BLACKLIST_TIMEOUT               15 /* seconds */
+#define AIS_AUTORN_MIN_INTERVAL		    20
+
 
 /*******************************************************************************
  *                             D A T A   T Y P E S
