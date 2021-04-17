@@ -1366,6 +1366,19 @@ __priv_get_int(IN struct net_device *prNetDev,
 				sizeof(uint32_t), &u4BufLen);
 		return status;
 #endif
+/* fos_change begin */
+	case PRIV_CMD_SHOW_CHANNEL:
+	{
+		uint32_t freq;
+
+		status = wlanQueryInformation(prGlueInfo->prAdapter,
+			wlanoidQueryFrequency,
+			&freq, sizeof(uint32_t), &u4BufLen);
+		if (status == 0)
+			prIwReqData->mode = freq/1000; /* Hz->MHz */
+
+		return status;
+	}
 
 	case PRIV_CMD_BAND_CONFIG:
 		DBGLOG(INIT, INFO, "CMD get_band=\n");
