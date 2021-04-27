@@ -4597,10 +4597,6 @@ bool nicBeaconTimeoutFilterPolicy(IN struct ADAPTER *prAdapter,
 	bool		bValid = true;
 	uint32_t	u4MonitorWindow;
 	struct BSS_INFO *prBssInfo = (struct BSS_INFO *) NULL;
-#if CFG_SUPPORT_WFD
-	struct WFD_CFG_SETTINGS *prWfdCfgSettings =
-		&prAdapter->rWifiVar.rWfdConfigureSettings;
-#endif
 
 	ASSERT(prAdapter);
 	u4MonitorWindow = CFG_BEACON_TIMEOUT_FILTER_DURATION_DEFAULT_VALUE;
@@ -4648,14 +4644,6 @@ bool nicBeaconTimeoutFilterPolicy(IN struct ADAPTER *prAdapter,
 				"Policy 1 hit, RX in the past duration");
 			bValid = false;
 		}
-#if CFG_SUPPORT_WFD
-		else if (prWfdCfgSettings->ucWfdEnable &&
-			prWfdCfgSettings->u4LinkScore > 0) {
-			DBGLOG(NIC, INFO,
-				"Policy 2 hit, link score > 0 in WFD");
-			bValid = false;
-		}
-#endif /* CFG_SUPPORT_WFD */
 	}
 #endif /* CFG_ENABLE_WIFI_DIRECT */
 
