@@ -24,7 +24,7 @@
 */
 #include "precomp.h"
 
-#if CFG_MTK_MCIF_WIFI_SUPPORT
+#ifdef CONFIG_MTK_MDDP_SUPPORT
 
 #include "gl_os.h"
 #include "mddp_export.h"
@@ -45,11 +45,7 @@
 ********************************************************************************
 */
 struct mddpw_drv_handle_t gMddpWFunc = {
-	mddpMdNotifyInfo,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
+	.notify_md_info = mddpMdNotifyInfo,
 };
 
 struct mddp_drv_conf_t gMddpDrvConf = {
@@ -57,9 +53,7 @@ struct mddp_drv_conf_t gMddpDrvConf = {
 };
 
 struct mddp_drv_handle_t gMddpFunc = {
-#if CFG_MTK_MDDP_WH_SUPPORT
 	.change_state = mddpChangeState,
-#endif
 };
 
 #define MD_ON_OFF_TIMEOUT 1000
@@ -89,16 +83,16 @@ struct mddp_drv_handle_t gMddpFunc = {
 #define MAC_ADDR_LEN            6
 
 struct mddp_txd_t {
-uint8_t version;
-uint8_t wlan_idx;
-uint8_t sta_idx;
-uint8_t nw_if_name[8];
-uint8_t sta_mode;
-uint8_t bss_id;
-uint8_t wmmset;
-uint8_t aucMacAddr[MAC_ADDR_LEN];
-uint8_t txd_length;
-uint8_t txd[0];
+	uint8_t version;
+	uint8_t wlan_idx;
+	uint8_t sta_idx;
+	uint8_t nw_if_name[8];
+	uint8_t sta_mode;
+	uint8_t bss_id;
+	uint8_t wmmset;
+	uint8_t aucMacAddr[MAC_ADDR_LEN];
+	uint8_t txd_length;
+	uint8_t txd[0];
 } __packed;
 
 struct tag_bootmode {
@@ -183,6 +177,9 @@ int32_t mddpGetMdStats(IN struct net_device *prDev)
 	int32_t ret;
 	uint8_t i = 0;
 
+	if (!mddpIsSupportMcifWifi() || !mddpIsSupportMddpWh())
+		return 0;
+
 	if (!gMddpWFunc.get_net_stat_ext)
 		return 0;
 
@@ -228,47 +225,6 @@ int32_t mddpGetMdStats(IN struct net_device *prDev)
 			element->rx_dropped + prev->rx_dropped;
 		prStats->tx_dropped +=
 			element->tx_dropped + prev->tx_dropped;
-	}
-
-	return 0;
-}
-
-int32_t mddpSetTxDescTemplate(IN struct ADAPTER *prAdapter,
-	IN struct STA_RECORD *prStaRec,
-	IN uint8_t fgActivate)
-{
-	struct mddpw_txd_t *prMddpTxd;
-	uint32_t u32BufSize = 0;
-	uint8_t *buff = NULL;
-
-	if (gMddpWFunc.add_txd) {
-		int32_t ret;
-
-		u32BufSize = (sizeof(struct mddpw_txd_t) +
-			NIC_TX_DESC_LONG_FORMAT_LENGTH);
-		buff = kalMemAlloc(u32BufSize, VIR_MEM_TYPE);
-
-		if (buff == NULL) {
-			DBGLOG(NIC, ERROR, "Can't allocate TXD buffer.\n");
-			return -1;
-		}
-		prMddpTxd = (struct mddpw_txd_t *) buff;
-		prMddpTxd->version = 0;
-		prMddpTxd->sta_idx = prStaRec->ucIndex;
-		prMddpTxd->wlan_idx = prStaRec->ucWlanIndex;
-		memcpy(prMddpTxd->aucMacAddr,
-			prStaRec->aucMacAddr, MAC_ADDR_LEN);
-		if (fgActivate)
-			prMddpTxd->txd_length = NIC_TX_DESC_LONG_FORMAT_LENGTH;
-		else
-			prMddpTxd->txd_length = 0;
-		memcpy(prMddpTxd->txd,
-			prStaRec->aprTxDescTemplate[0], prMddpTxd->txd_length);
-		ret = gMddpWFunc.add_txd(prMddpTxd);
-		DBGLOG(NIC, INFO, "ret: %d\n", ret);
-		kalMemFree(buff, VIR_MEM_TYPE, u32BufSize);
-	} else {
-		DBGLOG(INIT, ERROR, "add_txd is NULL.\n");
 	}
 
 	return 0;
@@ -502,7 +458,10 @@ int32_t mddpNotifyWifiStatus(IN enum mddp_drv_onoff_status wifiOnOffStatus)
 	struct mddpw_drv_info_t *prDrvInfo;
 	uint32_t u32BufSize = 0;
 	uint8_t *buff = NULL;
-	int32_t ret = 0;
+	int32_t ret = 0, feature = 0;
+
+	if (gMddpWFunc.get_mddp_feature)
+		feature = gMddpWFunc.get_mddp_feature();
 
 	if (gMddpWFunc.notify_drv_info) {
 		int32_t ret;
@@ -526,8 +485,8 @@ int32_t mddpNotifyWifiStatus(IN enum mddp_drv_onoff_status wifiOnOffStatus)
 		prDrvInfo->info[0] = wifiOnOffStatus;
 
 		ret = gMddpWFunc.notify_drv_info(prNotifyInfo);
-		DBGLOG(INIT, INFO, "power: %d, ret: %d.\n",
-			wifiOnOffStatus, ret);
+		DBGLOG(INIT, INFO, "power: %d, ret: %d, feature:%d.\n",
+		       wifiOnOffStatus, ret, feature);
 		kalMemFree(buff, VIR_MEM_TYPE, u32BufSize);
 	} else {
 		DBGLOG(INIT, ERROR, "notify_drv_info is NULL.\n");
@@ -539,13 +498,18 @@ int32_t mddpNotifyWifiStatus(IN enum mddp_drv_onoff_status wifiOnOffStatus)
 
 void mddpNotifyWifiOnStart(void)
 {
-	mddpRegisterCb();
+	if (!mddpIsSupportMcifWifi())
+		return;
+
 	mddpNotifyWifiStatus(MDDPW_DRV_INFO_WLAN_ON_START);
 }
 
 int32_t mddpNotifyWifiOnEnd(void)
 {
-	int32_t ret;
+	int32_t ret = 0;
+
+	if (!mddpIsSupportMcifWifi())
+		return ret;
 
 	clear_md_wifi_on_bit();
 	ret = mddpNotifyWifiStatus(MDDPW_DRV_INFO_WLAN_ON_END);
@@ -560,6 +524,9 @@ void mddpNotifyWifiOffStart(void)
 {
 	int32_t ret;
 
+	if (!mddpIsSupportMcifWifi())
+		return;
+
 	mddpSetMDFwOwn();
 
 #if (CFG_SUPPORT_CONNAC2X == 0)
@@ -571,8 +538,10 @@ void mddpNotifyWifiOffStart(void)
 
 void mddpNotifyWifiOffEnd(void)
 {
+	if (!mddpIsSupportMcifWifi())
+		return;
+
 	mddpNotifyWifiStatus(MDDPW_DRV_INFO_WLAN_OFF_END);
-	mddpUnregisterCb();
 }
 
 int32_t mddpMdNotifyInfo(struct mddpw_md_notify_info_t *prMdInfo)
@@ -652,7 +621,6 @@ int32_t mddpMdNotifyInfo(struct mddpw_md_notify_info_t *prMdInfo)
 	return 0;
 }
 
-#if CFG_MTK_MDDP_WH_SUPPORT
 int32_t mddpChangeState(enum mddp_state_e event, void *buf, uint32_t *buf_len)
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
@@ -713,7 +681,6 @@ int32_t mddpChangeState(enum mddp_state_e event, void *buf, uint32_t *buf_len)
 	return 0;
 
 }
-#endif
 
 static void clear_md_wifi_off_bit(void)
 {
@@ -809,6 +776,13 @@ void mddpInit(void)
 
 	DBGLOG(INIT, INFO, "bootmode: 0x%x\n", tag->bootmode);
 	g_wifi_boot_mode = tag->bootmode;
+
+	mddpRegisterCb();
+}
+
+void mddpUninit(void)
+{
+	mddpUnregisterCb();
 }
 
 static void notifyMdCrash2FW(void)
@@ -880,6 +854,22 @@ void mddpSetMDFwOwn(void)
 {
 	wf_ioremap_write(MD_LPCTL_ADDR, MDDP_LPCR_MD_SET_FW_OWN);
 	DBGLOG(INIT, INFO, "Set MD Fw Own.\n");
+}
+
+bool mddpIsSupportMcifWifi(void)
+{
+	if (!gMddpWFunc.get_mddp_feature)
+		return false;
+
+	return (gMddpWFunc.get_mddp_feature() & MDDP_FEATURE_MCIF_WIFI) != 0;
+}
+
+bool mddpIsSupportMddpWh(void)
+{
+	if (!gMddpWFunc.get_mddp_feature)
+		return false;
+
+	return (gMddpWFunc.get_mddp_feature() & MDDP_FEATURE_MDDP_WH) != 0;
 }
 
 #endif

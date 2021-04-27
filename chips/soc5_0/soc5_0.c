@@ -827,7 +827,6 @@ static void soc5_0asicConnac2xProcessRxInterrupt(
 		halRxReceiveRFBs(prAdapter, RX_RING_TXDONE1_IDX_4, TRUE);
 }
 
-#if CFG_MTK_MCIF_WIFI_SUPPORT
 static void soc5_0SetMDRXRingPriorityInterrupt(struct ADAPTER *prAdapter)
 {
 	u_int32_t val = 0;
@@ -838,7 +837,6 @@ static void soc5_0SetMDRXRingPriorityInterrupt(struct ADAPTER *prAdapter)
 	HAL_MCR_WR(prAdapter,
 		WF_WFDMA_HOST_DMA0_WPDMA_INT_RX_PRI_SEL_ADDR, val);
 }
-#endif /* CFG_MTK_MCIF_WIFI_SUPPORT */
 
 static void soc5_0asicConnac2xWfdmaManualPrefetch(
 	struct GLUE_INFO *prGlueInfo)
@@ -864,8 +862,9 @@ static void soc5_0asicConnac2xWfdmaManualPrefetch(
 		u4WrVal += 0x00400000;
 	}
 
-#if CFG_MTK_MCIF_WIFI_SUPPORT
-	HAL_MCR_WR(prAdapter, WF_WFDMA_HOST_DMA0_WPDMA_RX_RING1_EXT_CTRL_ADDR,
+	/* MD Rx ring */
+	HAL_MCR_WR(prAdapter,
+		   WF_WFDMA_HOST_DMA0_WPDMA_RX_RING1_EXT_CTRL_ADDR,
 		   u4WrVal);
 	u4WrVal += 0x00400000;
 	for (u4Addr = WF_WFDMA_HOST_DMA0_WPDMA_RX_RING6_EXT_CTRL_ADDR;
@@ -874,7 +873,6 @@ static void soc5_0asicConnac2xWfdmaManualPrefetch(
 		HAL_MCR_WR(prAdapter, u4Addr, u4WrVal);
 		u4WrVal += 0x00400000;
 	}
-#endif
 
 	/* Tx ring */
 	for (u4Addr = WF_WFDMA_HOST_DMA0_WPDMA_TX_RING0_EXT_CTRL_ADDR;
@@ -891,24 +889,23 @@ static void soc5_0asicConnac2xWfdmaManualPrefetch(
 		u4WrVal += 0x00400000;
 	}
 
-#if CFG_MTK_MCIF_WIFI_SUPPORT
+	/* MD Tx ring */
 	for (u4Addr = WF_WFDMA_HOST_DMA0_WPDMA_TX_RING8_EXT_CTRL_ADDR;
 	     u4Addr <= WF_WFDMA_HOST_DMA0_WPDMA_TX_RING9_EXT_CTRL_ADDR;
 	     u4Addr += 0x4) {
 		HAL_MCR_WR(prAdapter, u4Addr, u4WrVal);
 		u4WrVal += 0x00400000;
 	}
-	HAL_MCR_WR(prAdapter, WF_WFDMA_HOST_DMA0_WPDMA_TX_RING18_EXT_CTRL_ADDR,
-	     0x04000004);
+	HAL_MCR_WR(prAdapter,
+		   WF_WFDMA_HOST_DMA0_WPDMA_TX_RING18_EXT_CTRL_ADDR,
+		   0x04000004);
 	u4WrVal += 0x00400000;
-#endif
+
 	/* fill last dummy ring */
 	HAL_MCR_WR(prAdapter, WF_WFDMA_HOST_DMA0_WPDMA_TX_RING19_EXT_CTRL_ADDR,
 		   u4WrVal);
 
-#if CFG_MTK_MCIF_WIFI_SUPPORT
 	soc5_0SetMDRXRingPriorityInterrupt(prAdapter);
-#endif /* CFG_MTK_MCIF_WIFI_SUPPORT */
 
 	/* reset dma TRX idx */
 	HAL_MCR_WR(prAdapter,

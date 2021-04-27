@@ -17,7 +17,7 @@
 #ifndef _MDDP_H
 #define _MDDP_H
 
-#if CFG_MTK_MCIF_WIFI_SUPPORT
+#ifdef CONFIG_MTK_MDDP_SUPPORT
 
 /*******************************************************************************
  *                         C O M P I L E R   F L A G S
@@ -61,12 +61,10 @@
  *******************************************************************************
  */
 void mddpInit(void);
+void mddpUninit(void);
 int32_t mddpMdNotifyInfo(struct mddpw_md_notify_info_t *prMdInfo);
 int32_t mddpChangeState(enum mddp_state_e event, void *buf, uint32_t *buf_len);
 int32_t mddpGetMdStats(IN struct net_device *prDev);
-int32_t mddpSetTxDescTemplate(IN struct ADAPTER *prAdapter,
-	IN struct STA_RECORD *prStaRec,
-	IN uint8_t fgActivate);
 void mddpUpdateReorderQueParm(struct ADAPTER *prAdapter,
 			      struct RX_BA_ENTRY *prReorderQueParm,
 			      struct SW_RFB *prSwRfb);
@@ -83,6 +81,9 @@ void setMddpSupportRegister(IN struct ADAPTER *prAdapter);
 void mddpMdStateChangedCb(enum MD_STATE old_state,
 		enum MD_STATE new_state);
 void mddpSetMDFwOwn(void);
+bool mddpIsSupportMcifWifi(void);
+bool mddpIsSupportMddpWh(void);
 
-#endif
+#endif /* CONFIG_MTK_MDDP_SUPPORT */
+
 #endif /* _MDDP_H */

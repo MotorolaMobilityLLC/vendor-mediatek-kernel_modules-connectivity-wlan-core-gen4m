@@ -546,20 +546,23 @@ static void soc7_0asicConnac2xProcessRxInterrupt(
 
 	rIntrStatus = (union WPDMA_INT_STA_STRUCT)prHifInfo->u4IntStatus;
 
-	if (rIntrStatus.field_conn2x_single.wfdma0_rx_done_0)
+	if (rIntrStatus.field_conn2x_single.wfdma0_rx_done_0 ||
+	    (prAdapter->u4NoMoreRfb & BIT(RX_RING_DATA_IDX_0)))
 		halRxReceiveRFBs(prAdapter, RX_RING_DATA_IDX_0, TRUE);
 
-	if (rIntrStatus.field_conn2x_single.wfdma0_rx_done_1)
+	if (rIntrStatus.field_conn2x_single.wfdma0_rx_done_1 ||
+	    (prAdapter->u4NoMoreRfb & BIT(RX_RING_DATA1_IDX_2)))
 		halRxReceiveRFBs(prAdapter, RX_RING_DATA1_IDX_2, TRUE);
 
-	if (rIntrStatus.field_conn2x_single.wfdma0_rx_done_2)
+	if (rIntrStatus.field_conn2x_single.wfdma0_rx_done_2 ||
+	    (prAdapter->u4NoMoreRfb & BIT(RX_RING_EVT_IDX_1)))
 		halRxReceiveRFBs(prAdapter, RX_RING_EVT_IDX_1, FALSE);
 
-	if (rIntrStatus.field_conn2x_single.wfdma0_rx_done_3)
+	if (rIntrStatus.field_conn2x_single.wfdma0_rx_done_3 ||
+	    (prAdapter->u4NoMoreRfb & BIT(RX_RING_TXDONE0_IDX_3)))
 		halRxReceiveRFBs(prAdapter, RX_RING_TXDONE0_IDX_3, FALSE);
 }
 
-#if CFG_MTK_MCIF_WIFI_SUPPORT
 static void soc7_0SetMDRXRingPriorityInterrupt(struct ADAPTER *prAdapter)
 {
 	u_int32_t val = 0;
@@ -570,7 +573,6 @@ static void soc7_0SetMDRXRingPriorityInterrupt(struct ADAPTER *prAdapter)
 	HAL_MCR_WR(prAdapter,
 		WF_WFDMA_HOST_DMA0_WPDMA_INT_RX_PRI_SEL_ADDR, val);
 }
-#endif /* CFG_MTK_MCIF_WIFI_SUPPORT */
 
 static void soc7_0asicConnac2xWfdmaManualPrefetch(
 	struct GLUE_INFO *prGlueInfo)
@@ -593,14 +595,13 @@ static void soc7_0asicConnac2xWfdmaManualPrefetch(
 		u4WrVal += 0x00400000;
 	}
 
-#if CFG_MTK_MCIF_WIFI_SUPPORT
+	/* MD Rx ring */
 	for (u4Addr = WF_WFDMA_HOST_DMA0_WPDMA_RX_RING4_EXT_CTRL_ADDR;
 	     u4Addr <= WF_WFDMA_HOST_DMA0_WPDMA_RX_RING7_EXT_CTRL_ADDR;
 	     u4Addr += 0x4) {
 		HAL_MCR_WR(prAdapter, u4Addr, u4WrVal);
 		u4WrVal += 0x00400000;
 	}
-#endif
 
 	/* Tx ring */
 	for (u4Addr = WF_WFDMA_HOST_DMA0_WPDMA_TX_RING0_EXT_CTRL_ADDR;
@@ -617,24 +618,23 @@ static void soc7_0asicConnac2xWfdmaManualPrefetch(
 		u4WrVal += 0x00400000;
 	}
 
-#if CFG_MTK_MCIF_WIFI_SUPPORT
+	/* MD Tx ring */
 	for (u4Addr = WF_WFDMA_HOST_DMA0_WPDMA_TX_RING8_EXT_CTRL_ADDR;
 	     u4Addr <= WF_WFDMA_HOST_DMA0_WPDMA_TX_RING9_EXT_CTRL_ADDR;
 	     u4Addr += 0x4) {
 		HAL_MCR_WR(prAdapter, u4Addr, u4WrVal);
 		u4WrVal += 0x00400000;
 	}
-	HAL_MCR_WR(prAdapter, WF_WFDMA_HOST_DMA0_WPDMA_TX_RING18_EXT_CTRL_ADDR,
-	     0x04000004);
+	HAL_MCR_WR(prAdapter,
+		   WF_WFDMA_HOST_DMA0_WPDMA_TX_RING18_EXT_CTRL_ADDR,
+		   0x04000004);
 	u4WrVal += 0x00400000;
-#endif
+
 	/* fill last dummy ring */
 	HAL_MCR_WR(prAdapter, WF_WFDMA_HOST_DMA0_WPDMA_TX_RING19_EXT_CTRL_ADDR,
 		   u4WrVal);
 
-#if CFG_MTK_MCIF_WIFI_SUPPORT
 	soc7_0SetMDRXRingPriorityInterrupt(prAdapter);
-#endif /* CFG_MTK_MCIF_WIFI_SUPPORT */
 
 	/* reset dma TRX idx */
 	HAL_MCR_WR(prAdapter,
