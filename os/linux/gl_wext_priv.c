@@ -720,6 +720,33 @@ int priv_support_ioctl(IN struct net_device *prNetDev,
 
 }				/* priv_support_ioctl */
 
+#if CFG_SUPPORT_RSSI_DISCONNECT
+int priv_driver_get_rssiDisconnect(IN struct net_device *prNetDev, IN char *pcCommand, IN int i4TotalLen)
+{
+       struct GLUE_INFO *prGlueInfo;
+       uint32_t rStatus = WLAN_STATUS_SUCCESS;
+       uint32_t u4BufLen = 0;
+       int32_t i4Rssi = 0;
+       int32_t i4BytesWritten = 0;
+
+       if (!prNetDev)
+               return -EPERM;
+       if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
+               return -EPERM;
+       prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+
+       rStatus = kalIoctl(prGlueInfo, wlanoidQueryRssiDisconnect, &i4Rssi,
+               sizeof(i4Rssi), TRUE, TRUE, TRUE, &u4BufLen);
+       if (rStatus != WLAN_STATUS_SUCCESS)
+               return -EPERM;
+
+       DBGLOG(REQ, INFO, "i4Rssi = %d\n", i4Rssi);
+       i4BytesWritten = snprintf(pcCommand, i4TotalLen, "DISCONRSSI %d", i4Rssi);
+       DBGLOG(REQ, INFO, "%s: Command result is %s\n", __func__, pcCommand);
+       return i4BytesWritten;
+}
+#endif
+
 #if CFG_SUPPORT_BATCH_SCAN
 
 struct EVENT_BATCH_RESULT
@@ -3066,6 +3093,7 @@ reqExtSetAcpiDevicePowerState(IN struct GLUE_INFO
 
 #if CFG_SUPPORT_EASY_DEBUG
 #define CMD_FW_PARAM				"set_fw_param"
+#define CMD_RSSI_DISCONNECT                     "DISCONRSSI"
 #endif /* CFG_SUPPORT_EASY_DEBUG */
 
 #if (CFG_SUPPORT_CONNINFRA == 1)
@@ -13845,6 +13873,14 @@ int32_t priv_driver_cmds(IN struct net_device *prNetDev, IN int8_t *pcCommand,
 				 wlanoidShowDmaschInfo,
 				 (void *) pcCommand, i4TotalLen,
 				 FALSE, FALSE, TRUE, &i4BytesWritten);
+
+#if CFG_SUPPORT_RSSI_DISCONNECT
+               }else if (strnicmp(pcCommand, CMD_RSSI_DISCONNECT,
+                               strlen(CMD_RSSI_DISCONNECT)) == 0){
+               i4BytesWritten = priv_driver_get_rssiDisconnect(prNetDev, pcCommand, i4TotalLen);
+
+#endif
+
 #if CFG_SUPPORT_EASY_DEBUG
 		} else if (strnicmp(pcCommand, CMD_FW_PARAM,
 				strlen(CMD_FW_PARAM)) == 0) {
