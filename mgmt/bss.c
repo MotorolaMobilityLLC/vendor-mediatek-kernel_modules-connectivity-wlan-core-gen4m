@@ -156,7 +156,8 @@ struct APPEND_VAR_IE_ENTRY txBcnIETable[] = {
 	, {(ELEM_HDR_LEN + ELEM_MIN_LEN_CSA), NULL,
 	   rlmGenerateCsaIE}	/* 37 */
 #endif
-
+	, {(ELEM_HDR_LEN + ELEM_MAX_LEN_RSN), NULL,
+	   rsnGenerateRSNXIE}	/* 244 */
 };
 
 struct APPEND_VAR_IE_ENTRY txProbRspIETable[] = {
@@ -200,7 +201,8 @@ struct APPEND_VAR_IE_ENTRY txProbRspIETable[] = {
 	, {(ELEM_HDR_LEN + ELEM_MIN_LEN_MTK_OUI), NULL,
 	   rlmGenerateMTKOuiIE}	/* 221 */
 #endif
-
+	, {(ELEM_HDR_LEN + ELEM_MAX_LEN_RSN), NULL,
+	   rsnGenerateRSNXIE}	/* 244 */
 };
 
 #endif /* CFG_SUPPORT_ADHOC || CFG_SUPPORT_AAA */
