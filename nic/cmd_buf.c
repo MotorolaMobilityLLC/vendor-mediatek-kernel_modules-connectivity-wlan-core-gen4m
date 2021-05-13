@@ -252,12 +252,21 @@ struct CMD_INFO *cmdBufAllocateCmdInfo(IN struct ADAPTER
 		struct GLUE_INFO *prGlueInfo = prAdapter->prGlueInfo;
 		struct QUE *prCmdQue = &prGlueInfo->rCmdQueue;
 		struct QUE *prPendingCmdQue = &prAdapter->rPendingCmdQueue;
+#if CFG_SUPPORT_MULTITHREAD
+		struct QUE *prTxCmdQueue = &prAdapter->rTxCmdQueue;
+		struct QUE *prTxCmdDoneQueue = &prAdapter->rTxCmdDoneQueue;
+#endif
 		struct TX_TCQ_STATUS *prTc = &prAdapter->rTxCtrl.rTc;
 
 		fgCmdDumpIsDone = TRUE;
-		cmdBufDumpCmdQueue(prCmdQue, "waiting Tx CMD queue");
+		cmdBufDumpCmdQueue(prCmdQue, "waiting CMD queue");
 		cmdBufDumpCmdQueue(prPendingCmdQue,
 				   "waiting response CMD queue");
+#if CFG_SUPPORT_MULTITHREAD
+		cmdBufDumpCmdQueue(prTxCmdQueue, "waiting Tx CMD queue");
+		cmdBufDumpCmdQueue(prTxCmdDoneQueue,
+				   "waiting Tx CMD Done queue");
+#endif
 		DBGLOG(NIC, INFO, "Tc4 number:%d\n",
 		       prTc->au4FreeBufferCount[TC4_INDEX]);
 	}
