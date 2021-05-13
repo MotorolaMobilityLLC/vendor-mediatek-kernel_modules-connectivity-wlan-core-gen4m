@@ -2831,6 +2831,8 @@ struct wireless_dev *wlanNetCreate(void *pvData,
 	prChipInfo = ((struct mt66xx_hif_driver_data *)
 		      pvDriverData)->chip_info;
 	prAdapter->chip_info = prChipInfo;
+	prAdapter->fw_flavor = ((struct mt66xx_hif_driver_data *)
+		pvDriverData)->fw_flavor;
 	prGlueInfo->prAdapter = prAdapter;
 
 	/* 4 <3> Initialize Glue structure */

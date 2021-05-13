@@ -176,7 +176,7 @@ void kalSetDrvEmiMpuProtection(phys_addr_t emiPhyBase, uint32_t offset,
 }
 #endif
 
-int32_t kalGetFwFlavor(uint8_t *flavor)
+int32_t kalGetFwFlavorByPlat(uint8_t *flavor)
 {
 	int32_t ret = 1;
 	const uint32_t adie_chip_id = mtk_wcn_wmt_ic_info_get(WMTCHIN_ADIE);

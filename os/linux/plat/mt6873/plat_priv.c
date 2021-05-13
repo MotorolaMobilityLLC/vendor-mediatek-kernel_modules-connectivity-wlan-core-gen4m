@@ -175,7 +175,7 @@ void kalSetDrvEmiMpuProtection(phys_addr_t emiPhyBase, uint32_t offset,
 }
 #endif
 
-int32_t kalGetFwFlavor(uint8_t *flavor)
+int32_t kalGetFwFlavorByPlat(uint8_t *flavor)
 {
 	*flavor = 'b';
 	return 1;
