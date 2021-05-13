@@ -2992,6 +2992,16 @@ wlanoidSetAddKey(IN struct ADAPTER *prAdapter, IN void *pvSetBuffer,
 					kalMemCopy(prCmdKey->aucPeerAddr,
 						prBssInfo->prStaRecOfAP
 						->aucMacAddr, MAC_ADDR_LEN);
+
+					prBssInfo->ucBMCWlanIndexS[
+						prCmdKey->ucKeyId] =
+						prCmdKey->ucWlanIndex;
+					prBssInfo->ucBMCWlanIndexSUsed[
+						prCmdKey->ucKeyId] = TRUE;
+					DBGLOG_LIMITED(RSN, INFO,
+					       "BMCWlanIndex kid = %d, index = %d\n",
+					       prCmdKey->ucKeyId,
+					       prCmdKey->ucWlanIndex);
 				}
 			}
 
@@ -3207,12 +3217,6 @@ wlanSetRemoveKey(IN struct ADAPTER *prAdapter,
 #else
 	/* ASSERT(prCmdKey->ucKeyId < MAX_KEY_NUM); */
 #endif
-
-	if (u4KeyIndex >= 4) {
-		DBGLOG(RSN, INFO, "Remove bip key Index : 0x%08x\n",
-		       u4KeyIndex);
-		return WLAN_STATUS_SUCCESS;
-	}
 
 	/* Clean up the Tx key flag */
 	if (prRemovedKey->u4KeyIndex & IS_UNICAST_KEY) {
