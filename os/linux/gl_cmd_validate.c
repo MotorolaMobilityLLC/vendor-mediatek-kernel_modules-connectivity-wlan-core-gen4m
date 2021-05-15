@@ -853,6 +853,16 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers_customer[] = {
 		.ucArgNum  = COMMON_CMD_SET_ARG_NUM(2),
 		.policy    = set_flag_policy,
 		.u4PolicySize = ARRAY_SIZE(set_flag_policy)
+#if CFG_SUPPORT_RSSI_DISCONNECT
+	},
+	{
+		.pcCmdStr  = CMD_GETDISCONRSSI,
+		.pfHandler = priv_driver_get_rssiDisconnect,
+		.argPolicy = VERIFY_EXACT_ARG_NUM,
+		.ucArgNum  = COMMON_CMD_SET_ARG_NUM(1),
+		.policy    = NULL,
+		.u4PolicySize = 0
+#endif
 	}
 };
 

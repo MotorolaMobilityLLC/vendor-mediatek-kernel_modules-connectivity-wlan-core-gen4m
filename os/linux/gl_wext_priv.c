@@ -14321,6 +14321,34 @@ int priv_driver_set_suspend_mode(struct net_device *prNetDev,
 	return 0;
 }
 
+#if CFG_SUPPORT_RSSI_DISCONNECT
+int priv_driver_get_rssiDisconnect(struct net_device *prNetDev,
+				char *pcCommand, int i4TotalLen) {
+	struct GLUE_INFO *prGlueInfo;
+	uint32_t rStatus = WLAN_STATUS_SUCCESS;
+	uint32_t u4BufLen = 0;
+	int32_t i4Rssi = 0;
+	int32_t i4BytesWritten = 0;
+
+	if (!prNetDev)
+		return -EPERM;
+	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
+		return -EPERM;
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+
+	rStatus = kalIoctl(prGlueInfo, wlanoidQueryRssiDisconnect, &i4Rssi,
+			sizeof(i4Rssi), &u4BufLen);
+	if (rStatus != WLAN_STATUS_SUCCESS)
+		return -EPERM;
+
+	DBGLOG(REQ, INFO, "i4Rssi = %d\n", i4Rssi);
+	i4BytesWritten = snprintf(pcCommand, i4TotalLen,
+				 "DISCONRSSI %d", i4Rssi);
+	DBGLOG(REQ, INFO, "%s: Command result is %s\n", __func__, pcCommand);
+	return i4BytesWritten;
+}
+#endif
+
 int priv_driver_set_bf(struct net_device *prNetDev, char *pcCommand,
 			 int i4TotalLen)
 {
