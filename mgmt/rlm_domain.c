@@ -2927,7 +2927,7 @@ void rlmDomainBuildCmdByConfigTable(struct ADAPTER *prAdapter,
 	struct CMD_CHANNEL_POWER_LIMIT_HE *prCmdPwrLimtHE;
 	u_int8_t fgChannelValid;
 	uint8_t ucCentCh;
-	uint8_t ucPwrLmitConfSize = sizeof(PwrLmtConf) /
+	uint16_t ucPwrLmitConfSize = sizeof(PwrLmtConf) /
 		sizeof(struct COUNTRY_POWER_LIMIT_TABLE_CONFIGURATION);
 
 	uint8_t ucPwrLmitConfSizeHE = sizeof(PwrLmtConfHE) /

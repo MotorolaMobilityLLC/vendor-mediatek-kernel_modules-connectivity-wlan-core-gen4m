@@ -1282,6 +1282,9 @@ struct COUNTRY_POWER_LIMIT_TABLE_CONFIGURATION_HE
 	}
 };
 
+#ifdef TARGET_PRODUCT_SAIPAN
+    #include "rlm_txpwr_saipan.h"
+#else
 struct COUNTRY_POWER_LIMIT_TABLE_CONFIGURATION
 	g_rRlmPowerLimitConfiguration[] = {
 
@@ -1583,6 +1586,7 @@ struct COUNTRY_POWER_LIMIT_TABLE_CONFIGURATION
 		, 165, {63, 63, 63, 63, 63, 63, 63, 63, 63}
 	}
 };
+#endif
 
 #endif
 

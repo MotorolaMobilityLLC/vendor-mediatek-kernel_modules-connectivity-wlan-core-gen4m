@@ -197,6 +197,10 @@ CONFIG_MOT_DISABLE_DUAL_STA := y
 # Moto remove 2.4GHz ch12/13
 ccflags-y += -DCFG_MOT_REM_CH12_CH13
 
+ifneq (, $(findstring saipan, $(TARGET_PRODUCT)))
+    ccflags-y += -DTARGET_PRODUCT_SAIPAN
+endif
+
 ifneq ($(filter 6765, $(WLAN_CHIP_ID)),)
     ccflags-y += -DCFG_SUPPORT_DUAL_STA=0
 else ifeq ($(CONFIG_MTK_TC10_FEATURE), y)
