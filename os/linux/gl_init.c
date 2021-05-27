@@ -390,6 +390,7 @@ const uint32_t mtk_cipher_suites[] = {
 	/* keep last -- depends on hw flags! */
 	WLAN_CIPHER_SUITE_AES_CMAC,
 	WLAN_CIPHER_SUITE_GCMP_256,
+	WLAN_CIPHER_SUITE_GCMP,
 	WLAN_CIPHER_SUITE_BIP_GMAC_256, /* TODO, HW not support,
 					* SW should handle integrity check
 					*/
