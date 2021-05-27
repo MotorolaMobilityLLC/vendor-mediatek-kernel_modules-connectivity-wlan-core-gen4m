@@ -2786,6 +2786,16 @@ p2pFuncDisconnect(IN struct ADAPTER *prAdapter,
 
 			kalP2PGOStationUpdate(prAdapter->prGlueInfo,
 				prP2pRoleFsmInfo->ucRoleIndex, prStaRec, FALSE);
+
+#if (CFG_SUPPORT_DFS_MASTER == 1)
+			/* restore DFS channels table */
+			wlanUpdateDfsChannelTable(prAdapter->prGlueInfo,
+				-1, /* p2p role index */
+				0, /* primary channel */
+				0, /* bandwidth */
+				0, /* sco */
+				0 /* center frequency */);
+#endif
 		} else {
 			struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo =
 			    P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prAdapter,
