@@ -1318,6 +1318,7 @@ struct mt66xx_chip_info {
 	const unsigned int custom_oid_interface_version;
 	const unsigned int em_interface_version;
 	const unsigned int cmd_max_pkt_size;
+	const bool isSupportMddpAOR;
 
 	const struct ECO_INFO *eco_info;	/* chip version table */
 	uint8_t eco_ver;	/* chip version */

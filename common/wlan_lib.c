@@ -1179,7 +1179,7 @@ uint32_t wlanAdapterStart(IN struct ADAPTER *prAdapter,
 			break;
 		}
 
-#ifdef CONFIG_MTK_MDDP_SUPPORT
+#if IS_ENABLED(CONFIG_MTK_MDDP_SUPPORT)
 		setMddpSupportRegister(prAdapter);
 #endif
 
