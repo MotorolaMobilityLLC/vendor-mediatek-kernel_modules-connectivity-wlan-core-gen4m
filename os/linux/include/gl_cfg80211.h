@@ -362,12 +362,6 @@ int mtk_cfg80211_testmode_sw_cmd(IN struct wiphy *wiphy,
 					IN struct wireless_dev *wdev,
 					IN void *data, IN int len);
 
-#if CFG_SUPPORT_PASSPOINT
-int mtk_cfg80211_testmode_hs20_cmd(IN struct wiphy *wiphy,
-					IN struct wireless_dev *wdev,
-					IN void *data, IN int len);
-#endif /* CFG_SUPPORT_PASSPOINT */
-
 #if CFG_SUPPORT_WAPI
 int mtk_cfg80211_testmode_set_key_ext(IN struct wiphy
 				      *wiphy,

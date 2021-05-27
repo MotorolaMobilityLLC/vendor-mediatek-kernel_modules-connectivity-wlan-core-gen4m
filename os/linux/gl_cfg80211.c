@@ -1511,7 +1511,14 @@ int mtk_cfg80211_connect(struct wiphy *wiphy,
 			eAuthMode = AUTH_MODE_OPEN;
 			break;
 		case IW_AUTH_ALG_OPEN_SYSTEM:
-			eAuthMode = AUTH_MODE_OPEN;
+			if (sme->crypto.n_akm_suites &&
+				sme->crypto.akm_suites[0] ==
+				WLAN_AKM_SUITE_OSEN) {
+				eAuthMode = AUTH_MODE_WPA_OSEN;
+				u4AkmSuite = WFA_AKM_SUITE_OSEN;
+			} else {
+				eAuthMode = AUTH_MODE_OPEN;
+			}
 			break;
 		default:
 			eAuthMode = AUTH_MODE_AUTO_SWITCH;
@@ -1553,21 +1560,6 @@ int mtk_cfg80211_connect(struct wiphy *wiphy,
 					   prDesiredIE, IE_SIZE(prDesiredIE),
 					   FALSE, FALSE, TRUE, &u4BufLen,
 					   ucBssIndex);
-#if 0
-			if (rStatus != WLAN_STATUS_SUCCESS)
-				DBGLOG(INIT, INFO,
-					"[HS20] set HS20 assoc info error:%x\n",
-					rStatus);
-#endif
-		} else if (wextSrchDesiredOsenIE(pucIEStart, sme->ie_len,
-					(uint8_t **) &prDesiredIE)) {
-			/* we can reuse aucHS20AssocInfoIE because hs20
-			 * indication IE is not present when OSEN exist
-			 */
-			kalMemCopy(prGlueInfo->aucHS20AssocInfoIE,
-					prDesiredIE, IE_SIZE(prDesiredIE));
-			prGlueInfo->u2HS20AssocInfoIELen =
-						(uint16_t)IE_SIZE(prDesiredIE);
 		}
 #endif /* CFG_SUPPORT_PASSPOINT */
 		if (wextSrchDesiredWPAIE(pucIEStart, sme->ie_len, 0x30,
@@ -2714,74 +2706,6 @@ int mtk_cfg80211_mgmt_tx_cancel_wait(struct wiphy *wiphy,
 }
 
 #ifdef CONFIG_NL80211_TESTMODE
-
-#if CFG_SUPPORT_PASSPOINT
-int mtk_cfg80211_testmode_hs20_cmd(IN struct wiphy *wiphy,
-		IN struct wireless_dev *wdev,
-		IN void *data, IN int len)
-{
-	struct GLUE_INFO *prGlueInfo = NULL;
-	struct wpa_driver_hs20_data_s *prParams = NULL;
-	uint32_t rstatus = WLAN_STATUS_SUCCESS;
-	int fgIsValid = 0;
-	uint32_t u4SetInfoLen = 0;
-	uint8_t ucBssIndex = 0;
-
-	ASSERT(wiphy);
-
-	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wiphy);
-
-	ucBssIndex = wlanGetBssIdx(wdev->netdev);
-	if (!IS_BSS_INDEX_VALID(ucBssIndex))
-		return -EINVAL;
-
-	if (data && len)
-		prParams = (struct wpa_driver_hs20_data_s *)data;
-
-	if (prParams) {
-		int i;
-
-		DBGLOG(INIT, INFO, "Cmd Type (%d)\n", prParams->CmdType);
-		switch (prParams->CmdType) {
-		case HS20_CMD_ID_SET_BSSID_POOL:
-			DBGLOG(REQ, TRACE,
-			"fgBssidPoolIsEnable=%d, ucNumBssidPool=%d\n",
-			prParams->hs20_set_bssid_pool.fgBssidPoolIsEnable,
-			prParams->hs20_set_bssid_pool.ucNumBssidPool);
-			for (i = 0;
-			     i < prParams->hs20_set_bssid_pool.ucNumBssidPool;
-			     i++) {
-				DBGLOG(REQ, TRACE,
-					"[%d][ " MACSTR " ]\n",
-					i,
-					MAC2STR(prParams->
-					hs20_set_bssid_pool.
-					arBssidPool[i]));
-			}
-			rstatus = kalIoctlByBssIdx(prGlueInfo,
-			   (PFN_OID_HANDLER_FUNC) wlanoidSetHS20BssidPool,
-			   &prParams->hs20_set_bssid_pool,
-			   sizeof(struct param_hs20_set_bssid_pool),
-			   FALSE, FALSE, TRUE, FALSE, &u4SetInfoLen,
-			   ucBssIndex);
-			break;
-		default:
-			DBGLOG(REQ, TRACE,
-				"Unknown Cmd Type (%d)\n",
-				prParams->CmdType);
-			rstatus = WLAN_STATUS_FAILURE;
-
-		}
-
-	}
-
-	if (rstatus != WLAN_STATUS_SUCCESS)
-		fgIsValid = -EFAULT;
-
-	return fgIsValid;
-}
-#endif /* CFG_SUPPORT_PASSPOINT */
-
 #if CFG_SUPPORT_WAPI
 int mtk_cfg80211_testmode_set_key_ext(IN struct wiphy
 				      *wiphy,
@@ -3536,12 +3460,6 @@ static int mtk_wlan_cfg_testmode_cmd(struct wiphy *wiphy,
 		i4Status = mtk_cfg80211_testmode_get_link_detection(wiphy,
 				wdev, data, len, prGlueInfo);
 		break;
-#if CFG_SUPPORT_PASSPOINT
-	case TESTMODE_CMD_ID_HS20:
-		i4Status = mtk_cfg80211_testmode_hs20_cmd(wiphy,
-				wdev, data, len);
-		break;
-#endif /* CFG_SUPPORT_PASSPOINT */
 	case TESTMODE_CMD_ID_STR_CMD:
 		i4Status = mtk_cfg80211_process_str_cmd(wiphy,
 				wdev, data, len);
