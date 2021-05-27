@@ -3631,12 +3631,24 @@ void connac2x_show_ple_info(struct ADAPTER *prAdapter, u_int8_t fgDumpTxd)
 		}
 	}
 
-	/* Trigger Fw dump log */
-	HAL_MCR_RD(prAdapter, prCr->rToN9IntToggle.u4Addr, &value);
-	value = (~value & prCr->rToN9IntToggle.u4Mask) |
-		(value & ~prCr->rToN9IntToggle.u4Mask);
-	HAL_MCR_WR(prAdapter, prCr->rToN9IntToggle.u4Addr, value);
 	kalMemFree(buf, VIR_MEM_TYPE, buf_size);
+
+/* ============================================================================
+ *                         Debug Interrupt Interface
+ * +--------------------------------------------------------------------------+
+ * |Toggle|  Reserved[30:16]  | BandNum[15:14] | Module[13:08] | Reason[7:0]  |
+ * +--------------------------------------------------------------------------+
+ * ============================================================================
+ */
+	/* Trigger Fw dump log */
+	/* Band 0, TX */
+	HAL_MCR_RD(prAdapter, prCr->rToN9IntToggle.u4Addr, &value);
+	value = (~value & prCr->rToN9IntToggle.u4Mask) | (1 << 8);
+	HAL_MCR_WR(prAdapter, prCr->rToN9IntToggle.u4Addr, value);
+	/* Band 1, TX */
+	HAL_MCR_RD(prAdapter, prCr->rToN9IntToggle.u4Addr, &value);
+	value = (~value & prCr->rToN9IntToggle.u4Mask) | (1 << 14) | (1 << 8);
+	HAL_MCR_WR(prAdapter, prCr->rToN9IntToggle.u4Addr, value);
 }
 
 void connac2x_show_pse_info(struct ADAPTER *prAdapter)
