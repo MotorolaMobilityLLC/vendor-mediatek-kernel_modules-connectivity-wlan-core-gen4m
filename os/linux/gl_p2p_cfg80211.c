@@ -377,8 +377,23 @@ struct wireless_dev *mtk_p2p_cfg80211_add_iface(struct wiphy *wiphy,
 		prNetDevPriv->prGlueInfo = prGlueInfo;
 		prNetDevPriv->ucBssIdx = prP2pRoleFsmInfo->ucBssIndex;
 #if CFG_ENABLE_UNIFY_WIPHY
-		/* Expect that only P2P device uses the cfg80211_add_iface */
-		prNetDevPriv->ucIsP2p = TRUE;
+		if (type == NL80211_IFTYPE_AP) {
+			prNetDevPriv->ucIsP2p = FALSE;
+#if IS_ENABLED(CONFIG_MTK_MDDP_SUPPORT)
+			prNetDevPriv->ucMddpSupport = TRUE;
+#else
+			prNetDevPriv->ucMddpSupport = FALSE;
+#endif
+			p2pFuncInitConnectionSettings(prAdapter,
+				prAdapter->rWifiVar.prP2PConnSettings[u4Idx],
+				TRUE);
+		} else {
+			prNetDevPriv->ucIsP2p = TRUE;
+			prNetDevPriv->ucMddpSupport = FALSE;
+			p2pFuncInitConnectionSettings(prAdapter,
+				prAdapter->rWifiVar.prP2PConnSettings[u4Idx],
+				FALSE);
+		}
 #endif
 
 		/* 4.2 fill hardware address */
@@ -529,6 +544,7 @@ int mtk_p2p_cfg80211_del_iface(struct wiphy *wiphy, struct wireless_dev *wdev)
 	struct net_device *UnregRoleHander = (struct net_device *)NULL;
 	unsigned char ucBssIdx = 0;
 	struct BSS_INFO *prP2pBssInfo = NULL;
+	uint32_t u4Idx = 0;
 #if 1
 	struct cfg80211_scan_request *prScanRequest = NULL;
 #endif
@@ -543,19 +559,24 @@ int mtk_p2p_cfg80211_del_iface(struct wiphy *wiphy, struct wireless_dev *wdev)
 		return -EINVAL;
 
 	prAdapter = prGlueInfo->prAdapter;
-	prP2pInfo = prGlueInfo->prP2PInfo[0];
 	prP2pGlueDevInfo = prGlueInfo->prP2PDevInfo;
-
-	if ((prP2pInfo == NULL) ||
-	    (prP2pInfo->aprRoleHandler == NULL) ||
-	    (prP2pInfo->aprRoleHandler == prP2pInfo->prDevHandler)) {
-		/* This iface isn't added. */
-		return -EINVAL;
-	}
 
 	KAL_ACQUIRE_MUTEX(prAdapter, MUTEX_DEL_INF);
 
-	prP2pRoleFsmInfo = prAdapter->rWifiVar.aprP2pRoleFsmInfo[0];
+	for (u4Idx = 0; u4Idx < KAL_P2P_NUM; u4Idx++) {
+		prP2pInfo = prGlueInfo->prP2PInfo[u4Idx];
+		if (prP2pInfo == NULL)
+			continue;
+		if (prP2pInfo->aprRoleHandler ==
+				wdev->netdev)
+			break;
+	}
+	if (u4Idx == KAL_P2P_NUM) {
+		DBGLOG(INIT, WARN, "can't find the matched dev\n");
+		return -EINVAL;
+	}
+
+	prP2pRoleFsmInfo = prAdapter->rWifiVar.aprP2pRoleFsmInfo[u4Idx];
 	if (prP2pRoleFsmInfo == NULL) {
 		KAL_RELEASE_MUTEX(prAdapter, MUTEX_DEL_INF);
 		return -EINVAL;
@@ -563,7 +584,7 @@ int mtk_p2p_cfg80211_del_iface(struct wiphy *wiphy, struct wireless_dev *wdev)
 
 	ucBssIdx = prP2pRoleFsmInfo->ucBssIndex;
 	wlanBindBssIdxToNetInterface(prGlueInfo, ucBssIdx,
-		(void *) prGlueInfo->prP2PInfo[0]->prDevHandler);
+		(void *) prGlueInfo->prP2PInfo[u4Idx]->prDevHandler);
 
 	UnregRoleHander = prP2pInfo->aprRoleHandler;
 
@@ -636,7 +657,7 @@ int mtk_p2p_cfg80211_del_iface(struct wiphy *wiphy, struct wireless_dev *wdev)
 		DBGLOG(INIT, WARN, "unable to alloc msg\n");
 	} else {
 		prP2pDelIfaceMsg->rMsgHdr.eMsgId = MID_MNY_P2P_DEL_IFACE;
-		prP2pDelIfaceMsg->ucRoleIdx = 0;
+		prP2pDelIfaceMsg->ucRoleIdx = u4Idx;
 
 		mboxSendMsg(prGlueInfo->prAdapter,
 			MBOX_ID_0,
