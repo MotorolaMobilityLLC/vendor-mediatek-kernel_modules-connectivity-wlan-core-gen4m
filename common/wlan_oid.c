@@ -3508,6 +3508,13 @@ wlanoidQueryEncryptionStatus(IN struct ADAPTER *prAdapter,
 		prAisBssInfo->fgBcDefaultKeyExist;
 
 	switch (prConnSettings->eEncStatus) {
+	case ENUM_ENCRYPTION4_ENABLED:
+		if (fgTransmitKeyAvailable)
+			eEncStatus = ENUM_ENCRYPTION4_ENABLED;
+		else
+			eEncStatus = ENUM_ENCRYPTION4_KEY_ABSENT;
+		break;
+
 	case ENUM_ENCRYPTION3_ENABLED:
 		if (fgTransmitKeyAvailable)
 			eEncStatus = ENUM_ENCRYPTION3_ENABLED;
@@ -3642,6 +3649,13 @@ wlanoidSetEncryptionStatus(IN struct ADAPTER *prAdapter,
 		DBGLOG(RSN, INFO, "Enable Encryption3\n");
 		break;
 
+	case ENUM_ENCRYPTION4_ENABLED: /* Eanble GCMP256 */
+		secSetCipherSuite(prAdapter,
+				  CIPHER_FLAG_CCMP | CIPHER_FLAG_GCMP256,
+				  ucBssIndex);
+		DBGLOG(RSN, INFO, "Enable Encryption4\n");
+		break;
+
 	default:
 		DBGLOG(RSN, INFO, "Unacceptible encryption status: %d\n",
 		       *(enum ENUM_WEP_STATUS *) pvSetBuffer);
@@ -3700,7 +3714,7 @@ wlanoidQueryCapability(IN struct ADAPTER *prAdapter,
 
 	prCap->u4Length = *pu4QueryInfoLen;
 	prCap->u4Version = 2;	/* WPA2 */
-	prCap->u4NoOfAuthEncryptPairsSupported = 14;
+	prCap->u4NoOfAuthEncryptPairsSupported = 15;
 
 	prAuthenticationEncryptionSupported =
 		&prCap->arAuthenticationEncryptionSupported[0];
@@ -3776,6 +3790,11 @@ wlanoidQueryCapability(IN struct ADAPTER *prAdapter,
 		AUTH_MODE_WPA2_PSK;
 	prAuthenticationEncryptionSupported[13].eEncryptStatusSupported
 		= ENUM_ENCRYPTION3_ENABLED;
+
+	prAuthenticationEncryptionSupported[14].eAuthModeSupported
+		= AUTH_MODE_WPA2_PSK;
+	prAuthenticationEncryptionSupported[14].eEncryptStatusSupported
+		= ENUM_ENCRYPTION4_ENABLED;
 
 	return WLAN_STATUS_SUCCESS;
 

@@ -775,8 +775,8 @@ uint8_t rsnKeyMgmtWpa(IN struct ADAPTER *prAdapter,
 	       eAuthMode == AUTH_MODE_WPA2_FT ||
 	       eAuthMode == AUTH_MODE_WPA3_SAE ||
 	       eAuthMode == AUTH_MODE_WPA3_OWE ||
-	       rsnSearchAKMSuite(prAdapter, RSN_CIPHER_SUITE_OWE, &i, bssidx) ||
-	       rsnSearchAKMSuite(prAdapter, RSN_CIPHER_SUITE_SAE, &i, bssidx);
+	       rsnSearchAKMSuite(prAdapter, RSN_AKM_SUITE_OWE, &i, bssidx) ||
+	       rsnSearchAKMSuite(prAdapter, RSN_AKM_SUITE_SAE, &i, bssidx);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -937,6 +937,11 @@ u_int8_t rsnPerformPolicySelection(
 		fgSuiteSupported = FALSE;
 
 		switch (prBssRsnInfo->u4GroupKeyCipherSuite) {
+		case RSN_CIPHER_SUITE_GCMP_256:
+			if (eEncStatus ==
+			    ENUM_ENCRYPTION4_ENABLED)
+				fgSuiteSupported = TRUE;
+			break;
 		case WPA_CIPHER_SUITE_CCMP:
 		case RSN_CIPHER_SUITE_CCMP:
 			if (eEncStatus ==
@@ -980,6 +985,22 @@ u_int8_t rsnPerformPolicySelection(
 		       prBssRsnInfo->au4PairwiseKeyCipherSuite[0]);
 		/* Select pairwise/group ciphers */
 		switch (eEncStatus) {
+		case ENUM_ENCRYPTION4_ENABLED:
+		for (i = 0; i < prBssRsnInfo->u4PairwiseKeyCipherSuiteCount;
+			i++) {
+			/* TODO: WTBL cipher filed cannot
+			* 1-1 mapping to spec cipher suite number
+			*/
+			if (prBssRsnInfo->au4PairwiseKeyCipherSuite[i] ==
+				    RSN_CIPHER_SUITE_GCMP_256) {
+				u4PairwiseCipher =
+					prBssRsnInfo->
+					au4PairwiseKeyCipherSuite[i];
+			}
+		}
+		u4GroupCipher = prBssRsnInfo->u4GroupKeyCipherSuite;
+			break;
+
 		case ENUM_ENCRYPTION3_ENABLED:
 			for (i = 0; i < prBssRsnInfo->
 				u4PairwiseKeyCipherSuiteCount; i++) {
@@ -1192,7 +1213,12 @@ u_int8_t rsnPerformPolicySelection(
 			->fgMgmtProtection);
 #endif
 
-	if (GET_SELECTOR_TYPE(u4GroupCipher) == CIPHER_SUITE_CCMP) {
+	/* TODO: WTBL cipher filed cannot
+	* 1-1 mapping to spec cipher suite number
+	*/
+	if (u4GroupCipher == RSN_CIPHER_SUITE_GCMP_256) {
+		prBss->ucEncLevel = 4;
+	} else if (GET_SELECTOR_TYPE(u4GroupCipher) == CIPHER_SUITE_CCMP) {
 		prBss->ucEncLevel = 3;
 	} else if (GET_SELECTOR_TYPE(u4GroupCipher) == CIPHER_SUITE_TKIP) {
 		prBss->ucEncLevel = 2;
