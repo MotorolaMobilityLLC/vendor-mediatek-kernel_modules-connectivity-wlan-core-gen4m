@@ -272,6 +272,7 @@ struct CONNECTION_SETTINGS {
 
 	uint8_t *pucAssocIEs;
 	size_t assocIeLen;
+	u_int8_t fgAuthOsenWithRSN;
 };
 
 struct BSS_INFO {
