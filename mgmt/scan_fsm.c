@@ -366,6 +366,12 @@ void scnSendScanReqV2(IN struct ADAPTER *prAdapter)
 	    prCmdScanReq->u2ChannelMinDwellTime)
 		prCmdScanReq->u2ProbeDelayTime = 0;
 
+	/* OCE certification handling */
+	if (prAdapter->rWifiVar.u4SwTestMode == ENUM_SW_TEST_MODE_SIGMA_OCE) {
+		scanHandleOceIE(prScanParam, prCmdScanReq);
+		prCmdScanReq->ucScnFuncMask |= ENUM_SCN_OCE_SCAN_EN;
+	}
+
 	if (prScanParam->u2IELen <= MAX_IE_LENGTH)
 		prCmdScanReq->u2IELen = prScanParam->u2IELen;
 	else

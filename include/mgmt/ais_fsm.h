@@ -200,6 +200,11 @@ struct AIS_BLACKLIST_ITEM {
 	OS_SYSTIME rAddTime;
 	u_int8_t fgDeauthLastTime;
 	u_int8_t fgIsInFWKBlacklist;
+#if CFG_SUPPORT_MBO
+	uint8_t fgDisallowed;
+	uint16_t u2DisallowSec;
+	int32_t i4RssiThreshold;
+#endif
 };
 /* end Support AP Selection */
 
@@ -607,7 +612,8 @@ void aisRemoveBlackList(struct ADAPTER *prAdapter, struct BSS_DESC *prBssDesc);
 void aisRemoveTimeoutBlacklist(struct ADAPTER *prAdapter);
 struct AIS_BLACKLIST_ITEM *aisQueryBlackList(struct ADAPTER *prAdapter,
 	struct BSS_DESC *prBssDesc);
-/* end Support AP Selection */
+void aisBssTmpDisallow(struct ADAPTER *prAdapter, struct BSS_DESC *prBssDesc,
+	uint32_t sec, int32_t rssiThreshold, uint8_t ucBssIndex);
 
 /* Support 11K */
 void aisResetNeighborApList(struct ADAPTER *prAdapter,

@@ -137,6 +137,10 @@
 #define SCAN_CHANNEL_MIN_DWELL_TIME_MSEC_APP	(20)
 #define SCAN_CHANNEL_DWELL_TIME_MSEC_APP	(40)
 
+/* dwell time setting for OCE certification */
+#define SCAN_CHANNEL_DWELL_TIME_OCE         (42 + 28)
+
+
 /*----------------------------------------------------------------------------*/
 /* MSG_SCN_SCAN_REQ                                                           */
 /*----------------------------------------------------------------------------*/
@@ -438,6 +442,8 @@ struct BSS_DESC {
 	struct AIS_BLACKLIST_ITEM *prBlack;
 #if CFG_SUPPORT_MBO
 	uint8_t fgIsDisallowed;
+	uint8_t fgExistEspIE;
+	uint32_t u4EspInfo[WIFI_AC_MAX];
 #endif
 	uint16_t u2StaCnt;
 	uint16_t u2AvaliableAC; /* Available Admission Capacity */
@@ -515,7 +521,6 @@ struct SCAN_PARAM {	/* Used by SCAN FSM */
 	/* Information Element */
 	uint16_t u2IELen;
 	uint8_t aucIE[MAX_IE_LENGTH];
-
 };
 
 struct SCHED_SCAN_PARAM {	/* Used by SCAN FSM */
@@ -962,5 +967,8 @@ void scanParseVHTCapIE(IN uint8_t *pucIE, IN struct BSS_DESC *prBssDesc);
 void scanParseVHTOpIE(IN uint8_t *pucIE, IN struct BSS_DESC *prBssDesc);
 
 void scanCheckAdaptive11rIE(IN uint8_t *pucBuf, IN struct BSS_DESC *prBssDesc);
+
+void scanHandleOceIE(IN struct SCAN_PARAM *prScanParam,
+	IN struct CMD_SCAN_REQ_V2 *prCmdScanReq);
 
 #endif /* _SCAN_H */

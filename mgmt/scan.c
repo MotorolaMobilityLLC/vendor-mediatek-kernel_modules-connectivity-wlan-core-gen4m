@@ -1311,6 +1311,7 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 				  IN struct SW_RFB *prSwRfb)
 {
 	struct BSS_DESC *prBssDesc = NULL;
+	struct SCAN_PARAM *prScanParam;
 	uint16_t u2CapInfo;
 	enum ENUM_BSS_TYPE eBSSType = BSS_TYPE_INFRASTRUCTURE;
 
@@ -1351,6 +1352,7 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 	ASSERT(prAdapter);
 	ASSERT(prSwRfb);
 	prRxDescOps = prAdapter->chip_info->prRxDescOps;
+	prScanParam = &prAdapter->rWifiVar.rScanInfo.rScanParam;
 
 	RX_STATUS_GET(prRxDescOps, eHwBand, get_rf_band, prSwRfb->prRxStatus);
 	prWlanBeaconFrame = (struct WLAN_BEACON_FRAME *) prSwRfb->pvHeader;
@@ -1717,6 +1719,8 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 	prBssDesc->fgMultiAnttenaAndSTBC = FALSE;
 #if CFG_SUPPORT_MBO
 	prBssDesc->fgIsDisallowed = FALSE;
+	prBssDesc->fgExistEspIE = FALSE;
+	memset(prBssDesc->u4EspInfo, 0, sizeof(prBssDesc->u4EspInfo));
 #endif
 
 	if (fgIsProbeResp == FALSE) {
@@ -2048,6 +2052,28 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 					prBssDesc->fgIsHEPresent = TRUE;
 #endif
 			}
+
+#if CFG_SUPPORT_MBO
+			if (IE_ID_EXT(pucIE) == ELEM_EXT_ID_ESP) {
+				uint8_t infoNum = 0;
+				uint8_t *infoList = pucIE + 3;
+
+				DBGLOG(SCN, INFO, "ESP IE\n");
+				dumpMemory8(pucIE, IE_LEN(pucIE));
+
+				prBssDesc->fgExistEspIE = TRUE;
+				infoNum = (IE_LEN(pucIE) - 1) / 3;
+				for (i = 0; i < infoNum; i++) {
+					uint8_t *info = infoList + i * 3;
+					uint8_t ac = (*info) & 0x3;
+
+					if (ac < WIFI_AC_MAX)
+						WLAN_GET_FIELD_24(info,
+						    &prBssDesc->u4EspInfo[ac]);
+				}
+			}
+
+#endif
 			break;
 #endif
 		case ELEM_ID_PWR_CONSTRAINT:
@@ -4312,3 +4338,66 @@ void scanCheckAdaptive11rIE(IN uint8_t *pucBuf, IN struct BSS_DESC *prBssDesc)
 		MAC2STR(prBssDesc->aucBSSID), prBssDesc->ucIsAdaptive11r);
 }
 
+void scanHandleOceIE(IN struct SCAN_PARAM *prScanParam,
+	IN struct CMD_SCAN_REQ_V2 *prCmdScanReq)
+{
+	uint16_t u2Offset = 0, u2IEsBufLen = prScanParam->u2IELen;
+	uint8_t *pucBuf = prScanParam->aucIE;
+	uint8_t *pucBufAppend = NULL;
+	uint8_t aucOceOui[] = VENDOR_OUI_WFA_SPECIFIC;
+	struct IE_FILS_REQ_FRAME *prFilsReqIe;
+
+	DBGLOG(SCN, INFO, "before OCE IE, length = %d\n", u2IEsBufLen);
+	dumpMemory8(pucBuf, u2IEsBufLen);
+	/* Find MaxChannelTime in FILS request parameter,
+	 * it shall > 10 and not equal to 255 (TUs)
+	 */
+	IE_FOR_EACH(pucBuf, u2IEsBufLen, u2Offset) {
+		if (IE_ID(pucBuf) == ELEM_ID_RESERVED &&
+		    IE_ID_EXT(pucBuf) == ELEM_EXT_ID_FILS_REQUEST_PARA) {
+			prFilsReqIe = (struct IE_FILS_REQ_FRAME *) pucBuf;
+
+			if (prFilsReqIe->ucMaxChannelTime < 10 ||
+			    prFilsReqIe->ucMaxChannelTime == 255) {
+				prFilsReqIe->ucMaxChannelTime =
+				    SCAN_CHANNEL_DWELL_TIME_OCE;
+				prCmdScanReq->u2ChannelMinDwellTime =
+				    SCAN_CHANNEL_DWELL_TIME_MIN_MSEC;
+				prCmdScanReq->u2ChannelDwellTime =
+				    SCAN_CHANNEL_DWELL_TIME_OCE;
+			}
+		/* Append OCE_ATTR_ID_SUPPRESSION_BSSID to OCE IE tail,
+		 * length = 0. So total 2bytes(ID and Length).
+		 * FOR OCE CERTIFICATION 5.3.1
+		 */
+		} else if (IE_ID(pucBuf) == ELEM_ID_VENDOR) {
+			if ((OCE_IE_OUI_TYPE(pucBuf) == VENDOR_OUI_TYPE_MBO) &&
+			      (!kalMemCmp(OCE_IE_OUI(pucBuf), aucOceOui, 3))) {
+				/* point to OCE IE's tail */
+				pucBufAppend =
+					(uint8_t *)(pucBuf + IE_SIZE(pucBuf));
+
+				/* If OCE IE is not last IE, we need to add 2
+				 * byte offset after OCE IE. In order to insert
+				 * 2 bytes OCE_ATTR_ID_SUPPRESSION_BSSID.
+				 */
+				if (u2IEsBufLen > (u2Offset + IE_SIZE(pucBuf)))
+					kalMemCopy(pucBufAppend + 2,
+						pucBufAppend,
+						u2IEsBufLen -
+						(u2Offset + IE_SIZE(pucBuf)));
+
+				OCE_OUI_SUP_BSSID(pucBufAppend)->ucAttrId =
+						OCE_ATTR_ID_SUPPRESSION_BSSID;
+				OCE_OUI_SUP_BSSID(pucBufAppend)->ucAttrLength
+						= 0;
+				prScanParam->u2IELen += 2;
+				IE_LEN(pucBuf) += 2;
+			}
+		}
+	}
+
+	pucBuf = prScanParam->aucIE;
+	DBGLOG(SCN, INFO, "After OCE IE, length = %d\n", prScanParam->u2IELen);
+	dumpMemory8(pucBuf, prScanParam->u2IELen);
+}
