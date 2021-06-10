@@ -96,6 +96,7 @@ extern KAL_WAKE_LOCK_T *g_IntrWakeLock;
  *******************************************************************************
  */
 #define AXI_CFG_PREALLOC_MEMORY_BUFFER    1
+#define AXI_ISR_DEBUG_LOG    0
 
 #define AXI_TX_MAX_SIZE_PER_FRAME         (NIC_TX_MAX_SIZE_PER_FRAME +      \
 					   NIC_TX_DESC_AND_PADDING_LENGTH)
