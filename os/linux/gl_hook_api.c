@@ -4537,6 +4537,8 @@ uint32_t ServiceWlanOid(void *winfos,
 		capability->ph_cap.channel_band = BIT(0);
 		if (!prAdapter->fgIsHw5GBandDisabled)
 			capability->ph_cap.channel_band |= BIT(1);
+		if (prTestWinfo->chip_cap.support_6g)
+			capability->ph_cap.channel_band |= BIT(2);
 
 		/* ph_cap.bandwidth */
 		capability->ph_cap.bandwidth = BITS(0, 1);
@@ -4544,12 +4546,20 @@ uint32_t ServiceWlanOid(void *winfos,
 			capability->ph_cap.bandwidth |= BIT(2);
 
 		/* ph_cap.channel_band_dbdc */
-		if (prAdapter->rWifiVar.eDbdcMode == ENUM_DBDC_MODE_DISABLED)
+		if (prAdapter->rWifiVar.eDbdcMode == ENUM_DBDC_MODE_DISABLED) {
 			/* band0 (2.4G + 5G) */
-			capability->ph_cap.channel_band_dbdc = 0x00000003;
-		else
+			capability->ph_cap.channel_band_dbdc = BIT(0)+BIT(1);
+
+			if (prTestWinfo->chip_cap.support_6g)
+				capability->ph_cap.channel_band_dbdc |= BIT(2);
+		} else {
 			/* 6635: band0 (2.4G);  band1 (5G) */
-			capability->ph_cap.channel_band_dbdc = 0x00020001;
+			capability->ph_cap.channel_band_dbdc = BIT(0)+BIT(17);
+
+			/* 6637: band0 (2.4G);	band1 (5G+6G) */
+			if (prTestWinfo->chip_cap.support_6g)
+				capability->ph_cap.channel_band_dbdc |= BIT(18);
+		}
 
 		/* ext_cap.feature1: BIT0: AntSwap */
 #if CFG_SUPPORT_ANT_SWAP
