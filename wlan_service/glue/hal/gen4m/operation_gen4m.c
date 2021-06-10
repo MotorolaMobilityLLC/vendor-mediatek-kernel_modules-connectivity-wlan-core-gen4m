@@ -1044,7 +1044,7 @@ static void mt_op_set_manual_he_tb_value(
 	else
 		cmm.field.ltf_sym_midiam = ltf_sym_code[ru_sta->nss];
 	cmm.field.gi_ltf = configs->sgi;
-	cmm.field.ul_bw = configs->bw;
+	cmm.field.ul_bw = tm_bw_hqa_mapping_at((u_int32) configs->bw);
 	cmm.field.stbc = configs->stbc;
 
 	SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_TRACE,
@@ -1080,7 +1080,7 @@ static void mt_op_set_manual_he_tb_value(
 	usr.field.allocation = ru_sta->ru_index;
 	usr.field.coding = ru_sta->ldpc;
 	usr.field.mcs = ru_sta->rate & ~BIT(5);
-	usr.field.dcm = (ru_sta->rate & BIT(5)) >> 4;
+	usr.field.dcm = (ru_sta->rate & BIT(5)) >> 5;
 	usr.field.ss_allocation =
 	((ru_sta->nss-1) << 3) | (ru_sta->start_sp_st & 0x7);
 
@@ -1384,6 +1384,9 @@ s_int32 mt_op_set_channel(
 		SetFreq = 1000 * (5000 + central_ch0 * 5);
 	} else if (central_ch0 == 6 && ch_band == 1) {
 		SetFreq = 1000 * 5032;
+	} else if ((central_ch0 >= 1 && central_ch0 <= 233) && ch_band == 2) {
+		/*ch_band: 2: 6G */
+		SetFreq = 1000 * (5950 + central_ch0 * 5);
 	} else {
 		SetFreq = tm_ch_num_to_freq((u_int32)central_ch0);
 	}

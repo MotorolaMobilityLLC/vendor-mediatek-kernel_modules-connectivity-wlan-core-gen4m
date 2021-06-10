@@ -213,9 +213,13 @@ enum test_band_mode {
 /* Test DBDC band type for QA */
 enum test_band_type {
 	TEST_BAND_TYPE_UNUSE = 0,
-	TEST_BAND_TYPE_G,
-	TEST_BAND_TYPE_A,
-	TEST_BAND_TYPE_ALL
+	TEST_BAND_TYPE_2_4G,
+	TEST_BAND_TYPE_5G,
+	TEST_BAND_TYPE_2_4G_5G,
+	TEST_BAND_TYPE_6G,
+	TEST_BAND_TYPE_2_4G_6G,
+	TEST_BAND_TYPE_5G_6G,
+	TEST_BAND_TYPE_2_4G_5G_6G,
 };
 
 /* Test DBDC enable for QA */
@@ -461,11 +465,13 @@ struct serv_chip_cap {
 	u_int8 vht_ampdu_exp;
 	u_int16 he_tx_ba_wsize;
 	u_int8 he_ampdu_exp;
-	u_int16 efuse_size;
+	u_int32 efuse_size;
 	struct serv_mcs_nss_caps mcs_nss;
 	struct serv_qos_caps qos;
 	struct serv_spe_map_list spe_map_list;
 	boolean swq_per_band;
+	boolean ra_offload;
+	boolean support_6g;
 };
 
 /* Service channel configuration */
