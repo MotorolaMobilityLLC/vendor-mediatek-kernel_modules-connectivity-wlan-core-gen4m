@@ -317,6 +317,21 @@ void nic_rxd_v2_fill_rfb(
 #endif
 }
 
+void nic_rxd_v2_parse_drop_pkt(struct SW_RFB *prSwRfb)
+{
+	uint16_t *pu2EtherType;
+
+	pu2EtherType = (uint16_t *)
+			((uint8_t *)prSwRfb->pvHeader +
+			2 * MAC_ADDR_LEN);
+	DBGLOG(RX, INFO,
+		"u2PacketLen:%d ucSecMode:%d ucWlanIdx:%d ucStaRecIdx:%d\n",
+		prSwRfb->u2PacketLen, prSwRfb->ucSecMode,
+		prSwRfb->ucWlanIdx, prSwRfb->ucStaRecIdx
+	);
+	STATS_RX_PKT_INFO_DISPLAY(prSwRfb);
+}
+
 u_int8_t nic_rxd_v2_sanity_check(
 	struct ADAPTER *prAdapter,
 	struct SW_RFB *prSwRfb)
@@ -415,6 +430,8 @@ u_int8_t nic_rxd_v2_sanity_check(
 			DBGLOG(RSN, INFO,
 				"Don't drop eapol or wpi packet\n");
 		} else {
+			nic_rxd_v2_parse_drop_pkt(prSwRfb);
+
 			fgDrop = TRUE;
 			DBGLOG(RSN, INFO,
 				"Drop plain text during security connection\n");
