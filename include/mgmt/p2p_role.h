@@ -501,6 +501,10 @@ void p2pRoleFsmNotifyEapolTxStatus(IN struct ADAPTER *prAdapter,
 void p2pRoleFsmNotifyDhcpDone(IN struct ADAPTER *prAdapter,
 		IN uint8_t ucBssIndex);
 
+void p2pRoleFsmStateTransition(IN struct ADAPTER *prAdapter,
+		IN struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo,
+		IN enum ENUM_P2P_ROLE_STATE eNextState);
+
 void p2pRoleFsmRunEventMgmtTx(IN struct ADAPTER *prAdapter,
 		IN struct MSG_HDR *prMsgHdr);
 

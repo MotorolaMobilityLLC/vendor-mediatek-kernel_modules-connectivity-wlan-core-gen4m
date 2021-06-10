@@ -305,12 +305,17 @@ uint32_t nicActivateNetwork(IN struct ADAPTER *prAdapter,
 			    IN uint8_t ucBssIndex);
 
 uint32_t nicDeactivateNetwork(IN struct ADAPTER *prAdapter,
-			      IN uint8_t ucBssIndex);
+				IN uint8_t ucBssIndex);
+uint32_t nicDeactivateNetworkEx(IN struct ADAPTER *prAdapter,
+				IN uint8_t ucBssIndex,
+				IN uint8_t fgClearStaRec);
 
 /* BSS-INFO */
 uint32_t nicUpdateBss(IN struct ADAPTER *prAdapter,
-		      IN uint8_t ucBssIndex);
-
+			IN uint8_t ucBssIndex);
+uint32_t nicUpdateBssEx(IN struct ADAPTER *prAdapter,
+			IN uint8_t ucBssIndex,
+			IN uint8_t fgClearStaRec);
 /* BSS-INFO Indication (PM) */
 uint32_t nicPmIndicateBssCreated(IN struct ADAPTER
 				 *prAdapter, IN uint8_t ucBssIndex);

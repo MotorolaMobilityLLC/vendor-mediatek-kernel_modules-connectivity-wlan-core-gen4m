@@ -2945,10 +2945,13 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 				prBssInfo->ucVhtChannelFrequencyS1;
 			prBssDesc->ucCenterFreqS2 =
 				prBssInfo->ucVhtChannelFrequencyS2;
-			kalIndicateChannelSwitch(
-				prAdapter->prGlueInfo,
-				prBssInfo->eBssSCO,
-				prBssDesc->ucChannelNum);
+			if (IS_BSS_P2P(prBssInfo))
+				p2pFuncSwitchGcChannel(prAdapter, prBssInfo);
+			else
+				kalIndicateChannelSwitch(
+					prAdapter->prGlueInfo,
+					prBssInfo->eBssSCO,
+					prBssDesc->ucChannelNum);
 		} else {
 			DBGLOG(RLM, INFO,
 			       "DFS: BSS: " MACSTR " Desc is not found\n ",
@@ -3583,6 +3586,13 @@ void rlmProcessBcn(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb,
 			    prBssInfo->eConnectionState ==
 				    MEDIA_STATE_CONNECTED) {
 				/* P2P client or AIS infra STA */
+				if (prBssInfo->eIftype == IFTYPE_P2P_CLIENT &&
+					prBssInfo->fgIsSwitchingChnl) {
+					DBGLOG(RLM, INFO,
+						"Ignore rlm update when switching channel\n");
+					continue;
+				}
+
 				if (EQUAL_MAC_ADDR(
 					    prBssInfo->aucBSSID,
 					    ((struct WLAN_MAC_MGMT_HEADER
