@@ -1666,18 +1666,6 @@ void wlanTxProfilingTagMsdu(IN struct ADAPTER *prAdapter,
 void wlanTxLifetimeTagPacket(IN struct ADAPTER *prAdapter,
 			     IN struct MSDU_INFO *prMsduInfoListHead,
 			     IN enum ENUM_TX_PROFILING_TAG eTag);
-
-#if CFG_ASSERT_DUMP
-void wlanCorDumpTimerInit(IN struct ADAPTER *prAdapter, u_int8_t fgIsResetN9);
-
-void wlanCorDumpTimerReset(IN struct ADAPTER *prAdapter, u_int8_t fgIsResetN9);
-
-void wlanN9CorDumpTimeOut(IN struct ADAPTER *prAdapter,
-			  IN unsigned long ulParamPtr);
-
-void wlanCr4CorDumpTimeOut(IN struct ADAPTER *prAdapter,
-			   IN unsigned long ulParamPtr);
-#endif
 #endif /* _WLAN_LIB_H */
 
 
@@ -1772,7 +1760,7 @@ uint32_t wlanSetLowLatencyMode(IN struct ADAPTER *prAdapter,
 #endif /* CFG_SUPPORT_LOWLATENCY_MODE */
 int32_t wlanGetFileContent(struct ADAPTER *prAdapter,
 	const uint8_t *pcFileName, uint8_t *pucBuf,
-	uint32_t u4MaxFileLen, uint32_t *pu4ReadFileLen, u_int8_t bReqFw);
+	uint32_t u4MaxFileLen, uint32_t *pu4ReadFileLen);
 
 #if CFG_SUPPORT_EASY_DEBUG
 uint32_t wlanFwCfgParse(IN struct ADAPTER *prAdapter, uint8_t *pucConfigBuf);

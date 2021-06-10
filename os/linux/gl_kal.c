@@ -203,19 +203,6 @@ static uint8_t *apucCr4FwName[] = {
 	NULL
 };
 
-#if CFG_ASSERT_DUMP
-/* Core dump debug usage */
-#if MTK_WCN_HIF_SDIO
-uint8_t *apucCorDumpN9FileName =
-	"/data/misc/wifi/FW_DUMP_N9";
-uint8_t *apucCorDumpCr4FileName =
-	"/data/misc/wifi/FW_DUMP_Cr4";
-#else
-uint8_t *apucCorDumpN9FileName = "/tmp/FW_DUMP_N9";
-uint8_t *apucCorDumpCr4FileName = "/tmp/FW_DUMP_Cr4";
-#endif
-#endif
-
 #if !CONFIG_WLAN_DRV_BUILD_IN
 /*----------------------------------------------------------------------------*/
 /*!
@@ -5631,136 +5618,6 @@ uint8_t kalGetRsnIeMfpCap(IN struct GLUE_INFO *prGlueInfo,
 }
 #endif
 
-struct file *kalFileOpen(const char *filePath, int openModes,
-			 int createModes)
-{
-	struct file *prFile = NULL;
-	mm_segment_t oldFs;
-	long errval = 0;
-
-	oldFs = get_fs();
-	set_fs(get_ds());
-	prFile = filp_open(filePath, openModes, createModes);
-	set_fs(oldFs);
-	if (IS_ERR(prFile)) {
-		errval = PTR_ERR(prFile);
-		DBGLOG(INIT, TRACE, "kalFileOpen() fail: %ld\n", errval);
-		return NULL;
-	}
-	return prFile;
-}
-
-void kalFileClose(struct file *prFile)
-{
-	filp_close(prFile, NULL);
-}
-
-uint32_t kalFileRead(struct file *prFile,
-		     unsigned long long pos, unsigned char *buffer,
-		     unsigned int len)
-{
-	mm_segment_t oldFs;
-	int retval;
-
-	oldFs = get_fs();
-	set_fs(get_ds());
-
-#if KERNEL_VERSION(4, 13, 0) <= CFG80211_VERSION_CODE
-	retval = kernel_read(prFile, buffer, len, &pos);
-#else
-	retval = vfs_read(prFile, buffer, len, &pos);
-#endif
-
-	set_fs(oldFs);
-	return retval;
-}
-
-uint32_t kalFileWrite(struct file *prFile,
-		      unsigned long long pos, unsigned char *buffer,
-		      unsigned int len)
-{
-	mm_segment_t oldFs;
-	int retval;
-
-	oldFs = get_fs();
-	set_fs(get_ds());
-
-#if KERNEL_VERSION(4, 13, 0) <= CFG80211_VERSION_CODE
-	retval = kernel_write(prFile, buffer, len, &pos);
-#else
-	retval = vfs_write(prFile, buffer, len, &pos);
-#endif
-
-	set_fs(oldFs);
-	return retval;
-}
-
-uint32_t kalWriteToFile(const uint8_t *pucPath,
-			u_int8_t fgDoAppend, uint8_t *pucData, uint32_t u4Size)
-{
-	struct file *file = NULL;
-	int32_t ret = -1;
-	uint32_t u4Flags = 0;
-
-	if (fgDoAppend)
-		u4Flags = O_APPEND;
-
-	file = kalFileOpen(pucPath, O_WRONLY | O_CREAT | u4Flags, 0700);
-	if (file != NULL) {
-		kalFileWrite(file, 0, pucData, u4Size);
-		kalFileClose(file);
-		ret = 0;
-	}
-	return ret;
-}
-
-int32_t kalReadToFile(const uint8_t *pucPath,
-		      uint8_t *pucData, uint32_t u4Size, uint32_t *pu4ReadSize)
-{
-	struct file *file = NULL;
-	int32_t ret = -1;
-	uint32_t u4ReadSize = 0;
-
-	DBGLOG(INIT, TRACE, "kalReadToFile() path %s\n", pucPath);
-
-	file = kalFileOpen(pucPath, O_RDONLY, 0);
-
-	if ((file != NULL) && !IS_ERR(file)) {
-		u4ReadSize = kalFileRead(file, 0, pucData, u4Size);
-		kalFileClose(file);
-		if (pu4ReadSize)
-			*pu4ReadSize = u4ReadSize;
-		ret = 0;
-	}
-	return ret;
-}
-
-uint32_t kalCheckPath(const uint8_t *pucPath)
-{
-	struct file *file = NULL;
-	uint32_t u4Flags = 0;
-
-	file = kalFileOpen(pucPath, O_WRONLY | O_CREAT | u4Flags, 0700);
-	if (!file)
-		return -1;
-
-	kalFileClose(file);
-	return 1;
-}
-
-uint32_t kalTrunkPath(const uint8_t *pucPath)
-{
-	struct file *file = NULL;
-	uint32_t u4Flags = O_TRUNC;
-
-	file = kalFileOpen(pucPath, O_WRONLY | O_CREAT | u4Flags, 0700);
-	if (!file)
-		return -1;
-
-	kalFileClose(file);
-	return 1;
-}
-
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief read request firmware file binary to pucData
@@ -7130,47 +6987,6 @@ uint64_t kalGetBootTime(void)
 	bootTime += ts.tv_nsec / NSEC_PER_USEC;
 	return bootTime;
 }
-
-#if CFG_ASSERT_DUMP
-uint32_t kalOpenCorDumpFile(u_int8_t fgIsN9)
-{
-	/* Move open-op to kalWriteCorDumpFile(). Empty files only */
-	uint32_t ret;
-	uint8_t *apucFileName;
-
-	if (fgIsN9)
-		apucFileName = apucCorDumpN9FileName;
-	else
-		apucFileName = apucCorDumpCr4FileName;
-
-	ret = kalTrunkPath(apucFileName);
-
-	return (ret >= 0)?WLAN_STATUS_SUCCESS:WLAN_STATUS_FAILURE;
-}
-
-uint32_t kalWriteCorDumpFile(uint8_t *pucBuffer,
-			     uint16_t u2Size, u_int8_t fgIsN9)
-{
-	uint32_t ret;
-	uint8_t *apucFileName;
-
-	if (fgIsN9)
-		apucFileName = apucCorDumpN9FileName;
-	else
-		apucFileName = apucCorDumpCr4FileName;
-
-	ret = kalWriteToFile(apucFileName, TRUE, pucBuffer, u2Size);
-
-	return (ret >= 0)?WLAN_STATUS_SUCCESS:WLAN_STATUS_FAILURE;
-}
-
-uint32_t kalCloseCorDumpFile(u_int8_t fgIsN9)
-{
-	/* Move close-op to kalWriteCorDumpFile(). Do nothing here */
-
-	return WLAN_STATUS_SUCCESS;
-}
-#endif
 
 #if CFG_WOW_SUPPORT
 void kalWowInit(IN struct GLUE_INFO *prGlueInfo)

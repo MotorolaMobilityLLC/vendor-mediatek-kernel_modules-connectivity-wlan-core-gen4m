@@ -3046,16 +3046,6 @@ void nicCmdEventQueryRxStatistics(IN struct ADAPTER
 				  *prAdapter, IN struct CMD_INFO *prCmdInfo,
 				  IN uint8_t *pucEventBuf);
 
-uint32_t nicTsfRawData2IqFmt(struct EVENT_DUMP_MEM *prEventDumpMem,
-	struct ICAP_INFO_T *prIcap);
-uint32_t nicExtTsfRawData2IqFmt(
-	struct EXT_EVENT_RBIST_DUMP_DATA_T *prEventDumpMem,
-	struct ICAP_INFO_T *prIcap);
-
-int32_t GetIQData(struct ADAPTER *prAdapter,
-		  int32_t **prIQAry, uint32_t *prDataLen, uint32_t u4IQ,
-		  uint32_t u4GetWf1);
-
 #if CFG_SUPPORT_TX_BF
 void nicCmdEventPfmuDataRead(IN struct ADAPTER *prAdapter,
 	IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf);
@@ -3078,13 +3068,6 @@ void nicCmdEventQueryCalBackupV2(IN struct ADAPTER
 				 *prAdapter, IN struct CMD_INFO *prCmdInfo,
 				 IN uint8_t *pucEventBuf);
 #endif
-#if 0
-void nicEventQueryMemDump(IN struct ADAPTER *prAdapter,
-			  IN uint8_t *pucEventBuf);
-#endif
-
-void nicCmdEventQueryMemDump(IN struct ADAPTER *prAdapter,
-	IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf);
 
 void nicCmdEventQuerySwCtrlRead(IN struct ADAPTER
 				*prAdapter, IN struct CMD_INFO *prCmdInfo,
@@ -3241,8 +3224,6 @@ uint32_t nicCmdEventHostStatusEmiOffset(IN struct ADAPTER *prAdapter,
 
 void nicExtEventICapIQData(IN struct ADAPTER *prAdapter,
 			   IN uint8_t *pucEventBuf);
-void nicExtEventQueryMemDump(IN struct ADAPTER *prAdapter,
-			     IN uint8_t *pucEventBuf);
 void nicEventLinkQuality(IN struct ADAPTER *prAdapter,
 			 IN struct WIFI_EVENT *prEvent);
 void nicEventLayer0ExtMagic(IN struct ADAPTER *prAdapter,
@@ -3283,8 +3264,6 @@ void nicEventUpdateBcmDebug(IN struct ADAPTER *prAdapter,
 			    IN struct WIFI_EVENT *prEvent);
 void nicEventAddPkeyDone(IN struct ADAPTER *prAdapter,
 			 IN struct WIFI_EVENT *prEvent);
-void nicEventIcapDone(IN struct ADAPTER *prAdapter,
-		      IN struct WIFI_EVENT *prEvent);
 #if CFG_SUPPORT_CAL_RESULT_BACKUP_TO_HOST
 void nicEventCalAllDone(IN struct ADAPTER *prAdapter,
 			IN struct WIFI_EVENT *prEvent);
@@ -3298,8 +3277,6 @@ void nicEventRssiMonitor(IN struct ADAPTER *prAdapter,
 	IN struct WIFI_EVENT *prEvent);
 void nicEventDumpMem(IN struct ADAPTER *prAdapter,
 		     IN struct WIFI_EVENT *prEvent);
-void nicEventAssertDump(IN struct ADAPTER *prAdapter,
-			IN struct WIFI_EVENT *prEvent);
 void nicEventHifCtrl(IN struct ADAPTER *prAdapter,
 		     IN struct WIFI_EVENT *prEvent);
 void nicEventRddSendPulse(IN struct ADAPTER *prAdapter,

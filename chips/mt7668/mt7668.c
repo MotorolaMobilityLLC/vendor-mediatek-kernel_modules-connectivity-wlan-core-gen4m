@@ -502,8 +502,8 @@ struct RX_DESC_OPS_T mt7668RxDescOps = {
 struct ATE_OPS_T mt7668AteOps = {
 	.setICapStart = mt6632SetICapStart,
 	.getICapStatus = mt6632GetICapStatus,
-	.getICapIQData = commonGetICapIQData,
-	.getRbistDataDumpEvent = nicExtEventQueryMemDump,
+	.getICapIQData = NULL,
+	.getRbistDataDumpEvent = NULL,
 };
 #endif
 
