@@ -4544,6 +4544,8 @@ uint32_t ServiceWlanOid(void *winfos,
 		capability->ph_cap.bandwidth = BITS(0, 1);
 		if (prAdapter->rWifiVar.ucStaVht)
 			capability->ph_cap.bandwidth |= BIT(2);
+		if (prTestWinfo->chip_id == 0x37) /* 6637 */
+			capability->ph_cap.bandwidth |= BITS(3, 4);
 
 		/* ph_cap.channel_band_dbdc */
 		if (prAdapter->rWifiVar.eDbdcMode == ENUM_DBDC_MODE_DISABLED) {

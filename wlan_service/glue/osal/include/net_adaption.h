@@ -781,7 +781,7 @@ struct test_capability_ph_cap {
 
 	/* content: GET_CAPABILITY_TAG_PHY_LEN */
 
-	/* BIT0 : 11 a/b/g  BIT1: 11n , BIT2: 11ac , BIT3: 11ax */
+	/* BIT0: 11 a/b/g, BIT1: 11n, BIT2: 11ac, BIT3: 11ax */
 	u_int32 protocol;
 
 	/* 1:1x1, 2:2x2, ... */
@@ -790,17 +790,18 @@ struct test_capability_ph_cap {
 	/* BIT0: DBDC support */
 	u_int32 dbdc;
 
-	/* BIT0: TxLDPC , BTI1 : RxLDPC , BIT2: TxSTBC , BIT3: RxSTBC */
+	/* BIT0: TxLDPC, BTI1: RxLDPC, BIT2: TxSTBC, BIT3: RxSTBC */
 	u_int32 coding;
 
-	/* BIT0 : 2.4G  BIT1: 5G , BIT2: 6G */
+	/* BIT0: 2.4G, BIT1: 5G, BIT2: 6G */
 	u_int32 channel_band;
 
-	/* BIT0: BW20, BIT1:BW40, BIT2:BW80, BIT3:BW160, BIT4:BW80+80 */
+	/* BIT0: BW20, BIT1: BW40, BIT2: BW80 */
+	/* BIT3: BW160C, BIT4: BW80+80(BW160NC) */
 	u_int32 bandwidth;
 
-	/* BIT0 : Band0 2.4G  BIT1: Band1 5G , BIT2: Band0 6G */
-	/* BIT16 : Band1 2.4G  BIT17: Band1 5G , BIT18: Band1 6G */
+	/* BIT0: Band0 2.4G, BIT1: Band1 5G, BIT2: Band0 6G */
+	/* BIT16: Band1 2.4G, BIT17: Band1 5G, BIT18: Band1 6G */
 	u_int32 channel_band_dbdc;
 
 	u_int32 reserved[9];
