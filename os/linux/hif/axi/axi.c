@@ -548,6 +548,12 @@ static int axiAllocHifMem(struct platform_device *pdev,
 	kalSetDrvEmiMpuProtection(grMem.pucRsvMemBase, 0, grMem.u4RsvMemSize);
 
 	for (u4Idx = 0; u4Idx < NUM_OF_TX_RING; u4Idx++) {
+		if (u4Idx == TX_RING_DATA1_IDX_1 &&
+				!prChipInfo->bus_info->tx_ring1_data_idx)
+			continue;
+		else if (u4Idx == TX_RING_DATA2_IDX_2 &&
+				!prChipInfo->bus_info->tx_ring2_data_idx)
+			continue;
 		if (!axiAllocRsvMem(TX_RING_SIZE * TXD_SIZE,
 				    &grMem.rTxDesc[u4Idx]))
 			DBGLOG(INIT, ERROR, "TxDesc[%u] alloc fail\n", u4Idx);
@@ -1227,7 +1233,7 @@ static bool axiAllocTxCmdBuf(struct RTMP_DMABUF *prDmaBuf,
 			     uint32_t u4Num, uint32_t u4Idx)
 {
 	/* only for cmd & fw download ring */
-	if (u4Num == 2 || u4Num == 3) {
+	if (u4Num == TX_RING_CMD_IDX_3 || u4Num == TX_RING_FWDL_IDX_4) {
 		prDmaBuf->AllocSize = AXI_TX_CMD_BUFF_SIZE;
 		prDmaBuf->AllocPa = grMem.rTxCmdBuf[u4Idx].pa;
 		prDmaBuf->AllocVa = grMem.rTxCmdBuf[u4Idx].va;

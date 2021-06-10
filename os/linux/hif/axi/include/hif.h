@@ -224,6 +224,7 @@ struct BUS_INFO {
 	const uint32_t tx_ring_fwdl_idx;
 	const uint32_t tx_ring0_data_idx;
 	const uint32_t tx_ring1_data_idx;
+	const uint32_t tx_ring2_data_idx;
 	const uint32_t max_static_map_addr;
 	const uint32_t fw_own_clear_addr;
 	const uint32_t fw_own_clear_bit;
