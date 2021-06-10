@@ -9167,6 +9167,124 @@ void kalPrintLogLimited(const char *fmt, ...)
 	#endif
 }
 
+#if (CFG_SUPPORT_CONNINFRA == 1)
+void kalPwrLevelHdlrRegister(IN struct ADAPTER *prAdapter,
+					PFN_PWR_LEVEL_HANDLER hdlr)
+{
+	struct PWR_LEVEL_HANDLER_ELEMENT *prRegisterHdlr;
+
+	prRegisterHdlr = (struct PWR_LEVEL_HANDLER_ELEMENT *)
+			kalMemAlloc(sizeof(struct PWR_LEVEL_HANDLER_ELEMENT),
+			VIR_MEM_TYPE);
+	if (!prRegisterHdlr) {
+		DBGLOG(INIT, WARN, "prRegisterHdlr memory alloc fail!\n");
+		return;
+	}
+
+	prRegisterHdlr->prPwrLevelHandler = hdlr;
+
+	LINK_INSERT_HEAD(&prAdapter->rPwrLevelHandlerList,
+		&prRegisterHdlr->rLinkEntry);
+
+	prRegisterHdlr->prPwrLevelHandler(prAdapter, prAdapter->u4PwrLevel);
+}
+
+void
+connsysPowerLevelNotify(IN struct ADAPTER *prAdapter,
+				IN struct MSG_HDR *prMsgHdr)
+{
+	struct CMD_HEADER rCmdV1Header;
+	struct CMD_FORMAT_V1 rCmd_v1;
+	struct MSG_PWR_LEVEL_NOTIFY *prPwrLevelMsg;
+	struct LINK *prPwrLevelHandlerList;
+	struct PWR_LEVEL_HANDLER_ELEMENT  *prPwrLevelHdlr = NULL;
+	uint8_t aucCmdValue[MAX_CMD_VALUE_MAX_LENGTH] = { 0 };
+	uint32_t u4PwrLevel;
+	uint32_t rStatus = WLAN_STATUS_SUCCESS;
+	int ret = -1;
+
+	prPwrLevelHandlerList = &(prAdapter->rPwrLevelHandlerList);
+
+	/* Extract information of Message and then free memory. */
+	prPwrLevelMsg = (struct MSG_PWR_LEVEL_NOTIFY *)prMsgHdr;
+	u4PwrLevel = prPwrLevelMsg->level;
+	prAdapter->u4PwrLevel = u4PwrLevel;
+
+	kalMemFree(prMsgHdr, VIR_MEM_TYPE, sizeof(struct MSG_PWR_LEVEL_NOTIFY));
+
+	/* Notify registered handler. */
+	LINK_FOR_EACH_ENTRY(prPwrLevelHdlr, prPwrLevelHandlerList, rLinkEntry,
+		    struct PWR_LEVEL_HANDLER_ELEMENT) {
+		ret = prPwrLevelHdlr->prPwrLevelHandler(prAdapter, u4PwrLevel);
+		if (ret != 0)
+			DBGLOG(INIT, WARN, "Fail!\n");
+	}
+
+	/* Notify firmware. */
+	rCmdV1Header.cmdType = CMD_TYPE_SET;
+	rCmdV1Header.cmdVersion = CMD_VER_1;
+	rCmdV1Header.cmdBufferLen = 0;
+	rCmdV1Header.itemNum = 0;
+
+	kalMemSet(rCmdV1Header.buffer, 0, MAX_CMD_BUFFER_LENGTH);
+	kalMemSet(&rCmd_v1, 0, sizeof(struct CMD_FORMAT_V1));
+
+	rCmd_v1.itemType = ITEM_TYPE_STR;
+	rCmd_v1.itemStringLength = kalStrLen("PowerLevelNotify");
+	kalMemZero(rCmd_v1.itemString, MAX_CMD_NAME_MAX_LENGTH);
+	kalMemCopy(rCmd_v1.itemString, "PowerLevelNotify",
+		rCmd_v1.itemStringLength);
+
+	kalSnprintf(aucCmdValue, sizeof(aucCmdValue), "%d", u4PwrLevel);
+	rCmd_v1.itemValueLength = sizeof(aucCmdValue);
+	kalMemZero(rCmd_v1.itemValue, MAX_CMD_VALUE_MAX_LENGTH);
+	kalMemCopy(rCmd_v1.itemValue, aucCmdValue, sizeof(aucCmdValue));
+
+	kalMemCopy(((struct CMD_FORMAT_V1 *)rCmdV1Header.buffer),
+			&rCmd_v1,  sizeof(struct CMD_FORMAT_V1));
+
+	rCmdV1Header.cmdBufferLen += sizeof(struct CMD_FORMAT_V1);
+	rCmdV1Header.itemNum = 1;
+
+	rStatus = wlanSendSetQueryCmd(
+			prAdapter, /* prAdapter */
+			CMD_ID_GET_SET_CUSTOMER_CFG, /* 0x70 */
+			TRUE,  /* fgSetQuery */
+			FALSE, /* fgNeedResp */
+			FALSE, /* fgIsOid */
+			NULL,  /* pfCmdDoneHandler*/
+			NULL,  /* pfCmdTimeoutHandler */
+			sizeof(struct CMD_HEADER),
+			(uint8_t *)&rCmdV1Header, /* pucInfoBuffer */
+			NULL,  /* pvSetQueryBuffer */
+			0      /* u4SetQueryBufferLen */
+		);
+}
+
+void
+connsysPowerTempNotify(IN struct ADAPTER *prAdapter,
+				IN struct MSG_HDR *prMsgHdr)
+{
+	struct MSG_PWR_TEMP_NOTIFY *prPwrTempMsg;
+	uint32_t u4MaxTemp, u4RecoveryTemp;
+
+	/* Extract information of Message and then free memory. */
+	prPwrTempMsg = (struct MSG_PWR_TEMP_NOTIFY *)prMsgHdr;
+	u4MaxTemp = prPwrTempMsg->u4MaxTemp;
+	u4RecoveryTemp = prPwrTempMsg->u4RecoveryTemp;
+
+	kalMemFree(prMsgHdr, VIR_MEM_TYPE, sizeof(struct MSG_PWR_LEVEL_NOTIFY));
+
+	/* ToDo: thrmProtTempConfig(prAdapter, u4MaxTemp, u4RecoveryTemp) */
+}
+
+void connsysPowerTempUpdate(enum conn_pwr_msg_type status,
+					int currentTemp)
+{
+	conn_pwr_send_msg(CONN_PWR_DRV_WIFI, status, &currentTemp);
+}
+#endif
+
 #if KERNEL_VERSION(5, 4, 0) <= CFG80211_VERSION_CODE
 MODULE_IMPORT_NS(VFS_internal_I_am_really_a_filesystem_and_am_NOT_a_driver);
 #endif

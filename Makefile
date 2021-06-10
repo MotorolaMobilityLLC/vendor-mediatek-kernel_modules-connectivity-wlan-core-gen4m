@@ -271,6 +271,7 @@ ifeq ($(CONFIG_MTK_WIFI_CONNINFRA_SUPPORT), y)
     ccflags-y += -DCFG_SUPPORT_CONNINFRA=1
     ccflags-y += -DCFG_SUPPORT_PRE_ON_PHY_ACTION=1
     ccflags-y += -I$(TOP)/vendor/mediatek/kernel_modules/connectivity/conninfra/include
+    ccflags-y += -I$(srctree)/drivers/misc/mediatek/connectivity/power_throttling
     ccflags-y += -DCFG_ANDORID_CONNINFRA_COREDUMP_SUPPORT=1
     ifneq ($(CONFIG_MTK_CONNSYS_DEDICATED_LOG_PATH),)
         ccflags-y += -I$(TOP)/vendor/mediatek/kernel_modules/connectivity/conninfra/include
