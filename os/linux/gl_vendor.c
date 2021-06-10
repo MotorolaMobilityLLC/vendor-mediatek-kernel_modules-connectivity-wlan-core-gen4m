@@ -1806,7 +1806,8 @@ int mtk_cfg80211_vendor_dfs_capability(struct wiphy *wiphy,
 	ASSERT(wdev);
 
 #if CFG_SUPPORT_DFS_MASTER
-	dfs_capability = 1;
+	if (wdev->iftype != NL80211_IFTYPE_AP)
+		dfs_capability = 1;
 #endif
 
 	reply_skb = cfg80211_vendor_cmd_alloc_reply_skb(wiphy,
