@@ -632,9 +632,11 @@ static u_int8_t scanSanityCheckBssDesc(struct ADAPTER *prAdapter,
 			aisGetTargetBssDesc(prAdapter, AIS_DEFAULT_INDEX);
 
 		if (target && prBssDesc->eBand == target->eBand) {
-			log_dbg(SCN, WARN, MACSTR" band %d used by main\n",
+			log_dbg(SCN, WARN,
+				MACSTR" used the same band with main\n",
 				MAC2STR(prBssDesc->aucBSSID));
-			return FALSE;
+			if (!prAdapter->rWifiVar.fgAllowSameBandDualSta)
+				return FALSE;
 		}
 	}
 
