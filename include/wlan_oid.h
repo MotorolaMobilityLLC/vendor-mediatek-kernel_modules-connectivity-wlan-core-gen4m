@@ -1535,6 +1535,18 @@ struct PARAM_CUSTOM_SW_CTRL_STRUCT {
 	uint32_t u4Data;
 };
 
+#if (CFG_SUPPORT_ICS == 1)
+struct PARAM_CUSTOM_ICS_SNIFFER_INFO_STRUCT {
+	/* Include system all and PSSniffer */
+	uint8_t ucModule;
+	uint8_t ucAction;
+	uint8_t ucFilter;
+	uint8_t ucOperation;
+	uint16_t ucCondition[6];
+	uint8_t  aucPadding0[64];
+};
+#endif /* CFG_SUPPORT_ICS */
+
 struct PARAM_CUSTOM_CHIP_CONFIG_STRUCT {
 	uint16_t u2Id;
 	uint8_t ucType;
@@ -3151,6 +3163,12 @@ wlanoidSetChipConfig(IN struct ADAPTER *prAdapter,
 		     IN void *pvSetBuffer,
 		     IN uint32_t u4SetBufferLen,
 		     OUT uint32_t *pu4SetInfoLen);
+#if (CFG_SUPPORT_ICS == 1)
+uint32_t
+wlanoidSetIcsSniffer(IN struct ADAPTER *prAdapter,
+		      IN void *pvSetBuffer, IN uint32_t u4SetBufferLen,
+		      OUT uint32_t *pu4SetInfoLen);
+#endif /* CFG_SUPPORT_ICS */
 
 uint32_t
 wlanoidQueryChipConfig(IN struct ADAPTER *prAdapter,

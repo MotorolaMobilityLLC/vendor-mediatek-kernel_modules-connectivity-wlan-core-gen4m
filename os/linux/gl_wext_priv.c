@@ -3370,6 +3370,10 @@ reqExtSetAcpiDevicePowerState(IN struct GLUE_INFO
 #define CMD_TX_POWER_MANUAL_SET "TxPwrManualSet"
 #define CMD_GET_HAPD_CHANNEL       "HAPD_GET_CHANNEL"
 
+#if (CFG_SUPPORT_ICS == 1)
+#define CMD_SET_SNIFFER         "SNIFFER"
+#endif /* CFG_SUPPORT_ICS */
+
 /* neptune doens't support "show" entry, use "driver" to handle
  * MU GET request, and MURX_PKTCNT comes from RX_STATS,
  * so this command will reuse RX_STAT's flow
@@ -7697,7 +7701,70 @@ int priv_driver_set_sw_ctrl(IN struct net_device *prNetDev, IN char *pcCommand,
 
 }				/* priv_driver_set_sw_ctrl */
 
+#if (CFG_SUPPORT_ICS == 1)
+static int priv_driver_sniffer(IN struct net_device *prNetDev,
+				  IN char *pcCommand, IN int i4TotalLen)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct ADAPTER *prAdapter = NULL;
+	uint32_t rStatus = WLAN_STATUS_SUCCESS;
+	uint32_t u4BufLen = 0;
+	int32_t i4BytesWritten = 0;
+	int32_t i4Argc = 0;
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
+	int32_t i4Recv = 0;
+	int8_t *this_char = NULL;
+	struct PARAM_CUSTOM_ICS_SNIFFER_INFO_STRUCT rSniffer;
 
+	ASSERT(prNetDev);
+	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
+		return -1;
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+	prAdapter = prGlueInfo->prAdapter;
+
+	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+	DBGLOG(REQ, LOUD, "argc is %d, apcArgv[0] = %s\n\n", i4Argc, *apcArgv);
+
+	this_char = kalStrStr(*apcArgv, "=");
+	if (!this_char)
+		return -1;
+	this_char++;
+
+	kalMemZero(&rSniffer,
+		sizeof(struct PARAM_CUSTOM_ICS_SNIFFER_INFO_STRUCT));
+	i4Recv = sscanf(this_char,
+		"%d-%d-%d-%d-%x-%d-%d-%d-%d-%d",
+		&(rSniffer.ucModule),
+		&(rSniffer.ucAction),
+		&(rSniffer.ucFilter),
+		&(rSniffer.ucOperation),
+		&(rSniffer.ucCondition[0]),
+		&(rSniffer.ucCondition[1]),
+		&(rSniffer.ucCondition[2]),
+		&(rSniffer.ucCondition[3]),
+		&(rSniffer.ucCondition[4]),
+		&(rSniffer.ucCondition[5]));
+	if (i4Recv == 10) {
+		if (rSniffer.ucModule == 2) {
+			DBGLOG(REQ, INFO, "An ICS cmd");
+			rStatus = kalIoctl(prGlueInfo,
+				wlanoidSetIcsSniffer,
+				&rSniffer, sizeof(rSniffer),
+				FALSE, FALSE, TRUE, &u4BufLen);
+			if (rStatus != WLAN_STATUS_SUCCESS)
+				return -1;
+		} else {
+			/* reserve for PSS sniffer and system overall setting*/
+			DBGLOG(REQ, ERROR, "Not an ICS cmd");
+		}
+	} else {
+		DBGLOG(REQ, ERROR,
+			"SNIFFER CMD: Number of PARAMETERS is WRONG\n");
+	}
+	return i4BytesWritten;
+}
+#endif /* CFG_SUPPORT_ICS */
 
 int priv_driver_set_fixed_rate(IN struct net_device *prNetDev,
 			       IN char *pcCommand, IN int i4TotalLen)
@@ -14101,6 +14168,9 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers[] = {
 #endif
 	{CMD_TX_POWER_MANUAL_SET, priv_driver_txpower_man_set},
 	{CMD_SET_FIXED_RATE, priv_driver_set_fixed_rate},
+#if (CFG_SUPPORT_ICS == 1)
+	{CMD_SET_SNIFFER, priv_driver_sniffer},
+#endif /* CFG_SUPPORT_ICS */
 	{CMD_GET_SW_CTRL, priv_driver_get_sw_ctrl},
 	{CMD_SET_MCR, priv_driver_set_mcr},
 	{CMD_GET_MCR, priv_driver_get_mcr},

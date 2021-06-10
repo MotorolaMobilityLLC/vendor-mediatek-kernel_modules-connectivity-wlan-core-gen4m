@@ -2698,6 +2698,23 @@ struct EVENT_WIFI_RDD_TEST {
 	uint8_t aucBuffer[0];
 };
 
+#if (CFG_SUPPORT_ICS == 1)
+struct CMD_ICS_SNIFFER_INFO {
+	/* DWORD_0 - Common Part*/
+	/*Include system all and PSSniffer */
+	uint8_t	ucCmdVer;
+	uint8_t	ucAction;
+	uint16_t u2CmdLen;
+	/* DWORD_1 ~ x */
+	uint8_t ucModule;
+	uint8_t ucFilter;
+	uint8_t ucOperation;
+	uint8_t aucPadding0;
+	uint16_t ucCondition[6];
+	uint8_t aucPadding1[64];
+};
+#endif /* CFG_SUPPORT_ICS */
+
 #if CFG_SUPPORT_MSP
 /* EVENT_ID_WTBL_INFO */
 struct EVENT_WLAN_INFO {

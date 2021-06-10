@@ -1695,6 +1695,10 @@ void kalSchedScanStopped(IN struct GLUE_INFO *prGlueInfo,
 
 void kalSetFwOwnEvent2Hif(struct GLUE_INFO *pr);
 #if CFG_ASSERT_DUMP
+#if (CFG_SUPPORT_ICS == 1)
+uint32_t kalOpenIcsDumpFile(void);
+uint32_t kalWriteIcsDumpFile(uint8_t *pucBuffer, uint16_t u2Size);
+#endif /* CFG_SUPPORT_ICS */
 /* Core Dump out put file */
 uint32_t kalOpenCorDumpFile(u_int8_t fgIsN9);
 uint32_t kalWriteCorDumpFile(uint8_t *pucBuffer,
