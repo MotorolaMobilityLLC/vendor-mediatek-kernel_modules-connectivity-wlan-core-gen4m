@@ -3151,7 +3151,10 @@ void nicInitMGMT(IN struct ADAPTER *prAdapter,
 	uint8_t i;
 
 	ASSERT(prAdapter);
-
+#if (CFG_SUPPORT_CONNINFRA == 1 && CFG_SUPPORT_CNM_POWER_CTRL == 1)
+	/* register for power level control */
+	kalPwrLevelHdlrRegister(prAdapter, cnmPowerControl);
+#endif
 	/* CNM Module - initialization */
 	cnmInit(prAdapter);
 
