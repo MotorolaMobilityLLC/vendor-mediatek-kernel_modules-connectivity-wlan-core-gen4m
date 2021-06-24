@@ -9213,6 +9213,9 @@ connsysPowerLevelNotify(IN struct ADAPTER *prAdapter,
 
 	kalMemFree(prMsgHdr, VIR_MEM_TYPE, sizeof(struct MSG_PWR_LEVEL_NOTIFY));
 
+	DBGLOG(INIT, TRACE, "Notify each handler new power level: %d\n",
+								u4PwrLevel);
+
 	/* Notify registered handler. */
 	LINK_FOR_EACH_ENTRY(prPwrLevelHdlr, prPwrLevelHandlerList, rLinkEntry,
 		    struct PWR_LEVEL_HANDLER_ELEMENT) {
@@ -9247,6 +9250,8 @@ connsysPowerLevelNotify(IN struct ADAPTER *prAdapter,
 	rCmdV1Header.cmdBufferLen += sizeof(struct CMD_FORMAT_V1);
 	rCmdV1Header.itemNum = 1;
 
+	DBGLOG(INIT, TRACE, "Notify FW new power level: %d\n", u4PwrLevel);
+
 	rStatus = wlanSendSetQueryCmd(
 			prAdapter, /* prAdapter */
 			CMD_ID_GET_SET_CUSTOMER_CFG, /* 0x70 */
@@ -9276,12 +9281,17 @@ connsysPowerTempNotify(IN struct ADAPTER *prAdapter,
 
 	kalMemFree(prMsgHdr, VIR_MEM_TYPE, sizeof(struct MSG_PWR_LEVEL_NOTIFY));
 
+	DBGLOG(INIT, TRACE, "Notify FW new temp info: %d, %d\n",
+						u4MaxTemp, u4RecoveryTemp);
+
 	/* ToDo: thrmProtTempConfig(prAdapter, u4MaxTemp, u4RecoveryTemp) */
 }
 
 void connsysPowerTempUpdate(enum conn_pwr_msg_type status,
 					int currentTemp)
 {
+	DBGLOG(INIT, INFO, "Update power message type %d, current temp: %d\n",
+				status, currentTemp);
 	conn_pwr_send_msg(CONN_PWR_DRV_WIFI, status, &currentTemp);
 }
 #endif
