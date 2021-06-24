@@ -451,6 +451,9 @@ ccflags-y += -I$(srctree)/net
 
 ifneq ($(CONFIG_MTK_MDDP_SUPPORT),)
 ccflags-y += -I$(srctree)/drivers/misc/mediatek/mddp/include/
+ccflags-y += -DCFG_MTK_MDDP_SUPPORT=1
+else
+ccflags-y += -DCFG_MTK_MDDP_SUPPORT=0
 endif
 
 ifeq ($(CONFIG_MTK_COMBO_WIFI_HIF), sdio)

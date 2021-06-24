@@ -1631,7 +1631,7 @@ struct net_device_stats *wlanGetStats(IN struct net_device
 			netdev_priv(prDev);
 	kalMemCopy(&prNetDevPrivate->stats, &prDev->stats,
 			sizeof(struct net_device_stats));
-#if IS_ENABLED(CONFIG_MTK_MDDP_SUPPORT)
+#if CFG_MTK_MDDP_SUPPORT
 	mddpGetMdStats(prDev);
 #endif
 
@@ -2222,7 +2222,7 @@ static int32_t wlanNetRegister(struct wireless_dev *prWdev)
 #if CFG_ENABLE_UNIFY_WIPHY
 			prNetDevPrivate->ucIsP2p = FALSE;
 #endif
-#if IS_ENABLED(CONFIG_MTK_MDDP_SUPPORT)
+#if CFG_MTK_MDDP_SUPPORT
 			/* only wlan0 supports mddp */
 			prNetDevPrivate->ucMddpSupport = (u4Idx == 0);
 #else
@@ -5035,14 +5035,14 @@ static int32_t wlanProbe(void *pvData, void *pvDriverData)
 	struct WIFI_VAR *prWifiVar;
 	uint32_t u4Idx = 0;
 
-#if IS_ENABLED(CONFIG_MTK_MDDP_SUPPORT)
+#if CFG_MTK_MDDP_SUPPORT
 	mddpNotifyWifiOnStart();
 #endif
 
 #if CFG_CHIP_RESET_SUPPORT
 	if (fgSimplifyResetFlow) {
 		i4Status = wlanOnAtReset();
-#if IS_ENABLED(CONFIG_MTK_MDDP_SUPPORT)
+#if CFG_MTK_MDDP_SUPPORT
 		if (i4Status == WLAN_STATUS_SUCCESS)
 			mddpNotifyWifiOnEnd();
 #endif
@@ -5235,7 +5235,7 @@ static int32_t wlanProbe(void *pvData, void *pvDriverData)
 		       "wlanProbe: probe success, feature set: 0x%llx, persistNetdev: %d\n",
 		       wlanGetSupportedFeatureSet(prGlueInfo),
 		       CFG_SUPPORT_PERSIST_NETDEV);
-#if IS_ENABLED(CONFIG_MTK_MDDP_SUPPORT)
+#if CFG_MTK_MDDP_SUPPORT
 		mddpNotifyWifiOnEnd();
 #endif
 	} else {
@@ -5347,7 +5347,7 @@ static void wlanRemove(void)
 	if (g_NvramFsm == NVRAM_STATE_SEND_TO_FW)
 		g_NvramFsm = NVRAM_STATE_READY;
 
-#if IS_ENABLED(CONFIG_MTK_MDDP_SUPPORT)
+#if CFG_MTK_MDDP_SUPPORT
 	mddpNotifyWifiOffStart();
 #endif
 
@@ -5357,7 +5357,7 @@ static void wlanRemove(void)
 	 */
 	if (fgSimplifyResetFlow) {
 		if (wlanOffAtReset() == WLAN_STATUS_SUCCESS) {
-#if IS_ENABLED(CONFIG_MTK_MDDP_SUPPORT)
+#if CFG_MTK_MDDP_SUPPORT
 			mddpNotifyWifiOffEnd();
 #endif
 			return;
@@ -5561,7 +5561,7 @@ static void wlanRemove(void)
 #endif
 #endif
 
-#if IS_ENABLED(CONFIG_MTK_MDDP_SUPPORT)
+#if CFG_MTK_MDDP_SUPPORT
 	mddpNotifyWifiOffEnd();
 #endif
 }				/* end of wlanRemove() */
@@ -5681,7 +5681,7 @@ static int initWlan(void)
 #endif /* CFG_SUPPORT_ICS */
 #endif
 
-#if IS_ENABLED(CONFIG_MTK_MDDP_SUPPORT)
+#if CFG_MTK_MDDP_SUPPORT
 	mddpInit();
 #endif
 
@@ -5757,7 +5757,7 @@ static void exitWlan(void)
 	kfree((const void *)gConEmiPhyBase);
 #endif
 
-#if IS_ENABLED(CONFIG_MTK_MDDP_SUPPORT)
+#if CFG_MTK_MDDP_SUPPORT
 	mddpUninit();
 #endif
 

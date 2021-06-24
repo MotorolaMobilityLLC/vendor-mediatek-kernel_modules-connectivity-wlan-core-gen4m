@@ -80,7 +80,7 @@
 #include "fw_log_wifi.h"
 #endif
 
-#if IS_ENABLED(CONFIG_MTK_MDDP_SUPPORT)
+#if CFG_MTK_MDDP_SUPPORT
 #include "mddp.h"
 #endif
 
@@ -329,7 +329,7 @@ u_int8_t glResetTrigger(struct ADAPTER *prAdapter,
 	if (kalIsResetting())
 		return fgResult;
 
-#if IS_ENABLED(CONFIG_MTK_MDDP_SUPPORT)
+#if CFG_MTK_MDDP_SUPPORT
 	mddpNotifyWifiReset();
 #endif
 

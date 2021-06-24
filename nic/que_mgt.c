@@ -588,7 +588,7 @@ void qmActivateStaRec(IN struct ADAPTER *prAdapter,
 		(prStaRec->aprRxReorderParamRefTbl)[i] = NULL;
 #endif
 
-#if IS_ENABLED(CONFIG_MTK_MDDP_SUPPORT)
+#if CFG_MTK_MDDP_SUPPORT
 	if (mddpIsSupportMcifWifi())
 		mddpNotifyDrvTxd(prAdapter, prStaRec, TRUE);
 #endif
@@ -654,7 +654,7 @@ void qmDeactivateStaRec(IN struct ADAPTER *prAdapter,
 
 	qmUpdateStaRec(prAdapter, prStaRec);
 
-#if IS_ENABLED(CONFIG_MTK_MDDP_SUPPORT)
+#if CFG_MTK_MDDP_SUPPORT
 	if (mddpIsSupportMcifWifi())
 		mddpNotifyDrvTxd(prAdapter, prStaRec, FALSE);
 #endif
@@ -4839,7 +4839,7 @@ void qmHandleEventTxAddBa(IN struct ADAPTER *prAdapter,
 	prStaRec->u4MaxMpduLen = prEventTxAddBa->u4MaxMpduLen;
 	prStaRec->u4MinMpduLen = prEventTxAddBa->u4MinMpduLen;
 
-#if IS_ENABLED(CONFIG_MTK_MDDP_SUPPORT)
+#if CFG_MTK_MDDP_SUPPORT
 	if (mddpIsSupportMcifWifi())
 		mddpNotifyDrvTxd(prAdapter, prStaRec, TRUE);
 #endif
@@ -8546,7 +8546,7 @@ qmIsNoDropPacket(IN struct ADAPTER *prAdapter, IN struct SW_RFB *prSwRfb)
 		fgCheckDrop = TRUE;
 #endif
 
-#if IS_ENABLED(CONFIG_MTK_MDDP_SUPPORT)
+#if CFG_MTK_MDDP_SUPPORT
 	if (!fgCheckDrop && mddpIsSupportMddpWh() &&
 	    prAdapter->fgMddpActivated &&
 	    prBssInfo && prBssInfo->eNetworkType == NETWORK_TYPE_P2P) {

@@ -24,7 +24,7 @@
 */
 #include "precomp.h"
 
-#if IS_ENABLED(CONFIG_MTK_MDDP_SUPPORT)
+#if CFG_MTK_MDDP_SUPPORT
 
 #include "gl_os.h"
 #include "mddp_export.h"
@@ -55,34 +55,6 @@ struct mddp_drv_conf_t gMddpDrvConf = {
 struct mddp_drv_handle_t gMddpFunc = {
 	.change_state = mddpChangeState,
 };
-
-#define MD_ON_OFF_TIMEOUT 1000
-#if (CFG_SUPPORT_CONNAC2X == 1)
-#define MD_STATUS_SYNC_CR 0x180600F4
-#define MD_LPCTL_ADDR 0x18060050
-#else
-#define MD_STATUS_SYNC_CR 0x1800701C
-#define MD_LPCTL_ADDR 0x18007030
-#endif
-#define MD_SUPPORT_MDDP_STATUS_SYNC_CR_BIT BIT(0)
-#define MD_STATUS_OFF_SYNC_BIT BIT(1)
-#define MD_STATUS_ON_SYNC_BIT BIT(2)
-
-#define MD_AOR_SET_CR_ADDR 0x10001BEC
-#define MD_AOR_CLR_CR_ADDR 0x10001BF0
-#define MD_AOR_RD_CR_ADDR 0x10001BF4
-#define MD_AOR_MD_INIT_BIT BIT(8)
-#define MD_AOR_MD_OFF_BIT BIT(9)
-#define MD_AOR_MD_RDY_BIT BIT(10)
-#define MD_AOR_WIFI_ON_BIT BIT(11)
-
-#if (CFG_SUPPORT_CONNAC2X == 0)
-/* Use SER dummy register for mddp support flag */
-#define MDDP_SUPPORT_CR 0x820600d0
-#define MDDP_SUPPORT_CR_BIT BIT(23)
-#endif
-
-#define MDDP_LPCR_MD_SET_FW_OWN BIT(0)
 
 /*******************************************************************************
 *                           P R I V A T E   D A T A
@@ -129,7 +101,7 @@ enum BOOTMODE {
 
 enum BOOTMODE g_wifi_boot_mode = NORMAL_BOOT;
 u_int8_t g_fgMddpEnabled = TRUE;
-bool g_fgIsSupportAOR;
+struct MDDP_SETTINGS g_rSettings;
 
 struct mddpw_net_stat_ext_t stats;
 
@@ -138,10 +110,56 @@ struct mddpw_net_stat_ext_t stats;
 ********************************************************************************
 */
 
-static void clear_md_wifi_off_bit(void);
-static void clear_md_wifi_on_bit(void);
 static bool wait_for_md_on_complete(void);
 static void save_mddp_stats(void);
+
+static void mddpRdFunc(struct MDDP_SETTINGS *prSettings, uint32_t *pu4Val)
+{
+	if (!prSettings->u4SyncAddr)
+		return;
+
+	wf_ioremap_read(prSettings->u4SyncAddr, pu4Val);
+}
+
+static void mddpSetFuncV1(struct MDDP_SETTINGS *prSettings, uint32_t u4Bit)
+{
+	uint32_t u4Value = 0;
+
+	if (!prSettings->u4SyncAddr || u4Bit == 0)
+		return;
+
+	wf_ioremap_read(prSettings->u4SyncAddr, &u4Value);
+	u4Value |= u4Bit;
+	wf_ioremap_write(prSettings->u4SyncAddr, u4Value);
+}
+
+static void mddpClrFuncV1(struct MDDP_SETTINGS *prSettings, uint32_t u4Bit)
+{
+	uint32_t u4Value = 0;
+
+	if (!prSettings->u4SyncAddr || u4Bit == 0)
+		return;
+
+	wf_ioremap_read(prSettings->u4SyncAddr, &u4Value);
+	u4Value &= ~u4Bit;
+	wf_ioremap_write(prSettings->u4SyncAddr, u4Value);
+}
+
+static void mddpSetFuncV2(struct MDDP_SETTINGS *prSettings, uint32_t u4Bit)
+{
+	if (!prSettings->u4SyncSetAddr || u4Bit == 0)
+		return;
+
+	wf_ioremap_write(prSettings->u4SyncSetAddr, u4Bit);
+}
+
+static void mddpClrFuncV2(struct MDDP_SETTINGS *prSettings, uint32_t u4Bit)
+{
+	if (!prSettings->u4SyncClrAddr || u4Bit == 0)
+		return;
+
+	wf_ioremap_write(prSettings->u4SyncClrAddr, u4Bit);
+}
 
 static int32_t mddpRegisterCb(void)
 {
@@ -479,10 +497,11 @@ int32_t mddpNotifyWifiOnEnd(void)
 	if (!mddpIsSupportMcifWifi())
 		return ret;
 
-	if (g_fgIsSupportAOR)
-		wf_ioremap_write(MD_AOR_SET_CR_ADDR, MD_AOR_WIFI_ON_BIT);
+	if (g_rSettings.rOps.set)
+		g_rSettings.rOps.set(&g_rSettings, g_rSettings.u4WifiOnBit);
 
-	clear_md_wifi_on_bit();
+	if (g_rSettings.rOps.clr)
+		g_rSettings.rOps.clr(&g_rSettings, g_rSettings.u4MdOnBit);
 #if (CFG_SUPPORT_CONNAC2X == 0)
 	ret = mddpNotifyWifiStatus(MDDPW_DRV_INFO_WLAN_ON_END);
 #else
@@ -502,15 +521,20 @@ void mddpNotifyWifiOffStart(void)
 	if (!mddpIsSupportMcifWifi())
 		return;
 
-	if (g_fgIsSupportAOR) {
-		wf_ioremap_write(MD_AOR_CLR_CR_ADDR,
-				 MD_AOR_WIFI_ON_BIT | MD_AOR_MD_INIT_BIT);
+	if (g_rSettings.rOps.clr) {
+		g_rSettings.rOps.clr(
+			&g_rSettings,
+			g_rSettings.u4WifiOnBit | g_rSettings.u4MdInitBit);
 	}
 
 	mddpSetMDFwOwn();
 
 	mtk_ccci_register_md_state_cb(NULL);
-	clear_md_wifi_off_bit();
+
+	DBGLOG(INIT, INFO, "md off start.\n");
+	if (g_rSettings.rOps.set)
+		g_rSettings.rOps.set(&g_rSettings, g_rSettings.u4MdOffBit);
+
 	ret = mddpNotifyWifiStatus(MDDPW_DRV_INFO_WLAN_OFF_START);
 }
 
@@ -527,8 +551,8 @@ void mddpNotifyWifiReset(void)
 	if (!mddpIsSupportMcifWifi())
 		return;
 
-	if (g_fgIsSupportAOR)
-		wf_ioremap_write(MD_AOR_CLR_CR_ADDR, MD_AOR_WIFI_ON_BIT);
+	if (g_rSettings.rOps.clr)
+		g_rSettings.rOps.clr(&g_rSettings, g_rSettings.u4WifiOnBit);
 }
 
 int32_t mddpMdNotifyInfo(struct mddpw_md_notify_info_t *prMdInfo)
@@ -668,25 +692,6 @@ int32_t mddpChangeState(enum mddp_state_e event, void *buf, uint32_t *buf_len)
 
 }
 
-static void clear_md_wifi_off_bit(void)
-{
-	uint32_t u4Value = 0;
-
-	DBGLOG(INIT, INFO, "md off start.\n");
-	wf_ioremap_read(MD_STATUS_SYNC_CR, &u4Value);
-	u4Value |= MD_STATUS_OFF_SYNC_BIT;
-	wf_ioremap_write(MD_STATUS_SYNC_CR, u4Value);
-}
-
-static void clear_md_wifi_on_bit(void)
-{
-	uint32_t u4Value = 0;
-
-	wf_ioremap_read(MD_STATUS_SYNC_CR, &u4Value);
-	u4Value &= ~MD_STATUS_ON_SYNC_BIT;
-	wf_ioremap_write(MD_STATUS_SYNC_CR, u4Value);
-}
-
 static bool wait_for_md_on_complete(void)
 {
 	uint32_t u4Value = 0;
@@ -702,7 +707,8 @@ static bool wait_for_md_on_complete(void)
 	}
 
 	do {
-		wf_ioremap_read(MD_STATUS_SYNC_CR, &u4Value);
+		if (g_rSettings.rOps.rd)
+			g_rSettings.rOps.rd(&g_rSettings, &u4Value);
 
 		if ((u4Value & MD_STATUS_ON_SYNC_BIT) > 0) {
 			DBGLOG(INIT, INFO, "md on end.\n");
@@ -736,7 +742,26 @@ void setMddpSupportRegister(IN struct ADAPTER *prAdapter)
 #endif
 
 	prChipInfo = prAdapter->chip_info;
-	g_fgIsSupportAOR = prChipInfo->isSupportMddpAOR;
+
+	if (prChipInfo->isSupportMddpAOR) {
+		g_rSettings.rOps.rd = mddpRdFunc;
+		g_rSettings.rOps.set = mddpSetFuncV2;
+		g_rSettings.rOps.clr = mddpClrFuncV2;
+		g_rSettings.u4SyncAddr = MD_AOR_RD_CR_ADDR;
+		g_rSettings.u4SyncSetAddr = MD_AOR_SET_CR_ADDR;
+		g_rSettings.u4SyncClrAddr = MD_AOR_CLR_CR_ADDR;
+		g_rSettings.u4MdInitBit = MD_AOR_MD_INIT_BIT;
+		g_rSettings.u4MdOnBit = MD_AOR_MD_RDY_BIT;
+		g_rSettings.u4MdOffBit = MD_AOR_MD_OFF_BIT;
+		g_rSettings.u4WifiOnBit = MD_AOR_WIFI_ON_BIT;
+	} else {
+		g_rSettings.rOps.rd = mddpRdFunc;
+		g_rSettings.rOps.set = mddpSetFuncV1;
+		g_rSettings.rOps.clr = mddpClrFuncV1;
+		g_rSettings.u4SyncAddr = MD_STATUS_SYNC_CR;
+		g_rSettings.u4MdOnBit = MD_STATUS_ON_SYNC_BIT;
+		g_rSettings.u4MdOffBit = MD_STATUS_OFF_SYNC_BIT;
+	}
 
 #if (CFG_SUPPORT_CONNAC2X == 0)
 	HAL_MCR_RD(prAdapter, MDDP_SUPPORT_CR, &u4Val);
@@ -864,4 +889,4 @@ bool mddpIsSupportMddpWh(void)
 	return (gMddpWFunc.get_mddp_feature() & MDDP_FEATURE_MDDP_WH) != 0;
 }
 
-#endif
+#endif /* CFG_MTK_MDDP_SUPPORT */
