@@ -3096,34 +3096,27 @@ void connac2x_show_wfdma_desc(IN struct ADAPTER *prAdapter)
 
 static void connac2xDumpPPDebugCr(struct ADAPTER *prAdapter)
 {
-	uint32_t ReadRegValue[4];
+	struct BUS_INFO *prBusInfo;
+	struct PP_TOP_CR *prCr;
 	uint32_t u4Value[4] = {0};
 
 	if (!prAdapter)
 		return;
 
-	/* 0x820CC0F0 : PP DBG_CTRL */
-	ReadRegValue[0] = 0x820CC0F0;
-	HAL_MCR_RD(prAdapter, ReadRegValue[0], &u4Value[0]);
+	prBusInfo = prAdapter->chip_info->bus_info;
+	prCr = prBusInfo->prPpTopCr;
 
-	/* 0x820CC0F8 : PP DBG_CS0 */
-	ReadRegValue[1] = 0x820CC0F8;
-	HAL_MCR_RD(prAdapter, ReadRegValue[1], &u4Value[1]);
-
-	/* 0x820CC0FC : PP DBG_CS1 */
-	ReadRegValue[2] = 0x820CC0FC;
-	HAL_MCR_RD(prAdapter, ReadRegValue[2], &u4Value[2]);
-
-	/* 0x820CC100 : PP DBG_CS2 */
-	ReadRegValue[3] = 0x820CC100;
-	HAL_MCR_RD(prAdapter, ReadRegValue[3], &u4Value[3]);
+	HAL_MCR_RD(prAdapter, prCr->rDbgCtrl.u4Addr, &u4Value[0]);
+	HAL_MCR_RD(prAdapter, prCr->rDbgCs0.u4Addr, &u4Value[1]);
+	HAL_MCR_RD(prAdapter, prCr->rDbgCs1.u4Addr, &u4Value[2]);
+	HAL_MCR_RD(prAdapter, prCr->rDbgCs2.u4Addr, &u4Value[3]);
 
 	DBGLOG(HAL, INFO,
 	"PP[0x%08x]=0x%08x,[0x%08x]=0x%08x,[0x%08x]=0x%08x,[0x%08x]=0x%08x,",
-		ReadRegValue[0], u4Value[0],
-		ReadRegValue[1], u4Value[1],
-		ReadRegValue[2], u4Value[2],
-		ReadRegValue[3], u4Value[3]);
+		prCr->rDbgCtrl.u4Addr, u4Value[0],
+		prCr->rDbgCs0.u4Addr, u4Value[1],
+		prCr->rDbgCs1.u4Addr, u4Value[2],
+		prCr->rDbgCs2.u4Addr, u4Value[3]);
 }
 
 static void connac2x_dump_wfdma_dbg_value(
