@@ -414,7 +414,8 @@ void statsParseUDPInfo(struct sk_buff *skb, uint8_t *pucEthBody,
 		}
 			break;
 		}
-	} else if (u2UdpSrcPort == UDP_PORT_DNS) { /* tx dns */
+	} else if (u2UdpSrcPort == UDP_PORT_DNS ||
+			u2UdpDstPort == UDP_PORT_DNS) {
 		uint16_t u2TransId =
 			(pucBootp[0] << 8) | pucBootp[1];
 		if (eventType == EVENT_RX) {
