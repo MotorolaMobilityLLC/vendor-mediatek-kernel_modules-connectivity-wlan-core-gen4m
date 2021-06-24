@@ -300,14 +300,12 @@ void statsParseARPInfo(struct sk_buff *skb,
 		GLUE_SET_INDEPENDENT_PKT(skb, TRUE);
 		if (u2OpCode == ARP_PRO_REQ)
 			DBGLOG_LIMITED(RX, INFO,
-				"<RX> Arp Req From IP: %d.%d.%d.%d\n",
-				pucEthBody[14], pucEthBody[15],
-				pucEthBody[16], pucEthBody[17]);
+				"<RX> Arp Req From IP: " IPV4STR "\n",
+				IPV4TOSTR(&pucEthBody[ARP_SENDER_IP_OFFSET]));
 		else if (u2OpCode == ARP_PRO_RSP)
 			DBGLOG(RX, INFO,
-				"<RX> Arp Rsp from IP: %d.%d.%d.%d\n",
-				pucEthBody[14], pucEthBody[15],
-				pucEthBody[16], pucEthBody[17]);
+				"<RX> Arp Rsp From IP: " IPV4STR "\n",
+				IPV4TOSTR(&pucEthBody[ARP_SENDER_IP_OFFSET]));
 		break;
 	case EVENT_TX:
 		DBGLOG(TX, INFO,
