@@ -119,6 +119,7 @@ static u_int8_t cnmTimerIsTimerValid(IN struct ADAPTER *prAdapter,
  *
  */
 /*----------------------------------------------------------------------------*/
+#if 0
 static void cnmTimerDumpTimer(IN struct ADAPTER *prAdapter)
 {
 	struct ROOT_TIMER *prRootTimer;
@@ -144,7 +145,7 @@ static void cnmTimerDumpTimer(IN struct ADAPTER *prAdapter)
 			prTimerEntry->rExpiredSysTime);
 	}
 }
-
+#endif
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief This routine is called to check if a timer exists in timer list.
@@ -328,11 +329,6 @@ cnmTimerInitTimerOption(IN struct ADAPTER *prAdapter,
 {
 	struct LINK *prTimerList;
 	struct LINK_ENTRY *prLinkEntry;
-	struct LINK_ENTRY *prTempLinkEntry;
-	/* Previous valid timer before the dangling timer */
-	struct LINK_ENTRY *prPrevLinkEntry = NULL;
-	/* Next valid timer after the dangling timer */
-	struct LINK_ENTRY *prNextLinkEntry = NULL;
 	struct TIMER *prPendingTimer;
 
 	KAL_SPIN_LOCK_DECLARATION();
@@ -364,53 +360,9 @@ cnmTimerInitTimerOption(IN struct ADAPTER *prAdapter,
 				 */
 				cnmTimerStopTimer_impl(prAdapter,
 					prTimer, FALSE);
-				continue;
 			}
-
-			/* Timer structure was collapsed. Try to fix it. */
-			log_dbg(CNM, WARN, "timer was collapsed. fix it!\n");
-			LINK_FOR_EACH_PREV(prTempLinkEntry, prTimerList) {
-				if (prTempLinkEntry == NULL)
-					break;
-
-				prPendingTimer = LINK_ENTRY(
-					prTempLinkEntry,
-					struct TIMER, rLinkEntry);
-
-				if (prPendingTimer == prTimer) {
-					if (prNextLinkEntry == NULL) {
-						/* Link to head */
-						prNextLinkEntry =
-							(struct LINK_ENTRY *)
-							prTimerList;
-					}
-
-					/* Link to head */
-					if (prPrevLinkEntry == NULL) {
-						prTimerList->prNext =
-							prNextLinkEntry;
-						prNextLinkEntry->prPrev =
-							(struct LINK_ENTRY *)
-							prTimerList;
-						prTimerList->u4NumElem--;
-					} else { /* Link to previous entry */
-						prPrevLinkEntry->prNext =
-							prNextLinkEntry;
-						prNextLinkEntry->prPrev =
-							prPrevLinkEntry;
-						prTimerList->u4NumElem--;
-					}
-
-					/* Dump timer */
-					cnmTimerDumpTimer(prAdapter);
-					break;
-				}
-				/* Record next pending timer entry */
-				prNextLinkEntry = prTempLinkEntry;
-			}
+			break;
 		}
-		/* Record previous pending timer entry */
-		prPrevLinkEntry = prLinkEntry;
 	}
 
 	LINK_ENTRY_INITIALIZE(&prTimer->rLinkEntry);
@@ -506,7 +458,7 @@ void cnmTimerStartTimer(IN struct ADAPTER *prAdapter, IN struct TIMER *prTimer,
 {
 	struct ROOT_TIMER *prRootTimer;
 	struct LINK *prTimerList;
-	OS_SYSTIME rExpiredSysTime, rTimeoutSystime;
+	OS_SYSTIME rCurSysTime, rExpiredSysTime, rTimeoutSystime;
 
 	KAL_SPIN_LOCK_DECLARATION();
 
@@ -556,7 +508,19 @@ void cnmTimerStartTimer(IN struct ADAPTER *prAdapter, IN struct TIMER *prTimer,
 	rTimeoutSystime = MSEC_TO_SYSTIME(u4TimeoutMs);
 	if (rTimeoutSystime == 0)
 		rTimeoutSystime = 1;
-	rExpiredSysTime = kalGetTimeTick() + rTimeoutSystime;
+
+	rCurSysTime = kalGetTimeTick();
+	rExpiredSysTime = rCurSysTime + rTimeoutSystime;
+
+	/* Check if root timer expired but not timeout. */
+	if (TIME_BEFORE(prRootTimer->rNextExpiredSysTime, rCurSysTime) &&
+		!test_bit(GLUE_FLAG_TIMEOUT_BIT,
+				       &prAdapter->prGlueInfo->ulFlag)) {
+		log_dbg(CNM, WARN, "Invalid NextExpiredSysTime: %u, currentSysTime: %u\n",
+			prRootTimer->rNextExpiredSysTime, rCurSysTime);
+		set_bit(GLUE_FLAG_TIMEOUT_BIT,
+				       &prAdapter->prGlueInfo->ulFlag);
+	}
 
 	/* If no timer pending or the fast time interval is used. */
 	if (LINK_IS_EMPTY(prTimerList)
