@@ -1172,7 +1172,7 @@
 #define CFG_SUPPORT_DBDC	1
 #define CFG_SUPPORT_DBDC_NO_BLOCKING_OPMODE 1
 #define CFG_SUPPORT_SAP_DFS_CHANNEL 1
-#define CFG_SUPPORT_SET_IPV6_NETWORK 1 /* fos_change oneline */
+#define CFG_SUPPORT_SET_IPV6_NETWORK 0 /* fos_change oneline */
 
 
 /*------------------------------------------------------------------------------
