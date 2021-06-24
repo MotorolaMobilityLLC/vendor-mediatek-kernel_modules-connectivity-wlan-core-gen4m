@@ -1617,6 +1617,7 @@ void asicInitRxdHook(
 	prRxDescOps->nic_rxd_get_rf_band = nic_rxd_v1_get_rf_band;
 	prRxDescOps->nic_rxd_get_tcl = nic_rxd_v1_get_tcl;
 	prRxDescOps->nic_rxd_get_ofld = nic_rxd_v1_get_ofld;
+	prRxDescOps->nic_rxd_get_HdrTrans = nic_rxd_v1_get_HdrTrans;
 	prRxDescOps->nic_rxd_fill_rfb = nic_rxd_v1_fill_rfb;
 	prRxDescOps->nic_rxd_sanity_check = nic_rxd_v1_sanity_check;
 #if CFG_SUPPORT_WAKEUP_REASON_DEBUG

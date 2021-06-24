@@ -102,6 +102,9 @@ u_int8_t nic_rxd_v2_sanity_check(
 	struct ADAPTER *prAdapter,
 	struct SW_RFB *prSwRfb);
 
+uint8_t nic_rxd_v2_get_HdrTrans(
+	void *prRxStatus);
+
 #if CFG_SUPPORT_WAKEUP_REASON_DEBUG
 void nic_rxd_v2_check_wakeup_reason(
 	struct ADAPTER *prAdapter,

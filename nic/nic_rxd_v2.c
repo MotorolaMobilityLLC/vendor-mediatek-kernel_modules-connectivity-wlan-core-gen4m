@@ -454,6 +454,13 @@ u_int8_t nic_rxd_v2_sanity_check(
 	return fgDrop;
 }
 
+uint8_t nic_rxd_v2_get_HdrTrans(
+	void *prRxStatus)
+{
+	return HAL_MAC_CONNAC2X_RX_STATUS_IS_HEADER_TRAN(
+		(struct HW_MAC_CONNAC2X_RX_DESC *)prRxStatus);
+}
+
 #if CFG_SUPPORT_WAKEUP_REASON_DEBUG
 void nic_rxd_v2_check_wakeup_reason(
 	struct ADAPTER *prAdapter,
@@ -485,7 +492,7 @@ void nic_rxd_v2_check_wakeup_reason(
 
 	switch (prSwRfb->ucPacketType) {
 	case RX_PKT_TYPE_SW_DEFINED:
-	if (prSwRfb->ucOFLD) {
+	if (prSwRfb->ucOFLD || prSwRfb->fgHdrTran) {
 		DBGLOG(RX, INFO, "Need to treat as data frame.\n");
 		/*
 		 * In order to jump to case RX_PKT_TYPE_RX_DATA,
