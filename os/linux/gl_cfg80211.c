@@ -566,26 +566,21 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy,
 				   sizeof(rLinkSpeed), TRUE, FALSE, FALSE,
 				   &u4BufLen, ucBssIndex);
 #endif /* CFG_REPORT_MAX_TX_RATE */
+
 	if (ucBssIndex < BSSID_NUM) {
-		u4TxRate = rLinkSpeed.rLq[ucBssIndex].u2TxLinkSpeed;
+		/* convert unit to 100kbps */
+		u4TxRate = rLinkSpeed.rLq[ucBssIndex].u2TxLinkSpeed * 5;
 		u4RxRate = rLinkSpeed.rLq[ucBssIndex].u2RxLinkSpeed;
 	}
-#if KERNEL_VERSION(4, 0, 0) <= CFG80211_VERSION_CODE
-	sinfo->filled |= BIT(NL80211_STA_INFO_TX_BITRATE);
-	sinfo->filled |= BIT(NL80211_STA_INFO_RX_BITRATE);
-#else
-	sinfo->filled |= STATION_INFO_TX_BITRATE;
-	sinfo->filled |= STATION_INFO_RX_BITRATE;
-#endif
+
 	if ((rStatus != WLAN_STATUS_SUCCESS) || (u4TxRate == 0)) {
 		/* unable to retrieve link speed */
 		DBGLOG(REQ, WARN, "last Tx link speed\n");
 		sinfo->txrate.legacy =
 			prGlueInfo->u4TxLinkSpeedCache[ucBssIndex];
 	} else {
-		/* convert from 100bps to 100kbps */
-		sinfo->txrate.legacy = u4TxRate / 1000;
-		prGlueInfo->u4TxLinkSpeedCache[ucBssIndex] = u4TxRate / 1000;
+		sinfo->txrate.legacy = u4TxRate;
+		prGlueInfo->u4TxLinkSpeedCache[ucBssIndex] = u4TxRate;
 	}
 
 	if ((rStatus != WLAN_STATUS_SUCCESS) || (u4RxRate == 0)) {
@@ -594,10 +589,19 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy,
 		sinfo->rxrate.legacy =
 			prGlueInfo->u4RxLinkSpeedCache[ucBssIndex];
 	} else {
-		/* convert from 100bps to 100kbps */
-		sinfo->rxrate.legacy = u4RxRate / 1000;
-		prGlueInfo->u4RxLinkSpeedCache[ucBssIndex] = u4RxRate / 1000;
+		sinfo->rxrate.legacy = u4RxRate;
+		prGlueInfo->u4RxLinkSpeedCache[ucBssIndex] = u4RxRate;
 	}
+
+#if KERNEL_VERSION(4, 0, 0) <= CFG80211_VERSION_CODE
+		if (sinfo->txrate.legacy)
+			sinfo->filled |= BIT(NL80211_STA_INFO_TX_BITRATE);
+		if (sinfo->rxrate.legacy)
+			sinfo->filled |= BIT(NL80211_STA_INFO_RX_BITRATE);
+#else
+		sinfo->filled |= STATION_INFO_TX_BITRATE;
+		sinfo->filled |= STATION_INFO_RX_BITRATE;
+#endif
 
 	/* 3. fill RSSI */
 	rStatus = kalIoctlByBssIdx(prGlueInfo,
@@ -671,14 +675,15 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy,
 
 		if (rStatus != WLAN_STATUS_SUCCESS) {
 			DBGLOG(REQ, WARN,
-			       "link speed=%u, rssi=%d, unable to retrieve link speed,status=%u\n",
-			       sinfo->txrate.legacy, sinfo->signal, rStatus);
+			       "%s link speed=%u, rssi=%d, unable to retrieve link speed,status=%u\n",
+			       ndev->name, sinfo->txrate.legacy,
+			       sinfo->signal, rStatus);
 		} else {
 			DBGLOG(REQ, INFO,
-			       "link speed=%u/%u, rssi=%d, BSSID:[" MACSTR
+			       "%s link speed=%u/%u, rssi=%d, BSSID:[" MACSTR
 			       "], TxFail=%u, TxTimeOut=%u, TxOK=%u, RxOK=%u\n",
-			       sinfo->txrate.legacy, sinfo->rxrate.legacy,
-			       sinfo->signal,
+			       ndev->name, sinfo->txrate.legacy,
+			       sinfo->rxrate.legacy, sinfo->signal,
 			       MAC2STR(arBssid),
 			       rQueryStaStatistics.u4TxFailCount,
 			       rQueryStaStatistics.u4TxLifeTimeoutCount,

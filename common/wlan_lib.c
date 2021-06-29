@@ -11848,8 +11848,10 @@ int wlanQueryRateByTable(uint32_t txmode, uint32_t rate,
 		u4MaxRate = g_rDataRateMappingTable.nsts[nsts - 1]
 				.bw[frmode].sgi[sgi].rate[ucMaxSize - 1];
 	}
-	*pu4CurRate = u4CurRate;
-	*pu4MaxRate = u4MaxRate;
+	if (pu4CurRate)
+		*pu4CurRate = u4CurRate;
+	if (pu4MaxRate)
+		*pu4MaxRate = u4MaxRate;
 	return 0;
 }
 
@@ -11998,12 +12000,13 @@ int wlanGetRxRate(IN struct GLUE_INFO *prGlueInfo,
 {
 	struct ADAPTER *prAdapter;
 	uint32_t rxmode = 0, rate = 0, frmode = 0, sgi = 0, nss = 0;
-	uint32_t u4RxVector0 = 0, u4RxVector1 = 0;
 	int rv;
 	struct CHIP_DBG_OPS *prChipDbg;
 
-	*pu4CurRate = 0;
-	*pu4MaxRate = 0;
+	if (pu4CurRate)
+		*pu4CurRate = 0;
+	if (pu4MaxRate)
+		*pu4MaxRate = 0;
 	prAdapter = prGlueInfo->prAdapter;
 
 	prChipDbg = prAdapter->chip_info->prDebugOps;
@@ -12030,8 +12033,8 @@ int wlanGetRxRate(IN struct GLUE_INFO *prGlueInfo,
 
 errhandle:
 	DBGLOG(SW4, TRACE,
-		"u4RxVector0=[%x], u4RxVector1=[%x], rxmode=[%u], rate=[%u], frmode=[%u], sgi=[%u], nss=[%u]\n",
-		u4RxVector0, u4RxVector1, rxmode, rate, frmode, sgi, nss
+	       "B:%u rxmode=[%u], rate=[%u], frmode=[%u], sgi=[%u], nss=[%u]\n",
+	       ucBssIdx, rxmode, rate, frmode, sgi, nss
 	);
 	return -1;
 }

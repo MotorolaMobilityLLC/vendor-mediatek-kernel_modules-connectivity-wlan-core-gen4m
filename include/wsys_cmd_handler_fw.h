@@ -1337,7 +1337,7 @@ struct EVENT_ADD_KEY_DONE_INFO {
 struct LINK_QUALITY {
 	int8_t       cRssi; /* AIS Network. */
 	int8_t       cLinkQuality;
-	uint16_t     u2LinkSpeed;            /* TX rate1 */
+	uint16_t     u2TxLinkSpeed;          /* TX rate1 */
 	uint8_t      ucMediumBusyPercentage; /* Read clear */
 	uint8_t      ucIsLQ0Rdy;
 	/* Link Quality BSS0 Ready. */

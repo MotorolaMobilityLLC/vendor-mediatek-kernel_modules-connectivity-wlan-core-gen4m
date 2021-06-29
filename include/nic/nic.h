@@ -446,7 +446,8 @@ void nicUpdateRSSI(IN struct ADAPTER *prAdapter,
 		   IN int8_t cLinkQuality);
 
 void nicUpdateLinkSpeed(IN struct ADAPTER *prAdapter,
-			IN uint8_t ucBssIndex, IN uint16_t u2LinkSpeed);
+	IN uint8_t ucBssIndex, IN uint16_t u2TxLinkSpeed,
+	IN uint16_t u2RxLinkSpeed);
 
 #if CFG_SUPPORT_RDD_TEST_MODE
 uint32_t nicUpdateRddTestMode(IN struct ADAPTER *prAdapter,

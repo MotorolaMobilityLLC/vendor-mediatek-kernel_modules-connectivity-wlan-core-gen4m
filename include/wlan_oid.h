@@ -649,7 +649,9 @@ struct LINK_SPEED_EX_ {
 
 	uint8_t fgIsLinkRateValid;
 	OS_SYSTIME rLinkRateUpdateTime;
+	/*in unit of 20kbps*/
 	uint32_t u2TxLinkSpeed;
+	/*in unit of 100kbps*/
 	uint32_t u2RxLinkSpeed;
 
 	uint8_t ucMediumBusyPercentage;

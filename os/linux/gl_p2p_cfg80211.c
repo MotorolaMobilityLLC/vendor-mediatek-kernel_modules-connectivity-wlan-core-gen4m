@@ -1000,7 +1000,8 @@ int mtk_p2p_cfg80211_get_station(struct wiphy *wiphy,
 				 &u4BufLen, ucBssIdx);
 		if (rStatus == WLAN_STATUS_SUCCESS
 			&& ucBssIdx < BSSID_NUM) {
-			u4Rate = rLinkSpeed.rLq[ucBssIdx].u2TxLinkSpeed;
+			/* convert unit to 100kbps */
+			u4Rate = rLinkSpeed.rLq[ucBssIdx].u2TxLinkSpeed * 5;
 			i4Rssi = rLinkSpeed.rLq[ucBssIdx].cRssi;
 		}
 
@@ -1008,8 +1009,7 @@ int mtk_p2p_cfg80211_get_station(struct wiphy *wiphy,
 			i4Rssi = PARAM_WHQL_RSSI_MAX_DBM;
 		else if (i4Rssi < PARAM_WHQL_RSSI_MIN_DBM)
 			i4Rssi = PARAM_WHQL_RSSI_MIN_DBM;
-		/* convert from 100bps to 100kbps */
-		sinfo->txrate.legacy = u4Rate / 1000;
+		sinfo->txrate.legacy = u4Rate;
 		sinfo->signal = i4Rssi;
 
 		DBGLOG(P2P, INFO,

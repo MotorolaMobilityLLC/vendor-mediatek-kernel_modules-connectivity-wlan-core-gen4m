@@ -4777,15 +4777,8 @@ wlanoidQueryLinkSpeedEx(IN struct ADAPTER *prAdapter,
 	    prLq->fgIsLinkRateValid == TRUE &&
 	    rUpdateDeltaTime <= CFG_LINK_QUALITY_VALID_PERIOD) {
 		pu4LinkSpeed = (struct PARAM_LINK_SPEED_EX *) (pvQueryBuffer);
-		pu4LinkSpeed->rLq[ucBssIndex].cRssi = prLq->cRssi;
-		pu4LinkSpeed->rLq[ucBssIndex].u2TxLinkSpeed =
-			prLq->u2TxLinkSpeed;
-		pu4LinkSpeed->rLq[ucBssIndex].u2RxLinkSpeed =
-			prLq->u2RxLinkSpeed;
-
-		/* change to unit of 100bps */
-		pu4LinkSpeed->rLq[ucBssIndex].u2TxLinkSpeed *= 5000;
-		pu4LinkSpeed->rLq[ucBssIndex].u2RxLinkSpeed *= 5000;
+		kalMemCopy(&pu4LinkSpeed->rLq[ucBssIndex], prLq,
+			   sizeof(struct LINK_SPEED_EX_));
 		return WLAN_STATUS_SUCCESS;
 	} else {
 		return wlanSendSetQueryCmd(prAdapter,

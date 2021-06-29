@@ -4319,6 +4319,7 @@ void nicUpdateLinkQuality(IN struct ADAPTER *prAdapter,
 	int8_t cRssi;
 	uint16_t u2AdjustRssi = 10;
 	struct LINK_SPEED_EX_ *prLq;
+	uint32_t u2RxLinkSpeed;
 
 #if (CFG_TWT_SMART_STA == 1)
 	struct _MSG_TWT_PARAMS_SET_T *prTWTParamSetMsg;
@@ -4467,9 +4468,11 @@ void nicUpdateLinkQuality(IN struct ADAPTER *prAdapter,
 			if (prLq->fgIsLinkRateValid == FALSE ||
 			    (kalGetTimeTick() - prLq->rLinkRateUpdateTime)
 			    > CFG_LINK_QUALITY_VALID_PERIOD) {
+				wlanGetRxRate(prAdapter->prGlueInfo,
+				ucBssIndex, &u2RxLinkSpeed, NULL);
 				nicUpdateLinkSpeed(prAdapter, ucBssIndex,
 					prEventLinkQuality->rLq[ucBssIndex].
-					u2LinkSpeed);
+					u2TxLinkSpeed, u2RxLinkSpeed);
 			}
 
 		}
@@ -4571,7 +4574,8 @@ void nicUpdateRSSI(IN struct ADAPTER *prAdapter,
  */
 /*----------------------------------------------------------------------------*/
 void nicUpdateLinkSpeed(IN struct ADAPTER *prAdapter,
-			IN uint8_t ucBssIndex, IN uint16_t u2LinkSpeed)
+	IN uint8_t ucBssIndex, IN uint16_t u2TxLinkSpeed,
+	IN uint16_t u2RxLinkSpeed)
 {
 	ASSERT(prAdapter);
 	ASSERT(ucBssIndex <= prAdapter->ucHwBssIdNum);
@@ -4589,7 +4593,9 @@ void nicUpdateLinkSpeed(IN struct ADAPTER *prAdapter,
 				rLinkRateUpdateTime = kalGetTimeTick();
 
 			prAdapter->rLinkQuality.rLq[ucBssIndex].
-				u2TxLinkSpeed = u2LinkSpeed;
+				u2TxLinkSpeed = u2TxLinkSpeed;
+			prAdapter->rLinkQuality.rLq[ucBssIndex].
+				u2RxLinkSpeed = u2RxLinkSpeed;
 		}
 		break;
 
