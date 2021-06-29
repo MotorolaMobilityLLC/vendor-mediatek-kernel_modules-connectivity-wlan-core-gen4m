@@ -1642,7 +1642,7 @@ kalIndicateStatusAndComplete(IN struct GLUE_INFO
 					.rLq[ucBssIndex].cRssi;
 				rPayload.u2DataRate =
 					prGlueInfo->prAdapter->rLinkQuality
-					.rLq[ucBssIndex].u2LinkSpeed;
+					.rLq[ucBssIndex].u2TxLinkSpeed;
 
 				prTemp =
 					aisGetTargetBssDesc(

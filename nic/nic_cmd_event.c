@@ -812,7 +812,7 @@ void nicCmdEventQueryLinkQuality(IN struct ADAPTER
 		prCmdInfo->pvInformationBuffer;
 
 	for (i = 0; i < BSSID_NUM; i++) {
-		prLinkSpeed->rLq[i].u2LinkSpeed
+		prLinkSpeed->rLq[i].u2TxLinkSpeed
 			= prLinkQuality->rLq[i].u2LinkSpeed * 5000;
 
 		/* ranged from (-128 ~ 30) in unit of dBm */
@@ -820,8 +820,8 @@ void nicCmdEventQueryLinkQuality(IN struct ADAPTER
 			= prLinkQuality->rLq[i].cRssi;
 
 		DBGLOG(REQ, TRACE,
-			"ucBssIdx = %d, rate = %u, signal = %d\n",
-			i, prLinkSpeed->rLq[i].u2LinkSpeed,
+			"ucBssIdx = %d, TxRate = %u, signal = %d\n",
+			i, prLinkSpeed->rLq[i].u2TxLinkSpeed,
 			prLinkSpeed->rLq[i].cRssi);
 	}
 	u4QueryInfoLen = sizeof(struct PARAM_LINK_SPEED_EX);
@@ -875,6 +875,7 @@ void nicCmdEventQueryLinkSpeedEx(IN struct ADAPTER *prAdapter,
 	struct EVENT_LINK_QUALITY *prLinkQuality;
 	struct PARAM_LINK_SPEED_EX *pu4LinkSpeed;
 	struct GLUE_INFO *prGlueInfo;
+	uint32_t u4CurRxRate, u4MaxRxRate;
 	uint32_t u4QueryInfoLen;
 	uint32_t i;
 
@@ -887,19 +888,29 @@ void nicCmdEventQueryLinkSpeedEx(IN struct ADAPTER *prAdapter,
 		prGlueInfo = prAdapter->prGlueInfo;
 		pu4LinkSpeed = (struct PARAM_LINK_SPEED_EX *) (
 					   prCmdInfo->pvInformationBuffer);
-
 		for (i = 0; i < BSSID_NUM; i++) {
-			pu4LinkSpeed->rLq[i].u2LinkSpeed
+			/*Fill Tx Rate*/
+			pu4LinkSpeed->rLq[i].u2TxLinkSpeed
 				= prLinkQuality->rLq[i].u2LinkSpeed * 5000;
 
+			/*Fill Rx Rate in unit of 100bps*/
+			if (IS_BSS_INDEX_AIS(prAdapter, i) &&
+				(wlanGetRxRate(prGlueInfo, i,
+							  &u4CurRxRate,
+							  &u4MaxRxRate) == 0)) {
+				pu4LinkSpeed->rLq[i].u2RxLinkSpeed =
+					u4CurRxRate * 1000;
+			} else
+				pu4LinkSpeed->rLq[i].u2RxLinkSpeed = 0;
 			/* ranged from (-128 ~ 30) in unit of dBm */
 			pu4LinkSpeed->rLq[i].cRssi
 				= prLinkQuality->rLq[i].cRssi;
 
 			DBGLOG(NIC, TRACE,
-				"ucBssIdx = %d, rate = %u, signal = %d\n",
+				"ucBssIdx=%d, TxRate=%u, RxRate=%u signal=%d\n",
 				i,
-				pu4LinkSpeed->rLq[i].u2LinkSpeed,
+				pu4LinkSpeed->rLq[i].u2TxLinkSpeed,
+				pu4LinkSpeed->rLq[i].u2RxLinkSpeed,
 				pu4LinkSpeed->rLq[i].cRssi);
 		}
 

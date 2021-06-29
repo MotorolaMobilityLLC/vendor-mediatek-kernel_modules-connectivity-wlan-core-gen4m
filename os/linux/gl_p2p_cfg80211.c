@@ -1000,7 +1000,7 @@ int mtk_p2p_cfg80211_get_station(struct wiphy *wiphy,
 				 &u4BufLen, ucBssIdx);
 		if (rStatus == WLAN_STATUS_SUCCESS
 			&& ucBssIdx < BSSID_NUM) {
-			u4Rate = rLinkSpeed.rLq[ucBssIdx].u2LinkSpeed;
+			u4Rate = rLinkSpeed.rLq[ucBssIdx].u2TxLinkSpeed;
 			i4Rssi = rLinkSpeed.rLq[ucBssIdx].cRssi;
 		}
 

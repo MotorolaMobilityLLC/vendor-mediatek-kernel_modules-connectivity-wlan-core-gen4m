@@ -11986,7 +11986,8 @@ errhandle:
 
 #ifdef CFG_SUPPORT_LINK_QUALITY_MONITOR
 int wlanGetRxRate(IN struct GLUE_INFO *prGlueInfo,
-		 OUT uint32_t *pu4CurRate, OUT uint32_t *pu4MaxRate)
+		IN uint8_t ucBssIdx, OUT uint32_t *pu4CurRate,
+		OUT uint32_t *pu4MaxRate)
 {
 	struct ADAPTER *prAdapter;
 	uint32_t rxmode = 0, rate = 0, frmode = 0, sgi = 0, nss = 0;
@@ -11999,7 +12000,7 @@ int wlanGetRxRate(IN struct GLUE_INFO *prGlueInfo,
 	*pu4MaxRate = 0;
 	prAdapter = prGlueInfo->prAdapter;
 
-	prStaRec = aisGetStaRecOfAP(prAdapter, AIS_DEFAULT_INDEX);
+	prStaRec = aisGetStaRecOfAP(prAdapter, ucBssIdx);
 	if (prStaRec) {
 		ucWlanIdx = prStaRec->ucWlanIndex;
 	} else {
@@ -12186,7 +12187,8 @@ void wlanFinishCollectingLinkQuality(struct GLUE_INFO *prGlueInfo)
 			prLinkQualityInfo->u8LastIdleSlotCount;
 
 	/* get current rx rate */
-	if (wlanGetRxRate(prGlueInfo, &u4CurRxRate, &u4MaxRxRate) < 0)
+	if (wlanGetRxRate(prGlueInfo, AIS_DEFAULT_INDEX,
+		&u4CurRxRate, &u4MaxRxRate) < 0)
 		prLinkQualityInfo->u4CurRxRate = 0;
 	else
 		prLinkQualityInfo->u4CurRxRate = u4CurRxRate;

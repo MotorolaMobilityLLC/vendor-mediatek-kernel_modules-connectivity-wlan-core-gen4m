@@ -4251,12 +4251,12 @@ wlanoidQueryRssi(IN struct ADAPTER *prAdapter,
 		prLinkSpeed = (struct PARAM_LINK_SPEED_EX *) pvQueryBuffer;
 
 		prLinkSpeed->rLq[ucBssIndex].
-			u2LinkSpeed = prLq->u2LinkSpeed * 5000;
+			u2TxLinkSpeed = prLq->u2TxLinkSpeed * 5000;
 		prLinkSpeed->rLq[ucBssIndex].cRssi = prLq->cRssi;
 
-		DBGLOG(REQ, TRACE, "ucBssIdx = %d, rate = %u, signal = %d\n",
+		DBGLOG(REQ, TRACE, "ucBssIdx = %d, TxRate = %u, signal = %d\n",
 		       ucBssIndex,
-		       prLinkSpeed->rLq[ucBssIndex].u2LinkSpeed,
+		       prLinkSpeed->rLq[ucBssIndex].u2TxLinkSpeed,
 		       prLinkSpeed->rLq[ucBssIndex].cRssi);
 		return WLAN_STATUS_SUCCESS;
 	}
@@ -4732,7 +4732,7 @@ wlanQueryLinkSpeed(IN struct ADAPTER *prAdapter,
 		   CFG_LINK_QUALITY_VALID_PERIOD) {
 		/* change to unit of 100bps */
 		*(uint32_t *) pvQueryBuffer =
-			prLq->u2LinkSpeed * 5000;
+			prLq->u2TxLinkSpeed * 5000;
 		return WLAN_STATUS_SUCCESS;
 	} else {
 		return wlanSendSetQueryCmd(prAdapter,
@@ -4778,10 +4778,14 @@ wlanoidQueryLinkSpeedEx(IN struct ADAPTER *prAdapter,
 	    rUpdateDeltaTime <= CFG_LINK_QUALITY_VALID_PERIOD) {
 		pu4LinkSpeed = (struct PARAM_LINK_SPEED_EX *) (pvQueryBuffer);
 		pu4LinkSpeed->rLq[ucBssIndex].cRssi = prLq->cRssi;
-		pu4LinkSpeed->rLq[ucBssIndex].u2LinkSpeed = prLq->u2LinkSpeed;
+		pu4LinkSpeed->rLq[ucBssIndex].u2TxLinkSpeed =
+			prLq->u2TxLinkSpeed;
+		pu4LinkSpeed->rLq[ucBssIndex].u2RxLinkSpeed =
+			prLq->u2RxLinkSpeed;
 
 		/* change to unit of 100bps */
-		pu4LinkSpeed->rLq[ucBssIndex].u2LinkSpeed *= 5000;
+		pu4LinkSpeed->rLq[ucBssIndex].u2TxLinkSpeed *= 5000;
+		pu4LinkSpeed->rLq[ucBssIndex].u2RxLinkSpeed *= 5000;
 		return WLAN_STATUS_SUCCESS;
 	} else {
 		return wlanSendSetQueryCmd(prAdapter,
@@ -4835,7 +4839,8 @@ wlanoidQueryMaxLinkSpeed(IN struct ADAPTER *prAdapter,
 		if (wlanGetMaxTxRate(prAdapter, prBssInfo, prStaRecOfAP,
 				    &u4CurRate, &u4MaxRate) >= 0) {
 			u4MaxRate = u4MaxRate * 1000;
-			prLinkSpeed->rLq[ucBssIndex].u2LinkSpeed = u4MaxRate;
+			prLinkSpeed->rLq[ucBssIndex].u2TxLinkSpeed = u4MaxRate;
+			prLinkSpeed->rLq[ucBssIndex].u2RxLinkSpeed = u4MaxRate;
 			rv = WLAN_STATUS_SUCCESS;
 		}
 	}
