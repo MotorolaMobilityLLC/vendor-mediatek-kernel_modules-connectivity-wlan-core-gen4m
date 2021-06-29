@@ -2792,10 +2792,12 @@ int connac2x_get_rx_rate_info(IN struct ADAPTER *prAdapter,
 	groupid = (u4RxVector2 & CONNAC2X_RX_VT_GROUP_ID_MASK)
 				>> CONNAC2X_RX_VT_GROUP_ID_OFFSET;
 
-	if ((groupid == 0) || (groupid == 63))
-		nsts += 1;
-
-	nss = stbc ? (nsts >> 1) : nsts;
+	/* Since NSTS gets from RXRPT, always plus one */
+	nsts += 1;
+	if (nsts == 1)
+		nss = nsts;
+	else
+		nss = stbc ? (nsts >> 1) : nsts;
 
 	if (frmode >= 4) {
 		DBGLOG(SW4, ERROR, "frmode error: %u\n", frmode);
