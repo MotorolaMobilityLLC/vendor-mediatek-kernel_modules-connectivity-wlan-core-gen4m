@@ -262,6 +262,16 @@ struct CHIP_DBG_OPS {
 		struct PARAM_GET_STA_STATISTICS *prQueryStaStatistics,
 		uint8_t fgResetCnt,
 		uint32_t u4StatGroup);
+#ifdef CFG_SUPPORT_LINK_QUALITY_MONITOR
+	int (*get_rx_rate_info)(
+		struct ADAPTER *prAdapter,
+		uint8_t ucBssIdx,
+		uint32_t *pu4Rate,
+		uint32_t *pu4Nss,
+		uint32_t *pu4RxMode,
+		uint32_t *pu4FrMode,
+		uint32_t *pu4Sgi);
+#endif
 };
 
 enum PKT_PHASE {
@@ -566,7 +576,15 @@ int32_t halShowStatInfo(struct ADAPTER *prAdapter,
 			struct PARAM_HW_WLAN_INFO *prHwWlanInfo,
 			struct PARAM_GET_STA_STATISTICS *prQueryStaStatistics,
 			u_int8_t fgResetCnt, uint32_t u4StatGroup);
-
+#ifdef CFG_SUPPORT_LINK_QUALITY_MONITOR
+int connac_get_rx_rate_info(struct ADAPTER *prAdapter,
+	uint8_t ucBssIdx,
+	uint32_t *pu4Rate,
+	uint32_t *pu4Nss,
+	uint32_t *pu4RxMode,
+	uint32_t *pu4FrMode,
+	uint32_t *pu4Sgi);
+#endif
 
 #if (CFG_SUPPORT_CONNAC2X == 1)
 void connac2x_show_txd_Info(
@@ -603,6 +621,17 @@ int32_t connac2x_show_stat_info(
 	struct PARAM_GET_STA_STATISTICS *prQueryStaStatistics,
 	uint8_t fgResetCnt,
 	uint32_t u4StatGroup);
+
+#ifdef CFG_SUPPORT_LINK_QUALITY_MONITOR
+int connac2x_get_rx_rate_info(
+	struct ADAPTER *prAdapter,
+	uint8_t ucBssIdx,
+	uint32_t *pu4Rate,
+	uint32_t *pu4Nss,
+	uint32_t *pu4RxMode,
+	uint32_t *pu4FrMode,
+	uint32_t *pu4Sgi);
+#endif
 
 #endif /* CFG_SUPPORT_CONNAC2X == 1 */
 

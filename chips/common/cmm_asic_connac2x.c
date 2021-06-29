@@ -1612,6 +1612,9 @@ void asicConnac2xRxProcessRxvforMSP(IN struct ADAPTER *prAdapter,
 		return;
 	}
 
+	if (CONNAC2X_RXV_FROM_RX_RPT(prAdapter))
+		return;
+
 	prGroup3 =
 		(struct HW_MAC_RX_STS_GROUP_3_V2 *)prRetSwRfb->prRxStatusGroup3;
 	if (prRetSwRfb->ucGroupVLD & BIT(RX_GROUP_VLD_3)) {
