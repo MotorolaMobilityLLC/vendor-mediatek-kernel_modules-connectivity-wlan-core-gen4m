@@ -1102,8 +1102,8 @@ void saaFsmRunEventRxAuth(IN struct ADAPTER *prAdapter,
 				prStaRec->u2StatusCode = u2StatusCode;
 			}
 		}
-		kalIndicateRxMgmtFrame(prAdapter->prGlueInfo, prSwRfb,
-				       prStaRec->ucBssIndex);
+		kalIndicateRxMgmtFrame(prAdapter, prAdapter->prGlueInfo,
+				prSwRfb, prStaRec->ucBssIndex);
 		break;
 
 	default:

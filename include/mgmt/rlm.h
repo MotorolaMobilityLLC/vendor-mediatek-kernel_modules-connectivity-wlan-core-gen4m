@@ -491,6 +491,20 @@ void rlmModifyVhtBwPara(uint8_t *pucVhtChannelFrequencyS1,
 			uint8_t *pucVhtChannelFrequencyS2,
 			uint8_t *pucVhtChannelWidth);
 
+#if (CFG_SUPPORT_WIFI_6G == 1)
+void rlmTransferHe6gOpInfor(IN uint8_t ucChannelNum,
+	IN uint8_t ucChannelWidth,
+	OUT enum ENUM_CHANNEL_WIDTH *peChannelWidth,
+	OUT uint8_t *pucCenterFreqS1,
+	OUT uint8_t *pucCenterFreqS2,
+	OUT enum ENUM_CHNL_EXT *peSco);
+
+void rlmModifyHE6GBwPara(uint8_t *pucHe6gChannelFrequencyS1,
+			uint8_t *pucHe6gChannelFrequencyS2,
+			uint8_t *pucHe6gChannelWidth);
+#endif
+
+
 void rlmReviseMaxBw(
 	struct ADAPTER *prAdapter,
 	uint8_t ucBssIndex,

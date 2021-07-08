@@ -1669,13 +1669,21 @@ void nicRxProcessMonitorPacket(IN struct ADAPTER *prAdapter,
 
 	RX_STATUS_GET(prRxDescOps, ucChanNum, get_ch_num, prRxStatus);
 	RX_STATUS_GET(prRxDescOps, eBand, get_rf_band, prRxStatus);
+
+	nicRxdChNumTranslate(eBand, &ucChanNum);
+
 	if (eBand == BAND_2G4) {
 		rMonitorRadiotap.u2ChFlags |= BIT(7);
 		rMonitorRadiotap.u2ChFrequency = (ucChanNum * 5 + 2407);
-	} else {		/* BAND_5G */
+	} else if (eBand == BAND_5G) {		/* BAND_5G */
 		rMonitorRadiotap.u2ChFlags |= BIT(8);
 		rMonitorRadiotap.u2ChFrequency = (ucChanNum * 5 + 5000);
 	}
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	else if (eBand == BAND_6G)		/* BAND_6G */
+		rMonitorRadiotap.u2ChFrequency = (ucChanNum * 5 + 5950);
+#endif
+
 
 	/* Bit Number 5 ANT SIGNAL */
 	rMonitorRadiotap.ucAntennaSignal =
