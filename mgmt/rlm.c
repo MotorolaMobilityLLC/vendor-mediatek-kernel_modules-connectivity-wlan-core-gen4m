@@ -1091,7 +1091,6 @@ static void rlmFillExtCapIE(struct ADAPTER *prAdapter,
 
 #if (CFG_SUPPORT_802_11AX == 1)
 	if ((prBssInfo->eCurrentOPMode == OP_MODE_ACCESS_POINT)
-		&& (prBssInfo->eBand == BAND_2G4)
 		&& !RLM_NET_IS_11AX(prBssInfo))
 		prExtCap->ucLength = ELEM_MAX_LEN_EXT_CAP_11ABGNAC;
 #endif
