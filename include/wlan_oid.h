@@ -3170,6 +3170,14 @@ wlanoidSetChipConfig(IN struct ADAPTER *prAdapter,
 		     IN void *pvSetBuffer,
 		     IN uint32_t u4SetBufferLen,
 		     OUT uint32_t *pu4SetInfoLen);
+
+uint32_t
+wlanSetChipConfig(IN struct ADAPTER *prAdapter,
+		     IN void *pvSetBuffer,
+		     IN uint32_t u4SetBufferLen,
+		     OUT uint32_t *pu4SetInfoLen,
+		     IN uint8_t fgIsOid);
+
 #if (CFG_SUPPORT_ICS == 1)
 uint32_t
 wlanoidSetIcsSniffer(IN struct ADAPTER *prAdapter,
