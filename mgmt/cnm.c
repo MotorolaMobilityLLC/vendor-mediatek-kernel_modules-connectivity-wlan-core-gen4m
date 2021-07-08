@@ -2187,7 +2187,7 @@ void cnmInitDbdcSetting(IN struct ADAPTER *prAdapter)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * @brief    Check A+G Condition
+ * @brief    Check if DBDC should be enabled
  *
  * @param (none)
  *
@@ -2201,7 +2201,7 @@ static u_int8_t cnmDbdcIsAGConcurrent(
 	struct BSS_INFO *prBssInfo;
 	uint8_t ucBssIndex;
 	enum ENUM_BAND eBandCompare = eRfBand_Connecting;
-	u_int8_t fgAGConcurrent = FALSE;
+	u_int8_t fgShouldDbdcEnabled = FALSE;
 	enum ENUM_BAND eBssBand[BSSID_NUM] = {BAND_NULL};
 #if (CFG_SUPPORT_POWER_THROTTLING == 1 && CFG_SUPPORT_CNM_POWER_CTRL == 1)
 	if (prAdapter->fgPowerForceOneNss) {
@@ -2217,17 +2217,25 @@ static u_int8_t cnmDbdcIsAGConcurrent(
 		if (IS_BSS_NOT_ALIVE(prAdapter, prBssInfo))
 			continue;
 
-		if (prBssInfo->eBand != BAND_2G4
-		    && prBssInfo->eBand != BAND_5G)
+		if (prBssInfo->eBand == BAND_NULL)
 			continue;
 
 		eBssBand[ucBssIndex] = prBssInfo->eBand;
 
-		if (eBandCompare != BAND_2G4 && eBandCompare != BAND_5G)
+		if (eBandCompare == BAND_NULL)
 			eBandCompare = prBssInfo->eBand;
 
-		if (eBandCompare != prBssInfo->eBand)
-			fgAGConcurrent = TRUE;	/*A+G*/
+		if (eBandCompare != prBssInfo->eBand) {
+#if (CFG_SUPPORT_WIFI_6G == 1)
+			if ((eBandCompare == BAND_5G &&
+				prBssInfo->eBand == BAND_6G) ||
+			    (eBandCompare == BAND_6G &&
+				prBssInfo->eBand == BAND_5G))
+				fgShouldDbdcEnabled = FALSE; /* A+A */
+			else
+#endif
+				fgShouldDbdcEnabled = TRUE; /* A+G */
+		}
 	}
 
 	log_dbg(CNM, INFO, "[DBDC] BSS AG[%u.%u.%u.%u][%u]\n",
@@ -2237,7 +2245,7 @@ static u_int8_t cnmDbdcIsAGConcurrent(
 	       eBssBand[BSSID_3],
 	       eRfBand_Connecting);
 
-	return fgAGConcurrent;	/*NOT A+G*/
+	return fgShouldDbdcEnabled;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2260,8 +2268,8 @@ bool cnmIsMccMode(IN struct ADAPTER *prAdapter)
 
 	for (u4Idx = 0; u4Idx < MAX_BSSID_NUM; u4Idx++) {
 		prBssInfo = prAdapter->aprBssInfo[u4Idx];
-		if (!prBssInfo->fgIsNetActive ||
-		    prBssInfo->eConnectionState != MEDIA_STATE_CONNECTED)
+
+		if (IS_BSS_NOT_ALIVE(prAdapter, prBssInfo))
 			continue;
 
 		if (prBssInfo->eBand == BAND_2G4) {
@@ -2275,6 +2283,15 @@ bool cnmIsMccMode(IN struct ADAPTER *prAdapter)
 				fgIs5GMcc = true;
 			ucLast5GChNum = prBssInfo->ucPrimaryChannel;
 		}
+#if (CFG_SUPPORT_WIFI_6G == 1)
+		else if (prBssInfo->eBand == BAND_6G) {
+			/* Use the same handler as 5G channel */
+			if (ucLast5GChNum != 0 &&
+			    ucLast5GChNum != prBssInfo->ucPrimaryChannel)
+				fgIs5GMcc = true;
+			ucLast5GChNum = prBssInfo->ucPrimaryChannel;
+		}
+#endif
 	}
 
 	if (fgIs2GMcc || fgIs5GMcc)
@@ -3379,7 +3396,7 @@ void cnmDbdcPreConnectionEnableDecision(
 		}
 	}
 
-	if (eRfBand != BAND_2G4 && eRfBand != BAND_5G) {
+	if (eRfBand == BAND_NULL) {
 		log_dbg(CNM, INFO, "[DBDC Debug] Wrong RF band Return");
 		return;
 	}
