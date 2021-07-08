@@ -1677,6 +1677,10 @@ struct ADAPTER {
 	u_int8_t fgIsEfuseValid;
 	u_int8_t fgIsEmbbededMacAddrValid;
 
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	u_int8_t fgIsHwSupport6G;
+#endif
+
 #if CFG_SUPPORT_ANT_SWAP
 	u_int8_t fgIsSupportAntSwp;
 #endif
