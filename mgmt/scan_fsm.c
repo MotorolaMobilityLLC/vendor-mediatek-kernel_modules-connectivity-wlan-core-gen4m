@@ -100,6 +100,15 @@ static uint8_t *apucDebugScanState[SCAN_STATE_NUM] = {
  *                                 M A C R O S
  *******************************************************************************
  */
+#if (CFG_SUPPORT_WIFI_6G == 1)
+#define SCN_GET_EBAND_BY_CH_NUM(_ucChNum) \
+	((_ucChNum <= HW_CHNL_NUM_MAX_2G4) ? BAND_2G4 : \
+	(_ucChNum > HW_CHNL_NUM_MAX_5G) ? BAND_6G : \
+	BAND_5G)
+#else
+#define SCN_GET_EBAND_BY_CH_NUM(_ucChNum) \
+	((_ucChNum <= HW_CHNL_NUM_MAX_2G4) ? BAND_2G4 :	BAND_5G)
+#endif
 
 /*******************************************************************************
  *                   F U N C T I O N   D E C L A R A T I O N S
@@ -258,7 +267,17 @@ void scnSendScanReqV2(IN struct ADAPTER *prAdapter)
 	/* send command packet for scan */
 	kalMemZero(prCmdScanReq, sizeof(struct CMD_SCAN_REQ_V2));
 	/* Modify channelList number from 32 to 54 */
-	COPY_MAC_ADDR(prCmdScanReq->aucBSSID, prScanParam->aucBSSID);
+	if (prScanParam->ucScnFuncMask & ENUM_SCN_USE_PADDING_AS_BSSID) {
+		kalMemCopy(prCmdScanReq->aucExtBSSID,
+		&prScanParam->aucBSSID[0][0],
+		SCN_SSID_MAX_NUM*MAC_ADDR_LEN);
+	} else {
+		COPY_MAC_ADDR(prCmdScanReq->aucBSSID,
+		&prScanParam->aucBSSID[0][0]);
+	}
+	if (!EQUAL_MAC_ADDR(prCmdScanReq->aucBSSID, "\xff\xff\xff\xff\xff\xff"))
+		DBGLOG(SCN, INFO, "Include BSSID "MACSTR" in probe request\n",
+			MAC2STR(prCmdScanReq->aucBSSID));
 
 	prCmdScanReq->ucSeqNum = prScanParam->ucSeqNum;
 	prCmdScanReq->ucBssIndex = prScanParam->ucBssIndex;
@@ -653,6 +672,7 @@ void scnFsmHandleScanMsgV2(IN struct ADAPTER *prAdapter,
 	prScanParam->ucSSIDType = prScanReqMsg->ucSSIDType;
 	prScanParam->ucSSIDNum = prScanReqMsg->ucSSIDNum;
 	prScanParam->ucScnFuncMask |= prScanReqMsg->ucScnFuncMask;
+
 	kalMemCopy(prScanParam->aucRandomMac, prScanReqMsg->aucRandomMac,
 		MAC_ADDR_LEN);
 
@@ -708,6 +728,10 @@ void scnFsmHandleScanMsgV2(IN struct ADAPTER *prAdapter,
 	prScanParam->ucSeqNum = prScanReqMsg->ucSeqNum;
 	prScanParam->eMsgId = prScanReqMsg->rMsgHdr.eMsgId;
 	prScanParam->fgIsScanV2 = TRUE;
+
+	kalMemCopy(&prScanParam->aucBSSID[0][0],
+		&prScanReqMsg->aucExtBssid[0][0],
+		SCN_SSID_MAX_NUM*MAC_ADDR_LEN);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -940,6 +964,27 @@ scnFsmDumpScanDoneInfo(IN struct ADAPTER *prAdapter,
 			ucScanChNum);
 	}
 
+#define print_info_ch(_Mod, _Clz, _Fmt, var) \
+	do { \
+		uint16_t u2Written = 0; \
+		uint16_t u2TotalLen = SCN_SCAN_DONE_PRINT_BUFFER_LENGTH; \
+		enum ENUM_BAND eBand = BAND_NULL; \
+		for (ucChCnt = 0; ucChCnt < ucScanChNum; ucChCnt++) { \
+			eBand = \
+			SCN_GET_EBAND_BY_CH_NUM( \
+			prScanDone->var[ucChCnt]); \
+			prScanInfo->aeChannelBand[ucChCnt] = eBand; \
+			prScanInfo->var[ucChCnt] \
+				= prScanDone->var[ucChCnt]; \
+			nicRxdChNumTranslate(eBand, \
+			&prScanInfo->var[ucChCnt]); \
+			u2Written += kalSnprintf(strbuf + u2Written, \
+				u2TotalLen - u2Written, "%6d", \
+				prScanInfo->var[ucChCnt]); \
+		} \
+		log_dbg(_Mod, _Clz, _Fmt, strbuf); \
+	} while (0)
+
 #define print_info(_Mod, _Clz, _Fmt, var) \
 	do { \
 		uint16_t u2Written = 0; \
@@ -948,7 +993,7 @@ scnFsmDumpScanDoneInfo(IN struct ADAPTER *prAdapter,
 			prScanInfo->var[ucChCnt] \
 				= prScanDone->var[ucChCnt]; \
 			u2Written += kalSnprintf(strbuf + u2Written, \
-				u2TotalLen - u2Written, "%7d", \
+				u2TotalLen - u2Written, "%6d", \
 				prScanInfo->var[ucChCnt]); \
 		} \
 		log_dbg(_Mod, _Clz, _Fmt, strbuf); \
@@ -958,7 +1003,8 @@ scnFsmDumpScanDoneInfo(IN struct ADAPTER *prAdapter,
 	*  means this scan done event might have something wrong,
 	*  not to print it to avoid unexpected issue
 	*/
-	if (ucScanChNum > prScanParam->ucChannelListNum) {
+	if ((ucScanChNum > prScanParam->ucChannelListNum) &&
+		(prScanParam->ucChannelListNum != 0)) {
 		log_dbg(SCN, INFO,
 			"Driver request %d ch, but FW scan %d ch!\n",
 			prScanParam->ucChannelListNum,
@@ -966,8 +1012,8 @@ scnFsmDumpScanDoneInfo(IN struct ADAPTER *prAdapter,
 		return;
 	}
 
-	print_info(SCN, INFO, "Channel	: %s\n", aucChannelNum);
-	print_info(SCN, INFO, "IdleTime : %s\n", au2ChannelIdleTime);
+	print_info_ch(SCN, INFO, "Channel : %s\n", aucChannelNum);
+	print_info(SCN, INFO, "IdleTime	: %s\n", au2ChannelIdleTime);
 	print_info(SCN, INFO, "MdrdyCnt : %s\n", aucChannelMDRDYCnt);
 	print_info(SCN, INFO, "BAndPCnt : %s\n", aucChannelBAndPCnt);
 	if (prScanDone->ucScanDoneVersion >= 4)

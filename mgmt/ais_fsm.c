@@ -1600,6 +1600,9 @@ void aisFsmSteps(IN struct ADAPTER *prAdapter,
 	u_int8_t fgIsTransition = (u_int8_t) FALSE;
 	uint8_t ucRfBw;
 	enum ENUM_AIS_STATE eNewState;
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	uint32_t u4Loop = 0;
+#endif
 
 	DEBUGFUNC("aisFsmSteps()");
 
@@ -1871,13 +1874,33 @@ void aisFsmSteps(IN struct ADAPTER *prAdapter,
 				} else {
 					prScanReqMsg->eScanType =
 					    SCAN_TYPE_ACTIVE_SCAN;
-
+#if (CFG_SUPPORT_WIFI_6G == 1)
+			for (u4Loop = 0;
+				u4Loop < prScanRequest->u4ChannelNum;
+				u4Loop++) {
+				if (prScanRequest->arChannel[u4Loop].eBand
+					== BAND_6G) {
+					prScanReqMsg->ucSSIDType =
+						SCAN_REQ_SSID_SPECIFIED_ONLY;
+					break;
+				}
+			}
+			if (prScanReqMsg->ucSSIDType !=
+				SCAN_REQ_SSID_SPECIFIED_ONLY) {
+				prScanReqMsg->ucSSIDType =
+					SCAN_REQ_SSID_SPECIFIED;
+			}
+#else
 					prScanReqMsg->ucSSIDType =
 					    SCAN_REQ_SSID_SPECIFIED;
+#endif
 					prScanReqMsg->ucSSIDNum = ucScanSSIDNum;
 					prScanReqMsg->prSsid =
 					    prScanRequest->rSsid;
 				}
+				kalMemCopy(prScanReqMsg->aucExtBssid,
+					prScanRequest->aucBssid,
+					SCN_SSID_MAX_NUM*MAC_ADDR_LEN);
 				kalMemCopy(prScanReqMsg->aucRandomMac,
 					   prScanRequest->aucRandomMac,
 					   MAC_ADDR_LEN);

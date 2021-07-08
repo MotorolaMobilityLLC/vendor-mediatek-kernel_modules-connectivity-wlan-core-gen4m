@@ -124,8 +124,12 @@
 
 /* Full2Partial */
 /* Define a full scan as scan channel number larger than this number */
-#define SCAN_FULL2PARTIAL_CHANNEL_NUM           (20)
+#define SCAN_FULL2PARTIAL_CHANNEL_NUM           (25)
+#if (CFG_SUPPORT_WIFI_6G == 1)
+#define SCAN_CHANNEL_BITMAP_ARRAY_LEN           (8 + 8)
+#else
 #define SCAN_CHANNEL_BITMAP_ARRAY_LEN           (8)
+#endif
 #define BITS_OF_UINT                            (32)
 #define BITS_OF_BYTE                            (8)
 
@@ -506,7 +510,7 @@ struct SCAN_PARAM {	/* Used by SCAN FSM */
 	uint16_t u2ChannelMinDwellTime;
 	uint16_t u2TimeoutValue;
 
-	uint8_t aucBSSID[MAC_ADDR_LEN];
+	uint8_t aucBSSID[SCN_SSID_MAX_NUM][MAC_ADDR_LEN];
 
 	enum ENUM_MSG_ID eMsgId;
 	u_int8_t fgIsScanV2;
@@ -596,6 +600,9 @@ struct SCAN_INFO {
 	/* Beacon and Probe Response Count in each Channel */
 	uint8_t		aucChannelBAndPCnt[64];
 	uint16_t	au2ChannelScanTime[64];
+	/* eBand infor for differing the 2g4/6g */
+	enum ENUM_BAND aeChannelBand[64];
+
 	/* Support AP Selection */
 	uint32_t u4ScanUpdateIdx;
 	/* Scan log cache */
@@ -656,6 +663,8 @@ struct MSG_SCN_SCAN_REQ_V2 {
 	struct RF_CHANNEL_INFO arChnlInfoList[MAXIMUM_OPERATION_CHANNEL_LIST];
 	uint8_t ucScnFuncMask;
 	uint8_t aucRandomMac[MAC_ADDR_LEN];	/* random mac */
+	/* pass from PARAM_SCAN_REQUEST_ADV.aucBssid*/
+	uint8_t aucExtBssid[CFG_SCAN_SSID_MAX_NUM][MAC_ADDR_LEN];
 	uint16_t u2IELen;
 	uint8_t aucIE[MAX_IE_LENGTH];
 };

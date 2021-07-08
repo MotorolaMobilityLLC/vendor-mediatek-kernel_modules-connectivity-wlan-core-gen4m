@@ -1057,7 +1057,7 @@ int mtk_cfg80211_scan(struct wiphy *wiphy,
 				/* remove if this is a wildcard scan */
 				num_ssid--;
 				wildcard_flag |= (1 << i);
-				DBGLOG(REQ, TRACE, "i=%d, wildcard scan\n", i);
+				DBGLOG(REQ, STATE, "i=%d, wildcard scan\n", i);
 				continue;
 			}
 			COPY_SSID(prScanRequest->rSsid[u4ValidIdx].aucSsid,
@@ -1069,7 +1069,7 @@ int mtk_cfg80211_scan(struct wiphy *wiphy,
 				prScanRequest->rSsid[u4ValidIdx].u4SsidLen =
 				ELEM_MAX_LEN_SSID;
 			}
-			DBGLOG(REQ, TRACE,
+			DBGLOG(REQ, STATE,
 			       "i=%d, u4ValidIdx=%d, Ssid=%s, SsidLen=%d\n",
 			       i, u4ValidIdx,
 			       HIDE(prScanRequest->rSsid[u4ValidIdx].aucSsid),
@@ -1077,7 +1077,7 @@ int mtk_cfg80211_scan(struct wiphy *wiphy,
 
 			u4ValidIdx++;
 			if (u4ValidIdx == SCN_SSID_MAX_NUM) {
-				DBGLOG(REQ, TRACE, "SCN_SSID_MAX_NUM\n");
+				DBGLOG(REQ, STATE, "SCN_SSID_MAX_NUM\n");
 				break;
 			}
 		}
@@ -1119,6 +1119,10 @@ int mtk_cfg80211_scan(struct wiphy *wiphy,
 				break;
 #if (CFG_SUPPORT_WIFI_6G == 1)
 			case KAL_BAND_6GHZ:
+				/* find out psc */
+				if (((u4channel - 5) % 16) != 0)
+					continue;
+
 				prScanRequest->arChannel[j].eBand = BAND_6G;
 				break;
 #endif
