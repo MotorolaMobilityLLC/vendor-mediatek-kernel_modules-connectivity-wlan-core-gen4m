@@ -3603,6 +3603,7 @@ p2pFuncParseBeaconContent(IN struct ADAPTER *prAdapter,
 		prP2pSpecificBssInfo->u2AttributeLen = 0;
 		prP2pSpecificBssInfo->u2WpaIeLen = 0;
 		prP2pSpecificBssInfo->u2RsnIeLen = 0;
+		prP2pSpecificBssInfo->u2RsnxIeLen = 0;
 
 		ASSERT_BREAK(pucIEInfo != NULL);
 
