@@ -524,7 +524,7 @@ static void triggerHifDumpIfNeed(void)
 	if (fgIsResetting)
 		return;
 
-	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wlanGetWiphy());
+	WIPHY_PRIV(wlanGetWiphy(), prGlueInfo);
 	if (!prGlueInfo || !prGlueInfo->u4ReadyFlag || !prGlueInfo->prAdapter)
 		return;
 
@@ -544,7 +544,7 @@ static void dumpWlanThreadsIfNeed(void)
 {
 	struct GLUE_INFO *prGlueInfo;
 
-	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wlanGetWiphy());
+	WIPHY_PRIV(wlanGetWiphy(), prGlueInfo);
 	if (!prGlueInfo || !prGlueInfo->u4ReadyFlag || !prGlueInfo->prAdapter)
 		return;
 
@@ -718,7 +718,7 @@ int glRstwlanPreWholeChipReset(enum consys_drv_type type, char *reason)
 	struct GLUE_INFO *prGlueInfo;
 	struct ADAPTER *prAdapter = NULL;
 
-	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wlanGetWiphy());
+	WIPHY_PRIV(wlanGetWiphy(), prGlueInfo);
 	prAdapter = prGlueInfo->prAdapter;
 
 	DBGLOG(INIT, INFO,
@@ -746,8 +746,7 @@ int glRstwlanPreWholeChipReset(enum consys_drv_type type, char *reason)
 		while ((!prGlueInfo) ||
 			(prGlueInfo->u4ReadyFlag == 0) ||
 			(g_IsWfsysRstDone == FALSE)) {
-			prGlueInfo =
-				(struct GLUE_INFO *) wiphy_priv(wlanGetWiphy());
+			WIPHY_PRIV(wlanGetWiphy(), prGlueInfo);
 			DBGLOG(REQ, WARN, "wifi driver is not ready\n");
 			if (g_IsWfsysResetOnFail == TRUE) {
 				DBGLOG(REQ, WARN,
@@ -865,7 +864,7 @@ void glResetSubsysRstProcedure(
 	struct WIFI_VAR *prWifiVar = NULL;
 	struct GLUE_INFO *prGlueInfo = NULL;
 
-	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wlanGetWiphy());
+	WIPHY_PRIV(wlanGetWiphy(), prGlueInfo);
 	if (prGlueInfo && prGlueInfo->u4ReadyFlag) {
 		prWifiVar = &prAdapter->rWifiVar;
 		if (prWifiVar->fgRstRecover == 1)
@@ -1022,7 +1021,7 @@ int wlan_reset_thread_main(void *data)
 			KAL_WAKE_LOCK(NULL,
 				      prWlanRstThreadWakeLock);
 #endif
-		prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wlanGetWiphy());
+		WIPHY_PRIV(wlanGetWiphy(), prGlueInfo);
 		if (test_and_clear_bit(GLUE_FLAG_RST_START_BIT, &g_ulFlag)) {
 			if (KAL_WAKE_LOCK_ACTIVE(NULL, g_IntrWakeLock))
 				KAL_WAKE_UNLOCK(NULL, g_IntrWakeLock);

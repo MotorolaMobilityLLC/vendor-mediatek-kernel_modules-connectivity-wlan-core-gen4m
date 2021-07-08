@@ -86,7 +86,7 @@ int32_t kalBoostCpu(IN struct ADAPTER *prAdapter,
 
 	uint32_t u4ClusterNum = topo_ctrl_get_nr_clusters();
 
-	prGlueInfo = (struct GLUE_INFO *)wiphy_priv(wlanGetWiphy());
+	WIPHY_PRIV(wlanGetWiphy(), prGlueInfo);
 	ASSERT(u4ClusterNum <= MAX_CLUSTER_NUM);
 	/* ACAO, we dont have to set core number */
 	i4Freq = (u4TarPerfLevel >= u4BoostCpuTh) ? MAX_CPU_FREQ : -1;
