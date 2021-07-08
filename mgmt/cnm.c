@@ -4209,7 +4209,7 @@ void cnmOpmodeEventHandler(
 	prEvtOpMode = (struct EVENT_OPMODE_CHANGE *)
 		(prEvent->aucBuffer);
 
-#if (CFG_SUPPORT_CONNINFRA == 1 && CFG_SUPPORT_CNM_POWER_CTRL == 1)
+#if (CFG_SUPPORT_POWER_THROTTLING == 1 && CFG_SUPPORT_CNM_POWER_CTRL == 1)
 	/* store reason for ANT_CTRL and SMARTGEAR  */
 	if (prEvtOpMode->ucEnable &&
 			(prEvtOpMode->ucReason ==
