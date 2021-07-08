@@ -102,7 +102,7 @@ char *g_au1TxPwrOperationLabel[] = {
 };
 #endif
 
-#define PWR_BUF_LEN 200
+#define PWR_BUF_LEN 1024
 
 /*******************************************************************************
  *                             D A T A   T Y P E S
@@ -4429,6 +4429,8 @@ void txPwrCtrlShowList(struct ADAPTER *prAdapter, uint8_t filterType,
 						prChlSettingList->opHE[k],
 					    prChlSettingList->i8PwrLimitHE[k]);
 
+				if (msgOfs > PWR_BUF_LEN)
+					msgOfs = PWR_BUF_LEN;
 				/*message tail*/
 				if (msgOfs > 0)
 					msgLimit[msgOfs-1] = '\0';
