@@ -711,7 +711,12 @@ struct DOMAIN_INFO_ENTRY arSupportedRegDomains[] = {
 			{121, BAND_5G, CHNL_SPAN_20, 100, 12, TRUE}
 			,			/* CH_SET_UNII_WW_100_144 */
 			{125, BAND_5G, CHNL_SPAN_20, 149, 5, FALSE}
-					/* CH_SET_UNII_UPPER_149_165 */
+			,			/* CH_SET_UNII_UPPER_149_165 */
+#if (CFG_SUPPORT_WIFI_6G == 1)
+			{131, BAND_6G, CHNL_SPAN_80, 5, 15, FALSE}
+			,			/* 6G_PSC_CH_SET_5_229 */
+#endif
+			{0, BAND_NULL, 0, 0, 0, FALSE}
 		}
 	}
 	,
@@ -781,6 +786,10 @@ struct DOMAIN_INFO_ENTRY arSupportedRegDomains[] = {
 			,			/* CH_SET_UNII_WW_100_144 */
 			{125, BAND_5G, CHNL_SPAN_20, 149, 5, FALSE}
 			,			/* CH_SET_UNII_UPPER_149_165 */
+#if (CFG_SUPPORT_WIFI_6G == 1)
+			{131, BAND_6G, CHNL_SPAN_80, 5, 15, FALSE}
+			,			/* 6G_PSC_CH_SET_5_229 */
+#endif
 			{0, BAND_NULL, 0, 0, 0, FALSE}
 		}
 	}
@@ -2845,7 +2854,8 @@ rlmDomainBuildCmdByDefaultTable(struct CMD_SET_COUNTRY_CHANNEL_POWER_LIMIT
 
 	/*Build power limit cmd by default table information */
 
-	for (i = POWER_LIMIT_2G4; i < POWER_LIMIT_SUBAND_NUM; i++) {
+	/*for (i = POWER_LIMIT_2G4; i < POWER_LIMIT_SUBAND_NUM; i++) {*/
+	for (i = POWER_LIMIT_2G4; i <= POWER_LIMIT_UNII3; i++) {
 
 		cLmtBand = prPwrLimitSubBand->aucPwrLimitSubBand[i];
 

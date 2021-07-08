@@ -334,7 +334,6 @@ static struct ieee80211_channel mtk_6ghz_channels[] = {
 	CHAN6G(93, 0),
 	/* UNII-6 */
 	CHAN6G(97, 0),
-#if 0 /* Harrier currently not support */
 	CHAN6G(101, 0),
 	CHAN6G(105, 0),
 	CHAN6G(109, 0),
@@ -371,7 +370,6 @@ static struct ieee80211_channel mtk_6ghz_channels[] = {
 	CHAN6G(225, 0),
 	CHAN6G(229, 0),
 	CHAN6G(233, 0)
-#endif
 };
 #endif
 
