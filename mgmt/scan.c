@@ -2071,6 +2071,12 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 					HE_IS_ER_SU_DISABLE(
 						prHeOp->ucHeOpParams);
 				}
+#if (CFG_SUPPORT_WIFI_6G == 1)
+				if (IE_ID_EXT(pucIE) == ELEM_EXT_ID_HE_OP)
+					scanParseHEOpIE(pucIE,
+						prBssDesc, eHwBand);
+#endif /* CFG_SUPPORT_WIFI_6G == 1 */
+
 				DBGLOG(SCN, INFO,
 					"ER: BSSID:" MACSTR
 					" SSID:%s,rx:%x, er:%x\n",
