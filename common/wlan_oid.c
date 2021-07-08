@@ -9496,6 +9496,11 @@ wlanoidSetNetworkAddress(IN struct ADAPTER *prAdapter,
 			(struct IPV4_NETWORK_ADDRESS_LIST *)
 			kalMemAlloc(u4IpV4AddrListSize,
 				    VIR_MEM_TYPE);
+	if (!prBssInfo->prIpV4NetAddrList) {
+		kalMemFree(prCmdNetworkAddressList, VIR_MEM_TYPE,
+			   u4CmdSize);
+		return WLAN_STATUS_FAILURE;
+	}
 	prBssInfo->prIpV4NetAddrList->ucAddrCount =
 			(uint8_t) u4IPv4AddrCount;
 #endif
