@@ -1380,6 +1380,10 @@ uint32_t wlanAdapterStart(IN struct ADAPTER *prAdapter,
 		nicEnableInterrupt(prAdapter);
 		/* init SER module */
 		nicSerInit(prAdapter);
+#if (CFG_SUPPORT_POWER_THROTTLING == 1)
+		/* init thermal protection */
+		thrmInit(prAdapter);
+#endif
 	} else {
 		prAdapter->u4HifDbgFlag |= DEG_HIF_DEFAULT_DUMP;
 		halPrintHifDbgInfo(prAdapter);

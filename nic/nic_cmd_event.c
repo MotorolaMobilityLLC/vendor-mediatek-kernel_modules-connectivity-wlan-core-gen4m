@@ -3243,6 +3243,13 @@ void nicEventLayer0ExtMagic(IN struct ADAPTER *prAdapter,
 		       prStaRec->ucMaxMpduCount);
 		break;
 	}
+#if (CFG_SUPPORT_POWER_THROTTLING == 1)
+	case EXT_EVENT_ID_THERMAL_PROTECT:
+	{
+		thrmProtEventHandler(prAdapter, prEvent->aucBuffer);
+		break;
+	}
+#endif
 #if CFG_SUPPORT_WIFI_SYSDVT
 	case EXT_EVENT_ID_SYSDVT_TEST:
 	{
