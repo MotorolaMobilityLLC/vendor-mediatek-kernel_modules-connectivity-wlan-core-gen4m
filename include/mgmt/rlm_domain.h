@@ -77,7 +77,11 @@
  *   C O N S T A N T S
  *******************************************************************************
  */
+#if (CFG_SUPPORT_WIFI_6G == 1)
+#define MAX_SUBBAND_NUM     7
+#else
 #define MAX_SUBBAND_NUM     6
+#endif
 #define MAX_SUBBAND_NUM_5G  8
 
 #define COUNTRY_CODE_NULL      ((uint16_t)0x0)
@@ -814,7 +818,8 @@ enum ENUM_CHNL_SPAN {
 	CHNL_SPAN_5 = 1,
 	CHNL_SPAN_10 = 2,
 	CHNL_SPAN_20 = 4,
-	CHNL_SPAN_40 = 8
+	CHNL_SPAN_40 = 8,
+	CHNL_SPAN_80 = 16
 };
 
 /* Define BSS operating bandwidth */

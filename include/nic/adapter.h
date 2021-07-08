@@ -1910,6 +1910,9 @@ struct ADAPTER {
 
 #if (CFG_SUPPORT_WIFI_6G == 1)
 	u_int8_t fgEnable6GBand;
+#if (CFG_SUPPORT_WIFI_6G_OOB_RNR == 1)
+	struct LINK rNeighborAPInfoList;
+#endif
 #endif
 };				/* end of _ADAPTER_T */
 

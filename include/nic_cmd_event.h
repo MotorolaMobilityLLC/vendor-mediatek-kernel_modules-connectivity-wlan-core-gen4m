@@ -1646,7 +1646,7 @@ struct CMD_SUBBAND_INFO {
 struct CMD_SET_DOMAIN_INFO {
 	uint16_t u2CountryCode;
 	uint16_t u2IsSetPassiveScan;
-	struct CMD_SUBBAND_INFO rSubBand[6];
+	struct CMD_SUBBAND_INFO rSubBand[MAX_SUBBAND_NUM];
 
 	uint8_t uc2G4Bandwidth;	/* CONFIG_BW_20_40M or CONFIG_BW_20M */
 	uint8_t uc5GBandwidth;	/* CONFIG_BW_20_40M or CONFIG_BW_20M */

@@ -2384,6 +2384,7 @@ struct PARAM_SCAN_REQUEST_EXT {
 };
 
 struct PARAM_SCAN_REQUEST_ADV {
+	uint8_t ucShortSsidNum;
 	uint32_t u4SsidNum;
 	struct PARAM_SSID rSsid[CFG_SCAN_SSID_MAX_NUM];
 	uint8_t ucScanType;
@@ -2397,6 +2398,9 @@ struct PARAM_SCAN_REQUEST_ADV {
 	uint8_t ucBssIndex;
 	uint32_t u4Flags;
 	uint8_t aucBssid[CFG_SCAN_SSID_MAX_NUM][MAC_ADDR_LEN];
+	/* For 6G OOB discovery*/
+	uint8_t ucBssidMatchCh[CFG_SCAN_SSID_MAX_NUM];
+	uint8_t ucBssidMatchSsidInd[CFG_SCAN_SSID_MAX_NUM];
 };
 
 /*--------------------------------------------------------------*/
