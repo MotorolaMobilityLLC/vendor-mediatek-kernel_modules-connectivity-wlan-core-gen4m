@@ -6613,7 +6613,7 @@ uint8_t p2pFunGetAcsBestCh(IN struct ADAPTER *prAdapter,
 		IN uint32_t u4LteSafeChnMask_5G_1,
 		IN uint32_t u4LteSafeChnMask_5G_2)
 {
-	struct RF_CHANNEL_INFO aucChannelList[MAX_CHN_NUM];
+	struct RF_CHANNEL_INFO aucChannelList[MAX_PER_BAND_CHN_NUM];
 	uint8_t ucNumOfChannel;
 	struct PARAM_GET_CHN_INFO *prGetChnLoad;
 	uint8_t i;
@@ -6623,10 +6623,9 @@ uint8_t p2pFunGetAcsBestCh(IN struct ADAPTER *prAdapter,
 	rPreferChannel.ucChannel = 0;
 	rPreferChannel.u4Dirtiness = 0xFFFFFFFF;
 
-	kalMemZero(aucChannelList,
-			sizeof(struct RF_CHANNEL_INFO) * MAX_CHN_NUM);
+	kalMemZero(aucChannelList, sizeof(aucChannelList));
 
-	rlmDomainGetChnlList(prAdapter, eBand, TRUE, MAX_CHN_NUM,
+	rlmDomainGetChnlList(prAdapter, eBand, TRUE, MAX_PER_BAND_CHN_NUM,
 			&ucNumOfChannel, aucChannelList);
 
 	/*
@@ -6643,7 +6642,7 @@ uint8_t p2pFunGetAcsBestCh(IN struct ADAPTER *prAdapter,
 		uint8_t ucIdx;
 
 		ucIdx = wlanGetChannelIndex(aucChannelList[i].ucChannelNum);
-		if (ucIdx >= MAX_CHN_NUM)
+		if (ucIdx >= MAX_PER_BAND_CHN_NUM)
 			continue;
 
 		DBGLOG(P2P, TRACE, "idx: %u, ch: %u, d: %d\n",

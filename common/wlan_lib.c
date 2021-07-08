@@ -5654,6 +5654,30 @@ uint8_t wlanGetChannelNumberByNetwork(IN struct ADAPTER
 /*----------------------------------------------------------------------------*/
 /*!
  * @brief This function is to
+ *        get band information corresponding to specified network type
+ *
+ * @param prAdapter      Pointer of Adapter Data Structure
+ * @param ucBssIndex     BSS Info Index
+ *
+ * @return Band index
+ */
+/*----------------------------------------------------------------------------*/
+uint32_t wlanGetBandIndexByNetwork(IN struct ADAPTER
+				      *prAdapter, IN uint8_t ucBssIndex)
+{
+	struct BSS_INFO *prBssInfo;
+
+	ASSERT(prAdapter);
+	ASSERT(ucBssIndex <= prAdapter->ucHwBssIdNum);
+
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
+
+	return prBssInfo->eBand;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * @brief This function is to
  *        check unconfigured system properties and generate related message on
  *        scan list to notify users
  *
@@ -7226,17 +7250,23 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 				prAdapter, "Sta2gBw", MAX_BW_20MHZ);
 	prWifiVar->ucSta5gBandwidth = (uint8_t) wlanCfgGetUint32(
 				prAdapter, "Sta5gBw", MAX_BW_80MHZ);
+	prWifiVar->ucSta6gBandwidth = (uint8_t) wlanCfgGetUint32(
+				prAdapter, "Sta6gBw", MAX_BW_80MHZ);
 	/* GC,GO */
 	prWifiVar->ucP2p2gBandwidth = (uint8_t) wlanCfgGetUint32(
 				prAdapter, "P2p2gBw", MAX_BW_20MHZ);
 	prWifiVar->ucP2p5gBandwidth = (uint8_t) wlanCfgGetUint32(
 				prAdapter, "P2p5gBw", MAX_BW_80MHZ);
+	prWifiVar->ucP2p6gBandwidth = (uint8_t) wlanCfgGetUint32(
+				prAdapter, "P2p6gBw", MAX_BW_80MHZ);
 	prWifiVar->ucApBandwidth = (uint8_t) wlanCfgGetUint32(
 				prAdapter, "ApBw", MAX_BW_160MHZ);
 	prWifiVar->ucAp2gBandwidth = (uint8_t) wlanCfgGetUint32(
 				prAdapter, "Ap2gBw", MAX_BW_20MHZ);
 	prWifiVar->ucAp5gBandwidth = (uint8_t) wlanCfgGetUint32(
 				prAdapter, "Ap5gBw", MAX_BW_80MHZ);
+	prWifiVar->ucAp6gBandwidth = (uint8_t) wlanCfgGetUint32(
+				prAdapter, "Ap6gBw", MAX_BW_80MHZ);
 	prWifiVar->ucApChnlDefFromCfg = (uint8_t) wlanCfgGetUint32(
 				prAdapter, "ApChnlDefFromCfg", FEATURE_ENABLED);
 	prWifiVar->ucApAllowHtVhtTkip = (uint8_t) wlanCfgGetUint32(
@@ -7245,17 +7275,24 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 
 	prWifiVar->ucNSS = (uint8_t) wlanCfgGetUint32
 				(prAdapter, "Nss", 2);
+
 #ifdef CFG_FORCE_AP1NSS
+	prWifiVar->ucAp6gNSS = (uint8_t)wlanCfgGetUint32
+				(prAdapter, "Ap6gNss", 1);
 	prWifiVar->ucAp5gNSS = (uint8_t)wlanCfgGetUint32
 				(prAdapter, "Ap5gNss", 1);
 	prWifiVar->ucAp2gNSS = (uint8_t) wlanCfgGetUint32
 				(prAdapter, "Ap2gNss", 1);
 #else
+	prWifiVar->ucAp6gNSS = (uint8_t)wlanCfgGetUint32
+				(prAdapter, "Ap6gNss", 2);
 	prWifiVar->ucAp5gNSS = (uint8_t)wlanCfgGetUint32
 				(prAdapter, "Ap5gNss", 2);
 	prWifiVar->ucAp2gNSS = (uint8_t) wlanCfgGetUint32
 				(prAdapter, "Ap2gNss", 2);
 #endif
+	prWifiVar->ucGo6gNSS = (uint8_t) wlanCfgGetUint32
+				(prAdapter, "Go6gNss", 2);
 	prWifiVar->ucGo5gNSS = (uint8_t) wlanCfgGetUint32
 				(prAdapter, "Go5gNss", 2);
 	prWifiVar->ucGo2gNSS = (uint8_t) wlanCfgGetUint32
@@ -11034,11 +11071,19 @@ wlanGetSupportNss(IN struct ADAPTER *prAdapter,
 				ucRetValNss = prAdapter->rWifiVar.ucAp2gNSS;
 			else if (prBssInfo->eBand == BAND_5G)
 				ucRetValNss = prAdapter->rWifiVar.ucAp5gNSS;
+#if (CFG_SUPPORT_WIFI_6G == 1)
+			else if (prBssInfo->eBand == BAND_6G)
+				ucRetValNss = prAdapter->rWifiVar.ucAp6gNSS;
+#endif
 		} else {
 			if (prBssInfo->eBand == BAND_2G4)
 				ucRetValNss = prAdapter->rWifiVar.ucGo2gNSS;
 			else if (prBssInfo->eBand == BAND_5G)
 				ucRetValNss = prAdapter->rWifiVar.ucGo5gNSS;
+#if (CFG_SUPPORT_WIFI_6G == 1)
+			else if (prBssInfo->eBand == BAND_6G)
+				ucRetValNss = prAdapter->rWifiVar.ucGo6gNSS;
+#endif
 		}
 	}
 #if CFG_SUPPORT_IOT_AP_BLACKLIST

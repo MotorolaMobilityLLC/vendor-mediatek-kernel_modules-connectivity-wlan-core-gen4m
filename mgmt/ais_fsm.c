@@ -290,6 +290,7 @@ void aisInitializeConnectionSettings(IN struct ADAPTER *prAdapter,
 		? CONFIG_BW_20_40M
 		: CONFIG_BW_20M;
 	prAdapter->rWifiVar.uc5GBandwidthMode = CONFIG_BW_20_40M;
+	prAdapter->rWifiVar.uc6GBandwidthMode = CONFIG_BW_20_40_80M;
 
 	prConnSettings->rRsnInfo.ucElemId = 0x30;
 	prConnSettings->rRsnInfo.u2Version = 0x0001;

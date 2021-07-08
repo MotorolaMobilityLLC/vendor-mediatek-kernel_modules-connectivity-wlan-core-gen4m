@@ -1170,6 +1170,11 @@ int mtk_p2p_cfg80211_scan(struct wiphy *wiphy,
 			case KAL_BAND_5GHZ:
 				prRfChannelInfo->eBand = BAND_5G;
 				break;
+#if (CFG_SUPPORT_WIFI_6G == 1)
+			case KAL_BAND_6GHZ:
+				prRfChannelInfo->eBand = BAND_6G;
+				break;
+#endif
 			default:
 				DBGLOG(P2P, TRACE,
 					"UNKNOWN Band info from supplicant\n");

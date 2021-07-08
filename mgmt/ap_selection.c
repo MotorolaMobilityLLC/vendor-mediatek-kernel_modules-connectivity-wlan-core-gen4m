@@ -302,6 +302,9 @@ static uint16_t scanCalculateScoreByBandwidth(struct ADAPTER *prAdapter,
 {
 	uint16_t u2Score = 0;
 	enum ENUM_CHANNEL_WIDTH eChannelWidth = prBssDesc->eChannelWidth;
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	uint8_t ucSta6GBW = prAdapter->rWifiVar.ucSta6gBandwidth;
+#endif
 	uint8_t ucSta5GBW = prAdapter->rWifiVar.ucSta5gBandwidth;
 	uint8_t ucSta2GBW = prAdapter->rWifiVar.ucSta2gBandwidth;
 	uint8_t ucStaBW = prAdapter->rWifiVar.ucStaBandwidth;
@@ -342,6 +345,14 @@ static uint16_t scanCalculateScoreByBandwidth(struct ADAPTER *prAdapter,
 			u2Score = (prBssDesc->eSco == 0 ||
 					ucSta5GBW == MAX_BW_20MHZ) ? 40:60;
 		}
+#if (CFG_SUPPORT_WIFI_6G == 1)
+		else if (prBssDesc->eBand == BAND_6G) {
+			if (ucSta6GBW > ucStaBW)
+				ucSta6GBW = ucStaBW;
+			u2Score = (prBssDesc->eSco == 0 ||
+				ucSta6GBW == MAX_BW_20MHZ) ? 40:60;
+		}
+#endif
 	} else if (prBssDesc->u2BSSBasicRateSet & RATE_SET_OFDM)
 		u2Score = 20;
 	else

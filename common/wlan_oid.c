@@ -16857,6 +16857,7 @@ wlanoidIndicateBssInfo(IN struct ADAPTER *prAdapter,
 				   (uint8_t *) pprBssDesc[i]->aucRawBuf,
 				   pprBssDesc[i]->u2RawLength,
 				   pprBssDesc[i]->ucChannelNum,
+				   pprBssDesc[i]->eBand,
 				   RCPI_TO_dBm(pprBssDesc[i]->ucRCPI));
 	}
 	DBGLOG(SCN, INFO, "pending %d sched scan results\n", i);
