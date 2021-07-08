@@ -661,6 +661,10 @@ u_int8_t secIsProtectedFrame(IN struct ADAPTER *prAdapter,
 			     IN struct MSDU_INFO *prMsdu,
 			     IN struct STA_RECORD *prStaRec)
 {
+#if CFG_SUPPORT_NAN
+	struct BSS_INFO *prBssInfo;
+#endif
+
 #if CFG_SUPPORT_802_11W
 	if (rsnCheckBipKeyInstalled(prAdapter, prStaRec) &&
 	    (secIsRobustActionFrame(prAdapter, prMsdu->prPacket)
@@ -670,6 +674,20 @@ u_int8_t secIsProtectedFrame(IN struct ADAPTER *prAdapter,
 #endif
 	if (prMsdu->ucPacketType == TX_PACKET_TYPE_MGMT)
 		return FALSE;
+#if CFG_SUPPORT_NAN
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
+		prMsdu->ucBssIndex);
+	if (prBssInfo == NULL) {
+		DBGLOG(NAN, ERROR, "prBssInfo is null\n");
+		return FALSE;
+	}
+	if (prBssInfo->eNetworkType == NETWORK_TYPE_NAN) {
+		if (prStaRec && (prStaRec->fgTransmitKeyExist == TRUE))
+			return TRUE;
+		else
+			return FALSE;
+	}
+#endif
 
 	return secIsProtectedBss(prAdapter,
 				 GET_BSS_INFO_BY_INDEX(prAdapter,

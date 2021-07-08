@@ -73,6 +73,9 @@
 #include "precomp.h"
 #include "que_mgt.h"
 #include "wnm.h"
+#if CFG_SUPPORT_NAN
+#include "nan_data_engine.h"
+#endif
 
 /*******************************************************************************
  *                              C O N S T A N T S
@@ -187,6 +190,9 @@ static struct RX_EVENT_HANDLER arEventTable[] = {
 	{EVENT_ID_OPMODE_CHANGE, cnmOpmodeEventHandler},
 #if CFG_SUPPORT_LOWLATENCY_MODE
 	{EVENT_ID_LOW_LATENCY_INFO, nicEventUpdateLowLatencyInfoStatus},
+#endif
+#if CFG_SUPPORT_NAN
+	{ EVENT_ID_NAN_EXT_EVENT, nicNanEventDispatcher }
 #endif
 };
 
@@ -4555,6 +4561,162 @@ uint8_t nicIsActionFrameValid(IN struct SW_RFB *prSwRfb)
 	}
 	return TRUE;
 }
+
+#if CFG_SUPPORT_NAN
+uint32_t nicRxNANPMFCheck(IN struct ADAPTER *prAdapter,
+		 IN struct BSS_INFO *prBssInfo, IN struct SW_RFB *prSwRfb)
+{
+	struct _NAN_ACTION_FRAME_T *prActionFrame = NULL;
+
+	if (!prSwRfb) {
+		DBGLOG(NAN, ERROR, "prSwRfb error!\n");
+		return WLAN_STATUS_FAILURE;
+	}
+
+	prActionFrame = (struct _NAN_ACTION_FRAME_T *)prSwRfb->pvHeader;
+
+	if (prAdapter->rWifiVar.fgNoPmf)
+		return WLAN_STATUS_SUCCESS;
+
+	if (prBssInfo != NULL) {
+		if (prBssInfo->eNetworkType == NETWORK_TYPE_NAN) {
+			if (prSwRfb->prStaRec->fgIsTxKeyReady == TRUE) {
+				/* NAN Todo: Not HW_MAC_RX_DESC here */
+				if (HAL_RX_STATUS_IS_CIPHER_MISMATCH(
+					    (struct HW_MAC_RX_DESC *)prSwRfb
+						    ->prRxStatus) == TRUE) {
+					DBGLOG(NAN, INFO,
+					       "[PMF] Rx NON-PROTECT NAF, StaIdx:%d, Wtbl:%d\n",
+					       prSwRfb->prStaRec->ucIndex,
+					       prSwRfb->ucWlanIdx);
+					DBGLOG(NAN, INFO,
+					       "Src=>%02x:%02x:%02x:%02x:%02x:%02x, OUISubtype:%d\n",
+					       prActionFrame->aucSrcAddr[0],
+					       prActionFrame->aucSrcAddr[1],
+					       prActionFrame->aucSrcAddr[2],
+					       prActionFrame->aucSrcAddr[3],
+					       prActionFrame->aucSrcAddr[4],
+					       prActionFrame->aucSrcAddr[5],
+					       prActionFrame->ucOUISubtype);
+					return WLAN_STATUS_FAILURE;
+				}
+			}
+		}
+	}
+	return WLAN_STATUS_SUCCESS;
+}
+
+uint32_t nicRxProcessNanPubActionFrame(IN struct ADAPTER *prAdapter,
+			      IN struct SW_RFB *prSwRfb)
+{
+	uint32_t rWlanStatus = WLAN_STATUS_SUCCESS;
+	struct _NAN_ACTION_FRAME_T *prActionFrame = NULL;
+	uint8_t ucOuiType;
+	uint8_t ucOuiSubtype;
+	struct BSS_INFO *prBssInfo = NULL;
+
+	if (!prSwRfb) {
+		DBGLOG(NAN, ERROR, "prSwRfb error!\n");
+		return WLAN_STATUS_FAILURE;
+	}
+
+	DBGLOG(NAN, LOUD, "NAN RX ACTION FRAME PROCESSING\n");
+	prActionFrame = (struct _NAN_ACTION_FRAME_T *)prSwRfb->pvHeader;
+	if (!IS_WFA_SPECIFIC_OUI(prActionFrame->aucOUI))
+		return WLAN_STATUS_INVALID_DATA;
+
+	ucOuiType = prActionFrame->ucOUItype;
+
+	if (prSwRfb->prStaRec && (ucOuiType == VENDOR_OUI_TYPE_NAN_NAF)) {
+		prBssInfo = GET_BSS_INFO_BY_INDEX(
+			prAdapter, prSwRfb->prStaRec->ucBssIndex);
+		if (nicRxNANPMFCheck(prAdapter, prBssInfo, prSwRfb) ==
+		    WLAN_STATUS_FAILURE)
+			return WLAN_STATUS_FAILURE;
+	}
+
+	if (ucOuiType == VENDOR_OUI_TYPE_NAN_NAF ||
+	    ucOuiType == VENDOR_OUI_TYPE_NAN_SDF) {
+		ucOuiSubtype = prActionFrame->ucOUISubtype;
+		DBGLOG(NAN, INFO,
+		       "Rx NAN Pub Action, StaIdx:%d, Wtbl:%d, Key:%d, OUISubtype:%d\n",
+		       prSwRfb->ucStaRecIdx, prSwRfb->ucWlanIdx,
+		       (prSwRfb->prStaRec ? prSwRfb->prStaRec->fgIsTxKeyReady
+					  : 0),
+		       ucOuiSubtype);
+		DBGLOG(NAN, INFO, "Src=>%02x:%02x:%02x:%02x:%02x:%02x\n",
+		       prActionFrame->aucSrcAddr[0],
+		       prActionFrame->aucSrcAddr[1],
+		       prActionFrame->aucSrcAddr[2],
+		       prActionFrame->aucSrcAddr[3],
+		       prActionFrame->aucSrcAddr[4],
+		       prActionFrame->aucSrcAddr[5]);
+		DBGLOG(NAN, INFO, "Dest=>%02x:%02x:%02x:%02x:%02x:%02x\n",
+		       prActionFrame->aucDestAddr[0],
+		       prActionFrame->aucDestAddr[1],
+		       prActionFrame->aucDestAddr[2],
+		       prActionFrame->aucDestAddr[3],
+		       prActionFrame->aucDestAddr[4],
+		       prActionFrame->aucDestAddr[5]);
+
+		switch (ucOuiSubtype) {
+		case NAN_ACTION_RANGING_REQUEST:
+			rWlanStatus = nanRangingRequestRx(prAdapter, prSwRfb);
+			break;
+		case NAN_ACTION_RANGING_RESPONSE:
+			rWlanStatus = nanRangingResponseRx(prAdapter, prSwRfb);
+			break;
+		case NAN_ACTION_RANGING_TERMINATION:
+			rWlanStatus =
+				nanRangingTerminationRx(prAdapter, prSwRfb);
+			break;
+		case NAN_ACTION_RANGING_REPORT:
+			rWlanStatus = nanRangingReportRx(prAdapter, prSwRfb);
+			break;
+		case NAN_ACTION_DATA_PATH_REQUEST:
+			rWlanStatus =
+				nanNdpProcessDataRequest(prAdapter, prSwRfb);
+			break;
+		case NAN_ACTION_DATA_PATH_RESPONSE:
+			rWlanStatus =
+				nanNdpProcessDataResponse(prAdapter, prSwRfb);
+			break;
+		case NAN_ACTION_DATA_PATH_CONFIRM:
+			rWlanStatus =
+				nanNdpProcessDataConfirm(prAdapter, prSwRfb);
+			break;
+		case NAN_ACTION_DATA_PATH_KEY_INSTALLMENT:
+			rWlanStatus =
+				nanNdpProcessDataKeyInstall(prAdapter, prSwRfb);
+			break;
+		case NAN_ACTION_DATA_PATH_TERMINATION:
+			rWlanStatus = nanNdpProcessDataTermination(prAdapter,
+								   prSwRfb);
+			break;
+		case NAN_ACTION_SCHEDULE_REQUEST:
+			rWlanStatus = nanNdlProcessScheduleRequest(prAdapter,
+								   prSwRfb);
+			break;
+		case NAN_ACTION_SCHEDULE_RESPONSE:
+			rWlanStatus = nanNdlProcessScheduleResponse(prAdapter,
+								    prSwRfb);
+			break;
+		case NAN_ACTION_SCHEDULE_CONFIRM:
+			rWlanStatus = nanNdlProcessScheduleConfirm(prAdapter,
+								   prSwRfb);
+			break;
+		case NAN_ACTION_SCHEDULE_UPDATE_NOTIFICATION:
+			rWlanStatus = nanNdlProcessScheduleUpdateNotification(
+				prAdapter, prSwRfb);
+			break;
+		default:
+			break;
+		}
+	}
+	return rWlanStatus;
+}
+#endif
+
 /*----------------------------------------------------------------------------*/
 /*!
  * @brief
@@ -4648,6 +4810,10 @@ uint32_t nicRxProcessActionFrame(IN struct ADAPTER *
 				p2pFuncValidateRxActionFrame(prAdapter,
 					prSwRfb, TRUE, 0);
 		}
+#endif
+#if CFG_SUPPORT_NAN
+		if (prAdapter->fgIsNANRegistered)
+			nicRxProcessNanPubActionFrame(prAdapter, prSwRfb);
 #endif
 		break;
 

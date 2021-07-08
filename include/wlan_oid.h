@@ -3238,6 +3238,13 @@ wlanoidSetMulticastList(IN struct ADAPTER *prAdapter,
 			IN uint32_t u4SetBufferLen,
 			OUT uint32_t *pu4SetInfoLen);
 
+#if CFG_SUPPORT_NAN
+uint32_t wlanoidSetNANMulticastList(IN struct ADAPTER *prAdapter,
+				    uint8_t ucBssIdx, IN void *pvSetBuffer,
+				    IN uint32_t u4SetBufferLen,
+				    OUT uint32_t *pu4SetInfoLen);
+#endif
+
 uint32_t
 wlanoidQueryRcvError(IN struct ADAPTER *prAdapter,
 		     IN void *pvQueryBuffer,
@@ -3715,6 +3722,12 @@ wlanoidSetP2pMode(IN struct ADAPTER *prAdapter,
 		  IN void *pvSetBuffer,
 		  IN uint32_t u4SetBufferLen,
 		  OUT uint32_t *pu4SetInfoLen);
+#endif
+
+#if CFG_SUPPORT_NAN
+uint32_t wlanoidSetNANMode(IN struct ADAPTER *prAdapter, IN void *pvSetBuffer,
+			   IN uint32_t u4SetBufferLen,
+			   OUT uint32_t *pu4SetInfoLen);
 #endif
 
 uint32_t

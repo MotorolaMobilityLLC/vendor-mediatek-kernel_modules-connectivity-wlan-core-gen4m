@@ -986,6 +986,11 @@ uint32_t qmDequeueTxPacketsFromGlobalQueue(IN struct ADAPTER
 	IN uint32_t
 	*prPleCurrentQuota, IN uint32_t u4TotalQuota);
 
+#if CFG_SUPPORT_NAN
+void qmUpdateFreeNANQouta(IN struct ADAPTER *prAdapter,
+			  struct EVENT_UPDATE_NAN_TX_STATUS *prTxStatus);
+#endif
+
 void qmSetStaRecTxAllowed(IN struct ADAPTER *prAdapter,
 	IN struct STA_RECORD *prStaRec, IN u_int8_t fgIsTxAllowed);
 

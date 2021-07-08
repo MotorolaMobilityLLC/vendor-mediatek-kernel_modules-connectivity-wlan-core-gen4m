@@ -89,6 +89,10 @@
 #include "gl_vendor.h"
 #include "gl_hook_api.h"
 #include "mddp.h"
+#if CFG_SUPPORT_NAN
+#include "gl_vendor_ndp.h"
+#endif
+
 /*******************************************************************************
  *                              C O N S T A N T S
  *******************************************************************************
@@ -907,7 +911,37 @@ static const struct wiphy_vendor_command
 		,
 		.policy = VENDOR_CMD_RAW_DATA
 #endif
-	}
+	},
+#if CFG_SUPPORT_NAN
+	{
+		{
+			.vendor_id = OUI_MTK,
+			.subcmd = NL80211_VENDOR_SUBCMD_NAN
+		},
+		.flags = WIPHY_VENDOR_CMD_NEED_WDEV |
+				WIPHY_VENDOR_CMD_NEED_NETDEV |
+				WIPHY_VENDOR_CMD_NEED_RUNNING,
+		.doit = mtk_cfg80211_vendor_nan
+#if KERNEL_VERSION(5, 4, 0) <= CFG80211_VERSION_CODE
+		,
+		.policy = VENDOR_CMD_RAW_DATA
+#endif
+		},
+	{
+		{
+			.vendor_id = OUI_MTK,
+			.subcmd = NL80211_VENDOR_SUBCMD_NDP
+		},
+		.flags = WIPHY_VENDOR_CMD_NEED_WDEV |
+				WIPHY_VENDOR_CMD_NEED_NETDEV |
+				WIPHY_VENDOR_CMD_NEED_RUNNING,
+		.doit = mtk_cfg80211_vendor_ndp
+#if KERNEL_VERSION(5, 4, 0) <= CFG80211_VERSION_CODE
+		,
+		.policy = VENDOR_CMD_RAW_DATA
+#endif
+	},
+#endif
 };
 
 static const struct nl80211_vendor_cmd_info
@@ -3421,6 +3455,35 @@ int set_p2p_mode_handler(struct net_device *netdev,
 
 #endif
 
+#if CFG_SUPPORT_NAN
+int set_nan_handler(struct net_device *netdev, uint32_t ucEnable)
+{
+	struct GLUE_INFO *prGlueInfo =
+		*((struct GLUE_INFO **)netdev_priv(netdev));
+	uint32_t rWlanStatus = WLAN_STATUS_SUCCESS;
+	uint32_t u4BufLen = 0;
+
+	if ((!ucEnable) && (kalIsResetting() == FALSE))
+		nanNetUnregister(prGlueInfo, FALSE);
+
+	rWlanStatus = kalIoctl(prGlueInfo, wlanoidSetNANMode, (void *)&ucEnable,
+			       sizeof(uint32_t), FALSE, FALSE, TRUE, &u4BufLen);
+
+	DBGLOG(INIT, INFO, "set_nan_handler ret = 0x%08lx\n",
+	       (uint32_t)rWlanStatus);
+
+	/* Need to check fgIsNANRegistered, in case of whole chip reset.
+	 * in this case, kalIOCTL return success always,
+	 * and prGlueInfo->prP2PInfo[0] may be NULL
+	 */
+	if ((ucEnable) && (prGlueInfo->prAdapter->fgIsNANRegistered) &&
+	    (kalIsResetting() == FALSE))
+		nanNetRegister(prGlueInfo, FALSE); /* Fixme: error handling */
+
+	return 0;
+}
+#endif
+
 #if CFG_SUPPORT_EASY_DEBUG
 /*----------------------------------------------------------------------------*/
 /*!
@@ -4368,6 +4431,12 @@ void wlanOnPreAdapterStart(struct GLUE_INFO *prGlueInfo,
 	tasklet_init(&prGlueInfo->rTxCompleteTask,
 			halTxCompleteTasklet,
 			(unsigned long)prGlueInfo);
+
+#if CFG_SUPPORT_NAN
+	prAdapter->fgIsNANfromHAL = TRUE;
+	DBGLOG(INIT, WARN, "NAN fgIsNANfromHAL init %u\n",
+	       prAdapter->fgIsNANfromHAL);
+#endif
 }
 
 static
@@ -4475,6 +4544,11 @@ static int32_t wlanOnPreNetRegister(struct GLUE_INFO *prGlueInfo,
 #endif
 #endif
 	}
+
+#if CFG_SUPPORT_NAN
+	if (!bAtResetFlow)
+		kalCreateUserSock(prAdapter->prGlueInfo);
+#endif
 
 #if CFG_SUPPORT_DBDC
 	/* Update DBDC default setting */
@@ -5545,6 +5619,17 @@ static void wlanRemove(void)
 		/*p2pRemove must before wlanAdapterStop */
 		p2pRemove(prGlueInfo);
 	}
+#endif
+
+#if CFG_SUPPORT_NAN
+	if (prGlueInfo->prAdapter->fgIsNANRegistered) {
+		DBGLOG(INIT, INFO, "NANNetUnregister...\n");
+		nanNetUnregister(prGlueInfo, FALSE);
+		DBGLOG(INIT, INFO, "nanRemove...\n");
+		/*p2pRemove must before wlanAdapterStop */
+		nanRemove(prGlueInfo);
+	}
+	kalReleaseUserSock(prGlueInfo);
 #endif
 
 #if CFG_ENABLE_BT_OVER_WIFI
