@@ -21,6 +21,7 @@
 #include "coda/soc7_0/wf_pse_top.h"
 #include "coda/soc7_0/wf_wfdma_host_dma0.h"
 #include "coda/soc7_0/wf_hif_dmashdl_top.h"
+#include "coda/soc7_0/wf_pp_top.h"
 
 /*******************************************************************************
  *                         C O M P I L E R   F L A G S

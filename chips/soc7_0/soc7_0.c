@@ -14,8 +14,23 @@
 
 #include "precomp.h"
 #include "soc7_0.h"
-#include "coda/soc7_0/wf_wfdma_host_dma0.h"
+#include "coda/soc7_0/conn_host_csr_top.h"
+#include "coda/soc7_0/conn_infra_cfg.h"
+#include "coda/soc7_0/conn_infra_cfg_on.h"
+#include "coda/soc7_0/conn_infra_rgu_on.h"
+#include "coda/soc7_0/conn_wt_slp_ctl_reg.h"
+#include "coda/soc7_0/wf_hif_dmashdl_top.h"
+#include "coda/soc7_0/wf_mcu_bus_cr.h"
+#include "coda/soc7_0/wf_mcu_confg_ls.h"
+#include "coda/soc7_0/wf_mcusys_infra_bus_full_u_debug_ctrl_ao_wfmcu_pwa_debug_ctrl_ao.h"
+#include "coda/soc7_0/wf_ple_top.h"
 #include "coda/soc7_0/wf_pse_top.h"
+#include "coda/soc7_0/wf_top_cfg.h"
+#include "coda/soc7_0/wf_top_cfg_on.h"
+#include "coda/soc7_0/wf_top_slpprot_on.h"
+#include "coda/soc7_0/wf_wfdma_host_dma0.h"
+#include "coda/soc7_0/ap2wf_conn_infra_on_ccif4.h"
+#include "coda/soc7_0/conn_semaphore.h"
 #include "hal_dmashdl_soc7_0.h"
 
 /*******************************************************************************
@@ -27,6 +42,14 @@
 *                                 M A C R O S
 ********************************************************************************
 */
+
+#define SOC7_0_FILE_NAME_TOTAL 8
+#define SOC7_0_FILE_NAME_MAX 64
+
+static uint8_t *soc7_0_apucFwName[] = {
+	(uint8_t *) CFG_FW_FILENAME "_MT",
+	NULL
+};
 
 /*******************************************************************************
 *                   F U N C T I O N   D E C L A R A T I O N S
@@ -66,6 +89,12 @@ static void soc7_0asicConnac2xWpdmaConfig(struct GLUE_INFO *prGlueInfo,
 		u_int8_t enable, bool fgResetHif);
 
 static void soc7_0EnableFwDlMode(struct ADAPTER *prAdapter);
+
+static bool soc7_0_get_sw_interrupt_status(struct ADAPTER *prAdapter,
+	uint32_t *status);
+
+static int wf_pwr_on_consys_mcu(void);
+static int wf_pwr_off_consys_mcu(void);
 
 /*******************************************************************************
 *                              F U N C T I O N S
@@ -145,56 +174,58 @@ struct PCIE_CHIP_CR_MAPPING soc7_0_bus2chip_cr_mapping[] = {
 #elif defined(_HIF_AXI)
 struct PCIE_CHIP_CR_MAPPING soc7_0_bus2chip_cr_mapping[] = {
 	/* chip addr, bus addr, range */
-	{0x830c0000, 0x400000, 0x1000}, /* WF_MCU_BUS_CR_REMAP */
-	{0x54000000, 0x402000, 0x1000},  /* WFDMA PCIE0 MCU DMA0 */
-	{0x55000000, 0x403000, 0x1000},  /* WFDMA PCIE0 MCU DMA1 */
-	{0x56000000, 0x404000, 0x1000},  /* WFDMA reserved */
-	{0x57000000, 0x405000, 0x1000},  /* WFDMA MCU wrap CR */
-	{0x58000000, 0x406000, 0x1000},  /* WFDMA PCIE1 MCU DMA0 (MEM_DMA) */
-	{0x59000000, 0x407000, 0x1000},  /* WFDMA PCIE1 MCU DMA1 */
-	{0x820c0000, 0x408000, 0x4000},  /* WF_UMAC_TOP (PLE) */
-	{0x820c8000, 0x40c000, 0x2000},  /* WF_UMAC_TOP (PSE) */
-	{0x820cc000, 0x40e000, 0x2000},  /* WF_UMAC_TOP (PP) */
-	{0x820e0000, 0x420000, 0x0400},  /* WF_LMAC_TOP BN0 (WF_CFG) */
-	{0x820e1000, 0x420400, 0x0200},  /* WF_LMAC_TOP BN0 (WF_TRB) */
-	{0x820e2000, 0x420800, 0x0400},  /* WF_LMAC_TOP BN0 (WF_AGG) */
-	{0x820e3000, 0x420c00, 0x0400},  /* WF_LMAC_TOP BN0 (WF_ARB) */
-	{0x820e4000, 0x421000, 0x0400},  /* WF_LMAC_TOP BN0 (WF_TMAC) */
-	{0x820e5000, 0x421400, 0x0800},  /* WF_LMAC_TOP BN0 (WF_RMAC) */
-	{0x820ce000, 0x421c00, 0x0200},  /* WF_LMAC_TOP (WF_SEC) */
-	{0x820e7000, 0x421e00, 0x0200},  /* WF_LMAC_TOP BN0 (WF_DMA) */
-	{0x820cf000, 0x422000, 0x1000},  /* WF_LMAC_TOP (WF_PF) */
-	{0x820e9000, 0x423400, 0x0200},  /* WF_LMAC_TOP BN0 (WF_WTBLOFF) */
-	{0x820ea000, 0x424000, 0x0200},  /* WF_LMAC_TOP BN0 (WF_ETBF) */
-	{0x820eb000, 0x424200, 0x0400},  /* WF_LMAC_TOP BN0 (WF_LPON) */
-	{0x820ec000, 0x424600, 0x0200},  /* WF_LMAC_TOP BN0 (WF_INT) */
-	{0x820ed000, 0x424800, 0x0800},  /* WF_LMAC_TOP BN0 (WF_MIB) */
-	{0x820ca000, 0x426000, 0x2000},  /* WF_LMAC_TOP BN0 (WF_MUCOP) */
-	{0x820d0000, 0x430000, 0x10000}, /* WF_LMAC_TOP (WF_WTBLON) */
-	{0x40000000, 0x470000, 0x10000}, /* WF_UMAC_SYSRAM */
-	{0x00400000, 0x480000, 0x10000}, /* WF_MCU_SYSRAM */
-	{0x00410000, 0x490000, 0x10000}, /* WF_MCU_SYSRAM (configure register)*/
-	{0x820f0000, 0x4a0000, 0x0400},  /* WF_LMAC_TOP BN1 (WF_CFG) */
-	{0x820f1000, 0x4a0600, 0x0200},  /* WF_LMAC_TOP BN1 (WF_TRB) */
-	{0x820f2000, 0x4a0800, 0x0400},  /* WF_LMAC_TOP BN1 (WF_AGG) */
-	{0x820f3000, 0x4a0c00, 0x0400},  /* WF_LMAC_TOP BN1 (WF_ARB) */
-	{0x820f4000, 0x4a1000, 0x0400},  /* WF_LMAC_TOP BN1 (WF_TMAC) */
-	{0x820f5000, 0x4a1400, 0x0800},  /* WF_LMAC_TOP BN1 (WF_RMAC) */
-	{0x820f7000, 0x4a1e00, 0x0200},  /* WF_LMAC_TOP BN1 (WF_DMA) */
-	{0x820f9000, 0x4a3400, 0x0200},  /* WF_LMAC_TOP BN1 (WF_WTBLOFF) */
-	{0x820fa000, 0x4a4000, 0x0200},  /* WF_LMAC_TOP BN1 (WF_ETBF) */
-	{0x820fb000, 0x4a4200, 0x0400},  /* WF_LMAC_TOP BN1 (WF_LPON) */
-	{0x820fc000, 0x4a4600, 0x0200},  /* WF_LMAC_TOP BN1 (WF_INT) */
-	{0x820fd000, 0x4a4800, 0x0800},  /* WF_LMAC_TOP BN1 (WF_MIB) */
-	{0x820cc000, 0x4a5000, 0x2000},  /* WF_LMAC_TOP BN1 (WF_MUCOP) */
-	{0x820c4000, 0x4a8000, 0x4000},  /* WF_LMAC_TOP BN1 (WF_MUCOP) */
-	{0x820b0000, 0x4ae000, 0x1000},  /* [APB2] WFSYS_ON */
-	{0x80020000, 0x4b0000, 0x10000}, /* WF_TOP_MISC_OFF */
-	{0x81020000, 0x4c0000, 0x10000}, /* WF_TOP_MISC_ON */
-	{0x7c020000, 0x4d0000, 0x10000}, /* CONN_INFRA, wfdma */
-	{0x7c500000, 0x500000, 0x10000}, /* CONN_INFRA, dyn mem map */
-	{0x7c060000, 0x4e0000, 0x10000}, /* CONN_INFRA, conn_host_csr_top */
-	{0x7c000000, 0x4f0000, 0x10000}, /* CONN_INFRA */
+	{0x830c0000, 0x400000, 0x1000},    /* WF_MCU_BUS_CR_REMAP */
+	{0x54000000, 0x402000, 0x1000},    /* WFDMA PCIE0 MCU DMA0 */
+	{0x55000000, 0x403000, 0x1000},    /* WFDMA PCIE0 MCU DMA1 */
+	{0x56000000, 0x404000, 0x1000},    /* WFDMA reserved */
+	{0x57000000, 0x405000, 0x1000},    /* WFDMA MCU wrap CR */
+	{0x58000000, 0x406000, 0x1000},    /* WFDMA PCIE1 MCU DMA0 (MEM_DMA) */
+	{0x59000000, 0x407000, 0x1000},    /* WFDMA PCIE1 MCU DMA1 */
+	{0x820c0000, 0x408000, 0x4000},    /* WF_UMAC_TOP (PLE) */
+	{0x820c8000, 0x40c000, 0x2000},    /* WF_UMAC_TOP (PSE) */
+	{0x820cc000, 0x40e000, 0x2000},    /* WF_UMAC_TOP (PP) */
+	{0x83000000, 0x410000, 0x10000},   /* WF_PHY_MAP3 */
+	{0x820e0000, 0x420000, 0x0400},    /* WF_LMAC_TOP BN0 (WF_CFG) */
+	{0x820e1000, 0x420400, 0x0200},    /* WF_LMAC_TOP BN0 (WF_TRB) */
+	{0x820e2000, 0x420800, 0x0400},    /* WF_LMAC_TOP BN0 (WF_AGG) */
+	{0x820e3000, 0x420c00, 0x0400},    /* WF_LMAC_TOP BN0 (WF_ARB) */
+	{0x820e4000, 0x421000, 0x0400},    /* WF_LMAC_TOP BN0 (WF_TMAC) */
+	{0x820e5000, 0x421400, 0x0800},    /* WF_LMAC_TOP BN0 (WF_RMAC) */
+	{0x820ce000, 0x421c00, 0x0200},    /* WF_LMAC_TOP (WF_SEC) */
+	{0x820e7000, 0x421e00, 0x0200},    /* WF_LMAC_TOP BN0 (WF_DMA) */
+	{0x820cf000, 0x422000, 0x1000},    /* WF_LMAC_TOP (WF_PF) */
+	{0x820e9000, 0x423400, 0x0200},    /* WF_LMAC_TOP BN0 (WF_WTBLOFF) */
+	{0x820ea000, 0x424000, 0x0200},    /* WF_LMAC_TOP BN0 (WF_ETBF) */
+	{0x820eb000, 0x424200, 0x0400},    /* WF_LMAC_TOP BN0 (WF_LPON) */
+	{0x820ec000, 0x424600, 0x0200},    /* WF_LMAC_TOP BN0 (WF_INT) */
+	{0x820ed000, 0x424800, 0x0800},    /* WF_LMAC_TOP BN0 (WF_MIB) */
+	{0x820ca000, 0x426000, 0x2000},    /* WF_LMAC_TOP BN0 (WF_MUCOP) */
+	{0x820d0000, 0x430000, 0x10000},   /* WF_LMAC_TOP (WF_WTBLON) */
+	{0x83080000, 0x450000, 0x10000},   /* WF_PHY_MAP1 */
+	{0x83090000, 0x460000, 0x10000},   /* WF_PHY_MAP2 */
+	{0xE0200000, 0x470000, 0x10000},   /* WF_UMAC_SYSRAM */
+	{0x00400000, 0x480000, 0x10000},   /* WF_MCU_SYSRAM */
+	{0x00410000, 0x490000, 0x10000},   /* WF_MCU_SYSRAM (config register) */
+	{0x820f0000, 0x4a0000, 0x0400},    /* WF_LMAC_TOP BN1 (WF_CFG) */
+	{0x820f1000, 0x4a0600, 0x0200},    /* WF_LMAC_TOP BN1 (WF_TRB) */
+	{0x820f2000, 0x4a0800, 0x0400},    /* WF_LMAC_TOP BN1 (WF_AGG) */
+	{0x820f3000, 0x4a0c00, 0x0400},    /* WF_LMAC_TOP BN1 (WF_ARB) */
+	{0x820f4000, 0x4a1000, 0x0400},    /* WF_LMAC_TOP BN1 (WF_TMAC) */
+	{0x820f5000, 0x4a1400, 0x0800},    /* WF_LMAC_TOP BN1 (WF_RMAC) */
+	{0x820f7000, 0x4a1e00, 0x0200},    /* WF_LMAC_TOP BN1 (WF_DMA) */
+	{0x820f9000, 0x4a3400, 0x0200},    /* WF_LMAC_TOP BN1 (WF_WTBLOFF) */
+	{0x820fa000, 0x4a4000, 0x0200},    /* WF_LMAC_TOP BN1 (WF_ETBF) */
+	{0x820fb000, 0x4a4200, 0x0400},    /* WF_LMAC_TOP BN1 (WF_LPON) */
+	{0x820fc000, 0x4a4600, 0x0200},    /* WF_LMAC_TOP BN1 (WF_INT) */
+	{0x820fd000, 0x4a4800, 0x0800},    /* WF_LMAC_TOP BN1 (WF_MIB) */
+	{0x820c4000, 0x4a8000, 0x4000},    /* WF_LMAC_TOP BN1 (WF_UWTBL) */
+	{0x820b0000, 0x4ae000, 0x1000},    /* [APB2] WFSYS_ON */
+	{0x80020000, 0x4b0000, 0x10000},   /* WF_TOP_MISC_OFF */
+	{0x81020000, 0x4c0000, 0x10000},   /* WF_TOP_MISC_ON */
+	{0x80010000, 0x4d4000, 0x1000},    /* WF_AXIDMA */
+	{0x83010000, 0x4e0000, 0x10000},   /* WF_PHY_MAP4 */
+	{0x88000000, 0x4f0000, 0x10000},   /* WF_MCU_CFG_LS */
+	{0x7c000000, 0x000000, 0x1000000}, /* CONN_INFRA */
 };
 #endif
 
@@ -353,6 +384,11 @@ struct FWDL_OPS_T soc7_0_fw_dl_ops = {
 #endif
 	.getFwInfo = wlanGetConnacFwInfo,
 	.getFwDlInfo = asicGetFwDlInfo,
+#if (CFG_SUPPORT_PRE_ON_PHY_ACTION == 1)
+	.phyAction = wlanPhyAction,
+#else
+	.phyAction = NULL,
+#endif
 };
 #endif /* CFG_ENABLE_FW_DOWNLOAD */
 
@@ -401,6 +437,7 @@ struct mt66xx_chip_info mt66xx_chip_info_soc7_0 = {
 	.is_support_wacpu = FALSE,
 	.txd_append_size = SOC7_0_TX_DESC_APPEND_LENGTH,
 	.rxd_size = SOC7_0_RX_DESC_LENGTH,
+	.init_evt_rxd_size = SOC7_0_RX_DESC_LENGTH,
 	.pse_header_length = CONNAC2X_NIC_TX_PSE_HEADER_LENGTH,
 	.init_event_size = CONNAC2X_RX_INIT_EVENT_LENGTH,
 	.eco_info = soc7_0_eco_table,
@@ -409,6 +446,8 @@ struct mt66xx_chip_info mt66xx_chip_info_soc7_0 = {
 	.top_hvr = CONNAC2X_TOP_HVR,
 	.top_fvr = CONNAC2X_TOP_FVR,
 	.arb_ac_mode_addr = SOC7_0_ARB_AC_MODE_ADDR,
+	.custom_oid_interface_version = MTK_CUSTOM_OID_INTERFACE_VERSION,
+	.em_interface_version = MTK_EM_INTERFACE_VERSION,
 	.asicCapInit = asicConnac2xCapInit,
 #if CFG_ENABLE_FW_DOWNLOAD
 	.asicEnableFWDownload = NULL,
@@ -417,11 +456,28 @@ struct mt66xx_chip_info mt66xx_chip_info_soc7_0 = {
 	.is_support_hw_amsdu = TRUE,
 	.is_support_asic_lp = TRUE,
 	.is_support_wfdma1 = FALSE,
+	.is_support_nvram_fragment = TRUE,
 	.asicWfdmaReInit = asicConnac2xWfdmaReInit,
 	.asicWfdmaReInit_handshakeInit = asicConnac2xWfdmaDummyCrWrite,
 	.group5_size = sizeof(struct HW_MAC_RX_STS_GROUP_5),
 	.u4LmacWtblDUAddr = CONNAC2X_WIFI_LWTBL_BASE,
 	.u4UmacWtblDUAddr = CONNAC2X_WIFI_UWTBL_BASE,
+	.wmmcupwron = wf_pwr_on_consys_mcu,
+	.wmmcupwroff = wf_pwr_off_consys_mcu,
+#if (CFG_POWER_ON_DOWNLOAD_EMI_ROM_PATCH == 1)
+	.pwrondownload = soc7_0_wlanPowerOnDownload,
+#else
+	.pwrondownload = NULL,
+#endif
+	.triggerfwassert = soc7_0_Trigger_fw_assert,
+#if (CFG_SUPPORT_CONNINFRA == 1)
+	.get_sw_interrupt_status = soc7_0_get_sw_interrupt_status,
+#endif
+#if (CFG_SUPPORT_PRE_ON_PHY_ACTION == 1)
+	.getCalResult = wlanGetCalResult,
+	.calDebugCmd = wlanCalDebugCmd,
+#endif
+	.cmd_max_pkt_size = CFG_TX_MAX_PKT_SIZE, /* size 1600 */
 	.isSupportMddpAOR = true,
 };
 
@@ -435,6 +491,9 @@ static void soc7_0_ConstructFirmwarePrio(struct GLUE_INFO *prGlueInfo,
 {
 	int ret = 0;
 	uint8_t ucIdx = 0;
+	uint8_t aucFlavor[2] = {0};
+
+	kalGetFwFlavor(prGlueInfo->prAdapter, &aucFlavor[0]);
 
 	for (ucIdx = 0; apucsoc7_0FwName[ucIdx]; ucIdx++) {
 		if ((*pucNameIdx + 3) >= ucMaxNameIdx) {
@@ -447,9 +506,10 @@ static void soc7_0_ConstructFirmwarePrio(struct GLUE_INFO *prGlueInfo,
 
 		/* Type 1. WIFI_RAM_CODE_soc7_0_1_1.bin */
 		ret = kalSnprintf(*(apucName + (*pucNameIdx)),
-				CFG_FW_NAME_MAX_LEN, "%s_%u_%u.bin",
+				CFG_FW_NAME_MAX_LEN, "%s_%u%s_%u.bin",
 				apucsoc7_0FwName[ucIdx],
 				CFG_WIFI_IP_SET,
+				aucFlavor,
 				wlanGetEcoVersion(
 					prGlueInfo->prAdapter));
 		if (ret >= 0 && ret < CFG_FW_NAME_MAX_LEN)
@@ -726,7 +786,6 @@ static void soc7_0asicConnac2xWpdmaConfig(struct GLUE_INFO *prGlueInfo,
 	struct ADAPTER *prAdapter = prGlueInfo->prAdapter;
 	union WPDMA_GLO_CFG_STRUCT GloCfg;
 	uint32_t u4DmaCfgCr;
-	uint32_t idx;
 
 	asicConnac2xWfdmaControl(prGlueInfo, 0, enable);
 	u4DmaCfgCr = asicConnac2xWfdmaCfgAddrGet(prGlueInfo, 0);
@@ -735,20 +794,1218 @@ static void soc7_0asicConnac2xWpdmaConfig(struct GLUE_INFO *prGlueInfo,
 	configIntMask(prGlueInfo, enable);
 
 	if (enable) {
-		u4DmaCfgCr = asicConnac2xWfdmaCfgAddrGet(prGlueInfo, idx);
+		u4DmaCfgCr = asicConnac2xWfdmaCfgAddrGet(prGlueInfo, 0);
 		GloCfg.field_conn2x.tx_dma_en = 1;
 		GloCfg.field_conn2x.rx_dma_en = 1;
 		HAL_MCR_WR(prAdapter, u4DmaCfgCr, GloCfg.word);
 	}
 }
 
+int soc7_0_Trigger_fw_assert(void)
+{
+	int ret = 0;
+	int value = 0;
+	uint32_t waitRet = 0;
+	struct ADAPTER *prAdapter = NULL;
+	struct GLUE_INFO *prGlueInfo = NULL;
+
+	prGlueInfo = (struct GLUE_INFO *)wiphy_priv(wlanGetWiphy());
+	prAdapter = prGlueInfo->prAdapter;
+
+	if (g_IsWfsysBusHang == TRUE) {
+		DBGLOG(HAL, INFO,
+			"Already trigger conninfra whole chip reset.\n");
+		return 0;
+	}
+	DBGLOG(HAL, INFO, "Trigger fw assert start.\n");
+	wf_ioremap_read(WF_TRIGGER_AP2CONN_EINT, &value);
+	value &= 0xFFFFFF7F;
+	ret = wf_ioremap_write(WF_TRIGGER_AP2CONN_EINT, value);
+	waitRet = wait_for_completion_timeout(&g_triggerComp,
+			MSEC_TO_JIFFIES(WIFI_TRIGGER_ASSERT_TIMEOUT));
+	if (waitRet > 0) {
+		/* Case 1: No timeout. */
+		DBGLOG(INIT, INFO, "Trigger assert successfully.\n");
+	} else {
+		/* Case 2: timeout */
+		DBGLOG(INIT, ERROR,
+			"Trigger assert more than 2 seconds, need to trigger rst self\n");
+		g_IsTriggerTimeout = TRUE;
+#if (CFG_ANDORID_CONNINFRA_COREDUMP_SUPPORT == 1)
+		if (!prAdapter->prGlueInfo->u4ReadyFlag)
+			g_IsNeedWaitCoredump = TRUE;
+#endif
+	}
+#if (CFG_SUPPORT_CONNINFRA == 1)
+	kalSetRstEvent();
+#endif
+	wf_ioremap_read(WF_TRIGGER_AP2CONN_EINT, &value);
+	value |= 0x80;
+	ret = wf_ioremap_write(WF_TRIGGER_AP2CONN_EINT, value);
+
+	return ret;
+}
+
 static void soc7_0EnableFwDlMode(struct ADAPTER *prAdapter)
 {
-	u_int32_t val = 0;
+	uint32_t val = 0;
 
 	HAL_MCR_RD(prAdapter, WF_WFDMA_HOST_DMA0_PDA_CONFG_ADDR, &val);
-	val |= (BIT(0) << 31);
+	val |= BIT(31);
 	HAL_MCR_WR(prAdapter, WF_WFDMA_HOST_DMA0_PDA_CONFG_ADDR, val);
+}
+
+static int wf_pwr_on_consys_mcu(void)
+{
+	int ret = 0;
+	int check;
+	uint32_t value = 0;
+	uint32_t polling_count;
+
+	DBGLOG(INIT, INFO, "wmmcu power-on start.\n");
+
+	/* Wakeup conn_infra off
+	 * Address: 0x1801_1000[31:0]
+	 * Data: 0x02050100
+	 * Action: write
+	 */
+	wf_ioremap_read(CONN_HOST_CSR_TOP_CONN_INFRA_WAKEPU_WF_ADDR, &value);
+	value |= CONN_HOST_CSR_TOP_CONN_INFRA_WAKEPU_WF_CONN_INFRA_WAKEPU_WF_MASK;
+	wf_ioremap_write(CONN_HOST_CSR_TOP_CONN_INFRA_WAKEPU_WF_ADDR, value);
+
+	/* Check CONNSYS version ID
+	 * (polling "10 times" for specific project code
+	 * and each polling interval is "1ms")
+	 * Address: 0x1801_1000[31:0]
+	 * Data: 0x02050100
+	 * Action: polling
+	 */
+	wf_ioremap_read(CONN_INFRA_CFG_IP_VERSION_ADDR, &value);
+	polling_count = 0;
+	while (value != SOC7_CONNSYS_VERSION_ID) {
+		if (polling_count > 10) {
+			DBGLOG(INIT, ERROR, "Polling CONNSYS version ID fail.\n");
+			ret = -1;
+			return ret;
+		}
+		udelay(1000);
+		wf_ioremap_read(CONN_INFRA_CFG_IP_VERSION_ADDR, &value);
+		polling_count++;
+	}
+
+	/* Assert CONNSYS WM CPU SW reset
+	 * (apply this for default value patching)
+	 * Address: 0x1800_0120[0]
+	 * Data: 1'b0
+	 * Action: write
+	 */
+	wf_ioremap_read(CONN_INFRA_RGU_ON_WFSYS_CPU_SW_RST_B_ADDR, &value);
+	value &= ~CONN_INFRA_RGU_ON_WFSYS_CPU_SW_RST_B_WFSYS_CPU_SW_RST_B_MASK;
+	wf_ioremap_write(CONN_INFRA_RGU_ON_WFSYS_CPU_SW_RST_B_ADDR, value);
+
+	/* Turn off "conn_infra to wfsys"/wfsys to conn_infra/wfdma2conn" bus sleep protect
+	 * Address: 0x1800_1440[0]
+	 * Data: 1'b0
+	 * Action: write
+	 */
+	wf_ioremap_read(CONN_INFRA_CFG_ON_CONN_INFRA_WF_SLP_CTRL_ADDR, &value);
+	value &= ~CONN_INFRA_CFG_ON_CONN_INFRA_WF_SLP_CTRL_CFG_CONN_WF_SLP_PROT_SW_EN_MASK;
+	wf_ioremap_write(CONN_INFRA_CFG_ON_CONN_INFRA_WF_SLP_CTRL_ADDR, value);
+
+	/* Turn on wfsys_top_on
+	 * Address: 0x1800_0010[31:16] 0x1800_0010[7]
+	 * Data: [31:16] = 16'h5746(key) [7] = 1'b1
+	 * Action: write
+	 */
+	wf_ioremap_read(CONN_INFRA_RGU_ON_WFSYS_ON_TOP_PWR_CTL_ADDR, &value);
+	value &= ~(CONN_INFRA_RGU_ON_WFSYS_ON_TOP_PWR_CTL_WFSYS_ON_TOP_WRITE_KEY_MASK |
+		CONN_INFRA_RGU_ON_WFSYS_ON_TOP_PWR_CTL_WFSYS_ON_TOP_PWR_ON_MASK);
+	value |= WFSYS_ON_TOP_WRITE_KEY;
+	value |= CONN_INFRA_RGU_ON_WFSYS_ON_TOP_PWR_CTL_WFSYS_ON_TOP_PWR_ON_MASK;
+	wf_ioremap_write(CONN_INFRA_RGU_ON_WFSYS_ON_TOP_PWR_CTL_ADDR, value);
+
+	/* Polling wfsys_rgu_off_hreset_rst_b
+	 * Address: 0x1806_0A10[30]
+	 * Data: 1'b1
+	 * Action: polling
+	 */
+	wf_ioremap_read(CONN_HOST_CSR_TOP_CONNSYS_PWR_STATES_ADDR, &value);
+	check = 0;
+	polling_count = 0;
+	while ((value & BIT(30)) == 0) {
+		if (polling_count > 10) {
+			ret = -1;
+			DBGLOG(INIT, ERROR,
+				"Polling wfsys rgu off fail. (0x%x)\n",
+				value);
+			return ret;
+		}
+		udelay(500);
+		wf_ioremap_read(CONN_HOST_CSR_TOP_CONNSYS_PWR_STATES_ADDR,
+				&value);
+		polling_count++;
+	}
+
+	/* Check "conn_infra to wfsys"/wfsys to conn_infra" bus sleep protect turn off
+	 * (polling "100 times" and each polling interval is "0.5ms")
+	 * If conn2wf protect turn off fail, power on fail.
+	 * (DRV access wfsys CR will trigger bus hang, because bus transaction will queue at slpprot.)
+	 * Address: 0x1800_1444[29] 0x1800_1444[31]
+	 * Data: 1'b0 1'b0
+	 * Action: polling
+	 */
+	wf_ioremap_read(CONN_INFRA_CFG_ON_CONN_INFRA_WF_SLP_STATUS_ADDR, &value);
+	check = 0;
+	polling_count = 0;
+	while ((value & (CONN_INFRA_CFG_ON_CONN_INFRA_WF_SLP_STATUS_WF2CONN_SLP_PROT_RDY_MASK |
+			CONN_INFRA_CFG_ON_CONN_INFRA_WF_SLP_STATUS_CONN2WF_SLP_PROT_RDY_MASK)) != 0) {
+		if (polling_count > 100) {
+			DBGLOG(INIT, ERROR,
+				"Polling WFSYS TO CONNINFRA SLEEP PROTECT fail. (0x%x)\n",
+				value);
+			ret = -1;
+			return ret;
+		}
+		udelay(500);
+		wf_ioremap_read(CONN_INFRA_CFG_ON_CONN_INFRA_WF_SLP_STATUS_ADDR, &value);
+		polling_count++;
+	}
+
+	/* Check WFDMA2CONN AXI TX bus sleep protect turn off
+	 * (polling "100 times")
+	 * If protect turn off fail, print error message
+	 * Address: 0x184C_300C[23]
+	 * Data: 1'b0
+	 * Action: polling
+	 */
+	wf_ioremap_read(WF_TOP_SLPPROT_ON_STATUS_READ_ADDR, &value);
+	polling_count = 0;
+	while ((value & WF_TOP_SLPPROT_ON_STATUS_READ_ro_slpprot_en_source_1_MASK) != 0) {
+		if (polling_count > 100) {
+			DBGLOG(INIT, ERROR,
+				"Polling WFDMA TO CONNINFRA SLEEP PROTECT EN 1 fail. (0x%x)\n",
+				value);
+			ret = -1;
+			return ret;
+		}
+		udelay(500);
+		wf_ioremap_read(WF_TOP_SLPPROT_ON_STATUS_READ_ADDR, &value);
+		polling_count++;
+	}
+
+	/* Check WFDMA2CONN AXI RX bus sleep protect turn off
+	 * (polling "100 times")
+	 * If protect turn off fail, print error message
+	 * Address: 0x184C_300C[21]
+	 * Data: 1'b0
+	 * Action: polling
+	 */
+	wf_ioremap_read(WF_TOP_SLPPROT_ON_STATUS_READ_ADDR, &value);
+	polling_count = 0;
+	while ((value & WF_TOP_SLPPROT_ON_STATUS_READ_ro_slpprot_en_source_2_MASK) != 0) {
+		if (polling_count > 100) {
+			DBGLOG(INIT, ERROR,
+				"Polling WFDMA TO CONNINFRA SLEEP PROTECT EN 2 fail. (0x%x)\n",
+				value);
+			ret = -1;
+			return ret;
+		}
+		udelay(500);
+		wf_ioremap_read(WF_TOP_SLPPROT_ON_STATUS_READ_ADDR, &value);
+		polling_count++;
+	}
+
+	/* Check WFSYS version ID
+	 * (polling "10 times" for specific project code and each polling interval is "0.5ms")
+	 * Address: 0x184B_0010[31:0]
+	 * Data: 32'h02040100
+	 * Action: polling
+	 */
+	wf_ioremap_read(WF_TOP_CFG_IP_VERSION_ADDR, &value);
+	polling_count = 0;
+	while (value != SOC7_WFSYS_VERSION_ID) {
+		if (polling_count > 10) {
+			DBGLOG(INIT, ERROR, "Polling WFSYS version ID fail.\n");
+			ret = -1;
+			return ret;
+		}
+		udelay(500);
+		wf_ioremap_read(WF_TOP_CFG_IP_VERSION_ADDR, &value);
+		polling_count++;
+	}
+
+	/* Set wfsys bus timeout value (ahb apb timeout)
+	 * Address: 0x184F_0440[7:0]
+	 * Data: 8'h03
+	 * Action: write
+	 */
+	wf_ioremap_read(WF_MCU_CONFG_LS_BUSHANGCR_ADDR, &value);
+	value &= ~WF_MCU_CONFG_LS_BUSHANGCR_BUS_HANG_TIME_LIMIT_MASK;
+	value |= 0x00000003;
+	wf_ioremap_write(WF_MCU_CONFG_LS_BUSHANGCR_ADDR, value);
+
+	/* Enable wfsys bus timeout (ahb apb timeout)
+	 * Address: 0x184F_0440[28] 0x184F_0440[31]
+	 * Data: 1'b1 1'b1
+	 * Action: write
+	 */
+	wf_ioremap_read(WF_MCU_CONFG_LS_BUSHANGCR_ADDR, &value);
+	value |= (WF_MCU_CONFG_LS_BUSHANGCR_BUS_HANG_DEBUG_EN_MASK |
+		WF_MCU_CONFG_LS_BUSHANGCR_BUS_HANG_DEBUG_CG_EN_MASK);
+	wf_ioremap_write(WF_MCU_CONFG_LS_BUSHANGCR_ADDR, value);
+
+	/* Set conn2wf remapping window to wf debug_ctrl_ao CR
+	 * Address: 0x1840_0120
+	 * Data: 32'h810F0000
+	 * Action: write
+	 */
+	wf_ioremap_write(WF_MCU_BUS_CR_AP2WF_REMAP_1_ADDR,
+		WF_MCUSYS_INFRA_BUS_FULL_U_DEBUG_CTRL_AO_WFMCU_PWA_DEBUG_CTRL_AO_BASE);
+
+	/* Enable debug clock (debug ctrl ao)
+	 * Address: 0x1850_0000[3]
+	 * Data: 1'b1
+	 * Action: write
+	 */
+	wf_ioremap_read(DEBUG_CTRL_AO_WFMCU_PWA_CTRL0, &value);
+	value |= WF_MCUSYS_INFRA_BUS_FULL_U_DEBUG_CTRL_AO_WFMCU_PWA_DEBUG_CTRL_AO_WF_MCUSYS_INFRA_BUS_FULL_U_DEBUG_CTRL_AO_WFMCU_PWA_CTRL0_debug_cken_MASK;
+	wf_ioremap_write(DEBUG_CTRL_AO_WFMCU_PWA_CTRL0, value);
+
+	/* Reset wfsys bus timeout value (debug ctrl ao)
+	 * Address: 0x1850_0000[9]
+	 * Data: 1'b0
+	 * Action: write
+	 */
+	wf_ioremap_read(DEBUG_CTRL_AO_WFMCU_PWA_CTRL0, &value);
+	value |= WF_MCUSYS_INFRA_BUS_FULL_U_DEBUG_CTRL_AO_WFMCU_PWA_DEBUG_CTRL_AO_WF_MCUSYS_INFRA_BUS_FULL_U_DEBUG_CTRL_AO_WFMCU_PWA_CTRL0_timeout_clr_MASK;
+	wf_ioremap_write(DEBUG_CTRL_AO_WFMCU_PWA_CTRL0, value);
+
+	/* Reset wfsys bus timeout value (debug ctrl ao)
+	 * Address: 0x1850_0000[9]
+	 * Data: 1'b0
+	 * Action: write
+	 */
+	wf_ioremap_read(DEBUG_CTRL_AO_WFMCU_PWA_CTRL0, &value);
+	value &= ~WF_MCUSYS_INFRA_BUS_FULL_U_DEBUG_CTRL_AO_WFMCU_PWA_DEBUG_CTRL_AO_WF_MCUSYS_INFRA_BUS_FULL_U_DEBUG_CTRL_AO_WFMCU_PWA_CTRL0_timeout_clr_MASK;
+	wf_ioremap_write(DEBUG_CTRL_AO_WFMCU_PWA_CTRL0, value);
+
+	/* Set wfsys bus timeout value (debug ctrl ao)
+	 * Address: 0x1850_0000[31:16]
+	 * Data: 16'h04F5
+	 * Action: write
+	 */
+	wf_ioremap_read(DEBUG_CTRL_AO_WFMCU_PWA_CTRL0, &value);
+	value &= ~WF_MCUSYS_INFRA_BUS_FULL_U_DEBUG_CTRL_AO_WFMCU_PWA_DEBUG_CTRL_AO_WF_MCUSYS_INFRA_BUS_FULL_U_DEBUG_CTRL_AO_WFMCU_PWA_CTRL0_timeout_thres_MASK;
+	value |= 0x04F50000;
+	wf_ioremap_write(DEBUG_CTRL_AO_WFMCU_PWA_CTRL0, value);
+
+	/* Mask wfdma+umac busy signal (debug ctrl ao)
+	 * Address: 0x1850_000C[8]
+	 * Data: 1'b1
+	 * Action: write
+	 */
+	wf_ioremap_read(DEBUG_CTRL_AO_WFMCU_PWA_CTRL3, &value);
+	value |= 0x00000100;
+	wf_ioremap_write(DEBUG_CTRL_AO_WFMCU_PWA_CTRL3, value);
+
+	/* Enable wfsys bus timeout (debug ctrl ao)
+	 * Address: 0x1850_0000[4] 0x1850_0000[3] 0x1850_0000[2]
+	 * Data: 1'b1 1'b1 1'b1
+	 * Action: write
+	 */
+	wf_ioremap_read(DEBUG_CTRL_AO_WFMCU_PWA_CTRL0, &value);
+	value |= (WF_MCUSYS_INFRA_BUS_FULL_U_DEBUG_CTRL_AO_WFMCU_PWA_DEBUG_CTRL_AO_WF_MCUSYS_INFRA_BUS_FULL_U_DEBUG_CTRL_AO_WFMCU_PWA_CTRL0_debug_en_MASK |
+		WF_MCUSYS_INFRA_BUS_FULL_U_DEBUG_CTRL_AO_WFMCU_PWA_DEBUG_CTRL_AO_WF_MCUSYS_INFRA_BUS_FULL_U_DEBUG_CTRL_AO_WFMCU_PWA_CTRL0_debug_cken_MASK |
+		WF_MCUSYS_INFRA_BUS_FULL_U_DEBUG_CTRL_AO_WFMCU_PWA_DEBUG_CTRL_AO_WF_MCUSYS_INFRA_BUS_FULL_U_DEBUG_CTRL_AO_WFMCU_PWA_CTRL0_debug_en_debugtop_MASK);
+	wf_ioremap_write(DEBUG_CTRL_AO_WFMCU_PWA_CTRL0, value);
+
+	/* Setup CONNSYS firmware in EMI */
+#if (CFG_POWER_ON_DOWNLOAD_EMI_ROM_PATCH == 1)
+	soc7_0_wlanPowerOnInit();
+#endif
+
+	/* Set wf_monflg_on for polling wf mailbox from host side CR
+	 * Address: 0x1806_0B00[0] 0x1806_0B04[4:0]
+	 * Data: 1'b1 5'b01100
+	 * Action: write
+	 */
+	wf_ioremap_read(CONN_HOST_CSR_TOP_WF_ON_MONFLG_EN_FR_HIF_ADDR, &value);
+	value |= CONN_HOST_CSR_TOP_WF_ON_MONFLG_EN_FR_HIF_WF_ON_MONFLG_EN_FR_HIF_MASK;
+	wf_ioremap_write(CONN_HOST_CSR_TOP_WF_ON_MONFLG_EN_FR_HIF_ADDR, value);
+	wf_ioremap_read(CONN_HOST_CSR_TOP_WF_ON_MONFLG_SEL_FR_HIF_ADDR, &value);
+	value &= ~CONN_HOST_CSR_TOP_WF_ON_MONFLG_SEL_FR_HIF_WF_ON_MONFLG_SEL_FR_HIF_MASK;
+	value |= 0xc;
+	wf_ioremap_write(CONN_HOST_CSR_TOP_WF_ON_MONFLG_SEL_FR_HIF_ADDR, value);
+
+	/* De-assert WFSYS CPU SW reset
+	 * Address: 0x1800_0120[0]
+	 * Data: 1'b1
+	 * Action: write
+	 */
+	wf_ioremap_read(CONN_INFRA_RGU_ON_WFSYS_CPU_SW_RST_B_ADDR, &value);
+	value |= CONN_INFRA_RGU_ON_WFSYS_CPU_SW_RST_B_WFSYS_CPU_SW_RST_B_MASK;
+	wf_ioremap_write(CONN_INFRA_RGU_ON_WFSYS_CPU_SW_RST_B_ADDR, value);
+
+	/* Check CONNSYS power-on completion
+	 * (polling "0x8102_1604[31:0]" == 0x1D1E and each polling interval is "1ms")
+	 * or
+	 * (polling "0x1806_0B10[31:0]" == 0x1D1E and each polling interval is "1ms")
+	 * (apply this for guarantee that CONNSYS CPU goes to "cos_idle_loop")
+	 * ([NOTE] this setting could be changed at different CONNSYS ROM code)
+	 * Action: polling
+	 */
+	check = 0;
+	polling_count = 0;
+	while (TRUE) {
+		if (polling_count > 1000) {
+			check = -1;
+			ret = -1;
+			break;
+		}
+		wf_ioremap_read(WF_TOP_CFG_ON_ROMCODE_INDEX_ADDR, &value);
+		if (value == CONNSYS_ROM_DONE_CHECK)
+			break;
+		/* pooling mailbox as backup */
+		wf_ioremap_read(CONN_HOST_CSR_TOP_WF_ON_MONFLG_OUT_ADDR, &value);
+		if (value == CONNSYS_ROM_DONE_CHECK)
+			break;
+		polling_count++;
+		udelay(1000);
+	}
+	if (check != 0) {
+		DBGLOG(INIT, ERROR,
+			"Check CONNSYS power-on completion fail.\n");
+		return ret;
+	}
+
+	/* Disable conn_infra off domain force on
+	 * Address: 0x1806_01A4[0]
+	 * Data: 1'b0
+	 * Action: write
+	 */
+	wf_ioremap_read(CONN_HOST_CSR_TOP_CONN_INFRA_WAKEPU_WF_ADDR, &value);
+	value &= ~CONN_HOST_CSR_TOP_CONN_INFRA_WAKEPU_WF_CONN_INFRA_WAKEPU_WF_MASK;
+	wf_ioremap_write(CONN_HOST_CSR_TOP_CONN_INFRA_WAKEPU_WF_ADDR, value);
+
+	DBGLOG(INIT, INFO, "wmmcu power-on done.\n");
+	return ret;
+}
+
+static int wf_pwr_off_consys_mcu(void)
+{
+#define MAX_WAIT_COREDUMP_COUNT 10
+
+	int check;
+	int value = 0;
+	int ret = 0;
+	int polling_count;
+	int retryCount = 0;
+
+#if (CFG_ANDORID_CONNINFRA_COREDUMP_SUPPORT == 1)
+	while (g_IsNeedWaitCoredump) {
+		kalMsleep(100);
+		retryCount++;
+		if (retryCount >= MAX_WAIT_COREDUMP_COUNT) {
+			DBGLOG(INIT, WARN,
+				"Coredump spend long time, retryCount = %d\n",
+				retryCount);
+		}
+	}
+#endif
+
+	DBGLOG(INIT, INFO, "wmmcu power-off start.\n");
+
+	/* Wakeup conn_infra off
+	 * Address: 0x1806_01A4[0]
+	 * Data: 1'b1
+	 * Action: write
+	 */
+	wf_ioremap_read(CONN_HOST_CSR_TOP_CONN_INFRA_WAKEPU_WF_ADDR, &value);
+	value |= CONN_HOST_CSR_TOP_CONN_INFRA_WAKEPU_WF_CONN_INFRA_WAKEPU_WF_MASK;
+	wf_ioremap_write(CONN_HOST_CSR_TOP_CONN_INFRA_WAKEPU_WF_ADDR, value);
+
+	/* Check CONNSYS version ID
+	 * (polling "10 times" for specific project code and each polling interval is "1ms")
+	 * Address: 0x1801_1000[31:0]
+	 * Data: 32'h02050100
+	 * Action: polling
+	 */
+	wf_ioremap_read(CONN_INFRA_CFG_IP_VERSION_ADDR, &value);
+	check = 0;
+	polling_count = 0;
+	while (value != SOC7_CONNSYS_VERSION_ID) {
+		if (polling_count > 10) {
+			check = -1;
+			ret = -1;
+			break;
+		}
+		udelay(1000);
+		wf_ioremap_read(CONN_INFRA_CFG_IP_VERSION_ADDR, &value);
+		polling_count++;
+	}
+	if (check != 0) {
+		DBGLOG(INIT, ERROR, "Polling CONNSYS version ID fail.\n");
+		return ret;
+	}
+
+	/* Turn on "conn_infra to wfsys"/wfsys to conn_infra/wfdma2conn" bus sleep protect
+	 * Address: 0x1800_1440[0]
+	 * Data: 1'b1
+	 * Action: write
+	 */
+	wf_ioremap_read(CONN_INFRA_CFG_ON_CONN_INFRA_WF_SLP_CTRL_ADDR, &value);
+	value |= CONN_INFRA_CFG_ON_CONN_INFRA_WF_SLP_CTRL_CFG_CONN_WF_SLP_PROT_SW_EN_MASK;
+	wf_ioremap_write(CONN_INFRA_CFG_ON_CONN_INFRA_WF_SLP_CTRL_ADDR, value);
+
+	/* Check WFDMA2CONN AXI RX bus sleep protect turn on
+	 * (polling "100 times")
+	 * Address: 0x1800_1444[25]
+	 * Data: 1'b1
+	 * Action: polling
+	 */
+	wf_ioremap_read(CONN_INFRA_CFG_ON_CONN_INFRA_WF_SLP_STATUS_ADDR, &value);
+	check = 0;
+	polling_count = 0;
+	while ((value & CONN_INFRA_CFG_ON_CONN_INFRA_WF_SLP_STATUS_WFDMA2CONN_SLP_PROT_RDY_MASK) == 0) {
+		if (polling_count > 100) {
+			check = -1;
+			ret = -1;
+			break;
+		}
+		udelay(500);
+		wf_ioremap_read(CONN_INFRA_CFG_ON_CONN_INFRA_WF_SLP_STATUS_ADDR, &value);
+		polling_count++;
+	}
+	if (check != 0) {
+		DBGLOG(INIT, ERROR,
+			"Polling WFDMA TO CONNINFRA SLP PROT fail. (0x%x)\n",
+			value);
+	}
+
+	/* Check "conn_infra to wfsys"/wfsys to conn_infra" bus sleep protect turn on
+	 * (polling "100 times" and each polling interval is "0.5ms")
+	 * If conn2wf protect turn on fail, power off fail.
+	 * (DRV access wfsys CR will trigger bus hang, because bus transaction wiil queue at slpprot. )
+	 * Address: 0x1800_1444[29] 0x1800_1444[31]
+	 * Data: 1'b1 1'b1
+	 * Action: polling
+	 */
+	wf_ioremap_read(CONN_INFRA_CFG_ON_CONN_INFRA_WF_SLP_STATUS_ADDR, &value);
+	check = 0;
+	polling_count = 0;
+	while ((value & (CONN_INFRA_CFG_ON_CONN_INFRA_WF_SLP_STATUS_WF2CONN_SLP_PROT_RDY_MASK |
+			CONN_INFRA_CFG_ON_CONN_INFRA_WF_SLP_STATUS_WF2CONN_SLP_PROT_HW_EN_MASK)) == 0) {
+		if (polling_count > 100) {
+			check = -1;
+			ret = -1;
+			break;
+		}
+		udelay(500);
+		wf_ioremap_read(CONN_INFRA_CFG_ON_CONN_INFRA_WF_SLP_STATUS_ADDR, &value);
+		polling_count++;
+	}
+	if (check != 0) {
+		DBGLOG(INIT, ERROR,
+			"Polling WFSYS TO CONNINFRA SLP PROT fail. (0x%x)\n",
+			value);
+	}
+
+	/* Turn off wfsys_top_on
+	 * Address: 0x1800_0010[31:16] 0x1800_0010[7]
+	 * Data: [31:16] = 16'h5746(key) [7] = 1'b0
+	 * Action: write
+	 */
+	wf_ioremap_read(CONN_INFRA_RGU_ON_WFSYS_ON_TOP_PWR_CTL_ADDR, &value);
+	value &= ~(CONN_INFRA_RGU_ON_WFSYS_ON_TOP_PWR_CTL_WFSYS_ON_TOP_WRITE_KEY_MASK |
+		CONN_INFRA_RGU_ON_WFSYS_ON_TOP_PWR_CTL_WFSYS_ON_TOP_PWR_ON_MASK);
+	value |= WFSYS_ON_TOP_WRITE_KEY;
+	wf_ioremap_write(CONN_INFRA_RGU_ON_WFSYS_ON_TOP_PWR_CTL_ADDR, value);
+
+	/* Polling wfsys_rgu_off_hreset_rst_b
+	 * Address: 0x1806_0A10[30]
+	 * Data: 1'b0
+	 * Action: polling
+	 */
+	wf_ioremap_read(CONN_HOST_CSR_TOP_CONN_INFRA_WAKEPU_TOP_ADDR, &value);
+	check = 0;
+	polling_count = 0;
+	while ((value & BIT(30)) != 0) {
+		if (polling_count > 10) {
+			check = -1;
+			ret = -1;
+			break;
+		}
+		udelay(500);
+		wf_ioremap_read(CONN_HOST_CSR_TOP_CONN_INFRA_WAKEPU_TOP_ADDR,
+				&value);
+		polling_count++;
+	}
+	if (check != 0) {
+		DBGLOG(INIT, ERROR,
+			"Polling wfsys rgu off fail. (0x%x)\n",
+			value);
+		return ret;
+	}
+
+	/* Release WFSYS semaphore
+	 * 0x1807_0200[0]=1'b1
+	 * 0x1807_0204[0]=1'b1
+	 * 0x1807_0208[0]=1'b1
+	 * 0x1807_020C[0]=1'b1
+	 * 0x1807_0210[0]=1'b1
+	 * 0x1807_0214[0]=1'b1
+	 * 0x1807_0218[0]=1'b1
+	 * 0x1807_021C[0]=1'b1
+	 * 0x1807_0220[0]=1'b1
+	 * 0x1807_0224[0]=1'b1
+	 * 0x1807_0228[0]=1'b1
+	 * 0x1807_022C[0]=1'b1
+	 * 0x1807_0230[0]=1'b1
+	 * 0x1807_0234[0]=1'b1
+	 * 0x1807_0238[0]=1'b1
+	 * 0x1807_023C[0]=1'b1
+	 * 0x1807_0240[0]=1'b1
+	 * 0x1807_0244[0]=1'b1
+	 * 0x1807_0248[0]=1'b1
+	 * 0x1807_024C[0]=1'b1
+	 * 0x1807_0250[0]=1'b1
+	 * 0x1807_0254[0]=1'b1
+	 * 0x1807_0258[0]=1'b1
+	 * 0x1807_025C[0]=1'b1
+	 * 0x1807_0260[0]=1'b1
+	 * Action: write
+	 */
+	wf_ioremap_read(CONN_SEMAPHORE_CONN_SEMA00_M0_OWN_REL_ADDR, &value);
+	value |= CONN_SEMAPHORE_CONN_SEMA00_M0_OWN_REL_CONN_SEMA00_M0_OWN_REL_MASK;
+	wf_ioremap_write(CONN_SEMAPHORE_CONN_SEMA00_M0_OWN_REL_ADDR, value);
+	wf_ioremap_read(CONN_SEMAPHORE_CONN_SEMA01_M0_OWN_REL_ADDR, &value);
+	value |= CONN_SEMAPHORE_CONN_SEMA01_M0_OWN_REL_CONN_SEMA01_M0_OWN_REL_MASK;
+	wf_ioremap_write(CONN_SEMAPHORE_CONN_SEMA01_M0_OWN_REL_ADDR, value);
+	wf_ioremap_read(CONN_SEMAPHORE_CONN_SEMA02_M0_OWN_REL_ADDR, &value);
+	value |= CONN_SEMAPHORE_CONN_SEMA02_M0_OWN_REL_CONN_SEMA02_M0_OWN_REL_MASK;
+	wf_ioremap_write(CONN_SEMAPHORE_CONN_SEMA02_M0_OWN_REL_ADDR, value);
+	wf_ioremap_read(CONN_SEMAPHORE_CONN_SEMA03_M0_OWN_REL_ADDR, &value);
+	value |= CONN_SEMAPHORE_CONN_SEMA03_M0_OWN_REL_CONN_SEMA03_M0_OWN_REL_MASK;
+	wf_ioremap_write(CONN_SEMAPHORE_CONN_SEMA03_M0_OWN_REL_ADDR, value);
+	wf_ioremap_read(CONN_SEMAPHORE_CONN_SEMA04_M0_OWN_REL_ADDR, &value);
+	value |= CONN_SEMAPHORE_CONN_SEMA04_M0_OWN_REL_CONN_SEMA04_M0_OWN_REL_MASK;
+	wf_ioremap_write(CONN_SEMAPHORE_CONN_SEMA04_M0_OWN_REL_ADDR, value);
+	wf_ioremap_read(CONN_SEMAPHORE_CONN_SEMA05_M0_OWN_REL_ADDR, &value);
+	value |= CONN_SEMAPHORE_CONN_SEMA05_M0_OWN_REL_CONN_SEMA05_M0_OWN_REL_MASK;
+	wf_ioremap_write(CONN_SEMAPHORE_CONN_SEMA05_M0_OWN_REL_ADDR, value);
+	wf_ioremap_read(CONN_SEMAPHORE_CONN_SEMA06_M0_OWN_REL_ADDR, &value);
+	value |= CONN_SEMAPHORE_CONN_SEMA06_M0_OWN_REL_CONN_SEMA06_M0_OWN_REL_MASK;
+	wf_ioremap_write(CONN_SEMAPHORE_CONN_SEMA06_M0_OWN_REL_ADDR, value);
+	wf_ioremap_read(CONN_SEMAPHORE_CONN_SEMA07_M0_OWN_REL_ADDR, &value);
+	value |= CONN_SEMAPHORE_CONN_SEMA07_M0_OWN_REL_CONN_SEMA07_M0_OWN_REL_MASK;
+	wf_ioremap_write(CONN_SEMAPHORE_CONN_SEMA07_M0_OWN_REL_ADDR, value);
+	wf_ioremap_read(CONN_SEMAPHORE_CONN_SEMA08_M0_OWN_REL_ADDR, &value);
+	value |= CONN_SEMAPHORE_CONN_SEMA08_M0_OWN_REL_CONN_SEMA08_M0_OWN_REL_MASK;
+	wf_ioremap_write(CONN_SEMAPHORE_CONN_SEMA08_M0_OWN_REL_ADDR, value);
+	wf_ioremap_read(CONN_SEMAPHORE_CONN_SEMA09_M0_OWN_REL_ADDR, &value);
+	value |= CONN_SEMAPHORE_CONN_SEMA09_M0_OWN_REL_CONN_SEMA09_M0_OWN_REL_MASK;
+	wf_ioremap_write(CONN_SEMAPHORE_CONN_SEMA09_M0_OWN_REL_ADDR, value);
+	wf_ioremap_read(CONN_SEMAPHORE_CONN_SEMA10_M0_OWN_REL_ADDR, &value);
+	value |= CONN_SEMAPHORE_CONN_SEMA10_M0_OWN_REL_CONN_SEMA10_M0_OWN_REL_MASK;
+	wf_ioremap_write(CONN_SEMAPHORE_CONN_SEMA10_M0_OWN_REL_ADDR, value);
+	wf_ioremap_read(CONN_SEMAPHORE_CONN_SEMA11_M0_OWN_REL_ADDR, &value);
+	value |= CONN_SEMAPHORE_CONN_SEMA11_M0_OWN_REL_CONN_SEMA11_M0_OWN_REL_MASK;
+	wf_ioremap_write(CONN_SEMAPHORE_CONN_SEMA11_M0_OWN_REL_ADDR, value);
+	wf_ioremap_read(CONN_SEMAPHORE_CONN_SEMA12_M0_OWN_REL_ADDR, &value);
+	value |= CONN_SEMAPHORE_CONN_SEMA12_M0_OWN_REL_CONN_SEMA12_M0_OWN_REL_MASK;
+	wf_ioremap_write(CONN_SEMAPHORE_CONN_SEMA12_M0_OWN_REL_ADDR, value);
+	wf_ioremap_read(CONN_SEMAPHORE_CONN_SEMA13_M0_OWN_REL_ADDR, &value);
+	value |= CONN_SEMAPHORE_CONN_SEMA13_M0_OWN_REL_CONN_SEMA13_M0_OWN_REL_MASK;
+	wf_ioremap_write(CONN_SEMAPHORE_CONN_SEMA13_M0_OWN_REL_ADDR, value);
+	wf_ioremap_read(CONN_SEMAPHORE_CONN_SEMA14_M0_OWN_REL_ADDR, &value);
+	value |= CONN_SEMAPHORE_CONN_SEMA14_M0_OWN_REL_CONN_SEMA14_M0_OWN_REL_MASK;
+	wf_ioremap_write(CONN_SEMAPHORE_CONN_SEMA14_M0_OWN_REL_ADDR, value);
+	wf_ioremap_read(CONN_SEMAPHORE_CONN_SEMA15_M0_OWN_REL_ADDR, &value);
+	value |= CONN_SEMAPHORE_CONN_SEMA15_M0_OWN_REL_CONN_SEMA15_M0_OWN_REL_MASK;
+	wf_ioremap_write(CONN_SEMAPHORE_CONN_SEMA15_M0_OWN_REL_ADDR, value);
+	wf_ioremap_read(CONN_SEMAPHORE_CONN_SEMA16_M0_OWN_REL_ADDR, &value);
+	value |= CONN_SEMAPHORE_CONN_SEMA16_M0_OWN_REL_CONN_SEMA16_M0_OWN_REL_MASK;
+	wf_ioremap_write(CONN_SEMAPHORE_CONN_SEMA16_M0_OWN_REL_ADDR, value);
+	wf_ioremap_read(CONN_SEMAPHORE_CONN_SEMA17_M0_OWN_REL_ADDR, &value);
+	value |= CONN_SEMAPHORE_CONN_SEMA17_M0_OWN_REL_CONN_SEMA17_M0_OWN_REL_MASK;
+	wf_ioremap_write(CONN_SEMAPHORE_CONN_SEMA17_M0_OWN_REL_ADDR, value);
+	wf_ioremap_read(CONN_SEMAPHORE_CONN_SEMA18_M0_OWN_REL_ADDR, &value);
+	value |= CONN_SEMAPHORE_CONN_SEMA18_M0_OWN_REL_CONN_SEMA18_M0_OWN_REL_MASK;
+	wf_ioremap_write(CONN_SEMAPHORE_CONN_SEMA18_M0_OWN_REL_ADDR, value);
+	wf_ioremap_read(CONN_SEMAPHORE_CONN_SEMA19_M0_OWN_REL_ADDR, &value);
+	value |= CONN_SEMAPHORE_CONN_SEMA19_M0_OWN_REL_CONN_SEMA19_M0_OWN_REL_MASK;
+	wf_ioremap_write(CONN_SEMAPHORE_CONN_SEMA19_M0_OWN_REL_ADDR, value);
+	wf_ioremap_read(CONN_SEMAPHORE_CONN_SEMA20_M0_OWN_REL_ADDR, &value);
+	value |= CONN_SEMAPHORE_CONN_SEMA20_M0_OWN_REL_CONN_SEMA20_M0_OWN_REL_MASK;
+	wf_ioremap_write(CONN_SEMAPHORE_CONN_SEMA20_M0_OWN_REL_ADDR, value);
+	wf_ioremap_read(CONN_SEMAPHORE_CONN_SEMA21_M0_OWN_REL_ADDR, &value);
+	value |= CONN_SEMAPHORE_CONN_SEMA21_M0_OWN_REL_CONN_SEMA21_M0_OWN_REL_MASK;
+	wf_ioremap_write(CONN_SEMAPHORE_CONN_SEMA21_M0_OWN_REL_ADDR, value);
+	wf_ioremap_read(CONN_SEMAPHORE_CONN_SEMA22_M0_OWN_REL_ADDR, &value);
+	value |= CONN_SEMAPHORE_CONN_SEMA22_M0_OWN_REL_CONN_SEMA22_M0_OWN_REL_MASK;
+	wf_ioremap_write(CONN_SEMAPHORE_CONN_SEMA22_M0_OWN_REL_ADDR, value);
+	wf_ioremap_read(CONN_SEMAPHORE_CONN_SEMA23_M0_OWN_REL_ADDR, &value);
+	value |= CONN_SEMAPHORE_CONN_SEMA23_M0_OWN_REL_CONN_SEMA23_M0_OWN_REL_MASK;
+	wf_ioremap_write(CONN_SEMAPHORE_CONN_SEMA23_M0_OWN_REL_ADDR, value);
+	wf_ioremap_read(CONN_SEMAPHORE_CONN_SEMA24_M0_OWN_REL_ADDR, &value);
+	value |= CONN_SEMAPHORE_CONN_SEMA24_M0_OWN_REL_CONN_SEMA24_M0_OWN_REL_MASK;
+	wf_ioremap_write(CONN_SEMAPHORE_CONN_SEMA24_M0_OWN_REL_ADDR, value);
+
+	/* Disable A-die top_ck_en_1
+	 * Address: 0x18003124[0]
+	 * Data: 1'b0
+	 * Action: write
+	 */
+	wf_ioremap_read(CONN_WT_SLP_CTL_REG_WB_SLP_TOP_CK_1_ADDR, &value);
+	value &= 0xFFFFFFFE;
+	wf_ioremap_write(CONN_WT_SLP_CTL_REG_WB_SLP_TOP_CK_1_ADDR, value);
+
+	/* Disable A-die top_ck_en_1
+	 * Address: 0x18003124[1]
+	 * Data: 1'b1
+	 * Action: polling
+	 */
+	wf_ioremap_read(CONN_WT_SLP_CTL_REG_WB_SLP_TOP_CK_1_ADDR, &value);
+	check = 0;
+	polling_count = 0;
+	while ((value & CONN_WT_SLP_CTL_REG_WB_SLP_TOP_CK_1_WB_SLP_TOP_CK_1_BSY_MASK) != 0) {
+		if (polling_count > 100) {
+			check = -1;
+			ret = -1;
+			break;
+		}
+		udelay(500);
+		wf_ioremap_read(CONN_WT_SLP_CTL_REG_WB_SLP_TOP_CK_1_ADDR, &value);
+		polling_count++;
+	}
+	if (check != 0) {
+		DBGLOG(INIT, ERROR,
+			"Polling A-die top_ck_en_1 off fail. (0x%x)\n",
+			value);
+	}
+
+	/* Clear wf_emi_req
+	 * Address: 0x18011114[0]
+	 * step 1. write 1'b1
+	 * step 2. write 1'b0
+	 */
+	wf_ioremap_read(CONN_INFRA_CFG_EMI_CTL_WF_ADDR, &value);
+	value |= 0x00000001;
+	wf_ioremap_write(CONN_INFRA_CFG_EMI_CTL_WF_ADDR, value);
+	value &= 0xFFFFFFFE;
+	wf_ioremap_write(CONN_INFRA_CFG_EMI_CTL_WF_ADDR, value);
+
+	/* Clear wf_infra_req
+	 * Address: 0x18011114[5]
+	 * step 1. write 1'b1
+	 * step 2. write 1'b0
+	 */
+	wf_ioremap_read(CONN_INFRA_CFG_EMI_CTL_WF_ADDR, &value);
+	value |= 0x00000020;
+	wf_ioremap_write(CONN_INFRA_CFG_EMI_CTL_WF_ADDR, value);
+	value &= 0xFFFFFFDF;
+	wf_ioremap_write(CONN_INFRA_CFG_EMI_CTL_WF_ADDR, value);
+
+	/* Clear wf_infra_req
+	 * Address: 0x1806_01A4[0]
+	 * Data: 1'b0
+	 * Action: write
+	 */
+	wf_ioremap_read(CONN_HOST_CSR_TOP_CONN_INFRA_WAKEPU_WF_ADDR, &value);
+	value &= ~CONN_HOST_CSR_TOP_CONN_INFRA_WAKEPU_WF_CONN_INFRA_WAKEPU_WF_MASK;
+	wf_ioremap_write(CONN_HOST_CSR_TOP_CONN_INFRA_WAKEPU_WF_ADDR, value);
+
+	return ret;
+}
+
+#if (CFG_POWER_ON_DOWNLOAD_EMI_ROM_PATCH == 1)
+void *
+soc7_0_kalFirmwareImageMapping(
+			IN struct GLUE_INFO *prGlueInfo,
+			OUT void **ppvMapFileBuf,
+			OUT uint32_t *pu4FileLength,
+			IN enum ENUM_IMG_DL_IDX_T eDlIdx)
+{
+	uint8_t **apucNameTable = NULL;
+	uint8_t *apucName[SOC7_0_FILE_NAME_TOTAL +
+					  1]; /* extra +1, for the purpose of
+					       * detecting the end of the array
+					       */
+	uint8_t idx = 0, max_idx,
+		aucNameBody[SOC7_0_FILE_NAME_TOTAL][SOC7_0_FILE_NAME_MAX],
+		sub_idx = 0;
+	struct mt66xx_chip_info *prChipInfo =
+			prGlueInfo->prAdapter->chip_info;
+	uint8_t aucFlavor[2] = {0};
+
+	DEBUGFUNC("kalFirmwareImageMapping");
+
+	ASSERT(prGlueInfo);
+	ASSERT(ppvMapFileBuf);
+	ASSERT(pu4FileLength);
+
+	*ppvMapFileBuf = NULL;
+	*pu4FileLength = 0;
+	kalGetFwFlavor(prGlueInfo->prAdapter, &aucFlavor[0]);
+
+	do {
+		/* <0.0> Get FW name prefix table */
+		switch (eDlIdx) {
+		case IMG_DL_IDX_N9_FW:
+			apucNameTable = soc7_0_apucFwName;
+			break;
+
+		case IMG_DL_IDX_MCU_ROM_EMI:
+			break;
+
+		case IMG_DL_IDX_WIFI_ROM_EMI:
+			break;
+
+		default:
+			ASSERT(0);
+			break;
+		}
+
+		/* <0.2> Construct FW name */
+		memset(apucName, 0, sizeof(apucName));
+
+		/* magic number 1: reservation for detection
+		 * of the end of the array
+		 */
+		max_idx = (sizeof(apucName) / sizeof(uint8_t *)) - 1;
+
+		idx = 0;
+		apucName[idx] = (uint8_t *)(aucNameBody + idx);
+
+		if (eDlIdx == IMG_DL_IDX_PATCH) {
+			/* construct the file name for patch */
+			/* soc7_0_patch_wmmcu_1_1_hdr.bin */
+			if (prChipInfo->fw_dl_ops->constructPatchName)
+				prChipInfo->fw_dl_ops->constructPatchName(
+					prGlueInfo, apucName, &idx);
+			else
+				kalSnprintf(apucName[idx], SOC7_0_FILE_NAME_MAX,
+					"soc7_0_patch_wmmcu_1_%x_hdr.bin",
+					wlanGetEcoVersion(
+						prGlueInfo->prAdapter));
+			idx += 1;
+		} else if (eDlIdx == IMG_DL_IDX_MCU_ROM_EMI) {
+			/* construct the file name for MCU ROM EMI */
+			/* soc7_0_ram_wmmcu_1_1_hdr.bin */
+			kalSnprintf(apucName[idx], SOC7_0_FILE_NAME_MAX,
+				"soc7_0_ram_wmmcu_%u%s_%x_hdr.bin",
+				CFG_WIFI_IP_SET,
+				aucFlavor,
+				wlanGetEcoVersion(
+					prGlueInfo->prAdapter));
+
+			idx += 1;
+		} else if (eDlIdx == IMG_DL_IDX_WIFI_ROM_EMI) {
+			/* construct the file name for WiFi ROM EMI */
+			/* soc7_0_ram_wifi_1_1_hdr.bin */
+			kalSnprintf(apucName[idx], SOC7_0_FILE_NAME_MAX,
+				"soc7_0_ram_wifi_%u%s_%x_hdr.bin",
+				CFG_WIFI_IP_SET,
+				aucFlavor,
+				wlanGetEcoVersion(
+					prGlueInfo->prAdapter));
+
+			idx += 1;
+		} else {
+			for (sub_idx = 0; sub_idx < max_idx; sub_idx++)
+				apucName[sub_idx] =
+					(uint8_t *)(aucNameBody + sub_idx);
+
+			if (prChipInfo->fw_dl_ops->constructFirmwarePrio)
+				prChipInfo->fw_dl_ops->constructFirmwarePrio(
+					prGlueInfo, apucNameTable, apucName,
+					&idx, max_idx);
+			else
+				kalConstructDefaultFirmwarePrio(
+					prGlueInfo, apucNameTable, apucName,
+					&idx, max_idx);
+		}
+
+		/* let the last pointer point to NULL
+		 * so that we can detect the end of the array in
+		 * kalFirmwareOpen().
+		 */
+		apucName[idx] = NULL;
+
+		apucNameTable = apucName;
+
+		/* <1> Open firmware */
+		if (kalFirmwareOpen(prGlueInfo,
+				    apucNameTable) != WLAN_STATUS_SUCCESS)
+			break;
+		{
+			uint32_t u4FwSize = 0;
+			void *prFwBuffer = NULL;
+			/* <2> Query firmare size */
+			kalFirmwareSize(prGlueInfo, &u4FwSize);
+			/* <3> Use vmalloc for allocating large memory trunk */
+			prFwBuffer = vmalloc(ALIGN_4(u4FwSize));
+			/* <4> Load image binary into buffer */
+			if (kalFirmwareLoad(prGlueInfo, prFwBuffer, 0,
+					    &u4FwSize) != WLAN_STATUS_SUCCESS) {
+				vfree(prFwBuffer);
+				kalFirmwareClose(prGlueInfo);
+				break;
+			}
+			/* <5> write back info */
+			*pu4FileLength = u4FwSize;
+			*ppvMapFileBuf = prFwBuffer;
+
+			return prFwBuffer;
+		}
+	} while (FALSE);
+
+	return NULL;
+}
+
+uint32_t soc7_0_wlanImageSectionDownloadStage(
+	IN struct ADAPTER *prAdapter, IN void *pvFwImageMapFile,
+	IN uint32_t u4FwImageFileLength, IN uint8_t ucSectionNumber,
+	IN enum ENUM_IMG_DL_IDX_T eDlIdx)
+{
+	uint32_t u4SecIdx, u4Offset = 0;
+	uint32_t u4Addr, u4Len, u4DataMode = 0;
+	u_int8_t fgIsEMIDownload = FALSE;
+	u_int8_t fgIsNotDownload = FALSE;
+	uint32_t u4Status = WLAN_STATUS_SUCCESS;
+	struct mt66xx_chip_info *prChipInfo = prAdapter->chip_info;
+	struct patch_dl_target target;
+	struct PATCH_FORMAT_T *prPatchHeader;
+	struct ROM_EMI_HEADER *prRomEmiHeader;
+	struct FWDL_OPS_T *prFwDlOps;
+
+	prFwDlOps = prChipInfo->fw_dl_ops;
+
+	/* 3a. parse file header for decision of
+	 * divided firmware download or not
+	 */
+	if (eDlIdx == IMG_DL_IDX_PATCH) {
+		prPatchHeader = pvFwImageMapFile;
+		if (prPatchHeader->u4PatchVersion == PATCH_VERSION_MAGIC_NUM) {
+			wlanImageSectionGetPatchInfoV2(prAdapter,
+				pvFwImageMapFile,
+				u4FwImageFileLength,
+				&u4DataMode,
+				&target);
+			DBGLOG(INIT, INFO,
+				"FormatV2 num_of_regoin[%d] datamode[0x%08x]\n",
+				target.num_of_region, u4DataMode);
+		} else {
+			wlanImageSectionGetPatchInfo(prAdapter,
+				pvFwImageMapFile,
+					     u4FwImageFileLength,
+					     &u4Offset, &u4Addr,
+					     &u4Len, &u4DataMode);
+			DBGLOG(INIT, INFO,
+		"FormatV1 DL Offset[%u] addr[0x%08x] len[%u] datamode[0x%08x]\n",
+		       u4Offset, u4Addr, u4Len, u4DataMode);
+		}
+
+		if (prPatchHeader->u4PatchVersion == PATCH_VERSION_MAGIC_NUM)
+			u4Status = wlanDownloadSectionV2(prAdapter,
+				u4DataMode, eDlIdx, &target);
+		else
+/* For dynamic memory map::Begin */
+#if (CFG_DOWNLOAD_DYN_MEMORY_MAP == 1)
+			u4Status = prFwDlOps->downloadByDynMemMap(
+						prAdapter, u4Addr, u4Len,
+						pvFwImageMapFile
+							+ u4Offset,
+							eDlIdx);
+#else
+			u4Status = wlanDownloadSection(
+							prAdapter,
+							u4Addr,
+							u4Len,
+							u4DataMode,
+							pvFwImageMapFile
+								+ u4Offset,
+						       eDlIdx);
+#endif
+/* For dynamic memory map::End */
+#if (CFG_SUPPORT_CONNINFRA == 1)
+		/* Set datecode to EMI */
+		wlanDownloadEMISection(prAdapter,
+			WMMCU_ROM_PATCH_DATE_ADDR,
+			DATE_CODE_SIZE, prPatchHeader->aucBuildDate);
+#endif
+
+	} else if (eDlIdx == IMG_DL_IDX_MCU_ROM_EMI) {
+		prRomEmiHeader = (struct ROM_EMI_HEADER *)pvFwImageMapFile;
+
+		DBGLOG(INIT, INFO,
+			"DL MCU ROM EMI %s\n",
+			(char *)prRomEmiHeader->ucDateTime);
+
+		u4Addr = prRomEmiHeader->u4PatchAddr;
+
+		u4Len = u4FwImageFileLength - sizeof(struct ROM_EMI_HEADER);
+
+		u4Offset = sizeof(struct ROM_EMI_HEADER);
+
+		u4Status = wlanDownloadEMISection(prAdapter,
+					u4Addr, u4Len,
+					pvFwImageMapFile + u4Offset);
+		/* Set datecode to EMI */
+		wlanDownloadEMISection(prAdapter,
+			WMMCU_MCU_ROM_EMI_DATE_ADDR,
+			DATE_CODE_SIZE,
+			prRomEmiHeader->ucDateTime);
+	} else {
+		for (u4SecIdx = 0; u4SecIdx < ucSectionNumber;
+		     u4SecIdx++, u4Offset += u4Len) {
+			prChipInfo->fw_dl_ops->getFwInfo(prAdapter, u4SecIdx,
+				eDlIdx, &u4Addr,
+				&u4Len, &u4DataMode, &fgIsEMIDownload,
+				&fgIsNotDownload);
+
+			DBGLOG(INIT, INFO,
+			       "DL Offset[%u] addr[0x%08x] len[%u] datamode[0x%08x]\n",
+			       u4Offset, u4Addr, u4Len, u4DataMode);
+
+			if (fgIsNotDownload)
+				continue;
+			else if (fgIsEMIDownload)
+				u4Status = wlanDownloadEMISection(prAdapter,
+					u4Addr, u4Len,
+					pvFwImageMapFile + u4Offset);
+/* For dynamic memory map:: Begin */
+#if (CFG_DOWNLOAD_DYN_MEMORY_MAP == 1)
+			else if ((u4DataMode &
+				DOWNLOAD_CONFIG_ENCRYPTION_MODE) == 0) {
+				/* Non-encrypted F/W region,
+				 * use dynamic memory mapping for download
+				 */
+				u4Status = prFwDlOps->downloadByDynMemMap(
+					prAdapter,
+					u4Addr,
+					u4Len,
+					pvFwImageMapFile + u4Offset,
+					eDlIdx);
+			}
+#endif
+/* For dynamic memory map:: End */
+			else
+				u4Status = wlanDownloadSection(prAdapter,
+					u4Addr, u4Len,
+					u4DataMode,
+					pvFwImageMapFile + u4Offset, eDlIdx);
+
+			/* escape from loop if any pending error occurs */
+			if (u4Status == WLAN_STATUS_FAILURE)
+				break;
+		}
+	}
+
+	return u4Status;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Wlan power on download function. This function prepare the job
+ *  during power on stage to download MCU ROM EMI
+ *
+ * \retval 0 Success
+ * \retval negative value Failed
+ */
+/*----------------------------------------------------------------------------*/
+uint32_t soc7_0_wlanPowerOnDownload(
+	IN struct ADAPTER *prAdapter,
+	IN uint8_t ucDownloadItem)
+{
+	uint32_t u4FwSize = 0;
+	void *prFwBuffer = NULL;
+	uint32_t u4Status;
+
+	if (!prAdapter)
+		return WLAN_STATUS_FAILURE;
+
+	DBGLOG_LIMITED(INIT, INFO,
+		"Power on download start(%d)\n", ucDownloadItem);
+
+	switch (ucDownloadItem) {
+	case ENUM_WLAN_POWER_ON_DOWNLOAD_EMI:
+		/* Download MCU ROM EMI*/
+		soc7_0_kalFirmwareImageMapping(prAdapter->prGlueInfo,
+			&prFwBuffer, &u4FwSize, IMG_DL_IDX_MCU_ROM_EMI);
+
+		if (prFwBuffer == NULL) {
+			DBGLOG(INIT, WARN, "FW[%u] load error!\n",
+			       IMG_DL_IDX_MCU_ROM_EMI);
+			return WLAN_STATUS_FAILURE;
+		}
+
+		u4Status = soc7_0_wlanImageSectionDownloadStage(
+			prAdapter, prFwBuffer, u4FwSize, 1,
+			IMG_DL_IDX_MCU_ROM_EMI);
+
+		kalFirmwareImageUnmapping(
+			prAdapter->prGlueInfo, NULL, prFwBuffer);
+
+		DBGLOG_LIMITED(INIT, INFO, "Power on download mcu ROM EMI %s\n",
+			(u4Status == WLAN_STATUS_SUCCESS) ? "pass" : "failed");
+
+		break;
+
+	default:
+		return WLAN_STATUS_NOT_SUPPORTED;
+	}
+
+	DBGLOG_LIMITED(INIT, INFO, "Power on download end[%d].\n", u4Status);
+
+	return u4Status;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Wlan power on init function. This function do the job in the
+ *  power on stage to download MCU ROM EMI
+ *
+ *  It is to simulate wlanProbe() with the minimum effort to complete
+ *  ROM EMI + ROM patch download.
+ *
+ * \retval 0 Success
+ * \retval negative value Failed
+ */
+/*----------------------------------------------------------------------------*/
+int32_t soc7_0_wlanPowerOnInit(void)
+{
+	void *pvData;
+	void *pvDriverData = (void *)&mt66xx_driver_data_soc7_0;
+
+	int32_t i4Status = 0;
+	enum ENUM_POWER_ON_INIT_FAIL_REASON {
+		NET_CREATE_FAIL = 0,
+		ROM_PATCH_DOWNLOAD_FAIL,
+		POWER_ON_INIT_DONE,
+		FAIL_REASON_NUM
+	} eFailReason;
+	struct wireless_dev *prWdev = NULL;
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct ADAPTER *prAdapter = NULL;
+	struct mt66xx_chip_info *prChipInfo;
+
+	DBGLOG(INIT, INFO, "wlanPowerOnInit::begin\n");
+
+	eFailReason = POWER_ON_INIT_DONE;
+
+	prChipInfo = ((struct mt66xx_hif_driver_data *)pvDriverData)
+				->chip_info;
+	pvData = (void *)prChipInfo->pdev;
+
+	if (fgSimplifyResetFlow) {
+		prGlueInfo = (struct GLUE_INFO *)wiphy_priv(wlanGetWiphy());
+		prAdapter = prGlueInfo->prAdapter;
+
+		if (prChipInfo->pwrondownload) {
+			DBGLOG_LIMITED(INIT, INFO,
+				"[Wi-Fi PWR On] EMI download Start\n");
+
+			if (prChipInfo->pwrondownload(prAdapter,
+				ENUM_WLAN_POWER_ON_DOWNLOAD_EMI) !=
+				WLAN_STATUS_SUCCESS)
+				i4Status = -ROM_PATCH_DOWNLOAD_FAIL;
+
+			DBGLOG_LIMITED(INIT, INFO,
+				"[Wi-Fi PWR On] EMI download End\n");
+		}
+	} else {
+		prWdev = wlanNetCreate(pvData, pvDriverData);
+
+		if (prWdev == NULL) {
+			DBGLOG(INIT, ERROR,
+				"[Wi-Fi PWR On] No memory for dev and its private\n");
+
+			i4Status = -NET_CREATE_FAIL;
+		} else {
+			/* Set the ioaddr to HIF Info */
+			prGlueInfo = (struct GLUE_INFO *)
+				wiphy_priv(prWdev->wiphy);
+
+			prAdapter = prGlueInfo->prAdapter;
+
+			if (prChipInfo->pwrondownload) {
+				DBGLOG_LIMITED(INIT, INFO,
+					"[Wi-Fi PWR On] EMI download Start\n");
+
+				if (prChipInfo->pwrondownload(prAdapter,
+				    ENUM_WLAN_POWER_ON_DOWNLOAD_EMI) !=
+					WLAN_STATUS_SUCCESS)
+					i4Status = -ROM_PATCH_DOWNLOAD_FAIL;
+
+				DBGLOG_LIMITED(INIT, INFO,
+					"[Wi-Fi PWR On] EMI download End\n");
+			}
+
+			wlanWakeLockUninit(prGlueInfo);
+		}
+
+		wlanNetDestroy(prWdev);
+	}
+
+	return i4Status;
+}
+#endif
+
+static bool soc7_0_get_sw_interrupt_status(struct ADAPTER *prAdapter,
+	uint32_t *status)
+{
+#define MAX_POLLING_CNT 10
+
+	int check = 0;
+	uint32_t value = 0;
+	uint32_t sw_int_value = 0;
+	uint32_t polling_count = 0;
+
+	/* Wakeup conn_infra off write 0x180601A4[0] = 1'b1 */
+	wf_ioremap_read(CONN_HOST_CSR_TOP_CONN_INFRA_WAKEPU_WF_ADDR, &value);
+	value |= CONN_HOST_CSR_TOP_CONN_INFRA_WAKEPU_WF_CONN_INFRA_WAKEPU_WF_MASK;
+	wf_ioremap_write(CONN_HOST_CSR_TOP_CONN_INFRA_WAKEPU_WF_ADDR, value);
+
+	/* Check CONNSYS version ID
+	 * (polling "10 times" and each polling interval is "1ms")
+	 * Address: 0x1800_1000[31:0]
+	 * Data: 0x02060002
+	 * Action: polling
+	 */
+	wf_ioremap_read(CONN_INFRA_CFG_IP_VERSION_ADDR, &value);
+	check = 0;
+	polling_count = 0;
+	while (value != SOC7_CONNSYS_VERSION_ID) {
+		if (polling_count > MAX_POLLING_CNT) {
+			check = -1;
+			DBGLOG(HAL, ERROR, "Polling CONNSYS version ID fail.\n");
+			break;
+		}
+		udelay(1000);
+		wf_ioremap_read(CONN_INFRA_CFG_IP_VERSION_ADDR, &value);
+		polling_count++;
+	}
+	if (check != 0) {
+		if (!conninfra_reg_readable()) {
+			DBGLOG(HAL, ERROR,
+				"conninfra_reg_readable fail\n");
+			return false;
+		}
+	}
+
+	wf_ioremap_read(AP2WF_CONN_INFRA_ON_CCIF4_AP2WF_PCCIF_RCHNUM_ADDR,
+		&sw_int_value);
+	wf_ioremap_write(AP2WF_CONN_INFRA_ON_CCIF4_AP2WF_PCCIF_ACK_ADDR,
+		sw_int_value);
+
+	/* Disable conn_infra off domain force on 0x180601A4[0] = 1'b0 */
+	wf_ioremap_read(CONN_HOST_CSR_TOP_CONN_INFRA_WAKEPU_WF_ADDR, &value);
+	value &= ~CONN_HOST_CSR_TOP_CONN_INFRA_WAKEPU_WF_CONN_INFRA_WAKEPU_WF_MASK;
+	wf_ioremap_write(CONN_HOST_CSR_TOP_CONN_INFRA_WAKEPU_WF_ADDR, value);
+
+	*status = sw_int_value;
+	return true;
 }
 
 #endif  /* soc7_0 */

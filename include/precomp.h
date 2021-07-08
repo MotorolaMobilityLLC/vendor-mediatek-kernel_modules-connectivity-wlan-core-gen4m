@@ -188,6 +188,8 @@
 #include "cmm_asic_connac.h"
 #include "cmm_asic_connac2x.h"
 
+#include "pre_cal.h"
+
 #if (CFG_SUPPORT_802_11AX == 1)
 #include "he_rlm.h"
 #include "wlan_he.h"
