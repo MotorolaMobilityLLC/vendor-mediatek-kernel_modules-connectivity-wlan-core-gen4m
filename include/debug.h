@@ -105,6 +105,18 @@ extern struct MIB_INFO_STAT g_arMibInfo[ENUM_BAND_NUM];
 #define DBG_CLASS_TEMP          BIT(7)
 #define DBG_CLASS_MASK          BITS(0, 7)
 
+// IKSWR-110533 reduce the log for ellis user version.
+#ifdef DBG_LOG_LEVEL_LESS
+#define DBG_LOG_LEVEL_DEFAULT \
+	(DBG_CLASS_ERROR)
+#define DBG_LOG_LEVEL_MORE \
+	(DBG_LOG_LEVEL_DEFAULT | \
+	DBG_CLASS_WARN | \
+	DBG_CLASS_STATE | \
+	DBG_CLASS_EVENT | \
+	DBG_CLASS_INFO | \
+	DBG_CLASS_TRACE)
+#else
 #define DBG_LOG_LEVEL_DEFAULT \
 	(DBG_CLASS_ERROR | \
 	DBG_CLASS_WARN | \
@@ -114,6 +126,9 @@ extern struct MIB_INFO_STAT g_arMibInfo[ENUM_BAND_NUM];
 #define DBG_LOG_LEVEL_MORE \
 	(DBG_LOG_LEVEL_DEFAULT | \
 	DBG_CLASS_TRACE)
+#endif
+// IKSWR-110533 end.
+
 #define DBG_LOG_LEVEL_EXTREME \
 	(DBG_LOG_LEVEL_MORE | \
 	DBG_CLASS_LOUD)
