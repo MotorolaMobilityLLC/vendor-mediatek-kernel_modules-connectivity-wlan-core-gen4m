@@ -4351,6 +4351,10 @@ int main_thread(void *data)
 #if (CFG_SUPPORT_CONNINFRA == 1)
 	struct timespec64 time;
 #endif
+#ifdef CONFIG_MTK_CONNSYS_DEDICATED_LOG_PATH
+	struct CMD_CONNSYS_FW_LOG rFwLogCmd;
+	uint32_t u4BufLen;
+#endif
 
 #if CFG_SUPPORT_MULTITHREAD
 	prGlueInfo->u4TxThreadPid = KAL_GET_CURRENT_THREAD_ID();
@@ -4681,6 +4685,29 @@ int main_thread(void *data)
 			}
 		}
 #endif
+#ifdef CONFIG_MTK_CONNSYS_DEDICATED_LOG_PATH
+		if (!prGlueInfo->prAdapter->fgSetLogOnOff) {
+			kalMemZero(&rFwLogCmd, sizeof(rFwLogCmd));
+			rFwLogCmd.fgCmd = FW_LOG_CMD_ON_OFF;
+			rFwLogCmd.fgValue = getFWLogOnOff();
+
+			connsysFwLogControl(prGlueInfo->prAdapter,
+				(void *)&rFwLogCmd,
+				sizeof(struct CMD_CONNSYS_FW_LOG),
+				&u4BufLen);
+		}
+		if (!prGlueInfo->prAdapter->fgSetLogLevel) {
+			kalMemZero(&rFwLogCmd, sizeof(rFwLogCmd));
+			rFwLogCmd.fgCmd = FW_LOG_CMD_SET_LEVEL;
+			rFwLogCmd.fgValue = getFWLogLevel();
+
+			connsysFwLogControl(prGlueInfo->prAdapter,
+				(void *)&rFwLogCmd,
+				sizeof(struct CMD_CONNSYS_FW_LOG),
+				&u4BufLen);
+		}
+#endif
+
 		kalTraceEnd(); /* main_thread */
 	}
 
