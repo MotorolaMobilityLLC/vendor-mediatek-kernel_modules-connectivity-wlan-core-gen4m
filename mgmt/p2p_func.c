@@ -7172,7 +7172,8 @@ void p2pFunIndicateAcsResult(IN struct GLUE_INFO *prGlueInfo,
 			prAcsReqInfo->ucSecondCh,
 			prAcsReqInfo->ucCenterFreqS1,
 			prAcsReqInfo->ucCenterFreqS2,
-			prAcsReqInfo->eChnlBw);
+			prAcsReqInfo->eChnlBw,
+			prAcsReqInfo->eHwMode);
 }
 
 void p2pFunCalAcsChnScores(IN struct ADAPTER *prAdapter)
