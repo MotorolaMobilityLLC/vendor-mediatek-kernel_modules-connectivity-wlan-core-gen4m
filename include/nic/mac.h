@@ -1458,6 +1458,7 @@ enum BEACON_REPORT_DETAIL {
 
 /*8.4.1.50 Operating Mode Field*/
 #define VHT_OP_MODE_CHANNEL_WIDTH                   BITS(0, 1)
+#define VHT_OP_MODE_CHANNEL_WIDTH_80P80_160         BIT(2)
 #define VHT_OP_MODE_RX_NSS                          BITS(4, 6)
 #define VHT_OP_MODE_RX_NSS_TYPE                     BIT(7)
 
