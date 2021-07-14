@@ -198,6 +198,10 @@ uint32_t heRlmSendHtcNullFrame(
 	IN struct STA_RECORD *prStaRec,
 	IN uint8_t ucUP,
 	IN PFN_TX_DONE_HANDLER pfTxDoneHandler);
+uint8_t heGetBssBandBw(
+	struct ADAPTER *prAdapter,
+	struct BSS_INFO *prBssInfo,
+	enum ENUM_BAND eBand);
 #if (CFG_SUPPORT_WIFI_6G == 1)
 void heRlmReqGenerateHe6gBandCapIE(
 	struct ADAPTER *prAdapter,
