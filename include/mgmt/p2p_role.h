@@ -334,6 +334,8 @@ struct P2P_ROLE_FSM_INFO {
 
 	uint8_t ucBssIndex;
 
+	uint8_t fgIsChannelSelectByAcs;
+
 	/* State related. */
 	enum ENUM_P2P_ROLE_STATE eCurrentState;
 

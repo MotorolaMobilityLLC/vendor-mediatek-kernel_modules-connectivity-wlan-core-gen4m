@@ -4178,6 +4178,7 @@ void p2pRoleFsmRunEventAcs(IN struct ADAPTER *prAdapter,
 	prMsgAcsRequest = (struct MSG_P2P_ACS_REQUEST *) prMsgHdr;
 	prP2pRoleFsmInfo = P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prAdapter,
 			prMsgAcsRequest->ucRoleIdx);
+	prP2pRoleFsmInfo->fgIsChannelSelectByAcs = TRUE;
 	prAcsReqInfo = &prP2pRoleFsmInfo->rAcsReqInfo;
 
 	p2pRoleFsmAbortCurrentAcsReq(prAdapter, prMsgAcsRequest);

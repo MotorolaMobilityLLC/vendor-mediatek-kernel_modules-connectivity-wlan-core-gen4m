@@ -1384,6 +1384,11 @@ void p2pFuncStopGO(IN struct ADAPTER *prAdapter,
 		IN struct BSS_INFO *prP2pBssInfo)
 {
 	uint32_t u4ClientCount = 0;
+	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo;
+
+	prP2pRoleFsmInfo = P2P_ROLE_INDEX_2_ROLE_FSM_INFO(
+		prAdapter, prP2pBssInfo->u4PrivateData);
+	prP2pRoleFsmInfo->fgIsChannelSelectByAcs = FALSE;
 
 	do {
 		ASSERT_BREAK((prAdapter != NULL) && (prP2pBssInfo != NULL));
