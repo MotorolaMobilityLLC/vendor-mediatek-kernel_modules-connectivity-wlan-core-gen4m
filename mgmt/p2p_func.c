@@ -6441,6 +6441,16 @@ void p2pFuncSwitchSapChannel(
 		rRfChnlInfo.ucChnlBw =
 			rlmGetBssOpBwByVhtAndHtOpInfo(prP2pBssInfo);
 
+		if ((prAdapter->rWifiVar.fgSapChannelSwitchPolicy ==
+			P2P_CHANNEL_SWITCH_POLICY_SKIP_DFS) &&
+			rlmDomainIsLegalDfsChannel(prAdapter,
+			eStaBand, ucStaChannelNum)) {
+			DBGLOG(P2P, INFO,
+				"[SKIP] StaCH(%d), Band(%d)\n",
+				ucStaChannelNum, eStaBand);
+			goto exit;
+		}
+
 		DBGLOG(P2P, INFO,
 			"[SCC] StaCH(%d), SapCH(%d)(dfs: %u)\n",
 			ucStaChannelNum, ucSapChannelNum, fgIsSapDfs);
