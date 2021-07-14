@@ -273,6 +273,7 @@ struct P2P_ACS_REQ_INFO {
 	uint32_t u4LteSafeChnMask_6G;
 
 	/* output only */
+	uint8_t ucBand;
 	enum ENUM_BAND eBand;
 	uint8_t ucPrimaryCh;
 	uint8_t ucSecondCh;
