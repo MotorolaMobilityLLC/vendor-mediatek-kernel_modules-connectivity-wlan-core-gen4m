@@ -2263,13 +2263,9 @@ void rlmReviseMaxBw(struct ADAPTER *prAdapter, uint8_t ucBssIndex,
 	uint8_t ucMaxBandwidth = MAX_BW_80MHZ;
 	uint8_t ucCurrentBandwidth = MAX_BW_20MHZ;
 	uint8_t ucOffset = (MAX_BW_80MHZ - CW_80MHZ);
-#if (CFG_SUPPORT_WIFI_6G == 1)
 	struct BSS_INFO *prBssInfo;
 
-	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
-					  ucBssIndex);
-#endif
-
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
 	ucMaxBandwidth = cnmGetDbdcBwCapability(prAdapter, ucBssIndex);
 
 	if (*peChannelWidth > CW_20_40MHZ) {
@@ -2303,50 +2299,100 @@ void rlmReviseMaxBw(struct ADAPTER *prAdapter, uint8_t ucBssIndex,
 			if (ucMaxBandwidth == MAX_BW_80MHZ) {
 				/* modify S1 for Bandwidth 160 downgrade 80 case
 				 */
-				if (ucCurrentBandwidth == MAX_BW_160MHZ
-#if (CFG_SUPPORT_WIFI_6G == 1)
-					&& prBssInfo->eBand != BAND_6G
-#endif
-					) {
-					if ((*pucPrimaryCh >= 36) &&
-					    (*pucPrimaryCh <= 48))
-						*pucS1 = 42;
-					else if ((*pucPrimaryCh >= 52) &&
-						 (*pucPrimaryCh <= 64))
-						*pucS1 = 58;
-					else if ((*pucPrimaryCh >= 100) &&
-						 (*pucPrimaryCh <= 112))
-						*pucS1 = 106;
-					else if ((*pucPrimaryCh >= 116) &&
-						 (*pucPrimaryCh <= 128))
-						*pucS1 = 122;
-					else if ((*pucPrimaryCh >= 132) &&
-						 (*pucPrimaryCh <= 144))
-						/* 160 downgrade should not in
-						 * this case
-						 */
-						*pucS1 = 138;
-					else if ((*pucPrimaryCh >= 149) &&
-						 (*pucPrimaryCh <= 161))
-						/* 160 downgrade should not in
-						 * this case
-						 */
-						*pucS1 = 155;
-					else
-						DBGLOG(RLM, INFO,
-						       "Check connect 160 downgrde (%d) case\n",
-						       ucMaxBandwidth);
-
-					DBGLOG(RLM, INFO,
-					       "Decreasse the BW160 to BW80, shift S1 to (%d)\n",
-					       *pucS1);
-				}
+				if (ucCurrentBandwidth == MAX_BW_160MHZ)
+					*pucS1 = rlmReviseChFreqS1(prBssInfo,
+							*pucPrimaryCh, *pucS1,
+							ucMaxBandwidth);
 			}
 		}
 
 		DBGLOG(RLM, INFO, "Modify ChannelWidth (%d) and Extend (%d)\n",
 		       *peChannelWidth, *peExtend);
 	}
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Revise channel frequency by Primary Channel number
+ *
+ * \param[in]
+ *
+ * \return none
+ */
+/*----------------------------------------------------------------------------*/
+uint8_t rlmReviseChFreqS1(IN struct BSS_INFO *prBssInfo,
+	IN uint8_t ucPrimaryCh, IN uint8_t ucOriginS1,
+	IN uint8_t ucMaxBandwidth)
+{
+	uint8_t ucS1 = 0;
+
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	if (prBssInfo->eBand == BAND_6G) {
+		if ((ucPrimaryCh >= 1) && (ucPrimaryCh <= 13))
+			ucS1 = 7;
+		else if ((ucPrimaryCh >= 17) && (ucPrimaryCh <= 29))
+			ucS1 = 23;
+		else if ((ucPrimaryCh >= 33) && (ucPrimaryCh <= 45))
+			ucS1 = 39;
+		else if ((ucPrimaryCh >= 49) && (ucPrimaryCh <= 61))
+			ucS1 = 55;
+		else if ((ucPrimaryCh >= 65) && (ucPrimaryCh <= 77))
+			ucS1 = 71;
+		else if ((ucPrimaryCh >= 81) && (ucPrimaryCh <= 93))
+			ucS1 = 87;
+		else if ((ucPrimaryCh >= 97) && (ucPrimaryCh <= 109))
+			ucS1 = 103;
+		else if ((ucPrimaryCh >= 113) && (ucPrimaryCh <= 125))
+			ucS1 = 119;
+		else if ((ucPrimaryCh >= 129) && (ucPrimaryCh <= 141))
+			ucS1 = 135;
+		else if ((ucPrimaryCh >= 145) && (ucPrimaryCh <= 157))
+			ucS1 = 151;
+		else if ((ucPrimaryCh >= 161) && (ucPrimaryCh <= 173))
+			ucS1 = 167;
+		else if ((ucPrimaryCh >= 177) && (ucPrimaryCh <= 189))
+			ucS1 = 183;
+		else if ((ucPrimaryCh >= 193) && (ucPrimaryCh <= 205))
+			ucS1 = 199;
+		else if ((ucPrimaryCh >= 209) && (ucPrimaryCh <= 221))
+			ucS1 = 215;
+		else
+			DBGLOG(RLM, ERROR,
+				"Check connect 160 downgrade (%d) case\n",
+				ucMaxBandwidth);
+		DBGLOG(RLM, ERROR,
+			"Decreasse the BW160 to BW80, shift S1 to (%d)\n",
+			ucS1);
+	} else
+#endif
+	{
+		if ((ucPrimaryCh >= 36) && (ucPrimaryCh <= 48))
+			ucS1 = 42;
+		else if ((ucPrimaryCh >= 52) && (ucPrimaryCh <= 64))
+			ucS1 = 58;
+		else if ((ucPrimaryCh >= 100) && (ucPrimaryCh <= 112))
+			ucS1 = 106;
+		else if ((ucPrimaryCh >= 116) && (ucPrimaryCh <= 128))
+			ucS1 = 122;
+		else if ((ucPrimaryCh >= 132) && (ucPrimaryCh <= 144))
+		/* 160 downgrade should not in this case */
+			ucS1 = 138;
+		else if ((ucPrimaryCh >= 149) && (ucPrimaryCh <= 161))
+		/* 160 downgrade should not in this case */
+			ucS1 = 155;
+		else
+			DBGLOG(RLM, INFO,
+				"Check connect 160 downgrde (%d) case\n",
+				ucMaxBandwidth);
+
+		DBGLOG(RLM, INFO,
+			"Decreasse the BW160 to BW80, shift S1 to (%d)\n",
+			ucS1);
+	}
+	if (ucS1 != 0)
+		return ucS1;
+	else
+		return ucOriginS1;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2448,6 +2494,7 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 #endif
 	uint8_t *pucDumpIE;
 	uint8_t fgDomainValid = FALSE;
+	enum ENUM_CHANNEL_WIDTH eChannelWidth = CW_20_40MHZ;
 
 	ASSERT(prAdapter);
 	ASSERT(prBssInfo);
@@ -3236,23 +3283,35 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 #endif
 
 #if (CFG_SUPPORT_WIFI_6G == 1)
-	if (prBssInfo->eBand == BAND_6G)
+	if (prBssInfo->eBand == BAND_6G) {
+		/* Do not write prBssInfo->ucHeChannelWidth directly
+		 * in rlmReviseMaxBw, otherwise it will cause the following
+		 * struct members are overwritten unexpectly.
+		 */
+		eChannelWidth =
+			(enum ENUM_CHANNEL_WIDTH)
+			prBssInfo->ucHeChannelWidth;
 		rlmReviseMaxBw(prAdapter,
 				prBssInfo->ucBssIndex,
 				&prBssInfo->eBssSCO,
-				(enum ENUM_CHANNEL_WIDTH *)
-				&prBssInfo->ucHeChannelWidth,
+				&eChannelWidth,
 				&prBssInfo->ucHeChannelFrequencyS1,
 				&prBssInfo->ucPrimaryChannel);
+		prBssInfo->ucHeChannelWidth = (uint8_t)eChannelWidth;
+	}
 	else
 #endif
-		rlmReviseMaxBw(
-				prAdapter,
-				prBssInfo->ucBssIndex, &prBssInfo->eBssSCO,
-				(enum ENUM_CHANNEL_WIDTH *)
-				&prBssInfo->ucVhtChannelWidth,
+	{
+		eChannelWidth =
+			(enum ENUM_CHANNEL_WIDTH)
+			prBssInfo->ucVhtChannelWidth;
+		rlmReviseMaxBw(prAdapter, prBssInfo->ucBssIndex,
+				&prBssInfo->eBssSCO,
+				&eChannelWidth,
 				&prBssInfo->ucVhtChannelFrequencyS1,
 				&prBssInfo->ucPrimaryChannel);
+		prBssInfo->ucVhtChannelWidth = (uint8_t)eChannelWidth;
+	}
 
 	rlmRevisePreferBandwidthNss(prAdapter, prBssInfo->ucBssIndex, prStaRec);
 

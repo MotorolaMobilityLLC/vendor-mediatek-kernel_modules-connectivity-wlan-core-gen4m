@@ -513,6 +513,10 @@ void rlmReviseMaxBw(
 	uint8_t *pucS1,
 	uint8_t *pucPrimaryCh);
 
+uint8_t rlmReviseChFreqS1(IN struct BSS_INFO *prBssInfo,
+	IN uint8_t ucPrimaryCh, IN uint8_t ucOriginS1,
+	IN uint8_t ucMaxBandwidth);
+
 void rlmSetMaxTxPwrLimit(IN struct ADAPTER *prAdapter, int8_t cLimit,
 			 uint8_t ucEnable);
 
