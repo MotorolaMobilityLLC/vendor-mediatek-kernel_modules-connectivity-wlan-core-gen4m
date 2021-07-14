@@ -2754,21 +2754,16 @@ nicUpdateBeaconIETemplate(IN struct ADAPTER *prAdapter,
 		return WLAN_STATUS_INVALID_DATA;
 
 	if (eIeUpdMethod == IE_UPD_METHOD_UPDATE_RANDOM
-	    || eIeUpdMethod == IE_UPD_METHOD_UPDATE_ALL) {
+		|| eIeUpdMethod == IE_UPD_METHOD_UPDATE_ALL
+#if CFG_SUPPORT_P2P_GO_OFFLOAD_PROBE_RSP
+		|| eIeUpdMethod == IE_UPD_METHOD_UPDATE_PROBE_RSP
+#endif
+		|| eIeUpdMethod == IE_UPD_METHOD_UNSOL_PROBE_RSP) {
 		u2CmdBufLen = OFFSET_OF(struct CMD_BEACON_TEMPLATE_UPDATE,
 					aucIE) + u2IELen;
 	} else if (eIeUpdMethod == IE_UPD_METHOD_DELETE_ALL) {
 		u2CmdBufLen = OFFSET_OF(struct CMD_BEACON_TEMPLATE_UPDATE,
 					u2IELen);
-#if CFG_SUPPORT_P2P_GO_OFFLOAD_PROBE_RSP
-	} else if (eIeUpdMethod == IE_UPD_METHOD_UPDATE_PROBE_RSP
-		    || eIeUpdMethod == IE_UPD_METHOD_UNSOL_PROBE_RSP) {
-		u2CmdBufLen = OFFSET_OF(struct CMD_BEACON_TEMPLATE_UPDATE,
-					aucIE) + u2IELen;
-		DBGLOG(NIC, INFO,
-		       "update probe response to firmware, method:%d\n",
-		       eIeUpdMethod);
-#endif
 	} else {
 		DBGLOG(INIT, ERROR, "Unknown IeUpdMethod.\n");
 		return WLAN_STATUS_FAILURE;
