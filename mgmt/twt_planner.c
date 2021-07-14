@@ -1074,8 +1074,7 @@ void twtPlannerSetParams(
 	}
 
 	/* For COEX concern, suppose only 5G is allowed */
-	if ((prAdapter->rWifiVar.ucTWTStaBandBitmap & prBssInfo->eBand)
-		!= prBssInfo->eBand) {
+	if (!(prAdapter->rWifiVar.ucTWTStaBandBitmap & BIT(prBssInfo->eBand))) {
 		DBGLOG(TWT_PLANNER, ERROR,
 			"TWT BAND support bitmaps(%u)!=%u\n",
 			prAdapter->rWifiVar.ucTWTStaBandBitmap,

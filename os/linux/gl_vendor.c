@@ -240,15 +240,21 @@ int mtk_cfg80211_vendor_get_channel_list(struct wiphy *wiphy,
 	switch (band) {
 	case 1: /* 2.4G band */
 		rlmDomainGetChnlList(prGlueInfo->prAdapter, BAND_2G4, TRUE,
-			     MAX_CHN_NUM, &ucNumOfChannel, aucChannelList);
+			MAX_CHN_NUM, &ucNumOfChannel, aucChannelList);
 		break;
 	case 2: /* 5G band without DFS channels */
 		rlmDomainGetChnlList(prGlueInfo->prAdapter, BAND_5G, TRUE,
-			     MAX_CHN_NUM, &ucNumOfChannel, aucChannelList);
+			MAX_CHN_NUM, &ucNumOfChannel, aucChannelList);
 		break;
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	case 3: /* 6G band */
+		rlmDomainGetChnlList(prGlueInfo->prAdapter, BAND_6G, TRUE,
+			MAX_CHN_NUM, &ucNumOfChannel, aucChannelList);
+	break;
+#endif
 	case 4: /* 5G band DFS channels only */
 		rlmDomainGetDfsChnls(prGlueInfo->prAdapter, MAX_CHN_NUM,
-				     &ucNumOfChannel, aucChannelList);
+			&ucNumOfChannel, aucChannelList);
 		break;
 	default:
 		ucNumOfChannel = 0;

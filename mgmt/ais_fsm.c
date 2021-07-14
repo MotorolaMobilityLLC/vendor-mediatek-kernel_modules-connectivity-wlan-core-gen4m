@@ -172,8 +172,11 @@ bool aisCheckUsingERRate(IN struct ADAPTER *prAdapter,
 
 	if ((prBssDesc->fgIsERSUDisable == 0) &&
 		(prBssDesc->ucDCMMaxConRx > 0) &&
-		(prBssDesc->eBand == BAND_5G) &&
-		(aisCheckPowerMatchERCondition(prAdapter, prBssDesc))) {
+		(prBssDesc->eBand == BAND_5G
+#if (CFG_SUPPORT_WIFI_6G == 1)
+		|| prBssDesc->eBand == BAND_6G
+#endif
+		) && (aisCheckPowerMatchERCondition(prAdapter, prBssDesc))) {
 		fgIsStaUseERRate = TRUE;
 	}
 
@@ -1557,10 +1560,18 @@ u_int8_t aisScanChannelFixed(struct ADAPTER *prAdapter, enum ENUM_BAND *prBand,
 		*pucPrimaryChannel =
 			nicFreq2ChannelNum(setting->u4FreqInKHz * 1000);
 		if (*pucPrimaryChannel > 0) {
-			if (*pucPrimaryChannel <= 14)
+			if ((setting->u4FreqInKHz >= 2412) &&
+				(setting->u4FreqInKHz <= 2484))
 				*prBand = BAND_2G4;
-			else
+			else if ((setting->u4FreqInKHz >= 5180) &&
+				(setting->u4FreqInKHz <= 5900))
 				*prBand = BAND_5G;
+#if (CFG_SUPPORT_WIFI_6G == 1)
+			else if ((setting->u4FreqInKHz >= 5955) &&
+				(setting->u4FreqInKHz <= 7115))
+				*prBand = BAND_6G;
+#endif
+
 			DBGLOG(AIS, INFO, "fixed channel %d, band %d\n",
 				*pucPrimaryChannel, *prBand);
 			return TRUE;

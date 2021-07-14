@@ -68,6 +68,10 @@
 #define MINIMUM_RSSI_2G4                        -94
 /* Link speed 6Mbps need at least rssi -86dbm for 5G */
 #define MINIMUM_RSSI_5G                         -86
+#if (CFG_SUPPORT_WIFI_6G == 1)
+/* Link speed 6Mbps need at least rssi -86dbm for 6G */
+#define MINIMUM_RSSI_6G                         -86
+#endif
 
 /* level of rssi range on StatusBar */
 #define RSSI_MAX_LEVEL                          -55
@@ -220,10 +224,18 @@ uint8_t mtk_reason_to_type[ROAMING_REASON_NUM] = {
 	(BSS_FULL_SCORE - (prAdapter->rWifiVar.rScanInfo.u4ScanUpdateIdx - \
 	prBssDesc->u4UpdateIdx) * 25)))
 
+#if (CFG_SUPPORT_WIFI_6G == 1)
+#define CALCULATE_SCORE_BY_BAND(prAdapter, prBssDesc, cRssi, eRoamType) \
+	(gasMtkWeightConfig[eRoamType].ucBandWeight * \
+	((((prBssDesc->eBand == BAND_5G && prAdapter->fgEnable5GBand) || \
+	   (prBssDesc->eBand == BAND_6G && prAdapter->fgIsHwSupport6G)) && \
+	cRssi > -70) ? BSS_FULL_SCORE : 0))
+#else
 #define CALCULATE_SCORE_BY_BAND(prAdapter, prBssDesc, cRssi, eRoamType) \
 	(gasMtkWeightConfig[eRoamType].ucBandWeight * \
 	((prBssDesc->eBand == BAND_5G && prAdapter->fgEnable5GBand && \
 	cRssi > -70) ? BSS_FULL_SCORE : 0))
+#endif
 
 #define CALCULATE_SCORE_BY_STBC(prAdapter, prBssDesc, eRoamType) \
 	(gasMtkWeightConfig[eRoamType].ucStbcWeight * \
@@ -467,9 +479,15 @@ static u_int8_t scanNeedReplaceCandidate(struct ADAPTER *prAdapter,
 	}
 	/* 1.3 Hard connecting RSSI check */
 	if ((prCurrBss->eBand == BAND_5G && cCurrRssi < MINIMUM_RSSI_5G) ||
+#if (CFG_SUPPORT_WIFI_6G == 1)
+		(prCurrBss->eBand == BAND_6G && cCurrRssi < MINIMUM_RSSI_6G) ||
+#endif
 		(prCurrBss->eBand == BAND_2G4 && cCurrRssi < MINIMUM_RSSI_2G4))
 		return FALSE;
 	else if ((prCandBss->eBand == BAND_5G && cCandRssi < MINIMUM_RSSI_5G) ||
+#if (CFG_SUPPORT_WIFI_6G == 1)
+		(prCandBss->eBand == BAND_6G && cCandRssi < MINIMUM_RSSI_6G) ||
+#endif
 		(prCandBss->eBand == BAND_2G4 && cCandRssi < MINIMUM_RSSI_2G4))
 		return TRUE;
 
