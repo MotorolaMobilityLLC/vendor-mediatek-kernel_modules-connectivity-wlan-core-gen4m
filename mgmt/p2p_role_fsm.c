@@ -746,7 +746,7 @@ p2pRoleFsmDeauthComplete(IN struct ADAPTER *prAdapter,
 			DBGLOG(P2P, TRACE,
 				"No More Client, Media Status DISCONNECTED\n");
 		else
-			DBGLOG(P2P, TRACE,
+			DBGLOG(P2P, INFO,
 				"Deauth done, Media Status DISCONNECTED\n");
 		p2pChangeMediaState(prAdapter,
 			prP2pBssInfo,
@@ -879,7 +879,7 @@ void p2pRoleFsmRunEventRxDeauthentication(IN struct ADAPTER *prAdapter,
 		if (prStaRec->ucStaState == STA_STATE_1)
 			break;
 
-		DBGLOG(P2P, TRACE, "RX Deauth\n");
+		DBGLOG(P2P, INFO, "RX Deauth\n");
 
 		switch (prP2pBssInfo->eCurrentOPMode) {
 		case OP_MODE_INFRASTRUCTURE:
@@ -2182,7 +2182,7 @@ void p2pRoleFsmRunEventConnectionAbort(IN struct ADAPTER *prAdapter,
 		P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prAdapter,
 			prDisconnMsg->ucRoleIdx);
 
-	DBGLOG(P2P, TRACE,
+	DBGLOG(P2P, INFO,
 		"p2pFsmRunEventConnectionAbort: Connection Abort.\n");
 
 	if (!prP2pRoleFsmInfo) {
@@ -2209,7 +2209,7 @@ void p2pRoleFsmRunEventConnectionAbort(IN struct ADAPTER *prAdapter,
 			if (!prP2pBssInfo->prStaRecOfAP) {
 				struct P2P_JOIN_INFO *prJoinInfo;
 
-				DBGLOG(P2P, TRACE, "GO's StaRec is NULL\n");
+				DBGLOG(P2P, INFO, "GO's StaRec is NULL\n");
 				/* Receive disconnection request during GC join.
 				  * Abort GC join to prevent STA record leak.
 				  */
@@ -2232,7 +2232,7 @@ void p2pRoleFsmRunEventConnectionAbort(IN struct ADAPTER *prAdapter,
 					prDisconnMsg->aucTargetID) &&
 			    UNEQUAL_MAC_ADDR(prDisconnMsg->aucTargetID,
 				    aucBCBSSID)) {
-				DBGLOG(P2P, TRACE,
+				DBGLOG(P2P, INFO,
 				"Unequal MAC ADDR [" MACSTR ":" MACSTR "]\n",
 				MAC2STR(
 					prP2pBssInfo->prStaRecOfAP->aucMacAddr),
@@ -2289,7 +2289,7 @@ void p2pRoleFsmRunEventConnectionAbort(IN struct ADAPTER *prAdapter,
 			struct STA_RECORD *prCurrStaRec =
 				(struct STA_RECORD *) NULL;
 
-			DBGLOG(P2P, TRACE,
+			DBGLOG(P2P, INFO,
 				"Disconnecting with Target ID: " MACSTR "\n",
 				MAC2STR(prDisconnMsg->aucTargetID));
 
@@ -2298,7 +2298,7 @@ void p2pRoleFsmRunEventConnectionAbort(IN struct ADAPTER *prAdapter,
 				prDisconnMsg->aucTargetID);
 
 			if (prCurrStaRec) {
-				DBGLOG(P2P, TRACE,
+				DBGLOG(P2P, INFO,
 					"Disconnecting: " MACSTR "\n",
 					MAC2STR(prCurrStaRec->aucMacAddr));
 
