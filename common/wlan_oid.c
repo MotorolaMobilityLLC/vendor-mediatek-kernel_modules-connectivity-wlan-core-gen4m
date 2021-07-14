@@ -2829,6 +2829,12 @@ wlanoidSetAddKey(IN struct ADAPTER *prAdapter, IN void *pvSetBuffer,
 						prNewKey->ucBssIdx);
 					prAisSpecBssInfo->fgBipKeyInstalled =
 						TRUE;
+
+					DBGLOG(RSN, INFO,
+						"Change BIP BC keyId from %d to 3\n",
+						prCmdKey->ucKeyId);
+					/* Reserve keyid 3 for IGTK */
+					prCmdKey->ucKeyId = 3;
 				}
 			}
 #endif
