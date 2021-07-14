@@ -1351,26 +1351,27 @@ p2pFuncStartGO(IN struct ADAPTER *prAdapter,
 		/* 4 <3.3> Update Beacon again
 		 * for network phy type confirmed.
 		 */
-		bssUpdateBeaconContent(prAdapter, prBssInfo->ucBssIndex);
-
 #if CFG_SUPPORT_P2P_GO_OFFLOAD_PROBE_RSP
-		{
-			enum ENUM_IE_UPD_METHOD eMethod =
-				IE_UPD_METHOD_UPDATE_PROBE_RSP;
-
 #if (CFG_SUPPORT_WIFI_6G == 1)
-			if (prBssInfo->eBand == BAND_6G)
-				eMethod = IE_UPD_METHOD_UNSOL_PROBE_RSP;
+		if (prBssInfo->eBand == BAND_6G) {
+			bssUpdateBeaconContentEx(prAdapter,
+				prBssInfo->ucBssIndex,
+				IE_UPD_METHOD_UNSOL_PROBE_RSP);
+		} else
 #endif
+		{
 			if (p2pFuncProbeRespUpdate(prAdapter,
 				prBssInfo,
 				prBssInfo->prBeacon->prPacket,
 				prBssInfo->prBeacon->u2FrameLength,
-				eMethod) == WLAN_STATUS_FAILURE) {
+				IE_UPD_METHOD_UPDATE_PROBE_RSP) ==
+					WLAN_STATUS_FAILURE) {
 				DBGLOG(P2P, ERROR,
 					"Update probe resp IEs fail!\n");
 			}
 		}
+#else /* !CFG_SUPPORT_P2P_GO_OFFLOAD_PROBE_RSP */
+		bssUpdateBeaconContent(prAdapter, prBssInfo->ucBssIndex);
 #endif
 
 		/* 4 <3.4> Setup BSSID */
@@ -2650,15 +2651,11 @@ p2pFuncProbeRespUpdate(IN struct ADAPTER *prAdapter,
 		prMsduInfo->u2FrameLength);
 	/* dumpMemory8(prMsduInfo->prPacket, prMsduInfo->u2FrameLength); */
 
-#if (CFG_SUPPORT_WIFI_6G == 1)
-	if (eMethod == IE_UPD_METHOD_UNSOL_PROBE_RSP) {
-		DBGLOG(P2P, TRACE, "Dump unsolicited probe response to FW\n");
-		if (aucDebugModule[DBG_P2P_IDX] & DBG_CLASS_TRACE) {
-			dumpMemory8((uint8_t *) prMsduInfo->prPacket,
-				(uint32_t) prMsduInfo->u2FrameLength);
-		}
+	DBGLOG(P2P, TRACE, "Dump probe response to FW\n");
+	if (aucDebugModule[DBG_P2P_IDX] & DBG_CLASS_TRACE) {
+		dumpMemory8((uint8_t *) prMsduInfo->prPacket,
+					(uint32_t) prMsduInfo->u2FrameLength);
 	}
-#endif
 
 	return nicUpdateBeaconIETemplate(prAdapter,
 					eMethod,
@@ -6464,6 +6461,8 @@ p2pFunGetPreferredFreqList(IN struct ADAPTER *prAdapter,
 	uint8_t ucNumOfChannel;
 	uint32_t i;
 	struct RF_CHANNEL_INFO *aucChannelList;
+	enum ENUM_BAND eBandPrefer;
+	uint8_t eBandSel;
 #if (CFG_SUPPORT_P2PGO_ACS == 1)
 	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
 #endif
@@ -6484,19 +6483,29 @@ p2pFunGetPreferredFreqList(IN struct ADAPTER *prAdapter,
 	DBGLOG(P2P, INFO, "iftype: %d\n", eIftype);
 
 	if (!prAisBssInfo) {
-		/* Prefer 5G if STA is NOT connected */
+		/* Prefer 5G/6G if STA is not connected */
+		eBandPrefer = BAND_5G;
+		eBandSel = BIT(BAND_5G);
+
+#if (CFG_SUPPORT_WIFI_6G == 1)
+		if (prAdapter->fgIsHwSupport6G) {
+			eBandPrefer = BAND_6G;
+			eBandSel |= BIT(BAND_6G);
+		}
+#endif
+
 #if (CFG_SUPPORT_P2PGO_ACS == 1)
-		if (prWifiVar->ucP2pGoACS == TRUE) {
+		if (prWifiVar->ucP2pGoACS == FEATURE_ENABLED) {
 			p2pFunGetAcsBestChList(prAdapter,
-					BIT(BAND_2G4) | BIT(BAND_5G)
-					, MAX_BW_20MHZ, BITS(0, 14)
-					, BITS(0, 14), BITS(0, 14),
+					eBandSel, MAX_BW_20MHZ,
+					BITS(0, 31), BITS(0, 31),
+					BITS(0, 31), BITS(0, 31),
 					&ucNumOfChannel, aucChannelList);
 
 		} else
 #endif
 		{
-			rlmDomainGetChnlList(prAdapter, BAND_5G, TRUE,
+			rlmDomainGetChnlList(prAdapter, eBandPrefer, TRUE,
 				MAX_CHN_NUM, &ucNumOfChannel, aucChannelList);
 		}
 		DBGLOG(P2P, INFO,
@@ -6526,12 +6535,34 @@ p2pFunGetPreferredFreqList(IN struct ADAPTER *prAdapter,
 			prAisBssInfo->ucPrimaryChannel,
 			prAisBssInfo->eBand,
 			prAisBssInfo->eConnectionState);
+
+		eBandPrefer = BAND_5G;
+		eBandSel = BIT(BAND_5G);
+
+#if (CFG_SUPPORT_WIFI_6G == 1)
+		if (prAdapter->fgIsHwSupport6G) {
+			eBandPrefer = BAND_6G;
+			eBandSel |= BIT(BAND_6G);
+		}
+#endif
+
+		/* Prefer 5G/6G if STA is connected at 2.4G */
 		if (prAisBssInfo->eBand == BAND_2G4) {
-			/* Prefer 5G if STA is connected at 2G band */
-			rlmDomainGetChnlList(prAdapter, BAND_5G, TRUE,
-					MAX_CHN_NUM,
-					&ucNumOfChannel,
-					aucChannelList);
+#if (CFG_SUPPORT_P2PGO_ACS == 1)
+			if (prWifiVar->ucP2pGoACS == FEATURE_ENABLED) {
+				p2pFunGetAcsBestChList(prAdapter,
+					eBandSel, MAX_BW_20MHZ,
+					BITS(0, 31), BITS(0, 31),
+					BITS(0, 31), BITS(0, 31),
+					&ucNumOfChannel, aucChannelList);
+			} else
+#endif
+			{
+				rlmDomainGetChnlList(prAdapter, eBandPrefer,
+					TRUE, MAX_CHN_NUM,
+					&ucNumOfChannel, aucChannelList);
+			}
+
 			for (i = 0; i < ucNumOfChannel; i++) {
 				freq_list[i] = nicChannelNum2Freq(
 					aucChannelList[i].ucChannelNum,
@@ -6545,25 +6576,30 @@ p2pFunGetPreferredFreqList(IN struct ADAPTER *prAdapter,
 				prAisBssInfo->eBand) / 1000;
 				(*num_freq_list)++;
 		} else {
-			/* Prefer SCC if STA is connected at 5G band */
+			/* Prefer SCC/2G if STA is connected at 5G/6G */
+			/* Add SCC channel */
 			freq_list[0] = nicChannelNum2Freq(
 				prAisBssInfo->ucPrimaryChannel,
 				prAisBssInfo->eBand) / 1000;
 			(*num_freq_list)++;
+
+			/* Add 2G channels */
 #if (CFG_SUPPORT_P2PGO_ACS == 1)
-			if (prWifiVar->ucP2pGoACS == TRUE) {
+			if (prWifiVar->ucP2pGoACS == FEATURE_ENABLED) {
 				p2pFunGetAcsBestChList(prAdapter,
-					BAND_2G4, MAX_BW_20MHZ,
-					BITS(0, 14), BITS(0, 14),
-					BITS(0, 14),
+					BIT(BAND_2G4), MAX_BW_20MHZ,
+					BITS(0, 31), BITS(0, 31),
+					BITS(0, 31), BITS(0, 31),
 					&ucNumOfChannel, aucChannelList);
 			} else
 #endif
-			/* Add 2G channels */
-			rlmDomainGetChnlList(prAdapter, BAND_2G4, TRUE,
+			{
+				rlmDomainGetChnlList(prAdapter, BAND_2G4, TRUE,
 					MAX_CHN_NUM,
 					&ucNumOfChannel,
 					aucChannelList);
+			}
+
 			for (i = 0; i < ucNumOfChannel; i++) {
 				freq_list[i + 1] = nicChannelNum2Freq(
 					aucChannelList[i].ucChannelNum,
@@ -6766,25 +6802,22 @@ uint8_t p2pFunGetAcsBestCh(IN struct ADAPTER *prAdapter,
 
 	return rPreferChannel.ucChannel;
 }
-#if (CFG_SUPPORT_P2PGO_ACS == 1)
 
+#if (CFG_SUPPORT_P2PGO_ACS == 1)
 void p2pFunGetAcsBestChList(IN struct ADAPTER *prAdapter,
 		IN uint8_t eBandSel,
 		IN enum ENUM_MAX_BANDWIDTH_SETTING eChnlBw,
 		IN uint32_t u4LteSafeChnMask_2G,
 		IN uint32_t u4LteSafeChnMask_5G_1,
 		IN uint32_t u4LteSafeChnMask_5G_2,
+		IN uint32_t u4LteSafeChnMask_6G,
 		OUT uint8_t *pucSortChannelNumber,
 		OUT struct RF_CHANNEL_INFO *paucSortChannelList)
 {
-	struct PARAM_GET_CHN_INFO *prGetChnLoad;
+	struct PARAM_GET_CHN_INFO *prChnLoad;
+	struct PARAM_CHN_RANK_INFO *prChnRank;
 	uint8_t i, ucInUsedCHNumber = 0, ucBandIdx = BAND_2G4;
-	bool bIs2Gsupport = FALSE, bIs5Gsupport = FALSE;
-	/*
-	*Set 2G/5G support
-	*/
-	bIs2Gsupport = (eBandSel & BIT(BAND_2G4)) >> 1 ? TRUE : FALSE;
-	bIs5Gsupport = (eBandSel & BIT(BAND_5G)) >> 2 ? TRUE : FALSE;
+
 	/*
 	 * 1. Sort all channels (which are support by current domain)
 	*/
@@ -6792,85 +6825,94 @@ void p2pFunGetAcsBestChList(IN struct ADAPTER *prAdapter,
 	/*
 	 * 2. Calculate each channel's dirty score
 	*/
-	prGetChnLoad = &(prAdapter->rWifiVar.rChnLoadInfo);
-	DBGLOG(P2P, INFO, "acs Band=5G[%d]2G[%d]",
-			bIs5Gsupport, bIs2Gsupport);
-	DBGLOG(P2P, INFO, "[0x%08x][0x%08x][0x%08x]\n",
-			u4LteSafeChnMask_2G,
-			u4LteSafeChnMask_5G_1,
-			u4LteSafeChnMask_5G_2);
+	prChnLoad = &(prAdapter->rWifiVar.rChnLoadInfo);
+
 	/*
 	 * 3. Skip some un-safe channels
 	*/
 	for (i = 0; i < MAX_CHN_NUM; i++) {
-		DBGLOG(P2P, TRACE, "idx:%x ch: %u, d: %d\n",
-				i,
-				prGetChnLoad->rChnRankList[i].ucChannel,
-				prGetChnLoad->rChnRankList[i].u4Dirtiness);
-		if ((bIs2Gsupport == TRUE) &&
-		(prGetChnLoad->rChnRankList[i].ucChannel <= 14)) {
+		prChnRank = &(prChnLoad->rChnRankList[i]);
+
+		DBGLOG(P2P, TRACE, "idx:%d band:%d ch:%u d:0x%x\n",
+			i,
+			prChnRank->eBand,
+			prChnRank->ucChannel,
+			prChnRank->u4Dirtiness);
+
+		if (prChnRank->u4Dirtiness == 0xFFFFFFFF)
+			continue;
+
+		if (!(eBandSel & BIT(prChnRank->eBand)))
+			continue;
+
+		if (prChnRank->eBand == BAND_2G4 &&
+			prChnRank->ucChannel <= 14) {
 			ucBandIdx = BAND_2G4;
-			if (!(u4LteSafeChnMask_2G & BIT(
-				prGetChnLoad->
-				rChnRankList[i].ucChannel)))
+			if (!(u4LteSafeChnMask_2G & BIT(prChnRank->ucChannel)))
 				continue;
-			} else if ((bIs5Gsupport == TRUE) &&
-			(prGetChnLoad->rChnRankList[i].ucChannel >= 36) &&
-			(prGetChnLoad->rChnRankList[i].ucChannel <= 144)) {
-				ucBandIdx = BAND_5G;
+		} else if (prChnRank->eBand == BAND_5G &&
+			prChnRank->ucChannel >= 36 &&
+			prChnRank->ucChannel <= 144) {
+			ucBandIdx = BAND_5G;
 			if (!(u4LteSafeChnMask_5G_1 & BIT(
-				(prGetChnLoad->
-				rChnRankList[i].ucChannel - 36) / 4)))
+				(prChnRank->ucChannel - 36) / 4)))
 				continue;
-			} else if ((bIs5Gsupport == TRUE) &&
-			(prGetChnLoad->rChnRankList[i].ucChannel >= 149) &&
-			(prGetChnLoad->rChnRankList[i].ucChannel <= 181)) {
-				ucBandIdx = BAND_5G;
-				if (!(u4LteSafeChnMask_5G_2 & BIT(
-				(prGetChnLoad->
-				rChnRankList[i].ucChannel - 149) / 4)))
-				continue;
-		} else {
+		} else if (prChnRank->eBand == BAND_5G &&
+			prChnRank->ucChannel >= 149 &&
+			prChnRank->ucChannel <= 181) {
+			ucBandIdx = BAND_5G;
+			if (!(u4LteSafeChnMask_5G_2 & BIT(
+				(prChnRank->ucChannel - 149) / 4)))
 				continue;
 		}
+#if (CFG_SUPPORT_WIFI_6G == 1)
+		else if (prChnRank->eBand == BAND_6G) {
+			ucBandIdx = BAND_6G;
+			/* Keep only PSC channels */
+			if (!(prChnRank->ucChannel >= 5 &&
+			      prChnRank->ucChannel <= 225 &&
+			      ((prChnRank->ucChannel - 5) % 16 == 0)))
+				continue;
+
+			/* Skip unsafe BW 80 channels */
+			if ((eChnlBw == MAX_BW_80MHZ ||
+				eChnlBw == MAX_BW_80_80_MHZ) &&
+				(prChnRank->ucChannel >= 7) &&
+				(prChnRank->ucChannel <= 215) &&
+				!(u4LteSafeChnMask_6G & BIT(
+				  (prChnRank->ucChannel - 7) / 16)))
+				continue;
+		}
+#endif
 
 		if (ucBandIdx == BAND_5G && eChnlBw >= MAX_BW_80MHZ &&
-			nicGetVhtS1(prGetChnLoad->rChnRankList[i].ucChannel,
+			nicGetVhtS1(prChnRank->ucChannel,
 				VHT_OP_CHANNEL_WIDTH_80) == 0)
 			continue;
 
 #if (CFG_SUPPORT_WIFI_6G == 1)
 		if (ucBandIdx == BAND_6G && eChnlBw >= MAX_BW_80MHZ &&
-			nicGetHe6gS1(prGetChnLoad->rChnRankList[i].ucChannel,
+			nicGetHe6gS1(prChnRank->ucChannel,
 				CW_80MHZ) == 0)
 			continue;
 #endif
 
-		(paucSortChannelList+ucInUsedCHNumber)->
-			ucChannelNum =
-			prGetChnLoad->
-			rChnRankList[i].ucChannel;
-		(paucSortChannelList+ucInUsedCHNumber)->
-			eBand = ucBandIdx;
-		DBGLOG(P2P, TRACE, "ACS Usedidx=%d,ch[%d] Dirty=%x\n",
-				ucInUsedCHNumber,
-				(paucSortChannelList+ucInUsedCHNumber)->
-				ucChannelNum,
-				prGetChnLoad->
-				rChnRankList[i].u4Dirtiness);
+		(paucSortChannelList+ucInUsedCHNumber)->ucChannelNum =
+			prChnRank->ucChannel;
+		(paucSortChannelList+ucInUsedCHNumber)->eBand = ucBandIdx;
+
 		ucInUsedCHNumber++;
 	}
+
 	/*
 	 * 4. Dump the Result
 	*/
 	*pucSortChannelNumber = ucInUsedCHNumber;
 	for (i = 0; i < ucInUsedCHNumber; i++) {
-		DBGLOG(P2P, INFO, "ACS idx=%d,ch[%d] Dirty=%x\n",
-				i,
-				(paucSortChannelList+i)->ucChannelNum,
-				prGetChnLoad->rChnRankList[i].u4Dirtiness);
+		DBGLOG(P2P, INFO, "ACS idx=%d, band[%d] ch[%d]\n", i,
+			(paucSortChannelList+i)->eBand,
+			(paucSortChannelList+i)->ucChannelNum);
 	}
-	/*return rPreferChannel.ucChannel*/
 }
 #endif
 
