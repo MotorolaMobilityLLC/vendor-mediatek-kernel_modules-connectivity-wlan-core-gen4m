@@ -167,6 +167,14 @@ extern struct MIB_INFO_STAT g_arMibInfo[ENUM_BAND_NUM];
 #define AGG_RANGE_SEL_6_MASK		AGG_RANGE_SEL_2_MASK
 #define AGG_RANGE_SEL_6_OFFSET		AGG_RANGE_SEL_2_OFFSET
 
+#define DBG_PLE_INT_TX_MASK        BIT(8)
+#define DBG_PLE_INT_FW_SYNC_MASK   BIT(29)
+#define DBG_PLE_INT_DRV_SYNC_MASK  BIT(30)
+#define DBG_PLE_INT_TRIGGER_MASK   BIT(31)
+#define DBG_PLE_INT_BAND_SHIFT     14
+#define DBG_PLE_INT_FW_READY_MASK  0xFFFF
+#define DBG_PLE_INT_FW_READY       0xDDDD
+
 /*******************************************************************************
  *                             D A T A   T Y P E S
  *******************************************************************************
@@ -461,6 +469,9 @@ struct CHIP_DBG_OPS {
 	bool (*showCsrInfo)(struct ADAPTER *prAdapter);
 	void (*showDmaschInfo)(struct ADAPTER *prAdapter);
 	void (*dumpMacInfo)(struct ADAPTER *prAdapter);
+	uint32_t (*getFwDebug)(struct ADAPTER *prAdapter);
+	void (*setFwDebug)(struct ADAPTER *prAdapter, bool fgTrigger,
+			   uint32_t u4SetMask, uint32_t u4ClrMask);
 	int32_t (*showWtblInfo)(
 		struct ADAPTER *prAdapter,
 		uint32_t u4Index,
@@ -809,6 +820,9 @@ void wlanFillTimestamp(struct ADAPTER *prAdapter, void *pvPacket,
 		       uint8_t ucPhase);
 
 void halShowPseInfo(IN struct ADAPTER *prAdapter);
+uint32_t halGetPleInt(struct ADAPTER *prAdapter);
+void halSetPleInt(struct ADAPTER *prAdapter, bool fgTrigger,
+		  uint32_t u4SetMask, uint32_t u4ClrMask);
 void halShowPleInfo(IN struct ADAPTER *prAdapter,
 	u_int8_t fgDumpTxd);
 void halShowDmaschInfo(IN struct ADAPTER *prAdapter);
@@ -893,6 +907,9 @@ void connac2x_show_wfdma_info_by_type(
 
 void connac2x_show_wfdma_info(IN struct ADAPTER *prAdapter);
 void connac2x_show_dmashdl_info(IN struct ADAPTER *prAdapter);
+uint32_t connac2x_get_ple_int(struct ADAPTER *prAdapter);
+void connac2x_set_ple_int(struct ADAPTER *prAdapter, bool fgTrigger,
+			  uint32_t u4ClrMask, uint32_t u4SetMask);
 void connac2x_show_ple_info(struct ADAPTER *prAdapter, u_int8_t fgDumpTxd);
 void connac2x_show_pse_info(struct ADAPTER *prAdapter);
 void connac2x_DumpWfsyscpupcr(struct ADAPTER *prAdapter);
