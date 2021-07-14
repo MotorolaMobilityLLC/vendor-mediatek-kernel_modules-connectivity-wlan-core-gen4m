@@ -695,11 +695,6 @@ struct CMD_RX_PACKET_FILTER {
 #define EXT_EVENT_ID_TX_POWER_FEATURE_CTRL  0x58
 #endif
 
-#define SCHED_SCAN_CHANNEL_TYPE_SPECIFIED      (0)
-#define SCHED_SCAN_CHANNEL_TYPE_DUAL_BAND      (1)
-#define SCHED_SCAN_CHANNEL_TYPE_2G4_ONLY       (2)
-#define SCHED_SCAN_CHANNEL_TYPE_5G_ONLY        (3)
-
 #if (CFG_SUPPORT_TWT == 1)
 /* TWT related definitions */
 #define TWT_AGRT_MAX_NUM        16

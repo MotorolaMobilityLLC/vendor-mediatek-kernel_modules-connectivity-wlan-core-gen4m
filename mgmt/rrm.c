@@ -579,7 +579,7 @@ u_int8_t rrmFillScanMsg(struct ADAPTER *prAdapter,
 	struct IE_MEASUREMENT_REQ *prCurrReq = NULL;
 	struct RM_BCN_REQ *prBeaconReq = NULL;
 	uint16_t u2RemainLen = 0;
-	uint8_t *pucSubIE = NULL, i;
+	uint8_t *pucSubIE = NULL, i, ucOpClass;
 
 	static struct PARAM_SSID rBcnReqSsid;
 
@@ -650,6 +650,8 @@ u_int8_t rrmFillScanMsg(struct ADAPTER *prAdapter,
 				continue;
 			pucChnl = ((struct IE_AP_CHNL_REPORT *)pucIE)
 				->aucChnlList;
+			ucOpClass = ((struct IE_AP_CHNL_REPORT *)pucIE)
+				->ucOpClass;
 			ucChnlNum = pucIE[1] - 1;
 			DBGLOG(RRM, INFO,
 				"Channel number in latest AP channel report %d\n",
@@ -657,16 +659,24 @@ u_int8_t rrmFillScanMsg(struct ADAPTER *prAdapter,
 			while (ucIndex < ucChnlNum &&
 				prMsg->ucChannelListNum <
 				MAXIMUM_OPERATION_CHANNEL_LIST) {
-				if (pucChnl[ucIndex] <= 14)
+
+#if (CFG_SUPPORT_WIFI_6G == 1)
+				if (rrmCheckIs6GOpClass(ucOpClass))
 					prChnlInfo
-						[prMsg->ucChannelListNum]
-							.eBand =
-						BAND_2G4;
+					[prMsg->ucChannelListNum]
+					.eBand = BAND_6G;
 				else
-					prChnlInfo
+#endif
+				{
+					if (pucChnl[ucIndex] <= 14)
+						prChnlInfo
 						[prMsg->ucChannelListNum]
-							.eBand =
-						BAND_5G;
+						.eBand = BAND_2G4;
+					else
+						prChnlInfo
+						[prMsg->ucChannelListNum]
+						.eBand = BAND_5G;
+				}
 				prChnlInfo[prMsg->ucChannelListNum]
 					.ucChannelNum =
 					pucChnl[ucIndex];
@@ -676,13 +686,22 @@ u_int8_t rrmFillScanMsg(struct ADAPTER *prAdapter,
 			}
 		}
 	} else {
+		ucOpClass = prBeaconReq->ucRegulatoryClass;
 		prMsg->eScanChannel = SCAN_CHANNEL_SPECIFIED;
 		prMsg->ucChannelListNum = 1;
 		prMsg->arChnlInfoList[0].ucChannelNum = prBeaconReq->ucChannel;
-		if (prBeaconReq->ucChannel <= 14)
-			prMsg->arChnlInfoList[0].eBand = BAND_2G4;
+
+#if (CFG_SUPPORT_WIFI_6G == 1)
+		if (rrmCheckIs6GOpClass(ucOpClass))
+			prMsg->arChnlInfoList[0].eBand = BAND_6G;
 		else
-			prMsg->arChnlInfoList[0].eBand = BAND_5G;
+#endif
+		{
+			if (prBeaconReq->ucChannel <= 14)
+				prMsg->arChnlInfoList[0].eBand = BAND_2G4;
+			else
+				prMsg->arChnlInfoList[0].eBand = BAND_5G;
+		}
 	}
 	u2RemainLen = prCurrReq->ucLength - 3 -
 		      OFFSET_OF(struct RM_BCN_REQ, aucSubElements);
@@ -714,20 +733,30 @@ u_int8_t rrmFillScanMsg(struct ADAPTER *prAdapter,
 			if (prBeaconReq->ucChannel == 0)
 				break;
 			prMsg->eScanChannel = SCAN_CHANNEL_SPECIFIED;
+			ucOpClass = prApChnl->ucOpClass;
 			DBGLOG(RRM, INFO,
 			       "Channel number in measurement AP channel report %d\n",
 			       ucChannelCnt);
 			while (ucIndex < ucChannelCnt &&
 			       prMsg->ucChannelListNum <
 				       MAXIMUM_OPERATION_CHANNEL_LIST) {
-				if (prApChnl->aucChnlList[ucIndex] <= 14)
+#if (CFG_SUPPORT_WIFI_6G == 1)
+				if (rrmCheckIs6GOpClass(ucOpClass))
 					prMsg->arChnlInfoList
-						[prMsg->ucChannelListNum]
-							.eBand = BAND_2G4;
+					[prMsg->ucChannelListNum]
+						.eBand = BAND_6G;
 				else
+#endif
+				{
+				    if (prApChnl->aucChnlList[ucIndex] <= 14)
 					prMsg->arChnlInfoList
-						[prMsg->ucChannelListNum]
-							.eBand = BAND_5G;
+					[prMsg->ucChannelListNum]
+						.eBand = BAND_2G4;
+				    else
+					prMsg->arChnlInfoList
+					[prMsg->ucChannelListNum]
+						.eBand = BAND_5G;
+				}
 				prMsg->arChnlInfoList[prMsg->ucChannelListNum]
 					.ucChannelNum =
 					prApChnl->aucChnlList[ucIndex];
@@ -736,6 +765,8 @@ u_int8_t rrmFillScanMsg(struct ADAPTER *prAdapter,
 			}
 			break;
 		}
+		default:
+			break;
 		}
 		u2RemainLen -= IE_SIZE(pucSubIE);
 		pucSubIE += IE_SIZE(pucSubIE);
@@ -1682,3 +1713,14 @@ void rrmUpdateBssTimeTsf(struct ADAPTER *prAdapter, struct BSS_DESC *prBssDesc)
 	rTsf.rTime = prBssDesc->rUpdateTime;
 	kalMemCopy(&rTsf.au4Tsf[0], &prBssDesc->u8TimeStamp, 8);
 }
+
+#if (CFG_SUPPORT_WIFI_6G == 1)
+uint8_t rrmCheckIs6GOpClass(uint8_t ucOpClass)
+{
+	/* 6G band global operating class will be 131 ~ 135*/
+	if (ucOpClass >= 131 && ucOpClass <= 135)
+		return TRUE;
+	else
+		return FALSE;
+}
+#endif

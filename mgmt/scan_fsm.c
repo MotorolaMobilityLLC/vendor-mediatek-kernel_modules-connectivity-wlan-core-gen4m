@@ -1310,28 +1310,33 @@ scnFsmSchedScanRequest(IN struct ADAPTER *prAdapter,
 		= prAdapter->aePreferBand[NETWORK_TYPE_AIS];
 	if (ePreferedChnl == BAND_2G4) {
 		prSchedScanCmd->ucChannelType =
-			SCHED_SCAN_CHANNEL_TYPE_2G4_ONLY;
+			SCAN_CHANNEL_2G4;
 		prSchedScanCmd->ucChnlNum = 0;
 	} else if (ePreferedChnl == BAND_5G) {
 		prSchedScanCmd->ucChannelType =
-			SCHED_SCAN_CHANNEL_TYPE_5G_ONLY;
+			SCAN_CHANNEL_5G;
 		prSchedScanCmd->ucChnlNum = 0;
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	} else if (ePreferedChnl == BAND_6G) {
+		prSchedScanCmd->ucChannelType =
+			SCAN_CHANNEL_6G;
+		prSchedScanCmd->ucChnlNum = 0;
+#endif
 	} else if (prRequest->ucChnlNum > 0 &&
 		prRequest->ucChnlNum <= MAXIMUM_OPERATION_CHANNEL_LIST) {
 		prSchedScanCmd->ucChannelType =
-			SCHED_SCAN_CHANNEL_TYPE_SPECIFIED;
+			SCAN_CHANNEL_SPECIFIED;
 		prSchedScanCmd->ucChnlNum = prRequest->ucChnlNum;
 		for (i = 0; i < prRequest->ucChnlNum; i++) {
 			prSchedScanCmd->aucChannel[i].ucChannelNum =
-				prRequest->pucChannels[i];
+				prRequest->aucChannel[i].ucChannelNum;
 			prSchedScanCmd->aucChannel[i].ucBand =
-				(prSchedScanCmd->aucChannel[i].ucChannelNum <=
-				HW_CHNL_NUM_MAX_2G4) ? BAND_2G4 : BAND_5G;
+				prRequest->aucChannel[i].ucBand;
 		}
 	} else {
 		prSchedScanCmd->ucChnlNum = 0;
 		prSchedScanCmd->ucChannelType =
-			SCHED_SCAN_CHANNEL_TYPE_DUAL_BAND;
+			SCAN_CHANNEL_FULL;
 	}
 
 	prSchedScanCmd->ucSeqNum = prSchedScanParam->ucSeqNum;
