@@ -562,9 +562,10 @@ p2pRoleStatePrepare_To_REQING_CHANNEL_STATE(IN struct ADAPTER *prAdapter,
 			prChnlReqInfo->eChannelWidth = CW_20_40MHZ;
 
 		/* TODO: BW80+80 support */
-		prChnlReqInfo->ucCenterFreqS1 =
-			nicGetVhtS1(prBssInfo->ucPrimaryChannel,
-				prChnlReqInfo->eChannelWidth);
+		prChnlReqInfo->ucCenterFreqS1 = nicGetS1(
+			prBssInfo->eBand,
+			prBssInfo->ucPrimaryChannel,
+			prChnlReqInfo->eChannelWidth);
 		prChnlReqInfo->ucCenterFreqS2 = 0;
 
 		/* If the S1 is invalid, force to change bandwidth */

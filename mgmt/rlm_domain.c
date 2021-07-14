@@ -713,8 +713,8 @@ struct DOMAIN_INFO_ENTRY arSupportedRegDomains[] = {
 			{125, BAND_5G, CHNL_SPAN_20, 149, 5, FALSE}
 			,			/* CH_SET_UNII_UPPER_149_165 */
 #if (CFG_SUPPORT_WIFI_6G == 1)
-			{131, BAND_6G, CHNL_SPAN_80, 5, 15, FALSE}
-			,			/* 6G_PSC_CH_SET_5_229 */
+			{131, BAND_6G, CHNL_SPAN_20, 1, 59, FALSE}
+			,			/* 6G_CH_1_233 */
 #endif
 			{0, BAND_NULL, 0, 0, 0, FALSE}
 		}
@@ -787,8 +787,8 @@ struct DOMAIN_INFO_ENTRY arSupportedRegDomains[] = {
 			{125, BAND_5G, CHNL_SPAN_20, 149, 5, FALSE}
 			,			/* CH_SET_UNII_UPPER_149_165 */
 #if (CFG_SUPPORT_WIFI_6G == 1)
-			{131, BAND_6G, CHNL_SPAN_80, 5, 15, FALSE}
-			,			/* 6G_PSC_CH_SET_5_229 */
+			{131, BAND_6G, CHNL_SPAN_20, 1, 59, FALSE}
+			,			/* 6G_CH_1_233 */
 #endif
 			{0, BAND_NULL, 0, 0, 0, FALSE}
 		}
@@ -819,8 +819,8 @@ struct DOMAIN_INFO_ENTRY arSupportedRegDomains_Passive[] = {
 						/* CH_SET_UNII_UPPER_NA */
 #if (CFG_SUPPORT_WIFI_6G == 1)
 			,
-			{131, BAND_6G, CHNL_SPAN_80, 5, 15, FALSE}
-						/* 6G_PSC_CH_SET_5_229 */
+			{131, BAND_6G, CHNL_SPAN_20, 1, 59, FALSE}
+						/* 6G_CH_1_233 */
 #endif
 		}
 	}
@@ -845,8 +845,8 @@ struct DOMAIN_INFO_ENTRY arSupportedRegDomains_Passive[] = {
 						/* CH_SET_UNII_UPPER_NA */
 #if (CFG_SUPPORT_WIFI_6G == 1)
 			,
-			{131, BAND_6G, CHNL_SPAN_80, 5, 15, FALSE}
-						/* 6G_PSC_CH_SET_5_229 */
+			{131, BAND_6G, CHNL_SPAN_20, 1, 59, FALSE}
+						/* 6G_CH_1_233 */
 #endif
 		}
 	}
@@ -6112,11 +6112,12 @@ bool rlmDomainIsEfuseUsed(void)
 	return g_mtk_regd_control.isEfuseCountryCodeUsed;
 }
 
-uint8_t rlmDomainGetChannelBw(uint8_t channelNum)
+uint8_t rlmDomainGetChannelBw(enum ENUM_BAND eBand, uint8_t channelNum)
 {
 	uint32_t ch_idx = 0, start_idx = 0, end_idx = 0;
 	uint8_t channelBw = MAX_BW_80_80_MHZ;
 	struct CMD_DOMAIN_CHANNEL *pCh;
+	enum ENUM_BAND eChBand;
 
 	end_idx = rlmDomainGetActiveChannelCount(KAL_BAND_2GHZ)
 			+ rlmDomainGetActiveChannelCount(KAL_BAND_5GHZ)
@@ -6128,7 +6129,20 @@ uint8_t rlmDomainGetChannelBw(uint8_t channelNum)
 	for (ch_idx = start_idx; ch_idx < end_idx; ch_idx++) {
 		pCh = (rlmDomainGetActiveChannels() + ch_idx);
 
-		if (pCh->u2ChNum != channelNum)
+		if (ch_idx < rlmDomainGetActiveChannelCount(KAL_BAND_2GHZ))
+			eChBand = BAND_2G4;
+#if (CFG_SUPPORT_WIFI_6G == 1)
+		else if (ch_idx < rlmDomainGetActiveChannelCount(KAL_BAND_2GHZ)
+			+ rlmDomainGetActiveChannelCount(KAL_BAND_5GHZ))
+			eChBand = BAND_5G;
+		else
+			eChBand = BAND_6G;
+#else
+		else
+			eChBand = BAND_5G;
+#endif
+
+		if ((eChBand != eBand) || (pCh->u2ChNum != channelNum))
 			continue;
 
 		/* Max BW */

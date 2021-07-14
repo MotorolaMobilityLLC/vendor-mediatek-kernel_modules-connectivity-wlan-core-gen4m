@@ -1797,7 +1797,7 @@ void
 wlanInitChnLoadInfoChannelList(IN struct ADAPTER *prAdapter);
 
 uint8_t
-wlanGetChannelIndex(IN uint8_t channel);
+wlanGetChannelIndex(IN enum ENUM_BAND band, IN uint8_t channel);
 
 uint8_t
 wlanGetChannelNumFromIndex(IN uint8_t ucIdx);

@@ -2338,12 +2338,14 @@ void rlmFillVhtOpInfoByBssOpBw(struct BSS_INFO *prBssInfo, uint8_t ucBssOpBw)
 		prBssInfo->ucVhtChannelFrequencyS2 = 0;
 	} else if (ucBssOpBw == MAX_BW_80MHZ) {
 		prBssInfo->ucVhtChannelWidth = VHT_OP_CHANNEL_WIDTH_80;
-		prBssInfo->ucVhtChannelFrequencyS1 = nicGetVhtS1(
+		prBssInfo->ucVhtChannelFrequencyS1 = nicGetS1(
+			prBssInfo->eBand,
 			prBssInfo->ucPrimaryChannel, VHT_OP_CHANNEL_WIDTH_80);
 		prBssInfo->ucVhtChannelFrequencyS2 = 0;
 	} else if (ucBssOpBw == MAX_BW_160MHZ) {
 		prBssInfo->ucVhtChannelWidth = VHT_OP_CHANNEL_WIDTH_160;
-		prBssInfo->ucVhtChannelFrequencyS1 = nicGetVhtS1(
+		prBssInfo->ucVhtChannelFrequencyS1 = nicGetS1(
+			prBssInfo->eBand,
 			prBssInfo->ucPrimaryChannel, VHT_OP_CHANNEL_WIDTH_160);
 		prBssInfo->ucVhtChannelFrequencyS2 = 0;
 	} else {

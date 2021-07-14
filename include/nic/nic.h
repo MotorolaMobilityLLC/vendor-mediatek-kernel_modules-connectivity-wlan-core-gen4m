@@ -296,6 +296,10 @@ uint32_t nicChannelNum2Freq(uint32_t u4ChannelNum, enum ENUM_BAND eBand);
 
 uint32_t nicFreq2ChannelNum(IN uint32_t u4FreqInKHz);
 
+uint8_t nicGetS1(IN enum ENUM_BAND eBand,
+			IN uint8_t ucPrimaryChannel,
+		    IN uint8_t ucBandwidth);
+
 uint8_t nicGetVhtS1(IN uint8_t ucPrimaryChannel,
 		    IN uint8_t ucBandwidth);
 

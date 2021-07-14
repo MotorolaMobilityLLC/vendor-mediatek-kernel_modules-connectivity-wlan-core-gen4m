@@ -6306,8 +6306,7 @@ void p2pFuncSwitchSapChannel(
 	} else {
 		/* Get current channel info */
 		ucStaChannelNum = prAisBssInfo->ucPrimaryChannel;
-		eStaBand = (prAisBssInfo->ucPrimaryChannel <= 14)
-			? BAND_2G4 : BAND_5G;
+		eStaBand = prAisBssInfo->eBand;
 #if CFG_SUPPORT_SAP_DFS_CHANNEL
 		/* restore DFS channels table */
 		wlanUpdateDfsChannelTable(prAdapter->prGlueInfo,
@@ -6318,7 +6317,7 @@ void p2pFuncSwitchSapChannel(
 			0, /* center frequency */
 			0 /* eBand */);
 #endif
-		if (eStaBand != BAND_2G4 && eStaBand != BAND_5G) {
+		if (eStaBand <= BAND_NULL || eStaBand >= BAND_NUM) {
 			DBGLOG(P2P, WARN, "STA has invalid band\n");
 			goto exit;
 		}
@@ -6344,7 +6343,7 @@ void p2pFuncSwitchSapChannel(
 
 	ucSapChannelNum = prP2pBssInfo->ucPrimaryChannel;
 	eSapBand = prP2pBssInfo->eBand;
-	if (eSapBand != BAND_2G4 && eSapBand != BAND_5G) {
+	if (eSapBand <= BAND_NULL || eSapBand >= BAND_NUM) {
 		DBGLOG(P2P, WARN, "SAP has invalid band\n");
 		goto exit;
 	}
@@ -6627,7 +6626,8 @@ uint8_t p2pFunGetAcsBestCh(IN struct ADAPTER *prAdapter,
 		IN enum ENUM_MAX_BANDWIDTH_SETTING eChnlBw,
 		IN uint32_t u4LteSafeChnMask_2G,
 		IN uint32_t u4LteSafeChnMask_5G_1,
-		IN uint32_t u4LteSafeChnMask_5G_2)
+		IN uint32_t u4LteSafeChnMask_5G_2,
+		IN uint32_t u4LteSafeChnMask_6G)
 {
 	struct RF_CHANNEL_INFO aucChannelList[MAX_PER_BAND_CHN_NUM];
 	uint8_t ucNumOfChannel;
@@ -6649,16 +6649,19 @@ uint8_t p2pFunGetAcsBestCh(IN struct ADAPTER *prAdapter,
 	 */
 	prGetChnLoad = &(prAdapter->rWifiVar.rChnLoadInfo);
 
-	DBGLOG(P2P, INFO, "acs chnl mask=[0x%08x][0x%08x][0x%08x]\n",
+	DBGLOG(P2P, INFO, "acs chnl mask=[0x%08x][0x%08x][0x%08x][0x%08x]\n",
 			u4LteSafeChnMask_2G,
 			u4LteSafeChnMask_5G_1,
-			u4LteSafeChnMask_5G_2);
+			u4LteSafeChnMask_5G_2,
+			u4LteSafeChnMask_6G);
 
 	for (i = 0; i < ucNumOfChannel; i++) {
 		uint8_t ucIdx;
 
-		ucIdx = wlanGetChannelIndex(aucChannelList[i].ucChannelNum);
-		if (ucIdx >= MAX_PER_BAND_CHN_NUM)
+		ucIdx = wlanGetChannelIndex(aucChannelList[i].eBand,
+				aucChannelList[i].ucChannelNum);
+
+		if (ucIdx >= MAX_CHN_NUM)
 			continue;
 
 		DBGLOG(P2P, TRACE, "idx: %u, ch: %u, d: %d\n",
@@ -6666,27 +6669,54 @@ uint8_t p2pFunGetAcsBestCh(IN struct ADAPTER *prAdapter,
 				aucChannelList[i].ucChannelNum,
 				prGetChnLoad->rEachChnLoad[ucIdx].u4Dirtiness);
 
-		if (aucChannelList[i].ucChannelNum <= 14) {
+		if (aucChannelList[i].eBand == BAND_2G4) {
 			if (!(u4LteSafeChnMask_2G & BIT(
 					aucChannelList[i].ucChannelNum)))
 				continue;
-		} else if ((aucChannelList[i].ucChannelNum >= 36) &&
+		} else if (aucChannelList[i].eBand == BAND_5G &&
+				(aucChannelList[i].ucChannelNum >= 36) &&
 				(aucChannelList[i].ucChannelNum <= 144)) {
 			if (!(u4LteSafeChnMask_5G_1 & BIT(
 				(aucChannelList[i].ucChannelNum - 36) / 4)))
 				continue;
-		} else if ((aucChannelList[i].ucChannelNum >= 149) &&
+		} else if (aucChannelList[i].eBand == BAND_5G &&
+				(aucChannelList[i].ucChannelNum >= 149) &&
 				(aucChannelList[i].ucChannelNum <= 181)) {
 			if (!(u4LteSafeChnMask_5G_2 & BIT(
 				(aucChannelList[i].ucChannelNum - 149) / 4)))
 				continue;
 		}
 
+#if (CFG_SUPPORT_WIFI_6G == 1)
+		else if (aucChannelList[i].eBand == BAND_6G) {
+			/* Keep only PSC channels */
+			if (!(aucChannelList[i].ucChannelNum >= 5 &&
+			      aucChannelList[i].ucChannelNum <= 225 &&
+			      ((aucChannelList[i].ucChannelNum - 5) % 16 == 0)))
+				continue;
+
+			/* Skip unsafe BW 80 channels */
+			if ((eChnlBw == MAX_BW_80MHZ ||
+				eChnlBw == MAX_BW_80_80_MHZ) &&
+				(aucChannelList[i].ucChannelNum >= 7) &&
+				(aucChannelList[i].ucChannelNum <= 215) &&
+				!(u4LteSafeChnMask_6G & BIT(
+				  (aucChannelList[i].ucChannelNum - 7) / 16)))
+				continue;
+		}
+#endif
+
 		if (eBand == BAND_5G && eChnlBw >= MAX_BW_80MHZ &&
-				nicGetVhtS1(aucChannelList[i].ucChannelNum,
-					VHT_OP_CHANNEL_WIDTH_80) == 0)
+			nicGetVhtS1(aucChannelList[i].ucChannelNum,
+				VHT_OP_CHANNEL_WIDTH_80) == 0)
 			continue;
 
+#if (CFG_SUPPORT_WIFI_6G == 1)
+		if (eBand == BAND_6G && eChnlBw >= MAX_BW_80MHZ &&
+			nicGetHe6gS1(aucChannelList[i].ucChannelNum,
+				CW_80MHZ) == 0)
+			continue;
+#endif
 		if (rPreferChannel.u4Dirtiness >
 				prGetChnLoad->rEachChnLoad[ucIdx].u4Dirtiness) {
 			rPreferChannel.ucChannel =
@@ -6770,6 +6800,14 @@ void p2pFunGetAcsBestChList(IN struct ADAPTER *prAdapter,
 			nicGetVhtS1(prGetChnLoad->rChnRankList[i].ucChannel,
 				VHT_OP_CHANNEL_WIDTH_80) == 0)
 			continue;
+
+#if (CFG_SUPPORT_WIFI_6G == 1)
+		if (ucBandIdx == BAND_6G && eChnlBw >= MAX_BW_80MHZ &&
+			nicGetHe6gS1(prGetChnLoad->rChnRankList[i].ucChannel,
+				CW_80MHZ) == 0)
+			continue;
+#endif
+
 		(paucSortChannelList+ucInUsedCHNumber)->
 			ucChannelNum =
 			prGetChnLoad->
@@ -6803,19 +6841,33 @@ void p2pFunProcessAcsReport(IN struct ADAPTER *prAdapter,
 		IN struct PARAM_GET_CHN_INFO *prLteSafeChnInfo,
 		IN struct P2P_ACS_REQ_INFO *prAcsReqInfo)
 {
-	enum ENUM_BAND eBand;
+	uint8_t eBandSel;
+	enum ENUM_BAND eBandPrefer;
 	uint32_t u4LteSafeChnMask_2G = -1;
 
 	if (!prAdapter || !prAcsReqInfo)
 		return;
 
 	if (prAcsReqInfo->eHwMode == P2P_VENDOR_ACS_HW_MODE_11B ||
-			prAcsReqInfo->eHwMode == P2P_VENDOR_ACS_HW_MODE_11G)
-		eBand = BAND_2G4;
-	else
-		eBand = BAND_5G;
+			prAcsReqInfo->eHwMode == P2P_VENDOR_ACS_HW_MODE_11G) {
+		eBandSel = BIT(BAND_2G4);
+		eBandPrefer = BAND_2G4;
+	} else {
+		eBandSel = BIT(BAND_5G);
+		eBandPrefer = BAND_5G;
 
-	if (prLteSafeChnInfo && (eBand == BAND_2G4)) {
+#if (CFG_SUPPORT_WIFI_6G == 1)
+		if (!prAdapter->rWifiVar.fgDisable6GBand) {
+			eBandSel |= BIT(BAND_6G);
+			eBandPrefer = BAND_6G; /* prefer 6G */
+		}
+#endif
+	}
+
+	if (!prLteSafeChnInfo)
+		goto error;
+
+	if (eBandSel & BIT(BAND_2G4)) {
 		struct LTE_SAFE_CHN_INFO *prLteSafeChnList;
 		struct RF_CHANNEL_INFO aucChannelList[MAX_2G_BAND_CHN_NUM];
 		uint8_t ucNumOfChannel;
@@ -6825,7 +6877,7 @@ void p2pFunProcessAcsReport(IN struct ADAPTER *prAdapter,
 		kalMemZero(aucChannelList,
 			sizeof(struct RF_CHANNEL_INFO) * MAX_2G_BAND_CHN_NUM);
 
-		rlmDomainGetChnlList(prAdapter, eBand, TRUE,
+		rlmDomainGetChnlList(prAdapter, BAND_2G4, TRUE,
 			MAX_2G_BAND_CHN_NUM, &ucNumOfChannel, aucChannelList);
 
 		prLteSafeChnList = &prLteSafeChnInfo->rLteSafeChnList;
@@ -6857,7 +6909,9 @@ void p2pFunProcessAcsReport(IN struct ADAPTER *prAdapter,
 		 */
 		prAcsReqInfo->u4LteSafeChnMask_2G &= 0x0FFE;
 #endif
-	} else if (prLteSafeChnInfo && (eBand == BAND_5G)) {
+	}
+
+	if (eBandSel & BIT(BAND_5G)) {
 		/* Add support for 5G FW mask */
 		struct LTE_SAFE_CHN_INFO *prLteSafeChnList =
 			&prLteSafeChnInfo->rLteSafeChnList;
@@ -6872,12 +6926,32 @@ void p2pFunProcessAcsReport(IN struct ADAPTER *prAdapter,
 		prAcsReqInfo->u4LteSafeChnMask_5G_1 &= u4LteSafeChnMask_5G_2;
 	}
 
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	if (eBandSel & BIT(BAND_6G)) {
+		/* Add support for 6G FW mask */
+		struct LTE_SAFE_CHN_INFO *prLteSafeChnList =
+			&prLteSafeChnInfo->rLteSafeChnList;
+		uint32_t u4LteSafeChnMask_6G =
+			prLteSafeChnList->au4SafeChannelBitmask
+			[ENUM_SAFE_CH_MASK_BAND_6G];
+
+		if (u4LteSafeChnMask_6G != 0)
+			prAcsReqInfo->u4LteSafeChnMask_6G &=
+				u4LteSafeChnMask_6G;
+		else
+			DBGLOG(P2P, WARN, "All 6G channels are unsafe!?\n");
+	}
+#endif
+
+error:
+	prAcsReqInfo->eBand = eBandPrefer;
 	prAcsReqInfo->ucPrimaryCh = p2pFunGetAcsBestCh(prAdapter,
-			eBand,
+			eBandPrefer,
 			prAcsReqInfo->eChnlBw,
 			prAcsReqInfo->u4LteSafeChnMask_2G,
 			prAcsReqInfo->u4LteSafeChnMask_5G_1,
-			prAcsReqInfo->u4LteSafeChnMask_5G_2);
+			prAcsReqInfo->u4LteSafeChnMask_5G_2,
+			prAcsReqInfo->u4LteSafeChnMask_6G);
 
 	p2pFunIndicateAcsResult(prAdapter->prGlueInfo,
 			prAcsReqInfo);
@@ -6960,7 +7034,11 @@ void p2pFunIndicateAcsResult(IN struct GLUE_INFO *prGlueInfo,
 					P2P_VENDOR_ACS_HW_MODE_11G) {
 			prAcsReqInfo->ucPrimaryCh = AP_DEFAULT_CHANNEL_2G;
 		} else {
+#if (CFG_SUPPORT_WIFI_6G == 1)
+			prAcsReqInfo->ucPrimaryCh = AP_DEFAULT_CHANNEL_6G;
+#else
 			prAcsReqInfo->ucPrimaryCh = AP_DEFAULT_CHANNEL_5G;
+#endif
 		}
 		DBGLOG(P2P, WARN, "No chosed channel, use default channel %d\n",
 				prAcsReqInfo->ucPrimaryCh);
@@ -6970,7 +7048,7 @@ void p2pFunIndicateAcsResult(IN struct GLUE_INFO *prGlueInfo,
 		enum ENUM_BAND eBand;
 		enum ENUM_CHNL_EXT eSCO;
 
-		eBand = prAcsReqInfo->ucPrimaryCh <= 14 ? BAND_2G4 : BAND_5G;
+		eBand = prAcsReqInfo->eBand;
 		eSCO = p2pFunGetSco(prGlueInfo->prAdapter,
 				eBand,
 				prAcsReqInfo->ucPrimaryCh);
@@ -7000,9 +7078,11 @@ void p2pFunIndicateAcsResult(IN struct GLUE_INFO *prGlueInfo,
 		ucVhtBw = VHT_OP_CHANNEL_WIDTH_20_40;
 		break;
 	}
-	prAcsReqInfo->ucCenterFreqS1 = nicGetVhtS1(
-			prAcsReqInfo->ucPrimaryCh,
-			ucVhtBw);
+
+	prAcsReqInfo->ucCenterFreqS1 = nicGetS1(
+		prAcsReqInfo->eBand,
+		prAcsReqInfo->ucPrimaryCh,
+		ucVhtBw);
 
 	if (prAcsReqInfo->eChnlBw != VHT_OP_CHANNEL_WIDTH_80P80)
 		prAcsReqInfo->ucCenterFreqS2 = 0;
@@ -7012,6 +7092,7 @@ void p2pFunIndicateAcsResult(IN struct GLUE_INFO *prGlueInfo,
 	prAcsReqInfo->fgIsProcessing = FALSE;
 	kalP2pIndicateAcsResult(prGlueInfo,
 			prAcsReqInfo->ucRoleIdx,
+			prAcsReqInfo->eBand,
 			prAcsReqInfo->ucPrimaryCh,
 			prAcsReqInfo->ucSecondCh,
 			prAcsReqInfo->ucCenterFreqS1,
@@ -7043,6 +7124,7 @@ void p2pFunCalAcsChnScores(IN struct ADAPTER *prAdapter)
 	LINK_FOR_EACH_ENTRY(prBssDesc, prBSSDescList,
 			rLinkEntry, struct BSS_DESC) {
 		uint8_t ucIdx = wlanGetChannelIndex(
+				prBssDesc->eBand,
 				prBssDesc->ucChannelNum);
 
 		if (ucIdx >= MAX_CHN_NUM)
@@ -7071,18 +7153,19 @@ p2pFunDetermineChnlSwitchPolicy(IN struct ADAPTER *prAdapter,
 			prP2PConnSettings[prBssInfo->u4PrivateData])) {
 		return ePolicy;
 	}
+
 #if CFG_SEND_DEAUTH_DURING_CHNL_SWITCH
-	else {
-		/* Send deauth frame to clients:
-		 * 1. Cross band
-		 * 2. BW > 20MHz
-		 */
-		if (prNewChannelInfo->eBand == BAND_5G ||
-			(prBssInfo && prBssInfo->eBand == BAND_5G &&
-				prNewChannelInfo->eBand == BAND_2G4))
-			ePolicy = CHNL_SWITCH_POLICY_DEAUTH;
-	}
+	/* Send deauth frame to clients:
+	 * 1. Cross band
+	 * 2. BW > 20MHz
+	*/
+	if (prNewChannelInfo->eBand == BAND_5G ||
+#if (CFG_SUPPORT_WIFI_6G == 1)
+		prNewChannelInfo->eBand == BAND_6G ||
 #endif
+		(prBssInfo && prBssInfo->eBand != prNewChannelInfo->eBand))
+		ePolicy = CHNL_SWITCH_POLICY_DEAUTH;
+#endif /* CFG_SEND_DEAUTH_DURING_CHNL_SWITCH */
 
 	return ePolicy;
 }

@@ -124,6 +124,9 @@
 
 #define AP_DEFAULT_CHANNEL_2G     6
 #define AP_DEFAULT_CHANNEL_5G     36
+#if (CFG_SUPPORT_WIFI_6G == 1)
+#define AP_DEFAULT_CHANNEL_6G     5
+#endif
 
 /******************************************************************************
  *                                 M A C R O S
@@ -267,8 +270,10 @@ struct P2P_ACS_REQ_INFO {
 	uint32_t u4LteSafeChnMask_2G;
 	uint32_t u4LteSafeChnMask_5G_1;
 	uint32_t u4LteSafeChnMask_5G_2;
+	uint32_t u4LteSafeChnMask_6G;
 
 	/* output only */
+	enum ENUM_BAND eBand;
 	uint8_t ucPrimaryCh;
 	uint8_t ucSecondCh;
 	uint8_t ucCenterFreqS1;
