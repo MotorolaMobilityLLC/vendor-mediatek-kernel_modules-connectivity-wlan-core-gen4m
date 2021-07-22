@@ -304,6 +304,18 @@
 #define ACS_DIRTINESS_LEVEL_MID		40
 #define ACS_DIRTINESS_LEVEL_LOW		32
 
+#if CFG_SUPPORT_TPENHANCE_MODE
+#define TPENHANCE_SESSION_MAP_LEN	20
+#define TPENHANCE_PKT_LATCH_MIN	    10
+#define TPENHANCE_PKT_KEEP_MAX	    256
+struct TPENHANCE_PKT_MAP {
+	uint16_t au2SPort;
+	uint16_t au2DPort;
+	uint32_t au4Ip;
+	uint16_t au2Hit;
+};
+
+#endif /* CFG_SUPPORT_TPENHANCE_MODE */
 
 enum CMD_VER {
 	CMD_VER_1,	/* Type[2]+String[32]+Value[32] */
@@ -1871,3 +1883,20 @@ uint32_t wlanSetTxBaSize(IN struct GLUE_INFO *prGlueInfo,
 void
 wlanGetTRXInfo(IN struct ADAPTER *prAdapter,
 	OUT struct TRX_INFO *prTRxInfo);
+
+#if CFG_SUPPORT_TPENHANCE_MODE
+inline uint64_t wlanTpeTimeUs(void);
+void wlanTpeUpdate(struct GLUE_INFO *prGlueInfo, struct QUE *prSrcQue,
+		uint8_t ucPktJump);
+void wlanTpeFlush(struct GLUE_INFO *prGlueInfo);
+#if KERNEL_VERSION(4, 15, 0) <= LINUX_VERSION_CODE
+void wlanTpeTimeoutHandler(struct timer_list *timer);
+#else
+void wlanTpeTimeoutHandler(unsigned long ulData);
+#endif
+void wlanTpeInit(struct GLUE_INFO *prGlueInfo);
+void wlanTpeUninit(struct GLUE_INFO *prGlueInfo);
+int wlanTpeProcess(struct GLUE_INFO *prGlueInfo,
+			struct sk_buff *prSkb,
+			struct net_device *prDev);
+#endif /* CFG_SUPPORT_TPENHANCE_MODE */

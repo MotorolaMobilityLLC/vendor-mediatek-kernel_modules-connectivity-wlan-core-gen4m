@@ -162,6 +162,8 @@
 #define ICMPV6_TYPE_NEIGHBOR_SOLICITATION       0x87
 #define ICMPV6_TYPE_NEIGHBOR_ADVERTISEMENT      0x88
 
+#define TCP_HDR_FLAG_OFFSET                     13
+#define TCP_HDR_FLAG_ACK_BIT                    BIT(4)
 #define TCP_HDR_TCP_CSUM_OFFSET                 16
 
 #define UDP_HDR_LEN                             8
