@@ -1448,6 +1448,17 @@ uint32_t nicFreq2ChannelNum(uint32_t u4FreqInKHz)
 	}
 }
 
+uint32_t nicGetS1Freq(IN enum ENUM_BAND eBand,
+	IN uint8_t ucPrimaryChannel,
+	IN uint8_t ucBandwidth)
+{
+	uint8_t ucS1;
+
+	ucS1 = nicGetS1(eBand, ucPrimaryChannel, ucBandwidth);
+
+	return nicChannelNum2Freq(ucS1, eBand) / 1000;
+}
+
 uint8_t nicGetS1(IN enum ENUM_BAND eBand,
 	IN uint8_t ucPrimaryChannel,
 	IN uint8_t ucBandwidth)
@@ -1561,6 +1572,13 @@ uint8_t nicGetHe6gS1(uint8_t ucPrimaryChannel,
 
 /* firmware command wrapper */
 /* NETWORK (WIFISYS) */
+
+uint32_t nicActivateNetwork(IN struct ADAPTER *prAdapter,
+			    IN uint8_t ucBssIndex)
+{
+	return nicActivateNetworkEx(prAdapter, ucBssIndex, TRUE);
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
  * @brief This utility function is used to activate WIFISYS for specified
@@ -1572,8 +1590,9 @@ uint8_t nicGetHe6gS1(uint8_t ucPrimaryChannel,
  * @retval -
  */
 /*----------------------------------------------------------------------------*/
-uint32_t nicActivateNetwork(IN struct ADAPTER *prAdapter,
-			    IN uint8_t ucBssIndex)
+uint32_t nicActivateNetworkEx(IN struct ADAPTER *prAdapter,
+			    IN uint8_t ucBssIndex,
+			    IN uint8_t fgReset40mBw)
 {
 	struct CMD_BSS_ACTIVATE_CTRL rCmdActivateCtrl;
 	struct BSS_INFO *prBssInfo;
@@ -1584,8 +1603,10 @@ uint32_t nicActivateNetwork(IN struct ADAPTER *prAdapter,
 
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
 
-	prBssInfo->fg40mBwAllowed = FALSE;
-	prBssInfo->fgAssoc40mBwAllowed = FALSE;
+	if (fgReset40mBw) {
+		prBssInfo->fg40mBwAllowed = FALSE;
+		prBssInfo->fgAssoc40mBwAllowed = FALSE;
+	}
 
 	rCmdActivateCtrl.ucBssIndex = ucBssIndex;
 	rCmdActivateCtrl.ucActive = 1;
@@ -1606,8 +1627,8 @@ uint32_t nicActivateNetwork(IN struct ADAPTER *prAdapter,
 	kalMemZero(&rCmdActivateCtrl.ucReserved,
 		   sizeof(rCmdActivateCtrl.ucReserved));
 
-#if 1				/* DBG */
-	DBGLOG_LIMITED(RSN, INFO,
+#if 1
+	DBGLOG(RSN, INFO,
 	       "[BSS index]=%d OwnMac%d=" MACSTR " BSSID=" MACSTR
 	       " BMCIndex = %d NetType=%d\n",
 	       ucBssIndex,
@@ -1679,7 +1700,7 @@ uint32_t nicDeactivateNetworkEx(IN struct ADAPTER *prAdapter,
 	rCmdActivateCtrl.ucBMCWlanIndex =
 		prBssInfo->ucBMCWlanIndex;
 
-	DBGLOG_LIMITED(RSN, INFO,
+	DBGLOG(RSN, INFO,
 	       "[BSS index]=%d OwnMac=" MACSTR " BSSID=" MACSTR
 	       " BMCIndex = %d NetType=%d\n",
 	       ucBssIndex,

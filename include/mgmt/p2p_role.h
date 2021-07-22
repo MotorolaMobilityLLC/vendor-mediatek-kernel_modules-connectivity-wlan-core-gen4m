@@ -225,7 +225,7 @@ struct P2P_RADAR_INFO {
 
 struct MSG_P2P_SET_NEW_CHANNEL {
 	struct MSG_HDR rMsgHdr;
-	enum ENUM_CHANNEL_WIDTH eChannelWidth;
+	struct RF_CHANNEL_INFO rRfChannelInfo;
 	uint8_t ucRoleIdx;
 	uint8_t ucBssIndex;
 };

@@ -722,7 +722,10 @@ void cnmChMngrRequestPrivilege(struct ADAPTER
 
 	if (!IS_BSS_ACTIVE(prBssInfo)) {
 		SET_NET_ACTIVE(prAdapter, prBssInfo->ucBssIndex);
-		nicActivateNetwork(prAdapter, prBssInfo->ucBssIndex);
+		/* Don't reset 40mbw flag. Otherwise, ucHtOpInfo1 will be reset
+		 * and cause SCO changed unexpectly.
+		 */
+		nicActivateNetworkEx(prAdapter, prBssInfo->ucBssIndex, FALSE);
 	}
 
 	log_dbg(CNM, INFO,
@@ -1281,10 +1284,12 @@ uint8_t cnmIdcCsaReq(IN struct ADAPTER *prAdapter,
 		prBssInfo->eBand = eBandOrig; /* Restore BSS eBand */
 
 		rRfChnlInfo.u2PriChnlFreq =
-			nicChannelNum2Freq(
-				ch_num, eBandCsa) / 1000;
+			nicChannelNum2Freq(ch_num, eBandCsa) / 1000;
 		rRfChnlInfo.u4CenterFreq1 =
-			rRfChnlInfo.u2PriChnlFreq;
+			nicGetS1Freq(
+				eBandCsa,
+				rRfChnlInfo.ucChannelNum,
+				rlmGetVhtOpBwByBssOpBw(rRfChnlInfo.ucChnlBw));
 		rRfChnlInfo.u4CenterFreq2 = 0;
 
 		DBGLOG(REQ, INFO,
@@ -2136,8 +2141,8 @@ struct BSS_INFO *cnmGetBssInfoAndInit(struct ADAPTER *prAdapter,
 			&prBssInfo->rCsaTimer,
 			(PFN_MGMT_TIMEOUT_FUNC) rlmCsaTimeout,
 			(unsigned long)ucBssIndex);
-
 		rlmResetCSAParams(prBssInfo);
+		prBssInfo->fgHasStopTx = FALSE;
 	}
 #endif
 
@@ -3767,9 +3772,10 @@ uint8_t cnmSapChannelSwitchReq(IN struct ADAPTER *prAdapter,
 
 	prP2pSetNewChannelMsg->rMsgHdr.eMsgId =
 		MID_MNY_P2P_SET_NEW_CHANNEL;
-	prP2pSetNewChannelMsg->eChannelWidth =
-		(enum ENUM_CHANNEL_WIDTH)
-		rlmGetVhtOpBwByBssOpBw(prRfChannelInfo->ucChnlBw);
+
+	memcpy(&prP2pSetNewChannelMsg->rRfChannelInfo,
+		prRfChannelInfo, sizeof(struct RF_CHANNEL_INFO));
+
 	prP2pSetNewChannelMsg->ucRoleIdx = ucRoleIdx;
 	prP2pSetNewChannelMsg->ucBssIndex = ucBssIdx;
 	mboxSendMsg(prAdapter,
