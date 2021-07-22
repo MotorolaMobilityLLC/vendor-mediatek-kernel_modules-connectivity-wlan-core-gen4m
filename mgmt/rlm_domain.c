@@ -294,8 +294,10 @@ struct mtk_regd_control g_mtk_regd_control = {
 
 #if CFG_SUPPORT_BW160
 #define BW_5G 160
+#define BW_6G 160
 #else
 #define BW_5G 80
+#define BW_6G 80
 #endif
 
 #if (CFG_SUPPORT_SINGLE_SKU_LOCAL_DB == 1)
@@ -309,11 +311,11 @@ const struct ieee80211_regdomain default_regdom_ww = {
 	/* channels 14 */
 	REG_RULE_LIGHT(2484-10, 2484+10, 20, 0),
 	/* channel 36..64 */
-	REG_RULE_LIGHT(5150-10, 5350+10, BW_5G, 0),
+	REG_RULE_LIGHT(5150-10, 5350+10, BW_6G, 0),
 	/* channel 100..165 */
-	REG_RULE_LIGHT(5470-10, 5850+10, BW_5G, 0),
+	REG_RULE_LIGHT(5470-10, 5850+10, BW_6G, 0),
 	/* 6G channel 1..17 */
-	REG_RULE_LIGHT(5935-10, 7135+10, BW_5G, 0),
+	REG_RULE_LIGHT(5935-10, 7135+10, BW_6G, 0),
 	}
 };
 #else
@@ -943,24 +945,24 @@ struct DOMAIN_INFO_ENTRY arSupportedRegDomains_Passive[] = {
 #if (CFG_SUPPORT_PWR_LIMIT_COUNTRY == 1)
 struct SUBBAND_CHANNEL g_rRlmSubBand[] = {
 
-	{BAND_2G4_LOWER_BOUND, BAND_2G4_UPPER_BOUND, 1, 0} /* 2.4G */
+	{BAND_2G4, BAND_2G4_LOWER_BOUND, BAND_2G4_UPPER_BOUND, 1, 0} /* 2.4G */
 	,
-	{UNII1_LOWER_BOUND, UNII1_UPPER_BOUND, 2, 0} /* ch36,38,40,..,48 */
+	{BAND_5G, UNII1_LOWER_BOUND, UNII1_UPPER_BOUND, 2, 0} /* 5G 36~48 */
 	,
-	{UNII2A_LOWER_BOUND, UNII2A_UPPER_BOUND, 2, 0} /* ch52,54,56,..,64 */
+	{BAND_5G, UNII2A_LOWER_BOUND, UNII2A_UPPER_BOUND, 2, 0} /* 5G 52~64 */
 	,
-	{UNII2C_LOWER_BOUND, UNII2C_UPPER_BOUND, 2, 0} /* ch100,102,.,144 */
+	{BAND_5G, UNII2C_LOWER_BOUND, UNII2C_UPPER_BOUND, 2, 0} /* 5G 100~144 */
 	,
-	{UNII3_LOWER_BOUND, UNII3_UPPER_BOUND, 2, 0} /* ch149,151,....,165 */
+	{BAND_5G, UNII3_LOWER_BOUND, UNII3_UPPER_BOUND, 2, 0} /* 5G 149~165 */
 #if (CFG_SUPPORT_WIFI_6G == 1)
 	,
-	{UNII5_LOWER_BOUND, UNII5_UPPER_BOUND, 2, 0}
+	{BAND_6G, UNII5_LOWER_BOUND, UNII5_UPPER_BOUND, 2, 0}
 	,
-	{UNII6_LOWER_BOUND, UNII6_UPPER_BOUND, 2, 0}
+	{BAND_6G, UNII6_LOWER_BOUND, UNII6_UPPER_BOUND, 2, 0}
 	,
-	{UNII7_LOWER_BOUND, UNII7_UPPER_BOUND, 2, 0}
+	{BAND_6G, UNII7_LOWER_BOUND, UNII7_UPPER_BOUND, 2, 0}
 	,
-	{UNII8_LOWER_BOUND, UNII8_UPPER_BOUND, 2, 0}
+	{BAND_6G, UNII8_LOWER_BOUND, UNII8_UPPER_BOUND, 2, 0}
 #endif
 };
 #endif
@@ -1827,7 +1829,7 @@ uint32_t rlmDomainSupOperatingClassIeFill(uint8_t *pBuf)
  */
 /*----------------------------------------------------------------------------*/
 u_int8_t rlmDomainCheckChannelEntryValid(struct ADAPTER *prAdapter,
-					 uint8_t ucCentralCh)
+				enum ENUM_BAND eBand, uint8_t ucCentralCh)
 {
 	u_int8_t fgValid = FALSE;
 	uint8_t ucTemp = 0xff;
@@ -1837,14 +1839,15 @@ u_int8_t rlmDomainCheckChannelEntryValid(struct ADAPTER *prAdapter,
 	/* CH50 is not located in any FCC subbands
 	 * but it's a valid central channel for 160C
 	 */
-	if (ucCentralCh == 50) {
+	if (eBand == BAND_5G && ucCentralCh == 50) {
 		fgValid = TRUE;
 		return fgValid;
 	}
 
 	for (i = POWER_LIMIT_2G4; i < POWER_LIMIT_SUBAND_NUM; i++) {
-		if ((ucCentralCh >= g_rRlmSubBand[i].ucStartCh) &&
-				    (ucCentralCh <= g_rRlmSubBand[i].ucEndCh))
+		if ((eBand == BAND_NULL || eBand == g_rRlmSubBand[i].eBand) &&
+			(ucCentralCh >= g_rRlmSubBand[i].ucStartCh) &&
+			(ucCentralCh <= g_rRlmSubBand[i].ucEndCh))
 			ucTemp = (ucCentralCh - g_rRlmSubBand[i].ucStartCh) %
 				 g_rRlmSubBand[i].ucInterval;
 		if (ucTemp == 0)
@@ -1915,7 +1918,7 @@ rlmDomainIsValidRfSetting(struct ADAPTER *prAdapter,
 
 		/* Check Central Channel Valid or Not */
 		fgValidChannel = rlmDomainCheckChannelEntryValid(prAdapter,
-								 ucCenterCh);
+			eBand, ucCenterCh);
 		if (fgValidChannel == FALSE)
 			DBGLOG(RLM, WARN, "Rf20: CentralCh=%d\n", ucCenterCh);
 
@@ -1936,12 +1939,12 @@ rlmDomainIsValidRfSetting(struct ADAPTER *prAdapter,
 		}
 
 		fgUpperChannel = rlmDomainCheckChannelEntryValid(prAdapter,
-								ucUpperChannel);
+			eBand, ucUpperChannel);
 		if (fgUpperChannel == FALSE)
 			DBGLOG(RLM, WARN, "Rf20: UpperCh=%d\n", ucUpperChannel);
 
 		fgLowerChannel = rlmDomainCheckChannelEntryValid(prAdapter,
-								ucLowerChannel);
+			eBand, ucLowerChannel);
 		if (fgLowerChannel == FALSE)
 			DBGLOG(RLM, WARN, "Rf20: LowerCh=%d\n", ucLowerChannel);
 
@@ -1956,7 +1959,7 @@ rlmDomainIsValidRfSetting(struct ADAPTER *prAdapter,
 			 */
 			fgValidChannel =
 				rlmDomainCheckChannelEntryValid(prAdapter,
-								ucCenterCh);
+					eBand, ucCenterCh);
 		}
 
 		if (fgValidChannel == FALSE)
@@ -1966,7 +1969,7 @@ rlmDomainIsValidRfSetting(struct ADAPTER *prAdapter,
 		ucCenterCh = ucChannelS1;
 
 		fgValidChannel = rlmDomainCheckChannelEntryValid(prAdapter,
-								 ucCenterCh);
+			eBand, ucCenterCh);
 
 		if (fgValidChannel == FALSE)
 			DBGLOG(RLM, WARN, "Rf160NC: CentralCh1=%d\n",
@@ -1975,7 +1978,7 @@ rlmDomainIsValidRfSetting(struct ADAPTER *prAdapter,
 		ucCenterCh = ucChannelS2;
 
 		fgValidChannel = rlmDomainCheckChannelEntryValid(prAdapter,
-								 ucCenterCh);
+			eBand, ucCenterCh);
 
 		if (fgValidChannel == FALSE)
 			DBGLOG(RLM, WARN, "Rf160NC: CentralCh2=%d\n",
@@ -2805,7 +2808,7 @@ void rlmDomainCheckCountryPowerLimitTable(struct ADAPTER *prAdapter)
 		/*<2>Channel Number Interval Check */
 		fgChannelValid =
 		    rlmDomainCheckChannelEntryValid(prAdapter,
-						    PwrLmtConf[i].ucCentralCh);
+				BAND_NULL, PwrLmtConf[i].ucCentralCh);
 
 		/*<3>Power Limit Range Check */
 		fgPowerLimitValid =
@@ -3161,8 +3164,10 @@ void rlmDomainBuildCmdByConfigTable(struct ADAPTER *prAdapter,
 					&u2CountryCodeTable);
 
 				fgChannelValid =
-				    rlmDomainCheckChannelEntryValid(prAdapter,
-					PwrLmtConfHE[i].ucCentralCh);
+					rlmDomainCheckChannelEntryValid(
+						prAdapter,
+						BAND_NULL,
+						PwrLmtConfHE[i].ucCentralCh);
 
 				if (u2CountryCodeTable == COUNTRY_CODE_NULL)
 					break;	/*end of configuration table */
@@ -3203,9 +3208,10 @@ void rlmDomainBuildCmdByConfigTable(struct ADAPTER *prAdapter,
 					&u2CountryCodeTable);
 
 				fgChannelValid =
-				    rlmDomainCheckChannelEntryValid(
-				    prAdapter,
-					PwrLmtConf[i].ucCentralCh);
+					rlmDomainCheckChannelEntryValid(
+						prAdapter,
+						BAND_NULL,
+						PwrLmtConf[i].ucCentralCh);
 
 				if (u2CountryCodeTable == COUNTRY_CODE_NULL)
 					break;	/*end of configuration table */
@@ -6232,6 +6238,9 @@ uint8_t rlmDomainGetChannelBw(enum ENUM_BAND eBand, uint8_t channelNum)
 
 		if ((eChBand != eBand) || (pCh->u2ChNum != channelNum))
 			continue;
+
+		DBGLOG(RLM, TRACE, "band=%d, ch=%d, flags=%x\n",
+			eBand, channelNum, pCh->eFlags);
 
 		/* Max BW */
 		if ((pCh->eFlags & IEEE80211_CHAN_NO_160MHZ)
