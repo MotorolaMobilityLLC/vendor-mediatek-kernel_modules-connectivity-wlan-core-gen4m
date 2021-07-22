@@ -1930,31 +1930,40 @@ void p2pRoleFsmRunEventCsaDone(IN struct ADAPTER *prAdapter,
 					P2P_ROLE_STATE_SWITCH_CHANNEL);
 			}
 		}
-	} else {
-		DBGLOG(P2P, INFO, "GO CSA done\n");
+	} else { /* GO */
+		DBGLOG(P2P, INFO, "GO CSA done: %s band\n",
+			prP2pBssInfo->eBand ==
+				prP2pRoleFsmInfo->rChnlReqInfo.eBand ?
+				"same" : "cross");
 
-		/* Indicate PM abort to sync BSS state with FW */
-		nicPmIndicateBssAbort(prAdapter, prP2pBssInfo->ucBssIndex);
+		if (prAdapter->rWifiVar.eDbdcMode != ENUM_DBDC_MODE_DISABLED &&
+			prP2pBssInfo->eBand !=
+				prP2pRoleFsmInfo->rChnlReqInfo.eBand) {
 
-		/* Update BSS with temp. disconnect state to FW */
-		UNSET_NET_ACTIVE(prAdapter,
-			prP2pBssInfo->ucBssIndex);
-		nicDeactivateNetworkEx(prAdapter,
-			prP2pBssInfo->ucBssIndex,
-			FALSE);
-		p2pChangeMediaState(prAdapter, prP2pBssInfo,
-			MEDIA_STATE_DISCONNECTED);
-		nicUpdateBssEx(prAdapter,
-			prP2pBssInfo->ucBssIndex,
-			FALSE);
+			/* Indicate PM abort to sync BSS state with FW */
+			nicPmIndicateBssAbort(prAdapter,
+				prP2pBssInfo->ucBssIndex);
+
+			/* Update BSS with temp. disconnect state to FW */
+			UNSET_NET_ACTIVE(prAdapter,
+				prP2pBssInfo->ucBssIndex);
+			nicDeactivateNetworkEx(prAdapter,
+				prP2pBssInfo->ucBssIndex,
+				FALSE);
+			p2pChangeMediaState(prAdapter, prP2pBssInfo,
+				MEDIA_STATE_DISCONNECTED);
+			nicUpdateBssEx(prAdapter,
+				prP2pBssInfo->ucBssIndex,
+				FALSE);
 
 #if CFG_SUPPORT_DBDC
-		cnmDbdcPreConnectionEnableDecision(prAdapter,
-			prP2pBssInfo->ucBssIndex,
-			prP2pRoleFsmInfo->rChnlReqInfo.eBand,
-			prP2pRoleFsmInfo->rChnlReqInfo.ucReqChnlNum,
-			prP2pBssInfo->ucWmmQueSet);
+			cnmDbdcPreConnectionEnableDecision(prAdapter,
+				prP2pBssInfo->ucBssIndex,
+				prP2pRoleFsmInfo->rChnlReqInfo.eBand,
+				prP2pRoleFsmInfo->rChnlReqInfo.ucReqChnlNum,
+				prP2pBssInfo->ucWmmQueSet);
 #endif /*CFG_SUPPORT_DBDC*/
+		}
 
 		p2pRoleFsmStateTransition(prAdapter,
 			prP2pRoleFsmInfo,
