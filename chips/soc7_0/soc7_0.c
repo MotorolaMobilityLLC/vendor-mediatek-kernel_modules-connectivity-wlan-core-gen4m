@@ -1064,14 +1064,10 @@ static void soc7_0EnableFwDlMode(struct ADAPTER *prAdapter)
 	HAL_MCR_WR(prAdapter, WF_WFDMA_HOST_DMA0_PDA_CONFG_ADDR, val);
 }
 
-static int wf_pwr_on_consys_mcu(void)
+static int wake_up_conninfra_off(void)
 {
-	int ret = 0;
-	int check;
 	uint32_t value = 0;
 	uint32_t polling_count;
-
-	DBGLOG(INIT, INFO, "wmmcu power-on start.\n");
 
 	/* Wakeup conn_infra off
 	 * Address: 0x1801_1000[31:0]
@@ -1094,13 +1090,47 @@ static int wf_pwr_on_consys_mcu(void)
 	while (value != SOC7_CONNSYS_VERSION_ID) {
 		if (polling_count > 10) {
 			DBGLOG(INIT, ERROR, "Polling CONNSYS version ID fail.\n");
-			ret = -1;
-			return ret;
+			return -1;
 		}
 		udelay(1000);
 		wf_ioremap_read(CONN_INFRA_CFG_IP_VERSION_ADDR, &value);
 		polling_count++;
 	}
+
+	/* Check CONN_INFRA cmdbt restore done
+	 * (polling "10 times" for specific project code
+	 * and each polling interval is "0.5ms")
+	 * Address: 0x1800_1210[16]
+	 * Data: 1'b1
+	 * Action: polling
+	 */
+	wf_ioremap_read(CONN_INFRA_CFG_ON_CONN_INFRA_CFG_PWRCTRL1_CONN_INFRA_RDY_ADDR, &value);
+	polling_count = 0;
+	while ((value & CONN_INFRA_CFG_ON_CONN_INFRA_CFG_PWRCTRL1_CONN_INFRA_RDY_MASK) == 0) {
+		if (polling_count > 10) {
+			DBGLOG(INIT, ERROR, "Polling CONN_INFRA cmdbt restore done fail.\n");
+			return -1;
+		}
+		udelay(500);
+		wf_ioremap_read(CONN_INFRA_CFG_ON_CONN_INFRA_CFG_PWRCTRL1_CONN_INFRA_RDY_ADDR, &value);
+		polling_count++;
+	}
+
+	return 0;
+}
+
+static int wf_pwr_on_consys_mcu(void)
+{
+	int ret = 0;
+	int check;
+	uint32_t value = 0;
+	uint32_t polling_count;
+
+	DBGLOG(INIT, INFO, "wmmcu power-on start.\n");
+
+	ret = wake_up_conninfra_off();
+	if (ret)
+		return ret;
 
 	/* Assert CONNSYS WM CPU SW reset
 	 * (apply this for default value patching)
@@ -1424,38 +1454,9 @@ static int wf_pwr_off_consys_mcu(void)
 
 	DBGLOG(INIT, INFO, "wmmcu power-off start.\n");
 
-	/* Wakeup conn_infra off
-	 * Address: 0x1806_01A4[0]
-	 * Data: 1'b1
-	 * Action: write
-	 */
-	wf_ioremap_read(CONN_HOST_CSR_TOP_CONN_INFRA_WAKEPU_WF_ADDR, &value);
-	value |= CONN_HOST_CSR_TOP_CONN_INFRA_WAKEPU_WF_CONN_INFRA_WAKEPU_WF_MASK;
-	wf_ioremap_write(CONN_HOST_CSR_TOP_CONN_INFRA_WAKEPU_WF_ADDR, value);
-
-	/* Check CONNSYS version ID
-	 * (polling "10 times" for specific project code and each polling interval is "1ms")
-	 * Address: 0x1801_1000[31:0]
-	 * Data: 32'h02050100
-	 * Action: polling
-	 */
-	wf_ioremap_read(CONN_INFRA_CFG_IP_VERSION_ADDR, &value);
-	check = 0;
-	polling_count = 0;
-	while (value != SOC7_CONNSYS_VERSION_ID) {
-		if (polling_count > 10) {
-			check = -1;
-			ret = -1;
-			break;
-		}
-		udelay(1000);
-		wf_ioremap_read(CONN_INFRA_CFG_IP_VERSION_ADDR, &value);
-		polling_count++;
-	}
-	if (check != 0) {
-		DBGLOG(INIT, ERROR, "Polling CONNSYS version ID fail.\n");
+	ret = wake_up_conninfra_off();
+	if (ret)
 		return ret;
-	}
 
 	/* Turn on "conn_infra to wfsys"/wfsys to conn_infra/wfdma2conn" bus sleep protect
 	 * Address: 0x1800_1440[0]
@@ -2595,44 +2596,13 @@ static int soc7_0_CheckBusHang(void *adapter, uint8_t ucWfResetEnable)
 static bool soc7_0_get_sw_interrupt_status(struct ADAPTER *prAdapter,
 	uint32_t *status)
 {
-#define MAX_POLLING_CNT 10
-
 	int check = 0;
 	uint32_t value = 0;
 	uint32_t sw_int_value = 0;
-	uint32_t polling_count = 0;
 
-	/* Wakeup conn_infra off write 0x180601A4[0] = 1'b1 */
-	wf_ioremap_read(CONN_HOST_CSR_TOP_CONN_INFRA_WAKEPU_WF_ADDR, &value);
-	value |= CONN_HOST_CSR_TOP_CONN_INFRA_WAKEPU_WF_CONN_INFRA_WAKEPU_WF_MASK;
-	wf_ioremap_write(CONN_HOST_CSR_TOP_CONN_INFRA_WAKEPU_WF_ADDR, value);
-
-	/* Check CONNSYS version ID
-	 * (polling "10 times" and each polling interval is "1ms")
-	 * Address: 0x1800_1000[31:0]
-	 * Data: 0x02060002
-	 * Action: polling
-	 */
-	wf_ioremap_read(CONN_INFRA_CFG_IP_VERSION_ADDR, &value);
-	check = 0;
-	polling_count = 0;
-	while (value != SOC7_CONNSYS_VERSION_ID) {
-		if (polling_count > MAX_POLLING_CNT) {
-			check = -1;
-			DBGLOG(HAL, ERROR, "Polling CONNSYS version ID fail.\n");
-			break;
-		}
-		udelay(1000);
-		wf_ioremap_read(CONN_INFRA_CFG_IP_VERSION_ADDR, &value);
-		polling_count++;
-	}
-	if (check != 0) {
-		if (!conninfra_reg_readable()) {
-			DBGLOG(HAL, ERROR,
-				"conninfra_reg_readable fail\n");
-			return false;
-		}
-	}
+	check = wake_up_conninfra_off();
+	if (check)
+		return false;
 
 	wf_ioremap_read(AP2WF_CONN_INFRA_ON_CCIF4_AP2WF_PCCIF_RCHNUM_ADDR,
 		&sw_int_value);
