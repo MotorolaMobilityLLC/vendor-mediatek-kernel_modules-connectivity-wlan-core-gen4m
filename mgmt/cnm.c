@@ -1250,14 +1250,13 @@ uint8_t cnmDecideSapNewChannel(
 }
 
 uint8_t cnmIdcCsaReq(IN struct ADAPTER *prAdapter,
-	IN uint8_t ch_num, IN uint8_t ucRoleIdx)
+	IN uint8_t ucCh, IN uint8_t ucRoleIdx)
 {
 	struct BSS_INFO *prBssInfo = NULL;
 	uint8_t ucBssIdx = 0;
 	struct RF_CHANNEL_INFO rRfChnlInfo;
-	enum ENUM_BAND eBandOrig, eBandCsa;
 
-	ASSERT(ch_num);
+	ASSERT(ucCh);
 
 	if (p2pFuncRoleToBssIdx(
 		prAdapter, ucRoleIdx, &ucBssIdx) !=
@@ -1265,32 +1264,16 @@ uint8_t cnmIdcCsaReq(IN struct ADAPTER *prAdapter,
 		return -1;
 
 	DBGLOG(REQ, INFO,
-		"[CSA]RoleIdx = %d ,CH = %d BssIdx = %d\n",
-		ucRoleIdx, ch_num, ucBssIdx);
+		"[CSA]RoleIdx=%d, CH=%d BssIdx=%d\n",
+		ucRoleIdx, ucCh, ucBssIdx);
 
 	prBssInfo = prAdapter->aprBssInfo[ucBssIdx];
 
+	if (prBssInfo->ucPrimaryChannel != ucCh) {
 
-	if (prBssInfo->ucPrimaryChannel != ch_num) {
-		rRfChnlInfo.ucChannelNum = ch_num;
-
-		eBandCsa = (ch_num <= 14) ? BAND_2G4 : BAND_5G;
-		rRfChnlInfo.eBand = eBandCsa;
-
-		/* temp replace BSS eBand to get BW of CSA band */
-		eBandOrig = prBssInfo->eBand;
-		prBssInfo->eBand = eBandCsa;
-		rRfChnlInfo.ucChnlBw = cnmGetBssMaxBw(prAdapter, ucBssIdx);
-		prBssInfo->eBand = eBandOrig; /* Restore BSS eBand */
-
-		rRfChnlInfo.u2PriChnlFreq =
-			nicChannelNum2Freq(ch_num, eBandCsa) / 1000;
-		rRfChnlInfo.u4CenterFreq1 =
-			nicGetS1Freq(
-				eBandCsa,
-				rRfChnlInfo.ucChannelNum,
-				rlmGetVhtOpBwByBssOpBw(rRfChnlInfo.ucChnlBw));
-		rRfChnlInfo.u4CenterFreq2 = 0;
+		rlmGetChnlInfoForCSA(prAdapter,
+			(ucCh <= 14) ? BAND_2G4 : BAND_5G,
+			ucCh, ucBssIdx, &rRfChnlInfo);
 
 		DBGLOG(REQ, INFO,
 		"[CSA]CH=%d,Band=%d,BW=%d,PriFreq=%d,S1Freq=%d\n",

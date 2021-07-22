@@ -138,5 +138,10 @@ enum ENUM_CHNL_EXT rlmGetScoByChnInfo(struct ADAPTER *prAdapter,
 uint8_t rlmGetVhtS1ForAP(struct ADAPTER *prAdapter,
 		struct BSS_INFO *prBssInfo);
 
+void rlmGetChnlInfoForCSA(struct ADAPTER *prAdapter,
+	IN enum ENUM_BAND eBand,
+	IN uint8_t ucCh,
+	IN uint8_t ucBssIdx,
+	OUT struct RF_CHANNEL_INFO *prRfChnlInfo);
 
 #endif
