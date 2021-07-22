@@ -2860,6 +2860,11 @@ wlanoidSetAddKey(IN struct ADAPTER *prAdapter, IN void *pvSetBuffer,
 			    && (prCmdKey->ucAlgorithmId == CIPHER_SUITE_BIP)) {
 				DBGLOG_LIMITED(RSN, INFO, "AP mode set BIP\n");
 				prBssInfo->rApPmfCfg.fgBipKeyInstalled = TRUE;
+				DBGLOG(RSN, INFO,
+					"Change BIP BC keyId from %d to 3\n",
+					prCmdKey->ucKeyId);
+				/* Reserve keyid 3 for IGTK */
+				prCmdKey->ucKeyId = 3;
 			}
 #endif
 		}
