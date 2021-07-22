@@ -748,6 +748,7 @@ void rlmGenerateCsaIE(struct ADAPTER *prAdapter, struct MSDU_INFO *prMsduInfo)
 			(uint8_t *)((unsigned long)prMsduInfo->prPacket +
 				    (unsigned long)prMsduInfo->u2FrameLength);
 
+		/* Fill Channel Switch Announcement IE */
 		CSA_IE(pucBuffer)->ucId = ELEM_ID_CH_SW_ANNOUNCEMENT;
 		CSA_IE(pucBuffer)->ucLength = ELEM_MIN_LEN_CSA;
 		CSA_IE(pucBuffer)->ucChannelSwitchMode =
@@ -758,7 +759,30 @@ void rlmGenerateCsaIE(struct ADAPTER *prAdapter, struct MSDU_INFO *prMsduInfo)
 			prAdapter->rWifiVar.ucChannelSwitchCount;
 
 		prMsduInfo->u2FrameLength += IE_SIZE(pucBuffer);
+
+		/* Fill Secondary channel offset IE */
 		pucBuffer += IE_SIZE(pucBuffer);
+
+		SEC_OFFSET_IE(pucBuffer)->ucId = ELEM_ID_SCO;
+		SEC_OFFSET_IE(pucBuffer)->ucLength = 1;
+		SEC_OFFSET_IE(pucBuffer)->ucSecondaryOffset =
+			prAdapter->rWifiVar.ucSecondaryOffset;
+
+		prMsduInfo->u2FrameLength += IE_SIZE(pucBuffer);
+
+		/* Fill Wide Bandwidth Channel Switch IE */
+		pucBuffer += IE_SIZE(pucBuffer);
+
+		WIDE_BW_IE(pucBuffer)->ucId = ELEM_ID_WIDE_BAND_CHANNEL_SWITCH;
+		WIDE_BW_IE(pucBuffer)->ucLength = 3;
+		WIDE_BW_IE(pucBuffer)->ucNewChannelWidth =
+			prAdapter->rWifiVar.ucNewChannelWidth;
+		WIDE_BW_IE(pucBuffer)->ucChannelS1 =
+			prAdapter->rWifiVar.ucNewChannelS1;
+		WIDE_BW_IE(pucBuffer)->ucChannelS2 =
+			prAdapter->rWifiVar.ucNewChannelS2;
+
+		prMsduInfo->u2FrameLength += IE_SIZE(pucBuffer);
 	}
 }
 
@@ -2625,10 +2649,13 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 					  HT_OP_INFO1_STA_CHNL_WIDTH);
 
 			if ((prBssInfo->ucHtOpInfo1 & HT_OP_INFO1_SCO) !=
-			    CHNL_EXT_RES)
+			    CHNL_EXT_RES) {
 				prBssInfo->eBssSCO = (enum ENUM_CHNL_EXT)(
 					prBssInfo->ucHtOpInfo1 &
 					HT_OP_INFO1_SCO);
+				DBGLOG(RLM, TRACE, "SCO updated by HT OP: %d\n",
+					prBssInfo->eBssSCO);
+			}
 
 			/* Revise by own OP BW */
 			if (prBssInfo->fgIsOpChangeChannelWidth &&
@@ -2637,6 +2664,8 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 					~(HT_OP_INFO1_SCO |
 					  HT_OP_INFO1_STA_CHNL_WIDTH);
 				prBssInfo->eBssSCO = CHNL_EXT_SCN;
+				DBGLOG(RLM, TRACE,
+					"SCO updated by own OP BW\n");
 			}
 
 			prBssInfo->eHtProtectMode = (enum ENUM_HT_PROTECT_MODE)(
@@ -3148,6 +3177,8 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 						~(HT_OP_INFO1_SCO |
 						  HT_OP_INFO1_STA_CHNL_WIDTH);
 					prBssInfo->eBssSCO = CHNL_EXT_SCN;
+					DBGLOG(RLM, TRACE,
+						"SCO updated by OP Mode IE\n");
 				}
 			}
 		}
@@ -6624,6 +6655,8 @@ static void rlmChangeOwnOpInfo(struct ADAPTER *prAdapter,
 					 HT_OP_INFO1_STA_CHNL_WIDTH_OFFSET),
 			       prBssInfo->eBssSCO);
 		}
+
+		prBssInfo->fgIsOpChangeChannelWidth = FALSE;
 	}
 
 	/* Update own operating RxNss */
@@ -6631,6 +6664,7 @@ static void rlmChangeOwnOpInfo(struct ADAPTER *prAdapter,
 		prBssInfo->ucOpRxNss = prBssInfo->ucOpChangeRxNss;
 		DBGLOG(RLM, INFO, "Update OP RxNss[%d]\n",
 			prBssInfo->ucOpRxNss);
+		prBssInfo->fgIsOpChangeRxNss = FALSE;
 	}
 
 	/* Update own operating TxNss */
@@ -6638,6 +6672,7 @@ static void rlmChangeOwnOpInfo(struct ADAPTER *prAdapter,
 		prBssInfo->ucOpTxNss = prBssInfo->ucOpChangeTxNss;
 		DBGLOG(RLM, INFO, "Update OP TxNss[%d]\n",
 			prBssInfo->ucOpTxNss);
+		prBssInfo->fgIsOpChangeTxNss = FALSE;
 	}
 }
 
@@ -7250,6 +7285,7 @@ void rlmSendChannelSwitchFrame(struct ADAPTER *prAdapter,
 	prTxFrame->ucCategory = CATEGORY_SPEC_MGT;
 	prTxFrame->ucAction = ACTION_CHNL_SWITCH;
 
+	/* 3.1 - Channel Switch Announcement element */
 	prTxFrame->aucInfoElem[0] = ELEM_ID_CH_SW_ANNOUNCEMENT;
 	prTxFrame->aucInfoElem[1] = 3;
 	prTxFrame->aucInfoElem[2]
@@ -7258,6 +7294,22 @@ void rlmSendChannelSwitchFrame(struct ADAPTER *prAdapter,
 		= prAdapter->rWifiVar.ucNewChannelNumber;
 	prTxFrame->aucInfoElem[4]
 		= prAdapter->rWifiVar.ucChannelSwitchCount;
+
+	/* 3.2 - Secondary Channel Offset element */
+	prTxFrame->aucInfoElem[5] = ELEM_ID_SCO;
+	prTxFrame->aucInfoElem[6] = 1;
+	prTxFrame->aucInfoElem[7]
+		= prAdapter->rWifiVar.ucSecondaryOffset;
+
+	/* 3.3 - Wide Bandwidth Channel Switch element */
+	prTxFrame->aucInfoElem[8] = ELEM_ID_WIDE_BAND_CHANNEL_SWITCH;
+	prTxFrame->aucInfoElem[9] = 3;
+	prTxFrame->aucInfoElem[10]
+		= prAdapter->rWifiVar.ucNewChannelWidth;
+	prTxFrame->aucInfoElem[11]
+		= prAdapter->rWifiVar.ucNewChannelS1;
+	prTxFrame->aucInfoElem[12]
+		= prAdapter->rWifiVar.ucNewChannelS2;
 
 	pfTxDoneHandler = rlmSendChannelSwitchTxDone;
 
