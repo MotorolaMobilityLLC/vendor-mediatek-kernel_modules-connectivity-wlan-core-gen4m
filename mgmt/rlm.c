@@ -738,7 +738,7 @@ void rlmGenerateCsaIE(struct ADAPTER *prAdapter, struct MSDU_INFO *prMsduInfo)
 
 		/* Fill Channel Switch Announcement IE */
 		CSA_IE(pucBuffer)->ucId = ELEM_ID_CH_SW_ANNOUNCEMENT;
-		CSA_IE(pucBuffer)->ucLength = ELEM_MIN_LEN_CSA;
+		CSA_IE(pucBuffer)->ucLength = 3;
 		CSA_IE(pucBuffer)->ucChannelSwitchMode =
 			prAdapter->rWifiVar.ucChannelSwitchMode;
 		CSA_IE(pucBuffer)->ucNewChannelNum =
