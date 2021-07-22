@@ -730,9 +730,7 @@ void rlmGenerateCsaIE(struct ADAPTER *prAdapter, struct MSDU_INFO *prMsduInfo)
 	ASSERT(prAdapter);
 	ASSERT(prMsduInfo);
 
-	if (prAdapter->rWifiVar.fgCsaInProgress &&
-		!prAdapter->rWifiVar.fgCsaInBeacon) {
-
+	if (prAdapter->rWifiVar.fgCsaInProgress) {
 		pucBuffer =
 			(uint8_t *)((unsigned long)prMsduInfo->prPacket +
 				    (unsigned long)prMsduInfo->u2FrameLength);
@@ -772,25 +770,6 @@ void rlmGenerateCsaIE(struct ADAPTER *prAdapter, struct MSDU_INFO *prMsduInfo)
 			prAdapter->rWifiVar.ucNewChannelS2;
 
 		prMsduInfo->u2FrameLength += IE_SIZE(pucBuffer);
-
-		/* When we report CSA IE in beacon, FW will trigger CSA
-		 * countdown and report CSA done event to driver when CSA count
-		 * becomes 0. However, if we repeatedly report CSA IE in beacon
-		 * (such as NoA due to MCC or scan), FW will repeatedly reset
-		 * CSA countdown and may delay or fail to report CSA done event.
-		 * Hence, for every CSA request, we should report CSA IE in
-		 * beacon for only once.
-		 */
-		prAdapter->rWifiVar.fgCsaInBeacon = TRUE;
-
-		/* Clean up CSA variable */
-		prAdapter->rWifiVar.ucChannelSwitchMode = 0;
-		prAdapter->rWifiVar.ucNewChannelNumber = 0;
-		prAdapter->rWifiVar.ucChannelSwitchCount = 0;
-		prAdapter->rWifiVar.ucSecondaryOffset = 0;
-		prAdapter->rWifiVar.ucNewChannelWidth = 0;
-		prAdapter->rWifiVar.ucNewChannelS1 = 0;
-		prAdapter->rWifiVar.ucNewChannelS2 = 0;
 	}
 }
 
