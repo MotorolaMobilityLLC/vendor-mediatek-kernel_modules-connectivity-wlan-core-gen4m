@@ -1270,7 +1270,7 @@ void soc3_0_dump_mac_info(IN struct ADAPTER *prAdapter)
 	DBGLOG(HAL, INFO, "Dump for band0\n");
 	HAL_MCR_WR(prAdapter, 0x7C006100, 0x1F);
 	HAL_MCR_WR(prAdapter, 0x7C006104, 0x07070707);
-	HAL_MCR_WR(prAdapter, 0x7C006108, 0x0A0A0909);
+	HAL_MCR_WR(prAdapter, 0x7C006108, 0x0D0D0C0C);
 	HAL_MCR_RD(prAdapter, 0x820D0000, &value);
 	DBGLOG(HAL, INFO, "Dump CR: 0x820D0000 = 0x%08x\n", value);
 	HAL_MCR_RD(prAdapter, 0x820E3080, &value);
@@ -1308,7 +1308,7 @@ void soc3_0_dump_mac_info(IN struct ADAPTER *prAdapter)
 	DBGLOG(HAL, INFO, "Dump for band1\n");
 	HAL_MCR_WR(prAdapter, 0x7C006400, 0x1F);
 	HAL_MCR_WR(prAdapter, 0x7C006404, 0x07070707);
-	HAL_MCR_WR(prAdapter, 0x7C006408, 0x0A0A0909);
+	HAL_MCR_WR(prAdapter, 0x7C006408, 0x0D0D0C0C);
 	HAL_MCR_RD(prAdapter, 0x820D0000, &value);
 	DBGLOG(HAL, INFO, "Dump CR: 0x820D0000 = 0x%08x\n", value);
 	HAL_MCR_RD(prAdapter, 0x820F3080, &value);
