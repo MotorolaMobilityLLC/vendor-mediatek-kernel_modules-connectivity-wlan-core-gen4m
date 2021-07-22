@@ -148,6 +148,12 @@ struct APPEND_VAR_IE_ENTRY txBcnIETable[] = {
 	, {0, heRlmCalculateHeOpIELen,
 	   heRlmRspGenerateHeOpIE}      /* 255, EXT 36 */
 #endif
+#if CFG_SUPPORT_802_11BE
+	, {0, ehtRlmCalculateCapIELen,
+	   ehtRlmRspGenerateCapIE}
+	, {0, ehtRlmCalculateOpIELen,
+	   ehtRlmRspGenerateOpIE}
+#endif
 #if CFG_SUPPORT_MTK_SYNERGY
 	, {(ELEM_HDR_LEN + ELEM_MIN_LEN_MTK_OUI), NULL,
 	   rlmGenerateMTKOuiIE}	/* 221 */
@@ -196,6 +202,12 @@ struct APPEND_VAR_IE_ENTRY txProbRspIETable[] = {
 	   heRlmRspGenerateHeCapIE}    /* 255, EXT 35 */
 	, {0, heRlmCalculateHeOpIELen,
 	   heRlmRspGenerateHeOpIE}      /* 255, EXT 36 */
+#endif
+#if CFG_SUPPORT_802_11BE
+	, {0, ehtRlmCalculateCapIELen,
+	   ehtRlmRspGenerateCapIE}
+	, {0, ehtRlmCalculateOpIELen,
+	   ehtRlmRspGenerateOpIE}
 #endif
 #if CFG_SUPPORT_MTK_SYNERGY
 	, {(ELEM_HDR_LEN + ELEM_MIN_LEN_MTK_OUI), NULL,
@@ -250,6 +262,9 @@ void bssDetermineStaRecPhyTypeSet(IN struct ADAPTER *prAdapter,
 	uint8_t ucHtOption = FEATURE_ENABLED;
 	uint8_t ucVhtOption = FEATURE_ENABLED;
 	struct BSS_INFO *prBssInfo;
+#if (CFG_SUPPORT_802_11BE == 1)
+	uint8_t ucEhtOption = FEATURE_ENABLED;
+#endif
 #if (CFG_SUPPORT_802_11AX == 1)
 	uint8_t ucHeOption = FEATURE_ENABLED;
 
@@ -295,6 +310,9 @@ void bssDetermineStaRecPhyTypeSet(IN struct ADAPTER *prAdapter,
 #if (CFG_SUPPORT_802_11AX == 1)
 			prStaRec->ucPhyTypeSet &= ~(PHY_TYPE_BIT_HE);
 #endif
+#if (CFG_SUPPORT_802_11BE == 1)
+			prStaRec->ucPhyTypeSet &= ~(PHY_TYPE_BIT_EHT);
+#endif
 		}
 
 		ucHtOption = prWifiVar->ucStaHt;
@@ -303,7 +321,9 @@ void bssDetermineStaRecPhyTypeSet(IN struct ADAPTER *prAdapter,
 		if (fgEfuseCtrlAxOn == 1)
 			ucHeOption = prWifiVar->ucStaHe;
 #endif
-
+#if (CFG_SUPPORT_802_11BE == 1)
+		ucEhtOption = prWifiVar->ucStaEht;
+#endif
 	}
 	/* Decide P2P GC PHY type set */
 	else if (prStaRec->eStaType == STA_TYPE_P2P_GO) {
@@ -312,7 +332,9 @@ void bssDetermineStaRecPhyTypeSet(IN struct ADAPTER *prAdapter,
 #if (CFG_SUPPORT_802_11AX == 1)
 		ucHeOption = prWifiVar->ucP2pGcHe;
 #endif
-
+#if (CFG_SUPPORT_802_11BE == 1)
+		ucEhtOption = prWifiVar->ucP2pGcEht;
+#endif
 	}
 
 	/* Set HT/VHT capability from Feature Option */
@@ -337,6 +359,12 @@ void bssDetermineStaRecPhyTypeSet(IN struct ADAPTER *prAdapter,
 	else if (IS_FEATURE_FORCE_ENABLED(ucHeOption))
 		prStaRec->ucPhyTypeSet |= PHY_TYPE_BIT_HE;
 	}
+#endif
+#if (CFG_SUPPORT_802_11BE == 1)
+	if (IS_FEATURE_DISABLED(ucEhtOption))
+		prStaRec->ucPhyTypeSet &= ~PHY_TYPE_BIT_EHT;
+	else if (IS_FEATURE_FORCE_ENABLED(ucEhtOption))
+		prStaRec->ucPhyTypeSet |= PHY_TYPE_BIT_EHT;
 #endif
 
 	prStaRec->ucDesiredPhyTypeSet =
@@ -366,6 +394,9 @@ void bssDetermineApBssInfoPhyTypeSet(IN struct ADAPTER *prAdapter,
 #if (CFG_SUPPORT_802_11AX == 1)
 	uint8_t ucHeOption = FEATURE_ENABLED;
 #endif
+#if (CFG_SUPPORT_802_11BE == 1)
+	uint8_t ucEhtOption = FEATURE_ENABLED;
+#endif
 
 	/* Decide AP mode PHY type set */
 	if (fgIsPureAp) {
@@ -374,6 +405,9 @@ void bssDetermineApBssInfoPhyTypeSet(IN struct ADAPTER *prAdapter,
 #if (CFG_SUPPORT_802_11AX == 1)
 		ucHeOption = prWifiVar->ucApHe;
 #endif
+#if (CFG_SUPPORT_802_11BE == 1)
+		ucEhtOption = prWifiVar->ucApEht;
+#endif
 	}
 	/* Decide P2P GO PHY type set */
 	else {
@@ -381,6 +415,9 @@ void bssDetermineApBssInfoPhyTypeSet(IN struct ADAPTER *prAdapter,
 		ucVhtOption = prWifiVar->ucP2pGoVht;
 #if (CFG_SUPPORT_802_11AX == 1)
 		ucHeOption = prWifiVar->ucP2pGoHe;
+#endif
+#if (CFG_SUPPORT_802_11BE == 1)
+		ucEhtOption = prWifiVar->ucP2pGoEht;
 #endif
 	}
 
@@ -418,6 +455,14 @@ void bssDetermineApBssInfoPhyTypeSet(IN struct ADAPTER *prAdapter,
 		prBssInfo->ucPhyTypeSet |= PHY_TYPE_BIT_HE;
 	else if (!fgIsPureAp && IS_FEATURE_ENABLED(ucHeOption))
 		prBssInfo->ucPhyTypeSet |= PHY_TYPE_BIT_HE;
+#endif
+#if (CFG_SUPPORT_802_11BE == 1)
+	if (IS_FEATURE_DISABLED(ucEhtOption))
+		prBssInfo->ucPhyTypeSet &= ~PHY_TYPE_BIT_EHT;
+	else if (IS_FEATURE_FORCE_ENABLED(ucEhtOption))
+		prBssInfo->ucPhyTypeSet |= PHY_TYPE_BIT_EHT;
+	else if (!fgIsPureAp && IS_FEATURE_ENABLED(ucEhtOption))
+		prBssInfo->ucPhyTypeSet |= PHY_TYPE_BIT_EHT;
 #endif
 
 	prBssInfo->ucPhyTypeSet &= prAdapter->rWifiVar.ucAvailablePhyTypeSet;

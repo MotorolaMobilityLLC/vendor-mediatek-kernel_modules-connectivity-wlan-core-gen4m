@@ -2235,6 +2235,9 @@ struct HW_TX_AMPDU_METRICS {
 	uint16_t u2TxRange15AmpduCnt;
 	uint16_t u2TxRange16AmpduCnt;
 #endif
+#if (CFG_SUPPORT_802_11BE == 1)
+	/* TODO */
+#endif
 };
 
 struct HW_MIB_COUNTER {

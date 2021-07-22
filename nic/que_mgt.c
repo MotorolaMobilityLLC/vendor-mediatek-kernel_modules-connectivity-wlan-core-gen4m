@@ -2968,6 +2968,10 @@ uint32_t gmGetDequeueQuota(
 		;/* TBD */
 	}
 #endif
+#if (CFG_SUPPORT_802_11BE == 1)
+	else if (prStaRec->ucDesiredPhyTypeSet & PHY_TYPE_BIT_EHT)
+		;/* TBD */
+#endif
 
 	u4Quota = u4TotalQuota * u4Weight / 100;
 
@@ -5569,6 +5573,9 @@ void mqmProcessAssocRsp(IN struct ADAPTER *prAdapter,
 				pucIEStart, u2IELength, TRUE);
 			}
 #endif
+#if (CFG_SUPPORT_802_11BE == 1)
+			/*TODO */
+#endif
 
 #if ARP_MONITER_ENABLE
 			qmResetArpDetect();
@@ -5588,7 +5595,9 @@ void mqmProcessAssocRsp(IN struct ADAPTER *prAdapter,
 		}
 		}
 #endif
-
+#if (CFG_SUPPORT_802_11BE == 1)
+		/*TODO */
+#endif
 	}
 }
 
@@ -5645,6 +5654,10 @@ void mqmProcessBcn(IN struct ADAPTER *prAdapter,
 						u2IELength, FALSE);
 					}
 #endif
+#if (CFG_SUPPORT_802_11BE == 1)
+				/*TODO */
+#endif
+
 				}
 			}
 
@@ -5662,6 +5675,9 @@ void mqmProcessBcn(IN struct ADAPTER *prAdapter,
 					fgNewMUEdca = FALSE;
 				}
 			}
+#endif
+#if (CFG_SUPPORT_802_11BE == 1)
+			/*TODO */
 #endif
 		}
 	}		/* end of IS_BSS_ACTIVE() */
@@ -6184,6 +6200,10 @@ void mqmProcessScanResult(IN struct ADAPTER *prAdapter,
 	}
 #endif
 
+#if (CFG_SUPPORT_802_11BE == 1)
+	if (prStaRec->ucDesiredPhyTypeSet & PHY_TYPE_SET_802_11BE)
+		prStaRec->fgIsQoS = TRUE;
+#endif
 }
 
 /*----------------------------------------------------------------------------*/

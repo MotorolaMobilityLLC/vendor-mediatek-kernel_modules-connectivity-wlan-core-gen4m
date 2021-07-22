@@ -533,7 +533,9 @@ struct BSS_INFO {
 	struct _6G_OPER_INFOR_T r6gOperInfor;
 #endif
 #endif
-
+#if (CFG_SUPPORT_802_11BE == 1)
+	uint8_t  ucEhtOpParams[EHT_OP_BYTE_NUM];
+#endif
 #if (CFG_SUPPORT_802_11V_MBSSID == 1)
 	uint8_t ucMaxBSSIDIndicator;
 	uint8_t ucMBSSIDIndex;
@@ -910,6 +912,12 @@ struct WIFI_VAR {
 	uint8_t ucApSelAxWeight;
 	uint8_t ucApSelAxScoreDiv;
 #endif
+#if (CFG_SUPPORT_802_11BE == 1)
+	uint8_t ucStaEht;
+	uint8_t ucApEht;
+	uint8_t ucP2pGoEht;
+	uint8_t ucP2pGcEht;
+#endif
 	uint8_t ucApHt;
 	uint8_t ucApVht;
 	uint8_t ucP2pGoHt;
@@ -934,6 +942,11 @@ struct WIFI_VAR {
 	uint8_t ucHeCertForceAmsdu;
 	uint8_t ucTrigMacPadDur;
 	uint8_t ucStaHeBfee;
+#endif
+#if (CFG_SUPPORT_802_11BE == 1)
+	uint8_t ucEhtAmsduInAmpduTx;
+	uint8_t ucEhtAmsduInAmpduRx;
+	uint8_t ucStaEhtBfee;
 #endif
 #if (CFG_SUPPORT_TWT == 1)
 	uint8_t ucTWTRequester;
@@ -1029,7 +1042,10 @@ struct WIFI_VAR {
 	uint16_t u2RxHeBaSize;
 	uint16_t u2TxHeBaSize;
 #endif
-
+#if (CFG_SUPPORT_802_11BE == 1)
+	uint16_t u2RxEhtBaSize;
+	uint16_t u2TxEhtBaSize;
+#endif
 	uint8_t ucThreadScheduling;
 	uint8_t ucThreadPriority;
 	int8_t cThreadNice;

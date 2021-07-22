@@ -106,6 +106,10 @@
 #include "he_ie.h"
 #endif
 
+#if (CFG_SUPPORT_802_11BE == 1)
+#include "eht_ie.h"
+#endif
+
 #if CFG_SUPPORT_SWCR
 #include "swcr.h"
 #endif
@@ -194,6 +198,10 @@
 #include "he_rlm.h"
 #include "wlan_he.h"
 #endif /* CFG_SUPPORT_802_11AX == 1 */
+
+#if (CFG_SUPPORT_802_11BE == 1)
+#include "eht_rlm.h"
+#endif
 
 #if (CFG_SUPPORT_TWT == 1)
 #include "twt_req_fsm.h"

@@ -163,6 +163,9 @@
 #define HE_OP_BYTE_NUM                          3
 #define HE_MAC_CAP_BYTE_NUM                     6
 #define HE_PHY_CAP_BYTE_NUM                     11
+#define EHT_OP_BYTE_NUM                          (1)
+#define EHT_MAC_CAP_BYTE_NUM                    (2)
+#define EHT_PHY_CAP_BYTE_NUM                    (8)
 
 /*****************************************************************************
 *                             D A T A   T Y P E S
@@ -845,6 +848,11 @@ struct CMD_HE_BA_SIZE {
 	uint16_t u2RxBaSize;
 };
 
+struct CMD_EHT_BA_SIZE {
+	uint16_t u2TxBaSize;
+	uint16_t u2RxBaSize;
+};
+
 struct CMD_UPDATE_STA_RECORD {
 	uint8_t  ucStaIndex;
 	uint8_t  ucStaType;
@@ -926,6 +934,7 @@ struct CMD_UPDATE_STA_RECORD {
 	union BA_SIZE {
 		struct CMD_HTVHT_BA_SIZE rHtVhtBaSize;
 		struct CMD_HE_BA_SIZE rHeBaSize;
+		struct CMD_EHT_BA_SIZE rEhtBaSize;
 	} rBaSize;
 
 	uint16_t   u2PfmuId;   /* 0xFFFF means no access right for PFMU*/
@@ -976,6 +985,10 @@ struct CMD_UPDATE_STA_RECORD {
 	uint16_t u2He6gBandCapInfo;
 	uint8_t  aucPadding4[2];
 	uint8_t  aucPadding5[28];
+#if (CFG_SUPPORT_802_11BE == 1)
+	uint8_t ucEhtMacCapInfo[EHT_MAC_CAP_BYTE_NUM];
+	uint8_t ucEhtPhyCapInfo[EHT_PHY_CAP_BYTE_NUM];
+#endif
 #else
 	uint8_t  aucPadding4[32];
 #endif

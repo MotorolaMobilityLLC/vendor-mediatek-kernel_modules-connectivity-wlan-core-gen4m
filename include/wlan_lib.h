@@ -238,9 +238,11 @@
 #define WLAN_TYPE_UNKNOWN 0
 #define WLAN_TYPE_LEGACY 1
 #define WLAN_TYPE_HE 2
+#define WLAN_TYPE_EHT 3
 
 #define WLAN_LEGACY_MAX_BA_SIZE 64
 #define WLAN_HE_MAX_BA_SIZE 256
+#define WLAN_EHT_MAX_BA_SIZE 1024
 
 /* Define for wifi path usage */
 #define WLAN_FLAG_2G4_WF0		BIT(0)	/*1: support, 0: NOT support */
@@ -1103,6 +1105,7 @@ enum ENUM_MAX_BANDWIDTH_SETTING {
 	MAX_BW_80MHZ,
 	MAX_BW_160MHZ,
 	MAX_BW_80_80_MHZ,
+	MAX_BW_320MHZ,
 	MAX_BW_UNKNOWN
 };
 

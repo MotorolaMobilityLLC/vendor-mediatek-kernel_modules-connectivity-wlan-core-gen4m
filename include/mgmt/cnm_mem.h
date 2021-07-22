@@ -388,6 +388,15 @@ struct STA_RECORD {
 	uint16_t u2HeRxMcsMapBW80P80;
 	uint16_t u2HeTxMcsMapBW80P80;
 #endif
+#if (CFG_SUPPORT_802_11BE == 1)
+	/*--------------------------------------------------------------------*/
+	/* EHT capability if (prStaRec->ucPhyTypeSet &                        */
+	/*  PHY_TYPE_BIT_EHT) is set                                          */
+	/* They have the same definition with fields of information element   */
+	/*--------------------------------------------------------------------*/
+	uint8_t ucEhtMacCapInfo[EHT_MAC_CAP_BYTE_NUM];
+	uint8_t ucEhtPhyCapInfo[EHT_PHY_CAP_BYTE_NUM];
+#endif
 
 #if (CFG_SUPPORT_WIFI_6G == 1)
 	/* HE 6 GHz Band Capabilities */
