@@ -546,11 +546,20 @@ void nic_rxd_v1_check_wakeup_reason(
 				u2Temp);
 			break;
 		default:
-			DBGLOG(RX, WARN,
-				"abnormal packet, EthType 0x%04x wakeup host\n",
-				u2Temp);
-			DBGLOG_MEM8(RX, INFO,
-				pvHeader, u2PktLen > 50 ? 50:u2PktLen);
+			if (HAL_RX_STATUS_IS_LLC_MIS(prRxStatus)) {
+				DBGLOG(RX, WARN,
+					"abnormal packet, Header translate fail\n");
+				DBGLOG_MEM8(RX, INFO,
+					(uint8_t *)prSwRfb->prRxStatus,
+					prChipInfo->rxd_size);
+				DBGLOG_MEM8(RX, INFO, pvHeader, u2PktLen);
+			} else {
+				DBGLOG(RX, WARN,
+					"abnormal packet, EthType 0x%04x wakeup host\n",
+					u2Temp);
+				DBGLOG_MEM8(RX, INFO,
+					pvHeader, u2PktLen > 50 ? 50:u2PktLen);
+			}
 			break;
 		}
 		break;
