@@ -999,6 +999,7 @@ struct CHIP_DBG_OPS soc3_0_debug_ops = {
 	.showCsrInfo = NULL,
 	.showDmaschInfo = connac2x_show_dmashdl_info,
 	.dumpMacInfo = soc3_0_dump_mac_info,
+	.dumpTxdInfo = connac2x_dump_tmac_info,
 	.getFwDebug = connac2x_get_ple_int,
 	.setFwDebug = connac2x_set_ple_int,
 	.showHifInfo = NULL,
