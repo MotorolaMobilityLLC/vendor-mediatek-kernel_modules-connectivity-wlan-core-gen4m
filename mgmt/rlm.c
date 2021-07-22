@@ -5401,14 +5401,13 @@ void rlmProcessSpecMgtAction(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb)
 	struct STA_RECORD *prStaRec;
 	struct BSS_INFO *prBssInfo;
 	uint16_t u2IELength;
-#if 0
+#if CFG_SUPPORT_DFS
 	uint16_t u2Offset = 0;
 	struct IE_CHANNEL_SWITCH *prChannelSwitchAnnounceIE;
 	struct IE_SECONDARY_OFFSET *prSecondaryOffsetIE;
 	struct IE_WIDE_BAND_CHANNEL *prWideBandChannelIE;
-	u_int8_t fgHasWideBandIE = FALSE;
-	u_int8_t fgHasSCOIE = FALSE;
-	u_int8_t fgHasChannelSwitchIE = FALSE;
+	struct SWITCH_CH_AND_BAND_PARAMS *prCSAParams;
+	uint8_t ucCurrentCsaCount;
 #endif
 	struct IE_TPC_REQ *prTpcReqIE;
 	struct IE_TPC_REPORT *prTpcRepIE;
@@ -5498,8 +5497,11 @@ void rlmProcessSpecMgtAction(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb)
 			       "[Mgt Action] Correct TPC report IE !!\n");
 
 		break;
-#if 0 /* Process CSA in beacon */
+#if CFG_SUPPORT_DFS
 	case ACTION_CHNL_SWITCH:
+		prCSAParams = &prBssInfo->CSAParams;
+		ucCurrentCsaCount = MAX_CSA_COUNT;
+
 		IE_FOR_EACH(pucIE, u2IELength, u2Offset)
 		{
 			switch (IE_ID(pucIE)) {
@@ -5511,46 +5513,27 @@ void rlmProcessSpecMgtAction(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb)
 						    IE_WIDE_BAND_CHANNEL) -
 					     2)) {
 					DBGLOG(RLM, INFO,
-					       "[Mgt Action] ELEM_ID_WIDE_BAND_CHANNEL_SWITCH, Length\n");
+					       "[CSA Mgt] ELEM_ID_WIDE_BAND_CHANNEL_SWITCH, Length\n");
 					break;
 				}
 				DBGLOG(RLM, INFO,
-				       "[Mgt Action] ELEM_ID_WIDE_BAND_CHANNEL_SWITCH, 11AC\n");
+				       "[CSA Mgt] ELEM_ID_WIDE_BAND_CHANNEL_SWITCH, 11AC\n");
+
 				prWideBandChannelIE =
 					(struct IE_WIDE_BAND_CHANNEL *)pucIE;
-				prBssInfo->ucVhtChannelWidth =
+				prCSAParams->ucVhtBw =
 					prWideBandChannelIE->ucNewChannelWidth;
-				prBssInfo->ucVhtChannelFrequencyS1 =
+				prCSAParams->ucVhtS1 =
 					prWideBandChannelIE->ucChannelS1;
-				prBssInfo->ucVhtChannelFrequencyS2 =
+				prCSAParams->ucVhtS2 =
 					prWideBandChannelIE->ucChannelS2;
-
-				/* Revise by own OP BW if needed */
-				if ((prBssInfo->fgIsOpChangeChannelWidth) &&
-				    (rlmGetVhtOpBwByBssOpBw(
-					     prBssInfo
-						     ->ucOpChangeChannelWidth) <
-				     prBssInfo->ucVhtChannelWidth)) {
-
-					DBGLOG(RLM, LOUD,
-					"Change to w:%d s1:%d s2:%d since own changed BW < peer's WideBand BW",
-					prBssInfo->ucVhtChannelWidth,
-					prBssInfo->ucVhtChannelFrequencyS1,
-					prBssInfo->ucVhtChannelFrequencyS2);
-					rlmFillVhtOpInfoByBssOpBw(
-					prBssInfo,
-					prBssInfo
-					->ucOpChangeChannelWidth);
-				}
-
-				fgHasWideBandIE = TRUE;
 				break;
 
 			case ELEM_ID_CH_SW_ANNOUNCEMENT:
 				if (IE_LEN(pucIE) !=
 				    (sizeof(struct IE_CHANNEL_SWITCH) - 2)) {
 					DBGLOG(RLM, INFO,
-					       "[Mgt Action] ELEM_ID_CH_SW_ANNOUNCEMENT, Length\n");
+					       "[CSA Mgt] ELEM_ID_CH_SW_ANNOUNCEMENT, Length\n");
 					break;
 				}
 
@@ -5563,96 +5546,71 @@ void rlmProcessSpecMgtAction(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb)
 					/* Need to stop data
 					 * transmission immediately
 					 */
-					if (!g_fgHasStopTx) {
-						g_fgHasStopTx = TRUE;
+					if (!prBssInfo->fgHasStopTx) {
+						prBssInfo->fgHasStopTx = TRUE;
 						/* AP */
 						qmSetStaRecTxAllowed(prAdapter,
 							   prStaRec,
 							   FALSE);
 						DBGLOG(RLM, EVENT,
-							"[Ch] TxAllowed = FALSE\n");
+							"[CSA Mgt] TxAllowed = FALSE\n");
 					}
 
-					if (prChannelSwitchAnnounceIE
-						->ucChannelSwitchCount <= 5) {
-						DBGLOG(RLM, INFO,
-						"[Mgt Action] switch channel [%d]->[%d]\n",
+					DBGLOG(RLM, INFO,
+						"[CSA Mgt] switch channel [%d]->[%d]\n",
 						prBssInfo->ucPrimaryChannel,
 						prChannelSwitchAnnounceIE
 						    ->ucNewChannelNum);
-						prBssInfo->ucPrimaryChannel =
-						    prChannelSwitchAnnounceIE
-						    ->ucNewChannelNum;
-						prBssInfo->eBand =
-						    (prBssInfo
-						    ->ucPrimaryChannel
-						    <= 14) ? BAND_2G4 :
-						    BAND_5G;
-					}
+
+					prCSAParams->ucCsaNewCh =
+						prChannelSwitchAnnounceIE->
+							ucNewChannelNum;
+					ucCurrentCsaCount =
+						prChannelSwitchAnnounceIE->
+							ucChannelSwitchCount;
+
 				} else {
 					DBGLOG(RLM, INFO,
-					       "[Mgt Action] ucChannelSwitchMode = 0\n");
+					       "[CSA Mgt] ucChannelSwitchMode = 0\n");
 				}
-
-				fgHasChannelSwitchIE = TRUE;
 				break;
+
 			case ELEM_ID_SCO:
 				if (IE_LEN(pucIE) !=
 				    (sizeof(struct IE_SECONDARY_OFFSET) - 2)) {
 					DBGLOG(RLM, INFO,
-					       "[Mgt Action] ELEM_ID_SCO, Length\n");
+					       "[CSA Mgt] ELEM_ID_SCO, Length\n");
 					break;
 				}
 				prSecondaryOffsetIE =
 					(struct IE_SECONDARY_OFFSET *)pucIE;
+
 				DBGLOG(RLM, INFO,
-				       "[Mgt Action] SCO [%d]->[%d]\n",
+				       "[CSA Mgt] SCO [%d]->[%d]\n",
 				       prBssInfo->eBssSCO,
 				       prSecondaryOffsetIE->ucSecondaryOffset);
-				prBssInfo->eBssSCO =
+
+				prCSAParams->eSco = (enum ENUM_CHNL_EXT)
 					prSecondaryOffsetIE->ucSecondaryOffset;
-				fgHasSCOIE = TRUE;
 				break;
+
 			default:
 				break;
 			} /*end of switch IE_ID */
 		}	 /*end of IE_FOR_EACH */
-		if (fgHasChannelSwitchIE != FALSE) {
-			struct BSS_DESC *prBssDesc;
-			struct PARAM_SSID rSsid;
 
-			COPY_SSID(rSsid.aucSsid, rSsid.u4SsidLen,
-			      prBssInfo->aucSSID, prBssInfo->ucSSIDLen);
-			prBssDesc = scanSearchBssDescByBssidAndSsid(
-				prAdapter, prBssInfo->aucBSSID, TRUE, &rSsid);
-
-			if (fgHasWideBandIE == FALSE) {
-				prBssInfo->ucVhtChannelWidth = 0;
-				prBssInfo->ucVhtChannelFrequencyS1 =
-					prBssInfo->ucPrimaryChannel;
-				prBssInfo->ucVhtChannelFrequencyS2 = 0;
-			}
-			if (fgHasSCOIE == FALSE)
-				prBssInfo->eBssSCO = CHNL_EXT_SCN;
-
-			/* Check SAP channel */
-			p2pFuncSwitchSapChannel(prAdapter);
-
-			if (prBssDesc) {
-				prBssDesc->ucChannelNum =
-						prBssInfo->ucPrimaryChannel;
-				prBssDesc->eChannelWidth =
-						prBssInfo->ucVhtChannelWidth;
-				prBssDesc->ucCenterFreqS1 = prBssInfo->
-					ucVhtChannelFrequencyS1;
-				prBssDesc->ucCenterFreqS2 = prBssInfo->
-					ucVhtChannelFrequencyS2;
-			} else {
-				DBGLOG(RLM, WARN,
-				"[Mgt Action] BssDesc is not found!\n");
-			}
+		if (SHOULD_CH_SWITCH(ucCurrentCsaCount, prCSAParams)) {
+			cnmTimerStopTimer(prAdapter, &prBssInfo->rCsaTimer);
+			cnmTimerStartTimer(prAdapter, &prBssInfo->rCsaTimer,
+				prBssInfo->u2BeaconInterval *
+					ucCurrentCsaCount);
+			prCSAParams->ucCsaCount = ucCurrentCsaCount;
+			DBGLOG(RLM, INFO,
+				"[CSA Mgt] Channel switch Countdown: %d msecs\n",
+				prBssInfo->u2BeaconInterval *
+					prCSAParams->ucCsaCount);
 		}
-		nicUpdateBss(prAdapter, prBssInfo->ucBssIndex);
+
 		break;
 #endif
 	default:
