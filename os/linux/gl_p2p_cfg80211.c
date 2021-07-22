@@ -1968,6 +1968,7 @@ int mtk_p2p_cfg80211_channel_switch(struct wiphy *wiphy,
 
 		/* Set CSA IE parameters */
 		prGlueInfo->prAdapter->rWifiVar.fgCsaInProgress = TRUE;
+		prGlueInfo->prAdapter->rWifiVar.fgCsaInBeacon = FALSE;
 		prGlueInfo->prAdapter->rWifiVar.ucChannelSwitchMode = 1;
 		prGlueInfo->prAdapter->rWifiVar.ucNewChannelNumber =
 			nicFreq2ChannelNum(
