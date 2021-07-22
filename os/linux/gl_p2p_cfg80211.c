@@ -1967,14 +1967,20 @@ int mtk_p2p_cfg80211_channel_switch(struct wiphy *wiphy,
 			p2pFuncSetDfsState(DFS_STATE_INACTIVE);
 
 		/* Set CSA IE parameters */
-		prGlueInfo->prAdapter->rWifiVar.fgCsaInProgress = TRUE;
-		prGlueInfo->prAdapter->rWifiVar.fgCsaInBeacon = FALSE;
 		prGlueInfo->prAdapter->rWifiVar.ucChannelSwitchMode = 1;
 		prGlueInfo->prAdapter->rWifiVar.ucNewChannelNumber =
 			nicFreq2ChannelNum(
 				params->chandef.chan->center_freq * 1000);
 		prGlueInfo->prAdapter->rWifiVar.ucChannelSwitchCount =
 			params->count;
+
+		/* To prevent race condition, we have to set CSA flags
+		 * after all CSA parameters are updated. In this way,
+		 * we can guarantee that CSA IE will be and only be
+		 * reported once in the beacon.
+		 */
+		prGlueInfo->prAdapter->rWifiVar.fgCsaInProgress = TRUE;
+		prGlueInfo->prAdapter->rWifiVar.fgCsaInBeacon = FALSE;
 
 		/* Set new channel parameters */
 		prP2pSetNewChannelMsg = (struct MSG_P2P_SET_NEW_CHANNEL *)

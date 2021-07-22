@@ -782,6 +782,15 @@ void rlmGenerateCsaIE(struct ADAPTER *prAdapter, struct MSDU_INFO *prMsduInfo)
 		 * beacon for only once.
 		 */
 		prAdapter->rWifiVar.fgCsaInBeacon = TRUE;
+
+		/* Clean up CSA variable */
+		prAdapter->rWifiVar.ucChannelSwitchMode = 0;
+		prAdapter->rWifiVar.ucNewChannelNumber = 0;
+		prAdapter->rWifiVar.ucChannelSwitchCount = 0;
+		prAdapter->rWifiVar.ucSecondaryOffset = 0;
+		prAdapter->rWifiVar.ucNewChannelWidth = 0;
+		prAdapter->rWifiVar.ucNewChannelS1 = 0;
+		prAdapter->rWifiVar.ucNewChannelS2 = 0;
 	}
 }
 
