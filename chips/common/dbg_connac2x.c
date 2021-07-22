@@ -601,11 +601,11 @@ static void connac2x_event_dump_txd_mem(
 
 void connac2x_show_txd_Info(
 	struct ADAPTER *prAdapter,
-	u_int32_t fid)
+	uint32_t fid)
 {
 	struct EXT_CMD_EVENT_DUMP_MEM_T CmdMemDump;
-	u_int32_t Addr = 0;
-	u_int32_t rWlanStatus = WLAN_STATUS_SUCCESS;
+	uint32_t Addr = 0;
+	uint32_t rWlanStatus = WLAN_STATUS_SUCCESS;
 
 	DBGLOG(HAL, INFO, "inShowTXDINFO fid=%d 0x%x\n", fid, fid);
 
@@ -3383,17 +3383,17 @@ void connac2x_show_ple_info(struct ADAPTER *prAdapter, u_int8_t fgDumpTxd)
 {
 	struct BUS_INFO *prBusInfo;
 	struct PLE_TOP_CR *prCr;
-	u_int32_t int_n9_err = 0;
-	u_int32_t int_n9_err1 = 0;
-	u_int32_t ple_buf_ctrl = 0, pg_sz, pg_num;
-	u_int32_t ple_stat[25] = {0}, pg_flow_ctrl[10] = {0};
-	u_int32_t sta_pause[6] = {0}, dis_sta_map[6] = {0};
-	u_int32_t fpg_cnt, ffa_cnt, fpg_head, fpg_tail, hif_max_q, hif_min_q;
-	u_int32_t rpg_hif, upg_hif, cpu_max_q, cpu_min_q, rpg_cpu, upg_cpu;
-	u_int32_t i, j;
-	u_int32_t ple_peek[12] = {0};
-	u_int32_t ple_empty = 0;
-	u_int32_t ple_txd_empty = 0;
+	uint32_t int_n9_err = 0;
+	uint32_t int_n9_err1 = 0;
+	uint32_t ple_buf_ctrl = 0, pg_sz, pg_num;
+	uint32_t ple_stat[25] = {0}, pg_flow_ctrl[10] = {0};
+	uint32_t sta_pause[6] = {0}, dis_sta_map[6] = {0};
+	uint32_t fpg_cnt, ffa_cnt, fpg_head, fpg_tail, hif_max_q, hif_min_q;
+	uint32_t rpg_hif, upg_hif, cpu_max_q, cpu_min_q, rpg_cpu, upg_cpu;
+	uint32_t i, j;
+	uint32_t ple_peek[12] = {0};
+	uint32_t ple_empty = 0;
+	uint32_t ple_txd_empty = 0;
 	uint32_t buf_size = 1024, pos = 0;
 	char *buf;
 
@@ -3676,24 +3676,25 @@ void connac2x_show_pse_info(struct ADAPTER *prAdapter)
 {
 	struct BUS_INFO *prBusInfo;
 	struct PSE_TOP_CR *prCr;
-	u_int32_t int_n9_err = 0;
-	u_int32_t int_n9_err1 = 0;
-	u_int32_t pse_buf_ctrl = 0;
-	u_int32_t pg_sz = 0;
-	u_int32_t pg_num = 0;
-	u_int32_t pse_stat = 0;
-	u_int32_t pse_stat_mask = 0;
-	u_int32_t fpg_cnt, ffa_cnt, fpg_head, fpg_tail;
-	u_int32_t max_q, min_q, rsv_pg, used_pg;
-	u_int32_t i;
-	u_int32_t group_quota = 0;
-	u_int32_t group_info = 0;
-	u_int32_t freepg_cnt = 0;
-	u_int32_t freepg_head_tail = 0;
+	uint32_t int_n9_sta = 0;
+	uint32_t int_n9_err = 0;
+	uint32_t int_n9_err1 = 0;
+	uint32_t pse_buf_ctrl = 0;
+	uint32_t pg_sz = 0;
+	uint32_t pg_num = 0;
+	uint32_t pse_stat = 0;
+	uint32_t pse_stat_mask = 0;
+	uint32_t fpg_cnt, ffa_cnt, fpg_head, fpg_tail;
+	uint32_t max_q, min_q, rsv_pg, used_pg;
+	uint32_t i;
+	uint32_t group_quota = 0;
+	uint32_t group_info = 0;
+	uint32_t freepg_cnt = 0;
+	uint32_t freepg_head_tail = 0;
 	struct pse_group_info *pse_group;
 	struct pse_group_info *group;
 	char *str;
-	u_int32_t pse_peek[10] = {0};
+	uint32_t pse_peek[10] = {0};
 
 	prBusInfo = prAdapter->chip_info->bus_info;
 	pse_group = prBusInfo->prPseGroup;
@@ -3706,6 +3707,7 @@ void connac2x_show_pse_info(struct ADAPTER *prAdapter)
 	HAL_MCR_RD(prAdapter, prCr->rFreepgHeadTail.u4Addr,
 		   &freepg_head_tail);
 
+	HAL_MCR_RD(prAdapter, prCr->rIntN9Sts.u4Addr, &int_n9_sta);
 	HAL_MCR_RD(prAdapter, prCr->rIntN9ErrSts.u4Addr, &int_n9_err);
 	HAL_MCR_RD(prAdapter, prCr->rIntN9Err1Sts.u4Addr, &int_n9_err1);
 
@@ -3720,27 +3722,28 @@ void connac2x_show_pse_info(struct ADAPTER *prAdapter)
 	HAL_MCR_RD(prAdapter, prCr->rFsmPeekCr08.u4Addr, &pse_peek[8]);
 	HAL_MCR_RD(prAdapter, prCr->rFsmPeekCr09.u4Addr, &pse_peek[9]);
 
-	/* Error Status Info */
+	/* Status Info */
 	DBGLOG(HAL, INFO,
-	"PSE Error Status(0x%08x):0x%08x,PSE Error 1 Status(0x%08x):0x%08x\n",
-			prCr->rIntN9ErrSts.u4Addr, int_n9_err,
-			prCr->rIntN9Err1Sts.u4Addr, int_n9_err1);
+	"PSE Int Status(0x%08x):0x%08x, PSE Error Status(0x%08x):0x%08x, PSE Error 1 Status(0x%08x):0x%08x\n",
+		prCr->rIntN9Sts.u4Addr, int_n9_sta,
+		prCr->rIntN9ErrSts.u4Addr, int_n9_err,
+		prCr->rIntN9Err1Sts.u4Addr, int_n9_err1);
 
 	DBGLOG(HAL, INFO,
-	"00(0x%08x):0x%08x,01(0x%08x):0x%08x02(0x%08x):0x%08x,03(0x%08x):0x%08x04(0x%08x):0x%08x,05(0x%08x):0x%08x\n",
-				prCr->rFsmPeekCr00.u4Addr, pse_peek[0],
-				prCr->rFsmPeekCr01.u4Addr, pse_peek[1],
-				prCr->rFsmPeekCr02.u4Addr, pse_peek[2],
-				prCr->rFsmPeekCr03.u4Addr, pse_peek[3],
-				prCr->rFsmPeekCr04.u4Addr, pse_peek[4],
-				prCr->rFsmPeekCr05.u4Addr, pse_peek[5]);
+	"00(0x%08x):0x%08x, 01(0x%08x):0x%08x, 02(0x%08x):0x%08x, 03(0x%08x):0x%08x, 04(0x%08x):0x%08x\n",
+		prCr->rFsmPeekCr00.u4Addr, pse_peek[0],
+		prCr->rFsmPeekCr01.u4Addr, pse_peek[1],
+		prCr->rFsmPeekCr02.u4Addr, pse_peek[2],
+		prCr->rFsmPeekCr03.u4Addr, pse_peek[3],
+		prCr->rFsmPeekCr04.u4Addr, pse_peek[4]);
 
 	DBGLOG(HAL, INFO,
-	"06(0x%08x):0x%08x,07(0x%08x):0x%08x08(0x%08x):0x%08x,09(0x%08x):0x%08x\n",
-				prCr->rFsmPeekCr06.u4Addr, pse_peek[6],
-				prCr->rFsmPeekCr07.u4Addr, pse_peek[7],
-				prCr->rFsmPeekCr08.u4Addr, pse_peek[8],
-				prCr->rFsmPeekCr09.u4Addr, pse_peek[9]);
+	"05(0x%08x):0x%08x, 06(0x%08x):0x%08x, 07(0x%08x):0x%08x, 08(0x%08x):0x%08x, 09(0x%08x):0x%08x\n",
+		prCr->rFsmPeekCr05.u4Addr, pse_peek[5],
+		prCr->rFsmPeekCr06.u4Addr, pse_peek[6],
+		prCr->rFsmPeekCr07.u4Addr, pse_peek[7],
+		prCr->rFsmPeekCr08.u4Addr, pse_peek[8],
+		prCr->rFsmPeekCr09.u4Addr, pse_peek[9]);
 
 	/* Configuration Info */
 	pg_sz = (pse_buf_ctrl & prCr->rPbufCtrlPageSizeCfg.u4Mask) >>
