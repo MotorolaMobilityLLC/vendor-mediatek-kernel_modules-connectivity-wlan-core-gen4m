@@ -437,6 +437,38 @@ int halTimeCompare(struct timespec64 *prTs1, struct timespec64 *prTs2)
 		return -1;
 	return 0;
 }
+
+static void halNotifyTxHangEvent(struct ADAPTER *prAdapter,
+				 struct MSDU_TOKEN_HISTORY_INFO *prHistory)
+{
+	struct TOKEN_HISTORY *prCur, *prNext;
+	uint32_t u4Idx, u4CurIdx, u4NextIdx;
+
+	ASSERT(prAdapter);
+	ASSERT(prHistory);
+
+	u4CurIdx = prHistory->u4CurIdx;
+
+	for (u4Idx = 0; u4Idx < MSDU_TOKEN_HISTORY_NUM - 1; u4Idx++) {
+		u4NextIdx = (u4CurIdx + 1) % MSDU_TOKEN_HISTORY_NUM;
+		prCur = &prHistory->au4List[u4CurIdx];
+		prNext = &prHistory->au4List[u4NextIdx];
+
+		if (prCur->u4LongestId != prNext->u4LongestId)
+			return;
+
+		if (prCur->u4UsedCnt == 0)
+			return;
+
+		if (prCur->u4UsedCnt > prNext->u4UsedCnt)
+			return;
+
+		u4CurIdx = u4NextIdx;
+	}
+
+	kalSendUevent("abnormaltrx=DIR:TX,Event:Hang");
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
  * @brief Checking tx hang
@@ -450,6 +482,7 @@ static bool halIsTxHang(struct ADAPTER *prAdapter)
 {
 	struct MSDU_TOKEN_INFO *prTokenInfo;
 	struct MSDU_TOKEN_ENTRY *prToken;
+	struct MSDU_TOKEN_HISTORY_INFO *prHistory;
 	struct timespec64 rNowTs, rTime, rLongest, rTimeout;
 	uint32_t u4Idx = 0, u4TokenId = 0;
 	bool fgIsTimeout = false;
@@ -459,6 +492,7 @@ static bool halIsTxHang(struct ADAPTER *prAdapter)
 	ASSERT(prAdapter->prGlueInfo);
 
 	prTokenInfo = &prAdapter->prGlueInfo->rHifInfo.rTokenInfo;
+	prHistory = &prTokenInfo->rHistory;
 	prWifiVar = &prAdapter->rWifiVar;
 
 	rTimeout.tv_sec = prWifiVar->ucMsduReportTimeout;
@@ -503,6 +537,14 @@ static bool halIsTxHang(struct ADAPTER *prAdapter)
 				rLongest.tv_sec);
 		if (prToken->prPacket)
 			DBGLOG_MEM32(HAL, INFO, prToken->prPacket, 64);
+		prHistory->au4List[prHistory->u4CurIdx].u4LongestId = u4TokenId;
+		prHistory->au4List[prHistory->u4CurIdx].u4UsedCnt =
+			prTokenInfo->u4UsedCnt;
+		prHistory->u4CurIdx =
+			(prHistory->u4CurIdx + 1) % MSDU_TOKEN_HISTORY_NUM;
+		halNotifyTxHangEvent(prAdapter, prHistory);
+	} else {
+		kalMemZero(prHistory, sizeof(struct MSDU_TOKEN_HISTORY_INFO));
 	}
 
 	return fgIsTimeout;
