@@ -843,7 +843,7 @@ static uint32_t heRlmRecHeMcsMap(
 			BITS(ucHeCapMcsOwnNotSupportOffset, 15);
 	}
 	if (prStaRec->u2HeRxMcsMapBW80 != u2McsMap)
-		DBGLOG(RLM, TRACE, "Change HeRxMcsMapBW80 from 0x%x to 0x%x\n",
+		DBGLOG(RLM, WARN, "Change HeRxMcsMapBW80 from 0x%x to 0x%x\n",
 			u2McsMap, prStaRec->u2HeRxMcsMapBW80);
 
 	u4McsMapOffset += sizeof(uint16_t);
@@ -912,6 +912,16 @@ static uint32_t heRlmRecHeMcsMap(
 		prStaRec->u2HeRxMcsMapBW80P80 = BITS(0, 15);
 		prStaRec->u2HeTxMcsMapBW80P80 = BITS(0, 15);
 	}
+
+	log_dbg(RLM, LOUD, "PhyCap:1st:%x,..heRlmRecHeMcsMap-80:%x,%x,160:%x,%x,80+80:%x,%x\n",
+		prStaRec->ucHePhyCapInfo[0],
+		prStaRec->u2HeRxMcsMapBW80,
+		prStaRec->u2HeTxMcsMapBW80,
+		prStaRec->u2HeRxMcsMapBW160,
+		prStaRec->u2HeTxMcsMapBW160,
+		prStaRec->u2HeRxMcsMapBW80P80,
+		prStaRec->u2HeTxMcsMapBW80P80
+		);
 
 	return u4McsMapOffset;
 }
@@ -982,6 +992,23 @@ void heRlmRecHeCapInfo(
 			prStaRec->ucHePhyCapInfo));
 #endif
 
+	log_dbg(RLM, LOUD, "ucHePhyCapInfo-0-%x,%x,%x,%x,%x,%x\n",
+			prStaRec->ucHePhyCapInfo[0],
+			prStaRec->ucHePhyCapInfo[1],
+			prStaRec->ucHePhyCapInfo[2],
+			prStaRec->ucHePhyCapInfo[3],
+			prStaRec->ucHePhyCapInfo[4],
+			prStaRec->ucHePhyCapInfo[5]
+			);
+
+	log_dbg(RLM, LOUD, "ucHePhyCapInfo-1-%x,%x,%x,%x,%x,%x\n",
+			prStaRec->ucHePhyCapInfo[6],
+			prStaRec->ucHePhyCapInfo[7],
+			prStaRec->ucHePhyCapInfo[8],
+			prStaRec->ucHePhyCapInfo[9],
+			prStaRec->ucHePhyCapInfo[10]
+			);
+
 	/* Disable peer bfer cap indication to FW
 	 * if our bfee feature is not on
 	 */
@@ -1026,6 +1053,15 @@ void heRlmRecHeOperation(
 
 	prBssInfo->ucBssColorInfo = prHeOp->ucBssColorInfo;
 	prBssInfo->u2HeBasicMcsSet = prHeOp->u2HeBasicMcsSet;
+
+
+	log_dbg(RLM, LOUD, "RlmHeOpInfo-0x:%x,%x,%x,%x,%x\n",
+		prBssInfo->ucHeOpParams[0],
+		prBssInfo->ucHeOpParams[1],
+		prBssInfo->ucHeOpParams[2],
+		prBssInfo->ucBssColorInfo,
+		prBssInfo->u2HeBasicMcsSet
+		);
 
 #if (CFG_SUPPORT_WIFI_6G == 1)
 	if (HE_IS_CO_HOSTED_BSS(prHeOp->ucHeOpParams))

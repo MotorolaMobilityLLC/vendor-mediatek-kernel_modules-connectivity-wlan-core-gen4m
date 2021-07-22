@@ -2150,33 +2150,33 @@ void rlmModifyVhtBwPara(uint8_t *pucVhtChannelFrequencyS1,
 
 void rlmTransferHe6gOpInfor(IN uint8_t ucChannelNum,
 	IN uint8_t ucChannelWidth,
-	OUT enum ENUM_CHANNEL_WIDTH *peChannelWidth,
+	OUT uint8_t *pucChannelWidth,
 	OUT uint8_t *pucCenterFreqS1,
 	OUT uint8_t *pucCenterFreqS2,
 	OUT enum ENUM_CHNL_EXT *peSco)
 {
 	if (ucChannelWidth == HE_OP_CHANNEL_WIDTH_20)
-		*peChannelWidth = CW_20_40MHZ;
+		*pucChannelWidth = (uint8_t)CW_20_40MHZ;
 	else if (ucChannelWidth == HE_OP_CHANNEL_WIDTH_40) {
-		*peChannelWidth = CW_20_40MHZ;
+		*pucChannelWidth = (uint8_t)CW_20_40MHZ;
 		if ((ucChannelNum + 2) ==
 			*pucCenterFreqS1)
 			*peSco = CHNL_EXT_SCA;
 		else
 			*peSco = CHNL_EXT_SCB;
 	} else if (ucChannelWidth == HE_OP_CHANNEL_WIDTH_80)
-		*peChannelWidth = CW_80MHZ;
+		*pucChannelWidth = (uint8_t)CW_80MHZ;
 	else if (
 		((*pucCenterFreqS1 - *pucCenterFreqS2) == 8) ||
 		((*pucCenterFreqS2 - *pucCenterFreqS1) == 8))
-		*peChannelWidth = CW_160MHZ;
+		*pucChannelWidth = (uint8_t)CW_160MHZ;
 	else
-		*peChannelWidth = CW_80P80MHZ;
+		*pucChannelWidth = (uint8_t)CW_80P80MHZ;
 
 	/*add IEEE BW160 patch*/
 	rlmModifyHE6GBwPara(pucCenterFreqS1,
 			   pucCenterFreqS2,
-			   (uint8_t *)peChannelWidth);
+			   pucChannelWidth);
 }
 void rlmModifyHE6GBwPara(uint8_t *pucHe6gChannelFrequencyS1,
 			uint8_t *pucHe6gChannelFrequencyS2,
