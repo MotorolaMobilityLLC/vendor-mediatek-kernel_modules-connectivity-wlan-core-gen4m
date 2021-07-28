@@ -450,7 +450,7 @@ u_int8_t halSetDriverOwn(IN struct ADAPTER *prAdapter)
 	struct mt66xx_chip_info *prChipInfo;
 	struct BUS_INFO *prBusInfo;
 	u_int8_t fgStatus = TRUE;
-	uint32_t i, u4CurrTick, u4WriteTick, u4WriteTickTemp;
+	uint32_t i, u4CurrTick;
 	u_int8_t fgTimeout;
 	u_int8_t fgResult;
 
@@ -469,7 +469,6 @@ u_int8_t halSetDriverOwn(IN struct ADAPTER *prAdapter)
 	DBGLOG(INIT, TRACE, "DRIVER OWN Start\n");
 	KAL_REC_TIME_START();
 
-	u4WriteTick = 0;
 	u4CurrTick = kalGetTimeTick();
 	i = 0;
 
@@ -506,16 +505,6 @@ u_int8_t halSetDriverOwn(IN struct ADAPTER *prAdapter)
 			halDriverOwnTimeout(prAdapter, u4CurrTick, fgTimeout);
 			fgStatus = FALSE;
 			break;
-		}
-
-		u4WriteTickTemp = kalGetTimeTick();
-		if ((i == 0) || TIME_AFTER(u4WriteTickTemp,
-			(u4WriteTick + LP_OWN_REQ_CLR_INTERVAL_MS))) {
-			/* Driver get LP ownership per 200 ms,
-			 * to avoid iteration time not accurate
-			 */
-			HAL_LP_OWN_CLR(prAdapter, &fgResult);
-			u4WriteTick = u4WriteTickTemp;
 		}
 
 		/* Delay for LP engine to complete its operation. */
