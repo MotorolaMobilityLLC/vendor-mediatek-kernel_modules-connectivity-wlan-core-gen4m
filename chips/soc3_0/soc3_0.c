@@ -448,6 +448,7 @@ static void soc3_0asicConnac2xInterruptSettings(
 		IntMask.field_wfdma1_ena.wfdma1_tx_done_2 = 1;
 		IntMask.field_wfdma1_ena.wfdma1_tx_done_16 = 1;
 		IntMask.field_wfdma1_ena.wfdma1_tx_done_17 = 1;
+		IntMask.field_wfdma1_ena.wfdma1_tx_coherent = 1;
 		IntMask.field_wfdma1_ena.wfdma1_rx_done_0 = 1;
 		IntMask.field_wfdma1_ena.wfdma1_mcu2host_sw_int_en = 1;
 		HAL_MCR_WR(prAdapter,
@@ -468,6 +469,7 @@ static void soc3_0asicConnac2xInterruptSettings(
 		IntMask.field_wfdma1_ena.wfdma1_tx_done_2 = 1;
 		IntMask.field_wfdma1_ena.wfdma1_tx_done_16 = 1;
 		IntMask.field_wfdma1_ena.wfdma1_tx_done_17 = 1;
+		IntMask.field_wfdma1_ena.wfdma1_tx_coherent = 0;
 		IntMask.field_wfdma1_ena.wfdma1_rx_done_0 = 1;
 		IntMask.field_wfdma1_ena.wfdma1_mcu2host_sw_int_en = 1;
 		HAL_MCR_WR(prAdapter,
@@ -587,6 +589,12 @@ void soc3_0ReadExtIntStatus(
 		*pu4IntStatus |= WHISR_TX_DONE_INT;
 	}
 
+	if (u4RegValue & CONNAC2X_EXT_WFDMA1_TX_COHERENT_INT) {
+		*pu4IntStatus |= WHISR_ABNORMAL_INT;
+		ap_write_value |=
+			(u4RegValue & CONNAC2X_EXT_WFDMA1_TX_COHERENT_INT);
+	}
+
 	if (prHifInfo->ulIntFlag & HIF_FLAG_SW_WFDMA_INT)
 		*pu4IntStatus |= WHISR_TX_DONE_INT;
 
@@ -679,6 +687,18 @@ void soc3_0asicConnac2xProcessRxInterrupt(
 	if (rIntrStatus.field_conn2x_ext.wfdma0_rx_done_3 ||
 		(prAdapter->u4NoMoreRfb & BIT(RX_RING_TXDONE1_IDX_4)))
 		halRxReceiveRFBs(prAdapter, RX_RING_TXDONE1_IDX_4, TRUE);
+}
+
+void soc3_0ProcessAbnormalInterrupt(struct ADAPTER *prAdapter)
+{
+	struct GL_HIF_INFO *prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
+	union WPDMA_INT_STA_STRUCT rIntrStatus;
+
+	rIntrStatus = (union WPDMA_INT_STA_STRUCT)prHifInfo->u4IntStatus;
+	if (rIntrStatus.field_conn2x_ext.wfdma1_tx_coherent) {
+		DBGLOG(HAL, ERROR, "wfdma1 tx coherent, trigger SER\n");
+		halProcessAbnormalInterrupt(prAdapter);
+	}
 }
 
 static void soc3_0SetMDRXRingPriorityInterrupt(struct ADAPTER *prAdapter)
@@ -904,6 +924,7 @@ struct BUS_INFO soc3_0_bus_info = {
 	.disableSwInterrupt = asicConnac2xDisablePlatformSwIRQ,
 	.processTxInterrupt = soc3_0asicConnac2xProcessTxInterrupt,
 	.processRxInterrupt = soc3_0asicConnac2xProcessRxInterrupt,
+	.processAbnormalInterrupt = soc3_0ProcessAbnormalInterrupt,
 	.tx_ring_ext_ctrl = asicConnac2xWfdmaTxRingExtCtrl,
 	.rx_ring_ext_ctrl = asicConnac2xWfdmaRxRingExtCtrl,
 	/* null wfdmaManualPrefetch if want to disable manual mode */
