@@ -907,7 +907,7 @@ static void soc7_0asicConnac2xWfdmaManualPrefetch(
 	}
 	HAL_MCR_WR(prAdapter,
 		   WF_WFDMA_HOST_DMA0_WPDMA_TX_RING14_EXT_CTRL_ADDR,
-		   0x04000004);
+		   u4WrVal);
 	u4WrVal += 0x00400000;
 
 	soc7_0SetMDRXRingPriorityInterrupt(prAdapter);
