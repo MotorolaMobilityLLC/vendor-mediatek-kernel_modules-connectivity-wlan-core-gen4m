@@ -1507,8 +1507,7 @@ static void connac2x_print_wtbl_info(
 					rate_idx + 1,
 					txrate[rate_idx],
 					txmode,
-					(txmode < ENUM_TX_MODE_NUM ?
-					RATE_V2_HW_TX_MODE_STR[txmode] : "N/A"),
+					RATE_V2_HW_TX_MODE_STR[txmode],
 					mcs,
 					mcs < 4 ? HW_TX_RATE_CCK_STR[mcs] :
 					   HW_TX_RATE_CCK_STR[4],
@@ -1519,8 +1518,7 @@ static void connac2x_print_wtbl_info(
 					rate_idx + 1,
 					txrate[rate_idx],
 					txmode,
-					(txmode < ENUM_TX_MODE_NUM ?
-					RATE_V2_HW_TX_MODE_STR[txmode] : "N/A"),
+					RATE_V2_HW_TX_MODE_STR[txmode],
 					mcs,
 					nicHwRateOfdmStr(mcs),
 					nss, stbc);

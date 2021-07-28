@@ -122,7 +122,7 @@ void halSwWfdmaInit(struct GLUE_INFO *prGlueInfo)
 		SW_WFDMA_EMI_SIZE);
 
 	DBGLOG_LIMITED(INIT, INFO,
-		       "EmiPhyBase:0x%llx offset:0x%x, ioremap region 0x%lX @ 0x%lX\n",
+		       "EmiPhyBase:0x%llx offset:0x%x, ioremap region 0x%lX @ 0x%p\n",
 		       (uint64_t)gConEmiPhyBaseFinal,
 		       prSwWfdmaInfo->u4EmiOffset,
 		       gConEmiSizeFinal, pucEmiBaseAddr);
@@ -155,7 +155,7 @@ void halSwWfdmaUninit(struct GLUE_INFO *prGlueInfo)
 		return;
 	}
 
-	DBGLOG_LIMITED(INIT, INFO, "iounmap 0x%lX\n",
+	DBGLOG_LIMITED(INIT, INFO, "iounmap 0x%p\n",
 		       prSwWfdmaInfo->pucIoremapAddr);
 	iounmap(prSwWfdmaInfo->pucIoremapAddr);
 	release_mem_region(
