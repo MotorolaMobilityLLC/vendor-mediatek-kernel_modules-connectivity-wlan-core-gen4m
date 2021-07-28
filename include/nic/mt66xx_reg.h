@@ -909,7 +909,8 @@ union WPDMA_GLO_CFG_STRUCT {
 		uint32_t big_endian:1;
 		uint32_t dmad_32b_en:1;
 		uint32_t bypass_dmashdl_txring:1;
-		uint32_t reserved10:2;
+		uint32_t csr_wfdma_dummy_reg:1;
+		uint32_t csr_axi_bufrdy_byp:1;
 		uint32_t fifo_little_endian:1;
 		uint32_t csr_rx_wb_ddone:1;
 		uint32_t csr_pp_hif_txp_active_en:1;

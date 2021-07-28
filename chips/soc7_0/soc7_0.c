@@ -1006,6 +1006,7 @@ static void soc7_0asicConnac2xWpdmaConfig(struct GLUE_INFO *prGlueInfo,
 		u4DmaCfgCr = asicConnac2xWfdmaCfgAddrGet(prGlueInfo, 0);
 		GloCfg.field_conn2x.tx_dma_en = 1;
 		GloCfg.field_conn2x.rx_dma_en = 1;
+		GloCfg.field_conn2x.csr_wfdma_dummy_reg = 1;
 		HAL_MCR_WR(prAdapter, u4DmaCfgCr, GloCfg.word);
 	}
 }
