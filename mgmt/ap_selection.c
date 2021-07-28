@@ -1206,8 +1206,8 @@ void scanGetCurrentEssChnlList(struct ADAPTER *prAdapter,
 	struct LINK *prCurEssLink;
 	struct AIS_SPECIFIC_BSS_INFO *prAisSpecBssInfo;
 	uint8_t aucChnlBitMap[30] = {0,};
-	uint8_t aucChnlApNum[215] = {0,};
-	uint8_t aucChnlUtil[215] = {0,};
+	uint8_t aucChnlApNum[234] = {0,};
+	uint8_t aucChnlUtil[234] = {0,};
 	uint8_t ucChnlCount = 0;
 	uint32_t i;
 	uint8_t j = 0;
@@ -1256,7 +1256,7 @@ void scanGetCurrentEssChnlList(struct ADAPTER *prAdapter,
 	}
 	LINK_FOR_EACH_ENTRY(prBssDesc, prBSSDescList, rLinkEntry,
 		struct BSS_DESC) {
-		if (prBssDesc->ucChannelNum > 214)
+		if (prBssDesc->ucChannelNum > 233)
 			continue;
 		/* Statistic AP num for each channel */
 		if (aucChnlApNum[prBssDesc->ucChannelNum] < 255)
