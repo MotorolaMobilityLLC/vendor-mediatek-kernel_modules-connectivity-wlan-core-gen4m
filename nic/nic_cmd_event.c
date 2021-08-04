@@ -3048,7 +3048,7 @@ void nicExtEventICapIQData(IN struct ADAPTER *prAdapter,
 		       "u4SmplCnt is larger than buffer size\n");
 	}
 
-	if (prIcapInfo->u4IQArrayIndex + prICapEvent->u4SmplCnt >=
+	if (prIcapInfo->u4IQArrayIndex + prICapEvent->u4SmplCnt >
 	    MAX_ICAP_IQ_DATA_CNT) {
 		DBGLOG(RFTEST, ERROR,
 		       "Too many packets from FW, skip rest of them\n");
