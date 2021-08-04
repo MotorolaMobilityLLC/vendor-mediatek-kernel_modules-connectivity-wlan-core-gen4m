@@ -9757,11 +9757,13 @@ int priv_driver_set_miracast(IN struct net_device *prNetDev,
 				prAdapter->rWifiVar.rScanInfo.fgSkipDFS = 0;
 			}
 
-			mboxSendMsg(prAdapter, MBOX_ID_0, (struct MSG_HDR *)
-				    prMsgWfdCfgUpdate, MSG_SEND_METHOD_BUF);
-
+			/* Set mira mode to FW first */
 			priv_driver_set_chip_config(prNetDev, pcCommand,
 						    i4TotalLen);
+
+			/* Update WFD settings including WMM parameters */
+			mboxSendMsg(prAdapter, MBOX_ID_0, (struct MSG_HDR *)
+				    prMsgWfdCfgUpdate, MSG_SEND_METHOD_BUF);
 		} /* prMsgWfdCfgUpdate */
 		else {
 			ASSERT(FALSE);
