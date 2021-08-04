@@ -450,6 +450,9 @@ struct CHIP_DBG_OPS soc7_0_DebugOps = {
 	.show_rx_rate_info = connac2x_show_rx_rate_info,
 	.show_rx_rssi_info = connac2x_show_rx_rssi_info,
 	.show_stat_info = connac2x_show_stat_info,
+#ifdef CFG_SUPPORT_LINK_QUALITY_MONITOR
+	.get_rx_rate_info = soc7_0_get_rx_rate_info,
+#endif
 	.show_wfdma_dbg_probe_info = soc7_0_show_wfdma_dbg_probe_info,
 	.show_wfdma_wrapper_info = soc7_0_show_wfdma_wrapper_info,
 };
