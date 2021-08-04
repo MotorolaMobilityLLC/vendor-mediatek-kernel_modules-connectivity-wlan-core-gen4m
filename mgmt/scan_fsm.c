@@ -1036,8 +1036,8 @@ scnFsmDumpScanDoneInfo(IN struct ADAPTER *prAdapter,
 		return;
 	}
 
-	print_info_ch(SCN, INFO, "Channel : %s\n", aucChannelNum);
-	print_info(SCN, INFO, "IdleTime	: %s\n", au2ChannelIdleTime);
+	print_info_ch(SCN, INFO, "Channel  : %s\n", aucChannelNum);
+	print_info(SCN, INFO, "IdleTime : %s\n", au2ChannelIdleTime);
 	print_info(SCN, INFO, "MdrdyCnt : %s\n", aucChannelMDRDYCnt);
 	print_info(SCN, INFO, "BAndPCnt : %s\n", aucChannelBAndPCnt);
 	if (prScanDone->ucScanDoneVersion >= 4)

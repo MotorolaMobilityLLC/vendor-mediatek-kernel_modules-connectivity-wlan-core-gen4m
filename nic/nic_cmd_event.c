@@ -2530,13 +2530,65 @@ uint32_t nicCfgChipCapPhyCap(IN struct ADAPTER *prAdapter,
 #if (CFG_SUPPORT_802_11BE == 1)
 	/* TODO */
 #endif
+	/* Overwrite bandwidth settings by phy capability */
+	if (prAdapter->rWifiVar.ucStaBandwidth > prPhyCap->ucMaxBandwidth) {
+		prAdapter->rWifiVar.ucStaBandwidth = prPhyCap->ucMaxBandwidth;
+		wlanCfgSetUint32(prAdapter, "StaBw",
+			prAdapter->rWifiVar.ucStaBandwidth);
+	}
+
+	if (prAdapter->rWifiVar.ucSta5gBandwidth > prPhyCap->ucMaxBandwidth) {
+		prAdapter->rWifiVar.ucSta5gBandwidth = prPhyCap->ucMaxBandwidth;
+		wlanCfgSetUint32(prAdapter, "Sta5gBw",
+			prAdapter->rWifiVar.ucSta5gBandwidth);
+	}
+
+	if (prAdapter->rWifiVar.ucApBandwidth > prPhyCap->ucMaxBandwidth) {
+		prAdapter->rWifiVar.ucApBandwidth = prPhyCap->ucMaxBandwidth;
+		wlanCfgSetUint32(prAdapter, "ApBw",
+			prAdapter->rWifiVar.ucApBandwidth);
+	}
+
+	if (prAdapter->rWifiVar.ucAp5gBandwidth > prPhyCap->ucMaxBandwidth) {
+		prAdapter->rWifiVar.ucAp5gBandwidth = prPhyCap->ucMaxBandwidth;
+		wlanCfgSetUint32(prAdapter, "Ap5gBw",
+			prAdapter->rWifiVar.ucAp5gBandwidth);
+	}
+
+	if (prAdapter->rWifiVar.ucP2p5gBandwidth > prPhyCap->ucMaxBandwidth) {
+		prAdapter->rWifiVar.ucP2p5gBandwidth = prPhyCap->ucMaxBandwidth;
+		wlanCfgSetUint32(prAdapter, "P2p5gBw",
+			prAdapter->rWifiVar.ucP2p5gBandwidth);
+	}
+
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	if (prAdapter->rWifiVar.ucSta6gBandwidth > prPhyCap->ucMaxBandwidth) {
+		prAdapter->rWifiVar.ucSta6gBandwidth = prPhyCap->ucMaxBandwidth;
+		wlanCfgSetUint32(prAdapter, "Sta6gBw",
+			prAdapter->rWifiVar.ucSta6gBandwidth);
+	}
+
+	if (prAdapter->rWifiVar.ucAp6gBandwidth > prPhyCap->ucMaxBandwidth) {
+		prAdapter->rWifiVar.ucAp6gBandwidth = prPhyCap->ucMaxBandwidth;
+		wlanCfgSetUint32(prAdapter, "Ap6gBw",
+			prAdapter->rWifiVar.ucAp6gBandwidth);
+	}
+
+	if (prAdapter->rWifiVar.ucP2p6gBandwidth > prPhyCap->ucMaxBandwidth) {
+		prAdapter->rWifiVar.ucP2p6gBandwidth = prPhyCap->ucMaxBandwidth;
+		wlanCfgSetUint32(prAdapter, "P2p6gBw",
+			prAdapter->rWifiVar.ucP2p6gBandwidth);
+	}
+#endif
+
 	DBGLOG(INIT, TRACE,
-		"Vht [%u] He[%u] 5gBand [%d], Nss [%d], Dbdc [%d]\n",
+		"Vht [%u] He[%u] 5gBand [%d], Nss [%d], Dbdc [%d], bw [%d]\n",
 			prPhyCap->ucVht,
 			prPhyCap->ucHe,
 			prPhyCap->uc5gBand,
 			prPhyCap->ucNss,
-			prPhyCap->ucDbdc);
+			prPhyCap->ucDbdc,
+			prPhyCap->ucMaxBandwidth);
 
 	DBGLOG(INIT, TRACE,
 		"TxLdpc [%u], RxLdpc [%u], StbcTx [%u], StbcRx [%u], WifiPath [%x]\n",
