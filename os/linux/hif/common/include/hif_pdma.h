@@ -615,4 +615,7 @@ void halSwWfdmaGetDidx(struct GLUE_INFO *prGlueInfo, uint32_t *pu4Didx);
 bool halSwWfdmaWriteCmd(struct GLUE_INFO *prGlueInfo);
 bool halSwWfdmaProcessDmaDone(IN struct GLUE_INFO *prGlueInfo);
 void halSwWfdmaDumpDebugLog(struct GLUE_INFO *prGlueInfo);
+
+void halAddDriverLatencyCount(IN struct ADAPTER *prAdapter,
+	uint32_t u4DriverLatency);
 #endif /* HIF_PDMA_H__ */

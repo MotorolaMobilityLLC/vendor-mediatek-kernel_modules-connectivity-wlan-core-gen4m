@@ -180,6 +180,7 @@ static unsigned long rtc_update;
 
 static void kalDumpHifStats(IN struct ADAPTER *prAdapter);
 static uint32_t kalPerMonUpdate(IN struct ADAPTER *prAdapter);
+static void kalDumpMsduReportStats(IN struct ADAPTER *prAdapter);
 
 /*******************************************************************************
  *                              F U N C T I O N S
@@ -9030,6 +9031,85 @@ int _kalSprintf(char *buf, const char *fmt, ...)
 	return (retval < 0)?(0):(retval);
 }
 
+static void kalDumpMsduReportStats(IN struct ADAPTER *prAdapter)
+{
+#if CFG_SUPPORT_TX_LATENCY_STATS
+	static unsigned long next_update; /* in ms */
+	unsigned long update_interval; /* in ms */
+	struct TX_LATENCY_REPORT_STATS *stats = &prAdapter->rMsduReportStats;
+	char *buf;
+	uint32_t u4BufferSize = 512, pos = 0;
+	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
+	int i;
+
+	stats = &prAdapter->rMsduReportStats;
+	if (!stats->fgTxLatencyEnabled || time_before(jiffies, next_update))
+		return;
+
+	buf = (char *)kalMemAlloc(u4BufferSize, VIR_MEM_TYPE);
+	if (buf == NULL)
+		return;
+	kalMemZero(buf, u4BufferSize);
+
+	/* By wifi.cfg first. If it is not set 1s by default; 100ms on more. */
+	if (prWifiVar->u4MsduStatsUpdateInterval != 0)
+		update_interval =
+			prWifiVar->u4MsduStatsUpdateInterval * HZ / 1000;
+	else {
+		uint32_t u4DebugLevel = 0;
+
+		wlanGetDriverDbgLevel(DBG_TX_IDX, &u4DebugLevel);
+		update_interval = 1000 * HZ / 1000;
+		if (u4DebugLevel & DBG_CLASS_TRACE)
+			update_interval = 100 * HZ / 1000;
+	}
+	next_update = jiffies + update_interval;
+
+	/* TX_Delay [%u:%u:%u:%u]=[%u:%u:%u:%u:%u] */
+	pos += kalSnprintf(buf + pos, u4BufferSize - pos, "TX_Delay ");
+	for (i = 0; i < LATENCY_STATS_MAX_SLOTS-1; i++)
+		pos += kalSnprintf(buf + pos, u4BufferSize - pos, "%s%u%s",
+			i == 0 ? "[" : ":",
+			prWifiVar->au4DriverTxDelayMax[i],
+			i != LATENCY_STATS_MAX_SLOTS-2 ? "" : "]=");
+	for (i = 0; i < LATENCY_STATS_MAX_SLOTS; i++)
+		pos += kalSnprintf(buf + pos, u4BufferSize - pos, "%s%u%s",
+			i == 0 ? "[" : ":", stats->au2DriverLatency[i],
+			i != LATENCY_STATS_MAX_SLOTS-1 ? "" : "] ");
+
+	for (i = 0; i < LATENCY_STATS_MAX_SLOTS-1; i++)
+		pos += kalSnprintf(buf + pos, u4BufferSize - pos, "%s%u%s",
+			i == 0 ? "[" : ":",
+			prWifiVar->au4ConnsysTxDelayMax[i],
+			i != LATENCY_STATS_MAX_SLOTS-2 ? "" : "]=");
+	for (i = 0; i < LATENCY_STATS_MAX_SLOTS; i++)
+		pos += kalSnprintf(buf + pos, u4BufferSize - pos, "%s%u%s",
+			i == 0 ? "[" : ":", stats->au2ConnsysLatency[i],
+			i != LATENCY_STATS_MAX_SLOTS-1 ? "" : "] ");
+
+	for (i = 0; i < LATENCY_STATS_MAX_SLOTS-1; i++)
+		pos += kalSnprintf(buf + pos, u4BufferSize - pos, "%s%u%s",
+			i == 0 ? "[" : ":",
+			prWifiVar->au4MacTxDelayMax[i],
+			i != LATENCY_STATS_MAX_SLOTS-2 ? "" : "]=");
+	for (i = 0; i < LATENCY_STATS_MAX_SLOTS; i++)
+		pos += kalSnprintf(buf + pos, u4BufferSize - pos, "%s%u%s",
+			i == 0 ? "[" : ":", stats->au2MacLatency[i],
+			i != LATENCY_STATS_MAX_SLOTS-1 ? "" : "] ");
+
+	pos += kalSnprintf(buf + pos, u4BufferSize - pos, "Txfail:%u",
+			stats->u2TxFail);
+
+	kalMemZero(stats->au2DriverLatency, sizeof(stats->au2DriverLatency));
+	kalMemZero(stats->au2ConnsysLatency, sizeof(stats->au2ConnsysLatency));
+	kalMemZero(stats->au2MacLatency, sizeof(stats->au2MacLatency));
+	stats->u2TxFail = 0;
+
+	DBGLOG(HAL, INFO, "%s", buf);
+	kalMemFree(buf, VIR_MEM_TYPE, u4BufferSize);
+#endif
+}
+
 static void kalDumpHifStats(IN struct ADAPTER *prAdapter)
 {
 	struct HIF_STATS *prHifStats;
@@ -9043,6 +9123,8 @@ static void kalDumpHifStats(IN struct ADAPTER *prAdapter)
 
 	if (!prAdapter)
 		return;
+
+	kalDumpMsduReportStats(prAdapter);
 
 	prHifStats = &prAdapter->rHifStats;
 	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;

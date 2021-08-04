@@ -1106,6 +1106,111 @@ void halHifSwInfoUnInit(IN struct GLUE_INFO *prGlueInfo)
 #endif
 }
 
+#if CFG_SUPPORT_TX_LATENCY_STATS
+void halAddDriverLatencyCount(IN struct ADAPTER *prAdapter,
+	uint32_t u4DriverLatency)
+{
+	struct TX_LATENCY_REPORT_STATS *stats = &prAdapter->rMsduReportStats;
+	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
+	uint8_t i;
+
+	for (i = 0; i < LATENCY_STATS_MAX_SLOTS; i++) {
+		if (u4DriverLatency <= prWifiVar->au4DriverTxDelayMax[i]) {
+			GLUE_INC_REF_CNT(stats->au2DriverLatency[i]);
+			break;
+		}
+	}
+}
+
+static void halAddConnsysLatencyCount(IN struct ADAPTER *prAdapter,
+	uint32_t u4ConnsysLatency)
+{
+	struct TX_LATENCY_REPORT_STATS *stats = &prAdapter->rMsduReportStats;
+	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
+	uint8_t i;
+
+	for (i = 0; i < LATENCY_STATS_MAX_SLOTS; i++) {
+		if (u4ConnsysLatency <= prWifiVar->au4ConnsysTxDelayMax[i]) {
+			GLUE_INC_REF_CNT(stats->au2ConnsysLatency[i]);
+			break;
+		}
+	}
+}
+
+static void halAddMacLatencyCount(IN struct ADAPTER *prAdapter,
+	uint32_t u4MacLatency)
+{
+	struct TX_LATENCY_REPORT_STATS *stats = &prAdapter->rMsduReportStats;
+	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
+	uint8_t i;
+
+	for (i = 0; i < LATENCY_STATS_MAX_SLOTS; i++) {
+		if (u4MacLatency <= prWifiVar->au4MacTxDelayMax[i]) {
+			GLUE_INC_REF_CNT(stats->au2MacLatency[i]);
+			break;
+		}
+	}
+}
+#endif
+
+static void halMsduReportStatsP0(IN struct ADAPTER *prAdapter,
+		union HW_MAC_MSDU_TOKEN_T *msduToken, uint32_t u4Token)
+{
+#if CFG_SUPPORT_TX_LATENCY_STATS
+	struct TX_LATENCY_REPORT_STATS *stats = &prAdapter->rMsduReportStats;
+	struct MSDU_TOKEN_ENTRY *prTokenEntry;
+	struct WIFI_VAR *prWifiVar = NULL;
+	uint32_t u4ConnsysLatency;
+	uint32_t u4MacLatency;
+	struct timespec64 rNowTs;
+
+	if (u4Token >= HIF_TX_MSDU_TOKEN_NUM)
+		return;
+
+	prTokenEntry = halGetMsduTokenEntry(prAdapter, u4Token);
+	prWifiVar = &prAdapter->rWifiVar;
+	stats->fgTxLatencyEnabled = 1;
+
+	/*
+	 * Driver latency counted in wlanTxLifetimeTagPacket,
+	 * since MSDU info freed on passed to DMA.
+	 */
+
+	ktime_get_ts64(&rNowTs);
+	if (rNowTs.tv_nsec < prTokenEntry->rTs.tv_nsec) {
+		rNowTs.tv_sec -= 1;
+		rNowTs.tv_nsec += NSEC_PER_SEC;
+	}
+	u4ConnsysLatency =
+		(rNowTs.tv_sec - prTokenEntry->rTs.tv_sec) * MSEC_PER_SEC +
+		(rNowTs.tv_nsec - prTokenEntry->rTs.tv_nsec) / NSEC_PER_MSEC;
+	halAddConnsysLatencyCount(prAdapter, u4ConnsysLatency);
+
+	u4MacLatency = msduToken->rFormatV3.rP0.u4TxCnt;
+	halAddMacLatencyCount(prAdapter, u4MacLatency);
+
+	if (prWifiVar->fgPacketLatencyLog)
+		DBGLOG(HAL, INFO, "Latency C: %u M: %u; tok=%u",
+			u4ConnsysLatency, u4MacLatency, u4Token);
+
+	if (unlikely(msduToken->rFormatV3.rP0.u4Stat)) {
+		GLUE_INC_REF_CNT(stats->u2TxFail);
+		GLUE_INC_REF_CNT(stats->u2ContinuousTxFail);
+		if (prAdapter->rWifiVar.u4ContinuousTxFailThreshold <=
+			stats->u2ContinuousTxFail) {
+			char uevent[64];
+
+			kalSnprintf(uevent, sizeof(uevent),
+				"Continuous TX Failed %u",
+				stats->u2ContinuousTxFail);
+			kalSendUevent(uevent);
+		}
+	} else {
+		stats->u2ContinuousTxFail = 0;
+	}
+#endif
+}
+
 void halRxProcessMsduReport(IN struct ADAPTER *prAdapter,
 			    IN OUT struct SW_RFB *prSwRfb)
 {
@@ -1159,10 +1264,14 @@ void halRxProcessMsduReport(IN struct ADAPTER *prAdapter,
 				rFormatV2.u2MsduID;
 		else {
 			if (!prMsduReport->au4MsduToken[u4Idx].
-				rFormatV3.rP0.u4Pair)
+				rFormatV3.rP0.u4Pair) {
 				u4Token = prMsduReport->au4MsduToken[u4Idx].
 						rFormatV3.rP0.u4MsduID;
-			else {
+
+				halMsduReportStatsP0(prAdapter,
+					&prMsduReport->au4MsduToken[u4Idx],
+					u4Token);
+			} else {
 				u4Idx++;
 				continue;
 			}

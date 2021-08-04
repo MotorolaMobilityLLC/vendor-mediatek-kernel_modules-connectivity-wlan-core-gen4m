@@ -865,11 +865,18 @@ struct HW_MAC_MSDU_REPORT {
 	/* DW 1 */
 	union {
 		struct {
-	uint32_t         u4TxdCount:8;
-	uint32_t         u4Rsv1:8;
-	uint32_t         u4Ver:3;
-	uint32_t         u4Rsv2:13;
+			uint32_t         u4TxdCount:8;
+			uint32_t         u4Rsv1:8;
+			uint32_t         u4Ver:3;
+			uint32_t         u4Rsv2:13;
 		} field;
+		struct {
+			uint32_t         u4TxdCount:8;
+			uint32_t         u4Rsv1:8;
+			uint32_t         u4Ver:3;
+			uint32_t         u4Rsv2:1;
+			uint32_t         u4PseFid:12;
+		} field_v3;
 
 		uint32_t word;
 	} DW1;

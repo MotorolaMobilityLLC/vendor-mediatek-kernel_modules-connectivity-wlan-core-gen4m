@@ -2403,9 +2403,7 @@ uint32_t nicTxMsduQueue(IN struct ADAPTER *prAdapter,
 					       TX_PROF_TAG_DRV_TX_DONE);
 			wlanFillTimestamp(prAdapter, prMsduInfo->prPacket,
 					       PHASE_HIF_TX);
-		}
-
-		if (!fgTxDoneHandler)
+		} else if (!fgTxDoneHandler)
 			wlanTxProfilingTagMsdu(prAdapter, prMsduInfo,
 						TX_PROF_TAG_DRV_TX_DONE);
 

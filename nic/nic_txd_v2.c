@@ -393,6 +393,8 @@ void nic_txd_v2_compose(
 	HAL_MAC_CONNAC2X_TXD_SET_WLAN_INDEX(
 		prTxDesc, prMsduInfo->ucWlanIndex);
 
+	HAL_MAC_CONNAC2X_TXD_SET_VTA(prTxDesc, 1);
+
 	/* Header format */
 	if (prMsduInfo->fgIs802_11) {
 		HAL_MAC_CONNAC2X_TXD_SET_HEADER_FORMAT(
