@@ -518,11 +518,13 @@ OS_SYSTIME g_rLastCsaSysTime;
 
 static struct CNM_OPMODE_BSS_CONTROL_T g_arBssOpControl[BSS_DEFAULT_NUM];
 static uint8_t *apucCnmOpModeReq[CNM_OPMODE_REQ_MAX_CAP+1] = {
+	(uint8_t *) DISP_STRING("ANT Ctrl"),
 	(uint8_t *) DISP_STRING("DBDC"),
 	(uint8_t *) DISP_STRING("DBDC Scan"),
 	(uint8_t *) DISP_STRING("COEX"),
 	(uint8_t *) DISP_STRING("SmartGear"),
 	(uint8_t *) DISP_STRING("SmartGear_1T2R"),
+	(uint8_t *) DISP_STRING("ANT Ctrl_1T2R"),
 	(uint8_t *) DISP_STRING("CoAnt"),
 	(uint8_t *) DISP_STRING("N/A"),
 	(uint8_t *) DISP_STRING("MAX_CAP")
@@ -3882,6 +3884,9 @@ cnmOpModeMapEvtReason(
 	case EVENT_OPMODE_CHANGE_REASON_ANT_CTRL:
 		eReqIdx = CNM_OPMODE_REQ_ANT_CTRL;
 		break;
+	case EVENT_OPMODE_CHANGE_REASON_ANT_CTRL_1T2R:
+		eReqIdx = CNM_OPMODE_REQ_ANT_CTRL_1T2R;
+		break;
 	default:
 		eReqIdx = CNM_OPMODE_REQ_NUM;
 		break;
@@ -4051,6 +4056,7 @@ cnmOpModeSetTRxNss(
 		= CNM_OPMODE_REQ_STATUS_SUCCESS;
 	uint8_t ucOpRxNssFinal, ucOpTxNssFinal, ucOpBwFinal;
 	enum ENUM_CNM_OPMODE_REQ_T eRunReq;
+	uint8_t ucSendAct = TRUE;
 
 	ASSERT(prAdapter);
 	if (ucBssIndex > prAdapter->ucHwBssIdNum ||
@@ -4127,14 +4133,16 @@ cnmOpModeSetTRxNss(
 		}
 
 		/* Step 4. Execute OpMode change function for alive BSS */
+		if (eNewReq == CNM_OPMODE_REQ_SMARTGEAR_1T2R ||
+			eNewReq == CNM_OPMODE_REQ_ANT_CTRL_1T2R)
+			ucSendAct = FALSE;
+
 		eRlmStatus = rlmChangeOperationMode(prAdapter,
 					ucBssIndex,
 					ucOpBwFinal,
 					ucOpRxNssFinal,
 					ucOpTxNssFinal,
-					#if CFG_SUPPORT_SMART_GEAR
-					eNewReq,
-					#endif
+					ucSendAct,
 					cnmOpModeCallbackDispatcher
 		);
 

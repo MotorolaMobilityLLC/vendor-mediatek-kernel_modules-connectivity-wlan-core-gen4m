@@ -496,9 +496,7 @@ rlmChangeOperationMode(
 	uint8_t ucChannelWidth,
 	uint8_t ucOpRxNss,
 	uint8_t ucOpTxNss,
-	#if CFG_SUPPORT_SMART_GEAR
-	uint8_t eNewReq,
-	#endif
+	uint8_t ucSendAct,
 	PFN_OPMODE_NOTIFY_DONE_FUNC pfOpChangeHandler
 );
 

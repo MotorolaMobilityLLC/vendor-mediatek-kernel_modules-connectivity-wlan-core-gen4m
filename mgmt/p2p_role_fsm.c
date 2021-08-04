@@ -2984,9 +2984,7 @@ p2pRoleFsmRunEventChnlGrant(IN struct ADAPTER *prAdapter,
 						prP2pBssInfo->ucBssIndex),
 					prP2pBssInfo->ucOpRxNss,
 					prP2pBssInfo->ucOpTxNss,
-					#if CFG_SUPPORT_SMART_GEAR
-					0x00,
-					#endif
+					TRUE,
 					rlmDummyChangeOpHandler);
 
 				/* Indicate channel switch to kernel */

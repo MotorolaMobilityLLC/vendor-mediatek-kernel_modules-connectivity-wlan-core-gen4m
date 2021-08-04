@@ -6797,9 +6797,7 @@ enum ENUM_OP_CHANGE_STATUS_T
 rlmChangeOperationMode(
 	struct ADAPTER *prAdapter, uint8_t ucBssIndex,
 	uint8_t ucChannelWidth, uint8_t ucOpRxNss, uint8_t ucOpTxNss,
-	#if CFG_SUPPORT_SMART_GEAR
-	uint8_t eNewReq,
-	#endif
+	uint8_t ucSendAct,
 	PFN_OPMODE_NOTIFY_DONE_FUNC pfOpChangeHandler
 	)
 {
@@ -6903,11 +6901,12 @@ rlmChangeOperationMode(
 			}
 		}
 
-#if CFG_SUPPORT_SMART_GEAR
-		if (eNewReq != CNM_OPMODE_REQ_SMARTGEAR_1T2R) {
-#endif		/* <5.2> Send operating mode notification frame (STA mode)
-		 * No action frame is needed if we only changed OpTxNss.
-		 */
+		if (!ucSendAct) {
+			/* no need to send action frame, just done */
+			rlmCompleteOpModeChange(prAdapter, prBssInfo, TRUE);
+			return OP_CHANGE_STATUS_VALID_CHANGE_CALLBACK_DONE;
+		}
+
 #if CFG_SUPPORT_802_11AC
 		if (RLM_NET_IS_11AC(prBssInfo) &&
 			(fgIsChangeBw || fgIsChangeRxNss)) {
@@ -6952,9 +6951,7 @@ rlmChangeOperationMode(
 					ucBssIndex, ucChannelWidth);
 			}
 		}
-#if CFG_SUPPORT_SMART_GEAR
-	}
-#endif
+
 		/* Error handling */
 		if (u4Status != WLAN_STATUS_SUCCESS) {
 			rlmCompleteOpModeChange(prAdapter, prBssInfo, FALSE);
@@ -6963,9 +6960,6 @@ rlmChangeOperationMode(
 
 		/* <5.3> Change OP Info w/o waiting for notification Tx done */
 		if (prBssInfo->pfOpChangeHandler == NULL ||
-#if CFG_SUPPORT_SMART_GEAR
-			eNewReq == 0x04 /* CNM_OPMODE_REQ_SMARTGEAR_1T2R */ ||
-#endif
 			(!fgIsChangeBw && !fgIsChangeRxNss)) {
 			rlmCompleteOpModeChange(prAdapter, prBssInfo, TRUE);
 			/* No callback */
