@@ -1821,14 +1821,11 @@ void asicRxPerfIndProcessRXV(IN struct ADAPTER *prAdapter,
 			prRxStatusGroup3, 0) &
 			RX_VT_SHORT_GI) ? 1 : 0;	/* VHTA2 B0 */
 
-		if ((ucMcs > PHY_RATE_MCS9) ||
-			(ucFrMode > RX_VT_FR_MODE_160) ||
-			(ucShortGI > MAC_GI_SHORT))
-			return;
-
 		/* ucRate(500kbs) = u4PhyRate(100kbps) */
 		u4PhyRate = nicGetPhyRateByMcsRate(ucMcs, ucFrMode,
 					ucShortGI);
+		if (u4PhyRate == 0)
+			return;
 		u2Rate = u4PhyRate / 5;
 
 	}

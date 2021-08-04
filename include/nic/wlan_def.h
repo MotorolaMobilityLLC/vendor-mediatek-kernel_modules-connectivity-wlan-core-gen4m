@@ -124,6 +124,8 @@
 #define PHY_RATE_MCS7           0x7
 #define PHY_RATE_MCS8           0x8
 #define PHY_RATE_MCS9           0x9
+#define PHY_RATE_MCS10          0xA
+#define PHY_RATE_MCS11          0xB
 #define PHY_RATE_MCS32          0x20
 
 #define PHY_RATE_DCM			0x10
@@ -178,6 +180,8 @@
 #define RATE_VHT_MCS_7          (TX_MODE_VHT | PHY_RATE_MCS7)
 #define RATE_VHT_MCS_8          (TX_MODE_VHT | PHY_RATE_MCS8)
 #define RATE_VHT_MCS_9          (TX_MODE_VHT | PHY_RATE_MCS9)
+#define RATE_VHT_MCS_10         (TX_MODE_VHT | PHY_RATE_MCS10)
+#define RATE_VHT_MCS_11         (TX_MODE_VHT | PHY_RATE_MCS11)
 
 #define RATE_HE_ER_DCM_MCS_0	(TX_MODE_HE_ER_SU | PHY_RATE_DCM)
 #define RATE_HE_ER_TONE_106_MCS_0	(TX_MODE_HE_ER_SU | PHY_RATE_TONE_106)
@@ -622,7 +626,9 @@ enum ENUM_VHT_RATE_INDEX {
 	VHT_RATE_MCS7_INDEX,
 	VHT_RATE_MCS8_INDEX,
 	VHT_RATE_MCS9_INDEX,
-	VHT_RATE_NUM		/* 10 */
+	VHT_RATE_MCS10_INDEX,
+	VHT_RATE_MCS11_INDEX,
+	VHT_RATE_NUM		/* 12 */
 };
 
 enum ENUM_PREMABLE_OPTION {
