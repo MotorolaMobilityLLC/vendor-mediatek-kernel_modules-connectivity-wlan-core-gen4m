@@ -591,10 +591,10 @@ void rlmHandleObssStatusEventPkt(struct ADAPTER *prAdapter,
  *
  * \param[in]
  *
- * \return none
+ * \return if beacon was updated
  */
 /*----------------------------------------------------------------------------*/
-void rlmUpdateParamsForAP(struct ADAPTER *prAdapter,
+u_int8_t rlmUpdateParamsForAP(struct ADAPTER *prAdapter,
 		struct BSS_INFO *prBssInfo,
 		u_int8_t fgUpdateBeacon)
 {
@@ -611,7 +611,7 @@ void rlmUpdateParamsForAP(struct ADAPTER *prAdapter,
 
 	if (!IS_BSS_ACTIVE(prBssInfo)
 		|| prBssInfo->eCurrentOPMode != OP_MODE_ACCESS_POINT)
-		return;
+		return FALSE;
 
 	fgErpProtectMode = FALSE;
 	eHtProtectMode = HT_PROTECT_MODE_NONE;
@@ -717,6 +717,8 @@ void rlmUpdateParamsForAP(struct ADAPTER *prAdapter,
 	/* Update Beacon content if related IE content is changed */
 	if (fgUpdateBeacon)
 		bssUpdateBeaconContent(prAdapter, prBssInfo->ucBssIndex);
+
+	return fgUpdateBeacon;
 }
 #if 0
 /*----------------------------------------------------------------------------*/

@@ -1917,6 +1917,7 @@ void p2pFuncDfsSwitchCh(IN struct ADAPTER *prAdapter,
 	struct CMD_RDD_ON_OFF_CTRL *prCmdRddOnOffCtrl;
 	uint8_t role_idx = 0;
 	u_int8_t fgIsCrossBand = FALSE;
+	u_int8_t fgIsPureAp = TRUE;
 
 	DEBUGFUNC("p2pFuncDfsSwitchCh()");
 
@@ -1950,9 +1951,15 @@ void p2pFuncDfsSwitchCh(IN struct ADAPTER *prAdapter,
 		prBssInfo->ucConfigAdHocAPMode = AP_MODE_MIXED_11BG;
 	}
 
+	fgIsPureAp = p2pFuncIsAPMode(
+			prAdapter->rWifiVar.prP2PConnSettings
+			[prBssInfo->u4PrivateData]);
+
 	/* Overwrite BSS PHY type set by Feature Options */
 	bssDetermineApBssInfoPhyTypeSet(prAdapter,
-		TRUE, prBssInfo);
+		fgIsPureAp, prBssInfo);
+
+	DBGLOG(P2P, TRACE, "Phy type: 0x%x\n", prBssInfo->ucPhyTypeSet);
 
 	prBssInfo->ucNonHTBasicPhyType = (uint8_t)
 		rNonHTApModeAttributes
@@ -1983,7 +1990,10 @@ void p2pFuncDfsSwitchCh(IN struct ADAPTER *prAdapter,
 	 * Notification IE and assume wrong Rx NSS.
 	 */
 	prBssInfo->fgIsOpChangeRxNss = TRUE;
-	bssUpdateBeaconContent(prAdapter, prBssInfo->ucBssIndex);
+
+	if (rlmUpdateParamsForAP(prAdapter, prBssInfo, FALSE) == FALSE)
+		bssUpdateBeaconContent(prAdapter, prBssInfo->ucBssIndex);
+
 	prBssInfo->fgIsOpChangeRxNss = FALSE;
 
 	/* Reset HW TSF Update Mode and Beacon Mode */
