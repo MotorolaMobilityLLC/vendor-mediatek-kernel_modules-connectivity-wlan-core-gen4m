@@ -7963,6 +7963,10 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 		prAdapter, "SapChannelSwitchPolicy",
 		P2P_CHANNEL_SWITCH_POLICY_SCC);
 
+	prWifiVar->fgSapConcurrencyPolicy = (uint32_t) wlanCfgGetUint32(
+		prAdapter, "SapConcurrencyPolicy",
+		P2P_CONCURRENCY_POLICY_REMOVE);
+
 	prWifiVar->fgAllowSameBandDualSta = (uint8_t) wlanCfgGetUint32(
 		prAdapter, "AllowSameBandDualSta", FEATURE_ENABLED);
 

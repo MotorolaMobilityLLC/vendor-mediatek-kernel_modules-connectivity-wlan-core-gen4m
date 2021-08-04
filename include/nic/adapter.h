@@ -1241,6 +1241,7 @@ struct WIFI_VAR {
 
 	uint8_t fgSapCheckPmkidInDriver;
 	uint8_t fgSapChannelSwitchPolicy;
+	uint8_t fgSapConcurrencyPolicy;
 	uint8_t fgAllowSameBandDualSta;
 
 #if CFG_SUPPORT_NAN

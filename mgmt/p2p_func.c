@@ -6549,14 +6549,28 @@ void p2pFuncSwitchSapChannel(
 		}
 	}
 
-	/* Assume only one sap bss info */
-	if (prAisBssInfo)
-		p2pFuncRemoveOneSap(prAdapter);
+	/* Check other ap */
+	if (prAdapter->rWifiVar.fgSapConcurrencyPolicy ==
+		P2P_CONCURRENCY_POLICY_REMOVE)
+		if (prAisBssInfo)
+			p2pFuncRemoveOneSap(prAdapter);
+
 	prP2pBssInfo = cnmGetSapBssInfo(prAdapter);
 	if (!prP2pBssInfo) {
 		DBGLOG(P2P, TRACE, "SAP is not active\n");
 		goto exit;
 	}
+
+	if (prAdapter->rWifiVar.fgSapConcurrencyPolicy ==
+		P2P_CONCURRENCY_POLICY_KEEP) {
+		struct BSS_INFO *prSapBssInfo =
+			cnmGetOtherSapBssInfo(prAdapter,
+			prP2pBssInfo);
+		if (prSapBssInfo &&
+			(prP2pBssInfo->eBand != eStaBand))
+			prP2pBssInfo = prSapBssInfo;
+	}
+
 	if (prP2pBssInfo->eCurrentOPMode != OP_MODE_ACCESS_POINT) {
 		DBGLOG(P2P, TRACE, "SAP is during initialization\n");
 		goto exit;
@@ -6635,7 +6649,9 @@ void p2pFuncSwitchSapChannel(
 		}
 
 		DBGLOG(P2P, INFO,
-			"[SCC] StaCH(%d), SapCH(%d)(dfs: %u)\n",
+			"[SCC][%d][Bss%d] StaCH(%d), SapCH(%d)(dfs: %u)\n",
+			prP2pBssInfo->u4PrivateData,
+			prP2pBssInfo->ucBssIndex,
 			ucStaChannelNum, ucSapChannelNum, fgIsSapDfs);
 
 		/* Use sta ch info to do sap ch switch */
