@@ -1020,7 +1020,7 @@
 
 #if (CFG_SUPPORT_WIFI_6G == 1)
 /* Add dynamic tx power support for 6G before turning on this option !!! */
-#define CFG_SUPPORT_DYNAMIC_PWR_LIMIT		0
+#define CFG_SUPPORT_DYNAMIC_PWR_LIMIT		1
 #else
 #define CFG_SUPPORT_DYNAMIC_PWR_LIMIT		1
 #endif
@@ -1522,7 +1522,7 @@
 #if (CFG_SUPPORT_802_11AX == 1)
 #if (CFG_SUPPORT_WIFI_6G == 1)
 /* Add HE tx power support for 6G before turning on this option !!! */
-#define CFG_SUPPORT_PWR_LIMIT_HE		0
+#define CFG_SUPPORT_PWR_LIMIT_HE		1
 #else
 #define CFG_SUPPORT_PWR_LIMIT_HE		1
 #endif /* CFG_SUPPORT_WIFI_6G */
