@@ -6720,6 +6720,7 @@ static void rlmCompleteOpModeChange(struct ADAPTER *prAdapter,
 	uint8_t strLen = 0;
 	uint32_t strOutLen = 0;
 #endif
+	u_int8_t fgIsSwitchingP2pChnl = FALSE;
 
 	ASSERT((prAdapter != NULL) && (prBssInfo != NULL));
 
@@ -6727,18 +6728,26 @@ static void rlmCompleteOpModeChange(struct ADAPTER *prAdapter,
 		(prBssInfo->fgIsOpChangeRxNss) ||
 		(prBssInfo->fgIsOpChangeTxNss)) {
 
+		if (IS_BSS_P2P(prBssInfo) && prBssInfo->fgIsSwitchingChnl) {
+			DBGLOG(RLM, INFO,
+				"Ignore rlm update when switch p2p channel\n");
+			fgIsSwitchingP2pChnl = TRUE;
+		}
+
 		/* <1> Update own OP BW/Nss */
 		rlmChangeOwnOpInfo(prAdapter, prBssInfo);
 
 		/* <2> Update OP BW/Nss to FW */
-		rlmSyncOperationParams(prAdapter, prBssInfo);
+		if (!fgIsSwitchingP2pChnl)
+			rlmSyncOperationParams(prAdapter, prBssInfo);
 
 		/* <3> Update BCN/Probe Resp IE to notify peers our OP info is
 		 * changed (AP mode)
 		 */
-		if (prBssInfo->eCurrentOPMode == OP_MODE_ACCESS_POINT)
+		if (prBssInfo->eCurrentOPMode == OP_MODE_ACCESS_POINT &&
+			!fgIsSwitchingP2pChnl)
 			bssUpdateBeaconContent(prAdapter,
-					       prBssInfo->ucBssIndex);
+				prBssInfo->ucBssIndex);
 
 		/* <4) Reset flags */
 		prBssInfo->fgIsOpChangeChannelWidth = FALSE;
