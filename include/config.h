@@ -1532,9 +1532,9 @@
 #define CFG_SUPPORT_PWR_LIMIT_HE		0
 #endif /* CFG_SUPPORT_802_11AX */
 
-#define CFG_SUPPORT_STAT_STATISTICS	1 /* fos_change oneline */
-#define CFG_SUPPORT_WAKEUP_STATISTICS 1 /* fos_change oneline */
-#define CFG_SUPPORT_EXCEPTION_STATISTICS 1 /* fos_change oneline */
+#define CFG_SUPPORT_STAT_STATISTICS	0 /* fos_change oneline */
+#define CFG_SUPPORT_WAKEUP_STATISTICS 0 /* fos_change oneline */
+#define CFG_SUPPORT_EXCEPTION_STATISTICS 0 /* fos_change oneline */
 /*------------------------------------------------------------------------------
  * cnm power control:
  * for power save, disable 2x2 and DBDC when power is low
