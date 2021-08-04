@@ -668,16 +668,20 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy,
 		} else {
 			DBGLOG(REQ, INFO,
 			       "link speed=%u/%u, rssi=%d, BSSID:[" MACSTR
-			       "], TxFail=%u, TxTimeOut=%u, TxOK=%u, RxOK=%u\n",
+			       "], TxFail=%u, TxTimeOut=%u, TxOK=%u, RxOK=%u, FcsErr=%u\n",
 			       sinfo->txrate.legacy, sinfo->rxrate.legacy,
 			       sinfo->signal,
 			       MAC2STR(arBssid),
 			       rQueryStaStatistics.u4TxFailCount,
 			       rQueryStaStatistics.u4TxLifeTimeoutCount,
-			       sinfo->tx_packets, sinfo->rx_packets);
+			       sinfo->tx_packets, sinfo->rx_packets,
+			       rQueryStaStatistics.rMibInfo[0].u4FcsError
+			);
 
 			u4TotalError = rQueryStaStatistics.u4TxFailCount +
 				       rQueryStaStatistics.u4TxLifeTimeoutCount;
+			prGlueInfo->u4FcsErrorCache =
+				rQueryStaStatistics.rMibInfo[0].u4FcsError;
 			prDevStats->tx_errors += u4TotalError;
 		}
 #if KERNEL_VERSION(4, 0, 0) <= CFG80211_VERSION_CODE
@@ -686,6 +690,9 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy,
 		sinfo->filled |= STATION_INFO_TX_FAILED;
 #endif
 		sinfo->tx_failed = prDevStats->tx_errors;
+#if KERNEL_VERSION(4, 19, 0) <= CFG80211_VERSION_CODE
+		sinfo->fcs_err_count = prGlueInfo->u4FcsErrorCache;
+#endif
 	}
 
 	return 0;
