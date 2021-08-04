@@ -481,6 +481,49 @@ static struct ieee80211_sband_iftype_data mtk_he_cap[] = {
 #endif
 #endif
 
+#if KERNEL_VERSION(5, 4, 0) <= CFG80211_VERSION_CODE
+#if (CFG_SUPPORT_802_11AX == 1) && (CFG_SUPPORT_WIFI_6G == 1)
+
+#define HE_6GHZ_MIN_MPDU_START_SPACE		0
+#define HE_6GHZ_MAX_AMPUD_LEN_EXP		7
+#define HE_6GHZ_MAX_MPDU			2
+
+#define HE_6GHZ_BAND_CAP_MIN_MPDU_START              (BIT(0) | BIT(1) | BIT(2))
+#define HE_6GHZ_BAND_CAP_MAX_AMPDU_LEN_EXP_MASK      (BIT(3) | BIT(4) | BIT(5))
+#define HE_6GHZ_BAND_CAP_MAX_AMPDU_LEN_EXP_SHIFT     3
+#define HE_6GHZ_BAND_CAP_MAX_MPDU_LEN_MASK           (BIT(6) | BIT(7))
+#define HE_6GHZ_BAND_CAP_MAX_MPDU_LEN_SHIFT	     6
+#define HE_6GHZ_BAND_CAP_SMPS_DISABLED               (BIT(9) | BIT(10))
+#define HE_6GHZ_BAND_CAP_RX_ANTPAT_CONS              BIT(12)
+#define HE_6GHZ_BAND_CAP_TX_ANTPAT_CONS              BIT(13)
+
+#define WLAN_HE_6G_CAP_INFO						\
+{									\
+	.capa = (HE_6GHZ_MIN_MPDU_START_SPACE &				\
+			HE_6GHZ_BAND_CAP_MIN_MPDU_START)		\
+		| ((HE_6GHZ_MAX_AMPUD_LEN_EXP <<			\
+			HE_6GHZ_BAND_CAP_MAX_AMPDU_LEN_EXP_SHIFT) &	\
+			HE_6GHZ_BAND_CAP_MAX_AMPDU_LEN_EXP_MASK)	\
+		| ((HE_6GHZ_MAX_MPDU <<					\
+			HE_6GHZ_BAND_CAP_MAX_MPDU_LEN_SHIFT) &		\
+			HE_6GHZ_BAND_CAP_MAX_MPDU_LEN_MASK)		\
+		| HE_6GHZ_BAND_CAP_SMPS_DISABLED			\
+		| HE_6GHZ_BAND_CAP_RX_ANTPAT_CONS			\
+		| HE_6GHZ_BAND_CAP_TX_ANTPAT_CONS,			\
+}
+
+static struct ieee80211_sband_iftype_data mtk_he_cap_6g[] = {
+	{
+		.types_mask =
+			BIT(NL80211_IFTYPE_STATION) | BIT(NL80211_IFTYPE_AP),
+		.he_cap = WLAN_HE_CAP_INFO,
+		.he_6ghz_capa = WLAN_HE_6G_CAP_INFO,
+	},
+};
+
+#endif /* (CFG_SUPPORT_802_11AX == 1) && (CFG_SUPPORT_WIFI_6G == 1) */
+#endif
+
 /* public for both Legacy Wi-Fi / P2P access */
 struct ieee80211_supported_band mtk_band_2ghz = {
 	.band = KAL_BAND_2GHZ,
@@ -522,10 +565,10 @@ struct ieee80211_supported_band mtk_band_6ghz = {
 	.n_channels = ARRAY_SIZE(mtk_6ghz_channels),
 	.bitrates = mtk_a_rates,
 	.n_bitrates = mtk_a_rates_size,
-#if KERNEL_VERSION(4, 19, 0) <= CFG80211_VERSION_CODE
+#if KERNEL_VERSION(5, 4, 0) <= CFG80211_VERSION_CODE
 #if (CFG_SUPPORT_802_11AX == 1)
 	.n_iftype_data = 1,
-	.iftype_data = mtk_he_cap,
+	.iftype_data = mtk_he_cap_6g,
 #endif
 #endif
 };
