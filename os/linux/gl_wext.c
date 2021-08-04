@@ -2610,7 +2610,7 @@ wext_get_rate(IN struct net_device *prNetDev,
 
 	if (rStatus != WLAN_STATUS_SUCCESS)
 		return -EFAULT;
-	u4Rate = rLinkSpeed.rLq[ucBssIndex].u2LinkSpeed;
+	u4Rate = rLinkSpeed.rLq[ucBssIndex].u2TxLinkSpeed;
 	/* u4Rate is in unit of 100bps */
 	prRate->value = u4Rate * 100;
 	prRate->fixed = 0;

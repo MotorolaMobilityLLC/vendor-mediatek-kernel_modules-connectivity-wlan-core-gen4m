@@ -12286,11 +12286,11 @@ errhandle:
 
 #ifdef CFG_SUPPORT_LINK_QUALITY_MONITOR
 int wlanGetRxRate(IN struct GLUE_INFO *prGlueInfo,
-		 OUT uint32_t *pu4CurRate, OUT uint32_t *pu4MaxRate)
+		IN uint8_t ucBssIdx, OUT uint32_t *pu4CurRate,
+		OUT uint32_t *pu4MaxRate)
 {
 	struct ADAPTER *prAdapter;
 	uint32_t rxmode = 0, rate = 0, frmode = 0, sgi = 0, nss = 0;
-	uint32_t u4RxVector0 = 0, u4RxVector1 = 0;
 	int rv;
 	struct CHIP_DBG_OPS *prChipDbg;
 
@@ -12321,8 +12321,8 @@ int wlanGetRxRate(IN struct GLUE_INFO *prGlueInfo,
 
 errhandle:
 	DBGLOG(SW4, TRACE,
-		"u4RxVector0=[%x], u4RxVector1=[%x], rxmode=[%u], rate=[%u], frmode=[%u], sgi=[%u], nss=[%u]\n",
-		u4RxVector0, u4RxVector1, rxmode, rate, frmode, sgi, nss
+		"rxmode=[%u], rate=[%u], frmode=[%u], sgi=[%u], nss=[%u]\n",
+		rxmode, rate, frmode, sgi, nss
 	);
 	return -1;
 }
@@ -12458,7 +12458,8 @@ void wlanFinishCollectingLinkQuality(struct GLUE_INFO *prGlueInfo)
 			prLinkQualityInfo->u8LastIdleSlotCount;
 
 	/* get current rx rate */
-	if (wlanGetRxRate(prGlueInfo, &u4CurRxRate, &u4MaxRxRate) < 0)
+	if (wlanGetRxRate(prGlueInfo, AIS_DEFAULT_INDEX,
+		&u4CurRxRate, &u4MaxRxRate) < 0)
 		prLinkQualityInfo->u4CurRxRate = 0;
 	else
 		prLinkQualityInfo->u4CurRxRate = u4CurRxRate;

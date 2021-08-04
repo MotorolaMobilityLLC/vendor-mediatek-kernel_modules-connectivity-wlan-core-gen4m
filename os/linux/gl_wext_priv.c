@@ -9234,8 +9234,8 @@ int priv_driver_get_linkspeed(IN struct net_device *prNetDev,
 
 	if (rStatus != WLAN_STATUS_SUCCESS)
 		return -1;
-	u4Rate = rLinkSpeed.rLq[ucBssIndex].u2LinkSpeed;
-	i4BytesWritten = kalSnprintf(pcCommand, i4TotalLen, "LinkSpeed %u",
+	u4Rate = rLinkSpeed.rLq[ucBssIndex].u2TxLinkSpeed;
+	i4BytesWritten = kalSnprintf(pcCommand, i4TotalLen, "TxLinkSpeed %u",
 				  (unsigned int)(u4Rate * 100));
 	DBGLOG(REQ, INFO, "%s: command result is %s\n", __func__, pcCommand);
 	return i4BytesWritten;

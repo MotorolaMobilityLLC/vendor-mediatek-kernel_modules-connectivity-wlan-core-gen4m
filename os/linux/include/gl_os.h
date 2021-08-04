@@ -796,8 +796,8 @@ struct GLUE_INFO {
 #endif
 
 	int32_t i4RssiCache[BSSID_NUM];
-	uint32_t u4LinkSpeedCache[BSSID_NUM];
-
+	uint32_t u4TxLinkSpeedCache[BSSID_NUM];
+	uint32_t u4RxLinkSpeedCache[BSSID_NUM];
 
 	uint32_t u4InfType;
 

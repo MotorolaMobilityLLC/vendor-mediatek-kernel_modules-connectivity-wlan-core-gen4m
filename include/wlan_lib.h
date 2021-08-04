@@ -1838,7 +1838,8 @@ int wlanGetMaxTxRate(IN struct ADAPTER *prAdapter,
 
 #ifdef CFG_SUPPORT_LINK_QUALITY_MONITOR
 int wlanGetRxRate(IN struct GLUE_INFO *prGlueInfo,
-		 OUT uint32_t *pu4CurRate, OUT uint32_t *pu4MaxRate);
+		IN uint8_t ucBssIdx, OUT uint32_t *pu4CurRate,
+		OUT uint32_t *pu4MaxRate);
 uint32_t wlanLinkQualityMonitor(struct GLUE_INFO *prGlueInfo, bool bFgIsOid);
 void wlanFinishCollectingLinkQuality(struct GLUE_INFO *prGlueInfo);
 #endif /* CFG_SUPPORT_LINK_QUALITY_MONITOR */

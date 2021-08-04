@@ -4828,7 +4828,7 @@ void nicUpdateLinkSpeed(IN struct ADAPTER *prAdapter,
 				rLinkRateUpdateTime = kalGetTimeTick();
 
 			prAdapter->rLinkQuality.rLq[ucBssIndex].
-				u2LinkSpeed = u2LinkSpeed;
+				u2TxLinkSpeed = u2LinkSpeed;
 		}
 		break;
 
