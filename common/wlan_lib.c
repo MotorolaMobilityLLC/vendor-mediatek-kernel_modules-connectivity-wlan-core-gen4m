@@ -11242,6 +11242,25 @@ wlanGetSpeIdx(IN struct ADAPTER *prAdapter,
 					ucRetValSpeIdx = wlanAntPathFavorSelect(
 						prAdapter, eWfPathFavor);
 			}
+#if (CFG_SUPPORT_WIFI_6G == 1)
+		} else if (eBand == BAND_6G) {
+			if (IS_WIFI_6G_SISO(prAdapter)) {
+				if (IS_WIFI_6G_WF0_SUPPORT(prAdapter))
+					ucRetValSpeIdx = ANTENNA_WF0;
+				else
+					ucRetValSpeIdx = ANTENNA_WF1;
+			} else {
+				if (IS_WIFI_SMART_GEAR_SUPPORT_WF0_SISO(
+				    prAdapter))
+					ucRetValSpeIdx = ANTENNA_WF0;
+				else if (IS_WIFI_SMART_GEAR_SUPPORT_WF1_SISO(
+				    prAdapter))
+					ucRetValSpeIdx = ANTENNA_WF1;
+				else
+					ucRetValSpeIdx = wlanAntPathFavorSelect(
+						prAdapter, eWfPathFavor);
+			}
+#endif
 		} else
 			ucRetValSpeIdx = wlanAntPathFavorSelect(prAdapter,
 				eWfPathFavor);
@@ -11337,6 +11356,10 @@ wlanGetSupportNss(IN struct ADAPTER *prAdapter,
 		ucRetValNss = 1;
 	else if ((eBand == BAND_5G) && IS_WIFI_5G_SISO(prAdapter))
 		ucRetValNss = 1;
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	else if ((eBand == BAND_6G) && IS_WIFI_6G_SISO(prAdapter))
+		ucRetValNss = 1;
+#endif
 	DBGLOG(INIT, TRACE, "Nss=%d,G=%d,B=%d,Bss=%d\n",
 	       ucRetValNss, prBssInfo->fgIsGranted, eBand, ucBssIndex);
 #endif

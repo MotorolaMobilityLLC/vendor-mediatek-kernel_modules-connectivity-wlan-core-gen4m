@@ -2714,8 +2714,12 @@ uint32_t nicCfgChipCap6GCap(IN struct ADAPTER *prAdapter,
 	ASSERT(prAdapter);
 
 	prAdapter->fgIsHwSupport6G = pr6gCap->ucIsSupport6G;
+	prAdapter->rWifiFemCfg.u2WifiPath6G = (uint16_t)(pr6gCap->ucHwWifiPath);
 
-	DBGLOG(INIT, INFO, "fgIsHwSupport6G=%d\n", prAdapter->fgIsHwSupport6G);
+	DBGLOG(INIT, INFO, "fgIsHwSupport6G = %d, u2WifiPath6G = %d\n",
+		prAdapter->fgIsHwSupport6G,
+		prAdapter->rWifiFemCfg.u2WifiPath6G);
+
 	return WLAN_STATUS_SUCCESS;
 }
 #endif /* CFG_SUPPORT_WIFI_6G */

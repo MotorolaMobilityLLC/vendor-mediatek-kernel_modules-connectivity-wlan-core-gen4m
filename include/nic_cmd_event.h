@@ -1147,7 +1147,8 @@ struct NIC_HOST_STATUS_EMI_OFFSET {
 #if (CFG_SUPPORT_WIFI_6G == 1)
 struct CAP_6G_CAP {
 	uint8_t ucIsSupport6G;  /* 1: Support, 0: Not Support */
-	uint8_t aucReseved[3];
+	uint8_t ucHwWifiPath;	/* BIT(0): 6G_WF0, BIT(1): 6G_WF1 */
+	uint8_t aucReseved[2];
 };
 #endif
 

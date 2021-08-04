@@ -1428,7 +1428,7 @@ struct NCHO_INFO {
 struct WIFI_FEM_CFG {
 	/* WiFi FEM path */
 	uint16_t u2WifiPath;
-	uint16_t u2Reserved;
+	uint16_t u2WifiPath6G;
 	/* Reserved  */
 	uint32_t au4Reserved[4];
 };
@@ -2079,6 +2079,12 @@ struct ADAPTER {
 #define IS_WIFI_5G_WF1_SUPPORT(_prAdapter) \
 	((_prAdapter)->rWifiFemCfg.u2WifiPath & WLAN_FLAG_5G_WF1)
 
+#define IS_WIFI_6G_WF0_SUPPORT(_prAdapter) \
+	((_prAdapter)->rWifiFemCfg.u2WifiPath6G & WLAN_FLAG_6G_WF0)
+
+#define IS_WIFI_6G_WF1_SUPPORT(_prAdapter) \
+	((_prAdapter)->rWifiFemCfg.u2WifiPath6G & WLAN_FLAG_6G_WF1)
+
 #define IS_WIFI_2G4_SISO(_prAdapter) \
 	((IS_WIFI_2G4_WF0_SUPPORT(_prAdapter) && \
 	!(IS_WIFI_2G4_WF1_SUPPORT(_prAdapter))) || \
@@ -2090,6 +2096,12 @@ struct ADAPTER {
 	!(IS_WIFI_5G_WF1_SUPPORT(_prAdapter))) || \
 	(IS_WIFI_5G_WF1_SUPPORT(_prAdapter) && \
 	!(IS_WIFI_5G_WF0_SUPPORT(_prAdapter))))
+
+#define IS_WIFI_6G_SISO(_prAdapter) \
+	((IS_WIFI_6G_WF0_SUPPORT(_prAdapter) && \
+	!(IS_WIFI_6G_WF1_SUPPORT(_prAdapter))) || \
+	(IS_WIFI_6G_WF1_SUPPORT(_prAdapter) && \
+	!(IS_WIFI_6G_WF0_SUPPORT(_prAdapter))))
 
 #define IS_WIFI_SMART_GEAR_SUPPORT_WF0_SISO(_prAdapter) \
 	((_prAdapter)->ucSmarGearSupportSisoOnly && \

@@ -254,6 +254,9 @@
 #define WLAN_FLAG_5G_COANT_SUPPORT	BIT(6)	/*1: support, 0: NOT support */
 #define WLAN_FLAG_5G_COANT_PATH		BIT(7)	/*1: WF1, 0:WF0 */
 
+#define WLAN_FLAG_6G_WF0		BIT(0)	/*1: support, 0: NOT support */
+#define WLAN_FLAG_6G_WF1		BIT(1)	/*1: support, 0: NOT support */
+
 /* Define concurrent network channel number, using by CNM/CMD */
 #define MAX_OP_CHNL_NUM			3
 

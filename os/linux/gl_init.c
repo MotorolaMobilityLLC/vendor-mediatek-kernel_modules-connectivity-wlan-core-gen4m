@@ -4518,6 +4518,12 @@ void wlanOnPreAdapterStart(struct GLUE_INFO *prGlueInfo,
 			WLAN_FLAG_2G4_WF0 | WLAN_FLAG_5G_WF0 |
 			WLAN_FLAG_2G4_WF1 | WLAN_FLAG_5G_WF1);
 
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	/* Default support 6G MIMO */
+	prAdapter->rWifiFemCfg.u2WifiPath6G =
+			(WLAN_FLAG_6G_WF0 | WLAN_FLAG_6G_WF1);
+#endif
+
 #if CFG_WMT_WIFI_PATH_SUPPORT
 	i4RetVal = mtk_wcn_wmt_wifi_fem_cfg_report((
 				void *)&prAdapter->rWifiFemCfg);
