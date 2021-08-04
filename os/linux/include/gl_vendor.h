@@ -411,14 +411,18 @@ extern uint8_t
 keyStructBuf[100];	/* add/remove key shared buffer */
 #endif
 
-extern const struct nla_policy nla_get_acs_policy[
-		WIFI_VENDOR_ATTR_ACS_MAX + 1];
-
+extern const struct nla_policy mtk_scan_param_policy[
+		WIFI_ATTR_SCAN_MAX + 1];
 extern const struct nla_policy nla_parse_wifi_rssi_monitor[
 		WIFI_ATTRIBUTE_RSSI_MONITOR_ATTRIBUTE_MAX + 1];
-
 extern const struct nla_policy nla_get_version_policy[
 		LOGGER_ATTRIBUTE_MAX + 1];
+extern const struct nla_policy nla_parse_offloading_policy[
+		MKEEP_ALIVE_ATTRIBUTE_PERIOD_MSEC + 1];
+extern const struct nla_policy nla_get_preferred_freq_list_policy[
+		WIFI_VENDOR_ATTR_PREFERRED_FREQ_LIST_MAX + 1];
+extern const struct nla_policy nla_get_acs_policy[
+		WIFI_VENDOR_ATTR_ACS_MAX + 1];
 
 /*******************************************************************************
  *                           MACROS

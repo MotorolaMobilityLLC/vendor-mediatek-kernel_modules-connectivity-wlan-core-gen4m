@@ -130,7 +130,7 @@ const struct nla_policy nla_get_version_policy[
 #endif
 };
 
-static struct nla_policy nla_parse_offloading_policy[
+const struct nla_policy nla_parse_offloading_policy[
 		 MKEEP_ALIVE_ATTRIBUTE_PERIOD_MSEC + 1] = {
 	[MKEEP_ALIVE_ATTRIBUTE_ID] = {.type = NLA_U8},
 	[MKEEP_ALIVE_ATTRIBUTE_IP_PKT] = {.type = NLA_UNSPEC},
@@ -140,9 +140,12 @@ static struct nla_policy nla_parse_offloading_policy[
 	[MKEEP_ALIVE_ATTRIBUTE_PERIOD_MSEC] = {.type = NLA_U32},
 };
 
-static struct nla_policy nla_get_preferred_freq_list_policy[
-		WIFI_VENDOR_ATTR_PREFERRED_FREQ_LIST_MAX] = {
+const struct nla_policy nla_get_preferred_freq_list_policy[
+		WIFI_VENDOR_ATTR_PREFERRED_FREQ_LIST_MAX + 1] = {
 	[WIFI_VENDOR_ATTR_PREFERRED_FREQ_LIST_IFACE_TYPE] = {.type = NLA_U32},
+#if KERNEL_VERSION(5, 9, 0) <= CFG80211_VERSION_CODE
+	[WIFI_VENDOR_ATTR_PREFERRED_FREQ_LIST_GET] = NLA_POLICY_MIN_LEN(0),
+#endif
 };
 
 const struct nla_policy nla_get_acs_policy[

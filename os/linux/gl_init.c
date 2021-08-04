@@ -874,7 +874,8 @@ static const struct wiphy_vendor_command
 		.doit = mtk_cfg80211_vendor_packet_keep_alive_start
 #if KERNEL_VERSION(5, 4, 0) <= LINUX_VERSION_CODE
 		,
-		.policy = VENDOR_CMD_RAW_DATA
+		.policy = nla_parse_offloading_policy,
+		.maxattr = MKEEP_ALIVE_ATTRIBUTE_PERIOD_MSEC
 #endif
 	},
 	{
@@ -947,7 +948,8 @@ static const struct wiphy_vendor_command
 		.doit = mtk_cfg80211_vendor_get_preferred_freq_list
 #if KERNEL_VERSION(5, 4, 0) <= LINUX_VERSION_CODE
 		,
-		.policy = VENDOR_CMD_RAW_DATA
+		.policy = nla_get_preferred_freq_list_policy,
+		.maxattr = WIFI_VENDOR_ATTR_PREFERRED_FREQ_LIST_MAX
 #endif
 	},
 #endif /* CFG_SUPPORT_P2P_PREFERRED_FREQ_LIST */
@@ -1022,7 +1024,8 @@ static const struct wiphy_vendor_command
 		.doit = mtk_cfg80211_vendor_set_scan_param
 #if KERNEL_VERSION(5, 4, 0) <= LINUX_VERSION_CODE
 		,
-		.policy = VENDOR_CMD_RAW_DATA
+		.policy = mtk_scan_param_policy,
+		.maxattr = WIFI_ATTR_SCAN_MAX
 #endif
 	},
 #if CFG_SUPPORT_NAN
