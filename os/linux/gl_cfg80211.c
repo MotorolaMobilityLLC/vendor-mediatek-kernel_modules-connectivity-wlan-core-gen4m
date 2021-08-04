@@ -3686,7 +3686,7 @@ int mtk_cfg80211_sched_scan_start(IN struct wiphy *wiphy,
 			       i, request->channels[i]->center_freq);
 			continue;
 		}
-		prSchedScanRequest->aucChannel[i].ucChannelNum = u4channel;
+		prSchedScanRequest->aucChannel[j].ucChannelNum = u4channel;
 		switch ((request->channels[i])->band) {
 		case KAL_BAND_2GHZ:
 			prSchedScanRequest->aucChannel[j].ucBand = BAND_2G4;
