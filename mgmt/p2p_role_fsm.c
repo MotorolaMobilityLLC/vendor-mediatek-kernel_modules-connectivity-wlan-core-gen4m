@@ -4185,6 +4185,73 @@ static void initAcsChnlMask(IN struct ADAPTER *prAdapter,
 			prAcsReqInfo->u4LteSafeChnMask_6G);
 }
 
+u_int8_t indicateApAcsOverwrite(
+	IN struct ADAPTER *prAdapter,
+	IN struct MSG_P2P_ACS_REQUEST *prMsgAcsRequest,
+	IN struct P2P_ACS_REQ_INFO *prAcsReqInfo)
+{
+	struct RF_CHANNEL_INFO *prRfChannelInfo;
+	enum ENUM_BAND eBand = BAND_NULL;
+	enum ENUM_MAX_BANDWIDTH_SETTING eChnlBw;
+	u_int8_t bOverwrite = FALSE;
+	uint8_t ucPrimaryCh = 0;
+	uint8_t i;
+
+	if (!prAdapter || !prAcsReqInfo || !prMsgAcsRequest)
+		return FALSE;
+
+	for (i = prMsgAcsRequest->u4NumChannel - 1; i >= 0; i--) {
+		prRfChannelInfo =
+			&(prMsgAcsRequest->arChannelListInfo[i]);
+		if (prRfChannelInfo->eBand != BAND_NULL) {
+			eBand = prRfChannelInfo->eBand;
+			break;
+		}
+	}
+
+	if (eBand == BAND_NULL)
+		return FALSE;
+
+	if (eBand == BAND_2G4) {
+		if (prAdapter->rWifiVar.ucApAcsChannel[0]) {
+			ucPrimaryCh = prAdapter->rWifiVar.ucApAcsChannel[0];
+			eChnlBw = prAdapter->rWifiVar.ucAp2gBandwidth;
+		} else if (p2pFuncIsAPMode(prAdapter->rWifiVar.
+			prP2PConnSettings[0]) &&
+			p2pFuncIsAPMode(prAdapter->rWifiVar.
+			prP2PConnSettings[1])) {
+			ucPrimaryCh = AP_DEFAULT_CHANNEL_2G;
+			eChnlBw = prAdapter->rWifiVar.ucAp2gBandwidth;
+		}
+	} else if ((eBand == BAND_5G) &&
+		prAdapter->rWifiVar.ucApAcsChannel[1]) {
+		ucPrimaryCh = prAdapter->rWifiVar.ucApAcsChannel[1];
+		eChnlBw = prAdapter->rWifiVar.ucAp5gBandwidth;
+	}
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	else if ((eBand == BAND_6G) &&
+		prAdapter->rWifiVar.ucApAcsChannel[2]) {
+		ucPrimaryCh = prAdapter->rWifiVar.ucApAcsChannel[2];
+		eChnlBw = prAdapter->rWifiVar.ucAp6gBandwidth;
+	}
+#endif
+
+	if (ucPrimaryCh) {
+		prAcsReqInfo->ucPrimaryCh = ucPrimaryCh;
+		prAcsReqInfo->eBand = eBand;
+		if (eBand == BAND_2G4)
+			prAcsReqInfo->eHwMode = P2P_VENDOR_ACS_HW_MODE_11G;
+		else
+			prAcsReqInfo->eHwMode = P2P_VENDOR_ACS_HW_MODE_11A;
+		/* prAcsReqInfo->eChnlBw = eChnlBw; */
+		p2pFunIndicateAcsResult(prAdapter->prGlueInfo,
+			prAcsReqInfo);
+		bOverwrite = TRUE;
+	}
+
+	return bOverwrite;
+}
+
 void p2pRoleFsmRunEventAcs(IN struct ADAPTER *prAdapter,
 		IN struct MSG_HDR *prMsgHdr)
 {
@@ -4206,6 +4273,11 @@ void p2pRoleFsmRunEventAcs(IN struct ADAPTER *prAdapter,
 	p2pRoleFsmAbortCurrentAcsReq(prAdapter, prMsgAcsRequest);
 
 	initAcsParams(prAdapter, prMsgAcsRequest, prAcsReqInfo);
+
+	if (indicateApAcsOverwrite(prAdapter,
+		prMsgAcsRequest, prAcsReqInfo)) {
+		goto exit;
+	}
 
 #if CFG_HOTSPOT_SUPPORT_FORCE_ACS_SCC
 	if (prAdapter->rWifiVar.eDbdcMode == ENUM_DBDC_MODE_DISABLED) {
@@ -4262,16 +4334,6 @@ void p2pRoleFsmRunEventAcs(IN struct ADAPTER *prAdapter,
 			/* Trim 5G channels */
 			trimAcsScanList(prAdapter, prMsgAcsRequest,
 				prAcsReqInfo, BIT(BAND_5G));
-		}
-	} else if (prAcsReqInfo->eHwMode == P2P_VENDOR_ACS_HW_MODE_11G) {
-		if (p2pFuncIsAPMode(prAdapter->rWifiVar.
-			prP2PConnSettings[0]) &&
-			p2pFuncIsAPMode(prAdapter->rWifiVar.
-			prP2PConnSettings[1])) {
-			DBGLOG(P2P, INFO, "Report default channel\n");
-			p2pFunIndicateAcsResult(prAdapter->prGlueInfo,
-					prAcsReqInfo);
-			goto exit;
 		}
 	}
 

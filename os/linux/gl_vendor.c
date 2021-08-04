@@ -1913,10 +1913,7 @@ int mtk_cfg80211_vendor_dfs_capability(struct wiphy *wiphy,
 	ASSERT(wiphy);
 	ASSERT(wdev);
 
-#if CFG_SUPPORT_DFS_MASTER
-	if (wdev->iftype != NL80211_IFTYPE_AP)
-		dfs_capability = 1;
-#endif
+	dfs_capability = 1;
 
 	reply_skb = cfg80211_vendor_cmd_alloc_reply_skb(wiphy,
 			sizeof(uint32_t) + NLMSG_HDRLEN);

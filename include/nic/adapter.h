@@ -992,6 +992,7 @@ struct WIFI_VAR {
 	uint8_t ucApWpsMode;
 	uint8_t ucApChannel;
 	uint16_t u2ApFreq;
+	uint8_t ucApAcsChannel[3];
 
 	uint8_t ucApSco;
 	uint8_t ucP2pGoSco;

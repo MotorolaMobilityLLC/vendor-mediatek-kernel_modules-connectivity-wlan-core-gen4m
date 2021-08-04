@@ -226,6 +226,12 @@ void p2pFuncSetChannel(IN struct ADAPTER *prAdapter,
 		IN uint8_t ucRoleIdx,
 		IN struct RF_CHANNEL_INFO *prRfChannelInfo);
 
+int p2pFuncPreStartRdd(
+	IN struct ADAPTER *prAdapter,
+	IN uint8_t ucRoleIdx,
+	IN struct cfg80211_chan_def *chandef,
+	IN unsigned int cac_time_ms);
+
 u_int8_t p2pFuncRetryJOIN(IN struct ADAPTER *prAdapter,
 		IN struct STA_RECORD *prStaRec,
 		IN struct P2P_JOIN_INFO *prJoinInfo);

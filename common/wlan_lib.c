@@ -7273,6 +7273,12 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 					prAdapter, "ApChannel", 0);
 	prWifiVar->u2ApFreq = (uint16_t) wlanCfgGetUint32(
 					prAdapter, "ApFreq", 0);
+	prWifiVar->ucApAcsChannel[0] = (uint16_t) wlanCfgGetUint32(
+					prAdapter, "ApAcs2gChannel", 0);
+	prWifiVar->ucApAcsChannel[1] = (uint16_t) wlanCfgGetUint32(
+					prAdapter, "ApAcs5gChannel", 0);
+	prWifiVar->ucApAcsChannel[2] = (uint16_t) wlanCfgGetUint32(
+					prAdapter, "ApAcs6gChannel", 0);
 
 	/*
 	 * 0: SCN
