@@ -103,6 +103,32 @@
 #define WF_PP_TOP_DBG_CS_1_ADDR    (WF_PP_TOP_BASE + 0x0108)
 #define WF_PP_TOP_DBG_CS_2_ADDR    (WF_PP_TOP_BASE + 0x010C)
 
+/*------------------------------------------------------------------------------
+ * MACRO for SOC5_0 RXVECTOR0(GROUP3 NEW FORMAT WITH ENTIRE RATE) Parsing
+ *------------------------------------------------------------------------------
+ */
+#define SOC5_0_RX_VT_RX_RATE_MASK         BITS(0, 6)
+#define SOC5_0_RX_VT_RX_RATE_OFFSET       0
+#define SOC5_0_RX_VT_NSTS_MASK            BITS(7, 9)
+#define SOC5_0_RX_VT_NSTS_OFFSET          7
+#define SOC5_0_RX_VT_BF_MASK              BIT(10)
+#define SOC5_0_RX_VT_BF_OFFSET            10
+#define SOC5_0_RX_VT_LDPC_MASK            BIT(11)
+#define SOC5_0_RX_VT_LDPC_OFFSET          11
+#define SOC5_0_RX_VT_FR_MODE_MASK         BITS(12, 14)
+#define SOC5_0_RX_VT_FR_MODE_OFFSET       12
+#define SOC5_0_RX_VT_GI_MASK              BITS(15, 16)
+#define SOC5_0_RX_VT_GI_OFFSET            15
+#define SOC5_0_RX_VT_DCM_MASK             BIT(17)
+#define SOC5_0_RX_VT_DCM_OFFSET           17
+#define SOC5_0_RX_VT_NUMRX_MASK           BITS(28, 30)
+#define SOC5_0_RX_VT_NUMRX_OFFSET         28
+#define SOC5_0_RX_VT_MUMIMO_MASK          BIT(21)
+#define SOC5_0_RX_VT_MUMIMO_OFFSET        21
+#define SOC5_0_RX_VT_STBC_MASK            BITS(22, 23)
+#define SOC5_0_RX_VT_STBC_OFFSET          23
+#define SOC5_0_RX_VT_TXMODE_MASK          BITS(24, 27)
+#define SOC5_0_RX_VT_TXMODE_OFFSET        24
 
 /*******************************************************************************
 *                         D A T A   T Y P E S
@@ -158,6 +184,12 @@ void soc5_0_show_wfdma_wrapper_info(IN struct ADAPTER *prAdapter,
 	IN enum _ENUM_WFDMA_TYPE_T enum_wfdma_type);
 void soc5_0_dump_mac_info(
 	IN struct ADAPTER *prAdapter);
+#ifdef CFG_SUPPORT_LINK_QUALITY_MONITOR
+int soc5_0_get_rx_rate_info(IN struct ADAPTER *prAdapter,
+		OUT uint32_t *pu4Rate, OUT uint32_t *pu4Nss,
+		OUT uint32_t *pu4RxMode, OUT uint32_t *pu4FrMode,
+		OUT uint32_t *pu4Sgi);
+#endif
 
 extern void kalConstructDefaultFirmwarePrio(
 				struct GLUE_INFO	*prGlueInfo,

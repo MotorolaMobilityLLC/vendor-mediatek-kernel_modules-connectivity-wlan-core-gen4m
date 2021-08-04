@@ -1013,4 +1013,81 @@ void soc5_0_dump_mac_info(IN struct ADAPTER *prAdapter)
 		kalMemFree(buf, VIR_MEM_TYPE, BUF_SIZE);
 }
 
+#ifdef CFG_SUPPORT_LINK_QUALITY_MONITOR
+int soc5_0_get_rx_rate_info(IN struct ADAPTER *prAdapter,
+		OUT uint32_t *pu4Rate, OUT uint32_t *pu4Nss,
+		OUT uint32_t *pu4RxMode, OUT uint32_t *pu4FrMode,
+		OUT uint32_t *pu4Sgi)
+{
+	struct STA_RECORD *prStaRec;
+	uint32_t rxmode = 0, rate = 0, frmode = 0, sgi = 0, nsts = 0;
+	uint32_t stbc = 0, nss = 0;
+	uint32_t u4RxVector0 = 0;
+	uint8_t ucWlanIdx, ucStaIdx;
+
+	if ((!pu4Rate) || (!pu4Nss) || (!pu4RxMode) || (!pu4FrMode) ||
+		(!pu4Sgi))
+		return -1;
+
+	prStaRec = aisGetStaRecOfAP(prAdapter, AIS_DEFAULT_INDEX);
+	if (prStaRec) {
+		ucWlanIdx = prStaRec->ucWlanIndex;
+	} else {
+		DBGLOG(SW4, ERROR, "prStaRecOfAP is null\n");
+		return -1;
+	}
+
+	if (wlanGetStaIdxByWlanIdx(prAdapter, ucWlanIdx, &ucStaIdx) ==
+		WLAN_STATUS_SUCCESS) {
+		u4RxVector0 = prAdapter->arStaRec[ucStaIdx].u4RxVector0;
+		if (u4RxVector0 == 0) {
+			DBGLOG(SW4, WARN, "u4RxVector0 is 0\n");
+			return -1;
+		}
+	} else {
+		DBGLOG(SW4, ERROR, "wlanGetStaIdxByWlanIdx fail\n");
+		return -1;
+	}
+
+	/* P-RXV1 */
+	rate = (u4RxVector0 & SOC5_0_RX_VT_RX_RATE_MASK)
+				>> SOC5_0_RX_VT_RX_RATE_OFFSET;
+	nsts = ((u4RxVector0 & SOC5_0_RX_VT_NSTS_MASK)
+				>> SOC5_0_RX_VT_NSTS_OFFSET);
+	/* C-B-0 */
+	rxmode = (u4RxVector0 & SOC5_0_RX_VT_TXMODE_MASK)
+				>> SOC5_0_RX_VT_TXMODE_OFFSET;
+	frmode = (u4RxVector0 & SOC5_0_RX_VT_FR_MODE_MASK)
+				>> SOC5_0_RX_VT_FR_MODE_OFFSET;
+	sgi = (u4RxVector0 & SOC5_0_RX_VT_GI_MASK)
+				>> SOC5_0_RX_VT_GI_OFFSET;
+	stbc = (u4RxVector0 & SOC5_0_RX_VT_STBC_MASK)
+				>> SOC5_0_RX_VT_STBC_OFFSET;
+
+	nsts += 1;
+	if (nsts == 1)
+		nss = nsts;
+	else
+		nss = stbc ? (nsts >> 1) : nsts;
+
+	if (frmode >= 4) {
+		DBGLOG(SW4, ERROR, "frmode error: %u\n", frmode);
+		return -1;
+	}
+
+	*pu4Rate = rate;
+	*pu4Nss = nss;
+	*pu4RxMode = rxmode;
+	*pu4FrMode = frmode;
+	*pu4Sgi = sgi;
+
+	DBGLOG(SW4, TRACE,
+		   "rxvec0=[0x%x] rxmode=[%u], rate=[%u], bw=[%u], sgi=[%u], nss=[%u]\n",
+		   u4RxVector0, rxmode, rate, frmode, sgi, nss
+	);
+
+	return 0;
+}
+#endif
+
 #endif /* SOC5_0 */
