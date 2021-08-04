@@ -398,7 +398,7 @@ struct wireless_dev *mtk_p2p_cfg80211_add_iface(struct wiphy *wiphy,
 		kalMemCopy(prNewNetDevice->dev_addr, rMacAddr, ETH_ALEN);
 		kalMemCopy(prNewNetDevice->perm_addr, rMacAddr, ETH_ALEN);
 
-		DBGLOG(P2P, TRACE,
+		DBGLOG(P2P, INFO,
 			"mtk_p2p_cfg80211_add_iface ucBssIdx=%d\n",
 			prNetDevPriv->ucBssIdx);
 

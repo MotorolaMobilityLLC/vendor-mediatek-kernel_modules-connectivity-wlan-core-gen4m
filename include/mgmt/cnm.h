@@ -364,6 +364,11 @@ u_int8_t cnmSapIsConcurrent(IN struct ADAPTER *prAdapter);
 
 struct BSS_INFO *cnmGetSapBssInfo(IN struct ADAPTER *prAdapter);
 
+struct BSS_INFO *
+cnmGetOtherSapBssInfo(
+	IN struct ADAPTER *prAdapter,
+	IN struct BSS_INFO *prSapBssInfo);
+
 void cnmOpModeGetTRxNss(
 	IN struct ADAPTER *prAdapter,
 	IN uint8_t ucBssIndex,

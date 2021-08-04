@@ -6335,6 +6335,31 @@ void p2pFuncSwitchGcChannel(
 		P2P_ROLE_STATE_SWITCH_CHANNEL);
 }
 
+void p2pFuncRemoveOneSap(IN struct ADAPTER *prAdapter)
+{
+	struct BSS_INFO *prSapBssInfo;
+
+	if (!prAdapter)
+		return;
+
+	prSapBssInfo = cnmGetSapBssInfo(prAdapter);
+	if (!prSapBssInfo) {
+		DBGLOG(P2P, TRACE, "SAP is not active\n");
+		return;
+	}
+
+	if (cnmGetOtherSapBssInfo(prAdapter,
+		prSapBssInfo)) {
+		/* Remove first one */
+		DBGLOG(P2P, WARN,
+			"Remove sap (role%d)\n",
+			prSapBssInfo->u4PrivateData);
+		p2pFuncStopGO(prAdapter, prSapBssInfo);
+		SET_NET_PWR_STATE_IDLE(prAdapter,
+			prSapBssInfo->ucBssIndex);
+	}
+}
+
 void p2pFuncSwitchSapChannel(
 		IN struct ADAPTER *prAdapter)
 {
@@ -6397,6 +6422,8 @@ void p2pFuncSwitchSapChannel(
 	}
 
 	/* Assume only one sap bss info */
+	if (prAisBssInfo)
+		p2pFuncRemoveOneSap(prAdapter);
 	prP2pBssInfo = cnmGetSapBssInfo(prAdapter);
 	if (!prP2pBssInfo) {
 		DBGLOG(P2P, TRACE, "SAP is not active\n");

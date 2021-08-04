@@ -3695,6 +3695,38 @@ struct BSS_INFO *cnmGetSapBssInfo(IN struct ADAPTER *prAdapter)
 	return NULL;
 }
 
+struct BSS_INFO *
+cnmGetOtherSapBssInfo(
+	IN struct ADAPTER *prAdapter,
+	IN struct BSS_INFO *prSapBssInfo)
+{
+	struct BSS_INFO *prBssInfo;
+
+	uint8_t i;
+
+	if (!prAdapter)
+		return NULL;
+
+	for (i = 0; i < prAdapter->ucHwBssIdNum; i++) {
+		prBssInfo = prAdapter->aprBssInfo[i];
+		if ((prSapBssInfo != prBssInfo) &&
+			IS_BSS_P2P(prBssInfo) &&
+			p2pFuncIsAPMode(
+			prAdapter->rWifiVar.prP2PConnSettings
+			[prBssInfo->u4PrivateData]) &&
+			IS_NET_PWR_STATE_ACTIVE(
+			prAdapter,
+			prBssInfo->ucBssIndex)) {
+			DBGLOG(P2P, INFO,
+				"Get other sap (role%d)\n",
+				prSapBssInfo->u4PrivateData);
+			return prBssInfo;
+		}
+	}
+
+	return NULL;
+}
+
 uint8_t cnmSapChannelSwitchReq(IN struct ADAPTER *prAdapter,
 	IN struct RF_CHANNEL_INFO *prRfChannelInfo,
 	IN uint8_t ucRoleIdx)

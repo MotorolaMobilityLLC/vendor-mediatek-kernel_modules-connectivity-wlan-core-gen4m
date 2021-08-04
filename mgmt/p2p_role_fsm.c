@@ -3381,6 +3381,11 @@ void p2pRoleFsmRunEventSwitchOPMode(IN struct ADAPTER *prAdapter,
 	}
 	prP2pBssInfo->eIftype = prSwitchOpMode->eIftype;
 
+	if (prP2pBssInfo->eIftype != IFTYPE_AP)
+		p2pFuncInitConnectionSettings(prAdapter,
+		prAdapter->rWifiVar.prP2PConnSettings
+		[prSwitchOpMode->ucRoleIdx], FALSE);
+
 error:
 	cnmMemFree(prAdapter, prMsgHdr);
 }				/* p2pRoleFsmRunEventSwitchOPMode */
@@ -4257,6 +4262,16 @@ void p2pRoleFsmRunEventAcs(IN struct ADAPTER *prAdapter,
 			/* Trim 5G channels */
 			trimAcsScanList(prAdapter, prMsgAcsRequest,
 				prAcsReqInfo, BIT(BAND_5G));
+		}
+	} else if (prAcsReqInfo->eHwMode == P2P_VENDOR_ACS_HW_MODE_11G) {
+		if (p2pFuncIsAPMode(prAdapter->rWifiVar.
+			prP2PConnSettings[0]) &&
+			p2pFuncIsAPMode(prAdapter->rWifiVar.
+			prP2PConnSettings[1])) {
+			DBGLOG(P2P, INFO, "Report default channel\n");
+			p2pFunIndicateAcsResult(prAdapter->prGlueInfo,
+					prAcsReqInfo);
+			goto exit;
 		}
 	}
 
