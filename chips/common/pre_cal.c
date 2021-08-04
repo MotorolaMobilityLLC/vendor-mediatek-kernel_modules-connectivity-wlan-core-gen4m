@@ -803,7 +803,10 @@ int wlanPreCalPwrOn(void)
 			prChipInfo->asicCapInit(prAdapter);
 
 		prAdapter->fgIsFwOwn = TRUE;
-		wlanAcquirePowerControl(prAdapter);
+		if (wlanAcquirePowerControl(prAdapter) != WLAN_STATUS_SUCCESS) {
+			eFailReason = DRIVER_OWN_FAIL;
+			break;
+		}
 
 		prAdapter->u4OwnFailedCount = 0;
 		prAdapter->u4OwnFailedLogCount = 0;
@@ -944,7 +947,7 @@ int wlanPreCalPwrOn(void)
 
 		wlanWakeLockUninit(prGlueInfo);
 
-		if (eFailReason != ALLOC_ADAPTER_MEM_FAIL)
+		if (eFailReason == INIT_ADAPTER_FAIL)
 			nicReleaseAdapterMemory(prAdapter);
 
 		wlanNetDestroy(grWdev);
@@ -995,8 +998,11 @@ int wlanPreCalPwrOn(void)
 		break;
 	}
 
-	if (eFailReason != POWER_ON_INIT_DONE)
+	if (eFailReason != POWER_ON_INIT_DONE) {
+		if (prChipInfo->dumpBusHangCr)
+			prChipInfo->dumpBusHangCr(NULL);
 		return CONNINFRA_CB_RET_CAL_FAIL_POWER_OFF;
+	}
 
 	return CONNINFRA_CB_RET_CAL_PASS_POWER_OFF;
 }

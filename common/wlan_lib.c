@@ -5484,7 +5484,10 @@ uint32_t wlanAcquirePowerControl(IN struct ADAPTER *prAdapter)
 
 	/* DBGLOG(INIT, INFO, ("Acquire Power Ctrl\n")); */
 
-	ACQUIRE_POWER_CONTROL_FROM_PM(prAdapter);
+#if CFG_ENABLE_FULL_PM
+	if (nicpmSetDriverOwn(prAdapter) != TRUE)
+		return WLAN_STATUS_FAILURE;
+#endif
 
 	/* Reset sleepy state */
 	if (prAdapter->fgWiFiInSleepyState == TRUE)
