@@ -936,7 +936,8 @@ static void heRlmRecHePPEThresholds(struct ADAPTER *prAdapter,
 	uint32_t u4Offset)
 {
 	/* To store subfiled values in peer's PPE threshold */
-	uint8_t i, j, k, ucNSS, ucRUIdxBMP, ucRUIdxBMPTmp, ucPPEInfo[32], ucPos;
+	uint8_t i, j, k, ucNSS, ucRUIdxBMP, ucRUIdxBMPTmp;
+	uint8_t ucPPEInfo[128], ucPos;
 	uint8_t *pucMem = ((uint8_t *)prHeCap) + u4Offset;
 
 	ucNSS = (*pucMem) & HE_CAP_PPE_NSS;
