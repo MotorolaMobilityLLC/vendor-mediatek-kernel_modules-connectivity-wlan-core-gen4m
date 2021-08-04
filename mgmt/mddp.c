@@ -710,7 +710,7 @@ static bool wait_for_md_on_complete(void)
 		if (g_rSettings.rOps.rd)
 			g_rSettings.rOps.rd(&g_rSettings, &u4Value);
 
-		if ((u4Value & MD_STATUS_ON_SYNC_BIT) > 0) {
+		if ((u4Value & g_rSettings.u4MdOnBit) > 0) {
 			DBGLOG(INIT, INFO, "md on end.\n");
 			fgCompletion = true;
 			break;
