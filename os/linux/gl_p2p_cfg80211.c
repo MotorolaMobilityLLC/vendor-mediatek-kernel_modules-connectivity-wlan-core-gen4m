@@ -1509,6 +1509,25 @@ int mtk_p2p_cfg80211_start_ap(struct wiphy *wiphy,
 		if (mtk_Netdev_To_RoleIdx(prGlueInfo, dev, &ucRoleIdx) < 0)
 			break;
 
+		if ((prGlueInfo->prAdapter->rWifiVar.
+			fgSapConcurrencyPolicy ==
+			P2P_CONCURRENCY_POLICY_REMOVE) &&
+			(ucRoleIdx == 0) &&
+			aisGetConnectedBssInfo(
+			prGlueInfo->prAdapter) &&
+			p2pFuncIsAPMode(
+			prGlueInfo->prAdapter->rWifiVar.
+			prP2PConnSettings[0]) &&
+			p2pFuncIsAPMode(
+			prGlueInfo->prAdapter->rWifiVar.
+			prP2PConnSettings[1])) {
+			DBGLOG(P2P, WARN,
+				"Remove sap (role%d)\n",
+				ucRoleIdx);
+			i4Rslt = 0;
+			break;
+		}
+
 		if (chandef) {
 			kalChannelFormatSwitch(chandef, chandef->chan,
 					&rRfChnlInfo);
