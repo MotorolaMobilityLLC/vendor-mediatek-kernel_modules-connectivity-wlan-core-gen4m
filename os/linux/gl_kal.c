@@ -7997,7 +7997,7 @@ static uint32_t kalPerMonUpdate(IN struct ADAPTER *prAdapter)
 #define TEMP_LOG_TEMPLATE \
 	"ndevdrp:%s drv[RM,IL,RI,RT,RM,RW,RA,RB,DT,NS,IB,HS,LS,DD,ME,BD,NI," \
 	"DR,TE,CE,DN]:%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu," \
-	"%lu,%lu,%lu,%lu,%lu,%lu,%lu\n"
+	"%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu\n"
 	DBGLOG(SW4, INFO, TEMP_LOG_TEMPLATE,
 		head4,
 		RX_GET_CNT(&prAdapter->rRxCtrl, RX_MPDU_TOTAL_COUNT),
