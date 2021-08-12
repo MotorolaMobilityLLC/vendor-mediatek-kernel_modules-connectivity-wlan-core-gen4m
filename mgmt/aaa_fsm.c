@@ -364,7 +364,14 @@ void aaaFsmRunEventRxAuth(IN struct ADAPTER *prAdapter,
 					 * ignore Rx auth
 					 */
 					/* Certification 4.3.3.4 */
-					if (rsnCheckBipKeyInstalled(prAdapter,
+
+					if (prAdapter->rWifiVar
+						.fgSapAuthPolicy ==
+						P2P_AUTH_POLICY_RESET)
+						DBGLOG(P2P, INFO,
+							"Ignore PMF check\n");
+					else if (rsnCheckBipKeyInstalled(
+						prAdapter,
 						prStaRec)) {
 						DBGLOG(AAA, INFO,
 							"Drop RxAuth\n");
