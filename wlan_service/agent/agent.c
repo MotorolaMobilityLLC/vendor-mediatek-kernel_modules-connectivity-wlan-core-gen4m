@@ -320,8 +320,8 @@ static s_int32 todo_function(
 	struct service_test *serv_test, struct hqa_frame *hqa_frame)
 {
 	SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_TRACE, ("%s\n", __func__));
-	update_hqa_frame(hqa_frame, 2, SERV_STATUS_SUCCESS);
-	return SERV_STATUS_SUCCESS;
+	update_hqa_frame(hqa_frame, 2, SERV_STATUS_AGENT_NOT_SUPPORTED);
+	return SERV_STATUS_AGENT_NOT_SUPPORTED;
 }
 
 static s_int32 hqa_open_adapter(
@@ -4785,7 +4785,6 @@ s_int32 mt_agent_hqa_cmd_handler(
 			}
 
 			cmd_id &= 0xff;
-			ret = SERV_STATUS_AGENT_NOT_SUPPORTED;
 			while (cmd_loop < CMD_TABLES[table_idx].cmd_set_size) {
 				if (cmd_id == cmd_set[cmd_loop].index) {
 					ret = cmd_set[cmd_loop].handler(
@@ -4798,6 +4797,8 @@ s_int32 mt_agent_hqa_cmd_handler(
 		} else
 			table_idx++;
 	}
+
+	ret = todo_function(serv_test, hqa_frame);	/* return no support */
 
 done:
 	if (cmd_id == TEST_CMD_REQ) {
