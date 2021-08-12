@@ -7967,6 +7967,10 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 		prAdapter, "SapConcurrencyPolicy",
 		P2P_CONCURRENCY_POLICY_REMOVE);
 
+	prWifiVar->fgSapAuthPolicy = (uint32_t) wlanCfgGetUint32(
+		prAdapter, "SapAuthPolicy",
+		P2P_AUTH_POLICY_NONE);
+
 	prWifiVar->fgAllowSameBandDualSta = (uint8_t) wlanCfgGetUint32(
 		prAdapter, "AllowSameBandDualSta", FEATURE_ENABLED);
 

@@ -356,11 +356,8 @@ void aaaFsmRunEventRxAuth(IN struct ADAPTER *prAdapter,
 						&u2StatusCode);
 
 #if CFG_SUPPORT_802_11W
-					if ((prBssInfo->u4RsnSelectedAKMSuite ==
-						RSN_AKM_SUITE_SAE) &&
-						(prAdapter->rWifiVar.
-						u4SwTestMode !=
-						ENUM_SW_TEST_MODE_SIGMA_PMF))
+					if (prBssInfo->u4RsnSelectedAKMSuite ==
+						RSN_AKM_SUITE_SAE)
 						break;
 
 					/* AP PMF, if PMF connection,
