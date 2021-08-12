@@ -602,7 +602,7 @@
 #define MAX_TX_POWER				63
 #define MIN_TX_POWER				-64
 /*align Frimware Max Power Limit CH Num*/
-#define MAX_CMD_SUPPORT_CHANNEL_NUM			70
+#define MAX_CMD_SUPPORT_CHANNEL_NUM			60
 #endif
 
 #if (CFG_SUPPORT_SINGLE_SKU == 1)
