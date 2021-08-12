@@ -1431,9 +1431,7 @@ uint8_t scanProcessRnrChannel(IN struct ADAPTER *prAdapter,
 	return uc6gChNum;
 }
 
-
-uint8_t scanValidRnrTbttInfo(IN uint16_t u2TbttInfoLength,
-	IN uint8_t ucOpClass)
+uint8_t scanValidRnrTbttInfo(IN uint16_t u2TbttInfoLength)
 {
 	uint8_t ucValidInfo;
 
@@ -1454,6 +1452,12 @@ uint8_t scanValidRnrTbttInfo(IN uint16_t u2TbttInfoLength,
 		ucValidInfo = FALSE;
 		break;
 	}
+	return ucValidInfo;
+}
+
+uint8_t scanIs6gOpClass(IN uint8_t ucOpClass)
+{
+	uint8_t ucIs6gOpClass;
 
 	switch (ucOpClass) {
 	case 131:
@@ -1461,13 +1465,13 @@ uint8_t scanValidRnrTbttInfo(IN uint16_t u2TbttInfoLength,
 	case 133:
 	case 134:
 	case 135:
+		ucIs6gOpClass = TRUE;
 		break;
 	default:
-		ucValidInfo = FALSE;
+		ucIs6gOpClass = FALSE;
 		break;
 	}
-
-	return ucValidInfo;
+	return ucIs6gOpClass;
 }
 
 uint8_t scanSearchBssidInCurrentList(
@@ -1511,7 +1515,6 @@ void scanParsingRnrElement(IN struct ADAPTER *prAdapter,
 	struct IE_SHORT_SSID_LIST *prIeShortSsidList;
 	struct BSS_DESC *prBssDescTemp = NULL;
 
-
 	while (ucCurrentLength < IE_LEN(pucIE)) {
 		pucProfileIE = &IE_ID_EXT(pucIE) + ucCurrentLength;
 		prNeighborAPInfoField =
@@ -1529,21 +1532,23 @@ void scanParsingRnrElement(IN struct ADAPTER *prAdapter,
 						TBTT_INFO_HDR_LENGTH)
 						>> TBTT_INFO_HDR_LENGTH_OFFSET;
 
-		/* Check Tbtt Info length and OpClass is valid or not*/
-		if (!scanValidRnrTbttInfo(u2TbttInfoLength,
-					prNeighborAPInfoField->ucOpClass)) {
-			DBGLOG(SCN, ERROR,
-				"Invalid TBTT info length = %d, opClass = %d\n",
-				u2TbttInfoLength,
-				prNeighborAPInfoField->ucOpClass);
+		/* Check Tbtt Info length is valid or not*/
+		if (!scanValidRnrTbttInfo(u2TbttInfoLength)) {
+			DBGLOG(SCN, ERROR, "Invalid TBTT info length = %d\n",
+				u2TbttInfoLength);
 			return;
 		}
-		/* Handle this NeighborAPInfo reported 6G channel */
-		uc6gChNum = scanProcessRnrChannel(prAdapter,
-					prNeighborAPInfoField, prScanRequest);
-		if (uc6gChNum == 0) {
-			DBGLOG(SCN, ERROR, "RNR channel = NULL!\n");
-			return;
+		/* If opClass is not 6G, no need to do extra scan
+		 * directly check next neighborAPInfo if exist
+		 */
+		if (!scanIs6gOpClass(prNeighborAPInfoField->ucOpClass)) {
+			DBGLOG(SCN, INFO, "RNR op class(%d) is not 6G\n",
+				prNeighborAPInfoField->ucOpClass);
+
+			/* Calculate next NeighborAPInfo's index if exists */
+			ucCurrentLength += 4 +
+				(u2TbttInfoCount * u2TbttInfoLength);
+			continue;
 		}
 
 		/* peek tail NeighborAPInfo from list to save information */
@@ -1610,6 +1615,14 @@ void scanParsingRnrElement(IN struct ADAPTER *prAdapter,
 			kalMemSet(prScanRequest->ucBssidMatchSsidInd,
 				CFG_SCAN_SSID_MAX_NUM,
 				sizeof(prScanRequest->ucBssidMatchSsidInd));
+		}
+
+		/* Handle this NeighborAPInfo reported 6G channel */
+		uc6gChNum = scanProcessRnrChannel(prAdapter,
+					prNeighborAPInfoField, prScanRequest);
+		if (uc6gChNum == 0) {
+			DBGLOG(SCN, ERROR, "RNR channel = NULL!\n");
+			return;
 		}
 
 		for (i = 0; i < u2TbttInfoCount; i++) {
