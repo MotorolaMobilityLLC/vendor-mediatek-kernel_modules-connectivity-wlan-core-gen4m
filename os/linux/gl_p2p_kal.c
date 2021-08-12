@@ -2252,6 +2252,55 @@ nla_put_failure:
 		kfree_skb(vendor_event);
 }
 
+void kalP2pIndicateRadarEvent(IN struct GLUE_INFO *prGlueInfo,
+	IN uint8_t ucRoleIndex,
+	IN uint32_t event,
+	IN uint32_t freq)
+{
+	struct GL_P2P_INFO *prGlueP2pInfo = (struct GL_P2P_INFO *) NULL;
+	struct sk_buff *vendor_event = NULL;
+
+	prGlueP2pInfo = prGlueInfo->prP2PInfo[ucRoleIndex];
+
+	if (!prGlueP2pInfo) {
+		DBGLOG(P2P, ERROR, "p2p glue info null.\n");
+		return;
+	}
+
+	DBGLOG(P2P, INFO,
+		"r=%d, event=%d, f=%d\n",
+		ucRoleIndex,
+		event,
+		freq);
+
+	vendor_event = cfg80211_vendor_event_alloc(
+		prGlueP2pInfo->prWdev->wiphy,
+		prGlueP2pInfo->prWdev,
+		sizeof(uint32_t) + NLMSG_HDRLEN,
+		event,
+		GFP_KERNEL);
+
+	if (!vendor_event) {
+		DBGLOG(P2P, ERROR, "allocate vendor event fail.\n");
+		goto nla_put_failure;
+	}
+
+	if (unlikely(nla_put_u32(vendor_event,
+			NL80211_ATTR_WIPHY_FREQ,
+			freq) < 0)) {
+		DBGLOG(P2P, ERROR, "put freq fail.\n");
+		goto nla_put_failure;
+	}
+
+	cfg80211_vendor_event(vendor_event, GFP_KERNEL);
+
+	return;
+
+nla_put_failure:
+	if (vendor_event)
+		kfree_skb(vendor_event);
+}
+
 void kalP2pNotifyStopApComplete(IN struct ADAPTER *prAdapter,
 		IN uint8_t ucRoleIndex)
 {

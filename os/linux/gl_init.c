@@ -1165,6 +1165,31 @@ static const struct nl80211_vendor_cmd_info
 #endif
 
 	{
+		.vendor_id = OUI_QCA,
+		.subcmd = NL80211_VENDOR_SUBCMD_DFS_OFFLOAD_CAC_STARTED
+	},
+
+	{
+		.vendor_id = OUI_QCA,
+		.subcmd = NL80211_VENDOR_SUBCMD_DFS_OFFLOAD_CAC_FINISHED
+	},
+
+	{
+		.vendor_id = OUI_QCA,
+		.subcmd = NL80211_VENDOR_SUBCMD_DFS_OFFLOAD_CAC_ABORTED
+	},
+
+	{
+		.vendor_id = OUI_QCA,
+		.subcmd = NL80211_VENDOR_SUBCMD_DFS_OFFLOAD_CAC_NOP_FINISHED
+	},
+
+	{
+		.vendor_id = OUI_QCA,
+		.subcmd = NL80211_VENDOR_SUBCMD_DFS_OFFLOAD_RADAR_DETECTED
+	},
+
+	{
 		.vendor_id = OUI_MTK,
 		.subcmd = WIFI_EVENT_GENERIC_RESPONSE
 	},

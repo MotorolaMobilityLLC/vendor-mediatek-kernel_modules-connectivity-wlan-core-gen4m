@@ -382,6 +382,11 @@ void kalP2pIndicateAcsResult(IN struct GLUE_INFO *prGlueInfo,
 		IN enum ENUM_MAX_BANDWIDTH_SETTING eChnlBw,
 		IN enum P2P_VENDOR_ACS_HW_MODE eHwMode);
 
+void kalP2pIndicateRadarEvent(IN struct GLUE_INFO *prGlueInfo,
+		IN uint8_t ucRoleIndex,
+		IN uint32_t event,
+		IN uint32_t freq);
+
 void kalP2pNotifyStopApComplete(IN struct ADAPTER *prAdapter,
 		IN uint8_t ucRoleIndex);
 
