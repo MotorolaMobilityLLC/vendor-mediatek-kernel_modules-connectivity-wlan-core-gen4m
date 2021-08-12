@@ -766,6 +766,12 @@ int glRstwlanPreWholeChipReset(enum consys_drv_type type, char *reason)
 			DBGLOG(INIT, INFO, "Reach subsys reset threshold!!!\n");
 		else if (g_IsWfsysBusHang)
 			DBGLOG(INIT, INFO, "WFSYS bus hang!!!\n");
+
+		while (kalIsResetting()) {
+			DBGLOG(REQ, WARN, "Wi-Fi driver is resetting\n");
+			msleep(100);
+		}
+
 		g_IsWholeChipRst = TRUE;
 #if (CFG_ANDORID_CONNINFRA_COREDUMP_SUPPORT == 1)
 		if (!prAdapter->prGlueInfo->u4ReadyFlag)
