@@ -2129,4 +2129,133 @@ err_handle_label:
 	return i4Status;
 }
 
+int mtk_cfg80211_vendor_get_trx_stats(struct wiphy *wiphy,
+					 struct wireless_dev *wdev,
+					 const void *data, int data_len)
+{
+	struct GLUE_INFO *prGlueInfo;
+	struct sk_buff *skb;
+
+	uint32_t u4TxTlvSize;
+	uint32_t u4RxTlvSize;
+	uint32_t u4CgsTlvSize;
+	uint32_t u4FlagTlvSize;
+
+	struct STATS_TRX_TLV_T *aucTxTlvList = NULL;
+	struct STATS_TRX_TLV_T *aucRxTlvList = NULL;
+	struct STATS_TRX_TLV_T *aucCgsTlvList = NULL;
+	struct STATS_TRX_TLV_T *aucFlagTlvList = NULL;
+
+	ASSERT(wiphy && wdev);
+	DBGLOG(REQ, TRACE, "data_len=%d, iftype=%d\n", data_len, wdev->iftype);
+
+	WIPHY_PRIV(wiphy, prGlueInfo);
+	if (!prGlueInfo)
+		return -EFAULT;
+
+	/* tx tlv */
+	u4TxTlvSize = statsTxGetTlvStatTotalLen();
+	aucTxTlvList = (struct STATS_TRX_TLV_T *) kalMemAlloc(u4TxTlvSize,
+		VIR_MEM_TYPE);
+	if (!aucTxTlvList) {
+		DBGLOG(REQ, ERROR,
+			"Can not alloc memory for stats tx info\n");
+		return -ENOMEM;
+	}
+	kalMemZero(aucTxTlvList, u4TxTlvSize);
+	statsGetTxInfoHdlr(prGlueInfo, aucTxTlvList);
+
+	/* rx tlv */
+	u4RxTlvSize = statsRxGetTlvStatTotalLen();
+	aucRxTlvList = (struct STATS_TRX_TLV_T *) kalMemAlloc(u4RxTlvSize,
+		VIR_MEM_TYPE);
+	if (!aucRxTlvList) {
+		DBGLOG(REQ, ERROR,
+			"Can not alloc memory for stats rx info\n");
+		return -ENOMEM;
+	}
+	kalMemZero(aucRxTlvList, u4RxTlvSize);
+	statsGetRxInfoHdlr(prGlueInfo, aucRxTlvList);
+
+	/* cgstn tlv */
+	u4CgsTlvSize = statsCgsGetTlvStatTotalLen();
+	aucCgsTlvList = (struct STATS_TRX_TLV_T *) kalMemAlloc(u4CgsTlvSize,
+		VIR_MEM_TYPE);
+	if (!aucCgsTlvList) {
+		DBGLOG(REQ, ERROR,
+			"Can not alloc memory for stats cgstn info\n");
+		return -ENOMEM;
+	}
+	kalMemZero(aucCgsTlvList, u4CgsTlvSize);
+	statsGetCgsInfoHdlr(prGlueInfo, aucCgsTlvList);
+
+	/* flag tlv */
+	u4FlagTlvSize = statsFlagGetTlvStatTotalLen();
+	aucFlagTlvList = (struct STATS_TRX_TLV_T *) kalMemAlloc(u4FlagTlvSize,
+		VIR_MEM_TYPE);
+	if (!aucFlagTlvList) {
+		DBGLOG(REQ, ERROR,
+			"Can not alloc memory for stats flag info\n");
+		return -ENOMEM;
+	}
+	kalMemZero(aucFlagTlvList, u4FlagTlvSize);
+	statsGetFgInfoHdlr(prGlueInfo, aucFlagTlvList);
+
+	skb = cfg80211_vendor_cmd_alloc_reply_skb(wiphy,
+		u4TxTlvSize + u4RxTlvSize + u4CgsTlvSize + u4FlagTlvSize +
+		(sizeof(uint32_t) * 8));
+	if (!skb) {
+		DBGLOG(REQ, ERROR, "Allocate skb failed\n");
+		return -ENOMEM;
+	}
+
+	if (unlikely(nla_put_u32(skb, WIFI_ATTRIBUTE_STATS_TX_TLV_NUM,
+				 STATS_TX_TAG_MAX_NUM) < 0))
+		goto nla_put_failure;
+	if (unlikely(nla_put_u32(skb, WIFI_ATTRIBUTE_STATS_RX_TLV_NUM,
+				 STATS_RX_TAG_MAX_NUM) < 0))
+		goto nla_put_failure;
+	if (unlikely(nla_put_u32(skb, WIFI_ATTRIBUTE_STATS_CGS_TLV_NUM,
+				 STATS_CGS_TAG_MAX_NUM) < 0))
+		goto nla_put_failure;
+	if (unlikely(nla_put_u32(skb, WIFI_ATTRIBUTE_STATS_FLAG_TLV_NUM,
+				 STATS_FLAG_TAG_MAX_NUM) < 0))
+		goto nla_put_failure;
+
+	if (unlikely(nla_put_u32(skb, WIFI_ATTRIBUTE_STATS_TX_TLV_SIZE,
+				 u4TxTlvSize) < 0))
+		goto nla_put_failure;
+	if (unlikely(nla_put_u32(skb, WIFI_ATTRIBUTE_STATS_RX_TLV_SIZE,
+				 u4RxTlvSize) < 0))
+		goto nla_put_failure;
+	if (unlikely(nla_put_u32(skb, WIFI_ATTRIBUTE_STATS_CGS_TLV_SIZE,
+				 u4CgsTlvSize) < 0))
+		goto nla_put_failure;
+	if (unlikely(nla_put_u32(skb, WIFI_ATTRIBUTE_STATS_FLAG_TLV_SIZE,
+				 u4FlagTlvSize) < 0))
+		goto nla_put_failure;
+
+	if (unlikely(nla_put(skb, WIFI_ATTRIBUTE_STATS_TX,
+			     u4TxTlvSize, aucTxTlvList) < 0))
+		goto nla_put_failure;
+
+	if (unlikely(nla_put(skb, WIFI_ATTRIBUTE_STATS_RX,
+			     u4RxTlvSize, aucRxTlvList) < 0))
+		goto nla_put_failure;
+
+	if (unlikely(nla_put(skb, WIFI_ATTRIBUTE_STATS_CGS,
+			     u4RxTlvSize, aucCgsTlvList) < 0))
+		goto nla_put_failure;
+
+	if (unlikely(nla_put(skb, WIFI_ATTRIBUTE_STATS_FLAG,
+			     u4FlagTlvSize, aucFlagTlvList) < 0))
+		goto nla_put_failure;
+
+	return cfg80211_vendor_cmd_reply(skb);
+
+nla_put_failure:
+	kfree_skb(skb);
+	return -EFAULT;
+}
+
 #endif /* KERNEL_VERSION(3, 16, 0) <= LINUX_VERSION_CODE */

@@ -1101,6 +1101,20 @@ static const struct wiphy_vendor_command
 #endif
 	},
 #endif
+	/* Get Trx Stats */
+	{
+		{
+			.vendor_id = OUI_MTK,
+			.subcmd = NL80211_VENDOR_SUBCMD_GET_TRX_STATS
+		},
+		.flags = WIPHY_VENDOR_CMD_NEED_WDEV |
+				WIPHY_VENDOR_CMD_NEED_NETDEV,
+		.doit = mtk_cfg80211_vendor_get_trx_stats
+#if KERNEL_VERSION(5, 4, 0) <= LINUX_VERSION_CODE
+		,
+		.policy = VENDOR_CMD_RAW_DATA
+#endif
+	},
 };
 
 static const struct nl80211_vendor_cmd_info
