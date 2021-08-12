@@ -7313,7 +7313,7 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 	prWifiVar->ucP2p5gBandwidth = (uint8_t) wlanCfgGetUint32(
 				prAdapter, "P2p5gBw", MAX_BW_80MHZ);
 	prWifiVar->ucP2p6gBandwidth = (uint8_t) wlanCfgGetUint32(
-				prAdapter, "P2p6gBw", MAX_BW_80MHZ);
+				prAdapter, "P2p6gBw", MAX_BW_160MHZ);
 	prWifiVar->ucApBandwidth = (uint8_t) wlanCfgGetUint32(
 				prAdapter, "ApBw", MAX_BW_160MHZ);
 	prWifiVar->ucAp2gBandwidth = (uint8_t) wlanCfgGetUint32(
