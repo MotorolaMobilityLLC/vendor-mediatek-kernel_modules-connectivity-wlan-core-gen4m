@@ -7971,6 +7971,9 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 		prAdapter, "SapAuthPolicy",
 		P2P_AUTH_POLICY_NONE);
 
+	prWifiVar->fgSapOverwriteAcsChnlBw = (uint32_t) wlanCfgGetUint32(
+		prAdapter, "SapOverwriteAcsChnlBw", FEATURE_ENABLED);
+
 	prWifiVar->fgAllowSameBandDualSta = (uint8_t) wlanCfgGetUint32(
 		prAdapter, "AllowSameBandDualSta", FEATURE_ENABLED);
 

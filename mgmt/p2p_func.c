@@ -7346,6 +7346,33 @@ void p2pFunIndicateAcsResult(IN struct GLUE_INFO *prGlueInfo,
 				prAcsReqInfo->ucPrimaryCh);
 	}
 
+	if (prGlueInfo->prAdapter->rWifiVar.fgSapOverwriteAcsChnlBw) {
+		uint8_t ucMaxBandwidth = MAX_BW_20MHZ;
+
+		if (prAcsReqInfo->eBand == BAND_2G4)
+			ucMaxBandwidth = prGlueInfo->prAdapter->rWifiVar
+				.ucAp2gBandwidth;
+		else if (prAcsReqInfo->eBand == BAND_5G)
+			ucMaxBandwidth = prGlueInfo->prAdapter->rWifiVar
+				.ucAp5gBandwidth;
+#if (CFG_SUPPORT_WIFI_6G == 1)
+		else if (prAcsReqInfo->eBand == BAND_6G)
+			ucMaxBandwidth = prGlueInfo->prAdapter->rWifiVar
+				.ucAp6gBandwidth;
+#endif
+		if (ucMaxBandwidth
+			> prGlueInfo->prAdapter->rWifiVar.ucApBandwidth)
+			ucMaxBandwidth = prGlueInfo->prAdapter->rWifiVar
+				.ucApBandwidth;
+		if (ucMaxBandwidth != prAcsReqInfo->eChnlBw) {
+			DBGLOG(P2P, WARN,
+				"Adjust bw from %d to %d\n",
+				prAcsReqInfo->eChnlBw,
+				ucMaxBandwidth);
+			prAcsReqInfo->eChnlBw = ucMaxBandwidth;
+		}
+	}
+
 	if (prAcsReqInfo->eChnlBw > MAX_BW_20MHZ) {
 		enum ENUM_BAND eBand;
 		enum ENUM_CHNL_EXT eSCO;
