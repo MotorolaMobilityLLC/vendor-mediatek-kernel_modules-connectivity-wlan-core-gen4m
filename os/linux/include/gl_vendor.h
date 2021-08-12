@@ -101,6 +101,9 @@
 #define NL80211_VENDOR_SUBCMD_DFS_CAPABILITY 11
 #define NL80211_VENDOR_SUBCMD_GET_FEATURES 55
 #define QCA_NL80211_VENDOR_SUBCMD_ROAM 64
+#define QCA_WLAN_VENDOR_ATTR_SETBAND_VALUE 12
+#define QCA_WLAN_VENDOR_ATTR_SETBAND_MASK 43
+#define QCA_WLAN_VENDOR_ATTR_MAX 44
 #define QCA_NL80211_VENDOR_SUBCMD_SETBAND 105
 #define NL80211_VENDOR_SUBCMD_NAN 12
 #define NL80211_VENDOR_SUBCMD_NDP 81
@@ -250,6 +253,7 @@ enum WIFI_ATTRIBUTE {
 	WIFI_ATTRIBUTE_STATS_FLAG_TLV_NUM,
 	WIFI_ATTRIBUTE_STATS_FLAG_TLV_SIZE,
 	WIFI_ATTRIBUTE_STATS_FLAG,
+	WIFI_ATTRIBUTE_MAX,
 };
 
 enum WIFI_RSSI_MONITOR_ATTRIBUTE {
@@ -297,12 +301,14 @@ enum LSTATS_ATTRIBUTE {
 };
 
 enum WIFI_MKEEP_ALIVE_ATTRIBUTE {
-	MKEEP_ALIVE_ATTRIBUTE_ID = 1,
+	MKEEP_ALIVE_ATTRIBUTE_INVALID = 0,
+	MKEEP_ALIVE_ATTRIBUTE_ID,
 	MKEEP_ALIVE_ATTRIBUTE_IP_PKT_LEN,
 	MKEEP_ALIVE_ATTRIBUTE_IP_PKT,
 	MKEEP_ALIVE_ATTRIBUTE_SRC_MAC_ADDR,
 	MKEEP_ALIVE_ATTRIBUTE_DST_MAC_ADDR,
-	MKEEP_ALIVE_ATTRIBUTE_PERIOD_MSEC
+	MKEEP_ALIVE_ATTRIBUTE_PERIOD_MSEC,
+	MKEEP_ALIVE_ATTRIBUTE_MAX
 };
 
 /* QCA Vender CMD */
@@ -327,6 +333,7 @@ enum QCA_ATTR_ROAMING_PARAMS {
 	QCA_ATTR_ROAMING_PARAM_INVALID = 0,
 
 	QCA_ATTR_ROAMING_SUBCMD = 1,
+	QCA_ATTR_ROAMING_REQ_ID = 2,
 
 	/* Attribute for set_blacklist bssid params */
 	QCA_ATTR_ROAMING_PARAM_SET_BSSID_PARAMS = 18,
@@ -439,6 +446,10 @@ extern const struct nla_policy mtk_scan_param_policy[
 		WIFI_ATTR_SCAN_MAX + 1];
 extern const struct nla_policy nla_parse_wifi_rssi_monitor[
 		WIFI_ATTRIBUTE_RSSI_MONITOR_ATTRIBUTE_MAX + 1];
+extern const struct nla_policy nla_parse_wifi_attribute[
+		WIFI_ATTRIBUTE_MAX + 1];
+extern const struct nla_policy nal_parse_wifi_setband[
+		QCA_WLAN_VENDOR_ATTR_MAX + 1];
 extern const struct nla_policy nla_get_version_policy[
 		LOGGER_ATTRIBUTE_MAX + 1];
 extern const struct nla_policy nla_parse_offloading_policy[
@@ -448,6 +459,10 @@ extern const struct nla_policy nla_get_preferred_freq_list_policy[
 extern const struct nla_policy nla_get_acs_policy[
 		WIFI_VENDOR_ATTR_ACS_MAX + 1];
 
+#if CFG_SUPPORT_MBO
+extern const struct nla_policy qca_roaming_param_policy[
+	QCA_ATTR_ROAMING_PARAM_MAX + 1];
+#endif
 /*******************************************************************************
  *                           MACROS
  *******************************************************************************

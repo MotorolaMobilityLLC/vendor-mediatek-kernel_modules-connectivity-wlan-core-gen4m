@@ -294,6 +294,8 @@ struct NanDebugParams {
 	u8 debug_cmd_data[NAN_MAX_DEBUG_MESSAGE_DATA_LEN];
 } PACKED;
 
+extern const struct nla_policy mtk_wlan_vendor_nan_policy[NL80211_ATTR_MAX + 1];
+
 /* Service Discovery Extended Attribute params Format to HAL*/
 struct NanFWSdeaCtrlParams {
 	u32 fsd_required : 1;

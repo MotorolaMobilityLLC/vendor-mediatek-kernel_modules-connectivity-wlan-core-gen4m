@@ -108,6 +108,43 @@ const struct nla_policy mtk_scan_param_policy[
 	[WIFI_ATTR_SCAN_PASSIVE_N_CH_BACK] = {.type = NLA_U8},
 };
 
+const struct nla_policy nal_parse_wifi_setband[
+	QCA_WLAN_VENDOR_ATTR_MAX + 1] = {
+	[QCA_WLAN_VENDOR_ATTR_SETBAND_VALUE] = {.type = NLA_U32},
+	[QCA_WLAN_VENDOR_ATTR_SETBAND_MASK] = {.type = NLA_U32},
+};
+
+const struct nla_policy nla_parse_wifi_attribute[
+	WIFI_ATTRIBUTE_MAX + 1] = {
+#if KERNEL_VERSION(5, 9, 0) <= CFG80211_VERSION_CODE
+	[WIFI_ATTRIBUTE_PNO_RANDOM_MAC_OUI] = NLA_POLICY_MIN_LEN(0),
+#elif KERNEL_VERSION(5, 4, 0) <= CFG80211_VERSION_CODE
+	[WIFI_ATTRIBUTE_PNO_RANDOM_MAC_OUI] = {.type = NLA_MIN_LEN, .len = 0 },
+#else
+	[WIFI_ATTRIBUTE_PNO_RANDOM_MAC_OUI] = {.type = NLA_BINARY},
+#endif
+	[WIFI_ATTRIBUTE_COUNTRY_CODE] = {.type = NLA_STRING},
+	[WIFI_ATTRIBUTE_ROAMING_BLACKLIST_NUM] = {.type = NLA_U32},
+#if KERNEL_VERSION(5, 9, 0) <= CFG80211_VERSION_CODE
+	[WIFI_ATTRIBUTE_ROAMING_BLACKLIST_BSSID] = NLA_POLICY_MIN_LEN(0),
+#elif KERNEL_VERSION(5, 4, 0) <= CFG80211_VERSION_CODE
+	[WIFI_ATTRIBUTE_ROAMING_BLACKLIST_BSSID] = {
+		.type = NLA_MIN_LEN, .len = 0 },
+#else
+	[WIFI_ATTRIBUTE_ROAMING_BLACKLIST_BSSID] = {.type = NLA_BINARY},
+#endif
+	[WIFI_ATTRIBUTE_ROAMING_WHITELIST_NUM] = {.type = NLA_U32},
+#if KERNEL_VERSION(5, 9, 0) <= CFG80211_VERSION_CODE
+	[WIFI_ATTRIBUTE_ROAMING_WHITELIST_SSID] = NLA_POLICY_MIN_LEN(0),
+#elif KERNEL_VERSION(5, 4, 0) <= CFG80211_VERSION_CODE
+	[WIFI_ATTRIBUTE_ROAMING_WHITELIST_SSID] = {
+		.type = NLA_MIN_LEN, .len = 0 },
+#else
+	[WIFI_ATTRIBUTE_ROAMING_WHITELIST_SSID] = {.type = NLA_BINARY},
+#endif
+	[WIFI_ATTRIBUTE_ROAMING_STATE] = {.type = NLA_U32},
+	[WIFI_ATTRIBUTE_TX_POWER_SCENARIO] = {.type = NLA_U32},
+};
 
 const struct nla_policy nla_parse_wifi_rssi_monitor[
 		WIFI_ATTRIBUTE_RSSI_MONITOR_ATTRIBUTE_MAX + 1] = {
@@ -133,10 +170,19 @@ const struct nla_policy nla_get_version_policy[
 const struct nla_policy nla_parse_offloading_policy[
 		 MKEEP_ALIVE_ATTRIBUTE_PERIOD_MSEC + 1] = {
 	[MKEEP_ALIVE_ATTRIBUTE_ID] = {.type = NLA_U8},
-	[MKEEP_ALIVE_ATTRIBUTE_IP_PKT] = {.type = NLA_UNSPEC},
+	[MKEEP_ALIVE_ATTRIBUTE_IP_PKT] = {.type = NLA_BINARY},
 	[MKEEP_ALIVE_ATTRIBUTE_IP_PKT_LEN] = {.type = NLA_U16},
-	[MKEEP_ALIVE_ATTRIBUTE_SRC_MAC_ADDR] = {.type = NLA_UNSPEC},
-	[MKEEP_ALIVE_ATTRIBUTE_DST_MAC_ADDR] = {.type = NLA_UNSPEC},
+#if KERNEL_VERSION(5, 9, 0) <= CFG80211_VERSION_CODE
+	[MKEEP_ALIVE_ATTRIBUTE_SRC_MAC_ADDR] =
+		NLA_POLICY_EXACT_LEN_WARN(MAC_ADDR_LEN),
+	[MKEEP_ALIVE_ATTRIBUTE_DST_MAC_ADDR] =
+		NLA_POLICY_EXACT_LEN_WARN(MAC_ADDR_LEN),
+#else
+	[MKEEP_ALIVE_ATTRIBUTE_SRC_MAC_ADDR] = {
+		.type = NLA_BINARY, .len = MAC_ADDR_LEN},
+	[MKEEP_ALIVE_ATTRIBUTE_DST_MAC_ADDR] = {
+		.type = NLA_BINARY, .len = MAC_ADDR_LEN},
+#endif
 	[MKEEP_ALIVE_ATTRIBUTE_PERIOD_MSEC] = {.type = NLA_U32},
 };
 
@@ -927,9 +973,10 @@ nla_put_failure:
 }
 
 #if CFG_SUPPORT_MBO
-static const struct nla_policy
+const struct nla_policy
 qca_roaming_param_policy[QCA_ATTR_ROAMING_PARAM_MAX + 1] = {
 	[QCA_ATTR_ROAMING_SUBCMD] = {.type = NLA_U32},
+	[QCA_ATTR_ROAMING_REQ_ID] = {.type = NLA_U32},
 	[QCA_ATTR_ROAMING_PARAM_SET_BSSID_PARAMS_NUM_BSSID] = {.type = NLA_U32},
 	[QCA_ATTR_ROAMING_PARAM_SET_BSSID_PARAMS] = {.type = NLA_NESTED},
 	[QCA_ATTR_ROAMING_PARAM_SET_BSSID_PARAMS_BSSID] = {
@@ -1173,7 +1220,7 @@ int mtk_cfg80211_vendor_packet_keep_alive_start(
 
 	int32_t i4Status = -EINVAL;
 	struct PARAM_PACKET_KEEPALIVE_T *prPkt = NULL;
-	struct nlattr *attr[MKEEP_ALIVE_ATTRIBUTE_PERIOD_MSEC + 1];
+	struct nlattr *attr[MKEEP_ALIVE_ATTRIBUTE_MAX];
 	uint32_t i = 0;
 
 	ASSERT(wiphy);
@@ -1192,8 +1239,7 @@ int mtk_cfg80211_vendor_packet_keep_alive_start(
 		return -ENOMEM;
 	}
 	kalMemZero(prPkt, sizeof(struct PARAM_PACKET_KEEPALIVE_T));
-	kalMemZero(attr, sizeof(struct nlattr *)
-		   * (MKEEP_ALIVE_ATTRIBUTE_PERIOD_MSEC + 1));
+	kalMemZero(attr, sizeof(struct nlattr *) * (MKEEP_ALIVE_ATTRIBUTE_MAX));
 
 	prPkt->enable = TRUE; /*start packet keep alive*/
 	if (NLA_PARSE_NESTED(attr,
