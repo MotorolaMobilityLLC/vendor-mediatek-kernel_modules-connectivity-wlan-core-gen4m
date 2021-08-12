@@ -7321,7 +7321,7 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 	prWifiVar->ucAp5gBandwidth = (uint8_t) wlanCfgGetUint32(
 				prAdapter, "Ap5gBw", MAX_BW_80MHZ);
 	prWifiVar->ucAp6gBandwidth = (uint8_t) wlanCfgGetUint32(
-				prAdapter, "Ap6gBw", MAX_BW_20MHZ);
+				prAdapter, "Ap6gBw", MAX_BW_160MHZ);
 	prWifiVar->ucApChnlDefFromCfg = (uint8_t) wlanCfgGetUint32(
 				prAdapter, "ApChnlDefFromCfg", FEATURE_ENABLED);
 	prWifiVar->ucApAllowHtVhtTkip = (uint8_t) wlanCfgGetUint32(

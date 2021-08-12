@@ -4195,7 +4195,7 @@ u_int8_t indicateApAcsOverwrite(
 	enum ENUM_MAX_BANDWIDTH_SETTING eChnlBw;
 	u_int8_t bOverwrite = FALSE;
 	uint8_t ucPrimaryCh = 0;
-	uint8_t i;
+	int32_t i;
 
 	if (!prAdapter || !prAcsReqInfo || !prMsgAcsRequest)
 		return FALSE;
@@ -4243,7 +4243,10 @@ u_int8_t indicateApAcsOverwrite(
 			prAcsReqInfo->eHwMode = P2P_VENDOR_ACS_HW_MODE_11G;
 		else
 			prAcsReqInfo->eHwMode = P2P_VENDOR_ACS_HW_MODE_11A;
-		/* prAcsReqInfo->eChnlBw = eChnlBw; */
+		if (eChnlBw
+			> prAdapter->rWifiVar.ucApBandwidth)
+			eChnlBw = prAdapter->rWifiVar.ucApBandwidth;
+		/* prAcsReqInfo->eChnlBw = eChnlBw;*/
 		p2pFunIndicateAcsResult(prAdapter->prGlueInfo,
 			prAcsReqInfo);
 		bOverwrite = TRUE;
