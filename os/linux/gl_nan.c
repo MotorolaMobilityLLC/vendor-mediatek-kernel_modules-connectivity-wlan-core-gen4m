@@ -184,7 +184,7 @@ nanAllocInfo(IN struct GLUE_INFO *prGlueInfo, uint8_t ucRoleIdx)
 {
 	struct ADAPTER *prAdapter = NULL;
 	struct WIFI_VAR *prWifiVar = NULL;
-	/* UINT_32 u4Idx = 0; */
+	uint8_t ucIdx = 0;
 
 	if (!prGlueInfo) {
 		DBGLOG(NAN, ERROR, "prGlueInfo error\n");
@@ -211,43 +211,44 @@ nanAllocInfo(IN struct GLUE_INFO *prGlueInfo, uint8_t ucRoleIdx)
 		if (prGlueInfo->aprNANDevInfo[ucRoleIdx]) {
 			kalMemZero(prGlueInfo->aprNANDevInfo[ucRoleIdx],
 				   sizeof(struct _GL_NAN_INFO_T));
+		} else {
+			DBGLOG(NAN, INFO, "alloc aprNANDevInfo fail\n");
+			goto err_alloc;
 		}
 
-		prWifiVar->aprNanSpecificBssInfo[ucRoleIdx] =
-			kalMemAlloc(
+		for (ucIdx = 0; ucIdx < NAN_BSS_INDEX_NUM; ucIdx++) {
+			prWifiVar->aprNanSpecificBssInfo[ucIdx] =
+				kalMemAlloc(
 				sizeof(struct _NAN_SPECIFIC_BSS_INFO_T),
 				VIR_MEM_TYPE);
-
-	} else {
-		if (prGlueInfo->aprNANDevInfo[ucRoleIdx] == NULL) {
-			DBGLOG(NAN, ERROR, "aprNANDevInfo is null!\n");
-			return FALSE;
 		}
 	}
 
+	for (ucIdx = 0; ucIdx < NAN_BSS_INDEX_NUM; ucIdx++) {
+		/* chk if alloc successful or not */
+		if (prGlueInfo->aprNANDevInfo[ucRoleIdx] &&
+		    prWifiVar->aprNanSpecificBssInfo[ucIdx])
+			continue;
 
-	if (!prGlueInfo->aprNANDevInfo[ucRoleIdx])
-		DBGLOG(NAN, ERROR, "prNANDevInfo error\n");
-	else
-		DBGLOG(NAN, INFO, "prNANDevInfo ok\n");
+		DBGLOG(NAN, ERROR, "[fail!]NANAllocInfo :fail\n");
+		goto err_alloc;
+	}
 
-	/* chk if alloc successful or not */
-	if (prGlueInfo->aprNANDevInfo[ucRoleIdx] &&
-	    prWifiVar->aprNanSpecificBssInfo[ucRoleIdx])
-		return TRUE;
+	return TRUE;
 
-	DBGLOG(NAN, ERROR, "[fail!]NANAllocInfo :fail\n");
+err_alloc:
+	for (ucIdx = 0; ucIdx < NAN_BSS_INDEX_NUM; ucIdx++) {
+		if (prWifiVar->aprNanSpecificBssInfo[ucIdx]) {
+			kalMemFree(prWifiVar->aprNanSpecificBssInfo[ucIdx],
+				VIR_MEM_TYPE, sizeof(_NAN_SPECIFIC_BSS_INFO_T));
 
-	if (prWifiVar->aprNanSpecificBssInfo[ucRoleIdx]) {
-		kalMemFree(prWifiVar->aprNanSpecificBssInfo[ucRoleIdx],
-			   VIR_MEM_TYPE, sizeof(NAN_SPECIFIC_BSS_INFO_T));
-
-		prWifiVar->aprNanSpecificBssInfo[ucRoleIdx] = NULL;
+			prWifiVar->aprNanSpecificBssInfo[ucIdx] = NULL;
+		}
 	}
 
 	if (prGlueInfo->aprNANDevInfo[ucRoleIdx]) {
 		kalMemFree(prGlueInfo->aprNANDevInfo, VIR_MEM_TYPE,
-			   sizeof(struct _GL_NAN_INFO_T));
+		   sizeof(struct _GL_NAN_INFO_T));
 
 		prGlueInfo->aprNANDevInfo[ucRoleIdx] = NULL;
 	}
@@ -285,7 +286,7 @@ nanFreeInfo(struct GLUE_INFO *prGlueInfo, uint8_t ucRoleIdx)
 	if (prGlueInfo->aprNANDevInfo[ucRoleIdx] != NULL) {
 		kalMemFree(prGlueInfo->prAdapter->rWifiVar
 				   .aprNanSpecificBssInfo[ucRoleIdx],
-			   VIR_MEM_TYPE, sizeof(NAN_SPECIFIC_BSS_INFO_T));
+			   VIR_MEM_TYPE, sizeof(_NAN_SPECIFIC_BSS_INFO_T));
 		prGlueInfo->prAdapter->rWifiVar
 			.aprNanSpecificBssInfo[ucRoleIdx] = NULL;
 		kalMemFree(prGlueInfo->aprNANDevInfo[ucRoleIdx], VIR_MEM_TYPE,
@@ -303,7 +304,7 @@ nanNetRegister(struct GLUE_INFO *prGlueInfo,
 	unsigned char fgDoRegister = FALSE;
 	unsigned char fgRollbackRtnlLock = FALSE;
 	unsigned char ret;
-	enum NAN_BSS_ROLE_INDEX eRole;
+	enum NAN_BSS_ROLE_INDEX eRole = NAN_BSS_INDEX_BAND0;
 
 	GLUE_SPIN_LOCK_DECLARATION();
 
@@ -334,49 +335,39 @@ nanNetRegister(struct GLUE_INFO *prGlueInfo,
 	}
 
 	ret = TRUE;
-	for (eRole = 0; eRole < NAN_BSS_INDEX_NUM; eRole++) {
-		/* net device initialize */
-		netif_carrier_off(
-			prGlueInfo->aprNANDevInfo[eRole]->prDevHandler);
-		netif_tx_stop_all_queues(
+	/* net device initialize */
+	netif_carrier_off(
+		prGlueInfo->aprNANDevInfo[eRole]->prDevHandler);
+	netif_tx_stop_all_queues(
+		prGlueInfo->aprNANDevInfo[eRole]->prDevHandler);
+
+	/* register for net device */
+	if (register_netdev(
+		    prGlueInfo->aprNANDevInfo[eRole]->prDevHandler) <
+	    0) {
+		DBGLOG(INIT, WARN,
+		       "unable to register netdevice for nan\n");
+		/* trunk doesn't do free_netdev here */
+		free_netdev(
 			prGlueInfo->aprNANDevInfo[eRole]->prDevHandler);
 
-		/* register for net device */
-		if (register_netdev(
-			    prGlueInfo->aprNANDevInfo[eRole]->prDevHandler) <
-		    0) {
-			DBGLOG(INIT, WARN,
-			       "unable to register netdevice for nan\n");
-			/* trunk doesn't do free_netdev here */
-			free_netdev(
-				prGlueInfo->aprNANDevInfo[eRole]->prDevHandler);
-
-			ret = FALSE;
-		} else {
-			prGlueInfo->prAdapter->rNanNetRegState =
-				ENUM_NET_REG_STATE_REGISTERED;
+		ret = FALSE;
+	} else {
+		prGlueInfo->prAdapter->rNanNetRegState =
+			ENUM_NET_REG_STATE_REGISTERED;
 
 #if CFG_SUPPORT_NAN_CARRIER_ON_INIT
-			rtnl_lock();
-#if KERNEL_VERSION(5, 0, 0) <= CFG80211_VERSION_CODE
-			dev_change_flags(
-				prGlueInfo->aprNANDevInfo[eRole]->prDevHandler,
-				prGlueInfo->aprNANDevInfo[eRole]
-						->prDevHandler->flags |
-					IFF_UP, NULL);
-#else
-			dev_change_flags(
-				prGlueInfo->aprNANDevInfo[eRole]->prDevHandler,
-				prGlueInfo->aprNANDevInfo[eRole]
-						->prDevHandler->flags |
-					IFF_UP);
-#endif
-			rtnl_unlock();
+		rtnl_lock();
+		dev_change_flags(
+			prGlueInfo->aprNANDevInfo[eRole]->prDevHandler,
+			prGlueInfo->aprNANDevInfo[eRole]
+					->prDevHandler->flags |
+				IFF_UP);
+		rtnl_unlock();
 
-			netif_carrier_on(
-				prGlueInfo->aprNANDevInfo[eRole]->prDevHandler);
+		netif_carrier_on(
+			prGlueInfo->aprNANDevInfo[eRole]->prDevHandler);
 #endif
-		}
 	}
 
 	if (fgRollbackRtnlLock)
@@ -393,7 +384,7 @@ nanNetUnregister(struct GLUE_INFO *prGlueInfo,
 	unsigned char fgRollbackRtnlLock = FALSE;
 	struct ADAPTER *prAdapter = NULL;
 	struct _GL_NAN_INFO_T *prNANInfo = NULL;
-	uint8_t ucIdx = 0;
+	uint8_t ucIdx = NAN_BSS_INDEX_BAND0;
 
 	GLUE_SPIN_LOCK_DECLARATION();
 
@@ -420,40 +411,38 @@ nanNetUnregister(struct GLUE_INFO *prGlueInfo,
 
 	if (fgIsRtnlLockAcquired && rtnl_is_locked())
 		fgRollbackRtnlLock = TRUE;
-	for (ucIdx = 0; ucIdx < NAN_BSS_INDEX_NUM; ucIdx++) {
 
-		prNANInfo = prGlueInfo->aprNANDevInfo[ucIdx];
-		if (prNANInfo == NULL)
-			return FALSE;
+	prNANInfo = prGlueInfo->aprNANDevInfo[ucIdx];
+	if (prNANInfo == NULL)
+		return FALSE;
 
 #if CFG_ENABLE_UNIFY_WIPHY
-		{
-			/* don't unregister the dev that share with the AIS */
-			uint32_t u4Idx = 0;
+	{
+		/* don't unregister the dev that share with the AIS */
+		uint32_t u4Idx = 0;
 
-			for (u4Idx = 0; u4Idx < KAL_AIS_NUM; u4Idx++) {
+		for (u4Idx = 0; u4Idx < KAL_AIS_NUM; u4Idx++) {
 
-				if (gprWdev[u4Idx] &&
-				    (prNANInfo->prDevHandler ==
-				     gprWdev[u4Idx]->netdev))
-					return FALSE;
-			}
+			if (gprWdev[u4Idx] &&
+			    (prNANInfo->prDevHandler ==
+			     gprWdev[u4Idx]->netdev))
+				return FALSE;
 		}
+	}
 #endif
 
-		if (netif_carrier_ok(prNANInfo->prDevHandler))
-			netif_carrier_off(prNANInfo->prDevHandler);
+	if (netif_carrier_ok(prNANInfo->prDevHandler))
+		netif_carrier_off(prNANInfo->prDevHandler);
 
-		netif_tx_stop_all_queues(prNANInfo->prDevHandler);
+	netif_tx_stop_all_queues(prNANInfo->prDevHandler);
 
-		if (fgRollbackRtnlLock)
-			rtnl_unlock();
+	if (fgRollbackRtnlLock)
+		rtnl_unlock();
 
-		unregister_netdev(prNANInfo->prDevHandler);
-		DBGLOG(INIT, INFO, "unregister nandev\n");
-		if (fgRollbackRtnlLock)
-			rtnl_lock();
-	}
+	unregister_netdev(prNANInfo->prDevHandler);
+	DBGLOG(INIT, INFO, "unregister nandev\n");
+	if (fgRollbackRtnlLock)
+		rtnl_lock();
 
 	prGlueInfo->prAdapter->rNanNetRegState =
 		ENUM_NET_REG_STATE_UNREGISTERED;
@@ -545,18 +534,21 @@ glSetupNAN(struct GLUE_INFO *prGlueInfo, struct wireless_dev *prNanWdev,
 	prNANInfo->prDevHandler = prNanDev;
 	DBGLOG(INIT, INFO, "setup the nan dev\n");
 
-	ucBssIndex = nanDevInit(prGlueInfo->prAdapter, u4Idx);
+	for (u4Idx = 0; u4Idx < NAN_BSS_INDEX_NUM; u4Idx++) {
 
-	if (ucBssIndex == MAX_BSS_INDEX) {
-		DBGLOG(INIT, ERROR, "No BSS can be used!!\n");
-		nanFreeInfo(prGlueInfo, u4Idx);
-		return -1;
+		ucBssIndex = nanDevInit(prGlueInfo->prAdapter, u4Idx);
+
+		if (ucBssIndex == MAX_BSS_INDEX) {
+			DBGLOG(INIT, ERROR, "No BSS can be used!!\n");
+			nanFreeInfo(prGlueInfo, u4Idx);
+			return -1;
+		}
+		if (u4Idx == NAN_BSS_INDEX_BAND0) {
+			prNetDevPriv->ucBssIdx = ucBssIndex;
+			wlanBindBssIdxToNetInterface(prGlueInfo, ucBssIndex,
+					(void *)prNANInfo->prDevHandler);
+		}
 	}
-	prNetDevPriv->ucBssIdx = ucBssIndex;
-
-	wlanBindBssIdxToNetInterface(prGlueInfo, ucBssIndex,
-				     (void *)prNANInfo->prDevHandler);
-
 	return 0;
 }
 
@@ -576,85 +568,82 @@ mtk_nan_wext_set_Multicastlist(struct GLUE_INFO *prGlueInfo)
 	uint32_t u4McCount;
 	uint32_t u4PacketFilter = 0;
 	uint8_t ucRoleIdx = 0;
-	enum NAN_BSS_ROLE_INDEX eRole;
 	struct net_device *prDev;
 
-	for (eRole = 0; eRole < NAN_BSS_INDEX_NUM; eRole++) {
-		prDev = g_aprNanMultiDev[ucRoleIdx].prDevHandler;
+	prDev = g_aprNanMultiDev[ucRoleIdx].prDevHandler;
 
-		prGlueInfo =
-			(prDev != NULL)
-				? *((struct GLUE_INFO **)netdev_priv(prDev))
-				: NULL;
-		if (g_aprNanMultiDev[ucRoleIdx].fgBMCFilterSet == FALSE)
-			continue;
+	prGlueInfo =
+		(prDev != NULL)
+			? *((struct GLUE_INFO **)netdev_priv(prDev))
+			: NULL;
+	if (g_aprNanMultiDev[ucRoleIdx].fgBMCFilterSet == FALSE)
+		return;
 
-		if (!prDev) {
-			DBGLOG(NAN, ERROR, "prDev error!\n");
-			return;
-		}
-		if (!prGlueInfo) {
-			DBGLOG(NAN, ERROR, "prGlueInfo error!\n");
-			return;
-		}
-
-		if (!prDev || !prGlueInfo) {
-			DBGLOG(INIT, WARN,
-			       " abnormal dev or skb: prDev(0x%p), prGlueInfo(0x%p)\n",
-			       prDev, prGlueInfo);
-			return;
-		}
-
-		if (prDev->flags & IFF_PROMISC)
-			u4PacketFilter |= PARAM_PACKET_FILTER_PROMISCUOUS;
-
-		if (prDev->flags & IFF_BROADCAST)
-			u4PacketFilter |= PARAM_PACKET_FILTER_BROADCAST;
-		u4McCount = netdev_mc_count(prDev);
-
-		if (prDev->flags & IFF_MULTICAST) {
-			if ((prDev->flags & IFF_ALLMULTI) ||
-			    (u4McCount > MAX_NUM_GROUP_ADDR))
-				u4PacketFilter |=
-					PARAM_PACKET_FILTER_ALL_MULTICAST;
-			else
-				u4PacketFilter |= PARAM_PACKET_FILTER_MULTICAST;
-		}
-
-		if (u4PacketFilter & PARAM_PACKET_FILTER_MULTICAST) {
-			/* Prepare multicast address list */
-			struct netdev_hw_addr *ha;
-			uint8_t *prMCAddrList = NULL;
-			uint32_t i = 0;
-
-			prMCAddrList = kalMemAlloc(
-				MAX_NUM_GROUP_ADDR * ETH_ALEN, VIR_MEM_TYPE);
-
-			netdev_for_each_mc_addr(ha, prDev) {
-				if (i < MAX_NUM_GROUP_ADDR) {
-					kalMemCopy(
-						(prMCAddrList + i * ETH_ALEN),
-						GET_ADDR(ha), ETH_ALEN);
-					DBGLOG(NAN, INFO,
-					       "SEt Multicast Address List "
-					       MACSTR "\n",
-					       MAC2STR(GET_ADDR(ha)));
-					i++;
-				}
-			}
-			if (i >= MAX_NUM_GROUP_ADDR)
-				return;
-
-			wlanoidSetNANMulticastList(
-				prGlueInfo->prAdapter,
-				wlanGetBssIdxByNetInterface(prGlueInfo, prDev),
-				prMCAddrList, (i * ETH_ALEN), &u4SetInfoLen);
-
-			kalMemFree(prMCAddrList, VIR_MEM_TYPE,
-				   MAX_NUM_GROUP_ADDR * ETH_ALEN);
-		}
-		g_aprNanMultiDev[ucRoleIdx].fgBMCFilterSet = FALSE;
+	if (!prDev) {
+		DBGLOG(NAN, ERROR, "prDev error!\n");
+		return;
 	}
+	if (!prGlueInfo) {
+		DBGLOG(NAN, ERROR, "prGlueInfo error!\n");
+		return;
+	}
+
+	if (!prDev || !prGlueInfo) {
+		DBGLOG(INIT, WARN,
+		       " abnormal dev or skb: prDev(0x%p), prGlueInfo(0x%p)\n",
+		       prDev, prGlueInfo);
+		return;
+	}
+
+	if (prDev->flags & IFF_PROMISC)
+		u4PacketFilter |= PARAM_PACKET_FILTER_PROMISCUOUS;
+
+	if (prDev->flags & IFF_BROADCAST)
+		u4PacketFilter |= PARAM_PACKET_FILTER_BROADCAST;
+	u4McCount = netdev_mc_count(prDev);
+
+	if (prDev->flags & IFF_MULTICAST) {
+		if ((prDev->flags & IFF_ALLMULTI) ||
+		    (u4McCount > MAX_NUM_GROUP_ADDR))
+			u4PacketFilter |=
+				PARAM_PACKET_FILTER_ALL_MULTICAST;
+		else
+			u4PacketFilter |= PARAM_PACKET_FILTER_MULTICAST;
+	}
+
+	if (u4PacketFilter & PARAM_PACKET_FILTER_MULTICAST) {
+		/* Prepare multicast address list */
+		struct netdev_hw_addr *ha;
+		uint8_t *prMCAddrList = NULL;
+		uint32_t i = 0;
+
+		prMCAddrList = kalMemAlloc(
+			MAX_NUM_GROUP_ADDR * ETH_ALEN, VIR_MEM_TYPE);
+
+		netdev_for_each_mc_addr(ha, prDev) {
+			if (i < MAX_NUM_GROUP_ADDR) {
+				kalMemCopy(
+					(prMCAddrList + i * ETH_ALEN),
+					GET_ADDR(ha), ETH_ALEN);
+				DBGLOG(NAN, INFO,
+				       "SEt Multicast Address List "
+				       MACSTR "\n",
+				       MAC2STR(GET_ADDR(ha)));
+				i++;
+			}
+		}
+		if (i >= MAX_NUM_GROUP_ADDR)
+			return;
+
+		wlanoidSetNANMulticastList(
+			prGlueInfo->prAdapter,
+			wlanGetBssIdxByNetInterface(prGlueInfo, prDev),
+			prMCAddrList, (i * ETH_ALEN), &u4SetInfoLen);
+
+		kalMemFree(prMCAddrList, VIR_MEM_TYPE,
+			   MAX_NUM_GROUP_ADDR * ETH_ALEN);
+	}
+	g_aprNanMultiDev[ucRoleIdx].fgBMCFilterSet = FALSE;
 } /* end of p2pSetMulticastList() */
 
 void
@@ -669,17 +658,6 @@ nanSetMulticastListWorkQueueWrapper(struct GLUE_INFO *prGlueInfo)
 
 	if (prGlueInfo->prAdapter->fgIsNANRegistered)
 		mtk_nan_wext_set_Multicastlist(prGlueInfo);
-}
-uint8_t
-nanFindMulticastRoleIdx(void *prNetDev)
-{
-	int i = 0;
-
-	for (i = 0; i < NAN_BSS_INDEX_NUM; i++) {
-		if (g_aprNanMultiDev[i].prDevHandler == prNetDev)
-			return i;
-	}
-	return NAN_BSS_INDEX_NUM;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -706,7 +684,7 @@ glRegisterNAN(struct GLUE_INFO *prGlueInfo, const char *prDevName)
 	struct device *prDev;
 #endif
 	struct _GL_NAN_INFO_T *prNANInfo = (struct _GL_NAN_INFO_T *)NULL;
-	enum NAN_BSS_ROLE_INDEX eRole;
+	enum NAN_BSS_ROLE_INDEX eRole = NAN_BSS_INDEX_BAND0;
 
 	if (!prGlueInfo) {
 		DBGLOG(NAN, ERROR, "prGlueInfo error!\n");
@@ -715,56 +693,57 @@ glRegisterNAN(struct GLUE_INFO *prGlueInfo, const char *prDevName)
 
 	prAdapter = prGlueInfo->prAdapter;
 
-	for (eRole = 0; eRole < NAN_BSS_INDEX_NUM; eRole++) {
-		glNanCreateWirelessDevice(prGlueInfo);
-		if (!g_aprNanRoleWdev[eRole]) {
-			DBGLOG(INIT, ERROR, "gprNanWdev is NULL\n");
-			return FALSE;
-		}
+	glNanCreateWirelessDevice(prGlueInfo);
+	if (!g_aprNanRoleWdev[eRole]) {
+		DBGLOG(INIT, ERROR, "gprNanWdev is NULL\n");
+		return FALSE;
+	}
 
-		DBGLOG(INIT, INFO, "gprNanWdev\n");
-		prNanWdev = g_aprNanRoleWdev[eRole];
-		prWiphy = prNanWdev->wiphy;
-		memset(prNanWdev, 0, sizeof(struct wireless_dev));
-		prNanWdev->wiphy = prWiphy;
+	DBGLOG(INIT, INFO, "gprNanWdev\n");
+	prNanWdev = g_aprNanRoleWdev[eRole];
+	prWiphy = prNanWdev->wiphy;
+	memset(prNanWdev, 0, sizeof(struct wireless_dev));
+	prNanWdev->wiphy = prWiphy;
 
-		prSetDevName = prDevName;
+	prSetDevName = prDevName;
 /* allocate netdev */
 #if KERNEL_VERSION(3, 17, 0) <= CFG80211_VERSION_CODE
-		prNanDev = alloc_netdev_mq(
-			sizeof(struct NETDEV_PRIVATE_GLUE_INFO), prSetDevName,
-			NET_NAME_PREDICTABLE, ether_setup, CFG_MAX_TXQ_NUM);
+	prNanDev = alloc_netdev_mq(
+		sizeof(struct NETDEV_PRIVATE_GLUE_INFO), prSetDevName,
+		NET_NAME_PREDICTABLE, ether_setup, CFG_MAX_TXQ_NUM);
 #else
-		prNanDev = alloc_netdev_mq(
-			sizeof(struct NETDEV_PRIVATE_GLUE_INFO), prSetDevName,
-			ether_setup, CFG_MAX_TXQ_NUM);
+	prNanDev = alloc_netdev_mq(
+		sizeof(struct NETDEV_PRIVATE_GLUE_INFO), prSetDevName,
+		ether_setup, CFG_MAX_TXQ_NUM);
 #endif
-		if (!prNanDev) {
-			DBGLOG(INIT, WARN, "unable to allocate ndev for nan\n");
-			goto err_alloc_netdev;
-		}
+	if (!prNanDev) {
+		DBGLOG(INIT, WARN, "unable to allocate ndev for nan\n");
+		goto err_alloc_netdev;
+	}
 
-		g_aprNanMultiDev[eRole].prDevHandler = prNanDev;
-		g_aprNanMultiDev[eRole].fgBMCFilterSet = FALSE;
+	g_aprNanMultiDev[eRole].prDevHandler = prNanDev;
+	g_aprNanMultiDev[eRole].fgBMCFilterSet = FALSE;
 
-		/* fill hardware address */
-		COPY_MAC_ADDR(rMacAddr, prAdapter->rMyMacAddr);
-		rMacAddr[0] |= 0x2;
-		/* change to local administrated address */
-		rMacAddr[0] ^= (eRole + 1) << 3;
-		kalMemCopy(prNanDev->dev_addr, rMacAddr, ETH_ALEN);
-		kalMemCopy(prNanDev->perm_addr, prNanDev->dev_addr, ETH_ALEN);
+	/* fill hardware address */
+	COPY_MAC_ADDR(rMacAddr, prAdapter->rMyMacAddr);
+	rMacAddr[0] |= 0x2;
+	if (random_mac_addr_keep_oui(rMacAddr) == -1)
+		DBGLOG(INIT, ERROR, "unable to get random mac for nan\n");
 
-		if (glSetupNAN(prGlueInfo, prNanWdev, prNanDev, eRole) != 0) {
-			DBGLOG(INIT, WARN, "glSetupnan FAILED\n");
-			free_netdev(prNanDev);
-			return FALSE;
-		}
+	/* change to local administrated address */
+	rMacAddr[0] ^= (eRole + 1) << 3;
+	kalMemCopy(prNanDev->dev_addr, rMacAddr, ETH_ALEN);
+	kalMemCopy(prNanDev->perm_addr, prNanDev->dev_addr, ETH_ALEN);
+
+	if (glSetupNAN(prGlueInfo, prNanWdev, prNanDev, eRole) != 0) {
+		DBGLOG(INIT, WARN, "glSetupnan FAILED\n");
+		free_netdev(prNanDev);
+		return FALSE;
 	}
 
 	/* initialize NAN Data Engine */
 
-	prNANInfo = prAdapter->prGlueInfo->aprNANDevInfo[NAN_BSS_INDEX_MAIN];
+	prNANInfo = prAdapter->prGlueInfo->aprNANDevInfo[NAN_BSS_INDEX_BAND0];
 	nanDataEngineInit(prAdapter, prNANInfo->prDevHandler->dev_addr);
 
 	/* initialize NAN Ranging Engine */
@@ -792,22 +771,11 @@ glNanCreateWirelessDevice(struct GLUE_INFO *prGlueInfo)
 {
 	/* whsu, KAL_AIS_NUM at gprWdev */
 	struct wiphy *prWiphy = wlanGetWiphy();
-
 	struct wireless_dev *prWdev = NULL;
-	uint8_t i = 0;
+	enum NAN_BSS_ROLE_INDEX eRole = NAN_BSS_INDEX_BAND0;
 
 	if (!prWiphy) {
 		DBGLOG(NAN, ERROR, "unable to allocate wiphy for NAN\n");
-		return FALSE;
-	}
-
-	for (i = 0; i < NAN_BSS_INDEX_NUM; i++) {
-		if (!g_aprNanRoleWdev[i])
-			break;
-	}
-
-	if (i >= NAN_BSS_INDEX_NUM) {
-		DBGLOG(INIT, WARN, "fail to register wiphy to driver\n");
 		return FALSE;
 	}
 
@@ -820,9 +788,9 @@ glNanCreateWirelessDevice(struct GLUE_INFO *prGlueInfo)
 	/* set priv as pointer to glue structure */
 	prWdev->wiphy = prWiphy;
 
-	g_aprNanRoleWdev[i] = prWdev;
+	g_aprNanRoleWdev[eRole] = prWdev;
 	DBGLOG(NAN, INFO, "glNanCreateWirelessDevice (%x) %d\n",
-	       g_aprNanRoleWdev[i]->wiphy, i);
+	       g_aprNanRoleWdev[eRole]->wiphy, eRole);
 
 	return TRUE;
 }
@@ -845,7 +813,7 @@ glUnregisterNAN(struct GLUE_INFO *prGlueInfo)
 {
 	struct ADAPTER *prAdapter;
 	struct _GL_NAN_INFO_T *prNANInfo = NULL;
-	uint8_t ucIdx = 0;
+	uint8_t ucIdx = NAN_BSS_INDEX_BAND0;
 
 	if (!prGlueInfo) {
 		DBGLOG(NAN, ERROR, "prGlueInfo error!\n");
@@ -869,37 +837,34 @@ glUnregisterNAN(struct GLUE_INFO *prGlueInfo)
 	/* Clear pending cipher suite */
 	nanSecFlushCipherList();
 
-	for (ucIdx = 0; ucIdx < NAN_BSS_INDEX_NUM; ucIdx++) {
+	/* 4 <1> Uninit NAN dev FSM */
+	/* Uninit NAN device FSM */
+	/* only do nanDevFsmUninit, when unregister all nan device */
+	nanDevFsmUninit(prGlueInfo->prAdapter, ucIdx);
 
-		/* 4 <1> Uninit NAN dev FSM */
-		/* Uninit NAN device FSM */
-		/* only do nanDevFsmUninit, when unregister all nan device */
-		nanDevFsmUninit(prGlueInfo->prAdapter, ucIdx);
+	/* 4 <3> Free Wiphy & netdev */
+	prNANInfo = prGlueInfo->aprNANDevInfo[ucIdx];
+	if (prNANInfo == NULL)
+		return TRUE;
 
-		/* 4 <3> Free Wiphy & netdev */
-		prNANInfo = prGlueInfo->aprNANDevInfo[ucIdx];
-		if (prNANInfo == NULL)
-			continue;
+	{
+		/* don't unregister the dev that share with the AIS */
+		uint32_t u4Idx = 0;
 
-		{
-			/* don't unregister the dev that share with the AIS */
-			uint32_t u4Idx = 0;
+		for (u4Idx = 0; u4Idx < KAL_AIS_NUM; u4Idx++) {
 
-			for (u4Idx = 0; u4Idx < KAL_AIS_NUM; u4Idx++) {
-
-				if (gprWdev[u4Idx] &&
-				    prNANInfo->prDevHandler ==
-					    gprWdev[u4Idx]->netdev) {
-					free_netdev(prNANInfo->prDevHandler);
-					prNANInfo->prDevHandler = NULL;
-				}
+			if (gprWdev[u4Idx] &&
+			    prNANInfo->prDevHandler ==
+				    gprWdev[u4Idx]->netdev) {
+				free_netdev(prNANInfo->prDevHandler);
+				prNANInfo->prDevHandler = NULL;
 			}
 		}
-		/* 4 <4> Free P2P internal memory */
-		if (!nanFreeInfo(prGlueInfo, ucIdx)) {
-			DBGLOG(INIT, ERROR, "nanFreeInfo FAILED\n");
-			return FALSE;
-		}
+	}
+	/* 4 <4> Free P2P internal memory */
+	if (!nanFreeInfo(prGlueInfo, ucIdx)) {
+		DBGLOG(INIT, ERROR, "nanFreeInfo FAILED\n");
+		return FALSE;
 	}
 
 	return TRUE;
@@ -943,7 +908,7 @@ nanLaunch(struct GLUE_INFO *prGlueInfo)
 unsigned char
 nanRemove(struct GLUE_INFO *prGlueInfo)
 {
-	uint8_t ucIdx = 0;
+	uint8_t ucIdx = NAN_BSS_INDEX_BAND0;
 
 	if (prGlueInfo->prAdapter->fgIsNANRegistered == FALSE) {
 		DBGLOG(NAN, INFO, "nan is not registered\n");
@@ -957,32 +922,29 @@ nanRemove(struct GLUE_INFO *prGlueInfo)
 
 	/* Release nan wdev. */
 
-	for (ucIdx = 0; ucIdx < NAN_BSS_INDEX_NUM; ucIdx++) {
-		if (g_aprNanRoleWdev[ucIdx] == NULL)
-			continue;
+	if (g_aprNanRoleWdev[ucIdx] == NULL)
+		return TRUE;
 
 #if CFG_ENABLE_UNIFY_WIPHY
-	{
-		/* don't unregister the dev that share with the AIS */
-		uint32_t u4Idx = 0;
+{
+	/* don't unregister the dev that share with the AIS */
+	uint32_t u4Idx = 0;
 
-		for (u4Idx = 0; u4Idx < KAL_AIS_NUM; u4Idx++) {
-			if (gprWdev[u4Idx] &&
-			    g_aprNanRoleWdev[ucIdx] == gprWdev[u4Idx]) {
-				/* This is AIS/AP Interface */
-				g_aprNanRoleWdev[ucIdx] = NULL;
-				continue;
-			}
+	for (u4Idx = 0; u4Idx < KAL_AIS_NUM; u4Idx++) {
+		if (gprWdev[u4Idx] &&
+		    g_aprNanRoleWdev[ucIdx] == gprWdev[u4Idx]) {
+			/* This is AIS/AP Interface */
+			g_aprNanRoleWdev[ucIdx] = NULL;
+			continue;
 		}
 	}
+}
 #endif
 
-		DBGLOG(INIT, INFO, "Unregister g_aprNanRoleWdev[%d]\n", ucIdx);
+	DBGLOG(INIT, INFO, "Unregister g_aprNanRoleWdev[%d]\n", ucIdx);
 
-		kfree(g_aprNanRoleWdev[ucIdx]);
-		g_aprNanRoleWdev[ucIdx] = NULL;
-		break;
-	}
+	kfree(g_aprNanRoleWdev[ucIdx]);
+	g_aprNanRoleWdev[ucIdx] = NULL;
 	return TRUE;
 }
 void
@@ -1126,7 +1088,7 @@ static void
 nanSetMulticastList(IN struct net_device *prDev)
 {
 	struct GLUE_INFO *prGlueInfo = (struct GLUE_INFO *)NULL;
-	uint8_t ucRoleIdx = 0;
+	uint8_t ucRoleIdx = NAN_BSS_INDEX_BAND0;
 
 	prGlueInfo = (prDev != NULL)
 			     ? *((struct GLUE_INFO **)netdev_priv(prDev))
@@ -1139,19 +1101,14 @@ nanSetMulticastList(IN struct net_device *prDev)
 		return;
 	}
 	/* TO-DO MulticastList Support */
-	ucRoleIdx = nanFindMulticastRoleIdx(prDev);
-	if (ucRoleIdx != NAN_BSS_INDEX_NUM) {
-		if (g_aprNanMultiDev[ucRoleIdx].fgBMCFilterSet == FALSE) {
+	if (g_aprNanMultiDev[ucRoleIdx].fgBMCFilterSet == FALSE) {
 
-			g_aprNanMultiDev[ucRoleIdx].fgBMCFilterSet = TRUE;
-			/* Mark HALT, notify main thread to finish current job*/
-			set_bit(GLUE_FLAG_NAN_MULTICAST_BIT,
-				&prGlueInfo->ulFlag);
-			/* wake up main thread */
-			wake_up_interruptible(&prGlueInfo->waitq);
-		}
-	} else {
-		DBGLOG(NAN, ERROR, "nanSetMulticastList Role not found\n");
+		g_aprNanMultiDev[ucRoleIdx].fgBMCFilterSet = TRUE;
+		/* Mark HALT, notify main thread to finish current job*/
+		set_bit(GLUE_FLAG_NAN_MULTICAST_BIT,
+			&prGlueInfo->ulFlag);
+		/* wake up main thread */
+		wake_up_interruptible(&prGlueInfo->waitq);
 	}
 }
 
@@ -1174,6 +1131,8 @@ nanHardStartXmit(IN struct sk_buff *prSkb, IN struct net_device *prDev)
 		(struct NETDEV_PRIVATE_GLUE_INFO *)NULL;
 	struct GLUE_INFO *prGlueInfo = NULL;
 	uint8_t ucBssIndex;
+	struct TX_PACKET_INFO prTxPktInfo;
+	struct STA_RECORD *prStaRec;
 
 	if (!prSkb) {
 		DBGLOG(NAN, ERROR, "prSkb error!\n");
@@ -1187,6 +1146,24 @@ nanHardStartXmit(IN struct sk_buff *prSkb, IN struct net_device *prDev)
 	prNetDevPrivate = (struct NETDEV_PRIVATE_GLUE_INFO *)netdev_priv(prDev);
 	prGlueInfo = prNetDevPrivate->prGlueInfo;
 	ucBssIndex = prNetDevPrivate->ucBssIdx;
+
+#if (CFG_SUPPORT_DBDC == 1)
+	if (kalQoSFrameClassifierAndPacketInfo(
+			prGlueInfo, prSkb, &prTxPktInfo)) {
+
+		if (IS_BMCAST_MAC_ADDR(prTxPktInfo.aucEthDestAddr)) {
+			DBGLOG(NAN, LOUD, "TX with DA = BMCAST\n");
+		} else {
+			prStaRec = nanGetStaRecByNDI(prGlueInfo->prAdapter,
+				prTxPktInfo.aucEthDestAddr);
+			if (prStaRec != NULL) {
+				ucBssIndex = prStaRec->ucBssIndex;
+				DBGLOG(NAN, LOUD, "Starec bssIndex:%d\n",
+							ucBssIndex);
+			}
+		}
+	}
+#endif
 
 	kalResetPacket(prGlueInfo, (void *)prSkb);
 

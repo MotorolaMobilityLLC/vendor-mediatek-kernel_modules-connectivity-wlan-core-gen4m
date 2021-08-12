@@ -7430,7 +7430,7 @@ nanSchedAddPotentialWindows(struct ADAPTER *prAdapter, uint8_t *pucBuf) {
 
 	prScheduler = nanGetScheduler(prAdapter);
 	prNanSpecificBssInfo =
-		nanGetSpecificBssInfo(prAdapter, NAN_BSS_INDEX_MAIN);
+		nanGetSpecificBssInfo(prAdapter, NAN_BSS_INDEX_BAND0);
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
 					  prNanSpecificBssInfo->ucBssIndex);
 
@@ -7566,7 +7566,7 @@ nanSchedGetAvailabilityAttr(struct ADAPTER *prAdapter,
 	prNegoCtrl = nanGetNegoControlBlock(prAdapter);
 
 	prNanSpecificBssInfo =
-		nanGetSpecificBssInfo(prAdapter, NAN_BSS_INDEX_MAIN);
+		nanGetSpecificBssInfo(prAdapter, NAN_BSS_INDEX_BAND0);
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
 					  prNanSpecificBssInfo->ucBssIndex);
 
@@ -7763,7 +7763,7 @@ nanSchedGetDevCapabilityAttr(struct ADAPTER *prAdapter,
 	prAttrDevCap->ucOperationMode = 0;
 
 	prNanSpecificBssInfo =
-		nanGetSpecificBssInfo(prAdapter, NAN_BSS_INDEX_MAIN);
+		nanGetSpecificBssInfo(prAdapter, NAN_BSS_INDEX_BAND0);
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
 					  prNanSpecificBssInfo->ucBssIndex);
 	prAttrDevCap->ucNumOfAntennas =

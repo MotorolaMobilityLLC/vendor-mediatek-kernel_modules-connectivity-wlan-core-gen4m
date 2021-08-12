@@ -9047,14 +9047,14 @@ priv_driver_get_master_ind(IN struct net_device *prNetDev, IN char *pcCommand,
 	DBGLOG(REQ, LOUD, "argc is %i\n", i4Argc);
 
 	prAdapter = prGlueInfo->prAdapter;
-	prNANSpecInfo = nanGetSpecificBssInfo(prAdapter, NAN_BSS_INDEX_MAIN);
+	prNANSpecInfo = nanGetSpecificBssInfo(prAdapter, NAN_BSS_INDEX_BAND0);
 
 	if (prNANSpecInfo == NULL) {
 		i4BytesWritten = -1;
 		return i4BytesWritten;
 	}
 
-	prNANSpecInfo = nanGetSpecificBssInfo(prAdapter, NAN_BSS_INDEX_MAIN);
+	prNANSpecInfo = nanGetSpecificBssInfo(prAdapter, NAN_BSS_INDEX_BAND0);
 
 	ucMasterPreference = prNANSpecInfo->rMasterIndAttr.ucMasterPreference;
 	ucRandomFactor = prNANSpecInfo->rMasterIndAttr.ucRandomFactor;
@@ -9095,7 +9095,7 @@ priv_driver_get_range(IN struct net_device *prNetDev, IN char *pcCommand,
 	DBGLOG(REQ, LOUD, "argc is %i\n", i4Argc);
 
 	prAdapter = prGlueInfo->prAdapter;
-	prNANSpecInfo = nanGetSpecificBssInfo(prAdapter, NAN_BSS_INDEX_MAIN);
+	prNANSpecInfo = nanGetSpecificBssInfo(prAdapter, NAN_BSS_INDEX_BAND0);
 
 	if (prNANSpecInfo == NULL) {
 		i4BytesWritten = -1;

@@ -409,6 +409,8 @@ wlanoidGetNANCapabilitiesRsp(IN struct ADAPTER *prAdapter, IN void *pvSetBuffer,
 	nanCapabilitiesRsp.max_subscribes = 4;
 	nanCapabilitiesRsp.max_total_match_filter_len =
 		NAN_MAX_SERVICE_SPECIFIC_INFO_LEN;
+	nanCapabilitiesRsp.cipher_suites_supported =
+		NAN_CIPHER_SUITE_SHARED_KEY_128_MASK;
 
 	/*  Fill values of nanCapabilitiesRsp */
 	skb = cfg80211_vendor_event_alloc(wiphy, wdev,
