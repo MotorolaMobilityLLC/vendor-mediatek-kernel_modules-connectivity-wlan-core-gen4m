@@ -130,6 +130,47 @@
  *******************************************************************************
  */
 
+struct TPUT_FACTOR_LIST_T {
+	/** Event source: TPUT_EVENT_START ~ */
+	uint32_t u4EvtId;
+
+	/** Factor version */
+	uint32_t u4Ver;
+
+	uint8_t Cont[0];
+};
+
+struct TPUT_SUB_FACTOR_T {
+	/** sub header */
+	uint8_t ucTag;
+	uint16_t u2Len;
+	uint8_t ucRes;
+
+	uint8_t Cont[0];
+};
+
+struct TPUT_BKRS_FACTOR_T {
+	/** Collection type: TPUT_COLL_CMD_INIT ~ */
+	uint32_t u4EvtId;
+
+	/** Factor type: _TPUT_FACTOR_TAG */
+	uint32_t u4FactorType;
+
+	/** sub header */
+	/* TPUT_FACTOR_TYPE_LMAC_TMAC
+	 * ~ TPUT_FACTOR_TYPE_LMAC_RMAC
+	 */
+	uint8_t ucTag;
+	uint16_t u2Len;
+	uint8_t ucIndex;
+
+	/* reference to backup/restore table */
+	uint32_t u4AddrStart, u4AddrEnd;
+	uint32_t u4RegNum;
+
+	uint8_t Cont[0];
+};
+
 /*******************************************************************************
  *                            P U B L I C   D A T A
  *******************************************************************************
@@ -9681,6 +9722,147 @@ void kalNanHandleVendorEvent(IN struct ADAPTER *prAdapter, uint8_t *prBuffer)
 	}
 }
 #endif
+
+void nicEventTputFactorHandler(IN struct ADAPTER *prAdapter,
+			IN struct WIFI_EVENT *prEvent)
+{
+#define EVENT_HDR_SIZE              OFFSET_OF(struct WIFI_EVENT, aucBuffer)
+#define TPUT_FACTOR_DUMP_LINE_SIZE  16
+
+	struct TPUT_FACTOR_LIST_T *pFactorList;
+	struct TPUT_SUB_FACTOR_T *pFactor;
+	uint8_t *pucCont;
+	uint32_t u4EvtLen;
+	uint32_t u4FIdx;
+	uint32_t u4ContIdx;
+	uint8_t ucContTemp[TPUT_FACTOR_DUMP_LINE_SIZE];
+	uint32_t *pu4ContCR;
+
+	pFactorList = (struct TPUT_FACTOR_LIST_T *)prEvent->aucBuffer;
+	pFactor = (struct TPUT_SUB_FACTOR_T *)&pFactorList->Cont[0];
+	pucCont = &pFactorList->Cont[0];
+
+	u4EvtLen = prEvent->u2PacketLength - EVENT_HDR_SIZE;
+	if (u4EvtLen <= 8)
+		return;
+
+	/* skip u4EvtId & u4FactorType */
+	u4EvtLen -= 8;
+
+/* ucExtenEID: TPUT_EVENT_EXTEND_ID_GEN (0)
+ *           & TPUT_EVENT_EXTEND_ID_CR (1)
+ * u4EvtId:    TPUT_EVENT_START (0),
+ *             TPUT_EVENT_ASSOCD (1) ~
+ */
+	DBGLOG(INIT, WARN, "tputf> |FGROUP|%d|FCASE|%d|VER|%d|ALLLEN|%d|\n",
+		   prEvent->ucExtenEID,
+		   pFactorList->u4EvtId,
+		   pFactorList->u4Ver,
+		   u4EvtLen);
+
+	if (prEvent->ucExtenEID == 1) {
+		/* skip u4EvtId & u4FactorType in BKRS event, not GEN event */
+		pFactor->u2Len -= 8;
+	}
+
+	while (u4EvtLen > 0) {
+		/* for BKRS event, ucRes = number of report events
+		 * for latest one, we will set BIT7 to 1,
+		 *                 EX: 9th event, ucRes = 0x89
+		 */
+		DBGLOG(INIT, WARN, "tputf> |FTAG|%d|FLEN|%d|FRES|%d|\n",
+		       pFactor->ucTag, pFactor->u2Len, pFactor->ucRes);
+
+#if 0
+		DBGLOG(INIT, WARN,
+				"tputf> debug= %d %d 0x%x %x, 0x%x %x %x %x\n",
+				pFactorList,
+				u4EvtLen,
+				&pFactor->ucTag,
+				&pFactorList->Cont[0],
+				pFactorList->Cont[0], pFactorList->Cont[1],
+				pFactorList->Cont[2], pFactorList->Cont[3]);
+#endif
+
+	if ((pFactor->u2Len <= 4) || (pFactor->u2Len > u4EvtLen))
+		break;
+
+	pFactor->u2Len -= 4; /* 4: tag/len/res */
+	u4ContIdx = 0;
+
+	for (u4FIdx = 0;
+		 u4FIdx < pFactor->u2Len;
+		 u4FIdx += TPUT_FACTOR_DUMP_LINE_SIZE) {
+		if ((u4FIdx+TPUT_FACTOR_DUMP_LINE_SIZE)
+			> pFactor->u2Len) {
+			kalMemZero(ucContTemp, sizeof(ucContTemp));
+
+			if ((pFactor->u2Len > u4FIdx) &&
+				((pFactor->u2Len-u4FIdx)
+				 <= TPUT_FACTOR_DUMP_LINE_SIZE)) {
+#if 0
+				DBGLOG(INIT, WARN,
+					"tputf> debug: last=%d %d\n",
+					u4FIdx, pFactor->u2Len - u4FIdx);
+#endif
+				kalMemCopy(ucContTemp,
+							&pFactor->Cont[u4FIdx],
+							pFactor->u2Len-u4FIdx);
+			}
+		} else {
+			kalMemCopy(ucContTemp, &pFactor->Cont[u4FIdx], 16);
+		}
+
+		/* dump content byte by byte */
+		if (prEvent->ucExtenEID == 0) {
+			DBGLOG(INIT, WARN,
+				"tputf> FACTOR: %03d %02x %02x %02x %02x %02x %02x %02x %02x\n",
+				u4ContIdx,
+				ucContTemp[0], ucContTemp[1],
+				ucContTemp[2], ucContTemp[3],
+				ucContTemp[4], ucContTemp[5],
+				ucContTemp[6], ucContTemp[7]);
+
+			DBGLOG(INIT, WARN,
+				"tputf> FACTOR: %03d %02x %02x %02x %02x %02x %02x %02x %02x\n",
+				u4ContIdx,
+				ucContTemp[8], ucContTemp[9],
+				ucContTemp[10], ucContTemp[11],
+				ucContTemp[12], ucContTemp[13],
+				ucContTemp[14], ucContTemp[15]);
+
+				u4ContIdx++;
+		} else {
+			pu4ContCR = (uint32_t *)ucContTemp;
+
+			DBGLOG(INIT, WARN,
+				"tputf> FACTOR: %03d %08x %08x %08x %08x\n",
+				u4ContIdx++,
+				pu4ContCR[0], pu4ContCR[1],
+				pu4ContCR[2], pu4ContCR[3]);
+			}
+		}
+
+		/* recover real length */
+		pFactor->u2Len += 4; /* 4: tag/len/res */
+
+#if 0
+		DBGLOG(INIT, WARN,
+			"tputf> debug: u4EvtLen %d %d\n",
+			u4EvtLen, pFactor->u2Len);
+#endif
+
+		if (u4EvtLen > pFactor->u2Len)
+			u4EvtLen -= pFactor->u2Len;
+		else
+			break;
+
+		pucCont += pFactor->u2Len;
+		pFactor = (struct TPUT_SUB_FACTOR_T *)pucCont;
+	}
+
+	DBGLOG(INIT, WARN, "tputf> FEND\n");
+}
 
 #if KERNEL_VERSION(5, 4, 0) <= CFG80211_VERSION_CODE
 MODULE_IMPORT_NS(VFS_internal_I_am_really_a_filesystem_and_am_NOT_a_driver);

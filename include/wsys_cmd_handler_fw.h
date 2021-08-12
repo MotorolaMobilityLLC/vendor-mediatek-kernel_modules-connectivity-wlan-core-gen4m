@@ -507,6 +507,7 @@ enum ENUM_EVENT_ID {
 	/* 0xAE (Query - CMD_ID_CAL_BACKUP) */
 	EVENT_ID_CAL_ALL_DONE = 0xAF,   /* 0xAF (FW Cal All Done Event) */
 
+	EVENT_ID_TPUT_INFO = 0xCB,
 	EVENT_ID_WTBL_INFO = 0xCD,              /* 0xCD (Query) */
 	EVENT_ID_MIB_INFO = 0xCE,               /* 0xCE (Query) */
 

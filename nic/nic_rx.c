@@ -145,6 +145,7 @@ static struct RX_EVENT_HANDLER arEventTable[] = {
 	{EVENT_ID_BT_OVER_WIFI, nicEventBtOverWifi},
 #endif
 	{EVENT_ID_STATISTICS, nicEventStatistics},
+	{EVENT_ID_TPUT_INFO, nicEventTputFactorHandler},
 	{EVENT_ID_WTBL_INFO, nicEventWlanInfo},
 	{EVENT_ID_MIB_INFO, nicEventMibInfo},
 	{EVENT_ID_CH_PRIVILEGE, cnmChMngrHandleChEvent},
