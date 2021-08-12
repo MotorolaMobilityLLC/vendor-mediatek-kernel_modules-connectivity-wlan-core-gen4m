@@ -2383,7 +2383,7 @@ static void soc7_0_DumpWfsysSleepWakeupDebug(struct ADAPTER *prAdapter)
 		connac2x_DbgCrRead(prAdapter, u4RdAddr, &u4Val);
 		DBGLOG(HAL, ERROR,
 		       "\tW 0x%08x=[0x%08x], 0x%08x=[0x%08x]\n",
-		       u4WrAddr, u4RdAddr, u4WrVal, u4Val);
+		       u4WrAddr, u4WrVal, u4RdAddr, u4Val);
 	}
 }
 
@@ -2419,7 +2419,7 @@ static void soc7_0_DumpConnDbgCtrl(struct ADAPTER *prAdapter)
 		connac2x_DbgCrRead(prAdapter, u4RdAddr, &u4Val);
 		DBGLOG(HAL, ERROR,
 		       "\tW 0x%08x=[0x%08x], 0x%08x=[0x%08x]\n",
-		       u4WrAddr, u4RdAddr, u4WrVal, u4Val);
+		       u4WrAddr, u4WrVal, u4RdAddr, u4Val);
 		u4WrVal += 0x00010000;
 	}
 	u4WrVal = 0x00010002;
@@ -2427,13 +2427,13 @@ static void soc7_0_DumpConnDbgCtrl(struct ADAPTER *prAdapter)
 	connac2x_DbgCrRead(prAdapter, u4RdAddr, &u4Val);
 	DBGLOG(HAL, ERROR,
 	       "\tW 0x%08x=[0x%08x], 0x%08x=[0x%08x]\n",
-	       u4WrAddr, u4RdAddr, u4WrVal, u4Val);
+	       u4WrAddr, u4WrVal, u4RdAddr, u4Val);
 	u4WrVal = 0x00010003;
 	connac2x_DbgCrWrite(prAdapter, u4WrAddr, u4WrVal);
 	connac2x_DbgCrRead(prAdapter, u4RdAddr, &u4Val);
 	DBGLOG(HAL, ERROR,
 	       "\tW 0x%08x=[0x%08x], 0x%08x=[0x%08x]\n",
-	       u4WrAddr, u4RdAddr, u4WrVal, u4Val);
+	       u4WrAddr, u4WrVal, u4RdAddr, u4Val);
 }
 
 static void soc7_0_DumpOtherCr(struct ADAPTER *prAdapter)
