@@ -6489,10 +6489,16 @@ uint8_t rlmGetBssOpBwByVhtAndHtOpInfo(struct BSS_INFO *prBssInfo)
 {
 
 	uint8_t ucBssOpBw = MAX_BW_20MHZ;
+	uint8_t ucChannelWidth = prBssInfo->ucVhtChannelWidth;
 
 	ASSERT(prBssInfo);
 
-	switch (prBssInfo->ucVhtChannelWidth) {
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	if (prBssInfo->eBand == BAND_6G)
+		ucChannelWidth = prBssInfo->ucHeChannelWidth;
+#endif
+
+	switch (ucChannelWidth) {
 	case VHT_OP_CHANNEL_WIDTH_320:
 		ucBssOpBw = MAX_BW_320MHZ;
 		break;
@@ -6515,7 +6521,7 @@ uint8_t rlmGetBssOpBwByVhtAndHtOpInfo(struct BSS_INFO *prBssInfo)
 		break;
 	default:
 		DBGLOG(RLM, WARN, "%s: unexpected VHT channel width: %d\n",
-		       __func__, prBssInfo->ucVhtChannelWidth);
+		       __func__, ucChannelWidth);
 #if CFG_SUPPORT_802_11AC
 		if (RLM_NET_IS_11AC(prBssInfo))
 			/*VHT default should support BW 80*/
@@ -6917,8 +6923,11 @@ rlmChangeOperationMode(
 		}
 
 #if CFG_SUPPORT_802_11AC
-		if (RLM_NET_IS_11AC(prBssInfo) &&
-			(fgIsChangeBw || fgIsChangeRxNss)) {
+		if (RLM_NET_IS_11AC(prBssInfo)
+#if (CFG_SUPPORT_802_11AX == 1)
+			|| RLM_NET_IS_11AX(prBssInfo)
+#endif
+			&& (fgIsChangeBw || fgIsChangeRxNss)) {
 			if (prBssInfo->pfOpChangeHandler)
 				prBssInfo->aucOpModeChangeState
 					[OP_NOTIFY_TYPE_VHT_NSS_BW] =
@@ -7131,7 +7140,14 @@ static u_int8_t rlmCheckOpChangeParamValid(struct ADAPTER *prAdapter,
 	ASSERT(prBssInfo);
 
 	/* <1>Check if BSS PHY type is legacy mode */
-	if (!RLM_NET_IS_11N(prBssInfo)) {
+	if (!(RLM_NET_IS_11N(prBssInfo)
+#if CFG_SUPPORT_802_11AC
+		|| RLM_NET_IS_11AC(prBssInfo)
+#endif
+#if (CFG_SUPPORT_802_11AX == 1)
+		|| RLM_NET_IS_11AX(prBssInfo)
+#endif
+	)) {
 		DBGLOG(RLM, WARN,
 		       "Can't change BSS[%d] OP info for legacy BSS\n",
 		       prBssInfo->ucBssIndex);

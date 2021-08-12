@@ -246,6 +246,21 @@ enum ENUM_CNM_OPMODE_REQ_T {
 	 (_prAdapter)->rCnmInfo.ucBssIndex == (_ucBssIndex))
 
 /* True if our TxNss > 1 && peer support 2ss rate && peer no Rx limit. */
+#if (CFG_SUPPORT_WIFI_6G == 1)
+#define IS_CONNECTION_NSS2(prBssInfo, prStaRec) \
+	((((prBssInfo)->ucOpTxNss > 1) && \
+	((prStaRec)->aucRxMcsBitmask[1] != 0x00) \
+	&& (((prStaRec)->u2HtCapInfo & HT_CAP_INFO_SM_POWER_SAVE) != 0)) || \
+	(((prBssInfo)->ucOpTxNss > 1) && ((((prStaRec)->u2VhtRxMcsMap \
+	& BITS(2, 3)) >> 2) != BITS(0, 1)) && ((((prStaRec)->ucVhtOpMode \
+	& VHT_OP_MODE_RX_NSS) >> VHT_OP_MODE_RX_NSS_OFFSET) > 0)) || \
+	(((prBssInfo)->ucOpTxNss > 1) \
+	&& ((prBssInfo)->eBand == BAND_6G) \
+	&& ((((prStaRec)->u2HeRxMcsMapBW80 & BITS(2, 3)) >> 2) != BITS(0, 1)) \
+	&& (((prStaRec)->u2He6gBandCapInfo \
+	& HE_6G_CAP_INFO_SM_POWER_SAVE) != 0)))
+
+#else
 #define IS_CONNECTION_NSS2(prBssInfo, prStaRec) \
 	((((prBssInfo)->ucOpTxNss > 1) && \
 	((prStaRec)->aucRxMcsBitmask[1] != 0x00) \
@@ -253,6 +268,7 @@ enum ENUM_CNM_OPMODE_REQ_T {
 	(((prBssInfo)->ucOpTxNss > 1) && ((((prStaRec)->u2VhtRxMcsMap \
 	& BITS(2, 3)) >> 2) != BITS(0, 1)) && ((((prStaRec)->ucVhtOpMode \
 	& VHT_OP_MODE_RX_NSS) >> VHT_OP_MODE_RX_NSS_OFFSET) > 0)))
+#endif
 
 /*******************************************************************************
  *                   F U N C T I O N   D E C L A R A T I O N S
