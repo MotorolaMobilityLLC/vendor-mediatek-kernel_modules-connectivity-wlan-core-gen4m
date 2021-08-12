@@ -1175,6 +1175,25 @@ static const struct nl80211_vendor_cmd_info
 #endif
 
 	{
+		.vendor_id = OUI_MTK,
+		.subcmd = WIFI_EVENT_GENERIC_RESPONSE
+	},
+
+#if CFG_SUPPORT_BIGDATA_PIP
+	{
+		.vendor_id = OUI_MTK,
+		.subcmd = WIFI_EVENT_BIGDATA_PIP
+	},
+#endif
+
+#if CFG_SUPPORT_DBDC
+	{
+		.vendor_id = OUI_MTK,
+		.subcmd = WIFI_EVENT_OP_MODE_CHANGE
+	},
+#endif
+
+	{
 		.vendor_id = OUI_QCA,
 		.subcmd = NL80211_VENDOR_SUBCMD_DFS_OFFLOAD_CAC_STARTED
 	},
@@ -1199,24 +1218,6 @@ static const struct nl80211_vendor_cmd_info
 		.subcmd = NL80211_VENDOR_SUBCMD_DFS_OFFLOAD_RADAR_DETECTED
 	},
 
-	{
-		.vendor_id = OUI_MTK,
-		.subcmd = WIFI_EVENT_GENERIC_RESPONSE
-	},
-
-#if CFG_SUPPORT_BIGDATA_PIP
-	{
-		.vendor_id = OUI_MTK,
-		.subcmd = WIFI_EVENT_BIGDATA_PIP
-	},
-#endif
-
-#if CFG_SUPPORT_DBDC
-	{
-		.vendor_id = OUI_MTK,
-		.subcmd = WIFI_EVENT_OP_MODE_CHANGE
-	},
-#endif
 };
 #endif
 
@@ -2421,6 +2422,12 @@ static u_int8_t wlanIsAdjacentChnl(struct GL_P2P_INFO *prGlueP2pInfo,
 		break;
 	case VHT_OP_CHANNEL_WIDTH_80:
 		u4BandWidth = 80;
+		break;
+	case VHT_OP_CHANNEL_WIDTH_160:
+		u4BandWidth = 160;
+		break;
+	case VHT_OP_CHANNEL_WIDTH_320:
+		u4BandWidth = 320;
 		break;
 	default:
 		DBGLOG(INIT, WARN, "unsupported bandwidth: %d", ucBandWidth);
