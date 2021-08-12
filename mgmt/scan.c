@@ -1402,6 +1402,11 @@ uint8_t scanProcessRnrChannel(IN struct ADAPTER *prAdapter,
 					ieee80211_channel_to_frequency
 					(prNeighborAPInfoField->ucChannelNum,
 					band));
+	if (!prChannel) {
+		log_dbg(SCN, ERROR, "RnrCh=NULL!\n");
+		return 0;
+	}
+
 	uc6gChNum = nicFreq2ChannelNum(prChannel->center_freq * 1000);
 
 	/* Check this NeighborAPInfo's reported 6G channel has recorded
@@ -1533,6 +1538,14 @@ void scanParsingRnrElement(IN struct ADAPTER *prAdapter,
 				prNeighborAPInfoField->ucOpClass);
 			return;
 		}
+		/* Handle this NeighborAPInfo reported 6G channel */
+		uc6gChNum = scanProcessRnrChannel(prAdapter,
+					prNeighborAPInfoField, prScanRequest);
+		if (uc6gChNum == 0) {
+			DBGLOG(SCN, ERROR, "RNR channel = NULL!\n");
+			return;
+		}
+
 		/* peek tail NeighborAPInfo from list to save information */
 		prNeighborAPInfo = LINK_PEEK_TAIL(
 		    &prAdapter->rNeighborAPInfoList, struct NEIGHBOR_AP_INFO,
@@ -1598,10 +1611,6 @@ void scanParsingRnrElement(IN struct ADAPTER *prAdapter,
 				CFG_SCAN_SSID_MAX_NUM,
 				sizeof(prScanRequest->ucBssidMatchSsidInd));
 		}
-
-		/* Handle this NeighborAPInfo reported 6G channel */
-		uc6gChNum = scanProcessRnrChannel(prAdapter,
-				prNeighborAPInfoField, prScanRequest);
 
 		for (i = 0; i < u2TbttInfoCount; i++) {
 			j = i * u2TbttInfoLength;
