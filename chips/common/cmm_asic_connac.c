@@ -916,10 +916,12 @@ bool asicIsValidRegAccess(IN struct ADAPTER *prAdapter, IN uint32_t u4Register)
 void asicGetMailboxStatus(IN struct ADAPTER *prAdapter,
 			  OUT uint32_t *pu4Val)
 {
+#define WF_MAILBOX_DBG (CONN_HIF_BASE + 0x11C)
+
 	uint32_t u4RegValue = 0;
 
 	HAL_MCR_RD(prAdapter,
-		   CONN_MCU_CONFG_ON_HOST_MAILBOX_WF_ADDR, &u4RegValue);
+		   WF_MAILBOX_DBG, &u4RegValue);
 	*pu4Val = u4RegValue;
 }
 

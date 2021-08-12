@@ -1390,8 +1390,6 @@ static int wf_pwr_on_consys_mcu(void)
 	wf_ioremap_write(CONN_INFRA_RGU_ON_WFSYS_CPU_SW_RST_B_ADDR, value);
 
 	/* Check CONNSYS power-on completion
-	 * (polling "0x8102_1604[31:0]" == 0x1D1E and each polling interval is "1ms")
-	 * or
 	 * (polling "0x1806_0B10[31:0]" == 0x1D1E and each polling interval is "1ms")
 	 * (apply this for guarantee that CONNSYS CPU goes to "cos_idle_loop")
 	 * ([NOTE] this setting could be changed at different CONNSYS ROM code)
@@ -1405,9 +1403,6 @@ static int wf_pwr_on_consys_mcu(void)
 			ret = -1;
 			break;
 		}
-		wf_ioremap_read(WF_TOP_CFG_ON_ROMCODE_INDEX_ADDR, &value);
-		if (value == CONNSYS_ROM_DONE_CHECK)
-			break;
 		/* pooling mailbox as backup */
 		wf_ioremap_read(CONN_HOST_CSR_TOP_WF_ON_MONFLG_OUT_ADDR, &value);
 		if (value == CONNSYS_ROM_DONE_CHECK)
@@ -1417,7 +1412,8 @@ static int wf_pwr_on_consys_mcu(void)
 	}
 	if (check != 0) {
 		DBGLOG(INIT, ERROR,
-			"Check CONNSYS power-on completion fail.\n");
+			"Check CONNSYS power-on completion fail, value=0x%08x\n",
+			value);
 		return ret;
 	}
 
@@ -2443,6 +2439,11 @@ static void soc7_0_DumpOtherCr(struct ADAPTER *prAdapter)
 
 	DBGLOG(HAL, INFO,
 		"Host_CSR - mailbox and other CRs");
+
+	connac2x_DbgCrRead(NULL, 0x18060010, &u4Val);
+	DBGLOG(INIT, INFO, "0x18060010=[0x%08x]\n", u4Val);
+	connac2x_DbgCrRead(NULL, 0x180600f0, &u4Val);
+	DBGLOG(INIT, INFO, "0x180600f0=[0x%08x]\n", u4Val);
 
 	/* Power_check */
 	soc7_0_DumpWfsysSleepWakeupDebug(prAdapter);

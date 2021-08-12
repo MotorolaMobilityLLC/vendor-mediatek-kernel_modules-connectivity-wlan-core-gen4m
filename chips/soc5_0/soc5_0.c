@@ -1369,7 +1369,7 @@ static int wf_pwr_on_consys_mcu(void)
 
 	/* Check CONNSYS power-on completion
 	 * Polling "1000 times" and each polling interval is "1ms"
-	 * Polling 0x81021604[31:0] || 0x18060260[31:0] = 0x00001D1E
+	 * Polling 0x18060260[31:0] = 0x00001D1E
 	 */
 	check = 0;
 	polling_count = 0;
@@ -1379,10 +1379,6 @@ static int wf_pwr_on_consys_mcu(void)
 			ret = -1;
 			break;
 		}
-		wf_ioremap_read(WF_ROM_CODE_INDEX_ADDR, &value);
-		if (value == CONNSYS_ROM_DONE_CHECK)
-			break;
-		/* pooling mailbox as backup */
 		wf_ioremap_read(CONNAC2X_MAILBOX_DBG_ADDR, &value);
 		if (value == CONNSYS_ROM_DONE_CHECK)
 			break;
@@ -1391,7 +1387,8 @@ static int wf_pwr_on_consys_mcu(void)
 	}
 	if (check != 0) {
 		DBGLOG(INIT, ERROR,
-			"Check CONNSYS power-on completion fail.\n");
+			"Check CONNSYS power-on completion fail, value=0x%08x\n",
+			value);
 		return ret;
 	}
 
@@ -2390,6 +2387,11 @@ static void soc5_0_DumpOtherCr(struct ADAPTER *prAdapter)
 
 	DBGLOG(HAL, INFO,
 		"Host_CSR - mailbox and other CRs");
+
+	connac2x_DbgCrRead(NULL, 0x18060010, &u4Val);
+	DBGLOG(INIT, INFO, "0x18060010=[0x%08x]\n", u4Val);
+	connac2x_DbgCrRead(NULL, 0x180600f0, &u4Val);
+	DBGLOG(INIT, INFO, "0x180600f0=[0x%08x]\n", u4Val);
 
 	connac2x_DumpCrRange(NULL, 0x18060260, HANG_OTHER_LOG_NUM,
 		"mailbox and other CRs");
