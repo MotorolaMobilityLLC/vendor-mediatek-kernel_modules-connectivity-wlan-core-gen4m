@@ -6048,18 +6048,22 @@ void rlmDomainSendPwrLimitCmd(struct ADAPTER *prAdapter)
 
 #if CFG_SUPPORT_DYNAMIC_PWR_LIMIT_ANT_TAG
 	prCmdAnt->ucNum = 0;
+	prCmdAnt->fgPwrTblKeep = TRUE;
 	/* ANT number if PWR_LIMIT_TYPE_COMP_ANT*/
 	prCmdAnt->ucLimitType = PWR_LIMIT_TYPE_COMP_ANT;
 	prCmdAnt->ucVersion = 1;
 #endif
 #if (CFG_SUPPORT_WIFI_6G == 1)
 	prCmd6E_1->ucNum = 0;
+	prCmd6E_1->fgPwrTblKeep = TRUE;
 	prCmd6E_1->ucLimitType = PWR_LIMIT_TYPE_COMP_6E_1;
 
 	prCmd6E_2->ucNum = 0;
+	prCmd6E_2->fgPwrTblKeep = TRUE;
 	prCmd6E_2->ucLimitType = PWR_LIMIT_TYPE_COMP_6E_2;
 
 	prCmd6E_3->ucNum = 0;
+	prCmd6E_3->fgPwrTblKeep = TRUE;
 	prCmd6E_3->ucLimitType = PWR_LIMIT_TYPE_COMP_6E_3;
 #endif
 	/*<1>Command - default table information,
