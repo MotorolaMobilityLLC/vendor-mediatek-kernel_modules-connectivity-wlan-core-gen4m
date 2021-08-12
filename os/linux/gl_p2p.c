@@ -1903,8 +1903,8 @@ void mtk_p2p_wext_set_Multicastlist(struct GLUE_INFO *prGlueInfo)
 
 	if (!prDev || !prGlueInfo || !prGlueInfo->prP2PDevInfo) {
 		DBGLOG(INIT, WARN,
-			" abnormal dev or skb: prDev(0x%p), prGlueInfo(0x%p), prP2PDevInfo(0x%p)\n",
-			prDev, prGlueInfo, prGlueInfo->prP2PDevInfo);
+			" abnormal dev or skb: prDev(0x%p), prGlueInfo(0x%p)\n",
+			prDev, prGlueInfo);
 		return;
 	}
 
