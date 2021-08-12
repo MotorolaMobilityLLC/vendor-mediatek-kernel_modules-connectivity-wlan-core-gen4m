@@ -4763,6 +4763,10 @@ int main_thread(void *data)
 		}
 #endif
 
+#if (CFG_SUPPORT_POWER_THROTTLING == 1)
+		kalDumpPwrLevel(prGlueInfo->prAdapter);
+#endif
+
 		kalTraceEnd(); /* main_thread */
 	}
 
@@ -9638,6 +9642,26 @@ void connsysPowerTempUpdate(enum conn_pwr_msg_type status,
 				status, currentTemp);
 	conn_pwr_send_msg(CONN_PWR_DRV_WIFI, status, &currentTemp);
 }
+
+uint32_t kalDumpPwrLevel(IN struct ADAPTER *prAdapter)
+{
+	OS_SYSTIME now, last;
+
+	GET_BOOT_SYSTIME(&now);
+	last = prAdapter->rPwrLevelStatUpdateTime;
+
+	if (!CHECK_FOR_TIMEOUT(now, last,
+		SEC_TO_SYSTIME(PWR_LEVEL_STAT_UPDATE_INTERVAL))) {
+		return WLAN_STATUS_PENDING;
+	}
+
+	prAdapter->rPwrLevelStatUpdateTime = now;
+
+	DBGLOG(SW4, INFO, "Current power level: %d\n",	prAdapter->u4PwrLevel);
+
+	return WLAN_STATUS_SUCCESS;
+}
+
 #endif
 
 #if CFG_SUPPORT_NAN

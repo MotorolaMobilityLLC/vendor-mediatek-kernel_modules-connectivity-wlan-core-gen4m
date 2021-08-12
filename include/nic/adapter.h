@@ -1970,6 +1970,7 @@ struct ADAPTER {
 	uint32_t u4PwrLevel;
 	struct conn_pwr_event_max_temp rTempInfo;
 	struct THRM_PROT_CFG_CONTEXT rThrmProtCfg;
+	OS_SYSTIME rPwrLevelStatUpdateTime;
 #endif
 
 #if (CFG_SUPPORT_POWER_THROTTLING == 1 && CFG_SUPPORT_CNM_POWER_CTRL == 1)
