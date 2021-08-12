@@ -734,12 +734,12 @@ struct PP_TOP_CR rSoc5_0_PpTopCr = {
 		0,
 		0
 	},
-	.rDbgCs0 = {
+	.rDbgCs1 = {
 		WF_PP_TOP_DBG_CS_1_ADDR,
 		0,
 		0
 	},
-	.rDbgCs0 = {
+	.rDbgCs2 = {
 		WF_PP_TOP_DBG_CS_2_ADDR,
 		0,
 		0
