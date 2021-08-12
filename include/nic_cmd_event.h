@@ -1022,6 +1022,9 @@ enum NIC_CAPABILITY_V2_TAG {
 	TAG_CAP_6G_CAP = 0x18,
 #endif
 	TAG_CAP_HOST_STATUS_EMI_OFFSET = 0x19,
+#if (CFG_SUPPORT_RX_QUOTA_INFO == 1)
+	TAG_CAP_PSE_RX_QUOTA = 0x1b,
+#endif
 	TAG_CAP_TOTAL
 };
 
@@ -1089,6 +1092,13 @@ struct CAP_PHY_CAP {
 	uint8_t ucWifiPath;
 	uint8_t ucHe; /* 1:support, 0:not*/
 };
+
+#if (CFG_SUPPORT_RX_QUOTA_INFO == 1)
+struct CAP_PSE_RX_QUOTA {
+	uint32_t u4MaxQuotaBytes;
+	uint32_t u4MinQuotaBytes;
+};
+#endif
 
 struct CAP_MAC_CAP {
 	uint8_t ucHwBssIdNum; /* HW BSSID number */
@@ -3515,6 +3525,11 @@ void nicEventReportUEvent(IN struct ADAPTER *prAdapter,
 
 void tputEventFactorHandler(IN struct ADAPTER *prAdapter,
 		  IN struct WIFI_EVENT *prEvent);
+
+#if (CFG_SUPPORT_RX_QUOTA_INFO == 1)
+uint32_t nicCfgChipPseRxQuota(IN struct ADAPTER *prAdapter,
+				IN uint8_t *pucEventBuf);
+#endif
 
 /*******************************************************************************
  *                              F U N C T I O N S

@@ -105,6 +105,9 @@ const struct NIC_CAPABILITY_V2_REF_TABLE
 #if (CFG_SUPPORT_P2PGO_ACS == 1)
 	{TAG_CAP_P2P, nicCfgChipP2PCap},
 #endif
+#if (CFG_SUPPORT_RX_QUOTA_INFO == 1)
+	{TAG_CAP_PSE_RX_QUOTA, nicCfgChipPseRxQuota},
+#endif
 	{TAG_CAP_HOST_STATUS_EMI_OFFSET, nicCmdEventHostStatusEmiOffset},
 #if (CFG_SUPPORT_WIFI_6G == 1)
 	{TAG_CAP_6G_CAP, nicCfgChipCap6GCap},
@@ -2628,6 +2631,39 @@ uint32_t nicCfgChipP2PCap(IN struct ADAPTER *prAdapter,
 		prAdapter->rWifiVar.ucP2pGoACS);
 	return WLAN_STATUS_SUCCESS;
 	}
+#endif
+
+#if (CFG_SUPPORT_RX_QUOTA_INFO == 1)
+uint32_t nicCfgChipPseRxQuota(IN struct ADAPTER *prAdapter,
+				IN uint8_t *pucEventBuf)
+{
+	struct CAP_PSE_RX_QUOTA *prPseCap =
+	(struct CAP_PSE_RX_QUOTA *)pucEventBuf;
+	uint8_t ucMaxBand = prAdapter->rWifiVar.ucNSS;
+	uint32_t u4MaxPktSize = 0;
+
+	u4MaxPktSize = (prPseCap->u4MaxQuotaBytes)/(ucMaxBand + 1);
+	if (u4MaxPktSize < 3000) {
+		/* disable AMSDU */
+		prAdapter->rWifiVar.ucAmsduInAmpduRx = FEATURE_DISABLED;
+		DBGLOG(INIT, INFO, "Disable AMSDU\n");
+	} else if (u4MaxPktSize < 7000) {
+		/* MAX RX MPDU len = 3K */
+		prAdapter->ucRxMaxMpduLen = 0;
+	} else if (u4MaxPktSize < 11000) {
+		/* MAX RX MPDU len = 7K */
+		prAdapter->ucRxMaxMpduLen = 1;
+	} else {
+		/* MAX RX MPDU len = 11K */
+		prAdapter->ucRxMaxMpduLen = 2;
+	}
+	DBGLOG(INIT, INFO,
+		"u4MaxQuotaBytes:%d u4MaxPktSize:%d ucRxMaxMpduLen:%d\n",
+		prPseCap->u4MaxQuotaBytes, u4MaxPktSize,
+		prAdapter->ucRxMaxMpduLen);
+
+	return WLAN_STATUS_SUCCESS;
+}
 #endif
 
 uint32_t nicCmdEventHostStatusEmiOffset(IN struct ADAPTER *prAdapter,

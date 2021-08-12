@@ -1982,6 +1982,11 @@ struct ADAPTER {
 	struct LINK rNeighborAPInfoList;
 #endif
 #endif
+
+#if (CFG_SUPPORT_RX_QUOTA_INFO == 1)
+	uint32_t ucRxMaxMpduLen;
+#endif
+
 };				/* end of _ADAPTER_T */
 
 /*******************************************************************************
