@@ -4033,6 +4033,9 @@ void aisUpdateBssInfoForJOIN(IN struct ADAPTER *prAdapter,
 
 	prAisBssInfo->ucBeaconTimeoutCount = AIS_BEACON_TIMEOUT_COUNT_INFRA;
 
+	/*reset coex related info*/
+	prAisBssInfo->eCoexMode = COEX_NONE_BT;
+
 #if CFG_SUPPORT_ROAMING_SKIP_ONE_AP
 	prAisSpecBssInfo->ucRoamSkipTimes = ROAMING_ONE_AP_SKIP_TIMES;
 	prAisSpecBssInfo->fgGoodRcpiArea = FALSE;
