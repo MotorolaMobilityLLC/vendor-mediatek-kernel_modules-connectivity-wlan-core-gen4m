@@ -12793,78 +12793,33 @@ static int priv_driver_get_ch_rank_list(IN struct net_device *prNetDev,
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
 	uint32_t i4BytesWritten = 0;
-	int8_t ucIdx = 0, ucIdx2 = 0, ucChannelNum = 0,
-		ucNumOf2gChannel = 0, ucNumOf5gChannel = 0;
-#if (CFG_SUPPORT_WIFI_6G == 1)
-	int8_t ucNumOf6gChannel = 0;
-#endif
 	struct PARAM_GET_CHN_INFO *prChnLoadInfo = NULL;
-	struct RF_CHANNEL_INFO *prChannelList = NULL,
-		auc2gChannelList[MAX_2G_BAND_CHN_NUM],
-#if (CFG_SUPPORT_WIFI_6G == 1)
-		auc6gChannelList[MAX_6G_BAND_CHN_NUM],
-#endif
-		auc5gChannelList[MAX_5G_BAND_CHN_NUM];
-	enum ENUM_BAND eChBand;
+	struct RF_CHANNEL_INFO aucChannelList[MAX_PER_BAND_CHN_NUM];
+	uint8_t i = 0, ucBandIdx = 0, ucChnIdx = 0, ucNumOfChannel = 0;
 
 	ASSERT(prNetDev);
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 	prChnLoadInfo = &(prGlueInfo->prAdapter->rWifiVar.rChnLoadInfo);
 	kalMemZero(pcCommand, i4TotalLen);
 
-	rlmDomainGetChnlList(prGlueInfo->prAdapter, BAND_2G4, TRUE,
-			     MAX_2G_BAND_CHN_NUM, &ucNumOf2gChannel,
-			     auc2gChannelList);
-	rlmDomainGetChnlList(prGlueInfo->prAdapter, BAND_5G, TRUE,
-			     MAX_5G_BAND_CHN_NUM, &ucNumOf5gChannel,
-			     auc5gChannelList);
-#if (CFG_SUPPORT_WIFI_6G == 1)
-	rlmDomainGetChnlList(prGlueInfo->prAdapter, BAND_6G, TRUE,
-			     MAX_6G_BAND_CHN_NUM, &ucNumOf6gChannel,
-			     auc6gChannelList);
-#endif
+	for (ucBandIdx = BAND_2G4; ucBandIdx < BAND_NUM; ucBandIdx++) {
+		rlmDomainGetChnlList(prGlueInfo->prAdapter, ucBandIdx,
+			TRUE, MAX_PER_BAND_CHN_NUM,
+			&ucNumOfChannel, aucChannelList);
 
-	for (ucIdx = 0; ucIdx < MAX_CHN_NUM; ucIdx++) {
-		if (ucIdx < rlmDomainGetActiveChannelCount(KAL_BAND_2GHZ))
-			eChBand = BAND_2G4;
-#if (CFG_SUPPORT_WIFI_6G == 1)
-		else if (ucIdx < rlmDomainGetActiveChannelCount(KAL_BAND_2GHZ)
-			+ rlmDomainGetActiveChannelCount(KAL_BAND_5GHZ))
-			eChBand = BAND_5G;
-		else
-			eChBand = BAND_6G;
-#else
-		else
-			eChBand = BAND_5G;
-#endif
+		for (i = 0; i < ucNumOfChannel; i++) {
+			ucChnIdx = wlanGetChannelIndex(
+				aucChannelList[i].eBand,
+				aucChannelList[i].ucChannelNum);
 
-		if (eChBand == BAND_2G4) {
-			prChannelList = auc5gChannelList;
-			ucChannelNum = ucNumOf5gChannel;
-		} else if (eChBand == BAND_5G) {
-			prChannelList = auc2gChannelList;
-			ucChannelNum = ucNumOf2gChannel;
-		}
-#if (CFG_SUPPORT_WIFI_6G == 1)
-		else if (eChBand == BAND_6G) {
-			prChannelList = auc6gChannelList;
-			ucChannelNum = ucNumOf6gChannel;
-		}
-#endif
+			pcCommand[i4BytesWritten++] =
+				prChnLoadInfo->rChnRankList[ucChnIdx].ucChannel;
 
-		for (ucIdx2 = 0; ucIdx2 < ucChannelNum; ucIdx2++) {
-			if (prChnLoadInfo->rChnRankList[ucIdx].ucChannel ==
-			    prChannelList[ucIdx2].ucChannelNum) {
-				pcCommand[i4BytesWritten++] =
-					prChnLoadInfo->rChnRankList[ucIdx]
-								.ucChannel;
-				DBGLOG(SCN, TRACE, "ch %u, dirtiness %d\n",
-					prChnLoadInfo->rChnRankList[ucIdx]
-								.ucChannel,
-					prChnLoadInfo->rChnRankList[ucIdx]
-								.u4Dirtiness);
-				break;
-			}
+			DBGLOG(SCN, TRACE, "band %u, ch %u, dirtiness %d\n",
+				prChnLoadInfo->rChnRankList[ucChnIdx].eBand,
+				prChnLoadInfo->rChnRankList[ucChnIdx].ucChannel,
+				prChnLoadInfo->rChnRankList[ucChnIdx]
+					.u4Dirtiness);
 		}
 	}
 
@@ -12875,53 +12830,35 @@ static int priv_driver_get_ch_dirtiness(IN struct net_device *prNetDev,
 					IN char *pcCommand, IN int i4TotalLen)
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
-	int8_t cIdx = 0;
-	uint8_t ucNumOf2gChannel = 0;
-	uint8_t ucNumOf5gChannel = 0;
-	uint32_t i4BytesWritten = 0;
+	uint32_t i4BytesWritten = 0, u4Offset = 0;
 	struct PARAM_GET_CHN_INFO *prChnLoadInfo = NULL;
-	struct RF_CHANNEL_INFO ar2gChannelList[MAX_2G_BAND_CHN_NUM];
-	struct RF_CHANNEL_INFO ar5gChannelList[MAX_5G_BAND_CHN_NUM];
+	struct RF_CHANNEL_INFO aucChannelList[MAX_PER_BAND_CHN_NUM];
+	uint8_t i = 0, ucBandIdx = 0, ucChnIdx = 0, ucNumOfChannel = 0;
 
 	ASSERT(prNetDev);
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 	prChnLoadInfo = &(prGlueInfo->prAdapter->rWifiVar.rChnLoadInfo);
 	kalMemZero(pcCommand, i4TotalLen);
 
-	rlmDomainGetChnlList(prGlueInfo->prAdapter, BAND_2G4, TRUE,
-			     MAX_2G_BAND_CHN_NUM, &ucNumOf2gChannel,
-			     ar2gChannelList);
-	rlmDomainGetChnlList(prGlueInfo->prAdapter, BAND_5G, TRUE,
-			     MAX_5G_BAND_CHN_NUM, &ucNumOf5gChannel,
-			     ar5gChannelList);
+	for (ucBandIdx = BAND_2G4; ucBandIdx < BAND_NUM; ucBandIdx++) {
+		rlmDomainGetChnlList(prGlueInfo->prAdapter, ucBandIdx,
+			TRUE, MAX_PER_BAND_CHN_NUM,
+			&ucNumOfChannel, aucChannelList);
 
-	for (cIdx = 0; cIdx < MAX_CHN_NUM; cIdx++) {
-		int8_t cIdx2 = 0;
-		uint8_t ucChannelNum = 0;
-		uint32_t u4Offset = 0;
-		struct RF_CHANNEL_INFO *prChannelList = NULL;
+		for (i = 0; i < ucNumOfChannel; i++) {
+			ucChnIdx = wlanGetChannelIndex(
+				aucChannelList[i].eBand,
+				aucChannelList[i].ucChannelNum);
 
-		if (prChnLoadInfo->rChnRankList[cIdx].ucChannel > 14) {
-			prChannelList = ar5gChannelList;
-			ucChannelNum = ucNumOf5gChannel;
-		} else {
-			prChannelList = ar2gChannelList;
-			ucChannelNum = ucNumOf2gChannel;
-		}
+			u4Offset = kalSprintf(
+				pcCommand + i4BytesWritten,
+				"\nband %u ch %03u -> dirtiness %u",
+				prChnLoadInfo->rChnRankList[ucChnIdx].eBand,
+				prChnLoadInfo->rChnRankList[ucChnIdx].ucChannel,
+				prChnLoadInfo->rChnRankList[ucChnIdx]
+					.u4Dirtiness);
 
-		for (cIdx2 = 0; cIdx2 < ucChannelNum; cIdx2++) {
-			if (prChnLoadInfo->rChnRankList[cIdx].ucChannel ==
-				prChannelList[cIdx2].ucChannelNum) {
-				u4Offset = kalSprintf(
-					pcCommand + i4BytesWritten,
-					"\nch %03u -> dirtiness %u",
-					prChnLoadInfo->rChnRankList[cIdx]
-								.ucChannel,
-					prChnLoadInfo->rChnRankList[cIdx]
-								.u4Dirtiness);
-				i4BytesWritten += u4Offset;
-				break;
-			}
+			i4BytesWritten += u4Offset;
 		}
 	}
 

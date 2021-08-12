@@ -10953,15 +10953,16 @@ wlanSortChannel(IN struct ADAPTER *prAdapter,
 	int8_t ucIdx = 0, ucRoot = 0, ucChild = 0;
 #if (CFG_SUPPORT_P2PGO_ACS == 1)
 	uint8_t i = 0, ucBandIdx = 0, ucNumOfChannel = 0, uc2gChNum = 0;
-	struct RF_CHANNEL_INFO aucChannelList[MAX_CHN_NUM] = { { 0 } };
+	struct RF_CHANNEL_INFO aucChannelList[MAX_PER_BAND_CHN_NUM] = { { 0 } };
 #endif
 	struct PARAM_CHN_RANK_INFO rChnRankInfo;
 	/* prepare unsorted ch rank list */
 #if (CFG_SUPPORT_P2PGO_ACS == 1)
 	if (ucSortType == CHNL_SORT_POLICY_BY_CH_DOMAIN) {
 		for (ucBandIdx = BAND_2G4; ucBandIdx < BAND_NUM; ucBandIdx++) {
-			rlmDomainGetChnlList(prAdapter, ucBandIdx, TRUE,
-				MAX_CHN_NUM, &ucNumOfChannel, aucChannelList);
+			rlmDomainGetChnlList(prAdapter, ucBandIdx,
+				TRUE, MAX_PER_BAND_CHN_NUM,
+				&ucNumOfChannel, aucChannelList);
 
 			DBGLOG(SCN, TRACE, "[ACS]Band=%d, Channel Number=%d\n",
 				ucBandIdx,
