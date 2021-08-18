@@ -1686,6 +1686,7 @@ struct ADAPTER {
 	u_int8_t fgIsStatValid;
 
 #if CFG_SUPPORT_LLS
+	struct HAL_LLS_FULL_REPORT rLinkStatsDestBuffer;
 	struct HAL_LLS_FULL_REPORT *pucLinkStatsSrcBufferAddr;
 	uint32_t u4RxMpduAc[STATS_LLS_WIFI_AC_MAX]; /* Store in LLS order */
 #endif
