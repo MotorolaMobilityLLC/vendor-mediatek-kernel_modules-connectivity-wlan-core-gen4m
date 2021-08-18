@@ -3268,7 +3268,11 @@ void connac2x_show_dmashdl_info(IN struct ADAPTER *prAdapter)
 	DBGLOG(HAL, INFO, "DMASHDL ERR FLAG CTRL(0x%08x): 0x%08x\n",
 	       prCfg->rErrorFlagCtrl.u4Addr, value);
 
-	for (idx = 0; idx < ENUM_DMASHDL_GROUP_2; idx++) {
+	/* Dump Group 0~14 info */
+	for (idx = 0; idx <= ENUM_DMASHDL_GROUP_14; idx++) {
+		if (prCfg->afgRefillEn[idx] == 0)
+			continue;
+
 		DBGLOG(HAL, INFO, "Group %d info:\n", idx);
 		asicConnac2xDmashdlGetGroupControl(prAdapter, idx);
 		rsv_cnt = asicConnac2xDmashdlGetRsvCount(prAdapter, idx);
@@ -3277,6 +3281,15 @@ void connac2x_show_dmashdl_info(IN struct ADAPTER *prAdapter)
 		total_src_cnt += src_cnt;
 		total_rsv_cnt += rsv_cnt;
 	}
+
+	/* Dump Group 15 info */
+	idx = ENUM_DMASHDL_GROUP_15;
+	DBGLOG(HAL, INFO, "Group %d info:\n", idx);
+	asicConnac2xDmashdlGetGroupControl(prAdapter, idx);
+	asicConnac2xDmashdlGetRsvCount(prAdapter, idx);
+	asicConnac2xDmashdlGetSrcCount(prAdapter, idx);
+	asicConnac2xDmashdlGetPKTCount(prAdapter, idx);
+
 	HAL_MCR_RD(prAdapter, prCfg->rStatusRdFfaCnt.u4Addr, &value);
 	ffa_cnt = (value & prCfg->rStatusRdFfaCnt.u4Mask) >>
 		prCfg->rStatusRdFfaCnt.u4Shift;
