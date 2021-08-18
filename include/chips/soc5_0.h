@@ -143,7 +143,7 @@
 			 >> SOC5_0_RX_VT_FR_MODE_OFFSET)
 
 #define RXV_GET_GI(_prRxVector)					\
-		(((_prRxVector) & SSOC5_0_RX_VT_GI_MASK)	\
+		(((_prRxVector) & SOC5_0_RX_VT_GI_MASK)	\
 			 >> SOC5_0_RX_VT_GI_OFFSET)
 
 #define RXV_GET_STBC(_prRxVector)				\

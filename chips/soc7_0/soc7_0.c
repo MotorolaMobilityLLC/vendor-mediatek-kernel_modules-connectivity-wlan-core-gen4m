@@ -455,6 +455,9 @@ struct CHIP_DBG_OPS soc7_0_DebugOps = {
 #endif
 	.show_wfdma_dbg_probe_info = soc7_0_show_wfdma_dbg_probe_info,
 	.show_wfdma_wrapper_info = soc7_0_show_wfdma_wrapper_info,
+#ifdef CFG_SUPPORT_LLS
+	.get_rx_link_stats = soc7_0_get_rx_link_stats,
+#endif
 };
 
 

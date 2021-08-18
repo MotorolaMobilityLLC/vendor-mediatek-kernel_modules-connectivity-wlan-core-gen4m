@@ -2,8 +2,8 @@
 /*
  * Copyright (c) 2020 MediaTek Inc.
  */
-/*! \file  soc5_0.h
-*    \brief This file contains the info of soc5_0
+/*! \file  soc7_0.h
+*    \brief This file contains the info of soc7_0
 */
 
 #ifdef SOC7_0
@@ -101,6 +101,30 @@
 #define SOC7_0_RX_VT_TXMODE_MASK          BITS(24, 27)
 #define SOC7_0_RX_VT_TXMODE_OFFSET        24
 
+#define RXV_GET_RX_RATE(_prRxVector)				\
+		(((_prRxVector) & SOC7_0_RX_VT_RX_RATE_MASK)	\
+			 >> SOC7_0_RX_VT_RX_RATE_OFFSET)
+
+#define RXV_GET_RX_NSTS(_prRxVector)				\
+		(((_prRxVector) & SOC7_0_RX_VT_NSTS_MASK)	\
+			 >> SOC7_0_RX_VT_NSTS_OFFSET)
+
+#define RXV_GET_FR_MODE(_prRxVector)				\
+		(((_prRxVector) & SOC7_0_RX_VT_FR_MODE_MASK)	\
+			 >> SOC7_0_RX_VT_FR_MODE_OFFSET)
+
+#define RXV_GET_GI(_prRxVector)					\
+		(((_prRxVector) & SOC7_0_RX_VT_GI_MASK)	\
+			 >> SOC7_0_RX_VT_GI_OFFSET)
+
+#define RXV_GET_STBC(_prRxVector)				\
+		(((_prRxVector) & SOC7_0_RX_VT_STBC_MASK)	\
+			 >> SOC7_0_RX_VT_STBC_OFFSET)
+
+#define RXV_GET_TXMODE(_prRxVector)				\
+		(((_prRxVector) & SOC7_0_RX_VT_TXMODE_MASK)	\
+			 >> SOC7_0_RX_VT_TXMODE_OFFSET)
+
 extern struct PLE_TOP_CR rSoc7_0_PleTopCr;
 extern struct PSE_TOP_CR rSoc7_0_PseTopCr;
 extern struct PP_TOP_CR rSoc7_0_PpTopCr;
@@ -161,6 +185,11 @@ int soc7_0_get_rx_rate_info(IN struct ADAPTER *prAdapter,
 		OUT uint32_t *pu4Rate, OUT uint32_t *pu4Nss,
 		OUT uint32_t *pu4RxMode, OUT uint32_t *pu4FrMode,
 		OUT uint32_t *pu4Sgi);
+#endif
+
+#ifdef CFG_SUPPORT_LLS
+void soc7_0_get_rx_link_stats(IN struct ADAPTER *prAdapter,
+	IN struct SW_RFB *prRetSwRfb, IN uint32_t u4RxVector0);
 #endif
 
 #if (CFG_POWER_ON_DOWNLOAD_EMI_ROM_PATCH == 1)
