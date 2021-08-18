@@ -1566,7 +1566,7 @@ static void rlmFillVhtCapIE(struct ADAPTER *prAdapter,
 
 	prVhtCap->ucId = ELEM_ID_VHT_CAP;
 	prVhtCap->ucLength = sizeof(struct IE_VHT_CAP) - ELEM_HDR_LEN;
-	prVhtCap->u4VhtCapInfo = GET_VHT_CAP_INFO_DEFAULT_VAL(prAdapter);
+	prVhtCap->u4VhtCapInfo = VHT_CAP_INFO_DEFAULT_VAL;
 
 	ucMaxBw = cnmGetBssMaxBw(prAdapter, prBssInfo->ucBssIndex);
 
@@ -4839,7 +4839,7 @@ uint32_t rlmFillVhtCapIEByAdapter(struct ADAPTER *prAdapter,
 
 	prVhtCap->ucId = ELEM_ID_VHT_CAP;
 	prVhtCap->ucLength = sizeof(struct IE_VHT_CAP) - ELEM_HDR_LEN;
-	prVhtCap->u4VhtCapInfo = GET_VHT_CAP_INFO_DEFAULT_VAL(prAdapter);
+	prVhtCap->u4VhtCapInfo = VHT_CAP_INFO_DEFAULT_VAL;
 
 	if (IS_FEATURE_ENABLED(prAdapter->rWifiVar.ucRxShortGI))
 		prVhtCap->u4VhtCapInfo |= VHT_CAP_INFO_SHORT_GI_80;

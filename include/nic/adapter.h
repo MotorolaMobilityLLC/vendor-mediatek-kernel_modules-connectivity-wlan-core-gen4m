@@ -1034,6 +1034,7 @@ struct WIFI_VAR {
 	uint8_t ucGo2gNSS; /* Less or euqal than ucNss */
 
 	uint8_t ucRxMaxMpduLen;
+	uint8_t ucRxQuotaInfoEn;
 	uint32_t u4TxMaxAmsduInAmpduLen;
 
 	uint8_t ucTxBaSize;
@@ -1983,10 +1984,6 @@ struct ADAPTER {
 #if (CFG_SUPPORT_WIFI_6G_OOB_RNR == 1)
 	struct LINK rNeighborAPInfoList;
 #endif
-#endif
-
-#if (CFG_SUPPORT_RX_QUOTA_INFO == 1)
-	uint32_t ucRxMaxMpduLen;
 #endif
 
 };				/* end of _ADAPTER_T */

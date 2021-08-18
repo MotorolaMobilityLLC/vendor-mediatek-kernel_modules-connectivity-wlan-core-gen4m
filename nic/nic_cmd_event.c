@@ -2642,6 +2642,11 @@ uint32_t nicCfgChipPseRxQuota(IN struct ADAPTER *prAdapter,
 	uint8_t ucMaxBand = prAdapter->rWifiVar.ucNSS;
 	uint32_t u4MaxPktSize = 0;
 
+	if (IS_FEATURE_DISABLED(prAdapter->rWifiVar.ucRxQuotaInfoEn)) {
+		DBGLOG(INIT, INFO, "RxQuotaInfoEn disabled.");
+		return WLAN_STATUS_SUCCESS;
+	}
+
 	u4MaxPktSize = (prPseCap->u4MaxQuotaBytes)/(ucMaxBand + 1);
 	if (u4MaxPktSize < 3000) {
 		/* disable AMSDU */
@@ -2649,18 +2654,18 @@ uint32_t nicCfgChipPseRxQuota(IN struct ADAPTER *prAdapter,
 		DBGLOG(INIT, INFO, "Disable AMSDU\n");
 	} else if (u4MaxPktSize < 7000) {
 		/* MAX RX MPDU len = 3K */
-		prAdapter->ucRxMaxMpduLen = 0;
+		prAdapter->rWifiVar.ucRxMaxMpduLen = 0;
 	} else if (u4MaxPktSize < 11000) {
 		/* MAX RX MPDU len = 7K */
-		prAdapter->ucRxMaxMpduLen = 1;
+		prAdapter->rWifiVar.ucRxMaxMpduLen = 1;
 	} else {
 		/* MAX RX MPDU len = 11K */
-		prAdapter->ucRxMaxMpduLen = 2;
+		prAdapter->rWifiVar.ucRxMaxMpduLen = 2;
 	}
 	DBGLOG(INIT, INFO,
 		"u4MaxQuotaBytes:%d u4MaxPktSize:%d ucRxMaxMpduLen:%d\n",
 		prPseCap->u4MaxQuotaBytes, u4MaxPktSize,
-		prAdapter->ucRxMaxMpduLen);
+		prAdapter->rWifiVar.ucRxMaxMpduLen);
 
 	return WLAN_STATUS_SUCCESS;
 }

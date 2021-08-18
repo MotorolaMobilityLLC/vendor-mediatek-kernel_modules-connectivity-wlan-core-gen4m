@@ -7361,6 +7361,12 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 	prWifiVar->ucRxMaxMpduLen = (uint8_t) wlanCfgGetUint32(
 					prAdapter, "RxMaxMpduLen",
 					VHT_CAP_INFO_MAX_MPDU_LEN_3K);
+
+#if (CFG_SUPPORT_RX_QUOTA_INFO == 1)
+	prWifiVar->ucRxQuotaInfoEn = (uint8_t) wlanCfgGetUint32(
+					prAdapter, "RxQuotaInfoEn",
+					FEATURE_ENABLED);
+#endif
 	/* Max Tx AMSDU in AMPDU length *in BYTES* */
 	prWifiVar->u4TxMaxAmsduInAmpduLen = wlanCfgGetUint32(
 					prAdapter, "TxMaxAmsduInAmpduLen",
