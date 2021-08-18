@@ -643,6 +643,7 @@ struct BSS_INFO {
 	struct TIMER rCsaTimer;
 	struct SWITCH_CH_AND_BAND_PARAMS CSAParams;
 	uint8_t fgHasStopTx;
+	uint8_t ucVhtChannelWidthBeforeCsa;
 #endif
 };
 

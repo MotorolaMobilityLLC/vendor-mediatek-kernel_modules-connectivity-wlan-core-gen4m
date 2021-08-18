@@ -2876,8 +2876,10 @@ p2pRoleFsmRunEventChnlGrant(IN struct ADAPTER *prAdapter,
 		(struct P2P_CHNL_REQ_INFO *) NULL;
 	struct MSG_CH_GRANT *prMsgChGrant = (struct MSG_CH_GRANT *) NULL;
 #if (CFG_SUPPORT_DFS_MASTER == 1)
-	struct BSS_INFO *prP2pBssInfo = (struct BSS_INFO *) NULL;
+	struct BSS_INFO *prBssInfo = (struct BSS_INFO *) NULL;
 	uint32_t u4CacTimeMs;
+	struct STA_RECORD *prStaRec = NULL;
+	uint8_t ucVhtChannelWidthAfterCsa = VHT_OP_CHANNEL_WIDTH_20_40;
 #endif
 	uint8_t ucTokenID = 0;
 
@@ -2894,9 +2896,7 @@ p2pRoleFsmRunEventChnlGrant(IN struct ADAPTER *prAdapter,
 	prChnlReqInfo = &(prP2pRoleFsmInfo->rChnlReqInfo);
 
 #if (CFG_SUPPORT_DFS_MASTER == 1)
-	prP2pBssInfo =
-		GET_BSS_INFO_BY_INDEX(prAdapter,
-			prMsgChGrant->ucBssIndex);
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prMsgChGrant->ucBssIndex);
 #endif
 	if (prChnlReqInfo->u4MaxInterval != prMsgChGrant->u4GrantInterval) {
 		DBGLOG(P2P, WARN,
@@ -2966,36 +2966,58 @@ p2pRoleFsmRunEventChnlGrant(IN struct ADAPTER *prAdapter,
 				u4CacTimeMs/1000);
 			break;
 		case P2P_ROLE_STATE_SWITCH_CHANNEL:
-			prP2pBssInfo->fgIsSwitchingChnl = FALSE;
+			prBssInfo->fgIsSwitchingChnl = FALSE;
 
 			/* Restore connection state */
-			p2pChangeMediaState(prAdapter, prP2pBssInfo,
+			p2pChangeMediaState(prAdapter, prBssInfo,
 				MEDIA_STATE_CONNECTED);
 
 			/* GC */
-			if (prP2pBssInfo->eIftype == IFTYPE_P2P_CLIENT) {
-				nicUpdateBss(prAdapter,
-					prP2pBssInfo->ucBssIndex);
+			if (prBssInfo->eIftype == IFTYPE_P2P_CLIENT) {
+				nicUpdateBss(prAdapter, prBssInfo->ucBssIndex);
 
-				/* Indicate op mode change to update BW/NSS */
+				/* Update VHT op info of target AP */
+				prStaRec = prBssInfo->prStaRecOfAP;
+
+				prStaRec->ucVhtOpChannelWidth =
+					prBssInfo->ucVhtChannelWidth;
+				prStaRec->ucVhtOpChannelFrequencyS1 =
+					prBssInfo->ucVhtChannelFrequencyS1;
+				prStaRec->ucVhtOpChannelFrequencyS2 =
+					prBssInfo->ucVhtChannelFrequencyS2;
+
+				/* Indicate op mode change to update BW/NSS.
+				 * Note that we have to temporarily set VHT
+				 * channel width to the one before CSA.
+				 * Otherwise, op mode change will not work.
+				 */
+				ucVhtChannelWidthAfterCsa =
+					prBssInfo->ucVhtChannelWidth;
+				prBssInfo->ucVhtChannelWidth =
+					prBssInfo->ucVhtChannelWidthBeforeCsa;
+
 				rlmChangeOperationMode(
-					prAdapter, prP2pBssInfo->ucBssIndex,
+					prAdapter, prBssInfo->ucBssIndex,
 					cnmGetBssMaxBw(prAdapter,
-						prP2pBssInfo->ucBssIndex),
-					prP2pBssInfo->ucOpRxNss,
-					prP2pBssInfo->ucOpTxNss,
+						prBssInfo->ucBssIndex),
+					prBssInfo->ucOpRxNss,
+					prBssInfo->ucOpTxNss,
 					TRUE,
 					rlmDummyChangeOpHandler);
 
+				/* Restore VHT channel width after CSA */
+				prBssInfo->ucVhtChannelWidth =
+					ucVhtChannelWidthAfterCsa;
+
 				/* Indicate channel switch to kernel */
 				prAdapter->prGlueInfo->
-					prP2PInfo[prP2pBssInfo->u4PrivateData]->
+					prP2PInfo[prBssInfo->u4PrivateData]->
 					fgChannelSwitchReq = TRUE;
 				kalP2pIndicateChnlSwitch(prAdapter,
-					prP2pBssInfo);
+					prBssInfo);
 			} else { /* GO */
 				p2pFuncDfsSwitchCh(prAdapter,
-					prP2pBssInfo,
+					prBssInfo,
 					prP2pRoleFsmInfo->rChnlReqInfo);
 			}
 

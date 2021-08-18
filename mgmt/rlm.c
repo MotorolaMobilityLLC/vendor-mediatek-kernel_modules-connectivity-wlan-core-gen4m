@@ -3377,7 +3377,7 @@ static void rlmRecOpModeBwForClient(uint8_t ucVhtOpModeChannelWidth,
 	case VHT_OP_MODE_CHANNEL_WIDTH_80:
 #if CFG_OPMODE_CONFLICT_OPINFO
 		if (prBssInfo->ucVhtChannelWidth !=
-		    VHT_OP_MODE_CHANNEL_WIDTH_80) {
+		    VHT_OP_CHANNEL_WIDTH_80) {
 			DBGLOG(RLM, WARN,
 			       "VHT_OP != OPmode:%d, follow VHT_OP to VHT_OP:%d HT_OP:%d\n",
 			       ucVhtOpModeChannelWidth,
@@ -5712,6 +5712,10 @@ void rlmCsaTimeout(IN struct ADAPTER *prAdapter,
 	prBssInfo->eBand = (prCSAParams->ucCsaNewCh <= 14) ? BAND_2G4 : BAND_5G;
 
 	if (HAS_WIDE_BAND_PARAMS(prCSAParams)) {
+		/* Store VHT Channel width for later op mode operation */
+		prBssInfo->ucVhtChannelWidthBeforeCsa =
+			prBssInfo->ucVhtChannelWidth;
+
 		prBssInfo->ucVhtChannelWidth = prCSAParams->ucVhtBw;
 		prBssInfo->ucVhtChannelFrequencyS1 = prCSAParams->ucVhtS1;
 		prBssInfo->ucVhtChannelFrequencyS2 = prCSAParams->ucVhtS2;
