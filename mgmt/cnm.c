@@ -1222,14 +1222,18 @@ uint8_t cnmDecideSapNewChannel(
 		}
 #endif
 		}
-	} else if (ucSwitchMode == CH_SWITCH_6G) {
+	}
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	else if (ucSwitchMode == CH_SWITCH_6G) {
 		if (!(u4LteSafeChnBitMask_6G & BITS(0, 13))) {
 			DBGLOG(P2P, WARN,
 				"FW report 6G all channels unsafe!?\n");
 			/* not to switch channel*/
 			return 0;
 		}
-	} else { /*ucSwitchMode == CH_SWITCH_5G*/
+	}
+#endif
+	else { /*ucSwitchMode == CH_SWITCH_5G*/
 		if ((!(u4LteSafeChnBitMask_5G_1 & BITS(0, 27))) &&
 			(!(u4LteSafeChnBitMask_5G_2 & BITS(0, 8)))) {
 		DBGLOG(P2P, WARN,
