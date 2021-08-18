@@ -161,6 +161,7 @@ static enum _ENUM_CHIP_RESET_REASON_TYPE_T eResetReason;
 #if CFG_CHIP_RESET_SUPPORT
 static struct RESET_STRUCT wifi_rst;
 u_int8_t fgIsResetting = FALSE;
+u_int8_t fgIsDrvTriggerWholeChipReset = FALSE;
 #if (CFG_SUPPORT_CONNINFRA == 1)
 enum ENUM_WF_RST_SOURCE g_eWfRstSource = WF_RST_SOURCE_NONE;
 #endif
@@ -767,11 +768,12 @@ int glRstwlanPreWholeChipReset(enum consys_drv_type type, char *reason)
 		else if (g_IsWfsysBusHang)
 			DBGLOG(INIT, INFO, "WFSYS bus hang!!!\n");
 
-		while (kalIsResetting()) {
+		while (kalIsResetting() &&
+				fgIsDrvTriggerWholeChipReset == FALSE) {
 			DBGLOG(REQ, WARN, "Wi-Fi driver is resetting\n");
 			msleep(100);
 		}
-
+		fgIsDrvTriggerWholeChipReset = FALSE;
 		g_IsWholeChipRst = TRUE;
 #if (CFG_ANDORID_CONNINFRA_COREDUMP_SUPPORT == 1)
 		if (!prAdapter->prGlueInfo->u4ReadyFlag)
@@ -886,6 +888,7 @@ void glResetSubsysRstProcedure(
 			/* dump host cr */
 			if (prAdapter->chip_info->dumpBusHangCr)
 				prAdapter->chip_info->dumpBusHangCr(prAdapter);
+			fgIsDrvTriggerWholeChipReset = TRUE;
 			glSetRstReasonString(
 				"fw detect bus hang");
 			conninfra_trigger_whole_chip_rst(CONNDRV_TYPE_WIFI,
@@ -939,6 +942,7 @@ void glResetSubsysRstProcedure(
 			g_IsSubsysRstOverThreshold = TRUE;
 			/*coredump is done, no need do again*/
 			g_IsTriggerTimeout = TRUE;
+			fgIsDrvTriggerWholeChipReset = TRUE;
 			glSetRstReasonString(
 				"subsys reset more than 3 times");
 			conninfra_trigger_whole_chip_rst(CONNDRV_TYPE_WIFI,
