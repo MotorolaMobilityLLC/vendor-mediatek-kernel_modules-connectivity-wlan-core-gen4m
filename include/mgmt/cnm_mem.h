@@ -757,6 +757,31 @@ struct STA_RECORD {
 	unsigned char fgNanSendTimeExpired;
 	atomic_t NanRefCount;
 #endif
+
+#if CFG_SUPPORT_LLS
+	/* Store data in format from RXV in reduced size to serve Link Stats
+	 * report format defined in STATS_LLS_WIFI_RATE
+	 *
+	 * preamble   :3;   0:OFDM, 1:CCK, 2:HT 3:VHT 4:HE, in separate array
+	 * nss        :1;   0:1x1, 1:2x2
+	 * bw         :2;   0:20MHz, 1:40Mhz, 2:80Mhz, 3:160Mhz
+	 * rateMcsIdx :4;   CCK: [2, 4, 11, 22]
+	 *                  OFDM:  [12, 18, 24, 36, 48, 72, 96, 108];
+	 *                  HT/VHT/HE it would be mcs index
+	 */
+	struct {
+		uint32_t u4RxMpduOFDM[1]
+			[STATS_LLS_MAX_OFDM_BW_NUM][STATS_LLS_OFDM_NUM];
+		uint32_t u4RxMpduCCK[1]
+			[STATS_LLS_MAX_CCK_BW_NUM][STATS_LLS_CCK_NUM];
+		uint32_t u4RxMpduHT[1]
+			[STATS_LLS_MAX_HT_BW_NUM][STATS_LLS_HT_NUM];
+		uint32_t u4RxMpduVHT[STATS_LLS_MAX_NSS_NUM]
+			[STATS_LLS_MAX_VHT_BW_NUM][STATS_LLS_VHT_NUM];
+		uint32_t u4RxMpduHE[STATS_LLS_MAX_NSS_NUM]
+			[STATS_LLS_MAX_HE_BW_NUM][STATS_LLS_HE_NUM];
+	};
+#endif
 };
 
 #if 0

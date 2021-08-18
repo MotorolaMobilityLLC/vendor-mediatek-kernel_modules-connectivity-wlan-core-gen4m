@@ -130,6 +130,30 @@
 #define SOC5_0_RX_VT_TXMODE_MASK          BITS(24, 27)
 #define SOC5_0_RX_VT_TXMODE_OFFSET        24
 
+#define RXV_GET_RX_RATE(_prRxVector)				\
+		(((_prRxVector) & SOC5_0_RX_VT_RX_RATE_MASK)	\
+			 >> SOC5_0_RX_VT_RX_RATE_OFFSET)
+
+#define RXV_GET_RX_NSTS(_prRxVector)				\
+		(((_prRxVector) & SOC5_0_RX_VT_NSTS_MASK)	\
+			 >> SOC5_0_RX_VT_NSTS_OFFSET)
+
+#define RXV_GET_FR_MODE(_prRxVector)				\
+		(((_prRxVector) & SOC5_0_RX_VT_FR_MODE_MASK)	\
+			 >> SOC5_0_RX_VT_FR_MODE_OFFSET)
+
+#define RXV_GET_GI(_prRxVector)					\
+		(((_prRxVector) & SSOC5_0_RX_VT_GI_MASK)	\
+			 >> SOC5_0_RX_VT_GI_OFFSET)
+
+#define RXV_GET_STBC(_prRxVector)				\
+		(((_prRxVector) & SOC5_0_RX_VT_STBC_MASK)	\
+			 >> SOC5_0_RX_VT_STBC_OFFSET)
+
+#define RXV_GET_TXMODE(_prRxVector)				\
+		(((_prRxVector) & SOC5_0_RX_VT_TXMODE_MASK)	\
+			 >> SOC5_0_RX_VT_TXMODE_OFFSET)
+
 /*******************************************************************************
 *                         D A T A   T Y P E S
 ********************************************************************************
@@ -189,6 +213,11 @@ int soc5_0_get_rx_rate_info(IN struct ADAPTER *prAdapter,
 		OUT uint32_t *pu4Rate, OUT uint32_t *pu4Nss,
 		OUT uint32_t *pu4RxMode, OUT uint32_t *pu4FrMode,
 		OUT uint32_t *pu4Sgi);
+#endif
+
+#ifdef CFG_SUPPORT_LLS
+void soc5_0_get_rx_link_stats(IN struct ADAPTER *prAdapter,
+	IN struct SW_RFB *prRetSwRfb, IN uint32_t u4RxVector0);
 #endif
 
 extern void kalConstructDefaultFirmwarePrio(
