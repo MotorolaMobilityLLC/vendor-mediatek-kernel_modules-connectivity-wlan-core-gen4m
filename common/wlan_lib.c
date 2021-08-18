@@ -6463,6 +6463,52 @@ wlanQueryStatistics(IN struct ADAPTER *prAdapter,
 
 } /* wlanQueryStatistics */
 
+#if CFG_SUPPORT_LLS
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief This routine is called to get LLS data from FW
+ *
+ * \param[in]  prAdapter        A pointer to the Adapter structure.
+ * \param[in]  pvQueryBuffer    Buffer holding query command, also used to hold
+ *                              the returned result if any
+ * \param[in]  u4QueryBufferLen The size of query command buffer
+ * \param[out] pu4QueryInfoLen  Pointer to integer to pass returned size copied
+ *                              to return buffer
+ *
+ * \retval WLAN_STATUS_SUCCESS: Send command success
+ *         WLAN_STATUS_FAILURE: Send command failed
+ *         WLAN_STATUS_PENDING: Pending for waiting event
+ */
+/*----------------------------------------------------------------------------*/
+uint32_t
+wlanQueryLinkStats(IN struct ADAPTER *prAdapter,
+		IN void *pvQueryBuffer, IN uint32_t u4QueryBufferLen,
+		OUT uint32_t *pu4QueryInfoLen)
+{
+	struct CMD_GET_STATS_LLS rQuery;
+	struct CMD_GET_STATS_LLS *cmd =
+		(struct CMD_GET_STATS_LLS *)pvQueryBuffer;
+
+	DBGLOG(REQ, INFO, "cmd: u4Tag=%08x, args=%u/%u/%u/%u, len=%u",
+			cmd->u4Tag, cmd->ucArg0, cmd->ucArg1,
+			cmd->ucArg2, cmd->ucArg3, *pu4QueryInfoLen);
+	rQuery = *cmd;
+
+	return wlanSendSetQueryCmd(prAdapter,	/* prAdapter */
+			    CMD_ID_GET_STATS_LLS,	/* ucCID */
+			    FALSE,	/* fgSetQuery */
+			    TRUE,	/* fgNeedResp */
+			    TRUE,	/* fgIsOid */
+			    nicCmdEventQueryLinkStats,    /* pfCmdDoneHandler */
+			    nicOidCmdTimeoutCommon, /* pfCmdTimeoutHandler */
+			    *pu4QueryInfoLen,    /* u4SetQueryInfoLen */
+			    (uint8_t *)&rQuery,  /* pucInfoBuffer */
+			    pvQueryBuffer,       /* pvSetQueryBuffer */
+			    u4QueryBufferLen);   /* u4SetQueryBufferLen */
+}
+#endif
+
+
 /*----------------------------------------------------------------------------*/
 /*!
  * @brief This function is to query Nic resource information

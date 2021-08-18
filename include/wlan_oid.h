@@ -1756,6 +1756,57 @@ struct PARAM_LINUX_NETDEV_STATISTICS {
 	uint32_t u4Multicast;
 };
 
+
+#if CFG_SUPPORT_LLS
+/* Cmd */
+struct CMD_GET_STATS_LLS {
+	uint32_t u4Tag; /* enum ENUM_STATS_LLS_TLV_TAG_ID */
+	uint8_t ucArg0;
+	uint8_t ucArg1;
+	uint8_t ucArg2;
+	uint8_t ucArg3;
+};
+
+/* Used in Event as well */
+enum ENUM_STATS_LLS_TLV_TAG_ID {
+	STATS_LLS_TAG_LLS_DATA           = 0,
+	STATS_LLS_TAG_PPDU_LATENCY       = 1,
+	STATS_LLS_TAG_CURRENT_TX_RATE    = 2,
+	STATS_LLS_TAG_MAX_NUM
+};
+
+/* Event */
+enum ENUM_STATS_LLS_UPDATE_STATUS {
+	STATS_LLS_UPDATE_STATUS_SUCCESS = 0,
+	STATS_LLS_UPDATE_STATUS_FAIL    = 1,
+};
+
+struct EVENT_STATS_LLS_DATA {
+	enum ENUM_STATS_LLS_UPDATE_STATUS eUpdateStatus;
+};
+
+
+#define STATS_LATENCY_LEVEL_NUM 4
+#define STATS_LATENCY_CATEGORY_NUM (STATS_LATENCY_LEVEL_NUM + 1)
+struct EVENT_STATS_LLS_TX_LATENCY {
+	uint32_t arLatencyLevel[STATS_LATENCY_LEVEL_NUM];
+	uint32_t arLatencyMpduCntPerLevel[STATS_LATENCY_CATEGORY_NUM];
+};
+
+struct EVENT_STATS_LLS_TX_RATE_INFO {
+	uint8_t flags;
+	uint8_t mcs;
+	uint16_t legacy;
+	uint8_t nss;
+	uint8_t bw;
+	uint8_t he_gi;
+	uint8_t he_dcm;
+	uint8_t he_ru_alloc;
+	uint8_t n_bonded_ch;
+	uint8_t padding[2];
+};
+#endif /* CFG_SUPPORT_LLS */
+
 struct PARAM_MTK_WIFI_TEST_STRUCT {
 	uint32_t u4FuncIndex;
 	uint32_t u4FuncData;
@@ -4142,6 +4193,13 @@ wlanoidQueryTxPowerInfo(IN struct ADAPTER *prAdapter,
 			IN void *pvSetBuffer,
 			IN uint32_t u4SetBufferLen,
 			OUT uint32_t *pu4SetInfoLen);
+#endif
+
+#if CFG_SUPPORT_LLS
+uint32_t
+wlanQueryLinkStats(IN struct ADAPTER *prAdapter,
+		IN void *pvQueryBuffer, IN uint32_t u4QueryBufferLen,
+		OUT uint32_t *pu4QueryInfoLen);
 #endif
 
 #if CFG_SUPPORT_MBO

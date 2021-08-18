@@ -302,6 +302,7 @@ enum ENUM_CMD_ID {
 	CMD_ID_GET_LINK_QUALITY,            /* 0x81 (Query) */
 	CMD_ID_GET_STATISTICS,              /* 0x82 (Query) */
 	CMD_ID_GET_CONNECTION_STATUS,       /* 0x83 (Query) */
+	CMD_ID_GET_STATS_LLS,               /* 0x84 (Query) */
 	CMD_ID_GET_STA_STATISTICS = 0x85,   /* 0x85 (Query) */
 	CMD_ID_GET_LTE_CHN = 0x87,          /* 0x87 (Query) */
 	CMD_ID_GET_BUG_REPORT = 0x89,       /* 0x89 (Query) */
@@ -487,6 +488,7 @@ enum ENUM_EVENT_ID {
 #endif
 
 	EVENT_ID_REPORT_U_EVENT = 0x68,
+	EVENT_ID_STATS_LLS      = 0x69,
 
 	EVENT_ID_GET_CMD_INFO = 0x70,
 	/* 0x70 (Query - EVENT_ID_GET_CMD_INFO) */

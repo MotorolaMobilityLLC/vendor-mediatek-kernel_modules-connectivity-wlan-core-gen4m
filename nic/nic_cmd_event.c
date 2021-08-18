@@ -1065,6 +1065,64 @@ void nicCmdEventQueryStatistics(IN struct ADAPTER
 			       u4QueryInfoLen, WLAN_STATUS_SUCCESS);
 }
 
+#if CFG_SUPPORT_LLS
+void nicCmdEventQueryLinkStats(IN struct ADAPTER *prAdapter,
+		IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf)
+{
+	struct GLUE_INFO *prGlueInfo;
+	uint16_t len = prCmdInfo->u4InformationBufferLength;
+
+	ASSERT(prAdapter);
+	ASSERT(prCmdInfo);
+
+	prGlueInfo = prAdapter->prGlueInfo;
+
+	memcpy((uint8_t *)prCmdInfo->pvInformationBuffer, pucEventBuf, len);
+
+	DBGLOG(RX, TRACE, "kalOidComplete: infoLen=%u", len);
+
+	if (prCmdInfo->fgIsOid)
+		kalOidComplete(prGlueInfo, prCmdInfo, len, WLAN_STATUS_SUCCESS);
+}
+
+void nicEventStatsLinkStats(IN struct ADAPTER *prAdapter,
+		IN struct WIFI_EVENT *prEvent)
+{
+	struct CMD_INFO *prCmdInfo;
+
+	prCmdInfo = nicGetPendingCmdInfo(prAdapter, prEvent->ucSeqNum);
+
+	if (!prCmdInfo)
+		return;
+
+	if (unlikely(prEvent->u2PacketLength - sizeof(struct WIFI_EVENT) >
+					prCmdInfo->u4InformationBufferLength)) {
+		DBGLOG(RX, WARN, "prEventLen=%u-%u, BufLen=%u",
+				prEvent->u2PacketLength,
+				sizeof(struct WIFI_EVENT),
+				prCmdInfo->u4InformationBufferLength);
+		kalOidComplete(prAdapter->prGlueInfo, prCmdInfo, 0,
+				WLAN_STATUS_FAILURE);
+	} else if (prCmdInfo->pfCmdDoneHandler) {
+		/* The destination buffer length has been checked sufficient */
+		kalMemZero(prCmdInfo->pvInformationBuffer,
+				prCmdInfo->u4InformationBufferLength);
+		prCmdInfo->u4InformationBufferLength =
+			prEvent->u2PacketLength - sizeof(struct WIFI_EVENT);
+		prCmdInfo->pfCmdDoneHandler(prAdapter, prCmdInfo,
+					    prEvent->aucBuffer);
+	} else if (prCmdInfo->fgIsOid)
+		kalOidComplete(prAdapter->prGlueInfo,
+			prCmdInfo,
+			prEvent->u2PacketLength - sizeof(struct WIFI_EVENT),
+			WLAN_STATUS_SUCCESS);
+
+	/* return prCmdInfo */
+	cmdBufFreeCmdInfo(prAdapter, prCmdInfo);
+}
+#endif
+
+
 void nicCmdEventQueryBugReport(IN struct ADAPTER *prAdapter,
 	IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf)
 {

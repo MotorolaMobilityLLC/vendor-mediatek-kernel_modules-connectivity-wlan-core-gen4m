@@ -3317,6 +3317,12 @@ void nicCmdEventQueryStatistics(IN struct ADAPTER
 				*prAdapter, IN struct CMD_INFO *prCmdInfo,
 				IN uint8_t *pucEventBuf);
 
+#if CFG_SUPPORT_LLS
+void nicCmdEventQueryLinkStats(IN struct ADAPTER *prAdapter,
+		IN struct CMD_INFO *prCmdInfo,
+		IN uint8_t *pucEventBuf);
+#endif
+
 void nicCmdEventEnterRfTest(IN struct ADAPTER *prAdapter,
 	IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf);
 
@@ -3463,6 +3469,10 @@ void nicEventStatistics(IN struct ADAPTER *prAdapter,
 			IN struct WIFI_EVENT *prEvent);
 void nicEventTputFactorHandler(IN struct ADAPTER *prAdapter,
 		  IN struct WIFI_EVENT *prEvent);
+#if CFG_SUPPORT_LLS
+void nicEventStatsLinkStats(IN struct ADAPTER *prAdapter,
+			IN struct WIFI_EVENT *prEvent);
+#endif
 void nicEventWlanInfo(IN struct ADAPTER *prAdapter,
 		      IN struct WIFI_EVENT *prEvent);
 void nicEventMibInfo(IN struct ADAPTER *prAdapter,

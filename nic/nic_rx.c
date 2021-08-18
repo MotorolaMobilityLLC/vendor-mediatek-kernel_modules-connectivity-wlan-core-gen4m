@@ -167,6 +167,10 @@ static struct RX_EVENT_HANDLER arEventTable[] = {
 #if (CFG_SUPPORT_HE_ER == 1)
 	{EVENT_ID_BSS_ER_TX_MODE, bssProcessErTxModeEvent},
 #endif
+
+#if CFG_SUPPORT_LLS
+	{EVENT_ID_STATS_LLS, nicEventStatsLinkStats},
+#endif
 	{EVENT_ID_RSSI_MONITOR, nicEventRssiMonitor},
 	{EVENT_ID_DUMP_MEM, nicEventDumpMem},
 #if CFG_SUPPORT_CAL_RESULT_BACKUP_TO_HOST
