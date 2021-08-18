@@ -1280,12 +1280,14 @@ struct WIFI_VAR {
 #define LATENCY_STATS_MAX_SLOTS 5
 #if CFG_SUPPORT_TX_LATENCY_STATS
 	bool fgPacketLatencyLog;
+	bool fgTxLatencyKeepCounting;
 	uint32_t u4MsduStatsUpdateInterval; /* in ms */
 	uint32_t u4ContinuousTxFailThreshold;
 
 	uint32_t au4MacTxDelayMax[LATENCY_STATS_MAX_SLOTS]; /* in ms */
 	uint32_t au4DriverTxDelayMax[LATENCY_STATS_MAX_SLOTS]; /* in ms */
 	uint32_t au4ConnsysTxDelayMax[LATENCY_STATS_MAX_SLOTS]; /* in ms */
+	uint32_t au4ConnsysTxFailDelayMax[LATENCY_STATS_MAX_SLOTS]; /* in ms */
 #endif /* CFG_SUPPORT_TX_LATENCY_STATS */
 };
 
@@ -1484,11 +1486,12 @@ struct OID_HANDLER_RECORD {
 };
 
 struct TX_LATENCY_REPORT_STATS {
-	uint32_t au2DriverLatency[LATENCY_STATS_MAX_SLOTS];
-	uint32_t au2ConnsysLatency[LATENCY_STATS_MAX_SLOTS];
-	uint32_t au2MacLatency[LATENCY_STATS_MAX_SLOTS];
-	uint32_t u2TxFail;
-	uint32_t u2ContinuousTxFail;
+	uint32_t au4DriverLatency[LATENCY_STATS_MAX_SLOTS];
+	uint32_t au4ConnsysLatency[LATENCY_STATS_MAX_SLOTS];
+	uint32_t au4MacLatency[LATENCY_STATS_MAX_SLOTS];
+	uint32_t au4FailConnsysLatency[LATENCY_STATS_MAX_SLOTS];
+	uint32_t u4TxFail;
+	uint32_t u4ContinuousTxFail;
 	u_int8_t fgTxLatencyEnabled;
 };
 

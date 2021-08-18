@@ -1116,7 +1116,7 @@ void halAddDriverLatencyCount(IN struct ADAPTER *prAdapter,
 
 	for (i = 0; i < LATENCY_STATS_MAX_SLOTS; i++) {
 		if (u4DriverLatency <= prWifiVar->au4DriverTxDelayMax[i]) {
-			GLUE_INC_REF_CNT(stats->au2DriverLatency[i]);
+			GLUE_INC_REF_CNT(stats->au4DriverLatency[i]);
 			break;
 		}
 	}
@@ -1131,7 +1131,23 @@ static void halAddConnsysLatencyCount(IN struct ADAPTER *prAdapter,
 
 	for (i = 0; i < LATENCY_STATS_MAX_SLOTS; i++) {
 		if (u4ConnsysLatency <= prWifiVar->au4ConnsysTxDelayMax[i]) {
-			GLUE_INC_REF_CNT(stats->au2ConnsysLatency[i]);
+			GLUE_INC_REF_CNT(stats->au4ConnsysLatency[i]);
+			break;
+		}
+	}
+}
+
+static void halAddTxFailConnsysLatencyCount(IN struct ADAPTER *prAdapter,
+	uint32_t u4ConnsysLatency)
+{
+	struct TX_LATENCY_REPORT_STATS *stats = &prAdapter->rMsduReportStats;
+	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
+	uint8_t i;
+
+	for (i = 0; i < LATENCY_STATS_MAX_SLOTS; i++) {
+		if (u4ConnsysLatency <=
+			    prWifiVar->au4ConnsysTxFailDelayMax[i]) {
+			GLUE_INC_REF_CNT(stats->au4FailConnsysLatency[i]);
 			break;
 		}
 	}
@@ -1146,7 +1162,7 @@ static void halAddMacLatencyCount(IN struct ADAPTER *prAdapter,
 
 	for (i = 0; i < LATENCY_STATS_MAX_SLOTS; i++) {
 		if (u4MacLatency <= prWifiVar->au4MacTxDelayMax[i]) {
-			GLUE_INC_REF_CNT(stats->au2MacLatency[i]);
+			GLUE_INC_REF_CNT(stats->au4MacLatency[i]);
 			break;
 		}
 	}
@@ -1184,30 +1200,31 @@ static void halMsduReportStatsP0(IN struct ADAPTER *prAdapter,
 	u4ConnsysLatency =
 		(rNowTs.tv_sec - prTokenEntry->rTs.tv_sec) * MSEC_PER_SEC +
 		(rNowTs.tv_nsec - prTokenEntry->rTs.tv_nsec) / NSEC_PER_MSEC;
-	halAddConnsysLatencyCount(prAdapter, u4ConnsysLatency);
 
 	u4MacLatency = msduToken->rFormatV3.rP0.u4TxCnt;
 	halAddMacLatencyCount(prAdapter, u4MacLatency);
 
-	if (prWifiVar->fgPacketLatencyLog)
-		DBGLOG(HAL, INFO, "Latency C: %u M: %u; tok=%u",
-			u4ConnsysLatency, u4MacLatency, u4Token);
-
 	if (unlikely(msduToken->rFormatV3.rP0.u4Stat)) {
-		GLUE_INC_REF_CNT(stats->u2TxFail);
-		GLUE_INC_REF_CNT(stats->u2ContinuousTxFail);
+		GLUE_INC_REF_CNT(stats->u4TxFail);
+		GLUE_INC_REF_CNT(stats->u4ContinuousTxFail);
+		halAddTxFailConnsysLatencyCount(prAdapter, u4ConnsysLatency);
 		if (prAdapter->rWifiVar.u4ContinuousTxFailThreshold <=
-			stats->u2ContinuousTxFail) {
+			stats->u4ContinuousTxFail) {
 			char uevent[64];
 
 			kalSnprintf(uevent, sizeof(uevent),
 				"Continuous TX Failed %u",
-				stats->u2ContinuousTxFail);
+				stats->u4ContinuousTxFail);
 			kalSendUevent(uevent);
 		}
 	} else {
-		stats->u2ContinuousTxFail = 0;
+		halAddConnsysLatencyCount(prAdapter, u4ConnsysLatency);
+		stats->u4ContinuousTxFail = 0;
 	}
+
+	if (prWifiVar->fgPacketLatencyLog)
+		DBGLOG(HAL, INFO, "Latency C: %u M: %u; tok=%u",
+			u4ConnsysLatency, u4MacLatency, u4Token);
 #endif
 }
 

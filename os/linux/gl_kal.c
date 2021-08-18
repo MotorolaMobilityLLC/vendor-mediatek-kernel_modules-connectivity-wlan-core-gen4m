@@ -9114,41 +9114,57 @@ static void kalDumpMsduReportStats(IN struct ADAPTER *prAdapter)
 	pos += kalSnprintf(buf + pos, u4BufferSize - pos, "TX_Delay ");
 	for (i = 0; i < LATENCY_STATS_MAX_SLOTS-1; i++)
 		pos += kalSnprintf(buf + pos, u4BufferSize - pos, "%s%u%s",
-			i == 0 ? "[" : ":",
+			i == 0 ? "D:[" : ":",
 			prWifiVar->au4DriverTxDelayMax[i],
 			i != LATENCY_STATS_MAX_SLOTS-2 ? "" : "]=");
 	for (i = 0; i < LATENCY_STATS_MAX_SLOTS; i++)
 		pos += kalSnprintf(buf + pos, u4BufferSize - pos, "%s%u%s",
-			i == 0 ? "[" : ":", stats->au2DriverLatency[i],
+			i == 0 ? "[" : ":", stats->au4DriverLatency[i],
 			i != LATENCY_STATS_MAX_SLOTS-1 ? "" : "] ");
 
 	for (i = 0; i < LATENCY_STATS_MAX_SLOTS-1; i++)
 		pos += kalSnprintf(buf + pos, u4BufferSize - pos, "%s%u%s",
-			i == 0 ? "[" : ":",
+			i == 0 ? "C:[" : ":",
 			prWifiVar->au4ConnsysTxDelayMax[i],
 			i != LATENCY_STATS_MAX_SLOTS-2 ? "" : "]=");
 	for (i = 0; i < LATENCY_STATS_MAX_SLOTS; i++)
 		pos += kalSnprintf(buf + pos, u4BufferSize - pos, "%s%u%s",
-			i == 0 ? "[" : ":", stats->au2ConnsysLatency[i],
+			i == 0 ? "[" : ":", stats->au4ConnsysLatency[i],
 			i != LATENCY_STATS_MAX_SLOTS-1 ? "" : "] ");
 
 	for (i = 0; i < LATENCY_STATS_MAX_SLOTS-1; i++)
 		pos += kalSnprintf(buf + pos, u4BufferSize - pos, "%s%u%s",
-			i == 0 ? "[" : ":",
+			i == 0 ? "M:[" : ":",
 			prWifiVar->au4MacTxDelayMax[i],
 			i != LATENCY_STATS_MAX_SLOTS-2 ? "" : "]=");
 	for (i = 0; i < LATENCY_STATS_MAX_SLOTS; i++)
 		pos += kalSnprintf(buf + pos, u4BufferSize - pos, "%s%u%s",
-			i == 0 ? "[" : ":", stats->au2MacLatency[i],
+			i == 0 ? "[" : ":", stats->au4MacLatency[i],
 			i != LATENCY_STATS_MAX_SLOTS-1 ? "" : "] ");
 
+	for (i = 0; i < LATENCY_STATS_MAX_SLOTS-1; i++)
+		pos += kalSnprintf(buf + pos, u4BufferSize - pos, "%s%u%s",
+			i == 0 ? "F:[" : ":",
+			prWifiVar->au4ConnsysTxFailDelayMax[i],
+			i != LATENCY_STATS_MAX_SLOTS-2 ? "" : "]=");
+	for (i = 0; i < LATENCY_STATS_MAX_SLOTS; i++)
+		pos += kalSnprintf(buf + pos, u4BufferSize - pos, "%s%u%s",
+			i == 0 ? "[" : ":", stats->au4FailConnsysLatency[i],
+			i != LATENCY_STATS_MAX_SLOTS-1 ? "" : "] ");
 	pos += kalSnprintf(buf + pos, u4BufferSize - pos, "Txfail:%u",
-			stats->u2TxFail);
+			stats->u4TxFail);
 
-	kalMemZero(stats->au2DriverLatency, sizeof(stats->au2DriverLatency));
-	kalMemZero(stats->au2ConnsysLatency, sizeof(stats->au2ConnsysLatency));
-	kalMemZero(stats->au2MacLatency, sizeof(stats->au2MacLatency));
-	stats->u2TxFail = 0;
+	if (!prWifiVar->fgTxLatencyKeepCounting) {
+		kalMemZero(stats->au4DriverLatency,
+				sizeof(stats->au4DriverLatency));
+		kalMemZero(stats->au4ConnsysLatency,
+				sizeof(stats->au4ConnsysLatency));
+		kalMemZero(stats->au4MacLatency,
+				sizeof(stats->au4MacLatency));
+		kalMemZero(stats->au4FailConnsysLatency,
+				sizeof(stats->au4FailConnsysLatency));
+		stats->u4TxFail = 0;
+	}
 
 	DBGLOG(HAL, INFO, "%s", buf);
 	kalMemFree(buf, VIR_MEM_TYPE, u4BufferSize);

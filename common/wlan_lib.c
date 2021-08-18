@@ -7743,6 +7743,9 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 	prWifiVar->fgPacketLatencyLog = (bool)wlanCfgGetUint32(
 		prAdapter, "TxLatencyPacketLog", 0);
 
+	prWifiVar->fgTxLatencyKeepCounting = (bool)wlanCfgGetUint32(
+		prAdapter, "TxLatencyKeepCounting", 0);
+
 	prWifiVar->u4MsduStatsUpdateInterval = (uint32_t) wlanCfgGetUint32(
 		prAdapter, "TxLatencyUpdateInterval",
 		TX_LATENCY_STATS_UPDATE_INTERVAL);
@@ -7791,6 +7794,20 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 		prAdapter, "TxLatencyMacDelayMaxL4",
 		TX_LATENCY_STATS_MAX_MAC_DELAY_L4);
 	prWifiVar->au4MacTxDelayMax[4] = UINT_MAX;
+
+	prWifiVar->au4ConnsysTxFailDelayMax[0] = (uint32_t) wlanCfgGetUint32(
+		prAdapter, "TxLatencyFailConnsysDelayMaxL1",
+		TX_LATENCY_STATS_MAX_FAIL_CONNSYS_DELAY_L1);
+	prWifiVar->au4ConnsysTxFailDelayMax[1] = (uint32_t) wlanCfgGetUint32(
+		prAdapter, "TxLatencyFailConnsysDelayMaxL2",
+		TX_LATENCY_STATS_MAX_FAIL_CONNSYS_DELAY_L2);
+	prWifiVar->au4ConnsysTxFailDelayMax[2] = (uint32_t) wlanCfgGetUint32(
+		prAdapter, "TxLatencyFailConnsysDelayMaxL3",
+		TX_LATENCY_STATS_MAX_FAIL_CONNSYS_DELAY_L3);
+	prWifiVar->au4ConnsysTxFailDelayMax[3] = (uint32_t) wlanCfgGetUint32(
+		prAdapter, "TxLatencyFailConnsysDelayMaxL4",
+		TX_LATENCY_STATS_MAX_FAIL_CONNSYS_DELAY_L4);
+	prWifiVar->au4ConnsysTxFailDelayMax[4] = UINT_MAX;
 #endif /* CFG_SUPPORT_TX_LATENCY_STATS */
 
 	u4PlatformBoostCpuTh = kalGetCpuBoostThreshold();
@@ -10030,9 +10047,7 @@ void wlanTxLifetimeTagPacket(IN struct ADAPTER *prAdapter,
 				DBGLOG(TX, INFO, "Latency D: %u",
 				       prPktProfile->rHifTxDoneTimestamp -
 				       prPktProfile->rHardXmitArrivalTimestamp);
-#endif
 
-#if CFG_SUPPORT_TX_LATENCY_STATS
 			halAddDriverLatencyCount(prAdapter,
 				prPktProfile->rHifTxDoneTimestamp -
 				prPktProfile->rHardXmitArrivalTimestamp);
