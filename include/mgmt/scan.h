@@ -731,7 +731,7 @@ struct AGPS_AP_LIST {
 };
 #endif
 
-#if (CFG_SUPPORT_WIFI_6G_OOB_RNR == 1 && CFG_SUPPORT_WIFI_6G == 1)
+#if (CFG_SUPPORT_WIFI_RNR == 1)
 struct NEIGHBOR_AP_INFO {
 	struct LINK_ENTRY rLinkEntry;
 	struct PARAM_SCAN_REQUEST_ADV rScanRequest;

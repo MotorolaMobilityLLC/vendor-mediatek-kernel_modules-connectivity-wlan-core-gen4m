@@ -521,9 +521,13 @@ int mtk_cfg80211_vendor_set_scan_param(struct wiphy *wiphy,
 	ASSERT(wiphy);
 	ASSERT(wdev);
 	WIPHY_PRIV(wiphy, prGlueInfo);
+
+	if (!prGlueInfo)
+		return -EFAULT;
+
 	prAdapter = prGlueInfo->prAdapter;
 
-	if ((!prGlueInfo) || (!prAdapter))
+	if (!prAdapter)
 		return -EFAULT;
 
 	if ((data == NULL) || (data_len == 0))

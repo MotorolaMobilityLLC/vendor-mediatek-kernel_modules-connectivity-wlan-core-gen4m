@@ -2463,7 +2463,7 @@ void aisFsmRunEventScanDone(IN struct ADAPTER *prAdapter,
 	struct ROAMING_INFO *prRoamingFsmInfo = NULL;
 	uint8_t ucBssIndex = 0;
 
-#if (CFG_SUPPORT_WIFI_6G_OOB_RNR == 1 && CFG_SUPPORT_WIFI_6G == 1)
+#if (CFG_SUPPORT_WIFI_RNR == 1)
 	struct NEIGHBOR_AP_INFO *prNeighborAPInfo;
 #endif
 
@@ -2557,7 +2557,7 @@ void aisFsmRunEventScanDone(IN struct ADAPTER *prAdapter,
 	if (eNextState != prAisFsmInfo->eCurrentState)
 		aisFsmSteps(prAdapter, eNextState, ucBssIndex);
 
-#if (CFG_SUPPORT_WIFI_6G_OOB_RNR == 1 && CFG_SUPPORT_WIFI_6G == 1)
+#if (CFG_SUPPORT_WIFI_RNR == 1)
 	if (!LINK_IS_EMPTY(&prAdapter->rNeighborAPInfoList)) {
 		LINK_REMOVE_HEAD(&prAdapter->rNeighborAPInfoList,
 			prNeighborAPInfo, struct NEIGHBOR_AP_INFO *);
