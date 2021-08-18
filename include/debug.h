@@ -522,6 +522,13 @@ struct CHIP_DBG_OPS {
 		uint32_t *pu4Sgi);
 #endif
 #endif
+
+#ifdef CFG_SUPPORT_LLS
+	void (*get_rx_link_stats)(
+		IN struct ADAPTER *prAdapter,
+		IN struct SW_RFB *prRetSwRfb,
+		IN uint32_t u4RxVector0);
+#endif
 };
 
 enum PKT_PHASE {
@@ -631,6 +638,7 @@ enum WAKE_DATA_TYPE {
 #if DBG_DISABLE_ALL_LOG
 #define DBGLOG(_Module, _Class, _Fmt)
 #define DBGLOG_LIMITED(_Module, _Class, _Fmt)
+#define DBGLOG_HEX(_Module, _Class, _StartAddr, _Length)
 #define DBGLOG_MEM8(_Module, _Class, _StartAddr, _Length)
 #define DBGLOG_MEM32(_Module, _Class, _StartAddr, _Length)
 #else
@@ -674,6 +682,13 @@ enum WAKE_DATA_TYPE {
 			break; \
 		LOG_FUNC(_Fmt, ##__VA_ARGS__); \
 	} while (0)
+#define DBGLOG_HEX(_Mod, _Clz, _Adr, _Len) \
+	{ \
+		if (aucDebugModule[DBG_##_Mod##_IDX] & DBG_CLASS_##_Clz) { \
+			LOG_FUNC("%s:(" #_Mod " " #_Clz ")\n", __func__); \
+			dumpHex((uint8_t *)(_Adr), (uint32_t)(_Len)); \
+		} \
+	}
 #define DBGLOG_MEM8(_Mod, _Clz, _Adr, _Len) \
 	{ \
 		if (aucDebugModule[DBG_##_Mod##_IDX] & DBG_CLASS_##_Clz) { \
@@ -799,6 +814,7 @@ enum WAKE_DATA_TYPE {
  *                  F U N C T I O N   D E C L A R A T I O N S
  *******************************************************************************
  */
+void dumpHex(IN uint8_t *pucStartAddr, uint16_t u2Length);
 void dumpMemory8(IN uint8_t *pucStartAddr,
 		 IN uint32_t u4Length);
 void dumpMemory32(IN uint32_t *pu4StartAddr,
