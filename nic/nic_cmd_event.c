@@ -112,6 +112,10 @@ const struct NIC_CAPABILITY_V2_REF_TABLE
 #if (CFG_SUPPORT_WIFI_6G == 1)
 	{TAG_CAP_6G_CAP, nicCfgChipCap6GCap},
 #endif
+
+#if CFG_SUPPORT_LLS
+	{TAG_CAP_LLS_DATA_EMI_OFFSET, nicCmdEventLinkStatsEmiOffset},
+#endif
 };
 
 /*******************************************************************************
@@ -2685,6 +2689,78 @@ uint32_t nicCmdEventHostStatusEmiOffset(IN struct ADAPTER *prAdapter,
 
 	return WLAN_STATUS_SUCCESS;
 }
+
+#if CFG_SUPPORT_LLS
+uint32_t nicCmdEventLinkStatsEmiOffset(IN struct ADAPTER *prAdapter,
+					IN uint8_t *pucEventBuf)
+{
+	struct CAP_LLS_DATA_EMI_OFFSET *prOffset =
+		(struct CAP_LLS_DATA_EMI_OFFSET *)pucEventBuf;
+	uint32_t size = sizeof(struct HAL_LLS_FULL_REPORT);
+	uint32_t offset = prOffset->u4DataEmiOffset & WIFI_EMI_ADDR_MASK;
+
+	uint32_t u4HostOffsetInfo =
+		OFFSET_OF(struct STATS_LLS_WIFI_IFACE_STAT, info);
+	uint32_t u4HostOffsetAc =
+		OFFSET_OF(struct STATS_LLS_WIFI_IFACE_STAT, ac);
+	uint32_t u4HostOffsetPeerInfo =
+		OFFSET_OF(struct HAL_LLS_FULL_REPORT, peer_info);
+	uint32_t u4HostOffsetRadioStat =
+		OFFSET_OF(struct HAL_LLS_FULL_REPORT, radio);
+	uint32_t u4HostOffsetChannel =
+		OFFSET_OF(struct WIFI_RADIO_CHANNEL_STAT, channel);
+	uint32_t u4HostOffsetTxTimePerLevels =
+		OFFSET_OF(struct STATS_LLS_WIFI_RADIO_STAT, tx_time_per_levels);
+	uint32_t u4HostOffsetRxTime =
+		OFFSET_OF(struct STATS_LLS_WIFI_RADIO_STAT, rx_time);
+
+	if (!gConEmiPhyBaseFinal) {
+		DBGLOG(INIT, ERROR,
+		       "Invalid Consys EMI memory address gConEmiPhyBaseFinal");
+		return WLAN_STATUS_FAILURE;
+	}
+
+	DBGLOG(INIT, INFO, "Offset(Host): %u/%u/%u/%u/%u/%u/%u",
+			u4HostOffsetInfo, u4HostOffsetAc,
+			u4HostOffsetPeerInfo, u4HostOffsetRadioStat,
+			u4HostOffsetTxTimePerLevels, u4HostOffsetRxTime,
+			u4HostOffsetChannel);
+
+	if (prOffset->u4OffsetInfo != u4HostOffsetInfo ||
+	    prOffset->u4OffsetAc != u4HostOffsetAc ||
+	    prOffset->u4OffsetPeerInfo != u4HostOffsetPeerInfo ||
+	    prOffset->u4OffsetRadioStat != u4HostOffsetRadioStat ||
+	    prOffset->u4OffsetTxTimerPerLevels != u4HostOffsetTxTimePerLevels ||
+	    prOffset->u4OffsetRxTime != u4HostOffsetRxTime ||
+	    prOffset->u4OffsetChannel != u4HostOffsetChannel) {
+		DBGLOG(INIT, WARN, "Offset not match(FW): %u/%u/%u/%u/%u/%u/%u",
+			prOffset->u4OffsetInfo,
+			prOffset->u4OffsetAc,
+			prOffset->u4OffsetPeerInfo,
+			prOffset->u4OffsetRadioStat,
+			prOffset->u4OffsetTxTimerPerLevels,
+			prOffset->u4OffsetRxTime,
+			prOffset->u4OffsetChannel);
+		return WLAN_STATUS_FAILURE;
+	}
+
+	if (prAdapter->pucLinkStatsSrcBufferAddr) {
+		DBGLOG(INIT, WARN, "LLS EMI has already set, update it.");
+		iounmap(prAdapter->pucLinkStatsSrcBufferAddr);
+		prAdapter->pucLinkStatsSrcBufferAddr = NULL;
+	}
+
+	request_mem_region(gConEmiPhyBaseFinal + offset, size, "WIFI-LLS");
+
+	prAdapter->pucLinkStatsSrcBufferAddr =
+				ioremap(gConEmiPhyBaseFinal + offset, size);
+
+	DBGLOG(INIT, INFO, "EMI Base=0x%llx, offset= %x, size=%zu",
+			gConEmiPhyBase, prOffset->u4DataEmiOffset, size);
+
+	return WLAN_STATUS_SUCCESS;
+}
+#endif
 
 uint32_t nicCfgChipCapMacCap(IN struct ADAPTER *prAdapter,
 			     IN uint8_t *pucEventBuf)

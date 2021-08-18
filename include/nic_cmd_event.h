@@ -1022,9 +1022,13 @@ enum NIC_CAPABILITY_V2_TAG {
 	TAG_CAP_6G_CAP = 0x18,
 #endif
 	TAG_CAP_HOST_STATUS_EMI_OFFSET = 0x19,
+
 #if (CFG_SUPPORT_RX_QUOTA_INFO == 1)
 	TAG_CAP_PSE_RX_QUOTA = 0x1b,
 #endif
+
+	TAG_CAP_LLS_DATA_EMI_OFFSET = 0x1c, /* Shared EMI offset for LLS */
+
 	TAG_CAP_TOTAL
 };
 
@@ -1161,6 +1165,31 @@ struct CAP_6G_CAP {
 	uint8_t aucReseved[2];
 };
 #endif
+
+/**
+ * EMI shared memory and the offset of key structure fields.
+ *
+ * @u4DataEmiOffset: pointer to shared EMI memory, in the structure of
+ *                   HAL_LLS_FULL_REPORT
+ * @u4OffsetInfo: info in STATS_LLS_WIFI_IFACE_STAT
+ * @u4OffsetAc: ac in STATS_LLS_WIFI_IFACE_STAT
+ * @u4OffsetPeerInfo: peer_info in HAL_LLS_FULL_REPORT
+ * @u4OffsetRadioStat: radio in HAL_LLS_FULL_REPORT
+ * @u4OffsetTxTimerPerLevels: tx_time_per_levels in STATS_LLS_WIFI_RADIO_STAT
+ * @u4OffsetRxTime: rx_time in STATS_LLS_WIFI_RADIO_STAT
+ * @u4OffsetChannel: channel in WIFI_RADIO_CHANNEL_STAT
+ */
+struct CAP_LLS_DATA_EMI_OFFSET {
+	uint32_t u4DataEmiOffset;
+	uint32_t u4OffsetInfo;
+	uint32_t u4OffsetAc;
+	uint32_t u4OffsetPeerInfo;
+	uint32_t u4OffsetRadioStat;
+	uint32_t u4OffsetTxTimerPerLevels;
+	uint32_t u4OffsetRxTime;
+	uint32_t u4OffsetChannel;
+};
+
 
 #define EFUSE_SECTION_TABLE_SIZE        (10)   /* It should not be changed. */
 
@@ -3406,6 +3435,12 @@ uint32_t nicCmdEventHostStatusEmiOffset(IN struct ADAPTER *prAdapter,
 #if (CFG_SUPPORT_WIFI_6G == 1)
 uint32_t nicCfgChipCap6GCap(IN struct ADAPTER *prAdapter,
 		IN uint8_t *pucEventBuf);
+#endif
+
+
+#if CFG_SUPPORT_LLS
+uint32_t nicCmdEventLinkStatsEmiOffset(IN struct ADAPTER *prAdapter,
+					IN uint8_t *pucEventBuf);
 #endif
 
 void nicExtEventICapIQData(IN struct ADAPTER *prAdapter,

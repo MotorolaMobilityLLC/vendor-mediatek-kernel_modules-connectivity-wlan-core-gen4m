@@ -1685,6 +1685,11 @@ struct ADAPTER {
 	OS_SYSTIME rStatUpdateTime;
 	u_int8_t fgIsStatValid;
 
+
+#if CFG_SUPPORT_LLS
+	struct HAL_LLS_FULL_REPORT *pucLinkStatsSrcBufferAddr;
+#endif
+
 #if CFG_SUPPORT_MSP
 	struct EVENT_WLAN_INFO rEventWlanInfo;
 #endif
