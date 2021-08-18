@@ -168,14 +168,29 @@ int32_t mtk_Netdev_To_RoleIdx(struct GLUE_INFO *prGlueInfo,
 static void mtk_vif_destructor(struct net_device *dev)
 {
 	struct wireless_dev *prWdev = ERR_PTR(-ENOMEM);
-
-	DBGLOG(P2P, INFO, "mtk_vif_destructor\n");
+	uint32_t u4Idx = 0;
 	if (dev) {
+		DBGLOG(P2P, TRACE, "mtk_vif_destructor\n");
 		prWdev = dev->ieee80211_ptr;
 		free_netdev(dev);
 		/* Expect that the gprP2pWdev isn't freed here */
-		if (prWdev)
+		if (prWdev) {
+			/* Role[i] and Dev share the same wdev by default */
+			for (u4Idx = 0; u4Idx < KAL_P2P_NUM; u4Idx++) {
+				if (prWdev == gprP2pWdev[u4Idx])
+					continue;
+				if (prWdev != gprP2pRoleWdev[u4Idx])
+					continue;
+				/* In the initWlan gprP2pRoleWdev[0] is equal to
+				 * gprP2pWdev. And other gprP2pRoleWdev[] should
+				 * be NULL, if the 2nd P2P dev isn't created.
+				 */
+				DBGLOG(P2P, INFO, "Restore role %d\n", u4Idx);
+				gprP2pRoleWdev[u4Idx] = gprP2pWdev[u4Idx];
+				break;
+			}
 			kfree(prWdev);
+		}
 	}
 }
 
@@ -301,7 +316,9 @@ struct wireless_dev *mtk_p2p_cfg80211_add_iface(struct wiphy *wiphy,
 #endif
 
 #if CFG_ENABLE_WIFI_DIRECT_CFG_80211
-		kalMemCopy(prWdev, gprP2pWdev, sizeof(struct wireless_dev));
+		kalMemCopy(prWdev,
+			gprP2pWdev[u4Idx],
+			sizeof(struct wireless_dev));
 		prWdev->netdev = prNewNetDevice;
 		prWdev->iftype = type;
 		prNewNetDevice->ieee80211_ptr = prWdev;
@@ -376,7 +393,6 @@ struct wireless_dev *mtk_p2p_cfg80211_add_iface(struct wiphy *wiphy,
 #endif
 
 		/* Backup */
-		prP2pInfo->prOrigWdev = prP2pInfo->prWdev;
 		prP2pInfo->prWdev = prWdev;
 
 		/* 4.2 fill hardware address */
@@ -460,7 +476,7 @@ struct wireless_dev *mtk_p2p_cfg80211_add_iface(struct wiphy *wiphy,
 		kfree(prWdev);
 
 		if ((gprP2pRoleWdev[u4Idx] != NULL) &&
-		    (gprP2pRoleWdev[u4Idx] != gprP2pWdev)) {
+		    (gprP2pRoleWdev[u4Idx] != gprP2pWdev[u4Idx])) {
 			gprP2pRoleWdev[u4Idx] = prOrigWdev;
 		}
 	}
@@ -588,8 +604,7 @@ int mtk_p2p_cfg80211_del_iface(struct wiphy *wiphy, struct wireless_dev *wdev)
 	GLUE_ACQUIRE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
 	prP2pInfo->aprRoleHandler = prP2pInfo->prDevHandler;
 	/* Restore */
-	prP2pInfo->prWdev = prP2pInfo->prOrigWdev;
-	gprP2pRoleWdev[u4Idx] = prP2pInfo->prOrigWdev;
+	prP2pInfo->prWdev = gprP2pWdev[u4Idx];
 #if 1
 	prScanRequest = prP2pGlueDevInfo->prScanRequest;
 	if ((prScanRequest != NULL) &&

@@ -265,7 +265,7 @@ u_int8_t p2pRemove(struct GLUE_INFO *prGlueInfo)
 		}
 #endif
 		/* free gprP2pWdev in wlanDestroyAllWdev */
-		if (gprP2pRoleWdev[idx] == gprP2pWdev)
+		if (gprP2pRoleWdev[idx] == gprP2pWdev[idx])
 			continue;
 
 		DBGLOG(INIT, INFO, "Unregister gprP2pRoleWdev[%d]\n", idx);
@@ -286,7 +286,7 @@ u_int8_t p2pRemove(struct GLUE_INFO *prGlueInfo)
 	 * system operation (poweroff, suspend) might reference it.
 	 * set_wiphy_dev(wiphy, NULL): set the wiphy->dev->parent = NULL
 	 */
-	if (gprP2pWdev != NULL)
+	if (gprP2pWdev[0] != NULL)
 		set_wiphy_dev(gprP2pWdev->wiphy, NULL);
 #endif
 

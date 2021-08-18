@@ -3019,8 +3019,8 @@ static void wlanDestroyAllWdev(void)
 		 * unregister_netdev/mtk_vif_destructor. And gprP2pRoleWdev[i]
 		 * is reset as gprP2pWdev in mtk_vif_destructor.
 		 */
-		if (gprP2pRoleWdev[i] == gprP2pWdev)
-			gprP2pWdev = NULL;
+		if (gprP2pRoleWdev[i] == gprP2pWdev[i])
+			gprP2pWdev[i] = NULL;
 
 #if CFG_ENABLE_UNIFY_WIPHY
 		wiphy = gprP2pRoleWdev[i]->wiphy;
@@ -3034,21 +3034,23 @@ static void wlanDestroyAllWdev(void)
 		gprP2pRoleWdev[i] = NULL;
 	}
 
-	if (gprP2pWdev != NULL) {
-		/* This case is that gprP2pWdev isn't equal to gprP2pRoleWdev[0]
-		 * . The gprP2pRoleWdev[0] is created in the p2p cfg80211 add
-		 * iface ops. The two wdev use the same wiphy. Don't double
-		 * free the same wiphy.
-		 * This part isn't expect occur. Because p2pNetUnregister should
-		 * unregister_netdev the new created wdev, and gprP2pRoleWdev[0]
-		 * is reset as gprP2pWdev.
-		 */
+	/* This case is that gprP2pWdev isn't equal to gprP2pRoleWdev[0]
+	 * . The gprP2pRoleWdev[0] is created in the p2p cfg80211 add
+	 * iface ops. The two wdev use the same wiphy. Don't double
+	 * free the same wiphy.
+	 * This part isn't expect occur. Because p2pNetUnregister should
+	 * unregister_netdev the new created wdev, and gprP2pRoleWdev[0]
+	 * is reset as gprP2pWdev.
+	 */
+	for (i = 0; i < KAL_P2P_NUM; i++) {
+		if (gprP2pWdev[i] != NULL) {
 #if CFG_ENABLE_UNIFY_WIPHY
-		wiphy = gprP2pWdev->wiphy;
+			wiphy = gprP2pWdev[i]->wiphy;
 #endif
 
-		kfree(gprP2pWdev);
-		gprP2pWdev = NULL;
+			kfree(gprP2pWdev[i]);
+			gprP2pWdev[i] = NULL;
+		}
 	}
 #endif	/* CFG_ENABLE_WIFI_DIRECT */
 
@@ -6113,11 +6115,9 @@ static int initWlan(void)
 		return -ENOMEM;
 
 	WIPHY_PRIV(wlanGetWiphy(), prGlueInfo);
-	if (gprWdev[0]) {
-		/* P2PDev and P2PRole[0] share the same Wdev */
-		if (glP2pCreateWirelessDevice(prGlueInfo) == TRUE)
-			gprP2pWdev = gprP2pRoleWdev[0];
-	}
+	if (gprWdev[0])
+		glP2pCreateWirelessDevice(prGlueInfo);
+
 	gPrDev = NULL;
 
 #if CFG_MTK_ANDROID_WMT && (CFG_SUPPORT_CONNINFRA == 0)

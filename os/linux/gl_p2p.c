@@ -120,7 +120,7 @@
  */
 
 struct net_device *g_P2pPrDev;
-struct wireless_dev *gprP2pWdev;
+struct wireless_dev *gprP2pWdev[KAL_P2P_NUM];
 struct wireless_dev *gprP2pRoleWdev[KAL_P2P_NUM];
 struct net_device *gPrP2pDev[KAL_P2P_NUM];
 uint32_t g_u4DevIdx[KAL_P2P_NUM];
@@ -1430,6 +1430,9 @@ u_int8_t glP2pCreateWirelessDevice(struct GLUE_INFO *prGlueInfo)
 	gprP2pRoleWdev[i] = prWdev;
 	DBGLOG(INIT, TRACE, "glP2pCreateWirelessDevice (%p)\n",
 			gprP2pRoleWdev[i]->wiphy);
+
+	/* P2PDev and P2PRole[0] share the same Wdev */
+	gprP2pWdev[i] = gprP2pRoleWdev[i];
 
 	return TRUE;
 #else

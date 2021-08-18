@@ -115,7 +115,7 @@ extern const struct net_device_ops p2p_netdev_ops;
  */
 
 extern struct net_device *g_P2pPrDev;
-extern struct wireless_dev *gprP2pWdev;
+extern struct wireless_dev *gprP2pWdev[KAL_P2P_NUM];
 extern struct wireless_dev *gprP2pRoleWdev[KAL_P2P_NUM];
 
 /******************************************************************************
@@ -143,7 +143,6 @@ struct GL_P2P_INFO {
 #if CFG_ENABLE_WIFI_DIRECT_CFG_80211
 	/* cfg80211 */
 	struct wireless_dev *prWdev;
-	struct wireless_dev *prOrigWdev;
 	/*struct wireless_dev *prRoleWdev[KAL_P2P_NUM];*//* TH3 multiple P2P */
 
 	/*struct cfg80211_scan_request *prScanRequest;*//* TH3 multiple P2P */
