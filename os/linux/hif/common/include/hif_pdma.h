@@ -515,6 +515,8 @@ struct SW_WFDMA_INFO {
 	uint32_t u4CcifChlNum;
 	uint32_t u4CpuIdx;
 	uint32_t u4DmaIdx;
+	uint32_t u4CpuIdxBackup;
+	uint32_t u4DmaIdxBackup;
 	uint32_t u4MaxCnt;
 	uint8_t aucCID[SW_WFDMA_CMD_NUM];
 };
@@ -528,7 +530,7 @@ void halHifRst(struct GLUE_INFO *prGlueInfo);
 bool halWpdmaAllocRing(struct GLUE_INFO *prGlueInfo, bool fgAllocMem);
 void halWpdmaFreeRing(struct GLUE_INFO *prGlueInfo);
 void halWpdmaInitRing(struct GLUE_INFO *prGlueInfo, bool fgResetHif);
-void halWpdmaInitTxRing(IN struct GLUE_INFO *prGlueInfo);
+void halWpdmaInitTxRing(IN struct GLUE_INFO *prGlueInfo, bool fgResetHif);
 void halWpdmaInitRxRing(IN struct GLUE_INFO *prGlueInfo);
 void halWpdmaProcessCmdDmaDone(IN struct GLUE_INFO *prGlueInfo,
 			       IN uint16_t u2Port);

@@ -1933,7 +1933,7 @@ void halWpdmaInitRing(struct GLUE_INFO *prGlueInfo, bool fgResetHif)
 	if (prBusInfo->pdmaSetup)
 		prBusInfo->pdmaSetup(prGlueInfo, FALSE, fgResetHif);
 
-	halWpdmaInitTxRing(prGlueInfo);
+	halWpdmaInitTxRing(prGlueInfo, fgResetHif);
 
 	/* Init RX Ring0 Base/Size/Index pointer CSR */
 	halWpdmaInitRxRing(prGlueInfo);
@@ -1949,7 +1949,7 @@ void halWpdmaInitRing(struct GLUE_INFO *prGlueInfo, bool fgResetHif)
 		prBusInfo->setDummyReg(prGlueInfo);
 }
 
-void halWpdmaInitTxRing(IN struct GLUE_INFO *prGlueInfo)
+void halWpdmaInitTxRing(IN struct GLUE_INFO *prGlueInfo, bool fgResetHif)
 {
 	struct GL_HIF_INFO *prHifInfo = NULL;
 	struct BUS_INFO *prBusInfo = NULL;
@@ -1957,19 +1957,23 @@ void halWpdmaInitTxRing(IN struct GLUE_INFO *prGlueInfo)
 	struct RTMP_DMACB *prTxCell;
 	uint32_t i = 0, offset = 0, phy_addr = 0;
 	struct mt66xx_chip_info *prChipInfo;
+	struct SW_WFDMA_INFO *prSwWfdmaInfo;
 
 	prHifInfo = &prGlueInfo->rHifInfo;
 	prBusInfo = prGlueInfo->prAdapter->chip_info->bus_info;
 	prChipInfo = prGlueInfo->prAdapter->chip_info;
+	prSwWfdmaInfo = &prBusInfo->rSwWfdmaInfo;
 
 	/* reset all TX Ring register */
 	for (i = 0; i < NUM_OF_TX_RING; i++) {
 		prTxRing = &prHifInfo->TxRing[i];
 		prTxCell = &prTxRing->Cell[0];
 
-		if (i == TX_RING_CMD_IDX_3)
+		if (i == TX_RING_CMD_IDX_3) {
+			if (prSwWfdmaInfo->fgIsEnSwWfdma && !fgResetHif)
+				continue;
 			offset = prBusInfo->tx_ring_cmd_idx * MT_RINGREG_DIFF;
-		else if (i == TX_RING_FWDL_IDX_4)
+		} else if (i == TX_RING_FWDL_IDX_4)
 			offset = prBusInfo->tx_ring_fwdl_idx * MT_RINGREG_DIFF;
 #if (CFG_SUPPORT_CONNAC2X == 1)
 		else if (prChipInfo->is_support_wacpu) {
