@@ -3118,12 +3118,16 @@ kalOidComplete(IN struct GLUE_INFO *prGlueInfo,
 	       IN struct CMD_INFO *prCmdInfo, IN uint32_t u4SetQueryInfoLen,
 	       IN uint32_t rOidStatus)
 {
+	struct GL_IO_REQ *prIoReq = NULL;
 
 	ASSERT(prGlueInfo);
 	/* remove timeout check timer */
 	wlanoidClearTimeoutCheck(prGlueInfo->prAdapter);
 
 	prGlueInfo->rPendStatus = rOidStatus;
+
+	prIoReq = &(prGlueInfo->OidEntry);
+	*prIoReq->pu4QryInfoLen = u4SetQueryInfoLen;
 
 	prGlueInfo->u4OidCompleteFlag = 1;
 	/* complete ONLY if there are waiters */
