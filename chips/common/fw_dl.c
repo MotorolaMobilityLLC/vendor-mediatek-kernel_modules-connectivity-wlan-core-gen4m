@@ -471,7 +471,7 @@ uint32_t wlanDownloadEMISection(IN struct ADAPTER
 		return WLAN_STATUS_FAILURE;
 	}
 
-	memcpy_toio((pucEmiBaseAddr + u4Offset), pucStartPtr, u4Len);
+	kalMemCopyToIo((pucEmiBaseAddr + u4Offset), pucStartPtr, u4Len);
 
 	kalSetEmiMpuProtection(gConEmiPhyBaseFinal, true);
 	iounmap(pucEmiBaseAddr);

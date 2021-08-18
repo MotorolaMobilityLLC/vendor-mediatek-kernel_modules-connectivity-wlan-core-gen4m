@@ -891,6 +891,18 @@ static inline void kalCfg80211ScanDone(struct cfg80211_scan_request *request,
 #define kalMemSet(pvAddr, ucPattern, u4Size)  \
 	memset(pvAddr, ucPattern, u4Size)
 
+/* Copy memory block from IO memory */
+#define kalMemCopyFromIo(pvDst, pvSrc, u4Size)  \
+	memcpy_fromio(pvDst, pvSrc, u4Size)
+
+/* Copy memory block to IO memory */
+#define kalMemCopyToIo(pvDst, pvSrc, u4Size)  \
+	memcpy_toio(pvDst, pvSrc, u4Size)
+
+/* Set memory block to IO memory */
+#define kalMemSetIo(pvAddr, ucPattern, u4Size)  \
+	memset_io(pvAddr, ucPattern, u4Size)
+
 /* Compare two memory block with specific length.
  * Return zero if they are the same.
  */
