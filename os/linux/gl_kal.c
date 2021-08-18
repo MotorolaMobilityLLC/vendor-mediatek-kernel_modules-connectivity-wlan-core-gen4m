@@ -130,7 +130,7 @@
  *******************************************************************************
  */
 
-struct TPUT_FACTOR_LIST_T {
+struct GNU_PACKED TPUT_FACTOR_LIST_T {
 	/** Event source: TPUT_EVENT_START ~ */
 	uint32_t u4EvtId;
 
@@ -140,7 +140,7 @@ struct TPUT_FACTOR_LIST_T {
 	uint8_t Cont[0];
 };
 
-struct TPUT_SUB_FACTOR_T {
+struct GNU_PACKED TPUT_SUB_FACTOR_T {
 	/** sub header */
 	uint8_t ucTag;
 	uint16_t u2Len;
@@ -149,7 +149,7 @@ struct TPUT_SUB_FACTOR_T {
 	uint8_t Cont[0];
 };
 
-struct TPUT_BKRS_FACTOR_T {
+struct GNU_PACKED TPUT_BKRS_FACTOR_T {
 	/** Collection type: TPUT_COLL_CMD_INIT ~ */
 	uint32_t u4EvtId;
 
@@ -9841,7 +9841,7 @@ void nicEventTputFactorHandler(IN struct ADAPTER *prAdapter,
 		if (prEvent->ucExtenEID == 0) {
 			DBGLOG(INIT, WARN,
 				"tputf> FACTOR: %03d %02x %02x %02x %02x %02x %02x %02x %02x\n",
-				u4ContIdx,
+				u4ContIdx++,
 				ucContTemp[0], ucContTemp[1],
 				ucContTemp[2], ucContTemp[3],
 				ucContTemp[4], ucContTemp[5],
@@ -9849,13 +9849,12 @@ void nicEventTputFactorHandler(IN struct ADAPTER *prAdapter,
 
 			DBGLOG(INIT, WARN,
 				"tputf> FACTOR: %03d %02x %02x %02x %02x %02x %02x %02x %02x\n",
-				u4ContIdx,
+				u4ContIdx++,
 				ucContTemp[8], ucContTemp[9],
 				ucContTemp[10], ucContTemp[11],
 				ucContTemp[12], ucContTemp[13],
 				ucContTemp[14], ucContTemp[15]);
 
-				u4ContIdx++;
 		} else {
 			pu4ContCR = (uint32_t *)ucContTemp;
 
