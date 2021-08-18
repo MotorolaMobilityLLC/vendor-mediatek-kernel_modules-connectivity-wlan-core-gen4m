@@ -868,6 +868,7 @@ int mtk_cfg80211_vendor_llstats_get_info(
 	const void *data, int data_len)
 {
 	int32_t i4Status = -EINVAL;
+#if 0
 	struct WIFI_RADIO_STAT *pRadioStat = NULL;
 	struct sk_buff *skb = NULL;
 	uint32_t u4BufLen = 0;
@@ -926,6 +927,7 @@ nla_put_failure:
 		kfree_skb(skb);
 	if (pRadioStat != NULL)
 		kalMemFree(pRadioStat, VIR_MEM_TYPE, u4BufLen);
+#endif
 	return i4Status;
 }
 

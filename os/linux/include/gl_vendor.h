@@ -533,38 +533,121 @@ struct PARAM_AP_THRESHOLD {
 	uint32_t channel;	/* channel hint */
 };
 
-/* channel operating width */
-enum WIFI_CHANNEL_WIDTH {
-	WIFI_CHAN_WIDTH_20 = 0,
-	WIFI_CHAN_WIDTH_40 = 1,
-	WIFI_CHAN_WIDTH_80 = 2,
-	WIFI_CHAN_WIDTH_160 = 3,
-	WIFI_CHAN_WIDTH_80P80 = 4,
-	WIFI_CHAN_WIDTH_5 = 5,
-	WIFI_CHAN_WIDTH_10 = 6,
-	WIFI_CHAN_WIDTH_INVALID = -1
+#define STATS_LLS_MAX_NSS_NUM    2
+
+#define STATS_LLS_CCK_NUM        4   /* 1M/2M/5.5M/11M */
+#define STATS_LLS_OFDM_NUM       8   /* 6M/9M/12M/18M/24M/36M/48M/54M */
+#define STATS_LLS_HT_NUM         16  /* MCS0~15 */
+#define STATS_LLS_VHT_NUM        10  /* MCS0~9 */
+#define STATS_LLS_HE_NUM         12  /* MCS0~11 */
+
+#define STATS_LLS_MAX_CCK_BW_NUM  1  /* BW20 */
+#define STATS_LLS_MAX_OFDM_BW_NUM 1  /* BW20 */
+#define STATS_LLS_MAX_HT_BW_NUM   2  /* BW20/40 */
+#define STATS_LLS_MAX_VHT_BW_NUM  3  /* BW20/40/80 */
+#define STATS_LLS_MAX_HE_BW_NUM   4  /* BW20/40/80/160 */
+
+#define STATS_LLS_MAX_CCK_NUM  (STATS_LLS_CCK_NUM)
+#define STATS_LLS_MAX_OFDM_NUM (STATS_LLS_OFDM_NUM)
+#define STATS_LLS_MAX_HT_NUM   \
+	(STATS_LLS_HT_NUM * STATS_LLS_MAX_HT_BW_NUM)
+#define STATS_LLS_MAX_VHT_NUM  \
+	(STATS_LLS_VHT_NUM * STATS_LLS_MAX_VHT_BW_NUM * STATS_LLS_MAX_NSS_NUM)
+#define STATS_LLS_MAX_HE_NUM   \
+	(STATS_LLS_HE_NUM * STATS_LLS_MAX_HE_BW_NUM * STATS_LLS_MAX_NSS_NUM)
+
+
+#define STATS_LLS_CH_NUM_2G4 14
+#define STATS_LLS_CH_NUM_5G 32
+#if CFG_SUPPORT_WIFI_6G
+#define STATS_LLS_CH_NUM_6G 64
+#else
+#define STATS_LLS_CH_NUM_6G 0
+#endif
+
+#define STATS_LLS_CH_NUM (STATS_LLS_CH_NUM_2G4 +	\
+			  STATS_LLS_CH_NUM_5G +		\
+			  STATS_LLS_CH_NUM_6G)
+
+#define STATS_LLS_RATE_NUM (STATS_LLS_MAX_CCK_NUM +	\
+			    STATS_LLS_MAX_OFDM_NUM +	\
+			    STATS_LLS_MAX_HT_NUM +	\
+			    STATS_LLS_MAX_VHT_NUM +	\
+			    STATS_LLS_MAX_HE_NUM)
+
+/**
+ * channel operating width
+ */
+enum ENUM_STATS_LLS_CHANNEL_WIDTH {
+	STATS_LLS_WIFI_CHAN_WIDTH_20    = 0,
+	STATS_LLS_WIFI_CHAN_WIDTH_40    = 1,
+	STATS_LLS_WIFI_CHAN_WIDTH_80    = 2,
+	STATS_LLS_WIFI_CHAN_WIDTH_160   = 3,
+	STATS_LLS_WIFI_CHAN_WIDTH_80P80 = 4,
+	STATS_LLS_WIFI_CHAN_WIDTH_5     = 5,
+	STATS_LLS_WIFI_CHAN_WIDTH_10    = 6,
+	STATS_LLS_WIFI_CHAN_WIDTH_INVALID = -1
 };
 
-/* channel information */
-struct WIFI_CHANNEL_INFO {
-	enum WIFI_CHANNEL_WIDTH width;
-	uint32_t center_freq;
-	uint32_t center_freq0;
-	uint32_t center_freq1;
+/**
+ * @width: channel width (20, 40, 80, 80+80, 160)
+ * @center_freq: primary 20 MHz channel
+ * @center_freq0: center frequency (MHz) first segment
+ * @center_freq1: center frequency (MHz) second segment
+ */
+struct STATS_LLS_CHANNEL_INFO {
+	enum ENUM_STATS_LLS_CHANNEL_WIDTH width;
+	int32_t center_freq;
+	int32_t center_freq0;
+	int32_t center_freq1;
 };
 
-/* channel statistics */
-struct WIFI_CHANNEL_STAT {
-	struct WIFI_CHANNEL_INFO channel;
+/**
+ * @channel: channel
+ * @on_time: msecs the radio is awake
+ *           (32 bits number accruing over time)
+ * @cca_busy_time: msecs the CCA register is busy
+ *                 (32 bits number accruing over time)
+ */
+struct STATS_LLS_CHANNEL_STAT {
+	struct STATS_LLS_CHANNEL_INFO channel;
 	uint32_t on_time;
 	uint32_t cca_busy_time;
 };
 
-/* radio statistics */
-struct WIFI_RADIO_STAT {
-	uint32_t radio;
+/**
+ * Statistics data reported for STATS_LLS_TAG_RADIO_STAT.
+ *
+ * @radio: wifi radio (if multiple radio supported)
+ * @on_time: msecs the radio is awake (32 bits number accruing over time)
+ * @tx_time: msecs the radio is transmitting (32 bits number accruing over time)
+ * @num_tx_levels: number of radio transmit power levels (unavailable)
+ * @tx_time_per_levels: pointer to an array of radio transmit per power levels
+ *                      in msecs accured over time (unavailable)
+ * @rx_time: msecs the radio is in active receive
+ *           (32 bits number accruing over time)
+ * @on_time_scan: msecs the radio is awake due to all scan
+ *                (32 bits number accruing over time)
+ * @on_time_nbd: msecs the radio is awake due to NAN
+ *               (32 bits number accruing over time)
+ * @on_time_gscan: msecs the radio is awake due to G?scan
+ *                 (32 bits number accruing over time)
+ * @on_time_roam_scan: msecs the radio is awake due to roam?scan
+ *                     (32 bits number accruing over time)
+ * @on_time_pno_scan: msecs the radio is awake due to PNO scan
+ *                    (32 bits number accruing over time)
+ * @on_time_hs20: msecs the radio is awake due to HS2.0 scans and GAS exchange
+ *                (32 bits number accruing over time)
+ * @num_channels: number of channels
+ * @RESERVED: for padding since sizeof this structure returns 56 bytes.
+ * @channels: channel statistics
+ */
+struct STATS_LLS_WIFI_RADIO_STAT {
+	int32_t radio;
 	uint32_t on_time;
 	uint32_t tx_time;
+	uint32_t num_tx_levels; /* 0 */
+	uint32_t *tx_time_per_levels; /* NULL */
 	uint32_t rx_time;
 	uint32_t on_time_scan;
 	uint32_t on_time_nbd;
@@ -573,23 +656,54 @@ struct WIFI_RADIO_STAT {
 	uint32_t on_time_pno_scan;
 	uint32_t on_time_hs20;
 	uint32_t num_channels;
-	struct WIFI_CHANNEL_STAT channels[];
+	struct STATS_LLS_CHANNEL_STAT channels[0];
 };
 
-/* wifi rate */
-struct WIFI_RATE {
-	uint32_t preamble: 3;
-	uint32_t nss: 2;
-	uint32_t bw: 3;
-	uint32_t rateMcsIdx: 8;
 
-	uint32_t reserved: 16;
+enum STATS_LLS_WIFI_RATE_PREAMBLE {
+	LLS_MODE_OFDM,
+	LLS_MODE_CCK,
+	LLS_MODE_HT,
+	LLS_MODE_VHT,
+	LLS_MODE_HE,
+	LLS_MODE_RESERVED,
+};
+
+/**
+ * wifi rate
+ *
+ * @preamble: 0: OFDM, 1:CCK, 2:HT 3:VHT 4:HE 5..7 reserved
+ * @nss: 0:1x1, 1:2x2, 3:3x3, 4:4x4
+ * @bw: 0:20MHz, 1:40Mhz, 2:80Mhz, 3:160Mhz
+ * @rateMcsIdx: OFDM/CCK rate code would be as per ieee std in the units of
+ *              0.5mbps
+ *              HT/VHT/HE it would be mcs index
+ * @reserved: reserved
+ * @bitrate: units of 100 Kbps
+ */
+struct STATS_LLS_WIFI_RATE {
+	uint32_t preamble   :3;
+	uint32_t nss        :2;
+	uint32_t bw         :3;
+	uint32_t rateMcsIdx :8;
+
+	uint32_t reserved   :16;
 	uint32_t bitrate;
 };
 
-/* per rate statistics */
-struct WIFI_RATE_STAT {
-	struct WIFI_RATE rate;
+/**
+ * per rate statistics
+ *
+ * @rate: rate information
+ * @tx_mpdu: number of successfully transmitted data pkts (ACK rcvd)
+ * @rx_mpdu: number of received data pkts
+ * @mpdu_lost: number of data packet losses (no ACK)
+ * @retries: total number of data pkt retries
+ * @retries_short: number of short data pkt retries
+ * @retries_long: number of long data pkt retries
+ */
+struct STATS_LLS_RATE_STAT {
+	struct STATS_LLS_WIFI_RATE rate;
 	uint32_t tx_mpdu;
 	uint32_t rx_mpdu;
 	uint32_t mpdu_lost;
@@ -598,22 +712,21 @@ struct WIFI_RATE_STAT {
 	uint32_t retries_long;
 };
 
-/*wifi_interface_link_layer_info*/
-enum WIFI_CONNECTION_STATE {
+enum ENUM_WIFI_CONNECTION_STATE {
 	WIFI_DISCONNECTED = 0,
 	WIFI_AUTHENTICATING = 1,
 	WIFI_ASSOCIATING = 2,
 	WIFI_ASSOCIATED = 3,
-	WIFI_EAPOL_STARTED = 4,
-	WIFI_EAPOL_COMPLETED = 5,
+	WIFI_EAPOL_STARTED = 4,   /* if done by firmware/driver */
+	WIFI_EAPOL_COMPLETED = 5, /* if done by firmware/driver */
 };
 
-enum WIFI_ROAM_STATE {
+enum ENUM_WIFI_ROAM_STATE {
 	WIFI_ROAMING_IDLE = 0,
 	WIFI_ROAMING_ACTIVE = 1,
 };
 
-enum WIFI_INTERFACE_MODE {
+enum ENUM_WIFI_INTERFACE_MODE {
 	WIFI_INTERFACE_STA = 0,
 	WIFI_INTERFACE_SOFTAP = 1,
 	WIFI_INTERFACE_IBSS = 2,
@@ -621,19 +734,48 @@ enum WIFI_INTERFACE_MODE {
 	WIFI_INTERFACE_P2P_GO = 4,
 	WIFI_INTERFACE_NAN = 5,
 	WIFI_INTERFACE_MESH = 6,
+	WIFI_INTERFACE_TDLS = 7,
 	WIFI_INTERFACE_UNKNOWN = -1
 };
 
+/**
+ *
+ * @mode: interface mode
+ * @mac_addr[6]: interface mac address (self)
+ * @state: connection state (valid for STA, CLI only)
+ * @roaming: roaming state
+ * @capabilities: WIFI_CAPABILITY_XXX (self)
+ * @ssid[33]: null terminated SSID
+ * @bssid[6]: bssid
+ * @ap_country_str[3]: country string advertised by AP
+ * @country_str[3]: country string for this association
+ * @time_slicing_duty_cycle_percent: if this iface is being served using time
+ *                     slicing on a radio with one or more ifaces (i.e MCC),
+ *                     then the duty cycle assigned to this iface in %.
+ *                     If not using time slicing (i.e SCC or DBS), set to 100.
+ */
 struct WIFI_INTERFACE_LINK_LAYER_INFO {
-	enum WIFI_INTERFACE_MODE mode;
-	u8 mac_addr[6];
-	enum WIFI_CONNECTION_STATE state;
-	enum WIFI_ROAM_STATE roaming;
-	u32 capabilities;
-	u8 ssid[33];
-	u8 bssid[6];
-	u8 ap_country_str[3];
-	u8 country_str[3];
+	enum ENUM_WIFI_INTERFACE_MODE mode;
+	uint8_t mac_addr[6];
+	enum ENUM_WIFI_CONNECTION_STATE state;
+	enum ENUM_WIFI_ROAM_STATE roaming;
+	uint32_t capabilities;
+	uint8_t ssid[33];
+	uint8_t bssid[6];
+	uint8_t ap_country_str[3];
+	uint8_t country_str[3];
+	uint8_t time_slicing_duty_cycle_percent;
+};
+
+/**
+ * access categories
+ */
+enum ENUM_STATS_LLS_AC {
+	STATS_LLS_WIFI_AC_VO  = 0,
+	STATS_LLS_WIFI_AC_VI  = 1,
+	STATS_LLS_WIFI_AC_BE  = 2,
+	STATS_LLS_WIFI_AC_BK  = 3,
+	STATS_LLS_WIFI_AC_MAX = 4,
 };
 
 /* access categories */
@@ -646,32 +788,76 @@ enum WIFI_TRAFFIC_AC {
 };
 
 /* wifi peer type */
-enum WIFI_PEER_TYPE {
-	WIFI_PEER_STA,
-	WIFI_PEER_AP,
-	WIFI_PEER_P2P_GO,
-	WIFI_PEER_P2P_CLIENT,
-	WIFI_PEER_NAN,
-	WIFI_PEER_TDLS,
-	WIFI_PEER_INVALID,
+enum ENUM_STATS_PEER_TYPE {
+	STATS_LLS_WIFI_PEER_STA,
+	STATS_LLS_WIFI_PEER_AP,
+	STATS_LLS_WIFI_PEER_P2P_GO,
+	STATS_LLS_WIFI_PEER_P2P_CLIENT,
+	STATS_LLS_WIFI_PEER_NAN,
+	STATS_LLS_WIFI_PEER_TDLS,
+	STATS_LLS_WIFI_PEER_INVALID,
 };
 
-/* per peer statistics */
-struct WIFI_PEER_INFO {
-	enum WIFI_PEER_TYPE type;
+/**
+ * per peer statistics
+ *
+ * @sta_count: station count
+ * @chan_util: channel utilization
+ * @reserved: reserved
+ */
+struct STATS_LLS_BSSLOAD_INFO {
+	uint16_t sta_count;
+	uint16_t chan_util;
+	uint8_t reserved[4];
+};
+
+/**
+ * Statistics data reported for STATS_LLS_TAG_PEER_STAT.
+ *
+ * @type: peer type (AP, TDLS, GO etc.)
+ * @peer_mac_address[6]: mac address (unavailable)
+ * @capabilities: peer WIFI_CAPABILITY_XXX (unavailable)
+ * @bssload: STA count and CU
+ * @num_rate: number of rates
+ * @rate_stats: per rate statistics, number of entries  = num_rate
+ */
+struct STATS_LLS_PEER_INFO {
+	enum ENUM_STATS_PEER_TYPE type;
 	uint8_t peer_mac_address[6];
 	uint32_t capabilities;
+	struct STATS_LLS_BSSLOAD_INFO bssload;
 	uint32_t num_rate;
-	struct WIFI_RATE_STAT rate_stats[];
+	struct STATS_LLS_RATE_STAT rate_stats[]; /* structure revised */
 };
 
-/* per access category statistics */
-struct WIFI_WMM_AC_STAT_ {
-	enum WIFI_TRAFFIC_AC ac;
+/**
+ * Statistics data reported for STATS_LLS_TAG_WMM_AC_STAT.
+ *
+ * @ac: access category (VI, VO, BE, BK)
+ * @tx_mpdu: number of successfully transmitted unicast data pkts (ACK rcvd)
+ * @rx_mpdu: number of received unicast data packets
+ * @tx_mcast: number of successfully transmitted multicast data packets
+ *            STA case: implies ACK received from AP for the unicast packet
+ *            in which mcast pkt was sent
+ * @rx_mcast: number of received multicast data packets
+ * @rx_ampdu: number of received unicast a-mpdus;
+ *              support of this counter is optional
+ * @tx_ampdu: number of transmitted unicast a-mpdus;
+ *              support of this counter is optional
+ * @mpdu_lost: number of data pkt losses (no ACK)
+ * @retries: total number of data pkt retries
+ * @retries_short: number of short data pkt retries
+ * @retries_long: number of long data pkt retries
+ * @contention_time_min: data pkt min contention time (usecs)
+ * @contention_time_max: data pkt max contention time (usecs)
+ * @contention_time_avg: data pkt avg contention time (usecs)
+ * @contention_num_samples: num of data pkts used for contention statistics
+ */
+struct STATS_LLS_WMM_AC_STAT {
+	enum ENUM_STATS_LLS_AC ac;
 	uint32_t tx_mpdu;
 	uint32_t rx_mpdu;
 	uint32_t tx_mcast;
-
 	uint32_t rx_mcast;
 	uint32_t rx_ampdu;
 	uint32_t tx_ampdu;
@@ -683,6 +869,73 @@ struct WIFI_WMM_AC_STAT_ {
 	uint32_t contention_time_max;
 	uint32_t contention_time_avg;
 	uint32_t contention_num_samples;
+};
+
+/**
+ * interface statistics
+ *
+ * @iface: wifi interface
+ * @info: current state of the interface
+ * @beacon_rx: access point beacon received count from connected AP
+ * @average_tsf_offset: average beacon offset encountered (beacon_TSF - TBTT)
+ *               The average_tsf_offset field is used so as to calculate the
+ *               typical beacon contention time on the channel as well may be
+ *               used to debug beacon synchronization and related power
+ *               consumption issue
+ * @leaky_ap_detected: indicate that this AP typically leaks packets
+ *                     beyond the driver guard time.
+ * @leaky_ap_avg_num_frames_leaked: average number of frame leaked by AP
+ *                                  after frame with PM bit set was ACK'ed by AP
+ * @leaky_ap_guard_time: guard time currently in force
+ *                       (when implementing IEEE power management based on
+ *                       frame control PM bit), How long driver waits before
+ *                       shutting down the radio and after receiving an ACK
+ *                       for a data frame with PM bit set)
+ * @mgmt_rx: access point mgmt frames received count from connected AP
+ *           (including Beacon)
+ * @mgmt_action_rx: action frames received count
+ * @mgmt_action_tx: action frames transmit count
+ * @rssi_mgmt: access Point Beacon and Management frames RSSI (averaged)
+ * @rssi_data: access Point Data Frames RSSI (averaged) from connected AP
+ * @rssi_ack: access Point ACK RSSI (averaged) from connected AP
+ * @ac[WIFI_AC_MAX]: per ac data packet statistics
+ * @num_peers: number of peers
+ * @peer_info[]: per peer statistics
+ */
+struct STATS_LLS_WIFI_IFACE_STAT {
+	void *iface;
+	struct WIFI_INTERFACE_LINK_LAYER_INFO info;
+	uint32_t beacon_rx;
+	uint64_t average_tsf_offset;
+	uint32_t leaky_ap_detected;
+	uint32_t leaky_ap_avg_num_frames_leaked;
+	uint32_t leaky_ap_guard_time;
+	uint32_t mgmt_rx;
+	uint32_t mgmt_action_rx;
+	uint32_t mgmt_action_tx;
+	int32_t rssi_mgmt;
+	int32_t rssi_data;
+	int32_t rssi_ack;
+	struct STATS_LLS_WMM_AC_STAT ac[STATS_LLS_WIFI_AC_MAX];
+	uint32_t num_peers;
+	struct STATS_LLS_PEER_INFO peer_info[];
+};
+
+/* Shared EMI Memory layout */
+struct PEER_INFO_RATE_STAT {
+	struct STATS_LLS_PEER_INFO peer;
+	struct STATS_LLS_RATE_STAT rate[STATS_LLS_RATE_NUM];
+};
+
+struct WIFI_RADIO_CHANNEL_STAT {
+	struct STATS_LLS_WIFI_RADIO_STAT radio;
+	struct STATS_LLS_CHANNEL_STAT channel[STATS_LLS_CH_NUM];
+};
+
+struct HAL_LLS_FULL_REPORT {
+	struct STATS_LLS_WIFI_IFACE_STAT iface;
+	struct PEER_INFO_RATE_STAT peer_info[CFG_STA_REC_NUM];
+	struct WIFI_RADIO_CHANNEL_STAT radio[ENUM_BAND_NUM];
 };
 
 /* RTT Capabilities */
@@ -699,21 +952,6 @@ struct PARAM_WIFI_RTT_CAPABILITIES {
 	uint8_t preamble_support;
 	/* bit mask indicates what BW is supported by initiator */
 	uint8_t bw_support;
-};
-
-/* interface statistics */
-struct WIFI_IFACE_STAT {
-	struct WIFI_INTERFACE_LINK_LAYER_INFO info;
-	uint32_t beacon_rx;
-	uint32_t mgmt_rx;
-	uint32_t mgmt_action_rx;
-	uint32_t mgmt_action_tx;
-	int32_t rssi_mgmt;
-	int32_t rssi_data;
-	int32_t rssi_ack;
-	struct WIFI_WMM_AC_STAT_ ac[WIFI_AC_MAX];
-	uint32_t num_peers;
-	struct WIFI_PEER_INFO peer_info[];
 };
 
 enum ENUM_NLA_PUT_DATE_TYPE {
