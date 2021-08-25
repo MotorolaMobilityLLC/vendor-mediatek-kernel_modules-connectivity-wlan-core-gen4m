@@ -101,6 +101,12 @@
  *                           P R I V A T E   D A T A
  *******************************************************************************
  */
+static const uint32_t arBwCfg80211Table[] = {
+	RATE_INFO_BW_20,
+	RATE_INFO_BW_40,
+	RATE_INFO_BW_80,
+	RATE_INFO_BW_160
+};
 
 /*******************************************************************************
  *                                 M A C R O S
@@ -513,13 +519,24 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy,
 	struct GLUE_INFO *prGlueInfo = NULL;
 	uint32_t rStatus;
 	uint8_t arBssid[PARAM_MAC_ADDR_LEN];
-	uint32_t u4BufLen, u4TxRate, u4RxRate;
+	uint32_t u4BufLen, u4TxRate, u4RxRate, u4RxBw;
 	int32_t i4Rssi = 0;
 	struct PARAM_GET_STA_STATISTICS rQueryStaStatistics;
 	struct PARAM_LINK_SPEED_EX rLinkSpeed;
 	uint32_t u4TotalError;
+	uint32_t u4FcsError;
 	struct net_device_stats *prDevStats;
 	uint8_t ucBssIndex = 0;
+
+#if CFG_SUPPORT_LLS
+	uint32_t u4TxBw, u4MaxTxRate;
+	union {
+		struct CMD_GET_STATS_LLS cmd;
+		struct EVENT_STATS_LLS_TX_RATE_INFO rate_info;
+	} query = {0};
+	uint32_t u4QueryBufLen;
+	uint32_t u4QueryInfoLen;
+#endif
 
 	WIPHY_PRIV(wiphy, prGlueInfo);
 	ASSERT(prGlueInfo);
@@ -572,6 +589,11 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy,
 		u4TxRate = rLinkSpeed.rLq[ucBssIndex].u2TxLinkSpeed;
 		u4RxRate = rLinkSpeed.rLq[ucBssIndex].u2RxLinkSpeed;
 		i4Rssi = rLinkSpeed.rLq[ucBssIndex].cRssi;
+		u4RxBw = rLinkSpeed.rLq[ucBssIndex].u4RxBw;
+		if (unlikely(u4RxBw > ARRAY_SIZE(arBwCfg80211Table))) {
+			DBGLOG(REQ, WARN, "wrong u4RxBw!");
+			return -EOVERFLOW;
+		}
 	}
 #if KERNEL_VERSION(4, 0, 0) <= CFG80211_VERSION_CODE
 	sinfo->filled |= BIT(NL80211_STA_INFO_TX_BITRATE);
@@ -582,27 +604,83 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy,
 	sinfo->filled |= STATION_INFO_RX_BITRATE;
 	sinfo->filled |= STATION_INFO_SIGNAL;
 #endif
+
+#if CFG_SUPPORT_LLS
+	/* fill tx rate/bw from LLS */
+	kalMemZero(&query, sizeof(query));
+	query.cmd.u4Tag = STATS_LLS_TAG_CURRENT_TX_RATE;
+	u4QueryBufLen = sizeof(query);
+	u4QueryInfoLen = sizeof(query);
+
+	rStatus = kalIoctl(prGlueInfo,
+			wlanQueryLinkStats,
+			&query,
+			u4QueryBufLen,
+			TRUE,
+			TRUE,
+			TRUE,
+			&u4QueryInfoLen);
+	DBGLOG(REQ, INFO, "kalIoctl=%x, %u bytes",
+				rStatus, u4QueryInfoLen);
+	DBGLOG_HEX(REQ, INFO, &query.rate_info, u4QueryInfoLen);
+	if (unlikely(rStatus != WLAN_STATUS_SUCCESS)) {
+		DBGLOG(REQ, WARN, "wlanQueryLinkStats return fail\n");
+		return -EBUSY;
+	}
+	if (unlikely(u4QueryInfoLen != sizeof(
+		struct EVENT_STATS_LLS_TX_RATE_INFO))) {
+		DBGLOG(REQ, WARN, "wlanQueryLinkStats return len unexpected\n");
+		return -EOVERFLOW;
+	}
+
+	DBGLOG(REQ, INFO, "rate=%u mode=%u nsts=%u stbc=%u bw=%u",
+		query.rate_info.rate, query.rate_info.mode,
+		query.rate_info.nsts, query.rate_info.stbc,
+		query.rate_info.bw);
+
+	if (wlanQueryRateByTable(query.rate_info.mode,
+		query.rate_info.rate, query.rate_info.bw, 0,
+		query.rate_info.nsts, &u4TxRate, &u4MaxTxRate) < 0){
+		DBGLOG(REQ, WARN, "wlanQueryRateByTable error!");
+		return -EOVERFLOW;
+	}
+
+	if (unlikely(query.rate_info.bw > ARRAY_SIZE(
+		arBwCfg80211Table))) {
+		DBGLOG(REQ, WARN, "wrong tx bw!");
+		return -EOVERFLOW;
+	}
+	u4TxBw = arBwCfg80211Table[query.rate_info.bw];
+	prGlueInfo->u4TxLinkSpeedCache[ucBssIndex] = u4TxRate;
+	prGlueInfo->u4TxBwCache[ucBssIndex] = u4TxBw;
+#else
 	if ((rStatus != WLAN_STATUS_SUCCESS) || (u4TxRate == 0)) {
 		/* unable to retrieve link speed */
 		DBGLOG(REQ, WARN, "last Tx link speed\n");
-		sinfo->txrate.legacy =
-			prGlueInfo->u4TxLinkSpeedCache[ucBssIndex];
 	} else {
 		/* convert from 100bps to 100kbps */
-		sinfo->txrate.legacy = u4TxRate / 1000;
 		prGlueInfo->u4TxLinkSpeedCache[ucBssIndex] = u4TxRate / 1000;
 	}
+#endif
 
 	if ((rStatus != WLAN_STATUS_SUCCESS) || (u4RxRate == 0)) {
 		/* unable to retrieve link speed */
 		DBGLOG(REQ, WARN, "last Rx link speed\n");
-		sinfo->rxrate.legacy =
-			prGlueInfo->u4RxLinkSpeedCache[ucBssIndex];
 	} else {
 		/* convert from 100bps to 100kbps */
-		sinfo->rxrate.legacy = u4RxRate / 1000;
 		prGlueInfo->u4RxLinkSpeedCache[ucBssIndex] = u4RxRate / 1000;
+		prGlueInfo->u4RxBwCache[ucBssIndex] =
+			arBwCfg80211Table[u4RxBw];
 	}
+
+	sinfo->txrate.legacy =
+		prGlueInfo->u4TxLinkSpeedCache[ucBssIndex];
+	sinfo->rxrate.legacy =
+		prGlueInfo->u4RxLinkSpeedCache[ucBssIndex];
+	sinfo->txrate.bw =
+		prGlueInfo->u4TxBwCache[ucBssIndex];
+	sinfo->rxrate.bw =
+		prGlueInfo->u4RxBwCache[ucBssIndex];
 
 	if (rStatus != WLAN_STATUS_SUCCESS || i4Rssi == 0) {
 		DBGLOG(REQ, WARN,
@@ -666,23 +744,26 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy,
 			       "link speed=%u, rssi=%d, unable to retrieve link speed,status=%u\n",
 			       sinfo->txrate.legacy, sinfo->signal, rStatus);
 		} else {
-			DBGLOG(REQ, INFO,
-			       "link speed=%u/%u, rssi=%d, BSSID:[" MACSTR
-			       "], TxFail=%u, TxTimeOut=%u, TxOK=%u, RxOK=%u, FcsErr=%u\n",
-			       sinfo->txrate.legacy, sinfo->rxrate.legacy,
-			       sinfo->signal,
-			       MAC2STR(arBssid),
-			       rQueryStaStatistics.u4TxFailCount,
-			       rQueryStaStatistics.u4TxLifeTimeoutCount,
-			       sinfo->tx_packets, sinfo->rx_packets,
-			       rQueryStaStatistics.rMibInfo[0].u4FcsError
-			);
-
+			u4FcsError = rQueryStaStatistics.rMibInfo[0].u4FcsError;
 			u4TotalError = rQueryStaStatistics.u4TxFailCount +
 				       rQueryStaStatistics.u4TxLifeTimeoutCount;
-			prGlueInfo->u4FcsErrorCache =
-				rQueryStaStatistics.rMibInfo[0].u4FcsError;
+			prGlueInfo->u4FcsErrorCache += u4FcsError;
 			prDevStats->tx_errors += u4TotalError;
+#define TEMP_LOG_TEMPLATE \
+	"link speed=%u/%u, bw=%u/%u, rssi=%d, BSSID:[" MACSTR "]," \
+	"TxFail=%u, TxTimeOut=%u, TxOK=%u, RxOK=%u, FcsErr=%u\n"
+			DBGLOG(REQ, INFO,
+				TEMP_LOG_TEMPLATE,
+				sinfo->txrate.legacy, sinfo->rxrate.legacy,
+				sinfo->txrate.bw, sinfo->rxrate.bw,
+				sinfo->signal,
+				MAC2STR(arBssid),
+				rQueryStaStatistics.u4TxFailCount,
+				rQueryStaStatistics.u4TxLifeTimeoutCount,
+				sinfo->tx_packets, sinfo->rx_packets,
+				u4FcsError
+			);
+#undef TEMP_LOG_TEMPLATE
 		}
 #if KERNEL_VERSION(4, 0, 0) <= CFG80211_VERSION_CODE
 		sinfo->filled |= BIT(NL80211_STA_INFO_TX_FAILED);
@@ -691,6 +772,7 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy,
 #endif
 		sinfo->tx_failed = prDevStats->tx_errors;
 #if KERNEL_VERSION(4, 19, 0) <= CFG80211_VERSION_CODE
+		sinfo->filled |= BIT_ULL(NL80211_STA_INFO_FCS_ERROR_COUNT);
 		sinfo->fcs_err_count = prGlueInfo->u4FcsErrorCache;
 #endif
 	}

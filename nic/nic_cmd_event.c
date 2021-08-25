@@ -913,7 +913,7 @@ void nicCmdEventQueryLinkSpeedEx(IN struct ADAPTER *prAdapter,
 	struct EVENT_LINK_QUALITY *prLinkQuality;
 	struct PARAM_LINK_SPEED_EX *pu4LinkSpeed;
 	struct GLUE_INFO *prGlueInfo;
-	uint32_t u4CurRxRate, u4MaxRxRate;
+	uint32_t u4CurRxRate, u4MaxRxRate, u4CurRxBw;
 	uint32_t u4QueryInfoLen;
 	uint32_t i;
 
@@ -935,11 +935,15 @@ void nicCmdEventQueryLinkSpeedEx(IN struct ADAPTER *prAdapter,
 			if (IS_BSS_INDEX_AIS(prAdapter, i) &&
 				(wlanGetRxRate(prGlueInfo, i,
 							  &u4CurRxRate,
-							  &u4MaxRxRate) == 0)) {
+							  &u4MaxRxRate,
+							  &u4CurRxBw) == 0)) {
 				pu4LinkSpeed->rLq[i].u2RxLinkSpeed =
 					u4CurRxRate * 1000;
-			} else
+				pu4LinkSpeed->rLq[i].u4RxBw = u4CurRxBw;
+			} else {
 				pu4LinkSpeed->rLq[i].u2RxLinkSpeed = 0;
+				pu4LinkSpeed->rLq[i].u4RxBw = 0;
+			}
 			/* ranged from (-128 ~ 30) in unit of dBm */
 			pu4LinkSpeed->rLq[i].cRssi
 				= prLinkQuality->rLq[i].cRssi;

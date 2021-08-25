@@ -4862,6 +4862,8 @@ wlanoidQueryLinkSpeedEx(IN struct ADAPTER *prAdapter,
 			prLq->u2TxLinkSpeed;
 		pu4LinkSpeed->rLq[ucBssIndex].u2RxLinkSpeed =
 			prLq->u2RxLinkSpeed;
+		pu4LinkSpeed->rLq[ucBssIndex].u4RxBw =
+			prLq->u4RxBw;
 
 		/* change to unit of 100bps */
 		pu4LinkSpeed->rLq[ucBssIndex].u2TxLinkSpeed *= 5000;

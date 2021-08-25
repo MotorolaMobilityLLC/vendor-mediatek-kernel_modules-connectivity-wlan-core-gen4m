@@ -656,6 +656,7 @@ struct LINK_SPEED_EX_ {
 	OS_SYSTIME rLinkRateUpdateTime;
 	uint32_t u2TxLinkSpeed;
 	uint32_t u2RxLinkSpeed;
+	uint32_t u4RxBw;
 
 	uint8_t ucMediumBusyPercentage;
 	uint8_t ucIsLQ0Rdy;
@@ -1794,16 +1795,12 @@ struct EVENT_STATS_LLS_TX_LATENCY {
 };
 
 struct EVENT_STATS_LLS_TX_RATE_INFO {
-	uint8_t flags;
-	uint8_t mcs;
-	uint16_t legacy;
-	uint8_t nss;
-	uint8_t bw;
-	uint8_t he_gi;
-	uint8_t he_dcm;
-	uint8_t he_ru_alloc;
-	uint8_t n_bonded_ch;
-	uint8_t padding[2];
+	uint32_t rate :6,
+	mode :4,
+	nsts :3,
+	stbc :1,
+	bw :2,
+	reserved :16;
 };
 #endif /* CFG_SUPPORT_LLS */
 
