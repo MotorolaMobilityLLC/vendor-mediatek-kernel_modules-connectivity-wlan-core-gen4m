@@ -1956,17 +1956,45 @@ uint32_t nicUpdateBssEx(IN struct ADAPTER *prAdapter,
 		DBGLOG(SW4, INFO, "[SG]cnmAisInfraConnectNotify,%d\n",
 		       prBssInfo->eConnectionState);
 		if (prBssInfo->eConnectionState == MEDIA_STATE_CONNECTED) {
-			uint8_t ucSGEnable = TRUE, ucRetValNss = 0;
-			ucRetValNss = wlanGetSupportNss(prAdapter, ucBssIndex);
-			DBGLOG(SW4, INFO, "[SG]SG Get NSS,%d\n", ucRetValNss);
+			uint8_t ucSGEnable = TRUE, ucDutNss = 0;
+			struct STA_RECORD *prCurStaRec;
+
+			ucDutNss = wlanGetSupportNss(prAdapter, ucBssIndex);
+			DBGLOG(SW4, INFO, "[SG]SG Get Dut NSS %d\n", ucDutNss);
 			if (rCmdSetBssInfo.ucIotApAct == WLAN_IOT_AP_DIS_SG) {
 				DBGLOG(SW4, INFO,
 					"[SG]Hit SG blacklist, disable SG\n");
 				ucSGEnable = FALSE;
 			}
+
+			prCurStaRec = prBssInfo->prStaRecOfAP;
+
+			/* Check peer Rx Nss Cap */
+#if CFG_SUPPORT_802_11AC
+			if (RLM_NET_IS_11AC(prBssInfo)) { /* VHT */
+				if (ucDutNss == 2 &&
+				((prCurStaRec->u2VhtRxMcsMap &
+				VHT_CAP_INFO_MCS_2SS_MASK) >>
+				VHT_CAP_INFO_MCS_2SS_OFFSET) ==
+				VHT_CAP_INFO_MCS_NOT_SUPPORTED) {
+					DBGLOG(RLM, INFO,
+						"[SG] VHT peer doesn't support 2ss\n");
+					ucSGEnable = FALSE;
+				}
+			} else
+#endif
+			if (RLM_NET_IS_11N(prBssInfo)) { /* HT */
+				if (ucDutNss == 2 &&
+				(prCurStaRec->aucRxMcsBitmask[1]
+				== 0)) {
+					DBGLOG(RLM, INFO,
+						   "[SG] HT peer doesn't support 2ss\n");
+					ucSGEnable = FALSE;
+				}
+			}
 			/*Send Event  to Enable/Disable SG*/
 			wlandioSetSGStatus(prAdapter,
-			ucSGEnable, 0xFF, ucRetValNss);
+			ucSGEnable, 0xFF, ucDutNss);
 		}
 #endif
 	}
