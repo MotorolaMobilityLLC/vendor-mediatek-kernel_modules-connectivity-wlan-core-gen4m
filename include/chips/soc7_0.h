@@ -92,12 +92,12 @@
 #define SOC7_0_RX_VT_GI_OFFSET            15
 #define SOC7_0_RX_VT_DCM_MASK             BIT(17)
 #define SOC7_0_RX_VT_DCM_OFFSET           17
-#define SOC7_0_RX_VT_NUMRX_MASK           BITS(28, 30)
-#define SOC7_0_RX_VT_NUMRX_OFFSET         28
+#define SOC7_0_RX_VT_NUMRX_MASK           BITS(18, 20)
+#define SOC7_0_RX_VT_NUMRX_OFFSET         18
 #define SOC7_0_RX_VT_MUMIMO_MASK          BIT(21)
 #define SOC7_0_RX_VT_MUMIMO_OFFSET        21
 #define SOC7_0_RX_VT_STBC_MASK            BITS(22, 23)
-#define SOC7_0_RX_VT_STBC_OFFSET          23
+#define SOC7_0_RX_VT_STBC_OFFSET          22
 #define SOC7_0_RX_VT_TXMODE_MASK          BITS(24, 27)
 #define SOC7_0_RX_VT_TXMODE_OFFSET        24
 
