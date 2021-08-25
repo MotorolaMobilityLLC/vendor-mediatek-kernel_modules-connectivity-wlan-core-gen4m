@@ -1728,6 +1728,9 @@ kalIndicateStatusAndComplete(IN struct GLUE_INFO
 		prGlueInfo->prAdapter->rLinkQualityInfo.u8RxTotalCount = 0;
 		prGlueInfo->prAdapter->rLinkQualityInfo.u8RxErrCount = 0;
 #endif
+		prGlueInfo->u4TxLinkSpeedCache[ucBssIndex] = 0;
+		prGlueInfo->u4RxLinkSpeedCache[ucBssIndex] = 0;
+
 		/* indicate disassoc event */
 		wext_indicate_wext_event(prGlueInfo, SIOCGIWAP, NULL, 0
 			, ucBssIndex);
