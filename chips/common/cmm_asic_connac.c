@@ -233,8 +233,8 @@ uint32_t asicGetFwDlInfo(struct ADAPTER *prAdapter,
 	prComTailer = &prAdapter->rVerInfo.rCommonTailer;
 
 	kalMemZero(aucBuf, sizeof(aucBuf));
-	kalMemCopy(aucBuf, prComTailer->aucRamVersion,
-			sizeof(prComTailer->aucRamVersion));
+	kalStrnCpy(aucBuf, prComTailer->aucRamVersion,
+			sizeof(prComTailer->aucRamVersion)+1);
 	u4Offset += snprintf(pcBuf + u4Offset, i4TotalLen - u4Offset,
 			     "Tailer Ver[%u:%u] %s (%s) info %u:E%u\n",
 			     prComTailer->ucFormatVer,

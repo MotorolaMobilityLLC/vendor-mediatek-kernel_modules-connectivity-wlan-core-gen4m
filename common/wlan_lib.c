@@ -1611,7 +1611,7 @@ uint32_t wlanCheckWifiFunc(IN struct ADAPTER *prAdapter,
 #endif
 
 	while (TRUE) {
-		DBGLOG_LIMITED(INIT, TRACE,
+		DBGLOG(INIT, TRACE,
 			"Check ready_bits(=0x%x)\n", ready_bits);
 		if (fgRdyChk)
 			HAL_WIFI_FUNC_READY_CHECK(prAdapter,
@@ -1639,10 +1639,10 @@ uint32_t wlanCheckWifiFunc(IN struct ADAPTER *prAdapter,
 
 		if (fgResult) {
 			if (fgRdyChk)
-				DBGLOG_LIMITED(INIT, INFO,
+				DBGLOG(INIT, INFO,
 					"Ready bit asserted\n");
 			else
-				DBGLOG_LIMITED(INIT, INFO,
+				DBGLOG(INIT, INFO,
 					"Wi-Fi power off done!\n");
 
 			u4Status = WLAN_STATUS_SUCCESS;

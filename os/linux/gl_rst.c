@@ -146,7 +146,9 @@ static uint8_t *apucRstReason[RST_REASON_MAX] = {
 	(uint8_t *) DISP_STRING("RST_ACCESS_REG_FAIL"),
 	(uint8_t *) DISP_STRING("[Wi-Fi On] nicpmSetDriverOwn() failed!"),
 	(uint8_t *) DISP_STRING("[Wi-Fi] [Read WCIR_WLAN_READY fail!]"),
-	(uint8_t *) DISP_STRING("[Wi-Fi Off] Allocate CMD_INFO_T ==> FAILED.")
+	(uint8_t *) DISP_STRING("[Wi-Fi Off] Allocate CMD_INFO_T ==> FAILED."),
+	(uint8_t *) DISP_STRING("RST_SDIO_RX_ERROR"),
+	(uint8_t *) DISP_STRING("RST_WHOLE_CHIP_TRIGGER")
 };
 #if (CFG_ANDORID_CONNINFRA_COREDUMP_SUPPORT == 1)
 u_int8_t g_IsNeedWaitCoredump = FALSE;
@@ -760,6 +762,7 @@ int glRstwlanPreWholeChipReset(enum consys_drv_type type, char *reason)
 		g_IsWholeChipRst = TRUE;
 		DBGLOG(INIT, INFO,
 				"Wi-Fi Driver processes whole chip reset start.\n");
+		glSetRstReason(RST_WHOLE_CHIP_TRIGGER);
 			GL_RESET_TRIGGER(prGlueInfo->prAdapter,
 							 RST_FLAG_WF_RESET);
 	} else {
