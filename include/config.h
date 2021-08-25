@@ -1492,7 +1492,7 @@
  *------------------------------------------------------------------------------
 */
 #ifndef CFG_SUPPORT_SMART_GEAR
-#define CFG_SUPPORT_SMART_GEAR 1
+#define CFG_SUPPORT_SMART_GEAR 0
 #endif
 
 #define CFG_SUPPORT_WIFI_RNR  1
