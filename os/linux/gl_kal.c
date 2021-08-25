@@ -4413,6 +4413,7 @@ int main_thread(void *data)
 #ifdef CONFIG_MTK_CONNSYS_DEDICATED_LOG_PATH
 	struct CMD_CONNSYS_FW_LOG rFwLogCmd;
 	uint32_t u4BufLen;
+	uint32_t u4FwLevel = ENUM_WIFI_LOG_LEVEL_DEFAULT;
 #endif
 
 #if CFG_SUPPORT_MULTITHREAD
@@ -4756,14 +4757,13 @@ int main_thread(void *data)
 				&u4BufLen);
 		}
 		if (!prGlueInfo->prAdapter->fgSetLogLevel) {
-			kalMemZero(&rFwLogCmd, sizeof(rFwLogCmd));
-			rFwLogCmd.fgCmd = FW_LOG_CMD_SET_LEVEL;
-			rFwLogCmd.fgValue = getFWLogLevel();
+			wlanDbgGetGlobalLogLevel(
+					ENUM_WIFI_LOG_MODULE_FW, &u4FwLevel);
 
-			connsysFwLogControl(prGlueInfo->prAdapter,
-				(void *)&rFwLogCmd,
-				sizeof(struct CMD_CONNSYS_FW_LOG),
-				&u4BufLen);
+			wlanDbgSetLogLevelImpl(prGlueInfo->prAdapter,
+						ENUM_WIFI_LOG_LEVEL_VERSION_V1,
+						ENUM_WIFI_LOG_MODULE_FW,
+						u4FwLevel);
 		}
 #endif
 

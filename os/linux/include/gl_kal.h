@@ -1907,10 +1907,11 @@ void tracing_mark_write(const char *fmt, ...);
 uint32_t kalSetSuspendFlagToEMI(IN struct ADAPTER
 	*prAdapter, IN u_int8_t fgSuspend);
 
-#if (CFG_SUPPORT_CONNINFRA == 1)
 #ifdef CONFIG_MTK_CONNSYS_DEDICATED_LOG_PATH
 extern uint32_t getFWLogOnOff(void);
 #endif
+
+#if (CFG_SUPPORT_CONNINFRA == 1)
 void setupTimeParameter(
 	struct PARAM_CUSTOM_CHIP_CONFIG_STRUCT *prChipConfigInfo,
 	int chipConfigInfoSize, unsigned int second, unsigned int usecond);
