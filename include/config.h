@@ -640,12 +640,7 @@
 #define SCAN_CMD_EXT_CHNL_NUM                   (32)
 #endif
 #define CFG_SCAN_SSID_MAX_NUM (SCAN_CMD_SSID_NUM+SCAN_CMD_EXT_SSID_NUM)
-#if (CFG_SUPPORT_WIFI_6G == 1)/* Align max channel number with FW */
-#define MAXIMUM_OPERATION_CHANNEL_LIST (46+64)
-#else
 #define MAXIMUM_OPERATION_CHANNEL_LIST (SCAN_CMD_CHNL_NUM+SCAN_CMD_EXT_CHNL_NUM)
-#endif
-
 
 
 /*------------------------------------------------------------------------------
