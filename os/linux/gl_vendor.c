@@ -1041,52 +1041,73 @@ void rate_mcsIdx_conversion(struct STATS_LLS_RATE_STAT *rate)
 	DBGLOG(REQ, TRACE, "McsIdx %u -> %u", idx, rate->rate.rateMcsIdx);
 }
 
+uint8_t isValidRate(struct STATS_LLS_RATE_STAT *rate_stats)
+{
+	struct STATS_LLS_WIFI_RATE *rate = &rate_stats->rate;
+
+	switch (rate->preamble) {
+	case LLS_MODE_OFDM:
+		if (rate->nss >= 1 ||
+		    rate->bw >= STATS_LLS_MAX_OFDM_BW_NUM ||
+		    rate->rateMcsIdx >= STATS_LLS_OFDM_NUM)
+			goto invalid_rate;
+		break;
+	case LLS_MODE_CCK:
+		if (rate->nss >= 1 ||
+		    rate->bw >= STATS_LLS_MAX_CCK_BW_NUM ||
+		    rate->rateMcsIdx >= STATS_LLS_CCK_NUM)
+			goto invalid_rate;
+		break;
+	case LLS_MODE_HT:
+		if (rate->nss >= 1 ||
+		    rate->bw >= STATS_LLS_MAX_HT_BW_NUM ||
+		    rate->rateMcsIdx >= STATS_LLS_HT_NUM)
+			goto invalid_rate;
+		break;
+	case LLS_MODE_VHT:
+		if (rate->nss >= STATS_LLS_MAX_NSS_NUM ||
+		    rate->bw >= STATS_LLS_MAX_VHT_BW_NUM ||
+		    rate->rateMcsIdx >= STATS_LLS_VHT_NUM)
+			goto invalid_rate;
+		break;
+	case LLS_MODE_HE:
+		if (rate->nss >= STATS_LLS_MAX_NSS_NUM ||
+		    rate->bw >= STATS_LLS_MAX_HE_BW_NUM ||
+		    rate->rateMcsIdx >= STATS_LLS_HE_NUM)
+			goto invalid_rate;
+		break;
+	default:
+		goto invalid_rate;
+	}
+	return TRUE;
+
+invalid_rate:
+	DBGLOG(REQ, ERROR, "Bad rate: preamble=%u, nss=%u, bw=%u, mcsIdx=%u",
+			rate->preamble, rate->nss, rate->bw, rate->rateMcsIdx);
+	return FALSE;
+}
+
 void update_peer_rxmpdu(struct STA_RECORD *prStaRec,
 		struct STATS_LLS_RATE_STAT *rate_stats)
 {
 	struct STATS_LLS_WIFI_RATE *rate = &rate_stats->rate;
 
-	if (rate->preamble == LLS_MODE_OFDM) {
-		if (rate->nss >= 1 ||
-				rate->bw >= STATS_LLS_MAX_OFDM_BW_NUM ||
-				rate->rateMcsIdx >= STATS_LLS_OFDM_NUM)
-			goto index_oor;
+	if (rate->preamble == LLS_MODE_OFDM)
 		rate_stats->rx_mpdu = prStaRec->u4RxMpduOFDM
 					[rate->nss][rate->bw][rate->rateMcsIdx];
-	} else if (rate->preamble == LLS_MODE_CCK) {
-		if (rate->nss >= 1 ||
-				rate->bw >= STATS_LLS_MAX_CCK_BW_NUM ||
-				rate->rateMcsIdx >= STATS_LLS_CCK_NUM)
-			goto index_oor;
+	else if (rate->preamble == LLS_MODE_CCK)
 		rate_stats->rx_mpdu = prStaRec->u4RxMpduCCK
 					[rate->nss][rate->bw][rate->rateMcsIdx];
-	} else if (rate->preamble == LLS_MODE_HT) {
-		if (rate->nss >= 1 ||
-				rate->bw >= STATS_LLS_MAX_HT_BW_NUM ||
-				rate->rateMcsIdx >= STATS_LLS_HT_NUM)
-			goto index_oor;
+	else if (rate->preamble == LLS_MODE_HT)
 		rate_stats->rx_mpdu = prStaRec->u4RxMpduHT
 					[rate->nss][rate->bw][rate->rateMcsIdx];
-	} else if (rate->preamble == LLS_MODE_VHT) {
-		if (rate->nss >= STATS_LLS_MAX_NSS_NUM ||
-				rate->bw >= STATS_LLS_MAX_VHT_BW_NUM ||
-				rate->rateMcsIdx >= STATS_LLS_VHT_NUM)
-			goto index_oor;
+	else if (rate->preamble == LLS_MODE_VHT)
 		rate_stats->rx_mpdu = prStaRec->u4RxMpduVHT
 					[rate->nss][rate->bw][rate->rateMcsIdx];
-	} else if (rate->preamble == LLS_MODE_HE) {
-		if (rate->nss >= STATS_LLS_MAX_NSS_NUM ||
-				rate->bw >= STATS_LLS_MAX_HE_BW_NUM ||
-				rate->rateMcsIdx >= STATS_LLS_HE_NUM)
-			goto index_oor;
+	else if (rate->preamble == LLS_MODE_HE)
 		rate_stats->rx_mpdu = prStaRec->u4RxMpduHE
 					[rate->nss][rate->bw][rate->rateMcsIdx];
-	}
 	return;
-
-index_oor:
-	DBGLOG(REQ, ERROR, "OOR index: preamble=%u, nss=%u, bw=%u, mcsIdx=%u",
-			rate->preamble, rate->nss, rate->bw, rate->rateMcsIdx);
 }
 
 /**
@@ -1112,6 +1133,7 @@ uint32_t fill_peer_info(uint8_t *dst, struct PEER_INFO_RATE_STAT *src,
 	uint32_t i;
 	uint32_t j;
 	uint8_t *orig = dst;
+	struct STATS_LLS_RATE_STAT tmp;
 
 	*num_peers = 0;
 	for (i = 0; i < CFG_STA_REC_NUM; i++, src++) {
@@ -1155,6 +1177,11 @@ uint32_t fill_peer_info(uint8_t *dst, struct PEER_INFO_RATE_STAT *src,
 		for (j = 0; j < STATS_LLS_RATE_NUM; j++, src_rate++) {
 			if (src_rate->tx_mpdu || src_rate->mpdu_lost ||
 					src_rate->retries) {
+				kalMemCopyFromIo(&tmp, src_rate,
+					sizeof(struct STATS_LLS_RATE_STAT));
+				if (!isValidRate(&tmp))
+					continue;
+
 				dst_peer->num_rate++;
 				DBGLOG(REQ, TRACE, "valid rate %u", j);
 				DBGLOG(REQ, TRACE,
@@ -1163,7 +1190,7 @@ uint32_t fill_peer_info(uint8_t *dst, struct PEER_INFO_RATE_STAT *src,
 							((uint8_t *)dst),
 					((uint8_t *)src_rate) -
 							((uint8_t *)src->rate));
-				kalMemCopyFromIo(dst_rate, src_rate,
+				kalMemCopy(dst_rate, &tmp,
 					sizeof(struct STATS_LLS_RATE_STAT));
 
 				if (sta_rec)
