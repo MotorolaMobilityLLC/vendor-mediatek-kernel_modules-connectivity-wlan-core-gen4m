@@ -1214,7 +1214,7 @@ static void halMsduReportStatsP0(IN struct ADAPTER *prAdapter,
 			char uevent[64];
 
 			kalSnprintf(uevent, sizeof(uevent),
-				"Continuous TX Failed %u",
+				"abnormaltrx=DIR:TX,event:AbDrop,Count:%u",
 				stats->u4ContinuousTxFail);
 			kalSendUevent(uevent);
 		}
