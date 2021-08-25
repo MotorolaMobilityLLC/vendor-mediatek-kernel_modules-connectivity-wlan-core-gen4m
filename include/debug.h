@@ -656,14 +656,9 @@ enum WAKE_DATA_TYPE {
 		if ((aucDebugModule[DBG_##_Mod##_IDX] & \
 			 DBG_CLASS_##_Clz) == 0) \
 			break; \
-		if (get_wifi_standalone_log_mode() == 1) \
-			LOG_FUNC("[%u]%s:(" #_Mod " " #_Clz ") " _Fmt, \
-			 KAL_GET_CURRENT_THREAD_ID(), \
-			 __func__, ##__VA_ARGS__); \
-		else \
-			LOG_FUNC_LIMITED("[%u]%s:(" #_Mod " " #_Clz ") " _Fmt, \
-				 KAL_GET_CURRENT_THREAD_ID(), \
-				 __func__, ##__VA_ARGS__); \
+		LOG_FUNC_LIMITED("[%u]%s:(" #_Mod " " #_Clz ") " _Fmt, \
+			KAL_GET_CURRENT_THREAD_ID(), \
+			__func__, ##__VA_ARGS__); \
 	} while (0)
 #define DBGFWLOG(_Mod, _Clz, _Fmt, ...) \
 	do { \

@@ -1046,9 +1046,18 @@ int8_t atoi(uint8_t ch);
 
 #define kalGetTimeTick()                jiffies_to_msecs(jiffies)
 
+#define kalPrintLogLimited(fmt, ...)					\
+({									\
+	static DEFINE_RATELIMIT_STATE(_rs,				\
+		DEFAULT_RATELIMIT_INTERVAL, DEFAULT_RATELIMIT_BURST);	\
+									\
+	if (__ratelimit(&_rs))						\
+		kalPrintLog(fmt, ##__VA_ARGS__);			\
+})
+
 #define WLAN_TAG                        "[wlan]"
 #define kalPrint               kalPrintLog
-#define kalPrintLimited(_Fmt...)        pr_info_ratelimited(WLAN_TAG _Fmt)
+#define kalPrintLimited(_Fmt...) kalPrintLogLimited(WLAN_TAG _Fmt)
 
 #define kalBreakPoint() \
 do { \
@@ -1935,7 +1944,6 @@ void kalUpdateCompHdlrRec(IN struct ADAPTER *prAdapter,
 
 extern uint32_t get_wifi_standalone_log_mode(void);
 void kalPrintLog(const char *fmt, ...);
-void kalPrintLogLimited(const char *fmt, ...);
 
 #if (CFG_SUPPORT_POWER_THROTTLING == 1)
 void kalPwrLevelHdlrRegister(IN struct ADAPTER *prAdapter,

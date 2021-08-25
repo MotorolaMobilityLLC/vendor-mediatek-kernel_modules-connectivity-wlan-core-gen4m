@@ -9522,35 +9522,6 @@ void kalPrintLog(const char *fmt, ...)
 	va_end(args);
 }
 
-void kalPrintLogLimited(const char *fmt, ...)
-{
-	#ifdef CONFIG_PRINTK
-	static DEFINE_RATELIMIT_STATE(_rs,
-		DEFAULT_RATELIMIT_INTERVAL, DEFAULT_RATELIMIT_BURST);
-
-	if (__ratelimit(&_rs)) {
-		char buffer[WIFI_LOG_MSG_BUFFER];
-		int ret = 0;
-		struct va_format vaf;
-		va_list args;
-
-		va_start(args, fmt);
-		vaf.fmt = fmt;
-		vaf.va = &args;
-		ret = vsnprintf(buffer, sizeof(buffer), fmt, args);
-		if (ret < 0) {
-			kalPrintLog("[%u] vsnprintf failed, ret: %d",
-				__LINE__, ret);
-		} else if (get_wifi_standalone_log_mode() == 1) {
-			kalPrintTrace(buffer, strlen(buffer));
-		} else {
-			pr_info("%s%s", WLAN_TAG, buffer);
-		}
-
-		va_end(args);
-	}
-	#endif
-}
 
 #if (CFG_SUPPORT_POWER_THROTTLING == 1)
 void kalPwrLevelHdlrRegister(IN struct ADAPTER *prAdapter,
