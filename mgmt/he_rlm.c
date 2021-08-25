@@ -438,6 +438,9 @@ static void heRlmFillHeCapIE(
 #endif
 	uint8_t ucSupportedNss =
 		wlanGetSupportNss(prAdapter, prBssInfo->ucBssIndex) - 1;
+	u_int8_t fgTxStbcEn = TRUE;
+	u_int8_t fgRxStbcEn = TRUE;
+
 	struct AIS_FSM_INFO *prAisFsmInfo =
 		aisGetAisFsmInfo(prAdapter, prBssInfo->ucBssIndex);
 	struct BSS_DESC *prBssDesc = NULL;
@@ -518,13 +521,19 @@ static void heRlmFillHeCapIE(
 		IS_FEATURE_ENABLED(prWifiVar->ucTxLdpc))
 		HE_SET_PHY_CAP_LDPC_CODING_IN_PAYLOAD(prHeCap->ucHePhyCap);
 
-	if (IS_FEATURE_ENABLED(prWifiVar->ucTxStbc)) {
+	if (IS_BSS_APGO(prBssInfo) && (prBssInfo->ucOpTxNss < 2))
+		fgTxStbcEn = FALSE;
+
+	if (IS_BSS_APGO(prBssInfo) && (prBssInfo->ucOpRxNss < 2))
+		fgRxStbcEn = FALSE;
+
+	if (IS_FEATURE_ENABLED(prWifiVar->ucTxStbc) && fgTxStbcEn) {
 		HE_SET_PHY_CAP_STBC_TX_LT_OR_EQ_80M(prHeCap->ucHePhyCap);
 		if (IS_BSS_AIS(prBssInfo))
 			HE_SET_PHY_CAP_STBC_TX_GT_80M(prHeCap->ucHePhyCap);
 	}
 
-	if (IS_FEATURE_ENABLED(prWifiVar->ucRxStbc)) {
+	if (IS_FEATURE_ENABLED(prWifiVar->ucRxStbc) && fgRxStbcEn) {
 		HE_SET_PHY_CAP_STBC_RX_LT_OR_EQ_80M(prHeCap->ucHePhyCap);
 		if (IS_BSS_AIS(prBssInfo))
 			HE_SET_PHY_CAP_STBC_RX_GT_80M(prHeCap->ucHePhyCap);
