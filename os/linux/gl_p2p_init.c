@@ -243,6 +243,8 @@ u_int8_t p2pRemove(struct GLUE_INFO *prGlueInfo)
 	GLUE_SPIN_LOCK_DECLARATION();
 	GLUE_ACQUIRE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
 
+	g_P2pPrDev = NULL;
+
 	if (prGlueInfo->prAdapter->fgIsP2PRegistered == FALSE) {
 		DBGLOG(P2P, INFO, "p2p is not registered\n");
 		GLUE_RELEASE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
