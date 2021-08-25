@@ -1019,7 +1019,8 @@ struct STA_RECORD *find_peer_starec(struct ADAPTER *prAdapter,
 	return prStaRec;
 }
 
-uint8_t isValidRate(struct STATS_LLS_RATE_STAT *rate_stats)
+uint8_t isValidRate(struct STATS_LLS_RATE_STAT *rate_stats,
+	uint32_t ofdm_idx, uint32_t cck_idx)
 {
 	struct STATS_LLS_WIFI_RATE *rate = &rate_stats->rate;
 
@@ -1027,13 +1028,13 @@ uint8_t isValidRate(struct STATS_LLS_RATE_STAT *rate_stats)
 	case LLS_MODE_OFDM:
 		if (rate->nss >= 1 ||
 		    rate->bw >= STATS_LLS_MAX_OFDM_BW_NUM ||
-		    rate->rateMcsIdx >= STATS_LLS_OFDM_NUM)
+		    ofdm_idx >= STATS_LLS_OFDM_NUM)
 			goto invalid_rate;
 		break;
 	case LLS_MODE_CCK:
 		if (rate->nss >= 1 ||
 		    rate->bw >= STATS_LLS_MAX_CCK_BW_NUM ||
-		    rate->rateMcsIdx >= STATS_LLS_CCK_NUM)
+		    cck_idx >= STATS_LLS_CCK_NUM)
 			goto invalid_rate;
 		break;
 	case LLS_MODE_HT:
@@ -1060,22 +1061,24 @@ uint8_t isValidRate(struct STATS_LLS_RATE_STAT *rate_stats)
 	return TRUE;
 
 invalid_rate:
-	DBGLOG(REQ, ERROR, "Bad rate: preamble=%u, nss=%u, bw=%u, mcsIdx=%u",
-			rate->preamble, rate->nss, rate->bw, rate->rateMcsIdx);
+	DBGLOG(REQ, ERROR, "BAD:preamble=%u nss=%u bw=%u mcs=%u ofdm=%u cck=%u",
+			rate->preamble, rate->nss, rate->bw, rate->rateMcsIdx,
+			ofdm_idx, cck_idx);
 	return FALSE;
 }
 
 void update_peer_rxmpdu(struct STA_RECORD *prStaRec,
-		struct STATS_LLS_RATE_STAT *rate_stats)
+		struct STATS_LLS_RATE_STAT *rate_stats,
+		uint32_t ofdm_idx, uint32_t cck_idx)
 {
 	struct STATS_LLS_WIFI_RATE *rate = &rate_stats->rate;
 
 	if (rate->preamble == LLS_MODE_OFDM)
 		rate_stats->rx_mpdu = prStaRec->u4RxMpduOFDM
-					[rate->nss][rate->bw][rate->rateMcsIdx];
+					[rate->nss][rate->bw][ofdm_idx];
 	else if (rate->preamble == LLS_MODE_CCK)
 		rate_stats->rx_mpdu = prStaRec->u4RxMpduCCK
-					[rate->nss][rate->bw][rate->rateMcsIdx];
+					[rate->nss][rate->bw][cck_idx];
 	else if (rate->preamble == LLS_MODE_HT)
 		rate_stats->rx_mpdu = prStaRec->u4RxMpduHT
 					[rate->nss][rate->bw][rate->rateMcsIdx];
@@ -1111,7 +1114,8 @@ uint32_t fill_peer_info(uint8_t *dst, struct PEER_INFO_RATE_STAT *src,
 	uint32_t i;
 	uint32_t j;
 	uint8_t *orig = dst;
-	struct STATS_LLS_RATE_STAT tmp;
+	int32_t ofdm_idx;
+	int32_t cck_idx;
 
 	*num_peers = 0;
 	for (i = 0; i < CFG_STA_REC_NUM; i++, src++) {
@@ -1152,14 +1156,18 @@ uint32_t fill_peer_info(uint8_t *dst, struct PEER_INFO_RATE_STAT *src,
 		dst_peer->num_rate = 0;
 		dst_rate = (struct STATS_LLS_RATE_STAT *)dst;
 		src_rate = src->rate;
+		ofdm_idx = -1;
+		cck_idx = -1;
 		for (j = 0; j < STATS_LLS_RATE_NUM; j++, src_rate++) {
+			if (unlikely(src_rate->rate.preamble == LLS_MODE_OFDM))
+				ofdm_idx++;
+			if (unlikely(src_rate->rate.preamble == LLS_MODE_CCK))
+				cck_idx++;
+
+			if (!isValidRate(src_rate, ofdm_idx, cck_idx))
+				continue;
 			if (src_rate->tx_mpdu || src_rate->mpdu_lost ||
 					src_rate->retries) {
-				kalMemCopyFromIo(&tmp, src_rate,
-					sizeof(struct STATS_LLS_RATE_STAT));
-				if (!isValidRate(&tmp))
-					continue;
-
 				dst_peer->num_rate++;
 				DBGLOG(REQ, TRACE, "valid rate %u", j);
 				DBGLOG(REQ, TRACE,
@@ -1168,11 +1176,12 @@ uint32_t fill_peer_info(uint8_t *dst, struct PEER_INFO_RATE_STAT *src,
 							((uint8_t *)dst),
 					((uint8_t *)src_rate) -
 							((uint8_t *)src->rate));
-				kalMemCopy(dst_rate, &tmp,
+				kalMemCopyFromIo(dst_rate, src_rate,
 					sizeof(struct STATS_LLS_RATE_STAT));
 
 				if (sta_rec)
-					update_peer_rxmpdu(sta_rec, dst_rate);
+					update_peer_rxmpdu(sta_rec, dst_rate,
+							ofdm_idx, cck_idx);
 				if (prAdapter->rWifiVar.fgLinkStatsDump)
 					dumpLinkStatsRate(dst_rate, j);
 				dst_rate++;
