@@ -7710,7 +7710,7 @@ inline int32_t kalPerMonInit(IN struct GLUE_INFO
 			prPerMonitor->ulLastTxBytes[i] =
 				prDevHandler->stats.tx_bytes;
 			prPerMonitor->ulLastRxBytes[i] =
-				prDevHandler->stats.tx_bytes;
+				prDevHandler->stats.rx_bytes;
 			prPerMonitor->ulLastTxPackets[i] =
 				prDevHandler->stats.tx_packets;
 			prPerMonitor->ulLastRxPackets[i] =
@@ -7862,7 +7862,7 @@ static uint32_t kalPerMonUpdate(IN struct ADAPTER *prAdapter)
 		    rxDiffBytes[BSS_DEFAULT_NUM],
 		    rxDiffPkts[BSS_DEFAULT_NUM],
 		    txDiffPkts[BSS_DEFAULT_NUM];
-	signed long lastTxBytes, lastRxBytes, lastTxPkts, lastRxPkts;
+	unsigned long lastTxBytes, lastRxBytes, lastTxPkts, lastRxPkts;
 	unsigned long currentTxBytes, currentRxBytes;
 	unsigned long currentTxPkts, currentRxPkts;
 	uint64_t throughput = 0;
@@ -7902,33 +7902,28 @@ static uint32_t kalPerMonUpdate(IN struct ADAPTER *prAdapter)
 			currentTxPkts = perf->ulLastTxPackets[i];
 			currentRxPkts = perf->ulLastRxPackets[i];
 		}
-		lastTxBytes = (signed long) perf->ulLastTxBytes[i];
-		lastRxBytes = (signed long) perf->ulLastRxBytes[i];
+		lastTxBytes = perf->ulLastTxBytes[i];
+		lastRxBytes = perf->ulLastRxBytes[i];
 		perf->ulLastTxBytes[i] = currentTxBytes;
 		perf->ulLastRxBytes[i] = currentRxBytes;
-		txDiffBytes[i] = (signed long) currentTxBytes - lastTxBytes;
-		rxDiffBytes[i] = (signed long) currentRxBytes - lastRxBytes;
+		txDiffBytes[i] = (signed long) (currentTxBytes - lastTxBytes);
+		rxDiffBytes[i] = (signed long) (currentRxBytes - lastRxBytes);
 
-		lastTxPkts = (signed long) perf->ulLastTxPackets[i];
-		lastRxPkts = (signed long) perf->ulLastRxPackets[i];
+		lastTxPkts = perf->ulLastTxPackets[i];
+		lastRxPkts = perf->ulLastRxPackets[i];
 		perf->ulLastTxPackets[i] = currentTxPkts;
 		perf->ulLastRxPackets[i] = currentRxPkts;
-		txDiffPkts[i] = (signed long) currentTxPkts - lastTxPkts;
-		rxDiffPkts[i] = (signed long) currentRxPkts - lastRxPkts;
+		txDiffPkts[i] = (signed long) (currentTxPkts - lastTxPkts);
+		rxDiffPkts[i] = (signed long) (currentRxPkts - lastRxPkts);
 		perf->ulTxPacketsDiffLastSec[i] = txDiffPkts[i];
 		perf->ulRxPacketsDiffLastSec[i] = rxDiffPkts[i];
 
 		if (txDiffBytes[i] < 0 || rxDiffBytes[i] < 0) {
 			/* overflow should not happen */
 			DBGLOG(SW4, WARN,
-				"[i]wrong bytes: tx[%llu][%lld][%lld], rx[%llu][%lld][%lld],\n",
-				i,
-				(unsigned long long) currentTxBytes,
-				(long long) lastTxBytes,
-				(long long) txDiffBytes[i],
-				(unsigned long long) currentRxBytes,
-				(long long) lastRxBytes,
-				(long long) rxDiffBytes[i]);
+				"[%d]wrong bytes: tx[%lu][%lu][%ld], rx[%lu][%lu][%ld],\n",
+				i, currentTxBytes, lastTxBytes, txDiffBytes[i],
+				currentRxBytes, lastRxBytes, rxDiffBytes[i]);
 			goto fail;
 		}
 
