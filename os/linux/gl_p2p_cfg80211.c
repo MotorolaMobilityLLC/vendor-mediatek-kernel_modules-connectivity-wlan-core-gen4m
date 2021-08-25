@@ -1530,12 +1530,8 @@ int mtk_p2p_cfg80211_start_ap(struct wiphy *wiphy,
 			(ucRoleIdx == 0) &&
 			aisGetConnectedBssInfo(
 			prGlueInfo->prAdapter) &&
-			p2pFuncIsAPMode(
-			prGlueInfo->prAdapter->rWifiVar.
-			prP2PConnSettings[0]) &&
-			p2pFuncIsAPMode(
-			prGlueInfo->prAdapter->rWifiVar.
-			prP2PConnSettings[1])) {
+			p2pFuncIsDualAPMode(
+			prGlueInfo->prAdapter)) {
 			DBGLOG(P2P, WARN,
 				"Remove sap (role%d)\n",
 				ucRoleIdx);

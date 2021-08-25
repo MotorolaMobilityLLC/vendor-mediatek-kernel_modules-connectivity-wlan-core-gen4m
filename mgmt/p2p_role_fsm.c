@@ -3478,7 +3478,9 @@ void p2pRoleFsmRunEventBeaconUpdate(IN struct ADAPTER *prAdapter,
 			prBcnUpdateMsg->pucAssocRespIE,
 			prBcnUpdateMsg->u4AssocRespLen) == WLAN_STATUS_FAILURE)
 			DBGLOG(P2P, ERROR,
-				"Update extra IEs for asso resp fail!\n");
+				"Nss%d, Update extra IEs for asso resp fail!\n",
+				wlanGetSupportNss(prAdapter,
+				prP2pBssInfo->ucBssIndex));
 	}
 
 	if ((prP2pBssInfo->eCurrentOPMode == OP_MODE_ACCESS_POINT) &&
@@ -4238,10 +4240,7 @@ u_int8_t indicateApAcsOverwrite(
 		if (prAdapter->rWifiVar.ucApAcsChannel[0]) {
 			ucPrimaryCh = prAdapter->rWifiVar.ucApAcsChannel[0];
 			eChnlBw = prAdapter->rWifiVar.ucAp2gBandwidth;
-		} else if (p2pFuncIsAPMode(prAdapter->rWifiVar.
-			prP2PConnSettings[0]) &&
-			p2pFuncIsAPMode(prAdapter->rWifiVar.
-			prP2PConnSettings[1])) {
+		} else if (p2pFuncIsDualAPMode(prAdapter)) {
 			ucPrimaryCh = AP_DEFAULT_CHANNEL_2G;
 			eChnlBw = prAdapter->rWifiVar.ucAp2gBandwidth;
 		}

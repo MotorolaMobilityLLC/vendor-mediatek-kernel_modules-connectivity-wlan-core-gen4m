@@ -1293,8 +1293,6 @@ p2pFuncStartGO(IN struct ADAPTER *prAdapter,
 			(prP2pConnReqInfo->eConnRequest ==
 			P2P_CONNECTION_TYPE_PURE_AP) ? TRUE : FALSE, prBssInfo);
 
-		DBGLOG(P2P, TRACE, "Phy type: 0x%x\n", prBssInfo->ucPhyTypeSet);
-
 		prBssInfo->ucNonHTBasicPhyType = (uint8_t)
 			rNonHTApModeAttributes
 				[prBssInfo->ucConfigAdHocAPMode]
@@ -1334,6 +1332,11 @@ p2pFuncStartGO(IN struct ADAPTER *prAdapter,
 		}
 
 		bssInitForAP(prAdapter, prBssInfo, TRUE);
+
+		DBGLOG(P2P, TRACE, "Phy type: 0x%x, %d, %d\n",
+			prBssInfo->ucPhyTypeSet,
+			prBssInfo->ucConfigAdHocAPMode,
+			prBssInfo->ucNonHTBasicPhyType);
 
 #if 0
 		if (prBssInfo->ucBMCWlanIndex >= WTBL_SIZE) {
@@ -3756,6 +3759,17 @@ void p2pFuncValidateRxActionFrame(IN struct ADAPTER *prAdapter,
 
 	return;
 }				/* p2pFuncValidateRxMgmtFrame */
+
+u_int8_t p2pFuncIsDualAPMode(IN struct ADAPTER *prAdapter)
+{
+	if (prAdapter)
+		return p2pFuncIsAPMode(prAdapter->rWifiVar.
+			prP2PConnSettings[0]) &&
+			p2pFuncIsAPMode(prAdapter->rWifiVar.
+			prP2PConnSettings[1]);
+
+	return FALSE;
+}
 
 u_int8_t p2pFuncIsAPMode(IN struct P2P_CONNECTION_SETTINGS *prP2pConnSettings)
 {

@@ -11412,6 +11412,11 @@ wlanGetSupportNss(IN struct ADAPTER *prAdapter,
 	}
 #endif
 
+	if (IS_BSS_P2P(prBssInfo) && p2pFuncIsDualAPMode(prAdapter)) {
+		DBGLOG(SW4, LOUD, "Use 1x1 due to dual ap mode\n");
+		ucRetValNss = 1;
+	}
+
 	if (ucRetValNss > prAdapter->rWifiVar.ucNSS)
 		ucRetValNss = prAdapter->rWifiVar.ucNSS;
 
