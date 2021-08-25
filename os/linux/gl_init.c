@@ -5071,6 +5071,18 @@ int32_t wlanOnWhenProbeSuccess(struct GLUE_INFO *prGlueInfo,
 	wlanOnP2pRegistration(prGlueInfo, prAdapter, gprWdev[0]);
 	if (prAdapter->u4HostStatusEmiOffset)
 		kalSetSuspendFlagToEMI(prAdapter, FALSE);
+#if CFG_MODIFY_TX_POWER_BY_BAT_VOLT
+	if (wlan_bat_volt == 3550) {
+		kalEnableTxPwrBackoffByBattVolt(prAdapter, TRUE);
+		kalSetTxPwrBackoffByBattVolt(prAdapter, TRUE);
+		fgIsTxPowerDecreased = TRUE;
+	} else if (wlan_bat_volt == 3650) {
+		kalEnableTxPwrBackoffByBattVolt(prAdapter, TRUE);
+		kalSetTxPwrBackoffByBattVolt(prAdapter, FALSE);
+		fgIsTxPowerDecreased = FALSE;
+	}
+#endif
+
 	return 0;
 }
 
@@ -6143,6 +6155,10 @@ static int initWlan(void)
 	kalFbNotifierReg(prGlueInfo);
 	wlanRegisterNetdevNotifier();
 
+#if CFG_MODIFY_TX_POWER_BY_BAT_VOLT
+	kalBatNotifierReg(prGlueInfo);
+#endif
+
 #ifdef CONFIG_MTK_CONNSYS_DEDICATED_LOG_PATH
 	wifi_fwlog_event_func_register(consys_log_event_notification);
 #if (CFG_SUPPORT_ICS == 1)
@@ -6201,6 +6217,10 @@ static void exitWlan(void)
 	wlanUnregisterNetdevNotifier();
 
 	/* printk("remove %p\n", wlanRemove); */
+#if CFG_MODIFY_TX_POWER_BY_BAT_VOLT
+	kalBatNotifierUnReg();
+#endif
+
 #if CFG_CHIP_RESET_SUPPORT
 	glResetUninit();
 #endif

@@ -82,6 +82,10 @@
 #include <net/netlink.h>
 #endif
 
+#if CFG_MODIFY_TX_POWER_BY_BAT_VOLT
+#include "pmic_lbat_service.h"
+#endif
+
 #if CFG_TC1_FEATURE
 #include <tc1_partition.h>
 #endif
@@ -123,6 +127,11 @@
 #define MTKPROTO 25
 /* Multicast group, consistent in both kernel prog and user prog. */
 #define MTKGRP 22
+#endif
+
+#if CFG_MODIFY_TX_POWER_BY_BAT_VOLT
+#define BACKOFF_VOLT 3550
+#define RESTORE_VOLT 3650
 #endif
 
 /*******************************************************************************
@@ -196,6 +205,11 @@ static struct KAL_HALT_CTRL_T rHaltCtrl = {
 };
 /* framebuffer callback related variable and status flag */
 u_int8_t wlan_fb_power_down = FALSE;
+#if CFG_MODIFY_TX_POWER_BY_BAT_VOLT
+void *wlan_bat_volt_notifier_priv_data;
+unsigned int wlan_bat_volt;
+bool fgIsTxPowerDecreased = FALSE;
+#endif
 
 #if CFG_FORCE_ENABLE_PERF_MONITOR
 u_int8_t wlan_perf_monitor_force_enable = TRUE;
@@ -9910,6 +9924,149 @@ void nicEventTputFactorHandler(IN struct ADAPTER *prAdapter,
 
 	DBGLOG(INIT, WARN, "tputf> FEND\n");
 }
+
+#if CFG_MODIFY_TX_POWER_BY_BAT_VOLT
+void kalEnableTxPwrBackoffByBattVolt(struct ADAPTER *prAdapter, bool ucEnable)
+{
+	struct CMD_TX_POWER_PERCENTAGE_CTRL_T  rTxPwrPercentage;
+
+	ASSERT(prAdapter);
+
+	if (!prAdapter)
+		return;
+
+	rTxPwrPercentage.ucPowerCtrlFormatId = TX_POWER_PERCENTAGE_CTRL;
+	rTxPwrPercentage.fgPercentageEnable = ucEnable;
+	rTxPwrPercentage.ucBandIdx = 0;	/* TODO: how to get bandIdx */
+
+	DBGLOG(NIC, INFO, "kalEnableTxPwrBackoffByBattVolt, ucEnable = %d",
+				rTxPwrPercentage.fgPercentageEnable);
+
+	wlanSendSetQueryExtCmd(prAdapter,
+				CMD_ID_LAYER_0_EXT_MAGIC_NUM,
+			    EXT_CMD_ID_TX_POWER_FEATURE_CTRL,
+			    TRUE,
+			    FALSE, FALSE, NULL, NULL,
+			    sizeof(struct CMD_TX_POWER_PERCENTAGE_CTRL_T),
+			    (uint8_t *)&rTxPwrPercentage, NULL, 0);
+}
+
+void kalSetTxPwrBackoffByBattVolt(struct ADAPTER *prAdapter, bool ucEnable)
+{
+	struct CMD_TX_POWER_PERCENTAGE_DROP_CTRL_T  rTxPwrDrop;
+
+	ASSERT(prAdapter);
+
+	if (!prAdapter)
+		return;
+
+	rTxPwrDrop.ucPowerCtrlFormatId = TX_POWER_DROP_CTRL;
+	if (ucEnable)
+		rTxPwrDrop.i1PowerDropLevel =
+			prAdapter->rWifiVar.u4BackoffLevel;
+	else
+		rTxPwrDrop.i1PowerDropLevel = 0;
+	rTxPwrDrop.ucBandIdx = 0;   /* TODO: how to get bandIdx */
+
+	DBGLOG(NIC, INFO, "kalSetTxPwrBackoffByBattVolt, i1PowerDropLevel = %d",
+			rTxPwrDrop.i1PowerDropLevel);
+
+	wlanSendSetQueryExtCmd(prAdapter,
+				CMD_ID_LAYER_0_EXT_MAGIC_NUM,
+			    EXT_CMD_ID_TX_POWER_FEATURE_CTRL,
+			    TRUE,
+			    FALSE, FALSE, NULL, NULL,
+			    sizeof(struct CMD_TX_POWER_PERCENTAGE_DROP_CTRL_T),
+			    (uint8_t *)&rTxPwrDrop, NULL, 0);
+
+	if (prAdapter->rWifiVar.eDbdcMode == ENUM_DBDC_MODE_DYNAMIC) {
+		DBGLOG(NIC, INFO,
+			  "kalSetTxPwrBackoffByBattVolt, ENUM_DBDC_MODE_DYNAMIC");
+		rTxPwrDrop.ucBandIdx = 1;
+
+		wlanSendSetQueryExtCmd(prAdapter,
+				CMD_ID_LAYER_0_EXT_MAGIC_NUM,
+			    EXT_CMD_ID_TX_POWER_FEATURE_CTRL,
+			    TRUE,
+			    FALSE, FALSE, NULL, NULL,
+			    sizeof(struct CMD_TX_POWER_PERCENTAGE_DROP_CTRL_T),
+			    (uint8_t *)&rTxPwrDrop, NULL, 0);
+	}
+}
+
+static void kal_bat_volt_notifier_callback(unsigned int volt)
+{
+	struct GLUE_INFO *prGlueInfo =
+			(struct GLUE_INFO *)wlan_bat_volt_notifier_priv_data;
+	struct ADAPTER *prAdapter = NULL;
+	struct REG_INFO *prRegInfo = NULL;
+
+	wlan_bat_volt = volt;
+	if (prGlueInfo == NULL) {
+		DBGLOG(NIC, ERROR, "volt = %d, prGlueInfo is NULL", volt);
+		return;
+	}
+	prAdapter = prGlueInfo->prAdapter;
+	prRegInfo = &prGlueInfo->rRegInfo;
+
+	if (prRegInfo == NULL || prGlueInfo->prAdapter == NULL) {
+		DBGLOG(NIC, ERROR,
+			"volt = %d, prRegInfo or prAdapter is NULL", volt);
+		return;
+	}
+	if (prGlueInfo->ulFlag & GLUE_FLAG_HALT) {
+		DBGLOG(NIC, ERROR, "volt = %d, Wi-Fi is stopped", volt);
+		fgIsTxPowerDecreased = FALSE;
+		return;
+	}
+
+	kalEnableTxPwrBackoffByBattVolt(prAdapter, TRUE);
+
+	if (volt == RESTORE_VOLT && fgIsTxPowerDecreased == TRUE) {
+		kalSetTxPwrBackoffByBattVolt(prAdapter, FALSE);
+		fgIsTxPowerDecreased = FALSE;
+	} else if (volt == BACKOFF_VOLT && fgIsTxPowerDecreased == FALSE) {
+		kalSetTxPwrBackoffByBattVolt(prAdapter, TRUE);
+		fgIsTxPowerDecreased = TRUE;
+	}
+}
+
+int32_t kalBatNotifierReg(IN struct GLUE_INFO *prGlueInfo)
+{
+	int32_t i4Ret = 0;
+#if (KERNEL_VERSION(4, 19, 0) <= LINUX_VERSION_CODE)
+	static struct lbat_user *lbat_pt;
+#else
+	static struct lbat_user rWifiBatVolt;
+#endif
+	wlan_bat_volt_notifier_priv_data = prGlueInfo;
+	wlan_bat_volt = 0;
+#if (KERNEL_VERSION(4, 19, 0) <= LINUX_VERSION_CODE)
+	lbat_pt = lbat_user_register("WiFi Get Battery Voltage", RESTORE_VOLT,
+				BACKOFF_VOLT, 2000,
+				kal_bat_volt_notifier_callback);
+	if (IS_ERR(lbat_pt))
+		i4Ret = PTR_ERR(lbat_pt);
+#else
+	i4Ret = lbat_user_register(&rWifiBatVolt, "WiFi Get Battery Voltage",
+				RESTORE_VOLT, BACKOFF_VOLT, 2000,
+			kal_bat_volt_notifier_callback);
+#endif
+
+	if (i4Ret)
+		DBGLOG(SW4, ERROR, "Register rWifiBatVolt failed:%d\n", i4Ret);
+	else
+		DBGLOG(SW4, INFO, "Register rWifiBatVolt succeed\n");
+
+	return i4Ret;
+}
+
+void kalBatNotifierUnReg(void)
+{
+	wlan_bat_volt_notifier_priv_data = NULL;
+}
+
+#endif
 
 #if KERNEL_VERSION(5, 4, 0) <= CFG80211_VERSION_CODE
 MODULE_IMPORT_NS(VFS_internal_I_am_really_a_filesystem_and_am_NOT_a_driver);
