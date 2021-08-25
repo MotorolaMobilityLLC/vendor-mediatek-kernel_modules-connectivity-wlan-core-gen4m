@@ -1019,28 +1019,6 @@ struct STA_RECORD *find_peer_starec(struct ADAPTER *prAdapter,
 	return prStaRec;
 }
 
-/**
- * The rate of OFDM and CCK shall be represented in the unit of 0.5 Mbps.
- * Otherwise, use McsIdx.
- */
-void rate_mcsIdx_conversion(struct STATS_LLS_RATE_STAT *rate)
-{
-	static const uint32_t OFDM_RATE[STATS_LLS_OFDM_NUM] = {
-					12, 18, 24, 36, 48, 72, 96, 108};
-	static const uint32_t CCK_RATE[STATS_LLS_CCK_NUM] = {2, 4, 11, 22};
-	uint32_t idx = rate->rate.rateMcsIdx;
-
-	if (rate->rate.preamble >= LLS_MODE_HT)
-		return;
-
-	if (rate->rate.preamble == LLS_MODE_OFDM)
-		rate->rate.rateMcsIdx = OFDM_RATE[rate->rate.rateMcsIdx];
-	else if (rate->rate.preamble == LLS_MODE_CCK)
-		rate->rate.rateMcsIdx = CCK_RATE[rate->rate.rateMcsIdx];
-
-	DBGLOG(REQ, TRACE, "McsIdx %u -> %u", idx, rate->rate.rateMcsIdx);
-}
-
 uint8_t isValidRate(struct STATS_LLS_RATE_STAT *rate_stats)
 {
 	struct STATS_LLS_WIFI_RATE *rate = &rate_stats->rate;
@@ -1195,7 +1173,6 @@ uint32_t fill_peer_info(uint8_t *dst, struct PEER_INFO_RATE_STAT *src,
 
 				if (sta_rec)
 					update_peer_rxmpdu(sta_rec, dst_rate);
-				rate_mcsIdx_conversion(dst_rate);
 				if (prAdapter->rWifiVar.fgLinkStatsDump)
 					dumpLinkStatsRate(dst_rate, j);
 				dst_rate++;
