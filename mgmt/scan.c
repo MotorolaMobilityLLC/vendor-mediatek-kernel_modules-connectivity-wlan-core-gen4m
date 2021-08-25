@@ -1362,6 +1362,10 @@ void scanHandleRnrSsid(IN struct PARAM_SCAN_REQUEST_ADV *prScanRequest,
 	uint8_t i, fgHasEqualSsid = FALSE;
 	struct PARAM_SSID *prSsid;
 
+	/* For coverity check, ucBssidNum shall not smaller than 1 */
+	if (ucBssidNum < 1)
+		ucBssidNum = 1;
+
 	/* Check this SSID has recorded or not */
 	for (i = 0; i < prScanRequest->u4SsidNum; i++) {
 		if (EQUAL_SSID(prScanRequest->rSsid[i].aucSsid,
@@ -1394,8 +1398,11 @@ uint8_t scanGetRnrChannel(IN struct NEIGHBOR_AP_INFO_FIELD
 {
 	uint8_t ucRnrChNum;
 	struct ieee80211_channel *prChannel;
-	enum nl80211_band band;
-
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	enum nl80211_band band = NL80211_BAND_6GHZ;
+#else
+	enum nl80211_band band = NL80211_BAND_2GHZ;
+#endif
 	/* get channel number for this neighborAPInfo */
 	ieee80211_operating_class_to_band(
 			prNeighborAPInfoField->ucOpClass, &band);
@@ -1419,7 +1426,11 @@ void scanProcessRnrChannel(IN uint8_t ucRnrChNum,
 	IN struct PARAM_SCAN_REQUEST_ADV *prScanRequest)
 {
 	uint8_t i, ucHasSameCh = FALSE;
-	enum nl80211_band band;
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	enum nl80211_band band = NL80211_BAND_6GHZ;
+#else
+	enum nl80211_band band = NL80211_BAND_2GHZ;
+#endif
 
 	/* get channel number for this neighborAPInfo */
 	ieee80211_operating_class_to_band(u2OpClass, &band);
