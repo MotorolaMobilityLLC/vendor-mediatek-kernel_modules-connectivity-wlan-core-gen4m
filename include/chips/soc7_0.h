@@ -187,7 +187,7 @@ int soc7_0_get_rx_rate_info(IN struct ADAPTER *prAdapter,
 		OUT uint32_t *pu4Sgi);
 #endif
 
-#ifdef CFG_SUPPORT_LLS
+#if CFG_SUPPORT_LLS
 void soc7_0_get_rx_link_stats(IN struct ADAPTER *prAdapter,
 	IN struct SW_RFB *prRetSwRfb, IN uint32_t u4RxVector0);
 #endif

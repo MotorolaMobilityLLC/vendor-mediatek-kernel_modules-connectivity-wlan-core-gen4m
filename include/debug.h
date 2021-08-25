@@ -523,7 +523,7 @@ struct CHIP_DBG_OPS {
 #endif
 #endif
 
-#ifdef CFG_SUPPORT_LLS
+#if CFG_SUPPORT_LLS
 	void (*get_rx_link_stats)(
 		IN struct ADAPTER *prAdapter,
 		IN struct SW_RFB *prRetSwRfb,

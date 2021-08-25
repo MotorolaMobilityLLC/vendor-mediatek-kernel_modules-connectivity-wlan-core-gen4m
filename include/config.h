@@ -1072,7 +1072,7 @@
 
 #define CFG_SUPPORT_TX_LATENCY_STATS 1
 
-#define CFG_SUPPORT_LLS 0
+#define CFG_SUPPORT_LLS 1
 
 /*------------------------------------------------------------------------------
  * Flags for prepare the FW compile flag

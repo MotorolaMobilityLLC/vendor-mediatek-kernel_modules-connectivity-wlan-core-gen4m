@@ -1289,9 +1289,14 @@ struct WIFI_VAR {
 	uint32_t au4ConnsysTxDelayMax[LATENCY_STATS_MAX_SLOTS]; /* in ms */
 	uint32_t au4ConnsysTxFailDelayMax[LATENCY_STATS_MAX_SLOTS]; /* in ms */
 #endif /* CFG_SUPPORT_TX_LATENCY_STATS */
+
 #if CFG_MODIFY_TX_POWER_BY_BAT_VOLT
 	uint32_t u4BackoffLevel;
 #endif
+
+#if CFG_SUPPORT_LLS
+	u_int8_t fgLinkStatsDump;
+#endif /* CFG_SUPPORT_LLS */
 };
 
 /* cnm_timer module */

@@ -7858,6 +7858,11 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 	prWifiVar->au4ConnsysTxFailDelayMax[4] = UINT_MAX;
 #endif /* CFG_SUPPORT_TX_LATENCY_STATS */
 
+#if CFG_SUPPORT_LLS
+	prWifiVar->fgLinkStatsDump = (bool)wlanCfgGetUint32(
+		prAdapter, "LinkStatsDump", 0);
+#endif
+
 	u4PlatformBoostCpuTh = kalGetCpuBoostThreshold();
 	prWifiVar->u4BoostCpuTh =
 		(uint32_t) wlanCfgGetUint32(prAdapter, "BoostCpuTh",

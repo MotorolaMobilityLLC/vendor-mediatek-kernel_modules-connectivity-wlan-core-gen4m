@@ -865,162 +865,138 @@ nla_put_failure:
 
 
 #if CFG_SUPPORT_LLS
-void dumpLinkStatsIface(struct HAL_LLS_FULL_REPORT *lls)
+void dumpLinkStatsIface(struct STATS_LLS_WIFI_IFACE_STAT *iface)
 {
-#if !DBG_DISABLE_ALL_LOG
-	DBGLOG(REQ, TRACE, "iface.iface=%p", lls->iface.iface);
-	DBGLOG(REQ, TRACE, "iface.info.mode=%u", lls->iface.info.mode);
-	DBGLOG(REQ, TRACE, "iface.info.mac_addr=%pM", lls->iface.info.mac_addr);
-	DBGLOG(REQ, TRACE, "iface.info.state=%u", lls->iface.info.state);
-	DBGLOG(REQ, TRACE, "iface.info.roaming=%u", lls->iface.info.roaming);
-	DBGLOG(REQ, TRACE, "iface.info.capabilities=%u",
-			lls->iface.info.capabilities);
-	DBGLOG(REQ, TRACE, "iface.info.ssid=%s", lls->iface.info.ssid);
-	DBGLOG(REQ, TRACE, "iface.info.bssid=%pM", lls->iface.info.bssid);
-	DBGLOG(REQ, TRACE, "iface.info.ap_country_str=%u%u%u",
-			lls->iface.info.ap_country_str[0],
-			lls->iface.info.ap_country_str[1],
-			lls->iface.info.ap_country_str[2]);
-	DBGLOG(REQ, TRACE, "iface.info.country_str=%u%u%u",
-			lls->iface.info.country_str[0],
-			lls->iface.info.country_str[1],
-			lls->iface.info.country_str[2]);
-	DBGLOG(REQ, TRACE, "iface.info.time_slicing_duty_cycle_percent=%u",
-			lls->iface.info.time_slicing_duty_cycle_percent);
-	DBGLOG(REQ, TRACE, "iface.beacon_rx=%u", lls->iface.beacon_rx);
-	DBGLOG(REQ, TRACE, "iface.average_tsf_offset=%llu",
-			lls->iface.average_tsf_offset);
-	DBGLOG(REQ, TRACE, "iface.leaky_ap_detected=%u",
-			lls->iface.leaky_ap_detected);
-	DBGLOG(REQ, TRACE, "iface.leaky_ap_avg_num_frames_leaked=%u",
-			lls->iface.leaky_ap_avg_num_frames_leaked);
-	DBGLOG(REQ, TRACE, "iface.leaky_ap_guard_time=%u",
-			lls->iface.leaky_ap_guard_time);
-	DBGLOG(REQ, TRACE, "iface.mgmt_rx=%u", lls->iface.mgmt_rx);
-	DBGLOG(REQ, TRACE, "iface.mgmt_action_rx=%u",
-			lls->iface.mgmt_action_rx);
-	DBGLOG(REQ, TRACE, "iface.mgmt_action_tx=%u",
-			lls->iface.mgmt_action_tx);
-	DBGLOG(REQ, TRACE, "iface.rssi_mgmt=%u", lls->iface.rssi_mgmt);
-	DBGLOG(REQ, TRACE, "iface.rssi_data=%u", lls->iface.rssi_data);
-	DBGLOG(REQ, TRACE, "iface.rssi_ack=%u", lls->iface.rssi_ack);
-	DBGLOG(REQ, TRACE, "iface.num_peers=%u", lls->iface.num_peers);
-#endif
+	DBGLOG(REQ, INFO, "Dump iface");
+
+	DBGLOG(REQ, INFO, "%p %u "MACSTR " %u %u %u %s" MACSTR " %u%u%u %u%u%u",
+			iface->iface,
+			iface->info.mode,
+			MAC2STR(iface->info.mac_addr),
+			iface->info.state,
+			iface->info.roaming,
+			iface->info.capabilities,
+			iface->info.ssid,
+			MAC2STR(iface->info.bssid),
+			iface->info.ap_country_str[0],
+			iface->info.ap_country_str[1],
+			iface->info.ap_country_str[2],
+			iface->info.country_str[0],
+			iface->info.country_str[1],
+			iface->info.country_str[2]);
+
+	DBGLOG(REQ, INFO, "%u %u %llu %u %u %u %u %u %u %u %u %u [%u]",
+			iface->info.time_slicing_duty_cycle_percent,
+			iface->beacon_rx,
+			iface->average_tsf_offset,
+			iface->leaky_ap_detected,
+			iface->leaky_ap_avg_num_frames_leaked,
+			iface->leaky_ap_guard_time,
+			iface->mgmt_rx,
+			iface->mgmt_action_rx,
+			iface->mgmt_action_tx,
+			iface->rssi_mgmt,
+			iface->rssi_data,
+			iface->rssi_ack,
+			iface->num_peers);
 }
 
 void dumpLinkStatsAc(struct STATS_LLS_WMM_AC_STAT *ac_stat,
 		enum ENUM_STATS_LLS_AC ac)
 {
-#if !DBG_DISABLE_ALL_LOG
-	char *s[STATS_LLS_WIFI_AC_MAX] = {"VO", "VI", "BE", "BK"};
+	static const char * const s[STATS_LLS_WIFI_AC_MAX] = {
+		"VO", "VI", "BE", "BK"};
 
-	DBGLOG(REQ, TRACE, "ac[%s].ac=%u", s[ac], ac_stat[ac].ac);
-	DBGLOG(REQ, TRACE, "ac[%s].tx_mpdu=%u", s[ac], ac_stat[ac].tx_mpdu);
-	DBGLOG(REQ, TRACE, "ac[%s].rx_mpdu=%u", s[ac], ac_stat[ac].rx_mpdu);
-	DBGLOG(REQ, TRACE, "ac[%s].tx_mcast=%u", s[ac], ac_stat[ac].tx_mcast);
-	DBGLOG(REQ, TRACE, "ac[%s].rx_mcast=%u", s[ac], ac_stat[ac].rx_mcast);
-	DBGLOG(REQ, TRACE, "ac[%s].rx_ampdu=%u", s[ac], ac_stat[ac].rx_ampdu);
-	DBGLOG(REQ, TRACE, "ac[%s].tx_ampdu=%u", s[ac], ac_stat[ac].tx_ampdu);
-	DBGLOG(REQ, TRACE, "ac[%s].mpdu_lost=%u", s[ac], ac_stat[ac].mpdu_lost);
-	DBGLOG(REQ, TRACE, "ac[%s].retries=%u", s[ac], ac_stat[ac].retries);
-	DBGLOG(REQ, TRACE, "ac[%s].retries_short=%u",
-			s[ac], ac_stat[ac].retries_short);
-	DBGLOG(REQ, TRACE, "ac[%s].retries_long=%u",
-			s[ac], ac_stat[ac].retries_long);
-	DBGLOG(REQ, TRACE, "ac[%s].contention_time_min=%u",
-			s[ac], ac_stat[ac].contention_time_min);
-	DBGLOG(REQ, TRACE, "ac[%s].contention_time_max=%u",
-			s[ac], ac_stat[ac].contention_time_max);
-	DBGLOG(REQ, TRACE, "ac[%s].contention_time_avg=%u",
-			s[ac], ac_stat[ac].contention_time_avg);
-	DBGLOG(REQ, TRACE, "ac[%s].contention_num_samples=%u",
-			s[ac], ac_stat[ac].contention_num_samples);
-#endif
+	DBGLOG(REQ, INFO, "AC[%s] %u %u %u %u %u %u %u %u %u %u %u %u %u %u %u",
+			s[ac],
+			ac_stat[ac].ac,
+			ac_stat[ac].tx_mpdu,
+			ac_stat[ac].rx_mpdu,
+			ac_stat[ac].tx_mcast,
+			ac_stat[ac].rx_mcast,
+			ac_stat[ac].rx_ampdu,
+			ac_stat[ac].tx_ampdu,
+			ac_stat[ac].mpdu_lost,
+			ac_stat[ac].retries,
+			ac_stat[ac].retries_short,
+			ac_stat[ac].retries_long,
+			ac_stat[ac].contention_time_min,
+			ac_stat[ac].contention_time_max,
+			ac_stat[ac].contention_time_avg,
+			ac_stat[ac].contention_num_samples);
 }
 
 
-void dumpLinkStatsPeerInfo(struct PEER_INFO_RATE_STAT *peer, uint32_t idx)
+void dumpLinkStatsPeerInfo(struct STATS_LLS_PEER_INFO *peer, uint32_t idx)
 {
-#if !DBG_DISABLE_ALL_LOG
-	DBGLOG(REQ, TRACE, "Dump peer_info %u", idx);
+	static const char * const type[STATS_LLS_WIFI_PEER_INVALID + 1] = {
+		"STA", "AP", "P2P_GO", "P2P_CLIENT", "NAN", "TDLS", "INVALID"};
 
-	DBGLOG(REQ, TRACE, "peer.type=%u", peer->peer.type);
-	DBGLOG(REQ, TRACE, "peer.peer_mac_address=%pM",
-			peer->peer.peer_mac_address);
-	DBGLOG(REQ, TRACE, "peer.capabilities=%u", peer->peer.capabilities);
-	DBGLOG(REQ, TRACE, "peer.bssload.sta_count=%u",
-			peer->peer.bssload.sta_count);
-	DBGLOG(REQ, TRACE, "peer.bssload.chan_util=%u",
-			peer->peer.bssload.chan_util);
-	DBGLOG(REQ, TRACE, "peer.num_rate=%u", peer->peer.num_rate);
-#endif
+	DBGLOG(REQ, INFO, "Peer(%u) %u(%s)" MACSTR "%u %u %u [%u]",
+			idx,
+			peer->type, type[peer->type],
+			MAC2STR(peer->peer_mac_address),
+			peer->capabilities,
+			peer->bssload.sta_count,
+			peer->bssload.chan_util,
+			peer->num_rate);
 }
 
 
 void dumpLinkStatsRate(struct STATS_LLS_RATE_STAT *rate, uint32_t idx)
 {
-#if !DBG_DISABLE_ALL_LOG
-	DBGLOG(REQ, TRACE, "Dump rate %u", idx);
+	static const char * const preamble[] = {
+		"OFDM", "CCK", "HT", "VHT", "HE", "", "", ""};
 
-	DBGLOG(REQ, TRACE, "rate.rate.preamble=%u", rate->rate.preamble);
-	DBGLOG(REQ, TRACE, "rate.rate.nss=%u", rate->rate.nss);
-	DBGLOG(REQ, TRACE, "rate.rate.bw=%u", rate->rate.bw);
-	DBGLOG(REQ, TRACE, "rate.rate.rateMcsIdx=%u", rate->rate.rateMcsIdx);
-	DBGLOG(REQ, TRACE, "rate.rate.bitrate=%u", rate->rate.bitrate);
-
-	DBGLOG(REQ, TRACE, "rate.tx_mpdu=%u", rate->tx_mpdu);
-	DBGLOG(REQ, TRACE, "rate.rx_mpdu=%u", rate->rx_mpdu);
-	DBGLOG(REQ, TRACE, "rate.mpdu_lost=%u", rate->mpdu_lost);
-	DBGLOG(REQ, TRACE, "rate.retries=%u", rate->retries);
-	DBGLOG(REQ, TRACE, "rate.retries_short=%u", rate->retries_short);
-	DBGLOG(REQ, TRACE, "rate.retries_long=%u", rate->retries_long);
-#endif
+	DBGLOG(REQ, INFO, "Rate(%u) %u(%s) %u %u %u %u %u %u %u %u %u %u",
+			idx,
+			rate->rate.preamble, rate->rate.preamble > 4 ? "" :
+			preamble[rate->rate.preamble],
+			rate->rate.nss,
+			rate->rate.bw,
+			rate->rate.rateMcsIdx,
+			rate->rate.bitrate,
+			rate->tx_mpdu,
+			rate->rx_mpdu,
+			rate->mpdu_lost,
+			rate->retries,
+			rate->retries_short,
+			rate->retries_long);
 }
 
 void dumpLinkStatsRadio(struct STATS_LLS_WIFI_RADIO_STAT *radio, uint32_t idx)
 {
-#if !DBG_DISABLE_ALL_LOG
-	DBGLOG(REQ, TRACE, "Dump radio %u", idx);
-
-	DBGLOG(REQ, TRACE, "radio.radio=%d", radio->radio);
-	DBGLOG(REQ, TRACE, "radio.on_time=%u", radio->on_time);
-	DBGLOG(REQ, TRACE, "radio.tx_time=%u", radio->tx_time);
-	DBGLOG(REQ, TRACE, "radio.num_tx_levels=%u", radio->num_tx_levels);
-	DBGLOG(REQ, TRACE, "radio.tx_time_per_levels=%p",
-			radio->tx_time_per_levels);
-	DBGLOG(REQ, TRACE, "radio.tx_time=%u", radio->tx_time);
-	DBGLOG(REQ, TRACE, "radio.on_time_scan=%u", radio->on_time_scan);
-	DBGLOG(REQ, TRACE, "radio.on_time_nbd=%u", radio->on_time_nbd);
-	DBGLOG(REQ, TRACE, "radio.on_time_gscan=%u", radio->on_time_gscan);
-	DBGLOG(REQ, TRACE, "radio.on_time_roam_scan=%u",
-			radio->on_time_roam_scan);
-	DBGLOG(REQ, TRACE, "radio.on_time_pno_scan=%u",
-			radio->on_time_pno_scan);
-	DBGLOG(REQ, TRACE, "radio.on_time_hs20=%u", radio->on_time_hs20);
-	DBGLOG(REQ, TRACE, "radio.num_channels=%u", radio->num_channels);
-#endif
+	DBGLOG(REQ, INFO, "Radio(%u) %d %u %u %u %p %u %u %u %u %u %u %u [%u]",
+			idx,
+			radio->radio,
+			radio->on_time,
+			radio->tx_time,
+			radio->num_tx_levels,
+			radio->tx_time_per_levels,
+			radio->tx_time,
+			radio->on_time_scan,
+			radio->on_time_nbd,
+			radio->on_time_gscan,
+			radio->on_time_roam_scan,
+			radio->on_time_pno_scan,
+			radio->on_time_hs20,
+			radio->num_channels);
 }
 
 void dumpLinkStatsChannel(struct STATS_LLS_CHANNEL_STAT *channel, uint32_t idx)
 {
-#if !DBG_DISABLE_ALL_LOG
-	DBGLOG(REQ, TRACE, "Dump channel %u", idx);
-
-	DBGLOG(REQ, TRACE, "channel.channel.width=%u", channel->channel.width);
-	DBGLOG(REQ, TRACE, "channel.channel.center_freq=%d",
-			channel->channel.center_freq);
-	DBGLOG(REQ, TRACE, "channel.channel.center_freq0=%d",
-			channel->channel.center_freq0);
-	DBGLOG(REQ, TRACE, "channel.channel.center_freq1=%d",
-			channel->channel.center_freq1);
-	DBGLOG(REQ, TRACE, "channel->on_time=%u", channel->on_time);
-	DBGLOG(REQ, TRACE, "channel->cca_busy_time=%u", channel->cca_busy_time);
-#endif
+	DBGLOG(REQ, INFO, "Channel(%u) %u %d %d %d %u %u",
+			idx,
+			channel->channel.center_freq,
+			channel->channel.width,
+			channel->channel.center_freq0,
+			channel->channel.center_freq1,
+			channel->on_time,
+			channel->cca_busy_time);
 }
 
 
-struct STA_RECORD *
-find_peer_starec(struct ADAPTER *prAdapter,
+struct STA_RECORD *find_peer_starec(struct ADAPTER *prAdapter,
 		struct STATS_LLS_PEER_INFO *peer_info)
 {
 	struct STA_RECORD *prStaRec;
@@ -1065,8 +1041,7 @@ void rate_mcsIdx_conversion(struct STATS_LLS_RATE_STAT *rate)
 	DBGLOG(REQ, TRACE, "McsIdx %u -> %u", idx, rate->rate.rateMcsIdx);
 }
 
-void
-update_peer_rxmpdu(struct STA_RECORD *prStaRec,
+void update_peer_rxmpdu(struct STA_RECORD *prStaRec,
 		struct STATS_LLS_RATE_STAT *rate_stats)
 {
 	struct STATS_LLS_WIFI_RATE *rate = &rate_stats->rate;
@@ -1152,10 +1127,11 @@ uint32_t fill_peer_info(uint8_t *dst, struct PEER_INFO_RATE_STAT *src,
 		kalMemCopyFromIo(dst_peer, src_peer,
 				sizeof(struct STATS_LLS_PEER_INFO));
 
-		DBGLOG(REQ, TRACE, "Peer MAC: %pM", dst_peer->peer_mac_address);
+		DBGLOG(REQ, TRACE, "Peer MAC: " MACSTR,
+				MAC2STR(dst_peer->peer_mac_address));
 		sta_rec = find_peer_starec(prAdapter, dst_peer);
 		if (sta_rec == NULL) {
-			DBGLOG(REQ, WARN, "MAC not found: "MACSTR,
+			DBGLOG(REQ, WARN, "MAC not found: " MACSTR,
 					MAC2STR(dst_peer->peer_mac_address));
 		}
 		if (src_peer->type == STATS_LLS_WIFI_PEER_AP) {
@@ -1169,6 +1145,8 @@ uint32_t fill_peer_info(uint8_t *dst, struct PEER_INFO_RATE_STAT *src,
 			}
 		}
 
+		if (prAdapter->rWifiVar.fgLinkStatsDump)
+			dumpLinkStatsPeerInfo(dst_peer, i);
 		dst += sizeof(struct STATS_LLS_PEER_INFO);
 
 		dst_peer->num_rate = 0;
@@ -1191,6 +1169,8 @@ uint32_t fill_peer_info(uint8_t *dst, struct PEER_INFO_RATE_STAT *src,
 				if (sta_rec)
 					update_peer_rxmpdu(sta_rec, dst_rate);
 				rate_mcsIdx_conversion(dst_rate);
+				if (prAdapter->rWifiVar.fgLinkStatsDump)
+					dumpLinkStatsRate(dst_rate, j);
 				dst_rate++;
 			}
 		}
@@ -1233,6 +1213,13 @@ uint32_t fill_iface(uint8_t *dst, struct HAL_LLS_FULL_REPORT *src,
 	iface->ac[STATS_LLS_WIFI_AC_BK].rx_mpdu =
 				prAdapter->u4RxMpduAc[STATS_LLS_WIFI_AC_BK];
 
+	if (prAdapter->rWifiVar.fgLinkStatsDump) {
+		int i = 0;
+
+		dumpLinkStatsIface(iface);
+		for (i = 0; i < STATS_LLS_WIFI_AC_MAX; i++)
+			dumpLinkStatsAc(iface->ac, i);
+	}
 	dst += sizeof(struct STATS_LLS_WIFI_IFACE_STAT);
 
 	dst += fill_peer_info(dst, src->peer_info,
@@ -1251,7 +1238,7 @@ uint32_t fill_iface(uint8_t *dst, struct HAL_LLS_FULL_REPORT *src,
  *     STATS_LLS_CHANNEL_STAT[] <-- up to 46 (2.4 + 5G; 6G will be more)
  */
 uint32_t fill_radio(uint8_t *dst, struct WIFI_RADIO_CHANNEL_STAT *src,
-		uint32_t num_radio)
+		uint32_t num_radio, struct ADAPTER *prAdapter)
 {
 	struct STATS_LLS_WIFI_RADIO_STAT *radio;
 	struct STATS_LLS_CHANNEL_STAT *src_ch;
@@ -1266,6 +1253,8 @@ uint32_t fill_radio(uint8_t *dst, struct WIFI_RADIO_CHANNEL_STAT *src,
 		radio = (struct STATS_LLS_WIFI_RADIO_STAT *)dst;
 		dst += sizeof(struct STATS_LLS_WIFI_RADIO_STAT);
 
+		if (prAdapter->rWifiVar.fgLinkStatsDump)
+			dumpLinkStatsRadio(radio, i);
 		radio->num_channels = 0;
 
 		src_ch = src->channel;
@@ -1275,7 +1264,9 @@ uint32_t fill_radio(uint8_t *dst, struct WIFI_RADIO_CHANNEL_STAT *src,
 				(!src_ch->on_time && !src_ch->cca_busy_time))
 				continue;
 			radio->num_channels++;
-			*dst_ch = *src_ch;
+			kalMemCopyFromIo(dst_ch, src_ch, sizeof(*dst_ch));
+			if (prAdapter->rWifiVar.fgLinkStatsDump)
+				dumpLinkStatsChannel(dst_ch, j);
 			dst_ch++;
 		}
 
@@ -1370,7 +1361,7 @@ int mtk_cfg80211_vendor_llstats_get_info(struct wiphy *wiphy,
 		*(uint32_t *)ptr = ENUM_BAND_NUM;
 		ptr += sizeof(uint32_t);
 
-		ptr += fill_radio(ptr, src->radio, ENUM_BAND_NUM);
+		ptr += fill_radio(ptr, src->radio, ENUM_BAND_NUM, prAdapter);
 		DBGLOG(REQ, INFO, "Collected %u bytes for LLS", ptr - buf);
 
 		skb = cfg80211_vendor_cmd_alloc_reply_skb(wiphy, ptr - buf);

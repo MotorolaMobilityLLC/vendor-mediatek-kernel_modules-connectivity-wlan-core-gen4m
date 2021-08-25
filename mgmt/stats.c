@@ -1095,6 +1095,7 @@ statsCgsAirLatHdlr(struct GLUE_INFO *prGlueInfo,
 	} query = {0};
 	uint32_t u4QueryBufLen;
 	uint32_t u4QueryInfoLen;
+	uint32_t rStatus = WLAN_STATUS_SUCCESS;
 #endif
 
 	prAirLat = (struct STATS_CGS_LAT_STAT_T *)(&prStatTlv->aucBuffer[0]);
@@ -1102,8 +1103,6 @@ statsCgsAirLatHdlr(struct GLUE_INFO *prGlueInfo,
 	kalMemZero(prAirLat->au4AirLatMpdu, sizeof(uint32_t) * AIR_LAT_CAT_NUM);
 
 #if CFG_SUPPORT_LLS
-	int32_t rStatus = WLAN_STATUS_SUCCESS;
-
 	u4QueryBufLen = sizeof(query);
 	u4QueryInfoLen = sizeof(query);
 
