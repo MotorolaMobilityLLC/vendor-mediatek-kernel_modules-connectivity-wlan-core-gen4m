@@ -70,6 +70,7 @@
  */
 #include "precomp.h"
 #include "rlm_txpwr_init.h"
+#include "mot_config.h"
 
 /*******************************************************************************
  *                              C O N S T A N T S
@@ -8030,11 +8031,26 @@ void txPwrCtrlGlobalVariableToList(struct ADAPTER *prAdapter)
 			  "config list, after loadding global variables");
 }
 
+
+
 void txPwrCtrlCfgFileToList(struct ADAPTER *prAdapter)
 {
 	uint8_t *pucConfigBuf = NULL;
 	uint32_t u4ConfigReadLen = 0;
+	char motoConfigName[ARRAY_VALUE_MAX] = {0}; // IKSWR-130356
+	int motoRet = 1;// IKSWR-130356
 
+	// IKSWR-130356
+	get_moto_config_file_name(motoConfigName, TXPOWERCTRL_CFG_INDEX);
+	if (strlen(motoConfigName)) {
+		motoRet = kalRequestFirmware(motoConfigName, &pucConfigBuf,
+				  &u4ConfigReadLen, TRUE,
+				  kalGetGlueDevHdl(prAdapter->prGlueInfo));
+	}
+	// END IKSWR-130356
+	if (motoRet == 0) {
+		/* ToDo:: Nothing */
+	} else
 	if (kalRequestFirmware("txpowerctrl.cfg", &pucConfigBuf,
 	    &u4ConfigReadLen, TRUE,
 	    kalGetGlueDevHdl(prAdapter->prGlueInfo)) == 0) {
