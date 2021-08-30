@@ -21,6 +21,7 @@
 #include "precomp.h"
 #include "rlm_txpwr_init.h"
 #include "gl_kal.h"
+#include "mot_config.h"
 
 #if (CFG_SUPPORT_WIFI_6G_PWR_MODE == 1)
 #include "he_ie.h"
@@ -9107,7 +9108,20 @@ void txPwrCtrlCfgFileToList(struct ADAPTER *prAdapter)
 {
 	uint8_t *pucConfigBuf = NULL;
 	uint32_t u4ConfigReadLen = 0;
+	char motoConfigName[ARRAY_VALUE_MAX] = {0}; // IKSWR-130356
+	int motoRet = 1;// IKSWR-130356
 
+	// IKSWR-130356
+	get_moto_config_file_name(motoConfigName, TXPOWERCTRL_CFG_INDEX);
+	if (strlen(motoConfigName)) {
+		motoRet = kalRequestFirmware(motoConfigName, &pucConfigBuf,
+			&u4ConfigReadLen, TRUE,
+			prAdapter->prGlueInfo->prDev);
+	}
+	// END IKSWR-130356
+	if (motoRet == 0) {
+		/* ToDo:: Nothing */
+	} else
 	if (kalRequestFirmware("txpowerctrl.cfg", &pucConfigBuf,
 	    &u4ConfigReadLen, TRUE,
 	    kalGetGlueDevHdl(prAdapter->prGlueInfo)) == 0) {
