@@ -86,6 +86,9 @@
 #if (CFG_HW_DETECT_REPORT == 1)
 #include "conn_dbg.h"
 #endif
+/* for moto cfgs */
+#include "mgmt/rlm_domain.h"
+#include "mot_config.h"
 
 /*******************************************************************************
  *                              C O N S T A N T S
@@ -5122,10 +5125,24 @@ void wlanGetParseConfig(struct ADAPTER *prAdapter)
 {
 	uint8_t *pucConfigBuf = NULL;
 	uint32_t u4ConfigReadLen;
+	char motoConfigName[ARRAY_VALUE_MAX] = {0}; // IKSWR-130356
+	int motoRet = 1;// IKSWR-130356
 
 	wlanCfgInit(prAdapter, NULL, 0, 0);
 	u4ConfigReadLen = 0;
 
+	// IKSWR-130356
+	DBGLOG(INIT, ERROR, "wlanGetParseConfig.\n");
+	get_moto_config_file_name(motoConfigName, WIFI_CFG_INDEX);
+	if (strlen(motoConfigName)) {
+		motoRet = kalRequestFirmware(motoConfigName, &pucConfigBuf,
+			&u4ConfigReadLen, TRUE,
+			prAdapter->prGlueInfo->prDev);
+	}
+	// END IKSWR-130356
+	if (motoRet == 0) {
+		/* ToDo:: Nothing */
+	} else
 	if (kalRequestFirmware("wifi_sigma.cfg", &pucConfigBuf,
 		   &u4ConfigReadLen, TRUE,
 		   prAdapter->prGlueInfo->prDev) == 0) {
@@ -5162,10 +5179,24 @@ void wlanGetConfig(struct ADAPTER *prAdapter)
 #endif
 	uint8_t *pucConfigBuf = NULL;
 	uint32_t u4ConfigReadLen;
+    char motoConfigName[ARRAY_VALUE_MAX] = {0}; // IKSWR-130356
+	int motoRet = 1;// IKSWR-130356
 
 	wlanCfgInit(prAdapter, NULL, 0, 0);
 	u4ConfigReadLen = 0;
 
+	// IKSWR-130356
+	DBGLOG(INIT, ERROR, "wlanGetConfig\n");
+	get_moto_config_file_name(motoConfigName, 0);
+	if (strlen(motoConfigName)) {
+		motoRet = kalRequestFirmware(motoConfigName, &pucConfigBuf,
+			&u4ConfigReadLen, TRUE,
+			prAdapter->prGlueInfo->prDev);
+	}
+	// END IKSWR-130356
+	if (motoRet == 0) {
+		/* ToDo:: Nothing */
+	} else
 	if (kalRequestFirmware("wifi_sigma.cfg", &pucConfigBuf,
 		   &u4ConfigReadLen, TRUE,
 		   prAdapter->prGlueInfo->prDev) == 0) {
