@@ -652,6 +652,7 @@ struct ESS_CHNL_INFO {
 	uint8_t ucChannel;
 	uint8_t ucUtilization;
 	uint8_t ucApNum;
+	enum ENUM_BAND eBand;
 };
 /* end Support AP Selection */
 
@@ -668,6 +669,7 @@ struct NEIGHBOR_AP {
 	uint8_t ucPreference;
 	uint8_t ucChannel;
 	uint64_t u8TermTsf;
+	enum ENUM_BAND eBand;
 };
 
 struct AIS_SPECIFIC_BSS_INFO {

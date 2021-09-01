@@ -31,8 +31,6 @@
 #define REPLICATED_BEACON_TIME_THRESHOLD        (3000)
 #define IS_6G_PSC_CHANNEL(_ch) \
 	(((_ch - 5) % 16) == 0)
-#define IS_6G_OP_CLASS(_opClass) \
-	((_opClass >= 131) && (_opClass <= 135))
 
 /*******************************************************************************
  *                             D A T A   T Y P E S
