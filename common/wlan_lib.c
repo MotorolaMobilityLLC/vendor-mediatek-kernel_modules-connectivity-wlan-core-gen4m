@@ -13311,8 +13311,10 @@ TpeEndFlush:
 
 void wlanSetConnsysFwLog(IN struct ADAPTER *prAdapter)
 {
+#ifdef CONFIG_MTK_CONNSYS_DEDICATED_LOG_PATH
 	struct CMD_CONNSYS_FW_LOG rFwLogCmd;
 	uint32_t u4BufLen;
+#endif
 	int32_t u4LogLevel = ENUM_WIFI_LOG_LEVEL_DEFAULT;
 
 	/* Enable FW log */
