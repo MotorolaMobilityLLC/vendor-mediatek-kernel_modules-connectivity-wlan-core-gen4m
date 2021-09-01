@@ -213,6 +213,20 @@ const struct nla_policy nla_get_acs_policy[
 #endif
 };
 
+const struct nla_policy nla_get_apf_policy[
+		APF_ATTRIBUTE_MAX + 1] = {
+	[APF_ATTRIBUTE_VERSION] = {.type = NLA_U32},
+	[APF_ATTRIBUTE_MAX_LEN] = {.type = NLA_U32},
+#if KERNEL_VERSION(5, 9, 0) <= CFG80211_VERSION_CODE
+	[APF_ATTRIBUTE_PROGRAM] = NLA_POLICY_MIN_LEN(0),
+#elif KERNEL_VERSION(5, 4, 0) <= CFG80211_VERSION_CODE
+	[APF_ATTRIBUTE_PROGRAM] = {.type = NLA_MIN_LEN, .len = 0},
+#else
+	[APF_ATTRIBUTE_PROGRAM] = {.type = NLA_UNSPEC},
+#endif
+	[APF_ATTRIBUTE_PROGRAM_LEN] = {.type = NLA_U32},
+};
+
 /*******************************************************************************
  *                           P R I V A T E   D A T A
  *******************************************************************************
@@ -2491,6 +2505,230 @@ nla_put_failure:
 	kfree_skb(reply_skb);
 	return -EINVAL;
 }
+
+int mtk_cfg80211_vendor_get_apf_capabilities(struct wiphy *wiphy,
+	struct wireless_dev *wdev, const void *data, int data_len)
+{
+	uint32_t aucCapablilities[2] = {APF_VERSION, APF_MAX_PROGRAM_LEN};
+	struct sk_buff *skb;
+#if (CFG_SUPPORT_APF == 1)
+	struct GLUE_INFO *prGlueInfo = NULL;
+#endif
+
+	ASSERT(wiphy);
+	ASSERT(wdev);
+
+	skb = cfg80211_vendor_cmd_alloc_reply_skb(wiphy,
+		sizeof(aucCapablilities));
+
+	if (!skb) {
+		DBGLOG(REQ, ERROR, "Allocate skb failed\n");
+		return -ENOMEM;
+	}
+
+#if (CFG_SUPPORT_APF == 1)
+	prGlueInfo = wlanGetGlueInfo();
+	if (prGlueInfo->prAdapter->rWifiVar.ucApfEnable == 0)
+		kalMemZero(&aucCapablilities[0], sizeof(aucCapablilities));
+#endif
+
+	if (unlikely(nla_put(skb, APF_ATTRIBUTE_VERSION,
+				sizeof(uint32_t), &aucCapablilities[0]) < 0))
+		goto nla_put_failure;
+	if (unlikely(nla_put(skb, APF_ATTRIBUTE_MAX_LEN,
+				sizeof(uint32_t), &aucCapablilities[1]) < 0))
+		goto nla_put_failure;
+
+	DBGLOG(REQ, INFO, "apf capability - ver:%d, max program len: %d\n",
+		APF_VERSION, APF_MAX_PROGRAM_LEN);
+
+	return cfg80211_vendor_cmd_reply(skb);
+
+nla_put_failure:
+	kfree_skb(skb);
+	return -EFAULT;
+}
+
+#if (CFG_SUPPORT_APF == 1)
+int mtk_cfg80211_vendor_set_packet_filter(struct wiphy *wiphy,
+	struct wireless_dev *wdev, const void *data, int data_len)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	uint32_t rStatus = WLAN_STATUS_SUCCESS;
+	struct nlattr *attr;
+	struct PARAM_OFLD_INFO rInfo;
+
+	uint8_t *prProg = NULL;
+	uint32_t u4ProgLen = 0, u4SentLen = 0, u4RemainLen = 0;
+	uint32_t u4SetInfoLen = 0;
+
+	uint8_t ucFragNum = 0, ucFragSeq = 0;
+
+	ASSERT(wiphy);
+	ASSERT(wdev);
+
+	if (data == NULL || data_len <= 0) {
+		DBGLOG(REQ, ERROR, "data error(len=%d)\n", data_len);
+		return -EINVAL;
+	}
+
+	prGlueInfo = wlanGetGlueInfo();
+	if (!prGlueInfo) {
+		DBGLOG(REQ, ERROR, "Invalid glue info\n");
+		return -EFAULT;
+	}
+
+	attr = (struct nlattr *)data;
+
+	if (nla_type(attr) != APF_ATTRIBUTE_PROGRAM) {
+		DBGLOG(REQ, ERROR, "Get program fail. (%u)\n",
+			nla_type(attr));
+		return -EINVAL;
+	}
+
+	u4ProgLen = nla_len(attr);
+	ucFragNum = u4ProgLen / PKT_OFLD_BUF_SIZE;
+	if (u4ProgLen > PKT_OFLD_BUF_SIZE && u4ProgLen % PKT_OFLD_BUF_SIZE > 0)
+		ucFragNum++;
+
+	prProg = (uint8_t *) nla_data(attr);
+
+	dumpMemory8(prProg, u4ProgLen);
+
+	kalMemZero(&rInfo, sizeof(struct PARAM_OFLD_INFO));
+
+	/* Init OFLD description */
+	rInfo.ucType = PKT_OFLD_TYPE_APF;
+	rInfo.ucOp = PKT_OFLD_OP_INSTALL;
+	rInfo.u4TotalLen = u4ProgLen;
+	rInfo.ucFragNum = ucFragNum;
+
+	u4RemainLen = u4ProgLen;
+	do {
+		rInfo.ucFragSeq = ucFragSeq;
+		rInfo.u4BufLen = u4RemainLen > PKT_OFLD_BUF_SIZE ?
+					PKT_OFLD_BUF_SIZE : u4RemainLen;
+		kalMemCopy(rInfo.aucBuf, (prProg + u4SentLen),
+				rInfo.u4BufLen);
+
+		u4SentLen += rInfo.u4BufLen;
+
+		if (u4SentLen == u4ProgLen)
+			rInfo.ucOp = PKT_OFLD_OP_ENABLE;
+
+		DBGLOG(REQ, INFO, "Set APF size(%d, %d) frag(%d, %d).\n",
+				u4ProgLen, u4SentLen,
+				ucFragNum, ucFragSeq);
+
+		rStatus = kalIoctl(prGlueInfo,
+				wlanoidSetOffloadInfo, &rInfo,
+				sizeof(struct PARAM_OFLD_INFO),
+				FALSE, FALSE, TRUE, &u4SetInfoLen);
+
+		if (rStatus != WLAN_STATUS_SUCCESS) {
+			DBGLOG(REQ, ERROR, "APF install fail:0x%x\n", rStatus);
+			return -EFAULT;
+		}
+		ucFragSeq++;
+		u4RemainLen -= u4SentLen;
+	} while (ucFragSeq < ucFragNum);
+
+	return 0;
+}
+
+
+int mtk_cfg80211_vendor_read_packet_filter(struct wiphy *wiphy,
+	struct wireless_dev *wdev, const void *data, int data_len)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	uint32_t rStatus = WLAN_STATUS_SUCCESS;
+
+	struct PARAM_OFLD_INFO rInfo;
+	uint32_t u4SetInfoLen = 0;
+	struct sk_buff *skb = NULL;
+
+	uint8_t prProg[APF_MAX_PROGRAM_LEN];
+	uint32_t u4ProgLen = 0, u4RecvLen = 0, u4BufLen = 0;
+	uint8_t ucFragNum = 0, ucCurrSeq = 0;
+
+
+	ASSERT(wiphy);
+	ASSERT(wdev);
+
+	DBGLOG(REQ, INFO, "apf: mtk_cfg80211_vendor_read_packet_filter\n");
+
+	prGlueInfo = wlanGetGlueInfo();
+	if (!prGlueInfo) {
+		DBGLOG(REQ, ERROR, "Invalid glue info\n");
+		return -EFAULT;
+	}
+
+	kalMemZero(&rInfo, sizeof(struct PARAM_OFLD_INFO));
+
+	/* Init OFLD description */
+	rInfo.ucType = PKT_OFLD_TYPE_APF;
+	rInfo.ucOp = PKT_OFLD_OP_QUERY;
+	rInfo.u4BufLen = PKT_OFLD_BUF_SIZE;
+
+	do {
+		rStatus = kalIoctl(prGlueInfo,
+				wlanoidQueryOffloadInfo, &rInfo,
+				sizeof(struct PARAM_OFLD_INFO),
+				TRUE, TRUE, TRUE, &u4SetInfoLen);
+
+		if (rStatus != WLAN_STATUS_SUCCESS) {
+			DBGLOG(REQ, ERROR, "APF query fail:0x%x\n", rStatus);
+			goto query_apf_failure;
+		}
+
+		if (ucCurrSeq == 0) {
+			ucFragNum = rInfo.ucFragNum;
+			u4ProgLen = rInfo.u4TotalLen;
+			if (u4ProgLen == 0) {
+				DBGLOG(REQ, ERROR,
+					"Failed to query APF from firmware.\n");
+				return -EFAULT;
+			}
+			skb = cfg80211_vendor_cmd_alloc_reply_skb(wiphy,
+				u4ProgLen);
+			if (!skb) {
+				DBGLOG(REQ, ERROR, "Allocate skb failed\n");
+				return -ENOMEM;
+			}
+		} else if (rInfo.ucFragSeq <= ucCurrSeq) {
+			DBGLOG(REQ, ERROR, "Wrong frag seq (%d, %d)\n",
+				ucCurrSeq, rInfo.ucFragSeq);
+			goto query_apf_failure;
+		} else if (u4RecvLen + rInfo.u4BufLen > u4ProgLen) {
+			DBGLOG(REQ, ERROR,
+				"Buffer overflow, got wrong size %d\n",
+				(u4RecvLen + rInfo.u4BufLen));
+			goto query_apf_failure;
+		}
+		ucCurrSeq = rInfo.ucFragSeq;
+		u4BufLen = rInfo.u4BufLen;
+		kalMemCopy((prProg + u4RecvLen), &rInfo.aucBuf[0],
+					rInfo.u4BufLen);
+
+		u4RecvLen = u4BufLen;
+		DBGLOG(REQ, INFO, "Get APF size(%d, %d) frag(%d, %d).\n",
+					u4ProgLen, u4RecvLen,
+					ucFragNum, ucCurrSeq);
+		rInfo.ucFragSeq++;
+	} while (rInfo.ucFragSeq < ucFragNum);
+
+	if (unlikely(nla_put(skb, APF_ATTRIBUTE_PROGRAM,
+				u4ProgLen, prProg) < 0))
+		goto query_apf_failure;
+
+	return cfg80211_vendor_cmd_reply(skb);
+
+query_apf_failure:
+	if (skb != NULL)
+		kfree_skb(skb);
+	return -EFAULT;
+}
+#endif /* CFG_SUPPORT_APF */
 
 int mtk_cfg80211_vendor_driver_memory_dump(struct wiphy *wiphy,
 	struct wireless_dev *wdev, const void *data, int data_len)

@@ -188,6 +188,9 @@ CONFIG_MTK_WIFI_CONNINFRA_SUPPORT=y
 CONFIG_MTK_WIFI_CONNAC2X_2x2=y
 CONFIG_MTK_WIFI_DOWNLOAD_DYN_MEMORY_MAP=y
 CONFIG_MTK_WIFI_POWER_THROTTLING=y
+CONFIG_MTK_WIFI_PKT_OFLD_SUPPORT=y
+CONFIG_MTK_WIFI_APF_SUPPORT=y
+
 ccflags-y += -DCFG_POWER_ON_DOWNLOAD_EMI_ROM_PATCH=1
 ccflags-y += -DCFG_ROM_PATCH_NO_SEM_CTRL=1
 endif
@@ -522,6 +525,17 @@ else
 $(warning $(MODULE_NAME) is kernel module)
 obj-m += $(MODULE_NAME).o
 ccflags-y += -DCONFIG_WLAN_DRV_BUILD_IN=0
+endif
+
+ifeq ($(CONFIG_MTK_WIFI_PKT_OFLD_SUPPORT), y)
+ccflags-y += -DCFG_SUPPORT_PKT_OFLD=1
+ifeq ($(CONFIG_MTK_WIFI_APF_SUPPORT), y)
+ccflags-y += -DCFG_SUPPORT_APF=1
+else
+ccflags-y += -DCFG_SUPPORT_APF=0
+endif
+else
+ccflags-y += -DCFG_SUPPORT_PKT_OFLD=0
 endif
 
 # ---------------------------------------------------

@@ -87,9 +87,7 @@
  */
 #define GOOGLE_OUI 0x001A11
 #define OUI_QCA 0x001374
-#if CFG_SUPPORT_DATA_STALL
 #define OUI_MTK 0x000CE7
-#endif
 
 #define NL80211_VENDOR_SUBCMD_GET_PREFER_FREQ_LIST 103
 #define NL80211_VENDOR_SUBCMD_ACS 54
@@ -106,6 +104,9 @@
 #define QCA_WLAN_VENDOR_ATTR_MAX 44
 #define QCA_NL80211_VENDOR_SUBCMD_SETBAND 105
 #define NL80211_VENDOR_SUBCMD_NAN 12
+#define NL80211_VENDOR_SUBCMD_GET_APF_CAPABILITIES 14
+#define NL80211_VENDOR_SUBCMD_SET_PACKET_FILTER 15
+#define NL80211_VENDOR_SUBCMD_READ_PACKET_FILTER 16
 #define NL80211_VENDOR_SUBCMD_NDP 81
 #define NL80211_VENDOR_SUBCMD_GET_TRX_STATS 48
 
@@ -305,6 +306,23 @@ enum WIFI_MKEEP_ALIVE_ATTRIBUTE {
 	MKEEP_ALIVE_ATTRIBUTE_MAX
 };
 
+#if (CFG_SUPPORT_APF == 1)
+#define APF_VERSION		4
+#define APF_MAX_PROGRAM_LEN	2048
+#else
+#define APF_VERSION		0
+#define APF_MAX_PROGRAM_LEN	0
+#endif
+
+enum WIFI_APF_ATTRIBUTE {
+	APF_ATTRIBUTE_INVALID = 0,
+	APF_ATTRIBUTE_VERSION,
+	APF_ATTRIBUTE_MAX_LEN,
+	APF_ATTRIBUTE_PROGRAM,
+	APF_ATTRIBUTE_PROGRAM_LEN,
+	APF_ATTRIBUTE_MAX
+};
+
 /* QCA Vender CMD */
 enum QCA_SET_BAND {
 	QCA_SETBAND_AUTO,
@@ -457,6 +475,10 @@ extern const struct nla_policy nla_get_acs_policy[
 extern const struct nla_policy qca_roaming_param_policy[
 	QCA_ATTR_ROAMING_PARAM_MAX + 1];
 #endif
+
+extern const struct nla_policy nla_get_apf_policy[
+		APF_ATTRIBUTE_MAX + 1];
+
 /*******************************************************************************
  *                           MACROS
  *******************************************************************************
@@ -1129,6 +1151,19 @@ int mtk_cfg80211_vendor_dfs_capability(struct wiphy *wiphy,
 
 int mtk_cfg80211_vendor_get_features(struct wiphy *wiphy,
 		struct wireless_dev *wdev, const void *data, int data_len);
+
+int mtk_cfg80211_vendor_get_apf_capabilities(struct wiphy *wiphy,
+	struct wireless_dev *wdev, const void *data, int data_len);
+
+#if (CFG_SUPPORT_APF == 1)
+int mtk_cfg80211_vendor_set_packet_filter(
+	struct wiphy *wiphy,
+	struct wireless_dev *wdev, const void *data, int data_len);
+
+int mtk_cfg80211_vendor_read_packet_filter(
+	struct wiphy *wiphy,
+	struct wireless_dev *wdev, const void *data, int data_len);
+#endif /* CFG_SUPPORT_APF */
 
 int mtk_cfg80211_vendor_driver_memory_dump(struct wiphy *wiphy,
 					   struct wireless_dev *wdev,

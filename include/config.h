@@ -1561,6 +1561,25 @@
 #define CFG_SUPPORT_POWER_THROTTLING 0
 #endif
 
+/*------------------------------------------------------------------------------
+ * Flag used for packet offload support.
+ * Value 0: Do not enable packet offload.
+ * Value 1: Enable packet offload.
+ *------------------------------------------------------------------------------
+ */
+#ifndef CFG_SUPPORT_PKT_OFLD
+#define CFG_SUPPORT_PKT_OFLD 0
+#endif
+
+/*------------------------------------------------------------------------------
+ * Flag used for APF support.
+ * Value 0: Do not enable APF.
+ * Value 1: Enable APF.
+ *------------------------------------------------------------------------------
+ */
+#ifndef CFG_SUPPORT_APF
+#define CFG_SUPPORT_APF 0
+#endif
 #if (CFG_SUPPORT_CONNINFRA == 0)
 #define CFG_SUPPORT_POWER_THROTTLING 0
 #endif

@@ -2943,6 +2943,20 @@ struct EVENT_COEX_STATUS {
 	uint8_t aucReserved1[5]; /* 4 byte alignment */
 };
 
+#if (CFG_SUPPORT_PKT_OFLD == 1)
+struct CMD_OFLD_INFO {
+	/* restrict buffer size to 1500 bytes */
+	/* because FW WFDMA MAX buf size is 1600 Byte */
+	uint8_t ucType;
+	uint8_t ucOp;
+	uint8_t ucFragNum;
+	uint8_t ucFragSeq;
+	uint32_t u4TotalLen;
+	uint32_t u4BufLen;
+	uint8_t aucBuf[PKT_OFLD_BUF_SIZE];
+};
+#endif /* CFG_SUPPORT_PKT_OFLD */
+
 struct EVENT_REPORT_U_EVENT {
 	uint8_t aucData[MAX_UEVENT_LEN];
 };
@@ -3420,6 +3434,13 @@ uint32_t nicCmdEventQueryNicCoexFeature(IN struct ADAPTER
 uint32_t nicCmdEventQueryNicCsumOffload(IN struct ADAPTER
 					*prAdapter, IN uint8_t *pucEventBuf);
 #endif
+
+#if (CFG_SUPPORT_PKT_OFLD == 1)
+void nicCmdEventQueryOfldInfo(IN struct ADAPTER
+				*prAdapter, IN struct CMD_INFO *prCmdInfo,
+				IN uint8_t *pucEventBuf);
+#endif
+
 uint32_t nicCfgChipCapHwVersion(IN struct ADAPTER
 				*prAdapter, IN uint8_t *pucEventBuf);
 uint32_t nicCfgChipCapSwVersion(IN struct ADAPTER

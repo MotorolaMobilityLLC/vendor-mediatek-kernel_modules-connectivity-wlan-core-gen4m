@@ -1050,6 +1050,50 @@ static const struct wiphy_vendor_command
 #endif
 
 	},
+	{
+		{
+			.vendor_id = OUI_MTK,
+			.subcmd =  NL80211_VENDOR_SUBCMD_GET_APF_CAPABILITIES
+		},
+			.flags = WIPHY_VENDOR_CMD_NEED_WDEV |
+				 WIPHY_VENDOR_CMD_NEED_NETDEV,
+			.doit = mtk_cfg80211_vendor_get_apf_capabilities
+#if KERNEL_VERSION(5, 4, 0) <= LINUX_VERSION_CODE
+			,
+			.policy = nla_get_apf_policy,
+			.maxattr = APF_ATTRIBUTE_MAX
+#endif
+	},
+#if (CFG_SUPPORT_APF == 1)
+	{
+		{
+			.vendor_id = OUI_MTK,
+			.subcmd = NL80211_VENDOR_SUBCMD_SET_PACKET_FILTER
+		},
+			.flags = WIPHY_VENDOR_CMD_NEED_WDEV |
+				 WIPHY_VENDOR_CMD_NEED_NETDEV,
+			.doit = mtk_cfg80211_vendor_set_packet_filter
+#if KERNEL_VERSION(5, 4, 0) <= LINUX_VERSION_CODE
+			,
+			.policy = nla_get_apf_policy,
+			.maxattr = APF_ATTRIBUTE_MAX
+#endif
+	},
+	{
+		{
+			.vendor_id = OUI_MTK,
+			.subcmd = NL80211_VENDOR_SUBCMD_READ_PACKET_FILTER
+		},
+			.flags = WIPHY_VENDOR_CMD_NEED_WDEV |
+				WIPHY_VENDOR_CMD_NEED_NETDEV,
+			.doit = mtk_cfg80211_vendor_read_packet_filter
+#if KERNEL_VERSION(5, 4, 0) <= LINUX_VERSION_CODE
+		,
+		.policy = nla_get_apf_policy,
+		.maxattr = APF_ATTRIBUTE_MAX
+#endif
+	},
+#endif /* CFG_SUPPORT_APF */
 	/* Get Driver Memory Dump */
 	{
 		{

@@ -1484,6 +1484,60 @@ void nicCmdEventSetStopSchedScan(IN struct ADAPTER
 
 }
 
+#if (CFG_SUPPORT_PKT_OFLD == 1)
+void nicCmdEventQueryOfldInfo(IN struct ADAPTER
+				*prAdapter, IN struct CMD_INFO *prCmdInfo,
+				IN uint8_t *pucEventBuf)
+{
+	uint32_t u4QueryInfoLen;
+	struct GLUE_INFO *prGlueInfo;
+	struct PARAM_OFLD_INFO *prParamOfldInfo;
+	struct CMD_OFLD_INFO *prCmdOfldInfo;
+
+	ASSERT(prAdapter);
+	ASSERT(prCmdInfo);
+	ASSERT(pucEventBuf);
+
+	/* 4 <2> Update information of OID */
+	if (prCmdInfo->fgIsOid) {
+		prGlueInfo = prAdapter->prGlueInfo;
+		prCmdOfldInfo = (struct CMD_OFLD_INFO *) (pucEventBuf);
+
+		u4QueryInfoLen = sizeof(struct
+					PARAM_OFLD_INFO);
+
+		if (prCmdInfo->u4InformationBufferLength < sizeof(
+			    struct PARAM_OFLD_INFO)) {
+			DBGLOG(REQ, INFO,
+			       "Ofld info query length %u is not valid.\n",
+			       prCmdInfo->u4InformationBufferLength);
+		}
+		prParamOfldInfo = (struct PARAM_OFLD_INFO
+				    *) prCmdInfo->pvInformationBuffer;
+		prParamOfldInfo->ucFragNum = prCmdOfldInfo->ucFragNum;
+		prParamOfldInfo->ucFragSeq = prCmdOfldInfo->ucFragSeq;
+		prParamOfldInfo->u4TotalLen = prCmdOfldInfo->u4TotalLen;
+		prParamOfldInfo->u4BufLen = prCmdOfldInfo->u4BufLen;
+
+		if (prCmdOfldInfo->u4TotalLen > 0 &&
+				prCmdOfldInfo->u4BufLen > 0 &&
+				prCmdOfldInfo->u4BufLen <= PKT_OFLD_BUF_SIZE) {
+			kalMemCopy(prParamOfldInfo->aucBuf,
+				prCmdOfldInfo->aucBuf,
+				prCmdOfldInfo->u4BufLen);
+		} else {
+			DBGLOG(REQ, INFO,
+			       "Invalid query result, length: %d Buf size: %d.\n",
+				prCmdOfldInfo->u4TotalLen,
+				prCmdOfldInfo->u4BufLen);
+		}
+		kalOidComplete(prGlueInfo, prCmdInfo,
+		   u4QueryInfoLen, WLAN_STATUS_SUCCESS);
+	}
+
+}
+#endif /* CFG_SUPPORT_PKT_OFLD */
+
 /*----------------------------------------------------------------------------*/
 /*!
  * @brief This function is called when command by OID/ioctl has been timeout

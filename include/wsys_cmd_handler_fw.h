@@ -320,6 +320,11 @@ enum ENUM_CMD_ID {
 #endif /* CFG_SUPPORT_ICS */
 	CMD_ID_WFC_KEEP_ALIVE = 0xA0,       /* 0xA0 (Set) */
 	CMD_ID_RSSI_MONITOR = 0xA1,         /* 0xA1 (Set) */
+#if (CFG_SUPPORT_PKT_OFLD == 1)
+	CMD_ID_PKT_OFLD = 0xA2,	            /* 0xA2 (Set) */
+#endif /* CFG_SUPPORT_PKT_OFLD */
+
+
 	CMD_ID_CAL_BACKUP_IN_HOST_V2 = 0xAE,    /* 0xAE (Set / Query) */
 
 	CMD_ID_MQM_UPDATE_MU_EDCA_PARMS = 0xB0,   /* 0xB0 (Set) */
@@ -505,6 +510,9 @@ enum ENUM_EVENT_ID {
 	EVENT_ID_UPDATE_COEX_STATUS = 0x91,
 
 	EVENT_ID_RSSI_MONITOR = 0xA1,       /* Event ID for Rssi monitoring */
+#if (CFG_SUPPORT_PKT_OFLD == 1)
+	EVENT_ID_PKT_OFLD = 0xA2,
+#endif /* CFG_SUPPORT_PKT_OFLD */
 	EVENT_ID_CAL_BACKUP_IN_HOST_V2 = 0xAE,
 	/* 0xAE (Query - CMD_ID_CAL_BACKUP) */
 	EVENT_ID_CAL_ALL_DONE = 0xAF,   /* 0xAF (FW Cal All Done Event) */

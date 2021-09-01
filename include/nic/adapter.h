@@ -1298,6 +1298,10 @@ struct WIFI_VAR {
 #if CFG_SUPPORT_LLS
 	u_int8_t fgLinkStatsDump;
 #endif /* CFG_SUPPORT_LLS */
+
+#if (CFG_SUPPORT_APF == 1)
+	uint8_t ucApfEnable;
+#endif
 };
 
 /* cnm_timer module */

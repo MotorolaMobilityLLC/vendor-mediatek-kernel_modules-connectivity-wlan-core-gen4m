@@ -2731,6 +2731,20 @@ enum ENUM_AX_BLACKLIST_TYPE {
 	BLACKLIST_NUM
 };
 
+#if (CFG_SUPPORT_PKT_OFLD == 1)
+struct PARAM_OFLD_INFO {
+	/*restrict buffer size to 1500 bytes*/
+	/*because FW WFDMA MAX buf size is 1600 Byte*/
+	uint8_t ucType;
+	uint8_t ucOp;
+	uint8_t ucFragNum;
+	uint8_t ucFragSeq;
+	uint32_t u4TotalLen;
+	uint32_t u4BufLen;
+	uint8_t aucBuf[PKT_OFLD_BUF_SIZE];
+};
+#endif /* CFG_SUPPORT_PKT_OFLD */
+
 /*******************************************************************************
  *                            P U B L I C   D A T A
  *******************************************************************************
@@ -4343,4 +4357,17 @@ wlanoidThermalProtectAct(IN struct ADAPTER *prAdapter,
 			IN uint32_t u4SetBufferLen,
 			OUT uint32_t *pu4SetInfoLen);
 #endif
+
+#if (CFG_SUPPORT_PKT_OFLD == 1)
+uint32_t
+wlanoidSetOffloadInfo(IN struct ADAPTER *prAdapter,
+			   IN void *pvSetBuffer, IN uint32_t u4SetBufferLen,
+			   OUT uint32_t *pu4SetInfoLen);
+
+uint32_t
+wlanoidQueryOffloadInfo(IN struct ADAPTER *prAdapter,
+			   IN void *pvSetBuffer, IN uint32_t u4SetBufferLen,
+			   OUT uint32_t *pu4SetInfoLen);
+
+#endif /* CFG_SUPPORT_PKT_OFLD */
 #endif /* _WLAN_OID_H */
