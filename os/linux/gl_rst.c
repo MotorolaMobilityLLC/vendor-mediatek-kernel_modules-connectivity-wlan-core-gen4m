@@ -611,14 +611,14 @@ static void glResetCallback(enum _ENUM_WMTDRV_TYPE_T eSrcType,
 				DBGLOG(INIT, WARN, "Whole chip reset end!\n");
 				wifi_rst.rst_data = RESET_SUCCESS;
 				fgIsResetting = FALSE;
-				schedule_work(&(wifi_rst.rst_work));
+				mtk_wifi_reset_main(&wifi_rst);
 				break;
 
 			case WMTRSTMSG_RESET_END_FAIL:
 				DBGLOG(INIT, WARN, "Whole chip reset fail!\n");
 				fgIsResetting = FALSE;
 				wifi_rst.rst_data = RESET_FAIL;
-				schedule_work(&(wifi_rst.rst_work));
+				mtk_wifi_reset_main(&wifi_rst);
 				break;
 
 			default:
