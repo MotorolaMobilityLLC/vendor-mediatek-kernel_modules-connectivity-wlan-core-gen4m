@@ -874,7 +874,8 @@ void scanReportBss2Cfg80211(IN struct ADAPTER *prAdapter,
 			    IN enum ENUM_BSS_TYPE eBSSType,
 			    IN struct BSS_DESC *SpecificprBssDesc);
 
-bool scnEnableSpilitScan(struct ADAPTER *prAdapter);
+bool scnEnableSplitScan(struct ADAPTER *prAdapter,
+				uint8_t ucBssIndex);
 
 /*----------------------------------------------------------------------------*/
 /* Routines in scan_fsm.c                                                     */

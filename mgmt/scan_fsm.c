@@ -300,7 +300,7 @@ void scnSendScanReqV2(IN struct ADAPTER *prAdapter)
 	if (prAdapter->rWifiVar.eDbdcMode == ENUM_DBDC_MODE_DISABLED)
 		prCmdScanReq->ucScnFuncMask |= ENUM_SCN_DBDC_SCAN_DIS;
 
-	if (wlanWfdEnabled(prAdapter) || scnEnableSpilitScan(prAdapter))
+	if (scnEnableSplitScan(prAdapter, prScanParam->ucBssIndex))
 		prCmdScanReq->ucScnFuncMask |= ENUM_SCN_SPLIT_SCAN_EN;
 
 	/* Set SSID to scan request */
@@ -1179,32 +1179,42 @@ void scnEventSchedScanDone(IN struct ADAPTER *prAdapter,
  * \return none
  */
 /*----------------------------------------------------------------------------*/
-bool scnEnableSpilitScan(struct ADAPTER *prAdapter)
+bool scnEnableSplitScan(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 {
-	uint8_t i;
+	uint8_t ucWfdEn = FALSE, ucTrxPktEn = FALSE, ucRoamingEn = FALSE;
 	struct PERF_MONITOR *prPerMonitor;
-	struct BSS_INFO *prBssInfo;
+	struct BSS_INFO *prBssInfo = NULL;
+	struct ROAMING_INFO *prRoamInfo = NULL;
 	unsigned long ulTrxPacketsDiffTotal = 0;
 
+	prBssInfo = aisGetAisBssInfo(prAdapter, ucBssIndex);
+	prRoamInfo = aisGetRoamingInfo(prAdapter, ucBssIndex);
 	prPerMonitor = &prAdapter->rPerMonitor;
 
-	/* Sum all active BSS's TX and RX packets count */
-	for (i = 0; i < BSS_DEFAULT_NUM; i++) {
-		prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, i);
-		if (IS_BSS_ACTIVE(prBssInfo)) {
-			ulTrxPacketsDiffTotal += (prPerMonitor->
-						 ulTxPacketsDiffLastSec[i] +
-						  prPerMonitor->
-						 ulRxPacketsDiffLastSec[i]);
-		}
-	}
-	if (ulTrxPacketsDiffTotal > SCAN_SPLIT_PACKETS_THRESHOLD) {
-		log_dbg(SCN, TRACE, "Set SplitScan, TRXPacket=%ld",
-					ulTrxPacketsDiffTotal);
-		return TRUE;
-	}
+	/* Enable condition 1: WFD case*/
+	ucWfdEn = wlanWfdEnabled(prAdapter);
 
-	return FALSE;
+	/* Enable condition 2: (TX + RX) packets in last 1s > 30 */
+	ulTrxPacketsDiffTotal +=
+			(prPerMonitor->ulTxPacketsDiffLastSec[ucBssIndex] +
+			prPerMonitor->ulRxPacketsDiffLastSec[ucBssIndex]);
+
+	if (ulTrxPacketsDiffTotal > SCAN_SPLIT_PACKETS_THRESHOLD)
+		ucTrxPktEn = TRUE;
+
+	/* Enable Pre-condition: not in roaming, avoid romaing scan too long */
+	if (prBssInfo->eConnectionState == MEDIA_STATE_CONNECTED &&
+		(prRoamInfo->eCurrentState == ROAMING_STATE_DISCOVERY ||
+		prRoamInfo->eCurrentState == ROAMING_STATE_ROAM))
+		ucRoamingEn = TRUE;
+
+	log_dbg(SCN, TRACE, "SplitScan: Roam(%d),WFD(%d),TRX(%d)",
+				ucRoamingEn, ucWfdEn, ucTrxPktEn);
+	/* Enable split scan when (not in roam) & (WFD or TRX packet > 30) */
+	if ((!ucRoamingEn) && (ucWfdEn || ucTrxPktEn))
+		return TRUE;
+	else
+		return FALSE;
 }
 
 #if CFG_SUPPORT_SCHED_SCAN
