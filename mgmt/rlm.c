@@ -2152,6 +2152,9 @@ void rlmTransferHe6gOpInfor(IN uint8_t ucChannelNum,
 	OUT uint8_t *pucCenterFreqS2,
 	OUT enum ENUM_CHNL_EXT *peSco)
 {
+	int8_t cDelta;
+	enum ENUM_CHNL_EXT eAndOneSCO;
+
 	if (ucChannelWidth == HE_OP_CHANNEL_WIDTH_20)
 		*pucChannelWidth = (uint8_t)CW_20_40MHZ;
 	else if (ucChannelWidth == HE_OP_CHANNEL_WIDTH_40) {
@@ -2174,6 +2177,32 @@ void rlmTransferHe6gOpInfor(IN uint8_t ucChannelNum,
 	rlmModifyHE6GBwPara(pucCenterFreqS1,
 			   pucCenterFreqS2,
 			   pucChannelWidth);
+
+	/* Calculate SCO */
+	if (*pucChannelWidth == CW_80MHZ ||
+		*pucChannelWidth == CW_160MHZ) {
+		/* P: PriChnl
+		 * A: CHNL_EXT_SCA
+		 * B: CHNL_EXT_SCB
+		 */
+		/* --|----|--CenterFreqS1--|----|-- */
+		/* --|----|--CenterFreqS1--B----P-- */
+		/* --|----|--CenterFreqS1--P----A-- */
+		cDelta = ucChannelNum - *pucCenterFreqS1;
+		eAndOneSCO = CHNL_EXT_SCB;
+		*peSco = CHNL_EXT_SCA;
+		if (cDelta < 0) {
+			/* --|----|--CenterFreqS1--|----|-- */
+			/* --P----A--CenterFreqS1--|----|-- */
+			/* --B----P--CenterFreqS1--|----|-- */
+			eAndOneSCO = CHNL_EXT_SCA;
+			*peSco = CHNL_EXT_SCB;
+			cDelta = -cDelta;
+		}
+		cDelta = cDelta - 2;
+		if ((cDelta/4) & 1)
+			*peSco = eAndOneSCO;
+	}
 }
 void rlmModifyHE6GBwPara(uint8_t *pucHe6gChannelFrequencyS1,
 			uint8_t *pucHe6gChannelFrequencyS2,
@@ -3038,11 +3067,11 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 						pr6gOperInfor->
 						ucPrimaryChannel;
 
-					prBssInfo->ucHeChannelFrequencyS1 =
+					prBssInfo->ucVhtChannelFrequencyS1 =
 						pr6gOperInfor->
 						ucChannelCenterFreqSeg0;
 
-					prBssInfo->ucHeChannelFrequencyS2 =
+					prBssInfo->ucVhtChannelFrequencyS2 =
 						pr6gOperInfor->
 						ucChannelCenterFreqSeg1;
 
@@ -3052,11 +3081,11 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 						(uint8_t)pr6gOperInfor->
 						rControl.bits.ChannelWidth,
 						&prBssInfo->
-							ucHeChannelWidth,
+							ucVhtChannelWidth,
 						&prBssInfo->
-							ucHeChannelFrequencyS1,
+							ucVhtChannelFrequencyS1,
 						&prBssInfo->
-							ucHeChannelFrequencyS2,
+							ucVhtChannelFrequencyS2,
 						&prBssInfo->eBssSCO);
 				}
 				}
@@ -3210,78 +3239,30 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 		prBssInfo->fgHasStopTx = FALSE;
 	}
 
-#if (CFG_SUPPORT_WIFI_6G == 1)
-	if (prBssInfo->eBand == BAND_6G) {
-		/* Do not write prBssInfo->ucHeChannelWidth directly
-		 * in rlmReviseMaxBw, otherwise it will cause the following
-		 * struct members are overwritten unexpectly.
-		 */
-		eChannelWidth =
-			(enum ENUM_CHANNEL_WIDTH)
-			prBssInfo->ucHeChannelWidth;
-		rlmReviseMaxBw(prAdapter,
-				prBssInfo->ucBssIndex,
-				&prBssInfo->eBssSCO,
-				&eChannelWidth,
-				&prBssInfo->ucHeChannelFrequencyS1,
-				&prBssInfo->ucPrimaryChannel);
-		prBssInfo->ucHeChannelWidth = (uint8_t)eChannelWidth;
-	}
-	else
-#endif
-	{
-		eChannelWidth =
-			(enum ENUM_CHANNEL_WIDTH)
-			prBssInfo->ucVhtChannelWidth;
-		rlmReviseMaxBw(prAdapter, prBssInfo->ucBssIndex,
-				&prBssInfo->eBssSCO,
-				&eChannelWidth,
-				&prBssInfo->ucVhtChannelFrequencyS1,
-				&prBssInfo->ucPrimaryChannel);
-		prBssInfo->ucVhtChannelWidth = (uint8_t)eChannelWidth;
-	}
+	/* Do not write prBssInfo->ucVhtChannelWidth directly
+	 * in rlmReviseMaxBw, otherwise it will cause the following
+	 * struct members being overwritten unexpectly.
+	 */
+	eChannelWidth = (enum ENUM_CHANNEL_WIDTH)
+		prBssInfo->ucVhtChannelWidth;
+	rlmReviseMaxBw(prAdapter, prBssInfo->ucBssIndex,
+		&prBssInfo->eBssSCO,
+		&eChannelWidth,
+		&prBssInfo->ucVhtChannelFrequencyS1,
+		&prBssInfo->ucPrimaryChannel);
+	prBssInfo->ucVhtChannelWidth = (uint8_t)eChannelWidth;
 
 	rlmRevisePreferBandwidthNss(prAdapter, prBssInfo->ucBssIndex, prStaRec);
 
-	fgDomainValid =
-#if (CFG_SUPPORT_WIFI_6G == 1)
-		(prBssInfo->eBand == BAND_6G) ?
-		rlmDomainIsValidRfSetting(
-		    prAdapter,
-		    prBssInfo->eBand,
-		    prBssInfo->ucPrimaryChannel,
-		    prBssInfo->eBssSCO,
-		    prBssInfo->ucHeChannelWidth,
-		    prBssInfo->ucHeChannelFrequencyS1,
-		    prBssInfo->ucHeChannelFrequencyS2) :
-#endif
-		rlmDomainIsValidRfSetting(
-		    prAdapter,
-		    prBssInfo->eBand,
-		    prBssInfo->ucPrimaryChannel,
-		    prBssInfo->eBssSCO,
-		    prBssInfo->ucVhtChannelWidth,
-		    prBssInfo->ucVhtChannelFrequencyS1,
-		    prBssInfo->ucVhtChannelFrequencyS2);
+	fgDomainValid = rlmDomainIsValidRfSetting(
+		prAdapter,
+		prBssInfo->eBand,
+		prBssInfo->ucPrimaryChannel,
+		prBssInfo->eBssSCO,
+		prBssInfo->ucVhtChannelWidth,
+		prBssInfo->ucVhtChannelFrequencyS1,
+		prBssInfo->ucVhtChannelFrequencyS2);
 
-#if (CFG_SUPPORT_WIFI_6G == 1)
-	if (prBssInfo->eBand == BAND_6G
-		&& fgDomainValid == FALSE) {
-		/*Dump IE Inforamtion */
-		DBGLOG(RLM, WARN, "rlmRecIeInfoForClient IE Information\n");
-		DBGLOG(RLM, WARN, "IE Length = %d\n", u2IELength);
-		DBGLOG_MEM8(RLM, WARN, pucDumpIE, u2IELength);
-
-		/*Error Handling for Non-predicted IE - Fixed to set 20MHz */
-		prBssInfo->ucHeChannelWidth = CW_20_40MHZ;
-		prBssInfo->ucHeChannelFrequencyS1 = 0;
-		prBssInfo->ucHeChannelFrequencyS2 = 0;
-		prBssInfo->eBssSCO = CHNL_EXT_SCN;
-
-		/* Check SAP channel */
-		p2pFuncSwitchSapChannel(prAdapter);
-	} else
-#endif
 	if (fgDomainValid == FALSE) {
 		/*Dump IE Inforamtion */
 		DBGLOG(RLM, WARN, "rlmRecIeInfoForClient IE Information\n");
@@ -3299,6 +3280,7 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 		/* Check SAP channel */
 		p2pFuncSwitchSapChannel(prAdapter);
 	}
+
 #if CFG_SUPPORT_QUIET && 0
 	if (!fgHasQuietIE)
 		rrmQuietIeNotExist(prAdapter, prBssInfo);
@@ -6504,11 +6486,6 @@ uint8_t rlmGetBssOpBwByVhtAndHtOpInfo(struct BSS_INFO *prBssInfo)
 	uint8_t ucChannelWidth = prBssInfo->ucVhtChannelWidth;
 
 	ASSERT(prBssInfo);
-
-#if (CFG_SUPPORT_WIFI_6G == 1)
-	if (prBssInfo->eBand == BAND_6G)
-		ucChannelWidth = prBssInfo->ucHeChannelWidth;
-#endif
 
 	switch (ucChannelWidth) {
 	case VHT_OP_CHANNEL_WIDTH_320:

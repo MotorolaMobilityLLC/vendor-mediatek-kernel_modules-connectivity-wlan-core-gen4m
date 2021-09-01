@@ -515,6 +515,13 @@ struct BSS_INFO {
 	/* & PHY_TYPE_BIT_VHT) is true. They have the same definition with   */
 	/* fields of information element (EASON)                             */
 	/*-------------------------------------------------------------------*/
+	/*-------------------------------------------------------------------*/
+	/* Note that FW will use ucVhtChannelWidth, ucVhtChannelFrequencyS1  */
+	/* and ucVhtChannelFrequencyS2 as general RLM parameters regardless  */
+	/* of VHT, HE or EHT. Hence, driver shall update these 3 parameters  */
+	/* by reference to the spec of VHT IE even in 6G channels that shall */
+	/* not use VHT IE.                                                   */
+	/*-------------------------------------------------------------------*/
 #if 1				/* CFG_SUPPORT_802_11AC */
 	uint8_t ucVhtChannelWidth;
 	uint8_t ucVhtChannelFrequencyS1;
@@ -525,9 +532,6 @@ struct BSS_INFO {
 #if (CFG_SUPPORT_802_11AX == 1)
 	uint8_t ucHeOpParams[HE_OP_BYTE_NUM];
 	uint8_t ucBssColorInfo;
-	uint8_t ucHeChannelWidth;
-	uint8_t ucHeChannelFrequencyS1;
-	uint8_t ucHeChannelFrequencyS2;
 	uint16_t u2HeBasicMcsSet;
 #if (CFG_SUPPORT_WIFI_6G == 1)
 	struct _6G_OPER_INFOR_T r6gOperInfor;
