@@ -529,7 +529,7 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy,
 	uint8_t ucBssIndex = 0;
 
 #if CFG_SUPPORT_LLS
-	uint32_t u4TxBw, u4MaxTxRate;
+	uint32_t u4TxBw, u4MaxTxRate, u4Nss;
 	union {
 		struct CMD_GET_STATS_LLS cmd;
 		struct EVENT_STATS_LLS_TX_RATE_INFO rate_info;
@@ -633,14 +633,26 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy,
 		return -EOVERFLOW;
 	}
 
-	DBGLOG(REQ, INFO, "rate=%u mode=%u nsts=%u stbc=%u bw=%u",
+	if (query.rate_info.mode >= 4) {
+		DBGLOG(REQ, ERROR, "frmode error: %u\n", query.rate_info.mode);
+		return -EOVERFLOW;
+	}
+
+	query.rate_info.nsts += 1;
+	if (query.rate_info.nsts == 1)
+		u4Nss = query.rate_info.nsts;
+	else
+		u4Nss = query.rate_info.stbc ?
+			(query.rate_info.nsts >> 1) : query.rate_info.nsts;
+
+	DBGLOG(REQ, INFO, "rate=%u mode=%u nss=%u stbc=%u bw=%u",
 		query.rate_info.rate, query.rate_info.mode,
-		query.rate_info.nsts, query.rate_info.stbc,
+		u4Nss, query.rate_info.stbc,
 		query.rate_info.bw);
 
 	if (wlanQueryRateByTable(query.rate_info.mode,
 		query.rate_info.rate, query.rate_info.bw, 0,
-		query.rate_info.nsts, &u4TxRate, &u4MaxTxRate) < 0){
+		u4Nss, &u4TxRate, &u4MaxTxRate) < 0){
 		DBGLOG(REQ, WARN, "wlanQueryRateByTable error!");
 		return -EOVERFLOW;
 	}
