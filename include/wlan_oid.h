@@ -4370,4 +4370,10 @@ wlanoidQueryOffloadInfo(IN struct ADAPTER *prAdapter,
 			   OUT uint32_t *pu4SetInfoLen);
 
 #endif /* CFG_SUPPORT_PKT_OFLD */
+
+uint32_t
+wlanoidListMode(IN struct ADAPTER *prAdapter,
+			 IN void *pvQueryBuffer,
+			 IN uint32_t u4QueryBufferLen,
+			 OUT uint32_t *pu4QueryInfoLen);
 #endif /* _WLAN_OID_H */

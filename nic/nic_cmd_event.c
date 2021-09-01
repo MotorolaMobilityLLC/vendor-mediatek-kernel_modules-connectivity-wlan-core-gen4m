@@ -746,7 +746,6 @@ void nicCmdEventSetCommon(IN struct ADAPTER *prAdapter,
 		kalOidComplete(prAdapter->prGlueInfo, prCmdInfo,
 	    prCmdInfo->u4InformationBufferLength, WLAN_STATUS_SUCCESS);
 	}
-
 }
 
 void nicCmdEventSetIpAddress(IN struct ADAPTER *prAdapter,
@@ -5263,3 +5262,31 @@ void nicNanTestQueryInfoDone(IN struct ADAPTER *prAdapter,
 	}
 }
 #endif
+#if (CONFIG_WLAN_SERVICE == 1)
+void nicCmdEventListmode(IN struct ADAPTER
+				  *prAdapter, IN struct CMD_INFO *prCmdInfo,
+				  IN uint8_t *pucEventBuf)
+{
+	struct list_mode_event *prStatus;
+	struct GLUE_INFO *prGlueInfo;
+	uint32_t u4QueryInfoLen;
+
+	ASSERT(prAdapter);
+	ASSERT(prCmdInfo);
+
+	prStatus = (struct list_mode_event *) pucEventBuf;
+
+	if (prCmdInfo->fgIsOid) {
+		prGlueInfo = prAdapter->prGlueInfo;
+
+		u4QueryInfoLen = sizeof(struct list_mode_event);
+
+		/* Memory copy length is depended on upper-layer */
+		kalMemCopy(&g_HqaListModeStatus, prStatus, u4QueryInfoLen);
+
+		/* Update Query Information Length */
+		kalOidComplete(prGlueInfo, prCmdInfo,
+			       u4QueryInfoLen, WLAN_STATUS_SUCCESS);
+	}
+}
+#endif /*(CONFIG_WLAN_SERVICE == 1)*/

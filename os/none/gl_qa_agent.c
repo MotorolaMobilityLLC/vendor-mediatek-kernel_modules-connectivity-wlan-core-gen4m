@@ -91,6 +91,8 @@
  */
 /* export to other common part file */
 struct PARAM_RX_STAT g_HqaRxStat;
+struct list_mode_event g_HqaListModeStatus;
+
 uint32_t u4RxStatSeqNum;
 /*****************************************************************************
  *                           P R I V A T E   D A T A

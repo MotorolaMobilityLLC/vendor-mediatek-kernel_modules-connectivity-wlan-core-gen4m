@@ -83,6 +83,7 @@
  */
 
 struct PARAM_RX_STAT g_HqaRxStat;
+struct list_mode_event g_HqaListModeStatus;
 uint32_t u4RxStatSeqNum;
 u_int8_t g_DBDCEnable = FALSE;
 /* For SA Buffer Mode Temp Solution */

@@ -14479,15 +14479,25 @@ static int priv_driver_run_hqa(
 				NTOHL(i4tmpVal));
 			} else {
 				if (IsShowRxStat) {
-				i += datalen;
-				i4BytesWritten +=
-				priv_driver_rx_stat_parser(dataptr,
-				i4TotalLen, pcCommand + i4BytesWritten);
+					i += datalen;
+					i4BytesWritten +=
+					priv_driver_rx_stat_parser(dataptr,
+					i4TotalLen, pcCommand + i4BytesWritten);
 				} else {
-				i4BytesWritten +=
-				kalSnprintf(pcCommand + i4BytesWritten,
-				i4TotalLen, "id%d : 0x%08x\n", i/4,
-				NTOHL(i4tmpVal));
+					if (i/4 > 100) {
+						i4BytesWritten +=
+							kalSnprintf(
+							pcCommand +
+							i4BytesWritten,
+							i4TotalLen,
+							"stop print to prevent overflow\n");
+						break;
+					}
+
+					i4BytesWritten +=
+					kalSnprintf(pcCommand + i4BytesWritten,
+					i4TotalLen, "id%d : 0x%08x\n", i/4,
+					NTOHL(i4tmpVal));
 				}
 			}
 		}

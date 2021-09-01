@@ -3608,6 +3608,11 @@ uint32_t nicCfgChipPseRxQuota(IN struct ADAPTER *prAdapter,
 				IN uint8_t *pucEventBuf);
 #endif
 
+#if (CONFIG_WLAN_SERVICE == 1)
+void nicCmdEventListmode(IN struct ADAPTER
+				  *prAdapter, IN struct CMD_INFO *prCmdInfo,
+				  IN uint8_t *pucEventBuf);
+#endif /*(CONFIG_WLAN_SERVICE == 1)*/
 /*******************************************************************************
  *                              F U N C T I O N S
  *******************************************************************************

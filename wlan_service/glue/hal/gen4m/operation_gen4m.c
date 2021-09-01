@@ -2935,3 +2935,27 @@ s_int32 mt_op_get_wf_path_comb(
 
 	return ret;
 }
+
+s_int32 mt_op_listmode_cmd(
+	struct test_wlan_info *winfos,
+	u_int8 *para,
+	u_int16 para_len,
+	uint32_t *rsp_len,
+	void *rsp_data)
+{
+	s_int32 ret = SERV_STATUS_SUCCESS;
+	wlan_oid_handler_t pr_oid_funcptr = winfos->oid_funcptr;
+
+	if (pr_oid_funcptr == NULL)
+		return SERV_STATUS_HAL_OP_INVALID_NULL_POINTER;
+
+	ret = pr_oid_funcptr(winfos, /*call back to ServiceWlanOid*/
+		OP_WLAN_OID_LIST_MODE,
+		(void *)para,
+		(u_int32)para_len,
+		rsp_len,
+		rsp_data);
+
+	return ret;
+}
+

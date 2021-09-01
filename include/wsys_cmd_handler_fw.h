@@ -339,6 +339,7 @@ enum ENUM_CMD_ID {
 	CMD_ID_DUMP_MEM,                    /* 0xc6 (Query) */
 	CMD_ID_RESOURCE_CONFIG,             /* 0xc7 (Set / Query) */
 	CMD_ID_ACCESS_RX_STAT,              /* 0xc8 (Query) */
+	CMD_ID_LIST_MODE,                   /* 0xc9 (Set / Query) */
 
 	CMD_ID_CHIP_CONFIG          = 0xCA, /* 0xca (Set / Query) */
 
@@ -458,6 +459,7 @@ enum ENUM_EVENT_ID {
 	/* 0x44 (Query - CMD_ID_CHIP_CONFIG) */
 	EVENT_ID_ACCESS_RX_STAT = 0x45,
 	/* 0x45 (Query - CMD_ID_ACCESS_RX_STAT) */
+	EVENT_ID_LIST_MODE = 0x48,
 
 	EVENT_ID_RDD_SEND_PULSE = 0x50,
 	EVENT_ID_PFMU_TAG_READ = 0x51,
