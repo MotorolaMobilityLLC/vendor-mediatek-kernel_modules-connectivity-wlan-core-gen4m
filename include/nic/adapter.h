@@ -1153,6 +1153,7 @@ struct WIFI_VAR {
 	uint32_t u4PerfMonUpdatePeriod;
 	uint32_t u4PerfMonTpTh[PERF_MON_TP_MAX_THRESHOLD];
 	uint32_t	u4BoostCpuTh;
+	u_int8_t	fgIsBoostCpuThAdjustable;
 
 	uint32_t u4PerfMonPendingTh;
 	uint32_t u4PerfMonUsedTh;

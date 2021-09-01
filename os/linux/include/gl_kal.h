@@ -213,6 +213,7 @@ extern bool fgIsTxPowerDecreased;
 #define PERF_MON_TP_MAX_THRESHOLD (10)
 
 #define PERF_MON_TP_CONDITION (125000)
+#define PERF_MON_COEX_TP_THRESHOLD (100)
 
 /* By wifi.cfg first. If it is not set 1s by default; 100ms on more. */
 #define TX_LATENCY_STATS_UPDATE_INTERVAL (0)

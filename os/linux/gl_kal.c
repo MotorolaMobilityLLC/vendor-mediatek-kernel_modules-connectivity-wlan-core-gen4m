@@ -8081,6 +8081,7 @@ void kalPerMonHandler(IN struct ADAPTER *prAdapter,
 #if CFG_SUPPORT_PERF_IND || CFG_SUPPORT_DATA_STALL
 	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
 #endif
+	uint32_t u4BoostCpuTh = prAdapter->rWifiVar.u4BoostCpuTh;
 
 	if (prGlueInfo->ulFlag & GLUE_FLAG_HALT)
 		return;
@@ -8101,6 +8102,39 @@ void kalPerMonHandler(IN struct ADAPTER *prAdapter,
 		prDevHandler = wlanGetNetDev(prGlueInfo, i);
 		if (IS_BSS_ALIVE(prAdapter, prBssInfo) && prDevHandler) {
 			keep_alive |= netif_carrier_ok(prDevHandler);
+
+			/* Adjust CPU threshold when:
+				* CPU threshould has not been set in wifi.cfg
+				* Current CPU boost threshold > 100M
+				* Coex TDD & BSS in 2.4G
+				* The specific BSS Tput > 100M
+				* the PerfMonLv3 still stands for 100M
+		    */
+			DBGLOG(SW4, TRACE,
+			"Coex_i[%d]ad[%d]k[%d]m[%d]eb[%d]tp[%llu]tpi[%llu]tpth[%d]th[%d]\n",
+			i, prWifiVar->fgIsBoostCpuThAdjustable, keep_alive,
+			prBssInfo->eCoexMode, prBssInfo->eBand,
+			prWifiVar->u4PerfMonTpTh[u4BoostCpuTh],
+			((unsigned long long)(prPerMonitor->ulTxTp[i] +
+					prPerMonitor->ulRxTp[i]) >> 17),
+			prWifiVar->u4PerfMonTpTh[2],
+			PERF_MON_COEX_TP_THRESHOLD);
+
+			if ((prWifiVar->fgIsBoostCpuThAdjustable == TRUE) &&
+				keep_alive &&
+				(prBssInfo->eBand == BAND_2G4) &&
+				(prBssInfo->eCoexMode == COEX_TDD_MODE) &&
+				(prWifiVar->u4PerfMonTpTh[u4BoostCpuTh] >
+					PERF_MON_COEX_TP_THRESHOLD) &&
+				(((unsigned long long)(prPerMonitor->ulTxTp[i] +
+					prPerMonitor->ulRxTp[i]) >> 17) >
+					PERF_MON_COEX_TP_THRESHOLD) &&
+				(prWifiVar->u4PerfMonTpTh[2] ==
+					PERF_MON_COEX_TP_THRESHOLD)) {
+				/*  3, stands for 100Mbps */
+				DBGLOG(SW4, INFO, "[Coex]CPUTh[3]\n");
+				u4BoostCpuTh = 3;
+			}
 		}
 	}
 
@@ -8137,7 +8171,7 @@ void kalPerMonHandler(IN struct ADAPTER *prAdapter,
 			(unsigned long) ((prPerMonitor->ulThroughput >> 10)
 					& BITS(0, 9)),
 			prPerMonitor->u4TarPerfLevel,
-			prAdapter->rWifiVar.u4BoostCpuTh,
+			u4BoostCpuTh,
 			prPerMonitor->ulPerfMonFlag,
 			GLUE_GET_REF_CNT(prGlueInfo->i4TxPendingFrameNum),
 			GLUE_GET_REF_CNT(prPerMonitor->u4UsedCnt));
@@ -8148,8 +8182,7 @@ void kalPerMonHandler(IN struct ADAPTER *prAdapter,
 				prPerMonitor->u4TarPerfLevel);
 		} else if ((prPerMonitor->u4TarPerfLevel !=
 		     prPerMonitor->u4CurrPerfLevel) &&
-		    (prAdapter->rWifiVar.u4BoostCpuTh <
-		     PERF_MON_TP_MAX_THRESHOLD)) {
+		    (u4BoostCpuTh < PERF_MON_TP_MAX_THRESHOLD)) {
 
 			DBGLOG(SW4, INFO,
 			"PerfMon total:%3lu.%03lu mbps lv:%u th:%u fg:0x%lx\n",
@@ -8157,11 +8190,11 @@ void kalPerMonHandler(IN struct ADAPTER *prAdapter,
 			(unsigned long) ((prPerMonitor->ulThroughput >> 10)
 					& BITS(0, 9)),
 			prPerMonitor->u4TarPerfLevel,
-			prAdapter->rWifiVar.u4BoostCpuTh,
+			u4BoostCpuTh,
 			prPerMonitor->ulPerfMonFlag);
 
 			kalBoostCpu(prAdapter, prPerMonitor->u4TarPerfLevel,
-				    prAdapter->rWifiVar.u4BoostCpuTh);
+				    u4BoostCpuTh);
 		}
 
 		prPerMonitor->u4UpdatePeriod =

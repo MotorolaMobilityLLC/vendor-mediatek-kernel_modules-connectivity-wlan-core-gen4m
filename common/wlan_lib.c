@@ -7867,6 +7867,11 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 	prWifiVar->u4BoostCpuTh =
 		(uint32_t) wlanCfgGetUint32(prAdapter, "BoostCpuTh",
 			u4PlatformBoostCpuTh);
+	prWifiVar->fgIsBoostCpuThAdjustable = FALSE;
+	if (!wlanCfgGetEntry(prAdapter, "BoostCpuTh", FALSE)) {
+		prWifiVar->fgIsBoostCpuThAdjustable  = TRUE;
+		DBGLOG(INIT, TRACE, "BoostCPUTh is not config, adjustable\n");
+	}
 
 	prWifiVar->u4PerfMonPendingTh = (uint8_t)wlanCfgGetUint32(prAdapter,
 						"PerfMonPendingTh", 80);
