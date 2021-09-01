@@ -1375,6 +1375,10 @@ void cnmIdcDetectHandler(IN struct ADAPTER *prAdapter,
 				au4SafeChannelBitmask[ucIdx]);
 		}
 	}
+
+	if (g_rLteSafeChInfo.ucVersion == 2)
+		goto SKIP_COOL_DOWN;
+
 	prWifiVar = &prAdapter->rWifiVar;
 	if (prWifiVar->ucChannelSwtichColdownTime)
 		ucColdDownTime = prWifiVar->ucChannelSwtichColdownTime;
@@ -1400,10 +1404,14 @@ void cnmIdcDetectHandler(IN struct ADAPTER *prAdapter,
 		return;
 	}
 
+SKIP_COOL_DOWN:
+
 	/* Choose New Ch & Start CH Swtich*/
 	prBssInfo = cnmGetSapBssInfo(prAdapter);
 	if (prBssInfo) {
-		DBGLOG(CNM, INFO, "[CSA]BssIdx=%d,CurCH=%d\n",
+		DBGLOG(CNM, INFO,
+			"[CSA] IDC Version %d, BssIdx = %d, CurCH = %d\n",
+			g_rLteSafeChInfo.ucVersion,
 			prBssInfo->ucBssIndex,
 			prBssInfo->ucPrimaryChannel);
 		ucNewChannel = cnmDecideSapNewChannel(prGlueInfo,
@@ -1411,15 +1419,15 @@ void cnmIdcDetectHandler(IN struct ADAPTER *prAdapter,
 		if (ucNewChannel) {
 			u4Ret = cnmIdcCsaReq(prAdapter, ucNewChannel,
 						prBssInfo->u4PrivateData);
-			DBGLOG(CNM, INFO, "[CSA]BssIdx=%d,NewCH=%d\n",
+			DBGLOG(CNM, INFO, "[CSA] BssIdx=%d, NewCH = %d\n",
 				prBssInfo->ucBssIndex, ucNewChannel);
 		} else {
 			DBGLOG(CNM, INFO,
-				"[CSA]No Safe channel,not switch CH\n");
+				"[CSA] No Safe channel,not switch CH\n");
 		}
 	} else {
 		DBGLOG(CNM, WARN,
-			"[CSA]SoftAp Not Exist\n");
+			"[CSA] SoftAp Not Exist\n");
 	}
 
 }
