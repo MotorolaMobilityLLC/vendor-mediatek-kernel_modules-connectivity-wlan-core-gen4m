@@ -1539,6 +1539,20 @@ int mtk_p2p_cfg80211_start_ap(struct wiphy *wiphy,
 			break;
 		}
 
+		if (dev->ieee80211_ptr &&
+			(dev->ieee80211_ptr->iftype == NL80211_IFTYPE_AP) &&
+			!p2pFuncIsAPMode(
+				prGlueInfo->prAdapter->rWifiVar.
+				prP2PConnSettings[ucRoleIdx])) {
+			DBGLOG(P2P, ERROR,
+				"Set fgIsApMode (role%d)\n",
+				ucRoleIdx);
+			p2pFuncInitConnectionSettings(prGlueInfo->prAdapter,
+				prGlueInfo->prAdapter->rWifiVar.
+				prP2PConnSettings[ucRoleIdx],
+				TRUE);
+		}
+
 		if (chandef) {
 			kalChannelFormatSwitch(chandef, chandef->chan,
 					&rRfChnlInfo);
