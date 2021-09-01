@@ -566,7 +566,7 @@ static struct WLAN_REQ_ENTRY arWlanOidReqTable[] = {
 	{
 		OID_CUSTOM_LOWLATENCY_MODE,	/* 0xFFA0CC00 */
 		DISP_STRING("OID_CUSTOM_LOWLATENCY_MODE"),
-		FALSE, FALSE, ENUM_OID_DRIVER_CORE, sizeof(uint32_t),
+		FALSE, FALSE, ENUM_OID_DRIVER_CORE, sizeof(uint32_t) * 7,
 		NULL,
 		(PFN_OID_HANDLER_FUNC_REQ) wlanoidSetLowLatencyMode
 	}

@@ -649,6 +649,10 @@ struct BSS_INFO {
 	uint8_t fgHasStopTx;
 	uint8_t ucVhtChannelWidthBeforeCsa;
 #endif
+
+#ifdef CFG_MSCS_SUPPORT
+	struct FAST_PATH_INFO rFastPathInfo;
+#endif
 };
 
 /* Support AP Selection */
@@ -1243,6 +1247,7 @@ struct WIFI_VAR {
 	uint32_t uArpMonitorNumber;
 	uint32_t uArpMonitorRxPktNum;
 #endif /* ARP_MONITER_ENABLE */
+
 #if CFG_SUPPORT_SCAN_NO_AP_RECOVERY
 	uint8_t ucScanNoApRecover;
 	uint8_t ucScanNoApRecoverTh;
@@ -1308,6 +1313,16 @@ struct WIFI_VAR {
 #if (CFG_SUPPORT_APF == 1)
 	uint8_t ucApfEnable;
 #endif
+	uint8_t ucUdpTspecUp;
+	uint8_t ucTcpTspecUp;
+	uint32_t u4UdpDelayBound;
+	uint32_t u4TcpDelayBound;
+	uint8_t ucDataRate;
+	/* 0:UDP, 1:TCP, 2:BOTH */
+	uint8_t ucSupportProtocol;
+	uint8_t ucCheckBeacon;
+	uint8_t ucEnableFastPath;
+	uint8_t ucFastPathAllPacket;
 };
 
 /* cnm_timer module */
@@ -2011,6 +2026,9 @@ struct ADAPTER {
 	struct LINK rNeighborAPInfoList;
 #endif
 
+#ifdef CFG_MSCS_SUPPORT
+	struct MSCS_CAP_FAST_PATH rFastPathCap;
+#endif
 };				/* end of _ADAPTER_T */
 
 /*******************************************************************************

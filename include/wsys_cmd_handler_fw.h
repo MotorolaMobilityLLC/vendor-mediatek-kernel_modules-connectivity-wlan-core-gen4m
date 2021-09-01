@@ -347,6 +347,7 @@ enum ENUM_CMD_ID {
 	CMD_ID_MIB_INFO     = 0xCE, /* 0xce (Query) */
 
 	CMD_ID_SET_TXBF_BACKOFF = 0xD1,
+	CMD_ID_FAST_PATH = 0xD5,
 
 	CMD_ID_SET_RDD_CH           = 0xE1,
 
@@ -525,6 +526,9 @@ enum ENUM_EVENT_ID {
 #if CFG_SUPPORT_NAN
 	EVENT_ID_NAN_EXT_EVENT = 0xEB,
 #endif
+
+	EVENT_ID_FAST_PATH = 0xD5,
+
 	EVENT_ID_NIC_CAPABILITY_V2 = 0xEC,
 	/* 0xEC (Query - CMD_ID_GET_NIC_CAPABILITY_V2) */
 	EVENT_ID_LAYER_0_EXT_MAGIC_NUM  = 0xED,
@@ -2083,6 +2087,29 @@ struct CMD_SET_FORCE_RTS {
 	uint8_t aucReserved[2];
 };
 
+struct CMD_FAST_PATH {
+	/* DWORD_0 - Common Part */
+	uint8_t  ucCmdVer;
+	uint8_t  aucPadding0[1];
+	uint16_t u2CmdLen;
+
+	/* DWORD_1 - afterwards */
+	uint8_t  aucOwnMac[6]; /* Own Mac address*/
+	uint16_t u2RandomNum; /* Random number genetate by Driver*/
+	uint32_t u4Keybitmap[4]; /* Keybitmap send from AP */
+};
+
+struct EVENT_FAST_PATH {
+	/* DWORD_0 - Common Part */
+	uint8_t  ucEvtVer;
+	uint8_t  aucPadding0[1];
+	uint16_t u2EvtLen;
+
+	/* DWORD_1 - afterwards */
+	uint16_t u2Mic; /* message integrity check */
+	uint8_t  ucKeynum; /* To tell AP side about STA use which key */
+	uint8_t  ucKeyBitmapMatchStatus; /* Tell if Keybitmap match */
+};
 #endif /* _WSYS_CMD_HANDLER_FW_H */
 
 

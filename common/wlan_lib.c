@@ -5383,6 +5383,13 @@ uint32_t wlanEnqueueTxPacket(IN struct ADAPTER *prAdapter,
 		wlanTxProfilingTagMsdu(prAdapter, prMsduInfo,
 				       TX_PROF_TAG_DRV_ENQUE);
 
+		/* Check if need to send a MSCS request */
+		if (mscsIsNeedRequest(prAdapter, prNativePacket)) {
+			/* Request a mscs frame if needed */
+			mscsRequest(prAdapter, prNativePacket, MSCS_REQUEST,
+				FRAME_CLASSIFIER_TYPE_4);
+		}
+
 		/* enqueue to QM */
 		nicTxEnqueueMsdu(prAdapter, prMsduInfo);
 
@@ -8069,6 +8076,24 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 	prWifiVar->ucApfEnable = (uint32_t) wlanCfgGetUint32(
 			prAdapter, "ApfEnable", FEATURE_ENABLED);
 #endif
+	prWifiVar->ucUdpTspecUp = (uint8_t) wlanCfgGetUint32(
+				prAdapter, "UdpTspecUp", 7);
+	prWifiVar->ucTcpTspecUp = (uint8_t) wlanCfgGetUint32(
+				prAdapter, "TcpTspecUp", 5);
+	prWifiVar->u4UdpDelayBound = wlanCfgGetUint32(
+			prAdapter, "UdpDelayBound", 7000);
+	prWifiVar->u4TcpDelayBound = wlanCfgGetUint32(
+			prAdapter, "TcpDelayBound", 10000);
+	prWifiVar->ucDataRate = (uint8_t) wlanCfgGetUint32(
+			prAdapter, "TspecDataRate", 0);
+	prWifiVar->ucSupportProtocol = (uint8_t) wlanCfgGetUint32(
+			prAdapter, "SupportProtocol", 0);
+	prWifiVar->ucCheckBeacon = (uint8_t) wlanCfgGetUint32(
+			prAdapter, "MscsCheckBeacon", FEATURE_ENABLED);
+	prWifiVar->ucEnableFastPath = (uint8_t) wlanCfgGetUint32(
+			prAdapter, "EnableFastPath", FEATURE_ENABLED);
+	prWifiVar->ucFastPathAllPacket = (uint8_t) wlanCfgGetUint32(
+			prAdapter, "EnableFastPath", FEATURE_DISABLED);
 }
 
 void wlanCfgSetSwCtrl(IN struct ADAPTER *prAdapter)
@@ -11647,6 +11672,16 @@ uint32_t wlanSetLowLatencyMode(
 			prAisBssInfo->ucBssIndex))
 		fgEnMode = TRUE; /* It will enable low latency mode */
 
+
+	if (fgEnMode != prAdapter->fgEnLowLatencyMode) {
+		prAdapter->fgEnLowLatencyMode = fgEnMode;
+		if (!fgEnMode && (MEDIA_STATE_CONNECTED
+			== kalGetMediaStateIndicated(prAdapter->prGlueInfo,
+			prAisBssInfo->ucBssIndex)))
+			mscsDeactivate(prAdapter,
+				aisGetStaRecOfAP(prAdapter, AIS_DEFAULT_INDEX));
+	}
+
 	/* Enable/disable scan management decision:
 	 *
 	 * Enable if it will enable low latency mode.
@@ -11681,8 +11716,6 @@ uint32_t wlanSetLowLatencyMode(
 
 	if ((prWifiVar->ucLowLatencyModeReOrder == FEATURE_ENABLED) &&
 	    (fgEnMode != prAdapter->fgEnLowLatencyMode)) {
-		prAdapter->fgEnLowLatencyMode = fgEnMode;
-
 		/* Queue management:
 		 *
 		 * Change QM RX BA timeout if the gaming mode state changed
@@ -12592,6 +12625,33 @@ void wlanCustomMonitorFunction(struct ADAPTER *prAdapter,
 	}
 }
 #endif
+
+uint8_t wlanCheckExtCapBit(struct STA_RECORD *prStaRec, uint8_t *pucIE,
+		uint8_t ucTargetBit)
+{
+	uint8_t *pucIeExtCap;
+	uint8_t ucTargetByteIndex = (ucTargetBit >> 3);
+	uint8_t ucTargetBitInByte = ucTargetBit % 8;
+
+	if ((prStaRec == NULL) || (pucIE == NULL))
+		return FALSE;
+
+	if (IE_ID(pucIE) != ELEM_ID_EXTENDED_CAP)
+		return FALSE;
+
+	if (IE_LEN(pucIE) < (ucTargetByteIndex + 1))
+		return FALSE;
+
+	/* parse */
+	pucIeExtCap = pucIE + 2;
+	/* shift to the byte we care about */
+	pucIeExtCap += ucTargetByteIndex;
+
+	if ((*pucIeExtCap) & BIT(ucTargetBitInByte))
+		return TRUE;
+
+	return FALSE;
+}
 
 /*----------------------------------------------------------------------------*/
 /*!

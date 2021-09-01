@@ -196,6 +196,9 @@ static struct RX_EVENT_HANDLER arEventTable[] = {
 #if CFG_SUPPORT_LOWLATENCY_MODE
 	{EVENT_ID_LOW_LATENCY_INFO, nicEventUpdateLowLatencyInfoStatus},
 #endif
+#if CFG_MSCS_SUPPORT
+	{EVENT_ID_FAST_PATH, fpEventHandler},
+#endif
 #if CFG_SUPPORT_NAN
 	{ EVENT_ID_NAN_EXT_EVENT, nicNanEventDispatcher},
 #endif
@@ -2064,6 +2067,9 @@ void nicRxProcessDataPacket(IN struct ADAPTER *prAdapter,
 						   prSwRfb->ucWlanIdx);
 		GLUE_SET_PKT_BSS_IDX(prSwRfb->pvPacket, ucBssIndex);
 		STATS_RX_PKT_INFO_DISPLAY(prSwRfb);
+		if (prAdapter->fgEnLowLatencyMode &&
+			prAdapter->rWifiVar.ucSupportProtocol != 0)
+			mscsHandleRxPacket(prAdapter, prSwRfb);
 
 #if ((CFG_SUPPORT_802_11AX == 1) && (CFG_SUPPORT_WIFI_SYSDVT == 1))
 		if (fgEfuseCtrlAxOn == 1) {
@@ -4858,6 +4864,9 @@ uint32_t nicRxProcessActionFrame(IN struct ADAPTER *
 	case CATEGORY_HT_ACTION:
 		rlmProcessHtAction(prAdapter, prSwRfb);
 		break;
+	case CATEGORY_VENDOR_SPECIFIC_PROTECTED_ACTION:
+		fpProcessVendorSpecProtectedFrame(prAdapter, prSwRfb);
+		break;
 	case CATEGORY_VENDOR_SPECIFIC_ACTION:
 #if CFG_ENABLE_WIFI_DIRECT
 		if (prAdapter->fgIsP2PRegistered) {
@@ -4975,9 +4984,15 @@ uint32_t nicRxProcessActionFrame(IN struct ADAPTER *
 	case CATEGORY_WME_MGT_NOTIFICATION:
 		wmmParseQosAction(prAdapter, prSwRfb);
 		break;
+
 	case CATEGORY_PROTECTED_DUAL_OF_PUBLIC_ACTION:
 		aisFuncValidateRxActionFrame(prAdapter, prSwRfb);
 		break;
+
+	case CATEGORY_ROBUST_AV_STREAMING_ACTION:
+		mscsProcessRobustAVStreaming(prAdapter, prSwRfb);
+		break;
+
 	default:
 		break;
 	}			/* end of switch case */

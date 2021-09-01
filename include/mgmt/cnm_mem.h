@@ -747,6 +747,7 @@ struct STA_RECORD {
 #if CFG_SUPPORT_HE_ER
 	u_int8_t fgIsExtendedRange;
 #endif
+
 /* fos_change begin*/
 #if CFG_SUPPORT_STAT_STATISTICS
 	uint32_t u4LastPhyRate;
@@ -782,6 +783,10 @@ struct STA_RECORD {
 			[STATS_LLS_MAX_HE_BW_NUM][STATS_LLS_HE_NUM];
 	};
 #endif
+
+	u_int8_t fgIsMscsSupported;
+	struct LINK rMscsMonitorList;
+	struct LINK rMscsTcpMonitorList;
 };
 
 #if 0

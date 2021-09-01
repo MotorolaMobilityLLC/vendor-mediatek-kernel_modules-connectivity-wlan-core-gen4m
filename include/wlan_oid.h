@@ -2733,6 +2733,18 @@ struct PARAM_OFLD_INFO {
 };
 #endif /* CFG_SUPPORT_PKT_OFLD */
 
+#if CFG_SUPPORT_LOWLATENCY_MODE
+struct PARAM_LOWLATENCY_DATA {
+	uint32_t u4Events;
+	uint32_t u4UdpDelayBound;
+	uint32_t u4TcpDelayBound;
+	uint32_t u4DataPhyRate;
+	uint32_t u4UdpPriority;
+	uint32_t u4TcpPriority;
+	uint32_t u4SupportProtocol;
+};
+#endif /* CFG_SUPPORT_LOWLATENCY_MODE */
+
 /*******************************************************************************
  *                            P U B L I C   D A T A
  *******************************************************************************

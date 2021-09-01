@@ -96,6 +96,10 @@
 #define UDP_PORT_DHCPC				0x44
 #define UDP_PORT_DNS				0x35
 
+#define TCP_FLAG_SYN				0x02
+#define TCP_FLAG_SYN_ACK			0x12
+#define TCP_FLAG_ACK				0x10
+
 #define ETH_P_1X                                0x888E
 #define ETH_P_PRE_1X                            0x88C7
 #if CFG_SUPPORT_WAPI
@@ -117,10 +121,6 @@
 #define IP_PRO_ICMP				0x01
 #define IP_PRO_UDP				0x11
 #define IP_PRO_TCP				0x06
-
-#define UDP_PORT_DHCPS				0x43
-#define UDP_PORT_DHCPC				0x44
-#define UDP_PORT_DNS				0x35
 
 /* IPv4 Header definition */
 #define IPV4_HDR_TOS_OFFSET                     1
@@ -164,6 +164,11 @@
 
 #define TCP_HDR_FLAG_OFFSET                     13
 #define TCP_HDR_FLAG_ACK_BIT                    BIT(4)
+#define TCP_HDR_SRC_PORT_OFFSET                 0
+#define TCP_HDR_DST_PORT_OFFSET                 2
+#define TCP_HDR_SEQ                             4
+#define TCP_HDR_ACK                             8
+#define TCP_HDR_FLAG_OFFSET                     13
 #define TCP_HDR_TCP_CSUM_OFFSET                 16
 
 #define UDP_HDR_LEN                             8
@@ -1048,8 +1053,6 @@
 	74	/* Overlapping BSS Scan Parameters */
 #define ELEM_ID_MBSSID_INDEX \
 	85	/* Multiple BSSID-Index element */
-#define ELEM_ID_EXTENDED_CAP \
-	127	/* Extended capabilities */
 #define ELEM_ID_RNR \
 	201	/* Reduced Neighbor Report */
 #define ELEM_ID_INTERWORKING \
@@ -1314,6 +1317,7 @@ enum BEACON_REPORT_DETAIL {
 #if (CFG_SUPPORT_TWT == 1)
 #define ELEM_EXT_CAP_TWT_REQUESTER_BIT              77
 #endif
+#define ELEM_EXT_CAP_MSCS_BIT                       85
 
 #define ELEM_MAX_LEN_EXT_CAP_11ABGNAC               (8)
 
@@ -1800,6 +1804,15 @@ enum BEACON_REPORT_DETAIL {
 #define ACTION_S1G_TWT_TEARDOWN                     7
 #define ACTION_S1G_TWT_INFORMATION                  11
 #endif
+
+/* 9.6.18 Robust AV streaming Robust Action */
+#define ACTION_MSCS_REQ                             4
+#define ACTION_MSCS_RSP                             5
+#define ELEM_ID_EXT_MSCS_DESC                       88
+#define ELEM_ID_EXT_TCLAS_MASK                      89
+#define MSCS_DESC_REQ_TYPE_ADD                      0
+#define MSCS_DESC_REQ_TYPE_REMOVE                   1
+#define MSCS_DESC_MANDATORY_LEN                     8
 
 /* 3  --------------- WFA  frame body fields --------------- */
 #define VENDOR_OUI_WFA                              { 0x00, 0x50, 0xF2 }
@@ -2955,6 +2968,40 @@ struct ACTION_CHANNEL_SWITCH_FRAME {
 	uint8_t aucInfoElem[13]; /* Information elements */
 } __KAL_ATTRIB_PACKED__;
 
+struct ACTION_MSCS_REQ_FRAME {
+	/* Action MAC header */
+	uint16_t u2FrameCtrl;	/* Frame Control */
+	uint16_t u2DurationID;	/* Duration */
+	uint8_t aucDestAddr[MAC_ADDR_LEN];	/* DA */
+	uint8_t aucSrcAddr[MAC_ADDR_LEN];	/* SA */
+	uint8_t aucBSSID[MAC_ADDR_LEN];	/* BSSID */
+	uint16_t u2SeqCtrl;	/* Sequence Control */
+	/* Action frame body */
+	uint8_t ucCategory;	/* Category: 19 */
+	/* Robust Action Value: [4]: MSCS Request [5]: MSCS Response */
+	uint8_t ucAction;
+	uint8_t ucDialogToken;	/* Dialog Token */
+	uint8_t aucMSCSDesc[0]; /* MSCS Descriptor Element */
+} __KAL_ATTRIB_PACKED__;
+
+struct ACTION_MSCS_RSP_FRAME {
+	/* Action MAC header */
+	uint16_t u2FrameCtrl;	/* Frame Control */
+	uint16_t u2DurationID;	/* Duration */
+	uint8_t aucDestAddr[MAC_ADDR_LEN];	/* DA */
+	uint8_t aucSrcAddr[MAC_ADDR_LEN];	/* SA */
+	uint8_t aucBSSID[MAC_ADDR_LEN];	/* BSSID */
+	uint16_t u2SeqCtrl;	/* Sequence Control */
+	/* Action frame body */
+	uint8_t ucCategory;	/* Category: 19 */
+	/* Robust Action Value: [4]: MSCS Request [5]: MSCS Response */
+	uint8_t ucAction;
+	uint8_t ucDialogToken;	/* Dialog Token */
+	uint16_t u2StatusCode;	/* Status code */
+	uint8_t aucMSCSDesc[0]; /* MSCS Descriptor Element */
+} __KAL_ATTRIB_PACKED__;
+
+
 /* 7.4.2.1 ADDTS Request frame format */
 struct ACTION_ADDTS_REQ_FRAME {
 	/* ADDTS Request MAC header */
@@ -3542,7 +3589,9 @@ struct SUB_IE_REPORTING_DETAIL {
 } __KAL_ATTRIB_PACKED__;
 
 struct IE_TSPEC_BODY {
-	uint8_t	aucTsInfo[3];               /* TS info field */
+	uint8_t ucId;                   /* ELEM_ID_TSPEC */
+	uint8_t ucLength;
+	uint8_t	aucTsInfo[3];           /* TS info field */
 	uint16_t u2NominalMSDUSize;     /* nominal MSDU size */
 	uint16_t u2MaxMSDUsize;         /* maximum MSDU size */
 	uint32_t u4MinSvcIntv;          /* minimum service interval */
@@ -3622,6 +3671,59 @@ struct IE_SHORT_SSID_LIST {
 	uint8_t      ucLength;
 	uint8_t      ucIdExt;
 	uint8_t      aucShortSsidList[0];
+} __KAL_ATTRIB_PACKED__;
+
+struct IE_TCLAS_MASK {
+	uint8_t      ucId;
+	uint8_t      ucLength;
+	uint8_t      ucIdExt;
+	uint8_t      aucFrameClassifier[0];  /* Frame Classifier Field */
+} __KAL_ATTRIB_PACKED__;
+
+/* Frame Classifier Field */
+struct IE_TCLAS_CLASS_TYPE_4 {
+	uint8_t      ucClassifierType;
+	uint8_t      ucClassifierMask;
+	uint8_t      ucVersion;
+	uint32_t     u4SrcIp;
+	uint32_t     u4DestIp;
+	uint16_t     u2SrcPort;
+	uint16_t     u2DestPort;
+	uint8_t      ucDSCP;
+	uint8_t      ucProtocol;
+	uint8_t      ucReserved;
+} __KAL_ATTRIB_PACKED__;
+
+struct IE_MSCS_DESC {
+	uint8_t      ucId;
+	uint8_t      ucLength;
+	uint8_t      ucIdExt;
+	uint8_t      ucReqType;
+	uint16_t     u2UserPriorityCtrl; /* bitmap: 4567, limit: 7 */
+	uint32_t     u4StreamTimeout; /* 60s */
+	uint8_t      aucData[0]; /* TCLAS */
+} __KAL_ATTRIB_PACKED__;
+
+struct ACTION_VENDOR_SPEC_PROTECTED_FRAME {
+	/* MAC header */
+	uint16_t u2FrameCtrl;	/* Frame Control */
+	uint16_t u2Duration;	/* Duration */
+	uint8_t  aucDestAddr[MAC_ADDR_LEN];	/* DA */
+	uint8_t  aucSrcAddr[MAC_ADDR_LEN];	/* SA */
+	uint8_t  aucBSSID[MAC_ADDR_LEN];	/* BSSID */
+	uint16_t u2SeqCtrl;	/* Sequence Control */
+	/* Vendor Specific Management frame body */
+	uint8_t  ucCategory;	/* Category */
+	uint8_t  aucOui[3];
+	uint8_t  ucFastPathVersion;
+	uint8_t  ucFastPathStatus;
+	uint8_t  ucTransactionId;
+	uint8_t  ucFastPathType;
+	uint16_t u2RandomNum;
+	uint16_t u2Mic;
+	uint16_t u2KeyNum;
+	uint16_t u2Reserved;
+	uint32_t u4KeyBitmap[4];
 } __KAL_ATTRIB_PACKED__;
 
 #if defined(WINDOWS_DDK) || defined(WINDOWS_CE)

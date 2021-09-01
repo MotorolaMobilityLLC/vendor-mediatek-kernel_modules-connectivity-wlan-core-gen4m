@@ -593,6 +593,9 @@ void qmActivateStaRec(IN struct ADAPTER *prAdapter,
 		mddpNotifyDrvTxd(prAdapter, prStaRec, TRUE);
 #endif
 
+	LINK_INITIALIZE(&prStaRec->rMscsMonitorList);
+	LINK_INITIALIZE(&prStaRec->rMscsTcpMonitorList);
+
 	DBGLOG(QM, INFO, "QM: +STA[%d]\n", prStaRec->ucIndex);
 }
 
@@ -644,6 +647,7 @@ void qmDeactivateStaRec(IN struct ADAPTER *prAdapter,
 	prStaRec->fgIsValid = FALSE;
 	prStaRec->fgIsInPS = FALSE;
 	prStaRec->fgIsTxKeyReady = FALSE;
+	prStaRec->fgIsMscsSupported = FALSE;
 
 	/* Reset buffer count  */
 	prStaRec->ucFreeQuota = 0;
@@ -658,6 +662,7 @@ void qmDeactivateStaRec(IN struct ADAPTER *prAdapter,
 	if (mddpIsSupportMcifWifi())
 		mddpNotifyDrvTxd(prAdapter, prStaRec, FALSE);
 #endif
+	mscsDeactivate(prAdapter, prStaRec);
 
 	DBGLOG(QM, INFO, "QM: -STA[%u]\n", prStaRec->ucIndex);
 }
@@ -6094,6 +6099,7 @@ void mqmProcessScanResult(IN struct ADAPTER *prAdapter,
 	prStaRec->fgIsWmmSupported = FALSE;
 	prStaRec->fgIsUapsdSupported = FALSE;
 	prStaRec->fgIsQoS = FALSE;
+	prStaRec->fgIsMscsSupported = FALSE;
 #if (CFG_SUPPORT_802_11AX == 1)
 	prStaRec->fgIsMuEdcaSupported = FALSE;
 #endif
@@ -6119,8 +6125,12 @@ void mqmProcessScanResult(IN struct ADAPTER *prAdapter,
 				!!((*(uint32_t *)(pucIE + 2)) &
 			BIT(ELEM_EXT_CAP_BSS_TRANSITION_BIT));
 #endif
+			prStaRec->fgIsMscsSupported = wlanCheckExtCapBit(
+				prStaRec, pucIE, ELEM_EXT_CAP_MSCS_BIT);
+			if (IS_FEATURE_DISABLED(
+				prAdapter->rWifiVar.ucCheckBeacon))
+				prStaRec->fgIsMscsSupported = TRUE;
 			break;
-
 		case ELEM_ID_WMM:
 			if ((WMM_IE_OUI_TYPE(pucIE) == VENDOR_OUI_TYPE_WMM) &&
 			    (!kalMemCmp(WMM_IE_OUI(pucIE), aucWfaOui, 3))) {

@@ -1874,6 +1874,10 @@ int wlanQueryRateByTable(uint32_t txmode, uint32_t rate,
 void wlanCustomMonitorFunction(struct ADAPTER *prAdapter,
 	struct WIFI_LINK_QUALITY_INFO *prLinkQualityInfo, uint8_t ucBssIdx);
 #endif /* CFG_SUPPORT_DATA_STALL */
+
+uint8_t wlanCheckExtCapBit(struct STA_RECORD *prStaRec, uint8_t *pucIE,
+	uint8_t ucTargetBit);
+
 uint32_t wlanSetForceRTS(IN struct ADAPTER *prAdapter,
 	IN u_int8_t fgEnForceRTS);
 
