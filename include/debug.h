@@ -826,6 +826,9 @@ uint32_t wlanDbgGetLogLevelImpl(IN struct ADAPTER *prAdapter,
 		uint32_t u4Version, uint32_t ucModule);
 void wlanDbgSetLogLevelImpl(IN struct ADAPTER *prAdapter,
 		uint32_t u4Version, uint32_t u4Module, uint32_t u4level);
+void wlanDbgSetLogLevel(IN struct ADAPTER *prAdapter,
+		uint32_t u4Version, uint32_t u4Module,
+		uint32_t u4level, u_int8_t fgEarlySet);
 void wlanDriverDbgLevelSync(void);
 u_int8_t wlanDbgGetGlobalLogLevel(uint32_t u4Module, uint32_t *pu4Level);
 u_int8_t wlanDbgSetGlobalLogLevel(uint32_t u4Module, uint32_t u4Level);

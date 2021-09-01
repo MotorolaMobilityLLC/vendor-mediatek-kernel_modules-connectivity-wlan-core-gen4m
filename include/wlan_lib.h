@@ -77,6 +77,7 @@
 #include "nic_init_cmd_event.h"
 #include "fw_dl.h"
 #include "queue.h"
+#include "cmd_buf.h"
 /*******************************************************************************
  *                              C O N S T A N T S
  *******************************************************************************
@@ -1924,3 +1925,11 @@ int wlanTpeProcess(struct GLUE_INFO *prGlueInfo,
 			struct sk_buff *prSkb,
 			struct net_device *prDev);
 #endif /* CFG_SUPPORT_TPENHANCE_MODE */
+
+void wlanSetConnsysFwLog(IN struct ADAPTER *prAdapter);
+uint32_t wlanSendFwLogControlCmd(IN struct ADAPTER *prAdapter,
+				uint8_t ucCID,
+				PFN_CMD_DONE_HANDLER pfCmdDoneHandler,
+				PFN_CMD_TIMEOUT_HANDLER pfCmdTimeoutHandler,
+				uint32_t u4SetQueryInfoLen,
+				int8_t *pucInfoBuffer);

@@ -4365,7 +4365,15 @@ connsysFwLogControl(struct ADAPTER *prAdapter, void *pvSetBuffer,
 		rCmdV1Header.itemNum = 1;
 		prAdapter->fgSetLogOnOff = false;
 
-		rStatus = wlanSendSetQueryCmd(
+		if (prCmd->fgEarlySet) {
+			rStatus = wlanSendFwLogControlCmd(prAdapter,
+					CMD_ID_GET_SET_CUSTOMER_CFG,
+					NULL,
+					NULL,
+					sizeof(struct CMD_HEADER),
+					(uint8_t *)&rCmdV1Header);
+		} else {
+			rStatus = wlanSendSetQueryCmd(
 				prAdapter, /* prAdapter */
 				CMD_ID_GET_SET_CUSTOMER_CFG, /* 0x70 */
 				TRUE,  /* fgSetQuery */
@@ -4378,6 +4386,7 @@ connsysFwLogControl(struct ADAPTER *prAdapter, void *pvSetBuffer,
 				NULL,  /* pvSetQueryBuffer */
 				0      /* u4SetQueryBufferLen */
 			);
+		}
 
 		/* keep in cache */
 		u4LogOnOffCache = prCmd->fgValue;
@@ -4411,10 +4420,19 @@ connsysFwLogControl(struct ADAPTER *prAdapter, void *pvSetBuffer,
 					   ENUM_WIFI_LOG_LEVEL_VERSION_V1,
 					   ENUM_WIFI_LOG_MODULE_DRIVER,
 					   u4LogLevel);
-		wlanDbgSetLogLevelImpl(prAdapter,
+
+		if (prCmd->fgEarlySet) {
+			wlanDbgSetLogLevel(prAdapter,
+					   ENUM_WIFI_LOG_LEVEL_VERSION_V1,
+					   ENUM_WIFI_LOG_MODULE_FW,
+					   u4LogLevel, TRUE);
+		} else {
+			wlanDbgSetLogLevelImpl(prAdapter,
 					   ENUM_WIFI_LOG_LEVEL_VERSION_V1,
 					   ENUM_WIFI_LOG_MODULE_FW,
 					   u4LogLevel);
+		}
+
 		/* keep in cache */
 		u4LogLevelCache = prCmd->fgValue;
 	} else {
@@ -4527,6 +4545,7 @@ static void consys_log_event_notification(int cmd, int value)
 	kalMemZero(&rFwLogCmd, sizeof(rFwLogCmd));
 	rFwLogCmd.fgCmd = cmd;
 	rFwLogCmd.fgValue = value;
+	rFwLogCmd.fgEarlySet = FALSE;
 
 	rStatus = kalIoctl(prGlueInfo,
 				   connsysFwLogControl,
@@ -4977,8 +4996,6 @@ int32_t wlanOnWhenProbeSuccess(struct GLUE_INFO *prGlueInfo,
 	struct ADAPTER *prAdapter,
 	const u_int8_t bAtResetFlow)
 {
-	int32_t u4LogLevel = ENUM_WIFI_LOG_LEVEL_DEFAULT;
-
 	DBGLOG(INIT, TRACE, "start.\n");
 
 #if CFG_SUPPORT_EASY_DEBUG
@@ -5047,22 +5064,8 @@ int32_t wlanOnWhenProbeSuccess(struct GLUE_INFO *prGlueInfo,
 #endif
 	kalSetHalted(FALSE);
 
-	wlanDbgGetGlobalLogLevel(ENUM_WIFI_LOG_MODULE_FW,
-				 &u4LogLevel);
-	if (u4LogLevel > ENUM_WIFI_LOG_LEVEL_DEFAULT)
-		wlanDbgSetLogLevelImpl(prAdapter,
-				       ENUM_WIFI_LOG_LEVEL_VERSION_V1,
-				       ENUM_WIFI_LOG_MODULE_FW,
-				       u4LogLevel);
 
 #ifdef CONFIG_MTK_CONNSYS_DEDICATED_LOG_PATH
-	/* sync log status with firmware */
-	consys_log_event_notification((int)FW_LOG_CMD_ON_OFF,
-		u4LogOnOffCache);
-	if (u4LogLevelCache != -1) {
-		consys_log_event_notification((int)FW_LOG_CMD_SET_LEVEL,
-			u4LogLevelCache);
-	}
 #if (CFG_SUPPORT_ICS == 1)
 	ics_log_event_notification((int)ICS_LOG_CMD_ON_OFF,
 		u4IcsLogOnOffCache);

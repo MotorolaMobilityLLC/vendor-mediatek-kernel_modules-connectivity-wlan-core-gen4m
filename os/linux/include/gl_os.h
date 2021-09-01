@@ -120,6 +120,8 @@
 /* for non-wfa vendor specific IE buffer */
 #define NON_WFA_VENDOR_IE_MAX_LEN	(128)
 
+#define FW_LOG_CMD_ON_OFF		0
+#define FW_LOG_CMD_SET_LEVEL		1
 
 /*******************************************************************************
  *                    E X T E R N A L   R E F E R E N C E S
@@ -1021,6 +1023,12 @@ struct PACKET_PRIVATE_DATA {
 struct PACKET_PRIVATE_RX_DATA {
 	uint64_t u8IntTime;	/* 8byte */
 	uint64_t u8RxTime;	/* 8byte */
+};
+
+struct CMD_CONNSYS_FW_LOG {
+	int32_t fgCmd;
+	int32_t fgValue;
+	u_int8_t fgEarlySet;
 };
 
 /*******************************************************************************

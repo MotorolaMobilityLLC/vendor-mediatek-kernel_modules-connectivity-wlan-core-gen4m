@@ -1298,8 +1298,11 @@ uint32_t wlanAdapterStart(IN struct ADAPTER *prAdapter,
 			if (!bAtResetFlow) {
 				/* 2.9 Workaround for Capability
 				*CMD packet lost issue
+				*wlanSendDummyCmd(prAdapter, TRUE);
 				*/
-				wlanSendDummyCmd(prAdapter, TRUE);
+
+				/* Connsys Fw log setting */
+				wlanSetConnsysFwLog(prAdapter);
 
 				/* 3. query for NIC capability */
 				if (prAdapter->chip_info->isNicCapV1)
@@ -13305,3 +13308,106 @@ TpeEndFlush:
 	return WLAN_STATUS_PENDING;
 }
 #endif /* CFG_SUPPORT_TPENHANCE_MODE */
+
+void wlanSetConnsysFwLog(IN struct ADAPTER *prAdapter)
+{
+	struct CMD_CONNSYS_FW_LOG rFwLogCmd;
+	uint32_t u4BufLen;
+	int32_t u4LogLevel = ENUM_WIFI_LOG_LEVEL_DEFAULT;
+
+	/* Enable FW log */
+	wlanDbgGetGlobalLogLevel(
+		ENUM_WIFI_LOG_MODULE_FW, &u4LogLevel);
+	if (u4LogLevel > ENUM_WIFI_LOG_LEVEL_DEFAULT)
+		wlanDbgSetLogLevel(prAdapter,
+			ENUM_WIFI_LOG_LEVEL_VERSION_V1,
+			ENUM_WIFI_LOG_MODULE_FW,
+			u4LogLevel, TRUE);
+
+#ifdef CONFIG_MTK_CONNSYS_DEDICATED_LOG_PATH
+	kalMemZero(&rFwLogCmd, sizeof(rFwLogCmd));
+
+	rFwLogCmd.fgCmd = (int)FW_LOG_CMD_ON_OFF;
+	rFwLogCmd.fgValue = getFWLogOnOff();
+	rFwLogCmd.fgEarlySet = TRUE;
+
+	connsysFwLogControl(prAdapter,
+		&rFwLogCmd,
+		sizeof(struct CMD_CONNSYS_FW_LOG),
+		&u4BufLen);
+
+	if (getFWLogLevel() != -1) {
+		rFwLogCmd.fgCmd =
+			(int)FW_LOG_CMD_SET_LEVEL;
+		rFwLogCmd.fgValue = getFWLogLevel();
+		rFwLogCmd.fgEarlySet = TRUE;
+
+		connsysFwLogControl(prAdapter,
+		&rFwLogCmd,
+		sizeof(struct CMD_CONNSYS_FW_LOG),
+		&u4BufLen);
+	}
+#endif
+
+}
+
+uint32_t wlanSendFwLogControlCmd(IN struct ADAPTER *prAdapter,
+				uint8_t ucCID,
+				PFN_CMD_DONE_HANDLER pfCmdDoneHandler,
+				PFN_CMD_TIMEOUT_HANDLER pfCmdTimeoutHandler,
+				uint32_t u4SetQueryInfoLen,
+				int8_t *pucInfoBuffer)
+{
+	uint32_t status = WLAN_STATUS_SUCCESS;
+	struct GLUE_INFO *prGlueInfo;
+	struct CMD_INFO *prCmdInfo;
+	struct mt66xx_chip_info *prChipInfo;
+	uint8_t *pucCmfBuf;
+	uint16_t cmd_size;
+
+	ASSERT(prAdapter);
+
+	prGlueInfo = prAdapter->prGlueInfo;
+	prChipInfo = prAdapter->chip_info;
+	cmd_size = prChipInfo->u2CmdTxHdrSize + u4SetQueryInfoLen;
+	prCmdInfo = cmdBufAllocateCmdInfo(prAdapter, cmd_size);
+	if (!prCmdInfo) {
+		DBGLOG(INIT, ERROR, "Allocate CMD_INFO_T FAILED ID[0x%x]\n",
+			ucCID);
+		return WLAN_STATUS_FAILURE;
+	}
+
+	/* Setup common CMD Info Packet */
+	prCmdInfo->eCmdType = COMMAND_TYPE_GENERAL_IOCTL;
+	prCmdInfo->u2InfoBufLen = cmd_size;
+	prCmdInfo->pfCmdDoneHandler = pfCmdDoneHandler;
+	prCmdInfo->pfCmdTimeoutHandler = pfCmdTimeoutHandler;
+	prCmdInfo->ucCID = ucCID;
+	prCmdInfo->fgSetQuery = TRUE;
+	prCmdInfo->fgNeedResp = FALSE;
+	prCmdInfo->fgIsOid = FALSE;
+	prCmdInfo->u4SetInfoLen = u4SetQueryInfoLen;
+
+	NIC_FILL_CMD_TX_HDR(prAdapter,
+		prCmdInfo->pucInfoBuffer,
+		prCmdInfo->u2InfoBufLen,
+		prCmdInfo->ucCID,
+		CMD_PACKET_TYPE_ID,
+		&prCmdInfo->ucCmdSeqNum,
+		prCmdInfo->fgSetQuery, &pucCmfBuf, FALSE, 0, S2D_INDEX_CMD_H2N);
+	if (u4SetQueryInfoLen > 0 && pucInfoBuffer != NULL)
+		kalMemCopy(pucCmfBuf, pucInfoBuffer,
+			   u4SetQueryInfoLen);
+
+	if (wlanSendCommand(prAdapter,
+			prCmdInfo) != WLAN_STATUS_SUCCESS) {
+		DBGLOG(INIT, ERROR,
+			"Fail to transmit commandID[0x%x]\n",
+			ucCID);
+		status = WLAN_STATUS_FAILURE;
+	}
+
+	cmdBufFreeCmdInfo(prAdapter, prCmdInfo);
+
+	return status;
+}

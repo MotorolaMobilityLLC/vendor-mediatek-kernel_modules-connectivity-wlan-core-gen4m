@@ -315,11 +315,6 @@
 #define LOW_LATENCY_MODE_CMD_V2          0x2
 #endif /* CFG_SUPPORT_LOWLATENCY_MODE */
 
-#ifdef CONFIG_MTK_CONNSYS_DEDICATED_LOG_PATH
-#define FW_LOG_CMD_ON_OFF        0
-#define FW_LOG_CMD_SET_LEVEL     1
-#endif
-
 /*******************************************************************************
  *                             D A T A   T Y P E S
  *******************************************************************************
@@ -2696,13 +2691,6 @@ enum ENUM_WIFI_LOG_LEVEL_SUPPORT_T {
 	ENUM_WIFI_LOG_LEVEL_SUPPORT_ENABLE,
 	ENUM_WIFI_LOG_LEVEL_SUPPORT_NUM
 };
-
-#ifdef CONFIG_MTK_CONNSYS_DEDICATED_LOG_PATH
-struct CMD_CONNSYS_FW_LOG {
-	int32_t fgCmd;
-	int32_t fgValue;
-};
-#endif
 
 #ifdef CFG_SUPPORT_LINK_QUALITY_MONITOR
 struct PARAM_GET_LINK_QUALITY_INFO {
