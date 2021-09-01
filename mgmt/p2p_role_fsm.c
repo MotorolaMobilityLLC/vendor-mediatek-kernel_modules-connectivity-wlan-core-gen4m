@@ -4427,6 +4427,11 @@ p2pRoleFsmAbortCurrentAcsReq(IN struct ADAPTER *prAdapter,
 			prMsgAcsRequest->ucRoleIdx);
 	prScanReqInfo = &(prP2pRoleFsmInfo->rScanReqInfo);
 
+	if (prScanReqInfo && prScanReqInfo->fgIsScanRequest) {
+		DBGLOG(P2P, ERROR, "Clear old scan req.\n");
+		prScanReqInfo->fgIsScanRequest = FALSE;
+	}
+
 	if (!p2pRoleFsmIsAcsProcessing(prAdapter, prMsgAcsRequest->ucRoleIdx))
 		return;
 
