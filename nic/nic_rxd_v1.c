@@ -446,6 +446,11 @@ u_int8_t nic_rxd_v1_sanity_check(
 		DBGLOG(RSN, INFO, "De-amsdu fail, drop:%d\n", fgDrop);
 #endif /* CFG_SUPPORT_FRAG_AGG_ATTACK_DETECTION */
 
+	/* check CLS for MD */
+	if (HAL_RX_STATUS_GET_CLS_BITMAP(prRxStatus) & BITS(6, 9))
+		DBGLOG(RX, WARN, "RX DW3[0x%08x]\n",
+		       prRxStatus->u4PatternFilterInfo);
+
 	return fgDrop;
 }
 
