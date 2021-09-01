@@ -1184,30 +1184,39 @@ bool scnEnableSplitScan(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 	uint8_t ucWfdEn = FALSE, ucTrxPktEn = FALSE, ucRoamingEn = FALSE;
 	struct PERF_MONITOR *prPerMonitor;
 	struct BSS_INFO *prBssInfo = NULL;
-	struct ROAMING_INFO *prRoamInfo = NULL;
+	struct AIS_FSM_INFO *prAisFsmInfo;
 	unsigned long ulTrxPacketsDiffTotal = 0;
 
-	prBssInfo = aisGetAisBssInfo(prAdapter, ucBssIndex);
-	prRoamInfo = aisGetRoamingInfo(prAdapter, ucBssIndex);
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
 	prPerMonitor = &prAdapter->rPerMonitor;
 
+	if (!prBssInfo)
+		return FALSE;
 	/* Enable condition 1: WFD case*/
 	ucWfdEn = wlanWfdEnabled(prAdapter);
 
-	/* Enable condition 2: (TX + RX) packets in last 1s > 30 */
-	ulTrxPacketsDiffTotal +=
+	/* Enable condition 2: (TX + RX) packets in last 1s > 30,
+	 * exclude P2P device because prPerMonitor not include P2P device
+	 */
+	if (ucBssIndex < P2P_DEV_BSS_INDEX && IS_BSS_ACTIVE(prBssInfo)) {
+		ulTrxPacketsDiffTotal +=
 			(prPerMonitor->ulTxPacketsDiffLastSec[ucBssIndex] +
 			prPerMonitor->ulRxPacketsDiffLastSec[ucBssIndex]);
 
-	if (ulTrxPacketsDiffTotal > SCAN_SPLIT_PACKETS_THRESHOLD)
-		ucTrxPktEn = TRUE;
-
-	/* Enable Pre-condition: not in roaming, avoid romaing scan too long */
-	if (prBssInfo->eConnectionState == MEDIA_STATE_CONNECTED &&
-		(prRoamInfo->eCurrentState == ROAMING_STATE_DISCOVERY ||
-		prRoamInfo->eCurrentState == ROAMING_STATE_ROAM))
-		ucRoamingEn = TRUE;
-
+		if (ulTrxPacketsDiffTotal > SCAN_SPLIT_PACKETS_THRESHOLD) {
+			log_dbg(SCN, TRACE, "SplitScan: TRXPacket=%ld",
+				ulTrxPacketsDiffTotal);
+			ucTrxPktEn = TRUE;
+		}
+	}
+	/* Enable Pre-condition: not in roaming, avoid roaming scan too long */
+	if (ucBssIndex < KAL_AIS_NUM) {
+		prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
+		if (prAisFsmInfo &&
+			prBssInfo->eConnectionState == MEDIA_STATE_CONNECTED &&
+			prAisFsmInfo->eCurrentState == AIS_STATE_LOOKING_FOR)
+			ucRoamingEn = TRUE;
+	}
 	log_dbg(SCN, TRACE, "SplitScan: Roam(%d),WFD(%d),TRX(%d)",
 				ucRoamingEn, ucWfdEn, ucTrxPktEn);
 	/* Enable split scan when (not in roam) & (WFD or TRX packet > 30) */
