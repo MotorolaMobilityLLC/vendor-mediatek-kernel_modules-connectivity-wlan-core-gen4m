@@ -567,6 +567,7 @@ struct mt66xx_chip_info mt66xx_chip_info_soc5_0 = {
 	.coexpccifon = wlanConnacPccifon,
 	.coexpccifoff = wlanConnacPccifoff,
 	.get_sw_interrupt_status = soc5_0_get_sw_interrupt_status,
+	.chip_capability = BIT(CHIP_CAPA_FW_LOG_TIME_SYNC),
 #endif
 	.checkbushang = soc5_0_CheckBusHang,
 	.dumpBusHangCr = soc5_0_DumpBusHangCr,

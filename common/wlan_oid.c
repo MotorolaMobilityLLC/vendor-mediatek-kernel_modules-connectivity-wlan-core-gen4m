@@ -10639,6 +10639,157 @@ wlanSendSetQueryCmd(IN struct ADAPTER *prAdapter,
 	return WLAN_STATUS_PENDING;
 }
 
+uint32_t wlanSendInitCmd(IN struct ADAPTER *prAdapter,
+		    uint8_t ucCID,
+		    u_int8_t fgSetQuery,
+		    u_int8_t fgNeedResp,
+		    uint32_t u4SetQueryInfoLen,
+		    uint8_t *pucInfoBuffer) {
+	struct CMD_INFO *prCmdInfo;
+	struct mt66xx_chip_info *prChipInfo;
+	uint8_t *pucCmfBuf;
+	uint8_t *aucBuffer;
+	uint8_t ucTC;
+	uint16_t cmd_size;
+	uint32_t u4EventSize;
+	uint32_t u4RxPktLength;
+	uint32_t u4Status = WLAN_STATUS_SUCCESS;
+	int8_t ucPortIdx = IMG_DL_STATUS_PORT_IDX;
+	struct INIT_WIFI_EVENT *prInitEvent;
+
+	prChipInfo = prAdapter->chip_info;
+	DEBUGFUNC("wlanSendInitCmd");
+
+	/* 1. Allocate CMD Info Packet and its Buffer. */
+	cmd_size = sizeof(struct INIT_HIF_TX_HEADER) +
+		sizeof(struct INIT_HIF_TX_HEADER_PENDING_FOR_HW_32BYTES) +
+		u4SetQueryInfoLen;
+	prCmdInfo = cmdBufAllocateCmdInfo(prAdapter, cmd_size);
+	if (!prCmdInfo) {
+		DBGLOG(INIT, ERROR, "Allocate CMD_INFO_T FAILED ID[0x%x]\n",
+			ucCID);
+		return WLAN_STATUS_FAILURE;
+	}
+
+	u4EventSize = prChipInfo->init_evt_rxd_size +
+		prChipInfo->init_event_size +
+		sizeof(struct INIT_EVENT_CMD_RESULT);
+	aucBuffer = kalMemAlloc(u4EventSize, PHY_MEM_TYPE);
+	if (aucBuffer == NULL) {
+		DBGLOG(INIT, ERROR, "Alloc CMD buffer failed\n");
+		return WLAN_STATUS_FAILURE;
+	}
+
+	/* Setup common CMD Info Packet */
+	prCmdInfo->u2InfoBufLen = cmd_size;
+	prCmdInfo->ucCID = ucCID;
+	prCmdInfo->fgSetQuery = fgSetQuery;
+	prCmdInfo->fgNeedResp = fgNeedResp;
+	prCmdInfo->u4SetInfoLen = u4SetQueryInfoLen;
+
+#if (CFG_USE_TC4_RESOURCE_FOR_INIT_CMD == 1)
+	/* 2. Always use TC4 (TC4 as CPU) */
+	ucTC = TC4_INDEX;
+#else
+	/* 2. Use TC0's resource to send patch finish command.
+	 * Only TC0 is allowed because SDIO HW always reports
+	 * MCU's TXQ_CNT at TXQ0_CNT in CR4 architecutre)
+	 */
+	ucTC = TC0_INDEX;
+#endif
+
+	/* Setup WIFI_CMD_T (no payload) */
+	NIC_FILL_CMD_TX_HDR(prAdapter,
+		prCmdInfo->pucInfoBuffer,
+		prCmdInfo->u2InfoBufLen,
+		prCmdInfo->ucCID,
+		INIT_CMD_PACKET_TYPE_ID,
+		&prCmdInfo->ucCmdSeqNum,
+		prCmdInfo->fgSetQuery,
+		&pucCmfBuf, TRUE, 0, S2D_INDEX_CMD_H2N);
+	if (u4SetQueryInfoLen > 0 && pucInfoBuffer != NULL)
+		kalMemCopy(pucCmfBuf, pucInfoBuffer,
+			   u4SetQueryInfoLen);
+
+	/* 5. Send WIFI start command */
+	while (1) {
+		/* 5.1 Acquire TX Resource */
+		if (nicTxAcquireResource(prAdapter, ucTC,
+					 nicTxGetPageCount(prAdapter,
+					 prCmdInfo->u2InfoBufLen, TRUE),
+					 TRUE) == WLAN_STATUS_RESOURCES) {
+			if (nicTxPollingResource(prAdapter,
+						 ucTC) != WLAN_STATUS_SUCCESS) {
+				u4Status = WLAN_STATUS_FAILURE;
+				DBGLOG(INIT, ERROR,
+				       "Fail to get TX resource return within timeout\n");
+				goto exit;
+			}
+			continue;
+		}
+		/* 5.2 Send CMD Info Packet */
+		if (nicTxInitCmd(prAdapter, prCmdInfo,
+				 prChipInfo->u2TxInitCmdPort) !=
+				 WLAN_STATUS_SUCCESS) {
+			u4Status = WLAN_STATUS_FAILURE;
+			DBGLOG(INIT, ERROR,
+			       "Fail to transmit WIFI start command\n");
+			goto exit;
+		}
+
+		break;
+	};
+
+	DBGLOG(INIT, INFO,
+	       "Init CMD ID[0x%x] sent, ret(%x). Waiting for RSP.\n",
+			ucCID, u4Status);
+
+	/* kalMdelay(10000); */
+	/* 6. Wait for INIT_EVENT_ID_CMD_RESULT */
+	if ((!prCmdInfo->fgSetQuery) || (prCmdInfo->fgNeedResp)) {
+		do {
+			if (kalIsCardRemoved(prAdapter->prGlueInfo) == TRUE
+			    || fgIsBusAccessFailed == TRUE) {
+				u4Status = WLAN_STATUS_FAILURE;
+			} else if (nicRxWaitResponse(prAdapter, ucPortIdx,
+						     aucBuffer, u4EventSize,
+						     &u4RxPktLength) !=
+				   WLAN_STATUS_SUCCESS) {
+				u4Status = WLAN_STATUS_FAILURE;
+			} else {
+				prInitEvent = (struct INIT_WIFI_EVENT *)
+					(aucBuffer
+					+ prChipInfo->init_evt_rxd_size);
+				if (prInitEvent == NULL) {
+					DBGLOG(INIT, ERROR,
+						"prInitEvent is NULL\n");
+					u4Status = WLAN_STATUS_FAILURE;
+					break;
+				}
+
+				/* EID / SeqNum check */
+				if (prInitEvent->ucEID !=
+					INIT_EVENT_ID_CMD_RESULT)
+					u4Status = WLAN_STATUS_FAILURE;
+				else if (prInitEvent->ucSeqNum !=
+						prCmdInfo->ucCmdSeqNum)
+					u4Status = WLAN_STATUS_FAILURE;
+			}
+		} while (FALSE);
+
+		if (u4Status != WLAN_STATUS_SUCCESS)
+			DBGLOG(INIT, WARN, "RSP Fail\n");
+
+	}
+
+exit:
+	/* 7. Free CMD Info Packet. */
+	cmdBufFreeCmdInfo(prAdapter, prCmdInfo);
+	kalMemFree(aucBuffer, PHY_MEM_TYPE, u4EventSize);
+
+	return u4Status;
+}
+
 #if CFG_SUPPORT_WAPI
 /*----------------------------------------------------------------------------*/
 /*!

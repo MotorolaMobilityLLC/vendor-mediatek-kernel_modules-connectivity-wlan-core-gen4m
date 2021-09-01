@@ -1931,14 +1931,12 @@ uint32_t kalSetSuspendFlagToEMI(IN struct ADAPTER
 extern uint32_t getFWLogOnOff(void);
 #endif
 
-#if (CFG_SUPPORT_CONNINFRA == 1)
-void setupTimeParameter(
+void setTimeParameter(
 	struct PARAM_CUSTOM_CHIP_CONFIG_STRUCT *prChipConfigInfo,
 	int chipConfigInfoSize, unsigned int second, unsigned int usecond);
 uint32_t kalSyncTimeToFW(IN struct ADAPTER *prAdapter,
-	unsigned int second, unsigned int usecond);
+	IN u_int8_t fgInitCmd, unsigned int second, unsigned int usecond);
 void kalSyncTimeToFWByIoctl(void);
-#endif /* CFG_SUPPORT_CONNINFRA == 1*/
 
 void kalUpdateCompHdlrRec(IN struct ADAPTER *prAdapter,
 	IN PFN_OID_HANDLER_FUNC pfnOidHandler, IN struct CMD_INFO *prCmdInfo);

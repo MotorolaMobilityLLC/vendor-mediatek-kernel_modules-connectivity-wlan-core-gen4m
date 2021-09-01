@@ -1956,9 +1956,7 @@ struct ADAPTER {
 
 	struct TX_LATENCY_REPORT_STATS rMsduReportStats;
 
-#if (CFG_SUPPORT_CONNINFRA == 1)
 	unsigned int u4FWLastUpdateTime;
-#endif
 
 	u_int8_t fgSetLogOnOff;
 	u_int8_t fgSetLogLevel;
