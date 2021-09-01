@@ -27,6 +27,14 @@ ifeq ($(WLAN_BUILD_COMMON), true)
 	WIFI_NAME := wlan_drv_gen4m_6879
 	WIFI_CHRDEV_MODULE := wmt_chrdev_wifi_connac2.ko
 	include $(LOCAL_PATH)/build_wlan_drv.mk
+
+	WLAN_CHIP_ID := 6895
+	WIFI_CHIP := CONNAC2X2_SOC7_0
+	WIFI_IP_SET := 1
+	CONNAC_VER := 2_0
+	WIFI_NAME := wlan_drv_gen4m_6895
+	WIFI_CHRDEV_MODULE := wmt_chrdev_wifi_connac2.ko
+	include $(LOCAL_PATH)/build_wlan_drv.mk
 else
 	WIFI_NAME := wlan_drv_gen4m
 	WIFI_CHRDEV_MODULE := wmt_chrdev_wifi.ko
