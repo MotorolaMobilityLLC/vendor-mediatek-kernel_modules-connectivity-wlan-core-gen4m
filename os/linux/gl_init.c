@@ -2798,6 +2798,7 @@ static void wlanCreateWirelessDevice(void)
 
 	/* Allocate GLUE_INFO and set priv as pointer to glue structure */
 	prGlueInfo = kalMemAlloc(sizeof(struct GLUE_INFO), VIR_MEM_TYPE);
+	kalMemSet(prGlueInfo, 0, sizeof(struct GLUE_INFO));
 	if (!prGlueInfo) {
 		DBGLOG(INIT, ERROR,
 		       "Allocating memory to GLUE_INFO failed\n");
