@@ -2234,16 +2234,33 @@ void nicRxProcessEventPacket(IN struct ADAPTER *prAdapter,
 						 prEvent->ucSeqNum);
 
 		if (prCmdInfo != NULL) {
-			if (prCmdInfo->pfCmdDoneHandler)
-				prCmdInfo->pfCmdDoneHandler(
-					prAdapter, prCmdInfo,
-					prEvent->aucBuffer);
-			else if (prCmdInfo->fgIsOid)
-				kalOidComplete(
-					prAdapter->prGlueInfo,
-					prCmdInfo,
-					0,
-					WLAN_STATUS_SUCCESS);
+			if (unlikely(prEvent->ucEID ==
+					EVENT_ID_INIT_EVENT_CMD_RESULT) &&
+					prCmdInfo->fgIsOid) {
+				/*
+				 * This event ID will be returned if CMD is not
+				 * handled by FW. Here skip invoking
+				 * pfCmdDoneHandler since the call back cannot
+				 * distinguish the calling conditions.
+				 * The callback accessing the event buffer is
+				 * dangerous.
+				 */
+				DBGLOG(RX, INFO, "FW not support cmd 0x%02X",
+						prCmdInfo->ucCID);
+				kalOidComplete(prAdapter->prGlueInfo, prCmdInfo,
+						0, WLAN_STATUS_FAILURE);
+			} else {
+				if (prCmdInfo->pfCmdDoneHandler)
+					prCmdInfo->pfCmdDoneHandler(
+						prAdapter, prCmdInfo,
+						prEvent->aucBuffer);
+				else if (prCmdInfo->fgIsOid)
+					kalOidComplete(
+						prAdapter->prGlueInfo,
+						prCmdInfo,
+						0,
+						WLAN_STATUS_SUCCESS);
+			}
 
 			/* return prCmdInfo */
 			cmdBufFreeCmdInfo(prAdapter, prCmdInfo);
