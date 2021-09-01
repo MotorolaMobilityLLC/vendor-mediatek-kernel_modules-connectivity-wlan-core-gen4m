@@ -2797,11 +2797,6 @@ struct CMD_MONITOR_SET_INFO {
 };
 #endif
 
-struct CMD_STATS_LOG {
-	uint32_t u4DurationInMs;
-	uint8_t aucReserved[32];
-};
-
 struct EVENT_WIFI_RDD_TEST {
 	uint32_t u4FuncIndex;
 	uint32_t u4FuncLength;

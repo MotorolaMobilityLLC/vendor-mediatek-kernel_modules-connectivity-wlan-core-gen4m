@@ -699,11 +699,6 @@ saaFsmRunEventTxDone(IN struct ADAPTER *prAdapter,
 		       "EVENT-TX DONE [status: %d][seq: %d]: Current Time = %d\n",
 		       rTxDoneStatus, prMsduInfo->ucTxSeqNum, kalGetTimeTick());
 
-	/* Trigger statistics log if Auth/Assoc Tx failed */
-	if (rTxDoneStatus != TX_RESULT_SUCCESS)
-		wlanTriggerStatsLog(prAdapter,
-				    prAdapter->rWifiVar.u4StatsLogDuration);
-
 	eNextState = prStaRec->eAuthAssocState;
 
 	switch (prStaRec->eAuthAssocState) {
@@ -846,9 +841,6 @@ void saaFsmRunEventTxReqTimeOut(IN struct ADAPTER *prAdapter,
 #if CFG_SUPPORT_EXCEPTION_STATISTICS
 		prAdapter->total_mgmtTX_timeout_count++;
 #endif /* fos_change end */
-
-	/* Trigger statistics log if Auth/Assoc Tx timeout */
-	wlanTriggerStatsLog(prAdapter, prAdapter->rWifiVar.u4StatsLogDuration);
 
 	switch (prStaRec->eAuthAssocState) {
 	case SAA_STATE_SEND_AUTH1:

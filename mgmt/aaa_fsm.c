@@ -232,9 +232,6 @@ void aaaFsmRunEventTxReqTimeOut(IN struct ADAPTER *prAdapter,
 		"EVENT-TIMER: TX REQ TIMEOUT, Current Time = %d\n",
 		kalGetTimeTick());
 
-	/* Trigger statistics log if Auth/Assoc Tx timeout */
-	wlanTriggerStatsLog(prAdapter, prAdapter->rWifiVar.u4StatsLogDuration);
-
 	switch (prStaRec->eAuthAssocState) {
 	case AAA_STATE_SEND_AUTH2:
 		DBGLOG(AAA, ERROR,
@@ -946,11 +943,6 @@ aaaFsmRunEventTxDone(IN struct ADAPTER *prAdapter,
 
 	DBGLOG(AAA, TRACE, "TxDone ucStaState:%d, eAuthAssocState:%d\n",
 		prStaRec->ucStaState, prStaRec->eAuthAssocState);
-
-	/* Trigger statistics log if Auth/Assoc Tx failed */
-	if (rTxDoneStatus != TX_RESULT_SUCCESS)
-		wlanTriggerStatsLog(prAdapter,
-			prAdapter->rWifiVar.u4StatsLogDuration);
 
 	switch (prStaRec->eAuthAssocState) {
 	case AAA_STATE_SEND_AUTH2:

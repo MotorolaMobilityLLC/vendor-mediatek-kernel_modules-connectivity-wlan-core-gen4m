@@ -10228,8 +10228,6 @@ void wlanUpdateTxStatistics(IN struct ADAPTER *prAdapter,
 			      MSEC_TO_SYSTIME(
 			      prAdapter->rWifiVar.u4StatsLogTimeout))) {
 
-		wlanTriggerStatsLog(prAdapter,
-				    prAdapter->rWifiVar.u4StatsLogDuration);
 		wlanDumpAllBssStatistics(prAdapter);
 
 		prQM->rLastTxPktDumpTime = rCurTime;
@@ -10248,28 +10246,6 @@ void wlanUpdateRxStatistics(IN struct ADAPTER *prAdapter,
 				       prSwRfb->ucStaRecIdx);
 	if (prStaRec && eAci >= 0 && eAci < WMM_AC_INDEX_NUM)
 		prStaRec->arLinkStatistics[eAci].u4RxMsdu++;
-}
-
-uint32_t wlanTriggerStatsLog(IN struct ADAPTER *prAdapter,
-			     IN uint32_t u4DurationInMs)
-{
-	struct CMD_STATS_LOG rStatsLogCmd;
-	uint32_t rResult;
-
-	if (prAdapter->fgIsEnableLpdvt)
-		return WLAN_STATUS_NOT_SUPPORTED;
-
-	kalMemZero(&rStatsLogCmd, sizeof(struct CMD_STATS_LOG));
-
-	rStatsLogCmd.u4DurationInMs = u4DurationInMs;
-
-	rResult = wlanSendSetQueryCmd(prAdapter, CMD_ID_STATS_LOG, TRUE, FALSE,
-				      FALSE, nicCmdEventSetCommon,
-				      nicOidCmdTimeoutCommon,
-				      sizeof(struct CMD_STATS_LOG),
-				      (uint8_t *) &rStatsLogCmd, NULL, 0);
-
-	return rResult;
 }
 
 uint32_t

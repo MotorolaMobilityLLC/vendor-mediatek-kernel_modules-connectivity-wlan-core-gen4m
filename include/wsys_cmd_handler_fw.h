@@ -341,7 +341,6 @@ enum ENUM_CMD_ID {
 	CMD_ID_ACCESS_RX_STAT,              /* 0xc8 (Query) */
 
 	CMD_ID_CHIP_CONFIG          = 0xCA, /* 0xca (Set / Query) */
-	CMD_ID_STATS_LOG            = 0xCB,
 
 	CMD_ID_WTBL_INFO        = 0xCD, /* 0xcd (Query) */
 	CMD_ID_MIB_INFO     = 0xCE, /* 0xce (Query) */

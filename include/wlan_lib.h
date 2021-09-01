@@ -1756,9 +1756,6 @@ void wlanUpdateTxStatistics(IN struct ADAPTER *prAdapter,
 void wlanUpdateRxStatistics(IN struct ADAPTER *prAdapter,
 			    IN struct SW_RFB *prSwRfb);
 
-uint32_t wlanTriggerStatsLog(IN struct ADAPTER *prAdapter,
-			     IN uint32_t u4DurationInMs);
-
 uint32_t wlanPktTxDone(IN struct ADAPTER *prAdapter,
 		       IN struct MSDU_INFO *prMsduInfo,
 		       IN enum ENUM_TX_RESULT_CODE rTxDoneStatus);
