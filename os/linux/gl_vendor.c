@@ -1313,7 +1313,7 @@ uint32_t fill_radio(uint8_t *dst, struct WIFI_RADIO_CHANNEL_STAT *src,
 int mtk_cfg80211_vendor_llstats_get_info(struct wiphy *wiphy,
 		struct wireless_dev *wdev, const void *data, int data_len)
 {
-	int32_t rStatus = WLAN_STATUS_CAPS_UNSUPPORTED;
+	int32_t rStatus = -EOPNOTSUPP;
 #if CFG_SUPPORT_LLS
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct ADAPTER *prAdapter;

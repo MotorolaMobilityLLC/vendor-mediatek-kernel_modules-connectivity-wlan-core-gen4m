@@ -1006,15 +1006,15 @@ void
 statsTxTimeHdlr(struct GLUE_INFO *prGlueInfo,
 	struct STATS_TRX_TLV_T *prTlvList, uint32_t u4TlvLen)
 {
-	struct ADAPTER *prAdapter = prGlueInfo->prAdapter;
 	struct STATS_TRX_TLV_T *prStatTlv = prTlvList;
 	struct STATS_TX_TIME_STAT_T *prTimeStat;
 #if CFG_SUPPORT_TX_LATENCY_STATS
+	struct ADAPTER *prAdapter = prGlueInfo->prAdapter;
 	struct TX_LATENCY_REPORT_STATS *stats;
-#endif
 	uint32_t au4Success[TX_TIME_CAT_NUM];
 	uint32_t au4Fail[TX_TIME_CAT_NUM];
 	uint8_t i;
+#endif
 
 	prTimeStat = (struct STATS_TX_TIME_STAT_T *)(
 		&prStatTlv->aucBuffer[0]);
