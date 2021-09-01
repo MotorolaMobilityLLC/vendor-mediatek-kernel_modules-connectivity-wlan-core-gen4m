@@ -242,6 +242,13 @@ extern u_int8_t fgIsBusAccessFailed;
 #define GLUE_FLAG_NOTIFY_MD_CRASH_BIT		(18)
 #define GLUE_FLAG_DRV_INT_BIT			(19)
 
+#if (CFG_SUPPORT_POWER_THROTTLING == 1)
+#define GLUE_FLAG_CNS_PWR_LEVEL_BIT		(21)
+#define GLUE_FLAG_CNS_PWR_TEMP_BIT		(22)
+#define GLUE_FLAG_CNS_PWR_LEVEL			BIT(21)
+#define GLUE_FLAG_CNS_PWR_TEMP			BIT(22)
+#endif
+
 #if CFG_ENABLE_BT_OVER_WIFI
 #define GLUE_BOW_KFIFO_DEPTH        (1024)
 /* #define GLUE_BOW_DEVICE_NAME        "MT6620 802.11 AMP" */

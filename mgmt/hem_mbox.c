@@ -336,10 +336,6 @@ static struct MSG_HNDL_ENTRY arMsgMapTable[] = {
 	{MID_TWT_REQ_IND_INFOFRM, twtPlannerRxInfoFrm},
 	{MID_TWT_PARAMS_SET, twtPlannerSetParams},
 #endif
-#if (CFG_SUPPORT_POWER_THROTTLING == 1)
-	{MID_CNS_DRV_PWR_LEVEL, connsysPowerLevelNotify},
-	{MID_CNS_DRV_PWR_TEMP, connsysPowerTempNotify},
-#endif
 
 #if (CFG_SUPPORT_NAN == 1)
 	{MID_CNM_NAN_CH_GRANT, nanDevSendEnableRequest}

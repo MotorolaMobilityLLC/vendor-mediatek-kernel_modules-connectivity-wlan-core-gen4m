@@ -15793,7 +15793,6 @@ static int priv_driver_set_pwr_level(IN struct net_device *prNetDev,
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct ADAPTER *prAdapter = NULL;
-	struct MSG_PWR_LEVEL_NOTIFY *prMsgNotify;
 	int32_t i4BytesWritten = 0;
 	int32_t i4Argc = 0;
 	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = { 0 };
@@ -15818,22 +15817,9 @@ static int priv_driver_set_pwr_level(IN struct net_device *prNetDev,
 			       "parse get_mcr error (Address) u4Ret=%d\n",
 			       u4Ret);
 
-		prMsgNotify = (struct MSG_PWR_LEVEL_NOTIFY *)
-				kalMemAlloc(sizeof(struct MSG_PWR_LEVEL_NOTIFY),
-						VIR_MEM_TYPE);
+		prAdapter->u4PwrLevel = level;
 
-		if (!prMsgNotify) {
-			DBGLOG(INIT, WARN, "prMsgNotify memory alloc fail!\n");
-			return -1;
-		}
-
-		kalMemSet(prMsgNotify, 0, sizeof(struct MSG_PWR_LEVEL_NOTIFY));
-		prMsgNotify->rMsgHdr.eMsgId = MID_CNS_DRV_PWR_LEVEL;
-		prMsgNotify->level = level;
-
-		mboxSendMsg(prAdapter, MBOX_ID_0,
-				(struct MSG_HDR *) prMsgNotify,
-				MSG_SEND_METHOD_BUF);
+		connsysPowerLevelNotify(prGlueInfo->prAdapter);
 	}
 
 	return i4BytesWritten;
@@ -15844,7 +15830,6 @@ static int priv_driver_set_pwr_temp(IN struct net_device *prNetDev,
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct ADAPTER *prAdapter = NULL;
-	struct MSG_PWR_TEMP_NOTIFY *prMsgNotify;
 	int32_t i4BytesWritten = 0;
 	int32_t i4Argc = 0;
 	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = { 0 };
@@ -15870,28 +15855,16 @@ static int priv_driver_set_pwr_temp(IN struct net_device *prNetDev,
 			       "parse get_mcr error (Address) u4Ret=%d\n",
 			       u4Ret);
 
-		u4Ret = kalkStrtou32(apcArgv[1], 0, &u4RecoveryTemp);
+		u4Ret = kalkStrtou32(apcArgv[2], 0, &u4RecoveryTemp);
 		if (u4Ret)
 			DBGLOG(REQ, LOUD,
 			       "parse get_mcr error (Address) u4Ret=%d\n",
 			       u4Ret);
 
-		prMsgNotify = (struct MSG_PWR_TEMP_NOTIFY *)
-				kalMemAlloc(sizeof(struct MSG_PWR_TEMP_NOTIFY),
-						VIR_MEM_TYPE);
+		(prAdapter->rTempInfo).max_temp = u4MaxTemp;
+		(prAdapter->rTempInfo).recovery_temp = u4RecoveryTemp;
 
-		if (!prMsgNotify) {
-			DBGLOG(INIT, WARN, "prMsgNotify memory alloc fail!\n");
-			return -1;
-		}
-
-		kalMemSet(prMsgNotify, 0, sizeof(struct MSG_PWR_TEMP_NOTIFY));
-		prMsgNotify->rMsgHdr.eMsgId = MID_CNS_DRV_PWR_TEMP;
-		prMsgNotify->u4RecoveryTemp = u4RecoveryTemp;
-
-		mboxSendMsg(prAdapter, MBOX_ID_0,
-				(struct MSG_HDR *) prMsgNotify,
-				MSG_SEND_METHOD_BUF);
+		connsysPowerTempNotify(prGlueInfo->prAdapter);
 	}
 
 	return i4BytesWritten;

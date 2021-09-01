@@ -1948,10 +1948,8 @@ void kalPrintLog(const char *fmt, ...);
 #if (CFG_SUPPORT_POWER_THROTTLING == 1)
 void kalPwrLevelHdlrRegister(IN struct ADAPTER *prAdapter,
 					PFN_PWR_LEVEL_HANDLER hdlr);
-void connsysPowerLevelNotify(IN struct ADAPTER *prAdapter,
-				IN struct MSG_HDR *prMsgHdr);
-void connsysPowerTempNotify(IN struct ADAPTER *prAdapter,
-				IN struct MSG_HDR *prMsgHdr);
+void connsysPowerLevelNotify(IN struct ADAPTER *prAdapter);
+void connsysPowerTempNotify(IN struct ADAPTER *prAdapter);
 void connsysPowerTempUpdate(enum conn_pwr_msg_type status,
 					int currentTemp);
 uint32_t kalDumpPwrLevel(IN struct ADAPTER *prAdapter);

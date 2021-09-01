@@ -4790,6 +4790,16 @@ int main_thread(void *data)
 #endif
 
 #if (CFG_SUPPORT_POWER_THROTTLING == 1)
+		if (test_and_clear_bit(GLUE_FLAG_CNS_PWR_LEVEL_BIT,
+			&prGlueInfo->ulFlag)) {
+			connsysPowerLevelNotify(prGlueInfo->prAdapter);
+		}
+
+		if (test_and_clear_bit(GLUE_FLAG_CNS_PWR_TEMP_BIT,
+			&prGlueInfo->ulFlag)) {
+			connsysPowerTempNotify(prGlueInfo->prAdapter);
+		}
+
 		kalDumpPwrLevel(prGlueInfo->prAdapter);
 #endif
 
@@ -9545,13 +9555,10 @@ void kalPwrLevelHdlrRegister(IN struct ADAPTER *prAdapter,
 	prRegisterHdlr->prPwrLevelHandler(prAdapter, prAdapter->u4PwrLevel);
 }
 
-void
-connsysPowerLevelNotify(IN struct ADAPTER *prAdapter,
-				IN struct MSG_HDR *prMsgHdr)
+void connsysPowerLevelNotify(IN struct ADAPTER *prAdapter)
 {
 	struct CMD_HEADER rCmdV1Header;
 	struct CMD_FORMAT_V1 rCmd_v1;
-	struct MSG_PWR_LEVEL_NOTIFY *prPwrLevelMsg;
 	struct LINK *prPwrLevelHandlerList;
 	struct PWR_LEVEL_HANDLER_ELEMENT  *prPwrLevelHdlr = NULL;
 	uint8_t aucCmdValue[MAX_CMD_VALUE_MAX_LENGTH] = { 0 };
@@ -9560,15 +9567,9 @@ connsysPowerLevelNotify(IN struct ADAPTER *prAdapter,
 	int ret = -1;
 
 	prPwrLevelHandlerList = &(prAdapter->rPwrLevelHandlerList);
+	u4PwrLevel = prAdapter->u4PwrLevel;
 
-	/* Extract information of Message and then free memory. */
-	prPwrLevelMsg = (struct MSG_PWR_LEVEL_NOTIFY *)prMsgHdr;
-	u4PwrLevel = prPwrLevelMsg->level;
-	prAdapter->u4PwrLevel = u4PwrLevel;
-
-	kalMemFree(prMsgHdr, VIR_MEM_TYPE, sizeof(struct MSG_PWR_LEVEL_NOTIFY));
-
-	DBGLOG(INIT, TRACE, "Notify each handler new power level: %d\n",
+	DBGLOG(INIT, INFO, "Notify each handler new power level: %d\n",
 								u4PwrLevel);
 
 	/* Notify registered handler. */
@@ -9605,7 +9606,7 @@ connsysPowerLevelNotify(IN struct ADAPTER *prAdapter,
 	rCmdV1Header.cmdBufferLen += sizeof(struct CMD_FORMAT_V1);
 	rCmdV1Header.itemNum = 1;
 
-	DBGLOG(INIT, TRACE, "Notify FW new power level: %d\n", u4PwrLevel);
+	DBGLOG(INIT, INFO, "Notify FW new power level: %d\n", u4PwrLevel);
 
 	rStatus = wlanSendSetQueryCmd(
 			prAdapter, /* prAdapter */
@@ -9622,21 +9623,14 @@ connsysPowerLevelNotify(IN struct ADAPTER *prAdapter,
 		);
 }
 
-void
-connsysPowerTempNotify(IN struct ADAPTER *prAdapter,
-				IN struct MSG_HDR *prMsgHdr)
+void connsysPowerTempNotify(IN struct ADAPTER *prAdapter)
 {
-	struct MSG_PWR_TEMP_NOTIFY *prPwrTempMsg;
 	uint32_t u4MaxTemp, u4RecoveryTemp;
 
-	/* Extract information of Message and then free memory. */
-	prPwrTempMsg = (struct MSG_PWR_TEMP_NOTIFY *)prMsgHdr;
-	u4MaxTemp = prPwrTempMsg->u4MaxTemp;
-	u4RecoveryTemp = prPwrTempMsg->u4RecoveryTemp;
+	u4MaxTemp = (prAdapter->rTempInfo).max_temp;
+	u4RecoveryTemp = (prAdapter->rTempInfo).recovery_temp;
 
-	kalMemFree(prMsgHdr, VIR_MEM_TYPE, sizeof(struct MSG_PWR_LEVEL_NOTIFY));
-
-	DBGLOG(INIT, TRACE, "Notify FW new temp info: %d, %d\n",
+	DBGLOG(INIT, INFO, "Notify FW new temp info: %d, %d\n",
 						u4MaxTemp, u4RecoveryTemp);
 
 	thrmProtTempConfig(prAdapter, u4MaxTemp, u4RecoveryTemp);

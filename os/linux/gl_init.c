@@ -4499,8 +4499,6 @@ int connsys_power_event_notification(
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct ADAPTER *prAdapter = NULL;
 	struct net_device *prDev = gPrDev;
-	struct MSG_PWR_LEVEL_NOTIFY *prMsgLevelNotify;
-	struct MSG_PWR_TEMP_NOTIFY *prMsgPwrNotify;
 	uint32_t *prLevel;
 	struct conn_pwr_event_max_temp *prTempInfo;
 	int ret = -1;
@@ -4525,54 +4523,31 @@ int connsys_power_event_notification(
 	switch (type) {
 	case CONN_PWR_EVENT_LEVEL:
 		prLevel = (int *)data;
-		prMsgLevelNotify = (struct MSG_PWR_LEVEL_NOTIFY *)
-				kalMemAlloc(sizeof(struct MSG_PWR_LEVEL_NOTIFY),
-						VIR_MEM_TYPE);
-
-		if (!prMsgLevelNotify) {
-			DBGLOG(INIT, WARN, "prMsgNotify memory alloc fail!\n");
-			return ret;
-		}
-
-		kalMemSet(prMsgLevelNotify, 0,
-				sizeof(struct MSG_PWR_LEVEL_NOTIFY));
-		prMsgLevelNotify->rMsgHdr.eMsgId = MID_CNS_DRV_PWR_LEVEL;
-		prMsgLevelNotify->level = *prLevel;
+		prAdapter->u4PwrLevel = *prLevel;
 
 		DBGLOG(INIT, INFO, "New power level: %d\n",
-					prMsgLevelNotify->level);
+					prAdapter->u4PwrLevel);
 
-		mboxSendMsg(prAdapter, MBOX_ID_0,
-				(struct MSG_HDR *) prMsgLevelNotify,
-				MSG_SEND_METHOD_BUF);
-		/* Is MSG_SEND_METHOD_UNBUF needed? */
+		set_bit(GLUE_FLAG_CNS_PWR_LEVEL_BIT, &prGlueInfo->ulFlag);
+		/* wake up main thread */
+		wake_up_interruptible(&prGlueInfo->waitq);
+
 		break;
 
 	case CONN_PWR_EVENT_MAX_TEMP:
 		prTempInfo = (struct conn_pwr_event_max_temp *)data;
-		prMsgPwrNotify = (struct MSG_PWR_TEMP_NOTIFY *)
-				kalMemAlloc(sizeof(struct MSG_PWR_TEMP_NOTIFY),
-						VIR_MEM_TYPE);
-
-		if (!prMsgPwrNotify) {
-			DBGLOG(INIT, WARN, "prMsgNotify memory alloc fail!\n");
-			return ret;
-		}
-
-		kalMemSet(prMsgPwrNotify, 0,
-				sizeof(struct MSG_PWR_TEMP_NOTIFY));
-		prMsgPwrNotify->rMsgHdr.eMsgId = MID_CNS_DRV_PWR_TEMP;
-		prMsgPwrNotify->u4MaxTemp = prTempInfo->max_temp;
-		prMsgPwrNotify->u4RecoveryTemp = prTempInfo->recovery_temp;
+		(prAdapter->rTempInfo).max_temp = prTempInfo->max_temp;
+		(prAdapter->rTempInfo).recovery_temp =
+						prTempInfo->recovery_temp;
 
 		DBGLOG(INIT, INFO, "New max temp: %d/New recovery temp: %d",
-					prMsgPwrNotify->u4MaxTemp,
-					prMsgPwrNotify->u4RecoveryTemp);
+					(prAdapter->rTempInfo).max_temp,
+					(prAdapter->rTempInfo).recovery_temp);
 
-		mboxSendMsg(prAdapter, MBOX_ID_0,
-				(struct MSG_HDR *) prMsgPwrNotify,
-				MSG_SEND_METHOD_BUF);
-		/* Is MSG_SEND_METHOD_UNBUF needed? */
+		set_bit(GLUE_FLAG_CNS_PWR_TEMP_BIT, &prGlueInfo->ulFlag);
+		/* wake up main thread */
+		wake_up_interruptible(&prGlueInfo->waitq);
+
 		break;
 
 	default:
@@ -5557,17 +5532,6 @@ static int32_t wlanProbe(void *pvData, void *pvDriverData)
 		prAdapter = prGlueInfo->prAdapter;
 		prWifiVar = &prAdapter->rWifiVar;
 
-#if (CFG_SUPPORT_POWER_THROTTLING == 1)
-		prHifDriverData = (struct mt66xx_hif_driver_data *)pvDriverData;
-		prAdapter->u4PwrLevel = prHifDriverData->u4PwrLevel;
-		kalMemCopy(&prAdapter->rTempInfo, &prHifDriverData->rTempInfo,
-				sizeof(struct conn_pwr_event_max_temp));
-		connsys_power_event_notification(CONN_PWR_EVENT_LEVEL,
-						&(prAdapter->u4PwrLevel));
-		connsys_power_event_notification(CONN_PWR_EVENT_MAX_TEMP,
-						&prAdapter->rTempInfo);
-#endif
-
 		wlanOnPreAdapterStart(prGlueInfo,
 			prAdapter,
 			&prRegInfo,
@@ -5588,6 +5552,17 @@ static int32_t wlanProbe(void *pvData, void *pvDriverData)
 
 		wlanOnPreNetRegister(prGlueInfo, prAdapter, prChipInfo,
 			prWifiVar, FALSE);
+
+#if (CFG_SUPPORT_POWER_THROTTLING == 1)
+		prHifDriverData = (struct mt66xx_hif_driver_data *)pvDriverData;
+		prAdapter->u4PwrLevel = prHifDriverData->u4PwrLevel;
+		kalMemCopy(&prAdapter->rTempInfo, &prHifDriverData->rTempInfo,
+				sizeof(struct conn_pwr_event_max_temp));
+		connsys_power_event_notification(CONN_PWR_EVENT_LEVEL,
+				&(prAdapter->u4PwrLevel));
+		connsys_power_event_notification(CONN_PWR_EVENT_MAX_TEMP,
+				&prAdapter->rTempInfo);
+#endif
 
 		/* 4 <3> Register the card */
 		i4DevIdx = wlanNetRegister(prWdev);
