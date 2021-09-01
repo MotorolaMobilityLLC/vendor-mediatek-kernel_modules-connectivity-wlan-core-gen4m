@@ -1009,7 +1009,7 @@ struct STA_RECORD *find_peer_starec(struct ADAPTER *prAdapter,
 
 	for (ucIdx = 0; ucIdx < CFG_STA_REC_NUM; ucIdx++) {
 		prStaRec = cnmGetStaRecByIndex(prAdapter, ucIdx);
-		if (prStaRec->ucWlanIndex == pucIndex)
+		if (prStaRec && prStaRec->ucWlanIndex == pucIndex)
 			break;
 	}
 
