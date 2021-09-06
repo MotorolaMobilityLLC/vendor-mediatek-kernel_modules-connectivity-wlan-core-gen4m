@@ -9362,6 +9362,9 @@ int priv_driver_set_country(IN struct net_device *prNetDev,
 	int32_t i4Argc = 0;
 	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
 	uint8_t aucCountry[2];
+	uint16_t u2CountryCode = 0;
+	uint8_t aucCountry_code[4] = {0, 0, 0, 0};
+	uint8_t i, count;
 
 	ASSERT(prNetDev);
 	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
@@ -9373,8 +9376,6 @@ int priv_driver_set_country(IN struct net_device *prNetDev,
 	DBGLOG(REQ, LOUD, "argc is %i\n", i4Argc);
 
 	if (regd_is_single_sku_en()) {
-		uint8_t aucCountry_code[4] = {0, 0, 0, 0};
-		uint8_t i, count;
 
 		/* command like "COUNTRY US", "COUNTRY US1" and
 		 * "COUNTRY US01"
@@ -9383,8 +9384,11 @@ int priv_driver_set_country(IN struct net_device *prNetDev,
 		for (i = 0; i < count; i++)
 			aucCountry_code[i] = apcArgv[1][i];
 
-
-		rStatus = kalIoctl(prGlueInfo, wlanoidSetCountryCode,
+		u2CountryCode = (((uint16_t) aucCountry_code[0]) << 8) |
+			((uint16_t) aucCountry_code[1]);
+		rStatus = priv_driver_set_ce_or_fcc_country(prGlueInfo,
+			u2CountryCode);
+		rStatus |= kalIoctl(prGlueInfo, wlanoidSetCountryCode,
 				   &aucCountry_code[0], count,
 				   FALSE, FALSE, TRUE, &u4BufLen);
 		if (rStatus != WLAN_STATUS_SUCCESS)
@@ -9398,8 +9402,13 @@ int priv_driver_set_country(IN struct net_device *prNetDev,
 		/* command like "COUNTRY US", "COUNTRY EU" and "COUNTRY JP" */
 		aucCountry[0] = apcArgv[1][0];
 		aucCountry[1] = apcArgv[1][1];
-
-		rStatus = kalIoctl(prGlueInfo, wlanoidSetCountryCode,
+		u2CountryCode = (((uint16_t) aucCountry[0]) << 8) |
+			((uint16_t) aucCountry[1]);
+		DBGLOG(REQ, INFO,
+			"i4Argc >= 2 enters aucCountry[0]=%u, aucCountry[1]=%u\n", aucCountry[0], aucCountry[1]);
+		rStatus = priv_driver_set_ce_or_fcc_country(prGlueInfo,
+			u2CountryCode);
+		rStatus |= kalIoctl(prGlueInfo, wlanoidSetCountryCode,
 				   &aucCountry[0], 2, FALSE, FALSE, TRUE,
 				   &u4BufLen);
 
