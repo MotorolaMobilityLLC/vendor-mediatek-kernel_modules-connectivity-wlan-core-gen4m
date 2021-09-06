@@ -509,6 +509,12 @@ int32_t MulAPAgentMontorSendMsg(uint16_t msgtype,
 	void *pvmsgbuf, int32_t i4TotalLen);
 #endif /* CFG_AP_80211KVR_INTERFACE */
 
+/* moto CE/FCC dynamic TX power settings */
+int priv_driver_set_ce_or_fcc_country(struct GLUE_INFO *prGlueInfo,   uint16_t u2CountryCode);
+uint32_t country_code_is_in_fcc_group(uint16_t country_code);
+uint32_t country_code_is_in_ce_group(uint16_t country_code);
+extern uint16_t priCountryCode;
+
 /* Mediatek ioctl private commnad handler */
 int priv_driver_set_ap_start(struct net_device *prNetDev,
 	char *pcCommand, int i4TotalLen);
