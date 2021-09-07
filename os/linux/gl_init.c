@@ -260,7 +260,9 @@ static struct ieee80211_channel mtk_2ghz_channels[] = {
 	CHAN2G(11, 2462, 0),
 	CHAN2G(12, 2467, 0),
 	CHAN2G(13, 2472, 0),
+#ifdef WLAN_ENABLE_JP_CH14
 	CHAN2G(14, 2484, 0),
+#endif
 };
 
 #if KERNEL_VERSION(5, 4, 0) <= CFG80211_VERSION_CODE
