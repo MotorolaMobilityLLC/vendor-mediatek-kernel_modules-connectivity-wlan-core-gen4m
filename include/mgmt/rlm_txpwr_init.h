@@ -53,6 +53,50 @@
 #endif /*CFG_SUPPORT_PWR_LMT_EMI == 1*/
 
 #if CFG_SUPPORT_PWR_LIMIT_COUNTRY
+#ifdef MOTO_DYNAMIC_TX_PWR
+#if (CFG_SUPPORT_WIFI_6G == 1)
+struct COUNTRY_POWER_LIMIT_TABLE_DEFAULT
+	/*Default*/
+	g_rRlmPowerLimitDefault[] = {
+	{	{0, 0}
+		, {63, 63, 63, 63, 63, 63, 63, 63, 63}
+		, 0
+	}
+};
+
+#if (CFG_SUPPORT_WIFI_6G_PWR_MODE == 1)
+/* For 802.11ax 6G Very Low Power mode setting */
+struct COUNTRY_POWER_LIMIT_TABLE_DEFAULT
+	g_rRlmPowerLimitDefault_VLP[] = {
+	/*Default*/
+	{	{0, 0}
+		, {63, 63, 63, 63, 63, 63, 63, 63, 63}
+		, 0
+	}
+};
+/* For 802.11ax 6G Standard Power mode setting */
+struct COUNTRY_POWER_LIMIT_TABLE_DEFAULT
+	g_rRlmPowerLimitDefault_SP[] = {
+	/*Default*/
+	{	{0, 0}
+		, {63, 63, 63, 63, 63, 63, 63, 63, 63}
+		, 0
+	}
+};
+#endif /* CFG_SUPPORT_WIFI_6G_PWR_MODE */
+
+#else
+struct COUNTRY_POWER_LIMIT_TABLE_DEFAULT
+	g_rRlmPowerLimitDefault[] = {
+
+	/*Default*/
+	{	{0, 0}
+		, {63, 63, 63, 63, 63}
+		, 0
+	}
+};
+#endif
+#else
 #if (CFG_SUPPORT_WIFI_6G == 1)
 /*Set to MAX_TX_PWR = 63dBm if larger than it*/
 /* For 802.11ax 6G Low Power Indoor mode setting*/
@@ -2442,7 +2486,7 @@ struct COUNTRY_POWER_LIMIT_TABLE_DEFAULT
 	}
 };
 #endif
-
+#endif	//MOTO_DYNAMIC_TX_PWR
 
 static struct COUNTRY_POWER_LIMIT_COUNTRY_CODE g_u2CountryLimitGrp0[] = {0};
 

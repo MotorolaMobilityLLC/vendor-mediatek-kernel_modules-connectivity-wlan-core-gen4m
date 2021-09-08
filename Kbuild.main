@@ -88,6 +88,7 @@ endif
 # Moto settings
 # ---------------------------------------------------
 ccflags-y += -DMOTO_UTAGS_MAC=1
+ccflags-y += -DMOTO_DYNAMIC_TX_PWR=1
 
 # ---------------------------------------------------
 # ALPS Setting
