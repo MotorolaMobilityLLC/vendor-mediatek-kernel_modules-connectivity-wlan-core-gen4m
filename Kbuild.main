@@ -90,6 +90,7 @@ endif
 ccflags-y += -DMOTO_UTAGS_MAC=1
 # Moto remove 2.4GHz ch12/13
 ccflags-y += -DCFG_MOT_REM_CH12_CH13
+ccflags-y += -DMOTO_DYNAMIC_TX_PWR=1
 
 # ---------------------------------------------------
 # ALPS Setting
