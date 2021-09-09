@@ -4510,6 +4510,14 @@ void nicEventUpdateCoexStatus(IN struct ADAPTER *prAdapter,
 	eCoexMode = prEventCoexStatus->ucCoexMode;
 	fgIsBAND2G4Coex = prEventCoexStatus->fgIsBAND2G4Coex;
 
+#if (CFG_SUPPORT_AVOID_DESENSE == 1)
+	prAdapter->fgIsNeedAvoidDesenseFreq =
+		!!(prEventCoexStatus->ucBtOnOff &&
+		!prEventCoexStatus->fgIs5GsupportEPA);
+	DBGLOG(NIC, TRACE, "Avoid desense frequency[%d]\n",
+		prAdapter->fgIsNeedAvoidDesenseFreq);
+#endif
+
 	DBGLOG(NIC, TRACE, "[BTon:%d BTPrf:0x%x BTRssi=%d Mode:%d Flag:%d]\n",
 	       prEventCoexStatus->ucBtOnOff,
 	       prEventCoexStatus->u2BtProfile,

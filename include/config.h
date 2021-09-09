@@ -1604,6 +1604,12 @@
 #define CFG_SUPPORT_NAN_SHOULD_REMOVE_FOR_NO_TYPEDEF 0
 #endif
 
+#ifdef SOC7_0
+#define CFG_SUPPORT_AVOID_DESENSE 1
+#else
+#define CFG_SUPPORT_AVOID_DESENSE 0
+#endif
+
 /*------------------------------------------------------------------------------
  * Flags of Tp Enhance Mechanism
  *------------------------------------------------------------------------------

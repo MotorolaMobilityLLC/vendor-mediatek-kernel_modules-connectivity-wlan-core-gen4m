@@ -223,6 +223,14 @@ struct NETWORK_SELECTION_POLICY_BY_BAND networkReplaceHandler[BAND_NUM] = {
 #endif
 };
 
+#if (CFG_SUPPORT_AVOID_DESENSE == 1)
+const struct WFA_DESENSE_CHANNEL_LIST desenseChList[BAND_NUM] = {
+	[BAND_5G]  = {120, 157},
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	[BAND_6G]  = {13,  53},
+#endif
+};
+#endif
 
 uint8_t roamReasonToType[ROAMING_REASON_NUM] = {
 	[0 ... ROAMING_REASON_NUM - 1] = ROAM_TYPE_RCPI,
@@ -1108,7 +1116,15 @@ uint16_t scanCalculateTotalScore(struct ADAPTER *prAdapter,
 	uint16_t u2PreferenceScore = 0;
 	uint16_t u2AxApScore = 0;
 	uint16_t u2TputScore = 0;
-
+#if (CFG_SUPPORT_AVOID_DESENSE == 1)
+	uint8_t fgBssInDenseRange =
+		IS_CHANNEL_IN_DESENSE_RANGE(prAdapter,
+		prBssDesc->ucChannelNum,
+		prBssDesc->eBand);
+	char extra[16] = {0};
+#else
+	char *extra = "";
+#endif
 	int8_t cRssi = -128;
 	enum ROAM_TYPE eRoamType = roamReasonToType[eRoamReason];
 
@@ -1151,11 +1167,17 @@ uint16_t scanCalculateTotalScore(struct ADAPTER *prAdapter,
 		u2ScoreBand + u2BlackListScore + u2ScoreSaa +
 		u2ScoreIdleTime + u2AxApScore + u2TputScore;
 
+#if (CFG_SUPPORT_AVOID_DESENSE == 1)
+	if (fgBssInDenseRange)
+		u2ScoreTotal /= 4;
+	kalSnprintf(extra, sizeof(extra), ", DESENSE[%d]", fgBssInDenseRange);
+#endif
+
 #define TEMP_LOG_TEMPLATE\
 		MACSTR" cRSSI[%d] Band[%s] Score,Total %d,DE[%d]"\
 		", PR[%d], SM[%d], RSSI[%d],BD[%d],BL[%d],SAA[%d]"\
 		", BW[%d], SC[%d],ST[%d],CI[%d],IT[%d],CU[%d,%d],PF[%d]"\
-		", AX[%d], TPUT[%d]\n"
+		", AX[%d], TPUT[%d]%s\n"
 
 	log_dbg(SCN, INFO,
 		TEMP_LOG_TEMPLATE,
@@ -1168,7 +1190,11 @@ uint16_t scanCalculateTotalScore(struct ADAPTER *prAdapter,
 		prBssDesc->fgExsitBssLoadIE,
 		prBssDesc->ucChnlUtilization,
 		u2PreferenceScore,
-		u2AxApScore, u2TputScore);
+#if (CFG_SUPPORT_AVOID_DESENSE == 1)
+		u2AxApScore, u2TputScore, extra, fgBssInDenseRange);
+#else
+		u2AxApScore, u2TputScore, extra);
+#endif
 
 #undef TEMP_LOG_TEMPLATE
 
@@ -1296,10 +1322,21 @@ try_again:
 #endif
 			if (!oce && EQUAL_MAC_ADDR(prBssDesc->aucBSSID,
 					prConnSettings->aucBSSIDHint)) {
-				log_dbg(SCN, INFO, MACSTR" match bssid_hint\n",
-					MAC2STR(prBssDesc->aucBSSID));
-				prCandBssDesc = prBssDesc;
-				break;
+#if (CFG_SUPPORT_AVOID_DESENSE == 1)
+				if (IS_CHANNEL_IN_DESENSE_RANGE(prAdapter,
+					prBssDesc->ucChannelNum,
+					prBssDesc->eBand)) {
+					log_dbg(SCN, INFO,
+						"Do network selection even match bssid_hint\n");
+				} else
+#endif
+				{
+					log_dbg(SCN, INFO,
+						MACSTR" match bssid_hint\n",
+						MAC2STR(prBssDesc->aucBSSID));
+					prCandBssDesc = prBssDesc;
+					break;
+				}
 			}
 		}
 

@@ -76,6 +76,20 @@ struct NETWORK_SELECTION_POLICY_BY_BAND {
 	PFN_SELECTION_POLICY_FUNC pfnNetworkSelection;
 };
 
+#if (CFG_SUPPORT_AVOID_DESENSE == 1)
+struct WFA_DESENSE_CHANNEL_LIST {
+	int8_t ucChLowerBound;
+	int8_t ucChUpperBound;
+};
+
+extern const struct WFA_DESENSE_CHANNEL_LIST desenseChList[BAND_NUM];
+
+#define IS_CHANNEL_IN_DESENSE_RANGE(_prAdapter, _ch, _band) \
+	(!!(_prAdapter->fgIsNeedAvoidDesenseFreq && (_band != BAND_2G4) && \
+	(_ch >= desenseChList[_band].ucChLowerBound) && \
+	(_ch <= desenseChList[_band].ucChUpperBound)))
+#endif
+
 struct BSS_DESC *scanSearchBssDescByScoreForAis(struct ADAPTER *prAdapter,
 	enum ENUM_ROAMING_REASON eRoamReason, uint8_t ucBssIndex);
 void scanGetCurrentEssChnlList(struct ADAPTER *prAdapter, uint8_t ucBssIndex);

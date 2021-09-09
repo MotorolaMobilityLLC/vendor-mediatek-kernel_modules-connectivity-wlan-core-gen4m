@@ -2944,7 +2944,12 @@ struct EVENT_COEX_STATUS {
 	uint8_t ucBtRssi;
 	uint16_t u2BtProfile;
 	uint8_t fgIsBAND2G4Coex;
+#if (CFG_SUPPORT_AVOID_DESENSE == 1)
+	uint8_t fgIs5GsupportEPA; /* If 5G support EPA, WFA didn't desense BT */
+	uint8_t aucReserved1[4]; /* 4 byte alignment */
+#else
 	uint8_t aucReserved1[5]; /* 4 byte alignment */
+#endif
 };
 
 #if (CFG_SUPPORT_PKT_OFLD == 1)

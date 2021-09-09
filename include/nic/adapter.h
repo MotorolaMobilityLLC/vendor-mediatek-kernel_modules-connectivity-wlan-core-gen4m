@@ -2035,6 +2035,10 @@ struct ADAPTER {
 #ifdef CFG_MSCS_SUPPORT
 	struct MSCS_CAP_FAST_PATH rFastPathCap;
 #endif
+
+#if (CFG_SUPPORT_AVOID_DESENSE == 1)
+	bool fgIsNeedAvoidDesenseFreq;
+#endif
 };				/* end of _ADAPTER_T */
 
 /*******************************************************************************
