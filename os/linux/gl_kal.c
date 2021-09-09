@@ -3398,13 +3398,19 @@ kalIoctlByBssIdx(IN struct GLUE_INFO *prGlueInfo,
 		return WLAN_STATUS_FAILURE;
 	}
 
-	if (kalIsResetting())
+	if (kalIsResetting()) {
+		up(&prGlueInfo->ioctl_sem);
+		up(&g_halt_sem);
 		return WLAN_STATUS_SUCCESS;
+	}
 
 	ASSERT(prGlueInfo->prAdapter);
 
-	if (wlanIsChipAssert(prGlueInfo->prAdapter))
+	if (wlanIsChipAssert(prGlueInfo->prAdapter)) {
+		up(&prGlueInfo->ioctl_sem);
+		up(&g_halt_sem);
 		return WLAN_STATUS_SUCCESS;
+	}
 
 	if (prGlueInfo->main_thread == NULL) {
 		dump_stack();
