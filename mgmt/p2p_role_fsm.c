@@ -4151,6 +4151,12 @@ static void trimAcsScanList(IN struct ADAPTER *prAdapter,
 			  ((prRfChannelInfo1->ucChannelNum - 5) % 16 == 0)))
 			continue;
 #endif
+#if (CFG_SUPPORT_AVOID_DESENSE == 1)
+		if (IS_CHANNEL_IN_DESENSE_RANGE(prAdapter,
+			prRfChannelInfo1->ucChannelNum,
+			prRfChannelInfo1->eBand))
+			continue;
+#endif
 		DBGLOG(P2P, INFO, "acs trim scan list, [%d]=%d %d\n",
 				u4NumChannel,
 				prRfChannelInfo1->eBand,

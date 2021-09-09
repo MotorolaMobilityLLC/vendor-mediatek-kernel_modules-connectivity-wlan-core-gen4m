@@ -6512,6 +6512,7 @@ void p2pFuncSwitchSapChannel(
 	u_int8_t fgEnable = FALSE;
 	u_int8_t fgDbDcModeEn = FALSE;
 	u_int8_t fgIsSapDfs = FALSE;
+	u_int8_t fgIsSapDesense = FALSE;
 	struct BSS_INFO *prP2pBssInfo =
 		(struct BSS_INFO *) NULL;
 	struct BSS_INFO *prAisBssInfo =
@@ -6614,11 +6615,20 @@ void p2pFuncSwitchSapChannel(
 
 	/* STA is not connected */
 	if (ucStaChannelNum == 0) {
-		if (fgIsSapDfs) {
+#if (CFG_SUPPORT_AVOID_DESENSE == 1)
+		fgIsSapDesense =
+			IS_CHANNEL_IN_DESENSE_RANGE(prAdapter,
+			ucSapChannelNum,
+			eSapBand);
+#endif
+		if (fgIsSapDfs || fgIsSapDesense) {
 			/* Choose one 5G channel */
 			ucStaChannelNum = 36;
 			eStaBand = BAND_5G;
-			DBGLOG(P2P, INFO, "[SCC] Choose a channel\n");
+			DBGLOG(P2P, INFO,
+				"[SCC] Dfs: %d, Desense %d, Choose a channel\n",
+				fgIsSapDfs,
+				fgIsSapDesense);
 		} else {
 			DBGLOG(P2P, WARN, "STA is not connected\n");
 			goto exit;
