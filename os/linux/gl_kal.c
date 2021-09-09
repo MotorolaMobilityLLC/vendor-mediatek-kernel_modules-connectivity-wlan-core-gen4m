@@ -3376,15 +3376,6 @@ kalIoctlByBssIdx(IN struct GLUE_INFO *prGlueInfo,
 
 	KAL_REC_TIME_START();
 
-	if (kalIsResetting())
-		return WLAN_STATUS_SUCCESS;
-
-	ASSERT(prGlueInfo);
-	ASSERT(prGlueInfo->prAdapter);
-
-	if (wlanIsChipAssert(prGlueInfo->prAdapter))
-		return WLAN_STATUS_SUCCESS;
-
 	/* GLUE_SPIN_LOCK_DECLARATION(); */
 
 	/* <1> Check if driver is halt */
@@ -3400,10 +3391,20 @@ kalIoctlByBssIdx(IN struct GLUE_INFO *prGlueInfo,
 		return WLAN_STATUS_ADAPTER_NOT_READY;
 	}
 
+	ASSERT(prGlueInfo);
+
 	if (down_interruptible(&prGlueInfo->ioctl_sem)) {
 		up(&g_halt_sem);
 		return WLAN_STATUS_FAILURE;
 	}
+
+	if (kalIsResetting())
+		return WLAN_STATUS_SUCCESS;
+
+	ASSERT(prGlueInfo->prAdapter);
+
+	if (wlanIsChipAssert(prGlueInfo->prAdapter))
+		return WLAN_STATUS_SUCCESS;
 
 	if (prGlueInfo->main_thread == NULL) {
 		dump_stack();

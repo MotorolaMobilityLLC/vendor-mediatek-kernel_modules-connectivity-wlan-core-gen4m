@@ -5528,6 +5528,10 @@ static int32_t wlanProbe(void *pvData, void *pvDriverData)
 #endif
 		return i4Status;
 	}
+	fgIsResetting = FALSE;
+#if (CFG_SUPPORT_CONNINFRA == 1)
+	update_driver_reset_status(fgIsResetting);
+#endif
 #endif
 
 #if 0
