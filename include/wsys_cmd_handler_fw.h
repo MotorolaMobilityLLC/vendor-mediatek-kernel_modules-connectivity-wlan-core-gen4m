@@ -217,6 +217,7 @@ enum ENUM_CMD_ID {
 	CMD_ID_SET_DBDC_PARMS,              /* 0x28 (Set) */
 	CMD_ID_SET_FILTER_COEFFICIENT,      /* 0x29 (Set) */
 
+	CMD_ID_SET_ACL_POLICY       = 0x2A, /* 0x2A (Set) */
 	/* SLT commands */
 	CMD_ID_RANDOM_RX_RESET_EN   = 0x2C, /* 0x2C (Set ) */
 	CMD_ID_RANDOM_RX_RESET_DE   = 0x2D, /* 0x2D (Set ) */

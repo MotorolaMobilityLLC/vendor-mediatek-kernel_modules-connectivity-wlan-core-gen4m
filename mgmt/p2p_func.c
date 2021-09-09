@@ -7720,9 +7720,8 @@ void p2pFuncSetAclPolicy(
 			prCmdAclPolicy->ucBssIdx,
 			prCmdAclPolicy->ucPolicy);
 
-#if 0
 	wlanSendSetQueryCmd(prAdapter,
-		CMD_ID_RDD_ON_OFF_CTRL,
+		CMD_ID_SET_ACL_POLICY,
 		TRUE,
 		FALSE,
 		FALSE,
@@ -7730,7 +7729,6 @@ void p2pFuncSetAclPolicy(
 		NULL,
 		sizeof(*prCmdAclPolicy),
 		(uint8_t *) prCmdAclPolicy, NULL, 0);
-#endif
 
 	cnmMemFree(prAdapter, prCmdAclPolicy);
 }
