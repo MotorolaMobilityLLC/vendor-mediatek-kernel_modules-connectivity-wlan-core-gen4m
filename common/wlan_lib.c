@@ -7135,6 +7135,12 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 	}
 #endif
 
+
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	prWifiVar->ucP2pPrefer6G = (uint8_t)
+		wlanCfgGetUint32(prAdapter, "P2pPrefer6G", FEATURE_DISABLED);
+#endif
+
 #if (CFG_SUPPORT_802_11BE == 1)
 	prWifiVar->ucStaEht = (uint8_t)
 		wlanCfgGetUint32(prAdapter, "StaEHT", FEATURE_ENABLED);

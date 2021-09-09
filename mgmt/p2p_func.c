@@ -6730,7 +6730,7 @@ p2pFunGetPreferredFreqList(IN struct ADAPTER *prAdapter,
 		eBandSel = BIT(BAND_5G);
 
 #if (CFG_SUPPORT_WIFI_6G == 1)
-		if (prAdapter->fgIsHwSupport6G) {
+		if (prAdapter->fgIsHwSupport6G && prWifiVar->ucP2pPrefer6G) {
 			eBandPrefer = BAND_6G;
 			eBandSel |= BIT(BAND_6G);
 		}
