@@ -530,7 +530,8 @@ struct STA_RECORD {
 	P_TX_BA_ENTRY_T aprTxBaTable[TID_NUM];
 #endif
 
-	struct FRAG_INFO rFragInfo[MAX_NUM_CONCURRENT_FRAGMENTED_MSDUS];
+	struct FRAG_INFO rFragInfo[TID_NUM + 1][
+			MAX_NUM_CONCURRENT_FRAGMENTED_MSDUS];
 
 #if 0 /* TODO: Remove this */
 	struct SEC_INFO rSecInfo; /* The security state machine */

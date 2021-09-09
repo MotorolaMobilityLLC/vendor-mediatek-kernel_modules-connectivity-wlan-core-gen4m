@@ -546,15 +546,18 @@ void nicRxFillChksumStatus(IN struct ADAPTER *prAdapter,
 void nicRxClearFrag(IN struct ADAPTER *prAdapter,
 	IN struct STA_RECORD *prStaRec)
 {
-	int j;
+	int i, j;
 	struct FRAG_INFO *prFragInfo;
 
-	for (j = 0; j < MAX_NUM_CONCURRENT_FRAGMENTED_MSDUS; j++) {
-		prFragInfo = &prStaRec->rFragInfo[j];
+	for (i = 0; i < TID_NUM; i++) {
+		for (j = 0; j < MAX_NUM_CONCURRENT_FRAGMENTED_MSDUS; j++) {
+			prFragInfo = &prStaRec->rFragInfo[i][j];
 
-		if (prFragInfo->pr1stFrag) {
-			nicRxReturnRFB(prAdapter, prFragInfo->pr1stFrag);
-			prFragInfo->pr1stFrag = (struct SW_RFB *)NULL;
+			if (prFragInfo->pr1stFrag) {
+				nicRxReturnRFB(prAdapter,
+					prFragInfo->pr1stFrag);
+				prFragInfo->pr1stFrag = (struct SW_RFB *)NULL;
+			}
 		}
 	}
 
@@ -587,8 +590,12 @@ struct SW_RFB *nicRxDefragMPDU(IN struct ADAPTER *prAdapter,
 	u_int8_t fgLast = FALSE;
 	OS_SYSTIME rCurrentTime;
 	struct WLAN_MAC_HEADER *prWlanHeader = NULL;
+	struct WLAN_MAC_HEADER_QOS *prWlanHeaderQos = NULL;
+	struct WLAN_MAC_HEADER_A4_QOS *prWlanHeaderA4Qos = NULL;
 	void *prRxStatus = NULL;
 	struct HW_MAC_RX_STS_GROUP_4 *prRxStatusGroup4 = NULL;
+	struct STA_RECORD *prStaRec;
+	uint8_t ucTid = 0;
 #if CFG_SUPPORT_FRAG_AGG_ATTACK_DETECTION
 	uint8_t ucSecMode = CIPHER_SUITE_NONE;
 	uint64_t u8PN;
@@ -599,24 +606,45 @@ struct SW_RFB *nicRxDefragMPDU(IN struct ADAPTER *prAdapter,
 	ASSERT(prSWRfb);
 
 	prRxCtrl = &prAdapter->rRxCtrl;
+	prStaRec = prSWRfb->prStaRec;
 
 	prRxStatus = prSWRfb->prRxStatus;
 	ASSERT(prRxStatus);
 
 	if (prSWRfb->fgHdrTran == FALSE) {
-		prWlanHeader = (struct WLAN_MAC_HEADER *) prSWRfb->pvHeader;
+		prWlanHeader = (struct WLAN_MAC_HEADER *)
+					prSWRfb->pvHeader;
+		prWlanHeaderQos = (struct WLAN_MAC_HEADER_QOS *)
+					prSWRfb->pvHeader;
+		prWlanHeaderA4Qos = (struct WLAN_MAC_HEADER_A4_QOS *)
+					prSWRfb->pvHeader;
 		u2FrameCtrl = prWlanHeader->u2FrameCtrl;
+		if (RXM_IS_QOS_DATA_FRAME(u2FrameCtrl)) {
+			if (RXM_IS_FROM_DS_TO_DS(u2FrameCtrl)) {
+				ucTid = (prWlanHeaderA4Qos->
+					u2QosCtrl & MASK_QC_TID);
+			} else {
+				ucTid = (prWlanHeaderQos->
+					u2QosCtrl & MASK_QC_TID);
+			}
+		} else
+			ucTid = TID_NUM;
 	} else {
 		prRxStatusGroup4 = prSWRfb->prRxStatusGroup4;
 		prSWRfb->u2SequenceControl = HAL_RX_STATUS_GET_SEQFrag_NUM(
 						     prRxStatusGroup4);
 		u2FrameCtrl = HAL_RX_STATUS_GET_FRAME_CTL_FIELD(
 				      prRxStatusGroup4);
+		if (RXM_IS_QOS_DATA_FRAME(u2FrameCtrl))
+			ucTid = prSWRfb->ucTid;
+		else
+			ucTid = TID_NUM;
 	}
 	u2SeqCtrl = prSWRfb->u2SequenceControl;
 	u2SeqNo = u2SeqCtrl >> MASK_SC_SEQ_NUM_OFFSET;
 	ucFragNo = (uint8_t) (u2SeqCtrl & MASK_SC_FRAG_NUM);
 	prSWRfb->u2FrameCtrl = u2FrameCtrl;
+	prSWRfb->ucTid = ucTid;
 
 	if (!(u2FrameCtrl & MASK_FC_MORE_FRAG)) {
 		/* The last fragment frame */
@@ -670,7 +698,7 @@ struct SW_RFB *nicRxDefragMPDU(IN struct ADAPTER *prAdapter,
 
 
 	for (j = 0; j < MAX_NUM_CONCURRENT_FRAGMENTED_MSDUS; j++) {
-		prFragInfo = &prSWRfb->prStaRec->rFragInfo[j];
+		prFragInfo = &prStaRec->rFragInfo[prSWRfb->ucTid][j];
 		if (prFragInfo->pr1stFrag) {
 			/* I. If the receive timer for the MSDU or MMPDU that
 			 * is stored in the fragments queue exceeds
@@ -693,8 +721,7 @@ struct SW_RFB *nicRxDefragMPDU(IN struct ADAPTER *prAdapter,
 	}
 
 	for (i = 0; i < MAX_NUM_CONCURRENT_FRAGMENTED_MSDUS; i++) {
-
-		prFragInfo = &prSWRfb->prStaRec->rFragInfo[i];
+		prFragInfo = &prStaRec->rFragInfo[prSWRfb->ucTid][i];
 
 		if (fgFirst) {	/* looking for timed-out frag buffer */
 

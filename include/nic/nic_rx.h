@@ -1462,6 +1462,9 @@ struct ACTION_FRAME_SIZE_MAP {
 	(((_u2FrameCtrl & MASK_TO_DS_FROM_DS) == MASK_FC_FROM_DS) ?\
 		TRUE : FALSE)
 
+#define RXM_IS_FROM_DS_TO_DS(_u2FrameCtrl) \
+	(RXM_IS_TO_DS(_u2FrameCtrl) && RXM_IS_FROM_DS(_u2FrameCtrl))
+
 /*******************************************************************************
  *                   F U N C T I O N   D E C L A R A T I O N S
  *******************************************************************************
