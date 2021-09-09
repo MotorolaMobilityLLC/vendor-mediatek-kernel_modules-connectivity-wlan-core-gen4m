@@ -12192,8 +12192,8 @@ int wlanQueryRateByTable(uint32_t txmode, uint32_t rate,
 			uint32_t frmode, uint32_t sgi, uint32_t nsts,
 			uint32_t *pu4CurRate, uint32_t *pu4MaxRate)
 {
-	uint32_t u4CurRate, u4MaxRate;
-	uint8_t ucMaxSize;
+	uint32_t u4CurRate = 0, u4MaxRate = 0;
+	uint8_t ucMaxSize = 0;
 
 	if (txmode == TX_RATE_MODE_CCK) { /* 11B */
 		ucMaxSize = ARRAY_SIZE(g_rCckDataRateMappingTable.rate);
@@ -12216,12 +12216,13 @@ int wlanQueryRateByTable(uint32_t txmode, uint32_t rate,
 		u4MaxRate = g_rOfdmDataRateMappingTable.rate[ucMaxSize - 1];
 	} else if ((txmode == TX_RATE_MODE_HTMIX) ||
 		   (txmode == TX_RATE_MODE_HTGF)) { /* 11N */
+		ucMaxSize = 8;
 		if (rate > 23) {
 			DBGLOG(SW4, ERROR, "rate error for 11N: %u\n",
 			       rate);
 			return -1;
 		}
-		rate %= 8;
+		rate %= ucMaxSize;
 
 		if (frmode > 1) {
 			DBGLOG(SW4, ERROR,
@@ -12231,10 +12232,36 @@ int wlanQueryRateByTable(uint32_t txmode, uint32_t rate,
 		}
 		u4CurRate = g_rDataRateMappingTable.nsts[nsts - 1].bw[frmode]
 				.sgi[sgi].rate[rate];
-		ucMaxSize = 8;
 		u4MaxRate = g_rDataRateMappingTable.nsts[nsts - 1].bw[frmode]
 				.sgi[sgi].rate[ucMaxSize - 1];
-	} else if (txmode == TX_RATE_MODE_HE_SU) { /* AX */
+	} else if (txmode == TX_RATE_MODE_VHT) { /* 11AC */
+		if ((nsts == 0) || (nsts >= 4)) {
+			DBGLOG(SW4, ERROR, "nsts error: %u\n", nsts);
+			return -1;
+		}
+
+		if (frmode > 3) {
+			DBGLOG(SW4, ERROR,
+			       "frmode error for 11AC: %u\n",
+			       frmode);
+			return -1;
+		}
+
+		ucMaxSize = ARRAY_SIZE(g_rDataRateMappingTable.nsts[nsts - 1]
+				.bw[frmode].sgi[sgi].rate);
+		if (rate > ucMaxSize) {
+			DBGLOG(SW4, ERROR, "rate error for 11AC: %u\n",
+			       rate);
+			return -1;
+		}
+		u4CurRate = g_rDataRateMappingTable.nsts[nsts - 1]
+				.bw[frmode].sgi[sgi].rate[rate];
+		u4MaxRate = g_rDataRateMappingTable.nsts[nsts - 1]
+				.bw[frmode].sgi[sgi].rate[ucMaxSize - 1];
+	} else if ((txmode == TX_RATE_MODE_HE_SU) ||
+		(txmode == TX_RATE_MODE_HE_ER)) { /* AX */
+		uint8_t dcm = 0, ru106 = 0;
+
 		if ((nsts == 0) || (nsts >= 5)) {
 			DBGLOG(SW4, ERROR, "nsts error: %u\n", nsts);
 			return -1;
@@ -12245,30 +12272,35 @@ int wlanQueryRateByTable(uint32_t txmode, uint32_t rate,
 			       frmode);
 			return -1;
 		}
-		u4CurRate = g_rAxDataRateMappingTable.nsts[nsts - 1]
-				.bw[frmode].gi[sgi].rate[rate];
+
+		/* bit 4: dcm, bit 5: RU106 */
+		dcm = rate & BIT(4);
+		ru106 = rate & BIT(5);
+		rate = rate & BITS(0, 3);
+
 		ucMaxSize = ARRAY_SIZE(g_rAxDataRateMappingTable.nsts[nsts - 1]
 				.bw[frmode].gi[sgi].rate);
+		if (rate > ucMaxSize) {
+			DBGLOG(SW4, ERROR, "rate error for 11AX: %u\n",
+			       rate);
+			return -1;
+		}
+		u4CurRate = g_rAxDataRateMappingTable.nsts[nsts - 1]
+				.bw[frmode].gi[sgi].rate[rate];
 		u4MaxRate = g_rAxDataRateMappingTable.nsts[nsts - 1]
 				.bw[frmode].gi[sgi].rate[ucMaxSize - 1];
-	} else { /* 11AC */
-		if ((nsts == 0) || (nsts >= 4)) {
-			DBGLOG(SW4, ERROR, "nsts error: %u\n", nsts);
-			return -1;
+
+		if (dcm != 0 || ru106 != 0) {
+			u4CurRate = u4CurRate >> 1;
+			u4MaxRate = u4MaxRate >> 1;
 		}
-		if (frmode > 3) {
-			DBGLOG(SW4, ERROR,
-			       "frmode error for 11AC: %u\n",
-			       frmode);
-			return -1;
-		}
-		u4CurRate = g_rDataRateMappingTable.nsts[nsts - 1]
-				.bw[frmode].sgi[sgi].rate[rate];
-		ucMaxSize = ARRAY_SIZE(g_rDataRateMappingTable.nsts[nsts - 1]
-				.bw[frmode].sgi[sgi].rate);
-		u4MaxRate = g_rDataRateMappingTable.nsts[nsts - 1]
-				.bw[frmode].sgi[sgi].rate[ucMaxSize - 1];
+	} else {
+		DBGLOG(SW4, ERROR,
+			"Unknown rate for [%d,%d,%d,%d,%d]\n",
+			txmode, nsts, frmode, sgi, rate);
+		return -1;
 	}
+
 	*pu4CurRate = u4CurRate;
 	*pu4MaxRate = u4MaxRate;
 	return 0;
