@@ -1631,6 +1631,13 @@ struct CMD_RDD_ON_OFF_CTRL {
 };
 #endif
 
+struct CMD_SET_ACL_POLICY {
+	uint8_t ucBssIdx;
+	uint8_t ucPolicy;
+	uint8_t aucAddr[MAC_ADDR_LEN];
+	uint8_t aucReserve[4];
+};
+
 struct CMD_PERF_IND {
 	/* DWORD_0 - Common Part */
 	uint8_t  ucCmdVer;

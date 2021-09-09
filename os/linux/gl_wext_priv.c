@@ -7567,6 +7567,11 @@ static int priv_driver_set_acl_policy(IN struct net_device *prNetDev,
 
 	DBGLOG(REQ, INFO, "%s: command result is %s\n", __func__, pcCommand);
 
+	p2pFuncSetAclPolicy(prAdapter,
+		ucBssIdx,
+		prBssInfo->rACL.ePolicy,
+		NULL);
+
 	return i4BytesWritten;
 } /* priv_driver_set_acl_policy */
 
@@ -7686,6 +7691,11 @@ static int priv_driver_add_acl_entry(IN struct net_device *prNetDev,
 
 	DBGLOG(REQ, INFO, "%s: command result is %s\n", __func__, pcCommand);
 
+	p2pFuncSetAclPolicy(prAdapter,
+		ucBssIdx,
+		PARAM_CUSTOM_ACL_POLICY_ADD,
+		aucMacAddr);
+
 	return i4BytesWritten;
 } /* priv_driver_add_acl_entry */
 
@@ -7780,6 +7790,11 @@ static int priv_driver_del_acl_entry(IN struct net_device *prNetDev,
 		p2pRoleUpdateACLEntry(prAdapter, ucBssIdx);
 
 	DBGLOG(REQ, INFO, "%s: command result is %s\n", __func__, pcCommand);
+
+	p2pFuncSetAclPolicy(prAdapter,
+		ucBssIdx,
+		PARAM_CUSTOM_ACL_POLICY_REMOVE,
+		aucMacAddr);
 
 	return i4BytesWritten;
 } /* priv_driver_del_acl_entry */
@@ -7892,6 +7907,11 @@ static int priv_driver_clear_acl_entry(IN struct net_device *prNetDev,
 	/* check if the change in ACL affects any existent association */
 	if (prBssInfo->rACL.ePolicy == PARAM_CUSTOM_ACL_POLICY_ACCEPT)
 		p2pRoleUpdateACLEntry(prAdapter, ucBssIdx);
+
+	p2pFuncSetAclPolicy(prAdapter,
+		ucBssIdx,
+		PARAM_CUSTOM_ACL_POLICY_CLEAR,
+		NULL);
 
 	return i4BytesWritten;
 } /* priv_driver_clear_acl_entry */

@@ -8050,6 +8050,9 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 	prWifiVar->fgSapCheckPmkidInDriver = (uint32_t) wlanCfgGetUint32(
 		prAdapter, "SapCheckPmkidInDriver", FEATURE_ENABLED);
 
+	prWifiVar->fgSapOffload = (uint32_t) wlanCfgGetUint32(
+		prAdapter, "SapOffload", FEATURE_DISABLED);
+
 	prWifiVar->fgSapChannelSwitchPolicy = (uint32_t) wlanCfgGetUint32(
 		prAdapter, "SapChannelSwitchPolicy",
 		P2P_CHANNEL_SWITCH_POLICY_SCC);

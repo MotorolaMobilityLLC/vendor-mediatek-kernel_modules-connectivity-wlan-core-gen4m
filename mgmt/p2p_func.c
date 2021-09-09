@@ -7672,3 +7672,66 @@ uint8_t p2pFuncIsBufferableMMPDU(IN struct ADAPTER *prAdapter,
 	return fgIsBufferableMMPDU;
 }
 
+void p2pFuncSetAclPolicy(
+	IN struct ADAPTER *prAdapter,
+	IN uint8_t ucBssIdx,
+	IN enum ENUM_PARAM_CUSTOM_ACL_POLICY ePolicy,
+	IN uint8_t aucAddr[])
+{
+	struct CMD_SET_ACL_POLICY *prCmdAclPolicy;
+	struct BSS_INFO *prBssInfo =
+		(struct BSS_INFO *) NULL;
+
+	if (!prAdapter)
+		return;
+
+	if (IS_FEATURE_DISABLED(prAdapter->rWifiVar.fgSapOffload))
+		return;
+
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIdx);
+
+	prCmdAclPolicy = (struct CMD_SET_ACL_POLICY *)
+		cnmMemAlloc(prAdapter, RAM_TYPE_MSG,
+		sizeof(*prCmdAclPolicy));
+
+	if (!prCmdAclPolicy) {
+		DBGLOG(P2P, ERROR,
+			"cnmMemAlloc for prCmdAclPolicy failed!\n");
+		return;
+	}
+
+	prCmdAclPolicy->ucBssIdx = ucBssIdx;
+	prCmdAclPolicy->ucPolicy = (uint8_t) ePolicy;
+
+	if (ePolicy == PARAM_CUSTOM_ACL_POLICY_ADD ||
+		ePolicy == PARAM_CUSTOM_ACL_POLICY_REMOVE) {
+		COPY_MAC_ADDR(prCmdAclPolicy->aucAddr,
+			aucAddr);
+		DBGLOG(P2P, INFO,
+			"[Role%d][%d] Policy:%d, MAC [" MACSTR "]\n",
+			prBssInfo->u4PrivateData,
+			prCmdAclPolicy->ucBssIdx,
+			prCmdAclPolicy->ucPolicy,
+			prCmdAclPolicy->aucAddr);
+	} else
+		DBGLOG(P2P, INFO,
+			"[Role%d][%d] Policy:%d\n",
+			prBssInfo->u4PrivateData,
+			prCmdAclPolicy->ucBssIdx,
+			prCmdAclPolicy->ucPolicy);
+
+#if 0
+	wlanSendSetQueryCmd(prAdapter,
+		CMD_ID_RDD_ON_OFF_CTRL,
+		TRUE,
+		FALSE,
+		FALSE,
+		NULL,
+		NULL,
+		sizeof(*prCmdAclPolicy),
+		(uint8_t *) prCmdAclPolicy, NULL, 0);
+#endif
+
+	cnmMemFree(prAdapter, prCmdAclPolicy);
+}
+

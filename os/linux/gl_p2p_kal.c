@@ -1891,6 +1891,7 @@ u_int8_t kalP2PSetBlackList(IN struct GLUE_INFO *prGlueInfo,
 {
 	uint8_t aucNullAddr[] = NULL_MAC_ADDR;
 	uint32_t i;
+	uint8_t ucBssIdx = 0;
 
 	ASSERT(prGlueInfo);
 
@@ -1923,6 +1924,17 @@ u_int8_t kalP2PSetBlackList(IN struct GLUE_INFO *prGlueInfo,
 					[ucRoleIndex]
 					->aucblackMACList[i]),
 					rbssid);
+				if (p2pFuncRoleToBssIdx(
+					prGlueInfo->prAdapter,
+					ucRoleIndex,
+					&ucBssIdx) ==
+					WLAN_STATUS_SUCCESS) {
+					p2pFuncSetAclPolicy(
+						prGlueInfo->prAdapter,
+						ucBssIdx,
+						PARAM_CUSTOM_ACL_POLICY_ADD,
+						rbssid);
+				}
 				return FALSE;
 			}
 		}
@@ -1934,7 +1946,17 @@ u_int8_t kalP2PSetBlackList(IN struct GLUE_INFO *prGlueInfo,
 				COPY_MAC_ADDR(
 					&(prGlueInfo->prP2PInfo[ucRoleIndex]
 					->aucblackMACList[i]), aucNullAddr);
-
+				if (p2pFuncRoleToBssIdx(
+					prGlueInfo->prAdapter,
+					ucRoleIndex,
+					&ucBssIdx) ==
+					WLAN_STATUS_SUCCESS) {
+					p2pFuncSetAclPolicy(
+						prGlueInfo->prAdapter,
+						ucBssIdx,
+						PARAM_CUSTOM_ACL_POLICY_REMOVE,
+						rbssid);
+				}
 				return FALSE;
 			}
 		}
@@ -1949,6 +1971,7 @@ u_int8_t kalP2PResetBlackList(IN struct GLUE_INFO *prGlueInfo,
 {
 	uint8_t aucNullAddr[] = NULL_MAC_ADDR;
 	uint32_t i;
+	uint8_t ucBssIdx = 0;
 
 	if (!prGlueInfo || !prGlueInfo->prP2PInfo[ucRoleIndex])
 		return FALSE;
@@ -1957,6 +1980,22 @@ u_int8_t kalP2PResetBlackList(IN struct GLUE_INFO *prGlueInfo,
 		COPY_MAC_ADDR(
 			&(prGlueInfo->prP2PInfo[ucRoleIndex]
 			->aucblackMACList[i]), aucNullAddr);
+	}
+
+	if (p2pFuncRoleToBssIdx(
+		prGlueInfo->prAdapter,
+		ucRoleIndex,
+		&ucBssIdx) == WLAN_STATUS_SUCCESS) {
+		p2pFuncSetAclPolicy(
+			prGlueInfo->prAdapter,
+			ucBssIdx,
+			PARAM_CUSTOM_ACL_POLICY_CLEAR,
+			NULL);
+		p2pFuncSetAclPolicy(
+			prGlueInfo->prAdapter,
+			ucBssIdx,
+			PARAM_CUSTOM_ACL_POLICY_DENY,
+			NULL);
 	}
 
 	return TRUE;
