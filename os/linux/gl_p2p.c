@@ -1898,14 +1898,20 @@ void mtk_p2p_wext_set_Multicastlist(struct GLUE_INFO *prGlueInfo)
 {
 	uint32_t u4SetInfoLen = 0;
 	uint32_t u4McCount;
-	struct net_device *prDev = g_P2pPrDev;
+	struct net_device *prDev = NULL;
+
+	GLUE_SPIN_LOCK_DECLARATION();
+	GLUE_ACQUIRE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
+
+	prDev = g_P2pPrDev;
+
+	GLUE_RELEASE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
 
 	prGlueInfo = (prDev != NULL)
 		? *((struct GLUE_INFO **) netdev_priv(prDev))
 		: NULL;
 
-	if (!prDev || !prGlueInfo ||
-		!prGlueInfo->prAdapter->fgIsP2PRegistered) {
+	if (!prDev || !prGlueInfo) {
 		DBGLOG(INIT, WARN,
 			" abnormal dev or skb: prDev(0x%p), prGlueInfo(0x%p)\n",
 			prDev, prGlueInfo);
