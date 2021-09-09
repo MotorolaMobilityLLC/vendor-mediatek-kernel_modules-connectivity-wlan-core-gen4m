@@ -2920,10 +2920,7 @@ s_int32 mt_op_get_wf_path_comb(
 
 	if (dbdc_mode_en) {
 		*path_len = 1;
-		if (band_idx == M_BAND_0)
-			*path = 0;
-		else
-			*path = 1;
+		*path = 0;
 	} else {
 		*path_len = 2;
 		for (i = 0; i < *path_len; i++)
