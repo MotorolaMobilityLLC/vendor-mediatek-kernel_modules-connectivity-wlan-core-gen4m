@@ -8114,7 +8114,7 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 	prWifiVar->ucEnableFastPath = (uint8_t) wlanCfgGetUint32(
 			prAdapter, "EnableFastPath", FEATURE_ENABLED);
 	prWifiVar->ucFastPathAllPacket = (uint8_t) wlanCfgGetUint32(
-			prAdapter, "EnableFastPath", FEATURE_DISABLED);
+			prAdapter, "FastPathAllPacket", FEATURE_DISABLED);
 }
 
 void wlanCfgSetSwCtrl(IN struct ADAPTER *prAdapter)

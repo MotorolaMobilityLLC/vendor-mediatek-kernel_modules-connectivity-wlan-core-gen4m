@@ -63,9 +63,9 @@ struct MSCS_FIVE_TUPLE_T *mscsSearchFiveTuple(IN struct ADAPTER *prAdapter,
 		return NULL;
 
 	prMonitorList = &prStaRec->rMscsMonitorList;
-	DBGLOG(OID, TRACE, "[F] monitor list(%p) len:%d\n",
+	DBGLOG(TX, TRACE, "[F] monitor list(%p) len:%d\n",
 			prMonitorList, prMonitorList->u4NumElem);
-	DBGLOG_MEM8(OID, TRACE, prTargetTuple, LEN_OF_FIVE_TUPLE);
+	DBGLOG_MEM8(TX, LOUD, prTargetTuple, LEN_OF_FIVE_TUPLE);
 
 	LINK_FOR_EACH_ENTRY(prFiveTuple, prMonitorList, rLinkEntry,
 			    struct MSCS_FIVE_TUPLE_T) {
@@ -75,7 +75,7 @@ struct MSCS_FIVE_TUPLE_T *mscsSearchFiveTuple(IN struct ADAPTER *prAdapter,
 		if (!kalMemCmp(
 				&prFiveTuple->u4SrcIp, prTargetTuple,
 				LEN_OF_FIVE_TUPLE)) {
-			DBGLOG(OID, TRACE,
+			DBGLOG(TX, LOUD,
 			       "Current 5-tuple already in monitoring list\n");
 			return prFiveTuple;
 		}
@@ -96,25 +96,25 @@ void mscsAddFiveTuple(IN struct ADAPTER *prAdapter,
 		return;
 
 	prMonitorList = &prStaRec->rMscsMonitorList;
-	DBGLOG(OID, TRACE, "[F] monitor list(%p) len:%d\n",
+	DBGLOG(TX, TRACE, "[F] monitor list(%p) len:%d\n",
 			prMonitorList, prMonitorList->u4NumElem);
 
 	LINK_FOR_EACH_ENTRY(prFiveTuple, prMonitorList, rLinkEntry,
 			    struct MSCS_FIVE_TUPLE_T) {
 		if (!prFiveTuple) {
-			DBGLOG(OID, TRACE, "[F] return because of no entry\n");
+			DBGLOG(TX, TRACE, "[F] return because of no entry\n");
 			break;
 		}
 
 		if (!kalMemCmp(&prFiveTuple->u4SrcIp, prTargetTuple,
 			LEN_OF_FIVE_TUPLE)) {
-			DBGLOG(OID, TRACE,
+			DBGLOG(TX, TRACE,
 			       "Current 5-tuple already in monitoring list\n");
 			return;
 		}
 	}
 
-	DBGLOG(OID, TRACE, "No match add into monitor list\n");
+	DBGLOG(TX, TRACE, "No match, add into monitor list\n");
 
 	if (prMonitorList->u4NumElem >= MAX_MONITOR_FIVE_TUPLE) {
 		LINK_REMOVE_HEAD(prMonitorList, prEntry,
@@ -125,6 +125,10 @@ void mscsAddFiveTuple(IN struct ADAPTER *prAdapter,
 	}
 
 	prEntry = kalMemAlloc(sizeof(struct MSCS_FIVE_TUPLE_T), VIR_MEM_TYPE);
+	if (!prEntry) {
+		DBGLOG(TX, WARN, "No memory for 5 tuple\n");
+		return;
+	}
 	kalMemCopy(&prEntry->u4SrcIp, prTargetTuple, LEN_OF_FIVE_TUPLE);
 	LINK_INSERT_TAIL(prMonitorList, &prEntry->rLinkEntry);
 }
@@ -142,11 +146,11 @@ void mscsDelFiveTuple(IN struct ADAPTER *prAdapter,
 
 	prMonitorList = &prStaRec->rMscsMonitorList;
 
-	DBGLOG(OID, TRACE, "[F] monitor list(%p) len:%d\n",
+	DBGLOG(TX, TRACE, "[F] monitor list(%p) len:%d\n",
 			prMonitorList, prMonitorList->u4NumElem);
 
-	DBGLOG(OID, TRACE, "[F] del 5-tuple\n");
-	DBGLOG_MEM8(OID, TRACE, prTargetTuple, 12);
+	DBGLOG(TX, TRACE, "[F] del 5-tuple\n");
+	DBGLOG_MEM8(TX, TRACE, prTargetTuple, 12);
 
 	LINK_FOR_EACH_ENTRY(prEntry, prMonitorList, rLinkEntry,
 			    struct MSCS_FIVE_TUPLE_T) {
@@ -157,12 +161,12 @@ void mscsDelFiveTuple(IN struct ADAPTER *prAdapter,
 			LINK_REMOVE_KNOWN_ENTRY(prMonitorList, prEntry);
 			kalMemFree(prEntry, VIR_MEM_TYPE,
 				sizeof(struct MSCS_FIVE_TUPLE_T));
-			DBGLOG(OID, TRACE, "[F] del a tuple!!!!\n");
+			DBGLOG(TX, TRACE, "[F] del a tuple!!!!\n");
 			return;
 		}
 	}
-	DBGLOG(OID, TRACE, "[F] del 5-tuple\n");
-	DBGLOG_MEM8(OID, TRACE, prTargetTuple, 12);
+	DBGLOG(TX, TRACE, "[F] del 5-tuple\n");
+	DBGLOG_MEM8(TX, TRACE, prTargetTuple, 12);
 }
 
 void mscsFlushFiveTuple(IN struct ADAPTER *prAdapter,
@@ -194,9 +198,9 @@ struct MSCS_TCP_INFO_T *mscsSearchTcpEntry(IN struct ADAPTER *prAdapter,
 		return NULL;
 
 	prMonitorList = &prStaRec->rMscsTcpMonitorList;
-	DBGLOG(OID, TRACE, "[F] monitor list(%p) len:%d\n",
+	DBGLOG(TX, LOUD, "[F] monitor list(%p) len:%d\n",
 			prMonitorList, prMonitorList->u4NumElem);
-	DBGLOG_MEM8(OID, TRACE, prTargetTcp, LEN_OF_SRC_DST_IP_PORT);
+	DBGLOG_MEM8(TX, LOUD, prTargetTcp, LEN_OF_SRC_DST_IP_PORT);
 
 	LINK_FOR_EACH_ENTRY(prTcpInfo, prMonitorList, rLinkEntry,
 			    struct MSCS_TCP_INFO_T) {
@@ -205,7 +209,7 @@ struct MSCS_TCP_INFO_T *mscsSearchTcpEntry(IN struct ADAPTER *prAdapter,
 
 		if (!kalMemCmp(&prTcpInfo->u4SrcIp, prTargetTcp,
 				LEN_OF_SRC_DST_IP_PORT)) {
-			DBGLOG(OID, TRACE,
+			DBGLOG(TX, LOUD,
 			       "Current 5-tuple already in monitoring list\n");
 			return prTcpInfo;
 		}
@@ -227,24 +231,24 @@ void mscsAddTcpForMonitor(IN struct ADAPTER *prAdapter,
 		return;
 
 	prMonitorList = &prStaRec->rMscsTcpMonitorList;
-	DBGLOG(OID, TRACE, "[F] TCP monitor list(%p) len:%d\n",
+	DBGLOG(TX, TRACE, "[F] TCP monitor list(%p) len:%d\n",
 			prMonitorList, prMonitorList->u4NumElem);
 
 	LINK_FOR_EACH_ENTRY(prTcpInfo, prMonitorList, rLinkEntry,
 			    struct MSCS_TCP_INFO_T) {
 		if (!prTcpInfo) {
-			DBGLOG(OID, TRACE, "[F] return because of no entry\n");
+			DBGLOG(TX, TRACE, "[F] return because of no entry\n");
 			break;
 		}
 
 		if (!kalMemCmp(&prTcpInfo->u4SrcIp, prTargetTuple,
 			LEN_OF_SRC_DST_IP_PORT)) {
-			DBGLOG(OID, TRACE,
+			DBGLOG(TX, TRACE,
 			       "Current TCP already in monitoring list\n");
 			return;
 		}
 	}
-	DBGLOG(OID, TRACE, "No match add into monitor list\n");
+	DBGLOG(TX, TRACE, "No match add into monitor list\n");
 
 	if (prMonitorList->u4NumElem >= MAX_MONITOR_FIVE_TUPLE) {
 		LINK_REMOVE_HEAD(prMonitorList, prEntry,
@@ -255,6 +259,10 @@ void mscsAddTcpForMonitor(IN struct ADAPTER *prAdapter,
 	}
 
 	prEntry = kalMemAlloc(sizeof(struct MSCS_TCP_INFO_T), VIR_MEM_TYPE);
+	if (!prEntry) {
+		DBGLOG(TX, WARN, "No memory for TCP Monitor\n");
+		return;
+	}
 	kalMemCopy(&prEntry->u4SrcIp, prTargetTuple, LEN_OF_TCP_INFO);
 	LINK_INSERT_TAIL(prMonitorList, &prEntry->rLinkEntry);
 }
@@ -265,7 +273,7 @@ void mscsFlushMonitorTcp(IN struct ADAPTER *prAdapter,
 	struct LINK *prMonitorList = &prStaRec->rMscsTcpMonitorList;
 	struct MSCS_TCP_INFO_T *prEntry;
 
-	DBGLOG(OID, TRACE, "Flush all monitor TCP(%d)\n",
+	DBGLOG(TX, TRACE, "Flush all monitor TCP(%d)\n",
 		prMonitorList->u4NumElem);
 
 	while (!LINK_IS_EMPTY(prMonitorList)) {
@@ -338,7 +346,7 @@ uint8_t mscsIsTcpNeedMonitor(IN struct ADAPTER *prAdapter, IN uint8_t *pucPkt)
 	 */
 	ucTcpFlag = (pucTcpBody[TCP_HDR_FLAG_OFFSET]) & 0x3F;
 	u4Ack = GET_TCP_ACK_FROM_TCP_BODY(pucTcpBody);
-	DBGLOG(OID, TRACE, "[F] TCP flag:%d ack=%d\n", ucTcpFlag, u4Ack);
+	DBGLOG(TX, LOUD, "[F] TCP flag:%d ack=%d\n", ucTcpFlag, u4Ack);
 
 	SET_SRC_IP_FROM_ETH_BODY_DST_IP(&rTcpInfo, pucEthBody);
 	SET_DST_IP_FROM_ETH_BODY_STC_IP(&rTcpInfo, pucEthBody);
@@ -347,7 +355,7 @@ uint8_t mscsIsTcpNeedMonitor(IN struct ADAPTER *prAdapter, IN uint8_t *pucPkt)
 	rTcpInfo.u4Seq = GET_TCP_SEQ_FROM_TCP_BODY(pucTcpBody);
 
 	rTcpInfo.ucFlag = ucTcpFlag;
-	DBGLOG_MEM8(OID, TRACE, &rTcpInfo.u4SrcIp, LEN_OF_TCP_INFO);
+	DBGLOG_MEM8(TX, LOUD, &rTcpInfo.u4SrcIp, LEN_OF_TCP_INFO);
 
 	if (ucTcpFlag == TCP_FLAG_SYN) {
 		mscsAddTcpForMonitor(prAdapter, (uint8_t *) &rTcpInfo.u4SrcIp);
@@ -393,7 +401,7 @@ uint8_t mscsIsNeedRequest(IN struct ADAPTER *prAdapter, IN void *prPacket)
 		| (pPkt[ETH_TYPE_LEN_OFFSET + 1]);
 	pucEthBody = &pPkt[ETH_HLEN];
 	pucUdpBody = &pucEthBody[IP_HEADER_LEN];
-	DBGLOG(OID, TRACE, "[F] IP protocol:%d\n", pucEthBody[9]);
+	DBGLOG(TX, LOUD, "[F] IP protocol:%d\n", pucEthBody[9]);
 
 	if (u2EtherType != ETH_P_IPV4 || (pucEthBody[9] != IP_PRO_UDP
 		&& pucEthBody[9] != IP_PRO_TCP))
@@ -415,8 +423,8 @@ uint8_t mscsIsNeedRequest(IN struct ADAPTER *prAdapter, IN void *prPacket)
 	SET_DST_PORT_FROM_PRO_BODY_SRC_PORT(&rTargetFiveTuple, pucUdpBody);
 	rTargetFiveTuple.ucProtocol = pucEthBody[9];
 
-	DBGLOG(OID, TRACE, "[F] original IP content:\n");
-	DBGLOG_MEM8(OID, TRACE, &pucEthBody[IPV4_HDR_IP_SRC_ADDR_OFFSET], 12);
+	DBGLOG(TX, LOUD, "[F] original IP content:\n");
+	DBGLOG_MEM8(TX, LOUD, &pucEthBody[IPV4_HDR_IP_SRC_ADDR_OFFSET], 12);
 	if (mscsSearchFiveTuple(
 		prAdapter, (uint8_t *) &rTargetFiveTuple.u4SrcIp))
 		return FALSE;
@@ -464,7 +472,7 @@ uint32_t mscsSend(IN struct ADAPTER *prAdapter,
 	prStaRec = aisGetStaRecOfAP(prAdapter, AIS_DEFAULT_INDEX);
 
 	if (!prAisBssInfo || !prStaRec) {
-		DBGLOG(OID, ERROR, "prAisBssInfo or prStaRec equal to NULL\n");
+		DBGLOG(TX, ERROR, "prAisBssInfo or prStaRec equal to NULL\n");
 		return WLAN_STATUS_FAILURE;
 	}
 
@@ -477,7 +485,7 @@ uint32_t mscsSend(IN struct ADAPTER *prAdapter,
 	prMsduInfo = (struct MSDU_INFO *)cnmMgtPktAlloc(prAdapter,
 							u2EstimatedFrameLen);
 	if (!prMsduInfo) {
-		DBGLOG(OID, ERROR, "Alloc packet failed for MSDU");
+		DBGLOG(TX, ERROR, "Alloc packet failed for MSDU");
 		return WLAN_STATUS_RESOURCES;
 	}
 
@@ -485,7 +493,9 @@ uint32_t mscsSend(IN struct ADAPTER *prAdapter,
 	prTxFrame = prMsduInfo->prPacket;
 
 	/* 1. Fill MSCS descriptor */
-	prMscsDesc = kalMemAlloc(sizeof(struct IE_MSCS_DESC), VIR_MEM_TYPE);
+	prMscsDesc = kalMemAlloc(
+			sizeof(struct IE_MSCS_DESC) + prTclas->ucLength + 2,
+			VIR_MEM_TYPE);
 	if (!prMscsDesc)
 		return WLAN_STATUS_RESOURCES;
 
@@ -506,7 +516,11 @@ uint32_t mscsSend(IN struct ADAPTER *prAdapter,
 		prTspec = kalMemAlloc(
 				sizeof(struct IE_TSPEC_BODY), VIR_MEM_TYPE);
 		if (!prTspec) {
-			DBGLOG(OID, ERROR, "Alloc packet failed for TSPEC");
+			DBGLOG(TX, ERROR, "Alloc packet failed for TSPEC");
+			kalMemFree(prMscsDesc, VIR_MEM_TYPE,
+				sizeof(struct IE_MSCS_DESC)
+				+ prTclas->ucLength + 2);
+
 			return WLAN_STATUS_RESOURCES;
 		}
 		kalMemZero(prTspec, sizeof(struct IE_TSPEC_BODY));
@@ -519,10 +533,10 @@ uint32_t mscsSend(IN struct ADAPTER *prAdapter,
 		prTspec->u4DelayBound = (fgIsUdp ? prWifiVar->u4UdpDelayBound :
 			prWifiVar->u4TcpDelayBound);
 		u2FrameLen += sizeof(struct IE_TSPEC_BODY);
-		DBGLOG(OID, ERROR, "[F] tspec len:%d\n",
+		DBGLOG(TX, LOUD, "[F] tspec len:%d\n",
 				(uint8_t)sizeof(struct IE_TSPEC_BODY));
 	}
-	DBGLOG(OID, TRACE, "[F] u2FrameLen+:%d\n", u2FrameLen);
+	DBGLOG(TX, LOUD, "[F] u2FrameLen: %d\n", u2FrameLen);
 
 	/* 3. Fill frame ctrl */
 	prTxFrame->u2FrameCtrl = MAC_FRAME_ACTION;
@@ -545,15 +559,16 @@ uint32_t mscsSend(IN struct ADAPTER *prAdapter,
 			  prStaRec->ucIndex, WLAN_MAC_MGMT_HEADER_LEN,
 			  u2FrameLen, mscsTxDoneCb, MSDU_RATE_MODE_AUTO);
 
-	DBGLOG(OID, TRACE, "[F] Frame content:");
-	DBGLOG_MEM8(OID, TRACE, prMsduInfo->prPacket, u2FrameLen);
-	DBGLOG(OID, TRACE, "[F] !=======================================!\n");
+	DBGLOG(TX, LOUD, "[F] Frame content:");
+	DBGLOG_MEM8(TX, LOUD, prMsduInfo->prPacket, u2FrameLen);
+	DBGLOG(TX, LOUD, "[F] !=======================================!\n");
 
 	/* 5. Enqueue the frame to send this action frame. */
 	nicTxEnqueueMsdu(prAdapter, prMsduInfo);
 
 	/* 6. Return resources */
-	kalMemFree(prMscsDesc, VIR_MEM_TYPE, sizeof(struct IE_MSCS_DESC));
+	kalMemFree(prMscsDesc, VIR_MEM_TYPE,
+		sizeof(struct IE_MSCS_DESC) + prTclas->ucLength + 2);
 	if (fgIsMtkPortAuthorized)
 		kalMemFree(prTspec, VIR_MEM_TYPE, sizeof(struct IE_TSPEC_BODY));
 
@@ -561,15 +576,12 @@ uint32_t mscsSend(IN struct ADAPTER *prAdapter,
 }
 
 uint32_t mscsGenerateTCLASType4(IN struct ADAPTER *prAdapter,
-	IN void *prPacket, OUT uint8_t *pucContent, OUT uint32_t *pu4Size)
+	IN void *prPacket, OUT uint8_t *pucContent, IN uint32_t pu4Size)
 {
 	struct IE_TCLAS_MASK *prTclas;
 	struct IE_TCLAS_CLASS_TYPE_4 *prContent;
 	struct sk_buff *prSkb = (struct sk_buff *)prPacket;
 	uint8_t *pucEthBody, *pucUdpBody;
-
-	*pu4Size += (sizeof(struct IE_TCLAS_MASK) +
-			sizeof(struct IE_TCLAS_CLASS_TYPE_4));
 
 	/* Fill content */
 	prTclas = (struct IE_TCLAS_MASK *) pucContent;
@@ -593,7 +605,7 @@ uint32_t mscsGenerateTCLASType4(IN struct ADAPTER *prAdapter,
 	SET_DST_PORT_FROM_PRO_BODY_SRC_PORT(prContent, pucUdpBody);
 	prContent->ucDSCP = (pucEthBody[IPV4_HDR_TOS_OFFSET] >> 2) & 0x3F;
 	prContent->ucProtocol = pucEthBody[IPV4_HDR_IP_PROTOCOL_OFFSET];
-	DBGLOG(OID, TRACE, "TCLAS len:%d\n", *pu4Size);
+	DBGLOG(TX, LOUD, "TCLAS len:%d %d\n", pu4Size, prTclas->ucLength);
 	return WLAN_STATUS_SUCCESS;
 }
 
@@ -609,17 +621,20 @@ uint32_t mscsRequest(IN struct ADAPTER *prAdapter,
 	/* 1. Retrieve TCLAS if needed */
 	switch (eTCLASType) {
 	case FRAME_CLASSIFIER_TYPE_4:
-		pucTCLAS = kalMemAlloc(sizeof(struct IE_TCLAS_MASK) +
-			sizeof(struct IE_TCLAS_CLASS_TYPE_4), VIR_MEM_TYPE);
+		u4TCLASLen = sizeof(struct IE_TCLAS_MASK) +
+			sizeof(struct IE_TCLAS_CLASS_TYPE_4);
+
+		pucTCLAS = kalMemAlloc(u4TCLASLen, VIR_MEM_TYPE);
 		if (!pucTCLAS) {
-			DBGLOG(OID, ERROR, "Alloc TCLAS type 4 failed");
+			DBGLOG(TX, ERROR, "Alloc TCLAS type 4 failed");
 			return WLAN_STATUS_RESOURCES;
 		}
 		u4Status = mscsGenerateTCLASType4(
-			prAdapter, prPacket, pucTCLAS, &u4TCLASLen);
+			prAdapter, prPacket, pucTCLAS, u4TCLASLen);
 		break;
 	default:
-		DBGLOG(NIC, WARN, "NOT support TCLAS type:%d\n", eTCLASType);
+		DBGLOG(TX, WARN, "NOT support TCLAS type:%d\n", eTCLASType);
+		return WLAN_STATUS_SUCCESS;
 		break;
 	}
 	if (u4Status != WLAN_STATUS_SUCCESS)
@@ -632,18 +647,18 @@ uint32_t mscsRequest(IN struct ADAPTER *prAdapter,
 
 	/* 3. Add to maintained list */
 	if (u4Status == WLAN_STATUS_SUCCESS) {
-		DBGLOG(OID, INFO, "[F] add 5-tuple\n");
+		DBGLOG(TX, TRACE, "[F] add 5-tuple\n");
 		/* pucTargetFiveTuple = GET_SRC_IP_BY_IE(pucTCLAS);  */
 		kalMemCopy(&rTargetFiveTuple.u4SrcIp,
 			GET_SRC_IP_BY_IE(pucTCLAS), 12);
 		rTargetFiveTuple.ucProtocol = GET_PROTOCOL_BY_IE(pucTCLAS);
-		DBGLOG_MEM8(OID, INFO, &rTargetFiveTuple.u4SrcIp,
+		DBGLOG_MEM8(TX, TRACE, &rTargetFiveTuple.u4SrcIp,
 			LEN_OF_FIVE_TUPLE);
 		mscsAddFiveTuple(prAdapter, (uint8_t *)
 			&rTargetFiveTuple.u4SrcIp);
 	}
 
-	if (u4TCLASLen)
+	if (pucTCLAS)
 		kalMemFree(pucTCLAS, VIR_MEM_TYPE, u4TCLASLen);
 
 	return u4Status;
@@ -670,12 +685,12 @@ void mscsProcessRobustAVStreaming(IN struct ADAPTER *prAdapter,
 	if (!prStaRec)
 		return;
 
-	DBGLOG(OID, INFO,
+	DBGLOG(RX, INFO,
 		"Received RAVS action:%d\n", prRxFrame->ucAction);
 
 	switch (prRxFrame->ucAction) {
 	case ACTION_MSCS_RSP:
-		DBGLOG(OID, INFO,
+		DBGLOG(RX, INFO,
 			"Received MSCS response with status:%d\n",
 			prRxFrame->u2StatusCode);
 		/* Remove 5-tuple matched with any in monitor list */
@@ -730,7 +745,7 @@ void mscsHandleRxPacket(IN struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb)
 	pucTcpBody = &pucEthBody[IP_HEADER_LEN];
 	u2EtherType = (pucPkt[ETH_TYPE_LEN_OFFSET] << 8) |
 			(pucPkt[ETH_TYPE_LEN_OFFSET + 1]);
-	DBGLOG(OID, INFO, "TCP type:%d protocol:%d raw flag:%d\n", u2EtherType,
+	DBGLOG(NIC, TRACE, "TCP type:%d protocol:%d raw flag:%d\n", u2EtherType,
 		pucEthBody[9], (pucTcpBody[TCP_HDR_FLAG_OFFSET] & 0x3F));
 	if (u2EtherType != ETH_P_IPV4 || pucEthBody[9] != IP_PRO_TCP
 	    || ((pucTcpBody[TCP_HDR_FLAG_OFFSET] & 0x3F) != TCP_FLAG_SYN_ACK))
@@ -742,7 +757,7 @@ void mscsHandleRxPacket(IN struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb)
 		return;
 
 	u4Ack = GET_TCP_ACK_FROM_TCP_BODY(pucTcpBody);
-	DBGLOG(OID, INFO, "TCP ACK:%d, monitored SEQ:%d\n", u4Ack,
+	DBGLOG(NIC, TRACE, "TCP ACK:%d, monitored SEQ:%d\n", u4Ack,
 		prTcpEntry->u4Seq);
 	if (prTcpEntry->u4Seq + 1 == u4Ack) {
 		prTcpEntry->u4Seq = GET_TCP_SEQ_FROM_TCP_BODY(pucTcpBody);
