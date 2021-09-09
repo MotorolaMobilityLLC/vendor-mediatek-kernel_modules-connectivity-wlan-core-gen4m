@@ -7371,7 +7371,8 @@ void p2pFunIndicateAcsResult(IN struct GLUE_INFO *prGlueInfo,
 				prAcsReqInfo->ucPrimaryCh);
 	}
 
-	if (prGlueInfo->prAdapter->rWifiVar.fgSapOverwriteAcsChnlBw) {
+	if (prGlueInfo->prAdapter->rWifiVar.fgSapOverwriteAcsChnlBw
+		&& !prAcsReqInfo->fgIsAis) {
 		uint8_t ucMaxBandwidth = MAX_BW_20MHZ;
 
 		if (prAcsReqInfo->eBand == BAND_2G4)
@@ -7389,12 +7390,24 @@ void p2pFunIndicateAcsResult(IN struct GLUE_INFO *prGlueInfo,
 			> prGlueInfo->prAdapter->rWifiVar.ucApBandwidth)
 			ucMaxBandwidth = prGlueInfo->prAdapter->rWifiVar
 				.ucApBandwidth;
+
 		if (ucMaxBandwidth != prAcsReqInfo->eChnlBw) {
-			DBGLOG(P2P, WARN,
-				"Adjust bw from %d to %d\n",
-				prAcsReqInfo->eChnlBw,
-				ucMaxBandwidth);
-			prAcsReqInfo->eChnlBw = ucMaxBandwidth;
+			uint8_t ucS1;
+
+			ucS1 = nicGetS1(
+				prAcsReqInfo->eBand,
+				prAcsReqInfo->ucPrimaryCh,
+				rlmGetVhtOpBwByBssOpBw(
+				ucMaxBandwidth));
+
+			if ((ucMaxBandwidth >= MAX_BW_80MHZ && ucS1)
+				|| ucMaxBandwidth < MAX_BW_80MHZ) {
+				DBGLOG(P2P, WARN,
+					"Adjust bw from %d to %d\n",
+					prAcsReqInfo->eChnlBw,
+					ucMaxBandwidth);
+				prAcsReqInfo->eChnlBw = ucMaxBandwidth;
+			}
 		}
 	}
 
@@ -7427,6 +7440,9 @@ void p2pFunIndicateAcsResult(IN struct GLUE_INFO *prGlueInfo,
 		break;
 	case MAX_BW_80_80_MHZ:
 		ucVhtBw = VHT_OP_CHANNEL_WIDTH_80P80;
+		break;
+	case MAX_BW_320MHZ:
+		ucVhtBw = VHT_OP_CHANNEL_WIDTH_320;
 		break;
 	default:
 		ucVhtBw = VHT_OP_CHANNEL_WIDTH_20_40;

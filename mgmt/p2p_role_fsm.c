@@ -4121,6 +4121,8 @@ static void indicateAcsResultByAisCh(IN struct ADAPTER *prAdapter,
 	else
 		prAcsReqInfo->eHwMode = P2P_VENDOR_ACS_HW_MODE_11A;
 
+	prAcsReqInfo->fgIsAis = TRUE;
+
 	p2pFunIndicateAcsResult(prAdapter->prGlueInfo,
 			prAcsReqInfo);
 }

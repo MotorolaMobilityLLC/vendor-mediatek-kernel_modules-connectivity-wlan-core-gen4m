@@ -457,6 +457,17 @@ static struct ieee80211_rate mtk_rates[] = {
 		IEEE80211_HE_PHY_CAP0_CHANNEL_WIDTH_SET_40MHZ_80MHZ_IN_5G,    \
 }
 
+#define WLAN_HE_CAP_160_ELEM_INFO					\
+{								\
+	.mac_cap_info[0] =					\
+		IEEE80211_HE_MAC_CAP0_HTC_HE,			\
+	.mac_cap_info[3] =					\
+		IEEE80211_HE_MAC_CAP3_OMI_CONTROL,		\
+	.phy_cap_info[0] =					\
+		IEEE80211_HE_PHY_CAP0_CHANNEL_WIDTH_SET_40MHZ_80MHZ_IN_5G    \
+		| IEEE80211_HE_PHY_CAP0_CHANNEL_WIDTH_SET_160MHZ_IN_5G,    \
+}
+
 #define WLAN_HE_MCS_NSS_SUPP_INFO				\
 {								\
 	.rx_mcs_80 = cpu_to_le16(0xFFFA),			\
@@ -470,11 +481,22 @@ static struct ieee80211_rate mtk_rates[] = {
 	.he_mcs_nss_supp = WLAN_HE_MCS_NSS_SUPP_INFO,		\
 }
 
+#define WLAN_HE_CAP_160_INFO					\
+{								\
+	.has_he = true,						\
+	.he_cap_elem = WLAN_HE_CAP_160_ELEM_INFO,			\
+	.he_mcs_nss_supp = WLAN_HE_MCS_NSS_SUPP_INFO,		\
+}
+
 static struct ieee80211_sband_iftype_data mtk_he_cap[] = {
 	{
 		.types_mask =
 			BIT(NL80211_IFTYPE_STATION) | BIT(NL80211_IFTYPE_AP),
+#if KERNEL_VERSION(5, 4, 0) <= CFG80211_VERSION_CODE
+		.he_cap = WLAN_HE_CAP_160_INFO,
+#else
 		.he_cap = WLAN_HE_CAP_INFO,
+#endif
 	},
 };
 

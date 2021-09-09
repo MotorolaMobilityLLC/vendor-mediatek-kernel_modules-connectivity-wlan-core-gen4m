@@ -288,6 +288,7 @@ struct P2P_ACS_REQ_INFO {
 	uint32_t u4LteSafeChnMask_5G_1;
 	uint32_t u4LteSafeChnMask_5G_2;
 	uint32_t u4LteSafeChnMask_6G;
+	u_int8_t fgIsAis;
 
 	/* output only */
 	uint8_t ucBand;
