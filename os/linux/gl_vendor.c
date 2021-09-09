@@ -1195,7 +1195,8 @@ uint32_t fill_peer_info(uint8_t *dst, struct PEER_INFO_RATE_STAT *src,
 
 				if (sta_rec)
 					update_peer_rxmpdu(sta_rec, dst_rate,
-							ofdm_idx, cck_idx);
+						ofdm_idx >= 0 ? ofdm_idx : 0,
+						cck_idx >= 0 ? cck_idx : 0);
 				if (prAdapter->rWifiVar.fgLinkStatsDump)
 					dumpLinkStatsRate(dst_rate, j);
 				dst_rate++;
