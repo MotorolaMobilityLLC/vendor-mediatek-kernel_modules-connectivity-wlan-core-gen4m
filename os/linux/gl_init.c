@@ -4996,6 +4996,8 @@ int32_t wlanOnWhenProbeSuccess(struct GLUE_INFO *prGlueInfo,
 	struct ADAPTER *prAdapter,
 	const u_int8_t bAtResetFlow)
 {
+	uint8_t i;
+
 	DBGLOG(INIT, TRACE, "start.\n");
 
 #if CFG_SUPPORT_EASY_DEBUG
@@ -5089,6 +5091,11 @@ int32_t wlanOnWhenProbeSuccess(struct GLUE_INFO *prGlueInfo,
 	if (prAdapter->chip_info->checkbushang) {
 		fw_log_bug_hang_register(prAdapter->chip_info->checkbushang);
 	}
+#endif
+
+#if CFG_SUPPORT_PERSIST_NETDEV
+	for (i = 0; i < KAL_AIS_NUM; i++)
+		netif_device_attach(gprWdev[i]->netdev);
 #endif
 
 	wlanOnP2pRegistration(prGlueInfo, prAdapter, gprWdev[0]);
@@ -5213,6 +5220,7 @@ static int32_t wlanOffAtReset(void)
 	struct ADAPTER *prAdapter = NULL;
 	struct net_device *prDev = NULL;
 	struct GLUE_INFO *prGlueInfo = NULL;
+	uint8_t i;
 
 	DBGLOG(INIT, INFO, "Driver Off during Reset\n");
 
@@ -5225,6 +5233,11 @@ static int32_t wlanOffAtReset(void)
 		DBGLOG(INIT, ERROR, "prDev is NULL\n");
 		return WLAN_STATUS_FAILURE;
 	}
+
+#if CFG_SUPPORT_PERSIST_NETDEV
+	for (i = 0; i < KAL_AIS_NUM; i++)
+		netif_device_detach(gprWdev[i]->netdev);
+#endif
 
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prDev));
 	if (prGlueInfo == NULL) {
@@ -5831,6 +5844,7 @@ static void wlanRemove(void)
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct ADAPTER *prAdapter = NULL;
 	u_int8_t fgResult = FALSE;
+	uint8_t i;
 
 	DBGLOG(INIT, INFO, "Remove wlan!\n");
 
@@ -5878,6 +5892,11 @@ static void wlanRemove(void)
 		DBGLOG(INIT, ERROR, "prDev is NULL\n");
 		return;
 	}
+
+#if CFG_SUPPORT_PERSIST_NETDEV
+	for (i = 0; i < KAL_AIS_NUM; i++)
+		netif_device_detach(gprWdev[i]->netdev);
+#endif
 
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prDev));
 	ASSERT(prGlueInfo);
