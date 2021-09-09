@@ -2764,6 +2764,7 @@ uint32_t nicCfgChipPseRxQuota(IN struct ADAPTER *prAdapter,
 	struct CAP_PSE_RX_QUOTA *prPseCap =
 	(struct CAP_PSE_RX_QUOTA *)pucEventBuf;
 	uint8_t ucMaxBand = prAdapter->rWifiVar.ucNSS;
+	uint32_t u4MaxQuotaBytes = 0;
 	uint32_t u4MaxPktSize = 0;
 
 	if (IS_FEATURE_DISABLED(prAdapter->rWifiVar.ucRxQuotaInfoEn)) {
@@ -2771,7 +2772,14 @@ uint32_t nicCfgChipPseRxQuota(IN struct ADAPTER *prAdapter,
 		return WLAN_STATUS_SUCCESS;
 	}
 
-	u4MaxPktSize = (prPseCap->u4MaxQuotaBytes)/(ucMaxBand + 1);
+	if (prPseCap->u4MaxQuotaBytes < RX_QUOTA_MAGIC_NUM) {
+		DBGLOG(INIT, ERROR, "invalid u4MaxQuotaBytes:%d\n",
+			prPseCap->u4MaxQuotaBytes);
+		return WLAN_STATUS_SUCCESS;
+	}
+
+	u4MaxQuotaBytes = prPseCap->u4MaxQuotaBytes - RX_QUOTA_MAGIC_NUM;
+	u4MaxPktSize = u4MaxQuotaBytes/ucMaxBand;
 	if (u4MaxPktSize < 3000) {
 		/* disable AMSDU */
 		prAdapter->rWifiVar.ucAmsduInAmpduRx = FEATURE_DISABLED;
