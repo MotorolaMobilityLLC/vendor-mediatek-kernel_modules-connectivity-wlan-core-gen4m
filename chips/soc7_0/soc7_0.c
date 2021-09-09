@@ -17,6 +17,7 @@
 #include "coda/soc7_0/conn_host_csr_top.h"
 #include "coda/soc7_0/conn_infra_cfg.h"
 #include "coda/soc7_0/conn_infra_cfg_on.h"
+#include "coda/soc7_0/conn_infra_clkgen_top.h"
 #include "coda/soc7_0/conn_infra_rgu_on.h"
 #include "coda/soc7_0/conn_wt_slp_ctl_reg.h"
 #include "coda/soc7_0/wf_hif_dmashdl_top.h"
@@ -1140,6 +1141,20 @@ static int wf_pwr_on_consys_mcu(void)
 	if (ret)
 		return ret;
 
+	/* PTA clock on
+	 * Address: 0x1801_2064、0x1801_2074
+	 * Data: 0x01010101、0x00000101
+	 * Action: write
+	 */
+	value = CONN_INFRA_CLKGEN_TOP_CKGEN_COEX_0_SET_CONN_CO_EXT_PTA_HCLK_CKEN_M0_MASK |
+			CONN_INFRA_CLKGEN_TOP_CKGEN_COEX_0_SET_CONN_CO_EXT_PTA_OSC_CKEN_M0_MASK |
+			CONN_INFRA_CLKGEN_TOP_CKGEN_COEX_0_SET_CONN_CO_EXT_UART_PTA_HCLK_CKEN_M0_MASK |
+			CONN_INFRA_CLKGEN_TOP_CKGEN_COEX_0_SET_CONN_CO_EXT_UART_PTA_OSC_CKEN_M0_MASK;
+	wf_ioremap_write(CONN_INFRA_CLKGEN_TOP_CKGEN_COEX_0_SET_ADDR, value);
+	value = CONN_INFRA_CLKGEN_TOP_CKGEN_COEX_1_SET_CONN_BSI_CNS_HCLK_CKEN_M0_MASK |
+			CONN_INFRA_CLKGEN_TOP_CKGEN_COEX_1_SET_CONN_CO_EXT_FDD_COEX_HCLKCKEN_M0_MASK;
+	wf_ioremap_write(CONN_INFRA_CLKGEN_TOP_CKGEN_COEX_1_SET_ADDR, value);
+
 	/* Assert CONNSYS WM CPU SW reset
 	 * (apply this for default value patching)
 	 * Address: 0x1800_0120[0]
@@ -1540,7 +1555,7 @@ static int wf_pwr_off_consys_mcu(void)
 	 * Data: 1'b0
 	 * Action: polling
 	 */
-	wf_ioremap_read(CONN_HOST_CSR_TOP_CONN_INFRA_WAKEPU_TOP_ADDR, &value);
+	wf_ioremap_read(CONN_HOST_CSR_TOP_CONNSYS_PWR_STATES_ADDR, &value);
 	check = 0;
 	polling_count = 0;
 	while ((value & BIT(30)) != 0) {
@@ -1550,7 +1565,7 @@ static int wf_pwr_off_consys_mcu(void)
 			break;
 		}
 		udelay(500);
-		wf_ioremap_read(CONN_HOST_CSR_TOP_CONN_INFRA_WAKEPU_TOP_ADDR,
+		wf_ioremap_read(CONN_HOST_CSR_TOP_CONNSYS_PWR_STATES_ADDR,
 				&value);
 		polling_count++;
 	}
@@ -1719,6 +1734,20 @@ static int wf_pwr_off_consys_mcu(void)
 	wf_ioremap_write(CONN_INFRA_CFG_EMI_CTL_WF_ADDR, value);
 	value &= 0xFFFFFFDF;
 	wf_ioremap_write(CONN_INFRA_CFG_EMI_CTL_WF_ADDR, value);
+
+	/* PTA clock off
+	 * Address: 0x1801_2068、0x1801_2078
+	 * Data: 0x01010101、0x00000101
+	 * Action: write
+	 */
+	value = CONN_INFRA_CLKGEN_TOP_CKGEN_COEX_0_SET_CONN_CO_EXT_PTA_HCLK_CKEN_M0_MASK |
+			CONN_INFRA_CLKGEN_TOP_CKGEN_COEX_0_SET_CONN_CO_EXT_PTA_OSC_CKEN_M0_MASK |
+			CONN_INFRA_CLKGEN_TOP_CKGEN_COEX_0_SET_CONN_CO_EXT_UART_PTA_HCLK_CKEN_M0_MASK |
+			CONN_INFRA_CLKGEN_TOP_CKGEN_COEX_0_SET_CONN_CO_EXT_UART_PTA_OSC_CKEN_M0_MASK;
+	wf_ioremap_write(CONN_INFRA_CLKGEN_TOP_CKGEN_COEX_0_CLR_ADDR, value);
+	value = CONN_INFRA_CLKGEN_TOP_CKGEN_COEX_1_SET_CONN_BSI_CNS_HCLK_CKEN_M0_MASK |
+			CONN_INFRA_CLKGEN_TOP_CKGEN_COEX_1_SET_CONN_CO_EXT_FDD_COEX_HCLKCKEN_M0_MASK;
+	wf_ioremap_write(CONN_INFRA_CLKGEN_TOP_CKGEN_COEX_1_CLR_ADDR, value);
 
 	/* Clear wf_infra_req
 	 * Address: 0x1806_01A4[0]
