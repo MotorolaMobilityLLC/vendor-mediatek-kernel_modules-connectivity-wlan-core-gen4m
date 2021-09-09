@@ -16115,7 +16115,7 @@ uint32_t wlanoidSendBTMQuery(struct ADAPTER *prAdapter, void *pvSetBuffer,
 	struct BSS_INFO *prAisBssInfo;
 	uint8_t ucBssIndex = 0;
 	int32_t u4Ret = 0;
-	uint8_t ucQueryReason;
+	uint8_t ucQueryReason = BSS_TRANSITION_LOW_RSSI;
 
 	ucBssIndex = GET_IOCTL_BSSIDX(prAdapter);
 	prAisBssInfo = aisGetAisBssInfo(prAdapter, ucBssIndex);
@@ -16137,8 +16137,6 @@ uint32_t wlanoidSendBTMQuery(struct ADAPTER *prAdapter, void *pvSetBuffer,
 		u4Ret = kalkStrtou8(pvSetBuffer, 0, &ucQueryReason);
 		if (u4Ret)
 			DBGLOG(OID, WARN, "parse reason u4Ret=%d\n", u4Ret);
-	} else {
-		ucQueryReason = BSS_TRANSITION_LOW_RSSI;
 	}
 	wnmSendBTMQueryFrame(prAdapter, prStaRec, ucQueryReason);
 	DBGLOG(OID, INFO, "Send BTM Query, Reason %d\n", ucQueryReason);
