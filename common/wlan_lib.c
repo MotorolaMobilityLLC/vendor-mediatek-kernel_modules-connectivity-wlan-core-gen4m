@@ -12371,7 +12371,7 @@ int wlanGetMaxTxRate(IN struct ADAPTER *prAdapter,
 		if (ucApNss > 0 && ucApNss < ucNss)
 			ucNss = ucApNss;
 	}
-	if ((ucNss < 1) && (ucNss > 3)) {
+	if ((ucNss < 1) || (ucNss > 3)) {
 		DBGLOG(RLM, ERROR, "error ucNss: %u\n", ucNss);
 		goto errhandle;
 	}
