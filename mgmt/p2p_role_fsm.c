@@ -2859,7 +2859,9 @@ p2pRoleFsmRunEventScanDone(IN struct ADAPTER *prAdapter,
 		/* Unexpected channel scan done event
 		 * without being chanceled.
 		 */
-		ASSERT(FALSE);
+		DBGLOG(P2P, WARN,
+			"Unexpected scan done for state [%s].\n",
+			p2pRoleFsmGetFsmState(prP2pRoleFsmInfo->eCurrentState));
 		break;
 	}
 
