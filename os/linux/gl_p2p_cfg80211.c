@@ -1629,7 +1629,8 @@ int mtk_p2p_cfg80211_start_ap(struct wiphy *wiphy,
 		pucBuffer = prP2pBcnUpdateMsg->aucBuffer;
 
 #if (CFG_SUPPORT_DFS_MASTER == 1)
-		if (p2pFuncGetDfsState() == DFS_STATE_DETECTED)
+		if ((rRfChnlInfo.eBand == BAND_5G) &&
+			(p2pFuncGetDfsState() == DFS_STATE_DETECTED))
 			p2pFuncSetDfsState(DFS_STATE_INACTIVE);
 #endif
 		if (settings->beacon.head_len != 0) {

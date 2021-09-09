@@ -1041,8 +1041,6 @@ void cnmRadarDetectEvent(IN struct ADAPTER *prAdapter,
 	struct MSG_P2P_RADAR_DETECT *prP2pRddDetMsg;
 	uint8_t ucBssIndex;
 
-	log_dbg(CNM, INFO, "cnmRadarDetectEvent.\n");
-
 	prEventBody = (struct EVENT_RDD_REPORT *)(
 			      prEvent->aucBuffer);
 
@@ -1069,6 +1067,10 @@ void cnmRadarDetectEvent(IN struct ADAPTER *prAdapter,
 			break;
 		}
 	}
+
+	log_dbg(CNM, INFO,
+		"cnmRadarDetectEvent (%d).\n",
+		prP2pRddDetMsg->ucBssIndex);
 
 	p2pFuncSetDfsState(DFS_STATE_DETECTED);
 

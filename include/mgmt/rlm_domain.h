@@ -1067,6 +1067,7 @@ struct mtk_regd_control {
 	u8 n_channel_active_6g;
 	struct CMD_DOMAIN_CHANNEL channels[MAX_SUPPORTED_CH_COUNT];
 	enum nl80211_dfs_regions dfs_region;
+	enum ENUM_DBDC_BN eDBDCBand;
 };
 
 #if (CFG_SUPPORT_SINGLE_SKU_LOCAL_DB == 1)
@@ -1172,6 +1173,8 @@ void rlmDomainSetCountryCode(char *alpha2,
 void rlmDomainSetDfsRegion(enum nl80211_dfs_regions
 			   dfs_region);
 enum nl80211_dfs_regions rlmDomainGetDfsRegion(void);
+void rlmDomainSetDfsDbdcBand(enum ENUM_DBDC_BN eDBDCBand);
+enum ENUM_DBDC_BN rlmDomainGetDfsDbdcBand(void);
 void rlmDomainResetCtrlInfo(u_int8_t force);
 void rlmDomainAddActiveChannel(u8 band);
 u8 rlmDomainGetActiveChannelCount(u8 band);

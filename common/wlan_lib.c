@@ -8068,6 +8068,18 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 	prWifiVar->fgSapOverwriteAcsChnlBw = (uint32_t) wlanCfgGetUint32(
 		prAdapter, "SapOverwriteAcsChnlBw", FEATURE_ENABLED);
 
+	prWifiVar->ucDfsRegion = (uint32_t) wlanCfgGetUint32(
+		prAdapter, "DfsRegion", NL80211_DFS_UNSET);
+	if (prWifiVar->ucDfsRegion)
+		rlmDomainSetDfsRegion(prWifiVar->ucDfsRegion);
+
+	prWifiVar->u4ByPassCacTime = (uint32_t) wlanCfgGetUint32(
+		prAdapter, "ByPassCacTime", 0);
+	if (prWifiVar->u4ByPassCacTime) {
+		p2pFuncEnableManualCac();
+		p2pFuncSetDriverCacTime(prWifiVar->u4ByPassCacTime);
+	}
+
 	prWifiVar->fgAllowSameBandDualSta = (uint8_t) wlanCfgGetUint32(
 		prAdapter, "AllowSameBandDualSta", FEATURE_ENABLED);
 #if CFG_MODIFY_TX_POWER_BY_BAT_VOLT

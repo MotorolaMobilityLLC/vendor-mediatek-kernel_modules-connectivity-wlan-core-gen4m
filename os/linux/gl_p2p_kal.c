@@ -1678,10 +1678,9 @@ void kalP2PRddDetectUpdate(IN struct GLUE_INFO *prGlueInfo,
 	DBGLOG(INIT, INFO, "Radar Detection event\n");
 
 	do {
-		if (prGlueInfo == NULL) {
-			ASSERT(FALSE);
+
+		if (prGlueInfo == NULL)
 			break;
-		}
 
 		prGlueP2pInfo = prGlueInfo->prP2PInfo[ucRoleIndex];
 
@@ -1692,10 +1691,10 @@ void kalP2PRddDetectUpdate(IN struct GLUE_INFO *prGlueInfo,
 		else
 			prNetdevice = prGlueP2pInfo->prDevHandler;
 
-		if (prGlueP2pInfo->chandef == NULL) {
-			ASSERT(FALSE);
+		if (prGlueP2pInfo->chandef == NULL)
 			break;
-		}
+
+#ifdef CFG_REPORT_TO_OS
 
 		/* cac start disable for next cac slot
 		 * if enable in dfs channel
@@ -1709,6 +1708,13 @@ void kalP2PRddDetectUpdate(IN struct GLUE_INFO *prGlueInfo,
 			GFP_KERNEL);
 		DBGLOG(INIT, INFO,
 			"kalP2PRddDetectUpdate: Update to OS Done\n");
+#endif
+
+		if (prGlueP2pInfo->chandef->chan)
+			kalP2pIndicateRadarEvent(prGlueInfo,
+				ucRoleIndex,
+				WIFI_EVENT_DFS_OFFLOAD_RADAR_DETECTED,
+				prGlueP2pInfo->chandef->chan->center_freq);
 
 		netif_carrier_off(prNetdevice);
 		netif_tx_stop_all_queues(prNetdevice);
@@ -1725,10 +1731,8 @@ void kalP2PCacFinishedUpdate(IN struct GLUE_INFO *prGlueInfo,
 	DBGLOG(INIT, INFO, "CAC Finished event\n");
 
 	do {
-		if (prGlueInfo == NULL) {
-			ASSERT(FALSE);
+		if (prGlueInfo == NULL)
 			break;
-		}
 
 		prGlueP2pInfo = prGlueInfo->prP2PInfo[ucRoleIndex];
 
@@ -1739,11 +1743,10 @@ void kalP2PCacFinishedUpdate(IN struct GLUE_INFO *prGlueInfo,
 		else
 			prNetdevice = prGlueP2pInfo->prDevHandler;
 
-		if (prGlueP2pInfo->chandef == NULL) {
-			ASSERT(FALSE);
+		if (prGlueP2pInfo->chandef == NULL)
 			break;
-		}
 
+#ifdef CFG_REPORT_TO_OS
 		DBGLOG(INIT, INFO, "kalP2PCacFinishedUpdate: Update to OS\n");
 #if KERNEL_VERSION(3, 14, 0) <= CFG80211_VERSION_CODE
 		cfg80211_cac_event(
@@ -1757,7 +1760,13 @@ void kalP2PCacFinishedUpdate(IN struct GLUE_INFO *prGlueInfo,
 #endif
 		DBGLOG(INIT, INFO,
 			"kalP2PCacFinishedUpdate: Update to OS Done\n");
+#endif
 
+		if (prGlueP2pInfo->chandef->chan)
+			kalP2pIndicateRadarEvent(prGlueInfo,
+				ucRoleIndex,
+				WIFI_EVENT_DFS_OFFLOAD_CAC_FINISHED,
+				prGlueP2pInfo->chandef->chan->center_freq);
 	} while (FALSE);
 
 }				/* kalP2PRddDetectUpdate */
@@ -2224,6 +2233,16 @@ void kalP2pIndicateAcsResult(IN struct GLUE_INFO *prGlueInfo,
 		ucSeg1Ch,
 		ch_width,
 		eHwMode);
+
+	/* Indicatre CAC */
+	if (rlmDomainIsLegalDfsChannel(
+		prGlueInfo->prAdapter,
+		eBand,
+		ucPrimaryCh) || (eChnlBw >= MAX_BW_160MHZ)) {
+		DBGLOG(P2P, INFO, "Do pre CAC.\n");
+		p2pFuncSetDfsChannelAvailable(prGlueInfo->prAdapter,
+			ucPrimaryCh, TRUE);
+	}
 
 #if KERNEL_VERSION(3, 14, 0) <= LINUX_VERSION_CODE
 	vendor_event = cfg80211_vendor_event_alloc(prGlueP2pInfo->prWdev->wiphy,

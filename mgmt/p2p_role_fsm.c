@@ -1582,9 +1582,14 @@ void p2pRoleFsmRunEventStopAP(IN struct ADAPTER *prAdapter,
 	}
 
 #if (CFG_SUPPORT_DFS_MASTER == 1)
+	if (prP2pBssInfo->eBand != BAND_5G)
+		goto SKIP_END_RDD;
+
 	p2pFuncSetDfsState(DFS_STATE_INACTIVE);
 	p2pFuncStopRdd(prAdapter, prP2pBssInfo->ucBssIndex);
 #endif
+
+SKIP_END_RDD:
 
 	rsnFlushPmkid(prAdapter, prP2pBssInfo->ucBssIndex);
 
@@ -2938,6 +2943,8 @@ p2pRoleFsmRunEventChnlGrant(IN struct ADAPTER *prAdapter,
 
 #if (CFG_SUPPORT_DFS_MASTER == 1)
 		case P2P_ROLE_STATE_DFS_CAC:
+			rlmDomainSetDfsDbdcBand(prMsgChGrant->eDBDCBand);
+
 			p2pFuncStartRdd(prAdapter, prMsgChGrant->ucBssIndex);
 
 			if (p2pFuncCheckWeatherRadarBand(prChnlReqInfo))

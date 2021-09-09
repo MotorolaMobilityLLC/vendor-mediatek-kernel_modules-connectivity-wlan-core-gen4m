@@ -1259,6 +1259,8 @@ struct WIFI_VAR {
 	uint8_t fgSapAuthPolicy;
 	uint8_t fgSapOverwriteAcsChnlBw;
 	uint8_t fgSapOffload;
+	uint8_t ucDfsRegion;
+	uint32_t u4ByPassCacTime;
 	uint8_t fgAllowSameBandDualSta;
 
 #if CFG_SUPPORT_NAN

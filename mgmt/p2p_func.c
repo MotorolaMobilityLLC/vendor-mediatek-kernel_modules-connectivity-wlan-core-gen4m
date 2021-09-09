@@ -1201,6 +1201,9 @@ p2pFuncStartGO(IN struct ADAPTER *prAdapter,
 
 		DBGLOG(P2P, TRACE, "p2pFuncStartGO:\n");
 
+		if (prP2pChnlReqInfo->eBand != BAND_5G)
+			goto SKIP_START_RDD;
+
 #if (CFG_SUPPORT_DFS_MASTER == 1)
 		prCmdRddOnOffCtrl = (struct CMD_RDD_ON_OFF_CTRL *)
 			cnmMemAlloc(prAdapter, RAM_TYPE_MSG,
@@ -1220,11 +1223,12 @@ p2pFuncStartGO(IN struct ADAPTER *prAdapter,
 		 * Remember to fix it when driver could get
 		 * the correct band from firmware.
 		 */
-		prCmdRddOnOffCtrl->ucRddIdx = ENUM_BAND_0;
+		prCmdRddOnOffCtrl->ucRddIdx = rlmDomainGetDfsDbdcBand();
 
 		DBGLOG(P2P, INFO,
-			"p2pFuncStartGO: Start TXQ - DFS ctrl: %.d\n",
-			prCmdRddOnOffCtrl->ucDfsCtrl);
+			"Start TXQ - DFS ctrl: %d, RDD index: %d\n",
+			prCmdRddOnOffCtrl->ucDfsCtrl,
+			prCmdRddOnOffCtrl->ucRddIdx);
 
 		wlanSendSetQueryCmd(prAdapter,
 			CMD_ID_RDD_ON_OFF_CTRL,
@@ -1238,6 +1242,8 @@ p2pFuncStartGO(IN struct ADAPTER *prAdapter,
 
 		cnmMemFree(prAdapter, prCmdRddOnOffCtrl);
 #endif
+
+SKIP_START_RDD:
 
 		/* Re-start AP mode.  */
 		p2pFuncSwitchOPMode(prAdapter,
@@ -1816,7 +1822,7 @@ void p2pFuncStartRdd(IN struct ADAPTER *prAdapter, IN uint8_t ucBssIdx)
 	 * Remember to fix it when driver could get
 	 * the correct band from firmware.
 	 */
-	prCmdRddOnOffCtrl->ucRddIdx = ENUM_BAND_0;
+	prCmdRddOnOffCtrl->ucRddIdx = rlmDomainGetDfsDbdcBand();
 
 #if (CFG_SUPPORT_SINGLE_SKU == 1)
 	switch (rlmDomainGetDfsRegion()) {
@@ -1842,8 +1848,10 @@ void p2pFuncStartRdd(IN struct ADAPTER *prAdapter, IN uint8_t ucBssIdx)
 		prCmdRddOnOffCtrl->ucRddRxSel = RDD_IN_SEL_0;
 
 	DBGLOG(P2P, INFO,
-		"p2pFuncStartRdd: Start Radar detection - DFS ctrl: %d, RDD index: %d\n",
-		prCmdRddOnOffCtrl->ucDfsCtrl, prCmdRddOnOffCtrl->ucRddIdx);
+		"Start Radar detection at %d - DFS ctrl: %d, RDD index: %d\n",
+		prCmdRddOnOffCtrl->ucSetVal,
+		prCmdRddOnOffCtrl->ucDfsCtrl,
+		prCmdRddOnOffCtrl->ucRddIdx);
 
 	wlanSendSetQueryCmd(prAdapter,
 		CMD_ID_RDD_ON_OFF_CTRL,
@@ -1883,7 +1891,7 @@ void p2pFuncStopRdd(IN struct ADAPTER *prAdapter, IN uint8_t ucBssIdx)
 	 * Remember to fix it when driver could get
 	 * the correct band from firmware.
 	 */
-	prCmdRddOnOffCtrl->ucRddIdx = ENUM_BAND_0;
+	prCmdRddOnOffCtrl->ucRddIdx = rlmDomainGetDfsDbdcBand();
 
 	if (prCmdRddOnOffCtrl->ucRddIdx)
 		prCmdRddOnOffCtrl->ucRddRxSel = RDD_IN_SEL_1;
@@ -1891,8 +1899,9 @@ void p2pFuncStopRdd(IN struct ADAPTER *prAdapter, IN uint8_t ucBssIdx)
 		prCmdRddOnOffCtrl->ucRddRxSel = RDD_IN_SEL_0;
 
 	DBGLOG(P2P, INFO,
-		"p2pFuncStopRdd: Stop Radar detection - DFS ctrl: %d, RDD index: %d\n",
-		prCmdRddOnOffCtrl->ucDfsCtrl, prCmdRddOnOffCtrl->ucRddIdx);
+		"Stop Radar detection - DFS ctrl: %d, RDD index: %d\n",
+		prCmdRddOnOffCtrl->ucDfsCtrl,
+		prCmdRddOnOffCtrl->ucRddIdx);
 
 	wlanSendSetQueryCmd(prAdapter,
 		CMD_ID_RDD_ON_OFF_CTRL,
@@ -2019,8 +2028,9 @@ void p2pFuncDfsSwitchCh(IN struct ADAPTER *prAdapter,
 	prCmdRddOnOffCtrl->ucDfsCtrl = RDD_START_TXQ;
 
 	DBGLOG(P2P, TRACE,
-		"p2pFuncDfsSwitchCh: Start TXQ - DFS ctrl: %.d\n",
-		prCmdRddOnOffCtrl->ucDfsCtrl);
+		"p2pFuncDfsSwitchCh: Start TXQ - DFS ctrl: %d, RDD index: %d\n",
+		prCmdRddOnOffCtrl->ucDfsCtrl,
+		prCmdRddOnOffCtrl->ucRddIdx);
 
 	wlanSendSetQueryCmd(prAdapter,
 		CMD_ID_RDD_ON_OFF_CTRL,

@@ -6400,6 +6400,7 @@ void rlmDomainSetCountryCode(char *alpha2, u8 size_of_alpha2)
 
 	g_mtk_regd_control.alpha2 = rlmDomainAlpha2ToU32(alpha2, max);
 }
+
 void rlmDomainSetDfsRegion(enum nl80211_dfs_regions dfs_region)
 {
 	g_mtk_regd_control.dfs_region = dfs_region;
@@ -6408,6 +6409,16 @@ void rlmDomainSetDfsRegion(enum nl80211_dfs_regions dfs_region)
 enum nl80211_dfs_regions rlmDomainGetDfsRegion(void)
 {
 	return g_mtk_regd_control.dfs_region;
+}
+
+void rlmDomainSetDfsDbdcBand(enum ENUM_DBDC_BN eDBDCBand)
+{
+	g_mtk_regd_control.eDBDCBand = eDBDCBand;
+}
+
+enum ENUM_DBDC_BN rlmDomainGetDfsDbdcBand(void)
+{
+	return g_mtk_regd_control.eDBDCBand;
 }
 
 void rlmDomainSetTempCountryCode(char *alpha2, u8 size_of_alpha2)
