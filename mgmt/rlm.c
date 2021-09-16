@@ -2144,7 +2144,6 @@ void rlmModifyVhtBwPara(uint8_t *pucVhtChannelFrequencyS1,
 }
 
 #if (CFG_SUPPORT_WIFI_6G == 1)
-
 void rlmTransferHe6gOpInfor(IN uint8_t ucChannelNum,
 	IN uint8_t ucChannelWidth,
 	OUT uint8_t *pucChannelWidth,
@@ -2168,60 +2167,81 @@ void rlmTransferHe6gOpInfor(IN uint8_t ucChannelNum,
 		break;
 	}
 
-	/*add IEEE BW160 patch*/
-	rlmModifyHE6GBwPara(pucCenterFreqS1,
-			   pucCenterFreqS2,
-			   pucChannelWidth);
+	/* Covert S1, S2 to VHT format */
+	rlmModifyHE6GBwPara(*pucChannelWidth,
+		ucChannelNum,
+		pucCenterFreqS1,
+		pucCenterFreqS2);
 
 	/* Revise SCO */
 	*peSco = rlmReviseSco(*pucChannelWidth,
 		ucChannelNum, *pucCenterFreqS1);
 }
-void rlmModifyHE6GBwPara(uint8_t *pucHe6gChannelFrequencyS1,
-			uint8_t *pucHe6gChannelFrequencyS2,
-			uint8_t *pucHe6gChannelWidth)
+
+void rlmModifyHE6GBwPara(uint8_t ucHe6gChannelWidth,
+	uint8_t ucHe6gPrimaryChannel,
+	uint8_t *pucHe6gChannelFrequencyS1,
+	uint8_t *pucHe6gChannelFrequencyS2)
 {
-	uint8_t i = 0, ucTempS = 0;
+	uint8_t i = 0, ucS1Modify = 0;
+	uint8_t ucS1Origin = *pucHe6gChannelFrequencyS1;
+	uint8_t ucS2Origin = *pucHe6gChannelFrequencyS2;
 
-	if ((*pucHe6gChannelFrequencyS1 != 0) &&
-		(*pucHe6gChannelFrequencyS2 != 0)) {
-
-		uint8_t ucBW160Inteval = 8;
-
-		if (((*pucHe6gChannelFrequencyS2 - *pucHe6gChannelFrequencyS1)
-		== ucBW160Inteval) ||
-		((*pucHe6gChannelFrequencyS1 - *pucHe6gChannelFrequencyS2)
-		== ucBW160Inteval)) {
-			/*C160 case*/
-
-			/* NEW spec should set central ch of bw80 at S1,
-			 * set central ch of bw160 at S2
+	if (ucHe6gChannelWidth == CW_160MHZ) {
+		if ((ucS1Origin != 0 && ucS2Origin != 0) &&
+			(((ucS2Origin - ucS1Origin) == 8) ||
+			 ((ucS1Origin - ucS2Origin) == 8))) {
+			/* HE operating element sets central ch of bw80 at S1,
+			 * set central ch of bw160 at S2.
 			 */
 			for (i = 0; i < 2; i++) {
-
 				if (i == 0)
-					ucTempS = *pucHe6gChannelFrequencyS1;
+					ucS1Modify = ucS1Origin;
 				else
-					ucTempS = *pucHe6gChannelFrequencyS2;
+					ucS1Modify = ucS2Origin;
 
-				if ((ucTempS == 15) || (ucTempS == 47) ||
-					(ucTempS == 79) || (ucTempS == 111) ||
-					(ucTempS == 143) || (ucTempS == 175) ||
-					(ucTempS == 207))
+				if ((ucS1Modify == 15) ||
+					(ucS1Modify == 47) ||
+					(ucS1Modify == 79) ||
+					(ucS1Modify == 111) ||
+					(ucS1Modify == 143) ||
+					(ucS1Modify == 175) ||
+					(ucS1Modify == 207))
 					break;
 			}
+		}
 
-			if (ucTempS == 0) {
-				DBGLOG(RLM, WARN,
-					   "@wifi 6g,please check BW160 setting, find central freq fail\n");
-				return;
-			}
+		if (ucS1Modify == 0) {
+			ucS1Modify = nicGetHe6gS1(ucHe6gPrimaryChannel,
+				ucHe6gChannelWidth);
 
-			*pucHe6gChannelFrequencyS1 = ucTempS;
+			DBGLOG(RLM, WARN,
+				"S1/S2 for 6G BW160 is out of spec, S1[%d->%d] S2[%d->0]\n",
+				ucS1Origin, ucS1Modify, ucS2Origin);
+		}
+
+		*pucHe6gChannelFrequencyS1 = ucS1Modify;
+		*pucHe6gChannelFrequencyS2 = 0;
+	} else if (ucHe6gChannelWidth == CW_80MHZ) {
+		ucS1Modify = nicGetHe6gS1(ucHe6gPrimaryChannel,
+			ucHe6gChannelWidth);
+
+		if (ucS1Modify != ucS1Origin) {
+			DBGLOG(RLM, WARN,
+				"S1/S2 for 6G BW80 is out of spec, S1[%d->%d] S2[%d->0]\n",
+				ucS1Origin, ucS1Modify, ucS2Origin);
+
+			*pucHe6gChannelFrequencyS1 = ucS1Modify;
 			*pucHe6gChannelFrequencyS2 = 0;
-			*pucHe6gChannelWidth = CW_160MHZ;
-		} else {
-			/*real 80P80 case*/
+		}
+	} else if (ucHe6gChannelWidth == CW_20_40MHZ) {
+		if (ucS1Origin != 0 || ucS2Origin != 0) {
+			DBGLOG(RLM, WARN,
+				"S1/S2 for 6G BW20/40 is out of spec, S1[%d->0] S2[%d->0]\n",
+				ucS1Origin, ucS2Origin);
+
+			*pucHe6gChannelFrequencyS1 = 0;
+			*pucHe6gChannelFrequencyS2 = 0;
 		}
 	}
 }
