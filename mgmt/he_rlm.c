@@ -207,9 +207,15 @@ uint8_t heGetBssBandBw(struct ADAPTER *prAdapter,
 			if (prBssInfo->eBand == BAND_2G4)
 				ucMaxBandwidth = prAdapter->rWifiVar
 					.ucAp2gBandwidth;
-			else if (prBssInfo->eBand == BAND_5G)
+			else if (prBssInfo->eBand == BAND_5G) {
 				ucMaxBandwidth = prAdapter->rWifiVar
 					.ucAp5gBandwidth;
+				/* Use platform capability */
+				if (prAdapter->rWifiVar.u4SwTestMode ==
+					ENUM_SW_TEST_MODE_SIGMA_AX_AP)
+					ucMaxBandwidth = prAdapter->rWifiVar
+						.ucApBandwidth;
+			}
 #if (CFG_SUPPORT_WIFI_6G == 1)
 			else if (prBssInfo->eBand == BAND_6G)
 				ucMaxBandwidth = prAdapter->rWifiVar
