@@ -128,7 +128,7 @@ static uint8_t halRingDataSelectByWmmIndex(
 
 	bus_info = prAdapter->chip_info->bus_info;
 	if (bus_info->tx_ring0_data_idx != bus_info->tx_ring1_data_idx) {
-		u2Port = (ucWmmIndex == 1) ?
+		u2Port = (ucWmmIndex % 2) ?
 			TX_RING_DATA1_IDX_1 : TX_RING_DATA0_IDX_0;
 	}
 	return u2Port;

@@ -422,7 +422,8 @@ int32_t mddpNotifyDrvTxd(IN struct ADAPTER *prAdapter,
 	prMddpTxd->wlan_idx = prStaRec->ucWlanIndex;
 	prMddpTxd->sta_mode = prStaRec->eStaType;
 	prMddpTxd->bss_id = prStaRec->ucBssIndex;
-	prMddpTxd->wmmset = prBssInfo->ucWmmQueSet;
+	/* TODO: Create a new msg for DMASHDL BMP */
+	prMddpTxd->wmmset = prBssInfo->ucWmmQueSet % 2;
 	kalMemCopy(prMddpTxd->nw_if_name, prNetdev->name,
 			sizeof(prMddpTxd->nw_if_name));
 	kalMemCopy(prMddpTxd->aucMacAddr, prStaRec->aucMacAddr, MAC_ADDR_LEN);
