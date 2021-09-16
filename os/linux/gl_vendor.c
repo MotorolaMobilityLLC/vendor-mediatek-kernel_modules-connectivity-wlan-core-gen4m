@@ -2892,14 +2892,13 @@ int mtk_cfg80211_vendor_get_trx_stats(struct wiphy *wiphy,
 	struct GLUE_INFO *prGlueInfo;
 	struct sk_buff *skb;
 	int32_t i4Status = -EFAULT;
+	uint32_t u4TxTlvSize = statsTxGetTlvStatTotalLen();
+	uint32_t u4RxTlvSize = statsRxGetTlvStatTotalLen();
+	uint32_t u4CgsTlvSize = statsCgsGetTlvStatTotalLen();
+	uint32_t u4MaxTlvSize = max(max(u4TxTlvSize, u4RxTlvSize),
+				     u4CgsTlvSize);
 
-	uint32_t u4TxTlvSize;
-	uint32_t u4RxTlvSize;
-	uint32_t u4CgsTlvSize;
-
-	struct STATS_TRX_TLV_T *aucTxTlvList = NULL;
-	struct STATS_TRX_TLV_T *aucRxTlvList = NULL;
-	struct STATS_TRX_TLV_T *aucCgsTlvList = NULL;
+	struct STATS_TRX_TLV_T *aucTlvList = NULL;
 
 	ASSERT(wiphy && wdev);
 	DBGLOG(REQ, TRACE, "data_len=%d, iftype=%d\n", data_len, wdev->iftype);
@@ -2911,79 +2910,47 @@ int mtk_cfg80211_vendor_get_trx_stats(struct wiphy *wiphy,
 	if (!prGlueInfo->prAdapter)
 		return -EFAULT;
 
-	u4TxTlvSize = statsTxGetTlvStatTotalLen();
-	u4RxTlvSize = statsRxGetTlvStatTotalLen();
-	u4CgsTlvSize = statsCgsGetTlvStatTotalLen();
-
 	skb = cfg80211_vendor_cmd_alloc_reply_skb(wiphy,
 		u4TxTlvSize + u4RxTlvSize + u4CgsTlvSize);
 	if (!skb) {
 		DBGLOG(REQ, ERROR, "Allocate skb failed\n");
 		return -ENOMEM;
 	}
-
-	/* tx tlv */
-	aucTxTlvList = (struct STATS_TRX_TLV_T *) kalMemAlloc(u4TxTlvSize,
+	aucTlvList = (struct STATS_TRX_TLV_T *) kalMemAlloc(u4MaxTlvSize,
 		VIR_MEM_TYPE);
-	if (!aucTxTlvList) {
+	if (!aucTlvList) {
 		DBGLOG(REQ, ERROR,
-			"Can not alloc memory for stats tx info\n");
+			"Can not alloc memory for stats info\n");
 		i4Status = -ENOMEM;
 		goto err_handle_label;
 	}
-	kalMemZero(aucTxTlvList, u4TxTlvSize);
-	statsGetTxInfoHdlr(prGlueInfo, aucTxTlvList);
+	kalMemZero(aucTlvList, u4MaxTlvSize);
+	statsGetTxInfoHdlr(prGlueInfo, aucTlvList);
 	if (unlikely(nla_put(skb, WIFI_ATTRIBUTE_STATS_TX,
-		     u4TxTlvSize, aucTxTlvList) < 0))
+		     u4TxTlvSize, aucTlvList) < 0))
 		goto err_handle_label;
-	kalMemFree(aucTxTlvList, sizeof(u4TxTlvSize), VIR_MEM_TYPE);
 
 	/* rx tlv */
-	aucRxTlvList = (struct STATS_TRX_TLV_T *) kalMemAlloc(u4RxTlvSize,
-		VIR_MEM_TYPE);
-	if (!aucRxTlvList) {
-		DBGLOG(REQ, ERROR,
-			"Can not alloc memory for stats rx info\n");
-		i4Status = -ENOMEM;
-		goto err_handle_label;
-	}
-	kalMemZero(aucRxTlvList, u4RxTlvSize);
-	statsGetRxInfoHdlr(prGlueInfo, aucRxTlvList);
+	kalMemZero(aucTlvList, u4MaxTlvSize);
+	statsGetRxInfoHdlr(prGlueInfo, aucTlvList);
 	if (unlikely(nla_put(skb, WIFI_ATTRIBUTE_STATS_RX,
-			     u4RxTlvSize, aucRxTlvList) < 0))
+			     u4RxTlvSize, aucTlvList) < 0))
 		goto err_handle_label;
-	kalMemFree(aucRxTlvList, sizeof(u4RxTlvSize), VIR_MEM_TYPE);
 
 	/* cgstn tlv */
-	aucCgsTlvList = (struct STATS_TRX_TLV_T *) kalMemAlloc(u4CgsTlvSize,
-		VIR_MEM_TYPE);
-	if (!aucCgsTlvList) {
-		DBGLOG(REQ, ERROR,
-			"Can not alloc memory for stats cgstn info\n");
-		i4Status = -ENOMEM;
-		goto err_handle_label;
-	}
-	kalMemZero(aucCgsTlvList, u4CgsTlvSize);
-	statsGetCgsInfoHdlr(prGlueInfo, aucCgsTlvList);
+	kalMemZero(aucTlvList, u4MaxTlvSize);
+	statsGetCgsInfoHdlr(prGlueInfo, aucTlvList);
 	if (unlikely(nla_put(skb, WIFI_ATTRIBUTE_STATS_CGS,
-			     u4CgsTlvSize, aucCgsTlvList) < 0))
+			     u4CgsTlvSize, aucTlvList) < 0))
 		goto err_handle_label;
-	kalMemFree(aucCgsTlvList, sizeof(u4CgsTlvSize), VIR_MEM_TYPE);
 
+	kalMemFree(aucTlvList, u4MaxTlvSize, VIR_MEM_TYPE);
 	return cfg80211_vendor_cmd_reply(skb);
 
 err_handle_label:
-	if (aucTxTlvList != NULL)
-		kalMemFree(aucTxTlvList, sizeof(u4TxTlvSize), VIR_MEM_TYPE);
-
-	if (aucRxTlvList != NULL)
-		kalMemFree(aucRxTlvList, sizeof(u4RxTlvSize), VIR_MEM_TYPE);
-
-	if (aucCgsTlvList != NULL)
-		kalMemFree(aucCgsTlvList, sizeof(u4CgsTlvSize), VIR_MEM_TYPE);
-
-	if (skb != NULL)
-		kfree_skb(skb);
+	if (aucTlvList != NULL)
+		kalMemFree(aucTlvList, u4MaxTlvSize, VIR_MEM_TYPE);
+	kfree_skb(skb);
 	return i4Status;
 }
 
