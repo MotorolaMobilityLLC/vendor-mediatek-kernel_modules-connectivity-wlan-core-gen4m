@@ -13784,9 +13784,6 @@ wlanQueryWlanInfo(IN struct ADAPTER *prAdapter,
 	}
 
 	prHwWlanInfo = (struct PARAM_HW_WLAN_INFO *)pvQueryBuffer;
-	DBGLOG(RSN, INFO,
-	       "MT6632 : wlanoidQueryWlanInfo index = %d\n",
-	       prHwWlanInfo->u4Index);
 
 	/*  *pu4QueryInfoLen = 8 + prRxStatistics->u4TotalNum; */
 
@@ -13846,9 +13843,6 @@ wlanQueryMibInfo(IN struct ADAPTER *prAdapter,
 	}
 
 	prHwMibInfo = (struct PARAM_HW_MIB_INFO *)pvQueryBuffer;
-	DBGLOG(RSN, INFO,
-	       "MT6632 : wlanoidQueryMibInfo index = %d\n",
-	       prHwMibInfo->u4Index);
 
 	/* *pu4QueryInfoLen = 8 + prRxStatistics->u4TotalNum; */
 
