@@ -2434,10 +2434,17 @@ static void soc7_0_DumpDebugCtrlAoCr(struct ADAPTER *prAdapter)
 static void soc7_0_DumpConnDbgCtrl(struct ADAPTER *prAdapter)
 {
 	uint32_t u4WrVal = 0, u4Val = 0, u4Idx, u4RdAddr, u4WrAddr;
+	uint32_t u4RdValue2 = 0, u4RegVal = 0, u4WrAddr2;
 
 	u4WrAddr = 0x18023628;
 	u4RdAddr = 0x18023608;
 	u4WrVal = 0x00010001;
+	u4WrAddr2 = 0x18023604;
+
+	connac2x_DbgCrRead(prAdapter, u4WrAddr2, &u4RdValue2);
+	u4RegVal = BIT(2) | (u4RdValue2 & BITS(3, 31));
+	connac2x_DbgCrWrite(prAdapter, u4WrAddr2, u4RegVal);
+
 	for (u4Idx = 0; u4Idx < 15; u4Idx++) {
 		connac2x_DbgCrWrite(prAdapter, u4WrAddr, u4WrVal);
 		connac2x_DbgCrRead(prAdapter, u4RdAddr, &u4Val);
@@ -2458,6 +2465,9 @@ static void soc7_0_DumpConnDbgCtrl(struct ADAPTER *prAdapter)
 	DBGLOG(HAL, ERROR,
 	       "\tW 0x%08x=[0x%08x], 0x%08x=[0x%08x]\n",
 	       u4WrAddr, u4WrVal, u4RdAddr, u4Val);
+
+	u4RegVal = (u4RdValue2 & BITS(3, 31));
+	connac2x_DbgCrWrite(prAdapter, u4WrAddr2, u4RegVal);
 }
 
 static void soc7_0_DumpOtherCr(struct ADAPTER *prAdapter)
