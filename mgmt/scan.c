@@ -1483,7 +1483,7 @@ uint8_t scanValidRnrTbttInfo(IN uint16_t u2TbttInfoLength)
 	case 9:
 	case 11:
 	case 12:
-	case 13:
+	case 13 ... 255:
 		ucValidInfo = TRUE;
 		break;
 	default:
@@ -2074,7 +2074,7 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 		(uint8_t *) prWlanBeaconFrame->aucSrcAddr,
 		fgIsValidSsid, fgIsValidSsid == TRUE ? &rSsid : NULL);
 
-	log_dbg(SCN, INFO, "Receive type %u in chnl %u %u %u (" MACSTR
+	log_dbg(SCN, TRACE, "Receive type %u in chnl %u %u %u (" MACSTR
 		") valid(%u) found(%u),band=%d\n",
 		ucSubtype, ucIeDsChannelNum, ucIeHtChannelNum,
 		prSwRfb->ucChnlNum,
@@ -2660,7 +2660,7 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 						prBssDesc, eHwBand);
 #endif /* CFG_SUPPORT_WIFI_6G == 1 */
 
-				DBGLOG(SCN, INFO,
+				DBGLOG(SCN, TRACE,
 					"ER: BSSID:" MACSTR
 					" SSID:%s,rx:%x, er:%x\n",
 					MAC2STR(prBssDesc->aucBSSID),
