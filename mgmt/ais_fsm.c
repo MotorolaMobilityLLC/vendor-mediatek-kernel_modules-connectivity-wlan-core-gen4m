@@ -1712,16 +1712,20 @@ void aisFsmSteps(IN struct ADAPTER *prAdapter,
 						prAisBssInfo->ucBssIndex);
 				}
 				if (prAisReq != NULL) {
-					SET_NET_ACTIVE(prAdapter,
+					if (cnmDBDCIsReqPeivilegeLock()) {
+						DBGLOG(AIS, INFO,
+						"DBDC lock: skip activate\n");
+					} else {
+					    SET_NET_ACTIVE(prAdapter,
 						prAisBssInfo->
 						ucBssIndex);
-					/* sync with firmware */
-					nicActivateNetwork(prAdapter,
+					    /* sync with firmware */
+					    nicActivateNetwork(prAdapter,
 						prAisBssInfo->ucBssIndex);
 
-					SET_NET_PWR_STATE_ACTIVE(prAdapter,
-					prAisBssInfo->ucBssIndex);
-
+					    SET_NET_PWR_STATE_ACTIVE(prAdapter,
+						prAisBssInfo->ucBssIndex);
+					}
 					eNextState = AIS_STATE_SEARCH;
 					fgIsTransition = TRUE;
 				} else {
