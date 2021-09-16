@@ -323,6 +323,8 @@ uint32_t nanSchedNegoCustFawConfigCmd(struct ADAPTER *prAdapter, uint8_t ucChnl,
 				      uint32_t u4SlotBitmap);
 
 void nanSchedReleaseUnusedCommitSlot(struct ADAPTER *prAdapter);
+enum ENUM_BAND
+nanSchedGetSchRecBandByMac(struct ADAPTER *prAdapter, uint8_t *pucNmiAddr);
 
 extern union _NAN_BAND_CHNL_CTRL g_rNullChnl;
 

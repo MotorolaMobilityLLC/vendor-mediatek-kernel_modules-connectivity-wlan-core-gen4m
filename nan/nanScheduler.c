@@ -196,6 +196,8 @@ struct _NAN_PEER_SCHEDULE_RECORD_T {
 	uint32_t u4FinalQosMaxLatency;
 
 	int32_t i4InNegoContext;
+	enum ENUM_BAND eBand;
+
 };
 
 enum _ENUM_NAN_CRB_NEGO_STATE_T {
@@ -3935,6 +3937,7 @@ nanSchedPeerUpdateCommonFAW(struct ADAPTER *prAdapter, uint32_t u4SchIdx) {
 	union _NAN_BAND_CHNL_CTRL rLocalChnlInfo;
 	union _NAN_BAND_CHNL_CTRL rRmtChnlInfo;
 	struct _NAN_SCHEDULER_T *prScheduler;
+	enum ENUM_BAND eBand;
 
 	prScheduler = nanGetScheduler(prAdapter);
 
@@ -3983,6 +3986,22 @@ nanSchedPeerUpdateCommonFAW(struct ADAPTER *prAdapter, uint32_t u4SchIdx) {
 				DBGLOG(NAN, LOUD, "co-channel check pass\n");
 				NAN_TIMELINE_SET(prTimeline->au4AvailMap,
 						 u4SlotIdx);
+
+				/* Update used band to peer schedule record */
+				eBand =
+				(rLocalChnlInfo.rChannel.u4PrimaryChnl < 36)
+						? BAND_2G4 : BAND_5G;
+
+				if (prPeerSchRecord->eBand == BAND_NULL) {
+					prPeerSchRecord->eBand = eBand;
+					DBGLOG(NAN, INFO,
+					"Peer %d use band %d\n",
+					u4SchIdx, prPeerSchRecord->eBand);
+				} else if (prPeerSchRecord->eBand != eBand) {
+					DBGLOG(NAN, ERROR,
+					"Band conflict %d != %d\n",
+						prPeerSchRecord->eBand, eBand);
+				}
 				break;
 			}
 		}
@@ -9314,4 +9333,15 @@ nanSchedSwDbg4(struct ADAPTER *prAdapter, uint32_t u4Data) /* 0x7426000d */
 	}
 
 	return u4Ret;
+}
+
+enum ENUM_BAND
+nanSchedGetSchRecBandByMac(struct ADAPTER *prAdapter, uint8_t *pucNmiAddr) {
+	struct _NAN_PEER_SCHEDULE_RECORD_T *prPeerSchRec;
+
+	prPeerSchRec = nanSchedLookupPeerSchRecord(prAdapter, pucNmiAddr);
+	if (prPeerSchRec)
+		return prPeerSchRec->eBand;
+	else
+		return BAND_NULL;
 }
