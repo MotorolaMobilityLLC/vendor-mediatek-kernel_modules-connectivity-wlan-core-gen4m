@@ -9794,7 +9794,7 @@ int priv_driver_radarmode(IN struct net_device *prNetDev,
 	int32_t i4Argc = 0;
 	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
 	uint32_t u4Ret = 0;
-	uint8_t ucRadarDetectMode;
+	uint8_t ucRadarDetectMode = 0;
 
 	ASSERT(prNetDev);
 	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
@@ -12955,6 +12955,7 @@ static int priv_driver_get_ch_rank_list(IN struct net_device *prNetDev,
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 	prChnLoadInfo = &(prGlueInfo->prAdapter->rWifiVar.rChnLoadInfo);
 	kalMemZero(pcCommand, i4TotalLen);
+	kalMemZero(aucChannelList, sizeof(aucChannelList));
 
 	for (ucBandIdx = BAND_2G4; ucBandIdx < BAND_NUM; ucBandIdx++) {
 		rlmDomainGetChnlList(prGlueInfo->prAdapter, ucBandIdx,
@@ -12993,6 +12994,7 @@ static int priv_driver_get_ch_dirtiness(IN struct net_device *prNetDev,
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 	prChnLoadInfo = &(prGlueInfo->prAdapter->rWifiVar.rChnLoadInfo);
 	kalMemZero(pcCommand, i4TotalLen);
+	kalMemZero(aucChannelList, sizeof(aucChannelList));
 
 	for (ucBandIdx = BAND_2G4; ucBandIdx < BAND_NUM; ucBandIdx++) {
 		rlmDomainGetChnlList(prGlueInfo->prAdapter, ucBandIdx,
