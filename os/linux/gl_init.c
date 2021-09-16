@@ -1191,6 +1191,20 @@ static const struct wiphy_vendor_command
 		.policy = VENDOR_CMD_RAW_DATA
 #endif
 	},
+	/* Get Wifi Reset */
+	{
+		{
+			.vendor_id = OUI_MTK,
+			.subcmd = WIFI_SUBCMD_TRIGGER_RESET
+		},
+		.flags = WIPHY_VENDOR_CMD_NEED_WDEV |
+				WIPHY_VENDOR_CMD_NEED_NETDEV,
+		.doit = mtk_cfg80211_vendor_trigger_reset
+#if KERNEL_VERSION(5, 4, 0) <= LINUX_VERSION_CODE
+		,
+		.policy = VENDOR_CMD_RAW_DATA
+#endif
+	},
 };
 
 static const struct nl80211_vendor_cmd_info
@@ -1283,7 +1297,10 @@ static const struct nl80211_vendor_cmd_info
 		.vendor_id = OUI_QCA,
 		.subcmd = NL80211_VENDOR_SUBCMD_DFS_OFFLOAD_RADAR_DETECTED
 	},
-
+	{
+		.vendor_id = OUI_MTK,
+		.subcmd = MTK_NL80211_TRIGGER_RESET
+	}
 };
 #endif
 

@@ -2988,3 +2988,89 @@ err_handle_label:
 }
 
 #endif /* KERNEL_VERSION(3, 16, 0) <= LINUX_VERSION_CODE */
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief This routine is to handle a reset CMD from FWK.
+ *
+ * \param[in] wiphy wiphy
+ * \param[in] wdev wireless_dev
+ * \param[in] data (not used here)
+ * \param[in] data_len (not used here)
+ *
+ * \retval 0 Success.
+ */
+/*----------------------------------------------------------------------------*/
+int mtk_cfg80211_vendor_trigger_reset(
+	struct wiphy *wiphy, struct wireless_dev *wdev,
+	const void *data, int data_len)
+{
+	struct GLUE_INFO *prGlueInfo = wlanGetGlueInfo();
+
+	if (!prGlueInfo) {
+		DBGLOG(REQ, WARN, "Invalid glue info\n");
+		return -EFAULT;
+	}
+	if (prGlueInfo->u4ReadyFlag == 0) {
+		DBGLOG(REQ, WARN, "driver is not ready\n");
+		return -EFAULT;
+	}
+	DBGLOG(REQ, INFO, "Framework trigger reset\n");
+
+	glSetRstReason(RST_FWK_TRIGGER);
+#if (CFG_SUPPORT_CONNINFRA == 0)
+	GL_RESET_TRIGGER(prGlueInfo->prAdapter, RST_FLAG_CHIP_RESET);
+#else
+	GL_RESET_TRIGGER(prGlueInfo->prAdapter, RST_FLAG_WF_RESET);
+#endif
+
+	return 0;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief This routine is to send FWK a event that the reset happened.
+ *
+ * \param[in] data reset reason, eResetReason.
+ *
+ * \retval 0 Success.
+ */
+/*----------------------------------------------------------------------------*/
+int mtk_cfg80211_vendor_event_reset_triggered(
+	uint32_t data)
+{
+	struct wiphy *wiphy = gprWdev[0]->wiphy;
+	struct wireless_dev *wdev = gprWdev[0];
+	struct sk_buff *skb;
+
+	if (!wiphy || !wdev || !wdev->netdev || !data) {
+		DBGLOG(REQ, ERROR, "%s wrong input parameters\n", __func__);
+		return -EINVAL;
+	}
+
+	DBGLOG(REQ, INFO, "Reset event report through %s. Reason=[%u]\n",
+			wdev->netdev->name, data);
+
+	skb = cfg80211_vendor_event_alloc(wiphy,
+#if KERNEL_VERSION(4, 4, 0) <= CFG80211_VERSION_CODE
+			wdev,
+#endif
+			sizeof(uint32_t),
+			WIFI_EVENT_RESET_TRIGGERED,
+			GFP_KERNEL);
+	if (!skb) {
+		DBGLOG(REQ, ERROR, "%s allocate skb failed\n", __func__);
+		return -ENOMEM;
+	}
+
+	if (unlikely(nla_put_u32(skb, WIFI_ATTRIBUTE_RESET_REASON,
+				data) < 0))
+		goto nla_put_failure;
+
+	cfg80211_vendor_event(skb, GFP_KERNEL);
+	return 0;
+
+nla_put_failure:
+	kfree_skb(skb);
+	return -ENOMEM;
+}

@@ -148,7 +148,9 @@ static uint8_t *apucRstReason[RST_REASON_MAX] = {
 	(uint8_t *) DISP_STRING("[Wi-Fi] [Read WCIR_WLAN_READY fail!]"),
 	(uint8_t *) DISP_STRING("[Wi-Fi Off] Allocate CMD_INFO_T ==> FAILED."),
 	(uint8_t *) DISP_STRING("RST_SDIO_RX_ERROR"),
-	(uint8_t *) DISP_STRING("RST_WHOLE_CHIP_TRIGGER")
+	(uint8_t *) DISP_STRING("RST_WHOLE_CHIP_TRIGGER"),
+	(uint8_t *) DISP_STRING("RST_MDDP_MD_TRIGGER_EXCEPTION"),
+	(uint8_t *) DISP_STRING("RST_FWK_TRIGGER")
 };
 #if (CFG_ANDORID_CONNINFRA_COREDUMP_SUPPORT == 1)
 u_int8_t g_IsNeedWaitCoredump = FALSE;
@@ -463,6 +465,10 @@ static void mtk_wifi_reset_main(struct RESET_STRUCT *rst)
 			g_IsWfsysResetOnFail);
 	}
 #endif
+	if (mtk_cfg80211_vendor_event_reset_triggered(
+					(uint32_t) eResetReason) != 0)
+		DBGLOG(INIT, ERROR, "Send WIFI_EVENT_RESET_TRIGGERED Error!\n");
+
 	DBGLOG(INIT, STATE, "[SER][L0] flow end, fgResult=%d\n", fgResult);
 }
 

@@ -109,6 +109,7 @@
 #define NL80211_VENDOR_SUBCMD_READ_PACKET_FILTER 16
 #define NL80211_VENDOR_SUBCMD_NDP 81
 #define NL80211_VENDOR_SUBCMD_GET_TRX_STATS 48
+#define MTK_NL80211_TRIGGER_RESET 15
 
 #define WIFI_VENDOR_ATTR_FEATURE_FLAGS 7
 #define WIFI_VENDOR_DATA_OP_MODE_CHANGE(bssIdx, channelBw, TxNss, RxNss) \
@@ -199,6 +200,10 @@ enum WIFI_OFFLOAD_SUB_COMMAND {
 	WIFI_OFFLOAD_STOP_MKEEP_ALIVE,
 };
 
+enum MTK_WIFI_VENDOR_SUB_COMMAND {
+	WIFI_SUBCMD_TRIGGER_RESET = 1,
+};
+
 enum WIFI_VENDOR_EVENT {
 	GSCAN_EVENT_SIGNIFICANT_CHANGE_RESULTS,
 	GSCAN_EVENT_HOTLIST_RESULTS_FOUND,
@@ -218,6 +223,7 @@ enum WIFI_VENDOR_EVENT {
 	WIFI_EVENT_DFS_OFFLOAD_CAC_ABORTED,
 	WIFI_EVENT_DFS_OFFLOAD_CAC_NOP_FINISHED,
 	WIFI_EVENT_DFS_OFFLOAD_RADAR_DETECTED,
+	WIFI_EVENT_RESET_TRIGGERED,
 	WIFI_EVENT_SUBCMD_NAN,
 	WIFI_EVENT_SUBCMD_NDP,
 	/* Always add at the end.*/
@@ -436,6 +442,10 @@ enum WIFI_OP_MODE_CHANGE_ATTRIBUTE {
 	WIFI_ATTRIBUTE_OP_MODE_CHANGE = 0,
 };
 #endif
+
+enum WIFI_RESET_TRIGGERED_ATTRIBUTE {
+	WIFI_ATTRIBUTE_RESET_REASON = 1,
+};
 
 /*******************************************************************************
  *                             D A T A   T Y P E S
@@ -1177,4 +1187,11 @@ int mtk_cfg80211_vendor_get_trx_stats(struct wiphy *wiphy,
 					   struct wireless_dev *wdev,
 					   const void *data,
 					   int data_len);
+
+int mtk_cfg80211_vendor_trigger_reset(
+	struct wiphy *wiphy, struct wireless_dev *wdev,
+	const void *data, int data_len);
+
+int mtk_cfg80211_vendor_event_reset_triggered(
+	uint32_t data);
 #endif /* _GL_VENDOR_H */
