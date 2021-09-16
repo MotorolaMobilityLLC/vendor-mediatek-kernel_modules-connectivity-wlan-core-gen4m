@@ -1162,6 +1162,53 @@ void cnmCsaDoneEvent(IN struct ADAPTER *prAdapter,
 #define CFG_SUPPORT_IDC_CROSS_BAND_SWITCH   1
 
 #if CFG_SUPPORT_IDC_CH_SWITCH
+uint8_t cnmIsSafeCh(IN struct BSS_INFO *prBssInfo)
+{
+	enum ENUM_BAND eBand;
+	uint8_t ucChannel;
+	uint32_t u4Safe2G = 0,
+		u4Safe5G_1 = 0,
+		u4Safe5G_2 = 0,
+		u4Safe6G = 0;
+
+	if (!prBssInfo)
+		return FALSE;
+
+	if (g_rLteSafeChInfo.u4Flags & BIT(0)) {
+		u4Safe2G = g_rLteSafeChInfo
+			.rLteSafeChn.au4SafeChannelBitmask[0];
+		u4Safe5G_1 = g_rLteSafeChInfo
+			.rLteSafeChn.au4SafeChannelBitmask[1];
+		u4Safe5G_2 = g_rLteSafeChInfo
+			.rLteSafeChn.au4SafeChannelBitmask[2];
+		u4Safe6G = g_rLteSafeChInfo
+			.rLteSafeChn.au4SafeChannelBitmask[3];
+	}
+
+	eBand = prBssInfo->eBand;
+	ucChannel = prBssInfo->ucPrimaryChannel;
+
+	if (eBand == BAND_2G4)
+		if (u4Safe2G & BIT(ucChannel))
+			return TRUE;
+	else if (eBand == BAND_5G &&
+		ucChannel >= 36 && ucChannel <= 144)
+		if (u4Safe5G_1 & BIT((ucChannel - 36) / 4))
+			return TRUE;
+	else if (eBand == BAND_5G &&
+		ucChannel >= 149 && ucChannel <= 181)
+		if (u4Safe5G_2 & BIT((ucChannel - 149) / 4))
+			return TRUE;
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	else if (eBand == BAND_6G &&
+		ucChannel >= 7 && ucChannel <= 215)
+		if (u4Safe6G & BIT((ucChannel - 7) / 16))
+			return TRUE;
+#endif
+
+	return FALSE;
+}
+
 uint8_t cnmDecideSapNewChannel(
 	IN struct GLUE_INFO *prGlueInfo,
 	IN struct BSS_INFO *prBssInfo)
@@ -1319,19 +1366,15 @@ uint8_t cnmIdcCsaReq(IN struct ADAPTER *prAdapter,
 void cnmIdcDetectHandler(IN struct ADAPTER *prAdapter,
 			IN struct WIFI_EVENT *prEvent)
 {
-
 	struct EVENT_LTE_SAFE_CHN *prEventBody;
 	uint8_t ucIdx;
-	struct BSS_INFO *prBssInfo;
-	struct GLUE_INFO *prGlueInfo = prAdapter->prGlueInfo;
-	uint8_t ucNewChannel = 0;
-	uint32_t u4Ret = 0;
 	OS_SYSTIME rCurrentTime = 0;
 	bool fgCsaCoolDown = FALSE;
 	uint8_t ucColdDownTime = 0;
 	struct WIFI_VAR *prWifiVar =
 		(struct WIFI_VAR *)NULL;
 #if CFG_TC10_FEATURE
+	struct BSS_INFO *prBssInfo;
 	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo;
 #endif
 
@@ -1408,31 +1451,49 @@ void cnmIdcDetectHandler(IN struct ADAPTER *prAdapter,
 
 SKIP_COOL_DOWN:
 
-	/* Choose New Ch & Start CH Swtich*/
-	prBssInfo = cnmGetSapBssInfo(prAdapter);
-	if (prBssInfo) {
-		DBGLOG(CNM, INFO,
-			"[CSA] IDC Version %d, BssIdx = %d, CurCH = %d\n",
-			g_rLteSafeChInfo.ucVersion,
-			prBssInfo->ucBssIndex,
-			prBssInfo->ucPrimaryChannel);
-		ucNewChannel = cnmDecideSapNewChannel(prGlueInfo,
-			prBssInfo);
-		if (ucNewChannel) {
-			u4Ret = cnmIdcCsaReq(prAdapter, ucNewChannel,
-						prBssInfo->u4PrivateData);
-			DBGLOG(CNM, INFO, "[CSA] BssIdx=%d, NewCH = %d\n",
-				prBssInfo->ucBssIndex, ucNewChannel);
-		} else {
-			DBGLOG(CNM, INFO,
-				"[CSA] No Safe channel,not switch CH\n");
-		}
-	} else {
-		DBGLOG(CNM, WARN,
-			"[CSA] SoftAp Not Exist\n");
-	}
-
+	cnmIdcSwitchSapChannel(prAdapter);
 }
+
+
+void cnmIdcSwitchSapChannel(IN struct ADAPTER *prAdapter)
+{
+	struct BSS_INFO *prBssInfo;
+	uint8_t i;
+	uint8_t ucNewChannel = 0;
+
+	if (!prAdapter)
+		return;
+
+	for (i = 0; i < prAdapter->ucHwBssIdNum; i++) {
+		prBssInfo = prAdapter->aprBssInfo[i];
+
+		if (prBssInfo &&
+			IS_BSS_P2P(prBssInfo) &&
+			p2pFuncIsAPMode(
+			prAdapter->rWifiVar.prP2PConnSettings
+			[prBssInfo->u4PrivateData]) &&
+			IS_NET_PWR_STATE_ACTIVE(
+			prAdapter,
+			prBssInfo->ucBssIndex)) {
+			if (cnmIsSafeCh(prBssInfo))
+				continue;
+			ucNewChannel = cnmDecideSapNewChannel(
+				prAdapter->prGlueInfo,
+				prBssInfo);
+			if (ucNewChannel) {
+				cnmIdcCsaReq(prAdapter, ucNewChannel,
+					prBssInfo->u4PrivateData);
+				DBGLOG(CNM, INFO,
+					"IDC Version %d, Bss=%d, NewCH=%d\n",
+					g_rLteSafeChInfo.ucVersion,
+					prBssInfo->ucBssIndex,
+					ucNewChannel);
+				break;
+			}
+		}
+	}
+}
+
 #endif
 
 /*----------------------------------------------------------------------------*/
