@@ -6628,6 +6628,15 @@ static void rlmChangeOwnOpInfo(struct ADAPTER *prAdapter,
 					 HT_OP_INFO1_STA_CHNL_WIDTH_OFFSET),
 			       prBssInfo->eBssSCO);
 		}
+
+#if (CFG_SUPPORT_802_11AX == 1)
+#if (CFG_SUPPORT_WIFI_6G == 1)
+		if (prBssInfo->ucPhyTypeSet & PHY_TYPE_BIT_HE) {
+			/* Update 6G operating info */
+			rlmUpdate6GOpInfo(prAdapter, prBssInfo);
+		}
+#endif
+#endif
 	}
 
 	/* Update own operating RxNss */

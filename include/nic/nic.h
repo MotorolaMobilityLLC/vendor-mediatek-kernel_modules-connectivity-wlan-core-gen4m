@@ -299,16 +299,22 @@ uint32_t nicGetS1Freq(IN enum ENUM_BAND eBand,
 			IN uint8_t ucPrimaryChannel,
 			IN uint8_t ucBandwidth);
 
+/* Utility to get S1, S2 */
 uint8_t nicGetS1(IN enum ENUM_BAND eBand,
-			IN uint8_t ucPrimaryChannel,
-		    IN uint8_t ucBandwidth);
-
+		IN uint8_t ucPrimaryChannel,
+		IN uint8_t ucBandwidth);
+uint8_t nicGetS2(IN enum ENUM_BAND eBand,
+		IN uint8_t ucPrimaryChannel,
+		IN uint8_t ucBandwidth,
+		IN uint8_t ucS1);
 uint8_t nicGetVhtS1(IN uint8_t ucPrimaryChannel,
-		    IN uint8_t ucBandwidth);
-
+		IN uint8_t ucBandwidth);
 #if (CFG_SUPPORT_WIFI_6G == 1)
 uint8_t nicGetHe6gS1(IN uint8_t ucPrimaryChannel,
-		    IN uint8_t ucBandwidth);
+		IN uint8_t ucBandwidth);
+uint8_t nicGetHe6gS2(IN uint8_t ucPrimaryChannel,
+		IN uint8_t ucBandwidth,
+		IN uint8_t ucS1);
 #endif
 
 /* firmware command wrapper */
