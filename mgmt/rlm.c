@@ -2286,6 +2286,8 @@ void rlmReviseMaxBw(struct ADAPTER *prAdapter, uint8_t ucBssIndex,
 	uint8_t ucCurrentBandwidth = MAX_BW_20MHZ;
 	uint8_t ucOffset = (MAX_BW_80MHZ - CW_80MHZ);
 	struct BSS_INFO *prBssInfo;
+	uint8_t ucS1Origin = *pucS1;
+	enum ENUM_CHANNEL_WIDTH eChBwOrigin = *peChannelWidth;
 	enum ENUM_CHNL_EXT eScoOrigin = *peExtend;
 	enum ENUM_CHNL_EXT eScoModify;
 
@@ -2304,30 +2306,35 @@ void rlmReviseMaxBw(struct ADAPTER *prAdapter, uint8_t ucBssIndex,
 	}
 
 	if (ucCurrentBandwidth != ucMaxBandwidth) {
-		if (ucMaxBandwidth <= MAX_BW_40MHZ) {
-			/*BW20 * BW40*/
+		if (ucMaxBandwidth <= MAX_BW_40MHZ) { /* BW20, BW40 */
 			*peChannelWidth = CW_20_40MHZ;
-		} else {
-			/* BW80, BW160, BW80P80
-			 * ucMaxBandwidth Must be
-			 * MAX_BW_80MHZ,MAX_BW_160MHZ,MAX_BW_80MHZ
-			 * peExtend should not change
+		} else { /* BW80, BW160, BW80P80 */
+			/*
+			 * Note that we should make sure S1 is non-zeno
+			 * before changing BW / S1. Clients may want
+			 * to stick bandwidth on CW_20_40MHZ even we
+			 * have more bandwidth capability.
 			 */
-			*peChannelWidth = (ucMaxBandwidth - ucOffset);
+			if (ucS1Origin) {
+				*peChannelWidth = (ucMaxBandwidth - ucOffset);
 
-			/* modify S1 for Bandwidth 160 <-> 80 */
-			if ((ucCurrentBandwidth == MAX_BW_160MHZ &&
-				ucMaxBandwidth == MAX_BW_80MHZ) ||
-				(ucCurrentBandwidth == MAX_BW_80MHZ &&
-				ucMaxBandwidth == MAX_BW_160MHZ)) {
-				*pucS1 = nicGetS1(prBssInfo->eBand,
-					*pucPrimaryCh,
-					*peChannelWidth);
+				/* modify S1 for Bandwidth 160 <-> 80 */
+				if ((ucCurrentBandwidth == MAX_BW_160MHZ &&
+					ucMaxBandwidth == MAX_BW_80MHZ) ||
+					(ucCurrentBandwidth == MAX_BW_80MHZ &&
+					ucMaxBandwidth == MAX_BW_160MHZ)) {
+					*pucS1 = nicGetS1(prBssInfo->eBand,
+						*pucPrimaryCh,
+						*peChannelWidth);
+				}
 			}
 		}
 
-		DBGLOG(RLM, INFO, "Change BW from (%d) to (%d), S1 (%d)\n",
-			ucCurrentBandwidth, ucMaxBandwidth, *pucS1);
+		if (eChBwOrigin != *peChannelWidth) {
+			DBGLOG(RLM, INFO, "Change BW[%d->%d], S1[%d->%d)\n",
+				eChBwOrigin, *peChannelWidth,
+				ucS1Origin, *pucS1);
+		}
 	}
 
 	/* Revise SCO */
@@ -2337,7 +2344,7 @@ void rlmReviseMaxBw(struct ADAPTER *prAdapter, uint8_t ucBssIndex,
 	if (eScoOrigin != eScoModify) {
 		*peExtend = eScoModify;
 
-		DBGLOG(RLM, INFO, "Change SCO from (%d) to (%d)\n",
+		DBGLOG(RLM, INFO, "Change SCO[%d->%d]\n",
 			eScoOrigin, eScoModify);
 	}
 }
