@@ -12221,6 +12221,11 @@ int wlanQueryRateByTable(uint32_t txmode, uint32_t rate,
 		u4MaxRate = g_rOfdmDataRateMappingTable.rate[ucMaxSize - 1];
 	} else if ((txmode == TX_RATE_MODE_HTMIX) ||
 		   (txmode == TX_RATE_MODE_HTGF)) { /* 11N */
+		if ((nsts == 0) || (nsts >= 4)) {
+			DBGLOG(SW4, ERROR, "nsts error: %u\n", nsts);
+			return -1;
+		}
+
 		ucMaxSize = 8;
 		if (rate > 23) {
 			DBGLOG(SW4, ERROR, "rate error for 11N: %u\n",
