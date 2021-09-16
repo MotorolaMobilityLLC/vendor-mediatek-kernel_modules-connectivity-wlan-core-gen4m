@@ -1722,6 +1722,39 @@ void kalP2PRddDetectUpdate(IN struct GLUE_INFO *prGlueInfo,
 
 }				/* kalP2PRddDetectUpdate */
 
+void kalP2PCacStartedUpdate(IN struct GLUE_INFO *prGlueInfo,
+		IN uint8_t ucRoleIndex)
+{
+	struct GL_P2P_INFO *prGlueP2pInfo = (struct GL_P2P_INFO *) NULL;
+	struct net_device *prNetdevice = (struct net_device *) NULL;
+
+	DBGLOG(INIT, INFO, "CAC Started event\n");
+
+	do {
+		if (prGlueInfo == NULL)
+			break;
+
+		prGlueP2pInfo = prGlueInfo->prP2PInfo[ucRoleIndex];
+
+		if ((prGlueP2pInfo->aprRoleHandler != NULL) &&
+			(prGlueP2pInfo->aprRoleHandler !=
+				prGlueP2pInfo->prDevHandler))
+			prNetdevice = prGlueP2pInfo->aprRoleHandler;
+		else
+			prNetdevice = prGlueP2pInfo->prDevHandler;
+
+		if (prGlueP2pInfo->chandef == NULL)
+			break;
+
+		if (prGlueP2pInfo->chandef->chan)
+			kalP2pIndicateRadarEvent(prGlueInfo,
+				ucRoleIndex,
+				WIFI_EVENT_DFS_OFFLOAD_CAC_STARTED,
+				prGlueP2pInfo->chandef->chan->center_freq);
+	} while (FALSE);
+
+}
+
 void kalP2PCacFinishedUpdate(IN struct GLUE_INFO *prGlueInfo,
 		IN uint8_t ucRoleIndex)
 {
@@ -2184,6 +2217,38 @@ void kalP2pIndicateQueuedMgmtFrame(IN struct GLUE_INFO *prGlueInfo,
 #endif
 }
 
+void kalP2pPreStartRdd(
+	IN struct GLUE_INFO *prGlueInfo,
+	IN uint8_t ucRoleIdx,
+	IN uint32_t ucPrimaryCh,
+	IN enum ENUM_BAND eBand)
+{
+	uint32_t freq =
+		nicChannelNum2Freq(ucPrimaryCh, eBand) / 1000;
+	struct cfg80211_chan_def chandef;
+	struct ieee80211_channel *chan;
+	struct GL_P2P_INFO *prGlueP2pInfo = (struct GL_P2P_INFO *) NULL;
+
+	prGlueP2pInfo = prGlueInfo->prP2PInfo[ucRoleIdx];
+
+	if (!prGlueP2pInfo) {
+		DBGLOG(P2P, ERROR, "p2p glue info null.\n");
+		return;
+	}
+
+	chan = ieee80211_get_channel(
+		prGlueP2pInfo->prWdev->wiphy,
+		freq);
+	cfg80211_chandef_create(&chandef,
+		chan, NL80211_CHAN_NO_HT);
+
+	p2pFuncPreStartRdd(
+		prGlueInfo->prAdapter,
+		ucRoleIdx,
+		&chandef,
+		P2P_AP_CAC_MIN_CAC_TIME_MS);
+}
+
 void kalP2pIndicateAcsResult(IN struct GLUE_INFO *prGlueInfo,
 		IN uint8_t ucRoleIndex,
 		IN enum ENUM_BAND eBand,
@@ -2235,10 +2300,11 @@ void kalP2pIndicateAcsResult(IN struct GLUE_INFO *prGlueInfo,
 		eHwMode);
 
 	/* Indicatre CAC */
-	if (rlmDomainIsLegalDfsChannel(
+	if ((eBand == BAND_5G) &&
+		(rlmDomainIsLegalDfsChannel(
 		prGlueInfo->prAdapter,
 		eBand,
-		ucPrimaryCh) || (eChnlBw >= MAX_BW_160MHZ)) {
+		ucPrimaryCh) || (eChnlBw >= MAX_BW_160MHZ))) {
 		DBGLOG(P2P, INFO, "Do pre CAC.\n");
 		wlanUpdateDfsChannelTable(prGlueInfo,
 			ucRoleIndex,

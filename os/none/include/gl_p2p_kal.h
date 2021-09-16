@@ -399,6 +399,9 @@ kalP2PGOStationUpdate(IN struct GLUE_INFO *prGlueInfo,
 
 #define kalP2PCacFinishedUpdate(_prGlueInfo, _ucRoleIndex) \
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__, _prGlueInfo)
+
+#define kalP2PCacStartedUpdate(_prGlueInfo, _ucRoleIndex) \
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__, _prGlueInfo)
 #else
 void
 kalP2PRddDetectUpdate(IN struct GLUE_INFO *prGlueInfo,
@@ -407,6 +410,11 @@ kalP2PRddDetectUpdate(IN struct GLUE_INFO *prGlueInfo,
 void
 kalP2PCacFinishedUpdate(IN struct GLUE_INFO *prGlueInfo,
 		IN uint8_t ucRoleIndex);
+
+void
+kalP2PCacStartedUpdate(IN struct GLUE_INFO *prGlueInfo,
+		IN uint8_t ucRoleIndex);
+
 #endif
 #endif
 
@@ -452,6 +460,10 @@ u_int8_t kalP2PMaxClients(IN struct GLUE_INFO *prGlueInfo,
 	_ucPrimaryCh, _ucSecondCh, _ucSeg0Ch, _ucSeg1Ch, _eChnlBw, eHwMode) \
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__, _prGlueInfo)
 
+#define  kalP2pPreStartRdd( \
+		prGlueInfo, ucRoleIdx, ucPrimaryCh, eBand) \
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__, _prGlueInfo)
+
 #define kalP2pNotifyStopApComplete(_prAdapter, _ucRoleIndex) \
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
 
@@ -462,6 +474,12 @@ void kalP2pUnlinkBss(IN struct GLUE_INFO *prGlueInfo, IN uint8_t aucBSSID[]);
 
 void kalP2pIndicateQueuedMgmtFrame(IN struct GLUE_INFO *prGlueInfo,
 		IN struct P2P_QUEUED_ACTION_FRAME *prFrame);
+
+void kalP2pPreStartRdd(
+		IN struct GLUE_INFO *prGlueInfo,
+		IN uint8_t ucRoleIdx,
+		IN uint32_t ucPrimaryCh,
+		IN enum ENUM_BAND eBand);
 
 void kalP2pIndicateAcsResult(IN struct GLUE_INFO *prGlueInfo,
 		IN uint8_t ucRoleIndex,

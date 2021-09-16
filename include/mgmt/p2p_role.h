@@ -324,6 +324,8 @@ struct P2P_CONNECTION_REQ_INFO {
 	/* For ASSOC Req. */
 	uint32_t u4BufLength;
 	uint8_t aucIEBuf[MAX_IE_LENGTH];
+
+	struct MSG_P2P_START_AP rMsgStartAp;
 };
 
 #define P2P_ROLE_INDEX_2_ROLE_FSM_INFO(_prAdapter, _RoleIndex) \
@@ -386,6 +388,9 @@ void p2pRoleFsmUninit(IN struct ADAPTER *prAdapter, IN uint8_t ucRoleIdx);
 
 void p2pRoleFsmRunEventAbort(IN struct ADAPTER *prAdapter,
 		IN struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo);
+
+void p2pRoleFsmRunEventPreStartAP(IN struct ADAPTER *prAdapter,
+		IN struct MSG_HDR *prMsgHdr);
 
 void p2pRoleFsmRunEventStartAP(IN struct ADAPTER *prAdapter,
 		IN struct MSG_HDR *prMsgHdr);

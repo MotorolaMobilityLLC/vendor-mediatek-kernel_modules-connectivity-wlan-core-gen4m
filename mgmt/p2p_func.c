@@ -6620,7 +6620,8 @@ void p2pFuncSwitchSapChannel(
 		goto exit;
 	}
 
-	if (eSapBand == BAND_5G)
+	if ((eSapBand == BAND_5G) &&
+		(p2pFuncGetDfsState() != DFS_STATE_ACTIVE))
 		fgIsSapDfs = rlmDomainIsLegalDfsChannel(prAdapter,
 			eSapBand, ucSapChannelNum);
 

@@ -3771,6 +3771,7 @@ reqExtSetAcpiDevicePowerState(IN struct GLUE_INFO
 #define CMD_SHOW_DFS_CAC_TIME		"SHOW_DFS_CAC_TIME"
 #define CMD_SET_DFS_RDDREPORT		"RDDReport"
 #define CMD_SET_DFS_RADARMODE		"RadarDetectMode"
+#define CMD_SET_DFS_RADAREVENT		"RadarEvent"
 #endif
 
 #define CMD_PNOSSIDCLR_SET	"PNOSSIDCLR"
@@ -9827,6 +9828,49 @@ int priv_driver_radarmode(IN struct net_device *prNetDev,
 	return 0;
 }
 
+int priv_driver_radarevent(IN struct net_device *prNetDev,
+				IN char *pcCommand, IN int i4TotalLen)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct EVENT_RDD_REPORT rEventBody;
+	int32_t i4BytesWritten = 0;
+	uint8_t ucRoleIdx = 0, ucBssIdx = 0;
+
+	ASSERT(prNetDev);
+	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
+		return -1;
+
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+	if (!prGlueInfo)
+		goto error;
+	if (mtk_Netdev_To_RoleIdx(prGlueInfo, prNetDev, &ucRoleIdx) != 0)
+		goto error;
+	if (p2pFuncRoleToBssIdx(prGlueInfo->prAdapter, ucRoleIdx, &ucBssIdx) !=
+		WLAN_STATUS_SUCCESS)
+		goto error;
+
+	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
+
+	if (p2pFuncGetDfsState() != DFS_STATE_CHECKING) {
+		LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
+			"\nNot in CAC period");
+		return i4BytesWritten;
+	}
+
+	cnmRadarDetectEvent(prGlueInfo->prAdapter,
+		(struct WIFI_EVENT *) &rEventBody);
+
+	LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
+		"\nRemaining time of CAC: %dsec",
+		p2pFuncGetCacRemainingTime());
+
+	return	i4BytesWritten;
+
+error:
+
+	return -1;
+}
+
 #endif
 int priv_driver_set_miracast(IN struct net_device *prNetDev,
 			     IN char *pcCommand, IN int i4TotalLen)
@@ -15202,6 +15246,7 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers[] = {
 	{CMD_SHOW_DFS_CAC_TIME, priv_driver_show_dfs_cac_time},
 	{CMD_SET_DFS_RDDREPORT, priv_driver_rddreport},
 	{CMD_SET_DFS_RADARMODE, priv_driver_radarmode},
+	{CMD_SET_DFS_RADAREVENT, priv_driver_radarevent},
 #endif
 #if CFG_SUPPORT_CAL_RESULT_BACKUP_TO_HOST
 	{CMD_SET_CALBACKUP_TEST_DRV_FW, priv_driver_set_calbackup_test_drv_fw},
