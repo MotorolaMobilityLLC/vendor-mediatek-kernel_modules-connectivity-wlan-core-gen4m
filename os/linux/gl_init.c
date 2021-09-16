@@ -5285,6 +5285,12 @@ static int32_t wlanOffAtReset(void)
 		return WLAN_STATUS_FAILURE;
 	}
 
+	/* to avoid that wpa_supplicant/hostapd triogger new cfg80211 command */
+	prGlueInfo->u4ReadyFlag = 0;
+#if CFG_MTK_ANDROID_WMT
+	update_driver_loaded_status(prGlueInfo->u4ReadyFlag);
+#endif
+
 	prAdapter = prGlueInfo->prAdapter;
 	if (prAdapter == NULL) {
 		DBGLOG(INIT, INFO, "prAdapter is NULL\n");
@@ -5292,11 +5298,6 @@ static int32_t wlanOffAtReset(void)
 		return WLAN_STATUS_FAILURE;
 	}
 
-	/* to avoid that wpa_supplicant/hostapd triogger new cfg80211 command */
-	prGlueInfo->u4ReadyFlag = 0;
-#if CFG_MTK_ANDROID_WMT
-	update_driver_loaded_status(prGlueInfo->u4ReadyFlag);
-#endif
 	kalPerMonDestroy(prGlueInfo);
 
 	/* complete possible pending oid, which may block wlanRemove some time
@@ -5949,14 +5950,14 @@ static void wlanRemove(void)
 		return;
 	}
 
-#if (CONFIG_WLAN_SERVICE == 1)
-	wlanServiceExit(prGlueInfo);
-#endif
-
 	/* to avoid that wpa_supplicant/hostapd triogger new cfg80211 command */
 	prGlueInfo->u4ReadyFlag = 0;
 #if CFG_MTK_ANDROID_WMT
 	update_driver_loaded_status(prGlueInfo->u4ReadyFlag);
+#endif
+
+#if (CONFIG_WLAN_SERVICE == 1)
+	wlanServiceExit(prGlueInfo);
 #endif
 
 	/* Have tried to do scan done here, but the exception occurs for */

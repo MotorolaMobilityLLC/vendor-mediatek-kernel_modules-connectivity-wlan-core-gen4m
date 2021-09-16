@@ -1048,11 +1048,6 @@ int soc7_0_Trigger_fw_assert(void)
 		/* Case 2: timeout */
 		DBGLOG(INIT, ERROR,
 			"Trigger assert more than 2 seconds, need to trigger rst self\n");
-		g_IsTriggerTimeout = TRUE;
-#if (CFG_ANDORID_CONNINFRA_COREDUMP_SUPPORT == 1)
-		if (!prAdapter->prGlueInfo->u4ReadyFlag)
-			g_IsNeedWaitCoredump = TRUE;
-#endif
 	}
 #if (CFG_SUPPORT_CONNINFRA == 1)
 	kalSetRstEvent();

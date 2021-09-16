@@ -116,7 +116,6 @@ u_int8_t g_IsWholeChipRst = FALSE;
 u_int8_t g_SubsysRstCnt;
 int g_SubsysRstTotalCnt;
 int g_WholeChipRstTotalCnt;
-bool g_IsTriggerTimeout = FALSE;
 u_int8_t g_IsSubsysRstOverThreshold = FALSE;
 u_int8_t g_IsWfsysBusHang = FALSE;
 char *g_reason;
@@ -707,7 +706,6 @@ void glRstWholeChipRstParamInit(void)
 {
 	g_IsSubsysRstOverThreshold = FALSE;
 	g_SubsysRstCnt = 0;
-	g_IsTriggerTimeout = FALSE;
 	g_WholeChipRstTotalCnt++;
 }
 void glRstSetRstEndEvent(void)
@@ -785,7 +783,7 @@ int glRstwlanPreWholeChipReset(enum consys_drv_type type, char *reason)
 		fgIsDrvTriggerWholeChipReset = FALSE;
 		g_IsWholeChipRst = TRUE;
 #if (CFG_ANDORID_CONNINFRA_COREDUMP_SUPPORT == 1)
-		if (!prAdapter->prGlueInfo->u4ReadyFlag)
+		if (!prGlueInfo->u4ReadyFlag)
 			g_IsNeedWaitCoredump = TRUE;
 #endif
 		kalSetRstEvent();
@@ -902,7 +900,6 @@ void glResetSubsysRstProcedure(
 				"fw detect bus hang");
 			conninfra_trigger_whole_chip_rst(CONNDRV_TYPE_WIFI,
 				g_reason);
-			g_IsTriggerTimeout = FALSE;
 		} else {
 			DBGLOG(INIT, INFO,
 				"Don't trigger whole chip reset due to driver is not ready\n");
@@ -950,7 +947,6 @@ void glResetSubsysRstProcedure(
 			/*g_SubsysRstCnt > 3, < 30 sec, do whole chip reset */
 			g_IsSubsysRstOverThreshold = TRUE;
 			/*coredump is done, no need do again*/
-			g_IsTriggerTimeout = TRUE;
 			fgIsDrvTriggerWholeChipReset = TRUE;
 			glSetRstReasonString(
 				"subsys reset more than 3 times");
@@ -995,7 +991,6 @@ void glResetSubsysRstProcedure(
 		rLastTs->tv_sec = rNowTs->tv_sec;
 		rLastTs->tv_nsec = rNowTs->tv_nsec;
 	}
-	g_IsTriggerTimeout = FALSE;
 #if (CFG_ANDORID_CONNINFRA_COREDUMP_SUPPORT == 1)
 	g_eWfRstSource = WF_RST_SOURCE_NONE;
 #endif
