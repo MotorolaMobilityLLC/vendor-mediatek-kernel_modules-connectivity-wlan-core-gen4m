@@ -652,7 +652,8 @@ p2pRoleStatePrepare_To_DFS_CAC_STATE(IN struct ADAPTER *prAdapter,
 
 		/* Revise to VHT OP BW */
 		ucRfBw = rlmGetVhtOpBwByBssOpBw(ucRfBw);
-		prChnlReqInfo->eChannelWidth = ucRfBw;
+		prChnlReqInfo->eChannelWidth =
+			(enum ENUM_CHANNEL_WIDTH) ucRfBw;
 
 		/* TODO: BW80+80 support */
 		prChnlReqInfo->ucCenterFreqS1 = nicGetS1(

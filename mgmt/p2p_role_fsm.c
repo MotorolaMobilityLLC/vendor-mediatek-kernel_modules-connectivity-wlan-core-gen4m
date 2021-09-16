@@ -2985,7 +2985,8 @@ p2pRoleFsmRunEventScanDone(IN struct ADAPTER *prAdapter,
 		DBGLOG(P2P, WARN,
 			"Unexpected scan done for state [%s].\n",
 			p2pRoleFsmGetFsmState(prP2pRoleFsmInfo->eCurrentState));
-		break;
+		prScanReqInfo->fgIsScanRequest = FALSE;
+		goto error;
 	}
 
 	prScanReqInfo->fgIsScanRequest = FALSE;
@@ -4567,11 +4568,6 @@ p2pRoleFsmAbortCurrentAcsReq(IN struct ADAPTER *prAdapter,
 			prMsgAcsRequest->ucRoleIdx);
 	prScanReqInfo = &(prP2pRoleFsmInfo->rScanReqInfo);
 
-	if (prScanReqInfo && prScanReqInfo->fgIsScanRequest) {
-		DBGLOG(P2P, ERROR, "Clear old scan req.\n");
-		prScanReqInfo->fgIsScanRequest = FALSE;
-	}
-
 	if (!p2pRoleFsmIsAcsProcessing(prAdapter, prMsgAcsRequest->ucRoleIdx))
 		return;
 
@@ -4579,6 +4575,11 @@ p2pRoleFsmAbortCurrentAcsReq(IN struct ADAPTER *prAdapter,
 			prScanReqInfo->eScanReason == SCAN_REASON_ACS) {
 		DBGLOG(P2P, INFO, "Cancel current ACS scan.\n");
 		p2pRoleFsmRunEventAbort(prAdapter, prP2pRoleFsmInfo);
+	}
+
+	if (prScanReqInfo && prScanReqInfo->fgIsScanRequest) {
+		DBGLOG(P2P, ERROR, "Clear old scan req.\n");
+		prScanReqInfo->fgIsScanRequest = FALSE;
 	}
 }
 
