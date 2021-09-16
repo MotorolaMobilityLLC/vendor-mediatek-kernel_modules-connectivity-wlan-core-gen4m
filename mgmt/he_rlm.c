@@ -422,9 +422,6 @@ static uint8_t heRlmFillPPEThreshold(
 
 	switch (ucMaxBw) {
 	case MAX_BW_20MHZ:
-		(*pPPEThreshold) |= HE_CAP_PPE_242_RU_IDX;
-		ucRUIdxSize = 1;
-		break;
 	case MAX_BW_40MHZ:
 		(*pPPEThreshold) |= HE_CAP_PPE_484_RU_IDX;
 		ucRUIdxSize = 2;
