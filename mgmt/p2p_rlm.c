@@ -193,7 +193,8 @@ void rlmBssUpdateChannelParams(struct ADAPTER *prAdapter,
 			HE_SET_6G_OP_INFOR_PRESENT(prBssInfo->ucHeOpParams);
 
 			prBssInfo->r6gOperInfor.rControl.bits.ChannelWidth =
-				heGetBssBandBw(prAdapter, prBssInfo, BAND_6G);
+				heRlmMaxBwToHeBw(heGetBssBandBw(
+					prAdapter, prBssInfo, BAND_6G));
 			prBssInfo->r6gOperInfor.ucPrimaryChannel =
 				prBssInfo->ucPrimaryChannel;
 			prBssInfo->r6gOperInfor.ucChannelCenterFreqSeg0 =

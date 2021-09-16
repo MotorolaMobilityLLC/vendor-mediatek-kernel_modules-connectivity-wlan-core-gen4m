@@ -545,9 +545,10 @@ void rlmReviseMaxBw(
 	uint8_t *pucS1,
 	uint8_t *pucPrimaryCh);
 
-uint8_t rlmReviseChFreqS1(IN struct BSS_INFO *prBssInfo,
-	IN uint8_t ucPrimaryCh, IN uint8_t ucOriginS1,
-	IN uint8_t ucMaxBandwidth);
+enum ENUM_CHNL_EXT rlmReviseSco(
+	IN enum ENUM_CHANNEL_WIDTH eChannelWidth,
+	IN uint8_t ucPrimaryCh,
+	IN uint8_t ucS1);
 
 void rlmRevisePreferBandwidthNss(struct ADAPTER *prAdapter,
 					uint8_t ucBssIndex,

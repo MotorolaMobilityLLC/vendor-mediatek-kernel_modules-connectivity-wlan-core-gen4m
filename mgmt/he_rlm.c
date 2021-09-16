@@ -157,6 +157,31 @@ static void heRlmFillHe6gBandCapIE(struct ADAPTER *prAdapter,
 *                              F U N C T I O N S
 ********************************************************************************
 */
+uint8_t heRlmMaxBwToHeBw(uint8_t ucMaxBw)
+{
+	uint8_t ucHeBw = HE_OP_CHANNEL_WIDTH_20;
+
+	switch (ucMaxBw) {
+	case MAX_BW_20MHZ:
+		ucHeBw = HE_OP_CHANNEL_WIDTH_20;
+		break;
+	case MAX_BW_40MHZ:
+		ucHeBw = HE_OP_CHANNEL_WIDTH_40;
+		break;
+	case MAX_BW_80MHZ:
+		ucHeBw = HE_OP_CHANNEL_WIDTH_80;
+		break;
+	case MAX_BW_160MHZ:
+	case MAX_BW_80_80_MHZ:
+		ucHeBw = HE_OP_CHANNEL_WIDTH_80P80_160;
+		break;
+	default:
+		break;
+	}
+
+	return ucHeBw;
+}
+
 uint8_t heGetBssBandBw(struct ADAPTER *prAdapter,
 	struct BSS_INFO *prBssInfo,
 	enum ENUM_BAND eBand)

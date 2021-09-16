@@ -1948,6 +1948,13 @@ rlmDomainIsValidRfSetting(struct ADAPTER *prAdapter,
 		if (fgLowerChannel == FALSE)
 			DBGLOG(RLM, WARN, "Rf20: LowerCh=%d\n", ucLowerChannel);
 
+		/* Check S1, S2 */
+		if (eExtend == CHNL_EXT_SCN &&
+			(ucChannelS1 != 0 || ucChannelS2 != 0)) {
+			fgValidChannel = FALSE;
+			DBGLOG(RLM, WARN, "Rf20: S1=%d, S2=%d\n",
+				ucChannelS1, ucChannelS2);
+		}
 	} else if ((eChannelWidth == CW_80MHZ) ||
 		   (eChannelWidth == CW_160MHZ)) {
 		ucCenterCh = ucChannelS1;
