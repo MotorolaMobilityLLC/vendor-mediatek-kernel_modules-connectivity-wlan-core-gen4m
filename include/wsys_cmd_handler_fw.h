@@ -520,6 +520,10 @@ enum ENUM_EVENT_ID {
 	/* 0xAE (Query - CMD_ID_CAL_BACKUP) */
 	EVENT_ID_CAL_ALL_DONE = 0xAF,   /* 0xAF (FW Cal All Done Event) */
 
+#if CFG_SUPPORT_BAR_DELAY_INDICATION
+	EVENT_ID_RXM_DELAY_BAR = 0xB5,
+#endif /* CFG_SUPPORT_BAR_DELAY_INDICATION */
+
 	EVENT_ID_TPUT_INFO = 0xCB,
 	EVENT_ID_WTBL_INFO = 0xCD,              /* 0xCD (Query) */
 	EVENT_ID_MIB_INFO = 0xCE,               /* 0xCE (Query) */
@@ -1389,6 +1393,29 @@ struct EVENT_ADD_KEY_DONE_INFO {
 	uint8_t      ucReserved;
 	uint8_t      aucStaAddr[6];
 };
+
+#if CFG_SUPPORT_BAR_DELAY_INDICATION
+/*
+ * CFG_NUM_OF_RX_BA_AGREEMENTS = 80
+ * cannot use CFG_NUM_OF_RX_BA_AGREEMENTS directly,
+ * because we must ensure event structure no change
+ */
+#define BAR_DELAY_INDICATION_BA_MAX 80
+struct EVENT_STORED_BA_REQUEST {
+	uint16_t u2SSN;
+	uint8_t ucTid;
+	uint8_t ucStaRecIdx;
+	uint8_t aucPadding[4];
+};
+
+struct EVENT_BAR_DELAY {
+	uint8_t ucEvtVer;
+	uint8_t ucBaNum;
+	uint8_t aucPadding[2];
+	struct EVENT_STORED_BA_REQUEST
+		rBAR[BAR_DELAY_INDICATION_BA_MAX];
+};
+#endif /* CFG_SUPPORT_BAR_DELAY_INDICATION */
 
 struct LINK_QUALITY {
 	int8_t       cRssi; /* AIS Network. */

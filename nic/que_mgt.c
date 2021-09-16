@@ -3899,14 +3899,7 @@ void qmProcessPktWithReordering(IN struct ADAPTER *prAdapter,
 void qmProcessBarFrame(IN struct ADAPTER *prAdapter,
 	IN struct SW_RFB *prSwRfb, OUT struct QUE *prReturnedQue)
 {
-
-	struct STA_RECORD *prStaRec;
-	struct RX_BA_ENTRY *prReorderQueParm;
 	struct CTRL_BAR_FRAME *prBarCtrlFrame;
-
-	uint32_t u4SSN;
-	uint32_t u4WinStart;
-	uint32_t u4WinEnd;
 
 	ASSERT(prSwRfb);
 	ASSERT(prReturnedQue);
@@ -3937,72 +3930,8 @@ void qmProcessBarFrame(IN struct ADAPTER *prAdapter,
 		return;
 	}
 
-	/* Check whether the STA_REC is activated */
-	prSwRfb->prStaRec = cnmGetStaRecByIndex(prAdapter,
-		prSwRfb->ucStaRecIdx);
-	prStaRec = prSwRfb->prStaRec;
-	if (prStaRec == NULL) {
-		/* ASSERT(prStaRec); */
-		return;
-	}
-#if 0
-	if (!(prStaRec->fgIsValid)) {
-		/* TODO: (Tehuang) Handle the Host-FW sync issue. */
-		DbgPrint("QM: (Warning) BAR for an invalid STA_REC\n");
-		/* ASSERT(0); */
-		return;
-	}
-#endif
-
-	/* Check whether the BA agreement exists */
-	prReorderQueParm = prStaRec->aprRxReorderParamRefTbl[prSwRfb->ucTid];
-	if (!prReorderQueParm) {
-		/* TODO: (Tehuang) Handle the Host-FW sync issue. */
-		DBGLOG(QM, WARN,
-			"QM: (Warning) BAR for a NULL ReorderQueParm\n");
-		/* ASSERT(0); */
-		return;
-	}
-
-	RX_DIRECT_REORDER_LOCK(prAdapter, 0);
-
-	u4SSN = (uint32_t) (prSwRfb->u2SSN);
-	u4WinStart = (uint32_t) (prReorderQueParm->u2WinStart);
-	u4WinEnd = (uint32_t) (prReorderQueParm->u2WinEnd);
-
-	if (qmCompareSnIsLessThan(u4WinStart, u4SSN)) {
-#if CFG_SUPPORT_RX_OOR_BAR
-		prReorderQueParm->u2BarSSN = u4SSN;
-		DBGLOG(RX, INFO,
-			"BAR: update WinStart from %u to %u, LastRcvdSN=%u",
-			prReorderQueParm->u2WinStart,
-			prReorderQueParm->u2BarSSN,
-			prReorderQueParm->u2LastRcvdSN);
-		SET_BAR_SSN_VALID(prReorderQueParm->u2BarSSN);
-#endif /* CFG_SUPPORT_RX_OOR_BAR */
-
-		prReorderQueParm->u2WinStart = (uint16_t) u4SSN;
-		prReorderQueParm->u2WinEnd =
-			((prReorderQueParm->u2WinStart) +
-			(prReorderQueParm->u2WinSize) - 1) % MAX_SEQ_NO_COUNT;
-
-#if CFG_SUPPORT_RX_AMSDU
-		/* RX reorder for one MSDU in AMSDU issue */
-		prReorderQueParm->u8LastAmsduSubIdx = RX_PAYLOAD_FORMAT_MSDU;
-#endif
-
-		DBGLOG(RX, TEMP,
-			"QM:(BAR)[%d](%u){%hu,%hu}\n",
-			prSwRfb->ucTid, u4SSN,
-			prReorderQueParm->u2WinStart,
-			prReorderQueParm->u2WinEnd);
-		qmPopOutDueToFallAhead(prAdapter, prReorderQueParm,
-			prReturnedQue);
-	} else {
-		DBGLOG(RX, TEMP, "QM:(BAR)(%d)(%u){%u,%u}\n",
-			prSwRfb->ucTid, u4SSN, u4WinStart, u4WinEnd);
-	}
-	RX_DIRECT_REORDER_UNLOCK(prAdapter, 0);
+	qmHandleRxReorderWinShift(prAdapter, prSwRfb->ucStaRecIdx,
+		prSwRfb->ucTid, prSwRfb->u2SSN, prReturnedQue);
 }
 
 void qmInsertReorderPkt(IN struct ADAPTER *prAdapter,
@@ -8846,4 +8775,71 @@ void qmReleaseCHAtFinishedDhcp(struct ADAPTER *prAdapter,
 		DBGLOG(QM, INFO, "Dhcp done, stop GC join timer\n");
 		p2pRoleFsmNotifyDhcpDone(prAdapter, ucBssIndex);
 	}
+}
+
+void qmHandleRxReorderWinShift(IN struct ADAPTER *prAdapter,
+	IN uint8_t ucStaRecIdx, uint8_t ucTid, uint32_t u4SSN,
+	OUT struct QUE *prReturnedQue)
+{
+	struct STA_RECORD *prStaRec;
+	struct RX_BA_ENTRY *prReorderQueParm;
+	uint32_t u4WinStart;
+	uint32_t u4WinEnd;
+
+	/* Check whether the STA_REC is activated */
+	prStaRec = cnmGetStaRecByIndex(prAdapter, ucStaRecIdx);
+	if (prStaRec == NULL) {
+		/* ASSERT(prStaRec); */
+		return;
+	}
+
+	/* Check whether the BA agreement exists */
+	prReorderQueParm = prStaRec->aprRxReorderParamRefTbl[ucTid];
+	if (!prReorderQueParm) {
+		/* TODO: (Tehuang) Handle the Host-FW sync issue. */
+		DBGLOG(QM, WARN,
+			"QM: (Warning) BAR for a NULL ReorderQueParm\n");
+		/* ASSERT(0); */
+		return;
+	}
+
+	RX_DIRECT_REORDER_LOCK(prAdapter, 0);
+
+	u4WinStart = (uint32_t) (prReorderQueParm->u2WinStart);
+	u4WinEnd = (uint32_t) (prReorderQueParm->u2WinEnd);
+
+	if (qmCompareSnIsLessThan(u4WinStart, u4SSN)) {
+#if CFG_SUPPORT_RX_OOR_BAR
+		prReorderQueParm->u2BarSSN = u4SSN;
+		DBGLOG(RX, INFO,
+			"BAR: update WinStart from %u to %u, LastRcvdSN=%u",
+			prReorderQueParm->u2WinStart,
+			prReorderQueParm->u2BarSSN,
+			prReorderQueParm->u2LastRcvdSN);
+		SET_BAR_SSN_VALID(prReorderQueParm->u2BarSSN);
+#endif /* CFG_SUPPORT_RX_OOR_BAR */
+
+		prReorderQueParm->u2WinStart = (uint16_t) u4SSN;
+		prReorderQueParm->u2WinEnd =
+			((prReorderQueParm->u2WinStart) +
+			(prReorderQueParm->u2WinSize) - 1) % MAX_SEQ_NO_COUNT;
+
+#if CFG_SUPPORT_RX_AMSDU
+		/* RX reorder for one MSDU in AMSDU issue */
+		prReorderQueParm->u8LastAmsduSubIdx = RX_PAYLOAD_FORMAT_MSDU;
+#endif
+
+		DBGLOG(RX, TEMP,
+			"QM:(BAR U)[%d](%u){%hu,%hu}\n",
+			ucTid, u4SSN,
+			prReorderQueParm->u2WinStart,
+			prReorderQueParm->u2WinEnd);
+		qmPopOutDueToFallAhead(prAdapter, prReorderQueParm,
+			prReturnedQue);
+	} else {
+		DBGLOG(RX, TEMP, "QM:(BAR I)(%d)(%u){%u,%u}\n",
+			ucTid, u4SSN, u4WinStart, u4WinEnd);
+	}
+
+	RX_DIRECT_REORDER_UNLOCK(prAdapter, 0);
 }

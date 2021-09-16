@@ -5332,3 +5332,65 @@ void nicCmdEventListmode(IN struct ADAPTER
 	}
 }
 #endif /*(CONFIG_WLAN_SERVICE == 1)*/
+
+#if CFG_SUPPORT_BAR_DELAY_INDICATION
+void nicEventHandleDelayBar(IN struct ADAPTER *prAdapter,
+		      IN struct WIFI_EVENT *prEvent)
+{
+	struct EVENT_BAR_DELAY *prEventStoredBAR;
+	struct SW_RFB *prRetSwRfb;
+	struct QUE rReturnedQue;
+	struct QUE *prReturnedQue;
+	int i = 0;
+
+	prEventStoredBAR = (struct EVENT_BAR_DELAY *)(
+				prEvent->aucBuffer);
+
+	if (unlikely(prEventStoredBAR == NULL)) {
+		DBGLOG(NIC, WARN, "prEventStoredBAR is NULL\n");
+		return;
+	}
+
+	if (unlikely(prEventStoredBAR->ucEvtVer != 0)) {
+		DBGLOG(NIC, WARN, "not be handle, ucEvtVer:%u\n",
+			prEventStoredBAR->ucEvtVer);
+		return;
+	}
+
+	if (unlikely(prEventStoredBAR->ucBaNum >
+		BAR_DELAY_INDICATION_BA_MAX)) {
+		DBGLOG(NIC, WARN, "not be handle, ucBaNum:%u\n",
+			prEventStoredBAR->ucBaNum);
+		return;
+	}
+
+	prReturnedQue = &rReturnedQue;
+	QUEUE_INITIALIZE(prReturnedQue);
+	for (i = 0; i < prEventStoredBAR->ucBaNum; i++) {
+		DBGLOG(NIC, INFO,
+			"[%d] ucStaRecIdx:%d ucTid:%d u2SSN:%d\n",
+			i,
+			prEventStoredBAR->rBAR[i].ucStaRecIdx,
+			prEventStoredBAR->rBAR[i].ucTid,
+			prEventStoredBAR->rBAR[i].u2SSN);
+
+		qmHandleRxReorderWinShift(prAdapter,
+			prEventStoredBAR->rBAR[i].ucStaRecIdx,
+			prEventStoredBAR->rBAR[i].ucTid,
+			prEventStoredBAR->rBAR[i].u2SSN,
+			prReturnedQue);
+
+	}
+
+	if (QUEUE_IS_NOT_EMPTY(prReturnedQue)) {
+		QM_TX_SET_NEXT_MSDU_INFO((struct SW_RFB *)
+			QUEUE_GET_TAIL(prReturnedQue), NULL);
+	}
+
+	prRetSwRfb = (struct SW_RFB *) QUEUE_GET_HEAD(
+				prReturnedQue);
+	if (prRetSwRfb != NULL)
+		nicRxIndicatePackets(prAdapter, prRetSwRfb);
+}
+#endif /* CFG_SUPPORT_BAR_DELAY_INDICATION */
+

@@ -3630,6 +3630,12 @@ void nicCmdEventListmode(IN struct ADAPTER
 				  *prAdapter, IN struct CMD_INFO *prCmdInfo,
 				  IN uint8_t *pucEventBuf);
 #endif /*(CONFIG_WLAN_SERVICE == 1)*/
+
+#if CFG_SUPPORT_BAR_DELAY_INDICATION
+void nicEventHandleDelayBar(IN struct ADAPTER *prAdapter,
+		      IN struct WIFI_EVENT *prEvent);
+#endif /* CFG_SUPPORT_BAR_DELAY_INDICATION */
+
 /*******************************************************************************
  *                              F U N C T I O N S
  *******************************************************************************

@@ -1329,6 +1329,10 @@ struct WIFI_VAR {
 	uint8_t ucCheckBeacon;
 	uint8_t ucEnableFastPath;
 	uint8_t ucFastPathAllPacket;
+
+#if CFG_SUPPORT_BAR_DELAY_INDICATION
+	u_int8_t fgBARDelayIndicationEn;
+#endif /* CFG_SUPPORT_BAR_DELAY_INDICATION */
 };
 
 /* cnm_timer module */

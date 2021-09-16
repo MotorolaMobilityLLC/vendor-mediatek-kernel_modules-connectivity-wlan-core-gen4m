@@ -8115,6 +8115,11 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 			prAdapter, "EnableFastPath", FEATURE_ENABLED);
 	prWifiVar->ucFastPathAllPacket = (uint8_t) wlanCfgGetUint32(
 			prAdapter, "FastPathAllPacket", FEATURE_DISABLED);
+
+#if CFG_SUPPORT_BAR_DELAY_INDICATION
+	prWifiVar->fgBARDelayIndicationEn = (uint8_t) wlanCfgGetUint32(
+		prAdapter, "BARDelayIndicationEn", FEATURE_ENABLED);
+#endif /* CFG_SUPPORT_BAR_DELAY_INDICATION */
 }
 
 void wlanCfgSetSwCtrl(IN struct ADAPTER *prAdapter)

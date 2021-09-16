@@ -176,6 +176,9 @@ static struct RX_EVENT_HANDLER arEventTable[] = {
 #if CFG_SUPPORT_CAL_RESULT_BACKUP_TO_HOST
 	{EVENT_ID_CAL_ALL_DONE, nicEventCalAllDone},
 #endif
+#if CFG_SUPPORT_BAR_DELAY_INDICATION
+	{EVENT_ID_RXM_DELAY_BAR, nicEventHandleDelayBar},
+#endif
 	{EVENT_ID_HIF_CTRL, nicEventHifCtrl},
 	{EVENT_ID_RDD_SEND_PULSE, nicEventRddSendPulse},
 #if (CFG_SUPPORT_DFS_MASTER == 1)
@@ -1995,6 +1998,108 @@ void nicRxGetNoiseLevelAndLastRate(IN struct ADAPTER *prAdapter,
 }
 #endif /* fos_change end */
 
+void nicRxIndicatePackets(IN struct ADAPTER *prAdapter,
+	IN struct SW_RFB *prSwRfbListHead)
+{
+	struct RX_CTRL *prRxCtrl;
+	struct mt66xx_chip_info *prChipInfo;
+	struct SW_RFB *prRetSwRfb, *prNextSwRfb;
+	struct STA_RECORD *prStaRec;
+
+	prRxCtrl = &prAdapter->rRxCtrl;
+	prChipInfo = prAdapter->chip_info;
+	prRetSwRfb = prSwRfbListHead;
+
+	while (prRetSwRfb) {
+#if (CFG_SUPPORT_MSP == 1)
+		/* collect RXV information */
+		if (prChipInfo->asicRxProcessRxvforMSP)
+			prChipInfo->asicRxProcessRxvforMSP(
+				prAdapter, prRetSwRfb);
+#endif /* CFG_SUPPORT_MSP == 1 */
+/* fos_change begin */
+#if CFG_SUPPORT_STAT_STATISTICS
+		nicRxGetNoiseLevelAndLastRate(prAdapter, prRetSwRfb);
+#endif /* fos_change end */
+
+#if CFG_SUPPORT_PERF_IND
+		nicRxPerfIndProcessRXV(prAdapter, prRetSwRfb,
+			GLUE_GET_PKT_BSS_IDX(prRetSwRfb->pvPacket));
+#endif
+
+		/* save next first */
+		prNextSwRfb = (struct SW_RFB *)
+			QUEUE_GET_NEXT_ENTRY(
+				(struct QUE_ENTRY *)
+				prRetSwRfb);
+
+		switch (prRetSwRfb->eDst) {
+		case RX_PKT_DESTINATION_HOST:
+			prStaRec = cnmGetStaRecByIndex(prAdapter,
+					prRetSwRfb->ucStaRecIdx);
+#if ARP_MONITER_ENABLE
+			if (prStaRec &&
+				IS_STA_IN_AIS(prStaRec)) {
+				qmHandleRxArpPackets(prAdapter,
+					prRetSwRfb);
+			}
+
+			if (prStaRec) { /* STA or GC */
+				qmHandleRxDhcpPackets(
+					prAdapter,
+					prRetSwRfb);
+			}
+#endif
+#if CFG_SUPPORT_WIFI_SYSDVT
+#if (CFG_SUPPORT_CONNAC2X == 1)
+			/* Not handle non-CONNAC2X case */
+			if (RXV_AUTODVT_DNABLED(prAdapter) &&
+				(prRetSwRfb->ucGroupVLD &
+				BIT(RX_GROUP_VLD_3)) &&
+				(prRetSwRfb->ucGroupVLD &
+				BIT(RX_GROUP_VLD_5))) {
+				connac2x_rxv_correct_test(
+					prAdapter, prRetSwRfb);
+			}
+#endif
+#endif /* CFG_SUPPORT_WIFI_SYSDVT */
+			if (prStaRec &&
+			prStaRec->ucBssIndex < MAX_BSSID_NUM) {
+				GET_BOOT_SYSTIME(
+					&prRxCtrl->u4LastRxTime
+					[prStaRec->ucBssIndex]);
+			}
+			nicRxProcessPktWithoutReorder(
+				prAdapter, prRetSwRfb);
+			break;
+
+		case RX_PKT_DESTINATION_FORWARD:
+			nicRxProcessForwardPkt(
+				prAdapter, prRetSwRfb);
+			break;
+
+		case RX_PKT_DESTINATION_HOST_WITH_FORWARD:
+			nicRxProcessGOBroadcastPkt(prAdapter,
+				prRetSwRfb);
+			break;
+
+		case RX_PKT_DESTINATION_NULL:
+			nicRxReturnRFB(prAdapter, prRetSwRfb);
+			RX_INC_CNT(prRxCtrl,
+				RX_DST_NULL_DROP_COUNT);
+			RX_INC_CNT(prRxCtrl,
+				RX_DROP_TOTAL_COUNT);
+			break;
+
+		default:
+			break;
+		}
+#if CFG_HIF_RX_STARVATION_WARNING
+		prRxCtrl->u4DequeuedCnt++;
+#endif
+		prRetSwRfb = prNextSwRfb;
+	}
+}
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -2011,13 +2116,12 @@ void nicRxProcessDataPacket(IN struct ADAPTER *prAdapter,
 			    IN OUT struct SW_RFB *prSwRfb)
 {
 	struct RX_CTRL *prRxCtrl;
-	struct SW_RFB *prRetSwRfb, *prNextSwRfb;
+	struct SW_RFB *prRetSwRfb;
 	struct HW_MAC_RX_DESC *prRxStatus;
 
 	u_int8_t fgDrop;
 	uint8_t ucBssIndex = 0;
 	struct mt66xx_chip_info *prChipInfo;
-	struct STA_RECORD *prStaRec;
 	struct RX_DESC_OPS_T *prRxDescOps;
 
 	DEBUGFUNC("nicRxProcessDataPacket");
@@ -2122,102 +2226,8 @@ void nicRxProcessDataPacket(IN struct ADAPTER *prAdapter,
 #endif /* CFG_SUPPORT_802_11AX == 1 */
 
 		prRetSwRfb = qmHandleRxPackets(prAdapter, prSwRfb);
-		if (prRetSwRfb != NULL) {
-			do {
-#if (CFG_SUPPORT_MSP == 1)
-				/* collect RXV information */
-				if (prChipInfo->asicRxProcessRxvforMSP)
-					prChipInfo->asicRxProcessRxvforMSP(
-						prAdapter, prRetSwRfb);
-#endif /* CFG_SUPPORT_MSP == 1 */
-/* fos_change begin */
-#if CFG_SUPPORT_STAT_STATISTICS
-					nicRxGetNoiseLevelAndLastRate(
-					prAdapter, prRetSwRfb);
-#endif /* fos_change end */
-
-#if CFG_SUPPORT_PERF_IND
-				nicRxPerfIndProcessRXV(
-					prAdapter,
-					prRetSwRfb,
-					ucBssIndex);
-#endif
-
-				/* save next first */
-				prNextSwRfb = (struct SW_RFB *)
-					QUEUE_GET_NEXT_ENTRY(
-						(struct QUE_ENTRY *)
-						prRetSwRfb);
-
-				switch (prRetSwRfb->eDst) {
-				case RX_PKT_DESTINATION_HOST:
-					prStaRec = cnmGetStaRecByIndex(
-						prAdapter,
-						prRetSwRfb->ucStaRecIdx);
-#if ARP_MONITER_ENABLE
-					if (prStaRec &&
-						IS_STA_IN_AIS(prStaRec)) {
-						qmHandleRxArpPackets(
-							prAdapter,
-							prRetSwRfb);
-					}
-
-					if (prStaRec) { /* STA or GC */
-						qmHandleRxDhcpPackets(
-							prAdapter,
-							prRetSwRfb);
-					}
-#endif
-#if CFG_SUPPORT_WIFI_SYSDVT
-#if (CFG_SUPPORT_CONNAC2X == 1)
-					/* Not handle non-CONNAC2X case */
-					if (RXV_AUTODVT_DNABLED(prAdapter) &&
-						(prRetSwRfb->ucGroupVLD &
-						BIT(RX_GROUP_VLD_3)) &&
-						(prRetSwRfb->ucGroupVLD &
-						BIT(RX_GROUP_VLD_5))) {
-						connac2x_rxv_correct_test(
-							prAdapter, prRetSwRfb);
-					}
-#endif
-#endif /* CFG_SUPPORT_WIFI_SYSDVT */
-					if (prStaRec &&
-					prStaRec->ucBssIndex < MAX_BSSID_NUM) {
-						GET_BOOT_SYSTIME(
-							&prRxCtrl->u4LastRxTime
-							[prStaRec->ucBssIndex]);
-					}
-					nicRxProcessPktWithoutReorder(
-						prAdapter, prRetSwRfb);
-					break;
-
-				case RX_PKT_DESTINATION_FORWARD:
-					nicRxProcessForwardPkt(
-						prAdapter, prRetSwRfb);
-					break;
-
-				case RX_PKT_DESTINATION_HOST_WITH_FORWARD:
-					nicRxProcessGOBroadcastPkt(prAdapter,
-						prRetSwRfb);
-					break;
-
-				case RX_PKT_DESTINATION_NULL:
-					nicRxReturnRFB(prAdapter, prRetSwRfb);
-					RX_INC_CNT(prRxCtrl,
-						RX_DST_NULL_DROP_COUNT);
-					RX_INC_CNT(prRxCtrl,
-						RX_DROP_TOTAL_COUNT);
-					break;
-
-				default:
-					break;
-				}
-#if CFG_HIF_RX_STARVATION_WARNING
-				prRxCtrl->u4DequeuedCnt++;
-#endif
-				prRetSwRfb = prNextSwRfb;
-			} while (prRetSwRfb);
-		}
+		if (prRetSwRfb != NULL)
+			nicRxIndicatePackets(prAdapter, prRetSwRfb);
 	} else {
 		nicRxReturnRFB(prAdapter, prSwRfb);
 		RX_INC_CNT(prRxCtrl, RX_CLASS_ERR_DROP_COUNT);
