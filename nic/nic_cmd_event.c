@@ -121,6 +121,7 @@ const struct NIC_CAPABILITY_V2_REF_TABLE
 #if CFG_MSCS_SUPPORT
 	{TAG_CAP_FAST_PATH, nicCfgChipCapFastPath},
 #endif
+	{TAG_CAP_CASAN_LOAD_TYPE, nicCmdEventCasanLoadType},
 };
 
 /*******************************************************************************
@@ -2903,6 +2904,22 @@ uint32_t nicCfgChipCapFastPath(IN struct ADAPTER *prAdapter,
 	       "Fast path version(%d) support(%d) vendor key(0x%x) group key(0x%x)\n",
 	       prFastPathCap->ucVersion, prFastPathCap->fgSupportFastPath,
 	       prFastPathCap->u4KeyBitmap[0], prFastPathCap->u4KeyBitmap[2]);
+
+	return WLAN_STATUS_SUCCESS;
+}
+
+uint32_t nicCmdEventCasanLoadType(IN struct ADAPTER *prAdapter,
+					IN uint8_t *pucEventBuf)
+{
+
+	struct CAP_CASAN_LOAD_TYPE_T *prLoadType =
+		(struct CAP_CASAN_LOAD_TYPE_T *)pucEventBuf;
+
+	prAdapter->u4CasanLoadType = prLoadType->u4CasanLoadType;
+
+	DBGLOG(INIT, INFO,
+	       "Casan load type = %x\n",
+	       prAdapter->u4CasanLoadType);
 
 	return WLAN_STATUS_SUCCESS;
 }

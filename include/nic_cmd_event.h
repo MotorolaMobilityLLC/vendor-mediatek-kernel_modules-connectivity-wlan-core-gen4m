@@ -1031,6 +1031,7 @@ enum NIC_CAPABILITY_V2_TAG {
 #if CFG_MSCS_SUPPORT
 	TAG_CAP_FAST_PATH = 0x1a,
 #endif
+	TAG_CAP_CASAN_LOAD_TYPE = 0x1d,
 	TAG_CAP_TOTAL
 };
 
@@ -1210,6 +1211,11 @@ struct CAP_BUFFER_MODE_INFO_T {
 	 * 10 so that driver don't change.
 	 */
 };
+
+struct CAP_CASAN_LOAD_TYPE_T {
+	uint32_t u4CasanLoadType;	/* Type of CASAN 0:Normal 1:CASAN */
+};
+
 
 /*
  * NIC_TX_RESOURCE_REPORT_EVENT related definition
@@ -3497,6 +3503,8 @@ uint32_t nicCfgChipCap6GCap(IN struct ADAPTER *prAdapter,
 uint32_t nicCmdEventLinkStatsEmiOffset(IN struct ADAPTER *prAdapter,
 					IN uint8_t *pucEventBuf);
 #endif
+uint32_t nicCmdEventCasanLoadType(IN struct ADAPTER *prAdapter,
+					IN uint8_t *pucEventBuf);
 
 void nicExtEventICapIQData(IN struct ADAPTER *prAdapter,
 			   IN uint8_t *pucEventBuf);
