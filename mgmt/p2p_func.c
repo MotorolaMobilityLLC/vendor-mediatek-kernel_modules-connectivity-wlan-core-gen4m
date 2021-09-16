@@ -7387,9 +7387,12 @@ void p2pFunIndicateAcsResult(IN struct GLUE_INFO *prGlueInfo,
 		if (prAcsReqInfo->eBand == BAND_2G4)
 			ucMaxBandwidth = prGlueInfo->prAdapter->rWifiVar
 				.ucAp2gBandwidth;
-		else if (prAcsReqInfo->eBand == BAND_5G)
+		else if (prAcsReqInfo->eBand == BAND_5G) {
 			ucMaxBandwidth = prGlueInfo->prAdapter->rWifiVar
 				.ucAp5gBandwidth;
+			if (ucMaxBandwidth > MAX_BW_80MHZ)
+				ucMaxBandwidth = MAX_BW_80MHZ;
+		}
 #if (CFG_SUPPORT_WIFI_6G == 1)
 		else if (prAcsReqInfo->eBand == BAND_6G)
 			ucMaxBandwidth = prGlueInfo->prAdapter->rWifiVar
