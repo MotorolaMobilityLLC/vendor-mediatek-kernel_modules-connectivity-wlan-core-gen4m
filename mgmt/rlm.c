@@ -2305,7 +2305,7 @@ void rlmReviseMaxBw(struct ADAPTER *prAdapter, uint8_t ucBssIndex,
 		}
 	}
 
-	if (ucCurrentBandwidth != ucMaxBandwidth) {
+	if (ucCurrentBandwidth > ucMaxBandwidth) {
 		if (ucMaxBandwidth <= MAX_BW_40MHZ) { /* BW20, BW40 */
 			*peChannelWidth = CW_20_40MHZ;
 		} else { /* BW80, BW160, BW80P80 */
