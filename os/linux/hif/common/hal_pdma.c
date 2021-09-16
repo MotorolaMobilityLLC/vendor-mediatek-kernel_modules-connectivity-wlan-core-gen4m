@@ -1453,6 +1453,9 @@ void halRxReceiveRFBs(IN struct ADAPTER *prAdapter, uint32_t u4Port,
 
 	DBGLOG(RX, TEMP, "halRxReceiveRFBs: u4RxCnt:%d\n", u4RxCnt);
 
+	kalDevRegRead(prAdapter->prGlueInfo, prRxRing->hw_cidx_addr,
+		      &prRxRing->RxCpuIdx);
+
 	while (u4RxCnt--) {
 		KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_RX_FREE_QUE);
 		QUEUE_REMOVE_HEAD(&prRxCtrl->rFreeSwRfbList,
@@ -1533,6 +1536,10 @@ void halRxReceiveRFBs(IN struct ADAPTER *prAdapter, uint32_t u4Port,
 			prSwRfb, RX_GET_CNT(prRxCtrl, RX_MPDU_TOTAL_COUNT));
 		KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_RX_QUE);
 	}
+
+	kalDevRegWrite(prAdapter->prGlueInfo, prRxRing->hw_cidx_addr,
+		       prRxRing->RxCpuIdx);
+
 	prRxRing->u4PendingCnt = halWpdmaGetRxDmaDoneCnt(prAdapter->prGlueInfo,
 			u4Port);
 	if (u4MsduReportCnt > 0)

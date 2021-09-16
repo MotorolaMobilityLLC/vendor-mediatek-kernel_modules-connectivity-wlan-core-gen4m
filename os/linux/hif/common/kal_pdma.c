@@ -308,9 +308,9 @@ static bool kalWaitRxDmaDone(struct GLUE_INFO *prGlueInfo,
 	uint32_t u4Count = 0;
 
 	for (u4Count = 0; pRxD->DMADONE == 0; u4Count++) {
-		kalDevRegRead(prGlueInfo, prRxRing->hw_didx_addr,
-			      &prRxRing->RxDmaIdx);
 		if (u4Count > DMA_DONE_WAITING_COUNT) {
+			kalDevRegRead(prGlueInfo, prRxRing->hw_didx_addr,
+				      &prRxRing->RxDmaIdx);
 			DBGLOG(HAL, INFO,
 			       "Rx DMA done P[%u] DMA[%u] CPU[%u]\n",
 			       u2Port, prRxRing->RxDmaIdx, prRxRing->RxCpuIdx);
@@ -916,15 +916,11 @@ bool kalDevReadData(struct GLUE_INFO *prGlueInfo, uint16_t u2Port,
 	prMemOps = &prHifInfo->rMemOps;
 	prRxRing = &prHifInfo->RxRing[u2Port];
 
-	kalDevRegRead(prGlueInfo, prRxRing->hw_cidx_addr, &prRxRing->RxCpuIdx);
 	u4CpuIdx = prRxRing->RxCpuIdx;
 	INC_RING_INDEX(u4CpuIdx, prRxRing->u4RingSize);
 
 	pRxCell = &prRxRing->Cell[u4CpuIdx];
 	pRxD = (struct RXD_STRUCT *)pRxCell->AllocVa;
-
-	if (halWpdmaGetRxDmaDoneCnt(prGlueInfo, u2Port) == 0)
-		return FALSE;
 
 	if (!kalWaitRxDmaDone(prGlueInfo, prRxRing, pRxD, u2Port)) {
 		if (!prRxRing->fgIsDumpLog) {
@@ -978,7 +974,6 @@ skip:
 	pRxD->DMADONE = 0;
 
 	prRxRing->RxCpuIdx = u4CpuIdx;
-	kalDevRegWrite(prGlueInfo, prRxRing->hw_cidx_addr, prRxRing->RxCpuIdx);
 	prRxRing->fgIsDumpLog = false;
 
 	GLUE_INC_REF_CNT(prGlueInfo->prAdapter->rHifStats.u4DataRxCount);
