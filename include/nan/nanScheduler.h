@@ -254,7 +254,6 @@ uint32_t nanUtilCheckBitOneCnt(struct ADAPTER *prAdapter, uint8_t *pucBitMask,
 			      uint32_t u4Size);
 void nanUtilDump(struct ADAPTER *prAdapter,
 		uint8_t *pucMsg, uint8_t *pucContent, uint32_t u4Length);
-uint32_t nanUtilCalAttributeCrc(struct _NAN_ATTR_HDR_T *prNanAttr);
 uint32_t nanUtilCalAttributeToken(struct _NAN_ATTR_HDR_T *prNanAttr);
 
 unsigned char nanGetFeatureNDPE(struct ADAPTER *prAdapter);
