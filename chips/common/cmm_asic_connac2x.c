@@ -2351,6 +2351,9 @@ bool asicConnac2xSwIntHandler(struct ADAPTER *prAdapter)
 #endif
 			DBGLOG(HAL, ERROR,
 				"FW trigger assert(0x%x).\n", status);
+
+			glSetRstReason(RST_FW_ASSERT);
+
 			fgIsResetting = TRUE;
 			update_driver_reset_status(fgIsResetting);
 
