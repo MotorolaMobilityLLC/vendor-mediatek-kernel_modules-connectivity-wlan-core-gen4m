@@ -2594,8 +2594,6 @@ int mtk_cfg80211_vendor_set_packet_filter(struct wiphy *wiphy,
 
 	prProg = (uint8_t *) nla_data(attr);
 
-	dumpMemory8(prProg, u4ProgLen);
-
 	kalMemZero(&rInfo, sizeof(struct PARAM_OFLD_INFO));
 
 	/* Init OFLD description */
@@ -2617,7 +2615,7 @@ int mtk_cfg80211_vendor_set_packet_filter(struct wiphy *wiphy,
 		if (u4SentLen == u4ProgLen)
 			rInfo.ucOp = PKT_OFLD_OP_ENABLE;
 
-		DBGLOG(REQ, INFO, "Set APF size(%d, %d) frag(%d, %d).\n",
+		DBGLOG(REQ, TRACE, "Set APF size(%d, %d) frag(%d, %d).\n",
 				u4ProgLen, u4SentLen,
 				ucFragNum, ucFragSeq);
 
@@ -2655,8 +2653,6 @@ int mtk_cfg80211_vendor_read_packet_filter(struct wiphy *wiphy,
 
 	ASSERT(wiphy);
 	ASSERT(wdev);
-
-	DBGLOG(REQ, INFO, "apf: mtk_cfg80211_vendor_read_packet_filter\n");
 
 	prGlueInfo = wlanGetGlueInfo();
 	if (!prGlueInfo) {
@@ -2712,7 +2708,7 @@ int mtk_cfg80211_vendor_read_packet_filter(struct wiphy *wiphy,
 					rInfo.u4BufLen);
 
 		u4RecvLen = u4BufLen;
-		DBGLOG(REQ, INFO, "Get APF size(%d, %d) frag(%d, %d).\n",
+		DBGLOG(REQ, TRACE, "Get APF size(%d, %d) frag(%d, %d).\n",
 					u4ProgLen, u4RecvLen,
 					ucFragNum, ucCurrSeq);
 		rInfo.ucFragSeq++;
