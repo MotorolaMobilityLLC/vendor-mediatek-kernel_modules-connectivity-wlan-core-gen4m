@@ -2003,7 +2003,9 @@ void p2pFuncDfsSwitchCh(IN struct ADAPTER *prAdapter,
 	 */
 	prBssInfo->fgIsOpChangeRxNss = TRUE;
 
-	if (rlmUpdateParamsForAP(prAdapter, prBssInfo, FALSE) == FALSE)
+	if (fgIsPureAp)
+		bssUpdateBeaconContent(prAdapter, prBssInfo->ucBssIndex);
+	else if (rlmUpdateParamsForAP(prAdapter, prBssInfo, FALSE) == FALSE)
 		bssUpdateBeaconContent(prAdapter, prBssInfo->ucBssIndex);
 
 	prBssInfo->fgIsOpChangeRxNss = FALSE;
