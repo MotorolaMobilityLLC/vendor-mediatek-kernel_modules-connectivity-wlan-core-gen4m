@@ -356,6 +356,9 @@ void aaaFsmRunEventRxAuth(IN struct ADAPTER *prAdapter,
 					if (prBssInfo->u4RsnSelectedAKMSuite ==
 						RSN_AKM_SUITE_SAE)
 						break;
+					if (prBssInfo->u4RsnSelectedAKMSuite ==
+						RSN_AKM_SUITE_OWE)
+						break;
 
 					/* AP PMF, if PMF connection,
 					 * ignore Rx auth
@@ -495,6 +498,15 @@ bow_proc:
 				FALSE,
 				(uint8_t)prBssInfo->u4PrivateData);
 			DBGLOG(AAA, INFO, "Forward RxAuth\n");
+			return;
+		} else if (prBssInfo->u4RsnSelectedAKMSuite ==
+			RSN_AKM_SUITE_OWE) {
+			kalP2PIndicateRxMgmtFrame(prAdapter,
+				prAdapter->prGlueInfo,
+				prSwRfb,
+				FALSE,
+				(uint8_t)prBssInfo->u4PrivateData);
+			DBGLOG(AAA, INFO, "[OWE] Forward RxAuth\n");
 			return;
 		}
 
@@ -886,7 +898,16 @@ uint32_t aaaFsmRunEventRxAssoc(IN struct ADAPTER *prAdapter,
 
 		/* NOTE: Ignore the return status for AAA */
 		/* 4 <4.2> Reply  Assoc Resp */
-		assocSendReAssocRespFrame(prAdapter, prStaRec);
+		if (prBssInfo->u4RsnSelectedAKMSuite ==
+			RSN_AKM_SUITE_OWE) {
+			kalP2PIndicateRxMgmtFrame(prAdapter,
+				prAdapter->prGlueInfo,
+				prSwRfb,
+				FALSE,
+				(uint8_t)prBssInfo->u4PrivateData);
+			DBGLOG(AAA, INFO, "[OWE] Forward RxAssoc\n");
+		} else
+			assocSendReAssocRespFrame(prAdapter, prStaRec);
 
 #if CFG_SUPPORT_802_11W
 		/* AP PMF */

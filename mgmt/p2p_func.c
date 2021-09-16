@@ -3275,6 +3275,10 @@ p2pFuncValidateAuth(IN struct ADAPTER *prAdapter,
 			P2P_AUTH_POLICY_RESET)
 			DBGLOG(P2P, INFO, "Fall through PMF check\n");
 		else if (fgPmfConn &&
+			(prP2pBssInfo->u4RsnSelectedAKMSuite ==
+			RSN_AKM_SUITE_OWE))
+			DBGLOG(P2P, INFO, "[OWE] Fall through PMF check\n");
+		else if (fgPmfConn &&
 			((prP2pBssInfo->u4RsnSelectedAKMSuite !=
 			RSN_AKM_SUITE_SAE) ||
 			(prAdapter->rWifiVar.fgSapAuthPolicy ==
@@ -4115,6 +4119,11 @@ p2pFuncParseBeaconContent(IN struct ADAPTER *prAdapter,
 						break;
 					} else if (rRsnIe.au4AuthKeyMgtSuite[i]
 					== RSN_AKM_SUITE_SAE)
+						prP2pBssInfo
+						->u4RsnSelectedAKMSuite
+						= rRsnIe.au4AuthKeyMgtSuite[i];
+					else if (rRsnIe.au4AuthKeyMgtSuite[i]
+					== RSN_AKM_SUITE_OWE)
 						prP2pBssInfo
 						->u4RsnSelectedAKMSuite
 						= rRsnIe.au4AuthKeyMgtSuite[i];
