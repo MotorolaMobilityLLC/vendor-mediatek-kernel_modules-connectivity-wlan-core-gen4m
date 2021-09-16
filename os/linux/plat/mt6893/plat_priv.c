@@ -33,8 +33,9 @@
 
 #define MAX_CPU_FREQ (3 * 1024 * 1024) /* in kHZ */
 #define MAX_CLUSTER_NUM  3
+#define CPU_ALL_CORE (0xff)
 #define CPU_BIG_CORE (0xf0)
-#define CPU_SMALL_CORE (0xff - CPU_BIG_CORE)
+#define CPU_LITTLE_CORE (CPU_ALL_CORE - CPU_BIG_CORE)
 
 #define CONNSYS_VERSION_ID  0x20010101
 
@@ -217,7 +218,7 @@ int32_t kalBoostCpu(IN struct ADAPTER *prAdapter,
 
 	if (fgRequested == ENUM_CPU_BOOST_STATUS_INIT) {
 		/* initially enable rps working at small cores */
-		kalSetRpsMap(prGlueInfo, CPU_SMALL_CORE);
+		kalSetRpsMap(prGlueInfo, CPU_LITTLE_CORE);
 		fgRequested = ENUM_CPU_BOOST_STATUS_STOP;
 	}
 
@@ -243,7 +244,7 @@ int32_t kalBoostCpu(IN struct ADAPTER *prAdapter,
 			kalSetTaskUtilMinPct(prGlueInfo->u4TxThreadPid, 0);
 			kalSetTaskUtilMinPct(prGlueInfo->u4RxThreadPid, 0);
 			kalSetTaskUtilMinPct(prGlueInfo->u4HifThreadPid, 0);
-			kalSetRpsMap(prGlueInfo, CPU_SMALL_CORE);
+			kalSetRpsMap(prGlueInfo, CPU_LITTLE_CORE);
 			kalSetCpuFreq(i4Freq);
 			kalSetDramBoost(prAdapter, FALSE);
 		}
