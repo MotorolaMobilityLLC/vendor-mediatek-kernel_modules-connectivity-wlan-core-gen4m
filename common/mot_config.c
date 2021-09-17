@@ -12,7 +12,8 @@ typedef struct moto_product {
 static moto_product products_list[] = {
 		{"ellis",    "NCA", "wifi", "txpowerctrl"},
 		{"ellis",    "CA",  "wifi_EPA", "txpowerctrl_EPA"},
-
+		{"tonga",    "NA",  "wifi", "txpowerctrl_EPA"},
+		{"tonga",    "NA_CARRIERS",  "wifi", "txpowerctrl"},
 
 		{{0},        {0},   {0},	{0}},
 };
@@ -26,11 +27,11 @@ void read_cmdline(char* value, char* root_cmdline)
 	if (rootfsmtd_ptr) {
 		memcpy(format, root_cmdline, strlen(root_cmdline));
 		strcat(format, "%s");
-		DBGLOG(RLM, ERROR, "[MOTO]format:%s\n", format);
+		DBGLOG(RLM, INFO, "[MOTO]format:%s\n", format);
 
 		sscanf(rootfsmtd_ptr, format, value);
 
-		DBGLOG(RLM, ERROR, "[MOTO]read_cmdline:%s%s\n", root_cmdline, value);
+		DBGLOG(RLM, INFO, "[MOTO]read_cmdline:%s%s\n", root_cmdline, value);
 	}
 
 }
@@ -43,7 +44,7 @@ void get_moto_config_file_name(char* name, WIFI_CFG_ENUM index)
 	int num = 0;
 	int i = 0;
 
-	DBGLOG(RLM, ERROR, "[MOTO]get_moto_config_file_name.\n");
+	DBGLOG(RLM, INFO, "[MOTO]get_moto_config_file_name.\n");
 
 	read_cmdline(device, "androidboot.device=");
 	read_cmdline(radio, "androidboot.radio=");
@@ -60,7 +61,7 @@ void get_moto_config_file_name(char* name, WIFI_CFG_ENUM index)
                 else {
                     snprintf(name, ARRAY_VALUE_MAX, "%s.cfg", (products_list + i)->txpowerctrl_name);
                 }
-                DBGLOG(RLM, ERROR, "[MOTO]Use moto config file name: %s\n", name);
+                DBGLOG(RLM, INFO, "[MOTO]Use moto config file name: %s\n", name);
                 return;
             }
         }
