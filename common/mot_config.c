@@ -17,6 +17,9 @@ static moto_product products_list[] = {
 		{"saipan",   "all", "wifi",     "txpowerctrl"},
 		{"tesla",    "NA", "wifi",     "txpowerctrl_na"},
 		{"tesla",    "all", "wifi",     "txpowerctrl"},
+		{"tonga",    "NA",  "wifi", "txpowerctrl_EPA"},
+		{"tonga",    "NA_CARRIERS",  "wifi", "txpowerctrl"},
+
 		{{0},        {0},   {0},	{0}},
 };
 
@@ -112,7 +115,7 @@ void get_moto_config_file_name(char* name, WIFI_CFG_ENUM index)
                 else {
                     snprintf(name, ARRAY_VALUE_MAX, "%s.cfg", (products_list + i)->txpowerctrl_name);
                 }
-                DBGLOG(RLM, ERROR, "[MOTO]Use moto config file name: %s\n", name);
+                DBGLOG(RLM, INFO, "[MOTO]Use moto config file name: %s\n", name);
                 return;
             }
         }
