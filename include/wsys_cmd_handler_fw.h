@@ -217,6 +217,7 @@ enum ENUM_CMD_ID {
 	CMD_ID_SET_DBDC_PARMS,              /* 0x28 (Set) */
 	CMD_ID_SET_FILTER_COEFFICIENT,      /* 0x29 (Set) */
 
+	CMD_ID_SET_ACL_POLICY       = 0x2A, /* 0x2A (Set) */
 	/* SLT commands */
 	CMD_ID_RANDOM_RX_RESET_EN   = 0x2C, /* 0x2C (Set ) */
 	CMD_ID_RANDOM_RX_RESET_DE   = 0x2D, /* 0x2D (Set ) */
@@ -320,6 +321,11 @@ enum ENUM_CMD_ID {
 #endif /* CFG_SUPPORT_ICS */
 	CMD_ID_WFC_KEEP_ALIVE = 0xA0,       /* 0xA0 (Set) */
 	CMD_ID_RSSI_MONITOR = 0xA1,         /* 0xA1 (Set) */
+#if (CFG_SUPPORT_PKT_OFLD == 1)
+	CMD_ID_PKT_OFLD = 0xA2,	            /* 0xA2 (Set) */
+#endif /* CFG_SUPPORT_PKT_OFLD */
+
+
 	CMD_ID_CAL_BACKUP_IN_HOST_V2 = 0xAE,    /* 0xAE (Set / Query) */
 
 	CMD_ID_MQM_UPDATE_MU_EDCA_PARMS = 0xB0,   /* 0xB0 (Set) */
@@ -334,14 +340,15 @@ enum ENUM_CMD_ID {
 	CMD_ID_DUMP_MEM,                    /* 0xc6 (Query) */
 	CMD_ID_RESOURCE_CONFIG,             /* 0xc7 (Set / Query) */
 	CMD_ID_ACCESS_RX_STAT,              /* 0xc8 (Query) */
+	CMD_ID_LIST_MODE,                   /* 0xc9 (Set / Query) */
 
 	CMD_ID_CHIP_CONFIG          = 0xCA, /* 0xca (Set / Query) */
-	CMD_ID_STATS_LOG            = 0xCB,
 
 	CMD_ID_WTBL_INFO        = 0xCD, /* 0xcd (Query) */
 	CMD_ID_MIB_INFO     = 0xCE, /* 0xce (Query) */
 
 	CMD_ID_SET_TXBF_BACKOFF = 0xD1,
+	CMD_ID_FAST_PATH = 0xD5,
 
 	CMD_ID_SET_RDD_CH           = 0xE1,
 
@@ -454,6 +461,7 @@ enum ENUM_EVENT_ID {
 	/* 0x44 (Query - CMD_ID_CHIP_CONFIG) */
 	EVENT_ID_ACCESS_RX_STAT = 0x45,
 	/* 0x45 (Query - CMD_ID_ACCESS_RX_STAT) */
+	EVENT_ID_LIST_MODE = 0x48,
 
 	EVENT_ID_RDD_SEND_PULSE = 0x50,
 	EVENT_ID_PFMU_TAG_READ = 0x51,
@@ -505,9 +513,16 @@ enum ENUM_EVENT_ID {
 	EVENT_ID_UPDATE_COEX_STATUS = 0x91,
 
 	EVENT_ID_RSSI_MONITOR = 0xA1,       /* Event ID for Rssi monitoring */
+#if (CFG_SUPPORT_PKT_OFLD == 1)
+	EVENT_ID_PKT_OFLD = 0xA2,
+#endif /* CFG_SUPPORT_PKT_OFLD */
 	EVENT_ID_CAL_BACKUP_IN_HOST_V2 = 0xAE,
 	/* 0xAE (Query - CMD_ID_CAL_BACKUP) */
 	EVENT_ID_CAL_ALL_DONE = 0xAF,   /* 0xAF (FW Cal All Done Event) */
+
+#if CFG_SUPPORT_BAR_DELAY_INDICATION
+	EVENT_ID_RXM_DELAY_BAR = 0xB5,
+#endif /* CFG_SUPPORT_BAR_DELAY_INDICATION */
 
 	EVENT_ID_TPUT_INFO = 0xCB,
 	EVENT_ID_WTBL_INFO = 0xCD,              /* 0xCD (Query) */
@@ -516,6 +531,9 @@ enum ENUM_EVENT_ID {
 #if CFG_SUPPORT_NAN
 	EVENT_ID_NAN_EXT_EVENT = 0xEB,
 #endif
+
+	EVENT_ID_FAST_PATH = 0xD5,
+
 	EVENT_ID_NIC_CAPABILITY_V2 = 0xEC,
 	/* 0xEC (Query - CMD_ID_GET_NIC_CAPABILITY_V2) */
 	EVENT_ID_LAYER_0_EXT_MAGIC_NUM  = 0xED,
@@ -834,10 +852,7 @@ struct CMD_SET_BSS_INFO {
 	uint16_t u2HeBasicMcsSet;
 	uint8_t  ucMaxBSSIDIndicator;
 	uint8_t  ucMBSSIDIndex;
-	uint8_t  ucHeChannelWidth; /* for 6g band */
-	uint8_t  ucHeChannelFrequencyS1; /* for 6g band */
-	uint8_t  ucHeChannelFrequencyS2; /* for 6g band */
-	uint8_t  aucPadding[9];
+	uint8_t  aucPadding[12];
 };
 
 struct CMD_HTVHT_BA_SIZE {
@@ -1378,6 +1393,29 @@ struct EVENT_ADD_KEY_DONE_INFO {
 	uint8_t      ucReserved;
 	uint8_t      aucStaAddr[6];
 };
+
+#if CFG_SUPPORT_BAR_DELAY_INDICATION
+/*
+ * CFG_NUM_OF_RX_BA_AGREEMENTS = 80
+ * cannot use CFG_NUM_OF_RX_BA_AGREEMENTS directly,
+ * because we must ensure event structure no change
+ */
+#define BAR_DELAY_INDICATION_BA_MAX 80
+struct EVENT_STORED_BA_REQUEST {
+	uint16_t u2SSN;
+	uint8_t ucTid;
+	uint8_t ucStaRecIdx;
+	uint8_t aucPadding[4];
+};
+
+struct EVENT_BAR_DELAY {
+	uint8_t ucEvtVer;
+	uint8_t ucBaNum;
+	uint8_t aucPadding[2];
+	struct EVENT_STORED_BA_REQUEST
+		rBAR[BAR_DELAY_INDICATION_BA_MAX];
+};
+#endif /* CFG_SUPPORT_BAR_DELAY_INDICATION */
 
 struct LINK_QUALITY {
 	int8_t       cRssi; /* AIS Network. */
@@ -2077,6 +2115,29 @@ struct CMD_SET_FORCE_RTS {
 	uint8_t aucReserved[2];
 };
 
+struct CMD_FAST_PATH {
+	/* DWORD_0 - Common Part */
+	uint8_t  ucCmdVer;
+	uint8_t  aucPadding0[1];
+	uint16_t u2CmdLen;
+
+	/* DWORD_1 - afterwards */
+	uint8_t  aucOwnMac[6]; /* Own Mac address*/
+	uint16_t u2RandomNum; /* Random number genetate by Driver*/
+	uint32_t u4Keybitmap[4]; /* Keybitmap send from AP */
+};
+
+struct EVENT_FAST_PATH {
+	/* DWORD_0 - Common Part */
+	uint8_t  ucEvtVer;
+	uint8_t  aucPadding0[1];
+	uint16_t u2EvtLen;
+
+	/* DWORD_1 - afterwards */
+	uint16_t u2Mic; /* message integrity check */
+	uint8_t  ucKeynum; /* To tell AP side about STA use which key */
+	uint8_t  ucKeyBitmapMatchStatus; /* Tell if Keybitmap match */
+};
 #endif /* _WSYS_CMD_HANDLER_FW_H */
 
 

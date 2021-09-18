@@ -104,11 +104,13 @@ endif
 ifneq ($(filter SOC2_1X1,$(MTK_COMBO_CHIP)),)
 ccflags-y:=$(filter-out -USOC2_1X1,$(ccflags-y))
 ccflags-y += -DSOC2_1X1
+ccflags-y += -DCONFIG_MTK_WIFI_VHT80
 endif
 
 ifneq ($(filter SOC2_2X2,$(MTK_COMBO_CHIP)),)
 ccflags-y:=$(filter-out -USOC2_2X2,$(ccflags-y))
 ccflags-y += -DSOC2_2X2
+ccflags-y += -DCONFIG_MTK_WIFI_VHT80
 endif
 
 ifneq ($(findstring MT7915,$(MTK_COMBO_CHIP)),)
@@ -138,6 +140,7 @@ CFG_WIFI_WORKAROUND_HWITS00012836_WTBL_SEARCH_FAIL=1
 CFG_WIFI_WORKAROUND_HWITS00010371_PMF_CIPHER_MISMATCH=1
 ccflags-y += -DCFG_POWER_ON_DOWNLOAD_EMI_ROM_PATCH=1
 ccflags-y += -DCFG_ROM_PATCH_NO_SEM_CTRL=1
+ccflags-y += -DCONFIG_MTK_WIFI_HE80
 endif
 
 ifneq ($(findstring MT7961,$(MTK_COMBO_CHIP)),)
@@ -173,6 +176,7 @@ CONFIG_MTK_WIFI_CONNAC2X_2x2=y
 CONFIG_MTK_WIFI_DOWNLOAD_DYN_MEMORY_MAP=y
 ccflags-y += -DCFG_POWER_ON_DOWNLOAD_EMI_ROM_PATCH=1
 ccflags-y += -DCFG_ROM_PATCH_NO_SEM_CTRL=1
+ccflags-y += -DCONFIG_MTK_WIFI_HE80
 endif
 
 ifneq ($(findstring 7_0,$(MTK_COMBO_CHIP)),)
@@ -188,8 +192,12 @@ CONFIG_MTK_WIFI_CONNINFRA_SUPPORT=y
 CONFIG_MTK_WIFI_CONNAC2X_2x2=y
 CONFIG_MTK_WIFI_DOWNLOAD_DYN_MEMORY_MAP=y
 CONFIG_MTK_WIFI_POWER_THROTTLING=y
+CONFIG_MTK_WIFI_PKT_OFLD_SUPPORT=y
+CONFIG_MTK_WIFI_APF_SUPPORT=y
+
 ccflags-y += -DCFG_POWER_ON_DOWNLOAD_EMI_ROM_PATCH=1
 ccflags-y += -DCFG_ROM_PATCH_NO_SEM_CTRL=1
+ccflags-y += -DCONFIG_MTK_WIFI_HE160
 endif
 
 ifeq ($(CONFIG_MTK_WIFI_CONNINFRA_SUPPORT), y)
@@ -524,6 +532,17 @@ obj-m += $(MODULE_NAME).o
 ccflags-y += -DCONFIG_WLAN_DRV_BUILD_IN=0
 endif
 
+ifeq ($(CONFIG_MTK_WIFI_PKT_OFLD_SUPPORT), y)
+ccflags-y += -DCFG_SUPPORT_PKT_OFLD=1
+ifeq ($(CONFIG_MTK_WIFI_APF_SUPPORT), y)
+ccflags-y += -DCFG_SUPPORT_APF=1
+else
+ccflags-y += -DCFG_SUPPORT_APF=0
+endif
+else
+ccflags-y += -DCFG_SUPPORT_PKT_OFLD=0
+endif
+
 # ---------------------------------------------------
 # Directory List
 # ---------------------------------------------------
@@ -633,6 +652,7 @@ MGMT_OBJS := 	$(MGMT_DIR)ais_fsm.o \
 		$(MGMT_DIR)wmm.o \
 		$(MGMT_DIR)mddp.o \
 		$(MGMT_DIR)thrm.o \
+		$(MGMT_DIR)mscs.o \
 
 # ---------------------------------------------------
 # Chips Objects List

@@ -604,6 +604,7 @@ p2pRoleStatePrepare_To_DFS_CAC_STATE(IN struct ADAPTER *prAdapter,
 	enum ENUM_CHNL_EXT eSCOBackup;
 	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo =
 		(struct P2P_ROLE_FSM_INFO *) NULL;
+	uint8_t ucRfBw;
 
 	do {
 
@@ -641,22 +642,33 @@ p2pRoleStatePrepare_To_DFS_CAC_STATE(IN struct ADAPTER *prAdapter,
 				prBssInfo->ucBssIndex);
 		prChnlReqInfo->eChannelWidth = prBssInfo->ucVhtChannelWidth;
 
-		if (prChnlReqInfo->eChannelWidth
-			== VHT_OP_CHANNEL_WIDTH_80P80) {
-			/* TODO: BW80+80 support */
-			log_dbg(RLM, WARN, "BW80+80 not support. Fallback  to VHT_OP_CHANNEL_WIDTH_20_40\n");
+		/* Decide RF BW by own OP BW */
+		ucRfBw = cnmGetDbdcBwCapability(prAdapter,
+			prBssInfo->ucBssIndex);
+
+		if (p2pFuncIsDualAPMode(prAdapter) &&
+			(ucRfBw >= MAX_BW_160MHZ))
+			ucRfBw = MAX_BW_80MHZ;
+
+		/* Revise to VHT OP BW */
+		ucRfBw = rlmGetVhtOpBwByBssOpBw(ucRfBw);
+		prChnlReqInfo->eChannelWidth =
+			(enum ENUM_CHANNEL_WIDTH) ucRfBw;
+
+		/* TODO: BW80+80 support */
+		prChnlReqInfo->ucCenterFreqS1 = nicGetS1(
+			prBssInfo->eBand,
+			prBssInfo->ucPrimaryChannel,
+			prChnlReqInfo->eChannelWidth);
+		prChnlReqInfo->ucCenterFreqS2 = 0;
+
+		/* If the S1 is invalid, force to change bandwidth */
+		if (prChnlReqInfo->ucCenterFreqS1 == 0)
 			prChnlReqInfo->eChannelWidth =
 				VHT_OP_CHANNEL_WIDTH_20_40;
-			prChnlReqInfo->ucCenterFreqS1 = 0;
-			prChnlReqInfo->ucCenterFreqS2 = 0;
-		} else {
-			prChnlReqInfo->ucCenterFreqS1 =
-				rlmGetVhtS1ForAP(prAdapter, prBssInfo);
-			prChnlReqInfo->ucCenterFreqS2 = 0;
-		}
 
 		DBGLOG(P2P, TRACE,
-			"p2pRoleStatePrepare_To_REQING_CHANNEL_STATE\n");
+			"p2pRoleStatePrepare_To_DFS_CAC_STATE\n");
 
 		/* Reset */
 		prBssInfo->ucPrimaryChannel = ucChannelBackup;

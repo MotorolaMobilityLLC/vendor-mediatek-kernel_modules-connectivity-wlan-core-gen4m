@@ -3376,15 +3376,6 @@ kalIoctlByBssIdx(IN struct GLUE_INFO *prGlueInfo,
 
 	KAL_REC_TIME_START();
 
-	if (kalIsResetting())
-		return WLAN_STATUS_SUCCESS;
-
-	ASSERT(prGlueInfo);
-	ASSERT(prGlueInfo->prAdapter);
-
-	if (wlanIsChipAssert(prGlueInfo->prAdapter))
-		return WLAN_STATUS_SUCCESS;
-
 	/* GLUE_SPIN_LOCK_DECLARATION(); */
 
 	/* <1> Check if driver is halt */
@@ -3400,9 +3391,25 @@ kalIoctlByBssIdx(IN struct GLUE_INFO *prGlueInfo,
 		return WLAN_STATUS_ADAPTER_NOT_READY;
 	}
 
+	ASSERT(prGlueInfo);
+
 	if (down_interruptible(&prGlueInfo->ioctl_sem)) {
 		up(&g_halt_sem);
 		return WLAN_STATUS_FAILURE;
+	}
+
+	if (kalIsResetting()) {
+		up(&prGlueInfo->ioctl_sem);
+		up(&g_halt_sem);
+		return WLAN_STATUS_SUCCESS;
+	}
+
+	ASSERT(prGlueInfo->prAdapter);
+
+	if (wlanIsChipAssert(prGlueInfo->prAdapter)) {
+		up(&prGlueInfo->ioctl_sem);
+		up(&g_halt_sem);
+		return WLAN_STATUS_SUCCESS;
 	}
 
 	if (prGlueInfo->main_thread == NULL) {
@@ -4755,7 +4762,7 @@ int main_thread(void *data)
 			(unsigned int)time.tv_sec)) {
 			uint32_t rStatus = WLAN_STATUS_SUCCESS;
 
-			rStatus = kalSyncTimeToFW(prGlueInfo->prAdapter,
+			rStatus = kalSyncTimeToFW(prGlueInfo->prAdapter, FALSE,
 				(unsigned int)time.tv_sec,
 				(unsigned int)NSEC_TO_USEC(time.tv_nsec));
 			if (rStatus == WLAN_STATUS_FAILURE)
@@ -4790,6 +4797,16 @@ int main_thread(void *data)
 #endif
 
 #if (CFG_SUPPORT_POWER_THROTTLING == 1)
+		if (test_and_clear_bit(GLUE_FLAG_CNS_PWR_LEVEL_BIT,
+			&prGlueInfo->ulFlag)) {
+			connsysPowerLevelNotify(prGlueInfo->prAdapter);
+		}
+
+		if (test_and_clear_bit(GLUE_FLAG_CNS_PWR_TEMP_BIT,
+			&prGlueInfo->ulFlag)) {
+			connsysPowerTempNotify(prGlueInfo->prAdapter);
+		}
+
 		kalDumpPwrLevel(prGlueInfo->prAdapter);
 #endif
 
@@ -8071,6 +8088,7 @@ void kalPerMonHandler(IN struct ADAPTER *prAdapter,
 #if CFG_SUPPORT_PERF_IND || CFG_SUPPORT_DATA_STALL
 	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
 #endif
+	uint32_t u4BoostCpuTh = prAdapter->rWifiVar.u4BoostCpuTh;
 
 	if (prGlueInfo->ulFlag & GLUE_FLAG_HALT)
 		return;
@@ -8091,6 +8109,39 @@ void kalPerMonHandler(IN struct ADAPTER *prAdapter,
 		prDevHandler = wlanGetNetDev(prGlueInfo, i);
 		if (IS_BSS_ALIVE(prAdapter, prBssInfo) && prDevHandler) {
 			keep_alive |= netif_carrier_ok(prDevHandler);
+
+			/* Adjust CPU threshold when:
+				* CPU threshould has not been set in wifi.cfg
+				* Current CPU boost threshold > 100M
+				* Coex TDD & BSS in 2.4G
+				* The specific BSS Tput > 100M
+				* the PerfMonLv3 still stands for 100M
+		    */
+			DBGLOG(SW4, TRACE,
+			"Coex_i[%d]ad[%d]k[%d]m[%d]eb[%d]tp[%llu]tpi[%llu]tpth[%d]th[%d]\n",
+			i, prWifiVar->fgIsBoostCpuThAdjustable, keep_alive,
+			prBssInfo->eCoexMode, prBssInfo->eBand,
+			prWifiVar->u4PerfMonTpTh[u4BoostCpuTh],
+			((unsigned long long)(prPerMonitor->ulTxTp[i] +
+					prPerMonitor->ulRxTp[i]) >> 17),
+			prWifiVar->u4PerfMonTpTh[2],
+			PERF_MON_COEX_TP_THRESHOLD);
+
+			if ((prWifiVar->fgIsBoostCpuThAdjustable == TRUE) &&
+				keep_alive &&
+				(prBssInfo->eBand == BAND_2G4) &&
+				(prBssInfo->eCoexMode == COEX_TDD_MODE) &&
+				(prWifiVar->u4PerfMonTpTh[u4BoostCpuTh] >
+					PERF_MON_COEX_TP_THRESHOLD) &&
+				(((unsigned long long)(prPerMonitor->ulTxTp[i] +
+					prPerMonitor->ulRxTp[i]) >> 17) >
+					PERF_MON_COEX_TP_THRESHOLD) &&
+				(prWifiVar->u4PerfMonTpTh[2] ==
+					PERF_MON_COEX_TP_THRESHOLD)) {
+				/*  3, stands for 100Mbps */
+				DBGLOG(SW4, INFO, "[Coex]CPUTh[3]\n");
+				u4BoostCpuTh = 3;
+			}
 		}
 	}
 
@@ -8127,7 +8178,7 @@ void kalPerMonHandler(IN struct ADAPTER *prAdapter,
 			(unsigned long) ((prPerMonitor->ulThroughput >> 10)
 					& BITS(0, 9)),
 			prPerMonitor->u4TarPerfLevel,
-			prAdapter->rWifiVar.u4BoostCpuTh,
+			u4BoostCpuTh,
 			prPerMonitor->ulPerfMonFlag,
 			GLUE_GET_REF_CNT(prGlueInfo->i4TxPendingFrameNum),
 			GLUE_GET_REF_CNT(prPerMonitor->u4UsedCnt));
@@ -8138,8 +8189,7 @@ void kalPerMonHandler(IN struct ADAPTER *prAdapter,
 				prPerMonitor->u4TarPerfLevel);
 		} else if ((prPerMonitor->u4TarPerfLevel !=
 		     prPerMonitor->u4CurrPerfLevel) &&
-		    (prAdapter->rWifiVar.u4BoostCpuTh <
-		     PERF_MON_TP_MAX_THRESHOLD)) {
+		    (u4BoostCpuTh < PERF_MON_TP_MAX_THRESHOLD)) {
 
 			DBGLOG(SW4, INFO,
 			"PerfMon total:%3lu.%03lu mbps lv:%u th:%u fg:0x%lx\n",
@@ -8147,11 +8197,11 @@ void kalPerMonHandler(IN struct ADAPTER *prAdapter,
 			(unsigned long) ((prPerMonitor->ulThroughput >> 10)
 					& BITS(0, 9)),
 			prPerMonitor->u4TarPerfLevel,
-			prAdapter->rWifiVar.u4BoostCpuTh,
+			u4BoostCpuTh,
 			prPerMonitor->ulPerfMonFlag);
 
 			kalBoostCpu(prAdapter, prPerMonitor->u4TarPerfLevel,
-				    prAdapter->rWifiVar.u4BoostCpuTh);
+				    u4BoostCpuTh);
 		}
 
 		prPerMonitor->u4UpdatePeriod =
@@ -9296,8 +9346,7 @@ uint32_t kalSetSuspendFlagToEMI(IN struct ADAPTER
 	return WLAN_STATUS_SUCCESS;
 }
 
-#if (CFG_SUPPORT_CONNINFRA == 1)
-void setupTimeParameter(
+void setTimeParameter(
 		struct PARAM_CUSTOM_CHIP_CONFIG_STRUCT *prChipConfigInfo,
 		int chipConfigInfoSize, unsigned int second,
 		unsigned int usecond)
@@ -9321,7 +9370,7 @@ void setupTimeParameter(
 }
 
 uint32_t
-kalSyncTimeToFW(IN struct ADAPTER *prAdapter,
+kalSyncTimeToFW(IN struct ADAPTER *prAdapter, IN u_int8_t fgInitCmd,
 		unsigned int second, unsigned int usecond)
 {
 	uint32_t u4SetBufferLen = 0;
@@ -9333,7 +9382,7 @@ kalSyncTimeToFW(IN struct ADAPTER *prAdapter,
 
 	ASSERT(prAdapter);
 
-	setupTimeParameter(&rChipConfigInfo, sizeof(rChipConfigInfo),
+	setTimeParameter(&rChipConfigInfo, sizeof(rChipConfigInfo),
 			second, usecond);
 
 	DBGLOG(INIT, INFO,
@@ -9356,7 +9405,8 @@ kalSyncTimeToFW(IN struct ADAPTER *prAdapter,
 	kalMemCopy(rCmdChipConfig.aucCmd, rChipConfigInfo.aucCmd,
 		   rCmdChipConfig.u2MsgSize);
 
-	rStatus = wlanSendSetQueryCmd(prAdapter,
+	if (!fgInitCmd)
+		rStatus = wlanSendSetQueryCmd(prAdapter,
 					  CMD_ID_CHIP_CONFIG,
 					  TRUE,
 					  FALSE,
@@ -9366,6 +9416,13 @@ kalSyncTimeToFW(IN struct ADAPTER *prAdapter,
 					  sizeof(struct CMD_CHIP_CONFIG),
 					  (uint8_t *) &rCmdChipConfig,
 					  &rChipConfigInfo, u4SetBufferLen);
+	else
+		rStatus = wlanSendInitCmd(prAdapter,
+			  INIT_CMD_ID_LOG_TIME_SYNC,
+			  TRUE,
+			  TRUE,
+			  sizeof(struct CMD_CHIP_CONFIG),
+			  (uint8_t *) &rCmdChipConfig);
 
 	return rStatus;
 }
@@ -9392,7 +9449,7 @@ kalSyncTimeToFWByIoctl(void)
 		second = (unsigned int)time.tv_sec;
 		usecond = (unsigned int)NSEC_TO_USEC(time.tv_nsec);
 
-		setupTimeParameter(&rChipConfigInfo, sizeof(rChipConfigInfo),
+		setTimeParameter(&rChipConfigInfo, sizeof(rChipConfigInfo),
 				second, usecond);
 
 		DBGLOG(INIT, INFO,
@@ -9408,7 +9465,6 @@ kalSyncTimeToFWByIoctl(void)
 	}
 #endif
 }
-#endif /* (CFG_SUPPORT_CONNINFRA == 1) */
 
 void kalUpdateCompHdlrRec(IN struct ADAPTER *prAdapter,
 				IN PFN_OID_HANDLER_FUNC pfnOidHandler,
@@ -9545,13 +9601,10 @@ void kalPwrLevelHdlrRegister(IN struct ADAPTER *prAdapter,
 	prRegisterHdlr->prPwrLevelHandler(prAdapter, prAdapter->u4PwrLevel);
 }
 
-void
-connsysPowerLevelNotify(IN struct ADAPTER *prAdapter,
-				IN struct MSG_HDR *prMsgHdr)
+void connsysPowerLevelNotify(IN struct ADAPTER *prAdapter)
 {
 	struct CMD_HEADER rCmdV1Header;
 	struct CMD_FORMAT_V1 rCmd_v1;
-	struct MSG_PWR_LEVEL_NOTIFY *prPwrLevelMsg;
 	struct LINK *prPwrLevelHandlerList;
 	struct PWR_LEVEL_HANDLER_ELEMENT  *prPwrLevelHdlr = NULL;
 	uint8_t aucCmdValue[MAX_CMD_VALUE_MAX_LENGTH] = { 0 };
@@ -9560,15 +9613,9 @@ connsysPowerLevelNotify(IN struct ADAPTER *prAdapter,
 	int ret = -1;
 
 	prPwrLevelHandlerList = &(prAdapter->rPwrLevelHandlerList);
+	u4PwrLevel = prAdapter->u4PwrLevel;
 
-	/* Extract information of Message and then free memory. */
-	prPwrLevelMsg = (struct MSG_PWR_LEVEL_NOTIFY *)prMsgHdr;
-	u4PwrLevel = prPwrLevelMsg->level;
-	prAdapter->u4PwrLevel = u4PwrLevel;
-
-	kalMemFree(prMsgHdr, VIR_MEM_TYPE, sizeof(struct MSG_PWR_LEVEL_NOTIFY));
-
-	DBGLOG(INIT, TRACE, "Notify each handler new power level: %d\n",
+	DBGLOG(INIT, INFO, "Notify each handler new power level: %d\n",
 								u4PwrLevel);
 
 	/* Notify registered handler. */
@@ -9605,7 +9652,7 @@ connsysPowerLevelNotify(IN struct ADAPTER *prAdapter,
 	rCmdV1Header.cmdBufferLen += sizeof(struct CMD_FORMAT_V1);
 	rCmdV1Header.itemNum = 1;
 
-	DBGLOG(INIT, TRACE, "Notify FW new power level: %d\n", u4PwrLevel);
+	DBGLOG(INIT, INFO, "Notify FW new power level: %d\n", u4PwrLevel);
 
 	rStatus = wlanSendSetQueryCmd(
 			prAdapter, /* prAdapter */
@@ -9622,21 +9669,14 @@ connsysPowerLevelNotify(IN struct ADAPTER *prAdapter,
 		);
 }
 
-void
-connsysPowerTempNotify(IN struct ADAPTER *prAdapter,
-				IN struct MSG_HDR *prMsgHdr)
+void connsysPowerTempNotify(IN struct ADAPTER *prAdapter)
 {
-	struct MSG_PWR_TEMP_NOTIFY *prPwrTempMsg;
 	uint32_t u4MaxTemp, u4RecoveryTemp;
 
-	/* Extract information of Message and then free memory. */
-	prPwrTempMsg = (struct MSG_PWR_TEMP_NOTIFY *)prMsgHdr;
-	u4MaxTemp = prPwrTempMsg->u4MaxTemp;
-	u4RecoveryTemp = prPwrTempMsg->u4RecoveryTemp;
+	u4MaxTemp = (prAdapter->rTempInfo).max_temp;
+	u4RecoveryTemp = (prAdapter->rTempInfo).recovery_temp;
 
-	kalMemFree(prMsgHdr, VIR_MEM_TYPE, sizeof(struct MSG_PWR_LEVEL_NOTIFY));
-
-	DBGLOG(INIT, TRACE, "Notify FW new temp info: %d, %d\n",
+	DBGLOG(INIT, INFO, "Notify FW new temp info: %d, %d\n",
 						u4MaxTemp, u4RecoveryTemp);
 
 	thrmProtTempConfig(prAdapter, u4MaxTemp, u4RecoveryTemp);

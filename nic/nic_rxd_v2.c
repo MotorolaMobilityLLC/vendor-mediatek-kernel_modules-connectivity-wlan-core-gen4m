@@ -471,6 +471,10 @@ u_int8_t nic_rxd_v2_sanity_check(
 		DBGLOG(RSN, INFO, "De-amsdu fail, drop:%d\n", fgDrop);
 #endif /* CFG_SUPPORT_FRAG_AGG_ATTACK_DETECTION */
 
+	/* check CLS for MD */
+	if (HAL_MAC_CONNAC2X_RX_STATUS_GET_DW5_CLS_BITMAP_OFFSET(prRxStatus))
+		DBGLOG(RX, WARN, "RX DW5[0x%08x]\n", prRxStatus->u4DW5);
+
 	return fgDrop;
 }
 

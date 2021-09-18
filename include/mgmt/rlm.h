@@ -531,9 +531,10 @@ void rlmTransferHe6gOpInfor(IN uint8_t ucChannelNum,
 	OUT uint8_t *pucCenterFreqS2,
 	OUT enum ENUM_CHNL_EXT *peSco);
 
-void rlmModifyHE6GBwPara(uint8_t *pucHe6gChannelFrequencyS1,
-			uint8_t *pucHe6gChannelFrequencyS2,
-			uint8_t *pucHe6gChannelWidth);
+void rlmModifyHE6GBwPara(uint8_t ucHe6gChannelWidth,
+	uint8_t ucHe6gPrimaryChannel,
+	uint8_t *pucHe6gChannelFrequencyS1,
+	uint8_t *pucHe6gChannelFrequencyS2);
 #endif
 
 
@@ -545,9 +546,10 @@ void rlmReviseMaxBw(
 	uint8_t *pucS1,
 	uint8_t *pucPrimaryCh);
 
-uint8_t rlmReviseChFreqS1(IN struct BSS_INFO *prBssInfo,
-	IN uint8_t ucPrimaryCh, IN uint8_t ucOriginS1,
-	IN uint8_t ucMaxBandwidth);
+enum ENUM_CHNL_EXT rlmReviseSco(
+	IN enum ENUM_CHANNEL_WIDTH eChannelWidth,
+	IN uint8_t ucPrimaryCh,
+	IN uint8_t ucS1);
 
 void rlmRevisePreferBandwidthNss(struct ADAPTER *prAdapter,
 					uint8_t ucBssIndex,

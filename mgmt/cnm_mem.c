@@ -647,6 +647,10 @@ struct STA_RECORD *cnmStaRecAlloc(struct ADAPTER *prAdapter,
 			for (k = 0; k < STA_WAIT_QUEUE_NUM; k++)
 				LINK_INITIALIZE(&prStaRec->arStaWaitQueue[k]);
 
+			LINK_INITIALIZE(&prStaRec->rMscsMonitorList);
+			LINK_INITIALIZE(&prStaRec->rMscsTcpMonitorList);
+			DBGLOG(MEM, WARN, "LINK_INITIALIZE list: %p\n",
+						&prStaRec->rMscsMonitorList);
 #if CFG_ENABLE_PER_STA_STATISTICS && CFG_ENABLE_PKT_LIFETIME_PROFILE
 			prStaRec->u4TotalTxPktsNumber = 0;
 			prStaRec->u4TotalTxPktsTime = 0;

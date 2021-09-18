@@ -232,9 +232,6 @@ void aaaFsmRunEventTxReqTimeOut(IN struct ADAPTER *prAdapter,
 		"EVENT-TIMER: TX REQ TIMEOUT, Current Time = %d\n",
 		kalGetTimeTick());
 
-	/* Trigger statistics log if Auth/Assoc Tx timeout */
-	wlanTriggerStatsLog(prAdapter, prAdapter->rWifiVar.u4StatsLogDuration);
-
 	switch (prStaRec->eAuthAssocState) {
 	case AAA_STATE_SEND_AUTH2:
 		DBGLOG(AAA, ERROR,
@@ -358,6 +355,9 @@ void aaaFsmRunEventRxAuth(IN struct ADAPTER *prAdapter,
 #if CFG_SUPPORT_802_11W
 					if (prBssInfo->u4RsnSelectedAKMSuite ==
 						RSN_AKM_SUITE_SAE)
+						break;
+					if (prBssInfo->u4RsnSelectedAKMSuite ==
+						RSN_AKM_SUITE_OWE)
 						break;
 
 					/* AP PMF, if PMF connection,
@@ -498,6 +498,15 @@ bow_proc:
 				FALSE,
 				(uint8_t)prBssInfo->u4PrivateData);
 			DBGLOG(AAA, INFO, "Forward RxAuth\n");
+			return;
+		} else if (prBssInfo->u4RsnSelectedAKMSuite ==
+			RSN_AKM_SUITE_OWE) {
+			kalP2PIndicateRxMgmtFrame(prAdapter,
+				prAdapter->prGlueInfo,
+				prSwRfb,
+				FALSE,
+				(uint8_t)prBssInfo->u4PrivateData);
+			DBGLOG(AAA, INFO, "[OWE] Forward RxAuth\n");
 			return;
 		}
 
@@ -889,7 +898,16 @@ uint32_t aaaFsmRunEventRxAssoc(IN struct ADAPTER *prAdapter,
 
 		/* NOTE: Ignore the return status for AAA */
 		/* 4 <4.2> Reply  Assoc Resp */
-		assocSendReAssocRespFrame(prAdapter, prStaRec);
+		if (prBssInfo->u4RsnSelectedAKMSuite ==
+			RSN_AKM_SUITE_OWE) {
+			kalP2PIndicateRxMgmtFrame(prAdapter,
+				prAdapter->prGlueInfo,
+				prSwRfb,
+				FALSE,
+				(uint8_t)prBssInfo->u4PrivateData);
+			DBGLOG(AAA, INFO, "[OWE] Forward RxAssoc\n");
+		} else
+			assocSendReAssocRespFrame(prAdapter, prStaRec);
 
 #if CFG_SUPPORT_802_11W
 		/* AP PMF */
@@ -946,11 +964,6 @@ aaaFsmRunEventTxDone(IN struct ADAPTER *prAdapter,
 
 	DBGLOG(AAA, TRACE, "TxDone ucStaState:%d, eAuthAssocState:%d\n",
 		prStaRec->ucStaState, prStaRec->eAuthAssocState);
-
-	/* Trigger statistics log if Auth/Assoc Tx failed */
-	if (rTxDoneStatus != TX_RESULT_SUCCESS)
-		wlanTriggerStatsLog(prAdapter,
-			prAdapter->rWifiVar.u4StatsLogDuration);
 
 	switch (prStaRec->eAuthAssocState) {
 	case AAA_STATE_SEND_AUTH2:

@@ -77,6 +77,7 @@
 #include "nic_init_cmd_event.h"
 #include "fw_dl.h"
 #include "queue.h"
+#include "cmd_buf.h"
 /*******************************************************************************
  *                              C O N S T A N T S
  *******************************************************************************
@@ -586,6 +587,26 @@ enum {
 	DEBUG_MSG_TYPE_END
 };
 
+
+#if (CFG_SUPPORT_PKT_OFLD == 1)
+
+#define PKT_OFLD_BUF_SIZE 1488
+enum {
+	PKT_OFLD_TYPE_APF = 0,
+	PKT_OFLD_TYPE_IGMP,
+	PKT_OFLD_TYPE_MDNS,
+	PKT_OFLD_TYPE_CUSTOM,
+	PKT_OFLD_TYPE_END
+};
+
+enum {
+	PKT_OFLD_OP_DISABLE = 0,
+	PKT_OFLD_OP_ENABLE,
+	PKT_OFLD_OP_INSTALL,
+	PKT_OFLD_OP_QUERY,
+	PKT_OFLD_OP_END
+};
+#endif /* CFG_SUPPORT_PKT_OFLD */
 #define CHIP_CONFIG_RESP_SIZE 320
 enum {
 	CHIP_CONFIG_TYPE_WO_RESPONSE = 0x00,
@@ -1736,9 +1757,6 @@ void wlanUpdateTxStatistics(IN struct ADAPTER *prAdapter,
 void wlanUpdateRxStatistics(IN struct ADAPTER *prAdapter,
 			    IN struct SW_RFB *prSwRfb);
 
-uint32_t wlanTriggerStatsLog(IN struct ADAPTER *prAdapter,
-			     IN uint32_t u4DurationInMs);
-
 uint32_t wlanPktTxDone(IN struct ADAPTER *prAdapter,
 		       IN struct MSDU_INFO *prMsduInfo,
 		       IN enum ENUM_TX_RESULT_CODE rTxDoneStatus);
@@ -1856,6 +1874,10 @@ int wlanQueryRateByTable(uint32_t txmode, uint32_t rate,
 void wlanCustomMonitorFunction(struct ADAPTER *prAdapter,
 	struct WIFI_LINK_QUALITY_INFO *prLinkQualityInfo, uint8_t ucBssIdx);
 #endif /* CFG_SUPPORT_DATA_STALL */
+
+uint8_t wlanCheckExtCapBit(struct STA_RECORD *prStaRec, uint8_t *pucIE,
+	uint8_t ucTargetBit);
+
 uint32_t wlanSetForceRTS(IN struct ADAPTER *prAdapter,
 	IN u_int8_t fgEnForceRTS);
 
@@ -1907,3 +1929,11 @@ int wlanTpeProcess(struct GLUE_INFO *prGlueInfo,
 			struct sk_buff *prSkb,
 			struct net_device *prDev);
 #endif /* CFG_SUPPORT_TPENHANCE_MODE */
+
+void wlanSetConnsysFwLog(IN struct ADAPTER *prAdapter);
+uint32_t wlanSendFwLogControlCmd(IN struct ADAPTER *prAdapter,
+				uint8_t ucCID,
+				PFN_CMD_DONE_HANDLER pfCmdDoneHandler,
+				PFN_CMD_TIMEOUT_HANDLER pfCmdTimeoutHandler,
+				uint32_t u4SetQueryInfoLen,
+				int8_t *pucInfoBuffer);

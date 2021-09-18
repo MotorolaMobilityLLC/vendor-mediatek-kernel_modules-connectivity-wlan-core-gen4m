@@ -116,6 +116,7 @@
 
 #if (CFG_SUPPORT_DFS_MASTER == 1)
 #define P2P_AP_CAC_WEATHER_CHNL_HOLD_TIME_MS (600*1000)
+#define P2P_AP_CAC_MIN_CAC_TIME_MS (60*1000)
 #endif
 
 #define P2P_DEAUTH_TIMEOUT_TIME_MS 1000
@@ -287,6 +288,7 @@ struct P2P_ACS_REQ_INFO {
 	uint32_t u4LteSafeChnMask_5G_1;
 	uint32_t u4LteSafeChnMask_5G_2;
 	uint32_t u4LteSafeChnMask_6G;
+	u_int8_t fgIsAis;
 
 	/* output only */
 	uint8_t ucBand;

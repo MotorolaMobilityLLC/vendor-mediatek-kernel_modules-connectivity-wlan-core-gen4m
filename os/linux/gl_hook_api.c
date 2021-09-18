@@ -4685,6 +4685,13 @@ uint32_t ServiceWlanOid(void *winfos,
 
 		return WLAN_STATUS_SUCCESS;
 
+	case OP_WLAN_OID_LIST_MODE:
+		pfnOidHandler = wlanoidListMode; /* List mode OID control */
+		fgRead = TRUE;
+		fgWaitResp = TRUE;
+		fgCmd = TRUE;
+		break;
+
 	case OP_WLAN_OID_NUM:
 	default:
 		return WLAN_STATUS_FAILURE;
@@ -4705,6 +4712,24 @@ uint32_t ServiceWlanOid(void *winfos,
 		/* 264 = 66 items * 4 bytes */
 		kalMemCopy(&prStatsData->mac_rx_fcs_err_cnt,
 		&(g_HqaRxStat.MAC_FCS_Err), 264);
+	}
+
+	if ((rsp_data) &&
+		(oidType == OP_WLAN_OID_LIST_MODE)) {
+		DBGLOG(RFTEST, WARN, "OP_WLAN_OID_LIST_MODE event\n");
+		DBGLOG_MEM8(RFTEST,
+					WARN,
+					&g_HqaListModeStatus,
+					sizeof(g_HqaListModeStatus));
+
+		kalMemCopy(rsp_data,
+					&g_HqaListModeStatus,
+					sizeof(g_HqaListModeStatus));
+		*u4BufLen = paramLen;
+
+		/* Prevent list mode command takes more than 2 seconds */
+		if (i4Status == WLAN_STATUS_FAILURE)
+			i4Status = WLAN_STATUS_SUCCESS;
 	}
 
 	return i4Status;

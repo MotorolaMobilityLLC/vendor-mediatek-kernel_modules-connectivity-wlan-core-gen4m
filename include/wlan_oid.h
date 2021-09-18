@@ -315,11 +315,6 @@
 #define LOW_LATENCY_MODE_CMD_V2          0x2
 #endif /* CFG_SUPPORT_LOWLATENCY_MODE */
 
-#ifdef CONFIG_MTK_CONNSYS_DEDICATED_LOG_PATH
-#define FW_LOG_CMD_ON_OFF        0
-#define FW_LOG_CMD_SET_LEVEL     1
-#endif
-
 /*******************************************************************************
  *                             D A T A   T Y P E S
  *******************************************************************************
@@ -1635,7 +1630,9 @@ enum ENUM_PARAM_CUSTOM_ACL_POLICY {
 	PARAM_CUSTOM_ACL_POLICY_DISABLE,
 	PARAM_CUSTOM_ACL_POLICY_ACCEPT,
 	PARAM_CUSTOM_ACL_POLICY_DENY,
-	PARAM_CUSTOM_ACL_POLICY_NUM
+	PARAM_CUSTOM_ACL_POLICY_CLEAR,
+	PARAM_CUSTOM_ACL_POLICY_ADD,
+	PARAM_CUSTOM_ACL_POLICY_REMOVE,
 };
 
 struct PARAM_CUSTOM_ACL_ENTRY {
@@ -2697,13 +2694,6 @@ enum ENUM_WIFI_LOG_LEVEL_SUPPORT_T {
 	ENUM_WIFI_LOG_LEVEL_SUPPORT_NUM
 };
 
-#ifdef CONFIG_MTK_CONNSYS_DEDICATED_LOG_PATH
-struct CMD_CONNSYS_FW_LOG {
-	int32_t fgCmd;
-	int32_t fgValue;
-};
-#endif
-
 #ifdef CFG_SUPPORT_LINK_QUALITY_MONITOR
 struct PARAM_GET_LINK_QUALITY_INFO {
 	uint8_t ucBssIdx;
@@ -2730,6 +2720,32 @@ enum ENUM_AX_BLACKLIST_TYPE {
 	BLACKLIST_DIS_HE_HTC = 1,
 	BLACKLIST_NUM
 };
+
+#if (CFG_SUPPORT_PKT_OFLD == 1)
+struct PARAM_OFLD_INFO {
+	/*restrict buffer size to 1500 bytes*/
+	/*because FW WFDMA MAX buf size is 1600 Byte*/
+	uint8_t ucType;
+	uint8_t ucOp;
+	uint8_t ucFragNum;
+	uint8_t ucFragSeq;
+	uint32_t u4TotalLen;
+	uint32_t u4BufLen;
+	uint8_t aucBuf[PKT_OFLD_BUF_SIZE];
+};
+#endif /* CFG_SUPPORT_PKT_OFLD */
+
+#if CFG_SUPPORT_LOWLATENCY_MODE
+struct PARAM_LOWLATENCY_DATA {
+	uint32_t u4Events;
+	uint32_t u4UdpDelayBound;
+	uint32_t u4TcpDelayBound;
+	uint32_t u4DataPhyRate;
+	uint32_t u4UdpPriority;
+	uint32_t u4TcpPriority;
+	uint32_t u4SupportProtocol;
+};
+#endif /* CFG_SUPPORT_LOWLATENCY_MODE */
 
 /*******************************************************************************
  *                            P U B L I C   D A T A
@@ -4343,4 +4359,23 @@ wlanoidThermalProtectAct(IN struct ADAPTER *prAdapter,
 			IN uint32_t u4SetBufferLen,
 			OUT uint32_t *pu4SetInfoLen);
 #endif
+
+#if (CFG_SUPPORT_PKT_OFLD == 1)
+uint32_t
+wlanoidSetOffloadInfo(IN struct ADAPTER *prAdapter,
+			   IN void *pvSetBuffer, IN uint32_t u4SetBufferLen,
+			   OUT uint32_t *pu4SetInfoLen);
+
+uint32_t
+wlanoidQueryOffloadInfo(IN struct ADAPTER *prAdapter,
+			   IN void *pvSetBuffer, IN uint32_t u4SetBufferLen,
+			   OUT uint32_t *pu4SetInfoLen);
+
+#endif /* CFG_SUPPORT_PKT_OFLD */
+
+uint32_t
+wlanoidListMode(IN struct ADAPTER *prAdapter,
+			 IN void *pvQueryBuffer,
+			 IN uint32_t u4QueryBufferLen,
+			 OUT uint32_t *pu4QueryInfoLen);
 #endif /* _WLAN_OID_H */

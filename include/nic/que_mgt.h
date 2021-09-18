@@ -1027,6 +1027,10 @@ void qmProcessPktWithReordering(IN struct ADAPTER
 void qmProcessBarFrame(IN struct ADAPTER *prAdapter,
 	IN struct SW_RFB *prSwRfb, OUT struct QUE *prReturnedQue);
 
+void qmHandleRxReorderWinShift(IN struct ADAPTER *prAdapter,
+	IN uint8_t ucStaRecIdx, uint8_t ucTid, uint32_t u4SSN,
+	OUT struct QUE *prReturnedQue);
+
 void qmInsertReorderPkt(IN struct ADAPTER *prAdapter,
 			IN struct SW_RFB *prSwRfb,
 			IN struct RX_BA_ENTRY *prReorderQueParm,

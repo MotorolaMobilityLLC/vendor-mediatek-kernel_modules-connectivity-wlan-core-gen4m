@@ -248,6 +248,26 @@ nanGetSpecificBssInfo(IN struct ADAPTER *prAdapter,
 	return prAdapter->rWifiVar.aprNanSpecificBssInfo[eIndex];
 }
 
+uint8_t
+nanGetBssIdxbyBand(IN struct ADAPTER *prAdapter,
+		      enum ENUM_BAND eBand) {
+	uint8_t ucIdx = 0;
+	struct _NAN_SPECIFIC_BSS_INFO_T *prNANSpecInfo;
+	struct BSS_INFO *prBssInfo;
+
+	for (ucIdx = 0; ucIdx < NAN_BSS_INDEX_NUM; ucIdx++) {
+		prNANSpecInfo = nanGetSpecificBssInfo(prAdapter, ucIdx);
+		prBssInfo = GET_BSS_INFO_BY_INDEX(
+			prAdapter,
+			prNANSpecInfo->ucBssIndex);
+
+		if (prBssInfo->eBand == eBand)
+			break;
+	}
+
+	return prNANSpecInfo->ucBssIndex;
+}
+
 void
 nanDevCommonSetCb(IN struct ADAPTER *prAdapter, IN struct CMD_INFO *prCmdInfo,
 		  IN uint8_t *pucEventBuf) {

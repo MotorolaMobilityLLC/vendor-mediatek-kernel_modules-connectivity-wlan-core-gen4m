@@ -213,6 +213,20 @@ const struct nla_policy nla_get_acs_policy[
 #endif
 };
 
+const struct nla_policy nla_get_apf_policy[
+		APF_ATTRIBUTE_MAX + 1] = {
+	[APF_ATTRIBUTE_VERSION] = {.type = NLA_U32},
+	[APF_ATTRIBUTE_MAX_LEN] = {.type = NLA_U32},
+#if KERNEL_VERSION(5, 9, 0) <= CFG80211_VERSION_CODE
+	[APF_ATTRIBUTE_PROGRAM] = NLA_POLICY_MIN_LEN(0),
+#elif KERNEL_VERSION(5, 4, 0) <= CFG80211_VERSION_CODE
+	[APF_ATTRIBUTE_PROGRAM] = {.type = NLA_MIN_LEN, .len = 0},
+#else
+	[APF_ATTRIBUTE_PROGRAM] = {.type = NLA_UNSPEC},
+#endif
+	[APF_ATTRIBUTE_PROGRAM_LEN] = {.type = NLA_U32},
+};
+
 /*******************************************************************************
  *                           P R I V A T E   D A T A
  *******************************************************************************
@@ -1009,7 +1023,7 @@ struct STA_RECORD *find_peer_starec(struct ADAPTER *prAdapter,
 
 	for (ucIdx = 0; ucIdx < CFG_STA_REC_NUM; ucIdx++) {
 		prStaRec = cnmGetStaRecByIndex(prAdapter, ucIdx);
-		if (prStaRec->ucWlanIndex == pucIndex)
+		if (prStaRec && prStaRec->ucWlanIndex == pucIndex)
 			break;
 	}
 
@@ -1181,7 +1195,8 @@ uint32_t fill_peer_info(uint8_t *dst, struct PEER_INFO_RATE_STAT *src,
 
 				if (sta_rec)
 					update_peer_rxmpdu(sta_rec, dst_rate,
-							ofdm_idx, cck_idx);
+						ofdm_idx >= 0 ? ofdm_idx : 0,
+						cck_idx >= 0 ? cck_idx : 0);
 				if (prAdapter->rWifiVar.fgLinkStatsDump)
 					dumpLinkStatsRate(dst_rate, j);
 				dst_rate++;
@@ -1299,7 +1314,7 @@ uint32_t fill_radio(uint8_t *dst, struct WIFI_RADIO_CHANNEL_STAT *src,
 int mtk_cfg80211_vendor_llstats_get_info(struct wiphy *wiphy,
 		struct wireless_dev *wdev, const void *data, int data_len)
 {
-	int32_t rStatus = WLAN_STATUS_CAPS_UNSUPPORTED;
+	int32_t rStatus = -EOPNOTSUPP;
 #if CFG_SUPPORT_LLS
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct ADAPTER *prAdapter;
@@ -2492,6 +2507,226 @@ nla_put_failure:
 	return -EINVAL;
 }
 
+int mtk_cfg80211_vendor_get_apf_capabilities(struct wiphy *wiphy,
+	struct wireless_dev *wdev, const void *data, int data_len)
+{
+	uint32_t aucCapablilities[2] = {APF_VERSION, APF_MAX_PROGRAM_LEN};
+	struct sk_buff *skb;
+#if (CFG_SUPPORT_APF == 1)
+	struct GLUE_INFO *prGlueInfo = NULL;
+#endif
+
+	ASSERT(wiphy);
+	ASSERT(wdev);
+
+	skb = cfg80211_vendor_cmd_alloc_reply_skb(wiphy,
+		sizeof(aucCapablilities));
+
+	if (!skb) {
+		DBGLOG(REQ, ERROR, "Allocate skb failed\n");
+		return -ENOMEM;
+	}
+
+#if (CFG_SUPPORT_APF == 1)
+	prGlueInfo = wlanGetGlueInfo();
+	if (prGlueInfo->prAdapter->rWifiVar.ucApfEnable == 0)
+		kalMemZero(&aucCapablilities[0], sizeof(aucCapablilities));
+#endif
+
+	if (unlikely(nla_put(skb, APF_ATTRIBUTE_VERSION,
+				sizeof(uint32_t), &aucCapablilities[0]) < 0))
+		goto nla_put_failure;
+	if (unlikely(nla_put(skb, APF_ATTRIBUTE_MAX_LEN,
+				sizeof(uint32_t), &aucCapablilities[1]) < 0))
+		goto nla_put_failure;
+
+	DBGLOG(REQ, INFO, "apf capability - ver:%d, max program len: %d\n",
+		APF_VERSION, APF_MAX_PROGRAM_LEN);
+
+	return cfg80211_vendor_cmd_reply(skb);
+
+nla_put_failure:
+	kfree_skb(skb);
+	return -EFAULT;
+}
+
+#if (CFG_SUPPORT_APF == 1)
+int mtk_cfg80211_vendor_set_packet_filter(struct wiphy *wiphy,
+	struct wireless_dev *wdev, const void *data, int data_len)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	uint32_t rStatus = WLAN_STATUS_SUCCESS;
+	struct nlattr *attr;
+	struct PARAM_OFLD_INFO rInfo;
+
+	uint8_t *prProg = NULL;
+	uint32_t u4ProgLen = 0, u4SentLen = 0, u4RemainLen = 0;
+	uint32_t u4SetInfoLen = 0;
+
+	uint8_t ucFragNum = 0, ucFragSeq = 0;
+
+	ASSERT(wiphy);
+	ASSERT(wdev);
+
+	if (data == NULL || data_len <= 0) {
+		DBGLOG(REQ, ERROR, "data error(len=%d)\n", data_len);
+		return -EINVAL;
+	}
+
+	prGlueInfo = wlanGetGlueInfo();
+	if (!prGlueInfo) {
+		DBGLOG(REQ, ERROR, "Invalid glue info\n");
+		return -EFAULT;
+	}
+
+	attr = (struct nlattr *)data;
+
+	if (nla_type(attr) != APF_ATTRIBUTE_PROGRAM) {
+		DBGLOG(REQ, ERROR, "Get program fail. (%u)\n",
+			nla_type(attr));
+		return -EINVAL;
+	}
+
+	u4ProgLen = nla_len(attr);
+	ucFragNum = u4ProgLen / PKT_OFLD_BUF_SIZE;
+	if (u4ProgLen > PKT_OFLD_BUF_SIZE && u4ProgLen % PKT_OFLD_BUF_SIZE > 0)
+		ucFragNum++;
+
+	prProg = (uint8_t *) nla_data(attr);
+
+	kalMemZero(&rInfo, sizeof(struct PARAM_OFLD_INFO));
+
+	/* Init OFLD description */
+	rInfo.ucType = PKT_OFLD_TYPE_APF;
+	rInfo.ucOp = PKT_OFLD_OP_INSTALL;
+	rInfo.u4TotalLen = u4ProgLen;
+	rInfo.ucFragNum = ucFragNum;
+
+	u4RemainLen = u4ProgLen;
+	do {
+		rInfo.ucFragSeq = ucFragSeq;
+		rInfo.u4BufLen = u4RemainLen > PKT_OFLD_BUF_SIZE ?
+					PKT_OFLD_BUF_SIZE : u4RemainLen;
+		kalMemCopy(rInfo.aucBuf, (prProg + u4SentLen),
+				rInfo.u4BufLen);
+
+		u4SentLen += rInfo.u4BufLen;
+
+		if (u4SentLen == u4ProgLen)
+			rInfo.ucOp = PKT_OFLD_OP_ENABLE;
+
+		DBGLOG(REQ, TRACE, "Set APF size(%d, %d) frag(%d, %d).\n",
+				u4ProgLen, u4SentLen,
+				ucFragNum, ucFragSeq);
+
+		rStatus = kalIoctl(prGlueInfo,
+				wlanoidSetOffloadInfo, &rInfo,
+				sizeof(struct PARAM_OFLD_INFO),
+				FALSE, FALSE, TRUE, &u4SetInfoLen);
+
+		if (rStatus != WLAN_STATUS_SUCCESS) {
+			DBGLOG(REQ, ERROR, "APF install fail:0x%x\n", rStatus);
+			return -EFAULT;
+		}
+		ucFragSeq++;
+		u4RemainLen -= u4SentLen;
+	} while (ucFragSeq < ucFragNum);
+
+	return 0;
+}
+
+
+int mtk_cfg80211_vendor_read_packet_filter(struct wiphy *wiphy,
+	struct wireless_dev *wdev, const void *data, int data_len)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	uint32_t rStatus = WLAN_STATUS_SUCCESS;
+
+	struct PARAM_OFLD_INFO rInfo;
+	uint32_t u4SetInfoLen = 0;
+	struct sk_buff *skb = NULL;
+
+	uint8_t prProg[APF_MAX_PROGRAM_LEN];
+	uint32_t u4ProgLen = 0, u4RecvLen = 0, u4BufLen = 0;
+	uint8_t ucFragNum = 0, ucCurrSeq = 0;
+
+
+	ASSERT(wiphy);
+	ASSERT(wdev);
+
+	prGlueInfo = wlanGetGlueInfo();
+	if (!prGlueInfo) {
+		DBGLOG(REQ, ERROR, "Invalid glue info\n");
+		return -EFAULT;
+	}
+
+	kalMemZero(&rInfo, sizeof(struct PARAM_OFLD_INFO));
+
+	/* Init OFLD description */
+	rInfo.ucType = PKT_OFLD_TYPE_APF;
+	rInfo.ucOp = PKT_OFLD_OP_QUERY;
+	rInfo.u4BufLen = PKT_OFLD_BUF_SIZE;
+
+	do {
+		rStatus = kalIoctl(prGlueInfo,
+				wlanoidQueryOffloadInfo, &rInfo,
+				sizeof(struct PARAM_OFLD_INFO),
+				TRUE, TRUE, TRUE, &u4SetInfoLen);
+
+		if (rStatus != WLAN_STATUS_SUCCESS) {
+			DBGLOG(REQ, ERROR, "APF query fail:0x%x\n", rStatus);
+			goto query_apf_failure;
+		}
+
+		if (ucCurrSeq == 0) {
+			ucFragNum = rInfo.ucFragNum;
+			u4ProgLen = rInfo.u4TotalLen;
+			if (u4ProgLen == 0) {
+				DBGLOG(REQ, ERROR,
+					"Failed to query APF from firmware.\n");
+				return -EFAULT;
+			}
+			skb = cfg80211_vendor_cmd_alloc_reply_skb(wiphy,
+				u4ProgLen);
+			if (!skb) {
+				DBGLOG(REQ, ERROR, "Allocate skb failed\n");
+				return -ENOMEM;
+			}
+		} else if (rInfo.ucFragSeq <= ucCurrSeq) {
+			DBGLOG(REQ, ERROR, "Wrong frag seq (%d, %d)\n",
+				ucCurrSeq, rInfo.ucFragSeq);
+			goto query_apf_failure;
+		} else if (u4RecvLen + rInfo.u4BufLen > u4ProgLen) {
+			DBGLOG(REQ, ERROR,
+				"Buffer overflow, got wrong size %d\n",
+				(u4RecvLen + rInfo.u4BufLen));
+			goto query_apf_failure;
+		}
+		ucCurrSeq = rInfo.ucFragSeq;
+		u4BufLen = rInfo.u4BufLen;
+		kalMemCopy((prProg + u4RecvLen), &rInfo.aucBuf[0],
+					rInfo.u4BufLen);
+
+		u4RecvLen = u4BufLen;
+		DBGLOG(REQ, TRACE, "Get APF size(%d, %d) frag(%d, %d).\n",
+					u4ProgLen, u4RecvLen,
+					ucFragNum, ucCurrSeq);
+		rInfo.ucFragSeq++;
+	} while (rInfo.ucFragSeq < ucFragNum);
+
+	if (unlikely(nla_put(skb, APF_ATTRIBUTE_PROGRAM,
+				u4ProgLen, prProg) < 0))
+		goto query_apf_failure;
+
+	return cfg80211_vendor_cmd_reply(skb);
+
+query_apf_failure:
+	if (skb != NULL)
+		kfree_skb(skb);
+	return -EFAULT;
+}
+#endif /* CFG_SUPPORT_APF */
+
 int mtk_cfg80211_vendor_driver_memory_dump(struct wiphy *wiphy,
 	struct wireless_dev *wdev, const void *data, int data_len)
 {
@@ -2657,14 +2892,13 @@ int mtk_cfg80211_vendor_get_trx_stats(struct wiphy *wiphy,
 	struct GLUE_INFO *prGlueInfo;
 	struct sk_buff *skb;
 	int32_t i4Status = -EFAULT;
+	uint32_t u4TxTlvSize = statsTxGetTlvStatTotalLen();
+	uint32_t u4RxTlvSize = statsRxGetTlvStatTotalLen();
+	uint32_t u4CgsTlvSize = statsCgsGetTlvStatTotalLen();
+	uint32_t u4MaxTlvSize = max(max(u4TxTlvSize, u4RxTlvSize),
+				     u4CgsTlvSize);
 
-	uint32_t u4TxTlvSize;
-	uint32_t u4RxTlvSize;
-	uint32_t u4CgsTlvSize;
-
-	struct STATS_TRX_TLV_T *aucTxTlvList = NULL;
-	struct STATS_TRX_TLV_T *aucRxTlvList = NULL;
-	struct STATS_TRX_TLV_T *aucCgsTlvList = NULL;
+	struct STATS_TRX_TLV_T *aucTlvList = NULL;
 
 	ASSERT(wiphy && wdev);
 	DBGLOG(REQ, TRACE, "data_len=%d, iftype=%d\n", data_len, wdev->iftype);
@@ -2676,80 +2910,134 @@ int mtk_cfg80211_vendor_get_trx_stats(struct wiphy *wiphy,
 	if (!prGlueInfo->prAdapter)
 		return -EFAULT;
 
-	u4TxTlvSize = statsTxGetTlvStatTotalLen();
-	u4RxTlvSize = statsRxGetTlvStatTotalLen();
-	u4CgsTlvSize = statsCgsGetTlvStatTotalLen();
-
 	skb = cfg80211_vendor_cmd_alloc_reply_skb(wiphy,
 		u4TxTlvSize + u4RxTlvSize + u4CgsTlvSize);
 	if (!skb) {
 		DBGLOG(REQ, ERROR, "Allocate skb failed\n");
 		return -ENOMEM;
 	}
-
-	/* tx tlv */
-	aucTxTlvList = (struct STATS_TRX_TLV_T *) kalMemAlloc(u4TxTlvSize,
+	aucTlvList = (struct STATS_TRX_TLV_T *) kalMemAlloc(u4MaxTlvSize,
 		VIR_MEM_TYPE);
-	if (!aucTxTlvList) {
+	if (!aucTlvList) {
 		DBGLOG(REQ, ERROR,
-			"Can not alloc memory for stats tx info\n");
+			"Can not alloc memory for stats info\n");
 		i4Status = -ENOMEM;
 		goto err_handle_label;
 	}
-	kalMemZero(aucTxTlvList, u4TxTlvSize);
-	statsGetTxInfoHdlr(prGlueInfo, aucTxTlvList);
+	kalMemZero(aucTlvList, u4MaxTlvSize);
+	statsGetTxInfoHdlr(prGlueInfo, aucTlvList);
 	if (unlikely(nla_put(skb, WIFI_ATTRIBUTE_STATS_TX,
-		     u4TxTlvSize, aucTxTlvList) < 0))
+		     u4TxTlvSize, aucTlvList) < 0))
 		goto err_handle_label;
-	kalMemFree(aucTxTlvList, sizeof(u4TxTlvSize), VIR_MEM_TYPE);
 
 	/* rx tlv */
-	aucRxTlvList = (struct STATS_TRX_TLV_T *) kalMemAlloc(u4RxTlvSize,
-		VIR_MEM_TYPE);
-	if (!aucRxTlvList) {
-		DBGLOG(REQ, ERROR,
-			"Can not alloc memory for stats rx info\n");
-		i4Status = -ENOMEM;
-		goto err_handle_label;
-	}
-	kalMemZero(aucRxTlvList, u4RxTlvSize);
-	statsGetRxInfoHdlr(prGlueInfo, aucRxTlvList);
+	kalMemZero(aucTlvList, u4MaxTlvSize);
+	statsGetRxInfoHdlr(prGlueInfo, aucTlvList);
 	if (unlikely(nla_put(skb, WIFI_ATTRIBUTE_STATS_RX,
-			     u4RxTlvSize, aucRxTlvList) < 0))
+			     u4RxTlvSize, aucTlvList) < 0))
 		goto err_handle_label;
-	kalMemFree(aucRxTlvList, sizeof(u4RxTlvSize), VIR_MEM_TYPE);
 
 	/* cgstn tlv */
-	aucCgsTlvList = (struct STATS_TRX_TLV_T *) kalMemAlloc(u4CgsTlvSize,
-		VIR_MEM_TYPE);
-	if (!aucCgsTlvList) {
-		DBGLOG(REQ, ERROR,
-			"Can not alloc memory for stats cgstn info\n");
-		i4Status = -ENOMEM;
-		goto err_handle_label;
-	}
-	kalMemZero(aucCgsTlvList, u4CgsTlvSize);
-	statsGetCgsInfoHdlr(prGlueInfo, aucCgsTlvList);
+	kalMemZero(aucTlvList, u4MaxTlvSize);
+	statsGetCgsInfoHdlr(prGlueInfo, aucTlvList);
 	if (unlikely(nla_put(skb, WIFI_ATTRIBUTE_STATS_CGS,
-			     u4CgsTlvSize, aucCgsTlvList) < 0))
+			     u4CgsTlvSize, aucTlvList) < 0))
 		goto err_handle_label;
-	kalMemFree(aucCgsTlvList, sizeof(u4CgsTlvSize), VIR_MEM_TYPE);
 
+	kalMemFree(aucTlvList, u4MaxTlvSize, VIR_MEM_TYPE);
 	return cfg80211_vendor_cmd_reply(skb);
 
 err_handle_label:
-	if (aucTxTlvList != NULL)
-		kalMemFree(aucTxTlvList, sizeof(u4TxTlvSize), VIR_MEM_TYPE);
-
-	if (aucRxTlvList != NULL)
-		kalMemFree(aucRxTlvList, sizeof(u4RxTlvSize), VIR_MEM_TYPE);
-
-	if (aucCgsTlvList != NULL)
-		kalMemFree(aucCgsTlvList, sizeof(u4CgsTlvSize), VIR_MEM_TYPE);
-
-	if (skb != NULL)
-		kfree_skb(skb);
+	if (aucTlvList != NULL)
+		kalMemFree(aucTlvList, u4MaxTlvSize, VIR_MEM_TYPE);
+	kfree_skb(skb);
 	return i4Status;
 }
 
 #endif /* KERNEL_VERSION(3, 16, 0) <= LINUX_VERSION_CODE */
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief This routine is to handle a reset CMD from FWK.
+ *
+ * \param[in] wiphy wiphy
+ * \param[in] wdev wireless_dev
+ * \param[in] data (not used here)
+ * \param[in] data_len (not used here)
+ *
+ * \retval 0 Success.
+ */
+/*----------------------------------------------------------------------------*/
+int mtk_cfg80211_vendor_trigger_reset(
+	struct wiphy *wiphy, struct wireless_dev *wdev,
+	const void *data, int data_len)
+{
+	struct GLUE_INFO *prGlueInfo = wlanGetGlueInfo();
+
+	if (!prGlueInfo) {
+		DBGLOG(REQ, WARN, "Invalid glue info\n");
+		return -EFAULT;
+	}
+	if (prGlueInfo->u4ReadyFlag == 0) {
+		DBGLOG(REQ, WARN, "driver is not ready\n");
+		return -EFAULT;
+	}
+	DBGLOG(REQ, INFO, "Framework trigger reset\n");
+
+	glSetRstReason(RST_FWK_TRIGGER);
+#if (CFG_SUPPORT_CONNINFRA == 0)
+	GL_RESET_TRIGGER(prGlueInfo->prAdapter, RST_FLAG_CHIP_RESET);
+#else
+	GL_RESET_TRIGGER(prGlueInfo->prAdapter, RST_FLAG_WF_RESET);
+#endif
+
+	return 0;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief This routine is to send FWK a event that the reset happened.
+ *
+ * \param[in] data reset reason, eResetReason.
+ *
+ * \retval 0 Success.
+ */
+/*----------------------------------------------------------------------------*/
+int mtk_cfg80211_vendor_event_reset_triggered(
+	uint32_t data)
+{
+	struct wiphy *wiphy = gprWdev[0]->wiphy;
+	struct wireless_dev *wdev = gprWdev[0];
+	struct sk_buff *skb;
+
+	if (!wiphy || !wdev || !wdev->netdev || !data) {
+		DBGLOG(REQ, ERROR, "%s wrong input parameters\n", __func__);
+		return -EINVAL;
+	}
+
+	DBGLOG(REQ, INFO, "Reset event report through %s. Reason=[%u]\n",
+			wdev->netdev->name, data);
+
+	skb = cfg80211_vendor_event_alloc(wiphy,
+#if KERNEL_VERSION(4, 4, 0) <= CFG80211_VERSION_CODE
+			wdev,
+#endif
+			sizeof(uint32_t),
+			WIFI_EVENT_RESET_TRIGGERED,
+			GFP_KERNEL);
+	if (!skb) {
+		DBGLOG(REQ, ERROR, "%s allocate skb failed\n", __func__);
+		return -ENOMEM;
+	}
+
+	if (unlikely(nla_put_u32(skb, WIFI_ATTRIBUTE_RESET_REASON,
+				data) < 0))
+		goto nla_put_failure;
+
+	cfg80211_vendor_event(skb, GFP_KERNEL);
+	return 0;
+
+nla_put_failure:
+	kfree_skb(skb);
+	return -ENOMEM;
+}

@@ -623,9 +623,9 @@ void cnmTimerDoTimeOutCheck(IN struct ADAPTER *prAdapter)
 					KAL_RELEASE_SPIN_LOCK(prAdapter,
 						SPIN_LOCK_TIMER);
 				#ifdef UT_TEST_MODE
-					if (testTimerTimeout(prAdapter,
-							     pfMgmtTimeOutFunc,
-							     ulTimeoutDataPtr))
+				if (testTimerTimeout(prAdapter,
+						     pfMgmtTimeOutFunc,
+						     ulTimeoutDataPtr))
 				#endif
 				log_dbg(CNM, INFO, "timer timeout, timer %p func %pf\n",
 					prTimer, prTimer->pfMgmtTimeOutFunc);

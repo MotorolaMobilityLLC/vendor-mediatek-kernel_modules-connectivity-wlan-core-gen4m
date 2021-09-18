@@ -567,6 +567,7 @@ struct mt66xx_chip_info mt66xx_chip_info_soc5_0 = {
 	.coexpccifon = wlanConnacPccifon,
 	.coexpccifoff = wlanConnacPccifoff,
 	.get_sw_interrupt_status = soc5_0_get_sw_interrupt_status,
+	.chip_capability = BIT(CHIP_CAPA_FW_LOG_TIME_SYNC),
 #endif
 	.checkbushang = soc5_0_CheckBusHang,
 	.dumpBusHangCr = soc5_0_DumpBusHangCr,
@@ -1060,11 +1061,6 @@ int soc5_0_Trigger_fw_assert(void)
 		/* Case 2: timeout */
 		DBGLOG(INIT, ERROR,
 			"Trigger assert more than 2 seconds, need to trigger rst self\n");
-		g_IsTriggerTimeout = TRUE;
-#if (CFG_ANDORID_CONNINFRA_COREDUMP_SUPPORT == 1)
-		if (!prAdapter->prGlueInfo->u4ReadyFlag)
-			g_IsNeedWaitCoredump = TRUE;
-#endif
 	}
 #if (CFG_SUPPORT_CONNINFRA == 1)
 	kalSetRstEvent();

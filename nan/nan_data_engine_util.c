@@ -3975,6 +3975,7 @@ nanDataEngineEnrollNMIContext(IN struct ADAPTER *prAdapter,
 	uint8_t ucBssIndex;
 	uint8_t *pucLocalNMI;
 	uint8_t *pucPeerNMI;
+	enum ENUM_BAND eBand;
 
 #if !CFG_NAN_PMF_PATCH
 	return WLAN_STATUS_SUCCESS;
@@ -3983,8 +3984,6 @@ nanDataEngineEnrollNMIContext(IN struct ADAPTER *prAdapter,
 	if ((prNDL == NULL) || (prNDP == NULL))
 		return WLAN_STATUS_FAILURE;
 
-	ucBssIndex = nanGetSpecificBssInfo(prAdapter, NAN_BSS_INDEX_BAND0)
-			     ->ucBssIndex;
 	pucLocalNMI = prAdapter->rDataPathInfo.aucLocalNMIAddr;
 	pucPeerNMI = prNDL->aucPeerMacAddr;
 
@@ -4073,6 +4072,9 @@ nanDataEngineEnrollNMIContext(IN struct ADAPTER *prAdapter,
 	}
 	prTargetNdpSA = prNdpCxt->aprEnrollNdp[0];
 	fgSecurityRequired = prTargetNdpSA->fgSecurityRequired;
+
+	eBand = nanSchedGetSchRecBandByMac(prAdapter, pucPeerNMI);
+	ucBssIndex = nanGetBssIdxbyBand(prAdapter, eBand);
 
 	if (nanDataEngineAllocStaRec(prAdapter, prNDL, ucBssIndex, pucPeerNMI,
 				     prNDP->ucRCPI, &prNdpCxt->prNanStaRec) !=
@@ -4315,6 +4317,7 @@ nanDataEngineEnrollNDPContext(IN struct ADAPTER *prAdapter,
 	struct _NAN_DATA_PATH_INFO_T *prDataPathInfo;
 	unsigned char fgSecurityRequired;
 	uint8_t ucBssIndex;
+	enum ENUM_BAND eBand;
 
 	if ((prNDL == NULL) || (prNDP == NULL))
 		return WLAN_STATUS_FAILURE;
@@ -4403,7 +4406,8 @@ nanDataEngineEnrollNDPContext(IN struct ADAPTER *prAdapter,
 	prTargetNdpSA = prNdpCxt->aprEnrollNdp[0];
 	fgSecurityRequired = prTargetNdpSA->fgSecurityRequired;
 
-	ucBssIndex = nanGetSpecificBssInfo(prAdapter, eRole)->ucBssIndex;
+	eBand = nanSchedGetSchRecBandByMac(prAdapter, prNDP->aucPeerNDIAddr);
+	ucBssIndex = nanGetBssIdxbyBand(prAdapter, eBand);
 
 	if (nanDataEngineAllocStaRec(prAdapter, prNDL, ucBssIndex,
 				     prNDP->aucPeerNDIAddr, prNDP->ucRCPI,

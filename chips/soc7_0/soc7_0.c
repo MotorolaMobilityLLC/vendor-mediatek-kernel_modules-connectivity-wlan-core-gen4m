@@ -17,6 +17,7 @@
 #include "coda/soc7_0/conn_host_csr_top.h"
 #include "coda/soc7_0/conn_infra_cfg.h"
 #include "coda/soc7_0/conn_infra_cfg_on.h"
+#include "coda/soc7_0/conn_infra_clkgen_top.h"
 #include "coda/soc7_0/conn_infra_rgu_on.h"
 #include "coda/soc7_0/conn_wt_slp_ctl_reg.h"
 #include "coda/soc7_0/wf_hif_dmashdl_top.h"
@@ -537,6 +538,7 @@ struct mt66xx_chip_info mt66xx_chip_info_soc7_0 = {
 	.coexpccifon = soc7_0_ConnacPccifon,
 	.coexpccifoff = soc7_0_ConnacPccifoff,
 	.get_sw_interrupt_status = soc7_0_get_sw_interrupt_status,
+	.chip_capability = BIT(CHIP_CAPA_FW_LOG_TIME_SYNC),
 #endif
 	.checkbushang = soc7_0_CheckBusHang,
 	.dumpBusHangCr = soc7_0_DumpBusHangCr,
@@ -1046,11 +1048,6 @@ int soc7_0_Trigger_fw_assert(void)
 		/* Case 2: timeout */
 		DBGLOG(INIT, ERROR,
 			"Trigger assert more than 2 seconds, need to trigger rst self\n");
-		g_IsTriggerTimeout = TRUE;
-#if (CFG_ANDORID_CONNINFRA_COREDUMP_SUPPORT == 1)
-		if (!prAdapter->prGlueInfo->u4ReadyFlag)
-			g_IsNeedWaitCoredump = TRUE;
-#endif
 	}
 #if (CFG_SUPPORT_CONNINFRA == 1)
 	kalSetRstEvent();
@@ -1138,6 +1135,20 @@ static int wf_pwr_on_consys_mcu(void)
 	ret = wake_up_conninfra_off();
 	if (ret)
 		return ret;
+
+	/* PTA clock on
+	 * Address: 0x1801_2064、0x1801_2074
+	 * Data: 0x01010101、0x00000101
+	 * Action: write
+	 */
+	value = CONN_INFRA_CLKGEN_TOP_CKGEN_COEX_0_SET_CONN_CO_EXT_PTA_HCLK_CKEN_M0_MASK |
+			CONN_INFRA_CLKGEN_TOP_CKGEN_COEX_0_SET_CONN_CO_EXT_PTA_OSC_CKEN_M0_MASK |
+			CONN_INFRA_CLKGEN_TOP_CKGEN_COEX_0_SET_CONN_CO_EXT_UART_PTA_HCLK_CKEN_M0_MASK |
+			CONN_INFRA_CLKGEN_TOP_CKGEN_COEX_0_SET_CONN_CO_EXT_UART_PTA_OSC_CKEN_M0_MASK;
+	wf_ioremap_write(CONN_INFRA_CLKGEN_TOP_CKGEN_COEX_0_SET_ADDR, value);
+	value = CONN_INFRA_CLKGEN_TOP_CKGEN_COEX_1_SET_CONN_BSI_CNS_HCLK_CKEN_M0_MASK |
+			CONN_INFRA_CLKGEN_TOP_CKGEN_COEX_1_SET_CONN_CO_EXT_FDD_COEX_HCLKCKEN_M0_MASK;
+	wf_ioremap_write(CONN_INFRA_CLKGEN_TOP_CKGEN_COEX_1_SET_ADDR, value);
 
 	/* Assert CONNSYS WM CPU SW reset
 	 * (apply this for default value patching)
@@ -1539,7 +1550,7 @@ static int wf_pwr_off_consys_mcu(void)
 	 * Data: 1'b0
 	 * Action: polling
 	 */
-	wf_ioremap_read(CONN_HOST_CSR_TOP_CONN_INFRA_WAKEPU_TOP_ADDR, &value);
+	wf_ioremap_read(CONN_HOST_CSR_TOP_CONNSYS_PWR_STATES_ADDR, &value);
 	check = 0;
 	polling_count = 0;
 	while ((value & BIT(30)) != 0) {
@@ -1549,7 +1560,7 @@ static int wf_pwr_off_consys_mcu(void)
 			break;
 		}
 		udelay(500);
-		wf_ioremap_read(CONN_HOST_CSR_TOP_CONN_INFRA_WAKEPU_TOP_ADDR,
+		wf_ioremap_read(CONN_HOST_CSR_TOP_CONNSYS_PWR_STATES_ADDR,
 				&value);
 		polling_count++;
 	}
@@ -1718,6 +1729,20 @@ static int wf_pwr_off_consys_mcu(void)
 	wf_ioremap_write(CONN_INFRA_CFG_EMI_CTL_WF_ADDR, value);
 	value &= 0xFFFFFFDF;
 	wf_ioremap_write(CONN_INFRA_CFG_EMI_CTL_WF_ADDR, value);
+
+	/* PTA clock off
+	 * Address: 0x1801_2068、0x1801_2078
+	 * Data: 0x01010101、0x00000101
+	 * Action: write
+	 */
+	value = CONN_INFRA_CLKGEN_TOP_CKGEN_COEX_0_SET_CONN_CO_EXT_PTA_HCLK_CKEN_M0_MASK |
+			CONN_INFRA_CLKGEN_TOP_CKGEN_COEX_0_SET_CONN_CO_EXT_PTA_OSC_CKEN_M0_MASK |
+			CONN_INFRA_CLKGEN_TOP_CKGEN_COEX_0_SET_CONN_CO_EXT_UART_PTA_HCLK_CKEN_M0_MASK |
+			CONN_INFRA_CLKGEN_TOP_CKGEN_COEX_0_SET_CONN_CO_EXT_UART_PTA_OSC_CKEN_M0_MASK;
+	wf_ioremap_write(CONN_INFRA_CLKGEN_TOP_CKGEN_COEX_0_CLR_ADDR, value);
+	value = CONN_INFRA_CLKGEN_TOP_CKGEN_COEX_1_SET_CONN_BSI_CNS_HCLK_CKEN_M0_MASK |
+			CONN_INFRA_CLKGEN_TOP_CKGEN_COEX_1_SET_CONN_CO_EXT_FDD_COEX_HCLKCKEN_M0_MASK;
+	wf_ioremap_write(CONN_INFRA_CLKGEN_TOP_CKGEN_COEX_1_CLR_ADDR, value);
 
 	/* Clear wf_infra_req
 	 * Address: 0x1806_01A4[0]
@@ -2409,10 +2434,17 @@ static void soc7_0_DumpDebugCtrlAoCr(struct ADAPTER *prAdapter)
 static void soc7_0_DumpConnDbgCtrl(struct ADAPTER *prAdapter)
 {
 	uint32_t u4WrVal = 0, u4Val = 0, u4Idx, u4RdAddr, u4WrAddr;
+	uint32_t u4RdValue2 = 0, u4RegVal = 0, u4WrAddr2;
 
 	u4WrAddr = 0x18023628;
 	u4RdAddr = 0x18023608;
 	u4WrVal = 0x00010001;
+	u4WrAddr2 = 0x18023604;
+
+	connac2x_DbgCrRead(prAdapter, u4WrAddr2, &u4RdValue2);
+	u4RegVal = BIT(2) | (u4RdValue2 & BITS(3, 31));
+	connac2x_DbgCrWrite(prAdapter, u4WrAddr2, u4RegVal);
+
 	for (u4Idx = 0; u4Idx < 15; u4Idx++) {
 		connac2x_DbgCrWrite(prAdapter, u4WrAddr, u4WrVal);
 		connac2x_DbgCrRead(prAdapter, u4RdAddr, &u4Val);
@@ -2433,6 +2465,9 @@ static void soc7_0_DumpConnDbgCtrl(struct ADAPTER *prAdapter)
 	DBGLOG(HAL, ERROR,
 	       "\tW 0x%08x=[0x%08x], 0x%08x=[0x%08x]\n",
 	       u4WrAddr, u4WrVal, u4RdAddr, u4Val);
+
+	u4RegVal = (u4RdValue2 & BITS(3, 31));
+	connac2x_DbgCrWrite(prAdapter, u4WrAddr2, u4RegVal);
 }
 
 static void soc7_0_DumpOtherCr(struct ADAPTER *prAdapter)

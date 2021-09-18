@@ -1948,6 +1948,12 @@ rlmDomainIsValidRfSetting(struct ADAPTER *prAdapter,
 		if (fgLowerChannel == FALSE)
 			DBGLOG(RLM, WARN, "Rf20: LowerCh=%d\n", ucLowerChannel);
 
+		/* Check S1, S2 */
+		if (ucChannelS1 != 0 || ucChannelS2 != 0) {
+			fgValidChannel = FALSE;
+			DBGLOG(RLM, WARN, "Rf20: S1=%d, S2=%d\n",
+				ucChannelS1, ucChannelS2);
+		}
 	} else if ((eChannelWidth == CW_80MHZ) ||
 		   (eChannelWidth == CW_160MHZ)) {
 		ucCenterCh = ucChannelS1;
@@ -4057,7 +4063,13 @@ void txPwrParseTagDump(struct TX_PWR_CTRL_ELEMENT *pRecord)
 			DBGLOG(RLM, TRACE, "[%d]",
 				pRecord->aiPwrAnt[i].aiPwrAnt2G4[j]);
 			DBGLOG(RLM, TRACE, "[%d]",
-				pRecord->aiPwrAnt[i].aiPwrAnt5G[j]);
+				pRecord->aiPwrAnt[i].aiPwrAnt5GB1[j]);
+			DBGLOG(RLM, TRACE, "[%d]",
+				pRecord->aiPwrAnt[i].aiPwrAnt5GB2[j]);
+			DBGLOG(RLM, TRACE, "[%d]",
+				pRecord->aiPwrAnt[i].aiPwrAnt5GB3[j]);
+			DBGLOG(RLM, TRACE, "[%d]",
+				pRecord->aiPwrAnt[i].aiPwrAnt5GB4[j]);
 		}
 	}
 }
@@ -4128,8 +4140,20 @@ int32_t txPwrParseTagXXXT(
 			pRecord->aiPwrAnt[eTag].aiPwrAnt2G4[ucAntIdx]
 				= backoff;
 			break;
-		case POWER_ANT_5G_BAND:
-			pRecord->aiPwrAnt[eTag].aiPwrAnt5G[ucAntIdx]
+		case POWER_ANT_5G_BAND1:
+			pRecord->aiPwrAnt[eTag].aiPwrAnt5GB1[ucAntIdx]
+				= backoff;
+			break;
+		case POWER_ANT_5G_BAND2:
+			pRecord->aiPwrAnt[eTag].aiPwrAnt5GB2[ucAntIdx]
+				= backoff;
+			break;
+		case POWER_ANT_5G_BAND3:
+			pRecord->aiPwrAnt[eTag].aiPwrAnt5GB3[ucAntIdx]
+				= backoff;
+			break;
+		case POWER_ANT_5G_BAND4:
+			pRecord->aiPwrAnt[eTag].aiPwrAnt5GB4[ucAntIdx]
 				= backoff;
 			break;
 		default:
@@ -4148,16 +4172,22 @@ int32_t txPwrParseTagXXXT(
 			       pStart);
 		for (j = 0; j < POWER_ANT_NUM; j++) {
 			pRecord->aiPwrAnt[eTag].aiPwrAnt2G4[j] = 0;
-			pRecord->aiPwrAnt[eTag].aiPwrAnt5G[j] = 0;
+			pRecord->aiPwrAnt[eTag].aiPwrAnt5GB1[j] = 0;
+			pRecord->aiPwrAnt[eTag].aiPwrAnt5GB2[j] = 0;
+			pRecord->aiPwrAnt[eTag].aiPwrAnt5GB3[j] = 0;
+			pRecord->aiPwrAnt[eTag].aiPwrAnt5GB4[j] = 0;
 		}
 		return -1;
 	}
 
 	DBGLOG(RLM, TRACE, "[Success] Dump aiPwrAnt[%u] para: ", eTag);
 	for (j = 0; j < POWER_ANT_NUM; j++)
-		DBGLOG(RLM, TRACE, "[%d][%d]",
+		DBGLOG(RLM, TRACE, "[%d][%d][%d][%d][%d]",
 			       pRecord->aiPwrAnt[eTag].aiPwrAnt2G4[j],
-			       pRecord->aiPwrAnt[eTag].aiPwrAnt5G[j]);
+			       pRecord->aiPwrAnt[eTag].aiPwrAnt5GB1[j],
+			       pRecord->aiPwrAnt[eTag].aiPwrAnt5GB2[j],
+			       pRecord->aiPwrAnt[eTag].aiPwrAnt5GB3[j],
+			       pRecord->aiPwrAnt[eTag].aiPwrAnt5GB4[j]);
 	DBGLOG(RLM, TRACE, "\n");
 
 	return 0;
@@ -4432,7 +4462,13 @@ uint8_t txPwrIsAntTagSet(
 	for (i = 0; i < POWER_ANT_NUM; i++) {
 		if (prCurElement->aiPwrAnt[tag].aiPwrAnt2G4[i] != 0)
 			return 1;
-		if (prCurElement->aiPwrAnt[tag].aiPwrAnt5G[i] != 0)
+		if (prCurElement->aiPwrAnt[tag].aiPwrAnt5GB1[i] != 0)
+			return 1;
+		if (prCurElement->aiPwrAnt[tag].aiPwrAnt5GB2[i] != 0)
+			return 1;
+		if (prCurElement->aiPwrAnt[tag].aiPwrAnt5GB3[i] != 0)
+			return 1;
+		if (prCurElement->aiPwrAnt[tag].aiPwrAnt5GB4[i] != 0)
 			return 1;
 	}
 	return 0;
@@ -4512,16 +4548,46 @@ uint32_t txPwrApplyOneSettingPwrAnt(
 							[POWER_ANT_ALL_T]
 							.aiPwrAnt2G4[k];
 					}
-				} else if (j == POWER_ANT_5G_BAND) {
+				} else if (j == POWER_ANT_5G_BAND1) {
 					if (prCmdPwrAnt[i].cValue >
 						prCurElement->
 						aiPwrAnt[POWER_ANT_ALL_T]
-						.aiPwrAnt5G[k])
+						.aiPwrAnt5GB1[k])
 						prCmdPwrAnt[i].cValue =
 							prCurElement->
 							aiPwrAnt
 							[POWER_ANT_ALL_T]
-							.aiPwrAnt5G[k];
+							.aiPwrAnt5GB1[k];
+				} else if (j == POWER_ANT_5G_BAND2) {
+					if (prCmdPwrAnt[i].cValue >
+						prCurElement->
+						aiPwrAnt[POWER_ANT_ALL_T]
+						.aiPwrAnt5GB2[k])
+						prCmdPwrAnt[i].cValue =
+							prCurElement->
+							aiPwrAnt
+							[POWER_ANT_ALL_T]
+							.aiPwrAnt5GB2[k];
+				} else if (j == POWER_ANT_5G_BAND3) {
+					if (prCmdPwrAnt[i].cValue >
+						prCurElement->
+						aiPwrAnt[POWER_ANT_ALL_T]
+						.aiPwrAnt5GB3[k])
+						prCmdPwrAnt[i].cValue =
+							prCurElement->
+							aiPwrAnt
+							[POWER_ANT_ALL_T]
+							.aiPwrAnt5GB3[k];
+				} else if (j == POWER_ANT_5G_BAND4) {
+					if (prCmdPwrAnt[i].cValue >
+						prCurElement->
+						aiPwrAnt[POWER_ANT_ALL_T]
+						.aiPwrAnt5GB4[k])
+						prCmdPwrAnt[i].cValue =
+							prCurElement->
+							aiPwrAnt
+							[POWER_ANT_ALL_T]
+							.aiPwrAnt5GB4[k];
 				}
 				i++;
 			}
@@ -4547,16 +4613,46 @@ uint32_t txPwrApplyOneSettingPwrAnt(
 							[POWER_ANT_MIMO_1T]
 							.aiPwrAnt2G4[k];
 					}
-				} else if (j == POWER_ANT_5G_BAND) {
+				} else if (j == POWER_ANT_5G_BAND1) {
 					if (prCmdPwrAnt[i].cValue >
 						prCurElement->
 						aiPwrAnt[POWER_ANT_MIMO_1T]
-						.aiPwrAnt5G[k])
+						.aiPwrAnt5GB1[k])
 						prCmdPwrAnt[i].cValue =
 							prCurElement->
 							aiPwrAnt
 							[POWER_ANT_MIMO_1T]
-							.aiPwrAnt5G[k];
+							.aiPwrAnt5GB1[k];
+				} else if (j == POWER_ANT_5G_BAND2) {
+					if (prCmdPwrAnt[i].cValue >
+						prCurElement->
+						aiPwrAnt[POWER_ANT_MIMO_1T]
+						.aiPwrAnt5GB2[k])
+						prCmdPwrAnt[i].cValue =
+							prCurElement->
+							aiPwrAnt
+							[POWER_ANT_MIMO_1T]
+							.aiPwrAnt5GB2[k];
+				} else if (j == POWER_ANT_5G_BAND3) {
+					if (prCmdPwrAnt[i].cValue >
+						prCurElement->
+						aiPwrAnt[POWER_ANT_MIMO_1T]
+						.aiPwrAnt5GB3[k])
+						prCmdPwrAnt[i].cValue =
+							prCurElement->
+							aiPwrAnt
+							[POWER_ANT_MIMO_1T]
+							.aiPwrAnt5GB3[k];
+				} else if (j == POWER_ANT_5G_BAND4) {
+					if (prCmdPwrAnt[i].cValue >
+						prCurElement->
+						aiPwrAnt[POWER_ANT_MIMO_1T]
+						.aiPwrAnt5GB4[k])
+						prCmdPwrAnt[i].cValue =
+							prCurElement->
+							aiPwrAnt
+							[POWER_ANT_MIMO_1T]
+							.aiPwrAnt5GB4[k];
 				}
 				i++;
 			}
@@ -4582,16 +4678,46 @@ uint32_t txPwrApplyOneSettingPwrAnt(
 							[POWER_ANT_MIMO_2T]
 							.aiPwrAnt2G4[k];
 					}
-				} else if (j == POWER_ANT_5G_BAND) {
+				} else if (j == POWER_ANT_5G_BAND1) {
 					if (prCmdPwrAnt[i].cValue >
 						prCurElement->
 						aiPwrAnt[POWER_ANT_MIMO_2T]
-						.aiPwrAnt5G[k])
+						.aiPwrAnt5GB1[k])
 						prCmdPwrAnt[i].cValue =
 							prCurElement->
 							aiPwrAnt
 							[POWER_ANT_MIMO_2T]
-							.aiPwrAnt5G[k];
+							.aiPwrAnt5GB1[k];
+				} else if (j == POWER_ANT_5G_BAND2) {
+					if (prCmdPwrAnt[i].cValue >
+						prCurElement->
+						aiPwrAnt[POWER_ANT_MIMO_2T]
+						.aiPwrAnt5GB2[k])
+						prCmdPwrAnt[i].cValue =
+							prCurElement->
+							aiPwrAnt
+							[POWER_ANT_MIMO_2T]
+							.aiPwrAnt5GB2[k];
+				} else if (j == POWER_ANT_5G_BAND3) {
+					if (prCmdPwrAnt[i].cValue >
+						prCurElement->
+						aiPwrAnt[POWER_ANT_MIMO_2T]
+						.aiPwrAnt5GB3[k])
+						prCmdPwrAnt[i].cValue =
+							prCurElement->
+							aiPwrAnt
+							[POWER_ANT_MIMO_2T]
+							.aiPwrAnt5GB3[k];
+				} else if (j == POWER_ANT_5G_BAND4) {
+					if (prCmdPwrAnt[i].cValue >
+						prCurElement->
+						aiPwrAnt[POWER_ANT_MIMO_2T]
+						.aiPwrAnt5GB4[k])
+						prCmdPwrAnt[i].cValue =
+							prCurElement->
+							aiPwrAnt
+							[POWER_ANT_MIMO_2T]
+							.aiPwrAnt5GB4[k];
 				}
 				i++;
 			}
@@ -4666,8 +4792,6 @@ uint32_t txPwrApplyOneSetting(struct CMD_SET_COUNTRY_CHANNEL_POWER_LIMIT *prCmd,
 				case PWR_CTRL_CHNL_TYPE_ALL: {
 					fgDoArbitrator = TRUE;
 #if (CFG_SUPPORT_WIFI_6G == 1)
-					DBGLOG(RLM, ERROR,
-					"Facer fgDoArbitrator6E\n");
 					fgDoArbitrator6E = TRUE;
 #endif
 					break;
@@ -5293,7 +5417,6 @@ skipLabel:
 		}
 #if (CFG_SUPPORT_WIFI_6G == 1)
 		else if (count == PWR_LIMIT_6E_NUM) {
-			DBGLOG(RLM, ERROR, "Facer 6E count = %d\n", count);
 			for (j = 0; j < PWR_LIMIT_6E_NUM; j++) {
 				/* parse RU26L ...  RU996U setting */
 				if (j == PWR_LIMIT_6E_NUM - 1)
@@ -5387,15 +5510,12 @@ void txPwrCtrlShowList(struct ADAPTER *prAdapter, uint8_t filterType,
 {
 	struct LINK_ENTRY *prCur, *prNext;
 	struct TX_PWR_CTRL_ELEMENT *prCurElement = NULL;
-	struct TX_PWR_CTRL_CHANNEL_SETTING *prChlSettingList;
 	struct LINK *aryprlist[2] = {
 		&prAdapter->rTxPwr_DefaultList,
 		&prAdapter->rTxPwr_DynamicList
 	};
 	uint8_t ucAppliedWay, ucOperation;
-	int i, j, k, count = 0;
-	char msgLimit[PWR_BUF_LEN];
-	int msgOfs = 0;
+	int i, count = 0;
 
 	if (filterType == 1)
 		DBGLOG(RLM, TRACE, "Tx Power Ctrl List=[%s], Size=[%d]",
@@ -5452,61 +5572,6 @@ void txPwrCtrlShowList(struct ADAPTER *prAdapter, uint8_t filterType,
 			       g_au1TxPwrOperationLabel[ucOperation - 1],
 			       prCurElement->settingCount);
 
-			for (j = 0; j < prCurElement->settingCount; j++) {
-				prChlSettingList =
-					&(prCurElement->rChlSettingList[j]);
-				msgOfs = 0;
-
-				/*Coverity check*/
-				if (prChlSettingList->eChnlType < 0)
-					prChlSettingList->eChnlType = 0;
-
-				/*message head*/
-				msgOfs += snprintf(msgLimit + msgOfs,
-					PWR_BUF_LEN - msgOfs,
-					"Setting-%u:[%s:%u,%u],Legcy:",
-					(j + 1),
-					g_au1TxPwrChlTypeLabel[
-					prChlSettingList->eChnlType],
-					prChlSettingList->channelParam[0],
-					prChlSettingList->channelParam[1]);
-
-				/*print legacy cfg*/
-				for (k = 0; k < PWR_LIMIT_NUM ; k++)
-					msgOfs += snprintf(msgLimit + msgOfs,
-						PWR_BUF_LEN - msgOfs,
-						"[%u,%d]",
-						prChlSettingList->op[k],
-					    prChlSettingList->i8PwrLimit[k]);
-
-				/*print HE cfg*/
-				msgOfs += snprintf(msgLimit + msgOfs,
-					PWR_BUF_LEN - msgOfs,
-					"HE:");
-				for (k = 0; k < PWR_LIMIT_HE_NUM ; k++)
-					msgOfs += snprintf(msgLimit + msgOfs,
-						PWR_BUF_LEN - msgOfs,
-						"[%u,%d]",
-						prChlSettingList->opHE[k],
-					    prChlSettingList->i8PwrLimitHE[k]);
-
-				if (msgOfs > PWR_BUF_LEN)
-					msgOfs = PWR_BUF_LEN;
-				/*message tail*/
-				if (msgOfs > 0)
-					msgLimit[msgOfs-1] = '\0';
-				else
-					msgLimit[0] = '\0';
-
-				DBGLOG(RLM, TRACE, "%s\n", msgLimit);
-			}
-#if CFG_SUPPORT_DYNAMIC_PWR_LIMIT_ANT_TAG
-			DBGLOG(RLM, TRACE,
-				"Power Ant info in (%s) index (%u)\n",
-				prCurElement->name,
-				prCurElement->index);
-			txPwrParseTagDump(prCurElement);
-#endif
 		}
 	}
 }
@@ -6400,6 +6465,7 @@ void rlmDomainSetCountryCode(char *alpha2, u8 size_of_alpha2)
 
 	g_mtk_regd_control.alpha2 = rlmDomainAlpha2ToU32(alpha2, max);
 }
+
 void rlmDomainSetDfsRegion(enum nl80211_dfs_regions dfs_region)
 {
 	g_mtk_regd_control.dfs_region = dfs_region;
@@ -6408,6 +6474,16 @@ void rlmDomainSetDfsRegion(enum nl80211_dfs_regions dfs_region)
 enum nl80211_dfs_regions rlmDomainGetDfsRegion(void)
 {
 	return g_mtk_regd_control.dfs_region;
+}
+
+void rlmDomainSetDfsDbdcBand(enum ENUM_DBDC_BN eDBDCBand)
+{
+	g_mtk_regd_control.eDBDCBand = eDBDCBand;
+}
+
+enum ENUM_DBDC_BN rlmDomainGetDfsDbdcBand(void)
+{
+	return g_mtk_regd_control.eDBDCBand;
 }
 
 void rlmDomainSetTempCountryCode(char *alpha2, u8 size_of_alpha2)

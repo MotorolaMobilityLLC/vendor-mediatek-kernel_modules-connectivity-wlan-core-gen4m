@@ -530,7 +530,8 @@ struct STA_RECORD {
 	P_TX_BA_ENTRY_T aprTxBaTable[TID_NUM];
 #endif
 
-	struct FRAG_INFO rFragInfo[MAX_NUM_CONCURRENT_FRAGMENTED_MSDUS];
+	struct FRAG_INFO rFragInfo[TID_NUM + 1][
+			MAX_NUM_CONCURRENT_FRAGMENTED_MSDUS];
 
 #if 0 /* TODO: Remove this */
 	struct SEC_INFO rSecInfo; /* The security state machine */
@@ -747,6 +748,7 @@ struct STA_RECORD {
 #if CFG_SUPPORT_HE_ER
 	u_int8_t fgIsExtendedRange;
 #endif
+
 /* fos_change begin*/
 #if CFG_SUPPORT_STAT_STATISTICS
 	uint32_t u4LastPhyRate;
@@ -782,6 +784,10 @@ struct STA_RECORD {
 			[STATS_LLS_MAX_HE_BW_NUM][STATS_LLS_HE_NUM];
 	};
 #endif
+
+	u_int8_t fgIsMscsSupported;
+	struct LINK rMscsMonitorList;
+	struct LINK rMscsTcpMonitorList;
 };
 
 #if 0

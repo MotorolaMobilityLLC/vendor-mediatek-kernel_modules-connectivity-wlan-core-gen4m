@@ -502,6 +502,83 @@ mtk_cfg80211_set_default_key(struct wiphy *wiphy,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * @brief This routine is responsible for getting tx rate from LLS
+ *
+ * @param
+ *
+ * @retval 0:       successful
+ *         others:  failure
+ */
+/*----------------------------------------------------------------------------*/
+static uint32_t wlanGetTxRateFromLinkStats(
+	IN struct GLUE_INFO *prGlueInfo, IN uint32_t *pu4TxRate,
+	IN uint32_t *pu4TxBw)
+{
+	uint32_t rStatus = WLAN_STATUS_NOT_SUPPORTED;
+#if CFG_SUPPORT_LLS
+	uint32_t u4MaxTxRate, u4Nss;
+	union {
+		struct CMD_GET_STATS_LLS cmd;
+		struct EVENT_STATS_LLS_TX_RATE_INFO rate_info;
+	} query = {0};
+	uint32_t u4QueryBufLen;
+	uint32_t u4QueryInfoLen;
+
+	kalMemZero(&query, sizeof(query));
+	query.cmd.u4Tag = STATS_LLS_TAG_CURRENT_TX_RATE;
+	u4QueryBufLen = sizeof(query);
+	u4QueryInfoLen = sizeof(query);
+
+	rStatus = kalIoctl(prGlueInfo,
+			wlanQueryLinkStats,
+			&query,
+			u4QueryBufLen,
+			TRUE,
+			TRUE,
+			TRUE,
+			&u4QueryInfoLen);
+	DBGLOG(REQ, INFO, "kalIoctl=%x, %u bytes",
+				rStatus, u4QueryInfoLen);
+	DBGLOG_HEX(REQ, INFO, &query.rate_info, u4QueryInfoLen);
+
+	if (unlikely(rStatus != WLAN_STATUS_SUCCESS)) {
+		DBGLOG(REQ, INFO, "wlanQueryLinkStats return fail\n");
+		return rStatus;
+	}
+	if (unlikely(u4QueryInfoLen != sizeof(
+		struct EVENT_STATS_LLS_TX_RATE_INFO))) {
+		DBGLOG(REQ, INFO, "wlanQueryLinkStats return len unexpected\n");
+		return WLAN_STATUS_FAILURE;
+	}
+
+	if (query.rate_info.bw >= ARRAY_SIZE(arBwCfg80211Table)) {
+		DBGLOG(REQ, WARN, "wrong tx bw!");
+		return WLAN_STATUS_FAILURE;
+	}
+
+	*pu4TxBw = arBwCfg80211Table[query.rate_info.bw];
+	query.rate_info.nsts += 1;
+	if (query.rate_info.nsts == 1)
+		u4Nss = query.rate_info.nsts;
+	else
+		u4Nss = query.rate_info.stbc ?
+			(query.rate_info.nsts >> 1)
+			: query.rate_info.nsts;
+
+	wlanQueryRateByTable(query.rate_info.mode,
+			query.rate_info.rate, query.rate_info.bw, 0,
+			u4Nss, pu4TxRate, &u4MaxTxRate);
+	DBGLOG(REQ, INFO, "rate=%u mode=%u nss=%u stbc=%u bw=%u linkspeed=%u\n",
+		query.rate_info.rate, query.rate_info.mode,
+		u4Nss, query.rate_info.stbc,
+		*pu4TxBw, *pu4TxRate);
+
+#endif
+	return rStatus;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * @brief This routine is responsible for getting station information such as
  *        RSSI
  *
@@ -519,7 +596,7 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy,
 	struct GLUE_INFO *prGlueInfo = NULL;
 	uint32_t rStatus;
 	uint8_t arBssid[PARAM_MAC_ADDR_LEN];
-	uint32_t u4BufLen, u4TxRate, u4RxRate, u4RxBw;
+	uint32_t u4BufLen, u4TxRate, u4TxBw, u4RxRate, u4RxBw;
 	int32_t i4Rssi = 0;
 	struct PARAM_GET_STA_STATISTICS rQueryStaStatistics;
 	struct PARAM_LINK_SPEED_EX rLinkSpeed;
@@ -527,16 +604,6 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy,
 	uint32_t u4FcsError;
 	struct net_device_stats *prDevStats;
 	uint8_t ucBssIndex = 0;
-
-#if CFG_SUPPORT_LLS
-	uint32_t u4TxBw, u4MaxTxRate;
-	union {
-		struct CMD_GET_STATS_LLS cmd;
-		struct EVENT_STATS_LLS_TX_RATE_INFO rate_info;
-	} query = {0};
-	uint32_t u4QueryBufLen;
-	uint32_t u4QueryInfoLen;
-#endif
 
 	WIPHY_PRIV(wiphy, prGlueInfo);
 	ASSERT(prGlueInfo);
@@ -590,9 +657,9 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy,
 		u4RxRate = rLinkSpeed.rLq[ucBssIndex].u2RxLinkSpeed;
 		i4Rssi = rLinkSpeed.rLq[ucBssIndex].cRssi;
 		u4RxBw = rLinkSpeed.rLq[ucBssIndex].u4RxBw;
-		if (unlikely(u4RxBw > ARRAY_SIZE(arBwCfg80211Table))) {
+		if (unlikely(u4RxBw >= ARRAY_SIZE(arBwCfg80211Table))) {
 			DBGLOG(REQ, WARN, "wrong u4RxBw!");
-			return -EOVERFLOW;
+			u4RxBw = 0;
 		}
 	}
 #if KERNEL_VERSION(4, 0, 0) <= CFG80211_VERSION_CODE
@@ -605,55 +672,6 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy,
 	sinfo->filled |= STATION_INFO_SIGNAL;
 #endif
 
-#if CFG_SUPPORT_LLS
-	/* fill tx rate/bw from LLS */
-	kalMemZero(&query, sizeof(query));
-	query.cmd.u4Tag = STATS_LLS_TAG_CURRENT_TX_RATE;
-	u4QueryBufLen = sizeof(query);
-	u4QueryInfoLen = sizeof(query);
-
-	rStatus = kalIoctl(prGlueInfo,
-			wlanQueryLinkStats,
-			&query,
-			u4QueryBufLen,
-			TRUE,
-			TRUE,
-			TRUE,
-			&u4QueryInfoLen);
-	DBGLOG(REQ, INFO, "kalIoctl=%x, %u bytes",
-				rStatus, u4QueryInfoLen);
-	DBGLOG_HEX(REQ, INFO, &query.rate_info, u4QueryInfoLen);
-	if (unlikely(rStatus != WLAN_STATUS_SUCCESS)) {
-		DBGLOG(REQ, WARN, "wlanQueryLinkStats return fail\n");
-		return -EBUSY;
-	}
-	if (unlikely(u4QueryInfoLen != sizeof(
-		struct EVENT_STATS_LLS_TX_RATE_INFO))) {
-		DBGLOG(REQ, WARN, "wlanQueryLinkStats return len unexpected\n");
-		return -EOVERFLOW;
-	}
-
-	DBGLOG(REQ, INFO, "rate=%u mode=%u nsts=%u stbc=%u bw=%u",
-		query.rate_info.rate, query.rate_info.mode,
-		query.rate_info.nsts, query.rate_info.stbc,
-		query.rate_info.bw);
-
-	if (wlanQueryRateByTable(query.rate_info.mode,
-		query.rate_info.rate, query.rate_info.bw, 0,
-		query.rate_info.nsts, &u4TxRate, &u4MaxTxRate) < 0){
-		DBGLOG(REQ, WARN, "wlanQueryRateByTable error!");
-		return -EOVERFLOW;
-	}
-
-	if (unlikely(query.rate_info.bw > ARRAY_SIZE(
-		arBwCfg80211Table))) {
-		DBGLOG(REQ, WARN, "wrong tx bw!");
-		return -EOVERFLOW;
-	}
-	u4TxBw = arBwCfg80211Table[query.rate_info.bw];
-	prGlueInfo->u4TxLinkSpeedCache[ucBssIndex] = u4TxRate;
-	prGlueInfo->u4TxBwCache[ucBssIndex] = u4TxBw;
-#else
 	if ((rStatus != WLAN_STATUS_SUCCESS) || (u4TxRate == 0)) {
 		/* unable to retrieve link speed */
 		DBGLOG(REQ, WARN, "last Tx link speed\n");
@@ -661,7 +679,6 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy,
 		/* convert from 100bps to 100kbps */
 		prGlueInfo->u4TxLinkSpeedCache[ucBssIndex] = u4TxRate / 1000;
 	}
-#endif
 
 	if ((rStatus != WLAN_STATUS_SUCCESS) || (u4RxRate == 0)) {
 		/* unable to retrieve link speed */
@@ -672,15 +689,6 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy,
 		prGlueInfo->u4RxBwCache[ucBssIndex] =
 			arBwCfg80211Table[u4RxBw];
 	}
-
-	sinfo->txrate.legacy =
-		prGlueInfo->u4TxLinkSpeedCache[ucBssIndex];
-	sinfo->rxrate.legacy =
-		prGlueInfo->u4RxLinkSpeedCache[ucBssIndex];
-	sinfo->txrate.bw =
-		prGlueInfo->u4TxBwCache[ucBssIndex];
-	sinfo->rxrate.bw =
-		prGlueInfo->u4RxBwCache[ucBssIndex];
 
 	if (rStatus != WLAN_STATUS_SUCCESS || i4Rssi == 0) {
 		DBGLOG(REQ, WARN,
@@ -700,6 +708,21 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy,
 		sinfo->signal = i4Rssi;	/* dBm */
 		prGlueInfo->i4RssiCache[ucBssIndex] = i4Rssi;
 	}
+
+	rStatus = wlanGetTxRateFromLinkStats(prGlueInfo, &u4TxRate, &u4TxBw);
+	if (rStatus == WLAN_STATUS_SUCCESS) {
+		prGlueInfo->u4TxLinkSpeedCache[ucBssIndex] = u4TxRate;
+		prGlueInfo->u4TxBwCache[ucBssIndex] = u4TxBw;
+	}
+
+	sinfo->txrate.legacy =
+		prGlueInfo->u4TxLinkSpeedCache[ucBssIndex];
+	sinfo->rxrate.legacy =
+		prGlueInfo->u4RxLinkSpeedCache[ucBssIndex];
+	sinfo->txrate.bw =
+		prGlueInfo->u4TxBwCache[ucBssIndex];
+	sinfo->rxrate.bw =
+		prGlueInfo->u4RxBwCache[ucBssIndex];
 
 	/* Get statistics from net_dev */
 	prDevStats = (struct net_device_stats *)kalGetStats(ndev);

@@ -341,6 +341,9 @@ kalP2PRddDetectUpdate(IN struct GLUE_INFO *prGlueInfo,
 void
 kalP2PCacFinishedUpdate(IN struct GLUE_INFO *prGlueInfo,
 		IN uint8_t ucRoleIndex);
+void
+kalP2PCacStartedUpdate(IN struct GLUE_INFO *prGlueInfo,
+		IN uint8_t ucRoleIndex);
 #endif
 
 #if CFG_SUPPORT_HOTSPOT_WPS_MANAGER
@@ -381,6 +384,12 @@ void kalP2pIndicateAcsResult(IN struct GLUE_INFO *prGlueInfo,
 		IN uint8_t ucSeg1Ch,
 		IN enum ENUM_MAX_BANDWIDTH_SETTING eChnlBw,
 		IN enum P2P_VENDOR_ACS_HW_MODE eHwMode);
+
+void kalP2pPreStartRdd(
+		IN struct GLUE_INFO *prGlueInfo,
+		IN uint8_t ucRoleIdx,
+		IN uint32_t ucPrimaryCh,
+		IN enum ENUM_BAND eBand);
 
 void kalP2pIndicateRadarEvent(IN struct GLUE_INFO *prGlueInfo,
 		IN uint8_t ucRoleIndex,

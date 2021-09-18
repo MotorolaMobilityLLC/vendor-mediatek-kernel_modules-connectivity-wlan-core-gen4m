@@ -213,6 +213,7 @@ extern bool fgIsTxPowerDecreased;
 #define PERF_MON_TP_MAX_THRESHOLD (10)
 
 #define PERF_MON_TP_CONDITION (125000)
+#define PERF_MON_COEX_TP_THRESHOLD (100)
 
 /* By wifi.cfg first. If it is not set 1s by default; 100ms on more. */
 #define TX_LATENCY_STATS_UPDATE_INTERVAL (0)
@@ -1930,14 +1931,12 @@ uint32_t kalSetSuspendFlagToEMI(IN struct ADAPTER
 extern uint32_t getFWLogOnOff(void);
 #endif
 
-#if (CFG_SUPPORT_CONNINFRA == 1)
-void setupTimeParameter(
+void setTimeParameter(
 	struct PARAM_CUSTOM_CHIP_CONFIG_STRUCT *prChipConfigInfo,
 	int chipConfigInfoSize, unsigned int second, unsigned int usecond);
 uint32_t kalSyncTimeToFW(IN struct ADAPTER *prAdapter,
-	unsigned int second, unsigned int usecond);
+	IN u_int8_t fgInitCmd, unsigned int second, unsigned int usecond);
 void kalSyncTimeToFWByIoctl(void);
-#endif /* CFG_SUPPORT_CONNINFRA == 1*/
 
 void kalUpdateCompHdlrRec(IN struct ADAPTER *prAdapter,
 	IN PFN_OID_HANDLER_FUNC pfnOidHandler, IN struct CMD_INFO *prCmdInfo);
@@ -1948,10 +1947,8 @@ void kalPrintLog(const char *fmt, ...);
 #if (CFG_SUPPORT_POWER_THROTTLING == 1)
 void kalPwrLevelHdlrRegister(IN struct ADAPTER *prAdapter,
 					PFN_PWR_LEVEL_HANDLER hdlr);
-void connsysPowerLevelNotify(IN struct ADAPTER *prAdapter,
-				IN struct MSG_HDR *prMsgHdr);
-void connsysPowerTempNotify(IN struct ADAPTER *prAdapter,
-				IN struct MSG_HDR *prMsgHdr);
+void connsysPowerLevelNotify(IN struct ADAPTER *prAdapter);
+void connsysPowerTempNotify(IN struct ADAPTER *prAdapter);
 void connsysPowerTempUpdate(enum conn_pwr_msg_type status,
 					int currentTemp);
 uint32_t kalDumpPwrLevel(IN struct ADAPTER *prAdapter);

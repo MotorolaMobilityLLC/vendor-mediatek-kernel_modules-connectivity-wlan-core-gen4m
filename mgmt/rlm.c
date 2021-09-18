@@ -964,7 +964,8 @@ static void rlmFillExtCapIE(struct ADAPTER *prAdapter,
 	else
 		prHsExtCap->ucLength = 3 - ELEM_HDR_LEN;
 
-	kalMemZero(prHsExtCap->aucCapabilities, ELEM_MAX_LEN_EXT_CAP);
+	kalMemZero(prHsExtCap->aucCapabilities,
+			sizeof(prHsExtCap->aucCapabilities));
 
 	prHsExtCap->aucCapabilities[0] = ELEM_EXT_CAP_DEFAULT_VAL;
 
@@ -2144,7 +2145,6 @@ void rlmModifyVhtBwPara(uint8_t *pucVhtChannelFrequencyS1,
 }
 
 #if (CFG_SUPPORT_WIFI_6G == 1)
-
 void rlmTransferHe6gOpInfor(IN uint8_t ucChannelNum,
 	IN uint8_t ucChannelWidth,
 	OUT uint8_t *pucChannelWidth,
@@ -2152,74 +2152,97 @@ void rlmTransferHe6gOpInfor(IN uint8_t ucChannelNum,
 	OUT uint8_t *pucCenterFreqS2,
 	OUT enum ENUM_CHNL_EXT *peSco)
 {
-	if (ucChannelWidth == HE_OP_CHANNEL_WIDTH_20)
+	switch (ucChannelWidth) {
+	case HE_OP_CHANNEL_WIDTH_20:
+	case HE_OP_CHANNEL_WIDTH_40:
 		*pucChannelWidth = (uint8_t)CW_20_40MHZ;
-	else if (ucChannelWidth == HE_OP_CHANNEL_WIDTH_40) {
-		*pucChannelWidth = (uint8_t)CW_20_40MHZ;
-		if ((ucChannelNum + 2) ==
-			*pucCenterFreqS1)
-			*peSco = CHNL_EXT_SCA;
-		else
-			*peSco = CHNL_EXT_SCB;
-	} else if (ucChannelWidth == HE_OP_CHANNEL_WIDTH_80)
+		break;
+	case HE_OP_CHANNEL_WIDTH_80:
 		*pucChannelWidth = (uint8_t)CW_80MHZ;
-	else if (
-		((*pucCenterFreqS1 - *pucCenterFreqS2) == 8) ||
-		((*pucCenterFreqS2 - *pucCenterFreqS1) == 8))
+		break;
+	case HE_OP_CHANNEL_WIDTH_80P80_160:
 		*pucChannelWidth = (uint8_t)CW_160MHZ;
-	else
-		*pucChannelWidth = (uint8_t)CW_80P80MHZ;
+		break;
+	default:
+		*pucChannelWidth = (uint8_t)CW_20_40MHZ;
+		break;
+	}
 
-	/*add IEEE BW160 patch*/
-	rlmModifyHE6GBwPara(pucCenterFreqS1,
-			   pucCenterFreqS2,
-			   pucChannelWidth);
+	/* Covert S1, S2 to VHT format */
+	rlmModifyHE6GBwPara(*pucChannelWidth,
+		ucChannelNum,
+		pucCenterFreqS1,
+		pucCenterFreqS2);
+
+	/* Revise SCO */
+	*peSco = rlmReviseSco(*pucChannelWidth,
+		ucChannelNum, *pucCenterFreqS1);
 }
-void rlmModifyHE6GBwPara(uint8_t *pucHe6gChannelFrequencyS1,
-			uint8_t *pucHe6gChannelFrequencyS2,
-			uint8_t *pucHe6gChannelWidth)
+
+void rlmModifyHE6GBwPara(uint8_t ucHe6gChannelWidth,
+	uint8_t ucHe6gPrimaryChannel,
+	uint8_t *pucHe6gChannelFrequencyS1,
+	uint8_t *pucHe6gChannelFrequencyS2)
 {
-	uint8_t i = 0, ucTempS = 0;
+	uint8_t i = 0, ucS1Modify = 0;
+	uint8_t ucS1Origin = *pucHe6gChannelFrequencyS1;
+	uint8_t ucS2Origin = *pucHe6gChannelFrequencyS2;
 
-	if ((*pucHe6gChannelFrequencyS1 != 0) &&
-		(*pucHe6gChannelFrequencyS2 != 0)) {
-
-		uint8_t ucBW160Inteval = 8;
-
-		if (((*pucHe6gChannelFrequencyS2 - *pucHe6gChannelFrequencyS1)
-		== ucBW160Inteval) ||
-		((*pucHe6gChannelFrequencyS1 - *pucHe6gChannelFrequencyS2)
-		== ucBW160Inteval)) {
-			/*C160 case*/
-
-			/* NEW spec should set central ch of bw80 at S1,
-			 * set central ch of bw160 at S2
+	if (ucHe6gChannelWidth == CW_160MHZ) {
+		if ((ucS1Origin != 0 && ucS2Origin != 0) &&
+			(((ucS2Origin - ucS1Origin) == 8) ||
+			 ((ucS1Origin - ucS2Origin) == 8))) {
+			/* HE operating element sets central ch of bw80 at S1,
+			 * set central ch of bw160 at S2.
 			 */
 			for (i = 0; i < 2; i++) {
-
 				if (i == 0)
-					ucTempS = *pucHe6gChannelFrequencyS1;
+					ucS1Modify = ucS1Origin;
 				else
-					ucTempS = *pucHe6gChannelFrequencyS2;
+					ucS1Modify = ucS2Origin;
 
-				if ((ucTempS == 15) || (ucTempS == 47) ||
-					(ucTempS == 79) || (ucTempS == 111) ||
-					(ucTempS == 143) || (ucTempS == 175) ||
-					(ucTempS == 207))
+				if ((ucS1Modify == 15) ||
+					(ucS1Modify == 47) ||
+					(ucS1Modify == 79) ||
+					(ucS1Modify == 111) ||
+					(ucS1Modify == 143) ||
+					(ucS1Modify == 175) ||
+					(ucS1Modify == 207))
 					break;
 			}
+		}
 
-			if (ucTempS == 0) {
-				DBGLOG(RLM, WARN,
-					   "@wifi 6g,please check BW160 setting, find central freq fail\n");
-				return;
-			}
+		if (ucS1Modify == 0) {
+			ucS1Modify = nicGetHe6gS1(ucHe6gPrimaryChannel,
+				ucHe6gChannelWidth);
 
-			*pucHe6gChannelFrequencyS1 = ucTempS;
+			DBGLOG(RLM, WARN,
+				"S1/S2 for 6G BW160 is out of spec, S1[%d->%d] S2[%d->0]\n",
+				ucS1Origin, ucS1Modify, ucS2Origin);
+		}
+
+		*pucHe6gChannelFrequencyS1 = ucS1Modify;
+		*pucHe6gChannelFrequencyS2 = 0;
+	} else if (ucHe6gChannelWidth == CW_80MHZ) {
+		ucS1Modify = nicGetHe6gS1(ucHe6gPrimaryChannel,
+			ucHe6gChannelWidth);
+
+		if (ucS1Modify != ucS1Origin) {
+			DBGLOG(RLM, WARN,
+				"S1/S2 for 6G BW80 is out of spec, S1[%d->%d] S2[%d->0]\n",
+				ucS1Origin, ucS1Modify, ucS2Origin);
+
+			*pucHe6gChannelFrequencyS1 = ucS1Modify;
 			*pucHe6gChannelFrequencyS2 = 0;
-			*pucHe6gChannelWidth = CW_160MHZ;
-		} else {
-			/*real 80P80 case*/
+		}
+	} else if (ucHe6gChannelWidth == CW_20_40MHZ) {
+		if (ucS1Origin != 0 || ucS2Origin != 0) {
+			DBGLOG(RLM, WARN,
+				"S1/S2 for 6G BW20/40 is out of spec, S1[%d->0] S2[%d->0]\n",
+				ucS1Origin, ucS2Origin);
+
+			*pucHe6gChannelFrequencyS1 = 0;
+			*pucHe6gChannelFrequencyS2 = 0;
 		}
 	}
 }
@@ -2284,6 +2307,10 @@ void rlmReviseMaxBw(struct ADAPTER *prAdapter, uint8_t ucBssIndex,
 	uint8_t ucCurrentBandwidth = MAX_BW_20MHZ;
 	uint8_t ucOffset = (MAX_BW_80MHZ - CW_80MHZ);
 	struct BSS_INFO *prBssInfo;
+	uint8_t ucS1Origin = *pucS1;
+	enum ENUM_CHANNEL_WIDTH eChBwOrigin = *peChannelWidth;
+	enum ENUM_CHNL_EXT eScoOrigin = *peExtend;
+	enum ENUM_CHNL_EXT eScoModify;
 
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
 	ucMaxBandwidth = cnmGetDbdcBwCapability(prAdapter, ucBssIndex);
@@ -2293,126 +2320,106 @@ void rlmReviseMaxBw(struct ADAPTER *prAdapter, uint8_t ucBssIndex,
 		ucCurrentBandwidth = (uint8_t)*peChannelWidth + ucOffset;
 	} else {
 		/*case BW20 BW40 */
-		if (*peExtend != CHNL_EXT_SCN) {
+		if (eScoOrigin != CHNL_EXT_SCN) {
 			/*case BW40 */
 			ucCurrentBandwidth = MAX_BW_40MHZ;
 		}
 	}
 
 	if (ucCurrentBandwidth > ucMaxBandwidth) {
-		DBGLOG(RLM, INFO, "Decreasse the BW to (%d)\n", ucMaxBandwidth);
-
-		if (ucMaxBandwidth <= MAX_BW_40MHZ) {
-			/*BW20 * BW40*/
+		if (ucMaxBandwidth <= MAX_BW_40MHZ) { /* BW20, BW40 */
 			*peChannelWidth = CW_20_40MHZ;
-
-			if (ucMaxBandwidth == MAX_BW_20MHZ)
-				*peExtend = CHNL_EXT_SCN;
-		} else {
-			/* BW80, BW160, BW80P80
-			 * ucMaxBandwidth Must be
-			 * MAX_BW_80MHZ,MAX_BW_160MHZ,MAX_BW_80MHZ
-			 * peExtend should not change
+		} else { /* BW80, BW160, BW80P80 */
+			/*
+			 * Note that we should make sure S1 is non-zeno
+			 * before changing BW / S1. Clients may want
+			 * to stick bandwidth on CW_20_40MHZ even we
+			 * have more bandwidth capability.
 			 */
-			*peChannelWidth = (ucMaxBandwidth - ucOffset);
+			if (ucS1Origin) {
+				*peChannelWidth = (ucMaxBandwidth - ucOffset);
 
-			if (ucMaxBandwidth == MAX_BW_80MHZ) {
-				/* modify S1 for Bandwidth 160 downgrade 80 case
-				 */
-				if (ucCurrentBandwidth == MAX_BW_160MHZ)
-					*pucS1 = rlmReviseChFreqS1(prBssInfo,
-							*pucPrimaryCh, *pucS1,
-							ucMaxBandwidth);
+				/* modify S1 for Bandwidth 160 <-> 80 */
+				if ((ucCurrentBandwidth == MAX_BW_160MHZ &&
+					ucMaxBandwidth == MAX_BW_80MHZ) ||
+					(ucCurrentBandwidth == MAX_BW_80MHZ &&
+					ucMaxBandwidth == MAX_BW_160MHZ)) {
+					*pucS1 = nicGetS1(prBssInfo->eBand,
+						*pucPrimaryCh,
+						*peChannelWidth);
+				}
 			}
 		}
 
-		DBGLOG(RLM, INFO, "Modify ChannelWidth (%d) and Extend (%d)\n",
-		       *peChannelWidth, *peExtend);
+		if (eChBwOrigin != *peChannelWidth) {
+			DBGLOG(RLM, INFO, "Change BW[%d->%d], S1[%d->%d)\n",
+				eChBwOrigin, *peChannelWidth,
+				ucS1Origin, *pucS1);
+		}
+	}
+
+	/* Revise SCO */
+	eScoModify = rlmReviseSco(*peChannelWidth,
+		*pucPrimaryCh, *pucS1);
+
+	if (eScoOrigin != eScoModify) {
+		*peExtend = eScoModify;
+
+		DBGLOG(RLM, INFO, "Change SCO[%d->%d]\n",
+			eScoOrigin, eScoModify);
 	}
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Revise channel frequency by Primary Channel number
+ * \brief Revise SCO
  *
  * \param[in]
  *
- * \return none
+ * \return Revised SCO
  */
 /*----------------------------------------------------------------------------*/
-uint8_t rlmReviseChFreqS1(IN struct BSS_INFO *prBssInfo,
-	IN uint8_t ucPrimaryCh, IN uint8_t ucOriginS1,
-	IN uint8_t ucMaxBandwidth)
+enum ENUM_CHNL_EXT rlmReviseSco(
+	IN enum ENUM_CHANNEL_WIDTH eChannelWidth,
+	IN uint8_t ucPrimaryCh,
+	IN uint8_t ucS1)
 {
-	uint8_t ucS1 = 0;
+	int8_t cDelta;
+	enum ENUM_CHNL_EXT eAndOneSCO;
+	enum ENUM_CHNL_EXT eSCO = CHNL_EXT_SCN;
 
-#if (CFG_SUPPORT_WIFI_6G == 1)
-	if (prBssInfo->eBand == BAND_6G) {
-		if ((ucPrimaryCh >= 1) && (ucPrimaryCh <= 13))
-			ucS1 = 7;
-		else if ((ucPrimaryCh >= 17) && (ucPrimaryCh <= 29))
-			ucS1 = 23;
-		else if ((ucPrimaryCh >= 33) && (ucPrimaryCh <= 45))
-			ucS1 = 39;
-		else if ((ucPrimaryCh >= 49) && (ucPrimaryCh <= 61))
-			ucS1 = 55;
-		else if ((ucPrimaryCh >= 65) && (ucPrimaryCh <= 77))
-			ucS1 = 71;
-		else if ((ucPrimaryCh >= 81) && (ucPrimaryCh <= 93))
-			ucS1 = 87;
-		else if ((ucPrimaryCh >= 97) && (ucPrimaryCh <= 109))
-			ucS1 = 103;
-		else if ((ucPrimaryCh >= 113) && (ucPrimaryCh <= 125))
-			ucS1 = 119;
-		else if ((ucPrimaryCh >= 129) && (ucPrimaryCh <= 141))
-			ucS1 = 135;
-		else if ((ucPrimaryCh >= 145) && (ucPrimaryCh <= 157))
-			ucS1 = 151;
-		else if ((ucPrimaryCh >= 161) && (ucPrimaryCh <= 173))
-			ucS1 = 167;
-		else if ((ucPrimaryCh >= 177) && (ucPrimaryCh <= 189))
-			ucS1 = 183;
-		else if ((ucPrimaryCh >= 193) && (ucPrimaryCh <= 205))
-			ucS1 = 199;
-		else if ((ucPrimaryCh >= 209) && (ucPrimaryCh <= 221))
-			ucS1 = 215;
-		else
-			DBGLOG(RLM, ERROR,
-				"Check connect 160 downgrade (%d) case\n",
-				ucMaxBandwidth);
-		DBGLOG(RLM, ERROR,
-			"Decreasse the BW160 to BW80, shift S1 to (%d)\n",
-			ucS1);
-	} else
-#endif
-	{
-		if ((ucPrimaryCh >= 36) && (ucPrimaryCh <= 48))
-			ucS1 = 42;
-		else if ((ucPrimaryCh >= 52) && (ucPrimaryCh <= 64))
-			ucS1 = 58;
-		else if ((ucPrimaryCh >= 100) && (ucPrimaryCh <= 112))
-			ucS1 = 106;
-		else if ((ucPrimaryCh >= 116) && (ucPrimaryCh <= 128))
-			ucS1 = 122;
-		else if ((ucPrimaryCh >= 132) && (ucPrimaryCh <= 144))
-		/* 160 downgrade should not in this case */
-			ucS1 = 138;
-		else if ((ucPrimaryCh >= 149) && (ucPrimaryCh <= 161))
-		/* 160 downgrade should not in this case */
-			ucS1 = 155;
-		else
-			DBGLOG(RLM, INFO,
-				"Check connect 160 downgrde (%d) case\n",
-				ucMaxBandwidth);
-
-		DBGLOG(RLM, INFO,
-			"Decreasse the BW160 to BW80, shift S1 to (%d)\n",
-			ucS1);
+	if (eChannelWidth == CW_20_40MHZ) {
+		if (ucS1 == 0)
+			eSCO = CHNL_EXT_SCN;
+		else if (ucS1 > ucPrimaryCh)
+			eSCO = CHNL_EXT_SCA;
+		else if (ucS1 < ucPrimaryCh)
+			eSCO = CHNL_EXT_SCB;
+	} else if (eChannelWidth > CW_20_40MHZ) {
+		/* P: PriChnl
+		 * A: CHNL_EXT_SCA
+		 * B: CHNL_EXT_SCB
+		 */
+		/* --|----|--CenterFreqS1--|----|-- */
+		/* --|----|--CenterFreqS1--B----P-- */
+		/* --|----|--CenterFreqS1--P----A-- */
+		cDelta = ucPrimaryCh - ucS1;
+		eAndOneSCO = CHNL_EXT_SCB;
+		eSCO = CHNL_EXT_SCA;
+		if (cDelta < 0) {
+			/* --|----|--CenterFreqS1--|----|-- */
+			/* --P----A--CenterFreqS1--|----|-- */
+			/* --B----P--CenterFreqS1--|----|-- */
+			eAndOneSCO = CHNL_EXT_SCA;
+			eSCO = CHNL_EXT_SCB;
+			cDelta = -cDelta;
+		}
+		cDelta = cDelta - 2;
+		if ((cDelta/4) & 1)
+			eSCO = eAndOneSCO;
 	}
-	if (ucS1 != 0)
-		return ucS1;
-	else
-		return ucOriginS1;
+
+	return eSCO;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -3038,11 +3045,11 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 						pr6gOperInfor->
 						ucPrimaryChannel;
 
-					prBssInfo->ucHeChannelFrequencyS1 =
+					prBssInfo->ucVhtChannelFrequencyS1 =
 						pr6gOperInfor->
 						ucChannelCenterFreqSeg0;
 
-					prBssInfo->ucHeChannelFrequencyS2 =
+					prBssInfo->ucVhtChannelFrequencyS2 =
 						pr6gOperInfor->
 						ucChannelCenterFreqSeg1;
 
@@ -3052,11 +3059,11 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 						(uint8_t)pr6gOperInfor->
 						rControl.bits.ChannelWidth,
 						&prBssInfo->
-							ucHeChannelWidth,
+							ucVhtChannelWidth,
 						&prBssInfo->
-							ucHeChannelFrequencyS1,
+							ucVhtChannelFrequencyS1,
 						&prBssInfo->
-							ucHeChannelFrequencyS2,
+							ucVhtChannelFrequencyS2,
 						&prBssInfo->eBssSCO);
 				}
 				}
@@ -3210,78 +3217,30 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 		prBssInfo->fgHasStopTx = FALSE;
 	}
 
-#if (CFG_SUPPORT_WIFI_6G == 1)
-	if (prBssInfo->eBand == BAND_6G) {
-		/* Do not write prBssInfo->ucHeChannelWidth directly
-		 * in rlmReviseMaxBw, otherwise it will cause the following
-		 * struct members are overwritten unexpectly.
-		 */
-		eChannelWidth =
-			(enum ENUM_CHANNEL_WIDTH)
-			prBssInfo->ucHeChannelWidth;
-		rlmReviseMaxBw(prAdapter,
-				prBssInfo->ucBssIndex,
-				&prBssInfo->eBssSCO,
-				&eChannelWidth,
-				&prBssInfo->ucHeChannelFrequencyS1,
-				&prBssInfo->ucPrimaryChannel);
-		prBssInfo->ucHeChannelWidth = (uint8_t)eChannelWidth;
-	}
-	else
-#endif
-	{
-		eChannelWidth =
-			(enum ENUM_CHANNEL_WIDTH)
-			prBssInfo->ucVhtChannelWidth;
-		rlmReviseMaxBw(prAdapter, prBssInfo->ucBssIndex,
-				&prBssInfo->eBssSCO,
-				&eChannelWidth,
-				&prBssInfo->ucVhtChannelFrequencyS1,
-				&prBssInfo->ucPrimaryChannel);
-		prBssInfo->ucVhtChannelWidth = (uint8_t)eChannelWidth;
-	}
+	/* Do not write prBssInfo->ucVhtChannelWidth directly
+	 * in rlmReviseMaxBw, otherwise it will cause the following
+	 * struct members being overwritten unexpectly.
+	 */
+	eChannelWidth = (enum ENUM_CHANNEL_WIDTH)
+		prBssInfo->ucVhtChannelWidth;
+	rlmReviseMaxBw(prAdapter, prBssInfo->ucBssIndex,
+		&prBssInfo->eBssSCO,
+		&eChannelWidth,
+		&prBssInfo->ucVhtChannelFrequencyS1,
+		&prBssInfo->ucPrimaryChannel);
+	prBssInfo->ucVhtChannelWidth = (uint8_t)eChannelWidth;
 
 	rlmRevisePreferBandwidthNss(prAdapter, prBssInfo->ucBssIndex, prStaRec);
 
-	fgDomainValid =
-#if (CFG_SUPPORT_WIFI_6G == 1)
-		(prBssInfo->eBand == BAND_6G) ?
-		rlmDomainIsValidRfSetting(
-		    prAdapter,
-		    prBssInfo->eBand,
-		    prBssInfo->ucPrimaryChannel,
-		    prBssInfo->eBssSCO,
-		    prBssInfo->ucHeChannelWidth,
-		    prBssInfo->ucHeChannelFrequencyS1,
-		    prBssInfo->ucHeChannelFrequencyS2) :
-#endif
-		rlmDomainIsValidRfSetting(
-		    prAdapter,
-		    prBssInfo->eBand,
-		    prBssInfo->ucPrimaryChannel,
-		    prBssInfo->eBssSCO,
-		    prBssInfo->ucVhtChannelWidth,
-		    prBssInfo->ucVhtChannelFrequencyS1,
-		    prBssInfo->ucVhtChannelFrequencyS2);
+	fgDomainValid = rlmDomainIsValidRfSetting(
+		prAdapter,
+		prBssInfo->eBand,
+		prBssInfo->ucPrimaryChannel,
+		prBssInfo->eBssSCO,
+		prBssInfo->ucVhtChannelWidth,
+		prBssInfo->ucVhtChannelFrequencyS1,
+		prBssInfo->ucVhtChannelFrequencyS2);
 
-#if (CFG_SUPPORT_WIFI_6G == 1)
-	if (prBssInfo->eBand == BAND_6G
-		&& fgDomainValid == FALSE) {
-		/*Dump IE Inforamtion */
-		DBGLOG(RLM, WARN, "rlmRecIeInfoForClient IE Information\n");
-		DBGLOG(RLM, WARN, "IE Length = %d\n", u2IELength);
-		DBGLOG_MEM8(RLM, WARN, pucDumpIE, u2IELength);
-
-		/*Error Handling for Non-predicted IE - Fixed to set 20MHz */
-		prBssInfo->ucHeChannelWidth = CW_20_40MHZ;
-		prBssInfo->ucHeChannelFrequencyS1 = 0;
-		prBssInfo->ucHeChannelFrequencyS2 = 0;
-		prBssInfo->eBssSCO = CHNL_EXT_SCN;
-
-		/* Check SAP channel */
-		p2pFuncSwitchSapChannel(prAdapter);
-	} else
-#endif
 	if (fgDomainValid == FALSE) {
 		/*Dump IE Inforamtion */
 		DBGLOG(RLM, WARN, "rlmRecIeInfoForClient IE Information\n");
@@ -3299,6 +3258,7 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 		/* Check SAP channel */
 		p2pFuncSwitchSapChannel(prAdapter);
 	}
+
 #if CFG_SUPPORT_QUIET && 0
 	if (!fgHasQuietIE)
 		rrmQuietIeNotExist(prAdapter, prBssInfo);
@@ -6505,11 +6465,6 @@ uint8_t rlmGetBssOpBwByVhtAndHtOpInfo(struct BSS_INFO *prBssInfo)
 
 	ASSERT(prBssInfo);
 
-#if (CFG_SUPPORT_WIFI_6G == 1)
-	if (prBssInfo->eBand == BAND_6G)
-		ucChannelWidth = prBssInfo->ucHeChannelWidth;
-#endif
-
 	switch (ucChannelWidth) {
 	case VHT_OP_CHANNEL_WIDTH_320:
 		ucBssOpBw = MAX_BW_320MHZ;
@@ -6701,6 +6656,15 @@ static void rlmChangeOwnOpInfo(struct ADAPTER *prAdapter,
 					 HT_OP_INFO1_STA_CHNL_WIDTH_OFFSET),
 			       prBssInfo->eBssSCO);
 		}
+
+#if (CFG_SUPPORT_802_11AX == 1)
+#if (CFG_SUPPORT_WIFI_6G == 1)
+		if (prBssInfo->ucPhyTypeSet & PHY_TYPE_BIT_HE) {
+			/* Update 6G operating info */
+			rlmUpdate6GOpInfo(prAdapter, prBssInfo);
+		}
+#endif
+#endif
 	}
 
 	/* Update own operating RxNss */

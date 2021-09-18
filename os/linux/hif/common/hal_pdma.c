@@ -128,7 +128,7 @@ static uint8_t halRingDataSelectByWmmIndex(
 
 	bus_info = prAdapter->chip_info->bus_info;
 	if (bus_info->tx_ring0_data_idx != bus_info->tx_ring1_data_idx) {
-		u2Port = (ucWmmIndex == 1) ?
+		u2Port = (ucWmmIndex % 2) ?
 			TX_RING_DATA1_IDX_1 : TX_RING_DATA0_IDX_0;
 	}
 	return u2Port;
@@ -388,13 +388,21 @@ static void halDriverOwnTimeout(struct ADAPTER *prAdapter,
 {
 	struct mt66xx_chip_info *prChipInfo;
 	struct CHIP_DBG_OPS *prChipDbgOps;
+	uint32_t u4DrvOwnTimeoutMs = LP_OWN_BACK_FAILED_LOG_SKIP_MS;
+
+	if (prAdapter->u4CasanLoadType == 1)
+		u4DrvOwnTimeoutMs = LP_OWN_BACK_FAILED_LOG_SKIP_CASAN_MS;
+
+	DBGLOG(INIT, INFO,
+		   "Driver own timeout %u ms\n",
+		   u4DrvOwnTimeoutMs);
 
 	prChipInfo = prAdapter->chip_info;
 	prChipDbgOps = prChipInfo->prDebugOps;
 
 	if ((prAdapter->u4OwnFailedCount == 0) ||
 	    CHECK_FOR_TIMEOUT(u4CurrTick, prAdapter->rLastOwnFailedLogTime,
-			      MSEC_TO_SYSTIME(LP_OWN_BACK_FAILED_LOG_SKIP_MS))
+			      MSEC_TO_SYSTIME(u4DrvOwnTimeoutMs))
 		) {
 		DBGLOG(INIT, ERROR,
 		       "LP cannot be own back, Timeout[%u](%ums), BusAccessError[%u]",
@@ -409,7 +417,7 @@ static void halDriverOwnTimeout(struct ADAPTER *prAdapter,
 		       prAdapter->u4OwnFailedCount);
 		DBGLOG(INIT, INFO,
 		       "Skip LP own back failed log for next %ums\n",
-		       LP_OWN_BACK_FAILED_LOG_SKIP_MS);
+		       u4DrvOwnTimeoutMs);
 		if (prAdapter->chip_info->dumpwfsyscpupcr)
 			prAdapter->chip_info->dumpwfsyscpupcr(prAdapter);
 
@@ -1453,6 +1461,9 @@ void halRxReceiveRFBs(IN struct ADAPTER *prAdapter, uint32_t u4Port,
 
 	DBGLOG(RX, TEMP, "halRxReceiveRFBs: u4RxCnt:%d\n", u4RxCnt);
 
+	kalDevRegRead(prAdapter->prGlueInfo, prRxRing->hw_cidx_addr,
+		      &prRxRing->RxCpuIdx);
+
 	while (u4RxCnt--) {
 		KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_RX_FREE_QUE);
 		QUEUE_REMOVE_HEAD(&prRxCtrl->rFreeSwRfbList,
@@ -1533,6 +1544,10 @@ void halRxReceiveRFBs(IN struct ADAPTER *prAdapter, uint32_t u4Port,
 			prSwRfb, RX_GET_CNT(prRxCtrl, RX_MPDU_TOTAL_COUNT));
 		KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_RX_QUE);
 	}
+
+	kalDevRegWrite(prAdapter->prGlueInfo, prRxRing->hw_cidx_addr,
+		       prRxRing->RxCpuIdx);
+
 	prRxRing->u4PendingCnt = halWpdmaGetRxDmaDoneCnt(prAdapter->prGlueInfo,
 			u4Port);
 	if (u4MsduReportCnt > 0)

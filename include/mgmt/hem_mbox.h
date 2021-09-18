@@ -247,12 +247,6 @@ enum ENUM_MSG_ID {
 	MID_TWT_REQ_IND_INFOFRM,
 	MID_TWT_PARAMS_SET,
 #endif
-#if (CFG_SUPPORT_POWER_THROTTLING == 1)
-	/* Connsys power adapter notify driver new power level */
-	MID_CNS_DRV_PWR_LEVEL,
-	/* Connsys power adapter notify driver new power temp */
-	MID_CNS_DRV_PWR_TEMP,
-#endif
 #if (CFG_SUPPORT_NAN == 1)
 	MID_CNM_NAN_CH_GRANT,
 #endif
@@ -413,19 +407,6 @@ struct MSG_SAA_EXTERNAL_AUTH_DONE {
 	struct STA_RECORD *prStaRec;
 	uint16_t status;
 };
-
-#if (CFG_SUPPORT_POWER_THROTTLING == 1)
-struct MSG_PWR_LEVEL_NOTIFY {
-	struct MSG_HDR rMsgHdr; /* Must be the first member */
-	uint32_t level;
-};
-
-struct MSG_PWR_TEMP_NOTIFY {
-	struct MSG_HDR rMsgHdr; /* Must be the first member */
-	uint32_t u4MaxTemp;
-	uint32_t u4RecoveryTemp;
-};
-#endif
 
 /* specific message data types */
 

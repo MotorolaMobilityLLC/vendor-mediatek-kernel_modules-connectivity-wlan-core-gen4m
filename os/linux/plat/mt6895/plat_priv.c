@@ -12,18 +12,7 @@
 #include <linux/pm_qos.h>
 #include "precomp.h"
 
-#ifdef CONFIG_MTK_EMI
-#if KERNEL_VERSION(5, 4, 0) <= CFG80211_VERSION_CODE
-#include <soc/mediatek/emi.h>
-#else
-#include <memory/mediatek/emi.h>
-#endif
-#define DOMAIN_AP	0
-#define DOMAIN_CONN	2
-#endif
-
 #define MAX_CPU_FREQ (3 * 1024 * 1024) /* in kHZ */
-#define MAX_CLUSTER_NUM  3
 #define CPU_ALL_CORE (0xff)
 #define CPU_BIG_CORE (0xf0)
 #define CPU_LITTLE_CORE (CPU_ALL_CORE - CPU_BIG_CORE)
@@ -34,8 +23,6 @@ enum ENUM_CPU_BOOST_STATUS {
 	ENUM_CPU_BOOST_STATUS_STOP,
 	ENUM_CPU_BOOST_STATUS_NUM
 };
-
-static uint32_t u4EmiMetOffset = 0x45D400;
 
 uint32_t kalGetCpuBoostThreshold(void)
 {
@@ -62,9 +49,15 @@ int32_t kalCheckTputLoad(IN struct ADAPTER *prAdapter,
 	       TRUE : FALSE;
 }
 
+#if KERNEL_VERSION(5, 4, 0) <= CFG80211_VERSION_CODE
+static LIST_HEAD(wlan_policy_list);
+struct wlan_policy {
+	struct freq_qos_request	qos_req;
+	struct list_head	list;
+};
+
 void kalSetTaskUtilMinPct(IN int pid, IN unsigned int min)
 {
-#if KERNEL_VERSION(5, 4, 0) <= CFG80211_VERSION_CODE
 	int ret = 0;
 	unsigned int blc_1024;
 	struct task_struct *p;
@@ -102,22 +95,10 @@ void kalSetTaskUtilMinPct(IN int pid, IN unsigned int min)
 		ret = sched_setattr(p, &attr);
 		put_task_struct(p);
 	}
-#else
-	set_task_util_min_pct(pid, min);
-#endif
 }
-
-#if KERNEL_VERSION(5, 4, 0) <= CFG80211_VERSION_CODE
-static LIST_HEAD(wlan_policy_list);
-struct wlan_policy {
-	struct freq_qos_request	qos_req;
-	struct list_head	list;
-};
-#endif
 
 void kalSetCpuFreq(IN int32_t freq)
 {
-#if KERNEL_VERSION(5, 4, 0) <= CFG80211_VERSION_CODE
 	int cpu, ret;
 	struct cpufreq_policy *policy;
 	struct wlan_policy *wReq;
@@ -149,73 +130,13 @@ void kalSetCpuFreq(IN int32_t freq)
 	list_for_each_entry(wReq, &wlan_policy_list, list) {
 		freq_qos_update_request(&wReq->qos_req, freq);
 	}
-#else
-	int32_t i = 0;
-	struct ppm_limit_data *freq_to_set;
-	uint32_t u4ClusterNum = topo_ctrl_get_nr_clusters();
-
-	freq_to_set = kmalloc_array(u4ClusterNum, sizeof(struct ppm_limit_data),
-			GFP_KERNEL);
-	if (freq_to_set)
-		return;
-
-	for (i = 0; i < u4ClusterNum; i++) {
-		freq_to_set[i].min = freq;
-		freq_to_set[i].max = freq;
-	}
-
-	update_userlimit_cpu_freq(CPU_KIR_WIFI,
-		u4ClusterNum, freq_to_set);
-
-	kfree(freq_to_set);
-#endif
 }
 
 void kalSetDramBoost(IN struct ADAPTER *prAdapter, IN u_int8_t onoff)
 {
-#if KERNEL_VERSION(5, 4, 0) <= CFG80211_VERSION_CODE
 	/* TODO */
-#else
-	static struct pm_qos_request wifi_qos_request;
-
-	KAL_ACQUIRE_MUTEX(prAdapter, MUTEX_BOOST_CPU);
-	if (onoff == TRUE) {
-		pr_info("Max Dram Freq start\n");
-		pm_qos_add_request(&wifi_qos_request,
-				   PM_QOS_DDR_OPP,
-				   DDR_OPP_2);
-		pm_qos_update_request(&wifi_qos_request, DDR_OPP_2);
-	} else {
-		pr_info("Max Dram Freq end\n");
-		pm_qos_update_request(&wifi_qos_request, DDR_OPP_UNREQ);
-		pm_qos_remove_request(&wifi_qos_request);
-	}
-	KAL_RELEASE_MUTEX(prAdapter, MUTEX_BOOST_CPU);
-#endif
 }
 
-static int kalSetCpuMask(struct task_struct *task, uint32_t set_mask)
-{
-	int r = -1;
-#if CFG_SUPPORT_TPUT_ON_BIG_CORE
-	struct cpumask cpu_mask;
-	int i;
-
-	if (set_mask == CPU_ALL_CORE)
-		r = set_cpus_allowed_ptr(task, cpu_all_mask);
-	else {
-		cpumask_clear(&cpu_mask);
-		for (i = 0; i < num_possible_cpus(); i++)
-			if ((0x1 << i) & set_mask)
-				cpumask_or(&cpu_mask, &cpu_mask, cpumask_of(i));
-		r = set_cpus_allowed_ptr(task, &cpu_mask);
-	}
-	DBGLOG(INIT, INFO, "set_cpus_allowed_ptr()=%d", r);
-#endif
-	return r;
-}
-
-#if KERNEL_VERSION(5, 4, 0) <= CFG80211_VERSION_CODE
 int32_t kalBoostCpu(IN struct ADAPTER *prAdapter,
 		    IN uint32_t u4TarPerfLevel,
 		    IN uint32_t u4BoostCpuTh)
@@ -239,10 +160,6 @@ int32_t kalBoostCpu(IN struct ADAPTER *prAdapter,
 				u4TarPerfLevel, u4BoostCpuTh);
 			fgRequested = ENUM_CPU_BOOST_STATUS_START;
 
-			kalSetCpuMask(prGlueInfo->hif_thread, CPU_BIG_CORE);
-			kalSetCpuMask(prGlueInfo->main_thread, CPU_BIG_CORE);
-			kalSetCpuMask(prGlueInfo->rx_thread, CPU_BIG_CORE);
-
 			kalSetTaskUtilMinPct(prGlueInfo->u4TxThreadPid, 100);
 			kalSetTaskUtilMinPct(prGlueInfo->u4RxThreadPid, 100);
 			kalSetTaskUtilMinPct(prGlueInfo->u4HifThreadPid, 100);
@@ -255,10 +172,6 @@ int32_t kalBoostCpu(IN struct ADAPTER *prAdapter,
 			pr_info("kalBoostCpu stop (%d<%d)\n",
 				u4TarPerfLevel, u4BoostCpuTh);
 			fgRequested = ENUM_CPU_BOOST_STATUS_STOP;
-
-			kalSetCpuMask(prGlueInfo->hif_thread, CPU_ALL_CORE);
-			kalSetCpuMask(prGlueInfo->main_thread, CPU_ALL_CORE);
-			kalSetCpuMask(prGlueInfo->rx_thread, CPU_ALL_CORE);
 
 			kalSetTaskUtilMinPct(prGlueInfo->u4TxThreadPid, 0);
 			kalSetTaskUtilMinPct(prGlueInfo->u4RxThreadPid, 0);
@@ -274,47 +187,3 @@ int32_t kalBoostCpu(IN struct ADAPTER *prAdapter,
 }
 #endif
 
-uint32_t kalGetEmiMetOffset(void)
-{
-	return u4EmiMetOffset;
-}
-
-void kalSetEmiMetOffset(uint32_t newEmiMetOffset)
-{
-	u4EmiMetOffset = newEmiMetOffset;
-}
-
-#ifdef CONFIG_MTK_EMI
-void kalSetEmiMpuProtection(phys_addr_t emiPhyBase, bool enable)
-{
-}
-
-void kalSetDrvEmiMpuProtection(phys_addr_t emiPhyBase, uint32_t offset,
-			       uint32_t size)
-{
-	struct emimpu_region_t region;
-	unsigned long long start = emiPhyBase + offset;
-	unsigned long long end = emiPhyBase + offset + size - 1;
-	int ret;
-
-	DBGLOG(INIT, INFO, "emiPhyBase: 0x%p, offset: %d, size: %d\n",
-				emiPhyBase, offset, size);
-
-	ret = mtk_emimpu_init_region(&region, 18);
-	if (ret) {
-		DBGLOG(INIT, ERROR, "mtk_emimpu_init_region failed, ret: %d\n",
-				ret);
-		return;
-	}
-	mtk_emimpu_set_addr(&region, start, end);
-	mtk_emimpu_set_apc(&region, DOMAIN_AP, MTK_EMIMPU_NO_PROTECTION);
-	mtk_emimpu_set_apc(&region, DOMAIN_CONN, MTK_EMIMPU_NO_PROTECTION);
-	mtk_emimpu_lock_region(&region, MTK_EMIMPU_LOCK);
-	ret = mtk_emimpu_set_protection(&region);
-	if (ret)
-		DBGLOG(INIT, ERROR,
-			"mtk_emimpu_set_protection failed, ret: %d\n",
-			ret);
-	mtk_emimpu_free_region(&region);
-}
-#endif

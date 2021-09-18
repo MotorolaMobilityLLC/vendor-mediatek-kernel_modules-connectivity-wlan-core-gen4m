@@ -282,6 +282,8 @@
 #define CFG_SUPPORT_ICS                 0
 #endif
 
+#define CFG_SUPPORT_BAR_DELAY_INDICATION	1
+
 /*------------------------------------------------------------------------------
  * Flags of 6G SUPPORT
  *------------------------------------------------------------------------------
@@ -1492,7 +1494,7 @@
  *------------------------------------------------------------------------------
 */
 #ifndef CFG_SUPPORT_SMART_GEAR
-#define CFG_SUPPORT_SMART_GEAR 0
+#define CFG_SUPPORT_SMART_GEAR 1
 #endif
 
 #define CFG_SUPPORT_WIFI_RNR  1
@@ -1561,6 +1563,25 @@
 #define CFG_SUPPORT_POWER_THROTTLING 0
 #endif
 
+/*------------------------------------------------------------------------------
+ * Flag used for packet offload support.
+ * Value 0: Do not enable packet offload.
+ * Value 1: Enable packet offload.
+ *------------------------------------------------------------------------------
+ */
+#ifndef CFG_SUPPORT_PKT_OFLD
+#define CFG_SUPPORT_PKT_OFLD 0
+#endif
+
+/*------------------------------------------------------------------------------
+ * Flag used for APF support.
+ * Value 0: Do not enable APF.
+ * Value 1: Enable APF.
+ *------------------------------------------------------------------------------
+ */
+#ifndef CFG_SUPPORT_APF
+#define CFG_SUPPORT_APF 0
+#endif
 #if (CFG_SUPPORT_CONNINFRA == 0)
 #define CFG_SUPPORT_POWER_THROTTLING 0
 #endif
@@ -1585,6 +1606,12 @@
 #define CFG_SUPPORT_NAN_SHOULD_REMOVE_FOR_NO_TYPEDEF 0
 #endif
 
+#ifdef SOC7_0
+#define CFG_SUPPORT_AVOID_DESENSE 1
+#else
+#define CFG_SUPPORT_AVOID_DESENSE 0
+#endif
+
 /*------------------------------------------------------------------------------
  * Flags of Tp Enhance Mechanism
  *------------------------------------------------------------------------------
@@ -1594,6 +1621,17 @@
  * 0(default): Disable
  */
 #define CFG_SUPPORT_TPENHANCE_MODE          0
+
+/*------------------------------------------------------------------------------
+ * Flags of Fast Path Feature Support
+ *------------------------------------------------------------------------------
+ */
+#define CFG_MSCS_SUPPORT                            1
+
+/* 1(default): Run on big core when tput over threshold
+ * 0: Disable (Let system scheduler decide)
+ */
+#define CFG_SUPPORT_TPUT_ON_BIG_CORE 1
 
 
 /*******************************************************************************

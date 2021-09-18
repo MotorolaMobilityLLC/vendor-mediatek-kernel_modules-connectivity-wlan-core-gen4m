@@ -187,6 +187,8 @@ extern u_int8_t fgIsBusAccessFailed;
 /* for non-wfa vendor specific IE buffer */
 #define NON_WFA_VENDOR_IE_MAX_LEN	(128)
 
+#define FW_LOG_CMD_ON_OFF		0
+#define FW_LOG_CMD_SET_LEVEL		1
 
 /*******************************************************************************
  *                    E X T E R N A L   R E F E R E N C E S
@@ -241,6 +243,13 @@ extern u_int8_t fgIsBusAccessFailed;
 #define GLUE_FLAG_UPDATE_WMM_QUOTA_BIT		(17)
 #define GLUE_FLAG_NOTIFY_MD_CRASH_BIT		(18)
 #define GLUE_FLAG_DRV_INT_BIT			(19)
+
+#if (CFG_SUPPORT_POWER_THROTTLING == 1)
+#define GLUE_FLAG_CNS_PWR_LEVEL_BIT		(21)
+#define GLUE_FLAG_CNS_PWR_TEMP_BIT		(22)
+#define GLUE_FLAG_CNS_PWR_LEVEL			BIT(21)
+#define GLUE_FLAG_CNS_PWR_TEMP			BIT(22)
+#endif
 
 #if CFG_ENABLE_BT_OVER_WIFI
 #define GLUE_BOW_KFIFO_DEPTH        (1024)
@@ -935,6 +944,12 @@ struct PACKET_PRIVATE_DATA {
 struct PACKET_PRIVATE_RX_DATA {
 	uint64_t u8IntTime;	/* 8byte */
 	uint64_t u8RxTime;	/* 8byte */
+};
+
+struct CMD_CONNSYS_FW_LOG {
+	int32_t fgCmd;
+	int32_t fgValue;
+	u_int8_t fgEarlySet;
 };
 
 /*******************************************************************************

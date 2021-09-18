@@ -291,7 +291,7 @@ static struct MSG_HNDL_ENTRY arMsgMapTable[] = {
 	{MID_MNY_P2P_MGMT_FRAME_REGISTER,
 		p2pDevFsmRunEventMgmtFrameRegister},
 	{MID_MNY_P2P_NET_DEV_REGISTER, p2pFsmRunEventNetDeviceRegister},
-	{MID_MNY_P2P_START_AP, p2pRoleFsmRunEventStartAP},
+	{MID_MNY_P2P_START_AP, p2pRoleFsmRunEventPreStartAP},
 	{MID_MNY_P2P_DEL_IFACE, p2pRoleFsmRunEventDelIface},
 	{MID_MNY_P2P_MGMT_FRAME_UPDATE, p2pFsmRunEventUpdateMgmtFrame},
 #if (CFG_SUPPORT_DFS_MASTER == 1)
@@ -335,10 +335,6 @@ static struct MSG_HNDL_ENTRY arMsgMapTable[] = {
 	{MID_TWT_REQ_IND_TEARDOWN_DONE, twtPlannerTeardownDone},
 	{MID_TWT_REQ_IND_INFOFRM, twtPlannerRxInfoFrm},
 	{MID_TWT_PARAMS_SET, twtPlannerSetParams},
-#endif
-#if (CFG_SUPPORT_POWER_THROTTLING == 1)
-	{MID_CNS_DRV_PWR_LEVEL, connsysPowerLevelNotify},
-	{MID_CNS_DRV_PWR_TEMP, connsysPowerTempNotify},
 #endif
 
 #if (CFG_SUPPORT_NAN == 1)

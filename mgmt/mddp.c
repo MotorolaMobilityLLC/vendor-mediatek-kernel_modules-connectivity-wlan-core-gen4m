@@ -44,6 +44,27 @@
 *                            P U B L I C   D A T A
 ********************************************************************************
 */
+enum ENUM_MDDPW_DRV_INFO_STATUS {
+	MDDPW_DRV_INFO_STATUS_ON_START   = 0,
+	MDDPW_DRV_INFO_STATUS_ON_END     = 1,
+	MDDPW_DRV_INFO_STATUS_OFF_START  = 2,
+	MDDPW_DRV_INFO_STATUS_OFF_END    = 3,
+	MDDPW_DRV_INFO_STATUS_ON_END_QOS = 4,
+};
+
+enum ENUM_MDDPW_MD_INFO {
+	MDDPW_MD_INFO_RESET_IND     = 1,
+	MDDPW_MD_INFO_DRV_EXCEPTION = 2,
+};
+
+/* MDDPW_MD_INFO_DRV_EXCEPTION */
+struct wsvc_md_event_exception_t {
+	uint32_t u4RstReason;
+	uint32_t u4RstFlag;
+	uint32_t u4Line;
+	char pucFuncName[64];
+};
+
 struct mddpw_drv_handle_t gMddpWFunc = {
 	.notify_md_info = mddpMdNotifyInfo,
 };
@@ -176,8 +197,6 @@ static int32_t mddpRegisterCb(void)
 	gMddpFunc.wifi_handle = &gMddpWFunc;
 
 	ret = mddp_drv_attach(&gMddpDrvConf, &gMddpFunc);
-
-	mtk_ccci_register_md_state_cb(&mddpMdStateChangedCb);
 
 	DBGLOG(INIT, INFO, "mddp_drv_attach ret: %d, g_fgMddpEnabled: %d\n",
 			ret, g_fgMddpEnabled);
@@ -403,7 +422,8 @@ int32_t mddpNotifyDrvTxd(IN struct ADAPTER *prAdapter,
 	prMddpTxd->wlan_idx = prStaRec->ucWlanIndex;
 	prMddpTxd->sta_mode = prStaRec->eStaType;
 	prMddpTxd->bss_id = prStaRec->ucBssIndex;
-	prMddpTxd->wmmset = prBssInfo->ucWmmQueSet;
+	/* TODO: Create a new msg for DMASHDL BMP */
+	prMddpTxd->wmmset = prBssInfo->ucWmmQueSet % 2;
 	kalMemCopy(prMddpTxd->nw_if_name, prNetdev->name,
 			sizeof(prMddpTxd->nw_if_name));
 	kalMemCopy(prMddpTxd->aucMacAddr, prStaRec->aucMacAddr, MAC_ADDR_LEN);
@@ -439,7 +459,7 @@ exit:
 	return ret;
 }
 
-int32_t mddpNotifyWifiStatus(IN enum mddp_drv_onoff_status wifiOnOffStatus)
+int32_t mddpNotifyWifiStatus(IN enum ENUM_MDDPW_DRV_INFO_STATUS status)
 {
 	struct mddpw_drv_notify_info_t *prNotifyInfo;
 	struct mddpw_drv_info_t *prDrvInfo;
@@ -469,11 +489,11 @@ int32_t mddpNotifyWifiStatus(IN enum mddp_drv_onoff_status wifiOnOffStatus)
 		prDrvInfo = (struct mddpw_drv_info_t *) &(prNotifyInfo->buf[0]);
 		prDrvInfo->info_id = MDDPW_DRV_INFO_NOTIFY_WIFI_ONOFF;
 		prDrvInfo->info_len = WIFI_ONOFF_NOTIFICATION_LEN;
-		prDrvInfo->info[0] = wifiOnOffStatus;
+		prDrvInfo->info[0] = status;
 
 		ret = gMddpWFunc.notify_drv_info(prNotifyInfo);
 		DBGLOG(INIT, INFO, "power: %d, ret: %d, feature:%d.\n",
-		       wifiOnOffStatus, ret, feature);
+		       status, ret, feature);
 		kalMemFree(buff, VIR_MEM_TYPE, u32BufSize);
 	} else {
 		DBGLOG(INIT, ERROR, "notify_drv_info is NULL.\n");
@@ -487,7 +507,10 @@ void mddpNotifyWifiOnStart(void)
 {
 	if (!mddpIsSupportMcifWifi())
 		return;
-	mddpNotifyWifiStatus(MDDPW_DRV_INFO_WLAN_ON_START);
+
+	mtk_ccci_register_md_state_cb(&mddpMdStateChangedCb);
+
+	mddpNotifyWifiStatus(MDDPW_DRV_INFO_STATUS_ON_START);
 }
 
 int32_t mddpNotifyWifiOnEnd(void)
@@ -503,9 +526,9 @@ int32_t mddpNotifyWifiOnEnd(void)
 	if (g_rSettings.rOps.clr)
 		g_rSettings.rOps.clr(&g_rSettings, g_rSettings.u4MdOnBit);
 #if (CFG_SUPPORT_CONNAC2X == 0)
-	ret = mddpNotifyWifiStatus(MDDPW_DRV_INFO_WLAN_ON_END);
+	ret = mddpNotifyWifiStatus(MDDPW_DRV_INFO_STATUS_ON_END);
 #else
-	ret = mddpNotifyWifiStatus(MDDPW_DRV_INFO_WLAN_ON_END_QOS);
+	ret = mddpNotifyWifiStatus(MDDPW_DRV_INFO_STATUS_ON_END_QOS);
 #endif
 	if (ret == 0)
 		ret = wait_for_md_on_complete() ?
@@ -535,7 +558,7 @@ void mddpNotifyWifiOffStart(void)
 	if (g_rSettings.rOps.set)
 		g_rSettings.rOps.set(&g_rSettings, g_rSettings.u4MdOffBit);
 
-	ret = mddpNotifyWifiStatus(MDDPW_DRV_INFO_WLAN_OFF_START);
+	ret = mddpNotifyWifiStatus(MDDPW_DRV_INFO_STATUS_OFF_START);
 }
 
 void mddpNotifyWifiOffEnd(void)
@@ -543,7 +566,7 @@ void mddpNotifyWifiOffEnd(void)
 	if (!mddpIsSupportMcifWifi())
 		return;
 
-	mddpNotifyWifiStatus(MDDPW_DRV_INFO_WLAN_OFF_END);
+	mddpNotifyWifiStatus(MDDPW_DRV_INFO_STATUS_OFF_END);
 }
 
 void mddpNotifyWifiReset(void)
@@ -559,35 +582,41 @@ int32_t mddpMdNotifyInfo(struct mddpw_md_notify_info_t *prMdInfo)
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct ADAPTER *prAdapter = NULL;
+	int32_t ret = 0;
 	u_int8_t fgHalted = kalIsHalted();
 
 	DBGLOG(INIT, INFO, "MD notify mddpMdNotifyInfo.\n");
 
 	if (gPrDev == NULL) {
 		DBGLOG(INIT, ERROR, "gPrDev is NULL.\n");
-		return 0;
+		ret = -ENODEV;
+		goto exit;
 	}
 
 	prGlueInfo = *((struct GLUE_INFO **)netdev_priv(gPrDev));
 	if (prGlueInfo == NULL) {
 		DBGLOG(INIT, ERROR, "prGlueInfo is NULL.\n");
-		return 0;
+		ret = -ENODEV;
+		goto exit;
 	}
 	prAdapter = prGlueInfo->prAdapter;
 	if (prAdapter == NULL) {
 		DBGLOG(INIT, ERROR, "prAdapter is NULL.\n");
-		return 0;
+		ret = -ENODEV;
+		goto exit;
 	}
 
 	if (fgHalted || !prGlueInfo->u4ReadyFlag) {
 		DBGLOG(INIT, INFO,
 			"Skip update info. to MD, fgHalted: %d, u4ReadyFlag: %d\n",
 			fgHalted, prGlueInfo->u4ReadyFlag);
-		return 0;
+		ret = -ENODEV;
+		goto exit;
 	}
 
-	if (prMdInfo->info_type == 1) {
+	if (prMdInfo->info_type == MDDPW_MD_INFO_RESET_IND) {
 		uint32_t i;
+		struct BSS_INFO *prSapBssInfo = (struct BSS_INFO *) NULL;
 		struct BSS_INFO *prP2pBssInfo = (struct BSS_INFO *) NULL;
 		int32_t ret;
 
@@ -627,8 +656,51 @@ int32_t mddpMdNotifyInfo(struct mddpw_md_notify_info_t *prMdInfo)
 						TRUE);
 			}
 		}
+		prSapBssInfo = cnmGetOtherSapBssInfo(prAdapter, prP2pBssInfo);
+		if (prSapBssInfo) {
+			struct LINK *prClientList;
+			struct STA_RECORD *prCurrStaRec;
+
+			prClientList = &prSapBssInfo->rStaRecOfClientList;
+			LINK_FOR_EACH_ENTRY(prCurrStaRec, prClientList,
+					rLinkEntry, struct STA_RECORD) {
+				if (!prCurrStaRec)
+					break;
+				mddpNotifyDrvTxd(prAdapter,
+						prCurrStaRec,
+						TRUE);
+			}
+		}
+	} else if (prMdInfo->info_type == MDDPW_MD_INFO_DRV_EXCEPTION) {
+		struct wsvc_md_event_exception_t *event;
+
+		if (prMdInfo->buf_len != sizeof(
+				struct wsvc_md_event_exception_t)) {
+			DBGLOG(INIT, ERROR,
+				"Invalid args from MD, expect %u but %u\n",
+				sizeof(struct wsvc_md_event_exception_t),
+				prMdInfo->buf_len);
+			ret = -EINVAL;
+			goto exit;
+		}
+		event = (struct wsvc_md_event_exception_t *)
+				&(prMdInfo->buf[1]);
+		DBGLOG(INIT, WARN, "reason: %d, flag: %d, line: %d, func: %s\n",
+				event->u4RstReason,
+				event->u4RstFlag,
+				event->u4Line,
+				event->pucFuncName);
+		glSetRstReason(RST_MDDP_MD_TRIGGER_EXCEPTION);
+		GL_RESET_TRIGGER(prAdapter, event->u4RstFlag);
+	} else {
+		DBGLOG(INIT, ERROR, "unknown MD info type: %d\n",
+			prMdInfo->info_type);
+		ret = -ENODEV;
+		goto exit;
 	}
-	return 0;
+
+exit:
+	return ret;
 }
 
 int32_t mddpChangeState(enum mddp_state_e event, void *buf, uint32_t *buf_len)

@@ -157,6 +157,31 @@ static void heRlmFillHe6gBandCapIE(struct ADAPTER *prAdapter,
 *                              F U N C T I O N S
 ********************************************************************************
 */
+uint8_t heRlmMaxBwToHeBw(uint8_t ucMaxBw)
+{
+	uint8_t ucHeBw = HE_OP_CHANNEL_WIDTH_20;
+
+	switch (ucMaxBw) {
+	case MAX_BW_20MHZ:
+		ucHeBw = HE_OP_CHANNEL_WIDTH_20;
+		break;
+	case MAX_BW_40MHZ:
+		ucHeBw = HE_OP_CHANNEL_WIDTH_40;
+		break;
+	case MAX_BW_80MHZ:
+		ucHeBw = HE_OP_CHANNEL_WIDTH_80;
+		break;
+	case MAX_BW_160MHZ:
+	case MAX_BW_80_80_MHZ:
+		ucHeBw = HE_OP_CHANNEL_WIDTH_80P80_160;
+		break;
+	default:
+		break;
+	}
+
+	return ucHeBw;
+}
+
 uint8_t heGetBssBandBw(struct ADAPTER *prAdapter,
 	struct BSS_INFO *prBssInfo,
 	enum ENUM_BAND eBand)
@@ -182,9 +207,15 @@ uint8_t heGetBssBandBw(struct ADAPTER *prAdapter,
 			if (prBssInfo->eBand == BAND_2G4)
 				ucMaxBandwidth = prAdapter->rWifiVar
 					.ucAp2gBandwidth;
-			else if (prBssInfo->eBand == BAND_5G)
+			else if (prBssInfo->eBand == BAND_5G) {
 				ucMaxBandwidth = prAdapter->rWifiVar
 					.ucAp5gBandwidth;
+				/* Use platform capability */
+				if (prAdapter->rWifiVar.u4SwTestMode ==
+					ENUM_SW_TEST_MODE_SIGMA_AX_AP)
+					ucMaxBandwidth = prAdapter->rWifiVar
+						.ucApBandwidth;
+			}
 #if (CFG_SUPPORT_WIFI_6G == 1)
 			else if (prBssInfo->eBand == BAND_6G)
 				ucMaxBandwidth = prAdapter->rWifiVar
@@ -391,9 +422,6 @@ static uint8_t heRlmFillPPEThreshold(
 
 	switch (ucMaxBw) {
 	case MAX_BW_20MHZ:
-		(*pPPEThreshold) |= HE_CAP_PPE_242_RU_IDX;
-		ucRUIdxSize = 1;
-		break;
 	case MAX_BW_40MHZ:
 		(*pPPEThreshold) |= HE_CAP_PPE_484_RU_IDX;
 		ucRUIdxSize = 2;

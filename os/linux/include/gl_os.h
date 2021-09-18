@@ -93,7 +93,10 @@
 
 #define CFG_TX_STOP_NETIF_QUEUE_THRESHOLD   256	/* packets */
 
-#if (CFG_SUPPORT_CONNAC2X == 1)
+#ifdef CONFIG_MTK_WIFI_HE160
+#define CFG_TX_STOP_NETIF_PER_QUEUE_THRESHOLD   4096	/* packets */
+#define CFG_TX_START_NETIF_PER_QUEUE_THRESHOLD  3072	/* packets */
+#elif (defined CONFIG_MTK_WIFI_HE80)
 #define CFG_TX_STOP_NETIF_PER_QUEUE_THRESHOLD   1024	/* packets */
 #define CFG_TX_START_NETIF_PER_QUEUE_THRESHOLD  512	/* packets */
 #else
@@ -120,6 +123,8 @@
 /* for non-wfa vendor specific IE buffer */
 #define NON_WFA_VENDOR_IE_MAX_LEN	(128)
 
+#define FW_LOG_CMD_ON_OFF		0
+#define FW_LOG_CMD_SET_LEVEL		1
 
 /*******************************************************************************
  *                    E X T E R N A L   R E F E R E N C E S
@@ -366,6 +371,13 @@ extern void update_driver_loaded_status(uint8_t loaded);
 #if CFG_SUPPORT_NAN /* notice the bit differnet with 7668 */
 #define GLUE_FLAG_NAN_MULTICAST_BIT (20)
 #define GLUE_FLAG_NAN_MULTICAST BIT(20)
+#endif
+
+#if (CFG_SUPPORT_POWER_THROTTLING == 1)
+#define GLUE_FLAG_CNS_PWR_LEVEL_BIT		(21)
+#define GLUE_FLAG_CNS_PWR_TEMP_BIT		(22)
+#define GLUE_FLAG_CNS_PWR_LEVEL			BIT(21)
+#define GLUE_FLAG_CNS_PWR_TEMP			BIT(22)
 #endif
 
 #define GLUE_BOW_KFIFO_DEPTH        (1024)
@@ -1014,6 +1026,12 @@ struct PACKET_PRIVATE_DATA {
 struct PACKET_PRIVATE_RX_DATA {
 	uint64_t u8IntTime;	/* 8byte */
 	uint64_t u8RxTime;	/* 8byte */
+};
+
+struct CMD_CONNSYS_FW_LOG {
+	int32_t fgCmd;
+	int32_t fgValue;
+	u_int8_t fgEarlySet;
 };
 
 /*******************************************************************************

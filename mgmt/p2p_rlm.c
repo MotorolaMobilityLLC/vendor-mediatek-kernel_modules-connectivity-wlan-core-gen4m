@@ -106,6 +106,57 @@ static enum ENUM_CHNL_EXT rlmGetSco(struct ADAPTER *prAdapter,
  *                              F U N C T I O N S
  ******************************************************************************
  */
+#if (CFG_SUPPORT_WIFI_6G == 1)
+void rlmUpdate6GOpInfo(struct ADAPTER *prAdapter,
+		struct BSS_INFO *prBssInfo)
+{
+	uint8_t ucMaxBandwidth, ucS1, ucS2;
+
+	if (IS_BSS_APGO(prBssInfo) && prBssInfo->eBand == BAND_6G) {
+		HE_SET_6G_OP_INFOR_PRESENT(prBssInfo->ucHeOpParams);
+
+		ucMaxBandwidth = rlmGetBssOpBwByVhtAndHtOpInfo(prBssInfo);
+
+		ucS1 = nicGetS1(prBssInfo->eBand,
+				prBssInfo->ucPrimaryChannel,
+				prBssInfo->ucVhtChannelWidth);
+
+		ucS2 = nicGetS2(prBssInfo->eBand,
+				prBssInfo->ucPrimaryChannel,
+				prBssInfo->ucVhtChannelWidth,
+				ucS1);
+
+		prBssInfo->r6gOperInfor.rControl.bits.ChannelWidth =
+			heRlmMaxBwToHeBw(ucMaxBandwidth);
+		prBssInfo->r6gOperInfor.ucPrimaryChannel =
+			prBssInfo->ucPrimaryChannel;
+
+		/* If the BSS channel width is 160 MHz then the Channel Center
+		 * Frequency Segment 0 field indicates the channel center
+		 * frequency index of the primary 80 MHz. The Channel Center
+		 * Frequency Segment 1 field indicates the channel center
+		 * frequency index of the 160 MHz channel on which the BSS
+		 * operates in the 6 GHz band.
+		 */
+		if (ucMaxBandwidth == MAX_BW_160MHZ) {
+			prBssInfo->r6gOperInfor.ucChannelCenterFreqSeg0 = ucS2;
+			prBssInfo->r6gOperInfor.ucChannelCenterFreqSeg1 = ucS1;
+		} else {
+			prBssInfo->r6gOperInfor.ucChannelCenterFreqSeg0 = ucS1;
+			prBssInfo->r6gOperInfor.ucChannelCenterFreqSeg1 = ucS2;
+		}
+
+		prBssInfo->r6gOperInfor.ucMinimumRate = 6;
+
+		DBGLOG(RLM, INFO,
+			"Set 6G operating info: BW[%d] CH[%d] S1[%d] S2[%d]\n",
+			prBssInfo->r6gOperInfor.rControl.bits.ChannelWidth,
+			prBssInfo->r6gOperInfor.ucPrimaryChannel,
+			prBssInfo->r6gOperInfor.ucChannelCenterFreqSeg0,
+			prBssInfo->r6gOperInfor.ucChannelCenterFreqSeg1);
+	}
+}
+#endif
 
 void rlmBssUpdateChannelParams(struct ADAPTER *prAdapter,
 		struct BSS_INFO *prBssInfo)
@@ -186,23 +237,9 @@ void rlmBssUpdateChannelParams(struct ADAPTER *prAdapter,
 		for (i = 1; i < 8; i++)
 			prBssInfo->u2HeBasicMcsSet |=
 				(HE_CAP_INFO_MCS_NOT_SUPPORTED << 2 * i);
+
 #if (CFG_SUPPORT_WIFI_6G == 1)
-		if (IS_BSS_APGO(prBssInfo) && prBssInfo->eBand == BAND_6G) {
-			DBGLOG(RLM, INFO, "Set 6G operating info\n");
-
-			HE_SET_6G_OP_INFOR_PRESENT(prBssInfo->ucHeOpParams);
-
-			prBssInfo->r6gOperInfor.rControl.bits.ChannelWidth =
-				heGetBssBandBw(prAdapter, prBssInfo, BAND_6G);
-			prBssInfo->r6gOperInfor.ucPrimaryChannel =
-				prBssInfo->ucPrimaryChannel;
-			prBssInfo->r6gOperInfor.ucChannelCenterFreqSeg0 =
-				nicGetS1(prBssInfo->eBand,
-					prBssInfo->ucPrimaryChannel,
-					prBssInfo->ucVhtChannelWidth);
-			prBssInfo->r6gOperInfor.ucChannelCenterFreqSeg1 = 0;
-			prBssInfo->r6gOperInfor.ucMinimumRate = 6;
-		}
+		rlmUpdate6GOpInfo(prAdapter, prBssInfo);
 #endif
 	} else {
 		memset(prBssInfo->ucHeOpParams, 0, HE_OP_BYTE_NUM);

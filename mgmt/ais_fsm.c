@@ -1712,16 +1712,20 @@ void aisFsmSteps(IN struct ADAPTER *prAdapter,
 						prAisBssInfo->ucBssIndex);
 				}
 				if (prAisReq != NULL) {
-					SET_NET_ACTIVE(prAdapter,
+					if (cnmDBDCIsReqPeivilegeLock()) {
+						DBGLOG(AIS, INFO,
+						"DBDC lock: skip activate\n");
+					} else {
+					    SET_NET_ACTIVE(prAdapter,
 						prAisBssInfo->
 						ucBssIndex);
-					/* sync with firmware */
-					nicActivateNetwork(prAdapter,
+					    /* sync with firmware */
+					    nicActivateNetwork(prAdapter,
 						prAisBssInfo->ucBssIndex);
 
-					SET_NET_PWR_STATE_ACTIVE(prAdapter,
-					prAisBssInfo->ucBssIndex);
-
+					    SET_NET_PWR_STATE_ACTIVE(prAdapter,
+						prAisBssInfo->ucBssIndex);
+					}
 					eNextState = AIS_STATE_SEARCH;
 					fgIsTransition = TRUE;
 				} else {
@@ -2011,11 +2015,9 @@ void aisFsmSteps(IN struct ADAPTER *prAdapter,
 					ucChannelNum =
 					    prAisSpecificBssInfo->
 					    arCurEssChnlInfo[i].ucChannel;
-					if ((ucChannelNum >= 1)
-					    && (ucChannelNum <= 14))
-						prChnlInfo[i].eBand = BAND_2G4;
-					else
-						prChnlInfo[i].eBand = BAND_5G;
+					prChnlInfo[i].eBand =
+						prAisSpecificBssInfo->
+						arCurEssChnlInfo[i].eBand;
 					prChnlInfo[i].ucChannelNum
 					    = ucChannelNum;
 				}
@@ -6704,6 +6706,11 @@ uint32_t aisCollectNeighborAP(struct ADAPTER *prAdapter, uint8_t *pucApBuf,
 		prNeighborAP->fgQoS = !!(prIe->u4BSSIDInfo & BIT(5));
 		prNeighborAP->fgSameMD = !!(prIe->u4BSSIDInfo & BIT(10));
 		prNeighborAP->ucChannel = prIe->ucChnlNumber;
+		prNeighborAP->eBand =
+#if (CFG_SUPPORT_WIFI_6G == 1)
+			IS_6G_OP_CLASS(prIe->ucOperClass) ? BAND_6G :
+#endif
+			(prNeighborAP->ucChannel <= 14 ? BAND_2G4 : BAND_5G);
 		prNeighborAP->fgPrefPresence = aisCandPrefIEIsExist(
 			prIe->aucSubElem,
 			IE_SIZE(prIe) - OFFSET_OF(struct IE_NEIGHBOR_REPORT,

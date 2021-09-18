@@ -371,6 +371,10 @@ CONNAC2X_RX_STATUS_PF_MASK, CONNAC2X_RX_STATUS_PF_OFFSET)
 (((_prHwMacRxDesc)->u4DW4 & CONNAC2X_RX_STATUS_OFLD_MASK) >> \
 CONNAC2X_RX_STATUS_OFLD_OFFSET)
 
+#define HAL_MAC_CONNAC2X_RX_STATUS_GET_DW5_CLS_BITMAP_OFFSET(_prHwMacRxDesc) \
+(((_prHwMacRxDesc)->u4DW5 & CONNAC2X_RX_STATUS_DW5_CLS_BITMAP_MASK) >> \
+CONNAC2X_RX_STATUS_DW5_CLS_BITMAP_OFFSET)
+
 /*******************************************************************************
 *                  F U N C T I O N   D E C L A R A T I O N S
 ********************************************************************************

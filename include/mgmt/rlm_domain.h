@@ -765,7 +765,10 @@ enum ENUM_POWER_ANT_TAG {
 
 enum ENUM_POWER_ANT_BAND {
 	POWER_ANT_2G4_BAND = 0,
-	POWER_ANT_5G_BAND,
+	POWER_ANT_5G_BAND1,
+	POWER_ANT_5G_BAND2,
+	POWER_ANT_5G_BAND3,
+	POWER_ANT_5G_BAND4,
 	POWER_ANT_BAND_NUM
 };
 
@@ -795,7 +798,10 @@ struct TX_PWR_CTRL_CHANNEL_SETTING {
 #if CFG_SUPPORT_DYNAMIC_PWR_LIMIT_ANT_TAG
 struct TX_PWR_CTRL_ANT_SETTING {
 	int8_t aiPwrAnt2G4[POWER_ANT_NUM];
-	int8_t aiPwrAnt5G[POWER_ANT_NUM];
+	int8_t aiPwrAnt5GB1[POWER_ANT_NUM];
+	int8_t aiPwrAnt5GB2[POWER_ANT_NUM];
+	int8_t aiPwrAnt5GB3[POWER_ANT_NUM];
+	int8_t aiPwrAnt5GB4[POWER_ANT_NUM];
 };
 #endif
 
@@ -1067,6 +1073,7 @@ struct mtk_regd_control {
 	u8 n_channel_active_6g;
 	struct CMD_DOMAIN_CHANNEL channels[MAX_SUPPORTED_CH_COUNT];
 	enum nl80211_dfs_regions dfs_region;
+	enum ENUM_DBDC_BN eDBDCBand;
 };
 
 #if (CFG_SUPPORT_SINGLE_SKU_LOCAL_DB == 1)
@@ -1172,6 +1179,8 @@ void rlmDomainSetCountryCode(char *alpha2,
 void rlmDomainSetDfsRegion(enum nl80211_dfs_regions
 			   dfs_region);
 enum nl80211_dfs_regions rlmDomainGetDfsRegion(void);
+void rlmDomainSetDfsDbdcBand(enum ENUM_DBDC_BN eDBDCBand);
+enum ENUM_DBDC_BN rlmDomainGetDfsDbdcBand(void);
 void rlmDomainResetCtrlInfo(u_int8_t force);
 void rlmDomainAddActiveChannel(u8 band);
 u8 rlmDomainGetActiveChannelCount(u8 band);

@@ -2351,9 +2351,20 @@ bool asicConnac2xSwIntHandler(struct ADAPTER *prAdapter)
 #endif
 			DBGLOG(HAL, ERROR,
 				"FW trigger assert(0x%x).\n", status);
+
+			glSetRstReason(RST_FW_ASSERT);
+
 			fgIsResetting = TRUE;
 			update_driver_reset_status(fgIsResetting);
-			kalSetRstEvent();
+
+			if (get_wifi_process_status() == 1) {
+#if (CFG_ANDORID_CONNINFRA_COREDUMP_SUPPORT == 1)
+				fw_log_connsys_coredump_start(-1, NULL);
+				g_IsNeedWaitCoredump = FALSE;
+#endif
+			} else {
+				kalSetRstEvent();
+			}
 		}
 	}
 

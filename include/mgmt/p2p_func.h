@@ -498,4 +498,10 @@ uint8_t p2pFuncIsBufferableMMPDU(IN struct ADAPTER *prAdapter,
 		IN enum ENUM_P2P_CONNECT_STATE eConnState,
 		IN struct MSDU_INFO *prMgmtTxMsdu);
 
+void p2pFuncSetAclPolicy(
+	IN struct ADAPTER *prAdapter,
+	IN uint8_t ucBssIdx,
+	IN enum ENUM_PARAM_CUSTOM_ACL_POLICY ePolicy,
+	IN uint8_t aucAddr[]);
+
 #endif

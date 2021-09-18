@@ -96,11 +96,11 @@
 #define SOC7_0_DMASHDL_QUEUE_8_TO_GROUP                (0x0)   /* LMAC AC20 */
 #define SOC7_0_DMASHDL_QUEUE_9_TO_GROUP                (0x0)   /* LMAC AC21 */
 #define SOC7_0_DMASHDL_QUEUE_10_TO_GROUP               (0x0)   /* LMAC AC22 */
-#define SOC7_0_DMASHDL_QUEUE_11_TO_GROUP               (0x0)   /* LMAC AC23 */
-#define SOC7_0_DMASHDL_QUEUE_12_TO_GROUP               (0x0)   /* LMAC AC30 */
-#define SOC7_0_DMASHDL_QUEUE_13_TO_GROUP               (0x0)   /* LMAC AC31 */
-#define SOC7_0_DMASHDL_QUEUE_14_TO_GROUP               (0x0)   /* LMAC AC32 */
-#define SOC7_0_DMASHDL_QUEUE_15_TO_GROUP               (0x0)   /* LMAC AC33 */
+#define SOC7_0_DMASHDL_QUEUE_11_TO_GROUP               (0x2)   /* LMAC AC23 */
+#define SOC7_0_DMASHDL_QUEUE_12_TO_GROUP               (0x1)   /* LMAC AC30 */
+#define SOC7_0_DMASHDL_QUEUE_13_TO_GROUP               (0x1)   /* LMAC AC31 */
+#define SOC7_0_DMASHDL_QUEUE_14_TO_GROUP               (0x1)   /* LMAC AC32 */
+#define SOC7_0_DMASHDL_QUEUE_15_TO_GROUP               (0x2)   /* LMAC AC33 */
 #define SOC7_0_DMASHDL_QUEUE_16_TO_GROUP               (0x0)   /* ALTX */
 #define SOC7_0_DMASHDL_QUEUE_17_TO_GROUP               (0x0)   /* BMC */
 #define SOC7_0_DMASHDL_QUEUE_18_TO_GROUP               (0x0)   /* BCN */

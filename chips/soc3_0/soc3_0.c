@@ -1263,11 +1263,6 @@ int soc3_0_Trigger_fw_assert(void)
 			"Trigger assert more than 2 seconds, need to trigger rst self\n");
 		soc3_0_DumpWfsysInfo();
 		soc3_0_DumpWfsysdebugflag();
-		g_IsTriggerTimeout = TRUE;
-#if (CFG_ANDORID_CONNINFRA_COREDUMP_SUPPORT == 1)
-		if (!prAdapter->prGlueInfo->u4ReadyFlag)
-			g_IsNeedWaitCoredump = TRUE;
-#endif
 	}
 #if (CFG_SUPPORT_CONNINFRA == 1)
 		kalSetRstEvent();

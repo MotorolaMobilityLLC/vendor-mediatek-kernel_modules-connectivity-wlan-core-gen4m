@@ -77,7 +77,7 @@
 #define RSSI_MAX_LEVEL                          -55
 #define RSSI_SECOND_LEVEL                       -66
 
-#if CFG_TC10_FEATURE
+#if (CFG_TC10_FEATURE == 1)
 #define RCPI_FOR_DONT_ROAM                      80 /*-70dbm*/
 #else
 #define RCPI_FOR_DONT_ROAM                      60 /*-80dbm*/
@@ -101,8 +101,8 @@
  * want to benifit 2.4G->5G case, and keep original logic in
  * other cases.
  */
-#define RSSI_BAD_NEED_ROAM_24G_TO_5G		-40 /* dbm */
-#define RSSI_BAD_NEED_ROAM			-80 /* dbm */
+#define RSSI_BAD_NEED_ROAM_24G_TO_5G_6G         -40 /* dbm */
+#define RSSI_BAD_NEED_ROAM                      -80 /* dbm */
 
 #define CHNL_DWELL_TIME_DEFAULT  100
 #define CHNL_DWELL_TIME_ONLINE   50
@@ -110,7 +110,7 @@
 /* When roam to 5G AP, the AP's rcpi should great than
  * RCPI_THRESHOLD_ROAM_2_5G dbm
  */
-#define RCPI_THRESHOLD_ROAM_TO_5G  90 /* rssi -65 */
+#define RCPI_THRESHOLD_ROAM_TO_5G_6G  90 /* rssi -65 */
 
 #define WEIGHT_IDX_CHNL_UTIL                    0
 #define WEIGHT_IDX_RSSI                         2
@@ -204,6 +204,33 @@ struct WEIGHT_CONFIG gasMtkWeightConfig[ROAM_TYPE_NUM] = {
 		.ucPreferenceWeight = WEIGHT_IDX_PREFERENCE_PER
 	}
 };
+
+static uint8_t *apucBandStr[BAND_NUM] = {
+	(uint8_t *) DISP_STRING("NULL"),
+	(uint8_t *) DISP_STRING("2.4G"),
+	(uint8_t *) DISP_STRING("5G")
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	,
+	(uint8_t *) DISP_STRING("6G")
+#endif
+};
+
+struct NETWORK_SELECTION_POLICY_BY_BAND networkReplaceHandler[BAND_NUM] = {
+	[BAND_2G4] = {BAND_2G4, scanNetworkReplaceHandler2G4},
+	[BAND_5G]  = {BAND_5G,  scanNetworkReplaceHandler5G},
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	[BAND_6G]  = {BAND_6G,  scanNetworkReplaceHandler6G},
+#endif
+};
+
+#if (CFG_SUPPORT_AVOID_DESENSE == 1)
+const struct WFA_DESENSE_CHANNEL_LIST desenseChList[BAND_NUM] = {
+	[BAND_5G]  = {120, 157},
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	[BAND_6G]  = {13,  53},
+#endif
+};
+#endif
 
 uint8_t roamReasonToType[ROAMING_REASON_NUM] = {
 	[0 ... ROAMING_REASON_NUM - 1] = ROAM_TYPE_RCPI,
@@ -429,6 +456,70 @@ struct NEIGHBOR_AP *scanGetNeighborAPEntry(
 
 #endif
 
+uint8_t scanNetworkReplaceHandler2G4(enum ENUM_BAND eCurrentBand,
+	int8_t cCandidateRssi, int8_t cCurrentRssi)
+{
+	/* Current AP is 2.4G, replace candidate AP if target AP is good */
+	if (eCurrentBand == BAND_5G
+#if (CFG_SUPPORT_WIFI_6G == 1)
+		|| eCurrentBand == BAND_6G
+#endif
+		) {
+		if (cCurrentRssi >= GOOD_RSSI_FOR_HT_VHT)
+			return TRUE;
+
+		if (cCurrentRssi < LOW_RSSI_FOR_5G_BAND &&
+			(cCandidateRssi > cCurrentRssi + 5))
+			return FALSE;
+	}
+	return FALSE;
+}
+
+uint8_t scanNetworkReplaceHandler5G(enum ENUM_BAND eCurrentBand,
+	int8_t cCandidateRssi, int8_t cCurrentRssi)
+{
+	/* Candidate AP is 5G, don't replace it if it's good enough. */
+	if (eCurrentBand == BAND_2G4) {
+		if (cCandidateRssi >= GOOD_RSSI_FOR_HT_VHT)
+			return FALSE;
+
+		if (cCandidateRssi < LOW_RSSI_FOR_5G_BAND &&
+			(cCurrentRssi > cCandidateRssi + 5))
+			return TRUE;
+	}
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	else if (eCurrentBand == BAND_6G) {
+		/* Target AP is 6G, replace candidate AP if target AP is good */
+		if (cCurrentRssi >= GOOD_RSSI_FOR_HT_VHT)
+			return TRUE;
+
+		if (cCurrentRssi < LOW_RSSI_FOR_5G_BAND &&
+			(cCandidateRssi > cCurrentRssi + 5))
+			return FALSE;
+	}
+#endif
+	return FALSE;
+}
+
+#if (CFG_SUPPORT_WIFI_6G == 1)
+uint8_t scanNetworkReplaceHandler6G(enum ENUM_BAND eCurrentBand,
+	int8_t cCandidateRssi, int8_t cCurrentRssi)
+{
+	if (eCurrentBand < BAND_2G4 || eCurrentBand > BAND_6G)
+		return FALSE;
+
+	/* Candidate AP is 6G, don't replace it if it's good enough. */
+	if (cCandidateRssi >= GOOD_RSSI_FOR_HT_VHT)
+		return FALSE;
+
+	if (cCandidateRssi < LOW_RSSI_FOR_5G_BAND &&
+		(cCurrentRssi > cCandidateRssi + 7))
+		return TRUE;
+
+	return FALSE;
+}
+#endif
+
 static u_int8_t scanNeedReplaceCandidate(struct ADAPTER *prAdapter,
 	struct BSS_DESC *prCandBss, struct BSS_DESC *prCurrBss,
 	uint16_t u2CandScore, uint16_t u2CurrScore,
@@ -482,28 +573,18 @@ static u_int8_t scanNeedReplaceCandidate(struct ADAPTER *prAdapter,
 		return TRUE;
 
 	/* 1.4 prefer to select 5G Bss if Rssi of a 5G band BSS is good */
-	if (eRoamType != ROAM_TYPE_PER) {
-		if (prCandBss->eBand != prCurrBss->eBand) {
-			if (prCandBss->eBand == BAND_5G) {
-				/* Candidate AP is 5G, don't replace it
-				 * if it's good enough.
-				 */
-				if (cCandRssi >= GOOD_RSSI_FOR_HT_VHT)
-					return FALSE;
-				if (cCandRssi < LOW_RSSI_FOR_5G_BAND &&
-					(cCurrRssi > cCandRssi + 5))
-					return TRUE;
-			} else {
-				/* Current AP is 5G, replace candidate
-				 * AP if current AP is good.
-				 */
-				if (cCurrRssi >= GOOD_RSSI_FOR_HT_VHT)
-					return TRUE;
-				if (cCurrRssi < LOW_RSSI_FOR_5G_BAND &&
-					(cCandRssi > cCurrRssi + 5))
-					return FALSE;
-			}
-		}
+	if (eRoamType != ROAM_TYPE_PER &&
+		prCandBss->eBand != prCurrBss->eBand) {
+		if (prCandBss->eBand >= BAND_2G4 &&
+#if (CFG_SUPPORT_WIFI_6G == 1)
+			prCandBss->eBand <= BAND_6G &&
+#else
+			prCandBss->eBand <= BAND_5G &&
+#endif
+			networkReplaceHandler[prCandBss->eBand].
+			pfnNetworkSelection(
+			prCurrBss->eBand, cCandRssi, cCurrRssi))
+			return TRUE;
 	}
 
 	/* 1.5 RSSI of Current Bss is lower than Candidate, don't replace
@@ -740,7 +821,7 @@ static u_int8_t scanSanityCheckBssDesc(struct ADAPTER *prAdapter,
 	return TRUE;
 }
 
-#ifdef CFG_TC10_FEATURE
+#if (CFG_TC10_FEATURE == 1)
 static int32_t scanCalculateScoreByCu(IN struct ADAPTER *prAdapter,
 	IN struct BSS_DESC *prBssDesc, IN uint8_t ucBssIndex)
 {
@@ -939,9 +1020,9 @@ static uint16_t scanCalculateScoreByIdleTime(struct ADAPTER *prAdapter,
 
 	log_dbg(SCN, TRACE,
 		MACSTR
-		" 5G[%d],chl[%d],slt[%d],ld[%d] idle Score %d,rssi[%d],cu[%d],cuR[%d],rf[%d],rw[%d],cf[%d],cw[%d]\n",
+		" Band[%s],chl[%d],slt[%d],ld[%d] idle Score %d,rssi[%d],cu[%d],cuR[%d],rf[%d],rw[%d],cf[%d],cw[%d]\n",
 		MAC2STR(prBssDesc->aucBSSID),
-		(prBssDesc->eBand == BAND_5G ? 1 : 0),
+		apucBandStr[prBssDesc->eBand],
 		prBssDesc->ucChannelNum, slot,
 		prBssDesc->fgExsitBssLoadIE, score, rssi, cu, cuRatio,
 		rssiFactor, rssiWeight, cuFactor, cuWeight);
@@ -1035,7 +1116,15 @@ uint16_t scanCalculateTotalScore(struct ADAPTER *prAdapter,
 	uint16_t u2PreferenceScore = 0;
 	uint16_t u2AxApScore = 0;
 	uint16_t u2TputScore = 0;
-
+#if (CFG_SUPPORT_AVOID_DESENSE == 1)
+	uint8_t fgBssInDenseRange =
+		IS_CHANNEL_IN_DESENSE_RANGE(prAdapter,
+		prBssDesc->ucChannelNum,
+		prBssDesc->eBand);
+	char extra[16] = {0};
+#else
+	char *extra = "";
+#endif
 	int8_t cRssi = -128;
 	enum ROAM_TYPE eRoamType = roamReasonToType[eRoamReason];
 
@@ -1078,16 +1167,22 @@ uint16_t scanCalculateTotalScore(struct ADAPTER *prAdapter,
 		u2ScoreBand + u2BlackListScore + u2ScoreSaa +
 		u2ScoreIdleTime + u2AxApScore + u2TputScore;
 
+#if (CFG_SUPPORT_AVOID_DESENSE == 1)
+	if (fgBssInDenseRange)
+		u2ScoreTotal /= 4;
+	kalSnprintf(extra, sizeof(extra), ", DESENSE[%d]", fgBssInDenseRange);
+#endif
+
 #define TEMP_LOG_TEMPLATE\
-		MACSTR" cRSSI[%d] 5G[%d] Score,Total %d,DE[%d]"\
+		MACSTR" cRSSI[%d] Band[%s] Score,Total %d,DE[%d]"\
 		", PR[%d], SM[%d], RSSI[%d],BD[%d],BL[%d],SAA[%d]"\
 		", BW[%d], SC[%d],ST[%d],CI[%d],IT[%d],CU[%d,%d],PF[%d]"\
-		", AX[%d], TPUT[%d]\n"
+		", AX[%d], TPUT[%d]%s\n"
 
 	log_dbg(SCN, INFO,
 		TEMP_LOG_TEMPLATE,
 		MAC2STR(prBssDesc->aucBSSID), cRssi,
-		(prBssDesc->eBand == BAND_5G ? 1 : 0), u2ScoreTotal,
+		apucBandStr[prBssDesc->eBand], u2ScoreTotal,
 		u2ScoreDeauth, u2ScoreProbeRsp, u2ScoreScanMiss,
 		u2ScoreSnrRssi, u2ScoreBand, u2BlackListScore,
 		u2ScoreSaa, u2ScoreBandwidth, u2ScoreStaCnt,
@@ -1095,7 +1190,11 @@ uint16_t scanCalculateTotalScore(struct ADAPTER *prAdapter,
 		prBssDesc->fgExsitBssLoadIE,
 		prBssDesc->ucChnlUtilization,
 		u2PreferenceScore,
-		u2AxApScore, u2TputScore);
+#if (CFG_SUPPORT_AVOID_DESENSE == 1)
+		u2AxApScore, u2TputScore, extra, fgBssInDenseRange);
+#else
+		u2AxApScore, u2TputScore, extra);
+#endif
 
 #undef TEMP_LOG_TEMPLATE
 
@@ -1143,7 +1242,7 @@ struct BSS_DESC *scanSearchBssDescByScoreForAis(struct ADAPTER *prAdapter,
 	enum ENUM_PARAM_CONNECTION_POLICY policy;
 	struct ROAMING_INFO *roam;
 	enum ROAM_TYPE eRoamType;
-#ifdef CFG_TC10_FEATURE
+#if (CFG_TC10_FEATURE == 1)
 	int32_t base, delta, goal;
 #endif
 
@@ -1173,7 +1272,7 @@ struct BSS_DESC *scanSearchBssDescByScoreForAis(struct ADAPTER *prAdapter,
 	log_dbg(SCN, INFO, "ConnectionPolicy = %d, reason = %d\n",
 		prConnSettings->eConnectionPolicy, eRoamReason);
 	policy = prConnSettings->eConnectionPolicy;
-#ifdef CFG_TC10_FEATURE
+#if (CFG_TC10_FEATURE == 1)
 	base = (eRoamReason == ROAMING_REASON_BTM_DISASSOC) ? 6000 :
 		scanCalculateScoreByCu(prAdapter,
 			aisGetTargetBssDesc(prAdapter, ucBssIndex), ucBssIndex);
@@ -1223,14 +1322,25 @@ try_again:
 #endif
 			if (!oce && EQUAL_MAC_ADDR(prBssDesc->aucBSSID,
 					prConnSettings->aucBSSIDHint)) {
-				log_dbg(SCN, INFO, MACSTR" match bssid_hint\n",
-					MAC2STR(prBssDesc->aucBSSID));
-				prCandBssDesc = prBssDesc;
-				break;
+#if (CFG_SUPPORT_AVOID_DESENSE == 1)
+				if (IS_CHANNEL_IN_DESENSE_RANGE(prAdapter,
+					prBssDesc->ucChannelNum,
+					prBssDesc->eBand)) {
+					log_dbg(SCN, INFO,
+						"Do network selection even match bssid_hint\n");
+				} else
+#endif
+				{
+					log_dbg(SCN, INFO,
+						MACSTR" match bssid_hint\n",
+						MAC2STR(prBssDesc->aucBSSID));
+					prCandBssDesc = prBssDesc;
+					break;
+				}
 			}
 		}
 
-#ifdef CFG_TC10_FEATURE
+#if (CFG_TC10_FEATURE == 1)
 		if (base > 0) {
 			if (UNEQUAL_MAC_ADDR(prBssDesc->aucBSSID,
 						prAisBssInfo->aucBSSID)) {
@@ -1299,12 +1409,12 @@ try_again:
 			log_dbg(SCN, INFO,
 				"Selected "
 				MACSTR
-				", cRSSI[%d] 5G[%d] Score %d when find %s, "
+				", cRSSI[%d] Band[%s] Score %d when find %s, "
 				MACSTR
 				" in %d BSSes, fix channel %d.\n",
 				MAC2STR(prCandBssDesc->aucBSSID),
 				RCPI_TO_dBm(prCandBssDesc->ucRCPI),
-				(prCandBssDesc->eBand == BAND_5G ? 1 : 0),
+				apucBandStr[prCandBssDesc->eBand],
 				u2CandBssScore, prConnSettings->aucSSID,
 				MAC2STR(prConnSettings->aucBSSID),
 				prEssLink->u4NumElem, ucChannel);
@@ -1334,7 +1444,7 @@ try_again:
 	return NULL;
 }
 
-uint8_t scanUpdateChannelList(uint8_t channel,
+uint8_t scanUpdateChannelList(uint8_t channel, enum ENUM_BAND eBand,
 	uint8_t *bitmap, uint8_t *count, struct ESS_CHNL_INFO *info)
 {
 	uint8_t byteNum = 0;
@@ -1346,6 +1456,7 @@ uint8_t scanUpdateChannelList(uint8_t channel,
 		return 1;
 	bitmap[byteNum] |= BIT(bitNum);
 	info[*count].ucChannel = channel;
+	info[*count].eBand = eBand;
 	*count += 1;
 	if (*count >= CFG_MAX_NUM_OF_CHNL_INFO)
 		return 0;
@@ -1439,7 +1550,8 @@ void scanGetCurrentEssChnlList(struct ADAPTER *prAdapter,
 			continue;
 #endif
 		if (!scanUpdateChannelList(prBssDesc->ucChannelNum,
-			aucChnlBitMap, &ucChnlCount, prEssChnlInfo))
+			prBssDesc->eBand, aucChnlBitMap, &ucChnlCount,
+			prEssChnlInfo))
 			goto updated;
 	}
 
@@ -1456,9 +1568,11 @@ void scanGetCurrentEssChnlList(struct ADAPTER *prAdapter,
 		for (i = 0; ucChnlCount < CFG_MAX_NUM_OF_CHNL_INFO &&
 			i < ncho->ucChannelListNum; i++) {
 			uint8_t chnl;
+			enum ENUM_BAND eBand;
 
 			chnl = ncho->arChnlInfoList[i].ucChannelNum;
-			if (!scanUpdateChannelList(chnl,
+			eBand = ncho->arChnlInfoList[i].eBand;
+			if (!scanUpdateChannelList(chnl, eBand,
 			    aucChnlBitMap, &ucChnlCount, prEssChnlInfo))
 				goto updated;
 		}
@@ -1481,11 +1595,11 @@ void scanGetCurrentEssChnlList(struct ADAPTER *prAdapter,
 		LINK_FOR_EACH_ENTRY(prNeiAP, prNeighborAPLink,
 		    rLinkEntry, struct NEIGHBOR_AP) {
 			ucChannel = prNeiAP->ucChannel;
-			eBand = ucChannel <= 14 ? BAND_2G4 : BAND_5G;
+			eBand = prNeiAP->eBand;
 			if (!rlmDomainIsLegalChannel(
 				prAdapter, eBand, ucChannel))
 				continue;
-			if (!scanUpdateChannelList(ucChannel,
+			if (!scanUpdateChannelList(ucChannel, eBand,
 				aucChnlBitMap, &ucChnlCount, prEssChnlInfo))
 				goto updated;
 		}
@@ -1496,9 +1610,11 @@ void scanGetCurrentEssChnlList(struct ADAPTER *prAdapter,
 	for (i = 0; ucChnlCount < CFG_MAX_NUM_OF_CHNL_INFO &&
 		i < prRoamScnChnl->ucChannelListNum; i++) {
 		uint8_t chnl;
+		enum ENUM_BAND eBand;
 
 		chnl = prRoamScnChnl->arChnlInfoList[i].ucChannelNum;
-		if (!scanUpdateChannelList(chnl,
+		eBand = prRoamScnChnl->arChnlInfoList[i].eBand;
+		if (!scanUpdateChannelList(chnl, eBand,
 		    aucChnlBitMap, &ucChnlCount, prEssChnlInfo))
 			goto updated;
 	}
@@ -1564,11 +1680,16 @@ uint8_t scanCheckNeedDriverRoaming(
 
 		if (bss == NULL)
 			return FALSE;
+
 		/* 2.4 -> 5 */
-		if (bss->eBand == BAND_5G && target->eBand == BAND_2G4) {
-			if (rssi > RSSI_BAD_NEED_ROAM_24G_TO_5G)
+		if (bss->eBand == BAND_5G
+#if (CFG_SUPPORT_WIFI_6G == 1)
+			|| bss->eBand == BAND_6G
+#endif
+			&& target->eBand == BAND_2G4) {
+			if (rssi > RSSI_BAD_NEED_ROAM_24G_TO_5G_6G)
 				return FALSE;
-			if (bss->ucRCPI >= RCPI_THRESHOLD_ROAM_TO_5G ||
+			if (bss->ucRCPI >= RCPI_THRESHOLD_ROAM_TO_5G_6G ||
 			bss->ucRCPI - target->ucRCPI > RCPI_DIFF_DRIVER_ROAM) {
 				log_dbg(SCN, INFO,
 					"Driver trigger roaming to 5G band.\n");

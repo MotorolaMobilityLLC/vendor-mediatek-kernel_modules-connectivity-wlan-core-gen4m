@@ -283,6 +283,8 @@
 
 #include "ais_fsm.h"
 
+#include "mscs.h"
+
 #include "adapter.h"
 
 #include "que_mgt.h"

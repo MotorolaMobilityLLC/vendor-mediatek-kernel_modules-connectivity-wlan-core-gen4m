@@ -515,6 +515,13 @@ struct BSS_INFO {
 	/* & PHY_TYPE_BIT_VHT) is true. They have the same definition with   */
 	/* fields of information element (EASON)                             */
 	/*-------------------------------------------------------------------*/
+	/*-------------------------------------------------------------------*/
+	/* Note that FW will use ucVhtChannelWidth, ucVhtChannelFrequencyS1  */
+	/* and ucVhtChannelFrequencyS2 as general RLM parameters regardless  */
+	/* of VHT, HE or EHT. Hence, driver shall update these 3 parameters  */
+	/* by reference to the spec of VHT IE even in 6G channels that shall */
+	/* not use VHT IE.                                                   */
+	/*-------------------------------------------------------------------*/
 #if 1				/* CFG_SUPPORT_802_11AC */
 	uint8_t ucVhtChannelWidth;
 	uint8_t ucVhtChannelFrequencyS1;
@@ -525,9 +532,6 @@ struct BSS_INFO {
 #if (CFG_SUPPORT_802_11AX == 1)
 	uint8_t ucHeOpParams[HE_OP_BYTE_NUM];
 	uint8_t ucBssColorInfo;
-	uint8_t ucHeChannelWidth;
-	uint8_t ucHeChannelFrequencyS1;
-	uint8_t ucHeChannelFrequencyS2;
 	uint16_t u2HeBasicMcsSet;
 #if (CFG_SUPPORT_WIFI_6G == 1)
 	struct _6G_OPER_INFOR_T r6gOperInfor;
@@ -645,6 +649,10 @@ struct BSS_INFO {
 	uint8_t fgHasStopTx;
 	uint8_t ucVhtChannelWidthBeforeCsa;
 #endif
+
+#ifdef CFG_MSCS_SUPPORT
+	struct FAST_PATH_INFO rFastPathInfo;
+#endif
 };
 
 /* Support AP Selection */
@@ -652,6 +660,7 @@ struct ESS_CHNL_INFO {
 	uint8_t ucChannel;
 	uint8_t ucUtilization;
 	uint8_t ucApNum;
+	enum ENUM_BAND eBand;
 };
 /* end Support AP Selection */
 
@@ -668,6 +677,7 @@ struct NEIGHBOR_AP {
 	uint8_t ucPreference;
 	uint8_t ucChannel;
 	uint64_t u8TermTsf;
+	enum ENUM_BAND eBand;
 };
 
 struct AIS_SPECIFIC_BSS_INFO {
@@ -913,6 +923,9 @@ struct WIFI_VAR {
 	uint8_t ucApSelAxWeight;
 	uint8_t ucApSelAxScoreDiv;
 #endif
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	uint8_t ucP2pPrefer6G;
+#endif
 #if (CFG_SUPPORT_802_11BE == 1)
 	uint8_t ucStaEht;
 	uint8_t ucApEht;
@@ -1153,6 +1166,7 @@ struct WIFI_VAR {
 	uint32_t u4PerfMonUpdatePeriod;
 	uint32_t u4PerfMonTpTh[PERF_MON_TP_MAX_THRESHOLD];
 	uint32_t	u4BoostCpuTh;
+	u_int8_t	fgIsBoostCpuThAdjustable;
 
 	uint32_t u4PerfMonPendingTh;
 	uint32_t u4PerfMonUsedTh;
@@ -1236,6 +1250,7 @@ struct WIFI_VAR {
 	uint32_t uArpMonitorNumber;
 	uint32_t uArpMonitorRxPktNum;
 #endif /* ARP_MONITER_ENABLE */
+
 #if CFG_SUPPORT_SCAN_NO_AP_RECOVERY
 	uint8_t ucScanNoApRecover;
 	uint8_t ucScanNoApRecoverTh;
@@ -1246,6 +1261,9 @@ struct WIFI_VAR {
 	uint8_t fgSapConcurrencyPolicy;
 	uint8_t fgSapAuthPolicy;
 	uint8_t fgSapOverwriteAcsChnlBw;
+	uint8_t fgSapOffload;
+	uint8_t ucDfsRegion;
+	uint32_t u4ByPassCacTime;
 	uint8_t fgAllowSameBandDualSta;
 
 #if CFG_SUPPORT_NAN
@@ -1297,6 +1315,24 @@ struct WIFI_VAR {
 #if CFG_SUPPORT_LLS
 	u_int8_t fgLinkStatsDump;
 #endif /* CFG_SUPPORT_LLS */
+
+#if (CFG_SUPPORT_APF == 1)
+	uint8_t ucApfEnable;
+#endif
+	uint8_t ucUdpTspecUp;
+	uint8_t ucTcpTspecUp;
+	uint32_t u4UdpDelayBound;
+	uint32_t u4TcpDelayBound;
+	uint8_t ucDataRate;
+	/* 0:UDP, 1:TCP, 2:BOTH */
+	uint8_t ucSupportProtocol;
+	uint8_t ucCheckBeacon;
+	uint8_t ucEnableFastPath;
+	uint8_t ucFastPathAllPacket;
+
+#if CFG_SUPPORT_BAR_DELAY_INDICATION
+	u_int8_t fgBARDelayIndicationEn;
+#endif /* CFG_SUPPORT_BAR_DELAY_INDICATION */
 };
 
 /* cnm_timer module */
@@ -1815,6 +1851,9 @@ struct ADAPTER {
 	/* host status EMI offset*/
 	uint32_t u4HostStatusEmiOffset;
 
+	/* Casan load type */
+	uint32_t u4CasanLoadType;
+
 #if CFG_WOW_SUPPORT
 	struct WOW_CTRL	rWowCtrl;
 #endif
@@ -1949,9 +1988,7 @@ struct ADAPTER {
 
 	struct TX_LATENCY_REPORT_STATS rMsduReportStats;
 
-#if (CFG_SUPPORT_CONNINFRA == 1)
 	unsigned int u4FWLastUpdateTime;
-#endif
 
 	u_int8_t fgSetLogOnOff;
 	u_int8_t fgSetLogLevel;
@@ -2002,6 +2039,13 @@ struct ADAPTER {
 	struct LINK rNeighborAPInfoList;
 #endif
 
+#ifdef CFG_MSCS_SUPPORT
+	struct MSCS_CAP_FAST_PATH rFastPathCap;
+#endif
+
+#if (CFG_SUPPORT_AVOID_DESENSE == 1)
+	bool fgIsNeedAvoidDesenseFreq;
+#endif
 };				/* end of _ADAPTER_T */
 
 /*******************************************************************************

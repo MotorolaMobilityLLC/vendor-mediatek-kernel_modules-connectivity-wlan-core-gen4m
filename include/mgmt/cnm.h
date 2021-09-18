@@ -298,6 +298,8 @@ void cnmCsaDoneEvent(struct ADAPTER *prAdapter,
 uint8_t cnmIdcCsaReq(IN struct ADAPTER *prAdapter,
 	IN uint8_t ch_num, IN uint8_t ucRoleIdx);
 
+void cnmIdcSwitchSapChannel(IN struct ADAPTER *prAdapter);
+
 void cnmIdcDetectHandler(IN struct ADAPTER *prAdapter,
 	IN struct WIFI_EVENT *prEvent);
 #endif

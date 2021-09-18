@@ -1022,13 +1022,16 @@ enum NIC_CAPABILITY_V2_TAG {
 	TAG_CAP_6G_CAP = 0x18,
 #endif
 	TAG_CAP_HOST_STATUS_EMI_OFFSET = 0x19,
-
 #if (CFG_SUPPORT_RX_QUOTA_INFO == 1)
 	TAG_CAP_PSE_RX_QUOTA = 0x1b,
 #endif
 
 	TAG_CAP_LLS_DATA_EMI_OFFSET = 0x1c, /* Shared EMI offset for LLS */
 
+#if CFG_MSCS_SUPPORT
+	TAG_CAP_FAST_PATH = 0x1a,
+#endif
+	TAG_CAP_CASAN_LOAD_TYPE = 0x1d,
 	TAG_CAP_TOTAL
 };
 
@@ -1098,6 +1101,7 @@ struct CAP_PHY_CAP {
 };
 
 #if (CFG_SUPPORT_RX_QUOTA_INFO == 1)
+#define RX_QUOTA_MAGIC_NUM 10000
 struct CAP_PSE_RX_QUOTA {
 	uint32_t u4MaxQuotaBytes;
 	uint32_t u4MinQuotaBytes;
@@ -1207,6 +1211,11 @@ struct CAP_BUFFER_MODE_INFO_T {
 	 * 10 so that driver don't change.
 	 */
 };
+
+struct CAP_CASAN_LOAD_TYPE_T {
+	uint32_t u4CasanLoadType;	/* Type of CASAN 0:Normal 1:CASAN */
+};
+
 
 /*
  * NIC_TX_RESOURCE_REPORT_EVENT related definition
@@ -1628,6 +1637,13 @@ struct CMD_RDD_ON_OFF_CTRL {
 	uint8_t aucReserve[4];
 };
 #endif
+
+struct CMD_SET_ACL_POLICY {
+	uint8_t ucBssIdx;
+	uint8_t ucPolicy;
+	uint8_t aucAddr[MAC_ADDR_LEN];
+	uint8_t aucReserve[4];
+};
 
 struct CMD_PERF_IND {
 	/* DWORD_0 - Common Part */
@@ -2797,11 +2813,6 @@ struct CMD_MONITOR_SET_INFO {
 };
 #endif
 
-struct CMD_STATS_LOG {
-	uint32_t u4DurationInMs;
-	uint8_t aucReserved[32];
-};
-
 struct EVENT_WIFI_RDD_TEST {
 	uint32_t u4FuncIndex;
 	uint32_t u4FuncLength;
@@ -2940,8 +2951,27 @@ struct EVENT_COEX_STATUS {
 	uint8_t ucBtRssi;
 	uint16_t u2BtProfile;
 	uint8_t fgIsBAND2G4Coex;
+#if (CFG_SUPPORT_AVOID_DESENSE == 1)
+	uint8_t fgIs5GsupportEPA; /* If 5G support EPA, WFA didn't desense BT */
+	uint8_t aucReserved1[4]; /* 4 byte alignment */
+#else
 	uint8_t aucReserved1[5]; /* 4 byte alignment */
+#endif
 };
+
+#if (CFG_SUPPORT_PKT_OFLD == 1)
+struct CMD_OFLD_INFO {
+	/* restrict buffer size to 1500 bytes */
+	/* because FW WFDMA MAX buf size is 1600 Byte */
+	uint8_t ucType;
+	uint8_t ucOp;
+	uint8_t ucFragNum;
+	uint8_t ucFragSeq;
+	uint32_t u4TotalLen;
+	uint32_t u4BufLen;
+	uint8_t aucBuf[PKT_OFLD_BUF_SIZE];
+};
+#endif /* CFG_SUPPORT_PKT_OFLD */
 
 struct EVENT_REPORT_U_EVENT {
 	uint8_t aucData[MAX_UEVENT_LEN];
@@ -3420,6 +3450,13 @@ uint32_t nicCmdEventQueryNicCoexFeature(IN struct ADAPTER
 uint32_t nicCmdEventQueryNicCsumOffload(IN struct ADAPTER
 					*prAdapter, IN uint8_t *pucEventBuf);
 #endif
+
+#if (CFG_SUPPORT_PKT_OFLD == 1)
+void nicCmdEventQueryOfldInfo(IN struct ADAPTER
+				*prAdapter, IN struct CMD_INFO *prCmdInfo,
+				IN uint8_t *pucEventBuf);
+#endif
+
 uint32_t nicCfgChipCapHwVersion(IN struct ADAPTER
 				*prAdapter, IN uint8_t *pucEventBuf);
 uint32_t nicCfgChipCapSwVersion(IN struct ADAPTER
@@ -3453,6 +3490,8 @@ uint32_t nicCfgChipP2PCap(IN struct ADAPTER *prAdapter,
 
 uint32_t nicCmdEventHostStatusEmiOffset(IN struct ADAPTER *prAdapter,
 					IN uint8_t *pucEventBuf);
+uint32_t nicCfgChipCapFastPath(IN struct ADAPTER *prAdapter,
+			       IN uint8_t *pucEventBuf);
 
 #if (CFG_SUPPORT_WIFI_6G == 1)
 uint32_t nicCfgChipCap6GCap(IN struct ADAPTER *prAdapter,
@@ -3464,6 +3503,8 @@ uint32_t nicCfgChipCap6GCap(IN struct ADAPTER *prAdapter,
 uint32_t nicCmdEventLinkStatsEmiOffset(IN struct ADAPTER *prAdapter,
 					IN uint8_t *pucEventBuf);
 #endif
+uint32_t nicCmdEventCasanLoadType(IN struct ADAPTER *prAdapter,
+					IN uint8_t *pucEventBuf);
 
 void nicExtEventICapIQData(IN struct ADAPTER *prAdapter,
 			   IN uint8_t *pucEventBuf);
@@ -3591,6 +3632,17 @@ void tputEventFactorHandler(IN struct ADAPTER *prAdapter,
 uint32_t nicCfgChipPseRxQuota(IN struct ADAPTER *prAdapter,
 				IN uint8_t *pucEventBuf);
 #endif
+
+#if (CONFIG_WLAN_SERVICE == 1)
+void nicCmdEventListmode(IN struct ADAPTER
+				  *prAdapter, IN struct CMD_INFO *prCmdInfo,
+				  IN uint8_t *pucEventBuf);
+#endif /*(CONFIG_WLAN_SERVICE == 1)*/
+
+#if CFG_SUPPORT_BAR_DELAY_INDICATION
+void nicEventHandleDelayBar(IN struct ADAPTER *prAdapter,
+		      IN struct WIFI_EVENT *prEvent);
+#endif /* CFG_SUPPORT_BAR_DELAY_INDICATION */
 
 /*******************************************************************************
  *                              F U N C T I O N S

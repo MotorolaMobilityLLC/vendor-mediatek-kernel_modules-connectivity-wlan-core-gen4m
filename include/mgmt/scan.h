@@ -768,6 +768,8 @@ extern const char aucScanLogPrefix[][SCAN_LOG_PREFIX_MAX_LEN];
 	} while (0)
 #endif /* DBG_DISABLE_ALL_LOG */
 
+#define IS_6G_OP_CLASS(_opClass) \
+	((_opClass >= 131) && (_opClass <= 135))
 
 /*******************************************************************************
  *                   F U N C T I O N   D E C L A R A T I O N S
@@ -874,7 +876,8 @@ void scanReportBss2Cfg80211(IN struct ADAPTER *prAdapter,
 			    IN enum ENUM_BSS_TYPE eBSSType,
 			    IN struct BSS_DESC *SpecificprBssDesc);
 
-bool scnEnableSpilitScan(struct ADAPTER *prAdapter);
+bool scnEnableSplitScan(struct ADAPTER *prAdapter,
+				uint8_t ucBssIndex);
 
 /*----------------------------------------------------------------------------*/
 /* Routines in scan_fsm.c                                                     */

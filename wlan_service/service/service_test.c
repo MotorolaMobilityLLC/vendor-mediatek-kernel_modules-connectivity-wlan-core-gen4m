@@ -110,6 +110,7 @@ static s_int32 mt_serv_init_op(struct test_operation *ops)
 	ops->op_read_bulk_rf_reg = mt_op_read_bulk_rf_reg;
 	ops->op_write_bulk_rf_reg = mt_op_write_bulk_rf_reg;
 	ops->op_read_bulk_eeprom = mt_op_read_bulk_eeprom;
+	ops->op_listmode_cmd = mt_op_listmode_cmd;
 
 	return SERV_STATUS_SUCCESS;
 }
@@ -2481,3 +2482,19 @@ s_int32 mt_serv_main(struct service_test *serv_test, u_int32 test_item)
 
 	return ret;
 }
+
+s_int32 mt_serv_listmode_cmd(struct service_test *serv_test,
+	u_int8 *para, u_int16 para_len, u_int32 *rsp_len, void *rsp_data)
+{
+	s_int32 ret = SERV_STATUS_SUCCESS;
+
+	ret = serv_test->test_op->op_listmode_cmd(
+		serv_test->test_winfo, para, para_len, rsp_len, rsp_data);
+
+	if (ret)
+		SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_ERROR,
+			("%s: err=0x%08x\n", __func__, ret));
+
+	return ret;
+}
+

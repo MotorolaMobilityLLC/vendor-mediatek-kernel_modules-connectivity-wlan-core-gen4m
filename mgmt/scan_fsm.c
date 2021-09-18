@@ -300,7 +300,7 @@ void scnSendScanReqV2(IN struct ADAPTER *prAdapter)
 	if (prAdapter->rWifiVar.eDbdcMode == ENUM_DBDC_MODE_DISABLED)
 		prCmdScanReq->ucScnFuncMask |= ENUM_SCN_DBDC_SCAN_DIS;
 
-	if (wlanWfdEnabled(prAdapter) || scnEnableSpilitScan(prAdapter))
+	if (scnEnableSplitScan(prAdapter, prScanParam->ucBssIndex))
 		prCmdScanReq->ucScnFuncMask |= ENUM_SCN_SPLIT_SCAN_EN;
 
 	/* Set SSID to scan request */
@@ -1179,32 +1179,51 @@ void scnEventSchedScanDone(IN struct ADAPTER *prAdapter,
  * \return none
  */
 /*----------------------------------------------------------------------------*/
-bool scnEnableSpilitScan(struct ADAPTER *prAdapter)
+bool scnEnableSplitScan(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 {
-	uint8_t i;
+	uint8_t ucWfdEn = FALSE, ucTrxPktEn = FALSE, ucRoamingEn = FALSE;
 	struct PERF_MONITOR *prPerMonitor;
-	struct BSS_INFO *prBssInfo;
+	struct BSS_INFO *prBssInfo = NULL;
+	struct AIS_FSM_INFO *prAisFsmInfo;
 	unsigned long ulTrxPacketsDiffTotal = 0;
 
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
 	prPerMonitor = &prAdapter->rPerMonitor;
 
-	/* Sum all active BSS's TX and RX packets count */
-	for (i = 0; i < BSS_DEFAULT_NUM; i++) {
-		prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, i);
-		if (IS_BSS_ACTIVE(prBssInfo)) {
-			ulTrxPacketsDiffTotal += (prPerMonitor->
-						 ulTxPacketsDiffLastSec[i] +
-						  prPerMonitor->
-						 ulRxPacketsDiffLastSec[i]);
+	if (!prBssInfo)
+		return FALSE;
+	/* Enable condition 1: WFD case*/
+	ucWfdEn = wlanWfdEnabled(prAdapter);
+
+	/* Enable condition 2: (TX + RX) packets in last 1s > 30,
+	 * exclude P2P device because prPerMonitor not include P2P device
+	 */
+	if (ucBssIndex < P2P_DEV_BSS_INDEX && IS_BSS_ACTIVE(prBssInfo)) {
+		ulTrxPacketsDiffTotal +=
+			(prPerMonitor->ulTxPacketsDiffLastSec[ucBssIndex] +
+			prPerMonitor->ulRxPacketsDiffLastSec[ucBssIndex]);
+
+		if (ulTrxPacketsDiffTotal > SCAN_SPLIT_PACKETS_THRESHOLD) {
+			log_dbg(SCN, TRACE, "SplitScan: TRXPacket=%ld",
+				ulTrxPacketsDiffTotal);
+			ucTrxPktEn = TRUE;
 		}
 	}
-	if (ulTrxPacketsDiffTotal > SCAN_SPLIT_PACKETS_THRESHOLD) {
-		log_dbg(SCN, TRACE, "Set SplitScan, TRXPacket=%ld",
-					ulTrxPacketsDiffTotal);
-		return TRUE;
+	/* Enable Pre-condition: not in roaming, avoid roaming scan too long */
+	if (ucBssIndex < KAL_AIS_NUM) {
+		prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
+		if (prAisFsmInfo &&
+			prBssInfo->eConnectionState == MEDIA_STATE_CONNECTED &&
+			prAisFsmInfo->eCurrentState == AIS_STATE_LOOKING_FOR)
+			ucRoamingEn = TRUE;
 	}
-
-	return FALSE;
+	log_dbg(SCN, TRACE, "SplitScan: Roam(%d),WFD(%d),TRX(%d)",
+				ucRoamingEn, ucWfdEn, ucTrxPktEn);
+	/* Enable split scan when (not in roam) & (WFD or TRX packet > 30) */
+	if ((!ucRoamingEn) && (ucWfdEn || ucTrxPktEn))
+		return TRUE;
+	else
+		return FALSE;
 }
 
 #if CFG_SUPPORT_SCHED_SCAN

@@ -109,6 +109,7 @@ const struct NIC_CAPABILITY_V2_REF_TABLE
 	{TAG_CAP_PSE_RX_QUOTA, nicCfgChipPseRxQuota},
 #endif
 	{TAG_CAP_HOST_STATUS_EMI_OFFSET, nicCmdEventHostStatusEmiOffset},
+
 #if (CFG_SUPPORT_WIFI_6G == 1)
 	{TAG_CAP_6G_CAP, nicCfgChipCap6GCap},
 #endif
@@ -116,6 +117,11 @@ const struct NIC_CAPABILITY_V2_REF_TABLE
 #if CFG_SUPPORT_LLS
 	{TAG_CAP_LLS_DATA_EMI_OFFSET, nicCmdEventLinkStatsEmiOffset},
 #endif
+
+#if CFG_MSCS_SUPPORT
+	{TAG_CAP_FAST_PATH, nicCfgChipCapFastPath},
+#endif
+	{TAG_CAP_CASAN_LOAD_TYPE, nicCmdEventCasanLoadType},
 };
 
 /*******************************************************************************
@@ -746,7 +752,6 @@ void nicCmdEventSetCommon(IN struct ADAPTER *prAdapter,
 		kalOidComplete(prAdapter->prGlueInfo, prCmdInfo,
 	    prCmdInfo->u4InformationBufferLength, WLAN_STATUS_SUCCESS);
 	}
-
 }
 
 void nicCmdEventSetIpAddress(IN struct ADAPTER *prAdapter,
@@ -1483,6 +1488,60 @@ void nicCmdEventSetStopSchedScan(IN struct ADAPTER
 			    !prCmdInfo->fgIsOid);
 
 }
+
+#if (CFG_SUPPORT_PKT_OFLD == 1)
+void nicCmdEventQueryOfldInfo(IN struct ADAPTER
+				*prAdapter, IN struct CMD_INFO *prCmdInfo,
+				IN uint8_t *pucEventBuf)
+{
+	uint32_t u4QueryInfoLen;
+	struct GLUE_INFO *prGlueInfo;
+	struct PARAM_OFLD_INFO *prParamOfldInfo;
+	struct CMD_OFLD_INFO *prCmdOfldInfo;
+
+	ASSERT(prAdapter);
+	ASSERT(prCmdInfo);
+	ASSERT(pucEventBuf);
+
+	/* 4 <2> Update information of OID */
+	if (prCmdInfo->fgIsOid) {
+		prGlueInfo = prAdapter->prGlueInfo;
+		prCmdOfldInfo = (struct CMD_OFLD_INFO *) (pucEventBuf);
+
+		u4QueryInfoLen = sizeof(struct
+					PARAM_OFLD_INFO);
+
+		if (prCmdInfo->u4InformationBufferLength < sizeof(
+			    struct PARAM_OFLD_INFO)) {
+			DBGLOG(REQ, INFO,
+			       "Ofld info query length %u is not valid.\n",
+			       prCmdInfo->u4InformationBufferLength);
+		}
+		prParamOfldInfo = (struct PARAM_OFLD_INFO
+				    *) prCmdInfo->pvInformationBuffer;
+		prParamOfldInfo->ucFragNum = prCmdOfldInfo->ucFragNum;
+		prParamOfldInfo->ucFragSeq = prCmdOfldInfo->ucFragSeq;
+		prParamOfldInfo->u4TotalLen = prCmdOfldInfo->u4TotalLen;
+		prParamOfldInfo->u4BufLen = prCmdOfldInfo->u4BufLen;
+
+		if (prCmdOfldInfo->u4TotalLen > 0 &&
+				prCmdOfldInfo->u4BufLen > 0 &&
+				prCmdOfldInfo->u4BufLen <= PKT_OFLD_BUF_SIZE) {
+			kalMemCopy(prParamOfldInfo->aucBuf,
+				prCmdOfldInfo->aucBuf,
+				prCmdOfldInfo->u4BufLen);
+		} else {
+			DBGLOG(REQ, INFO,
+			       "Invalid query result, length: %d Buf size: %d.\n",
+				prCmdOfldInfo->u4TotalLen,
+				prCmdOfldInfo->u4BufLen);
+		}
+		kalOidComplete(prGlueInfo, prCmdInfo,
+		   u4QueryInfoLen, WLAN_STATUS_SUCCESS);
+	}
+
+}
+#endif /* CFG_SUPPORT_PKT_OFLD */
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -2706,6 +2765,7 @@ uint32_t nicCfgChipPseRxQuota(IN struct ADAPTER *prAdapter,
 	struct CAP_PSE_RX_QUOTA *prPseCap =
 	(struct CAP_PSE_RX_QUOTA *)pucEventBuf;
 	uint8_t ucMaxBand = prAdapter->rWifiVar.ucNSS;
+	uint32_t u4MaxQuotaBytes = 0;
 	uint32_t u4MaxPktSize = 0;
 
 	if (IS_FEATURE_DISABLED(prAdapter->rWifiVar.ucRxQuotaInfoEn)) {
@@ -2713,7 +2773,14 @@ uint32_t nicCfgChipPseRxQuota(IN struct ADAPTER *prAdapter,
 		return WLAN_STATUS_SUCCESS;
 	}
 
-	u4MaxPktSize = (prPseCap->u4MaxQuotaBytes)/(ucMaxBand + 1);
+	if (prPseCap->u4MaxQuotaBytes < RX_QUOTA_MAGIC_NUM) {
+		DBGLOG(INIT, ERROR, "invalid u4MaxQuotaBytes:%d\n",
+			prPseCap->u4MaxQuotaBytes);
+		return WLAN_STATUS_SUCCESS;
+	}
+
+	u4MaxQuotaBytes = prPseCap->u4MaxQuotaBytes - RX_QUOTA_MAGIC_NUM;
+	u4MaxPktSize = u4MaxQuotaBytes/ucMaxBand;
 	if (u4MaxPktSize < 3000) {
 		/* disable AMSDU */
 		prAdapter->rWifiVar.ucAmsduInAmpduRx = FEATURE_DISABLED;
@@ -2823,6 +2890,39 @@ uint32_t nicCmdEventLinkStatsEmiOffset(IN struct ADAPTER *prAdapter,
 	return WLAN_STATUS_SUCCESS;
 }
 #endif
+
+uint32_t nicCfgChipCapFastPath(IN struct ADAPTER *prAdapter,
+			       IN uint8_t *pucEventBuf)
+{
+	struct MSCS_CAP_FAST_PATH *prFastPathCap =
+		(struct MSCS_CAP_FAST_PATH *)pucEventBuf;
+
+	kalMemCopy(&prAdapter->rFastPathCap, prFastPathCap,
+			sizeof(struct MSCS_CAP_FAST_PATH));
+
+	DBGLOG(INIT, INFO,
+	       "Fast path version(%d) support(%d) vendor key(0x%x) group key(0x%x)\n",
+	       prFastPathCap->ucVersion, prFastPathCap->fgSupportFastPath,
+	       prFastPathCap->u4KeyBitmap[0], prFastPathCap->u4KeyBitmap[2]);
+
+	return WLAN_STATUS_SUCCESS;
+}
+
+uint32_t nicCmdEventCasanLoadType(IN struct ADAPTER *prAdapter,
+					IN uint8_t *pucEventBuf)
+{
+
+	struct CAP_CASAN_LOAD_TYPE_T *prLoadType =
+		(struct CAP_CASAN_LOAD_TYPE_T *)pucEventBuf;
+
+	prAdapter->u4CasanLoadType = prLoadType->u4CasanLoadType;
+
+	DBGLOG(INIT, INFO,
+	       "Casan load type = %x\n",
+	       prAdapter->u4CasanLoadType);
+
+	return WLAN_STATUS_SUCCESS;
+}
 
 uint32_t nicCfgChipCapMacCap(IN struct ADAPTER *prAdapter,
 			     IN uint8_t *pucEventBuf)
@@ -4435,6 +4535,14 @@ void nicEventUpdateCoexStatus(IN struct ADAPTER *prAdapter,
 	eCoexMode = prEventCoexStatus->ucCoexMode;
 	fgIsBAND2G4Coex = prEventCoexStatus->fgIsBAND2G4Coex;
 
+#if (CFG_SUPPORT_AVOID_DESENSE == 1)
+	prAdapter->fgIsNeedAvoidDesenseFreq =
+		!!(prEventCoexStatus->ucBtOnOff &&
+		!prEventCoexStatus->fgIs5GsupportEPA);
+	DBGLOG(NIC, TRACE, "Avoid desense frequency[%d]\n",
+		prAdapter->fgIsNeedAvoidDesenseFreq);
+#endif
+
 	DBGLOG(NIC, TRACE, "[BTon:%d BTPrf:0x%x BTRssi=%d Mode:%d Flag:%d]\n",
 	       prEventCoexStatus->ucBtOnOff,
 	       prEventCoexStatus->u2BtProfile,
@@ -4496,6 +4604,10 @@ void nicEventUpdateCoexStatus(IN struct ADAPTER *prAdapter,
 		/*Record current coex mode to Ais BssInfo*/
 		prBssInfo->eCoexMode = eCoexMode;
 	}
+
+#if (CFG_SUPPORT_AVOID_DESENSE == 1)
+	p2pFuncSwitchSapChannel(prAdapter);
+#endif
 }
 
 
@@ -5209,3 +5321,93 @@ void nicNanTestQueryInfoDone(IN struct ADAPTER *prAdapter,
 	}
 }
 #endif
+#if (CONFIG_WLAN_SERVICE == 1)
+void nicCmdEventListmode(IN struct ADAPTER
+				  *prAdapter, IN struct CMD_INFO *prCmdInfo,
+				  IN uint8_t *pucEventBuf)
+{
+	struct list_mode_event *prStatus;
+	struct GLUE_INFO *prGlueInfo;
+	uint32_t u4QueryInfoLen;
+
+	ASSERT(prAdapter);
+	ASSERT(prCmdInfo);
+
+	prStatus = (struct list_mode_event *) pucEventBuf;
+
+	if (prCmdInfo->fgIsOid) {
+		prGlueInfo = prAdapter->prGlueInfo;
+
+		u4QueryInfoLen = sizeof(struct list_mode_event);
+
+		/* Memory copy length is depended on upper-layer */
+		kalMemCopy(&g_HqaListModeStatus, prStatus, u4QueryInfoLen);
+
+		/* Update Query Information Length */
+		kalOidComplete(prGlueInfo, prCmdInfo,
+			       u4QueryInfoLen, WLAN_STATUS_SUCCESS);
+	}
+}
+#endif /*(CONFIG_WLAN_SERVICE == 1)*/
+
+#if CFG_SUPPORT_BAR_DELAY_INDICATION
+void nicEventHandleDelayBar(IN struct ADAPTER *prAdapter,
+		      IN struct WIFI_EVENT *prEvent)
+{
+	struct EVENT_BAR_DELAY *prEventStoredBAR;
+	struct SW_RFB *prRetSwRfb;
+	struct QUE rReturnedQue;
+	struct QUE *prReturnedQue;
+	int i = 0;
+
+	prEventStoredBAR = (struct EVENT_BAR_DELAY *)(
+				prEvent->aucBuffer);
+
+	if (unlikely(prEventStoredBAR == NULL)) {
+		DBGLOG(NIC, WARN, "prEventStoredBAR is NULL\n");
+		return;
+	}
+
+	if (unlikely(prEventStoredBAR->ucEvtVer != 0)) {
+		DBGLOG(NIC, WARN, "not be handle, ucEvtVer:%u\n",
+			prEventStoredBAR->ucEvtVer);
+		return;
+	}
+
+	if (unlikely(prEventStoredBAR->ucBaNum >
+		BAR_DELAY_INDICATION_BA_MAX)) {
+		DBGLOG(NIC, WARN, "not be handle, ucBaNum:%u\n",
+			prEventStoredBAR->ucBaNum);
+		return;
+	}
+
+	prReturnedQue = &rReturnedQue;
+	QUEUE_INITIALIZE(prReturnedQue);
+	for (i = 0; i < prEventStoredBAR->ucBaNum; i++) {
+		DBGLOG(NIC, INFO,
+			"[%d] ucStaRecIdx:%d ucTid:%d u2SSN:%d\n",
+			i,
+			prEventStoredBAR->rBAR[i].ucStaRecIdx,
+			prEventStoredBAR->rBAR[i].ucTid,
+			prEventStoredBAR->rBAR[i].u2SSN);
+
+		qmHandleRxReorderWinShift(prAdapter,
+			prEventStoredBAR->rBAR[i].ucStaRecIdx,
+			prEventStoredBAR->rBAR[i].ucTid,
+			prEventStoredBAR->rBAR[i].u2SSN,
+			prReturnedQue);
+
+	}
+
+	if (QUEUE_IS_NOT_EMPTY(prReturnedQue)) {
+		QM_TX_SET_NEXT_MSDU_INFO((struct SW_RFB *)
+			QUEUE_GET_TAIL(prReturnedQue), NULL);
+	}
+
+	prRetSwRfb = (struct SW_RFB *) QUEUE_GET_HEAD(
+				prReturnedQue);
+	if (prRetSwRfb != NULL)
+		nicRxIndicatePackets(prAdapter, prRetSwRfb);
+}
+#endif /* CFG_SUPPORT_BAR_DELAY_INDICATION */
+

@@ -594,6 +594,8 @@ void p2pRoleFsmRunEventTimeout(IN struct ADAPTER *prAdapter,
 		(struct P2P_ROLE_FSM_INFO *) ulParamPtr;
 	struct P2P_CHNL_REQ_INFO *prP2pChnlReqInfo =
 		(struct P2P_CHNL_REQ_INFO *) NULL;
+	struct P2P_CONNECTION_REQ_INFO *prP2pConnReqInfo =
+		(struct P2P_CONNECTION_REQ_INFO *) NULL;
 
 	do {
 		ASSERT_BREAK((prAdapter != NULL) && (prP2pRoleFsmInfo != NULL));
@@ -645,6 +647,11 @@ void p2pRoleFsmRunEventTimeout(IN struct ADAPTER *prAdapter,
 			cnmTimerStartTimer(prAdapter,
 				&(prP2pRoleFsmInfo->rDfsShutDownTimer),
 				5000);
+			/* start ap */
+			prP2pConnReqInfo = &(prP2pRoleFsmInfo->rConnReqInfo);
+			p2pRoleFsmRunEventStartAP(prAdapter,
+				(struct MSG_HDR *)
+				&prP2pConnReqInfo->rMsgStartAp);
 			break;
 #endif
 		default:
@@ -1221,6 +1228,90 @@ void p2pRoleFsmRunEventBeaconTimeout(IN struct ADAPTER *prAdapter,
 }				/* p2pFsmRunEventBeaconTimeout */
 
 /*================== Message Event ==================*/
+void p2pRoleFsmRunEventPreStartAP(IN struct ADAPTER *prAdapter,
+		IN struct MSG_HDR *prMsgHdr)
+{
+	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo =
+		(struct P2P_ROLE_FSM_INFO *) NULL;
+	struct MSG_P2P_START_AP *prP2pStartAPMsg =
+		(struct MSG_P2P_START_AP *) NULL;
+	struct P2P_CONNECTION_REQ_INFO *prP2pConnReqInfo =
+		(struct P2P_CONNECTION_REQ_INFO *) NULL;
+	u_int8_t bSkipCac = TRUE;
+	enum ENUM_BAND eBand;
+	uint8_t ucChannelNum;
+
+	prP2pStartAPMsg = (struct MSG_P2P_START_AP *) prMsgHdr;
+
+	prP2pRoleFsmInfo =
+		P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prAdapter,
+			prP2pStartAPMsg->ucRoleIdx);
+
+	DBGLOG(P2P, TRACE,
+		"p2pRoleFsmRunEventPreStartAP with Role(%d)\n",
+		prP2pStartAPMsg->ucRoleIdx);
+
+	if (!prP2pRoleFsmInfo) {
+		DBGLOG(P2P, ERROR,
+			"Corresponding P2P Role FSM empty: %d.\n",
+			prP2pStartAPMsg->ucRoleIdx);
+		cnmMemFree(prAdapter, prMsgHdr);
+		return;
+	}
+
+	prP2pConnReqInfo = &(prP2pRoleFsmInfo->rConnReqInfo);
+
+	eBand = prP2pConnReqInfo->rChannelInfo.eBand;
+	ucChannelNum = prP2pConnReqInfo->rChannelInfo.ucChannelNum;
+
+	if ((eBand == BAND_5G) &&
+		rlmDomainIsLegalDfsChannel(
+		prAdapter,
+		eBand,
+		ucChannelNum))
+		bSkipCac = FALSE;
+	else if ((eBand == BAND_5G) &&
+		(prAdapter->rWifiVar.ucAp5gBandwidth >=
+		MAX_BW_160MHZ)) {
+		uint8_t ucRfBw =
+			prAdapter->rWifiVar.ucAp5gBandwidth;
+
+		if (p2pFuncIsDualAPMode(prAdapter) &&
+			(ucRfBw >= MAX_BW_160MHZ))
+			ucRfBw = MAX_BW_80MHZ;
+
+		/* Revise to VHT OP BW */
+		ucRfBw = rlmGetVhtOpBwByBssOpBw(ucRfBw);
+		if (nicGetVhtS1(
+			ucChannelNum,
+			ucRfBw))
+			bSkipCac = FALSE;
+	}
+
+	/* STA+SAP will follow STA BW */
+	if (aisGetConnectedBssInfo(prAdapter))
+		bSkipCac = TRUE;
+	else if (p2pFuncIsManualCac() &&
+		(prAdapter->rWifiVar.u4ByPassCacTime <= 2)) {
+		p2pFuncSetDfsState(DFS_STATE_ACTIVE);
+		bSkipCac = TRUE;
+	}
+
+	if (bSkipCac)
+		p2pRoleFsmRunEventStartAP(prAdapter, prMsgHdr);
+	else {
+		memcpy(&prP2pConnReqInfo->rMsgStartAp,
+			prMsgHdr,
+			sizeof(struct MSG_P2P_START_AP));
+		kalP2pPreStartRdd(prAdapter->prGlueInfo,
+			prP2pStartAPMsg->ucRoleIdx,
+			ucChannelNum,
+			eBand);
+	}
+
+	cnmMemFree(prAdapter, prMsgHdr);
+}
+
 void p2pRoleFsmRunEventStartAP(IN struct ADAPTER *prAdapter,
 		IN struct MSG_HDR *prMsgHdr)
 {
@@ -1466,7 +1557,8 @@ void p2pRoleFsmRunEventStartAP(IN struct ADAPTER *prAdapter,
 	}
 
 error:
-	cnmMemFree(prAdapter, prMsgHdr);
+	return;
+
 }				/* p2pRoleFsmRunEventStartAP */
 
 
@@ -1546,7 +1638,7 @@ void p2pRoleFsmRunEventDelIface(IN struct ADAPTER *prAdapter,
 
 error:
 	cnmMemFree(prAdapter, prMsgHdr);
-}				/* p2pRoleFsmRunEventStartAP */
+}
 
 
 void p2pRoleFsmRunEventStopAP(IN struct ADAPTER *prAdapter,
@@ -1582,9 +1674,14 @@ void p2pRoleFsmRunEventStopAP(IN struct ADAPTER *prAdapter,
 	}
 
 #if (CFG_SUPPORT_DFS_MASTER == 1)
+	if (prP2pBssInfo->eBand != BAND_5G)
+		goto SKIP_END_RDD;
+
 	p2pFuncSetDfsState(DFS_STATE_INACTIVE);
 	p2pFuncStopRdd(prAdapter, prP2pBssInfo->ucBssIndex);
 #endif
+
+SKIP_END_RDD:
 
 	rsnFlushPmkid(prAdapter, prP2pBssInfo->ucBssIndex);
 
@@ -1732,6 +1829,9 @@ void p2pRoleFsmRunEventDfsCac(IN struct ADAPTER *prAdapter,
 			prP2pRoleFsmInfo->rConnReqInfo
 				.rChannelInfo.ucChannelNum);
 
+		kalP2PCacStartedUpdate(prAdapter->prGlueInfo,
+			prP2pDfsCacMsg->ucRoleIdx);
+
 		p2pRoleStatePrepare_To_DFS_CAC_STATE(prAdapter,
 				GET_BSS_INFO_BY_INDEX(prAdapter,
 				prP2pRoleFsmInfo->ucBssIndex),
@@ -1757,6 +1857,8 @@ void p2pRoleFsmRunEventRadarDet(IN struct ADAPTER *prAdapter,
 		(struct P2P_ROLE_FSM_INFO *) NULL;
 	struct BSS_INFO *prP2pBssInfo = (struct BSS_INFO *) NULL;
 	struct MSG_P2P_RADAR_DETECT *prMsgP2pRddDetMsg;
+	struct P2P_CONNECTION_REQ_INFO *prP2pConnReqInfo =
+		(struct P2P_CONNECTION_REQ_INFO *) NULL;
 
 
 	DBGLOG(P2P, INFO, "p2pRoleFsmRunEventRadarDet\n");
@@ -1794,6 +1896,12 @@ void p2pRoleFsmRunEventRadarDet(IN struct ADAPTER *prAdapter,
 		else
 			p2pFuncSetDfsState(DFS_STATE_ACTIVE);
 	} else {
+		uint8_t ucNumOfChannel;
+		uint8_t ch_idx = 0;
+		uint8_t ucChannelNum = 36;
+		struct RF_CHANNEL_INFO aucChannelList
+			[MAX_5G_BAND_CHN_NUM] = {};
+
 		if (prP2pRoleFsmInfo->eCurrentState == P2P_ROLE_STATE_DFS_CAC)
 			p2pRoleFsmStateTransition(prAdapter,
 				prP2pRoleFsmInfo,
@@ -1801,9 +1909,29 @@ void p2pRoleFsmRunEventRadarDet(IN struct ADAPTER *prAdapter,
 
 		kalP2PRddDetectUpdate(prAdapter->prGlueInfo,
 			prP2pRoleFsmInfo->ucRoleIndex);
+
 		cnmTimerStartTimer(prAdapter,
 			&(prP2pRoleFsmInfo->rDfsShutDownTimer),
 			5000);
+
+		/* Get random ch */
+		rlmDomainGetChnlList(prAdapter,
+			BAND_5G,
+			TRUE,
+			MAX_5G_BAND_CHN_NUM,
+			&ucNumOfChannel,
+			aucChannelList);
+		ch_idx = kalRandomNumber() % ucNumOfChannel;
+		if (ch_idx < MAX_5G_BAND_CHN_NUM)
+			ucChannelNum = aucChannelList[ch_idx].ucChannelNum;
+		prP2pBssInfo->eCurrentOPMode = OP_MODE_ACCESS_POINT;
+		prP2pConnReqInfo = &(prP2pRoleFsmInfo->rConnReqInfo);
+		prP2pConnReqInfo->rChannelInfo.ucChannelNum = ucChannelNum;
+		/* Use rConnReqInfo bw */
+		prP2pConnReqInfo->rChannelInfo.ucChnlBw = MAX_BW_80MHZ;
+
+		p2pRoleFsmRunEventStartAP(prAdapter,
+			(struct MSG_HDR *)&prP2pConnReqInfo->rMsgStartAp);
 	}
 
 error:
@@ -2854,8 +2982,11 @@ p2pRoleFsmRunEventScanDone(IN struct ADAPTER *prAdapter,
 		/* Unexpected channel scan done event
 		 * without being chanceled.
 		 */
-		ASSERT(FALSE);
-		break;
+		DBGLOG(P2P, WARN,
+			"Unexpected scan done for state [%s].\n",
+			p2pRoleFsmGetFsmState(prP2pRoleFsmInfo->eCurrentState));
+		prScanReqInfo->fgIsScanRequest = FALSE;
+		goto error;
 	}
 
 	prScanReqInfo->fgIsScanRequest = FALSE;
@@ -2938,6 +3069,8 @@ p2pRoleFsmRunEventChnlGrant(IN struct ADAPTER *prAdapter,
 
 #if (CFG_SUPPORT_DFS_MASTER == 1)
 		case P2P_ROLE_STATE_DFS_CAC:
+			rlmDomainSetDfsDbdcBand(prMsgChGrant->eDBDCBand);
+
 			p2pFuncStartRdd(prAdapter, prMsgChGrant->ucBssIndex);
 
 			if (p2pFuncCheckWeatherRadarBand(prChnlReqInfo))
@@ -4112,6 +4245,8 @@ static void indicateAcsResultByAisCh(IN struct ADAPTER *prAdapter,
 	else
 		prAcsReqInfo->eHwMode = P2P_VENDOR_ACS_HW_MODE_11A;
 
+	prAcsReqInfo->fgIsAis = TRUE;
+
 	p2pFunIndicateAcsResult(prAdapter->prGlueInfo,
 			prAcsReqInfo);
 }
@@ -4140,6 +4275,12 @@ static void trimAcsScanList(IN struct ADAPTER *prAdapter,
 			!(prRfChannelInfo1->ucChannelNum >= 5 &&
 			  prRfChannelInfo1->ucChannelNum <= 225 &&
 			  ((prRfChannelInfo1->ucChannelNum - 5) % 16 == 0)))
+			continue;
+#endif
+#if (CFG_SUPPORT_AVOID_DESENSE == 1)
+		if (IS_CHANNEL_IN_DESENSE_RANGE(prAdapter,
+			prRfChannelInfo1->ucChannelNum,
+			prRfChannelInfo1->eBand))
 			continue;
 #endif
 		DBGLOG(P2P, INFO, "acs trim scan list, [%d]=%d %d\n",
@@ -4434,6 +4575,11 @@ p2pRoleFsmAbortCurrentAcsReq(IN struct ADAPTER *prAdapter,
 			prScanReqInfo->eScanReason == SCAN_REASON_ACS) {
 		DBGLOG(P2P, INFO, "Cancel current ACS scan.\n");
 		p2pRoleFsmRunEventAbort(prAdapter, prP2pRoleFsmInfo);
+	}
+
+	if (prScanReqInfo && prScanReqInfo->fgIsScanRequest) {
+		DBGLOG(P2P, ERROR, "Clear old scan req.\n");
+		prScanReqInfo->fgIsScanRequest = FALSE;
 	}
 }
 
