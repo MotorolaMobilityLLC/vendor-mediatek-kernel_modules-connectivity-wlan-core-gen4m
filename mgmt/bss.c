@@ -148,6 +148,10 @@ struct APPEND_VAR_IE_ENTRY txBcnIETable[] = {
 	   heRlmRspGenerateHeCapIE}    /* 255, EXT 35 */
 	, {0, heRlmCalculateHeOpIELen,
 	   heRlmRspGenerateHeOpIE}      /* 255, EXT 36 */
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	, {(ELEM_HDR_LEN + ELEM_MAX_LEN_HE_6G_CAP), NULL,
+	   heRlmReqGenerateHe6gBandCapIE} /* 255, EXT 59 */
+#endif
 #endif
 #if CFG_SUPPORT_802_11BE
 	, {0, ehtRlmCalculateCapIELen,
