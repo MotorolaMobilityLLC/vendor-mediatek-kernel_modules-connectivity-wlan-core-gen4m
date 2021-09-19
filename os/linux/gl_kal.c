@@ -3141,6 +3141,7 @@ kalOidComplete(IN struct GLUE_INFO *prGlueInfo,
 	       IN uint32_t rOidStatus)
 {
 	struct GL_IO_REQ *prIoReq = NULL;
+	struct ADAPTER *prAdapter = prGlueInfo->prAdapter;
 
 	ASSERT(prGlueInfo);
 	/* remove timeout check timer */
@@ -3159,8 +3160,29 @@ kalOidComplete(IN struct GLUE_INFO *prGlueInfo,
 
 		complete(&prGlueInfo->rPendComp);
 	} else {
+		uint32_t wIdx, cIdx;
+		int i;
+
 		DBGLOG(INIT, WARN, "SKIP multiple OID complete!\n");
 		/* WARN_ON(TRUE); */
+
+		if (prAdapter != NULL) {
+			for (i = OID_HDLR_REC_NUM - 1,
+				wIdx = prAdapter->u4WaitRecIdx,
+				cIdx = prAdapter->u4CompRecIdx;
+				i >= 0; i--) {
+				DBGLOG(OID, WARN,
+					"%dth last wait OID hdlr: %s\n",
+					OID_HDLR_REC_NUM - i,
+					prAdapter->arPrevWaitHdlrRec[
+					(wIdx + i) % OID_HDLR_REC_NUM].aucName);
+				DBGLOG(OID, WARN,
+					"%dth last comp OID hdlr: %s\n",
+					OID_HDLR_REC_NUM - i,
+					prAdapter->arPrevCompHdlrRec[
+					(cIdx + i) % OID_HDLR_REC_NUM].aucName);
+			}
+		}
 	}
 
 	if (rOidStatus == WLAN_STATUS_SUCCESS)
