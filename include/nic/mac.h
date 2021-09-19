@@ -2682,7 +2682,7 @@ struct IE_EXT_CAP {
 struct IE_HS20_EXT_CAP_T {
 	uint8_t ucId;
 	uint8_t ucLength;
-	uint8_t aucCapabilities[6];
+	uint8_t aucCapabilities[ELEM_MAX_LEN_EXT_CAP];
 };
 
 /* 7.3.2.27 Extended Capabilities element */
