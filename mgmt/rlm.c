@@ -2388,8 +2388,6 @@ enum ENUM_CHNL_EXT rlmReviseSco(
 	IN enum ENUM_CHNL_EXT eScoOrigin,
 	IN uint8_t ucMaxBandwidth)
 {
-	int8_t cDelta;
-	enum ENUM_CHNL_EXT eAndOneSCO;
 	enum ENUM_CHNL_EXT eSCO = eScoOrigin;
 
 	if (eChannelWidth == CW_20_40MHZ) {
