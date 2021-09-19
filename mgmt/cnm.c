@@ -1333,11 +1333,17 @@ uint8_t cnmIdcCsaReq(IN struct ADAPTER *prAdapter,
 	prBssInfo = prAdapter->aprBssInfo[ucBssIdx];
 
 	if (prBssInfo->ucPrimaryChannel != ucCh) {
-
-		rlmGetChnlInfoForCSA(prAdapter,
-			(ucCh <= 14) ? BAND_2G4 : BAND_5G,
-			ucCh, ucBssIdx, &rRfChnlInfo);
-
+#if (CFG_SUPPORT_WIFI_6G == 1)
+		if (prBssInfo->eBand == BAND_6G)
+			rlmGetChnlInfoForCSA(prAdapter,
+				BAND_6G,
+				ucCh, ucBssIdx, &rRfChnlInfo);
+		else
+#else
+			rlmGetChnlInfoForCSA(prAdapter,
+				(ucCh <= 14) ? BAND_2G4 : BAND_5G,
+				ucCh, ucBssIdx, &rRfChnlInfo);
+#endif
 		DBGLOG(REQ, INFO,
 		"[CSA]CH=%d,Band=%d,BW=%d,PriFreq=%d,S1Freq=%d\n",
 			rRfChnlInfo.ucChannelNum,

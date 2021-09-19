@@ -7034,12 +7034,11 @@ uint8_t p2pFunGetAcsBestCh(IN struct ADAPTER *prAdapter,
 				continue;
 
 			/* Skip unsafe BW 80 channels */
-			if ((eChnlBw == MAX_BW_80MHZ ||
-				eChnlBw == MAX_BW_80_80_MHZ) &&
-				(aucChannelList[i].ucChannelNum >= 7) &&
-				(aucChannelList[i].ucChannelNum <= 215) &&
+			if ((eChnlBw >= MAX_BW_80MHZ) &&
+				(aucChannelList[i].ucChannelNum >= 5) &&
+				(aucChannelList[i].ucChannelNum <= 225) &&
 				!(u4LteSafeChnMask_6G & BIT(
-				  (aucChannelList[i].ucChannelNum - 7) / 16)))
+				  (aucChannelList[i].ucChannelNum - 5) / 16)))
 				continue;
 		}
 #endif
