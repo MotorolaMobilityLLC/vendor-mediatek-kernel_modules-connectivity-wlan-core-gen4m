@@ -774,7 +774,8 @@ static const struct wiphy_vendor_command
 		.doit = mtk_cfg80211_vendor_get_channel_list
 #if KERNEL_VERSION(5, 4, 0) <= LINUX_VERSION_CODE
 		,
-		.policy = VENDOR_CMD_RAW_DATA
+		.policy = nla_parse_wifi_attribute,
+		.maxattr = WIFI_ATTRIBUTE_MAX
 #endif
 	},
 	{
