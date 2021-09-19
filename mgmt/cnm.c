@@ -4212,7 +4212,7 @@ cnmOpModeSetTRxNss(
 		 * If you want to change OpBw in the future, please
 		 * make sure you can restore to current peer's OpBw.
 		 */
-		ucOpBwFinal = cnmGetBssMaxBw(prAdapter, prBssInfo->ucBssIndex);
+		ucOpBwFinal = rlmGetBssOpBwByVhtAndHtOpInfo(prBssInfo);
 		if ((eRunReq ==  CNM_OPMODE_REQ_DBDC ||
 			eRunReq == CNM_OPMODE_REQ_DBDC_SCAN) &&
 			ucOpBwFinal > MAX_BW_80MHZ) {
