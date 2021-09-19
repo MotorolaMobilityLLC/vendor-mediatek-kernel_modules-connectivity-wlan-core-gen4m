@@ -1339,11 +1339,11 @@ uint8_t cnmIdcCsaReq(IN struct ADAPTER *prAdapter,
 				BAND_6G,
 				ucCh, ucBssIdx, &rRfChnlInfo);
 		else
-#else
+#endif
 			rlmGetChnlInfoForCSA(prAdapter,
 				(ucCh <= 14) ? BAND_2G4 : BAND_5G,
 				ucCh, ucBssIdx, &rRfChnlInfo);
-#endif
+
 		DBGLOG(REQ, INFO,
 		"[CSA]CH=%d,Band=%d,BW=%d,PriFreq=%d,S1Freq=%d\n",
 			rRfChnlInfo.ucChannelNum,
