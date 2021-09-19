@@ -1276,6 +1276,7 @@ void p2pRoleFsmRunEventPreStartAP(IN struct ADAPTER *prAdapter,
 		uint8_t ucRfBw =
 			prAdapter->rWifiVar.ucAp5gBandwidth;
 
+		/* Downgrade */
 		if (p2pFuncIsDualAPMode(prAdapter) &&
 			(ucRfBw >= MAX_BW_160MHZ))
 			ucRfBw = MAX_BW_80MHZ;
@@ -1284,7 +1285,8 @@ void p2pRoleFsmRunEventPreStartAP(IN struct ADAPTER *prAdapter,
 		ucRfBw = rlmGetVhtOpBwByBssOpBw(ucRfBw);
 		if (nicGetVhtS1(
 			ucChannelNum,
-			ucRfBw))
+			ucRfBw) &&
+			(ucRfBw >= MAX_BW_160MHZ))
 			bSkipCac = FALSE;
 	}
 
