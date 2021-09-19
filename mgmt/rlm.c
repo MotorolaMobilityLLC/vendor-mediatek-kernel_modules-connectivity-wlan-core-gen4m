@@ -2176,7 +2176,8 @@ void rlmTransferHe6gOpInfor(IN uint8_t ucChannelNum,
 
 	/* Revise SCO */
 	*peSco = rlmReviseSco(*pucChannelWidth,
-		ucChannelNum, *pucCenterFreqS1);
+		ucChannelNum, *pucCenterFreqS1,
+		*peSco, MAX_BW_UNKNOWN);
 }
 
 void rlmModifyHE6GBwPara(uint8_t ucHe6gChannelWidth,
@@ -2360,7 +2361,8 @@ void rlmReviseMaxBw(struct ADAPTER *prAdapter, uint8_t ucBssIndex,
 
 	/* Revise SCO */
 	eScoModify = rlmReviseSco(*peChannelWidth,
-		*pucPrimaryCh, *pucS1);
+		*pucPrimaryCh, *pucS1,
+		eScoOrigin, ucMaxBandwidth);
 
 	if (eScoOrigin != eScoModify) {
 		*peExtend = eScoModify;
@@ -2382,41 +2384,17 @@ void rlmReviseMaxBw(struct ADAPTER *prAdapter, uint8_t ucBssIndex,
 enum ENUM_CHNL_EXT rlmReviseSco(
 	IN enum ENUM_CHANNEL_WIDTH eChannelWidth,
 	IN uint8_t ucPrimaryCh,
-	IN uint8_t ucS1)
+	IN uint8_t ucS1,
+	IN enum ENUM_CHNL_EXT eScoOrigin,
+	IN uint8_t ucMaxBandwidth)
 {
 	int8_t cDelta;
 	enum ENUM_CHNL_EXT eAndOneSCO;
-	enum ENUM_CHNL_EXT eSCO = CHNL_EXT_SCN;
+	enum ENUM_CHNL_EXT eSCO = eScoOrigin;
 
 	if (eChannelWidth == CW_20_40MHZ) {
-		if (ucS1 == 0)
+		if (ucMaxBandwidth == MAX_BW_20MHZ)
 			eSCO = CHNL_EXT_SCN;
-		else if (ucS1 > ucPrimaryCh)
-			eSCO = CHNL_EXT_SCA;
-		else if (ucS1 < ucPrimaryCh)
-			eSCO = CHNL_EXT_SCB;
-	} else if (eChannelWidth > CW_20_40MHZ) {
-		/* P: PriChnl
-		 * A: CHNL_EXT_SCA
-		 * B: CHNL_EXT_SCB
-		 */
-		/* --|----|--CenterFreqS1--|----|-- */
-		/* --|----|--CenterFreqS1--B----P-- */
-		/* --|----|--CenterFreqS1--P----A-- */
-		cDelta = ucPrimaryCh - ucS1;
-		eAndOneSCO = CHNL_EXT_SCB;
-		eSCO = CHNL_EXT_SCA;
-		if (cDelta < 0) {
-			/* --|----|--CenterFreqS1--|----|-- */
-			/* --P----A--CenterFreqS1--|----|-- */
-			/* --B----P--CenterFreqS1--|----|-- */
-			eAndOneSCO = CHNL_EXT_SCA;
-			eSCO = CHNL_EXT_SCB;
-			cDelta = -cDelta;
-		}
-		cDelta = cDelta - 2;
-		if ((cDelta/4) & 1)
-			eSCO = eAndOneSCO;
 	}
 
 	return eSCO;
