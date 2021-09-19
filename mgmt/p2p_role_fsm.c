@@ -1286,7 +1286,7 @@ void p2pRoleFsmRunEventPreStartAP(IN struct ADAPTER *prAdapter,
 		if (nicGetVhtS1(
 			ucChannelNum,
 			ucRfBw) &&
-			(ucRfBw >= MAX_BW_160MHZ))
+			(ucRfBw >= VHT_OP_CHANNEL_WIDTH_160))
 			bSkipCac = FALSE;
 	}
 
