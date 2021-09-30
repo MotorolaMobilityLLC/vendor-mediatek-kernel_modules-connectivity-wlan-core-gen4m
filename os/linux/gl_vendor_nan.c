@@ -1370,6 +1370,8 @@ int mtk_cfg80211_vendor_nan(struct wiphy *wiphy,
 	case NAN_MSG_ID_SUBSCRIBE_SERVICE_REQ: {
 		struct NanSubscribeRequest *pNanSubscribeReq = NULL;
 		struct NanSubscribeServiceRspMsg *pNanSubscribeRsp = NULL;
+		bool fgRangingCFG = FALSE;
+		bool fgRangingREQ = FALSE;
 		uint16_t Subscribe_id = 0;
 		int i = 0;
 
@@ -1518,13 +1520,16 @@ int mtk_cfg80211_vendor_nan(struct wiphy *wiphy,
 				       outputTlv.length);
 				break;
 			case NAN_TLV_TYPE_NAN_RANGING_CFG:
+				fgRangingCFG = TRUE;
+				DBGLOG(NAN, INFO, "fgRangingCFG %d\n",
+					fgRangingCFG);
 				nanMapRangingConfigParams(
 					(u32 *)outputTlv.value,
 					&pNanSubscribeReq->ranging_cfg);
 				break;
 			case NAN_TLV_TYPE_SDEA_SERVICE_SPECIFIC_INFO:
 				memcpy(pNanSubscribeReq
-					       ->sdea_service_specific_info,
+					->sdea_service_specific_info,
 				       outputTlv.value, outputTlv.length);
 				pNanSubscribeReq
 					->sdea_service_specific_info_len =
@@ -1535,6 +1540,9 @@ int mtk_cfg80211_vendor_nan(struct wiphy *wiphy,
 				       outputTlv.length);
 				break;
 			case NAN_TLV_TYPE_NAN20_RANGING_REQUEST:
+				fgRangingREQ = TRUE;
+				DBGLOG(NAN, INFO, "fgRangingREQ %d\n",
+					fgRangingREQ);
 				nanMapNan20RangingReqParams(
 					(u32 *)outputTlv.value,
 					&pNanSubscribeReq->range_response_cfg);
@@ -1564,6 +1572,54 @@ int mtk_cfg80211_vendor_nan(struct wiphy *wiphy,
 			kfree_skb(skb);
 			return -EFAULT;
 		}
+		/* Ranging */
+		if (fgRangingCFG && fgRangingREQ) {
+
+			struct NanRangeRequest *rgreq = NULL;
+			uint16_t rgId = 0;
+			uint32_t rStatus;
+
+			rgreq = kmalloc(sizeof(struct NanRangeRequest),
+				GFP_ATOMIC);
+			kalMemZero(rgreq, sizeof(struct NanRangeRequest));
+
+			memcpy(&rgreq->peer_addr,
+				&pNanSubscribeReq->range_response_cfg.peer_addr,
+				NAN_MAC_ADDR_LEN);
+			memcpy(&rgreq->ranging_cfg,
+				&pNanSubscribeReq->ranging_cfg,
+				sizeof(struct NanRangingCfg));
+			rgreq->range_id =
+			pNanSubscribeReq->range_response_cfg
+				.requestor_instance_id;
+			DBGLOG(NAN, INFO, MACSTR
+				" id %d reso %d intev %d indicat %d ING CM %d ENG CM %d\n",
+				MAC2STR(rgreq->peer_addr),
+				rgreq->range_id,
+				rgreq->ranging_cfg.ranging_resolution,
+				rgreq->ranging_cfg.ranging_interval_msec,
+				rgreq->ranging_cfg.config_ranging_indications,
+				rgreq->ranging_cfg.distance_ingress_cm,
+				rgreq->ranging_cfg.distance_egress_cm);
+			rStatus =
+			nanRangingRequest(prGlueInfo->prAdapter, &rgId, rgreq);
+
+			pNanSubscribeRsp->fwHeader.handle = rgId;
+			i4Status = kalIoctl(prGlueInfo, wlanoidNanSubscribeRsp,
+				       (void *)pNanSubscribeRsp,
+				       sizeof(struct NanSubscribeServiceRspMsg),
+				       FALSE, FALSE, FALSE, &u4BufLen);
+			if (i4Status != WLAN_STATUS_SUCCESS) {
+				DBGLOG(REQ, ERROR, "kalIoctl failed\n");
+				return -EFAULT;
+			}
+			kfree(rgreq);
+			kfree(pNanSubscribeReq);
+			break;
+
+		}
+
+		prAdapter->fgIsNANfromHAL = TRUE;
 
 		/* return subscribe ID */
 		Subscribe_id = (uint16_t)nanSubscribeRequest(
