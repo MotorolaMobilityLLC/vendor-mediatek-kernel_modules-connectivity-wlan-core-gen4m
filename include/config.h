@@ -1223,8 +1223,14 @@
 #define CFG_SUPPORT_DBDC	1
 #define CFG_SUPPORT_DBDC_NO_BLOCKING_OPMODE 1
 #define CFG_SUPPORT_SAP_DFS_CHANNEL 1
-#define CFG_SUPPORT_SET_IPV6_NETWORK 0 /* fos_change oneline */
 
+/*------------------------------------------------------------------------------
+ * Flags for Set IPv6 address to firmware
+ *------------------------------------------------------------------------------
+ */
+#ifndef CFG_SUPPORT_SET_IPV6_NETWORK
+#define CFG_SUPPORT_SET_IPV6_NETWORK 0
+#endif
 
 /*------------------------------------------------------------------------------
  * Flags for Using TC4 Resource in ROM code stage

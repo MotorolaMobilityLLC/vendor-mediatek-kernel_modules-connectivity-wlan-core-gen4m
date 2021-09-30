@@ -160,6 +160,12 @@ else
     ccflags-y += -DCFG_ENABLE_HOST_BUS_TIMEOUT=0
 endif
 
+ifneq ($(filter 6879 6895, $(WLAN_CHIP_ID)),)
+    ccflags-y += -DCFG_SUPPORT_SET_IPV6_NETWORK=1
+else
+    ccflags-y += -DCFG_SUPPORT_SET_IPV6_NETWORK=0
+endif
+
 ifneq ($(findstring 5_0,$(MTK_COMBO_CHIP)),)
 ccflags-y:=$(filter-out -USOC5_0,$(ccflags-y))
 ccflags-y += -DSOC5_0
