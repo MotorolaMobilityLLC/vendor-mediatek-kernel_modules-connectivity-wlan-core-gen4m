@@ -994,6 +994,28 @@ static void heRlmRecHePPEThresholds(struct ADAPTER *prAdapter,
 	}
 }
 
+#if (CFG_SUPPORT_WIFI_6G == 1)
+void heRlmRecHe6GCapInfo(
+	struct ADAPTER *prAdapter,
+	struct STA_RECORD *prStaRec,
+	uint8_t *pucIE)
+{
+	struct _IE_HE_6G_BAND_CAP_T *prHe6GCap =
+		(struct _IE_HE_6G_BAND_CAP_T *) pucIE;
+
+	/* if payload not contain any aucVarInfo,
+	 * IE size = sizeof(struct _IE_HE_6G_BAND_CAP_T)
+	 */
+	if (IE_SIZE(prHe6GCap) < (sizeof(struct _IE_HE_6G_BAND_CAP_T))) {
+		DBGLOG(SCN, WARN,
+			"HE_6G_CAP IE_LEN err(%d)!\n", IE_LEN(prHe6GCap));
+		return;
+	}
+
+	prStaRec->u2He6gBandCapInfo = prHe6GCap->u2CapInfo;
+}
+#endif
+
 void heRlmRecHeCapInfo(
 	struct ADAPTER *prAdapter,
 	struct STA_RECORD *prStaRec,

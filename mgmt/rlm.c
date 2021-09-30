@@ -4388,6 +4388,10 @@ void rlmProcessAssocReq(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb,
 #if (CFG_SUPPORT_802_11AX == 1)
 			if (IE_ID_EXT(pucIE) == ELEM_EXT_ID_HE_CAP)
 				heRlmRecHeCapInfo(prAdapter, prStaRec, pucIE);
+#if (CFG_SUPPORT_WIFI_6G == 1)
+			if (IE_ID_EXT(pucIE) == ELEM_EXT_ID_HE_6G_BAND_CAP)
+				heRlmRecHe6GCapInfo(prAdapter, prStaRec, pucIE);
+#endif
 #endif
 #if (CFG_SUPPORT_802_11BE == 1)
 			if (IE_ID_EXT(pucIE) == EID_EXT_EHT_CAPS)
