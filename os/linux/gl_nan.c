@@ -362,7 +362,7 @@ nanNetRegister(struct GLUE_INFO *prGlueInfo,
 			prGlueInfo->aprNANDevInfo[eRole]->prDevHandler,
 			prGlueInfo->aprNANDevInfo[eRole]
 					->prDevHandler->flags |
-				IFF_UP, NULL);
+				IFF_UP);
 		rtnl_unlock();
 
 		netif_carrier_on(
@@ -545,9 +545,9 @@ glSetupNAN(struct GLUE_INFO *prGlueInfo, struct wireless_dev *prNanWdev,
 		}
 		if (u4Idx == NAN_BSS_INDEX_BAND0) {
 			prNetDevPriv->ucBssIdx = ucBssIndex;
-		}
-		wlanBindBssIdxToNetInterface(prGlueInfo, ucBssIndex,
+			wlanBindBssIdxToNetInterface(prGlueInfo, ucBssIndex,
 					(void *)prNANInfo->prDevHandler);
+		}
 	}
 	return 0;
 }

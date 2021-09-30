@@ -6121,7 +6121,7 @@ nanDataEngineUpdateAppInfo(IN struct ADAPTER *prAdapter,
 		return WLAN_STATUS_INVALID_DATA;
 	}
 
-	if (!pucAppInfo) {
+	if (pucAppInfo) {
 		DBGLOG(NAN, ERROR, "[%s] pucAppInfo error\n", __func__);
 		return WLAN_STATUS_INVALID_DATA;
 	}
