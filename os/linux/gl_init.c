@@ -1158,8 +1158,7 @@ static const struct wiphy_vendor_command
 		.doit = mtk_cfg80211_vendor_nan
 #if KERNEL_VERSION(5, 4, 0) <= CFG80211_VERSION_CODE
 		,
-		.policy = mtk_wlan_vendor_nan_policy,
-		.maxattr = NL80211_ATTR_MAX
+		.policy = VENDOR_CMD_RAW_DATA
 #endif
 	},
 	{
@@ -1301,6 +1300,14 @@ static const struct nl80211_vendor_cmd_info
 	{
 		.vendor_id = OUI_MTK,
 		.subcmd = MTK_NL80211_TRIGGER_RESET
+	},
+	{
+		.vendor_id = OUI_MTK,
+		.subcmd = NL80211_VENDOR_SUBCMD_NAN
+	},
+	{
+		.vendor_id = OUI_MTK,
+		.subcmd = NL80211_VENDOR_SUBCMD_NDP
 	}
 };
 #endif

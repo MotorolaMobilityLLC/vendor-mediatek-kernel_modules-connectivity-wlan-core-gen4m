@@ -4955,7 +4955,7 @@ uint32_t rlmFillNANVHTCapIE(struct ADAPTER *prAdapter,
 	prVhtSupportedMcsSet->u2TxHighestSupportedDataRate =
 		VHT_CAP_INFO_DEFAULT_HIGHEST_DATA_RATE;
 
-	if (IE_SIZE(prVhtCap) <= (ELEM_HDR_LEN + ELEM_MAX_LEN_VHT_CAP)) {
+	if (IE_SIZE(prVhtCap) > (ELEM_HDR_LEN + ELEM_MAX_LEN_VHT_CAP)) {
 		DBGLOG(NAN, ERROR, "prVhtCap size error!\n");
 		return 0;
 	}

@@ -959,7 +959,7 @@ random_mac_addr(u8 *addr) {
 
 int
 random_mac_addr_keep_oui(u8 *addr) {
-#if 0
+#if 1
 	if (os_get_random(addr + 3, 3) < 0)
 		return -1;
 	addr[0] &= 0xfe; /* unicast */
