@@ -1338,7 +1338,7 @@ SKIP_START_RDD:
 		}
 
 		bssInitForAP(prAdapter, prBssInfo, TRUE);
-		if (prBssInfo && prBssInfo->fgEnableH2E) {
+		if (prBssInfo->fgEnableH2E) {
 			prBssInfo->aucAllSupportedRates
 				[prBssInfo->ucAllSupportedRatesLen]
 				= RATE_H2E_ONLY_VAL;
@@ -1997,7 +1997,7 @@ void p2pFuncDfsSwitchCh(IN struct ADAPTER *prAdapter,
 		prBssInfo->u2BSSBasicRateSet,
 		prBssInfo->aucAllSupportedRates,
 		&prBssInfo->ucAllSupportedRatesLen);
-	if (prBssInfo && prBssInfo->fgEnableH2E) {
+	if (prBssInfo->fgEnableH2E) {
 		prBssInfo->aucAllSupportedRates
 			[prBssInfo->ucAllSupportedRatesLen]
 			= RATE_H2E_ONLY_VAL;
@@ -2210,6 +2210,33 @@ uint32_t p2pFuncGetCacRemainingTime(void)
 }
 #endif
 
+void p2pFuncParseH2E(IN struct BSS_INFO *prP2pBssInfo)
+{
+	if (prP2pBssInfo) {
+		uint32_t i;
+
+		prP2pBssInfo->fgEnableH2E = FALSE;
+
+		for (i = 0;
+			i < prP2pBssInfo->ucAllSupportedRatesLen;
+			i++) {
+			DBGLOG(P2P, LOUD,
+				"Rate [%d] = %d\n",
+				i,
+				prP2pBssInfo->aucAllSupportedRates[i]);
+			if (prP2pBssInfo->aucAllSupportedRates[i] ==
+				RATE_H2E_ONLY_VAL) {
+				prP2pBssInfo->fgEnableH2E = TRUE;
+				break;
+			}
+		}
+
+		DBGLOG(P2P, TRACE,
+			"fgEnableH2E = %d\n",
+			prP2pBssInfo->fgEnableH2E);
+	}
+}
+
 #if 0
 uint32_t
 p2pFuncBeaconUpdate(IN struct ADAPTER *prAdapter,
@@ -2407,29 +2434,7 @@ p2pFuncBeaconUpdate(IN struct ADAPTER *prAdapter,
 			(prBcnMsduInfo->u2FrameLength -
 			OFFSET_OF(struct WLAN_BEACON_FRAME, aucInfoElem)));
 
-		if (prP2pBssInfo) {
-			uint32_t i;
-
-			prP2pBssInfo->fgEnableH2E = FALSE;
-
-			for (i = 0;
-				i < prP2pBssInfo->ucAllSupportedRatesLen;
-				i++) {
-				DBGLOG(P2P, LOUD,
-					"Rate [%d] = %d\n",
-					i,
-					prP2pBssInfo->aucAllSupportedRates[i]);
-				if (prP2pBssInfo->aucAllSupportedRates[i] ==
-					RATE_H2E_ONLY_VAL) {
-					prP2pBssInfo->fgEnableH2E = TRUE;
-					break;
-				}
-			}
-
-			DBGLOG(P2P, TRACE,
-				"fgEnableH2E = %d\n",
-				prP2pBssInfo->fgEnableH2E);
-		}
+		p2pFuncParseH2E(prP2pBssInfo);
 
 #if 1
 		/* bssUpdateBeaconContent(prAdapter, NETWORK_TYPE_P2P_INDEX); */
