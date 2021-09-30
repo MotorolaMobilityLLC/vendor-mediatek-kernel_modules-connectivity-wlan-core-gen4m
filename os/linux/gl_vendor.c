@@ -1326,7 +1326,7 @@ int mtk_cfg80211_vendor_llstats_get_info(struct wiphy *wiphy,
 	} query = {0};
 
 	uint32_t u4QueryBufLen = sizeof(query);
-	uint32_t u4QueryInfoLen = sizeof(query);
+	uint32_t u4QueryInfoLen = sizeof(query.cmd);
 
 	uint8_t *buf = NULL;
 	struct sk_buff *skb = NULL;

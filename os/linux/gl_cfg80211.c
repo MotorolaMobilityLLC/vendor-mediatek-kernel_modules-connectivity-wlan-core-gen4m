@@ -531,7 +531,7 @@ static uint32_t wlanGetTxRateFromLinkStats(
 	kalMemZero(&query, sizeof(query));
 	query.cmd.u4Tag = STATS_LLS_TAG_CURRENT_TX_RATE;
 	u4QueryBufLen = sizeof(query);
-	u4QueryInfoLen = sizeof(query);
+	u4QueryInfoLen = sizeof(query.cmd);
 
 	rStatus = kalIoctl(prGlueInfo,
 			wlanQueryLinkStats,
