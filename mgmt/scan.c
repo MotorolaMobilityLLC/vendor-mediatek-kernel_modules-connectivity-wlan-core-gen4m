@@ -2654,7 +2654,6 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 
 #endif
 			if (fgEfuseCtrlAxOn == 1) {
-#if (CFG_SUPPORT_HE_ER == 1)
 				if (IE_ID_EXT(pucIE) == ELEM_EXT_ID_HE_CAP) {
 					prHeCap = (struct _IE_HE_CAP_T *) pucIE;
 					if (IE_SIZE(prHeCap)
@@ -2665,6 +2664,12 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 						break;
 					}
 					prBssDesc->fgIsHEPresent = TRUE;
+					memcpy(prBssDesc->ucHePhyCapInfo,
+						prHeCap->ucHePhyCap,
+						HE_PHY_CAP_BYTE_NUM);
+				}
+#if (CFG_SUPPORT_HE_ER == 1)
+				if (IE_ID_EXT(pucIE) == ELEM_EXT_ID_HE_CAP) {
 					prBssDesc->ucDCMMaxConRx =
 					HE_GET_PHY_CAP_DCM_MAX_CONSTELLATION_RX(
 						prHeCap->ucHePhyCap);
@@ -2696,8 +2701,6 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 					prBssDesc->ucDCMMaxConRx,
 					prBssDesc->fgIsERSUDisable);
 #else
-				if (IE_ID_EXT(pucIE) == ELEM_EXT_ID_HE_CAP)
-					prBssDesc->fgIsHEPresent = TRUE;
 
 #if (CFG_SUPPORT_WIFI_6G == 1)
 				if (IE_ID_EXT(pucIE) == ELEM_EXT_ID_HE_OP)

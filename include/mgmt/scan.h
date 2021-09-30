@@ -329,6 +329,7 @@ struct BSS_DESC {
 	u_int8_t fgIsVHTPresent;
 #if (CFG_SUPPORT_802_11AX == 1)
 	u_int8_t fgIsHEPresent;
+	uint8_t ucHePhyCapInfo[HE_PHY_CAP_BYTE_NUM];
 #if (CFG_SUPPORT_WIFI_6G == 1)
 	u_int8_t fgIsHE6GPresent;
 	u_int8_t fgIsCoHostedBssPresent;
