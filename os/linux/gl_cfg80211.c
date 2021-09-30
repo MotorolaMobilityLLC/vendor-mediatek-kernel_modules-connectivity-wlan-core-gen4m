@@ -6191,6 +6191,10 @@ int mtk_IsP2PNetDevice(struct GLUE_INFO *prGlueInfo,
 		ret = 0;
 	else if (iftype == NL80211_IFTYPE_ADHOC)
 		ret = 0;
+#if CFG_SUPPORT_NAN
+	else if (prNetDevPrivate->ucIsNan == TRUE)
+		ret = 0;
+#endif
 
 	return ret;
 }

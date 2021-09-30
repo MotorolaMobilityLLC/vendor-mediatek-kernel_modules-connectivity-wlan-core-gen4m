@@ -84,10 +84,10 @@ const struct nla_policy
 			[MTK_WLAN_VENDOR_ATTR_NDP_CHANNEL] = {
 				.type = NLA_U32 },
 			[MTK_WLAN_VENDOR_ATTR_NDP_PEER_DISCOVERY_MAC_ADDR] = {
-				.type = NLA_UNSPEC,
+				.type = NLA_BINARY,
 				.len = MAC_ADDR_LEN },
 			[MTK_WLAN_VENDOR_ATTR_NDP_CONFIG_SECURITY] = {
-				.type = NLA_U16 },
+				.type = NLA_NESTED },
 			[MTK_WLAN_VENDOR_ATTR_NDP_CONFIG_QOS] = {
 				.type = NLA_U32 },
 			[MTK_WLAN_VENDOR_ATTR_NDP_APP_INFO] = {
@@ -115,6 +115,8 @@ const struct nla_policy
 			[MTK_WLAN_VENDOR_ATTR_NDP_SCID] = {
 				.type = NLA_BINARY,
 				.len = NDP_SCID_BUF_LEN },
+			[MTK_WLAN_VENDOR_ATTR_NDP_CSID] = {
+				.type = NLA_U32 },
 			[MTK_WLAN_VENDOR_ATTR_NDP_PASSPHRASE] = {
 				.type = NLA_BINARY,
 				.len = NAN_PASSPHRASE_MAX_LEN },
@@ -718,9 +720,7 @@ nanNdpResponderReqHandler(struct GLUE_INFO *prGlueInfo, struct nlattr **tb) {
 	if (tb[MTK_WLAN_VENDOR_ATTR_NDP_RESPONSE_CODE]) {
 		rNanCmdDataResponse.ucDecisionStatus =
 			nla_get_u32(tb[MTK_WLAN_VENDOR_ATTR_NDP_RESPONSE_CODE]);
-#if (NAN_DATA_ENGINE_SIGMA_WORKAROUND == 1)
 		rNanCmdDataResponse.ucDecisionStatus = NAN_DP_REQUEST_ACCEPT;
-#endif
 	}
 
 	/* Instance ID */

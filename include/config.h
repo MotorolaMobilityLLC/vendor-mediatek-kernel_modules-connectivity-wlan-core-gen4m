@@ -1590,7 +1590,7 @@
  *------------------------------------------------------------------------------
  */
 #ifndef CFG_SUPPORT_NAN
-#define CFG_SUPPORT_NAN  0
+#define CFG_SUPPORT_NAN  1
 #endif
 
 #if (CFG_SUPPORT_NAN == 1)
