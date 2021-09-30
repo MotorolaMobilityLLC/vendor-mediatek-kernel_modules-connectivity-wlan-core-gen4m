@@ -1188,23 +1188,24 @@ uint8_t cnmIsSafeCh(IN struct BSS_INFO *prBssInfo)
 	eBand = prBssInfo->eBand;
 	ucChannel = prBssInfo->ucPrimaryChannel;
 
-	if (eBand == BAND_2G4)
+	if (eBand == BAND_2G4) {
 		if (u4Safe2G & BIT(ucChannel))
 			return TRUE;
-	else if (eBand == BAND_5G &&
-		ucChannel >= 36 && ucChannel <= 144)
+	} else if (eBand == BAND_5G &&
+		ucChannel >= 36 && ucChannel <= 144) {
 		if (u4Safe5G_1 & BIT((ucChannel - 36) / 4))
 			return TRUE;
-	else if (eBand == BAND_5G &&
-		ucChannel >= 149 && ucChannel <= 181)
+	} else if (eBand == BAND_5G &&
+		ucChannel >= 149 && ucChannel <= 181) {
 		if (u4Safe5G_2 & BIT((ucChannel - 149) / 4))
 			return TRUE;
 #if (CFG_SUPPORT_WIFI_6G == 1)
-	else if (eBand == BAND_6G &&
-		ucChannel >= 7 && ucChannel <= 215)
+	} else if (eBand == BAND_6G &&
+		ucChannel >= 7 && ucChannel <= 215) {
 		if (u4Safe6G & BIT((ucChannel - 7) / 16))
 			return TRUE;
 #endif
+	}
 
 	return FALSE;
 }
