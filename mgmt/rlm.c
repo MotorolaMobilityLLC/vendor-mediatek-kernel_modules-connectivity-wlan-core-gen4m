@@ -407,9 +407,9 @@ void rlmReqGenerateExtCapIE(struct ADAPTER *prAdapter,
 
 	prStaRec = cnmGetStaRecByIndex(prAdapter, prMsduInfo->ucStaRecIndex);
 
-	if (!prStaRec || RLM_NET_IS_11N(prBssInfo)
+	if (!prStaRec || (prStaRec->ucPhyTypeSet & PHY_TYPE_SET_802_11N)
 #if (CFG_SUPPORT_802_11AX == 1)
-		|| RLM_NET_IS_11AX(prBssInfo)
+		|| (prStaRec->ucPhyTypeSet & PHY_TYPE_SET_802_11AX)
 #endif
 		)
 		rlmFillExtCapIE(prAdapter, prBssInfo, prMsduInfo);
