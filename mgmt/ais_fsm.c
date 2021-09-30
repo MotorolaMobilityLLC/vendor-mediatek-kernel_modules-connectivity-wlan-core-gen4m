@@ -2499,6 +2499,8 @@ void aisFsmRunEventScanDone(IN struct ADAPTER *prAdapter,
 	DBGLOG(AIS, INFO, "ScanDone %u, status(%d) native req(%u)\n",
 	       ucSeqNumOfCompMsg, eStatus, prAisFsmInfo->u2SeqNumOfScanReport);
 
+	scnFsmNotifyEvent(prAdapter, eStatus, ucBssIndex);
+
 	eNextState = prAisFsmInfo->eCurrentState;
 
 	if ((uint16_t) ucSeqNumOfCompMsg ==
@@ -4527,6 +4529,7 @@ static void aisFsmRunEventScanDoneTimeOut(IN struct ADAPTER *prAdapter,
 	struct AIS_FSM_INFO *prAisFsmInfo;
 	struct CONNECTION_SETTINGS *prConnSettings;
 	uint8_t ucBssIndex = (uint8_t) ulParam;
+	struct SCAN_INFO *prScanInfo;
 
 	DEBUGFUNC("aisFsmRunEventScanDoneTimeOut()");
 
@@ -4539,6 +4542,7 @@ static void aisFsmRunEventScanDoneTimeOut(IN struct ADAPTER *prAdapter,
 
 	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
 	prConnSettings = aisGetConnSettings(prAdapter, ucBssIndex);
+	prScanInfo = &(prAdapter->rWifiVar.rScanInfo);
 
 	DBGLOG(AIS, STATE,
 		"[%d] aisFsmRunEventScanDoneTimeOut Current[%d] Seq=%u\n",
@@ -4547,6 +4551,7 @@ static void aisFsmRunEventScanDoneTimeOut(IN struct ADAPTER *prAdapter,
 
 	prAdapter->u4HifDbgFlag |= DEG_HIF_DEFAULT_DUMP;
 	kalSetHifDbgEvent(prAdapter->prGlueInfo);
+	prScanInfo->fgIsScanTimeout = TRUE;
 
 	/* try to stop scan in CONNSYS */
 	aisFsmStateAbort_SCAN(prAdapter, ucBssIndex);
