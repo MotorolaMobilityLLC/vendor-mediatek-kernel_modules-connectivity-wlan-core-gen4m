@@ -1593,6 +1593,12 @@ VHT_CAP_INFO_COMPRESSED_STEERING_NUMBER_OF_BEAMFORMER_ANTENNAS_4_SUP;
 			prBssInfo->ucOpTxNss >= 2)
 		prVhtCap->u4VhtCapInfo |= VHT_CAP_INFO_TX_STBC;
 
+	prVhtCap->u4VhtCapInfo |=
+		((VHT_CAP_INFO_EXT_NSS_BW_SUPPORT
+			<< VHT_CAP_INFO_EXT_NSS_BW_SUPPORT_OFFSET) &
+		 VHT_CAP_INFO_EXT_NSS_BW_SUPPORT_MASK);
+
+
 	/*set MCS map */
 	prVhtSupportedMcsSet = &prVhtCap->rVhtSupportedMcsSet;
 	kalMemZero((void *)prVhtSupportedMcsSet,
@@ -1629,6 +1635,9 @@ VHT_CAP_INFO_COMPRESSED_STEERING_NUMBER_OF_BEAMFORMER_ANTENNAS_4_SUP;
 		VHT_CAP_INFO_DEFAULT_HIGHEST_DATA_RATE;
 	prVhtSupportedMcsSet->u2TxHighestSupportedDataRate =
 		VHT_CAP_INFO_DEFAULT_HIGHEST_DATA_RATE;
+
+	prVhtSupportedMcsSet->u2TxHighestSupportedDataRate
+		|= VHT_CAP_INFO_EXT_NSS_BW_CAP;
 
 	ASSERT(IE_SIZE(prVhtCap) <= (ELEM_HDR_LEN + ELEM_MAX_LEN_VHT_CAP));
 

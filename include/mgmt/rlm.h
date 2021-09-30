@@ -194,6 +194,8 @@ extern uint32_t g_au4IQData[256];
 		 << VHT_CAP_INFO_MAX_AMPDU_LENGTH_OFFSET))
 
 #define VHT_CAP_INFO_DEFAULT_HIGHEST_DATA_RATE			0
+#define VHT_CAP_INFO_EXT_NSS_BW_CAP				BIT(13)
+
 #endif
 /*******************************************************************************
  *                             D A T A   T Y P E S
