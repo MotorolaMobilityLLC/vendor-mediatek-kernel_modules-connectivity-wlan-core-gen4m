@@ -2882,12 +2882,12 @@ static void wlanCreateWirelessDevice(void)
 
 	/* Allocate GLUE_INFO and set priv as pointer to glue structure */
 	prGlueInfo = kalMemAlloc(sizeof(struct GLUE_INFO), VIR_MEM_TYPE);
-	kalMemSet(prGlueInfo, 0, sizeof(struct GLUE_INFO));
 	if (!prGlueInfo) {
 		DBGLOG(INIT, ERROR,
 		       "Allocating memory to GLUE_INFO failed\n");
 		goto free_wiphy;
 	}
+	kalMemSet(prGlueInfo, 0, sizeof(struct GLUE_INFO));
 	*((struct GLUE_INFO **) wiphy_priv(prWiphy)) = prGlueInfo;
 
 	/* 4 <1.3> configure wireless_dev & wiphy */
