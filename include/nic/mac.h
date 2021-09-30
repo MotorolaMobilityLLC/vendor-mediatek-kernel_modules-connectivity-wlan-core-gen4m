@@ -321,6 +321,8 @@
 #define RATE_HT_PHY         127
 /* BSS Selector - Hash to Element only */
 #define RATE_H2E_ONLY                           123
+#define RATE_H2E_ONLY_VAL                       (0x80 | 123)
+
 /* mask bits for the rate */
 #define RATE_MASK                               BITS(0, 6)
 /* mask bit for the rate belonging to the BSSBasicRateSet */
@@ -1317,7 +1319,10 @@ enum BEACON_REPORT_DETAIL {
 #if (CFG_SUPPORT_TWT == 1)
 #define ELEM_EXT_CAP_TWT_REQUESTER_BIT              77
 #endif
+#define ELEM_EXT_CAP_SAE_PW_USED_BIT                81
+#define ELEM_EXT_CAP_SAE_PW_EX_BIT                  82
 #define ELEM_EXT_CAP_MSCS_BIT                       85
+#define ELEM_EXT_CAP_SAE_PK_BIT                     88
 
 #define ELEM_MAX_LEN_EXT_CAP_11ABGNAC               (8)
 

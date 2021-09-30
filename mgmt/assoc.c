@@ -207,7 +207,9 @@ struct APPEND_VAR_IE_ENTRY txAssocRespIETable[] = {
 	rsnPmfGenerateTimeoutIE}
 	/* 56 */
 #endif
-
+	,
+	{(ELEM_HDR_LEN + ELEM_MAX_LEN_RSN), NULL, rsnGenerateRSNXIE}
+	/* 244 */
 };
 #endif /* CFG_SUPPORT_AAA */
 

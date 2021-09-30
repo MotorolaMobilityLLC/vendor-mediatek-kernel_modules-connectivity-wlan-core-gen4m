@@ -1338,6 +1338,12 @@ SKIP_START_RDD:
 		}
 
 		bssInitForAP(prAdapter, prBssInfo, TRUE);
+		if (prBssInfo) {
+			prBssInfo->aucAllSupportedRates
+				[prBssInfo->ucAllSupportedRatesLen]
+				= RATE_H2E_ONLY_VAL;
+			prBssInfo->ucAllSupportedRatesLen++;
+		}
 
 		DBGLOG(P2P, TRACE, "Phy type: 0x%x, %d, %d\n",
 			prBssInfo->ucPhyTypeSet,
@@ -1991,6 +1997,12 @@ void p2pFuncDfsSwitchCh(IN struct ADAPTER *prAdapter,
 		prBssInfo->u2BSSBasicRateSet,
 		prBssInfo->aucAllSupportedRates,
 		&prBssInfo->ucAllSupportedRatesLen);
+	if (prBssInfo) {
+		prBssInfo->aucAllSupportedRates
+			[prBssInfo->ucAllSupportedRatesLen]
+			= RATE_H2E_ONLY_VAL;
+		prBssInfo->ucAllSupportedRatesLen++;
+	}
 #endif
 
 	/* Setup channel and bandwidth */
@@ -2394,6 +2406,30 @@ p2pFuncBeaconUpdate(IN struct ADAPTER *prAdapter,
 			(uint8_t *) prBcnFrame->aucInfoElem,
 			(prBcnMsduInfo->u2FrameLength -
 			OFFSET_OF(struct WLAN_BEACON_FRAME, aucInfoElem)));
+
+		if (prP2pBssInfo) {
+			uint32_t i;
+
+			prP2pBssInfo->fgEnableH2E = FALSE;
+
+			for (i = 0;
+				i < prP2pBssInfo->ucAllSupportedRatesLen;
+				i++) {
+				DBGLOG(P2P, LOUD,
+					"Rate [%d] = %d\n",
+					i,
+					prP2pBssInfo->aucAllSupportedRates[i]);
+				if (prP2pBssInfo->aucAllSupportedRates[i] ==
+					RATE_H2E_ONLY_VAL) {
+					prP2pBssInfo->fgEnableH2E = TRUE;
+					break;
+				}
+			}
+
+			DBGLOG(P2P, TRACE,
+				"fgEnableH2E = %d\n",
+				prP2pBssInfo->fgEnableH2E);
+		}
 
 #if 1
 		/* bssUpdateBeaconContent(prAdapter, NETWORK_TYPE_P2P_INDEX); */

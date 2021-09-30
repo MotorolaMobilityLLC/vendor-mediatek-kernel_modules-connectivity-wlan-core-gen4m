@@ -653,6 +653,8 @@ struct BSS_INFO {
 #ifdef CFG_MSCS_SUPPORT
 	struct FAST_PATH_INFO rFastPathInfo;
 #endif
+
+	u_int8_t fgEnableH2E;
 };
 
 /* Support AP Selection */
