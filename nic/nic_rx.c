@@ -4499,6 +4499,28 @@ void nicRxQueryStatistics(IN struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * @brief Use to distinguish waiting pre-cal or not
+ *
+ * @param prAdapter pointer to the Adapter handler
+ * @param pucRspBuffer pointer to the Response buffer
+ *
+ * @retval WLAN_STATUS_SUCCESS: Response packet has been read
+ * @retval WLAN_STATUS_FAILURE: Read Response packet timeout or error occurred
+ *
+ */
+/*----------------------------------------------------------------------------*/
+inline uint32_t
+nicRxWaitResponse(IN struct ADAPTER *prAdapter,
+		  IN uint8_t ucPortIdx, OUT uint8_t *pucRspBuffer,
+		  IN uint32_t u4MaxRespBufferLen, OUT uint32_t *pu4Length) {
+	return nicRxWaitResponseByWaitingInterval(
+				prAdapter, ucPortIdx,
+				pucRspBuffer, u4MaxRespBufferLen,
+				pu4Length, CFG_DEFAULT_SLEEP_WAITING_INTERVAL);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * @brief Read the Response data from data port
  *
  * @param prAdapter pointer to the Adapter handler
@@ -4510,9 +4532,10 @@ void nicRxQueryStatistics(IN struct ADAPTER *prAdapter,
  */
 /*----------------------------------------------------------------------------*/
 uint32_t
-nicRxWaitResponse(IN struct ADAPTER *prAdapter,
+nicRxWaitResponseByWaitingInterval(IN struct ADAPTER *prAdapter,
 		  IN uint8_t ucPortIdx, OUT uint8_t *pucRspBuffer,
-		  IN uint32_t u4MaxRespBufferLen, OUT uint32_t *pu4Length) {
+		  IN uint32_t u4MaxRespBufferLen, OUT uint32_t *pu4Length,
+		  IN uint32_t u4WaitingInterval) {
 	struct mt66xx_chip_info *prChipInfo;
 	struct WIFI_EVENT *prEvent;
 	uint32_t u4Status = WLAN_STATUS_SUCCESS;
@@ -4521,8 +4544,8 @@ nicRxWaitResponse(IN struct ADAPTER *prAdapter,
 	prChipInfo = prAdapter->chip_info;
 
 	u4Status = halRxWaitResponse(prAdapter, ucPortIdx,
-				     pucRspBuffer,
-				     u4MaxRespBufferLen, pu4Length);
+					pucRspBuffer, u4MaxRespBufferLen,
+					pu4Length, u4WaitingInterval);
 	if (u4Status == WLAN_STATUS_SUCCESS) {
 		DBGLOG(RX, TRACE,
 		       "Dump Response buffer, length = %u\n", *pu4Length);

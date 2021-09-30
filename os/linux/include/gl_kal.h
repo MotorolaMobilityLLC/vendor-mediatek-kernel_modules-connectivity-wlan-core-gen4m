@@ -879,9 +879,15 @@ static inline void kalCfg80211ScanDone(struct cfg80211_scan_request *request,
 #endif
 
 #define kalUdelay(u4USec)                           udelay(u4USec)
-
 #define kalMdelay(u4MSec)                           mdelay(u4MSec)
 #define kalMsleep(u4MSec)                           msleep(u4MSec)
+#define kalUsleep(u4USec) \
+{ \
+	if (u4USec > 10000) \
+		msleep(u4USec / 1000); \
+	else \
+		usleep_range(u4USec, u4USec + 50); \
+}
 #define kalUsleep_range(u4MinUSec, u4MaxUSec)  \
 	usleep_range(u4MinUSec, u4MaxUSec)
 

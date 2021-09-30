@@ -652,6 +652,7 @@ enum ENUM_CMD_TX_RESULT {
 #define kalUdelay(u4USec) KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
 #define kalMdelay(u4MSec) KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
 #define kalMsleep(u4MSec) KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
+#define kalUsleep(u4USec) KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
 #define kalUsleep_range(u4MinUSec, u4MaxUSec) \
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
 

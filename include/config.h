@@ -546,6 +546,10 @@
 #endif
 #define CFG_RESPONSE_POLLING_DELAY              5
 
+#define CFG_DEFAULT_SLEEP_WAITING_INTERVAL      50
+
+#define CFG_PRE_CAL_SLEEP_WAITING_INTERVAL      50000
+
 /*------------------------------------------------------------------------------
  * Flags and Parameters for Protocol Stack
  *------------------------------------------------------------------------------
