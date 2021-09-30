@@ -12259,7 +12259,7 @@ int wlanQueryRateByTable(uint32_t txmode, uint32_t rate,
 
 		ucMaxSize = ARRAY_SIZE(g_rDataRateMappingTable.nsts[nsts - 1]
 				.bw[frmode].sgi[sgi].rate);
-		if (rate > ucMaxSize) {
+		if (rate >= ucMaxSize) {
 			DBGLOG(SW4, ERROR, "rate error for 11AC: %u\n",
 			       rate);
 			return -1;
@@ -12290,7 +12290,7 @@ int wlanQueryRateByTable(uint32_t txmode, uint32_t rate,
 
 		ucMaxSize = ARRAY_SIZE(g_rAxDataRateMappingTable.nsts[nsts - 1]
 				.bw[frmode].gi[sgi].rate);
-		if (rate > ucMaxSize) {
+		if (rate >= ucMaxSize) {
 			DBGLOG(SW4, ERROR, "rate error for 11AX: %u\n",
 			       rate);
 			return -1;
