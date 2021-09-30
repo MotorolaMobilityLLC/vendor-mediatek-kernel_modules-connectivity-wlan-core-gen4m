@@ -922,17 +922,16 @@ static void rlmFillExtCapIE(struct ADAPTER *prAdapter,
 			    struct BSS_INFO *prBssInfo,
 			    struct MSDU_INFO *prMsduInfo)
 {
-#if CFG_SUPPORT_PASSPOINT
-	struct IE_HS20_EXT_CAP_T *prHsExtCap;
-	struct HS20_INFO *prHS20Info;
-#else
 	struct IE_EXT_CAP *prExtCap;
-#endif
 	u_int8_t fg40mAllowed, fgAppendVhtCap;
 	struct STA_RECORD *prStaRec;
 	struct CONNECTION_SETTINGS *prConnSettings;
 	const uint8_t *extCapConn;
 	uint32_t extCapIeLen = 0;
+#if CFG_SUPPORT_PASSPOINT
+	struct HS20_INFO *prHS20Info = aisGetHS20Info(
+			prAdapter, prBssInfo->ucBssIndex);
+#endif
 
 	ASSERT(prAdapter);
 	ASSERT(prMsduInfo);
@@ -948,124 +947,18 @@ static void rlmFillExtCapIE(struct ADAPTER *prAdapter,
 		DBGLOG_MEM8(SAA, INFO, extCapConn, extCapIeLen);
 	}
 
-#if CFG_SUPPORT_PASSPOINT
-	prHS20Info = aisGetHS20Info(prAdapter,
-			prBssInfo->ucBssIndex);
-	if (!prHS20Info)
-		return;
-
-	prHsExtCap =
-		(struct IE_HS20_EXT_CAP_T *)(((uint8_t *)prMsduInfo->prPacket) +
-					     prMsduInfo->u2FrameLength);
-	prHsExtCap->ucId = ELEM_ID_EXTENDED_CAP;
-
-	if (prHS20Info->fgConnectHS20AP == TRUE)
-		prHsExtCap->ucLength = ELEM_MAX_LEN_EXT_CAP;
-	else
-		prHsExtCap->ucLength = 3 - ELEM_HDR_LEN;
-
-	kalMemZero(prHsExtCap->aucCapabilities,
-			sizeof(prHsExtCap->aucCapabilities));
-
-	prHsExtCap->aucCapabilities[0] = ELEM_EXT_CAP_DEFAULT_VAL;
-
-	if (!fg40mAllowed)
-		prHsExtCap->aucCapabilities[0] &=
-			~ELEM_EXT_CAP_20_40_COEXIST_SUPPORT;
-
-	if (prBssInfo->eCurrentOPMode != OP_MODE_INFRASTRUCTURE)
-		prHsExtCap->aucCapabilities[0] &= ~ELEM_EXT_CAP_PSMP_CAP;
-
-#if CFG_SUPPORT_802_11AC
-	prStaRec = cnmGetStaRecByIndex(prAdapter, prMsduInfo->ucStaRecIndex);
-	fgAppendVhtCap = FALSE;
-
-	/* Check append rule */
-	if (prAdapter->rWifiVar.ucAvailablePhyTypeSet
-		& PHY_TYPE_SET_802_11AC) {
-		/* Note: For AIS connecting state,
-		 * structure in BSS_INFO will not be inited
-		 *	 So, we check StaRec instead of BssInfo
-		 */
-		if (prStaRec) {
-			if (prStaRec->ucPhyTypeSet & PHY_TYPE_SET_802_11AC)
-				fgAppendVhtCap = TRUE;
-		} else if (RLM_NET_IS_11AC(prBssInfo) &&
-				((prBssInfo->eCurrentOPMode ==
-				OP_MODE_INFRASTRUCTURE) ||
-				(prBssInfo->eCurrentOPMode ==
-				OP_MODE_ACCESS_POINT))) {
-			fgAppendVhtCap = TRUE;
-		}
-
-	}
-
-	if (fgAppendVhtCap) {
-		if (prHsExtCap->ucLength < ELEM_MAX_LEN_EXT_CAP)
-			prHsExtCap->ucLength = ELEM_MAX_LEN_EXT_CAP;
-
-		SET_EXT_CAP(prHsExtCap->aucCapabilities, ELEM_MAX_LEN_EXT_CAP,
-			    ELEM_EXT_CAP_OP_MODE_NOTIFICATION_BIT);
-	}
-#endif
-
-	if (prHS20Info->fgConnectHS20AP == TRUE) {
-		SET_EXT_CAP(prHsExtCap->aucCapabilities, ELEM_MAX_LEN_EXT_CAP,
-			    ELEM_EXT_CAP_INTERWORKING_BIT);
-		SET_EXT_CAP(prHsExtCap->aucCapabilities, ELEM_MAX_LEN_EXT_CAP,
-			    ELEM_EXT_CAP_QOSMAPSET_BIT);
-		SET_EXT_CAP(prHsExtCap->aucCapabilities, ELEM_MAX_LEN_EXT_CAP,
-			    ELEM_EXT_CAP_BSS_TRANSITION_BIT);
-		/* For R2 WNM-Notification */
-		SET_EXT_CAP(prHsExtCap->aucCapabilities, ELEM_MAX_LEN_EXT_CAP,
-			    ELEM_EXT_CAP_WNM_NOTIFICATION_BIT);
-	}
-
-#if CFG_SUPPORT_802_11V_BSS_TRANSITION_MGT
-	prHsExtCap->ucLength = ELEM_MAX_LEN_EXT_CAP;
-	SET_EXT_CAP(prHsExtCap->aucCapabilities, ELEM_MAX_LEN_EXT_CAP,
-		    ELEM_EXT_CAP_BSS_TRANSITION_BIT);
-#endif
-
-#if (CFG_SUPPORT_802_11V_MBSSID == 1)
-	if (prBssInfo->eCurrentOPMode != OP_MODE_ACCESS_POINT) {
-	prHsExtCap->ucLength = ELEM_MAX_LEN_EXT_CAP;
-	SET_EXT_CAP(prHsExtCap->aucCapabilities, ELEM_MAX_LEN_EXT_CAP,
-		    ELEM_EXT_CAP_MBSSID_BIT);
-	}
-#endif
-
-	if (extCapConn) {
-		if ((extCapIeLen - ELEM_HDR_LEN) > prHsExtCap->ucLength)
-			prHsExtCap->ucLength = ELEM_MAX_LEN_EXT_CAP;
-		rlmSyncExtCapIEwithSupplicant(prHsExtCap->aucCapabilities,
-			extCapConn, extCapIeLen);
-	} else
-		DBGLOG(RLM, WARN, "extCapConn = NULL!");
-
-	ASSERT(IE_SIZE(prHsExtCap) <= (ELEM_HDR_LEN + ELEM_MAX_LEN_EXT_CAP));
-
-	prMsduInfo->u2FrameLength += IE_SIZE(prHsExtCap);
-
-#else
 	/* Add Extended Capabilities IE */
 	prExtCap = (struct IE_EXT_CAP *)(((uint8_t *)prMsduInfo->prPacket) +
 					 prMsduInfo->u2FrameLength);
 
 	prExtCap->ucId = ELEM_ID_EXTENDED_CAP;
-
-	prExtCap->ucLength = 3 - ELEM_HDR_LEN;
+	prExtCap->ucLength = ELEM_MAX_LEN_EXT_CAP;
 	kalMemZero(prExtCap->aucCapabilities,
 				sizeof(prExtCap->aucCapabilities));
 
-	prExtCap->aucCapabilities[0] = ELEM_EXT_CAP_DEFAULT_VAL;
-
-	if (!fg40mAllowed)
-		prExtCap->aucCapabilities[0] &=
-			~ELEM_EXT_CAP_20_40_COEXIST_SUPPORT;
-
-	if (prBssInfo->eCurrentOPMode != OP_MODE_INFRASTRUCTURE)
-		prExtCap->aucCapabilities[0] &= ~ELEM_EXT_CAP_PSMP_CAP;
+	if (fg40mAllowed)
+		SET_EXT_CAP(prExtCap->aucCapabilities, ELEM_MAX_LEN_EXT_CAP,
+			    ELEM_EXT_CAP_20_40_COEXIST_SUPPORT);
 
 #if CFG_SUPPORT_802_11AC
 	prStaRec = cnmGetStaRecByIndex(prAdapter, prMsduInfo->ucStaRecIndex);
@@ -1090,38 +983,38 @@ static void rlmFillExtCapIE(struct ADAPTER *prAdapter,
 		}
 	}
 
-	if (fgAppendVhtCap) {
-		if (prExtCap->ucLength < ELEM_MAX_LEN_EXT_CAP)
-			prExtCap->ucLength = ELEM_MAX_LEN_EXT_CAP;
-
+	if (fgAppendVhtCap)
 		SET_EXT_CAP(prExtCap->aucCapabilities, ELEM_MAX_LEN_EXT_CAP,
 			    ELEM_EXT_CAP_OP_MODE_NOTIFICATION_BIT);
-	}
 #endif
 
 #if (CFG_SUPPORT_TWT == 1)
-	prExtCap->aucCapabilities[ELEM_EXT_CAP_TWT_REQUESTER_BIT >> 3] |=
-		BIT(ELEM_EXT_CAP_TWT_REQUESTER_BIT % 8);
+	SET_EXT_CAP(prExtCap->aucCapabilities, ELEM_MAX_LEN_EXT_CAP,
+			    ELEM_EXT_CAP_TWT_REQUESTER_BIT);
+#endif
+
+#if CFG_SUPPORT_PASSPOINT
+	if (prHS20Info && prHS20Info->fgConnectHS20AP == TRUE) {
+		SET_EXT_CAP(prExtCap->aucCapabilities, ELEM_MAX_LEN_EXT_CAP,
+			    ELEM_EXT_CAP_INTERWORKING_BIT);
+		SET_EXT_CAP(prExtCap->aucCapabilities, ELEM_MAX_LEN_EXT_CAP,
+			    ELEM_EXT_CAP_QOSMAPSET_BIT);
+		SET_EXT_CAP(prExtCap->aucCapabilities, ELEM_MAX_LEN_EXT_CAP,
+			    ELEM_EXT_CAP_BSS_TRANSITION_BIT);
+		SET_EXT_CAP(prExtCap->aucCapabilities, ELEM_MAX_LEN_EXT_CAP,
+			    ELEM_EXT_CAP_WNM_NOTIFICATION_BIT);
+	}
 #endif
 
 #if CFG_SUPPORT_802_11V_BSS_TRANSITION_MGT
-	prExtCap->ucLength = ELEM_MAX_LEN_EXT_CAP;
 	SET_EXT_CAP(prExtCap->aucCapabilities, ELEM_MAX_LEN_EXT_CAP,
 				ELEM_EXT_CAP_BSS_TRANSITION_BIT);
 #endif
 
 #if (CFG_SUPPORT_802_11V_MBSSID == 1)
-	if (prBssInfo->eCurrentOPMode != OP_MODE_ACCESS_POINT) {
-	prExtCap->ucLength = ELEM_MAX_LEN_EXT_CAP;
-	SET_EXT_CAP(prExtCap->aucCapabilities, ELEM_MAX_LEN_EXT_CAP,
+	if (prBssInfo->eCurrentOPMode != OP_MODE_ACCESS_POINT)
+		SET_EXT_CAP(prExtCap->aucCapabilities, ELEM_MAX_LEN_EXT_CAP,
 				ELEM_EXT_CAP_MBSSID_BIT);
-	}
-#endif
-
-#if (CFG_SUPPORT_802_11AX == 1)
-	if ((prBssInfo->eCurrentOPMode == OP_MODE_ACCESS_POINT)
-		&& !RLM_NET_IS_11AX(prBssInfo))
-		prExtCap->ucLength = ELEM_MAX_LEN_EXT_CAP_11ABGNAC;
 #endif
 
 	if (extCapConn) {
@@ -1132,10 +1025,14 @@ static void rlmFillExtCapIE(struct ADAPTER *prAdapter,
 	} else
 		DBGLOG(RLM, WARN, "extCapConn = NULL!");
 
+	while (prExtCap->ucLength > 0 &&
+		prExtCap->aucCapabilities[prExtCap->ucLength - 1] == 0) {
+		prExtCap->ucLength--;
+	}
+
 	ASSERT(IE_SIZE(prExtCap) <= (ELEM_HDR_LEN + ELEM_MAX_LEN_EXT_CAP));
 
 	prMsduInfo->u2FrameLength += IE_SIZE(prExtCap);
-#endif
 }
 
 void rlmSyncExtCapIEwithSupplicant(uint8_t *aucCapabilities,

@@ -1325,11 +1325,8 @@ enum BEACON_REPORT_DETAIL {
 /* TODO */
 #endif
 
-#if (CFG_SUPPORT_802_11AX == 1)
-#define ELEM_MAX_LEN_EXT_CAP                        (10)
-#else
-#define ELEM_MAX_LEN_EXT_CAP                        (8)
-#endif
+/* This length should synchronize with wpa_supplicant */
+#define ELEM_MAX_LEN_EXT_CAP                        (11)
 
 /* 7.3.2.30 TSPEC element */
 /* WMM: 0 (Asynchronous TS of low-duty cycles) */
@@ -2675,15 +2672,8 @@ struct IE_QUIET {
 struct IE_EXT_CAP {
 	uint8_t ucId;
 	uint8_t ucLength;
-	uint8_t aucCapabilities[1];
-} __KAL_ATTRIB_PACKED__;
-
-/* 7.3.2.27 hs20 Extended Capabilities element */
-struct IE_HS20_EXT_CAP_T {
-	uint8_t ucId;
-	uint8_t ucLength;
 	uint8_t aucCapabilities[ELEM_MAX_LEN_EXT_CAP];
-};
+} __KAL_ATTRIB_PACKED__;
 
 /* 7.3.2.27 Extended Capabilities element */
 struct IE_RRM_ENABLED_CAP {
