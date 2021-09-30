@@ -8317,6 +8317,13 @@ uint32_t __weak kalGetCpuBoostThreshold(void)
 	return 1;
 }
 
+#if CFG_SUPPORT_LITTLE_CPU_BOOST
+uint32_t __weak kalGetLittleCpuBoostThreshold(void)
+{
+	return kalGetCpuBoostThreshold();
+}
+#endif /* CFG_SUPPORT_LITTLE_CPU_BOOST */
+
 uint32_t __weak kalGetEmiMetOffset(void)
 {
 	DBGLOG(SW4, WARN, "enter kalGetEmiMetOffset\n");

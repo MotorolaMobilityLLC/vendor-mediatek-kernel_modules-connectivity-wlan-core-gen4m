@@ -1633,6 +1633,7 @@
  */
 #define CFG_SUPPORT_TPUT_ON_BIG_CORE 1
 
+#define CFG_SUPPORT_LITTLE_CPU_BOOST 1
 
 /*******************************************************************************
  *                             D A T A   T Y P E S

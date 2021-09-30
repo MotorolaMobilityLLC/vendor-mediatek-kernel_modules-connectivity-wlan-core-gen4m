@@ -1826,6 +1826,9 @@ int32_t kalCheckTputLoad(IN struct ADAPTER *prAdapter,
 			 IN int32_t i4Pending,
 			 IN uint32_t u4Used);
 uint32_t kalGetCpuBoostThreshold(void);
+#if CFG_SUPPORT_LITTLE_CPU_BOOST
+uint32_t kalGetLittleCpuBoostThreshold(void);
+#endif /* CFG_SUPPORT_LITTLE_CPU_BOOST */
 uint32_t kalGetEmiMetOffset(void);
 void kalSetEmiMetOffset(uint32_t newEmiMetOffset);
 void kalSetRpsMap(IN struct GLUE_INFO *glue, IN unsigned long value);

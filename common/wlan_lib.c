@@ -7098,6 +7098,9 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 #endif
 	uint32_t u4TxHifRes = 0, u4Idx = 0;
 	uint32_t u4PlatformBoostCpuTh = 1;
+#if CFG_SUPPORT_LITTLE_CPU_BOOST
+	uint32_t u4PlatformBoostLittleCpuTh = 1;
+#endif /* CFG_SUPPORT_LITTLE_CPU_BOOST */
 
 	/* Feature options will be filled by config file */
 
@@ -7888,6 +7891,13 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 		prWifiVar->fgIsBoostCpuThAdjustable  = TRUE;
 		DBGLOG(INIT, TRACE, "BoostCPUTh is not config, adjustable\n");
 	}
+
+#if CFG_SUPPORT_LITTLE_CPU_BOOST
+	u4PlatformBoostLittleCpuTh = kalGetLittleCpuBoostThreshold();
+	prWifiVar->u4BoostLittleCpuTh =
+		(uint32_t) wlanCfgGetUint32(prAdapter, "BoostLittleCpuTh",
+			u4PlatformBoostLittleCpuTh);
+#endif /* CFG_SUPPORT_LITTLE_CPU_BOOST */
 
 	prWifiVar->u4PerfMonPendingTh = (uint8_t)wlanCfgGetUint32(prAdapter,
 						"PerfMonPendingTh", 80);
