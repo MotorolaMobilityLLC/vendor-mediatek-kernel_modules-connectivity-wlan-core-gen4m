@@ -362,11 +362,7 @@ nanNetRegister(struct GLUE_INFO *prGlueInfo,
 			prGlueInfo->aprNANDevInfo[eRole]->prDevHandler,
 			prGlueInfo->aprNANDevInfo[eRole]
 					->prDevHandler->flags |
-				IFF_UP
-#if KERNEL_VERSION(5, 4, 0) <= CFG80211_VERSION_CODE
-				, NULL
-#endif
-				);
+				IFF_UP, NULL);
 		rtnl_unlock();
 
 		netif_carrier_on(
