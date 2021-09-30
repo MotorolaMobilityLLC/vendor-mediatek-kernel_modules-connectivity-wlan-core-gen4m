@@ -4185,8 +4185,7 @@ static void initAcsParams(IN struct ADAPTER *prAdapter,
 		}
 	}
 	if (!prAcsReqInfo->fgIsVhtEnable &&
-			(prAcsReqInfo->eChnlBw == MAX_BW_80MHZ ||
-				prAcsReqInfo->eChnlBw == MAX_BW_160MHZ)) {
+			(prAcsReqInfo->eChnlBw >= MAX_BW_80MHZ)) {
 		if (prAcsReqInfo->fgIsHtEnable &&
 				prAcsReqInfo->fgIsHt40Enable) {
 			prAcsReqInfo->eChnlBw = MAX_BW_40MHZ;
@@ -4229,14 +4228,8 @@ static void indicateAcsResultByAisCh(IN struct ADAPTER *prAdapter,
 			prAcsReqInfo->eChnlBw = MAX_BW_20MHZ;
 		else
 			prAcsReqInfo->eChnlBw = MAX_BW_40MHZ;
-	} else if (prAisBssInfo->ucVhtChannelWidth == VHT_OP_CHANNEL_WIDTH_80) {
+	} else if (prAisBssInfo->ucVhtChannelWidth >= VHT_OP_CHANNEL_WIDTH_80) {
 		prAcsReqInfo->eChnlBw = MAX_BW_80MHZ;
-	} else if (prAisBssInfo->ucVhtChannelWidth ==
-			VHT_OP_CHANNEL_WIDTH_160) {
-		prAcsReqInfo->eChnlBw = MAX_BW_160MHZ;
-	} else if (prAisBssInfo->ucVhtChannelWidth ==
-			VHT_OP_CHANNEL_WIDTH_80P80) {
-		prAcsReqInfo->eChnlBw = MAX_BW_80_80_MHZ;
 	} else {
 		prAcsReqInfo->eChnlBw = MAX_BW_20MHZ;
 	}

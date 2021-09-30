@@ -2283,6 +2283,9 @@ void kalP2pIndicateAcsResult(IN struct GLUE_INFO *prGlueInfo,
 	case MAX_BW_160MHZ:
 		ch_width = 160;
 		break;
+	case MAX_BW_320MHZ:
+		ch_width = 320;
+		break;
 	default:
 		DBGLOG(P2P, ERROR, "unsupport width: %d.\n", ch_width);
 		break;
