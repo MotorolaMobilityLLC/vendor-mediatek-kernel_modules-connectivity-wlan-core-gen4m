@@ -1428,7 +1428,14 @@ static int wf_pwr_on_consys_mcu(void)
 	}
 	if (check != 0) {
 		DBGLOG(INIT, ERROR,
-			"Check CONNSYS power-on completion fail, value=0x%08x\n",
+			"Check CONNSYS power-on completion fail, 0x%08x=[0x%08x]\n",
+			CONN_HOST_CSR_TOP_WF_ON_MONFLG_OUT_ADDR,
+			value);
+
+		wf_ioremap_read(WF_TOP_CFG_ON_ROMCODE_INDEX_ADDR, &value);
+		DBGLOG(INIT, ERROR,
+			"Check CONNSYS power-on completion fail, 0x%08x=[0x%08x]\n",
+			WF_TOP_CFG_ON_ROMCODE_INDEX_ADDR,
 			value);
 		return ret;
 	}
