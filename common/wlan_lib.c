@@ -8016,8 +8016,7 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 	prWifiVar->ucNanFixChnl =
 		(uint8_t)wlanCfgGetUint32(prAdapter, "NanFixChnl", 0);
 	prWifiVar->fgEnableNDPE =
-		((wlanCfgGetUint32(prAdapter, "NanEnableNDPE", 0) == 0) ? FALSE
-								     : TRUE);
+		wlanCfgGetUint32(prAdapter, "NanEnableNDPE", 1);
 	prWifiVar->u2DftNdlQosLatencyVal =
 		wlanCfgGetUint32(prAdapter, "NanDftNdlQosLatency", 0);
 	prWifiVar->ucDftNdlQosQuotaVal =

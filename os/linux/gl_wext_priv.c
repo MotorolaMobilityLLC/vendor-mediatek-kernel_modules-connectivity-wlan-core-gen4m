@@ -2363,9 +2363,7 @@ __priv_nan_struct(IN struct net_device *prNetDev,
 
 		rNanCmdDataResponse.ucType = prDataRes->type;
 		rNanCmdDataResponse.ucDecisionStatus = prDataRes->rsp_code;
-#if (NAN_DATA_ENGINE_SIGMA_WORKAROUND == 1)
 		rNanCmdDataResponse.ucDecisionStatus = NAN_DP_REQUEST_ACCEPT;
-#endif
 		rNanCmdDataResponse.ucNDPId = prDataRes->ndp_instance_id;
 		rNanCmdDataResponse.ucRequireQOS = prDataRes->ndp_cfg.qos_cfg;
 		rNanCmdDataResponse.ucSecurity = prDataRes->cipher_type;

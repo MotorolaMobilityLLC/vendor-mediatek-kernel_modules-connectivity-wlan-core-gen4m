@@ -2769,10 +2769,9 @@ nanSecNotify4wayBegin(IN struct _NAN_NDP_INSTANCE_T *prNdp) {
 
 		nanSecUpdatePmk(prNdp);
 
-#if (NAN_DATA_ENGINE_SIGMA_WORKAROUND == 1)
 		/* Sigma workaround: g_prNanWpaSupp is not assigned yet */
 		wpa_supplicant_set_bssid(g_prNanWpaSupp, prNdp->aucPeerNDIAddr);
-#endif
+
 	}
 
 	wpa_SYSrand_Gen_Rand_Seed(prNdp->aucLocalNDIAddr);
@@ -3749,12 +3748,6 @@ nanSecUpdatePeerNDI(struct _NAN_NDP_INSTANCE_T *prNdp,
 	if (prNdp->eNDPRole == NAN_PROTOCOL_INITIATOR)
 		kalMemCopy(prNdp->prInitiatorSecSmInfo->addr, au1PeerNdiAddr,
 			   MAC_ADDR_LEN);
-	else {
-#if (NAN_DATA_ENGINE_SIGMA_WORKAROUND == 0)
-		/* Sigma workaround: g_prNanWpaSupp is not assigned yet */
-		wpa_supplicant_set_bssid(g_prNanWpaSupp, au1PeerNdiAddr);
-#endif
-	}
 }
 
 int32_t

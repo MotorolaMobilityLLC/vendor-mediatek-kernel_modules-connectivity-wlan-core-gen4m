@@ -2082,10 +2082,9 @@ nanDataEngineNDLAttrLength(struct ADAPTER *prAdapter,
 			} else
 				fgGenerateNDL = FALSE;
 
-#if (NAN_DATA_ENGINE_SIGMA_WORKAROUND == 1)
 			/* Sigma 5.3.2 must pass with NDL attr */
 			fgGenerateNDL = TRUE;
-#endif
+
 			break;
 		case NDP_RESPONDER_TX_DP_RESPONSE:
 			fgGenerateNDL =
@@ -2388,27 +2387,7 @@ nanDataEngineElemContainerAttrLength(struct ADAPTER *prAdapter,
 		return u2AttrLength;
 
 	case NDP_RESPONDER_TX_DP_RESPONSE:
-#if (NAN_DATA_ENGINE_SIGMA_WORKAROUND == 1)
-		/* Sigma 5.3.9 must pass with EC attr */
 		return u2AttrLength;
-#else
-		if (prNDL->fgScheduleEstablished == FALSE) {
-			if (prNDL->ucNDLSetupCurrentStatus ==
-				    NAN_ATTR_NDL_STATUS_ACCEPTED ||
-			    prNDL->ucNDLSetupCurrentStatus ==
-				    NAN_ATTR_NDL_STATUS_CONTINUED)
-				return u2AttrLength;
-			else
-				return 0;
-		} else {
-			if (prNDP->ucNDPSetupStatus ==
-			    NAN_ATTR_NDP_STATUS_ACCEPTED)
-				return u2AttrLength;
-			else
-				return 0;
-		}
-#endif
-
 	default:
 		return 0;
 	}

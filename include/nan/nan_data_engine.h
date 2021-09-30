@@ -60,8 +60,6 @@ extern struct net_device *gPrDev;
 
 #define ENABLE_NDP_UT_LOG 1
 
-#define NAN_DATA_ENGINE_SIGMA_WORKAROUND 1
-
 #define NAN_CATEGORY_HDR_OFFSET 7
 
 /****************************************************
@@ -356,11 +354,9 @@ struct _NAN_DATA_PATH_INFO_T {
 	/* NET-DEV reference count */
 	atomic_t NetDevRefCount[NAN_BSS_INDEX_NUM];
 
-#if (NAN_DATA_ENGINE_SIGMA_WORKAROUND == 1)
 	unsigned char fgAutoHandleDPRequest;
 	uint8_t ucDPResponseDecisionStatus;
 	uint8_t aucRemoteAddr[6];
-#endif
 
 	/* NAN R3 feature */
 	bool             fgCarryIPV6;

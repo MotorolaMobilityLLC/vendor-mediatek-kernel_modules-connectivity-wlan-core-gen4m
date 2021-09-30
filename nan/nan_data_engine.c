@@ -1262,11 +1262,9 @@ nanDataEngineInit(struct ADAPTER *prAdapter, IN uint8_t *pu1NMIAddress) {
 
 	atomic_set(&(prDataPathInfo->NetDevRefCount[eRole]), 0);
 	g_ndpReqNDPE.fgEnNDPE = FALSE;
-#if (NAN_DATA_ENGINE_SIGMA_WORKAROUND == 1)
 	prDataPathInfo->fgAutoHandleDPRequest = FALSE;
 	prDataPathInfo->ucDPResponseDecisionStatus =
 		NAN_DATA_RESP_DECISION_ACCEPT;
-#endif
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1355,7 +1353,6 @@ nanDataPathSetupSuccess(struct ADAPTER *prAdapter,
 	nanCmdManageScid(prAdapter, TRUE, prNDP->ucPublishId, prNDP->au1Scid);
 }
 
-#if (NAN_DATA_ENGINE_SIGMA_WORKAROUND == 1)
 /*----------------------------------------------------------------------------*/
 /*!
 * \brief
@@ -1396,6 +1393,11 @@ nanNdpAutoReplyDataRequest(struct ADAPTER *prAdapter,
 
 	if (!prNDL) {
 		DBGLOG(NAN, ERROR, "[%s] prNDL error\n", __func__);
+		return WLAN_STATUS_INVALID_DATA;
+	}
+
+	if (!prDataPathInfo) {
+		DBGLOG(NAN, ERROR, "[%s] prDataPathInfo error\n", __func__);
 		return WLAN_STATUS_INVALID_DATA;
 	}
 
@@ -1441,6 +1443,42 @@ nanNdpAutoReplyDataRequest(struct ADAPTER *prAdapter,
 						prNDP->aucPeerNDIAddr);
 		}
 
+		/* If Support NAN R3 NDPE IE */
+		if (nanGetFeatureNDPE(prAdapter)) {
+			/* Carry Ipv6 */
+			if (prDataPathInfo->fgCarryIPV6) {
+				prNDP->fgCarryIPV6 = TRUE;
+				kalMemCopy(prNDP->aucRspInterfaceId,
+					prDataPathInfo->aucIPv6Addr,
+					IPV6MACLEN);
+			}
+
+			/* Carry App info */
+			if (prDataPathInfo->u2AppInfoLen > 0) {
+				prNDP->u2AppInfoLen =
+					prDataPathInfo->u2AppInfoLen;
+				prNDP->pucAppInfo = cnmMemAlloc(prAdapter,
+					RAM_TYPE_BUF,
+					(uint32_t)prNDP->u2AppInfoLen);
+				kalMemCopy(prNDP->pucAppInfo,
+					prDataPathInfo->pucAppInfo,
+					prNDP->u2AppInfoLen);
+				DBGLOG(NAN, INFO, "[%s] App Info:"IPV6STR"\n",
+					__func__, prNDP->pucAppInfo);
+			}
+
+			/* Carry port number */
+			if (prDataPathInfo->u2PortNum > 0)
+				prNDP->u2PortNum = prDataPathInfo->u2PortNum;
+
+			/* Carry Transport protocol type:
+			 * TCP(0x06) / UDP(0x11)
+			 */
+			if (prDataPathInfo->ucProtocolType != 0xFF)
+				prNDP->ucProtocolType =
+					prDataPathInfo->ucProtocolType;
+		}
+
 		if (prDataPathInfo->ucDPResponseDecisionStatus ==
 		    NAN_DATA_RESP_DECISION_ACCEPT) {
 			if (prNDL->eCurrentNDLMgmtState == NDL_IDLE ||
@@ -1472,7 +1510,6 @@ nanNdpAutoReplyDataRequest(struct ADAPTER *prAdapter,
 	} else
 		return WLAN_STATUS_FAILURE;
 }
-#endif
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -1648,11 +1685,9 @@ nanNdpProcessDataRequest(struct ADAPTER *prAdapter, IN struct SW_RFB *prSwRfb) {
 				prNDP->ucRCPI = nicRxGetRcpiValueFromRxv(
 					prAdapter, RCPI_MODE_WF0, prSwRfb);
 
-#if (NAN_DATA_ENGINE_SIGMA_WORKAROUND == 1)
 				if (nanNdpAutoReplyDataRequest(prAdapter, prNDL,
 							       prNDP) !=
 				    WLAN_STATUS_SUCCESS)
-#endif
 				/* if (prNDP->fgSecurityRequired == TRUE) */
 				/* TODO_CJ */
 					nanDataPathProtocolFsmStep(
@@ -3353,11 +3388,9 @@ nanCmdDataRequest(IN struct ADAPTER *prAdapter,
 		return WLAN_STATUS_INVALID_DATA;
 	}
 
-#if (NAN_DATA_ENGINE_SIGMA_WORKAROUND == 1)
 	/* Workaround for NDP termination */
 	kalMemCopy(prAdapter->rDataPathInfo.aucRemoteAddr,
 		   prNanCmdDataRequest->aucResponderDataAddress, MAC_ADDR_LEN);
-#endif
 
 #if (ENABLE_NDP_UT_LOG == 1)
 	DBGLOG(NAN, INFO, "[%s] Enter\n", __func__);
@@ -3440,21 +3473,6 @@ nanCmdDataRequest(IN struct ADAPTER *prAdapter,
 		nanSecSetCipherType(prNDP, prNanCmdDataRequest->ucSecurity);
 		nanSecNotify4wayBegin(prNDP);
 	}
-
-	prNDP->fgCarryIPV6 = prNanCmdDataRequest->fgCarryIpv6;
-	if (prNDP->fgCarryIPV6 == TRUE) {
-		prNDP->fgIsInitiator = TRUE;
-		kalMemCopy(prNDP->aucInterfaceId,
-			   prNanCmdDataRequest->aucIPv6Addr, IPV6MACLEN);
-	}
-
-	if (prNanCmdDataRequest->u2SpecificInfoLength > 0)
-		nanDataEngineUpdateAppInfo(
-			prAdapter, prNDP, NAN_SERVICE_PROTOCOL_TYPE_GENERIC,
-			prNanCmdDataRequest->u2SpecificInfoLength,
-			prNanCmdDataRequest->aucSpecificInfo);
-	else
-		prNDP->u2AppInfoLen = 0;
 
 	/* R3 capability */
 	prNDP->fgSupportNDPE = prNanCmdDataRequest->fgNDPE;
@@ -3590,7 +3608,6 @@ nanCmdDataResponse(struct ADAPTER *prAdapter,
 	}
 
 	if (prNDL == NULL || prNDP == NULL) {
-#if (NAN_DATA_ENGINE_SIGMA_WORKAROUND == 1)
 		if (prNanCmdDataResponse->ucNDPId == 0) {
 			prDataPathInfo->fgAutoHandleDPRequest = TRUE;
 			prDataPathInfo->ucDPResponseDecisionStatus =
@@ -3615,7 +3632,7 @@ nanCmdDataResponse(struct ADAPTER *prAdapter,
 						IPV6MACLEN);
 				}
 
-				/* Add App info*/
+				/* Add App info */
 				if (prNanCmdDataResponse->
 					u2SpecificInfoLength > 0) {
 					DBGLOG(NAN, INFO,
@@ -3632,7 +3649,7 @@ nanCmdDataResponse(struct ADAPTER *prAdapter,
 					kalMemCopy(prDataPathInfo->pucAppInfo,
 						prNanCmdDataResponse->
 						aucSpecificInfo,
-						prDataPathInfo->u2AppInfoLen);
+						IPV6MACLEN);
 				}
 				prDataPathInfo->u2PortNum =
 					prNanCmdDataResponse->u2PortNum;
@@ -3641,11 +3658,13 @@ nanCmdDataResponse(struct ADAPTER *prAdapter,
 					ucServiceProtocolType;
 
 				DBGLOG(NAN, INFO,
-					"[%s] NDPE Ipv6/AppInfo: "IPV6STR"\n",
+					"[%s] NDPE Ipv6/AppInfo: "
+					IPV6STR"/"IPV6STR"\n",
 					__func__,
 					IPV6TOSTR(
-						prNanCmdDataResponse->
-						aucIPv6Addr));
+						prDataPathInfo->aucIPv6Addr),
+					IPV6TOSTR(
+						prDataPathInfo->pucAppInfo));
 
 				DBGLOG(NAN, INFO,
 					"[%s] PortNum: %d, TransProType: 0x%x\n",
@@ -3656,7 +3675,7 @@ nanCmdDataResponse(struct ADAPTER *prAdapter,
 
 			return WLAN_STATUS_SUCCESS;
 		}
-#endif
+
 		/* no matching NDL/NDP - it should have been created when NAF
 		 * - Data Path Request is received
 		 */
@@ -3827,10 +3846,8 @@ nanCmdDataEnd(IN struct ADAPTER *prAdapter,
 		return WLAN_STATUS_INVALID_DATA;
 	}
 
-#if (NAN_DATA_ENGINE_SIGMA_WORKAROUND == 1)
 	kalMemCopy(prNanCmdDataEnd->aucInitiatorDataAddress,
 		   prAdapter->rDataPathInfo.aucRemoteAddr, MAC_ADDR_LEN);
-#endif
 
 #if (ENABLE_NDP_UT_LOG == 1)
 	DBGLOG(NAN, INFO, "[%s] Enter\n", __func__);
