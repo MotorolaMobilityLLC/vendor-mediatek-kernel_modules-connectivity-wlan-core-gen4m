@@ -512,7 +512,7 @@ mtk_cfg80211_set_default_key(struct wiphy *wiphy,
 /*----------------------------------------------------------------------------*/
 static uint32_t wlanGetTxRateFromLinkStats(
 	IN struct GLUE_INFO *prGlueInfo, IN uint32_t *pu4TxRate,
-	IN uint32_t *pu4TxBw)
+	IN uint32_t *pu4TxBw, IN uint8_t ucBssIndex)
 {
 	uint32_t rStatus = WLAN_STATUS_NOT_SUPPORTED;
 #if CFG_SUPPORT_LLS
@@ -523,6 +523,10 @@ static uint32_t wlanGetTxRateFromLinkStats(
 	} query = {0};
 	uint32_t u4QueryBufLen;
 	uint32_t u4QueryInfoLen;
+	struct _STATS_LLS_TX_RATE_INFO targetRateInfo;
+
+	if (!IS_BSS_INDEX_VALID(ucBssIndex))
+		return WLAN_STATUS_FAILURE;
 
 	kalMemZero(&query, sizeof(query));
 	query.cmd.u4Tag = STATS_LLS_TAG_CURRENT_TX_RATE;
@@ -539,7 +543,8 @@ static uint32_t wlanGetTxRateFromLinkStats(
 			&u4QueryInfoLen);
 	DBGLOG(REQ, INFO, "kalIoctl=%x, %u bytes",
 				rStatus, u4QueryInfoLen);
-	DBGLOG_HEX(REQ, INFO, &query.rate_info, u4QueryInfoLen);
+	targetRateInfo = query.rate_info.arTxRateInfo[ucBssIndex];
+	DBGLOG_HEX(REQ, INFO, &targetRateInfo, u4QueryInfoLen);
 
 	if (unlikely(rStatus != WLAN_STATUS_SUCCESS)) {
 		DBGLOG(REQ, INFO, "wlanQueryLinkStats return fail\n");
@@ -551,26 +556,26 @@ static uint32_t wlanGetTxRateFromLinkStats(
 		return WLAN_STATUS_FAILURE;
 	}
 
-	if (query.rate_info.bw >= ARRAY_SIZE(arBwCfg80211Table)) {
+	if (targetRateInfo.bw >= ARRAY_SIZE(arBwCfg80211Table)) {
 		DBGLOG(REQ, WARN, "wrong tx bw!");
 		return WLAN_STATUS_FAILURE;
 	}
 
-	*pu4TxBw = arBwCfg80211Table[query.rate_info.bw];
-	query.rate_info.nsts += 1;
-	if (query.rate_info.nsts == 1)
-		u4Nss = query.rate_info.nsts;
+	*pu4TxBw = arBwCfg80211Table[targetRateInfo.bw];
+	targetRateInfo.nsts += 1;
+	if (targetRateInfo.nsts == 1)
+		u4Nss = targetRateInfo.nsts;
 	else
-		u4Nss = query.rate_info.stbc ?
-			(query.rate_info.nsts >> 1)
-			: query.rate_info.nsts;
+		u4Nss = targetRateInfo.stbc ?
+			(targetRateInfo.nsts >> 1)
+			: targetRateInfo.nsts;
 
-	wlanQueryRateByTable(query.rate_info.mode,
-			query.rate_info.rate, query.rate_info.bw, 0,
+	wlanQueryRateByTable(targetRateInfo.mode,
+			targetRateInfo.rate, targetRateInfo.bw, 0,
 			u4Nss, pu4TxRate, &u4MaxTxRate);
 	DBGLOG(REQ, INFO, "rate=%u mode=%u nss=%u stbc=%u bw=%u linkspeed=%u\n",
-		query.rate_info.rate, query.rate_info.mode,
-		u4Nss, query.rate_info.stbc,
+		targetRateInfo.rate, targetRateInfo.mode,
+		u4Nss, targetRateInfo.stbc,
 		*pu4TxBw, *pu4TxRate);
 
 #endif
@@ -709,7 +714,8 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy,
 		prGlueInfo->i4RssiCache[ucBssIndex] = i4Rssi;
 	}
 
-	rStatus = wlanGetTxRateFromLinkStats(prGlueInfo, &u4TxRate, &u4TxBw);
+	rStatus = wlanGetTxRateFromLinkStats(prGlueInfo, &u4TxRate, &u4TxBw,
+			ucBssIndex);
 	if (rStatus == WLAN_STATUS_SUCCESS) {
 		prGlueInfo->u4TxLinkSpeedCache[ucBssIndex] = u4TxRate;
 		prGlueInfo->u4TxBwCache[ucBssIndex] = u4TxBw;
