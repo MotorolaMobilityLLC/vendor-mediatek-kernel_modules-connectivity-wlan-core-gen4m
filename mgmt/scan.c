@@ -2296,6 +2296,7 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 	prBssDesc->fgIEWAPI = FALSE;
 	prBssDesc->fgIERSN = FALSE;
 	prBssDesc->fgIEWPA = FALSE;
+	prBssDesc->fgIERSNX = FALSE;
 
 	/*Reset VHT OP IE relative settings */
 	prBssDesc->eChannelWidth = CW_20_40MHZ;
@@ -2458,6 +2459,16 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 						prBssDesc,
 						i);
 				}
+			}
+			break;
+
+		case ELEM_ID_RSNX:
+			if (rsnParseRsnxIE(prAdapter, RSNX_IE(pucIE),
+				&prBssDesc->rRSNXInfo)) {
+
+				prBssDesc->fgIERSNX = TRUE;
+				prBssDesc->u2RsnxCap
+					= prBssDesc->rRSNXInfo.u2Cap;
 			}
 			break;
 

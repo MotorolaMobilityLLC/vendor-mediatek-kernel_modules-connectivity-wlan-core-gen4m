@@ -1706,7 +1706,7 @@ int mtk_cfg80211_connect(struct wiphy *wiphy,
 					   ucBssIndex);
 		}
 #endif /* CFG_SUPPORT_PASSPOINT */
-		if (wextSrchDesiredWPAIE(pucIEStart, sme->ie_len, 0x30,
+		if (wextSrchDesiredWPAIE(pucIEStart, sme->ie_len, ELEM_ID_RSN,
 					 (uint8_t **) &prDesiredIE)) {
 			struct RSN_INFO rRsnInfo;
 
@@ -1727,6 +1727,23 @@ int mtk_cfg80211_connect(struct wiphy *wiphy,
 #endif
 			}
 		}
+		if (wextSrchDesiredWPAIE(pucIEStart, sme->ie_len, ELEM_ID_RSNX,
+					 (uint8_t **) &prDesiredIE)) {
+			struct RSNX_INFO rRsnxeInfo;
+
+			if (rsnParseRsnxIE(prGlueInfo->prAdapter,
+				(struct RSNX_INFO_ELEM *)prDesiredIE,
+					&rRsnxeInfo)) {
+				prWpaInfo->u2RSNXCap = rRsnxeInfo.u2Cap;
+				if (prWpaInfo->u2RSNXCap &
+					BIT(WLAN_RSNX_CAPAB_SAE_H2E)) {
+					DBGLOG(RSN, INFO,
+						"SAE-H2E is supported, RSNX ie: 0x%x\n",
+						prWpaInfo->u2RSNXCap);
+				}
+			}
+		}
+
 		/* Find non-wfa vendor specific ies set from upper layer */
 		if (cfg80211_get_non_wfa_vendor_ie(prGlueInfo, pucIEStart,
 			sme->ie_len, ucBssIndex) > 0) {

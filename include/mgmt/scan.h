@@ -387,9 +387,11 @@ struct BSS_DESC {
 	uint32_t u4RsnSelectedAKMSuite;
 
 	uint16_t u2RsnCap;
+	uint16_t u2RsnxCap;
 
 	struct RSN_INFO rRSNInfo;
 	struct RSN_INFO rWPAInfo;
+	struct RSNX_INFO rRSNXInfo;
 #if 1	/* CFG_SUPPORT_WAPI */
 	struct WAPI_INFO rIEWAPI;
 	u_int8_t fgIEWAPI;
@@ -397,6 +399,7 @@ struct BSS_DESC {
 	u_int8_t fgIERSN;
 	u_int8_t fgIEWPA;
 	u_int8_t fgIEOsen;
+	u_int8_t fgIERSNX;
 
 	/*! \brief RSN parameters selected for connection */
 	/*! \brief The Select score for final AP selection,
