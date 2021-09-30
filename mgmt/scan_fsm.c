@@ -1686,7 +1686,7 @@ scnFsmNotifyEvent(IN struct ADAPTER *prAdapter,
 		IN uint8_t ucBssIndex)
 {
 	struct SCAN_INFO *prScanInfo;
-	char uEvent[300], strbuf[200];
+	char uEvent[300], strbuf[200] = "N/A";
 	uint8_t fgIsScanNormal = TRUE, fgIsDbdcScan = TRUE;
 	uint8_t i, ucReasonInd, ucWritten = 0, fgAnyConnection = FALSE;
 	uint8_t ucTotalLen = 200;
@@ -1739,7 +1739,6 @@ scnFsmNotifyEvent(IN struct ADAPTER *prAdapter,
 					prScanInfo->aucChannelNum[i]);
 		}
 	}
-
 	kalSnprintf(uEvent, sizeof(uEvent),
 		"Scan=Status:%s,DBDC:%s,Time:%d,Channel:%s,Reason:%s",
 		(fgIsScanNormal ? "NORMAL" : "ABNORMAL"),
