@@ -2507,9 +2507,12 @@ void aisFsmRunEventScanDone(IN struct ADAPTER *prAdapter,
 		prAisFsmInfo->u2SeqNumOfScanReport) {
 		prAisFsmInfo->u2SeqNumOfScanReport = AIS_SCN_REPORT_SEQ_NOT_SET;
 		prConnSettings->fgIsScanReqIssued = FALSE;
-		kalScanDone(prAdapter->prGlueInfo, ucBssIndex,
-			    (eStatus == SCAN_STATUS_DONE) ?
-			    WLAN_STATUS_SUCCESS : WLAN_STATUS_FAILURE);
+#if (CFG_SUPPORT_WIFI_RNR == 1)
+		if (LINK_IS_EMPTY(&prAdapter->rNeighborAPInfoList))
+#endif
+			kalScanDone(prAdapter->prGlueInfo, ucBssIndex,
+				(eStatus == SCAN_STATUS_DONE) ?
+				WLAN_STATUS_SUCCESS : WLAN_STATUS_FAILURE);
 	}
 	if (ucSeqNumOfCompMsg != prAisFsmInfo->ucSeqNumOfScanReq) {
 		DBGLOG(AIS, WARN,

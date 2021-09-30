@@ -1902,6 +1902,7 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 	uint8_t ucSubtype;
 	u_int8_t fgIsProbeResp = FALSE;
 	u_int8_t ucPowerConstraint = 0;
+	u_int8_t ucChnlNum = 0;
 	struct IE_COUNTRY *prCountryIE = NULL;
 	struct RX_DESC_OPS_T *prRxDescOps;
 #if ((CFG_SUPPORT_802_11AX == 1) && (CFG_SUPPORT_HE_ER == 1))
@@ -2074,10 +2075,15 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 		(uint8_t *) prWlanBeaconFrame->aucSrcAddr,
 		fgIsValidSsid, fgIsValidSsid == TRUE ? &rSsid : NULL);
 
+	ucChnlNum = prSwRfb->ucChnlNum;
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	nicRxdChNumTranslate(eHwBand, &ucChnlNum);
+#endif
+
 	log_dbg(SCN, TRACE, "Receive type %u in chnl %u %u %u (" MACSTR
 		") valid(%u) found(%u),band=%d\n",
 		ucSubtype, ucIeDsChannelNum, ucIeHtChannelNum,
-		prSwRfb->ucChnlNum,
+		ucChnlNum,
 		MAC2STR((uint8_t *)prWlanBeaconFrame->aucBSSID), fgIsValidSsid,
 		(prBssDesc != NULL) ? 1 : 0,
 		eHwBand);
@@ -2143,7 +2149,7 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 
 		if (prBssDesc->eBSSType != eBSSType) {
 			prBssDesc->eBSSType = eBSSType;
-		} else if (prSwRfb->ucChnlNum !=
+		} else if (ucChnlNum !=
 			prBssDesc->ucChannelNum
 			&& prBssDesc->ucRCPI
 			> nicRxGetRcpiValueFromRxv(
@@ -2373,14 +2379,25 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 						  SSID_IE(pucIE)->aucSSID,
 						  SSID_IE(pucIE)->ucLength);
 				} else if (fgIsProbeResp) {
-					/* SSID should be updated
-					 * if it is ProbeResp
-					 */
-					kalMemZero(prBssDesc->aucSSID,
-					sizeof(prBssDesc->aucSSID));
-					prBssDesc->ucSSIDLen = 0;
+#if (CFG_SUPPORT_WIFI_6G == 1)
+			/* Don't clear SSID for 6G, 6G AP may send unsolicited
+			 * probe response every 20TU. Therefore, for search
+			 * hidden 6G AP case, the hidden ssid prob response may
+			 * come after the prob response with Target AP SSID,
+			 * it will clear BSS Desc's SSID causes connection
+			 * failed.
+			 */
+					if ((eHwBand != BAND_6G) ||
+						(eHwBand == BAND_6G
+						&& prBssDesc->u2RawLength
+						== 0))
+#endif
+					{
+						kalMemZero(prBssDesc->aucSSID,
+						sizeof(prBssDesc->aucSSID));
+						prBssDesc->ucSSIDLen = 0;
+					}
 				}
-
 			}
 			break;
 
