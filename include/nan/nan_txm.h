@@ -9,11 +9,6 @@
 
 #if CFG_SUPPORT_NAN
 
-/* The macro to check if the MAC address is B/MCAST Address */
-/*#define IS_BMCAST_MAC_ADDR(_pucDestAddr)
-*	((BOOLEAN) (((PUINT_8)(_pucDestAddr))[0] & BIT(0)))
-*/
-
 #define TXM_UT_CONTENT_LEN 20
 
 struct _WLAN_TX_UT_FRAME_T {

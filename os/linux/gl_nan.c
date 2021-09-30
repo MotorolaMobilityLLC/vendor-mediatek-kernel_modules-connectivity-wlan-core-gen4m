@@ -1,28 +1,27 @@
 /* SPDX-License-Identifier: GPL-2.0 */
-
 /*
  * Copyright (c) 2020 MediaTek Inc.
  */
 /*
-** Id: @(#) gl_nan.c@@
-*/
+ ** Id: @(#) gl_nan.c@@
+ */
 
 /*! \file   gl_nan.c
-*    \brief  Main routines of Linux driver interface for Wi-Fi NAN
-*
-*    This file contains the main routines of Linux driver for MediaTek Inc.
-*    802.11 Wireless LAN Adapters.
-*/
+ *    \brief  Main routines of Linux driver interface for Wi-Fi Aware
+ *
+ *    This file contains the main routines of Linux driver for MediaTek Inc.
+ *    802.11 Wireless LAN Adapters.
+ */
 
 /*******************************************************************************
-*                         C O M P I L E R   F L A G S
-********************************************************************************
-*/
+ *                         C O M P I L E R   F L A G S
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                    E X T E R N A L   R E F E R E N C E S
-********************************************************************************
-*/
+ *                    E X T E R N A L   R E F E R E N C E S
+ *******************************************************************************
+ */
 
 #include <linux/poll.h>
 
@@ -39,9 +38,9 @@
 #include "nan/nan_sec.h"
 
 /*******************************************************************************
-*                              C O N S T A N T S
-********************************************************************************
-*/
+ *                              C O N S T A N T S
+ *******************************************************************************
+ */
 
 #define NAN_INF_NAME "nan%d"
 
@@ -52,19 +51,19 @@
 #endif
 
 /*******************************************************************************
-*                             D A T A   T Y P E S
-********************************************************************************
-*/
+ *                             D A T A   T Y P E S
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                            P U B L I C   D A T A
-********************************************************************************
-*/
+ *                            P U B L I C   D A T A
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                           P R I V A T E   D A T A
-********************************************************************************
-*/
+ *                           P R I V A T E   D A T A
+ *******************************************************************************
+ */
 
 struct wireless_dev *g_aprNanRoleWdev[NAN_BSS_INDEX_NUM];
 struct _GL_NAN_INFO_T g_aprNanMultiDev[NAN_BSS_INDEX_NUM];
@@ -99,14 +98,14 @@ const struct iw_handler_def mtk_p2p_wext_handler_def = {
 #endif
 
 /*******************************************************************************
-*                                 M A C R O S
-********************************************************************************
-*/
+ *                                 M A C R O S
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                   F U N C T I O N   D E C L A R A T I O N S
-********************************************************************************
-*/
+ *                   F U N C T I O N   D E C L A R A T I O N S
+ *******************************************************************************
+ */
 
 /* Net Device Hooks */
 static int nanOpen(IN struct net_device *prDev);
@@ -125,13 +124,13 @@ static int nanDoIOCTL(struct net_device *prDev, struct ifreq *prIFReq,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief A function for prDev->init
-*
-* \param[in] prDev      Pointer to struct net_device.
-*
-* \retval 0         The execution of wlanInit succeeds.
-* \retval -ENXIO    No such device.
-*/
+ * \brief A function for prDev->init
+ *
+ * \param[in] prDev      Pointer to struct net_device.
+ *
+ * \retval 0         The execution of wlanInit succeeds.
+ * \retval -ENXIO    No such device.
+ */
 /*----------------------------------------------------------------------------*/
 static int
 nanInit(struct net_device *prDev) {
@@ -143,12 +142,12 @@ nanInit(struct net_device *prDev) {
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief A function for prDev->uninit
-*
-* \param[in] prDev      Pointer to struct net_device.
-*
-* \return (none)
-*/
+ * \brief A function for prDev->uninit
+ *
+ * \param[in] prDev      Pointer to struct net_device.
+ *
+ * \return (none)
+ */
 /*----------------------------------------------------------------------------*/
 static void
 nanUninit(IN struct net_device *prDev) {}
@@ -165,19 +164,19 @@ const struct net_device_ops nan_netdev_ops = {
 };
 
 /*******************************************************************************
-*                              F U N C T I O N S
-********************************************************************************
-*/
+ *                              F U N C T I O N S
+ *******************************************************************************
+ */
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief Allocate memory for NAN_INFO,
-*
-* \param[in] prGlueInfo      Pointer to glue info
-*
-* \return   TRUE
-*           FALSE
-*/
+ * \brief Allocate memory for NAN_INFO,
+ *
+ * \param[in] prGlueInfo      Pointer to glue info
+ *
+ * \return   TRUE
+ *           FALSE
+ */
 /*----------------------------------------------------------------------------*/
 unsigned char
 nanAllocInfo(IN struct GLUE_INFO *prGlueInfo, uint8_t ucRoleIdx)
@@ -205,7 +204,7 @@ nanAllocInfo(IN struct GLUE_INFO *prGlueInfo, uint8_t ucRoleIdx)
 
 
 	if (prGlueInfo->aprNANDevInfo[ucRoleIdx] == NULL) {
-		/*alloc memory for NANDEV info */
+		/* alloc memory for NANDEV info */
 		prGlueInfo->aprNANDevInfo[ucRoleIdx] = kalMemAlloc(
 			sizeof(struct _GL_NAN_INFO_T), VIR_MEM_TYPE);
 		if (prGlueInfo->aprNANDevInfo[ucRoleIdx]) {
@@ -258,16 +257,16 @@ err_alloc:
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief Free memory for NAN_INFO,
-*
-* \param[in] prGlueInfo      Pointer to glue info
-*	[in] ucIdx	     The BSS with the idx will be freed.
-*			     "ucIdx == 0xff" will free all BSSs.
-*			     Only has meaning for "CFG_ENABLE_UNIFY_WIPHY == 1"
-*
-* \return   TRUE
-*           FALSE
-*/
+ * \brief Free memory for NAN_INFO,
+ *
+ * \param[in] prGlueInfo      Pointer to glue info
+ *	[in] ucIdx	     The BSS with the idx will be freed.
+ *			     "ucIdx == 0xff" will free all BSSs.
+ *			     Only has meaning for "CFG_ENABLE_UNIFY_WIPHY == 1"
+ *
+ * \return   TRUE
+ *           FALSE
+ */
 /*----------------------------------------------------------------------------*/
 unsigned char
 nanFreeInfo(struct GLUE_INFO *prGlueInfo, uint8_t ucRoleIdx)
@@ -456,16 +455,16 @@ nanNetUnregister(struct GLUE_INFO *prGlueInfo,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief Setup the NAN device information
-*
-* \param[in] prGlueInfo      Pointer to glue info
-*       [in] prNANWdev       Pointer to the wireless device
-*       [in] prNANDev        Pointer to the net device
-*       [in] u4Idx           The nan Role index
-*
-* \return    0	Success
-*           -1	Failure
-*/
+ * \brief Setup the NAN device information
+ *
+ * \param[in] prGlueInfo      Pointer to glue info
+ *       [in] prNANWdev       Pointer to the wireless device
+ *       [in] prNANDev        Pointer to the net device
+ *       [in] u4Idx           The nan Role index
+ *
+ * \return    0	Success
+ *           -1	Failure
+ */
 /*----------------------------------------------------------------------------*/
 int
 glSetupNAN(struct GLUE_INFO *prGlueInfo, struct wireless_dev *prNanWdev,
@@ -533,8 +532,9 @@ glSetupNAN(struct GLUE_INFO *prGlueInfo, struct wireless_dev *prNanWdev,
 
 	kalResetStats(prNanDev);
 
-	/* finish */
-	/* bind netdev pointer to netdev index */
+	/* finish
+	 * bind netdev pointer to netdev index
+	 */
 	prNANInfo->prDevHandler = prNanDev;
 	DBGLOG(INIT, INFO, "setup the nan dev\n");
 
@@ -666,13 +666,13 @@ nanSetMulticastListWorkQueueWrapper(struct GLUE_INFO *prGlueInfo)
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief Register for cfg80211 for NAN
-*
-* \param[in] prGlueInfo      Pointer to glue info
-*
-* \return   TRUE
-*           FALSE
-*/
+ * \brief Register for cfg80211 for NAN
+ *
+ * \param[in] prGlueInfo      Pointer to glue info
+ *
+ * \return   TRUE
+ *           FALSE
+ */
 /*----------------------------------------------------------------------------*/
 unsigned char
 glRegisterNAN(struct GLUE_INFO *prGlueInfo, const char *prDevName)
@@ -801,16 +801,16 @@ glNanCreateWirelessDevice(struct GLUE_INFO *prGlueInfo)
 #endif
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief Unregister Net Device for NAN
-*
-* \param[in] prGlueInfo      Pointer to glue info
-*	[in] ucIdx	     The BSS with the idx will be freed.
-*			     "ucIdx == 0xff" will free all BSSs.
-*			     Only has meaning for "CFG_ENABLE_UNIFY_WIPHY == 1"
-*
-* \return   TRUE
-*           FALSE
-*/
+ * \brief Unregister Net Device for NAN
+ *
+ * \param[in] prGlueInfo      Pointer to glue info
+ *	[in] ucIdx	     The BSS with the idx will be freed.
+ *			     "ucIdx == 0xff" will free all BSSs.
+ *			     Only has meaning for "CFG_ENABLE_UNIFY_WIPHY == 1"
+ *
+ * \return   TRUE
+ *           FALSE
+ */
 /*----------------------------------------------------------------------------*/
 unsigned char
 glUnregisterNAN(struct GLUE_INFO *prGlueInfo)
@@ -841,9 +841,10 @@ glUnregisterNAN(struct GLUE_INFO *prGlueInfo)
 	/* Clear pending cipher suite */
 	nanSecFlushCipherList();
 
-	/* 4 <1> Uninit NAN dev FSM */
-	/* Uninit NAN device FSM */
-	/* only do nanDevFsmUninit, when unregister all nan device */
+	/* 4 <1> Uninit NAN dev FSM
+	 * Uninit NAN device FSM
+	 * only do nanDevFsmUninit, when unregister all nan device
+	 */
 	nanDevFsmUninit(prGlueInfo->prAdapter, ucIdx);
 
 	/* 4 <3> Free Wiphy & netdev */
@@ -876,11 +877,11 @@ glUnregisterNAN(struct GLUE_INFO *prGlueInfo)
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief
-*       run nan init procedure, glue register nan and set nan registered flag
-*
-* \retval 1     Success
-*/
+ * \brief
+ *       run nan init procedure, glue register nan and set nan registered flag
+ *
+ * \retval 1     Success
+ */
 /*----------------------------------------------------------------------------*/
 unsigned char
 nanLaunch(struct GLUE_INFO *prGlueInfo)
@@ -903,11 +904,11 @@ nanLaunch(struct GLUE_INFO *prGlueInfo)
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief
-*       run NAN exit procedure, glue unregister NAN and set NAN registered flag
-*
-* \retval 1     Success
-*/
+ * \brief
+ *       run NAN exit procedure, glue unregister NAN and set NAN registered flag
+ *
+ * \retval 1     Success
+ */
 /*----------------------------------------------------------------------------*/
 unsigned char
 nanRemove(struct GLUE_INFO *prGlueInfo)
@@ -1052,14 +1053,13 @@ nanStop(IN struct net_device *prDev)
 		return -EFAULT;
 	}
 
-	/* 0. Do the scan done and set parameter to abort if the scan pending */
-	/*DBGLOG(INIT, INFO, "p2pStop and ucRoleIdx = %u\n", ucRoleIdx);*/
-	/* TODO flush the scan request */
-
-	/* 1. stop TX queue */
-	/* 3. stop queue and turn off carrier */
-	/*prGlueInfo->prP2PInfo[0]->eState = PARAM_MEDIA_STATE_DISCONNECTED;*/
-	/* TH3 multiple P2P */
+	/* 0. Do the scan done and set parameter to abort if the scan pending
+	 * DBGLOG(INIT, INFO, "p2pStop and ucRoleIdx = %u\n", ucRoleIdx);
+	 * TODO flush the scan request
+	 * 1. stop TX queue
+	 * 3. stop queue and turn off carrier
+	 * prGlueInfo->prP2PInfo[0]->eState = PARAM_MEDIA_STATE_DISCONNECTED;
+	 */
 
 	netif_tx_stop_all_queues(prDev);
 	if (netif_carrier_ok(prDev))
@@ -1106,9 +1106,10 @@ nanSetMulticastList(IN struct net_device *prDev)
 	}
 	/* TO-DO MulticastList Support */
 	if (g_aprNanMultiDev[ucRoleIdx].fgBMCFilterSet == FALSE) {
-
 		g_aprNanMultiDev[ucRoleIdx].fgBMCFilterSet = TRUE;
-		/* Mark HALT, notify main thread to finish current job*/
+		/* Mark HALT, notify main thread to
+		 * finish current job
+		 */
 		set_bit(GLUE_FLAG_NAN_MULTICAST_BIT,
 			&prGlueInfo->ulFlag);
 		/* wake up main thread */
@@ -1118,14 +1119,14 @@ nanSetMulticastList(IN struct net_device *prDev)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * * \brief This function is TX entry point of NET DEVICE.
- * *
- * * \param[in] prSkb  Pointer of the sk_buff to be sent
- * * \param[in] prDev  Pointer to struct net_device
- * *
- * * \retval NETDEV_TX_OK - on success.
- * * \retval NETDEV_TX_BUSY - on failure, packet will be discarded
- * *                          by upper layer.
+ * \brief This function is TX entry point of NET DEVICE.
+ *
+ * \param[in] prSkb  Pointer of the sk_buff to be sent
+ * \param[in] prDev  Pointer to struct net_device
+ *
+ * \retval NETDEV_TX_OK - on success.
+ * \retval NETDEV_TX_BUSY - on failure, packet will be discarded
+ *                          by upper layer.
  */
 /*----------------------------------------------------------------------------*/
 netdev_tx_t

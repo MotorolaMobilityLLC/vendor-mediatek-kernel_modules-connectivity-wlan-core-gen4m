@@ -6,9 +6,6 @@
 
 /*
  * Log: gl_vendor_nan.h
- *
- *
- *
  */
 
 /*******************************************************************************
@@ -57,7 +54,7 @@
  *******************************************************************************
  */
 #define PACKED __packed
-/* 8-byte control message header used by NAN*/
+/* 8-byte control message header used by NAN */
 struct _NanMsgHeader {
 	u16 msgVersion : 4;
 	u16 msgId : 12;
@@ -265,11 +262,11 @@ struct NanFWRangeConfigParams {
 	struct _NanFWGeoFenceDescriptor geo_fence_threshold;
 } PACKED;
 
-/** 2 word representation of MAC addr */
+/* 2 word representation of MAC addr */
 struct _fw_mac_addr {
-	/** upper 4 bytes of  MAC address */
+	/* upper 4 bytes of  MAC address */
 	u32 mac_addr31to0;
-	/** lower 2 bytes of  MAC address */
+	/* lower 2 bytes of  MAC address */
 	u32 mac_addr47to32;
 };
 
@@ -283,18 +280,17 @@ struct NanFWRangeReqMsg {
 } PACKED;
 
 struct NanDebugParams {
-    /*
-     * To indicate the debug command type.
-     */
+    /* To indicate the debug command type. */
 	u32 cmd;
-    /*
-     * To hold the data for the above command
+    /* To hold the data for the above command
      * type.
      */
 	u8 debug_cmd_data[NAN_MAX_DEBUG_MESSAGE_DATA_LEN];
 } PACKED;
 
-/* Service Discovery Extended Attribute params Format to HAL*/
+extern const struct nla_policy mtk_wlan_vendor_nan_policy[NL80211_ATTR_MAX + 1];
+
+/* Service Discovery Extended Attribute params Format to HAL */
 struct NanFWSdeaCtrlParams {
 	u32 fsd_required : 1;
 	u32 fsd_with_gas : 1;
@@ -354,9 +350,8 @@ enum NanMsgId {
 	NAN_MSG_ID_TESTMODE_RSP = 1026
 };
 
-/*
- *  Various TLV Type ID sent as part of NAN Stats Response
- *  or NAN TCA Indication
+/* Various TLV Type ID sent as part of NAN Stats Response
+ * or NAN TCA Indication
  */
 enum NanTlvType {
 	NAN_TLV_TYPE_FIRST = 0,
@@ -484,8 +479,7 @@ enum NanTlvType {
 	NAN_TLV_TYPE_LAST = 65535
 };
 
-/*
- * Definitions of debug subcommand type for the
+/* Definitions of debug subcommand type for the
  * generic debug command.
  * This debug command carries any one command type
  * followed by corresponding command data content
@@ -555,7 +549,7 @@ enum NanDebugModeCmd {
 	NAN_TEST_MODE_CMD_ENABLE_NDP = 16,
 };
 
-/* NAN Resp status type*/
+/* NAN Resp status type */
 enum NanInternalStatusType {
 	/* NAN Protocol Response Codes */
 	NAN_I_STATUS_SUCCESS = 0,
@@ -732,11 +726,12 @@ enum NanInternalStatusType {
 #define GET_SDEA_RANGE_LIMIT_PRESENT(flags)                                    \
 	((flags & SDEA_CTRL_PARMS_RANGE_LIMIT_PRESENT) >> 8) /* fgRangeLimit */
 
-/* Get flags */
-/*BIT0 - Disable publish termination indication.*/
-/*BIT1 - Disable match expired indication.*/
-/*BIT2 - Disable followUp indication received (OTA).*/
-/*BIT3 - Disable publishReplied indication.*/
+/* Get flags
+ * BIT0 - Disable publish termination indication.
+ * BIT1 - Disable match expired indication.
+ * BIT2 - Disable followUp indication received (OTA).
+ * BIT3 - Disable publishReplied indication.
+ */
 #define GET_PUB_REPLY_IND_FLAG(flags) ((flags & PUB_REPLY_IND_FLAG) << 3)
 #define GET_PUB_FOLLOWUP_RX_IND_DISABLE_FLAG(flags)                            \
 	(((flags & PUB_FOLLOWUP_RX_IND_DISABLE_FLAG) >> 26) << 2)

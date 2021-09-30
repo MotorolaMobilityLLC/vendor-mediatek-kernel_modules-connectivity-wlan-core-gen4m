@@ -8,35 +8,35 @@
 #include "nan_base.h"
 
 /*******************************************************************************
-*                         C O M P I L E R   F L A G S
-********************************************************************************
-*/
+ *                         C O M P I L E R   F L A G S
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                    E X T E R N A L   R E F E R E N C E S
-********************************************************************************
-*/
+ *                    E X T E R N A L   R E F E R E N C E S
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                              C O N S T A N T S
-********************************************************************************
-*/
+ *                              C O N S T A N T S
+ *******************************************************************************
+ */
 #define UINT8_MAX 0xFF
 
 /*******************************************************************************
-*                             D A T A   T Y P E S
-********************************************************************************
-*/
+ *                             D A T A   T Y P E S
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                            P U B L I C   D A T A
-********************************************************************************
-*/
+ *                            P U B L I C   D A T A
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                           P R I V A T E   D A T A
-********************************************************************************
-*/
+ *                           P R I V A T E   D A T A
+ *******************************************************************************
+ */
 
 uint8_t g_aucRangingIEBuffer[NAN_IE_BUF_MAX_SIZE];
 
@@ -53,24 +53,24 @@ static uint8_t *apucDebugRangingState[RANGING_STATE_NUM] = {
 };
 
 /*******************************************************************************
-*                                 M A C R O S
-********************************************************************************
-*/
+ *                                 M A C R O S
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                   F U N C T I O N   D E C L A R A T I O N S
-********************************************************************************
-*/
+ *                   F U N C T I O N   D E C L A R A T I O N S
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                              F U N C T I O N S
-********************************************************************************
-*/
+ *                              F U N C T I O N S
+ *******************************************************************************
+ */
 
 /************************************************
-*   Initialization and Uninitialization
-*************************************************
-*/
+ *   Initialization and Uninitialization
+ ************************************************
+ */
 void
 nanRangingEngineInit(struct ADAPTER *prAdapter) {
 	struct _NAN_RANGING_INFO_T *prRangingInfo;
@@ -129,9 +129,9 @@ nanRangingEngineUninit(struct ADAPTER *prAdapter) {
 }
 
 /************************************************
-*   NAN Ranging Instance
-*************************************************
-*/
+ *   NAN Ranging Instance
+ ************************************************
+ */
 void
 nanRangingInstanceInit(struct ADAPTER *prAdapter,
 		       struct _NAN_RANGING_INSTANCE_T *prRanging,
@@ -350,9 +350,9 @@ nanRangingInstanceSearchById(struct ADAPTER *prAdapter, uint16_t u2RangingId) {
 }
 
 /************************************************
-*   NAN Ranging Attribute
-*************************************************
-*/
+ *   NAN Ranging Attribute
+ ************************************************
+ */
 uint32_t
 nanGetFtmRangeReportAttr(struct ADAPTER *prAdapter, uint8_t **ppucAttr,
 			 uint32_t *pu4AttrLen, uint8_t *pucDevAddr) {
@@ -559,9 +559,7 @@ nanRangingFrameCompose(struct ADAPTER *prAdapter, struct MSDU_INFO *prMsduInfo,
 
 	prActionFrame = (struct _NAN_ACTION_FRAME_T *)prMsduInfo->prPacket;
 
-	/*
-	 *  MAC Header
-	 */
+	/* MAC Header */
 
 	/* Decide the Frame Control Field and AID Field */
 	u2FrameCtrl = MAC_FRAME_ACTION;
@@ -582,9 +580,7 @@ nanRangingFrameCompose(struct ADAPTER *prAdapter, struct MSDU_INFO *prMsduInfo,
 
 	prActionFrame->u2SeqCtrl = 0;
 
-	/*
-	 *  NAF Header (Fixed Field)
-	 */
+	/* NAF Header (Fixed Field) */
 	prActionFrame->ucCategory = CATEGORY_PUBLIC_ACTION;
 	prActionFrame->ucAction = ACTION_PUBLIC_VENDOR_SPECIFIC;
 	kalMemCopy(prActionFrame->aucOUI, aucOui, VENDOR_OUI_LEN);
@@ -594,9 +590,7 @@ nanRangingFrameCompose(struct ADAPTER *prAdapter, struct MSDU_INFO *prMsduInfo,
 	prMsduInfo->u2FrameLength =
 		OFFSET_OF(struct _NAN_ACTION_FRAME_T, aucInfoContent);
 
-	/*
-	 *  Playload (Mandatory)
-	 */
+	/* Playload (Mandatory) */
 
 	/* Ranging FTM Range Report */
 	if (ucNafSubType == NAN_ACTION_RANGING_REPORT) {
@@ -1237,7 +1231,7 @@ nanRangingResponseRx(IN struct ADAPTER *prAdapter, IN struct SW_RFB *prSwRfb) {
 
 	nanParseRangingFrame(prAdapter, prSwRfb, prRanging);
 
-	/*    nan_report_upper_layer(RANGE_CONFIRM_INDICATON, DATA_SUCCESS); */
+	/* nan_report_upper_layer(RANGE_CONFIRM_INDICATON, DATA_SUCCESS); */
 
 	if ((prRanging->ranging_ctrl.TypeStatus & NAN_RANGING_STATUS_MASK) ==
 	    (NAN_RANGING_STATUS_ACCEPTED << NAN_RANGING_STATUS_OFFSET)) {
@@ -1457,9 +1451,9 @@ nanRangingReportRx(IN struct ADAPTER *prAdapter, IN struct SW_RFB *prSwRfb) {
 }
 
 /************************************************
-*   NAN Ranging State Machine
-*************************************************
-*/
+ *   NAN Ranging State Machine
+ ************************************************
+ */
 void
 nanRangingFsmStep(struct ADAPTER *prAdapter,
 		  struct _NAN_RANGING_INSTANCE_T *prRanging,
@@ -1559,9 +1553,9 @@ nanRangingSessionTimeout(struct ADAPTER *prAdapter, unsigned long ulParam) {
 }
 
 /************************************************
-*   Interface for FTM
-*************************************************
-*/
+ *   Interface for FTM
+ ************************************************
+ */
 void
 nanRangingFtmParamCmd(IN struct ADAPTER *prAdapter,
 		      struct _NAN_RANGING_INSTANCE_T *prRanging) {
@@ -1885,9 +1879,9 @@ nanRangingReportDiscCmd(IN struct ADAPTER *prAdapter,
 }
 
 /************************************************
-*   Interface for NAN Discovery Engine
-*************************************************
-*/
+ *   Interface for NAN Discovery Engine
+ ************************************************
+ */
 uint32_t
 nanRangingInvokedByDisc(struct ADAPTER *prAdapter, uint16_t *pu2Id,
 			struct NanRangeRequest *msg) {
@@ -2001,9 +1995,9 @@ nanRangingInvokedByDiscEvt(IN struct ADAPTER *prAdapter,
 }
 
 /************************************************
-*   Interface for Application
-*************************************************
-*/
+ *   Interface for Application
+ ************************************************
+ */
 uint32_t
 nanRangingRequest(struct ADAPTER *prAdapter, uint16_t *pu2Id,
 		  struct NanRangeRequest *msg) {
@@ -2240,9 +2234,9 @@ nanRangingResult(struct ADAPTER *prAdapter,
 }
 
 /************************************************
-*   Interface for NAN Scheduler
-*************************************************
-*/
+ *   Interface for NAN Scheduler
+ ************************************************
+ */
 void
 nanRangingScheduleNegoGranted(struct ADAPTER *prAdapter, uint8_t *pu1DevAddr,
 			      enum _ENUM_NAN_NEGO_TYPE_T eType,

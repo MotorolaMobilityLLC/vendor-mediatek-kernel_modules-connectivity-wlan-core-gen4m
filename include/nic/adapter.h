@@ -767,13 +767,12 @@ struct _NAN_SPECIFIC_BSS_INFO_T {
 	uint8_t aucClusterId[MAC_ADDR_LEN];
 	struct _NAN_ATTR_MASTER_INDICATION_T rMasterIndAttr;
 
-	/*
- *	struct NAN_CRB_NEGO_CTRL_T rNanSchNegoCtrl;
- *	struct NAN_PEER_SCHEDULE_RECORD_T
- *			 arNanPeerSchedRecord[NAN_MAX_CONN_CFG];
- *	struct NAN_TIMELINE_MGMT_T rNanTimelineMgmt;
- *	struct NAN_SCHEDULER_T rNanScheduler;
- */
+	/* struct NAN_CRB_NEGO_CTRL_T rNanSchNegoCtrl;
+	 * struct NAN_PEER_SCHEDULE_RECORD_T
+	 * arNanPeerSchedRecord[NAN_MAX_CONN_CFG];
+	 * struct NAN_TIMELINE_MGMT_T rNanTimelineMgmt;
+	 * struct NAN_SCHEDULER_T rNanScheduler;
+	 */
 };
 #endif
 

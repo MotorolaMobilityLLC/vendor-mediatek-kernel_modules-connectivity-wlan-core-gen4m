@@ -6057,7 +6057,7 @@ static void wlanRemove(void)
 		DBGLOG(INIT, INFO, "NANNetUnregister...\n");
 		nanNetUnregister(prGlueInfo, FALSE);
 		DBGLOG(INIT, INFO, "nanRemove...\n");
-		/*p2pRemove must before wlanAdapterStop */
+		/* nanRemove must before wlanAdapterStop */
 		nanRemove(prGlueInfo);
 	}
 	kalReleaseUserSock(prGlueInfo);

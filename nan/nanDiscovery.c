@@ -22,7 +22,7 @@ nanConvertMatchFilter(uint8_t *pucFilterDst, uint8_t *pucFilterSrc,
 
 	ucFilterLen = 0;
 	for (u4Idx = 0; u4Idx < ucFilterSrcLen;) {
-		/* skip comma*/
+		/* skip comma */
 		if (*pucFilterSrc == ',') {
 			u4Idx++;
 			pucFilterSrc++;
@@ -35,7 +35,7 @@ nanConvertMatchFilter(uint8_t *pucFilterDst, uint8_t *pucFilterSrc,
 		u4Idx++;
 		pucFilterSrc++;
 		ucFilterLen++;
-		/* skip comma*/
+		/* skip comma */
 		if (*pucFilterSrc == ',') {
 			DBGLOG(INIT, INFO, "nan: skip comma%d\n", u4Idx);
 			u4Idx++;
@@ -71,7 +71,7 @@ nanConvertUccMatchFilter(uint8_t *pucFilterDst, uint8_t *pucFilterSrc,
 		return;
 	}
 
-	/* skip last , */
+	/* skip last */
 	if ((*(pucFilterSrc + ucFilterSrcLen - 1) == *delim) &&
 	    (ucFilterSrcLen >= 2)) {
 		DBGLOG(INIT, INFO, " erase last ','\n");
@@ -224,7 +224,7 @@ nanUpdatePublishRequest(struct ADAPTER *prAdapter,
 		   msg->sdea_service_specific_info,
 		   prPublishReq->sdea_service_specific_info_len);
 
-	/*send command to fw*/
+	/* send command to fw */
 	wlanSendSetQueryCmd(prAdapter,		  /* prAdapter */
 			    CMD_ID_NAN_EXT_CMD,   /* ucCID */
 			    TRUE,		  /* fgSetQuery */
@@ -416,9 +416,6 @@ nanPublishRequest(struct ADAPTER *prAdapter, struct NanPublishRequest *msg) {
 			    prPublishReq->rx_match_filter,
 			    prPublishReq->rx_match_filter_len);
 	}
-	/* DBGLOG(NAN, INFO, */
-	/*	 "nan: publish CMD buflen =  %d\n", u4CmdBufferLen); */
-	/* nanUtilDump(prAdapter, "publish CMD", (PUINT_8)prCmdBuffer, 64); */
 
 	wlanSendSetQueryCmd(prAdapter,		  /* prAdapter */
 			    CMD_ID_NAN_EXT_CMD,   /* ucCID */
@@ -500,7 +497,7 @@ nanTransmitRequest(struct ADAPTER *prAdapter,
 	       prTransmitReq->addr[2], prTransmitReq->addr[3],
 	       prTransmitReq->addr[4], prTransmitReq->addr[5]);
 
-	/*send command to fw*/
+	/* send command to fw */
 	wlanSendSetQueryCmd(prAdapter,		  /* prAdapter */
 			    CMD_ID_NAN_EXT_CMD,   /* ucCID */
 			    TRUE,		  /* fgSetQuery */
@@ -713,7 +710,7 @@ nanSubscribeRequest(struct ADAPTER *prAdapter,
 	prSubscribeReq->num_intf_addr_present = msg->num_intf_addr_present;
 	kalMemCopy(prSubscribeReq->intf_addr, msg->intf_addr,
 		   msg->num_intf_addr_present * MAC_ADDR_LEN);
-	/*send command to fw*/
+	/* send command to fw */
 	wlanSendSetQueryCmd(prAdapter,		  /* prAdapter */
 			    CMD_ID_NAN_EXT_CMD,   /* ucCID */
 			    TRUE,		  /* fgSetQuery */
@@ -1060,8 +1057,9 @@ nanDiscUpdateCipherSuiteInfoAttr(struct ADAPTER *prAdapter,
 	pucCipherSuiteInfoAttr = prEventNanAttr->aucNanAttr;
 
 	prAttrHdr = (struct _NAN_ATTR_HDR_T *)prEventNanAttr->aucNanAttr;
-	/*nanUtilDump(prAdapter, "NAN Attribute", */
-	/*	     (PUINT_8)prAttrHdr, (prAttrHdr->u2Length + 3));*/
+	/* nanUtilDump(prAdapter, "NAN Attribute",
+	 *	     (PUINT_8)prAttrHdr, (prAttrHdr->u2Length + 3));
+	 */
 
 	prAttrCipherSuiteInfo =
 		(struct _NAN_ATTR_CIPHER_SUITE_INFO_T *)pucCipherSuiteInfoAttr;

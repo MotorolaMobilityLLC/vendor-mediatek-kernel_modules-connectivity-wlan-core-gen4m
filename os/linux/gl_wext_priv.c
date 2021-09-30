@@ -2411,7 +2411,6 @@ __priv_nan_struct(IN struct net_device *prNetDev,
 
 		rStatus = nanCmdDataEnd(prGlueInfo->prAdapter, &rNanCmdDataEnd);
 
-		/*DBGLOG(NAN, INFO, "NDPID %d\n", dataend->num_ndp_instances);*/
 		break;
 	}
 	case ENUM_NAN_DATA_UPDTAE: {

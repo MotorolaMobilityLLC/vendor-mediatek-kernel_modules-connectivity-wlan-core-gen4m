@@ -1358,16 +1358,16 @@ uint32_t kalRxIndicateOnePkt(IN struct GLUE_INFO
 #if CFG_SUPPORT_NAN
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief Called by driver to indicate event to upper layer, for example, the wpa
-*        supplicant or wireless tools.
-*
-* \param[in] pvAdapter Pointer to the adapter descriptor.
-* \param[in] eStatus Indicated status.
-* \param[in] NAN_BSS_ROLE_INDEX eIndex
-*
-* \return (none)
-*
-*/
+ * \brief Called by driver to indicate event to upper layer, for example, the
+ *        wpa supplicant or wireless tools.
+ *
+ * \param[in] pvAdapter Pointer to the adapter descriptor.
+ * \param[in] eStatus Indicated status.
+ * \param[in] NAN_BSS_ROLE_INDEX eIndex
+ *
+ * \return (none)
+ *
+ */
 /*----------------------------------------------------------------------------*/
 void kalNanIndicateStatusAndComplete(IN struct GLUE_INFO *prGlueInfo,
 				IN uint32_t eStatus, IN uint8_t ucRoleIdx)

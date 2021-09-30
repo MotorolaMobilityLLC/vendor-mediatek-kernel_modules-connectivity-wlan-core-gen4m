@@ -111,8 +111,9 @@ enum mtk_wlan_vendor_attr_ndp_params {
 	MTK_WLAN_VENDOR_ATTR_NDP_SUBCMD,
 	/* Unsigned 16-bit value */
 	MTK_WLAN_VENDOR_ATTR_NDP_TRANSACTION_ID,
-	/* NL attributes for data used NDP SUB cmds */
-	/* Unsigned 32-bit value indicating a service info */
+	/* NL attributes for data used NDP SUB cmds
+	 * Unsigned 32-bit value indicating a service info
+	 */
 	MTK_WLAN_VENDOR_ATTR_NDP_SERVICE_INSTANCE_ID,
 	/* Unsigned 32-bit value; channel frequency in MHz */
 	MTK_WLAN_VENDOR_ATTR_NDP_CHANNEL,
@@ -211,7 +212,7 @@ extern const struct nla_policy
 /*******************************************************************************
  *                  F U N C T I O N   D E C L A R A T I O N S
  *******************************************************************************
-*/
+ */
 uint32_t nanNdiCreateRspEvent(struct ADAPTER *prAdapter);
 
 uint32_t nanNdiDeleteRspEvent(struct ADAPTER *prAdapter);
