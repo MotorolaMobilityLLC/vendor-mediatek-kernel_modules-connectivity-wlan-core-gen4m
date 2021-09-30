@@ -1487,7 +1487,96 @@ static void soc3_0_DumpN10CoreReg(struct ADAPTER *prAdapter)
 		log, HANG_N10_CORE_LOG_NUM, "N10 core register");
 }
 
-static void soc3_0_DumpOtherCr(struct ADAPTER *prAdapter, bool fgIsReadable)
+
+static int soc3_0_wakeupConninfra(void)
+{
+	int check;
+	int value = 0;
+	int ret = 0;
+	int conninfra_hang_ret = 0;
+	unsigned int polling_count;
+
+	/* Wakeup conn_infra off write 0x180601A4[0] = 1'b1 */
+	wf_ioremap_read(CONN_INFRA_WAKEUP_WF_ADDR, &value);
+	value |= 0x00000001;
+	wf_ioremap_write(CONN_INFRA_WAKEUP_WF_ADDR, value);
+
+	/* Check AP2CONN slpprot ready
+	 * (polling "10 times" and each polling interval is "1ms")
+	 * Address: 0x1806_0184[5]
+	 * Data: 1'b0
+	 * Action: polling
+	 */
+	wf_ioremap_read(CONN_INFRA_ON2OFF_SLP_PROT_ACK_ADDR, &value);
+	check = 0;
+	polling_count = 0;
+	while ((value & 0x00000020) != 0) {
+		if (polling_count > 10) {
+			check = -1;
+			ret = -1;
+			break;
+		}
+		udelay(1000);
+		wf_ioremap_read(CONN_INFRA_ON2OFF_SLP_PROT_ACK_ADDR, &value);
+		polling_count++;
+	}
+	if (check != 0) {
+		DBGLOG(INIT, ERROR, "Polling  AP2CONN slpprot ready fail.\n");
+		return ret;
+	}
+
+	if (!conninfra_reg_readable()) {
+		DBGLOG(HAL, ERROR,
+			"conninfra_reg_readable fail\n");
+
+		conninfra_hang_ret = conninfra_is_bus_hang();
+
+		if (conninfra_hang_ret > 0) {
+
+			DBGLOG(HAL, ERROR,
+				"conninfra_is_bus_hang, Chip reset\n");
+		}
+		return -1;
+	}
+
+	/* Check CONNSYS version ID
+	 * (polling "10 times" and each polling interval is "1ms")
+	 * Address: 0x1800_1000[31:0]
+	 * Data: 0x2001_0000
+	 * Action: polling
+	 */
+	wf_ioremap_read(CONN_HW_VER_ADDR, &value);
+	check = 0;
+	polling_count = 0;
+	while (value != kalGetConnsysVerId()) {
+		if (polling_count > 10) {
+			check = -1;
+			ret = -1;
+			break;
+		}
+		udelay(1000);
+		wf_ioremap_read(CONN_HW_VER_ADDR, &value);
+		polling_count++;
+	}
+	if (check != 0) {
+		DBGLOG(INIT, ERROR, "Polling CONNSYS version ID fail.\n");
+		return ret;
+	}
+
+	return ret;
+}
+
+static void soc3_0_disableConninfraForceOn(void)
+{
+	int value = 0;
+
+	/* Disable conn_infra off domain force on 0x180601A4[0] = 1'b0 */
+	wf_ioremap_read(CONN_INFRA_WAKEUP_WF_ADDR, &value);
+	value &= 0xFFFFFFFE;
+	wf_ioremap_write(CONN_INFRA_WAKEUP_WF_ADDR, value);
+}
+
+static void soc3_0_DumpOtherCr(struct ADAPTER *prAdapter)
 {
 #define	HANG_OTHER_LOG_NUM		2
 
@@ -1496,12 +1585,16 @@ static void soc3_0_DumpOtherCr(struct ADAPTER *prAdapter, bool fgIsReadable)
 	connac2x_DumpCrRange(NULL, 0x180602c0, 8, "DBG_DUMMY");
 	connac2x_DumpCrRange(NULL, 0x180602e0, 4, "BT_CSR_DUMMY");
 	connac2x_DumpCrRange(NULL, 0x180602f0, 4, "WF_CSR_DUMMY");
-	if (fgIsReadable) {
+
+	if (soc3_0_wakeupConninfra() == 0) {
+		DBGLOG(INIT, ERROR, "wake up conninfra.\n");
 		connac2x_DumpCrRange(NULL, 0x18052900, 16,
 				     "conninfra Sysram BT");
 		connac2x_DumpCrRange(NULL, 0x18053000, 16,
 				     "conninfra Sysram WF");
 	}
+
+	soc3_0_disableConninfraForceOn();
 }
 
 static void soc3_0_DumpSpecifiedWfTop(struct ADAPTER *prAdapter)
@@ -1718,7 +1811,7 @@ static void soc3_0_DumpHostCr(struct ADAPTER *prAdapter, bool fgIsReadable)
 	soc3_0_DumpWfsyscpupcr(prAdapter);	/* first dump */
 	soc3_0_DumpPcLrLog(prAdapter);
 	soc3_0_DumpN10CoreReg(prAdapter);
-	soc3_0_DumpOtherCr(prAdapter, fgIsReadable);
+	soc3_0_DumpOtherCr(prAdapter);
 	soc3_0_DumpHwDebugFlag(prAdapter);
 	soc3_0_DumpSpecifiedWfTop(prAdapter);
 	soc3_0_DumpWFDMACr(prAdapter);
@@ -1979,58 +2072,9 @@ static int wf_pwr_on_consys_mcu(void)
 	unsigned int polling_count;
 
 	DBGLOG(INIT, INFO, "wmmcu power-on start.\n");
-	/* Wakeup conn_infra off write 0x180601A4[0] = 1'b1 */
-	wf_ioremap_read(CONN_INFRA_WAKEUP_WF_ADDR, &value);
-	value |= 0x00000001;
-	wf_ioremap_write(CONN_INFRA_WAKEUP_WF_ADDR, value);
-
-	/* Check AP2CONN slpprot ready
-	 * (polling "10 times" and each polling interval is "1ms")
-	 * Address: 0x1806_0184[5]
-	 * Data: 1'b0
-	 * Action: polling
-	 */
-	wf_ioremap_read(CONN_INFRA_ON2OFF_SLP_PROT_ACK_ADDR, &value);
-	check = 0;
-	polling_count = 0;
-	while ((value & 0x00000020) != 0) {
-		if (polling_count > 10) {
-			check = -1;
-			ret = -1;
-			break;
-		}
-		udelay(1000);
-		wf_ioremap_read(CONN_INFRA_ON2OFF_SLP_PROT_ACK_ADDR, &value);
-		polling_count++;
-	}
-	if (check != 0) {
-		DBGLOG(INIT, ERROR, "Polling  AP2CONN slpprot ready fail.\n");
+	ret = soc3_0_wakeupConninfra();
+	if (ret != 0)
 		return ret;
-	}
-
-	/* Check CONNSYS version ID
-	 * (polling "10 times" and each polling interval is "1ms")
-	 * Address: 0x1800_1000[31:0]
-	 * Data: 0x2001_0000
-	 * Action: polling
-	 */
-	wf_ioremap_read(CONN_HW_VER_ADDR, &value);
-	check = 0;
-	polling_count = 0;
-	while (value != kalGetConnsysVerId()) {
-		if (polling_count > 10) {
-			check = -1;
-			ret = -1;
-			break;
-		}
-		udelay(1000);
-		wf_ioremap_read(CONN_HW_VER_ADDR, &value);
-		polling_count++;
-	}
-	if (check != 0) {
-		DBGLOG(INIT, ERROR, "Polling CONNSYS version ID fail.\n");
-		return ret;
-	}
 	soc3_0_DumpBusHangdebuglog();
 
 	/* Assert CONNSYS WM CPU SW reset write 0x18000010[0] = 1'b0*/
@@ -2233,10 +2277,8 @@ static int wf_pwr_on_consys_mcu(void)
 	/* bus clock ctrl */
 	conninfra_bus_clock_ctrl(CONNDRV_TYPE_WIFI, CONNINFRA_BUS_CLOCK_ALL, 0);
 
-	/* Disable conn_infra off domain force on 0x180601A4[0] = 1'b0 */
-	wf_ioremap_read(CONN_INFRA_WAKEUP_WF_ADDR, &value);
-	value &= 0xFFFFFFFE;
-	wf_ioremap_write(CONN_INFRA_WAKEUP_WF_ADDR, value);
+	soc3_0_disableConninfraForceOn();
+
 	DBGLOG(INIT, INFO, "wmmcu power-on done.\n");
 	return ret;
 }
@@ -2248,7 +2290,6 @@ static int wf_pwr_off_consys_mcu(void)
 	int check;
 	int value = 0;
 	int ret = 0;
-	int conninfra_hang_ret = 0;
 	int polling_count;
 	int retryCount = 0;
 
@@ -2265,72 +2306,9 @@ static int wf_pwr_off_consys_mcu(void)
 #endif
 
 	DBGLOG(INIT, INFO, "wmmcu power-off start.\n");
-	/* Wakeup conn_infra off write 0x180601A4[0] = 1'b1 */
-	wf_ioremap_read(CONN_INFRA_WAKEUP_WF_ADDR, &value);
-	value |= 0x00000001;
-	wf_ioremap_write(CONN_INFRA_WAKEUP_WF_ADDR, value);
-
-	/* Check AP2CONN slpprot ready
-	 * (polling "10 times" and each polling interval is "1ms")
-	 * Address: 0x1806_0184[5]
-	 * Data: 1'b0
-	 * Action: polling
-	 */
-	wf_ioremap_read(CONN_INFRA_ON2OFF_SLP_PROT_ACK_ADDR, &value);
-	check = 0;
-	polling_count = 0;
-	while ((value & 0x00000020) != 0) {
-		if (polling_count > 10) {
-			check = -1;
-			ret = -1;
-			break;
-		}
-		udelay(1000);
-		wf_ioremap_read(CONN_INFRA_ON2OFF_SLP_PROT_ACK_ADDR, &value);
-		polling_count++;
-	}
-	if (check != 0) {
-		DBGLOG(INIT, ERROR, "Polling  AP2CONN slpprot ready fail.\n");
+	ret = soc3_0_wakeupConninfra();
+	if (ret != 0)
 		return ret;
-	}
-
-	if (!conninfra_reg_readable()) {
-		DBGLOG(HAL, ERROR,
-			"conninfra_reg_readable fail\n");
-
-		conninfra_hang_ret = conninfra_is_bus_hang();
-
-		if (conninfra_hang_ret > 0) {
-
-			DBGLOG(HAL, ERROR,
-				"conninfra_is_bus_hang, Chip reset\n");
-		}
-		return -1;
-	}
-
-	/* Check CONNSYS version ID
-	 * (polling "10 times" and each polling interval is "1ms")
-	 * Address: 0x1800_1000[31:0]
-	 * Data: 0x2001_0000
-	 * Action: polling
-	 */
-	wf_ioremap_read(CONN_HW_VER_ADDR, &value);
-	check = 0;
-	polling_count = 0;
-	while (value != kalGetConnsysVerId()) {
-		if (polling_count > 10) {
-			check = -1;
-			ret = -1;
-			break;
-		}
-		udelay(1000);
-		wf_ioremap_read(CONN_HW_VER_ADDR, &value);
-		polling_count++;
-	}
-	if (check != 0) {
-		DBGLOG(INIT, ERROR, "Polling CONNSYS version ID fail.\n");
-		return ret;
-	}
 
 	/* mask wf2conn slpprot idle
 	 * 0x1800F004[0] = 1'b1
@@ -2474,10 +2452,7 @@ static int wf_pwr_off_consys_mcu(void)
 	conninfra_adie_top_ck_en_off(CONNSYS_ADIE_CTL_FW_WIFI);
 
 	soc3_0_DumpBusHangdebuglog();
-	/* Disable conn_infra off domain force on 0x180601A4[0] = 1'b0 */
-	wf_ioremap_read(CONN_INFRA_WAKEUP_WF_ADDR, &value);
-	value &= 0xFFFFFFFE;
-	wf_ioremap_write(CONN_INFRA_WAKEUP_WF_ADDR, value);
+	soc3_0_disableConninfraForceOn();
 	return ret;
 }
 
