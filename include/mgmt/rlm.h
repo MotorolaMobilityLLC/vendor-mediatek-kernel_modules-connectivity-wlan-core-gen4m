@@ -324,6 +324,8 @@ struct SWITCH_CH_AND_BAND_PARAMS {
  *                   F U N C T I O N   D E C L A R A T I O N S
  *******************************************************************************
  */
+uint8_t rlmMaxBwToVhtBw(uint8_t ucMaxBw);
+
 void rlmFsmEventInit(struct ADAPTER *prAdapter);
 
 void rlmFsmEventUninit(struct ADAPTER *prAdapter);

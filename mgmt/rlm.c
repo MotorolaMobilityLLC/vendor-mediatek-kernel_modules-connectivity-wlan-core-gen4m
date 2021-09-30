@@ -177,6 +177,31 @@ static void rlmRecOpModeBwForClient(uint8_t ucVhtOpModeChannelWidth,
  *******************************************************************************
  */
 
+uint8_t rlmMaxBwToVhtBw(uint8_t ucMaxBw)
+{
+	uint8_t ucVhtBw = VHT_OP_CHANNEL_WIDTH_20_40;
+
+	switch (ucMaxBw) {
+	case MAX_BW_20MHZ:
+	case MAX_BW_40MHZ:
+		ucVhtBw = VHT_OP_CHANNEL_WIDTH_20_40;
+		break;
+	case MAX_BW_80MHZ:
+		ucVhtBw = VHT_OP_CHANNEL_WIDTH_80;
+		break;
+	case MAX_BW_160MHZ:
+		ucVhtBw = VHT_OP_CHANNEL_WIDTH_160;
+		break;
+	case MAX_BW_80_80_MHZ:
+		ucVhtBw = VHT_OP_CHANNEL_WIDTH_80P80;
+		break;
+	default:
+		break;
+	}
+
+	return ucVhtBw;
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief
@@ -6496,22 +6521,6 @@ static void rlmChangeOwnOpInfo(struct ADAPTER *prAdapter,
 	/* Update own operating channel Width */
 	if (prBssInfo->fgIsOpChangeChannelWidth) {
 		if (prBssInfo->ucPhyTypeSet & PHY_TYPE_BIT_HT) {
-#if CFG_SUPPORT_802_11AC
-			/* Update VHT OP Info*/
-			if (prBssInfo->ucPhyTypeSet & PHY_TYPE_BIT_VHT) {
-				rlmFillVhtOpInfoByBssOpBw(
-					prBssInfo,
-					prBssInfo->ucOpChangeChannelWidth);
-
-				DBGLOG(RLM, INFO,
-				       "Update BSS[%d] VHT Channel Width Info to w=%d s1=%d s2=%d\n",
-				       prBssInfo->ucBssIndex,
-				       prBssInfo->ucVhtChannelWidth,
-				       prBssInfo->ucVhtChannelFrequencyS1,
-				       prBssInfo->ucVhtChannelFrequencyS2);
-			}
-#endif
-
 			/* Update HT OP Info*/
 			if (prBssInfo->ucOpChangeChannelWidth == MAX_BW_20MHZ) {
 				prBssInfo->ucHtOpInfo1 &=
@@ -6548,6 +6557,26 @@ static void rlmChangeOwnOpInfo(struct ADAPTER *prAdapter,
 					 HT_OP_INFO1_STA_CHNL_WIDTH_OFFSET),
 			       prBssInfo->eBssSCO);
 		}
+
+#if CFG_SUPPORT_802_11AC
+		/* Update VHT OP Info*/
+		if (prBssInfo->ucPhyTypeSet & PHY_TYPE_BIT_VHT
+#if (CFG_SUPPORT_802_11AX == 1)
+			|| prBssInfo->ucPhyTypeSet & PHY_TYPE_BIT_HE
+#endif
+		) {
+			rlmFillVhtOpInfoByBssOpBw(
+				prBssInfo,
+				prBssInfo->ucOpChangeChannelWidth);
+
+			DBGLOG(RLM, INFO,
+				"Update BSS[%d] VHT Channel Width Info to w=%d s1=%d s2=%d\n",
+				prBssInfo->ucBssIndex,
+				prBssInfo->ucVhtChannelWidth,
+				prBssInfo->ucVhtChannelFrequencyS1,
+				prBssInfo->ucVhtChannelFrequencyS2);
+		}
+#endif
 
 #if (CFG_SUPPORT_802_11AX == 1)
 #if (CFG_SUPPORT_WIFI_6G == 1)
