@@ -924,6 +924,7 @@ struct WIFI_VAR {
 	uint8_t ucP2pGcHe;
 	uint8_t ucApSelAxWeight;
 	uint8_t ucApSelAxScoreDiv;
+	uint8_t ucVcoreBoostEnable;
 #endif
 #if (CFG_SUPPORT_WIFI_6G == 1)
 	uint8_t ucP2pPrefer6G;
@@ -1920,6 +1921,7 @@ struct ADAPTER {
 	uint32_t u4HeHtcOM;
 	uint8_t  fgEnShowHETrigger;
 	uint8_t fgTxPPDU;
+	uint8_t ucVcoreBoost;
 #endif /* CFG_SUPPORT_802_11AX == 1 */
 #if (CFG_SUPPORT_TWT == 1)
 	struct _TWT_PLANNER_T rTWTPlanner;
