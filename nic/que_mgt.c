@@ -1368,8 +1368,6 @@ struct MSDU_INFO *qmEnqueueTxPackets(IN struct ADAPTER *prAdapter,
 void qmDetermineStaRecIndex(IN struct ADAPTER *prAdapter,
 	IN struct MSDU_INFO *prMsduInfo)
 {
-	uint32_t i;
-
 	struct STA_RECORD *prTempStaRec;
 	struct BSS_INFO *prBssInfo;
 
@@ -1445,18 +1443,14 @@ void qmDetermineStaRecIndex(IN struct ADAPTER *prAdapter,
 	/* 4 <3> Not BMCAST, No AP --> Compare DA
 	 * (i.e., to see whether this is a unicast frame to a client)
 	 */
-	for (i = 0; i < CFG_STA_REC_NUM; i++) {
-		prTempStaRec = &(prAdapter->arStaRec[i]);
-		if (prTempStaRec->fgIsInUse) {
-			if (EQUAL_MAC_ADDR(prTempStaRec->aucMacAddr,
-				prMsduInfo->aucEthDestAddr)) {
-				prMsduInfo->ucStaRecIndex =
-					prTempStaRec->ucIndex;
-				DBGLOG(QM, LOUD, "TX with STA[%u]\n",
-					prTempStaRec->ucIndex);
-				return;
-			}
-		}
+	prTempStaRec = cnmGetStaRecByAddress(prAdapter,
+			prMsduInfo->ucBssIndex,
+			prMsduInfo->aucEthDestAddr);
+	if (prTempStaRec) {
+		prMsduInfo->ucStaRecIndex = prTempStaRec->ucIndex;
+		DBGLOG(QM, LOUD, "TX with STA[%u]\n",
+			prTempStaRec->ucIndex);
+		return;
 	}
 
 	/* 4 <4> No STA found, Not BMCAST --> Indicate NOT_FOUND to FW */
