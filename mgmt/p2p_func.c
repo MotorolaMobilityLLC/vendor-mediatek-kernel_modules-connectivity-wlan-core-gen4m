@@ -1338,7 +1338,7 @@ SKIP_START_RDD:
 		}
 
 		bssInitForAP(prAdapter, prBssInfo, TRUE);
-		if (prBssInfo) {
+		if (prBssInfo && prBssInfo->fgEnableH2E) {
 			prBssInfo->aucAllSupportedRates
 				[prBssInfo->ucAllSupportedRatesLen]
 				= RATE_H2E_ONLY_VAL;
@@ -1997,7 +1997,7 @@ void p2pFuncDfsSwitchCh(IN struct ADAPTER *prAdapter,
 		prBssInfo->u2BSSBasicRateSet,
 		prBssInfo->aucAllSupportedRates,
 		&prBssInfo->ucAllSupportedRatesLen);
-	if (prBssInfo) {
+	if (prBssInfo && prBssInfo->fgEnableH2E) {
 		prBssInfo->aucAllSupportedRates
 			[prBssInfo->ucAllSupportedRatesLen]
 			= RATE_H2E_ONLY_VAL;

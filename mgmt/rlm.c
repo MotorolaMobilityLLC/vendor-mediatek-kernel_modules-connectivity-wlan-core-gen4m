@@ -1658,6 +1658,22 @@ void rlmFillVhtOpIE(struct ADAPTER *prAdapter, struct BSS_INFO *prBssInfo,
 	}
 #endif
 
+	/* VHT-4.2.58 */
+	if (IS_BSS_APGO(prBssInfo) &&
+		(prBssInfo->ucVhtChannelWidth == VHT_OP_CHANNEL_WIDTH_160)) {
+		/*
+		 * Convert 160 MHz channel width to new style as interop
+		 * workaround.
+		 */
+		prVhtOp->ucVhtOperation[0] = 1;
+		prVhtOp->ucVhtOperation[2] = prVhtOp->ucVhtOperation[1];
+		if (prBssInfo->ucPrimaryChannel <
+			prBssInfo->ucVhtChannelFrequencyS1)
+			prVhtOp->ucVhtOperation[1] -= 8;
+		else
+			prVhtOp->ucVhtOperation[1] += 8;
+	}
+
 	prVhtOp->u2VhtBasicMcsSet = prBssInfo->u2VhtBasicMcsSet;
 
 	prMsduInfo->u2FrameLength += IE_SIZE(prVhtOp);
