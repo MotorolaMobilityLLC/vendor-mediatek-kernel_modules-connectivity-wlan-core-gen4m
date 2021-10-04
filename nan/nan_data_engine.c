@@ -5,9 +5,9 @@
  */
 
 /*******************************************************************************
-*                         C O M P I L E R   F L A G S
-********************************************************************************
-*/
+ *                         C O M P I L E R   F L A G S
+ *******************************************************************************
+ */
 #include "precomp.h"
 #include "nan_data_engine.h"
 #include "nan_base.h"
@@ -26,14 +26,14 @@
 /* #if (CFG_NAN_DATAENGINE == 1) */
 
 /*******************************************************************************
-*                    E X T E R N A L   R E F E R E N C E S
-********************************************************************************
-*/
+ *                   E X T E R N A L   R E F E R E N C E S
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                              C O N S T A N T S
-********************************************************************************
-*/
+ *                            C O N S T A N T S
+ *******************************************************************************
+ */
 #define UINT8_MAX 0xFF
 
 /*******************************************************************************
@@ -112,9 +112,9 @@ static uint8_t *apucDebugDataPathProtocolState[NDP_PROTOCOL_STATE_NUM] = {
 };
 
 /*******************************************************************************
-*                   F U N C T I O N   D E C L A R A T I O N S
-********************************************************************************
-*/
+ *                   F U N C T I O N   D E C L A R A T I O N S
+ *******************************************************************************
+ */
 static struct _NAN_NDL_INSTANCE_T *
 nanDataUtilSearchEmptyNdlEntry(struct ADAPTER *prAdapter);
 
@@ -191,9 +191,9 @@ nanDataPathProtocolFsmStep(IN struct ADAPTER *prAdapter,
 			   IN struct _NAN_NDP_INSTANCE_T *prNDP);
 
 /*******************************************************************************
-*                              F U N C T I O N S
-********************************************************************************
-*/
+ *                              F U N C T I O N S
+ *******************************************************************************
+ */
 void
 nanDataResponseTimeout(struct ADAPTER *prAdapter, unsigned long ulParam) {
 	struct _NAN_NDP_INSTANCE_T *prNDP;
@@ -220,12 +220,12 @@ nanDataResponseTimeout(struct ADAPTER *prAdapter, unsigned long ulParam) {
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief
-*
-* \param[in]
-*
-* \return none
-*/
+ * \brief
+ *
+ * \param[in]
+ *
+ * \return none
+ */
 /*----------------------------------------------------------------------------*/
 void
 nanDataProtocolTimeout(struct ADAPTER *prAdapter, unsigned long ulParam) {
@@ -251,12 +251,12 @@ nanDataProtocolTimeout(struct ADAPTER *prAdapter, unsigned long ulParam) {
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief
-*
-* \param[in]
-*
-* \return none
-*/
+ * \brief
+ *
+ * \param[in]
+ *
+ * \return none
+ */
 /*----------------------------------------------------------------------------*/
 void
 nanDataRetryTimeout(struct ADAPTER *prAdapter, unsigned long ulParam) {
@@ -280,12 +280,12 @@ nanDataRetryTimeout(struct ADAPTER *prAdapter, unsigned long ulParam) {
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief
-*
-* \param[in]
-*
-* \return none
-*/
+ * \brief
+ *
+ * \param[in]
+ *
+ * \return none
+ */
 /*----------------------------------------------------------------------------*/
 void
 nanDataSecurityTimeout(struct ADAPTER *prAdapter, unsigned long ulParam) {
@@ -310,13 +310,13 @@ nanDataSecurityTimeout(struct ADAPTER *prAdapter, unsigned long ulParam) {
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief        Callback from NAN-Scheduler for
-*               granting start of schedule negotiatio
-*
-* \param[in]
-*
-* \return none
-*/
+ * \brief        Callback from NAN-Scheduler for
+ *               granting start of schedule negotiatio
+ *
+ * \param[in]
+ *
+ * \return none
+ */
 /*----------------------------------------------------------------------------*/
 static void
 nanDataPathScheduleNegoGranted(struct ADAPTER *prAdapter, uint8_t *pu1DevAddr,
@@ -387,12 +387,12 @@ nanDataPathScheduleNegoGranted(struct ADAPTER *prAdapter, uint8_t *pu1DevAddr,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief
-*
-* \param[in]
-*
-* \return none
-*/
+ * \brief
+ *
+ * \param[in]
+ *
+ * \return none
+ */
 /*----------------------------------------------------------------------------*/
 static struct _NAN_NDL_INSTANCE_T *
 nanDataUtilSearchEmptyNdlEntry(struct ADAPTER *prAdapter) {
@@ -420,12 +420,12 @@ nanDataUtilSearchEmptyNdlEntry(struct ADAPTER *prAdapter) {
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief
-*
-* \param[in]
-*
-* \return none
-*/
+ * \brief
+ *
+ * \param[in]
+ *
+ * \return none
+ */
 /*----------------------------------------------------------------------------*/
 static struct _NAN_NDP_INSTANCE_T *
 nanDataUtilSearchEmptyNdpEntry(struct ADAPTER *prAdapter,
@@ -459,12 +459,12 @@ nanDataUtilSearchEmptyNdpEntry(struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief
-*
-* \param[in]
-*
-* \return none
-*/
+ * \brief
+ *
+ * \param[in]
+ *
+ * \return none
+ */
 /*----------------------------------------------------------------------------*/
 static struct _NAN_NDP_INSTANCE_T *
 nanDataUtilSearchNdpByNdpId(struct ADAPTER *prAdapter,
@@ -489,18 +489,18 @@ nanDataUtilSearchNdpByNdpId(struct ADAPTER *prAdapter,
 		}
 	}
 
-	/*no NDP matched*/
+	/* no NDP matched */
 	return NULL;
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief
-*
-* \param[in]
-*
-* \return none
-*/
+ * \brief
+ *
+ * \param[in]
+ *
+ * \return none
+ */
 /*----------------------------------------------------------------------------*/
 static struct _NAN_NDP_INSTANCE_T *
 nanDataUtilSearchNdpByNdpIdOnly(struct ADAPTER *prAdapter, uint8_t ucNdpId) {
@@ -618,12 +618,12 @@ nanDataUtilSearchNdpByPublishId(
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief
-*
-* \param[in]
-*
-* \return none
-*/
+ * \brief
+ *
+ * \param[in]
+ *
+ * \return none
+ */
 /*----------------------------------------------------------------------------*/
 static struct _NAN_NDL_INSTANCE_T *
 nanDataUtilSearchNdlByMac(struct ADAPTER *prAdapter, uint8_t *pucAddr) {
@@ -683,12 +683,12 @@ nanDataUtilSearchNdlByMac(struct ADAPTER *prAdapter, uint8_t *pucAddr) {
 }
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief
-*
-* \param[in]
-*
-* \return none
-*/
+ * \brief
+ *
+ * \param[in]
+ *
+ * \return none
+ */
 /*----------------------------------------------------------------------------*/
 static struct _NAN_NDL_INSTANCE_T *
 nanDataUtilSearchNdlByStaRec(struct ADAPTER *prAdapter,
@@ -733,12 +733,12 @@ nanDataUtilSearchNdlByStaRec(struct ADAPTER *prAdapter,
 
 /*---------------------------------------------------------------------------*/
 /*!
-* \brief
-*
-* \param[in]
-*
-* \return none
-*/
+ * \brief
+ *
+ * \param[in]
+ *
+ * \return none
+ */
 /*----------------------------------------------------------------------------*/
 static uint8_t
 nanDataUtilGenerateNdpId(struct ADAPTER *prAdapter,
@@ -794,14 +794,14 @@ nanDataUtilGenerateNdpId(struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief
-*
-* \param[in] prNDL
-*       [in] eNDPRole
-*       [in] ucNDPID - only valid when eNDPRole == RESPONDER
-*
-* \return none
-*/
+ * \brief
+ *
+ * \param[in] prNDL
+ *       [in] eNDPRole
+ *       [in] ucNDPID - only valid when eNDPRole == RESPONDER
+ *
+ * \return none
+ */
 /*----------------------------------------------------------------------------*/
 static struct _NAN_NDP_INSTANCE_T *
 nanDataAllocateNdp(struct ADAPTER *prAdapter,
@@ -837,7 +837,7 @@ nanDataAllocateNdp(struct ADAPTER *prAdapter,
 	if (prNDP == NULL)
 		return NULL;
 
-	/*fill data in NDP*/
+	/* fill data in NDP */
 	prNDP->eNDPRole = eNDPRole;
 	if (eNDPRole == NAN_PROTOCOL_RESPONDER)
 		prNDP->ucNDPID = ucNDPID;
@@ -862,9 +862,9 @@ nanDataAllocateNdp(struct ADAPTER *prAdapter,
 		nanGetFeaturePeerNDPE(prAdapter, prNDL->aucPeerMacAddr);
 	prNDP->fgCarryIPV6 = FALSE;
 	prNDP->ucCipherType = 0;
-	/*Need security module data structure*/
+	/* Need security module data structure */
 	prNDP->fgNDPValid = TRUE;
-	/*prNDP->rkey_info = ;*/
+	/* prNDP->rkey_info = ; */
 	prNDP->u2KdeLen = 0;
 	prNDP->pucKdeInfo = NULL;
 
@@ -903,12 +903,12 @@ nanDataAllocateNdp(struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief
-*
-* \param[in]
-*
-* \return none
-*/
+ * \brief
+ *
+ * \param[in]
+ *
+ * \return none
+ */
 /*----------------------------------------------------------------------------*/
 void
 nanDataUpdateNdpPeerNDI(IN struct ADAPTER *prAdapter,
@@ -930,12 +930,12 @@ nanDataUpdateNdpPeerNDI(IN struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief
-*
-* \param[in]
-*
-* \return none
-*/
+ * \brief
+ *
+ * \param[in]
+ *
+ * \return none
+ */
 /*----------------------------------------------------------------------------*/
 void
 nanDataUpdateNdpLocalNDI(IN struct ADAPTER *prAdapter,
@@ -962,12 +962,12 @@ nanDataUpdateNdpLocalNDI(IN struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief
-*
-* \param[in]
-*
-* \return none
-*/
+ * \brief
+ *
+ * \param[in]
+ *
+ * \return none
+ */
 /*----------------------------------------------------------------------------*/
 static void
 nanDataFreeNdp(struct ADAPTER *prAdapter, struct _NAN_NDP_INSTANCE_T *prNDP) {
@@ -1027,12 +1027,12 @@ nanDataFreeNdp(struct ADAPTER *prAdapter, struct _NAN_NDP_INSTANCE_T *prNDP) {
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief
-*
-* \param[in]
-*
-* \return none
-*/
+ * \brief
+ *
+ * \param[in]
+ *
+ * \return none
+ */
 /*----------------------------------------------------------------------------*/
 static struct _NAN_NDL_INSTANCE_T *
 nanDataAllocateNdl(struct ADAPTER *prAdapter, IN uint8_t *pucMacAddr,
@@ -1113,12 +1113,12 @@ nanDataAllocateNdl(struct ADAPTER *prAdapter, IN uint8_t *pucMacAddr,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief
-*
-* \param[in]
-*
-* \return none
-*/
+ * \brief
+ *
+ * \param[in]
+ *
+ * \return none
+ */
 /*----------------------------------------------------------------------------*/
 static struct _NAN_NDL_INSTANCE_T *
 nanDataUtilGetNdl(struct ADAPTER *prAdapter,
@@ -1137,12 +1137,12 @@ nanDataUtilGetNdl(struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief
-*
-* \param[in]
-*
-* \return none
-*/
+ * \brief
+ *
+ * \param[in]
+ *
+ * \return none
+ */
 /*----------------------------------------------------------------------------*/
 static void
 nanDataFreeNdl(struct ADAPTER *prAdapter, struct _NAN_NDL_INSTANCE_T *prNDL) {
@@ -1205,12 +1205,12 @@ nanDataFreeNdl(struct ADAPTER *prAdapter, struct _NAN_NDL_INSTANCE_T *prNDL) {
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief
-*
-* \param[in]
-*
-* \return Status
-*/
+ * \brief
+ *
+ * \param[in]
+ *
+ * \return Status
+ */
 /*----------------------------------------------------------------------------*/
 void
 nanDataEngineInit(struct ADAPTER *prAdapter, IN uint8_t *pu1NMIAddress) {
@@ -1236,7 +1236,7 @@ nanDataEngineInit(struct ADAPTER *prAdapter, IN uint8_t *pu1NMIAddress) {
 
 	for (i = 0; i < NAN_MAX_SUPPORT_NDL_NUM; i++) {
 		for (j = 0; j < NAN_MAX_SUPPORT_NDP_NUM; j++) {
-			/* zero-ize*/
+			/* zero-ize */
 			kalMemZero(&(prDataPathInfo->arNDL[i].arNDP[j]),
 				   sizeof(struct _NAN_NDP_INSTANCE_T));
 			prDataPathInfo->arNDL[i].arNDP[j].ucNdlIndex = i;
@@ -1262,21 +1262,19 @@ nanDataEngineInit(struct ADAPTER *prAdapter, IN uint8_t *pu1NMIAddress) {
 
 	atomic_set(&(prDataPathInfo->NetDevRefCount[eRole]), 0);
 	g_ndpReqNDPE.fgEnNDPE = FALSE;
-#if (NAN_DATA_ENGINE_SIGMA_WORKAROUND == 1)
 	prDataPathInfo->fgAutoHandleDPRequest = FALSE;
 	prDataPathInfo->ucDPResponseDecisionStatus =
 		NAN_DATA_RESP_DECISION_ACCEPT;
-#endif
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief
-*
-* \param[in]
-*
-* \return Status
-*/
+ * \brief
+ *
+ * \param[in]
+ *
+ * \return Status
+ */
 /*----------------------------------------------------------------------------*/
 void
 nanDataEngineUninit(struct ADAPTER *prAdapter) {
@@ -1323,12 +1321,12 @@ nanDataEngineUninit(struct ADAPTER *prAdapter) {
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief
-*
-* \param[in]
-*
-* \return Status
-*/
+ * \brief
+ *
+ * \param[in]
+ *
+ * \return Status
+ */
 /*----------------------------------------------------------------------------*/
 void
 nanDataPathSetupSuccess(struct ADAPTER *prAdapter,
@@ -1345,7 +1343,7 @@ nanDataPathSetupSuccess(struct ADAPTER *prAdapter,
 	prNDP->fgNDPActive = TRUE;
 
 	if (prAdapter->fgIsNANfromHAL == FALSE) {
-		/*send dataConfirm() to host*/
+		/* send dataConfirm() to host */
 		nanNdpSendDataConfirmEvent(prAdapter, prNDP);
 	} else {
 		/* vendor cmd path */
@@ -1355,15 +1353,14 @@ nanDataPathSetupSuccess(struct ADAPTER *prAdapter,
 	nanCmdManageScid(prAdapter, TRUE, prNDP->ucPublishId, prNDP->au1Scid);
 }
 
-#if (NAN_DATA_ENGINE_SIGMA_WORKAROUND == 1)
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief
-*
-* \param[in]
-*
-* \return Status
-*/
+ * \brief
+ *
+ * \param[in]
+ *
+ * \return Status
+ */
 /*----------------------------------------------------------------------------*/
 static uint32_t
 nanNdpAutoReplyDataRequest(struct ADAPTER *prAdapter,
@@ -1396,6 +1393,11 @@ nanNdpAutoReplyDataRequest(struct ADAPTER *prAdapter,
 
 	if (!prNDL) {
 		DBGLOG(NAN, ERROR, "[%s] prNDL error\n", __func__);
+		return WLAN_STATUS_INVALID_DATA;
+	}
+
+	if (!prDataPathInfo) {
+		DBGLOG(NAN, ERROR, "[%s] prDataPathInfo error\n", __func__);
 		return WLAN_STATUS_INVALID_DATA;
 	}
 
@@ -1441,6 +1443,42 @@ nanNdpAutoReplyDataRequest(struct ADAPTER *prAdapter,
 						prNDP->aucPeerNDIAddr);
 		}
 
+		/* If Support NAN R3 NDPE IE */
+		if (nanGetFeatureNDPE(prAdapter)) {
+			/* Carry Ipv6 */
+			if (prDataPathInfo->fgCarryIPV6) {
+				prNDP->fgCarryIPV6 = TRUE;
+				kalMemCopy(prNDP->aucRspInterfaceId,
+					prDataPathInfo->aucIPv6Addr,
+					IPV6MACLEN);
+			}
+
+			/* Carry App info */
+			if (prDataPathInfo->u2AppInfoLen > 0) {
+				prNDP->u2AppInfoLen =
+					prDataPathInfo->u2AppInfoLen;
+				prNDP->pucAppInfo = cnmMemAlloc(prAdapter,
+					RAM_TYPE_BUF,
+					(uint32_t)prNDP->u2AppInfoLen);
+				kalMemCopy(prNDP->pucAppInfo,
+					prDataPathInfo->pucAppInfo,
+					prNDP->u2AppInfoLen);
+				DBGLOG(NAN, INFO, "[%s] App Info:"IPV6STR"\n",
+					__func__, prNDP->pucAppInfo);
+			}
+
+			/* Carry port number */
+			if (prDataPathInfo->u2PortNum > 0)
+				prNDP->u2PortNum = prDataPathInfo->u2PortNum;
+
+			/* Carry Transport protocol type:
+			 * TCP(0x06) / UDP(0x11)
+			 */
+			if (prDataPathInfo->ucProtocolType != 0xFF)
+				prNDP->ucProtocolType =
+					prDataPathInfo->ucProtocolType;
+		}
+
 		if (prDataPathInfo->ucDPResponseDecisionStatus ==
 		    NAN_DATA_RESP_DECISION_ACCEPT) {
 			if (prNDL->eCurrentNDLMgmtState == NDL_IDLE ||
@@ -1472,16 +1510,15 @@ nanNdpAutoReplyDataRequest(struct ADAPTER *prAdapter,
 	} else
 		return WLAN_STATUS_FAILURE;
 }
-#endif
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief Incoming frame handlers for NAN Action Frame - Data Request
-*
-* \param[in]
-*
-* \return Status
-*/
+ * \brief Incoming frame handlers for NAN Action Frame - Data Request
+ *
+ * \param[in]
+ *
+ * \return Status
+ */
 /*----------------------------------------------------------------------------*/
 uint32_t
 nanNdpProcessDataRequest(struct ADAPTER *prAdapter, IN struct SW_RFB *prSwRfb) {
@@ -1648,11 +1685,9 @@ nanNdpProcessDataRequest(struct ADAPTER *prAdapter, IN struct SW_RFB *prSwRfb) {
 				prNDP->ucRCPI = nicRxGetRcpiValueFromRxv(
 					prAdapter, RCPI_MODE_WF0, prSwRfb);
 
-#if (NAN_DATA_ENGINE_SIGMA_WORKAROUND == 1)
 				if (nanNdpAutoReplyDataRequest(prAdapter, prNDL,
 							       prNDP) !=
 				    WLAN_STATUS_SUCCESS)
-#endif
 				/* if (prNDP->fgSecurityRequired == TRUE) */
 				/* TODO_CJ */
 					nanDataPathProtocolFsmStep(
@@ -1684,12 +1719,12 @@ nanNdpProcessDataRequest(struct ADAPTER *prAdapter, IN struct SW_RFB *prSwRfb) {
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief Incoming frame handlers for NAN Action Frame - Data Response
-*
-* \param[in]
-*
-* \return Status
-*/
+ * \brief Incoming frame handlers for NAN Action Frame - Data Response
+ *
+ * \param[in]
+ *
+ * \return Status
+ */
 /*----------------------------------------------------------------------------*/
 uint32_t
 nanNdpProcessDataResponse(struct ADAPTER *prAdapter,
@@ -1899,12 +1934,12 @@ nanNdpProcessDataResponse(struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief Incoming frame handlers for NAN Action Frame - Data Confirm
-*
-* \param[in]
-*
-* \return Status
-*/
+ * \brief Incoming frame handlers for NAN Action Frame - Data Confirm
+ *
+ * \param[in]
+ *
+ * \return Status
+ */
 /*----------------------------------------------------------------------------*/
 uint32_t
 nanNdpProcessDataConfirm(struct ADAPTER *prAdapter, IN struct SW_RFB *prSwRfb) {
@@ -2061,12 +2096,12 @@ nanNdpProcessDataConfirm(struct ADAPTER *prAdapter, IN struct SW_RFB *prSwRfb) {
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief Incoming frame handlers for NAN Action Frame - Data Path Key Install
-*
-* \param[in]
-*
-* \return Status
-*/
+ * \brief Incoming frame handlers for NAN Action Frame - Data Path Key Install
+ *
+ * \param[in]
+ *
+ * \return Status
+ */
 /*----------------------------------------------------------------------------*/
 uint32_t
 nanNdpProcessDataKeyInstall(struct ADAPTER *prAdapter,
@@ -2185,18 +2220,18 @@ nanNdpProcessDataKeyInstall(struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief Incoming frame handlers for NAN Action Frame - Data Path Termination
-*
-* \param[in]
-*
-* \return Status
-*/
+ * \brief Incoming frame handlers for NAN Action Frame - Data Path Termination
+ *
+ * \param[in]
+ *
+ * \return Status
+ */
 /*----------------------------------------------------------------------------*/
 uint32_t
 nanNdpProcessDataTermination(struct ADAPTER *prAdapter,
 			     IN struct SW_RFB *prSwRfb) {
-	/*enum _ENUM_NDP_PROTOCOL_STATE_T eCurrentState;*/
 
+	/* enum _ENUM_NDP_PROTOCOL_STATE_T eCurrentState; */
 	struct _NAN_NDP_INSTANCE_T *prNDP = NULL;
 	struct _NAN_NDL_INSTANCE_T *prNDL = NULL;
 	struct _NAN_ACTION_FRAME_T *prNaf =
@@ -2266,13 +2301,13 @@ nanNdpProcessDataTermination(struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief Incoming frame handlers for NAN Action Frame - Schedule Request
-*
-* \param[in]
-*
-* \return Status WLAN_STATUS_SUCCESS - accepted
-*                WLAN_STATUS_FAILURE - reject or ignore
-*/
+ * \brief Incoming frame handlers for NAN Action Frame - Schedule Request
+ *
+ * \param[in]
+ *
+ * \return Status WLAN_STATUS_SUCCESS - accepted
+ *                WLAN_STATUS_FAILURE - reject or ignore
+ */
 /*----------------------------------------------------------------------------*/
 uint32_t
 nanNdlProcessScheduleRequest(struct ADAPTER *prAdapter,
@@ -2323,7 +2358,7 @@ nanNdlProcessScheduleRequest(struct ADAPTER *prAdapter,
 						  prNDL);
 			} else {
 /* insert into queue for later handling */
-#if 0 /* whsu: skip for skip the calling parameter enum error !!!*/
+#if 0 /* whsu: skip for skip the calling parameter enum error !!! */
 				nanDataEngineInsertRequest(prAdapter,
 						prNDL,
 						NDL_REQUEST_SCHEDULE_NDL,
@@ -2346,7 +2381,7 @@ nanNdlProcessScheduleRequest(struct ADAPTER *prAdapter,
 						  prNDL);
 			} else {
 /* insert into queue for later handling */
-#if 0 /* whsu: skip for skip the calling parameter enum error !!!*/
+#if 0 /* skip for skip the calling parameter enum error !!! */
 				nanDataEngineInsertRequest(prAdapter,
 						prNDL,
 						NDL_TEARDOWN,
@@ -2402,13 +2437,13 @@ nanNdlProcessScheduleRequest(struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief Incoming frame handlers for NAN Action Frame - Schedule Response
-*
-* \param[in]
-*
-* \return Status WLAN_STATUS_SUCCESS - accepted
-*                WLAN_STATUS_FAILURE - reject or ignore
-*/
+ * \brief Incoming frame handlers for NAN Action Frame - Schedule Response
+ *
+ * \param[in]
+ *
+ * \return Status WLAN_STATUS_SUCCESS - accepted
+ *                WLAN_STATUS_FAILURE - reject or ignore
+ */
 /*----------------------------------------------------------------------------*/
 uint32_t
 nanNdlProcessScheduleResponse(struct ADAPTER *prAdapter,
@@ -2485,12 +2520,12 @@ nanNdlProcessScheduleResponse(struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief Incoming frame handlers for NAN Action Frame - Schedule Confirm
-*
-* \param[in]
-*
-* \return Status
-*/
+ * \brief Incoming frame handlers for NAN Action Frame - Schedule Confirm
+ *
+ * \param[in]
+ *
+ * \return Status
+ */
 /*----------------------------------------------------------------------------*/
 uint32_t
 nanNdlProcessScheduleConfirm(struct ADAPTER *prAdapter,
@@ -2571,13 +2606,13 @@ nanNdlProcessScheduleConfirm(struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief Incoming frame handlers for NAN Action Frame
-*  - Schedule Update Notification
-*
-* \param[in]
-*
-* \return Status
-*/
+ * \brief Incoming frame handlers for NAN Action Frame
+ *  - Schedule Update Notification
+ *
+ * \param[in]
+ *
+ * \return Status
+ */
 /*----------------------------------------------------------------------------*/
 uint32_t
 nanNdlProcessScheduleUpdateNotification(struct ADAPTER *prAdapter,
@@ -2646,12 +2681,12 @@ nanNdlProcessScheduleUpdateNotification(struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief
-*
-* \param[in]
-*
-* \return Status
-*/
+ * \brief
+ *
+ * \param[in]
+ *
+ * \return Status
+ */
 /*----------------------------------------------------------------------------*/
 static enum _ENUM_NAN_NDP_STATUS_T
 nanDataPathProtocolFsmStep(IN struct ADAPTER *prAdapter,
@@ -2681,7 +2716,7 @@ nanDataPathProtocolFsmStep(IN struct ADAPTER *prAdapter,
 
 	do {
 
-		/*TODO: Define your own dbg level*/
+		/* TODO: Define your own dbg level */
 		DBGLOG(NAN, STATE, "NDP mgmt STATE_%d: [%s] -> [%s]\n",
 		       prNDP->ucNDPID,
 		       apucDebugDataPathProtocolState
@@ -3035,12 +3070,12 @@ nanNdlGetNextRequire(IN struct ADAPTER *prAdapter,
 }
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief
-*
-* \param[in]
-*
-* \return Status
-*/
+ * \brief
+ *
+ * \param[in]
+ *
+ * \return Status
+ */
 /*----------------------------------------------------------------------------*/
 static void
 nanNdlMgmtFsmStep(IN struct ADAPTER *prAdapter,
@@ -3327,12 +3362,12 @@ void nanSetNdpPmkid(
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief
-*
-* \param[in]
-*
-* \return Status
-*/
+ * \brief
+ *
+ * \param[in]
+ *
+ * \return Status
+ */
 /*----------------------------------------------------------------------------*/
 uint32_t
 nanCmdDataRequest(IN struct ADAPTER *prAdapter,
@@ -3353,11 +3388,9 @@ nanCmdDataRequest(IN struct ADAPTER *prAdapter,
 		return WLAN_STATUS_INVALID_DATA;
 	}
 
-#if (NAN_DATA_ENGINE_SIGMA_WORKAROUND == 1)
 	/* Workaround for NDP termination */
 	kalMemCopy(prAdapter->rDataPathInfo.aucRemoteAddr,
 		   prNanCmdDataRequest->aucResponderDataAddress, MAC_ADDR_LEN);
-#endif
 
 #if (ENABLE_NDP_UT_LOG == 1)
 	DBGLOG(NAN, INFO, "[%s] Enter\n", __func__);
@@ -3410,7 +3443,7 @@ nanCmdDataRequest(IN struct ADAPTER *prAdapter,
 		return WLAN_STATUS_RESOURCES;
 	}
 
-	/*fill NDP parameters from initiator request*/
+	/* fill NDP parameters from initiator request */
 	prNDP->ucPublishId = prNanCmdDataRequest->ucPublishID;
 
 	if (prNanCmdDataRequest->ucRequireQOS & NAN_DATAREQ_REQUIRE_QOS_UNICAST)
@@ -3440,21 +3473,6 @@ nanCmdDataRequest(IN struct ADAPTER *prAdapter,
 		nanSecSetCipherType(prNDP, prNanCmdDataRequest->ucSecurity);
 		nanSecNotify4wayBegin(prNDP);
 	}
-
-	prNDP->fgCarryIPV6 = prNanCmdDataRequest->fgCarryIpv6;
-	if (prNDP->fgCarryIPV6 == TRUE) {
-		prNDP->fgIsInitiator = TRUE;
-		kalMemCopy(prNDP->aucInterfaceId,
-			   prNanCmdDataRequest->aucIPv6Addr, IPV6MACLEN);
-	}
-
-	if (prNanCmdDataRequest->u2SpecificInfoLength > 0)
-		nanDataEngineUpdateAppInfo(
-			prAdapter, prNDP, NAN_SERVICE_PROTOCOL_TYPE_GENERIC,
-			prNanCmdDataRequest->u2SpecificInfoLength,
-			prNanCmdDataRequest->aucSpecificInfo);
-	else
-		prNDP->u2AppInfoLen = 0;
 
 	/* R3 capability */
 	prNDP->fgSupportNDPE = prNanCmdDataRequest->fgNDPE;
@@ -3501,7 +3519,7 @@ nanCmdDataRequest(IN struct ADAPTER *prAdapter,
 		nanNdlMgmtFsmStep(prAdapter, NDL_REQUEST_SCHEDULE_NDP, prNDL);
 	} else {
 /* insert into queue for later handling */
-#if 0 /* whsu: skip for skip the calling parameter enum error !!!*/
+#if 0 /* skip for skip the calling parameter enum error !!! */
 		nanDataEngineInsertRequest(prAdapter,
 				prNDL,
 				NAN_DATA_ENGINE_REQUEST_NDP_SETUP,
@@ -3520,12 +3538,12 @@ nanCmdDataRequest(IN struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief
-*
-* \param[in]
-*
-* \return Status
-*/
+ * \brief
+ *
+ * \param[in]
+ *
+ * \return Status
+ */
 /*----------------------------------------------------------------------------*/
 uint32_t
 nanCmdDataResponse(struct ADAPTER *prAdapter,
@@ -3590,7 +3608,6 @@ nanCmdDataResponse(struct ADAPTER *prAdapter,
 	}
 
 	if (prNDL == NULL || prNDP == NULL) {
-#if (NAN_DATA_ENGINE_SIGMA_WORKAROUND == 1)
 		if (prNanCmdDataResponse->ucNDPId == 0) {
 			prDataPathInfo->fgAutoHandleDPRequest = TRUE;
 			prDataPathInfo->ucDPResponseDecisionStatus =
@@ -3615,7 +3632,7 @@ nanCmdDataResponse(struct ADAPTER *prAdapter,
 						IPV6MACLEN);
 				}
 
-				/* Add App info*/
+				/* Add App info */
 				if (prNanCmdDataResponse->
 					u2SpecificInfoLength > 0) {
 					DBGLOG(NAN, INFO,
@@ -3632,7 +3649,7 @@ nanCmdDataResponse(struct ADAPTER *prAdapter,
 					kalMemCopy(prDataPathInfo->pucAppInfo,
 						prNanCmdDataResponse->
 						aucSpecificInfo,
-						prDataPathInfo->u2AppInfoLen);
+						IPV6MACLEN);
 				}
 				prDataPathInfo->u2PortNum =
 					prNanCmdDataResponse->u2PortNum;
@@ -3641,11 +3658,13 @@ nanCmdDataResponse(struct ADAPTER *prAdapter,
 					ucServiceProtocolType;
 
 				DBGLOG(NAN, INFO,
-					"[%s] NDPE Ipv6/AppInfo: "IPV6STR"\n",
+					"[%s] NDPE Ipv6/AppInfo: "
+					IPV6STR"/"IPV6STR"\n",
 					__func__,
 					IPV6TOSTR(
-						prNanCmdDataResponse->
-						aucIPv6Addr));
+						prDataPathInfo->aucIPv6Addr),
+					IPV6TOSTR(
+						prDataPathInfo->pucAppInfo));
 
 				DBGLOG(NAN, INFO,
 					"[%s] PortNum: %d, TransProType: 0x%x\n",
@@ -3656,7 +3675,7 @@ nanCmdDataResponse(struct ADAPTER *prAdapter,
 
 			return WLAN_STATUS_SUCCESS;
 		}
-#endif
+
 		/* no matching NDL/NDP - it should have been created when NAF
 		 * - Data Path Request is received
 		 */
@@ -3682,11 +3701,10 @@ nanCmdDataResponse(struct ADAPTER *prAdapter,
 		prNanCmdDataResponse->ucDecisionStatus =
 			NAN_DATA_RESP_DECISION_REJECT;
 
-		/**
-		 * Because NAN security SM init only after data response
-		 *     accept the connection establishment, to
-		 *     reset NDP security required to avoid touch security SM.
-		 **************************************************************/
+		/* Because NAN security SM init only after data response
+		 * accept the connection establishment, to
+		 * reset NDP security required to avoid touch security SM.
+		 */
 		prNDP->fgSecurityRequired = FALSE;
 	}
 
@@ -3767,7 +3785,7 @@ nanCmdDataResponse(struct ADAPTER *prAdapter,
 						  prNDL);
 			} else {
 /* insert into queue for later handling */
-#if 0 /* whsu: skip for skip the calling parameter enum error !!!*/
+#if 0 /* skip for skip the calling parameter enum error !!! */
 				nanDataEngineInsertRequest(prAdapter,
 					prNDL,
 					NAN_DATA_ENGINE_REQUEST_NDP_SETUP,
@@ -3803,12 +3821,12 @@ nanCmdDataResponse(struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief
-*
-* \param[in]
-*
-* \return Status
-*/
+ * \brief
+ *
+ * \param[in]
+ *
+ * \return Status
+ */
 /*----------------------------------------------------------------------------*/
 uint32_t
 nanCmdDataEnd(IN struct ADAPTER *prAdapter,
@@ -3827,10 +3845,8 @@ nanCmdDataEnd(IN struct ADAPTER *prAdapter,
 		return WLAN_STATUS_INVALID_DATA;
 	}
 
-#if (NAN_DATA_ENGINE_SIGMA_WORKAROUND == 1)
 	kalMemCopy(prNanCmdDataEnd->aucInitiatorDataAddress,
 		   prAdapter->rDataPathInfo.aucRemoteAddr, MAC_ADDR_LEN);
-#endif
 
 #if (ENABLE_NDP_UT_LOG == 1)
 	DBGLOG(NAN, INFO, "[%s] Enter\n", __func__);
@@ -3874,12 +3890,12 @@ nanCmdDataEnd(IN struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief
-*
-* \param[in]
-*
-* \return Status
-*/
+ * \brief
+ *
+ * \param[in]
+ *
+ * \return Status
+ */
 /*----------------------------------------------------------------------------*/
 uint32_t
 nanCmdDataUpdtae(IN struct ADAPTER *prAdapter,
@@ -3889,17 +3905,17 @@ nanCmdDataUpdtae(IN struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief
-*
-* \param[in]
-*
-* \return Status
-*/
+ * \brief
+ *
+ * \param[in]
+ *
+ * \return Status
+ */
 /*----------------------------------------------------------------------------*/
 uint32_t
 nanUpdateNdlSchedule(IN struct ADAPTER *prAdapter,
 		     struct _NAN_PARAMETER_NDL_SCH *prNanUpdateSchParam) {
-#if 0 /* whsu: skip for skip the calling parameter enum error !!!*/
+#if 0 /* skip for skip the calling parameter enum error !!! */
 	struct _NAN_NDP_INSTANCE_T *prNDP = NULL;
 #endif
 	struct _NAN_NDL_INSTANCE_T *prNDL = NULL;
@@ -3959,7 +3975,7 @@ nanUpdateNdlSchedule(IN struct ADAPTER *prAdapter,
 
 		} else {
 /* insert into queue for later handling */
-#if 0 /* whsu: skip for skip the calling parameter enum error !!!*/
+#if 0 /* skip for skip the calling parameter enum error !!! */
 			nanDataEngineInsertRequest(prAdapter,
 					prNDL,
 					NDL_REQUEST_SCHEDULE_NDL,
@@ -3976,12 +3992,12 @@ nanUpdateNdlSchedule(IN struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief    Send Data Indication event to host
-*
-* \param[in]
-*
-* \return Status
-*/
+ * \brief    Send Data Indication event to host
+ *
+ * \param[in]
+ *
+ * \return Status
+ */
 /*----------------------------------------------------------------------------*/
 void
 nanNdpSendDataIndicationEvent(IN struct ADAPTER *prAdapter,
@@ -4035,12 +4051,12 @@ nanNdpSendDataIndicationEvent(IN struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief    Send Data Confirm event to host
-*
-* \param[in]
-*
-* \return Status
-*/
+ * \brief    Send Data Confirm event to host
+ *
+ * \param[in]
+ *
+ * \return Status
+ */
 /*----------------------------------------------------------------------------*/
 void
 nanNdpSendDataConfirmEvent(IN struct ADAPTER *prAdapter,
@@ -4087,12 +4103,12 @@ nanNdpSendDataConfirmEvent(IN struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief
-*
-* \param[in]
-*
-* \return Status
-*/
+ * \brief
+ *
+ * \param[in]
+ *
+ * \return Status
+ */
 /*----------------------------------------------------------------------------*/
 void
 nanNdpSendDataTerminationEvent(IN struct ADAPTER *prAdapter,
@@ -4120,12 +4136,12 @@ nanNdpSendDataTerminationEvent(IN struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief            Send NAF - Data Path Request
-*
-* \param[in]
-*
-* \return Status
-*/
+ * \brief            Send NAF - Data Path Request
+ *
+ * \param[in]
+ *
+ * \return Status
+ */
 /*----------------------------------------------------------------------------*/
 uint32_t
 nanNdpSendDataPathRequest(IN struct ADAPTER *prAdapter,
@@ -4217,14 +4233,14 @@ nanNdpSendDataPathRequest(IN struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief            Send NAF - Data Path Response
-*
-* \param[in]        Parameter 3~9 only valid when prNDP == NULL
-*                   When prNDP == NULL, always send Data Path Response with
-*                   StatusCode == REJECT (2)
-*
-* \return Status
-*/
+ * \brief            Send NAF - Data Path Response
+ *
+ * \param[in]        Parameter 3~9 only valid when prNDP == NULL
+ *                   When prNDP == NULL, always send Data Path Response with
+ *                   StatusCode == REJECT (2)
+ *
+ * \return Status
+ */
 /*----------------------------------------------------------------------------*/
 uint32_t
 nanNdpSendDataPathResponse(
@@ -4311,7 +4327,7 @@ nanNdpSendDataPathResponse(
 			}
 		}
 
-		/* For MIC calulation*/
+		/* For MIC calulation */
 		if (prNDP->fgSecurityRequired) {
 			/* The body of Mx beginning from the Category */
 			pu1TxMsgBuf = ((uint8_t *)prMsduInfo->prPacket) +
@@ -4368,12 +4384,12 @@ nanNdpSendDataPathResponse(
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief            Send NAF - Data Path Confirm
-*
-* \param[in]
-*
-* \return Status
-*/
+ * \brief            Send NAF - Data Path Confirm
+ *
+ * \param[in]
+ *
+ * \return Status
+ */
 /*----------------------------------------------------------------------------*/
 uint32_t
 nanNdpSendDataPathConfirm(IN struct ADAPTER *prAdapter,
@@ -4450,7 +4466,7 @@ nanNdpSendDataPathConfirm(IN struct ADAPTER *prAdapter,
 		}
 	}
 
-	/* For MIC calulation*/
+	/* For MIC calulation */
 	if (prNDP->fgSecurityRequired) {
 		/* The body of Mx beginning from the Category */
 		pu1TxMsgBuf = ((uint8_t *)prMsduInfo->prPacket) +
@@ -4478,12 +4494,12 @@ nanNdpSendDataPathConfirm(IN struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief            Send NAF - Data Path Key Installment
-*
-* \param[in]
-*
-* \return Status
-*/
+ * \brief            Send NAF - Data Path Key Installment
+ *
+ * \param[in]
+ *
+ * \return Status
+ */
 /*----------------------------------------------------------------------------*/
 uint32_t
 nanNdpSendDataPathKeyInstall(IN struct ADAPTER *prAdapter,
@@ -4560,7 +4576,7 @@ nanNdpSendDataPathKeyInstall(IN struct ADAPTER *prAdapter,
 		}
 	}
 
-	/* For MIC calulation*/
+	/* For MIC calulation */
 	if (prNDP->fgSecurityRequired) {
 		/* The body of Mx beginning from the Category */
 		pu1TxMsgBuf = ((uint8_t *)prMsduInfo->prPacket) +
@@ -4588,12 +4604,12 @@ nanNdpSendDataPathKeyInstall(IN struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief            Send NAF - Data Path Termination
-*
-* \param[in]
-*
-* \return Status
-*/
+ * \brief            Send NAF - Data Path Termination
+ *
+ * \param[in]
+ *
+ * \return Status
+ */
 /*----------------------------------------------------------------------------*/
 uint32_t
 nanNdpSendDataPathTermination(IN struct ADAPTER *prAdapter,
@@ -4677,12 +4693,12 @@ nanNdpSendDataPathTermination(IN struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief            Send NAF - Schedule Request
-*
-* \param[in]
-*
-* \return Status
-*/
+ * \brief            Send NAF - Schedule Request
+ *
+ * \param[in]
+ *
+ * \return Status
+ */
 /*----------------------------------------------------------------------------*/
 uint32_t
 nanNdlSendScheduleRequest(IN struct ADAPTER *prAdapter,
@@ -4758,12 +4774,12 @@ nanNdlSendScheduleRequest(IN struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief            Send NAF - Schedule Response
-*
-* \param[in]
-*
-* \return Status
-*/
+ * \brief            Send NAF - Schedule Response
+ *
+ * \param[in]
+ *
+ * \return Status
+ */
 /*----------------------------------------------------------------------------*/
 uint32_t
 nanNdlSendScheduleResponse(
@@ -4859,12 +4875,12 @@ nanNdlSendScheduleResponse(
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief            Send NAF - Schedule Confirm
-*
-* \param[in]
-*
-* \return Status
-*/
+ * \brief            Send NAF - Schedule Confirm
+ *
+ * \param[in]
+ *
+ * \return Status
+ */
 /*----------------------------------------------------------------------------*/
 
 uint32_t
@@ -4942,12 +4958,12 @@ nanNdlSendScheduleConfirm(IN struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief            Send NAF - Schedule Update Notify
-*
-* \param[in]
-*
-* \return Status
-*/
+ * \brief            Send NAF - Schedule Update Notify
+ *
+ * \param[in]
+ *
+ * \return Status
+ */
 /*----------------------------------------------------------------------------*/
 uint32_t
 nanNdlSendScheduleUpdateNotify(IN struct ADAPTER *prAdapter,
@@ -5020,12 +5036,12 @@ nanNdlSendScheduleUpdateNotify(IN struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief            NAF TX Done Callback - for NDP negotiation (DP Request)
-*
-* \param[in]
-*
-* \return Status
-*/
+ * \brief            NAF TX Done Callback - for NDP negotiation (DP Request)
+ *
+ * \param[in]
+ *
+ * \return Status
+ */
 /*----------------------------------------------------------------------------*/
 uint32_t
 nanDPReqTxDone(IN struct ADAPTER *prAdapter, IN struct MSDU_INFO *prMsduInfo,
@@ -5107,7 +5123,7 @@ nanDPReqTxDone(IN struct ADAPTER *prAdapter, IN struct MSDU_INFO *prMsduInfo,
 		}
 	}
 
-	/* Send rsp event to wifi hal*/
+	/* Send rsp event to wifi hal */
 	nanNdpInitiatorRspEvent(prAdapter, prNDP, rTxDoneStatus);
 
 	return WLAN_STATUS_SUCCESS;
@@ -5115,12 +5131,12 @@ nanDPReqTxDone(IN struct ADAPTER *prAdapter, IN struct MSDU_INFO *prMsduInfo,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief            NAF TX Done Callback - for NDP negotiation (DP Response)
-*
-* \param[in]
-*
-* \return Status
-*/
+ * \brief            NAF TX Done Callback - for NDP negotiation (DP Response)
+ *
+ * \param[in]
+ *
+ * \return Status
+ */
 /*----------------------------------------------------------------------------*/
 uint32_t
 nanDPRespTxDone(IN struct ADAPTER *prAdapter, IN struct MSDU_INFO *prMsduInfo,
@@ -5219,7 +5235,7 @@ nanDPRespTxDone(IN struct ADAPTER *prAdapter, IN struct MSDU_INFO *prMsduInfo,
 		}
 	}
 
-	/* Send rsp event to wifi hal*/
+	/* Send rsp event to wifi hal */
 	nanNdpResponderRspEvent(prAdapter, prNDP, rTxDoneStatus);
 
 	return WLAN_STATUS_SUCCESS;
@@ -5227,12 +5243,12 @@ nanDPRespTxDone(IN struct ADAPTER *prAdapter, IN struct MSDU_INFO *prMsduInfo,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief            NAF TX Done Callback - for NDP negotiation (DP Confirm)
-*
-* \param[in]
-*
-* \return Status
-*/
+ * \brief            NAF TX Done Callback - for NDP negotiation (DP Confirm)
+ *
+ * \param[in]
+ *
+ * \return Status
+ */
 /*----------------------------------------------------------------------------*/
 uint32_t
 nanDPConfirmTxDone(IN struct ADAPTER *prAdapter,
@@ -5336,12 +5352,12 @@ nanDPConfirmTxDone(IN struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief        NAF TX Done Callback - for NDP negotiation (DP Security Install)
-*
-* \param[in]
-*
-* \return Status
-*/
+ * \brief       NAF TX Done Callback - for NDP negotiation (DP Security Install)
+ *
+ * \param[in]
+ *
+ * \return Status
+ */
 /*----------------------------------------------------------------------------*/
 uint32_t
 nanDPSecurityInstallTxDone(IN struct ADAPTER *prAdapter,
@@ -5441,12 +5457,12 @@ nanDPSecurityInstallTxDone(IN struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief            NAF TX Done Callback - for NDP negotiation (DP Termination)
-*
-* \param[in]
-*
-* \return Status
-*/
+ * \brief            NAF TX Done Callback - for NDP negotiation (DP Termination)
+ *
+ * \param[in]
+ *
+ * \return Status
+ */
 /*----------------------------------------------------------------------------*/
 uint32_t
 nanDPTerminationTxDone(IN struct ADAPTER *prAdapter,
@@ -5532,12 +5548,12 @@ nanDPTerminationTxDone(IN struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief           NAF TX Done Callback - for NDL negotiation (Schedule Request)
-*
-* \param[in]
-*
-* \return Status
-*/
+ * \brief          NAF TX Done Callback - for NDL negotiation (Schedule Request)
+ *
+ * \param[in]
+ *
+ * \return Status
+ */
 /*----------------------------------------------------------------------------*/
 uint32_t
 nanDataEngineScheduleReqTxDone(IN struct ADAPTER *prAdapter,
@@ -5571,8 +5587,9 @@ nanDataEngineScheduleReqTxDone(IN struct ADAPTER *prAdapter,
 				prAdapter,
 				NDL_INITIATOR_WAITFOR_RX_SCHEDULE_RESPONSE,
 				prNDL);
-		/* else */
-		/* unexpected state - ignore */
+		/* else
+		 * unexpected state - ignore
+		 */
 	} else {
 		if (prNDL->eCurrentNDLMgmtState ==
 		    NDL_INITIATOR_TX_SCHEDULE_REQUEST) {
@@ -5596,12 +5613,12 @@ nanDataEngineScheduleReqTxDone(IN struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brie           NAF TX Done Callback - for NDL negotiation (Schedule Response)
-*
-* \param[in]
-*
-* \return Status
-*/
+ * \brie          NAF TX Done Callback - for NDL negotiation (Schedule Response)
+ *
+ * \param[in]
+ *
+ * \return Status
+ */
 /*----------------------------------------------------------------------------*/
 uint32_t
 nanDataEngineScheduleRespTxDone(IN struct ADAPTER *prAdapter,
@@ -5679,12 +5696,12 @@ nanDataEngineScheduleRespTxDone(IN struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief           NAF TX Done Callback - for NDL negotiation (Schedule Confirm)
-*
-* \param[in]
-*
-* \return Status
-*/
+ * \brief          NAF TX Done Callback - for NDL negotiation (Schedule Confirm)
+ *
+ * \param[in]
+ *
+ * \return Status
+ */
 /*----------------------------------------------------------------------------*/
 uint32_t
 nanDataEngineScheduleConfirmTxDone(IN struct ADAPTER *prAdapter,
@@ -5754,13 +5771,13 @@ nanDataEngineScheduleConfirmTxDone(IN struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief            NAF TX Done Callback - for NDL negotiation -
-*                                            (Schedule Update Notification)
-*
-* \param[in]
-*
-* \return Status
-*/
+ * \brief            NAF TX Done Callback - for NDL negotiation -
+ *                                            (Schedule Update Notification)
+ *
+ * \param[in]
+ *
+ * \return Status
+ */
 /*----------------------------------------------------------------------------*/
 uint32_t
 nanDataEngineScheduleUpdateNotificationTxDone(
@@ -5803,12 +5820,12 @@ nanDataEngineScheduleUpdateNotificationTxDone(
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief            NAF TX Wrapper Function
-*
-* \param[in]
-*
-* \return Status
-*/
+ * \brief            NAF TX Wrapper Function
+ *
+ * \param[in]
+ *
+ * \return Status
+ */
 /*----------------------------------------------------------------------------*/
 uint32_t
 nanDataEngineSendNAF(IN struct ADAPTER *prAdapter,
@@ -5860,12 +5877,12 @@ nanDataEngineSendNAF(IN struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief            NDP TX Type Status Generation
-*
-* \param[in]
-*
-* \return Status
-*/
+ * \brief            NDP TX Type Status Generation
+ *
+ * \param[in]
+ *
+ * \return Status
+ */
 /*----------------------------------------------------------------------------*/
 uint32_t
 nanNdpUpdateTypeStatus(IN struct ADAPTER *prAdapter,
@@ -5919,12 +5936,12 @@ nanNdpUpdateTypeStatus(IN struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief            NDP Dialog Token Generation
-*
-* \param[in]
-*
-* \return Status
-*/
+ * \brief            NDP Dialog Token Generation
+ *
+ * \param[in]
+ *
+ * \return Status
+ */
 /*----------------------------------------------------------------------------*/
 uint32_t
 nanNdpGenerateDialogToken(IN struct ADAPTER *prAdapter,
@@ -5954,12 +5971,12 @@ nanNdpGenerateDialogToken(IN struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief            NDL Dialog Token Generation
-*
-* \param[in]
-*
-* \return Status
-*/
+ * \brief            NDL Dialog Token Generation
+ *
+ * \param[in]
+ *
+ * \return Status
+ */
 /*----------------------------------------------------------------------------*/
 uint32_t
 nanNdlGenerateDialogToken(IN struct ADAPTER *prAdapter,
@@ -5988,12 +6005,12 @@ nanNdlGenerateDialogToken(IN struct ADAPTER *prAdapter,
 }
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief            NDP/NDPE APP-INFO Buffer/Update Function
-*
-* \param[in]
-*
-* \return Status
-*/
+ * \brief            NDP/NDPE APP-INFO Buffer/Update Function
+ *
+ * \param[in]
+ *
+ * \return Status
+ */
 /*----------------------------------------------------------------------------*/
 uint32_t
 nanDataEngineUpdateSSI(IN struct ADAPTER *prAdapter,
@@ -6088,12 +6105,12 @@ nanDataEngineUpdateSSI(IN struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief            NDP/NDPE APP-INFO Buffer/Update Function
-*
-* \param[in]
-*
-* \return Status
-*/
+ * \brief            NDP/NDPE APP-INFO Buffer/Update Function
+ *
+ * \param[in]
+ *
+ * \return Status
+ */
 /*----------------------------------------------------------------------------*/
 uint32_t
 nanDataEngineUpdateAppInfo(IN struct ADAPTER *prAdapter,
@@ -6121,7 +6138,7 @@ nanDataEngineUpdateAppInfo(IN struct ADAPTER *prAdapter,
 		return WLAN_STATUS_INVALID_DATA;
 	}
 
-	if (pucAppInfo) {
+	if (!pucAppInfo) {
 		DBGLOG(NAN, ERROR, "[%s] pucAppInfo error\n", __func__);
 		return WLAN_STATUS_INVALID_DATA;
 	}
@@ -6156,12 +6173,12 @@ nanDataEngineUpdateAppInfo(IN struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief            NDPE OTHER APP-INFO Buffer/Update Function
-*
-* \param[in]
-*
-* \return Status
-*/
+ * \brief            NDPE OTHER APP-INFO Buffer/Update Function
+ *
+ * \param[in]
+ *
+ * \return Status
+ */
 /*----------------------------------------------------------------------------*/
 uint32_t
 nanDataEngineUpdateOtherAppInfo(
@@ -6228,12 +6245,12 @@ nanDataEngineUpdateOtherAppInfo(
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief            NAN_ATTR
-*
-* \param[in]
-*
-* \return Status
-*/
+ * \brief            NAN_ATTR
+ *
+ * \param[in]
+ *
+ * \return Status
+ */
 /*----------------------------------------------------------------------------*/
 uint32_t
 nanDataEngineGetECAttr(struct ADAPTER *prAdapter, uint8_t **ppucECAttr,
@@ -6269,12 +6286,12 @@ nanDataEngineGetECAttr(struct ADAPTER *prAdapter, uint8_t **ppucECAttr,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief            NAN_ATTR
-*
-* \param[in]
-*
-* \return Status
-*/
+ * \brief            NAN_ATTR
+ *
+ * \param[in]
+ *
+ * \return Status
+ */
 /*----------------------------------------------------------------------------*/
 uint32_t
 nanDataEngineGetECAttrImpl(struct ADAPTER *prAdapter,
@@ -6354,12 +6371,12 @@ nanDataEngineGetECAttrImpl(struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief            NDL timer stopping
-*
-* \param[in]
-*
-* \return Status
-*/
+ * \brief            NDL timer stopping
+ *
+ * \param[in]
+ *
+ * \return Status
+ */
 /*----------------------------------------------------------------------------*/
 uint32_t
 nanNdlDeactivateTimers(IN struct ADAPTER *prAdapter,
@@ -6385,12 +6402,12 @@ nanNdlDeactivateTimers(IN struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief            NDL Request Management
-*
-* \param[in]
-*
-* \return Status
-*/
+ * \brief            NDL Request Management
+ *
+ * \param[in]
+ *
+ * \return Status
+ */
 /*----------------------------------------------------------------------------*/
 uint32_t
 nanDataEngineInsertRequest(IN struct ADAPTER *prAdapter,
@@ -6422,7 +6439,7 @@ nanDataEngineInsertRequest(IN struct ADAPTER *prAdapter,
 
 	prReq->eRequestType = eRequestType;
 	prReq->prNDP = prNDP;
-#if 0 /* whsu: skip for skip the calling parameter enum error !!!*/
+#if 0 /* skip for skip the calling parameter enum error !!! */
 	prReq->eRequestType = eNDLRole;
 #endif
 	LINK_INSERT_TAIL(&(prNDL->rPendingReqList), &(prReq->rLinkEntry));
@@ -6432,12 +6449,12 @@ nanDataEngineInsertRequest(IN struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief            NDL Request Management
-*
-* \param[in]
-*
-* \return Status
-*/
+ * \brief            NDL Request Management
+ *
+ * \param[in]
+ *
+ * \return Status
+ */
 /*----------------------------------------------------------------------------*/
 uint32_t
 nanDataEngineFlushRequest(IN struct ADAPTER *prAdapter,
@@ -6462,12 +6479,12 @@ nanDataEngineFlushRequest(IN struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief            NDL Request Management
-*
-* \param[in]
-*
-* \return Status
-*/
+ * \brief            NDL Request Management
+ *
+ * \param[in]
+ *
+ * \return Status
+ */
 /*----------------------------------------------------------------------------*/
 struct _NAN_DATA_ENGINE_REQUEST_T *
 nanDataEngineGetNextRequest(IN struct ADAPTER *prAdapter,
@@ -6492,12 +6509,12 @@ nanDataEngineGetNextRequest(IN struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief            NDL Request Management
-*
-* \param[in]
-*
-* \return Status
-*/
+ * \brief            NDL Request Management
+ *
+ * \param[in]
+ *
+ * \return Status
+ */
 /*----------------------------------------------------------------------------*/
 
 uint32_t

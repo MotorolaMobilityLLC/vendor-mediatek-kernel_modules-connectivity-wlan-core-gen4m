@@ -177,6 +177,31 @@ static void rlmRecOpModeBwForClient(uint8_t ucVhtOpModeChannelWidth,
  *******************************************************************************
  */
 
+uint8_t rlmMaxBwToVhtBw(uint8_t ucMaxBw)
+{
+	uint8_t ucVhtBw = VHT_OP_CHANNEL_WIDTH_20_40;
+
+	switch (ucMaxBw) {
+	case MAX_BW_20MHZ:
+	case MAX_BW_40MHZ:
+		ucVhtBw = VHT_OP_CHANNEL_WIDTH_20_40;
+		break;
+	case MAX_BW_80MHZ:
+		ucVhtBw = VHT_OP_CHANNEL_WIDTH_80;
+		break;
+	case MAX_BW_160MHZ:
+		ucVhtBw = VHT_OP_CHANNEL_WIDTH_160;
+		break;
+	case MAX_BW_80_80_MHZ:
+		ucVhtBw = VHT_OP_CHANNEL_WIDTH_80P80;
+		break;
+	default:
+		break;
+	}
+
+	return ucVhtBw;
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief
@@ -382,9 +407,9 @@ void rlmReqGenerateExtCapIE(struct ADAPTER *prAdapter,
 
 	prStaRec = cnmGetStaRecByIndex(prAdapter, prMsduInfo->ucStaRecIndex);
 
-	if (!prStaRec || RLM_NET_IS_11N(prBssInfo)
+	if (!prStaRec || (prStaRec->ucPhyTypeSet & PHY_TYPE_SET_802_11N)
 #if (CFG_SUPPORT_802_11AX == 1)
-		|| RLM_NET_IS_11AX(prBssInfo)
+		|| (prStaRec->ucPhyTypeSet & PHY_TYPE_SET_802_11AX)
 #endif
 		)
 		rlmFillExtCapIE(prAdapter, prBssInfo, prMsduInfo);
@@ -922,17 +947,16 @@ static void rlmFillExtCapIE(struct ADAPTER *prAdapter,
 			    struct BSS_INFO *prBssInfo,
 			    struct MSDU_INFO *prMsduInfo)
 {
-#if CFG_SUPPORT_PASSPOINT
-	struct IE_HS20_EXT_CAP_T *prHsExtCap;
-	struct HS20_INFO *prHS20Info;
-#else
 	struct IE_EXT_CAP *prExtCap;
-#endif
 	u_int8_t fg40mAllowed, fgAppendVhtCap;
 	struct STA_RECORD *prStaRec;
 	struct CONNECTION_SETTINGS *prConnSettings;
 	const uint8_t *extCapConn;
 	uint32_t extCapIeLen = 0;
+#if CFG_SUPPORT_PASSPOINT
+	struct HS20_INFO *prHS20Info = aisGetHS20Info(
+			prAdapter, prBssInfo->ucBssIndex);
+#endif
 
 	ASSERT(prAdapter);
 	ASSERT(prMsduInfo);
@@ -948,124 +972,18 @@ static void rlmFillExtCapIE(struct ADAPTER *prAdapter,
 		DBGLOG_MEM8(SAA, INFO, extCapConn, extCapIeLen);
 	}
 
-#if CFG_SUPPORT_PASSPOINT
-	prHS20Info = aisGetHS20Info(prAdapter,
-			prBssInfo->ucBssIndex);
-	if (!prHS20Info)
-		return;
-
-	prHsExtCap =
-		(struct IE_HS20_EXT_CAP_T *)(((uint8_t *)prMsduInfo->prPacket) +
-					     prMsduInfo->u2FrameLength);
-	prHsExtCap->ucId = ELEM_ID_EXTENDED_CAP;
-
-	if (prHS20Info->fgConnectHS20AP == TRUE)
-		prHsExtCap->ucLength = ELEM_MAX_LEN_EXT_CAP;
-	else
-		prHsExtCap->ucLength = 3 - ELEM_HDR_LEN;
-
-	kalMemZero(prHsExtCap->aucCapabilities,
-			sizeof(prHsExtCap->aucCapabilities));
-
-	prHsExtCap->aucCapabilities[0] = ELEM_EXT_CAP_DEFAULT_VAL;
-
-	if (!fg40mAllowed)
-		prHsExtCap->aucCapabilities[0] &=
-			~ELEM_EXT_CAP_20_40_COEXIST_SUPPORT;
-
-	if (prBssInfo->eCurrentOPMode != OP_MODE_INFRASTRUCTURE)
-		prHsExtCap->aucCapabilities[0] &= ~ELEM_EXT_CAP_PSMP_CAP;
-
-#if CFG_SUPPORT_802_11AC
-	prStaRec = cnmGetStaRecByIndex(prAdapter, prMsduInfo->ucStaRecIndex);
-	fgAppendVhtCap = FALSE;
-
-	/* Check append rule */
-	if (prAdapter->rWifiVar.ucAvailablePhyTypeSet
-		& PHY_TYPE_SET_802_11AC) {
-		/* Note: For AIS connecting state,
-		 * structure in BSS_INFO will not be inited
-		 *	 So, we check StaRec instead of BssInfo
-		 */
-		if (prStaRec) {
-			if (prStaRec->ucPhyTypeSet & PHY_TYPE_SET_802_11AC)
-				fgAppendVhtCap = TRUE;
-		} else if (RLM_NET_IS_11AC(prBssInfo) &&
-				((prBssInfo->eCurrentOPMode ==
-				OP_MODE_INFRASTRUCTURE) ||
-				(prBssInfo->eCurrentOPMode ==
-				OP_MODE_ACCESS_POINT))) {
-			fgAppendVhtCap = TRUE;
-		}
-
-	}
-
-	if (fgAppendVhtCap) {
-		if (prHsExtCap->ucLength < ELEM_MAX_LEN_EXT_CAP)
-			prHsExtCap->ucLength = ELEM_MAX_LEN_EXT_CAP;
-
-		SET_EXT_CAP(prHsExtCap->aucCapabilities, ELEM_MAX_LEN_EXT_CAP,
-			    ELEM_EXT_CAP_OP_MODE_NOTIFICATION_BIT);
-	}
-#endif
-
-	if (prHS20Info->fgConnectHS20AP == TRUE) {
-		SET_EXT_CAP(prHsExtCap->aucCapabilities, ELEM_MAX_LEN_EXT_CAP,
-			    ELEM_EXT_CAP_INTERWORKING_BIT);
-		SET_EXT_CAP(prHsExtCap->aucCapabilities, ELEM_MAX_LEN_EXT_CAP,
-			    ELEM_EXT_CAP_QOSMAPSET_BIT);
-		SET_EXT_CAP(prHsExtCap->aucCapabilities, ELEM_MAX_LEN_EXT_CAP,
-			    ELEM_EXT_CAP_BSS_TRANSITION_BIT);
-		/* For R2 WNM-Notification */
-		SET_EXT_CAP(prHsExtCap->aucCapabilities, ELEM_MAX_LEN_EXT_CAP,
-			    ELEM_EXT_CAP_WNM_NOTIFICATION_BIT);
-	}
-
-#if CFG_SUPPORT_802_11V_BSS_TRANSITION_MGT
-	prHsExtCap->ucLength = ELEM_MAX_LEN_EXT_CAP;
-	SET_EXT_CAP(prHsExtCap->aucCapabilities, ELEM_MAX_LEN_EXT_CAP,
-		    ELEM_EXT_CAP_BSS_TRANSITION_BIT);
-#endif
-
-#if (CFG_SUPPORT_802_11V_MBSSID == 1)
-	if (prBssInfo->eCurrentOPMode != OP_MODE_ACCESS_POINT) {
-	prHsExtCap->ucLength = ELEM_MAX_LEN_EXT_CAP;
-	SET_EXT_CAP(prHsExtCap->aucCapabilities, ELEM_MAX_LEN_EXT_CAP,
-		    ELEM_EXT_CAP_MBSSID_BIT);
-	}
-#endif
-
-	if (extCapConn) {
-		if ((extCapIeLen - ELEM_HDR_LEN) > prHsExtCap->ucLength)
-			prHsExtCap->ucLength = ELEM_MAX_LEN_EXT_CAP;
-		rlmSyncExtCapIEwithSupplicant(prHsExtCap->aucCapabilities,
-			extCapConn, extCapIeLen);
-	} else
-		DBGLOG(RLM, WARN, "extCapConn = NULL!");
-
-	ASSERT(IE_SIZE(prHsExtCap) <= (ELEM_HDR_LEN + ELEM_MAX_LEN_EXT_CAP));
-
-	prMsduInfo->u2FrameLength += IE_SIZE(prHsExtCap);
-
-#else
 	/* Add Extended Capabilities IE */
 	prExtCap = (struct IE_EXT_CAP *)(((uint8_t *)prMsduInfo->prPacket) +
 					 prMsduInfo->u2FrameLength);
 
 	prExtCap->ucId = ELEM_ID_EXTENDED_CAP;
-
-	prExtCap->ucLength = 3 - ELEM_HDR_LEN;
+	prExtCap->ucLength = ELEM_MAX_LEN_EXT_CAP;
 	kalMemZero(prExtCap->aucCapabilities,
 				sizeof(prExtCap->aucCapabilities));
 
-	prExtCap->aucCapabilities[0] = ELEM_EXT_CAP_DEFAULT_VAL;
-
-	if (!fg40mAllowed)
-		prExtCap->aucCapabilities[0] &=
-			~ELEM_EXT_CAP_20_40_COEXIST_SUPPORT;
-
-	if (prBssInfo->eCurrentOPMode != OP_MODE_INFRASTRUCTURE)
-		prExtCap->aucCapabilities[0] &= ~ELEM_EXT_CAP_PSMP_CAP;
+	if (fg40mAllowed)
+		SET_EXT_CAP(prExtCap->aucCapabilities, ELEM_MAX_LEN_EXT_CAP,
+			    ELEM_EXT_CAP_20_40_COEXIST_SUPPORT);
 
 #if CFG_SUPPORT_802_11AC
 	prStaRec = cnmGetStaRecByIndex(prAdapter, prMsduInfo->ucStaRecIndex);
@@ -1090,38 +1008,38 @@ static void rlmFillExtCapIE(struct ADAPTER *prAdapter,
 		}
 	}
 
-	if (fgAppendVhtCap) {
-		if (prExtCap->ucLength < ELEM_MAX_LEN_EXT_CAP)
-			prExtCap->ucLength = ELEM_MAX_LEN_EXT_CAP;
-
+	if (fgAppendVhtCap)
 		SET_EXT_CAP(prExtCap->aucCapabilities, ELEM_MAX_LEN_EXT_CAP,
 			    ELEM_EXT_CAP_OP_MODE_NOTIFICATION_BIT);
-	}
 #endif
 
 #if (CFG_SUPPORT_TWT == 1)
-	prExtCap->aucCapabilities[ELEM_EXT_CAP_TWT_REQUESTER_BIT >> 3] |=
-		BIT(ELEM_EXT_CAP_TWT_REQUESTER_BIT % 8);
+	SET_EXT_CAP(prExtCap->aucCapabilities, ELEM_MAX_LEN_EXT_CAP,
+			    ELEM_EXT_CAP_TWT_REQUESTER_BIT);
+#endif
+
+#if CFG_SUPPORT_PASSPOINT
+	if (prHS20Info && prHS20Info->fgConnectHS20AP == TRUE) {
+		SET_EXT_CAP(prExtCap->aucCapabilities, ELEM_MAX_LEN_EXT_CAP,
+			    ELEM_EXT_CAP_INTERWORKING_BIT);
+		SET_EXT_CAP(prExtCap->aucCapabilities, ELEM_MAX_LEN_EXT_CAP,
+			    ELEM_EXT_CAP_QOSMAPSET_BIT);
+		SET_EXT_CAP(prExtCap->aucCapabilities, ELEM_MAX_LEN_EXT_CAP,
+			    ELEM_EXT_CAP_BSS_TRANSITION_BIT);
+		SET_EXT_CAP(prExtCap->aucCapabilities, ELEM_MAX_LEN_EXT_CAP,
+			    ELEM_EXT_CAP_WNM_NOTIFICATION_BIT);
+	}
 #endif
 
 #if CFG_SUPPORT_802_11V_BSS_TRANSITION_MGT
-	prExtCap->ucLength = ELEM_MAX_LEN_EXT_CAP;
 	SET_EXT_CAP(prExtCap->aucCapabilities, ELEM_MAX_LEN_EXT_CAP,
 				ELEM_EXT_CAP_BSS_TRANSITION_BIT);
 #endif
 
 #if (CFG_SUPPORT_802_11V_MBSSID == 1)
-	if (prBssInfo->eCurrentOPMode != OP_MODE_ACCESS_POINT) {
-	prExtCap->ucLength = ELEM_MAX_LEN_EXT_CAP;
-	SET_EXT_CAP(prExtCap->aucCapabilities, ELEM_MAX_LEN_EXT_CAP,
+	if (prBssInfo->eCurrentOPMode != OP_MODE_ACCESS_POINT)
+		SET_EXT_CAP(prExtCap->aucCapabilities, ELEM_MAX_LEN_EXT_CAP,
 				ELEM_EXT_CAP_MBSSID_BIT);
-	}
-#endif
-
-#if (CFG_SUPPORT_802_11AX == 1)
-	if ((prBssInfo->eCurrentOPMode == OP_MODE_ACCESS_POINT)
-		&& !RLM_NET_IS_11AX(prBssInfo))
-		prExtCap->ucLength = ELEM_MAX_LEN_EXT_CAP_11ABGNAC;
 #endif
 
 	if (extCapConn) {
@@ -1132,10 +1050,14 @@ static void rlmFillExtCapIE(struct ADAPTER *prAdapter,
 	} else
 		DBGLOG(RLM, WARN, "extCapConn = NULL!");
 
+	while (prExtCap->ucLength > 0 &&
+		prExtCap->aucCapabilities[prExtCap->ucLength - 1] == 0) {
+		prExtCap->ucLength--;
+	}
+
 	ASSERT(IE_SIZE(prExtCap) <= (ELEM_HDR_LEN + ELEM_MAX_LEN_EXT_CAP));
 
 	prMsduInfo->u2FrameLength += IE_SIZE(prExtCap);
-#endif
 }
 
 void rlmSyncExtCapIEwithSupplicant(uint8_t *aucCapabilities,
@@ -1671,6 +1593,12 @@ VHT_CAP_INFO_COMPRESSED_STEERING_NUMBER_OF_BEAMFORMER_ANTENNAS_4_SUP;
 			prBssInfo->ucOpTxNss >= 2)
 		prVhtCap->u4VhtCapInfo |= VHT_CAP_INFO_TX_STBC;
 
+	prVhtCap->u4VhtCapInfo |=
+		((VHT_CAP_INFO_EXT_NSS_BW_SUPPORT
+			<< VHT_CAP_INFO_EXT_NSS_BW_SUPPORT_OFFSET) &
+		 VHT_CAP_INFO_EXT_NSS_BW_SUPPORT_MASK);
+
+
 	/*set MCS map */
 	prVhtSupportedMcsSet = &prVhtCap->rVhtSupportedMcsSet;
 	kalMemZero((void *)prVhtSupportedMcsSet,
@@ -1707,6 +1635,9 @@ VHT_CAP_INFO_COMPRESSED_STEERING_NUMBER_OF_BEAMFORMER_ANTENNAS_4_SUP;
 		VHT_CAP_INFO_DEFAULT_HIGHEST_DATA_RATE;
 	prVhtSupportedMcsSet->u2TxHighestSupportedDataRate =
 		VHT_CAP_INFO_DEFAULT_HIGHEST_DATA_RATE;
+
+	prVhtSupportedMcsSet->u2TxHighestSupportedDataRate
+		|= VHT_CAP_INFO_EXT_NSS_BW_CAP;
 
 	ASSERT(IE_SIZE(prVhtCap) <= (ELEM_HDR_LEN + ELEM_MAX_LEN_VHT_CAP));
 
@@ -1760,6 +1691,22 @@ void rlmFillVhtOpIE(struct ADAPTER *prAdapter, struct BSS_INFO *prBssInfo,
 		/* TODO: BW80 + 80/160 support */
 	}
 #endif
+
+	/* VHT-4.2.58 */
+	if (IS_BSS_APGO(prBssInfo) &&
+		(prBssInfo->ucVhtChannelWidth == VHT_OP_CHANNEL_WIDTH_160)) {
+		/*
+		 * Convert 160 MHz channel width to new style as interop
+		 * workaround.
+		 */
+		prVhtOp->ucVhtOperation[0] = 1;
+		prVhtOp->ucVhtOperation[2] = prVhtOp->ucVhtOperation[1];
+		if (prBssInfo->ucPrimaryChannel <
+			prBssInfo->ucVhtChannelFrequencyS1)
+			prVhtOp->ucVhtOperation[1] -= 8;
+		else
+			prVhtOp->ucVhtOperation[1] += 8;
+	}
 
 	prVhtOp->u2VhtBasicMcsSet = prBssInfo->u2VhtBasicMcsSet;
 
@@ -2176,7 +2123,8 @@ void rlmTransferHe6gOpInfor(IN uint8_t ucChannelNum,
 
 	/* Revise SCO */
 	*peSco = rlmReviseSco(*pucChannelWidth,
-		ucChannelNum, *pucCenterFreqS1);
+		ucChannelNum, *pucCenterFreqS1,
+		*peSco, MAX_BW_UNKNOWN);
 }
 
 void rlmModifyHE6GBwPara(uint8_t ucHe6gChannelWidth,
@@ -2360,7 +2308,8 @@ void rlmReviseMaxBw(struct ADAPTER *prAdapter, uint8_t ucBssIndex,
 
 	/* Revise SCO */
 	eScoModify = rlmReviseSco(*peChannelWidth,
-		*pucPrimaryCh, *pucS1);
+		*pucPrimaryCh, *pucS1,
+		eScoOrigin, ucMaxBandwidth);
 
 	if (eScoOrigin != eScoModify) {
 		*peExtend = eScoModify;
@@ -2382,41 +2331,15 @@ void rlmReviseMaxBw(struct ADAPTER *prAdapter, uint8_t ucBssIndex,
 enum ENUM_CHNL_EXT rlmReviseSco(
 	IN enum ENUM_CHANNEL_WIDTH eChannelWidth,
 	IN uint8_t ucPrimaryCh,
-	IN uint8_t ucS1)
+	IN uint8_t ucS1,
+	IN enum ENUM_CHNL_EXT eScoOrigin,
+	IN uint8_t ucMaxBandwidth)
 {
-	int8_t cDelta;
-	enum ENUM_CHNL_EXT eAndOneSCO;
-	enum ENUM_CHNL_EXT eSCO = CHNL_EXT_SCN;
+	enum ENUM_CHNL_EXT eSCO = eScoOrigin;
 
 	if (eChannelWidth == CW_20_40MHZ) {
-		if (ucS1 == 0)
+		if (ucMaxBandwidth == MAX_BW_20MHZ)
 			eSCO = CHNL_EXT_SCN;
-		else if (ucS1 > ucPrimaryCh)
-			eSCO = CHNL_EXT_SCA;
-		else if (ucS1 < ucPrimaryCh)
-			eSCO = CHNL_EXT_SCB;
-	} else if (eChannelWidth > CW_20_40MHZ) {
-		/* P: PriChnl
-		 * A: CHNL_EXT_SCA
-		 * B: CHNL_EXT_SCB
-		 */
-		/* --|----|--CenterFreqS1--|----|-- */
-		/* --|----|--CenterFreqS1--B----P-- */
-		/* --|----|--CenterFreqS1--P----A-- */
-		cDelta = ucPrimaryCh - ucS1;
-		eAndOneSCO = CHNL_EXT_SCB;
-		eSCO = CHNL_EXT_SCA;
-		if (cDelta < 0) {
-			/* --|----|--CenterFreqS1--|----|-- */
-			/* --P----A--CenterFreqS1--|----|-- */
-			/* --B----P--CenterFreqS1--|----|-- */
-			eAndOneSCO = CHNL_EXT_SCA;
-			eSCO = CHNL_EXT_SCB;
-			cDelta = -cDelta;
-		}
-		cDelta = cDelta - 2;
-		if ((cDelta/4) & 1)
-			eSCO = eAndOneSCO;
 	}
 
 	return eSCO;
@@ -4515,6 +4438,10 @@ void rlmProcessAssocReq(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb,
 #if (CFG_SUPPORT_802_11AX == 1)
 			if (IE_ID_EXT(pucIE) == ELEM_EXT_ID_HE_CAP)
 				heRlmRecHeCapInfo(prAdapter, prStaRec, pucIE);
+#if (CFG_SUPPORT_WIFI_6G == 1)
+			if (IE_ID_EXT(pucIE) == ELEM_EXT_ID_HE_6G_BAND_CAP)
+				heRlmRecHe6GCapInfo(prAdapter, prStaRec, pucIE);
+#endif
 #endif
 #if (CFG_SUPPORT_802_11BE == 1)
 			if (IE_ID_EXT(pucIE) == EID_EXT_EHT_CAPS)
@@ -4950,7 +4877,6 @@ uint32_t rlmFillNANHTCapIE(struct ADAPTER *prAdapter,
 
 	prHtCap->u4TxBeamformingCap = TX_BEAMFORMING_CAP_DEFAULT_VAL;
 
-	/* whsu!! */
 	/* (prAdapter->rWifiVar.ucDbdcMode == DBDC_MODE_DISABLED) || */
 	if (prBssInfo->eBand == BAND_5G) {
 		if (IS_FEATURE_ENABLED(prAdapter->rWifiVar.ucStaHtBfee))
@@ -4993,7 +4919,7 @@ uint32_t rlmFillNANVHTCapIE(struct ADAPTER *prAdapter,
 
 	prVhtCap->u4VhtCapInfo = VHT_CAP_INFO_DEFAULT_VAL;
 
-	/*ucMaxBw = cnmGetBssMaxBw(prAdapter, prBssInfo->ucBssIndex);*/
+	/* ucMaxBw = cnmGetBssMaxBw(prAdapter, prBssInfo->ucBssIndex); */
 	ucMaxBw = prAdapter->rWifiVar.ucNanBandwidth;
 
 	prVhtCap->u4VhtCapInfo |= (prAdapter->rWifiVar.ucRxMaxMpduLen &
@@ -5055,7 +4981,7 @@ uint32_t rlmFillNANVHTCapIE(struct ADAPTER *prAdapter,
 	if (IS_FEATURE_ENABLED(prAdapter->rWifiVar.ucTxStbc))
 		prVhtCap->u4VhtCapInfo |= VHT_CAP_INFO_TX_STBC;
 
-	/*set MCS map */
+	/* set MCS map */
 	prVhtSupportedMcsSet = &prVhtCap->rVhtSupportedMcsSet;
 	kalMemZero((void *)prVhtSupportedMcsSet,
 		   sizeof(struct VHT_SUPPORTED_MCS_FIELD));
@@ -5078,7 +5004,7 @@ uint32_t rlmFillNANVHTCapIE(struct ADAPTER *prAdapter,
 	prVhtSupportedMcsSet->u2TxHighestSupportedDataRate =
 		VHT_CAP_INFO_DEFAULT_HIGHEST_DATA_RATE;
 
-	if (IE_SIZE(prVhtCap) <= (ELEM_HDR_LEN + ELEM_MAX_LEN_VHT_CAP)) {
+	if (IE_SIZE(prVhtCap) > (ELEM_HDR_LEN + ELEM_MAX_LEN_VHT_CAP)) {
 		DBGLOG(NAN, ERROR, "prVhtCap size error!\n");
 		return 0;
 	}
@@ -6604,22 +6530,6 @@ static void rlmChangeOwnOpInfo(struct ADAPTER *prAdapter,
 	/* Update own operating channel Width */
 	if (prBssInfo->fgIsOpChangeChannelWidth) {
 		if (prBssInfo->ucPhyTypeSet & PHY_TYPE_BIT_HT) {
-#if CFG_SUPPORT_802_11AC
-			/* Update VHT OP Info*/
-			if (prBssInfo->ucPhyTypeSet & PHY_TYPE_BIT_VHT) {
-				rlmFillVhtOpInfoByBssOpBw(
-					prBssInfo,
-					prBssInfo->ucOpChangeChannelWidth);
-
-				DBGLOG(RLM, INFO,
-				       "Update BSS[%d] VHT Channel Width Info to w=%d s1=%d s2=%d\n",
-				       prBssInfo->ucBssIndex,
-				       prBssInfo->ucVhtChannelWidth,
-				       prBssInfo->ucVhtChannelFrequencyS1,
-				       prBssInfo->ucVhtChannelFrequencyS2);
-			}
-#endif
-
 			/* Update HT OP Info*/
 			if (prBssInfo->ucOpChangeChannelWidth == MAX_BW_20MHZ) {
 				prBssInfo->ucHtOpInfo1 &=
@@ -6656,6 +6566,26 @@ static void rlmChangeOwnOpInfo(struct ADAPTER *prAdapter,
 					 HT_OP_INFO1_STA_CHNL_WIDTH_OFFSET),
 			       prBssInfo->eBssSCO);
 		}
+
+#if CFG_SUPPORT_802_11AC
+		/* Update VHT OP Info*/
+		if (prBssInfo->ucPhyTypeSet & PHY_TYPE_BIT_VHT
+#if (CFG_SUPPORT_802_11AX == 1)
+			|| prBssInfo->ucPhyTypeSet & PHY_TYPE_BIT_HE
+#endif
+		) {
+			rlmFillVhtOpInfoByBssOpBw(
+				prBssInfo,
+				prBssInfo->ucOpChangeChannelWidth);
+
+			DBGLOG(RLM, INFO,
+				"Update BSS[%d] VHT Channel Width Info to w=%d s1=%d s2=%d\n",
+				prBssInfo->ucBssIndex,
+				prBssInfo->ucVhtChannelWidth,
+				prBssInfo->ucVhtChannelFrequencyS1,
+				prBssInfo->ucVhtChannelFrequencyS2);
+		}
+#endif
 
 #if (CFG_SUPPORT_802_11AX == 1)
 #if (CFG_SUPPORT_WIFI_6G == 1)

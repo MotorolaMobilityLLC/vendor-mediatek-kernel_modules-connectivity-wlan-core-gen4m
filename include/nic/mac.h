@@ -321,6 +321,8 @@
 #define RATE_HT_PHY         127
 /* BSS Selector - Hash to Element only */
 #define RATE_H2E_ONLY                           123
+#define RATE_H2E_ONLY_VAL                       (0x80 | 123)
+
 /* mask bits for the rate */
 #define RATE_MASK                               BITS(0, 6)
 /* mask bit for the rate belonging to the BSSBasicRateSet */
@@ -1317,7 +1319,10 @@ enum BEACON_REPORT_DETAIL {
 #if (CFG_SUPPORT_TWT == 1)
 #define ELEM_EXT_CAP_TWT_REQUESTER_BIT              77
 #endif
+#define ELEM_EXT_CAP_SAE_PW_USED_BIT                81
+#define ELEM_EXT_CAP_SAE_PW_EX_BIT                  82
 #define ELEM_EXT_CAP_MSCS_BIT                       85
+#define ELEM_EXT_CAP_SAE_PK_BIT                     88
 
 #define ELEM_MAX_LEN_EXT_CAP_11ABGNAC               (8)
 
@@ -1325,11 +1330,8 @@ enum BEACON_REPORT_DETAIL {
 /* TODO */
 #endif
 
-#if (CFG_SUPPORT_802_11AX == 1)
-#define ELEM_MAX_LEN_EXT_CAP                        (10)
-#else
-#define ELEM_MAX_LEN_EXT_CAP                        (8)
-#endif
+/* This length should synchronize with wpa_supplicant */
+#define ELEM_MAX_LEN_EXT_CAP                        (11)
 
 /* 7.3.2.30 TSPEC element */
 /* WMM: 0 (Asynchronous TS of low-duty cycles) */
@@ -1455,6 +1457,11 @@ enum BEACON_REPORT_DETAIL {
 
 #define VHT_CAP_INFO_RX_ANTENNA_PATTERN_CONSISTENCY			BIT(28)
 #define VHT_CAP_INFO_TX_ANTENNA_PATTERN_CONSISTENCY			BIT(29)
+
+/* refer to Table 9-272 Extended NSS BW Support subfield */
+#define VHT_CAP_INFO_EXT_NSS_BW_SUPPORT			0
+#define VHT_CAP_INFO_EXT_NSS_BW_SUPPORT_OFFSET		30
+#define VHT_CAP_INFO_EXT_NSS_BW_SUPPORT_MASK		BITS(30, 31)
 
 #define VHT_CAP_INFO_MCS_MAP_MCS7           0
 #define VHT_CAP_INFO_MCS_MAP_MCS8           BIT(0)
@@ -2675,15 +2682,8 @@ struct IE_QUIET {
 struct IE_EXT_CAP {
 	uint8_t ucId;
 	uint8_t ucLength;
-	uint8_t aucCapabilities[1];
+	uint8_t aucCapabilities[ELEM_MAX_LEN_EXT_CAP];
 } __KAL_ATTRIB_PACKED__;
-
-/* 7.3.2.27 hs20 Extended Capabilities element */
-struct IE_HS20_EXT_CAP_T {
-	uint8_t ucId;
-	uint8_t ucLength;
-	uint8_t aucCapabilities[6];
-};
 
 /* 7.3.2.27 Extended Capabilities element */
 struct IE_RRM_ENABLED_CAP {
@@ -3725,6 +3725,19 @@ struct ACTION_VENDOR_SPEC_PROTECTED_FRAME {
 	uint16_t u2Reserved;
 	uint32_t u4KeyBitmap[4];
 } __KAL_ATTRIB_PACKED__;
+
+struct RSNX_INFO {
+	uint8_t ucElemId;
+	uint8_t ucLength;
+	uint16_t u2Cap;
+} __KAL_ATTRIB_PACKED__;
+
+struct RSNX_INFO_ELEM {
+	uint8_t ucElemId;
+	uint8_t ucLength;
+	uint8_t aucCap[0];
+} __KAL_ATTRIB_PACKED__;
+
 
 #if defined(WINDOWS_DDK) || defined(WINDOWS_CE)
 #pragma pack()

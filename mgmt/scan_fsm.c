@@ -440,6 +440,7 @@ void scnSendScanReqV2(IN struct ADAPTER *prAdapter)
 		(uint8_t *)prCmdScanReq, NULL, 0);
 	log_dbg(SCN, TRACE, "Send %zu bytes\n", sizeof(struct CMD_SCAN_REQ_V2));
 
+	GET_CURRENT_SYSTIME(&prScanInfo->rLastScanStartTime);
 
 	kalMemFree(prCmdScanReq, VIR_MEM_TYPE, sizeof(struct CMD_SCAN_REQ_V2));
 
@@ -1672,3 +1673,82 @@ scnDoScanTimeoutRecoveryCheck(IN struct ADAPTER *prAdapter,
 
 #endif
 
+enum ENUM_SCN_DONE_REASON {
+	SCN_DONE_OK = 0,
+	SCN_DONE_TIMEOUT,
+	SCN_DONE_DRIVER_ABORT,
+	SCN_DONE_NUM
+};
+
+void
+scnFsmNotifyEvent(IN struct ADAPTER *prAdapter,
+		IN enum ENUM_SCAN_STATUS eStatus,
+		IN uint8_t ucBssIndex)
+{
+	struct SCAN_INFO *prScanInfo;
+	char uEvent[300], strbuf[200] = "N/A";
+	uint8_t fgIsScanNormal = TRUE, fgIsDbdcScan = TRUE;
+	uint8_t i, ucReasonInd, ucWritten = 0, fgAnyConnection = FALSE;
+	uint8_t ucTotalLen = 200;
+	uint8_t *apucScnReason[3] = {
+		(uint8_t *) DISP_STRING("OK"),
+		(uint8_t *) DISP_STRING("TIMEOUT"),
+		(uint8_t *) DISP_STRING("DRIVER ABORT"),
+	};
+	uint32_t u4ScanTime = 0;
+
+	/*
+	 * Status: NORMAL, ABNORMAL (scan timeout or driver abort scan both
+	 * classify to ABNORMAL)
+	 * DBDC: ENABLE, DISABLE
+	 * Reason: TIMEOUT, DRIVER ABORT (if status NORMAL, print OK)
+	 * Time: in ms
+	 * Channel: (divide by space) ex: 1 2 3 4 5 6
+	 *
+	 * eStatus = SCAN_STATUS_DONE --> normal scan done OR scan timeout!
+	 * eStatus = SCAN_STATUS_CANCELLED --> driver abort
+	 */
+	prScanInfo = &(prAdapter->rWifiVar.rScanInfo);
+
+	if (prScanInfo->fgIsScanTimeout || eStatus == SCAN_STATUS_CANCELLED) {
+		fgIsScanNormal = FALSE;
+		ucReasonInd = prScanInfo->fgIsScanTimeout ? SCN_DONE_TIMEOUT :
+				SCN_DONE_DRIVER_ABORT;
+		prScanInfo->fgIsScanTimeout = FALSE;
+	}
+	/* Currently FW only do DBDC scan when no connection, but this condition
+	 * might changed.
+	 */
+	for (i = 0; i < KAL_AIS_NUM; i++) {
+		if (IS_BSS_ALIVE(prAdapter, prAdapter->aprBssInfo[i])) {
+			fgAnyConnection	= TRUE;
+			break;
+		}
+	}
+	if (prAdapter->rWifiVar.eDbdcMode == ENUM_DBDC_MODE_DISABLED
+		|| fgAnyConnection)
+		fgIsDbdcScan = FALSE;
+
+	if (fgIsScanNormal) {
+		u4ScanTime = USEC_TO_MSEC(SYSTIME_TO_USEC(kalGetTimeTick()
+					- prScanInfo->rLastScanStartTime));
+		ucReasonInd = SCN_DONE_OK;
+		for (i = 0; i < prScanInfo->ucSparseChannelArrayValidNum; i++) {
+			ucWritten += kalSnprintf(strbuf + ucWritten,
+					ucTotalLen - ucWritten, "%d ",
+					prScanInfo->aucChannelNum[i]);
+		}
+	}
+	kalSnprintf(uEvent, sizeof(uEvent),
+		"Scan=Status:%s,DBDC:%s,Time:%d,Channel:%s,Reason:%s",
+		(fgIsScanNormal ? "NORMAL" : "ABNORMAL"),
+		(fgIsDbdcScan ? "ENABLE" : "DISABLE"),
+		u4ScanTime,
+		strbuf,
+		apucScnReason[ucReasonInd]);
+
+	DBGLOG(SCN, LOUD, "request uevent:%s\n", uEvent);
+	/* Only send Uevent if BSS is AIS */
+	if (IS_BSS_INDEX_AIS(prAdapter, ucBssIndex))
+		kalSendUevent(uEvent);
+}

@@ -76,8 +76,6 @@
 #define PACKED __packed
 
 extern struct NanDataPathInitiatorNDPE g_ndpReqNDPE;
-extern const struct nla_policy
-	mtk_wlan_vendor_ndp_policy[MTK_WLAN_VENDOR_ATTR_NDP_PARAMS_MAX + 1];
 
 enum mtk_wlan_ndp_sub_cmd {
 	MTK_WLAN_VENDOR_ATTR_NDP_INVALID = 0,
@@ -113,8 +111,9 @@ enum mtk_wlan_vendor_attr_ndp_params {
 	MTK_WLAN_VENDOR_ATTR_NDP_SUBCMD,
 	/* Unsigned 16-bit value */
 	MTK_WLAN_VENDOR_ATTR_NDP_TRANSACTION_ID,
-	/* NL attributes for data used NDP SUB cmds */
-	/* Unsigned 32-bit value indicating a service info */
+	/* NL attributes for data used NDP SUB cmds
+	 * Unsigned 32-bit value indicating a service info
+	 */
 	MTK_WLAN_VENDOR_ATTR_NDP_SERVICE_INSTANCE_ID,
 	/* Unsigned 32-bit value; channel frequency in MHz */
 	MTK_WLAN_VENDOR_ATTR_NDP_CHANNEL,
@@ -206,10 +205,14 @@ enum mtk_wlan_vendor_attr_ndp_cfg_security {
 	MTK_WLAN_VENDOR_ATTR_NDP_SECURITY_TYPE = 1,
 };
 
+extern const struct nla_policy
+	mtk_wlan_vendor_ndp_policy[MTK_WLAN_VENDOR_ATTR_NDP_PARAMS_MAX + 1];
+
+
 /*******************************************************************************
  *                  F U N C T I O N   D E C L A R A T I O N S
  *******************************************************************************
-*/
+ */
 uint32_t nanNdiCreateRspEvent(struct ADAPTER *prAdapter);
 
 uint32_t nanNdiDeleteRspEvent(struct ADAPTER *prAdapter);

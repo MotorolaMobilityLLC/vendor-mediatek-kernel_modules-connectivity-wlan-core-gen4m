@@ -1358,16 +1358,16 @@ uint32_t kalRxIndicateOnePkt(IN struct GLUE_INFO
 #if CFG_SUPPORT_NAN
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief Called by driver to indicate event to upper layer, for example, the wpa
-*        supplicant or wireless tools.
-*
-* \param[in] pvAdapter Pointer to the adapter descriptor.
-* \param[in] eStatus Indicated status.
-* \param[in] NAN_BSS_ROLE_INDEX eIndex
-*
-* \return (none)
-*
-*/
+ * \brief Called by driver to indicate event to upper layer, for example, the
+ *        wpa supplicant or wireless tools.
+ *
+ * \param[in] pvAdapter Pointer to the adapter descriptor.
+ * \param[in] eStatus Indicated status.
+ * \param[in] NAN_BSS_ROLE_INDEX eIndex
+ *
+ * \return (none)
+ *
+ */
 /*----------------------------------------------------------------------------*/
 void kalNanIndicateStatusAndComplete(IN struct GLUE_INFO *prGlueInfo,
 				IN uint32_t eStatus, IN uint8_t ucRoleIdx)
@@ -3141,6 +3141,7 @@ kalOidComplete(IN struct GLUE_INFO *prGlueInfo,
 	       IN uint32_t rOidStatus)
 {
 	struct GL_IO_REQ *prIoReq = NULL;
+	struct ADAPTER *prAdapter = prGlueInfo->prAdapter;
 
 	ASSERT(prGlueInfo);
 	/* remove timeout check timer */
@@ -3159,8 +3160,29 @@ kalOidComplete(IN struct GLUE_INFO *prGlueInfo,
 
 		complete(&prGlueInfo->rPendComp);
 	} else {
+		uint32_t wIdx, cIdx;
+		int i;
+
 		DBGLOG(INIT, WARN, "SKIP multiple OID complete!\n");
 		/* WARN_ON(TRUE); */
+
+		if (prAdapter != NULL) {
+			for (i = OID_HDLR_REC_NUM - 1,
+				wIdx = prAdapter->u4WaitRecIdx,
+				cIdx = prAdapter->u4CompRecIdx;
+				i >= 0; i--) {
+				DBGLOG(OID, WARN,
+					"%dth last wait OID hdlr: %s\n",
+					OID_HDLR_REC_NUM - i,
+					prAdapter->arPrevWaitHdlrRec[
+					(wIdx + i) % OID_HDLR_REC_NUM].aucName);
+				DBGLOG(OID, WARN,
+					"%dth last comp OID hdlr: %s\n",
+					OID_HDLR_REC_NUM - i,
+					prAdapter->arPrevCompHdlrRec[
+					(cIdx + i) % OID_HDLR_REC_NUM].aucName);
+			}
+		}
 	}
 
 	if (rOidStatus == WLAN_STATUS_SUCCESS)
@@ -8295,6 +8317,13 @@ uint32_t __weak kalGetCpuBoostThreshold(void)
 	return 1;
 }
 
+#if CFG_SUPPORT_LITTLE_CPU_BOOST
+uint32_t __weak kalGetLittleCpuBoostThreshold(void)
+{
+	return kalGetCpuBoostThreshold();
+}
+#endif /* CFG_SUPPORT_LITTLE_CPU_BOOST */
+
 uint32_t __weak kalGetEmiMetOffset(void)
 {
 	DBGLOG(SW4, WARN, "enter kalGetEmiMetOffset\n");
@@ -8354,6 +8383,12 @@ int32_t __weak kalCheckTputLoad(IN struct ADAPTER *prAdapter,
 			 IN uint32_t u4Used)
 {
 	DBGLOG(SW4, TRACE, "enter kalCheckTputLoad\n");
+	return FALSE;
+}
+
+int32_t __weak kalCheckVcoreBoost(IN struct ADAPTER *prAdapter,
+				  IN uint8_t uBssIndex)
+{
 	return FALSE;
 }
 

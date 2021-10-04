@@ -1368,8 +1368,6 @@ struct MSDU_INFO *qmEnqueueTxPackets(IN struct ADAPTER *prAdapter,
 void qmDetermineStaRecIndex(IN struct ADAPTER *prAdapter,
 	IN struct MSDU_INFO *prMsduInfo)
 {
-	uint32_t i;
-
 	struct STA_RECORD *prTempStaRec;
 	struct BSS_INFO *prBssInfo;
 
@@ -1445,18 +1443,14 @@ void qmDetermineStaRecIndex(IN struct ADAPTER *prAdapter,
 	/* 4 <3> Not BMCAST, No AP --> Compare DA
 	 * (i.e., to see whether this is a unicast frame to a client)
 	 */
-	for (i = 0; i < CFG_STA_REC_NUM; i++) {
-		prTempStaRec = &(prAdapter->arStaRec[i]);
-		if (prTempStaRec->fgIsInUse) {
-			if (EQUAL_MAC_ADDR(prTempStaRec->aucMacAddr,
-				prMsduInfo->aucEthDestAddr)) {
-				prMsduInfo->ucStaRecIndex =
-					prTempStaRec->ucIndex;
-				DBGLOG(QM, LOUD, "TX with STA[%u]\n",
-					prTempStaRec->ucIndex);
-				return;
-			}
-		}
+	prTempStaRec = cnmGetStaRecByAddress(prAdapter,
+			prMsduInfo->ucBssIndex,
+			prMsduInfo->aucEthDestAddr);
+	if (prTempStaRec) {
+		prMsduInfo->ucStaRecIndex = prTempStaRec->ucIndex;
+		DBGLOG(QM, LOUD, "TX with STA[%u]\n",
+			prTempStaRec->ucIndex);
+		return;
 	}
 
 	/* 4 <4> No STA found, Not BMCAST --> Indicate NOT_FOUND to FW */
@@ -1720,8 +1714,9 @@ qmDequeueTxPacketsFromPerStaQueues(IN struct ADAPTER *prAdapter,
 						rCurrentTime,
 						prStaRec->rNanExpiredSendTime);
 
-					/* avoid to flood the kernel log, */
-					/*only the 1st expiry event logged */
+					/* avoid to flood the kernel log,
+					 * only the 1st expiry event logged
+					 */
 					if (fgExpired &&
 					    !prStaRec->fgNanSendTimeExpired)
 						DBGLOG(NAN, TEMP,
@@ -8265,14 +8260,16 @@ void qmHandleRxDhcpPackets(struct ADAPTER *prAdapter,
 	uint8_t *pucData = NULL;
 	uint8_t *pucEthBody = NULL;
 	uint8_t *pucUdpBody = NULL;
-	uint32_t udpLength = 0;
+	uint32_t ipHLen = 0;
+	uint32_t udpLen = 0;
 	uint32_t i = 0;
 	struct BOOTP_PROTOCOL *prBootp = NULL;
 	uint32_t u4DhcpMagicCode = 0;
 	uint8_t dhcpTypeGot = 0;
 	uint8_t dhcpGatewayGot = 0;
 
-	if (prSwRfb->u2PacketLen <= ETHER_HEADER_LEN)
+	/* check if eth header and ip header is safe to read */
+	if (prSwRfb->u2PacketLen <= ETHER_HEADER_LEN + IP_HEADER_LEN)
 		return;
 
 	pucData = (uint8_t *)prSwRfb->pvHeader;
@@ -8282,19 +8279,31 @@ void qmHandleRxDhcpPackets(struct ADAPTER *prAdapter,
 		pucData[ETH_TYPE_LEN_OFFSET + 1]) != ETH_P_IPV4)
 		return;
 
-	pucEthBody = &pucData[ETH_HLEN];
+	/* check ip version and ip proto */
+	pucEthBody = &pucData[ETHER_HEADER_LEN];
 	if (((pucEthBody[0] & IPVH_VERSION_MASK) >>
 		IPVH_VERSION_OFFSET) != IPVERSION)
 		return;
 	if (pucEthBody[9] != IP_PRO_UDP)
 		return;
 
-	pucUdpBody = &pucEthBody[(pucEthBody[0] & 0x0F) * 4];
+	/* check ip header len and if udp header safe to read */
+	ipHLen = (pucEthBody[0] & 0x0F) * 4;
+	if (unlikely(prSwRfb->u2PacketLen <
+		ETHER_HEADER_LEN + ipHLen + UDP_HDR_LEN))
+		return;
+
+	/* check udp port is dhcp */
+	pucUdpBody = &pucEthBody[ipHLen];
 	if ((pucUdpBody[0] << 8 | pucUdpBody[1]) != UDP_PORT_DHCPS ||
 		(pucUdpBody[2] << 8 | pucUdpBody[3]) != UDP_PORT_DHCPC)
 		return;
 
-	udpLength = pucUdpBody[4] << 8 | pucUdpBody[5];
+	udpLen = pucUdpBody[4] << 8 | pucUdpBody[5];
+	/* check if udp payload safe to read */
+	if (unlikely(prSwRfb->u2PacketLen <
+		ETHER_HEADER_LEN + ipHLen + udpLen))
+		return;
 
 	prBootp = (struct BOOTP_PROTOCOL *) &pucUdpBody[8];
 
@@ -8311,7 +8320,7 @@ void qmHandleRxDhcpPackets(struct ADAPTER *prAdapter,
 	 * 2. not sure the dhcp option always usd 255 as a end mark?
 	 *    if so, while condition should be removed?
 	 */
-	while (i < udpLength - 248) {
+	while (i < udpLen - 248) {
 		/* bcz of the strange struct BOOTP_PROTOCOL *,
 		 * the dhcp magic code was count in dhcp options
 		 * so need to [i + 4] to skip it

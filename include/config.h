@@ -546,6 +546,10 @@
 #endif
 #define CFG_RESPONSE_POLLING_DELAY              5
 
+#define CFG_DEFAULT_SLEEP_WAITING_INTERVAL      50
+
+#define CFG_PRE_CAL_SLEEP_WAITING_INTERVAL      50000
+
 /*------------------------------------------------------------------------------
  * Flags and Parameters for Protocol Stack
  *------------------------------------------------------------------------------
@@ -1219,8 +1223,14 @@
 #define CFG_SUPPORT_DBDC	1
 #define CFG_SUPPORT_DBDC_NO_BLOCKING_OPMODE 1
 #define CFG_SUPPORT_SAP_DFS_CHANNEL 1
-#define CFG_SUPPORT_SET_IPV6_NETWORK 0 /* fos_change oneline */
 
+/*------------------------------------------------------------------------------
+ * Flags for Set IPv6 address to firmware
+ *------------------------------------------------------------------------------
+ */
+#ifndef CFG_SUPPORT_SET_IPV6_NETWORK
+#define CFG_SUPPORT_SET_IPV6_NETWORK 0
+#endif
 
 /*------------------------------------------------------------------------------
  * Flags for Using TC4 Resource in ROM code stage
@@ -1633,6 +1643,7 @@
  */
 #define CFG_SUPPORT_TPUT_ON_BIG_CORE 1
 
+#define CFG_SUPPORT_LITTLE_CPU_BOOST 1
 
 /*******************************************************************************
  *                             D A T A   T Y P E S

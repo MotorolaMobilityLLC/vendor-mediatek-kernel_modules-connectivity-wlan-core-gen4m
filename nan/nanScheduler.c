@@ -181,11 +181,10 @@ struct _NAN_PEER_SCHEDULE_RECORD_T {
 
 	struct _NAN_PEER_SCH_DESC_T *prPeerSchDesc;
 
-	/*
-	 * [Common timeline information]
-	 *   1. not support simultaneous availability schedule on local side
-	 *   2. the Map ID refers to the local availability schedule
-	 *       (the Map ID between rmt & local doesn't need to be same)
+	/* [Common timeline information]
+	 * 1. not support simultaneous availability schedule on local side
+	 * 2. the Map ID refers to the local availability schedule
+	 *    (the Map ID between rmt & local doesn't need to be same)
 	 */
 	struct _NAN_NDC_CTRL_T *prCommNdcCtrl;
 	struct _NAN_SCHEDULE_TIMELINE_T rCommImmuNdlTimeline;
@@ -244,7 +243,7 @@ enum _ENUM_NAN_SYNC_SCH_UPDATE_STATE_T {
 	ENUM_NAN_SYNC_SCH_UPDATE_STATE_NUM
 };
 
-/** NAN CRB Negotiation Control Block */
+/* NAN CRB Negotiation Control Block */
 struct _NAN_CRB_NEGO_CTRL_T {
 	uint32_t u4SchIdx;
 
@@ -255,8 +254,9 @@ struct _NAN_CRB_NEGO_CTRL_T {
 	enum _ENUM_NAN_NEGO_TYPE_T eType;
 	enum _ENUM_NAN_NEGO_ROLE_T eRole;
 
-	/* for local proposal or final proposal cache */
-	/* during schedule negotiation */
+	/* for local proposal or final proposal cache
+	 * during schedule negotiation
+	 */
 	struct _NAN_NDC_CTRL_T rSelectedNdcCtrl;
 	struct _NAN_SCHEDULE_TIMELINE_T rImmuNdlTimeline;
 	struct _NAN_SCHEDULE_TIMELINE_T rRangingTimeline;
@@ -300,21 +300,21 @@ struct _NAN_CHANNEL_TIMELINE_T {
 struct _NAN_TIMELINE_MGMT_T {
 	uint8_t ucMapId;
 
-	/** for committed availability type */
+	/* for committed availability type */
 	struct _NAN_CHANNEL_TIMELINE_T
 		arChnlList[NAN_TIMELINE_MGMT_CHNL_LIST_NUM];
 
-	/** for conditional availability type */
+	/* for conditional availability type */
 	unsigned char fgChkCondAvailability;
 	struct _NAN_CHANNEL_TIMELINE_T
 		arCondChnlList[NAN_TIMELINE_MGMT_CHNL_LIST_NUM];
 
-	/** for custom committed FAW */
+	/* for custom committed FAW */
 	struct _NAN_CHANNEL_TIMELINE_T
 		arCustChnlList[NAN_TIMELINE_MGMT_CHNL_LIST_NUM];
 };
 
-/** NAN Scheduler Control Block */
+/* NAN Scheduler Control Block */
 struct _NAN_SCHEDULER_T {
 	unsigned char fgInit;
 
@@ -593,7 +593,7 @@ cnmChConCurrType(IN uint8_t ucPrimaryChNew,
 		    eChannelWidthCurr == CW_80P80MHZ) {
 
 			if (ucChannelS2Curr ==
-				    ucChannelS2New && /*Mirror == Mirror*/
+				    ucChannelS2New && /* Mirror == Mirror */
 			    (ucChannelS1Curr == ucChannelS1New ||
 			     ucChannelS1Curr ==
 				     (ucChannelS2New * 2 - ucChannelS1New))) {
@@ -1421,13 +1421,12 @@ nanUtilDump(struct ADAPTER *prAdapter, uint8_t *pucMsg, uint8_t *pucContent,
 	}
 }
 
-/**
-*   pucTimeBitmapField:
-*       return Time Bitmap Field (must provide at least 67 bytes)
-*
-*   pu4TimeBitmapFieldLength:
-*       return real Time Bitmap Field total length
-****************************************************************/
+/* pucTimeBitmapField:
+ *       return Time Bitmap Field (must provide at least 67 bytes)
+ *
+ *   pu4TimeBitmapFieldLength:
+ *       return real Time Bitmap Field total length
+ */
 uint32_t
 nanParserGenTimeBitmapField(struct ADAPTER *prAdapter, uint32_t *pu4AvailMap,
 			    uint8_t *pucTimeBitmapField,
@@ -3384,8 +3383,9 @@ nanSchedPeerUpdateAvailabilityAttr(struct ADAPTER *prAdapter,
 			if ((u2EntryControl &
 			     NAN_AVAIL_ENTRY_CTRL_TBITMAP_PRESENT) ==
 			    0) {
-				/* all slots are available when timebitmap */
-				/* is not set */
+				/* all slots are available when timebitmap
+				 * is not set
+				 */
 				prAttrBandChnlList =
 				    (struct _NAN_BAND_CHNL_LIST_T *)
 				    (prAttrAvailEntry
@@ -3432,8 +3432,9 @@ nanSchedPeerUpdateAvailabilityAttr(struct ADAPTER *prAdapter,
 					(struct _NAN_CHNL_ENTRY_T *)
 					pucBandChnlEntryList;
 
-				/* only select one channel from Channel*/
-				/* Bitmap in the Channel Entry */
+				/* only select one channel from Channel
+				 * Bitmap in the Channel Entry
+				 */
 					ucPriChnl =
 					nanSchedChooseBestFromChnlBitmap(
 					    prAdapter,
@@ -3650,10 +3651,6 @@ nanSchedPeerUpdateDevCapabilityAttr(struct ADAPTER *prAdapter,
 	return rRetStatus;
 }
 
-/**
-* [nanSchedPeerUpdateQosAttr]
-*
-*****************************************************/
 uint32_t
 nanSchedPeerUpdateQosAttr(struct ADAPTER *prAdapter, uint8_t *pucNmiAddr,
 			  uint8_t *pucQosAttr) {
@@ -3692,10 +3689,6 @@ nanSchedPeerUpdateQosAttr(struct ADAPTER *prAdapter, uint8_t *pucNmiAddr,
 	return rRetStatus;
 }
 
-/**
-* [nanSchedPeerUpdateNdcAttr]
-*
-*****************************************************/
 uint32_t
 nanSchedPeerUpdateNdcAttr(struct ADAPTER *prAdapter, uint8_t *pucNmiAddr,
 			  uint8_t *pucNdcAttr) {
@@ -3753,10 +3746,6 @@ nanSchedPeerUpdateNdcAttr(struct ADAPTER *prAdapter, uint8_t *pucNmiAddr,
 	return rRetStatus;
 }
 
-/**
-* [nanSchedPeerUpdateUawAttr]
-*
-*****************************************************/
 uint32_t
 nanSchedPeerUpdateUawAttr(struct ADAPTER *prAdapter, uint8_t *pucNmiAddr,
 			  uint8_t *pucUawAttr) {
@@ -3837,12 +3826,10 @@ nanSchedPeerUpdateUawAttr(struct ADAPTER *prAdapter, uint8_t *pucNmiAddr,
 	return rStatus;
 }
 
-/**
-* [nanSchedPeerUpdateImmuNdlScheduleList]
-*
-*   Only allowed when it acquires the token to nego CRB.
-*
-*****************************************************/
+/* [nanSchedPeerUpdateImmuNdlScheduleList]
+ *
+ *   Only allowed when it acquires the token to nego CRB.
+ */
 uint32_t
 nanSchedPeerUpdateImmuNdlScheduleList(
 	struct ADAPTER *prAdapter, uint8_t *pucNmiAddr,
@@ -3890,12 +3877,10 @@ nanSchedPeerUpdateImmuNdlScheduleList(
 	return rRetStatus;
 }
 
-/**
-* [nanSchedPeerUpdateRangingScheduleList]
-*
-*   Only allowed when it acquires the token to nego CRB.
-*
-*****************************************************/
+/* [nanSchedPeerUpdateRangingScheduleList]
+ *
+ *   Only allowed when it acquires the token to nego CRB.
+ */
 uint32_t
 nanSchedPeerUpdateRangingScheduleList(
 	struct ADAPTER *prAdapter, uint8_t *pucNmiAddr,
@@ -4657,8 +4642,9 @@ nanSchedNegoSyncSchUpdateFsmStep(
 		case ENUM_NAN_SYNC_SCH_UPDATE_STATE_IDLE:
 			/* stable state */
 
-			/* check all peers to see if any one conflicts */
-			/*the new schedule */
+			/* check all peers to see if any one conflicts
+			 * the new schedule
+			 */
 			nanSchedReleaseUnusedCommitSlot(prAdapter);
 			nanSchedCmdUpdateAvailability(prAdapter);
 
@@ -4744,8 +4730,9 @@ nanSchedNegoSyncSchUpdateFsmStep(
 
 		case ENUM_NAN_SYNC_SCH_UPDATE_STATE_DONE:
 
-			/* Fixme: send schedule update notification frames */
-			/*  to all peers */
+			/* Fixme: send schedule update notification frames
+			 * to all peers
+			 */
 
 			nanSchedDbgDumpTimelineDb(prAdapter, __func__,
 						  __LINE__);
@@ -5138,8 +5125,9 @@ nanSchedNegoValidateCondChnlList(struct ADAPTER *prAdapter) {
 	prNegoCtrl = nanGetNegoControlBlock(prAdapter);
 	u4SchIdx = prNegoCtrl->u4SchIdx;
 
-	/* check if local & remote sides both in the same channel during */
-	/* the conditional window */
+	/* check if local & remote sides both in the same channel during
+	 * the conditional window
+	 */
 	for (u4SlotIdx = 0; u4SlotIdx < NAN_TOTAL_SLOT_WINDOWS; u4SlotIdx++) {
 		u4LocalChnl =
 			nanQueryPrimaryChnlBySlot(prAdapter, u4SlotIdx, FALSE);
@@ -5186,8 +5174,9 @@ nanSchedNegoCommitCondChnlList(struct ADAPTER *prAdapter) {
 
 	prNanTimelineMgmt = nanGetTimelineMgmt(prAdapter);
 
-	/* check local & remote availability to remove conflict */
-	/*conditional windows */
+	/* check local & remote availability to remove conflict
+	 * conditional windows
+	 */
 	nanSchedNegoValidateCondChnlList(prAdapter);
 
 	/* merge remain conditional windows into committed windows */
@@ -5524,8 +5513,9 @@ CHK_QOS_LATENCY_DONE:
 			}
 		}
 
-		/* step5. merge availability entry for the */
-		/* same primary channel */
+		/* step5. merge availability entry for the
+		 * same primary channel
+		 */
 		rRetStatus = nanSchedMergeAvailabileChnlList(prAdapter, FALSE);
 	}
 
@@ -5788,11 +5778,13 @@ nanSchedNegoIsRmtCrbConflict(
 				}
 				continue;
 			}
-
+/* Need to discuss why checking concurrent op. */
+#if 0
 			if (nanSchedChkConcurrOp(rLocalChnlInfo,
 						 rRmtChnlInfo) ==
 			    CNM_CH_CONCURR_MCC)
 				return TRUE;
+#endif
 		}
 	}
 
@@ -5911,11 +5903,10 @@ nanSchedNegoIsCrbEqual(
 					     NULL);
 }
 
-/**
-* [nanSchedNegoMergeCrb]
-*
-*   It just merges the CRBs and doesn't check if CRB channel conflict.
-******************************************************************************/
+/* [nanSchedNegoMergeCrb]
+ *
+ *   It just merges the CRBs and doesn't check if CRB channel conflict.
+ */
 uint32_t
 nanSchedNegoMergeCrb(
 	struct ADAPTER *prAdapter,
@@ -6139,9 +6130,6 @@ nanSchedNegoGenDefCrb(struct ADAPTER *prAdapter,
 		if (fgChkRmtCondSlot)
 			u4SlotOffset = 1;
 		else {
-			/* u4SlotOffset = */
-			/*	(u4DefCrbNumBackup * prNegoCtrl->u4SchIdx) */
-			/*	% u4NanQuota; */
 			u4SlotOffset =
 				prAdapter->rWifiVar.ucDftQuotaStartOffset;
 		}
@@ -6306,7 +6294,7 @@ nanSchedNegoGenNdcCrb(struct ADAPTER *prAdapter) {
 		goto GEN_NDC_DONE;
 	}
 
-	/** Step1 check existed NDC CRB */
+	/* Step1 check existed NDC CRB */
 	for (u4Idx = 0; u4Idx < NAN_MAX_NDC_RECORD; u4Idx++) {
 		prNdcCtrl = &prScheduler->arNdcCtrl[u4Idx];
 		if (prNdcCtrl->fgValid == FALSE)
@@ -6368,7 +6356,7 @@ nanSchedNegoGenNdcCrb(struct ADAPTER *prAdapter) {
 		goto GEN_NDC_DONE;
 	}
 
-	/** Step2 allocate new NDC CRB */
+	/* Step2 allocate new NDC CRB */
 	if (prScheduler->fgEn5gH || prScheduler->fgEn5gL)
 		u4SlotOffset = NAN_5G_DW_INDEX + 1;
 	else
@@ -6608,8 +6596,9 @@ nanSchedNegoResetControlInfo(struct ADAPTER *prAdapter,
 		break;
 
 	case ENUM_NEGO_CTRL_RST_PREPARE_WAIT_RSP_STATE:
-		/* peer should propose the final NDC CRB in the last state */
-		/* (WAIT-RSP-STATE) */
+		/* peer should propose the final NDC CRB in the last state
+		 * (WAIT-RSP-STATE)
+		 */
 		prPeerSchDesc->rSelectedNdcCtrl.fgValid = FALSE;
 
 		break;
@@ -6730,8 +6719,9 @@ nanSchedNegoDataPathChkRmtCrbProposalForRspState(
 		if (nanSchedNegoIsLocalCrbConflict(
 			    prAdapter, &prNegoCtrl->rImmuNdlTimeline, TRUE,
 			    &fgEmptyMapSet, au4EmptyMap) == TRUE) {
-			/* expect the initiator can change conditional */
-			/* window to comply with immutable NDL */
+			/* expect the initiator can change conditional
+			 * window to comply with immutable NDL
+			 */
 			fgCounterProposal = TRUE;
 		} else {
 			if (fgEmptyMapSet)
@@ -7697,8 +7687,9 @@ nanSchedGetAvailabilityAttr(struct ADAPTER *prAdapter,
 		*pu4AvailabilityAttrLength = (pucPos - g_aucNanIEBuffer);
 
 	nanSchedDbgDumpTimelineDb(prAdapter, __func__, __LINE__);
-	/*nanUtilDump(prAdapter, "Avail Attr", */
-	/*		g_aucNanIEBuffer, (pucPos-g_aucNanIEBuffer));*/
+	/* nanUtilDump(prAdapter, "Avail Attr",
+	 *		g_aucNanIEBuffer, (pucPos-g_aucNanIEBuffer));
+	 */
 
 	return WLAN_STATUS_SUCCESS;
 }
@@ -7914,8 +7905,9 @@ nanSchedCmdUpdatePotentialChnlList(IN struct ADAPTER *prAdapter) {
 					     prPotentialChnlMap->ucPrimaryChnl))
 			continue;
 
-		/* search the current potential channel list for the */
-		/* same group */
+		/* search the current potential channel list for the
+		 * same group
+		 */
 		for (u4Idx = 0; u4Idx < u4Num; u4Idx++) {
 			if ((prPotentialChnlList[u4Idx].ucOpClass ==
 			     prPotentialChnlMap->aucOperatingClass[eBwMap]) &&
@@ -8623,8 +8615,7 @@ nanSchedulerEventDispatch(struct ADAPTER *prAdapter, uint32_t u4SubEvent,
 #define NAN_STATION_TEST_ADDRESS                                               \
 	{ 0x22, 0x22, 0x22, 0x22, 0x22, 0x22 }
 
-/*
- * [0] ChnlRaw:0x247301, PriChnl:36
+/* [0] ChnlRaw:0x247301, PriChnl:36
  * [Map], len:64
  * 0x02057668: 00 0e 00 00 00 0e 00 00 00 0e 00 00 00 0e 00 00
  * 0x02057678: 00 0e 00 00 00 0e 00 00 00 0e 00 00 00 0e 00 00
@@ -8637,7 +8628,7 @@ nanSchedulerEventDispatch(struct ADAPTER *prAdapter, uint32_t u4SubEvent,
  * 0x020576d4: 00 20 00 00 00 20 00 00 00 20 00 00 00 20 00 00
  * 0x020576e4: 00 20 00 00 00 20 00 00 00 20 00 00 00 20 00 00
  * 0x020576f4: 00 20 00 00 00 20 00 00 00 20 00 00 00 20 00 00
-*/
+ */
 uint8_t g_aucPeerAvailabilityAttr[] = { 0x12, 0x1D, 0x0,  0x0,  0x1, 0x0, 0xb,
 				       0x0,  0x1,  0x12, 0x58, 0x2, 0x1, 0x7,
 				       0x11, 0x73, 0x1,  0x0,  0x0, 0xb, 0x0,
@@ -8647,8 +8638,7 @@ uint8_t g_aucPeerAvailabilityAttr2[] = { 0x12, 0xc,  0x0,  0x1,  0x21,
 					0x0,  0x7,  0x0,  0x1a, 0x0,
 					0x11, 0x51, 0xff, 0x7,  0x0 };
 
-/*
- * commit Chnl:6
+/* commit Chnl:6
  * AvailMap, len:64
  * ffffffffc0c9158c: 01 00 00 00 01 00 00 00 01 00 00 00 01 00 00 00
  * ffffffffc0c9159c: 01 00 00 00 01 00 00 00 01 00 00 00 01 00 00 00
@@ -8660,7 +8650,7 @@ uint8_t g_aucPeerAvailabilityAttr2[] = { 0x12, 0xc,  0x0,  0x1,  0x21,
  * ffffffffc0c915e8: 00 01 00 00 00 01 00 00 00 01 00 00 00 01 00 00
  * ffffffffc0c915f8: 00 01 00 00 00 01 00 00 00 01 00 00 00 01 00 00
  * ffffffffc0c91608: 00 01 00 00 00 01 00 00 00 01 00 00 00 01 00 00
-*/
+ */
 uint8_t g_aucPeerAvailabilityAttr3[] = {
 	0x12, 0x2b, 0x0,  0x01, 0x11, 0x0,  0xb,  0x0,  0x1,  0x12, 0x18, 0x0,
 	0x1,  0x1,  0x11, 0x51, 0x20, 0x0,  0x0,  0xb,  0x0,  0x1,  0x12, 0x18,
@@ -8668,8 +8658,7 @@ uint8_t g_aucPeerAvailabilityAttr3[] = {
 	0x58, 0x0,  0x4,  0x7f, 0xff, 0xff, 0x7f, 0x20, 0x02, 0x04
 };
 
-/*
- * [0], Commit Chnl:6
+/* [0], Commit Chnl:6
  * AvailMap, len:64
  * ffffffffc0c915cc: 01 00 00 00 01 00 00 00 01 00 00 00 01 00 00 00
  * ffffffffc0c915dc: 01 00 00 00 01 00 00 00 01 00 00 00 01 00 00 00
@@ -8687,7 +8676,7 @@ uint8_t g_aucPeerAvailabilityAttr3[] = {
  * ffffffffc0c918d8: 02 00 00 00 02 00 00 00 02 00 00 00 02 00 00 00
  * ffffffffc0c918e8: 02 00 00 00 02 00 00 00 02 00 00 00 02 00 00 00
  * ffffffffc0c918f8: 02 00 00 00 02 00 00 00 02 00 00 00 02 00 00 00
-*/
+ */
 uint8_t g_aucPeerAvailabilityAttr4[] = {
 	0x12, 0x38, 0x00, 0x01, 0x11, 0x00, 0x0b, 0x00, 0x01, 0x12, 0x18, 0x00,
 	0x01, 0x01, 0x11, 0x51, 0x20, 0x00, 0x00, 0x0b, 0x00, 0x01, 0x12, 0x18,
@@ -8712,12 +8701,11 @@ uint8_t g_aucRangSchEntryList1[] = { 0x1, 0x18, 0x0, 0x4, 0x1, 0x0, 0x0, 0x0 };
 uint8_t g_aucPeerSelectedNdcAttr[] = { 0x13, 0xc, 0x0, 0x1,  0x2, 0x3, 0x4, 0x5,
 				      0x6,  0x1, 0x1, 0x58, 0x3, 0x1, 0x1 };
 
-/*
- * ffffffffc0c918c8: 02 00 00 00 02 00 00 00 02 00 00 00 02 00 00 00
+/* ffffffffc0c918c8: 02 00 00 00 02 00 00 00 02 00 00 00 02 00 00 00
  * ffffffffc0c918d8: 02 00 00 00 02 00 00 00 02 00 00 00 02 00 00 00
  * ffffffffc0c918e8: 02 00 00 00 02 00 00 00 02 00 00 00 02 00 00 00
  * ffffffffc0c918f8: 02 00 00 00 02 00 00 00 02 00 00 00 02 00 00 00
-*/
+ */
 uint8_t g_aucRangSchEntryList[] = { 0x1, 0x58, 0x0, 0x1, 0x1 };
 uint8_t g_aucTestData[100];
 
@@ -8834,7 +8822,7 @@ nanScheduleNegoTestFunc(struct ADAPTER *prAdapter, uint8_t *pucNmiAddr,
 		nanSchedNegoStop(prAdapter);
 
 	} else if (pvToken == (void *)10) {
-		/*nanSchedNegoAddQos(prAdapter, 10, 3);*/
+		/* nanSchedNegoAddQos(prAdapter, 10, 3); */
 		rRetStatus =
 			nanSchedNegoChkRmtCrbProposal(prAdapter, &u4RejectCode);
 		DBGLOG(NAN, INFO, "nanSchedNegoChkRmtCrbProposal: %x, %u\n",

@@ -4499,6 +4499,28 @@ void nicRxQueryStatistics(IN struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * @brief Use to distinguish waiting pre-cal or not
+ *
+ * @param prAdapter pointer to the Adapter handler
+ * @param pucRspBuffer pointer to the Response buffer
+ *
+ * @retval WLAN_STATUS_SUCCESS: Response packet has been read
+ * @retval WLAN_STATUS_FAILURE: Read Response packet timeout or error occurred
+ *
+ */
+/*----------------------------------------------------------------------------*/
+inline uint32_t
+nicRxWaitResponse(IN struct ADAPTER *prAdapter,
+		  IN uint8_t ucPortIdx, OUT uint8_t *pucRspBuffer,
+		  IN uint32_t u4MaxRespBufferLen, OUT uint32_t *pu4Length) {
+	return nicRxWaitResponseByWaitingInterval(
+				prAdapter, ucPortIdx,
+				pucRspBuffer, u4MaxRespBufferLen,
+				pu4Length, CFG_DEFAULT_SLEEP_WAITING_INTERVAL);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * @brief Read the Response data from data port
  *
  * @param prAdapter pointer to the Adapter handler
@@ -4510,9 +4532,10 @@ void nicRxQueryStatistics(IN struct ADAPTER *prAdapter,
  */
 /*----------------------------------------------------------------------------*/
 uint32_t
-nicRxWaitResponse(IN struct ADAPTER *prAdapter,
+nicRxWaitResponseByWaitingInterval(IN struct ADAPTER *prAdapter,
 		  IN uint8_t ucPortIdx, OUT uint8_t *pucRspBuffer,
-		  IN uint32_t u4MaxRespBufferLen, OUT uint32_t *pu4Length) {
+		  IN uint32_t u4MaxRespBufferLen, OUT uint32_t *pu4Length,
+		  IN uint32_t u4WaitingInterval) {
 	struct mt66xx_chip_info *prChipInfo;
 	struct WIFI_EVENT *prEvent;
 	uint32_t u4Status = WLAN_STATUS_SUCCESS;
@@ -4521,8 +4544,8 @@ nicRxWaitResponse(IN struct ADAPTER *prAdapter,
 	prChipInfo = prAdapter->chip_info;
 
 	u4Status = halRxWaitResponse(prAdapter, ucPortIdx,
-				     pucRspBuffer,
-				     u4MaxRespBufferLen, pu4Length);
+					pucRspBuffer, u4MaxRespBufferLen,
+					pu4Length, u4WaitingInterval);
 	if (u4Status == WLAN_STATUS_SUCCESS) {
 		DBGLOG(RX, TRACE,
 		       "Dump Response buffer, length = %u\n", *pu4Length);
@@ -4659,31 +4682,39 @@ uint32_t nicRxNANPMFCheck(IN struct ADAPTER *prAdapter,
 	if (prAdapter->rWifiVar.fgNoPmf)
 		return WLAN_STATUS_SUCCESS;
 
-	if (prBssInfo != NULL) {
-		if (prBssInfo->eNetworkType == NETWORK_TYPE_NAN) {
-			if (prSwRfb->prStaRec->fgIsTxKeyReady == TRUE) {
-				/* NAN Todo: Not HW_MAC_RX_DESC here */
-				if (HAL_RX_STATUS_IS_CIPHER_MISMATCH(
-					    (struct HW_MAC_RX_DESC *)prSwRfb
-						    ->prRxStatus) == TRUE) {
-					DBGLOG(NAN, INFO,
-					       "[PMF] Rx NON-PROTECT NAF, StaIdx:%d, Wtbl:%d\n",
-					       prSwRfb->prStaRec->ucIndex,
-					       prSwRfb->ucWlanIdx);
-					DBGLOG(NAN, INFO,
-					       "Src=>%02x:%02x:%02x:%02x:%02x:%02x, OUISubtype:%d\n",
-					       prActionFrame->aucSrcAddr[0],
-					       prActionFrame->aucSrcAddr[1],
-					       prActionFrame->aucSrcAddr[2],
-					       prActionFrame->aucSrcAddr[3],
-					       prActionFrame->aucSrcAddr[4],
-					       prActionFrame->aucSrcAddr[5],
-					       prActionFrame->ucOUISubtype);
-					return WLAN_STATUS_FAILURE;
-				}
+	if (prBssInfo == NULL)
+		return WLAN_STATUS_FAILURE;
+
+	if (prBssInfo->eNetworkType == NETWORK_TYPE_NAN) {
+		if (prSwRfb->prStaRec->fgIsTxKeyReady == TRUE) {
+			/* NAN Todo: Not HW_MAC_RX_DESC here */
+#if (CFG_SUPPORT_CONNAC2X == 1)
+			if (HAL_MAC_CONNAC2X_RX_STATUS_IS_CIPHER_MISMATCH(
+				(struct HW_MAC_CONNAC2X_RX_DESC *)prSwRfb
+					    ->prRxStatus) == TRUE) {
+#else
+			if (HAL_RX_STATUS_IS_CIPHER_MISMATCH(
+				(struct HW_MAC_RX_DESC *)prSwRfb
+						->prRxStatus) == TRUE) {
+#endif
+				DBGLOG(NAN, INFO,
+				       "[PMF] Rx NON-PROTECT NAF, StaIdx:%d, Wtbl:%d\n",
+				       prSwRfb->prStaRec->ucIndex,
+				       prSwRfb->ucWlanIdx);
+				DBGLOG(NAN, INFO,
+				       "Src=>%02x:%02x:%02x:%02x:%02x:%02x, OUISubtype:%d\n",
+				       prActionFrame->aucSrcAddr[0],
+				       prActionFrame->aucSrcAddr[1],
+				       prActionFrame->aucSrcAddr[2],
+				       prActionFrame->aucSrcAddr[3],
+				       prActionFrame->aucSrcAddr[4],
+				       prActionFrame->aucSrcAddr[5],
+				       prActionFrame->ucOUISubtype);
+				return WLAN_STATUS_FAILURE;
 			}
 		}
 	}
+
 	return WLAN_STATUS_SUCCESS;
 }
 

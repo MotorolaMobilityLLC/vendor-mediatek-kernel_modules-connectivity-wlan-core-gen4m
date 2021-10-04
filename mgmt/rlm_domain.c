@@ -4512,7 +4512,7 @@ uint32_t txPwrApplyOneSettingPwrAnt(
 
 	eType = prCmd->ucLimitType;
 
-	if (eType != PWR_LIMIT_TYPE_COMP_ANT)
+	if (eType != PWR_LIMIT_TYPE_COMP_ANT_V2)
 		return 0;
 
 	prCmdPwrAnt = &(prCmd->u.rChPwrLimtAnt[0]);
@@ -4748,7 +4748,7 @@ uint32_t txPwrApplyOneSetting(struct CMD_SET_COUNTRY_CHANNEL_POWER_LIMIT *prCmd,
 	eType = prCmd->ucLimitType;
 
 #if CFG_SUPPORT_DYNAMIC_PWR_LIMIT_ANT_TAG
-	if (eType == PWR_LIMIT_TYPE_COMP_ANT) {
+	if (eType == PWR_LIMIT_TYPE_COMP_ANT_V2) {
 		txPwrApplyOneSettingPwrAnt(prCmd, prCurElement);
 		return 0;
 	}
@@ -5878,7 +5878,7 @@ void rlmDomainShowPwrLimitPerCh(char *message,
 
 	eType = prCmd->ucLimitType;
 #if CFG_SUPPORT_DYNAMIC_PWR_LIMIT_ANT_TAG
-	if (eType == PWR_LIMIT_TYPE_COMP_ANT) {
+	if (eType == PWR_LIMIT_TYPE_COMP_ANT_V2) {
 		prPwrLmtAnt = &prCmd->u.rChPwrLimtAnt[0];
 		DBGLOG(RLM, TRACE, "ANT Config #%d", prCmd->ucNum);
 		for (i = 0; i < prCmd->ucNum; i++) {
@@ -6115,7 +6115,7 @@ void rlmDomainSendPwrLimitCmd(struct ADAPTER *prAdapter)
 	prCmdAnt->ucNum = 0;
 	prCmdAnt->fgPwrTblKeep = TRUE;
 	/* ANT number if PWR_LIMIT_TYPE_COMP_ANT*/
-	prCmdAnt->ucLimitType = PWR_LIMIT_TYPE_COMP_ANT;
+	prCmdAnt->ucLimitType = PWR_LIMIT_TYPE_COMP_ANT_V2;
 	prCmdAnt->ucVersion = 1;
 #endif
 #if (CFG_SUPPORT_WIFI_6G == 1)

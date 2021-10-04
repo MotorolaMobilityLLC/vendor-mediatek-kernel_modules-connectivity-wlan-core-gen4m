@@ -194,6 +194,8 @@ extern uint32_t g_au4IQData[256];
 		 << VHT_CAP_INFO_MAX_AMPDU_LENGTH_OFFSET))
 
 #define VHT_CAP_INFO_DEFAULT_HIGHEST_DATA_RATE			0
+#define VHT_CAP_INFO_EXT_NSS_BW_CAP				BIT(13)
+
 #endif
 /*******************************************************************************
  *                             D A T A   T Y P E S
@@ -324,6 +326,8 @@ struct SWITCH_CH_AND_BAND_PARAMS {
  *                   F U N C T I O N   D E C L A R A T I O N S
  *******************************************************************************
  */
+uint8_t rlmMaxBwToVhtBw(uint8_t ucMaxBw);
+
 void rlmFsmEventInit(struct ADAPTER *prAdapter);
 
 void rlmFsmEventUninit(struct ADAPTER *prAdapter);
@@ -549,7 +553,9 @@ void rlmReviseMaxBw(
 enum ENUM_CHNL_EXT rlmReviseSco(
 	IN enum ENUM_CHANNEL_WIDTH eChannelWidth,
 	IN uint8_t ucPrimaryCh,
-	IN uint8_t ucS1);
+	IN uint8_t ucS1,
+	IN enum ENUM_CHNL_EXT eScoOrigin,
+	IN uint8_t ucMaxBandwidth);
 
 void rlmRevisePreferBandwidthNss(struct ADAPTER *prAdapter,
 					uint8_t ucBssIndex,

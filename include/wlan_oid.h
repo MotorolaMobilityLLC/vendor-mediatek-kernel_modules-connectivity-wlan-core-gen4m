@@ -1791,7 +1791,7 @@ struct EVENT_STATS_LLS_TX_LATENCY {
 	uint32_t arLatencyMpduCntPerLevel[STATS_LATENCY_CATEGORY_NUM];
 };
 
-struct EVENT_STATS_LLS_TX_RATE_INFO {
+struct _STATS_LLS_TX_RATE_INFO {
 	uint32_t rate :6,
 	mode :4,
 	nsts :3,
@@ -1799,6 +1799,11 @@ struct EVENT_STATS_LLS_TX_RATE_INFO {
 	bw :2,
 	reserved :16;
 };
+
+struct EVENT_STATS_LLS_TX_RATE_INFO {
+	struct _STATS_LLS_TX_RATE_INFO arTxRateInfo[BSSID_NUM];
+};
+
 #endif /* CFG_SUPPORT_LLS */
 
 struct PARAM_MTK_WIFI_TEST_STRUCT {

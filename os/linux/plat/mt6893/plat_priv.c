@@ -167,7 +167,7 @@ void kalSetCpuFreq(IN int32_t freq)
 
 	freq_to_set = kmalloc_array(u4ClusterNum, sizeof(struct ppm_limit_data),
 			GFP_KERNEL);
-	if (freq_to_set)
+	if (!freq_to_set)
 		return;
 
 	for (i = 0; i < u4ClusterNum; i++) {

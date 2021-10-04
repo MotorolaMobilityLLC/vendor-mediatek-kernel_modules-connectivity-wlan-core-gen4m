@@ -8121,21 +8121,22 @@ wlanoidSetMulticastList(IN struct ADAPTER *prAdapter,
 #if CFG_SUPPORT_NAN
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief This routine is called to set Multicast Address List.
-*
-* \param[in] prAdapter      Pointer to the Adapter structure.
-* \param[in] pvSetBuffer    Pointer to the buffer that holds the data to be set.
-* \param[in] u4SetBufferLen The length of the set buffer.
-* \param[out] pu4SetInfoLen If the call is successful, returns the number of
-*                           bytes read from the set buffer. If the call failed
-*                           due to invalid length of the set buffer, returns
-*                           the amount of storage needed.
-*
-* \retval WLAN_STATUS_SUCCESS
-* \retval WLAN_STATUS_INVALID_LENGTH
-* \retval WLAN_STATUS_ADAPTER_NOT_READY
-* \retval WLAN_STATUS_MULTICAST_FULL
-*/
+ * \brief This routine is called to set Multicast Address List.
+ *
+ * \param[in] prAdapter      Pointer to the Adapter structure.
+ * \param[in] pvSetBuffer    Pointer to the buffer that holds the data to be
+ *                           set.
+ * \param[in] u4SetBufferLen The length of the set buffer.
+ * \param[out] pu4SetInfoLen If the call is successful, returns the number of
+ *                           bytes read from the set buffer. If the call failed
+ *                           due to invalid length of the set buffer, returns
+ *                           the amount of storage needed.
+ *
+ * \retval WLAN_STATUS_SUCCESS
+ * \retval WLAN_STATUS_INVALID_LENGTH
+ * \retval WLAN_STATUS_ADAPTER_NOT_READY
+ * \retval WLAN_STATUS_MULTICAST_FULL
+ */
 /*----------------------------------------------------------------------------*/
 uint32_t
 wlanoidSetNANMulticastList(IN struct ADAPTER *prAdapter, uint8_t ucBssIdx,
@@ -9756,7 +9757,7 @@ wlanoidSetIPv6NetworkAddress(IN struct ADAPTER *prAdapter,
 
 		prNetworkAddress = (struct PARAM_NETWORK_ADDRESS *)
 			((unsigned long) prNetworkAddress +
-			(unsigned long) (prNetworkAddress->u2AddressLength +
+			(unsigned long) (prNetworkAddress->u2AddressLength * 2 +
 			OFFSET_OF(struct PARAM_NETWORK_ADDRESS, aucAddress)));
 	}
 
@@ -9811,9 +9812,10 @@ wlanoidSetIPv6NetworkAddress(IN struct ADAPTER *prAdapter,
 
 			prNetworkAddress = (struct PARAM_NETWORK_ADDRESS *)
 			    ((unsigned long)prNetworkAddress +
-			    (unsigned long)(prNetworkAddress->u2AddressLength +
-			    OFFSET_OF(struct PARAM_NETWORK_ADDRESS,
-				      aucAddress)));
+			    (unsigned long)(
+				prNetworkAddress->u2AddressLength * 2
+				+ OFFSET_OF(struct PARAM_NETWORK_ADDRESS,
+				aucAddress)));
 		}
 
 	} else {
@@ -12930,19 +12932,19 @@ wlanoidSetP2pMode(IN struct ADAPTER *prAdapter,
 #if CFG_SUPPORT_NAN
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief This routine is used to set the nan mode.
-*
-* \param[in] pvAdapter Pointer to the Adapter structure.
-* \param[in] pvSetBuffer A pointer to the buffer that holds the data to be set.
-* \param[in] u4SetBufferLen The length of the set buffer.
-* \param[out] pu4SetInfoLen If the call is successful, returns the number of
-*                          bytes read from the set buffer. If the call failed
-*                          due to invalid length of the set buffer, returns
-*                          the amount of storage needed.
-*
-* \retval WLAN_STATUS_SUCCESS
-* \retval WLAN_STATUS_INVALID_LENGTH
-*/
+ * \brief This routine is used to set the nan mode.
+ *
+ * \param[in] pvAdapter Pointer to the Adapter structure.
+ * \param[in] pvSetBuffer A pointer to the buffer that holds the data to be set.
+ * \param[in] u4SetBufferLen The length of the set buffer.
+ * \param[out] pu4SetInfoLen If the call is successful, returns the number of
+ *                          bytes read from the set buffer. If the call failed
+ *                          due to invalid length of the set buffer, returns
+ *                          the amount of storage needed.
+ *
+ * \retval WLAN_STATUS_SUCCESS
+ * \retval WLAN_STATUS_INVALID_LENGTH
+ */
 /*----------------------------------------------------------------------------*/
 uint32_t
 wlanoidSetNANMode(IN struct ADAPTER *prAdapter, IN void *pvSetBuffer,
@@ -12950,8 +12952,9 @@ wlanoidSetNANMode(IN struct ADAPTER *prAdapter, IN void *pvSetBuffer,
 {
 	uint32_t status = WLAN_STATUS_SUCCESS;
 	uint32_t *prEnable = (uint32_t *)NULL;
-	/* P_MSG_P2P_NETDEV_REGISTER_T prP2pNetdevRegMsg = */
-	/* (P_MSG_P2P_NETDEV_REGISTER_T)NULL; */
+	/* P_MSG_P2P_NETDEV_REGISTER_T prP2pNetdevRegMsg =
+	 * (P_MSG_P2P_NETDEV_REGISTER_T)NULL;
+	 */
 	DEBUGFUNC("wlanoidSetnanMode");
 
 	if (!prAdapter || !pu4SetInfoLen || !pvSetBuffer)
@@ -13184,7 +13187,7 @@ wlanoidSetStopSchedScan(IN struct ADAPTER *prAdapter,
 	if (scnFsmSchedScanStopRequest(prAdapter) == TRUE) {
 		kalMemFree(prSchedScanRequest->pucIE,
 			   VIR_MEM_TYPE,
-			   prGlueInfo->prSchedScanRequest->u4IELength);
+			   prSchedScanRequest->u4IELength);
 		kalMemFree(prSchedScanRequest,
 			   VIR_MEM_TYPE,
 			   sizeof(struct PARAM_SCHED_SCAN_REQUEST));

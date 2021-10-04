@@ -227,7 +227,7 @@ u_int8_t halVerifyChipID(IN struct ADAPTER *prAdapter)
 
 uint32_t halRxWaitResponse(IN struct ADAPTER *prAdapter, IN uint8_t ucPortIdx,
 	OUT uint8_t *pucRspBuffer, IN uint32_t u4MaxRespBufferLen,
-	OUT uint32_t *pu4Length)
+	OUT uint32_t *pu4Length, IN uint32_t u4WaitingInterval)
 {
 	struct GLUE_INFO *prGlueInfo;
 	uint32_t u4PktLen = 0, u4Time;
@@ -276,7 +276,7 @@ uint32_t halRxWaitResponse(IN struct ADAPTER *prAdapter, IN uint8_t ucPortIdx,
 
 		/* Response packet is not ready */
 		/* use sleep waiting instead of busy waiting */
-		kalUsleep_range(50, 100);
+		kalUsleep(u4WaitingInterval);
 	} while (TRUE);
 
 	return WLAN_STATUS_SUCCESS;

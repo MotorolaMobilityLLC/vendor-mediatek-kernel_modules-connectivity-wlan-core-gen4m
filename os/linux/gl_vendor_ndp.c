@@ -5,9 +5,7 @@
  */
 
 /*
- ** gl_vendor_ndp.c
- **
- **
+ * gl_vendor_ndp.c
  */
 
 /*******************************************************************************
@@ -84,10 +82,10 @@ const struct nla_policy
 			[MTK_WLAN_VENDOR_ATTR_NDP_CHANNEL] = {
 				.type = NLA_U32 },
 			[MTK_WLAN_VENDOR_ATTR_NDP_PEER_DISCOVERY_MAC_ADDR] = {
-				.type = NLA_UNSPEC,
+				.type = NLA_BINARY,
 				.len = MAC_ADDR_LEN },
 			[MTK_WLAN_VENDOR_ATTR_NDP_CONFIG_SECURITY] = {
-				.type = NLA_U16 },
+				.type = NLA_NESTED },
 			[MTK_WLAN_VENDOR_ATTR_NDP_CONFIG_QOS] = {
 				.type = NLA_U32 },
 			[MTK_WLAN_VENDOR_ATTR_NDP_APP_INFO] = {
@@ -115,6 +113,8 @@ const struct nla_policy
 			[MTK_WLAN_VENDOR_ATTR_NDP_SCID] = {
 				.type = NLA_BINARY,
 				.len = NDP_SCID_BUF_LEN },
+			[MTK_WLAN_VENDOR_ATTR_NDP_CSID] = {
+				.type = NLA_U32 },
 			[MTK_WLAN_VENDOR_ATTR_NDP_PASSPHRASE] = {
 				.type = NLA_BINARY,
 				.len = NAN_PASSPHRASE_MAX_LEN },
@@ -201,12 +201,12 @@ nanNdiCreateRspEvent(struct ADAPTER *prAdapter) {
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief After NDI interface delete, send delete response to wifi hal
-*
-* \param[in] prNDP: NDP info
-*
-* \return WLAN_STATUS
-*/
+ * \brief After NDI interface delete, send delete response to wifi hal
+ *
+ * \param[in] prNDP: NDP info
+ *
+ * \return WLAN_STATUS
+ */
 /*----------------------------------------------------------------------------*/
 uint32_t
 nanNdiDeleteRspEvent(struct ADAPTER *prAdapter) {
@@ -243,7 +243,7 @@ nanNdiDeleteRspEvent(struct ADAPTER *prAdapter) {
 		return -EFAULT;
 	}
 
-	/* Vicky: set Transaction ID = 1 as workaround*/
+	/* set Transaction ID = 1 as workaround */
 	if (unlikely(nla_put_u32(skb, MTK_WLAN_VENDOR_ATTR_NDP_TRANSACTION_ID,
 				 1) < 0)) {
 		DBGLOG(REQ, ERROR, "nla_put_nohdr failed\n");
@@ -275,12 +275,12 @@ nanNdiDeleteRspEvent(struct ADAPTER *prAdapter) {
 }
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief After Tx initiator req NAF TxDone, send initiator response to wifi hal
-*
-* \param[in] prNDP: NDP info
-*
-* \return WLAN_STATUS
-*/
+ * \brief After Tx initiator req NAF TxDone, send initiator response to wifi hal
+ *
+ * \param[in] prNDP: NDP info
+ *
+ * \return WLAN_STATUS
+ */
 /*----------------------------------------------------------------------------*/
 uint32_t
 nanNdpInitiatorRspEvent(struct ADAPTER *prAdapter,
@@ -301,7 +301,7 @@ nanNdpInitiatorRspEvent(struct ADAPTER *prAdapter,
 		return WLAN_STATUS_INVALID_DATA;
 	}
 
-	DBGLOG(NAN, INFO, "Send NDP Initiator Rsp event\n");
+	DBGLOG(NAN, INFO, "[%s] Send NDP Initiator Rsp event\n", __func__);
 
 	wiphy = wlanGetWiphy();
 	wdev = (wlanGetNetDev(prAdapter->prGlueInfo, AIS_DEFAULT_INDEX))
@@ -372,12 +372,12 @@ nanNdpInitiatorRspEvent(struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief After Tx responder req NAF TxDone, send responder response to wifi hal
-*
-* \param[in] prNDP: NDP info
-*
-* \return WLAN_STATUS
-*/
+ * \brief After Tx responder req NAF TxDone, send responder response to wifi hal
+ *
+ * \param[in] prNDP: NDP info
+ *
+ * \return WLAN_STATUS
+ */
 /*----------------------------------------------------------------------------*/
 uint32_t
 nanNdpResponderRspEvent(struct ADAPTER *prAdapter,
@@ -398,7 +398,7 @@ nanNdpResponderRspEvent(struct ADAPTER *prAdapter,
 		return WLAN_STATUS_INVALID_DATA;
 	}
 
-	DBGLOG(NAN, INFO, "Send NDP Data Indication event\n");
+	DBGLOG(NAN, INFO, "Send NDP Response event\n");
 
 	wiphy = wlanGetWiphy();
 	wdev = (wlanGetNetDev(prAdapter->prGlueInfo, AIS_DEFAULT_INDEX))
@@ -462,12 +462,12 @@ nanNdpResponderRspEvent(struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief After Tx termination req NAF TxDone, send end response to wifi hal
-*
-* \param[in] prNDP: NDP info
-*
-* \return WLAN_STATUS
-*/
+ * \brief After Tx termination req NAF TxDone, send end response to wifi hal
+ *
+ * \param[in] prNDP: NDP info
+ *
+ * \return WLAN_STATUS
+ */
 /*----------------------------------------------------------------------------*/
 uint32_t
 nanNdpEndRspEvent(struct ADAPTER *prAdapter, struct _NAN_NDP_INSTANCE_T *prNDP,
@@ -545,14 +545,14 @@ nanNdpEndRspEvent(struct ADAPTER *prAdapter, struct _NAN_NDP_INSTANCE_T *prNDP,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief Handle NAN interface create request vendor cmd.
-*
-* \param[in] prGlueInfo: Pointer to glue info structure.
-*
-* \param[in] tb: NDP vendor cmd attributes.
-*
-* \return WLAN_STATUS
-*/
+ * \brief Handle NAN interface create request vendor cmd.
+ *
+ * \param[in] prGlueInfo: Pointer to glue info structure.
+ *
+ * \param[in] tb: NDP vendor cmd attributes.
+ *
+ * \return WLAN_STATUS
+ */
 /*----------------------------------------------------------------------------*/
 uint32_t
 nanNdiCreateHandler(struct GLUE_INFO *prGlueInfo, struct nlattr **tb) {
@@ -574,14 +574,14 @@ nanNdiCreateHandler(struct GLUE_INFO *prGlueInfo, struct nlattr **tb) {
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief Handle NAN interface delete request vendor cmd.
-*
-* \param[in] prGlueInfo: Pointer to glue info structure.
-*
-* \param[in] tb: NDP vendor cmd attributes.
-*
-* \return WLAN_STATUS
-*/
+ * \brief Handle NAN interface delete request vendor cmd.
+ *
+ * \param[in] prGlueInfo: Pointer to glue info structure.
+ *
+ * \param[in] tb: NDP vendor cmd attributes.
+ *
+ * \return WLAN_STATUS
+ */
 /*----------------------------------------------------------------------------*/
 uint32_t
 nanNdiDeleteHandler(struct GLUE_INFO *prGlueInfo, struct nlattr **tb) {
@@ -603,14 +603,14 @@ nanNdiDeleteHandler(struct GLUE_INFO *prGlueInfo, struct nlattr **tb) {
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief Handle NDP initiator request vendor cmd.
-*
-* \param[in] prGlueInfo: Pointer to glue info structure.
-*
-* \param[in] tb: NDP vendor cmd attributes.
-*
-* \return WLAN_STATUS
-*/
+ * \brief Handle NDP initiator request vendor cmd.
+ *
+ * \param[in] prGlueInfo: Pointer to glue info structure.
+ *
+ * \param[in] tb: NDP vendor cmd attributes.
+ *
+ * \return WLAN_STATUS
+ */
 /*----------------------------------------------------------------------------*/
 uint32_t
 nanNdpInitiatorReqHandler(struct GLUE_INFO *prGlueInfo, struct nlattr **tb) {
@@ -669,6 +669,14 @@ nanNdpInitiatorReqHandler(struct GLUE_INFO *prGlueInfo, struct nlattr **tb) {
 		/* nla_get_u32(tb[MTK_WLAN_VENDOR_ATTR_NDP_CONFIG_QOS]); */
 	}
 
+	/* Peer mac Addr */
+	if (tb[MTK_WLAN_VENDOR_ATTR_NDP_PEER_DISCOVERY_MAC_ADDR]) {
+		kalMemCopy(rNanCmdDataRequest.aucResponderDataAddress,
+			nla_data(
+			tb[MTK_WLAN_VENDOR_ATTR_NDP_PEER_DISCOVERY_MAC_ADDR]),
+			MAC_ADDR_LEN);
+	}
+
 	rNanCmdDataRequest.fgNDPE = g_ndpReqNDPE.fgEnNDPE;
 	if (rNanCmdDataRequest.fgNDPE) {
 		/* Ipv6: vendor cmd did not fill this attribute,
@@ -699,14 +707,14 @@ nanNdpInitiatorReqHandler(struct GLUE_INFO *prGlueInfo, struct nlattr **tb) {
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief Handle NDP reponder request vendor cmd.
-*
-* \param[in] prGlueInfo: Pointer to glue info structure.
-*
-* \param[in] tb: NDP vendor cmd attributes.
-*
-* \return WLAN_STATUS
-*/
+ * \brief Handle NDP reponder request vendor cmd.
+ *
+ * \param[in] prGlueInfo: Pointer to glue info structure.
+ *
+ * \param[in] tb: NDP vendor cmd attributes.
+ *
+ * \return WLAN_STATUS
+ */
 /*----------------------------------------------------------------------------*/
 uint32_t
 nanNdpResponderReqHandler(struct GLUE_INFO *prGlueInfo, struct nlattr **tb) {
@@ -718,9 +726,6 @@ nanNdpResponderReqHandler(struct GLUE_INFO *prGlueInfo, struct nlattr **tb) {
 	if (tb[MTK_WLAN_VENDOR_ATTR_NDP_RESPONSE_CODE]) {
 		rNanCmdDataResponse.ucDecisionStatus =
 			nla_get_u32(tb[MTK_WLAN_VENDOR_ATTR_NDP_RESPONSE_CODE]);
-#if (NAN_DATA_ENGINE_SIGMA_WORKAROUND == 1)
-		rNanCmdDataResponse.ucDecisionStatus = NAN_DP_REQUEST_ACCEPT;
-#endif
 	}
 
 	/* Instance ID */
@@ -753,10 +758,10 @@ nanNdpResponderReqHandler(struct GLUE_INFO *prGlueInfo, struct nlattr **tb) {
 	/* App Info */
 	if (tb[MTK_WLAN_VENDOR_ATTR_NDP_APP_INFO]) {
 		rNanCmdDataResponse.u2SpecificInfoLength =
-			nla_len(tb[MTK_WLAN_VENDOR_ATTR_NDP_APP_INFO]);
+			IPV6MACLEN;
 		kalMemCopy(rNanCmdDataResponse.aucSpecificInfo,
 			nla_data(tb[MTK_WLAN_VENDOR_ATTR_NDP_APP_INFO]),
-			rNanCmdDataResponse.u2SpecificInfoLength);
+			IPV6MACLEN);
 		kalMemCopy(rNanCmdDataResponse.aucIPv6Addr,
 			nla_data(tb[MTK_WLAN_VENDOR_ATTR_NDP_APP_INFO]),
 			IPV6MACLEN);
@@ -818,14 +823,14 @@ nanNdpResponderReqHandler(struct GLUE_INFO *prGlueInfo, struct nlattr **tb) {
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief Handle NDP end vendor cmd.
-*
-* \param[in] prGlueInfo: Pointer to glue info structure.
-*
-* \param[in] tb: NDP vendor cmd attributes.
-*
-* \return WLAN_STATUS
-*/
+ * \brief Handle NDP end vendor cmd.
+ *
+ * \param[in] prGlueInfo: Pointer to glue info structure.
+ *
+ * \param[in] tb: NDP vendor cmd attributes.
+ *
+ * \return WLAN_STATUS
+ */
 /*----------------------------------------------------------------------------*/
 uint32_t
 nanNdpEndReqHandler(struct GLUE_INFO *prGlueInfo, struct nlattr **tb) {
@@ -862,12 +867,12 @@ nanNdpEndReqHandler(struct GLUE_INFO *prGlueInfo, struct nlattr **tb) {
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief Send data indication event to hal.
-*
-* \param[in] prNDP: NDP info attribute
-*
-* \return WLAN_STATUS
-*/
+ * \brief Send data indication event to hal.
+ *
+ * \param[in] prNDP: NDP info attribute
+ *
+ * \return WLAN_STATUS
+ */
 /*----------------------------------------------------------------------------*/
 
 uint32_t
@@ -992,12 +997,12 @@ nanNdpDataIndEvent(IN struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief Send data confirm event to hal.
-*
-* \param[in] prNDP: NDP info attribute
-*
-* \return WLAN_STATUS
-*/
+ * \brief Send data confirm event to hal.
+ *
+ * \param[in] prNDP: NDP info attribute
+ *
+ * \return WLAN_STATUS
+ */
 /*----------------------------------------------------------------------------*/
 
 uint32_t
@@ -1092,12 +1097,12 @@ nanNdpDataConfirmEvent(IN struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief Send data termination event to hal.
-*
-* \param[in] prNDP: NDP info attribute
-*
-* \return WLAN_STATUS
-*/
+ * \brief Send data termination event to hal.
+ *
+ * \param[in] prNDP: NDP info attribute
+ *
+ * \return WLAN_STATUS
+ */
 /*----------------------------------------------------------------------------*/
 
 uint32_t
@@ -1159,18 +1164,18 @@ nanNdpDataTerminationEvent(IN struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief This function is the enter point of NDP vendor cmd.
-*
-* \param[in] wiphy: for AIS STA
-*
-* \param[in] wdev (not used here).
-*
-* \param[in] data: Content of NDP vendor cmd .
-*
-* \param[in] data_len: NDP vendor cmd length.
-*
-* \return int
-*/
+ * \brief This function is the enter point of NDP vendor cmd.
+ *
+ * \param[in] wiphy: for AIS STA
+ *
+ * \param[in] wdev (not used here).
+ *
+ * \param[in] data: Content of NDP vendor cmd .
+ *
+ * \param[in] data_len: NDP vendor cmd length.
+ *
+ * \return int
+ */
 /*----------------------------------------------------------------------------*/
 int
 mtk_cfg80211_vendor_ndp(struct wiphy *wiphy, struct wireless_dev *wdev,

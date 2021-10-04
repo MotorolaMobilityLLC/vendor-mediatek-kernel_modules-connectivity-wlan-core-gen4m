@@ -7098,6 +7098,9 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 #endif
 	uint32_t u4TxHifRes = 0, u4Idx = 0;
 	uint32_t u4PlatformBoostCpuTh = 1;
+#if CFG_SUPPORT_LITTLE_CPU_BOOST
+	uint32_t u4PlatformBoostLittleCpuTh = 1;
+#endif /* CFG_SUPPORT_LITTLE_CPU_BOOST */
 
 	/* Feature options will be filled by config file */
 
@@ -7133,12 +7136,6 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 		wlanCfgGetUint32(prAdapter, "ApSelAxScoreDiv",
 			AX_SEL_DEF_DIVIDER);
 	}
-#endif
-
-
-#if (CFG_SUPPORT_WIFI_6G == 1)
-	prWifiVar->ucP2pPrefer6G = (uint8_t)
-		wlanCfgGetUint32(prAdapter, "P2pPrefer6G", FEATURE_DISABLED);
 #endif
 
 #if (CFG_SUPPORT_802_11BE == 1)
@@ -7258,6 +7255,8 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 		"HeAmsduInAmpduTx", FEATURE_ENABLED);
 	prWifiVar->ucTrigMacPadDur = (uint8_t) wlanCfgGetUint32(prAdapter,
 		"TrigMacPadDur", HE_CAP_TRIGGER_PAD_DURATION_16);
+	prWifiVar->ucVcoreBoostEnable = (uint8_t) wlanCfgGetUint32(prAdapter,
+		"ucVcoreBoostEnable", FEATURE_ENABLED);
 	}
 #endif
 
@@ -7889,6 +7888,13 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 		DBGLOG(INIT, TRACE, "BoostCPUTh is not config, adjustable\n");
 	}
 
+#if CFG_SUPPORT_LITTLE_CPU_BOOST
+	u4PlatformBoostLittleCpuTh = kalGetLittleCpuBoostThreshold();
+	prWifiVar->u4BoostLittleCpuTh =
+		(uint32_t) wlanCfgGetUint32(prAdapter, "BoostLittleCpuTh",
+			u4PlatformBoostLittleCpuTh);
+#endif /* CFG_SUPPORT_LITTLE_CPU_BOOST */
+
 	prWifiVar->u4PerfMonPendingTh = (uint8_t)wlanCfgGetUint32(prAdapter,
 						"PerfMonPendingTh", 80);
 
@@ -8006,8 +8012,7 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 	prWifiVar->ucNanFixChnl =
 		(uint8_t)wlanCfgGetUint32(prAdapter, "NanFixChnl", 0);
 	prWifiVar->fgEnableNDPE =
-		((wlanCfgGetUint32(prAdapter, "NanEnableNDPE", 0) == 0) ? FALSE
-								     : TRUE);
+		wlanCfgGetUint32(prAdapter, "NanEnableNDPE", 1);
 	prWifiVar->u2DftNdlQosLatencyVal =
 		wlanCfgGetUint32(prAdapter, "NanDftNdlQosLatency", 0);
 	prWifiVar->ucDftNdlQosQuotaVal =
@@ -12259,7 +12264,7 @@ int wlanQueryRateByTable(uint32_t txmode, uint32_t rate,
 
 		ucMaxSize = ARRAY_SIZE(g_rDataRateMappingTable.nsts[nsts - 1]
 				.bw[frmode].sgi[sgi].rate);
-		if (rate > ucMaxSize) {
+		if (rate >= ucMaxSize) {
 			DBGLOG(SW4, ERROR, "rate error for 11AC: %u\n",
 			       rate);
 			return -1;
@@ -12290,7 +12295,7 @@ int wlanQueryRateByTable(uint32_t txmode, uint32_t rate,
 
 		ucMaxSize = ARRAY_SIZE(g_rAxDataRateMappingTable.nsts[nsts - 1]
 				.bw[frmode].gi[sgi].rate);
-		if (rate > ucMaxSize) {
+		if (rate >= ucMaxSize) {
 			DBGLOG(SW4, ERROR, "rate error for 11AX: %u\n",
 			       rate);
 			return -1;

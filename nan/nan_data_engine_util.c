@@ -5,9 +5,9 @@
  */
 
 /*******************************************************************************
-*                         C O M P I L E R   F L A G S
-********************************************************************************
-*/
+ *                         C O M P I L E R   F L A G S
+ *******************************************************************************
+ */
 #include "precomp.h"
 #include "nan_base.h"
 #include "nan_data_engine.h"
@@ -21,24 +21,24 @@
 #include "nan_sec.h"
 
 /*******************************************************************************
-*                    E X T E R N A L   R E F E R E N C E S
-********************************************************************************
-*/
+ *                    E X T E R N A L   R E F E R E N C E S
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                              C O N S T A N T S
-********************************************************************************
-*/
+ *                              C O N S T A N T S
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                             D A T A   T Y P E S
-********************************************************************************
-*/
+ *                             D A T A   T Y P E S
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                            P U B L I C   D A T A
-********************************************************************************
-*/
+ *                            P U B L I C   D A T A
+ *******************************************************************************
+ */
 static struct _APPEND_SUB_ATTR_ENTRY_T txServInfoSSITable[] = {
 	/*    ATTR-ID	     fp for calc-var-len        fp for attr appending */
 	{ NAN_ATTR_NDPE_SERVINFO_SUB_ATTR_TRANSPORT_PORT,
@@ -51,36 +51,36 @@ static struct _APPEND_SUB_ATTR_ENTRY_T txServInfoSSITable[] = {
 };
 
 /*******************************************************************************
-*                           P R I V A T E   D A T A
-********************************************************************************
-*/
+ *                           P R I V A T E   D A T A
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                   F U N C T I O N   D E C L A R A T I O N S
-********************************************************************************
-*/
+ *                   F U N C T I O N   D E C L A R A T I O N S
+ *******************************************************************************
+ */
 static uint32_t nanNdpBufferNanAttrLists(struct ADAPTER *prAdapter,
 					 uint8_t *pucNanAttrList,
 					 uint16_t u2NanAttrListLength,
 					 struct _NAN_NDP_INSTANCE_T *prNDP);
 
 /*******************************************************************************
-*                              F U N C T I O N S
-********************************************************************************
-*/
+ *                              F U N C T I O N S
+ *******************************************************************************
+ */
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief    This function manages to copy whole NAN attribute lists
-*           to a dynamically allocated buffer, as NAN-SEC may take use of
-*           it for integrity check
-*
-* \param[in] WLAN_STATUS_SUCCESS
-*            WLAN_STATUS_RESOURCES
-*
-* \return WLAN_STATUS_SUCCESS
-*         WLAN_STATUS_RESOURCES
-*/
+ * \brief    This function manages to copy whole NAN attribute lists
+ *           to a dynamically allocated buffer, as NAN-SEC may take use of
+ *           it for integrity check
+ *
+ * \param[in] WLAN_STATUS_SUCCESS
+ *            WLAN_STATUS_RESOURCES
+ *
+ * \return WLAN_STATUS_SUCCESS
+ *         WLAN_STATUS_RESOURCES
+ */
 /*----------------------------------------------------------------------------*/
 static uint32_t
 nanNdpBufferNanAttrLists(struct ADAPTER *prAdapter, uint8_t *pucNanAttrList,
@@ -135,18 +135,18 @@ nanNdpBufferNanAttrLists(struct ADAPTER *prAdapter, uint8_t *pucNanAttrList,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief        This utility function search through whole attr body list
-*               for specific Attribute ID
-*
-* \param[in]    pucAttrList
-*       [in]    u2Length
-*       [in]    ucAttrId
-*
-* \return   NULL: not found
-*           Non-NULL: pointer to specific ID
-*
-*   @TODO: this function may be better putting into nan_common.c or NAN RXM
-*/
+ * \brief        This utility function search through whole attr body list
+ *               for specific Attribute ID
+ *
+ * \param[in]    pucAttrList
+ *       [in]    u2Length
+ *       [in]    ucAttrId
+ *
+ * \return   NULL: not found
+ *           Non-NULL: pointer to specific ID
+ *
+ *   @TODO: this function may be better putting into nan_common.c or NAN RXM
+ */
 /*----------------------------------------------------------------------------*/
 struct _NAN_ATTR_HDR_T *
 nanRetrieveAttrById(uint8_t *pucAttrList, uint16_t u2Length,
@@ -206,13 +206,13 @@ nanRetrieveAttrById(uint8_t *pucAttrList, uint16_t u2Length,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief        Utility function to compose NAF header
-*
-* \param[in]
-*
-* \return WLAN_STATUS_SUCCESS
-*         WLAN_STATUS_FAILURE
-*/
+ * \brief        Utility function to compose NAF header
+ *
+ * \param[in]
+ *
+ * \return WLAN_STATUS_SUCCESS
+ *         WLAN_STATUS_FAILURE
+ */
 /*----------------------------------------------------------------------------*/
 uint32_t
 nanDataEngineComposeNAFHeader(struct ADAPTER *prAdapter,
@@ -265,13 +265,13 @@ nanDataEngineComposeNAFHeader(struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief    RX Path - NDP attribute handler
-*
-* \param[in]
-*
-* \return   WLAN_STATUS_SUCCESS: Correctly matched and/or updated
-*           WLAN_STATUS_FAILURE: Mismatch and/or parameter not acceptable
-*/
+ * \brief    RX Path - NDP attribute handler
+ *
+ * \param[in]
+ *
+ * \return   WLAN_STATUS_SUCCESS: Correctly matched and/or updated
+ *           WLAN_STATUS_FAILURE: Mismatch and/or parameter not acceptable
+ */
 /*----------------------------------------------------------------------------*/
 uint32_t
 nanNdpAttrUpdateNdp(struct ADAPTER *prAdapter, enum _NAN_ACTION_T eNanAction,
@@ -382,7 +382,7 @@ nanNdpAttrUpdateNdp(struct ADAPTER *prAdapter, enum _NAN_ACTION_T eNanAction,
 			 NAN_ATTR_NDP_STATUS_CONTINUED)
 			prNDP->fgConfirmRequired = TRUE;
 
-		/* Update responder NDI: dynamic parsing optional field*/
+		/* Update responder NDI: dynamic parsing optional field */
 		if (prAttrNDP->ucNDPControl &
 		    NAN_ATTR_NDP_CTRL_PUBLISHID_PRESENT)
 			pu1TmpAddr = &prAttrNDP->aucResponderNDI[0];
@@ -498,8 +498,9 @@ nanNdpAttrUpdateNdp(struct ADAPTER *prAdapter, enum _NAN_ACTION_T eNanAction,
 		u2CountLen += MAC_ADDR_LEN;
 	}
 
-	/* buffer SpecificInfo, later indicating host through DataIndication */
-	/* event */
+	/* buffer SpecificInfo, later indicating host through DataIndication
+	 * event
+	 */
 	if (prAttrNDP->ucNDPControl & NAN_ATTR_NDP_CTRL_SPECIFIC_INFO_PRESENT) {
 		u2NDPSpecificInfoLen = prAttrNDP->u2Length - u2CountLen;
 		pucNDPSpecificInfo = pucPivot;
@@ -514,13 +515,13 @@ nanNdpAttrUpdateNdp(struct ADAPTER *prAdapter, enum _NAN_ACTION_T eNanAction,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief    RX Path - NDPE attribute handler
-*
-* \param[in]
-*
-* \return   WLAN_STATUS_SUCCESS: Correctly matched and/or updated
-*           WLAN_STATUS_FAILURE: Mismatch and/or parameter not acceptable
-*/
+ * \brief    RX Path - NDPE attribute handler
+ *
+ * \param[in]
+ *
+ * \return   WLAN_STATUS_SUCCESS: Correctly matched and/or updated
+ *           WLAN_STATUS_FAILURE: Mismatch and/or parameter not acceptable
+ */
 /*----------------------------------------------------------------------------*/
 uint32_t
 nanNdpeAttrUpdateNdp(IN struct ADAPTER *prAdapter,
@@ -635,7 +636,7 @@ nanNdpeAttrUpdateNdp(IN struct ADAPTER *prAdapter,
 			 NAN_ATTR_NDPE_STATUS_CONTINUED)
 			prNDP->fgConfirmRequired = TRUE;
 
-		/* Update responder NDI: dynamic parsing optional field*/
+		/* Update responder NDI: dynamic parsing optional field */
 		if (prAttrNDPE->ucNDPEControl &
 		    NAN_ATTR_NDP_CTRL_PUBLISHID_PRESENT)
 			pu1TmpAddr = &prAttrNDPE->aucResponderNDI[0];
@@ -768,7 +769,7 @@ nanNdpeAttrUpdateNdp(IN struct ADAPTER *prAdapter,
 				(struct _NAN_ATTR_NDPE_IPV6_LINK_LOCAL_TLV_T *)
 					prTLV;
 			DBGLOG(NAN, INFO, "IPV6 link local\n");
-			/* Update from the other side*/
+			/* Update from the other side */
 			if (prIPV6TLV->u2Length == 8) {
 				prNDP->fgCarryIPV6 = TRUE;
 				if (prNDP->fgIsInitiator == TRUE)
@@ -864,13 +865,13 @@ nanNdpeAttrUpdateNdp(IN struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief        Attribute Parser for
-*               Schedule Request/Response/Confirm/Update Notification
-*
-* \param[in]
-*
-* \return Status
-*/
+ * \brief        Attribute Parser for
+ *               Schedule Request/Response/Confirm/Update Notification
+ *
+ * \param[in]
+ *
+ * \return Status
+ */
 /*----------------------------------------------------------------------------*/
 uint32_t
 nanNdlParseAttributes(struct ADAPTER *prAdapter,
@@ -915,7 +916,7 @@ nanNdlParseAttributes(struct ADAPTER *prAdapter,
 			break;
 		}
 
-		/* move to next Attr*/
+		/* move to next Attr */
 		pucOffset += (OFFSET_OF(struct _NAN_ATTR_HDR_T, aucAttrBody) +
 			      prNanAttr->u2Length);
 
@@ -989,13 +990,13 @@ nanNdlParseAttributes(struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief
-*
-* \param[in]
-*
-* \return   WLAN_STATUS_SUCCESS: Correctly matched and/or updated
-*           WLAN_STATUS_FAILURE: Mismatch and/or parameter not acceptable
-*/
+ * \brief
+ *
+ * \param[in]
+ *
+ * \return   WLAN_STATUS_SUCCESS: Correctly matched and/or updated
+ *           WLAN_STATUS_FAILURE: Mismatch and/or parameter not acceptable
+ */
 /*----------------------------------------------------------------------------*/
 uint32_t
 nanNdlAttrUpdateNdl(struct ADAPTER *prAdapter,
@@ -1052,8 +1053,9 @@ nanNdlAttrUpdateNdl(struct ADAPTER *prAdapter,
 
 		/* TODO: check conflict with "existing" NDL */
 
-		/* TODO: set to CONITNUED/ACCEPTED/REJECTED upon */
-		/* scheduler result */
+		/* TODO: set to CONITNUED/ACCEPTED/REJECTED upon
+		 * scheduler result
+		 */
 		prNDL->ucNDLSetupCurrentStatus = NAN_ATTR_NDL_STATUS_CONTINUED;
 
 	} else if (eNanAction == NAN_ACTION_DATA_PATH_RESPONSE ||
@@ -1112,8 +1114,9 @@ nanNdlAttrUpdateNdl(struct ADAPTER *prAdapter,
 			return WLAN_STATUS_FAILURE;
 
 		else {
-			/* TODO: check if matching current operating */
-			/* parameters */
+			/* TODO: check if matching current
+			 * operating parameters
+			 */
 
 			/* TODO: inform scheduler for final result */
 		}
@@ -1169,13 +1172,13 @@ nanNdlAttrUpdateNdl(struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief
-*
-* \param[in]
-*
-* \return   WLAN_STATUS_SUCCESS: Correctly matched and/or updated
-*           WLAN_STATUS_FAILURE: Mismatch and/or parameter not acceptable
-*/
+ * \brief
+ *
+ * \param[in]
+ *
+ * \return   WLAN_STATUS_SUCCESS: Correctly matched and/or updated
+ *           WLAN_STATUS_FAILURE: Mismatch and/or parameter not acceptable
+ */
 /*----------------------------------------------------------------------------*/
 uint32_t
 nanNdlQosAttrUpdateNdl(struct ADAPTER *prAdapter,
@@ -1225,13 +1228,13 @@ nanNdlQosAttrUpdateNdl(struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief
-*
-* \param[in]
-*
-* \return   WLAN_STATUS_SUCCESS: Correctly matched and/or updated
-*           WLAN_STATUS_FAILURE: Mismatch and/or parameter not acceptable
-*/
+ * \brief
+ *
+ * \param[in]
+ *
+ * \return   WLAN_STATUS_SUCCESS: Correctly matched and/or updated
+ *           WLAN_STATUS_FAILURE: Mismatch and/or parameter not acceptable
+ */
 /*----------------------------------------------------------------------------*/
 uint32_t
 nanDeviceCapabilityAttrHandler(
@@ -1254,13 +1257,13 @@ nanDeviceCapabilityAttrHandler(
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief
-*
-* \param[in]
-*
-* \return   WLAN_STATUS_SUCCESS: Correctly matched and/or updated
-*           WLAN_STATUS_FAILURE: Mismatch and/or parameter not acceptable
-*/
+ * \brief
+ *
+ * \param[in]
+ *
+ * \return   WLAN_STATUS_SUCCESS: Correctly matched and/or updated
+ *           WLAN_STATUS_FAILURE: Mismatch and/or parameter not acceptable
+ */
 /*----------------------------------------------------------------------------*/
 uint32_t
 nanAvailabilityAttrHandler(
@@ -1291,13 +1294,13 @@ nanAvailabilityAttrHandler(
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief
-*
-* \param[in]
-*
-* \return   WLAN_STATUS_SUCCESS: Correctly matched and/or updated
-*           WLAN_STATUS_FAILURE: Mismatch and/or parameter not acceptable
-*/
+ * \brief
+ *
+ * \param[in]
+ *
+ * \return   WLAN_STATUS_SUCCESS: Correctly matched and/or updated
+ *           WLAN_STATUS_FAILURE: Mismatch and/or parameter not acceptable
+ */
 /*----------------------------------------------------------------------------*/
 uint32_t
 nanNDCAttrHandler(struct ADAPTER *prAdapter,
@@ -1328,13 +1331,13 @@ nanNDCAttrHandler(struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief
-*
-* \param[in]
-*
-* \return   WLAN_STATUS_SUCCESS: Correctly matched and/or updated
-*           WLAN_STATUS_FAILURE: Mismatch and/or parameter not acceptable
-*/
+ * \brief
+ *
+ * \param[in]
+ *
+ * \return   WLAN_STATUS_SUCCESS: Correctly matched and/or updated
+ *           WLAN_STATUS_FAILURE: Mismatch and/or parameter not acceptable
+ */
 /*----------------------------------------------------------------------------*/
 uint32_t
 nanElemContainerAttrHandler(
@@ -1376,8 +1379,9 @@ nanElemContainerAttrHandler(
 			prNDL->ucPhyTypeSet |= PHY_TYPE_BIT_HT;
 			if (IE_SIZE(pucIE) <= sizeof(struct IE_HT_CAP))
 				COPY_IE(&(prNDL->rIeHtCap), pucIE);
-			/* TODO: match with local capabilities */
-			/* for STA-REC params */
+			/* TODO: match with local capabilities
+			 * for STA-REC params
+			 */
 
 			break;
 
@@ -1387,8 +1391,9 @@ nanElemContainerAttrHandler(
 			prNDL->ucPhyTypeSet |= PHY_TYPE_BIT_VHT;
 			if (IE_SIZE(pucIE) <= sizeof(struct IE_VHT_CAP))
 				COPY_IE(&(prNDL->rIeVhtCap), pucIE);
-			/* TODO: match with local capabilities */
-			/* for STA-REC params */
+			/* TODO: match with local capabilities
+			 * for STA-REC params
+			 */
 
 			break;
 
@@ -1402,13 +1407,13 @@ nanElemContainerAttrHandler(
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief
-*
-* \param[in]
-*
-* \return   WLAN_STATUS_SUCCESS: Correctly matched and/or updated
-*           WLAN_STATUS_FAILURE: Mismatch and/or parameter not acceptable
-*/
+ * \brief
+ *
+ * \param[in]
+ *
+ * \return   WLAN_STATUS_SUCCESS: Correctly matched and/or updated
+ *           WLAN_STATUS_FAILURE: Mismatch and/or parameter not acceptable
+ */
 /*----------------------------------------------------------------------------*/
 uint32_t
 nanUnalignedAttrHandler(struct ADAPTER *prAdapter,
@@ -1429,13 +1434,13 @@ nanUnalignedAttrHandler(struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief
-*
-* \param[in]
-*
-* \return   WLAN_STATUS_SUCCESS: Correctly matched and/or updated
-*           WLAN_STATUS_FAILURE: Mismatch and/or parameter not acceptable
-*/
+ * \brief
+ *
+ * \param[in]
+ *
+ * \return   WLAN_STATUS_SUCCESS: Correctly matched and/or updated
+ *           WLAN_STATUS_FAILURE: Mismatch and/or parameter not acceptable
+ */
 /*----------------------------------------------------------------------------*/
 uint32_t
 nanCipherSuiteAttrHandler(
@@ -1462,13 +1467,13 @@ nanCipherSuiteAttrHandler(
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief
-*
-* \param[in]
-*
-* \return   WLAN_STATUS_SUCCESS: Correctly matched and/or updated
-*           WLAN_STATUS_FAILURE: Mismatch and/or parameter not acceptable
-*/
+ * \brief
+ *
+ * \param[in]
+ *
+ * \return   WLAN_STATUS_SUCCESS: Correctly matched and/or updated
+ *           WLAN_STATUS_FAILURE: Mismatch and/or parameter not acceptable
+ */
 /*----------------------------------------------------------------------------*/
 uint32_t
 nanSecContextAttrHandler(
@@ -1499,13 +1504,13 @@ nanSecContextAttrHandler(
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief
-*
-* \param[in]
-*
-* \return   WLAN_STATUS_SUCCESS: Correctly matched and/or updated
-*           WLAN_STATUS_FAILURE: Mismatch and/or parameter not acceptable
-*/
+ * \brief
+ *
+ * \param[in]
+ *
+ * \return   WLAN_STATUS_SUCCESS: Correctly matched and/or updated
+ *           WLAN_STATUS_FAILURE: Mismatch and/or parameter not acceptable
+ */
 /*----------------------------------------------------------------------------*/
 uint32_t
 nanSharedKeyAttrHandler(
@@ -1513,7 +1518,7 @@ nanSharedKeyAttrHandler(
 	struct _NAN_ATTR_SHARED_KEY_DESCRIPTOR_T *prAttrSharedKeyDescriptor,
 	struct _NAN_NDL_INSTANCE_T *prNDL, struct _NAN_NDP_INSTANCE_T *prNDP) {
 	uint16_t u2FullAttrLen;
-/*WLAN_STATUS rStatus = WLAN_STATUS_SUCCESS;*/
+	/* WLAN_STATUS rStatus = WLAN_STATUS_SUCCESS; */
 
 #if (ENABLE_NDP_UT_LOG == 1)
 	DBGLOG(NAN, INFO, "[%s] Enter, u2RxSkdAttrOffset:%d\n", __func__,
@@ -1537,31 +1542,31 @@ nanSharedKeyAttrHandler(
 
 	prNDP->u2KdeLen = u2FullAttrLen;
 
-	/*prNDP->pucKdeInfo = (P_UINT_8) prAttrSharedKeyDescriptor;*/
+	/* prNDP->pucKdeInfo = (P_UINT_8) prAttrSharedKeyDescriptor; */
 	prNDP->pucKdeInfo = prNDP->pucRxMsgBuf + NAN_CATEGORY_HDR_OFFSET +
 			    prNDP->u2RxSkdAttrOffset;
 
-	/*rStatus = nanSecRxKdeAttr(prNDP, eNanAction-4,
-	*		prNDP->u2KdeLen, prNDP->pucKdeInfo,
-	*		prNDP->u2AttrListLength, prNDP->pucAttrList);
-	*/
-	/*rStatus = nanSecRxKdeAttr(prNDP, NAN_ACTION_TO_MSG(eNanAction),
-	*		prNDP->u2KdeLen, prNDP->pucKdeInfo,
-	*		prNDP->u2RxMsgLen, prNDP->pucRxMsgBuf);
-	*/
+	/* rStatus = nanSecRxKdeAttr(prNDP, eNanAction-4,
+	 *		prNDP->u2KdeLen, prNDP->pucKdeInfo,
+	 *		prNDP->u2AttrListLength, prNDP->pucAttrList);
+	 */
+	/* rStatus = nanSecRxKdeAttr(prNDP, NAN_ACTION_TO_MSG(eNanAction),
+	 *		prNDP->u2KdeLen, prNDP->pucKdeInfo,
+	 *		prNDP->u2RxMsgLen, prNDP->pucRxMsgBuf);
+	 */
 
 	return WLAN_STATUS_SUCCESS;
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief        Attribute Parser for
-*               Data Path Request/Response/Confirm/key_Install/Termination
-*
-* \param[in]
-*
-* \return Status
-*/
+ * \brief        Attribute Parser for
+ *               Data Path Request/Response/Confirm/key_Install/Termination
+ *
+ * \param[in]
+ *
+ * \return Status
+ */
 /*----------------------------------------------------------------------------*/
 uint32_t
 nanNdpParseAttributes(struct ADAPTER *prAdapter,
@@ -1571,12 +1576,13 @@ nanNdpParseAttributes(struct ADAPTER *prAdapter,
 		struct _NAN_NDP_INSTANCE_T *prNDP) {
 	uint8_t *pucOffset, *pucEnd;
 	struct _NAN_ATTR_HDR_T *prNanAttr;
-	/* struct _NAN_ATTR_SHARED_KEY_DESCRIPTOR_T* */
-	/*		prAttrSharedKeyDescriptor; */
-	/* UINT_16 u2NDPSpecificInfoLen; */
-	/* PUINT_8 pucNDPSpecificInfo; */
-	/* UINT_16 u2NDLImmutableScheduleLen; */
-	/* PUINT_8 pucNDLImmutableSchedule; */
+	/* struct _NAN_ATTR_SHARED_KEY_DESCRIPTOR_T*
+	 *		prAttrSharedKeyDescriptor;
+	 * UINT_16 u2NDPSpecificInfoLen;
+	 * PUINT_8 pucNDPSpecificInfo;
+	 * UINT_16 u2NDLImmutableScheduleLen;
+	 * PUINT_8 pucNDLImmutableSchedule;
+	 */
 	uint32_t rStatus = WLAN_STATUS_SUCCESS;
 	unsigned char fgExistNDPE = FALSE;
 	unsigned char fgExistNDP = FALSE;
@@ -1640,8 +1646,9 @@ nanNdpParseAttributes(struct ADAPTER *prAdapter,
 		case NAN_ATTR_ID_NDP:
 			fgExistNDP = TRUE;
 
-			/* only parse NDP when support NDPE is turned off, */
-			/* or NDPE is not there */
+			/* only parse NDP when support NDPE is turned off,
+			 * or NDPE is not there
+			 */
 			if (fgExistNDPE == FALSE)
 				rStatus = nanNdpAttrUpdateNdp(
 					prAdapter, eNanAction,
@@ -1800,12 +1807,12 @@ nanNdpParseAttributes(struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief            NAN Attribute Length Estimation - NDP ATTR
-*
-* \param[in]
-*
-* \return Status
-*/
+ * \brief            NAN Attribute Length Estimation - NDP ATTR
+ *
+ * \param[in]
+ *
+ * \return Status
+ */
 /*----------------------------------------------------------------------------*/
 uint16_t
 nanDataEngineNDPAttrLength(struct ADAPTER *prAdapter,
@@ -1836,8 +1843,9 @@ nanDataEngineNDPAttrLength(struct ADAPTER *prAdapter,
 			return u2AttrLength;
 
 		case NDP_INITIATOR_TX_DP_CONFIRM:
-			/* refer to Table.28 - don't carry NDP */
-			/* for NDL Counter Reject */
+			/* refer to Table.28 - don't carry NDP
+			 * for NDL Counter Reject
+			 */
 			if (prNDL->ucNDLSetupCurrentStatus ==
 			    NAN_ATTR_NDL_STATUS_REJECTED)
 				return 0;
@@ -1868,12 +1876,12 @@ nanDataEngineNDPAttrLength(struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief            NAN Attribute Length Generation - NDP ATTR
-*
-* \param[in]
-*
-* \return Status
-*/
+ * \brief            NAN Attribute Length Generation - NDP ATTR
+ *
+ * \param[in]
+ *
+ * \return Status
+ */
 /*----------------------------------------------------------------------------*/
 void
 nanDataEngineNDPAttrAppend(struct ADAPTER *prAdapter,
@@ -1901,12 +1909,12 @@ nanDataEngineNDPAttrAppend(struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief            NAN Attribute Length Generation - NDP ATTR Implementation
-*
-* \param[in]
-*
-* \return Status
-*/
+ * \brief            NAN Attribute Length Generation - NDP ATTR Implementation
+ *
+ * \param[in]
+ *
+ * \return Status
+ */
 /*----------------------------------------------------------------------------*/
 void
 nanDataEngineNDPAttrAppendImpl(IN struct ADAPTER *prAdapter,
@@ -2029,12 +2037,12 @@ nanDataEngineNDPAttrAppendImpl(IN struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief            NAN Attribute Length Estimation - NDL ATTR
-*
-* \param[in]
-*
-* \return Status
-*/
+ * \brief            NAN Attribute Length Estimation - NDL ATTR
+ *
+ * \param[in]
+ *
+ * \return Status
+ */
 /*----------------------------------------------------------------------------*/
 uint16_t
 nanDataEngineNDLAttrLength(struct ADAPTER *prAdapter,
@@ -2082,10 +2090,9 @@ nanDataEngineNDLAttrLength(struct ADAPTER *prAdapter,
 			} else
 				fgGenerateNDL = FALSE;
 
-#if (NAN_DATA_ENGINE_SIGMA_WORKAROUND == 1)
 			/* Sigma 5.3.2 must pass with NDL attr */
 			fgGenerateNDL = TRUE;
-#endif
+
 			break;
 		case NDP_RESPONDER_TX_DP_RESPONSE:
 			fgGenerateNDL =
@@ -2126,12 +2133,12 @@ nanDataEngineNDLAttrLength(struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief            NAN Attribute Length Generation - NDL ATTR
-*
-* \param[in]
-*
-* \return Status
-*/
+ * \brief            NAN Attribute Length Generation - NDL ATTR
+ *
+ * \param[in]
+ *
+ * \return Status
+ */
 /*----------------------------------------------------------------------------*/
 void
 nanDataEngineNDLAttrAppend(struct ADAPTER *prAdapter,
@@ -2159,12 +2166,12 @@ nanDataEngineNDLAttrAppend(struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief            NAN Attribute Length Generation - NDL ATTR Implementation
-*
-* \param[in]
-*
-* \return Status
-*/
+ * \brief            NAN Attribute Length Generation - NDL ATTR Implementation
+ *
+ * \param[in]
+ *
+ * \return Status
+ */
 /*----------------------------------------------------------------------------*/
 void
 nanDataEngineNDLAttrAppendImpl(IN struct ADAPTER *prAdapter,
@@ -2354,12 +2361,12 @@ nanDataEngineNDLAttrAppendImpl(IN struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief            NAN Attribute Length Estimation - Element Container ATTR
-*
-* \param[in]
-*
-* \return Status
-*/
+ * \brief            NAN Attribute Length Estimation - Element Container ATTR
+ *
+ * \param[in]
+ *
+ * \return Status
+ */
 /*----------------------------------------------------------------------------*/
 uint16_t
 nanDataEngineElemContainerAttrLength(struct ADAPTER *prAdapter,
@@ -2388,27 +2395,7 @@ nanDataEngineElemContainerAttrLength(struct ADAPTER *prAdapter,
 		return u2AttrLength;
 
 	case NDP_RESPONDER_TX_DP_RESPONSE:
-#if (NAN_DATA_ENGINE_SIGMA_WORKAROUND == 1)
-		/* Sigma 5.3.9 must pass with EC attr */
 		return u2AttrLength;
-#else
-		if (prNDL->fgScheduleEstablished == FALSE) {
-			if (prNDL->ucNDLSetupCurrentStatus ==
-				    NAN_ATTR_NDL_STATUS_ACCEPTED ||
-			    prNDL->ucNDLSetupCurrentStatus ==
-				    NAN_ATTR_NDL_STATUS_CONTINUED)
-				return u2AttrLength;
-			else
-				return 0;
-		} else {
-			if (prNDP->ucNDPSetupStatus ==
-			    NAN_ATTR_NDP_STATUS_ACCEPTED)
-				return u2AttrLength;
-			else
-				return 0;
-		}
-#endif
-
 	default:
 		return 0;
 	}
@@ -2416,12 +2403,12 @@ nanDataEngineElemContainerAttrLength(struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief            NAN Attribute Length Generation - Element Container ATTR
-*
-* \param[in]
-*
-* \return Status
-*/
+ * \brief            NAN Attribute Length Generation - Element Container ATTR
+ *
+ * \param[in]
+ *
+ * \return Status
+ */
 /*----------------------------------------------------------------------------*/
 void
 nanDataEngineElemContainerAttrAppend(struct ADAPTER *prAdapter,
@@ -2457,12 +2444,12 @@ nanDataEngineElemContainerAttrAppend(struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief            NAN Attribute Length Estimation - Device Capability
-*
-* \param[in]
-*
-* \return Status
-*/
+ * \brief            NAN Attribute Length Estimation - Device Capability
+ *
+ * \param[in]
+ *
+ * \return Status
+ */
 /*----------------------------------------------------------------------------*/
 uint16_t
 nanDataEngineDevCapAttrLength(struct ADAPTER *prAdapter,
@@ -2486,12 +2473,12 @@ nanDataEngineDevCapAttrLength(struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief            NAN Attribute Length Generation - Device Capability
-*
-* \param[in]
-*
-* \return Status
-*/
+ * \brief            NAN Attribute Length Generation - Device Capability
+ *
+ * \param[in]
+ *
+ * \return Status
+ */
 /*----------------------------------------------------------------------------*/
 void
 nanDataEngineDevCapAttrAppend(struct ADAPTER *prAdapter,
@@ -2521,12 +2508,12 @@ nanDataEngineDevCapAttrAppend(struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief            NAN Attribute Length Estimation - NAN Availability
-*
-* \param[in]
-*
-* \return Status
-*/
+ * \brief            NAN Attribute Length Estimation - NAN Availability
+ *
+ * \param[in]
+ *
+ * \return Status
+ */
 /*----------------------------------------------------------------------------*/
 uint16_t
 nanDataEngineNanAvailAttrLength(struct ADAPTER *prAdapter,
@@ -2550,12 +2537,12 @@ nanDataEngineNanAvailAttrLength(struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief            NAN Attribute Length Generation - NAN Availability
-*
-* \param[in]
-*
-* \return Status
-*/
+ * \brief            NAN Attribute Length Generation - NAN Availability
+ *
+ * \param[in]
+ *
+ * \return Status
+ */
 /*----------------------------------------------------------------------------*/
 void
 nanDataEngineNanAvailAttrAppend(struct ADAPTER *prAdapter,
@@ -2585,12 +2572,12 @@ nanDataEngineNanAvailAttrAppend(struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief            NAN CHECK NEED TO USE NDPE
-*
-* \param[in]
-*
-* \return Status
-*/
+ * \brief            NAN CHECK NEED TO USE NDPE
+ *
+ * \param[in]
+ *
+ * \return Status
+ */
 /*----------------------------------------------------------------------------*/
 unsigned char
 nanDataEngineNDPECheck(struct ADAPTER *prAdapter,
@@ -2604,12 +2591,12 @@ nanDataEngineNDPECheck(struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief            NAN Attribute Length Estimation - NDC
-*
-* \param[in]
-*
-* \return Status
-*/
+ * \brief            NAN Attribute Length Estimation - NDC
+ *
+ * \param[in]
+ *
+ * \return Status
+ */
 /*----------------------------------------------------------------------------*/
 uint16_t
 nanDataEngineNdcAttrLength(struct ADAPTER *prAdapter,
@@ -2625,9 +2612,10 @@ nanDataEngineNdcAttrLength(struct ADAPTER *prAdapter,
 	if ((prNDL == NULL) && (prNDP == NULL))
 		return 0;
 
-	/* Sigma 5.3.2 must pass with NDC attr */
-	/* not to carry for NDP Status [ACCEPTED] with Data Path Confirm */
-	/*  - Table 28 */
+	/* Sigma 5.3.2 must pass with NDC attr
+	 * not to carry for NDP Status [ACCEPTED] with Data Path Confirm
+	 *  - Table 28
+	 */
 	if (prNDP != NULL &&
 	    prNDP->eCurrentNDPProtocolState == NDP_INITIATOR_TX_DP_CONFIRM &&
 	    prNDP->fgConfirmRequired == TRUE &&
@@ -2644,12 +2632,12 @@ nanDataEngineNdcAttrLength(struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief            NAN Attribute Length Generation - NDC
-*
-* \param[in]
-*
-* \return Status
-*/
+ * \brief            NAN Attribute Length Generation - NDC
+ *
+ * \param[in]
+ *
+ * \return Status
+ */
 /*----------------------------------------------------------------------------*/
 void
 nanDataEngineNdcAttrAppend(struct ADAPTER *prAdapter,
@@ -2679,12 +2667,12 @@ nanDataEngineNdcAttrAppend(struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief            NAN Attribute Length Estimation - NDL QoS
-*
-* \param[in]
-*
-* \return Status
-*/
+ * \brief            NAN Attribute Length Estimation - NDL QoS
+ *
+ * \param[in]
+ *
+ * \return Status
+ */
 /*----------------------------------------------------------------------------*/
 uint16_t
 nanDataEngineNdlQosAttrLength(struct ADAPTER *prAdapter,
@@ -2700,8 +2688,9 @@ nanDataEngineNdlQosAttrLength(struct ADAPTER *prAdapter,
 	if ((prNDL == NULL) && (prNDP == NULL))
 		return 0;
 
-	/* not to carry for NDP Status [ACCEPTED] with Data Path Confirm */
-	/* - Table 28 */
+	/* not to carry for NDP Status [ACCEPTED] with Data Path Confirm
+	 * - Table 28
+	 */
 	if (prNDP != NULL &&
 	    prNDP->eCurrentNDPProtocolState == NDP_INITIATOR_TX_DP_CONFIRM &&
 	    prNDP->fgConfirmRequired == TRUE &&
@@ -2715,12 +2704,12 @@ nanDataEngineNdlQosAttrLength(struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief            NAN Attribute Length Generation - NDL QoS
-*
-* \param[in]
-*
-* \return Status
-*/
+ * \brief            NAN Attribute Length Generation - NDL QoS
+ *
+ * \param[in]
+ *
+ * \return Status
+ */
 /*----------------------------------------------------------------------------*/
 void
 nanDataEngineNdlQosAttrAppend(struct ADAPTER *prAdapter,
@@ -2751,12 +2740,12 @@ nanDataEngineNdlQosAttrAppend(struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief            NAN Attribute Length Estimation - Unaligned Schedule
-*
-* \param[in]
-*
-* \return Status
-*/
+ * \brief            NAN Attribute Length Estimation - Unaligned Schedule
+ *
+ * \param[in]
+ *
+ * \return Status
+ */
 /*----------------------------------------------------------------------------*/
 uint16_t
 nanDataEngineUnalignedAttrLength(struct ADAPTER *prAdapter,
@@ -2788,12 +2777,12 @@ nanDataEngineUnalignedAttrLength(struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief            NAN Attribute Length Generation - Unaligned Schedule
-*
-* \param[in]
-*
-* \return Status
-*/
+ * \brief            NAN Attribute Length Generation - Unaligned Schedule
+ *
+ * \param[in]
+ *
+ * \return Status
+ */
 /*----------------------------------------------------------------------------*/
 void
 nanDataEngineUnalignedAttrAppend(struct ADAPTER *prAdapter,
@@ -2824,12 +2813,12 @@ nanDataEngineUnalignedAttrAppend(struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief            NAN Attribute Length Estimation - Cipher Suite Information
-*
-* \param[in]
-*
-* \return Status
-*/
+ * \brief            NAN Attribute Length Estimation - Cipher Suite Information
+ *
+ * \param[in]
+ *
+ * \return Status
+ */
 /*----------------------------------------------------------------------------*/
 uint16_t
 nanDataEngineCipherSuiteAttrLength(struct ADAPTER *prAdapter,
@@ -2859,12 +2848,12 @@ nanDataEngineCipherSuiteAttrLength(struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief            NAN Attribute Length Generation - Cipher Suite Information
-*
-* \param[in]
-*
-* \return Status
-*/
+ * \brief            NAN Attribute Length Generation - Cipher Suite Information
+ *
+ * \param[in]
+ *
+ * \return Status
+ */
 /*----------------------------------------------------------------------------*/
 void
 nanDataEngineCipherSuiteAttrAppend(struct ADAPTER *prAdapter,
@@ -2893,12 +2882,12 @@ nanDataEngineCipherSuiteAttrAppend(struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief         NAN Attribute Length Estimation - Security Context Information
-*
-* \param[in]
-*
-* \return Status
-*/
+ * \brief         NAN Attribute Length Estimation - Security Context Information
+ *
+ * \param[in]
+ *
+ * \return Status
+ */
 /*----------------------------------------------------------------------------*/
 uint16_t
 nanDataEngineSecContextAttrLength(struct ADAPTER *prAdapter,
@@ -2928,12 +2917,12 @@ nanDataEngineSecContextAttrLength(struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief        NAN Attribute Length Generation - Security Context Information
-*
-* \param[in]
-*
-* \return Status
-*/
+ * \brief        NAN Attribute Length Generation - Security Context Information
+ *
+ * \param[in]
+ *
+ * \return Status
+ */
 /*----------------------------------------------------------------------------*/
 void
 nanDataEngineSecContextAttrAppend(struct ADAPTER *prAdapter,
@@ -2962,12 +2951,12 @@ nanDataEngineSecContextAttrAppend(struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief            NAN Attribute Length Estimation - NAN Shared Key Descriptor
-*
-* \param[in]
-*
-* \return Status
-*/
+ * \brief            NAN Attribute Length Estimation - NAN Shared Key Descriptor
+ *
+ * \param[in]
+ *
+ * \return Status
+ */
 /*----------------------------------------------------------------------------*/
 uint16_t
 nanDataEngineSharedKeyAttrLength(struct ADAPTER *prAdapter,
@@ -2988,12 +2977,12 @@ nanDataEngineSharedKeyAttrLength(struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief            NAN Attribute Length Generation - NAN Shared Key Descriptor
-*
-* \param[in]
-*
-* \return Status
-*/
+ * \brief            NAN Attribute Length Generation - NAN Shared Key Descriptor
+ *
+ * \param[in]
+ *
+ * \return Status
+ */
 /*----------------------------------------------------------------------------*/
 void
 nanDataEngineSharedKeyAttrAppend(struct ADAPTER *prAdapter,
@@ -3012,12 +3001,12 @@ nanDataEngineSharedKeyAttrAppend(struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief            NAN Attribute Length Estimation - NDP Extension
-*
-* \param[in]
-*
-* \return Status
-*/
+ * \brief            NAN Attribute Length Estimation - NDP Extension
+ *
+ * \param[in]
+ *
+ * \return Status
+ */
 /*----------------------------------------------------------------------------*/
 uint16_t
 nanDataEngineNDPESpecAttrLength(IN struct ADAPTER *prAdapter,
@@ -3041,12 +3030,12 @@ nanDataEngineNDPESpecAttrLength(IN struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief            NAN Attribute Generation - NDPE ATTR
-*
-* \param[in]
-*
-* \return Status
-*/
+ * \brief            NAN Attribute Generation - NDPE ATTR
+ *
+ * \param[in]
+ *
+ * \return Status
+ */
 /*----------------------------------------------------------------------------*/
 void
 nanDataEngineNDPESpecAttrAppend(IN struct ADAPTER *prAdapter,
@@ -3072,12 +3061,12 @@ nanDataEngineNDPESpecAttrAppend(IN struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief            NAN Attribute Length Estimation - NDP Extension
-*
-* \param[in]
-*
-* \return Status
-*/
+ * \brief            NAN Attribute Length Estimation - NDP Extension
+ *
+ * \param[in]
+ *
+ * \return Status
+ */
 /*----------------------------------------------------------------------------*/
 uint16_t
 nanDataEngineNDPEProtocolAttrLength(IN struct ADAPTER *prAdapter,
@@ -3103,12 +3092,12 @@ nanDataEngineNDPEProtocolAttrLength(IN struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief            NAN Attribute Generation - NDPE ATTR
-*
-* \param[in]
-*
-* \return Status
-*/
+ * \brief            NAN Attribute Generation - NDPE ATTR
+ *
+ * \param[in]
+ *
+ * \return Status
+ */
 /*----------------------------------------------------------------------------*/
 void
 nanDataEngineNDPEProtocolAttrAppend(IN struct ADAPTER *prAdapter,
@@ -3134,12 +3123,12 @@ nanDataEngineNDPEProtocolAttrAppend(IN struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief            NAN Attribute Length Estimation - NDP Extension
-*
-* \param[in]
-*
-* \return Status
-*/
+ * \brief            NAN Attribute Length Estimation - NDP Extension
+ *
+ * \param[in]
+ *
+ * \return Status
+ */
 /*----------------------------------------------------------------------------*/
 uint16_t
 nanDataEngineNDPEPORTAttrLength(IN struct ADAPTER *prAdapter,
@@ -3165,12 +3154,12 @@ nanDataEngineNDPEPORTAttrLength(IN struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief            NAN Attribute Generation - NDPE ATTR
-*
-* \param[in]
-*
-* \return Status
-*/
+ * \brief            NAN Attribute Generation - NDPE ATTR
+ *
+ * \param[in]
+ *
+ * \return Status
+ */
 /*----------------------------------------------------------------------------*/
 void
 nanDataEngineNDPEPORTAttrAppend(IN struct ADAPTER *prAdapter,
@@ -3193,12 +3182,12 @@ nanDataEngineNDPEPORTAttrAppend(IN struct ADAPTER *prAdapter,
 }
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief            NANE Attribute : Service Info check
-*
-* \param[in]
-*
-* \return Status
-*/
+ * \brief            NANE Attribute : Service Info check
+ *
+ * \param[in]
+ *
+ * \return Status
+ */
 /*----------------------------------------------------------------------------*/
 unsigned char
 nanDataEngineServiceInfoCheck(IN struct ADAPTER *prAdapter,
@@ -3210,12 +3199,12 @@ nanDataEngineServiceInfoCheck(IN struct ADAPTER *prAdapter,
 }
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief            NAN Attribute Length Estimation - NDP Extension
-*
-* \param[in]
-*
-* \return Status
-*/
+ * \brief            NAN Attribute Length Estimation - NDP Extension
+ *
+ * \param[in]
+ *
+ * \return Status
+ */
 /*----------------------------------------------------------------------------*/
 uint16_t
 nanDataEngineNDPEAttrLength(IN struct ADAPTER *prAdapter,
@@ -3303,8 +3292,9 @@ nanDataEngineNDPEAttrLength(IN struct ADAPTER *prAdapter,
 			return u2AttrLength;
 
 		case NDP_INITIATOR_TX_DP_CONFIRM:
-			/* refer to Table.28 - don't carry NDP for NDL */
-			/* Counter Reject */
+			/* refer to Table.28 - don't carry NDP for NDL
+			 * Counter Reject
+			 */
 			if (prNDL->ucNDLSetupCurrentStatus ==
 			    NAN_ATTR_NDL_STATUS_REJECTED)
 				return 0;
@@ -3335,12 +3325,12 @@ nanDataEngineNDPEAttrLength(IN struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief            NAN Attribute Generation - NDPE ATTR
-*
-* \param[in]
-*
-* \return Status
-*/
+ * \brief            NAN Attribute Generation - NDPE ATTR
+ *
+ * \param[in]
+ *
+ * \return Status
+ */
 /*----------------------------------------------------------------------------*/
 void
 nanDataEngineNDPEAttrAppend(IN struct ADAPTER *prAdapter,
@@ -3368,12 +3358,12 @@ nanDataEngineNDPEAttrAppend(IN struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief            NAN Attribute Generation - NDPE ATTR Implementation
-*
-* \param[in]
-*
-* \return Status
-*/
+ * \brief            NAN Attribute Generation - NDPE ATTR Implementation
+ *
+ * \param[in]
+ *
+ * \return Status
+ */
 /*----------------------------------------------------------------------------*/
 void
 nanDataEngineNDPEAttrAppendImpl(IN struct ADAPTER *prAdapter,
@@ -3752,7 +3742,9 @@ nanDataEngineSetupStaRec(IN struct ADAPTER *prAdapter,
 				~VHT_CAP_INFO_SHORT_GI_160_80P80;
 		}
 
-		/*Set Vht Rx Mcs Map upon peer's capability and our capability*/
+		/* Set Vht Rx Mcs Map upon peer's capability
+		 * and our capability
+		 */
 		prStaRec->u2VhtRxMcsMap =
 			prVhtCap->rVhtSupportedMcsSet.u2RxMcsMap;
 		if (wlanGetSupportNss(prAdapter, prStaRec->ucBssIndex) < 8) {
@@ -3760,7 +3752,7 @@ nanDataEngineSetupStaRec(IN struct ADAPTER *prAdapter,
 				wlanGetSupportNss(prAdapter,
 						  prStaRec->ucBssIndex) *
 				2;
-			/*Mark Rx Mcs Map which we don't support*/
+			/* Mark Rx Mcs Map which we don't support */
 			prStaRec->u2VhtRxMcsMap |=
 				BITS(ucVhtCapMcsOwnNotSupportOffset, 15);
 		}
@@ -3810,13 +3802,13 @@ nanDataEngineSetupStaRec(IN struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief         NAN STA-REC Allocate & Activate
-*
-* \param[in]
-*
-* \return Status WLAN_STATUS_SUCCESS
-*                WLAN_STATUS_FAILURE
-*/
+ * \brief         NAN STA-REC Allocate & Activate
+ *
+ * \param[in]
+ *
+ * \return Status WLAN_STATUS_SUCCESS
+ *                WLAN_STATUS_FAILURE
+ */
 /*----------------------------------------------------------------------------*/
 uint32_t
 nanDataEngineAllocStaRec(IN struct ADAPTER *prAdapter,
@@ -3850,8 +3842,9 @@ nanDataEngineAllocStaRec(IN struct ADAPTER *prAdapter,
 			       __func__);
 			return WLAN_STATUS_FAILURE;
 		}
-		/* Fixme: support QoS data */
-		/* (*pprStaRec)->fgIsQoS = TRUE */
+		/* Fixme: support QoS data
+		 * (*pprStaRec)->fgIsQoS = TRUE
+		 */
 
 		prBssInfo = prAdapter->aprBssInfo[(*pprStaRec)->ucBssIndex];
 		DBGLOG(NAN, INFO,
@@ -3927,13 +3920,13 @@ nanGetStaRecByNDI(struct ADAPTER *prAdapter, uint8_t *pucPeerMacAddr) {
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief         NAN STA-REC Deactivate & Free
-*
-* \param[in]
-*
-* \return Status WLAN_STATUS_SUCCESS
-*                WLAN_STATUS_FAILURE
-*/
+ * \brief         NAN STA-REC Deactivate & Free
+ *
+ * \param[in]
+ *
+ * \return Status WLAN_STATUS_SUCCESS
+ *                WLAN_STATUS_FAILURE
+ */
 /*----------------------------------------------------------------------------*/
 uint32_t
 nanDataEngineFreeStaRec(IN struct ADAPTER *prAdapter,
@@ -4220,9 +4213,10 @@ nanDataEngineUnrollNMIContext(IN struct ADAPTER *prAdapter,
 		}
 	}
 
-	/* free STA-REC for deactivating data path operation */
-	/* STARec only establish when NDP setup success (NORMAL_TR) */
-	/*  in NDP case*/
+	/* free STA-REC for deactivating data path operation
+	 * STARec only establish when NDP setup success (NORMAL_TR)
+	 *  in NDP case
+	 */
 	if (prNDP->fgNDPEstablish == TRUE)
 		nanDataEngineFreeStaRec(prAdapter, prNDL,
 					&prNdpCxt->prNanStaRec);
@@ -4541,9 +4535,10 @@ nanDataEngineUnrollNDPContext(IN struct ADAPTER *prAdapter,
 		}
 	}
 
-	/* free STA-REC for deactivating data path operation */
-	/* STARec only establish when NDP setup success (NORMAL_TR) */
-	/*  in NDP case*/
+	/* free STA-REC for deactivating data path operation
+	 * STARec only establish when NDP setup success (NORMAL_TR)
+	 *  in NDP case
+	 */
 	if (prNDP->fgNDPEstablish == TRUE)
 		nanDataEngineFreeStaRec(prAdapter, prNDL,
 					&prNdpCxt->prNanStaRec);

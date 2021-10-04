@@ -5,9 +5,7 @@
  */
 
 /*
- ** gl_vendor_nan.c
- **
- **
+ * gl_vendor_nan.c
  */
 
 /*******************************************************************************
@@ -65,12 +63,10 @@
  *                              F U N C T I O N S
  *******************************************************************************
  */
-const struct nla_policy mtk_wlan_vendor_nan_policy[NL80211_ATTR_MAX + 1] = {
-	[NL80211_ATTR_VENDOR_DATA] = NLA_POLICY_MIN_LEN(0),
-};
 
-/* Helper function to Write and Read TLV called in indication as well as */
-/*  request */
+/* Helper function to Write and Read TLV called in indication as well as
+ * request
+ */
 u16
 nanWriteTlv(struct _NanTlv *pInTlv, u8 *pOutTlv)
 {
@@ -1115,7 +1111,7 @@ int mtk_cfg80211_vendor_nan(struct wiphy *wiphy,
 		kalMemZero(pNanPublishRsp,
 			   sizeof(struct NanPublishServiceRspMsg));
 
-		/*Mapping publish req related parameters*/
+		/* Mapping publish req related parameters */
 		readLen = nanMapPublishReqParams((u16 *)data, pNanPublishReq);
 		remainingLen -= readLen;
 		data += readLen;
@@ -1373,6 +1369,8 @@ int mtk_cfg80211_vendor_nan(struct wiphy *wiphy,
 	case NAN_MSG_ID_SUBSCRIBE_SERVICE_REQ: {
 		struct NanSubscribeRequest *pNanSubscribeReq = NULL;
 		struct NanSubscribeServiceRspMsg *pNanSubscribeRsp = NULL;
+		bool fgRangingCFG = FALSE;
+		bool fgRangingREQ = FALSE;
 		uint16_t Subscribe_id = 0;
 		int i = 0;
 
@@ -1388,7 +1386,7 @@ int mtk_cfg80211_vendor_nan(struct wiphy *wiphy,
 			   sizeof(struct NanSubscribeRequest));
 		kalMemZero(pNanSubscribeRsp,
 			   sizeof(struct NanSubscribeServiceRspMsg));
-		/*Mapping subscribe req related parameters*/
+		/* Mapping subscribe req related parameters */
 		readLen =
 			nanMapSubscribeReqParams((u16 *)data, pNanSubscribeReq);
 		remainingLen -= readLen;
@@ -1521,13 +1519,16 @@ int mtk_cfg80211_vendor_nan(struct wiphy *wiphy,
 				       outputTlv.length);
 				break;
 			case NAN_TLV_TYPE_NAN_RANGING_CFG:
+				fgRangingCFG = TRUE;
+				DBGLOG(NAN, INFO, "fgRangingCFG %d\n",
+					fgRangingCFG);
 				nanMapRangingConfigParams(
 					(u32 *)outputTlv.value,
 					&pNanSubscribeReq->ranging_cfg);
 				break;
 			case NAN_TLV_TYPE_SDEA_SERVICE_SPECIFIC_INFO:
 				memcpy(pNanSubscribeReq
-					       ->sdea_service_specific_info,
+					->sdea_service_specific_info,
 				       outputTlv.value, outputTlv.length);
 				pNanSubscribeReq
 					->sdea_service_specific_info_len =
@@ -1538,6 +1539,9 @@ int mtk_cfg80211_vendor_nan(struct wiphy *wiphy,
 				       outputTlv.length);
 				break;
 			case NAN_TLV_TYPE_NAN20_RANGING_REQUEST:
+				fgRangingREQ = TRUE;
+				DBGLOG(NAN, INFO, "fgRangingREQ %d\n",
+					fgRangingREQ);
 				nanMapNan20RangingReqParams(
 					(u32 *)outputTlv.value,
 					&pNanSubscribeReq->range_response_cfg);
@@ -1567,6 +1571,54 @@ int mtk_cfg80211_vendor_nan(struct wiphy *wiphy,
 			kfree_skb(skb);
 			return -EFAULT;
 		}
+		/* Ranging */
+		if (fgRangingCFG && fgRangingREQ) {
+
+			struct NanRangeRequest *rgreq = NULL;
+			uint16_t rgId = 0;
+			uint32_t rStatus;
+
+			rgreq = kmalloc(sizeof(struct NanRangeRequest),
+				GFP_ATOMIC);
+			kalMemZero(rgreq, sizeof(struct NanRangeRequest));
+
+			memcpy(&rgreq->peer_addr,
+				&pNanSubscribeReq->range_response_cfg.peer_addr,
+				NAN_MAC_ADDR_LEN);
+			memcpy(&rgreq->ranging_cfg,
+				&pNanSubscribeReq->ranging_cfg,
+				sizeof(struct NanRangingCfg));
+			rgreq->range_id =
+			pNanSubscribeReq->range_response_cfg
+				.requestor_instance_id;
+			DBGLOG(NAN, INFO, MACSTR
+				" id %d reso %d intev %d indicat %d ING CM %d ENG CM %d\n",
+				MAC2STR(rgreq->peer_addr),
+				rgreq->range_id,
+				rgreq->ranging_cfg.ranging_resolution,
+				rgreq->ranging_cfg.ranging_interval_msec,
+				rgreq->ranging_cfg.config_ranging_indications,
+				rgreq->ranging_cfg.distance_ingress_cm,
+				rgreq->ranging_cfg.distance_egress_cm);
+			rStatus =
+			nanRangingRequest(prGlueInfo->prAdapter, &rgId, rgreq);
+
+			pNanSubscribeRsp->fwHeader.handle = rgId;
+			i4Status = kalIoctl(prGlueInfo, wlanoidNanSubscribeRsp,
+				       (void *)pNanSubscribeRsp,
+				       sizeof(struct NanSubscribeServiceRspMsg),
+				       FALSE, FALSE, FALSE, &u4BufLen);
+			if (i4Status != WLAN_STATUS_SUCCESS) {
+				DBGLOG(REQ, ERROR, "kalIoctl failed\n");
+				return -EFAULT;
+			}
+			kfree(rgreq);
+			kfree(pNanSubscribeReq);
+			break;
+
+		}
+
+		prAdapter->fgIsNANfromHAL = TRUE;
 
 		/* return subscribe ID */
 		Subscribe_id = (uint16_t)nanSubscribeRequest(
@@ -1671,7 +1723,7 @@ int mtk_cfg80211_vendor_nan(struct wiphy *wiphy,
 
 		DBGLOG(REQ, INFO, "Enter Transmit follow up Request\n");
 
-		/*Mapping publish req related parameters*/
+		/* Mapping publish req related parameters */
 		readLen = nanMapFollowupReqParams((u32 *)data,
 						  pNanXmitFollowupReq);
 		remainingLen -= readLen;
@@ -1795,9 +1847,10 @@ int mtk_cfg80211_vendor_nan(struct wiphy *wiphy,
 			memset(&outputTlv, 0, sizeof(outputTlv));
 		}
 
-		/* To be implement */
-		/* Beacon SDF VSA request................................. */
-		/* rStatus = ; */
+		/* To be implement
+		 * Beacon SDF VSA request.................................
+		 * rStatus = ;
+		 */
 
 		/* Prepare Beacon Sdf Payload Response */
 		memcpy(&pNanBcnSdfVSARsp->fwHeader, &nanMsgHdr,
@@ -1924,10 +1977,10 @@ mtk_cfg80211_vendor_event_nan_event_indication(IN struct ADAPTER *prAdapter,
 		return WLAN_STATUS_SUCCESS;
 	}
 
-	/*Add TLV datas*/
+	/* Add TLV datas */
 	tlvs = nanAddTlv(u2EventType, MAC_ADDR_LEN, pucNanEventInd, tlvs);
 
-	/*  Fill skb and send to kernel by nl80211*/
+	/* Fill skb and send to kernel by nl80211 */
 	skb = cfg80211_vendor_event_alloc(wiphy, wdev,
 					  message_len + NLMSG_HDRLEN,
 					  WIFI_EVENT_SUBCMD_NAN, GFP_KERNEL);
@@ -1968,7 +2021,7 @@ mtk_cfg80211_vendor_event_nan_replied_indication(IN struct ADAPTER *prAdapter,
 
 	prRepliedEvt = (struct NAN_REPLIED_EVENT *)pcuEvtBuf;
 
-	/*Final length includes all TLVs*/
+	/* Final length includes all TLVs */
 	message_len = sizeof(struct _NanMsgHeader) +
 		      sizeof(struct _NanPublishRepliedIndParams) +
 		      ((SIZEOF_TLV_HDR) + MAC_ADDR_LEN) +
@@ -1988,7 +2041,7 @@ mtk_cfg80211_vendor_event_nan_replied_indication(IN struct ADAPTER *prAdapter,
 		prRepliedEvt->u2Subid;
 
 	tlvs = prNanPubRepliedInd->ptlv;
-	/*Add TLV datas*/
+	/* Add TLV datas */
 	tlvs = nanAddTlv(NAN_TLV_TYPE_MAC_ADDRESS, MAC_ADDR_LEN,
 			 &prRepliedEvt->auAddr[0], tlvs);
 
@@ -1996,7 +2049,7 @@ mtk_cfg80211_vendor_event_nan_replied_indication(IN struct ADAPTER *prAdapter,
 			 sizeof(prRepliedEvt->ucRssi_value),
 			 &prRepliedEvt->ucRssi_value, tlvs);
 
-	/*  Fill skb and send to kernel by nl80211*/
+	/* Fill skb and send to kernel by nl80211 */
 	skb = cfg80211_vendor_event_alloc(wiphy, wdev,
 					  message_len + NLMSG_HDRLEN,
 					  WIFI_EVENT_SUBCMD_NAN, GFP_KERNEL);
@@ -2061,7 +2114,7 @@ mtk_cfg80211_vendor_event_nan_match_indication(IN struct ADAPTER *prAdapter,
 		0; /* doesn't outof resource. */
 
 	tlvs = prNanMatchInd->ptlv;
-	/*Add TLV datas*/
+	/* Add TLV datas */
 	tlvs = nanAddTlv(NAN_TLV_TYPE_MAC_ADDRESS, MAC_ADDR_LEN,
 			 &prDiscEvt->aucNanAddress[0], tlvs);
 	DBGLOG(NAN, INFO, "[%s] :NAN_TLV_TYPE_SERVICE_SPECIFIC_INFO %u\n",
@@ -2088,7 +2141,7 @@ mtk_cfg80211_vendor_event_nan_match_indication(IN struct ADAPTER *prAdapter,
 			 sizeof(struct NanFWSdeaCtrlParams),
 			 (u8 *)&nanPeerSdeaCtrlarms, tlvs);
 
-	/*  Fill skb and send to kernel by nl80211*/
+	/* Fill skb and send to kernel by nl80211 */
 	skb = cfg80211_vendor_event_alloc(wiphy, wdev,
 					  message_len + NLMSG_HDRLEN,
 					  WIFI_EVENT_SUBCMD_NAN, GFP_KERNEL);
@@ -2140,7 +2193,7 @@ mtk_cfg80211_vendor_event_nan_publish_terminate(IN struct ADAPTER *prAdapter,
 	DBGLOG(NAN, ERROR, "[%s] Cancel Pub ID = %d\n",
 	       nanPubTerInd.fwHeader.handle);
 
-	/*  Fill skb and send to kernel by nl80211*/
+	/* Fill skb and send to kernel by nl80211 */
 	skb = cfg80211_vendor_event_alloc(wiphy, wdev,
 					  message_len + NLMSG_HDRLEN,
 					  WIFI_EVENT_SUBCMD_NAN, GFP_KERNEL);
@@ -2187,7 +2240,7 @@ mtk_cfg80211_vendor_event_nan_subscribe_terminate(IN struct ADAPTER *prAdapter,
 	/* For all user should be success. */
 	nanSubTerInd.reason = prSubTerEvt->ucReasonCode;
 
-	/*  Fill skb and send to kernel by nl80211*/
+	/* Fill skb and send to kernel by nl80211 */
 	skb = cfg80211_vendor_event_alloc(wiphy, wdev,
 					  message_len + NLMSG_HDRLEN,
 					  WIFI_EVENT_SUBCMD_NAN, GFP_KERNEL);
@@ -2251,7 +2304,7 @@ mtk_cfg80211_vendor_event_nan_followup_indication(IN struct ADAPTER *prAdapter,
 	       prNanFollowupInd->followupIndParams.window);
 
 	tlvs = prNanFollowupInd->ptlv;
-	/*Add TLV datas*/
+	/* Add TLV datas */
 	tlvs = nanAddTlv(NAN_TLV_TYPE_MAC_ADDRESS, MAC_ADDR_LEN,
 			 prFollowupEvt->addr, tlvs);
 
@@ -2259,10 +2312,11 @@ mtk_cfg80211_vendor_event_nan_followup_indication(IN struct ADAPTER *prAdapter,
 			 prFollowupEvt->service_specific_info_len,
 			 prFollowupEvt->service_specific_info, tlvs);
 
-	/* Ranging report */
-	/* To be implement. NAN_TLV_TYPE_SDEA_SERVICE_SPECIFIC_INFO */
+	/* Ranging report
+	 * To be implement. NAN_TLV_TYPE_SDEA_SERVICE_SPECIFIC_INFO
+	 */
 
-	/*  Fill skb and send to kernel by nl80211*/
+	/*  Fill skb and send to kernel by nl80211 */
 	skb = cfg80211_vendor_event_alloc(wiphy, wdev,
 					  message_len + NLMSG_HDRLEN,
 					  WIFI_EVENT_SUBCMD_NAN, GFP_KERNEL);

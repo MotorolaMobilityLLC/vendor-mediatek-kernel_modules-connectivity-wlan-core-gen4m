@@ -116,6 +116,7 @@ const struct nla_policy nal_parse_wifi_setband[
 
 const struct nla_policy nla_parse_wifi_attribute[
 	WIFI_ATTRIBUTE_MAX + 1] = {
+	[WIFI_ATTRIBUTE_BAND] = {.type = NLA_U32},
 #if KERNEL_VERSION(5, 9, 0) <= CFG80211_VERSION_CODE
 	[WIFI_ATTRIBUTE_PNO_RANDOM_MAC_OUI] = NLA_POLICY_MIN_LEN(0),
 #elif KERNEL_VERSION(5, 4, 0) <= CFG80211_VERSION_CODE
@@ -1325,7 +1326,7 @@ int mtk_cfg80211_vendor_llstats_get_info(struct wiphy *wiphy,
 	} query = {0};
 
 	uint32_t u4QueryBufLen = sizeof(query);
-	uint32_t u4QueryInfoLen = sizeof(query);
+	uint32_t u4QueryInfoLen = sizeof(query.cmd);
 
 	uint8_t *buf = NULL;
 	struct sk_buff *skb = NULL;

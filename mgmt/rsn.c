@@ -107,6 +107,36 @@
  *******************************************************************************
  */
 
+
+u_int8_t rsnParseRsnxIE(IN struct ADAPTER *prAdapter,
+				   IN struct RSNX_INFO_ELEM *prInfoElem,
+				   OUT struct RSNX_INFO *prRsnxeInfo)
+{
+	uint8_t *cp;
+	uint16_t u2Cap = 0;
+
+	if (prInfoElem->ucLength < 1) {
+		DBGLOG(RSN, TRACE, "RSNXE IE length too short (length=%d)\n",
+		       prInfoElem->ucLength);
+		return FALSE;
+	}
+
+	cp = (uint8_t *) prInfoElem->aucCap;
+	if (prInfoElem->ucLength == 1) {
+		uint8_t ucCap = *cp;
+
+		u2Cap = (uint16_t) ucCap & 0x00ff;
+	} else if (prInfoElem->ucLength == 2) {
+		WLAN_GET_FIELD_16(cp, &u2Cap);
+	}
+	prRsnxeInfo->u2Cap = u2Cap;
+
+	DBGLOG(RSN, INFO, "parse RSNXE cap: 0x%x\n",
+		prRsnxeInfo->u2Cap);
+
+	return TRUE;
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief This routine is called to parse RSN IE.
@@ -779,6 +809,30 @@ uint8_t rsnKeyMgmtWpa(IN struct ADAPTER *prAdapter,
 	       rsnSearchAKMSuite(prAdapter, RSN_AKM_SUITE_SAE, &i, bssidx);
 }
 
+uint8_t rsnKeyMgmtWpa3for6g(IN struct ADAPTER *prAdapter,
+	IN enum ENUM_PARAM_AUTH_MODE eAuthMode,
+	IN uint8_t bssidx,
+	IN struct BSS_DESC *prBss)
+{
+	uint32_t i;
+	struct GL_WPA_INFO *prWpaInfo;
+	u_int8_t fgIsOWE;
+	u_int8_t fgIsSAE;
+	u_int8_t fgIsSAEH2E;
+
+	prWpaInfo = aisGetWpaInfo(prAdapter, bssidx);
+	fgIsOWE = eAuthMode == AUTH_MODE_WPA3_OWE ||
+		rsnSearchAKMSuite(prAdapter, RSN_AKM_SUITE_OWE, &i, bssidx);
+	fgIsSAE = eAuthMode == AUTH_MODE_WPA3_SAE ||
+		rsnSearchAKMSuite(prAdapter, RSN_AKM_SUITE_SAE, &i, bssidx);
+	fgIsSAEH2E = fgIsSAE &&
+		(prWpaInfo->u2RSNXCap & BIT(WLAN_RSNX_CAPAB_SAE_H2E)) &&
+		(prBss->fgIERSNX &&
+			prBss->u2RsnxCap & BIT(WLAN_RSNX_CAPAB_SAE_H2E));
+
+	return (fgIsOWE || fgIsSAEH2E);
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief This routine is called to perform RSNA or TSN policy
@@ -830,6 +884,17 @@ u_int8_t rsnPerformPolicySelection(
 	    aisGetOPMode(prAdapter, ucBssIndex);
 	eEncStatus =
 	    aisGetEncStatus(prAdapter, ucBssIndex);
+
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	if (prBss->eBand == BAND_6G) {
+		if (!rsnKeyMgmtWpa3for6g(
+				prAdapter, eAuthMode, ucBssIndex, prBss)) {
+			DBGLOG(RSN, INFO,
+				"Invalid 6g security mode: only OWE & SAE H2E is allowed\n");
+			return FALSE;
+		}
+	}
+#endif
 
 #if CFG_SUPPORT_WPS
 	fgIsWpsActive = aisGetConnSettings(prAdapter,

@@ -205,6 +205,7 @@ struct PCIE_CHIP_CR_MAPPING soc7_0_bus2chip_cr_mapping[] = {
 	{0x7c500000, 0x50000, 0x10000}, /* CONN_INFRA, dyn mem map */
 	{0x7c060000, 0xe0000, 0x10000}, /* CONN_INFRA, conn_host_csr_top */
 	{0x7c000000, 0xf0000, 0x10000}, /* CONN_INFRA */
+	{0x0, 0x0, 0x0} /* End */
 };
 #elif defined(_HIF_AXI)
 struct PCIE_CHIP_CR_MAPPING soc7_0_bus2chip_cr_mapping[] = {
@@ -261,6 +262,7 @@ struct PCIE_CHIP_CR_MAPPING soc7_0_bus2chip_cr_mapping[] = {
 	{0x83010000, 0x4e0000, 0x10000},   /* WF_PHY_MAP4 */
 	{0x88000000, 0x4f0000, 0x10000},   /* WF_MCU_CFG_LS */
 	{0x7c000000, 0x000000, 0x1000000}, /* CONN_INFRA */
+	{0x0, 0x0, 0x0} /* End */
 };
 #endif
 
@@ -1426,7 +1428,14 @@ static int wf_pwr_on_consys_mcu(void)
 	}
 	if (check != 0) {
 		DBGLOG(INIT, ERROR,
-			"Check CONNSYS power-on completion fail, value=0x%08x\n",
+			"Check CONNSYS power-on completion fail, 0x%08x=[0x%08x]\n",
+			CONN_HOST_CSR_TOP_WF_ON_MONFLG_OUT_ADDR,
+			value);
+
+		wf_ioremap_read(WF_TOP_CFG_ON_ROMCODE_INDEX_ADDR, &value);
+		DBGLOG(INIT, ERROR,
+			"Check CONNSYS power-on completion fail, 0x%08x=[0x%08x]\n",
+			WF_TOP_CFG_ON_ROMCODE_INDEX_ADDR,
 			value);
 		return ret;
 	}

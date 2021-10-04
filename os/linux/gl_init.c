@@ -774,7 +774,8 @@ static const struct wiphy_vendor_command
 		.doit = mtk_cfg80211_vendor_get_channel_list
 #if KERNEL_VERSION(5, 4, 0) <= LINUX_VERSION_CODE
 		,
-		.policy = VENDOR_CMD_RAW_DATA
+		.policy = nla_parse_wifi_attribute,
+		.maxattr = WIFI_ATTRIBUTE_MAX
 #endif
 	},
 	{
@@ -1157,8 +1158,7 @@ static const struct wiphy_vendor_command
 		.doit = mtk_cfg80211_vendor_nan
 #if KERNEL_VERSION(5, 4, 0) <= CFG80211_VERSION_CODE
 		,
-		.policy = mtk_wlan_vendor_nan_policy,
-		.maxattr = NL80211_ATTR_MAX
+		.policy = VENDOR_CMD_RAW_DATA
 #endif
 	},
 	{
@@ -1300,6 +1300,14 @@ static const struct nl80211_vendor_cmd_info
 	{
 		.vendor_id = OUI_MTK,
 		.subcmd = MTK_NL80211_TRIGGER_RESET
+	},
+	{
+		.vendor_id = OUI_MTK,
+		.subcmd = NL80211_VENDOR_SUBCMD_NAN
+	},
+	{
+		.vendor_id = OUI_MTK,
+		.subcmd = NL80211_VENDOR_SUBCMD_NDP
 	}
 };
 #endif
@@ -2260,6 +2268,7 @@ static int wlanStop(struct net_device *prDev)
 	*/
 	GLUE_ACQUIRE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
 	if (prGlueInfo->prScanRequest) {
+		DBGLOG(INIT, INFO, "wlanStop abort scan!\n");
 		kalCfg80211ScanDone(prGlueInfo->prScanRequest, TRUE);
 		aisFsmStateAbort_SCAN(prGlueInfo->prAdapter,
 					wlanGetBssIdx(prDev));
@@ -2881,12 +2890,12 @@ static void wlanCreateWirelessDevice(void)
 
 	/* Allocate GLUE_INFO and set priv as pointer to glue structure */
 	prGlueInfo = kalMemAlloc(sizeof(struct GLUE_INFO), VIR_MEM_TYPE);
-	kalMemSet(prGlueInfo, 0, sizeof(struct GLUE_INFO));
 	if (!prGlueInfo) {
 		DBGLOG(INIT, ERROR,
 		       "Allocating memory to GLUE_INFO failed\n");
 		goto free_wiphy;
 	}
+	kalMemSet(prGlueInfo, 0, sizeof(struct GLUE_INFO));
 	*((struct GLUE_INFO **) wiphy_priv(prWiphy)) = prGlueInfo;
 
 	/* 4 <1.3> configure wireless_dev & wiphy */
@@ -6049,7 +6058,7 @@ static void wlanRemove(void)
 		DBGLOG(INIT, INFO, "NANNetUnregister...\n");
 		nanNetUnregister(prGlueInfo, FALSE);
 		DBGLOG(INIT, INFO, "nanRemove...\n");
-		/*p2pRemove must before wlanAdapterStop */
+		/* nanRemove must before wlanAdapterStop */
 		nanRemove(prGlueInfo);
 	}
 	kalReleaseUserSock(prGlueInfo);

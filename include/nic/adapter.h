@@ -653,6 +653,8 @@ struct BSS_INFO {
 #ifdef CFG_MSCS_SUPPORT
 	struct FAST_PATH_INFO rFastPathInfo;
 #endif
+
+	u_int8_t fgEnableH2E;
 };
 
 /* Support AP Selection */
@@ -765,13 +767,12 @@ struct _NAN_SPECIFIC_BSS_INFO_T {
 	uint8_t aucClusterId[MAC_ADDR_LEN];
 	struct _NAN_ATTR_MASTER_INDICATION_T rMasterIndAttr;
 
-	/*
- *	struct NAN_CRB_NEGO_CTRL_T rNanSchNegoCtrl;
- *	struct NAN_PEER_SCHEDULE_RECORD_T
- *			 arNanPeerSchedRecord[NAN_MAX_CONN_CFG];
- *	struct NAN_TIMELINE_MGMT_T rNanTimelineMgmt;
- *	struct NAN_SCHEDULER_T rNanScheduler;
- */
+	/* struct NAN_CRB_NEGO_CTRL_T rNanSchNegoCtrl;
+	 * struct NAN_PEER_SCHEDULE_RECORD_T
+	 * arNanPeerSchedRecord[NAN_MAX_CONN_CFG];
+	 * struct NAN_TIMELINE_MGMT_T rNanTimelineMgmt;
+	 * struct NAN_SCHEDULER_T rNanScheduler;
+	 */
 };
 #endif
 
@@ -922,9 +923,7 @@ struct WIFI_VAR {
 	uint8_t ucP2pGcHe;
 	uint8_t ucApSelAxWeight;
 	uint8_t ucApSelAxScoreDiv;
-#endif
-#if (CFG_SUPPORT_WIFI_6G == 1)
-	uint8_t ucP2pPrefer6G;
+	uint8_t ucVcoreBoostEnable;
 #endif
 #if (CFG_SUPPORT_802_11BE == 1)
 	uint8_t ucStaEht;
@@ -1166,6 +1165,9 @@ struct WIFI_VAR {
 	uint32_t u4PerfMonUpdatePeriod;
 	uint32_t u4PerfMonTpTh[PERF_MON_TP_MAX_THRESHOLD];
 	uint32_t	u4BoostCpuTh;
+#if CFG_SUPPORT_LITTLE_CPU_BOOST
+	uint32_t	u4BoostLittleCpuTh;
+#endif /* CFG_SUPPORT_LITTLE_CPU_BOOST */
 	u_int8_t	fgIsBoostCpuThAdjustable;
 
 	uint32_t u4PerfMonPendingTh;
@@ -1915,6 +1917,7 @@ struct ADAPTER {
 	uint32_t u4HeHtcOM;
 	uint8_t  fgEnShowHETrigger;
 	uint8_t fgTxPPDU;
+	uint8_t ucVcoreBoost;
 #endif /* CFG_SUPPORT_802_11AX == 1 */
 #if (CFG_SUPPORT_TWT == 1)
 	struct _TWT_PLANNER_T rTWTPlanner;

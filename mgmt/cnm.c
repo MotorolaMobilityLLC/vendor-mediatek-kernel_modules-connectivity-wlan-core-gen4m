@@ -1188,23 +1188,24 @@ uint8_t cnmIsSafeCh(IN struct BSS_INFO *prBssInfo)
 	eBand = prBssInfo->eBand;
 	ucChannel = prBssInfo->ucPrimaryChannel;
 
-	if (eBand == BAND_2G4)
+	if (eBand == BAND_2G4) {
 		if (u4Safe2G & BIT(ucChannel))
 			return TRUE;
-	else if (eBand == BAND_5G &&
-		ucChannel >= 36 && ucChannel <= 144)
+	} else if (eBand == BAND_5G &&
+		ucChannel >= 36 && ucChannel <= 144) {
 		if (u4Safe5G_1 & BIT((ucChannel - 36) / 4))
 			return TRUE;
-	else if (eBand == BAND_5G &&
-		ucChannel >= 149 && ucChannel <= 181)
+	} else if (eBand == BAND_5G &&
+		ucChannel >= 149 && ucChannel <= 181) {
 		if (u4Safe5G_2 & BIT((ucChannel - 149) / 4))
 			return TRUE;
 #if (CFG_SUPPORT_WIFI_6G == 1)
-	else if (eBand == BAND_6G &&
-		ucChannel >= 7 && ucChannel <= 215)
+	} else if (eBand == BAND_6G &&
+		ucChannel >= 7 && ucChannel <= 215) {
 		if (u4Safe6G & BIT((ucChannel - 7) / 16))
 			return TRUE;
 #endif
+	}
 
 	return FALSE;
 }
@@ -1333,10 +1334,16 @@ uint8_t cnmIdcCsaReq(IN struct ADAPTER *prAdapter,
 	prBssInfo = prAdapter->aprBssInfo[ucBssIdx];
 
 	if (prBssInfo->ucPrimaryChannel != ucCh) {
-
-		rlmGetChnlInfoForCSA(prAdapter,
-			(ucCh <= 14) ? BAND_2G4 : BAND_5G,
-			ucCh, ucBssIdx, &rRfChnlInfo);
+#if (CFG_SUPPORT_WIFI_6G == 1)
+		if (prBssInfo->eBand == BAND_6G)
+			rlmGetChnlInfoForCSA(prAdapter,
+				BAND_6G,
+				ucCh, ucBssIdx, &rRfChnlInfo);
+		else
+#endif
+			rlmGetChnlInfoForCSA(prAdapter,
+				(ucCh <= 14) ? BAND_2G4 : BAND_5G,
+				ucCh, ucBssIdx, &rRfChnlInfo);
 
 		DBGLOG(REQ, INFO,
 		"[CSA]CH=%d,Band=%d,BW=%d,PriFreq=%d,S1Freq=%d\n",
@@ -4129,6 +4136,50 @@ cnmOpModeReqDispatcher(
 	return eReqFinal;
 }
 
+uint8_t cnmOpModeGetMaxBw(IN struct ADAPTER *prAdapter,
+	IN struct BSS_INFO *prBssInfo)
+{
+	uint8_t ucOpMaxBw = MAX_BW_UNKNOWN;
+	uint8_t ucS1 = 0;
+
+	if (prBssInfo->eCurrentOPMode == OP_MODE_ACCESS_POINT) { /* AP, GO */
+		ucOpMaxBw = cnmGetBssMaxBw(prAdapter, prBssInfo->ucBssIndex);
+
+		if (ucOpMaxBw >= MAX_BW_80MHZ) {
+			/* Verify if there is valid S1 */
+			ucS1 = nicGetS1(prBssInfo->eBand,
+				prBssInfo->ucPrimaryChannel,
+				rlmMaxBwToVhtBw(ucOpMaxBw));
+
+			/* Try if there is valid S1 for BW80 if we failed to
+			 * get S1 for BW160.
+			 */
+			if (ucS1 == 0 && ucOpMaxBw == MAX_BW_160MHZ) {
+				ucS1 = nicGetS1(prBssInfo->eBand,
+					prBssInfo->ucPrimaryChannel,
+					rlmMaxBwToVhtBw(MAX_BW_80MHZ));
+
+				if (ucS1) /* Fallback to BW80 */
+					ucOpMaxBw = MAX_BW_80MHZ;
+			}
+
+			if (ucS1 == 0) {  /* Invalid S1 */
+				DBGLOG(CNM, INFO,
+					"fallback to BW20, BssIdx[%d], CH[%d], MaxBw[%d]\n",
+					prBssInfo->ucBssIndex,
+					prBssInfo->ucPrimaryChannel,
+					ucOpMaxBw);
+
+				ucOpMaxBw = MAX_BW_20MHZ;
+			}
+		}
+	} else { /* STA, GC */
+		ucOpMaxBw = rlmGetBssOpBwByVhtAndHtOpInfo(prBssInfo);
+	}
+
+	return ucOpMaxBw;
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
  * @brief Set the operating TRx Nss.
@@ -4206,7 +4257,7 @@ cnmOpModeSetTRxNss(
 		 * If you want to change OpBw in the future, please
 		 * make sure you can restore to current peer's OpBw.
 		 */
-		ucOpBwFinal = cnmGetBssMaxBw(prAdapter, prBssInfo->ucBssIndex);
+		ucOpBwFinal = cnmOpModeGetMaxBw(prAdapter, prBssInfo);
 		if ((eRunReq ==  CNM_OPMODE_REQ_DBDC ||
 			eRunReq == CNM_OPMODE_REQ_DBDC_SCAN) &&
 			ucOpBwFinal > MAX_BW_80MHZ) {

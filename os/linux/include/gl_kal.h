@@ -879,9 +879,15 @@ static inline void kalCfg80211ScanDone(struct cfg80211_scan_request *request,
 #endif
 
 #define kalUdelay(u4USec)                           udelay(u4USec)
-
 #define kalMdelay(u4MSec)                           mdelay(u4MSec)
 #define kalMsleep(u4MSec)                           msleep(u4MSec)
+#define kalUsleep(u4USec) \
+{ \
+	if (u4USec > 10000) \
+		msleep(u4USec / 1000); \
+	else \
+		usleep_range(u4USec, u4USec + 50); \
+}
 #define kalUsleep_range(u4MinUSec, u4MaxUSec)  \
 	usleep_range(u4MinUSec, u4MaxUSec)
 
@@ -1826,6 +1832,10 @@ int32_t kalCheckTputLoad(IN struct ADAPTER *prAdapter,
 			 IN int32_t i4Pending,
 			 IN uint32_t u4Used);
 uint32_t kalGetCpuBoostThreshold(void);
+#if CFG_SUPPORT_LITTLE_CPU_BOOST
+uint32_t kalGetLittleCpuBoostThreshold(void);
+#endif /* CFG_SUPPORT_LITTLE_CPU_BOOST */
+int32_t kalCheckVcoreBoost(IN struct ADAPTER *prAdapter, IN uint8_t uBssIndex);
 uint32_t kalGetEmiMetOffset(void);
 void kalSetEmiMetOffset(uint32_t newEmiMetOffset);
 void kalSetRpsMap(IN struct GLUE_INFO *glue, IN unsigned long value);

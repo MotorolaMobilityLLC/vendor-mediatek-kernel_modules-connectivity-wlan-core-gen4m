@@ -1682,9 +1682,10 @@ uint8_t scanCheckNeedDriverRoaming(
 			return FALSE;
 
 		/* 2.4 -> 5 */
-		if (bss->eBand == BAND_5G
 #if (CFG_SUPPORT_WIFI_6G == 1)
-			|| bss->eBand == BAND_6G
+		if ((bss->eBand == BAND_5G || bss->eBand == BAND_6G)
+#else
+		if (bss->eBand == BAND_5G
 #endif
 			&& target->eBand == BAND_2G4) {
 			if (rssi > RSSI_BAD_NEED_ROAM_24G_TO_5G_6G)

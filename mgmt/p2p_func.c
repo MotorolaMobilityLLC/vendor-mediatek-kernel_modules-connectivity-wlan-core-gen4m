@@ -1338,6 +1338,12 @@ SKIP_START_RDD:
 		}
 
 		bssInitForAP(prAdapter, prBssInfo, TRUE);
+		if (prBssInfo->fgEnableH2E) {
+			prBssInfo->aucAllSupportedRates
+				[prBssInfo->ucAllSupportedRatesLen]
+				= RATE_H2E_ONLY_VAL;
+			prBssInfo->ucAllSupportedRatesLen++;
+		}
 
 		DBGLOG(P2P, TRACE, "Phy type: 0x%x, %d, %d\n",
 			prBssInfo->ucPhyTypeSet,
@@ -1991,6 +1997,12 @@ void p2pFuncDfsSwitchCh(IN struct ADAPTER *prAdapter,
 		prBssInfo->u2BSSBasicRateSet,
 		prBssInfo->aucAllSupportedRates,
 		&prBssInfo->ucAllSupportedRatesLen);
+	if (prBssInfo->fgEnableH2E) {
+		prBssInfo->aucAllSupportedRates
+			[prBssInfo->ucAllSupportedRatesLen]
+			= RATE_H2E_ONLY_VAL;
+		prBssInfo->ucAllSupportedRatesLen++;
+	}
 #endif
 
 	/* Setup channel and bandwidth */
@@ -2198,6 +2210,33 @@ uint32_t p2pFuncGetCacRemainingTime(void)
 }
 #endif
 
+void p2pFuncParseH2E(IN struct BSS_INFO *prP2pBssInfo)
+{
+	if (prP2pBssInfo) {
+		uint32_t i;
+
+		prP2pBssInfo->fgEnableH2E = FALSE;
+
+		for (i = 0;
+			i < prP2pBssInfo->ucAllSupportedRatesLen;
+			i++) {
+			DBGLOG(P2P, LOUD,
+				"Rate [%d] = %d\n",
+				i,
+				prP2pBssInfo->aucAllSupportedRates[i]);
+			if (prP2pBssInfo->aucAllSupportedRates[i] ==
+				RATE_H2E_ONLY_VAL) {
+				prP2pBssInfo->fgEnableH2E = TRUE;
+				break;
+			}
+		}
+
+		DBGLOG(P2P, TRACE,
+			"fgEnableH2E = %d\n",
+			prP2pBssInfo->fgEnableH2E);
+	}
+}
+
 #if 0
 uint32_t
 p2pFuncBeaconUpdate(IN struct ADAPTER *prAdapter,
@@ -2394,6 +2433,8 @@ p2pFuncBeaconUpdate(IN struct ADAPTER *prAdapter,
 			(uint8_t *) prBcnFrame->aucInfoElem,
 			(prBcnMsduInfo->u2FrameLength -
 			OFFSET_OF(struct WLAN_BEACON_FRAME, aucInfoElem)));
+
+		p2pFuncParseH2E(prP2pBssInfo);
 
 #if 1
 		/* bssUpdateBeaconContent(prAdapter, NETWORK_TYPE_P2P_INDEX); */
@@ -6752,7 +6793,7 @@ p2pFunGetPreferredFreqList(IN struct ADAPTER *prAdapter,
 		eBandSel = BIT(BAND_5G);
 
 #if (CFG_SUPPORT_WIFI_6G == 1)
-		if (prAdapter->fgIsHwSupport6G && prWifiVar->ucP2pPrefer6G) {
+		if (prAdapter->fgIsHwSupport6G) {
 			eBandPrefer = BAND_6G;
 			eBandSel |= BIT(BAND_6G);
 		}
@@ -7034,12 +7075,11 @@ uint8_t p2pFunGetAcsBestCh(IN struct ADAPTER *prAdapter,
 				continue;
 
 			/* Skip unsafe BW 80 channels */
-			if ((eChnlBw == MAX_BW_80MHZ ||
-				eChnlBw == MAX_BW_80_80_MHZ) &&
-				(aucChannelList[i].ucChannelNum >= 7) &&
-				(aucChannelList[i].ucChannelNum <= 215) &&
+			if ((eChnlBw >= MAX_BW_80MHZ) &&
+				(aucChannelList[i].ucChannelNum >= 5) &&
+				(aucChannelList[i].ucChannelNum <= 225) &&
 				!(u4LteSafeChnMask_6G & BIT(
-				  (aucChannelList[i].ucChannelNum - 7) / 16)))
+				  (aucChannelList[i].ucChannelNum - 5) / 16)))
 				continue;
 		}
 #endif

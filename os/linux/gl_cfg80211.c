@@ -512,7 +512,7 @@ mtk_cfg80211_set_default_key(struct wiphy *wiphy,
 /*----------------------------------------------------------------------------*/
 static uint32_t wlanGetTxRateFromLinkStats(
 	IN struct GLUE_INFO *prGlueInfo, IN uint32_t *pu4TxRate,
-	IN uint32_t *pu4TxBw)
+	IN uint32_t *pu4TxBw, IN uint8_t ucBssIndex)
 {
 	uint32_t rStatus = WLAN_STATUS_NOT_SUPPORTED;
 #if CFG_SUPPORT_LLS
@@ -523,11 +523,15 @@ static uint32_t wlanGetTxRateFromLinkStats(
 	} query = {0};
 	uint32_t u4QueryBufLen;
 	uint32_t u4QueryInfoLen;
+	struct _STATS_LLS_TX_RATE_INFO targetRateInfo;
+
+	if (!IS_BSS_INDEX_VALID(ucBssIndex))
+		return WLAN_STATUS_FAILURE;
 
 	kalMemZero(&query, sizeof(query));
 	query.cmd.u4Tag = STATS_LLS_TAG_CURRENT_TX_RATE;
 	u4QueryBufLen = sizeof(query);
-	u4QueryInfoLen = sizeof(query);
+	u4QueryInfoLen = sizeof(query.cmd);
 
 	rStatus = kalIoctl(prGlueInfo,
 			wlanQueryLinkStats,
@@ -539,7 +543,8 @@ static uint32_t wlanGetTxRateFromLinkStats(
 			&u4QueryInfoLen);
 	DBGLOG(REQ, INFO, "kalIoctl=%x, %u bytes",
 				rStatus, u4QueryInfoLen);
-	DBGLOG_HEX(REQ, INFO, &query.rate_info, u4QueryInfoLen);
+	targetRateInfo = query.rate_info.arTxRateInfo[ucBssIndex];
+	DBGLOG_HEX(REQ, INFO, &targetRateInfo, u4QueryInfoLen);
 
 	if (unlikely(rStatus != WLAN_STATUS_SUCCESS)) {
 		DBGLOG(REQ, INFO, "wlanQueryLinkStats return fail\n");
@@ -551,26 +556,26 @@ static uint32_t wlanGetTxRateFromLinkStats(
 		return WLAN_STATUS_FAILURE;
 	}
 
-	if (query.rate_info.bw >= ARRAY_SIZE(arBwCfg80211Table)) {
+	if (targetRateInfo.bw >= ARRAY_SIZE(arBwCfg80211Table)) {
 		DBGLOG(REQ, WARN, "wrong tx bw!");
 		return WLAN_STATUS_FAILURE;
 	}
 
-	*pu4TxBw = arBwCfg80211Table[query.rate_info.bw];
-	query.rate_info.nsts += 1;
-	if (query.rate_info.nsts == 1)
-		u4Nss = query.rate_info.nsts;
+	*pu4TxBw = arBwCfg80211Table[targetRateInfo.bw];
+	targetRateInfo.nsts += 1;
+	if (targetRateInfo.nsts == 1)
+		u4Nss = targetRateInfo.nsts;
 	else
-		u4Nss = query.rate_info.stbc ?
-			(query.rate_info.nsts >> 1)
-			: query.rate_info.nsts;
+		u4Nss = targetRateInfo.stbc ?
+			(targetRateInfo.nsts >> 1)
+			: targetRateInfo.nsts;
 
-	wlanQueryRateByTable(query.rate_info.mode,
-			query.rate_info.rate, query.rate_info.bw, 0,
+	wlanQueryRateByTable(targetRateInfo.mode,
+			targetRateInfo.rate, targetRateInfo.bw, 0,
 			u4Nss, pu4TxRate, &u4MaxTxRate);
 	DBGLOG(REQ, INFO, "rate=%u mode=%u nss=%u stbc=%u bw=%u linkspeed=%u\n",
-		query.rate_info.rate, query.rate_info.mode,
-		u4Nss, query.rate_info.stbc,
+		targetRateInfo.rate, targetRateInfo.mode,
+		u4Nss, targetRateInfo.stbc,
 		*pu4TxBw, *pu4TxRate);
 
 #endif
@@ -709,7 +714,8 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy,
 		prGlueInfo->i4RssiCache[ucBssIndex] = i4Rssi;
 	}
 
-	rStatus = wlanGetTxRateFromLinkStats(prGlueInfo, &u4TxRate, &u4TxBw);
+	rStatus = wlanGetTxRateFromLinkStats(prGlueInfo, &u4TxRate, &u4TxBw,
+			ucBssIndex);
 	if (rStatus == WLAN_STATUS_SUCCESS) {
 		prGlueInfo->u4TxLinkSpeedCache[ucBssIndex] = u4TxRate;
 		prGlueInfo->u4TxBwCache[ucBssIndex] = u4TxBw;
@@ -1700,7 +1706,7 @@ int mtk_cfg80211_connect(struct wiphy *wiphy,
 					   ucBssIndex);
 		}
 #endif /* CFG_SUPPORT_PASSPOINT */
-		if (wextSrchDesiredWPAIE(pucIEStart, sme->ie_len, 0x30,
+		if (wextSrchDesiredWPAIE(pucIEStart, sme->ie_len, ELEM_ID_RSN,
 					 (uint8_t **) &prDesiredIE)) {
 			struct RSN_INFO rRsnInfo;
 
@@ -1721,6 +1727,23 @@ int mtk_cfg80211_connect(struct wiphy *wiphy,
 #endif
 			}
 		}
+		if (wextSrchDesiredWPAIE(pucIEStart, sme->ie_len, ELEM_ID_RSNX,
+					 (uint8_t **) &prDesiredIE)) {
+			struct RSNX_INFO rRsnxeInfo;
+
+			if (rsnParseRsnxIE(prGlueInfo->prAdapter,
+				(struct RSNX_INFO_ELEM *)prDesiredIE,
+					&rRsnxeInfo)) {
+				prWpaInfo->u2RSNXCap = rRsnxeInfo.u2Cap;
+				if (prWpaInfo->u2RSNXCap &
+					BIT(WLAN_RSNX_CAPAB_SAE_H2E)) {
+					DBGLOG(RSN, INFO,
+						"SAE-H2E is supported, RSNX ie: 0x%x\n",
+						prWpaInfo->u2RSNXCap);
+				}
+			}
+		}
+
 		/* Find non-wfa vendor specific ies set from upper layer */
 		if (cfg80211_get_non_wfa_vendor_ie(prGlueInfo, pucIEStart,
 			sme->ie_len, ucBssIndex) > 0) {
@@ -3649,6 +3672,14 @@ int mtk_cfg80211_sched_scan_start(IN struct wiphy *wiphy,
 	uint32_t num = 0;
 	uint8_t ucBssIndex = 0;
 
+	WIPHY_PRIV(wiphy, prGlueInfo);
+	ASSERT(prGlueInfo);
+
+	if (prGlueInfo->prAdapter == NULL) {
+		DBGLOG(REQ, ERROR, "prGlueInfo->prAdapter is NULL");
+		return -EINVAL;
+	}
+
 	ucBssIndex = wlanGetBssIdx(ndev);
 	if (!IS_BSS_INDEX_AIS(prGlueInfo->prAdapter, ucBssIndex))
 		return -EINVAL;
@@ -3665,14 +3696,6 @@ int mtk_cfg80211_sched_scan_start(IN struct wiphy *wiphy,
 	} else
 		scanlog_dbg(LOG_SCHED_SCAN_REQ_START_K2D, INFO, "--> %s()\n",
 			__func__);
-
-	WIPHY_PRIV(wiphy, prGlueInfo);
-	ASSERT(prGlueInfo);
-
-	if (prGlueInfo->prAdapter == NULL) {
-		DBGLOG(REQ, ERROR, "prGlueInfo->prAdapter is NULL");
-		return -EINVAL;
-	}
 
 #if CFG_SUPPORT_LOWLATENCY_MODE
 	if (!prGlueInfo->prAdapter->fgEnCfg80211Scan
@@ -6191,6 +6214,10 @@ int mtk_IsP2PNetDevice(struct GLUE_INFO *prGlueInfo,
 		ret = 0;
 	else if (iftype == NL80211_IFTYPE_ADHOC)
 		ret = 0;
+#if CFG_SUPPORT_NAN
+	else if (prNetDevPrivate->ucIsNan == TRUE)
+		ret = 0;
+#endif
 
 	return ret;
 }

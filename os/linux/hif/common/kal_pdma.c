@@ -994,7 +994,7 @@ int wf_ioremap_read(phys_addr_t addr, unsigned int *val)
 	vir_addr = ioremap(addr, 0x10);
 	if (!vir_addr) {
 		DBGLOG(INIT, ERROR, "%s: Cannot remap address[%pa].\n",
-		       addr, __func__);
+		       __func__, addr);
 		return -1;
 	}
 
@@ -1012,7 +1012,7 @@ int wf_ioremap_write(phys_addr_t addr, unsigned int val)
 	vir_addr = ioremap(addr, 0x10);
 	if (!vir_addr) {
 		DBGLOG(INIT, ERROR, "%s: Cannot remap address[%pa].\n",
-		       addr, __func__);
+		       __func__, addr);
 		return -1;
 	}
 

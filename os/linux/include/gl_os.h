@@ -410,6 +410,7 @@ struct GL_WPA_INFO {
 	uint32_t u4Mfp;
 	uint8_t ucRSNMfpCap;
 #endif
+	uint16_t u2RSNXCap;
 };
 
 #if CFG_SUPPORT_REPLAY_DETECTION

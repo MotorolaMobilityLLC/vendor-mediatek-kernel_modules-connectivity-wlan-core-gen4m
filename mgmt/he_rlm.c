@@ -459,6 +459,7 @@ static void heRlmFillHeCapIE(
 	uint32_t u4OverallLen = OFFSET_OF(struct _IE_HE_CAP_T, aucVarInfo[0]);
 	uint16_t ucMaxBw;
 	u_int8_t fgBfEn = TRUE;
+	uint32_t soundingDim = 0;
 
 	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
 #if (CFG_RX_PPE_THRESHOLD == 1)
@@ -568,8 +569,20 @@ static void heRlmFillHeCapIE(
 	if ((prAdapter->rWifiVar.u4SwTestMode != ENUM_SW_TEST_MODE_SIGMA_AX) &&
 		(IS_BSS_AIS(prBssInfo) && prAisFsmInfo != NULL)) {
 		prBssDesc = prAisFsmInfo->prTargetBssDesc;
+		soundingDim =
+			HE_IS_PHY_CAP_CHAN_WIDTH_SET_BW160_5G(
+						prHeCap->ucHePhyCap) ?
+			HE_GET_PHY_CAP5_NUM_OF_SND_DIM_GT_80M(
+						prBssDesc->ucHePhyCapInfo) :
+			HE_GET_PHY_CAP_NUM_OF_SND_DIM_LT_OR_EQ_80M(
+						prBssDesc->ucHePhyCapInfo);
+
+		DBGLOG(RLM, INFO, "bssGetRxNss: %d, soundingDim: %d\n",
+			bssGetRxNss(prAdapter, prBssDesc), soundingDim);
 		if (prBssDesc != NULL && (bssGetRxNss(prAdapter, prBssDesc) ==
-			wlanGetSupportNss(prAdapter, prBssInfo->ucBssIndex))) {
+			wlanGetSupportNss(prAdapter, prBssInfo->ucBssIndex))
+			&& (bssGetRxNss(prAdapter, prBssDesc) ==
+				soundingDim + 1)) {
 			fgBfEn = FALSE;
 			DBGLOG(SW4, ERROR,
 				"Disable Bfee due to same Nss between STA and AP\n");
@@ -993,6 +1006,28 @@ static void heRlmRecHePPEThresholds(struct ADAPTER *prAdapter,
 		}
 	}
 }
+
+#if (CFG_SUPPORT_WIFI_6G == 1)
+void heRlmRecHe6GCapInfo(
+	struct ADAPTER *prAdapter,
+	struct STA_RECORD *prStaRec,
+	uint8_t *pucIE)
+{
+	struct _IE_HE_6G_BAND_CAP_T *prHe6GCap =
+		(struct _IE_HE_6G_BAND_CAP_T *) pucIE;
+
+	/* if payload not contain any aucVarInfo,
+	 * IE size = sizeof(struct _IE_HE_6G_BAND_CAP_T)
+	 */
+	if (IE_SIZE(prHe6GCap) < (sizeof(struct _IE_HE_6G_BAND_CAP_T))) {
+		DBGLOG(SCN, WARN,
+			"HE_6G_CAP IE_LEN err(%d)!\n", IE_LEN(prHe6GCap));
+		return;
+	}
+
+	prStaRec->u2He6gBandCapInfo = prHe6GCap->u2CapInfo;
+}
+#endif
 
 void heRlmRecHeCapInfo(
 	struct ADAPTER *prAdapter,

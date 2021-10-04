@@ -4889,17 +4889,17 @@ struct _CMD_EVENT_TLV_ELEMENT_T *nicGetTargetTlvElement(
 
 	prTlvCommon = (struct _CMD_EVENT_TLV_COMMOM_T *)prCmdBuffer;
 
-	/*Check target element is exist or not*/
+	/* Check target element is exist or not */
 	if (u2TargetTlvElement > prTlvCommon->u2TotalElementNum) {
-		/*New element or element is not exist*/
+		/* New element or element is not exist */
 		if (u2TargetTlvElement - prTlvCommon->u2TotalElementNum > 1) {
-			/*element is not exist*/
+			/* element is not exist */
 			DBGLOG(TX, ERROR, "Target element is not exist\n");
 			return NULL;
 		}
 	}
 
-	/*Get target element*/
+	/* Get target element */
 	pvCurrPtr = prCmdBuffer;
 
 	for (u2ElementNum = 1; u2ElementNum <= u2TargetTlvElement;
@@ -4926,7 +4926,7 @@ uint32_t nicAddNewTlvElement(IN uint32_t u4Tag, IN uint32_t u4BodyLen,
 
 	prTlvCommon = (struct _CMD_EVENT_TLV_COMMOM_T *)prCmdBuffer;
 
-	/*Get new element*/
+	/* Get new element */
 	prTlvElement = nicGetTargetTlvElement(
 		prTlvCommon->u2TotalElementNum + 1, prCmdBuffer);
 
@@ -4935,22 +4935,22 @@ uint32_t nicAddNewTlvElement(IN uint32_t u4Tag, IN uint32_t u4BodyLen,
 		return WLAN_STATUS_FAILURE;
 	}
 
-	/*Check tatol len is overflow or not*/
+	/* Check tatol len is overflow or not */
 	u4TotalLen = ((size_t)prTlvElement->aucbody + u4BodyLen) -
 		     (size_t)prCmdBuffer;
 
 	if (u4TotalLen > prCmdBufferLen) {
-		/*Length overflow*/
+		/* Length overflow */
 		DBGLOG(TX, ERROR,
 		       "Length overflow: Total len:%d, CMD buffer len:%d\n",
 		       u4TotalLen, prCmdBufferLen);
 		return WLAN_STATUS_NOT_ACCEPTED;
 	}
 
-	/*Update total element count*/
+	/* Update total element count */
 	prTlvCommon->u2TotalElementNum++;
 
-	/*Fill TLV constant*/
+	/* Fill TLV constant */
 	prTlvElement->tag_type = u4Tag;
 
 	prTlvElement->body_len = u4BodyLen;
@@ -4974,10 +4974,10 @@ void nicNanEventTestProcess(IN struct ADAPTER *prAdapter,
 
 	DBGLOG(TX, INFO, "nicNanEventDispatcher\n");
 
-	/*Dump Event content*/
+	/* Dump Event content */
 	nicDumpTlv((void *)prEvent->aucBuffer);
 
-	/*Process CMD done handler*/
+	/* Process CMD done handler */
 	prCmdInfo = nicGetPendingCmdInfo(prAdapter, prEvent->ucSeqNum);
 
 	if (prCmdInfo != NULL) {

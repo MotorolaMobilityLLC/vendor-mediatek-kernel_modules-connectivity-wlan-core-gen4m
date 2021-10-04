@@ -1104,7 +1104,7 @@ statsCgsAirLatHdlr(struct GLUE_INFO *prGlueInfo,
 
 #if CFG_SUPPORT_LLS
 	u4QueryBufLen = sizeof(query);
-	u4QueryInfoLen = sizeof(query);
+	u4QueryInfoLen = sizeof(query.cmd);
 
 	kalMemZero(&query, sizeof(query));
 	query.cmd.u4Tag = STATS_LLS_TAG_PPDU_LATENCY;

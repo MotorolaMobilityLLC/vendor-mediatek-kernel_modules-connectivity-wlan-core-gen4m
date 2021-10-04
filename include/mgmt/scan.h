@@ -329,6 +329,7 @@ struct BSS_DESC {
 	u_int8_t fgIsVHTPresent;
 #if (CFG_SUPPORT_802_11AX == 1)
 	u_int8_t fgIsHEPresent;
+	uint8_t ucHePhyCapInfo[HE_PHY_CAP_BYTE_NUM];
 #if (CFG_SUPPORT_WIFI_6G == 1)
 	u_int8_t fgIsHE6GPresent;
 	u_int8_t fgIsCoHostedBssPresent;
@@ -387,9 +388,11 @@ struct BSS_DESC {
 	uint32_t u4RsnSelectedAKMSuite;
 
 	uint16_t u2RsnCap;
+	uint16_t u2RsnxCap;
 
 	struct RSN_INFO rRSNInfo;
 	struct RSN_INFO rWPAInfo;
+	struct RSNX_INFO rRSNXInfo;
 #if 1	/* CFG_SUPPORT_WAPI */
 	struct WAPI_INFO rIEWAPI;
 	u_int8_t fgIEWAPI;
@@ -397,6 +400,7 @@ struct BSS_DESC {
 	u_int8_t fgIERSN;
 	u_int8_t fgIEWPA;
 	u_int8_t fgIEOsen;
+	u_int8_t fgIERSNX;
 
 	/*! \brief RSN parameters selected for connection */
 	/*! \brief The Select score for final AP selection,
@@ -628,9 +632,10 @@ struct SCAN_INFO {
 	uint8_t		ucScnTimeoutTimes;
 	uint8_t		ucScnTimeoutSubsysResetCnt;
 #endif
-
 	/*Skip DFS channel scan or not */
 	u_int8_t	fgSkipDFS;
+	uint8_t		fgIsScanTimeout;
+	OS_SYSTIME rLastScanStartTime;
 };
 
 /* Incoming Mailbox Messages */
@@ -972,12 +977,14 @@ void scnSetSchedScanPlan(IN struct ADAPTER *prAdapter,
 void scnDoZeroMdrdyRecoveryCheck(IN struct ADAPTER *prAdapter,
 			IN struct EVENT_SCAN_DONE *prScanDone,
 			IN struct SCAN_INFO *prScanInfo, IN uint8_t ucBssIndex);
-
 void scnDoScanTimeoutRecoveryCheck(IN struct ADAPTER *prAdapter,
 			IN uint8_t ucBssIndex);
 
 #endif
 
+void scnFsmNotifyEvent(IN struct ADAPTER *prAdapter,
+			IN enum ENUM_SCAN_STATUS eStatus,
+			IN uint8_t ucBssIndex);
 void scanLogEssResult(struct ADAPTER *prAdapter);
 void scanInitEssResult(struct ADAPTER *prAdapter);
 #if CFG_SUPPORT_SCAN_CACHE_RESULT
