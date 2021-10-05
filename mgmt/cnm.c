@@ -4748,7 +4748,7 @@ int cnmPowerControl(
 		prAdapter->rWifiVar.fgDbDcModeEn);
 
 	/* DBDC enabled need to disconnect STA */
-	if (prAdapter->rWifiVar.fgDbDcModeEn) {
+	if (prAdapter->rWifiVar.fgDbDcModeEn && prAdapter->fgPowerForceOneNss) {
 		/* check if dual sta */
 		prSta0BssInfo = aisGetAisBssInfo(prAdapter, 0);
 		prSta1BssInfo = aisGetAisBssInfo(prAdapter, 1);
