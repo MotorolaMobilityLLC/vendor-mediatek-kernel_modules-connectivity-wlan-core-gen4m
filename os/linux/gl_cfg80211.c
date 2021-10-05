@@ -6879,8 +6879,7 @@ int mtk_cfg_add_station(struct wiphy *wiphy,
 	}
 
 	if (mtk_IsP2PNetDevice(prGlueInfo, ndev) > 0) {
-		DBGLOG(REQ, WARN, "P2P/AP don't support this function\n");
-		return -EFAULT;
+		return mtk_p2p_cfg80211_add_station(wiphy, ndev, mac);
 	}
 	/* STA Mode */
 	return mtk_cfg80211_add_station(wiphy, ndev, mac, params);

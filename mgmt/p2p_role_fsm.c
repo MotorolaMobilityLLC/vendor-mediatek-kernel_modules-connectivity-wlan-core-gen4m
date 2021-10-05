@@ -2441,6 +2441,20 @@ void p2pRoleFsmRunEventConnectionAbort(IN struct ADAPTER *prAdapter,
 					"Disconnecting: " MACSTR "\n",
 					MAC2STR(prCurrStaRec->aucMacAddr));
 
+				if ((prP2pBssInfo->u4RsnSelectedAKMSuite ==
+					RSN_AKM_SUITE_OWE) &&
+					(prCurrStaRec->eAuthAssocState ==
+					AAA_STATE_SEND_AUTH2 ||
+					prCurrStaRec->eAuthAssocState ==
+					AAA_STATE_SEND_AUTH4 ||
+					prCurrStaRec->eAuthAssocState ==
+					AAA_STATE_SEND_ASSOC2)) {
+					DBGLOG(P2P, INFO,
+						"[OWE] Ignore deauth in %d\n",
+						prCurrStaRec->eAuthAssocState);
+					break;
+				}
+
 				/* Glue layer indication. */
 				/* kalP2PGOStationUpdate(prAdapter->prGlueInfo,
 				 * prCurrStaRec, FALSE);
