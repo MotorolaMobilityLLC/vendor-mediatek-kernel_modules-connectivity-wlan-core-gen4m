@@ -2477,14 +2477,13 @@ uint32_t fwDlGetFwdlInfo(struct ADAPTER *prAdapter,
 
 	prFwDlOps = prAdapter->chip_info->fw_dl_ops;
 
-	kalMemZero(aucBuf, sizeof(aucBuf));
-	kalStrnCpy(aucBuf, prVerInfo->aucFwBranchInfo, sizeof(aucBuf) - 1);
+	kalSnprintf(aucBuf, sizeof(aucBuf), "%4s", prVerInfo->aucFwBranchInfo);
 	kalMemZero(aucDate, sizeof(aucDate));
 	kalStrnCpy(aucDate, prVerInfo->aucFwDateCode, sizeof(aucDate) - 1);
 
 	u4Offset += snprintf(pcBuf + u4Offset,
 			i4TotalLen - u4Offset,
-			"\nN9 FW version %4s-%u.%u.%u[DEC] (%s)\n",
+			"\nN9 FW version %s-%u.%u.%u[DEC] (%s)\n",
 			aucBuf,
 			(uint32_t)(prVerInfo->u2FwOwnVersion >> 8),
 			(uint32_t)(prVerInfo->u2FwOwnVersion & BITS(0, 7)),
