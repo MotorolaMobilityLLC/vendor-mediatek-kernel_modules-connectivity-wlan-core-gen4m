@@ -113,6 +113,20 @@ enum ENUM_BAND_WIDTH {
 #define RATE_VER_1	0	/* AC */
 #define RATE_VER_2	1	/* HE */
 
+/* Define max MCS index by 802.11 specification for reporting max rate.
+ *
+ * The rate tables are used for finding both current rate and max rate,
+ * In some cases, the current rate can exceed the specification,
+ * for example, 802.11ac with MCS11.
+ * For current rate, this table support the actual rate in use.
+ * For max rate, limit the return values based on standard defined max index.
+ */
+#define MCS_IDX_MAX_RATE_CCK  3
+#define MCS_IDX_MAX_RATE_OFDM  7
+#define MCS_IDX_MAX_RATE_HT  7
+#define MCS_IDX_MAX_RATE_VHT 9
+#define MCS_IDX_MAX_RATE_HE 11
+
 /*******************************************************************************
  *                         D A T A   T Y P E S
  *******************************************************************************

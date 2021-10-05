@@ -12215,15 +12215,16 @@ int wlanQueryRateByTable(uint32_t txmode, uint32_t rate,
 			return -1;
 		}
 		u4CurRate = g_rCckDataRateMappingTable.rate[rate];
-		u4MaxRate = g_rCckDataRateMappingTable.rate[ucMaxSize - 1];
+		u4MaxRate = g_rCckDataRateMappingTable
+			.rate[MCS_IDX_MAX_RATE_CCK];
 	} else if (txmode == TX_RATE_MODE_OFDM) { /* 11G */
 		u4CurRate = wlanHwRateOfdmNum(rate);
 		if (u4CurRate == 0) {
 			DBGLOG(SW4, ERROR, "rate error for OFDM\n");
 			return -1;
 		}
-		ucMaxSize = ARRAY_SIZE(g_rOfdmDataRateMappingTable.rate);
-		u4MaxRate = g_rOfdmDataRateMappingTable.rate[ucMaxSize - 1];
+		u4MaxRate = g_rOfdmDataRateMappingTable
+			.rate[MCS_IDX_MAX_RATE_OFDM];
 	} else if ((txmode == TX_RATE_MODE_HTMIX) ||
 		   (txmode == TX_RATE_MODE_HTGF)) { /* 11N */
 		if ((nsts == 0) || (nsts >= 4)) {
@@ -12248,7 +12249,7 @@ int wlanQueryRateByTable(uint32_t txmode, uint32_t rate,
 		u4CurRate = g_rDataRateMappingTable.nsts[nsts - 1].bw[frmode]
 				.sgi[sgi].rate[rate];
 		u4MaxRate = g_rDataRateMappingTable.nsts[nsts - 1].bw[frmode]
-				.sgi[sgi].rate[ucMaxSize - 1];
+				.sgi[sgi].rate[MCS_IDX_MAX_RATE_HT];
 	} else if (txmode == TX_RATE_MODE_VHT) { /* 11AC */
 		if ((nsts == 0) || (nsts >= 4)) {
 			DBGLOG(SW4, ERROR, "nsts error: %u\n", nsts);
@@ -12269,10 +12270,11 @@ int wlanQueryRateByTable(uint32_t txmode, uint32_t rate,
 			       rate);
 			return -1;
 		}
+
 		u4CurRate = g_rDataRateMappingTable.nsts[nsts - 1]
 				.bw[frmode].sgi[sgi].rate[rate];
-		u4MaxRate = g_rDataRateMappingTable.nsts[nsts - 1]
-				.bw[frmode].sgi[sgi].rate[ucMaxSize - 1];
+		u4MaxRate = g_rDataRateMappingTable.nsts[nsts - 1].bw[frmode]
+				.sgi[sgi].rate[MCS_IDX_MAX_RATE_VHT];
 	} else if ((txmode == TX_RATE_MODE_HE_SU) ||
 		(txmode == TX_RATE_MODE_HE_ER)) { /* AX */
 		uint8_t dcm = 0, ru106 = 0;
@@ -12300,10 +12302,11 @@ int wlanQueryRateByTable(uint32_t txmode, uint32_t rate,
 			       rate);
 			return -1;
 		}
+
 		u4CurRate = g_rAxDataRateMappingTable.nsts[nsts - 1]
 				.bw[frmode].gi[sgi].rate[rate];
 		u4MaxRate = g_rAxDataRateMappingTable.nsts[nsts - 1]
-				.bw[frmode].gi[sgi].rate[ucMaxSize - 1];
+				.bw[frmode].gi[sgi].rate[MCS_IDX_MAX_RATE_HE];
 
 		if (dcm != 0 || ru106 != 0) {
 			u4CurRate = u4CurRate >> 1;
