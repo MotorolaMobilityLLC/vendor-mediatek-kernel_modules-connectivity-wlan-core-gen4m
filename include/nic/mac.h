@@ -2808,7 +2808,11 @@ struct RSN_INFO_ELEM {
 	uint16_t u2Version;
 	uint32_t u4GroupKeyCipherSuite;
 	uint16_t u2PairwiseKeyCipherSuiteCount;
-	uint8_t aucPairwiseKeyCipherSuite1[4];
+	/* Meet the needs of variable length structure.
+	 * There are many variables of variable length
+	 * follow up, such as RSNCap, AKMSuite...
+	 */
+	uint8_t aucPairwiseKeyCipherSuite1[0];
 } __KAL_ATTRIB_PACKED__;
 
 /* 7.3.2.26 WPA Information element format */

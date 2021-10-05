@@ -1772,7 +1772,7 @@ void rsnGenerateRSNIE(IN struct ADAPTER *prAdapter,
 		WLAN_SET_FIELD_32(cp, GET_BSS_INFO_BY_INDEX(prAdapter,
 			ucBssIndex)->u4RsnSelectedPairwiseCipher);
 
-		cp = pucBuffer + sizeof(struct RSN_INFO_ELEM);
+		cp += 4;
 
 		if ((prBssInfo->eNetworkType == NETWORK_TYPE_P2P) &&
 			(prBssInfo->u4RsnSelectedAKMSuite ==
