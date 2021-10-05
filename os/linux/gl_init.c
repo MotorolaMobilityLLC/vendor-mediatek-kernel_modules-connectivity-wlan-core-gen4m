@@ -2565,6 +2565,8 @@ void wlanUpdateDfsChannelTable(struct GLUE_INFO *prGlueInfo,
 
 	if (ucRoleIdx >= 0 && ucRoleIdx < KAL_P2P_NUM)
 		prGlueP2pInfo = prGlueInfo->prP2PInfo[ucRoleIdx];
+	else
+		prGlueP2pInfo = prGlueInfo->prP2PInfo[0];
 
 	/* 2. Enable specific channel based on domain channel list */
 	for (i = 0; i < ucNumOfChannel; i++) {

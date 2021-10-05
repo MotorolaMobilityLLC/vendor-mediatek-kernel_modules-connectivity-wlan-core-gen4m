@@ -6604,16 +6604,6 @@ void p2pFuncSwitchSapChannel(
 	prAisBssInfo = aisGetConnectedBssInfo(prAdapter);
 	if (!prAisBssInfo) {
 		ucStaChannelNum = 0;
-#if CFG_SUPPORT_SAP_DFS_CHANNEL
-		/* restore DFS channels table */
-		wlanUpdateDfsChannelTable(prAdapter->prGlueInfo,
-			-1, /* p2p role index */
-			0, /* primary channel */
-			0, /* bandwidth */
-			0, /* sco */
-			0, /* center frequency */
-			0 /* eBand */);
-#endif
 	} else {
 		/* Get current channel info */
 		ucStaChannelNum = prAisBssInfo->ucPrimaryChannel;
@@ -6622,11 +6612,14 @@ void p2pFuncSwitchSapChannel(
 		/* restore DFS channels table */
 		wlanUpdateDfsChannelTable(prAdapter->prGlueInfo,
 			-1, /* p2p role index */
-			ucStaChannelNum, /* primary channel */
-			0, /* bandwidth */
-			0, /* sco */
-			0, /* center frequency */
-			0 /* eBand */);
+			prAisBssInfo->ucPrimaryChannel,
+			prAisBssInfo->ucVhtChannelWidth,
+			prAisBssInfo->eBssSCO,
+			nicChannelNum2Freq(
+				prAisBssInfo->ucVhtChannelFrequencyS1,
+				prAisBssInfo->eBand) / 1000,
+			prAisBssInfo->eBand
+			);
 #endif
 		if (eStaBand <= BAND_NULL || eStaBand >= BAND_NUM) {
 			DBGLOG(P2P, WARN, "STA has invalid band\n");
@@ -6696,6 +6689,17 @@ void p2pFuncSwitchSapChannel(
 				"[SCC] Dfs: %d, Desense %d, Choose a channel\n",
 				fgIsSapDfs,
 				fgIsSapDesense);
+#if CFG_SUPPORT_SAP_DFS_CHANNEL
+			/* restore DFS channels table */
+			wlanUpdateDfsChannelTable(
+				prAdapter->prGlueInfo,
+				-1, /* p2p role index */
+				0, /* primary channel */
+				0, /* bandwidth */
+				0, /* sco */
+				0, /* center frequency */
+				0 /* eBand */);
+#endif
 		} else {
 			DBGLOG(P2P, WARN, "STA is not connected\n");
 			goto exit;
