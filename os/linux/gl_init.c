@@ -5332,9 +5332,6 @@ static int32_t wlanOffAtReset(void)
 
 	wlanAdapterStop(prAdapter, TRUE);
 
-	/* 4 <x> Stopping handling interrupt and free IRQ */
-	glBusFreeIrq(prDev, prGlueInfo);
-
 #if (CFG_SUPPORT_TRACE_TC4 == 1)
 	wlanDebugTC4Uninit();
 #endif
@@ -5370,7 +5367,6 @@ static int32_t wlanOnAtReset(void)
 	enum ENUM_PROBE_FAIL_REASON {
 		BUS_INIT_FAIL,
 		NET_CREATE_FAIL,
-		BUS_SET_IRQ_FAIL,
 		ADAPTER_START_FAIL,
 		NET_REGISTER_FAIL,
 		PROC_INIT_FAIL,
@@ -5416,13 +5412,6 @@ static int32_t wlanOnAtReset(void)
 		QUEUE_INITIALIZE(&prGlueInfo->rCmdQueue);
 		prGlueInfo->i4TxPendingCmdNum = 0;
 		QUEUE_INITIALIZE(&prGlueInfo->rTxQueue);
-
-		rStatus = glBusSetIrq(prDev, NULL, prGlueInfo);
-		if (rStatus != WLAN_STATUS_SUCCESS) {
-			DBGLOG(INIT, ERROR, "Set IRQ error\n");
-			eFailReason = BUS_SET_IRQ_FAIL;
-			break;
-		}
 
 		/* Trigger the action of switching Pwr state to drv_own */
 		prAdapter->fgIsFwOwn = TRUE;
@@ -5503,11 +5492,6 @@ static int32_t wlanOnAtReset(void)
 #if 0
 		switch (eFailReason) {
 		case ADAPTER_START_FAIL:
-			glBusFreeIrq(prDev,
-				*((struct GLUE_INFO **)
-						netdev_priv(prDev)));
-		/* fallthrough */
-		case BUS_SET_IRQ_FAIL:
 			wlanWakeLockUninit(prGlueInfo);
 			wlanNetDestroy(prDev->ieee80211_ptr);
 			/* prGlueInfo->prAdapter is released in
