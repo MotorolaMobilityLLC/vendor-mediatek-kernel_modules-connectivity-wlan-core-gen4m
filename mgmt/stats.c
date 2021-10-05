@@ -1119,7 +1119,7 @@ statsCgsAirLatHdlr(struct GLUE_INFO *prGlueInfo,
 			&u4QueryInfoLen);
 	DBGLOG(REQ, INFO, "kalIoctl=%x, %u bytes",
 				rStatus, u4QueryInfoLen);
-	DBGLOG_HEX(REQ, INFO, &query.latency, u4QueryInfoLen);
+
 	if (rStatus == WLAN_STATUS_SUCCESS &&
 		u4QueryInfoLen == sizeof(struct EVENT_STATS_LLS_TX_LATENCY)) {
 		DBGLOG(REQ, INFO, "query.latency=%u/%u/%u/%u; %u/%u/%u/%u/%u",

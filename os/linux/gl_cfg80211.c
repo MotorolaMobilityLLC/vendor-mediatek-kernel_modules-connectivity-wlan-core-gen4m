@@ -544,7 +544,7 @@ static uint32_t wlanGetTxRateFromLinkStats(
 	DBGLOG(REQ, INFO, "kalIoctl=%x, %u bytes",
 				rStatus, u4QueryInfoLen);
 	targetRateInfo = query.rate_info.arTxRateInfo[ucBssIndex];
-	DBGLOG_HEX(REQ, INFO, &targetRateInfo, u4QueryInfoLen);
+	DBGLOG_HEX(REQ, INFO, &query.rate_info, sizeof(query.rate_info));
 
 	if (unlikely(rStatus != WLAN_STATUS_SUCCESS)) {
 		DBGLOG(REQ, INFO, "wlanQueryLinkStats return fail\n");
