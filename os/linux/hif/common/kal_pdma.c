@@ -306,6 +306,9 @@ static bool kalWaitRxDmaDone(struct GLUE_INFO *prGlueInfo,
 			     uint16_t u2Port)
 {
 	uint32_t u4Count = 0;
+	uint32_t u4CpuIdx = 0;
+	struct RTMP_DMACB *pRxCell;
+	struct RXD_STRUCT *pCrRxD;
 
 	for (u4Count = 0; pRxD->DMADONE == 0; u4Count++) {
 		if (u4Count > DMA_DONE_WAITING_COUNT) {
@@ -314,6 +317,20 @@ static bool kalWaitRxDmaDone(struct GLUE_INFO *prGlueInfo,
 			DBGLOG(HAL, INFO,
 			       "Rx DMA done P[%u] DMA[%u] CPU[%u]\n",
 			       u2Port, prRxRing->RxDmaIdx, prRxRing->RxCpuIdx);
+
+			DBGLOG(HAL, INFO, "Rx Dese pRxD[%u]\n",
+				prRxRing->RxCpuIdx);
+			DBGLOG_MEM32(HAL, INFO, pRxD,
+				sizeof(struct RXD_STRUCT));
+			kalDevRegRead(prGlueInfo, prRxRing->hw_cidx_addr,
+				&u4CpuIdx);
+			pRxCell = &prRxRing->Cell[u4CpuIdx];
+			pCrRxD = (struct RXD_STRUCT *) pRxCell->AllocVa;
+			DBGLOG(HAL, INFO, "Rx Dese pCrRxD[%u]\n", u4CpuIdx);
+			DBGLOG_MEM32(HAL, INFO, pCrRxD,
+				sizeof(struct RXD_STRUCT));
+			dump_stack();
+
 			return false;
 		}
 
