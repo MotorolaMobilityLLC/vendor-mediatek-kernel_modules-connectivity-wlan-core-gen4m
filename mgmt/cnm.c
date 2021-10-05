@@ -3885,6 +3885,7 @@ uint8_t cnmSapChannelSwitchReq(IN struct ADAPTER *prAdapter,
 
 	prP2pSetNewChannelMsg->ucRoleIdx = ucRoleIdx;
 	prP2pSetNewChannelMsg->ucBssIndex = ucBssIdx;
+	p2pFuncSetCsaBssIndex(ucBssIdx);
 	mboxSendMsg(prAdapter,
 		MBOX_ID_0,
 		(struct MSG_HDR *) prP2pSetNewChannelMsg,

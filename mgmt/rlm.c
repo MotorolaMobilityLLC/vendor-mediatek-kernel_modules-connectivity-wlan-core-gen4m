@@ -756,6 +756,10 @@ void rlmGenerateCsaIE(struct ADAPTER *prAdapter, struct MSDU_INFO *prMsduInfo)
 	ASSERT(prMsduInfo);
 
 	if (prAdapter->rWifiVar.fgCsaInProgress) {
+		if (prMsduInfo->ucBssIndex !=
+			p2pFuncGetCsaBssIndex())
+			return;
+
 		pucBuffer =
 			(uint8_t *)((unsigned long)prMsduInfo->prPacket +
 				    (unsigned long)prMsduInfo->u2FrameLength);

@@ -116,6 +116,7 @@ uint32_t g_u4CacStartBootTime;
 uint8_t g_ucRadarDetectMode = FALSE;
 struct P2P_RADAR_INFO g_rP2pRadarInfo;
 uint8_t g_ucDfsState = DFS_STATE_INACTIVE;
+uint8_t g_ucBssIdx;
 static uint8_t *apucDfsState[DFS_STATE_NUM] = {
 	(uint8_t *) DISP_STRING("DFS_STATE_INACTIVE"),
 	(uint8_t *) DISP_STRING("DFS_STATE_CHECKING"),
@@ -2184,6 +2185,19 @@ void p2pFuncSetDfsState(IN uint8_t ucDfsState)
 uint8_t p2pFuncGetDfsState(void)
 {
 	return g_ucDfsState;
+}
+
+uint8_t p2pFuncGetCsaBssIndex(void)
+{
+	return g_ucBssIdx;
+}
+
+void p2pFuncSetCsaBssIndex(IN uint8_t ucBssIdx)
+{
+	DBGLOG(P2P, TRACE,
+		"ucBssIdx = %d\n", ucBssIdx);
+
+	g_ucBssIdx = ucBssIdx;
 }
 
 uint8_t *p2pFuncShowDfsState(void)
@@ -7683,19 +7697,22 @@ p2pFunChnlSwitchNotifyDone(IN struct ADAPTER *prAdapter)
 {
 	struct BSS_INFO *prBssInfo;
 	struct MSG_P2P_CSA_DONE *prP2pCsaDoneMsg;
+	uint8_t ucBssIndex;
 
 	if (!prAdapter)
 		return;
 
 	/* Check SAP interface */
-	prBssInfo = cnmGetSapBssInfo(prAdapter);
-	if (!prBssInfo) {
-		/* Check p2p interface */
-		prBssInfo = cnmGetP2pBssInfo(prAdapter);
-		if (!prBssInfo) {
-			log_dbg(CNM, ERROR, "No SAP/P2P bss is active when CSA done!\n");
-			return;
-		}
+	ucBssIndex = p2pFuncGetCsaBssIndex();
+	if (!IS_BSS_INDEX_VALID(ucBssIndex)) {
+		log_dbg(CNM, ERROR, "Csa bss is invalid!\n");
+		return;
+	}
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
+		ucBssIndex);
+	if (!prBssInfo || !IS_BSS_P2P(prBssInfo)) {
+		log_dbg(CNM, ERROR, "No SAP/P2P bss is active when CSA done!\n");
+		return;
 	}
 
 	prP2pCsaDoneMsg = (struct MSG_P2P_CSA_DONE *) cnmMemAlloc(prAdapter,
@@ -7707,7 +7724,8 @@ p2pFunChnlSwitchNotifyDone(IN struct ADAPTER *prAdapter)
 		return;
 	}
 
-	DBGLOG(CNM, INFO, "ucBssIndex = %d\n", prBssInfo->ucBssIndex);
+	DBGLOG(CNM, INFO, "p2pFuncSwitch Done, ucBssIndex = %d\n",
+		prBssInfo->ucBssIndex);
 
 	prP2pCsaDoneMsg->rMsgHdr.eMsgId = MID_CNM_P2P_CSA_DONE;
 	prP2pCsaDoneMsg->ucBssIndex = prBssInfo->ucBssIndex;

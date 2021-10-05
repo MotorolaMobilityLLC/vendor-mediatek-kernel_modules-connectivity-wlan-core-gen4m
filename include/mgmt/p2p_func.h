@@ -217,6 +217,10 @@ uint8_t p2pFuncGetDfsState(void);
 
 uint8_t *p2pFuncShowDfsState(void);
 
+uint8_t p2pFuncGetCsaBssIndex(void);
+
+void p2pFuncSetCsaBssIndex(IN uint8_t ucBssIdx);
+
 void p2pFuncRecordCacStartBootTime(void);
 
 uint32_t p2pFuncGetCacRemainingTime(void);
