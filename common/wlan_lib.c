@@ -7772,7 +7772,7 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 
 	/* Support TDLS 5.5.4.2 optional case */
 	prWifiVar->fgTdlsBufferSTASleep = (u_int8_t) wlanCfgGetUint32(prAdapter,
-					"TdlsBufferSTASleep", FEATURE_DISABLED);
+					"TdlsBufferSTASleep", FEATURE_ENABLED);
 	/* Support USB Whole chip reset recover */
 	prWifiVar->fgChipResetRecover = (u_int8_t) wlanCfgGetUint32(prAdapter,
 					"ChipResetRecover", FEATURE_DISABLED);
