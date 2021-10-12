@@ -1105,7 +1105,7 @@ int mtk_cfg80211_scan(struct wiphy *wiphy,
 #if (CFG_SUPPORT_QA_TOOL == 1) || (CFG_SUPPORT_LOWLATENCY_MODE == 1)
 	struct ADAPTER *prAdapter = NULL;
 #endif
-	uint8_t ucBssIndex = 0;
+	uint8_t ucBssIndex = 0, aucBCMacAddr[] = BC_MAC_ADDR;
 	GLUE_SPIN_LOCK_DECLARATION();
 
 	if (kalIsResetting())
@@ -1234,6 +1234,15 @@ int mtk_cfg80211_scan(struct wiphy *wiphy,
 		kalMemFree(prScanRequest,
 			   sizeof(struct PARAM_SCAN_REQUEST_ADV), VIR_MEM_TYPE);
 		return -EINVAL;
+	}
+
+	/* OCE will send unicast probe request, not to affect normal case */
+	if ((prAdapter->rWifiVar.u4SwTestMode == ENUM_SW_TEST_MODE_SIGMA_OCE) &&
+		!EQUAL_MAC_ADDR(request->bssid, aucBCMacAddr)) {
+		COPY_MAC_ADDR(prScanRequest->aucBssid[0],
+			request->bssid);
+		DBGLOG(SCN, INFO, "Scan req set BSSID to "MACSTR"",
+			MAC2STR(prScanRequest->aucBssid[0]));
 	}
 
 	/* 6G only need to scan PSC channel, transform channel list first*/
