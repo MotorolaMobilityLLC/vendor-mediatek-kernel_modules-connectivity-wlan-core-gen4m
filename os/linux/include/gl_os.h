@@ -934,7 +934,10 @@ struct NL80211_DRIVER_STRING_CMD_PARAMS {
 	struct NL80211_DRIVER_TEST_MODE_PARAMS hdr;
 	uint32_t reply_buf_size;
 	uint32_t reply_len;
-	uint8_t *reply_buf;
+	union _reply_buf {
+		uint8_t *ptr;
+		uint64_t data;
+	} reply_buf;
 };
 
 /*SW CMD */
