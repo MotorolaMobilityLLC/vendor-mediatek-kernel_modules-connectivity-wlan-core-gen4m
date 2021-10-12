@@ -5207,14 +5207,6 @@ void wlanOffStopWlanThreads(IN struct GLUE_INFO *prGlueInfo)
 {
 	DBGLOG(INIT, TRACE, "start.\n");
 
-	if (prGlueInfo->main_thread == NULL &&
-	    prGlueInfo->hif_thread == NULL &&
-	    prGlueInfo->rx_thread == NULL) {
-		DBGLOG(INIT, INFO,
-			"Threads are already NULL, skip stop and free\n");
-		return;
-	}
-
 #if CFG_SUPPORT_MULTITHREAD
 	wake_up_interruptible(&prGlueInfo->waitq_hif);
 	wait_for_completion_interruptible(
@@ -5229,16 +5221,6 @@ void wlanOffStopWlanThreads(IN struct GLUE_INFO *prGlueInfo)
 	wait_for_completion_interruptible(&prGlueInfo->rHaltComp);
 
 	DBGLOG(INIT, INFO, "wlan thread stopped\n");
-
-	/* prGlueInfo->rHifInfo.main_thread = NULL; */
-	prGlueInfo->main_thread = NULL;
-#if CFG_SUPPORT_MULTITHREAD
-	prGlueInfo->hif_thread = NULL;
-	prGlueInfo->rx_thread = NULL;
-
-	prGlueInfo->u4TxThreadPid = 0xffffffff;
-	prGlueInfo->u4HifThreadPid = 0xffffffff;
-#endif
 
 	if (test_and_clear_bit(GLUE_FLAG_OID_BIT, &prGlueInfo->ulFlag) &&
 			!completion_done(&prGlueInfo->rPendComp)) {
