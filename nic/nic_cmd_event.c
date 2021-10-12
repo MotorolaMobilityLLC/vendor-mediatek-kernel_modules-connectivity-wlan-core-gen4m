@@ -927,10 +927,13 @@ void nicCmdEventQueryLinkSpeedEx(IN struct ADAPTER *prAdapter,
 
 	prLinkQuality = (struct EVENT_LINK_QUALITY *) pucEventBuf;
 
+	DBGLOG(NIC, TRACE, "prCmdInfo->fgIsOid=%u", prCmdInfo->fgIsOid);
 	if (prCmdInfo->fgIsOid) {
 		prGlueInfo = prAdapter->prGlueInfo;
 		pu4LinkSpeed = (struct PARAM_LINK_SPEED_EX *) (
 					   prCmdInfo->pvInformationBuffer);
+		DBGLOG(NIC, TRACE, "Glue=%p, Cmd=%p, pvInformationBuffer=%p",
+			prGlueInfo, prCmdInfo, prCmdInfo->pvInformationBuffer);
 		for (i = 0; i < BSSID_NUM; i++) {
 			/*Fill Tx Rate*/
 			pu4LinkSpeed->rLq[i].u2TxLinkSpeed
@@ -1086,6 +1089,11 @@ void nicCmdEventQueryLinkStats(IN struct ADAPTER *prAdapter,
 
 	prGlueInfo = prAdapter->prGlueInfo;
 
+	DBGLOG(NIC, TRACE, "Glue=%p, Pend=%p, Cmd=%p, oid=%u, Buf=%p, len=%u",
+			prGlueInfo, &prGlueInfo->rPendComp, prCmdInfo,
+			prCmdInfo->fgIsOid, prCmdInfo->pvInformationBuffer,
+			len);
+
 	memcpy((uint8_t *)prCmdInfo->pvInformationBuffer, pucEventBuf, len);
 
 	DBGLOG(RX, TRACE, "kalOidComplete: infoLen=%u", len);
@@ -1118,6 +1126,8 @@ void nicEventStatsLinkStats(IN struct ADAPTER *prAdapter,
 				prCmdInfo->u4InformationBufferLength);
 		prCmdInfo->u4InformationBufferLength =
 			prEvent->u2PacketLength - sizeof(struct WIFI_EVENT);
+		DBGLOG(RX, TRACE, "Calling prCmdInfo->pfCmdDoneHandler=%ps",
+				prCmdInfo->pfCmdDoneHandler);
 		prCmdInfo->pfCmdDoneHandler(prAdapter, prCmdInfo,
 					    prEvent->aucBuffer);
 	} else if (prCmdInfo->fgIsOid)
@@ -3231,7 +3241,10 @@ void nicEventLinkQuality(IN struct ADAPTER *prAdapter,
 	prCmdInfo = nicGetPendingCmdInfo(prAdapter,
 					 prEvent->ucSeqNum);
 
+	DBGLOG(RX, TRACE, "prCmdInfo=%p", prCmdInfo);
 	if (prCmdInfo != NULL) {
+		DBGLOG(RX, TRACE, "Calling prCmdInfo->pfCmdDoneHandler=%ps",
+				prCmdInfo->pfCmdDoneHandler);
 		if (prCmdInfo->pfCmdDoneHandler)
 			prCmdInfo->pfCmdDoneHandler(prAdapter, prCmdInfo,
 						    prEvent->aucBuffer);

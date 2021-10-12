@@ -644,10 +644,16 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy,
 		return 0;
 	}
 
+	DBGLOG(REQ, TRACE, "Call Glue=%p, LinkSpeed=%p, size=%zu, &u4BufLen=%p",
+		prGlueInfo, &rLinkSpeed, sizeof(rLinkSpeed), &u4BufLen);
 	rStatus = kalIoctlByBssIdx(prGlueInfo,
 				   wlanoidQueryLinkSpeedEx, &rLinkSpeed,
 				   sizeof(rLinkSpeed), TRUE, FALSE, FALSE,
 				   &u4BufLen, ucBssIndex);
+	DBGLOG(REQ, TRACE, "kalIoctlByBssIdx()=%u, prGlueInfo=%p, u4BufLen=%u",
+		rStatus, prGlueInfo, u4BufLen);
+
+
 
 #if defined(CFG_REPORT_MAX_TX_RATE) && (CFG_REPORT_MAX_TX_RATE == 1)
 	/*rewrite LinkSpeed with Max LinkSpeed*/
@@ -859,11 +865,15 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy,
 				&u4BufLen,
 				ucBssIndex);
 #else
+		DBGLOG(REQ, TRACE, "Call LinkSpeed=%p sizeof=%zu &u4BufLen=%p",
+			&rLinkSpeed, sizeof(rLinkSpeed), &u4BufLen);
 		rStatus = kalIoctlByBssIdx(prGlueInfo,
 					   wlanoidQueryLinkSpeedEx,
 					   &rLinkSpeed, sizeof(rLinkSpeed),
 					   TRUE, FALSE, FALSE,
 					   &u4BufLen, ucBssIndex);
+		DBGLOG(REQ, TRACE, "rStatus=%u, prGlueInfo=%p, u4BufLen=%u",
+			rStatus, prGlueInfo, u4BufLen);
 		if (ucBssIndex < BSSID_NUM)
 			u4Rate = rLinkSpeed.rLq[ucBssIndex].u2TxLinkSpeed;
 #endif /* CFG_REPORT_MAX_TX_RATE */

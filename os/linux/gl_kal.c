@@ -3144,12 +3144,17 @@ kalOidComplete(IN struct GLUE_INFO *prGlueInfo,
 	struct ADAPTER *prAdapter = prGlueInfo->prAdapter;
 
 	ASSERT(prGlueInfo);
+
+	DBGLOG(NIC, TRACE, "Glue=%p Cmd=%p InformationBuffer=%p 4QryInfoLen=%p",
+			prGlueInfo, prCmdInfo, prCmdInfo->pvInformationBuffer,
+			prGlueInfo->OidEntry.pu4QryInfoLen);
+
 	/* remove timeout check timer */
 	wlanoidClearTimeoutCheck(prGlueInfo->prAdapter);
 
 	prGlueInfo->rPendStatus = rOidStatus;
 
-	prIoReq = &(prGlueInfo->OidEntry);
+	prIoReq = &prGlueInfo->OidEntry;
 	*prIoReq->pu4QryInfoLen = u4SetQueryInfoLen;
 
 	prGlueInfo->u4OidCompleteFlag = 1;
@@ -3157,7 +3162,8 @@ kalOidComplete(IN struct GLUE_INFO *prGlueInfo,
 	if (!completion_done(&prGlueInfo->rPendComp)) {
 		kalUpdateCompHdlrRec(prGlueInfo->prAdapter,
 			NULL, prCmdInfo);
-
+		DBGLOG(NIC, TRACE, "&prGlueInfo->rPendComp=%p",
+				&prGlueInfo->rPendComp);
 		complete(&prGlueInfo->rPendComp);
 	} else {
 		uint32_t wIdx, cIdx;
@@ -3522,8 +3528,15 @@ kalIoctlByBssIdx(IN struct GLUE_INFO *prGlueInfo,
 	 * current the timeout is 30 secs
 	 */
 	kalThreadSchedMark(prGlueInfo->main_thread, &schedstats);
+
+	DBGLOG(OID, TRACE, "waiting, Glue=%p, rPend=%p, BufLen=%p, QryLen=%p",
+			prGlueInfo, &prGlueInfo->rPendComp,
+			prIoReq->u4InfoBufLen, prIoReq->pu4QryInfoLen);
 	waitRet = wait_for_completion_timeout(&prGlueInfo->rPendComp,
 				MSEC_TO_JIFFIES(30*1000));
+	DBGLOG(OID, TRACE, "wait=%u, Glue=%p, rPend=%p, BufLen=%p, QryLen=%p",
+			waitRet, prGlueInfo, &prGlueInfo->rPendComp,
+			prIoReq->u4InfoBufLen, prIoReq->pu4QryInfoLen);
 	kalThreadSchedUnmark(prGlueInfo->main_thread, &schedstats);
 	if (waitRet > 0) {
 		/* Case 1: No timeout. */
@@ -4666,6 +4679,9 @@ int main_thread(void *data)
 			kalTraceBegin("OID");
 			/* get current prIoReq */
 			prIoReq = &(prGlueInfo->OidEntry);
+			DBGLOG(NIC, TRACE, "fgRead=%u, pfnOidHandler=%ps",
+					prIoReq->fgRead,
+					prIoReq->pfnOidHandler);
 			if (prIoReq->fgRead == FALSE) {
 				prIoReq->rStatus = wlanSetInformation(
 						prIoReq->prAdapter,
@@ -4691,8 +4707,9 @@ int main_thread(void *data)
 						prIoReq->pfnOidHandler,
 						NULL);
 
-					complete(
+					DBGLOG(NIC, TRACE, "rPendComp=%p",
 						&prGlueInfo->rPendComp);
+					complete(&prGlueInfo->rPendComp);
 				} else
 					DBGLOG(INIT, WARN,
 						"SKIP multiple OID complete!\n"

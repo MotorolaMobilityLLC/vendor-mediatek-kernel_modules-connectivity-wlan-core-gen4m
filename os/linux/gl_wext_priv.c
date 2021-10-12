@@ -9246,10 +9246,14 @@ int priv_driver_get_linkspeed(IN struct net_device *prNetDev,
 	if (ucBssIndex >= BSSID_NUM)
 		return -EFAULT;
 
+	DBGLOG(REQ, TRACE, "Glue=%p, &rLinkSpeed=%p, sizeof=%zu, &u4BufLen=%p",
+		prGlueInfo, &rLinkSpeed, sizeof(rLinkSpeed), &u4BufLen);
 	rStatus = kalIoctl(prGlueInfo,
 			   wlanoidQueryLinkSpeedEx,
 			   &rLinkSpeed, sizeof(rLinkSpeed),
 			   TRUE, TRUE, TRUE, &u4BufLen);
+	DBGLOG(REQ, TRACE, "kalIoctlByBssIdx()=%u, prGlueInfo=%p, u4BufLen=%u",
+		rStatus, prGlueInfo, u4BufLen);
 
 	if (rStatus != WLAN_STATUS_SUCCESS)
 		return -1;

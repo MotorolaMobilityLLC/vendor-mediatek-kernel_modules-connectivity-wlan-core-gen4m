@@ -3778,11 +3778,15 @@ p2pRoleFsmGetStaStatistics(IN struct ADAPTER *prAdapter,
 		}
 
 		prQueryStaStatistics->ucReadClear = TRUE;
+		DBGLOG(REQ, TRACE, "Call: prQueryStaStatistics=%p, u4BufLen=%p",
+				prQueryStaStatistics, &u4BufLen);
 		wlanQueryStaStatistics(prAdapter,
 			prQueryStaStatistics,
 			sizeof(struct PARAM_GET_STA_STATISTICS),
 			&u4BufLen,
 			FALSE);
+		DBGLOG(REQ, TRACE, "ret prQueryStaStatistics=%p, &u4BufLen=%p",
+				prQueryStaStatistics, &u4BufLen);
 
 	}
 
