@@ -84,6 +84,8 @@ struct APPEND_VAR_IE_ENTRY txProbeRspIETable[] = {
 			rlmRspGenerateVhtCapIE}	/*191 */
 	, {(ELEM_HDR_LEN + ELEM_MAX_LEN_VHT_OP), NULL,
 			rlmRspGenerateVhtOpIE}	/*192 */
+	, {(ELEM_HDR_LEN + ELEM_MAX_LEN_TPE), NULL,
+			rlmGenerateVhtTPEIE}	/* 195 */
 	, {(ELEM_HDR_LEN + ELEM_MAX_LEN_VHT_OP_MODE_NOTIFICATION), NULL,
 			rlmRspGenerateVhtOpNotificationIE}	/*199 */
 #endif

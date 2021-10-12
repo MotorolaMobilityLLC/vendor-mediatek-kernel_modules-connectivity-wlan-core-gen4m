@@ -433,6 +433,10 @@ void rlmRspGenerateVhtOpIE(struct ADAPTER *prAdapter,
 void rlmFillVhtOpIE(struct ADAPTER *prAdapter,
 		    struct BSS_INFO *prBssInfo, struct MSDU_INFO *prMsduInfo);
 
+void rlmGenerateVhtTPEIE(
+	struct ADAPTER *prAdapter,
+	struct MSDU_INFO *prMsduInfo);
+
 void rlmRspGenerateVhtOpNotificationIE(struct ADAPTER
 			       *prAdapter, struct MSDU_INFO *prMsduInfo);
 void rlmReqGenerateVhtOpNotificationIE(struct ADAPTER

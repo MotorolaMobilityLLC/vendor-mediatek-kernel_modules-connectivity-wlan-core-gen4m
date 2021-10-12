@@ -1090,6 +1090,8 @@
 	192	/* VHT Operation information */
 #define ELEM_ID_WIDE_BAND_CHANNEL_SWITCH \
 	194	/*Wide Bandwidth Channel Switch */
+#define ELEM_ID_TPE \
+	195 /* Transmit Power Envelope */
 #define ELEM_ID_OP_MODE \
 	199	/* Operation Mode Notification */
 #define ELEM_ID_RSNX \
@@ -1394,6 +1396,9 @@ enum BEACON_REPORT_DETAIL {
 
 #define ELEM_MAX_LEN_VHT_OP_MODE_NOTIFICATION \
 	(3 - ELEM_HDR_LEN)	/* sizeof(IE_VHT_OP_MODE_T)-2 */
+
+#define ELEM_MAX_LEN_TPE \
+	(8 - ELEM_HDR_LEN)	/* sizeof(IE_VHT_TPE)-2 */
 
 /*8.4.2.160.3 VHT Supported MCS Set field*/
 
@@ -2868,6 +2873,13 @@ struct _IE_TWT_T {
 	uint8_t ucReserved;	/* TWT Channel for 11ah. Reserved for 11ax */
 } __KAL_ATTRIB_PACKED__;
 #endif
+
+struct IE_VHT_TPE {
+	uint8_t ucId;
+	uint8_t ucLength;
+	uint8_t u8TxPowerInfo;
+	uint8_t u8TxPowerBw[4];
+} __KAL_ATTRIB_PACKED__;
 
 /* 3 7.4 Action Frame. */
 /* 7.4 Action frame format */
