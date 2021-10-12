@@ -12124,6 +12124,11 @@ uint64_t wlanGetSupportedFeatureSet(IN struct GLUE_INFO *prGlueInfo)
 	if ((prRegInfo != NULL) && (prRegInfo->ucSupport5GBand))
 		u8FeatureSet |= WIFI_FEATURE_INFRA_5G;
 
+#if CFG_SUPPORT_LLS
+	if (prGlueInfo->prAdapter->pucLinkStatsSrcBufferAddr)
+		u8FeatureSet |= WIFI_FEATURE_LINK_LAYER_STATS;
+#endif
+
 	return u8FeatureSet;
 }
 
