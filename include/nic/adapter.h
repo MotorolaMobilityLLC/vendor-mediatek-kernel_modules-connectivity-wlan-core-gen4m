@@ -955,6 +955,7 @@ struct WIFI_VAR {
 	uint8_t ucHeCertForceAmsdu;
 	uint8_t ucTrigMacPadDur;
 	uint8_t ucStaHeBfee;
+	uint8_t ucMaxAmpduLenExp;
 #endif
 #if (CFG_SUPPORT_802_11BE == 1)
 	uint8_t ucEhtAmsduInAmpduTx;

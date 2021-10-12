@@ -7281,6 +7281,8 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 		"TrigMacPadDur", HE_CAP_TRIGGER_PAD_DURATION_16);
 	prWifiVar->ucVcoreBoostEnable = (uint8_t) wlanCfgGetUint32(prAdapter,
 		"ucVcoreBoostEnable", FEATURE_ENABLED);
+	prWifiVar->ucMaxAmpduLenExp = (uint8_t) wlanCfgGetUint32(prAdapter,
+		"MaxAmpduLenExt", HE_CAP_MAX_AMPDU_LEN_EXP);
 	}
 #endif
 
