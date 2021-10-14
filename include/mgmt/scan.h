@@ -523,7 +523,7 @@ struct SCAN_PARAM {	/* Used by SCAN FSM */
 	uint16_t u2ChannelMinDwellTime;
 	uint16_t u2TimeoutValue;
 
-	uint8_t aucBSSID[SCN_SSID_MAX_NUM][MAC_ADDR_LEN];
+	uint8_t aucBSSID[CFG_SCAN_OOB_MAX_NUM][MAC_ADDR_LEN];
 
 	enum ENUM_MSG_ID eMsgId;
 	u_int8_t fgIsScanV2;
@@ -544,8 +544,8 @@ struct SCAN_PARAM {	/* Used by SCAN FSM */
 	uint8_t ucSeqNum;
 
 	/* For 6G OOB discovery*/
-	uint8_t ucBssidMatchCh[CFG_SCAN_SSID_MAX_NUM];
-	uint8_t ucBssidMatchSsidInd[CFG_SCAN_SSID_MAX_NUM];
+	uint8_t ucBssidMatchCh[CFG_SCAN_OOB_MAX_NUM];
+	uint8_t ucBssidMatchSsidInd[CFG_SCAN_OOB_MAX_NUM];
 
 	/* Information Element */
 	uint16_t u2IELen;
@@ -683,11 +683,11 @@ struct MSG_SCN_SCAN_REQ_V2 {
 	uint8_t aucRandomMac[MAC_ADDR_LEN];	/* random mac */
 
 	/* pass from PARAM_SCAN_REQUEST_ADV.aucBssid */
-	uint8_t aucExtBssid[CFG_SCAN_SSID_MAX_NUM][MAC_ADDR_LEN];
+	uint8_t aucExtBssid[CFG_SCAN_OOB_MAX_NUM][MAC_ADDR_LEN];
 	uint8_t ucShortSSIDNum;
 	/* For 6G OOB discovery*/
-	uint8_t ucBssidMatchCh[CFG_SCAN_SSID_MAX_NUM];
-	uint8_t ucBssidMatchSsidInd[CFG_SCAN_SSID_MAX_NUM];
+	uint8_t ucBssidMatchCh[CFG_SCAN_OOB_MAX_NUM];
+	uint8_t ucBssidMatchSsidInd[CFG_SCAN_OOB_MAX_NUM];
 	uint16_t u2IELen;
 	uint8_t aucIE[MAX_IE_LENGTH];
 };
