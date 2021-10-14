@@ -2722,6 +2722,7 @@ kalIPv4FrameClassifier(IN struct GLUE_INFO *prGlueInfo,
 	uint8_t ucIpProto;
 	uint8_t ucSeqNo;
 	uint8_t *pucUdpHdr, *pucIcmp;
+	uint16_t u2SrcPort;
 	uint16_t u2DstPort;
 	struct BOOTP_PROTOCOL *prBootp;
 	uint32_t u4DhcpMagicCode;
@@ -2772,6 +2773,10 @@ kalIPv4FrameClassifier(IN struct GLUE_INFO *prGlueInfo,
 #endif /* CFG_TCP_IP_CHKSUM_OFFLOAD */
 #endif /* Automation */
 
+		/* Get UDP SRC port */
+		WLAN_GET_FIELD_BE16(&pucUdpHdr[UDP_HDR_SRC_PORT_OFFSET],
+					&u2SrcPort);
+
 		/* Get UDP DST port */
 		WLAN_GET_FIELD_BE16(&pucUdpHdr[UDP_HDR_DST_PORT_OFFSET],
 				    &u2DstPort);
@@ -2789,7 +2794,8 @@ kalIPv4FrameClassifier(IN struct GLUE_INFO *prGlueInfo,
 				GLUE_SET_PKT_SEQ_NO(prPacket, ucSeqNo);
 				prTxPktInfo->u2Flag |= BIT(ENUM_PKT_DHCP);
 			}
-		} else if (u2DstPort == UDP_PORT_DNS) {
+		} else if (u2DstPort == UDP_PORT_DNS ||
+		    u2SrcPort == UDP_PORT_DNS) {
 			ucSeqNo = nicIncreaseTxSeqNum(prGlueInfo->prAdapter);
 			GLUE_SET_PKT_SEQ_NO(prPacket, ucSeqNo);
 			prTxPktInfo->u2Flag |= BIT(ENUM_PKT_DNS);
