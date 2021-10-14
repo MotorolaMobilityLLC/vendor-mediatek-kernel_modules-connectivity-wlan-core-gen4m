@@ -3492,14 +3492,14 @@ kalIoctlByBssIdx(IN struct GLUE_INFO *prGlueInfo,
 				prAdapter->arPrevCompHdlrRec[
 					(cIdx + i) % OID_HDLR_REC_NUM].aucName);
 		}
-		DBGLOG(OID, WARN, "Current wait OID hdlr: %pf\n",
+		DBGLOG(OID, WARN, "Current wait OID hdlr: %ps\n",
 			pfnOidHandler);
 	}
 	kalSnprintf(prAdapter->arPrevWaitHdlrRec[
 			prAdapter->u4WaitRecIdx].aucName,
 			sizeof(prAdapter->arPrevWaitHdlrRec[
 			prAdapter->u4WaitRecIdx].aucName),
-			"%pf", pfnOidHandler);
+			"%ps", pfnOidHandler);
 	prAdapter->u4WaitRecIdx = (prAdapter->u4WaitRecIdx + 1)
 					% OID_HDLR_REC_NUM;
 
@@ -9509,21 +9509,21 @@ void kalUpdateCompHdlrRec(IN struct ADAPTER *prAdapter,
 					prAdapter->u4CompRecIdx].aucName,
 				sizeof(prAdapter->arPrevCompHdlrRec[
 					prAdapter->u4CompRecIdx].aucName),
-				"%pf", pfnOidHandler);
+				"%ps", pfnOidHandler);
 	else {
 		if (prCmdInfo)
 			kalSnprintf(prAdapter->arPrevCompHdlrRec[
 					prAdapter->u4CompRecIdx].aucName,
 					sizeof(prAdapter->arPrevCompHdlrRec[
 					prAdapter->u4CompRecIdx].aucName),
-					"[CID 0x%x] %pf", prCmdInfo->ucCID,
+					"[CID 0x%x] %ps", prCmdInfo->ucCID,
 					__builtin_return_address(0));
 		else
 			kalSnprintf(prAdapter->arPrevCompHdlrRec[
 					prAdapter->u4CompRecIdx].aucName,
 					sizeof(prAdapter->arPrevCompHdlrRec[
 					prAdapter->u4CompRecIdx].aucName),
-					"%pf", __builtin_return_address(0));
+					"%ps", __builtin_return_address(0));
 	}
 
 	prAdapter->u4CompRecIdx = (prAdapter->u4CompRecIdx + 1)
