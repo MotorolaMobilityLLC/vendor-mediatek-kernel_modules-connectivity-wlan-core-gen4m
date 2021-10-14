@@ -2479,6 +2479,46 @@ static void soc7_0_DumpConnDbgCtrl(struct ADAPTER *prAdapter)
 	connac2x_DbgCrWrite(prAdapter, u4WrAddr2, u4RegVal);
 }
 
+static void soc7_0_DumpAhbApbTimeout(struct ADAPTER *prAdapter)
+{
+	uint32_t u4Val = 0, u4Addr = 0;
+
+	/* To check ahb apb timeout setting
+	 * Read 0x184F_0440
+	 */
+	u4Addr = WF_MCU_CONFG_LS_BUSHANGCR_ADDR;
+	connac2x_DbgCrRead(prAdapter, u4Addr, &u4Val);
+	DBGLOG(HAL, ERROR, "0x%08x=[0x%08x]\n", u4Addr, u4Val);
+
+	/* To get the timeout address
+	 * Read 0x184F_0444
+	 */
+	u4Addr = WF_MCU_CONFG_LS_BUSHANGADDR_ADDR;
+	connac2x_DbgCrRead(prAdapter, u4Addr, &u4Val);
+	DBGLOG(HAL, ERROR, "0x%08x=[0x%08x]\n", u4Addr, u4Val);
+
+	/* To get the cmd information
+	 * Read 0x184F_0430
+	 */
+	u4Addr = WF_MCU_CONFG_LS_BUSHANGCTRLA_ADDR;
+	connac2x_DbgCrRead(prAdapter, u4Addr, &u4Val);
+	DBGLOG(HAL, ERROR, "0x%08x=[0x%08x]\n", u4Addr, u4Val);
+
+	/* To get bus hang bus transaction id
+	 * Read 0x184F_044C
+	 */
+	u4Addr = WF_MCU_CONFG_LS_BUSHANGID_ADDR;
+	connac2x_DbgCrRead(prAdapter, u4Addr, &u4Val);
+	DBGLOG(HAL, ERROR, "0x%08x=[0x%08x]\n", u4Addr, u4Val);
+
+	/* To get bus hang node index
+	 * Read 0x184F_0450
+	 */
+	u4Addr = WF_MCU_CONFG_LS_BUSHANGBUS_ADDR;
+	connac2x_DbgCrRead(prAdapter, u4Addr, &u4Val);
+	DBGLOG(HAL, ERROR, "0x%08x=[0x%08x]\n", u4Addr, u4Val);
+}
+
 static void soc7_0_DumpOtherCr(struct ADAPTER *prAdapter)
 {
 #define	HANG_OTHER_LOG_NUM		2
@@ -2498,6 +2538,7 @@ static void soc7_0_DumpOtherCr(struct ADAPTER *prAdapter)
 	/* WFSYS BUS debug method */
 	soc7_0_DumpDebugCtrlAoCr(prAdapter);
 	soc7_0_DumpConnDbgCtrl(prAdapter);
+	soc7_0_DumpAhbApbTimeout(prAdapter);
 
 	/* MCIF_MD_STATUS_CR */
 	connac2x_DbgCrRead(NULL, 0x10001BF4, &u4Val);
