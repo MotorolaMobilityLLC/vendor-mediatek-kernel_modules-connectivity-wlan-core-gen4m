@@ -2482,8 +2482,7 @@ uint32_t fwDlGetFwdlInfo(struct ADAPTER *prAdapter,
 	prFwDlOps = prAdapter->chip_info->fw_dl_ops;
 
 	kalSnprintf(aucBuf, sizeof(aucBuf), "%4s", prVerInfo->aucFwBranchInfo);
-	kalMemZero(aucDate, sizeof(aucDate));
-	kalStrnCpy(aucDate, prVerInfo->aucFwDateCode, sizeof(aucDate) - 1);
+	kalSnprintf(aucDate, sizeof(aucDate), "%16s", prVerInfo->aucFwDateCode);
 
 	u4Offset += snprintf(pcBuf + u4Offset,
 			i4TotalLen - u4Offset,
@@ -2507,12 +2506,11 @@ uint32_t fwDlGetFwdlInfo(struct ADAPTER *prAdapter,
 #endif
 	}
 
-	kalMemZero(aucBuf, sizeof(aucBuf));
-	kalMemZero(aucDate, sizeof(aucDate));
-	kalStrnCpy(aucBuf, prVerInfo->rPatchHeader.aucPlatform,
-			sizeof(aucBuf) - 1);
-	kalStrnCpy(aucDate, prVerInfo->rPatchHeader.aucBuildDate,
-			sizeof(aucDate) - 1);
+	kalSnprintf(aucBuf, sizeof(aucBuf), "%4s",
+			prVerInfo->rPatchHeader.aucPlatform);
+	kalSnprintf(aucDate, sizeof(aucDate), "%16s",
+			prVerInfo->rPatchHeader.aucBuildDate);
+
 	u4Offset += snprintf(pcBuf + u4Offset,
 			     i4TotalLen - u4Offset,
 			     "Patch platform %s version 0x%04X %s\n",
