@@ -190,6 +190,7 @@
 #define HE_PHY_CAP4_MU_BFMER_SHFT                      1
 #define HE_PHY_CAP4_BFMEE_STS_LT_OR_EQ_80M_MASK        BITS(2, 4)
 #define HE_PHY_CAP4_BFMEE_STS_LT_OR_EQ_80M_SHFT        2
+#define HE_PHY_CAP4_BFMEE_STS_GT_80M_MASK              BITS(5, 7)
 #define HE_PHY_CAP4_BFMEE_STS_GT_80M_SHFT              5
 
 /* HE PHY Capablilites byte5 */
@@ -541,6 +542,14 @@ enum ENUM_HEBA_TYPE {
 	_aucHePhyCapInfo[4] |= \
 		((_ucSts << HE_PHY_CAP4_BFMEE_STS_LT_OR_EQ_80M_SHFT) \
 			& HE_PHY_CAP4_BFMEE_STS_LT_OR_EQ_80M_MASK); \
+}
+
+#define HE_SET_PHY_CAP_BFMEE_STS_GT_80M(_aucHePhyCapInfo, _ucSts) \
+{ \
+	_aucHePhyCapInfo[4] &= ~(HE_PHY_CAP4_BFMEE_STS_GT_80M_MASK); \
+	_aucHePhyCapInfo[4] |= \
+		((_ucSts << HE_PHY_CAP4_BFMEE_STS_GT_80M_SHFT) \
+			& HE_PHY_CAP4_BFMEE_STS_GT_80M_MASK); \
 }
 
 #define HE_GET_PHY_CAP_NUM_OF_SND_DIM_LT_OR_EQ_80M(_aucHePhyCapInfo) \
