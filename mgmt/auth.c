@@ -609,7 +609,8 @@ uint32_t authCheckRxAuthFrameTransSeq(IN struct ADAPTER *prAdapter,
 	}
 
 	prStaRec = cnmGetStaRecByIndex(prAdapter, prSwRfb->ucStaRecIdx);
-	if (prStaRec && IS_STA_IN_AIS(prStaRec)) {
+	if (prStaRec &&
+		(IS_STA_IN_AIS(prStaRec) || IS_STA_IN_P2P(prStaRec))) {
 		if (prStaRec->eAuthAssocState == SAA_STATE_EXTERNAL_AUTH) {
 			saaFsmRunEventRxAuth(prAdapter, prSwRfb);
 			return WLAN_STATUS_SUCCESS;

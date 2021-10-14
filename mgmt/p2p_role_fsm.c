@@ -2228,6 +2228,22 @@ void p2pRoleFsmRunEventConnectionRequest(IN struct ADAPTER *prAdapter,
 		prP2pConnReqMsg->u4IELen);
 	prConnReqInfo->u4BufLength = prP2pConnReqMsg->u4IELen;
 
+	switch (prP2pConnReqMsg->eAuthMode) {
+	case AUTH_MODE_SHARED:
+		prJoinInfo->ucAvailableAuthTypes =
+			(uint8_t) AUTH_TYPE_SHARED_KEY;
+		break;
+	case AUTH_MODE_WPA3_SAE:
+		prJoinInfo->ucAvailableAuthTypes =
+			(uint8_t) AUTH_TYPE_SAE;
+		break;
+	case AUTH_MODE_OPEN:
+	default:
+		prJoinInfo->ucAvailableAuthTypes =
+			(uint8_t) AUTH_TYPE_OPEN_SYSTEM;
+		break;
+	}
+
 	/* Find BSS Descriptor first. */
 	prJoinInfo->prTargetBssDesc =
 		scanP2pSearchDesc(prAdapter, prConnReqInfo);

@@ -3027,8 +3027,24 @@ int mtk_p2p_cfg80211_connect(struct wiphy *wiphy,
 		kalMemCopy(prConnReqMsg->aucIEBuf, sme->ie, sme->ie_len);
 		prConnReqMsg->u4IELen = sme->ie_len;
 
-		kalP2PSetCipher(prGlueInfo, IW_AUTH_CIPHER_NONE, ucRoleIdx);
+		DBGLOG(REQ, INFO, "sme->auth_type=%x", sme->auth_type);
 
+		switch (sme->auth_type) {
+		case NL80211_AUTHTYPE_OPEN_SYSTEM:
+			prConnReqMsg->eAuthMode = AUTH_MODE_OPEN;
+			break;
+		case NL80211_AUTHTYPE_SHARED_KEY:
+			prConnReqMsg->eAuthMode = AUTH_MODE_SHARED;
+			break;
+		case NL80211_AUTHTYPE_SAE:
+			prConnReqMsg->eAuthMode = AUTH_MODE_WPA3_SAE;
+			break;
+		default:
+			prConnReqMsg->eAuthMode = AUTH_MODE_OPEN;
+			break;
+		}
+
+		kalP2PSetCipher(prGlueInfo, IW_AUTH_CIPHER_NONE, ucRoleIdx);
 		if (sme->crypto.n_ciphers_pairwise) {
 			DBGLOG(REQ, TRACE,
 				"cipher pairwise (%d)\n",

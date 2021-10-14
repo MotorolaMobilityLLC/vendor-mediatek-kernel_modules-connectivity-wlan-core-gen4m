@@ -9112,19 +9112,39 @@ int kalExternalAuthRequest(IN struct ADAPTER *prAdapter,
 	struct BSS_DESC *prBssDesc = NULL;
 	struct net_device *ndev = NULL;
 	struct GLUE_INFO *prGlueInfo = prAdapter->prGlueInfo;
+	struct BSS_INFO *prBssInfo = NULL;
+	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo = NULL;
 
-	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, uBssIndex);
-	if (!prAisFsmInfo) {
-		DBGLOG(SAA, WARN,
-		       "SAE auth failed with NULL prAisFsmInfo\n");
-		return WLAN_STATUS_INVALID_DATA;
-	}
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, uBssIndex);
 
-	prBssDesc = prAisFsmInfo->prTargetBssDesc;
-	if (!prBssDesc) {
-		DBGLOG(SAA, WARN,
-		       "SAE auth failed without prTargetBssDesc\n");
-		return WLAN_STATUS_INVALID_DATA;
+	if (IS_BSS_AIS(prBssInfo)) {
+		prAisFsmInfo = aisGetAisFsmInfo(prAdapter, uBssIndex);
+		if (!prAisFsmInfo) {
+			DBGLOG(SAA, WARN,
+			       "SAE auth failed with NULL prAisFsmInfo\n");
+			return WLAN_STATUS_INVALID_DATA;
+		}
+
+		prBssDesc = prAisFsmInfo->prTargetBssDesc;
+		if (!prBssDesc) {
+			DBGLOG(SAA, WARN,
+			       "SAE auth failed without prTargetBssDesc\n");
+			return WLAN_STATUS_INVALID_DATA;
+		}
+	} else if (IS_BSS_P2P(prBssInfo)) {
+		prP2pRoleFsmInfo = p2pFuncGetRoleByBssIdx(prAdapter, uBssIndex);
+		if (!prP2pRoleFsmInfo) {
+			DBGLOG(SAA, WARN,
+			       "SAE auth failed with NULL prP2pRoleFsmInfo\n");
+			return WLAN_STATUS_INVALID_DATA;
+		}
+
+		prBssDesc = prP2pRoleFsmInfo->rJoinInfo.prTargetBssDesc;
+		if (!prBssDesc) {
+			DBGLOG(SAA, WARN,
+			       "SAE auth failed without prTargetBssDesc\n");
+			return WLAN_STATUS_INVALID_DATA;
+		}
 	}
 
 	ndev = wlanGetNetDev(prGlueInfo, uBssIndex);

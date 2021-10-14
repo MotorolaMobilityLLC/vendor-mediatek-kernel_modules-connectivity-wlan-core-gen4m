@@ -455,8 +455,6 @@ void p2pFuncGCJoin(IN struct ADAPTER *prAdapter,
 		if (prP2pBssInfo->eConnectionState
 			== MEDIA_STATE_DISCONNECTED) {
 			prStaRec->fgIsReAssoc = FALSE;
-			prP2pJoinInfo->ucAvailableAuthTypes =
-				(uint8_t) AUTH_TYPE_OPEN_SYSTEM;
 			prStaRec->ucTxAuthAssocRetryLimit =
 				TX_AUTH_ASSOCI_RETRY_LIMIT;
 		} else {
@@ -468,8 +466,8 @@ void p2pFuncGCJoin(IN struct ADAPTER *prAdapter,
 		/* 2 <4> Use an appropriate Authentication Algorithm Number
 		 * among the ucAvailableAuthTypes.
 		 */
-		if (prP2pJoinInfo->ucAvailableAuthTypes
-			& (uint8_t) AUTH_TYPE_OPEN_SYSTEM) {
+		if (prP2pJoinInfo->ucAvailableAuthTypes &
+			(uint8_t) AUTH_TYPE_OPEN_SYSTEM) {
 
 			DBGLOG(P2P, TRACE,
 				"JOIN INIT: Try to do Authentication with AuthType == OPEN_SYSTEM.\n");
@@ -479,6 +477,27 @@ void p2pFuncGCJoin(IN struct ADAPTER *prAdapter,
 
 			prStaRec->ucAuthAlgNum =
 				(uint8_t) AUTH_ALGORITHM_NUM_OPEN_SYSTEM;
+		} else if (prP2pJoinInfo->ucAvailableAuthTypes &
+			(uint8_t) AUTH_TYPE_SHARED_KEY) {
+
+			DBGLOG(P2P, TRACE,
+				"JOIN INIT: Try to do Authentication with AuthType == SHARED_KEY.\n");
+
+			prP2pJoinInfo->ucAvailableAuthTypes &=
+				~(uint8_t) AUTH_TYPE_SHARED_KEY;
+
+			prStaRec->ucAuthAlgNum =
+				(uint8_t) AUTH_ALGORITHM_NUM_SHARED_KEY;
+		} else if (prP2pJoinInfo->ucAvailableAuthTypes &
+			(uint8_t) AUTH_TYPE_SAE) {
+			DBGLOG(P2P, TRACE,
+				"JOIN INIT: Try to do Authentication with AuthType == SAE.\n");
+
+			prP2pJoinInfo->ucAvailableAuthTypes &=
+				~(uint8_t) AUTH_TYPE_SAE;
+
+			prStaRec->ucAuthAlgNum =
+				(uint8_t) AUTH_ALGORITHM_NUM_SAE;
 		} else {
 			DBGLOG(P2P, ERROR,
 				"JOIN INIT: ucAvailableAuthTypes Error.\n");
