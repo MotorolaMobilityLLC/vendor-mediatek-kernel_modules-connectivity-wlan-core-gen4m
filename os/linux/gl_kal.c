@@ -4499,10 +4499,6 @@ int main_thread(void *data)
 	DBGLOG(INIT, INFO, "%s:%u starts running...\n",
 	       KAL_GET_CURRENT_THREAD_NAME(), KAL_GET_CURRENT_THREAD_ID());
 
-#if (CFG_SUPPORT_CONNINFRA == 1)
-	prGlueInfo->prAdapter->u4FWLastUpdateTime = 0;
-#endif
-
 	rtc_update = jiffies;	/* update rtc_update time base */
 
 	while (TRUE) {

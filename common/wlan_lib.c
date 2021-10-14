@@ -738,6 +738,9 @@ void wlanOnPreAllocAdapterMem(IN struct ADAPTER *prAdapter,
 		prAdapter->u4CompRecIdx = 0;
 		prAdapter->fgSetLogOnOff = true;
 		prAdapter->fgSetLogLevel = true;
+#if (CFG_SUPPORT_CONNINFRA == 1)
+		prAdapter->u4FWLastUpdateTime = 0;
+#endif
 
 		/* Initialize rWlanInfo */
 		kalMemSet(&(prAdapter->rWlanInfo), 0,
