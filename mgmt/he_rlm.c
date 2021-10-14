@@ -510,6 +510,9 @@ static void heRlmFillHeCapIE(
 
 	HE_SET_MAC_CAP_OM_CTRL(prHeCap->ucHeMacCap);
 
+	HE_SET_MAC_CAP_MAX_AMPDU_LEN_EXP(prHeCap->ucHeMacCap,
+		prWifiVar->ucMaxAmpduLenExp);
+
 #if (CFG_SUPPORT_TWT == 1)
 	if (IS_BSS_AIS(prBssInfo) &&
 		IS_FEATURE_ENABLED(prWifiVar->ucTWTRequester))
