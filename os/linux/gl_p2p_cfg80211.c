@@ -1573,36 +1573,40 @@ int mtk_p2p_cfg80211_start_ap(struct wiphy *wiphy,
 			prAdapter = prGlueInfo->prAdapter;
 			prWifiVar = &prAdapter->rWifiVar;
 
-			if ((prWifiVar->ucApChannel != 0) &&
-				(prWifiVar->ucApChnlDefFromCfg != 0) &&
-				(prWifiVar->ucApChannel !=
-				rRfChnlInfo.ucChannelNum)) {
-				rRfChnlInfo.ucChannelNum =
-					prWifiVar->ucApChannel;
-				rRfChnlInfo.eBand =
-					(rRfChnlInfo.ucChannelNum <= 14)
-					? BAND_2G4 : BAND_5G;
-				/* [TODO][20160829]If we will set SCO
-				 * by nl80211_channel_type afterward,
-				 * to check if we need to modify SCO
-				 * by wifi.cfg here
-				*/
-			} else if (prWifiVar->u2ApFreq &&
-				prWifiVar->ucApChnlDefFromCfg != 0) {
-				rRfChnlInfo.ucChannelNum  =
-				nicFreq2ChannelNum(prWifiVar->u2ApFreq * 1000);
+			if (p2pFuncIsAPMode(
+				prWifiVar->prP2PConnSettings[ucRoleIdx])) {
+				if ((prWifiVar->ucApChannel != 0) &&
+					(prWifiVar->ucApChnlDefFromCfg != 0) &&
+					(prWifiVar->ucApChannel !=
+					rRfChnlInfo.ucChannelNum)) {
+					rRfChnlInfo.ucChannelNum =
+						prWifiVar->ucApChannel;
+					rRfChnlInfo.eBand =
+						(rRfChnlInfo.ucChannelNum <= 14)
+						? BAND_2G4 : BAND_5G;
+					/* [TODO][20160829]If we will set SCO
+					 * by nl80211_channel_type afterward,
+					 * to check if we need to modify SCO
+					 * by wifi.cfg here
+					 */
+				} else if (prWifiVar->u2ApFreq &&
+					prWifiVar->ucApChnlDefFromCfg != 0) {
+					rRfChnlInfo.ucChannelNum =
+						nicFreq2ChannelNum(
+						prWifiVar->u2ApFreq * 1000);
 
-				if (prWifiVar->u2ApFreq >= 2412 &&
-					prWifiVar->u2ApFreq <= 2484)
-					rRfChnlInfo.eBand = BAND_2G4;
-				else if (prWifiVar->u2ApFreq >= 5180 &&
-					prWifiVar->u2ApFreq <= 5900)
-					rRfChnlInfo.eBand = BAND_5G;
+					if (prWifiVar->u2ApFreq >= 2412 &&
+						prWifiVar->u2ApFreq <= 2484)
+						rRfChnlInfo.eBand = BAND_2G4;
+					else if (prWifiVar->u2ApFreq >= 5180 &&
+						prWifiVar->u2ApFreq <= 5900)
+						rRfChnlInfo.eBand = BAND_5G;
 #if (CFG_SUPPORT_WIFI_6G == 1)
-				else if (prWifiVar->u2ApFreq >= 5955 &&
-					prWifiVar->u2ApFreq <= 7115)
-					rRfChnlInfo.eBand = BAND_6G;
+					else if (prWifiVar->u2ApFreq >= 5955 &&
+						prWifiVar->u2ApFreq <= 7115)
+						rRfChnlInfo.eBand = BAND_6G;
 #endif
+				}
 			}
 
 			p2pFuncSetChannel(prGlueInfo->prAdapter,
