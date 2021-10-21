@@ -538,6 +538,11 @@ int mtk_p2p_cfg80211_mgmt_tx(struct wiphy *wiphy,
 		u64 *cookie);
 #endif
 
+int mtk_p2p_cfg80211_add_station(
+	struct wiphy *wiphy,
+	struct net_device *ndev,
+	const u8 *mac);
+
 #if KERNEL_VERSION(3, 19, 0) <= CFG80211_VERSION_CODE
 int mtk_p2p_cfg80211_del_station(struct wiphy *wiphy,
 		struct net_device *dev,

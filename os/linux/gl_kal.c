@@ -2722,6 +2722,7 @@ kalIPv4FrameClassifier(IN struct GLUE_INFO *prGlueInfo,
 	uint8_t ucIpProto;
 	uint8_t ucSeqNo;
 	uint8_t *pucUdpHdr, *pucIcmp;
+	uint16_t u2SrcPort;
 	uint16_t u2DstPort;
 	struct BOOTP_PROTOCOL *prBootp;
 	uint32_t u4DhcpMagicCode;
@@ -2772,6 +2773,10 @@ kalIPv4FrameClassifier(IN struct GLUE_INFO *prGlueInfo,
 #endif /* CFG_TCP_IP_CHKSUM_OFFLOAD */
 #endif /* Automation */
 
+		/* Get UDP SRC port */
+		WLAN_GET_FIELD_BE16(&pucUdpHdr[UDP_HDR_SRC_PORT_OFFSET],
+					&u2SrcPort);
+
 		/* Get UDP DST port */
 		WLAN_GET_FIELD_BE16(&pucUdpHdr[UDP_HDR_DST_PORT_OFFSET],
 				    &u2DstPort);
@@ -2789,7 +2794,8 @@ kalIPv4FrameClassifier(IN struct GLUE_INFO *prGlueInfo,
 				GLUE_SET_PKT_SEQ_NO(prPacket, ucSeqNo);
 				prTxPktInfo->u2Flag |= BIT(ENUM_PKT_DHCP);
 			}
-		} else if (u2DstPort == UDP_PORT_DNS) {
+		} else if (u2DstPort == UDP_PORT_DNS ||
+		    u2SrcPort == UDP_PORT_DNS) {
 			ucSeqNo = nicIncreaseTxSeqNum(prGlueInfo->prAdapter);
 			GLUE_SET_PKT_SEQ_NO(prPacket, ucSeqNo);
 			prTxPktInfo->u2Flag |= BIT(ENUM_PKT_DNS);
@@ -3144,12 +3150,17 @@ kalOidComplete(IN struct GLUE_INFO *prGlueInfo,
 	struct ADAPTER *prAdapter = prGlueInfo->prAdapter;
 
 	ASSERT(prGlueInfo);
+
+	DBGLOG(NIC, TRACE, "Glue=%p Cmd=%p InformationBuffer=%p 4QryInfoLen=%p",
+			prGlueInfo, prCmdInfo, prCmdInfo->pvInformationBuffer,
+			prGlueInfo->OidEntry.pu4QryInfoLen);
+
 	/* remove timeout check timer */
 	wlanoidClearTimeoutCheck(prGlueInfo->prAdapter);
 
 	prGlueInfo->rPendStatus = rOidStatus;
 
-	prIoReq = &(prGlueInfo->OidEntry);
+	prIoReq = &prGlueInfo->OidEntry;
 	*prIoReq->pu4QryInfoLen = u4SetQueryInfoLen;
 
 	prGlueInfo->u4OidCompleteFlag = 1;
@@ -3157,7 +3168,8 @@ kalOidComplete(IN struct GLUE_INFO *prGlueInfo,
 	if (!completion_done(&prGlueInfo->rPendComp)) {
 		kalUpdateCompHdlrRec(prGlueInfo->prAdapter,
 			NULL, prCmdInfo);
-
+		DBGLOG(NIC, TRACE, "&prGlueInfo->rPendComp=%p",
+				&prGlueInfo->rPendComp);
 		complete(&prGlueInfo->rPendComp);
 	} else {
 		uint32_t wIdx, cIdx;
@@ -3492,14 +3504,14 @@ kalIoctlByBssIdx(IN struct GLUE_INFO *prGlueInfo,
 				prAdapter->arPrevCompHdlrRec[
 					(cIdx + i) % OID_HDLR_REC_NUM].aucName);
 		}
-		DBGLOG(OID, WARN, "Current wait OID hdlr: %pf\n",
+		DBGLOG(OID, WARN, "Current wait OID hdlr: %ps\n",
 			pfnOidHandler);
 	}
 	kalSnprintf(prAdapter->arPrevWaitHdlrRec[
 			prAdapter->u4WaitRecIdx].aucName,
 			sizeof(prAdapter->arPrevWaitHdlrRec[
 			prAdapter->u4WaitRecIdx].aucName),
-			"%pf", pfnOidHandler);
+			"%ps", pfnOidHandler);
 	prAdapter->u4WaitRecIdx = (prAdapter->u4WaitRecIdx + 1)
 					% OID_HDLR_REC_NUM;
 
@@ -3522,8 +3534,15 @@ kalIoctlByBssIdx(IN struct GLUE_INFO *prGlueInfo,
 	 * current the timeout is 30 secs
 	 */
 	kalThreadSchedMark(prGlueInfo->main_thread, &schedstats);
+
+	DBGLOG(OID, TRACE, "waiting, Glue=%p, rPend=%p, BufLen=%p, QryLen=%p",
+			prGlueInfo, &prGlueInfo->rPendComp,
+			prIoReq->u4InfoBufLen, prIoReq->pu4QryInfoLen);
 	waitRet = wait_for_completion_timeout(&prGlueInfo->rPendComp,
 				MSEC_TO_JIFFIES(30*1000));
+	DBGLOG(OID, TRACE, "wait=%u, Glue=%p, rPend=%p, BufLen=%p, QryLen=%p",
+			waitRet, prGlueInfo, &prGlueInfo->rPendComp,
+			prIoReq->u4InfoBufLen, prIoReq->pu4QryInfoLen);
 	kalThreadSchedUnmark(prGlueInfo->main_thread, &schedstats);
 	if (waitRet > 0) {
 		/* Case 1: No timeout. */
@@ -4302,6 +4321,9 @@ int hif_thread(void *data)
 	}
 #endif
 
+	prGlueInfo->hif_thread = NULL;
+	prGlueInfo->u4HifThreadPid = 0xffffffff;
+
 	return 0;
 }
 
@@ -4430,6 +4452,9 @@ int rx_thread(void *data)
 	}
 #endif
 
+	prGlueInfo->rx_thread = NULL;
+	prGlueInfo->u4RxThreadPid = 0xffffffff;
+
 	return 0;
 }
 #endif
@@ -4485,10 +4510,6 @@ int main_thread(void *data)
 
 	DBGLOG(INIT, INFO, "%s:%u starts running...\n",
 	       KAL_GET_CURRENT_THREAD_NAME(), KAL_GET_CURRENT_THREAD_ID());
-
-#if (CFG_SUPPORT_CONNINFRA == 1)
-	prGlueInfo->prAdapter->u4FWLastUpdateTime = 0;
-#endif
 
 	rtc_update = jiffies;	/* update rtc_update time base */
 
@@ -4666,6 +4687,9 @@ int main_thread(void *data)
 			kalTraceBegin("OID");
 			/* get current prIoReq */
 			prIoReq = &(prGlueInfo->OidEntry);
+			DBGLOG(NIC, TRACE, "fgRead=%u, pfnOidHandler=%ps",
+					prIoReq->fgRead,
+					prIoReq->pfnOidHandler);
 			if (prIoReq->fgRead == FALSE) {
 				prIoReq->rStatus = wlanSetInformation(
 						prIoReq->prAdapter,
@@ -4691,8 +4715,9 @@ int main_thread(void *data)
 						prIoReq->pfnOidHandler,
 						NULL);
 
-					complete(
+					DBGLOG(NIC, TRACE, "rPendComp=%p",
 						&prGlueInfo->rPendComp);
+					complete(&prGlueInfo->rPendComp);
 				} else
 					DBGLOG(INIT, WARN,
 						"SKIP multiple OID complete!\n"
@@ -4870,6 +4895,9 @@ int main_thread(void *data)
 		DBGLOG(INIT, STATE, "[SER][L0] SQC hang!\n");
 	}
 #endif
+
+	prGlueInfo->main_thread = NULL;
+	prGlueInfo->u4TxThreadPid = 0xffffffff;
 
 	return 0;
 
@@ -9084,19 +9112,39 @@ int kalExternalAuthRequest(IN struct ADAPTER *prAdapter,
 	struct BSS_DESC *prBssDesc = NULL;
 	struct net_device *ndev = NULL;
 	struct GLUE_INFO *prGlueInfo = prAdapter->prGlueInfo;
+	struct BSS_INFO *prBssInfo = NULL;
+	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo = NULL;
 
-	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, uBssIndex);
-	if (!prAisFsmInfo) {
-		DBGLOG(SAA, WARN,
-		       "SAE auth failed with NULL prAisFsmInfo\n");
-		return WLAN_STATUS_INVALID_DATA;
-	}
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, uBssIndex);
 
-	prBssDesc = prAisFsmInfo->prTargetBssDesc;
-	if (!prBssDesc) {
-		DBGLOG(SAA, WARN,
-		       "SAE auth failed without prTargetBssDesc\n");
-		return WLAN_STATUS_INVALID_DATA;
+	if (IS_BSS_AIS(prBssInfo)) {
+		prAisFsmInfo = aisGetAisFsmInfo(prAdapter, uBssIndex);
+		if (!prAisFsmInfo) {
+			DBGLOG(SAA, WARN,
+			       "SAE auth failed with NULL prAisFsmInfo\n");
+			return WLAN_STATUS_INVALID_DATA;
+		}
+
+		prBssDesc = prAisFsmInfo->prTargetBssDesc;
+		if (!prBssDesc) {
+			DBGLOG(SAA, WARN,
+			       "SAE auth failed without prTargetBssDesc\n");
+			return WLAN_STATUS_INVALID_DATA;
+		}
+	} else if (IS_BSS_P2P(prBssInfo)) {
+		prP2pRoleFsmInfo = p2pFuncGetRoleByBssIdx(prAdapter, uBssIndex);
+		if (!prP2pRoleFsmInfo) {
+			DBGLOG(SAA, WARN,
+			       "SAE auth failed with NULL prP2pRoleFsmInfo\n");
+			return WLAN_STATUS_INVALID_DATA;
+		}
+
+		prBssDesc = prP2pRoleFsmInfo->rJoinInfo.prTargetBssDesc;
+		if (!prBssDesc) {
+			DBGLOG(SAA, WARN,
+			       "SAE auth failed without prTargetBssDesc\n");
+			return WLAN_STATUS_INVALID_DATA;
+		}
 	}
 
 	ndev = wlanGetNetDev(prGlueInfo, uBssIndex);
@@ -9509,21 +9557,21 @@ void kalUpdateCompHdlrRec(IN struct ADAPTER *prAdapter,
 					prAdapter->u4CompRecIdx].aucName,
 				sizeof(prAdapter->arPrevCompHdlrRec[
 					prAdapter->u4CompRecIdx].aucName),
-				"%pf", pfnOidHandler);
+				"%ps", pfnOidHandler);
 	else {
 		if (prCmdInfo)
 			kalSnprintf(prAdapter->arPrevCompHdlrRec[
 					prAdapter->u4CompRecIdx].aucName,
 					sizeof(prAdapter->arPrevCompHdlrRec[
 					prAdapter->u4CompRecIdx].aucName),
-					"[CID 0x%x] %pf", prCmdInfo->ucCID,
+					"[CID 0x%x] %ps", prCmdInfo->ucCID,
 					__builtin_return_address(0));
 		else
 			kalSnprintf(prAdapter->arPrevCompHdlrRec[
 					prAdapter->u4CompRecIdx].aucName,
 					sizeof(prAdapter->arPrevCompHdlrRec[
 					prAdapter->u4CompRecIdx].aucName),
-					"%pf", __builtin_return_address(0));
+					"%ps", __builtin_return_address(0));
 	}
 
 	prAdapter->u4CompRecIdx = (prAdapter->u4CompRecIdx + 1)

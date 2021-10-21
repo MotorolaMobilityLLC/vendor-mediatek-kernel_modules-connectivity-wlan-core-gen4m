@@ -2325,7 +2325,11 @@ uint32_t wlanDownloadFW(IN struct ADAPTER *prAdapter)
 			DBGLOG(INIT, WARN,
 				"Failed to sync kernel time to FW: unhandled CMD ID 0x%x.\n",
 					INIT_CMD_ID_LOG_TIME_SYNC);
+		} else {
+			prAdapter->u4FWLastUpdateTime =
+				(unsigned int)time.tv_sec;
 		}
+
 	}
 
 	if (prFwDlOps->phyAction)
@@ -2477,14 +2481,12 @@ uint32_t fwDlGetFwdlInfo(struct ADAPTER *prAdapter,
 
 	prFwDlOps = prAdapter->chip_info->fw_dl_ops;
 
-	kalMemZero(aucBuf, sizeof(aucBuf));
-	kalStrnCpy(aucBuf, prVerInfo->aucFwBranchInfo, sizeof(aucBuf) - 1);
-	kalMemZero(aucDate, sizeof(aucDate));
-	kalStrnCpy(aucDate, prVerInfo->aucFwDateCode, sizeof(aucDate) - 1);
+	kalSnprintf(aucBuf, sizeof(aucBuf), "%4s", prVerInfo->aucFwBranchInfo);
+	kalSnprintf(aucDate, sizeof(aucDate), "%16s", prVerInfo->aucFwDateCode);
 
 	u4Offset += snprintf(pcBuf + u4Offset,
 			i4TotalLen - u4Offset,
-			"\nN9 FW version %4s-%u.%u.%u[DEC] (%s)\n",
+			"\nN9 FW version %s-%u.%u.%u[DEC] (%s)\n",
 			aucBuf,
 			(uint32_t)(prVerInfo->u2FwOwnVersion >> 8),
 			(uint32_t)(prVerInfo->u2FwOwnVersion & BITS(0, 7)),
@@ -2504,12 +2506,11 @@ uint32_t fwDlGetFwdlInfo(struct ADAPTER *prAdapter,
 #endif
 	}
 
-	kalMemZero(aucBuf, sizeof(aucBuf));
-	kalMemZero(aucDate, sizeof(aucDate));
-	kalStrnCpy(aucBuf, prVerInfo->rPatchHeader.aucPlatform,
-			sizeof(aucBuf) - 1);
-	kalStrnCpy(aucDate, prVerInfo->rPatchHeader.aucBuildDate,
-			sizeof(aucDate) - 1);
+	kalSnprintf(aucBuf, sizeof(aucBuf), "%4s",
+			prVerInfo->rPatchHeader.aucPlatform);
+	kalSnprintf(aucDate, sizeof(aucDate), "%16s",
+			prVerInfo->rPatchHeader.aucBuildDate);
+
 	u4Offset += snprintf(pcBuf + u4Offset,
 			     i4TotalLen - u4Offset,
 			     "Patch platform %s version 0x%04X %s\n",

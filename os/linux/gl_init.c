@@ -1351,12 +1351,20 @@ static const struct ieee80211_txrx_stypes
 	[NL80211_IFTYPE_P2P_CLIENT] = {
 		.tx = 0xffff,
 		.rx = BIT(IEEE80211_STYPE_ACTION >> 4) |
-		      BIT(IEEE80211_STYPE_PROBE_REQ >> 4)
+		      BIT(IEEE80211_STYPE_PROBE_REQ >> 4) |
+		      BIT(IEEE80211_STYPE_AUTH >> 4)
 	},
 	[NL80211_IFTYPE_P2P_GO] = {
 		.tx = 0xffff,
 		.rx = BIT(IEEE80211_STYPE_PROBE_REQ >> 4) |
 		      BIT(IEEE80211_STYPE_ACTION >> 4)
+#if CFG_SUPPORT_SOFTAP_WPA3
+			| BIT(IEEE80211_STYPE_ASSOC_REQ >> 4) |
+			  BIT(IEEE80211_STYPE_REASSOC_REQ >> 4) |
+			  BIT(IEEE80211_STYPE_DISASSOC >> 4) |
+			  BIT(IEEE80211_STYPE_AUTH >> 4) |
+			  BIT(IEEE80211_STYPE_DEAUTH >> 4)
+#endif
 	}
 };
 
@@ -2565,6 +2573,8 @@ void wlanUpdateDfsChannelTable(struct GLUE_INFO *prGlueInfo,
 
 	if (ucRoleIdx >= 0 && ucRoleIdx < KAL_P2P_NUM)
 		prGlueP2pInfo = prGlueInfo->prP2PInfo[ucRoleIdx];
+	else
+		prGlueP2pInfo = prGlueInfo->prP2PInfo[0];
 
 	/* 2. Enable specific channel based on domain channel list */
 	for (i = 0; i < ucNumOfChannel; i++) {
@@ -5071,9 +5081,6 @@ int32_t wlanOnWhenProbeSuccess(struct GLUE_INFO *prGlueInfo,
 
 		wlanCfgSetSwCtrl(prGlueInfo->prAdapter);
 		wlanCfgSetChip(prGlueInfo->prAdapter);
-#if (CFG_SUPPORT_CONNINFRA == 1)
-		wlanCfgSetChipSyncTime(prGlueInfo->prAdapter);
-#endif
 		wlanCfgSetCountryCode(prGlueInfo->prAdapter);
 		kalPerMonInit(prGlueInfo);
 #if CFG_MET_TAG_SUPPORT
@@ -5208,14 +5215,6 @@ void wlanOffStopWlanThreads(IN struct GLUE_INFO *prGlueInfo)
 {
 	DBGLOG(INIT, TRACE, "start.\n");
 
-	if (prGlueInfo->main_thread == NULL &&
-	    prGlueInfo->hif_thread == NULL &&
-	    prGlueInfo->rx_thread == NULL) {
-		DBGLOG(INIT, INFO,
-			"Threads are already NULL, skip stop and free\n");
-		return;
-	}
-
 #if CFG_SUPPORT_MULTITHREAD
 	wake_up_interruptible(&prGlueInfo->waitq_hif);
 	wait_for_completion_interruptible(
@@ -5231,16 +5230,6 @@ void wlanOffStopWlanThreads(IN struct GLUE_INFO *prGlueInfo)
 
 	DBGLOG(INIT, INFO, "wlan thread stopped\n");
 
-	/* prGlueInfo->rHifInfo.main_thread = NULL; */
-	prGlueInfo->main_thread = NULL;
-#if CFG_SUPPORT_MULTITHREAD
-	prGlueInfo->hif_thread = NULL;
-	prGlueInfo->rx_thread = NULL;
-
-	prGlueInfo->u4TxThreadPid = 0xffffffff;
-	prGlueInfo->u4HifThreadPid = 0xffffffff;
-#endif
-
 	if (test_and_clear_bit(GLUE_FLAG_OID_BIT, &prGlueInfo->ulFlag) &&
 			!completion_done(&prGlueInfo->rPendComp)) {
 		struct GL_IO_REQ *prIoReq;
@@ -5248,6 +5237,8 @@ void wlanOffStopWlanThreads(IN struct GLUE_INFO *prGlueInfo)
 		DBGLOG(INIT, INFO, "Complete on-going ioctl as failure.\n");
 		prIoReq = &(prGlueInfo->OidEntry);
 		prIoReq->rStatus = WLAN_STATUS_FAILURE;
+		DBGLOG(NIC, TRACE, "&prGlueInfo->rPendComp=%p",
+				&prGlueInfo->rPendComp);
 		complete(&prGlueInfo->rPendComp);
 	}
 }
@@ -5330,9 +5321,6 @@ static int32_t wlanOffAtReset(void)
 
 	wlanAdapterStop(prAdapter, TRUE);
 
-	/* 4 <x> Stopping handling interrupt and free IRQ */
-	glBusFreeIrq(prDev, prGlueInfo);
-
 #if (CFG_SUPPORT_TRACE_TC4 == 1)
 	wlanDebugTC4Uninit();
 #endif
@@ -5368,7 +5356,6 @@ static int32_t wlanOnAtReset(void)
 	enum ENUM_PROBE_FAIL_REASON {
 		BUS_INIT_FAIL,
 		NET_CREATE_FAIL,
-		BUS_SET_IRQ_FAIL,
 		ADAPTER_START_FAIL,
 		NET_REGISTER_FAIL,
 		PROC_INIT_FAIL,
@@ -5414,13 +5401,6 @@ static int32_t wlanOnAtReset(void)
 		QUEUE_INITIALIZE(&prGlueInfo->rCmdQueue);
 		prGlueInfo->i4TxPendingCmdNum = 0;
 		QUEUE_INITIALIZE(&prGlueInfo->rTxQueue);
-
-		rStatus = glBusSetIrq(prDev, NULL, prGlueInfo);
-		if (rStatus != WLAN_STATUS_SUCCESS) {
-			DBGLOG(INIT, ERROR, "Set IRQ error\n");
-			eFailReason = BUS_SET_IRQ_FAIL;
-			break;
-		}
 
 		/* Trigger the action of switching Pwr state to drv_own */
 		prAdapter->fgIsFwOwn = TRUE;
@@ -5501,11 +5481,6 @@ static int32_t wlanOnAtReset(void)
 #if 0
 		switch (eFailReason) {
 		case ADAPTER_START_FAIL:
-			glBusFreeIrq(prDev,
-				*((struct GLUE_INFO **)
-						netdev_priv(prDev)));
-		/* fallthrough */
-		case BUS_SET_IRQ_FAIL:
 			wlanWakeLockUninit(prGlueInfo);
 			wlanNetDestroy(prDev->ieee80211_ptr);
 			/* prGlueInfo->prAdapter is released in

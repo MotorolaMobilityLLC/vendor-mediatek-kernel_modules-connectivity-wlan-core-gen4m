@@ -1015,11 +1015,15 @@ int mtk_p2p_cfg80211_get_station(struct wiphy *wiphy,
 			return 0;
 		}
 
+		DBGLOG(REQ, TRACE, "Glue=%p rLinkSpeed=%p size=%zu u4BufLen=%p",
+			prGlueInfo, &rLinkSpeed, sizeof(rLinkSpeed), &u4BufLen);
 		rStatus = kalIoctlByBssIdx(prGlueInfo,
 				 wlanoidQueryLinkSpeedEx,
 				 &rLinkSpeed, sizeof(rLinkSpeed),
 				 TRUE, FALSE, FALSE,
 				 &u4BufLen, ucBssIdx);
+		DBGLOG(REQ, TRACE, "rStatus=%u, prGlueInfo=%p, u4BufLen=%u",
+			rStatus, prGlueInfo, u4BufLen);
 		if (rStatus == WLAN_STATUS_SUCCESS
 			&& ucBssIdx < BSSID_NUM) {
 			u4Rate = rLinkSpeed.rLq[ucBssIdx].u2TxLinkSpeed;
@@ -1569,36 +1573,40 @@ int mtk_p2p_cfg80211_start_ap(struct wiphy *wiphy,
 			prAdapter = prGlueInfo->prAdapter;
 			prWifiVar = &prAdapter->rWifiVar;
 
-			if ((prWifiVar->ucApChannel != 0) &&
-				(prWifiVar->ucApChnlDefFromCfg != 0) &&
-				(prWifiVar->ucApChannel !=
-				rRfChnlInfo.ucChannelNum)) {
-				rRfChnlInfo.ucChannelNum =
-					prWifiVar->ucApChannel;
-				rRfChnlInfo.eBand =
-					(rRfChnlInfo.ucChannelNum <= 14)
-					? BAND_2G4 : BAND_5G;
-				/* [TODO][20160829]If we will set SCO
-				 * by nl80211_channel_type afterward,
-				 * to check if we need to modify SCO
-				 * by wifi.cfg here
-				*/
-			} else if (prWifiVar->u2ApFreq &&
-				prWifiVar->ucApChnlDefFromCfg != 0) {
-				rRfChnlInfo.ucChannelNum  =
-				nicFreq2ChannelNum(prWifiVar->u2ApFreq * 1000);
+			if (p2pFuncIsAPMode(
+				prWifiVar->prP2PConnSettings[ucRoleIdx])) {
+				if ((prWifiVar->ucApChannel != 0) &&
+					(prWifiVar->ucApChnlDefFromCfg != 0) &&
+					(prWifiVar->ucApChannel !=
+					rRfChnlInfo.ucChannelNum)) {
+					rRfChnlInfo.ucChannelNum =
+						prWifiVar->ucApChannel;
+					rRfChnlInfo.eBand =
+						(rRfChnlInfo.ucChannelNum <= 14)
+						? BAND_2G4 : BAND_5G;
+					/* [TODO][20160829]If we will set SCO
+					 * by nl80211_channel_type afterward,
+					 * to check if we need to modify SCO
+					 * by wifi.cfg here
+					 */
+				} else if (prWifiVar->u2ApFreq &&
+					prWifiVar->ucApChnlDefFromCfg != 0) {
+					rRfChnlInfo.ucChannelNum =
+						nicFreq2ChannelNum(
+						prWifiVar->u2ApFreq * 1000);
 
-				if (prWifiVar->u2ApFreq >= 2412 &&
-					prWifiVar->u2ApFreq <= 2484)
-					rRfChnlInfo.eBand = BAND_2G4;
-				else if (prWifiVar->u2ApFreq >= 5180 &&
-					prWifiVar->u2ApFreq <= 5900)
-					rRfChnlInfo.eBand = BAND_5G;
+					if (prWifiVar->u2ApFreq >= 2412 &&
+						prWifiVar->u2ApFreq <= 2484)
+						rRfChnlInfo.eBand = BAND_2G4;
+					else if (prWifiVar->u2ApFreq >= 5180 &&
+						prWifiVar->u2ApFreq <= 5900)
+						rRfChnlInfo.eBand = BAND_5G;
 #if (CFG_SUPPORT_WIFI_6G == 1)
-				else if (prWifiVar->u2ApFreq >= 5955 &&
-					prWifiVar->u2ApFreq <= 7115)
-					rRfChnlInfo.eBand = BAND_6G;
+					else if (prWifiVar->u2ApFreq >= 5955 &&
+						prWifiVar->u2ApFreq <= 7115)
+						rRfChnlInfo.eBand = BAND_6G;
 #endif
+				}
 			}
 
 			p2pFuncSetChannel(prGlueInfo->prAdapter,
@@ -1958,7 +1966,7 @@ int mtk_p2p_cfg80211_channel_switch(struct wiphy *wiphy,
 
 		prP2pSetNewChannelMsg->ucRoleIdx = ucRoleIdx;
 		prP2pSetNewChannelMsg->ucBssIndex = ucBssIdx;
-
+		p2pFuncSetCsaBssIndex(ucBssIdx);
 		mboxSendMsg(prGlueInfo->prAdapter,
 			MBOX_ID_0,
 			(struct MSG_HDR *) prP2pSetNewChannelMsg,
@@ -2710,6 +2718,41 @@ int mtk_p2p_cfg80211_change_bss(struct wiphy *wiphy,
 	return i4Rslt;
 }				/* mtk_p2p_cfg80211_change_bss */
 
+int mtk_p2p_cfg80211_add_station(
+	struct wiphy *wiphy,
+	struct net_device *ndev,
+	const u8 *mac)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct BSS_INFO *prBssInfo;
+	uint8_t ucBssIndex = 0;
+
+	WIPHY_PRIV(wiphy, prGlueInfo);
+	if (!prGlueInfo)
+		return -EINVAL;
+
+	ucBssIndex = wlanGetBssIdx(ndev);
+	if (!IS_BSS_INDEX_VALID(ucBssIndex))
+		return -EINVAL;
+
+	prBssInfo =
+		GET_BSS_INFO_BY_INDEX(
+		prGlueInfo->prAdapter,
+		ucBssIndex);
+	if (prBssInfo &&
+		(prBssInfo->u4RsnSelectedAKMSuite ==
+		RSN_AKM_SUITE_OWE)) {
+		DBGLOG(P2P, INFO,
+			"[OWE] Bypass add station\n");
+		return 0;
+	}
+
+	DBGLOG(REQ, WARN,
+		"P2P/AP don't support this function\n");
+
+	return -EFAULT;
+}
+
 #if KERNEL_VERSION(3, 16, 0) <= CFG80211_VERSION_CODE
 #if KERNEL_VERSION(3, 19, 0) <= CFG80211_VERSION_CODE
 static const u8 bcast_addr[ETH_ALEN] = { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff };
@@ -2984,8 +3027,24 @@ int mtk_p2p_cfg80211_connect(struct wiphy *wiphy,
 		kalMemCopy(prConnReqMsg->aucIEBuf, sme->ie, sme->ie_len);
 		prConnReqMsg->u4IELen = sme->ie_len;
 
-		kalP2PSetCipher(prGlueInfo, IW_AUTH_CIPHER_NONE, ucRoleIdx);
+		DBGLOG(REQ, INFO, "sme->auth_type=%x", sme->auth_type);
 
+		switch (sme->auth_type) {
+		case NL80211_AUTHTYPE_OPEN_SYSTEM:
+			prConnReqMsg->eAuthMode = AUTH_MODE_OPEN;
+			break;
+		case NL80211_AUTHTYPE_SHARED_KEY:
+			prConnReqMsg->eAuthMode = AUTH_MODE_SHARED;
+			break;
+		case NL80211_AUTHTYPE_SAE:
+			prConnReqMsg->eAuthMode = AUTH_MODE_WPA3_SAE;
+			break;
+		default:
+			prConnReqMsg->eAuthMode = AUTH_MODE_OPEN;
+			break;
+		}
+
+		kalP2PSetCipher(prGlueInfo, IW_AUTH_CIPHER_NONE, ucRoleIdx);
 		if (sme->crypto.n_ciphers_pairwise) {
 			DBGLOG(REQ, TRACE,
 				"cipher pairwise (%d)\n",

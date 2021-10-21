@@ -2228,6 +2228,22 @@ void p2pRoleFsmRunEventConnectionRequest(IN struct ADAPTER *prAdapter,
 		prP2pConnReqMsg->u4IELen);
 	prConnReqInfo->u4BufLength = prP2pConnReqMsg->u4IELen;
 
+	switch (prP2pConnReqMsg->eAuthMode) {
+	case AUTH_MODE_SHARED:
+		prJoinInfo->ucAvailableAuthTypes =
+			(uint8_t) AUTH_TYPE_SHARED_KEY;
+		break;
+	case AUTH_MODE_WPA3_SAE:
+		prJoinInfo->ucAvailableAuthTypes =
+			(uint8_t) AUTH_TYPE_SAE;
+		break;
+	case AUTH_MODE_OPEN:
+	default:
+		prJoinInfo->ucAvailableAuthTypes =
+			(uint8_t) AUTH_TYPE_OPEN_SYSTEM;
+		break;
+	}
+
 	/* Find BSS Descriptor first. */
 	prJoinInfo->prTargetBssDesc =
 		scanP2pSearchDesc(prAdapter, prConnReqInfo);
@@ -2440,6 +2456,20 @@ void p2pRoleFsmRunEventConnectionAbort(IN struct ADAPTER *prAdapter,
 				DBGLOG(P2P, INFO,
 					"Disconnecting: " MACSTR "\n",
 					MAC2STR(prCurrStaRec->aucMacAddr));
+
+				if ((prP2pBssInfo->u4RsnSelectedAKMSuite ==
+					RSN_AKM_SUITE_OWE) &&
+					(prCurrStaRec->eAuthAssocState ==
+					AAA_STATE_SEND_AUTH2 ||
+					prCurrStaRec->eAuthAssocState ==
+					AAA_STATE_SEND_AUTH4 ||
+					prCurrStaRec->eAuthAssocState ==
+					AAA_STATE_SEND_ASSOC2)) {
+					DBGLOG(P2P, INFO,
+						"[OWE] Ignore deauth in %d\n",
+						prCurrStaRec->eAuthAssocState);
+					break;
+				}
 
 				/* Glue layer indication. */
 				/* kalP2PGOStationUpdate(prAdapter->prGlueInfo,
@@ -3764,11 +3794,15 @@ p2pRoleFsmGetStaStatistics(IN struct ADAPTER *prAdapter,
 		}
 
 		prQueryStaStatistics->ucReadClear = TRUE;
+		DBGLOG(REQ, TRACE, "Call: prQueryStaStatistics=%p, u4BufLen=%p",
+				prQueryStaStatistics, &u4BufLen);
 		wlanQueryStaStatistics(prAdapter,
 			prQueryStaStatistics,
 			sizeof(struct PARAM_GET_STA_STATISTICS),
 			&u4BufLen,
 			FALSE);
+		DBGLOG(REQ, TRACE, "ret prQueryStaStatistics=%p, &u4BufLen=%p",
+				prQueryStaStatistics, &u4BufLen);
 
 	}
 

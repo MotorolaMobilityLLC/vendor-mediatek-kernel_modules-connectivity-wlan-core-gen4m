@@ -3885,6 +3885,7 @@ uint8_t cnmSapChannelSwitchReq(IN struct ADAPTER *prAdapter,
 
 	prP2pSetNewChannelMsg->ucRoleIdx = ucRoleIdx;
 	prP2pSetNewChannelMsg->ucBssIndex = ucBssIdx;
+	p2pFuncSetCsaBssIndex(ucBssIdx);
 	mboxSendMsg(prAdapter,
 		MBOX_ID_0,
 		(struct MSG_HDR *) prP2pSetNewChannelMsg,
@@ -4748,7 +4749,7 @@ int cnmPowerControl(
 		prAdapter->rWifiVar.fgDbDcModeEn);
 
 	/* DBDC enabled need to disconnect STA */
-	if (prAdapter->rWifiVar.fgDbDcModeEn) {
+	if (prAdapter->rWifiVar.fgDbDcModeEn && prAdapter->fgPowerForceOneNss) {
 		/* check if dual sta */
 		prSta0BssInfo = aisGetAisBssInfo(prAdapter, 0);
 		prSta1BssInfo = aisGetAisBssInfo(prAdapter, 1);

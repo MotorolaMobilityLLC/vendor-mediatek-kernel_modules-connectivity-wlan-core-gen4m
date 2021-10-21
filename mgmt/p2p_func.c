@@ -84,6 +84,8 @@ struct APPEND_VAR_IE_ENTRY txProbeRspIETable[] = {
 			rlmRspGenerateVhtCapIE}	/*191 */
 	, {(ELEM_HDR_LEN + ELEM_MAX_LEN_VHT_OP), NULL,
 			rlmRspGenerateVhtOpIE}	/*192 */
+	, {(ELEM_HDR_LEN + ELEM_MAX_LEN_TPE), NULL,
+			rlmGenerateVhtTPEIE}	/* 195 */
 	, {(ELEM_HDR_LEN + ELEM_MAX_LEN_VHT_OP_MODE_NOTIFICATION), NULL,
 			rlmRspGenerateVhtOpNotificationIE}	/*199 */
 #endif
@@ -116,6 +118,7 @@ uint32_t g_u4CacStartBootTime;
 uint8_t g_ucRadarDetectMode = FALSE;
 struct P2P_RADAR_INFO g_rP2pRadarInfo;
 uint8_t g_ucDfsState = DFS_STATE_INACTIVE;
+uint8_t g_ucBssIdx;
 static uint8_t *apucDfsState[DFS_STATE_NUM] = {
 	(uint8_t *) DISP_STRING("DFS_STATE_INACTIVE"),
 	(uint8_t *) DISP_STRING("DFS_STATE_CHECKING"),
@@ -452,8 +455,6 @@ void p2pFuncGCJoin(IN struct ADAPTER *prAdapter,
 		if (prP2pBssInfo->eConnectionState
 			== MEDIA_STATE_DISCONNECTED) {
 			prStaRec->fgIsReAssoc = FALSE;
-			prP2pJoinInfo->ucAvailableAuthTypes =
-				(uint8_t) AUTH_TYPE_OPEN_SYSTEM;
 			prStaRec->ucTxAuthAssocRetryLimit =
 				TX_AUTH_ASSOCI_RETRY_LIMIT;
 		} else {
@@ -465,8 +466,8 @@ void p2pFuncGCJoin(IN struct ADAPTER *prAdapter,
 		/* 2 <4> Use an appropriate Authentication Algorithm Number
 		 * among the ucAvailableAuthTypes.
 		 */
-		if (prP2pJoinInfo->ucAvailableAuthTypes
-			& (uint8_t) AUTH_TYPE_OPEN_SYSTEM) {
+		if (prP2pJoinInfo->ucAvailableAuthTypes &
+			(uint8_t) AUTH_TYPE_OPEN_SYSTEM) {
 
 			DBGLOG(P2P, TRACE,
 				"JOIN INIT: Try to do Authentication with AuthType == OPEN_SYSTEM.\n");
@@ -476,6 +477,27 @@ void p2pFuncGCJoin(IN struct ADAPTER *prAdapter,
 
 			prStaRec->ucAuthAlgNum =
 				(uint8_t) AUTH_ALGORITHM_NUM_OPEN_SYSTEM;
+		} else if (prP2pJoinInfo->ucAvailableAuthTypes &
+			(uint8_t) AUTH_TYPE_SHARED_KEY) {
+
+			DBGLOG(P2P, TRACE,
+				"JOIN INIT: Try to do Authentication with AuthType == SHARED_KEY.\n");
+
+			prP2pJoinInfo->ucAvailableAuthTypes &=
+				~(uint8_t) AUTH_TYPE_SHARED_KEY;
+
+			prStaRec->ucAuthAlgNum =
+				(uint8_t) AUTH_ALGORITHM_NUM_SHARED_KEY;
+		} else if (prP2pJoinInfo->ucAvailableAuthTypes &
+			(uint8_t) AUTH_TYPE_SAE) {
+			DBGLOG(P2P, TRACE,
+				"JOIN INIT: Try to do Authentication with AuthType == SAE.\n");
+
+			prP2pJoinInfo->ucAvailableAuthTypes &=
+				~(uint8_t) AUTH_TYPE_SAE;
+
+			prStaRec->ucAuthAlgNum =
+				(uint8_t) AUTH_ALGORITHM_NUM_SAE;
 		} else {
 			DBGLOG(P2P, ERROR,
 				"JOIN INIT: ucAvailableAuthTypes Error.\n");
@@ -2184,6 +2206,19 @@ void p2pFuncSetDfsState(IN uint8_t ucDfsState)
 uint8_t p2pFuncGetDfsState(void)
 {
 	return g_ucDfsState;
+}
+
+uint8_t p2pFuncGetCsaBssIndex(void)
+{
+	return g_ucBssIdx;
+}
+
+void p2pFuncSetCsaBssIndex(IN uint8_t ucBssIdx)
+{
+	DBGLOG(P2P, TRACE,
+		"ucBssIdx = %d\n", ucBssIdx);
+
+	g_ucBssIdx = ucBssIdx;
 }
 
 uint8_t *p2pFuncShowDfsState(void)
@@ -6590,16 +6625,6 @@ void p2pFuncSwitchSapChannel(
 	prAisBssInfo = aisGetConnectedBssInfo(prAdapter);
 	if (!prAisBssInfo) {
 		ucStaChannelNum = 0;
-#if CFG_SUPPORT_SAP_DFS_CHANNEL
-		/* restore DFS channels table */
-		wlanUpdateDfsChannelTable(prAdapter->prGlueInfo,
-			-1, /* p2p role index */
-			0, /* primary channel */
-			0, /* bandwidth */
-			0, /* sco */
-			0, /* center frequency */
-			0 /* eBand */);
-#endif
 	} else {
 		/* Get current channel info */
 		ucStaChannelNum = prAisBssInfo->ucPrimaryChannel;
@@ -6608,11 +6633,14 @@ void p2pFuncSwitchSapChannel(
 		/* restore DFS channels table */
 		wlanUpdateDfsChannelTable(prAdapter->prGlueInfo,
 			-1, /* p2p role index */
-			ucStaChannelNum, /* primary channel */
-			0, /* bandwidth */
-			0, /* sco */
-			0, /* center frequency */
-			0 /* eBand */);
+			prAisBssInfo->ucPrimaryChannel,
+			prAisBssInfo->ucVhtChannelWidth,
+			prAisBssInfo->eBssSCO,
+			nicChannelNum2Freq(
+				prAisBssInfo->ucVhtChannelFrequencyS1,
+				prAisBssInfo->eBand) / 1000,
+			prAisBssInfo->eBand
+			);
 #endif
 		if (eStaBand <= BAND_NULL || eStaBand >= BAND_NUM) {
 			DBGLOG(P2P, WARN, "STA has invalid band\n");
@@ -6682,6 +6710,17 @@ void p2pFuncSwitchSapChannel(
 				"[SCC] Dfs: %d, Desense %d, Choose a channel\n",
 				fgIsSapDfs,
 				fgIsSapDesense);
+#if CFG_SUPPORT_SAP_DFS_CHANNEL
+			/* restore DFS channels table */
+			wlanUpdateDfsChannelTable(
+				prAdapter->prGlueInfo,
+				-1, /* p2p role index */
+				0, /* primary channel */
+				0, /* bandwidth */
+				0, /* sco */
+				0, /* center frequency */
+				0 /* eBand */);
+#endif
 		} else {
 			DBGLOG(P2P, WARN, "STA is not connected\n");
 			goto exit;
@@ -7683,19 +7722,22 @@ p2pFunChnlSwitchNotifyDone(IN struct ADAPTER *prAdapter)
 {
 	struct BSS_INFO *prBssInfo;
 	struct MSG_P2P_CSA_DONE *prP2pCsaDoneMsg;
+	uint8_t ucBssIndex;
 
 	if (!prAdapter)
 		return;
 
 	/* Check SAP interface */
-	prBssInfo = cnmGetSapBssInfo(prAdapter);
-	if (!prBssInfo) {
-		/* Check p2p interface */
-		prBssInfo = cnmGetP2pBssInfo(prAdapter);
-		if (!prBssInfo) {
-			log_dbg(CNM, ERROR, "No SAP/P2P bss is active when CSA done!\n");
-			return;
-		}
+	ucBssIndex = p2pFuncGetCsaBssIndex();
+	if (!IS_BSS_INDEX_VALID(ucBssIndex)) {
+		log_dbg(CNM, ERROR, "Csa bss is invalid!\n");
+		return;
+	}
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
+		ucBssIndex);
+	if (!prBssInfo || !IS_BSS_P2P(prBssInfo)) {
+		log_dbg(CNM, ERROR, "No SAP/P2P bss is active when CSA done!\n");
+		return;
 	}
 
 	prP2pCsaDoneMsg = (struct MSG_P2P_CSA_DONE *) cnmMemAlloc(prAdapter,
@@ -7707,7 +7749,8 @@ p2pFunChnlSwitchNotifyDone(IN struct ADAPTER *prAdapter)
 		return;
 	}
 
-	DBGLOG(CNM, INFO, "ucBssIndex = %d\n", prBssInfo->ucBssIndex);
+	DBGLOG(CNM, INFO, "p2pFuncSwitch Done, ucBssIndex = %d\n",
+		prBssInfo->ucBssIndex);
 
 	prP2pCsaDoneMsg->rMsgHdr.eMsgId = MID_CNM_P2P_CSA_DONE;
 	prP2pCsaDoneMsg->ucBssIndex = prBssInfo->ucBssIndex;

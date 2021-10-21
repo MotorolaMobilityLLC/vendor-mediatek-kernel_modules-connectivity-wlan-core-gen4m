@@ -1938,7 +1938,7 @@ void aisFsmSteps(IN struct ADAPTER *prAdapter,
 				}
 				kalMemCopy(prScanReqMsg->aucExtBssid,
 					prScanRequest->aucBssid,
-					SCN_SSID_MAX_NUM*MAC_ADDR_LEN);
+					CFG_SCAN_OOB_MAX_NUM * MAC_ADDR_LEN);
 				kalMemCopy(prScanReqMsg->aucRandomMac,
 					   prScanRequest->aucRandomMac,
 					   MAC_ADDR_LEN);
@@ -1986,10 +1986,10 @@ void aisFsmSteps(IN struct ADAPTER *prAdapter,
 			/* for 6G OOB scan */
 			kalMemCopy(prScanReqMsg->ucBssidMatchCh,
 				prScanRequest->ucBssidMatchCh,
-				CFG_SCAN_SSID_MAX_NUM);
+				CFG_SCAN_OOB_MAX_NUM);
 			kalMemCopy(prScanReqMsg->ucBssidMatchSsidInd,
 				prScanRequest->ucBssidMatchSsidInd,
-				CFG_SCAN_SSID_MAX_NUM);
+				CFG_SCAN_OOB_MAX_NUM);
 
 			/* check if tethering is running and need to fix on
 			 * specific channel
@@ -3775,6 +3775,11 @@ aisIndicationOfMediaStateToHost(IN struct ADAPTER *prAdapter,
 				rEventConnStatus.u2AID = 0;
 				rEventConnStatus.u2ATIMWindow =
 				    prAisBssInfo->u2ATIMWindow;
+			} else {
+				DBGLOG(AIS, WARN,
+					"Invalid operation mode: %d",
+					prAisBssInfo->eCurrentOPMode);
+				return;
 			}
 
 			COPY_SSID(rEventConnStatus.aucSsid,
@@ -3791,6 +3796,8 @@ aisIndicationOfMediaStateToHost(IN struct ADAPTER *prAdapter,
 			    nicChannelNum2Freq(
 					prAisBssInfo->ucPrimaryChannel,
 					prAisBssInfo->eBand);
+			rEventConnStatus.ucEncryptStatus =
+			    prAisBssInfo->u2CapInfo & CAP_INFO_PRIVACY ? 1 : 0;
 
 			switch (prAisBssInfo->ucNonHTBasicPhyType) {
 			case PHY_TYPE_HR_DSSS_INDEX:

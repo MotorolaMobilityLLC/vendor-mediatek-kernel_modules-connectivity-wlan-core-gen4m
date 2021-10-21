@@ -177,6 +177,9 @@ static int kalSetCpuMask(struct task_struct *task, uint32_t set_mask)
 	struct cpumask cpu_mask;
 	int i;
 
+	if (task == NULL)
+		return r;
+
 	if (set_mask == CPU_ALL_CORE)
 		r = set_cpus_allowed_ptr(task, cpu_all_mask);
 	else {

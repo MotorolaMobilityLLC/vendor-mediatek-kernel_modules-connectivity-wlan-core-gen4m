@@ -314,6 +314,7 @@ static bool kalWaitRxDmaDone(struct GLUE_INFO *prGlueInfo,
 			DBGLOG(HAL, INFO,
 			       "Rx DMA done P[%u] DMA[%u] CPU[%u]\n",
 			       u2Port, prRxRing->RxDmaIdx, prRxRing->RxCpuIdx);
+
 			return false;
 		}
 

@@ -140,6 +140,8 @@ struct APPEND_VAR_IE_ENTRY txBcnIETable[] = {
 	   rlmRspGenerateVhtCapIE}	/*191 */
 	, {(ELEM_HDR_LEN + ELEM_MAX_LEN_VHT_OP), NULL,
 	   rlmRspGenerateVhtOpIE}	/*192 */
+	, {(ELEM_HDR_LEN + ELEM_MAX_LEN_TPE), NULL,
+	   rlmGenerateVhtTPEIE}	/* 195 */
 	, {(ELEM_HDR_LEN + ELEM_MAX_LEN_VHT_OP_MODE_NOTIFICATION), NULL,
 	   rlmRspGenerateVhtOpNotificationIE}	/*199 */
 #endif
@@ -199,6 +201,8 @@ struct APPEND_VAR_IE_ENTRY txProbRspIETable[] = {
 	   rlmRspGenerateVhtCapIE}	/*191 */
 	, {(ELEM_HDR_LEN + ELEM_MAX_LEN_VHT_OP), NULL,
 	   rlmRspGenerateVhtOpIE}	/*192 */
+	, {(ELEM_HDR_LEN + ELEM_MAX_LEN_TPE), NULL,
+	   rlmGenerateVhtTPEIE}	/* 195 */
 	, {(ELEM_HDR_LEN + ELEM_MAX_LEN_VHT_OP_MODE_NOTIFICATION), NULL,
 	   rlmRspGenerateVhtOpNotificationIE}	/*199 */
 #endif
@@ -219,7 +223,7 @@ struct APPEND_VAR_IE_ENTRY txProbRspIETable[] = {
 	   rlmGenerateMTKOuiIE}	/* 221 */
 #endif
 	, {(ELEM_HDR_LEN + ELEM_MAX_LEN_RSN), NULL,
-	   rsnGenerateRSNXIE}	/* 244 */
+	   rsnGenerateRSNXIE}   /* 244 */
 };
 
 #endif /* CFG_SUPPORT_ADHOC || CFG_SUPPORT_AAA */

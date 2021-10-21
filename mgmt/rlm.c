@@ -756,6 +756,10 @@ void rlmGenerateCsaIE(struct ADAPTER *prAdapter, struct MSDU_INFO *prMsduInfo)
 	ASSERT(prMsduInfo);
 
 	if (prAdapter->rWifiVar.fgCsaInProgress) {
+		if (prMsduInfo->ucBssIndex !=
+			p2pFuncGetCsaBssIndex())
+			return;
+
 		pucBuffer =
 			(uint8_t *)((unsigned long)prMsduInfo->prPacket +
 				    (unsigned long)prMsduInfo->u2FrameLength);
@@ -1711,6 +1715,76 @@ void rlmFillVhtOpIE(struct ADAPTER *prAdapter, struct BSS_INFO *prBssInfo,
 	prVhtOp->u2VhtBasicMcsSet = prBssInfo->u2VhtBasicMcsSet;
 
 	prMsduInfo->u2FrameLength += IE_SIZE(prVhtOp);
+}
+
+void rlmGenerateVhtTPEIE(
+	struct ADAPTER *prAdapter,
+	struct MSDU_INFO *prMsduInfo)
+{
+	struct BSS_INFO *prBssInfo;
+	struct STA_RECORD *prStaRec;
+	uint8_t ucPhyTypeSet;
+
+	ASSERT(prAdapter);
+	ASSERT(prMsduInfo);
+
+	prStaRec = cnmGetStaRecByIndex(prAdapter, prMsduInfo->ucStaRecIndex);
+
+	prBssInfo = prAdapter->aprBssInfo[prMsduInfo->ucBssIndex];
+	if (!prBssInfo || !IS_BSS_APGO(prBssInfo))
+		return;
+
+	if (!IS_BSS_ACTIVE(prBssInfo))
+		return;
+
+	if (IS_FEATURE_DISABLED(prAdapter->rWifiVar.fgSapAddTPEIE))
+		return;
+
+	/* Decide PHY type set source */
+	if (prStaRec) {
+		/* Get PHY type set from target STA */
+		ucPhyTypeSet = prStaRec->ucPhyTypeSet;
+	} else {
+		/* Get PHY type set from current BSS */
+		ucPhyTypeSet = prBssInfo->ucPhyTypeSet;
+	}
+
+	if (RLM_NET_IS_11AC(prBssInfo) &&
+		(ucPhyTypeSet & PHY_TYPE_SET_802_11AC)) {
+		struct IE_VHT_TPE *prVhtTpe;
+		uint8_t ucChannelWidth;
+		uint8_t ucPower;
+		uint8_t i = 0;
+
+		ucChannelWidth = prBssInfo->ucVhtChannelWidth;
+
+		prVhtTpe = (struct IE_VHT_TPE *)
+			(((uint8_t *)prMsduInfo->prPacket) +
+			prMsduInfo->u2FrameLength);
+
+		prVhtTpe->ucId = ELEM_ID_TPE;
+
+		if (ucChannelWidth > VHT_OP_CHANNEL_WIDTH_80)
+			ucPower = 3;
+		else if (ucChannelWidth == VHT_OP_CHANNEL_WIDTH_80)
+			ucPower = 2;
+		else {
+			if (prBssInfo->eBssSCO != CHNL_EXT_SCN)
+				ucPower = 1;
+			else
+				ucPower = 0;
+		}
+
+		prVhtTpe->ucLength = (ucPower + 2);
+
+		/* 23.5dB */
+		for (i = 0; i <= ucPower; i++)
+			prVhtTpe->u8TxPowerBw[i] = 47;
+
+		prVhtTpe->u8TxPowerInfo = ucPower;
+
+		prMsduInfo->u2FrameLength += IE_SIZE(prVhtTpe);
+	}
 }
 
 /*----------------------------------------------------------------------------*/

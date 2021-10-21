@@ -2537,6 +2537,13 @@ void kalP2pIndicateChnlSwitch(IN struct ADAPTER *prAdapter,
 
 		prP2PInfo->chandef->chan->dfs_state = chan->dfs_state;
 
+#if KERNEL_VERSION(5, 4, 0) <= CFG80211_VERSION_CODE
+		prP2PInfo->chandef->chan->freq_offset =
+			chan->freq_offset;
+		prP2PInfo->chandef->freq1_offset =
+			prP2PInfo->chandef->chan->freq_offset;
+#endif
+
 		switch (prBssInfo->ucVhtChannelWidth) {
 		case VHT_OP_CHANNEL_WIDTH_80P80:
 			prP2PInfo->chandef->width

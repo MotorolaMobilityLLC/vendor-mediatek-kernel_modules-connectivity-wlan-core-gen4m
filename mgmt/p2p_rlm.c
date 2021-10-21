@@ -243,8 +243,10 @@ void rlmBssUpdateChannelParams(struct ADAPTER *prAdapter,
 		prBssInfo->ucBssColorInfo |=
 			BIT(HE_OP_BSSCOLOR_BSS_COLOR_DISABLE_SHFT);
 
-		prBssInfo->ucBssColorInfo |=
-			BIT(HE_OP_BSSCOLOR_BSS_COLOR_SHFT);
+		if ((prBssInfo->eBand == BAND_2G4) ||
+			(prBssInfo->eBand == BAND_5G))
+			prBssInfo->ucBssColorInfo |=
+				BIT(HE_OP_BSSCOLOR_BSS_COLOR_SHFT);
 
 		prBssInfo->u2HeBasicMcsSet |= (HE_CAP_INFO_MCS_MAP_MCS7 << 0);
 		for (i = 1; i < 8; i++)

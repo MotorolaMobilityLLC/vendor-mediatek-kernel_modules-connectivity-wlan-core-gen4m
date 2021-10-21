@@ -4865,7 +4865,13 @@ wlanoidQueryLinkSpeedEx(IN struct ADAPTER *prAdapter,
 		pu4LinkSpeed->rLq[ucBssIndex].u4RxBw =
 			prLq->u4RxBw;
 
-		/* change to unit of 100bps */
+		/* change to unit of 100 bps */
+		/*
+		 *  FW report in 500kbps because u2TxLinkSpeed is 16 bytes
+		 *  TODO:
+		 *    driver and fw should change u2TxLinkSpeed to u4
+		 *    because it will overflow in wifi7
+		 */
 		pu4LinkSpeed->rLq[ucBssIndex].u2TxLinkSpeed *= 5000;
 		pu4LinkSpeed->rLq[ucBssIndex].u2RxLinkSpeed *= 5000;
 		return WLAN_STATUS_SUCCESS;
@@ -4881,7 +4887,7 @@ wlanoidQueryLinkSpeedEx(IN struct ADAPTER *prAdapter,
 	}
 }
 
-#if defined(CFG_REPORT_MAX_TX_RATE) && (CFG_REPORT_MAX_TX_RATE == 1)
+#if CFG_REPORT_MAX_TX_RATE
 uint32_t
 wlanoidQueryMaxLinkSpeed(IN struct ADAPTER *prAdapter,
 		      IN void *pvQueryBuffer, IN uint32_t u4QueryBufferLen,

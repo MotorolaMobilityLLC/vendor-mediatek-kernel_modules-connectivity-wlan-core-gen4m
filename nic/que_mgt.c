@@ -3929,6 +3929,32 @@ void qmProcessBarFrame(IN struct ADAPTER *prAdapter,
 		prSwRfb->ucTid, prSwRfb->u2SSN, prReturnedQue);
 }
 
+/**
+ * To avoid printing every fall behind drop msdu overwhelming the output buffer,
+ * log only start and end SN by checking whether there is gap between current
+ * dropping SN and the last dropped SN.
+ */
+static void qmLogDropFallBehind(IN struct ADAPTER *prAdapter,
+		IN struct RX_BA_ENTRY *prReorderQueParm,
+		uint8_t ucTid, uint32_t u4BarSSN,
+		uint32_t u4SeqNo, uint32_t u4WinStart, uint32_t u4WinEnd)
+{
+	uint16_t u2LastDrop = prReorderQueParm->u2LastFallBehindDropSN;
+	uint16_t u2DropGap = (u4SeqNo - u2LastDrop) & MAX_SEQ_NO;
+
+	prReorderQueParm->u2LastFallBehindDropSN = u4SeqNo;
+
+	if (u2DropGap <= 1)
+		return;
+
+	DBGLOG(RX, INFO,
+	       "QM:(D)[%u](~%u)(%u~){%u,%u} BAR SSN:%u/%u total:%lu",
+	       ucTid, u2LastDrop, u4SeqNo,
+	       u4WinStart, u4WinEnd,
+	       IS_BAR_SSN_VALID(prReorderQueParm->u2BarSSN) ? 1 : 0, u4BarSSN,
+	       RX_GET_CNT(&prAdapter->rRxCtrl, RX_REORDER_BEHIND_DROP_COUNT));
+}
+
 void qmInsertReorderPkt(IN struct ADAPTER *prAdapter,
 	IN struct SW_RFB *prSwRfb,
 	IN struct RX_BA_ENTRY *prReorderQueParm,
@@ -4137,13 +4163,9 @@ void qmInsertReorderPkt(IN struct ADAPTER *prAdapter,
 		prSwRfb->eDst = RX_PKT_DESTINATION_NULL;
 		qmPopOutReorderPkt(prAdapter, prSwRfb, prReturnedQue,
 			RX_REORDER_BEHIND_DROP_COUNT);
-		DBGLOG(RX, INFO,
-			"QM:(D)[%u](%u){%u,%u} BAR SSN:%u/%u total:%lu\n",
-			prSwRfb->ucTid,	u4SeqNo, u4WinStart, u4WinEnd,
-			IS_BAR_SSN_VALID(prReorderQueParm->u2BarSSN) ? 1 : 0,
-			u4BarSSN,
-			RX_GET_CNT(&prAdapter->rRxCtrl,
-				RX_REORDER_BEHIND_DROP_COUNT));
+
+		qmLogDropFallBehind(prAdapter, prReorderQueParm,
+		       prSwRfb->ucTid, u4BarSSN, u4SeqNo, u4WinStart, u4WinEnd);
 		return;
 	}
 }
