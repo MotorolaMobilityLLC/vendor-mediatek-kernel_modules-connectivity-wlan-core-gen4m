@@ -4478,11 +4478,22 @@ p2pFuncParseBeaconVenderId(IN struct ADAPTER *prAdapter,
 struct BSS_DESC *
 p2pFuncKeepOnConnection(IN struct ADAPTER *prAdapter,
 		IN struct BSS_INFO *prBssInfo,
-		IN struct P2P_CONNECTION_REQ_INFO *prConnReqInfo,
-		IN struct P2P_CHNL_REQ_INFO *prChnlReqInfo,
-		IN struct P2P_SCAN_REQ_INFO *prScanReqInfo)
+		IN struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo)
 {
 	struct BSS_DESC *prTargetBss = (struct BSS_DESC *) NULL;
+	struct P2P_CONNECTION_REQ_INFO *prConnReqInfo =
+		(struct P2P_CONNECTION_REQ_INFO *) NULL;
+	struct P2P_CHNL_REQ_INFO *prChnlReqInfo =
+		(struct P2P_CHNL_REQ_INFO *) NULL;
+	struct P2P_SCAN_REQ_INFO *prScanReqInfo =
+		(struct P2P_SCAN_REQ_INFO *) NULL;
+	struct P2P_JOIN_INFO *prJoinInfo =
+		(struct P2P_JOIN_INFO *) NULL;
+
+	prConnReqInfo = &(prP2pRoleFsmInfo->rConnReqInfo);
+	prChnlReqInfo = &(prP2pRoleFsmInfo->rChnlReqInfo);
+	prScanReqInfo =	&(prP2pRoleFsmInfo->rScanReqInfo);
+	prJoinInfo = &(prP2pRoleFsmInfo->rJoinInfo);
 
 	do {
 		ASSERT_BREAK((prAdapter != NULL) && (prBssInfo != NULL) &&
@@ -4521,6 +4532,9 @@ p2pFuncKeepOnConnection(IN struct ADAPTER *prAdapter,
 				prTargetBss->ucCenterFreqS1;
 			prChnlReqInfo->ucCenterFreqS2 =
 				prTargetBss->ucCenterFreqS2;
+
+			prJoinInfo->ucAvailableAuthTypes =
+				(uint8_t) AUTH_TYPE_OPEN_SYSTEM;
 		}
 
 	} while (FALSE);
