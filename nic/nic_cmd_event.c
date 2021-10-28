@@ -4591,7 +4591,7 @@ void nicEventUpdateCoexStatus(IN struct ADAPTER *prAdapter,
 			rAddBaReject.fgApply = TRUE;
 			rStatus = wlanSendSetQueryCmd(prAdapter,
 				CMD_ID_ADDBA_REJECT,
-				TRUE, FALSE, TRUE, NULL, NULL,
+				TRUE, FALSE, FALSE, NULL, NULL,
 				sizeof(struct CMD_ADDBA_REJECT),
 				(uint8_t *) &rAddBaReject, NULL, 0);
 			DBGLOG(NIC, INFO, "Set Rx BA size=1 [%u]\n", rStatus);
@@ -4609,7 +4609,7 @@ void nicEventUpdateCoexStatus(IN struct ADAPTER *prAdapter,
 			rAddBaReject.fgApply = TRUE;
 			rStatus = wlanSendSetQueryCmd(prAdapter,
 				CMD_ID_ADDBA_REJECT,
-				TRUE, FALSE, TRUE, NULL, NULL,
+				TRUE, FALSE, FALSE, NULL, NULL,
 				sizeof(struct CMD_ADDBA_REJECT),
 				(uint8_t *) &rAddBaReject, NULL, 0);
 			DBGLOG(NIC, INFO, "Reset Rx BA size [%u]\n", rStatus);
