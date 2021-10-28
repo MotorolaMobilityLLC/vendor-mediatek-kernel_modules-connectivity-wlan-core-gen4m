@@ -7172,7 +7172,7 @@ static u_int8_t rlmCheckOpChangeParamValid(struct ADAPTER *prAdapter,
 			       prBssInfo->ucBssIndex, ucChannelWidth);
 			return FALSE;
 		}
-	} else {
+	} else if (prBssInfo->eBand == BAND_5G) {
 		/* It can only use BW20 for CH165 */
 		if ((ucChannelWidth != MAX_BW_20MHZ) &&
 			(prBssInfo->ucPrimaryChannel == 165)) {
@@ -7193,6 +7193,26 @@ static u_int8_t rlmCheckOpChangeParamValid(struct ADAPTER *prAdapter,
 			       prBssInfo->ucPrimaryChannel);
 			return FALSE;
 		}
+	}
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	else if (prBssInfo->eBand == BAND_6G) {
+		if ((ucChannelWidth == MAX_BW_160MHZ) &&
+			((prBssInfo->ucPrimaryChannel < 1) ||
+			 (prBssInfo->ucPrimaryChannel > 221))) {
+			DBGLOG(RLM, WARN,
+				"Can't change BSS[%d] to OP BW160 for primary CH%d\n",
+				prBssInfo->ucBssIndex,
+				prBssInfo->ucPrimaryChannel);
+			return FALSE;
+		}
+	}
+#endif
+	else {
+		DBGLOG(RLM, WARN,
+			"Unknown band %d for BSS[%d] with primary CH%d\n",
+			prBssInfo->eBand,
+			prBssInfo->ucBssIndex,
+			prBssInfo->ucPrimaryChannel);
 	}
 
 	/* <5>Check if target OP BW/Nss <= peer's BW/Nss (STA mode) */
