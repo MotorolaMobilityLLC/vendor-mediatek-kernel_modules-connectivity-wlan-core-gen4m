@@ -131,7 +131,7 @@ u_int8_t rsnParseRsnxIE(IN struct ADAPTER *prAdapter,
 	}
 	prRsnxeInfo->u2Cap = u2Cap;
 
-	DBGLOG(RSN, INFO, "parse RSNXE cap: 0x%x\n",
+	DBGLOG(RSN, LOUD, "parse RSNXE cap: 0x%x\n",
 		prRsnxeInfo->u2Cap);
 
 	return TRUE;

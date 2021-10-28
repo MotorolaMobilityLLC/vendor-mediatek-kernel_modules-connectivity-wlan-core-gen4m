@@ -1646,7 +1646,7 @@ void scanParsingRnrElement(IN struct ADAPTER *prAdapter,
 		/* Get RNR channel */
 		ucRnrChNum = scanGetRnrChannel(prNeighborAPInfoField);
 		if (ucRnrChNum == 0 || IS_6G_PSC_CHANNEL(ucRnrChNum)) {
-			DBGLOG(SCN, INFO, "Not handle RNR channel(%d)!\n",
+			DBGLOG(SCN, TRACE, "Not handle RNR channel(%d)!\n",
 					ucRnrChNum);
 			if (LINK_IS_EMPTY(&prAdapter->rNeighborAPInfoList))
 				cnmMemFree(prAdapter, prNeighborAPInfo);

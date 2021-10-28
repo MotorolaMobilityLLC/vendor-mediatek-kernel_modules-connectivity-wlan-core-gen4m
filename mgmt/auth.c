@@ -1150,7 +1150,7 @@ authSendDeauthFrame(IN struct ADAPTER *prAdapter,
 	if (rsnCheckBipKeyInstalled(prAdapter, prStaRec)) {
 		/* 4.3.3.1 send unprotected deauth reason 6/7 */
 		if (prStaRec->rPmfCfg.fgRxDeauthResp != TRUE) {
-			DBGLOG(RSN, INFO,
+			DBGLOG(RSN, TRACE,
 			       "Deauth Set MSDU_OPT_PROTECTED_FRAME\n");
 			nicTxConfigPktOption(prMsduInfo,
 					     MSDU_OPT_PROTECTED_FRAME, TRUE);
