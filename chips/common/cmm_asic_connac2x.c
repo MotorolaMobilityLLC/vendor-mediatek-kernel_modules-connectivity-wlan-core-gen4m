@@ -2358,6 +2358,9 @@ bool asicConnac2xSwIntHandler(struct ADAPTER *prAdapter)
 			update_driver_reset_status(fgIsResetting);
 
 			if (get_wifi_process_status() == 1) {
+#ifdef CONFIG_MTK_CONNSYS_DEDICATED_LOG_PATH
+				fw_log_wifi_irq_handler();
+#endif
 #if (CFG_ANDORID_CONNINFRA_COREDUMP_SUPPORT == 1)
 				fw_log_connsys_coredump_start(-1, NULL);
 				g_IsNeedWaitCoredump = FALSE;
