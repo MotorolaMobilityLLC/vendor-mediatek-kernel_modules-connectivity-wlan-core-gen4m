@@ -3779,7 +3779,8 @@ void p2pFuncValidateRxActionFrame(IN struct ADAPTER *prAdapter,
 {
 	struct WLAN_ACTION_FRAME *prActFrame;
 	struct WLAN_PUBLIC_VENDOR_ACTION_FRAME *prActPubVenFrame;
-	uint32_t u4OUI;
+	u_int32_t u4Oui;
+	u_int8_t ucOuiType;
 	u_int8_t fgBufferFrame = FALSE;
 	struct P2P_DEV_FSM_INFO *prP2pDevFsmInfo = NULL;
 
@@ -3812,22 +3813,35 @@ void p2pFuncValidateRxActionFrame(IN struct ADAPTER *prAdapter,
 			prSwRfb->u2PacketLen <
 				sizeof(struct WLAN_PUBLIC_VENDOR_ACTION_FRAME))
 			break;
-		WLAN_GET_FIELD_BE32(prActFrame->ucActionDetails, &u4OUI);
-		DBGLOG(P2P, TRACE, "Action: oui: 0x%x\n", u4OUI);
-		if (u4OUI != P2P_IE_VENDOR_TYPE)
+
+		WLAN_GET_FIELD_BE24(prActFrame->ucActionDetails, &u4Oui);
+		ucOuiType = prActFrame->ucActionDetails[3];
+		DBGLOG(P2P, TRACE, "Action: oui: 0x%x, type: 0x%x\n",
+			u4Oui, ucOuiType);
+
+		if (u4Oui != OUI_WFA)
 			break;
 
-		prActPubVenFrame =
+		if (ucOuiType == P2P_OUI_TYPE) {
+			prActPubVenFrame =
 				(struct WLAN_PUBLIC_VENDOR_ACTION_FRAME *)
 				prActFrame;
-		p2pProcessActionResponse(prAdapter,
+			p2pProcessActionResponse(prAdapter,
 				prActPubVenFrame->ucPubSubType);
-		if (prActPubVenFrame->ucPubSubType == P2P_GO_NEG_REQ)
-			p2pFunAbortOngoingScan(prAdapter);
-		if (fgIsDevInterface) {
-			p2pDevFsmNotifyP2pRx(prAdapter,
+			if (prActPubVenFrame->ucPubSubType == P2P_GO_NEG_REQ)
+				p2pFunAbortOngoingScan(prAdapter);
+			if (fgIsDevInterface) {
+				p2pDevFsmNotifyP2pRx(prAdapter,
 					prActPubVenFrame->ucPubSubType,
 					&fgBufferFrame);
+			}
+		} else if (ucOuiType == DPP_OUI_TYPE) {
+			if (!p2pFuncIsAPMode(
+				prAdapter->rWifiVar.
+					prP2PConnSettings[ucRoleIdx])) {
+				/* P2P doesn't support DPP */
+				return;
+			}
 		}
 		/* Fall through */
 	default:
