@@ -310,11 +310,6 @@ void soc7_0DmashdlInit(struct ADAPTER *prAdapter)
 			rSOC7_0_DmashdlCfg.au2MinQuota[idx]);
 	}
 
-	/* Enable Group3 refill to solve dual sta tput tx hang issue */
-	asicConnac2xDmashdlSetRefill(
-		prAdapter, 3,
-		rSOC7_0_DmashdlCfg.afgRefillEn[3]);
-
 	for (idx = 0; idx < 32; idx++)
 		asicConnac2xDmashdlSetQueueMapping(
 			prAdapter, idx,
