@@ -5230,6 +5230,11 @@ static int priv_driver_get_mib_info(IN struct net_device *prNetDev,
 		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
 			i4TotalLen - i4BytesWritten, "\tRx BAR handle=%llu\n",
 			RX_GET_CNT(prRxCtrl, RX_BAR_DROP_COUNT));
+#if CFG_SUPPORT_BAR_DELAY_INDICATION
+		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
+			i4TotalLen - i4BytesWritten, "\tRx BAR delayed=%llu\n",
+			RX_GET_CNT(prRxCtrl, RX_BAR_DELAY_COUNT));
+#endif /* CFG_SUPPORT_BAR_DELAY_INDICATION */
 		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
 			i4TotalLen - i4BytesWritten,
 			"\tRx non-interest drop=%llu\n", RX_GET_CNT(prRxCtrl,
