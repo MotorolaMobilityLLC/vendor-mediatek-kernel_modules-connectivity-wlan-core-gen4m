@@ -923,7 +923,7 @@ void dumpLinkStatsAc(struct STATS_LLS_WMM_AC_STAT *ac_stat,
 		"VO", "VI", "BE", "BK"};
 
 	DBGLOG(REQ, INFO, "AC[%s] %u %u %u %u %u %u %u %u %u %u %u %u %u %u %u",
-			s[ac],
+			s[(uint32_t)ac],
 			ac_stat[ac].ac,
 			ac_stat[ac].tx_mpdu,
 			ac_stat[ac].rx_mpdu,
