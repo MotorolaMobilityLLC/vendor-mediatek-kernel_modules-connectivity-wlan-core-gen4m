@@ -221,7 +221,9 @@ enum NanDataPathSecurityCfgStatus {
 /* Data request Responder's response */
 enum NanDataPathResponseCode {
 	NAN_DP_REQUEST_ACCEPT = 0,
-	NAN_DP_REQUEST_REJECT
+	NAN_DP_REQUEST_REJECT,
+	NAN_DP_REQUEST_COUNTER,
+	NAN_DP_REQUEST_AUTO
 };
 
 /* NAN DP channel config options */
