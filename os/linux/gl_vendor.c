@@ -949,7 +949,7 @@ void dumpLinkStatsPeerInfo(struct STATS_LLS_PEER_INFO *peer, uint32_t idx)
 
 	DBGLOG(REQ, INFO, "Peer(%u) %u(%s)" MACSTR "%u %u %u [%u]",
 			idx,
-			peer->type, type[peer->type],
+			peer->type, type[(uint32_t)peer->type],
 			MAC2STR(peer->peer_mac_address),
 			peer->capabilities,
 			peer->bssload.sta_count,
