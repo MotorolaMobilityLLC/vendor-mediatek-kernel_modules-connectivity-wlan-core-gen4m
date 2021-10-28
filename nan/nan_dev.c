@@ -256,6 +256,14 @@ nanGetBssIdxbyBand(IN struct ADAPTER *prAdapter,
 	struct _NAN_SPECIFIC_BSS_INFO_T *prNANSpecInfo;
 	struct BSS_INFO *prBssInfo;
 
+	/* Use default BSS if can't find correct peerSchRec or no band info */
+	if (eBand == BAND_NULL) {
+		DBGLOG(NAN, WARN, "no band info\n");
+		prNANSpecInfo = nanGetSpecificBssInfo(
+				prAdapter, NAN_BSS_INDEX_BAND0);
+		return prNANSpecInfo->ucBssIndex;
+	}
+
 	for (ucIdx = 0; ucIdx < NAN_BSS_INDEX_NUM; ucIdx++) {
 		prNANSpecInfo = nanGetSpecificBssInfo(prAdapter, ucIdx);
 		prBssInfo = GET_BSS_INFO_BY_INDEX(
