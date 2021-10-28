@@ -928,7 +928,15 @@ void glResetSubsysRstProcedure(
 			}
 			g_IsNeedWaitCoredump = FALSE;
 #endif
+
+#if (CFG_SUPPORT_CONNINFRA == 1)
+			if (g_IsWfsysBusHang == TRUE)
+				DBGLOG(INIT, INFO,
+					"Detect bus hang, do whole chip reset.\n");
+			else if (prGlueInfo && prGlueInfo->u4ReadyFlag) {
+#else
 			if (prGlueInfo && prGlueInfo->u4ReadyFlag) {
+#endif
 				glResetMsgHandler(WMTMSG_TYPE_RESET,
 						  WMTRSTMSG_0P5RESET_START);
 				glResetMsgHandler(WMTMSG_TYPE_RESET,
@@ -969,7 +977,15 @@ void glResetSubsysRstProcedure(
 		}
 		g_IsNeedWaitCoredump = FALSE;
 #endif
-		if (prGlueInfo && prGlueInfo->u4ReadyFlag) {
+
+#if (CFG_SUPPORT_CONNINFRA == 1)
+			if (g_IsWfsysBusHang == TRUE)
+				DBGLOG(INIT, INFO,
+					"Detect bus hang, do whole chip reset.\n");
+			else if (prGlueInfo && prGlueInfo->u4ReadyFlag) {
+#else
+			if (prGlueInfo && prGlueInfo->u4ReadyFlag) {
+#endif
 			glResetMsgHandler(WMTMSG_TYPE_RESET,
 					  WMTRSTMSG_0P5RESET_START);
 			glResetMsgHandler(WMTMSG_TYPE_RESET,
@@ -995,6 +1011,7 @@ void glResetSubsysRstProcedure(
 	g_eWfRstSource = WF_RST_SOURCE_NONE;
 #endif
 }
+
 int wlan_reset_thread_main(void *data)
 {
 	int ret = 0;
