@@ -664,6 +664,17 @@ bool aisFsmIsBeaconTimeout(IN struct ADAPTER *prAdapter,
 			 DISCONNECT_REASON_CODE_RADIO_LOST_TX_ERR);
 }
 
+bool aisFsmIsReassociation(IN struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex)
+{
+	struct BSS_INFO *prAisBssInfo = aisGetAisBssInfo(prAdapter, ucBssIndex);
+
+	/* to support user space triggered reassociation */
+	return (prAisBssInfo->u2DeauthReason ==
+			REASON_CODE_RESERVED &&
+		prAisBssInfo->ucReasonOfDisconnect ==
+			DISCONNECT_REASON_CODE_RADIO_LOST);
+}
 /*----------------------------------------------------------------------------*/
 /*!
  * @brief Initialization of JOIN STATE
@@ -3875,7 +3886,9 @@ void aisPostponedEventOfDisconnTimeout(IN struct ADAPTER *prAdapter,
 		prAisFsmInfo->ucConnTrialCountLimit);
 
 	/* only retry connect once when beacon timeout */
-	if (policy != CONNECT_BY_BSSID && !fgIsPostponeTimeout &&
+	if ((policy != CONNECT_BY_BSSID ||
+		aisFsmIsReassociation(prAdapter, ucBssIndex)) &&
+	    !fgIsPostponeTimeout &&
 	    !(prAisFsmInfo->ucConnTrialCount >
 			prAisFsmInfo->ucConnTrialCountLimit)) {
 		DBGLOG(AIS, INFO,
