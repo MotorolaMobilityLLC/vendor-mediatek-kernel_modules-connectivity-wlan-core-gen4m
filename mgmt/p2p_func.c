@@ -7271,7 +7271,7 @@ void p2pFunGetAcsBestChList(IN struct ADAPTER *prAdapter,
 	*/
 	*pucSortChannelNumber = ucInUsedCHNumber;
 	for (i = 0; i < ucInUsedCHNumber; i++) {
-		DBGLOG(P2P, INFO, "ACS idx=%d, band[%d] ch[%d]\n", i,
+		DBGLOG(P2P, TRACE, "ACS idx=%d, band[%d] ch[%d]\n", i,
 			(paucSortChannelList+i)->eBand,
 			(paucSortChannelList+i)->ucChannelNum);
 	}

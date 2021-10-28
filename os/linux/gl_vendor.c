@@ -2224,9 +2224,9 @@ int mtk_cfg80211_vendor_get_preferred_freq_list(struct wiphy
 		return -EINVAL;
 	}
 
-	DBGLOG(P2P, INFO, "num. of preferred freq list = %d\n", num_freq_list);
+	DBGLOG(P2P, TRACE, "num. of preferred freq list = %d\n", num_freq_list);
 	for (i = 0; i < num_freq_list; i++)
-		DBGLOG(P2P, INFO, "dump preferred freq list[%d] = %d\n",
+		DBGLOG(P2P, TRACE, "dump preferred freq list[%d] = %d\n",
 			i, freq_list[i]);
 
 	skb = cfg80211_vendor_cmd_alloc_reply_skb(wiphy, sizeof(u32) +
