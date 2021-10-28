@@ -4462,6 +4462,7 @@ void aisFsmDisconnect(IN struct ADAPTER *prAdapter,
 			 * ensure the new reconnection runs correctly.
 			 */
 			prAisFsmInfo->ucConnTrialCount = 0;
+			GET_CURRENT_SYSTIME(&(prAisFsmInfo->rJoinReqTime));
 
 			switch (prAisBssInfo->ucReasonOfDisconnect) {
 			case DISCONNECT_REASON_CODE_RADIO_LOST:
