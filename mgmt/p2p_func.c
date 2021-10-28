@@ -6174,16 +6174,13 @@ uint32_t wfdFuncCalculateWfdIELenForAssocRsp(IN struct ADAPTER *prAdapter,
 #if CFG_SUPPORT_WFD_COMPOSE_IE
 	uint16_t u2EstimatedExtraIELen = 0;
 	struct BSS_INFO *prBssInfo = (struct BSS_INFO *) NULL;
-	struct WFD_CFG_SETTINGS *prWfdCfgSettings =
-		(struct WFD_CFG_SETTINGS *) NULL;
 
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
-	prWfdCfgSettings = &(prAdapter->rWifiVar.rWfdConfigureSettings);
 
 	if (prBssInfo->eNetworkType != NETWORK_TYPE_P2P)
 		return 0;
 
-	if (!IS_STA_P2P_TYPE(prStaRec) || !prWfdCfgSettings->ucWfdEnable)
+	if (!IS_STA_P2P_TYPE(prStaRec))
 		return 0;
 
 	u2EstimatedExtraIELen = prAdapter->prGlueInfo->
@@ -6208,8 +6205,6 @@ void wfdFuncGenerateWfdIEForAssocRsp(IN struct ADAPTER *prAdapter,
 	struct BSS_INFO *prP2pBssInfo = (struct BSS_INFO *) NULL;
 	struct GLUE_INFO *prGlueInfo;
 	struct GL_P2P_INFO *prP2PInfo;
-	struct WFD_CFG_SETTINGS *prWfdCfgSettings =
-		(struct WFD_CFG_SETTINGS *) NULL;
 
 	if (!prAdapter || !prMsduInfo)
 		return;
@@ -6231,10 +6226,6 @@ void wfdFuncGenerateWfdIEForAssocRsp(IN struct ADAPTER *prAdapter,
 
 	prP2PInfo = prGlueInfo->prP2PInfo[prP2pBssInfo->u4PrivateData];
 	if (!prP2PInfo)
-		return;
-
-	prWfdCfgSettings = &(prAdapter->rWifiVar.rWfdConfigureSettings);
-	if (!prWfdCfgSettings->ucWfdEnable)
 		return;
 
 	u2EstimatedExtraIELen = prP2PInfo->u2WFDIELen;
