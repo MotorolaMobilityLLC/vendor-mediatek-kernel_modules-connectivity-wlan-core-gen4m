@@ -2337,7 +2337,7 @@ void p2pRoleFsmRunEventConnectionAbort(IN struct ADAPTER *prAdapter,
 		P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prAdapter,
 			prDisconnMsg->ucRoleIdx);
 
-	DBGLOG(P2P, INFO,
+	DBGLOG(P2P, TRACE,
 		"p2pFsmRunEventConnectionAbort: Connection Abort.\n");
 
 	if (!prP2pRoleFsmInfo) {
@@ -2453,7 +2453,7 @@ void p2pRoleFsmRunEventConnectionAbort(IN struct ADAPTER *prAdapter,
 				prDisconnMsg->aucTargetID);
 
 			if (prCurrStaRec) {
-				DBGLOG(P2P, INFO,
+				DBGLOG(P2P, TRACE,
 					"Disconnecting: " MACSTR "\n",
 					MAC2STR(prCurrStaRec->aucMacAddr));
 
@@ -2941,9 +2941,7 @@ p2pRoleFsmRunEventScanDone(IN struct ADAPTER *prAdapter,
 				p2pFuncKeepOnConnection(prAdapter,
 					prAdapter->aprBssInfo
 						[prP2pRoleFsmInfo->ucBssIndex],
-					prConnReqInfo,
-					&prP2pRoleFsmInfo->rChnlReqInfo,
-					&prP2pRoleFsmInfo->rScanReqInfo);
+					prP2pRoleFsmInfo);
 			if ((prP2pJoinInfo->prTargetBssDesc) == NULL) {
 				eNextState = P2P_ROLE_STATE_SCAN;
 			} else {

@@ -2112,56 +2112,67 @@ uint32_t rlmTriggerCalBackup(struct ADAPTER *prAdapter,
 
 void rlmModifyVhtBwPara(uint8_t *pucVhtChannelFrequencyS1,
 			uint8_t *pucVhtChannelFrequencyS2,
+			uint8_t ucHtChannelFrequencyS3,
 			uint8_t *pucVhtChannelWidth)
 {
 	uint8_t i = 0, ucTempS = 0;
+	uint8_t ucBW160Inteval = 8;
+	uint8_t ucS1 = 0, ucS2 = 0;
 
 	if ((*pucVhtChannelFrequencyS1 != 0) &&
 	    (*pucVhtChannelFrequencyS2 != 0)) {
+		/* if BW160's NSS >= max VHT NSS support,
+		 * use VHT S1 & S2 directly
+		 */
+		ucS1 = *pucVhtChannelFrequencyS1;
+		ucS2 = *pucVhtChannelFrequencyS2;
+	} else if ((*pucVhtChannelFrequencyS1 != 0) &&
+		ucHtChannelFrequencyS3 != 0) {
+		/* if BW160's NSS < max VHT NSS support,
+		 * then HT S3 stands for VHT S2
+		 */
+		ucS1 = *pucVhtChannelFrequencyS1;
+		ucS2 = ucHtChannelFrequencyS3;
+	}
 
-		uint8_t ucBW160Inteval = 8;
+	if (((ucS1 - ucS2) == ucBW160Inteval) ||
+		((ucS2 - ucS1) == ucBW160Inteval)) {
+		/*C160 case*/
 
-		if (((*pucVhtChannelFrequencyS2 - *pucVhtChannelFrequencyS1) ==
-		     ucBW160Inteval) ||
-		    ((*pucVhtChannelFrequencyS1 - *pucVhtChannelFrequencyS2) ==
-		     ucBW160Inteval)) {
-			/*C160 case*/
+		/* NEW spec should set central ch of bw80 at S1,
+		 * set central ch of bw160 at S2
+		 */
+		for (i = 0; i < 2; i++) {
 
-			/* NEW spec should set central ch of bw80 at S1,
-			 * set central ch of bw160 at S2
-			 */
-			for (i = 0; i < 2; i++) {
+			if (i == 0)
+				ucTempS = ucS1;
+			else
+				ucTempS = ucS2;
 
-				if (i == 0)
-					ucTempS = *pucVhtChannelFrequencyS1;
-				else
-					ucTempS = *pucVhtChannelFrequencyS2;
-
-				if ((ucTempS == 50) || (ucTempS == 82)
-				   || (ucTempS == 114) || (ucTempS == 163)
+			if ((ucTempS == 50) || (ucTempS == 82)
+			   || (ucTempS == 114) || (ucTempS == 163)
 #if (CFG_SUPPORT_WIFI_6G == 1)
-				   || (ucTempS == 15) || (ucTempS == 47)
-				   || (ucTempS == 79) || (ucTempS == 111)
-				   || (ucTempS == 143) || (ucTempS == 175)
-				   || (ucTempS == 207)
+			   || (ucTempS == 15) || (ucTempS == 47)
+			   || (ucTempS == 79) || (ucTempS == 111)
+			   || (ucTempS == 143) || (ucTempS == 175)
+			   || (ucTempS == 207)
 #endif
-				   )
+			   )
 
-					break;
-			}
-
-			if (ucTempS == 0) {
-				DBGLOG(RLM, WARN,
-				       "please check BW160 setting, find central freq fail\n");
-				return;
-			}
-
-			*pucVhtChannelFrequencyS1 = ucTempS;
-			*pucVhtChannelFrequencyS2 = 0;
-			*pucVhtChannelWidth = CW_160MHZ;
-		} else {
-			/*real 80P80 case*/
+				break;
 		}
+
+		if (ucTempS == 0) {
+			DBGLOG(RLM, WARN,
+			       "please check BW160 setting, find central freq fail\n");
+			return;
+		}
+
+		*pucVhtChannelFrequencyS1 = ucTempS;
+		*pucVhtChannelFrequencyS2 = 0;
+		*pucVhtChannelWidth = CW_160MHZ;
+	} else {
+		/*real 80P80 case*/
 	}
 }
 
@@ -2517,6 +2528,7 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 	uint8_t *pucDumpIE;
 	uint8_t fgDomainValid = FALSE;
 	enum ENUM_CHANNEL_WIDTH eChannelWidth = CW_20_40MHZ;
+	uint8_t ucHtOpChannelFrequencyS3 = 0;
 
 	ASSERT(prAdapter);
 	ASSERT(prBssInfo);
@@ -2644,6 +2656,7 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 
 			/*Backup peer HT OP Info*/
 			prStaRec->ucHtPeerOpInfo1 = prHtOp->ucInfo1;
+			prStaRec->u2HtPeerOpInfo2 = prHtOp->u2Info2;
 
 			if (!prBssInfo->fg40mBwAllowed) {
 				DBGLOG(RLM, TRACE, "ucHtOpInfo1 reset\n");
@@ -2782,9 +2795,13 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 				prVhtOp->ucVhtOperation[1];
 			prStaRec->ucVhtOpChannelFrequencyS2 =
 				prVhtOp->ucVhtOperation[2];
+			ucHtOpChannelFrequencyS3 =
+				HT_GET_OP_INFO2_CH_CENTER_FREQ_SEG2(
+					prStaRec->u2HtPeerOpInfo2);
 
 			rlmModifyVhtBwPara(&prStaRec->ucVhtOpChannelFrequencyS1,
 					   &prStaRec->ucVhtOpChannelFrequencyS2,
+					   ucHtOpChannelFrequencyS3,
 					   &prStaRec->ucVhtOpChannelWidth);
 
 			prBssInfo->ucVhtChannelWidth =
@@ -2794,9 +2811,13 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 			prBssInfo->ucVhtChannelFrequencyS2 =
 				prVhtOp->ucVhtOperation[2];
 			prBssInfo->u2VhtBasicMcsSet = prVhtOp->u2VhtBasicMcsSet;
+			ucHtOpChannelFrequencyS3 =
+				HT_GET_OP_INFO2_CH_CENTER_FREQ_SEG2(
+					prBssInfo->u2HtOpInfo2);
 
 			rlmModifyVhtBwPara(&prBssInfo->ucVhtChannelFrequencyS1,
 					   &prBssInfo->ucVhtChannelFrequencyS2,
+					   ucHtOpChannelFrequencyS3,
 					   &prBssInfo->ucVhtChannelWidth);
 
 			/* Revise by own OP BW if needed */
@@ -7172,7 +7193,7 @@ static u_int8_t rlmCheckOpChangeParamValid(struct ADAPTER *prAdapter,
 			       prBssInfo->ucBssIndex, ucChannelWidth);
 			return FALSE;
 		}
-	} else {
+	} else if (prBssInfo->eBand == BAND_5G) {
 		/* It can only use BW20 for CH165 */
 		if ((ucChannelWidth != MAX_BW_20MHZ) &&
 			(prBssInfo->ucPrimaryChannel == 165)) {
@@ -7193,6 +7214,26 @@ static u_int8_t rlmCheckOpChangeParamValid(struct ADAPTER *prAdapter,
 			       prBssInfo->ucPrimaryChannel);
 			return FALSE;
 		}
+	}
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	else if (prBssInfo->eBand == BAND_6G) {
+		if ((ucChannelWidth == MAX_BW_160MHZ) &&
+			((prBssInfo->ucPrimaryChannel < 1) ||
+			 (prBssInfo->ucPrimaryChannel > 221))) {
+			DBGLOG(RLM, WARN,
+				"Can't change BSS[%d] to OP BW160 for primary CH%d\n",
+				prBssInfo->ucBssIndex,
+				prBssInfo->ucPrimaryChannel);
+			return FALSE;
+		}
+	}
+#endif
+	else {
+		DBGLOG(RLM, WARN,
+			"Unknown band %d for BSS[%d] with primary CH%d\n",
+			prBssInfo->eBand,
+			prBssInfo->ucBssIndex,
+			prBssInfo->ucPrimaryChannel);
 	}
 
 	/* <5>Check if target OP BW/Nss <= peer's BW/Nss (STA mode) */

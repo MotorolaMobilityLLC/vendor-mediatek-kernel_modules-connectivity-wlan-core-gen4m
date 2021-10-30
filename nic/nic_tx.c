@@ -5532,17 +5532,14 @@ int32_t nicTxGetVectorInfo(IN char *pcCommand, IN int i4TotalLen,
 				"%s%d_MCS%d, ", stbc ? "NSTS" : "NSS",
 				nsts, rate);
 
-		if (txmode == TX_RATE_MODE_HE_ER)
-			i4BytesWritten += kalScnprintf(
-				pcCommand + i4BytesWritten,
-				i4TotalLen - i4BytesWritten, "%s, ",
-				frmode > 0 ? "106-RU" : "242-RU");
-		else
-			i4BytesWritten += kalScnprintf(
-				pcCommand + i4BytesWritten,
-				i4TotalLen - i4BytesWritten, "%s, ",
-				frmode < 4 ? HW_TX_RATE_BW[frmode] :
-				HW_TX_RATE_BW[4]);
+		i4BytesWritten += kalScnprintf(
+			pcCommand + i4BytesWritten,
+			i4TotalLen - i4BytesWritten, "%s, ",
+#if (CFG_SUPPORT_CONNAC2X == 1)
+			txmode == TX_RATE_MODE_HE_ER ?
+			       (frmode > 0 ? "106-RU" : "242-RU") :
+#endif
+			       HW_TX_RATE_BW[frmode < 4 ? (uint8_t)frmode : 4]);
 
 		if (txmode == TX_RATE_MODE_CCK)
 			i4BytesWritten += kalScnprintf(

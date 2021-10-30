@@ -7283,7 +7283,7 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 	prWifiVar->ucTrigMacPadDur = (uint8_t) wlanCfgGetUint32(prAdapter,
 		"TrigMacPadDur", HE_CAP_TRIGGER_PAD_DURATION_16);
 	prWifiVar->ucVcoreBoostEnable = (uint8_t) wlanCfgGetUint32(prAdapter,
-		"ucVcoreBoostEnable", FEATURE_ENABLED);
+		"HeVcoreBoostEnable", FEATURE_DISABLED);
 	prWifiVar->ucMaxAmpduLenExp = (uint8_t) wlanCfgGetUint32(prAdapter,
 		"MaxAmpduLenExt", HE_CAP_MAX_AMPDU_LEN_EXP);
 	}
@@ -11657,7 +11657,7 @@ uint32_t wlanSetLowLatencyCommand(
 			    CMD_ID_SET_LOW_LATENCY_MODE,	/* ucCID */
 			    TRUE,	/* fgSetQuery */
 			    FALSE,	/* fgNeedResp */
-			    TRUE,	/* fgIsOid */
+			    FALSE,	/* fgIsOid */
 			    NULL,	/* pfCmdDoneHandler */
 			    NULL,	/* pfCmdTimeoutHandler */
 			    sizeof(struct CMD_LOW_LATENCY_MODE_HEADER),

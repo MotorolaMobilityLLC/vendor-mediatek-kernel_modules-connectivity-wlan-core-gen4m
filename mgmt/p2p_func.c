@@ -3779,7 +3779,8 @@ void p2pFuncValidateRxActionFrame(IN struct ADAPTER *prAdapter,
 {
 	struct WLAN_ACTION_FRAME *prActFrame;
 	struct WLAN_PUBLIC_VENDOR_ACTION_FRAME *prActPubVenFrame;
-	uint32_t u4OUI;
+	u_int32_t u4Oui;
+	u_int8_t ucOuiType;
 	u_int8_t fgBufferFrame = FALSE;
 	struct P2P_DEV_FSM_INFO *prP2pDevFsmInfo = NULL;
 
@@ -3812,22 +3813,35 @@ void p2pFuncValidateRxActionFrame(IN struct ADAPTER *prAdapter,
 			prSwRfb->u2PacketLen <
 				sizeof(struct WLAN_PUBLIC_VENDOR_ACTION_FRAME))
 			break;
-		WLAN_GET_FIELD_BE32(prActFrame->ucActionDetails, &u4OUI);
-		DBGLOG(P2P, TRACE, "Action: oui: 0x%x\n", u4OUI);
-		if (u4OUI != P2P_IE_VENDOR_TYPE)
+
+		WLAN_GET_FIELD_BE24(prActFrame->ucActionDetails, &u4Oui);
+		ucOuiType = prActFrame->ucActionDetails[3];
+		DBGLOG(P2P, TRACE, "Action: oui: 0x%x, type: 0x%x\n",
+			u4Oui, ucOuiType);
+
+		if (u4Oui != OUI_WFA)
 			break;
 
-		prActPubVenFrame =
+		if (ucOuiType == P2P_OUI_TYPE) {
+			prActPubVenFrame =
 				(struct WLAN_PUBLIC_VENDOR_ACTION_FRAME *)
 				prActFrame;
-		p2pProcessActionResponse(prAdapter,
+			p2pProcessActionResponse(prAdapter,
 				prActPubVenFrame->ucPubSubType);
-		if (prActPubVenFrame->ucPubSubType == P2P_GO_NEG_REQ)
-			p2pFunAbortOngoingScan(prAdapter);
-		if (fgIsDevInterface) {
-			p2pDevFsmNotifyP2pRx(prAdapter,
+			if (prActPubVenFrame->ucPubSubType == P2P_GO_NEG_REQ)
+				p2pFunAbortOngoingScan(prAdapter);
+			if (fgIsDevInterface) {
+				p2pDevFsmNotifyP2pRx(prAdapter,
 					prActPubVenFrame->ucPubSubType,
 					&fgBufferFrame);
+			}
+		} else if (ucOuiType == DPP_OUI_TYPE) {
+			if (!p2pFuncIsAPMode(
+				prAdapter->rWifiVar.
+					prP2PConnSettings[ucRoleIdx])) {
+				/* P2P doesn't support DPP */
+				return;
+			}
 		}
 		/* Fall through */
 	default:
@@ -4478,11 +4492,22 @@ p2pFuncParseBeaconVenderId(IN struct ADAPTER *prAdapter,
 struct BSS_DESC *
 p2pFuncKeepOnConnection(IN struct ADAPTER *prAdapter,
 		IN struct BSS_INFO *prBssInfo,
-		IN struct P2P_CONNECTION_REQ_INFO *prConnReqInfo,
-		IN struct P2P_CHNL_REQ_INFO *prChnlReqInfo,
-		IN struct P2P_SCAN_REQ_INFO *prScanReqInfo)
+		IN struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo)
 {
 	struct BSS_DESC *prTargetBss = (struct BSS_DESC *) NULL;
+	struct P2P_CONNECTION_REQ_INFO *prConnReqInfo =
+		(struct P2P_CONNECTION_REQ_INFO *) NULL;
+	struct P2P_CHNL_REQ_INFO *prChnlReqInfo =
+		(struct P2P_CHNL_REQ_INFO *) NULL;
+	struct P2P_SCAN_REQ_INFO *prScanReqInfo =
+		(struct P2P_SCAN_REQ_INFO *) NULL;
+	struct P2P_JOIN_INFO *prJoinInfo =
+		(struct P2P_JOIN_INFO *) NULL;
+
+	prConnReqInfo = &(prP2pRoleFsmInfo->rConnReqInfo);
+	prChnlReqInfo = &(prP2pRoleFsmInfo->rChnlReqInfo);
+	prScanReqInfo =	&(prP2pRoleFsmInfo->rScanReqInfo);
+	prJoinInfo = &(prP2pRoleFsmInfo->rJoinInfo);
 
 	do {
 		ASSERT_BREAK((prAdapter != NULL) && (prBssInfo != NULL) &&
@@ -4521,6 +4546,9 @@ p2pFuncKeepOnConnection(IN struct ADAPTER *prAdapter,
 				prTargetBss->ucCenterFreqS1;
 			prChnlReqInfo->ucCenterFreqS2 =
 				prTargetBss->ucCenterFreqS2;
+
+			prJoinInfo->ucAvailableAuthTypes =
+				(uint8_t) AUTH_TYPE_OPEN_SYSTEM;
 		}
 
 	} while (FALSE);
@@ -6160,16 +6188,13 @@ uint32_t wfdFuncCalculateWfdIELenForAssocRsp(IN struct ADAPTER *prAdapter,
 #if CFG_SUPPORT_WFD_COMPOSE_IE
 	uint16_t u2EstimatedExtraIELen = 0;
 	struct BSS_INFO *prBssInfo = (struct BSS_INFO *) NULL;
-	struct WFD_CFG_SETTINGS *prWfdCfgSettings =
-		(struct WFD_CFG_SETTINGS *) NULL;
 
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
-	prWfdCfgSettings = &(prAdapter->rWifiVar.rWfdConfigureSettings);
 
 	if (prBssInfo->eNetworkType != NETWORK_TYPE_P2P)
 		return 0;
 
-	if (!IS_STA_P2P_TYPE(prStaRec) || !prWfdCfgSettings->ucWfdEnable)
+	if (!IS_STA_P2P_TYPE(prStaRec))
 		return 0;
 
 	u2EstimatedExtraIELen = prAdapter->prGlueInfo->
@@ -6194,8 +6219,6 @@ void wfdFuncGenerateWfdIEForAssocRsp(IN struct ADAPTER *prAdapter,
 	struct BSS_INFO *prP2pBssInfo = (struct BSS_INFO *) NULL;
 	struct GLUE_INFO *prGlueInfo;
 	struct GL_P2P_INFO *prP2PInfo;
-	struct WFD_CFG_SETTINGS *prWfdCfgSettings =
-		(struct WFD_CFG_SETTINGS *) NULL;
 
 	if (!prAdapter || !prMsduInfo)
 		return;
@@ -6217,10 +6240,6 @@ void wfdFuncGenerateWfdIEForAssocRsp(IN struct ADAPTER *prAdapter,
 
 	prP2PInfo = prGlueInfo->prP2PInfo[prP2pBssInfo->u4PrivateData];
 	if (!prP2PInfo)
-		return;
-
-	prWfdCfgSettings = &(prAdapter->rWifiVar.rWfdConfigureSettings);
-	if (!prWfdCfgSettings->ucWfdEnable)
 		return;
 
 	u2EstimatedExtraIELen = prP2PInfo->u2WFDIELen;
@@ -7252,7 +7271,7 @@ void p2pFunGetAcsBestChList(IN struct ADAPTER *prAdapter,
 	*/
 	*pucSortChannelNumber = ucInUsedCHNumber;
 	for (i = 0; i < ucInUsedCHNumber; i++) {
-		DBGLOG(P2P, INFO, "ACS idx=%d, band[%d] ch[%d]\n", i,
+		DBGLOG(P2P, TRACE, "ACS idx=%d, band[%d] ch[%d]\n", i,
 			(paucSortChannelList+i)->eBand,
 			(paucSortChannelList+i)->ucChannelNum);
 	}

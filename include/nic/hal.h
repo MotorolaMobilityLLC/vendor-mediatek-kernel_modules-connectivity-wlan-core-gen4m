@@ -1161,7 +1161,7 @@ uint32_t halGetChipSwVer(IN struct ADAPTER *prAdapter);
 uint32_t halRxWaitResponse(IN struct ADAPTER *prAdapter,
 	IN uint8_t ucPortIdx, OUT uint8_t *pucRspBuffer,
 	IN uint32_t u4MaxRespBufferLen, OUT uint32_t *pu4Length,
-	IN uint32_t u4WaitingInterval);
+	IN uint32_t u4WaitingInterval, IN uint32_t u4TimeoutValue);
 
 void halEnableInterrupt(IN struct ADAPTER *prAdapter);
 void halDisableInterrupt(IN struct ADAPTER *prAdapter);

@@ -923,7 +923,7 @@ void dumpLinkStatsAc(struct STATS_LLS_WMM_AC_STAT *ac_stat,
 		"VO", "VI", "BE", "BK"};
 
 	DBGLOG(REQ, INFO, "AC[%s] %u %u %u %u %u %u %u %u %u %u %u %u %u %u %u",
-			s[ac],
+			s[(uint32_t)ac],
 			ac_stat[ac].ac,
 			ac_stat[ac].tx_mpdu,
 			ac_stat[ac].rx_mpdu,
@@ -949,7 +949,7 @@ void dumpLinkStatsPeerInfo(struct STATS_LLS_PEER_INFO *peer, uint32_t idx)
 
 	DBGLOG(REQ, INFO, "Peer(%u) %u(%s)" MACSTR "%u %u %u [%u]",
 			idx,
-			peer->type, type[peer->type],
+			peer->type, type[(uint32_t)peer->type],
 			MAC2STR(peer->peer_mac_address),
 			peer->capabilities,
 			peer->bssload.sta_count,
@@ -2224,9 +2224,9 @@ int mtk_cfg80211_vendor_get_preferred_freq_list(struct wiphy
 		return -EINVAL;
 	}
 
-	DBGLOG(P2P, INFO, "num. of preferred freq list = %d\n", num_freq_list);
+	DBGLOG(P2P, TRACE, "num. of preferred freq list = %d\n", num_freq_list);
 	for (i = 0; i < num_freq_list; i++)
-		DBGLOG(P2P, INFO, "dump preferred freq list[%d] = %d\n",
+		DBGLOG(P2P, TRACE, "dump preferred freq list[%d] = %d\n",
 			i, freq_list[i]);
 
 	skb = cfg80211_vendor_cmd_alloc_reply_skb(wiphy, sizeof(u32) +

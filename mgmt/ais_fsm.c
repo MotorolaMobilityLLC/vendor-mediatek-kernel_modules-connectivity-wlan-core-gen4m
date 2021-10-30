@@ -664,6 +664,17 @@ bool aisFsmIsBeaconTimeout(IN struct ADAPTER *prAdapter,
 			 DISCONNECT_REASON_CODE_RADIO_LOST_TX_ERR);
 }
 
+bool aisFsmIsReassociation(IN struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex)
+{
+	struct BSS_INFO *prAisBssInfo = aisGetAisBssInfo(prAdapter, ucBssIndex);
+
+	/* to support user space triggered reassociation */
+	return (prAisBssInfo->u2DeauthReason ==
+			REASON_CODE_RESERVED &&
+		prAisBssInfo->ucReasonOfDisconnect ==
+			DISCONNECT_REASON_CODE_RADIO_LOST);
+}
 /*----------------------------------------------------------------------------*/
 /*!
  * @brief Initialization of JOIN STATE
@@ -2706,6 +2717,7 @@ void aisFsmRunEventAbort(IN struct ADAPTER *prAdapter,
 					    ucBssIndex);
 		}
 		return;
+	/* to support user space triggered reassociation */
 	} else if (ucReasonOfDisconnect ==
 			DISCONNECT_REASON_CODE_REASSOCIATION) {
 		DBGLOG(AIS, STATE,
@@ -2731,22 +2743,9 @@ void aisFsmRunEventAbort(IN struct ADAPTER *prAdapter,
 			AIS_REQUEST_RECONNECT, ucBssIndex);
 
 	if (prAisFsmInfo->eCurrentState != AIS_STATE_DISCONNECTING) {
-		if (ucReasonOfDisconnect !=
-		    DISCONNECT_REASON_CODE_REASSOCIATION) {
-			/* 4 <3> invoke abort handler */
-			aisFsmStateAbort(prAdapter, ucReasonOfDisconnect,
-				fgDelayIndication, ucBssIndex);
-		} else {
-			/* 1. release channel */
-			aisFsmReleaseCh(prAdapter, ucBssIndex);
-			/* 2.1 stop join timeout timer */
-			cnmTimerStopTimer(prAdapter,
-					  &prAisFsmInfo->rJoinTimeoutTimer);
-
-			prAisBssInfo->ucReasonOfDisconnect =
-				ucReasonOfDisconnect;
-			aisFsmSteps(prAdapter, AIS_STATE_IDLE, ucBssIndex);
-		}
+		/* 4 <3> invoke abort handler */
+		aisFsmStateAbort(prAdapter, ucReasonOfDisconnect,
+			fgDelayIndication, ucBssIndex);
 	}
 }				/* end of aisFsmRunEventAbort() */
 
@@ -3887,7 +3886,9 @@ void aisPostponedEventOfDisconnTimeout(IN struct ADAPTER *prAdapter,
 		prAisFsmInfo->ucConnTrialCountLimit);
 
 	/* only retry connect once when beacon timeout */
-	if (policy != CONNECT_BY_BSSID && !fgIsPostponeTimeout &&
+	if ((policy != CONNECT_BY_BSSID ||
+		aisFsmIsReassociation(prAdapter, ucBssIndex)) &&
+	    !fgIsPostponeTimeout &&
 	    !(prAisFsmInfo->ucConnTrialCount >
 			prAisFsmInfo->ucConnTrialCountLimit)) {
 		DBGLOG(AIS, INFO,
@@ -4474,6 +4475,7 @@ void aisFsmDisconnect(IN struct ADAPTER *prAdapter,
 			 * ensure the new reconnection runs correctly.
 			 */
 			prAisFsmInfo->ucConnTrialCount = 0;
+			GET_CURRENT_SYSTIME(&(prAisFsmInfo->rJoinReqTime));
 
 			switch (prAisBssInfo->ucReasonOfDisconnect) {
 			case DISCONNECT_REASON_CODE_RADIO_LOST:
@@ -5219,12 +5221,13 @@ void aisBssBeaconTimeout_impl(IN struct ADAPTER *prAdapter,
 			DISCONNECT_REASON_CODE_REASSOCIATION) {
 			/* For reassociation */
 			prAisBssInfo->u2DeauthReason = REASON_CODE_RESERVED;
-		} else
+		} else {
 			prAisBssInfo->u2DeauthReason =
 				REASON_CODE_BEACON_TIMEOUT * 100 +
 				ucBcnTimeoutReason;
+			DBGLOG(AIS, EVENT, "aisBssBeaconTimeout\n");
+		}
 
-		DBGLOG(AIS, EVENT, "aisBssBeaconTimeout\n");
 		aisFsmStateAbort(prAdapter,
 			ucDisconnectReason,
 			!fgIsReasonPER,
@@ -6359,6 +6362,16 @@ void aisFuncValidateRxActionFrame(IN struct ADAPTER *prAdapter,
 	do {
 		if (prSwRfb->prStaRec)
 			ucBssIndex = prSwRfb->prStaRec->ucBssIndex;
+
+		/* CFG_SUPPORT_NAN and CFG_ENABLE_WIFI_DIRECT
+		* consider to bypass AIS RxActionFrame
+		*/
+		if (!IS_BSS_INDEX_AIS(prAdapter, ucBssIndex)) {
+			DBGLOG(AIS, LOUD,
+				"Use default, invalid index = %d\n",
+				ucBssIndex);
+			return;
+		}
 
 		prAisFsmInfo
 			= aisGetAisFsmInfo(prAdapter, ucBssIndex);

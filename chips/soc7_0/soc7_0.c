@@ -1076,8 +1076,8 @@ static int wake_up_conninfra_off(void)
 	uint32_t polling_count;
 
 	/* Wakeup conn_infra off
-	 * Address: 0x1801_1000[31:0]
-	 * Data: 0x02050100
+	 * Address: 0x1806_01A4[0]
+	 * Data: 1'b1
 	 * Action: write
 	 */
 	wf_ioremap_read(CONN_HOST_CSR_TOP_CONN_INFRA_WAKEPU_WF_ADDR, &value);
@@ -1123,6 +1123,25 @@ static int wake_up_conninfra_off(void)
 	}
 
 	return 0;
+}
+
+static void set_wf_monflg_on_mailbox_wf(void)
+{
+	uint32_t u4Val = 0;
+
+	/* Set wf_monflg_on for polling wf mailbox from host side CR
+	 * Address: 0x1806_0B00[0] 0x1806_0B04[4:0]
+	 * Data: 1'b1 5'b01100
+	 * Action: write
+	 */
+	wf_ioremap_read(CONN_HOST_CSR_TOP_WF_ON_MONFLG_EN_FR_HIF_ADDR, &u4Val);
+	u4Val |= CONN_HOST_CSR_TOP_WF_ON_MONFLG_EN_FR_HIF_WF_ON_MONFLG_EN_FR_HIF_MASK;
+	wf_ioremap_write(CONN_HOST_CSR_TOP_WF_ON_MONFLG_EN_FR_HIF_ADDR, u4Val);
+
+	wf_ioremap_read(CONN_HOST_CSR_TOP_WF_ON_MONFLG_SEL_FR_HIF_ADDR, &u4Val);
+	u4Val &= ~CONN_HOST_CSR_TOP_WF_ON_MONFLG_SEL_FR_HIF_WF_ON_MONFLG_SEL_FR_HIF_MASK;
+	u4Val |= 0xc;
+	wf_ioremap_write(CONN_HOST_CSR_TOP_WF_ON_MONFLG_SEL_FR_HIF_ADDR, u4Val);
 }
 
 static int wf_pwr_on_consys_mcu(void)
@@ -1383,18 +1402,7 @@ static int wf_pwr_on_consys_mcu(void)
 	soc7_0_wlanPowerOnInit();
 #endif
 
-	/* Set wf_monflg_on for polling wf mailbox from host side CR
-	 * Address: 0x1806_0B00[0] 0x1806_0B04[4:0]
-	 * Data: 1'b1 5'b01100
-	 * Action: write
-	 */
-	wf_ioremap_read(CONN_HOST_CSR_TOP_WF_ON_MONFLG_EN_FR_HIF_ADDR, &value);
-	value |= CONN_HOST_CSR_TOP_WF_ON_MONFLG_EN_FR_HIF_WF_ON_MONFLG_EN_FR_HIF_MASK;
-	wf_ioremap_write(CONN_HOST_CSR_TOP_WF_ON_MONFLG_EN_FR_HIF_ADDR, value);
-	wf_ioremap_read(CONN_HOST_CSR_TOP_WF_ON_MONFLG_SEL_FR_HIF_ADDR, &value);
-	value &= ~CONN_HOST_CSR_TOP_WF_ON_MONFLG_SEL_FR_HIF_WF_ON_MONFLG_SEL_FR_HIF_MASK;
-	value |= 0xc;
-	wf_ioremap_write(CONN_HOST_CSR_TOP_WF_ON_MONFLG_SEL_FR_HIF_ADDR, value);
+	set_wf_monflg_on_mailbox_wf();
 
 	/* De-assert WFSYS CPU SW reset
 	 * Address: 0x1800_0120[0]
@@ -1753,7 +1761,7 @@ static int wf_pwr_off_consys_mcu(void)
 			CONN_INFRA_CLKGEN_TOP_CKGEN_COEX_1_SET_CONN_CO_EXT_FDD_COEX_HCLKCKEN_M0_MASK;
 	wf_ioremap_write(CONN_INFRA_CLKGEN_TOP_CKGEN_COEX_1_CLR_ADDR, value);
 
-	/* Clear wf_infra_req
+	/* release conn_infra force on
 	 * Address: 0x1806_01A4[0]
 	 * Data: 1'b0
 	 * Action: write
@@ -2532,6 +2540,14 @@ static void soc7_0_DumpOtherCr(struct ADAPTER *prAdapter)
 	connac2x_DbgCrRead(NULL, 0x180600f0, &u4Val);
 	DBGLOG(INIT, INFO, "0x180600f0=[0x%08x]\n", u4Val);
 
+	set_wf_monflg_on_mailbox_wf();
+
+	/* pooling host_mailbox_wf status */
+	wf_ioremap_read(CONN_HOST_CSR_TOP_WF_ON_MONFLG_OUT_ADDR, &u4Val);
+	DBGLOG(INIT, INFO, "0x%08x=[0x%08x]\n",
+		CONN_HOST_CSR_TOP_WF_ON_MONFLG_OUT_ADDR,
+		u4Val);
+
 	/* Power_check */
 	soc7_0_DumpWfsysSleepWakeupDebug(prAdapter);
 
@@ -2653,8 +2669,29 @@ static int soc7_0_CheckBusHang(void *adapter, uint8_t ucWfResetEnable)
  */
 		connac2x_DbgCrRead(prAdapter, 0x1802362C, &u4Value);
 		if (u4Value & BIT(0)) {
-			DBGLOG(HAL, ERROR, "0x1802_362C[0]=1'b1\n");
-			break;
+			set_wf_monflg_on_mailbox_wf();
+
+			kalMsleep(10);
+
+			/* Pooling mailbox to check bus timeout status
+			 * Address: 0x1806_0B10[4:0]
+			 * [4] n9 read channel (*0:idle, 1:busy )
+			 * [3] n9 write channel (*0:idle, 1:busy )
+			 * [2] s2 (*1:idle, 0:busy)
+			 * [1] s0 (*1:idle, 0:busy)
+			 * [0] is all safe (*1:0x0A11_5AFE, 0:latched address)
+			 * Data: 5'b00111
+			 * Action: read
+			 */
+			wf_ioremap_read(CONN_HOST_CSR_TOP_WF_ON_MONFLG_OUT_ADDR,
+				&u4Value);
+
+			if (u4Value & 0x0000001f != 0x00000007) {
+				DBGLOG(HAL, ERROR, "0x1802_362C[0]=1'b1\n");
+				DBGLOG(HAL, ERROR, "0x1806_0B10=0x%x\n",
+					u4Value);
+				break;
+			}
 		}
 
 		DBGLOG(HAL, TRACE, "Bus hang check: Done\n");

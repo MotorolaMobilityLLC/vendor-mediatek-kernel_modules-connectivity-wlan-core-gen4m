@@ -92,6 +92,9 @@
 #if CFG_SUPPORT_NAN
 #include "gl_vendor_ndp.h"
 #endif
+#if (CFG_SUPPORT_CONNINFRA == 1)
+#include "fw_log_wifi.h"
+#endif
 
 /*******************************************************************************
  *                              C O N S T A N T S
@@ -1269,7 +1272,7 @@ static const struct nl80211_vendor_cmd_info
 #if CFG_SUPPORT_DBDC
 	{
 		.vendor_id = OUI_MTK,
-		.subcmd = WIFI_EVENT_OP_MODE_CHANGE
+		.subcmd = MTK_NL80211_OP_MODE_CHANGE
 	},
 #endif
 
@@ -4570,8 +4573,18 @@ static void consys_log_event_notification(int cmd, int value)
 	DBGLOG(INIT, INFO, "gPrDev=%p, cmd=%d, value=%d\n",
 		gPrDev, cmd, value);
 
-	if (cmd == FW_LOG_CMD_ON_OFF)
+	if (cmd == FW_LOG_CMD_ON_OFF) {
 		u4LogOnOffCache = value;
+
+#ifdef CONFIG_MTK_CONNSYS_DEDICATED_LOG_PATH
+#if (CFG_SUPPORT_CONNINFRA == 1)
+		if (u4LogOnOffCache == 0) {
+			fw_log_wifi_irq_handler();
+			DBGLOG(INIT, TRACE, "Stopping logs...\n");
+		}
+#endif
+#endif
+	}
 	if (cmd == FW_LOG_CMD_SET_LEVEL)
 		u4LogLevelCache = value;
 
@@ -5237,8 +5250,7 @@ void wlanOffStopWlanThreads(IN struct GLUE_INFO *prGlueInfo)
 		DBGLOG(INIT, INFO, "Complete on-going ioctl as failure.\n");
 		prIoReq = &(prGlueInfo->OidEntry);
 		prIoReq->rStatus = WLAN_STATUS_FAILURE;
-		DBGLOG(NIC, TRACE, "&prGlueInfo->rPendComp=%p",
-				&prGlueInfo->rPendComp);
+		DBGLOG(NIC, TRACE, "rPendComp=%p", &prGlueInfo->rPendComp);
 		complete(&prGlueInfo->rPendComp);
 	}
 }

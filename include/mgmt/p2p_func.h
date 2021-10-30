@@ -311,9 +311,7 @@ p2pFuncParseBeaconContent(IN struct ADAPTER *prAdapter,
 struct BSS_DESC *
 p2pFuncKeepOnConnection(IN struct ADAPTER *prAdapter,
 		IN struct BSS_INFO *prBssInfo,
-		IN struct P2P_CONNECTION_REQ_INFO *prConnReqInfo,
-		IN struct P2P_CHNL_REQ_INFO *prChnlReqInfo,
-		IN struct P2P_SCAN_REQ_INFO *prScanReqInfo);
+		IN struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo);
 
 void p2pFuncStoreAssocRspIEBuffer(IN struct ADAPTER *prAdapter,
 		IN struct P2P_JOIN_INFO *prP2pJoinInfo,

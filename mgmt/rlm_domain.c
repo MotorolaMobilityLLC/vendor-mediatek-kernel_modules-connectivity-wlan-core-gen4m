@@ -311,9 +311,9 @@ const struct ieee80211_regdomain default_regdom_ww = {
 	/* channels 14 */
 	REG_RULE_LIGHT(2484-10, 2484+10, 20, 0),
 	/* channel 36..64 */
-	REG_RULE_LIGHT(5150-10, 5350+10, BW_6G, 0),
+	REG_RULE_LIGHT(5150-10, 5350+10, BW_5G, 0),
 	/* channel 100..165 */
-	REG_RULE_LIGHT(5470-10, 5850+10, BW_6G, 0),
+	REG_RULE_LIGHT(5470-10, 5850+10, BW_5G, 0),
 	/* 6G channel 1..17 */
 	REG_RULE_LIGHT(5935-10, 7135+10, BW_6G, 0),
 	}

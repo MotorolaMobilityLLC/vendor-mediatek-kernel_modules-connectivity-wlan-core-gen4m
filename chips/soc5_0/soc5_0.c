@@ -2394,6 +2394,11 @@ static void soc5_0_DumpOtherCr(struct ADAPTER *prAdapter)
 	connac2x_DbgCrRead(NULL, 0x180600f0, &u4Val);
 	DBGLOG(INIT, INFO, "0x180600f0=[0x%08x]\n", u4Val);
 
+	connac2x_DbgCrRead(NULL,
+		CONNAC2X_MAILBOX_DBG_ADDR, &u4Val);
+	DBGLOG(INIT, INFO, "0x%08x=[0x%08x]\n",
+		CONNAC2X_MAILBOX_DBG_ADDR, u4Val);
+
 	connac2x_DumpCrRange(NULL, 0x18060260, HANG_OTHER_LOG_NUM,
 		"mailbox and other CRs");
 	connac2x_DumpCrRange(NULL, 0x180602c0, 8, "DBG_DUMMY");

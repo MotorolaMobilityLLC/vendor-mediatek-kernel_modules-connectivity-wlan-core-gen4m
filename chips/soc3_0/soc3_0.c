@@ -1580,7 +1580,9 @@ static void soc3_0_DumpOtherCr(struct ADAPTER *prAdapter)
 {
 #define	HANG_OTHER_LOG_NUM		2
 
-	connac2x_DumpCrRange(NULL, 0x18060260, HANG_OTHER_LOG_NUM,
+	connac2x_DumpCrRange(NULL,
+		CONN_MCU_CONFG_ON_HOST_MAILBOX_WF_ADDR,
+		HANG_OTHER_LOG_NUM,
 		"mailbox and other CRs");
 	connac2x_DumpCrRange(NULL, 0x180602c0, 8, "DBG_DUMMY");
 	connac2x_DumpCrRange(NULL, 0x180602e0, 4, "BT_CSR_DUMMY");
@@ -1873,10 +1875,9 @@ int soc3_0_CheckBusHang(void *adapter, uint8_t ucWfResetEnable)
 *  - 0x1806_0260[31] should be 1'b1  (FW view 0x8900_0100[31])
 */
 
-			u4Cr = 0x18060260;
+			u4Cr = CONN_MCU_CONFG_ON_HOST_MAILBOX_WF_ADDR;
 			connac2x_DbgCrRead(prAdapter, u4Cr, &u4Value);
-
-			if ((u4Value&BIT(31)) != BIT(31)) {
+			if ((u4Value & BIT(31)) != BIT(31)) {
 				DBGLOG(HAL, ERROR,
 					"Bus hang check: 0x%08x = 0x%08x\n",
 					u4Cr, u4Value);
@@ -1932,7 +1933,18 @@ int soc3_0_CheckBusHang(void *adapter, uint8_t ucWfResetEnable)
 				DBGLOG(HAL, ERROR,
 					"Bus hang check: 0x%08x = 0x%08x\n",
 					u4Cr, u4Value);
-				break;
+
+				/* check false alarm */
+				u4Cr = CONN_MCU_CONFG_ON_HOST_MAILBOX_WF_ADDR;
+				connac2x_DbgCrRead(prAdapter, u4Cr, &u4Value);
+				DBGLOG(HAL, ERROR,
+					"Bus hang check: 0x%08x = 0x%08x\n",
+					u4Cr, u4Value);
+				if ((u4Value & 0x0001FFFF) != 0x00000001) {
+					if (((u4Value & 0x00019E78) != 0) ||
+					    ((u4Value & 0x00000180) == 0))
+						break;
+				}
 			}
 		} else {
 			DBGLOG(HAL, INFO,
