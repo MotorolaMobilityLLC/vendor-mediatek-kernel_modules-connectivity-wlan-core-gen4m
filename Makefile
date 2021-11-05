@@ -205,6 +205,7 @@ endif
 ccflags-y += -DCFG_POWER_ON_DOWNLOAD_EMI_ROM_PATCH=1
 ccflags-y += -DCFG_ROM_PATCH_NO_SEM_CTRL=1
 ccflags-y += -DCONFIG_MTK_WIFI_HE160
+ccflags-y += -DCFG_SUPPORT_BW160
 endif
 
 ifeq ($(CONFIG_MTK_WIFI_CONNINFRA_SUPPORT), y)
