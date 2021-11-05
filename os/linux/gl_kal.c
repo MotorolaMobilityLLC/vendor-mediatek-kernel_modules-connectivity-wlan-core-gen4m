@@ -7991,9 +7991,14 @@ static uint32_t kalPerMonUpdate(IN struct ADAPTER *prAdapter)
 		if (txDiffBytes[i] < 0 || rxDiffBytes[i] < 0) {
 			/* overflow should not happen */
 			DBGLOG(SW4, WARN,
-				"[%d]wrong bytes: tx[%lu][%lu][%ld], rx[%lu][%lu][%ld],\n",
-				i, currentTxBytes, lastTxBytes, txDiffBytes[i],
-				currentRxBytes, lastRxBytes, rxDiffBytes[i]);
+				"[%d]wrong bytes: tx[%llu][%lld][%lld], rx[%llu][%lld][%lld],\n",
+				i,
+				(unsigned long long) currentTxBytes,
+				(long long) lastTxBytes,
+				(long long) txDiffBytes[i],
+				(unsigned long long) currentRxBytes,
+				(long long) lastRxBytes,
+				(long long) rxDiffBytes[i]);
 			goto fail;
 		}
 
