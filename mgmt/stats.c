@@ -314,7 +314,7 @@ void statsParseARPInfo(struct sk_buff *skb,
 	case EVENT_RX:
 		GLUE_SET_INDEPENDENT_PKT(skb, TRUE);
 		if (u2OpCode == ARP_PRO_REQ)
-			DBGLOG_LIMITED(RX, INFO,
+			DBGLOG(RX, INFO,
 				"<RX> Arp Req From IP: " IPV4STR "\n",
 				IPV4TOSTR(&pucEthBody[ARP_SENDER_IP_OFFSET]));
 		else if (u2OpCode == ARP_PRO_RSP)
