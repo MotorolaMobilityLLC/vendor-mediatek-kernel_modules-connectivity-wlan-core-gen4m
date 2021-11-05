@@ -6360,6 +6360,16 @@ void aisFuncValidateRxActionFrame(IN struct ADAPTER *prAdapter,
 		if (prSwRfb->prStaRec)
 			ucBssIndex = prSwRfb->prStaRec->ucBssIndex;
 
+		/* CFG_SUPPORT_NAN and CFG_ENABLE_WIFI_DIRECT
+		* consider to bypass AIS RxActionFrame
+		*/
+		if (!IS_BSS_INDEX_AIS(prAdapter, ucBssIndex)) {
+			DBGLOG(AIS, LOUD,
+				"Use default, invalid index = %d\n",
+				ucBssIndex);
+			return;
+		}
+
 		prAisFsmInfo
 			= aisGetAisFsmInfo(prAdapter, ucBssIndex);
 
