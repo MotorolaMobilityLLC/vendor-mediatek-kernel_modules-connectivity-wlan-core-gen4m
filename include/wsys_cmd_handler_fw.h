@@ -1405,7 +1405,8 @@ struct EVENT_STORED_BA_REQUEST {
 	uint16_t u2SSN;
 	uint8_t ucTid;
 	uint8_t ucStaRecIdx;
-	uint8_t aucPadding[4];
+	uint8_t ucStoredBARCount;
+	uint8_t aucPadding[3];
 };
 
 struct EVENT_BAR_DELAY {
