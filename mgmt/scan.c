@@ -2303,6 +2303,7 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 
 	prBssDesc->ucCenterFreqS1 = 0;
 	prBssDesc->ucCenterFreqS2 = 0;
+	prBssDesc->ucCenterFreqS3 = 0;
 
 	/* Support AP Selection */
 	prBssDesc->fgExsitBssLoadIE = FALSE;
@@ -2527,6 +2528,14 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 				    (((struct IE_HT_OP *) pucIE)->ucInfo1
 				    & HT_OP_INFO1_SCO);
 			}
+
+			prBssDesc->ucCenterFreqS3 = (uint8_t)
+				HT_GET_OP_INFO2_CH_CENTER_FREQ_SEG2(
+				((struct IE_HT_OP *) pucIE)->u2Info2);
+			if (prBssDesc->ucCenterFreqS3 != 0)
+				DBGLOG(SCN, LOUD, "Find valid HT S2 %d\n",
+					prBssDesc->ucCenterFreqS3);
+
 			break;
 		case ELEM_ID_VHT_CAP:
 #if (CFG_SUPPORT_WIFI_6G == 1)
@@ -4993,6 +5002,7 @@ void scanParseVHTOpIE(IN uint8_t *pucIE, IN struct BSS_DESC *prBssDesc)
 	/*add IEEE BW160 patch*/
 	rlmModifyVhtBwPara(&prBssDesc->ucCenterFreqS1,
 			   &prBssDesc->ucCenterFreqS2,
+			   prBssDesc->ucCenterFreqS3,
 			   (uint8_t *)&prBssDesc->eChannelWidth);
 }
 

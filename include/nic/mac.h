@@ -1630,6 +1630,8 @@ enum BEACON_REPORT_DETAIL {
 #define HT_OP_INFO2_HT_PROTECTION                   BITS(0, 1)
 #define HT_OP_INFO2_NON_GF_HT_STA_PRESENT           BIT(2)
 #define HT_OP_INFO2_OBSS_NON_HT_STA_PRESENT         BIT(4)
+#define HT_OP_INFO2_CH_CENTER_FREQ_SEG2_OFFSET      5
+#define HT_OP_INFO2_CH_CENTER_FREQ_SEG2             BITS(5, 12)
 
 #define HT_OP_INFO3_DUAL_BEACON                     BIT(6)
 #define HT_OP_INFO3_DUAL_CTS_PROTECTION             BIT(7)
@@ -1637,6 +1639,10 @@ enum BEACON_REPORT_DETAIL {
 #define HT_OP_INFO3_LSIG_TXOP_FULL_SUPPORT          BIT(9)
 #define HT_OP_INFO3_PCO_ACTIVE                      BIT(10)
 #define HT_OP_INFO3_PCO_PHASE                       BIT(11)
+
+#define HT_GET_OP_INFO2_CH_CENTER_FREQ_SEG2(_aucHtOp) \
+	((_aucHtOp & HT_OP_INFO2_CH_CENTER_FREQ_SEG2) \
+	>> HT_OP_INFO2_CH_CENTER_FREQ_SEG2_OFFSET)
 
 /* 7.3.2.59 OBSS Scan Parameter element */
 #define ELEM_MAX_LEN_OBSS_SCAN                      (16 - ELEM_HDR_LEN)

@@ -410,6 +410,7 @@ struct STA_RECORD {
 	 *----------------------------------------------------------------------
 	 */
 	uint8_t ucHtPeerOpInfo1; /* Backup peer HT OP Info */
+	uint16_t u2HtPeerOpInfo2; /* Backup peer HT OP Info */
 
 	/*----------------------------------------------------------------------
 	 * 802.11ac  VHT operation info when (prStaRec->ucPhyTypeSet &

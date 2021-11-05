@@ -365,6 +365,7 @@ struct BSS_DESC {
 	enum ENUM_CHANNEL_WIDTH eChannelWidth;	/* VHT, HE operation ie */
 	uint8_t ucCenterFreqS1;
 	uint8_t ucCenterFreqS2;
+	uint8_t ucCenterFreqS3;
 	enum ENUM_BAND eBand;
 
 	uint8_t ucDTIMPeriod;

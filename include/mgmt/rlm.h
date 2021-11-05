@@ -529,6 +529,7 @@ uint32_t rlmTriggerCalBackup(
 
 void rlmModifyVhtBwPara(uint8_t *pucVhtChannelFrequencyS1,
 			uint8_t *pucVhtChannelFrequencyS2,
+			uint8_t ucHtChannelFrequencyS3,
 			uint8_t *pucVhtChannelWidth);
 
 #if (CFG_SUPPORT_WIFI_6G == 1)
