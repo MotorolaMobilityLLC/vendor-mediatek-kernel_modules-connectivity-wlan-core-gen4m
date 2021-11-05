@@ -4401,6 +4401,15 @@ nanDataEngineEnrollNDPContext(IN struct ADAPTER *prAdapter,
 	fgSecurityRequired = prTargetNdpSA->fgSecurityRequired;
 
 	eBand = nanSchedGetSchRecBandByMac(prAdapter, prNDP->aucPeerNDIAddr);
+	if (eBand == BAND_NULL) {
+		/* Workaround: use NMI address to find peerSchRec,
+		* if search by NDI fail
+		*/
+		eBand = nanSchedGetSchRecBandByMac(prAdapter,
+				prNDL->aucPeerMacAddr);
+		DBGLOG(NAN, WARN,
+			"Search peerSchRec fail, use NMI, band:%d\n", eBand);
+	}
 	ucBssIndex = nanGetBssIdxbyBand(prAdapter, eBand);
 
 	if (nanDataEngineAllocStaRec(prAdapter, prNDL, ucBssIndex,
