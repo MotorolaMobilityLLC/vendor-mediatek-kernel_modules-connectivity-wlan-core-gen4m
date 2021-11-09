@@ -456,6 +456,9 @@ struct PP_TOP_CR {
 	struct CODA_CR_INFO rDbgCs0;
 	struct CODA_CR_INFO rDbgCs1;
 	struct CODA_CR_INFO rDbgCs2;
+	struct CODA_CR_INFO rDbgCs3;
+	struct CODA_CR_INFO rDbgCs4;
+	struct CODA_CR_INFO rDbgCs5;
 };
 
 enum _ENUM_WFDMA_TYPE_T {
