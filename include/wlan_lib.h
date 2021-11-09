@@ -1719,7 +1719,6 @@ void wlanTxProfilingTagMsdu(IN struct ADAPTER *prAdapter,
 void wlanTxLifetimeTagPacket(IN struct ADAPTER *prAdapter,
 			     IN struct MSDU_INFO *prMsduInfoListHead,
 			     IN enum ENUM_TX_PROFILING_TAG eTag);
-#endif /* _WLAN_LIB_H */
 
 
 u_int8_t wlanGetWlanIdxByAddress(IN struct ADAPTER *prAdapter,
@@ -1937,3 +1936,5 @@ uint32_t wlanSendFwLogControlCmd(IN struct ADAPTER *prAdapter,
 				PFN_CMD_TIMEOUT_HANDLER pfCmdTimeoutHandler,
 				uint32_t u4SetQueryInfoLen,
 				int8_t *pucInfoBuffer);
+
+#endif /* _WLAN_LIB_H */

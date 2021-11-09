@@ -1123,7 +1123,6 @@ uint32_t fill_peer_info(uint8_t *dst, struct PEER_INFO_RATE_STAT *src,
 	struct STATS_LLS_PEER_INFO *src_peer;
 	struct STATS_LLS_RATE_STAT *dst_rate;
 	struct STATS_LLS_RATE_STAT *src_rate;
-	struct BSS_DESC *prBssDesc = NULL;
 	struct STA_RECORD *sta_rec;
 	uint32_t i;
 	uint32_t j;
@@ -1154,13 +1153,17 @@ uint32_t fill_peer_info(uint8_t *dst, struct PEER_INFO_RATE_STAT *src,
 					MAC2STR(dst_peer->peer_mac_address));
 		}
 		if (src_peer->type == STATS_LLS_WIFI_PEER_AP) {
-			prBssDesc = scanSearchBssDescByBssid(prAdapter,
-					dst_peer->peer_mac_address);
-			if (prBssDesc) {
+			struct STATS_LLS_PEER_AP_REC *prPeerApRec = NULL;
+
+			for (prPeerApRec = prAdapter->rPeerApRec;
+					j < KAL_AIS_NUM; j++, prPeerApRec++) {
+				if (UNEQUAL_MAC_ADDR(dst_peer->peer_mac_address,
+						     prPeerApRec->mac_addr))
+					continue;
 				dst_peer->bssload.sta_count =
-						prBssDesc->u2StaCnt;
+							prPeerApRec->sta_count;
 				dst_peer->bssload.chan_util =
-						prBssDesc->ucChnlUtilization;
+							prPeerApRec->chan_util;
 			}
 		}
 

@@ -965,6 +965,12 @@ struct HAL_LLS_FULL_REPORT {
 	struct WIFI_RADIO_CHANNEL_STAT radio[ENUM_BAND_NUM];
 };
 
+struct STATS_LLS_PEER_AP_REC {
+	uint16_t sta_count;
+	uint16_t chan_util;
+	uint8_t mac_addr[ETH_ALEN];
+};
+
 /* RTT Capabilities */
 struct PARAM_WIFI_RTT_CAPABILITIES {
 	/* if 1-sided rtt data collection is supported */
