@@ -2037,7 +2037,9 @@ struct ADAPTER {
 #if (CFG_SUPPORT_POWER_THROTTLING == 1 && CFG_SUPPORT_CNM_POWER_CTRL == 1)
 	bool fgPowerForceOneNss;
 	bool fgPowerNeedDisconnect;
+	bool fgANTCtrl;
 	u_int8_t ucANTCtrlReason;
+	u_int8_t ucANTCtrlPendingCount;
 #endif
 
 #if (CFG_SUPPORT_WIFI_RNR == 1)

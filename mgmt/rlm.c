@@ -6436,6 +6436,21 @@ static void rlmOpModeTxDoneHandler(IN struct ADAPTER *prAdapter,
 
 	/* <4>Change own OP info */
 	rlmCompleteOpModeChange(prAdapter, prBssInfo, fgIsOpModeChangeSuccess);
+
+	/* notify FW if no active BSS or no pending action frame */
+#if (CFG_SUPPORT_POWER_THROTTLING == 1 && CFG_SUPPORT_CNM_POWER_CTRL == 1)
+	if (prAdapter->fgANTCtrl) {
+		DBGLOG(RLM, INFO,
+			"ANT Control [Enable:%d], Pending count = %d\n",
+			prAdapter->fgANTCtrl, prAdapter->ucANTCtrlPendingCount);
+		if (prAdapter->ucANTCtrlPendingCount > 0)
+			prAdapter->ucANTCtrlPendingCount--;
+		if (prAdapter->ucANTCtrlPendingCount == 0)
+			rlmSyncAntCtrl(prAdapter,
+				prBssInfo->ucOpTxNss, prBssInfo->ucOpRxNss);
+	}
+#endif
+
 }
 
 /*----------------------------------------------------------------------------*/
@@ -6707,6 +6722,32 @@ static void rlmChangeOwnOpInfo(struct ADAPTER *prAdapter,
 	}
 }
 
+void rlmSyncAntCtrl(struct ADAPTER *prAdapter, uint8_t txNss, uint8_t rxNss)
+{
+#if (CFG_SUPPORT_POWER_THROTTLING == 1 && CFG_SUPPORT_CNM_POWER_CTRL == 1)
+	struct PARAM_CUSTOM_CHIP_CONFIG_STRUCT rChipConfigInfo = {0};
+	uint8_t cmd[30] = {0};
+	uint8_t strLen = 0;
+	uint32_t strOutLen = 0;
+
+	strLen = kalSnprintf(cmd, sizeof(cmd),
+			"AntControlConfig %d %d %d",
+			prAdapter->ucANTCtrlReason,
+			txNss, rxNss);
+	DBGLOG(RLM, INFO, "Notify FW %s, strlen=%d", cmd, strLen);
+
+	rChipConfigInfo.ucType = CHIP_CONFIG_TYPE_ASCII;
+	rChipConfigInfo.u2MsgSize = strLen;
+	kalStrnCpy(rChipConfigInfo.aucCmd, cmd, strLen);
+	wlanSetChipConfig(prAdapter, &rChipConfigInfo,
+			sizeof(rChipConfigInfo), &strOutLen, FALSE);
+
+	/* clean up */
+	prAdapter->fgANTCtrl = false;
+	prAdapter->ucANTCtrlPendingCount = 0;
+#endif
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief
@@ -6721,12 +6762,6 @@ static void rlmCompleteOpModeChange(struct ADAPTER *prAdapter,
 				    u_int8_t fgIsSuccess)
 {
 	PFN_OPMODE_NOTIFY_DONE_FUNC pfnCallback;
-#if (CFG_SUPPORT_POWER_THROTTLING == 1 && CFG_SUPPORT_CNM_POWER_CTRL == 1)
-	struct PARAM_CUSTOM_CHIP_CONFIG_STRUCT rChipConfigInfo = {0};
-	uint8_t cmd[30] = {0};
-	uint8_t strLen = 0;
-	uint32_t strOutLen = 0;
-#endif
 	u_int8_t fgIsSwitchingP2pChnl = FALSE;
 
 	ASSERT((prAdapter != NULL) && (prBssInfo != NULL));
@@ -6761,25 +6796,6 @@ static void rlmCompleteOpModeChange(struct ADAPTER *prAdapter,
 		prBssInfo->fgIsOpChangeRxNss = FALSE;
 		prBssInfo->fgIsOpChangeTxNss = FALSE;
 	}
-
-#if (CFG_SUPPORT_POWER_THROTTLING == 1 && CFG_SUPPORT_CNM_POWER_CTRL == 1)
-	/* notify FW if reason is ANT_CTRL and SMARTGEAR */
-	if (prAdapter->ucANTCtrlReason > 0) {
-		strLen = kalSnprintf(cmd, sizeof(cmd),
-			"AntControlConfig %d %d %d",
-			prAdapter->ucANTCtrlReason,
-			prBssInfo->ucOpTxNss,
-			prBssInfo->ucOpRxNss);
-		DBGLOG(RLM, INFO, "Notify FW %s, strlen=%d", cmd, strLen);
-
-		rChipConfigInfo.ucType = CHIP_CONFIG_TYPE_ASCII;
-		rChipConfigInfo.u2MsgSize = strLen;
-		kalStrnCpy(rChipConfigInfo.aucCmd, cmd, strLen);
-		wlanSetChipConfig(prAdapter, &rChipConfigInfo,
-			sizeof(rChipConfigInfo), &strOutLen, FALSE);
-		prAdapter->ucANTCtrlReason = 0;
-	}
-#endif
 
 	DBGLOG(RLM, INFO,
 		"Complete BSS[%d] OP Mode change to BW[%d] RxNss[%d] TxNss[%d]",
