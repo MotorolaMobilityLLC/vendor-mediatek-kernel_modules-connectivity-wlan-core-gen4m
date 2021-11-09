@@ -4798,6 +4798,11 @@ static void rlmBssReset(struct ADAPTER *prAdapter, struct BSS_INFO *prBssInfo)
 		prBssInfo->u2HeBasicMcsSet = 0;
 	}
 #endif
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	prBssInfo->fgIsHE6GPresent = FALSE;
+	prBssInfo->fgIsCoHostedBssPresent = FALSE;
+#endif
+
 #if (CFG_SUPPORT_802_11BE == 1)
 	memset(prBssInfo->ucEhtOpParams, 0, EHT_OP_BYTE_NUM);
 	/*TODO */

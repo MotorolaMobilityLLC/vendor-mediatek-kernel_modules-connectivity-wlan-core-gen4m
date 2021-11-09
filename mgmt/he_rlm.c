@@ -1153,14 +1153,15 @@ void heRlmRecHeOperation(
 	else
 		prBssInfo->fgIsCoHostedBssPresent = FALSE;
 
-	if (prBssInfo->eBand == BAND_6G &&
-		HE_IS_VHT_OP_INFO_PRESENT(prHeOp->ucHeOpParams))
-		prBssInfo->fgIsHE6GPresent = FALSE;
-	else if (prBssInfo->eBand == BAND_6G) {
-		if (HE_IS_6G_OP_INFOR_PRESENT(prHeOp->ucHeOpParams))
+	if (prBssInfo->eBand == BAND_6G) {
+		if (HE_IS_VHT_OP_INFO_PRESENT(prHeOp->ucHeOpParams))
+			prBssInfo->fgIsHE6GPresent = FALSE;
+		else if (HE_IS_6G_OP_INFOR_PRESENT(prHeOp->ucHeOpParams))
 			prBssInfo->fgIsHE6GPresent = TRUE;
 		else
 			prBssInfo->fgIsHE6GPresent = FALSE;
+	} else {
+		prBssInfo->fgIsHE6GPresent = FALSE;
 	}
 #endif
 }
