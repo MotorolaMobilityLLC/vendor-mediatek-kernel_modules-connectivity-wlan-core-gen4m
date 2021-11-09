@@ -3880,10 +3880,6 @@ int mtk_cfg80211_sched_scan_start(IN struct wiphy *wiphy,
 			break;
 #if (CFG_SUPPORT_WIFI_6G == 1)
 		case KAL_BAND_6GHZ:
-			/* find out 6G PSC channel */
-			if (((u4channel - 5) % 16) != 0)
-				continue;
-
 			prSchedScanRequest->aucChannel[j].ucBand = BAND_6G;
 			break;
 #endif
