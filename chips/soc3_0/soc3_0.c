@@ -1940,8 +1940,8 @@ int soc3_0_CheckBusHang(void *adapter, uint8_t ucWfResetEnable)
 				DBGLOG(HAL, ERROR,
 					"Bus hang check: 0x%08x = 0x%08x\n",
 					u4Cr, u4Value);
-				if ((u4Value & 0x0001FFFF) != 0x00000001) {
-					if (((u4Value & 0x00019E78) != 0) ||
+				if ((u4Value & 0x0001FF87) != 0x00000001) {
+					if (((u4Value & 0x00019E00) != 0) ||
 					    ((u4Value & 0x00000180) == 0))
 						break;
 				}
