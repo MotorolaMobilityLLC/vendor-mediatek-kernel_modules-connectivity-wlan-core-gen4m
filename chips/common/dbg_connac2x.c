@@ -2810,21 +2810,38 @@ static void connac2x_show_wfdma_axi_debug_log(
 {
 	uint32_t pdma_base_cr;
 	uint32_t i = 0;
+	uint32_t u4RegValue = 0;
+	uint32_t target_cr = 0;
+	uint32_t u4BufferSize = 512, pos = 0;
+	char *buf;
+#define DUMP_CR_NUM			13
+#define WFDMA_AXI_OFFSET	0x500
+
+	buf = (char *)kalMemAlloc(u4BufferSize, VIR_MEM_TYPE);
+	if (buf == NULL)
+		return;
+	kalMemZero(buf, u4BufferSize);
 
 	if (enum_wfdma_type == WFDMA_TYPE_HOST)
 		pdma_base_cr = CONNAC2X_HOST_EXT_CONN_HIF_WRAP;
 	else
 		pdma_base_cr = CONNAC2X_MCU_INT_CONN_HIF_WRAP;
 
-	for (i = 0; i < 13; i++) {
-		uint32_t target_cr = pdma_base_cr + 0x500 + (i * 4);
-		uint32_t u4RegValue = 0;
+	for (i = 0; i < DUMP_CR_NUM; i++) {
+		target_cr = pdma_base_cr + WFDMA_AXI_OFFSET + (i * 4);
 
 		HAL_MCR_RD(prAdapter, target_cr, &u4RegValue);
-		DBGLOG(INIT, INFO, "get(0x%08x):0x%08x\n",
-			target_cr,
-			u4RegValue);
+
+		pos += kalSnprintf(buf + pos, u4BufferSize - pos,
+				"get(0x%08x):0x%08x", target_cr, u4RegValue);
+		if (i < DUMP_CR_NUM - 1)
+			pos += kalSnprintf(buf + pos, u4BufferSize - pos, ", ");
+		else
+			pos += kalSnprintf(buf + pos, u4BufferSize - pos, "\n");
 	}
+
+	DBGLOG(HAL, INFO, "%s", buf);
+	kalMemFree(buf, VIR_MEM_TYPE, u4BufferSize);
 }
 
 void connac2x_show_wfdma_interrupt_info(

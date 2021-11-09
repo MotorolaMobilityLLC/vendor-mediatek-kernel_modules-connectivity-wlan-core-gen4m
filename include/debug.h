@@ -644,6 +644,7 @@ enum WAKE_DATA_TYPE {
 #define DBGLOG_HEX(_Module, _Class, _StartAddr, _Length)
 #define DBGLOG_MEM8(_Module, _Class, _StartAddr, _Length)
 #define DBGLOG_MEM32(_Module, _Class, _StartAddr, _Length)
+#define DBGLOG_MEM128(_Module, _Class, _StartAddr, _Length)
 #else
 #define DBGLOG(_Mod, _Clz, _Fmt, ...) \
 	do { \
@@ -699,6 +700,12 @@ enum WAKE_DATA_TYPE {
 		if (aucDebugModule[DBG_##_Mod##_IDX] & DBG_CLASS_##_Clz) { \
 			LOG_FUNC("%s:(" #_Mod " " #_Clz ")\n", __func__); \
 			dumpMemory32((uint32_t *)(_Adr), (uint32_t)(_Len)); \
+		} \
+	}
+#define DBGLOG_MEM128(_Mod, _Clz, _Adr, _Len) \
+	{ \
+		if (aucDebugModule[DBG_##_Mod##_IDX] & DBG_CLASS_##_Clz) { \
+			dumpMemory128((uint32_t *)(_Adr), (uint32_t)(_Len)); \
 		} \
 	}
 #endif
@@ -816,6 +823,8 @@ void dumpHex(IN uint8_t *pucStartAddr, uint16_t u2Length);
 void dumpMemory8(IN uint8_t *pucStartAddr,
 		 IN uint32_t u4Length);
 void dumpMemory32(IN uint32_t *pu4StartAddr,
+		  IN uint32_t u4Length);
+void dumpMemory128(IN uint32_t *pu4StartAddr,
 		  IN uint32_t u4Length);
 void wlanPrintFwLog(uint8_t *pucLogContent,
 		    uint16_t u2MsgSize, uint8_t ucMsgType,

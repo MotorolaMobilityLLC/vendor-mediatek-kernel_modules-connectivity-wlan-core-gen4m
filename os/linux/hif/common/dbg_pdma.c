@@ -211,10 +211,39 @@ static void halDumpTxHangLog(struct ADAPTER *prAdapter, uint32_t u4TokenId)
 	}
 }
 
+bool halCheckFullDump(struct ADAPTER *prAdapter)
+{
+	bool ret = FALSE;
+	uint32_t n = prAdapter->u4HifTxHangDumpBitmap;
+	uint32_t idx = prAdapter->u4HifTxHangDumpIdx;
+
+	if (prAdapter->rWifiVar.u4TxHangFullDumpMode) {
+		ret = TRUE;
+		goto end;
+	}
+
+	if (n & BIT(idx))
+		prAdapter->u4HifTxHangDumpNum--;
+
+	if (prAdapter->u4HifTxHangDumpNum < LOG_DUMP_FULL_DUMP_TIMES)
+		ret = TRUE;
+
+end:
+	DBGLOG(HAL, INFO,
+		"ret: %d, Bitmap: 0x%08x, dumpMode: %d, idx: %d, count: %d\n",
+		ret, prAdapter->u4HifTxHangDumpBitmap,
+		prAdapter->rWifiVar.u4TxHangFullDumpMode,
+		prAdapter->u4HifTxHangDumpIdx,
+		prAdapter->u4HifTxHangDumpNum);
+
+	return ret;
+}
+
 static void halCheckHifState(struct ADAPTER *prAdapter)
 {
 	struct CHIP_DBG_OPS *prDbgOps;
 	uint32_t u4TokenId = 0;
+	bool fgHifTxHangFullDump = FALSE;
 
 	prDbgOps = prAdapter->chip_info->prDebugOps;
 
@@ -223,17 +252,27 @@ static void halCheckHifState(struct ADAPTER *prAdapter)
 			DBGLOG(HAL, ERROR,
 			       "Tx timeout, set hif debug info flag\n");
 
-			if (prDbgOps && prDbgOps->showPleInfo)
-				prDbgOps->showPleInfo(prAdapter, FALSE);
+			fgHifTxHangFullDump = halCheckFullDump(prAdapter);
 
-			if (prDbgOps && prDbgOps->showPseInfo)
-				prDbgOps->showPseInfo(prAdapter);
+			if (fgHifTxHangFullDump) {
+				prAdapter->u4HifTxHangDumpBitmap |=
+					1 << prAdapter->u4HifTxHangDumpIdx;
+				if (prAdapter->u4HifTxHangDumpNum <
+						LOG_DUMP_COUNT_PERIOD)
+					prAdapter->u4HifTxHangDumpNum++;
 
-			if (prDbgOps && prDbgOps->showPdmaInfo)
-				prDbgOps->showPdmaInfo(prAdapter);
+				if (prDbgOps && prDbgOps->showPleInfo)
+					prDbgOps->showPleInfo(prAdapter, FALSE);
 
-			if (prDbgOps && prDbgOps->showDmaschInfo)
-				prDbgOps->showDmaschInfo(prAdapter);
+				if (prDbgOps && prDbgOps->showPseInfo)
+					prDbgOps->showPseInfo(prAdapter);
+
+				if (prDbgOps && prDbgOps->showPdmaInfo)
+					prDbgOps->showPdmaInfo(prAdapter);
+
+				if (prDbgOps && prDbgOps->showDmaschInfo)
+					prDbgOps->showDmaschInfo(prAdapter);
+			}
 
 			halDumpTxHangLog(prAdapter, u4TokenId);
 		}
@@ -243,6 +282,12 @@ static void halCheckHifState(struct ADAPTER *prAdapter)
 		halSetDrvSer(prAdapter);
 
 	prAdapter->u4HifChkFlag = 0;
+
+	if (!fgHifTxHangFullDump)
+		prAdapter->u4HifTxHangDumpBitmap &=
+			~(1 << prAdapter->u4HifTxHangDumpIdx);
+	prAdapter->u4HifTxHangDumpIdx =
+		(prAdapter->u4HifTxHangDumpIdx + 1) % LOG_DUMP_COUNT_PERIOD;
 }
 
 static void halDumpHifDebugLog(struct ADAPTER *prAdapter)
@@ -593,10 +638,8 @@ void kalDumpTxRing(struct GLUE_INFO *prGlueInfo,
 	if (!fgDumpContent)
 		return;
 
-	DBGLOG(HAL, INFO, "Tx Contents\n");
 	if (prMemOps->dumpTx)
 		prMemOps->dumpTx(prHifInfo, prTxRing, u4Num, u4DumpLen);
-	DBGLOG(HAL, INFO, "\n");
 }
 
 void kalDumpRxRing(struct GLUE_INFO *prGlueInfo,
@@ -631,10 +674,8 @@ void kalDumpRxRing(struct GLUE_INFO *prGlueInfo,
 	if (u4DumpLen > pRxD->SDLen0)
 		u4DumpLen = pRxD->SDLen0;
 
-	DBGLOG(HAL, INFO, "Rx Contents\n");
 	if (prMemOps->dumpRx)
 		prMemOps->dumpRx(prHifInfo, prRxRing, u4Num, u4DumpLen);
-	DBGLOG(HAL, INFO, "\n");
 }
 
 void halShowPdmaInfo(IN struct ADAPTER *prAdapter)
