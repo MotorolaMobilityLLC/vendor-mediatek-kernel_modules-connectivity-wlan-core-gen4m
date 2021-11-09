@@ -7916,7 +7916,8 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 		prWifiVar->fgIsBoostCpuThAdjustable  = TRUE;
 		DBGLOG(INIT, TRACE, "BoostCPUTh is not config, adjustable\n");
 	}
-
+	prWifiVar->au4CpuBoostMinFreq = (uint32_t)wlanCfgGetUint32(
+		prAdapter, "CpuBoostMinFreq", 1300);
 #if CFG_SUPPORT_LITTLE_CPU_BOOST
 	u4PlatformBoostLittleCpuTh = kalGetLittleCpuBoostThreshold();
 	prWifiVar->u4BoostLittleCpuTh =
