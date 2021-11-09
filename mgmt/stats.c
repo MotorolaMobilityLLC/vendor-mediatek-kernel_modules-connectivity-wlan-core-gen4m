@@ -588,7 +588,7 @@ static void statsParsePktInfo(uint8_t *pucPkt, struct sk_buff *skb,
 			}
 				break;
 			case EVENT_TX:
-				DBGLOG(TX, INFO, "<TX><IPv6> UDP packet\n");
+				DBGLOG(TX, TRACE, "<TX><IPv6> UDP packet\n");
 				break;
 			}
 			break;
