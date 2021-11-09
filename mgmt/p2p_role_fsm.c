@@ -4471,21 +4471,37 @@ void p2pRoleFsmRunEventAcs(IN struct ADAPTER *prAdapter,
 		goto exit;
 	}
 
-#if CFG_HOTSPOT_SUPPORT_FORCE_ACS_SCC
 	if (prAdapter->rWifiVar.eDbdcMode == ENUM_DBDC_MODE_DISABLED) {
 		struct BSS_INFO *prAisBssInfo;
 
 		DBGLOG(P2P, INFO, "Report SCC channel\n");
 
 		prAisBssInfo = aisGetConnectedBssInfo(prAdapter);
-		if (prAisBssInfo) {
+		if (prAisBssInfo &&
+			prAisBssInfo->eBand == BAND_2G4 &&
+			prAcsReqInfo->eHwMode == P2P_VENDOR_ACS_HW_MODE_11G) {
 			/* Force SCC, indicate channel directly */
 			indicateAcsResultByAisCh(prAdapter, prAcsReqInfo,
 			prAisBssInfo);
 			goto exit;
+		} else if (prAisBssInfo &&
+			prAisBssInfo->eBand == BAND_5G &&
+			prAcsReqInfo->eHwMode == P2P_VENDOR_ACS_HW_MODE_11A) {
+			/* Force SCC, indicate channel directly */
+			indicateAcsResultByAisCh(prAdapter, prAcsReqInfo,
+			prAisBssInfo);
+			goto exit;
+#if CFG_HOTSPOT_SUPPORT_FORCE_ACS_SCC
+		} else if (prAisBssInfo &&
+			prAcsReqInfo->eHwMode == P2P_VENDOR_ACS_HW_MODE_11ANY) {
+			/* Force SCC, indicate channel directly */
+			indicateAcsResultByAisCh(prAdapter, prAcsReqInfo,
+			prAisBssInfo);
+			goto exit;
+#endif
 		}
 	}
-#endif
+
 
 	if (prAcsReqInfo->eHwMode == P2P_VENDOR_ACS_HW_MODE_11ANY) {
 		struct BSS_INFO *prAisBssInfo;
