@@ -1133,7 +1133,7 @@ void halAddDriverLatencyCount(IN struct ADAPTER *prAdapter,
 	uint8_t i;
 
 	for (i = 0; i < LATENCY_STATS_MAX_SLOTS; i++) {
-		if (u4DriverLatency <= prWifiVar->au4DriverTxDelayMax[i]) {
+		if (u4DriverLatency < prWifiVar->au4DriverTxDelayMax[i]) {
 			GLUE_INC_REF_CNT(stats->au4DriverLatency[i]);
 			break;
 		}

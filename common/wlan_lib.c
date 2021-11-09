@@ -10227,13 +10227,22 @@ void wlanTxLifetimeTagPacket(IN struct ADAPTER *prAdapter,
 			/* Packet enqueue time */
 			prPktProfile->rEnqueueTimestamp = (OS_SYSTIME)
 							  kalGetTimeTick();
+#if CFG_SUPPORT_TX_LATENCY_STATS
+			prPktProfile->u8XmitArrival =
+				GLUE_GET_PKT_XTIME(prMsduInfo->prPacket);
+			prPktProfile->u8EnqTime = StatsEnvTimeGet();
+#endif
 		}
 		break;
 
 	case TX_PROF_TAG_DRV_DEQUE:
-		if (prPktProfile->fgIsValid)
+		if (prPktProfile->fgIsValid) {
 			prPktProfile->rDequeueTimestamp = (OS_SYSTIME)
 							  kalGetTimeTick();
+#if CFG_SUPPORT_TX_LATENCY_STATS
+			prPktProfile->u8DeqTime = StatsEnvTimeGet();
+#endif
+		}
 		break;
 
 	case TX_PROF_TAG_DRV_TX_DONE:
@@ -10241,14 +10250,33 @@ void wlanTxLifetimeTagPacket(IN struct ADAPTER *prAdapter,
 			prPktProfile->rHifTxDoneTimestamp = (OS_SYSTIME)
 							    kalGetTimeTick();
 #if CFG_SUPPORT_TX_LATENCY_STATS
+			prPktProfile->u8HifTxTime = StatsEnvTimeGet();
 			if (prWifiVar->fgPacketLatencyLog)
-				DBGLOG(TX, INFO, "Latency D: %u",
-				       prPktProfile->rHifTxDoneTimestamp -
-				       prPktProfile->rHardXmitArrivalTimestamp);
+				DBGLOG(TX, INFO,
+					"Latency(us) HIF_D:%lu, DEQ_D:%lu, ENQ_D:%lu A:%llu BSSIDX:WIDX:PID[%u:%u:%u] IPID:0x%04x SeqNo:%d\n",
+					NSEC_TO_USEC((uint32_t)(
+					prPktProfile->u8HifTxTime -
+					prPktProfile->u8XmitArrival)),
+					NSEC_TO_USEC((uint32_t)(
+					prPktProfile->u8DeqTime -
+					prPktProfile->u8XmitArrival)),
+					NSEC_TO_USEC((uint32_t)(
+					prPktProfile->u8EnqTime -
+					prPktProfile->u8XmitArrival)),
+					NSEC_TO_USEC(
+					prPktProfile->u8XmitArrival),
+					prMsduInfo->ucBssIndex,
+					prMsduInfo->ucWlanIndex,
+					prMsduInfo->ucPID,
+					GLUE_GET_PKT_IP_ID(
+					prMsduInfo->prPacket),
+					GLUE_GET_PKT_SEQ_NO(
+					prMsduInfo->prPacket));
 
 			halAddDriverLatencyCount(prAdapter,
-				prPktProfile->rHifTxDoneTimestamp -
-				prPktProfile->rHardXmitArrivalTimestamp);
+				((uint32_t)(prPktProfile->u8HifTxTime -
+				prPktProfile->u8XmitArrival)) /
+				USEC_PER_SEC);
 #endif
 
 #if CFG_ENABLE_PER_STA_STATISTICS
