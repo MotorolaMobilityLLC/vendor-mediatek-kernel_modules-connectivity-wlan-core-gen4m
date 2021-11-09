@@ -2817,8 +2817,6 @@ void p2pRoleFsmRunEventScanRequest(IN struct ADAPTER *prAdapter,
 	/* Do we need to be in IDLE state? */
 	/* p2pDevFsmRunEventAbort(prAdapter, prP2pDevFsmInfo); */
 
-	ASSERT(prScanReqInfo->fgIsScanRequest == FALSE);
-
 	prScanReqInfo->fgIsAbort = TRUE;
 	prScanReqInfo->eScanType = prP2pScanReqMsg->eScanType;
 
