@@ -2351,6 +2351,7 @@ void nicHifTxMsduDoneCb(IN struct ADAPTER *prAdapter,
 uint32_t nicTxMsduQueue(IN struct ADAPTER *prAdapter,
 			uint8_t ucPortIdx, struct QUE *prQue)
 {
+	struct HIF_STATS *prHifStats;
 	struct MSDU_INFO *prMsduInfo;
 	struct TX_CTRL *prTxCtrl;
 	struct QUE qDataTemp, *prDataTemp = NULL;
@@ -2358,6 +2359,7 @@ uint32_t nicTxMsduQueue(IN struct ADAPTER *prAdapter,
 	ASSERT(prAdapter);
 	ASSERT(prQue);
 
+	prHifStats = &prAdapter->rHifStats;
 	prTxCtrl = &prAdapter->rTxCtrl;
 
 #if CFG_HIF_STATISTICS
@@ -2414,6 +2416,7 @@ uint32_t nicTxMsduQueue(IN struct ADAPTER *prAdapter,
 	}
 
 	HAL_KICK_TX_DATA(prAdapter);
+	prHifStats->u4TxDataRegCnt++;
 
 	if (QUEUE_IS_NOT_EMPTY(prQue))
 		QUEUE_CONCATENATE_QUEUES(prDataTemp, prQue);

@@ -1527,6 +1527,8 @@ struct HIF_STATS {
 	uint32_t u4DataMsduRptCount; /* data from consys to air */
 	uint32_t u4EventRxCount; /* event from DMA to hif_thread */
 	uint32_t u4DataRxCount; /* data from DMA to hif_thread */
+	uint32_t u4TxDataRegCnt;
+	uint32_t u4RxDataRegCnt;
 };
 
 struct OID_HANDLER_RECORD {

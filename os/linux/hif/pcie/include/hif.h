@@ -175,8 +175,8 @@ struct GL_HIF_INFO {
 	struct ERR_RECOVERY_CTRL_T rErrRecoveryCtl;
 	struct timer_list rSerTimer;
 	struct list_head rTxCmdQ;
-	struct list_head rTxDataQ;
-	uint32_t u4TxDataQLen;
+	struct list_head rTxDataQ[NUM_OF_TX_RING];
+	uint32_t u4TxDataQLen[NUM_OF_TX_RING];
 
 	bool fgIsPowerOff;
 	bool fgIsDumpLog;
