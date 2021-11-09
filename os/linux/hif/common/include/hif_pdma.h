@@ -532,6 +532,12 @@ struct SW_WFDMA_INFO {
 	uint8_t aucCID[SW_WFDMA_CMD_NUM];
 };
 
+enum ENUM_DMA_INT_TYPE {
+	DMA_INT_TYPE_MCU2HOST,
+	DMA_INT_TYPE_TRX,
+	DMA_INT_TYPE_NUM
+};
+
 /*******************************************************************************
 *                   F U N C T I O N   D E C L A R A T I O N S
 ********************************************************************************

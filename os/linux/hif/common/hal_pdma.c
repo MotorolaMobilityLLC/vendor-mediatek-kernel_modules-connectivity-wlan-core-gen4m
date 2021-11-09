@@ -3234,8 +3234,10 @@ uint32_t halHifPowerOffWifi(IN struct ADAPTER *prAdapter)
 
 	rStatus = wlanCheckWifiFunc(prAdapter, FALSE);
 
-	if (prBusInfo->setPdmaIntMask)
-		prBusInfo->setPdmaIntMask(prAdapter->prGlueInfo, FALSE);
+	if (prBusInfo->setDmaIntMask)
+		prBusInfo->setDmaIntMask(prAdapter->prGlueInfo,
+			BIT(DMA_INT_TYPE_MCU2HOST) | BIT(DMA_INT_TYPE_TRX),
+			FALSE);
 
 	nicDisableInterrupt(prAdapter);
 	if (prBusInfo->disableSwInterrupt)

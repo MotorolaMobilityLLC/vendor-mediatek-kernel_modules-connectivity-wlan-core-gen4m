@@ -302,7 +302,8 @@ struct BUS_INFO {
 	bool (*wfdmaAllocRxRing)(
 		struct GLUE_INFO *prGlueInfo,
 		bool fgAllocMem);
-	void (*setPdmaIntMask)(struct GLUE_INFO *prGlueInfo, u_int8_t fgEnable);
+	void (*setDmaIntMask)(struct GLUE_INFO *prGlueInfo,
+		uint8_t ucType, u_int8_t fgEnable);
 	void (*enableFwDlMode)(struct ADAPTER *prAdapter);
 
 	struct SW_WFDMA_INFO rSwWfdmaInfo;
