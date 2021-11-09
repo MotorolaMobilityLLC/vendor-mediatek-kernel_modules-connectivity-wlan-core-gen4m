@@ -1137,7 +1137,8 @@ void soc5_0_get_rx_link_stats(IN struct ADAPTER *prAdapter,
 	struct STATS_LLS_WIFI_RATE rate = {0};
 	struct STA_RECORD *prStaRec;
 
-	DBGLOG(RX, TRACE, "RXV: preamble=%u, nsts=%u, stbc=%u, bw=%u, mcs=%u",
+	if (prAdapter->rWifiVar.fgLinkStatsDump)
+		DBGLOG(RX, INFO, "RXV: pmbl=%u nsts=%u stbc=%u bw=%u mcs=%u",
 			RXV_GET_TXMODE(u4RxVector0),
 			RXV_GET_RX_NSTS(u4RxVector0),
 			RXV_GET_STBC(u4RxVector0),
@@ -1201,7 +1202,8 @@ void soc5_0_get_rx_link_stats(IN struct ADAPTER *prAdapter,
 		prStaRec->u4RxMpduHE[rate.nss][rate.bw][rate.rateMcsIdx]++;
 	}
 
-	DBGLOG(RX, TRACE, "rate preamble=%u, nss=%u, bw=%u, mcsIdx=%u",
+	if (prAdapter->rWifiVar.fgLinkStatsDump)
+		DBGLOG(RX, INFO, "rate preamble=%u, nss=%u, bw=%u, mcsIdx=%u",
 			rate.preamble, rate.nss, rate.bw, rate.rateMcsIdx);
 	return;
 
