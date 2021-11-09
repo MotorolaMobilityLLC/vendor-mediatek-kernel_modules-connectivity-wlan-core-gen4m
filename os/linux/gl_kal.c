@@ -10107,9 +10107,11 @@ static void kal_bat_volt_notifier_callback(unsigned int volt)
 	prAdapter = prGlueInfo->prAdapter;
 	prRegInfo = &prGlueInfo->rRegInfo;
 
-	if (prRegInfo == NULL || prGlueInfo->prAdapter == NULL) {
+	if (prRegInfo == NULL ||
+		prGlueInfo->prAdapter == NULL ||
+		prGlueInfo->u4ReadyFlag == 0) {
 		DBGLOG(NIC, ERROR,
-			"volt = %d, prRegInfo or prAdapter is NULL", volt);
+			"volt = %d, wlan not start", volt);
 		return;
 	}
 	if (prGlueInfo->ulFlag & GLUE_FLAG_HALT) {
