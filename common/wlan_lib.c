@@ -11657,7 +11657,7 @@ uint32_t wlanSetLowLatencyCommand(
 			    CMD_ID_SET_LOW_LATENCY_MODE,	/* ucCID */
 			    TRUE,	/* fgSetQuery */
 			    FALSE,	/* fgNeedResp */
-			    TRUE,	/* fgIsOid */
+			    FALSE,	/* fgIsOid */
 			    NULL,	/* pfCmdDoneHandler */
 			    NULL,	/* pfCmdTimeoutHandler */
 			    sizeof(struct CMD_LOW_LATENCY_MODE_HEADER),
