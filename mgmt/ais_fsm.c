@@ -2706,6 +2706,7 @@ void aisFsmRunEventAbort(IN struct ADAPTER *prAdapter,
 					    ucBssIndex);
 		}
 		return;
+	/* to support user space triggered reassociation */
 	} else if (ucReasonOfDisconnect ==
 			DISCONNECT_REASON_CODE_REASSOCIATION) {
 		DBGLOG(AIS, STATE,
@@ -2731,22 +2732,9 @@ void aisFsmRunEventAbort(IN struct ADAPTER *prAdapter,
 			AIS_REQUEST_RECONNECT, ucBssIndex);
 
 	if (prAisFsmInfo->eCurrentState != AIS_STATE_DISCONNECTING) {
-		if (ucReasonOfDisconnect !=
-		    DISCONNECT_REASON_CODE_REASSOCIATION) {
-			/* 4 <3> invoke abort handler */
-			aisFsmStateAbort(prAdapter, ucReasonOfDisconnect,
-				fgDelayIndication, ucBssIndex);
-		} else {
-			/* 1. release channel */
-			aisFsmReleaseCh(prAdapter, ucBssIndex);
-			/* 2.1 stop join timeout timer */
-			cnmTimerStopTimer(prAdapter,
-					  &prAisFsmInfo->rJoinTimeoutTimer);
-
-			prAisBssInfo->ucReasonOfDisconnect =
-				ucReasonOfDisconnect;
-			aisFsmSteps(prAdapter, AIS_STATE_IDLE, ucBssIndex);
-		}
+		/* 4 <3> invoke abort handler */
+		aisFsmStateAbort(prAdapter, ucReasonOfDisconnect,
+			fgDelayIndication, ucBssIndex);
 	}
 }				/* end of aisFsmRunEventAbort() */
 
@@ -5219,12 +5207,13 @@ void aisBssBeaconTimeout_impl(IN struct ADAPTER *prAdapter,
 			DISCONNECT_REASON_CODE_REASSOCIATION) {
 			/* For reassociation */
 			prAisBssInfo->u2DeauthReason = REASON_CODE_RESERVED;
-		} else
+		} else {
 			prAisBssInfo->u2DeauthReason =
 				REASON_CODE_BEACON_TIMEOUT * 100 +
 				ucBcnTimeoutReason;
+			DBGLOG(AIS, EVENT, "aisBssBeaconTimeout\n");
+		}
 
-		DBGLOG(AIS, EVENT, "aisBssBeaconTimeout\n");
 		aisFsmStateAbort(prAdapter,
 			ucDisconnectReason,
 			!fgIsReasonPER,
