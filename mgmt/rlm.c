@@ -1781,7 +1781,7 @@ void rlmGenerateVhtTPEIE(
 		for (i = 0; i <= ucPower; i++)
 			prVhtTpe->u8TxPowerBw[i] = 47;
 
-		prVhtTpe->u8TxPowerInfo = ucPower;
+		prVhtTpe->u8TxPowerInfo = 0x10 | ucPower;
 
 		prMsduInfo->u2FrameLength += IE_SIZE(prVhtTpe);
 	}
