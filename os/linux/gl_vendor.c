@@ -1337,6 +1337,10 @@ int mtk_cfg80211_vendor_llstats_get_info(struct wiphy *wiphy,
 	ASSERT(wiphy);
 	ASSERT(wdev);
 	WIPHY_PRIV(wiphy, prGlueInfo);
+	if (!prGlueInfo || prGlueInfo->u4ReadyFlag == 0) {
+		DBGLOG(REQ, WARN, "driver is not ready\n");
+		return -EFAULT;
+	}
 
 	do {
 		prAdapter = prGlueInfo->prAdapter;
