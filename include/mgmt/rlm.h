@@ -394,6 +394,8 @@ void rlmFillSyncCmdParam(struct CMD_SET_BSS_RLM_PARAM
 void rlmSyncOperationParams(struct ADAPTER *prAdapter,
 			    struct BSS_INFO *prBssInfo);
 
+void rlmSyncAntCtrl(struct ADAPTER *prAdapter, uint8_t txNss, uint8_t rxNss);
+
 void rlmBssInitForAPandIbss(struct ADAPTER *prAdapter,
 			    struct BSS_INFO *prBssInfo);
 

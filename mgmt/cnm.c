@@ -4317,10 +4317,19 @@ cnmOpModeSetTRxNss(
 			prBssOpCtrl->rRunning.eRunReq = eRunReq;
 			prBssOpCtrl->rRunning.ucOpTxNss = ucOpTxNssFinal;
 			prBssOpCtrl->rRunning.ucOpRxNss = ucOpRxNssFinal;
+#if (CFG_SUPPORT_POWER_THROTTLING == 1 && CFG_SUPPORT_CNM_POWER_CTRL == 1)
+			if (prAdapter->fgANTCtrl)
+				prAdapter->ucANTCtrlPendingCount++;
+#endif
 			break;
 		case OP_CHANGE_STATUS_INVALID:
 		default:
 			eStatus = CNM_OPMODE_REQ_STATUS_INVALID_PARAM;
+#if (CFG_SUPPORT_POWER_THROTTLING == 1 && CFG_SUPPORT_CNM_POWER_CTRL == 1)
+			/* cannot complete ANT control */
+			if (prAdapter->fgANTCtrl)
+				prAdapter->ucANTCtrlPendingCount++;
+#endif
 			break;
 		}
 	}
@@ -4477,15 +4486,12 @@ void cnmOpmodeEventHandler(
 		(prEvent->aucBuffer);
 
 #if (CFG_SUPPORT_POWER_THROTTLING == 1 && CFG_SUPPORT_CNM_POWER_CTRL == 1)
-	/* store reason for ANT_CTRL and SMARTGEAR  */
-	if (prEvtOpMode->ucEnable &&
-			(prEvtOpMode->ucReason ==
-				EVENT_OPMODE_CHANGE_REASON_ANT_CTRL ||
-			prEvtOpMode->ucReason ==
-				EVENT_OPMODE_CHANGE_REASON_SMARTGEAR ||
-			prEvtOpMode->ucReason ==
-				EVENT_OPMODE_CHANGE_REASON_SMARTGEAR_1T2R)) {
+	/* only notify FW for ANT control */
+	if ((prEvtOpMode->ucEnable) &&
+	    (prEvtOpMode->ucReason == EVENT_OPMODE_CHANGE_REASON_ANT_CTRL)) {
+		prAdapter->fgANTCtrl = true;
 		prAdapter->ucANTCtrlReason = prEvtOpMode->ucReason;
+		prAdapter->ucANTCtrlPendingCount = 0;
 	}
 #endif
 
@@ -4522,6 +4528,19 @@ void cnmOpmodeEventHandler(
 			);
 		}
 	}
+
+#if (CFG_SUPPORT_POWER_THROTTLING == 1 && CFG_SUPPORT_CNM_POWER_CTRL == 1)
+	/* notify FW if no active BSS or no pending action frame */
+	if (prAdapter->fgANTCtrl) {
+		DBGLOG(CNM, INFO,
+			"ANT control = Enable: %d, reason: %d, pending count = %d\n",
+			prAdapter->fgANTCtrl, prAdapter->ucANTCtrlReason,
+			prAdapter->ucANTCtrlPendingCount);
+		if (prAdapter->ucANTCtrlPendingCount == 0)
+			rlmSyncAntCtrl(prAdapter,
+				prEvtOpMode->ucOpTxNss, prEvtOpMode->ucOpRxNss);
+	}
+#endif
 }
 
 enum ENUM_CNM_WMM_QUOTA_REQ_T
