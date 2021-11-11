@@ -1034,4 +1034,6 @@ void scanParseHEOpIE(IN uint8_t *pucIE, IN struct BSS_DESC *prBssDesc,
 	IN enum ENUM_BAND eHwBand);
 #endif
 
+void updateLinkStatsApRec(struct ADAPTER *prAdapter,
+		struct BSS_DESC *prBssDesc);
 #endif /* _SCAN_H */

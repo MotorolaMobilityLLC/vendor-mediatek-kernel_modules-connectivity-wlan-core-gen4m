@@ -6502,6 +6502,41 @@ wlanQueryStatistics(IN struct ADAPTER *prAdapter,
 
 } /* wlanQueryStatistics */
 
+/**
+ * Called to save STATS_LLS_BSSLOAD_INFO information on scan operation.
+ * Update slot by bit mask in fgIsConnected.
+ */
+void updateLinkStatsApRec(struct ADAPTER *prAdapter, struct BSS_DESC *prBssDesc)
+{
+#if CFG_SUPPORT_LLS
+	struct STATS_LLS_PEER_AP_REC *prPeerApRec;
+	int32_t i = 0;
+
+	if (!prBssDesc->fgIsConnected)
+		return;
+
+	for (i = 0; i < KAL_AIS_NUM; i++) {
+		if ((prBssDesc->fgIsConnected >> i) & 0x1)
+			break;
+	}
+	if (i == KAL_AIS_NUM) {
+		DBGLOG(REQ, WARN, "AP connected flag set %u over limit", i);
+		return;
+	}
+
+	prPeerApRec = &prAdapter->rPeerApRec[i];
+	COPY_MAC_ADDR(prPeerApRec->mac_addr, prBssDesc->aucBSSID);
+	prPeerApRec->sta_count = prBssDesc->u2StaCnt;
+	prPeerApRec->chan_util = prBssDesc->ucChnlUtilization;
+
+	if (prAdapter->rWifiVar.fgLinkStatsDump)
+		DBGLOG(REQ, INFO, "Update record %u: " MACSTR " %u %u",
+				i, MAC2STR(prBssDesc->aucBSSID),
+				prBssDesc->u2StaCnt,
+				prBssDesc->ucChnlUtilization);
+#endif
+}
+
 #if CFG_SUPPORT_LLS
 /*----------------------------------------------------------------------------*/
 /*!
