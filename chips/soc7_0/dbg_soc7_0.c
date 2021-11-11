@@ -955,6 +955,10 @@ void soc7_0_get_rx_link_stats(IN struct ADAPTER *prAdapter,
 		goto wrong_rate;
 
 	prStaRec = cnmGetStaRecByIndex(prAdapter, prSwRfb->ucStaRecIdx);
+	if (!prStaRec) {
+		DBGLOG(RX, WARN, "StaRec %u not found", prSwRfb->ucStaRecIdx);
+		goto wrong_rate;
+	}
 
 	if (rate.preamble == LLS_MODE_OFDM) {
 		if (rate.rateMcsIdx >= STATS_LLS_OFDM_NUM)
