@@ -550,6 +550,10 @@
 
 #define CFG_PRE_CAL_SLEEP_WAITING_INTERVAL      50000
 
+#define CFG_DEFAULT_RX_RESPONSE_TIMEOUT         3000
+
+#define CFG_PRE_CAL_RX_RESPONSE_TIMEOUT         5000
+
 /*------------------------------------------------------------------------------
  * Flags and Parameters for Protocol Stack
  *------------------------------------------------------------------------------

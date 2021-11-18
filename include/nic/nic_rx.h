@@ -1557,7 +1557,7 @@ uint32_t nicRxWaitResponse(IN struct ADAPTER *prAdapter,
 uint32_t nicRxWaitResponseByWaitingInterval(IN struct ADAPTER *prAdapter,
 	IN uint8_t ucPortIdx, OUT uint8_t *pucRspBuffer,
 	IN uint32_t u4MaxRespBufferLen, OUT uint32_t *pu4Length,
-	IN uint32_t u4WaitingInterval);
+	IN uint32_t u4WaitingInterval, IN uint32_t u4TimeoutValue);
 
 void nicRxEnablePromiscuousMode(IN struct ADAPTER *prAdapter);
 
