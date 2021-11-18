@@ -3151,8 +3151,9 @@ kalOidComplete(IN struct GLUE_INFO *prGlueInfo,
 
 	ASSERT(prGlueInfo);
 
-	DBGLOG(NIC, TRACE, "Glue=%p Cmd=%p InformationBuffer=%p 4QryInfoLen=%p",
-			prGlueInfo, prCmdInfo, prCmdInfo->pvInformationBuffer,
+	DBGLOG(NIC, TRACE, "Glue=%p Cmd=%p InformationBuffer=%p QryInfoLen=%p",
+			prGlueInfo, prCmdInfo,
+			prCmdInfo ? prCmdInfo->pvInformationBuffer : NULL,
 			prGlueInfo->OidEntry.pu4QryInfoLen);
 
 	/* remove timeout check timer */
