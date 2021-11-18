@@ -54,22 +54,6 @@
 
 #if (CFG_SUPPORT_802_11AX == 1)
 
-/* HE Capabilities */
-#define ELEM_EXT_ID_HE_CAP               35
-/* HE Operation */
-#define ELEM_EXT_ID_HE_OP                36
-/* UL OFDMA-based Random Access (UORA) Parameter Set element */
-#define ELEM_EXT_ID_UORA_PARAM           37
-/* MU EDCA Parameter Set element */
-#define ELEM_EXT_ID_MU_EDCA_PARAM        38
-/* Spatial Reuse Parameter Set element */
-#define ELEM_EXT_ID_SR_PARAM             39
-
-#if (CFG_SUPPORT_WIFI_6G == 1)
-/* HE 6G Band Capabilities */
-#define ELEM_EXT_ID_HE_6G_BAND_CAP       59
-#endif
-
 #define ELEM_EXT_CAP_TWT_REQUESTER_SUPP_BIT       77
 #define ELEM_EXT_CAP_TWT_RESPONDER_SUPP_BIT       78
 

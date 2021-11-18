@@ -9181,6 +9181,16 @@ const uint8_t *kalFindIeMatchMask(uint8_t eid,
 	return NULL;
 }
 
+const uint8_t *kalFindIeExtIE(uint8_t eid,
+				uint8_t exteid,
+				const uint8_t *ies, int len)
+{
+	if (eid != ELEM_ID_RESERVED)
+		return kalFindIeMatchMask(eid, ies, len, NULL, 0, 0, NULL);
+	else
+		return kalFindIeMatchMask(eid, ies, len, &exteid, 1, 2, NULL);
+}
+
 const uint8_t *kalFindVendorIe(uint32_t oui, int type,
 				const uint8_t *ies, int len)
 {

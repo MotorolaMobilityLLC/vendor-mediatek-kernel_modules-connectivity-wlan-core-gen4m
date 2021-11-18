@@ -1030,10 +1030,8 @@
 	54  /* Mobility Domain for 802.11R */
 #define ELEM_ID_FAST_TRANSITION \
 	55  /* Fast Bss Transition for 802.11 R */
-#if CFG_SUPPORT_802_11W
 #define ELEM_ID_TIMEOUT_INTERVAL \
 	56	/* 802.11w SA Timeout interval */
-#endif
 #define ELEM_ID_RESOURCE_INFO_CONTAINER \
 	57  /* Resource Information Container for 802.11 R */
 #define ELEM_ID_SUP_OPERATING_CLASS \
@@ -1055,6 +1053,22 @@
 	74	/* Overlapping BSS Scan Parameters */
 #define ELEM_ID_MBSSID_INDEX \
 	85	/* Multiple BSSID-Index element */
+#define ELEM_ID_FMS_REQUEST \
+	87	/* FMS Request */
+#define ELEM_ID_QOS_TRAFFIC_CAP \
+	89  /* QoS Traffic Capability */
+#define ELEM_ID_BSS_MAX_IDLE_PERIOD \
+	90	/* BSS Max Idle Period */
+#define ELEM_ID_TIM_BROADCAST_REQ \
+	94	/* TIM Broadcast Request */
+#define ELEM_ID_TIM_BROADCAST_RESP \
+	95	/* TIM Broadcast Response */
+#define ELEM_ID_DMS_REQUEST \
+	99	/* DMS Request */
+#define ELEM_ID_CH_SWITCH_TIMING \
+	104	/* Channel Switch Timing */
+#define ELEM_ID_EXTENDED_CAP \
+	127	/* Extended capabilities */
 #define ELEM_ID_RNR \
 	201	/* Reduced Neighbor Report */
 #define ELEM_ID_INTERWORKING \
@@ -1067,11 +1081,16 @@
 	111	/* Roaming Consortium */
 #define ELEM_ID_EXTENDED_CAP \
 	127	/* Extended capabilities */
-
-#if (CFG_SUPPORT_TWT == 1)
+#define ELEM_ID_DMG_CAP \
+	148 /* DMG Capabilities */
+#define ELEM_ID_MULTI_BAND \
+	158 /* Multi-band */
+#define ELEM_ID_ADDBA_EXT \
+	159 /* ADDBA Extension */
+#define ELEM_ID_MULTI_MAC_SUBLAYERS \
+	170 /* Multiple MAC Sublayers */
 #define ELEM_ID_TWT \
 	216 /* Target Wake Time (TWT) @11ah/11ax */
-#endif
 
 #define ELEM_ID_VENDOR \
 	221	/* Vendor specific IE */
@@ -1094,16 +1113,88 @@
 	195 /* Transmit Power Envelope */
 #define ELEM_ID_OP_MODE \
 	199	/* Operation Mode Notification */
+#define ELEM_ID_AID_REQ \
+	210 /* AID Request */
+#define ELEM_ID_S1G_CAP \
+	217 /* S1G Capabilities */
+#define ELEM_ID_S1G_RELAY \
+	224 /* S1G Relay */
+#define ELEM_ID_REACHABLE_ADDR \
+	225 /* Reachable Address */
+#define ELEM_ID_EL_OP \
+	230 /* EL Operation */
+#define ELEM_ID_HEADER_COMPRESSION \
+	233 /* Header Compression */
+#define ELEM_ID_MAD \
+	235 /* MAD */
+#define ELEM_ID_S1G_RELAY_ACTIVATION \
+	236 /* S1G Relay Activation */
 #define ELEM_ID_RSNX \
-	244
+	244 /* RSN Extension */
 #define ELEM_ID_RESERVED \
 	255	/* Reserved */
+#define ELEM_ID_MAX_NUM \
+	256 /* EID: 0-255 */
 
 #define ELEM_EXT_ID_ESP	\
 	11 /* Estimated Service Parameters */
 
 #define ELEM_EXT_ID_FILS_REQUEST_PARA \
 	2 /* FILS Request Parameters */
+#define ELEM_EXT_ID_FILS_KEY_CONFIRM \
+	3 /* FILS Key Confirmation */
+#define ELEM_EXT_ID_FILS_SESSION \
+	4 /* FILS Session */
+#define ELEM_EXT_ID_FILS_HLP_CONTAINER \
+	5 /* FILS HLP Container */
+#define ELEM_EXT_ID_FILS_IP_ADDR_ASSIGN \
+	6 /* FILS IP Address Assignment */
+#define ELEM_EXT_ID_KEY_DELIVERY \
+	7 /* Key Delivery */
+#define ELEM_EXT_ID_FILS_WRAPPED_DATA \
+	8 /* FILS Wrapped Data */
+#define ELEM_EXT_ID_FILS_SYNC_INFO \
+	9 /* FTM Synchronization Information */
+#define ELEM_EXT_ID_FILS_PUBLIC_KEY \
+	12 /* FILS Public Key */
+#define ELEM_EXT_ID_FILS_NONCE \
+	13 /* FILS Nonce */
+#define ELEM_EXT_ID_CDMG_CAP \
+	17 /* CDMG Capabilities */
+#define ELEM_EXT_ID_CMMG_CAP \
+	27 /* CMMG Capabilities */
+#define ELEM_EXT_ID_DIFFIE_HELLMAN_PARAM \
+	32 /* OWE: Diffie-Hellman Parameter */
+#define ELEM_EXT_ID_GLK_GCR_PARAM_SET \
+	34 /* GLK-GCR Parameter Set */
+#define ELEM_EXT_ID_HE_CAP \
+	35 /* HE Capabilities */
+#define ELEM_EXT_ID_HE_OP \
+	36 /* HE Operation */
+#define ELEM_EXT_ID_UORA_PARAM \
+	37 /* UL OFDMA-based Random Access (UORA) Parameter Set element */
+#define ELEM_EXT_ID_MU_EDCA_PARAM \
+	38 /* MU EDCA Parameter Set element */
+#define ELEM_EXT_ID_SR_PARAM \
+	39 /* Spatial Reuse Parameter Set element */
+#define ELEM_EXT_ID_OCI \
+	54 /* Operating Channel Information (OCI) element */
+#define ELEM_EXT_ID_HE_6G_BAND_CAP \
+	59 /* HE 6G Band Capabilities */
+#define ELEM_EXT_ID_UL_MU_Power_CAP \
+	60 /* UL MU Power Capabilities */
+#define ELEM_EXT_ID_MSCS_DESCRIPTOR \
+	88 /* MSCS Descriptor */
+#define ELEM_EXT_ID_SUPPLEMENTAL_CLASS2_CAP \
+	90 /* Supplemental Class 2 Capabilities */
+
+/* 802.11-2020: Table 9-34 Association Request frame body */
+
+struct IE_ORDER_TABLE_INFO {
+	uint8_t order;
+	uint8_t eid;
+	uint8_t extid;
+};
 
 #if CFG_SUPPORT_MBO
 

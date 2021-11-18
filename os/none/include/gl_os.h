@@ -1244,6 +1244,16 @@ extern int glUnregisterEarlySuspend(struct early_suspend
 				    *prDesc);
 #endif
 
+extern const uint8_t *kalFindIeMatchMask(uint8_t eid,
+				const uint8_t *ies, int len,
+				const uint8_t *match,
+				int match_len, int match_offset,
+				const uint8_t *match_mask);
+
+extern const uint8_t *kalFindIeExtIE(uint8_t eid,
+				uint8_t exteid,
+				const uint8_t *ies, int len);
+
 #if CFG_MET_PACKET_TRACE_SUPPORT
 #ifdef CFG_REMIND_IMPLEMENT
 #define kalMetTagPacket(_prGlueInfo, _prPacket, _eTag) \
