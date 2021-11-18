@@ -52,6 +52,9 @@
 
 #include "precomp.h"
 
+#define IS_6G_PSC_CHANNEL(_ch) \
+	(((_ch - 5) % 16) == 0)
+
 struct APPEND_VAR_ATTRI_ENTRY txAssocRspAttributesTable[] = {
 	{(P2P_ATTRI_HDR_LEN + P2P_ATTRI_MAX_LEN_STATUS), NULL,
 		p2pFuncAppendAttriStatusForAssocRsp}
@@ -1964,10 +1967,12 @@ void p2pFuncDfsSwitchCh(IN struct ADAPTER *prAdapter,
 	) {
 		/* Depend on eBand */
 		prBssInfo->ucPhyTypeSet |= PHY_TYPE_SET_802_11A;
+		prBssInfo->ucPhyTypeSet &= ~(PHY_TYPE_SET_802_11BG);
 		/* Depend on eCurrentOPMode and ucPhyTypeSet */
 		prBssInfo->ucConfigAdHocAPMode = AP_MODE_11A;
 	} else { /* Only SAP mode should enter this function */
 		prBssInfo->ucPhyTypeSet |= PHY_TYPE_SET_802_11BG;
+		prBssInfo->ucPhyTypeSet &= ~(PHY_TYPE_SET_802_11A);
 		/* Depend on eCurrentOPMode and ucPhyTypeSet */
 		prBssInfo->ucConfigAdHocAPMode = AP_MODE_MIXED_11BG;
 	}
@@ -2000,12 +2005,16 @@ void p2pFuncDfsSwitchCh(IN struct ADAPTER *prAdapter,
 		prBssInfo->u2BSSBasicRateSet,
 		prBssInfo->aucAllSupportedRates,
 		&prBssInfo->ucAllSupportedRatesLen);
+
+	bssInitForAP(prAdapter, prBssInfo, TRUE);
 	if (prBssInfo->fgEnableH2E) {
 		prBssInfo->aucAllSupportedRates
 			[prBssInfo->ucAllSupportedRatesLen]
 			= RATE_H2E_ONLY_VAL;
 		prBssInfo->ucAllSupportedRatesLen++;
 	}
+
+	nicQmUpdateWmmParms(prAdapter, prBssInfo->ucBssIndex);
 #endif
 
 	/* Setup channel and bandwidth */
@@ -2022,6 +2031,15 @@ void p2pFuncDfsSwitchCh(IN struct ADAPTER *prAdapter,
 		bssUpdateBeaconContent(prAdapter, prBssInfo->ucBssIndex);
 	else if (rlmUpdateParamsForAP(prAdapter, prBssInfo, FALSE) == FALSE)
 		bssUpdateBeaconContent(prAdapter, prBssInfo->ucBssIndex);
+
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	if (prBssInfo->eBand == BAND_6G) {
+		/* Update unsolicited probe response as beacon */
+		bssUpdateBeaconContentEx(prAdapter,
+			prBssInfo->ucBssIndex,
+			IE_UPD_METHOD_UNSOL_PROBE_RSP);
+	}
+#endif
 
 	prBssInfo->fgIsOpChangeRxNss = FALSE;
 
@@ -6707,6 +6725,21 @@ void p2pFuncSwitchSapChannel(
 			goto exit;
 		}
 	}
+
+#ifdef CFG_SUPPORT_SKIP_NONPSC
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	if (prAdapter->rWifiVar.eDbdcMode != ENUM_DBDC_MODE_DISABLED &&
+		eStaBand == BAND_6G &&
+		!IS_6G_PSC_CHANNEL(ucStaChannelNum)) {
+		DBGLOG(P2P, INFO,
+			"[DBDC] STA non-psc: %d -> 6\n",
+			ucStaChannelNum);
+		ucStaChannelNum = 6;
+		eStaBand = BAND_2G4;
+		prP2pBssInfo->fgEnableH2E = FALSE;
+	}
+#endif
+#endif
 
 #if CFG_TC1_FEATURE
 	if (p2pFuncSwitchSapChannelToDbdc(
