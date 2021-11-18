@@ -3391,6 +3391,7 @@ bool halIsTxBssCntFull(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 	struct MSDU_TOKEN_INFO *prTokenInfo;
 	uint8_t aucStrBuf[MAX_BSSID_NUM * 20];
 	uint32_t u4Idx, u4Offset = 0;
+	uint32_t u4DebugLevel = 0;
 
 	ASSERT(prAdapter);
 	ASSERT(prAdapter->prGlueInfo);
@@ -3402,15 +3403,20 @@ bool halIsTxBssCntFull(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 	    prTokenInfo->u4TxBssCnt[ucBssIndex] < prTokenInfo->u4MaxBssFreeCnt)
 		return false;
 
-	kalMemZero(aucStrBuf, MAX_BSSID_NUM * 20);
-	for (u4Idx = 0; u4Idx < MAX_BSSID_NUM; u4Idx++) {
-		u4Offset += kalSprintf(
-			aucStrBuf + u4Offset,
-			u4Idx == 0 ? "%u" : ":%u",
-			prTokenInfo->u4TxBssCnt[u4Idx]);
-	}
+	wlanGetDriverDbgLevel(DBG_TX_IDX, &u4DebugLevel);
 
-	DBGLOG(HAL, TRACE, "Bss[%d] tx full, Cnt[%s]\n", ucBssIndex, aucStrBuf);
+	if (u4DebugLevel & DBG_CLASS_TRACE) {
+		kalMemZero(aucStrBuf, MAX_BSSID_NUM * 20);
+		for (u4Idx = 0; u4Idx < MAX_BSSID_NUM; u4Idx++) {
+			u4Offset += kalSprintf(
+				aucStrBuf + u4Offset,
+				u4Idx == 0 ? "%u" : ":%u",
+				prTokenInfo->u4TxBssCnt[u4Idx]);
+		}
+
+		DBGLOG(HAL, TRACE, "Bss[%d] tx full, Cnt[%s]\n",
+			ucBssIndex, aucStrBuf);
+	}
 
 	return true;
 }
