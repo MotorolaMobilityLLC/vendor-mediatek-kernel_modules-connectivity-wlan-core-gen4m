@@ -174,7 +174,9 @@ enum WIFI_SUB_COMMAND {
 	WIFI_SUBCMD_CONFIG_ROAMING = 0x000a,			/* 0x000a */
 	WIFI_SUBCMD_ENABLE_ROAMING,				/* 0x000b */
 	WIFI_SUBCMD_SELECT_TX_POWER_SCENARIO,			/* 0x000c */
-	WIFI_SUBCMD_SET_SCAN_PARAM,				/* 0x000d */
+	WIFI_SUBCMD_SET_MULTISTA_PRIMARY_CONNECTION,		/* 0x000d */
+	WIFI_SUBCMD_SET_MULTISTA_USE_CASE,			/* 0x000e */
+	WIFI_SUBCMD_SET_SCAN_PARAM,				/* 0x000f */
 };
 
 enum RTT_SUB_COMMAND {
@@ -263,6 +265,14 @@ enum WIFI_RSSI_MONITOR_ATTRIBUTE {
 	WIFI_ATTRIBUTE_RSSI_MONITOR_MIN_RSSI      = 2,
 	WIFI_ATTRIBUTE_RSSI_MONITOR_START	  = 3,
 	WIFI_ATTRIBUTE_RSSI_MONITOR_ATTRIBUTE_MAX
+};
+
+enum MULTISTA_ATTRIBUTE {
+	MULTISTA_ATTRIBUTE_INVALID,
+	MULTISTA_ATTRIBUTE_PRIMARY_IFACE,
+	MULTISTA_ATTRIBUTE_USE_CASE,
+	/* Add more attributes here */
+	MULTISTA_ATTRIBUTE_MAX
 };
 
 enum LOGGER_ATTRIBUTE {
@@ -466,6 +476,8 @@ keyStructBuf[100];	/* add/remove key shared buffer */
 
 extern const struct nla_policy mtk_scan_param_policy[
 		WIFI_ATTR_SCAN_MAX + 1];
+extern const struct nla_policy nla_parse_wifi_multista[
+		MULTISTA_ATTRIBUTE_MAX + 1];
 extern const struct nla_policy nla_parse_wifi_rssi_monitor[
 		WIFI_ATTRIBUTE_RSSI_MONITOR_ATTRIBUTE_MAX + 1];
 extern const struct nla_policy nla_parse_wifi_attribute[
@@ -736,6 +748,12 @@ struct STATS_LLS_RATE_STAT {
 	uint32_t retries;
 	uint32_t retries_short;
 	uint32_t retries_long;
+};
+
+enum WIFI_MULTI_STA_USE_CASE {
+	WIFI_DUAL_STA_TRANSIENT_PREFER_PRIMARY = 0,
+	WIFI_DUAL_STA_NON_TRANSIENT_UNBIASED = 1,
+	WIFI_DUAL_STA_MTK_LEGACY = 15,
 };
 
 enum ENUM_WIFI_CONNECTION_STATE {
@@ -1154,6 +1172,14 @@ int mtk_cfg80211_vendor_event_rssi_beyond_range(
 int mtk_cfg80211_vendor_set_tx_power_scenario(
 	struct wiphy *wiphy, struct wireless_dev *wdev,
 	const void *data, int data_len);
+
+int mtk_cfg80211_vendor_set_multista_primary_connection(
+	struct wiphy *wiphy, struct wireless_dev *wdev,
+	const void *data, int data_len);
+
+int mtk_cfg80211_vendor_set_multista_use_case(
+		struct wiphy *wiphy, struct wireless_dev *wdev,
+		const void *data, int data_len);
 
 int mtk_cfg80211_vendor_get_preferred_freq_list(struct wiphy
 		*wiphy, struct wireless_dev *wdev, const void *data,

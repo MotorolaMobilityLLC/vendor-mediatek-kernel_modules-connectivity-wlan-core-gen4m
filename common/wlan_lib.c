@@ -8192,6 +8192,10 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 	prWifiVar->fgBARDelayIndicationEn = (uint8_t) wlanCfgGetUint32(
 		prAdapter, "BARDelayIndicationEn", FEATURE_ENABLED);
 #endif /* CFG_SUPPORT_BAR_DELAY_INDICATION */
+	prWifiVar->u4MultiStaPrimaryQuoteTime = (uint32_t) wlanCfgGetUint32(
+		prAdapter, "MultiStaPrimaryQuoteTime", 300000);
+	prWifiVar->u4MultiStaSecondaryQuoteTime = (uint32_t) wlanCfgGetUint32(
+		prAdapter, "MultiStaSecondaryQuoteTime", 120000);
 }
 
 void wlanCfgSetSwCtrl(IN struct ADAPTER *prAdapter)

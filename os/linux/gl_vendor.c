@@ -147,6 +147,12 @@ const struct nla_policy nla_parse_wifi_attribute[
 	[WIFI_ATTRIBUTE_TX_POWER_SCENARIO] = {.type = NLA_U32},
 };
 
+const struct nla_policy nla_parse_wifi_multista[
+		MULTISTA_ATTRIBUTE_MAX + 1] = {
+	[MULTISTA_ATTRIBUTE_PRIMARY_IFACE] = {.type = NLA_U32},
+	[MULTISTA_ATTRIBUTE_USE_CASE] = {.type = NLA_U32},
+};
+
 const struct nla_policy nla_parse_wifi_rssi_monitor[
 		WIFI_ATTRIBUTE_RSSI_MONITOR_ATTRIBUTE_MAX + 1] = {
 	[WIFI_ATTRIBUTE_RSSI_MONITOR_MAX_RSSI] = {.type = NLA_U32},
@@ -2165,6 +2171,98 @@ errHandleLabel:
 	kfree_skb(skb);
 #endif
 	return -EFAULT;
+}
+
+int mtk_cfg80211_vendor_set_multista_primary_connection(struct wiphy *wiphy,
+		struct wireless_dev *wdev, const void *data, int data_len)
+{
+	struct GLUE_INFO *prGlueInfo;
+	struct nlattr *prAttr;
+	uint32_t u4InterfaceIdx;
+	uint32_t u4AisIndex = AIS_DEFAULT_INDEX;
+	uint32_t u4Status = WLAN_STATUS_SUCCESS;
+
+	ASSERT(wiphy);
+	ASSERT(wdev);
+
+	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wiphy);
+	if (!prGlueInfo)
+		return -EFAULT;
+
+	prAttr = (struct nlattr *)data;
+	if (prAttr->nla_type == MULTISTA_ATTRIBUTE_PRIMARY_IFACE)
+		u4InterfaceIdx = nla_get_u32(prAttr);
+	else {
+		DBGLOG(REQ, INFO, "Unknown nla type:%d\n", prAttr->nla_type);
+		return -EINVAL;
+	}
+
+	DBGLOG(REQ, INFO, "primary interface index=%d\n", u4InterfaceIdx);
+
+	if (gprWdev[AIS_DEFAULT_INDEX] && u4InterfaceIdx ==
+		gprWdev[AIS_DEFAULT_INDEX]->netdev->ifindex)
+		u4AisIndex = AIS_DEFAULT_INDEX;
+	else if (gprWdev[AIS_SECONDARY_INDEX] && u4InterfaceIdx ==
+		gprWdev[AIS_SECONDARY_INDEX]->netdev->ifindex)
+		u4AisIndex = AIS_SECONDARY_INDEX;
+	else {
+		DBGLOG(REQ, INFO, "No match with gprWdev\n");
+		return -EINVAL;
+	}
+
+#if 0
+	u4Status = kalIoctl(prGlueInfo,
+			wlanoidSetMultiStaPrimaryInterface,
+			&u4AisIndex,
+			sizeof(uint32_t),
+			FALSE,
+			FALSE,
+			FALSE,
+			&u4BufLen);
+#endif
+
+	return u4Status;
+
+}
+
+int mtk_cfg80211_vendor_set_multista_use_case(
+		struct wiphy *wiphy, struct wireless_dev *wdev,
+		const void *data, int data_len)
+{
+	struct GLUE_INFO *prGlueInfo;
+	struct nlattr *prAttr;
+	uint32_t u4UseCase;
+	uint32_t u4Status = WLAN_STATUS_SUCCESS;
+
+	ASSERT(wiphy);
+	ASSERT(wdev);
+
+	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wiphy);
+	if (!prGlueInfo)
+		return -EFAULT;
+
+	prAttr = (struct nlattr *)data;
+	if (prAttr->nla_type == MULTISTA_ATTRIBUTE_USE_CASE)
+		u4UseCase = nla_get_u32(prAttr);
+	else {
+		DBGLOG(REQ, INFO, "Unknown nla type:%d\n", prAttr->nla_type);
+		return -EINVAL;
+	}
+
+	DBGLOG(REQ, INFO, "Multiple station use case=%d\n", u4UseCase);
+
+#if 0
+	u4Status = kalIoctl(prGlueInfo,
+		wlanoidSetMultiStaUseCase,
+		&u4UseCase,
+		sizeof(uint32_t),
+		FALSE,
+		FALSE,
+		FALSE,
+		&u4BufLen);
+#endif
+
+	return u4Status;
 }
 
 int mtk_cfg80211_vendor_get_preferred_freq_list(struct wiphy

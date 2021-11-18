@@ -997,6 +997,36 @@ static const struct wiphy_vendor_command
 #endif
 
 	},
+	/* Set dual STA use cases */
+	{
+		{
+			.vendor_id = GOOGLE_OUI,
+			.subcmd = WIFI_SUBCMD_SET_MULTISTA_USE_CASE
+		},
+		.flags = WIPHY_VENDOR_CMD_NEED_WDEV |
+				WIPHY_VENDOR_CMD_NEED_NETDEV,
+		.doit = mtk_cfg80211_vendor_set_multista_use_case
+#if KERNEL_VERSION(5, 4, 0) <= CFG80211_VERSION_CODE
+		,
+		.policy = nla_parse_wifi_multista,
+		.maxattr = WIFI_ATTRIBUTE_MAX
+#endif
+	},
+	/* Select primary connection */
+	{
+		{
+			.vendor_id = GOOGLE_OUI,
+			.subcmd = WIFI_SUBCMD_SET_MULTISTA_PRIMARY_CONNECTION
+		},
+		.flags = WIPHY_VENDOR_CMD_NEED_WDEV |
+				WIPHY_VENDOR_CMD_NEED_NETDEV,
+		.doit = mtk_cfg80211_vendor_set_multista_primary_connection
+#if KERNEL_VERSION(5, 4, 0) <= CFG80211_VERSION_CODE
+		,
+		.policy = nla_parse_wifi_multista,
+		.maxattr = WIFI_ATTRIBUTE_MAX
+#endif
+	},
 	/* Set Tx Power Scenario */
 	{
 		{

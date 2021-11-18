@@ -1598,6 +1598,100 @@ enum ENUM_AIS_STATE aisSearchHandleBssDesc(IN struct ADAPTER *prAdapter,
 	}
 }
 
+#if (CFG_SUPPORT_ANDROID_DUAL_STA == 1)
+void aisSendChipConfigCmd(struct ADAPTER *prAdapter, char *aucCmd)
+{
+	struct CMD_CHIP_CONFIG rCmdChipConfig;
+
+	kalMemZero(&rCmdChipConfig, sizeof(rCmdChipConfig));
+	rCmdChipConfig.ucType = CHIP_CONFIG_TYPE_WO_RESPONSE;
+	rCmdChipConfig.u2MsgSize = kalStrnLen(aucCmd, WLAN_CFG_VALUE_LEN_MAX);
+	kalStrnCpy(rCmdChipConfig.aucCmd, aucCmd, WLAN_CFG_VALUE_LEN_MAX);
+
+	wlanSendSetQueryCmd(prAdapter,	/* prAdapter */
+			CMD_ID_CHIP_CONFIG,	/* ucCID */
+			TRUE,	/* fgSetQuery */
+			FALSE,	/* fgNeedResp */
+			FALSE,	/* fgIsOid */
+			NULL,	/* pfCmdDoneHandler */
+			NULL,	/* pfCmdTimeoutHandler */
+			sizeof(struct CMD_CHIP_CONFIG),
+			(uint8_t *) &rCmdChipConfig,
+			NULL,
+			0);
+}
+
+void aisMultiStaSetQuoteTime(struct ADAPTER *prAdapter, uint8_t fgSetQuoteTime)
+{
+	uint8_t aucEnableCnmDualSTA[20];
+
+	kalMemZero(aucEnableCnmDualSTA, sizeof(aucEnableCnmDualSTA));
+	kalSnprintf(aucEnableCnmDualSTA, sizeof(aucEnableCnmDualSTA),
+		"EnableCnmDualSTA %d", fgSetQuoteTime ? 1 : 0);
+	aisSendChipConfigCmd(prAdapter, aucEnableCnmDualSTA);
+
+	if (fgSetQuoteTime) {
+		uint8_t aucWlanQuoteTime[40];
+
+		kalMemZero(aucWlanQuoteTime, sizeof(aucWlanQuoteTime));
+		kalSnprintf(aucWlanQuoteTime, sizeof(aucWlanQuoteTime),
+			"MccDualStaAIS0QuotaTimeInUs %d",
+			prAdapter->u4MultiStaPrimaryInterface ==
+			AIS_DEFAULT_INDEX ?
+			prAdapter->rWifiVar.u4MultiStaPrimaryQuoteTime :
+			prAdapter->rWifiVar.u4MultiStaSecondaryQuoteTime);
+		aisSendChipConfigCmd(prAdapter, aucWlanQuoteTime);
+
+		kalMemZero(aucWlanQuoteTime, sizeof(aucWlanQuoteTime));
+		kalSnprintf(aucWlanQuoteTime, sizeof(aucWlanQuoteTime),
+			"MccDualStaAIS1QuotaTimeInUs %d",
+			prAdapter->u4MultiStaPrimaryInterface ==
+			AIS_SECONDARY_INDEX ?
+			prAdapter->rWifiVar.u4MultiStaPrimaryQuoteTime :
+			prAdapter->rWifiVar.u4MultiStaSecondaryQuoteTime);
+		aisSendChipConfigCmd(prAdapter, aucWlanQuoteTime);
+	}
+}
+
+void aisCheckMultiStaStatus(struct ADAPTER *prAdapter,
+	enum ENUM_PARAM_MEDIA_STATE eState, IN uint8_t ucBssIndex)
+{
+	struct BSS_INFO *prInspectBss = NULL;
+	uint8_t ucInspectBssIndex;
+
+	if (ucBssIndex >= KAL_AIS_NUM)
+		return;
+
+	switch (eState) {
+	case MEDIA_STATE_CONNECTED:
+		ucInspectBssIndex = ucBssIndex == AIS_DEFAULT_INDEX ?
+			AIS_SECONDARY_INDEX : AIS_DEFAULT_INDEX;
+		prInspectBss = aisGetAisBssInfo(prAdapter, ucInspectBssIndex);
+		if (!prInspectBss)
+			return;
+
+		if (prInspectBss->eConnectionState == MEDIA_STATE_CONNECTED) {
+			prAdapter->ucIsMultiStaConnected = TRUE;
+			/* Both AIS connected */
+			if (prAdapter->u4MultiStaUseCase ==
+				WIFI_DUAL_STA_TRANSIENT_PREFER_PRIMARY)
+				aisMultiStaSetQuoteTime(prAdapter, TRUE);
+		}
+		break;
+	case MEDIA_STATE_DISCONNECTED:
+		if (prAdapter->ucIsMultiStaConnected) {
+			prAdapter->ucIsMultiStaConnected = FALSE;
+			if (prAdapter->u4MultiStaUseCase ==
+				WIFI_DUAL_STA_TRANSIENT_PREFER_PRIMARY)
+				aisMultiStaSetQuoteTime(prAdapter, FALSE);
+		}
+		break;
+	default:
+		break;
+	}
+}
+#endif
+
 u_int8_t aisScanChannelFixed(struct ADAPTER *prAdapter, enum ENUM_BAND *prBand,
 	uint8_t *pucPrimaryChannel, IN uint8_t ucBssIndex)
 {
@@ -3291,6 +3385,12 @@ enum ENUM_AIS_STATE aisFsmJoinCompleteAction(IN struct ADAPTER *prAdapter,
 					 ENUM_TP_TEST_MODE_SIGMA_WMM_PS)
 					nicEnterTPTestMode(prAdapter,
 						TEST_MODE_SIGMA_WMM_PS);
+
+#if (CFG_SUPPORT_ANDROID_DUAL_STA == 1)
+				/* Check dual station status */
+				aisCheckMultiStaStatus(prAdapter,
+					MEDIA_STATE_CONNECTED, ucBssIndex);
+#endif
 			}
 
 #if CFG_SUPPORT_ROAMING
@@ -4538,6 +4638,9 @@ void aisFsmDisconnect(IN struct ADAPTER *prAdapter,
 					fgDelayIndication,
 					ucBssIndex);
 
+#if (CFG_SUPPORT_ANDROID_DUAL_STA == 1)
+	aisCheckMultiStaStatus(prAdapter, MEDIA_STATE_DISCONNECTED, ucBssIndex);
+#endif
 	/* 4 <7> Trigger AIS FSM */
 	aisFsmSteps(prAdapter, AIS_STATE_IDLE, ucBssIndex);
 }				/* end of aisFsmDisconnect() */

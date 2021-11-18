@@ -184,6 +184,9 @@ static int priv_driver_set_pwr_level(
 static int priv_driver_set_pwr_temp(
 	IN struct net_device *prNetDev, IN char *pcCommand, IN int i4TotalLen);
 #endif
+
+static int priv_driver_set_multista_use_case(
+	IN struct net_device *prNetDev, IN char *pcCommand, IN int i4TotalLen);
 /*******************************************************************************
  *                       P R I V A T E   D A T A
  *******************************************************************************
@@ -3904,6 +3907,8 @@ reqExtSetAcpiDevicePowerState(IN struct GLUE_INFO
 #define CMD_THERMAL_PROTECT_DUTY_CFG	"thermal_protect_duty_cfg"
 #define CMD_THERMAL_PROTECT_STATE_ACT	"thermal_protect_state_act"
 #endif
+
+#define CMD_SET_USE_CASE	"SET_USE_CASE"
 
 #if (CFG_SUPPORT_ICS == 1)
 #define CMD_SET_SNIFFER         "SNIFFER"
@@ -15382,6 +15387,7 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers[] = {
 	{CMD_THERMAL_PROTECT_DUTY_CFG, priv_driver_thermal_protect_duty_cfg},
 	{CMD_THERMAL_PROTECT_STATE_ACT, priv_driver_thermal_protect_state_act},
 #endif
+	{CMD_SET_USE_CASE, priv_driver_set_multista_use_case},
 };
 
 int32_t priv_driver_cmds(IN struct net_device *prNetDev, IN int8_t *pcCommand,
@@ -16127,3 +16133,50 @@ static int priv_driver_set_pwr_temp(IN struct net_device *prNetDev,
 	return i4BytesWritten;
 }
 #endif
+
+static int priv_driver_set_multista_use_case(IN struct net_device *prNetDev,
+	IN char *pcCommand, IN int i4TotalLen)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	uint32_t rStatus = WLAN_STATUS_SUCCESS;
+	int32_t i4BytesWritten = 0;
+	int32_t i4Argc = 0;
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
+	uint32_t u4Ret, u4UseCase = 0;
+
+	ASSERT(prNetDev);
+
+	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
+		return -1;
+
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+
+	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+
+	if (i4Argc == 2) {
+
+		u4Ret = kalkStrtou32(apcArgv[1], 0, &u4UseCase);
+		if (u4Ret)
+			DBGLOG(REQ, LOUD, "parse apcArgv error u4Ret=%d\n",
+			       u4Ret);
+
+#if 0
+		rStatus = kalIoctl(prGlueInfo,
+				   wlanoidSetMultiStaUseCase,
+				   &u4UseCase,
+				   sizeof(uint32_t),
+				   FALSE,
+				   FALSE,
+				   FALSE,
+				   &u4BufLen);
+#endif
+
+		if (rStatus != WLAN_STATUS_SUCCESS)
+			return -1;
+
+	} else
+		DBGLOG(INIT, ERROR, "Invalid input params\n");
+
+	return i4BytesWritten;
+}

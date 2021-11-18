@@ -15995,6 +15995,53 @@ wlanoidSetDrvRoamingPolicy(IN struct ADAPTER *prAdapter,
 	return WLAN_STATUS_SUCCESS;
 }
 
+#if (CFG_SUPPORT_ANDROID_DUAL_STA == 1)
+uint32_t wlanoidSetMultiStaPrimaryInterface(IN struct ADAPTER
+				    *prAdapter,
+				    IN void *pvSetBuffer,
+				    IN uint32_t u4SetBufferLen,
+				    OUT uint32_t *pu4SetInfoLen)
+{
+	uint32_t u4PrevPrimaryInterface;
+
+	ASSERT(prAdapter);
+	ASSERT(pvSetBuffer);
+
+	u4PrevPrimaryInterface = prAdapter->u4MultiStaPrimaryInterface;
+	prAdapter->u4MultiStaPrimaryInterface = *(uint32_t *)pvSetBuffer;
+
+	DBGLOG(REQ, INFO, "Update multista primary interface:[%s]\n",
+			prAdapter->u4MultiStaPrimaryInterface ==
+			AIS_DEFAULT_INDEX ? "wlan0" : "wlan1");
+
+	if (prAdapter->ucIsMultiStaConnected && u4PrevPrimaryInterface !=
+			prAdapter->u4MultiStaPrimaryInterface)
+		aisMultiStaSetQuoteTime(prAdapter, TRUE);
+
+	return WLAN_STATUS_SUCCESS;
+}
+
+uint32_t wlanoidSetMultiStaUseCase(IN struct ADAPTER
+				    *prAdapter,
+				    IN void *pvSetBuffer,
+				    IN uint32_t u4SetBufferLen,
+				    OUT uint32_t *pu4SetInfoLen)
+{
+	ASSERT(prAdapter);
+	ASSERT(pvSetBuffer);
+
+	prAdapter->u4MultiStaUseCase = *(uint32_t *)pvSetBuffer;
+	prAdapter->fgForceDualStaInMCCMode =
+		prAdapter->u4MultiStaUseCase ==
+		WIFI_DUAL_STA_TRANSIENT_PREFER_PRIMARY ? TRUE : FALSE;
+
+	DBGLOG(REQ, INFO, "Update multista use case:[%d]\n",
+			prAdapter->u4MultiStaUseCase);
+
+	return WLAN_STATUS_SUCCESS;
+}
+#endif
+
 uint32_t wlanoidUpdateFtIes(struct ADAPTER *prAdapter, void *pvSetBuffer,
 			    uint32_t u4SetBufferLen, uint32_t *pu4SetInfoLen)
 {
