@@ -16148,7 +16148,9 @@ static int priv_driver_set_multista_use_case(IN struct net_device *prNetDev,
 	IN char *pcCommand, IN int i4TotalLen)
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
+#if 0
 	uint32_t rStatus = WLAN_STATUS_SUCCESS;
+#endif
 	int32_t i4BytesWritten = 0;
 	int32_t i4Argc = 0;
 	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
@@ -16180,11 +16182,10 @@ static int priv_driver_set_multista_use_case(IN struct net_device *prNetDev,
 				   FALSE,
 				   FALSE,
 				   &u4BufLen);
-#endif
 
 		if (rStatus != WLAN_STATUS_SUCCESS)
 			return -1;
-
+#endif
 	} else
 		DBGLOG(INIT, ERROR, "Invalid input params\n");
 
