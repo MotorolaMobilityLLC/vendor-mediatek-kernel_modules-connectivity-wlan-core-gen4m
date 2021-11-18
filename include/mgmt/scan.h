@@ -134,7 +134,7 @@
 #define BITS_OF_BYTE                            (8)
 
 /* dwell time setting, should align FW setting */
-#define SCAN_CHANNEL_DWELL_TIME_MIN_MSEC         (42)
+#define SCAN_CHANNEL_DWELL_TIME_MIN_MSEC        (42)
 #define SCAN_SPLIT_PACKETS_THRESHOLD		(30)
 
 /* dwell time setting, reduce APP trigger scan dwell time to 20 */
@@ -144,6 +144,8 @@
 /* dwell time setting for OCE certification */
 #define SCAN_CHANNEL_DWELL_TIME_OCE         (42 + 28)
 
+/* dwell time setting for VOE certification */
+#define SCAN_CHANNEL_DWELL_TIME_VOE         (42 + 8)
 
 /*----------------------------------------------------------------------------*/
 /* MSG_SCN_SCAN_REQ                                                           */

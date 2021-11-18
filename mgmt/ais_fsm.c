@@ -2184,6 +2184,16 @@ void aisFsmSteps(IN struct ADAPTER *prAdapter,
 				break;
 			}
 
+			if (prAdapter->rWifiVar.u4SwTestMode ==
+			    ENUM_SW_TEST_MODE_SIGMA_VOICE_ENT &&
+			    prScanReqMsg->ucChannelListNum == 1) {
+				prScanReqMsg->u2ChannelDwellTime =
+					SCAN_CHANNEL_DWELL_TIME_VOE;
+				prScanReqMsg->u2ChannelMinDwellTime =
+					SCAN_CHANNEL_DWELL_TIME_MIN_MSEC;
+				DBGLOG(AIS, INFO,
+				       "[VoE] Adjust dwell time(50ms) for certification\n");
+			}
 
 			if (u2ScanIELen > 0) {
 				kalMemCopy(prScanReqMsg->aucIE,
