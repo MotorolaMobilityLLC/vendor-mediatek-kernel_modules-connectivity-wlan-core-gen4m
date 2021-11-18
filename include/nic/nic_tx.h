@@ -1197,7 +1197,7 @@ do { \
 
 #define HAL_MAC_TX_DESC_IS_IP_CHKSUM_ENABLED(_prHwMacTxDesc) \
 	(((_prHwMacTxDesc)->ucEtherOffset & TX_DESC_IP_CHKSUM_OFFLOAD) \
-	? FALSE : TRUE)
+	? TRUE : FALSE)
 #define HAL_MAC_TX_DESC_SET_IP_CHKSUM(_prHwMacTxDesc) \
 	((_prHwMacTxDesc)->ucEtherOffset |= TX_DESC_IP_CHKSUM_OFFLOAD)
 #define HAL_MAC_TX_DESC_UNSET_IP_CHKSUM(_prHwMacTxDesc) \
@@ -1205,7 +1205,7 @@ do { \
 
 #define HAL_MAC_TX_DESC_IS_TCP_UDP_CHKSUM_ENABLED(_prHwMacTxDesc) \
 	(((_prHwMacTxDesc)->ucPortIdx_QueueIdx & \
-	TX_DESC_TCP_UDP_CHKSUM_OFFLOAD) ? FALSE : TRUE)
+	TX_DESC_TCP_UDP_CHKSUM_OFFLOAD) ? TRUE : FALSE)
 #define HAL_MAC_TX_DESC_SET_TCP_UDP_CHKSUM(_prHwMacTxDesc) \
 	((_prHwMacTxDesc)->ucPortIdx_QueueIdx |= TX_DESC_TCP_UDP_CHKSUM_OFFLOAD)
 #define HAL_MAC_TX_DESC_UNSET_TCP_UDP_CHKSUM(_prHwMacTxDesc) \
