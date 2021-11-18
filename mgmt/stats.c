@@ -705,9 +705,10 @@ static void statsParsePktInfo(uint8_t *pucPkt, struct sk_buff *skb,
 			WLAN_GET_FIELD_BE16(&pucEapol[5], &u2KeyInfo);
 			switch (eventType) {
 			case EVENT_RX:
-				if ((u2KeyInfo & 0xfff0) == 0x0080)
+				if ((u2KeyInfo & 0x1100) == 0x0000 ||
+					(u2KeyInfo & 0x0008) == 0x0000)
 					m = 1;
-				else if ((u2KeyInfo & 0xfff0) == 0x13c0)
+				else
 					m = 3;
 				DBGLOG(RX, INFO,
 					"<RX> EAPOL: key, M%d, KeyInfo 0x%04x\n",

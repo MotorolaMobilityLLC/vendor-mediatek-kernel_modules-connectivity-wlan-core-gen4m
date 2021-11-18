@@ -1262,6 +1262,8 @@ void qmHandleDelTspec(struct ADAPTER *prAdapter, struct STA_RECORD *prStaRec,
 		      enum ENUM_ACI eAci);
 void qmReleaseCHAtFinishedDhcp(struct ADAPTER *prAdapter,
 			       uint8_t ucBssIndex);
+void qmCheckRxEAPOLM3(IN struct ADAPTER *prAdapter,
+			IN struct SW_RFB *prSwRfb, uint8_t ucBssIndex);
 /*******************************************************************************
  *                              F U N C T I O N S
  *******************************************************************************

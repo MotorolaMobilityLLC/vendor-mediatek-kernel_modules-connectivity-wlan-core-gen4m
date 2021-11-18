@@ -766,6 +766,7 @@ void wlanOnPreAllocAdapterMem(IN struct ADAPTER *prAdapter,
 	prAdapter->u4OwnFailedLogCount = 0;
 	prAdapter->ucCmdSeqNum = 0;
 	prAdapter->u4PwrCtrlBlockCnt = 0;
+	prAdapter->fgIsPostponeTxEAPOLM3 = FALSE;
 
 	if (bAtResetFlow) {
 		for (i = 0; i < (prAdapter->ucHwBssIdNum + 1); i++)

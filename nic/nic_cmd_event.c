@@ -1572,6 +1572,9 @@ void nicOidCmdTimeoutCommon(IN struct ADAPTER *prAdapter,
 	if (prCmdInfo->fgIsOid)
 		kalOidComplete(prAdapter->prGlueInfo, prCmdInfo,
 			       0, WLAN_STATUS_FAILURE);
+
+	if (prAdapter->fgIsPostponeTxEAPOLM3)
+		prAdapter->fgIsPostponeTxEAPOLM3 = FALSE;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -4319,6 +4322,12 @@ void nicEventAddPkeyDone(IN struct ADAPTER *prAdapter,
 		prStaRec->fgIsTxKeyReady = TRUE;
 		qmUpdateStaRec(prAdapter, prStaRec);
 	}
+
+	if (prAdapter->fgIsPostponeTxEAPOLM3) {
+		prAdapter->fgIsPostponeTxEAPOLM3 = FALSE;
+		DBGLOG(RX, INFO,
+			"[Passpoint] PTK is installed and ready!\n");
+	}
 }
 
 #if CFG_SUPPORT_CAL_RESULT_BACKUP_TO_HOST
@@ -4749,6 +4758,9 @@ void nicOidCmdTimeoutSetAddKey(IN struct ADAPTER *prAdapter,
 	if (prCmdInfo->fgIsOid)
 		kalOidComplete(prAdapter->prGlueInfo, prCmdInfo,
 			       0, WLAN_STATUS_FAILURE);
+
+	if (prAdapter->fgIsPostponeTxEAPOLM3)
+		prAdapter->fgIsPostponeTxEAPOLM3 = FALSE;
 }
 #endif
 

@@ -1030,7 +1030,8 @@ struct QUE *qmDetermineStaTxQueue(IN struct ADAPTER *prAdapter,
 		prTxQue = prStaRec->aprTargetQueue[ucQueIdx];
 	} else if (secIsProtectedBss(prAdapter, prBssInfo) &&
 		prMsduInfo->fgIs802_1x &&
-		prMsduInfo->fgIs802_1x_NonProtected) {
+		prMsduInfo->fgIs802_1x_NonProtected &&
+		!prAdapter->fgIsPostponeTxEAPOLM3) {
 		/* protected BSS without key set */
 		/* Tx pairwise EAPOL 1x packet (non-protected frame) */
 		prTxQue = &prStaRec->arTxQueue[ucQueIdx];
@@ -8873,4 +8874,55 @@ void qmHandleRxReorderWinShift(IN struct ADAPTER *prAdapter,
 	}
 
 	RX_DIRECT_REORDER_UNLOCK(prAdapter, 0);
+}
+
+void qmCheckRxEAPOLM3(IN struct ADAPTER *prAdapter,
+			IN struct SW_RFB *prSwRfb, uint8_t ucBssIndex)
+{
+	uint8_t *pPkt = NULL;
+	struct sk_buff *skb = NULL;
+	uint16_t u2EtherType;
+	uint8_t *pucEthBody;
+	struct GL_WPA_INFO *prWpaInfo;
+
+	if (prSwRfb->u2PacketLen <= ETHER_HEADER_LEN)
+		return;
+
+	pPkt = prSwRfb->pvHeader;
+	if (!pPkt)
+		return;
+
+	skb = (struct sk_buff *)(prSwRfb->pvPacket);
+	if (!skb)
+		return;
+
+	/* get ethernet protocol */
+	u2EtherType = (pPkt[ETH_TYPE_LEN_OFFSET] << 8)
+			| (pPkt[ETH_TYPE_LEN_OFFSET + 1]);
+	pucEthBody = &pPkt[ETH_HLEN];
+
+	prWpaInfo = aisGetWpaInfo(prAdapter, ucBssIndex);
+	prAdapter->fgIsPostponeTxEAPOLM3 = FALSE;
+
+	if (u2EtherType == ETH_P_1X) {
+		uint8_t *pucEapol = pucEthBody;
+		uint8_t ucEapolType = pucEapol[1];
+		uint16_t u2KeyInfo = 0;
+		uint8_t m;
+
+		if (ucEapolType == ETH_EAPOL_KEY) {
+			WLAN_GET_FIELD_BE16(&pucEapol[5], &u2KeyInfo);
+			m = ((u2KeyInfo & 0x1100) == 0x0000 ||
+				(u2KeyInfo & 0x0008) == 0x0000) ? 1 : 3;
+
+			if (prAdapter->rWifiVar.u4SwTestMode ==
+					ENUM_SW_TEST_MODE_SIGMA_HS20_R2 &&
+					m == 3 &&
+					!prSwRfb->prStaRec->fgIsTxKeyReady) {
+				prAdapter->fgIsPostponeTxEAPOLM3 = TRUE;
+				DBGLOG(QM, INFO,
+					"[Passpoint] Postpone sending EAPOL M4 until PTK installed!");
+			}
+		}
+	}
 }
