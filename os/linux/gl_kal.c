@@ -9379,6 +9379,10 @@ static void kalDumpHifStats(IN struct ADAPTER *prAdapter)
 			HIF_TX_MSDU_TOKEN_NUM,
 			prRxCtrl->rFreeSwRfbList.u4NumElem,
 			CFG_RX_MAX_PKT_NUM);
+	pos += kalSnprintf(buf + pos, u4BufferSize - pos,
+			" txreg[%u] rxreg[%u]",
+			prHifStats->u4TxDataRegCnt,
+			prHifStats->u4RxDataRegCnt);
 	DBGLOG(HAL, INFO, "%s\n", buf);
 	kalMemFree(buf, VIR_MEM_TYPE, u4BufferSize);
 }
