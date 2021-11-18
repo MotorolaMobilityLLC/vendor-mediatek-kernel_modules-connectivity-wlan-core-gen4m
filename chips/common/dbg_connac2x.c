@@ -3096,10 +3096,12 @@ static void connac2xDumpPPDebugCr(struct ADAPTER *prAdapter)
 {
 	struct BUS_INFO *prBusInfo;
 	struct PP_TOP_CR *prCr;
-	uint32_t u4Value[4] = {0};
+	uint32_t u4Value[7] = {0};
 
 	if (!prAdapter)
 		return;
+
+	DBGLOG(HAL, INFO, "PP info:\n");
 
 	prBusInfo = prAdapter->chip_info->bus_info;
 	prCr = prBusInfo->prPpTopCr;
@@ -3108,6 +3110,12 @@ static void connac2xDumpPPDebugCr(struct ADAPTER *prAdapter)
 	HAL_MCR_RD(prAdapter, prCr->rDbgCs0.u4Addr, &u4Value[1]);
 	HAL_MCR_RD(prAdapter, prCr->rDbgCs1.u4Addr, &u4Value[2]);
 	HAL_MCR_RD(prAdapter, prCr->rDbgCs2.u4Addr, &u4Value[3]);
+	if (prCr->rDbgCs3.u4Addr != 0)
+		HAL_MCR_RD(prAdapter, prCr->rDbgCs3.u4Addr, &u4Value[4]);
+	if (prCr->rDbgCs4.u4Addr != 0)
+		HAL_MCR_RD(prAdapter, prCr->rDbgCs4.u4Addr, &u4Value[5]);
+	if (prCr->rDbgCs5.u4Addr != 0)
+		HAL_MCR_RD(prAdapter, prCr->rDbgCs5.u4Addr, &u4Value[6]);
 
 	DBGLOG(HAL, INFO,
 	"PP[0x%08x]=0x%08x,[0x%08x]=0x%08x,[0x%08x]=0x%08x,[0x%08x]=0x%08x,",
@@ -3115,6 +3123,13 @@ static void connac2xDumpPPDebugCr(struct ADAPTER *prAdapter)
 		prCr->rDbgCs0.u4Addr, u4Value[1],
 		prCr->rDbgCs1.u4Addr, u4Value[2],
 		prCr->rDbgCs2.u4Addr, u4Value[3]);
+
+	if (prCr->rDbgCs3.u4Addr != 0)
+		DBGLOG(HAL, INFO,
+		"PP[0x%08x]=0x%08x,[0x%08x]=0x%08x,[0x%08x]=0x%08x,",
+			prCr->rDbgCs3.u4Addr, u4Value[4],
+			prCr->rDbgCs4.u4Addr, u4Value[5],
+			prCr->rDbgCs5.u4Addr, u4Value[6]);
 }
 
 static void connac2x_dump_wfdma_dbg_value(

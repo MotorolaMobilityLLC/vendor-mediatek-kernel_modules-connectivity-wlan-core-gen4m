@@ -745,6 +745,21 @@ struct PP_TOP_CR rSoc7_0_PpTopCr = {
 		0,
 		0
 	},
+	.rDbgCs3 = {
+		WF_PP_TOP_DBG_CS_3_ADDR,
+		0,
+		0
+	},
+	.rDbgCs4 = {
+		WF_PP_TOP_DBG_CS_4_ADDR,
+		0,
+		0
+	},
+	.rDbgCs5 = {
+		WF_PP_TOP_DBG_CS_5_ADDR,
+		0,
+		0
+	},
 };
 
 /*******************************************************************************
