@@ -1987,22 +1987,25 @@ nicTxFillDesc(IN struct ADAPTER *prAdapter,
 
 	/* Checksum offload */
 #if CFG_TCP_IP_CHKSUM_OFFLOAD
-	if (prAdapter->fgIsSupportCsumOffload
-	    && prMsduInfo->eSrc == TX_PACKET_OS) {
-		if (prAdapter->u4CSUMFlags &
-		    (CSUM_OFFLOAD_EN_TX_TCP | CSUM_OFFLOAD_EN_TX_UDP |
-		     CSUM_OFFLOAD_EN_TX_IP)) {
-			ASSERT(prMsduInfo->prPacket);
-			kalQueryTxChksumOffloadParam(prMsduInfo->prPacket,
-						     &ucChksumFlag);
-			if (prTxDescOps->nic_txd_chksum_op)
-				prTxDescOps->nic_txd_chksum_op(
-					prTxDesc, ucChksumFlag);
-			else
-				DBGLOG(TX, ERROR,
-					"%s:: no nic_txd_chksum_op??\n",
-					__func__);
-		}
+	if (prAdapter->fgIsSupportCsumOffload &&
+	    prMsduInfo->eSrc == TX_PACKET_OS &&
+	    prAdapter->u4CSUMFlags & CSUM_OFFLOAD_EN_TX_MASK) {
+		ASSERT(prMsduInfo->prPacket);
+		kalQueryTxChksumOffloadParam(prMsduInfo->prPacket,
+					     &ucChksumFlag);
+		/*
+		 * AMSDU needs this force checksum offload fix.
+		 * RX GRO from modem caused some CHECKSUM_UNNECESSARY
+		 * and some CHECKSUM_PARTIAL.
+		 * Remove this forced checksum flag setting and back to
+		 * kalQueryTxChksumOffloadParam() when per frame AMSDU is ready.
+		 */
+		ucChksumFlag |= TX_CS_IP_GEN | TX_CS_TCP_UDP_GEN;
+
+		if (prTxDescOps->nic_txd_chksum_op)
+			prTxDescOps->nic_txd_chksum_op(prTxDesc, ucChksumFlag);
+		else
+			DBGLOG(TX, ERROR, "no nic_txd_chksum_op??\n");
 	}
 #endif /* CFG_TCP_IP_CHKSUM_OFFLOAD */
 
