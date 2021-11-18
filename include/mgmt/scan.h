@@ -547,6 +547,7 @@ struct SCAN_PARAM {	/* Used by SCAN FSM */
 	/* For 6G OOB discovery*/
 	uint8_t ucBssidMatchCh[CFG_SCAN_OOB_MAX_NUM];
 	uint8_t ucBssidMatchSsidInd[CFG_SCAN_OOB_MAX_NUM];
+	u_int8_t fg6gOobRnrParseEn;
 
 	/* Information Element */
 	uint16_t u2IELen;
@@ -689,6 +690,8 @@ struct MSG_SCN_SCAN_REQ_V2 {
 	/* For 6G OOB discovery*/
 	uint8_t ucBssidMatchCh[CFG_SCAN_OOB_MAX_NUM];
 	uint8_t ucBssidMatchSsidInd[CFG_SCAN_OOB_MAX_NUM];
+	u_int8_t fg6gOobRnrParseEn;
+
 	uint16_t u2IELen;
 	uint8_t aucIE[MAX_IE_LENGTH];
 };

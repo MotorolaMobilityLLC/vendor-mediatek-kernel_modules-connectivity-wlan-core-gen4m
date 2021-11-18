@@ -1527,11 +1527,20 @@ void scanParsingRnrElement(IN struct ADAPTER *prAdapter,
 	uint8_t ucRnrChNum, ucHasBssid = FALSE, ucScanEnable = TRUE;
 	uint8_t aucNullAddr[] = NULL_MAC_ADDR;
 	uint16_t u2TbttInfoCount, u2TbttInfoLength;
+	struct SCAN_INFO *prScanInfo;
 	struct NEIGHBOR_AP_INFO *prNeighborAPInfo = NULL;
 	struct NEIGHBOR_AP_INFO_FIELD *prNeighborAPInfoField;
 	struct PARAM_SCAN_REQUEST_ADV *prScanRequest;
 	struct IE_SHORT_SSID_LIST *prIeShortSsidList;
 	struct BSS_DESC *prBssDescTemp = NULL;
+
+	prScanInfo = &(prAdapter->rWifiVar.rScanInfo);
+
+	if (prScanInfo->eCurrentState != SCAN_STATE_SCANNING
+		|| !prScanInfo->rScanParam.fg6gOobRnrParseEn) {
+		DBGLOG(SCN, INFO, "Skip 6G oob scan Rnr parsing\n");
+		return;
+	}
 
 	while (ucCurrentLength < IE_LEN(pucIE)) {
 		pucProfileIE = &IE_ID_EXT(pucIE) + ucCurrentLength;
@@ -1791,6 +1800,7 @@ void scanParsingRnrElement(IN struct ADAPTER *prAdapter,
 						&prNeighborAPInfo->rLinkEntry);
 				ucNewLink = FALSE;
 			}
+			prScanRequest->fg6gOobRnrParseEn = FALSE;
 			log_dbg(SCN, INFO, "6G RnR for ch[%d,%d,%d,%d]Match[%d %d %d %d][%d %d %d %d] (IE Length:%d)into list(%d)\n",
 				    prScanRequest->arChannel[0].ucChannelNum,
 				    prScanRequest->arChannel[1].ucChannelNum,

@@ -156,6 +156,7 @@ void scnFsmSteps(IN struct ADAPTER *prAdapter,
 
 		switch (prScanInfo->eCurrentState) {
 		case SCAN_STATE_IDLE:
+			prScanParam->fg6gOobRnrParseEn = FALSE;
 			/* check for pending scanning requests */
 			if (!LINK_IS_EMPTY(&(prScanInfo->rPendingMsgList))) {
 				/* load next message from pending list as
@@ -691,6 +692,7 @@ void scnFsmHandleScanMsgV2(IN struct ADAPTER *prAdapter,
 			CFG_SCAN_OOB_MAX_NUM);
 	kalMemCopy(prScanParam->ucBssidMatchSsidInd,
 		prScanReqMsg->ucBssidMatchSsidInd, CFG_SCAN_OOB_MAX_NUM);
+	prScanParam->fg6gOobRnrParseEn = prScanReqMsg->fg6gOobRnrParseEn;
 
 	if ((prScanParam->ucSSIDType & SCAN_REQ_SSID_SPECIFIED_ONLY) &&
 		((prScanReqMsg->ucScnFuncMask &
@@ -931,7 +933,7 @@ void scnEventScanDone(IN struct ADAPTER *prAdapter,
 			prScanInfo->eCurrentState);
 	}
 #if CFG_SUPPORT_SCAN_NO_AP_RECOVERY
-	/* SCAN NO AP RECOVERY is only for AIS,
+	/* SCAN NO AP RECOVERY is only for AIS and not OOB scan,
 	 * FW report scan done, reset ScnTimeoutTimes and reset count to 0
 	 */
 	prScanInfo->ucScnTimeoutTimes = 0;
@@ -941,7 +943,8 @@ void scnEventScanDone(IN struct ADAPTER *prAdapter,
 		prScanInfo->fgIsSparseChannelValid &&
 		prScanDone->ucSparseChannelArrayValidNum > 0 &&
 		(prScanParam->eMsgId == MID_AIS_SCN_SCAN_REQ ||
-		prScanParam->eMsgId == MID_AIS_SCN_SCAN_REQ_V2)) {
+		prScanParam->eMsgId == MID_AIS_SCN_SCAN_REQ_V2) &&
+		!(prScanParam->ucScnFuncMask & ENUM_SCN_USE_PADDING_AS_BSSID)) {
 		scnDoZeroMdrdyRecoveryCheck(prAdapter, prScanDone,
 				prScanInfo, prScanParam->ucBssIndex);
 	}
