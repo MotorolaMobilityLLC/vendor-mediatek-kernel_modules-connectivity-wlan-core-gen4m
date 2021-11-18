@@ -297,7 +297,11 @@ void scnSendScanReqV2(IN struct ADAPTER *prAdapter)
 		kalMemCopy(prCmdScanReq->aucRandomMac,
 			prScanParam->aucRandomMac, MAC_ADDR_LEN);
 	}
-	if (prAdapter->rWifiVar.eDbdcMode == ENUM_DBDC_MODE_DISABLED)
+	if (prAdapter->rWifiVar.eDbdcMode == ENUM_DBDC_MODE_DISABLED
+#if (CFG_SUPPORT_POWER_THROTTLING == 1 && CFG_SUPPORT_CNM_POWER_CTRL == 1)
+		|| prAdapter->fgPowerForceOneNss
+#endif
+		)
 		prCmdScanReq->ucScnFuncMask |= ENUM_SCN_DBDC_SCAN_DIS;
 
 	if (scnEnableSplitScan(prAdapter, prScanParam->ucBssIndex))
