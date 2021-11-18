@@ -284,6 +284,8 @@
 
 #define CFG_SUPPORT_BAR_DELAY_INDICATION	1
 
+#define CFG_SUPPORT_DROP_INVALID_MSDUINFO	1
+
 /*------------------------------------------------------------------------------
  * Flags of 6G SUPPORT
  *------------------------------------------------------------------------------

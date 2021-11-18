@@ -1762,6 +1762,15 @@ qmDequeueTxPacketsFromPerStaQueues(IN struct ADAPTER *prAdapter,
 					prDequeuedPkt->ucPsForwardingType =
 						PS_FORWARDING_MORE_DATA_ENABLED;
 				}
+
+				if (unlikely(prStaRec->ucBssIndex !=
+					prDequeuedPkt->ucBssIndex)) {
+					DBGLOG(QM, INFO,
+						"BssIdx mismatch [%d,%d]",
+						prStaRec->ucBssIndex,
+						prDequeuedPkt->ucBssIndex);
+				}
+
 				/* to record WMM Set */
 				prDequeuedPkt->ucWmmQueSet =
 					prBssInfo->ucWmmQueSet;
