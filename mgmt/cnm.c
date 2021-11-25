@@ -4143,7 +4143,7 @@ uint8_t cnmOpModeGetMaxBw(IN struct ADAPTER *prAdapter,
 	uint8_t ucOpMaxBw = MAX_BW_UNKNOWN;
 	uint8_t ucS1 = 0;
 
-	if (prBssInfo->eCurrentOPMode == OP_MODE_ACCESS_POINT) { /* AP, GO */
+	if (1) { /* prBssInfo->eCurrentOPMode == OP_MODE_ACCESS_POINT */
 		ucOpMaxBw = cnmGetBssMaxBw(prAdapter, prBssInfo->ucBssIndex);
 
 		if (ucOpMaxBw >= MAX_BW_80MHZ) {

@@ -382,10 +382,13 @@ struct STA_RECORD {
 	uint8_t ucHePhyCapInfo[HE_PHY_CAP_BYTE_NUM];
 
 	uint16_t u2HeRxMcsMapBW80;
+	uint16_t u2HeRxMcsMapBW80Assoc;
 	uint16_t u2HeTxMcsMapBW80;
 	uint16_t u2HeRxMcsMapBW160;
+	uint16_t u2HeRxMcsMapBW160Assoc;
 	uint16_t u2HeTxMcsMapBW160;
 	uint16_t u2HeRxMcsMapBW80P80;
+	uint16_t u2HeRxMcsMapBW80P80Assoc;
 	uint16_t u2HeTxMcsMapBW80P80;
 #endif
 #if (CFG_SUPPORT_802_11BE == 1)
