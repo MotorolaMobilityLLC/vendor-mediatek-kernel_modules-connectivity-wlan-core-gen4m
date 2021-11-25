@@ -327,6 +327,9 @@ u_int8_t nic_rxd_v1_sanity_check(
 	struct mt66xx_chip_info *prChipInfo;
 	struct HW_MAC_RX_DESC *prRxStatus;
 	u_int8_t fgDrop = FALSE;
+	struct RX_CTRL *prRxCtrl;
+
+	prRxCtrl = &prAdapter->rRxCtrl;
 
 	prChipInfo = prAdapter->chip_info;
 	prRxStatus = (struct HW_MAC_RX_DESC *)prSwRfb->prRxStatus;
@@ -404,6 +407,20 @@ u_int8_t nic_rxd_v1_sanity_check(
 			fgDrop = TRUE;	/* Drop after send de-auth  */
 		}
 #endif
+
+		if (fgDrop) {
+			if (HAL_RX_STATUS_IS_FCS_ERROR(prRxStatus))
+				RX_INC_CNT(prRxCtrl, RX_FCS_ERR_DROP_COUNT);
+
+			if (HAL_RX_STATUS_IS_ICV_ERROR(prRxStatus))
+				RX_INC_CNT(prRxCtrl, RX_ICV_ERR_DROP_COUNT);
+
+#if CFG_SUPPORT_FRAG_AGG_ATTACK_DETECTION
+			if (HAL_RX_STATUS_IS_TKIP_MIC_ERROR(prRxStatus))
+				RX_INC_CNT(prRxCtrl,
+					RX_TKIP_MIC_ERROR_DROP_COUNT);
+#endif /* CFG_SUPPORT_FRAG_AGG_ATTACK_DETECTION */
+		}
 
 		DBGLOG(RSN, TRACE, "Sanity check to drop:%d\n", fgDrop);
 	}

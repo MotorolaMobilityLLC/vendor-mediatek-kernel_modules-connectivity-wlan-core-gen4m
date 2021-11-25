@@ -8103,8 +8103,8 @@ static uint32_t kalPerMonUpdate(IN struct ADAPTER *prAdapter)
 #undef TEMP_LOG_TEMPLATE
 #define TEMP_LOG_TEMPLATE \
 	"ndevdrp:%s drv[RM,IL,RI,RT,RM,RW,RA,RB,DT,NS,IB,HS,LS,DD,ME,BD,NI," \
-	"DR,TE,CE,DN]:%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu," \
-	"%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu\n"
+	"DR,TE,CE,DN,FE,DE,IE,TME]:%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu," \
+	"%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu\n"
 	DBGLOG(SW4, INFO, TEMP_LOG_TEMPLATE,
 		head4,
 		RX_GET_CNT(&prAdapter->rRxCtrl, RX_MPDU_TOTAL_COUNT),
@@ -8127,7 +8127,11 @@ static uint32_t kalPerMonUpdate(IN struct ADAPTER *prAdapter)
 		RX_GET_CNT(&prAdapter->rRxCtrl, RX_REORDER_BEHIND_DROP_COUNT),
 		RX_GET_CNT(&prAdapter->rRxCtrl, RX_TYPE_ERR_DROP_COUNT),
 		RX_GET_CNT(&prAdapter->rRxCtrl, RX_CLASS_ERR_DROP_COUNT),
-		RX_GET_CNT(&prAdapter->rRxCtrl, RX_DST_NULL_DROP_COUNT));
+		RX_GET_CNT(&prAdapter->rRxCtrl, RX_DST_NULL_DROP_COUNT),
+		RX_GET_CNT(&prAdapter->rRxCtrl, RX_FCS_ERR_DROP_COUNT),
+		RX_GET_CNT(&prAdapter->rRxCtrl, RX_DAF_ERR_DROP_COUNT),
+		RX_GET_CNT(&prAdapter->rRxCtrl, RX_ICV_ERR_DROP_COUNT),
+		RX_GET_CNT(&prAdapter->rRxCtrl, RX_TKIP_MIC_ERROR_DROP_COUNT));
 #undef TEMP_LOG_TEMPLATE
 
 	kalTraceEvent("Tput: %llu.%03llumbps",
