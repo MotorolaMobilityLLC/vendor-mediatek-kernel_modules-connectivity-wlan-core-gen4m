@@ -1422,7 +1422,8 @@ SKIP_START_RDD:
 
 		/* 4 <3.4> Setup BSSID */
 		nicPmIndicateBssCreated(prAdapter, prBssInfo->ucBssIndex);
-
+		if (prP2pChnlReqInfo->eBand == BAND_5G)
+			kalP2PEnableNetDev(prAdapter->prGlueInfo, prBssInfo);
 	} while (FALSE);
 }				/* p2pFuncStartGO() */
 
@@ -2261,6 +2262,41 @@ uint32_t p2pFuncGetCacRemainingTime(void)
 
 	return u4CacRemainingTime;
 }
+
+void p2pFuncChannelListFiltering(struct ADAPTER *prAdapter,
+		uint16_t ucFilteredCh, uint8_t ucFilteredBw,
+		uint8_t pucNumOfChannel,
+		struct RF_CHANNEL_INFO *paucChannelList,
+		uint8_t *pucOutNumOfChannel,
+		struct RF_CHANNEL_INFO *paucOutChannelList)
+{
+	uint8_t i;
+	uint8_t j;
+	uint8_t rddS1;
+
+	rddS1 = nicGetS1(BAND_5G, ucFilteredCh, ucFilteredBw);
+	if (rddS1 == 0)
+		return;
+
+	j = 0;
+	for (i = 0; i < pucNumOfChannel; i++) {
+		if (nicGetS1(BAND_5G, paucChannelList[i].ucChannelNum,
+			ucFilteredBw) != rddS1) {
+			paucOutChannelList[j] = paucChannelList[i];
+			DBGLOG(RLM, TRACE,
+				"ch: %d, s1: %d, is_dfs, rdds1: %d: %d\n",
+				paucOutChannelList[j].ucChannelNum,
+				nicGetS1(BAND_5G,
+				paucOutChannelList[j].ucChannelNum,
+				ucFilteredBw),
+				paucOutChannelList[j].eDFS,
+				rddS1);
+			j++;
+		}
+	}
+	*pucOutNumOfChannel = j;
+}
+
 #endif
 
 void p2pFuncParseH2E(IN struct BSS_INFO *prP2pBssInfo)

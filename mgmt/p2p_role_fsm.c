@@ -1903,6 +1903,8 @@ void p2pRoleFsmRunEventRadarDet(IN struct ADAPTER *prAdapter,
 		uint8_t ucChannelNum = 36;
 		struct RF_CHANNEL_INFO aucChannelList
 			[MAX_5G_BAND_CHN_NUM] = {};
+		struct RF_CHANNEL_INFO aucChannelListRdd
+			[MAX_5G_BAND_CHN_NUM] = {};
 
 		if (prP2pRoleFsmInfo->eCurrentState == P2P_ROLE_STATE_DFS_CAC)
 			p2pRoleFsmStateTransition(prAdapter,
@@ -1923,11 +1925,20 @@ void p2pRoleFsmRunEventRadarDet(IN struct ADAPTER *prAdapter,
 			MAX_5G_BAND_CHN_NUM,
 			&ucNumOfChannel,
 			aucChannelList);
+
+		prP2pConnReqInfo = &(prP2pRoleFsmInfo->rConnReqInfo);
+		p2pFuncChannelListFiltering(prAdapter,
+			prP2pConnReqInfo->rChannelInfo.ucChannelNum,
+			prP2pBssInfo->ucVhtChannelWidth,
+			ucNumOfChannel,
+			aucChannelList,
+			&ucNumOfChannel,
+			aucChannelListRdd);
+
 		ch_idx = kalRandomNumber() % ucNumOfChannel;
 		if (ch_idx < MAX_5G_BAND_CHN_NUM)
-			ucChannelNum = aucChannelList[ch_idx].ucChannelNum;
+			ucChannelNum = aucChannelListRdd[ch_idx].ucChannelNum;
 		prP2pBssInfo->eCurrentOPMode = OP_MODE_ACCESS_POINT;
-		prP2pConnReqInfo = &(prP2pRoleFsmInfo->rConnReqInfo);
 		prP2pConnReqInfo->rChannelInfo.ucChannelNum = ucChannelNum;
 		/* Use rConnReqInfo bw */
 		prP2pConnReqInfo->rChannelInfo.ucChnlBw = MAX_BW_80MHZ;

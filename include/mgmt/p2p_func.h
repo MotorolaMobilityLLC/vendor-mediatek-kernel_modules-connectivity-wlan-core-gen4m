@@ -178,6 +178,14 @@ void p2pFuncReleaseCh(IN struct ADAPTER *prAdapter,
 #if (CFG_SUPPORT_DFS_MASTER == 1)
 void p2pFuncSetDfsChannelAvailable(IN struct ADAPTER *prAdapter,
 		IN uint8_t ucChannel, IN uint8_t ucAvailable);
+
+void p2pFuncChannelListFiltering(IN struct ADAPTER *prAdapter,
+		IN uint16_t ucFilteredCh, IN uint8_t ucFilteredBw,
+		IN uint8_t pucNumOfChannel,
+		IN struct RF_CHANNEL_INFO *paucChannelList,
+		OUT uint8_t *pucOutNumOfChannel,
+		OUT struct RF_CHANNEL_INFO *paucOutChannelList);
+
 void p2pFuncStartRdd(IN struct ADAPTER *prAdapter, IN uint8_t ucBssIdx);
 
 void p2pFuncStopRdd(IN struct ADAPTER *prAdapter, IN uint8_t ucBssIdx);

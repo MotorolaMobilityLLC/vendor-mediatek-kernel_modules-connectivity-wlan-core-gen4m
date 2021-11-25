@@ -624,6 +624,28 @@ uint16_t kalP2PCalP2P_IELen(IN struct GLUE_INFO *prGlueInfo,
 	return prGlueInfo->prP2PInfo[ucRoleIdx]->u2P2PIELen[ucIndex];
 }
 
+void kalP2PEnableNetDev(IN struct GLUE_INFO *prGlueInfo,
+		IN struct BSS_INFO *prBssInfo)
+{
+	struct net_device *prDevHandler = NULL;
+	uint8_t ucBssIndex = (uint8_t)prBssInfo->ucBssIndex;
+	uint8_t ucRoleIdx  = (uint8_t)prBssInfo->u4PrivateData;
+
+	prDevHandler = wlanGetNetDev(prGlueInfo, ucBssIndex);
+	if (prDevHandler == NULL)
+		return;
+
+	if (!netif_carrier_ok(prDevHandler)) {
+		netif_carrier_on(prDevHandler);
+		netif_tx_start_all_queues(prDevHandler);
+	}
+
+	if (p2pFuncGetDfsState() == DFS_STATE_DETECTED) {
+		prGlueInfo->prP2PInfo[ucRoleIdx]->fgChannelSwitchReq = TRUE;
+		kalP2pIndicateChnlSwitch(prGlueInfo->prAdapter, prBssInfo);
+	}
+}
+
 void kalP2PGenP2P_IE(IN struct GLUE_INFO *prGlueInfo,
 		IN uint8_t ucIndex, IN uint8_t *pucBuffer, IN uint8_t ucRoleIdx)
 {
@@ -2493,6 +2515,8 @@ void kalP2pIndicateChnlSwitch(IN struct ADAPTER *prAdapter,
 			DBGLOG(P2P, WARN, "cfg80211_chan_def alloc fail\n");
 			return;
 		}
+		kalMemZero(prP2PInfo->chandef,
+			sizeof(struct cfg80211_chan_def));
 
 		prP2PInfo->chandef->chan = (struct ieee80211_channel *)
 				cnmMemAlloc(prAdapter, RAM_TYPE_BUF,
