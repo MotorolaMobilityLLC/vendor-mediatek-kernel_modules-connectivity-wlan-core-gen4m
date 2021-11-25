@@ -10318,8 +10318,7 @@ void wlanTxLifetimeTagPacket(IN struct ADAPTER *prAdapter,
 					NSEC_TO_USEC((uint32_t)(
 					prPktProfile->u8EnqTime -
 					prPktProfile->u8XmitArrival)),
-					NSEC_TO_USEC(
-					prPktProfile->u8XmitArrival),
+					prPktProfile->u8XmitArrival,
 					prMsduInfo->ucBssIndex,
 					prMsduInfo->ucWlanIndex,
 					prMsduInfo->ucPID,
