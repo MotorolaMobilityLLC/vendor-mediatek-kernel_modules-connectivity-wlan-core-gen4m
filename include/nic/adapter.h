@@ -2067,6 +2067,8 @@ struct ADAPTER {
 	uint8_t ucIsMultiStaConnected;
 	uint32_t u4MultiStaPrimaryInterface;
 	uint32_t u4MultiStaUseCase;
+
+	bool fgIsPostponeTxEAPOLM3;
 };				/* end of _ADAPTER_T */
 
 /*******************************************************************************
