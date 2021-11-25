@@ -227,15 +227,29 @@ int CFG80211_Resume(struct wiphy *wiphy)
  *******************************************************************************
  */
 
-#define CHAN2G(_channel, _freq, _flags)		\
-{						\
-	.band               = KAL_BAND_2GHZ,	\
-	.center_freq        = (_freq),		\
-	.hw_value           = (_channel),	\
-	.flags              = (_flags),		\
-	.max_antenna_gain   = 0,		\
-	.max_power          = 30,		\
-}
+#if KERNEL_VERSION(5, 4, 0) <= CFG80211_VERSION_CODE
+	#define CHAN2G(_channel, _freq, _flags)		\
+	{						\
+		.band               = KAL_BAND_2GHZ,	\
+		.center_freq        = (_freq),		\
+		.freq_offset        = 0,		\
+		.hw_value           = (_channel),	\
+		.flags              = (_flags),		\
+		.max_antenna_gain   = 0,		\
+		.max_power          = 30,		\
+	}
+#else
+	#define CHAN2G(_channel, _freq, _flags)		\
+	{						\
+		.band               = KAL_BAND_2GHZ,	\
+		.center_freq        = (_freq),		\
+		.hw_value           = (_channel),	\
+		.flags              = (_flags),		\
+		.max_antenna_gain   = 0,		\
+		.max_power          = 30,		\
+	}
+#endif
+
 static struct ieee80211_channel mtk_2ghz_channels[] = {
 	CHAN2G(1, 2412, 0),
 	CHAN2G(2, 2417, 0),
@@ -253,27 +267,43 @@ static struct ieee80211_channel mtk_2ghz_channels[] = {
 	CHAN2G(14, 2484, 0),
 };
 
-#define CHAN5G(_channel, _flags)					\
-{									\
-	.band               = KAL_BAND_5GHZ,				\
-	.center_freq        =						\
-		(((_channel >= 182) && (_channel <= 196)) ?		\
-		(4000 + (5 * (_channel))) : (5000 + (5 * (_channel)))),	\
-	.hw_value           = (_channel),				\
-	.flags              = (_flags),					\
-	.max_antenna_gain   = 0,					\
-	.max_power          = 30,					\
-}
+#if KERNEL_VERSION(5, 4, 0) <= CFG80211_VERSION_CODE
+	#define CHAN5G(_channel, _flags)			\
+	{							\
+		.band              = KAL_BAND_5GHZ,		\
+		.center_freq       =				\
+			(((_channel >= 182) && (_channel <= 196)) ? \
+			(4000 + (5 * (_channel))) : (5000 + (5 * (_channel)))),\
+		.freq_offset       = 0,				\
+		.hw_value          = (_channel),		\
+		.flags             = (_flags),			\
+		.max_antenna_gain  = 0,				\
+		.max_power         = 30,			\
+	}
+#else
+	#define CHAN5G(_channel, _flags)			\
+	{							\
+		.band              = KAL_BAND_5GHZ,		\
+		.center_freq       =				\
+			(((_channel >= 182) && (_channel <= 196)) ? \
+			(4000 + (5 * (_channel))) : (5000 + (5 * (_channel)))),\
+		.hw_value          = (_channel),		\
+		.flags             = (_flags),			\
+		.max_antenna_gain  = 0,				\
+		.max_power         = 30,			\
+	}
+#endif
 
 #if (CFG_SUPPORT_WIFI_6G == 1)
-#define CHAN6G(_channel, _flags)					\
-{									\
-	.band               = KAL_BAND_6GHZ,				\
+#define CHAN6G(_channel, _flags)				\
+{								\
+	.band               = KAL_BAND_6GHZ,			\
 	.center_freq        = (5950 + (5 * (_channel))),	\
-	.hw_value           = (_channel),				\
-	.flags              = (_flags),					\
-	.max_antenna_gain   = 0,					\
-	.max_power          = 30,					\
+	.freq_offset        = 0,				\
+	.hw_value           = (_channel),			\
+	.flags              = (_flags),				\
+	.max_antenna_gain   = 0,				\
+	.max_power          = 30,				\
 }
 #endif
 
