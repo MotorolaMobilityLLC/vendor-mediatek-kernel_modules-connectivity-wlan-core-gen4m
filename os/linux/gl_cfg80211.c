@@ -3859,40 +3859,49 @@ int mtk_cfg80211_sched_scan_start(IN struct wiphy *wiphy,
 	prSchedScanRequest->u2ScanInterval = (uint16_t) (
 			request->interval);
 #endif
-
-	/* 6G only need to scan PSC channel, transform channel list first*/
-	for (i = 0; i < request->n_channels; i++) {
-		uint32_t u4channel =
-			nicFreq2ChannelNum(request->channels[i]->center_freq *
-									1000);
-		if (u4channel == 0) {
-			DBGLOG(REQ, WARN, "Wrong Channel[%d] freq=%u\n",
-			       i, request->channels[i]->center_freq);
-			continue;
-		}
-		prSchedScanRequest->aucChannel[j].ucChannelNum = u4channel;
-		switch ((request->channels[i])->band) {
-		case KAL_BAND_2GHZ:
-			prSchedScanRequest->aucChannel[j].ucBand = BAND_2G4;
-			break;
-		case KAL_BAND_5GHZ:
-			prSchedScanRequest->aucChannel[j].ucBand = BAND_5G;
-			break;
+	if (request->n_channels > MAXIMUM_OPERATION_CHANNEL_LIST) {
+		prSchedScanRequest->ucChnlNum = 0;
+		DBGLOG(REQ, INFO,
+		       "Channel list (%u->%u) exceed maximum support.\n",
+		       request->n_channels, prSchedScanRequest->ucChnlNum);
+	} else {
+		for (i = 0; i < request->n_channels; i++) {
+			uint32_t u4channel =
+				nicFreq2ChannelNum(request->channels[i]->
+							center_freq * 1000);
+			if (u4channel == 0) {
+				DBGLOG(REQ, WARN, "Wrong Channel[%d] freq=%u\n",
+				       i, request->channels[i]->center_freq);
+				continue;
+			}
+			prSchedScanRequest->aucChannel[j].ucChannelNum =
+								u4channel;
+			switch ((request->channels[i])->band) {
+			case KAL_BAND_2GHZ:
+				prSchedScanRequest->aucChannel[j].ucBand =
+								BAND_2G4;
+				break;
+			case KAL_BAND_5GHZ:
+				prSchedScanRequest->aucChannel[j].ucBand =
+								BAND_5G;
+				break;
 #if (CFG_SUPPORT_WIFI_6G == 1)
-		case KAL_BAND_6GHZ:
-			prSchedScanRequest->aucChannel[j].ucBand = BAND_6G;
-			break;
+			case KAL_BAND_6GHZ:
+				prSchedScanRequest->aucChannel[j].ucBand =
+								BAND_6G;
+				break;
 #endif
-		default:
-			DBGLOG(REQ, WARN, "UNKNOWN Band %d(chnl=%u)\n",
-			       request->channels[i]->band, u4channel);
-			prSchedScanRequest->aucChannel[j].ucBand = BAND_NULL;
-			break;
+			default:
+				DBGLOG(REQ, WARN, "UNKNOWN Band %d(chnl=%u)\n",
+				       request->channels[i]->band, u4channel);
+				prSchedScanRequest->aucChannel[j].ucBand =
+								BAND_NULL;
+				break;
+			}
+			j++;
 		}
-		j++;
+		prSchedScanRequest->ucChnlNum = j;
 	}
-	prSchedScanRequest->ucChnlNum = j;
-
 	prSchedScanRequest->ucBssIndex = ucBssIndex;
 	rStatus = kalIoctl(prGlueInfo, wlanoidSetStartSchedScan,
 			   prSchedScanRequest,
