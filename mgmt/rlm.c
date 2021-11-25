@@ -1399,7 +1399,7 @@ void rlmRspGenerateVhtOpNotificationIE(struct ADAPTER *prAdapter,
 	    ucPhyTypeSet & PHY_TYPE_SET_802_11AC)
 #if (CFG_SUPPORT_WIFI_6G == 1)
 		|| (prBssInfo->eBand == BAND_6G &&
-			prStaRec->ucPhyTypeSet & PHY_TYPE_SET_802_11AX)
+			ucPhyTypeSet & PHY_TYPE_SET_802_11AX)
 #endif
 	) {
 		rlmFillVhtOpNotificationIE(prAdapter, prBssInfo, prMsduInfo,
