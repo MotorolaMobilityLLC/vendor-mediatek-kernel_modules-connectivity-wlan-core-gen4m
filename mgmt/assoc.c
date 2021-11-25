@@ -739,6 +739,8 @@ uint32_t assocSendReAssocReqFrame(IN struct ADAPTER *prAdapter,
 	assoc_build_nonwfa_vend_ie(prAdapter, prMsduInfo);
 #endif
 
+	sortAssocReqIE(prAdapter, prMsduInfo, fgIsReAssoc);
+
 	/* 4 <6> Update the (Re)association request information */
 	if (IS_STA_IN_AIS(prStaRec)) {
 		struct WLAN_ASSOC_REQ_FRAME *prAssocFrame;
