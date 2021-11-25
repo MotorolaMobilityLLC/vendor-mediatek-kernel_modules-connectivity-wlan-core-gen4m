@@ -2040,6 +2040,15 @@ uint32_t wlanSendCommandMthread(IN struct ADAPTER
 		if (kalIsCardRemoved(prAdapter->prGlueInfo) == TRUE
 		    || fgIsBusAccessFailed == TRUE) {
 			rStatus = WLAN_STATUS_FAILURE;
+#if CFG_DBG_MGT_BUF
+			if (prMemTrack) {
+				prMemTrack->u2CmdIdAndWhere &= 0x00FF;
+				/* 0x01 means the CmdId can't enqueue to
+				 *  TxCmdQueue due to card removal
+				 */
+				prMemTrack->u2CmdIdAndWhere |= 0x0100;
+			}
+#endif
 			break;
 		}
 		/* <1> Normal case of sending CMD Packet */
@@ -2057,6 +2066,16 @@ uint32_t wlanSendCommandMthread(IN struct ADAPTER
 			       __func__, prCmdInfo->eCmdType, prCmdInfo->ucCID,
 			       prCmdInfo->ucCmdSeqNum, ucTC);
 #endif
+#if CFG_DBG_MGT_BUF
+			if (prMemTrack) {
+				prMemTrack->u2CmdIdAndWhere &= 0x00FF;
+				/* 0x02 means the CmdId can't enqueue
+				 *  to TxCmdQueue due to out of resource
+				 */
+				prMemTrack->u2CmdIdAndWhere |= 0x0200;
+			}
+#endif
+
 			break;
 		}
 
@@ -2078,7 +2097,10 @@ uint32_t wlanSendCommandMthread(IN struct ADAPTER
 #if CFG_DBG_MGT_BUF
 		if (prMemTrack) {
 			prMemTrack->u2CmdIdAndWhere &= 0x00FF;
-			prMemTrack->u2CmdIdAndWhere |= 0x0100;
+			/* 0x10 means the CmdId is in TxCmdQueue
+			 *  and is waiting for main_thread handling
+			 */
+			prMemTrack->u2CmdIdAndWhere |= 0x1000;
 		}
 #endif
 
@@ -2113,12 +2135,34 @@ uint32_t wlanSendCommandMthread(IN struct ADAPTER
 void wlanTxCmdDoneCb(IN struct ADAPTER *prAdapter,
 		     IN struct CMD_INFO *prCmdInfo)
 {
+#if CFG_DBG_MGT_BUF
+	struct MEM_TRACK *prMemTrack = NULL;
+#endif
+
 	KAL_SPIN_LOCK_DECLARATION();
 
 	if ((!prCmdInfo->fgSetQuery) || (prCmdInfo->fgNeedResp)) {
 		DBGLOG(TX, INFO, "Add command: %p, %ps, cmd=0x%02X, seq=%u",
 			prCmdInfo, prCmdInfo->pfCmdDoneHandler,
 			prCmdInfo->ucCID, prCmdInfo->ucCmdSeqNum);
+
+#if CFG_DBG_MGT_BUF
+		if (prCmdInfo->pucInfoBuffer &&
+				!IS_FROM_BUF(prAdapter,
+					prCmdInfo->pucInfoBuffer))
+			prMemTrack =
+				(struct MEM_TRACK *)
+					((uint8_t *)prCmdInfo->pucInfoBuffer -
+						sizeof(struct MEM_TRACK));
+
+		if (prMemTrack) {
+			prMemTrack->u2CmdIdAndWhere &= 0x00FF;
+			/* 0x40 means the CmdId is sent to
+			 * WFDMA by HIF
+			 */
+			prMemTrack->u2CmdIdAndWhere |= 0x4000;
+		}
+#endif
 
 		KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_CMD_PENDING);
 		QUEUE_INSERT_TAIL(&prAdapter->rPendingCmdQueue,
@@ -2187,14 +2231,20 @@ uint32_t wlanTxCmdMthread(IN struct ADAPTER *prAdapter)
 #if CFG_DBG_MGT_BUF
 			if (prMemTrack) {
 				prMemTrack->u2CmdIdAndWhere &= 0x00FF;
-				prMemTrack->u2CmdIdAndWhere |= 0x0200;
+				/* 0x20 means the CmdId needs to send to
+				 * FW via HIF
+				 */
+				prMemTrack->u2CmdIdAndWhere |= 0x2000;
 			}
 #endif
 		} else {
 #if CFG_DBG_MGT_BUF
 			if (prMemTrack) {
 				prMemTrack->u2CmdIdAndWhere &= 0x00FF;
-				prMemTrack->u2CmdIdAndWhere |= 0x0300;
+				/* 0x30 means the CmdId enqueues to
+				 * TxCmdDone queue
+				 */
+				prMemTrack->u2CmdIdAndWhere |= 0x3000;
 			}
 #endif
 			QUEUE_INSERT_TAIL(prTempCmdDoneQue, prQueueEntry);
@@ -5287,6 +5337,7 @@ uint32_t wlanLoadManufactureData(IN struct ADAPTER
 				    FALSE, NULL, NULL,
 				    sizeof(*prCmdNvramSettings),
 				    (uint8_t *) prCmdNvramSettings, NULL, 0);
+
 		kalMemFree(prCmdNvramSettings, VIR_MEM_TYPE,
 				   sizeof(struct CMD_NVRAM_SETTING));
 	}
