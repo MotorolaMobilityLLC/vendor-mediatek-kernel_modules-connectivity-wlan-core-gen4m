@@ -1067,7 +1067,7 @@ void heRlmRecHeCapInfo(
 		HE_PHY_CAP_BYTE_NUM);
 
 #if (CFG_SUPPORT_HE_ER == 1)
-	DBGLOG(RLM, INFO, "ER: TX:%d, RX:%d, bw:%d, 4x LTF:%d, 1X LTF:%d\n",
+	DBGLOG(RLM, TRACE, "ER: TX:%d, RX:%d, bw:%d, 4x LTF:%d, 1X LTF:%d\n",
 		HE_GET_PHY_CAP_DCM_MAX_CONSTELLATION_TX(
 			prStaRec->ucHePhyCapInfo),
 		HE_GET_PHY_CAP_DCM_MAX_CONSTELLATION_RX(

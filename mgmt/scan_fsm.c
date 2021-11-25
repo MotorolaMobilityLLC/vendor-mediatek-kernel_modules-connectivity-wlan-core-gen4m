@@ -276,7 +276,7 @@ void scnSendScanReqV2(IN struct ADAPTER *prAdapter)
 		COPY_MAC_ADDR(prCmdScanReq->aucBSSID,
 		&prScanParam->aucBSSID[0][0]);
 	}
-	if (!EQUAL_MAC_ADDR(prCmdScanReq->aucBSSID, "\xff\xff\xff\xff\xff\xff"))
+	if (!EQUAL_MAC_ADDR(prCmdScanReq->aucBSSID, "\x00\x00\x00\x00\x00\x00"))
 		DBGLOG(SCN, INFO, "Include BSSID "MACSTR" in probe request\n",
 			MAC2STR(prCmdScanReq->aucBSSID));
 
