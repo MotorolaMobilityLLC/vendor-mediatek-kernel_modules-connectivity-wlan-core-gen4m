@@ -1442,11 +1442,13 @@ void halRxReceiveRFBs(IN struct ADAPTER *prAdapter, uint32_t u4Port,
 	void *prRxStatus;
 	u_int8_t fgStatus;
 	uint32_t u4RxCnt, u4RfbCnt;
+	uint32_t u4RxLoopCnt, u4RxSuccessCnt = 0;
 	struct RX_DESC_OPS_T *prRxDescOps;
 	struct RTMP_RX_RING *prRxRing;
 	struct GL_HIF_INFO *prHifInfo;
 	uint32_t u4MsduReportCnt = 0;
 	struct QUE rFreeSwRfbList, rReceivedRfbList;
+	struct HIF_STATS *prHifStats;
 
 	KAL_SPIN_LOCK_DECLARATION();
 
@@ -1466,6 +1468,7 @@ void halRxReceiveRFBs(IN struct ADAPTER *prAdapter, uint32_t u4Port,
 
 	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
 	prRxRing = &prHifInfo->RxRing[u4Port];
+	prHifStats = &prAdapter->rHifStats;
 
 	QUEUE_INITIALIZE(&rFreeSwRfbList);
 	QUEUE_INITIALIZE(&rReceivedRfbList);
@@ -1489,10 +1492,12 @@ void halRxReceiveRFBs(IN struct ADAPTER *prAdapter, uint32_t u4Port,
 	}
 	KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_RX_FREE_QUE);
 
+	prHifStats->u4RxDataRegCnt++;
 	kalDevRegRead(prAdapter->prGlueInfo, prRxRing->hw_cidx_addr,
 		      &prRxRing->RxCpuIdx);
 
-	while (u4RxCnt--) {
+	u4RxLoopCnt = u4RxCnt;
+	while (u4RxLoopCnt--) {
 		QUEUE_REMOVE_HEAD(&rFreeSwRfbList, prSwRfb, struct SW_RFB *);
 		if (!prSwRfb)
 			break;
@@ -1517,6 +1522,7 @@ void halRxReceiveRFBs(IN struct ADAPTER *prAdapter, uint32_t u4Port,
 			continue;
 		}
 
+		u4RxSuccessCnt++;
 		prRxStatus = prSwRfb->prRxStatus;
 		ASSERT(prRxStatus);
 
@@ -1569,7 +1575,7 @@ void halRxReceiveRFBs(IN struct ADAPTER *prAdapter, uint32_t u4Port,
 		&rReceivedRfbList);
 	KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_RX_QUE);
 
-	prRxRing->u4PendingCnt = u4RxCnt;
+	prRxRing->u4PendingCnt = u4RxCnt - u4RxSuccessCnt;
 
 	if (u4MsduReportCnt > 0)
 		DBGLOG(RX, TEMP, "Recv %d msdu reports\n", u4MsduReportCnt);

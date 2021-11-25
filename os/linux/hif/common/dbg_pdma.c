@@ -216,6 +216,7 @@ bool halCheckFullDump(struct ADAPTER *prAdapter)
 	bool ret = FALSE;
 	uint32_t n = prAdapter->u4HifTxHangDumpBitmap;
 	uint32_t idx = prAdapter->u4HifTxHangDumpIdx;
+	uint32_t u4HifTxHangDumpNum = prAdapter->u4HifTxHangDumpNum;
 
 	if (prAdapter->rWifiVar.u4TxHangFullDumpMode) {
 		ret = TRUE;
@@ -223,9 +224,9 @@ bool halCheckFullDump(struct ADAPTER *prAdapter)
 	}
 
 	if (n & BIT(idx))
-		prAdapter->u4HifTxHangDumpNum--;
+		u4HifTxHangDumpNum--;
 
-	if (prAdapter->u4HifTxHangDumpNum < LOG_DUMP_FULL_DUMP_TIMES)
+	if (u4HifTxHangDumpNum < LOG_DUMP_FULL_DUMP_TIMES)
 		ret = TRUE;
 
 end:
@@ -234,7 +235,7 @@ end:
 		ret, prAdapter->u4HifTxHangDumpBitmap,
 		prAdapter->rWifiVar.u4TxHangFullDumpMode,
 		prAdapter->u4HifTxHangDumpIdx,
-		prAdapter->u4HifTxHangDumpNum);
+		u4HifTxHangDumpNum);
 
 	return ret;
 }
@@ -255,11 +256,14 @@ static void halCheckHifState(struct ADAPTER *prAdapter)
 			fgHifTxHangFullDump = halCheckFullDump(prAdapter);
 
 			if (fgHifTxHangFullDump) {
-				prAdapter->u4HifTxHangDumpBitmap |=
-					1 << prAdapter->u4HifTxHangDumpIdx;
-				if (prAdapter->u4HifTxHangDumpNum <
-						LOG_DUMP_COUNT_PERIOD)
+				if ((prAdapter->u4HifTxHangDumpNum <
+					LOG_DUMP_COUNT_PERIOD) &&
+					!(BIT(prAdapter->u4HifTxHangDumpIdx) &
+					prAdapter->u4HifTxHangDumpBitmap))
 					prAdapter->u4HifTxHangDumpNum++;
+
+				prAdapter->u4HifTxHangDumpBitmap |=
+					BIT(prAdapter->u4HifTxHangDumpIdx);
 
 				if (prDbgOps && prDbgOps->showPleInfo)
 					prDbgOps->showPleInfo(prAdapter, FALSE);
@@ -283,9 +287,14 @@ static void halCheckHifState(struct ADAPTER *prAdapter)
 
 	prAdapter->u4HifChkFlag = 0;
 
-	if (!fgHifTxHangFullDump)
+	if (!fgHifTxHangFullDump) {
+		if (BIT(prAdapter->u4HifTxHangDumpIdx) &
+			prAdapter->u4HifTxHangDumpBitmap)
+			prAdapter->u4HifTxHangDumpNum--;
 		prAdapter->u4HifTxHangDumpBitmap &=
-			~(1 << prAdapter->u4HifTxHangDumpIdx);
+			~(BIT(prAdapter->u4HifTxHangDumpIdx));
+	}
+
 	prAdapter->u4HifTxHangDumpIdx =
 		(prAdapter->u4HifTxHangDumpIdx + 1) % LOG_DUMP_COUNT_PERIOD;
 }
