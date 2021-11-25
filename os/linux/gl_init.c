@@ -4431,7 +4431,15 @@ uint32_t wlanServiceExit(struct GLUE_INFO *prGlueInfo)
 
 #if (CFG_SUPPORT_ICS == 1)
 #define ICS_LOG_CMD_ON_OFF        0
+#define ICS_LOG_CMD_SET_LEVEL     1
+
+enum ENUM_ICS_LOG_LEVEL_T {
+	ENUM_ICS_LOG_LEVEL_DISABLE,
+	ENUM_ICS_LOG_LEVEL_MAC,
+};
+
 static uint32_t u4IcsLogOnOffCache;
+static uint32_t u4IcsLogLevelCache = ENUM_ICS_LOG_LEVEL_MAC;
 #endif /* CFG_SUPPORT_ICS */
 
 static uint32_t u4LogOnOffCache;
@@ -4592,9 +4600,6 @@ static void ics_log_event_notification(int cmd, int value)
 	DBGLOG(INIT, INFO, "gPrDev=%p, cmd=%d, value=%d\n",
 		gPrDev, cmd, value);
 
-	if (cmd == ICS_LOG_CMD_ON_OFF)
-		u4IcsLogOnOffCache = value;
-
 	if (kalIsHalted() || !prDev) {
 		DBGLOG(INIT, INFO, "device not ready return");
 		return;
@@ -4612,11 +4617,34 @@ static void ics_log_event_notification(int cmd, int value)
 		return;
 	}
 
+	/*
+	 * Special code that matches App behavior:
+	 * 1. set ics log level
+	 * 2. set on/off (if fwlog on, then icslog also get on)
+	 */
 	if (cmd == ICS_LOG_CMD_ON_OFF) {
+		u4IcsLogOnOffCache = value;
+		if (u4IcsLogOnOffCache == 1 &&
+			u4IcsLogLevelCache == ENUM_ICS_LOG_LEVEL_DISABLE) {
+			DBGLOG(INIT, WARN, "IcsLv is disable!!!\n");
+			u4IcsLogOnOffCache = 0;
+		}
+	} else if (cmd == ICS_LOG_CMD_SET_LEVEL) {
+		u4IcsLogLevelCache = value;
+		if (u4IcsLogLevelCache == ENUM_ICS_LOG_LEVEL_DISABLE) {
+			DBGLOG(INIT, INFO, "IcsLv set to disable.\n");
+			u4IcsLogOnOffCache = 0;
+		} else {
+			DBGLOG(INIT, INFO, "IcsLv set to MAC ICS.\n");
+			u4IcsLogOnOffCache = 1;
+		}
+	}
+
+	if (cmd == ICS_LOG_CMD_ON_OFF || cmd == ICS_LOG_CMD_SET_LEVEL) {
 		kalMemZero(&rSniffer, sizeof(
 			struct PARAM_CUSTOM_ICS_SNIFFER_INFO_STRUCT));
 		rSniffer.ucModule = 2;
-		rSniffer.ucAction = (value == 0) ? 0 : 1;
+		rSniffer.ucAction = u4IcsLogOnOffCache;
 		rSniffer.ucFilter = 0;
 		rSniffer.ucOperation = 0;
 		rSniffer.ucCondition[0] = 2;
@@ -4632,6 +4660,8 @@ static void ics_log_event_notification(int cmd, int value)
 			FALSE, FALSE, TRUE, &u4BufLen);
 		if (rStatus != WLAN_STATUS_SUCCESS)
 			DBGLOG(INIT, INFO, "wlanoidSetIcsSniffer failed");
+		DBGLOG(INIT, INFO, "IcsLog[Lv:OnOff]=[%d:%d]\n",
+			u4IcsLogLevelCache, u4IcsLogOnOffCache);
 	} else {
 		DBGLOG(INIT, INFO, "unknown cmd %d\n", cmd);
 	}
