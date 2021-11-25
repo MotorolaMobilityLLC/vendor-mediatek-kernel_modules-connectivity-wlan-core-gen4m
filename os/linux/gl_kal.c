@@ -7931,7 +7931,6 @@ static uint32_t kalPerMonUpdate(IN struct ADAPTER *prAdapter)
 	struct net_device *ndev = NULL;
 	struct GL_HIF_INFO *hif = &glue->rHifInfo;
 	struct WIFI_LINK_QUALITY_INFO *lq = &prAdapter->rLinkQualityInfo;
-	struct TX_CTRL *pTxCtrl = &prAdapter->rTxCtrl;
 
 	OS_SYSTIME now, last;
 	int32_t period;
@@ -8079,7 +8078,7 @@ static uint32_t kalPerMonUpdate(IN struct ADAPTER *prAdapter)
 #define TEMP_LOG_TEMPLATE \
 	"<%dms> Tput: %llu(%llu.%03llumbps) %s Pending:%d/%d %s Used:" \
 	"%u/%d/%d %s LQ[%llu:%llu:%llu] lv:%u th:%u fg:0x%lx" \
-	" TxDp[ST:BS] %d:%d\n"
+	" TxDp[ST:BS:FO:QM]:%u:%u:%u:%u\n"
 
 	DBGLOG(SW4, INFO, TEMP_LOG_TEMPLATE,
 		period,	(unsigned long long) perf->ulThroughput,
@@ -8095,8 +8094,11 @@ static uint32_t kalPerMonUpdate(IN struct ADAPTER *prAdapter)
 		perf->u4CurrPerfLevel,
 		prAdapter->rWifiVar.u4BoostCpuTh,
 		perf->ulPerfMonFlag,
-		pTxCtrl->au4Statistics[TX_INACTIVE_BSS_DROP],
-		pTxCtrl->au4Statistics[TX_INACTIVE_STA_DROP]);
+		TX_GET_CNT(&prAdapter->rTxCtrl, TX_INACTIVE_STA_DROP),
+		TX_GET_CNT(&prAdapter->rTxCtrl, TX_INACTIVE_BSS_DROP),
+		TX_GET_CNT(&prAdapter->rTxCtrl, TX_FORWARD_OVERFLOW_DROP),
+		TX_GET_CNT(&prAdapter->rTxCtrl, TX_INVALID_MSDUINFO_COUNT)
+		);
 #undef TEMP_LOG_TEMPLATE
 #define TEMP_LOG_TEMPLATE \
 	"ndevdrp:%s drv[RM,IL,RI,RT,RM,RW,RA,RB,DT,NS,IB,HS,LS,DD,ME,BD,NI," \

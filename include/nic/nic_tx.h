@@ -531,6 +531,7 @@ enum ENUM_TX_STATISTIC_COUNTER {
 	TX_INACTIVE_STA_DROP,
 	TX_FORWARD_OVERFLOW_DROP,
 	TX_AP_BORADCAST_DROP,
+	TX_INVALID_MSDUINFO_COUNT,
 	TX_STATISTIC_COUNTER_NUM
 };
 
@@ -864,6 +865,11 @@ struct MSDU_INFO {
 	uint8_t ucTarQueue;
 #endif
 	uint8_t fgMgmtUseDataQ;
+
+#if CFG_SUPPORT_DROP_INVALID_MSDUINFO
+	/* sanity drop flag */
+	u_int8_t fgDrop;
+#endif /* CFG_SUPPORT_DROP_INVALID_MSDUINFO */
 };
 
 #define HIF_PKT_FLAGS_CT_INFO_APPLY_TXD            BIT(0)
