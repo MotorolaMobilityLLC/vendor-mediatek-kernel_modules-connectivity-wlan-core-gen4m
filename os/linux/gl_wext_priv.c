@@ -9824,12 +9824,14 @@ int priv_driver_radarmode(IN struct net_device *prNetDev,
 	}
 
 	if (i4Argc >= 1) {
-		u4Ret = kalkStrtou8(apcArgv[1], 0, &ucRadarDetectMode);
+		u4Ret = kalkStrtou8(apcArgv[i4Argc - 1], 0, &ucRadarDetectMode);
 		if (u4Ret)
 			DBGLOG(REQ, ERROR, "parse error u4Ret = %d\n", u4Ret);
 
-		if (ucRadarDetectMode > 1)
-			ucRadarDetectMode = 0;
+		if (ucRadarDetectMode >= 1)
+			ucRadarDetectMode = 1;
+
+		p2pFuncSetRadarDetectMode(ucRadarDetectMode);
 
 		_SetRadarDetectMode(prNetDev, ucRadarDetectMode);
 	} else {
