@@ -2460,6 +2460,7 @@ struct PARAM_SCAN_REQUEST_ADV {
 	/* For 6G OOB discovery*/
 	uint8_t ucBssidMatchCh[CFG_SCAN_OOB_MAX_NUM];
 	uint8_t ucBssidMatchSsidInd[CFG_SCAN_OOB_MAX_NUM];
+	u_int8_t fg6gOobRnrParseEn;
 };
 
 /*--------------------------------------------------------------*/
