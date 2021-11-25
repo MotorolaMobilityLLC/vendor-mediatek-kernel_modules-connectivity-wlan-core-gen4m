@@ -1120,6 +1120,44 @@ uint32_t kal_is_skb_gro(struct ADAPTER *prAdapter, uint8_t ucBssIdx)
 	return 0;
 }
 
+static inline void napi_gro_flush_list(struct napi_struct *napi)
+{
+	napi_gro_flush(napi, false);
+#if KERNEL_VERSION(5, 4, 0) <= CFG80211_VERSION_CODE
+	if (napi->rx_count) {
+		netif_receive_skb_list(&napi->rx_list);
+		INIT_LIST_HEAD(&napi->rx_list);
+		napi->rx_count = 0;
+	}
+#endif
+}
+
+static inline void kal_gro_flush_queue(IN struct GLUE_INFO *prGlueInfo)
+{
+	int32_t i = 0;
+	struct net_device *dev = NULL;
+	struct NETDEV_PRIVATE_GLUE_INFO *prNetDevPrivate = NULL;
+
+	for (i = 0; i < BSS_DEFAULT_NUM; i++) {
+		dev = wlanGetNetDev(prGlueInfo, i);
+		if (dev) {
+			prNetDevPrivate =
+				(struct NETDEV_PRIVATE_GLUE_INFO *)
+					netdev_priv(dev);
+			if (prNetDevPrivate->u4PendingFlushNum) {
+				preempt_disable();
+				spin_lock_bh(&prNetDevPrivate->napi_spinlock);
+				napi_gro_flush_list(&prNetDevPrivate->napi);
+				GET_CURRENT_SYSTIME(
+					&prNetDevPrivate->tmGROFlushTimeout);
+				prNetDevPrivate->u4PendingFlushNum = 0;
+				spin_unlock_bh(&prNetDevPrivate->napi_spinlock);
+				preempt_enable();
+			}
+		}
+	}
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
  * @brief flush Rx packet to kernel if kernel buffer is full or timeout(1ms)
@@ -1135,13 +1173,21 @@ void kal_gro_flush(struct ADAPTER *prAdapter, struct net_device *prDev)
 	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
 	struct NETDEV_PRIVATE_GLUE_INFO *prNetDevPrivate =
 			(struct NETDEV_PRIVATE_GLUE_INFO *) netdev_priv(prDev);
+	struct napi_struct *napi = &prNetDevPrivate->napi;
 
 	if (CHECK_FOR_TIMEOUT(kalGetTimeTick(),
 		prNetDevPrivate->tmGROFlushTimeout,
 		prWifiVar->ucGROFlushTimeout)) {
-		napi_gro_flush(&prNetDevPrivate->napi, false);
+		napi_gro_flush(napi, false);
 		DBGLOG_LIMITED(INIT, TRACE, "napi_gro_flush:%p\n", prDev);
-	}
+#if KERNEL_VERSION(5, 4, 0) <= CFG80211_VERSION_CODE
+		prNetDevPrivate->u4PendingFlushNum = napi->rx_count;
+#else
+		prNetDevPrivate->u4PendingFlushNum = 0;
+#endif
+	} else
+		prNetDevPrivate->u4PendingFlushNum++;
+
 	GET_CURRENT_SYSTIME(&prNetDevPrivate->tmGROFlushTimeout);
 }
 #endif
@@ -4434,6 +4480,9 @@ int rx_thread(void *data)
 					->rWifiVar.u4WakeLockRxTimeout));
 				}
 			}
+#if CFG_SUPPORT_RX_GRO
+			kal_gro_flush_queue(prGlueInfo);
+#endif /* CFG_SUPPORT_RX_GRO */
 			kalTraceEnd(); /* RX_TO_OS */
 		}
 
