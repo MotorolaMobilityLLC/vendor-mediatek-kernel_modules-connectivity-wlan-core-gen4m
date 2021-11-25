@@ -457,7 +457,8 @@ u_int8_t nic_rxd_v2_sanity_check(
 			DBGLOG(RSN, INFO,
 				"Don't drop eapol or wpi packet\n");
 #if CFG_SUPPORT_NAN
-		} else if ((GET_BSS_INFO_BY_INDEX(prAdapter,
+		} else if ((ucBssIndex < MAX_BSSID_NUM)
+			&& (GET_BSS_INFO_BY_INDEX(prAdapter,
 			ucBssIndex)->eNetworkType == NETWORK_TYPE_NAN)
 			&& (prSwRfb->fgIsBC | prSwRfb->fgIsMC)) {
 			fgDrop = FALSE;
