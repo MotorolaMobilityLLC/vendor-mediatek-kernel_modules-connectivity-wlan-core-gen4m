@@ -5342,7 +5342,7 @@ void nicRxdChNumTranslate(
 #if CFG_SUPPORT_DROP_INVALID_MSDUINFO
 void nicDumpMsduInfo(IN struct MSDU_INFO *prMsduInfo)
 {
-	struct sk_buff *prSkb = prMsduInfo->prPacket;
+	struct sk_buff *prSkb;
 
 	if (!prMsduInfo) {
 		DBGLOG(NIC, ERROR, "Invalid MsduInfo, skip dump.");
@@ -5419,6 +5419,7 @@ void nicDumpMsduInfo(IN struct MSDU_INFO *prMsduInfo)
 	/* dump txd */
 	if (prMsduInfo->ucPacketType == TX_PACKET_TYPE_DATA
 		&& prMsduInfo->prPacket) {
+		prSkb = prMsduInfo->prPacket;
 		DBGLOG_MEM8(NIC, INFO, prSkb->data, 64);
 	}
 }
