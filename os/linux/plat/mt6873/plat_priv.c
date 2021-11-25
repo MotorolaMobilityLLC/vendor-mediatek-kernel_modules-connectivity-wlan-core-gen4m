@@ -15,7 +15,7 @@
 #include "precomp.h"
 
 
-#if CONFIG_MTK_EMI
+#if CONFIG_WLAN_MTK_EMI
 #if KERNEL_VERSION(5, 4, 0) <= CFG80211_VERSION_CODE
 #include <soc/mediatek/emi.h>
 #else
@@ -140,7 +140,7 @@ int32_t kalBoostCpu(IN struct ADAPTER *prAdapter,
 }
 #endif
 
-#ifdef CONFIG_MTK_EMI
+#ifdef CONFIG_WLAN_MTK_EMI
 void kalSetEmiMpuProtection(phys_addr_t emiPhyBase, bool enable)
 {
 }

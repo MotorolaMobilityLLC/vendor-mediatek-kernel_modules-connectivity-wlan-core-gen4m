@@ -11,7 +11,7 @@
 #include "precomp.h"
 #include "wmt_exp.h"
 
-#ifdef CONFIG_MEDIATEK_EMI
+#ifdef CONFIG_WLAN_MTK_EMI
 #include <memory/mediatek/emi.h>
 #define WIFI_EMI_MEM_OFFSET    0x2A0000
 #define WIFI_EMI_MEM_SIZE      0x160000
@@ -131,7 +131,7 @@ int32_t kalBoostCpu(IN struct ADAPTER *prAdapter,
 	return 0;
 }
 
-#ifdef CONFIG_MEDIATEK_EMI
+#ifdef CONFIG_WLAN_MTK_EMI
 void kalSetEmiMpuProtection(phys_addr_t emiPhyBase, bool enable)
 {
 }

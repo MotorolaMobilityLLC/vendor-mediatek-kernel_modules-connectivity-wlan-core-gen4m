@@ -58,11 +58,11 @@ $(info $$WLAN_CHIP_ID is [${WLAN_CHIP_ID}])
 $(info $$MTK_COMBO_CHIP is [${MTK_COMBO_CHIP}])
 
 ifneq ($(CONFIG_MTK_EMI),)
-ccflags-y += -DCONFIG_MTK_EMI=1
+ccflags-y += -DCONFIG_WLAN_MTK_EMI=1
 endif
 
 ifneq ($(CONFIG_MEDIATEK_EMI),)
-ccflags-y += -DCONFIG_MTK_EMI=1
+ccflags-y += -DCONFIG_WLAN_MTK_EMI=1
 endif
 
 ifeq ($(WLAN_CHIP_ID),)
