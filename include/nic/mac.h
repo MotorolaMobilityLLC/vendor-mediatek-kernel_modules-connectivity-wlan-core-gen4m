@@ -1041,6 +1041,8 @@
 	61	/* HT Operation */
 #define ELEM_ID_SCO \
 	62	/* Secondary Channel Offset */
+#define ELEM_ID_BSS_AC_ACCESS_DELAY \
+	68	/* BSS AC Access Delay */
 #define ELEM_ID_RRM_ENABLED_CAP \
 	70	/* Radio Resource Management Enabled Capabilities */
 #define ELEM_ID_MBSSID  \
