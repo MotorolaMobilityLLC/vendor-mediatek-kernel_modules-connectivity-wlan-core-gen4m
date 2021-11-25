@@ -237,9 +237,9 @@
 #define RX_STATUS_UDF_VLT               BIT(10)
 #define RX_STATUS_FRAG                  BIT(11)
 #define RX_STATUS_NULL                  BIT(12)
-#define RX_STATUS_DATA                  BIT(13)
-#define RX_STATUS_AMPDU_SUB_FRAME       BIT(14)
-#define RX_STATUS_AMPDU_FORMAT          BIT(15)
+#define RX_STATUS_NON_DATA              BIT(13)
+#define RX_STATUS_NON_AMPDU_SUB_FRAME   BIT(14)
+#define RX_STATUS_NON_AMPDU_FORMAT      BIT(15)
 #define PAYLOAD_FORMAT_IS_MSDU_FRAME    0
 #define RX_STATUS_FLAG_ERROR_MASK \
 	(RX_STATUS_FLAG_FCS_ERROR | RX_STATUS_FLAG_ICV_ERROR | \
@@ -1304,12 +1304,11 @@ struct ACTION_FRAME_SIZE_MAP {
 #define HAL_RX_STATUS_IS_NULL(_prHwMacRxDesc) \
 	(((_prHwMacRxDesc)->u2StatusFlag & RX_STATUS_NULL)?TRUE:FALSE)
 #define HAL_RX_STATUS_IS_DATA(_prHwMacRxDesc) \
-	(((_prHwMacRxDesc)->u2StatusFlag & RX_STATUS_DATA)?FALSE:TRUE)
+	(!((_prHwMacRxDesc)->u2StatusFlag & RX_STATUS_NON_DATA))
 #define HAL_RX_STATUS_IS_AMPDU_SUB_FRAME(_prHwMacRxDesc)	\
-	(((_prHwMacRxDesc)->u2StatusFlag & RX_STATUS_AMPDU_SUB_FRAME) \
-	? FALSE : TRUE)
+	(!((_prHwMacRxDesc)->u2StatusFlag & RX_STATUS_NON_AMPDU_SUB_FRAME))
 #define HAL_RX_STATUS_IS_AMPDU_FORMAT(_prHwMacRxDesc)	\
-	(((_prHwMacRxDesc)->u2StatusFlag & RX_STATUS_AMPDU_FORMAT)?FALSE:TRUE)
+	(!((_prHwMacRxDesc)->u2StatusFlag & RX_STATUS_NON_AMPDU_FORMAT))
 
 /* DW 3 */
 #define HAL_RX_STATUS_IS_RV_VALID(_prHwMacRxDesc)	\
