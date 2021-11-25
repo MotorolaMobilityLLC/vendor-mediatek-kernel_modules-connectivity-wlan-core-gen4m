@@ -3417,7 +3417,7 @@ struct wireless_dev *wlanNetCreate(void *pvData,
 		 * after we stopped queue
 		 */
 		prDevHandler->tx_queue_len = 3000;
-		DBGLOG(INIT, INFO, "net_device prDev(0x%p) allocated\n",
+		DBGLOG(INIT, TRACE, "net_device prDev(0x%p) allocated\n",
 			prDevHandler);
 
 		/* 4 <3.1.1> Initialize net device varaiables */

@@ -2193,7 +2193,7 @@ int32_t soc7_0_wlanPowerOnInit(void)
 		prAdapter = prGlueInfo->prAdapter;
 
 		if (prChipInfo->pwrondownload) {
-			DBGLOG_LIMITED(INIT, INFO,
+			DBGLOG_LIMITED(INIT, TRACE,
 				"[Wi-Fi PWR On] EMI download Start\n");
 
 			if (prChipInfo->pwrondownload(prAdapter,
@@ -2201,7 +2201,7 @@ int32_t soc7_0_wlanPowerOnInit(void)
 				WLAN_STATUS_SUCCESS)
 				i4Status = -ROM_PATCH_DOWNLOAD_FAIL;
 
-			DBGLOG_LIMITED(INIT, INFO,
+			DBGLOG_LIMITED(INIT, TRACE,
 				"[Wi-Fi PWR On] EMI download End\n");
 		}
 	} else {
@@ -2219,7 +2219,7 @@ int32_t soc7_0_wlanPowerOnInit(void)
 			prAdapter = prGlueInfo->prAdapter;
 
 			if (prChipInfo->pwrondownload) {
-				DBGLOG_LIMITED(INIT, INFO,
+				DBGLOG_LIMITED(INIT, TRACE,
 					"[Wi-Fi PWR On] EMI download Start\n");
 
 				if (prChipInfo->pwrondownload(prAdapter,
@@ -2227,7 +2227,7 @@ int32_t soc7_0_wlanPowerOnInit(void)
 					WLAN_STATUS_SUCCESS)
 					i4Status = -ROM_PATCH_DOWNLOAD_FAIL;
 
-				DBGLOG_LIMITED(INIT, INFO,
+				DBGLOG_LIMITED(INIT, TRACE,
 					"[Wi-Fi PWR On] EMI download End\n");
 			}
 

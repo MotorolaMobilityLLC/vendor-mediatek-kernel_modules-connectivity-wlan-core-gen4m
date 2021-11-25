@@ -8387,7 +8387,7 @@ int32_t __weak kalSetCpuNumFreq(uint32_t u4CoreNum,
 
 int32_t __weak kalGetFwFlavorByPlat(uint8_t *flavor)
 {
-	DBGLOG(SW4, INFO, "NO firmware flavor build.\n");
+	DBGLOG(SW4, TRACE, "NO firmware flavor build.\n");
 	return 0;
 }
 
