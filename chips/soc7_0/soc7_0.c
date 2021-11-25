@@ -2549,6 +2549,8 @@ static void soc7_0_DumpOtherCr(struct ADAPTER *prAdapter)
 	DBGLOG(INIT, INFO, "0x18060010=[0x%08x]\n", u4Val);
 	connac2x_DbgCrRead(NULL, 0x180600f0, &u4Val);
 	DBGLOG(INIT, INFO, "0x180600f0=[0x%08x]\n", u4Val);
+	connac2x_DbgCrRead(prAdapter, 0x18400120, &u4Val);
+	DBGLOG(INIT, INFO, "0x18400120=[0x%08x]\n", u4Val);
 
 	set_wf_monflg_on_mailbox_wf();
 
