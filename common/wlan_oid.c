@@ -17096,9 +17096,12 @@ wlanoidIndicateBssInfo(IN struct ADAPTER *prAdapter,
 				   pprBssDesc[i]->eBand,
 				   RCPI_TO_dBm(pprBssDesc[i]->ucRCPI));
 	}
-	DBGLOG(SCN, INFO, "pending %d sched scan results\n", i);
-	if (i > 0)
+
+	if (i > 0) {
+		DBGLOG(SCN, INFO, "pending %d sched scan results\n", i);
 		kalMemZero(&pprBssDesc[0], i * sizeof(struct BSS_DESC *));
+	} else
+		DBGLOG(SCN, TRACE, "pending %d sched scan results\n", i);
 
 	return rStatus;
 }	/* wlanoidIndicateBssInfo */

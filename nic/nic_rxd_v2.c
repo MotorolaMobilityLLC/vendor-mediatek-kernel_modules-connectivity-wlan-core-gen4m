@@ -585,13 +585,11 @@ void nic_rxd_v2_check_wakeup_reason(
 			(struct WLAN_MAC_MGMT_HEADER *)pvHeader;
 			ucSubtype = (prWlanMgmtHeader->u2FrameCtrl &
 				MASK_FC_SUBTYPE) >> OFFSET_OF_FC_SUBTYPE;
+
 			DBGLOG(RX, INFO,
-				"frame subtype: %d",
-				ucSubtype);
-				DBGLOG(RX, INFO,
-				" SeqCtrl %d wakeup host\n",
-				prWlanMgmtHeader->u2SeqCtrl);
-			DBGLOG_MEM8(RX, INFO,
+				" frame subtype:%d, SeqCtrl %d wakeup host\n",
+				ucSubtype, prWlanMgmtHeader->u2SeqCtrl);
+			DBGLOG_MEM8(RX, TRACE,
 					pvHeader, u2PktLen > 50 ? 50:u2PktLen);
 		} else {
 			DBGLOG(RX, ERROR,

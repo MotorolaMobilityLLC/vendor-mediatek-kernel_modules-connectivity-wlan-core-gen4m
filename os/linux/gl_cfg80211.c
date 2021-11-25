@@ -1215,7 +1215,7 @@ int mtk_cfg80211_scan(struct wiphy *wiphy,
 				/* remove if this is a wildcard scan */
 				num_ssid--;
 				wildcard_flag |= (1 << i);
-				DBGLOG(REQ, STATE, "i=%d, wildcard scan\n", i);
+				DBGLOG(REQ, TRACE, "i=%d, wildcard scan\n", i);
 				continue;
 			}
 			COPY_SSID(prScanRequest->rSsid[u4ValidIdx].aucSsid,
