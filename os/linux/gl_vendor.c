@@ -1161,7 +1161,7 @@ uint32_t fill_peer_info(uint8_t *dst, struct PEER_INFO_RATE_STAT *src,
 		if (src_peer->type == STATS_LLS_WIFI_PEER_AP) {
 			struct STATS_LLS_PEER_AP_REC *prPeerApRec = NULL;
 
-			for (prPeerApRec = prAdapter->rPeerApRec;
+			for (j = 0, prPeerApRec = prAdapter->rPeerApRec;
 					j < KAL_AIS_NUM; j++, prPeerApRec++) {
 				if (UNEQUAL_MAC_ADDR(dst_peer->peer_mac_address,
 						     prPeerApRec->mac_addr))
