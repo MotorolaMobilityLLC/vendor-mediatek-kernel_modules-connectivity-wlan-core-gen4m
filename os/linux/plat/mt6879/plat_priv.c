@@ -187,7 +187,7 @@ int32_t kalBoostCpu(IN struct ADAPTER *prAdapter,
 }
 #endif
 
-#ifdef CONFIG_MTK_EMI
+#ifdef CONFIG_WLAN_MTK_EMI
 void kalSetEmiMpuProtection(phys_addr_t emiPhyBase, bool enable)
 {
 }
