@@ -8214,7 +8214,7 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 		prAdapter, "AllowSameBandDualSta", FEATURE_ENABLED);
 #if CFG_MODIFY_TX_POWER_BY_BAT_VOLT
 	prWifiVar->u4BackoffLevel = (uint32_t) wlanCfgGetUint32(
-		prAdapter, "BackoffLevel", 3);
+		prAdapter, "BackoffLevel", 0);
 #endif
 
 #if (CFG_SUPPORT_APF == 1)
