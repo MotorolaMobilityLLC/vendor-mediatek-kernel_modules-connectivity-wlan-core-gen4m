@@ -105,6 +105,11 @@ struct IE_ORDER_TABLE_INFO assoc_req_ie_order[] = {
 	{49, ELEM_ID_RESERVED, ELEM_EXT_ID_UL_MU_Power_CAP},
 	/* TWT Constraint Parameters */
 	{50, ELEM_ID_RESERVED, 0},
+	/* BSS AC Access Delay/WAPI Parameter Set
+	 * Note: This field is absent in order table of 802.11-2020
+	 * but we need to handle it for WAPI connection
+	 */
+	{98, ELEM_ID_BSS_AC_ACCESS_DELAY, 0},
 	/* Diffie-Hellman Parameter
 	 * Note: This field is absent in order table of 802.11-2020
 	 * but we need to handle it for OWE connection
@@ -216,6 +221,11 @@ struct IE_ORDER_TABLE_INFO reassoc_req_ie_order[] = {
 	{53, ELEM_ID_RESERVED, ELEM_EXT_ID_HE_6G_BAND_CAP},
 	/* UL MU Power Capabilities */
 	{54, ELEM_ID_RESERVED, ELEM_EXT_ID_UL_MU_Power_CAP},
+	/* BSS AC Access Delay/WAPI Parameter Set
+	 * Note: This field is absent in order table of 802.11-2020
+	 * but we need to handle it for WAPI connection
+	 */
+	{98, ELEM_ID_BSS_AC_ACCESS_DELAY, 0},
 	/* Diffie-Hellman Parameter
 	 * Note: This field is absent in order table of 802.11-2020
 	 * but we need to handle it for OWE connection
@@ -230,6 +240,7 @@ void sortAssocReqIE(IN struct ADAPTER *prAdapter,
 {
 	uint32_t beginOffset, start, end, frameLen, frameSearch, searchCount;
 	uint32_t eid, exteid, orderIdx;
+	uint16_t txAssocReqIENums;
 	const uint8_t *primary_IE;
 	struct MSDU_INFO *prMsduInfoInOrder;
 	uint8_t  *pucBufferInOrder;
@@ -249,17 +260,21 @@ void sortAssocReqIE(IN struct ADAPTER *prAdapter,
 	if (fgIsReAssoc) {
 		start = beginOffset =
 		  OFFSET_OF(struct WLAN_REASSOC_REQ_FRAME, aucInfoElem[0]);
-
+		txAssocReqIENums = sizeof(reassoc_req_ie_order) /
+					sizeof(struct IE_ORDER_TABLE_INFO);
 	} else {
 		start = beginOffset =
 		  OFFSET_OF(struct WLAN_ASSOC_REQ_FRAME, aucInfoElem[0]);
+		txAssocReqIENums = sizeof(assoc_req_ie_order) /
+					sizeof(struct IE_ORDER_TABLE_INFO);
 	}
 	frameLen = end - start;
 	frameSearch = 0;
 	searchCount = 0;
 	orderIdx = 0;
 	/* searchCount 500: just prevent infinite loop if IE is out of spec */
-	while (frameSearch < frameLen && searchCount < 500) {
+	while (frameSearch < frameLen && orderIdx < txAssocReqIENums &&
+			searchCount < 500) {
 		if (fgIsReAssoc) {
 			eid = reassoc_req_ie_order[orderIdx].eid;
 			exteid = reassoc_req_ie_order[orderIdx].extid;
