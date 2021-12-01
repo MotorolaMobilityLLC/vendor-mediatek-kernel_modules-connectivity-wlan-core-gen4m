@@ -1130,6 +1130,7 @@ uint32_t fill_peer_info(uint8_t *dst, struct PEER_INFO_RATE_STAT *src,
 	struct STATS_LLS_RATE_STAT *dst_rate;
 	struct STATS_LLS_RATE_STAT *src_rate;
 	struct STA_RECORD *sta_rec;
+	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
 	uint32_t i;
 	uint32_t j;
 	uint8_t *orig = dst;
@@ -1143,7 +1144,8 @@ uint32_t fill_peer_info(uint8_t *dst, struct PEER_INFO_RATE_STAT *src,
 		if (src_peer->type >= STATS_LLS_WIFI_PEER_INVALID)
 			continue;
 
-		DBGLOG(REQ, INFO, "Peer %u of type %u", i, src_peer->type);
+		if (prWifiVar->fgLinkStatsDump)
+			DBGLOG(REQ, INFO, "Peer=%u type=%u", i, src_peer->type);
 
 		(*num_peers)++;
 		dst_peer = (struct STATS_LLS_PEER_INFO *)dst;
@@ -1154,7 +1156,7 @@ uint32_t fill_peer_info(uint8_t *dst, struct PEER_INFO_RATE_STAT *src,
 		DBGLOG(REQ, TRACE, "Peer MAC: " MACSTR,
 				MAC2STR(dst_peer->peer_mac_address));
 		sta_rec = find_peer_starec(prAdapter, dst_peer);
-		if (sta_rec == NULL) {
+		if (sta_rec == NULL && prWifiVar->fgLinkStatsDump) {
 			DBGLOG(REQ, WARN, "MAC not found: " MACSTR,
 					MAC2STR(dst_peer->peer_mac_address));
 		}
@@ -1173,7 +1175,7 @@ uint32_t fill_peer_info(uint8_t *dst, struct PEER_INFO_RATE_STAT *src,
 			}
 		}
 
-		if (prAdapter->rWifiVar.fgLinkStatsDump)
+		if (prWifiVar->fgLinkStatsDump)
 			dumpLinkStatsPeerInfo(dst_peer, i);
 		dst += sizeof(struct STATS_LLS_PEER_INFO);
 
@@ -1207,7 +1209,7 @@ uint32_t fill_peer_info(uint8_t *dst, struct PEER_INFO_RATE_STAT *src,
 					sizeof(struct STATS_LLS_RATE_STAT));
 
 				dst_rate->rx_mpdu = rxMpduCount;
-				if (prAdapter->rWifiVar.fgLinkStatsDump)
+				if (prWifiVar->fgLinkStatsDump)
 					dumpLinkStatsRate(dst_rate, j);
 				dst_rate++;
 			}
@@ -1281,6 +1283,7 @@ uint32_t fill_radio(uint8_t *dst, struct WIFI_RADIO_CHANNEL_STAT *src,
 	struct STATS_LLS_WIFI_RADIO_STAT *radio;
 	struct STATS_LLS_CHANNEL_STAT *src_ch;
 	struct STATS_LLS_CHANNEL_STAT *dst_ch;
+	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
 
 	uint8_t *orig = dst;
 	uint32_t i, j;
@@ -1291,7 +1294,7 @@ uint32_t fill_radio(uint8_t *dst, struct WIFI_RADIO_CHANNEL_STAT *src,
 		radio = (struct STATS_LLS_WIFI_RADIO_STAT *)dst;
 		dst += sizeof(struct STATS_LLS_WIFI_RADIO_STAT);
 
-		if (prAdapter->rWifiVar.fgLinkStatsDump)
+		if (prWifiVar->fgLinkStatsDump)
 			dumpLinkStatsRadio(radio, i);
 		radio->num_channels = 0;
 
@@ -1303,7 +1306,7 @@ uint32_t fill_radio(uint8_t *dst, struct WIFI_RADIO_CHANNEL_STAT *src,
 				continue;
 			radio->num_channels++;
 			kalMemCopyFromIo(dst_ch, src_ch, sizeof(*dst_ch));
-			if (prAdapter->rWifiVar.fgLinkStatsDump)
+			if (prWifiVar->fgLinkStatsDump)
 				dumpLinkStatsChannel(dst_ch, j);
 			dst_ch++;
 		}
