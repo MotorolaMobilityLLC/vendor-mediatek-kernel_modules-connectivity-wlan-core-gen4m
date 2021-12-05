@@ -1327,8 +1327,6 @@ u_int8_t glRegisterP2P(struct GLUE_INFO *prGlueInfo, const char *prDevName,
 		}
 
 		prP2pWdev = gprP2pRoleWdev[i];
-		DBGLOG(INIT, INFO, "glRegisterP2P(%d), fgIsApMode(%d)\n",
-			i, fgIsApMode);
 
 		/* Reset prP2pWdev for the issue that the prP2pWdev doesn't
 		 * reset when the usb unplug/plug.
@@ -1357,8 +1355,10 @@ u_int8_t glRegisterP2P(struct GLUE_INFO *prGlueInfo, const char *prDevName,
 		COPY_MAC_ADDR(rMacAddr,
 				prAdapter->rWifiVar.aucInterfaceAddress[i]);
 
-		DBGLOG(INIT, INFO, "Set p2p role[%d] mac to " MACSTR "\n",
-				i, MAC2STR(rMacAddr));
+		DBGLOG(INIT, INFO,
+			"Set p2p role[%d] mac to " MACSTR " fgIsApMode(%d)\n",
+			fgIsApMode, i, MAC2STR(rMacAddr));
+
 		kalMemCopy(prP2pDev->dev_addr, rMacAddr, ETH_ALEN);
 		kalMemCopy(prP2pDev->perm_addr, prP2pDev->dev_addr, ETH_ALEN);
 
