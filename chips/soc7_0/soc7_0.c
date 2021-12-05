@@ -1094,6 +1094,9 @@ static int wake_up_conninfra_off(void)
 	value |= CONN_HOST_CSR_TOP_CONN_INFRA_WAKEPU_WF_CONN_INFRA_WAKEPU_WF_MASK;
 	wf_ioremap_write(CONN_HOST_CSR_TOP_CONN_INFRA_WAKEPU_WF_ADDR, value);
 
+	/* wait 200 us to avoid fake ready */
+	udelay(200);
+
 	/* Check CONNSYS version ID
 	 * (polling "10 times" for specific project code
 	 * and each polling interval is "1ms")
@@ -2683,7 +2686,7 @@ static int soc7_0_CheckBusHang(void *adapter, uint8_t ucWfResetEnable)
 		if (u4Value & BIT(0)) {
 			set_wf_monflg_on_mailbox_wf();
 
-			kalMsleep(10);
+			kalMsleep(20);
 
 			/* Pooling mailbox to check bus timeout status
 			 * Address: 0x1806_0B10[4:0]
