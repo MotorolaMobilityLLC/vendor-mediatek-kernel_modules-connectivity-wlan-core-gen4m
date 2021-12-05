@@ -246,6 +246,15 @@
 #define HE_CAP_INFO_MCS_MAP_MCS11                      2
 #define HE_CAP_INFO_MCS_NOT_SUPPORTED                  3
 
+#define HE_CAP_INFO_MCS_1SS_OFFSET                     0
+#define HE_CAP_INFO_MCS_2SS_OFFSET                     2
+#define HE_CAP_INFO_MCS_3SS_OFFSET                     4
+#define HE_CAP_INFO_MCS_4SS_OFFSET                     6
+#define HE_CAP_INFO_MCS_5SS_OFFSET                     8
+#define HE_CAP_INFO_MCS_6SS_OFFSET                     10
+#define HE_CAP_INFO_MCS_7SS_OFFSET                     12
+#define HE_CAP_INFO_MCS_8SS_OFFSET                     14
+
 #define HE_CAP_INFO_MCS_1SS_MASK                       BITS(0, 1)
 #define HE_CAP_INFO_MCS_2SS_MASK                       BITS(2, 3)
 #define HE_CAP_INFO_MCS_3SS_MASK                       BITS(4, 5)

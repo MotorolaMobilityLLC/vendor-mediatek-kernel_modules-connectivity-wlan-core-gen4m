@@ -6757,6 +6757,87 @@ uint8_t rlmGetBssOpBwByVhtAndHtOpInfo(struct BSS_INFO *prBssInfo)
 	return ucBssOpBw;
 }
 
+uint8_t rlmGetBssOpBwByOwnAndPeerCapability(IN struct ADAPTER *prAdapter,
+	IN struct BSS_INFO *prBssInfo)
+{
+	uint8_t ucOpMaxBw = MAX_BW_UNKNOWN;
+	uint8_t ucBssOpBw = MAX_BW_20MHZ;
+	struct STA_RECORD *prStaRec;
+
+	ASSERT(prBssInfo);
+	ASSERT(prBssInfo->eCurrentOPMode == OP_MODE_INFRASTRUCTURE);
+
+	ucOpMaxBw = cnmGetBssMaxBw(prAdapter, prBssInfo->ucBssIndex);
+	prStaRec = prBssInfo->prStaRecOfAP;
+
+#if CFG_SUPPORT_802_11AC
+	if (RLM_NET_IS_11AC(prBssInfo)) { /* VHT */
+		switch (prStaRec->ucVhtOpChannelWidth) {
+		case VHT_OP_CHANNEL_WIDTH_320:
+			ucBssOpBw = MAX_BW_320MHZ;
+			break;
+		case VHT_OP_CHANNEL_WIDTH_80P80:
+			ucBssOpBw = MAX_BW_80_80_MHZ;
+			break;
+		case VHT_OP_CHANNEL_WIDTH_160:
+			ucBssOpBw = MAX_BW_160MHZ;
+			break;
+		case VHT_OP_CHANNEL_WIDTH_80:
+			ucBssOpBw = MAX_BW_80MHZ;
+			break;
+		case VHT_OP_CHANNEL_WIDTH_20_40:
+			if (prBssInfo->eBssSCO != CHNL_EXT_SCN)
+				ucBssOpBw = MAX_BW_40MHZ;
+			break;
+		default:
+			ucBssOpBw = MAX_BW_80MHZ;
+			break;
+		}
+
+		if (ucOpMaxBw > ucBssOpBw) {
+			DBGLOG(RLM, WARN,
+				"Reduce max op bw from %d to %d per peer's VHT capability\n",
+				ucOpMaxBw, ucBssOpBw);
+			ucOpMaxBw = ucBssOpBw;
+		}
+	} else
+#endif
+#if (CFG_SUPPORT_802_11AX == 1)
+	if (RLM_NET_IS_11AX(prBssInfo)) { /* HE */
+		if (HE_IS_PHY_CAP_CHAN_WIDTH_SET_BW80P80_5G(
+			prStaRec->ucHePhyCapInfo))
+			ucBssOpBw = MAX_BW_80_80_MHZ;
+		else if (HE_IS_PHY_CAP_CHAN_WIDTH_SET_BW160_5G(
+			prStaRec->ucHePhyCapInfo))
+			ucBssOpBw = MAX_BW_160MHZ;
+		else
+			ucBssOpBw = MAX_BW_80MHZ;
+
+		if (ucOpMaxBw > ucBssOpBw) {
+			DBGLOG(RLM, WARN,
+				"Reduce max op bw from %d to %d per peer's HE capability\n",
+				ucOpMaxBw, ucBssOpBw);
+			ucOpMaxBw = ucBssOpBw;
+		}
+	} else
+#endif
+	if (RLM_NET_IS_11N(prBssInfo)) { /* HT */
+		if ((prStaRec->ucHtPeerOpInfo1 & HT_OP_INFO1_STA_CHNL_WIDTH)
+			&& prBssInfo->fg40mBwAllowed) {
+			ucBssOpBw = MAX_BW_40MHZ;
+		}
+
+		if (ucOpMaxBw > ucBssOpBw) {
+			DBGLOG(RLM, WARN,
+				"Reduce max op bw from %d to %d per peer's HT capability\n",
+				ucOpMaxBw, ucBssOpBw);
+			ucOpMaxBw = ucBssOpBw;
+		}
+	}
+
+	return ucOpMaxBw;
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief
@@ -7337,40 +7418,116 @@ static u_int8_t rlmCheckOpChangeParamForClient(struct BSS_INFO *prBssInfo,
 
 	} else
 #endif
-	{
-		if (RLM_NET_IS_11N(prBssInfo)) { /* HT */
-			/* Check peer Channel Width */
-			if (ucChannelWidth >= MAX_BW_80MHZ) {
-				DBGLOG(RLM, WARN,
-				       "BSS[%d] target OP BW:%d is invalid for HT OpMode change\n",
-				       prBssInfo->ucBssIndex, ucChannelWidth);
+#if (CFG_SUPPORT_802_11AX == 1)
+	if (RLM_NET_IS_11AX(prBssInfo)) { /* HE */
+		/* Check peer OP Channel Width */
+		switch (ucChannelWidth) {
+		case MAX_BW_80_80_MHZ:
+			if (!HE_IS_PHY_CAP_CHAN_WIDTH_SET_BW80P80_5G(
+				prStaRec->ucHePhyCapInfo)) {
+				DBGLOG(RLM, INFO,
+					"Can't change BSS[%d] OP BW to:%d for peer HE doesn't support BW80P80\n",
+					prBssInfo->ucBssIndex, ucChannelWidth);
 				return FALSE;
-			} else if (ucChannelWidth ==
-					MAX_BW_40MHZ) {
-				if (!(prStaRec->ucHtPeerOpInfo1 &
-				      HT_OP_INFO1_STA_CHNL_WIDTH) ||
-				    (!prBssInfo->fg40mBwAllowed)) {
+			}
+			break;
+		case MAX_BW_160MHZ:
+			if (!HE_IS_PHY_CAP_CHAN_WIDTH_SET_BW160_5G(
+				prStaRec->ucHePhyCapInfo)) {
+				DBGLOG(RLM, INFO,
+					"Can't change BSS[%d] OP BW to:%d for peer HE doesn't support BW160\n",
+					prBssInfo->ucBssIndex, ucChannelWidth);
+				return FALSE;
+			}
+			break;
+		case MAX_BW_80MHZ:
+		case MAX_BW_40MHZ:
+			if (!HE_IS_PHY_CAP_CHAN_WIDTH_SET_BW40_BW80_5G(
+				prStaRec->ucHePhyCapInfo)) {
+				DBGLOG(RLM, INFO,
+					"Can't change BSS[%d] OP BW to:%d for peer HE doens't support BW80/BW40\n",
+					prBssInfo->ucBssIndex, ucChannelWidth);
+				return FALSE;
+			}
+			break;
+		case MAX_BW_20MHZ:
+			break;
+		default:
+			DBGLOG(RLM, WARN,
+				"BSS[%d] target OP BW:%d is invalid for HE OpMode change\n",
+					prBssInfo->ucBssIndex, ucChannelWidth);
+			return FALSE;
+		}
+
+		/* Check peer Rx Nss Cap */
+		if (ucOpRxNss == 2) {
+			switch (ucChannelWidth) {
+			case MAX_BW_80_80_MHZ:
+				if (((prStaRec->u2HeRxMcsMapBW80P80 &
+					HE_CAP_INFO_MCS_2SS_MASK) >>
+					HE_CAP_INFO_MCS_2SS_OFFSET) ==
+						HE_CAP_INFO_MCS_NOT_SUPPORTED) {
 					DBGLOG(RLM, INFO,
-					       "Can't change BSS[%d] OP BW to:%d for PeerOpBw:%d fg40mBwAllowed:%d\n",
-					       prBssInfo->ucBssIndex,
-					       ucChannelWidth,
-					       (uint8_t)(
-					prStaRec->ucHtPeerOpInfo1 &
-					HT_OP_INFO1_STA_CHNL_WIDTH),
-					prBssInfo->fg40mBwAllowed);
+						"Don't change Nss since HE peer doesn't support BW80P80 2ss\n");
 					return FALSE;
 				}
-			}
-
-			/* Check peer Rx Nss Cap */
-			if (ucOpRxNss == 2 &&
-				(prStaRec->aucRxMcsBitmask[1] == 0)) {
+				break;
+			case MAX_BW_160MHZ:
+				if (((prStaRec->u2HeRxMcsMapBW160 &
+					HE_CAP_INFO_MCS_2SS_MASK) >>
+					HE_CAP_INFO_MCS_2SS_OFFSET) ==
+						HE_CAP_INFO_MCS_NOT_SUPPORTED) {
+					DBGLOG(RLM, INFO,
+						"Don't change Nss since HE peer doesn't support BW160 2ss\n");
+					return FALSE;
+				}
+				break;
+			case MAX_BW_80MHZ:
+			default:
+				if (((prStaRec->u2HeRxMcsMapBW80 &
+					HE_CAP_INFO_MCS_2SS_MASK) >>
+					HE_CAP_INFO_MCS_2SS_OFFSET) ==
+						HE_CAP_INFO_MCS_NOT_SUPPORTED) {
+					DBGLOG(RLM, INFO,
+						"Don't change Nss since HE peer doesn't support BW80 2ss\n");
+					return FALSE;
+				}
+				break;
+		    }
+		}
+	} else
+#endif
+	if (RLM_NET_IS_11N(prBssInfo)) { /* HT */
+		/* Check peer Channel Width */
+		if (ucChannelWidth >= MAX_BW_80MHZ) {
+			DBGLOG(RLM, WARN,
+				"BSS[%d] target OP BW:%d is invalid for HT OpMode change\n",
+				prBssInfo->ucBssIndex, ucChannelWidth);
+			return FALSE;
+		} else if (ucChannelWidth == MAX_BW_40MHZ) {
+			if (!(prStaRec->ucHtPeerOpInfo1 &
+					HT_OP_INFO1_STA_CHNL_WIDTH) ||
+				(!prBssInfo->fg40mBwAllowed)) {
 				DBGLOG(RLM, INFO,
-				       "Don't change Nss since HT peer doesn't support 2ss\n");
+					"Can't change BSS[%d] OP BW to:%d for PeerOpBw:%d fg40mBwAllowed:%d\n",
+					prBssInfo->ucBssIndex,
+					ucChannelWidth,
+					(uint8_t)(prStaRec->ucHtPeerOpInfo1 &
+						HT_OP_INFO1_STA_CHNL_WIDTH),
+					prBssInfo->fg40mBwAllowed);
 				return FALSE;
 			}
 		}
+
+		/* Check peer Rx Nss Cap */
+		if (ucOpRxNss == 2 &&
+			(prStaRec->aucRxMcsBitmask[1] == 0)) {
+			DBGLOG(RLM, INFO,
+				"Don't change Nss since HT peer doesn't support 2ss\n");
+			return FALSE;
+		}
 	}
+
 	return TRUE;
 }
 
