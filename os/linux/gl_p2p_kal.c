@@ -624,12 +624,11 @@ uint16_t kalP2PCalP2P_IELen(IN struct GLUE_INFO *prGlueInfo,
 	return prGlueInfo->prP2PInfo[ucRoleIdx]->u2P2PIELen[ucIndex];
 }
 
-void kalP2PEnableNetDev(IN struct GLUE_INFO *prGlueInfo,
+void kalP2PTxCarrierOn(IN struct GLUE_INFO *prGlueInfo,
 		IN struct BSS_INFO *prBssInfo)
 {
 	struct net_device *prDevHandler = NULL;
 	uint8_t ucBssIndex = (uint8_t)prBssInfo->ucBssIndex;
-	uint8_t ucRoleIdx  = (uint8_t)prBssInfo->u4PrivateData;
 
 	prDevHandler = wlanGetNetDev(prGlueInfo, ucBssIndex);
 	if (prDevHandler == NULL)
@@ -639,6 +638,15 @@ void kalP2PEnableNetDev(IN struct GLUE_INFO *prGlueInfo,
 		netif_carrier_on(prDevHandler);
 		netif_tx_start_all_queues(prDevHandler);
 	}
+}
+
+void kalP2PEnableNetDev(IN struct GLUE_INFO *prGlueInfo,
+		IN struct BSS_INFO *prBssInfo)
+{
+	uint8_t ucRoleIdx  = (uint8_t)prBssInfo->u4PrivateData;
+
+	kalP2PTxCarrierOn(prGlueInfo,
+			prBssInfo);
 
 	if (p2pFuncGetDfsState() == DFS_STATE_DETECTED) {
 		prGlueInfo->prP2PInfo[ucRoleIdx]->fgChannelSwitchReq = TRUE;

@@ -9867,7 +9867,6 @@ int priv_driver_radarevent(IN struct net_device *prNetDev,
 	if (p2pFuncGetDfsState() != DFS_STATE_CHECKING) {
 		LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
 			"\nNot in CAC period");
-		return i4BytesWritten;
 	}
 
 	cnmRadarDetectEvent(prGlueInfo->prAdapter,

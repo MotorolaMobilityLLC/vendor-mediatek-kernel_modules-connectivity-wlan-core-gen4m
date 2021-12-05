@@ -1941,10 +1941,21 @@ void p2pRoleFsmRunEventRadarDet(IN struct ADAPTER *prAdapter,
 		prP2pBssInfo->eCurrentOPMode = OP_MODE_ACCESS_POINT;
 		prP2pConnReqInfo->rChannelInfo.ucChannelNum = ucChannelNum;
 		/* Use rConnReqInfo bw */
-		prP2pConnReqInfo->rChannelInfo.ucChnlBw = MAX_BW_80MHZ;
 
-		p2pRoleFsmRunEventStartAP(prAdapter,
-			(struct MSG_HDR *)&prP2pConnReqInfo->rMsgStartAp);
+		if (IS_NET_PWR_STATE_ACTIVE(
+			prAdapter,
+			prP2pBssInfo->ucBssIndex)) {
+
+			cnmSapChannelSwitchReq(prAdapter,
+				&prP2pConnReqInfo->rChannelInfo,
+				prP2pBssInfo->u4PrivateData);
+			kalP2PTxCarrierOn(prAdapter->prGlueInfo,
+					prP2pBssInfo);
+		} else {
+			p2pRoleFsmRunEventStartAP(prAdapter,
+				(struct MSG_HDR *)
+				&prP2pConnReqInfo->rMsgStartAp);
+		}
 	}
 
 error:
