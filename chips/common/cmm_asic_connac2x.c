@@ -2384,7 +2384,8 @@ bool asicConnac2xSwIntHandler(struct ADAPTER *prAdapter)
 		}
 	}
 
-	if (status & BIT(SW_INT_WHOLE_RESET)) {
+	if (status & BIT(SW_INT_WHOLE_RESET) ||
+		status & BIT(SW_INT_NMI_BUS_HANG_WHOLE_CHIP_RESET)) {
 #if (CFG_ANDORID_CONNINFRA_COREDUMP_SUPPORT == 1)
 		g_eWfRstSource = WF_RST_SOURCE_FW;
 		if (!prAdapter->prGlueInfo->u4ReadyFlag)
