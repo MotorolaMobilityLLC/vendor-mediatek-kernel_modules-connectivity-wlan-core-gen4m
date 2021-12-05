@@ -1357,7 +1357,7 @@ u_int8_t glRegisterP2P(struct GLUE_INFO *prGlueInfo, const char *prDevName,
 
 		DBGLOG(INIT, INFO,
 			"Set p2p role[%d] mac to " MACSTR " fgIsApMode(%d)\n",
-			fgIsApMode, i, MAC2STR(rMacAddr));
+			i, MAC2STR(rMacAddr), fgIsApMode);
 
 		kalMemCopy(prP2pDev->dev_addr, rMacAddr, ETH_ALEN);
 		kalMemCopy(prP2pDev->perm_addr, prP2pDev->dev_addr, ETH_ALEN);
