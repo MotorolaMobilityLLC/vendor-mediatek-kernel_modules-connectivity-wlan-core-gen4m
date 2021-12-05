@@ -1487,8 +1487,9 @@ void p2pRoleFsmRunEventStartAP(IN struct ADAPTER *prAdapter,
 	DBGLOG(P2P, TRACE,
 		"p2pRoleFsmRunEventStartAP: start AP CH[%u]",
 		prP2pConnReqInfo->rChannelInfo.ucChannelNum);
-	DBGLOG(P2P, TRACE, "RxNSS[%u]TxNss[%u].\n",
-		prP2pBssInfo->ucOpRxNss, prP2pBssInfo->ucOpTxNss);
+	DBGLOG(P2P, TRACE, "RxNSS[%u]TxNss[%u]. Hidden[%u]\n",
+		prP2pBssInfo->ucOpRxNss, prP2pBssInfo->ucOpTxNss,
+		prP2pBssInfo->eHiddenSsidType);
 	/*
 	 * beacon content is related with Nss number ,
 	 * need to update because of modification
@@ -2486,13 +2487,7 @@ void p2pRoleFsmRunEventConnectionAbort(IN struct ADAPTER *prAdapter,
 					MAC2STR(prCurrStaRec->aucMacAddr));
 
 				if ((prP2pBssInfo->u4RsnSelectedAKMSuite ==
-					RSN_AKM_SUITE_OWE) &&
-					(prCurrStaRec->eAuthAssocState ==
-					AAA_STATE_SEND_AUTH2 ||
-					prCurrStaRec->eAuthAssocState ==
-					AAA_STATE_SEND_AUTH4 ||
-					prCurrStaRec->eAuthAssocState ==
-					AAA_STATE_SEND_ASSOC2)) {
+					RSN_AKM_SUITE_OWE)) {
 					DBGLOG(P2P, INFO,
 						"[OWE] Ignore deauth in %d\n",
 						prCurrStaRec->eAuthAssocState);
@@ -3496,6 +3491,14 @@ p2pRoleFsmRunEventAAASuccess(IN struct ADAPTER *prAdapter,
 		prP2pRoleFsmInfo =
 			P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prAdapter,
 				prP2pBssInfo->u4PrivateData);
+
+		if (prP2pBssInfo &&
+			(prP2pBssInfo->u4RsnSelectedAKMSuite ==
+			RSN_AKM_SUITE_OWE)) {
+			DBGLOG(P2P, INFO,
+				"[OWE] Bypass new_sta\n");
+			break;
+		}
 
 		/* Glue layer indication. */
 		kalP2PGOStationUpdate(prAdapter->prGlueInfo,

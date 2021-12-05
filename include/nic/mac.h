@@ -1189,6 +1189,8 @@
 	88 /* MSCS Descriptor */
 #define ELEM_EXT_ID_SUPPLEMENTAL_CLASS2_CAP \
 	90 /* Supplemental Class 2 Capabilities */
+#define ELEM_EXT_ID_SUPPLEMENTAL_CLASS2_CAP \
+	90 /* Supplemental Class 2 Capabilities */
 
 /* 802.11-2020: Table 9-34 Association Request frame body */
 
@@ -1934,6 +1936,7 @@ enum BEACON_REPORT_DETAIL {
 #define VENDOR_OUI_TYPE_P2P                         9
 #define VENDOR_OUI_TYPE_WFD                         10
 #define VENDOR_OUI_TYPE_MBO                         22
+#define VENDOR_OUI_TYPE_OWE                         28
 
 #define VENDOR_IE_TYPE_MBO                          0x506f9a16
 

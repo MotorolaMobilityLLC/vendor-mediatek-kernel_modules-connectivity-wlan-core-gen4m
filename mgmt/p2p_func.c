@@ -112,6 +112,8 @@ struct APPEND_VAR_IE_ENTRY txProbeRspIETable[] = {
 			rsnGenerateWPAIE}	/* 221 */
 	, {(ELEM_HDR_LEN + ELEM_MAX_LEN_RSN), NULL,
 			rsnGenerateRSNXIE}	/* 244 */
+	, {(ELEM_HDR_LEN + ELEM_MAX_LEN_WPA), NULL,
+	   rsnGenerateOWEIE}
 };
 
 #if (CFG_SUPPORT_DFS_MASTER == 1)
@@ -3975,6 +3977,7 @@ p2pFuncParseBeaconContent(IN struct ADAPTER *prAdapter,
 		prP2pSpecificBssInfo->u2WpaIeLen = 0;
 		prP2pSpecificBssInfo->u2RsnIeLen = 0;
 		prP2pSpecificBssInfo->u2RsnxIeLen = 0;
+		prP2pSpecificBssInfo->u2OweIeLen = 0;
 
 		ASSERT_BREAK(pucIEInfo != NULL);
 
@@ -4531,6 +4534,19 @@ p2pFuncParseBeaconVenderId(IN struct ADAPTER *prAdapter,
 
 				prP2pSpecificBssInfo->u2AttributeLen +=
 					IE_SIZE(pucIE);
+			} else if (ucOuiType == VENDOR_OUI_TYPE_OWE) {
+				if (IE_LEN(pucIE) > ELEM_MAX_LEN_WPA) {
+					DBGLOG(P2P, ERROR,
+						"RSN IE length is unexpected !!\n");
+					return;
+				}
+				kalMemCopy(
+					prP2pSpecificBssInfo->aucOweIeBuffer,
+					pucIE, IE_SIZE(pucIE));
+				prP2pSpecificBssInfo->u2OweIeLen
+					= IE_SIZE(pucIE);
+				DBGLOG(P2P, INFO,
+					"[OWE] Trans IE in supplicant\n");
 			} else {
 				DBGLOG(P2P, TRACE,
 					"Unknown 50-6F-9A-%d IE.\n",
