@@ -4303,6 +4303,21 @@ static void indicateAcsResultByAisCh(IN struct ADAPTER *prAdapter,
 
 	prAcsReqInfo->fgIsAis = TRUE;
 
+	if ((prAdapter->rWifiVar.fgSapChannelSwitchPolicy ==
+		P2P_CHANNEL_SWITCH_POLICY_SKIP_DFS) &&
+		(prAcsReqInfo->eBand == BAND_5G) &&
+		(rlmDomainIsLegalDfsChannel(
+		prAdapter,
+		prAcsReqInfo->eBand,
+		prAcsReqInfo->ucPrimaryCh) ||
+		(prAcsReqInfo->eChnlBw >= MAX_BW_160MHZ))) {
+		DBGLOG(P2P, INFO,
+			"[SKIP] StaCH(%d), Band(%d)\n",
+			prAcsReqInfo->ucPrimaryCh,
+			prAcsReqInfo->eBand);
+		prAcsReqInfo->ucPrimaryCh = AP_DEFAULT_CHANNEL_5G;
+	}
+
 	p2pFunIndicateAcsResult(prAdapter->prGlueInfo,
 			prAcsReqInfo);
 }
