@@ -2145,8 +2145,8 @@ u_int8_t p2pFuncCheckWeatherRadarBand(
 
 #if (CFG_SUPPORT_SINGLE_SKU == 1)
 	if (rlmDomainGetDfsRegion() == NL80211_DFS_ETSI) {
-		if (eChannelWidth == VHT_OP_CHANNEL_WIDTH_80) {
-			if (ucCenterFreqS1 >= 120 && ucCenterFreqS1 <= 128)
+		if (eChannelWidth >= VHT_OP_CHANNEL_WIDTH_80) {
+			if (ucCenterFreqS1 >= 114 && ucCenterFreqS1 <= 128)
 				return TRUE;
 		} else {
 			if ((ucReqChnlNum >= 120 && ucReqChnlNum <= 128))
@@ -2263,16 +2263,22 @@ uint32_t p2pFuncGetCacRemainingTime(void)
 	return u4CacRemainingTime;
 }
 
-void p2pFuncChannelListFiltering(struct ADAPTER *prAdapter,
-		uint16_t ucFilteredCh, uint8_t ucFilteredBw,
-		uint8_t pucNumOfChannel,
-		struct RF_CHANNEL_INFO *paucChannelList,
-		uint8_t *pucOutNumOfChannel,
-		struct RF_CHANNEL_INFO *paucOutChannelList)
+void p2pFuncChannelListFiltering(IN struct ADAPTER *prAdapter,
+		IN uint16_t ucFilteredCh, IN uint8_t ucFilteredBw,
+		IN uint8_t pucNumOfChannel,
+		IN struct RF_CHANNEL_INFO *paucChannelList,
+		OUT uint8_t *pucOutNumOfChannel,
+		OUT struct RF_CHANNEL_INFO *paucOutChannelList)
 {
 	uint8_t i;
 	uint8_t j;
 	uint8_t rddS1;
+
+	if (ucFilteredBw == VHT_OP_CHANNEL_WIDTH_20_40) {
+		for (i = 0; i < pucNumOfChannel; i++)
+			paucOutChannelList[i] = paucChannelList[i];
+		return;
+	}
 
 	rddS1 = nicGetS1(BAND_5G, ucFilteredCh, ucFilteredBw);
 	if (rddS1 == 0)
@@ -2284,7 +2290,7 @@ void p2pFuncChannelListFiltering(struct ADAPTER *prAdapter,
 			ucFilteredBw) != rddS1) {
 			paucOutChannelList[j] = paucChannelList[i];
 			DBGLOG(RLM, TRACE,
-				"ch: %d, s1: %d, is_dfs, rdds1: %d: %d\n",
+				"ch: %d, s1: %d, is_dfs: %d, rdds1: %d\n",
 				paucOutChannelList[j].ucChannelNum,
 				nicGetS1(BAND_5G,
 				paucOutChannelList[j].ucChannelNum,

@@ -2313,6 +2313,27 @@ void kalP2pIndicateAcsResult(IN struct GLUE_INFO *prGlueInfo,
 		break;
 	}
 
+	/* Indicatre CAC */
+	if ((eBand == BAND_5G) &&
+		(rlmDomainIsLegalDfsChannel(
+		prGlueInfo->prAdapter,
+		eBand,
+		ucPrimaryCh) || (eChnlBw >= MAX_BW_160MHZ))) {
+		DBGLOG(P2P, INFO, "Do pre CAC.\n");
+		if (ch_width == 40) {
+			/* Hostapd workaround for dfs offload BW40 */
+			ch_width = 20;
+			ucSecondCh = 0;
+		}
+		wlanUpdateDfsChannelTable(prGlueInfo,
+			ucRoleIndex,
+			ucPrimaryCh,
+			rlmGetVhtOpBwByBssOpBw(eChnlBw),
+			0,
+			nicChannelNum2Freq(ucSeg0Ch, eBand) / 1000,
+			eBand);
+	}
+
 	DBGLOG(P2P, INFO,
 		"r=%d, b=%d, c=%d, s=%d, s0=%d, s1=%d, ch_w=%d, h=%d\n",
 		ucRoleIndex,
@@ -2323,22 +2344,6 @@ void kalP2pIndicateAcsResult(IN struct GLUE_INFO *prGlueInfo,
 		ucSeg1Ch,
 		ch_width,
 		eHwMode);
-
-	/* Indicatre CAC */
-	if ((eBand == BAND_5G) &&
-		(rlmDomainIsLegalDfsChannel(
-		prGlueInfo->prAdapter,
-		eBand,
-		ucPrimaryCh) || (eChnlBw >= MAX_BW_160MHZ))) {
-		DBGLOG(P2P, INFO, "Do pre CAC.\n");
-		wlanUpdateDfsChannelTable(prGlueInfo,
-			ucRoleIndex,
-			ucPrimaryCh,
-			rlmGetVhtOpBwByBssOpBw(eChnlBw),
-			0,
-			nicChannelNum2Freq(ucSeg0Ch, eBand) / 1000,
-			eBand);
-	}
 
 #if KERNEL_VERSION(3, 14, 0) <= LINUX_VERSION_CODE
 	vendor_event = cfg80211_vendor_event_alloc(prGlueP2pInfo->prWdev->wiphy,
