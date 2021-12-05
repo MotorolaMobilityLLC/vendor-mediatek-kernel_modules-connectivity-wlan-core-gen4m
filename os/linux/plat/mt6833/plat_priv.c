@@ -2,6 +2,9 @@
 /*
  * Copyright (c) 2019 MediaTek Inc.
  */
+
+#include <cpu_ctrl.h>
+#include <topo_ctrl.h>
 #include "gl_os.h"
 
 #if KERNEL_VERSION(5, 4, 0) <= CFG80211_VERSION_CODE
@@ -19,11 +22,9 @@
 #define PM_QOS_DDR_OPP MTK_PM_QOS_DDR_OPP
 #define ppm_limit_data cpu_ctrl_data
 #else
-#include <cpu_ctrl.h>
-#include <topo_ctrl.h>
+#include <linux/pm_qos.h>
 #include <helio-dvfsrc-opp.h>
 #endif
-#include <linux/pm_qos.h>
 
 #include "precomp.h"
 #include "wmt_exp.h"
