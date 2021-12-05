@@ -5381,6 +5381,7 @@ static int32_t wlanOffAtReset(void)
 	struct ADAPTER *prAdapter = NULL;
 	struct net_device *prDev = NULL;
 	struct GLUE_INFO *prGlueInfo = NULL;
+	struct BUS_INFO *prBusInfo = NULL;
 	uint8_t i;
 
 	DBGLOG(INIT, INFO, "Driver Off during Reset\n");
@@ -5443,6 +5444,13 @@ static int32_t wlanOffAtReset(void)
 
 	wlanAdapterStop(prAdapter, TRUE);
 
+	/* 4 <x> Stopping handling interrupt and free IRQ */
+	prBusInfo = prAdapter->chip_info->bus_info;
+	nicDisableInterrupt(prAdapter);
+	if (prBusInfo->disableSwInterrupt)
+		prBusInfo->disableSwInterrupt(prAdapter);
+	glBusFreeIrq(prDev, prGlueInfo);
+
 #if (CFG_SUPPORT_TRACE_TC4 == 1)
 	wlanDebugTC4Uninit();
 #endif
@@ -5478,6 +5486,7 @@ static int32_t wlanOnAtReset(void)
 	enum ENUM_PROBE_FAIL_REASON {
 		BUS_INIT_FAIL,
 		NET_CREATE_FAIL,
+		BUS_SET_IRQ_FAIL,
 		ADAPTER_START_FAIL,
 		NET_REGISTER_FAIL,
 		PROC_INIT_FAIL,
@@ -5523,6 +5532,13 @@ static int32_t wlanOnAtReset(void)
 		QUEUE_INITIALIZE(&prGlueInfo->rCmdQueue);
 		prGlueInfo->i4TxPendingCmdNum = 0;
 		QUEUE_INITIALIZE(&prGlueInfo->rTxQueue);
+
+		rStatus = glBusSetIrq(prDev, NULL, prGlueInfo);
+		if (rStatus != WLAN_STATUS_SUCCESS) {
+			DBGLOG(INIT, ERROR, "Set IRQ error\n");
+			eFailReason = BUS_SET_IRQ_FAIL;
+			break;
+		}
 
 		/* Trigger the action of switching Pwr state to drv_own */
 		prAdapter->fgIsFwOwn = TRUE;
