@@ -227,9 +227,6 @@ int32_t kalBoostCpu(IN struct ADAPTER *prAdapter,
 		kalSetCpuMask(prGlueInfo->main_thread, CPU_ALL_CORE);
 		kalSetCpuMask(prGlueInfo->rx_thread, CPU_ALL_CORE);
 
-		kalSetTaskUtilMinPct(prGlueInfo->u4TxThreadPid, 100);
-		kalSetTaskUtilMinPct(prGlueInfo->u4RxThreadPid, 100);
-		kalSetTaskUtilMinPct(prGlueInfo->u4HifThreadPid, 100);
 		kalSetRpsMap(prGlueInfo, CPU_LITTLE_CORE);
 		kalSetDramBoost(prAdapter, TRUE);
 	} else if (u4TarPerfLevel >= u4BoostCpuTh &&
@@ -266,6 +263,10 @@ int32_t kalBoostCpu(IN struct ADAPTER *prAdapter,
 		kalSetCpuMask(prGlueInfo->main_thread, CPU_LITTLE_CORE);
 		kalSetCpuMask(prGlueInfo->rx_thread, CPU_LITTLE_CORE);
 
+		kalSetTaskUtilMinPct(prGlueInfo->u4TxThreadPid, 0);
+		kalSetTaskUtilMinPct(prGlueInfo->u4RxThreadPid, 0);
+		kalSetTaskUtilMinPct(prGlueInfo->u4HifThreadPid, 0);
+
 		kalSetRpsMap(prGlueInfo, CPU_LITTLE_CORE);
 		kalSetCpuFreq(DEFAULT_CPU_FREQ, CPU_BIG_CORE);
 	} else if (u4TarPerfLevel < u4BoostLittleCpuTh &&
@@ -276,7 +277,13 @@ int32_t kalBoostCpu(IN struct ADAPTER *prAdapter,
 		fgRequested == ENUM_CPU_BOOST_STATUS_START_ALL) {
 #endif /* CFG_SUPPORT_LITTLE_CPU_BOOST */
 		pr_info("kalBoostCpu stop all (%u<%u)\n",
-			u4TarPerfLevel, u4BoostLittleCpuTh);
+			u4TarPerfLevel,
+#if CFG_SUPPORT_LITTLE_CPU_BOOST
+			u4BoostLittleCpuTh
+#else
+			u4BoostCpuTh
+#endif /* CFG_SUPPORT_LITTLE_CPU_BOOST */
+		);
 		fgRequested = ENUM_CPU_BOOST_STATUS_STOP;
 
 		kalSetCpuMask(prGlueInfo->hif_thread, CPU_ALL_CORE);
