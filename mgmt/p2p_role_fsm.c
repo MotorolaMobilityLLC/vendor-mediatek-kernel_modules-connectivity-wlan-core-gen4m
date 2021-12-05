@@ -316,6 +316,12 @@ void p2pRoleFsmUninit(IN struct ADAPTER *prAdapter, IN uint8_t ucRoleIdx)
 		nicFreePendingTxMsduInfo(prAdapter,
 			prP2pBssInfo->ucBssIndex, MSDU_REMOVE_BY_BSS_INDEX);
 
+		/* Indicate PM abort if the BSS is under deauth process */
+		if (prP2pBssInfo->eConnectionState == MEDIA_STATE_CONNECTED) {
+			nicPmIndicateBssAbort(prAdapter,
+				prP2pRoleFsmInfo->ucBssIndex);
+		}
+
 		/* Deactivate BSS. */
 		UNSET_NET_ACTIVE(prAdapter, prP2pRoleFsmInfo->ucBssIndex);
 
