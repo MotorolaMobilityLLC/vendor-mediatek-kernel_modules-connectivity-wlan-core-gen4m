@@ -2460,6 +2460,23 @@ nla_put_failure:
 		kfree_skb(vendor_event);
 }
 
+u_int8_t kalP2pIsStoppingAp(IN struct ADAPTER *prAdapter,
+	IN struct BSS_INFO *prBssInfo)
+{
+	struct net_device *prDevHandler = NULL;
+
+	if (!prAdapter)
+		return FALSE;
+
+	prDevHandler = wlanGetNetDev(prAdapter->prGlueInfo,
+		prBssInfo->ucBssIndex);
+
+	if (prDevHandler && !netif_carrier_ok(prDevHandler))
+		return TRUE;
+
+	return FALSE;
+}
+
 void kalP2pNotifyStopApComplete(IN struct ADAPTER *prAdapter,
 		IN uint8_t ucRoleIndex)
 {

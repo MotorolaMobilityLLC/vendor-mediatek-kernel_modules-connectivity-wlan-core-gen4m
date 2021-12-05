@@ -6752,7 +6752,12 @@ void p2pFuncSwitchSapChannel(
 	if (prP2pBssInfo->eCurrentOPMode != OP_MODE_ACCESS_POINT) {
 		DBGLOG(P2P, TRACE, "SAP is during initialization\n");
 		goto exit;
+	} else if (kalP2pIsStoppingAp(prAdapter,
+		prP2pBssInfo)) {
+		DBGLOG(P2P, INFO, "SAP is during uninitialization\n");
+		goto exit;
 	}
+
 	prP2pRoleFsmInfo =
 		P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prAdapter,
 			prP2pBssInfo->u4PrivateData);
