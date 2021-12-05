@@ -1539,12 +1539,32 @@ struct OID_HANDLER_RECORD {
 	uint8_t aucName[100];
 };
 
-struct TX_LATENCY_REPORT_STATS {
+/**
+ * struct TX_LATENCY_STATS - TX latency statistics counters
+ * @au4DriverLatency: Counter distribution of TX delay in Driver
+ * @au4ConnsysLatency: Counter distribution of TX delay in Connsys
+ * @au4MacLatency: Counter distribution of TX delay logged in MSDU report
+ * @au4FailConnsysLatency: Counter distribution of TX Failed delay in Connsys
+ * @u4TxFail: Number of TX failed count
+ */
+struct TX_LATENCY_STATS {
 	uint32_t au4DriverLatency[LATENCY_STATS_MAX_SLOTS];
 	uint32_t au4ConnsysLatency[LATENCY_STATS_MAX_SLOTS];
 	uint32_t au4MacLatency[LATENCY_STATS_MAX_SLOTS];
 	uint32_t au4FailConnsysLatency[LATENCY_STATS_MAX_SLOTS];
 	uint32_t u4TxFail;
+};
+
+/**
+ * struct TX_LATENCY_REPORT_STATS - TX latency for reporting
+ * @rCounting: Continuous counting counters of each TX delay metrics
+ * @rReported: Reported counters of each TX delay metrics
+ * @u4ContinuousTxFail: Continuous TX fail monitor abnormal TX fail cases
+ * @fgTxLatencyEnabled: A on/off switch controlling the reporting mechanism
+ */
+struct TX_LATENCY_REPORT_STATS {
+	struct TX_LATENCY_STATS rCounting;
+	struct TX_LATENCY_STATS rReported;
 	uint32_t u4ContinuousTxFail;
 	u_int8_t fgTxLatencyEnabled;
 };
