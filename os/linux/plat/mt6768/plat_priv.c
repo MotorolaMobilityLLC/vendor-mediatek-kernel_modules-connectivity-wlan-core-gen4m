@@ -15,6 +15,7 @@
 
 #if KERNEL_VERSION(4, 19, 0) <= CFG80211_VERSION_CODE
 #include <linux/soc/mediatek/mtk-pm-qos.h>
+#include <helio-dvfsrc-opp.h>
 #define pm_qos_add_request(_req, _class, _value) \
 		mtk_pm_qos_add_request(_req, _class, _value)
 #define pm_qos_update_request(_req, _value) \
