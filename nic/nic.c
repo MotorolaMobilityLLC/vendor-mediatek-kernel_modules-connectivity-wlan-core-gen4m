@@ -2134,11 +2134,6 @@ uint32_t nicUpdateBssEx(IN struct ADAPTER *prAdapter,
 			qmFreeAllByBssIdx(prAdapter, ucBssIndex);
 		kalClearSecurityFramesByBssIdx(prAdapter->prGlueInfo,
 					       ucBssIndex);
-#if CFG_ENABLE_GTK_FRAME_FILTER
-		if (prBssInfo->prIpV4NetAddrList)
-			FREE_IPV4_NETWORK_ADDR_LIST(
-				prBssInfo->prIpV4NetAddrList);
-#endif
 #if CFG_SUPPORT_DBDC
 		cnmDbdcRuntimeCheckDecision(prAdapter, ucBssIndex);
 #endif
