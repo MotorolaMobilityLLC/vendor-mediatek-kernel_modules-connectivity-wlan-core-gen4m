@@ -3027,12 +3027,14 @@ int mtk_cfg80211_vendor_get_trx_stats(struct wiphy *wiphy,
 	}
 	aucTlvList = (struct STATS_TRX_TLV_T *) kalMemAlloc(u4MaxTlvSize,
 		VIR_MEM_TYPE);
+
 	if (!aucTlvList) {
 		DBGLOG(REQ, ERROR,
 			"Can not alloc memory for stats info\n");
 		i4Status = -ENOMEM;
 		goto err_handle_label;
 	}
+
 	kalMemZero(aucTlvList, u4MaxTlvSize);
 	statsGetTxInfoHdlr(prGlueInfo, aucTlvList);
 	if (unlikely(nla_put(skb, WIFI_ATTRIBUTE_STATS_TX,
