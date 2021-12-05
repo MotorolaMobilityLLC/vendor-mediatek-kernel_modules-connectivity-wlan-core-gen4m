@@ -1094,9 +1094,12 @@ uint8_t nicIncreaseTxSeqNum(IN struct ADAPTER *prAdapter)
 
 	KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_SEQ_NUM);
 
-	ucRetval = prAdapter->ucTxSeqNum;
-
 	prAdapter->ucTxSeqNum++;
+
+	if (unlikely(prAdapter->ucTxSeqNum == 0))
+		prAdapter->ucTxSeqNum++;
+
+	ucRetval = prAdapter->ucTxSeqNum;
 
 	KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_SEQ_NUM);
 
