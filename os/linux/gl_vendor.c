@@ -1407,7 +1407,7 @@ int mtk_cfg80211_vendor_llstats_get_info(struct wiphy *wiphy,
 		ptr += sizeof(uint32_t);
 
 		ptr += fill_radio(ptr, src->radio, ENUM_BAND_NUM, prAdapter);
-		DBGLOG(REQ, INFO, "Collected %u bytes for LLS", ptr - buf);
+		DBGLOG(REQ, TRACE, "Collected %u bytes for LLS", ptr - buf);
 
 		skb = cfg80211_vendor_cmd_alloc_reply_skb(wiphy, ptr - buf);
 		if (!skb) {

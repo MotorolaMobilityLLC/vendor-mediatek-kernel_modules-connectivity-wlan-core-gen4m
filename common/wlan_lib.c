@@ -6620,7 +6620,7 @@ wlanQueryLinkStats(IN struct ADAPTER *prAdapter,
 	struct CMD_GET_STATS_LLS *cmd =
 		(struct CMD_GET_STATS_LLS *)pvQueryBuffer;
 
-	DBGLOG(REQ, INFO, "cmd: u4Tag=%08x, args=%u/%u/%u/%u, len=%u",
+	DBGLOG(REQ, TRACE, "cmd: u4Tag=%08x, args=%u/%u/%u/%u, len=%u",
 			cmd->u4Tag, cmd->ucArg0, cmd->ucArg1,
 			cmd->ucArg2, cmd->ucArg3, *pu4QueryInfoLen);
 	rQuery = *cmd;

@@ -616,7 +616,7 @@ void nic_rxd_v2_check_wakeup_reason(
 			DBGLOG(RX, INFO,
 				" frame subtype:%d, SeqCtrl %d wakeup host\n",
 				ucSubtype, prWlanMgmtHeader->u2SeqCtrl);
-			DBGLOG_MEM8(RX, TRACE,
+			DBGLOG_MEM8(RX, INFO,
 					pvHeader, u2PktLen > 50 ? 50:u2PktLen);
 		} else {
 			DBGLOG(RX, ERROR,

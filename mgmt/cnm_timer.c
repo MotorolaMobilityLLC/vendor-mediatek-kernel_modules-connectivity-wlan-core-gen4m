@@ -594,7 +594,7 @@ void cnmTimerDoTimeOutCheck(IN struct ADAPTER *prAdapter)
 	prRootTimer->rNextExpiredSysTime
 		= rCurSysTime + MGMT_MAX_TIMEOUT_INTERVAL;
 
-	log_dbg(CNM, INFO, "loop start [%d]\n", prTimerList->u4NumElem);
+	log_dbg(CNM, TRACE, "loop start [%d]\n", prTimerList->u4NumElem);
 	gDoTimeOut = TRUE;
 
 	LINK_FOR_EACH(prLinkEntry, prTimerList) {
@@ -666,7 +666,7 @@ void cnmTimerDoTimeOutCheck(IN struct ADAPTER *prAdapter)
 		}
 	}	/* end of for loop */
 
-	log_dbg(CNM, INFO, "loop end");
+	log_dbg(CNM, TRACE, "loop end");
 	gDoTimeOut = false;
 
 	/* Setup the prNext timeout event. It is possible the timer was already
