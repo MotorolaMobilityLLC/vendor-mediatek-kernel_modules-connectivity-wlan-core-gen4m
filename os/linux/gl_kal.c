@@ -9346,6 +9346,10 @@ static inline uint32_t composeTxDelayLog(char *buf, uint32_t pos,
 	const uint32_t *delay;
 	int i;
 
+	u4BufferSize -= pos;
+	buf += pos;
+	pos = 0;
+
 	pos += kalSnprintf(buf + pos, u4BufferSize - pos, "%s", delayType);
 
 	delay = delayMax;
