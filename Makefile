@@ -1,7 +1,8 @@
+ccflags-y :=
 ifeq ($(CONFIG_MTK_PLATFORM),)
-	CONFIG_MTK_PLATFORM := mt$(WLAN_CHIP_ID)
+CONFIG_MTK_PLATFORM := mt$(WLAN_CHIP_ID)
 endif
-MTK_PLATFORM := $(subst ",,$(CONFIG_MTK_PLATFORM))
+MTK_PLATFORM := $(subst $(quote),,$(CONFIG_MTK_PLATFORM))
 
 # ---------------------------------------------------
 # OS option
@@ -74,7 +75,7 @@ ccflags-y += -DWLAN_INCLUDE_PROC
 ccflags-y += -DCFG_SUPPORT_AGPS_ASSIST=0
 ccflags-y += -DCFG_SUPPORT_TSF_USING_BOOTTIME=1
 ccflags-y += -DARP_MONITER_ENABLE=1
-ccflags-y += -Werror
+ccflags-y += -Werror $(call cc-disable-warning, unused-but-set-variable)
 #ccflags-y:=$(filter-out -U$(WLAN_CHIP_ID),$(ccflags-y))
 #ccflags-y += -DLINUX -D$(WLAN_CHIP_ID)
 #workaround: also needed for none LINUX system
@@ -476,7 +477,7 @@ ccflags-y += -DCFG_SUPPORT_NAN=0
 endif
 
 ifeq ($(MODULE_NAME),)
-	MODULE_NAME := wlan_$(shell echo $(strip $(WLAN_CHIP_ID)) | tr A-Z a-z)_$(CONFIG_MTK_COMBO_WIFI_HIF)
+MODULE_NAME := wlan_$(shell echo $(strip $(WLAN_CHIP_ID)) | tr A-Z a-z)_$(CONFIG_MTK_COMBO_WIFI_HIF)
 endif
 
 ccflags-y += -DDBG=0
