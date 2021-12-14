@@ -1720,6 +1720,7 @@ enum ENUM_PWR_LIMIT_TYPE {
 	PWR_LIMIT_TYPE_COMP_6E_2 = 5,
 	PWR_LIMIT_TYPE_COMP_6E_3 = 6,
 	PWR_LIMIT_TYPE_COMP_ANT_V2 = 7,
+	PWR_LIMIT_TYPE_COMP_11AX_BW160 = 8,
 	PWR_LIMIT_TYPE_COMP_NUM,
 };
 
@@ -1813,6 +1814,41 @@ struct CMD_CHANNEL_POWER_LIMIT_HE { /*HE SU design*/
 
 };
 
+struct CMD_CHANNEL_POWER_LIMIT_HE_BW160 { /*HE SU design*/
+	uint8_t ucCentralCh;
+	int8_t cPwrLimitRU26L; /* MCS0~4 */
+	int8_t cPwrLimitRU26H; /* MCS5~9 */
+	int8_t cPwrLimitRU26U; /* MCS10~11 */
+
+	int8_t cPwrLimitRU52L; /* MCS0~4 */
+	int8_t cPwrLimitRU52H; /* MCS5~9 */
+	int8_t cPwrLimitRU52U; /* MCS10~11 */
+
+	int8_t cPwrLimitRU106L; /* MCS0~4 */
+	int8_t cPwrLimitRU106H; /* MCS5~9 */
+	int8_t cPwrLimitRU106U; /* MCS10~11 */
+	/*RU242/SU20*/
+	int8_t cPwrLimitRU242L; /* MCS0~4 */
+	int8_t cPwrLimitRU242H; /* MCS5~9 */
+	int8_t cPwrLimitRU242U; /* MCS10~11 */
+	/*RU484/SU40*/
+	int8_t cPwrLimitRU484L; /* MCS0~4 */
+	int8_t cPwrLimitRU484H; /* MCS5~9 */
+	int8_t cPwrLimitRU484U; /* MCS10~11 */
+	/*RU996/SU80*/
+	int8_t cPwrLimitRU996L; /* MCS0~4 */
+	int8_t cPwrLimitRU996H; /* MCS5~9 */
+	int8_t cPwrLimitRU996U; /* MCS10~11 */
+	/*RU1992/SU160*/
+	int8_t cPwrLimitRU1992L; /* MCS0~4 */
+	int8_t cPwrLimitRU1992H; /* MCS5~9 */
+	int8_t cPwrLimitRU1992U; /* MCS10~11 */
+
+	uint8_t ucFlag;
+	uint8_t ucValid;
+
+};
+
 #if CFG_SUPPORT_DYNAMIC_PWR_LIMIT_ANT_TAG
 
 #define POWER_LIMIT_ANT_CONFIG_NUM 60
@@ -1847,6 +1883,9 @@ struct CMD_SET_COUNTRY_CHANNEL_POWER_LIMIT {
 		/*Channel HE power limit entries to be set*/
 		struct CMD_CHANNEL_POWER_LIMIT_HE
 			rChPwrLimtHE[MAX_CMD_SUPPORT_CHANNEL_NUM];
+		/*Channel HE BW160 power limit entries to be set*/
+		struct CMD_CHANNEL_POWER_LIMIT_HE_BW160
+			rChPwrLimtHEBW160[MAX_CMD_SUPPORT_CHANNEL_NUM];
 #if CFG_SUPPORT_DYNAMIC_PWR_LIMIT_ANT_TAG
 		struct CMD_CHANNEL_POWER_LIMIT_ANT
 			rChPwrLimtAnt[POWER_LIMIT_ANT_CONFIG_NUM];
