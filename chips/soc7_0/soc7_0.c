@@ -2700,13 +2700,14 @@ static int soc7_0_CheckBusHang(void *adapter, uint8_t ucWfResetEnable)
 	} while (FALSE);
 
 	if (ret > 0) {
-		if ((conninfra_hang_ret != CONNINFRA_ERR_RST_ONGOING) &&
+		if (conninfra_reg_readable_for_coredump() == 1 ||
+			((conninfra_hang_ret != CONNINFRA_ERR_RST_ONGOING) &&
 			(conninfra_hang_ret != CONNINFRA_INFRA_BUS_HANG) &&
 			(conninfra_hang_ret !=
 				CONNINFRA_AP2CONN_RX_SLP_PROT_ERR) &&
 			(conninfra_hang_ret !=
 				CONNINFRA_AP2CONN_TX_SLP_PROT_ERR) &&
-			(conninfra_hang_ret != CONNINFRA_AP2CONN_CLK_ERR))
+			(conninfra_hang_ret != CONNINFRA_AP2CONN_CLK_ERR)))
 			soc7_0_DumpHostCr(prAdapter);
 
 		if (conninfra_reset) {
