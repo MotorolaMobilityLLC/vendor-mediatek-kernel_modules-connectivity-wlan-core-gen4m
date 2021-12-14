@@ -916,6 +916,11 @@ void glResetSubsysRstProcedure(
 				"fw detect bus hang");
 			glResetWholeChipResetTrigger(g_reason);
 		} else {
+#if (CFG_SUPPORT_CONNINFRA == 1)
+			if (conninfra_reg_readable_for_coredump() == 1 &&
+				prAdapter->chip_info->dumpBusHangCr)
+				prAdapter->chip_info->dumpBusHangCr(prAdapter);
+#endif
 			DBGLOG(INIT, INFO,
 				"Don't trigger whole chip reset due to driver is not ready\n");
 		}
