@@ -9734,8 +9734,24 @@ void kalPwrLevelHdlrRegister(IN struct ADAPTER *prAdapter,
 
 	LINK_INSERT_HEAD(&prAdapter->rPwrLevelHandlerList,
 		&prRegisterHdlr->rLinkEntry);
+	DBGLOG(INIT, TRACE, "%ps is registered.\n", hdlr);
 
 	prRegisterHdlr->prPwrLevelHandler(prAdapter, prAdapter->u4PwrLevel);
+}
+
+void kalPwrLevelHdlrUnregisterAll(IN struct ADAPTER *prAdapter)
+{
+	struct PWR_LEVEL_HANDLER_ELEMENT *prRegisterHdlr = NULL;
+
+	while (!LINK_IS_EMPTY(&prAdapter->rPwrLevelHandlerList)) {
+		LINK_REMOVE_HEAD(&prAdapter->rPwrLevelHandlerList,
+			prRegisterHdlr, struct PWR_LEVEL_HANDLER_ELEMENT *);
+		DBGLOG(INIT, TRACE, "%ps is unregistered.\n",
+			prRegisterHdlr->prPwrLevelHandler);
+
+		kalMemFree(prRegisterHdlr, VIR_MEM_TYPE,
+			sizeof(struct PWR_LEVEL_HANDLER_ELEMENT));
+	}
 }
 
 void connsysPowerLevelNotify(IN struct ADAPTER *prAdapter)

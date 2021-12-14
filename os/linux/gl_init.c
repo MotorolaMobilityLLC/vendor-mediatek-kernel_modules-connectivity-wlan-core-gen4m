@@ -6073,6 +6073,10 @@ static void wlanRemove(void)
 	kalReleaseUserSock(prGlueInfo);
 #endif
 
+#if (CFG_SUPPORT_POWER_THROTTLING == 1)
+	kalPwrLevelHdlrUnregisterAll(prAdapter);
+#endif
+
 #if CFG_ENABLE_BT_OVER_WIFI
 	if (prGlueInfo->rBowInfo.fgIsRegistered)
 		glUnregisterAmpc(prGlueInfo);

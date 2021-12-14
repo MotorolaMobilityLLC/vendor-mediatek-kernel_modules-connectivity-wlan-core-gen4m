@@ -757,6 +757,10 @@ void wlanOnPreAllocAdapterMem(IN struct ADAPTER *prAdapter,
 				&prAdapter->rWifiVar.arBssInfoPool[i];
 		prAdapter->aprBssInfo[prAdapter->ucP2PDevBssIdx] =
 			&prAdapter->rWifiVar.rP2pDevInfo;
+
+#if (CFG_SUPPORT_POWER_THROTTLING == 1)
+		LINK_INITIALIZE(&prAdapter->rPwrLevelHandlerList);
+#endif
 	} else {
 		/* need to reset these values after the reset flow */
 		prAdapter->u4NoMoreRfb = 0;
@@ -787,10 +791,6 @@ void wlanOnPreAllocAdapterMem(IN struct ADAPTER *prAdapter,
 #endif
 	QUEUE_INITIALIZE(&prAdapter->rRxQueue);
 	QUEUE_INITIALIZE(&prAdapter->rTxDataDoneQueue);
-#endif
-
-#if (CFG_SUPPORT_POWER_THROTTLING == 1)
-	LINK_INITIALIZE(&prAdapter->rPwrLevelHandlerList);
 #endif
 
 	/* 4 <0.1> reset fgIsBusAccessFailed */
@@ -1391,7 +1391,9 @@ uint32_t wlanAdapterStart(IN struct ADAPTER *prAdapter,
 		nicSerInit(prAdapter);
 #if (CFG_SUPPORT_POWER_THROTTLING == 1)
 		/* init thermal protection */
-		thrmInit(prAdapter);
+		if (!bAtResetFlow) {
+			thrmInit(prAdapter);
+		}
 #endif
 	} else {
 		prAdapter->u4HifDbgFlag |= DEG_HIF_DEFAULT_DUMP;
