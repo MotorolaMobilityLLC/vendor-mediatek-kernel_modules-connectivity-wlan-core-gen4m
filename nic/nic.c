@@ -1706,6 +1706,9 @@ uint32_t nicActivateNetworkEx(IN struct ADAPTER *prAdapter,
 					 prBssInfo->aucOwnMacAddr,
 					 STA_REC_INDEX_NOT_FOUND,
 					 CIPHER_SUITE_NONE, 0xFF);
+#if CFG_SUPPORT_LIMITED_PKT_PID
+	nicTxInitPktPID(prAdapter, prBssInfo->ucBMCWlanIndex);
+#endif /* CFG_SUPPORT_LIMITED_PKT_PID */
 	rCmdActivateCtrl.ucBMCWlanIndex = prBssInfo->ucBMCWlanIndex;
 
 	kalMemZero(&rCmdActivateCtrl.ucReserved,

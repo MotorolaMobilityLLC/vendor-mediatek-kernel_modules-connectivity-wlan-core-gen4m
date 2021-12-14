@@ -1339,6 +1339,9 @@ struct WIFI_VAR {
 #endif /* CFG_SUPPORT_BAR_DELAY_INDICATION */
 	uint32_t u4MultiStaPrimaryQuoteTime;
 	uint32_t u4MultiStaSecondaryQuoteTime;
+#if CFG_SUPPORT_LIMITED_PKT_PID
+	uint32_t u4PktPIDTimeout;
+#endif /* CFG_SUPPORT_LIMITED_PKT_PID */
 };
 
 /* cnm_timer module */
@@ -1699,6 +1702,11 @@ struct ADAPTER {
 	uint8_t ucCmdSeqNum;
 	uint8_t ucTxSeqNum;
 	uint8_t aucPidPool[WTBL_SIZE];
+
+#if CFG_SUPPORT_LIMITED_PKT_PID
+	/* last timestamp of pkt with txdone */
+	uint32_t u4PktPIDTime[WTBL_SIZE][ENUM_PKT_FLAG_NUM];
+#endif /* CFG_SUPPORT_LIMITED_PKT_PID */
 
 #if 1				/* CFG_SUPPORT_WAPI */
 	u_int8_t fgUseWapi;

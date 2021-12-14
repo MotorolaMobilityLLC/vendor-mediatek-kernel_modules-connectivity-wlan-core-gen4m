@@ -8250,6 +8250,10 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 		prAdapter, "MultiStaPrimaryQuoteTime", 300000);
 	prWifiVar->u4MultiStaSecondaryQuoteTime = (uint32_t) wlanCfgGetUint32(
 		prAdapter, "MultiStaSecondaryQuoteTime", 120000);
+#if CFG_SUPPORT_LIMITED_PKT_PID
+	prWifiVar->u4PktPIDTimeout = (uint32_t) wlanCfgGetUint32(
+		prAdapter, "PktPIDTimeout", 1000);
+#endif /* CFG_SUPPORT_LIMITED_PKT_PID */
 }
 
 void wlanCfgSetSwCtrl(IN struct ADAPTER *prAdapter)
