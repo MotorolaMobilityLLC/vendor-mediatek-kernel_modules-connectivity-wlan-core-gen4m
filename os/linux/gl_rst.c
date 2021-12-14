@@ -1086,6 +1086,8 @@ int wlan_reset_thread_main(void *data)
 					glRstWholeChipRstParamInit();
 					glReset_timeinit(&rNowTs, &rLastTs);
 				} else {
+					if (!completion_done(&g_RstOffComp))
+						complete(&g_RstOffComp);
 					DBGLOG(INIT, INFO,
 						"Don't trigger whole chip reset due to driver is not ready\n");
 				}
