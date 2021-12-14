@@ -35,6 +35,7 @@
 u_int8_t *gEmiCalResult;
 u_int32_t gEmiCalSize;
 u_int32_t gEmiCalOffset;
+u_int32_t gEmiGetCalOffset;
 bool gEmiCalUseEmiData;
 #endif
 
@@ -133,6 +134,25 @@ uint32_t wlanAccessCalibrationEMI(
 	return u4Status;
 }
 
+int wlanGetCalResultCb(uint32_t *pEmiCalOffset, uint32_t *pEmiCalSize)
+{
+	uint32_t u4Status = WLAN_STATUS_FAILURE;
+
+	/* Shift 4 for bypass Cal result CRC */
+	*pEmiCalOffset = gEmiGetCalOffset + 0x4;
+
+	/* 2k size for RFCR backup */
+	*pEmiCalSize = 2048;
+
+	DBGLOG(INIT, INFO,
+				"EMI_GET_CAL emiAddr[0x%x]emiLen[%d]\n",
+				*pEmiCalOffset,
+				*pEmiCalSize);
+
+	u4Status = WLAN_STATUS_SUCCESS;
+	return u4Status;
+}
+
 uint32_t wlanRcvPhyActionRsp(struct ADAPTER *prAdapter,
 	uint8_t ucCmdSeqNum)
 {
@@ -225,6 +245,10 @@ uint32_t wlanRcvPhyActionRsp(struct ADAPTER *prAdapter,
 				HAL_PHY_ACTION_CAL_USE_BACKUP_RSP &&
 				prPhyEvent->ucStatus ==
 				HAL_PHY_ACTION_STATUS_RECAL)) {
+
+				/* Get Emi address and send to Conninfra */
+				gEmiGetCalOffset = prPhyEvent->u4EmiAddress &
+					WIFI_EMI_ADDR_MASK;
 
 				/* read from EMI, backup in driver */
 				wlanAccessCalibrationEMI(prPhyEvent,
