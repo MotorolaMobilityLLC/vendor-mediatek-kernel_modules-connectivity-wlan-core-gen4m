@@ -2014,12 +2014,10 @@ int soc3_0_CheckBusHang(void *adapter, uint8_t ucWfResetEnable)
 
 		if (conninfra_reset) {
 			g_IsWfsysBusHang = TRUE;
-			conninfra_trigger_whole_chip_rst(CONNDRV_TYPE_WIFI,
-				"bus hang");
+			glResetWholeChipResetTrigger("bus hang");
 		} else if (ucWfResetEnable) {
 			g_IsWfsysBusHang = TRUE;
-			conninfra_trigger_whole_chip_rst(CONNDRV_TYPE_WIFI,
-				"wifi bus hang");
+			glResetWholeChipResetTrigger("wifi bus hang");
 		}
 	}
 
@@ -2601,13 +2599,6 @@ int wlanConnacPccifoff(void)
 	*ret = wf_ioremap_write(0x100010c0,reg);
 	*/
 	return ret;
-}
-#endif
-
-#if (CFG_SUPPORT_CONNINFRA == 1)
-int soc3_0_Trigger_whole_chip_rst(char *reason)
-{
-	return conninfra_trigger_whole_chip_rst(CONNDRV_TYPE_WIFI, reason);
 }
 #endif
 
