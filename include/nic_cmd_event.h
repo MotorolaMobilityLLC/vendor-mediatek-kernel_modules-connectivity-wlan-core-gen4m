@@ -1713,7 +1713,7 @@ struct CMD_SET_DOMAIN_INFO {
 
 enum ENUM_PWR_LIMIT_TYPE {
 	PWR_LIMIT_TYPE_COMP_11AC = 0,
-	PWR_LIMIT_TYPE_COMP_11AG_11N = 1,
+	PWR_LIMIT_TYPE_COMP_11AC_V2 = 1,
 	PWR_LIMIT_TYPE_COMP_11AX = 2,
 	PWR_LIMIT_TYPE_COMP_ANT = 3,
 	PWR_LIMIT_TYPE_COMP_6E_1 = 4,
@@ -1762,12 +1762,14 @@ struct CMD_CHANNEL_POWER_LIMIT_6E {
 /* CMD_SET_PWR_LIMIT_TABLE */
 struct CMD_CHANNEL_POWER_LIMIT {
 	uint8_t ucCentralCh;
-
-	int8_t cPwrLimitCCK;
-#if (CFG_SUPPORT_DYNA_TX_PWR_CTRL_OFDM_SETTING == 1)
+#if (CFG_SUPPORT_DYNA_TX_PWR_CTRL_11AC_V2_SETTING == 1)
+	int8_t cPwrLimitCCK_L; /* CCK_L, 1M,2M */
+	int8_t cPwrLimitCCK_H; /* CCK_H, 5.5M,11M */
 	int8_t cPwrLimitOFDM_L; /* OFDM_L,  6M ~ 18M */
 	int8_t cPwrLimitOFDM_H; /* OFDM_H, 24M ~ 54M */
-#endif /* CFG_SUPPORT_DYNA_TX_PWR_CTRL_OFDM_SETTING */
+#else
+	int8_t cPwrLimitCCK;
+#endif /* CFG_SUPPORT_DYNA_TX_PWR_CTRL_11AC_V2_SETTING */
 	int8_t cPwrLimit20L; /* MCS0~4 */
 	int8_t cPwrLimit20H; /* MCS5~8 */
 	int8_t cPwrLimit40L; /* MCS0~4 */

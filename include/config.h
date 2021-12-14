@@ -1531,16 +1531,17 @@
 
 /*------------------------------------------------------------------------------
  * Dynamic tx power control:
- * Support additional tx power setting on OFDM
+ * Support additional tx power setting on CCK AND OFDM
  *
  * No define: CCK,HT20L,HT20H,HT40L,HT40H,HT80L,HT80H,HT160L,HT160H
- * Defined: CCK,OFDM_L,OFDM_H,HT20L,HT20H,HT40L,HT40H,HT80L,HT80H,HT160L,HT160H
+ * Defined: CCK_L,CCK_H,OFDM_L,OFDM_H,HT20L,HT20H,HT40L,HT40H,HT80L,
+ * HT80H,HT160L,HT160H
  *
  * note: need to confirm firmware support this feature
- *       COUNTRY_CHANNEL_TXPOWER_LIMIT_TYPE_COMP_11AG_11N
+ *       COUNTRY_CHANNEL_TXPOWER_LIMIT_TYPE_COMP_11AC_V2
  *------------------------------------------------------------------------------
  */
-#define CFG_SUPPORT_DYNA_TX_PWR_CTRL_OFDM_SETTING 0
+#define CFG_SUPPORT_DYNA_TX_PWR_CTRL_11AC_V2_SETTING 0
 
 /*------------------------------------------------------------------------------
  * tx power control:
