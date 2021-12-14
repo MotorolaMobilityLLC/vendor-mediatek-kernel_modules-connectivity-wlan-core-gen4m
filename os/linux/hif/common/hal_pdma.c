@@ -2267,6 +2267,8 @@ uint32_t halWpdmaGetRxDmaDoneCnt(IN struct GLUE_INFO *prGlueInfo,
 	u4CpuIdx = prRxRing->RxCpuIdx;
 	kalDevRegRead(prGlueInfo, prRxRing->hw_didx_addr, &u4DmaIdx);
 
+	u4MaxCnt = u4MaxCnt & 0x0FFF;
+
 	if (u4MaxCnt == 0 || u4MaxCnt > RX_RING_SIZE)
 		return 0;
 

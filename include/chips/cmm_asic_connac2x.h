@@ -1099,6 +1099,14 @@ uint8_t asicConnac2xWfdmaWaitIdle(
 	uint8_t index,
 	uint32_t round,
 	uint32_t wait_us);
+void asicConnac2xWfdmaTxRingBasePtrExtCtrl(
+	struct GLUE_INFO *prGlueInfo,
+	struct RTMP_TX_RING *tx_ring,
+	u_int32_t index);
+void asicConnac2xWfdmaRxRingBasePtrExtCtrl(
+	struct GLUE_INFO *prGlueInfo,
+	struct RTMP_RX_RING *rx_ring,
+	u_int32_t index);
 void asicConnac2xWfdmaTxRingExtCtrl(
 	struct GLUE_INFO *prGlueInfo,
 	struct RTMP_TX_RING *tx_ring,

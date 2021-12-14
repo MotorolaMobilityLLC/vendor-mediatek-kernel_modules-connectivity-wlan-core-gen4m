@@ -2953,6 +2953,7 @@ void connac2x_show_wfdma_ring_info(
 	uint32_t u4DmaCfgCrAddr;
 	struct wfdma_group_info *group;
 	uint32_t u4_hw_desc_base_value = 0;
+	uint64_t u8_hw_desc_base_value = 0;
 	uint32_t u4_hw_cnt_value = 0;
 	uint32_t u4_hw_cidx_value = 0;
 	uint32_t u4_hw_didx_value = 0;
@@ -2990,6 +2991,10 @@ void connac2x_show_wfdma_ring_info(
 		HAL_MCR_RD(prAdapter, u4DmaCfgCrAddr+0x08, &u4_hw_cidx_value);
 		HAL_MCR_RD(prAdapter, u4DmaCfgCrAddr+0x0c, &u4_hw_didx_value);
 
+		u8_hw_desc_base_value = (u4_hw_cnt_value & 0xF0000);
+		u8_hw_desc_base_value = (u8_hw_desc_base_value << 16)
+			| u4_hw_desc_base_value;
+		u4_hw_cnt_value = u4_hw_cnt_value & 0x0FFF;
 		group->cnt = u4_hw_cnt_value;
 		group->cidx = u4_hw_cidx_value;
 		group->didx = u4_hw_didx_value;
@@ -2998,10 +3003,10 @@ void connac2x_show_wfdma_ring_info(
 			(u4_hw_cidx_value - u4_hw_didx_value) :
 			(u4_hw_cidx_value - u4_hw_didx_value + u4_hw_cnt_value);
 
-		DBGLOG(HAL, INFO, "%4d %20s %8x %10x %6x %6x %6x %6x\n",
+		DBGLOG(HAL, INFO, "%4d %20s %8x %10lx %6x %6x %6x %6x\n",
 			idx,
 			group->name,
-			u4DmaCfgCrAddr, u4_hw_desc_base_value,
+			u4DmaCfgCrAddr, u8_hw_desc_base_value,
 			u4_hw_cnt_value, u4_hw_cidx_value,
 			u4_hw_didx_value, queue_cnt);
 
@@ -3030,6 +3035,10 @@ void connac2x_show_wfdma_ring_info(
 		HAL_MCR_RD(prAdapter, u4DmaCfgCrAddr+0x08, &u4_hw_cidx_value);
 		HAL_MCR_RD(prAdapter, u4DmaCfgCrAddr+0x0c, &u4_hw_didx_value);
 
+		u8_hw_desc_base_value = (u4_hw_cnt_value & 0xF0000);
+		u8_hw_desc_base_value = (u8_hw_desc_base_value << 16)
+			| u4_hw_desc_base_value;
+		u4_hw_cnt_value = u4_hw_cnt_value & 0xFFFF;
 		group->cnt = u4_hw_cnt_value;
 		group->cidx = u4_hw_cidx_value;
 		group->didx = u4_hw_didx_value;
@@ -3039,10 +3048,10 @@ void connac2x_show_wfdma_ring_info(
 			(u4_hw_didx_value - u4_hw_cidx_value
 			+ u4_hw_cnt_value - 1);
 
-		DBGLOG(HAL, INFO, "%4d %20s %8x %10x %6x %6x %6x %6x\n",
+		DBGLOG(HAL, INFO, "%4d %20s 0x%9x %10lx %6x %6x %6x %6x\n",
 			idx,
 			group->name,
-			u4DmaCfgCrAddr, u4_hw_desc_base_value,
+			u4DmaCfgCrAddr, u8_hw_desc_base_value,
 			u4_hw_cnt_value, u4_hw_cidx_value,
 			u4_hw_didx_value, queue_cnt);
 	}
