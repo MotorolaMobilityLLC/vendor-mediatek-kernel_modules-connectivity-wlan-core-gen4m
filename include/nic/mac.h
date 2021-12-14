@@ -1934,6 +1934,7 @@ enum BEACON_REPORT_DETAIL {
 #define VENDOR_OUI_TYPE_P2P                         9
 #define VENDOR_OUI_TYPE_WFD                         10
 #define VENDOR_OUI_TYPE_MBO                         22
+#define VENDOR_OUI_TYPE_OWE                         28
 
 #define VENDOR_IE_TYPE_MBO                          0x506f9a16
 

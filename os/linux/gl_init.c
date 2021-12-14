@@ -447,6 +447,22 @@ static struct ieee80211_rate mtk_rates[] = {
 	.vht_mcs        = WLAN_VHT_MCS_INFO,				\
 }
 
+#define WLAN_VHT_CAP_160	\
+{									\
+	.vht_supported  = true,						\
+	.cap            = IEEE80211_VHT_CAP_RXLDPC			\
+			| IEEE80211_VHT_CAP_SUPP_CHAN_WIDTH_MASK	\
+			| IEEE80211_VHT_CAP_MAX_MPDU_LENGTH_11454	\
+			| IEEE80211_VHT_CAP_RXLDPC			\
+			| IEEE80211_VHT_CAP_SHORT_GI_80			\
+			| IEEE80211_VHT_CAP_TXSTBC			\
+			| IEEE80211_VHT_CAP_SUPP_CHAN_WIDTH_160MHZ \
+			| IEEE80211_VHT_CAP_EXT_NSS_BW_MASK \
+			| IEEE80211_VHT_CAP_SU_BEAMFORMER_CAPABLE	\
+			| IEEE80211_VHT_CAP_SU_BEAMFORMEE_CAPABLE,	\
+	.vht_mcs        = WLAN_VHT_MCS_INFO,				\
+}
+
 #if KERNEL_VERSION(4, 19, 0) <= CFG80211_VERSION_CODE
 #if (CFG_SUPPORT_802_11AX == 1)
 
@@ -573,7 +589,11 @@ struct ieee80211_supported_band mtk_band_5ghz = {
 	.bitrates = mtk_a_rates,
 	.n_bitrates = mtk_a_rates_size,
 	.ht_cap = WLAN_HT_CAP,
+#if KERNEL_VERSION(5, 4, 0) <= CFG80211_VERSION_CODE
+	.vht_cap = WLAN_VHT_CAP_160,
+#else
 	.vht_cap = WLAN_VHT_CAP,
+#endif
 #if KERNEL_VERSION(4, 19, 0) <= CFG80211_VERSION_CODE
 #if (CFG_SUPPORT_802_11AX == 1)
 	.n_iftype_data = 1,

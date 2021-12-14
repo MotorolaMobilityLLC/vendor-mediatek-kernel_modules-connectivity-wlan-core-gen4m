@@ -112,6 +112,8 @@ struct APPEND_VAR_IE_ENTRY txProbeRspIETable[] = {
 			rsnGenerateWPAIE}	/* 221 */
 	, {(ELEM_HDR_LEN + ELEM_MAX_LEN_RSN), NULL,
 			rsnGenerateRSNXIE}	/* 244 */
+	, {(ELEM_HDR_LEN + ELEM_MAX_LEN_WPA), NULL,
+	   rsnGenerateOWEIE}
 };
 
 #if (CFG_SUPPORT_DFS_MASTER == 1)
@@ -1403,7 +1405,8 @@ SKIP_START_RDD:
 
 		/* 4 <3.4> Setup BSSID */
 		nicPmIndicateBssCreated(prAdapter, prBssInfo->ucBssIndex);
-
+		if (prP2pChnlReqInfo->eBand == BAND_5G)
+			kalP2PEnableNetDev(prAdapter->prGlueInfo, prBssInfo);
 	} while (FALSE);
 }				/* p2pFuncStartGO() */
 
@@ -2107,6 +2110,7 @@ void p2pFuncDfsSwitchCh(IN struct ADAPTER *prAdapter,
 
 	/* Check DBDC status */
 	cnmDbdcRuntimeCheckDecision(prAdapter, prBssInfo->ucBssIndex);
+	cnmIdcSwitchSapChannel(prAdapter);
 } /* p2pFuncDfsSwitchCh */
 
 u_int8_t p2pFuncCheckWeatherRadarBand(
@@ -2125,8 +2129,8 @@ u_int8_t p2pFuncCheckWeatherRadarBand(
 
 #if (CFG_SUPPORT_SINGLE_SKU == 1)
 	if (rlmDomainGetDfsRegion() == NL80211_DFS_ETSI) {
-		if (eChannelWidth == VHT_OP_CHANNEL_WIDTH_80) {
-			if (ucCenterFreqS1 >= 120 && ucCenterFreqS1 <= 128)
+		if (eChannelWidth >= VHT_OP_CHANNEL_WIDTH_80) {
+			if (ucCenterFreqS1 >= 114 && ucCenterFreqS1 <= 128)
 				return TRUE;
 		} else {
 			if ((ucReqChnlNum >= 120 && ucReqChnlNum <= 128))
@@ -2242,6 +2246,47 @@ uint32_t p2pFuncGetCacRemainingTime(void)
 
 	return u4CacRemainingTime;
 }
+
+void p2pFuncChannelListFiltering(IN struct ADAPTER *prAdapter,
+		IN uint16_t ucFilteredCh, IN uint8_t ucFilteredBw,
+		IN uint8_t pucNumOfChannel,
+		IN struct RF_CHANNEL_INFO *paucChannelList,
+		OUT uint8_t *pucOutNumOfChannel,
+		OUT struct RF_CHANNEL_INFO *paucOutChannelList)
+{
+	uint8_t i;
+	uint8_t j;
+	uint8_t rddS1;
+
+	if (ucFilteredBw == VHT_OP_CHANNEL_WIDTH_20_40) {
+		for (i = 0; i < pucNumOfChannel; i++)
+			paucOutChannelList[i] = paucChannelList[i];
+		return;
+	}
+
+	rddS1 = nicGetS1(BAND_5G, ucFilteredCh, ucFilteredBw);
+	if (rddS1 == 0)
+		return;
+
+	j = 0;
+	for (i = 0; i < pucNumOfChannel; i++) {
+		if (nicGetS1(BAND_5G, paucChannelList[i].ucChannelNum,
+			ucFilteredBw) != rddS1) {
+			paucOutChannelList[j] = paucChannelList[i];
+			DBGLOG(RLM, TRACE,
+				"ch: %d, s1: %d, is_dfs: %d, rdds1: %d\n",
+				paucOutChannelList[j].ucChannelNum,
+				nicGetS1(BAND_5G,
+				paucOutChannelList[j].ucChannelNum,
+				ucFilteredBw),
+				paucOutChannelList[j].eDFS,
+				rddS1);
+			j++;
+		}
+	}
+	*pucOutNumOfChannel = j;
+}
+
 #endif
 
 void p2pFuncParseH2E(IN struct BSS_INFO *prP2pBssInfo)
@@ -3900,6 +3945,7 @@ p2pFuncParseBeaconContent(IN struct ADAPTER *prAdapter,
 		prP2pSpecificBssInfo->u2WpaIeLen = 0;
 		prP2pSpecificBssInfo->u2RsnIeLen = 0;
 		prP2pSpecificBssInfo->u2RsnxIeLen = 0;
+		prP2pSpecificBssInfo->u2OweIeLen = 0;
 
 		ASSERT_BREAK(pucIEInfo != NULL);
 
@@ -4456,6 +4502,19 @@ p2pFuncParseBeaconVenderId(IN struct ADAPTER *prAdapter,
 
 				prP2pSpecificBssInfo->u2AttributeLen +=
 					IE_SIZE(pucIE);
+			} else if (ucOuiType == VENDOR_OUI_TYPE_OWE) {
+				if (IE_LEN(pucIE) > ELEM_MAX_LEN_WPA) {
+					DBGLOG(P2P, ERROR,
+						"RSN IE length is unexpected !!\n");
+					return;
+				}
+				kalMemCopy(
+					prP2pSpecificBssInfo->aucOweIeBuffer,
+					pucIE, IE_SIZE(pucIE));
+				prP2pSpecificBssInfo->u2OweIeLen
+					= IE_SIZE(pucIE);
+				DBGLOG(P2P, INFO,
+					"[OWE] Trans IE in supplicant\n");
 			} else {
 				DBGLOG(P2P, TRACE,
 					"Unknown 50-6F-9A-%d IE.\n",
@@ -6672,7 +6731,12 @@ void p2pFuncSwitchSapChannel(
 	if (prP2pBssInfo->eCurrentOPMode != OP_MODE_ACCESS_POINT) {
 		DBGLOG(P2P, TRACE, "SAP is during initialization\n");
 		goto exit;
+	} else if (kalP2pIsStoppingAp(prAdapter,
+		prP2pBssInfo)) {
+		DBGLOG(P2P, INFO, "SAP is during uninitialization\n");
+		goto exit;
 	}
+
 	prP2pRoleFsmInfo =
 		P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prAdapter,
 			prP2pBssInfo->u4PrivateData);
