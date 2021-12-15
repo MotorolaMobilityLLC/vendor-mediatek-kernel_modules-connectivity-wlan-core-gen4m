@@ -2467,6 +2467,22 @@ struct COUNTRY_POWER_LIMIT_TABLE_CONFIGURATION_HE
 	}
 };
 
+struct COUNTRY_POWER_LIMIT_TABLE_CONFIGURATION_HE_BW160
+	g_rRlmPowerLimitConfigurationHEBW160[] = {
+	/*Default*/
+	{	{0, 0}
+		, 36,
+			{64, 64, 64, /* RU26 L,H,U */
+			64, 64, 64,  /* RU52 L,H,U*/
+			64, 64, 64,  /* RU106 L,H,U*/
+			64, 64, 64,  /* RU242 L,H,U*/
+			64, 64, 64,  /* RU484 L,H,U*/
+			64, 64, 64,  /* RU996 L,H,U*/
+			64, 64, 64}  /* RU1992 L,H,U*/
+	}
+};
+
+
 #if (CFG_SUPPORT_WIFI_6G == 1)
 struct COUNTRY_POWER_LIMIT_TABLE_CONFIGURATION_6E
 	g_rRlmPowerLimitConfiguration6E[] = {
