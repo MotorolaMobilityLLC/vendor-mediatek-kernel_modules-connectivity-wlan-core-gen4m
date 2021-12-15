@@ -5128,7 +5128,7 @@ struct TX_PWR_CTRL_ELEMENT *txPwrCtrlStringToStruct(char *pcContent,
 		"OFDML",
 		"OFDMH",
 #else
-		"CCK"
+		"CCK",
 #endif
 		"HT20L",
 		"HT20H",
@@ -5586,7 +5586,7 @@ skipLabel:
 
 			/* first tag should be AX160 */
 			pcContTmp = txPwrGetString(&pcContCur, ",");
-			if (!kalStrCmp(pcContTmp,
+			if (!pcContTmp || !kalStrCmp(pcContTmp,
 				     PWR_CTRL_CHNL_TYPE_KEY_5G_AX160) == 0) {
 				DBGLOG(RLM, ERROR,
 					"parse AX160 error, %s\n", pcContTmp);
