@@ -3380,6 +3380,12 @@ struct wireless_dev *wlanNetCreate(void *pvData,
 		return NULL;
 	}
 
+	DBGLOG(INIT, INFO, "Adapter allocated: %px\n",
+			prAdapter);
+	if (prGlueInfo->prAdapter)
+		DBGLOG(INIT, WARN, "Adapter is not null: %px\n",
+			prGlueInfo->prAdapter);
+
 	prChipInfo = ((struct mt66xx_hif_driver_data *)
 		      pvDriverData)->chip_info;
 	prAdapter->chip_info = prChipInfo;
@@ -3603,6 +3609,11 @@ void wlanNetDestroy(struct wireless_dev *prWdev)
 
 	glClearHifInfo(prGlueInfo);
 
+	if (prGlueInfo->prAdapter)
+		DBGLOG(INIT, INFO, "Destroy Adapter: %px\n",
+			prGlueInfo->prAdapter);
+	else
+		DBGLOG(INIT, WARN, "Adapter is null\n");
 	wlanAdapterDestroy(prGlueInfo->prAdapter);
 	prGlueInfo->prAdapter = NULL;
 
