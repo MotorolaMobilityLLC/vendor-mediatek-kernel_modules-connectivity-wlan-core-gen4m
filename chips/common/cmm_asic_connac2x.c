@@ -579,6 +579,64 @@ u_int8_t asicConnac2xWfdmaWaitIdle(
 	return FALSE;
 }
 
+
+void asicConnac2xWfdmaTxRingBasePtrExtCtrl(
+	struct GLUE_INFO *prGlueInfo,
+	struct RTMP_TX_RING *tx_ring,
+	u_int32_t index)
+{
+	struct BUS_INFO *prBusInfo;
+	struct ADAPTER *prAdapter = prGlueInfo->prAdapter;
+	uint32_t phy_addr_ext = 0;
+	u_int32_t u4RegValue = 0;
+
+	prBusInfo = prGlueInfo->prAdapter->chip_info->bus_info;
+
+	if (prBusInfo->u4DmaMask <= 32)
+		return;
+
+	phy_addr_ext = (((uint64_t)tx_ring->Cell[0].AllocPa >>
+			DMA_BITS_OFFSET) & DMA_HIGHER_4BITS_MASK) << 16;
+
+	HAL_MCR_RD(prAdapter, tx_ring->hw_cnt_addr,
+			&u4RegValue);
+
+	phy_addr_ext |= u4RegValue;
+	DBGLOG(HAL, INFO, "phy_addr_ext=0x%x\n", phy_addr_ext);
+
+	HAL_MCR_WR(prAdapter, tx_ring->hw_cnt_addr,
+			phy_addr_ext);
+}
+
+void asicConnac2xWfdmaRxRingBasePtrExtCtrl(
+	struct GLUE_INFO *prGlueInfo,
+	struct RTMP_RX_RING *rx_ring,
+	u_int32_t index)
+{
+	struct BUS_INFO *prBusInfo;
+	struct ADAPTER *prAdapter = prGlueInfo->prAdapter;
+	uint32_t phy_addr_ext = 0;
+	u_int32_t u4RegValue = 0;
+
+	prBusInfo = prGlueInfo->prAdapter->chip_info->bus_info;
+
+	if (prBusInfo->u4DmaMask <= 32)
+		return;
+
+	phy_addr_ext = (((uint64_t)rx_ring->Cell[0].AllocPa >>
+			DMA_BITS_OFFSET) & DMA_HIGHER_4BITS_MASK) << 16;
+
+	HAL_MCR_RD(prAdapter, rx_ring->hw_cnt_addr,
+			&u4RegValue);
+
+	phy_addr_ext |= u4RegValue;
+	DBGLOG(HAL, INFO, "phy_addr_ext=0x%x\n", phy_addr_ext);
+
+	HAL_MCR_WR(prAdapter, rx_ring->hw_cnt_addr,
+			phy_addr_ext);
+}
+
+
 void asicConnac2xWfdmaTxRingExtCtrl(
 	struct GLUE_INFO *prGlueInfo,
 	struct RTMP_TX_RING *tx_ring,
@@ -610,6 +668,9 @@ void asicConnac2xWfdmaTxRingExtCtrl(
 		prBusInfo->host_tx_ring_ext_ctrl_base + ext_offset;
 	HAL_MCR_WR(prAdapter, tx_ring->hw_desc_base_ext,
 		   CONNAC2X_TX_RING_DISP_MAX_CNT);
+
+	asicConnac2xWfdmaTxRingBasePtrExtCtrl(prGlueInfo,
+		tx_ring, index);
 }
 
 void asicConnac2xWfdmaRxRingExtCtrl(
@@ -657,6 +718,9 @@ void asicConnac2xWfdmaRxRingExtCtrl(
 
 	HAL_MCR_WR(prAdapter, rx_ring->hw_desc_base_ext,
 		   CONNAC2X_RX_RING_DISP_MAX_CNT);
+
+	asicConnac2xWfdmaRxRingBasePtrExtCtrl(prGlueInfo,
+		rx_ring, index);
 }
 
 void asicConnac2xWfdmaManualPrefetch(

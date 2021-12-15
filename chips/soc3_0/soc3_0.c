@@ -548,6 +548,8 @@ void soc3_0asicConnac2xWpdmaConfig(
 	uint32_t u4DmaCfgCr = 0;
 	uint32_t idx, u4DmaNum = 1;
 	struct mt66xx_chip_info *chip_info = prAdapter->chip_info;
+	struct BUS_INFO *prBusInfo =
+			prGlueInfo->prAdapter->chip_info->bus_info;
 
 	if (chip_info->is_support_wfdma1)
 		u4DmaNum++;
@@ -567,6 +569,8 @@ void soc3_0asicConnac2xWpdmaConfig(
 				asicConnac2xWfdmaCfgAddrGet(prGlueInfo, idx);
 			GloCfg[idx].field_conn2x.tx_dma_en = 1;
 			GloCfg[idx].field_conn2x.rx_dma_en = 1;
+			GloCfg[idx].field_conn2x.pdma_addr_ext_en =
+				(prBusInfo->u4DmaMask > 32) ? 1 : 0;
 			HAL_MCR_WR(prAdapter, u4DmaCfgCr, GloCfg[idx].word);
 		}
 	}

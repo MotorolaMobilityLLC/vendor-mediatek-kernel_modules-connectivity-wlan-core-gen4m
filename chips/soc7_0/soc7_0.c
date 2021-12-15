@@ -364,7 +364,7 @@ struct BUS_INFO soc7_0_bus_info = {
 	.fw_own_clear_addr = CONNAC2X_BN0_IRQ_STAT_ADDR,
 	.fw_own_clear_bit = PCIE_LPCR_FW_CLR_OWN,
 	.fgCheckDriverOwnInt = FALSE,
-	.u4DmaMask = 32,
+	.u4DmaMask = 36,
 #if defined(_HIF_PCIE)
 	.pcie2ap_remap_2 = CONN_INFRA_CFG_PCIE2AP_REMAP_2_ADDR,
 #endif
@@ -864,6 +864,9 @@ static void soc7_0WfdmaRxRingExtCtrl(
 
 	HAL_MCR_WR(prAdapter, rx_ring->hw_desc_base_ext,
 		   CONNAC2X_RX_RING_DISP_MAX_CNT);
+
+	asicConnac2xWfdmaRxRingBasePtrExtCtrl(prGlueInfo,
+		rx_ring, index);
 }
 
 static void soc7_0asicConnac2xWfdmaManualPrefetch(
@@ -1013,6 +1016,8 @@ static void soc7_0asicConnac2xWpdmaConfig(struct GLUE_INFO *prGlueInfo,
 	struct ADAPTER *prAdapter = prGlueInfo->prAdapter;
 	union WPDMA_GLO_CFG_STRUCT GloCfg;
 	uint32_t u4DmaCfgCr;
+	struct BUS_INFO *prBusInfo =
+			prGlueInfo->prAdapter->chip_info->bus_info;
 
 	asicConnac2xWfdmaControl(prGlueInfo, 0, enable);
 	u4DmaCfgCr = asicConnac2xWfdmaCfgAddrGet(prGlueInfo, 0);
@@ -1027,6 +1032,8 @@ static void soc7_0asicConnac2xWpdmaConfig(struct GLUE_INFO *prGlueInfo,
 		GloCfg.field_conn2x.tx_dma_en = 1;
 		GloCfg.field_conn2x.rx_dma_en = 1;
 		GloCfg.field_conn2x.csr_wfdma_dummy_reg = 1;
+		GloCfg.field_conn.pdma_addr_ext_en =
+			(prBusInfo->u4DmaMask > 32) ? 1 : 0;
 		HAL_MCR_WR(prAdapter, u4DmaCfgCr, GloCfg.word);
 	}
 }
