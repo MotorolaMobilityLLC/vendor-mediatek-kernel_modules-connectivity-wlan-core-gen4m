@@ -3492,9 +3492,8 @@ p2pRoleFsmRunEventAAASuccess(IN struct ADAPTER *prAdapter,
 			P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prAdapter,
 				prP2pBssInfo->u4PrivateData);
 
-		if (prP2pBssInfo &&
-			(prP2pBssInfo->u4RsnSelectedAKMSuite ==
-			RSN_AKM_SUITE_OWE)) {
+		if (prP2pBssInfo->u4RsnSelectedAKMSuite ==
+			RSN_AKM_SUITE_OWE) {
 			DBGLOG(P2P, INFO,
 				"[OWE] Bypass new_sta\n");
 			break;

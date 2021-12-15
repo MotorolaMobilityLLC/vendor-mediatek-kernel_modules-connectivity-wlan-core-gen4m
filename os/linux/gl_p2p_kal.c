@@ -1874,12 +1874,12 @@ struct ieee80211_channel *kalP2pFuncGetChannelEntry(
 	struct ieee80211_channel *prTargetChannelEntry =
 		(struct ieee80211_channel *)NULL;
 	uint32_t u4TblSize = 0, u4Idx = 0;
-	struct wiphy *wiphy = NULL;
+	struct wiphy *wiphy = wlanGetWiphy();
 
-	if ((prP2pInfo == NULL) || (prChannelInfo == NULL))
+	if ((prP2pInfo == NULL) ||
+		(prChannelInfo == NULL) ||
+		(wiphy == NULL))
 		return NULL;
-
-	wiphy = prP2pInfo->prWdev->wiphy;
 
 	do {
 
