@@ -9556,7 +9556,7 @@ uint32_t kalSetSuspendFlagToEMI(IN struct ADAPTER
 	if (!gConEmiPhyBase) {
 #if (CFG_SUPPORT_CONNINFRA == 1)
 		conninfra_get_phy_addr(
-			(unsigned int *)&gConEmiPhyBase,
+			&gConEmiPhyBase,
 			(unsigned int *)&gConEmiSize);
 #endif
 
