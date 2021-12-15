@@ -4152,9 +4152,6 @@ u_int8_t wlanProcessTxFrame(IN struct ADAPTER *prAdapter,
 			if (rTxPacketInfo.u2Flag & BIT(ENUM_PKT_ARP))
 				GLUE_SET_PKT_FLAG(prPacket, ENUM_PKT_ARP);
 
-			if (rTxPacketInfo.u2Flag & BIT(ENUM_PKT_ARP_BC))
-				GLUE_SET_PKT_FLAG(prPacket, ENUM_PKT_ARP_BC);
-
 			if (rTxPacketInfo.u2Flag & BIT(ENUM_PKT_ICMP))
 				GLUE_SET_PKT_FLAG(prPacket, ENUM_PKT_ICMP);
 
@@ -4163,6 +4160,7 @@ u_int8_t wlanProcessTxFrame(IN struct ADAPTER *prAdapter,
 
 			if (rTxPacketInfo.u2Flag & BIT(ENUM_PKT_DNS))
 				GLUE_SET_PKT_FLAG(prPacket, ENUM_PKT_DNS);
+
 		}
 
 		ucMacHeaderLen = ETHER_HEADER_LEN;

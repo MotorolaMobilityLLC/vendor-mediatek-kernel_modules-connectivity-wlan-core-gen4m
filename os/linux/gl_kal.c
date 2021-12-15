@@ -2955,24 +2955,9 @@ kalArpFrameClassifier(IN struct GLUE_INFO *prGlueInfo,
 		      OUT struct TX_PACKET_INFO *prTxPktInfo)
 {
 	uint8_t ucSeqNo;
-
-	struct sk_buff *prSkb = (struct sk_buff *)prPacket;
-	uint8_t *pucPkt = prSkb->data;
-	uint8_t *pucEthBody = &pucPkt[ETH_HLEN];
-	const uint8_t BCAddr[] = BC_MAC_ADDR;
-	const uint8_t NullAddr[] = NULL_MAC_ADDR;
-
-	if (EQUAL_MAC_ADDR(&pucEthBody[ARP_TARGET_MAC_OFFSET], BCAddr)
-		|| EQUAL_MAC_ADDR(&pucEthBody[ARP_TARGET_MAC_OFFSET],
-			NullAddr)) {
-		GLUE_SET_PKT_SEQ_NO(prPacket, 0);
-		prTxPktInfo->u2Flag |= BIT(ENUM_PKT_ARP_BC);
-	} else {
-		ucSeqNo = nicIncreaseTxSeqNum(prGlueInfo->prAdapter);
-		GLUE_SET_PKT_SEQ_NO(prPacket, ucSeqNo);
-		prTxPktInfo->u2Flag |= BIT(ENUM_PKT_ARP);
-	}
-
+	ucSeqNo = nicIncreaseTxSeqNum(prGlueInfo->prAdapter);
+	GLUE_SET_PKT_SEQ_NO(prPacket, ucSeqNo);
+	prTxPktInfo->u2Flag |= BIT(ENUM_PKT_ARP);
 	return TRUE;
 }
 
