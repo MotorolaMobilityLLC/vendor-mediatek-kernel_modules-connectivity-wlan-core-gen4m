@@ -3102,6 +3102,9 @@ void connac2x_show_wfdma_desc(IN struct ADAPTER *prAdapter)
 		u4SwIdx = prGroup->didx == 0 ?
 			prGroup->cnt - 1 : prGroup->didx - 1;
 		kalDumpTxRing(prAdapter->prGlueInfo, prTxRing, u4SwIdx, true);
+		u4SwIdx = prGroup->didx == prGroup->cnt - 1 ?
+			0 : prGroup->didx + 1;
+		kalDumpTxRing(prAdapter->prGlueInfo, prTxRing, u4SwIdx, true);
 	}
 
 	for (i = 0; i < prBusInfo->wfmda_host_rx_group_len; i++) {
@@ -3114,6 +3117,9 @@ void connac2x_show_wfdma_desc(IN struct ADAPTER *prAdapter)
 		kalDumpRxRing(prAdapter->prGlueInfo, prRxRing, u4SwIdx, true);
 		u4SwIdx = prGroup->didx == 0 ?
 			prGroup->cnt - 1 : prGroup->didx - 1;
+		kalDumpRxRing(prAdapter->prGlueInfo, prRxRing, u4SwIdx, true);
+		u4SwIdx = prGroup->didx == prGroup->cnt - 1 ?
+			0 : prGroup->didx + 1;
 		kalDumpRxRing(prAdapter->prGlueInfo, prRxRing, u4SwIdx, true);
 	}
 }
@@ -3191,19 +3197,69 @@ static void connac2x_dump_wfdma_dbg_value(
 	set_debug_cr = pdma_base_cr + 0x124;
 	get_debug_cr = pdma_base_cr + 0x128;
 	kalMemZero(buf, BUF_SIZE);
-	pos += kalSnprintf(buf + pos, 50,
+	pos += kalSnprintf(buf + pos, BUF_SIZE - pos,
 			"set_debug_cr:0x%08x get_debug_cr:0x%08x; ",
 			set_debug_cr, get_debug_cr);
 	for (set_debug_flag_value = 0x100; set_debug_flag_value <= 0x112;
 			set_debug_flag_value++) {
 		HAL_MCR_WR(prAdapter, set_debug_cr, set_debug_flag_value);
 		HAL_MCR_RD(prAdapter, get_debug_cr, &get_debug_value);
-		pos += kalSnprintf(buf + pos, 40, "Set:0x%03x, result=0x%08x%s",
+		pos += kalSnprintf(buf + pos, BUF_SIZE - pos,
+			"Set:0x%03x, result=0x%08x%s",
 			set_debug_flag_value,
 			get_debug_value,
 			set_debug_flag_value == 0x112 ? "\n" : "; ");
 	}
 	DBGLOG(HAL, INFO, "%s", buf);
+
+	pos = 0;
+	pos += kalSnprintf(buf + pos, BUF_SIZE - pos,
+			"set_debug_cr:0x%08x get_debug_cr:0x%08x; ",
+			set_debug_cr, get_debug_cr);
+	for (set_debug_flag_value = 0x113; set_debug_flag_value <= 0x125;
+			set_debug_flag_value++) {
+		HAL_MCR_WR(prAdapter, set_debug_cr, set_debug_flag_value);
+		HAL_MCR_RD(prAdapter, get_debug_cr, &get_debug_value);
+		pos += kalSnprintf(buf + pos, BUF_SIZE - pos,
+			"Set:0x%03x, result=0x%08x%s",
+			set_debug_flag_value,
+			get_debug_value,
+			set_debug_flag_value == 0x125 ? "\n" : "; ");
+	}
+	DBGLOG(HAL, INFO, "%s", buf);
+
+	pos = 0;
+	pos += kalSnprintf(buf + pos, BUF_SIZE - pos,
+			"set_debug_cr:0x%08x get_debug_cr:0x%08x; ",
+			set_debug_cr, get_debug_cr);
+	for (set_debug_flag_value = 0x125; set_debug_flag_value <= 0x131;
+			set_debug_flag_value++) {
+		HAL_MCR_WR(prAdapter, set_debug_cr, set_debug_flag_value);
+		HAL_MCR_RD(prAdapter, get_debug_cr, &get_debug_value);
+		pos += kalSnprintf(buf + pos, BUF_SIZE - pos,
+			"Set:0x%03x, result=0x%08x%s",
+			set_debug_flag_value,
+			get_debug_value,
+			set_debug_flag_value == 0x131 ? "\n" : "; ");
+	}
+	DBGLOG(HAL, INFO, "%s", buf);
+
+	pos = 0;
+	pos += kalSnprintf(buf + pos, BUF_SIZE - pos,
+			"set_debug_cr:0x%08x get_debug_cr:0x%08x; ",
+			set_debug_cr, get_debug_cr);
+	for (set_debug_flag_value = 0x152; set_debug_flag_value <= 0x154;
+			set_debug_flag_value++) {
+		HAL_MCR_WR(prAdapter, set_debug_cr, set_debug_flag_value);
+		HAL_MCR_RD(prAdapter, get_debug_cr, &get_debug_value);
+		pos += kalSnprintf(buf + pos, BUF_SIZE - pos,
+			"Set:0x%03x, result=0x%08x%s",
+			set_debug_flag_value,
+			get_debug_value,
+			set_debug_flag_value == 0x154 ? "\n" : "; ");
+	}
+	DBGLOG(HAL, INFO, "%s", buf);
+
 	kalMemFree(buf, VIR_MEM_TYPE, BUF_SIZE);
 }
 
