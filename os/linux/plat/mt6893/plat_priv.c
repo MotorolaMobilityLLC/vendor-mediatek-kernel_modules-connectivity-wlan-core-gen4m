@@ -2,6 +2,7 @@
 /*
  * Copyright (c) 2019 MediaTek Inc.
  */
+
 #include "gl_os.h"
 
 #if KERNEL_VERSION(5, 4, 0) <= CFG80211_VERSION_CODE
@@ -9,6 +10,8 @@
 #include <linux/sched/task.h>
 #include <linux/cpufreq.h>
 #elif KERNEL_VERSION(4, 19, 0) <= CFG80211_VERSION_CODE
+#include <cpu_ctrl.h>
+#include <topo_ctrl.h>
 #include <linux/soc/mediatek/mtk-pm-qos.h>
 #include <helio-dvfsrc-opp.h>
 #define pm_qos_add_request(_req, _class, _value) \
@@ -23,10 +26,10 @@
 #else
 #include <cpu_ctrl.h>
 #include <topo_ctrl.h>
-
+#include <linux/pm_qos.h>
 #include <helio-dvfsrc-opp-mt6885.h>
 #endif
-#include <linux/pm_qos.h>
+
 #include "precomp.h"
 
 #ifdef CONFIG_WLAN_MTK_EMI
