@@ -167,6 +167,10 @@ else
     ccflags-y += -DCFG_SUPPORT_SET_IPV6_NETWORK=0
 endif
 
+ifneq ($(filter 6855, $(WLAN_CHIP_ID)),)
+    ccflags-y += -DCFG_SUPPORT_MDDP_AOR=1
+endif
+
 ifneq ($(findstring 5_0,$(MTK_COMBO_CHIP)),)
 ccflags-y:=$(filter-out -USOC5_0,$(ccflags-y))
 ccflags-y += -DSOC5_0
