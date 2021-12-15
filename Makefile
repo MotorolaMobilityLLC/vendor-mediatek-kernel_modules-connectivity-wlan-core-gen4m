@@ -169,6 +169,8 @@ endif
 
 ifneq ($(filter 6855, $(WLAN_CHIP_ID)),)
     ccflags-y += -DCFG_SUPPORT_MDDP_AOR=1
+else
+    ccflags-y += -DCFG_SUPPORT_MDDP_AOR=0
 endif
 
 ifneq ($(findstring 5_0,$(MTK_COMBO_CHIP)),)
