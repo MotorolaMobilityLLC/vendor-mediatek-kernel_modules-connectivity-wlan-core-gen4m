@@ -390,6 +390,9 @@ struct mt66xx_chip_info mt66xx_chip_info_soc2_1x1 = {
 	.em_interface_version = MTK_EM_INTERFACE_VERSION,
 
 	.calDebugCmd = soc2_1x1wlanCalDebugCmd,
+#if CFG_SUPPORT_MDDP_AOR
+	.isSupportMddpAOR = true,
+#endif
 };
 
 struct mt66xx_hif_driver_data mt66xx_driver_data_soc2_1x1 = {
