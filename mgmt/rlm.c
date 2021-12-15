@@ -6767,8 +6767,14 @@ uint8_t rlmGetBssOpBwByOwnAndPeerCapability(IN struct ADAPTER *prAdapter,
 	ASSERT(prBssInfo);
 	ASSERT(prBssInfo->eCurrentOPMode == OP_MODE_INFRASTRUCTURE);
 
-	ucOpMaxBw = cnmGetBssMaxBw(prAdapter, prBssInfo->ucBssIndex);
 	prStaRec = prBssInfo->prStaRecOfAP;
+
+	if (prStaRec == NULL) {
+		DBGLOG(RLM, WARN, "AP is gone? Use current BW setting\n");
+		return rlmGetBssOpBwByVhtAndHtOpInfo(prBssInfo);
+	}
+
+	ucOpMaxBw = cnmGetBssMaxBw(prAdapter, prBssInfo->ucBssIndex);
 
 #if CFG_SUPPORT_802_11AC
 	if (RLM_NET_IS_11AC(prBssInfo)) { /* VHT */
