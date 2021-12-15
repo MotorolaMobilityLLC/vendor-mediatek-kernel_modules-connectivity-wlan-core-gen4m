@@ -2129,6 +2129,7 @@ void p2pFuncDfsSwitchCh(IN struct ADAPTER *prAdapter,
 
 	/* Check DBDC status */
 	cnmDbdcRuntimeCheckDecision(prAdapter, prBssInfo->ucBssIndex);
+	cnmIdcSwitchSapChannel(prAdapter);
 } /* p2pFuncDfsSwitchCh */
 
 u_int8_t p2pFuncCheckWeatherRadarBand(

@@ -3773,6 +3773,9 @@ reqExtSetAcpiDevicePowerState(IN struct GLUE_INFO
 #define CMD_SET_DFS_RADARMODE		"RadarDetectMode"
 #define CMD_SET_DFS_RADAREVENT		"RadarEvent"
 #endif
+#if CFG_SUPPORT_IDC_CH_SWITCH
+#define CMD_SET_IDC_BMP		"SetIdcBmp"
+#endif
 
 #define CMD_PNOSSIDCLR_SET	"PNOSSIDCLR"
 #define CMD_PNOSETUP_SET	"PNOSETUP "
@@ -9882,6 +9885,89 @@ error:
 
 	return -1;
 }
+#endif
+
+#if CFG_SUPPORT_IDC_CH_SWITCH
+int priv_driver_set_idc_bmp(IN struct net_device *prNetDev,
+				IN char *pcCommand, IN int i4TotalLen)
+{
+	struct WIFI_EVENT *pEvent;
+	struct EVENT_LTE_SAFE_CHN *prEventBody;
+	struct GLUE_INFO *prGlueInfo = NULL;
+	int32_t i4BytesWritten = 0;
+	uint8_t ucRoleIdx = 0, ucBssIdx = 0;
+	uint8_t ucIdx;
+	int32_t i4Argc = 0;
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
+	uint32_t u4Ret = 0;
+	uint8_t ucIdcBmpIdx[ENUM_SAFE_CH_MASK_MAX_NUM] = {0};
+
+	ASSERT(prNetDev);
+	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
+		return -1;
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+	if (!prGlueInfo)
+		goto error;
+	if (mtk_Netdev_To_RoleIdx(prGlueInfo, prNetDev, &ucRoleIdx) != 0)
+		goto error;
+	if (p2pFuncRoleToBssIdx(prGlueInfo->prAdapter, ucRoleIdx, &ucBssIdx) !=
+		WLAN_STATUS_SUCCESS)
+		goto error;
+
+	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
+	pEvent = (struct WIFI_EVENT *) kalMemAlloc(sizeof(struct WIFI_EVENT)+
+		sizeof(struct EVENT_LTE_SAFE_CHN), VIR_MEM_TYPE);
+	prEventBody = (struct EVENT_LTE_SAFE_CHN *) &(pEvent->aucBuffer[0]);
+	prEventBody->ucVersion = 2;
+	prEventBody->u4Flags = BIT(0);
+	DBGLOG(P2P, INFO,
+		"prEventBody.ucVersion = %d\n",
+		prEventBody->ucVersion);
+	DBGLOG(P2P, INFO,
+		"prEventBody.u4Flags = 0x%08x\n",
+		prEventBody->u4Flags);
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+	DBGLOG(REQ, INFO, "argc is %i\n", i4Argc);
+	if (i4Argc >= (ENUM_SAFE_CH_MASK_MAX_NUM+1)) {
+		u4Ret = kalkStrtou8(apcArgv[1], 0, &ucIdcBmpIdx[0]);
+		u4Ret = kalkStrtou8(apcArgv[2], 0, &ucIdcBmpIdx[1]);
+		u4Ret = kalkStrtou8(apcArgv[3], 0, &ucIdcBmpIdx[2]);
+		u4Ret = kalkStrtou8(apcArgv[4], 0, &ucIdcBmpIdx[3]);
+		DBGLOG(REQ, ERROR,
+			"ucIdcBmpIdx = (%d,%d,%d,%d)\n",
+			ucIdcBmpIdx[0],
+			ucIdcBmpIdx[1],
+			ucIdcBmpIdx[2],
+			ucIdcBmpIdx[3]);
+	} else
+		DBGLOG(REQ, INFO, "Input insufficent\n");
+
+	/* Statistics from FW is valid */
+	for (ucIdx = 0;
+		ucIdx < ENUM_SAFE_CH_MASK_MAX_NUM;
+		ucIdx++) {
+		prEventBody->rLteSafeChn.
+		au4SafeChannelBitmask[ucIdx] = BIT(ucIdcBmpIdx[ucIdx]);
+		DBGLOG(P2P, INFO,
+			"[CSA]LTE safe channels[%d]=0x%08x\n",
+			ucIdx,
+			prEventBody->rLteSafeChn.
+			au4SafeChannelBitmask[ucIdx]);
+	}
+	cnmIdcDetectHandler(prGlueInfo->prAdapter,
+		(struct WIFI_EVENT *) pEvent);
+	kalMemFree(pEvent,
+		VIR_MEM_TYPE, sizeof(struct WIFI_EVENT)+
+		sizeof(struct EVENT_LTE_SAFE_CHN));
+
+	LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
+		"\n idv event 1");
+
+	return i4BytesWritten;
+error:
+
+	return -1;
+}
 
 #endif
 int priv_driver_set_miracast(IN struct net_device *prNetDev,
@@ -15259,6 +15345,9 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers[] = {
 	{CMD_SET_DFS_RDDREPORT, priv_driver_rddreport},
 	{CMD_SET_DFS_RADARMODE, priv_driver_radarmode},
 	{CMD_SET_DFS_RADAREVENT, priv_driver_radarevent},
+#endif
+#if CFG_SUPPORT_IDC_CH_SWITCH
+	{CMD_SET_IDC_BMP, priv_driver_set_idc_bmp},
 #endif
 #if CFG_SUPPORT_CAL_RESULT_BACKUP_TO_HOST
 	{CMD_SET_CALBACKUP_TEST_DRV_FW, priv_driver_set_calbackup_test_drv_fw},

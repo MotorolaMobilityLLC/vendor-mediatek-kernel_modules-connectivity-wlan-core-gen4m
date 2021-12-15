@@ -1370,6 +1370,16 @@ uint8_t cnmIdcCsaReq(IN struct ADAPTER *prAdapter,
 	}
 }
 
+void cnmSetIdcBssIdx(IN struct ADAPTER *prAdapter, IN uint8_t hwBssIdx)
+{
+	g_rLteSafeChInfo.aucReserved[0] = hwBssIdx;
+}
+
+uint8_t cnmGetIdcBssIdx(IN struct ADAPTER *prAdapter)
+{
+	return g_rLteSafeChInfo.aucReserved[0];
+}
+
 void cnmIdcDetectHandler(IN struct ADAPTER *prAdapter,
 			IN struct WIFI_EVENT *prEvent)
 {
@@ -1457,10 +1467,9 @@ void cnmIdcDetectHandler(IN struct ADAPTER *prAdapter,
 	}
 
 SKIP_COOL_DOWN:
-
+	cnmSetIdcBssIdx(prAdapter, 0);
 	cnmIdcSwitchSapChannel(prAdapter);
 }
-
 
 void cnmIdcSwitchSapChannel(IN struct ADAPTER *prAdapter)
 {
@@ -1471,7 +1480,7 @@ void cnmIdcSwitchSapChannel(IN struct ADAPTER *prAdapter)
 	if (!prAdapter)
 		return;
 
-	for (i = 0; i < prAdapter->ucHwBssIdNum; i++) {
+	for (i = cnmGetIdcBssIdx(prAdapter); i < prAdapter->ucHwBssIdNum; i++) {
 		prBssInfo = prAdapter->aprBssInfo[i];
 
 		if (prBssInfo &&
@@ -1499,8 +1508,8 @@ void cnmIdcSwitchSapChannel(IN struct ADAPTER *prAdapter)
 			}
 		}
 	}
+	cnmSetIdcBssIdx(prAdapter, i);
 }
-
 #endif
 
 /*----------------------------------------------------------------------------*/
