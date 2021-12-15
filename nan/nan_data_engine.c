@@ -148,9 +148,6 @@ static struct _NAN_NDL_INSTANCE_T *
 nanDataUtilSearchNdlByStaRec(struct ADAPTER *prAdapter,
 			     struct STA_RECORD *prStaRec);
 
-static struct _NAN_NDL_INSTANCE_T *
-nanDataUtilSearchNdlByMac(struct ADAPTER *prAdapter, uint8_t *pucAddr);
-
 static uint8_t nanDataUtilGenerateNdpId(struct ADAPTER *prAdapter,
 				       struct _NAN_NDL_INSTANCE_T *prNDL);
 
@@ -625,7 +622,7 @@ nanDataUtilSearchNdpByPublishId(
  * \return none
  */
 /*----------------------------------------------------------------------------*/
-static struct _NAN_NDL_INSTANCE_T *
+struct _NAN_NDL_INSTANCE_T *
 nanDataUtilSearchNdlByMac(struct ADAPTER *prAdapter, uint8_t *pucAddr) {
 	struct _NAN_NDL_INSTANCE_T *prNDL = NULL;
 	uint32_t u4Idx;

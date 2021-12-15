@@ -8537,16 +8537,19 @@ nanSchedEventNanAttr(struct ADAPTER *prAdapter, uint32_t u4SubEvent,
 	uint32_t rRetStatus = WLAN_STATUS_SUCCESS;
 	struct _NAN_SCHED_EVENT_NAN_ATTR_T *prEventNanAttr;
 	struct _NAN_ATTR_HDR_T *prAttrHdr;
+	struct _NAN_NDL_INSTANCE_T *prNDL = NULL;
+	struct _NAN_NDP_INSTANCE_T *prNDP = NULL;
+	uint32_t u4Idx = 0;
 
 	prEventNanAttr = (struct _NAN_SCHED_EVENT_NAN_ATTR_T *)pucBuf;
 	prAttrHdr = (struct _NAN_ATTR_HDR_T *)prEventNanAttr->aucNanAttr;
 
-#if 0
 	DBGLOG(NAN, INFO, "Nmi> %02x:%02x:%02x:%02x:%02x:%02x, SubEvent:%d\n",
 		prEventNanAttr->aucNmiAddr[0], prEventNanAttr->aucNmiAddr[1],
 		prEventNanAttr->aucNmiAddr[2], prEventNanAttr->aucNmiAddr[3],
 		prEventNanAttr->aucNmiAddr[4], prEventNanAttr->aucNmiAddr[5],
 		u4SubEvent);
+#if 0
 	nanUtilDump(prAdapter, "NAN Attribute",
 		(PUINT_8)prAttrHdr, (prAttrHdr->u2Length + 3));
 #endif
@@ -8558,6 +8561,47 @@ nanSchedEventNanAttr(struct ADAPTER *prAdapter, uint32_t u4SubEvent,
 						    prEventNanAttr->aucNanAttr);
 		break;
 	case NAN_EVENT_ID_PEER_AVAILABILITY:
+		/* Skip update availability by event
+		* if NDP negotiation is ongoing
+		*/
+		prNDL = nanDataUtilSearchNdlByMac(
+			prAdapter, prEventNanAttr->aucNmiAddr);
+		if (prNDL) {
+			if (prNDL->prOperatingNDP)
+				DBGLOG(NAN, INFO, "operating NDP %d\n",
+				prNDL->prOperatingNDP->ucNDPID);
+
+			if (prNDL->ucNDPNum) {
+				for (u4Idx = 0;
+					u4Idx < prNDL->ucNDPNum; u4Idx++) {
+					prNDP = &(prNDL->arNDP[u4Idx]);
+					DBGLOG(NAN, INFO,
+						"NDP idx[%d] NDPID[%d] state[%d]\n",
+						u4Idx, prNDP->ucNDPID,
+						(prNDP
+						->eCurrentNDPProtocolState));
+
+					if ((prNDP->eCurrentNDPProtocolState
+						!= NDP_IDLE) &&
+						(prNDP->eCurrentNDPProtocolState
+						!= NDP_NORMAL_TR)) {
+						DBGLOG(NAN, INFO,
+							"Skip due to peer under negotiation\n",
+							u4Idx,
+							prNDP->ucNDPID,
+						(prNDP
+						->eCurrentNDPProtocolState));
+						return WLAN_STATUS_FAILURE;
+					}
+				}
+			} else {
+				DBGLOG(NAN, INFO,
+					"No NDP found %d\n", prNDL->ucNDPNum);
+			}
+		} else {
+			DBGLOG(NAN, INFO, "No NDL found\n");
+		}
+
 		nanSchedPeerUpdateAvailabilityAttr(prAdapter,
 						   prEventNanAttr->aucNmiAddr,
 						   prEventNanAttr->aucNanAttr);
