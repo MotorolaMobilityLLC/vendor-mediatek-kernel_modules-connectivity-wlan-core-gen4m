@@ -4841,10 +4841,10 @@ void cnmPowerControlErrorHandling(
 		break;
 	case NETWORK_TYPE_P2P:
 		p2pFuncDisconnect(prAdapter,
-					prBssInfo,
-					prBssInfo->prStaRecOfAP,
-					FALSE,
-					REASON_CODE_OP_MODE_CHANGE_FAIL);
+			prBssInfo,
+			prBssInfo->prStaRecOfAP,
+			TRUE,
+			REASON_CODE_OP_MODE_CHANGE_FAIL);
 		break;
 	default:
 		break;
