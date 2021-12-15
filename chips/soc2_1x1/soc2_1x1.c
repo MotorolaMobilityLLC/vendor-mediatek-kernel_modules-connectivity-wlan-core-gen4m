@@ -303,6 +303,7 @@ struct ATE_OPS_T soc2_1x1AteOps = {
 	.getICapStatus = connacGetICapStatus,
 	.getICapIQData = connacGetICapIQData,
 	.getRbistDataDumpEvent = nicExtEventICapIQData,
+	.u4Architech = 1,
 };
 #endif
 
