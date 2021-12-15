@@ -144,13 +144,13 @@ struct TX_PWR_TAG_TABLE {
 #if CFG_SUPPORT_DYNAMIC_PWR_LIMIT
 /* dynamic tx power control */
 char *g_au1TxPwrDefaultSetting[] = {
-#if (CFG_SUPPORT_DYNA_TX_PWR_CTRL_OFDM_SETTING == 1)
-	"_SAR_PwrLevel;1;2;1;[2G4,,,,,,,,,,,][5G,,,,,,,,,,,]",
-	"_G_Scenario;1;2;1;[ALL,,,,,,,,,,,]",
-	"_G_Scenario;2;2;1;[ALL,,,,,,,,,,,]",
-	"_G_Scenario;3;2;1;[ALL,,,,,,,,,,,]",
-	"_G_Scenario;4;2;1;[ALL,,,,,,,,,,,]",
-	"_G_Scenario;5;2;1;[ALL,,,,,,,,,,,]",
+#if (CFG_SUPPORT_DYNA_TX_PWR_CTRL_11AC_V2_SETTING == 1)
+	"_SAR_PwrLevel;1;2;1;[2G4,,,,,,,,,,,,][5G,,,,,,,,,,,,]",
+	"_G_Scenario;1;2;1;[ALL,,,,,,,,,,,,]",
+	"_G_Scenario;2;2;1;[ALL,,,,,,,,,,,,]",
+	"_G_Scenario;3;2;1;[ALL,,,,,,,,,,,,]",
+	"_G_Scenario;4;2;1;[ALL,,,,,,,,,,,,]",
+	"_G_Scenario;5;2;1;[ALL,,,,,,,,,,,,]",
 #else
 	"_SAR_PwrLevel;1;2;1;[2G4,,,,,,,,,][5G,,,,,,,,,]",
 	"_G_Scenario;1;2;1;[ALL,,,,,,,,,]",
@@ -2825,11 +2825,22 @@ void rlmDomainCheckCountryPowerLimitTable(struct ADAPTER *prAdapter)
 		if (fgChannelValid == FALSE || fgPowerLimitValid == FALSE) {
 			fgTableValid = FALSE;
 			DBGLOG(RLM, LOUD,
+#if (CFG_SUPPORT_DYNA_TX_PWR_CTRL_11AC_V2_SETTING == 1)
+				"Domain: CC=%c%c, Ch=%d, Limit: %d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d, Valid:%d,%d\n",
+#else
 				"Domain: CC=%c%c, Ch=%d, Limit: %d,%d,%d,%d,%d,%d,%d,%d,%d, Valid:%d,%d\n",
+#endif
 				PwrLmtConf[i].aucCountryCode[0],
 				PwrLmtConf[i].aucCountryCode[1],
 				PwrLmtConf[i].ucCentralCh,
+#if (CFG_SUPPORT_DYNA_TX_PWR_CTRL_11AC_V2_SETTING == 1)
+				PwrLmtConf[i].aucPwrLimit[PWR_LIMIT_CCK_L],
+				PwrLmtConf[i].aucPwrLimit[PWR_LIMIT_CCK_H],
+				PwrLmtConf[i].aucPwrLimit[PWR_LIMIT_OFDM_L],
+				PwrLmtConf[i].aucPwrLimit[PWR_LIMIT_OFDM_H],
+#else
 				PwrLmtConf[i].aucPwrLimit[PWR_LIMIT_CCK],
+#endif
 				PwrLmtConf[i].aucPwrLimit[PWR_LIMIT_20M_L],
 				PwrLmtConf[i].aucPwrLimit[PWR_LIMIT_20M_H],
 				PwrLmtConf[i].aucPwrLimit[PWR_LIMIT_40M_L],
@@ -3025,7 +3036,11 @@ rlmDomainBuildCmdByDefaultTable(struct CMD_SET_COUNTRY_CHANNEL_POWER_LIMIT
 						PWR_LIMIT_6E_NUM);
 #endif
 				else
+#if (CFG_SUPPORT_DYNA_TX_PWR_CTRL_11AC_V2_SETTING == 1)
+					kalMemSet(&prPwrLimit->cPwrLimitCCK_L,
+#else
 					kalMemSet(&prPwrLimit->cPwrLimitCCK,
+#endif
 					cLmtBand,
 					PWR_LIMIT_NUM);
 			} else {
@@ -3078,11 +3093,14 @@ rlmDomainBuildCmdByDefaultTable(struct CMD_SET_COUNTRY_CHANNEL_POWER_LIMIT
 #endif
 				else {
 					/* BW20 */
-					prPwrLimit->cPwrLimitCCK = cLmtBand;
-#if (CFG_SUPPORT_DYNA_TX_PWR_CTRL_OFDM_SETTING == 1)
+#if (CFG_SUPPORT_DYNA_TX_PWR_CTRL_11AC_V2_SETTING == 1)
+					prPwrLimit->cPwrLimitCCK_L = cLmtBand;
+					prPwrLimit->cPwrLimitCCK_H = cLmtBand;
 					prPwrLimit->cPwrLimitOFDM_L = cLmtBand;
 					prPwrLimit->cPwrLimitOFDM_H = cLmtBand;
-#endif /* CFG_SUPPORT_DYNA_TX_PWR_CTRL_OFDM_SETTING */
+#else
+					prPwrLimit->cPwrLimitCCK = cLmtBand;
+#endif /* CFG_SUPPORT_DYNA_TX_PWR_CTRL_11AC_V2_SETTING */
 					prPwrLimit->cPwrLimit20L = cLmtBand;
 					prPwrLimit->cPwrLimit20H = cLmtBand;
 				}
@@ -3199,22 +3217,15 @@ void rlmDomainCopyFromConfigTable(struct CMD_CHANNEL_POWER_LIMIT *prCmdPwrLimit,
 {
 
 
-#if (CFG_SUPPORT_DYNA_TX_PWR_CTRL_OFDM_SETTING == 1)
-	/*remapping from old setting to new setting*/
-	prCmdPwrLimit->cPwrLimitCCK =
-				prPwrLimitConfig->aucPwrLimit[PWR_LIMIT_CCK];
-	prCmdPwrLimit->cPwrLimitOFDM_L =
-				prPwrLimitConfig->aucPwrLimit[PWR_LIMIT_OFDM_L];
-	prCmdPwrLimit->cPwrLimitOFDM_H =
-				prPwrLimitConfig->aucPwrLimit[PWR_LIMIT_OFDM_H];
-	kalMemCopy(&prCmdPwrLimit->cPwrLimit20L,
-		   &prPwrLimitConfig->aucPwrLimit[PWR_LIMIT_OFDM_L],
-		   PWR_LIMIT_NUM - 5);
+#if (CFG_SUPPORT_DYNA_TX_PWR_CTRL_11AC_V2_SETTING == 1)
+	kalMemCopy(&prCmdPwrLimit->cPwrLimitCCK_L,
+		   &prPwrLimitConfig->aucPwrLimit[0],
+		   PWR_LIMIT_NUM);
 #else
 	kalMemCopy(&prCmdPwrLimit->cPwrLimitCCK,
 		   &prPwrLimitConfig->aucPwrLimit[0],
 		   PWR_LIMIT_NUM);
-#endif /* CFG_SUPPORT_DYNA_TX_PWR_CTRL_OFDM_SETTING */
+#endif /* CFG_SUPPORT_DYNA_TX_PWR_CTRL_11AC_V2_SETTING */
 }
 
 
@@ -4435,9 +4446,14 @@ uint32_t txPwrArbitrator(enum ENUM_TX_POWER_CTRL_TYPE eCtrlType,
 #endif
 	else {
 		prPwrLimit = (struct CMD_CHANNEL_POWER_LIMIT *) pvBuf;
+#if (CFG_SUPPORT_DYNA_TX_PWR_CTRL_11AC_V2_SETTING == 1)
+		prRateOfs = &prPwrLimit->cPwrLimitCCK_L;
+		for (rateIdx = PWR_LIMIT_CCK_L;
+#else
 		prRateOfs = &prPwrLimit->cPwrLimitCCK;
 
 		for (rateIdx = PWR_LIMIT_CCK;
+#endif
 			rateIdx < PWR_LIMIT_NUM ; rateIdx++) {
 			if (prChlSetting->op[rateIdx]
 				!= PWR_CTRL_TYPE_NO_ACTION) {
@@ -4908,7 +4924,7 @@ uint32_t txPwrApplyOneSetting(struct CMD_SET_COUNTRY_CHANNEL_POWER_LIMIT *prCmd,
 							prChlSetting,
 							eType);
 				else if (eType == PWR_LIMIT_TYPE_COMP_11AC ||
-					eType == PWR_LIMIT_TYPE_COMP_11AG_11N)
+					eType == PWR_LIMIT_TYPE_COMP_11AC_V2)
 					txPwrArbitrator(prCurElement->eCtrlType,
 							prCmdPwrLimit,
 							prChlSetting,
@@ -4976,10 +4992,13 @@ struct TX_PWR_CTRL_ELEMENT *txPwrCtrlStringToStruct(char *pcContent,
 	char carySeperator[2] = { 0, 0 };
 
 	char *pacParsePwrAC[PWR_CFG_PRAM_NUM_AC] = {
-		"CCK",
-#if (CFG_SUPPORT_DYNA_TX_PWR_CTRL_OFDM_SETTING == 1)
+#if (CFG_SUPPORT_DYNA_TX_PWR_CTRL_11AC_V2_SETTING == 1)
+		"CCKL",
+		"CCKH",
 		"OFDML",
 		"OFDMH",
+#else
+		"CCK"
 #endif
 		"HT20L",
 		"HT20H",
@@ -5963,8 +5982,11 @@ void rlmDomainShowPwrLimitPerCh(char *message,
 #endif
 		else {
 			prPwrLmt = &prCmd->u.rChannelPowerLimit[i];
+#if (CFG_SUPPORT_DYNA_TX_PWR_CTRL_11AC_V2_SETTING == 1)
+			prcRatePwr = &prPwrLmt->cPwrLimitCCK_L;
+#else
 			prcRatePwr = &prPwrLmt->cPwrLimitCCK;
-
+#endif
 			/*message head*/
 			msgOfs += snprintf(msgLimit + msgOfs,
 				PWR_BUF_LEN - msgOfs,
@@ -5972,7 +5994,11 @@ void rlmDomainShowPwrLimitPerCh(char *message,
 				prPwrLmt->ucCentralCh);
 
 			/*message body*/
+#if (CFG_SUPPORT_DYNA_TX_PWR_CTRL_11AC_V2_SETTING == 1)
+			for (k = PWR_LIMIT_CCK_L; k < PWR_LIMIT_NUM ; k++)
+#else
 			for (k = PWR_LIMIT_CCK; k < PWR_LIMIT_NUM ; k++)
+#endif
 				msgOfs += snprintf(msgLimit + msgOfs,
 					PWR_BUF_LEN - msgOfs,
 					"%d,",
@@ -6103,7 +6129,11 @@ void rlmDomainSendPwrLimitCmd(struct ADAPTER *prAdapter)
 
 	/* Initialize channel number */
 	prCmd->ucNum = 0;
+#if (CFG_SUPPORT_DYNA_TX_PWR_CTRL_11AC_V2_SETTING == 1)
+	prCmd->ucLimitType = PWR_LIMIT_TYPE_COMP_11AC_V2;
+#else
 	prCmd->ucLimitType = PWR_LIMIT_TYPE_COMP_11AC;
+#endif
 	prCmd->ucVersion = 1;
 
 	prCmdHE->ucNum = 0;
