@@ -3861,12 +3861,18 @@ void p2pFuncValidateRxActionFrame(IN struct ADAPTER *prAdapter,
 	  * frames which may come from unexpected channels.
 	  */
 	if (fgIsDevInterface && prP2pDevFsmInfo &&
-		prP2pDevFsmInfo->eCurrentState ==
-			P2P_DEV_STATE_REQING_CHANNEL) {
+		((prP2pDevFsmInfo->eCurrentState ==
+			P2P_DEV_STATE_REQING_CHANNEL) ||
+		((prP2pDevFsmInfo->eCurrentState ==
+			P2P_DEV_STATE_CHNL_ON_HAND) &&
+			prP2pDevFsmInfo->rChnlReqInfo.ucReqChnlNum !=
+				prSwRfb->ucChnlNum))) {
 		DBGLOG(P2P, INFO,
-			"ignore rx action frame %d on state:%d\n",
+			"ignore rx action frame %d on state:%d, ReqChnl:%d, RxChnl:%d\n",
 			prActFrame->ucCategory,
-			prP2pDevFsmInfo->eCurrentState);
+			prP2pDevFsmInfo->eCurrentState,
+			prP2pDevFsmInfo->rChnlReqInfo.ucReqChnlNum,
+			prSwRfb->ucChnlNum);
 		return;
 	}
 
