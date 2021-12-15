@@ -1276,4 +1276,5 @@ int32_t txPwrParseTagAllT(
  *******************************************************************************
  */
 
+uint8_t regCountryDfsMapping(IN struct ADAPTER *prAdapter);
 #endif /* _RLM_DOMAIN_H */
