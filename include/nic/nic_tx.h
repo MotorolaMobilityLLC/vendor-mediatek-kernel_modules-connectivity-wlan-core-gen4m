@@ -532,6 +532,7 @@ enum ENUM_TX_STATISTIC_COUNTER {
 	TX_FORWARD_OVERFLOW_DROP,
 	TX_AP_BORADCAST_DROP,
 	TX_INVALID_MSDUINFO_COUNT,
+	TX_DROP_PID_COUNT,
 	TX_STATISTIC_COUNTER_NUM
 };
 
@@ -1850,6 +1851,11 @@ void nicTxFreeMsduInfoPacket(IN struct ADAPTER *prAdapter,
 
 void nicTxReturnMsduInfo(IN struct ADAPTER *prAdapter,
 	IN struct MSDU_INFO *prMsduInfoListHead);
+
+void nicTxInitPktPID(
+	IN struct ADAPTER *prAdapter,
+	IN uint8_t ucWlanIndex
+);
 
 u_int8_t nicTxFillMsduInfo(IN struct ADAPTER *prAdapter,
 	IN struct MSDU_INFO *prMsduInfo, IN void *prNdisPacket);
