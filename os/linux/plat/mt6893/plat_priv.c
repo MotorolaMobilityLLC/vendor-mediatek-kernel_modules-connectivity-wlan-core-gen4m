@@ -128,6 +128,8 @@ void kalSetTaskUtilMinPct(IN int pid, IN unsigned int min)
 		ret = sched_setattr(p, &attr);
 		put_task_struct(p);
 	}
+#elif KERNEL_VERSION(4, 19, 0) <= CFG80211_VERSION_CODE
+	/* TODO */
 #else
 	set_task_util_min_pct(pid, min);
 #endif
