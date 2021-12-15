@@ -373,6 +373,11 @@ void nicReleaseAdapterMemory(IN struct ADAPTER *prAdapter)
 					prAdapter->u4MemAllocDynamicCount) {
 				struct MEM_TRACK *prMemTrack = NULL;
 
+				DBGLOG(MEM, INFO,
+					"u4MemFreeDynamicCount %d u4MemAllocDynamicCount %d\n",
+					prAdapter->u4MemFreeDynamicCount,
+					prAdapter->u4MemAllocDynamicCount);
+
 				DBGLOG(MEM, ERROR, "----- Memory Leak -----\n");
 				LINK_FOR_EACH_ENTRY(prMemTrack,
 						&prAdapter->rMemTrackLink,
@@ -887,10 +892,10 @@ struct CMD_INFO *nicGetPendingCmdInfo(IN struct ADAPTER
 
 		if (prMemTrack) {
 			prMemTrack->u2CmdIdAndWhere &= 0x00FF;
-			/* 0x50 means the CmdId is in PendingCmdQuene
+			/* 0x60 means the CmdId is in PendingCmdQuene
 			 *  and already report to module
 			 */
-			prMemTrack->u2CmdIdAndWhere |= 0x5000;
+			prMemTrack->u2CmdIdAndWhere |= 0x6000;
 		}
 #endif
 	}
