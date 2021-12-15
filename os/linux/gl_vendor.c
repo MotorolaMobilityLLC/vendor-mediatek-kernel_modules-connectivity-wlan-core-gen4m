@@ -1909,8 +1909,7 @@ int mtk_cfg80211_vendor_get_version(struct wiphy *wiphy,
 	if (attrlist->nla_type == LOGGER_ATTRIBUTE_DRIVER_VER) {
 		char aucDriverVersionStr[] = STR(NIC_DRIVER_MAJOR_VERSION) "_"
 					     STR(NIC_DRIVER_MINOR_VERSION) "_"
-					     STR(NIC_DRIVER_SERIAL_VERSION) "-"
-					     STR(DRIVER_BUILD_DATE);
+					     STR(NIC_DRIVER_SERIAL_VERSION);
 
 		u2Len = kalStrLen(aucDriverVersionStr);
 		DBGLOG(REQ, TRACE, "Get driver version len: %d\n", u2Len);
