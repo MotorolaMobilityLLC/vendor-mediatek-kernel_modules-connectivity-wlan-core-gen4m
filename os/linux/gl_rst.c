@@ -386,11 +386,14 @@ u_int8_t glResetTrigger(struct ADAPTER *prAdapter,
 	else
 		g_fgRstRecover = TRUE;
 
-	if (u4RstFlag & RST_FLAG_DO_WHOLE_RESET) {
-		conninfra_trigger_whole_chip_rst(CONNDRV_TYPE_WIFI, g_reason);
-	} else {
-		if (prChipInfo->triggerfwassert)
-			prChipInfo->triggerfwassert();
+	/* check if whole chip reset is triggered */
+	if (g_IsWfsysBusHang == FALSE) {
+		if (u4RstFlag & RST_FLAG_DO_WHOLE_RESET) {
+			glResetWholeChipResetTrigger(g_reason);
+		} else {
+			if (prChipInfo->triggerfwassert)
+				prChipInfo->triggerfwassert();
+		}
 	}
 #endif /*end of CFG_SUPPORT_CONNINFRA == 0*/
 
@@ -876,6 +879,13 @@ bool IsOverRstTimeThreshold(
 	return fgIsTimeout;
 }
 
+void glResetWholeChipResetTrigger(char *pcReason)
+{
+	if (conninfra_trigger_whole_chip_rst(CONNDRV_TYPE_WIFI, pcReason)
+			== 0)
+		fgIsDrvTriggerWholeChipReset = TRUE;
+}
+
 void glResetSubsysRstProcedure(
 	struct ADAPTER *prAdapter,
 	struct timespec64 *rNowTs,
@@ -904,8 +914,7 @@ void glResetSubsysRstProcedure(
 			fgIsDrvTriggerWholeChipReset = TRUE;
 			glSetRstReasonString(
 				"fw detect bus hang");
-			conninfra_trigger_whole_chip_rst(CONNDRV_TYPE_WIFI,
-				g_reason);
+			glResetWholeChipResetTrigger(g_reason);
 		} else {
 #if (CFG_SUPPORT_CONNINFRA == 1)
 			if (conninfra_reg_readable_for_coredump() == 1 &&
@@ -969,8 +978,7 @@ void glResetSubsysRstProcedure(
 			fgIsDrvTriggerWholeChipReset = TRUE;
 			glSetRstReasonString(
 				"subsys reset more than 3 times");
-			conninfra_trigger_whole_chip_rst(CONNDRV_TYPE_WIFI,
-				g_reason);
+			glResetWholeChipResetTrigger(g_reason);
 		}
 	} else {
 #if (CFG_ANDORID_CONNINFRA_COREDUMP_SUPPORT == 1)
