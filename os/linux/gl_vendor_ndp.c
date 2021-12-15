@@ -133,7 +133,8 @@ const struct nla_policy
 */
 /*----------------------------------------------------------------------------*/
 uint32_t
-nanNdiCreateRspEvent(struct ADAPTER *prAdapter) {
+nanNdiCreateRspEvent(struct ADAPTER *prAdapter,
+		struct NdiIfaceCreate rNdiInterfaceCreate) {
 	struct sk_buff *skb = NULL;
 	struct wiphy *wiphy;
 	struct wireless_dev *wdev;
@@ -168,9 +169,18 @@ nanNdiCreateRspEvent(struct ADAPTER *prAdapter) {
 		return -EFAULT;
 	}
 
-	/* set Transaction ID = 1 as workaround */
-	if (unlikely(nla_put_u32(skb, MTK_WLAN_VENDOR_ATTR_NDP_TRANSACTION_ID,
-				 1) < 0)) {
+	/* Transaction ID */
+	if (unlikely(nla_put_u16(skb, MTK_WLAN_VENDOR_ATTR_NDP_TRANSACTION_ID,
+				rNdiInterfaceCreate.u2NdpTransactionId) < 0)){
+		DBGLOG(REQ, ERROR, "nla_put_nohdr failed\n");
+		kfree_skb(skb);
+		return -EFAULT;
+	}
+
+	/* NMI(same as NDI) */
+	if (unlikely(nla_put(skb, MTK_WLAN_VENDOR_ATTR_NDP_IFACE_STR,
+				strlen(rNdiInterfaceCreate.pucIfaceName) + 1,
+				rNdiInterfaceCreate.pucIfaceName) < 0)){
 		DBGLOG(REQ, ERROR, "nla_put_nohdr failed\n");
 		kfree_skb(skb);
 		return -EFAULT;
@@ -209,7 +219,8 @@ nanNdiCreateRspEvent(struct ADAPTER *prAdapter) {
  */
 /*----------------------------------------------------------------------------*/
 uint32_t
-nanNdiDeleteRspEvent(struct ADAPTER *prAdapter) {
+nanNdiDeleteRspEvent(struct ADAPTER *prAdapter,
+		struct NdiIfaceDelete rNdiInterfaceDelete) {
 	struct sk_buff *skb = NULL;
 	struct wiphy *wiphy;
 	struct wireless_dev *wdev;
@@ -243,9 +254,18 @@ nanNdiDeleteRspEvent(struct ADAPTER *prAdapter) {
 		return -EFAULT;
 	}
 
-	/* set Transaction ID = 1 as workaround */
-	if (unlikely(nla_put_u32(skb, MTK_WLAN_VENDOR_ATTR_NDP_TRANSACTION_ID,
-				 1) < 0)) {
+	/* Transaction ID */
+	if (unlikely(nla_put_u16(skb, MTK_WLAN_VENDOR_ATTR_NDP_TRANSACTION_ID,
+				rNdiInterfaceDelete.u2NdpTransactionId) < 0)){
+		DBGLOG(REQ, ERROR, "nla_put_nohdr failed\n");
+		kfree_skb(skb);
+		return -EFAULT;
+	}
+
+	/* NMI(same as NDI) */
+	if (unlikely(nla_put(skb, MTK_WLAN_VENDOR_ATTR_NDP_IFACE_STR,
+				strlen(rNdiInterfaceDelete.pucIfaceName) + 1,
+				rNdiInterfaceDelete.pucIfaceName) < 0)){
 		DBGLOG(REQ, ERROR, "nla_put_nohdr failed\n");
 		kfree_skb(skb);
 		return -EFAULT;
@@ -325,7 +345,7 @@ nanNdpInitiatorRspEvent(struct ADAPTER *prAdapter,
 	}
 
 	if (unlikely(nla_put_u16(skb, MTK_WLAN_VENDOR_ATTR_NDP_TRANSACTION_ID,
-				 prNDP->ucDialogToken) < 0)) {
+				 prNDP->u2TransId) < 0)) {
 		DBGLOG(REQ, ERROR, "nla_put_nohdr failed\n");
 		kfree_skb(skb);
 		return -EFAULT;
@@ -422,7 +442,7 @@ nanNdpResponderRspEvent(struct ADAPTER *prAdapter,
 	}
 
 	if (unlikely(nla_put_u16(skb, MTK_WLAN_VENDOR_ATTR_NDP_TRANSACTION_ID,
-				 prNDP->ucDialogToken) < 0)) {
+				 prNDP->u2TransId) < 0)) {
 		DBGLOG(REQ, ERROR, "nla_put_nohdr failed\n");
 		kfree_skb(skb);
 		return -EFAULT;
@@ -533,7 +553,7 @@ nanNdpEndRspEvent(struct ADAPTER *prAdapter, struct _NAN_NDP_INSTANCE_T *prNDP,
 		return -EFAULT;
 	}
 	if (unlikely(nla_put_u16(skb, MTK_WLAN_VENDOR_ATTR_NDP_TRANSACTION_ID,
-				 prNDP->ucDialogToken) < 0)) {
+				 prNDP->u2TransId) < 0)) {
 		DBGLOG(REQ, ERROR, "nla_put_nohdr failed\n");
 		kfree_skb(skb);
 		return -EFAULT;
@@ -558,17 +578,36 @@ uint32_t
 nanNdiCreateHandler(struct GLUE_INFO *prGlueInfo, struct nlattr **tb) {
 	/* Need implement */
 	struct ADAPTER *prAdapter = NULL;
+	struct NdiIfaceCreate rNdiInterfaceCreate;
+
+	kalMemZero(&rNdiInterfaceCreate, sizeof(struct NdiIfaceCreate));
 
 	if (prGlueInfo == NULL) {
 		DBGLOG(NAN, ERROR, "[%s] prGlueInfo is NULL\n", __func__);
 		return WLAN_STATUS_INVALID_DATA;
 	}
 
-	DBGLOG(NAN, INFO, "NAN interface create request, need implement!\n");
+	/* Get transaction ID */
+	if (!tb[MTK_WLAN_VENDOR_ATTR_NDP_TRANSACTION_ID]) {
+		DBGLOG(NAN, ERROR, "Get NDP Transaction ID error!\n");
+		return -EINVAL;
+	}
+	rNdiInterfaceCreate.u2NdpTransactionId =
+		nla_get_u16(tb[MTK_WLAN_VENDOR_ATTR_NDP_TRANSACTION_ID]);
 
-	/* Workaround: send event to wifi hal */
+	/* Get interface name */
+	if (tb[MTK_WLAN_VENDOR_ATTR_NDP_IFACE_STR]) {
+		rNdiInterfaceCreate.pucIfaceName =
+			nla_data(tb[MTK_WLAN_VENDOR_ATTR_NDP_IFACE_STR]);
+		DBGLOG(NAN, INFO,
+			"[%s] Transaction ID: %d Interface name: %s\n",
+			__func__, rNdiInterfaceCreate.u2NdpTransactionId,
+			rNdiInterfaceCreate.pucIfaceName);
+	}
+
+	/* Send event to wifi hal */
 	prAdapter = prGlueInfo->prAdapter;
-	nanNdiCreateRspEvent(prAdapter);
+	nanNdiCreateRspEvent(prAdapter, rNdiInterfaceCreate);
 	return WLAN_STATUS_SUCCESS;
 }
 
@@ -587,6 +626,9 @@ uint32_t
 nanNdiDeleteHandler(struct GLUE_INFO *prGlueInfo, struct nlattr **tb) {
 	/* Need implement */
 	struct ADAPTER *prAdapter = NULL;
+	struct NdiIfaceDelete rNdiInterfaceDelete;
+
+	kalMemZero(&rNdiInterfaceDelete, sizeof(struct NdiIfaceDelete));
 
 	if (prGlueInfo == NULL) {
 		DBGLOG(NAN, ERROR, "[%s] prGlueInfo is NULL\n", __func__);
@@ -595,9 +637,27 @@ nanNdiDeleteHandler(struct GLUE_INFO *prGlueInfo, struct nlattr **tb) {
 
 	DBGLOG(NAN, INFO, "NAN interface delete request, need implement!\n");
 
+	/* Get transaction ID */
+	if (!tb[MTK_WLAN_VENDOR_ATTR_NDP_TRANSACTION_ID]) {
+		DBGLOG(NAN, ERROR, "Get NDP Transaction ID error!\n");
+		return -EINVAL;
+	}
+	rNdiInterfaceDelete.u2NdpTransactionId =
+		nla_get_u16(tb[MTK_WLAN_VENDOR_ATTR_NDP_TRANSACTION_ID]);
+
+	/* Get interface name */
+	if (tb[MTK_WLAN_VENDOR_ATTR_NDP_IFACE_STR]) {
+		rNdiInterfaceDelete.pucIfaceName =
+			nla_data(tb[MTK_WLAN_VENDOR_ATTR_NDP_IFACE_STR]);
+		DBGLOG(NAN, INFO,
+			"[%s] Delete transaction ID: %d Interface name: %s\n",
+			__func__, rNdiInterfaceDelete.u2NdpTransactionId,
+			rNdiInterfaceDelete.pucIfaceName);
+	}
+
 	/* Workaround: send event to wifi hal */
 	prAdapter = prGlueInfo->prAdapter;
-	nanNdiDeleteRspEvent(prAdapter);
+	nanNdiDeleteRspEvent(prAdapter, rNdiInterfaceDelete);
 	return WLAN_STATUS_SUCCESS;
 }
 
@@ -625,6 +685,15 @@ nanNdpInitiatorReqHandler(struct GLUE_INFO *prGlueInfo, struct nlattr **tb) {
 		DBGLOG(NAN, ERROR, "Get NDP Instance ID unavailable!\n");
 		return -EINVAL;
 	}
+
+	/* Get transaction ID */
+	if (tb[MTK_WLAN_VENDOR_ATTR_NDP_TRANSACTION_ID]) {
+		rNanCmdDataRequest.u2NdpTransactionId = nla_get_u32(
+			tb[MTK_WLAN_VENDOR_ATTR_NDP_TRANSACTION_ID]);
+		DBGLOG(NAN, ERROR, "Get NDP Transaction ID = %d\n",
+			rNanCmdDataRequest.u2NdpTransactionId);
+	}
+
 	/* Peer mac Addr */
 	if (tb[MTK_WLAN_VENDOR_ATTR_NDP_PEER_DISCOVERY_MAC_ADDR]) {
 		kalMemCopy(rNanCmdDataRequest.aucResponderDataAddress,
@@ -639,8 +708,9 @@ nanNdpInitiatorReqHandler(struct GLUE_INFO *prGlueInfo, struct nlattr **tb) {
 
 	/* Security */
 	if (tb[MTK_WLAN_VENDOR_ATTR_NDP_CONFIG_SECURITY]) {
-		rNanCmdDataRequest.ucSecurity =
-			nla_get_u32(tb[MTK_WLAN_VENDOR_ATTR_NDP_CSID]);
+		if (tb[MTK_WLAN_VENDOR_ATTR_NDP_CSID])
+			rNanCmdDataRequest.ucSecurity =
+				nla_get_u32(tb[MTK_WLAN_VENDOR_ATTR_NDP_CSID]);
 		if (rNanCmdDataRequest.ucSecurity &&
 		    tb[MTK_WLAN_VENDOR_ATTR_NDP_PMK]) {
 			kalMemCopy(rNanCmdDataRequest.aucPMK,
@@ -747,6 +817,14 @@ nanNdpResponderReqHandler(struct GLUE_INFO *prGlueInfo, struct nlattr **tb) {
 	if (rNanCmdDataResponse.ucNDPId == 0)
 		rNanCmdDataResponse.ucNDPId = g_u2IndPubId;
 
+	/* Get transaction ID */
+	if (tb[MTK_WLAN_VENDOR_ATTR_NDP_TRANSACTION_ID]) {
+		rNanCmdDataResponse.u2NdpTransactionId = nla_get_u32(
+			tb[MTK_WLAN_VENDOR_ATTR_NDP_TRANSACTION_ID]);
+		DBGLOG(NAN, ERROR, "Get NDP Transaction ID =%d\n",
+			rNanCmdDataResponse.u2NdpTransactionId);
+	}
+
 	/* QoS: Default set to false for testing */
 	if (tb[MTK_WLAN_VENDOR_ATTR_NDP_CONFIG_QOS]) {
 		rNanCmdDataResponse.ucRequireQOS = 0;
@@ -756,10 +834,9 @@ nanNdpResponderReqHandler(struct GLUE_INFO *prGlueInfo, struct nlattr **tb) {
 	}
 
 	/* Security type */
-	if (tb[MTK_WLAN_VENDOR_ATTR_NDP_CONFIG_SECURITY]) {
+	if (tb[MTK_WLAN_VENDOR_ATTR_NDP_CSID])
 		rNanCmdDataResponse.ucSecurity =
-			nla_get_u32(tb[MTK_WLAN_VENDOR_ATTR_NDP_SECURITY_TYPE]);
-	}
+			nla_get_u32(tb[MTK_WLAN_VENDOR_ATTR_NDP_CSID]);
 
 	/* App Info */
 	if (tb[MTK_WLAN_VENDOR_ATTR_NDP_APP_INFO]) {
@@ -860,6 +937,14 @@ nanNdpEndReqHandler(struct GLUE_INFO *prGlueInfo, struct nlattr **tb) {
 	if (instanceIdNum <= 0) {
 		DBGLOG(NAN, ERROR, "No NDP Instance ID!\n");
 		return -EINVAL;
+	}
+
+	/* Get transaction ID */
+	if (tb[MTK_WLAN_VENDOR_ATTR_NDP_TRANSACTION_ID]) {
+		rNanCmdDataEnd.u2NdpTransactionId = nla_get_u32(
+			tb[MTK_WLAN_VENDOR_ATTR_NDP_TRANSACTION_ID]);
+		DBGLOG(NAN, ERROR, "Get NDP Transaction ID =%d\n",
+			rNanCmdDataEnd.u2NdpTransactionId);
 	}
 
 	for (i = 0; i < instanceIdNum; i++) {
@@ -1189,8 +1274,6 @@ mtk_cfg80211_vendor_ndp(struct wiphy *wiphy, struct wireless_dev *wdev,
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct nlattr *tb[MTK_WLAN_VENDOR_ATTR_NDP_PARAMS_MAX + 1];
 	uint32_t u4NdpCmdType;
-	uint16_t u2NdpTransactionId;
-	char *ifaceName;
 	uint32_t rStatus;
 
 	if (wiphy == NULL) {
@@ -1229,26 +1312,6 @@ mtk_cfg80211_vendor_ndp(struct wiphy *wiphy, struct wireless_dev *wdev,
 		return -EINVAL;
 	}
 	u4NdpCmdType = nla_get_u32(tb[MTK_WLAN_VENDOR_ATTR_NDP_SUBCMD]);
-
-	/* Get transaction ID */
-	if (!tb[MTK_WLAN_VENDOR_ATTR_NDP_TRANSACTION_ID]) {
-		DBGLOG(NAN, ERROR, "Get NDP Transaction ID error!\n");
-		return -EINVAL;
-	}
-	u2NdpTransactionId =
-		nla_get_u16(tb[MTK_WLAN_VENDOR_ATTR_NDP_TRANSACTION_ID]);
-
-	/* Get interface name */
-	if (tb[MTK_WLAN_VENDOR_ATTR_NDP_IFACE_STR]) {
-		ifaceName = nla_data(tb[MTK_WLAN_VENDOR_ATTR_NDP_IFACE_STR]);
-		DBGLOG(NAN, INFO,
-		       "NDP cmd type: %d Transaction ID: %d Interface name: %s!\n",
-		       u4NdpCmdType, u2NdpTransactionId, ifaceName);
-	} else {
-		DBGLOG(NAN, INFO,
-		       "NDP cmd type: %d Transaction ID: %d Interface name: Unspecified!\n",
-		       u4NdpCmdType, u2NdpTransactionId);
-	}
 
 	switch (u4NdpCmdType) {
 	/* Command to create a NAN data path interface */

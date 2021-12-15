@@ -189,6 +189,7 @@ struct _NAN_NDP_INSTANCE_T {
 
 	uint8_t ucNDPID;
 	uint8_t ucDialogToken; /* carried in NDP attribute */
+	uint16_t u2TransId;
 	uint8_t ucTxNextTypeStatus;
 	uint8_t ucTxRetryCounter;
 	uint8_t ucRCPI;
@@ -342,6 +343,7 @@ struct _NAN_DATA_PATH_INFO_T {
 
 	uint8_t aucLocalNMIAddr[MAC_ADDR_LEN]; /* NMI */
 	uint8_t ucSeqNum; /* used to assign event SeqNum Generation */
+	uint16_t u2TransId;
 
 	unsigned char fgIsECSet;
 	uint8_t aucECAttr[48];
@@ -379,6 +381,7 @@ struct _NAN_CMD_DATA_REQUEST {
 	uint8_t ucPublishID;
 	uint8_t ucRequireQOS; /* bit#0: unicast, bit#1: multicast */
 	uint8_t ucSecurity;   /* refer to NAN_CIPHER_SUITE_ID_XXX */
+	uint16_t u2NdpTransactionId; /* Transaction ID */
 
 	uint8_t aucScid[NAN_SCID_DEFAULT_LEN];
 
@@ -401,6 +404,7 @@ struct _NAN_CMD_DATA_RESPONSE {
 	uint8_t ucDecisionStatus; /* NAN_DATA_RESP_DECISION_* */
 	uint8_t ucReasonCode;     /* refer to NAN_REASON_CODE_* */
 	uint8_t ucNDPId;
+	uint16_t u2NdpTransactionId; /* Transaction ID */
 
 	uint8_t aucInitiatorDataAddress[6];
 	uint8_t aucMulticastAddress[6];
@@ -427,7 +431,7 @@ struct _NAN_CMD_DATA_END {
 	uint8_t ucReasonCode; /* refer to NAN_REASON_CODE_* */
 	uint8_t ucNDPId;
 	uint8_t ucNMSGId;
-
+	uint16_t u2NdpTransactionId;
 	uint8_t aucInitiatorDataAddress[6];
 	uint8_t aucReserved[2];
 };

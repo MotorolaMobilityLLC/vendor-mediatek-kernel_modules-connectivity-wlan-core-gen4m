@@ -5068,6 +5068,11 @@ void nicNanEventDiscoveryResult(IN struct ADAPTER *prAdapter,
 		   NAN_MAX_SERVICE_SPECIFIC_INFO_LEN);
 	kalMemCopy(g_rDiscMatchInd.addr, prDiscEvt->aucNanAddress,
 		   MAC_ADDR_LEN);
+	g_rDiscMatchInd.sdf_match_filter_len =
+		prDiscEvt->ucSdf_match_filter_len;
+	kalMemCopy(g_rDiscMatchInd.sdf_match_filter,
+			prDiscEvt->aucSdf_match_filter,
+			NAN_FW_MAX_MATCH_FILTER_LEN);
 
 	kalIndicateNetlink2User(prAdapter->prGlueInfo, &g_rDiscMatchInd,
 				sizeof(struct NanMatchInd));

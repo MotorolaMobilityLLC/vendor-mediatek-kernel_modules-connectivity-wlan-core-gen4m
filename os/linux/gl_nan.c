@@ -44,6 +44,8 @@
 
 #define NAN_INF_NAME "nan%d"
 
+#define NAN_INF_NAME2 "aware_data%d"
+
 #if 0
 #define RUNNING_P2P_MODE 0
 #define RUNNING_AP_MODE 1
@@ -68,7 +70,7 @@
 struct wireless_dev *g_aprNanRoleWdev[NAN_BSS_INDEX_NUM];
 struct _GL_NAN_INFO_T g_aprNanMultiDev[NAN_BSS_INDEX_NUM];
 
-static unsigned char *nifname = NAN_INF_NAME;
+static unsigned char *nifname = NAN_INF_NAME2;
 
 #if CFG_ENABLE_WIFI_DIRECT_CFG_80211
 #endif
@@ -679,6 +681,8 @@ glRegisterNAN(struct GLUE_INFO *prGlueInfo, const char *prDevName)
 {
 	struct ADAPTER *prAdapter = NULL;
 	uint8_t rMacAddr[6];
+	uint8_t rRandMacAddr[6];
+	uint8_t rRandMacMask[6] = {0xFF, 0xFF, 0xFF, 0x0, 0x0, 0x0};
 	struct wireless_dev *prNanWdev = NULL;
 	struct net_device *prNanDev = NULL;
 	struct wiphy *prWiphy = NULL;
@@ -731,12 +735,12 @@ glRegisterNAN(struct GLUE_INFO *prGlueInfo, const char *prDevName)
 	/* fill hardware address */
 	COPY_MAC_ADDR(rMacAddr, prAdapter->rMyMacAddr);
 	rMacAddr[0] |= 0x2;
-	if (random_mac_addr_keep_oui(rMacAddr) == -1)
-		DBGLOG(INIT, ERROR, "unable to get random mac for nan\n");
+
+	get_random_mask_addr(rRandMacAddr, rMacAddr, rRandMacMask);
 
 	/* change to local administrated address */
-	rMacAddr[0] ^= (eRole + 1) << 3;
-	kalMemCopy(prNanDev->dev_addr, rMacAddr, ETH_ALEN);
+	rRandMacAddr[0] ^= (eRole + 1) << 3;
+	kalMemCopy(prNanDev->dev_addr, rRandMacAddr, ETH_ALEN);
 	kalMemCopy(prNanDev->perm_addr, prNanDev->dev_addr, ETH_ALEN);
 
 	if (glSetupNAN(prGlueInfo, prNanWdev, prNanDev, eRole) != 0) {

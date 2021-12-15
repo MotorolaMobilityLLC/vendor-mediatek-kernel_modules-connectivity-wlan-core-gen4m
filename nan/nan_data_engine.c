@@ -1426,6 +1426,9 @@ nanNdpAutoReplyDataRequest(struct ADAPTER *prAdapter,
 		 */
 		nanDataUpdateNdpLocalNDI(prAdapter, prNDP);
 
+		/* Transaction Id */
+		prNDP->u2TransId = prAdapter->rDataPathInfo.u2TransId;
+
 		if (prNDP->fgConfirmRequired == TRUE ||
 		    prNDP->fgSecurityRequired == TRUE)
 			prNDP->ucNDPSetupStatus = NAN_ATTR_NDP_STATUS_CONTINUED;
@@ -2905,7 +2908,7 @@ nanDataPathProtocolFsmStep(IN struct ADAPTER *prAdapter,
 			}
 
 			/* terminate NAN SEC sm */
-			if (prNDP->fgSecurityRequired)
+			if (prNDP->fgNDPValid && prNDP->fgSecurityRequired)
 				nanSecNotify4wayTerminate(prNDP);
 
 			/* free NDP */
@@ -3446,6 +3449,9 @@ nanCmdDataRequest(IN struct ADAPTER *prAdapter,
 	/* fill NDP parameters from initiator request */
 	prNDP->ucPublishId = prNanCmdDataRequest->ucPublishID;
 
+	/* Fill transaction Id assign by framework */
+	prNDP->u2TransId = prNanCmdDataRequest->u2NdpTransactionId;
+
 	if (prNanCmdDataRequest->ucRequireQOS & NAN_DATAREQ_REQUIRE_QOS_UNICAST)
 		prNDP->fgQoSRequired = TRUE;
 
@@ -3612,6 +3618,8 @@ nanCmdDataResponse(struct ADAPTER *prAdapter,
 			prDataPathInfo->fgAutoHandleDPRequest = TRUE;
 			prDataPathInfo->ucDPResponseDecisionStatus =
 				prNanCmdDataResponse->ucDecisionStatus;
+			prDataPathInfo->u2TransId =
+				prNanCmdDataResponse->u2NdpTransactionId;
 
 			/* For NAN R3, Support NDPE,
 			 * should define in wifi.cfg
@@ -3683,6 +3691,9 @@ nanCmdDataResponse(struct ADAPTER *prAdapter,
 		/* @TODO: return a unsuccessful indication to host */
 		return WLAN_STATUS_FAILURE;
 	}
+
+	/* Transaction Id */
+	prNDP->u2TransId =  prNanCmdDataResponse->u2NdpTransactionId;
 
 	if (prNanCmdDataResponse->ucRequireQOS == TRUE) {
 		prNDL->ucMinimumTimeSlot = prNanCmdDataResponse->ucMinTimeSlot;
@@ -3869,6 +3880,9 @@ nanCmdDataEnd(IN struct ADAPTER *prAdapter,
 		/* @TODO: return a unsuccessful indication to host side */
 		rStatus = WLAN_STATUS_FAILURE;
 	} else {
+		/* Transaction Id */
+		prNDP->u2TransId = prNanCmdDataEnd->u2NdpTransactionId;
+
 		if (prNDP->eCurrentNDPProtocolState == NDP_NORMAL_TR) {
 			/* roll the state machine for disconnection handling */
 			nanDataPathProtocolFsmStep(
@@ -5192,6 +5206,9 @@ nanDPRespTxDone(IN struct ADAPTER *prAdapter, IN struct MSDU_INFO *prMsduInfo,
 		return WLAN_STATUS_SUCCESS;
 	}
 
+	/* Send rsp event to wifi hal */
+	nanNdpResponderRspEvent(prAdapter, prNDP, rTxDoneStatus);
+
 	if (rTxDoneStatus == WLAN_STATUS_SUCCESS) {
 		cnmTimerStopTimer(prAdapter, &(prNDL->rNDPProtocolRetryTimer));
 
@@ -5234,9 +5251,6 @@ nanDPRespTxDone(IN struct ADAPTER *prAdapter, IN struct MSDU_INFO *prMsduInfo,
 					prAdapter, NDP_DISCONNECT, prNDP);
 		}
 	}
-
-	/* Send rsp event to wifi hal */
-	nanNdpResponderRspEvent(prAdapter, prNDP, rTxDoneStatus);
 
 	return WLAN_STATUS_SUCCESS;
 }

@@ -12951,6 +12951,8 @@ wlanoidSetNANMode(IN struct ADAPTER *prAdapter, IN void *pvSetBuffer,
 		} else {
 			status = WLAN_STATUS_FAILURE;
 		}
+		prAdapter->ucNanPubNum = 0;
+		prAdapter->ucNanSubNum = 0;
 	} else {
 		if (prAdapter->fgIsNANRegistered)
 			nanRemove(prAdapter->prGlueInfo);

@@ -1716,6 +1716,8 @@ struct ADAPTER {
 	unsigned char fgIsNANfromHAL;
 	bool fgIsNanSendRequestToCnm;
 	uint8_t ucNanReqTokenId;
+	uint8_t ucNanPubNum;
+	uint8_t ucNanSubNum;
 
 	/* Container for Data Engine */
 	struct _NAN_DATA_PATH_INFO_T rDataPathInfo;
