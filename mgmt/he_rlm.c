@@ -607,6 +607,7 @@ static void heRlmFillHeCapIE(
 		HE_SET_PHY_CAP_CODE_BOOK_7_5_MU_FB(prHeCap->ucHePhyCap);
 		HE_SET_PHY_CAP_TRIG_SU_BF_FB(prHeCap->ucHePhyCap);
 		HE_SET_PHY_CAP_TRIG_MU_BF_PARTIAL_BW_FB(prHeCap->ucHePhyCap);
+		HE_SET_PHY_CAP_SU_MU_4X_HE_LTF(prHeCap->ucHePhyCap);
 		HE_SET_PHY_CAP_MAX_NC(prHeCap->ucHePhyCap, ucSupportedNss);
 	}
 #endif

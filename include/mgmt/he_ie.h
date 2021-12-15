@@ -207,6 +207,7 @@
 #define HE_PHY_CAP7_SRP_BASED_SR_SHFT                  0
 #define HE_PHY_CAP7_POWER_BOOST_FACTOR_SHFT            1
 #define HE_PHY_CAP7_SU_MU_4X_HE_LTF_SHFT               2
+#define HE_PHY_CAP7_SU_MU_4X_HE_LTF                    BIT(2)
 #define HE_PHY_CAP7_MAX_NC_MASK                        BITS(3, 5)
 #define HE_PHY_CAP7_MAX_NC_SHFT                        3
 #define HE_PHY_CAP7_STBC_TX_GT_80M                     BIT(6)
@@ -592,6 +593,9 @@ enum ENUM_HEBA_TYPE {
 
 #define HE_IS_PHY_CAP_PPE_THRESHOLD(_aucHePhyCapInfo) \
 	(_aucHePhyCapInfo[6] & HE_PHY_CAP6_PPE_THRESHOLD)
+
+#define HE_SET_PHY_CAP_SU_MU_4X_HE_LTF(_aucHePhyCapInfo) \
+	(_aucHePhyCapInfo[7] |= HE_PHY_CAP7_SU_MU_4X_HE_LTF)
 
 #define HE_SET_PHY_CAP_MAX_NC(_aucHePhyCapInfo, _ucMaxNc) \
 { \
