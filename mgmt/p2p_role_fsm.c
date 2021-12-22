@@ -4340,7 +4340,7 @@ static void indicateAcsResultByAisCh(IN struct ADAPTER *prAdapter,
 
 	prAcsReqInfo->fgIsAis = TRUE;
 
-	if ((prAdapter->rWifiVar.fgSapChannelSwitchPolicy ==
+	if ((prAdapter->rWifiVar.fgSapChannelSwitchPolicy >=
 		P2P_CHANNEL_SWITCH_POLICY_SKIP_DFS) &&
 		(prAcsReqInfo->eBand == BAND_5G) &&
 		(rlmDomainIsLegalDfsChannel(

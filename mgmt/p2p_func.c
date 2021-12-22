@@ -6889,14 +6889,28 @@ void p2pFuncSwitchSapChannel(
 		struct RF_CHANNEL_INFO rRfChnlInfo;
 		uint8_t ucBssIdx = 0;
 
-		if ((prAdapter->rWifiVar.fgSapChannelSwitchPolicy ==
+		if ((prAdapter->rWifiVar.fgSapChannelSwitchPolicy >=
 			P2P_CHANNEL_SWITCH_POLICY_SKIP_DFS) &&
 			rlmDomainIsLegalDfsChannel(prAdapter,
 			eStaBand, ucStaChannelNum)) {
 			DBGLOG(P2P, INFO,
-				"[SKIP] StaCH(%d), Band(%d)\n",
+				"[SKIP] Dfs StaCH(%d), Band(%d)\n",
 				ucStaChannelNum, eStaBand);
 			goto exit;
+		} else if (prAdapter->rWifiVar.fgSapChannelSwitchPolicy ==
+			P2P_CHANNEL_SWITCH_POLICY_SKIP_DFS_USER) {
+			enum P2P_VENDOR_ACS_HW_MODE eHwMode =
+				prP2pRoleFsmInfo->rAcsReqInfo.eHwMode;
+
+			if ((eHwMode < P2P_VENDOR_ACS_HW_MODE_11A &&
+				eStaBand != BAND_2G4) ||
+				(eHwMode == P2P_VENDOR_ACS_HW_MODE_11A &&
+				eStaBand == BAND_2G4)) {
+				DBGLOG(P2P, INFO,
+					"[SKIP] User Band(%d), Mode(%d)\n",
+					eStaBand, eHwMode);
+				goto exit;
+			}
 		}
 
 		DBGLOG(P2P, INFO,
