@@ -1456,7 +1456,7 @@ kalP2PIndicateRxMgmtFrame(IN struct ADAPTER *prAdapter,
 				prNetdevice);
 
 		if (!prGlueInfo->fgIsRegistered ||
-			(prGlueInfo->ulFlag & GLUE_FLAG_HALT) ||
+			test_bit(GLUE_FLAG_HALT_BIT, &prGlueInfo->ulFlag) ||
 			!prGlueInfo->prAdapter->fgIsP2PRegistered ||
 			(prGlueInfo->prAdapter->rP2PNetRegState !=
 				ENUM_NET_REG_STATE_REGISTERED) ||
@@ -1541,7 +1541,7 @@ kalP2PGCIndicateConnectionStatus(IN struct GLUE_INFO *prGlueInfo,
 				NETREG_REGISTERED) ||
 		    (prAdapter->rP2PNetRegState !=
 				ENUM_NET_REG_STATE_REGISTERED) ||
-		    ((prGlueInfo->ulFlag & GLUE_FLAG_HALT) == 1)) {
+		    (test_bit(GLUE_FLAG_HALT_BIT, &prGlueInfo->ulFlag) == 1)) {
 			break;
 		}
 
@@ -1600,7 +1600,7 @@ kalP2PGCIndicateConnectionStatus(IN struct GLUE_INFO *prGlueInfo,
 		    (prGlueP2pInfo->aprRoleHandler == NULL) ||
 		    (prAdapter->rP2PNetRegState !=
 				ENUM_NET_REG_STATE_REGISTERED) ||
-		    ((prGlueInfo->ulFlag & GLUE_FLAG_HALT) == 1)) {
+		    (test_bit(GLUE_FLAG_HALT_BIT, &prGlueInfo->ulFlag) == 1)) {
 			break;
 		}
 
@@ -1682,7 +1682,8 @@ kalP2PGOStationUpdate(IN struct GLUE_INFO *prGlueInfo,
 			/* FIXME: The exception occurs at wlanRemove, and
 			 *    check GLUE_FLAG_HALT is the temporarily solution.
 			 */
-			if ((prGlueInfo->ulFlag & GLUE_FLAG_HALT) == 0) {
+			if (test_bit(GLUE_FLAG_HALT_BIT, &prGlueInfo->ulFlag)
+				== 0) {
 				if (prCliStaRec->fgIsConnected == FALSE)
 					break;
 				prCliStaRec->fgIsConnected = FALSE;
