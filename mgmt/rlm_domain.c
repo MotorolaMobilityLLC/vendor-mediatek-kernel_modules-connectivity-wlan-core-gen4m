@@ -909,7 +909,7 @@ struct DOMAIN_INFO_ENTRY arSupportedRegDomains_Passive[] = {
 						/* CH_SET_UNII_UPPER_NA */
 #if (CFG_SUPPORT_WIFI_6G == 1)
 			,
-			{131, BAND_6G, CHNL_SPAN_20, 1, 59, FALSE}
+			{131, BAND_6G, CHNL_SPAN_20, 1, 0, FALSE}
 						/* 6G_CH_1_233 */
 #endif
 		}
@@ -935,7 +935,7 @@ struct DOMAIN_INFO_ENTRY arSupportedRegDomains_Passive[] = {
 						/* CH_SET_UNII_UPPER_NA */
 #if (CFG_SUPPORT_WIFI_6G == 1)
 			,
-			{131, BAND_6G, CHNL_SPAN_20, 1, 59, FALSE}
+			{131, BAND_6G, CHNL_SPAN_20, 1, 0, FALSE}
 						/* 6G_CH_1_233 */
 #endif
 		}

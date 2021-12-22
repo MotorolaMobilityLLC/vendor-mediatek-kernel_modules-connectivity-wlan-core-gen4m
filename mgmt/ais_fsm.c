@@ -2623,7 +2623,11 @@ void aisFsmRunEventScanDone(IN struct ADAPTER *prAdapter,
 	DBGLOG(AIS, INFO, "ScanDone %u, status(%d) native req(%u)\n",
 	       ucSeqNumOfCompMsg, eStatus, prAisFsmInfo->u2SeqNumOfScanReport);
 
-	scnFsmNotifyEvent(prAdapter, eStatus, ucBssIndex);
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	/* No need to send Uevent if EnOnlyScan6g is enabled */
+	if (IS_FEATURE_DISABLED(prAdapter->rWifiVar.fgEnOnlyScan6g))
+#endif
+		scnFsmNotifyEvent(prAdapter, eStatus, ucBssIndex);
 
 	eNextState = prAisFsmInfo->eCurrentState;
 
