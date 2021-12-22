@@ -2506,11 +2506,6 @@ void wlanCoAntVFE28En(IN struct ADAPTER *prAdapter)
 		if (gCoAntVFE28En == FALSE) {
 #if (KERNEL_VERSION(5, 4, 0) <= CFG80211_VERSION_CODE)
 			/* Implementation for kernel-5.4 */
-#elif (KERNEL_VERSION(4, 15, 0) <= CFG80211_VERSION_CODE)
-			regmap_write(g_regmap,
-				MT6359_LDO_VFE28_OP_EN_SET, 0x1 << 8);
-			regmap_write(g_regmap,
-				MT6359_LDO_VFE28_OP_CFG_CLR, 0x1 << 8);
 #else
 			KERNEL_pmic_ldo_vfe28_lp(8, 0, 1, 0);
 #endif
@@ -2529,10 +2524,6 @@ void wlanCoAntVFE28Dis(void)
 	if (gCoAntVFE28En == TRUE) {
 #if (KERNEL_VERSION(5, 4, 0) <= CFG80211_VERSION_CODE)
 		/* Implementation for kernel-5.4 */
-#elif (KERNEL_VERSION(4, 15, 0) <= CFG80211_VERSION_CODE)
-		regmap_write(g_regmap, MT6359_LDO_VFE28_OP_EN_CLR, 0x1 << 8);
-		regmap_write(g_regmap, MT6359_LDO_VFE28_OP_CFG_CLR, 0x1 << 8);
-		regmap_write(g_regmap, MT6359_LDO_VFE28_OP_CFG_CLR, 0x1 << 8);
 #else
 		KERNEL_pmic_ldo_vfe28_lp(8, 0, 0, 0);
 #endif
