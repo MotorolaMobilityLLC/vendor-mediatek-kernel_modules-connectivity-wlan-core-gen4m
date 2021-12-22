@@ -4304,7 +4304,7 @@ static void initAcsParams(IN struct ADAPTER *prAdapter,
 		for (i = 0; i < prMsgAcsRequest->u4NumChannel; i++) {
 			prRfChannelInfo =
 				&(prMsgAcsRequest->arChannelListInfo[i]);
-			DBGLOG(REQ, INFO, "[%d] band=%d, ch=%d\n", i,
+			DBGLOG(REQ, TRACE, "[%d] band=%d, ch=%d\n", i,
 				prRfChannelInfo->eBand,
 				prRfChannelInfo->ucChannelNum);
 			prAcsReqInfo->ucBand |= BIT(prRfChannelInfo->eBand);
