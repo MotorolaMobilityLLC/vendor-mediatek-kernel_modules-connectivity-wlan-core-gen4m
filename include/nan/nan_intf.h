@@ -24,6 +24,11 @@
 /* Buffer size to generate NAN attribute */
 #define NAN_IE_BUF_MAX_SIZE 1000
 
+/* Memory leak issue, use golbal array to alloc buffer for kde/mic */
+#define NAN_KDE_ATTR_BUF_SIZE 150
+#define NAN_MIC_BUF_SIZE 350
+
+
 #define NAN_MAC_ADDR_LEN 6
 #define NAN_MAX_SOCIAL_CHANNELS 3
 
