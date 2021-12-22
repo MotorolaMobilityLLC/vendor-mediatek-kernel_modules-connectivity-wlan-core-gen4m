@@ -904,7 +904,7 @@ u_int8_t p2pNetRegister(struct GLUE_INFO *prGlueInfo,
 	u_int8_t fgRollbackRtnlLock = FALSE;
 	struct net_device *prDevHandler = NULL;
 	u_int8_t ret;
-	uint32_t i;
+	uint32_t i, u4DeviceNum;
 
 	GLUE_SPIN_LOCK_DECLARATION();
 
@@ -927,7 +927,11 @@ u_int8_t p2pNetRegister(struct GLUE_INFO *prGlueInfo,
 		fgRollbackRtnlLock = TRUE;
 	}
 
-	for (i = 0; i < KAL_P2P_NUM; i++) {
+	u4DeviceNum =
+		(prGlueInfo->prAdapter->prP2pInfo->u4DeviceNum == KAL_P2P_NUM &&
+		 KAL_P2P_NUM == 2) ? 2 : 1;
+
+	for (i = 0; i < u4DeviceNum; i++) {
 		GLUE_ACQUIRE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
 		prDevHandler = prGlueInfo->prP2PInfo[i]->prDevHandler;
 
