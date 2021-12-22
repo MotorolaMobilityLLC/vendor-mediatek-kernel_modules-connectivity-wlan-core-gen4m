@@ -52,6 +52,8 @@ static uint8_t u8NanFollowupID;
 uint8_t g_enableNAN = TRUE;
 uint8_t g_disableNAN = TRUE;
 uint8_t g_deEvent = FALSE;
+uint8_t g_aucNanServiceName[NAN_MAX_SERVICE_NAME_LEN];
+
 
 /*******************************************************************************
  *                                 M A C R O S
@@ -1207,6 +1209,8 @@ int mtk_cfg80211_vendor_nan(struct wiphy *wiphy,
 			case NAN_TLV_TYPE_SERVICE_NAME:
 				memcpy(pNanPublishReq->service_name,
 				       outputTlv.value, outputTlv.length);
+				memcpy(g_aucNanServiceName,
+				       outputTlv.value, outputTlv.length);
 				pNanPublishReq->service_name_len =
 					outputTlv.length;
 				DBGLOG(INIT, INFO, "outputTlv.type:%u\n",
@@ -1483,6 +1487,8 @@ int mtk_cfg80211_vendor_nan(struct wiphy *wiphy,
 			switch (outputTlv.type) {
 			case NAN_TLV_TYPE_SERVICE_NAME:
 				memcpy(pNanSubscribeReq->service_name,
+				       outputTlv.value, outputTlv.length);
+				memcpy(g_aucNanServiceName,
 				       outputTlv.value, outputTlv.length);
 				pNanSubscribeReq->service_name_len =
 					outputTlv.length;

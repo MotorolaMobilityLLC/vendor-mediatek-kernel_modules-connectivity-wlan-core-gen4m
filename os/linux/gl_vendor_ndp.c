@@ -677,6 +677,9 @@ nanNdpInitiatorReqHandler(struct GLUE_INFO *prGlueInfo, struct nlattr **tb) {
 	struct _NAN_CMD_DATA_REQUEST rNanCmdDataRequest;
 	struct NanDataReqReceive rDataRcv;
 	uint32_t rStatus = WLAN_STATUS_SUCCESS;
+	uint8_t aucPassphrase[64];
+	uint8_t aucSalt[] = { 0x00, 0x01, 0x2b, 0x9c, 0x45, 0x0f, 0x66,
+				 0x71, 0x02, 0x90, 0x4c, 0x12, 0xd0, 0x01 };
 
 	kalMemZero(&rNanCmdDataRequest, sizeof(rNanCmdDataRequest));
 
@@ -711,24 +714,66 @@ nanNdpInitiatorReqHandler(struct GLUE_INFO *prGlueInfo, struct nlattr **tb) {
 		if (tb[MTK_WLAN_VENDOR_ATTR_NDP_CSID])
 			rNanCmdDataRequest.ucSecurity =
 				nla_get_u32(tb[MTK_WLAN_VENDOR_ATTR_NDP_CSID]);
+
 		if (rNanCmdDataRequest.ucSecurity &&
 		    tb[MTK_WLAN_VENDOR_ATTR_NDP_PMK]) {
 			kalMemCopy(rNanCmdDataRequest.aucPMK,
 				   nla_data(tb[MTK_WLAN_VENDOR_ATTR_NDP_PMK]),
 				   nla_len(tb[MTK_WLAN_VENDOR_ATTR_NDP_PMK]));
+
+#if (ENABLE_SEC_UT_LOG == 1)
+			DBGLOG(NAN, INFO, "PMK from APP\n");
+			dumpMemory8(nla_data(tb[MTK_WLAN_VENDOR_ATTR_NDP_PMK]),
+				    nla_len(tb[MTK_WLAN_VENDOR_ATTR_NDP_PMK]));
+#endif
+		}
+
+		if (rNanCmdDataRequest.ucSecurity) {
+			if (tb[MTK_WLAN_VENDOR_ATTR_NDP_PASSPHRASE]) {
+				DBGLOG(NAN, INFO,
+				"[%s] PASSPHRASE\n",
+				__func__);
+				kalMemCopy(
+				aucPassphrase,
+				nla_data(
+				tb[MTK_WLAN_VENDOR_ATTR_NDP_PASSPHRASE]),
+				nla_len(
+				tb[MTK_WLAN_VENDOR_ATTR_NDP_PASSPHRASE]));
+				dumpMemory8(
+				aucPassphrase, sizeof(aucPassphrase));
+				dumpMemory8(
+				aucSalt, sizeof(aucSalt));
+				PKCS5_PBKDF2_HMAC(
+				(unsigned char *)aucPassphrase,
+				sizeof(aucPassphrase) - 1,
+				(unsigned char *)aucSalt, sizeof(aucSalt),
+				4096, 32,
+				(unsigned char *)rNanCmdDataRequest.aucPMK
+				);
+
+				dumpMemory8(rNanCmdDataRequest.aucPMK, 32);
+			}
 			if (tb[MTK_WLAN_VENDOR_ATTR_NDP_SERVICE_NAME]) {
+				DBGLOG(NAN, INFO,
+					"[%s] pmkid(vendor cmd)\n",
+					__func__);
 				nanSetNdpPmkid(
 				prGlueInfo->prAdapter,
 				&rNanCmdDataRequest,
 				nla_data(
 				tb[MTK_WLAN_VENDOR_ATTR_NDP_SERVICE_NAME]
 				));
+			} else {
+				DBGLOG(NAN, INFO,
+					"[%s] pmkid(local)\n",
+					__func__);
+				nanSetNdpPmkid(
+				prGlueInfo->prAdapter,
+				&rNanCmdDataRequest,
+				g_aucNanServiceName);
+				memset(g_aucNanServiceName, 0,
+				NAN_MAX_SERVICE_NAME_LEN);
 			}
-#if (ENABLE_SEC_UT_LOG == 1)
-			DBGLOG(NAN, INFO, "PMK from APP\n");
-			dumpMemory8(nla_data(tb[MTK_WLAN_VENDOR_ATTR_NDP_PMK]),
-				    nla_len(tb[MTK_WLAN_VENDOR_ATTR_NDP_PMK]));
-#endif
 		}
 	}
 
@@ -790,6 +835,9 @@ uint32_t
 nanNdpResponderReqHandler(struct GLUE_INFO *prGlueInfo, struct nlattr **tb) {
 	struct _NAN_CMD_DATA_RESPONSE rNanCmdDataResponse;
 	uint32_t rStatus = WLAN_STATUS_SUCCESS;
+	uint8_t aucPassphrase[64];
+	uint8_t aucSalt[] = { 0x00, 0x01, 0x2b, 0x9c, 0x45, 0x0f, 0x66,
+				 0x71, 0x02, 0x90, 0x4c, 0x12, 0xd0, 0x01 };
 
 	kalMemZero(&rNanCmdDataResponse, sizeof(rNanCmdDataResponse));
 	/* Decision status */
@@ -892,6 +940,24 @@ nanNdpResponderReqHandler(struct GLUE_INFO *prGlueInfo, struct nlattr **tb) {
 		dumpMemory8(nla_data(tb[MTK_WLAN_VENDOR_ATTR_NDP_PMK]),
 			    nla_len(tb[MTK_WLAN_VENDOR_ATTR_NDP_PMK]));
 #endif
+	}
+	/* PASSPHRASE */
+	if (tb[MTK_WLAN_VENDOR_ATTR_NDP_PASSPHRASE]) {
+		DBGLOG(NAN, INFO, "[%s] PASSPHRASE\n", __func__);
+		kalMemCopy(aucPassphrase,
+			   nla_data(tb[MTK_WLAN_VENDOR_ATTR_NDP_PASSPHRASE]),
+			   nla_len(tb[MTK_WLAN_VENDOR_ATTR_NDP_PASSPHRASE]));
+		dumpMemory8(aucPassphrase, sizeof(aucPassphrase));
+		dumpMemory8(aucSalt, sizeof(aucSalt));
+		PKCS5_PBKDF2_HMAC(
+			  (unsigned char *)aucPassphrase,
+			  sizeof(aucPassphrase) - 1,
+			  (unsigned char *)aucSalt,
+			  sizeof(aucSalt),
+			  4096, 32,
+			  (unsigned char *)rNanCmdDataResponse.aucPMK);
+
+		dumpMemory8(rNanCmdDataResponse.aucPMK, 32);
 	}
 	/* Send data response */
 	rStatus =
