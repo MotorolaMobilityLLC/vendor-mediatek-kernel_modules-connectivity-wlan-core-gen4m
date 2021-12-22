@@ -3690,6 +3690,27 @@ void p2pRoleFsmRunEventBeaconUpdate(IN struct ADAPTER *prAdapter,
 
 		bssUpdateBeaconContent(prAdapter, prRoleP2pFsmInfo->ucBssIndex);
 
+#if (CFG_SUPPORT_WIFI_6G == 1)
+		if (prP2pBssInfo->eBand == BAND_6G) {
+			/* Update unsolicited probe response as beacon */
+			bssUpdateBeaconContentEx(prAdapter,
+				prP2pBssInfo->ucBssIndex,
+				IE_UPD_METHOD_UNSOL_PROBE_RSP);
+		}
+#endif
+
+#if CFG_SUPPORT_P2P_GO_OFFLOAD_PROBE_RSP
+		if (p2pFuncProbeRespUpdate(prAdapter,
+			prP2pBssInfo,
+			prP2pBssInfo->prBeacon->prPacket,
+			prP2pBssInfo->prBeacon->u2FrameLength,
+			IE_UPD_METHOD_UPDATE_PROBE_RSP) ==
+				WLAN_STATUS_FAILURE) {
+			DBGLOG(P2P, ERROR,
+				"Update probe resp IEs fail!\n");
+		}
+#endif
+
 		/* nicPmIndicateBssCreated(prAdapter,
 		 * NETWORK_TYPE_P2P_INDEX);
 		 */
