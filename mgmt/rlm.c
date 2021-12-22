@@ -971,7 +971,7 @@ static void rlmFillExtCapIE(struct ADAPTER *prAdapter,
 				       prConnSettings->pucAssocIEs,
 				       prConnSettings->assocIeLen,
 				       NULL, 0, 0, NULL);
-	if (extCapConn) {
+	if (extCapConn && IS_BSS_AIS(prBssInfo)) {
 		extCapIeLen = ELEM_HDR_LEN + RSN_IE(extCapConn)->ucLength;
 		DBGLOG_MEM8(SAA, INFO, extCapConn, extCapIeLen);
 	}
@@ -1046,7 +1046,7 @@ static void rlmFillExtCapIE(struct ADAPTER *prAdapter,
 				ELEM_EXT_CAP_MBSSID_BIT);
 #endif
 
-	if (extCapConn) {
+	if (extCapConn && IS_BSS_AIS(prBssInfo)) {
 		if ((extCapIeLen - ELEM_HDR_LEN) > prExtCap->ucLength)
 			prExtCap->ucLength = ELEM_MAX_LEN_EXT_CAP;
 		rlmSyncExtCapIEwithSupplicant(prExtCap->aucCapabilities,
@@ -1058,6 +1058,8 @@ static void rlmFillExtCapIE(struct ADAPTER *prAdapter,
 		prExtCap->aucCapabilities[prExtCap->ucLength - 1] == 0) {
 		prExtCap->ucLength--;
 	}
+
+	DBGLOG(RLM, TRACE, "prExtCap->ucLength = %d!", prExtCap->ucLength);
 
 	ASSERT(IE_SIZE(prExtCap) <= (ELEM_HDR_LEN + ELEM_MAX_LEN_EXT_CAP));
 
