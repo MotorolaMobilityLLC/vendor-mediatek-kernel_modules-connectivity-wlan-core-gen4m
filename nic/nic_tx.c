@@ -2931,8 +2931,9 @@ static inline bool nicTxPktPIDIsLimited(
 	uint8_t ucWlanIndex = prMsduInfo->ucWlanIndex;
 	uint8_t ucPktType = prMsduInfo->ucPktType;
 
-	/* only limit dns */
-	if (ucPktType != ENUM_PKT_DNS)
+	/* only limit dns and arp */
+	if (ucPktType != ENUM_PKT_DNS
+		&& ucPktType != ENUM_PKT_ARP)
 		return FALSE;
 
 	if (CHECK_FOR_TIMEOUT(kalGetTimeTick(),
@@ -3051,7 +3052,6 @@ u_int8_t nicTxFillMsduInfo(IN struct ADAPTER *prAdapter,
 #endif /* CFG_SUPPORT_WIFI_SYSDVT */
 		if (GLUE_TEST_PKT_FLAG(prPacket, ENUM_PKT_DHCP) ||
 		    GLUE_TEST_PKT_FLAG(prPacket, ENUM_PKT_ARP) ||
-		    GLUE_TEST_PKT_FLAG(prPacket, ENUM_PKT_ARP_BC) ||
 		    GLUE_TEST_PKT_FLAG(prPacket, ENUM_PKT_1X)) {
 			/* Set BSS/STA lowest basic rate */
 			prMsduInfo->ucRateMode = MSDU_RATE_MODE_LOWEST_RATE;
