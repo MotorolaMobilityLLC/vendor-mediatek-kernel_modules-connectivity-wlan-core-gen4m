@@ -2438,6 +2438,31 @@ kalHardStartXmit(struct sk_buff *prOrgSkb,
 	} else
 		prSkb = prOrgSkb;
 
+#if CFG_SUPPORT_SKB_CLONED_COPY
+	/*
+	 * When the same pkt is tx to different bssid, the skb is cloned,
+	 * and two skb share the same skb->data.
+	 * In gen4m, the txd is in the headroom (a pointer to the offset
+	 * before skb->data), which means that this two pkts will use the
+	 * same location to store txd, so if we find that pkt is cloned,
+	 * we need to do a skb_copy to avoid this condition.
+	 * Otherwise, the txd of the first pkt will be overwritten by
+	 * the second pkt, causing unexpected conditions.
+	 */
+	if (unlikely(skb_cloned(prSkb))) {
+		prOrgSkb = prSkb;
+		prSkbNew = skb_copy_expand(prOrgSkb,
+				u4TxHeadRoomSize, 0, GFP_ATOMIC);
+		if (!prSkbNew) {
+			dev_kfree_skb(prOrgSkb);
+			DBGLOG(INIT, ERROR, "cloned_skb copy fail\n");
+			return WLAN_STATUS_NOT_ACCEPTED;
+		}
+		dev_kfree_skb(prOrgSkb);
+		prSkb = prSkbNew;
+	}
+#endif
+
 	prQueueEntry = (struct QUE_ENTRY *)
 		       GLUE_GET_PKT_QUEUE_ENTRY(prSkb);
 	prTxQueue = &prGlueInfo->rTxQueue;
