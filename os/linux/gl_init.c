@@ -2030,9 +2030,6 @@ netdev_tx_t wlanHardStartXmit(struct sk_buff *prSkb,
 	}
 #endif
 	kalResetPacket(prGlueInfo, (void *) prSkb);
-#if (CFG_SUPPORT_STATISTICS == 1)
-	STATS_TX_TIME_ARRIVE(prSkb);
-#endif
 	if (kalHardStartXmit(prSkb, prDev, prGlueInfo,
 			     ucBssIndex) == WLAN_STATUS_SUCCESS) {
 		/* Successfully enqueue to Tx queue */

@@ -1134,7 +1134,7 @@ void halAddDriverLatencyCount(IN struct ADAPTER *prAdapter,
 	int i;
 
 	for (i = 0; i < LATENCY_STATS_MAX_SLOTS; i++, pDriverDelay++) {
-		if (u4DriverLatency <= *pMaxDriverDelay++) {
+		if (u4DriverLatency < *pMaxDriverDelay++) {
 			GLUE_INC_REF_CNT(*pDriverDelay);
 			break;
 		}

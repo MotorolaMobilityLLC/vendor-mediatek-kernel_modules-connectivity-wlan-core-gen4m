@@ -2479,6 +2479,10 @@ kalHardStartXmit(struct sk_buff *prOrgSkb,
 		return WLAN_STATUS_INVALID_PACKET;
 	}
 
+#if (CFG_SUPPORT_STATISTICS == 1)
+	STATS_TX_TIME_ARRIVE(prSkb);
+#endif
+
 	/* Tx profiling */
 	wlanTxProfilingTagPacket(prGlueInfo->prAdapter,
 				 (void *) prSkb, TX_PROF_TAG_OS_TO_DRV);
