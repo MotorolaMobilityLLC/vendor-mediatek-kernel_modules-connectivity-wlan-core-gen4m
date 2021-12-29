@@ -255,6 +255,10 @@ uint8_t p2pRoleFsmInit(IN struct ADAPTER *prAdapter,
 #if (CFG_SUPPORT_DFS_MASTER == 1)
 		p2pFuncRadarInfoInit();
 #endif
+#if CFG_SUPPORT_802_11W
+		init_completion(&prP2pBssInfo->rDeauthComp);
+		prP2pBssInfo->encryptedDeauthIsInProcess = FALSE;
+#endif
 
 		LINK_INITIALIZE(&prP2pBssInfo->rPmkidCache);
 	} while (FALSE);
@@ -709,6 +713,16 @@ p2pRoleFsmDeauthComplete(IN struct ADAPTER *prAdapter,
 		DBGLOG(P2P, ERROR, "prP2PInfo shouldn't be NULL!\n");
 		return;
 	}
+#if CFG_SUPPORT_802_11W
+	/* Notify completion after encrypted deauth frame tx done */
+	if (prP2pBssInfo->encryptedDeauthIsInProcess == TRUE) {
+		if (!completion_done(&prP2pBssInfo->rDeauthComp)) {
+			DBGLOG(P2P, TRACE, "Complete rDeauthComp\n");
+			complete(&prP2pBssInfo->rDeauthComp);
+		}
+	}
+	prP2pBssInfo->encryptedDeauthIsInProcess = FALSE;
+#endif
 
 	/*
 	 * After EAP exchange, GO/GC will disconnect
