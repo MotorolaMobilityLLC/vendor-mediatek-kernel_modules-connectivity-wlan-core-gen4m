@@ -862,10 +862,10 @@ static bool wait_for_md_off_complete(void)
 	uint32_t u4Value = 0;
 	uint32_t u4StartTime, u4CurTime;
 	bool fgTimeout = false;
-	uint32_t u32MDOffTimeoutTime = MD_ON_OFF_TIMEOUT;
+	uint32_t u4MDOffTimeoutTime = MD_ON_OFF_TIMEOUT;
 
 	if (mddpIsCasanFWload() == TRUE)
-		u32MDOffTimeoutTime = MD_ON_OFF_TIMEOUT_CASAN;
+		u4MDOffTimeoutTime = MD_ON_OFF_TIMEOUT_CASAN;
 
 	u4StartTime = kalGetTimeTick();
 
@@ -880,7 +880,7 @@ static bool wait_for_md_off_complete(void)
 
 		u4CurTime = kalGetTimeTick();
 		if (CHECK_FOR_TIMEOUT(u4CurTime, u4StartTime,
-				u32MDOffTimeoutTime)) {
+				u4MDOffTimeoutTime)) {
 			DBGLOG(INIT, ERROR, "wait for md off timeout\n");
 			fgTimeout = true;
 			break;
@@ -898,6 +898,7 @@ static bool wait_for_md_on_complete(void)
 	uint32_t u4StartTime, u4CurTime;
 	bool fgCompletion = false;
 	struct GLUE_INFO *prGlueInfo = NULL;
+	uint32_t u4MDOnTimeoutTime = MD_ON_OFF_TIMEOUT;
 
 	u4StartTime = kalGetTimeTick();
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(gPrDev));
@@ -905,6 +906,9 @@ static bool wait_for_md_on_complete(void)
 		DBGLOG(INIT, ERROR, "prGlueInfo is NULL.\n");
 		return false;
 	}
+
+	if (mddpIsCasanFWload() == TRUE)
+		u4MDOnTimeoutTime = MD_ON_OFF_TIMEOUT_CASAN;
 
 	do {
 		if (g_rSettings.rOps.rd)
@@ -922,7 +926,7 @@ static bool wait_for_md_on_complete(void)
 
 		u4CurTime = kalGetTimeTick();
 		if (CHECK_FOR_TIMEOUT(u4CurTime, u4StartTime,
-				MD_ON_OFF_TIMEOUT)) {
+				u4MDOnTimeoutTime)) {
 			DBGLOG(INIT, ERROR, "wait for md on timeout\n");
 			fgCompletion = false;
 			break;
