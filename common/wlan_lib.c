@@ -8212,6 +8212,9 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 		p2pFuncSetDriverCacTime(prWifiVar->u4ByPassCacTime);
 	}
 
+	prWifiVar->u4CC2Region = (uint32_t) wlanCfgGetUint32(
+		prAdapter, "CC2Region", FEATURE_ENABLED);
+
 	prWifiVar->fgAllowSameBandDualSta = (uint8_t) wlanCfgGetUint32(
 		prAdapter, "AllowSameBandDualSta", FEATURE_ENABLED);
 #if CFG_MODIFY_TX_POWER_BY_BAT_VOLT
