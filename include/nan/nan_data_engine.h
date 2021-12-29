@@ -1017,5 +1017,8 @@ nanDataEngineSearchNDPContext(IN struct ADAPTER *prAdapter,
 struct STA_RECORD *nanGetStaRecByNDI(struct ADAPTER *prAdapter,
 				     uint8_t *pucPeerMacAddr);
 
+struct _NAN_NDL_INSTANCE_T *
+nanDataUtilSearchNdlByMac(struct ADAPTER *prAdapter, uint8_t *pucAddr);
+
 #endif
 #endif
