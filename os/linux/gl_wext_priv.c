@@ -9946,6 +9946,9 @@ int priv_driver_set_idc_bmp(IN struct net_device *prNetDev,
 	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
 	pEvent = (struct WIFI_EVENT *) kalMemAlloc(sizeof(struct WIFI_EVENT)+
 		sizeof(struct EVENT_LTE_SAFE_CHN), VIR_MEM_TYPE);
+	if (!pEvent)
+		return -1;
+
 	prEventBody = (struct EVENT_LTE_SAFE_CHN *) &(pEvent->aucBuffer[0]);
 	prEventBody->ucVersion = 2;
 	prEventBody->u4Flags = BIT(0);
