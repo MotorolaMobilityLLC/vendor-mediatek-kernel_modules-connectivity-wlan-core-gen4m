@@ -953,7 +953,7 @@ void scnEventScanDone(IN struct ADAPTER *prAdapter,
 
 	if (IS_FEATURE_ENABLED(prAdapter->rWifiVar.ucScanNoApRecover) &&
 		prScanInfo->fgIsSparseChannelValid &&
-		prScanDone->ucSparseChannelArrayValidNum > 0 &&
+		prScanDone->ucSparseChannelArrayValidNum > 3 &&
 		(prScanParam->eMsgId == MID_AIS_SCN_SCAN_REQ ||
 		prScanParam->eMsgId == MID_AIS_SCN_SCAN_REQ_V2) &&
 		!(prScanParam->ucScnFuncMask & ENUM_SCN_USE_PADDING_AS_BSSID)) {
