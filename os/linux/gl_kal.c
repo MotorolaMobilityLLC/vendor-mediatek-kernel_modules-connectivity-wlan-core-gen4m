@@ -3245,9 +3245,10 @@ kalOidComplete(IN struct GLUE_INFO *prGlueInfo,
 		kalUpdateCompHdlrRec(prGlueInfo->prAdapter,
 			NULL, prCmdInfo);
 
-		DBGLOG(TX, TRACE, "rPendComp=%p, cmd=0x%02X, seq=%u",
-			&prGlueInfo->rPendComp,
-			prCmdInfo->ucCID, prCmdInfo->ucCmdSeqNum);
+		if (prCmdInfo)
+			DBGLOG(TX, TRACE, "rPendComp=%p, cmd=0x%02X, seq=%u",
+				&prGlueInfo->rPendComp,
+				prCmdInfo->ucCID, prCmdInfo->ucCmdSeqNum);
 		complete(&prGlueInfo->rPendComp);
 	} else {
 		uint32_t wIdx, cIdx;
