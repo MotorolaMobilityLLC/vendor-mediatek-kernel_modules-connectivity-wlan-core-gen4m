@@ -8292,6 +8292,11 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 	prWifiVar->u4PktPIDTimeout = (uint32_t) wlanCfgGetUint32(
 		prAdapter, "PktPIDTimeout", 1000);
 #endif /* CFG_SUPPORT_LIMITED_PKT_PID */
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	prWifiVar->fgEnOnlyScan6g = (uint8_t) wlanCfgGetUint32(
+		prAdapter, "EnableOnlyScan6g", FEATURE_DISABLED);
+#endif /* CFG_SUPPORT_LIMITED_PKT_PID */
+
 }
 
 void wlanCfgSetSwCtrl(IN struct ADAPTER *prAdapter)

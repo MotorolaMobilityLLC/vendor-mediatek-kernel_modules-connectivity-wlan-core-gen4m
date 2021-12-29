@@ -1272,16 +1272,28 @@ int mtk_cfg80211_scan(struct wiphy *wiphy,
 		prScanRequest->arChannel[j].ucChannelNum = u4channel;
 		switch ((request->channels[i])->band) {
 		case KAL_BAND_2GHZ:
+#if (CFG_SUPPORT_WIFI_6G == 1)
+			if (IS_FEATURE_ENABLED(prAdapter->rWifiVar.
+				fgEnOnlyScan6g))
+				continue;
+#endif
 			prScanRequest->arChannel[j].eBand = BAND_2G4;
 			break;
 		case KAL_BAND_5GHZ:
+#if (CFG_SUPPORT_WIFI_6G == 1)
+			if (IS_FEATURE_ENABLED(prAdapter->rWifiVar.
+				fgEnOnlyScan6g))
+				continue;
+#endif
 			prScanRequest->arChannel[j].eBand = BAND_5G;
 			break;
 #if (CFG_SUPPORT_WIFI_6G == 1)
 		case KAL_BAND_6GHZ:
-			/* find out 6G PSC channel */
-			if (((u4channel - 5) % 16) != 0)
-				continue;
+			/* 6g only scan PSC channel if OnlyScan6g not enabled */
+			if (IS_FEATURE_DISABLED(prAdapter->rWifiVar.
+				fgEnOnlyScan6g))
+				if (((u4channel - 5) % 16) != 0)
+					continue;
 
 			prScanRequest->arChannel[j].eBand = BAND_6G;
 			break;

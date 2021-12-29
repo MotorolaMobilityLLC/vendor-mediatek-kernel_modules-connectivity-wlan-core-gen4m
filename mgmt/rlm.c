@@ -2208,10 +2208,16 @@ void rlmTransferHe6gOpInfor(IN uint8_t ucChannelNum,
 		pucCenterFreqS1,
 		pucCenterFreqS2);
 
-	/* Revise SCO */
-	*peSco = rlmReviseSco(*pucChannelWidth,
-		ucChannelNum, *pucCenterFreqS1,
-		*peSco, MAX_BW_UNKNOWN);
+	/* 6G BW40, need to modify Sco to proper value */
+	if (ucChannelWidth == HE_OP_CHANNEL_WIDTH_40
+		&& *pucCenterFreqS1 != 0) {
+		if (*pucCenterFreqS1 > ucChannelNum)
+			*peSco = CHNL_EXT_SCA;
+		else if (*pucCenterFreqS1 < ucChannelNum)
+			*peSco = CHNL_EXT_SCB;
+		else
+			*peSco = CHNL_EXT_SCN;
+	}
 }
 
 void rlmModifyHE6GBwPara(uint8_t ucHe6gChannelWidth,
@@ -2271,7 +2277,7 @@ void rlmModifyHE6GBwPara(uint8_t ucHe6gChannelWidth,
 			*pucHe6gChannelFrequencyS2 = 0;
 		}
 	} else if (ucHe6gChannelWidth == CW_20_40MHZ) {
-		if (ucS1Origin != 0 || ucS2Origin != 0) {
+		if (ucS2Origin != 0) {
 			DBGLOG(RLM, WARN,
 				"S1/S2 for 6G BW20/40 is out of spec, S1[%d->0] S2[%d->0]\n",
 				ucS1Origin, ucS2Origin);
