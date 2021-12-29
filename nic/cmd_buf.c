@@ -311,8 +311,16 @@ void cmdBufFreeCmdInfo(IN struct ADAPTER *prAdapter,
 
 	if (prCmdInfo) {
 		if (prCmdInfo->pucInfoBuffer) {
+			/* Only for debug, will remove later... */
+			if (prCmdInfo->ucCID == 0x48 ||
+				prCmdInfo->ucCID == 0x49)
+				DBGLOG(MEM, INFO, "CMD[0x%x] freed!\n",
+					prCmdInfo->ucCID);
 			cnmMemFree(prAdapter, prCmdInfo->pucInfoBuffer);
 			prCmdInfo->pucInfoBuffer = NULL;
+		} else {
+			DBGLOG(MEM, WARN, "CMD[0x%x] not freed Buffer NULL!\n",
+				prCmdInfo->ucCID);
 		}
 
 		KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_CMD_RESOURCE);

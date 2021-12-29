@@ -3925,8 +3925,6 @@ void kalClearCommandQueue(IN struct GLUE_INFO *prGlueInfo)
 	struct QUE *prCmdQue;
 	struct QUE rTempCmdQue;
 	struct QUE *prTempCmdQue = &rTempCmdQue;
-	struct QUE rReturnCmdQue;
-	struct QUE *prReturnCmdQue = &rReturnCmdQue;
 	struct QUE_ENTRY *prQueueEntry = (struct QUE_ENTRY *) NULL;
 	struct CMD_INFO *prCmdInfo = (struct CMD_INFO *) NULL;
 
@@ -3934,7 +3932,7 @@ void kalClearCommandQueue(IN struct GLUE_INFO *prGlueInfo)
 
 	ASSERT(prGlueInfo);
 
-	QUEUE_INITIALIZE(prReturnCmdQue);
+	QUEUE_INITIALIZE(prTempCmdQue);
 
 	/* Clear ALL in prGlueInfo->rCmdQueue */
 	prCmdQue = &prGlueInfo->rCmdQueue;
@@ -3961,6 +3959,10 @@ void kalClearCommandQueue(IN struct GLUE_INFO *prGlueInfo)
 		QUEUE_REMOVE_HEAD(prTempCmdQue, prQueueEntry,
 				  struct QUE_ENTRY *);
 	}
+
+	if (prTempCmdQue->u4NumElem != 0)
+		DBGLOG(INIT, INFO, "After clear, cmd queue(%d)\n",
+			prTempCmdQue->u4NumElem);
 }
 
 #if CFG_SUPPORT_LOWLATENCY_MODE
@@ -5240,6 +5242,11 @@ void kalEnqueueCommand(IN struct GLUE_INFO *prGlueInfo,
 				sizeof(struct MEM_TRACK));
 		prMemTrack->u2CmdIdAndWhere = 0;
 		prMemTrack->u2CmdIdAndWhere |= prCmdInfo->ucCID;
+		/* 0x10 means the CmdId enqueue to rCmdQueue
+		 *	and is waiting for main_thread handling
+		 */
+		prMemTrack->u2CmdIdAndWhere |= 0x1000;
+
 	}
 #endif
 

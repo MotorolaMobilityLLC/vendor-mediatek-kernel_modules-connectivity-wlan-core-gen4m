@@ -1711,6 +1711,9 @@ uint32_t wlanProcessCommandQueue(IN struct ADAPTER
 	struct CMD_INFO *prCmdInfo;
 	struct MSDU_INFO *prMsduInfo;
 	enum ENUM_FRAME_ACTION eFrameAction = FRAME_ACTION_DROP_PKT;
+#if CFG_DBG_MGT_BUF
+	struct MEM_TRACK *prMemTrack = NULL;
+#endif
 
 	KAL_SPIN_LOCK_DECLARATION();
 
@@ -1735,6 +1738,23 @@ uint32_t wlanProcessCommandQueue(IN struct ADAPTER
 			  struct QUE_ENTRY *);
 	while (prQueueEntry) {
 		prCmdInfo = (struct CMD_INFO *) prQueueEntry;
+#if CFG_DBG_MGT_BUF
+		if (prCmdInfo->pucInfoBuffer &&
+				!IS_FROM_BUF(prAdapter,
+					prCmdInfo->pucInfoBuffer)) {
+			prMemTrack =
+				(struct MEM_TRACK *)
+					((uint8_t *)prCmdInfo->pucInfoBuffer -
+						sizeof(struct MEM_TRACK));
+
+			if (prMemTrack) {
+				prMemTrack->u2CmdIdAndWhere &= 0x00FF;
+				/* 0x11 means the CmdId drop in driver
+				 */
+				prMemTrack->u2CmdIdAndWhere |= 0x1100;
+			}
+		}
+#endif
 		switch (prCmdInfo->eCmdType) {
 		case COMMAND_TYPE_GENERAL_IOCTL:
 		case COMMAND_TYPE_NETWORK_IOCTL:
@@ -1778,6 +1798,14 @@ uint32_t wlanProcessCommandQueue(IN struct ADAPTER
 			       "DROP CMD TYPE[%u] ID[0x%02X] SEQ[%u]\n",
 			       prCmdInfo->eCmdType, prCmdInfo->ucCID,
 			       prCmdInfo->ucCmdSeqNum);
+#if CFG_DBG_MGT_BUF
+			if (prMemTrack) {
+				prMemTrack->u2CmdIdAndWhere &= 0x00FF;
+				/* 0x12 means the CmdId drop in driver
+				 */
+				prMemTrack->u2CmdIdAndWhere |= 0x1200;
+			}
+#endif
 			wlanReleaseCommand(prAdapter, prCmdInfo,
 					   TX_RESULT_DROPPED_IN_DRIVER);
 			cmdBufFreeCmdInfo(prAdapter, prCmdInfo);
@@ -1786,7 +1814,14 @@ uint32_t wlanProcessCommandQueue(IN struct ADAPTER
 			       "QUE back CMD TYPE[%u] ID[0x%02X] SEQ[%u]\n",
 			       prCmdInfo->eCmdType, prCmdInfo->ucCID,
 			       prCmdInfo->ucCmdSeqNum);
-
+#if CFG_DBG_MGT_BUF
+			if (prMemTrack) {
+				prMemTrack->u2CmdIdAndWhere &= 0x00FF;
+				/* 0x13 means the CmdId queue back to rCmdQueue
+				 */
+				prMemTrack->u2CmdIdAndWhere |= 0x1300;
+			}
+#endif
 			QUEUE_INSERT_TAIL(prMergeCmdQue, prQueueEntry);
 		} else if (eFrameAction == FRAME_ACTION_TX_PKT) {
 			/* 4 <4> Send the command */
@@ -2043,10 +2078,10 @@ uint32_t wlanSendCommandMthread(IN struct ADAPTER
 #if CFG_DBG_MGT_BUF
 			if (prMemTrack) {
 				prMemTrack->u2CmdIdAndWhere &= 0x00FF;
-				/* 0x01 means the CmdId can't enqueue to
+				/* 0x14 means the CmdId can't enqueue to
 				 *  TxCmdQueue due to card removal
 				 */
-				prMemTrack->u2CmdIdAndWhere |= 0x0100;
+				prMemTrack->u2CmdIdAndWhere |= 0x1400;
 			}
 #endif
 			break;
@@ -2069,10 +2104,10 @@ uint32_t wlanSendCommandMthread(IN struct ADAPTER
 #if CFG_DBG_MGT_BUF
 			if (prMemTrack) {
 				prMemTrack->u2CmdIdAndWhere &= 0x00FF;
-				/* 0x02 means the CmdId can't enqueue
+				/* 0x15 means the CmdId can't enqueue
 				 *  to TxCmdQueue due to out of resource
 				 */
-				prMemTrack->u2CmdIdAndWhere |= 0x0200;
+				prMemTrack->u2CmdIdAndWhere |= 0x1500;
 			}
 #endif
 
@@ -2097,10 +2132,10 @@ uint32_t wlanSendCommandMthread(IN struct ADAPTER
 #if CFG_DBG_MGT_BUF
 		if (prMemTrack) {
 			prMemTrack->u2CmdIdAndWhere &= 0x00FF;
-			/* 0x10 means the CmdId is in TxCmdQueue
+			/* 0x20 means the CmdId is in TxCmdQueue
 			 *  and is waiting for main_thread handling
 			 */
-			prMemTrack->u2CmdIdAndWhere |= 0x1000;
+			prMemTrack->u2CmdIdAndWhere |= 0x2000;
 		}
 #endif
 
@@ -2157,10 +2192,10 @@ void wlanTxCmdDoneCb(IN struct ADAPTER *prAdapter,
 
 		if (prMemTrack) {
 			prMemTrack->u2CmdIdAndWhere &= 0x00FF;
-			/* 0x40 means the CmdId is sent to
+			/* 0x50 means the CmdId is sent to
 			 * WFDMA by HIF
 			 */
-			prMemTrack->u2CmdIdAndWhere |= 0x4000;
+			prMemTrack->u2CmdIdAndWhere |= 0x5000;
 		}
 #endif
 
@@ -2231,20 +2266,20 @@ uint32_t wlanTxCmdMthread(IN struct ADAPTER *prAdapter)
 #if CFG_DBG_MGT_BUF
 			if (prMemTrack) {
 				prMemTrack->u2CmdIdAndWhere &= 0x00FF;
-				/* 0x20 means the CmdId needs to send to
+				/* 0x30 means the CmdId needs to send to
 				 * FW via HIF
 				 */
-				prMemTrack->u2CmdIdAndWhere |= 0x2000;
+				prMemTrack->u2CmdIdAndWhere |= 0x3000;
 			}
 #endif
 		} else {
 #if CFG_DBG_MGT_BUF
 			if (prMemTrack) {
 				prMemTrack->u2CmdIdAndWhere &= 0x00FF;
-				/* 0x30 means the CmdId enqueues to
+				/* 0x40 means the CmdId enqueues to
 				 * TxCmdDone queue
 				 */
-				prMemTrack->u2CmdIdAndWhere |= 0x3000;
+				prMemTrack->u2CmdIdAndWhere |= 0x4000;
 			}
 #endif
 			QUEUE_INSERT_TAIL(prTempCmdDoneQue, prQueueEntry);
