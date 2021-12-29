@@ -9544,10 +9544,6 @@ wlanoidSetNetworkAddress(IN struct ADAPTER *prAdapter,
 		(struct PARAM_NETWORK_ADDRESS_LIST *) pvSetBuffer;
 	struct PARAM_NETWORK_ADDRESS *prNetworkAddress;
 	uint32_t u4IPv4AddrCount, u4CmdSize;
-#if CFG_ENABLE_GTK_FRAME_FILTER
-	uint32_t u4IpV4AddrListSize;
-	struct BSS_INFO *prBssInfo;
-#endif
 
 	DEBUGFUNC("wlanoidSetNetworkAddress");
 	DBGLOG(INIT, LOUD, "\n");
@@ -9600,27 +9596,6 @@ wlanoidSetNetworkAddress(IN struct ADAPTER *prAdapter,
 
 	kalMemZero(prCmdNetworkAddressList, u4CmdSize);
 	prCmdNetworkAddressList->ucVersion = 1;
-#if CFG_ENABLE_GTK_FRAME_FILTER
-	u4IpV4AddrListSize =
-			OFFSET_OF(struct IPV4_NETWORK_ADDRESS_LIST, arNetAddr) +
-			(u4IPv4AddrCount *
-			sizeof(struct CMD_IPV4_NETWORK_ADDRESS));
-	prBssInfo = aisGetAisBssInfo(prAdapter,
-		prNetworkAddressList->ucBssIdx);
-	if (prBssInfo->prIpV4NetAddrList)
-		FREE_IPV4_NETWORK_ADDR_LIST(prBssInfo->prIpV4NetAddrList);
-	prBssInfo->prIpV4NetAddrList =
-			(struct IPV4_NETWORK_ADDRESS_LIST *)
-			kalMemAlloc(u4IpV4AddrListSize,
-				    VIR_MEM_TYPE);
-	if (!prBssInfo->prIpV4NetAddrList) {
-		kalMemFree(prCmdNetworkAddressList, VIR_MEM_TYPE,
-			   u4CmdSize);
-		return WLAN_STATUS_FAILURE;
-	}
-	prBssInfo->prIpV4NetAddrList->ucAddrCount =
-			(uint8_t) u4IPv4AddrCount;
-#endif
 
 	/* 4 <4> Fill P_CMD_SET_NETWORK_ADDRESS_LIST */
 	prCmdNetworkAddressList->ucBssIndex =
@@ -9652,12 +9627,6 @@ wlanoidSetNetworkAddress(IN struct ADAPTER *prAdapter,
 					prNetworkAddress->
 					aucAddress+sizeof(uint32_t),
 					sizeof(uint32_t));
-#if CFG_ENABLE_GTK_FRAME_FILTER
-				kalMemCopy(prBssInfo->prIpV4NetAddrList->
-					arNetAddr[u4IPv4AddrIdx].aucIpAddr,
-					prNetworkAddress->aucAddress,
-					sizeof(uint32_t));
-#endif
 
 				DBGLOG(OID, INFO,
 				"%s:IPv4 Addr[%u]["IPV4STR"]Mask["IPV4STR"]\n",
@@ -13646,55 +13615,6 @@ wlanoidSetHS20Info(IN struct ADAPTER *prAdapter,
 	return WLAN_STATUS_SUCCESS;
 
 }
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief This routine is called to set_bssid_pool
- *
- * \param[in] prAdapter      Pointer to the Adapter structure.
- * \param[in] pvSetBuffer    Pointer to the buffer that holds the data to be
- *			     set.
- * \param[in] u4SetBufferLen The length of the set buffer.
- * \param[out] pu4SetInfoLen If the call is successful, returns the number of
- *                           bytes read from the set buffer. If the call failed
- *                           due to invalid length of the set buffer, returns
- *                           the amount of storage needed.
- *
- * \retval WLAN_STATUS_SUCCESS
- * \retval WLAN_STATUS_INVALID_LENGTH
- * \retval WLAN_STATUS_ADAPTER_NOT_READY
- * \retval WLAN_STATUS_MULTICAST_FULL
- */
-/*----------------------------------------------------------------------------*/
-uint32_t
-wlanoidSetHS20BssidPool(IN struct ADAPTER *prAdapter,
-			IN void *pvSetBuffer, IN uint32_t u4SetBufferLen,
-			OUT uint32_t *pu4SetInfoLen) {
-	uint32_t rWlanStatus = WLAN_STATUS_SUCCESS;
-	uint8_t ucBssIndex = 0;
-
-	ASSERT(prAdapter);
-	ASSERT(pu4SetInfoLen);
-
-	if (u4SetBufferLen)
-		ASSERT(pvSetBuffer);
-
-	if (u4SetBufferLen < sizeof(struct
-				    PARAM_HS20_SET_BSSID_POOL)) {
-		*pu4SetInfoLen = sizeof(struct PARAM_HS20_SET_BSSID_POOL);
-		return WLAN_STATUS_BUFFER_TOO_SHORT;
-	}
-
-	ucBssIndex = GET_IOCTL_BSSIDX(prAdapter);
-
-	DBGLOG(REQ, LOUD, "ucBssIndex %d\n", ucBssIndex);
-
-	rWlanStatus = hs20SetBssidPool(prAdapter, pvSetBuffer,
-		ucBssIndex);
-
-	return rWlanStatus;
-}				/* end of wlanoidSendHS20GASRequest() */
-
 #endif /* CFG_SUPPORT_PASSPOINT */
 
 #if CFG_SUPPORT_SNIFFER

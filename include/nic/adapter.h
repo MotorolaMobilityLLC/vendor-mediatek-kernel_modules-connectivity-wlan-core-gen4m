@@ -600,9 +600,6 @@ struct BSS_INFO {
 
 	uint8_t ucBssFreeQuota;	/* The value is updated from FW  */
 
-#if CFG_ENABLE_GTK_FRAME_FILTER
-	struct IPV4_NETWORK_ADDRESS_LIST *prIpV4NetAddrList;
-#endif
 	uint16_t u2DeauthReason;
 
 #if CFG_SUPPORT_TDLS
