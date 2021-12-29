@@ -2569,6 +2569,22 @@ static void soc7_0_DumpOtherCr(struct ADAPTER *prAdapter)
 	/* MCIF_MD_STATUS_CR */
 	connac2x_DbgCrRead(NULL, 0x10001BF4, &u4Val);
 	DBGLOG(INIT, INFO, "MD_AOR_STATUS 0x10001BF4=[%x]\n", u4Val);
+
+	/* Dump WFDMA CR */
+	connac2x_DumpCrRange(prAdapter, 0x18024200, 7, "WFDMA 0x18024200");
+	connac2x_DumpCrRange(prAdapter, 0x18024300, 16, "WFDMA 0x18024300");
+	connac2x_DumpCrRange(prAdapter, 0x18024380, 16, "WFDMA x18024380");
+	connac2x_DumpCrRange(prAdapter, 0x180243E0, 12, "WFDMA 0x180243E0");
+	connac2x_DumpCrRange(prAdapter, 0x18024500, 16, "WFDMA 0x18024500");
+	connac2x_DumpCrRange(prAdapter, 0x18024540, 16, "WFDMA 0x18024540");
+	connac2x_DumpCrRange(prAdapter, 0x18024600, 16, "WFDMA 0x18024600");
+	connac2x_DumpCrRange(prAdapter, 0x18024640, 1, "WFDMA 0x18024640");
+	connac2x_DumpCrRange(prAdapter, 0x18024680, 8, "WFDMA 0x18024680");
+	connac2x_DumpCrRange(prAdapter, 0x18027044, 1, "WFDMA 0x18027044");
+	connac2x_DumpCrRange(prAdapter, 0x18027050, 1, "WFDMA 0x18027050");
+	connac2x_DumpCrRange(prAdapter, 0x18027074, 3, "WFDMA 0x18027074");
+	connac2x_DumpCrRange(prAdapter, 0x1802750C, 4, "WFDMA 0x1802750C");
+	connac2x_DumpCrRange(prAdapter, 0x18027520, 5, "WFDMA 0x18027520");
 }
 
 /* need to dump AXI Master related CR 0x1802750C ~ 0x18027530*/
@@ -2601,6 +2617,7 @@ static void soc7_0_DumpWFDMACr(struct ADAPTER *prAdapter)
 	connac2x_show_wfdma_info_by_type(prAdapter, WFDMA_TYPE_HOST, 1);
 	connac2x_show_wfdma_dbg_flag_log(prAdapter, WFDMA_TYPE_HOST, 1);
 	soc7_0_DumpAXIMasterDebugCr(prAdapter);
+	connac2x_show_wfdma_desc(prAdapter);
 } /* soc7_0_DumpWFDMAHostCr */
 
 static void soc7_0_DumpHostCr(struct ADAPTER *prAdapter)

@@ -922,6 +922,7 @@ void connac2x_show_wfdma_dbg_flag_log(
 	struct ADAPTER *prAdapter,
 	enum _ENUM_WFDMA_TYPE_T enum_wfdma_type,
 	uint32_t u4DmaNum);
+void connac2x_show_wfdma_desc(IN struct ADAPTER *prAdapter);
 
 void connac2x_show_wfdma_info_by_type(
 	struct ADAPTER *prAdapter,
