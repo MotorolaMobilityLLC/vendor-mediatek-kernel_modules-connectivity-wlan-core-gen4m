@@ -2205,9 +2205,11 @@ int mtk_cfg80211_vendor_set_multista_primary_connection(struct wiphy *wiphy,
 	if (gprWdev[AIS_DEFAULT_INDEX] && u4InterfaceIdx ==
 		gprWdev[AIS_DEFAULT_INDEX]->netdev->ifindex)
 		u4AisIndex = AIS_DEFAULT_INDEX;
+#if CFG_SUPPORT_DUAL_STA
 	else if (gprWdev[AIS_SECONDARY_INDEX] && u4InterfaceIdx ==
 		gprWdev[AIS_SECONDARY_INDEX]->netdev->ifindex)
 		u4AisIndex = AIS_SECONDARY_INDEX;
+#endif
 	else {
 		DBGLOG(REQ, INFO, "No match with gprWdev\n");
 		return -EINVAL;
