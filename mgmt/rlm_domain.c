@@ -124,6 +124,11 @@ struct TX_PWR_TAG_TABLE {
 		"ALL_T",
 		(POWER_ANT_BAND_NUM * POWER_ANT_NUM),
 		txPwrParseTagAllT
+	},
+	{
+		"ALL_T_6G",
+		(POWER_ANT_6G_BAND_NUM * POWER_ANT_NUM),
+		txPwrParseTagAllT6G
 	}
 };
 #endif
@@ -4333,6 +4338,108 @@ int32_t txPwrParseTagAllT(
 		cTagParaNum, pRecord, POWER_ANT_ALL_T);
 }
 
+int32_t txPwrParseTagAllT6G(
+	char *pStart, char *pEnd, uint8_t cTagParaNum,
+	struct TX_PWR_CTRL_ELEMENT *pRecord){
+
+	char *pCurent = NULL, *pContent = NULL;
+	uint8_t i = 0, j = 0;
+	uint8_t ucBandIdx = 0, ucAntIdx = 0;
+	uint8_t op = 0, value = 0;
+	int8_t backoff = 0;
+	enum ENUM_POWER_ANT_TAG eTag = POWER_ANT_ALL_T_6G;
+
+	if (!pStart || !pEnd || !pRecord)
+		return -1;
+
+	if (cTagParaNum != (POWER_ANT_6G_BAND_NUM * POWER_ANT_NUM))
+		return -1;
+
+	DBGLOG(RLM, TRACE, "pase tag Para (%s) to aiPwrAnt[%u]",
+		pStart, eTag);
+
+	pCurent = pStart;
+
+	for (i = 0; i < cTagParaNum; i++) {
+
+		if (!pCurent || pCurent >= pEnd)
+			break;
+
+		pContent = txPwrGetString(&pCurent, ",");
+
+		if (!pContent) {
+			DBGLOG(RLM, TRACE, "tag parameter format error: %s\n",
+			       pStart);
+			break;
+		}
+
+		if (txPwrParseNumber(&pContent, ",", &op, &value)) {
+			DBGLOG(RLM, TRACE, "parse parameter error: %s\n",
+			       pContent);
+			break;
+		}
+
+		backoff = (op == 1) ? value : (0 - value);
+		if (backoff < PWR_CFG_BACKOFF_MIN)
+			backoff = PWR_CFG_BACKOFF_MIN;
+
+		if (backoff > PWR_CFG_BACKOFF_MAX)
+			backoff = PWR_CFG_BACKOFF_MAX;
+
+		ucBandIdx = i%POWER_ANT_6G_BAND_NUM;
+		ucAntIdx = i/POWER_ANT_6G_BAND_NUM;
+		switch (ucBandIdx) {
+		case POWER_ANT_6G_BAND1:
+			pRecord->aiPwrAnt[eTag].aiPwrAnt6GB1[ucAntIdx]
+				= backoff;
+			break;
+		case POWER_ANT_6G_BAND2:
+			pRecord->aiPwrAnt[eTag].aiPwrAnt6GB2[ucAntIdx]
+				= backoff;
+			break;
+		case POWER_ANT_6G_BAND3:
+			pRecord->aiPwrAnt[eTag].aiPwrAnt6GB3[ucAntIdx]
+				= backoff;
+			break;
+		case POWER_ANT_6G_BAND4:
+			pRecord->aiPwrAnt[eTag].aiPwrAnt6GB4[ucAntIdx]
+				= backoff;
+			break;
+		default:
+			DBGLOG(RLM, INFO, "Never happen: %s\n",
+				pStart);
+			return -1;
+		}
+
+		if (pCurent >= pEnd)
+			break;
+
+	}
+
+	if (i != cTagParaNum) {
+		DBGLOG(RLM, INFO, "parameter number error: %s\n",
+			       pStart);
+		for (j = 0; j < POWER_ANT_NUM; j++) {
+			pRecord->aiPwrAnt[eTag].aiPwrAnt6GB1[j] = 0;
+			pRecord->aiPwrAnt[eTag].aiPwrAnt6GB2[j] = 0;
+			pRecord->aiPwrAnt[eTag].aiPwrAnt6GB3[j] = 0;
+			pRecord->aiPwrAnt[eTag].aiPwrAnt6GB4[j] = 0;
+		}
+		return -1;
+	}
+
+	DBGLOG(RLM, TRACE, "[Success] Dump aiPwrAnt[%u] para: ", eTag);
+	for (j = 0; j < POWER_ANT_NUM; j++)
+		DBGLOG(RLM, TRACE, "[%d][%d][%d][%d]",
+			       pRecord->aiPwrAnt[eTag].aiPwrAnt6GB1[j],
+			       pRecord->aiPwrAnt[eTag].aiPwrAnt6GB2[j],
+			       pRecord->aiPwrAnt[eTag].aiPwrAnt6GB3[j],
+			       pRecord->aiPwrAnt[eTag].aiPwrAnt6GB4[j]);
+	DBGLOG(RLM, TRACE, "\n");
+
+	return 0;
+}
+
 int32_t txPwrParseTag(char *pTagStart, char *pTagEnd,
 	struct TX_PWR_CTRL_ELEMENT *pRecord) {
 	uint8_t i = 0;
@@ -4606,6 +4713,14 @@ uint8_t txPwrIsAntTagSet(
 			return 1;
 		if (prCurElement->aiPwrAnt[tag].aiPwrAnt5GB4[i] != 0)
 			return 1;
+		if (prCurElement->aiPwrAnt[tag].aiPwrAnt6GB1[i] != 0)
+			return 1;
+		if (prCurElement->aiPwrAnt[tag].aiPwrAnt6GB2[i] != 0)
+			return 1;
+		if (prCurElement->aiPwrAnt[tag].aiPwrAnt6GB3[i] != 0)
+			return 1;
+		if (prCurElement->aiPwrAnt[tag].aiPwrAnt6GB4[i] != 0)
+			return 1;
 	}
 	return 0;
 }
@@ -4621,7 +4736,7 @@ uint8_t txPwrIsAntTagNeedApply(
 	fg1TSet = txPwrIsAntTagSet(prCurElement, POWER_ANT_MIMO_1T);
 	fg2TSet = txPwrIsAntTagSet(prCurElement, POWER_ANT_MIMO_2T);
 
-	if ((fgAllTSet && !fg1TSet && !fg2TSet)/* only ALL_T */
+	if ((fgAllTSet && !fg1TSet && !fg2TSet)
 		|| (!fgAllTSet && (fg1TSet || fg2TSet)))
 		/* only MIMO_1T or MIMO_2T */
 		return 1;
@@ -4639,6 +4754,7 @@ uint32_t txPwrApplyOneSettingPwrAnt(
 	struct CMD_CHANNEL_POWER_LIMIT_ANT *prCmdPwrAnt = NULL;
 	uint8_t i = 0, j = 0, k = 0;
 	uint8_t fgAllTSet = 0, fg1TSet = 0, fg2TSet = 0;
+	uint8_t fgAllT6GSet = 0;
 	uint8_t tagIdx = 0;
 
 	enum ENUM_PWR_LIMIT_TYPE eType;
@@ -4656,10 +4772,11 @@ uint32_t txPwrApplyOneSettingPwrAnt(
 	fgAllTSet = txPwrIsAntTagSet(prCurElement, POWER_ANT_ALL_T);
 	fg1TSet = txPwrIsAntTagSet(prCurElement, POWER_ANT_MIMO_1T);
 	fg2TSet = txPwrIsAntTagSet(prCurElement, POWER_ANT_MIMO_2T);
+	fgAllT6GSet = txPwrIsAntTagSet(prCurElement, POWER_ANT_ALL_T_6G);
 
 	/* check scenario reasonable */
-	if (!((fgAllTSet && !fg1TSet && !fg2TSet)/* only ALL_T */
-		|| (!fgAllTSet && (fg1TSet || fg2TSet)))) {
+	if (!(((fgAllTSet || fgAllT6GSet) && !fg1TSet && !fg2TSet)
+		|| (!(fgAllTSet || fgAllT6GSet) && (fg1TSet || fg2TSet)))) {
 		return 0;
 	}
 	/* TODO : refactory when fg1TSet/fg2TSet online */
@@ -4854,6 +4971,61 @@ uint32_t txPwrApplyOneSettingPwrAnt(
 							aiPwrAnt
 							[POWER_ANT_MIMO_2T]
 							.aiPwrAnt5GB4[k];
+				}
+				i++;
+			}
+		}
+	}
+
+	if (fgAllT6GSet) {
+		tagIdx = POWER_ANT_ALL_T_6G;
+		for (j = 0; j < POWER_ANT_6G_BAND_NUM; j++) {
+			for (k = 0; k < POWER_ANT_NUM; k++) {
+				prCmdPwrAnt[i].cTagIdx = tagIdx;
+				prCmdPwrAnt[i].cBandIdx = j;
+				prCmdPwrAnt[i].cAntIdx = k;
+
+				if (j == POWER_ANT_6G_BAND1) {
+					if (prCmdPwrAnt[i].cValue >
+						prCurElement->
+						aiPwrAnt[POWER_ANT_ALL_T_6G]
+						.aiPwrAnt6GB1[k]) {
+						prCmdPwrAnt[i].cValue =
+							prCurElement->
+							aiPwrAnt
+							[POWER_ANT_ALL_T_6G]
+							.aiPwrAnt6GB1[k];
+					}
+				} else if (j == POWER_ANT_6G_BAND2) {
+					if (prCmdPwrAnt[i].cValue >
+						prCurElement->
+						aiPwrAnt[POWER_ANT_ALL_T_6G]
+						.aiPwrAnt6GB2[k])
+						prCmdPwrAnt[i].cValue =
+							prCurElement->
+							aiPwrAnt
+							[POWER_ANT_ALL_T_6G]
+							.aiPwrAnt6GB2[k];
+				} else if (j == POWER_ANT_6G_BAND3) {
+					if (prCmdPwrAnt[i].cValue >
+						prCurElement->
+						aiPwrAnt[POWER_ANT_ALL_T_6G]
+						.aiPwrAnt6GB3[k])
+						prCmdPwrAnt[i].cValue =
+							prCurElement->
+							aiPwrAnt
+							[POWER_ANT_ALL_T_6G]
+							.aiPwrAnt6GB3[k];
+				} else if (j == POWER_ANT_6G_BAND4) {
+					if (prCmdPwrAnt[i].cValue >
+						prCurElement->
+						aiPwrAnt[POWER_ANT_ALL_T_6G]
+						.aiPwrAnt6GB4[k])
+						prCmdPwrAnt[i].cValue =
+							prCurElement->
+							aiPwrAnt
+							[POWER_ANT_ALL_T_6G]
+							.aiPwrAnt6GB4[k];
 				}
 				i++;
 			}
@@ -5463,7 +5635,7 @@ skipLabel:
 							value : (0 - value);
 			}
 
-			for (j = 0; j < PWR_CFG_PRAM_NUM_AX; j++) {
+			for (j = 0; j < PWR_LIMIT_HE_BW160_NUM; j++) {
 				prTmpSetting->opHE[j] = op;
 				prTmpSetting->i8PwrLimitHE[j] = (op != 2) ?
 							value : (0 - value);
