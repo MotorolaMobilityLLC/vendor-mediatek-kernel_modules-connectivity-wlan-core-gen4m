@@ -950,7 +950,7 @@ void halRxUSBReceiveEventComplete(struct urb *urb)
 	}
 
 	/* Hif power off wifi, drop rx packets and continue polling RX packets until RX path empty */
-	if (prGlueInfo->ulFlag & GLUE_FLAG_HALT) {
+	if (test_bit(GLUE_FLAG_HALT_BIT, &prGlueInfo->ulFlag)) {
 		glUsbEnqueueReq(prHifInfo, &prHifInfo->rRxEventFreeQ, prUsbReq, &prHifInfo->rRxEventQLock, FALSE);
 		halRxUSBReceiveEvent(prGlueInfo->prAdapter, FALSE);
 		return;
@@ -1032,7 +1032,7 @@ void halRxUSBReceiveDataComplete(struct urb *urb)
 	}
 
 	/* Hif power off wifi, drop rx packets and continue polling RX packets until RX path empty */
-	if (prGlueInfo->ulFlag & GLUE_FLAG_HALT) {
+	if (test_bit(GLUE_FLAG_HALT_BIT, &prGlueInfo->ulFlag)) {
 		glUsbEnqueueReq(prHifInfo, &prHifInfo->rRxDataFreeQ, prUsbReq, &prHifInfo->rRxDataQLock, FALSE);
 		halRxUSBReceiveData(prGlueInfo->prAdapter);
 		return;

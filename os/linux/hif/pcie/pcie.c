@@ -271,7 +271,7 @@ static irqreturn_t mtk_pci_interrupt(int irq, void *dev_instance)
 
 	halDisableInterrupt(prGlueInfo->prAdapter);
 
-	if (prGlueInfo->ulFlag & GLUE_FLAG_HALT) {
+	if (test_bit(GLUE_FLAG_HALT_BIT, &prGlueInfo->ulFlag)) {
 		DBGLOG(HAL, INFO, "GLUE_FLAG_HALT skip INT\n");
 		return IRQ_NONE;
 	}

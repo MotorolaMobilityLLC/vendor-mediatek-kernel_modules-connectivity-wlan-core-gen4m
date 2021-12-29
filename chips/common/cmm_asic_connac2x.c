@@ -2455,7 +2455,8 @@ bool asicConnac2xSwIntHandler(struct ADAPTER *prAdapter)
 			&prChipInfo->bus_info->rSwWfdmaInfo;
 
 		if (prSwWfdmaInfo->fgIsEnSwWfdma) {
-			if (prAdapter->prGlueInfo->ulFlag & GLUE_FLAG_HALT) {
+			if (test_bit(GLUE_FLAG_HALT_BIT,
+				&prAdapter->prGlueInfo->ulFlag)) {
 				DBGLOG(HAL, TRACE,
 					"GLUE_FLAG_HALT skip SwWfdma INT\n");
 			} else {

@@ -2394,7 +2394,7 @@ kalHardStartXmit(struct sk_buff *prOrgSkb,
 	u4TxHeadRoomSize = NIC_TX_DESC_AND_PADDING_LENGTH +
 		prChipInfo->txd_append_size;
 
-	if (prGlueInfo->ulFlag & GLUE_FLAG_HALT) {
+	if (test_bit(GLUE_FLAG_HALT_BIT, &prGlueInfo->ulFlag)) {
 		DBGLOG(INIT, INFO, "GLUE_FLAG_HALT skip tx\n");
 		dev_kfree_skb(prOrgSkb);
 		return WLAN_STATUS_ADAPTER_NOT_READY;
@@ -4273,7 +4273,7 @@ int hif_thread(void *data)
 
 	while (TRUE) {
 
-		if (prGlueInfo->ulFlag & GLUE_FLAG_HALT
+		if (test_bit(GLUE_FLAG_HALT_BIT, &prGlueInfo->ulFlag)
 			|| kalIsResetting()
 			) {
 			DBGLOG(INIT, INFO, "hif_thread should stop now...\n");
@@ -4327,7 +4327,7 @@ int hif_thread(void *data)
 			 * interrupt later
 			 */
 			prAdapter->fgIsIntEnable = FALSE;
-			if (prGlueInfo->ulFlag & GLUE_FLAG_HALT
+			if (test_bit(GLUE_FLAG_HALT_BIT, &prGlueInfo->ulFlag)
 				|| kalIsResetting()
 				) {
 				/* Should stop now... skip pending interrupt */
@@ -4444,7 +4444,7 @@ int rx_thread(void *data)
 
 	while (TRUE) {
 
-		if (prGlueInfo->ulFlag & GLUE_FLAG_HALT
+		if (test_bit(GLUE_FLAG_HALT_BIT, &prGlueInfo->ulFlag)
 			|| kalIsResetting()
 			) {
 			DBGLOG(INIT, INFO, "rx_thread should stop now...\n");
@@ -4608,7 +4608,7 @@ int main_thread(void *data)
 			p2pSetMulticastListWorkQueueWrapper(prGlueInfo);
 #endif
 
-		if (prGlueInfo->ulFlag & GLUE_FLAG_HALT
+		if (test_bit(GLUE_FLAG_HALT_BIT, &prGlueInfo->ulFlag)
 			|| kalIsResetting()
 			) {
 			DBGLOG(INIT, INFO, "%s should stop now...\n",
@@ -4685,9 +4685,8 @@ int main_thread(void *data)
 			nanSetMulticastListWorkQueueWrapper(prGlueInfo);
 #endif
 
-		if (prGlueInfo->ulFlag & GLUE_FLAG_HALT
-			|| kalIsResetting()
-			) {
+		if (test_bit(GLUE_FLAG_HALT_BIT, &prGlueInfo->ulFlag)
+			|| kalIsResetting()) {
 			DBGLOG(INIT, INFO, "%s should stop now...\n",
 			       KAL_GET_CURRENT_THREAD_NAME());
 			break;
@@ -4743,9 +4742,8 @@ int main_thread(void *data)
 			prGlueInfo->prAdapter->fgIsIntEnable = FALSE;
 			/* wlanISR(prGlueInfo->prAdapter, TRUE); */
 
-			if (prGlueInfo->ulFlag & GLUE_FLAG_HALT
-				|| kalIsResetting()
-				) {
+			if (test_bit(GLUE_FLAG_HALT_BIT, &prGlueInfo->ulFlag) ||
+					kalIsResetting()) {
 				/* Should stop now... skip pending interrupt */
 				DBGLOG(INIT, INFO,
 					"ignore pending interrupt\n");
@@ -7607,7 +7605,7 @@ void kalFreeTxMsduWorker(struct work_struct *work)
 			      rTxMsduFreeWork);
 	prAdapter = prGlueInfo->prAdapter;
 
-	if (prGlueInfo->ulFlag & GLUE_FLAG_HALT)
+	if (test_bit(GLUE_FLAG_HALT_BIT, &prGlueInfo->ulFlag))
 		return;
 
 	KAL_ACQUIRE_MUTEX(prAdapter, MUTEX_TX_DATA_DONE_QUE);
@@ -8242,7 +8240,7 @@ void kalPerMonHandler(IN struct ADAPTER *prAdapter,
 #endif
 	uint32_t u4BoostCpuTh = prAdapter->rWifiVar.u4BoostCpuTh;
 
-	if (prGlueInfo->ulFlag & GLUE_FLAG_HALT)
+	if (test_bit(GLUE_FLAG_HALT_BIT, &prGlueInfo->ulFlag))
 		return;
 
 	prPerMonitor = &prAdapter->rPerMonitor;
@@ -10264,7 +10262,7 @@ static void kal_bat_volt_notifier_callback(unsigned int volt)
 			"volt = %d, wlan not start", volt);
 		return;
 	}
-	if (prGlueInfo->ulFlag & GLUE_FLAG_HALT) {
+	if (test_bit(GLUE_FLAG_HALT_BIT, &prGlueInfo->ulFlag)) {
 		DBGLOG(NIC, ERROR, "volt = %d, Wi-Fi is stopped", volt);
 		fgIsTxPowerDecreased = FALSE;
 		return;
