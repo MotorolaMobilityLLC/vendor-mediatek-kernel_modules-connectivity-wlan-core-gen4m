@@ -2868,6 +2868,16 @@ struct COUNTRY_POWER_LIMIT_TABLE_CONFIGURATION
 	}
 };
 #else
+#ifdef MOTO_DYNAMIC_TX_PWR
+struct COUNTRY_POWER_LIMIT_TABLE_CONFIGURATION
+	g_rRlmPowerLimitConfiguration[] = {
+
+	/*Default*/
+	{	{0, 0}
+		, 165, {63, 63, 63, 63, 63, 63, 63, 63, 63}
+	}
+};
+#else
 struct COUNTRY_POWER_LIMIT_TABLE_CONFIGURATION
 	g_rRlmPowerLimitConfiguration[] = {
 
@@ -3209,6 +3219,7 @@ struct COUNTRY_POWER_LIMIT_GROUP_TABLE arSupportCountryPowerLmtGrps[] = {
 		(sizeof(arSupportCountryPowerLmtGrps) \
 			/ sizeof(struct COUNTRY_POWER_LIMIT_GROUP_TABLE))
 };
+#endif
 #endif
 
 /*******************************************************************************
