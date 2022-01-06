@@ -3013,14 +3013,16 @@ p2pFuncDisconnect(IN struct ADAPTER *prAdapter,
 				prP2pRoleFsmInfo->ucRoleIndex, prStaRec, FALSE);
 
 #if (CFG_SUPPORT_DFS_MASTER == 1)
-			/* restore DFS channels table */
-			wlanUpdateDfsChannelTable(prAdapter->prGlueInfo,
-				-1, /* p2p role index */
-				0, /* primary channel */
-				0, /* bandwidth */
-				0, /* sco */
-				0, /* center frequency */
-				0 /* eBand */);
+			if (!aisGetConnectedBssInfo(prAdapter)) {
+				/* restore DFS channels table */
+				wlanUpdateDfsChannelTable(prAdapter->prGlueInfo,
+					-1, /* p2p role index */
+					0, /* primary channel */
+					0, /* bandwidth */
+					0, /* sco */
+					0, /* center frequency */
+					0 /* eBand */);
+			}
 #endif
 		} else {
 			struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo =
