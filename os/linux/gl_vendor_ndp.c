@@ -661,6 +661,8 @@ nanNdiDeleteHandler(struct GLUE_INFO *prGlueInfo, struct nlattr **tb) {
 	return WLAN_STATUS_SUCCESS;
 }
 
+
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Handle NDP initiator request vendor cmd.
@@ -678,8 +680,8 @@ nanNdpInitiatorReqHandler(struct GLUE_INFO *prGlueInfo, struct nlattr **tb) {
 	struct NanDataReqReceive rDataRcv;
 	uint32_t rStatus = WLAN_STATUS_SUCCESS;
 	uint8_t aucPassphrase[64];
-	uint8_t aucSalt[] = { 0x00, 0x01, 0x2b, 0x9c, 0x45, 0x0f, 0x66,
-				 0x71, 0x02, 0x90, 0x4c, 0x12, 0xd0, 0x01 };
+	uint8_t aucSalt[] = { 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00,
+				 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
 
 	kalMemZero(&rNanCmdDataRequest, sizeof(rNanCmdDataRequest));
 
@@ -739,6 +741,11 @@ nanNdpInitiatorReqHandler(struct GLUE_INFO *prGlueInfo, struct nlattr **tb) {
 				tb[MTK_WLAN_VENDOR_ATTR_NDP_PASSPHRASE]),
 				nla_len(
 				tb[MTK_WLAN_VENDOR_ATTR_NDP_PASSPHRASE]));
+				kalMemCopy(aucSalt + 2,
+				g_aucNanServiceId, 6);
+				kalMemCopy(aucSalt + 8,
+				rNanCmdDataRequest.aucResponderDataAddress,
+				6);
 				dumpMemory8(
 				aucPassphrase, sizeof(aucPassphrase));
 				dumpMemory8(
@@ -836,8 +843,26 @@ nanNdpResponderReqHandler(struct GLUE_INFO *prGlueInfo, struct nlattr **tb) {
 	struct _NAN_CMD_DATA_RESPONSE rNanCmdDataResponse;
 	uint32_t rStatus = WLAN_STATUS_SUCCESS;
 	uint8_t aucPassphrase[64];
-	uint8_t aucSalt[] = { 0x00, 0x01, 0x2b, 0x9c, 0x45, 0x0f, 0x66,
-				 0x71, 0x02, 0x90, 0x4c, 0x12, 0xd0, 0x01 };
+	uint8_t aucSalt[] = { 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00,
+				 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
+	struct BSS_INFO *prBssInfo;
+	struct _NAN_SPECIFIC_BSS_INFO_T *prNanSpecificBssInfo;
+
+	/* Get BSS info */
+	prNanSpecificBssInfo = nanGetSpecificBssInfo(
+		prGlueInfo->prAdapter,
+		NAN_BSS_INDEX_BAND0);
+	if (prNanSpecificBssInfo == NULL) {
+		DBGLOG(NAN, ERROR, "prNanSpecificBssInfo is null\n");
+		return -EINVAL;
+	}
+	prBssInfo = GET_BSS_INFO_BY_INDEX(
+			prGlueInfo->prAdapter,
+			prNanSpecificBssInfo->ucBssIndex);
+	if (prBssInfo == NULL) {
+		DBGLOG(NAN, ERROR, "prBssInfo is null\n");
+		return -EINVAL;
+	}
 
 	kalMemZero(&rNanCmdDataResponse, sizeof(rNanCmdDataResponse));
 	/* Decision status */
@@ -947,6 +972,11 @@ nanNdpResponderReqHandler(struct GLUE_INFO *prGlueInfo, struct nlattr **tb) {
 		kalMemCopy(aucPassphrase,
 			   nla_data(tb[MTK_WLAN_VENDOR_ATTR_NDP_PASSPHRASE]),
 			   nla_len(tb[MTK_WLAN_VENDOR_ATTR_NDP_PASSPHRASE]));
+		kalMemCopy(aucSalt + 2,
+				g_aucNanServiceId, 6);
+		kalMemCopy(aucSalt + 8,
+		prBssInfo->aucOwnMacAddr,
+		6);
 		dumpMemory8(aucPassphrase, sizeof(aucPassphrase));
 		dumpMemory8(aucSalt, sizeof(aucSalt));
 		PKCS5_PBKDF2_HMAC(

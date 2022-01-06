@@ -359,6 +359,9 @@ nanPublishRequest(struct ADAPTER *prAdapter, struct NanPublishRequest *msg) {
 	sha256_done(&r_SHA_256_state, auc_tk);
 	kalMemCopy(prPublishReq->service_name_hash, auc_tk,
 		   NAN_SERVICE_HASH_LENGTH);
+	kalMemCopy(g_aucNanServiceId,
+			prPublishReq->service_name_hash,
+			6);
 	nanUtilDump(prAdapter, "service hash", auc_tk, NAN_SERVICE_HASH_LENGTH);
 
 	prPublishReq->service_specific_info_len =
@@ -659,7 +662,9 @@ nanSubscribeRequest(struct ADAPTER *prAdapter,
 	sha256_done(&r_SHA_256_state, auc_tk);
 	kalMemCopy(prSubscribeReq->service_name_hash, auc_tk,
 		   NAN_SERVICE_HASH_LENGTH);
-
+	kalMemCopy(g_aucNanServiceId,
+			prSubscribeReq->service_name_hash,
+			6);
 	prSubscribeReq->service_specific_info_len =
 		msg->service_specific_info_len;
 	if (prSubscribeReq->service_specific_info_len >

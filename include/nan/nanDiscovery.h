@@ -10,6 +10,7 @@
 #if CFG_SUPPORT_NAN
 
 extern uint8_t g_u2IndPubId;
+extern uint8_t g_aucNanServiceId[6];
 
 struct NAN_DISCOVERY_EVENT {
 	uint16_t u2SubscribeID;

@@ -53,7 +53,7 @@ uint8_t g_enableNAN = TRUE;
 uint8_t g_disableNAN = TRUE;
 uint8_t g_deEvent = FALSE;
 uint8_t g_aucNanServiceName[NAN_MAX_SERVICE_NAME_LEN];
-
+uint8_t g_aucNanServiceId[6];
 
 /*******************************************************************************
  *                                 M A C R O S
