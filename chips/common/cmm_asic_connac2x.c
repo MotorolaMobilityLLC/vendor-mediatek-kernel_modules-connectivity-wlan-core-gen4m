@@ -602,7 +602,7 @@ void asicConnac2xWfdmaTxRingBasePtrExtCtrl(
 			&u4RegValue);
 
 	phy_addr_ext |= u4RegValue;
-	DBGLOG(HAL, INFO, "phy_addr_ext=0x%x\n", phy_addr_ext);
+	DBGLOG(HAL, TRACE, "phy_addr_ext=0x%x\n", phy_addr_ext);
 
 	HAL_MCR_WR(prAdapter, tx_ring->hw_cnt_addr,
 			phy_addr_ext);
@@ -630,7 +630,7 @@ void asicConnac2xWfdmaRxRingBasePtrExtCtrl(
 			&u4RegValue);
 
 	phy_addr_ext |= u4RegValue;
-	DBGLOG(HAL, INFO, "phy_addr_ext=0x%x\n", phy_addr_ext);
+	DBGLOG(HAL, TRACE, "phy_addr_ext=0x%x\n", phy_addr_ext);
 
 	HAL_MCR_WR(prAdapter, rx_ring->hw_cnt_addr,
 			phy_addr_ext);
