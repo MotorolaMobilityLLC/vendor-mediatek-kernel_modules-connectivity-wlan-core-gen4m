@@ -66,7 +66,7 @@ struct wpa_authenticator g_rNanWpaAuth;
 uint8_t g_aucNanSecAttrBuffer[NAN_IE_BUF_MAX_SIZE];
 
 uint8_t g_aucTmpKdeAttrBufffer[NAN_KDE_ATTR_BUF_SIZE];
-uint8_t g_aucInitiatorSecSmInfo[NAN_AUTH_TOKEN_LEN];
+uint8_t g_aucAuthTokenBuf[NAN_AUTH_TOKEN_LEN];
 uint8_t g_aucMicMaterialBuffer[NAN_MIC_BUF_SIZE];
 
 
@@ -3017,10 +3017,10 @@ nanSecNotifyMsgBodyRdy(IN struct _NAN_NDP_INSTANCE_T *prNdp,
 	*pu4SmGetMsgBodyLen = u4TxMsgLen;
 
 	if (u1SrcMsg == NAN_SEC_M1) {
-		memset(g_aucInitiatorSecSmInfo, 0, NAN_AUTH_TOKEN_LEN);
+		memset(g_aucAuthTokenBuf, 0, NAN_AUTH_TOKEN_LEN);
 
 		prNdp->prInitiatorSecSmInfo->pu1AuthTokenBuf =
-			g_aucInitiatorSecSmInfo;
+			g_aucAuthTokenBuf;
 		if (prNdp->prInitiatorSecSmInfo->pu1AuthTokenBuf == NULL) {
 			DBGLOG(NAN, ERROR,
 			       "[%s] os_zalloc failed for pu1AuthTokenBuf\n",
@@ -3050,13 +3050,10 @@ nanSecNotifyMsgBodyRdy(IN struct _NAN_NDP_INSTANCE_T *prNdp,
 					return WLAN_STATUS_FAILURE;
 				}
 
-				if (prNdp->prResponderSecSmInfo
-					    ->pu1AuthTokenBuf != NULL)
-					os_free(prNdp->prResponderSecSmInfo
-							->pu1AuthTokenBuf);
-
+				memset(g_aucAuthTokenBuf, 0,
+					NAN_AUTH_TOKEN_LEN);
 				prNdp->prResponderSecSmInfo->pu1AuthTokenBuf =
-					os_zalloc(NAN_AUTH_TOKEN_LEN);
+					g_aucAuthTokenBuf;
 				if (prNdp->prResponderSecSmInfo
 					    ->pu1AuthTokenBuf == NULL) {
 					DBGLOG(NAN, ERROR,
@@ -3253,10 +3250,8 @@ uint32_t
 nanSecStaSmBufReset(struct wpa_sm *sm) {
 	DBGLOG(NAN, INFO, "[%s] Enter\n", __func__);
 
-	os_free(sm->pu1AuthTokenBuf);
 	sm->pu1AuthTokenBuf = NULL;
 
-	os_free(sm->pu1M3MicMaterialBuf);
 	sm->pu1M3MicMaterialBuf = NULL;
 	sm->u4M3MicMaterialLen = 0;
 
@@ -3329,9 +3324,6 @@ nanSecMicCalApSmStep(struct wpa_state_machine *sm) /* Send M1, M3 */
 				    sizeof(struct _NAN_SEC_KDE_ATTR_HDR));
 
 		/* Gen (auth token||M3 body) */
-		if (sm->pu1M3MicMaterialBuf != NULL)
-			os_free(sm->pu1M3MicMaterialBuf);
-
 		rStatus = nanSecGenM3MicMaterial(
 			sm->pu1AuthTokenBuf, sm->pu1GetTxMsgBodyBuf,
 			sm->u4GetTxMsgBodyLen, &sm->pu1M3MicMaterialBuf,
@@ -3382,7 +3374,6 @@ nanSecMicCalApSmStep(struct wpa_state_machine *sm) /* Send M1, M3 */
 		sm->u4GetTxMsgBodyLen = 0;
 		sm->pu1GetTxMsgKdeBuf = NULL;
 
-		os_free(sm->pu1M3MicMaterialBuf);
 		sm->pu1M3MicMaterialBuf = NULL;
 		sm->u4M3MicMaterialLen = 0;
 
@@ -3417,10 +3408,8 @@ nanSecApSmBufReset(struct wpa_state_machine *sm) {
 	if (sm->pu1TmpKdeAttrBuf != NULL)
 		dumpMemory8(sm->pu1TmpKdeAttrBuf, sm->u4TmpKdeAttrLen);
 
-	os_free(sm->pu1AuthTokenBuf);
 	sm->pu1AuthTokenBuf = NULL;
 
-	os_free(sm->pu1M3MicMaterialBuf);
 	sm->pu1M3MicMaterialBuf = NULL;
 	sm->u4M3MicMaterialLen = 0;
 

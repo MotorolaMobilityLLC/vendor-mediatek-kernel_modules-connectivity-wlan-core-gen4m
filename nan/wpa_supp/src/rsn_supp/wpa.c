@@ -1362,7 +1362,6 @@ wpa_supplicant_verify_eapol_key_mic(struct wpa_sm *sm,
 					  sm->u4SelCipherType,
 					  sm->pu1M3MicMaterialBuf,
 					  sm->u4M3MicMaterialLen, key->key_mic);
-		os_free(sm->pu1M3MicMaterialBuf);
 		sm->pu1M3MicMaterialBuf = NULL;
 		sm->u4M3MicMaterialLen = 0;
 #else
@@ -1397,7 +1396,6 @@ wpa_supplicant_verify_eapol_key_mic(struct wpa_sm *sm,
 				sm->ptk.kck, sm->ptk.kck_len,
 				sm->u4SelCipherType, sm->pu1M3MicMaterialBuf,
 				sm->u4M3MicMaterialLen, key->key_mic);
-			os_free(sm->pu1M3MicMaterialBuf);
 			sm->pu1M3MicMaterialBuf = NULL;
 			sm->u4M3MicMaterialLen = 0;
 		} else {
