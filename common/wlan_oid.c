@@ -12939,8 +12939,6 @@ wlanoidSetNANMode(IN struct ADAPTER *prAdapter, IN void *pvSetBuffer,
 	DBGLOG(INIT, INFO, "Set nan enable[%ld]\n", *prEnable);
 
 	if (*prEnable) {
-		nanSchedInit(prAdapter);
-		nanDiscInit(prAdapter);
 		if (nanLaunch(prAdapter->prGlueInfo)) {
 			/* ToDo:: ASSERT */
 			if (!prAdapter->fgIsNANRegistered) {

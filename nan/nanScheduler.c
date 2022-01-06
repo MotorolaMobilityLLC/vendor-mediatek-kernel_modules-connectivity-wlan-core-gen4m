@@ -415,10 +415,10 @@ uint8_t g_aucNanIEBuffer[NAN_IE_BUF_MAX_SIZE];
 
 uint32_t g_u4MaxChnlSwitchTimeUs = 8000;
 
-struct _NAN_CRB_NEGO_CTRL_T g_rNanSchNegoCtrl;
+struct _NAN_CRB_NEGO_CTRL_T g_rNanSchNegoCtrl = {0};
 struct _NAN_PEER_SCHEDULE_RECORD_T g_arNanPeerSchedRecord[NAN_MAX_CONN_CFG];
-struct _NAN_TIMELINE_MGMT_T g_rNanTimelineMgmt;
-struct _NAN_SCHEDULER_T g_rNanScheduler;
+struct _NAN_TIMELINE_MGMT_T g_rNanTimelineMgmt = {0};
+struct _NAN_SCHEDULER_T g_rNanScheduler = {0};
 
 union _NAN_BAND_CHNL_CTRL g_rNullChnl = {.u4RawData = 0 };
 
@@ -1278,6 +1278,8 @@ nanSchedInit(struct ADAPTER *prAdapter) {
 	prNanScheduler = nanGetScheduler(prAdapter);
 	prNanTimelineMgmt = nanGetTimelineMgmt(prAdapter);
 
+	DBGLOG(NAN, INFO, "IN, Init:%d\n", prNanScheduler->fgInit);
+
 	if (prNanScheduler->fgInit == FALSE) {
 		for (u4Idx = 0; u4Idx < NAN_MAX_CONN_CFG; u4Idx++) {
 			prPeerSchRecord =
@@ -1338,6 +1340,24 @@ nanSchedInit(struct ADAPTER *prAdapter) {
 	nanSchedReleaseAllPeerSchDesc(prAdapter);
 
 	nanSchedConfigPhyParams(prAdapter);
+
+	return WLAN_STATUS_SUCCESS;
+}
+
+uint32_t
+nanSchedUninit(struct ADAPTER *prAdapter) {
+	struct _NAN_SCHEDULER_T *prNanScheduler;
+	struct _NAN_CRB_NEGO_CTRL_T *prNegoCtrl;
+
+	prNanScheduler = nanGetScheduler(prAdapter);
+	prNegoCtrl = nanGetNegoControlBlock(prAdapter);
+
+	prNanScheduler->fgInit = FALSE;
+
+	cnmTimerStopTimer(prAdapter,
+		&prNegoCtrl->rCrbNegoDispatchTimer);
+	cnmTimerStopTimer(prAdapter,
+		&prNanScheduler->rAvailAttrCtrlResetTimer);
 
 	return WLAN_STATUS_SUCCESS;
 }
@@ -3216,10 +3236,11 @@ nanSchedPeerPrepareNegoState(struct ADAPTER *prAdapter, uint8_t *pucNmiAddr) {
 	prNegoCtrl->i4InNegoContext++;
 
 	DBGLOG(NAN, INFO,
-	       "[%02x:%02x:%02x:%02x:%02x:%02x] i4InNegoContext:%d (%d)\n",
+	       "[%02x:%02x:%02x:%02x:%02x:%02x] i4InNegoContext:%d (%d) state(%d)\n",
 	       pucNmiAddr[0], pucNmiAddr[1], pucNmiAddr[2], pucNmiAddr[3],
 	       pucNmiAddr[4], pucNmiAddr[5], prPeerSchRecord->i4InNegoContext,
-	       prNegoCtrl->i4InNegoContext);
+	       prNegoCtrl->i4InNegoContext,
+	       prNegoCtrl->eState);
 }
 
 void
@@ -3236,10 +3257,11 @@ nanSchedPeerCompleteNegoState(struct ADAPTER *prAdapter, uint8_t *pucNmiAddr) {
 	prNegoCtrl->i4InNegoContext--;
 
 	DBGLOG(NAN, INFO,
-	       "[%02x:%02x:%02x:%02x:%02x:%02x] i4InNegoContext:%d (%d)\n",
+	       "[%02x:%02x:%02x:%02x:%02x:%02x] i4InNegoContext:%d (%d) state(%d)\n",
 	       pucNmiAddr[0], pucNmiAddr[1], pucNmiAddr[2], pucNmiAddr[3],
 	       pucNmiAddr[4], pucNmiAddr[5], prPeerSchRecord->i4InNegoContext,
-	       prNegoCtrl->i4InNegoContext);
+	       prNegoCtrl->i4InNegoContext,
+	       prNegoCtrl->eState);
 }
 
 unsigned char
@@ -5014,16 +5036,17 @@ nanSchedNegoStop(struct ADAPTER *prAdapter) {
 
 	prPeerSchRecord =
 		nanSchedGetPeerSchRecord(prAdapter, prNegoCtrl->u4SchIdx);
-	if (prPeerSchRecord->fgActive && !prPeerSchRecord->fgUseDataPath &&
-	    !prPeerSchRecord->fgUseRanging) {
-		nanSchedReleasePeerSchedRecord(prAdapter, prNegoCtrl->u4SchIdx);
-	}
 
 	prNegoCtrl->eState = ENUM_NAN_CRB_NEGO_STATE_IDLE;
 	prNanTimelineMgmt->fgChkCondAvailability = FALSE;
 
 	nanSchedNegoDumpState(prAdapter, (uint8_t *) __func__, __LINE__);
 	nanSchedPeerCompleteNegoState(prAdapter, prPeerSchRecord->aucNmiAddr);
+
+	if (prPeerSchRecord->fgActive && !prPeerSchRecord->fgUseDataPath &&
+	    !prPeerSchRecord->fgUseRanging) {
+		nanSchedReleasePeerSchedRecord(prAdapter, prNegoCtrl->u4SchIdx);
+	}
 
 	cnmTimerStopTimer(prAdapter, &(prNegoCtrl->rCrbNegoDispatchTimer));
 	if (prNegoCtrl->ucNegoTransNum > 0)

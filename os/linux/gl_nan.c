@@ -749,6 +749,12 @@ glRegisterNAN(struct GLUE_INFO *prGlueInfo, const char *prDevName)
 		return FALSE;
 	}
 
+	/* initialize NAN Scheduler */
+	nanSchedInit(prAdapter);
+
+	/* initialize NAN Discovery Engine */
+	nanDiscInit(prAdapter);
+
 	/* initialize NAN Data Engine */
 
 	prNANInfo = prAdapter->prGlueInfo->aprNANDevInfo[NAN_BSS_INDEX_BAND0];
@@ -830,6 +836,11 @@ glUnregisterNAN(struct GLUE_INFO *prGlueInfo)
 
 	prAdapter = prGlueInfo->prAdapter;
 
+	if (!prAdapter) {
+		DBGLOG(NAN, ERROR, "prAdapter error\n");
+		return FALSE;
+	}
+
 	if (prAdapter->fgIsNanSendRequestToCnm)
 		nanDevSendAbortRequestToCnm(prAdapter);
 
@@ -844,6 +855,8 @@ glUnregisterNAN(struct GLUE_INFO *prGlueInfo)
 	nan_sec_hostapd_deinit();
 	/* Clear pending cipher suite */
 	nanSecFlushCipherList();
+	/* uninitialize NAN Scheduler */
+	nanSchedUninit(prAdapter);
 
 	/* 4 <1> Uninit NAN dev FSM
 	 * Uninit NAN device FSM
