@@ -85,6 +85,19 @@
 
 #endif /* CFG_SUPPORT_CONNAC2X == 1 */
 
+#if CFG_TRI_TX_RING
+/*
+ * 4 data ring:
+ * 1. ring0 (AC00~AC02 / AC30~AC32)
+ * 2. ring1 (AC10~AC12)
+ * 3. ring2 (AC20~AC22)
+ * 4. ring3 (AC03~AC33) (priority)
+ * fwdl ring
+ * cmd ring
+ */
+#define NUM_OF_TX_RING				(6+NUM_OF_WFDMA1_TX_RING)
+#define NUM_OF_RX_RING				(2+NUM_OF_WFDMA1_RX_RING)
+#else /* CFG_TRI_TX_RING */
 /*
  * 3 data ring (ring0 + ring1[DBDC] + ring2[priority])
  * fwdl ring
@@ -92,6 +105,7 @@
  */
 #define NUM_OF_TX_RING				(5+NUM_OF_WFDMA1_TX_RING)
 #define NUM_OF_RX_RING				(2+NUM_OF_WFDMA1_RX_RING)
+#endif /* CFG_TRI_TX_RING */
 
 #ifdef CONFIG_MTK_WIFI_HE160
 #define TX_RING_SIZE				1024
@@ -170,7 +184,11 @@
 #define HIF_CR4_FWDL_SECTION_NUM			1
 #define HIF_IMG_DL_STATUS_PORT_IDX			1
 
+#if CFG_TRI_TX_RING
+#define HIF_TX_INIT_CMD_PORT				TX_RING_FWDL_IDX_5
+#else
 #define HIF_TX_INIT_CMD_PORT				TX_RING_FWDL_IDX_4
+#endif /* CFG_TRI_TX_RING */
 
 #define HIF_TX_PAYLOAD_LENGTH				72
 
@@ -265,9 +283,16 @@ enum ENUM_TX_RING_IDX {
 	TX_RING_DATA0_IDX_0 = 0,
 	TX_RING_DATA1_IDX_1,
 	TX_RING_DATA2_IDX_2,
+#if CFG_TRI_TX_RING
+	TX_RING_DATA3_IDX_3,
+	TX_RING_CMD_IDX_4,
+	TX_RING_FWDL_IDX_5,
+	TX_RING_WA_CMD_IDX_6,
+#else
 	TX_RING_CMD_IDX_3,
 	TX_RING_FWDL_IDX_4,
 	TX_RING_WA_CMD_IDX_5,
+#endif /* CFG_TRI_TX_RING */
 };
 
 enum ENUM_RX_RING_IDX {

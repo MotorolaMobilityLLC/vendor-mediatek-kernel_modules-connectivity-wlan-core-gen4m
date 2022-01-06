@@ -649,11 +649,19 @@ void soc3_0asicConnac2xProcessTxInterrupt(IN struct ADAPTER *prAdapter)
 	rIntrStatus = (union WPDMA_INT_STA_STRUCT)prHifInfo->u4IntStatus;
 	if (rIntrStatus.field_conn2x_ext.wfdma1_tx_done_16)
 		halWpdmaProcessCmdDmaDone(prAdapter->prGlueInfo,
+#if CFG_TRI_TX_RING
+			TX_RING_FWDL_IDX_5);
+#else
 			TX_RING_FWDL_IDX_4);
+#endif
 
 	if (rIntrStatus.field_conn2x_ext.wfdma1_tx_done_17)
 		halWpdmaProcessCmdDmaDone(prAdapter->prGlueInfo,
+#if CFG_TRI_TX_RING
+			TX_RING_CMD_IDX_4);
+#else
 			TX_RING_CMD_IDX_3);
+#endif
 
 	if (rIntrStatus.field_conn2x_ext.wfdma1_tx_done_0) {
 		halWpdmaProcessDataDmaDone(prAdapter->prGlueInfo,

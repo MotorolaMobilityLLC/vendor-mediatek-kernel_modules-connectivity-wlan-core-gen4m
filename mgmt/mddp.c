@@ -81,7 +81,11 @@ struct mddp_drv_handle_t gMddpFunc = {
 *                           P R I V A T E   D A T A
 ********************************************************************************
 */
-#define MAC_ADDR_LEN            6
+#define MAC_ADDR_LEN		6
+
+#if CFG_TRI_TX_RING
+#define TX_DATA_RING_NUM	4
+#endif
 
 struct mddp_txd_t {
 	uint8_t version;
@@ -96,6 +100,13 @@ struct mddp_txd_t {
 	uint8_t txd_length;
 	uint8_t txd[0];
 } __packed;
+
+#if CFG_TRI_TX_RING
+struct mddp_info_t {
+	uint8_t status;
+	uint8_t ring_num;
+};
+#endif
 
 struct tag_bootmode {
 	u32 size;
@@ -358,6 +369,9 @@ int32_t mddpNotifyDrvTxd(IN struct ADAPTER *prAdapter,
 	struct BSS_INFO *prBssInfo = (struct BSS_INFO *) NULL;
 	struct net_device *prNetdev;
 	struct NETDEV_PRIVATE_GLUE_INFO *prNetDevPrivate;
+#if CFG_TRI_TX_RING
+	struct BUS_INFO *bus_info;
+#endif
 	uint32_t u32BufSize = 0;
 	uint8_t *buff = NULL;
 	int32_t ret = 0;
@@ -391,6 +405,9 @@ int32_t mddpNotifyDrvTxd(IN struct ADAPTER *prAdapter,
 			prAdapter->prGlueInfo, prStaRec->ucBssIndex);
 	prNetDevPrivate = (struct NETDEV_PRIVATE_GLUE_INFO *)
 			netdev_priv(prNetdev);
+#if CFG_TRI_TX_RING
+	bus_info = prAdapter->chip_info->bus_info;
+#endif
 
 	if (!prNetDevPrivate->ucMddpSupport) {
 		goto exit;
@@ -424,7 +441,14 @@ int32_t mddpNotifyDrvTxd(IN struct ADAPTER *prAdapter,
 	prMddpTxd->sta_mode = prStaRec->eStaType;
 	prMddpTxd->bss_id = prStaRec->ucBssIndex;
 	/* TODO: Create a new msg for DMASHDL BMP */
+#if CFG_TRI_TX_RING
+	if (bus_info->tx_ring0_data_idx != bus_info->tx_ring3_data_idx)
+		prMddpTxd->wmmset = prBssInfo->ucWmmQueSet % 3;
+	else
+		prMddpTxd->wmmset = prBssInfo->ucWmmQueSet % 2;
+#else
 	prMddpTxd->wmmset = prBssInfo->ucWmmQueSet % 2;
+#endif
 	kalMemCopy(prMddpTxd->nw_if_name, prNetdev->name,
 			sizeof(prMddpTxd->nw_if_name));
 	kalMemCopy(prMddpTxd->aucMacAddr, prStaRec->aucMacAddr, MAC_ADDR_LEN);
@@ -464,6 +488,9 @@ int32_t mddpNotifyWifiStatus(IN enum ENUM_MDDPW_DRV_INFO_STATUS status)
 {
 	struct mddpw_drv_notify_info_t *prNotifyInfo;
 	struct mddpw_drv_info_t *prDrvInfo;
+#if CFG_TRI_TX_RING
+	struct mddp_info_t *prMddpInfo;
+#endif
 	uint32_t u32BufSize = 0;
 	uint8_t *buff = NULL;
 	int32_t ret = 0, feature = 0;
@@ -473,9 +500,37 @@ int32_t mddpNotifyWifiStatus(IN enum ENUM_MDDPW_DRV_INFO_STATUS status)
 
 	if (gMddpWFunc.notify_drv_info) {
 		int32_t ret;
+#if CFG_TRI_TX_RING
+		u32BufSize = sizeof(struct mddpw_drv_notify_info_t) +
+			sizeof(struct mddpw_drv_info_t) +
+			sizeof(struct mddp_info_t);
+		buff = kalMemAlloc(u32BufSize, VIR_MEM_TYPE);
 
-		u32BufSize = (sizeof(struct mddpw_drv_notify_info_t) +
-			sizeof(struct mddpw_drv_info_t) + sizeof(bool));
+		if (buff == NULL) {
+			DBGLOG(NIC, ERROR, "Can't allocate buffer.\n");
+			return -1;
+		}
+		prNotifyInfo = (struct mddpw_drv_notify_info_t *) buff;
+		prNotifyInfo->version = 0;
+		prNotifyInfo->buf_len = sizeof(struct mddpw_drv_info_t) +
+				sizeof(struct mddp_info_t);
+		prNotifyInfo->info_num = 1;
+		prDrvInfo = (struct mddpw_drv_info_t *) &(prNotifyInfo->buf[0]);
+		prDrvInfo->info_id = MDDPW_DRV_INFO_NOTIFY_WIFI_ONOFF;
+		prDrvInfo->info_len = sizeof(struct mddp_info_t);
+		prMddpInfo = (struct mddp_info_t *) &(prDrvInfo->info[0]);
+		prMddpInfo->status = status;
+		prMddpInfo->ring_num = TX_DATA_RING_NUM;
+
+		ret = gMddpWFunc.notify_drv_info(prNotifyInfo);
+		DBGLOG(INIT, INFO, "power: %d, ret: %d, feature:%d, ring:%d.\n",
+			status, ret, feature, TX_DATA_RING_NUM);
+		kalMemFree(buff, VIR_MEM_TYPE, u32BufSize);
+
+#else /* CFG_TRI_TX_RING */
+		u32BufSize = sizeof(struct mddpw_drv_notify_info_t) +
+			sizeof(struct mddpw_drv_info_t) +
+			sizeof(bool);
 		buff = kalMemAlloc(u32BufSize, VIR_MEM_TYPE);
 
 		if (buff == NULL) {
@@ -494,8 +549,9 @@ int32_t mddpNotifyWifiStatus(IN enum ENUM_MDDPW_DRV_INFO_STATUS status)
 
 		ret = gMddpWFunc.notify_drv_info(prNotifyInfo);
 		DBGLOG(INIT, INFO, "power: %d, ret: %d, feature:%d.\n",
-		       status, ret, feature);
+			status, ret, feature);
 		kalMemFree(buff, VIR_MEM_TYPE, u32BufSize);
+#endif /* CFG_TRI_TX_RING */
 	} else {
 		DBGLOG(INIT, ERROR, "notify_drv_info is NULL.\n");
 		ret = -1;
@@ -615,7 +671,7 @@ int32_t mddpNotifyWifiOnEnd(void)
 
 	if (g_rSettings.rOps.clr)
 		g_rSettings.rOps.clr(&g_rSettings, g_rSettings.u4MdOnBit);
-#if (CFG_SUPPORT_CONNAC2X == 0)
+#if (CFG_SUPPORT_CONNAC2X == 0 || CFG_TRI_TX_RING == 1)
 	ret = mddpNotifyWifiStatus(MDDPW_DRV_INFO_STATUS_ON_END);
 #else
 	ret = mddpNotifyWifiStatus(MDDPW_DRV_INFO_STATUS_ON_END_QOS);

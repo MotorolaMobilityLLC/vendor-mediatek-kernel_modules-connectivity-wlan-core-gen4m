@@ -777,11 +777,19 @@ static void soc5_0asicConnac2xProcessTxInterrupt(
 	rIntrStatus = (union WPDMA_INT_STA_STRUCT)prHifInfo->u4IntStatus;
 	if (rIntrStatus.field_conn2x_single.wfdma0_tx_done_16)
 		halWpdmaProcessCmdDmaDone(
+#if CFG_TRI_TX_RING
+			prAdapter->prGlueInfo, TX_RING_FWDL_IDX_5);
+#else
 			prAdapter->prGlueInfo, TX_RING_FWDL_IDX_4);
+#endif
 
 	if (rIntrStatus.field_conn2x_single.wfdma0_tx_done_17)
 		halWpdmaProcessCmdDmaDone(
+#if CFG_TRI_TX_RING
+			prAdapter->prGlueInfo, TX_RING_CMD_IDX_4);
+#else
 			prAdapter->prGlueInfo, TX_RING_CMD_IDX_3);
+#endif
 
 	if (rIntrStatus.field_conn2x_single.wfdma0_tx_done_0) {
 		halWpdmaProcessDataDmaDone(

@@ -702,6 +702,9 @@ void halShowPdmaInfo(IN struct ADAPTER *prAdapter)
 		{"AP DATA0", prBus_info->tx_ring0_data_idx, true},
 		{"AP DATA1", prBus_info->tx_ring1_data_idx, true},
 		{"AP DATA2", prBus_info->tx_ring2_data_idx, true},
+#if CFG_TRI_TX_RING
+		{"AP DATA3", prBus_info->tx_ring3_data_idx, true},
+#endif
 		{"AP CMD", prBus_info->tx_ring_cmd_idx, true},
 		{"FWDL", prBus_info->tx_ring_fwdl_idx, true},
 		{"MD DATA0", 8, false},
