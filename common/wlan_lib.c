@@ -11908,9 +11908,7 @@ uint32_t wlanSetLowLatencyMode(
 			prAisBssInfo->ucBssIndex))
 		fgEnMode = TRUE; /* It will enable low latency mode */
 
-
 	if (fgEnMode != prAdapter->fgEnLowLatencyMode) {
-		prAdapter->fgEnLowLatencyMode = fgEnMode;
 		if (!fgEnMode && (MEDIA_STATE_CONNECTED
 			== kalGetMediaStateIndicated(prAdapter->prGlueInfo,
 			prAisBssInfo->ucBssIndex)))
@@ -11993,6 +11991,9 @@ uint32_t wlanSetLowLatencyMode(
 		#endif
 
 	}
+
+	if (fgEnMode != prAdapter->fgEnLowLatencyMode)
+		prAdapter->fgEnLowLatencyMode = fgEnMode;
 
 	DBGLOG(OID, INFO,
 		"LowLatency(gaming) fgEnMode=[%d]\n", fgEnMode);
