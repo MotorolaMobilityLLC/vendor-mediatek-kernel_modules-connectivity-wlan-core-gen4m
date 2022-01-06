@@ -82,6 +82,11 @@ static uint32_t nanNdpBufferNanAttrLists(struct ADAPTER *prAdapter,
  *         WLAN_STATUS_RESOURCES
  */
 /*----------------------------------------------------------------------------*/
+unsigned char
+nanGetFeatureIsSigma(struct ADAPTER *prAdapter) {
+	return prAdapter->rWifiVar.fgNanIsSigma;
+}
+
 static uint32_t
 nanNdpBufferNanAttrLists(struct ADAPTER *prAdapter, uint8_t *pucNanAttrList,
 			 uint16_t u2NanAttrListLength,
@@ -174,6 +179,7 @@ nanRetrieveAttrById(uint8_t *pucAttrList, uint16_t u2Length,
 
 		ucAttrId = NAN_GET_U8(pucPtr);
 		u2Length = NAN_GET_U16(pucPtr + 1);
+		DBGLOG(NAN, ERROR, "[%s] ucAttrId = %d\n", __func__, ucAttrId);
 
 		if (ucAttrId == ucTargetAttrId) {
 			prTargetAttr = (struct _NAN_ATTR_HDR_T *)pucPtr;
@@ -626,7 +632,8 @@ nanNdpeAttrUpdateNdp(IN struct ADAPTER *prAdapter,
 			    NAN_ATTR_NDPE_STATUS_OFFSET) ==
 			   NAN_ATTR_NDPE_STATUS_REJECTED) {
 			DBGLOG(NAN, WARN,
-			       "NAF Data Response: Being REJECTed\n");
+			       "NDP Response: Being REJECTed, reason = %d\n",
+			       prAttrNDPE->ucReasonCode);
 			return WLAN_STATUS_FAILURE;
 		}
 
@@ -753,6 +760,25 @@ nanNdpeAttrUpdateNdp(IN struct ADAPTER *prAdapter,
 		u2CountLen += MAC_ADDR_LEN;
 	}
 
+	DBGLOG(NAN, INFO, "[%s] NDPE TLV len = %d\n", __func__,
+		prAttrNDPE->u2Length - u2CountLen);
+	dumpMemory8(pucPivot, prAttrNDPE->u2Length - u2CountLen);
+
+	if (!nanGetFeatureIsSigma(prAdapter) &&
+		prAttrNDPE->u2Length > u2CountLen) {
+		if (prNDP->pucPeerAppInfo != NULL)
+			cnmMemFree(prAdapter, prNDP->pucPeerAppInfo);
+		prNDP->pucPeerAppInfo = cnmMemAlloc(
+			prAdapter, RAM_TYPE_BUF,
+			prAttrNDPE->u2Length - u2CountLen);
+		if (prNDP->pucPeerAppInfo != NULL) {
+			kalMemCopy(prNDP->pucPeerAppInfo,
+			   pucPivot, prAttrNDPE->u2Length - u2CountLen);
+			prNDP->u2PeerAppInfoLen =
+				prAttrNDPE->u2Length - u2CountLen;
+		}
+	}
+
 	/* 3.2 TLV parsing if there is still field */
 	while (prAttrNDPE->u2Length > u2CountLen) {
 		prTLV = (struct _NAN_ATTR_NDPE_GENERAL_TLV_T *)pucPivot;
@@ -775,11 +801,11 @@ nanNdpeAttrUpdateNdp(IN struct ADAPTER *prAdapter,
 				if (prNDP->fgIsInitiator == TRUE)
 					kalMemCopy(prNDP->aucRspInterfaceId,
 						   prIPV6TLV->aucInterfaceId,
-						   8);
+						   IPV6MACLEN);
 				else
 					kalMemCopy(prNDP->aucInterfaceId,
 						   prIPV6TLV->aucInterfaceId,
-						   8);
+						   IPV6MACLEN);
 			}
 
 			break;
@@ -1645,6 +1671,8 @@ nanNdpParseAttributes(struct ADAPTER *prAdapter,
 		switch (prNanAttr->ucAttrId) {
 		case NAN_ATTR_ID_NDP:
 			fgExistNDP = TRUE;
+			DBGLOG(NAN, ERROR, "[%s] NDP exist, fgExistNDPE= %d\n",
+				__func__, fgExistNDPE);
 
 			/* only parse NDP when support NDPE is turned off,
 			 * or NDPE is not there
@@ -1739,11 +1767,13 @@ nanNdpParseAttributes(struct ADAPTER *prAdapter,
 		case NAN_ATTR_ID_NDP_EXTENSION:
 			fgExistNDPE = TRUE;
 			/* only parse NDPE if option is turned on */
-			if (fgExistNDP == FALSE)
-				rStatus = nanNdpeAttrUpdateNdp(
-					prAdapter, eNanAction,
-					(struct _NAN_ATTR_NDPE_T *)prNanAttr,
-					prNDL, prNDP);
+
+			DBGLOG(NAN, INFO, "[%s] NDPE exist, fgExistNDP = %d\n",
+			__func__, fgExistNDP);
+			rStatus = nanNdpeAttrUpdateNdp(
+				prAdapter, eNanAction,
+				(struct _NAN_ATTR_NDPE_T *)prNanAttr,
+				prNDL, prNDP);
 			break;
 		default:
 			break;
@@ -1831,9 +1861,11 @@ nanDataEngineNDPAttrLength(struct ADAPTER *prAdapter,
 	u2AttrLength = OFFSET_OF(struct _NAN_ATTR_NDP_T, ucPublishID);
 
 	if (prNDP != NULL) {
-		if (nanDataEngineNDPECheck(prAdapter, prNDP->fgSupportNDPE) ==
-		    TRUE)
+		if (nanDataEngineNDPECheck(prAdapter, prNDP->fgSupportNDPE)) {
+			DBGLOG(NAN, INFO, "[%s] NDPE instead\n",
+				__func__);
 			return 0;
+		}
 
 		u2AttrLength += prNDP->u2AppInfoLen;
 
@@ -3231,61 +3263,75 @@ nanDataEngineNDPEAttrLength(IN struct ADAPTER *prAdapter,
 		if (nanDataEngineNDPECheck(prAdapter, prNDP->fgSupportNDPE) ==
 		    FALSE) {
 			DBGLOG(NAN, INFO,
-			       "prNDP->fgSupportNDPE %d nanGetFeatureNDPE %d\n",
-			       prNDP->fgSupportNDPE,
-			       nanGetFeatureNDPE(prAdapter));
+				"[%s] Do not carry NDPE Attr. fgSupportNDPE %d nanGetFeatureNDPE %d\n",
+				 __func__,
+				prNDP->fgSupportNDPE,
+				nanGetFeatureNDPE(prAdapter));
 			return 0;
 		}
 
-		if (prNDP->fgCarryIPV6 == TRUE)
-			u2AttrLength += sizeof(
+		DBGLOG(NAN, INFO,
+		   "[%s] Append AppInfoLen = %d, fgIpv6 = %d\n",
+		   __func__,
+		   prNDP->u2AppInfoLen,
+		   prNDP->fgCarryIPV6);
+
+		if (!nanGetFeatureIsSigma(prAdapter)) {
+			if (prNDP->fgCarryIPV6 == TRUE)
+				u2AttrLength += sizeof(
 				struct _NAN_ATTR_NDPE_IPV6_LINK_LOCAL_TLV_T);
+
+			if (prNDP->u2AppInfoLen > 0)
+				u2AttrLength += prNDP->u2AppInfoLen;
+		} else {
 #if 0
-		if (prNDP->u2AppInfoLen > 0)
-			u2AttrLength +=
-				OFFSET_OF(
-				  struct _NAN_ATTR_NDPE_WFA_SERVICE_INFO_TLV_T,
-				  aucBody);
-				+ prNDP->u2AppInfoLen;
-
-		if (prNDP->u2OtherAppInfoLen > 0)
-			u2AttrLength +=
-				OFFSET_OF(
-				  struct _NAN_ATTR_NDPE_SERVICE_INFO_TLV_T,
-				  aucBody)
-				+ prNDP->u2OtherAppInfoLen;
-#else
-		if (prNDP->eCurrentNDPProtocolState ==
-			    NDP_INITIATOR_TX_DP_REQUEST ||
-		    prNDP->eCurrentNDPProtocolState ==
-			    NDP_RESPONDER_TX_DP_RESPONSE) {
-			if (nanDataEngineServiceInfoCheck(prAdapter, prNDP) ==
-			    TRUE) {
-				uint8_t i = 0;
-
-				u2AttrLength += OFFSET_OF(
+			if (prNDP->u2AppInfoLen > 0)
+				u2AttrLength +=
+					OFFSET_OF(
 					struct
-					_NAN_ATTR_NDPE_WFA_SVC_INFO_TLV_T,
-					aucBody);
-				for (i = 0;
-				     i < sizeof(txServInfoSSITable) /
-						 sizeof(struct
-							_APPEND_ATTR_ENTRY_T);
-				     i++) {
-					if (txServInfoSSITable[i]
-						.pfnCalculateVariableAttrLen) {
-						u2AttrLength +=
+					_NAN_ATTR_NDPE_WFA_SERVICE_INFO_TLV_T,
+					aucBody)
+					+ prNDP->u2AppInfoLen;
+
+			if (prNDP->u2OtherAppInfoLen > 0)
+				u2AttrLength +=
+					OFFSET_OF(
+					struct
+					_NAN_ATTR_NDPE_SERVICE_INFO_TLV_T,
+					aucBody)
+					+ prNDP->u2OtherAppInfoLen;
+#else
+		if ((prNDP->eCurrentNDPProtocolState ==
+			NDP_INITIATOR_TX_DP_REQUEST ||
+			prNDP->eCurrentNDPProtocolState ==
+			NDP_RESPONDER_TX_DP_RESPONSE) &&
+			nanDataEngineServiceInfoCheck(prAdapter,
+			prNDP) == TRUE) {
+			uint8_t i = 0;
+
+			u2AttrLength += OFFSET_OF(
+			struct
+			_NAN_ATTR_NDPE_WFA_SVC_INFO_TLV_T,
+			aucBody);
+			for (i = 0;
+				i <
+				sizeof(txServInfoSSITable) /
+				sizeof(struct
+				_APPEND_ATTR_ENTRY_T);
+				 i++) {
+				if (txServInfoSSITable[i]
+					.pfnCalculateVariableAttrLen) {
+					u2AttrLength +=
 						txServInfoSSITable[i]
-						  .pfnCalculateVariableAttrLen(
-						  prAdapter,
-						  prNDL,
-						  prNDP);
-					}
+						.pfnCalculateVariableAttrLen(
+						prAdapter,
+						prNDL,
+						prNDP);
 				}
 			}
 		}
-
 #endif
+		}
 		switch (prNDP->eCurrentNDPProtocolState) {
 		case NDP_INITIATOR_TX_DP_REQUEST:
 			u2AttrLength++; /* for Publish ID */
@@ -3403,209 +3449,229 @@ nanDataEngineNDPEAttrAppendImpl(IN struct ADAPTER *prAdapter,
 
 	u2AttrLength = nanDataEngineNDPEAttrLength(prAdapter, prNDL, prNDP);
 
-	if (u2AttrLength != 0) {
-		prAttrNDPE->ucAttrId = NAN_ATTR_ID_NDP_EXTENSION;
-		prAttrNDPE->u2Length =
-			u2AttrLength -
-			OFFSET_OF(struct _NAN_ATTR_NDPE_T, ucDialogToken);
+	if (u2AttrLength == 0)
+		return;
 
-		if (prNDP == NULL) {
-			prAttrNDPE->ucDialogToken =
-				prPeerAttrNDPE->ucDialogToken;
-			prAttrNDPE->ucTypeStatus = ucTypeStatus;
-			prAttrNDPE->ucReasonCode = ucReasonCode;
+	prAttrNDPE->ucAttrId = NAN_ATTR_ID_NDP_EXTENSION;
+	prAttrNDPE->u2Length =
+		u2AttrLength -
+		OFFSET_OF(struct _NAN_ATTR_NDPE_T, ucDialogToken);
+
+	if (prNDP == NULL) {
+		prAttrNDPE->ucDialogToken =
+			prPeerAttrNDPE->ucDialogToken;
+		prAttrNDPE->ucTypeStatus = ucTypeStatus;
+		prAttrNDPE->ucReasonCode = ucReasonCode;
+		COPY_MAC_ADDR(prAttrNDPE->aucInitiatorNDI,
+			      prPeerAttrNDPE->aucInitiatorNDI);
+		prAttrNDPE->ucNDPID = prPeerAttrNDPE->ucNDPID;
+		prAttrNDPE->ucNDPEControl = 0;
+	} else {
+		prAttrNDPE->ucDialogToken = prNDP->ucDialogToken;
+		prAttrNDPE->ucTypeStatus = prNDP->ucTxNextTypeStatus;
+		prAttrNDPE->ucReasonCode = prNDP->ucReasonCode;
+
+		if (prNDP->eNDPRole == NAN_PROTOCOL_INITIATOR)
 			COPY_MAC_ADDR(prAttrNDPE->aucInitiatorNDI,
-				      prPeerAttrNDPE->aucInitiatorNDI);
-			prAttrNDPE->ucNDPID = prPeerAttrNDPE->ucNDPID;
-			prAttrNDPE->ucNDPEControl = 0;
-		} else {
-			prAttrNDPE->ucDialogToken = prNDP->ucDialogToken;
-			prAttrNDPE->ucTypeStatus = prNDP->ucTxNextTypeStatus;
-			prAttrNDPE->ucReasonCode = prNDP->ucReasonCode;
+				      prNDP->aucLocalNDIAddr);
 
+		else
+			COPY_MAC_ADDR(prAttrNDPE->aucInitiatorNDI,
+				      prNDP->aucPeerNDIAddr);
+
+		prAttrNDPE->ucNDPID = prNDP->ucNDPID;
+
+		prAttrNDPE->ucNDPEControl = 0;
+		if (prNDP->fgConfirmRequired)
+			prAttrNDPE->ucNDPEControl |=
+				NAN_ATTR_NDPE_CTRL_CONFIRM_REQUIRED;
+		if (prNDP->fgSecurityRequired)
+			prAttrNDPE->ucNDPEControl |=
+				NAN_ATTR_NDPE_CTRL_SECURITY_PRESENT;
+		if (prNDP->eCurrentNDPProtocolState ==
+		    NDP_INITIATOR_TX_DP_REQUEST)
+			prAttrNDPE->ucNDPEControl |=
+				NAN_ATTR_NDPE_CTRL_PUBLISHID_PRESENT;
+		if (prNDP->eCurrentNDPProtocolState ==
+		    NDP_RESPONDER_TX_DP_RESPONSE) {
+			if (prNDP->ucNDPSetupStatus ==
+				    NAN_ATTR_NDP_STATUS_CONTINUED ||
+			    prNDP->ucNDPSetupStatus ==
+				NAN_ATTR_NDP_STATUS_ACCEPTED) {
+				prAttrNDPE->ucNDPEControl |=
+				    NAN_ATTR_NDPE_CTRL_RESP_NDI_PRESENT;
+			}
+		}
+
+		/* start to fill option field */
+		pucOffset = &(prAttrNDPE->ucPublishID);
+		if (prAttrNDPE->ucNDPEControl &
+		    NAN_ATTR_NDPE_CTRL_PUBLISHID_PRESENT) {
+			*pucOffset = prNDP->ucPublishId;
+			pucOffset++;
+		}
+
+		if (prAttrNDPE->ucNDPEControl &
+		    NAN_ATTR_NDPE_CTRL_RESP_NDI_PRESENT) {
 			if (prNDP->eNDPRole == NAN_PROTOCOL_INITIATOR)
-				COPY_MAC_ADDR(prAttrNDPE->aucInitiatorNDI,
-					      prNDP->aucLocalNDIAddr);
-
-			else
-				COPY_MAC_ADDR(prAttrNDPE->aucInitiatorNDI,
+				COPY_MAC_ADDR(pucOffset,
 					      prNDP->aucPeerNDIAddr);
 
-			prAttrNDPE->ucNDPID = prNDP->ucNDPID;
+			else
+				COPY_MAC_ADDR(pucOffset,
+					      prNDP->aucLocalNDIAddr);
+			pucOffset += MAC_ADDR_LEN;
+		}
 
-			prAttrNDPE->ucNDPEControl = 0;
-			if (prNDP->fgConfirmRequired)
-				prAttrNDPE->ucNDPEControl |=
-					NAN_ATTR_NDPE_CTRL_CONFIRM_REQUIRED;
-			if (prNDP->fgSecurityRequired)
-				prAttrNDPE->ucNDPEControl |=
-					NAN_ATTR_NDPE_CTRL_SECURITY_PRESENT;
-			if (prNDP->eCurrentNDPProtocolState ==
-			    NDP_INITIATOR_TX_DP_REQUEST)
-				prAttrNDPE->ucNDPEControl |=
-					NAN_ATTR_NDPE_CTRL_PUBLISHID_PRESENT;
-			if (prNDP->eCurrentNDPProtocolState ==
-			    NDP_RESPONDER_TX_DP_RESPONSE) {
-				if (prNDP->ucNDPSetupStatus ==
-					    NAN_ATTR_NDP_STATUS_CONTINUED ||
-				    prNDP->ucNDPSetupStatus ==
-					NAN_ATTR_NDP_STATUS_ACCEPTED) {
-					prAttrNDPE->ucNDPEControl |=
-					    NAN_ATTR_NDPE_CTRL_RESP_NDI_PRESENT;
-				}
-			}
+		if (prNDP->fgCarryIPV6 == TRUE) {
+			prIPV6TLV =
+				(struct
+				 _NAN_ATTR_NDPE_IPV6_LINK_LOCAL_TLV_T *)
+					pucOffset;
 
-			/* start to fill option field */
-			pucOffset = &(prAttrNDPE->ucPublishID);
-			if (prAttrNDPE->ucNDPEControl &
-			    NAN_ATTR_NDPE_CTRL_PUBLISHID_PRESENT) {
-				*pucOffset = prNDP->ucPublishId;
-				pucOffset++;
-			}
+			/* filling */
+			prIPV6TLV->ucType =
+				NAN_ATTR_NDPE_TLV_TYPE_IPV6_LINK_LOCAL;
+			prIPV6TLV->u2Length =
+			    sizeof(struct
+				_NAN_ATTR_NDPE_IPV6_LINK_LOCAL_TLV_T) -
+				OFFSET_OF(struct
+				_NAN_ATTR_NDPE_IPV6_LINK_LOCAL_TLV_T,
+				aucInterfaceId);
+			if (prNDP->fgIsInitiator == TRUE)
+				kalMemCopy(prIPV6TLV->aucInterfaceId,
+					   prNDP->aucInterfaceId, 8);
+			else
+				kalMemCopy(prIPV6TLV->aucInterfaceId,
+					   prNDP->aucRspInterfaceId, 8);
+			/* move to next */
+			pucOffset += sizeof(
+				struct
+				_NAN_ATTR_NDPE_IPV6_LINK_LOCAL_TLV_T);
+		}
 
-			if (prAttrNDPE->ucNDPEControl &
-			    NAN_ATTR_NDPE_CTRL_RESP_NDI_PRESENT) {
-				if (prNDP->eNDPRole == NAN_PROTOCOL_INITIATOR)
-					COPY_MAC_ADDR(pucOffset,
-						      prNDP->aucPeerNDIAddr);
-
-				else
-					COPY_MAC_ADDR(pucOffset,
-						      prNDP->aucLocalNDIAddr);
-				pucOffset += MAC_ADDR_LEN;
-			}
-
-			if (prNDP->fgCarryIPV6 == TRUE) {
-				prIPV6TLV =
-					(struct
-					 _NAN_ATTR_NDPE_IPV6_LINK_LOCAL_TLV_T *)
-						pucOffset;
-
-				/* filling */
-				prIPV6TLV->ucType =
-					NAN_ATTR_NDPE_TLV_TYPE_IPV6_LINK_LOCAL;
-				prIPV6TLV->u2Length =
-				    sizeof(struct
-					_NAN_ATTR_NDPE_IPV6_LINK_LOCAL_TLV_T) -
-					OFFSET_OF(struct
-					_NAN_ATTR_NDPE_IPV6_LINK_LOCAL_TLV_T,
-					aucInterfaceId);
-				if (prNDP->fgIsInitiator == TRUE)
-					kalMemCopy(prIPV6TLV->aucInterfaceId,
-						   prNDP->aucInterfaceId, 8);
-				else
-					kalMemCopy(prIPV6TLV->aucInterfaceId,
-						   prNDP->aucRspInterfaceId, 8);
-				/* move to next */
-				pucOffset += sizeof(
-					struct
-					_NAN_ATTR_NDPE_IPV6_LINK_LOCAL_TLV_T);
-			}
-
-			if ((prNDP->eCurrentNDPProtocolState ==
-				     NDP_INITIATOR_TX_DP_REQUEST ||
+		if ((prNDP->eCurrentNDPProtocolState ==
+			     NDP_INITIATOR_TX_DP_REQUEST ||
+		     prNDP->eCurrentNDPProtocolState ==
+			     NDP_RESPONDER_TX_DP_RESPONSE ||
 			     prNDP->eCurrentNDPProtocolState ==
-				     NDP_RESPONDER_TX_DP_RESPONSE) &&
-			    nanDataEngineServiceInfoCheck(prAdapter, prNDP) ==
-				    TRUE) {
+			     NDP_RESPONDER_TX_DP_SECURITY_INSTALL) &&
+		    nanDataEngineServiceInfoCheck(prAdapter, prNDP) ==
+			    TRUE) {
+
+			if (nanGetFeatureIsSigma(prAdapter)) {
 				uint8_t i = 0;
 				uint16_t u2OffSet = 0, u2SubAttrLen = 0,
 					u2TotalSubAttrLen = 0;
 
 				prWFAAppInfoTLV =
-					(struct
-					 _NAN_ATTR_NDPE_WFA_SVC_INFO_TLV_T
-						 *)pucOffset;
+				(struct
+				_NAN_ATTR_NDPE_WFA_SVC_INFO_TLV_T
+				*)pucOffset;
 
 				prWFAAppInfoTLV->ucType =
-					NAN_ATTR_NDPE_TLV_TYPE_SERVICE_INFO;
+				NAN_ATTR_NDPE_TLV_TYPE_SERVICE_INFO;
 
-				kalMemCopy(prWFAAppInfoTLV->aucOui, aucOui,
-					   VENDOR_OUI_LEN);
+				kalMemCopy(prWFAAppInfoTLV->aucOui,
+					aucOui,
+					VENDOR_OUI_LEN);
 				prWFAAppInfoTLV->ucServiceProtocolType =
-					NAN_SERVICE_PROTOCOL_TYPE_GENERIC;
+				NAN_SERVICE_PROTOCOL_TYPE_GENERIC;
 
 				/* move to next */
 				pucOffset += OFFSET_OF(
-					struct
-					_NAN_ATTR_NDPE_WFA_SVC_INFO_TLV_T,
-					aucBody);
+				struct
+				_NAN_ATTR_NDPE_WFA_SVC_INFO_TLV_T,
+				aucBody);
 				/* fill NAN attributes */
 				for (i = 0;
 				     i < sizeof(txServInfoSSITable) /
-						 sizeof(struct
-							_APPEND_ATTR_ENTRY_T);
-				     i++) {
+						sizeof(struct
+						_APPEND_ATTR_ENTRY_T);
+					i++) {
 					u2SubAttrLen =
-					    txServInfoSSITable[i]
-						.pfnCalculateVariableAttrLen(
-							prAdapter,
-							prNDL, prNDP);
+					txServInfoSSITable[i]
+					.pfnCalculateVariableAttrLen(
+						prAdapter,
+						prNDL, prNDP);
 					if (u2SubAttrLen != 0 &&
-					    txServInfoSSITable[i]
-						    .pfnAppendAttr) {
 						txServInfoSSITable[i]
-						    .pfnAppendAttr(
+						.pfnAppendAttr) {
+						txServInfoSSITable[i]
+						.pfnAppendAttr(
 							prAdapter,
 							pucOffset +
 							u2OffSet,
 							prNDL, prNDP);
-						u2OffSet += u2SubAttrLen;
+						u2OffSet +=
+							u2SubAttrLen;
 						u2TotalSubAttrLen +=
 							u2SubAttrLen;
 					}
 				}
+
 				prWFAAppInfoTLV->u2Length =
-					OFFSET_OF(struct
-					    _NAN_ATTR_NDPE_WFA_SVC_INFO_TLV_T,
-					    aucBody) +
+				OFFSET_OF(struct
+					_NAN_ATTR_NDPE_WFA_SVC_INFO_TLV_T,
+					aucBody) +
 					u2TotalSubAttrLen -
 					OFFSET_OF(struct
-					    _NAN_ATTR_NDPE_WFA_SVC_INFO_TLV_T,
-					    aucOui);
+					_NAN_ATTR_NDPE_WFA_SVC_INFO_TLV_T,
+					aucOui);
+			} else {
+				if (prNDP->u2AppInfoLen > 0)
+					/* AppInfo: portNum,
+					 * protocolType
+					 */
+					kalMemCopy(pucOffset,
+						prNDP->pucAppInfo,
+						prNDP->u2AppInfoLen);
 			}
-#if 0
+#if 0 /* OtherAppinfo */
 			if (prNDP->u2OtherAppInfoLen > 0) {
 				prOtherAppInfoTLV =
-				  (struct _NAN_ATTR_NDPE_SERVICE_INFO_TLV_T *)
-				  pucOffset;
+				(struct
+				_NAN_ATTR_NDPE_SERVICE_INFO_TLV_T *)
+				pucOffset;
 
 				prOtherAppInfoTLV->ucType =
 					NAN_ATTR_NDPE_TLV_TYPE_SERVICE_INFO;
-				prOtherAppInfoTLV->u2Length =
-				    OFFSET_OF(
-				    struct _NAN_ATTR_NDPE_SERVICE_INFO_TLV_T,
-				    aucBody)
-				    + prNDP->u2OtherAppInfoLen
-				    - OFFSET_OF(struct
-				    _NAN_ATTR_NDPE_SERVICE_INFO_TLV_T,
-				    aucOui);
+					prOtherAppInfoTLV->u2Length =
+					OFFSET_OF(
+					struct
+					_NAN_ATTR_NDPE_SERVICE_INFO_TLV_T,
+					aucBody)
+					+ prNDP->u2OtherAppInfoLen
+					- OFFSET_OF(struct
+					_NAN_ATTR_NDPE_SERVICE_INFO_TLV_T,
+					aucOui);
 				kalMemCopy(prOtherAppInfoTLV->aucOui,
-						prNDP->aucOtherAppInfoOui,
-						VENDOR_OUI_LEN);
+					prNDP->aucOtherAppInfoOui,
+					VENDOR_OUI_LEN);
 				kalMemCopy(prOtherAppInfoTLV->aucBody,
-						prNDP->pucOtherAppInfo,
-						prNDP->u2OtherAppInfoLen);
+					prNDP->pucOtherAppInfo,
+					prNDP->u2OtherAppInfoLen);
 
 				/* move to next */
 				pucOffset +=
-				    OFFSET_OF(
-				    struct _NAN_ATTR_NDPE_SERVICE_INFO_TLV_T,
-				    aucBody) +
-				    prNDP->u2OtherAppInfoLen;
+					OFFSET_OF(
+					struct
+					_NAN_ATTR_NDPE_SERVICE_INFO_TLV_T,
+					aucBody) +
+					prNDP->u2OtherAppInfoLen;
 			}
 #endif
+			}
 		}
 #if (ENABLE_NDP_UT_LOG == 1)
-		DBGLOG(NAN, INFO, "NAN NDPE ROW DATA\n");
-		dumpMemory8((uint8_t *)prMsduInfo->prPacket +
-				    prMsduInfo->u2FrameLength,
-			    u2AttrLength);
-		DBGLOG(NAN, INFO, "NAN NDPE ROW DATA END\n");
+	DBGLOG(NAN, INFO, "NAN NDPE ROW DATA\n");
+	dumpMemory8((uint8_t *)prMsduInfo->prPacket +
+			    prMsduInfo->u2FrameLength,
+		    u2AttrLength);
+	DBGLOG(NAN, INFO, "NAN NDPE ROW DATA END\n");
 #endif
-		/* update payload length */
-		prMsduInfo->u2FrameLength += u2AttrLength;
-	}
+	/* update payload length */
+	prMsduInfo->u2FrameLength += u2AttrLength;
 }
 
 uint32_t

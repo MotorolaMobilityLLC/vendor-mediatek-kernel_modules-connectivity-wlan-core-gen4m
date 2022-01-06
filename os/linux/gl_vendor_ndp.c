@@ -800,21 +800,28 @@ nanNdpInitiatorReqHandler(struct GLUE_INFO *prGlueInfo, struct nlattr **tb) {
 	}
 
 	rNanCmdDataRequest.fgNDPE = g_ndpReqNDPE.fgEnNDPE;
-	if (rNanCmdDataRequest.fgNDPE) {
-		/* Ipv6: vendor cmd did not fill this attribute,
-		 * default set to FALSE
-		 */
-		rNanCmdDataRequest.fgCarryIpv6 = 1;
+	/* APP Info */
+	if (tb[MTK_WLAN_VENDOR_ATTR_NDP_APP_INFO]) {
+		rNanCmdDataRequest.u2SpecificInfoLength =
+			nla_len(tb[MTK_WLAN_VENDOR_ATTR_NDP_APP_INFO]);
+		kalMemCopy(rNanCmdDataRequest.aucSpecificInfo,
+			nla_data(tb[MTK_WLAN_VENDOR_ATTR_NDP_APP_INFO]),
+			nla_len(tb[MTK_WLAN_VENDOR_ATTR_NDP_APP_INFO]));
 
-		/* APP Info */
-		if (tb[MTK_WLAN_VENDOR_ATTR_NDP_APP_INFO]) {
-			rNanCmdDataRequest.u2SpecificInfoLength =
-				nla_len(tb[MTK_WLAN_VENDOR_ATTR_NDP_APP_INFO]);
-			kalMemCopy(rNanCmdDataRequest.aucSpecificInfo,
-				nla_data(tb[MTK_WLAN_VENDOR_ATTR_NDP_APP_INFO]),
-				nla_len(tb[MTK_WLAN_VENDOR_ATTR_NDP_APP_INFO]));
-		}
+		DBGLOG(NAN, INFO, "[%s] AppInfoLen = %d\n",
+			__func__, rNanCmdDataRequest.u2SpecificInfoLength);
 	}
+
+	/* Ipv6 */
+	if (tb[MTK_WLAN_VENDOR_ATTR_NDP_IPV6_ADDR]) {
+		rNanCmdDataRequest.fgCarryIpv6 = 1;
+		kalMemCopy(rNanCmdDataRequest.aucIPv6Addr, nla_data(
+		tb[MTK_WLAN_VENDOR_ATTR_NDP_IPV6_ADDR]), IPV6MACLEN);
+	}
+
+	/* NDPE */
+	DBGLOG(NAN, INFO, "[%s] NDPEenable = %d\n",
+		__func__, g_ndpReqNDPE.fgEnNDPE);
 
 	/* Send cmd request */
 	rStatus = nanCmdDataRequest(prGlueInfo->prAdapter, &rNanCmdDataRequest,
@@ -847,6 +854,11 @@ nanNdpResponderReqHandler(struct GLUE_INFO *prGlueInfo, struct nlattr **tb) {
 				 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
 	struct BSS_INFO *prBssInfo;
 	struct _NAN_SPECIFIC_BSS_INFO_T *prNanSpecificBssInfo;
+
+	if (prGlueInfo->prAdapter == NULL) {
+		DBGLOG(NAN, ERROR, "prAdapter is null\n");
+		return -EINVAL;
+	}
 
 	/* Get BSS info */
 	prNanSpecificBssInfo = nanGetSpecificBssInfo(
@@ -914,33 +926,35 @@ nanNdpResponderReqHandler(struct GLUE_INFO *prGlueInfo, struct nlattr **tb) {
 	/* App Info */
 	if (tb[MTK_WLAN_VENDOR_ATTR_NDP_APP_INFO]) {
 		rNanCmdDataResponse.u2SpecificInfoLength =
-			IPV6MACLEN;
+			nla_len(tb[MTK_WLAN_VENDOR_ATTR_NDP_APP_INFO]);
 		kalMemCopy(rNanCmdDataResponse.aucSpecificInfo,
 			nla_data(tb[MTK_WLAN_VENDOR_ATTR_NDP_APP_INFO]),
-			IPV6MACLEN);
-		kalMemCopy(rNanCmdDataResponse.aucIPv6Addr,
-			nla_data(tb[MTK_WLAN_VENDOR_ATTR_NDP_APP_INFO]),
-			IPV6MACLEN);
-		/* Ipv6: vendor cmd did not fill this attribute,
-		 * set to TRUE if carry Ipv6 by Sigma
-		 */
-		rNanCmdDataResponse.fgCarryIpv6 = 1;
+			nla_len(tb[MTK_WLAN_VENDOR_ATTR_NDP_APP_INFO]));
 
-		DBGLOG(NAN, ERROR, "[%s] appInfoLen= %d, Ipv6 ="IPV6STR"\n",
+		DBGLOG(NAN, ERROR, "[%s] appInfoLen= %d\n",
 			__func__,
-			rNanCmdDataResponse.u2SpecificInfoLength,
-			IPV6TOSTR(rNanCmdDataResponse.aucIPv6Addr));
+			rNanCmdDataResponse.u2SpecificInfoLength);
 	}
 
-	/* PortNum: vendor cmd did not fill this attribute,
-	 * default set to 9000
-	 */
-	rNanCmdDataResponse.u2PortNum = 9000;
+	if (tb[MTK_WLAN_VENDOR_ATTR_NDP_IPV6_ADDR]) {
+		kalMemCopy(rNanCmdDataResponse.aucIPv6Addr,
+			nla_data(tb[MTK_WLAN_VENDOR_ATTR_NDP_IPV6_ADDR]),
+			IPV6MACLEN);
+		rNanCmdDataResponse.fgCarryIpv6 = 1;
+	}
 
-	/* Service protocol type: vendor cmd did not fill this attribute,
-	 * default set to 0xFF
-	 */
-	rNanCmdDataResponse.ucServiceProtocolType = IP_PRO_TCP;
+	if (nanGetFeatureIsSigma(prGlueInfo->prAdapter)) {
+		/* PortNum: vendor cmd did not fill this attribute,
+		 * default set to 9000
+		 */
+		rNanCmdDataResponse.u2PortNum = 9000;
+
+		/* Service protocol type:
+		 * vendor cmd did not fill this attribute,
+		 * default set to 0xFF
+		 */
+		rNanCmdDataResponse.ucServiceProtocolType = IP_PRO_TCP;
+	}
 
 	/* Peer mac addr */
 	if (tb[MTK_WLAN_VENDOR_ATTR_NDP_PEER_DISCOVERY_MAC_ADDR]) {
@@ -1142,10 +1156,10 @@ nanNdpDataIndEvent(IN struct ADAPTER *prAdapter,
 		return -EFAULT;
 	}
 
-	if (prNDP->u2AppInfoLen) {
+	if (prNDP->u2PeerAppInfoLen) {
 		if (unlikely(nla_put(skb, MTK_WLAN_VENDOR_ATTR_NDP_APP_INFO,
-				     prNDP->u2AppInfoLen,
-				     prNDP->pucAppInfo) < 0)) {
+				     prNDP->u2PeerAppInfoLen,
+				     prNDP->pucPeerAppInfo) < 0)) {
 			DBGLOG(REQ, ERROR, "nla_put_nohdr failed\n");
 			kfree_skb(skb);
 			return -EFAULT;
@@ -1249,13 +1263,30 @@ nanNdpDataConfirmEvent(IN struct ADAPTER *prAdapter,
 		return -EFAULT;
 	}
 
-	if (prNDP->pucAppInfo &&
-	    nla_put(skb, MTK_WLAN_VENDOR_ATTR_NDP_APP_INFO, prNDP->u2AppInfoLen,
-		    prNDP->pucAppInfo)) {
+	if (prNDP->fgCarryIPV6 && unlikely(nla_put(skb,
+		MTK_WLAN_VENDOR_ATTR_NDP_IPV6_ADDR,
+		IPV6MACLEN, prNDP->aucRspInterfaceId)) < 0) {
 		DBGLOG(REQ, ERROR, "nla_put_nohdr failed\n");
 		kfree_skb(skb);
 		return -EFAULT;
 	}
+
+	if (prNDP->fgCarryIPV6)
+		DBGLOG(NAN, INFO, "[%s] fgCarryIPV6 = %d\n",
+		__func__, prNDP->aucRspInterfaceId);
+
+	if (prNDP->pucPeerAppInfo &&
+	    unlikely(nla_put(skb, MTK_WLAN_VENDOR_ATTR_NDP_APP_INFO,
+	    prNDP->u2PeerAppInfoLen,
+		    prNDP->pucPeerAppInfo)) < 0) {
+		DBGLOG(REQ, ERROR, "nla_put_nohdr failed\n");
+		kfree_skb(skb);
+		return -EFAULT;
+	}
+
+	if (prNDP->pucPeerAppInfo)
+		DBGLOG(NAN, INFO, "[%s] u2PeerAppInfoLen = %d\n", __func__,
+		prNDP->u2PeerAppInfoLen);
 
 	if (unlikely(nla_put_u32(skb, MTK_WLAN_VENDOR_ATTR_NDP_RESPONSE_CODE,
 				 prNDP->ucReasonCode) < 0)) {

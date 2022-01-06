@@ -241,6 +241,9 @@ struct _NAN_NDP_INSTANCE_T {
 	uint16_t u2AppInfoLen;
 	/* TODO: timing of freeing - after event indication */
 	uint8_t *pucAppInfo;
+	uint16_t u2PeerAppInfoLen;
+	uint8_t *pucPeerAppInfo;
+
 	/* NAN R3 feature */
 	uint8_t ucServiceProtocolType; /* NAN_SERVICE_PROTOCOL_TYPE_* */
 	uint8_t ucProtocolType;
@@ -249,8 +252,8 @@ struct _NAN_NDP_INSTANCE_T {
 	/* IPv6 - NAN R3 feature */
 	unsigned char fgCarryIPV6;
 	unsigned char fgIsInitiator;
-	uint8_t aucInterfaceId[8];
-	uint8_t aucRspInterfaceId[8];
+	uint8_t aucInterfaceId[IPV6MACLEN];
+	uint8_t aucRspInterfaceId[IPV6MACLEN];
 
 	uint8_t *pucServiceInfo;
 
@@ -1023,6 +1026,9 @@ struct STA_RECORD *nanGetStaRecByNDI(struct ADAPTER *prAdapter,
 
 struct _NAN_NDL_INSTANCE_T *
 nanDataUtilSearchNdlByMac(struct ADAPTER *prAdapter, uint8_t *pucAddr);
+
+unsigned char
+nanGetFeatureIsSigma(struct ADAPTER *prAdapter);
 
 #endif
 #endif

@@ -8188,6 +8188,8 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 		(uint8_t)wlanCfgGetUint32(prAdapter, "NanDftCommittedDw", 1);
 	prWifiVar->fgNoPmf =
 		(unsigned char)wlanCfgGetUint32(prAdapter, "NanForceNoPmf", 0);
+	prWifiVar->fgNanIsSigma =
+		(unsigned char)wlanCfgGetUint32(prAdapter, "NanIsSigma", 0);
 #endif
 
 	prWifiVar->fgReuseRSNIE = (uint32_t) wlanCfgGetUint32(
