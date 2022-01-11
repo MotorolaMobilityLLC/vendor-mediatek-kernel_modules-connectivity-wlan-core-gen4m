@@ -7701,8 +7701,8 @@ static int priv_driver_add_acl_entry(IN struct net_device *prNetDev,
 		return -1;
 	}
 
-	for (i = 0; i <= prBssInfo->rACL.u4Num; i++) {
-		if (memcmp(prBssInfo->rACL.rEntry[i].aucAddr, &aucMacAddr,
+	for (i = 1; i <= prBssInfo->rACL.u4Num; i++) {
+		if (memcmp(prBssInfo->rACL.rEntry[i-1].aucAddr, &aucMacAddr,
 		    MAC_ADDR_LEN) == 0) {
 			DBGLOG(REQ, ERROR, "add this mac [" MACSTR
 			       "] is duplicate.\n", MAC2STR(aucMacAddr));
@@ -7710,7 +7710,7 @@ static int priv_driver_add_acl_entry(IN struct net_device *prNetDev,
 		}
 	}
 
-	if ((i < 1) || (i > MAX_NUMBER_OF_ACL)) {
+	if (i > MAX_NUMBER_OF_ACL) {
 		DBGLOG(REQ, ERROR, "idx[%d] error or ACL is full.\n", i);
 		return -1;
 	}
