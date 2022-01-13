@@ -5774,6 +5774,24 @@ void txPwrCtrlGlobalVariableToList(struct ADAPTER *prAdapter)
 			  "config list, after loadding global variables");
 }
 
+// alex add
+static bool hardware_version_mp(){
+	const char *version = NULL;
+	int phase = 0;
+
+	struct device_node *ver_chosen = of_find_node_by_path("/firmware/android");
+	if (!ver_chosen)
+		return false;
+
+	of_property_read_string(ver_chosen, "hardware.revision", &version);
+	if (version && !strncmp(version, "MP", 2))
+		phase = 5;
+	DBGLOG(RLM, INFO,
+			"hardware.revision %d\n", phase);
+
+	return phase ? true : false;
+}
+
 void txPwrCtrlCfgFileToList(struct ADAPTER *prAdapter)
 {
 	uint8_t *pucConfigBuf;
@@ -5783,7 +5801,15 @@ void txPwrCtrlCfgFileToList(struct ADAPTER *prAdapter)
 					      VIR_MEM_TYPE);
 	kalMemZero(pucConfigBuf, WLAN_CFG_FILE_BUF_SIZE);
 	if (pucConfigBuf) {
+
+		if (!hardware_version_mp()){
 		if (kalRequestFirmware("txpowerctrl.cfg", pucConfigBuf,
+		    WLAN_CFG_FILE_BUF_SIZE, &u4ConfigReadLen,
+		    prAdapter->prGlueInfo->prDev) == 0) {
+			/* ToDo:: Nothing */
+		}
+		}else
+		if (kalRequestFirmware("txpowerctrlmp.cfg", pucConfigBuf,
 		    WLAN_CFG_FILE_BUF_SIZE, &u4ConfigReadLen,
 		    prAdapter->prGlueInfo->prDev) == 0) {
 			/* ToDo:: Nothing */
