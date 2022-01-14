@@ -578,7 +578,7 @@
 
 /* debug which packet wake up host */
 #define CFG_SUPPORT_WAKEUP_REASON_DEBUG         1
-#define CFG_MODIFY_TX_POWER_BY_BAT_VOLT         0
+#define CFG_MODIFY_TX_POWER_BY_BAT_VOLT         1
 
 #define CFG_INIT_POWER_SAVE_PROF		ENUM_PSP_FAST_SWITCH
 
@@ -1649,6 +1649,8 @@
 #define CFG_SUPPORT_TPUT_ON_BIG_CORE 1
 
 #define CFG_SUPPORT_LITTLE_CPU_BOOST 1
+
+#define CFG_SUPPORT_ANDROID_DUAL_STA 0
 
 /*******************************************************************************
  *                             D A T A   T Y P E S

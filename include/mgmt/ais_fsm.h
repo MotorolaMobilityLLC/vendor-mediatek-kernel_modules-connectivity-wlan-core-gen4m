@@ -641,6 +641,7 @@ void aisSendNeighborRequest(struct ADAPTER *prAdapter,
  */
 
 #define AIS_DEFAULT_INDEX (0)
+#define AIS_SECONDARY_INDEX (1)
 
 struct AIS_FSM_INFO *aisGetAisFsmInfo(
 	IN struct ADAPTER *prAdapter,
@@ -783,5 +784,11 @@ u_int8_t queryAxBlacklist(IN struct ADAPTER *prAdapter,
 u_int8_t clearAxBlacklist(IN struct ADAPTER *prAdapter,
 	IN uint8_t ucBssIndex,
 	IN uint8_t ucType);
+
+#if (CFG_SUPPORT_ANDROID_DUAL_STA == 1)
+void aisMultiStaSetQuoteTime(
+	struct ADAPTER *prAdapter,
+	uint8_t fgSetQuoteTime);
+#endif
 
 #endif /* _AIS_FSM_H */

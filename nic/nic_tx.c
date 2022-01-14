@@ -2351,6 +2351,7 @@ void nicHifTxMsduDoneCb(IN struct ADAPTER *prAdapter,
 uint32_t nicTxMsduQueue(IN struct ADAPTER *prAdapter,
 			uint8_t ucPortIdx, struct QUE *prQue)
 {
+	struct HIF_STATS *prHifStats;
 	struct MSDU_INFO *prMsduInfo;
 	struct TX_CTRL *prTxCtrl;
 	struct QUE qDataTemp, *prDataTemp = NULL;
@@ -2358,6 +2359,7 @@ uint32_t nicTxMsduQueue(IN struct ADAPTER *prAdapter,
 	ASSERT(prAdapter);
 	ASSERT(prQue);
 
+	prHifStats = &prAdapter->rHifStats;
 	prTxCtrl = &prAdapter->rTxCtrl;
 
 #if CFG_HIF_STATISTICS
@@ -2414,6 +2416,7 @@ uint32_t nicTxMsduQueue(IN struct ADAPTER *prAdapter,
 	}
 
 	HAL_KICK_TX_DATA(prAdapter);
+	prHifStats->u4TxDataRegCnt++;
 
 	if (QUEUE_IS_NOT_EMPTY(prQue))
 		QUEUE_CONCATENATE_QUEUES(prDataTemp, prQue);
@@ -5537,9 +5540,9 @@ int32_t nicTxGetVectorInfo(IN char *pcCommand, IN int i4TotalLen,
 			i4TotalLen - i4BytesWritten, "%s, ",
 #if (CFG_SUPPORT_CONNAC2X == 1)
 			txmode == TX_RATE_MODE_HE_ER ?
-			       (frmode > 0 ? "106-RU" : "242-RU") :
+			      (frmode > 0 ? "106-RU" : "242-RU") :
 #endif
-			       HW_TX_RATE_BW[frmode < 4 ? (uint8_t)frmode : 4]);
+			      HW_TX_RATE_BW[frmode < 4 ? (uint8_t)frmode : 4U]);
 
 		if (txmode == TX_RATE_MODE_CCK)
 			i4BytesWritten += kalScnprintf(

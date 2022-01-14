@@ -227,15 +227,29 @@ int CFG80211_Resume(struct wiphy *wiphy)
  *******************************************************************************
  */
 
-#define CHAN2G(_channel, _freq, _flags)		\
-{						\
-	.band               = KAL_BAND_2GHZ,	\
-	.center_freq        = (_freq),		\
-	.hw_value           = (_channel),	\
-	.flags              = (_flags),		\
-	.max_antenna_gain   = 0,		\
-	.max_power          = 30,		\
-}
+#if KERNEL_VERSION(5, 4, 0) <= CFG80211_VERSION_CODE
+	#define CHAN2G(_channel, _freq, _flags)		\
+	{						\
+		.band               = KAL_BAND_2GHZ,	\
+		.center_freq        = (_freq),		\
+		.freq_offset        = 0,		\
+		.hw_value           = (_channel),	\
+		.flags              = (_flags),		\
+		.max_antenna_gain   = 0,		\
+		.max_power          = 30,		\
+	}
+#else
+	#define CHAN2G(_channel, _freq, _flags)		\
+	{						\
+		.band               = KAL_BAND_2GHZ,	\
+		.center_freq        = (_freq),		\
+		.hw_value           = (_channel),	\
+		.flags              = (_flags),		\
+		.max_antenna_gain   = 0,		\
+		.max_power          = 30,		\
+	}
+#endif
+
 static struct ieee80211_channel mtk_2ghz_channels[] = {
 	CHAN2G(1, 2412, 0),
 	CHAN2G(2, 2417, 0),
@@ -253,27 +267,43 @@ static struct ieee80211_channel mtk_2ghz_channels[] = {
 	CHAN2G(14, 2484, 0),
 };
 
-#define CHAN5G(_channel, _flags)					\
-{									\
-	.band               = KAL_BAND_5GHZ,				\
-	.center_freq        =						\
-		(((_channel >= 182) && (_channel <= 196)) ?		\
-		(4000 + (5 * (_channel))) : (5000 + (5 * (_channel)))),	\
-	.hw_value           = (_channel),				\
-	.flags              = (_flags),					\
-	.max_antenna_gain   = 0,					\
-	.max_power          = 30,					\
-}
+#if KERNEL_VERSION(5, 4, 0) <= CFG80211_VERSION_CODE
+	#define CHAN5G(_channel, _flags)			\
+	{							\
+		.band              = KAL_BAND_5GHZ,		\
+		.center_freq       =				\
+			(((_channel >= 182) && (_channel <= 196)) ? \
+			(4000 + (5 * (_channel))) : (5000 + (5 * (_channel)))),\
+		.freq_offset       = 0,				\
+		.hw_value          = (_channel),		\
+		.flags             = (_flags),			\
+		.max_antenna_gain  = 0,				\
+		.max_power         = 30,			\
+	}
+#else
+	#define CHAN5G(_channel, _flags)			\
+	{							\
+		.band              = KAL_BAND_5GHZ,		\
+		.center_freq       =				\
+			(((_channel >= 182) && (_channel <= 196)) ? \
+			(4000 + (5 * (_channel))) : (5000 + (5 * (_channel)))),\
+		.hw_value          = (_channel),		\
+		.flags             = (_flags),			\
+		.max_antenna_gain  = 0,				\
+		.max_power         = 30,			\
+	}
+#endif
 
 #if (CFG_SUPPORT_WIFI_6G == 1)
-#define CHAN6G(_channel, _flags)					\
-{									\
-	.band               = KAL_BAND_6GHZ,				\
+#define CHAN6G(_channel, _flags)				\
+{								\
+	.band               = KAL_BAND_6GHZ,			\
 	.center_freq        = (5950 + (5 * (_channel))),	\
-	.hw_value           = (_channel),				\
-	.flags              = (_flags),					\
-	.max_antenna_gain   = 0,					\
-	.max_power          = 30,					\
+	.freq_offset        = 0,				\
+	.hw_value           = (_channel),			\
+	.flags              = (_flags),				\
+	.max_antenna_gain   = 0,				\
+	.max_power          = 30,				\
 }
 #endif
 
@@ -447,6 +477,22 @@ static struct ieee80211_rate mtk_rates[] = {
 	.vht_mcs        = WLAN_VHT_MCS_INFO,				\
 }
 
+#define WLAN_VHT_CAP_160	\
+{									\
+	.vht_supported  = true,						\
+	.cap            = IEEE80211_VHT_CAP_RXLDPC			\
+			| IEEE80211_VHT_CAP_SUPP_CHAN_WIDTH_MASK	\
+			| IEEE80211_VHT_CAP_MAX_MPDU_LENGTH_11454	\
+			| IEEE80211_VHT_CAP_RXLDPC			\
+			| IEEE80211_VHT_CAP_SHORT_GI_80			\
+			| IEEE80211_VHT_CAP_TXSTBC			\
+			| IEEE80211_VHT_CAP_SUPP_CHAN_WIDTH_160MHZ \
+			| IEEE80211_VHT_CAP_EXT_NSS_BW_MASK \
+			| IEEE80211_VHT_CAP_SU_BEAMFORMER_CAPABLE	\
+			| IEEE80211_VHT_CAP_SU_BEAMFORMEE_CAPABLE,	\
+	.vht_mcs        = WLAN_VHT_MCS_INFO,				\
+}
+
 #if KERNEL_VERSION(4, 19, 0) <= CFG80211_VERSION_CODE
 #if (CFG_SUPPORT_802_11AX == 1)
 
@@ -573,7 +619,11 @@ struct ieee80211_supported_band mtk_band_5ghz = {
 	.bitrates = mtk_a_rates,
 	.n_bitrates = mtk_a_rates_size,
 	.ht_cap = WLAN_HT_CAP,
+#if KERNEL_VERSION(5, 4, 0) <= CFG80211_VERSION_CODE
+	.vht_cap = WLAN_VHT_CAP_160,
+#else
 	.vht_cap = WLAN_VHT_CAP,
+#endif
 #if KERNEL_VERSION(4, 19, 0) <= CFG80211_VERSION_CODE
 #if (CFG_SUPPORT_802_11AX == 1)
 	.n_iftype_data = 1,
@@ -996,6 +1046,36 @@ static const struct wiphy_vendor_command
 		.policy = VENDOR_CMD_RAW_DATA
 #endif
 
+	},
+	/* Set dual STA use cases */
+	{
+		{
+			.vendor_id = GOOGLE_OUI,
+			.subcmd = WIFI_SUBCMD_SET_MULTISTA_USE_CASE
+		},
+		.flags = WIPHY_VENDOR_CMD_NEED_WDEV |
+				WIPHY_VENDOR_CMD_NEED_NETDEV,
+		.doit = mtk_cfg80211_vendor_set_multista_use_case
+#if KERNEL_VERSION(5, 4, 0) <= CFG80211_VERSION_CODE
+		,
+		.policy = nla_parse_wifi_multista,
+		.maxattr = WIFI_ATTRIBUTE_MAX
+#endif
+	},
+	/* Select primary connection */
+	{
+		{
+			.vendor_id = GOOGLE_OUI,
+			.subcmd = WIFI_SUBCMD_SET_MULTISTA_PRIMARY_CONNECTION
+		},
+		.flags = WIPHY_VENDOR_CMD_NEED_WDEV |
+				WIPHY_VENDOR_CMD_NEED_NETDEV,
+		.doit = mtk_cfg80211_vendor_set_multista_primary_connection
+#if KERNEL_VERSION(5, 4, 0) <= CFG80211_VERSION_CODE
+		,
+		.policy = nla_parse_wifi_multista,
+		.maxattr = WIFI_ATTRIBUTE_MAX
+#endif
 	},
 	/* Set Tx Power Scenario */
 	{
@@ -1988,9 +2068,6 @@ netdev_tx_t wlanHardStartXmit(struct sk_buff *prSkb,
 	}
 #endif
 	kalResetPacket(prGlueInfo, (void *) prSkb);
-#if (CFG_SUPPORT_STATISTICS == 1)
-	STATS_TX_TIME_ARRIVE(prSkb);
-#endif
 	if (kalHardStartXmit(prSkb, prDev, prGlueInfo,
 			     ucBssIndex) == WLAN_STATUS_SUCCESS) {
 		/* Successfully enqueue to Tx queue */
@@ -3360,7 +3437,7 @@ struct wireless_dev *wlanNetCreate(void *pvData,
 		 * after we stopped queue
 		 */
 		prDevHandler->tx_queue_len = 3000;
-		DBGLOG(INIT, INFO, "net_device prDev(0x%p) allocated\n",
+		DBGLOG(INIT, TRACE, "net_device prDev(0x%p) allocated\n",
 			prDevHandler);
 
 		/* 4 <3.1.1> Initialize net device varaiables */
@@ -4354,7 +4431,15 @@ uint32_t wlanServiceExit(struct GLUE_INFO *prGlueInfo)
 
 #if (CFG_SUPPORT_ICS == 1)
 #define ICS_LOG_CMD_ON_OFF        0
+#define ICS_LOG_CMD_SET_LEVEL     1
+
+enum ENUM_ICS_LOG_LEVEL_T {
+	ENUM_ICS_LOG_LEVEL_DISABLE,
+	ENUM_ICS_LOG_LEVEL_MAC,
+};
+
 static uint32_t u4IcsLogOnOffCache;
+static uint32_t u4IcsLogLevelCache = ENUM_ICS_LOG_LEVEL_MAC;
 #endif /* CFG_SUPPORT_ICS */
 
 static uint32_t u4LogOnOffCache;
@@ -4515,9 +4600,6 @@ static void ics_log_event_notification(int cmd, int value)
 	DBGLOG(INIT, INFO, "gPrDev=%p, cmd=%d, value=%d\n",
 		gPrDev, cmd, value);
 
-	if (cmd == ICS_LOG_CMD_ON_OFF)
-		u4IcsLogOnOffCache = value;
-
 	if (kalIsHalted() || !prDev) {
 		DBGLOG(INIT, INFO, "device not ready return");
 		return;
@@ -4535,11 +4617,34 @@ static void ics_log_event_notification(int cmd, int value)
 		return;
 	}
 
+	/*
+	 * Special code that matches App behavior:
+	 * 1. set ics log level
+	 * 2. set on/off (if fwlog on, then icslog also get on)
+	 */
 	if (cmd == ICS_LOG_CMD_ON_OFF) {
+		u4IcsLogOnOffCache = value;
+		if (u4IcsLogOnOffCache == 1 &&
+			u4IcsLogLevelCache == ENUM_ICS_LOG_LEVEL_DISABLE) {
+			DBGLOG(INIT, WARN, "IcsLv is disable!!!\n");
+			u4IcsLogOnOffCache = 0;
+		}
+	} else if (cmd == ICS_LOG_CMD_SET_LEVEL) {
+		u4IcsLogLevelCache = value;
+		if (u4IcsLogLevelCache == ENUM_ICS_LOG_LEVEL_DISABLE) {
+			DBGLOG(INIT, INFO, "IcsLv set to disable.\n");
+			u4IcsLogOnOffCache = 0;
+		} else {
+			DBGLOG(INIT, INFO, "IcsLv set to MAC ICS.\n");
+			u4IcsLogOnOffCache = 1;
+		}
+	}
+
+	if (cmd == ICS_LOG_CMD_ON_OFF || cmd == ICS_LOG_CMD_SET_LEVEL) {
 		kalMemZero(&rSniffer, sizeof(
 			struct PARAM_CUSTOM_ICS_SNIFFER_INFO_STRUCT));
 		rSniffer.ucModule = 2;
-		rSniffer.ucAction = (value == 0) ? 0 : 1;
+		rSniffer.ucAction = u4IcsLogOnOffCache;
 		rSniffer.ucFilter = 0;
 		rSniffer.ucOperation = 0;
 		rSniffer.ucCondition[0] = 2;
@@ -4555,6 +4660,8 @@ static void ics_log_event_notification(int cmd, int value)
 			FALSE, FALSE, TRUE, &u4BufLen);
 		if (rStatus != WLAN_STATUS_SUCCESS)
 			DBGLOG(INIT, INFO, "wlanoidSetIcsSniffer failed");
+		DBGLOG(INIT, INFO, "IcsLog[Lv:OnOff]=[%d:%d]\n",
+			u4IcsLogLevelCache, u4IcsLogOnOffCache);
 	} else {
 		DBGLOG(INIT, INFO, "unknown cmd %d\n", cmd);
 	}
@@ -5192,11 +5299,8 @@ int set_nan_handler(struct net_device *netdev, uint32_t ucEnable)
 	uint32_t rWlanStatus = WLAN_STATUS_SUCCESS;
 	uint32_t u4BufLen = 0;
 
-	if ((!ucEnable) && (kalIsResetting() == FALSE)) {
-		nanNetUnregister(prGlueInfo, FALSE);
-		wlanOnP2pRegistration(prGlueInfo,
-			prGlueInfo->prAdapter, gprWdev[0]);
-	}
+	if (kalIsResetting())
+		return 0;
 
 	if (ucEnable) {
 		struct PARAM_CUSTOM_P2P_SET_STRUCT rSetP2P;
@@ -5205,6 +5309,9 @@ int set_nan_handler(struct net_device *netdev, uint32_t ucEnable)
 		rSetP2P.u4Enable = 0;
 		set_p2p_mode_handler(netdev, rSetP2P);
 	}
+
+	if (!ucEnable)
+		nanNetUnregister(prGlueInfo, FALSE);
 
 	rWlanStatus = kalIoctl(prGlueInfo, wlanoidSetNANMode, (void *)&ucEnable,
 			       sizeof(uint32_t), FALSE, FALSE, TRUE, &u4BufLen);
@@ -5216,9 +5323,12 @@ int set_nan_handler(struct net_device *netdev, uint32_t ucEnable)
 	 * in this case, kalIOCTL return success always,
 	 * and prGlueInfo->prP2PInfo[0] may be NULL
 	 */
-	if ((ucEnable) && (prGlueInfo->prAdapter->fgIsNANRegistered) &&
-	    (kalIsResetting() == FALSE))
+	if ((ucEnable) && (prGlueInfo->prAdapter->fgIsNANRegistered))
 		nanNetRegister(prGlueInfo, FALSE); /* Fixme: error handling */
+
+	if (!ucEnable)
+		wlanOnP2pRegistration(prGlueInfo,
+			prGlueInfo->prAdapter, gprWdev[0]);
 
 	return 0;
 }
@@ -6219,7 +6329,7 @@ static int initWlan(void)
 #endif
 	ret = ((glRegisterBus(wlanProbe,
 			      wlanRemove) == WLAN_STATUS_SUCCESS) ? 0 : -EIO);
-#ifdef CONFIG_MTK_EMI
+#ifdef CONFIG_WLAN_MTK_EMI
 	/* Set WIFI EMI protection to consys permitted on system boot up */
 	kalSetEmiMpuProtection(gConEmiPhyBaseFinal, true);
 #endif

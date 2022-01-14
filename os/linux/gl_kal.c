@@ -2408,6 +2408,10 @@ kalHardStartXmit(struct sk_buff *prOrgSkb,
 		return WLAN_STATUS_INVALID_PACKET;
 	}
 
+#if (CFG_SUPPORT_STATISTICS == 1)
+	STATS_TX_TIME_ARRIVE(prSkb);
+#endif
+
 	/* Tx profiling */
 	wlanTxProfilingTagPacket(prGlueInfo->prAdapter,
 				 (void *) prSkb, TX_PROF_TAG_OS_TO_DRV);
@@ -9394,6 +9398,10 @@ static void kalDumpHifStats(IN struct ADAPTER *prAdapter)
 			HIF_TX_MSDU_TOKEN_NUM,
 			prRxCtrl->rFreeSwRfbList.u4NumElem,
 			CFG_RX_MAX_PKT_NUM);
+	pos += kalSnprintf(buf + pos, u4BufferSize - pos,
+			" txreg[%u] rxreg[%u]",
+			prHifStats->u4TxDataRegCnt,
+			prHifStats->u4RxDataRegCnt);
 	DBGLOG(HAL, INFO, "%s\n", buf);
 	kalMemFree(buf, VIR_MEM_TYPE, u4BufferSize);
 }
@@ -10103,9 +10111,11 @@ static void kal_bat_volt_notifier_callback(unsigned int volt)
 	prAdapter = prGlueInfo->prAdapter;
 	prRegInfo = &prGlueInfo->rRegInfo;
 
-	if (prRegInfo == NULL || prGlueInfo->prAdapter == NULL) {
+	if (prRegInfo == NULL ||
+		prGlueInfo->prAdapter == NULL ||
+		prGlueInfo->u4ReadyFlag == 0) {
 		DBGLOG(NIC, ERROR,
-			"volt = %d, prRegInfo or prAdapter is NULL", volt);
+			"volt = %d, wlan not start", volt);
 		return;
 	}
 	if (prGlueInfo->ulFlag & GLUE_FLAG_HALT) {

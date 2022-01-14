@@ -732,6 +732,12 @@ struct PKT_PROFILE {
 	OS_SYSTIME rEnqueueTimestamp;
 	OS_SYSTIME rDequeueTimestamp;
 	OS_SYSTIME rHifTxDoneTimestamp;
+#if CFG_SUPPORT_TX_LATENCY_STATS
+	uint64_t u8XmitArrival;
+	uint64_t u8EnqTime;
+	uint64_t u8DeqTime;
+	uint64_t u8HifTxTime;
+#endif
 };
 #endif
 

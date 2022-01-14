@@ -733,6 +733,9 @@ void wlanOnPreAllocAdapterMem(IN struct ADAPTER *prAdapter,
 
 		prAdapter->u4HifDbgFlag = 0;
 		prAdapter->u4HifChkFlag = 0;
+		prAdapter->u4HifTxHangDumpBitmap = 0;
+		prAdapter->u4HifTxHangDumpIdx = 0;
+		prAdapter->u4HifTxHangDumpNum = 0;
 		prAdapter->u4NoMoreRfb = 0;
 		prAdapter->u4WaitRecIdx = 0;
 		prAdapter->u4CompRecIdx = 0;
@@ -2037,6 +2040,15 @@ uint32_t wlanSendCommandMthread(IN struct ADAPTER
 		if (kalIsCardRemoved(prAdapter->prGlueInfo) == TRUE
 		    || fgIsBusAccessFailed == TRUE) {
 			rStatus = WLAN_STATUS_FAILURE;
+#if CFG_DBG_MGT_BUF
+			if (prMemTrack) {
+				prMemTrack->u2CmdIdAndWhere &= 0x00FF;
+				/* 0x01 means the CmdId can't enqueue to
+				 *  TxCmdQueue due to card removal
+				 */
+				prMemTrack->u2CmdIdAndWhere |= 0x0100;
+			}
+#endif
 			break;
 		}
 		/* <1> Normal case of sending CMD Packet */
@@ -2054,6 +2066,16 @@ uint32_t wlanSendCommandMthread(IN struct ADAPTER
 			       __func__, prCmdInfo->eCmdType, prCmdInfo->ucCID,
 			       prCmdInfo->ucCmdSeqNum, ucTC);
 #endif
+#if CFG_DBG_MGT_BUF
+			if (prMemTrack) {
+				prMemTrack->u2CmdIdAndWhere &= 0x00FF;
+				/* 0x02 means the CmdId can't enqueue
+				 *  to TxCmdQueue due to out of resource
+				 */
+				prMemTrack->u2CmdIdAndWhere |= 0x0200;
+			}
+#endif
+
 			break;
 		}
 
@@ -2075,7 +2097,10 @@ uint32_t wlanSendCommandMthread(IN struct ADAPTER
 #if CFG_DBG_MGT_BUF
 		if (prMemTrack) {
 			prMemTrack->u2CmdIdAndWhere &= 0x00FF;
-			prMemTrack->u2CmdIdAndWhere |= 0x0100;
+			/* 0x10 means the CmdId is in TxCmdQueue
+			 *  and is waiting for main_thread handling
+			 */
+			prMemTrack->u2CmdIdAndWhere |= 0x1000;
 		}
 #endif
 
@@ -2110,12 +2135,34 @@ uint32_t wlanSendCommandMthread(IN struct ADAPTER
 void wlanTxCmdDoneCb(IN struct ADAPTER *prAdapter,
 		     IN struct CMD_INFO *prCmdInfo)
 {
+#if CFG_DBG_MGT_BUF
+	struct MEM_TRACK *prMemTrack = NULL;
+#endif
+
 	KAL_SPIN_LOCK_DECLARATION();
 
 	if ((!prCmdInfo->fgSetQuery) || (prCmdInfo->fgNeedResp)) {
 		DBGLOG(TX, INFO, "Add command: %p, %ps, cmd=0x%02X, seq=%u",
 			prCmdInfo, prCmdInfo->pfCmdDoneHandler,
 			prCmdInfo->ucCID, prCmdInfo->ucCmdSeqNum);
+
+#if CFG_DBG_MGT_BUF
+		if (prCmdInfo->pucInfoBuffer &&
+				!IS_FROM_BUF(prAdapter,
+					prCmdInfo->pucInfoBuffer))
+			prMemTrack =
+				(struct MEM_TRACK *)
+					((uint8_t *)prCmdInfo->pucInfoBuffer -
+						sizeof(struct MEM_TRACK));
+
+		if (prMemTrack) {
+			prMemTrack->u2CmdIdAndWhere &= 0x00FF;
+			/* 0x40 means the CmdId is sent to
+			 * WFDMA by HIF
+			 */
+			prMemTrack->u2CmdIdAndWhere |= 0x4000;
+		}
+#endif
 
 		KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_CMD_PENDING);
 		QUEUE_INSERT_TAIL(&prAdapter->rPendingCmdQueue,
@@ -2184,14 +2231,20 @@ uint32_t wlanTxCmdMthread(IN struct ADAPTER *prAdapter)
 #if CFG_DBG_MGT_BUF
 			if (prMemTrack) {
 				prMemTrack->u2CmdIdAndWhere &= 0x00FF;
-				prMemTrack->u2CmdIdAndWhere |= 0x0200;
+				/* 0x20 means the CmdId needs to send to
+				 * FW via HIF
+				 */
+				prMemTrack->u2CmdIdAndWhere |= 0x2000;
 			}
 #endif
 		} else {
 #if CFG_DBG_MGT_BUF
 			if (prMemTrack) {
 				prMemTrack->u2CmdIdAndWhere &= 0x00FF;
-				prMemTrack->u2CmdIdAndWhere |= 0x0300;
+				/* 0x30 means the CmdId enqueues to
+				 * TxCmdDone queue
+				 */
+				prMemTrack->u2CmdIdAndWhere |= 0x3000;
 			}
 #endif
 			QUEUE_INSERT_TAIL(prTempCmdDoneQue, prQueueEntry);
@@ -6502,6 +6555,41 @@ wlanQueryStatistics(IN struct ADAPTER *prAdapter,
 
 } /* wlanQueryStatistics */
 
+/**
+ * Called to save STATS_LLS_BSSLOAD_INFO information on scan operation.
+ * Update slot by bit mask in fgIsConnected.
+ */
+void updateLinkStatsApRec(struct ADAPTER *prAdapter, struct BSS_DESC *prBssDesc)
+{
+#if CFG_SUPPORT_LLS
+	struct STATS_LLS_PEER_AP_REC *prPeerApRec;
+	int32_t i = 0;
+
+	if (!prBssDesc->fgIsConnected)
+		return;
+
+	for (i = 0; i < KAL_AIS_NUM; i++) {
+		if ((prBssDesc->fgIsConnected >> i) & 0x1)
+			break;
+	}
+	if (i == KAL_AIS_NUM) {
+		DBGLOG(REQ, WARN, "AP connected flag set %u over limit", i);
+		return;
+	}
+
+	prPeerApRec = &prAdapter->rPeerApRec[i];
+	COPY_MAC_ADDR(prPeerApRec->mac_addr, prBssDesc->aucBSSID);
+	prPeerApRec->sta_count = prBssDesc->u2StaCnt;
+	prPeerApRec->chan_util = prBssDesc->ucChnlUtilization;
+
+	if (prAdapter->rWifiVar.fgLinkStatsDump)
+		DBGLOG(REQ, INFO, "Update record %u: " MACSTR " %u %u",
+				i, MAC2STR(prBssDesc->aucBSSID),
+				prBssDesc->u2StaCnt,
+				prBssDesc->ucChnlUtilization);
+#endif
+}
+
 #if CFG_SUPPORT_LLS
 /*----------------------------------------------------------------------------*/
 /*!
@@ -7729,6 +7817,8 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 	prAdapter->rWowCtrl.astWakeHif[0].u4GpioInterval =
 		wlanCfgGetUint32(prAdapter, "GpioInterval", 0);
 #endif
+	prWifiVar->u4TxHangFullDumpMode = wlanCfgGetUint32(
+			prAdapter, "TxHangFullDumpMode", 0);
 
 	/* SW Test Mode: Mainly used for Sigma */
 	prWifiVar->u4SwTestMode = (uint8_t) wlanCfgGetUint32(
@@ -7916,7 +8006,8 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 		prWifiVar->fgIsBoostCpuThAdjustable  = TRUE;
 		DBGLOG(INIT, TRACE, "BoostCPUTh is not config, adjustable\n");
 	}
-
+	prWifiVar->au4CpuBoostMinFreq = (uint32_t)wlanCfgGetUint32(
+		prAdapter, "CpuBoostMinFreq", 1300);
 #if CFG_SUPPORT_LITTLE_CPU_BOOST
 	u4PlatformBoostLittleCpuTh = kalGetLittleCpuBoostThreshold();
 	prWifiVar->u4BoostLittleCpuTh =
@@ -8127,7 +8218,7 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 		prAdapter, "AllowSameBandDualSta", FEATURE_ENABLED);
 #if CFG_MODIFY_TX_POWER_BY_BAT_VOLT
 	prWifiVar->u4BackoffLevel = (uint32_t) wlanCfgGetUint32(
-		prAdapter, "BackoffLevel", 3);
+		prAdapter, "BackoffLevel", 0);
 #endif
 
 #if (CFG_SUPPORT_APF == 1)
@@ -8157,6 +8248,10 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 	prWifiVar->fgBARDelayIndicationEn = (uint8_t) wlanCfgGetUint32(
 		prAdapter, "BARDelayIndicationEn", FEATURE_ENABLED);
 #endif /* CFG_SUPPORT_BAR_DELAY_INDICATION */
+	prWifiVar->u4MultiStaPrimaryQuoteTime = (uint32_t) wlanCfgGetUint32(
+		prAdapter, "MultiStaPrimaryQuoteTime", 300000);
+	prWifiVar->u4MultiStaSecondaryQuoteTime = (uint32_t) wlanCfgGetUint32(
+		prAdapter, "MultiStaSecondaryQuoteTime", 120000);
 }
 
 void wlanCfgSetSwCtrl(IN struct ADAPTER *prAdapter)
@@ -10186,13 +10281,22 @@ void wlanTxLifetimeTagPacket(IN struct ADAPTER *prAdapter,
 			/* Packet enqueue time */
 			prPktProfile->rEnqueueTimestamp = (OS_SYSTIME)
 							  kalGetTimeTick();
+#if CFG_SUPPORT_TX_LATENCY_STATS
+			prPktProfile->u8XmitArrival =
+				GLUE_GET_PKT_XTIME(prMsduInfo->prPacket);
+			prPktProfile->u8EnqTime = StatsEnvTimeGet();
+#endif
 		}
 		break;
 
 	case TX_PROF_TAG_DRV_DEQUE:
-		if (prPktProfile->fgIsValid)
+		if (prPktProfile->fgIsValid) {
 			prPktProfile->rDequeueTimestamp = (OS_SYSTIME)
 							  kalGetTimeTick();
+#if CFG_SUPPORT_TX_LATENCY_STATS
+			prPktProfile->u8DeqTime = StatsEnvTimeGet();
+#endif
+		}
 		break;
 
 	case TX_PROF_TAG_DRV_TX_DONE:
@@ -10200,14 +10304,32 @@ void wlanTxLifetimeTagPacket(IN struct ADAPTER *prAdapter,
 			prPktProfile->rHifTxDoneTimestamp = (OS_SYSTIME)
 							    kalGetTimeTick();
 #if CFG_SUPPORT_TX_LATENCY_STATS
+			prPktProfile->u8HifTxTime = StatsEnvTimeGet();
 			if (prWifiVar->fgPacketLatencyLog)
-				DBGLOG(TX, INFO, "Latency D: %u",
-				       prPktProfile->rHifTxDoneTimestamp -
-				       prPktProfile->rHardXmitArrivalTimestamp);
+				DBGLOG(TX, INFO,
+					"Latency(us) HIF_D:%lu, DEQ_D:%lu, ENQ_D:%lu A:%llu BSSIDX:WIDX:PID[%u:%u:%u] IPID:0x%04x SeqNo:%d\n",
+					NSEC_TO_USEC((uint32_t)(
+					prPktProfile->u8HifTxTime -
+					prPktProfile->u8XmitArrival)),
+					NSEC_TO_USEC((uint32_t)(
+					prPktProfile->u8DeqTime -
+					prPktProfile->u8XmitArrival)),
+					NSEC_TO_USEC((uint32_t)(
+					prPktProfile->u8EnqTime -
+					prPktProfile->u8XmitArrival)),
+					prPktProfile->u8XmitArrival,
+					prMsduInfo->ucBssIndex,
+					prMsduInfo->ucWlanIndex,
+					prMsduInfo->ucPID,
+					GLUE_GET_PKT_IP_ID(
+					prMsduInfo->prPacket),
+					GLUE_GET_PKT_SEQ_NO(
+					prMsduInfo->prPacket));
 
 			halAddDriverLatencyCount(prAdapter,
-				prPktProfile->rHifTxDoneTimestamp -
-				prPktProfile->rHardXmitArrivalTimestamp);
+				((uint32_t)(prPktProfile->u8HifTxTime -
+				prPktProfile->u8XmitArrival)) /
+				USEC_PER_SEC);
 #endif
 
 #if CFG_ENABLE_PER_STA_STATISTICS
@@ -10480,7 +10602,7 @@ wlanNotifyFwSuspend(struct GLUE_INFO *prGlueInfo,
 		/* cfg enable + wow enable => Wow On mdtim*/
 		rSuspendCmd.ucMdtim =
 			prGlueInfo->prAdapter->rWifiVar.ucWowOnMdtim;
-		DBGLOG(REQ, INFO, "mdtim [1]\n");
+		DBGLOG(REQ, TRACE, "mdtim [1]\n");
 	} else if (prGlueInfo->prAdapter->rWifiVar.ucWow
 		   && !prGlueInfo->prAdapter->rWowCtrl.fgWowEnable) {
 		if (prGlueInfo->prAdapter->rWifiVar.ucAdvPws) {
@@ -10489,7 +10611,7 @@ wlanNotifyFwSuspend(struct GLUE_INFO *prGlueInfo,
 			 */
 			rSuspendCmd.ucMdtim =
 				prGlueInfo->prAdapter->rWifiVar.ucWowOffMdtim;
-			DBGLOG(REQ, INFO, "mdtim [2]\n");
+			DBGLOG(REQ, TRACE, "mdtim [2]\n");
 		}
 	} else if (!prGlueInfo->prAdapter->rWifiVar.ucWow) {
 		if (prGlueInfo->prAdapter->rWifiVar.ucAdvPws) {
@@ -10498,7 +10620,7 @@ wlanNotifyFwSuspend(struct GLUE_INFO *prGlueInfo,
 			 */
 			rSuspendCmd.ucMdtim =
 				prGlueInfo->prAdapter->rWifiVar.ucWowOffMdtim;
-			DBGLOG(REQ, INFO, "mdtim [3]\n");
+			DBGLOG(REQ, TRACE, "mdtim [3]\n");
 		}
 	}
 

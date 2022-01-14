@@ -175,8 +175,8 @@ struct GL_HIF_INFO {
 	struct ERR_RECOVERY_CTRL_T rErrRecoveryCtl;
 	struct timer_list rSerTimer;
 	struct list_head rTxCmdQ;
-	struct list_head rTxDataQ;
-	uint32_t u4TxDataQLen;
+	struct list_head rTxDataQ[NUM_OF_TX_RING];
+	uint32_t u4TxDataQLen[NUM_OF_TX_RING];
 
 	bool fgIsPowerOff;
 	bool fgIsDumpLog;
@@ -302,7 +302,8 @@ struct BUS_INFO {
 	bool (*wfdmaAllocRxRing)(
 		struct GLUE_INFO *prGlueInfo,
 		bool fgAllocMem);
-	void (*setPdmaIntMask)(struct GLUE_INFO *prGlueInfo, u_int8_t fgEnable);
+	void (*setDmaIntMask)(struct GLUE_INFO *prGlueInfo,
+		uint8_t ucType, u_int8_t fgEnable);
 	void (*enableFwDlMode)(struct ADAPTER *prAdapter);
 
 	struct SW_WFDMA_INFO rSwWfdmaInfo;

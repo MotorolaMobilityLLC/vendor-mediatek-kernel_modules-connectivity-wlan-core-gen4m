@@ -199,7 +199,7 @@
 #define DMA_BITS_OFFSET		32
 
 #define DMA_DONE_WAITING_TIME   10
-#define DMA_DONE_WAITING_COUNT  100
+#define DMA_DONE_WAITING_COUNT  (100 * 1000)
 
 #define MT_TX_RING_BASE_EXT WPDMA_TX_RING0_BASE_PTR_EXT
 #define MT_RX_RING_BASE_EXT WPDMA_RX_RING0_BASE_PTR_EXT
@@ -227,6 +227,9 @@
 #define SW_WFDMA_RETRY_TIME		10
 
 #define MSDU_TOKEN_HISTORY_NUM 5
+
+#define LOG_DUMP_COUNT_PERIOD		5
+#define LOG_DUMP_FULL_DUMP_TIMES	2
 
 /*******************************************************************************
  *                                 M A C R O S
@@ -527,6 +530,12 @@ struct SW_WFDMA_INFO {
 	uint32_t u4DmaIdxBackup;
 	uint32_t u4MaxCnt;
 	uint8_t aucCID[SW_WFDMA_CMD_NUM];
+};
+
+enum ENUM_DMA_INT_TYPE {
+	DMA_INT_TYPE_MCU2HOST,
+	DMA_INT_TYPE_TRX,
+	DMA_INT_TYPE_NUM
 };
 
 /*******************************************************************************

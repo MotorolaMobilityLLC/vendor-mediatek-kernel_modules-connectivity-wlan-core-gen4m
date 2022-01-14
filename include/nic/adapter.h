@@ -1136,6 +1136,7 @@ struct WIFI_VAR {
 	uint8_t ucAdvPws; /* enable LP multiple DTIM function, default enable */
 	uint8_t ucWowOnMdtim; /* multiple DTIM if WOW enable, default 1 */
 	uint8_t ucWowOffMdtim; /* multiple DTIM if WOW disable, default 3 */
+	uint32_t u4TxHangFullDumpMode;
 
 	uint8_t u4SwTestMode;
 	uint8_t	ucCtrlFlagAssertPath;
@@ -1157,19 +1158,20 @@ struct WIFI_VAR {
 	uint32_t fgEnArpFilter;
 
 	uint8_t	uDeQuePercentEnable;
-	uint32_t	u4DeQuePercentVHT80Nss1;
-	uint32_t	u4DeQuePercentVHT40Nss1;
-	uint32_t	u4DeQuePercentVHT20Nss1;
-	uint32_t	u4DeQuePercentHT40Nss1;
-	uint32_t	u4DeQuePercentHT20Nss1;
+	uint32_t u4DeQuePercentVHT80Nss1;
+	uint32_t u4DeQuePercentVHT40Nss1;
+	uint32_t u4DeQuePercentVHT20Nss1;
+	uint32_t u4DeQuePercentHT40Nss1;
+	uint32_t u4DeQuePercentHT20Nss1;
 
 	uint32_t u4PerfMonUpdatePeriod;
 	uint32_t u4PerfMonTpTh[PERF_MON_TP_MAX_THRESHOLD];
-	uint32_t	u4BoostCpuTh;
+	uint32_t u4BoostCpuTh;
 #if CFG_SUPPORT_LITTLE_CPU_BOOST
-	uint32_t	u4BoostLittleCpuTh;
+	uint32_t u4BoostLittleCpuTh;
 #endif /* CFG_SUPPORT_LITTLE_CPU_BOOST */
-	u_int8_t	fgIsBoostCpuThAdjustable;
+	uint32_t au4CpuBoostMinFreq;
+	uint8_t fgIsBoostCpuThAdjustable;
 
 	uint32_t u4PerfMonPendingTh;
 	uint32_t u4PerfMonUsedTh;
@@ -1337,6 +1339,8 @@ struct WIFI_VAR {
 #if CFG_SUPPORT_BAR_DELAY_INDICATION
 	u_int8_t fgBARDelayIndicationEn;
 #endif /* CFG_SUPPORT_BAR_DELAY_INDICATION */
+	uint32_t u4MultiStaPrimaryQuoteTime;
+	uint32_t u4MultiStaSecondaryQuoteTime;
 };
 
 /* cnm_timer module */
@@ -1527,6 +1531,8 @@ struct HIF_STATS {
 	uint32_t u4DataMsduRptCount; /* data from consys to air */
 	uint32_t u4EventRxCount; /* event from DMA to hif_thread */
 	uint32_t u4DataRxCount; /* data from DMA to hif_thread */
+	uint32_t u4TxDataRegCnt;
+	uint32_t u4RxDataRegCnt;
 };
 
 struct OID_HANDLER_RECORD {
@@ -1737,6 +1743,7 @@ struct ADAPTER {
 	struct HAL_LLS_FULL_REPORT rLinkStatsDestBuffer;
 	struct HAL_LLS_FULL_REPORT *pucLinkStatsSrcBufferAddr;
 	uint32_t u4RxMpduAc[STATS_LLS_WIFI_AC_MAX]; /* Store in LLS order */
+	struct STATS_LLS_PEER_AP_REC rPeerApRec[KAL_AIS_NUM];
 #endif
 
 #if CFG_SUPPORT_MSP
@@ -1934,6 +1941,9 @@ struct ADAPTER {
 
 	uint32_t u4HifDbgFlag;
 	uint32_t u4HifChkFlag;
+	uint32_t u4HifTxHangDumpBitmap;
+	uint32_t u4HifTxHangDumpIdx;
+	uint32_t u4HifTxHangDumpNum;
 	uint32_t u4NoMoreRfb;
 
 	/* Only for PCIE DmaSchdl usage so far. */
@@ -2037,7 +2047,9 @@ struct ADAPTER {
 #if (CFG_SUPPORT_POWER_THROTTLING == 1 && CFG_SUPPORT_CNM_POWER_CTRL == 1)
 	bool fgPowerForceOneNss;
 	bool fgPowerNeedDisconnect;
+	bool fgANTCtrl;
 	u_int8_t ucANTCtrlReason;
+	u_int8_t ucANTCtrlPendingCount;
 #endif
 
 #if (CFG_SUPPORT_WIFI_RNR == 1)
@@ -2051,6 +2063,10 @@ struct ADAPTER {
 #if (CFG_SUPPORT_AVOID_DESENSE == 1)
 	bool fgIsNeedAvoidDesenseFreq;
 #endif
+	bool fgForceDualStaInMCCMode;
+	uint8_t ucIsMultiStaConnected;
+	uint32_t u4MultiStaPrimaryInterface;
+	uint32_t u4MultiStaUseCase;
 };				/* end of _ADAPTER_T */
 
 /*******************************************************************************

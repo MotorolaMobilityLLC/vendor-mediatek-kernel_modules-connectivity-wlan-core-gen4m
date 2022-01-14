@@ -5125,6 +5125,8 @@ u_int8_t nicIsEcoVerEqualOrLaterTo(IN struct ADAPTER
 
 void nicSerStopTxRx(IN struct ADAPTER *prAdapter)
 {
+	struct BUS_INFO *prBusInfo = prAdapter->chip_info->bus_info;
+
 #if defined(_HIF_USB)
 	unsigned long ulFlags;
 
@@ -5155,6 +5157,10 @@ void nicSerStopTxRx(IN struct ADAPTER *prAdapter)
 	DBGLOG(NIC, WARN, "SER: Stop HIF Tx/Rx!\n");
 
 	prAdapter->ucSerState = SER_STOP_HOST_TX_RX;
+	if (prBusInfo->setDmaIntMask)
+		prBusInfo->setDmaIntMask(prAdapter->prGlueInfo,
+			BIT(DMA_INT_TYPE_TRX),
+			FALSE);
 
 	/* Force own to FW as ACK and stop HIF */
 	prAdapter->fgWiFiInSleepyState = TRUE;
@@ -5175,8 +5181,13 @@ void nicSerStopTx(IN struct ADAPTER *prAdapter)
 
 void nicSerStartTxRx(IN struct ADAPTER *prAdapter)
 {
-	DBGLOG(NIC, WARN, "SER: Start HIF T/R!\n");
+	struct BUS_INFO *prBusInfo = prAdapter->chip_info->bus_info;
 
+	DBGLOG(NIC, WARN, "SER: Start HIF T/R!\n");
+	if (prBusInfo->setDmaIntMask)
+		prBusInfo->setDmaIntMask(prAdapter->prGlueInfo,
+			BIT(DMA_INT_TYPE_TRX),
+			TRUE);
 	prAdapter->ucSerState = SER_IDLE_DONE;
 }
 
