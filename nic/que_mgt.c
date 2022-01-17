@@ -6617,6 +6617,7 @@ enum ENUM_FRAME_ACTION qmGetFrameAction(IN struct ADAPTER *prAdapter,
 	DEBUGFUNC("qmGetFrameAction");
 
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
+	/* if StaRec is not in use, prStaRec will be NULL. */
 	prStaRec = QM_GET_STA_REC_PTR_FROM_INDEX(prAdapter, ucStaRecIdx);
 
 	do {
@@ -6663,14 +6664,6 @@ enum ENUM_FRAME_ACTION qmGetFrameAction(IN struct ADAPTER *prAdapter,
 
 		/* 4 <4> Check based on StaRec */
 		if (prStaRec) {
-			/* 4 <4.1> Drop, if StaRec is not in use */
-			if (!prStaRec->fgIsInUse) {
-				DBGLOG(QM, TRACE,
-					"Drop packets (Sta[%u] not in USE)\n",
-					prStaRec->ucIndex);
-				eFrameAction = FRAME_ACTION_DROP_PKT;
-				break;
-			}
 			/* 4 <4.2> Sta in PS */
 			if (prStaRec->fgIsInPS) {
 				ucReqResource = nicTxGetPageCount(prAdapter,
@@ -6692,8 +6685,13 @@ enum ENUM_FRAME_ACTION qmGetFrameAction(IN struct ADAPTER *prAdapter,
 					break;
 				}
 			}
+		} else {
+			/* 4 <4.1> Drop, if StaRec is not in use */
+			DBGLOG(QM, TRACE,
+				"Drop packets (StaRec not in USE)\n");
+			eFrameAction = FRAME_ACTION_DROP_PKT;
+			break;
 		}
-
 	} while (FALSE);
 
 	/* <5> Resource CHECK! */
