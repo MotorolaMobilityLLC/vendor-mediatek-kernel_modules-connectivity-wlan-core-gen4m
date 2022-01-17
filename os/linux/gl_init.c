@@ -4562,23 +4562,6 @@ static void ics_log_event_notification(int cmd, int value)
 	DBGLOG(INIT, INFO, "gPrDev=%p, cmd=%d, value=%d\n",
 		gPrDev, cmd, value);
 
-	if (kalIsHalted() || !prDev) {
-		DBGLOG(INIT, INFO, "device not ready return");
-		return;
-	}
-
-	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prDev));
-	if (!prGlueInfo) {
-		DBGLOG(INIT, INFO, "prGlueInfo is NULL return");
-		return;
-	}
-
-	prAdapter = prGlueInfo->prAdapter;
-	if (!prAdapter) {
-		DBGLOG(INIT, INFO, "prAdapter is NULL return");
-		return;
-	}
-
 	/*
 	 * Special code that matches App behavior:
 	 * 1. set ics log level
@@ -4600,6 +4583,23 @@ static void ics_log_event_notification(int cmd, int value)
 			DBGLOG(INIT, INFO, "IcsLv set to MAC ICS.\n");
 			u4IcsLogOnOffCache = 1;
 		}
+	}
+
+	if (kalIsHalted() || !prDev) {
+		DBGLOG(INIT, INFO, "device not ready return");
+		return;
+	}
+
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prDev));
+	if (!prGlueInfo) {
+		DBGLOG(INIT, INFO, "prGlueInfo is NULL return");
+		return;
+	}
+
+	prAdapter = prGlueInfo->prAdapter;
+	if (!prAdapter) {
+		DBGLOG(INIT, INFO, "prAdapter is NULL return");
+		return;
 	}
 
 	if (cmd == ICS_LOG_CMD_ON_OFF || cmd == ICS_LOG_CMD_SET_LEVEL) {
