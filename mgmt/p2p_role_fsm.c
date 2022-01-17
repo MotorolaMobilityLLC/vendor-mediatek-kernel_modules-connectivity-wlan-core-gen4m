@@ -2061,6 +2061,10 @@ void p2pRoleFsmRunEventCsaDone(IN struct ADAPTER *prAdapter,
 		if (prAdapter->rWifiVar.eDbdcMode != ENUM_DBDC_MODE_DISABLED &&
 			prP2pBssInfo->eBand !=
 				prP2pRoleFsmInfo->rChnlReqInfo.eBand) {
+			/* Indicate PM abort to sync BSS state with FW */
+			nicPmIndicateBssAbort(prAdapter,
+				prP2pBssInfo->ucBssIndex);
+
 			nicDeactivateNetwork(prAdapter,
 				prP2pBssInfo->ucBssIndex);
 			nicUpdateBss(prAdapter,
