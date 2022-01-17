@@ -998,6 +998,102 @@ p2pFuncTagMgmtFrame(IN struct MSDU_INFO *prMgmtTxMsdu,
 	return eCNNState;
 }
 
+struct MSDU_INFO *p2pFuncProcessP2pAssocResp(
+	IN struct ADAPTER *prAdapter,
+	IN struct STA_RECORD *prStaRec,
+	IN uint8_t ucBssIdx,
+	IN struct MSDU_INFO *prMgmtTxMsdu)
+{
+	struct BSS_INFO *prP2pBssInfo = (struct BSS_INFO *) NULL;
+	struct MSDU_INFO *prRetMsduInfo = prMgmtTxMsdu;
+	struct MSDU_INFO *prMsduInfo;
+	struct WLAN_ASSOC_RSP_FRAME *prAssocRspFrame =
+		(struct WLAN_ASSOC_RSP_FRAME *) NULL;
+	uint8_t *pucIEBuf = (uint8_t *) NULL;
+	uint16_t u2Offset = 0, u2IELength = 0, u2RspHdrLen = 0;
+	uint8_t aucExtDHIE[1024];
+	uint16_t u2ExtDHIELen;
+
+	do {
+		ASSERT_BREAK((prAdapter != NULL) && (prMgmtTxMsdu != NULL));
+
+		prP2pBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
+			ucBssIdx);
+		if (!prP2pBssInfo ||
+			(prP2pBssInfo->u4RsnSelectedAKMSuite !=
+			RSN_AKM_SUITE_OWE)) {
+			DBGLOG(P2P, TRACE, "[OWE] Incorrect akm\n");
+			return prRetMsduInfo;
+		}
+
+		prAssocRspFrame = (struct WLAN_ASSOC_RSP_FRAME *)
+			((unsigned long) prMgmtTxMsdu->prPacket +
+			MAC_TX_RESERVED_FIELD);
+
+		u2RspHdrLen =
+			(MAC_TX_RESERVED_FIELD +
+		    WLAN_MAC_MGMT_HEADER_LEN +
+		    CAP_INFO_FIELD_LEN +
+		    STATUS_CODE_FIELD_LEN +
+		    AID_FIELD_LEN);
+
+		pucIEBuf = prAssocRspFrame->aucInfoElem;
+		u2IELength = prMgmtTxMsdu->u2FrameLength - u2RspHdrLen;
+
+		u2ExtDHIELen = 0;
+
+		IE_FOR_EACH(pucIEBuf, u2IELength, u2Offset) {
+			if ((IE_ID(pucIEBuf) == ELEM_ID_RESERVED)
+				&& (IE_ID_EXT(pucIEBuf) ==
+				ELEM_EXT_ID_DIFFIE_HELLMAN_PARAM)) {
+				kalMemCopy(aucExtDHIE,
+					pucIEBuf, IE_SIZE(pucIEBuf));
+				u2ExtDHIELen = IE_SIZE(pucIEBuf);
+				break;
+			}
+
+		}
+
+		if (!u2ExtDHIELen) {
+			DBGLOG(P2P, WARN, "[OWE] No DH IE\n");
+			return prRetMsduInfo;
+		}
+
+		prMsduInfo = assocComposeReAssocRespFrame(
+			prAdapter, prStaRec);
+		if (!prMsduInfo) {
+			DBGLOG(P2P, WARN, "[OWE] Compose fail\n");
+			return prRetMsduInfo;
+		}
+
+		kalMemCopy((uint8_t *)
+			((unsigned long) prRetMsduInfo->prPacket),
+			prMsduInfo->prPacket,
+			prMsduInfo->u2FrameLength);
+
+		prRetMsduInfo->u2FrameLength =
+			prMsduInfo->u2FrameLength;
+
+		kalMemCopy((uint8_t *)
+			((unsigned long) prRetMsduInfo->prPacket +
+			(unsigned long) prRetMsduInfo->u2FrameLength),
+			aucExtDHIE,
+			u2ExtDHIELen);
+
+		if (aucDebugModule[DBG_RLM_IDX] & DBG_CLASS_TRACE)
+			dumpMemory8((uint8_t *) aucExtDHIE,
+			(uint32_t) u2ExtDHIELen);
+
+		prRetMsduInfo->u2FrameLength +=
+			(uint16_t) u2ExtDHIELen;
+	} while (FALSE);
+
+	cnmMgtPktFree(prAdapter, prMsduInfo);
+
+	return prRetMsduInfo;
+}
+
+
 uint32_t
 p2pFuncTxMgmtFrame(IN struct ADAPTER *prAdapter,
 		IN uint8_t ucBssIndex,
@@ -1093,6 +1189,39 @@ p2pFuncTxMgmtFrame(IN struct ADAPTER *prAdapter,
 				dumpMemory8((uint8_t *) prMgmtTxMsdu->prPacket,
 					(uint32_t) prMgmtTxMsdu->u2FrameLength);
 			}
+			break;
+		case MAC_FRAME_ASSOC_RSP:
+			/* This case need to fall through */
+		case MAC_FRAME_REASSOC_RSP:
+			DBGLOG(P2P, TRACE, "[OWE] TX assoc resp Frame\n");
+			prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
+				ucBssIndex);
+			prMgmtTxMsdu->ucStaRecIndex =
+				(prStaRec != NULL)
+				? (prStaRec->ucIndex)
+				: (STA_REC_INDEX_NOT_FOUND);
+			DBGLOG(P2P, TRACE,
+				"[OWE] Dump assoc resp from supplicant.\n");
+			if (aucDebugModule[DBG_P2P_IDX] & DBG_CLASS_TRACE) {
+				dumpMemory8((uint8_t *) prMgmtTxMsdu->prPacket,
+					(uint32_t) prMgmtTxMsdu->u2FrameLength);
+			}
+			prMgmtTxMsdu = p2pFuncProcessP2pAssocResp(prAdapter,
+				prStaRec, ucBssIndex, prMgmtTxMsdu);
+			pu8GlCookie =
+				(uint64_t *) ((unsigned long)
+					prMgmtTxMsdu->prPacket +
+					(unsigned long)
+					prMgmtTxMsdu->u2FrameLength +
+					MAC_TX_RESERVED_FIELD);
+			*pu8GlCookie = u8GlCookie;
+			DBGLOG(P2P, TRACE,
+				"[OWE] Dump assoc resp to FW.\n");
+			if (aucDebugModule[DBG_P2P_IDX] & DBG_CLASS_TRACE) {
+				dumpMemory8((uint8_t *) prMgmtTxMsdu->prPacket,
+					(uint32_t) prMgmtTxMsdu->u2FrameLength);
+			}
+			prMgmtTxMsdu->ucBssIndex = ucBssIndex;
 			break;
 		default:
 			prMgmtTxMsdu->ucBssIndex = ucBssIndex;
