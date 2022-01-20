@@ -1996,6 +1996,7 @@ struct ADAPTER {
 #endif
 
 	bool fgMddpActivated;
+	uint8_t ucMddpBssIndex;
 
 	struct WLAN_DEBUG_INFO rDebugInfo;
 #if CFG_SUPPORT_IOT_AP_BLACKLIST

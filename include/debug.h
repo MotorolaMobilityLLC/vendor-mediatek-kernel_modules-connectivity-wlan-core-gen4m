@@ -142,6 +142,7 @@ extern struct MIB_INFO_STAT g_arMibInfo[ENUM_BAND_NUM];
 #define HIF_CHK_TX_HANG         BIT(1)
 #define HIF_DRV_SER             BIT(2)
 #define HIF_TRIGGER_FW_DUMP     BIT(3)
+#define HIF_CHK_MD_TX_HANG      BIT(4)
 
 #define DUMP_MEM_SIZE 64
 

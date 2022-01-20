@@ -180,6 +180,7 @@ static void halDumpTxHangLog(struct ADAPTER *prAdapter, uint32_t u4TokenId)
 	struct MSDU_TOKEN_INFO *prTokenInfo;
 	struct MSDU_TOKEN_ENTRY *prToken;
 	uint32_t u4DebugLevel = 0, u4Val = 0;
+	uint8_t ucBssIndex;
 
 	prDbgOps = prAdapter->chip_info->prDebugOps;
 	prTokenInfo = &prAdapter->prGlueInfo->rHifInfo.rTokenInfo;
@@ -217,7 +218,14 @@ static void halDumpTxHangLog(struct ADAPTER *prAdapter, uint32_t u4TokenId)
 		DBGLOG(HAL, ERROR, "Fw not ready to dump log\n");
 	}
 
-	halTriggerTxHangFwDebugSop(prAdapter, prToken->ucBssIndex);
+	if (prAdapter->u4HifChkFlag & HIF_CHK_MD_TX_HANG)
+		ucBssIndex = prAdapter->ucMddpBssIndex;
+	else
+		ucBssIndex = prToken->ucBssIndex;
+
+	DBGLOG(HAL, INFO, "BssIndex: %d\n", ucBssIndex);
+
+	halTriggerTxHangFwDebugSop(prAdapter, ucBssIndex);
 }
 
 bool halCheckFullDump(struct ADAPTER *prAdapter)
@@ -258,13 +266,15 @@ static void halCheckHifState(struct ADAPTER *prAdapter)
 	prDbgOps = prAdapter->chip_info->prDebugOps;
 
 	if (prAdapter->u4HifChkFlag & HIF_CHK_TX_HANG) {
-		if (halIsTxHang(prAdapter, &u4TokenId)) {
+		if (halIsTxHang(prAdapter, &u4TokenId) ||
+			prAdapter->u4HifChkFlag & HIF_CHK_MD_TX_HANG) {
 			DBGLOG(HAL, ERROR,
 			       "Tx timeout, set hif debug info flag\n");
 
 			fgHifTxHangFullDump = halCheckFullDump(prAdapter);
 
-			if (fgHifTxHangFullDump) {
+			if (fgHifTxHangFullDump ||
+				prAdapter->u4HifChkFlag & HIF_CHK_MD_TX_HANG) {
 				if ((prAdapter->u4HifTxHangDumpNum <
 					LOG_DUMP_COUNT_PERIOD) &&
 					!(BIT(prAdapter->u4HifTxHangDumpIdx) &

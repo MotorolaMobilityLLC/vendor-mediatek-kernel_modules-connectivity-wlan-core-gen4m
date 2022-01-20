@@ -55,6 +55,8 @@ enum ENUM_MDDPW_DRV_INFO_STATUS {
 enum ENUM_MDDPW_MD_INFO {
 	MDDPW_MD_INFO_RESET_IND     = 1,
 	MDDPW_MD_INFO_DRV_EXCEPTION = 2,
+	MDDPW_MD_EVENT_NOTIFY_MD_INFO_EMI = 3,
+	MDDPW_MD_EVENT_COMMUNICATION = 4,
 };
 
 /* MDDPW_MD_INFO_DRV_EXCEPTION */
@@ -62,6 +64,26 @@ struct wsvc_md_event_exception_t {
 	uint32_t u4RstReason;
 	uint32_t u4RstFlag;
 	uint32_t u4Line;
+	char pucFuncName[64];
+};
+
+enum EMUM_MD_NOTIFY_REASON_TYPE_T {
+	MD_INFORMATION_DUMP = 1,
+	MD_DRV_OWN_FAIL,
+	MD_INIT_FAIL,
+	MD_STATE_ABNORMAL,
+	MD_TX_DATA_HANG,
+	MD_TX_CMD_FAIL,
+	MD_ENUM_MAX,
+};
+
+/* MDDPW_MD_EVENT_COMMUNICATION */
+struct wsvc_md_event_comm_t {
+	uint32_t u4Reason;
+	uint32_t u4RstFlag;
+	uint32_t u4Line;
+	uint32_t dump_payload[32];
+	uint8_t  dump_size;
 	char pucFuncName[64];
 };
 
@@ -599,7 +621,7 @@ int32_t mddpNotifyDrvOwnTimeoutTime(void)
 	uint32_t u32DrvOwnTimeoutTime = LP_OWN_BACK_FAILED_LOG_SKIP_MS;
 	uint8_t *buff = NULL;
 
-	DBGLOG(INIT, INFO, "MD notify Drv Own Timeout time.\n");
+	DBGLOG(INIT, INFO, "Wi-Fi Notify MD Drv Own Timeout time.\n");
 
 	if (!gMddpWFunc.notify_drv_info) {
 		DBGLOG(NIC, ERROR, "notify_drv_info callback NOT exist.\n");
@@ -841,6 +863,37 @@ int32_t mddpMdNotifyInfo(struct mddpw_md_notify_info_t *prMdInfo)
 		glSetRstReason(RST_MDDP_MD_TRIGGER_EXCEPTION);
 		GL_RESET_TRIGGER(prAdapter, event->u4RstFlag
 			| RST_FLAG_DO_CORE_DUMP);
+	} else if (prMdInfo->info_type == MDDPW_MD_EVENT_COMMUNICATION) {
+		struct wsvc_md_event_comm_t *event;
+
+		if (prMdInfo->buf_len != sizeof(
+				struct wsvc_md_event_comm_t)) {
+			DBGLOG(INIT, ERROR,
+				"Invalid args from MD, expect %u but %u\n",
+				sizeof(struct wsvc_md_event_comm_t),
+				prMdInfo->buf_len);
+			ret = -EINVAL;
+			goto exit;
+		}
+		event = (struct wsvc_md_event_comm_t *)
+				&(prMdInfo->buf[1]);
+		DBGLOG(INIT, WARN,
+			"reason:%d, flag:%d, line:%d, func:%s, bssIdx:%d\n",
+				event->u4Reason,
+				event->u4RstFlag,
+				event->u4Line,
+				event->pucFuncName,
+				event->dump_payload[1]);
+		if (event->u4Reason == MD_TX_DATA_HANG) {
+			prAdapter->u4HifChkFlag |= HIF_CHK_TX_HANG;
+			prAdapter->u4HifChkFlag |= HIF_CHK_MD_TX_HANG;
+			prAdapter->ucMddpBssIndex =
+				(uint8_t) event->dump_payload[1];
+		} else {
+			glSetRstReason(RST_MDDP_MD_TRIGGER_EXCEPTION);
+			GL_RESET_TRIGGER(prAdapter, event->u4RstFlag
+				| RST_FLAG_DO_CORE_DUMP);
+		}
 	} else {
 		DBGLOG(INIT, ERROR, "unknown MD info type: %d\n",
 			prMdInfo->info_type);
