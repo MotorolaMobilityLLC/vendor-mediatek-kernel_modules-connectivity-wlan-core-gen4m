@@ -5487,6 +5487,24 @@ int testmode_get_ncho_mode(IN struct wiphy *wiphy, IN char *pcCommand,
 
 #endif /* CFG_SUPPORT_NCHO */
 
+#ifdef CFG_SUPPORT_ANT_SWAP
+int testmode_set_antswap_cfg(struct ADAPTER *prAdapter, IN char *pcCommand,
+			 IN int i4TotalLen)
+{
+	struct PARAM_CUSTOM_CHIP_CONFIG_STRUCT rChipConfigInfo = {0};
+	uint32_t strOutLen = 0;
+
+	DBGLOG(RLM, INFO, "pcCommand %s, strlen=%d", pcCommand, i4TotalLen);
+
+	rChipConfigInfo.u2MsgSize = i4TotalLen;
+	rChipConfigInfo.ucType = CHIP_CONFIG_TYPE_WO_RESPONSE;
+	kalStrnCpy(rChipConfigInfo.aucCmd, pcCommand, i4TotalLen);
+	wlanSetChipConfig(prAdapter, &rChipConfigInfo,
+			sizeof(rChipConfigInfo), &strOutLen, FALSE);
+	return 0;
+}
+#endif
+
 int testmode_add_roam_scn_chnl(
 	IN struct wiphy *wiphy, IN char *pcCommand, IN int i4TotalLen)
 {
@@ -5799,6 +5817,28 @@ int32_t mtk_cfg80211_process_str_cmd(IN struct wiphy *wiphy,
 	} else if (strnicmp(cmd, CMD_NCHO_MODE_GET,
 			    strlen(CMD_NCHO_MODE_GET)) == 0) {
 		return testmode_get_ncho_mode(wiphy, cmd, len);
+#endif
+#ifdef CFG_SUPPORT_ANT_SWAP
+	} else if (strnicmp(cmd, "AntSwapWeakRcpi",
+			    strlen("AntSwapWeakRcpi")) == 0) {
+		return testmode_set_antswap_cfg(prGlueInfo->prAdapter,
+			cmd, len);
+	} else if (strnicmp(cmd, "AntSwapDeltaRcpi",
+			    strlen("AntSwapDeltaRcpi")) == 0) {
+		return testmode_set_antswap_cfg(prGlueInfo->prAdapter,
+			cmd, len);
+	} else if (strnicmp(cmd, "AntSwapWeakSlot",
+			    strlen("AntSwapWeakSlot")) == 0) {
+		return testmode_set_antswap_cfg(prGlueInfo->prAdapter,
+			cmd, len);
+	} else if (strnicmp(cmd, "AntSwapExSlotInc",
+			    strlen("AntSwapExSlotInc")) == 0) {
+		return testmode_set_antswap_cfg(prGlueInfo->prAdapter,
+			cmd, len);
+	} else if (strnicmp(cmd, "AntSwapAntMode",
+			    strlen("AntSwapAntMode")) == 0) {
+		return testmode_set_antswap_cfg(prGlueInfo->prAdapter,
+			cmd, len);
 #endif
 	} else if (strnicmp(cmd, CMD_SET_AX_BLACKLIST,
 			    strlen(CMD_SET_AX_BLACKLIST)) == 0) {
