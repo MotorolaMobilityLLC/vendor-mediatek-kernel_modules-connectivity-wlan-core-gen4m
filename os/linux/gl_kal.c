@@ -7753,6 +7753,8 @@ void kalPerfIndReset(IN struct ADAPTER *prAdapter)
 		prAdapter->prGlueInfo->PerfIndCache.u2CurRxRate[i] = 0;
 		prAdapter->prGlueInfo->PerfIndCache.ucCurRxRCPI0[i] = 0;
 		prAdapter->prGlueInfo->PerfIndCache.ucCurRxRCPI1[i] = 0;
+		prAdapter->prGlueInfo->PerfIndCache.ucCurRxNss[i] = 0;
+		prAdapter->prGlueInfo->PerfIndCache.ucCurRxNss2[i] = 0;
 	}
 } /* kalPerfIndReset */
 
@@ -7793,6 +7795,8 @@ void kalSetPerfReport(IN struct ADAPTER *prAdapter)
 			prAdapter->prGlueInfo->PerfIndCache.ucCurRxRCPI1[i];
 		prCmdPerfReport->ucCurRxNss[i] =
 			prAdapter->prGlueInfo->PerfIndCache.ucCurRxNss[i];
+		prCmdPerfReport->ucCurRxNss2[i] =
+			prAdapter->prGlueInfo->PerfIndCache.ucCurRxNss2[i];
 		u4CurrentTp += (prCmdPerfReport->ulCurTxBytes[i] +
 			prCmdPerfReport->ulCurRxBytes[i]);
 	}

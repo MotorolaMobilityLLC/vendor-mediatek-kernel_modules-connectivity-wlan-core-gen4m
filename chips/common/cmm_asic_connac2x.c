@@ -1918,8 +1918,25 @@ void asicConnac2xRxPerfIndProcessRXV(IN struct ADAPTER *prAdapter,
 			       IN struct SW_RFB *prSwRfb,
 			       IN uint8_t ucBssIndex)
 {
+	struct STA_RECORD *prStaRec;
 	struct HW_MAC_RX_STS_GROUP_3 *prRxStatusGroup3;
+	uint32_t u4RxVector0 = 0;
+	uint8_t ucWlanIdx, ucStaIdx;
+	uint8_t ucRxMode = 0;
+	uint8_t ucMcs = 0;
+	uint8_t ucFrMode = 0;
+	uint8_t ucShortGI = 0;
+	uint8_t ucNsts = 0;
+	uint8_t ucNss = 0;
+	uint8_t ucStbc = 0;
 	uint8_t ucRCPI0 = 0, ucRCPI1 = 0;
+	uint32_t u4PhyRate;
+
+	/* Rate
+	 * Bit Number 2
+	 * Unit 500 Kbps
+	 */
+	uint16_t u2Rate = 0;
 
 	ASSERT(prAdapter);
 	ASSERT(prSwRfb);
@@ -1937,16 +1954,96 @@ void asicConnac2xRxPerfIndProcessRXV(IN struct ADAPTER *prAdapter,
 
 	prRxStatusGroup3 = prSwRfb->prRxStatusGroup3;
 
+	prStaRec = aisGetStaRecOfAP(prAdapter, AIS_DEFAULT_INDEX);
+	if (prStaRec) {
+		ucWlanIdx = prStaRec->ucWlanIndex;
+	} else {
+		DBGLOG(SW4, ERROR, "prStaRecOfAP is null\n");
+		return;
+	}
+
+	if (wlanGetStaIdxByWlanIdx(prAdapter, ucWlanIdx, &ucStaIdx) ==
+		WLAN_STATUS_SUCCESS) {
+		u4RxVector0 = prAdapter->arStaRec[ucStaIdx].u4RxVector0;
+		if (u4RxVector0 == 0) {
+			DBGLOG(SW4, WARN, "u4RxVector0 is 0\n");
+			return;
+		}
+	} else {
+		DBGLOG(SW4, ERROR, "wlanGetStaIdxByWlanIdx fail\n");
+		return;
+	}
+
+	ucRxMode = PERF_IND_RXV_GET_TXMODE(u4RxVector0);
+	ucMcs = PERF_IND_RXV_GET_RX_RATE(u4RxVector0);
+
+	/* RATE & NSS */
+	if ((ucRxMode == RX_VT_LEGACY_CCK)
+		|| (ucRxMode == RX_VT_LEGACY_OFDM)) {
+		/* Bit[2:0] for Legacy CCK, Bit[3:0] for Legacy OFDM */
+		u2Rate = nicGetHwRateByPhyRate(ucMcs);
+	} else {
+		ucFrMode = PERF_IND_RXV_GET_FR_MODE(u4RxVector0);
+		ucShortGI = PERF_IND_RXV_GET_GI(u4RxVector0);
+
+		if (ucFrMode >= 4) {
+			DBGLOG(SW4, ERROR, "frmode error: %u\n", ucFrMode);
+			return;
+		}
+
+		/* ucRate(500kbs) = u4PhyRate(100kbps) */
+		u4PhyRate = nicGetPhyRateByMcsRate(ucMcs, ucFrMode, ucShortGI);
+		if (u4PhyRate == 0)
+			return;
+		u2Rate = u4PhyRate / 5;
+	}
+
+	ucNsts = PERF_IND_RXV_GET_RX_NSTS(u4RxVector0);
+	ucStbc = PERF_IND_RXV_GET_STBC(u4RxVector0);
+
+	ucNsts += 1;
+	if (ucNsts == 1)
+		ucNss = ucNsts;
+	else
+		ucNss = ucStbc ? (ucNsts >> 1) : ucNsts;
+
+	if (ucNss == 1) {
+		if (prAdapter->prGlueInfo->
+			PerfIndCache.ucCurRxNss[ucBssIndex] < 0xff)
+			prAdapter->prGlueInfo->PerfIndCache.
+				ucCurRxNss[ucBssIndex]++;
+	} else if (ucNss == 2) {
+		if (prAdapter->prGlueInfo->
+			PerfIndCache.ucCurRxNss2[ucBssIndex] < 0xff)
+			prAdapter->prGlueInfo->PerfIndCache.
+				ucCurRxNss2[ucBssIndex]++;
+	}
+
 	/* RCPI */
 	ucRCPI0 = HAL_RX_STATUS_GET_RCPI0(prRxStatusGroup3);
 	ucRCPI1 = HAL_RX_STATUS_GET_RCPI1(prRxStatusGroup3);
 
-	/* Record peak rate to Traffic Indicator*/
-	prAdapter->prGlueInfo->PerfIndCache.
-		ucCurRxRCPI0[ucBssIndex] = ucRCPI0;
-	prAdapter->prGlueInfo->PerfIndCache.
-		ucCurRxRCPI1[ucBssIndex] = ucRCPI1;
+	/* DBGLOG(SW4, WARN, "rxvec0=[0x%x] rxmode=[%u], rate=[%u],
+	* bw=[%u], sgi=[%u], nsts=[%u], nss=[%u],
+	* cnt_nss1=[%d], cnt_nss2=[%d]\n",
+	* u4RxVector0, ucRxMode, ucMcs,
+	* ucFrMode, ucShortGI, ucNsts, ucNss,
+	* prAdapter->prGlueInfo->
+	* PerfIndCache.ucCurRxNss[ucBssIndex],
+	* prAdapter->prGlueInfo->
+	* PerfIndCache.ucCurRxNss2[ucBssIndex]);
+	*/
 
+	/* Record peak rate to Traffic Indicator*/
+	if (u2Rate > prAdapter->prGlueInfo
+		->PerfIndCache.u2CurRxRate[ucBssIndex]) {
+		prAdapter->prGlueInfo->PerfIndCache.
+			u2CurRxRate[ucBssIndex] = u2Rate;
+		prAdapter->prGlueInfo->PerfIndCache.
+			ucCurRxRCPI0[ucBssIndex] = ucRCPI0;
+		prAdapter->prGlueInfo->PerfIndCache.
+			ucCurRxRCPI1[ucBssIndex] = ucRCPI1;
+	}
 }
 #endif
 
