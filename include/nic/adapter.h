@@ -1974,6 +1974,7 @@ struct ADAPTER {
 
 	uint32_t u4HifDbgFlag;
 	uint32_t u4HifChkFlag;
+	uint32_t u4HifDbgParam;
 	uint32_t u4HifTxHangDumpBitmap;
 	uint32_t u4HifTxHangDumpIdx;
 	uint32_t u4HifTxHangDumpNum;
