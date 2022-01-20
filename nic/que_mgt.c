@@ -3952,18 +3952,24 @@ static void qmLogDropFallBehind(IN struct ADAPTER *prAdapter,
 {
 	uint16_t u2LastDrop = prReorderQueParm->u2LastFallBehindDropSN;
 	uint16_t u2DropGap = (u4SeqNo - u2LastDrop) & MAX_SEQ_NO;
+	uint64_t u8Count;
 
 	prReorderQueParm->u2LastFallBehindDropSN = u4SeqNo;
 
 	if (u2DropGap <= 1)
 		return;
 
-	DBGLOG(RX, INFO,
-	       "QM:(D)[%u](~%u)(%u~){%u,%u} BAR SSN:%u/%u total:%lu",
-	       ucTid, u2LastDrop, u4SeqNo,
-	       u4WinStart, u4WinEnd,
-	       IS_BAR_SSN_VALID(prReorderQueParm->u2BarSSN) ? 1 : 0, u4BarSSN,
-	       RX_GET_CNT(&prAdapter->rRxCtrl, RX_REORDER_BEHIND_DROP_COUNT));
+	u8Count = RX_GET_CNT(&prAdapter->rRxCtrl, RX_REORDER_BEHIND_DROP_COUNT);
+	if (IS_BAR_SSN_VALID(prReorderQueParm->u2BarSSN))
+		DBGLOG(RX, INFO,
+		       "QM:(D)[%u](~%u)(%u~){%u,%u} BAR SSN:%u/%u total:%lu",
+		       ucTid, u2LastDrop, u4SeqNo, u4WinStart, u4WinEnd, 1,
+		       u4BarSSN, u8Count);
+	else
+		DBGLOG(RX, TRACE,
+		       "QM:(D)[%u](~%u)(%u~){%u,%u} BAR SSN:%u/%u total:%lu",
+		       ucTid, u2LastDrop, u4SeqNo, u4WinStart, u4WinEnd, 0,
+		       u4BarSSN, u8Count);
 }
 
 void qmInsertReorderPkt(IN struct ADAPTER *prAdapter,
