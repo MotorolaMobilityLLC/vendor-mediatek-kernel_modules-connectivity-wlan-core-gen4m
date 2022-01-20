@@ -1105,6 +1105,8 @@ int glSetupP2P(struct GLUE_INFO *prGlueInfo, struct wireless_dev *prP2pWdev,
 	struct NETDEV_PRIVATE_GLUE_INFO *prNetDevPriv = NULL;
 	struct mt66xx_chip_info *prChipInfo = NULL;
 
+	GLUE_SPIN_LOCK_DECLARATION();
+
 	DBGLOG(INIT, TRACE, "setup the p2p dev\n");
 
 	if ((prGlueInfo == NULL) ||
@@ -1155,6 +1157,7 @@ int glSetupP2P(struct GLUE_INFO *prGlueInfo, struct wireless_dev *prP2pWdev,
 		prP2pWdev->wiphy->bands[BAND_6G] = NULL;
 #endif
 
+	GLUE_ACQUIRE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
 	/* setup netdev */
 	/* Point to shared glue structure */
 	prNetDevPriv = (struct NETDEV_PRIVATE_GLUE_INFO *)
@@ -1225,6 +1228,7 @@ int glSetupP2P(struct GLUE_INFO *prGlueInfo, struct wireless_dev *prP2pWdev,
 	/* so initial the corresponding data structure here. */
 	wlanBindBssIdxToNetInterface(prGlueInfo, prNetDevPriv->ucBssIdx,
 					(void *) prP2PInfo->aprRoleHandler);
+	GLUE_RELEASE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
 
 	/* bind netdev pointer to netdev index */
 #if 0
