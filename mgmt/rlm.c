@@ -1046,6 +1046,12 @@ static void rlmFillExtCapIE(struct ADAPTER *prAdapter,
 				ELEM_EXT_CAP_MBSSID_BIT);
 #endif
 
+#if CFG_MSCS_SUPPORT
+	if (mscsIsFpSupport(prAdapter))
+		SET_EXT_CAP(prExtCap->aucCapabilities, ELEM_MAX_LEN_EXT_CAP,
+				ELEM_EXT_CAP_MSCS_BIT);
+#endif
+
 	if (extCapConn && IS_BSS_AIS(prBssInfo)) {
 		if ((extCapIeLen - ELEM_HDR_LEN) > prExtCap->ucLength)
 			prExtCap->ucLength = ELEM_MAX_LEN_EXT_CAP;
