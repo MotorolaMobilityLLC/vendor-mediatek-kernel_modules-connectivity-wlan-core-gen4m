@@ -11606,7 +11606,7 @@ wlanGetSpeIdx(IN struct ADAPTER *prAdapter,
 			ucRetValSpeIdx = wlanAntPathFavorSelect(prAdapter,
 				eWfPathFavor);
 	}
-	DBGLOG(INIT, INFO, "SpeIdx:%d,D:%d,G=%d,B=%d,Bss=%d\n",
+	DBGLOG(INIT, TRACE, "SpeIdx:%d,D:%d,G=%d,B=%d,Bss=%d\n",
 	       ucRetValSpeIdx, prAdapter->rWifiVar.fgDbDcModeEn,
 	       prBssInfo->fgIsGranted, eBand, ucBssIndex);
 #endif
