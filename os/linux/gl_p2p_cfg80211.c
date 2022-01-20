@@ -1908,33 +1908,26 @@ int mtk_p2p_cfg80211_channel_switch(struct wiphy *wiphy,
 		netif_carrier_on(dev);
 		netif_tx_start_all_queues(dev);
 
-		if (prGlueInfo->prP2PInfo[ucRoleIdx]->chandef == NULL) {
-			prGlueInfo->prP2PInfo[ucRoleIdx]->chandef =
-				(struct cfg80211_chan_def *)
-				cnmMemAlloc(prGlueInfo->prAdapter,
-				RAM_TYPE_BUF, sizeof(struct cfg80211_chan_def));
-			if (prGlueInfo->prP2PInfo[ucRoleIdx]->chandef == NULL) {
-				i4Rslt = -ENOMEM;
-				break;
-			}
-			prGlueInfo->prP2PInfo[ucRoleIdx]->chandef->chan =
-				(struct ieee80211_channel *)
-				cnmMemAlloc(prGlueInfo->prAdapter,
-				RAM_TYPE_BUF, sizeof(struct ieee80211_channel));
-			if (prGlueInfo->prP2PInfo[ucRoleIdx]->chandef->chan
-				== NULL) {
-				i4Rslt = -ENOMEM;
-				break;
-			}
-		}
+		kalMemZero(
+			&(prGlueInfo->prP2PInfo[ucRoleIdx]->chandefCsa),
+			sizeof(struct cfg80211_chan_def));
+		prGlueInfo->prP2PInfo[ucRoleIdx]->chandefCsa.chan
+			= (struct ieee80211_channel *)
+			&(prGlueInfo->prP2PInfo[ucRoleIdx]->chanCsa);
+		kalMemZero(
+			prGlueInfo->prP2PInfo[ucRoleIdx]->chandefCsa.chan,
+			sizeof(struct ieee80211_channel));
+
 		/* Copy chan def to local buffer*/
 		prGlueInfo->prP2PInfo[ucRoleIdx]
-			->chandef->center_freq1 = params->chandef.center_freq1;
+			->chandefCsa.center_freq1 =
+			params->chandef.center_freq1;
 		prGlueInfo->prP2PInfo[ucRoleIdx]
-			->chandef->center_freq2 = params->chandef.center_freq2;
+			->chandefCsa.center_freq2 =
+			params->chandef.center_freq2;
 		prGlueInfo->prP2PInfo[ucRoleIdx]
-			->chandef->width = params->chandef.width;
-		memcpy(prGlueInfo->prP2PInfo[ucRoleIdx]->chandef->chan,
+			->chandefCsa.width = params->chandef.width;
+		memcpy(prGlueInfo->prP2PInfo[ucRoleIdx]->chandefCsa.chan,
 			params->chandef.chan,
 			sizeof(struct ieee80211_channel));
 
@@ -1949,10 +1942,10 @@ int mtk_p2p_cfg80211_channel_switch(struct wiphy *wiphy,
 		DBGLOG(P2P, INFO, "ucRoleIdx: %d, ucBssIdx: %d\n",
 				ucRoleIdx, ucBssIdx);
 
-		if (prGlueInfo->prP2PInfo[ucRoleIdx]->chandef->chan->
+		if (prGlueInfo->prP2PInfo[ucRoleIdx]->chandefCsa.chan->
 			dfs_state == NL80211_DFS_AVAILABLE
 #if KERNEL_VERSION(3, 15, 0) <= CFG80211_VERSION_CODE
-			&& prGlueInfo->prP2PInfo[ucRoleIdx]->chandef->chan->
+			&& prGlueInfo->prP2PInfo[ucRoleIdx]->chandefCsa.chan->
 			dfs_cac_ms != 0
 #endif
 			)

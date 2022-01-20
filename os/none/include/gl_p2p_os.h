@@ -219,7 +219,8 @@ struct GL_P2P_INFO {
 #endif
 
 #if (CFG_SUPPORT_DFS_MASTER == 1)
-	struct cfg80211_chan_def *chandef;
+	struct cfg80211_chan_def chandefCsa;
+	struct ieee80211_channel chanCsa;
 	uint32_t cac_time_ms;
 #endif
 

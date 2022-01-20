@@ -849,21 +849,6 @@ u_int8_t p2PFreeInfo(struct GLUE_INFO *prGlueInfo, uint8_t ucIdx)
 		prAdapter->rWifiVar.prP2pQueryStaStatistics[ucIdx] = NULL;
 #endif
 
-#if (CFG_SUPPORT_DFS_MASTER == 1)
-		if (prGlueInfo->prP2PInfo[ucIdx]->chandef) {
-			if (prGlueInfo->prP2PInfo[ucIdx]->chandef->chan) {
-				cnmMemFree(prGlueInfo->prAdapter,
-					prGlueInfo->prP2PInfo[ucIdx]
-					->chandef->chan);
-				prGlueInfo->prP2PInfo[ucIdx]
-					->chandef->chan = NULL;
-			}
-			cnmMemFree(prGlueInfo->prAdapter,
-				prGlueInfo->prP2PInfo[ucIdx]->chandef);
-			prGlueInfo->prP2PInfo[ucIdx]->chandef = NULL;
-		}
-#endif
-
 		kalMemFree(prGlueInfo->prP2PInfo[ucIdx],
 			VIR_MEM_TYPE,
 			sizeof(struct GL_P2P_INFO));

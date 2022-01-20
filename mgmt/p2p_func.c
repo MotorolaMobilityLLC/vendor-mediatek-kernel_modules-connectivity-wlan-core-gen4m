@@ -3279,36 +3279,24 @@ int32_t p2pFuncPreStartRdd(
 		if (prGlueInfo == NULL)
 			break;
 
-		if (prGlueInfo->prP2PInfo[ucRoleIdx]->chandef == NULL) {
-			prGlueInfo->prP2PInfo[ucRoleIdx]->chandef =
-				(struct cfg80211_chan_def *)
-					cnmMemAlloc(prGlueInfo->prAdapter,
-					RAM_TYPE_BUF,
-					sizeof(struct cfg80211_chan_def));
-			if (prGlueInfo->prP2PInfo[ucRoleIdx]->chandef == NULL) {
-				i4Rslt = -ENOMEM;
-				break;
-			}
-			prGlueInfo->prP2PInfo[ucRoleIdx]->chandef->chan =
-				(struct ieee80211_channel *)
-					cnmMemAlloc(prGlueInfo->prAdapter,
-					RAM_TYPE_BUF,
-					sizeof(struct ieee80211_channel));
-			if (prGlueInfo->prP2PInfo[ucRoleIdx]->chandef->chan
-				== NULL) {
-				i4Rslt = -ENOMEM;
-				break;
-			}
-		}
+		kalMemZero(
+			&(prGlueInfo->prP2PInfo[ucRoleIdx]->chandefCsa),
+			sizeof(struct cfg80211_chan_def));
+		prGlueInfo->prP2PInfo[ucRoleIdx]->chandefCsa.chan
+			= (struct ieee80211_channel *)
+			&(prGlueInfo->prP2PInfo[ucRoleIdx]->chanCsa);
+		kalMemZero(
+			prGlueInfo->prP2PInfo[ucRoleIdx]->chandefCsa.chan,
+			sizeof(struct ieee80211_channel));
 
 		/* Copy chan def to local buffer*/
 		prGlueInfo->prP2PInfo[ucRoleIdx]
-			->chandef->center_freq1 = chandef->center_freq1;
+			->chandefCsa.center_freq1 = chandef->center_freq1;
 		prGlueInfo->prP2PInfo[ucRoleIdx]
-			->chandef->center_freq2 = chandef->center_freq2;
+			->chandefCsa.center_freq2 = chandef->center_freq2;
 		prGlueInfo->prP2PInfo[ucRoleIdx]
-			->chandef->width = chandef->width;
-		memcpy(prGlueInfo->prP2PInfo[ucRoleIdx]->chandef->chan,
+			->chandefCsa.width = chandef->width;
+		memcpy(prGlueInfo->prP2PInfo[ucRoleIdx]->chandefCsa.chan,
 			chandef->chan, sizeof(struct ieee80211_channel));
 		prGlueInfo->prP2PInfo[ucRoleIdx]->cac_time_ms = cac_time_ms;
 
@@ -6732,14 +6720,15 @@ void p2pFuncSwitchGcChannel(
 		return;
 	}
 
-	if (prGlueP2pInfo->chandef != NULL) {
-		if (prGlueP2pInfo->chandef->chan) {
-			cnmMemFree(prAdapter, prGlueP2pInfo->chandef->chan);
-			prGlueP2pInfo->chandef->chan = NULL;
-		}
-		cnmMemFree(prAdapter, prGlueP2pInfo->chandef);
-		prGlueP2pInfo->chandef = NULL;
-	}
+	kalMemZero(
+		&(prGlueP2pInfo->chandefCsa),
+		sizeof(struct cfg80211_chan_def));
+	prGlueP2pInfo->chandefCsa.chan
+		= (struct ieee80211_channel *)
+		&(prGlueP2pInfo->chanCsa);
+	kalMemZero(
+		prGlueP2pInfo->chandefCsa.chan,
+		sizeof(struct ieee80211_channel));
 
 	DBGLOG(P2P, INFO, "switch gc channel: %s band\n",
 		prP2pBssInfo->eBand == prChnlReqInfo->eBand ? "same" : "cross");
