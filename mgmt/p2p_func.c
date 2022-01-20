@@ -3132,6 +3132,13 @@ p2pFuncDisconnect(IN struct ADAPTER *prAdapter,
 
 		eOriMediaStatus = prP2pBssInfo->eConnectionState;
 
+		if (u2ReasonCode == REASON_CODE_DISASSOC_INACTIVITY ||
+			u2ReasonCode == REASON_CODE_DISASSOC_LEAVING_BSS) {
+			prAdapter->u4HifChkFlag |= HIF_TRIGGER_FW_DUMP;
+			prAdapter->u4HifDbgParam = prP2pBssInfo->ucBssIndex;
+			kalSetHifDbgEvent(prAdapter->prGlueInfo);
+		}
+
 		/* Indicate disconnect. */
 		if (prP2pBssInfo->eCurrentOPMode == OP_MODE_ACCESS_POINT) {
 			struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo =
