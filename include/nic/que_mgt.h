@@ -806,13 +806,6 @@ enum ENUM_BA_ENTRY_STATUS {
 #define QM_RX_GET_NEXT_SW_RFB(_prSwRfb) \
 	((struct SW_RFB *)(((_prSwRfb)->rQueEntry).prNext))
 
-#if 0
-#define QM_GET_STA_REC_PTR_FROM_INDEX(_prAdapter, _ucIndex) \
-	((((_ucIndex) != STA_REC_INDEX_BMCAST) && \
-	((_ucIndex) != STA_REC_INDEX_NOT_FOUND)) ? \
-	 &(_prAdapter->arStaRec[_ucIndex]) : NULL)
-#endif
-
 #define QM_GET_STA_REC_PTR_FROM_INDEX(_prAdapter, _ucIndex) \
 	cnmGetStaRecByIndex(_prAdapter, _ucIndex)
 
