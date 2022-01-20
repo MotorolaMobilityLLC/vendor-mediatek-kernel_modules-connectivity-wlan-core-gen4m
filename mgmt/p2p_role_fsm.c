@@ -3871,7 +3871,8 @@ p2pRoleFsmGetStaStatistics(IN struct ADAPTER *prAdapter,
 	}
 
 	/* Make sure WFD is still enabled */
-	if (prAdapter->rWifiVar.rWfdConfigureSettings.ucWfdEnable) {
+	if (prAdapter->rWifiVar.rWfdConfigureSettings.ucWfdEnable &&
+		!prAdapter->prGlueInfo->fgIsInSuspendMode) {
 		cnmTimerStartTimer(prAdapter,
 			&(prP2pRoleFsmInfo->rP2pRoleFsmGetStatisticsTimer),
 			P2P_ROLE_GET_STATISTICS_TIME);

@@ -153,7 +153,61 @@ void p2pSetSuspendMode(struct GLUE_INFO *prGlueInfo, u_int8_t fgEnable)
 
 	kalSetNetAddressFromInterface(prGlueInfo, prDev, fgEnable);
 	wlanNotifyFwSuspend(prGlueInfo, prDev, fgEnable);
+
+#if CFG_ENABLE_PER_STA_STATISTICS_LOG
+	/*
+	 * For case P2pRoleFsmGetStatisticsTimer is stopped by system suspend.
+	 * We need to recall P2pRoleFsmGetStatisticsTimer when system resumes.
+	 */
+	p2pResumeStatisticsTimer(prGlueInfo, prDev);
+#endif
 }
+
+#if CFG_ENABLE_PER_STA_STATISTICS_LOG
+void p2pResumeStatisticsTimer(struct GLUE_INFO *prGlueInfo,
+	struct net_device *prNetDev)
+{
+	struct BSS_INFO *prP2pBssInfo = (struct BSS_INFO *) NULL;
+	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo =
+		(struct P2P_ROLE_FSM_INFO *) NULL;
+	uint8_t ucBssIndex = 0;
+
+	if (!prGlueInfo)
+		return;
+
+	ucBssIndex = wlanGetBssIdx(prNetDev);
+
+	if (!IS_BSS_INDEX_VALID(ucBssIndex)) {
+		DBGLOG(P2P, ERROR,
+			"StatisticsTimer resume failed. ucBssIndex is invalid\n");
+		return;
+	}
+
+	prP2pBssInfo = GET_BSS_INFO_BY_INDEX(prGlueInfo->prAdapter, ucBssIndex);
+	if (!prP2pBssInfo) {
+		DBGLOG(P2P, ERROR,
+			"StatisticsTimer resume failed. prP2pBssInfo is NULL\n");
+		return;
+	}
+
+	prP2pRoleFsmInfo =
+		P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prGlueInfo->prAdapter,
+			(uint8_t) prP2pBssInfo->u4PrivateData);
+
+	if (!prP2pRoleFsmInfo) {
+		DBGLOG(P2P, ERROR,
+			"StatisticsTimer resume failed. prP2pRoleFsmInfo is NULL\n");
+		return;
+	}
+
+	if (prGlueInfo->prAdapter->rWifiVar.rWfdConfigureSettings.ucWfdEnable &&
+		!prGlueInfo->fgIsInSuspendMode) {
+		cnmTimerStartTimer(prGlueInfo->prAdapter,
+			&(prP2pRoleFsmInfo->rP2pRoleFsmGetStatisticsTimer),
+			P2P_ROLE_GET_STATISTICS_TIME);
+	}
+}
+#endif
 
 /*---------------------------------------------------------------------------*/
 /*!
