@@ -1385,6 +1385,7 @@ void qmDetermineStaRecIndex(IN struct ADAPTER *prAdapter,
 	switch (prBssInfo->eCurrentOPMode) {
 	case OP_MODE_IBSS:
 	case OP_MODE_ACCESS_POINT:
+	case OP_MODE_NAN:
 		/* 4 <1> DA = BMCAST */
 		if (IS_BMCAST_MAC_ADDR(prMsduInfo->aucEthDestAddr)) {
 			prMsduInfo->ucStaRecIndex = STA_REC_INDEX_BMCAST;

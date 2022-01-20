@@ -48,7 +48,7 @@
  *                           P R I V A T E   D A T A
  *******************************************************************************
  */
-static uint8_t u8NanFollowupID;
+static uint16_t u16NanFollowupID;
 uint8_t g_enableNAN = TRUE;
 uint8_t g_disableNAN = TRUE;
 uint8_t g_deEvent = FALSE;
@@ -857,7 +857,7 @@ wlanoidNANFollowupRsp(IN struct ADAPTER *prAdapter, IN void *pvSetBuffer,
 	nanXmitFollowupRsp.status = pNanXmitFollowupRsp->status;
 	nanXmitFollowupRsp.value = 0;
 
-	u8NanFollowupID = nanXmitFollowupRsp.fwHeader.transactionId;
+	u16NanFollowupID = nanXmitFollowupRsp.fwHeader.transactionId;
 
 	/*  Fill values of NanSubscribeServiceCancelRspMsg */
 	skb = cfg80211_vendor_event_alloc(
@@ -2530,7 +2530,7 @@ mtk_cfg80211_vendor_event_nan_seldflwup_indication(
 	prNanFollowupInd->fwHeader.msgLen = message_len;
 	prNanFollowupInd->fwHeader.handle = prFollowupEvt->publish_subscribe_id;
 	/* Indication doesn't have transition ID */
-	prNanFollowupInd->fwHeader.transactionId = u8NanFollowupID;
+	prNanFollowupInd->fwHeader.transactionId = u16NanFollowupID;
 
 	/*  Fill skb and send to kernel by nl80211*/
 	skb = cfg80211_vendor_event_alloc(wiphy, wdev,
