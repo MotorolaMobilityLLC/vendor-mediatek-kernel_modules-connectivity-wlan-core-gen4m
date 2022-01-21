@@ -829,6 +829,22 @@ void cnmStaFreeAllStaByNetwork(struct ADAPTER *prAdapter, uint8_t ucBssIndex,
 #endif
 }
 
+struct STA_RECORD *cnmGetStaRecByIndexWithoutInUseCheck(
+	struct ADAPTER *prAdapter,
+	uint8_t ucIndex)
+{
+	struct STA_RECORD *prStaRec;
+
+	ASSERT(prAdapter);
+
+	if (ucIndex < CFG_STA_REC_NUM)
+		prStaRec = &prAdapter->arStaRec[ucIndex];
+	else
+		prStaRec = NULL;
+
+	return prStaRec;
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief
@@ -843,12 +859,7 @@ struct STA_RECORD *cnmGetStaRecByIndex(struct ADAPTER *prAdapter,
 {
 	struct STA_RECORD *prStaRec;
 
-	ASSERT(prAdapter);
-
-	if (ucIndex < CFG_STA_REC_NUM)
-		prStaRec = &prAdapter->arStaRec[ucIndex];
-	else
-		prStaRec = NULL;
+	prStaRec = cnmGetStaRecByIndexWithoutInUseCheck(prAdapter, ucIndex);
 
 	if (prStaRec && prStaRec->fgIsInUse == FALSE)
 		prStaRec = NULL;
