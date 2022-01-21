@@ -12321,7 +12321,8 @@ uint64_t wlanGetSupportedFeatureSet(IN struct GLUE_INFO *prGlueInfo)
 		u8FeatureSet |= WIFI_FEATURE_INFRA_5G;
 
 #if CFG_SUPPORT_LLS
-	if (prGlueInfo->prAdapter->pucLinkStatsSrcBufferAddr)
+	if (prGlueInfo && prGlueInfo->prAdapter &&
+	    prGlueInfo->prAdapter->pucLinkStatsSrcBufferAddr)
 		u8FeatureSet |= WIFI_FEATURE_LINK_LAYER_STATS;
 #endif
 
