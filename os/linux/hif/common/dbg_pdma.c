@@ -256,17 +256,6 @@ static void halCheckHifState(struct ADAPTER *prAdapter)
 
 	prAdapter->u4HifChkFlag = 0;
 	prAdapter->u4HifDbgParam = 0;
-
-	if (!fgHifTxHangFullDump) {
-		if (BIT(prAdapter->u4HifTxHangDumpIdx) &
-			prAdapter->u4HifTxHangDumpBitmap)
-			prAdapter->u4HifTxHangDumpNum--;
-		prAdapter->u4HifTxHangDumpBitmap &=
-			~(BIT(prAdapter->u4HifTxHangDumpIdx));
-	}
-
-	prAdapter->u4HifTxHangDumpIdx =
-		(prAdapter->u4HifTxHangDumpIdx + 1) % LOG_DUMP_COUNT_PERIOD;
 }
 
 static void halDumpHifDebugLog(struct ADAPTER *prAdapter)

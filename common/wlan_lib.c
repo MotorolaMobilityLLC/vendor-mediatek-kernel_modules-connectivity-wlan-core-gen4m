@@ -734,9 +734,6 @@ void wlanOnPreAllocAdapterMem(IN struct ADAPTER *prAdapter,
 		prAdapter->u4HifDbgFlag = 0;
 		prAdapter->u4HifChkFlag = 0;
 		prAdapter->u4HifDbgParam = 0;
-		prAdapter->u4HifTxHangDumpBitmap = 0;
-		prAdapter->u4HifTxHangDumpIdx = 0;
-		prAdapter->u4HifTxHangDumpNum = 0;
 		prAdapter->u4NoMoreRfb = 0;
 		prAdapter->u4WaitRecIdx = 0;
 		prAdapter->u4CompRecIdx = 0;
