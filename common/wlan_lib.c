@@ -2219,7 +2219,7 @@ uint32_t wlanTxCmdMthread(IN struct ADAPTER *prAdapter)
 	 * P_CMD_ACCESS_REG prEventAccessReg;
 	 * UINT_32 u4Address;
 	 */
-	uint32_t u4TxDoneQueueSize;
+	uint32_t u4TxDoneQueueSize, u4Ret;
 #if CFG_DBG_MGT_BUF
 	struct MEM_TRACK *prMemTrack = NULL;
 #endif
@@ -2261,34 +2261,35 @@ uint32_t wlanTxCmdMthread(IN struct ADAPTER *prAdapter)
 				(struct MEM_TRACK *)
 					((uint8_t *)prCmdInfo->pucInfoBuffer -
 						sizeof(struct MEM_TRACK));
-#endif
-
-		if ((!prCmdInfo->fgSetQuery) || (prCmdInfo->fgNeedResp)) {
-#if CFG_DBG_MGT_BUF
-			if (prMemTrack) {
+		if (prMemTrack) {
+			if (!prCmdInfo->fgSetQuery || prCmdInfo->fgNeedResp) {
 				prMemTrack->u2CmdIdAndWhere &= 0x00FF;
 				/* 0x30 means the CmdId needs to send to
 				 * FW via HIF
 				 */
 				prMemTrack->u2CmdIdAndWhere |= 0x3000;
-			}
-#endif
-		} else {
-#if CFG_DBG_MGT_BUF
-			if (prMemTrack) {
+			} else {
 				prMemTrack->u2CmdIdAndWhere &= 0x00FF;
 				/* 0x40 means the CmdId enqueues to
 				 * TxCmdDone queue
 				 */
 				prMemTrack->u2CmdIdAndWhere |= 0x4000;
 			}
+		}
 #endif
-			QUEUE_INSERT_TAIL(prTempCmdDoneQue, prQueueEntry);
+
+		u4Ret = nicTxCmd(prAdapter, prCmdInfo, TC4_INDEX);
+		if (u4Ret != WLAN_STATUS_SUCCESS)
+			DBGLOG(INIT, WARN, "nicTxCmd returns error[0x%08x]\n",
+			       u4Ret);
+
+		if (u4Ret == WLAN_STATUS_RESOURCES) {
+			QUEUE_INSERT_HEAD(prTempCmdQue, prQueueEntry);
+			break;
 		}
 
-		if (nicTxCmd(prAdapter, prCmdInfo, TC4_INDEX)
-						!= WLAN_STATUS_SUCCESS)
-			DBGLOG(INIT, WARN, "nicTxCmd returns error\n");
+		if (prCmdInfo->fgSetQuery && !prCmdInfo->fgNeedResp)
+			QUEUE_INSERT_TAIL(prTempCmdDoneQue, prQueueEntry);
 
 		/* DBGLOG(INIT, INFO, "==> TX CMD QID: %d (Q:%d)\n",
 		 *        prCmdInfo->ucCID, prTempCmdQue->u4NumElem));
@@ -2297,6 +2298,13 @@ uint32_t wlanTxCmdMthread(IN struct ADAPTER *prAdapter)
 		GLUE_DEC_REF_CNT(prAdapter->prGlueInfo->i4TxPendingCmdNum);
 		QUEUE_REMOVE_HEAD(prTempCmdQue, prQueueEntry,
 				  struct QUE_ENTRY *);
+	}
+
+	if (!QUEUE_IS_EMPTY(prTempCmdQue)) {
+		KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_CMD_QUE);
+		QUEUE_CONCATENATE_QUEUES(prTempCmdQue, &prAdapter->rTxCmdQueue);
+		QUEUE_CONCATENATE_QUEUES(&prAdapter->rTxCmdQueue, prTempCmdQue);
+		KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_CMD_QUE);
 	}
 
 	KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_CMD_DONE_QUE);
