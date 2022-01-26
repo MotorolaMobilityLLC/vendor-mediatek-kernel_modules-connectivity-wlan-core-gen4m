@@ -9330,6 +9330,7 @@ int priv_driver_set_country(IN struct net_device *prNetDev,
 	int32_t i4Argc = 0;
 	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
 	uint8_t aucCountry[2];
+	uint16_t u2CountryCode = 0;
 
 	ASSERT(prNetDev);
 	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
@@ -9352,7 +9353,13 @@ int priv_driver_set_country(IN struct net_device *prNetDev,
 			aucCountry_code[i] = apcArgv[1][i];
 
 
-		rStatus = kalIoctl(prGlueInfo, wlanoidSetCountryCode,
+		u2CountryCode = (((uint16_t) aucCountry_code[0]) << 8) |
+			((uint16_t) aucCountry_code[1]);
+#if CFG_SUPPORT_CE_FCC_DYNAMIC_TXPOWER
+		rStatus = priv_driver_set_ce_or_fcc_country(prGlueInfo,
+			u2CountryCode);
+#endif
+		rStatus |= kalIoctl(prGlueInfo, wlanoidSetCountryCode,
 				   &aucCountry_code[0], count,
 				   FALSE, FALSE, TRUE, &u4BufLen);
 		if (rStatus != WLAN_STATUS_SUCCESS)
@@ -9367,7 +9374,15 @@ int priv_driver_set_country(IN struct net_device *prNetDev,
 		aucCountry[0] = apcArgv[1][0];
 		aucCountry[1] = apcArgv[1][1];
 
-		rStatus = kalIoctl(prGlueInfo, wlanoidSetCountryCode,
+#if CFG_SUPPORT_CE_FCC_DYNAMIC_TXPOWER
+		u2CountryCode = (((uint16_t) aucCountry[0]) << 8) |
+			((uint16_t) aucCountry[1]);
+		DBGLOG(REQ, INFO, "i4Argc >= 2 enters aucCountry[0]=%u,aucCountry[1]=%u\n",
+				aucCountry[0], aucCountry[1]);
+		rStatus = priv_driver_set_ce_or_fcc_country(prGlueInfo,
+				u2CountryCode);
+#endif
+		rStatus |= kalIoctl(prGlueInfo, wlanoidSetCountryCode,
 				   &aucCountry[0], 2, FALSE, FALSE, TRUE,
 				   &u4BufLen);
 

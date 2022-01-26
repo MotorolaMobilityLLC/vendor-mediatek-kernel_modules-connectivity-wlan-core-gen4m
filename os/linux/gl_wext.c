@@ -3686,6 +3686,171 @@ wext_set_encode_ext(IN struct net_device *prNetDev,
 	return 0;
 }				/* wext_set_encode_ext */
 
+//alex.kou add
+#if CFG_SUPPORT_CE_FCC_DYNAMIC_TXPOWER
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief check country code is fcc  or not
+ *
+ * \param[in] country_code country code  requested.
+ *
+ * \retval 0 For success.
+ * \retval -EEFAULT For fail.
+ *
+ * \note Country code is stored and channel list is updated based on current
+ *  country domain.
+ */
+/*----------------------------------------------------------------------------*/
+uint32_t country_code_is_in_fcc_group(uint16_t country_code)
+{
+	uint32_t i;
+	uint16_t country_code_fcc[] = {
+		COUNTRY_CODE_US,
+		COUNTRY_CODE_BR,
+		COUNTRY_CODE_MX,
+		COUNTRY_CODE_AR,
+		COUNTRY_CODE_CL,
+		COUNTRY_CODE_TW,
+		COUNTRY_CODE_PE,
+		COUNTRY_CODE_CO,
+		COUNTRY_CODE_CR,
+		COUNTRY_CODE_DM
+	};
+
+	for (i = 0; i < ARRAY_SIZE(country_code_fcc); i++) {
+		if (country_code == country_code_fcc[i])
+			return 1;
+	}
+
+	return 0;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief check country code is ce  or not
+ *
+ * \param[in] country_code country code  requested.
+ *
+ * \retval 0 For success.
+ * \retval -EEFAULT For fail.
+ *
+ * \note Country code is stored and channel list is updated based on current
+ *  country domain.
+ */
+/*----------------------------------------------------------------------------*/
+uint32_t country_code_is_in_ce_group(uint16_t country_code)
+{
+	uint32_t i;
+	uint16_t country_code_ce[] = {
+		COUNTRY_CODE_AZ,
+		COUNTRY_CODE_TR,
+		COUNTRY_CODE_IN,
+		COUNTRY_CODE_KE
+	};
+
+	for (i = 0; i < ARRAY_SIZE(country_code_ce); i++) {
+		if (country_code == country_code_ce[i])
+			return 1;
+	}
+
+	return 0;
+}
+
+uint16_t priCountryCode = COUNTRY_CODE_CN;
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief set ce or fcc country to fw
+ *
+ * \param[in] country_code country code  requested.
+ *
+ * \retval 0 For success.
+ * \retval -EEFAULT For fail.
+ *
+ * \note Country code is stored and channel list is updated based on current
+ *  country domain.
+ */
+/*----------------------------------------------------------------------------*/
+int priv_driver_set_ce_or_fcc_country(struct GLUE_INFO *prGlueInfo,
+		uint16_t u2CountryCode)
+{
+	uint8_t index = 0;
+	char name[] = { "_G_Scenario" };
+	struct PARAM_TX_PWR_CTRL_IOCTL rPwrCtrlParam = { 0 };
+	uint32_t u4SetInfoLen = 0;
+	uint32_t rStatus = WLAN_STATUS_SUCCESS;
+
+	DBGLOG(REQ, WARN, "priCountryCode=%d, countryCode = %u\n",
+			priCountryCode, u2CountryCode);
+	if ((country_code_is_in_fcc_group(priCountryCode) &&
+				!country_code_is_in_fcc_group(u2CountryCode)) ||
+			(country_code_is_in_ce_group(priCountryCode) &&
+			 !country_code_is_in_ce_group(u2CountryCode))) {
+		if (country_code_is_in_fcc_group(priCountryCode)) {
+			kalStrnCpy(name, "FCCScenario",
+					strlen("FCCScenario") + 1);
+			index = 0;
+		}
+
+		if (country_code_is_in_ce_group(priCountryCode)) {
+			kalStrnCpy(name, "CEScenario",
+					strlen("CEScenario") + 1);
+			index = 0;
+		}
+
+		rPwrCtrlParam.fgApplied = (index == 0) ? FALSE : TRUE;
+		rPwrCtrlParam.name = name;
+		rPwrCtrlParam.index = index;
+		DBGLOG(REQ, INFO, "applied=[%d],name=[%s], index=[%u]\n",
+				rPwrCtrlParam.fgApplied,
+				rPwrCtrlParam.name,
+				rPwrCtrlParam.index);
+		rStatus = kalIoctl(prGlueInfo->prAdapter->prGlueInfo,
+				wlanoidTxPowerControl,
+				(void *)&rPwrCtrlParam,
+				sizeof(struct PARAM_TX_PWR_CTRL_IOCTL),
+				FALSE,
+				FALSE,
+				TRUE,
+				&u4SetInfoLen);
+
+		priCountryCode = u2CountryCode;
+	}
+
+	if (country_code_is_in_ce_group(u2CountryCode)) {
+		kalStrnCpy(name, "CEScenario", strlen("CEScenario") + 1);
+		index = 1;
+	}
+	else if (country_code_is_in_fcc_group(u2CountryCode)) {
+		kalStrnCpy(name, "FCCScenario", strlen("FCCScenario") + 1);
+		index = 2;
+	} else {
+		return 0;
+	}
+
+	rPwrCtrlParam.fgApplied = (index == 0) ? FALSE : TRUE;
+	rPwrCtrlParam.name = name;
+	rPwrCtrlParam.index = index;
+	DBGLOG(REQ, INFO, "applied=[%d],name=[%s], index=[%u]\n",
+			rPwrCtrlParam.fgApplied,
+			rPwrCtrlParam.name,
+			rPwrCtrlParam.index);
+	rStatus = kalIoctl(prGlueInfo->prAdapter->prGlueInfo,
+			wlanoidTxPowerControl,
+			(void *)&rPwrCtrlParam,
+			sizeof(struct PARAM_TX_PWR_CTRL_IOCTL),
+			FALSE,
+			FALSE,
+			TRUE,
+			&u4SetInfoLen);
+	DBGLOG(REQ, INFO, " priv_driver_set_ce_fcc command end\n");
+
+	if (rStatus != WLAN_STATUS_SUCCESS)
+		return -1;
+
+	return 0;
+}
+#endif
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -3709,6 +3874,7 @@ static int wext_set_country(IN struct net_device *prNetDev,
 	uint32_t u4BufLen;
 	uint8_t aucCountry[COUNTRY_CODE_LEN];
 
+	uint16_t u2CountryCode;
 	ASSERT(prNetDev);
 
 	/* prData->pointer should be like "COUNTRY US", "COUNTRY EU"
@@ -3724,10 +3890,19 @@ static int wext_set_country(IN struct net_device *prNetDev,
 			   COUNTRY_CODE_LEN))
 		return -EFAULT;
 
+	DBGLOG(REQ, ERROR, "wext_set_country: %c%c\n",
+		aucCountry[COUNTRY_CODE_LEN - 2], aucCountry[COUNTRY_CODE_LEN - 1]);
+#if CFG_SUPPORT_CE_FCC_DYNAMIC_TXPOWER
+	u2CountryCode = (((uint16_t) aucCountry[COUNTRY_CODE_LEN - 2]) << 8) |
+		((uint16_t) aucCountry[COUNTRY_CODE_LEN - 1]);
+	rStatus = priv_driver_set_ce_or_fcc_country(prGlueInfo, u2CountryCode);
+#endif
+
 	rStatus = kalIoctl(prGlueInfo,
 			   wlanoidSetCountryCode,
 			   &aucCountry[COUNTRY_CODE_LEN - 2], 2,
 			   FALSE, FALSE, TRUE, &u4BufLen);
+
 	if (rStatus != WLAN_STATUS_SUCCESS) {
 		DBGLOG(REQ, ERROR, "Set country code error: %x\n", rStatus);
 		return -EFAULT;
