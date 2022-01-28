@@ -230,3 +230,9 @@ void kalSetDrvEmiMpuProtection(phys_addr_t emiPhyBase, uint32_t offset,
 	mtk_emimpu_free_region(&region);
 }
 #endif
+
+#ifdef CONFIG_MTK_EMI
+void kalSetEmiMpuProtection(phys_addr_t emiPhyBase, bool enable)
+{
+}
+#endif

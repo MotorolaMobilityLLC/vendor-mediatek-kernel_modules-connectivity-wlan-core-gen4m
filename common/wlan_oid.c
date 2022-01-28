@@ -9629,12 +9629,15 @@ wlanoidSetNetworkAddress(IN struct ADAPTER *prAdapter,
 					sizeof(uint32_t));
 
 				DBGLOG(OID, INFO,
-				"%s:IPv4 Addr[%u]["IPV4STR"]Mask["IPV4STR"]\n",
+				"%s:IPv4 Addr[%u]["IPV4STR"]Mask["IPV4STR
+				"]BSS[%d] ver[%d]\n",
 				__func__,
 				u4IPv4AddrIdx,
 				IPV4TOSTR(prNetworkAddress->aucAddress),
 				IPV4TOSTR(prNetworkAddress->
-				aucAddress+sizeof(uint32_t)));
+				aucAddress+sizeof(uint32_t)),
+				prCmdNetworkAddressList->ucBssIndex,
+				prCmdNetworkAddressList->ucVersion);
 
 				u4IPv4AddrIdx++;
 			}
@@ -9650,12 +9653,6 @@ wlanoidSetNetworkAddress(IN struct ADAPTER *prAdapter,
 	} else {
 		prCmdNetworkAddressList->ucAddressCount = 0;
 	}
-
-	DBGLOG(OID, INFO,
-	       "%s: Set %u IPv4 address for BSS[%d] ver[%d]\n", __func__,
-		u4IPv4AddrCount,
-		prCmdNetworkAddressList->ucBssIndex,
-		prCmdNetworkAddressList->ucVersion);
 
 	/* 4 <5> Send command */
 	rStatus = wlanSendSetQueryCmd(prAdapter,
@@ -9776,11 +9773,12 @@ wlanoidSetIPv6NetworkAddress(IN struct ADAPTER *prAdapter,
 				->arNetAddress[u4IPv6AddrCount].aucIpAddr,
 				prNetworkAddress->aucAddress,
 				sizeof(struct CMD_IPV6_NETWORK_ADDRESS));
-
 				DBGLOG(INIT, INFO,
-				       "%s: IPv6 Addr [%u][" IPV6STR "]\n",
-				       __func__, u4IPv6AddrCount,
-				       IPV6TOSTR(prNetworkAddress->aucAddress));
+					"%s: IPv6 Addr [%u][" IPV6STR
+					"]BSS[%d]\n",
+					__func__, u4IPv6AddrCount,
+					IPV6TOSTR(prNetworkAddress->aucAddress),
+				       prCmdIPv6NetworkAddressList->ucBssIndex);
 
 				u4IPv6AddrCount++;
 			}
@@ -9796,11 +9794,6 @@ wlanoidSetIPv6NetworkAddress(IN struct ADAPTER *prAdapter,
 	} else {
 		prCmdIPv6NetworkAddressList->ucAddressCount = 0;
 	}
-
-	DBGLOG(INIT, INFO,
-	       "Set %u IPv6 address for BSS[%u]\n",
-	       u4IPv6AddrCount,
-	       prCmdIPv6NetworkAddressList->ucBssIndex);
 
 	/* 4 <5> Send command */
 	rStatus = wlanSendSetQueryCmd(prAdapter,
