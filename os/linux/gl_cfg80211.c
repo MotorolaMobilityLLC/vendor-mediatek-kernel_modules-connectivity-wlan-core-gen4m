@@ -3062,9 +3062,6 @@ mtk_cfg80211_testmode_get_sta_statistics(IN struct wiphy
 		return -ENOMEM;
 	}
 
-	DBGLOG(QM, TRACE, "Get [" MACSTR "] STA statistics\n",
-	       MAC2STR(prParams->aucMacAddr));
-
 	kalMemZero(&rQueryStaStatistics,
 		   sizeof(rQueryStaStatistics));
 	COPY_MAC_ADDR(rQueryStaStatistics.aucMacAddr,
