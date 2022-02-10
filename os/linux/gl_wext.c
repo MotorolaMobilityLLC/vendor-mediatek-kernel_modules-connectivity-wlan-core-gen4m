@@ -152,6 +152,8 @@ static const struct iw_priv_args rIwPrivTable[] = {
 	 IW_PRIV_TYPE_CHAR | 1024, "AP_STA_DISASSOC"},
 	{IOC_AP_SET_NSS, IW_PRIV_TYPE_CHAR | 256,
 	 IW_PRIV_TYPE_CHAR | 1024, "AP_SET_NSS"},
+	{IOC_AP_SET_BW, IW_PRIV_TYPE_CHAR | 256,
+	 IW_PRIV_TYPE_CHAR | 1024, "AP_SET_BW"},
 
 	/* sub-ioctl definitions */
 #if 0
@@ -277,6 +279,7 @@ static const iw_handler rIwPrivHandler[] = {
 	[IOC_AP_SET_CFG - SIOCIWFIRSTPRIV] = priv_set_ap,
 	[IOC_AP_STA_DISASSOC - SIOCIWFIRSTPRIV] = priv_set_ap,
 	[IOC_AP_SET_NSS - SIOCIWFIRSTPRIV] = priv_set_ap,
+	[IOC_AP_SET_BW - SIOCIWFIRSTPRIV] = priv_set_ap,
 #if CFG_SUPPORT_QA_TOOL
 	[IOCTL_QA_TOOL_DAEMON - SIOCIWFIRSTPRIV] = priv_qa_agent,
 	[IOCTL_IWPRIV_ATE - SIOCIWFIRSTPRIV] = priv_ate_set

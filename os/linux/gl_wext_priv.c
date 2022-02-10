@@ -734,6 +734,8 @@ int priv_support_ioctl(IN struct net_device *prNetDev,
 	case IOC_AP_STA_DISASSOC:
 	/* This case need to fall through */
 	case IOC_AP_SET_NSS:
+	/* This case need to fall through */
+	case IOC_AP_SET_BW:
 		return priv_set_ap(prNetDev, &rIwReqInfo, &(prIwReq->u),
 				     (char *) &(prIwReq->u));
 
@@ -10482,6 +10484,54 @@ error:
 	return -1;
 }
 
+int priv_driver_set_ap_bw(IN struct net_device *prNetDev,
+				IN char *pcCommand, IN int i4TotalLen)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	int32_t i4BytesWritten = 0;
+	int32_t i4Argc = 0;
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
+	uint32_t u4Ret, u4Parse = 0;
+	uint8_t ucBw;
+
+	ASSERT(prNetDev);
+
+	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
+		return -1;
+
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+
+	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+
+	if (i4Argc >= 1) {
+		u4Ret = kalkStrtou32(apcArgv[i4Argc - 1], 0, &u4Parse);
+		if (u4Ret) {
+			DBGLOG(REQ, WARN, "parse apcArgv error u4Ret=%d\n",
+				u4Ret);
+			goto error;
+		}
+		ucBw = (uint8_t) u4Parse;
+
+		if ((ucBw >= MAX_BW_20MHZ) && (ucBw < MAX_BW_UNKNOWN)) {
+			prGlueInfo->prAdapter->rWifiVar.ucAp5gBandwidth = ucBw;
+
+			DBGLOG(REQ, STATE,
+				"ApBW = %d\n", ucBw);
+	} else
+			DBGLOG(REQ, WARN, "Invalid bw=%d\n",
+				ucBw);
+	} else {
+		DBGLOG(INIT, ERROR,
+		  "iwpriv apx SET_AP_BW <value>\n");
+	}
+
+	return i4BytesWritten;
+
+error:
+	return -1;
+}
+
 int
 __priv_set_ap(IN struct net_device *prNetDev,
 	IN struct iw_request_info *prIwReqInfo,
@@ -10580,6 +10630,13 @@ __priv_set_ap(IN struct net_device *prNetDev,
 	case IOC_AP_SET_NSS:
 	i4BytesWritten =
 		priv_driver_set_ap_nss(
+		prNetDev,
+		aucOidBuf,
+		i4TotalFixLen);
+	  break;
+	case IOC_AP_SET_BW:
+	i4BytesWritten =
+		priv_driver_set_ap_bw(
 		prNetDev,
 		aucOidBuf,
 		i4TotalFixLen);

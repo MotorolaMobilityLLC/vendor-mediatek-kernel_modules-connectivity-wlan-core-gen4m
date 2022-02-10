@@ -111,6 +111,7 @@
 #define IOC_AP_SET_CFG          (SIOCIWFIRSTPRIV+23)
 #define IOC_AP_STA_DISASSOC     (SIOCIWFIRSTPRIV+25)
 #define IOC_AP_SET_NSS           (SIOCIWFIRSTPRIV+27)
+#define IOC_AP_SET_BW           (SIOCIWFIRSTPRIV+29)
 
 #define PRIV_CMD_REG_DOMAIN             0
 #define PRIV_CMD_BEACON_PERIOD          1
