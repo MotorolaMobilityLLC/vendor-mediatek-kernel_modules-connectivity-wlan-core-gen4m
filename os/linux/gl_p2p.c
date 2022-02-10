@@ -1003,17 +1003,23 @@ u_int8_t p2pNetUnregister(struct GLUE_INFO *prGlueInfo,
 		fgRollbackRtnlLock = TRUE;
 
 	for (ucRoleIdx = 0; ucRoleIdx < KAL_P2P_NUM; ucRoleIdx++) {
+		GLUE_ACQUIRE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
 		prP2PInfo = prGlueInfo->prP2PInfo[ucRoleIdx];
-		if (prP2PInfo == NULL)
+		if (prP2PInfo == NULL) {
+			GLUE_RELEASE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
 			continue;
+		}
 
 #if CFG_ENABLE_UNIFY_WIPHY
 		/* don't unregister the dev that share with the AIS */
-		if (wlanIsAisDev(prP2PInfo->prDevHandler))
+		if (wlanIsAisDev(prP2PInfo->prDevHandler)) {
+			GLUE_RELEASE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
 			continue;
+		}
 #endif
 
 		prRoleDev = prP2PInfo->aprRoleHandler;
+		GLUE_RELEASE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
 		if (prRoleDev != NULL) {
 			/* info cfg80211 disconnect */
 			prNetDevPriv = (struct NETDEV_PRIVATE_GLUE_INFO *)
