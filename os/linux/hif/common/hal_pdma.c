@@ -652,6 +652,44 @@ void halTxCancelSendingCmd(IN struct ADAPTER *prAdapter,
 {
 }
 
+u_int8_t halTxIsCmdBufEnough(IN struct ADAPTER *prAdapter)
+{
+	struct mt66xx_chip_info *prChipInfo;
+	struct GL_HIF_INFO *prHifInfo;
+	struct RTMP_TX_RING *prTxRing;
+#if CFG_TRI_TX_RING
+	uint16_t u2Port = TX_RING_CMD_IDX_4;
+#else
+	uint16_t u2Port = TX_RING_CMD_IDX_3;
+#endif
+
+	prChipInfo = prAdapter->chip_info;
+	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
+
+#if (CFG_SUPPORT_CONNAC2X == 1)
+	if (prChipInfo->is_support_wacpu)
+#if CFG_TRI_TX_RING
+		u2Port = TX_RING_WA_CMD_IDX_6;
+#else
+		u2Port = TX_RING_WA_CMD_IDX_5;
+#endif
+#endif /* CFG_SUPPORT_CONNAC2X == 1 */
+
+	prTxRing = &prHifInfo->TxRing[u2Port];
+
+	if (prTxRing->u4UsedCnt + 1 < TX_RING_SIZE)
+		return TRUE;
+
+	halWpdmaProcessCmdDmaDone(prAdapter->prGlueInfo, u2Port);
+	DBGLOG(HAL, INFO, "Force recycle port %d DMA resource UsedCnt[%d].\n",
+	       u2Port, prTxRing->u4UsedCnt);
+
+	if (prTxRing->u4UsedCnt + 1 < TX_RING_SIZE)
+		return TRUE;
+
+	return FALSE;
+}
+
 u_int8_t halTxIsDataBufEnough(IN struct ADAPTER *prAdapter,
 	IN struct MSDU_INFO *prMsduInfo)
 {
@@ -2292,6 +2330,11 @@ void halWpdmaProcessCmdDmaDone(IN struct GLUE_INFO *prGlueInfo,
 	} while (u4SwIdx != u4DmaIdx);
 
 	prTxRing->TxSwUsedIdx = u4SwIdx;
+
+#if CFG_SUPPORT_MULTITHREAD
+	if (!QUEUE_IS_EMPTY(&prGlueInfo->prAdapter->rTxCmdQueue))
+		kalSetTxCmdEvent2Hif(prGlueInfo);
+#endif
 
 }
 
