@@ -1213,12 +1213,14 @@ p2pFuncTxMgmtFrame(IN struct ADAPTER *prAdapter,
 			/* This case need to fall through */
 		case MAC_FRAME_REASSOC_RSP:
 			DBGLOG(P2P, TRACE, "[OWE] TX assoc resp Frame\n");
+			if (!prStaRec) {
+				DBGLOG(AAA, WARN, "get sta fail\n");
+				break;
+			}
 			prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
 				ucBssIndex);
 			prMgmtTxMsdu->ucStaRecIndex =
-				(prStaRec != NULL)
-				? (prStaRec->ucIndex)
-				: (STA_REC_INDEX_NOT_FOUND);
+				prStaRec->ucIndex;
 			DBGLOG(P2P, TRACE,
 				"[OWE] Dump assoc resp from supplicant.\n");
 			if (aucDebugModule[DBG_P2P_IDX] & DBG_CLASS_TRACE) {
