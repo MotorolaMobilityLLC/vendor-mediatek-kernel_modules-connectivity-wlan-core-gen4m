@@ -7992,11 +7992,12 @@ p2pFunNotifyChnlSwitch(IN struct ADAPTER *prAdapter,
 void
 p2pFunChnlSwitchNotifyDone(IN struct ADAPTER *prAdapter)
 {
+	struct GL_P2P_INFO *prP2PInfo;
 	struct BSS_INFO *prBssInfo;
 	struct MSG_P2P_CSA_DONE *prP2pCsaDoneMsg;
 	uint8_t ucBssIndex;
 
-	if (!prAdapter)
+	if (!prAdapter || !prAdapter->prGlueInfo)
 		return;
 
 	/* Check SAP interface */
@@ -8017,12 +8018,18 @@ p2pFunChnlSwitchNotifyDone(IN struct ADAPTER *prAdapter)
 			sizeof(*prP2pCsaDoneMsg));
 
 	if (!prP2pCsaDoneMsg) {
-		log_dbg(CNM, ERROR, "allocate for prP2pCsaDoneMsg failed!\n");
+		DBGLOG(CNM, ERROR, "allocate for prP2pCsaDoneMsg failed!\n");
 		return;
 	}
 
 	DBGLOG(CNM, INFO, "p2pFuncSwitch Done, ucBssIndex = %d\n",
 		prBssInfo->ucBssIndex);
+
+	prP2PInfo = prAdapter->prGlueInfo->prP2PInfo[prBssInfo->u4PrivateData];
+	if (!prP2PInfo->fgChannelSwitchReq) {
+		DBGLOG(CNM, ERROR, "Drop invalid csa done event!\n");
+		return; /* Drop invalid csa done event */
+	}
 
 	prP2pCsaDoneMsg->rMsgHdr.eMsgId = MID_CNM_P2P_CSA_DONE;
 	prP2pCsaDoneMsg->ucBssIndex = prBssInfo->ucBssIndex;
