@@ -580,7 +580,7 @@
 #define BAND_2G4_UPPER_BOUND 14
 /*5G SubBand FCC spec*/
 #define UNII1_LOWER_BOUND    36
-#define UNII1_UPPER_BOUND    48
+#define UNII1_UPPER_BOUND    50
 #define UNII2A_LOWER_BOUND   52
 #define UNII2A_UPPER_BOUND   64
 #define UNII2C_LOWER_BOUND   100
@@ -591,10 +591,10 @@
 #define UNII5_LOWER_BOUND    1
 #define UNII5_UPPER_BOUND    93
 #define UNII6_LOWER_BOUND    97
-#define UNII6_UPPER_BOUND    113
+#define UNII6_UPPER_BOUND    115
 #define UNII7_LOWER_BOUND    117
 #define UNII7_UPPER_BOUND    185
-#define UNII8_LOWER_BOUND    189
+#define UNII8_LOWER_BOUND    187
 #define UNII8_UPPER_BOUND    233
 
 #if CFG_SUPPORT_PWR_LIMIT_COUNTRY
@@ -602,7 +602,7 @@
 #define MAX_TX_POWER				63
 #define MIN_TX_POWER				-64
 /*align Frimware Max Power Limit CH Num*/
-#define MAX_CMD_SUPPORT_CHANNEL_NUM			60
+#define MAX_CMD_SUPPORT_CHANNEL_NUM			61
 #endif
 
 #if (CFG_SUPPORT_SINGLE_SKU == 1)
