@@ -318,10 +318,13 @@ static bool kalWaitRxDmaDone(struct GLUE_INFO *prGlueInfo,
 
 			u4CpuIdx = prRxRing->RxCpuIdx;
 			kalDumpRxRing(prGlueInfo, prRxRing, u4CpuIdx,
-						  true, CFG_RX_MAX_PKT_SIZE);
+						  true, 64);
 			INC_RING_INDEX(u4CpuIdx, prRxRing->u4RingSize);
 			kalDumpRxRing(prGlueInfo, prRxRing, u4CpuIdx,
-						  true, CFG_RX_MAX_PKT_SIZE);
+						  true, 64);
+			INC_RING_INDEX(u4CpuIdx, prRxRing->u4RingSize);
+			kalDumpRxRing(prGlueInfo, prRxRing, u4CpuIdx,
+						  true, 64);
 
 			return false;
 		}
