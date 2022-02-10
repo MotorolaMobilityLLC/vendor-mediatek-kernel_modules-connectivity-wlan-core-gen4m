@@ -5347,22 +5347,40 @@ int set_nan_handler(struct net_device *netdev, uint32_t ucEnable)
 }
 #endif
 
+void wlanOffWaitWlanThreads(IN struct completion *prComp,
+		IN struct task_struct *prThread)
+{
+	uint32_t waitRet = 0;
+
+	while (TRUE) {
+		waitRet = wait_for_completion_interruptible_timeout(
+			prComp, MSEC_TO_JIFFIES(1000));
+		if (waitRet > 0)
+			return;
+		DBGLOG(INIT, WARN,
+			"WlanThread not complete for 1 second.\n");
+		kal_show_stack(NULL, prThread, NULL);
+	}
+}
+
 void wlanOffStopWlanThreads(IN struct GLUE_INFO *prGlueInfo)
 {
 	DBGLOG(INIT, TRACE, "start.\n");
 
 #if CFG_SUPPORT_MULTITHREAD
 	wake_up_interruptible(&prGlueInfo->waitq_hif);
-	wait_for_completion_interruptible(
-		&prGlueInfo->rHifHaltComp);
+	wlanOffWaitWlanThreads(&prGlueInfo->rHifHaltComp,
+			prGlueInfo->hif_thread);
 	wake_up_interruptible(&prGlueInfo->waitq_rx);
-	wait_for_completion_interruptible(&prGlueInfo->rRxHaltComp);
+	wlanOffWaitWlanThreads(&prGlueInfo->rRxHaltComp,
+			prGlueInfo->rx_thread);
 #endif
 
 	/* wake up main thread */
 	wake_up_interruptible(&prGlueInfo->waitq);
 	/* wait main thread stops */
-	wait_for_completion_interruptible(&prGlueInfo->rHaltComp);
+	wlanOffWaitWlanThreads(&prGlueInfo->rHaltComp,
+			prGlueInfo->main_thread);
 
 	DBGLOG(INIT, INFO, "wlan thread stopped\n");
 
