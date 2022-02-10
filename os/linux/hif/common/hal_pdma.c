@@ -1532,6 +1532,9 @@ void halRxReceiveRFBs(IN struct ADAPTER *prAdapter, uint32_t u4Port,
 
 	DBGLOG(RX, TEMP, "halRxReceiveRFBs: u4RxCnt:%d\n", u4RxCnt);
 
+	/* unset no more rfb port bit */
+	prAdapter->u4NoMoreRfb &= ~BIT(u4Port);
+
 	KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_RX_FREE_QUE);
 	for (u4RfbCnt = 0; u4RfbCnt < u4RxCnt; u4RfbCnt++) {
 		QUEUE_REMOVE_HEAD(&prRxCtrl->rFreeSwRfbList,
@@ -1556,9 +1559,6 @@ void halRxReceiveRFBs(IN struct ADAPTER *prAdapter, uint32_t u4Port,
 		QUEUE_REMOVE_HEAD(&rFreeSwRfbList, prSwRfb, struct SW_RFB *);
 		if (!prSwRfb)
 			break;
-
-		/* unset no more rfb port bit */
-		prAdapter->u4NoMoreRfb &= ~BIT(u4Port);
 
 		if (fgRxData) {
 			fgStatus = kalDevReadData(prAdapter->prGlueInfo,
@@ -1623,9 +1623,12 @@ void halRxReceiveRFBs(IN struct ADAPTER *prAdapter, uint32_t u4Port,
 	kalDevRegWrite(prAdapter->prGlueInfo, prRxRing->hw_cidx_addr,
 		       prRxRing->RxCpuIdx);
 
-	KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_RX_QUE);
+	KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_RX_FREE_QUE);
 	QUEUE_CONCATENATE_QUEUES(&prRxCtrl->rFreeSwRfbList,
 		&rFreeSwRfbList);
+	KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_RX_FREE_QUE);
+
+	KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_RX_QUE);
 	QUEUE_CONCATENATE_QUEUES(&prRxCtrl->rReceivedRfbList,
 		&rReceivedRfbList);
 	KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_RX_QUE);
