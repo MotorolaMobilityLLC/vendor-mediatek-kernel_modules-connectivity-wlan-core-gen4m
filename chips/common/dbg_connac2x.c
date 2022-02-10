@@ -3114,13 +3114,16 @@ void connac2x_show_wfdma_desc(IN struct ADAPTER *prAdapter)
 		DBGLOG(HAL, INFO, "Dump WFDMA Rx Ring[%s]\n", prGroup->name);
 		prRxRing = &prHifInfo->RxRing[i];
 		u4SwIdx = prGroup->didx;
-		kalDumpRxRing(prAdapter->prGlueInfo, prRxRing, u4SwIdx, true);
+		kalDumpRxRing(prAdapter->prGlueInfo, prRxRing,
+					  u4SwIdx, true, 64);
 		u4SwIdx = prGroup->didx == 0 ?
 			prGroup->cnt - 1 : prGroup->didx - 1;
-		kalDumpRxRing(prAdapter->prGlueInfo, prRxRing, u4SwIdx, true);
+		kalDumpRxRing(prAdapter->prGlueInfo, prRxRing,
+					  u4SwIdx, true, 64);
 		u4SwIdx = prGroup->didx == prGroup->cnt - 1 ?
 			0 : prGroup->didx + 1;
-		kalDumpRxRing(prAdapter->prGlueInfo, prRxRing, u4SwIdx, true);
+		kalDumpRxRing(prAdapter->prGlueInfo, prRxRing,
+					  u4SwIdx, true, 64);
 	}
 }
 

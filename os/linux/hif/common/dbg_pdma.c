@@ -676,13 +676,13 @@ void kalDumpTxRing(struct GLUE_INFO *prGlueInfo,
 
 void kalDumpRxRing(struct GLUE_INFO *prGlueInfo,
 		   struct RTMP_RX_RING *prRxRing,
-		   uint32_t u4Num, bool fgDumpContent)
+		   uint32_t u4Num, bool fgDumpContent,
+		   uint32_t u4DumpLen)
 {
 	struct GL_HIF_INFO *prHifInfo = NULL;
 	struct HIF_MEM_OPS *prMemOps;
 	struct RTMP_DMACB *pRxCell;
 	struct RXD_STRUCT *pRxD;
-	uint32_t u4DumpLen = 64;
 
 	ASSERT(prGlueInfo);
 	prHifInfo = &prGlueInfo->rHifInfo;
@@ -893,12 +893,12 @@ void halShowPdmaInfo(IN struct ADAPTER *prAdapter)
 		prRxRing = &prHifInfo->RxRing[i];
 		SwIdx = wfmda_rx_group[i].didx;
 		kalDumpRxRing(prAdapter->prGlueInfo, prRxRing,
-			      SwIdx, true);
+			      SwIdx, true, 64);
 		SwIdx = wfmda_rx_group[i].didx == 0 ?
 				wfmda_rx_group[i].cnt - 1 :
 				wfmda_rx_group[i].didx - 1;
 		kalDumpRxRing(prAdapter->prGlueInfo, prRxRing,
-			      SwIdx, true);
+			      SwIdx, true, 64);
 	}
 
 	/* PDMA Busy Status */

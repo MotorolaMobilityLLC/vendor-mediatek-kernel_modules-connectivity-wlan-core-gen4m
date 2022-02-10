@@ -307,10 +307,6 @@ static bool kalWaitRxDmaDone(struct GLUE_INFO *prGlueInfo,
 {
 	uint32_t u4Count = 0;
 	uint32_t u4CpuIdx = 0;
-	struct RTMP_DMACB *pRxCell;
-	struct RXD_STRUCT *pCrRxD;
-	struct RTMP_DMABUF *prDmaBuf;
-	uint32_t u4Size = 0;
 
 	for (u4Count = 0; pRxD->DMADONE == 0; u4Count++) {
 		if (u4Count > DMA_DONE_WAITING_COUNT) {
@@ -321,27 +317,11 @@ static bool kalWaitRxDmaDone(struct GLUE_INFO *prGlueInfo,
 			       u2Port, prRxRing->RxDmaIdx, prRxRing->RxCpuIdx);
 
 			u4CpuIdx = prRxRing->RxCpuIdx;
+			kalDumpRxRing(prGlueInfo, prRxRing, u4CpuIdx,
+						  true, CFG_RX_MAX_PKT_SIZE);
 			INC_RING_INDEX(u4CpuIdx, prRxRing->u4RingSize);
-			if (prRxRing->RxDmaIdx != u4CpuIdx) {
-				pRxCell = &prRxRing->Cell[u4CpuIdx];
-				pCrRxD = (struct RXD_STRUCT *)pRxCell->AllocVa;
-				DBGLOG(HAL, INFO, "Rx DMAD[%u]\n", u4CpuIdx);
-				DBGLOG_MEM32(HAL, INFO, pCrRxD,
-					sizeof(struct RXD_STRUCT));
-				u4Size = pCrRxD->SDLen0;
-				if (u4Size > CFG_RX_MAX_PKT_SIZE) {
-					DBGLOG(RX, ERROR,
-						"Rx Data too large[%u]\n",
-						u4Size);
-				} else {
-					DBGLOG(HAL, INFO,
-						"RXD+Data[%u] len[%u]\n",
-						u4CpuIdx, u4Size);
-					prDmaBuf = &pRxCell->DmaBuf;
-					DBGLOG_MEM32(HAL, INFO,
-						prDmaBuf->AllocVa, u4Size);
-				}
-			}
+			kalDumpRxRing(prGlueInfo, prRxRing, u4CpuIdx,
+						  true, CFG_RX_MAX_PKT_SIZE);
 
 			return false;
 		}

@@ -1478,8 +1478,8 @@ static void axiDumpRx(struct GL_HIF_INFO *prHifInfo,
 	prRxCell = &prRxRing->Cell[u4Idx];
 	prDmaBuf = &prRxCell->DmaBuf;
 
-	if (prRxCell->pPacket)
-		DBGLOG_MEM128(HAL, INFO, prRxCell->pPacket, u4DumpLen);
+	if (prDmaBuf->AllocVa)
+		DBGLOG_MEM128(HAL, INFO, prDmaBuf->AllocVa, u4DumpLen);
 }
 #else /* AXI_CFG_PREALLOC_MEMORY_BUFFER */
 static void axiAllocDesc(struct GL_HIF_INFO *prHifInfo,
