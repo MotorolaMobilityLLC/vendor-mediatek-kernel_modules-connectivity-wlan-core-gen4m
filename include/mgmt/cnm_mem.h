@@ -1156,6 +1156,10 @@ void cnmStaFreeAllStaByNetwork(struct ADAPTER *prAdapter, uint8_t ucBssIndex,
 struct STA_RECORD *cnmGetStaRecByIndex(IN struct ADAPTER *prAdapter,
 	IN uint8_t ucIndex);
 
+struct STA_RECORD *cnmGetStaRecByIndexWithoutInUseCheck(
+	struct ADAPTER *prAdapter,
+	uint8_t ucIndex);
+
 struct STA_RECORD *cnmGetStaRecByAddress(struct ADAPTER *prAdapter,
 	uint8_t ucBssIndex, uint8_t aucPeerMACAddress[]);
 
