@@ -987,7 +987,7 @@ static void rlmFillExtCapIE(struct ADAPTER *prAdapter,
 
 	if (fg40mAllowed)
 		SET_EXT_CAP(prExtCap->aucCapabilities, ELEM_MAX_LEN_EXT_CAP,
-			    ELEM_EXT_CAP_20_40_COEXIST_SUPPORT);
+			ELEM_EXT_CAP_20_40_COEXIST_SUPPORT_BIT);
 
 #if CFG_SUPPORT_802_11AC
 	prStaRec = cnmGetStaRecByIndex(prAdapter, prMsduInfo->ucStaRecIndex);
