@@ -1078,12 +1078,12 @@ u_int8_t p2pNetUnregister(struct GLUE_INFO *prGlueInfo,
 		if (prP2PInfo->prDevHandler->reg_state == NETREG_REGISTERED)
 			unregister_netdev(prP2PInfo->prDevHandler);
 
+		prGlueInfo->prAdapter->rP2PNetRegState =
+			ENUM_NET_REG_STATE_UNREGISTERED;
+
 		if (fgRollbackRtnlLock)
 			rtnl_lock();
 	}
-
-	prGlueInfo->prAdapter->rP2PNetRegState =
-		ENUM_NET_REG_STATE_UNREGISTERED;
 
 	return TRUE;
 }
@@ -1565,6 +1565,7 @@ free_wdev:
 u_int8_t glUnregisterP2P(struct GLUE_INFO *prGlueInfo, uint8_t ucIdx)
 {
 	uint8_t ucRoleIdx;
+	u_int8_t fgDoUnregister = FALSE;
 	struct ADAPTER *prAdapter;
 	struct GL_P2P_INFO *prP2PInfo = NULL;
 	int i4Start = 0, i4End = 0;
@@ -1639,27 +1640,32 @@ u_int8_t glUnregisterP2P(struct GLUE_INFO *prGlueInfo, uint8_t ucIdx)
 			 * (unregister_netdev).
 			 */
 		}
-
 		if (prP2PInfo->prDevHandler) {
+			if (prAdapter->rP2PNetRegState ==
+				ENUM_NET_REG_STATE_REGISTERED) {
+				prAdapter->rP2PNetRegState =
+					ENUM_NET_REG_STATE_UNREGISTERING;
+				fgDoUnregister = TRUE;
+			}
 			/* don't free the dev that share with the AIS */
 			if (wlanIsAisDev(prP2PInfo->prDevHandler))
 				gprP2pRoleWdev[ucRoleIdx] = NULL;
 			else {
 				GLUE_RELEASE_SPIN_LOCK(prGlueInfo,
 					SPIN_LOCK_NET_DEV);
-				if (prP2PInfo->prDevHandler->reg_state
-					== NETREG_REGISTERED) {
+				if (prP2PInfo->prDevHandler->reg_state ==
+					NETREG_REGISTERED && fgDoUnregister) {
 					DBGLOG(INIT, WARN,
 						"Force unregister netdev\n");
 					unregister_netdev(
 						prP2PInfo->prDevHandler);
-					prGlueInfo->prAdapter->rP2PNetRegState =
-						ENUM_NET_REG_STATE_UNREGISTERED;
 				}
 				free_netdev(prP2PInfo->prDevHandler);
 				GLUE_ACQUIRE_SPIN_LOCK(prGlueInfo,
 					SPIN_LOCK_NET_DEV);
 			}
+			prAdapter->rP2PNetRegState =
+					ENUM_NET_REG_STATE_UNREGISTERED;
 			prP2PInfo->prDevHandler = NULL;
 		}
 		GLUE_RELEASE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
