@@ -1995,6 +1995,15 @@ void p2pRoleFsmRunEventSetNewChannel(IN struct ADAPTER *prAdapter,
 	prP2pBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
 		prMsgP2pSetNewChannelMsg->ucBssIndex);
 
+	if (prP2pBssInfo &&
+		kalP2pIsStoppingAp(prAdapter,
+		prP2pBssInfo)) {
+		DBGLOG(P2P, ERROR,
+			"BSS %d is disabled.\n",
+			prP2pBssInfo->ucBssIndex);
+		goto error;
+	}
+
 	prP2pRoleFsmInfo =
 		P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prAdapter,
 			prMsgP2pSetNewChannelMsg->ucRoleIdx);
