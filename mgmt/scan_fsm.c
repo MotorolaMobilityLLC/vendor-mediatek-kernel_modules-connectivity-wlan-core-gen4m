@@ -917,6 +917,23 @@ void scnEventScanDone(IN struct ADAPTER *prAdapter,
 			prScanDone->ucSeqNum,
 			prScanInfo->eCurrentState);
 	}
+#if CFG_SUPPORT_SCAN_NO_AP_RECOVERY
+	/* SCAN NO AP RECOVERY is only for AIS,
+	 * FW report scan done, reset ScnTimeoutTimes and reset count to 0
+	 */
+	prScanInfo->ucScnTimeoutTimes = 0;
+	prScanInfo->ucScnTimeoutSubsysResetCnt = 0;
+
+	if (IS_FEATURE_ENABLED(prAdapter->rWifiVar.ucScanNoApRecover) &&
+		prScanInfo->fgIsSparseChannelValid &&
+		prScanDone->ucSparseChannelArrayValidNum > 0 &&
+		(prScanParam->eMsgId == MID_AIS_SCN_SCAN_REQ ||
+		prScanParam->eMsgId == MID_AIS_SCN_SCAN_REQ_V2)) {
+		scnDoZeroMdrdyRecoveryCheck(prAdapter, prScanDone,
+				prScanInfo, prScanParam->ucBssIndex);
+	}
+#endif
+
 }	/* end of scnEventScanDone */
 
 /*----------------------------------------------------------------------------*/
@@ -1357,3 +1374,128 @@ scnSetSchedScanPlan(IN struct ADAPTER *prAdapter,
 }
 
 #endif /* CFG_SUPPORT_SCHED_SCAN */
+
+#if CFG_SUPPORT_SCAN_NO_AP_RECOVERY
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief                 Check scan result Mdrdy is all zero or not
+ * \param aucChannelMDRDYCnt       Channel Mdrdy result
+ * \param ucChNum	  Scan channel count
+ *
+ * \return                void
+ */
+/*----------------------------------------------------------------------------*/
+void
+scnDoZeroMdrdyRecoveryCheck(IN struct ADAPTER *prAdapter,
+		IN struct EVENT_SCAN_DONE *prScanDone,
+		IN struct SCAN_INFO *prScanInfo, IN uint8_t ucBssIndex)
+{
+	struct BSS_INFO *prAisBssInfo;
+	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
+	uint8_t i;
+	uint8_t fgZeroMdrdy = TRUE, fgZeroBeaconProbeReq = TRUE;
+
+	prAisBssInfo = aisGetAisBssInfo(prAdapter, ucBssIndex);
+
+	for (i = 0; i < prScanDone->ucSparseChannelArrayValidNum; i++) {
+		if (prScanDone->aucChannelMDRDYCnt[i] > 0)
+			fgZeroMdrdy = FALSE;
+		if (prScanDone->aucChannelBAndPCnt[i] > 0)
+			fgZeroBeaconProbeReq = FALSE;
+	}
+
+	/* Abnormal: total Mdrdy=0 or beacon+ProbReq=0 case */
+	if (fgZeroMdrdy || fgZeroBeaconProbeReq) {
+		prScanInfo->ucScnZeroMdrdyTimes++;
+
+		log_dbg(SCN, WARN, "ScanRecover: Mdrdy(%d),BandP(%d), Count(%d), Conn(%d), SER(%d), Reset(%d)",
+			fgZeroMdrdy, fgZeroBeaconProbeReq,
+			prScanInfo->ucScnZeroMdrdyTimes,
+			prAisBssInfo->eConnectionState,
+			prScanInfo->ucScnZeroMdrdySerCnt,
+			prScanInfo->ucScnZeroMdrdySubsysResetCnt);
+
+		/* Do L1 SER if continuous abnormal count >= 3,
+		 * if first L1 SER not useful, will do twice
+		 */
+		if (prScanInfo->ucScnZeroMdrdyTimes >= prWifiVar->
+			ucScanNoApRecoverTh)
+			if (prScanInfo->ucScnZeroMdrdySerCnt < 2) {
+				prScanInfo->ucScnZeroMdrdySerCnt++;
+				wlanoidSerExtCmd(prAdapter,
+						SER_ACTION_SET_ENABLE_MASK,
+						(SER_ENABLE_TRACKING |
+						SER_ENABLE_L1_RECOVER |
+						SER_ENABLE_L2_RECOVER |
+						SER_ENABLE_L3_RX_ABORT |
+						SER_ENABLE_L3_TX_ABORT |
+						SER_ENABLE_L3_TX_DISABLE |
+						SER_ENABLE_L3_BF_RECOVER), 0);
+				wlanoidSerExtCmd(prAdapter, SER_ACTION_RECOVER,
+					SER_SET_L1_RECOVER, 0);
+			}
+			/* TODO:
+			 * If still abnormal after do twice L1 SER
+			 * (ucScnZeroMdrdySerCnt >= 2)
+			 * do subsys reset if no connection.
+			 */
+#if 0
+			else if (prScanInfo->ucScnZeroMdrdySubsysResetCnt < 1) {
+				if (prAisBssInfo->eConnectionState
+					== MEDIA_STATE_DISCONNECTED) {
+					prScanInfo->
+						ucScnZeroMdrdySubsysResetCnt++;
+					GL_RESET_TRIGGER(prAdapter,
+						RST_FLAG_CHIP_RESET);
+				}
+			}
+#endif
+	}
+	/* Normal: Mdrdy>0 and beacon+ProbReq>0 case */
+	else {
+		prScanInfo->ucScnZeroMdrdyTimes = 0;
+		prScanInfo->ucScnZeroMdrdySerCnt = 0;
+		prScanInfo->ucScnZeroMdrdySubsysResetCnt = 0;
+	}
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief                 Check scan result Mdrdy is all zero or not
+ * \param aucChannelMDRDYCnt       Channel Mdrdy result
+ * \param ucChNum	  Scan channel count
+ *
+ * \return                void
+ */
+/*----------------------------------------------------------------------------*/
+void
+scnDoScanTimeoutRecoveryCheck(IN struct ADAPTER *prAdapter,
+			IN uint8_t ucBssIndex)
+{
+	struct BSS_INFO *prAisBssInfo;
+	struct SCAN_INFO *prScanInfo;
+	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
+
+	prAisBssInfo = aisGetAisBssInfo(prAdapter, ucBssIndex);
+	prScanInfo = &(prAdapter->rWifiVar.rScanInfo);
+
+	prScanInfo->ucScnTimeoutTimes++;
+
+	log_dbg(SCN, WARN, "ScanRecover:Conn(%d), ScnTimeoutCount(%d), Reset(%d)",
+		prAisBssInfo->eConnectionState,
+		prScanInfo->ucScnTimeoutTimes,
+		prScanInfo->ucScnTimeoutSubsysResetCnt);
+
+	/* If scanDoneTimeout count > 3 and no connection, do subsys reset */
+	if (prScanInfo->ucScnTimeoutTimes >= prWifiVar->ucScanNoApRecoverTh) {
+		if (prScanInfo->ucScnTimeoutSubsysResetCnt < 1 &&
+		   prAisBssInfo->eConnectionState == MEDIA_STATE_DISCONNECTED) {
+			prScanInfo->ucScnTimeoutSubsysResetCnt++;
+			GL_RESET_TRIGGER(prAdapter,
+				RST_FLAG_CHIP_RESET);
+		}
+	}
+}
+
+#endif
+
