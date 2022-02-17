@@ -1705,13 +1705,16 @@ void p2pRoleFsmRunEventJoinComplete(IN struct ADAPTER *prAdapter, IN struct MSG_
 	prStaRec = prJoinCompMsg->prStaRec;
 	prAssocRspSwRfb = prJoinCompMsg->prSwRfb;
 
-	DBGLOG(P2P, TRACE, "P2P BSS %d, Join Complete\n", prStaRec->ucBssIndex);
-
 	ASSERT(prStaRec)
 	if (!prStaRec) {
 		DBGLOG(P2P, ERROR, "prJoinCompMsg->prStaRec is NULL!\n");
 		goto error;
 	}
+
+	DBGLOG(P2P, INFO, "P2P BSS %d [" MACSTR "], Join Complete, status: %d\n",
+			prStaRec->ucBssIndex,
+			prStaRec->aucMacAddr,
+			prJoinCompMsg->rJoinStatus);
 
 	ASSERT(prStaRec->ucBssIndex < prAdapter->ucP2PDevBssIdx);
 	if (!(prStaRec->ucBssIndex < prAdapter->ucP2PDevBssIdx)) {
