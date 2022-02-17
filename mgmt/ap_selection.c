@@ -580,6 +580,14 @@ static u_int8_t scanSanityCheckBssDesc(struct ADAPTER *prAdapter,
 				MAC2STR(prBssDesc->aucBSSID));
 			return FALSE;
 		}
+
+		if (prBssDesc->prBlack->ucCount >= 10)  {
+			log_dbg(SCN, WARN,
+				MACSTR
+				" Skip AP that add toblacklist count >= 10\n",
+				MAC2STR(prBssDesc->aucBSSID));
+			return FALSE;
+		}
 	}
 
 	/* roaming case */
