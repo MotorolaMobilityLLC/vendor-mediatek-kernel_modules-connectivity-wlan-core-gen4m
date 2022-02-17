@@ -402,7 +402,6 @@ void glSetHifInfo(struct GLUE_INFO *prGlueInfo, unsigned long ulCookie)
 
 	prHif->rErrRecoveryCtl.eErrRecovState = ERR_RECOV_STOP_IDLE;
 	prHif->rErrRecoveryCtl.u4Status = 0;
-	prHif->fgIsErrRecovery = FALSE;
 
 	init_timer(&prHif->rSerTimer);
 	prHif->rSerTimer.function = halHwRecoveryTimeout;
