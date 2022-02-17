@@ -3808,7 +3808,12 @@ int mtk_cfg80211_sched_scan_stop(IN struct wiphy *wiphy,
 			   FALSE, FALSE, TRUE, &u4BufLen);
 
 	if (rStatus == WLAN_STATUS_FAILURE) {
-		DBGLOG(REQ, WARN, "scheduled scan error:%x\n", rStatus);
+		DBGLOG(REQ, WARN, "scheduled scan error in IoCtl:%x\n",
+		       rStatus);
+		return 0;
+	} else if (rStatus == WLAN_STATUS_RESOURCES) {
+		DBGLOG(REQ, WARN, "scheduled scan error in Driver:%x\n",
+		       rStatus);
 		return -EINVAL;
 	}
 
