@@ -130,6 +130,9 @@ static PROCESS_LEGACY_TO_UNI_FUNCTION arUniCmdTable[CMD_ID_END] = {
 	[CMD_ID_GET_STATISTICS] = nicUniCmdNotSupport,
 	[CMD_ID_PERF_IND] = nicUniCmdNotSupport,
 	[CMD_ID_SET_MONITOR] = nicUniCmdSetMonitor,
+	[CMD_ID_ADD_REMOVE_KEY] = nicUniCmdInstallKey,
+	[CMD_ID_DEFAULT_KEY_ID] = nicUniCmdInstallDefaultKey,
+	[CMD_ID_SET_GTK_REKEY_DATA] = nicUniCmdOffloadKey,
 };
 
 static PROCESS_LEGACY_TO_UNI_FUNCTION arUniExtCmdTable[EXT_CMD_ID_END] = {
@@ -156,6 +159,7 @@ static PROCESS_RX_UNI_EVENT_FUNCTION arUniEventTable[UNI_EVENT_ID_NUM] = {
 	[UNI_EVENT_ID_PS_SYNC] = nicUniEventPsSync,
 	[UNI_EVENT_ID_SAP] = nicUniEventSap,
 	[UNI_EVENT_ID_ROAMING] = nicUniEventRoaming,
+	[UNI_EVENT_ID_ADD_KEY_DONE] = nicUniEventAddKeyDone,
 };
 
 /*******************************************************************************
@@ -276,6 +280,7 @@ wlanSendSetQueryCmdHelper(IN struct ADAPTER *prAdapter,
 	info.pucInfoBuffer = pucInfoBuffer;
 	info.pvSetQueryBuffer = pvSetQueryBuffer;
 	info.u4SetQueryBufferLen = u4SetQueryBufferLen;
+	info.eMethod = eMethod;
 	LINK_INITIALIZE(&info.rUniCmdList);
 
 	/* collect unified cmd info */
@@ -290,13 +295,14 @@ wlanSendSetQueryCmdHelper(IN struct ADAPTER *prAdapter,
 
 		DBGLOG(REQ, TRACE,
 			"UCMD[0x%x] SET[%d] RSP[%d] OID[%d] LEN[%d]\n",
-			entry->ucUCID, fgSetQuery, fgNeedResp, fgIsOid,
-			entry->u4SetQueryInfoLen);
+			entry->ucUCID, info.fgSetQuery, info.fgNeedResp,
+			info.fgIsOid, entry->u4SetQueryInfoLen);
 		status = wlanSendSetQueryUniCmdAdv(prAdapter,
-			entry->ucUCID, fgSetQuery, fgNeedResp, fgIsOid,
-			entry->pfCmdDoneHandler, entry->pfCmdTimeoutHandler,
-			entry->u4SetQueryInfoLen, entry->pucInfoBuffer,
-			pvSetQueryBuffer, u4SetQueryBufferLen, eMethod);
+			entry->ucUCID, info.fgSetQuery, info.fgNeedResp,
+			info.fgIsOid, entry->pfCmdDoneHandler,
+			entry->pfCmdTimeoutHandler, entry->u4SetQueryInfoLen,
+			entry->pucInfoBuffer, info.pvSetQueryBuffer,
+			info.u4SetQueryBufferLen, info.eMethod);
 	}
 done:
 	/* clear before return, in case uni handler already insert any entry */
@@ -398,7 +404,6 @@ wlanSendSetQueryUniCmdAdv(IN struct ADAPTER *prAdapter,
 	ucOption = UNI_CMD_OPT_BIT_1_UNI_CMD;
 	if (fgSetQuery) /* it is a SET command */
 		ucOption |= (prCmdInfo->fgNeedResp ? UNI_CMD_OPT_BIT_0_ACK : 0);
-	ucOption |= (fgIsOid ? UNI_CMD_OPT_BIT_0_ACK : 0);
 	ucOption |= (fgSetQuery ? UNI_CMD_OPT_BIT_2_SET_QUERY : 0);
 
 	// TODO: uni cmd, fragment
@@ -1969,7 +1974,6 @@ uint32_t nicUniCmdSetBssRlm(struct ADAPTER *ad,
 	     		       sizeof(struct UNI_CMD_BSSINFO_RLM) +
 			       sizeof(struct UNI_CMD_BSSINFO_PROTECT) +
 			       sizeof(struct UNI_CMD_BSSINFO_IFS_TIME);
-	uint8_t *pos;
 
 	if (info->ucCID != CMD_ID_SET_BSS_RLM_PARAM ||
 	    info->u4SetQueryInfoLen != sizeof(*cmd))
@@ -1983,8 +1987,6 @@ uint32_t nicUniCmdSetBssRlm(struct ADAPTER *ad,
 
 	uni_cmd = (struct UNI_CMD_BSSINFO *) entry->pucInfoBuffer;
 	uni_cmd->ucBssInfoIdx = cmd->ucBssIndex;
-	pos = uni_cmd->aucTlvBuffer;
-
 	nicUniCmdSetBssRlmImpl(ad, uni_cmd->aucTlvBuffer, cmd);
 
 	LINK_INSERT_TAIL(&info->rUniCmdList, &entry->rLinkEntry);
@@ -2558,27 +2560,6 @@ struct UNI_CMD_STAREC_TAG_HANDLE arUpdateStaRecTable[] = {
 #endif
 };
 
-void nicUniCmdStaRecHandleEventPkt(IN struct ADAPTER
-	*prAdapter, IN struct CMD_INFO *prCmdInfo,
-	IN uint8_t *pucEventBuf)
-{
-	struct UNI_CMD_STAREC *uni_cmd =
-		(struct UNI_CMD_STAREC *) GET_UNI_CMD_DATA(prCmdInfo);
-	struct UNI_EVENT_CMD_RESULT *evt =
-		(struct UNI_EVENT_CMD_RESULT *)pucEventBuf;
-
-	DBGLOG(NIC, TRACE,
-		"cmd_result:ucCID=0x%x, status=%d, wlanidx=%d\n",
-		evt->u2CID, evt->u4Status, uni_cmd->ucWlanIdxL);
-
-	if (evt->u2CID == UNI_CMD_ID_STAREC_INFO && evt->u4Status == 0) {
-		struct STA_RECORD *prStaRec = cnmGetStaRecByIndex(prAdapter,
-			secGetStaIdxByWlanIdx(prAdapter, uni_cmd->ucWlanIdxL));
-
-		qmActivateStaRec(prAdapter, prStaRec);
-	}
-}
-
 uint32_t nicUniCmdUpdateStaRec(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info)
 {
@@ -3114,8 +3095,138 @@ uint32_t nicUniCmdRoaming(struct ADAPTER *ad,
 	return WLAN_STATUS_SUCCESS;
 }
 
+uint32_t nicUniCmdInstallKey(struct ADAPTER *ad,
+		struct WIFI_UNI_SETQUERY_INFO *info)
+{
+	struct CMD_802_11_KEY *cmd;
+	struct UNI_CMD_STAREC *uni_cmd;
+	struct UNI_CMD_STAREC_INSTALL_KEY3 *tag;
+	struct WIFI_UNI_CMD_ENTRY *entry;
+	uint32_t max_cmd_len = sizeof(struct UNI_CMD_STAREC) +
+	     		       sizeof(struct UNI_CMD_STAREC_INSTALL_KEY3);
+
+	if (info->ucCID != CMD_ID_ADD_REMOVE_KEY ||
+	    info->u4SetQueryInfoLen != sizeof(*cmd))
+		return WLAN_STATUS_NOT_ACCEPTED;
+
+	cmd = (struct CMD_802_11_KEY *) info->pucInfoBuffer;
+	entry = nicUniCmdAllocEntry(ad, UNI_CMD_ID_STAREC_INFO,
+		max_cmd_len, cmd->ucAddRemove ? nicUniCmdEventInstallKey :
+		nicUniCmdEventSetCommon, nicUniCmdTimeoutCommon);
+	if (!entry)
+		return WLAN_STATUS_RESOURCES;
+
+	uni_cmd = (struct UNI_CMD_STAREC *) entry->pucInfoBuffer;
+	uni_cmd->ucBssInfoIdx = cmd->ucBssIdx;
+	WCID_SET_H_L(uni_cmd->ucWlanIdxHnVer, uni_cmd->ucWlanIdxL,
+		cmd->ucWlanIndex);
+	tag = (struct UNI_CMD_STAREC_INSTALL_KEY3 *) uni_cmd->aucTlvBuffer;
+	tag->u2Tag = UNI_CMD_STAREC_TAG_INSTALL_KEY_V3;
+	tag->u2Length = sizeof(*tag);
+	tag->ucAddRemove = cmd->ucAddRemove;
+	tag->ucTxKey = cmd->ucTxKey;
+	tag->ucKeyType = cmd->ucKeyType;
+	tag->ucIsAuthenticator = cmd->ucIsAuthenticator;
+	COPY_MAC_ADDR(tag->aucPeerAddr, cmd->aucPeerAddr);
+	tag->ucBssIdx = cmd->ucBssIdx;
+	tag->ucAlgorithmId = cmd->ucAlgorithmId;
+	tag->ucKeyId = cmd->ucKeyId;
+	tag->ucKeyLen = cmd->ucKeyLen;
+	tag->ucWlanIndex = cmd->ucWlanIndex;
+	tag->ucMgmtProtection = cmd->ucMgmtProtection;
+	kalMemCopy(tag->aucKeyMaterial, cmd->aucKeyMaterial,
+		sizeof(tag->aucKeyMaterial));
+	kalMemCopy(tag->aucKeyRsc, cmd->aucKeyRsc, sizeof(tag->aucKeyRsc));
+
+	LINK_INSERT_TAIL(&info->rUniCmdList, &entry->rLinkEntry);
+
+	return WLAN_STATUS_SUCCESS;
+}
+
+uint32_t nicUniCmdInstallDefaultKey(struct ADAPTER *ad,
+		struct WIFI_UNI_SETQUERY_INFO *info)
+{
+	struct CMD_DEFAULT_KEY *cmd;
+	struct UNI_CMD_STAREC *uni_cmd;
+	struct UNI_CMD_STAREC_DEFAULT_KEY *tag;
+	struct WIFI_UNI_CMD_ENTRY *entry;
+	uint32_t max_cmd_len = sizeof(struct UNI_CMD_STAREC) +
+	     		       sizeof(struct UNI_CMD_STAREC_DEFAULT_KEY);
+
+	if (info->ucCID != CMD_ID_DEFAULT_KEY_ID ||
+	    info->u4SetQueryInfoLen != sizeof(*cmd))
+		return WLAN_STATUS_NOT_ACCEPTED;
+
+	cmd = (struct CMD_DEFAULT_KEY *) info->pucInfoBuffer;
+	entry = nicUniCmdAllocEntry(ad, UNI_CMD_ID_STAREC_INFO,
+		max_cmd_len, nicUniCmdEventSetCommon, nicUniCmdTimeoutCommon);
+	if (!entry)
+		return WLAN_STATUS_RESOURCES;
+
+	uni_cmd = (struct UNI_CMD_STAREC *) entry->pucInfoBuffer;
+	uni_cmd->ucBssInfoIdx = cmd->ucBssIdx;
+	WCID_SET_H_L(uni_cmd->ucWlanIdxHnVer, uni_cmd->ucWlanIdxL,
+		cmd->ucWlanIndex);
+	tag = (struct UNI_CMD_STAREC_DEFAULT_KEY *) uni_cmd->aucTlvBuffer;
+	tag->u2Tag = UNI_CMD_STAREC_TAG_INSTALL_DEFAULT_KEY;
+	tag->u2Length = sizeof(*tag);
+	tag->ucKeyId = cmd->ucKeyId;
+	tag->ucMulticast = cmd->ucMulticast;
+
+	LINK_INSERT_TAIL(&info->rUniCmdList, &entry->rLinkEntry);
+
+	return WLAN_STATUS_SUCCESS;
+}
+
+uint32_t nicUniCmdOffloadKey(struct ADAPTER *ad,
+		struct WIFI_UNI_SETQUERY_INFO *info)
+{
+	struct PARAM_GTK_REKEY_DATA *cmd;
+	struct UNI_CMD_OFFLOAD *uni_cmd;
+	struct UNI_CMD_OFFLOAD_GTK_REKEY *tag;
+	struct WIFI_UNI_CMD_ENTRY *entry;
+	uint32_t max_cmd_len = sizeof(struct UNI_CMD_OFFLOAD) +
+	     		       sizeof(struct UNI_CMD_OFFLOAD_GTK_REKEY);
+
+	if (info->ucCID != CMD_ID_SET_GTK_REKEY_DATA ||
+	    info->u4SetQueryInfoLen != sizeof(*cmd))
+		return WLAN_STATUS_NOT_ACCEPTED;
+
+	cmd = (struct PARAM_GTK_REKEY_DATA *) info->pucInfoBuffer;
+	entry = nicUniCmdAllocEntry(ad, UNI_CMD_ID_OFFLOAD,
+		max_cmd_len, nicUniCmdEventSetCommon, nicUniCmdTimeoutCommon);
+	if (!entry)
+		return WLAN_STATUS_RESOURCES;
+
+	uni_cmd = (struct UNI_CMD_OFFLOAD *) entry->pucInfoBuffer;
+	uni_cmd->ucBssInfoIdx = cmd->ucBssIndex;
+	tag = (struct UNI_CMD_OFFLOAD_GTK_REKEY *) uni_cmd->aucTlvBuffer;
+	tag->u2Tag = UNI_CMD_OFFLOAD_TAG_GTK_REKEY;
+	tag->u2Length = sizeof(*tag);
+	kalMemCopy(tag->aucKek, cmd->aucKek, sizeof(tag->aucKek));
+	kalMemCopy(tag->aucReplayCtr,
+		cmd->aucReplayCtr, sizeof(tag->aucReplayCtr));
+	tag->ucRekeyMode = 0;
+	tag->ucCurKeyId = 0;
+	tag->ucOption = 0;
+	tag->u4Proto = cmd->u4Proto;
+	tag->u4PairwiseCipher = cmd->u4PairwiseCipher;
+	tag->u4GroupCipher = cmd->u4GroupCipher;
+	tag->u4KeyMgmt = cmd->u4KeyMgmt;
+	tag->u4MgmtGroupCipher = cmd->u4MgmtGroupCipher;
+
+	LINK_INSERT_TAIL(&info->rUniCmdList, &entry->rLinkEntry);
+
+	return WLAN_STATUS_SUCCESS;
+}
+
 /*******************************************************************************
  *                                 Event
+ *******************************************************************************
+ */
+
+/*******************************************************************************
+ *                   Solicited Event
  *******************************************************************************
  */
 
@@ -3182,25 +3293,18 @@ void nicUniCmdEventSetCommon(IN struct ADAPTER
 	*prAdapter, IN struct CMD_INFO *prCmdInfo,
 	IN uint8_t *pucEventBuf)
 {
-	struct UNI_EVENT_CMD_RESULT *evt =
-		(struct UNI_EVENT_CMD_RESULT *)pucEventBuf;
-
-	DBGLOG(NIC, TRACE,
-		"cmd_result:ucCID=0x%x, status=%d, prCmdInfo:ucCID=%d\n",
-		evt->u2CID, evt->u4Status, prCmdInfo->ucCID);
-
+	DBGLOG(NIC, TRACE, "prCmdInfo:ucCID=0x%x SQ=%d NR=%d OID=%d\n",
+		prCmdInfo->ucCID, prCmdInfo->fgSetQuery,
+		prCmdInfo->fgNeedResp, prCmdInfo->fgIsOid);
 	nicCmdEventSetCommon(prAdapter, prCmdInfo, pucEventBuf);
 }
 
 void nicUniCmdTimeoutCommon(IN struct ADAPTER *prAdapter,
 			    IN struct CMD_INFO *prCmdInfo)
 {
-	ASSERT(prAdapter);
-
-	DBGLOG(NIC, TRACE,
-		"prCmdInfo:ucCID=0x%x isOid=%d timeout\n",
-		prCmdInfo->ucCID, prCmdInfo->fgIsOid);
-
+	DBGLOG(NIC, TRACE, "prCmdInfo:ucCID=0x%x SQ=%d NR=%d OID=%d\n",
+		prCmdInfo->ucCID, prCmdInfo->fgSetQuery,
+		prCmdInfo->fgNeedResp, prCmdInfo->fgIsOid);
 	nicOidCmdTimeoutCommon(prAdapter, prCmdInfo);
 }
 
@@ -3238,6 +3342,26 @@ void nicUniEventQueryChipConfig(IN struct ADAPTER *prAdapter,
 	kalMemCopy(legacy.aucCmd, resp->aucCmd, resp->u2MsgSize);
 
 	nicCmdEventQueryChipConfig(prAdapter, prCmdInfo, (uint8_t *)&legacy);
+}
+
+void nicUniCmdStaRecHandleEventPkt(IN struct ADAPTER
+	*prAdapter, IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf)
+{
+	struct UNI_CMD_STAREC *uni_cmd =
+		(struct UNI_CMD_STAREC *) GET_UNI_CMD_DATA(prCmdInfo);
+	struct UNI_EVENT_CMD_RESULT *evt =
+		(struct UNI_EVENT_CMD_RESULT *)pucEventBuf;
+
+	DBGLOG(NIC, TRACE,
+		"cmd_result:ucCID=0x%x, status=%d, wlanidx=%d\n",
+		evt->u2CID, evt->u4Status, uni_cmd->ucWlanIdxL);
+
+	if (evt->u2CID == UNI_CMD_ID_STAREC_INFO && evt->u4Status == 0) {
+		struct STA_RECORD *prStaRec = cnmGetStaRecByIndex(prAdapter,
+			secGetStaIdxByWlanIdx(prAdapter, uni_cmd->ucWlanIdxL));
+
+		qmActivateStaRec(prAdapter, prStaRec);
+	}
 }
 
 void nicUniEventQueryIdcChnl(IN struct ADAPTER *prAdapter,
@@ -3382,6 +3506,28 @@ void nicUniCmdEventGetTsfDone(IN struct ADAPTER *prAdapter,
 
 	twtPlannerGetTsfDone(prAdapter, prCmdInfo, (uint8_t *)&legacy);
 }
+
+void nicUniCmdEventInstallKey(IN struct ADAPTER
+	*prAdapter, IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf)
+{
+	struct UNI_CMD_STAREC *uni_cmd =
+		(struct UNI_CMD_STAREC *) GET_UNI_CMD_DATA(prCmdInfo);
+	struct UNI_CMD_STAREC_INSTALL_KEY3 *tag =
+	   (struct UNI_CMD_STAREC_INSTALL_KEY3 *) uni_cmd->aucTlvBuffer;
+
+	nicUniCmdEventSetCommon(prAdapter, prCmdInfo, pucEventBuf);
+
+#if CFG_SUPPORT_REPLAY_DETECTION
+	nicCmdEventDetectReplayInfo(prAdapter, tag->ucKeyId,
+		tag->ucKeyType, tag->ucBssIdx);
+#endif
+
+}
+
+/*******************************************************************************
+ *                   Unsolicited Event
+ *******************************************************************************
+ */
 
 void nicUniEventScanDone(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 {
@@ -3997,6 +4143,44 @@ void nicUniEventRoaming(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 				status->u2RcpiHighThreshold;
 
 			roamingFsmProcessEvent(ad, &legacy);
+		}
+			break;
+		default:
+			fail_cnt++;
+			ASSERT(fail_cnt < MAX_UNI_EVENT_FAIL_TAG_COUNT)
+			DBGLOG(NIC, WARN, "invalid tag = %d\n", TAG_ID(tag));
+			break;
+		}
+	}
+}
+
+void nicUniEventAddKeyDone(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
+{
+	int32_t tags_len;
+	uint8_t *tag;
+	uint16_t offset = 0;
+	uint32_t fixed_len = sizeof(struct UNI_EVENT_ADD_KEY_DONE);
+	uint32_t data_len = GET_UNI_EVENT_DATA_LEN(evt);
+	uint8_t *data = GET_UNI_EVENT_DATA(evt);
+	uint32_t fail_cnt = 0;
+	struct UNI_EVENT_ADD_KEY_DONE *done;
+	struct EVENT_ADD_KEY_DONE_INFO legacy;
+
+	done = (struct UNI_EVENT_ADD_KEY_DONE *) data;
+	legacy.ucBSSIndex = done->ucBssIndex;
+
+	tags_len = data_len - fixed_len;
+	tag = data + fixed_len;
+	TAG_FOR_EACH(tag, tags_len, offset) {
+		DBGLOG(NIC, TRACE, "Tag(%d, %d)\n", TAG_ID(tag), TAG_LEN(tag));
+
+		switch (TAG_ID(tag)) {
+		case UNI_EVENT_ADD_KEY_DONE_TAG_PKEY: {
+			struct UNI_EVENT_ADD_PKEY_DONE *pkey =
+				(struct UNI_EVENT_ADD_PKEY_DONE *) tag;
+
+			COPY_MAC_ADDR(legacy.aucStaAddr, pkey->aucStaAddr);
+			nicEventAddPkeyDoneImpl(ad, &legacy);
 		}
 			break;
 		default:

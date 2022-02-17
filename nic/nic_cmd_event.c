@@ -3965,15 +3965,11 @@ void nicEventUpdateBcmDebug(IN struct ADAPTER *prAdapter,
 #endif
 }
 
-void nicEventAddPkeyDone(IN struct ADAPTER *prAdapter,
-			 IN struct WIFI_EVENT *prEvent)
+void nicEventAddPkeyDoneImpl(IN struct ADAPTER *prAdapter,
+			 IN struct EVENT_ADD_KEY_DONE_INFO *prKeyDone)
 {
-	struct EVENT_ADD_KEY_DONE_INFO *prKeyDone;
 	struct STA_RECORD *prStaRec = NULL;
 	uint8_t ucKeyId;
-
-	prKeyDone = (struct EVENT_ADD_KEY_DONE_INFO *) (
-			    prEvent->aucBuffer);
 
 	DBGLOG(RSN, INFO, "EVENT_ID_ADD_PKEY_DONE BSSIDX=%d " MACSTR
 	       "\n",
@@ -4019,6 +4015,14 @@ void nicEventAddPkeyDone(IN struct ADAPTER *prAdapter,
 		qmUpdateStaRec(prAdapter, prStaRec);
 	}
 }
+
+void nicEventAddPkeyDone(IN struct ADAPTER *prAdapter,
+			 IN struct WIFI_EVENT *prEvent)
+{
+	nicEventAddPkeyDoneImpl(prAdapter,
+		(struct EVENT_ADD_KEY_DONE_INFO *) (prEvent->aucBuffer));
+}
+
 
 #if CFG_SUPPORT_CAL_RESULT_BACKUP_TO_HOST
 struct PARAM_CAL_BACKUP_STRUCT_V2	g_rCalBackupDataV2;
@@ -4388,15 +4392,39 @@ void nicEventReportUEvent(IN struct ADAPTER *prAdapter,
 	}
 }
 
-
 #if CFG_SUPPORT_REPLAY_DETECTION
+void nicCmdEventDetectReplayInfo(IN struct ADAPTER *prAdapter,
+		uint8_t ucKeyId, uint8_t ucKeyType, uint8_t ucBssIdx)
+{
+	struct GL_DETECT_REPLAY_INFO *prDetRplyInfo = NULL;
+
+	if (!IS_BSS_INDEX_AIS(prAdapter, ucBssIdx))
+		return;
+
+	/* AIS only */
+	if (!ucKeyType && ucKeyId >= 0 && ucKeyId < 4) {
+		/* Only save data broadcast key info.
+		*  ucKeyType == 1 means unicast key
+		*  ucKeyId == 4 or ucKeyId == 5 means it is a PMF key
+		*/
+		prDetRplyInfo = aisGetDetRplyInfo(prAdapter, ucBssIdx);
+
+		prDetRplyInfo->ucCurKeyId = ucKeyId;
+		prDetRplyInfo->ucKeyType = ucKeyType;
+		prDetRplyInfo->arReplayPNInfo[ucKeyId].fgRekey = TRUE;
+		prDetRplyInfo->arReplayPNInfo[ucKeyId].fgFirstPkt = TRUE;
+		DBGLOG(NIC, TRACE,
+			"[%d] Keyid is %d, ucKeyType is %d\n",
+			ucBssIdx, ucKeyId, ucKeyType);
+	}
+}
+
 void nicCmdEventSetAddKey(IN struct ADAPTER *prAdapter,
 		IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf)
 {
 	struct WIFI_CMD *prWifiCmd = NULL;
 	struct CMD_802_11_KEY *prCmdKey = NULL;
 	struct GLUE_INFO *prGlueInfo = NULL;
-	struct GL_DETECT_REPLAY_INFO *prDetRplyInfo = NULL;
 
 	ASSERT(prAdapter);
 	ASSERT(prCmdInfo);
@@ -4413,33 +4441,10 @@ void nicCmdEventSetAddKey(IN struct ADAPTER *prAdapter,
 
 	if (pucEventBuf) {
 		prWifiCmd = (struct WIFI_CMD *) (pucEventBuf);
-		prCmdKey = (struct CMD_802_11_KEY *) (prWifiCmd->aucBuffer);
+		prCmdKey = (struct CMD_802_11_KEY *) (pucEventBuf);
 
-		if (!IS_BSS_INDEX_AIS(prAdapter,
-			prCmdKey->ucBssIdx))
-			return;
-
-		/* AIS only */
-		if (!prCmdKey->ucKeyType &&
-			prCmdKey->ucKeyId >= 0 && prCmdKey->ucKeyId < 4) {
-			/* Only save data broadcast key info.
-			*  ucKeyType == 1 means unicast key
-			*  ucKeyId == 4 or ucKeyId == 5 means it is a PMF key
-			*/
-			prDetRplyInfo = aisGetDetRplyInfo(prAdapter,
-				prCmdKey->ucBssIdx);
-
-			prDetRplyInfo->ucCurKeyId = prCmdKey->ucKeyId;
-			prDetRplyInfo->ucKeyType = prCmdKey->ucKeyType;
-			prDetRplyInfo->arReplayPNInfo[
-				prCmdKey->ucKeyId].fgRekey = TRUE;
-			prDetRplyInfo->arReplayPNInfo[
-				prCmdKey->ucKeyId].fgFirstPkt = TRUE;
-			DBGLOG(NIC, TRACE,
-				"[%d] Keyid is %d, ucKeyType is %d\n",
-				prCmdKey->ucBssIdx,
-				prCmdKey->ucKeyId, prCmdKey->ucKeyType);
-		}
+		nicCmdEventDetectReplayInfo(prAdapter, prCmdKey->ucKeyId,
+			prCmdKey->ucKeyType, prCmdKey->ucBssIdx);
 	}
 }
 void nicOidCmdTimeoutSetAddKey(IN struct ADAPTER *prAdapter,
