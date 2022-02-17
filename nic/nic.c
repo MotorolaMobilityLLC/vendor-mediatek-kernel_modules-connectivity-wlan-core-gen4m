@@ -5340,7 +5340,7 @@ void nicSerInit(IN struct ADAPTER *prAdapter, IN const u_int8_t bAtResetFlow)
 	if (!bAtResetFlow) {
 #if defined(_HIF_USB)
 		/* check SER is supported or not */
-		if (prAdapter->rWifiVar.fgEnableSer == TRUE &&
+		if (prAdapter->rWifiVar.fgEnableSerL1 == TRUE &&
 		    prAdapter->chip_info->u4SerUsbMcuEventAddr != 0) {
 			cnmTimerInitTimer(prAdapter,
 					  &rSerSyncTimer,
@@ -5354,7 +5354,7 @@ void nicSerInit(IN struct ADAPTER *prAdapter, IN const u_int8_t bAtResetFlow)
 	}
 
 	/* if ser is not enabled, disable this feature in FW */
-	if (prAdapter->rWifiVar.fgEnableSer == FALSE
+	if (prAdapter->rWifiVar.fgEnableSerL1 == FALSE
 #if defined(_HIF_USB)
 	    || prAdapter->chip_info->u4SerUsbMcuEventAddr == 0
 #endif

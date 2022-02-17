@@ -7753,9 +7753,6 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 	/* Support TDLS 5.5.4.2 optional case */
 	prWifiVar->fgTdlsBufferSTASleep = (u_int8_t) wlanCfgGetUint32(prAdapter,
 					"TdlsBufferSTASleep", FEATURE_ENABLED);
-	/* Support USB Whole chip reset recover */
-	prWifiVar->fgChipResetRecover = (u_int8_t) wlanCfgGetUint32(prAdapter,
-					"ChipResetRecover", FEATURE_DISABLED);
 
 	prWifiVar->u4PerfMonUpdatePeriod =
 		(uint32_t) wlanCfgGetUint32(prAdapter, "PerfMonPeriod",
@@ -7882,9 +7879,33 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 	prWifiVar->u4PerfMonUsedTh = (uint8_t)wlanCfgGetUint32(prAdapter,
 						"PerfMonUsedTh", 80);
 
-	/* for SER */
-	prWifiVar->fgEnableSer = (uint8_t)wlanCfgGetUint32(prAdapter,
-						"SerEnable", FEATURE_ENABLED);
+	/* SER related fields */
+
+	/* for L0 SER */
+	prWifiVar->fgEnableSerL0 = (uint8_t)wlanCfgGetUint32(prAdapter,
+							     "EnableSerL0",
+							     FEATURE_ENABLED);
+
+	/* for L0.5 SER */
+	prWifiVar->fgEnableSerL0p5 = (uint8_t)wlanCfgGetUint32(prAdapter,
+							       "EnableSerL0p5",
+							       FEATURE_ENABLED);
+
+	/* for L1 SER */
+	prWifiVar->fgEnableSerL1 = (uint8_t)wlanCfgGetUint32(prAdapter,
+							     "EnableSerL1",
+							     FEATURE_ENABLED);
+
+	/* for L0 SER using WDT on some legacy CE USB project like MT7668 and
+	 * MT7663. The difference between fgEnableSerL0 and fgChipResetRecover
+	 * is that the former one toggles reset pin and the latter one sends
+	 * USB EP0 vendor request to fw, which makes fw assert and triggers
+	 * L0 reset when watchdog timeout. The purpose to reserve this mothod
+	 * is that some customers might not have dedicated reset pin on the
+	 * platform.
+	 */
+	prWifiVar->fgChipResetRecover = (u_int8_t) wlanCfgGetUint32(prAdapter,
+					"ChipResetRecover", FEATURE_DISABLED);
 
 	prWifiVar->fgRstRecover = (uint8_t) wlanCfgGetUint32(prAdapter,
 					"RstRecover", FEATURE_DISABLED);
