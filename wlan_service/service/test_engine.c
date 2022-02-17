@@ -1444,8 +1444,15 @@ static u_int32 mt_engine_add_allocation(
 
 	sub_band_idx = mt_engine_get_sub_band(ru_index) + seg*4;
 
-	if ((sub_band_idx > 7) || (sub_band_idx < 0))
+	if ((sub_band_idx > 4) || (sub_band_idx < 0)) {
+		SERV_LOG(SERV_DBG_CAT_ENGN, SERV_DBG_LVL_TRACE,
+		("%s: idx is invaild:%d\n ",
+		__func__, sub_band_idx));
+
+		sys_ad_set_mem(&alloc_info->sub20[0], 8, 0x72);
+
 		return SERV_STATUS_ENGINE_INVALID_PARAM;
+	}
 
 	SERV_LOG(SERV_DBG_CAT_ENGN, SERV_DBG_LVL_TRACE,
 		("%s: ru index:%d (%d), ",
