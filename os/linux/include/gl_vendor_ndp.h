@@ -88,6 +88,7 @@ struct NdiIfaceDelete {
 } PACKED;
 
 extern struct NanDataPathInitiatorNDPE g_ndpReqNDPE;
+extern uint8_t g_aucNanServiceName[NAN_MAX_SERVICE_NAME_LEN];
 
 enum mtk_wlan_ndp_sub_cmd {
 	MTK_WLAN_VENDOR_ATTR_NDP_INVALID = 0,
