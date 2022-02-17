@@ -88,6 +88,7 @@
 #define GOOGLE_OUI 0x001A11
 #define OUI_QCA 0x001374
 
+#define NL80211_VENDOR_SUBCMD_GET_PREFER_FREQ_LIST 103
 #define QCA_NL80211_VENDOR_SUBCMD_SETBAND 105
 
 enum ANDROID_VENDOR_SUB_COMMAND {
@@ -248,6 +249,15 @@ enum QCA_SET_BAND {
 	QCA_SETBAND_AUTO,
 	QCA_SETBAND_5G,
 	QCA_SETBAND_2G,
+};
+
+enum WIFI_VENDOR_ATTR_PREFERRED_FREQ_LIST {
+	WIFI_VENDOR_ATTR_PREFERRED_FREQ_LIST_INVALID,
+	WIFI_VENDOR_ATTR_PREFERRED_FREQ_LIST_IFACE_TYPE,
+	WIFI_VENDOR_ATTR_PREFERRED_FREQ_LIST_GET,
+	WIFI_VENDOR_ATTR_PREFERRED_FREQ_LIST_LAST,
+	WIFI_VENDOR_ATTR_PREFERRED_FREQ_LIST_MAX =
+		WIFI_VENDOR_ATTR_PREFERRED_FREQ_LIST_LAST - 1
 };
 
 #define MAX_FW_ROAMING_BLACKLIST_SIZE	16
@@ -660,5 +670,9 @@ int mtk_cfg80211_vendor_get_version(struct wiphy *wiphy,
 int mtk_cfg80211_vendor_event_rssi_beyond_range(
 	struct wiphy *wiphy,
 	struct wireless_dev *wdev, int rssi);
+
+int mtk_cfg80211_vendor_get_preferred_freq_list(struct wiphy
+		*wiphy, struct wireless_dev *wdev, const void *data,
+		int data_len);
 
 #endif /* _GL_VENDOR_H */

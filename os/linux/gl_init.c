@@ -624,7 +624,20 @@ static const struct wiphy_vendor_command
 		.flags = WIPHY_VENDOR_CMD_NEED_WDEV |
 				WIPHY_VENDOR_CMD_NEED_NETDEV,
 		.doit = mtk_cfg80211_vendor_get_version
-	}
+	},
+#if CFG_SUPPORT_P2P_PREFERRED_FREQ_LIST
+	/* P2P get preferred freq list */
+	{
+		{
+			.vendor_id = OUI_QCA,
+			.subcmd = NL80211_VENDOR_SUBCMD_GET_PREFER_FREQ_LIST
+		},
+		.flags = WIPHY_VENDOR_CMD_NEED_WDEV
+				| WIPHY_VENDOR_CMD_NEED_NETDEV
+				| WIPHY_VENDOR_CMD_NEED_RUNNING,
+		.doit = mtk_cfg80211_vendor_get_preferred_freq_list
+	},
+#endif /* CFG_SUPPORT_P2P_PREFERRED_FREQ_LIST */
 };
 
 static const struct nl80211_vendor_cmd_info
