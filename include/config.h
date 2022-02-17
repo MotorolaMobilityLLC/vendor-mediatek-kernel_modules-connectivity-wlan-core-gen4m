@@ -715,6 +715,10 @@
 
 #define CFG_UNITEST_P2P                         0
 
+#ifndef CONFIG_WLAN_DRV_BUILD_IN
+#define CONFIG_WLAN_DRV_BUILD_IN		0
+#endif
+
 /*
  * Enable cfg80211 option after Android 2.2(Froyo) is suggested,
  * cfg80211 on linux 2.6.29 is not mature yet

@@ -866,6 +866,16 @@ KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
 #define KAL_ARCH_SETUP_DMA_OPS(_dev, _base, _size, _iommu, _coherent)
 #endif
 
+/*----------------------------------------------------------------------------*/
+/* Macros of systrace operations for using in Driver Layer                    */
+/*----------------------------------------------------------------------------*/
+#define kalTraceBegin(_fmt, ...)
+#define kalTraceEnd()
+#define kalTraceInt(_value, _fmt, ...)
+#define kalTraceCall()
+#define kalTraceEvent(_fmt, ...)
+#define TRACE(_expr, _fmt, ...) _expr
+
 /*******************************************************************************
  *                  F U N C T I O N   D E C L A R A T I O N S
  *******************************************************************************
