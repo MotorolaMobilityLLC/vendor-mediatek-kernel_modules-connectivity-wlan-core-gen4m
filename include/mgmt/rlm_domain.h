@@ -667,34 +667,6 @@ enum ENUM_TX_POWER_CTRL_CHANNEL_TYPE {
 	PWR_CTRL_CHNL_TYPE_5G_BAND4,
 };
 
-struct TX_PWR_CTRL_CHANNEL_SETTING {
-	enum ENUM_TX_POWER_CTRL_CHANNEL_TYPE eChnlType;
-	uint8_t channelParam[2];
-
-	/* 0: CCK
-	 * 1: 20L, MCS0~4
-	 * 2: 20H, MCS5~8
-	 * 3: 40L, MCS0~4
-	 * 4: 40H, MCS5~9
-	 * 5: 80L, MCS0~4
-	 * 6: 80H, MCS5~9
-	 * 7: 160L, MCS0~4
-	 * 8: 160H, MCS5~9
-	 */
-	enum ENUM_TX_POWER_CTRL_VALUE_SIGN op[9];
-	int8_t i8PwrLimit[9];
-};
-
-struct TX_PWR_CTRL_ELEMENT {
-	struct LINK_ENTRY node;
-	u_int8_t fgApplied;
-	char name[MAX_TX_PWR_CTRL_ELEMENT_NAME_SIZE]; /* scenario name */
-	uint8_t index; /* scenario index */
-	enum ENUM_TX_POWER_CTRL_TYPE eCtrlType;
-	uint8_t settingCount;
-	struct TX_PWR_CTRL_CHANNEL_SETTING rChlSettingList[1];
-};
-
 enum ENUM_POWER_LIMIT {
 	PWR_LIMIT_CCK = 0,
 	PWR_LIMIT_20M_L = 1,
@@ -706,6 +678,40 @@ enum ENUM_POWER_LIMIT {
 	PWR_LIMIT_160M_L = 7,
 	PWR_LIMIT_160M_H = 8,
 	PWR_LIMIT_NUM
+};
+
+enum ENUM_POWER_LIMIT_V2 {
+	PWR_LIMIT_V2_CCK = 0,
+#ifdef CFG_SUPPORT_DYNA_TX_PWR_CTRL_OFDM_SETTING
+	PWR_LIMIT_V2_OFDM_L,
+	PWR_LIMIT_V2_OFDM_H,
+#endif /* CFG_SUPPORT_DYNA_TX_PWR_CTRL_OFDM_SETTING */
+	PWR_LIMIT_V2_20M_L,
+	PWR_LIMIT_V2_20M_H,
+	PWR_LIMIT_V2_40M_L,
+	PWR_LIMIT_V2_40M_H,
+	PWR_LIMIT_V2_80M_L,
+	PWR_LIMIT_V2_80M_H,
+	PWR_LIMIT_V2_160M_L,
+	PWR_LIMIT_V2_160M_H,
+	PWR_LIMIT_V2_NUM
+};
+
+struct TX_PWR_CTRL_CHANNEL_SETTING {
+	enum ENUM_TX_POWER_CTRL_CHANNEL_TYPE eChnlType;
+	uint8_t channelParam[2];
+	enum ENUM_TX_POWER_CTRL_VALUE_SIGN op[PWR_LIMIT_V2_NUM];
+	int8_t i8PwrLimit[PWR_LIMIT_V2_NUM];
+};
+
+struct TX_PWR_CTRL_ELEMENT {
+	struct LINK_ENTRY node;
+	u_int8_t fgApplied;
+	char name[MAX_TX_PWR_CTRL_ELEMENT_NAME_SIZE]; /* scenario name */
+	uint8_t index; /* scenario index */
+	enum ENUM_TX_POWER_CTRL_TYPE eCtrlType;
+	uint8_t settingCount;
+	struct TX_PWR_CTRL_CHANNEL_SETTING rChlSettingList[1];
 };
 
 struct PARAM_TX_PWR_CTRL_IOCTL {
@@ -924,6 +930,7 @@ struct COUNTRY_POWER_LIMIT_TABLE_DEFAULT {
 struct COUNTRY_POWER_LIMIT_TABLE_CONFIGURATION {
 	uint8_t aucCountryCode[2];
 	uint8_t ucCentralCh;
+	/* Note: this array doesn't include cPwrLimitOFDM_L & cPwrLimitOFDM_H */
 	int8_t aucPwrLimit[PWR_LIMIT_NUM];
 };
 

@@ -1630,11 +1630,21 @@ struct CMD_SET_DOMAIN_INFO {
 
 #if CFG_SUPPORT_PWR_LIMIT_COUNTRY
 
+enum ENUM_COUNTRY_CHANNEL_TXPOWER_LIMIT_FORMAT {
+	COUNTRY_CHANNEL_TXPOWER_LIMIT_TYPE_COMP = 0,
+	COUNTRY_CHANNEL_TXPOWER_LIMIT_TYPE_COMP_11AG_11N = 1,
+	COUNTRY_CHANNEL_TXPOWER_LIMIT_TYPE_COMP_NUM,
+};
+
 /* CMD_SET_PWR_LIMIT_TABLE */
 struct CMD_CHANNEL_POWER_LIMIT {
 	uint8_t ucCentralCh;
 
 	int8_t cPwrLimitCCK;
+#ifdef CFG_SUPPORT_DYNA_TX_PWR_CTRL_OFDM_SETTING
+	int8_t cPwrLimitOFDM_L; /* OFDM_L,  6M ~ 18M */
+	int8_t cPwrLimitOFDM_H; /* OFDM_H, 24M ~ 54M */
+#endif /* CFG_SUPPORT_DYNA_TX_PWR_CTRL_OFDM_SETTING */
 	int8_t cPwrLimit20L; /* MCS0~4 */
 	int8_t cPwrLimit20H; /* MCS5~8 */
 	int8_t cPwrLimit40L; /* MCS0~4 */
@@ -1649,11 +1659,17 @@ struct CMD_CHANNEL_POWER_LIMIT {
 };
 
 struct CMD_SET_COUNTRY_CHANNEL_POWER_LIMIT {
+    /* D-WORD 0 */
 	uint16_t u2CountryCode;
-	uint8_t ucCountryFlag; /*Not used in driver*/
-	uint8_t ucNum; /*Numbers of channel to set power limit*/
-	uint8_t ucTempVersion; /*Temp use for 160nc power limit implementation*/
-	uint8_t aucReserved[3];
+	uint8_t u1CountryFlag; /*Not used in driver*/
+	uint8_t u1ChPwrTblColNum; /*Numbers of channel to set power limit*/
+
+	/* D-WORD 1 */
+	u_int8_t fgPwrTblKeep;
+	uint8_t u1BandIdx;
+	/* u1LimitType: enum ENUM_COUNTRY_CHANNEL_TXPOWER_LIMIT_FORMAT */
+	uint8_t u1LimitType;
+	uint8_t au1Reserved[1];
 	struct CMD_CHANNEL_POWER_LIMIT
 		rChannelPowerLimit[1]; /*Channel power limit entries to be set*/
 };
