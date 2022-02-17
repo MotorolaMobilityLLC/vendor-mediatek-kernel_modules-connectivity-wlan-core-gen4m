@@ -181,6 +181,8 @@ ccflags-y += -DCFG_DRIVER_INITIAL_RUNNING_MODE=3
 
 ifneq ($(filter 6765, $(WLAN_CHIP_ID)),)
     ccflags-y += -DCFG_SUPPORT_DUAL_STA=0
+else ifeq ($(CONFIG_MTK_TC10_FEATURE), y)
+    ccflags-y += -DCFG_SUPPORT_DUAL_STA=0
 else
     ccflags-y += -DCFG_SUPPORT_DUAL_STA=1
 endif
