@@ -12753,7 +12753,10 @@ int32_t priv_driver_rx_stat_parser(
 			i++;
 			j = j >> 1;
 		}
-		i4SubLen = i4TypeLen / i;
+
+		if (i != 0)
+			i4SubLen = i4TypeLen / i;
+
 		i = 0;
 		DBGLOG(REQ, LOUD, "i4SubLen is %x\n", i4SubLen);
 
