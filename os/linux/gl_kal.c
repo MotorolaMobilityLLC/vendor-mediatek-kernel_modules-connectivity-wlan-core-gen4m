@@ -9586,6 +9586,7 @@ void kalNanHandleVendorEvent(IN struct ADAPTER *prAdapter, uint8_t *prBuffer)
 #endif
 	case NAN_EVENT_NDL_DISCONNECT:
 		nanDataEngingDisconnectEvt(prAdapter, prTlvElement->aucbody);
+		break;
 	default:
 		DBGLOG(NAN, LOUD, "No match event!!\n");
 		break;
