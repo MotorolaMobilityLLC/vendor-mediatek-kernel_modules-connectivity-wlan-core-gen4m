@@ -214,6 +214,9 @@ void halSwWfdmaBackup(struct GLUE_INFO *prGlueInfo)
 	if (!prSwWfdmaInfo->fgIsEnSwWfdma || !prSwWfDmad)
 		return;
 
+	prSwWfdmaInfo->u4CpuIdxBackup = prSwWfdmaInfo->u4CpuIdx;
+	prSwWfdmaInfo->u4DmaIdxBackup = prSwWfdmaInfo->u4DmaIdx;
+
 	memcpy_fromio(&prSwWfdmaInfo->rBackup, prSwWfDmad,
 		      sizeof(struct SW_WFDMAD));
 }
@@ -234,6 +237,9 @@ void halSwWfdmaRestore(struct GLUE_INFO *prGlueInfo)
 
 	if (!prSwWfdmaInfo->fgIsEnSwWfdma || !prSwWfDmad)
 		return;
+
+	prSwWfdmaInfo->u4CpuIdx = prSwWfdmaInfo->u4CpuIdxBackup;
+	prSwWfdmaInfo->u4DmaIdx = prSwWfdmaInfo->u4DmaIdxBackup;
 
 	while (prBackup->u4FwIdx != prBackup->u4DrvIdx) {
 		memcpy_toio(prSwWfDmad->aucBuf[prSwWfDmad->u4DrvIdx],
