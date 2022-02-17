@@ -3506,7 +3506,7 @@ int32_t StaRecCmmUpdate(struct net_device *prNetDev,
 }
 
 int32_t StaRecBfUpdate(struct net_device *prNetDev,
-		       struct STA_REC_BF_UPD_ARGUMENT rStaRecBfUpdArg,
+		       struct STA_REC_BF_UPD_ARGUMENT *prStaRecBfUpdArg,
 		       uint8_t aucMemRow[4], uint8_t aucMemCol[4]
 		      )
 {
@@ -3526,14 +3526,14 @@ int32_t StaRecBfUpdate(struct net_device *prNetDev,
 	/* Tag assignment */
 	rStaRecBF.u2Tag = STA_REC_BF;
 	rStaRecBF.u2Length = sizeof(struct CMD_STAREC_BF);
-	rStaRecBF.ucReserved[0] = rStaRecBfUpdArg.u4BssId;
-	rStaRecBF.ucReserved[1] = rStaRecBfUpdArg.u4WlanId;
+	rStaRecBF.ucReserved[0] = prStaRecBfUpdArg->u4BssId;
+	rStaRecBF.ucReserved[1] = prStaRecBfUpdArg->u4WlanId;
 	/* content */
-	rStaRecBF.rTxBfPfmuInfo.u2PfmuId = rStaRecBfUpdArg.u4PfmuId;
+	rStaRecBF.rTxBfPfmuInfo.u2PfmuId = prStaRecBfUpdArg->u4PfmuId;
 	rStaRecBF.rTxBfPfmuInfo.ucTotMemRequire =
-		rStaRecBfUpdArg.u4TotalMemReq;
+		prStaRecBfUpdArg->u4TotalMemReq;
 	rStaRecBF.rTxBfPfmuInfo.ucMemRequire20M =
-		rStaRecBfUpdArg.u4MemReq20M;
+		prStaRecBfUpdArg->u4MemReq20M;
 	rStaRecBF.rTxBfPfmuInfo.ucMemRow0 = aucMemRow[0];
 	rStaRecBF.rTxBfPfmuInfo.ucMemCol0 = aucMemCol[0];
 	rStaRecBF.rTxBfPfmuInfo.ucMemRow1 = aucMemRow[1];
@@ -3543,44 +3543,46 @@ int32_t StaRecBfUpdate(struct net_device *prNetDev,
 	rStaRecBF.rTxBfPfmuInfo.ucMemRow3 = aucMemRow[3];
 	rStaRecBF.rTxBfPfmuInfo.ucMemCol3 = aucMemCol[3];
 	/* 0 : SU, 1 : MU */
-	rStaRecBF.rTxBfPfmuInfo.fgSU_MU = rStaRecBfUpdArg.u4SuMu;
+	rStaRecBF.rTxBfPfmuInfo.fgSU_MU = prStaRecBfUpdArg->u4SuMu;
 	/* 0: iBF, 1: eBF */
 	rStaRecBF.rTxBfPfmuInfo.u1TxBfCap =
-		rStaRecBfUpdArg.u4eTxBfCap;
+		prStaRecBfUpdArg->u4eTxBfCap;
 	/* 0: legacy, 1: OFDM, 2: HT, 4: VHT */
 	rStaRecBF.rTxBfPfmuInfo.ucSoundingPhy = 1;
 	rStaRecBF.rTxBfPfmuInfo.ucNdpaRate =
-		rStaRecBfUpdArg.u4NdpaRate;
+		prStaRecBfUpdArg->u4NdpaRate;
 	rStaRecBF.rTxBfPfmuInfo.ucNdpRate =
-		rStaRecBfUpdArg.u4NdpRate;
+		prStaRecBfUpdArg->u4NdpRate;
 	rStaRecBF.rTxBfPfmuInfo.ucReptPollRate =
-		rStaRecBfUpdArg.u4ReptPollRate;
+		prStaRecBfUpdArg->u4ReptPollRate;
 	/* 0: legacy, 1: OFDM, 2: HT, 4: VHT */
-	rStaRecBF.rTxBfPfmuInfo.ucTxMode = rStaRecBfUpdArg.u4TxMode;
-	rStaRecBF.rTxBfPfmuInfo.ucNc = rStaRecBfUpdArg.u4Nc;
-	rStaRecBF.rTxBfPfmuInfo.ucNr = rStaRecBfUpdArg.u4Nr;
+	rStaRecBF.rTxBfPfmuInfo.ucTxMode = prStaRecBfUpdArg->u4TxMode;
+	rStaRecBF.rTxBfPfmuInfo.ucNc = prStaRecBfUpdArg->u4Nc;
+	rStaRecBF.rTxBfPfmuInfo.ucNr = prStaRecBfUpdArg->u4Nr;
 	/* 0 : 20M, 1 : 40M, 2 : 80M, 3 : 80 + 80M */
-	rStaRecBF.rTxBfPfmuInfo.ucCBW = rStaRecBfUpdArg.u4Bw;
-	rStaRecBF.rTxBfPfmuInfo.ucSEIdx = rStaRecBfUpdArg.u4SpeIdx;
+	rStaRecBF.rTxBfPfmuInfo.ucCBW = prStaRecBfUpdArg->u4Bw;
+	rStaRecBF.rTxBfPfmuInfo.ucSEIdx = prStaRecBfUpdArg->u4SpeIdx;
 	/* Default setting */
-	rStaRecBF.rTxBfPfmuInfo.u2SmartAnt = rStaRecBfUpdArg.u4SmartAnt;
+	rStaRecBF.rTxBfPfmuInfo.u2SmartAnt = prStaRecBfUpdArg->u4SmartAnt;
 	/* 0: legacy, 1: OFDM, 2: HT, 4: VHT */
-	rStaRecBF.rTxBfPfmuInfo.ucSoundingPhy = rStaRecBfUpdArg.u4SoundingPhy;
-	rStaRecBF.rTxBfPfmuInfo.uciBfTimeOut = rStaRecBfUpdArg.u4iBfTimeOut;
-	rStaRecBF.rTxBfPfmuInfo.uciBfDBW = rStaRecBfUpdArg.u4iBfDBW;
-	rStaRecBF.rTxBfPfmuInfo.uciBfNcol = rStaRecBfUpdArg.u4iBfNcol;
-	rStaRecBF.rTxBfPfmuInfo.uciBfNrow = rStaRecBfUpdArg.u4iBfNrow;
-	rStaRecBF.rTxBfPfmuInfo.u1NrBw160 = rStaRecBfUpdArg.u4NrBw160;
-	rStaRecBF.rTxBfPfmuInfo.u1NcBw160 = rStaRecBfUpdArg.u4NcBw160;
-	rStaRecBF.rTxBfPfmuInfo.u1RuStartIdx = rStaRecBfUpdArg.u4RuStartIdx;
-	rStaRecBF.rTxBfPfmuInfo.u1RuEndIdx = rStaRecBfUpdArg.u4RuEndIdx;
-	rStaRecBF.rTxBfPfmuInfo.fgTriggerSu = rStaRecBfUpdArg.u4TriggerSu;
-	rStaRecBF.rTxBfPfmuInfo.fgTriggerMu = rStaRecBfUpdArg.u4TriggerMu;
-	rStaRecBF.rTxBfPfmuInfo.fgNg16Su = rStaRecBfUpdArg.u4Ng16Su;
-	rStaRecBF.rTxBfPfmuInfo.fgNg16Mu = rStaRecBfUpdArg.u4Ng16Mu;
-	rStaRecBF.rTxBfPfmuInfo.fgCodebook42Su = rStaRecBfUpdArg.u4Codebook42Su;
-	rStaRecBF.rTxBfPfmuInfo.fgCodebook75Mu = rStaRecBfUpdArg.u4Codebook75Mu;
-	rStaRecBF.rTxBfPfmuInfo.u1HeLtf = rStaRecBfUpdArg.u4HeLtf;
+	rStaRecBF.rTxBfPfmuInfo.ucSoundingPhy = prStaRecBfUpdArg->u4SoundingPhy;
+	rStaRecBF.rTxBfPfmuInfo.uciBfTimeOut = prStaRecBfUpdArg->u4iBfTimeOut;
+	rStaRecBF.rTxBfPfmuInfo.uciBfDBW = prStaRecBfUpdArg->u4iBfDBW;
+	rStaRecBF.rTxBfPfmuInfo.uciBfNcol = prStaRecBfUpdArg->u4iBfNcol;
+	rStaRecBF.rTxBfPfmuInfo.uciBfNrow = prStaRecBfUpdArg->u4iBfNrow;
+	rStaRecBF.rTxBfPfmuInfo.u1NrBw160 = prStaRecBfUpdArg->u4NrBw160;
+	rStaRecBF.rTxBfPfmuInfo.u1NcBw160 = prStaRecBfUpdArg->u4NcBw160;
+	rStaRecBF.rTxBfPfmuInfo.u1RuStartIdx = prStaRecBfUpdArg->u4RuStartIdx;
+	rStaRecBF.rTxBfPfmuInfo.u1RuEndIdx = prStaRecBfUpdArg->u4RuEndIdx;
+	rStaRecBF.rTxBfPfmuInfo.fgTriggerSu = prStaRecBfUpdArg->u4TriggerSu;
+	rStaRecBF.rTxBfPfmuInfo.fgTriggerMu = prStaRecBfUpdArg->u4TriggerMu;
+	rStaRecBF.rTxBfPfmuInfo.fgNg16Su = prStaRecBfUpdArg->u4Ng16Su;
+	rStaRecBF.rTxBfPfmuInfo.fgNg16Mu = prStaRecBfUpdArg->u4Ng16Mu;
+	rStaRecBF.rTxBfPfmuInfo.fgCodebook42Su =
+		prStaRecBfUpdArg->u4Codebook42Su;
+	rStaRecBF.rTxBfPfmuInfo.fgCodebook75Mu =
+		prStaRecBfUpdArg->u4Codebook75Mu;
+	rStaRecBF.rTxBfPfmuInfo.u1HeLtf = prStaRecBfUpdArg->u4HeLtf;
 
 	i4Status = kalIoctl(prGlueInfo,
 			    wlanoidStaRecBFUpdate, &rStaRecBF,
