@@ -3277,6 +3277,34 @@ void mtk_p2p_cfg80211_mgmt_frame_register(IN struct wiphy *wiphy,
 					"Close packet filer action frame.\n");
 			}
 			break;
+#if CFG_SUPPORT_SOFTAP_WPA3
+		case MAC_FRAME_AUTH:
+			if (reg) {
+				*pu4P2pPacketFilter
+					|= PARAM_PACKET_FILTER_AUTH;
+				DBGLOG(P2P, TRACE,
+					"Open packet filer auth request\n");
+			} else {
+				*pu4P2pPacketFilter
+					&= ~PARAM_PACKET_FILTER_AUTH;
+				DBGLOG(P2P, TRACE,
+					"Close packet filer auth request\n");
+			}
+			break;
+		case MAC_FRAME_ASSOC_REQ:
+			if (reg) {
+				*pu4P2pPacketFilter
+					|= PARAM_PACKET_FILTER_ASSOC_REQ;
+				DBGLOG(P2P, TRACE,
+					"Open packet filer assoc request\n");
+			} else {
+				*pu4P2pPacketFilter
+					&= ~PARAM_PACKET_FILTER_ASSOC_REQ;
+				DBGLOG(P2P, TRACE,
+					"Close packet filer assoc request\n");
+			}
+			break;
+#endif
 		default:
 			DBGLOG(P2P, ERROR,
 				"Ask frog to add code for mgmt:%x\n",

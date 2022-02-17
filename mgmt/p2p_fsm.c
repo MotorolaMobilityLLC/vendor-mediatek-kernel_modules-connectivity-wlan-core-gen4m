@@ -125,7 +125,11 @@ static u_int8_t p2pFsmUseRoleIf(IN struct ADAPTER *prAdapter,
 		if (IS_NET_ACTIVE(prAdapter, ucBssIdx)) {
 			fgUseRoleInterface = TRUE;
 			if (prBssInfo->eIftype != IFTYPE_P2P_CLIENT &&
-					prBssInfo->eIftype != IFTYPE_P2P_GO) {
+				prBssInfo->eIftype != IFTYPE_P2P_GO &&
+				!p2pFuncIsAPMode(
+				prAdapter->rWifiVar
+				.prP2PConnSettings
+				[prBssInfo->u4PrivateData])) {
 				DBGLOG(P2P, TRACE,
 					"force use dev interface.\n");
 				fgUseRoleInterface = FALSE;
