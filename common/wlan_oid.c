@@ -12694,7 +12694,7 @@ wlanoidSetStopSchedScan(IN struct ADAPTER *prAdapter,
 	if (scnFsmSchedScanStopRequest(prAdapter) == TRUE) {
 		kalMemFree(prSchedScanRequest->pucIE,
 			   VIR_MEM_TYPE,
-			   prGlueInfo->prSchedScanRequest->u4IELength);
+			   prSchedScanRequest->u4IELength);
 		kalMemFree(prSchedScanRequest,
 			   VIR_MEM_TYPE,
 			   sizeof(struct PARAM_SCHED_SCAN_REQUEST));
