@@ -164,7 +164,9 @@ static PROCESS_LEGACY_TO_UNI_FUNCTION arUniCmdTable[CMD_ID_END] = {
 	[CMD_ID_ADDBA_REJECT] = nicUniCmdSetRxAmpdu,
 	[CMD_ID_MAC_MCAST_ADDR] = nicUniCmdNotSupport, // TODO: wait for FW ready
 	[CMD_ID_RSSI_MONITOR] = nicUniCmdSetRssiMonitor,
+#if (CFG_SUPPORT_ICS == 1)
 	[CMD_ID_SET_ICS_SNIFFER] = nicUniCmdSetIcsSniffer,
+#endif
 	[CMD_ID_NAN_EXT_CMD] = nicUniCmdNan,
 };
 
@@ -4617,6 +4619,7 @@ uint32_t nicUniCmdSetRssiMonitor(struct ADAPTER *ad,
 
 }
 
+#if (CFG_SUPPORT_ICS == 1)
 uint32_t nicUniCmdSetIcsSniffer(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info)
 {
@@ -4652,6 +4655,7 @@ uint32_t nicUniCmdSetIcsSniffer(struct ADAPTER *ad,
 
 	return WLAN_STATUS_SUCCESS;
 }
+#endif
 
 uint32_t nicUniCmdGetStaStatistics(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info)
