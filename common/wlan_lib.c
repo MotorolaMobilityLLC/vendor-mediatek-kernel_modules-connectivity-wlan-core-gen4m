@@ -1404,7 +1404,8 @@ void wlanOffUninitNicModule(IN struct ADAPTER *prAdapter,
  * \retval WLAN_STATUS_FAILURE: Failed
  */
 /*----------------------------------------------------------------------------*/
-uint32_t wlanAdapterStop(IN struct ADAPTER *prAdapter)
+uint32_t wlanAdapterStop(IN struct ADAPTER *prAdapter,
+		IN const u_int8_t bAtResetFlow)
 {
 	uint32_t u4Status = WLAN_STATUS_SUCCESS;
 
@@ -1420,7 +1421,7 @@ uint32_t wlanAdapterStop(IN struct ADAPTER *prAdapter)
 	 }
 
 	halHifSwInfoUnInit(prAdapter->prGlueInfo);
-	wlanOffUninitNicModule(prAdapter, FALSE);
+	wlanOffUninitNicModule(prAdapter, bAtResetFlow);
 
 	return u4Status;
 }				/* wlanAdapterStop */
