@@ -869,7 +869,7 @@ static inline void kalCfg80211ScanDone(struct cfg80211_scan_request *request,
 #define kalScnprintf(buf, size, fmt, ...)  \
 	scnprintf(buf, size, fmt, ##__VA_ARGS__)
 #define kalSprintf(buf, fmt, ...)          \
-	_kalSprintf((char *)(buf), (const char *)(fmt), __VA_ARGS__)
+	_kalSprintf((char *)(buf), (const char *)(fmt), ##__VA_ARGS__)
 /* remove for AOSP */
 /* #define kalSScanf(buf, fmt, ...)        sscanf(buf, fmt, __VA_ARGS__) */
 #define kalStrStr(ct, cs)                  strstr(ct, cs)

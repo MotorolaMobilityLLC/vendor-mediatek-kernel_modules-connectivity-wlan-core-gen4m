@@ -815,6 +815,7 @@ void wlanPrintFwLog(uint8_t *pucLogContent,
 #define DBG_LOG_BUF_SIZE 128
 
 	int8_t aucLogBuffer[DBG_LOG_BUF_SIZE];
+	int32_t err;
 	va_list args;
 
 	if (u2MsgSize > DEBUG_MSG_SIZE_MAX - 1) {
@@ -839,11 +840,12 @@ void wlanPrintFwLog(uint8_t *pucLogContent,
 	case DEBUG_MSG_TYPE_DRIVER:
 		/* Only 128 Bytes is available to print in driver */
 		va_start(args, pucFmt);
-		vsnprintf(aucLogBuffer, sizeof(aucLogBuffer) - 1, pucFmt,
+		err = vsnprintf(aucLogBuffer, sizeof(aucLogBuffer) - 1, pucFmt,
 			  args);
 		va_end(args);
 		aucLogBuffer[DBG_LOG_BUF_SIZE - 1] = '\0';
-		LOG_FUNC("%s\n", aucLogBuffer);
+		if (err >= 0)
+			LOG_FUNC("%s\n", aucLogBuffer);
 		break;
 	case DEBUG_MSG_TYPE_MEM8:
 		firmwareHexDump("fw data:", DUMP_PREFIX_ADDRESS,
