@@ -3087,6 +3087,369 @@ static void consys_log_event_notification(int cmd, int value)
 }
 #endif
 
+static
+void wlanOnPreAdapterStart(struct GLUE_INFO *prGlueInfo,
+	struct ADAPTER *prAdapter,
+	struct REG_INFO **pprRegInfo,
+	struct mt66xx_chip_info **pprChipInfo)
+{
+	DBGLOG(INIT, TRACE, "start.\n");
+	prGlueInfo->u4ReadyFlag = 0;
+
+#if CFG_TCP_IP_CHKSUM_OFFLOAD
+	prAdapter->fgIsSupportCsumOffload = FALSE;
+	prAdapter->u4CSUMFlags = CSUM_OFFLOAD_EN_ALL;
+#endif
+
+#if CFG_SUPPORT_CFG_FILE
+	wlanGetConfig(prAdapter);
+#endif
+
+	/* Init Chip Capability */
+	*pprChipInfo = prAdapter->chip_info;
+	if ((*pprChipInfo)->asicCapInit)
+		(*pprChipInfo)->asicCapInit(prAdapter);
+
+	/* Default support 2.4/5G MIMO */
+	prAdapter->rWifiFemCfg.u2WifiPath = (
+			WLAN_FLAG_2G4_WF0 | WLAN_FLAG_5G_WF0 |
+			WLAN_FLAG_2G4_WF1 | WLAN_FLAG_5G_WF1);
+
+#if (MTK_WCN_HIF_SDIO && CFG_WMT_WIFI_PATH_SUPPORT)
+	i4RetVal = mtk_wcn_wmt_wifi_fem_cfg_report((
+				void *)&prAdapter->rWifiFemCfg);
+	if (i4RetVal)
+		DBGLOG(INIT, ERROR, "Get WifiPath from WMT drv fail\n");
+	else
+		DBGLOG(INIT, INFO,
+		       "Get WifiPath from WMT drv success, WifiPath=0x%x\n",
+		       prAdapter->rWifiFemCfg.u2WifiPath);
+#endif
+	/* 4 <5> Start Device */
+	*pprRegInfo = &prGlueInfo->rRegInfo;
+
+	/* P_REG_INFO_T prRegInfo = (P_REG_INFO_T) kmalloc(
+	 *				sizeof(REG_INFO_T), GFP_KERNEL);
+	 */
+	kalMemSet(*pprRegInfo, 0, sizeof(struct REG_INFO));
+
+	/* Trigger the action of switching Pwr state to drv_own */
+	prAdapter->fgIsFwOwn = TRUE;
+
+	nicpmWakeUpWiFi(prAdapter);
+
+	/* Load NVRAM content to REG_INFO_T */
+	glLoadNvram(prGlueInfo, *pprRegInfo);
+
+	/* kalMemCopy(&prGlueInfo->rRegInfo, prRegInfo,
+	 *            sizeof(REG_INFO_T));
+	 */
+
+	(*pprRegInfo)->u4PowerMode = CFG_INIT_POWER_SAVE_PROF;
+#if 0
+		prRegInfo->fgEnArpFilter = TRUE;
+#endif
+	/* The Init value of u4WpaVersion/u4AuthAlg shall be
+	 * DISABLE/OPEN, not zero!
+	 */
+	/* The Init value of u4CipherGroup/u4CipherPairwise shall be
+	 * NONE, not zero!
+	 */
+	prGlueInfo->rWpaInfo.u4WpaVersion =
+		IW_AUTH_WPA_VERSION_DISABLED;
+	prGlueInfo->rWpaInfo.u4AuthAlg = IW_AUTH_ALG_OPEN_SYSTEM;
+	prGlueInfo->rWpaInfo.u4CipherGroup = IW_AUTH_CIPHER_NONE;
+	prGlueInfo->rWpaInfo.u4CipherPairwise = IW_AUTH_CIPHER_NONE;
+
+	tasklet_init(&prGlueInfo->rRxTask, halRxTasklet,
+			(unsigned long)prGlueInfo);
+	tasklet_init(&prGlueInfo->rTxCompleteTask,
+			halTxCompleteTasklet, (unsigned long)prGlueInfo);
+}
+
+static
+void wlanOnPostAdapterStart(struct ADAPTER *prAdapter,
+	struct GLUE_INFO *prGlueInfo)
+{
+	DBGLOG(INIT, TRACE, "start.\n");
+	if (HAL_IS_TX_DIRECT(prAdapter)) {
+		if (!prAdapter->fgTxDirectInited) {
+			skb_queue_head_init(
+					&prAdapter->rTxDirectSkbQueue);
+
+			init_timer(&prAdapter->rTxDirectSkbTimer);
+			prAdapter->rTxDirectSkbTimer.data =
+					(unsigned long)prGlueInfo;
+			prAdapter->rTxDirectSkbTimer.function =
+					nicTxDirectTimerCheckSkbQ;
+
+			init_timer(&prAdapter->rTxDirectHifTimer);
+			prAdapter->rTxDirectHifTimer.data =
+					(unsigned long)prGlueInfo;
+			prAdapter->rTxDirectHifTimer.function =
+				nicTxDirectTimerCheckHifQ;
+
+			prAdapter->fgTxDirectInited = TRUE;
+		}
+	}
+}
+
+static int32_t wlanOnPreNetRegister(struct GLUE_INFO *prGlueInfo,
+	struct ADAPTER *prAdapter,
+	struct mt66xx_chip_info *prChipInfo,
+	struct WIFI_VAR *prWifiVar,
+	const u_int8_t bAtResetFlow)
+{
+	DBGLOG(INIT, TRACE, "start.\n");
+	/* change net device mtu from feature option */
+	if (prWifiVar->u4MTU > 0 && prWifiVar->u4MTU <= ETH_DATA_LEN)
+		prGlueInfo->prDevHandler->mtu = prWifiVar->u4MTU;
+
+	INIT_WORK(&prGlueInfo->rTxMsduFreeWork, kalFreeTxMsduWorker);
+	INIT_DELAYED_WORK(&prGlueInfo->rRxPktDeAggWork,
+			halDeAggRxPktWorker);
+
+	prGlueInfo->main_thread = kthread_run(main_thread,
+			prGlueInfo->prDevHandler, "main_thread");
+#if CFG_SUPPORT_MULTITHREAD
+	prGlueInfo->hif_thread = kthread_run(hif_thread,
+			prGlueInfo->prDevHandler, "hif_thread");
+	prGlueInfo->rx_thread = kthread_run(rx_thread,
+			prGlueInfo->prDevHandler, "rx_thread");
+#endif
+	/* TODO the change schedule API shall be provided by OS glue
+	 * layer
+	 */
+	/* Switch the Wi-Fi task priority to higher priority and change
+	 * the scheduling method
+	 */
+	if (prGlueInfo->prAdapter->rWifiVar.ucThreadPriority > 0) {
+		struct sched_param param = {
+			.sched_priority = prGlueInfo->prAdapter
+			->rWifiVar.ucThreadPriority
+		};
+		sched_setscheduler(prGlueInfo->main_thread,
+				   prGlueInfo->prAdapter->rWifiVar
+				   .ucThreadScheduling, &param);
+#if CFG_SUPPORT_MULTITHREAD
+		sched_setscheduler(prGlueInfo->hif_thread,
+					prGlueInfo->prAdapter->rWifiVar
+					.ucThreadScheduling, &param);
+		sched_setscheduler(prGlueInfo->rx_thread,
+					prGlueInfo->prAdapter->rWifiVar
+					.ucThreadScheduling, &param);
+#endif
+		DBGLOG(INIT, INFO,
+		       "Set pri = %d, sched = %d\n",
+		       prGlueInfo->prAdapter->rWifiVar.ucThreadPriority,
+		       prGlueInfo->prAdapter->rWifiVar
+		       .ucThreadScheduling);
+	}
+
+	g_u4HaltFlag = 0;
+
+#if CFG_SUPPORT_BUFFER_MODE
+#if (CFG_EFUSE_BUFFER_MODE_DELAY_CAL == 1)
+	if (prChipInfo->downloadBufferBin) {
+		if (prChipInfo->downloadBufferBin(prAdapter) !=
+		    WLAN_STATUS_SUCCESS)
+			return -1;
+	}
+#endif
+#endif
+
+#if CFG_SUPPORT_DBDC
+	/* Update DBDC default setting */
+	cnmInitDbdcSetting(prAdapter);
+#endif /*CFG_SUPPORT_DBDC*/
+
+	/* send regulatory information to firmware */
+	rlmDomainSendInfoToFirmware(prAdapter);
+
+	/* set MAC address */
+	{
+		uint32_t rStatus = WLAN_STATUS_FAILURE;
+		struct sockaddr MacAddr;
+		uint32_t u4SetInfoLen = 0;
+
+		rStatus = kalIoctl(prGlueInfo, wlanoidQueryCurrentAddr,
+				&MacAddr.sa_data, PARAM_MAC_ADDR_LEN,
+				TRUE, TRUE, TRUE, &u4SetInfoLen);
+
+		if (rStatus != WLAN_STATUS_SUCCESS) {
+			DBGLOG(INIT, WARN, "set MAC addr fail 0x%x\n",
+							rStatus);
+		} else {
+			kalMemCopy(prGlueInfo->prDevHandler->dev_addr,
+					&MacAddr.sa_data, ETH_ALEN);
+			kalMemCopy(prGlueInfo->prDevHandler->perm_addr,
+					prGlueInfo->prDevHandler->dev_addr,
+					ETH_ALEN);
+
+#if CFG_SHOW_MACADDR_SOURCE
+			DBGLOG(INIT, INFO, "MAC address: " MACSTR,
+			MAC2STR(prAdapter->rWifiVar.aucMacAddress));
+#endif
+		}
+	}
+
+#if CFG_TCP_IP_CHKSUM_OFFLOAD
+	/* set HW checksum offload */
+	if (prAdapter->fgIsSupportCsumOffload) {
+		uint32_t rStatus = WLAN_STATUS_FAILURE;
+		uint32_t u4CSUMFlags = CSUM_OFFLOAD_EN_ALL;
+		uint32_t u4SetInfoLen = 0;
+
+		rStatus = kalIoctl(prGlueInfo, wlanoidSetCSUMOffload,
+				   (void *) &u4CSUMFlags,
+				   sizeof(uint32_t),
+				   FALSE, FALSE, TRUE, &u4SetInfoLen);
+
+		if (rStatus == WLAN_STATUS_SUCCESS) {
+			prGlueInfo->prDevHandler->features =
+						NETIF_F_IP_CSUM |
+						NETIF_F_IPV6_CSUM |
+						NETIF_F_RXCSUM;
+		} else {
+			DBGLOG(INIT, WARN,
+			       "set HW checksum offload fail 0x%x\n",
+			       rStatus);
+			prAdapter->fgIsSupportCsumOffload = FALSE;
+		}
+	}
+#endif
+#if CFG_SUPPORT_802_11K
+	{
+		uint32_t rStatus = WLAN_STATUS_FAILURE;
+		uint32_t u4SetInfoLen = 0;
+
+		rStatus = kalIoctl(prGlueInfo,
+				   wlanoidSync11kCapabilities, NULL, 0,
+				   FALSE, FALSE, TRUE, &u4SetInfoLen);
+
+		if (rStatus != WLAN_STATUS_SUCCESS)
+			DBGLOG(INIT, WARN,
+			       "RRM: Set 11k Capabilities fail 0x%x\n",
+			       rStatus);
+	}
+#endif
+	return 0;
+}
+
+static void wlanOnPostNetRegister(void)
+{
+	DBGLOG(INIT, TRACE, "start.\n");
+	/* 4 <4> Register early suspend callback */
+#if CFG_ENABLE_EARLY_SUSPEND
+	glRegisterEarlySuspend(&wlan_early_suspend_desc,
+			       wlan_early_suspend, wlan_late_resume);
+#endif
+	/* 4 <5> Register Notifier callback */
+	wlanRegisterNotifier();
+}
+
+static
+void wlanOnP2pRegistration(struct GLUE_INFO *prGlueInfo,
+	struct ADAPTER *prAdapter,
+	struct wireless_dev *prWdev)
+{
+	DBGLOG(INIT, TRACE, "start.\n");
+
+#if (CFG_ENABLE_WIFI_DIRECT && CFG_MTK_ANDROID_WMT)
+	register_set_p2p_mode_handler(set_p2p_mode_handler);
+#elif (CFG_ENABLE_WIFI_DIRECT)
+	if (prAdapter->rWifiVar.u4RegP2pIfAtProbe) {
+		struct PARAM_CUSTOM_P2P_SET_STRUCT rSetP2P;
+
+		rSetP2P.u4Enable = 1;
+
+#ifdef CFG_DRIVER_INITIAL_RUNNING_MODE
+		rSetP2P.u4Mode = CFG_DRIVER_INITIAL_RUNNING_MODE;
+#else
+		rSetP2P.u4Mode = RUNNING_P2P_MODE;
+#endif /* CFG_DRIVER_RUNNING_MODE */
+		if (set_p2p_mode_handler(prWdev->netdev, rSetP2P) == 0)
+			DBGLOG(INIT, INFO,
+				"%s: p2p device registered\n",
+				__func__);
+		else
+			DBGLOG(INIT, ERROR,
+				"%s: Failed to register p2p device\n",
+				__func__);
+	}
+#endif
+}
+
+static
+int32_t wlanOnWhenProbeSuccess(struct GLUE_INFO *prGlueInfo,
+	struct ADAPTER *prAdapter,
+	const u_int8_t bAtResetFlow)
+{
+	int32_t u4LogLevel = ENUM_WIFI_LOG_LEVEL_DEFAULT;
+
+	DBGLOG(INIT, TRACE, "start.\n");
+
+#if CFG_SUPPORT_AGPS_ASSIST
+	kalIndicateAgpsNotify(prAdapter, AGPS_EVENT_WLAN_ON, NULL,
+			      0);
+#endif
+#if CFG_SUPPORT_EASY_DEBUG
+	/* move before reading file
+	 * wlanLoadDefaultCustomerSetting(prAdapter);
+	 */
+	wlanFeatureToFw(prGlueInfo->prAdapter);
+#endif
+	wlanCfgSetSwCtrl(prGlueInfo->prAdapter);
+	wlanCfgSetChip(prGlueInfo->prAdapter);
+	wlanCfgSetCountryCode(prGlueInfo->prAdapter);
+	kalPerMonInit(prGlueInfo);
+#if CFG_MET_TAG_SUPPORT
+	if (met_tag_init() != 0)
+		DBGLOG(INIT, ERROR, "MET_TAG_INIT error!\n");
+#endif
+
+#if CFG_SUPPORT_CAL_RESULT_BACKUP_TO_HOST
+	/* Calibration Backup Flow */
+	if (!g_fgIsCalDataBackuped) {
+		if (rlmTriggerCalBackup(prGlueInfo->prAdapter,
+		    g_fgIsCalDataBackuped) == WLAN_STATUS_FAILURE) {
+			DBGLOG(RFTEST, INFO,
+			       "Error : Boot Time Wi-Fi Enable Fail........\n");
+			return -1;
+		}
+
+		g_fgIsCalDataBackuped = TRUE;
+	} else {
+		if (rlmTriggerCalBackup(prGlueInfo->prAdapter,
+		    g_fgIsCalDataBackuped) == WLAN_STATUS_FAILURE) {
+			DBGLOG(RFTEST, INFO,
+			       "Error : Normal Wi-Fi Enable Fail........\n");
+			return -1;
+		}
+	}
+#endif
+
+	/* card is ready */
+	prGlueInfo->u4ReadyFlag = 1;
+
+	kalSetHalted(FALSE);
+	wlanDbgGetGlobalLogLevel(ENUM_WIFI_LOG_MODULE_FW,
+				 &u4LogLevel);
+	if (u4LogLevel > ENUM_WIFI_LOG_LEVEL_DEFAULT)
+		wlanDbgSetLogLevelImpl(prAdapter,
+				       ENUM_WIFI_LOG_LEVEL_VERSION_V1,
+				       ENUM_WIFI_LOG_MODULE_FW,
+				       u4LogLevel);
+
+#ifdef CONFIG_MTK_CONNSYS_DEDICATED_LOG_PATH
+	/* sync log status with firmware */
+	if (u4LogOnOffCache != -1) /* -1: connsysD does not set */
+		consys_log_event_notification((int)FW_LOG_CMD_ON_OFF,
+			u4LogOnOffCache);
+#endif
+	return 0;
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Wlan probe function. This function probes and initializes the device.
@@ -3125,7 +3488,6 @@ static int32_t wlanProbe(void *pvData, void *pvDriverData)
 #if (MTK_WCN_HIF_SDIO && CFG_WMT_WIFI_PATH_SUPPORT)
 	int32_t i4RetVal = 0;
 #endif
-	int32_t u4LogLevel = ENUM_WIFI_LOG_LEVEL_DEFAULT;
 
 #if 0
 	uint8_t *pucConfigBuf = NULL, pucCfgBuf = NULL;
@@ -3185,103 +3547,16 @@ static int32_t wlanProbe(void *pvData, void *pvDriverData)
 		prAdapter = prGlueInfo->prAdapter;
 		prWifiVar = &prAdapter->rWifiVar;
 
-		prGlueInfo->u4ReadyFlag = 0;
-
-#if CFG_TCP_IP_CHKSUM_OFFLOAD
-		prAdapter->fgIsSupportCsumOffload = FALSE;
-		prAdapter->u4CSUMFlags = CSUM_OFFLOAD_EN_ALL;
-#endif
-
-#if CFG_SUPPORT_CFG_FILE
-		wlanGetConfig(prAdapter);
-#endif
-
-		/* Init Chip Capability */
-		prChipInfo = prAdapter->chip_info;
-		if (prChipInfo->asicCapInit)
-			prChipInfo->asicCapInit(prAdapter);
-
-
-		/* Default support 2.4/5G MIMO */
-		prAdapter->rWifiFemCfg.u2WifiPath = (
-				WLAN_FLAG_2G4_WF0 | WLAN_FLAG_5G_WF0 |
-				WLAN_FLAG_2G4_WF1 | WLAN_FLAG_5G_WF1);
-
-#if (MTK_WCN_HIF_SDIO && CFG_WMT_WIFI_PATH_SUPPORT)
-		i4RetVal = mtk_wcn_wmt_wifi_fem_cfg_report((
-					void *)&prAdapter->rWifiFemCfg);
-		if (i4RetVal)
-			DBGLOG(INIT, ERROR, "Get WifiPath from WMT drv fail\n");
-		else
-			DBGLOG(INIT, INFO,
-			       "Get WifiPath from WMT drv success, WifiPath=0x%x\n",
-			       prAdapter->rWifiFemCfg.u2WifiPath);
-#endif
-		/* 4 <5> Start Device */
-		prRegInfo = &prGlueInfo->rRegInfo;
-
-		/* P_REG_INFO_T prRegInfo = (P_REG_INFO_T) kmalloc(
-		 *				sizeof(REG_INFO_T), GFP_KERNEL);
-		 */
-		kalMemSet(prRegInfo, 0, sizeof(struct REG_INFO));
-
-		/* Trigger the action of switching Pwr state to drv_own */
-		prAdapter->fgIsFwOwn = TRUE;
-
-		nicpmWakeUpWiFi(prAdapter);
-
-		/* Load NVRAM content to REG_INFO_T */
-		glLoadNvram(prGlueInfo, prRegInfo);
-
-		/* kalMemCopy(&prGlueInfo->rRegInfo, prRegInfo,
-		 *            sizeof(REG_INFO_T));
-		 */
-
-		prRegInfo->u4PowerMode = CFG_INIT_POWER_SAVE_PROF;
-#if 0
-		prRegInfo->fgEnArpFilter = TRUE;
-#endif
-		/* The Init value of u4WpaVersion/u4AuthAlg shall be
-		 * DISABLE/OPEN, not zero!
-		 */
-		/* The Init value of u4CipherGroup/u4CipherPairwise shall be
-		 * NONE, not zero!
-		 */
-		prGlueInfo->rWpaInfo.u4WpaVersion =
-			IW_AUTH_WPA_VERSION_DISABLED;
-		prGlueInfo->rWpaInfo.u4AuthAlg = IW_AUTH_ALG_OPEN_SYSTEM;
-		prGlueInfo->rWpaInfo.u4CipherGroup = IW_AUTH_CIPHER_NONE;
-		prGlueInfo->rWpaInfo.u4CipherPairwise = IW_AUTH_CIPHER_NONE;
-
-		tasklet_init(&prGlueInfo->rRxTask, halRxTasklet,
-			     (unsigned long)prGlueInfo);
-		tasklet_init(&prGlueInfo->rTxCompleteTask,
-			     halTxCompleteTasklet, (unsigned long)prGlueInfo);
+		wlanOnPreAdapterStart(prGlueInfo,
+			prAdapter,
+			&prRegInfo,
+			&prChipInfo);
 
 		if (wlanAdapterStart(prAdapter,
-				     prRegInfo) != WLAN_STATUS_SUCCESS)
+				     prRegInfo, FALSE) != WLAN_STATUS_SUCCESS)
 			i4Status = -EIO;
 
-		if (HAL_IS_TX_DIRECT(prAdapter)) {
-			if (!prAdapter->fgTxDirectInited) {
-				skb_queue_head_init(
-						&prAdapter->rTxDirectSkbQueue);
-
-				init_timer(&prAdapter->rTxDirectSkbTimer);
-				prAdapter->rTxDirectSkbTimer.data =
-						(unsigned long)prGlueInfo;
-				prAdapter->rTxDirectSkbTimer.function =
-						nicTxDirectTimerCheckSkbQ;
-
-				init_timer(&prAdapter->rTxDirectHifTimer);
-				prAdapter->rTxDirectHifTimer.data =
-						(unsigned long)prGlueInfo;
-				prAdapter->rTxDirectHifTimer.function =
-					nicTxDirectTimerCheckHifQ;
-
-				prAdapter->fgTxDirectInited = TRUE;
-			}
-		}
+		wlanOnPostAdapterStart(prAdapter, prGlueInfo);
 
 		/* kfree(prRegInfo); */
 
@@ -3290,140 +3565,8 @@ static int32_t wlanProbe(void *pvData, void *pvDriverData)
 			break;
 		}
 
-		/* change net device mtu from feature option */
-		if (prWifiVar->u4MTU > 0 && prWifiVar->u4MTU <= ETH_DATA_LEN)
-			prGlueInfo->prDevHandler->mtu = prWifiVar->u4MTU;
-
-		INIT_WORK(&prGlueInfo->rTxMsduFreeWork, kalFreeTxMsduWorker);
-		INIT_DELAYED_WORK(&prGlueInfo->rRxPktDeAggWork,
-				halDeAggRxPktWorker);
-
-		prGlueInfo->main_thread = kthread_run(main_thread,
-				prGlueInfo->prDevHandler, "main_thread");
-#if CFG_SUPPORT_MULTITHREAD
-		prGlueInfo->hif_thread = kthread_run(hif_thread,
-				prGlueInfo->prDevHandler, "hif_thread");
-		prGlueInfo->rx_thread = kthread_run(rx_thread,
-				prGlueInfo->prDevHandler, "rx_thread");
-#endif
-
-
-		/* TODO the change schedule API shall be provided by OS glue
-		 * layer
-		 */
-		/* Switch the Wi-Fi task priority to higher priority and change
-		 * the scheduling method
-		 */
-		if (prGlueInfo->prAdapter->rWifiVar.ucThreadPriority > 0) {
-			struct sched_param param = {
-				.sched_priority = prGlueInfo->prAdapter
-				->rWifiVar.ucThreadPriority
-			};
-			sched_setscheduler(prGlueInfo->main_thread,
-					   prGlueInfo->prAdapter->rWifiVar
-					   .ucThreadScheduling, &param);
-#if CFG_SUPPORT_MULTITHREAD
-			sched_setscheduler(prGlueInfo->hif_thread,
-						prGlueInfo->prAdapter->rWifiVar
-						.ucThreadScheduling, &param);
-			sched_setscheduler(prGlueInfo->rx_thread,
-						prGlueInfo->prAdapter->rWifiVar
-						.ucThreadScheduling, &param);
-#endif
-			DBGLOG(INIT, INFO,
-			       "Set pri = %d, sched = %d\n",
-			       prGlueInfo->prAdapter->rWifiVar.ucThreadPriority,
-			       prGlueInfo->prAdapter->rWifiVar
-			       .ucThreadScheduling);
-		}
-
-		g_u4HaltFlag = 0;
-
-#if CFG_SUPPORT_BUFFER_MODE
-#if (CFG_EFUSE_BUFFER_MODE_DELAY_CAL == 1)
-		if (prChipInfo->downloadBufferBin) {
-			if (prChipInfo->downloadBufferBin(prAdapter) !=
-			    WLAN_STATUS_SUCCESS)
-				return -1;
-		}
-#endif
-#endif
-
-#if CFG_SUPPORT_DBDC
-		/* Update DBDC default setting */
-		cnmInitDbdcSetting(prAdapter);
-#endif /*CFG_SUPPORT_DBDC*/
-
-		/* send regulatory information to firmware */
-		rlmDomainSendInfoToFirmware(prAdapter);
-
-		/* set MAC address */
-		{
-			uint32_t rStatus = WLAN_STATUS_FAILURE;
-			struct sockaddr MacAddr;
-			uint32_t u4SetInfoLen = 0;
-
-			rStatus = kalIoctl(prGlueInfo, wlanoidQueryCurrentAddr,
-					   &MacAddr.sa_data, PARAM_MAC_ADDR_LEN,
-					   TRUE, TRUE, TRUE, &u4SetInfoLen);
-
-			if (rStatus != WLAN_STATUS_SUCCESS) {
-				DBGLOG(INIT, WARN, "set MAC addr fail 0x%x\n",
-								rStatus);
-			} else {
-				kalMemCopy(prGlueInfo->prDevHandler->dev_addr,
-					   &MacAddr.sa_data, ETH_ALEN);
-				kalMemCopy(prGlueInfo->prDevHandler->perm_addr,
-					   prGlueInfo->prDevHandler->dev_addr,
-					   ETH_ALEN);
-
-#if CFG_SHOW_MACADDR_SOURCE
-				DBGLOG(INIT, INFO, "MAC address: " MACSTR,
-				MAC2STR(prAdapter->rWifiVar.aucMacAddress));
-#endif
-			}
-		}
-
-#if CFG_TCP_IP_CHKSUM_OFFLOAD
-		/* set HW checksum offload */
-		if (prAdapter->fgIsSupportCsumOffload) {
-			uint32_t rStatus = WLAN_STATUS_FAILURE;
-			uint32_t u4CSUMFlags = CSUM_OFFLOAD_EN_ALL;
-			uint32_t u4SetInfoLen = 0;
-
-			rStatus = kalIoctl(prGlueInfo, wlanoidSetCSUMOffload,
-					   (void *) &u4CSUMFlags,
-					   sizeof(uint32_t),
-					   FALSE, FALSE, TRUE, &u4SetInfoLen);
-
-			if (rStatus == WLAN_STATUS_SUCCESS) {
-				prGlueInfo->prDevHandler->features =
-							NETIF_F_IP_CSUM |
-							NETIF_F_IPV6_CSUM |
-							NETIF_F_RXCSUM;
-			} else {
-				DBGLOG(INIT, WARN,
-				       "set HW checksum offload fail 0x%x\n",
-				       rStatus);
-				prAdapter->fgIsSupportCsumOffload = FALSE;
-			}
-		}
-#endif
-#if CFG_SUPPORT_802_11K
-		{
-			uint32_t rStatus = WLAN_STATUS_FAILURE;
-			uint32_t u4SetInfoLen = 0;
-
-			rStatus = kalIoctl(prGlueInfo,
-					   wlanoidSync11kCapabilities, NULL, 0,
-					   FALSE, FALSE, TRUE, &u4SetInfoLen);
-
-			if (rStatus != WLAN_STATUS_SUCCESS)
-				DBGLOG(INIT, WARN,
-				       "RRM: Set 11k Capabilities fail 0x%x\n",
-				       rStatus);
-		}
-#endif
+		wlanOnPreNetRegister(prGlueInfo, prAdapter, prChipInfo,
+			prWifiVar, FALSE);
 
 		/* 4 <3> Register the card */
 		i4DevIdx = wlanNetRegister(prWdev);
@@ -3434,14 +3577,8 @@ static int32_t wlanProbe(void *pvData, void *pvDriverData)
 			eFailReason = NET_REGISTER_FAIL;
 			break;
 		}
-		/* 4 <4> Register early suspend callback */
-#if CFG_ENABLE_EARLY_SUSPEND
-		glRegisterEarlySuspend(&wlan_early_suspend_desc,
-				       wlan_early_suspend, wlan_late_resume);
-#endif
 
-		/* 4 <5> Register Notifier callback */
-		wlanRegisterNotifier();
+		wlanOnPostNetRegister();
 
 		/* 4 <6> Initialize /proc filesystem */
 #if WLAN_INCLUDE_PROC
@@ -3454,38 +3591,17 @@ static int32_t wlanProbe(void *pvData, void *pvDriverData)
 #endif /* WLAN_INCLUDE_PROC */
 
 #if CFG_MET_PACKET_TRACE_SUPPORT
-		kalMetInit(prGlueInfo);
+	kalMetInit(prGlueInfo);
 #endif
 
 #if CFG_ENABLE_BT_OVER_WIFI
-		prGlueInfo->rBowInfo.fgIsNetRegistered = FALSE;
-		prGlueInfo->rBowInfo.fgIsRegistered = FALSE;
-		glRegisterAmpc(prGlueInfo);
+	prGlueInfo->rBowInfo.fgIsNetRegistered = FALSE;
+	prGlueInfo->rBowInfo.fgIsRegistered = FALSE;
+	glRegisterAmpc(prGlueInfo);
 #endif
 
-#if (CFG_ENABLE_WIFI_DIRECT && CFG_MTK_ANDROID_WMT)
-		register_set_p2p_mode_handler(set_p2p_mode_handler);
-#elif (CFG_ENABLE_WIFI_DIRECT)
-		if (prAdapter->rWifiVar.u4RegP2pIfAtProbe) {
-			struct PARAM_CUSTOM_P2P_SET_STRUCT rSetP2P;
+	wlanOnP2pRegistration(prGlueInfo, prAdapter, prWdev);
 
-			rSetP2P.u4Enable = 1;
-
-#ifdef CFG_DRIVER_INITIAL_RUNNING_MODE
-			rSetP2P.u4Mode = CFG_DRIVER_INITIAL_RUNNING_MODE;
-#else
-			rSetP2P.u4Mode = RUNNING_P2P_MODE;
-#endif /* CFG_DRIVER_RUNNING_MODE */
-			if (set_p2p_mode_handler(prWdev->netdev, rSetP2P) == 0)
-				DBGLOG(INIT, INFO,
-					"%s: p2p device registered\n",
-					__func__);
-			else
-				DBGLOG(INIT, ERROR,
-					"%s: Failed to register p2p device\n",
-					__func__);
-		}
-#endif
 #if (CFG_MET_PACKET_TRACE_SUPPORT == 1)
 		DBGLOG(INIT, TRACE, "init MET procfs...\n");
 		i4Status = kalMetInitProcfs(prGlueInfo);
@@ -3519,64 +3635,7 @@ static int32_t wlanProbe(void *pvData, void *pvDriverData)
 	} while (FALSE);
 
 	if (i4Status == 0) {
-#if CFG_SUPPORT_AGPS_ASSIST
-		kalIndicateAgpsNotify(prAdapter, AGPS_EVENT_WLAN_ON, NULL,
-				      0);
-#endif
-#if CFG_SUPPORT_EASY_DEBUG
-		/* move before reading file
-		 * wlanLoadDefaultCustomerSetting(prAdapter);
-		 */
-		wlanFeatureToFw(prGlueInfo->prAdapter);
-#endif
-		wlanCfgSetSwCtrl(prGlueInfo->prAdapter);
-		wlanCfgSetChip(prGlueInfo->prAdapter);
-		wlanCfgSetCountryCode(prGlueInfo->prAdapter);
-		kalPerMonInit(prGlueInfo);
-#if CFG_MET_TAG_SUPPORT
-		if (met_tag_init() != 0)
-			DBGLOG(INIT, ERROR, "MET_TAG_INIT error!\n");
-#endif
-
-#if CFG_SUPPORT_CAL_RESULT_BACKUP_TO_HOST
-		/* Calibration Backup Flow */
-		if (!g_fgIsCalDataBackuped) {
-			if (rlmTriggerCalBackup(prGlueInfo->prAdapter,
-			    g_fgIsCalDataBackuped) == WLAN_STATUS_FAILURE) {
-				DBGLOG(RFTEST, INFO,
-				       "Error : Boot Time Wi-Fi Enable Fail........\n");
-				return -1;
-			}
-
-			g_fgIsCalDataBackuped = TRUE;
-		} else {
-			if (rlmTriggerCalBackup(prGlueInfo->prAdapter,
-			    g_fgIsCalDataBackuped) == WLAN_STATUS_FAILURE) {
-				DBGLOG(RFTEST, INFO,
-				       "Error : Normal Wi-Fi Enable Fail........\n");
-				return -1;
-			}
-		}
-#endif
-
-		/* card is ready */
-		prGlueInfo->u4ReadyFlag = 1;
-
-		kalSetHalted(FALSE);
-		wlanDbgGetGlobalLogLevel(ENUM_WIFI_LOG_MODULE_FW,
-					 &u4LogLevel);
-		if (u4LogLevel > ENUM_WIFI_LOG_LEVEL_DEFAULT)
-			wlanDbgSetLogLevelImpl(prAdapter,
-					       ENUM_WIFI_LOG_LEVEL_VERSION_V1,
-					       ENUM_WIFI_LOG_MODULE_FW,
-					       u4LogLevel);
-
-#ifdef CONFIG_MTK_CONNSYS_DEDICATED_LOG_PATH
-		/* sync log status with firmware */
-		if (u4LogOnOffCache != -1) /* -1: connsysD does not set */
-			consys_log_event_notification((int)FW_LOG_CMD_ON_OFF,
-				u4LogOnOffCache);
-#endif
+		wlanOnWhenProbeSuccess(prGlueInfo, prAdapter, FALSE);
 		DBGLOG(INIT, INFO, "wlanProbe: probe success\n");
 	} else {
 		DBGLOG(INIT, ERROR, "wlanProbe: probe failed, reason:%d\n",
@@ -3620,6 +3679,64 @@ static int32_t wlanProbe(void *pvData, void *pvDriverData)
 
 	return i4Status;
 }				/* end of wlanProbe() */
+
+void
+wlanOffNotifyCfg80211Disconnect(IN struct GLUE_INFO *prGlueInfo)
+{
+	DBGLOG(INIT, TRACE, "start.\n");
+
+	if (prGlueInfo->eParamMediaStateIndicated ==
+	    MEDIA_STATE_CONNECTED) {
+
+#if CFG_WPS_DISCONNECT || (KERNEL_VERSION(4, 2, 0) <= CFG80211_VERSION_CODE)
+		cfg80211_disconnected(prGlueInfo->prDevHandler, 0, NULL, 0,
+				      TRUE, GFP_KERNEL);
+#else
+		cfg80211_disconnected(prGlueInfo->prDevHandler, 0, NULL, 0,
+				      GFP_KERNEL);
+#endif
+		kalMsleep(500);
+	}
+}
+
+void wlanOffStopWlanThreads(IN struct GLUE_INFO *prGlueInfo)
+{
+	DBGLOG(INIT, TRACE, "start.\n");
+
+	if (prGlueInfo->main_thread == NULL &&
+		prGlueInfo->hif_thread == NULL &&
+		prGlueInfo->rx_thread == NULL) {
+		DBGLOG(INIT, INFO,
+			"Threads are already NULL, skip stop and free\n");
+		return;
+	}
+
+#if CFG_SUPPORT_MULTITHREAD
+	wake_up_interruptible(&prGlueInfo->waitq_hif);
+	wait_for_completion_interruptible(
+		&prGlueInfo->rHifHaltComp);
+	wake_up_interruptible(&prGlueInfo->waitq_rx);
+	wait_for_completion_interruptible(&prGlueInfo->rRxHaltComp);
+#endif
+
+	/* wake up main thread */
+	wake_up_interruptible(&prGlueInfo->waitq);
+	/* wait main thread stops */
+	wait_for_completion_interruptible(&prGlueInfo->rHaltComp);
+
+	DBGLOG(INIT, INFO, "wlan thread stopped\n");
+
+	/* prGlueInfo->rHifInfo.main_thread = NULL; */
+	prGlueInfo->main_thread = NULL;
+#if CFG_SUPPORT_MULTITHREAD
+	prGlueInfo->hif_thread = NULL;
+	prGlueInfo->rx_thread = NULL;
+
+	prGlueInfo->u4TxThreadPid = 0xffffffff;
+	prGlueInfo->u4HifThreadPid = 0xffffffff;
+#endif
+
+}
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -3698,18 +3815,7 @@ static void wlanRemove(void)
 	}
 #endif
 
-	if (prGlueInfo->eParamMediaStateIndicated ==
-	    MEDIA_STATE_CONNECTED) {
-
-#if CFG_WPS_DISCONNECT || (KERNEL_VERSION(4, 2, 0) <= CFG80211_VERSION_CODE)
-		cfg80211_disconnected(prGlueInfo->prDevHandler, 0, NULL, 0,
-				      TRUE, GFP_KERNEL);
-#else
-		cfg80211_disconnected(prGlueInfo->prDevHandler, 0, NULL, 0,
-				      GFP_KERNEL);
-#endif
-		kalMsleep(500);
-	}
+	wlanOffNotifyCfg80211Disconnect(prGlueInfo);
 
 	flush_delayed_work(&workq);
 
@@ -3730,30 +3836,7 @@ static void wlanRemove(void)
 	flush_work(&prGlueInfo->rTxMsduFreeWork);
 	cancel_delayed_work_sync(&prGlueInfo->rRxPktDeAggWork);
 
-#if CFG_SUPPORT_MULTITHREAD
-	wake_up_interruptible(&prGlueInfo->waitq_hif);
-	wait_for_completion_interruptible(
-		&prGlueInfo->rHifHaltComp);
-	wake_up_interruptible(&prGlueInfo->waitq_rx);
-	wait_for_completion_interruptible(&prGlueInfo->rRxHaltComp);
-#endif
-
-	/* wake up main thread */
-	wake_up_interruptible(&prGlueInfo->waitq);
-	/* wait main thread stops */
-	wait_for_completion_interruptible(&prGlueInfo->rHaltComp);
-
-	DBGLOG(INIT, INFO, "wlan thread stopped\n");
-
-	/* prGlueInfo->rHifInfo.main_thread = NULL; */
-	prGlueInfo->main_thread = NULL;
-#if CFG_SUPPORT_MULTITHREAD
-	prGlueInfo->hif_thread = NULL;
-	prGlueInfo->rx_thread = NULL;
-
-	prGlueInfo->u4TxThreadPid = 0xffffffff;
-	prGlueInfo->u4HifThreadPid = 0xffffffff;
-#endif
+	wlanOffStopWlanThreads(prGlueInfo);
 
 	if (HAL_IS_TX_DIRECT(prAdapter)) {
 		if (prAdapter->fgTxDirectInited) {
