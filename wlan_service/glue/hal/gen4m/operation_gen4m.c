@@ -1944,7 +1944,7 @@ s_int32 mt_op_get_icap_data(
 
 s_int32 mt_op_do_cal_item(
 	struct test_wlan_info *winfos,
-	u_char item,
+	u_int32 item,
 	u_char band_idx)
 {
 	s_int32 ret = SERV_STATUS_SUCCESS;
@@ -1953,7 +1953,7 @@ s_int32 mt_op_do_cal_item(
 		RF_AT_FUNCID_SET_DBDC_BAND_IDX, band_idx);
 
 	tm_rftest_set_auto_test(winfos,
-		RF_AT_FUNCID_SET_RECAL_CAL_STEP, (u_int32)item);
+		RF_AT_FUNCID_SET_RECAL_CAL_STEP, item);
 
 	return ret;
 }
@@ -2464,13 +2464,13 @@ s_int32 mt_op_get_rx_stat_path(
 		rx_st_path->rssi =
 			SERV_OS_NTOHL(test_hqa_rx_stat.rssi1);
 		rx_st_path->fagc_ib_rssi =
-			SERV_OS_NTOHL(test_hqa_rx_stat.fagc_ib_rssi1);
+			SERV_OS_NTOHL(test_hqa_rx_stat.fagc_ib_RSSSI1);
 		rx_st_path->fagc_wb_rssi =
-			SERV_OS_NTOHL(test_hqa_rx_stat.fagc_wb_rssi1);
+			SERV_OS_NTOHL(test_hqa_rx_stat.fagc_wb_RSSSI1);
 		rx_st_path->inst_ib_rssi =
-			SERV_OS_NTOHL(test_hqa_rx_stat.inst_ib_rssi1);
+			SERV_OS_NTOHL(test_hqa_rx_stat.inst_ib_RSSSI1);
 		rx_st_path->inst_wb_rssi =
-			SERV_OS_NTOHL(test_hqa_rx_stat.inst_wb_rssi1);
+			SERV_OS_NTOHL(test_hqa_rx_stat.inst_wb_RSSSI1);
 		break;
 	default:
 		ret = SERV_STATUS_HAL_OP_FAIL;
