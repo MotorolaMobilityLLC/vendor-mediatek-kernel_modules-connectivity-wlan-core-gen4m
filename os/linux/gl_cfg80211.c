@@ -3234,6 +3234,14 @@ mtk_reg_notify(IN struct wiphy *pWiphy,
 	enum regd_state old_state;
 
 
+	/*
+	 * Check if firmawre support single sku
+	 */
+	if (!regd_is_single_sku_en())
+		return; /*no need to do the followings*/
+
+
+
 	if (!pWiphy) {
 		DBGLOG(RLM, ERROR, "%s(): pWiphy = NULL.\n", __func__);
 		return;
@@ -3389,18 +3397,10 @@ DOMAIN_SEND_CMD:
 		return; /*interface is not up yet.*/
 
 
-
-	/*
-	 * Check if firmawre support single sku
-	 */
-	if (!regd_is_single_sku_en())
-		return; /*no need to send information to firmware due to firmware is not supported*/
-
-
-	prAdapter->rWifiVar.rConnSettings.u2CountryCode = (UINT_16)rlmDomainGetCountryCode();
 	/*
 	 * Send commands to firmware
 	 */
+	prAdapter->rWifiVar.rConnSettings.u2CountryCode = (UINT_16)rlmDomainGetCountryCode();
 	rlmDomainSendCmd(prAdapter, FALSE);
 }
 
