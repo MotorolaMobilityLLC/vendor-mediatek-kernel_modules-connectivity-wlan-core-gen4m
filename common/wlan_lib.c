@@ -7445,7 +7445,7 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 				       prAdapter, "MacOverride", 0);
 	if (wlanCfgGet(prAdapter, "MacAddr", prWifiVar->aucMacAddrStr,
 	    "00:0c:e7:66:32:e1", 0))
-		DBGLOG(INIT, ERROR, "get MacAddr fail, use defaul\n");
+		DBGLOG(INIT, TRACE, "get MacAddr fail, use defaul\n");
 
 	prWifiVar->ucCtiaMode = (uint8_t) wlanCfgGetUint32(
 					prAdapter, "CtiaMode", 0);
