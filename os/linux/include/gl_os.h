@@ -529,7 +529,7 @@ struct GLUE_INFO {
 	/* struct net_device_stats rNetDevStats; */
 
 	/* Wireless statistics struct net_device */
-	struct iw_statistics rIwStats;
+	struct iw_statistics rIwStats[BSSID_NUM];
 
 	/* spinlock to sync power save mechanism */
 	spinlock_t rSpinLock[SPIN_LOCK_NUM];
