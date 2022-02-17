@@ -99,6 +99,9 @@ const struct NIC_CAPABILITY_V2_REF_TABLE
 	{TAG_CAP_LOCATION_CAP, nicCfgChipCapLocationCap},
 	{TAG_CAP_MUMIMO_CAP, nicCfgChipCapMuMimoCap},
 	{TAG_CAP_HW_ADIE_VERSION, nicCfgChipAdieHwVersion},
+#if CFG_SUPPORT_ANT_SWAP
+	{TAG_CAP_ANTSWP, nicCfgChipCapAntSwpCap},
+#endif
 };
 
 /*******************************************************************************
@@ -3057,6 +3060,22 @@ uint32_t nicCfgChipCapMuMimoCap(IN struct ADAPTER *prAdapter,
 {
 	return WLAN_STATUS_SUCCESS;
 }
+
+#if CFG_SUPPORT_ANT_SWAP
+uint32_t nicCfgChipCapAntSwpCap(IN struct ADAPTER *prAdapter,
+	IN uint8_t *pucEventBuf)
+{
+	struct CAP_ANTSWP *prAntSwpCap = (struct CAP_ANTSWP *)pucEventBuf;
+
+	/* FW's value combines both platform and FW capablity */
+	prAdapter->fgIsSupportAntSwp = prAntSwpCap->ucIsSupported;
+	DBGLOG(INIT, INFO,
+		"fgIsSupportAntSwp = %d\n",
+		prAdapter->fgIsSupportAntSwp);
+
+	return WLAN_STATUS_SUCCESS;
+}
+#endif /* CFG_SUPPORT_ANT_SWAP */
 
 struct nicTxRsrcEvtHdlr nicTxRsrcEvtHdlrTbl[] = {
 	{NIC_TX_RESOURCE_REPORT_VERSION_1,
