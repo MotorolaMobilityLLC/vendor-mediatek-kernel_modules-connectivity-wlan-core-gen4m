@@ -707,6 +707,23 @@ typedef struct _PKT_PROFILE_T {
 	OS_SYSTIME rHifTxDoneTimestamp;
 } PKT_PROFILE_T, *P_PKT_PROFILE_T;
 #endif
+
+enum ENUM_EAPOL_KEY_TYPE_T {
+	EAPOL_KEY_NOT_KEY = 0,
+	EAPOL_KEY_1_OF_4,
+	EAPOL_KEY_2_OF_4,
+	EAPOL_KEY_3_OF_4,
+	EAPOL_KEY_4_OF_4,
+	EAPOL_KEY_NUM
+};
+
+enum ENUM_KEY_ACTION_TYPE_T {
+	SEC_DROP_KEY_COMMAND  = 0,
+	SEC_QUEUE_KEY_COMMAND,
+	SEC_TX_KEY_COMMAND,
+	SEC_ACTION_KEY_NUM
+};
+
 /* TX transactions could be divided into 4 kinds:
  *
  * 1) 802.1X / Bluetooth-over-Wi-Fi Security Frames
@@ -807,6 +824,7 @@ struct _MSDU_INFO_T {
 #if defined(_HIF_PCIE)
 	P_MSDU_TOKEN_ENTRY_T prToken;
 #endif
+	enum ENUM_EAPOL_KEY_TYPE_T eEapolKeyType;
 };
 
 #define HIT_PKT_FLAGS_CT_WITH_TXD			BIT(0)

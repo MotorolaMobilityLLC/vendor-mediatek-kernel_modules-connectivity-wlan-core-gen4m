@@ -2358,6 +2358,9 @@ BOOLEAN nicTxFillMsduInfo(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduInfo,
 		prMsduInfo->fgIs802_3 = GLUE_TEST_PKT_FLAG(prPacket, ENUM_PKT_802_3) ? TRUE:FALSE;
 		prMsduInfo->fgIsVlanExists = GLUE_TEST_PKT_FLAG(prPacket, ENUM_PKT_VLAN_EXIST) ? TRUE:FALSE;
 
+		if (prMsduInfo->fgIs802_1x)
+			prMsduInfo->eEapolKeyType = secGetEapolKeyType(((struct sk_buff *)prPacket)->data);
+
 		if (GLUE_TEST_PKT_FLAG(prPacket, ENUM_PKT_DHCP) && prAdapter->rWifiVar.ucDhcpTxDone)
 			prMsduInfo->ucPktType = ENUM_PKT_DHCP;
 		else if (GLUE_TEST_PKT_FLAG(prPacket, ENUM_PKT_ARP) && prAdapter->rWifiVar.ucArpTxDone)
