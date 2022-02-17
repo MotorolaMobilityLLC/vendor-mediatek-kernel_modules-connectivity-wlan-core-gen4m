@@ -968,9 +968,9 @@ int soc3_0_Trigger_fw_assert(void)
 	int ret = 0;
 	int value;
 	uint32_t waitRet = 0;
-
+#if 0
 	ret = soc3_0_CheckBusHang();
-
+#endif
 	if (ret != 0) {
 		return ret;
 	} else {
