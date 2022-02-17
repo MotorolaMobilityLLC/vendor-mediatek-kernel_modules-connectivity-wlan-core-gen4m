@@ -1135,7 +1135,8 @@ void scanRemoveBssDescByBandAndNetwork(IN struct ADAPTER *prAdapter,
  */
 /*----------------------------------------------------------------------------*/
 void scanRemoveConnFlagOfBssDescByBssid(IN struct ADAPTER *prAdapter,
-					IN uint8_t aucBSSID[])
+					IN uint8_t aucBSSID[],
+					IN uint8_t ucBssIndex)
 {
 	struct SCAN_INFO *prScanInfo;
 	struct LINK *prBSSDescList;
@@ -1152,8 +1153,8 @@ void scanRemoveConnFlagOfBssDescByBssid(IN struct ADAPTER *prAdapter,
 		rLinkEntry, struct BSS_DESC) {
 
 		if (EQUAL_MAC_ADDR(prBssDesc->aucBSSID, aucBSSID)) {
-			prBssDesc->fgIsConnected = FALSE;
-			prBssDesc->fgIsConnecting = FALSE;
+			prBssDesc->fgIsConnected &= ~BIT(ucBssIndex);
+			prBssDesc->fgIsConnecting &= ~BIT(ucBssIndex);
 
 			/* BSSID is not unique, so need to
 			 * traverse whols link-list

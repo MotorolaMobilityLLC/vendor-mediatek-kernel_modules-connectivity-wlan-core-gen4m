@@ -1261,15 +1261,18 @@ uint8_t scanInDecidingRoaming(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 	struct ROAMING_INFO *roam;
 	enum ENUM_PARAM_CONNECTION_POLICY policy;
 	struct CONNECTION_SETTINGS *setting;
+	struct BSS_DESC *target;
 
 	roam = aisGetRoamingInfo(prAdapter, ucBssIndex);
 	setting = aisGetConnSettings(prAdapter, ucBssIndex);
 	policy = setting->eConnectionPolicy;
+	target = aisGetTargetBssDesc(prAdapter, ucBssIndex);
 
 	return IS_BSS_INDEX_AIS(prAdapter, ucBssIndex) &&
-	       roam->fgIsEnableRoaming &&
-	       roam->eCurrentState == ROAMING_STATE_DECISION &&
-	       policy != CONNECT_BY_BSSID ? TRUE : FALSE;
+		roam->fgIsEnableRoaming &&
+		roam->eCurrentState == ROAMING_STATE_DECISION &&
+		policy != CONNECT_BY_BSSID &&
+		target;
 
 }
 
