@@ -249,13 +249,13 @@ enum ENUM_TX_RING_IDX {
 };
 
 enum ENUM_RX_RING_IDX {
-	RX_RING_DATA_IDX_0 = 0,  /*Rx Data */
+	RX_RING_DATA_IDX_0 = 0,
 	RX_RING_EVT_IDX_1,
-	WFDMA0_RX_RING_IDX_2,  /* Band0 TxFreeDoneEvent */
-	WFDMA0_RX_RING_IDX_3,  /* Band1 TxFreeDoneEvent  */
-	WFDMA1_RX_RING_IDX_0,  /* WM Event */
-	WFDMA1_RX_RING_IDX_1,  /*WA Band 0 Event*/
-	WFDMA1_RX_RING_IDX_2,  /*WA Band 1 Event*/
+	RX_RING_DATA1_IDX_2,
+	RX_RING_TXDONE0_IDX_3,
+	RX_RING_TXDONE1_IDX_4,
+	RX_RING_WAEVT0_IDX_5,
+	RX_RING_WAEVT1_IDX_6,
 };
 
 /* ============================================================================

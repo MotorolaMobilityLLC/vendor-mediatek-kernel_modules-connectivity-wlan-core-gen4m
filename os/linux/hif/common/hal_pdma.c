@@ -235,12 +235,8 @@ uint32_t halRxWaitResponse(IN struct ADAPTER *prAdapter, IN uint8_t ucPortIdx,
 	ASSERT(prGlueInfo);
 	ASSERT(pucRspBuffer);
 
-	if (prChipInfo->is_support_wfdma1)
-		ucPortIdx = prChipInfo->rx_event_port;
-	else {
-		ASSERT(ucPortIdx < 2);
-		ucPortIdx = HIF_IMG_DL_STATUS_PORT_IDX;
-	}
+	ASSERT(ucPortIdx < 2);
+	ucPortIdx = HIF_IMG_DL_STATUS_PORT_IDX;
 
 	u4Time = kalGetTimeTick();
 	u4PktLen = u4MaxRespBufferLen;
@@ -1672,26 +1668,13 @@ bool halWpdmaAllocRing(struct GLUE_INFO *prGlueInfo, bool fgAllocMem)
 		return false;
 	}
 
-	/* For connac & old ic: Event Rx path */
-	/* For falcon: TxFreeDoneEvent to Host Rx path */
-	/* For buzzard(costdown wfdma): Event Rx path */
 	/* Event Rx path */
-#if (CFG_SUPPORT_CONNAC2X_2x2 == 1)
-
-	if (!halWpdmaAllocRxRing(prGlueInfo, RX_RING_EVT_IDX_1,
-				 RX_RING0_SIZE, RXD_SIZE,
-				 RX_BUFFER_AGGRESIZE, fgAllocMem)) {
-		DBGLOG(HAL, ERROR, "AllocRxRing[1] fail\n");
-		return false;
-	}
-#else
 	if (!halWpdmaAllocRxRing(prGlueInfo, RX_RING_EVT_IDX_1,
 			 RX_RING1_SIZE, RXD_SIZE,
 			 RX_BUFFER_AGGRESIZE, fgAllocMem)) {
 		DBGLOG(HAL, ERROR, "AllocRxRing[1] fail\n");
 		return false;
 	}
-#endif
 
 #if (CFG_SUPPORT_CONNAC2X == 1)
 	if (prBusInfo->wfdmaAllocRxRing)
@@ -1914,37 +1897,11 @@ static uint8_t defaultSetRxRingHwAddr(
 {
 	uint32_t offset = 0;
 
-	if (u4SwRingIdx >= WFDMA1_RX_RING_IDX_0) {
-#if (CFG_SUPPORT_CONNAC2X == 1)
-		if (prChipInfo->is_support_wfdma1) {
-			offset = (u4SwRingIdx - WFDMA1_RX_RING_IDX_0)
-					* MT_RINGREG_DIFF;
-			prRxRing->hw_desc_base =
-				prBusInfo->host_wfdma1_rx_ring_base
-					+ offset;
-			prRxRing->hw_cidx_addr =
-				prBusInfo->host_wfdma1_rx_ring_cidx_addr
-					+ offset;
-			prRxRing->hw_didx_addr =
-				prBusInfo->host_wfdma1_rx_ring_didx_addr
-					+ offset;
-			prRxRing->hw_cnt_addr =
-				prBusInfo->host_wfdma1_rx_ring_cnt_addr
-					+ offset;
-		} else
-#endif /* CFG_SUPPORT_CONNAC2X == 1 */
-			return FALSE;
-	} else {
-		offset = u4SwRingIdx * MT_RINGREG_DIFF;
-		prRxRing->hw_desc_base =
-			prBusInfo->host_rx_ring_base + offset;
-		prRxRing->hw_cidx_addr =
-			prBusInfo->host_rx_ring_cidx_addr + offset;
-		prRxRing->hw_didx_addr =
-			prBusInfo->host_rx_ring_didx_addr + offset;
-		prRxRing->hw_cnt_addr =
-			prBusInfo->host_rx_ring_cnt_addr + offset;
-	}
+	offset = u4SwRingIdx * MT_RINGREG_DIFF;
+	prRxRing->hw_desc_base = prBusInfo->host_rx_ring_base + offset;
+	prRxRing->hw_cidx_addr = prBusInfo->host_rx_ring_cidx_addr + offset;
+	prRxRing->hw_didx_addr = prBusInfo->host_rx_ring_didx_addr + offset;
+	prRxRing->hw_cnt_addr = prBusInfo->host_rx_ring_cnt_addr + offset;
 
 	return TRUE;
 }
@@ -2854,7 +2811,8 @@ void halHwRecoveryFromError(IN struct ADAPTER *prAdapter)
 
 	prGlueInfo = prAdapter->prGlueInfo;
 	prHifInfo = &prGlueInfo->rHifInfo;
-	prBusInfo = prGlueInfo->prAdapter->chip_info->bus_info;
+	prChipInfo = prAdapter->chip_info;
+	prBusInfo = prChipInfo->bus_info;
 	prSwWfdmaInfo = &prBusInfo->rSwWfdmaInfo;
 	prErrRecoveryCtrl = &prHifInfo->rErrRecoveryCtl;
 
@@ -2867,7 +2825,6 @@ void halHwRecoveryFromError(IN struct ADAPTER *prAdapter)
 	switch (prErrRecoveryCtrl->eErrRecovState) {
 	case ERR_RECOV_STOP_IDLE:
 		if (u4Status & ERROR_DETECT_STOP_PDMA) {
-			prChipInfo = prAdapter->chip_info;
 			if (prChipInfo->asicDumpSerDummyCR)
 				prChipInfo->asicDumpSerDummyCR(prAdapter);
 			halStartSerTimer(prAdapter);
@@ -2877,8 +2834,9 @@ void halHwRecoveryFromError(IN struct ADAPTER *prAdapter)
 #if (CFG_SUPPORT_CONNAC2X == 1)
 			/*get WFDMA HW data before Layer 1 SER*/
 			/*event*/
-			halRxReceiveRFBs(prAdapter, WFDMA1_RX_RING_IDX_0,
-						FALSE);
+			if (prChipInfo->is_support_wfdma1)
+				halRxReceiveRFBs(
+					prAdapter, RX_RING_EVT_IDX_1, FALSE);
 #endif
 #if CFG_SUPPORT_MULTITHREAD
 			kalSetRxProcessEvent(prAdapter->prGlueInfo);

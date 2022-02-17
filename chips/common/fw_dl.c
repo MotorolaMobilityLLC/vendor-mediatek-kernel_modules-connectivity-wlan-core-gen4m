@@ -1647,12 +1647,6 @@ uint32_t wlanConfigWifiFunc(IN struct ADAPTER *prAdapter,
 #endif
 	} else {
 		DBGLOG(INIT, INFO, "FW_START EVT success!!\n");
-
-#if defined(_HIF_PCIE)
-		if (ucPDA == PDA_CR4 && prChipInfo->is_support_wacpu)
-			prChipInfo->rx_event_port = WFDMA1_RX_RING_IDX_1;
-#endif /* _HIF_PCIE */
-
 	}
 
 exit:
@@ -1769,7 +1763,6 @@ uint32_t wlanRamCodeDynMemMapSendComplete(IN struct ADAPTER *prAdapter,
 	DBGLOG(INIT, INFO, "FW_START CMD send, waiting for RSP\n");
 
 	if (ucPDA == PDA_CR4 && prChipInfo->is_support_wacpu) {
-		prChipInfo->rx_event_port = WFDMA1_RX_RING_IDX_1;
 		/* workaround for harrier powerOnCal too long issue
 		* skip FW start event, fw ready bit check can cover this.
 		*/
