@@ -459,7 +459,7 @@ TdlsDataFrameSend_TearDown(ADAPTER_T *prAdapter,
 	prPmProfSetupInfo = &prBssInfo->rPmProfSetupInfo;
 	u4PktLen = 0;
 
-	prMsduInfo = kalPacketAllocWithHeadroom(prGlueInfo, 1600, &pPkt);
+	prMsduInfo = kalPacketAlloc(prGlueInfo, 512, &pPkt);
 	if (prMsduInfo == NULL)
 		return TDLS_STATUS_RESOURCES;
 
@@ -582,7 +582,7 @@ TdlsDataFrameSend_SETUP_REQ(ADAPTER_T *prAdapter,
 	prPmProfSetupInfo = &prBssInfo->rPmProfSetupInfo;
 	u4PktLen = 0;
 
-	prMsduInfo = kalPacketAllocWithHeadroom(prGlueInfo, 1600, &pPkt);
+	prMsduInfo = kalPacketAlloc(prGlueInfo, 512, &pPkt);
 	if (prMsduInfo == NULL)
 		return TDLS_STATUS_RESOURCES;
 
@@ -791,7 +791,7 @@ TdlsDataFrameSend_SETUP_RSP(ADAPTER_T *prAdapter,
 	prPmProfSetupInfo = &prBssInfo->rPmProfSetupInfo;
 	u4PktLen = 0;
 
-	prMsduInfo = kalPacketAllocWithHeadroom(prGlueInfo, 1600, &pPkt);
+	prMsduInfo = kalPacketAlloc(prGlueInfo, 512, &pPkt);
 	if (prMsduInfo == NULL)
 		return TDLS_STATUS_RESOURCES;
 
@@ -1001,7 +1001,7 @@ TdlsDataFrameSend_CONFIRM(ADAPTER_T *prAdapter,
 	prPmProfSetupInfo = &prBssInfo->rPmProfSetupInfo;
 	u4PktLen = 0;
 
-	prMsduInfo = kalPacketAllocWithHeadroom(prGlueInfo, 1600, &pPkt);
+	prMsduInfo = kalPacketAlloc(prGlueInfo, 512, &pPkt);
 	if (prMsduInfo == NULL)
 		return TDLS_STATUS_RESOURCES;
 
@@ -1177,7 +1177,7 @@ TdlsDataFrameSend_DISCOVERY_REQ(ADAPTER_T *prAdapter,
 	/* make up frame content */
 	if (ucActionCode != TDLS_FRM_ACTION_DISCOVERY_RSP) {
 		/* TODO: reduce 1600 to correct size */
-		prMsduInfo = kalPacketAllocWithHeadroom(prGlueInfo, 1600, &pPkt);
+		prMsduInfo = kalPacketAlloc(prGlueInfo, 512, &pPkt);
 		if (prMsduInfo == NULL)
 			return TDLS_STATUS_RESOURCES;
 
