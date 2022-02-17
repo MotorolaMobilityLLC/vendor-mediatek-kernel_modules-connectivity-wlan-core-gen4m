@@ -170,16 +170,11 @@ struct PCIE_CHIP_CR_MAPPING mt7915_bus2chip_cr_mapping[] = {
 uint16_t wlanHarrierUsbRxByteCount(
 	struct ADAPTER *prAdapter,
 	struct BUS_INFO *prBusInfo,
-	uint8_t *pRXD,
-	struct list_head *prCompleteQ)
+	uint8_t *pRXD)
 {
-	struct GL_HIF_INFO *prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
 	uint16_t u2RxByteCount;
 	uint8_t ucPacketType;
-	uint8_t ucHdrTrans;
 
-	ucHdrTrans = HAL_MAC_CONNAC2X_RX_STATUS_IS_HEADER_TRAN(
-		(struct HW_MAC_CONNAC2X_RX_DESC *)pRXD);
 	ucPacketType = HAL_MAC_CONNAC2X_RX_STATUS_GET_PKT_TYPE(
 		(struct HW_MAC_CONNAC2X_RX_DESC *)pRXD);
 	u2RxByteCount = HAL_MAC_CONNAC2X_RX_STATUS_GET_RX_BYTE_CNT(
@@ -189,19 +184,32 @@ uint16_t wlanHarrierUsbRxByteCount(
 	 * 1. Event packet (including WIFI packet sent by MCU)
 	   -> RX padding for 4B alignment
 	 * 2. WIFI packet from UMAC
+	 * E1:
 	 * case 1. In case byte length =
 				128*N-7 ~ 128*N -> RX padding for 4B alignment
 	 * case 2. RX padding for 8B alignment first,
 				then extra 4B padding
+	 * E2:
+	 * RX padding for 8B alignment + 4B CSO
 	 */
-	if ((ucPacketType == RX_PKT_TYPE_RX_DATA) &&
-	((u2RxByteCount & BITS(0, 6)) != 0 &&
-	(u2RxByteCount & BITS(0, 6)) < 121) &&
-	(prCompleteQ == &prHifInfo->rRxDataCompleteQ))
-		u2RxByteCount = ALIGN_8(u2RxByteCount)
-			+ LEN_USB_RX_PADDING_CSO;
-	else
-		u2RxByteCount = ALIGN_4(u2RxByteCount);
+	if (nicIsEcoVerEqualOrLaterTo(prAdapter, ECO_VER_2)) {
+		if (ucPacketType == RX_PKT_TYPE_RX_DATA) {
+			u2RxByteCount = ALIGN_8(u2RxByteCount)
+				+ LEN_USB_RX_PADDING_CSO;
+		} else {
+			u2RxByteCount = ALIGN_4(u2RxByteCount);
+		}
+	} else {
+		if ((ucPacketType == RX_PKT_TYPE_RX_DATA) &&
+		    (u2RxByteCount & BITS(0, 6)) != 0 &&
+		    (u2RxByteCount & BITS(0, 6)) < 121)
+			u2RxByteCount = ALIGN_8(u2RxByteCount)
+				+ LEN_USB_RX_PADDING_CSO;
+		else {
+			u2RxByteCount = ALIGN_4(u2RxByteCount);
+		}
+	}
+
 	return u2RxByteCount;
 }
 #endif /* defined(_HIF_USB) */
