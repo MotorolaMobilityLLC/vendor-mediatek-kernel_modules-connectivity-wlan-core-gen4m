@@ -808,8 +808,8 @@ void glResetSubsysRstProcedure(
 	fgIsTimeout = IsOverRstTimeThreshold(rNowTs, rLastTs);
 	if (g_IsWfsysBusHang == TRUE) {
 		/* dump host cr */
-		if (prAdapter->chip_info->checkbushang)
-			prAdapter->chip_info->checkbushang(prAdapter, FALSE);
+		if (prAdapter->chip_info->dumpBusHangCr)
+			prAdapter->chip_info->dumpBusHangCr(prAdapter);
 		glSetRstReasonString(
 			"fw detect bus hang");
 		prChipInfo = prAdapter->chip_info;
