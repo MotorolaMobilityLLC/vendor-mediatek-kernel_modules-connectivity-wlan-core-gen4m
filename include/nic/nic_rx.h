@@ -927,6 +927,7 @@ struct SW_RFB {
 #ifdef CFG_SUPPORT_SNIFFER_RADIOTAP
 	struct IEEE80211_RADIOTAP_INFO *prRadiotapInfo;
 #endif
+	uint8_t ucHwBandIdx;
 };
 
 #if CFG_TCP_IP_CHKSUM_OFFLOAD

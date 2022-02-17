@@ -4003,6 +4003,11 @@ reqExtSetAcpiDevicePowerState(IN struct GLUE_INFO
 #define CMD_DBG_SHOW_CSR_INFO			"show-csr"
 #define CMD_DBG_SHOW_DMASCH_INFO		"show-dmasch"
 
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+#define CMD_DBG_SHOW_MLD_BSS		"show-mld-bss"
+#define CMD_DBG_SHOW_MLD_STA		"show-mld-sta"
+#endif
+
 #if CFG_SUPPORT_EASY_DEBUG
 #define CMD_FW_PARAM				"set_fw_param"
 #endif /* CFG_SUPPORT_EASY_DEBUG */
@@ -5508,6 +5513,48 @@ int priv_driver_set_mdvt(IN struct net_device *prNetDev, IN char *pcCommand,
 
 	return i4BytesWritten;
 }
+
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+int priv_driver_dump_mld_bss(IN struct net_device *prNetDev,
+	IN char *pcCommand,
+	IN int i4TotalLen)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	int32_t i4BytesWritten = 0;
+
+	ASSERT(prNetDev);
+	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
+		return -1;
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+
+	if (!prGlueInfo->u4ReadyFlag)
+		return i4BytesWritten;
+
+	mldBssDump(prGlueInfo->prAdapter);
+
+	return i4BytesWritten;
+}
+
+int priv_driver_dump_mld_sta(IN struct net_device *prNetDev,
+	IN char *pcCommand,
+	IN int i4TotalLen)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	int32_t i4BytesWritten = 0;
+
+	ASSERT(prNetDev);
+	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
+		return -1;
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+
+	if (!prGlueInfo->u4ReadyFlag)
+		return i4BytesWritten;
+
+	mldStarecDump(prGlueInfo->prAdapter);
+
+	return i4BytesWritten;
+}
+#endif
 
 static int priv_driver_set_test_mode(IN struct net_device *prNetDev,
 				     IN char *pcCommand, IN int i4TotalLen)
@@ -15394,6 +15441,10 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers[] = {
 	{CMD_THERMAL_PROTECT_STATE_ACT, priv_driver_thermal_protect_state_act},
 #endif
 	{CMD_SET_MDVT, priv_driver_set_mdvt},
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	{CMD_DBG_SHOW_MLD_BSS, priv_driver_dump_mld_bss},
+	{CMD_DBG_SHOW_MLD_STA, priv_driver_dump_mld_sta},
+#endif
 };
 
 int32_t priv_driver_cmds(IN struct net_device *prNetDev, IN int8_t *pcCommand,

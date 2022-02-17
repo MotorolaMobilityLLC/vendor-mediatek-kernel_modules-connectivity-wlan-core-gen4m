@@ -794,6 +794,7 @@ struct MLD_STA_RECORD {
 	uint8_t ucEmlsrBitmap;
 	uint8_t aucStrBitmap[3];
 	struct LINK rStarecList;
+	uint64_t aucRxPktCnt[MLD_LINK_MAX];
 };
 #endif
 
@@ -1165,6 +1166,7 @@ struct STA_RECORD *cnmGetStaRecByAddress(struct ADAPTER *prAdapter,
 void cnmStaRecChangeState(IN struct ADAPTER *prAdapter,
 	IN OUT struct STA_RECORD *prStaRec, IN uint8_t ucNewState);
 
+void cnmDumpBssInfo(IN struct ADAPTER *prAdapter, IN uint8_t ucBssIdx);
 void cnmDumpStaRec(IN struct ADAPTER *prAdapter, IN uint8_t ucStaRecIdx);
 
 uint32_t cnmDumpMemoryStatus(IN struct ADAPTER *prAdapter, IN uint8_t *pucBuf,
