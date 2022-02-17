@@ -2802,6 +2802,7 @@ void halHwRecoveryFromError(IN struct ADAPTER *prAdapter)
 					MSDU_REMOVE_BY_ALL);
 			wlanClearPendingCommandQueue(prAdapter);
 			halResetMsduToken(prAdapter);
+			prAdapter->u4NoMoreRfb = 0;
 
 			DBGLOG(HAL, INFO, "SER(M) Host enable PDMA\n");
 			halWpdmaInitRing(prGlueInfo, false);
