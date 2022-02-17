@@ -426,7 +426,8 @@ uint32_t wlanImageSectionConfig(IN struct ADAPTER *prAdapter,
 	IN enum ENUM_IMG_DL_IDX_T eDlIdx);
 
 uint32_t wlanImageSectionDownload(IN struct ADAPTER *prAdapter,
-	IN uint32_t u4ImgSecSize, IN uint8_t *pucImgSecBuf);
+	IN uint8_t *pucImgBuf,
+	IN uint32_t u4ImgSize);
 
 uint32_t wlanImageQueryStatus(IN struct ADAPTER *prAdapter);
 

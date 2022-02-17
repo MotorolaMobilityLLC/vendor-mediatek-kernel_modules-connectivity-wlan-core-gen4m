@@ -1082,6 +1082,9 @@ uint8_t nicIncreaseCmdSeqNum(IN struct ADAPTER *prAdapter)
 	KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_CMD_SEQ_NUM);
 
 	prAdapter->ucCmdSeqNum++;
+	/* use 0 as reserved cmd. seq. for skip event seq. check */
+	if (prAdapter->ucCmdSeqNum == 0)
+		prAdapter->ucCmdSeqNum = 1;
 	ucRetval = prAdapter->ucCmdSeqNum;
 
 	KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_CMD_SEQ_NUM);
