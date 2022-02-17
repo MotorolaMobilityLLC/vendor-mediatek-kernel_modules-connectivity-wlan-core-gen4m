@@ -2631,12 +2631,21 @@ u_int8_t halIsTxResourceControlEn(IN struct ADAPTER *prAdapter)
 
 void halTxResourceResetHwTQCounter(IN struct ADAPTER *prAdapter)
 {
-	uint32_t u4WHISR = 0;
+	uint32_t *pu4WHISR = NULL;
 	uint16_t au2TxCount[16];
 
-	HAL_READ_INTR_STATUS(prAdapter, 4, (uint8_t *)&u4WHISR);
-	if (HAL_IS_TX_DONE_INTR(u4WHISR))
+	pu4WHISR = (uint32_t *)kalMemAlloc(sizeof(uint32_t), PHY_MEM_TYPE);
+	if (!pu4WHISR) {
+		DBGLOG(INIT, ERROR, "Allocate pu4WHISR fail\n");
+		return;
+	}
+
+	HAL_READ_INTR_STATUS(prAdapter, sizeof(uint32_t), (uint8_t *)pu4WHISR);
+	if (HAL_IS_TX_DONE_INTR(*pu4WHISR))
 		HAL_READ_TX_RELEASED_COUNT(prAdapter, au2TxCount);
+
+	if (pu4WHISR)
+		kalMemFree(pu4WHISR, PHY_MEM_TYPE, sizeof(uint32_t));
 }
 
 uint32_t halGetHifTxPageSize(IN struct ADAPTER *prAdapter)
