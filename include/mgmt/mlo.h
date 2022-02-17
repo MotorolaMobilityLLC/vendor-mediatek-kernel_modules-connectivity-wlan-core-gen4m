@@ -27,6 +27,13 @@
 	& (ML_CTRL_PRE_BMP_MASK)); \
 }
 
+#define BE_SET_MLD_ID_PRESENCE(_u2ctrl, _ctrl_type) \
+{\
+	(_u2ctrl) &= ~(ML_CTRL_PRE_BMP_MASK); \
+	(_u2ctrl) |= (((_ctrl_type) << (ML_CTRL_PRE_BMP_SHIFT)) \
+	& (ML_CTRL_PRE_BMP_MASK)); \
+}
+
 #define BE_GET_ML_CTRL_PRESENCE(_u2ctrl) \
 	((_u2ctrl & ML_CTRL_PRE_BMP_MASK) >> ML_CTRL_PRE_BMP_SHIFT)
 
@@ -184,6 +191,9 @@ void beGenerateBeaconMldIE(
 struct IE_MULTI_LINK_CONTROL *beGenerateMldCommonInfo(
 	struct ADAPTER *prAdapter,
 	struct MSDU_INFO *prMsduInfo);
+
+void beGenerateMlProbeReqIE(uint8_t *pucIE,
+	uint32_t *u4IELength, uint8_t ucMldId);
 
 void beGenerateMldSTAInfo(
 	struct ADAPTER *prAdapter,

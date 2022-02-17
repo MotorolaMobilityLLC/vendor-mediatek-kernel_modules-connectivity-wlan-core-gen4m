@@ -575,7 +575,8 @@ uint32_t nicUniCmdScanTagBssid(struct ADAPTER *ad, uint8_t *buf,
 	struct UNI_CMD_SCAN_BSSID *tag = (struct UNI_CMD_SCAN_BSSID *)buf;
 	uint8_t i;
 
-	if (cmd->ucScnFuncMask & ENUM_SCN_USE_PADDING_AS_BSSID) {
+	if (cmd->ucScnFuncMask & ENUM_SCN_USE_PADDING_AS_BSSID ||
+		cmd->u4ScnFuncMaskExtend & ENUM_SCN_ML_PROBE) {
 		for (i = 0; i < CFG_SCAN_OOB_MAX_NUM; i++) {
 			tag->u2Tag = UNI_CMD_SCAN_TAG_SCAN_BSSID;
 			tag->u2Length = sizeof(*tag);
