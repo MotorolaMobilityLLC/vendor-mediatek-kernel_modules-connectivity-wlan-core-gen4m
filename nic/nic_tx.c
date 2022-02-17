@@ -2231,6 +2231,32 @@ void nicTxMsduDoneCb(IN struct GLUE_INFO *prGlueInfo,
 	}
 }
 
+void nicHifTxMsduDoneCb(IN struct ADAPTER *prAdapter,
+		IN struct MSDU_INFO *prMsduInfo)
+{
+	struct TX_CTRL *prTxCtrl;
+
+	if (!prAdapter || !prMsduInfo)
+		return;
+
+	prTxCtrl = &prAdapter->rTxCtrl;
+
+	if (prMsduInfo->pfTxDoneHandler) {
+		KAL_SPIN_LOCK_DECLARATION();
+
+		/* Record native packet pointer for Tx done log */
+		WLAN_GET_FIELD_32(&prMsduInfo->prPacket,
+				  &prMsduInfo->u4TxDoneTag);
+
+		KAL_ACQUIRE_SPIN_LOCK(prAdapter,
+			SPIN_LOCK_TXING_MGMT_LIST);
+		QUEUE_INSERT_TAIL(&(prTxCtrl->rTxMgmtTxingQueue),
+				  (struct QUE_ENTRY *) prMsduInfo);
+		KAL_RELEASE_SPIN_LOCK(prAdapter,
+			SPIN_LOCK_TXING_MGMT_LIST);
+	}
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
  * @brief In this function, we'll write frame(PACKET_INFO_T) into HIF.
@@ -2297,61 +2323,11 @@ uint32_t nicTxMsduQueue(IN struct ADAPTER *prAdapter,
 		StatsEnvTxTime2Hif(prAdapter, prMsduInfo);
 #endif
 		HAL_WRITE_TX_DATA(prAdapter, prMsduInfo);
-
-		if (fgTxDoneHandler) {
-			KAL_SPIN_LOCK_DECLARATION();
-
-			/* Record native packet pointer for Tx done log */
-			WLAN_GET_FIELD_32(&prMsduInfo->prPacket,
-					  &prMsduInfo->u4TxDoneTag);
-
-			KAL_ACQUIRE_SPIN_LOCK(prAdapter,
-				SPIN_LOCK_TXING_MGMT_LIST);
-			QUEUE_INSERT_TAIL(&(prTxCtrl->rTxMgmtTxingQueue),
-					  (struct QUE_ENTRY *) prMsduInfo);
-			KAL_RELEASE_SPIN_LOCK(prAdapter,
-				SPIN_LOCK_TXING_MGMT_LIST);
-
-			/* MsduInfo might be cleaned up somewhere
-			 * without timer initialization. Initialize timer
-			 * starting itcan make sure the timeout function
-			 * is properly assigned.
-			 */
-			cnmTimerInitTimer(prAdapter,
-				&prMsduInfo->rLifetimeTimer,
-				(PFN_MGMT_TIMEOUT_FUNC)
-				 nicTxMsduLifeTimeoutHandler,
-				(unsigned long) prMsduInfo);
-
-			cnmTimerStartTimer(prAdapter,
-				&prMsduInfo->rLifetimeTimer,
-				NIC_TX_REMAINING_LIFE_TIME);
-		}
 	}
 
 	HAL_KICK_TX_DATA(prAdapter);
 
 	return WLAN_STATUS_SUCCESS;
-}
-
-
-void nicTxMsduLifeTimeoutHandler(IN struct ADAPTER *prAdapter,
-	IN unsigned long plParamPtr)
-{
-	struct MSDU_INFO *prMsduInfo = (struct MSDU_INFO *)plParamPtr;
-
-	DBGLOG(TX, ERROR, "MSDU Life Timeout Tag[0x%08x] WIDX:PID[%u:%u]\n",
-		prMsduInfo->u4TxDoneTag, prMsduInfo->ucWlanIndex,
-		prMsduInfo->ucPID);
-
-	prMsduInfo = nicGetPendingTxMsduInfo(prAdapter,
-			 prMsduInfo->ucWlanIndex, prMsduInfo->ucPID);
-	if (prMsduInfo) {
-		nicTxFreePacket(prAdapter, prMsduInfo, TRUE);
-		nicTxReturnMsduInfo(prAdapter, prMsduInfo);
-	} else {
-		DBGLOG(TX, ERROR, "Not in pending tx queue\n");
-	}
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2588,9 +2564,6 @@ void nicTxFreePacket(IN struct ADAPTER *prAdapter,
 
 	ASSERT(prAdapter);
 
-	cnmTimerStopTimer(prAdapter,
-		&prMsduInfo->rLifetimeTimer);
-
 	prTxCtrl = &prAdapter->rTxCtrl;
 
 	prNativePacket = prMsduInfo->prPacket;
@@ -2711,14 +2684,6 @@ void nicTxReturnMsduInfo(IN struct ADAPTER *prAdapter,
 		case TX_PACKET_MGMT:
 		default:
 			break;
-		}
-
-		if (timerPendingTimer(&prMsduInfo->rLifetimeTimer)) {
-			DBGLOG(NIC, WARN, "re-init msdu life timer %p\n",
-				&prMsduInfo->rLifetimeTimer);
-			cnmTimerStopTimer(prAdapter,
-				&prMsduInfo->rLifetimeTimer);
-			dump_stack();
 		}
 
 		/* Reset MSDU_INFO fields */
@@ -2844,6 +2809,8 @@ u_int8_t nicTxFillMsduInfo(IN struct ADAPTER *prAdapter,
 	if ((prAdapter->rWifiVar.ucDataTxDone == 1)
 	    && (prMsduInfo->pfTxDoneHandler == NULL))
 		prMsduInfo->pfTxDoneHandler = nicTxDummyTxDone;
+
+	prMsduInfo->pfHifTxMsduDoneCb = nicHifTxMsduDoneCb;
 
 	return TRUE;
 }

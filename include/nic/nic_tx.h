@@ -719,6 +719,9 @@ typedef uint32_t(*PFN_TX_DONE_HANDLER) (IN struct ADAPTER *prAdapter,
 	IN struct MSDU_INFO *prMsduInfo,
 	IN enum ENUM_TX_RESULT_CODE rTxDoneStatus);
 
+typedef void(*PFN_HIF_TX_MSDU_DONE_CB) (IN struct ADAPTER
+	*prAdapter, IN struct MSDU_INFO *prMsduInfo);
+
 #if CFG_ENABLE_PKT_LIFETIME_PROFILE
 struct PKT_PROFILE {
 	u_int8_t fgIsValid;
@@ -819,9 +822,9 @@ struct MSDU_INFO {
 	uint8_t ucPID;		/* PID */
 	uint8_t ucWmmQueSet;	/* WMM Set */
 	PFN_TX_DONE_HANDLER pfTxDoneHandler;	/* Tx done handler */
+	PFN_HIF_TX_MSDU_DONE_CB pfHifTxMsduDoneCb;
 	uint32_t u4TxDoneTag;	/* Tag for data frame Tx done log */
 	uint8_t ucPktType;
-	struct TIMER rLifetimeTimer;
 
 #if CFG_ENABLE_PKT_LIFETIME_PROFILE
 	struct PKT_PROFILE rPktProfile;
@@ -1817,9 +1820,6 @@ uint32_t nicTxGetMsduPendingCnt(IN struct ADAPTER *prAdapter);
 uint32_t nicTxMsduQueue(IN struct ADAPTER *prAdapter,
 	uint8_t ucPortIdx, struct QUE *prQue);
 
-void nicTxMsduLifeTimeoutHandler(IN struct ADAPTER *prAdapter,
-	IN unsigned long plParamPtr);
-
 uint32_t nicTxCmd(IN struct ADAPTER *prAdapter,
 	IN struct CMD_INFO *prCmdInfo, IN uint8_t ucTC);
 
@@ -2023,6 +2023,9 @@ void nicTxResourceUpdate_v1(IN struct ADAPTER *prAdapter);
 
 int32_t nicTxGetVectorInfo(IN char *pcCommand, IN int i4TotalLen,
 			IN struct TX_VECTOR_BBP_LATCH *prTxV);
+
+void nicHifTxMsduDoneCb(IN struct ADAPTER *prAdapter,
+		IN struct MSDU_INFO *prMsduInfo);
 
 /*******************************************************************************
  *                              F U N C T I O N S
