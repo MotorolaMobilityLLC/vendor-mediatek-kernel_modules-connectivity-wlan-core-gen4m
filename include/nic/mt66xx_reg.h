@@ -504,7 +504,20 @@ extern struct mt66xx_hif_driver_data mt66xx_driver_data_mt7961;
 /* Configuration for WPDMA Delayed Interrupt */
 #define WPDMA_DELAY_INT_CFG				(PCIE_HIF_BASE + 0x0210)
 
-#define MT_WPDMA_PAUSE_RX_Q             (PCIE_HIF_BASE + 0x0260)
+#define WPDMA_PAUSE_RX_Q_TH10				(PCIE_HIF_BASE + 0x0260)
+#define WPDMA_PAUSE_RX_Q_TH32				(PCIE_HIF_BASE + 0x0264)
+#define WPDMA_PAUSE_RX_Q_TH0				1
+#define WPDMA_PAUSE_RX_Q_TH1				1
+#define WPDMA_PAUSE_RX_Q_TH2				1
+#define WPDMA_PAUSE_RX_Q_TH3				1
+#define WPDMA_PAUSE_RX_Q_TH0_MASK			0x00000FFF
+#define WPDMA_PAUSE_RX_Q_TH1_MASK			0x0FFF0000
+#define WPDMA_PAUSE_RX_Q_TH2_MASK			0x00000FFF
+#define WPDMA_PAUSE_RX_Q_TH3_MASK			0x0FFF0000
+#define WPDMA_PAUSE_RX_Q_TH0_SHFT			0
+#define WPDMA_PAUSE_RX_Q_TH1_SHFT			16
+#define WPDMA_PAUSE_RX_Q_TH2_SHFT			0
+#define WPDMA_PAUSE_RX_Q_TH3_SHFT			16
 
 /* TX Ring0 Control 0 */
 #define WPDMA_TX_RING0_CTRL0			(PCIE_HIF_BASE + 0x0300)
