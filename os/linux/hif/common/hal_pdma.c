@@ -407,7 +407,12 @@ static void halDriverOwnTimeout(struct ADAPTER *prAdapter,
 #if CFG_CHIP_RESET_SUPPORT
 			/* Trigger RESET */
 			glSetRstReason(RST_DRV_OWN_FAIL);
+#if (CFG_SUPPORT_CONNINFRA == 0)
 			GL_RESET_TRIGGER(prAdapter, RST_FLAG_CHIP_RESET);
+#else
+			GL_RESET_TRIGGER(prAdapter, RST_FLAG_WF_RESET);
+#endif
+
 #endif
 		}
 		GET_CURRENT_SYSTIME(&prAdapter->rLastOwnFailedLogTime);
