@@ -108,6 +108,23 @@ p2pDevStateInit_IDLE(IN struct ADAPTER *prAdapter,
 			nicDeactivateNetwork(prAdapter,
 				prAdapter->ucP2PDevBssIdx);
 		}
+#if (CFG_DBDC_SW_FOR_P2P_LISTEN == 1)
+		if (prP2pDevFsmInfo && prP2pDevFsmInfo->fgIsP2pListening
+			&& prAdapter->rWifiVar.ucDbdcP2pLisEn) {
+			if (prAdapter->rWifiVar.u4DbdcP2pLisSwDelayTime) {
+				cnmTimerStopTimer(prAdapter,
+				&(prP2pDevFsmInfo->rP2pListenDbdcTimer));
+
+				cnmTimerStartTimer(prAdapter,
+				&(prP2pDevFsmInfo->rP2pListenDbdcTimer),
+				prAdapter->rWifiVar.u4DbdcP2pLisSwDelayTime);
+			} else {
+				prP2pDevFsmInfo->fgIsP2pListening = FALSE;
+				cnmDbdcRuntimeCheckDecision(prAdapter,
+					prAdapter->ucP2PDevBssIdx, FALSE);
+			}
+		}
+#endif
 	} while (FALSE);
 
 	return fgIsTransition;
@@ -128,6 +145,10 @@ p2pDevStateInit_REQING_CHANNEL(IN struct ADAPTER *prAdapter,
 	struct MSG_P2P_CHNL_REQUEST *prP2pMsgChnlReq =
 		(struct MSG_P2P_CHNL_REQUEST *) NULL;
 	struct BSS_INFO *prBssInfo = (struct BSS_INFO *) NULL;
+#if (CFG_DBDC_SW_FOR_P2P_LISTEN == 1)
+	struct P2P_DEV_FSM_INFO *prP2pDevFsmInfo =
+				(struct P2P_DEV_FSM_INFO *) NULL;
+#endif
 
 	do {
 		ASSERT_BREAK((prAdapter != NULL)
@@ -155,6 +176,32 @@ p2pDevStateInit_REQING_CHANNEL(IN struct ADAPTER *prAdapter,
 		if (prBssInfo->fgIsWmmInited == FALSE)
 			prBssInfo->ucWmmQueSet = MAX_HW_WMM_INDEX;
 		prBssInfo->eBand = prP2pMsgChnlReq->rChannelInfo.eBand;
+#if (CFG_DBDC_SW_FOR_P2P_LISTEN == 1)
+		prP2pDevFsmInfo = prAdapter->rWifiVar.prP2pDevFsmInfo;
+		DBGLOG(P2P, INFO,
+			"ucDbdcP2pLisEn %u P2pLisSwDelayTime %u\n"
+			, prAdapter->rWifiVar.ucDbdcP2pLisEn
+			, prAdapter->rWifiVar.u4DbdcP2pLisSwDelayTime);
+
+		if (prP2pDevFsmInfo &&
+			prAdapter->rWifiVar.ucDbdcP2pLisEn) {
+			prP2pDevFsmInfo->fgIsP2pListening = TRUE;
+			prP2pDevFsmInfo->ucReqChannelNum =
+				prP2pMsgChnlReq->rChannelInfo.ucChannelNum;
+			prP2pDevFsmInfo->eReqBand =
+				prP2pMsgChnlReq->rChannelInfo.eBand;
+
+			cnmTimerStopTimer(prAdapter,
+				&(prP2pDevFsmInfo->rP2pListenDbdcTimer));
+
+			cnmDbdcPreConnectionEnableDecision(
+				prAdapter,
+				prBssInfo->ucBssIndex,
+				prP2pMsgChnlReq->rChannelInfo.eBand,
+				prP2pMsgChnlReq->rChannelInfo.ucChannelNum,
+				prBssInfo->ucWmmQueSet);
+		}
+#endif
 		cnmOpModeGetTRxNss(
 			prAdapter, prBssInfo->ucBssIndex,
 			&prBssInfo->ucOpRxNss, &prBssInfo->ucOpTxNss);

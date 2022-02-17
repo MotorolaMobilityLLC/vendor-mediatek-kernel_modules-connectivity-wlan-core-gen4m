@@ -1268,6 +1268,14 @@
 #define CFG_SUPPORT_DBDC_NO_BLOCKING_OPMODE 1
 #define CFG_SUPPORT_SAP_DFS_CHANNEL 1
 
+#if (CFG_SUPPORT_DBDC == 1)
+#ifndef CFG_DBDC_SW_FOR_P2P_LISTEN
+#define CFG_DBDC_SW_FOR_P2P_LISTEN	0
+#endif
+#else
+#undef CFG_DBDC_SW_FOR_P2P_LISTEN
+#define CFG_DBDC_SW_FOR_P2P_LISTEN	0
+#endif /* CFG_SUPPORT_DBDC */
 /*------------------------------------------------------------------------------
  * Flags for Set IPv6 address to firmware
  *------------------------------------------------------------------------------

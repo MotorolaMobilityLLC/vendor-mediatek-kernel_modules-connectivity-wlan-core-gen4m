@@ -89,6 +89,10 @@ struct MSG_P2P_CHNL_REQUEST {
 #define P2P_DEV_EXTEND_CHAN_TIME	500
 #endif
 
+#if (CFG_DBDC_SW_FOR_P2P_LISTEN == 1)
+#define DBDC_P2P_LISTEN_SW_DELAY_TIME		4000
+#endif
+
 #if CFG_SUPPORT_WFD
 
 #define WFD_FLAGS_DEV_INFO_VALID            BIT(0)
@@ -175,6 +179,16 @@ struct P2P_DEV_FSM_INFO {
 
 	/* FSM Timer */
 	struct TIMER rP2pFsmTimeoutTimer;
+#if (CFG_DBDC_SW_FOR_P2P_LISTEN == 1)
+	struct TIMER rP2pListenDbdcTimer;
+
+	/* dbdc decision will use this to decide
+	 * if it need to check p2p dev bssinfo
+	 */
+	u_int8_t fgIsP2pListening;
+	uint8_t ucReqChannelNum;
+	enum ENUM_BAND eReqBand;
+#endif
 
 	/* Packet filter for P2P module. */
 	uint32_t u4P2pPacketFilter;
@@ -226,6 +240,11 @@ void p2pDevFsmRunEventAbort(IN struct ADAPTER *prAdapter,
 
 void p2pDevFsmRunEventTimeout(IN struct ADAPTER *prAdapter,
 		IN unsigned long ulParamPtr);
+
+#if (CFG_DBDC_SW_FOR_P2P_LISTEN == 1)
+void p2pDevDbdcSwDelayTimeout(IN struct ADAPTER *prAdapter,
+		IN unsigned long ulParamPtr);
+#endif
 
 /*================ Message Event =================*/
 void p2pDevFsmRunEventScanRequest(IN struct ADAPTER *prAdapter,

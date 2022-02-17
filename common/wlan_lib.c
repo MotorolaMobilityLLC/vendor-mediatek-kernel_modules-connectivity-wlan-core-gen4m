@@ -7953,6 +7953,18 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 	prWifiVar->u4DiscoverTimeout = (uint32_t) wlanCfgGetUint32(
 		prAdapter, "DiscoverTimeout", ROAMING_DISCOVER_TIMEOUT_SEC);
 
+#if (CFG_DBDC_SW_FOR_P2P_LISTEN == 1)
+	prWifiVar->ucDbdcP2pLisEn =
+		(uint8_t) wlanCfgGetUint32(
+				prAdapter, "DbdcP2pLisEn",
+				FEATURE_ENABLED);
+
+	prWifiVar->u4DbdcP2pLisSwDelayTime =
+	(uint32_t) wlanCfgGetUint32(
+			prAdapter, "DbdcP2pLisSwDelayTime",
+			DBDC_P2P_LISTEN_SW_DELAY_TIME);
+#endif
+
 	prWifiVar->u4InactiveTimeout = (uint32_t) wlanCfgGetUint32(
 		prAdapter, "InactiveTimeout", ROAMING_INACTIVE_TIMEOUT_SEC);
 

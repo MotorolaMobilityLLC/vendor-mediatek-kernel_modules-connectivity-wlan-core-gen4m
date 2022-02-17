@@ -949,6 +949,10 @@ struct WIFI_VAR {
 	uint8_t ucSigmaTestMode;
 	enum ENUM_CNM_DBDC_MODE eDbdcMode;
 	u_int8_t fgDbDcModeEn;
+#if (CFG_DBDC_SW_FOR_P2P_LISTEN == 1)
+	uint8_t ucDbdcP2pLisEn;
+	uint32_t u4DbdcP2pLisSwDelayTime;
+#endif
 	uint8_t u4ScanCtrl;
 	uint8_t ucScanChannelListenTime;
 
