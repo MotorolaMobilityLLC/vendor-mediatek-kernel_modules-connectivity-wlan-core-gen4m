@@ -1137,6 +1137,13 @@ struct test_wlan_info {
 	/* HW Tx on off */
 	u_int32 hw_tx_enable;
 
+	/* icap parameter */
+	u_char icap_arch;
+	u_char icap_bitwidth;
+	u_char icap_phy_idx;
+	u_int32 icap_emi_start_addr;
+	u_int32 icap_emi_end_addr;
+	u_int32 icap_emi_msb_addr;
 };
 
 /* Test control register read/write for service */

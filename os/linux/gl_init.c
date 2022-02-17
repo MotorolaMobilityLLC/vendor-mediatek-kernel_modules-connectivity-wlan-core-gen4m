@@ -3701,6 +3701,7 @@ uint32_t wlanServiceInit(struct GLUE_INFO *prGlueInfo)
 	struct service_test *prServiceTest;
 	struct test_wlan_info *winfos;
 	struct mt66xx_chip_info *prChipInfo;
+	struct ATE_OPS_T *prAteOps = NULL;
 	uint32_t rStatus = WLAN_STATUS_SUCCESS;
 
 	DBGLOG(INIT, TRACE, "%s enter!\n", __func__);
@@ -3753,6 +3754,31 @@ uint32_t wlanServiceInit(struct GLUE_INFO *prGlueInfo)
 		DBGLOG(INIT, WARN,
 			"prServiceTest->test_op memory alloc fail!\n");
 			goto label_exit;
+	}
+
+	/* icap setting */
+	prAteOps = prChipInfo->prAteOps;
+	if (prAteOps != NULL) {
+		prServiceTest->test_winfo->icap_arch
+			= prAteOps->u4Architech;
+		prServiceTest->test_winfo->icap_bitwidth
+			= prAteOps->u4EnBitWidth;
+		prServiceTest->test_winfo->icap_phy_idx
+			= prAteOps->u4PhyIdx;
+#if (CFG_MTK_ANDROID_EMI == 1)
+		prServiceTest->test_winfo->icap_emi_start_addr
+			= prAteOps->u4EmiStartAddress;
+		prServiceTest->test_winfo->icap_emi_end_addr
+			= prAteOps->u4EmiEndAddress;
+		prServiceTest->test_winfo->icap_emi_msb_addr
+			= prAteOps->u4EmiMsbAddress;
+#else
+		prServiceTest->test_winfo->icap_emi_start_addr = 0;
+		prServiceTest->test_winfo->icap_emi_end_addr = 0;
+		prServiceTest->test_winfo->icap_emi_msb_addr = 0;
+#endif /* (CFG_MTK_ANDROID_EMI == 1) */
+	} else {
+		DBGLOG(INIT, WARN, "prAteOps is null!\n");
 	}
 
 	prServiceTest->engine_offload = true;

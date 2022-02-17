@@ -19,9 +19,16 @@
 #include "coda/soc5_0/wf_pse_top.h"
 #include "hal_dmashdl_soc5_0.h"
 
+
 #ifdef CONFIG_MTK_CONNSYS_DEDICATED_LOG_PATH
 #include "fw_log_wifi.h"
 #endif /* CONFIG_MTK_CONNSYS_DEDICATED_LOG_PATH */
+
+#define CFG_SUPPORT_VCODE_VDFS 0
+
+#if (CFG_SUPPORT_VCODE_VDFS == 1)
+#include <linux/pm_qos.h>
+#endif /*#ifndef CFG_SUPPORT_VCODE_VDFS*/
 
 /*******************************************************************************
 *                         C O M P I L E R   F L A G S
@@ -112,6 +119,10 @@ bool gEmiCalUseEmiData;
 
 struct wireless_dev *grWdev;
 #endif /* (CFG_SUPPORT_PRE_ON_PHY_ACTION == 1) */
+
+#if (CFG_SUPPORT_VCODE_VDFS == 1)
+static struct pm_qos_request wifi_req;
+#endif /*#if (CFG_SUPPORT_VCODE_VDFS == 1)*/
 
 struct ECO_INFO soc5_0_eco_table[] = {
 	/* HW version,  ROM version,    Factory version */
@@ -471,11 +482,34 @@ struct CHIP_DBG_OPS soc5_0_DebugOps = {
 	.dumpMacInfo = soc5_0_dump_mac_info,
 };
 
+#if CFG_SUPPORT_QA_TOOL
+struct ATE_OPS_T soc5_0_AteOps = {
+	/* ICapStart phase out , wlan_service instead */
+	.setICapStart = connacSetICapStart,
+	/* ICapStatus phase out , wlan_service instead */
+	.getICapStatus = connacGetICapStatus,
+	/* CapIQData phase out , wlan_service instead */
+	.getICapIQData = connacGetICapIQData,
+	.getRbistDataDumpEvent = nicExtEventICapIQData,
+	.icapRiseVcoreClockRate = soc5_0_icapRiseVcoreClockRate,
+	.icapDownVcoreClockRate = soc5_0_icapDownVcoreClockRate,
+	.u4EnBitWidth = 0, /* 32 bit */
+	.u4Architech = 1,  /* 1:on-the-fly */
+	.u4PhyIdx = 0,
+	.u4EmiStartAddress = 0,
+	.u4EmiEndAddress = 0,
+	.u4EmiMsbAddress = 0,
+};
+#endif /* CFG_SUPPORT_QA_TOOL */
+
 struct mt66xx_chip_info mt66xx_chip_info_soc5_0 = {
 	.bus_info = &soc5_0_bus_info,
 #if CFG_ENABLE_FW_DOWNLOAD
 	.fw_dl_ops = &soc5_0_fw_dl_ops,
 #endif /* CFG_ENABLE_FW_DOWNLOAD */
+#if CFG_SUPPORT_QA_TOOL
+	.prAteOps = &soc5_0_AteOps,
+#endif /* CFG_SUPPORT_QA_TOOL */
 	.prTxDescOps = &soc5_0_TxDescOps,
 	.prRxDescOps = &soc5_0_RxDescOps,
 	.prDebugOps = &soc5_0_DebugOps,
@@ -544,6 +578,80 @@ struct mt66xx_chip_info mt66xx_chip_info_soc5_0 = {
 struct mt66xx_hif_driver_data mt66xx_driver_data_soc5_0 = {
 	.chip_info = &mt66xx_chip_info_soc5_0,
 };
+
+void soc5_0_icapRiseVcoreClockRate(void)
+{
+	int value = 0;
+
+#if (CFG_SUPPORT_VCODE_VDFS == 1)
+	/* Enable VCore to 0.725 */
+
+	/* init */
+	if (!pm_qos_request_active(&wifi_req))
+		pm_qos_add_request(&wifi_req, PM_QOS_VCORE_OPP,
+						PM_QOS_VCORE_OPP_DEFAULT_VALUE);
+
+	/* update Vcore */
+	pm_qos_update_request(&wifi_req, 0);
+
+	DBGLOG(HAL, STATE, "icapRiseVcoreClockRate done\n");
+
+	/* Seq2: update clock rate sel bus clock to 213MHz */
+
+	/* 0x1800_9a00[22:20]=3'b111 */
+	wf_ioremap_read(WF_CONN_INFA_BUS_CLOCK_RATE, &value);
+	value |= 0x00700000;
+	wf_ioremap_write(WF_CONN_INFA_BUS_CLOCK_RATE, value);
+
+	/* Seq3: enable clock select sw mode */
+
+	/* 0x1800_9a00[23]=1'b1 */
+	wf_ioremap_read(WF_CONN_INFA_BUS_CLOCK_RATE, &value);
+	value |= 0x00800000;
+	wf_ioremap_write(WF_CONN_INFA_BUS_CLOCK_RATE, value);
+
+#else
+	DBGLOG(HAL, STATE, "icapRiseVcoreClockRate skip\n");
+#endif  /*#ifndef CFG_BUILD_X86_PLATFORM*/
+}
+
+void soc5_0_icapDownVcoreClockRate(void)
+{
+	int value = 0;
+
+#if (CFG_SUPPORT_VCODE_VDFS == 1)
+
+	/*init*/
+	if (!pm_qos_request_active(&wifi_req))
+		pm_qos_add_request(&wifi_req, PM_QOS_VCORE_OPP,
+						PM_QOS_VCORE_OPP_DEFAULT_VALUE);
+
+	/*restore to default Vcore*/
+	pm_qos_update_request(&wifi_req,
+		PM_QOS_VCORE_OPP_DEFAULT_VALUE);
+
+	/*disable VCore to normal setting*/
+	DBGLOG(HAL, STATE, "icapDownVcoreClockRate done!\n");
+
+	/* Seq2: update clock rate sel bus clock to default value */
+
+	/* 0x1800_9a00[22:20]=3'b000 */
+	wf_ioremap_read(WF_CONN_INFA_BUS_CLOCK_RATE, &value);
+	value &= ~(0x00700000);
+	wf_ioremap_write(WF_CONN_INFA_BUS_CLOCK_RATE, value);
+
+	/* Seq3: disble clock select sw mode */
+
+	/* 0x1800_9a00[23]=1'b0 */
+	wf_ioremap_read(WF_CONN_INFA_BUS_CLOCK_RATE, &value);
+	value &= ~(0x00800000);
+	wf_ioremap_write(WF_CONN_INFA_BUS_CLOCK_RATE, value);
+
+#else
+	DBGLOG(HAL, STATE, "icapDownVcoreClockRate skip\n");
+#endif  /*#ifndef CFG_BUILD_X86_PLATFORM*/
+}
+
 
 static void soc5_0_ConstructFirmwarePrio(struct GLUE_INFO *prGlueInfo,
 	uint8_t **apucNameTable, uint8_t **apucName,
