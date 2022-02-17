@@ -726,7 +726,6 @@ authCheckRxAuthFrameStatus(IN struct ADAPTER *prAdapter,
 	struct WLAN_AUTH_FRAME *prAuthFrame;
 	uint16_t u2RxAuthAlgNum;
 	uint16_t u2RxTransactionSeqNum;
-	/* UINT_16 u2RxStatusCode; // NOTE(Kevin): Optimized for ARM */
 
 	prStaRec = cnmGetStaRecByIndex(prAdapter, prSwRfb->ucStaRecIdx);
 	if (!prStaRec)
@@ -758,6 +757,16 @@ authCheckRxAuthFrameStatus(IN struct ADAPTER *prAdapter,
 		*pu2StatusCode = STATUS_CODE_AUTH_OUT_OF_SEQ;
 		return WLAN_STATUS_FAILURE;
 	}
+
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	if (!beSanityCheckMld(prAdapter, prSwRfb->pvHeader,
+		prSwRfb->u2PacketLen, prStaRec, prStaRec->ucBssIndex)) {
+		DBGLOG(SAA, WARN, "Discard Auth frame with wrong ML IE\n");
+		*pu2StatusCode = STATUS_CODE_DENIFED_EHT_NOT_SUPPORTED;
+		return WLAN_STATUS_FAILURE;
+	}
+#endif
+
 	/* 4 <3> Get the Status code */
 	/* WLAN_GET_FIELD_16(&prAuthFrame->u2StatusCode, &u2RxStatusCode); */
 	/* *pu2StatusCode = u2RxStatusCode; */
@@ -1348,13 +1357,11 @@ authProcessRxAuthFrame(IN struct ADAPTER *prAdapter,
 		prAuthFrame->u2AuthTransSeqNo != AUTH_TRANSACTION_SEQ_2)
 		u2ReturnStatusCode = STATUS_CODE_AUTH_OUT_OF_SEQ;
 
-#if (CFG_SUPPORT_802_11BE_MLO == 0)
-	if (kalFindIeExtIE(ELEM_ID_RESERVED, ELEM_EXT_ID_MLD,
-		prSwRfb->pvHeader + prSwRfb->u2HeaderLen,
-		prSwRfb->u2PacketLen - prSwRfb->u2HeaderLen)) {
-		DBGLOG(AAA, WARN,
-		    "Invalid MLO IE for non-MLO AP\n");
-		u2ReturnStatusCode = STATUS_CODE_INVALID_INFO_ELEMENT;
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	if (!beSanityCheckMld(prAdapter, prSwRfb->pvHeader,
+		prSwRfb->u2PacketLen, NULL, prBssInfo->ucBssIndex)) {
+		DBGLOG(AAA, WARN, "Discard Auth frame with wrong ML IE\n");
+		return WLAN_STATUS_FAILURE;
 	}
 #endif
 
