@@ -1146,6 +1146,7 @@ void cnmCsaDoneEvent(IN struct ADAPTER *prAdapter,
 	/* Clean up CSA variable */
 	prAdapter->rWifiVar.fgCsaInProgress = FALSE;
 	prAdapter->rWifiVar.ucChannelSwitchMode = 0;
+	prAdapter->rWifiVar.ucNewOperatingClass = 0;
 	prAdapter->rWifiVar.ucNewChannelNumber = 0;
 	prAdapter->rWifiVar.ucChannelSwitchCount = 0;
 	prAdapter->rWifiVar.ucSecondaryOffset = 0;
@@ -1312,6 +1313,7 @@ uint8_t cnmDecideSapNewChannel(
 }
 
 uint8_t cnmIdcCsaReq(IN struct ADAPTER *prAdapter,
+	IN enum ENUM_BAND eBand,
 	IN uint8_t ucCh, IN uint8_t ucRoleIdx)
 {
 	struct BSS_INFO *prBssInfo = NULL;
@@ -1326,22 +1328,15 @@ uint8_t cnmIdcCsaReq(IN struct ADAPTER *prAdapter,
 		return -1;
 
 	DBGLOG(REQ, INFO,
-		"[CSA]RoleIdx=%d, CH=%d BssIdx=%d\n",
-		ucRoleIdx, ucCh, ucBssIdx);
+		"[CSA]RoleIdx=%d, Band=%d, CH=%d, BssIdx=%d\n",
+		ucRoleIdx, eBand, ucCh, ucBssIdx);
 
 	prBssInfo = prAdapter->aprBssInfo[ucBssIdx];
 
-	if (prBssInfo->ucPrimaryChannel != ucCh) {
-#if (CFG_SUPPORT_WIFI_6G == 1)
-		if (prBssInfo->eBand == BAND_6G)
-			rlmGetChnlInfoForCSA(prAdapter,
-				BAND_6G,
-				ucCh, ucBssIdx, &rRfChnlInfo);
-		else
-#endif
-			rlmGetChnlInfoForCSA(prAdapter,
-				(ucCh <= 14) ? BAND_2G4 : BAND_5G,
-				ucCh, ucBssIdx, &rRfChnlInfo);
+	if (prBssInfo->eBand != eBand ||
+		prBssInfo->ucPrimaryChannel != ucCh) {
+		rlmGetChnlInfoForCSA(prAdapter,
+			eBand, ucCh, ucBssIdx, &rRfChnlInfo);
 
 		DBGLOG(REQ, INFO,
 		"[CSA]CH=%d,Band=%d,BW=%d,PriFreq=%d,S1Freq=%d\n",
@@ -1362,7 +1357,8 @@ uint8_t cnmIdcCsaReq(IN struct ADAPTER *prAdapter,
 
 	} else {
 		DBGLOG(CNM, INFO,
-			"[CSA]Req CH = cur CH:%d, Stop Req\n",
+			"[CSA]Req CH = cur Band=%d, CH:%d, Stop Req\n",
+			prBssInfo->eBand,
 			prBssInfo->ucPrimaryChannel);
 		return -1;
 	}
@@ -1495,7 +1491,9 @@ void cnmIdcSwitchSapChannel(IN struct ADAPTER *prAdapter)
 				prAdapter->prGlueInfo,
 				prBssInfo);
 			if (ucNewChannel) {
-				cnmIdcCsaReq(prAdapter, ucNewChannel,
+				cnmIdcCsaReq(prAdapter,
+					prBssInfo->eBand,
+					ucNewChannel,
 					prBssInfo->u4PrivateData);
 				DBGLOG(CNM, INFO,
 					"IDC Version %d, Bss=%d, NewCH=%d\n",
@@ -5200,6 +5198,27 @@ struct BSS_INFO *cnmGetP2pBssInfo(IN struct ADAPTER *prAdapter)
 	}
 
 	return NULL;
+}
+
+enum ENUM_BAND_80211 cnmGet80211Band(IN enum ENUM_BAND eBand)
+{
+	enum ENUM_BAND_80211 eBand80211 = BAND_80211_NUM;
+
+	switch (eBand) {
+	case BAND_2G4:
+		eBand80211 = BAND_80211_G;
+		break;
+	case BAND_5G:
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	case BAND_6G:
+#endif
+		eBand80211 = BAND_80211_A;
+		break;
+	default:
+		break;
+	}
+
+	return eBand80211;
 }
 
 #if (CFG_SUPPORT_POWER_THROTTLING == 1 && CFG_SUPPORT_CNM_POWER_CTRL == 1)

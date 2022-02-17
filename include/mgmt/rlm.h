@@ -263,6 +263,7 @@ struct SUB_ELEMENT_LIST {
 
 #if CFG_SUPPORT_DFS
 struct SWITCH_CH_AND_BAND_PARAMS {
+	enum ENUM_BAND eCsaBand;
 	uint8_t ucCsaNewCh;
 	uint8_t ucCsaCount;
 	uint8_t ucVhtS1;
@@ -485,6 +486,9 @@ rlmSendChannelSwitchFrame(struct ADAPTER *prAdapter,
 
 uint16_t
 rlmOpClassToBandwidth(uint8_t ucOpClass);
+
+void rlmSendExChannelSwitchFrame(struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex);
 
 uint32_t
 rlmNotifyVhtOpModeTxDone(struct ADAPTER *prAdapter,

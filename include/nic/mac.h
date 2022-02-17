@@ -1937,7 +1937,7 @@ enum BEACON_REPORT_DETAIL {
 #define MTK_SYNERGY_CAP_SUPPORT_TWT_HOTSPOT_AC		BIT(1)
 
 /* 802.11h CSA element */
-#define ELEM_MIN_LEN_CSA                            11
+#define ELEM_MIN_LEN_CSA                            17
 
 /* 3 Management frame body components (III): 7.4 Action frame format details. */
 /* 7.4.1 Spectrum Measurement Action frame details */
@@ -2011,7 +2011,9 @@ enum BEACON_REPORT_DETAIL {
 /* 7.4.7 Public Action frame details */
 /* 20/40 BSS coexistence */
 #define ACTION_PUBLIC_20_40_COEXIST                 0
-/* 20/40 BSS coexistence */
+/* Extended channel switch announcment */
+#define ACTION_PUBLIC_EX_CH_SW_ANNOUNCEMENT         4
+/* Vendor specific */
 #define ACTION_PUBLIC_VENDOR_SPECIFIC               9
 
 #if CFG_SUPPORT_802_11W
@@ -2738,6 +2740,16 @@ struct IE_CHANNEL_SWITCH {
 	uint8_t ucChannelSwitchCount;
 } __KAL_ATTRIB_PACKED__;
 
+/* Extended Channel Switch Announcement element */
+struct IE_EX_CHANNEL_SWITCH {
+	uint8_t ucId;
+	uint8_t ucLength;
+	uint8_t ucChannelSwitchMode;
+	uint8_t ucNewOperatingClass;
+	uint8_t ucNewChannelNum;
+	uint8_t ucChannelSwitchCount;
+} __KAL_ATTRIB_PACKED__;
+
 struct IE_TIMEOUT_INTERVAL {
 	uint8_t ucId;
 	uint8_t ucLength;
@@ -3328,6 +3340,21 @@ struct ACTION_CHANNEL_SWITCH_FRAME {
 	uint8_t ucCategory;	/* Category */
 	uint8_t ucAction;	/* Action Value */
 	uint8_t aucInfoElem[13]; /* Information elements */
+} __KAL_ATTRIB_PACKED__;
+
+/* 9.6.8.7 Extended Channel Switch Announcement frame format */
+struct ACTION_EX_CHANNEL_SWITCH_FRAME {
+	/* MAC header */
+	uint16_t u2FrameCtrl;	/* Frame Control */
+	uint16_t u2Duration;	/* Duration */
+	uint8_t aucDestAddr[MAC_ADDR_LEN];	/* DA */
+	uint8_t aucSrcAddr[MAC_ADDR_LEN];	/* SA */
+	uint8_t aucBSSID[MAC_ADDR_LEN];	/* BSSID */
+	uint16_t u2SeqCtrl;	/* Sequence Control */
+	/* Frame body */
+	uint8_t ucCategory;	/* Category */
+	uint8_t ucAction;	/* Action Value */
+	uint8_t aucInfoElem[6]; /* Information elements */
 } __KAL_ATTRIB_PACKED__;
 
 /* 7.4.2.1 ADDTS Request frame format */
@@ -4192,6 +4219,7 @@ struct SUB_IE_WIDE_BW_CH_SWITCH {
 
 #define MTK_OUI_IE(fp)          ((struct IE_MTK_OUI *) fp)
 
+#define EX_CSA_IE(fp)		((struct IE_EX_CHANNEL_SWITCH *) fp)
 #define CSA_IE(fp)              ((struct IE_CHANNEL_SWITCH *) fp)
 #define SEC_OFFSET_IE(fp)	((struct IE_SECONDARY_OFFSET *) fp)
 #define WIDE_BW_IE(fp)		((struct IE_WIDE_BAND_CHANNEL *) fp)

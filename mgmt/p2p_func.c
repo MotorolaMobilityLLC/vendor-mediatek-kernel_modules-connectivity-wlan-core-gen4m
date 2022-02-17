@@ -2149,7 +2149,7 @@ void p2pFuncStopRdd(IN struct ADAPTER *prAdapter, IN uint8_t ucBssIdx)
 
 void p2pFuncDfsSwitchCh(IN struct ADAPTER *prAdapter,
 		IN struct BSS_INFO *prBssInfo,
-		IN struct P2P_CHNL_REQ_INFO rP2pChnlReqInfo)
+		IN struct P2P_CHNL_REQ_INFO *prP2pChnlReqInfo)
 {
 
 	struct GLUE_INFO *prGlueInfo;
@@ -2167,13 +2167,13 @@ void p2pFuncDfsSwitchCh(IN struct ADAPTER *prAdapter,
 		return;
 	}
 
-	if (prBssInfo->eBand != rP2pChnlReqInfo.eBand)
+	if (prBssInfo->eBand != prP2pChnlReqInfo->eBand)
 		fgIsCrossBand = TRUE;
 
 	/*  Setup Channel, Band */
-	prBssInfo->ucPrimaryChannel = rP2pChnlReqInfo.ucReqChnlNum;
-	prBssInfo->eBand = rP2pChnlReqInfo.eBand;
-	prBssInfo->eBssSCO = rP2pChnlReqInfo.eChnlSco;
+	prBssInfo->ucPrimaryChannel = prP2pChnlReqInfo->ucReqChnlNum;
+	prBssInfo->eBand = prP2pChnlReqInfo->eBand;
+	prBssInfo->eBssSCO = prP2pChnlReqInfo->eChnlSco;
 
 /* To Support Cross Band Channel Swtich */
 #if CFG_SUPPORT_IDC_CH_SWITCH
@@ -6911,7 +6911,8 @@ void p2pFuncSwitchGcChannel(
 		prP2pBssInfo->eBand == prChnlReqInfo->eBand ? "same" : "cross");
 
 	if (prAdapter->rWifiVar.eDbdcMode != ENUM_DBDC_MODE_DISABLED &&
-		prP2pBssInfo->eBand != prChnlReqInfo->eBand) {
+		cnmGet80211Band(prP2pBssInfo->eBand) !=
+			cnmGet80211Band(prChnlReqInfo->eBand)) {
 
 		/* Indicate PM abort to sync BSS state with FW */
 		nicPmIndicateBssAbort(prAdapter, prP2pBssInfo->ucBssIndex);
@@ -8100,6 +8101,9 @@ p2pFunDetermineChnlSwitchPolicy(IN struct ADAPTER *prAdapter,
 		return ePolicy;
 	}
 
+	if (IS_FEATURE_DISABLED(prAdapter->rWifiVar.ucCsaDeauthClient))
+		return ePolicy;
+
 #if CFG_SEND_DEAUTH_DURING_CHNL_SWITCH
 	/* Send deauth frame to clients:
 	 * 1. Cross band
@@ -8166,6 +8170,16 @@ p2pFunNotifyChnlSwitch(IN struct ADAPTER *prAdapter,
 	case CHNL_SWITCH_POLICY_CSA:
 		/* Set CSA IE */
 		prAdapter->rWifiVar.ucChannelSwitchMode = 1;
+
+		if (prNewChannelInfo->eBand == BAND_2G4)
+			prAdapter->rWifiVar.ucNewOperatingClass = 81;
+		else if (prNewChannelInfo->eBand == BAND_5G)
+			prAdapter->rWifiVar.ucNewOperatingClass = 115;
+#if (CFG_SUPPORT_WIFI_6G == 1)
+		else if (prNewChannelInfo->eBand == BAND_6G)
+			prAdapter->rWifiVar.ucNewOperatingClass = 131;
+#endif
+
 		prAdapter->rWifiVar.ucNewChannelNumber =
 			prNewChannelInfo->ucChannelNum;
 		prAdapter->rWifiVar.ucChannelSwitchCount = 5;
@@ -8178,8 +8192,9 @@ p2pFunNotifyChnlSwitch(IN struct ADAPTER *prAdapter,
 				prNewChannelInfo->u4CenterFreq1 * 1000);
 		prAdapter->rWifiVar.ucNewChannelS2 = 0;
 
-		/* Send Action Frame */
+		/* Send Action Frames */
 		rlmSendChannelSwitchFrame(prAdapter, prBssInfo->ucBssIndex);
+		rlmSendExChannelSwitchFrame(prAdapter, prBssInfo->ucBssIndex);
 
 		/* To prevent race condition, we have to set CSA flags
 		 * after all CSA parameters are updated. In this way,
