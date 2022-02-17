@@ -1598,7 +1598,7 @@ uint32_t nicUpdateBss(IN struct ADAPTER *prAdapter,
 	prWifiVar = &prAdapter->rWifiVar;
 	prBssInfo = prAdapter->aprBssInfo[ucBssIndex];
 
-	if (cnmIsMccMode(prAdapter))
+	if (prAdapter->rWifiVar.ucNSS == 1 && cnmIsMccMode(prAdapter))
 		halSetTxRingBssTokenCnt(prAdapter, NIC_BSS_MCC_MODE_TOKEN_CNT);
 	else if (prBssInfo->ucPhyTypeSet == PHY_TYPE_SET_802_11B) {
 		halSetTxRingBssTokenCnt(prAdapter, NIC_BSS_LOW_RATE_TOKEN_CNT);
