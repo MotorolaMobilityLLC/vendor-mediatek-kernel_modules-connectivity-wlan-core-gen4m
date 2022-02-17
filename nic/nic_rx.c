@@ -790,8 +790,8 @@ u_int8_t nicRxIsDuplicateFrame(IN OUT struct SW_RFB *prSwRfb)
 				} else {
 					DBGLOG(RX, WARN,
 					       "RXM: (Warning) Unknown QoS Data with TID=%d\n", prSwRfb->ucTid);
-
-					return TRUE;	/* Will be dropped */
+					/* Ignore duplicate frame check */
+					return FALSE;
 				}
 			}
 	}
