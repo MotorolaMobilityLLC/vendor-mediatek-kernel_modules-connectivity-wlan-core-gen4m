@@ -1259,6 +1259,7 @@ struct BSS_DESC *scanSearchBssDescByScoreForAis(struct ADAPTER *prAdapter,
 #if (CFG_TC10_FEATURE == 1)
 	int32_t base, delta, goal;
 #endif
+	uint8_t ucAisIdx;
 
 	if (!prAdapter ||
 	    eRoamReason >= ROAMING_REASON_NUM || eRoamReason < 0) {
@@ -1278,6 +1279,8 @@ struct BSS_DESC *scanSearchBssDescByScoreForAis(struct ADAPTER *prAdapter,
 #else
 	fgIsFixedChnl =	cnmAisInfraChannelFixed(prAdapter, &eBand, &ucChannel);
 #endif
+	ucAisIdx = AIS_INDEX(prAdapter, ucBssIndex);
+
 	aisRemoveTimeoutBlacklist(prAdapter);
 #if CFG_SUPPORT_802_11K
 	/* check before using neighbor report */
@@ -1292,7 +1295,7 @@ struct BSS_DESC *scanSearchBssDescByScoreForAis(struct ADAPTER *prAdapter,
 			aisGetTargetBssDesc(prAdapter, ucBssIndex), ucBssIndex);
 #endif
 try_again:
-	LINK_FOR_EACH_ENTRY(prBssDesc, prEssLink, rLinkEntryEss[ucBssIndex],
+	LINK_FOR_EACH_ENTRY(prBssDesc, prEssLink, rLinkEntryEss[ucAisIdx],
 		struct BSS_DESC) {
 		if (!fgSearchBlackList) {
 			/* update blacklist info */
@@ -1497,6 +1500,7 @@ void scanGetCurrentEssChnlList(struct ADAPTER *prAdapter,
 	struct LINK *prNeighborAPLink;
 #endif
 	struct CFG_SCAN_CHNL *prRoamScnChnl = &prAdapter->rAddRoamScnChnl;
+	uint8_t ucAisIdx = AIS_INDEX(prAdapter, ucBssIndex);
 
 	if (!prConnSettings)  {
 		log_dbg(SCN, INFO, "No prConnSettings\n");
@@ -1532,9 +1536,9 @@ void scanGetCurrentEssChnlList(struct ADAPTER *prAdapter,
 
 	while (!LINK_IS_EMPTY(prCurEssLink)) {
 		prBssDesc = LINK_PEEK_HEAD(prCurEssLink,
-			struct BSS_DESC, rLinkEntryEss[ucBssIndex]);
+			struct BSS_DESC, rLinkEntryEss[ucAisIdx]);
 		LINK_REMOVE_KNOWN_ENTRY(prCurEssLink,
-			&prBssDesc->rLinkEntryEss[ucBssIndex]);
+			&prBssDesc->rLinkEntryEss[ucAisIdx]);
 	}
 
 	LINK_FOR_EACH_ENTRY(prBssDesc, prBSSDescList, rLinkEntry,
@@ -1555,7 +1559,7 @@ void scanGetCurrentEssChnlList(struct ADAPTER *prAdapter,
 			continue;
 		/* Record same BSS list */
 		LINK_INSERT_HEAD(prCurEssLink,
-			&prBssDesc->rLinkEntryEss[ucBssIndex]);
+			&prBssDesc->rLinkEntryEss[ucAisIdx]);
 
 #if CFG_SUPPORT_NCHO
 		/* scan control is 1: use NCHO channel list only */
