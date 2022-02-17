@@ -1875,6 +1875,8 @@ void halUSBPreSuspendCmd(IN struct ADAPTER *prAdapter)
 	struct CMD_HIF_CTRL rCmdHifCtrl;
 	uint32_t rStatus;
 
+	kalMemSet(&rCmdHifCtrl, 0, sizeof(struct CMD_HIF_CTRL));
+
 	rCmdHifCtrl.ucHifType = ENUM_HIF_TYPE_USB;
 	rCmdHifCtrl.ucHifDirection = ENUM_HIF_TX;
 	rCmdHifCtrl.ucHifStop = 1;
@@ -1911,6 +1913,8 @@ void halUSBPreResumeCmd(IN struct ADAPTER *prAdapter)
 {
 	struct CMD_HIF_CTRL rCmdHifCtrl;
 	uint32_t rStatus;
+
+	kalMemSet(&rCmdHifCtrl, 0, sizeof(struct CMD_HIF_CTRL));
 
 	rCmdHifCtrl.ucHifType = ENUM_HIF_TYPE_USB;
 	rCmdHifCtrl.ucHifDirection = ENUM_HIF_TX;
