@@ -575,7 +575,8 @@ void p2pRoleFsmRunEventTimeout(IN struct ADAPTER *prAdapter,
 					prP2pChnlReqInfo);
 				if (IS_NET_PWR_STATE_IDLE(prAdapter,
 					prP2pRoleFsmInfo->ucBssIndex))
-					ASSERT(FALSE);
+					DBGLOG(P2P, ERROR,
+						"Power state was reset while request channel\n");
 			}
 
 			if (IS_NET_PWR_STATE_IDLE(prAdapter,
