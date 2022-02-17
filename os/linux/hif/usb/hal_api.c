@@ -411,9 +411,8 @@ VOID halTxCancelAllSending(IN P_ADAPTER_T prAdapter)
 	}
 
 #if CFG_USB_TX_AGG
-	for (ucTc = 0; ucTc < USB_TC_NUM; ++ucTc) {
+	for (ucTc = 0; ucTc < USB_TC_NUM; ++ucTc)
 		usb_kill_anchored_urbs(&prHifInfo->rTxDataAnchor[ucTc]);
-	}
 #else
 	usb_kill_anchored_urbs(&prHifInfo->rTxDataAnchor);
 #endif
@@ -750,9 +749,8 @@ UINT_32 halRxUSBEnqueueRFB(IN P_ADAPTER_T prAdapter, IN PUINT_8 pucBuf, IN UINT_
 				QUEUE_REMOVE_HEAD(&prRxCtrl->rFreeSwRfbList, prSwRfb, P_SW_RFB_T);
 			KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_RX_FREE_QUE);
 
-			if (!prSwRfb) {
+			if (!prSwRfb)
 				return (u4Length - u4RemainCount);
-			}
 
 			kalMemCopy(prSwRfb->pucRecvBuff, pucRxFrame, u2RxByteCount);
 
