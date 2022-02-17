@@ -2732,11 +2732,11 @@ void aisFsmRunEventJoinComplete(IN struct ADAPTER *prAdapter,
 		if (prJoinCompMsg->ucSeqNum == prAisFsmInfo->ucSeqNumOfReqMsg)
 			eNextState =
 			    aisFsmJoinCompleteAction(prAdapter, prMsgHdr);
-#if DBG
-		else
+		else {
+			eNextState = AIS_STATE_JOIN_FAILURE;
 			DBGLOG(AIS, WARN,
 			       "SEQ NO of AIS JOIN COMP MSG is not matched.\n");
-#endif /* DBG */
+		}
 	}
 
 	if (eNextState != prAisFsmInfo->eCurrentState)
@@ -2964,8 +2964,12 @@ enum ENUM_AIS_STATE aisFsmJoinCompleteAction(IN struct ADAPTER *prAdapter,
 					TRUE,
 					&rSsid);
 
-				if (prBssDesc == NULL)
+				if (prBssDesc == NULL) {
+					eNextState = AIS_STATE_JOIN_FAILURE;
+					DBGLOG(AIS, ERROR,
+						"Can't get bss descriptor\n");
 					break;
+				}
 
 				DBGLOG(AIS, INFO,
 				       "ucJoinFailureCount=%d %d, Status=%d Reason=%d, eConnectionState=%d",
