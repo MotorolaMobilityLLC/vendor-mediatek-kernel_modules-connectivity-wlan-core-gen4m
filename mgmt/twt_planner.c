@@ -79,6 +79,7 @@
 *                            P U B L I C   D A T A
 ********************************************************************************
 */
+uint8_t g_IsWfaTestBed;  /* To indocate if WFA test bed */
 
 /*******************************************************************************
 *                           P R I V A T E   D A T A
@@ -179,17 +180,54 @@ _twtPlannerDrvAgrtGet(
 
 static uint8_t
 twtPlannerDrvAgrtFind(struct ADAPTER *prAdapter, uint8_t ucBssIdx,
-	uint8_t ucFlowId)
+	uint8_t ucFlowId, uint8_t *pucFlowId)
 {
 	uint8_t i;
 	struct _TWT_PLANNER_T *prTWTPlanner = &(prAdapter->rTWTPlanner);
 	struct _TWT_AGRT_T *prTWTAgrt = &(prTWTPlanner->arTWTAgrtTbl[0]);
+	uint8_t uCnt = 0;
 
 	for (i = 0; i < TWT_AGRT_MAX_NUM; i++, prTWTAgrt++) {
 		if (prTWTAgrt->fgValid == TRUE &&
 			prTWTAgrt->ucFlowId == ucFlowId &&
 			prTWTAgrt->ucBssIdx == ucBssIdx)
 			break;
+	}
+
+	if ((i >= TWT_AGRT_MAX_NUM) && (pucFlowId != NULL)) {
+		/*
+		** This might be the case that we are in WFA logo
+		** and QCOM reply TWT flow ID not identical to our
+		** requested TWT flow ID
+		*/
+
+		/* Check if there exists only 1 valid TWT agrt */
+		prTWTAgrt = &(prTWTPlanner->arTWTAgrtTbl[0]);
+
+		for (i = 0; i < TWT_AGRT_MAX_NUM; i++, prTWTAgrt++) {
+			if (prTWTAgrt->fgValid == TRUE)
+				uCnt++;
+		}
+
+		/* Yes, only 1 valid TWT agrt exists,
+		** take its TWT flow ID if the input ucFlowId == 0
+		*/
+		if ((uCnt == 1) && (ucFlowId == 0)) {
+			prTWTAgrt = &(prTWTPlanner->arTWTAgrtTbl[0]);
+
+			for (i = 0; i < TWT_AGRT_MAX_NUM; i++, prTWTAgrt++) {
+				if ((prTWTAgrt->fgValid == TRUE) &&
+					(prTWTAgrt->ucBssIdx == ucBssIdx)) {
+					*pucFlowId = prTWTAgrt->ucFlowId;
+
+					DBGLOG(TWT_PLANNER, WARN,
+						"Gotcha, agrt bss %u flow %u->%u\n",
+						ucBssIdx, ucFlowId, *pucFlowId);
+
+					break;
+				}
+			}
+		}
 	}
 
 	return i;
@@ -231,13 +269,17 @@ twtPlannerDrvAgrtModify(
 	uint64_t u8CurTsf;
 	struct _TWT_PLANNER_T *prTWTPlanner = &(prAdapter->rTWTPlanner);
 	uint32_t rStatus;
+	uint8_t ucFlowId_real = ucFlowId;
 
-	ucIdx = twtPlannerDrvAgrtFind(prAdapter, ucBssIdx, ucFlowId);
+	ucIdx = twtPlannerDrvAgrtFind(
+		prAdapter, ucBssIdx, ucFlowId, &ucFlowId_real);
 	if (ucIdx >= TWT_AGRT_MAX_NUM) {
 		DBGLOG(TWT_PLANNER, ERROR, "Can't find agrt bss %u flow %u\n",
 			ucBssIdx, ucFlowId);
 		return WLAN_STATUS_FAILURE;
 	}
+
+	ucFlowId = ucFlowId_real;
 
 	/* TODO: get current TSF from FW */
 	u8CurTsf = 0;
@@ -258,13 +300,17 @@ twtPlannerDrvAgrtGet(struct ADAPTER *prAdapter,
 	uint8_t ucIdx;
 	struct _TWT_PLANNER_T *prTWTPlanner = &(prAdapter->rTWTPlanner);
 	uint32_t rStatus;
+	uint8_t ucFlowId_real = ucFlowId;
 
-	ucIdx = twtPlannerDrvAgrtFind(prAdapter, ucBssIdx, ucFlowId);
+	ucIdx = twtPlannerDrvAgrtFind(
+		prAdapter, ucBssIdx, ucFlowId, &ucFlowId_real);
 	if (ucIdx >= TWT_AGRT_MAX_NUM) {
 		DBGLOG(TWT_PLANNER, ERROR, "Can't find agrt bss %u flow %u\n",
 			ucBssIdx, ucFlowId);
 		return WLAN_STATUS_FAILURE;
 	}
+
+	ucFlowId = ucFlowId_real;
 
 	rStatus = _twtPlannerDrvAgrtGet(prTWTPlanner, ucIdx, prTWTParams);
 	if (rStatus == WLAN_STATUS_SUCCESS)
@@ -409,6 +455,11 @@ twtPlannerSendReqResume(struct ADAPTER *prAdapter,
 		prTWTReqFsmResumeMsg->u8NextTWT = u8NextTWT;
 		prTWTReqFsmResumeMsg->ucNextTWTSize = ucNextTWTSize;
 
+		DBGLOG(TWT_REQUESTER, WARN,
+			"TWT Info Frame 0x%x 0x%x\n",
+			prTWTReqFsmResumeMsg->u8NextTWT,
+			u8NextTWT);
+
 		mboxSendMsg(prAdapter, MBOX_ID_0,
 			(struct MSG_HDR *) prTWTReqFsmResumeMsg,
 			MSG_SEND_METHOD_BUF);
@@ -512,7 +563,7 @@ twtPlannerAddAgrtTbl(
 	return rWlanStatus;
 }
 
-static uint32_t
+uint32_t
 twtPlannerResumeAgrtTbl(struct ADAPTER *prAdapter,
 			struct BSS_INFO *prBssInfo, struct STA_RECORD *prStaRec,
 			uint8_t ucFlowId, uint8_t fgIsOid,
@@ -546,7 +597,7 @@ twtPlannerResumeAgrtTbl(struct ADAPTER *prAdapter,
 	}
 
 	prTWTAgrtUpdate->ucAgrtTblIdx = ucAgrtTblIdx;
-	prTWTAgrtUpdate->ucAgrtCtrlFlag = TWT_AGRT_CTRL_ADD;
+	prTWTAgrtUpdate->ucAgrtCtrlFlag = TWT_AGRT_CTRL_SUSPEND_RESUME;
 	prTWTAgrtUpdate->ucOwnMacId = (prBssInfo) ?
 		prBssInfo->ucOwnMacIndex : 0;
 	prTWTAgrtUpdate->ucFlowId = ucFlowId;
@@ -667,6 +718,7 @@ twtPlannerDelAgrtTbl(struct ADAPTER *prAdapter,
 	uint32_t rWlanStatus = WLAN_STATUS_SUCCESS;
 	struct _TWT_PLANNER_T *prTWTPlanner = &(prAdapter->rTWTPlanner);
 	struct _EXT_CMD_TWT_ARGT_UPDATE_T *prTWTAgrtUpdate;
+	uint8_t ucFlowId_real = ucFlowId;
 
 	if (prBssInfo == NULL) {
 		DBGLOG(TWT_PLANNER, ERROR, "No bssinfo to delete agrt\n");
@@ -675,7 +727,7 @@ twtPlannerDelAgrtTbl(struct ADAPTER *prAdapter,
 
 	/* Find and delete the agreement entry in the driver */
 	ucAgrtTblIdx = twtPlannerDrvAgrtFind(prAdapter,
-		prBssInfo->ucBssIndex, ucFlowId);
+		prBssInfo->ucBssIndex, ucFlowId, &ucFlowId_real);
 
 	if (ucAgrtTblIdx >= TWT_AGRT_MAX_NUM) {
 		DBGLOG(TWT_PLANNER, ERROR,
@@ -683,6 +735,8 @@ twtPlannerDelAgrtTbl(struct ADAPTER *prAdapter,
 		return WLAN_STATUS_FAILURE;
 
 	}
+
+	ucFlowId = ucFlowId_real;
 
 	if (fgDelDrvEntry)
 		_twtPlannerDrvAgrtDel(prTWTPlanner, ucAgrtTblIdx);
@@ -748,6 +802,70 @@ twtPlannerTeardownAgrtTbl(struct ADAPTER *prAdapter,
 		CPU_TO_LE16(prStaRec->ucWlanIndex) : 1;
 	prTWTAgrtUpdate->ucIsRoleAp = 0;  /* STA role */
 	prTWTAgrtUpdate->ucBssIndex = prStaRec ? prStaRec->ucBssIndex : 0;
+
+	rWlanStatus = wlanSendSetQueryExtCmd(prAdapter,
+			CMD_ID_LAYER_0_EXT_MAGIC_NUM,
+			EXT_CMD_ID_TWT_AGRT_UPDATE,
+			TRUE,
+			TRUE,
+			fgIsOid,
+			pfCmdDoneHandler,
+			pfCmdTimeoutHandler,
+			sizeof(struct _EXT_CMD_TWT_ARGT_UPDATE_T),
+			(uint8_t *) (prTWTAgrtUpdate),
+			NULL, 0);
+
+	cnmMemFree(prAdapter, prTWTAgrtUpdate);
+
+	return rWlanStatus;
+}
+
+
+static uint32_t
+twtPlannerSuspendAgrtTbl(struct ADAPTER *prAdapter,
+			struct BSS_INFO *prBssInfo, struct STA_RECORD *prStaRec,
+			uint8_t ucFlowId, uint8_t fgIsOid,
+			PFN_CMD_DONE_HANDLER pfCmdDoneHandler,
+			PFN_CMD_TIMEOUT_HANDLER pfCmdTimeoutHandler)
+{
+	uint8_t ucAgrtTblIdx;
+	struct _EXT_CMD_TWT_ARGT_UPDATE_T *prTWTAgrtUpdate;
+	struct _TWT_PARAMS_T rTWTParams;
+	uint32_t rWlanStatus = WLAN_STATUS_SUCCESS;
+
+	rWlanStatus = twtPlannerDrvAgrtGet(prAdapter, prBssInfo->ucBssIndex,
+		ucFlowId, &ucAgrtTblIdx, &rTWTParams);
+
+	if (rWlanStatus) {
+		DBGLOG(TWT_PLANNER, ERROR,
+			"No agrt to suspend Bss %u flow %u\n",
+			prBssInfo->ucBssIndex, ucFlowId);
+		return WLAN_STATUS_FAILURE;
+	}
+
+	/* Send cmd to delete agreement entry in FW */
+	prTWTAgrtUpdate = cnmMemAlloc(prAdapter, RAM_TYPE_MSG,
+		sizeof(struct _EXT_CMD_TWT_ARGT_UPDATE_T));
+
+	if (!prTWTAgrtUpdate) {
+		DBGLOG(TWT_PLANNER, ERROR,
+			"Alloc _EXT_CMD_TWT_ARGT_UPDATE_T for suspend.\n");
+		return WLAN_STATUS_FAILURE;
+	}
+
+	prTWTAgrtUpdate->ucAgrtTblIdx = ucAgrtTblIdx;
+	prTWTAgrtUpdate->ucAgrtCtrlFlag = TWT_AGRT_CTRL_SUSPEND;
+	prTWTAgrtUpdate->ucOwnMacId = (prBssInfo) ?
+		prBssInfo->ucOwnMacIndex : 0;
+	prTWTAgrtUpdate->ucFlowId = ucFlowId;
+	prTWTAgrtUpdate->u2PeerIdGrpId = (prStaRec) ?
+		CPU_TO_LE16(prStaRec->ucWlanIndex) : 1;
+	prTWTAgrtUpdate->ucIsRoleAp = 0;  /* STA role */
+	prTWTAgrtUpdate->ucBssIndex = prBssInfo ? prBssInfo->ucBssIndex : 0;
+	prTWTAgrtUpdate->ucAgrtParaBitmap =
+	    ((rTWTParams.fgProtect << TWT_AGRT_PARA_BITMAP_PROTECT_OFFSET) |
+	    ((!rTWTParams.fgUnannounced) << TWT_AGRT_PARA_BITMAP_ANNCE_OFFSET) |
+	    (rTWTParams.fgTrigger << TWT_AGRT_PARA_BITMAP_TRIGGER_OFFSET));
 
 	rWlanStatus = wlanSendSetQueryExtCmd(prAdapter,
 			CMD_ID_LAYER_0_EXT_MAGIC_NUM,
@@ -861,7 +979,10 @@ void twtPlannerGetTsfDone(
 	struct BSS_INFO *prBssInfo;
 	struct STA_RECORD *prStaRec;
 	struct TSF_RESULT_T *prTsfResult;
-	uint64_t u8CurTsf;
+	uint64_t u8CurTsf = 0;
+	uint64_t u8Temp = 0;
+	uint64_t u8twt_interval = 0;
+	uint64_t u8Mod = 0;
 
 	ASSERT(prAdapter);
 	ASSERT(prCmdInfo);
@@ -905,8 +1026,21 @@ void twtPlannerGetTsfDone(
 	case TWT_GET_TSF_FOR_ADD_AGRT:
 	{
 		struct _TWT_PARAMS_T *prTWTParams;
-		struct _TWT_FLOW_T *prTWTFlow = twtPlannerFlowFindById(prStaRec,
-					prGetTsfCtxt->ucTWTFlowId);
+		struct _TWT_FLOW_T *prTWTFlow = twtPlannerFlowFindById(
+					prStaRec, prGetTsfCtxt->ucTWTFlowId);
+
+		/* To have mantissa alignment::Begin */
+		u8twt_interval = ((u_int64_t)
+			(prGetTsfCtxt->rTWTParams.u2WakeIntvalMantiss))
+			<< prGetTsfCtxt->rTWTParams.ucWakeIntvalExponent;
+		u8Temp = u8CurTsf + u8twt_interval;
+
+		DBGLOG(TWT_PLANNER, WARN,
+			"u8twt_interval: 0x%x 0x%x u8Temp 0x%x 0x%x\n",
+			CPU_TO_LE32(u8twt_interval & 0xFFFFFFFF),
+			CPU_TO_LE32((uint32_t)(u8twt_interval >> 32)),
+			CPU_TO_LE32(u8Temp & 0xFFFFFFFF),
+			CPU_TO_LE32((uint32_t)(u8Temp >> 32)));
 
 		if (prTWTFlow == NULL) {
 			DBGLOG(TWT_PLANNER, ERROR, "prTWTFlow is NULL.\n");
@@ -917,8 +1051,25 @@ void twtPlannerGetTsfDone(
 			return;
 		}
 
+		u8Mod = kal_mod64(u8Temp, u8twt_interval);
+
 		prGetTsfCtxt->rTWTParams.u8TWT =
-			u8CurTsf + TSF_OFFSET_FOR_AGRT_ADD;
+				u8CurTsf + u8twt_interval - u8Mod;
+
+		DBGLOG(TWT_PLANNER, WARN,
+			"TWT cur TSF: 0x%x 0x%x TWT req TSF 0x%x 0x%x\n",
+			CPU_TO_LE32(u8CurTsf & 0xFFFFFFFF),
+			CPU_TO_LE32((uint32_t)(u8CurTsf >> 32)),
+			CPU_TO_LE32(prGetTsfCtxt->rTWTParams.u8TWT &
+				0xFFFFFFFF),
+			CPU_TO_LE32((uint32_t)(prGetTsfCtxt->rTWTParams.u8TWT
+				>> 32)));
+
+		DBGLOG(TWT_PLANNER, WARN,
+			"u8Mod 0x%x 0x%x\n",
+			CPU_TO_LE32(u8Mod & 0xFFFFFFFF),
+			CPU_TO_LE32((uint32_t)(u8Mod >> 32)));
+		/* To have mantissa alignment::End */
 
 		prTWTParams = &(prTWTFlow->rTWTParams);
 
@@ -933,6 +1084,53 @@ void twtPlannerGetTsfDone(
 	}
 	case TWT_GET_TSF_FOR_RESUME_AGRT:
 	{
+		uint8_t ucNextTWTSize = prGetTsfCtxt->rNextTWT.ucNextTWTSize;
+		uint64_t u8NextTWT = u8CurTsf +
+			prGetTsfCtxt->rNextTWT.u8NextTWT;
+
+		/* To have mantissa alignment from TWT wake time::Begin */
+		struct _TWT_PARAMS_T *prTWTParams;
+		struct _TWT_FLOW_T *prTWTFlow = twtPlannerFlowFindById(
+					prStaRec,
+					prGetTsfCtxt->ucTWTFlowId);
+
+		prTWTParams = &(prTWTFlow->rTWTPeerParams);
+
+		u8twt_interval = ((u_int64_t)(prTWTParams->u2WakeIntvalMantiss))
+			<< prTWTParams->ucWakeIntvalExponent;
+
+		u8Temp = u8CurTsf +
+			prGetTsfCtxt->rNextTWT.u8NextTWT +
+			u8twt_interval - prTWTParams->u8TWT;
+
+		DBGLOG(TWT_PLANNER, WARN,
+			"TWT Info Frame[0] TWT resp 0x%x 0x%x u8Temp 0x%x 0x%x\n",
+			CPU_TO_LE32(prTWTParams->u8TWT & 0xFFFFFFFF),
+			CPU_TO_LE32((uint32_t)(prTWTParams->u8TWT >> 32)),
+			CPU_TO_LE32(u8Temp & 0xFFFFFFFF),
+			CPU_TO_LE32((uint32_t)(u8Temp >> 32)));
+
+		u8Mod = kal_mod64(u8Temp, u8twt_interval);
+
+		u8NextTWT = u8CurTsf +
+			prGetTsfCtxt->rNextTWT.u8NextTWT +
+			u8twt_interval - u8Mod;
+
+		DBGLOG(TWT_PLANNER, WARN,
+			"TWT Info Frame[1] u8Mod 0x%x 0x%x\n",
+				CPU_TO_LE32(u8Mod & 0xFFFFFFFF),
+				CPU_TO_LE32((uint32_t)(u8Mod >> 32)));
+		/* To have mantissa alignment from TWT wake time::End */
+
+		if (((u8NextTWT & 0xFFFFFFFF00000000) != 0) &&
+			(g_IsWfaTestBed == 0))
+			ucNextTWTSize = 3;
+
+#if 0
+		/*
+		** As we are not seeing any Flexible TWT Sched
+		** criteria in test plan, temporarily mark it out
+		*/
 		uint8_t ucNextTWTSize = NEXT_TWT_SUBFIELD_64_BITS;
 		uint64_t u8NextTWT = u8CurTsf + TSF_OFFSET_FOR_AGRT_RESUME;
 
@@ -944,6 +1142,18 @@ void twtPlannerGetTsfDone(
 					prGetTsfCtxt->ucTWTFlowId,
 					u8NextTWT);
 		}
+#endif
+
+		DBGLOG(TWT_REQUESTER, WARN,
+		"TWT Info Frame[2] %d Tgt[0x%x 0x%x] Cur[0x%x 0x%x] Input[0x%x 0x%x]\n",
+		ucNextTWTSize,
+		(u8NextTWT & 0x00000000FFFFFFFF),
+		((u8NextTWT & 0xFFFFFFFF00000000) >> 32),
+		(u8CurTsf & 0x00000000FFFFFFFF),
+		((u8CurTsf & 0xFFFFFFFF00000000) >> 32),
+		(prGetTsfCtxt->rNextTWT.u8NextTWT & 0x00000000FFFFFFFF),
+		((prGetTsfCtxt->rNextTWT.u8NextTWT & 0xFFFFFFFF00000000)
+			>> 32));
 
 		/* Start the process to resume this TWT agreement */
 		twtPlannerSendReqResume(prAdapter,
@@ -1012,6 +1222,7 @@ void twtPlannerSetParams(
 	struct BSS_INFO *prBssInfo;
 	struct STA_RECORD *prStaRec;
 	uint8_t ucBssIdx, ucFlowId;
+	uint8_t ucFlowId_real;
 
 	ASSERT(prAdapter);
 	ASSERT(prMsgHdr);
@@ -1084,10 +1295,13 @@ void twtPlannerSetParams(
 
 	ucFlowId = prTWTCtrl->ucTWTFlowId;
 
+	ucFlowId_real = ucFlowId;
+
 	switch (prTWTCtrl->ucCtrlAction) {
 	case TWT_PARAM_ACTION_ADD:
 		if (twtPlannerDrvAgrtFind(
-			prAdapter, ucBssIdx, ucFlowId) >= TWT_AGRT_MAX_NUM) {
+			prAdapter, ucBssIdx,
+			ucFlowId, &ucFlowId_real) >= TWT_AGRT_MAX_NUM) {
 
 			struct _TWT_GET_TSF_CONTEXT_T *prGetTsfCtxt =
 				kalMemAlloc(
@@ -1106,6 +1320,11 @@ void twtPlannerSetParams(
 			kalMemCopy(&(prGetTsfCtxt->rTWTParams),
 					&(prTWTCtrl->rTWTParams),
 					sizeof(struct _TWT_PARAMS_T));
+
+			DBGLOG(TWT_PLANNER, WARN,
+				"BSS %u TWT flow %u get current TSF\n",
+				ucBssIdx, ucFlowId);
+
 			twtPlannerGetCurrentTSF(prAdapter, prBssInfo,
 				prGetTsfCtxt, sizeof(*prGetTsfCtxt));
 
@@ -1119,8 +1338,11 @@ void twtPlannerSetParams(
 
 	case TWT_PARAM_ACTION_DEL:
 		if (twtPlannerDrvAgrtFind(
-			prAdapter, ucBssIdx, ucFlowId) < TWT_AGRT_MAX_NUM) {
+			prAdapter, ucBssIdx, ucFlowId,
+			&ucFlowId_real) < TWT_AGRT_MAX_NUM) {
 			/* Start the process to tear down this TWT agreement */
+			ucFlowId = ucFlowId_real;
+
 			twtPlannerSendReqTeardown(prAdapter,
 				prStaRec, ucFlowId);
 		} else {
@@ -1132,8 +1354,11 @@ void twtPlannerSetParams(
 
 	case TWT_PARAM_ACTION_SUSPEND:
 		if (twtPlannerDrvAgrtFind(
-			prAdapter, ucBssIdx, ucFlowId) < TWT_AGRT_MAX_NUM) {
+			prAdapter, ucBssIdx, ucFlowId,
+			&ucFlowId_real) < TWT_AGRT_MAX_NUM) {
 			/* Start the process to suspend this TWT agreement */
+			ucFlowId = ucFlowId_real;
+
 			twtPlannerSendReqSuspend(prAdapter,
 				prStaRec, ucFlowId);
 		} else {
@@ -1145,7 +1370,8 @@ void twtPlannerSetParams(
 
 	case TWT_PARAM_ACTION_RESUME:
 		if (twtPlannerDrvAgrtFind(
-			prAdapter, ucBssIdx, ucFlowId) < TWT_AGRT_MAX_NUM) {
+			prAdapter, ucBssIdx, ucFlowId,
+			&ucFlowId_real) < TWT_AGRT_MAX_NUM) {
 			struct _TWT_GET_TSF_CONTEXT_T *prGetTsfCtxt =
 				kalMemAlloc(
 					sizeof(struct _TWT_GET_TSF_CONTEXT_T),
@@ -1156,10 +1382,15 @@ void twtPlannerSetParams(
 				return;
 			}
 
+			ucFlowId = ucFlowId_real;
+
 			prGetTsfCtxt->ucReason = TWT_GET_TSF_FOR_RESUME_AGRT;
 			prGetTsfCtxt->ucBssIdx = ucBssIdx;
-			prGetTsfCtxt->ucTWTFlowId = prTWTCtrl->ucTWTFlowId;
+			prGetTsfCtxt->ucTWTFlowId = ucFlowId;
 			prGetTsfCtxt->fgIsOid = FALSE;
+			kalMemCopy(&(prGetTsfCtxt->rNextTWT),
+					&(prTWTCtrl->rNextTWT),
+					sizeof(struct _NEXT_TWT_INFO_T));
 			twtPlannerGetCurrentTSF(prAdapter, prBssInfo,
 				prGetTsfCtxt, sizeof(*prGetTsfCtxt));
 		} else {
@@ -1281,15 +1512,9 @@ void twtPlannerSuspendDone(
 		return;
 	}
 
-	/* Delete only FW TWT agreement entry */
-	twtPlannerDelAgrtTbl(prAdapter, prBssInfo, prStaRec,
+	twtPlannerSuspendAgrtTbl(prAdapter, prBssInfo, prStaRec,
 		ucTWTFlowId, FALSE,
-		NULL, NULL /* handle TWT cmd timeout? */, FALSE);
-
-	/* Teardown FW TWT agreement entry */
-	twtPlannerTeardownAgrtTbl(prAdapter, prStaRec,
-		FALSE, NULL, NULL /* handle TWT cmd timeout? */);
-
+		NULL, NULL /* handle TWT cmd timeout? */);
 }
 
 void twtPlannerResumeDone(
@@ -1323,11 +1548,54 @@ void twtPlannerResumeDone(
 		return;
 	}
 
-	/* Add back the FW TWT agreement entry */
+	/* Resume the FW TWT agreement entry */
 	twtPlannerResumeAgrtTbl(prAdapter, prBssInfo, prStaRec,
 		ucTWTFlowId, FALSE,
 		NULL, NULL /* handle TWT cmd timeout? */);
 
+}
+
+void twtPlannerFillResumeData(
+	struct ADAPTER *prAdapter,
+	struct STA_RECORD *prStaRec,
+	uint8_t ucFlowId,
+	uint64_t u8NextTWT)
+{
+	struct _TWT_PLANNER_T *prTWTPlanner = &(prAdapter->rTWTPlanner);
+	struct _TWT_AGRT_T *prTWTAgrt;
+	struct BSS_INFO *prBssInfo;
+	uint8_t ucIdx;
+	uint8_t ucFlowId_real = ucFlowId;
+
+	if (prAdapter == NULL)
+		return;
+
+	if (prStaRec == NULL)
+		return;
+
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prStaRec->ucBssIndex);
+
+	if (prBssInfo == NULL)
+		return;
+
+	ucIdx = twtPlannerDrvAgrtFind(
+				prAdapter, prBssInfo->ucBssIndex, ucFlowId,
+				&ucFlowId_real);
+
+	if (ucIdx >= TWT_AGRT_MAX_NUM) {
+		DBGLOG(TWT_PLANNER, ERROR, "Can't find agrt bss %u flow %u\n",
+			prBssInfo->ucBssIndex, ucFlowId);
+		return;
+	}
+
+	ucFlowId = ucFlowId_real;
+
+	prTWTAgrt = &(prTWTPlanner->arTWTAgrtTbl[ucIdx]);
+	prTWTAgrt->rTWTAgrt.u8TWT = u8NextTWT;
+
+	DBGLOG(TWT_REQUESTER, WARN,
+			"TWT Info Frame 0x%x 0x%x\n",
+			prTWTAgrt->rTWTAgrt.u8TWT, u8NextTWT);
 }
 
 void twtPlannerTeardownDone(
@@ -1384,7 +1652,6 @@ void twtPlannerTeardownDone(
 	g_TwtSmartStaCtrl.u4TwtSwitch == 0;
 	g_TwtSmartStaCtrl.eState = TWT_SMART_STA_STATE_IDLE;
 #endif
-
 }
 
 void twtPlannerRxInfoFrm(

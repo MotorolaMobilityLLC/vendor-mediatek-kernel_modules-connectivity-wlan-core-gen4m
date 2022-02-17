@@ -688,6 +688,7 @@ struct _TWT_CTRL_T {
 	uint8_t ucCtrlAction;
 	uint8_t ucTWTFlowId;
 	struct _TWT_PARAMS_T rTWTParams;
+	struct _NEXT_TWT_INFO_T rNextTWT;
 };
 
 struct _TWT_GET_TSF_CONTEXT_T {
@@ -696,6 +697,7 @@ struct _TWT_GET_TSF_CONTEXT_T {
 	uint8_t ucTWTFlowId;
 	uint8_t fgIsOid;
 	struct _TWT_PARAMS_T rTWTParams;
+	struct _NEXT_TWT_INFO_T rNextTWT;
 };
 
 #endif

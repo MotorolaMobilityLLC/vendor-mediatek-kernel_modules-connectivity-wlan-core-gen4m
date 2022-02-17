@@ -152,7 +152,8 @@ twtReqFsmSteps(
 	do {
 
 		DBGLOG(TWT_REQUESTER, STATE,
-		"[TWT_REQ] Flow %d TRANSITION: [%s] -> [%s]\n",
+		"[TWT_REQ]BSS %d Flow %d TRANSITION: [%s] -> [%s]\n",
+		prStaRec->ucBssIndex,
 		ucTWTFlowId,
 		apucDebugTWTReqState[prStaRec->aeTWTReqState],
 		apucDebugTWTReqState[eNextState]);
@@ -174,9 +175,7 @@ twtReqFsmSteps(
 					ucTWTFlowId,
 					MID_TWT_REQ_IND_TEARDOWN_DONE);
 			} else if (ePreState == TWT_REQ_STATE_RESUMING) {
-				twtReqFsmSendEvent(prAdapter, prStaRec,
-					ucTWTFlowId,
-					MID_TWT_REQ_IND_RESUME_DONE);
+				/* At the end of resuming */
 			}
 			break;
 
@@ -226,6 +225,26 @@ twtReqFsmSteps(
 		{
 			struct _NEXT_TWT_INFO_T *prNextTWTInfo =
 				(struct _NEXT_TWT_INFO_T *)pParam;
+
+			twtPlannerFillResumeData(
+				prAdapter,
+				prStaRec,
+				ucTWTFlowId,
+				prNextTWTInfo->u8NextTWT);
+
+/*
+* for TWT inf frame blocked outside TWT service period,
+* inform F/W in advance to sending TWT inf frame.
+*/
+			twtPlannerResumeAgrtTbl(
+				prAdapter,
+				GET_BSS_INFO_BY_INDEX(prAdapter,
+					prStaRec->ucBssIndex),
+				prStaRec,
+				ucTWTFlowId,
+				FALSE,
+				NULL, NULL /* handle TWT cmd timeout? */);
+
 			rStatus = twtSendInfoFrame(
 				prAdapter, prStaRec, ucTWTFlowId, prNextTWTInfo,
 				twtReqFsmRunEventTxDone);
@@ -233,7 +252,6 @@ twtReqFsmSteps(
 				eNextState = TWT_REQ_STATE_IDLE;
 				fgIsTransition = TRUE;
 			}
-
 			break;
 		}
 
@@ -519,6 +537,11 @@ void twtReqFsmRunEventResume(
 		return;
 	}
 
+	DBGLOG(TWT_REQUESTER, WARN,
+			"TWT Info Frame 0x%x 0x%x\n",
+			rNextTWTInfo.u8NextTWT,
+			prTWTReqFsmResumeMsg->u8NextTWT);
+
 	twtReqFsmSteps(prAdapter, prStaRec, TWT_REQ_STATE_RESUMING,
 		ucTWTFlowId, (void *)&rNextTWTInfo);
 }
@@ -578,22 +601,22 @@ twtReqFsmRunEventTxDone(
 		break;
 
 	case TWT_REQ_STATE_SUSPENDING:
-		if (rTxDoneStatus == TX_RESULT_SUCCESS)
+		if (rTxDoneStatus == TX_RESULT_SUCCESS) {
 			eNextState = TWT_REQ_STATE_SUSPENDED;
-
-		ucTWTFlowId = twtGetTxInfoFlowId(prMsduInfo);
-		twtReqFsmSteps(prAdapter, prStaRec, eNextState,
-			ucTWTFlowId, NULL);
+			ucTWTFlowId = twtGetTxInfoFlowId(prMsduInfo);
+			twtReqFsmSteps(prAdapter, prStaRec, eNextState,
+				ucTWTFlowId, NULL);
+		}
 
 		break;
 
 	case TWT_REQ_STATE_RESUMING:
-		if (rTxDoneStatus == TX_RESULT_SUCCESS)
+		if (rTxDoneStatus == TX_RESULT_SUCCESS) {
 			eNextState = TWT_REQ_STATE_IDLE;
-
-		ucTWTFlowId = twtGetTxInfoFlowId(prMsduInfo);
-		twtReqFsmSteps(prAdapter, prStaRec, eNextState,
-			ucTWTFlowId, NULL);
+			ucTWTFlowId = twtGetTxInfoFlowId(prMsduInfo);
+			twtReqFsmSteps(prAdapter, prStaRec, eNextState,
+				ucTWTFlowId, NULL);
+		}
 
 		break;
 
