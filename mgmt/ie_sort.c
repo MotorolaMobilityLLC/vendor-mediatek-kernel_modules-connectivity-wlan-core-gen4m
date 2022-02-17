@@ -1132,7 +1132,7 @@ void sortIE(IN struct ADAPTER *prAdapter,
 
 	ASSERT(pucBuf - pucDst == u2IEsBufLen);
 
-	DBGLOG(TX, INFO, "Sorted %s IE, length = %d\n", pucDst, u2IEsBufLen);
+	DBGLOG(TX, INFO, "Sorted %s IE, length = %d\n", pucIeDesc, u2IEsBufLen);
 	dumpMemory8(pucDst, u2IEsBufLen);
 
 	/* copy ordered frame back to prMsduInfo */

@@ -2061,7 +2061,9 @@ static int wlanSetMacAddress(struct net_device *ndev, void *addr)
 	struct ADAPTER *prAdapter = NULL;
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct sockaddr *sa = NULL;
+	struct AIS_FSM_INFO *prAisFsmInfo = NULL;
 	struct BSS_INFO *prAisBssInfo = NULL;
+	uint8_t i = 0;
 
 	/**********************************************************************
 	 * Check if kernel passes valid data to us                            *
@@ -2089,15 +2091,27 @@ static int wlanSetMacAddress(struct net_device *ndev, void *addr)
 	}
 
 	prAdapter = prGlueInfo->prAdapter;
-	prAisBssInfo = aisGetAisBssInfo(prAdapter,
-		wlanGetBssIdx(ndev));
+	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, wlanGetBssIdx(ndev));
 
-	COPY_MAC_ADDR(prAisBssInfo->aucOwnMacAddr, sa->sa_data);
+	for (i = 0; i < MLD_LINK_MAX; i++) {
+		prAisBssInfo = aisGetLinkBssInfo(prAisFsmInfo, i);
+
+		/* update MAC address */
+		nicApplyLinkAddress(prAdapter, sa->sa_data,
+			prAisBssInfo->aucOwnMacAddr, i);
+
+		DBGLOG(INIT, INFO,
+			"[wlan%d] Bssid%d Set connect random macaddr to " MACSTR ".\n",
+			wlanGetBssIdx(ndev), prAisBssInfo->ucBssIndex,
+			MAC2STR(prAisBssInfo->aucOwnMacAddr));
+	}
+
 	COPY_MAC_ADDR(ndev->dev_addr, sa->sa_data);
-	DBGLOG(INIT, INFO,
-		"[wlan%d] Set connect random macaddr to " MACSTR ".\n",
-		prAisBssInfo->ucBssIndex,
-		MAC2STR(prAisBssInfo->aucOwnMacAddr));
+
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	mldBssUpdateMldAddrByMainBss(prAdapter,
+		mldBssGetByBss(prAdapter, prAisBssInfo));
+#endif
 
 	return WLAN_STATUS_SUCCESS;
 }				/* end of wlanSetMacAddr() */
