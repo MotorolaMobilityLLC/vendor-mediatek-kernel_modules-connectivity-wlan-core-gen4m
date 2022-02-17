@@ -1358,7 +1358,6 @@ uint32_t wlanProcessCommandQueue(IN struct ADAPTER
 			  struct QUE_ENTRY *);
 	while (prQueueEntry) {
 		prCmdInfo = (struct CMD_INFO *) prQueueEntry;
-
 		switch (prCmdInfo->eCmdType) {
 		case COMMAND_TYPE_GENERAL_IOCTL:
 		case COMMAND_TYPE_NETWORK_IOCTL:
@@ -1392,7 +1391,9 @@ uint32_t wlanProcessCommandQueue(IN struct ADAPTER
 			ASSERT(0);
 			break;
 		}
-
+#if (CFG_SUPPORT_STATISTICS == 1)
+		wlanWakeLogCmd(prCmdInfo->ucCID);
+#endif
 		/* 4 <3> handling upon dequeue result */
 		if (eFrameAction == FRAME_ACTION_DROP_PKT) {
 			DBGLOG(INIT, INFO,

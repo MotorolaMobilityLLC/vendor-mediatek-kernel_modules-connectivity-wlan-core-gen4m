@@ -5129,6 +5129,9 @@ int mtk_cfg80211_suspend(struct wiphy *wiphy,
 
 	DBGLOG(REQ, INFO, "mtk_cfg80211_suspend\n");
 
+#if (CFG_SUPPORT_STATISTICS == 1)
+	wlanWakeDumpRes();
+#endif
 	if (kalHaltTryLock())
 		return 0;
 

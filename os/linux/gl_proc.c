@@ -77,6 +77,7 @@
 #include "wlan_lib.h"
 #include "debug.h"
 #include "wlan_oid.h"
+#include <linux/rtc.h>
 
 /*******************************************************************************
  *                              C O N S T A N T S
@@ -862,9 +863,11 @@ static ssize_t procPktDelayDbgCfgRead(struct file *filp, char __user *buf,
 	kalStrnCpy(temp, str, u4StrLen + 1);
 	temp += kalStrLen(temp);
 
+#if (CFG_SUPPORT_STATISTICS == 1)
 	StatsEnvGetPktDelay(&ucTxRxFlag, &ucTxIpProto, &u2TxUdpPort,
 			&u4TxDelayThreshold, &ucRxIpProto, &u2RxUdpPort,
 			&u4RxDelayThreshold);
+#endif
 
 	if (ucTxRxFlag & BIT(0)) {
 		SNPRINTF(temp, g_aucProcBuf,
@@ -953,9 +956,10 @@ static ssize_t procPktDelayDbgCfgWrite(struct file *file, const char *buffer,
 		temp++;		/* skip ',' */
 	}
 
+#if (CFG_SUPPORT_STATISTICS == 1)
 	StatsEnvSetPktDelay(ucTxOrRx, (uint8_t) u4IpProto, (uint16_t) u4PortNum,
 		u4DelayThreshold);
-
+#endif
 	return count;
 }
 
