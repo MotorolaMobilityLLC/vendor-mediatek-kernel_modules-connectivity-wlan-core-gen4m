@@ -731,14 +731,13 @@ void nicCmdEventQueryChipConfig(IN struct ADAPTER
 		DBGLOG(REQ, INFO, "%s: u2MsgSize %u\n", __func__,
 		       prChipConfigInfo->u2MsgSize);
 
-#if 0
 		if (prChipConfigInfo->u2MsgSize > CHIP_CONFIG_RESP_SIZE) {
-			DBGLOG(REQ, INFO,
+			DBGLOG(REQ, WARN,
 			       "Chip config Msg Size %u is not valid (event)\n",
 			       prChipConfigInfo->u2MsgSize);
 			prChipConfigInfo->u2MsgSize = CHIP_CONFIG_RESP_SIZE;
 		}
-#endif
+
 		kalMemCopy(prChipConfigInfo->aucCmd,
 		   prCmdChipConfig->aucCmd, prChipConfigInfo->u2MsgSize);
 		kalOidComplete(prGlueInfo, prCmdInfo,
