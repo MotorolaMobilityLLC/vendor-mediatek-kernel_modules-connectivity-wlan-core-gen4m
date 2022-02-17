@@ -3123,6 +3123,7 @@ u_int8_t nicTxProcessCmdDataPacket(IN struct ADAPTER *prAdapter,
 	prConnac2xTxDesc =
 		(struct HW_MAC_CONNAC2X_TX_DESC *) prMsduInfo->aucTxDescBuffer;
 
+#if (CFG_SUPPORT_CONNAC2X == 1)
 	/* (1) Force set packet format to command for command data*/
 #if (UNIFIED_MAC_TX_FORMAT == 1)
 	HAL_MAC_CONNAC2X_TXD_SET_PKT_FORMAT(prConnac2xTxDesc,
@@ -3150,6 +3151,7 @@ u_int8_t nicTxProcessCmdDataPacket(IN struct ADAPTER *prAdapter,
 		HAL_MAC_CONNAC2X_TXD_SET_PID(prConnac2xTxDesc,
 				prMsduInfo->ucPID);
 	}
+#endif
 
 	return TRUE;
 }
