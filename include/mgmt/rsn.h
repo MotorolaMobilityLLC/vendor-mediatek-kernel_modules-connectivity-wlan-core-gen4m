@@ -239,6 +239,9 @@ void rsnGenerateWPAIE(IN struct ADAPTER *prAdapter,
 void rsnGenerateRSNIE(IN struct ADAPTER *prAdapter,
 		      IN struct MSDU_INFO *prMsduInfo);
 
+void rsnGenerateRSNXIE(IN struct ADAPTER *prAdapter,
+		      IN struct MSDU_INFO *prMsduInfo);
+
 u_int8_t
 rsnParseCheckForWFAInfoElem(IN struct ADAPTER *prAdapter,
 			    IN uint8_t *pucBuf, OUT uint8_t *pucOuiType,
