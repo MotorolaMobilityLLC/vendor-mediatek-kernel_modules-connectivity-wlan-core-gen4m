@@ -1456,7 +1456,9 @@ nicTxComposeDesc(IN struct ADAPTER *prAdapter,
 	uint8_t ucEtherTypeOffsetInWord;
 	uint32_t u4TxDescAndPaddingLength;
 	uint8_t ucTarPort, ucTarQueue;
-
+#if ((CFG_SISO_SW_DEVELOP == 1) || (CFG_SUPPORT_SPE_IDX_CONTROL == 1))
+	enum ENUM_WF_PATH_FAVOR_T eWfPathFavor;
+#endif
 	prTxDesc = (struct HW_MAC_TX_DESC *) prTxDescBuffer;
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
 					  prMsduInfo->ucBssIndex);
@@ -1640,10 +1642,12 @@ nicTxComposeDesc(IN struct ADAPTER *prAdapter,
 	case MSDU_RATE_MODE_MANUAL_DESC:
 		HAL_MAC_TX_DESC_SET_DW(prTxDesc, 6, 1,
 				       &prMsduInfo->u4FixedRateOption);
-#if CFG_SISO_SW_DEVELOP
+#if ((CFG_SISO_SW_DEVELOP == 1) || (CFG_SUPPORT_SPE_IDX_CONTROL == 1))
 		/* Update spatial extension index setting */
+		eWfPathFavor = wlanGetAntPathType(prAdapter, ENUM_WF_NON_FAVOR);
 		HAL_MAC_TX_DESC_SET_SPE_IDX(prTxDesc,
-			wlanGetSpeIdx(prAdapter, prBssInfo->ucBssIndex));
+			wlanGetSpeIdx(prAdapter, prBssInfo->ucBssIndex,
+				eWfPathFavor));
 #endif
 		HAL_MAC_TX_DESC_SET_FIXED_RATE_MODE_TO_DESC(prTxDesc);
 		HAL_MAC_TX_DESC_SET_FIXED_RATE_ENABLE(prTxDesc);
