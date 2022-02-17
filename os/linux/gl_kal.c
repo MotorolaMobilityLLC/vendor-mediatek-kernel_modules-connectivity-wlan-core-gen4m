@@ -1143,6 +1143,9 @@ uint32_t kal_is_skb_gro(struct ADAPTER *prAdapter, uint8_t ucBssIdx)
 	struct PERF_MONITOR *prPerMonitor;
 	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
 
+	if (ucBssIdx >= MAX_BSSID_NUM)
+		return 0;
+
 	prPerMonitor = &prAdapter->rPerMonitor;
 	if (prPerMonitor->ulRxTp[ucBssIdx] > prWifiVar->ucGROEnableTput)
 		return 1;
@@ -1242,7 +1245,7 @@ uint32_t kalRxIndicateOnePkt(IN struct GLUE_INFO
 	uint8_t ucBssIdx;
 #if CFG_SUPPORT_RX_GRO
 	struct NETDEV_PRIVATE_GLUE_INFO *prNetDevPrivate = NULL;
-#endif
+#endif /* CFG_SUPPORT_RX_NAPI */
 
 	ASSERT(prGlueInfo);
 	ASSERT(pvPkt);
@@ -1403,23 +1406,32 @@ uint32_t kalRxIndicateOnePkt(IN struct GLUE_INFO
 	kalTraceEvent("Rx ipid=0x%04x", GLUE_GET_PKT_IP_ID(prSkb));
 
 #if CFG_SUPPORT_RX_GRO
-	if (ucBssIdx < MAX_BSSID_NUM &&
-		kal_is_skb_gro(prGlueInfo->prAdapter, ucBssIdx)) {
+	if (kal_is_skb_gro(prGlueInfo->prAdapter, ucBssIdx)) {
+		prNetDevPrivate = (struct NETDEV_PRIVATE_GLUE_INFO *)
+			netdev_priv(prNetDev);
+#if CFG_SUPPORT_RX_NAPI
+		skb_queue_tail(&prNetDevPrivate->rRxNapiSkbQ, prSkb);
+#if KERNEL_VERSION(4, 0, 0) <= LINUX_VERSION_CODE
+		if (in_interrupt())
+			napi_schedule_irqoff(&prNetDevPrivate->napi);
+		else
+#endif /* KERNEL_VERSION(4, 0, 0) */
+			napi_schedule(&prNetDevPrivate->napi);
+#else /* CFG_SUPPORT_RX_NAPI */
 		/* GRO receive function can't be interrupt so it need to
 		 * disable preempt and protect by spin lock
 		 */
 		preempt_disable();
-		prNetDevPrivate = (struct NETDEV_PRIVATE_GLUE_INFO *)
-			netdev_priv(prNetDev);
 		spin_lock_bh(&prNetDevPrivate->napi_spinlock);
 		napi_gro_receive(&prNetDevPrivate->napi, prSkb);
 		kal_gro_flush(prGlueInfo->prAdapter, prNetDev);
 		spin_unlock_bh(&prNetDevPrivate->napi_spinlock);
 		preempt_enable();
 		DBGLOG_LIMITED(INIT, TRACE, "napi_gro_receive:%p\n", prNetDev);
+#endif /* CFG_SUPPORT_RX_NAPI */
 		return WLAN_STATUS_SUCCESS;
 	}
-#endif
+#endif /* CFG_SUPPORT_RX_GRO */
 	if (!in_interrupt())
 		netif_rx_ni(prSkb);
 	else
@@ -4589,7 +4601,9 @@ int rx_thread(void *data)
 				}
 			}
 #if CFG_SUPPORT_RX_GRO
+#if (CFG_SUPPORT_RX_NAPI == 0)
 			kal_gro_flush_queue(prGlueInfo);
+#endif /* CFG_SUPPORT_RX_NAPI == 0 */
 #endif /* CFG_SUPPORT_RX_GRO */
 			kalTraceEnd(); /* RX_TO_OS */
 		}
@@ -11155,3 +11169,188 @@ void kalSetThreadSchPolicyPriority(IN struct GLUE_INFO *prGlueInfo)
 #if KERNEL_VERSION(5, 4, 0) <= CFG80211_VERSION_CODE
 MODULE_IMPORT_NS(VFS_internal_I_am_really_a_filesystem_and_am_NOT_a_driver);
 #endif
+
+#if CFG_SUPPORT_RX_GRO
+/* For Linux kernel version wrapper */
+void kal_napi_complete_done(struct napi_struct *n, int work_done)
+{
+#if KERNEL_VERSION(3, 19, 0) <= LINUX_VERSION_CODE
+	napi_complete_done(n, work_done);
+#else
+	napi_complete(n);
+#endif /* KERNEL_VERSION(3, 19, 0) */
+}
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief A method of callback function for napi struct
+ *
+ * It just return false because driver indicate Rx packet directly.
+ *
+ * \param[in] napi      Pointer to struct napi_struct.
+ * \param[in] budget    Polling time interval.
+ *
+ * \return false
+ */
+/*----------------------------------------------------------------------------*/
+int kalNapiPoll(struct napi_struct *napi, int budget)
+{
+#if CFG_SUPPORT_RX_NAPI
+	int work_done = 0;
+	struct sk_buff *prSkb = NULL;
+	struct NETDEV_PRIVATE_GLUE_INFO *prPrivGlueInfo =
+		(struct NETDEV_PRIVATE_GLUE_INFO *)
+		container_of(napi, struct NETDEV_PRIVATE_GLUE_INFO, napi);
+
+	struct sk_buff_head rFlushSkbQ;
+	struct sk_buff_head *prRxNapiSkbQ, *prFlushSkbQ;
+	unsigned long u4Flags;
+#if CFG_SUPPORT_RX_GRO_PEAK
+	/* follow timeout rule in net_rx_action() */
+	const unsigned long ulTimeLimit = jiffies + 2;
+#endif
+
+	prRxNapiSkbQ = &prPrivGlueInfo->rRxNapiSkbQ;
+	prFlushSkbQ = &rFlushSkbQ;
+#if KERNEL_VERSION(3, 19, 0) <= LINUX_VERSION_CODE
+	hrtimer_cancel(&napi->timer);
+#endif /* KERNEL_VERSION(3, 19, 0) */
+
+#if CFG_SUPPORT_RX_GRO_PEAK
+next_try:
+#endif
+	/* Flush all RX SBKs to local SkbQ */
+	__skb_queue_head_init(prFlushSkbQ);
+	if (skb_queue_len(prRxNapiSkbQ)) {
+		spin_lock_irqsave(&prRxNapiSkbQ->lock, u4Flags);
+		skb_queue_splice_init(prRxNapiSkbQ, prFlushSkbQ);
+		spin_unlock_irqrestore(&prRxNapiSkbQ->lock, u4Flags);
+	}
+
+	while ((work_done < budget) &&
+	       skb_queue_len(prFlushSkbQ)) {
+
+		prSkb = __skb_dequeue(prFlushSkbQ);
+		if (!prSkb) {
+			DBGLOG(RX, ERROR, "skb NULL %d %d\n",
+				work_done, skb_queue_len(prFlushSkbQ));
+			kal_napi_complete_done(napi, work_done);
+			return work_done;
+		}
+
+		/*
+		* Take this line instead to skip GRO in NAPI
+		* if (netif_receive_skb(prSkb) != NET_RX_SUCCESS)
+		*/
+#if KERNEL_VERSION(5, 12, 0) <= CFG80211_VERSION_CODE
+		if (napi_gro_receive(napi, prSkb) == GRO_MERGED_FREE)
+#else
+		if (napi_gro_receive(napi, prSkb) == GRO_DROP)
+#endif
+			continue;
+
+		work_done++;
+	}
+
+	if (skb_queue_len(prFlushSkbQ)) {
+		spin_lock_irqsave(&prRxNapiSkbQ->lock, u4Flags);
+		skb_queue_splice_init(prRxNapiSkbQ, prFlushSkbQ);
+		skb_queue_splice_init(prFlushSkbQ, prRxNapiSkbQ);
+		spin_unlock_irqrestore(&prRxNapiSkbQ->lock, u4Flags);
+	}
+
+#if CFG_SUPPORT_RX_GRO_PEAK
+	if (skb_queue_len(prRxNapiSkbQ)
+		&& time_before_eq(jiffies, ulTimeLimit)) {
+		work_done = 0;
+		goto next_try;
+	}
+
+	/* Debug check only */
+	if (!time_before_eq(jiffies, ulTimeLimit))
+		DBGLOG(RX, WARN, "timeout hit %d\n", jiffies-ulTimeLimit);
+
+	if (work_done > budget)
+		work_done = budget;
+
+	kal_napi_complete_done(napi, work_done);
+#else /* CFG_SUPPORT_RX_GRO_PEAK */
+	if (work_done < budget) {
+		kal_napi_complete_done(napi, work_done);
+		if (skb_queue_len(prRxNapiSkbQ))
+			napi_schedule(napi);
+	}
+#endif /* CFG_SUPPORT_RX_GRO_PEAK */
+	return work_done;
+#else /* CFG_SUPPORT_RX_NAPI */
+	return 0;
+#endif /* CFG_SUPPORT_RX_NAPI */
+}
+
+uint8_t kalNapiInit(struct net_device *prDev)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct NETDEV_PRIVATE_GLUE_INFO *prNetDevPrivate = NULL;
+
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prDev));
+	/* Register GRO function to kernel */
+	prDev->features |= NETIF_F_GRO;
+	prDev->hw_features |= NETIF_F_GRO;
+	prNetDevPrivate = (struct NETDEV_PRIVATE_GLUE_INFO *)
+		netdev_priv(prDev);
+	spin_lock_init(&prNetDevPrivate->napi_spinlock);
+	prNetDevPrivate->napi.dev = prDev;
+	netif_napi_add(prNetDevPrivate->napi.dev,
+		&prNetDevPrivate->napi, kalNapiPoll, NAPI_POLL_WEIGHT);
+	skb_queue_head_init(&prNetDevPrivate->rRxNapiSkbQ);
+	DBGLOG(INIT, INFO,
+		"GRO interface added successfully:%s\n", prDev->name);
+	return 0;
+}
+
+uint8_t kalNapiEnable(struct net_device *prDev)
+{
+	struct NETDEV_PRIVATE_GLUE_INFO *prNetDevPrivate = NULL;
+
+	prNetDevPrivate = (struct NETDEV_PRIVATE_GLUE_INFO *)netdev_priv(prDev);
+	napi_enable(&prNetDevPrivate->napi);
+	DBGLOG(RX, INFO, "RX NAPI enabled %s\n", prDev->name);
+	return 0;
+}
+
+
+uint8_t kalNapiDisable(struct net_device *prDev)
+{
+	struct NETDEV_PRIVATE_GLUE_INFO *prNetDevPrivate = NULL;
+
+	prNetDevPrivate = (struct NETDEV_PRIVATE_GLUE_INFO *)netdev_priv(prDev);
+	DBGLOG(RX, INFO, "RX NAPI disable ongoing %s\n", prDev->name);
+	napi_synchronize(&prNetDevPrivate->napi);
+	napi_disable(&prNetDevPrivate->napi);
+	if (skb_queue_len(&prNetDevPrivate->rRxNapiSkbQ)) {
+		struct sk_buff *skb;
+
+		DBGLOG(INIT, WARN, "NAPI Remain pkts %d\n",
+			skb_queue_len(&prNetDevPrivate->rRxNapiSkbQ));
+
+		while ((skb = skb_dequeue(&prNetDevPrivate->rRxNapiSkbQ))
+				!= NULL)
+			kfree_skb(skb);
+	}
+	DBGLOG(RX, INFO, "RX NAPI disabled %s\n", prDev->name);
+	return 0;
+}
+#endif
+
+uint8_t kalRxNapiValidSkb(struct GLUE_INFO *prGlueInfo,
+	struct sk_buff *prSkb)
+{
+#if (CFG_SUPPORT_RX_GRO == 0) || (CFG_SUPPORT_RX_NAPI == 0)
+	return FALSE;
+#else
+	uint8_t ucBssIdx;
+
+	ucBssIdx = GLUE_GET_PKT_BSS_IDX(prSkb);
+
+	return kal_is_skb_gro(prGlueInfo->prAdapter, ucBssIdx);
+#endif
+}
