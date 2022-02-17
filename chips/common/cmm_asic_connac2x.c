@@ -886,7 +886,7 @@ void asicConnac2xLowPowerOwnSet(
 	prChipInfo = prAdapter->chip_info;
 
 	if (prChipInfo->is_support_asic_lp) {
-		u_int32_t u4RegValue;
+		u_int32_t u4RegValue = 0;
 
 		HAL_MCR_WR(prAdapter,
 				CONNAC2X_BN0_LPCTL_ADDR,
@@ -909,7 +909,7 @@ void asicConnac2xLowPowerOwnClear(
 	prChipInfo = prAdapter->chip_info;
 
 	if (prChipInfo->is_support_asic_lp) {
-		u_int32_t u4RegValue;
+		u_int32_t u4RegValue = 0;
 
 		HAL_MCR_WR(prAdapter,
 			CONNAC2X_BN0_LPCTL_ADDR,
@@ -2230,7 +2230,7 @@ void asicConnac2xDmashdlSetOptionalControl(struct ADAPTER *prAdapter,
 {
 	struct BUS_INFO *prBusInfo;
 	struct DMASHDL_CFG *prCfg;
-	uint32_t u4Addr, u4Val;
+	uint32_t u4Addr, u4Val = 0;
 
 	prBusInfo = prAdapter->chip_info->bus_info;
 	prCfg = prBusInfo->prDmashdlCfg;
