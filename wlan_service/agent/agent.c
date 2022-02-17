@@ -4246,9 +4246,8 @@ static s_int32 hqa_start_tx_ext(
 		("%s: ibf=%u, ebf=%u, wlan_id=%u, aifs=%u\n",
 		__func__, param.ibf, param.ebf, param.wlan_id, param.aifs));
 	SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_OFF,
-		("%s: gi=%u, nss=%u hwtx=%u puncture=%u\n",
-		__func__, param.gi, param.nss, param.hw_tx_enable,
-			param.puncture));
+		("%s: gi=%u, nss=%u hwtx=%u\n",
+		__func__, param.gi, param.nss, param.hw_tx_enable));
 
 #if (CFG_SUPPORT_CONNAC3X == 1)
 	SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_OFF,
