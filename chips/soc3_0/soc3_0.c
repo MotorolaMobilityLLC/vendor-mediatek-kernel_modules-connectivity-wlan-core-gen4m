@@ -77,7 +77,7 @@
 #endif
 
 #include "precomp.h"
-
+#include "gl_rst.h"
 #include "soc3_0.h"
 #include "hal_dmashdl_soc3_0.h"
 #include <linux/platform_device.h>
@@ -871,14 +871,19 @@ int wf_ioremap_write(phys_addr_t addr, unsigned int val)
 
 	return 0;
 }
+
+
 int soc3_0_Trigger_fw_assert(void)
 {
 	int ret = 0;
 	int value;
+	uint32_t waitRet = 0;
+
 	g_IsConninfraBusHang = conninfra_is_bus_hang();
 	if (g_IsConninfraBusHang) {
 		glSetRstReasonString("conninfra bus hang");
-		ret = soc3_0_Trigger_whole_chip_rst(g_reason);
+		soc3_0_Trigger_whole_chip_rst(g_reason);
+		return ret;
 	} else {
 		wf_ioremap_read(WF_TRIGGER_AP2CONN_EINT, &value);
 		value &= 0xFFFFFF7F;
@@ -887,6 +892,17 @@ int soc3_0_Trigger_fw_assert(void)
 		wf_ioremap_read(WF_TRIGGER_AP2CONN_EINT, &value);
 		value |= 0x80;
 		ret = wf_ioremap_write(WF_TRIGGER_AP2CONN_EINT, value);
+		waitRet = wait_for_completion_timeout(&g_triggerComp,
+				MSEC_TO_JIFFIES(WIFI_TRIGGER_ASSERT_TIMEOUT));
+		if (waitRet > 0) {
+		/* Case 1: No timeout. */
+			DBGLOG(INIT, INFO, "Trigger assert successfully.\n");
+		} else {
+		/* Case 2: timeout */
+			DBGLOG(INIT, ERROR,
+				"Trigger assert more than 2 seconds, need to trigger rst self\n");
+			kalSetRstEvent();
+		}
 	}
 	return ret;
 }
@@ -1370,6 +1386,7 @@ void soc3_0_Sw_interrupt_handler(struct ADAPTER *prAdapter)
 	HAL_MCR_WR(prAdapter,
 		  (CONN_INFRA_CFG_AP2WF_BUS_ADDR + 0xc8),
 		  value);
+	complete(&g_triggerComp);
 }
 
 void soc3_0_Conninfra_cb_register(void)
