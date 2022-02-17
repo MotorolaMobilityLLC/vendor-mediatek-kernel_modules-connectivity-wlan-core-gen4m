@@ -6867,8 +6867,7 @@ int32_t __weak kalSetCpuNumFreq(uint32_t u4CoreNum,
 	return 0;
 }
 
-void __weak kalSetEmiMpuProtection(phys_addr_t emiPhyBase, uint32_t offset,
-				   uint32_t size, bool enable)
+void __weak kalSetEmiMpuProtection(phys_addr_t emiPhyBase, bool enable)
 {
 	DBGLOG(SW4, WARN, "EMI MPU function is not defined\n");
 }
