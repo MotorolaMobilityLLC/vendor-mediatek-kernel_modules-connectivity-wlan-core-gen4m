@@ -76,6 +76,9 @@
 #include "precomp.h"
 #include "gl_rst.h"
 
+
+UINT_32 g_IsNeedDoChipReset;
+
 #if CFG_CHIP_RESET_SUPPORT
 
 /*******************************************************************************
