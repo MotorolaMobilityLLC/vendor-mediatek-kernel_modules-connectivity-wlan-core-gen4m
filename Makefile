@@ -40,7 +40,7 @@ ccflags-y += -DDRIVER_BUILD_DATE='"$(DRIVER_BUILD_DATE)"'
 # ---------------------------------------------------
 # Compile Options
 # ---------------------------------------------------
-WLAN_CHIP_LIST:=-UMT6620 -UMT6628 -UMT5931 -UMT6630 -UMT6632 -UMT7663 -UCONNAC -USOC2_1X1 -USOC2_2X2 -UUT_TEST_MODE -UMT7915 -USOC3_0 -UMT7961 -USOC5_0
+WLAN_CHIP_LIST:=-UMT6620 -UMT6628 -UMT5931 -UMT6630 -UMT6632 -UMT7663 -UCONNAC -USOC2_1X1 -USOC2_2X2 -UUT_TEST_MODE -UMT7915 -USOC3_0 -UMT7961 -USOC5_0 -USOC7_0
 # '-D' and '-U' options are processed in the order they are given on the command line.
 # All '-imacros file' and '-include file' options are processed after all '-D' and '-U' options.
 ccflags-y += $(WLAN_CHIP_LIST)
@@ -172,6 +172,21 @@ ifeq ($(CONFIG_MTK_WIFI_CONNINFRA_SUPPORT), y)
 ccflags-y += -DCFG_ANDORID_CONNINFRA_SUPPORT=1
 else
 ccflags-y += -DCFG_ANDORID_CONNINFRA_SUPPORT=0
+endif
+
+ifneq ($(findstring 7_0,$(MTK_COMBO_CHIP)),)
+ccflags-y:=$(filter-out -USOC7_0,$(ccflags-y))
+ccflags-y += -DSOC7_0
+CONFIG_MTK_WIFI_CONNAC2X=y
+CONFIG_MTK_WIFI_11AX_SUPPORT=y
+CONFIG_MTK_WIFI_TWT_SUPPORT=y
+CONFIG_MTK_WIFI_TWT_HOTSPOT_SUPPORT=n
+CONFIG_MTK_WIFI_TWT_HOTSPOT_AC_SUPPORT=n
+CONFIG_NUM_OF_WFDMA_RX_RING=2
+CONFIG_NUM_OF_WFDMA_TX_RING=0
+CONFIG_MTK_WIFI_CONNAC2X_2x2=y
+CONFIG_MTK_WIFI_DOWNLOAD_DYN_MEMORY_MAP=y
+#CONFIG_MTK_WIFI_CONNINFRA_SUPPORT=y
 endif
 
 ifeq ($(CONFIG_MTK_WIFI_CONNAC2X), y)
@@ -639,6 +654,11 @@ ifneq ($(findstring 5_0,$(MTK_COMBO_CHIP)),)
 CHIPS_OBJS += $(CHIPS)soc5_0/soc5_0.o
 CHIPS_OBJS += $(CHIPS)soc5_0/dbg_soc5_0.o
 CHIPS_OBJS += $(CHIPS)soc5_0/hal_dmashdl_soc5_0.o
+endif
+ifneq ($(findstring 7_0,$(MTK_COMBO_CHIP)),)
+CHIPS_OBJS += $(CHIPS)soc7_0/soc7_0.o
+CHIPS_OBJS += $(CHIPS)soc7_0/dbg_soc7_0.o
+CHIPS_OBJS += $(CHIPS)soc7_0/hal_dmashdl_soc7_0.o
 endif
 
 # ---------------------------------------------------

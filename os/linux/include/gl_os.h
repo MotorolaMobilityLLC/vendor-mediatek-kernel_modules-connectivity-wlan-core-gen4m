@@ -318,7 +318,6 @@ extern void update_driver_loaded_status(uint8_t loaded);
 #define GLUE_FLAG_FRAME_FILTER_AIS_BIT  (9)
 
 #if CFG_SUPPORT_MULTITHREAD
-#define GLUE_FLAG_RX				BIT(10)
 #define GLUE_FLAG_TX_CMD_DONE			BIT(11)
 #define GLUE_FLAG_HIF_TX			BIT(12)
 #define GLUE_FLAG_HIF_TX_CMD			BIT(13)
@@ -329,17 +328,22 @@ extern void update_driver_loaded_status(uint8_t loaded);
 #define GLUE_FLAG_NOTIFY_MD_CRASH		BIT(18)
 #define GLUE_FLAG_DRV_INT			BIT(19)
 
-#define GLUE_FLAG_RX_BIT				(10)
-#define GLUE_FLAG_TX_CMD_DONE_BIT			(11)
-#define GLUE_FLAG_HIF_TX_BIT				(12)
-#define GLUE_FLAG_HIF_TX_CMD_BIT			(13)
-#define GLUE_FLAG_RX_TO_OS_BIT				(14)
-#define GLUE_FLAG_HIF_FW_OWN_BIT			(15)
-#define GLUE_FLAG_HIF_PRT_HIF_DBG_INFO_BIT		(16)
-#define GLUE_FLAG_UPDATE_WMM_QUOTA_BIT			(17)
-#define GLUE_FLAG_NOTIFY_MD_CRASH_BIT			(18)
-#define GLUE_FLAG_DRV_INT_BIT				(19)
+#define GLUE_FLAG_TX_CMD_DONE_BIT		(11)
+#define GLUE_FLAG_HIF_TX_BIT			(12)
+#define GLUE_FLAG_HIF_TX_CMD_BIT		(13)
+#define GLUE_FLAG_RX_TO_OS_BIT			(14)
+#define GLUE_FLAG_HIF_FW_OWN_BIT		(15)
 #endif
+#define GLUE_FLAG_RX				BIT(10)
+#define GLUE_FLAG_HIF_PRT_HIF_DBG_INFO		BIT(16)
+#define GLUE_FLAG_UPDATE_WMM_QUOTA		BIT(17)
+
+#define GLUE_FLAG_RX_BIT			(10)
+#define GLUE_FLAG_HIF_PRT_HIF_DBG_INFO_BIT	(16)
+#define GLUE_FLAG_UPDATE_WMM_QUOTA_BIT		(17)
+#define GLUE_FLAG_NOTIFY_MD_CRASH_BIT		(18)
+#define GLUE_FLAG_DRV_INT_BIT			(19)
+
 #if (CFG_SUPPORT_CONNINFRA == 1)
 #define GLUE_FLAG_RST_START BIT(18)
 #define GLUE_FLAG_RST_START_BIT 18

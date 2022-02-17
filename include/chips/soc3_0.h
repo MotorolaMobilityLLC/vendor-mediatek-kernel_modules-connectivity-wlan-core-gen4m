@@ -276,6 +276,10 @@ void soc3_0_show_wfdma_info_by_type(
 void soc3_0_show_wfdma_info_by_type_without_adapter(
 	bool bIsHostDMA);
 
+void soc3_0_show_wfdma_dbg_probe_info(
+	IN struct ADAPTER *prAdapter,
+	IN enum _ENUM_WFDMA_TYPE_T enum_wfdma_type);
+
 void soc3_0_DumpWFDMACr(struct ADAPTER *prAdapter);
 
 void soc3_0_show_dmashdl_info(

@@ -75,6 +75,8 @@
 #include "coda/soc3_0/wf_wfdma_host_dma0.h"
 #include "coda/soc3_0/wf_wfdma_host_dma1.h"
 #include "coda/soc3_0/wf_hif_dmashdl_top.h"
+#include "coda/soc3_0/wf_wfdma_mcu_dma0.h"
+#include "coda/soc3_0/wf_wfdma_mcu_dma1.h"
 #include "precomp.h"
 #include "mt_dmac.h"
 #include "wf_ple.h"
@@ -87,24 +89,6 @@
 
 /* TODO : need to Merge related API with non-driver base */
 #define WFSYS_SUPPORT_BUS_HANG_READ_FROM_DRIVER_BASE 1
-
-/* define  WFDMA CODA here */
-#define WF_WFDMA_MCU_DMA0_WPDMA_TX_RING0_CTRL0_ADDR \
-			(CONNAC2X_MCU_WPDMA_0_BASE + 0x300)
-#define WF_WFDMA_MCU_DMA1_WPDMA_TX_RING0_CTRL0_ADDR \
-			(CONNAC2X_MCU_WPDMA_1_BASE + 0x300)
-#define WF_WFDMA_MCU_DMA1_WPDMA_TX_RING1_CTRL0_ADDR \
-				(CONNAC2X_MCU_WPDMA_1_BASE + 0x310)
-#define WF_WFDMA_MCU_DMA0_WPDMA_RX_RING0_CTRL0_ADDR \
-			(CONNAC2X_MCU_WPDMA_0_BASE + 0x500)
-#define WF_WFDMA_MCU_DMA0_WPDMA_RX_RING1_CTRL0_ADDR \
-			(CONNAC2X_MCU_WPDMA_0_BASE + 0x510)
-#define WF_WFDMA_MCU_DMA1_WPDMA_RX_RING0_CTRL0_ADDR \
-			(CONNAC2X_MCU_WPDMA_1_BASE + 0x500)
-#define WF_WFDMA_MCU_DMA1_WPDMA_RX_RING1_CTRL0_ADDR \
-			(CONNAC2X_MCU_WPDMA_1_BASE + 0x510)
-#define WF_WFDMA_MCU_DMA1_WPDMA_RX_RING2_CTRL0_ADDR \
-			(CONNAC2X_MCU_WPDMA_1_BASE + 0x520)
 
 /* define PLE/PSE FSM CR here */
 #define WF_PLE_FSM_PEEK_CR_00 (WF_PLE_TOP_BASE + 0x03D0)
@@ -202,16 +186,6 @@ struct pse_group_info {
 	char name[20];
 	u_int32_t quota_addr;
 	u_int32_t pg_info_addr;
-};
-
-struct wfdma_group_info {
-	char name[20];
-	u_int32_t hw_desc_base;
-};
-
-enum _ENUM_WFDMA_TYPE_T {
-	WFDMA_TYPE_HOST = 0,
-	WFDMA_TYPE_WM
 };
 
 /*******************************************************************************
@@ -364,42 +338,6 @@ struct pse_group_info pse_group[] = {
 #endif
 };
 
-struct wfdma_group_info wfmda_host_tx_group[] = {
-	{"P1T0:AP DATA0", WF_WFDMA_HOST_DMA1_WPDMA_TX_RING0_CTRL0_ADDR},
-	{"P1T1:AP DATA1", WF_WFDMA_HOST_DMA1_WPDMA_TX_RING1_CTRL0_ADDR},
-	{"P1T16:FWDL", WF_WFDMA_HOST_DMA1_WPDMA_TX_RING16_CTRL0_ADDR},
-	{"P1T17:AP CMD", WF_WFDMA_HOST_DMA1_WPDMA_TX_RING17_CTRL0_ADDR},
-	{"P1T8:MD DATA", WF_WFDMA_HOST_DMA1_WPDMA_TX_RING8_CTRL0_ADDR},
-	{"P1T18:MD CMD", WF_WFDMA_HOST_DMA1_WPDMA_TX_RING18_CTRL0_ADDR},
-};
-
-struct wfdma_group_info wfmda_host_rx_group[] = {
-	{"P0R0:AP DATA0", WF_WFDMA_HOST_DMA0_WPDMA_RX_RING0_CTRL0_ADDR},
-	{"P0R1:AP DATA1", WF_WFDMA_HOST_DMA0_WPDMA_RX_RING1_CTRL0_ADDR},
-	{"P0R2:AP TDONE0", WF_WFDMA_HOST_DMA0_WPDMA_RX_RING2_CTRL0_ADDR},
-	{"P0R3:AP TDONE1", WF_WFDMA_HOST_DMA0_WPDMA_RX_RING3_CTRL0_ADDR},
-	{"P1R0:AP EVENT", WF_WFDMA_HOST_DMA1_WPDMA_RX_RING0_CTRL0_ADDR},
-	{"P0R4:MD DATA0", WF_WFDMA_HOST_DMA0_WPDMA_RX_RING4_CTRL0_ADDR},
-	{"P0R5:MD DATA1", WF_WFDMA_HOST_DMA0_WPDMA_RX_RING5_CTRL0_ADDR},
-	{"P0R6:MD TDONE0", WF_WFDMA_HOST_DMA0_WPDMA_RX_RING6_CTRL0_ADDR},
-	{"P0R7:MD TDONE1", WF_WFDMA_HOST_DMA0_WPDMA_RX_RING7_CTRL0_ADDR},
-	{"P1R1:MD EVENT", WF_WFDMA_HOST_DMA1_WPDMA_RX_RING1_CTRL0_ADDR},
-};
-
-struct wfdma_group_info wfmda_wm_tx_group[] = {
-	{"P0T0:DATA", WF_WFDMA_MCU_DMA0_WPDMA_TX_RING0_CTRL0_ADDR},
-	{"P1T0:AP EVENT", WF_WFDMA_MCU_DMA1_WPDMA_TX_RING0_CTRL0_ADDR},
-	{"P1T1:MD EVENT", WF_WFDMA_MCU_DMA1_WPDMA_TX_RING1_CTRL0_ADDR},
-};
-
-struct wfdma_group_info wfmda_wm_rx_group[] = {
-	{"P0R0:DATA", WF_WFDMA_MCU_DMA0_WPDMA_RX_RING0_CTRL0_ADDR},
-	{"P0R1:TXDONE", WF_WFDMA_MCU_DMA0_WPDMA_RX_RING1_CTRL0_ADDR},
-	{"P1R0:FWDL", WF_WFDMA_MCU_DMA1_WPDMA_RX_RING0_CTRL0_ADDR},
-	{"P1R1:AP CMD", WF_WFDMA_MCU_DMA1_WPDMA_RX_RING1_CTRL0_ADDR},
-	{"P1R2:MD CMD", WF_WFDMA_MCU_DMA1_WPDMA_RX_RING2_CTRL0_ADDR},
-};
-
 #if WFSYS_SUPPORT_BUS_HANG_READ_FROM_DRIVER_BASE
 struct wfdma_group_info wfmda_host_tx_group_driver_base[] = {
 	{"P1T0:AP DATA0",
@@ -476,6 +414,33 @@ struct wfdma_group_info wfmda_wm_rx_group_driver_base[] = {
  *                              F U N C T I O N S
  *******************************************************************************
  */
+
+void soc3_0_show_wfdma_dbg_probe_info(IN struct ADAPTER *prAdapter,
+	IN enum _ENUM_WFDMA_TYPE_T enum_wfdma_type)
+{
+	uint32_t i = 0, u4DbgIdxAddr = 0, u4DbgProbeAddr = 0, u4DbgIdxValue = 0,
+		u4DbgProbeValue = 0;
+
+	if (!prAdapter)
+		return;
+
+	if (enum_wfdma_type == WFDMA_TYPE_HOST) {
+		u4DbgIdxAddr = WF_WFDMA_HOST_DMA0_WPDMA_DBG_IDX_ADDR;
+		u4DbgProbeAddr = WF_WFDMA_HOST_DMA0_WPDMA_DBG_PROBE_ADDR;
+	} else {
+		u4DbgIdxAddr = WF_WFDMA_MCU_DMA0_WPDMA_DBG_IDX_ADDR;
+		u4DbgProbeAddr = WF_WFDMA_MCU_DMA0_WPDMA_DBG_PROBE_ADDR;
+	}
+
+	for (i = 0; i <= 0x12; i++) {
+		u4DbgIdxValue = 0x100 + i;
+		HAL_MCR_WR(prAdapter, u4DbgIdxAddr, u4DbgIdxValue);
+		HAL_MCR_RD(prAdapter, u4DbgProbeAddr, &u4DbgProbeValue);
+		DBGLOG(HAL, INFO, "\t Write(0x%2x) DBG_PROBE[0x%X]=0x%08X\n",
+			u4DbgIdxValue, u4DbgProbeAddr, u4DbgProbeValue);
+	}
+}
+
 void soc3_0_show_ple_info(
 	struct ADAPTER *prAdapter,
 	u_int8_t fgDumpTxd)
@@ -1221,218 +1186,6 @@ static void DumpPPDebugCr(struct ADAPTER *prAdapter)
 		ReadRegValue[3], u4Value[3]);
 }
 
-void show_wfdma_interrupt_info(
-	IN struct ADAPTER *prAdapter,
-	IN enum _ENUM_WFDMA_TYPE_T enum_wfdma_type)
-{
-	uint32_t idx;
-	uint32_t u4hostBaseCrAddr;
-	uint32_t u4DmaCfgCrAddr = 0;
-	uint32_t u4DmaCfgCrAddrByWFDMA[CONNAC2X_WFDMA_COUNT];
-	uint32_t u4RegValue = 0;
-	uint32_t u4RegValueByWFDMA[CONNAC2X_WFDMA_COUNT] = {0};
-
-	/* Dump Interrupt Status info */
-	if (enum_wfdma_type == WFDMA_TYPE_HOST) {
-		/* Dump Global Status CR only in WFMDA HOST*/
-		u4hostBaseCrAddr = CONNAC2X_HOST_EXT_CONN_HIF_WRAP;
-
-		u4DmaCfgCrAddr = CONNAC2X_WPDMA_EXT_INT_STA(u4hostBaseCrAddr);
-		HAL_MCR_RD(prAdapter, u4DmaCfgCrAddr, &u4RegValue);
-	}
-
-	/* Dump PDMA Status CR */
-	for (idx = 0; idx < CONNAC2X_WFDMA_COUNT; idx++) {
-
-		if (enum_wfdma_type == WFDMA_TYPE_HOST)
-			u4hostBaseCrAddr = idx ?
-				CONNAC2X_HOST_WPDMA_1_BASE :
-				CONNAC2X_HOST_WPDMA_0_BASE;
-		else
-			u4hostBaseCrAddr = idx ?
-				CONNAC2X_MCU_WPDMA_1_BASE :
-				CONNAC2X_MCU_WPDMA_0_BASE;
-
-		u4DmaCfgCrAddrByWFDMA[idx] =
-			CONNAC2X_WPDMA_INT_STA(u4hostBaseCrAddr);
-
-		HAL_MCR_RD(prAdapter,
-			u4DmaCfgCrAddrByWFDMA[idx], &u4RegValueByWFDMA[idx]);
-	}
-
-	DBGLOG(INIT, INFO,
-	"G_INT_S(0x%08x):0x%08x,W_%d(0x%08x):0x%08x, W_%d(0x%08x):0x%08x\n",
-		u4DmaCfgCrAddr, u4RegValue,
-		0, u4DmaCfgCrAddrByWFDMA[0], u4RegValueByWFDMA[0],
-		1, u4DmaCfgCrAddrByWFDMA[1], u4RegValueByWFDMA[1]);
-
-	/* Dump Interrupt Enable Info */
-	if (enum_wfdma_type == WFDMA_TYPE_HOST) {
-
-		/* Dump Global Enable CR */
-		u4hostBaseCrAddr = CONNAC2X_HOST_EXT_CONN_HIF_WRAP;
-
-		u4DmaCfgCrAddr = CONNAC2X_WPDMA_EXT_INT_MASK(u4hostBaseCrAddr);
-
-		HAL_MCR_RD(prAdapter, u4DmaCfgCrAddr, &u4RegValue);
-	}
-
-	/* Dump PDMA Enable CR */
-	for (idx = 0; idx < CONNAC2X_WFDMA_COUNT; idx++) {
-
-		if (enum_wfdma_type == WFDMA_TYPE_HOST)
-			u4hostBaseCrAddr = idx ?
-				CONNAC2X_HOST_WPDMA_1_BASE :
-				CONNAC2X_HOST_WPDMA_0_BASE;
-		else
-			u4hostBaseCrAddr = idx ?
-				CONNAC2X_MCU_WPDMA_1_BASE :
-				CONNAC2X_MCU_WPDMA_0_BASE;
-
-		u4DmaCfgCrAddrByWFDMA[idx] =
-			CONNAC2X_WPDMA_INT_MASK(u4hostBaseCrAddr);
-
-		HAL_MCR_RD(prAdapter,
-			u4DmaCfgCrAddrByWFDMA[idx], &u4RegValueByWFDMA[idx]);
-	}
-
-	DBGLOG(INIT, INFO,
-	"G_INT_E(0x%08x):0x%08x,W_%d(0x%08x):0x%08x, W_%d(0x%08x):0x%08x\n",
-		u4DmaCfgCrAddr, u4RegValue,
-		0, u4DmaCfgCrAddrByWFDMA[0], u4RegValueByWFDMA[0],
-		1, u4DmaCfgCrAddrByWFDMA[1], u4RegValueByWFDMA[1]);
-}
-
-void show_wfdma_glo_info(
-	IN struct ADAPTER *prAdapter,
-	IN enum _ENUM_WFDMA_TYPE_T enum_wfdma_type)
-{
-	uint32_t idx;
-	uint32_t u4hostBaseCrAddr;
-	uint32_t u4DmaCfgCrAddr = 0;
-	union WPDMA_GLO_CFG_STRUCT GloCfgValue;
-
-	for (idx = 0; idx < CONNAC2X_WFDMA_COUNT; idx++) {
-
-		if (enum_wfdma_type == WFDMA_TYPE_HOST)
-			u4hostBaseCrAddr = idx ?
-			CONNAC2X_HOST_WPDMA_1_BASE :
-			CONNAC2X_HOST_WPDMA_0_BASE;
-		else
-			u4hostBaseCrAddr = idx ?
-			CONNAC2X_MCU_WPDMA_1_BASE :
-			CONNAC2X_MCU_WPDMA_0_BASE;
-
-		u4DmaCfgCrAddr = CONNAC2X_WPDMA_GLO_CFG(u4hostBaseCrAddr);
-
-		HAL_MCR_RD(prAdapter, u4DmaCfgCrAddr, &GloCfgValue.word);
-
-		DBGLOG(INIT, INFO,
-		"WFDMA_%d GLO(0x%08x):0x%08x,EN T/R=(%d/%d), Busy T/R=(%d/%d)\n",
-			idx, u4DmaCfgCrAddr, GloCfgValue.word,
-			GloCfgValue.field_conn2x.tx_dma_en,
-			GloCfgValue.field_conn2x.rx_dma_en,
-			GloCfgValue.field_conn2x.tx_dma_busy,
-			GloCfgValue.field_conn2x.rx_dma_busy);
-	}
-
-}
-
-void show_wfdma_ring_info(
-	IN struct ADAPTER *prAdapter,
-	IN enum _ENUM_WFDMA_TYPE_T enum_wfdma_type)
-{
-
-	uint32_t idx;
-	uint32_t group_cnt;
-	uint32_t u4DmaCfgCrAddr = 0;
-	struct wfdma_group_info *group;
-	uint32_t u4_hw_desc_base_value = 0;
-	uint32_t u4_hw_cnt_value = 0;
-	uint32_t u4_hw_cidx_value = 0;
-	uint32_t u4_hw_didx_value = 0;
-	uint32_t queue_cnt;
-
-	/* Dump All TX Ring Info */
-	DBGLOG(HAL, INFO, "----------- TX Ring Config -----------\n");
-	DBGLOG(HAL, INFO, "%4s %16s %8s %10s %6s %6s %6s %6s\n",
-		"Idx", "Attr", "Reg", "Base", "Cnt", "CIDX", "DIDX", "QCnt");
-
-	/* Dump TX Ring */
-	if (enum_wfdma_type == WFDMA_TYPE_HOST)
-		group_cnt = sizeof(wfmda_host_tx_group) /
-		sizeof(struct wfdma_group_info);
-	else
-		group_cnt = sizeof(wfmda_wm_tx_group) /
-		sizeof(struct wfdma_group_info);
-
-	for (idx = 0; idx < group_cnt; idx++) {
-		if (enum_wfdma_type == WFDMA_TYPE_HOST)
-			group = &wfmda_host_tx_group[idx];
-		else
-			group = &wfmda_wm_tx_group[idx];
-
-		u4DmaCfgCrAddr = group->hw_desc_base;
-
-		HAL_MCR_RD(prAdapter, u4DmaCfgCrAddr, &u4_hw_desc_base_value);
-		HAL_MCR_RD(prAdapter, u4DmaCfgCrAddr+0x04, &u4_hw_cnt_value);
-		HAL_MCR_RD(prAdapter, u4DmaCfgCrAddr+0x08, &u4_hw_cidx_value);
-		HAL_MCR_RD(prAdapter, u4DmaCfgCrAddr+0x0c, &u4_hw_didx_value);
-
-		queue_cnt = (u4_hw_cidx_value >= u4_hw_didx_value) ?
-			(u4_hw_cidx_value - u4_hw_didx_value) :
-			(u4_hw_cidx_value - u4_hw_didx_value + u4_hw_cnt_value);
-
-		DBGLOG(HAL, INFO, "%4d %16s %8x %10x %6x %6x %6x %6x\n",
-					idx,
-					group->name,
-					u4DmaCfgCrAddr, u4_hw_desc_base_value,
-					u4_hw_cnt_value, u4_hw_cidx_value,
-					u4_hw_didx_value, queue_cnt);
-
-	}
-
-	/* Dump All RX Ring Info */
-	DBGLOG(HAL, INFO, "----------- RX Ring Config -----------\n");
-	DBGLOG(HAL, INFO, "%4s %16s %8s %10s %6s %6s %6s %6s\n",
-		"Idx", "Attr", "Reg", "Base", "Cnt", "CIDX", "DIDX", "QCnt");
-
-	/* Dump RX Ring */
-	if (enum_wfdma_type == WFDMA_TYPE_HOST)
-		group_cnt = sizeof(wfmda_host_rx_group) /
-		sizeof(struct wfdma_group_info);
-	else
-		group_cnt = sizeof(wfmda_wm_rx_group) /
-		sizeof(struct wfdma_group_info);
-
-	for (idx = 0; idx < group_cnt; idx++) {
-		if (enum_wfdma_type == WFDMA_TYPE_HOST)
-			group = &wfmda_host_rx_group[idx];
-		else
-			group = &wfmda_wm_rx_group[idx];
-
-		u4DmaCfgCrAddr = group->hw_desc_base;
-
-		HAL_MCR_RD(prAdapter, u4DmaCfgCrAddr, &u4_hw_desc_base_value);
-		HAL_MCR_RD(prAdapter, u4DmaCfgCrAddr+0x04, &u4_hw_cnt_value);
-		HAL_MCR_RD(prAdapter, u4DmaCfgCrAddr+0x08, &u4_hw_cidx_value);
-		HAL_MCR_RD(prAdapter, u4DmaCfgCrAddr+0x0c, &u4_hw_didx_value);
-
-		queue_cnt = (u4_hw_didx_value > u4_hw_cidx_value) ?
-			(u4_hw_didx_value - u4_hw_cidx_value - 1) :
-			(u4_hw_didx_value - u4_hw_cidx_value
-			+ u4_hw_cnt_value - 1);
-
-		DBGLOG(HAL, INFO, "%4d %16s %8x %10x %6x %6x %6x %6x\n",
-					idx,
-					group->name,
-					u4DmaCfgCrAddr, u4_hw_desc_base_value,
-					u4_hw_cnt_value, u4_hw_cidx_value,
-					u4_hw_didx_value, queue_cnt);
-	}
-
-}
-
 static void dump_wfdma_dbg_value(
 	IN struct ADAPTER *prAdapter,
 	IN enum _ENUM_WFDMA_TYPE_T enum_wfdma_type,
@@ -1496,9 +1249,9 @@ void show_wfdma_dbg_log(
 {
 	/* Dump Host WFMDA info */
 	DBGLOG(HAL, TRACE, "WFMDA Configuration:\n");
-	show_wfdma_interrupt_info(prAdapter, enum_wfdma_type);
-	show_wfdma_glo_info(prAdapter, enum_wfdma_type);
-	show_wfdma_ring_info(prAdapter, enum_wfdma_type);
+	connac2x_show_wfdma_interrupt_info(prAdapter, enum_wfdma_type);
+	connac2x_show_wfdma_glo_info(prAdapter, enum_wfdma_type);
+	connac2x_show_wfdma_ring_info(prAdapter, enum_wfdma_type);
 }
 
 void soc3_0_show_wfdma_info(IN struct ADAPTER *prAdapter)

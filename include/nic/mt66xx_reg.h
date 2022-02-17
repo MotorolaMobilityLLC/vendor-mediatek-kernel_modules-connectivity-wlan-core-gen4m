@@ -102,6 +102,9 @@ extern struct mt66xx_hif_driver_data mt66xx_driver_data_mt7961;
 #ifdef SOC5_0
 extern struct mt66xx_hif_driver_data mt66xx_driver_data_soc5_0;
 #endif /* SOC5_0 */
+#ifdef SOC7_0
+extern struct mt66xx_hif_driver_data mt66xx_driver_data_soc7_0;
+#endif /* SOC7_0 */
 
 /*******************************************************************************
  *                              C O N S T A N T S
