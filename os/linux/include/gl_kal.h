@@ -87,6 +87,7 @@
 #endif
 
 #include "linux/kallsyms.h"
+#include "linux/sched.h"
 
 #if CFG_SUPPORT_SCAN_CACHE_RESULT
 #include "wireless/core.h"
@@ -403,6 +404,19 @@ struct KAL_HALT_CTRL_T {
 	u_int8_t fgHalt;
 	u_int8_t fgHeldByKalIoctl;
 	OS_SYSTIME u4HoldStart;
+};
+
+struct KAL_THREAD_SCHEDSTATS {
+	/* when marked: the profiling start time(ms),
+	 * when unmarked: total duration(ms)
+	 */
+	unsigned long long time;
+	/* time spent in exec (sum_exec_runtime) */
+	unsigned long long exec;
+	/* time spent in run-queue while not being scheduled (wait_sum) */
+	unsigned long long runnable;
+	/* time spent waiting for I/O (iowait_sum) */
+	unsigned long long iowait;
 };
 
 /*******************************************************************************
@@ -886,14 +900,14 @@ do { \
 /* Macros of show stack operations for using in Driver Layer                  */
 /*----------------------------------------------------------------------------*/
 #ifdef CONFIG_X86
-#define kal_show_stack(_task, _sp)
+#define kal_show_stack(_adapter, _task, _sp)
 #else
-/* TODO: temp remove for 7663 on mobile */
-/*
- * #define kal_show_stack(_task, _sp) \
- *	show_stack(_task, _sp)
- */
-#define kal_show_stack(_task, _sp)
+#define kal_show_stack(_adapter, _task, _sp) \
+{ \
+	if (_adapter->chip_info->showTaskStack) { \
+		_adapter->chip_info->showTaskStack(_task, _sp); \
+	} \
+}
 #endif
 
 /*******************************************************************************
