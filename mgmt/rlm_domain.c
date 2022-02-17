@@ -2187,6 +2187,12 @@ void rlmDomainCountryCodeUpdate(
 {
 	uint32_t u4FinalCountryCode = u4CountryCode;
 	char acCountryCodeStr[MAX_COUNTRY_CODE_LEN + 1] = {0};
+#ifdef CFG_SUPPORT_BT_SKU
+	typedef void (*bt_fn_t) (char *);
+	bt_fn_t bt_func = NULL;
+	char *bt_func_name = "btmtk_set_country_code_from_wifi";
+	void *func_addr = NULL;
+#endif
 
 	if (rlmDomainIsUsingLocalRegDomainDataBase()) {
 		u4FinalCountryCode =
@@ -2202,6 +2208,22 @@ void rlmDomainCountryCodeUpdate(
 			MAX_COUNTRY_CODE_LEN);
 
 	DBGLOG(RLM, INFO, "g_mtk_regd_control.alpha2 = %s\n", acCountryCodeStr);
+#ifdef CFG_SUPPORT_BT_SKU
+#if (CFG_ENABLE_GKI_SUPPORT != 1)
+	func_addr = GLUE_SYMBOL_GET(bt_func_name);
+#endif
+	if (func_addr) {
+		bt_func = (bt_fn_t) func_addr;
+		bt_func(acCountryCodeStr);
+#if (CFG_ENABLE_GKI_SUPPORT != 1)
+		GLUE_SYMBOL_PUT(bt_func_name);
+#endif
+	} else {
+		DBGLOG(RLM, ERROR,
+		       "Can't find function %s\n",
+		       bt_func_name);
+	}
+#endif
 
 	if (pWiphy)
 		rlmDomainParsingChannel(pWiphy);
@@ -7369,3 +7391,11 @@ void rlmDomainU32ToAlpha(uint32_t u4CountryCode, char *pcAlpha)
 	for (ucIdx = 0; ucIdx < MAX_COUNTRY_CODE_LEN; ucIdx++)
 		pcAlpha[ucIdx] = ((u4CountryCode >> (ucIdx * 8)) & 0xff);
 }
+
+#if (CFG_SUPPORT_SINGLE_SKU == 1)
+void rlm_get_alpha2(char *alpha2)
+{
+	rlmDomainU32ToAlpha(g_mtk_regd_control.alpha2, alpha2);
+}
+EXPORT_SYMBOL(rlm_get_alpha2);
+#endif
