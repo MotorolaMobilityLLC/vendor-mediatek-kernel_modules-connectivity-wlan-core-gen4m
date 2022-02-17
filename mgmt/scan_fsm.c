@@ -1101,6 +1101,7 @@ scnFsmSchedScanRequest(IN struct ADAPTER *prAdapter,
 	prSchedScanParam->ucBssIndex = prAisBssInfo->ucBssIndex;
 	prSchedScanParam->fgStopAfterIndication = FALSE;
 
+	prSchedScanCmd->ucBssIndex = prSchedScanParam->ucBssIndex;
 	if (!IS_NET_ACTIVE(prAdapter, prAisBssInfo->ucBssIndex)) {
 		SET_NET_ACTIVE(prAdapter, prAisBssInfo->ucBssIndex);
 		/* sync with firmware */
