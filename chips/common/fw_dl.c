@@ -1501,6 +1501,38 @@ uint32_t wlanImageQueryStatus(IN struct ADAPTER *prAdapter)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * @brief This function is called to return the string of WFDL status code
+ *
+ *
+ * @param ucStatus  Status code of FWDL event
+ *
+ * @return String of FWDL event status code
+ */
+/*----------------------------------------------------------------------------*/
+static char *wlanInitEventStatusCodeToStr(uint8_t ucStatus)
+{
+	switch (ucStatus) {
+	case WIFI_FW_DOWNLOAD_SUCCESS:
+		return "success";
+	case WIFI_FW_DOWNLOAD_INVALID_PARAM:
+		return "invalid param";
+	case WIFI_FW_DOWNLOAD_INVALID_CRC:
+		return "invalid crc";
+	case WIFI_FW_DOWNLOAD_DECRYPTION_FAIL:
+		return "decrypt fail";
+	case WIFI_FW_DOWNLOAD_UNKNOWN_CMD:
+		return "unknown";
+	case WIFI_FW_DOWNLOAD_TIMEOUT:
+		return "timeout";
+	case WIFI_FW_DOWNLOAD_SEC_BOOT_CHK_FAIL:
+		return "sec boot fail";
+	default:
+		return "unknown";
+	}
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * @brief This function is called to confirm the status of
  *        previously downloaded firmware scatter
  *
@@ -1561,8 +1593,11 @@ uint32_t wlanConfigWifiFuncStatus(IN struct ADAPTER
 				/* 0 for download success */
 				if (prEventCmdResult->ucStatus != 0) {
 					DBGLOG(INIT, ERROR,
-						"Start CMD failed, status[%u]\n",
-					  prEventCmdResult->ucStatus);
+					"Start CMD failed, status[%u]:%s\n",
+					prEventCmdResult->ucStatus,
+					wlanInitEventStatusCodeToStr(
+						prEventCmdResult->ucStatus)
+					);
 #if CFG_SUPPORT_COMPRESSION_FW_OPTION
 					if (prEventCmdResult->ucStatus ==
 					    WIFI_FW_DECOMPRESSION_FAILED)
