@@ -658,10 +658,11 @@ void aisFsmUninit(IN struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 				prAisBssInfo->ucBssIndex);
 			if (!fgHalted)
 				nicDeactivateNetwork(prAdapter,
-					prAisBssInfo->ucBssIndex);
+				       NETWORK_ID(prAisBssInfo->ucBssIndex, i));
 
 			if (prAisBssInfo->prBeacon) {
-				cnmMgtPktFree(prAdapter, prAisBssInfo->prBeacon);
+				cnmMgtPktFree(prAdapter,
+					prAisBssInfo->prBeacon);
 				prAisBssInfo->prBeacon = NULL;
 			}
 
@@ -2250,19 +2251,34 @@ void aisFsmSteps(IN struct ADAPTER *prAdapter,
 			break;
 
 		case AIS_STATE_REQ_CHANNEL_JOIN:
-			// TODO: mlo multi channel
-			/* stop Tx due to we need to connect a new AP. even the
-			 ** new AP is operating on the same channel with current
-			 ** , we still need to stop Tx, because firmware should
-			 ** ensure all mgmt and dhcp packets are Tx in time,
-			 ** and may cause normal data packets was queued and
-			 ** eventually flushed in firmware
-			 */
-			if (prAisBssInfo->prStaRecOfAP &&
-			    prAisFsmInfo->ucReasonOfDisconnect !=
-			    DISCONNECT_REASON_CODE_REASSOCIATION)
-				prAisBssInfo->
-				    prStaRecOfAP->fgIsTxAllowed = FALSE;
+			for (i = 0; i < MLD_LINK_MAX; i++) {
+				struct BSS_INFO *bss = aisGetLinkBssInfo(
+					prAisFsmInfo, i);
+
+				if (!aisGetLinkBssDesc(prAisFsmInfo, i))
+					break;
+
+				/* for secondary link */
+				if (!IS_NET_ACTIVE(prAdapter, bss->ucBssIndex)) {
+					SET_NET_ACTIVE(prAdapter,
+						       bss->ucBssIndex);
+					/* sync with firmware */
+					nicActivateNetwork(prAdapter,
+						NETWORK_ID(bss->ucBssIndex, i));
+				}
+				/* stop Tx due to we need to connect a new AP. even the
+				 ** new AP is operating on the same channel with current
+				 ** , we still need to stop Tx, because firmware should
+				 ** ensure all mgmt and dhcp packets are Tx in time,
+				 ** and may cause normal data packets was queued and
+				 ** eventually flushed in firmware
+				 */
+				if (bss->prStaRecOfAP &&
+				    prAisFsmInfo->ucReasonOfDisconnect !=
+				    DISCONNECT_REASON_CODE_REASSOCIATION)
+					bss->prStaRecOfAP->fgIsTxAllowed =
+									FALSE;
+			}
 
 			/* send message to CNM for acquiring channel */
 			prMsgChReq =
@@ -7229,7 +7245,8 @@ void aisDeactivateAllLink(IN struct ADAPTER *prAdapter,
 
 		if (IS_NET_ACTIVE(prAdapter, bss->ucBssIndex)) {
 			UNSET_NET_ACTIVE(prAdapter, bss->ucBssIndex);
-			nicDeactivateNetwork(prAdapter,	bss->ucBssIndex);
+			nicDeactivateNetwork(prAdapter,
+				NETWORK_ID(bss->ucBssIndex, i));
 		}
 	}
 }

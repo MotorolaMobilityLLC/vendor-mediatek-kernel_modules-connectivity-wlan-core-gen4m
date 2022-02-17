@@ -1597,9 +1597,9 @@ uint8_t nicGetHe6gS1(uint8_t ucPrimaryChannel,
 /* NETWORK (WIFISYS) */
 
 uint32_t nicActivateNetwork(IN struct ADAPTER *prAdapter,
-			    IN uint8_t ucBssIndex)
+			    IN uint8_t ucNetworkIndex)
 {
-	return nicActivateNetworkEx(prAdapter, ucBssIndex, TRUE);
+	return nicActivateNetworkEx(prAdapter, ucNetworkIndex, TRUE);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1614,11 +1614,14 @@ uint32_t nicActivateNetwork(IN struct ADAPTER *prAdapter,
  */
 /*----------------------------------------------------------------------------*/
 uint32_t nicActivateNetworkEx(IN struct ADAPTER *prAdapter,
-			    IN uint8_t ucBssIndex,
+			    IN uint8_t ucNetworkIndex,
 			    IN uint8_t fgReset40mBw)
 {
 	struct CMD_BSS_ACTIVATE_CTRL rCmdActivateCtrl;
 	struct BSS_INFO *prBssInfo;
+	uint8_t ucBssIndex = NETWORK_BSS_ID(ucNetworkIndex);
+	uint8_t ucLinkIndex = NETWORK_LINK_ID(ucNetworkIndex);
+
 	/*	const UINT_8 aucZeroMacAddr[] = NULL_MAC_ADDR; */
 
 	ASSERT(prAdapter);
@@ -1646,20 +1649,16 @@ uint32_t nicActivateNetworkEx(IN struct ADAPTER *prAdapter,
 					 STA_REC_INDEX_NOT_FOUND,
 					 CIPHER_SUITE_NONE, 0xFF);
 	rCmdActivateCtrl.ucBMCWlanIndex = prBssInfo->ucBMCWlanIndex;
+	rCmdActivateCtrl.ucMLOLinkIdx = ucLinkIndex;
 
-	kalMemZero(&rCmdActivateCtrl.ucReserved,
-		   sizeof(rCmdActivateCtrl.ucReserved));
-
-#if 1
 	DBGLOG(RSN, INFO,
-	       "[BSS index]=%d OwnMac%d=" MACSTR " BSSID=" MACSTR
+	       "[BSS index]=%d Link=%d OwnMac%d=" MACSTR " BSSID=" MACSTR
 	       " BMCIndex = %d NetType=%d\n",
-	       ucBssIndex,
+	       ucBssIndex, ucLinkIndex,
 	       prBssInfo->ucOwnMacIndex,
 	       MAC2STR(prBssInfo->aucOwnMacAddr),
 	       MAC2STR(prBssInfo->aucBSSID),
 	       prBssInfo->ucBMCWlanIndex, prBssInfo->eNetworkType);
-#endif
 
 	return wlanSendSetQueryCmd(prAdapter,
 				   CMD_ID_BSS_ACTIVATE_CTRL,
@@ -1672,9 +1671,9 @@ uint32_t nicActivateNetworkEx(IN struct ADAPTER *prAdapter,
 }
 
 uint32_t nicDeactivateNetwork(IN struct ADAPTER *prAdapter,
-				IN uint8_t ucBssIndex)
+				IN uint8_t ucNetworkIndex)
 {
-	return nicDeactivateNetworkEx(prAdapter, ucBssIndex, TRUE);
+	return nicDeactivateNetworkEx(prAdapter, ucNetworkIndex, TRUE);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1689,12 +1688,14 @@ uint32_t nicDeactivateNetwork(IN struct ADAPTER *prAdapter,
  */
 /*----------------------------------------------------------------------------*/
 uint32_t nicDeactivateNetworkEx(IN struct ADAPTER *prAdapter,
-				IN uint8_t ucBssIndex,
+				IN uint8_t ucNetworkIndex,
 				IN uint8_t fgClearStaRec)
 {
 	uint32_t u4Status;
 	struct CMD_BSS_ACTIVATE_CTRL rCmdActivateCtrl;
 	struct BSS_INFO *prBssInfo;
+	uint8_t ucBssIndex = NETWORK_BSS_ID(ucNetworkIndex);
+	uint8_t ucLinkIndex = NETWORK_LINK_ID(ucNetworkIndex);
 
 	ASSERT(prAdapter);
 	ASSERT(ucBssIndex <= prAdapter->ucHwBssIdNum);
@@ -1722,11 +1723,12 @@ uint32_t nicDeactivateNetworkEx(IN struct ADAPTER *prAdapter,
 		prBssInfo->ucOwnMacIndex;
 	rCmdActivateCtrl.ucBMCWlanIndex =
 		prBssInfo->ucBMCWlanIndex;
+	rCmdActivateCtrl.ucMLOLinkIdx = ucLinkIndex;
 
 	DBGLOG(RSN, INFO,
-	       "[BSS index]=%d OwnMac=" MACSTR " BSSID=" MACSTR
+	       "[BSS index]=%d Link=%d OwnMac=" MACSTR " BSSID=" MACSTR
 	       " BMCIndex = %d NetType=%d\n",
-	       ucBssIndex,
+	       ucBssIndex, ucLinkIndex,
 	       MAC2STR(prBssInfo->aucOwnMacAddr),
 	       MAC2STR(prBssInfo->aucBSSID),
 	       prBssInfo->ucBMCWlanIndex, prBssInfo->eNetworkType);
