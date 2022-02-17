@@ -1346,6 +1346,81 @@ void scanRemoveConnFlagOfBssDescByBssid(IN struct ADAPTER *prAdapter,
 	}
 }	/* end of scanRemoveConnectionFlagOfBssDescByBssid() */
 
+
+#if (CFG_SUPPORT_802_11V_MBSSID == 1)
+/*----------------------------------------------------------------------------*/
+/*!
+ * @brief Allocate new BSS_DESC structure
+ *
+ * @param[in] prAdapter          Pointer to the Adapter structure.
+ *
+ * @return   Pointer to BSS Descriptor, if has
+ *           free space. NULL, if has no space.
+ */
+/*----------------------------------------------------------------------------*/
+void scanParsingMBSSIDSubelement(IN struct ADAPTER *prAdapter,
+	IN struct BSS_DESC *prTransBSS, IN struct IE_MBSSID *prMbssidIe)
+{
+	uint8_t *pucIE;
+	uint16_t u2IELength, u2Offset;
+	uint8_t *pucProfileIE;
+	uint16_t u2ProfileLen, u2ProfileOffset;
+	struct BSS_DESC *prBssDesc;
+	struct IE_MBSSID_INDEX *prMbssidIdxIe;
+	uint8_t aucBSSID[MAC_ADDR_LEN];
+	int8_t ucBssidLsb;
+
+	if (prMbssidIe->ucMaxBSSIDIndicator == 0) /* invalid mbssid ie*/
+		return;
+
+	prTransBSS->ucMaxBSSIDIndicator = prMbssidIe->ucMaxBSSIDIndicator;
+	u2Offset = 0;
+	pucIE = &prMbssidIe->ucSubelements[0];
+	u2IELength = IE_SIZE(prMbssidIe) -
+		OFFSET_OF(struct IE_MBSSID, ucSubelements);
+	IE_FOR_EACH(pucIE, u2IELength, u2Offset)
+	{
+		pucProfileIE = NULL;
+		/*search for each nontransmitted bssid profile*/
+		if (IE_ID(pucIE) == NON_TX_BSSID_PROFILE) {
+			pucProfileIE = &((struct IE_HDR *)pucIE)->aucInfo[0];
+			u2ProfileLen = IE_LEN(pucIE);
+			u2ProfileOffset = 0;
+		}
+		if (pucProfileIE == NULL)
+			continue;
+
+		/*search for mbssid index ie in each profile*/
+		prMbssidIdxIe = NULL;
+		IE_FOR_EACH(pucProfileIE, u2ProfileLen, u2ProfileOffset) {
+			if (IE_ID(pucProfileIE) == ELEM_ID_MBSSID_INDEX) {
+				prMbssidIdxIe =	MBSSID_INDEX_IE(pucProfileIE);
+				break;
+			}
+		}
+		if (prMbssidIdxIe == NULL)
+			continue;
+
+		/*calculate BSSID of this profile*/
+		kalMemCopy(aucBSSID, &prTransBSS->aucBSSID[0], MAC_ADDR_LEN);
+		ucBssidLsb = aucBSSID[5] &
+				((1 << prMbssidIe->ucMaxBSSIDIndicator) - 1);
+		aucBSSID[5] &= ~((1 << prMbssidIe->ucMaxBSSIDIndicator) - 1);
+		aucBSSID[5] |= (ucBssidLsb + prMbssidIdxIe->ucBSSIDIndex) %
+				  (1 << prMbssidIe->ucMaxBSSIDIndicator);
+
+		prBssDesc = scanSearchBssDescByBssidAndSsid(prAdapter,
+					aucBSSID, FALSE, NULL);
+		if (prBssDesc) {
+			prBssDesc->ucMaxBSSIDIndicator =
+				prMbssidIe->ucMaxBSSIDIndicator;
+			prBssDesc->ucMBSSIDIndex =
+				prMbssidIdxIe->ucBSSIDIndex;
+		}
+	}
+}
+#endif
+
 /*----------------------------------------------------------------------------*/
 /*!
  * @brief Allocate new BSS_DESC structure
@@ -2098,6 +2173,21 @@ VHT_CAP_INFO_NUMBER_OF_SOUNDING_DIMENSIONS_OFFSET
 			kalMemCopy(prBssDesc->aucRrmCap, pucIE + 2,
 				   sizeof(prBssDesc->aucRrmCap));
 			break;
+#if (CFG_SUPPORT_802_11V_MBSSID == 1)
+		case ELEM_ID_MBSSID:
+			if (MBSSID_IE(pucIE)->ucMaxBSSIDIndicator <= 0 ||
+				MBSSID_IE(pucIE)->ucMaxBSSIDIndicator > 8) {
+				/* invalid Multiple BSSID ie
+				* (must in range 1~8)
+				*/
+				break;
+			}
+
+			scanParsingMBSSIDSubelement(prAdapter,
+						prBssDesc, MBSSID_IE(pucIE));
+			break;
+#endif
+
 			/* no default */
 		}
 	}
