@@ -253,12 +253,7 @@ static struct ieee80211_channel mtk_5ghz_channels[] = {
 	CHAN5G(140, 0), CHAN5G(144, 0),
 	CHAN5G(149, 0), CHAN5G(153, 0),
 	CHAN5G(157, 0), CHAN5G(161, 0),
-	CHAN5G(165, 0),	CHAN5G(169, 0),
-	CHAN5G(173, 0), CHAN5G(184, 0),
-	CHAN5G(188, 0), CHAN5G(192, 0),
-	CHAN5G(196, 0), CHAN5G(200, 0),
-	CHAN5G(204, 0), CHAN5G(208, 0),
-	CHAN5G(212, 0), CHAN5G(216, 0),
+	CHAN5G(165, 0)
 };
 
 #define RATETAB_ENT(_rate, _rateid, _flags)	\
