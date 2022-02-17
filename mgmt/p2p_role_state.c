@@ -478,10 +478,14 @@ p2pRoleStateInit_SWITCH_CHANNEL(IN struct ADAPTER *prAdapter,
 		IN uint8_t ucBssIdx,
 		IN struct P2P_CHNL_REQ_INFO *prChnlReqInfo)
 {
+	struct BSS_INFO *prBssInfo = (struct BSS_INFO *) NULL;
+
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIdx);
 
 	do {
 		ASSERT_BREAK((prAdapter != NULL) && (prChnlReqInfo != NULL));
 
+		prBssInfo->fgIsSwitchingChnl = TRUE;
 		p2pFuncAcquireCh(prAdapter, ucBssIdx, prChnlReqInfo);
 	} while (FALSE);
 }				/* p2pRoleStateInit_SWITCH_CHANNEL */
