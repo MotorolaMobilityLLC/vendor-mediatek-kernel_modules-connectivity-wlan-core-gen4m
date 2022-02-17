@@ -378,14 +378,12 @@ VOID aisFsmUninit(IN P_ADAPTER_T prAdapter)
 {
 	P_AIS_FSM_INFO_T prAisFsmInfo;
 	P_BSS_INFO_T prAisBssInfo;
-	P_AIS_SPECIFIC_BSS_INFO_T prAisSpecificBssInfo;
 
 	DEBUGFUNC("aisFsmUninit()");
 	DBGLOG(SW1, INFO, "->aisFsmUninit()\n");
 
 	prAisFsmInfo = &(prAdapter->rWifiVar.rAisFsmInfo);
 	prAisBssInfo = prAdapter->prAisBssInfo;
-	prAisSpecificBssInfo = &(prAdapter->rWifiVar.rAisSpecificBssInfo);
 
 	/* 4 <1> Stop all timers */
 	cnmTimerStopTimer(prAdapter, &prAisFsmInfo->rBGScanTimer);
@@ -398,18 +396,20 @@ VOID aisFsmUninit(IN P_ADAPTER_T prAdapter)
 	aisFsmFlushRequest(prAdapter);
 
 	/* 4 <3> Reset driver-domain BSS-INFO */
-	if (prAisBssInfo->prBeacon) {
-		cnmMgtPktFree(prAdapter, prAisBssInfo->prBeacon);
-		prAisBssInfo->prBeacon = NULL;
-	}
-#if CFG_SUPPORT_802_11W
-	rsnStopSaQuery(prAdapter);
-#endif
-
 	if (prAisBssInfo) {
+
+		if (prAisBssInfo->prBeacon) {
+			cnmMgtPktFree(prAdapter, prAisBssInfo->prBeacon);
+			prAisBssInfo->prBeacon = NULL;
+		}
+
 		cnmFreeBssInfo(prAdapter, prAisBssInfo);
 		prAdapter->prAisBssInfo = NULL;
 	}
+
+#if CFG_SUPPORT_802_11W
+	rsnStopSaQuery(prAdapter);
+#endif
 }				/* end of aisFsmUninit() */
 
 /*----------------------------------------------------------------------------*/
