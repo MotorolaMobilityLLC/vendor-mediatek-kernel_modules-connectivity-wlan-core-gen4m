@@ -6433,6 +6433,7 @@ p2pFuncNeedWaitRsp(IN struct ADAPTER *prAdapter,
 	case P2P_CNN_GO_NEG_REQ:
 	case P2P_CNN_GO_NEG_RESP:
 	case P2P_CNN_INVITATION_REQ:
+	case P2P_CNN_INVITATION_RESP:
 	case P2P_CNN_DEV_DISC_REQ:
 	case P2P_CNN_PROV_DISC_REQ:
 		return TRUE;
