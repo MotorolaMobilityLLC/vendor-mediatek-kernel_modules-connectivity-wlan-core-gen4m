@@ -960,6 +960,13 @@ struct WIFI_VAR {
 	uint8_t ucAdvPws; /* enable LP multiple DTIM function, default enable */
 	uint8_t ucWowOnMdtim; /* multiple DTIM if WOW enable, default 1 */
 	uint8_t ucWowOffMdtim; /* multiple DTIM if WOW disable, default 3 */
+	/* set wow detect type, default 1 (magic packet) */
+	/* bit 0, magic packet */
+	/* bit 1, any */
+	/* bit 2, disconnect */
+	/* bit 3, GTK rekey failure */
+	/* bit 4, beacon lost */
+	uint8_t ucWowDetectType;
 	uint32_t u4TxHangFullDumpMode;
 
 	uint8_t u4SwTestMode;
