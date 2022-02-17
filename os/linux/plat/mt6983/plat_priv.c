@@ -194,6 +194,27 @@ void kalSetDramBoost(IN struct ADAPTER *prAdapter, IN u_int8_t onoff)
 #endif
 }
 
+static int kalSetCpuMask(struct task_struct *task, uint32_t set_mask)
+{
+	int r = -1;
+#if CFG_SUPPORT_TPUT_ON_BIG_CORE
+	struct cpumask cpu_mask;
+	int i;
+
+	if (set_mask == CPU_ALL_CORE)
+		r = set_cpus_allowed_ptr(task, cpu_all_mask);
+	else {
+		cpumask_clear(&cpu_mask);
+		for (i = 0; i < num_possible_cpus(); i++)
+			if ((0x1 << i) & set_mask)
+				cpumask_or(&cpu_mask, &cpu_mask, cpumask_of(i));
+		r = set_cpus_allowed_ptr(task, &cpu_mask);
+	}
+	DBGLOG(INIT, INFO, "set_cpus_allowed_ptr()=%d", r);
+#endif
+	return r;
+}
+
 #if KERNEL_VERSION(5, 4, 0) <= CFG80211_VERSION_CODE
 int32_t kalBoostCpu(IN struct ADAPTER *prAdapter,
 		    IN uint32_t u4TarPerfLevel,
@@ -218,6 +239,10 @@ int32_t kalBoostCpu(IN struct ADAPTER *prAdapter,
 				u4TarPerfLevel, u4BoostCpuTh);
 			fgRequested = ENUM_CPU_BOOST_STATUS_START;
 
+			kalSetCpuMask(prGlueInfo->hif_thread, CPU_BIG_CORE);
+			kalSetCpuMask(prGlueInfo->main_thread, CPU_BIG_CORE);
+			kalSetCpuMask(prGlueInfo->rx_thread, CPU_BIG_CORE);
+
 			kalSetTaskUtilMinPct(prGlueInfo->u4TxThreadPid, 100);
 			kalSetTaskUtilMinPct(prGlueInfo->u4RxThreadPid, 100);
 			kalSetTaskUtilMinPct(prGlueInfo->u4HifThreadPid, 100);
@@ -230,6 +255,10 @@ int32_t kalBoostCpu(IN struct ADAPTER *prAdapter,
 			pr_info("kalBoostCpu stop (%d<%d)\n",
 				u4TarPerfLevel, u4BoostCpuTh);
 			fgRequested = ENUM_CPU_BOOST_STATUS_STOP;
+
+			kalSetCpuMask(prGlueInfo->hif_thread, CPU_ALL_CORE);
+			kalSetCpuMask(prGlueInfo->main_thread, CPU_ALL_CORE);
+			kalSetCpuMask(prGlueInfo->rx_thread, CPU_ALL_CORE);
 
 			kalSetTaskUtilMinPct(prGlueInfo->u4TxThreadPid, 0);
 			kalSetTaskUtilMinPct(prGlueInfo->u4RxThreadPid, 0);
