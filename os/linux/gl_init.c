@@ -3748,17 +3748,18 @@ uint32_t wlanServiceExit(struct GLUE_INFO *prGlueInfo)
 	if (rStatus != WLAN_STATUS_SUCCESS)
 		DBGLOG(INIT, WARN, "wlanServiceExit fail err:%d\n", rStatus);
 
-	if (prServiceTest->test_winfo)
-		kalMemFree(prServiceTest->test_winfo,
-		VIR_MEM_TYPE, sizeof(struct test_wlan_info));
+	if (prGlueInfo->rService.serv_handle) {
+		if (prServiceTest->test_winfo)
+			kalMemFree(prServiceTest->test_winfo,
+			VIR_MEM_TYPE, sizeof(struct test_wlan_info));
 
-	if (prServiceTest->test_op)
-		kalMemFree(prServiceTest->test_op,
-		VIR_MEM_TYPE, sizeof(struct test_operation));
+		if (prServiceTest->test_op)
+			kalMemFree(prServiceTest->test_op,
+			VIR_MEM_TYPE, sizeof(struct test_operation));
 
-	if (prGlueInfo->rService.serv_handle)
 		kalMemFree(prGlueInfo->rService.serv_handle,
 		VIR_MEM_TYPE, sizeof(struct service_test));
+	}
 
 	prGlueInfo->rService.serv_id = 0;
 
