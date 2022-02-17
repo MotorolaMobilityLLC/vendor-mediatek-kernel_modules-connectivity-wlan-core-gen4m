@@ -2796,7 +2796,8 @@ typedef struct _EXT_EVENT_GET_TX_POWER_T {
 typedef struct _CMD_SUSPEND_MODE_SETTING_T {
 	UINT_8 ucBssIndex;
 	UINT_8 ucEnableSuspendMode;
-	UINT_8 ucReserved1[2];
+	UINT_8 ucMdtim; /* LP parameter */
+	UINT_8 ucReserved1[1];
 	UINT_8 ucReserved2[64];
 } CMD_SUSPEND_MODE_SETTING_T, *P_CMD_SUSPEND_MODE_SETTING_T;
 
