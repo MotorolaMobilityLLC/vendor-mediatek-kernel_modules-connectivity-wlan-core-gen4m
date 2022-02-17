@@ -120,10 +120,12 @@ static const struct pci_device_id mtk_pci_ids[] = {
 	{	PCI_DEVICE(CONNAC_PCI_VENDOR_ID, CONNAC_PCIe_DEVICE_ID),
 		.driver_data = (kernel_ulong_t)&mt66xx_driver_data_connac},
 #endif /* CONNAC */
-#ifdef CONNAC2X2
-	{	PCI_DEVICE(CONNAC_PCI_VENDOR_ID, CONNAC_PCIe_DEVICE_ID),
-		.driver_data = (kernel_ulong_t)&mt66xx_driver_data_connac2x2},
-#endif /* CONNAC */
+#ifdef SOC2_1X1
+		.driver_data = (kernel_ulong_t)&mt66xx_driver_data_soc2_1x1},
+#endif /* SOC2_1X1 */
+#ifdef SOC2_2X2
+		.driver_data = (kernel_ulong_t)&mt66xx_driver_data_soc2_2x2},
+#endif /* SOC2_2X2 */
 #ifdef MT7915
 	{	PCI_DEVICE(MTK_PCI_VENDOR_ID, NIC7915_PCIe_DEVICE_ID),
 		.driver_data = (kernel_ulong_t)&mt66xx_driver_data_mt7915},
