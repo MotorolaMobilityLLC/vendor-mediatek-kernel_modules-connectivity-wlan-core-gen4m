@@ -875,8 +875,6 @@ void p2pRoleFsmRunEventRxDeauthentication(IN struct ADAPTER *prAdapter,
 					FALSE,
 					u2ReasonCode);
 
-				p2pFuncStopComplete(prAdapter, prP2pBssInfo);
-
 				SET_NET_PWR_STATE_IDLE(prAdapter,
 					prP2pBssInfo->ucBssIndex);
 
@@ -885,6 +883,8 @@ void p2pRoleFsmRunEventRxDeauthentication(IN struct ADAPTER *prAdapter,
 						prAdapter,
 						prP2pBssInfo->u4PrivateData),
 						P2P_ROLE_STATE_IDLE);
+
+				p2pFuncStopComplete(prAdapter, prP2pBssInfo);
 			}
 			break;
 		case OP_MODE_ACCESS_POINT:
@@ -1024,8 +1024,6 @@ void p2pRoleFsmRunEventRxDisassociation(IN struct ADAPTER *prAdapter,
 				FALSE,
 				prStaRec->u2ReasonCode);
 
-			p2pFuncStopComplete(prAdapter, prP2pBssInfo);
-
 			SET_NET_PWR_STATE_IDLE(prAdapter,
 				prP2pBssInfo->ucBssIndex);
 
@@ -1033,6 +1031,8 @@ void p2pRoleFsmRunEventRxDisassociation(IN struct ADAPTER *prAdapter,
 				P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prAdapter,
 					prP2pBssInfo->u4PrivateData),
 					P2P_ROLE_STATE_IDLE);
+
+			p2pFuncStopComplete(prAdapter, prP2pBssInfo);
 		}
 		break;
 	case OP_MODE_ACCESS_POINT:
@@ -1152,8 +1152,6 @@ void p2pRoleFsmRunEventBeaconTimeout(IN struct ADAPTER *prAdapter,
 					prStaRec, FALSE,
 					REASON_CODE_DISASSOC_LEAVING_BSS);
 
-				p2pFuncStopComplete(prAdapter, prP2pBssInfo);
-
 				SET_NET_PWR_STATE_IDLE(prAdapter,
 					prP2pBssInfo->ucBssIndex);
 				/* 20120830 moved into p2pFuncDisconnect() */
@@ -1164,6 +1162,7 @@ void p2pRoleFsmRunEventBeaconTimeout(IN struct ADAPTER *prAdapter,
 					prP2pRoleFsmInfo,
 					P2P_ROLE_STATE_IDLE);
 
+				p2pFuncStopComplete(prAdapter, prP2pBssInfo);
 			}
 		}
 	} while (FALSE);
