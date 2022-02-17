@@ -152,9 +152,9 @@ struct MSG_P2P_CONNECTION_REQUEST {
 	uint8_t aucSrcMacAddr[MAC_ADDR_LEN];
 	enum ENUM_CHNL_EXT eChnlSco;
 	struct RF_CHANNEL_INFO rChannelInfo;
+	enum ENUM_PARAM_AUTH_MODE eAuthMode;
 	uint32_t u4IELen;
 	uint8_t aucIEBuf[1];
-	/* TODO: Auth Type, OPEN, SHARED, FT, EAP... */
 };
 
 struct MSG_P2P_CONNECTION_ABORT {
