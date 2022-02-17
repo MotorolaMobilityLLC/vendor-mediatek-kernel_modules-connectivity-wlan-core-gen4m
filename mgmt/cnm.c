@@ -1508,7 +1508,7 @@ struct BSS_INFO *cnmGetBssInfoAndInit(struct ADAPTER *prAdapter,
 				      u_int8_t fgIsP2pDevice)
 {
 	struct BSS_INFO *prBssInfo;
-	uint8_t ucBssIndex, ucOwnMacIdx;
+	uint8_t i, ucBssIndex, ucOwnMacIdx;
 
 	ASSERT(prAdapter);
 
@@ -1527,6 +1527,15 @@ struct BSS_INFO *cnmGetBssInfoAndInit(struct ADAPTER *prAdapter,
 #endif
 		/* init add key action */
 		prBssInfo->eKeyAction = SEC_TX_KEY_COMMAND;
+
+		/* initialize wlan id and status for keys */
+		prBssInfo->ucBMCWlanIndex = WTBL_RESERVED_ENTRY;
+		prBssInfo->wepkeyWlanIdx = WTBL_RESERVED_ENTRY;
+		for (i = 0; i < MAX_KEY_NUM; i++) {
+			prBssInfo->ucBMCWlanIndexSUsed[i] = FALSE;
+			prBssInfo->ucBMCWlanIndexS[i] = WTBL_RESERVED_ENTRY;
+			prBssInfo->wepkeyUsed[i] = FALSE;
+		}
 		return prBssInfo;
 	}
 
@@ -1611,6 +1620,15 @@ struct BSS_INFO *cnmGetBssInfoAndInit(struct ADAPTER *prAdapter,
 #endif
 		/* init add key action */
 		prBssInfo->eKeyAction = SEC_TX_KEY_COMMAND;
+
+		/* initialize wlan id and status for keys */
+		prBssInfo->ucBMCWlanIndex = WTBL_RESERVED_ENTRY;
+		prBssInfo->wepkeyWlanIdx = WTBL_RESERVED_ENTRY;
+		for (i = 0; i < MAX_KEY_NUM; i++) {
+			prBssInfo->ucBMCWlanIndexSUsed[i] = FALSE;
+			prBssInfo->ucBMCWlanIndexS[i] = WTBL_RESERVED_ENTRY;
+			prBssInfo->wepkeyUsed[i] = FALSE;
+		}
 	}
 	return prBssInfo;
 }
