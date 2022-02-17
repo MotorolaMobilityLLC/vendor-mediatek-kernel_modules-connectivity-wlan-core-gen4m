@@ -4957,6 +4957,20 @@ uint32_t nicApplyNetworkAddress(IN struct ADAPTER
 	return WLAN_STATUS_SUCCESS;
 }
 
+void nicApplyLinkAddress(struct ADAPTER *prAdapter,
+	uint8_t *pucSrcMAC,
+	uint8_t *pucDestMAC,
+	uint8_t ucLinkIdx)
+{
+	COPY_MAC_ADDR(pucDestMAC, pucSrcMAC);
+	pucDestMAC[5] ^= ucLinkIdx;
+
+	DBGLOG(NIC, INFO, "ucLinkIdx: %d, src mac: " MACSTR ", dest mac: " MACSTR "\n",
+		ucLinkIdx,
+		MAC2STR(pucSrcMAC),
+		MAC2STR(pucDestMAC));
+}
+
 #if 1
 uint8_t nicGetChipHwVer(void)
 {

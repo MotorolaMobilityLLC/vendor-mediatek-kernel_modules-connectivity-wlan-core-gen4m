@@ -522,6 +522,10 @@ uint32_t nicUpdateRddTestMode(IN struct ADAPTER *prAdapter,
 /*----------------------------------------------------------------------------*/
 uint32_t nicApplyNetworkAddress(IN struct ADAPTER
 				*prAdapter);
+void nicApplyLinkAddress(struct ADAPTER *prAdapter,
+	uint8_t *pucSrcMAC,
+	uint8_t *pucDestMAC,
+	uint8_t ucLinkIdx);
 
 /*----------------------------------------------------------------------------*/
 /* ECO Version                                                                */
