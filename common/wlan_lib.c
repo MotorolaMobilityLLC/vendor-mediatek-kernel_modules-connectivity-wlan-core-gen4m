@@ -7016,6 +7016,12 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 	if (fgEfuseCtrlAxOn == 1) {
 		prWifiVar->ucStaHe = (uint8_t)
 		wlanCfgGetUint32(prAdapter, "StaHE", FEATURE_ENABLED);
+		prWifiVar->ucApHe = (uint8_t)
+			wlanCfgGetUint32(prAdapter, "ApHE", FEATURE_ENABLED);
+		prWifiVar->ucP2pGoHe = (uint8_t)
+			wlanCfgGetUint32(prAdapter, "P2pGoHE", FEATURE_ENABLED);
+		prWifiVar->ucP2pGcHe = (uint8_t)
+			wlanCfgGetUint32(prAdapter, "P2pGcHE", FEATURE_ENABLED);
 
 		prWifiVar->ucApSelAxWeight = (uint8_t)
 		wlanCfgGetUint32(prAdapter, "ApSelAxWeight", AX_SEL_DEF_WEIGHT);
