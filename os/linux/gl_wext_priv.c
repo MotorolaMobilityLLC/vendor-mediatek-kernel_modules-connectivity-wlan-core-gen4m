@@ -10219,7 +10219,6 @@ int priv_driver_set_ap_get_sta_list(IN struct net_device *prNetDev,
 	struct STA_RECORD *prCurrStaRec, *prNextStaRec;
 	uint8_t ucRoleIdx = 0, ucBssIdx = 0;
 	int32_t i4BytesWritten = 0;
-	int i = 0;
 
 	DBGLOG(REQ, INFO, "command is %s\n", pcCommand);
 
@@ -10257,9 +10256,8 @@ int priv_driver_set_ap_get_sta_list(IN struct net_device *prNetDev,
 		i4BytesWritten += kalSnprintf(
 			pcCommand + i4BytesWritten,
 			i4TotalLen - i4BytesWritten,
-			"MAC[%d]=" MACSTR "\n",
-			i++,
-			MAC2STR(prCurrStaRec->aucMacAddr));
+			"%pM\n",
+			prCurrStaRec->aucMacAddr);
 	}
 
 	return i4BytesWritten;
