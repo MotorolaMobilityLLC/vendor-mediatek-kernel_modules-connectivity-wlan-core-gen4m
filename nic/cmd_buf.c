@@ -271,9 +271,13 @@ struct CMD_INFO *cmdBufAllocateCmdInfo(IN struct ADAPTER
 		       "CMD[0x%p] allocated! LEN[%04u], Rest[%u]\n",
 		       prCmdInfo, u4Length, prAdapter->rFreeCmdList.u4NumElem);
 	} else {
-		DBGLOG(MEM, LOUD,
+		DBGLOG(MEM, ERROR,
 		       "CMD allocation failed! LEN[%04u], Rest[%u]\n",
 		       u4Length, prAdapter->rFreeCmdList.u4NumElem);
+#if CFG_CHIP_RESET_SUPPORT
+		/* Trigger RESET */
+		GL_RESET_TRIGGER(prAdapter, RST_FLAG_CHIP_RESET);
+#endif
 	}
 
 	return prCmdInfo;
