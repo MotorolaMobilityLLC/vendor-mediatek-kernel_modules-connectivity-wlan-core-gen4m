@@ -1011,7 +1011,10 @@ try_again:
 	}
 
 	if (prCandBssDesc) {
-		if (prCandBssDesc->fgIsConnected && !fgSearchBlackList &&
+		if (prCandBssDesc ==
+				aisGetTargetBssDesc(prAdapter, ucBssIndex)) {
+			log_dbg(SCN, INFO, "Current connected AP\n");
+		} else if (prCandBssDesc->fgIsConnected && !fgSearchBlackList &&
 			prEssLink->u4NumElem > 0) {
 			fgSearchBlackList = TRUE;
 			log_dbg(SCN, INFO, "Can't roam out, try blacklist\n");
