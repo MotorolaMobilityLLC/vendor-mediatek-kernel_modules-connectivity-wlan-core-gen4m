@@ -5435,7 +5435,7 @@ int32_t kalReadToFile(const uint8_t *pucPath,
 	int32_t ret = -1;
 	uint32_t u4ReadSize = 0;
 
-	DBGLOG(INIT, INFO, "kalReadToFile() path %s\n", pucPath);
+	DBGLOG(INIT, TRACE, "kalReadToFile() path %s\n", pucPath);
 
 	file = kalFileOpen(pucPath, O_RDONLY, 0);
 

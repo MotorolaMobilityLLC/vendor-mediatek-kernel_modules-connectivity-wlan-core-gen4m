@@ -1797,7 +1797,7 @@ nicTxFillDesc(IN struct ADAPTER *prAdapter,
 		/* Overwrite fields for EOSP or More data */
 		nicTxFillDescByPktOption(prAdapter, prMsduInfo, prTxDesc);
 	} else { /* Compose TXD by Msdu info */
-		DBGLOG_LIMITED(NIC, INFO, "Compose TXD by Msdu info\n");
+		DBGLOG_LIMITED(NIC, TRACE, "Compose TXD by Msdu info\n");
 #if (UNIFIED_MAC_TX_FORMAT == 1)
 		if (prMsduInfo->eSrc == TX_PACKET_MGMT)
 			prMsduInfo->ucPacketFormat = TXD_PKT_FORMAT_COMMAND;

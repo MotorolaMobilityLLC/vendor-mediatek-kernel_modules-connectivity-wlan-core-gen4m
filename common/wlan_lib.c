@@ -1494,7 +1494,7 @@ uint32_t wlanCheckWifiFunc(IN struct ADAPTER *prAdapter,
 #endif
 
 	while (TRUE) {
-		DBGLOG_LIMITED(INIT, INFO,
+		DBGLOG_LIMITED(INIT, TRACE,
 			"Check ready_bits(=0x%x)\n", ready_bits);
 		if (fgRdyChk)
 			HAL_WIFI_FUNC_READY_CHECK(prAdapter,
@@ -7584,7 +7584,7 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 	prWifiVar->ucP2pGoACS = (uint32_t) wlanCfgGetUint32(
 			prAdapter, "P2pGoACSEnable",
 			FEATURE_DISABLED);
-	DBGLOG(INIT, WARN,
+	DBGLOG(INIT, TRACE,
 		"P2pGoACSEnable Setting:ACS Enable[%d]\n",
 		prAdapter->rWifiVar.ucP2pGoACS);
 
