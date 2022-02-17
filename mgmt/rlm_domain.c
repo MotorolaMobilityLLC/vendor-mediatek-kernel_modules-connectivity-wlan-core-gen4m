@@ -3151,7 +3151,8 @@ rlmDomainBuildCmdByDefaultTable(struct CMD_SET_COUNTRY_CHANNEL_POWER_LIMIT
 		prPwrLmtHE = &prCmd->u.rChPwrLimtHE[0];
 #if (CFG_SUPPORT_WIFI_6G == 1)
 	else if (eType == PWR_LIMIT_TYPE_COMP_6E_1 ||
-				eType == PWR_LIMIT_TYPE_COMP_6E_2)
+				eType == PWR_LIMIT_TYPE_COMP_6E_2 ||
+				eType == PWR_LIMIT_TYPE_COMP_6E_3)
 		prPwrLmt6E = &prCmd->u.rChPwrLimt6E[0];
 #endif
 	else
@@ -3165,6 +3166,9 @@ rlmDomainBuildCmdByDefaultTable(struct CMD_SET_COUNTRY_CHANNEL_POWER_LIMIT
 		endIndex = POWER_LIMIT_UNII5;
 	} else if (eType == PWR_LIMIT_TYPE_COMP_6E_2) {
 		startIndex = POWER_LIMIT_UNII6;
+		endIndex = POWER_LIMIT_UNII7;
+	} else if (eType == PWR_LIMIT_TYPE_COMP_6E_3) {
+		startIndex = POWER_LIMIT_UNII8;
 		endIndex = POWER_LIMIT_UNII8;
 	}
 #endif
@@ -3188,7 +3192,8 @@ rlmDomainBuildCmdByDefaultTable(struct CMD_SET_COUNTRY_CHANNEL_POWER_LIMIT
 				prPwrLmtHE->ucCentralCh = k;
 #if (CFG_SUPPORT_WIFI_6G == 1)
 			else if (eType == PWR_LIMIT_TYPE_COMP_6E_1 ||
-					eType == PWR_LIMIT_TYPE_COMP_6E_2)
+					eType == PWR_LIMIT_TYPE_COMP_6E_2 ||
+					eType == PWR_LIMIT_TYPE_COMP_6E_3)
 				prPwrLmt6E->ucCentralCh = k;
 #endif
 			else
@@ -3203,7 +3208,8 @@ rlmDomainBuildCmdByDefaultTable(struct CMD_SET_COUNTRY_CHANNEL_POWER_LIMIT
 						PWR_LIMIT_HE_NUM);
 #if (CFG_SUPPORT_WIFI_6G == 1)
 				else if (eType == PWR_LIMIT_TYPE_COMP_6E_1 ||
-					eType == PWR_LIMIT_TYPE_COMP_6E_2)
+					eType == PWR_LIMIT_TYPE_COMP_6E_2 ||
+					eType == PWR_LIMIT_TYPE_COMP_6E_3)
 					kalMemSet(&prPwrLmt6E->cPwrLimitRU26L,
 						cLmtBand,
 						PWR_LIMIT_6E_NUM);
@@ -3240,7 +3246,8 @@ rlmDomainBuildCmdByDefaultTable(struct CMD_SET_COUNTRY_CHANNEL_POWER_LIMIT
 				}
 #if (CFG_SUPPORT_WIFI_6G == 1)
 				else if (eType == PWR_LIMIT_TYPE_COMP_6E_1 ||
-					eType == PWR_LIMIT_TYPE_COMP_6E_2) {
+					eType == PWR_LIMIT_TYPE_COMP_6E_2 ||
+					eType == PWR_LIMIT_TYPE_COMP_6E_3) {
 					/* BW20 */
 					prPwrLmt6E->cPwrLimitRU26L = cLmtBand;
 					prPwrLmt6E->cPwrLimitRU26H = cLmtBand;
@@ -3283,7 +3290,8 @@ rlmDomainBuildCmdByDefaultTable(struct CMD_SET_COUNTRY_CHANNEL_POWER_LIMIT
 				}
 #if (CFG_SUPPORT_WIFI_6G == 1)
 				else if (eType == PWR_LIMIT_TYPE_COMP_6E_1 ||
-					eType == PWR_LIMIT_TYPE_COMP_6E_2) {
+					eType == PWR_LIMIT_TYPE_COMP_6E_2 ||
+					eType == PWR_LIMIT_TYPE_COMP_6E_3) {
 					prPwrLmt6E->cPwrLimitRU484L = cLmtBand;
 					prPwrLmt6E->cPwrLimitRU484H = cLmtBand;
 					prPwrLmt6E->cPwrLimitRU484U = cLmtBand;
@@ -3307,7 +3315,8 @@ rlmDomainBuildCmdByDefaultTable(struct CMD_SET_COUNTRY_CHANNEL_POWER_LIMIT
 				}
 #if (CFG_SUPPORT_WIFI_6G == 1)
 				else if (eType == PWR_LIMIT_TYPE_COMP_6E_1 ||
-					eType == PWR_LIMIT_TYPE_COMP_6E_2) {
+					eType == PWR_LIMIT_TYPE_COMP_6E_2 ||
+					eType == PWR_LIMIT_TYPE_COMP_6E_3) {
 					prPwrLmt6E->cPwrLimitRU996L = cLmtBand;
 					prPwrLmt6E->cPwrLimitRU996H = cLmtBand;
 					prPwrLmt6E->cPwrLimitRU996U = cLmtBand;
@@ -3327,7 +3336,8 @@ rlmDomainBuildCmdByDefaultTable(struct CMD_SET_COUNTRY_CHANNEL_POWER_LIMIT
 				}
 #if (CFG_SUPPORT_WIFI_6G == 1)
 				else if (eType == PWR_LIMIT_TYPE_COMP_6E_1 ||
-					eType == PWR_LIMIT_TYPE_COMP_6E_2) {
+					eType == PWR_LIMIT_TYPE_COMP_6E_2 ||
+					eType == PWR_LIMIT_TYPE_COMP_6E_3) {
 					prPwrLmt6E->cPwrLimitRU1992L = cLmtBand;
 					prPwrLmt6E->cPwrLimitRU1992H = cLmtBand;
 					prPwrLmt6E->cPwrLimitRU1992U = cLmtBand;
@@ -3345,7 +3355,8 @@ rlmDomainBuildCmdByDefaultTable(struct CMD_SET_COUNTRY_CHANNEL_POWER_LIMIT
 				prPwrLmtHE++;
 #if (CFG_SUPPORT_WIFI_6G == 1)
 			else if (eType == PWR_LIMIT_TYPE_COMP_6E_1 ||
-					eType == PWR_LIMIT_TYPE_COMP_6E_2)
+					eType == PWR_LIMIT_TYPE_COMP_6E_2 ||
+					eType == PWR_LIMIT_TYPE_COMP_6E_3)
 				prPwrLmt6E++;
 #endif
 			else
@@ -3489,7 +3500,8 @@ void rlmDomainBuildCmdByConfigTable(struct ADAPTER *prAdapter,
 		}
 #if (CFG_SUPPORT_WIFI_6G == 1)
 		else if (eType == PWR_LIMIT_TYPE_COMP_6E_1 ||
-					eType == PWR_LIMIT_TYPE_COMP_6E_2) {
+					eType == PWR_LIMIT_TYPE_COMP_6E_2 ||
+					eType == PWR_LIMIT_TYPE_COMP_6E_3) {
 			prCmdPwrLimt6E = &prCmd->u.rChPwrLimt6E[k];
 			ucCentCh = prCmdPwrLimt6E->ucCentralCh;
 
@@ -4581,7 +4593,8 @@ uint32_t txPwrArbitrator(enum ENUM_TX_POWER_CTRL_TYPE eCtrlType,
 	}
 #if (CFG_SUPPORT_WIFI_6G == 1)
 	else if (eType == PWR_LIMIT_TYPE_COMP_6E_1 ||
-				eType == PWR_LIMIT_TYPE_COMP_6E_2) {
+				eType == PWR_LIMIT_TYPE_COMP_6E_2 ||
+				eType == PWR_LIMIT_TYPE_COMP_6E_3) {
 		prPwrLimit6E = (struct CMD_CHANNEL_POWER_LIMIT_6E *) pvBuf;
 		prRateOfs = &prPwrLimit6E->cPwrLimitRU26L;
 		for (rateIdx = PWR_LIMIT_RU26_L;
@@ -4827,7 +4840,8 @@ uint32_t txPwrApplyOneSetting(struct CMD_SET_COUNTRY_CHANNEL_POWER_LIMIT *prCmd,
 		}
 #if (CFG_SUPPORT_WIFI_6G == 1)
 		else if (eType == PWR_LIMIT_TYPE_COMP_6E_1 ||
-					eType == PWR_LIMIT_TYPE_COMP_6E_2) {
+					eType == PWR_LIMIT_TYPE_COMP_6E_2 ||
+					eType == PWR_LIMIT_TYPE_COMP_6E_3) {
 			prCmdPwrLimit6E = &prCmd->u.rChPwrLimt6E[i];
 			channel = prCmdPwrLimit6E->ucCentralCh;
 		}
@@ -4984,7 +4998,8 @@ uint32_t txPwrApplyOneSetting(struct CMD_SET_COUNTRY_CHANNEL_POWER_LIMIT *prCmd,
 #if (CFG_SUPPORT_WIFI_6G == 1)
 			if (fgDoArbitrator6E) {
 				if (eType == PWR_LIMIT_TYPE_COMP_6E_1 ||
-					eType == PWR_LIMIT_TYPE_COMP_6E_2)
+					eType == PWR_LIMIT_TYPE_COMP_6E_2 ||
+					eType == PWR_LIMIT_TYPE_COMP_6E_3)
 					txPwrArbitrator(prCurElement->eCtrlType,
 							prCmdPwrLimit6E,
 							prChlSetting,
@@ -6058,7 +6073,8 @@ void rlmDomainShowPwrLimitPerCh(char *message,
 		}
 #if (CFG_SUPPORT_WIFI_6G == 1)
 		else if (eType == PWR_LIMIT_TYPE_COMP_6E_1 ||
-					eType == PWR_LIMIT_TYPE_COMP_6E_2) {
+					eType == PWR_LIMIT_TYPE_COMP_6E_2 ||
+					eType == PWR_LIMIT_TYPE_COMP_6E_3) {
 			prPwrLmt6E = &prCmd->u.rChPwrLimt6E[i];
 			prcRatePwr = &prPwrLmt6E->cPwrLimitRU26L;
 
@@ -6125,6 +6141,7 @@ void rlmDomainSendPwrLimitCmd(struct ADAPTER *prAdapter)
 	/* 6E have many channel need to send by serval commnd */
 	struct CMD_SET_COUNTRY_CHANNEL_POWER_LIMIT *prCmd6E_1 = NULL;
 	struct CMD_SET_COUNTRY_CHANNEL_POWER_LIMIT *prCmd6E_2 = NULL;
+	struct CMD_SET_COUNTRY_CHANNEL_POWER_LIMIT *prCmd6E_3 = NULL;
 #endif
 	uint32_t rStatus;
 	uint16_t u2DefaultTableIndex;
@@ -6189,6 +6206,14 @@ void rlmDomainSendPwrLimitCmd(struct ADAPTER *prAdapter)
 		goto err;
 	}
 	kalMemZero(prCmd6E_2, u4SetCmdTableMaxSize);
+
+	prCmd6E_3 = cnmMemAlloc(prAdapter, RAM_TYPE_BUF, u4SetCmdTableMaxSize);
+
+	if (!prCmd6E_3) {
+		DBGLOG(RLM, ERROR, "Domain: Alloc cmd buffer failed\n");
+		goto err;
+	}
+	kalMemZero(prCmd6E_3, u4SetCmdTableMaxSize);
 #endif
 
 	u2DefaultTableIndex =
@@ -6237,6 +6262,9 @@ void rlmDomainSendPwrLimitCmd(struct ADAPTER *prAdapter)
 
 	prCmd6E_2->ucNum = 0;
 	prCmd6E_2->ucLimitType = PWR_LIMIT_TYPE_COMP_6E_2;
+
+	prCmd6E_3->ucNum = 0;
+	prCmd6E_3->ucLimitType = PWR_LIMIT_TYPE_COMP_6E_3;
 #endif
 	/*<1>Command - default table information,
 	 *fill all subband
@@ -6288,6 +6316,18 @@ void rlmDomainSendPwrLimitCmd(struct ADAPTER *prAdapter)
 		 */
 		rlmDomainBuildCmdByConfigTable(prAdapter,
 			prCmd6E_2);
+
+		/*<1>Command - default table information,
+		 *fill all subband
+		 */
+		rlmDomainBuildCmdByDefaultTable(prCmd6E_3,
+			u2DefaultTableIndex);
+
+		/*<2>Command - configuration table information,
+		 * replace specified channel
+		 */
+		rlmDomainBuildCmdByConfigTable(prAdapter,
+			prCmd6E_3);
 #endif
 
 
@@ -6325,6 +6365,10 @@ void rlmDomainSendPwrLimitCmd(struct ADAPTER *prAdapter)
 	rlmDomainShowPwrLimitPerCh("Old", prCmd6E_2);
 	txPwrCtrlApplySettings(prAdapter, prCmd6E_2, bandedgeParam);
 	rlmDomainShowPwrLimitPerCh("Final", prCmd6E_2);
+
+	rlmDomainShowPwrLimitPerCh("Old", prCmd6E_3);
+	txPwrCtrlApplySettings(prAdapter, prCmd6E_3, bandedgeParam);
+	rlmDomainShowPwrLimitPerCh("Final", prCmd6E_3);
 #endif
 #endif
 
@@ -6392,6 +6436,19 @@ void rlmDomainSendPwrLimitCmd(struct ADAPTER *prAdapter)
 			NULL,	/* pvSetQueryBuffer */
 			0	/* u4SetQueryBufferLen */
 	    );
+
+		rStatus = wlanSendSetQueryCmd(prAdapter,	/* prAdapter */
+			CMD_ID_SET_COUNTRY_POWER_LIMIT,	/* ucCID */
+			TRUE,	/* fgSetQuery */
+			FALSE,	/* fgNeedResp */
+			FALSE,	/* fgIsOid */
+			NULL,	/* pfCmdDoneHandler */
+			NULL,	/* pfCmdTimeoutHandler */
+			u4SetQueryInfoLen,	/* u4SetQueryInfoLen */
+			(uint8_t *) prCmd6E_3,	/* pucInfoBuffer */
+			NULL,	/* pvSetQueryBuffer */
+			0	/* u4SetQueryBufferLen */
+	    );
 #endif
 	} else {
 		DBGLOG(RLM, ERROR, "Domain: illegal power limit table\n");
@@ -6427,6 +6484,7 @@ err:
 #if (CFG_SUPPORT_WIFI_6G == 1)
 	cnmMemFree(prAdapter, prCmd6E_1);
 	cnmMemFree(prAdapter, prCmd6E_2);
+	cnmMemFree(prAdapter, prCmd6E_3);
 #endif
 }
 #endif
