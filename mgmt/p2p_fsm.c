@@ -357,6 +357,10 @@ void p2pFsmRunEventWfdSettingUpdate(IN struct ADAPTER *prAdapter,
 				/* Reset linkscore */
 				prWfdCfgSettings->u4LinkScore = 0;
 			}
+
+			/* Force RTS to protect WFD packet */
+			wlanSetForceRTS(prAdapter,
+				prWfdCfgSettings->ucWfdEnable);
 		}
 #endif
 
