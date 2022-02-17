@@ -7244,6 +7244,91 @@ void mtk_cfg_mgmt_frame_register(struct wiphy *wiphy,
 	}
 }
 
+#if KERNEL_VERSION(5, 8, 0) <= CFG80211_VERSION_CODE
+void mtk_cfg_mgmt_frame_update(struct wiphy *wiphy,
+				struct wireless_dev *wdev,
+				struct mgmt_frame_regs *upd)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	u_int8_t fgIsP2pNetDevice = FALSE;
+	uint32_t *pu4PacketFilter = NULL;
+
+	if ((wiphy == NULL) || (wdev == NULL) || (upd == NULL)) {
+		DBGLOG(INIT, TRACE, "Invalidate params\n");
+		return;
+	}
+	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wiphy);
+
+	if ((!prGlueInfo) || (prGlueInfo->u4ReadyFlag == 0)) {
+		DBGLOG(REQ, WARN, "driver is not ready\n");
+		return;
+	}
+	fgIsP2pNetDevice = mtk_IsP2PNetDevice(prGlueInfo, wdev->netdev);
+
+	DBGLOG(INIT, TRACE,
+		"netdev(0x%p) update management frame filter: 0x%08x\n",
+		wdev->netdev, upd->interface_stypes);
+	do {
+		if (fgIsP2pNetDevice) {
+			uint8_t ucRoleIdx = 0;
+			struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo =
+				(struct P2P_ROLE_FSM_INFO *) NULL;
+
+			if (prGlueInfo->prP2PInfo[0]->prDevHandler ==
+				wdev->netdev) {
+				pu4PacketFilter =
+					&prGlueInfo->prP2PDevInfo
+					->u4OsMgmtFrameFilter;
+				/* Reset filters*/
+				*pu4PacketFilter = 0;
+			} else {
+				if (mtk_Netdev_To_RoleIdx(prGlueInfo,
+					wdev->netdev, &ucRoleIdx) < 0) {
+					DBGLOG(P2P, WARN,
+						"wireless dev match fail!\n");
+					break;
+				}
+				/* Non P2P device*/
+				ASSERT(ucRoleIdx < KAL_P2P_NUM);
+				DBGLOG(P2P, TRACE,
+					"Open packet filer RoleIdx %u\n",
+					ucRoleIdx);
+				prP2pRoleFsmInfo =
+					prGlueInfo->prAdapter->rWifiVar
+					.aprP2pRoleFsmInfo[ucRoleIdx];
+				pu4PacketFilter = &prP2pRoleFsmInfo
+					->u4P2pPacketFilter;
+				*pu4PacketFilter =
+					PARAM_PACKET_FILTER_SUPPORTED;
+			}
+		} else {
+			pu4PacketFilter = &prGlueInfo->u4OsMgmtFrameFilter;
+			*pu4PacketFilter = 0;
+		}
+		if (upd->interface_stypes & MASK_MAC_FRAME_PROBE_REQ)
+			*pu4PacketFilter |= PARAM_PACKET_FILTER_PROBE_REQ;
+
+		if (upd->interface_stypes & MASK_MAC_FRAME_ACTION)
+			*pu4PacketFilter |= PARAM_PACKET_FILTER_ACTION_FRAME;
+#if CFG_SUPPORT_SOFTAP_WPA3
+		if (upd->interface_stypes & MASK_MAC_FRAME_AUTH)
+			*pu4PacketFilter |= PARAM_PACKET_FILTER_AUTH;
+
+		if (upd->interface_stypes & MASK_MAC_FRAME_ASSOC_REQ)
+			*pu4PacketFilter |= PARAM_PACKET_FILTER_ASSOC_REQ;
+#endif
+
+		set_bit(fgIsP2pNetDevice ?
+			GLUE_FLAG_FRAME_FILTER_BIT :
+			GLUE_FLAG_FRAME_FILTER_AIS_BIT,
+			&prGlueInfo->ulFlag);
+
+		/* wake up main thread */
+		wake_up_interruptible(&prGlueInfo->waitq);
+	} while (FALSE);
+}
+#endif
+
 #ifdef CONFIG_NL80211_TESTMODE
 #if KERNEL_VERSION(3, 12, 0) <= CFG80211_VERSION_CODE
 int mtk_cfg_testmode_cmd(struct wiphy *wiphy,
