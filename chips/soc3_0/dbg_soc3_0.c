@@ -481,7 +481,7 @@ void soc3_0_show_ple_info(
 	u_int8_t fgDumpTxd)
 {
 	u_int32_t int_n9_err, int_n9_err1;
-	u_int32_t ple_buf_ctrl, pg_sz, pg_num;
+	u_int32_t ple_buf_ctrl = 0, pg_sz, pg_num;
 	u_int32_t ple_stat[25] = {0}, pg_flow_ctrl[10] = {0};
 	u_int32_t sta_pause[6] = {0}, dis_sta_map[6] = {0};
 	u_int32_t fpg_cnt, ffa_cnt, fpg_head, fpg_tail, hif_max_q, hif_min_q;
