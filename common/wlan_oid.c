@@ -15553,6 +15553,7 @@ uint32_t wlanoidSetMonitor(IN struct ADAPTER *prAdapter,
 		  IN void *pvSetBuffer, IN uint32_t u4SetBufferLen,
 		  OUT uint32_t *pu4SetInfoLen)
 {
+	uint32_t rStatus;
 	struct GLUE_INFO *prGlueInfo;
 	struct CMD_MONITOR_SET_INFO *prCmdMonitor;
 
@@ -15580,6 +15581,8 @@ uint32_t wlanoidSetMonitor(IN struct ADAPTER *prAdapter,
 		prGlueInfo->u2Aid,
 		prGlueInfo->fgDropFcsErrorFrame);
 
+	prGlueInfo->aucBandIdxEn[prGlueInfo->ucBandIdx] = prGlueInfo->fgIsEnableMon;
+
 	prCmdMonitor->ucEnable = prGlueInfo->fgIsEnableMon;
 	prCmdMonitor->ucBand = prGlueInfo->ucBand;
 	prCmdMonitor->ucPriChannel = prGlueInfo->ucPriChannel;
@@ -15591,7 +15594,7 @@ uint32_t wlanoidSetMonitor(IN struct ADAPTER *prAdapter,
 	prCmdMonitor->u2Aid = prGlueInfo->u2Aid;
 	prCmdMonitor->fgDropFcsErrorFrame = prGlueInfo->fgDropFcsErrorFrame;
 
-	return wlanSendSetQueryCmd(prAdapter,
+	rStatus = wlanSendSetQueryCmd(prAdapter,
 		CMD_ID_SET_MONITOR,
 		TRUE,
 		FALSE,
@@ -15602,6 +15605,8 @@ uint32_t wlanoidSetMonitor(IN struct ADAPTER *prAdapter,
 		(uint8_t *)prCmdMonitor, pvSetBuffer, u4SetBufferLen);
 
 	kalMemFree(prCmdMonitor, VIR_MEM_TYPE, sizeof(struct CMD_MONITOR_SET_INFO));
+
+	return rStatus;
 }
 #endif
 

@@ -6731,7 +6731,9 @@ int mtk_cfg_change_iface(struct wiphy *wiphy,
 #if KERNEL_VERSION(4, 12, 0) <= CFG80211_VERSION_CODE
 	u32 *flags = NULL;
 #endif
-
+#ifdef CFG_SUPPORT_SNIFFER_RADIOTAP
+	uint8_t ucBandIdx = 0;
+#endif
 	GLUE_SPIN_LOCK_DECLARATION();
 
 	WIPHY_PRIV(wiphy, prGlueInfo);
@@ -6817,12 +6819,26 @@ int mtk_cfg_change_iface(struct wiphy *wiphy,
 		ndev->type = ARPHRD_IEEE80211_RADIOTAP;
 		ndev->ieee80211_ptr->iftype = NL80211_IFTYPE_MONITOR;
 		prGlueInfo->fgIsEnableMon = TRUE;
+		prGlueInfo->ucBandIdx = 0;
+		prGlueInfo->fgDropFcsErrorFrame = TRUE;
+		prGlueInfo->u2Aid = 0;
+		prGlueInfo->u4AmpduRefNum = 0;
+
+		for (ucBandIdx = 0; ucBandIdx < CFG_MONITOR_BAND_NUM; ucBandIdx++) {
+			prGlueInfo->aucBandIdxEn[ucBandIdx] = 0;
+		}
 #endif
 	} else {
 #ifdef CFG_SUPPORT_SNIFFER_RADIOTAP
 		if (prGlueInfo->fgIsEnableMon) {
 			prGlueInfo->fgIsEnableMon = FALSE;
-			mtk_cfg80211_set_monitor_channel(wiphy, NULL);
+
+			for (ucBandIdx = 0; ucBandIdx < CFG_MONITOR_BAND_NUM; ucBandIdx++) {
+				if (prGlueInfo->aucBandIdxEn[ucBandIdx]) {
+					prGlueInfo->ucBandIdx = ucBandIdx;
+					mtk_cfg80211_set_monitor_channel(wiphy, NULL);
+				}
+			}
 			ndev->type = ARPHRD_ETHER;
 		} else
 #endif
