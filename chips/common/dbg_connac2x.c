@@ -2167,11 +2167,12 @@ int32_t connac2x_show_stat_info(
 					i2Wf0AvgPwr, i2Wf1AvgPwr);
 		}
 
+#ifndef SOC3_0
 		/* Last RX Rate */
 		i4BytesWritten += nicGetRxRateInfo(prAdapter,
 			pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 			(uint8_t)(prHwWlanInfo->u4Index));
-
+#endif
 		/* Last RX RSSI */
 		i4BytesWritten += nicRxGetLastRxRssi(prAdapter,
 			pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
