@@ -164,6 +164,12 @@ const struct nla_policy nla_get_acs_policy[
 #endif
 };
 
+const struct nla_policy nla_string_cmd_policy[
+		STRING_ATTRIBUTE_MAX + 1] = {
+	[STRING_ATTRIBUTE_DATA] = { .type = NLA_STRING },
+};
+
+
 /*******************************************************************************
  *                           P R I V A T E   D A T A
  *******************************************************************************
@@ -452,6 +458,21 @@ int mtk_cfg80211_vendor_set_scan_mac_oui(struct wiphy *wiphy,
 	}
 
 	return 0;
+}
+
+int mtk_cfg80211_vendor_string_cmd(struct wiphy *wiphy,
+	struct wireless_dev *wdev, const void *data, int data_len)
+{
+	struct nlattr *attr;
+	char cmd[1024] = {0};
+
+	if ((data == NULL) || !data_len)
+		return -EINVAL;
+
+	attr = (struct nlattr *)data;
+	nla_strlcpy(cmd, attr, sizeof(cmd));
+
+	return mtk_cfg80211_process_str_cmd(wiphy, wdev, cmd, data_len);
 }
 
 int mtk_cfg80211_vendor_set_scan_param(struct wiphy *wiphy,
