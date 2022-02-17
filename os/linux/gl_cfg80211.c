@@ -496,7 +496,7 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy,
 	uint32_t rStatus;
 	uint8_t arBssid[PARAM_MAC_ADDR_LEN];
 	uint32_t u4BufLen, u4Rate;
-	int32_t i4Rssi;
+	int32_t i4Rssi = 0;
 	struct PARAM_GET_STA_STATISTICS rQueryStaStatistics;
 	struct PARAM_LINK_SPEED_EX rLinkSpeed;
 	uint32_t u4TotalError;
@@ -581,7 +581,7 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy,
 	sinfo->filled |= STATION_INFO_SIGNAL;
 #endif
 
-	if (rStatus != WLAN_STATUS_SUCCESS) {
+	if (rStatus != WLAN_STATUS_SUCCESS || i4Rssi == 0) {
 		DBGLOG(REQ, WARN,
 			"Query RSSI failed, use last RSSI %d\n",
 			prGlueInfo->i4RssiCache[ucBssIndex]);
