@@ -5123,21 +5123,59 @@ int mtk_init_ap_role(struct GLUE_INFO *prGlueInfo,
  *
  */
 /*----------------------------------------------------------------------------*/
+uint32_t
+mtk_oid_uninit_ap_role(struct ADAPTER *prAdapter, void *pvSetBuffer,
+	uint32_t u4SetBufferLen, uint32_t *pu4SetInfoLen)
+{
+	unsigned char u4Idx = 0;
+
+	if ((prAdapter == NULL) || (pvSetBuffer == NULL)
+		|| (pu4SetInfoLen == NULL))
+		return WLAN_STATUS_FAILURE;
+
+	/* init */
+	*pu4SetInfoLen = sizeof(unsigned char);
+	if (u4SetBufferLen < sizeof(unsigned char))
+		return WLAN_STATUS_INVALID_LENGTH;
+
+	ASSERT(pvSetBuffer);
+	u4Idx = *(unsigned char *) pvSetBuffer;
+
+	DBGLOG(INIT, INFO, "ucRoleIdx = %d\n", u4Idx);
+
+	glUnregisterP2P(prAdapter->prGlueInfo, u4Idx);
+
+	gPrP2pDev[u4Idx] = NULL;
+	gprP2pRoleWdev[u4Idx] = NULL;
+
+	return 0;
+
+}
+
 int mtk_uninit_ap_role(struct GLUE_INFO *prGlueInfo,
 		       struct net_device *ndev)
 {
 	unsigned char u4Idx;
+	uint32_t rStatus;
+	uint32_t u4BufLen;
 
+	if (!prGlueInfo) {
+		DBGLOG(INIT, WARN, "prGlueInfo is NULL\n");
+		return -EINVAL;
+	}
 	if (mtk_Netdev_To_RoleIdx(prGlueInfo, ndev, &u4Idx) != 0) {
 		DBGLOG(INIT, WARN,
 		       "can't find the matched dev to uninit AP\n");
 		return -EFAULT;
 	}
 
-	glUnregisterP2P(prGlueInfo, u4Idx);
-
-	gPrP2pDev[u4Idx] = NULL;
-	gprP2pRoleWdev[u4Idx] = NULL;
+	rStatus = kalIoctl(prGlueInfo,
+				mtk_oid_uninit_ap_role, &u4Idx,
+				sizeof(unsigned char),
+				FALSE, FALSE, FALSE,
+				&u4BufLen);
+	if (rStatus != WLAN_STATUS_SUCCESS)
+		return -EINVAL;
 
 	return 0;
 }
