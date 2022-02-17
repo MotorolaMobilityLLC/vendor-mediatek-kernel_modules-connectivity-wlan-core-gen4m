@@ -190,7 +190,6 @@ uint8_t *apucCorDumpCr4FileName = "/tmp/FW_DUMP_Cr4";
 #endif
 
 #if !CONFIG_WLAN_DRV_BUILD_IN
-
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  To leverage systrace, use the same name, i.e. tracing_mark_write,
@@ -206,7 +205,7 @@ void tracing_mark_write(const char *fmt, ...)
 	va_list ap;
 	char buf[BUFFER_SIZE];
 
-	if (aucDebugModule[DBG_TRACE_IDX] & DBG_CLASS_TEMP == 0)
+	if ((aucDebugModule[DBG_TRACE_IDX] & DBG_CLASS_TEMP) == 0)
 		return;
 
 	va_start(ap, fmt);
