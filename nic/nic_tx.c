@@ -526,8 +526,13 @@ uint32_t nicTxAcquireResource(IN struct ADAPTER *prAdapter,
 	if (prTc->au4FreePageCount[ucTC] >= u4PageCount) {
 
 		if (nicTxAcquireResourcePLE(prAdapter,
-					    ucTC) != WLAN_STATUS_SUCCESS)
+					    ucTC) != WLAN_STATUS_SUCCESS) {
+			if (fgReqLock)
+				KAL_RELEASE_SPIN_LOCK(prAdapter,
+					SPIN_LOCK_TX_RESOURCE);
+
 			return WLAN_STATUS_RESOURCES;
+		}
 
 		/* This update must be AFTER the PLE-resource-check */
 		if (ucTC == TC4_INDEX)
