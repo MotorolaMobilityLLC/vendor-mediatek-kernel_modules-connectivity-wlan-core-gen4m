@@ -145,6 +145,10 @@ struct DBDC_INFO_T {
 	/* Used for iwpriv to force enable DBDC*/
 	bool fgHasSentCmd;
 	bool fgCmdEn;
+
+	/* Used to queue enter/leave A+G event */
+	bool fgPostpondEnterAG;
+	bool fgPostpondLeaveAG;
 };
 
 enum ENUM_DBDC_FSM_EVENT_T {
@@ -2038,6 +2042,8 @@ void cnmInitDbdcSetting(IN struct ADAPTER *prAdapter)
 
 	DBDC_SET_WMMBAND_FW_AUTO_DEFAULT();
 	g_rDbdcInfo.fgHasSentCmd = FALSE;
+	g_rDbdcInfo.fgPostpondEnterAG = FALSE;
+	g_rDbdcInfo.fgPostpondLeaveAG = FALSE;
 
 	/* Parameter decision */
 	switch (prAdapter->rWifiVar.eDbdcMode) {
@@ -2679,8 +2685,11 @@ cnmDbdcFsmEventHandler_WAIT_HW_ENABLE(
 
 	switch (eEvent) {
 	case DBDC_FSM_EVENT_BSS_DISCONNECT_LEAVE_AG:
+		g_rDbdcInfo.fgPostpondLeaveAG = TRUE;
+		break;
+
 	case DBDC_FSM_EVENT_BSS_CONNECTING_ENTER_AG:
-		/* IGNORE */
+		g_rDbdcInfo.fgPostpondLeaveAG = FALSE;
 		break;
 
 	case DBDC_FSM_EVENT_SWITCH_GUARD_TIME_TO:
@@ -2703,6 +2712,15 @@ cnmDbdcFsmEventHandler_WAIT_HW_ENABLE(
 	}
 
 	cnmDbdcFsmSteps(prAdapter, g_rDbdcInfo.eDbdcFsmNextState, eEvent);
+
+	/* Leave A+G immediately */
+	if (eEvent == DBDC_FSM_EVENT_DBDC_HW_SWITCH_DONE &&
+		g_rDbdcInfo.fgPostpondLeaveAG) {
+		DBDC_FSM_EVENT_HANDLER(prAdapter,
+			DBDC_FSM_EVENT_BSS_DISCONNECT_LEAVE_AG);
+
+		g_rDbdcInfo.fgPostpondLeaveAG = FALSE;
+	}
 }
 
 
@@ -2713,6 +2731,21 @@ cnmDbdcFsmEventHandler_ENABLE_GUARD(
 {
 	switch (eEvent) {
 	case DBDC_FSM_EVENT_BSS_DISCONNECT_LEAVE_AG:
+		/* stop guard timer */
+		if (timerPendingTimer(&g_rDbdcInfo.rDbdcGuardTimer)) {
+			log_dbg(CNM, WARN, "[DBDC] Stop Guard Timer type %u\n",
+				g_rDbdcInfo.eDdbcGuardTimerType);
+			cnmTimerStopTimer(prAdapter,
+					  &g_rDbdcInfo.rDbdcGuardTimer);
+			g_rDbdcInfo.eDdbcGuardTimerType =
+			ENUM_DBDC_GUARD_TIMER_NONE;
+		}
+		/* directly enter HW disable state */
+		if (!cnmDbdcIsAGConcurrent(prAdapter, BAND_NULL))
+			g_rDbdcInfo.eDbdcFsmNextState =
+				ENUM_DBDC_FSM_STATE_WAIT_HW_DISABLE;
+		break;
+
 	case DBDC_FSM_EVENT_BSS_CONNECTING_ENTER_AG:
 		/* IGNORE */
 		break;
@@ -2746,7 +2779,7 @@ cnmDbdcFsmEventHandler_ENABLE_IDLE(
 {
 	switch (eEvent) {
 	case DBDC_FSM_EVENT_BSS_DISCONNECT_LEAVE_AG:
-		/* start DBDC disable countdown timer */
+		/* stop guard timer */
 		if (timerPendingTimer(&g_rDbdcInfo.rDbdcGuardTimer)) {
 			log_dbg(CNM, WARN, "[DBDC] Guard Timer type %u should not exist, stop it\n",
 				g_rDbdcInfo.eDdbcGuardTimerType);
@@ -2755,7 +2788,10 @@ cnmDbdcFsmEventHandler_ENABLE_IDLE(
 			g_rDbdcInfo.eDdbcGuardTimerType =
 			ENUM_DBDC_GUARD_TIMER_NONE;
 		}
-		DBDC_SET_DISABLE_COUNTDOWN(prAdapter);
+		/* directly enter HW disable state */
+		if (!cnmDbdcIsAGConcurrent(prAdapter, BAND_NULL))
+			g_rDbdcInfo.eDbdcFsmNextState =
+				ENUM_DBDC_FSM_STATE_WAIT_HW_DISABLE;
 		break;
 
 	case DBDC_FSM_EVENT_BSS_CONNECTING_ENTER_AG:
@@ -2802,8 +2838,11 @@ cnmDbdcFsmEventHandler_WAIT_HW_DISABLE(
 {
 	switch (eEvent) {
 	case DBDC_FSM_EVENT_BSS_DISCONNECT_LEAVE_AG:
+		g_rDbdcInfo.fgPostpondEnterAG = FALSE;
+		break;
+
 	case DBDC_FSM_EVENT_BSS_CONNECTING_ENTER_AG:
-		/* IGNORE */
+		g_rDbdcInfo.fgPostpondEnterAG = TRUE;
 		break;
 
 	case DBDC_FSM_EVENT_SWITCH_GUARD_TIME_TO:
@@ -2826,6 +2865,15 @@ cnmDbdcFsmEventHandler_WAIT_HW_DISABLE(
 	}
 
 	cnmDbdcFsmSteps(prAdapter, g_rDbdcInfo.eDbdcFsmNextState, eEvent);
+
+	/* Enter A+G immediately */
+	if (eEvent == DBDC_FSM_EVENT_DBDC_HW_SWITCH_DONE &&
+		g_rDbdcInfo.fgPostpondEnterAG) {
+		DBDC_FSM_EVENT_HANDLER(prAdapter,
+			DBDC_FSM_EVENT_BSS_CONNECTING_ENTER_AG);
+
+		g_rDbdcInfo.fgPostpondEnterAG = FALSE;
+	}
 }
 
 static void
@@ -3052,7 +3100,8 @@ void cnmDbdcPreConnectionEnableDecision(
 		return;
 	}
 
-	if (prAdapter->rWifiVar.fgDbDcModeEn) {
+	if (prAdapter->rWifiVar.eDbdcMode == ENUM_DBDC_MODE_STATIC &&
+		prAdapter->rWifiVar.fgDbDcModeEn) {
 		if (timerPendingTimer(&g_rDbdcInfo.rDbdcGuardTimer) &&
 		    g_rDbdcInfo.eDdbcGuardTimerType ==
 		    ENUM_DBDC_GUARD_TIMER_SWITCH_GUARD_TIME) {
@@ -3073,14 +3122,21 @@ void cnmDbdcPreConnectionEnableDecision(
 	if (timerPendingTimer(&g_rDbdcInfo.rDbdcGuardTimer) &&
 		g_rDbdcInfo.eDdbcGuardTimerType
 		== ENUM_DBDC_GUARD_TIMER_SWITCH_GUARD_TIME) {
-		log_dbg(CNM, INFO, "[DBDC Debug] Guard Time Return");
-		/* Force enable dbdc to prevent getting into mcc mode */
-		if (cnmDbdcIsAGConcurrent(prAdapter, eRfBand)) {
-			DBDC_SET_WMMBAND_FW_AUTO_BY_CHNL(ucPrimaryChannel,
-				ucWmmQueIdx);
-			cnmUpdateDbdcSetting(prAdapter, TRUE);
+		log_dbg(CNM, INFO, "[DBDC Debug] Guard Time Check");
+
+		if ((cnmDbdcIsAGConcurrent(prAdapter, eRfBand) &&
+			!prAdapter->rWifiVar.fgDbDcModeEn) ||
+			(!cnmDbdcIsAGConcurrent(prAdapter, eRfBand) &&
+			prAdapter->rWifiVar.fgDbDcModeEn)) {
+			/* cancel Guard Time and change DBDC mode */
+			cnmTimerStopTimer(prAdapter,
+				&g_rDbdcInfo.rDbdcGuardTimer);
+			g_rDbdcInfo.eDdbcGuardTimerType =
+				ENUM_DBDC_GUARD_TIMER_NONE;
+		} else {
+			log_dbg(CNM, INFO, "[DBDC Debug] Guard Time Return");
+			return;
 		}
-		return;
 	}
 
 	if (eRfBand != BAND_2G4 && eRfBand != BAND_5G) {
@@ -3092,6 +3148,9 @@ void cnmDbdcPreConnectionEnableDecision(
 		DBDC_SET_WMMBAND_FW_AUTO_BY_CHNL(ucPrimaryChannel, ucWmmQueIdx);
 		DBDC_FSM_EVENT_HANDLER(prAdapter,
 			DBDC_FSM_EVENT_BSS_CONNECTING_ENTER_AG);
+	} else {
+		DBDC_FSM_EVENT_HANDLER(prAdapter,
+			DBDC_FSM_EVENT_BSS_DISCONNECT_LEAVE_AG);
 	}
 }
 
