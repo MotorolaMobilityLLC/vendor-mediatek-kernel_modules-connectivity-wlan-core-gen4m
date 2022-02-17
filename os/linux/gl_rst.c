@@ -233,7 +233,7 @@ void glResetInit(struct GLUE_INFO *prGlueInfo)
 #if (CFG_ANDORID_CONNINFRA_COREDUMP_SUPPORT == 1)
 	fw_log_connsys_coredump_init();
 #endif
-
+	update_driver_reset_status(fgIsResetting);
 	KAL_WAKE_LOCK_INIT(NULL, &g_IntrWakeLock, "WLAN Reset");
 	init_waitqueue_head(&g_waitq_rst);
 	init_completion(&g_RstComp);
@@ -303,6 +303,9 @@ u_int8_t glResetTrigger(struct ADAPTER *prAdapter,
 		return fgResult;
 
 	fgIsResetting = TRUE;
+#if (CFG_SUPPORT_CONNINFRA == 1)
+	update_driver_reset_status(fgIsResetting);
+#endif
 #if (CFG_SUPPORT_CONNINFRA == 0)
 	if (eResetReason != RST_BT_TRIGGER)
 		DBGLOG(INIT, STATE, "[SER][L0] wifi trigger eResetReason=%d\n",
@@ -383,6 +386,9 @@ static void mtk_wifi_reset(struct work_struct *work)
 #if CFG_WMT_RESET_API_SUPPORT
 	/* wlanOnAtReset(); */
 	wifi_reset_end(rst->rst_data);
+#if (CFG_SUPPORT_CONNINFRA == 1)
+	update_driver_reset_status(fgIsResetting);
+#endif
 #else
 	fgResult = rst_L0_notify_step1();
 
