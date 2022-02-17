@@ -218,7 +218,11 @@ struct DMASHDL_CFG rMT7961DmashdlCfg = {
 		MT7961_DMASHDL_PRIORITY15_GROUP,
 	},
 
-	.u4GroupNum = ENUM_DMASHDL_GROUP_NUM,
+	.u4GroupNum = ENUM_MT7961_DMASHDL_GROUP_NUM,
+
+	.ucQueueNum = MT7961_DMASHDL_QUEUE_NUM,
+
+	.ucPriorityNum = MT7961_DMASHDL_PRIORITY_NUM,
 
 	.rPlePacketMaxSize = {
 		WF_HIF_DMASHDL_TOP_PACKET_MAX_SIZE_ADDR,
@@ -317,7 +321,6 @@ struct DMASHDL_CFG rMT7961DmashdlCfg = {
 	},
 };
 
-
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Do DMASDHL init when WIFISYS is initialized at probe, L0.5 reset, etc.
@@ -329,32 +332,21 @@ struct DMASHDL_CFG rMT7961DmashdlCfg = {
 /*----------------------------------------------------------------------------*/
 void mt7961DmashdlInit(struct ADAPTER *prAdapter)
 {
-	uint32_t idx;
+	asicConnac2xDmashdlSetPktMaxPage(prAdapter,
+				      rMT7961DmashdlCfg.u2PktPleMaxPage,
+				      rMT7961DmashdlCfg.u2PktPseMaxPage);
 
-	asicConnac2xDmashdlSetPlePktMaxPage(prAdapter,
-					 rMT7961DmashdlCfg.u2PktPleMaxPage);
+	asicConnac2xDmashdlSetAllRefill(prAdapter,
+					rMT7961DmashdlCfg.afgRefillEn);
 
-	asicConnac2xDmashdlSetPsePktMaxPage(prAdapter,
-					 rMT7961DmashdlCfg.u2PktPseMaxPage);
+	asicConnac2xDmashdlSetAllQuota(prAdapter, rMT7961DmashdlCfg.au2MaxQuota,
+				    rMT7961DmashdlCfg.au2MinQuota);
 
-	for (idx = 0; idx < ENUM_MT7961_DMASHDL_GROUP_NUM; idx++) {
-		asicConnac2xDmashdlSetRefill(prAdapter, idx,
-					  rMT7961DmashdlCfg.afgRefillEn[idx]);
+	asicConnac2xDmashdlSetAllQueueMapping(prAdapter,
+					   rMT7961DmashdlCfg.aucQueue2Group);
 
-		asicConnac2xDmashdlSetMaxQuota(prAdapter, idx,
-					    rMT7961DmashdlCfg.au2MaxQuota[idx]);
-
-		asicConnac2xDmashdlSetMinQuota(prAdapter, idx,
-					    rMT7961DmashdlCfg.au2MinQuota[idx]);
-	}
-
-	for (idx = 0; idx < 32; idx++)
-		asicConnac2xDmashdlSetQueueMapping(prAdapter, idx,
-					 rMT7961DmashdlCfg.aucQueue2Group[idx]);
-
-	for (idx = 0; idx < 16; idx++)
-		asicConnac2xDmashdlSetUserDefinedPriority(prAdapter, idx,
-				      rMT7961DmashdlCfg.aucPriority2Group[idx]);
+	asicConnac2xDmashdlSetAllUserDefinedPriority(prAdapter,
+					   rMT7961DmashdlCfg.aucPriority2Group);
 
 	asicConnac2xDmashdlSetSlotArbiter(prAdapter,
 				       rMT7961DmashdlCfg.fgSlotArbiterEn);
@@ -381,21 +373,15 @@ void mt7961DmashdlInit(struct ADAPTER *prAdapter)
 /*----------------------------------------------------------------------------*/
 void mt7961DmashdlReInit(struct ADAPTER *prAdapter)
 {
-	uint32_t idx;
+	asicConnac2xDmashdlSetPktMaxPage(prAdapter,
+				      rMT7961DmashdlCfg.u2PktPleMaxPage,
+				      rMT7961DmashdlCfg.u2PktPseMaxPage);
 
-	asicConnac2xDmashdlSetPlePktMaxPage(prAdapter,
-					 rMT7961DmashdlCfg.u2PktPleMaxPage);
+	asicConnac2xDmashdlSetAllQueueMapping(prAdapter,
+					   rMT7961DmashdlCfg.aucQueue2Group);
 
-	asicConnac2xDmashdlSetPsePktMaxPage(prAdapter,
-					 rMT7961DmashdlCfg.u2PktPseMaxPage);
-
-	for (idx = 0; idx < 32; idx++)
-		asicConnac2xDmashdlSetQueueMapping(prAdapter, idx,
-					 rMT7961DmashdlCfg.aucQueue2Group[idx]);
-
-	for (idx = 0; idx < 16; idx++)
-		asicConnac2xDmashdlSetUserDefinedPriority(prAdapter, idx,
-				      rMT7961DmashdlCfg.aucPriority2Group[idx]);
+	asicConnac2xDmashdlSetAllUserDefinedPriority(prAdapter,
+					   rMT7961DmashdlCfg.aucPriority2Group);
 
 	asicConnac2xDmashdlSetSlotArbiter(prAdapter,
 				       rMT7961DmashdlCfg.fgSlotArbiterEn);

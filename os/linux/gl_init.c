@@ -6153,10 +6153,14 @@ int32_t wlanOnAtReset(void)
 			break;
 		}
 
-		wlanOnPreNetRegister(prGlueInfo, prAdapter,
-			prAdapter->chip_info,
-			&prAdapter->rWifiVar,
-			TRUE);
+		if (wlanOnPreNetRegister(prGlueInfo, prAdapter,
+					 prAdapter->chip_info,
+					 &prAdapter->rWifiVar,
+					 TRUE)) {
+			rStatus = WLAN_STATUS_FAILURE;
+			eFailReason = NET_REGISTER_FAIL;
+			break;
+		}
 
 		/* Resend schedule scan */
 		prAdapter->rWifiVar.rScanInfo.fgSchedScanning = FALSE;
@@ -6381,8 +6385,12 @@ static int32_t wlanProbe(void *pvData, void *pvDriverData)
 			break;
 		}
 
-		wlanOnPreNetRegister(prGlueInfo, prAdapter, prChipInfo,
-			prWifiVar, FALSE);
+		if (wlanOnPreNetRegister(prGlueInfo, prAdapter, prChipInfo,
+					 prWifiVar, FALSE)) {
+			i4Status = -EIO;
+			eFailReason = NET_REGISTER_FAIL;
+			break;
+		}
 
 #if (CFG_SUPPORT_POWER_THROTTLING == 1)
 		prHifDriverData = (struct mt66xx_hif_driver_data *)pvDriverData;

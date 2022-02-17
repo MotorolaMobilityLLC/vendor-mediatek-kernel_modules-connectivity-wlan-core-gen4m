@@ -314,6 +314,9 @@ extern struct DMASHDL_CFG rMT7961DmashdlCfg;
 #endif
 #endif /* defined(_HIF_PCIE) || defined(_HIF_AXI) */
 
+#define MT7961_DMASHDL_QUEUE_NUM        32
+#define MT7961_DMASHDL_PRIORITY_NUM     16
+
 /*******************************************************************************
 *                         D A T A   T Y P E S
 ********************************************************************************
@@ -376,24 +379,6 @@ extern struct DMASHDL_CFG rMT7961DmashdlCfg;
 *                              F U N C T I O N S
 ********************************************************************************
 */
-
-void mt7961HalDmashdlSetPlePktMaxPage(struct ADAPTER *prAdapter,
-				      uint16_t u2MaxPage);
-
-void mt7961HalDmashdlSetPsePktMaxPage(struct ADAPTER *prAdapter,
-				      uint16_t u2MaxPage);
-
-void mt7961HalDmashdlSetRefill(struct ADAPTER *prAdapter, uint8_t ucGroup,
-			       u_int8_t fgEnable);
-
-void mt7961HalDmashdlSetMaxQuota(struct ADAPTER *prAdapter, uint8_t ucGroup,
-				 uint16_t u2MaxQuota);
-
-void mt7961HalDmashdlSetMinQuota(struct ADAPTER *prAdatper, uint8_t ucGroup,
-				 uint16_t u2MinQuota);
-
-void mt7961HalDmashdlSetQueueMapping(struct ADAPTER *prAdapter, uint8_t ucQueue,
-				     uint8_t ucGroup);
 
 void mt7961DmashdlInit(struct ADAPTER *prAdapter);
 

@@ -308,6 +308,8 @@ struct DMASHDL_CFG {
 	uint16_t u2HifAckCntTh;
 	uint16_t u2HifGupActMap;
 	uint32_t u4GroupNum;
+	uint8_t ucQueueNum;
+	uint8_t ucPriorityNum;
 
 	struct CODA_CR_INFO rPlePacketMaxSize;
 	struct CODA_CR_INFO rPsePacketMaxSize;
