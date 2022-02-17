@@ -215,8 +215,6 @@ struct LINK_MGMT {
 	((struct LINK_ENTRY *)(prEntry))->prPrev != \
 	(struct LINK_ENTRY *)INVALID_LINK_POISON2)
 
-
-
 /* NOTE: We should do memory zero before any LINK been initiated,
  *       so we can check if it is valid before parsing the LINK.
  */
@@ -240,6 +238,26 @@ struct LINK_MGMT {
 	{ \
 	    linkAddTail(prEntry, prLink); \
 	    ((prLink)->u4NumElem)++; \
+	}
+
+/* Insert an entry after a speceified entry */
+#define LINK_INSERT_AFTER(prLink, prEntry, prNew) \
+	{ \
+		__linkAdd( \
+			(struct LINK_ENTRY *)prNew, \
+			(struct LINK_ENTRY *)prEntry, \
+			(struct LINK_ENTRY *)(prEntry)->prNext); \
+		((prLink)->u4NumElem)++; \
+	}
+
+/* Insert an entry before a speceified entry */
+#define LINK_INSERT_BEFORE(prLink, prEntry, prNew) \
+	{ \
+		__linkAdd( \
+			(struct LINK_ENTRY *)prNew, \
+			(struct LINK_ENTRY *)(prEntry)->prPrev,	\
+			(struct LINK_ENTRY *)prEntry); \
+		((prLink)->u4NumElem)++; \
 	}
 
 /* Peek head entry, but keep still in link list */

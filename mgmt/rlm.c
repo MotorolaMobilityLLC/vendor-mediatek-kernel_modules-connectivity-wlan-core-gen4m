@@ -676,6 +676,16 @@ void rlmGenerateMTKOuiIE(struct ADAPTER *prAdapter,
 		       "Disable 2.4G 256QAM support if N only chip\n");
 	}
 
+#if (CFG_SUPPORT_TWT_HOTSPOT_AC == 1)
+	if (IS_FEATURE_ENABLED(
+		prAdapter->rWifiVar.ucTWTHotSpotSupport)) {
+		MTK_OUI_IE(pucBuffer)->aucCapability[0] |=
+			MTK_SYNERGY_CAP_SUPPORT_TWT_HOTSPOT_AC;
+
+		DBGLOG(INIT, WARN, "TWT hotspot supported\n");
+	}
+#endif
+
 	prMsduInfo->u2FrameLength += IE_SIZE(pucBuffer);
 	pucBuffer += IE_SIZE(pucBuffer);
 } /* rlmGenerateMTKOuiIE */
@@ -2568,6 +2578,11 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 	uint8_t fgDomainValid = FALSE;
 	enum ENUM_CHANNEL_WIDTH eChannelWidth = CW_20_40MHZ;
 	uint8_t ucHtOpChannelFrequencyS3 = 0;
+
+#if (CFG_SUPPORT_TWT_HOTSPOT_AC == 1)
+	uint8_t aucMtkOui[] = VENDOR_OUI_MTK;
+#endif
+
 #if (CFG_SUPPORT_BTWT == 1)
 	uint8_t fgBtwtIeFound = FALSE;
 #endif
@@ -3255,6 +3270,25 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 			break;
 
 #endif /* CFG_SUPPORT_802_11AX */
+
+#if (CFG_SUPPORT_TWT_HOTSPOT_AC == 1)
+		case ELEM_ID_VENDOR:
+			if ((MTK_OUI_IE(pucIE)->aucOui[0] ==
+					aucMtkOui[0]) &&
+				(MTK_OUI_IE(pucIE)->aucOui[1] ==
+					aucMtkOui[1]) &&
+				(MTK_OUI_IE(pucIE)->aucOui[2] ==
+					aucMtkOui[2]) &&
+				(MTK_OUI_IE(pucIE)->ucLength ==
+					ELEM_MIN_LEN_MTK_OUI) &&
+				((MTK_OUI_IE(pucIE)->aucCapability[0] &
+				MTK_SYNERGY_CAP_SUPPORT_TWT_HOTSPOT_AC) ==
+					MTK_SYNERGY_CAP_SUPPORT_TWT_HOTSPOT_AC))
+				prStaRec->ucTWTHospotSupport = TRUE;
+
+			break;
+#endif
+
 		default:
 			break;
 		} /* end of switch */

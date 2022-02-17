@@ -717,6 +717,38 @@ struct _TWT_CTRL_T {
 	struct _NEXT_TWT_INFO_T rNextTWT;
 };
 
+#if (CFG_SUPPORT_TWT_HOTSPOT == 1)
+struct _TWT_HOTSPOT_CTRL_T {
+	uint8_t ucBssIdx;
+	uint8_t ucCtrlAction;
+	uint8_t ucTWTFlowId;
+	struct _TWT_PARAMS_T rTWTParams;
+	uint8_t ucDialogToken;
+	uint8_t ucIsReject;
+	struct STA_RECORD *prStaRec;
+};
+
+struct _TWT_HOTSPOT_STA_NODE {
+	/* twt link node control */
+	struct LINK_ENTRY list_entry;
+	/* twt entry */
+	uint8_t	used;
+	uint8_t	agrt_tbl_idx;
+	uint8_t	own_mac_idx;
+	uint8_t	flow_id;
+	uint16_t	peer_id_grp_id;
+	uint8_t	agrt_sp_duration;
+	uint8_t	bss_idx;
+	/* used by scheduler and will be within TWT_SP_SPAN_TIME */
+	uint64_t	schedule_sp_start_tsf;
+	uint64_t  twt_assigned_tsf;  /* TWT real timestamp */
+	uint64_t	agrt_sp_start_tsf;  /* tsf from requester */
+	uint16_t	agrt_sp_wake_intvl_mantissa;
+	uint8_t	agrt_sp_wake_intvl_exponent;
+	struct STA_RECORD *prStaRec;
+};
+#endif
+
 struct _TWT_GET_TSF_CONTEXT_T {
 	enum _TWT_GET_TSF_REASON ucReason;
 	uint8_t ucBssIdx;

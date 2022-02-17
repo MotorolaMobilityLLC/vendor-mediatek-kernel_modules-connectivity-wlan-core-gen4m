@@ -229,6 +229,49 @@ void twtPlannerGetTsfDone(
 	struct CMD_INFO *prCmdInfo,
 	uint8_t *pucEventBuf);
 
+#if (CFG_SUPPORT_TWT_HOTSPOT == 1)
+void twtHotspotPlannerSetParams(
+	struct ADAPTER *prAdapter,
+	struct MSG_HDR *prMsgHdr);
+
+void twtHotspotPlannerSetupAgrtToFW(
+	struct ADAPTER *prAdapter,
+	struct MSG_HDR *prMsgHdr);
+
+void twtHotspotPlannerTeardownToFW(
+	struct ADAPTER *prAdapter,
+	struct MSG_HDR *prMsgHdr);
+
+uint32_t twtHotspotPlannerGetCurrentTSF(
+	struct ADAPTER *prAdapter,
+	struct BSS_INFO *prBssInfo,
+	void *pvSetBuffer,
+	uint32_t u4SetBufferLen);
+
+void twtHotspotPlannerGetTsfDone(
+	struct ADAPTER *prAdapter,
+	struct CMD_INFO *prCmdInfo,
+	uint8_t *pucEventBuf);
+
+uint32_t
+twtHotspotPlannerAddAgrtTbl(
+	struct ADAPTER *prAdapter,
+	struct STA_RECORD *prStaRec,
+	uint8_t ucFlowId,
+	uint8_t fgIsOid,
+	PFN_CMD_DONE_HANDLER pfCmdDoneHandler,
+	PFN_CMD_TIMEOUT_HANDLER pfCmdTimeoutHandler);
+
+uint32_t
+twtHotspotPlannerTeardownSta(
+	struct ADAPTER *prAdapter,
+	struct STA_RECORD *prStaRec,
+	uint8_t ucFlowId,
+	uint8_t fgIsOid,
+	PFN_CMD_DONE_HANDLER pfCmdDoneHandler,
+	PFN_CMD_TIMEOUT_HANDLER pfCmdTimeoutHandler);
+#endif
+
 #if (CFG_SUPPORT_BTWT == 1)
 uint32_t btwtPlannerSendReqStart(
 	struct ADAPTER *prAdapter,

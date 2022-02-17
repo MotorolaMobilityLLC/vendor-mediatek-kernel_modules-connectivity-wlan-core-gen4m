@@ -525,6 +525,13 @@ struct BSS_INFO {
 	uint8_t aucSubbandTriplet[253];
 	enum ENUM_IFTYPE eIftype;
 
+#if ((CFG_SUPPORT_TWT == 1) && (CFG_SUPPORT_TWT_HOTSPOT == 1))
+	enum _ENUM_TWT_HOTSPOT_RESPONDER_STATE_T aeTWTRespState;
+	uint8_t twt_flow_id_bitmap;
+	struct LINK twt_sch_link; /* twt sch-link */
+	struct _TWT_HOTSPOT_STA_NODE arTWTSta[TWT_MAX_FLOW_NUM];
+#endif
+
 	/* Buffer for WPA2 PMKID */
 	/* The PMKID cache lifetime is expire by media_disconnect_indication */
 	struct LINK rPmkidCache;
@@ -779,6 +786,9 @@ struct WIFI_VAR {
 	uint8_t ucTWTRequester;
 	uint8_t ucTWTResponder;
 	uint8_t ucTWTStaBandBitmap;
+#endif
+#if (CFG_SUPPORT_TWT_HOTSPOT == 1)
+	uint8_t ucTWTHotSpotSupport;
 #endif
 #if (CFG_TWT_SMART_STA == 1)
 	uint8_t ucTWTSmartSta;
