@@ -403,7 +403,11 @@ void bssDetermineApBssInfoPhyTypeSet(IN struct ADAPTER *prAdapter,
 		prBssInfo->ucPhyTypeSet |= PHY_TYPE_BIT_VHT;
 	} else if (!fgIsPureAp &&
 			IS_FEATURE_ENABLED(ucVhtOption) &&
-			(prBssInfo->eBand == BAND_5G)) {
+			((prBssInfo->eBand == BAND_5G)
+#if (CFG_SUPPORT_WIFI_6G == 1)
+			|| (prBssInfo->eBand == BAND_6G)
+#endif
+			)) {
 		prBssInfo->ucPhyTypeSet |= PHY_TYPE_BIT_VHT;
 	}
 

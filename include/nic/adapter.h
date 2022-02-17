@@ -529,6 +529,9 @@ struct BSS_INFO {
 	uint8_t ucHeChannelFrequencyS1;
 	uint8_t ucHeChannelFrequencyS2;
 	uint16_t u2HeBasicMcsSet;
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	struct _6G_OPER_INFOR_T r6gOperInfor;
+#endif
 #endif
 
 #if (CFG_SUPPORT_802_11V_MBSSID == 1)
@@ -967,6 +970,7 @@ struct WIFI_VAR {
 
 	uint8_t ucApWpsMode;
 	uint8_t ucApChannel;
+	uint16_t u2ApFreq;
 
 	uint8_t ucApSco;
 	uint8_t ucP2pGoSco;

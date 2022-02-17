@@ -432,6 +432,11 @@ void rlmRspGenerateHtCapIE(struct ADAPTER *prAdapter,
 	if (!IS_BSS_ACTIVE(prBssInfo))
 		return;
 
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	if (IS_BSS_APGO(prBssInfo) && prBssInfo->eBand == BAND_6G)
+		return;
+#endif
+
 	prStaRec = cnmGetStaRecByIndex(prAdapter, prMsduInfo->ucStaRecIndex);
 
 	/* Decide PHY type set source */
@@ -517,6 +522,11 @@ void rlmRspGenerateHtOpIE(struct ADAPTER *prAdapter,
 
 	if (!IS_BSS_ACTIVE(prBssInfo))
 		return;
+
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	if (IS_BSS_APGO(prBssInfo) && prBssInfo->eBand == BAND_6G)
+		return;
+#endif
 
 	/* Decide PHY type set source */
 	if (prStaRec) {
@@ -870,7 +880,11 @@ static void rlmFillHtCapIE(struct ADAPTER *prAdapter,
 
 	prHtCap->u4TxBeamformingCap = TX_BEAMFORMING_CAP_DEFAULT_VAL;
 	if ((prAdapter->rWifiVar.eDbdcMode == ENUM_DBDC_MODE_DISABLED) ||
-	    (prBssInfo->eBand == BAND_5G)) {
+	    (prBssInfo->eBand == BAND_5G)
+#if (CFG_SUPPORT_WIFI_6G == 1)
+		|| (prBssInfo->eBand == BAND_6G)
+#endif
+	) {
 		if (IS_FEATURE_ENABLED(prAdapter->rWifiVar.ucStaHtBfee))
 			prHtCap->u4TxBeamformingCap = TX_BEAMFORMING_CAP_BFEE;
 		if (IS_FEATURE_ENABLED(prAdapter->rWifiVar.ucStaHtBfer))
@@ -1286,6 +1300,11 @@ void rlmRspGenerateVhtCapIE(struct ADAPTER *prAdapter,
 	if (!IS_BSS_ACTIVE(prBssInfo))
 		return;
 
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	if (IS_BSS_APGO(prBssInfo) && prBssInfo->eBand == BAND_6G)
+		return;
+#endif
+
 	prStaRec = cnmGetStaRecByIndex(prAdapter, prMsduInfo->ucStaRecIndex);
 
 	/* Decide PHY type set source */
@@ -1329,6 +1348,11 @@ void rlmRspGenerateVhtOpIE(struct ADAPTER *prAdapter,
 
 	if (!IS_BSS_ACTIVE(prBssInfo))
 		return;
+
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	if (IS_BSS_APGO(prBssInfo) && prBssInfo->eBand == BAND_6G)
+		return;
+#endif
 
 	/* Decide PHY type set source */
 	if (prStaRec) {
@@ -3006,7 +3030,12 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 	 */
 	if ((prBssInfo->eBand == BAND_2G4 && ucPrimaryChannel > 14) ||
 	    (prBssInfo->eBand == BAND_5G &&
-	     (ucPrimaryChannel >= 180 || ucPrimaryChannel <= 14)))
+	     (ucPrimaryChannel >= 180 || ucPrimaryChannel <= 14))
+#if (CFG_SUPPORT_WIFI_6G == 1)
+		|| (prBssInfo->eBand == BAND_6G &&
+		 (ucPrimaryChannel > 233 || ucPrimaryChannel < 1))
+#endif
+	)
 		ucPrimaryChannel = 0;
 #if CFG_SUPPORT_802_11AC
 	/* Check whether the Operation Mode IE is exist or not.

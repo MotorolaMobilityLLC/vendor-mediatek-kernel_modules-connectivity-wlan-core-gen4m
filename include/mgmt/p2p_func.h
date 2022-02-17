@@ -255,7 +255,8 @@ p2pFuncAssocRespUpdate(IN struct ADAPTER *prAdapter,
 uint32_t
 p2pFuncProbeRespUpdate(IN struct ADAPTER *prAdapter,
 		IN struct BSS_INFO *prP2pBssInfo,
-		IN uint8_t *ProbeRespIE, IN uint32_t u4ProbeRespLen);
+		IN uint8_t *ProbeRespIE, IN uint32_t u4ProbeRespLen,
+		IN enum ENUM_IE_UPD_METHOD eMethod);
 #endif
 
 u_int8_t

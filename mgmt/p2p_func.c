@@ -1260,7 +1260,11 @@ p2pFuncStartGO(IN struct ADAPTER *prAdapter,
 			"GO Channel:%d\n",
 			prBssInfo->ucPrimaryChannel);
 
-		if (prBssInfo->eBand == BAND_5G) {
+		if (prBssInfo->eBand == BAND_5G
+#if (CFG_SUPPORT_WIFI_6G == 1)
+			|| prBssInfo->eBand == BAND_6G
+#endif
+		) {
 			/* Depend on eBand */
 			prBssInfo->ucPhyTypeSet |= PHY_TYPE_SET_802_11A;
 			/* Depend on eCurrentOPMode and ucPhyTypeSet */
@@ -1348,6 +1352,26 @@ p2pFuncStartGO(IN struct ADAPTER *prAdapter,
 		 * for network phy type confirmed.
 		 */
 		bssUpdateBeaconContent(prAdapter, prBssInfo->ucBssIndex);
+
+#if CFG_SUPPORT_P2P_GO_OFFLOAD_PROBE_RSP
+		{
+			enum ENUM_IE_UPD_METHOD eMethod =
+				IE_UPD_METHOD_UPDATE_PROBE_RSP;
+
+#if (CFG_SUPPORT_WIFI_6G == 1)
+			if (prBssInfo->eBand == BAND_6G)
+				eMethod = IE_UPD_METHOD_UNSOL_PROBE_RSP;
+#endif
+			if (p2pFuncProbeRespUpdate(prAdapter,
+				prBssInfo,
+				prBssInfo->prBeacon->prPacket,
+				prBssInfo->prBeacon->u2FrameLength,
+				eMethod) == WLAN_STATUS_FAILURE) {
+				DBGLOG(P2P, ERROR,
+					"Update probe resp IEs fail!\n");
+			}
+		}
+#endif
 
 		/* 4 <3.4> Setup BSSID */
 		nicPmIndicateBssCreated(prAdapter, prBssInfo->ucBssIndex);
@@ -1899,7 +1923,11 @@ void p2pFuncDfsSwitchCh(IN struct ADAPTER *prAdapter,
 
 /* To Support Cross Band Channel Swtich */
 #if CFG_SUPPORT_IDC_CH_SWITCH
-	if (prBssInfo->eBand == BAND_5G) {
+	if (prBssInfo->eBand == BAND_5G
+#if (CFG_SUPPORT_WIFI_6G == 1)
+		|| prBssInfo->eBand == BAND_6G
+#endif
+	) {
 		/* Depend on eBand */
 		prBssInfo->ucPhyTypeSet |= PHY_TYPE_SET_802_11A;
 		/* Depend on eCurrentOPMode and ucPhyTypeSet */
@@ -2539,7 +2567,8 @@ p2pFuncDisassoc(IN struct ADAPTER *prAdapter,
 uint32_t
 p2pFuncProbeRespUpdate(IN struct ADAPTER *prAdapter,
 		IN struct BSS_INFO *prP2pBssInfo,
-		IN uint8_t *ProbeRespIE, IN uint32_t u4ProbeRespLen)
+		IN uint8_t *ProbeRespIE, IN uint32_t u4ProbeRespLen,
+		IN enum ENUM_IE_UPD_METHOD eMethod)
 
 {
 	struct MSDU_INFO *prMsduInfo = (struct MSDU_INFO *) NULL;
@@ -2565,13 +2594,7 @@ p2pFuncProbeRespUpdate(IN struct ADAPTER *prAdapter,
 			"change beacon: has no extra probe response IEs\n");
 		return WLAN_STATUS_SUCCESS;
 	}
-	if (p2pFuncIsAPMode(
-		prAdapter->rWifiVar
-			.prP2PConnSettings[prP2pBssInfo->u4PrivateData])) {
-		DBGLOG(BSS, INFO,
-			"change beacon: pure Ap mode do not add extra probe response IEs\n");
-		return WLAN_STATUS_SUCCESS;
-	}
+
 	prMsduInfo->u2FrameLength = 0;
 
 	bssBuildBeaconProbeRespFrameCommonIEs(prMsduInfo,
@@ -2621,12 +2644,24 @@ p2pFuncProbeRespUpdate(IN struct ADAPTER *prAdapter,
 	}
 
 	DBGLOG(BSS, INFO,
-		"update probe response for bss index: %d, IE len: %d\n",
-		prP2pBssInfo->ucBssIndex, prMsduInfo->u2FrameLength);
+		"update probe response for bss index:%d, method:%d, IE len:%d\n",
+		prP2pBssInfo->ucBssIndex,
+		eMethod,
+		prMsduInfo->u2FrameLength);
 	/* dumpMemory8(prMsduInfo->prPacket, prMsduInfo->u2FrameLength); */
 
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	if (eMethod == IE_UPD_METHOD_UNSOL_PROBE_RSP) {
+		DBGLOG(P2P, TRACE, "Dump unsolicited probe response to FW\n");
+		if (aucDebugModule[DBG_P2P_IDX] & DBG_CLASS_TRACE) {
+			dumpMemory8((uint8_t *) prMsduInfo->prPacket,
+				(uint32_t) prMsduInfo->u2FrameLength);
+		}
+	}
+#endif
+
 	return nicUpdateBeaconIETemplate(prAdapter,
-					IE_UPD_METHOD_UPDATE_PROBE_RSP,
+					eMethod,
 					prP2pBssInfo->ucBssIndex,
 					prP2pBssInfo->u2CapInfo,
 					prMsduInfo->prPacket,
@@ -6107,10 +6142,13 @@ static u_int8_t p2pFuncSwitchSapChannelToDbdc(
 		ENUM_DBDC_MODE_DISABLED)
 		return FALSE;
 
-	if (eStaBand == eSapBand &&
-		eSapBand == BAND_5G &&
-		ucStaChannelNum != 149) {
-
+	if ((eStaBand == eSapBand) &&
+		((eSapBand == BAND_5G &&
+		ucStaChannelNum != 149)
+#if (CFG_SUPPORT_WIFI_6G == 1)
+		|| (eSapBand == BAND_6G)
+#endif
+	)) {
 		struct RF_CHANNEL_INFO rRfChnlInfo;
 
 		rRfChnlInfo.ucChannelNum = 6;

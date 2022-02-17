@@ -202,6 +202,12 @@ rateGetRateSetFromIEs(
 		 */
 		ASSERT(prIeSupportedRate->ucLength <= RATE_NUM_SW);
 
+		if (aucDebugModule[DBG_P2P_IDX] & DBG_CLASS_TRACE) {
+			DBGLOG(RLM, TRACE, "Dump supported rate\n");
+			dumpMemory8((uint8_t *) prIeSupportedRate,
+				(uint32_t) prIeSupportedRate->ucLength);
+		}
+
 		for (i = 0; i < prIeSupportedRate->ucLength; i++) {
 			ucRate =
 			    prIeSupportedRate->aucSupportedRates[i] & RATE_MASK;
@@ -266,6 +272,11 @@ rateGetRateSetFromIEs(
 	*pu2OperationalRateSet = u2OperationalRateSet;
 	*pu2BSSBasicRateSet = u2BSSBasicRateSet;
 	*pfgIsUnknownBSSBasicRate = fgIsUnknownBSSBasicRate;
+
+	DBGLOG(RLM, TRACE, "OP rate:%d, Basic rate:%d, Unknown rate:%d\n",
+		u2OperationalRateSet,
+		u2BSSBasicRateSet,
+		fgIsUnknownBSSBasicRate);
 
 	return;
 

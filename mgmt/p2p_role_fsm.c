@@ -1310,6 +1310,23 @@ void p2pRoleFsmRunEventStartAP(IN struct ADAPTER *prAdapter,
 				prP2pConnReqInfo->rChannelInfo.eBand = BAND_2G4;
 			else
 				prP2pConnReqInfo->rChannelInfo.eBand = BAND_5G;
+		} else if (prAdapter->rWifiVar.u2ApFreq &&
+			prAdapter->rWifiVar.ucApChnlDefFromCfg) {
+			/* Translate Freq from MHz to channel number. */
+			prP2pConnReqInfo->rChannelInfo.ucChannelNum =
+			nicFreq2ChannelNum(prAdapter->rWifiVar.u2ApFreq * 1000);
+
+			if (prAdapter->rWifiVar.u2ApFreq >= 2412 &&
+				prAdapter->rWifiVar.u2ApFreq <= 2484)
+				prP2pConnReqInfo->rChannelInfo.eBand = BAND_2G4;
+			else if (prAdapter->rWifiVar.u2ApFreq >= 5180 &&
+				prAdapter->rWifiVar.u2ApFreq <= 5900)
+				prP2pConnReqInfo->rChannelInfo.eBand = BAND_5G;
+#if (CFG_SUPPORT_WIFI_6G == 1)
+			else if (prAdapter->rWifiVar.u2ApFreq >= 5955 &&
+				prAdapter->rWifiVar.u2ApFreq <= 7115)
+				prP2pConnReqInfo->rChannelInfo.eBand = BAND_6G;
+#endif
 		}
 	} else {
 		prP2pConnReqInfo->eConnRequest = P2P_CONNECTION_TYPE_GO;
@@ -3370,6 +3387,8 @@ void p2pRoleFsmRunEventBeaconUpdate(IN struct ADAPTER *prAdapter,
 		(struct MSG_P2P_BEACON_UPDATE *) NULL;
 	struct P2P_BEACON_UPDATE_INFO *prBcnUpdateInfo =
 		(struct P2P_BEACON_UPDATE_INFO *) NULL;
+	struct P2P_CONNECTION_REQ_INFO *prP2pConnReqInfo =
+		(struct P2P_CONNECTION_REQ_INFO *) NULL;
 
 
 	DBGLOG(P2P, TRACE, "p2pRoleFsmRunEventBeaconUpdate\n");
@@ -3387,6 +3406,8 @@ void p2pRoleFsmRunEventBeaconUpdate(IN struct ADAPTER *prAdapter,
 	prP2pBssInfo =
 		GET_BSS_INFO_BY_INDEX(prAdapter,
 			prRoleP2pFsmInfo->ucBssIndex);
+
+	prP2pConnReqInfo = &(prRoleP2pFsmInfo->rConnReqInfo);
 
 	prP2pBssInfo->fgIsWepCipherGroup = prBcnUpdateMsg->fgIsWepCipher;
 
@@ -3423,9 +3444,9 @@ void p2pRoleFsmRunEventBeaconUpdate(IN struct ADAPTER *prAdapter,
 				"Update extra IEs for asso resp fail!\n");
 	}
 
-
 	if ((prP2pBssInfo->eCurrentOPMode == OP_MODE_ACCESS_POINT) &&
 	    (prP2pBssInfo->eIntendOPMode == OP_MODE_NUM)) {
+
 		/* AP is created, Beacon Update. */
 		/* nicPmIndicateBssAbort(prAdapter, NETWORK_TYPE_P2P_INDEX); */
 
@@ -3436,14 +3457,6 @@ void p2pRoleFsmRunEventBeaconUpdate(IN struct ADAPTER *prAdapter,
 
 		bssUpdateBeaconContent(prAdapter, prRoleP2pFsmInfo->ucBssIndex);
 
-#if CFG_SUPPORT_P2P_GO_OFFLOAD_PROBE_RSP
-		if (p2pFuncProbeRespUpdate(prAdapter,
-			prP2pBssInfo,
-			prBcnUpdateMsg->pucProbeRespIE,
-			prBcnUpdateMsg->u4ProbeRespLen) == WLAN_STATUS_FAILURE)
-			DBGLOG(P2P, ERROR,
-				"Update extra IEs for probe resp fail!\n");
-#endif
 		/* nicPmIndicateBssCreated(prAdapter,
 		 * NETWORK_TYPE_P2P_INDEX);
 		 */

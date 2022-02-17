@@ -5008,12 +5008,13 @@ void scanParseHEOpIE(IN uint8_t *pucIE, IN struct BSS_DESC *prBssDesc,
 			&prBssDesc->ucCenterFreqS2,
 			&prBssDesc->eSco);
 
-		log_dbg(SCN, INFO, "HE6G_OPINFOR:%u,%u,%u,%u,%u,%u,%u,%u\n",
+		log_dbg(SCN, INFO, "HE6G_OPINFOR:%u,%u,%u,%u,%u,%u,%u,%u,%u\n",
 			prBssDesc->ucChannelNum,
 			(uint8_t)pr6gOperInfor->rControl.bits.ChannelWidth,
 			prBssDesc->eChannelWidth,
 			pr6gOperInfor->ucChannelCenterFreqSeg0,
 			pr6gOperInfor->ucChannelCenterFreqSeg1,
+			pr6gOperInfor->ucMinimumRate,
 			prBssDesc->ucCenterFreqS1,
 			prBssDesc->ucCenterFreqS2,
 			prBssDesc->eSco);
