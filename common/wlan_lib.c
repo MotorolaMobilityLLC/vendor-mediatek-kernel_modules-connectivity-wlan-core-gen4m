@@ -11812,6 +11812,9 @@ int wlanQueryRateByTable(uint32_t txmode, uint32_t rate,
 
 	if (txmode == TX_RATE_MODE_CCK) { /* 11B */
 		ucMaxSize = ARRAY_SIZE(g_rCckDataRateMappingTable.rate);
+		/* short preamble */
+		if ((rate >= 5) && (rate <= 7))
+			rate -= 4;
 		if (rate >= ucMaxSize) {
 			DBGLOG(SW4, ERROR, "rate error for CCK: %u\n", rate);
 			return -1;
@@ -12033,53 +12036,26 @@ int wlanGetRxRate(IN struct GLUE_INFO *prGlueInfo,
 	struct ADAPTER *prAdapter;
 	uint32_t rxmode = 0, rate = 0, frmode = 0, sgi = 0, nss = 0;
 	uint32_t u4RxVector0 = 0, u4RxVector1 = 0;
-	uint8_t ucWlanIdx, ucStaIdx;
 	int rv;
-	struct STA_RECORD *prStaRec;
+	struct CHIP_DBG_OPS *prChipDbg;
 
 	*pu4CurRate = 0;
 	*pu4MaxRate = 0;
 	prAdapter = prGlueInfo->prAdapter;
 
-	prStaRec = aisGetStaRecOfAP(prAdapter, AIS_DEFAULT_INDEX);
-	if (prStaRec) {
-		ucWlanIdx = prStaRec->ucWlanIndex;
-	} else {
-		DBGLOG(SW4, ERROR, "prStaRecOfAP is null\n");
-		goto errhandle;
-	}
+	prChipDbg = prAdapter->chip_info->prDebugOps;
+	if (prChipDbg && prChipDbg->get_rx_rate_info) {
+		rv = prChipDbg->get_rx_rate_info(
+				prAdapter,
+				&rate,
+				&nss,
+				&rxmode,
+				&frmode,
+				&sgi);
 
-	if (wlanGetStaIdxByWlanIdx(prAdapter, ucWlanIdx, &ucStaIdx) ==
-		WLAN_STATUS_SUCCESS) {
-		u4RxVector0 = prAdapter->arStaRec[ucStaIdx].u4RxVector0;
-		u4RxVector1 = prAdapter->arStaRec[ucStaIdx].u4RxVector1;
-		if ((u4RxVector0 == 0) && (u4RxVector1 == 0)) {
-			/* soc3_0 known issue */
-			DBGLOG(SW4, TRACE, "u4RxVector0 or u4RxVector1 is 0\n");
+		if (rv < 0)
 			goto errhandle;
-		}
-	} else {
-		DBGLOG(SW4, ERROR, "wlanGetStaIdxByWlanIdx fail\n");
-		goto errhandle;
 	}
-
-	rxmode = (u4RxVector0 & RX_VT_RX_MODE_MASK) >> RX_VT_RX_MODE_OFFSET;
-	rate = (u4RxVector0 & RX_VT_RX_RATE_MASK) >> RX_VT_RX_RATE_OFFSET;
-	frmode = (u4RxVector0 & RX_VT_FR_MODE_MASK) >> RX_VT_FR_MODE_OFFSET;
-	nss = ((u4RxVector0 & RX_VT_NUM_RX_MASK) >> RX_VT_NUM_RX_OFFSET);
-	sgi = u4RxVector0 & RX_VT_SHORT_GI;
-
-	/*0 means 1R, 1 means 2R ...*/
-	nss += 1;
-	sgi = (sgi == 0) ? 0 : 1;
-	if (frmode >= 4) {
-		DBGLOG(SW4, ERROR, "frmode error: %u\n", frmode);
-		goto errhandle;
-	}
-
-	DBGLOG(SW4, TRACE,
-	       "rxmode=%u rate=%u bandwidth=%u sgi=%u nss=%u\n",
-	       rxmode, rate, frmode, sgi, nss);
 
 	rv = wlanQueryRateByTable(rxmode, rate, frmode, sgi, nss,
 				 pu4CurRate, pu4MaxRate);
@@ -12089,7 +12065,6 @@ int wlanGetRxRate(IN struct GLUE_INFO *prGlueInfo,
 	return 0;
 
 errhandle:
-	/* soc3_0 known issue */
 	DBGLOG(SW4, TRACE,
 		"u4RxVector0=[%x], u4RxVector1=[%x], rxmode=[%u], rate=[%u], frmode=[%u], sgi=[%u], nss=[%u]\n",
 		u4RxVector0, u4RxVector1, rxmode, rate, frmode, sgi, nss

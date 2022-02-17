@@ -110,6 +110,49 @@
 #define RX_PAYLOAD_FORMAT_MIDDLE_SUB_AMSDU      2
 #define RX_PAYLOAD_FORMAT_LAST_SUB_AMSDU        1
 
+/* RX Report Definition */
+/* Unit: DW */
+#define RX_RPT_HDR_LEN			8
+#define RX_RPT_USER_INFO_LEN		12
+#define RX_RPT_BLK_HDR_LEN		2
+#define RX_RPT_BLK_CRXV1_LEN		18
+#define RX_RPT_BLK_PRXV1_LEN		2
+#define RX_RPT_BLK_PRXV2_LEN		4
+#define RX_RPT_BLK_CRXV2_LEN		20
+
+/*------------------------------------------------------------------------------
+ * Bit fields for RX report
+ *------------------------------------------------------------------------------
+ */
+/* DW0 */
+#define RX_RPT_RX_BYTE_COUNT_MASK		BITS(0, 15)
+#define RX_RPT_RX_BYTE_COUNT_SHIFT		0
+#define RX_RPT_RXV_MASK				BIT(25)
+#define RX_RPT_RXV_SHIFT			25
+
+/* DW8 */
+#define RX_RPT_RX_WLAN_ID_MASK			BITS(22, 31)
+#define RX_RPT_RX_WLAN_ID_SHIFT			22
+
+/* DW11 */
+#define RX_RPT_RX_DATA_TYPE_MASK		BITS(27, 31)
+#define RX_RPT_RX_DATA_TYPE_SHIFT		27
+
+/* DW12 */
+#define RX_RPT_RX_RATE_MASK			BITS(0, 15)
+
+/* DW20 */
+#define RX_RPT_RXV_PRXV_BYTE_COUNT_MASK		BITS(7, 12)
+#define RX_RPT_RXV_PRXV_BYTE_COUNT_SHIFT	7
+#define RX_RPT_RXV_TYPE_CRXV1_VLD_MASK		BIT(16)
+#define RX_RPT_RXV_TYPE_CRXV1_VLD_SHIFT		16
+#define RX_RPT_RXV_TYPE_PRXV1_VLD_MASK		BIT(17)
+#define RX_RPT_RXV_TYPE_PRXV1_VLD_SHIFT		17
+#define RX_RPT_RXV_TYPE_PRXV2_VLD_MASK		BIT(18)
+#define RX_RPT_RXV_TYPE_PRXV2_VLD_SHIFT		18
+#define RX_RPT_RXV_TYPE_CRXV2_VLD_MASK		BIT(19)
+#define RX_RPT_RXV_TYPE_CRXV2_VLD_SHIFT		19
+
 /* HAL RX from hal_hw_def_rom.h */
 /*------------------------------------------------------------------------------
  * Cipher define
@@ -553,7 +596,8 @@ enum ENUM_MAC_RX_PKT_TYPE {
 	RX_PKT_TYPE_DUP_RFB,
 	RX_PKT_TYPE_TM_REPORT,
 	RX_PKT_TYPE_MSDU_REPORT = 6,
-	RX_PKT_TYPE_SW_DEFINED = 7
+	RX_PKT_TYPE_SW_DEFINED = 7,
+	RX_PKT_TYPE_RX_REPORT = 11
 };
 
 enum ENUM_MAC_RX_GROUP_VLD {
@@ -810,6 +854,24 @@ struct HW_MAC_MSDU_REPORT {
 	union HW_MAC_MSDU_TOKEN_T au4MsduToken[0];
 };
 
+struct SW_RX_RPT_BLK_RXV {
+	uint32_t u4CRxv1[RX_RPT_BLK_CRXV1_LEN];
+	uint32_t u4PRxv1[RX_RPT_BLK_PRXV1_LEN];
+	uint32_t u4PRxv2[RX_RPT_BLK_PRXV2_LEN];
+	uint32_t u4CRxv2[RX_RPT_BLK_CRXV2_LEN];
+};
+
+struct HW_MAC_RX_RPT_BLK {
+	uint32_t u4Header[RX_RPT_BLK_HDR_LEN];
+	uint32_t u4Rxv[0];
+};
+
+struct HW_MAC_RX_REPORT {
+	uint32_t u4Header[RX_RPT_HDR_LEN];
+	uint32_t u4UserInfo[RX_RPT_USER_INFO_LEN];
+	struct HW_MAC_RX_RPT_BLK rRxvBlk[0];
+};
+
 struct SW_RFB {
 	struct QUE_ENTRY rQueEntry;
 	void *pvPacket;		/*!< ptr to rx Packet Descriptor */
@@ -1054,6 +1116,59 @@ struct ACTION_FRAME_SIZE_MAP {
 			__func__); \
 	} \
 } \
+
+/*------------------------------------------------------------------------------
+ * MACRO for RX report
+ *------------------------------------------------------------------------------
+ */
+/* DW0 */
+#define RX_RPT_GET_RX_BYTE_COUNT(_prRxReport)	\
+		((((_prRxReport)->u4Header[0]) & \
+		RX_RPT_RX_BYTE_COUNT_MASK) >> RX_RPT_RX_BYTE_COUNT_SHIFT)
+
+#define RX_RPT_GET_RXV_BLK_EXIST(_prRxReport)	\
+		((((_prRxReport)->u4Header[0]) & \
+		RX_RPT_RXV_MASK) >> RX_RPT_RXV_SHIFT)
+
+/* DW8 */
+#define RX_RPT_GET_WLAN_ID(_prRxReport)	\
+		((((_prRxReport)->u4UserInfo[0]) & \
+		RX_RPT_RX_WLAN_ID_MASK) >> RX_RPT_RX_WLAN_ID_SHIFT)
+
+/* DW11 */
+#define RX_RPT_GET_FRAME_TYPE(_prRxReport)	\
+		((((_prRxReport)->u4UserInfo[3]) & \
+		RX_RPT_RX_DATA_TYPE_MASK) >> RX_RPT_RX_DATA_TYPE_SHIFT)
+
+#define RX_RPT_IS_DATA_FRAME(_ucDataType) \
+	((_ucDataType & 0x9) ? TRUE : FALSE)
+
+/* DW20 */
+#define RX_RPT_GET_RXV_PRXV_BYTE_COUNT(_prRxReport)	\
+		((((_prRxReport)->rRxvBlk[0].u4Header[0]) & \
+		RX_RPT_RXV_PRXV_BYTE_COUNT_MASK) >> \
+		RX_RPT_RXV_PRXV_BYTE_COUNT_SHIFT)
+
+#define RX_RPT_GET_RXV_TYPE_CRXV1_VLD(_prRxReport)	\
+		((((_prRxReport)->rRxvBlk[0].u4Header[0]) & \
+		RX_RPT_RXV_TYPE_CRXV1_VLD_MASK) >> \
+		RX_RPT_RXV_TYPE_CRXV1_VLD_SHIFT)
+
+#define RX_RPT_GET_RXV_TYPE_PRXV1_VLD(_prRxReport)	\
+		((((_prRxReport)->rRxvBlk[0].u4Header[0]) & \
+		RX_RPT_RXV_TYPE_PRXV1_VLD_MASK) >> \
+		RX_RPT_RXV_TYPE_PRXV1_VLD_SHIFT)
+
+#define RX_RPT_GET_RXV_TYPE_PRXV2_VLD(_prRxReport)	\
+		((((_prRxReport)->rRxvBlk[0].u4Header[0]) & \
+		RX_RPT_RXV_TYPE_PRXV2_VLD_MASK) >> \
+		RX_RPT_RXV_TYPE_PRXV2_VLD_SHIFT)
+
+#define RX_RPT_GET_RXV_TYPE_CRXV2_VLD(_prRxReport)	\
+		((((_prRxReport)->rRxvBlk[0].u4Header[0]) & \
+		RX_RPT_RXV_TYPE_CRXV2_VLD_MASK) >> \
+		RX_RPT_RXV_TYPE_CRXV2_VLD_SHIFT)
+
 /*------------------------------------------------------------------------------
  * MACRO for HW_MAC_RX_DESC_T
  *------------------------------------------------------------------------------
@@ -1325,6 +1440,9 @@ void nicRxUninitialize(IN struct ADAPTER *prAdapter);
 void nicRxProcessRFBs(IN struct ADAPTER *prAdapter);
 
 void nicRxProcessMsduReport(IN struct ADAPTER *prAdapter,
+	IN OUT struct SW_RFB *prSwRfb);
+
+void nicRxProcessRxReport(IN struct ADAPTER *prAdapter,
 	IN OUT struct SW_RFB *prSwRfb);
 
 uint32_t nicRxSetupRFB(IN struct ADAPTER *prAdapter, IN struct SW_RFB *prRfb);

@@ -319,6 +319,13 @@
 	((_key_loc & 0x7F) << 6) | (_DW & 0xF) << 2)
 
 /*------------------------------------------------------------------------------
+ * MACRO for decision of RXV source (RXD or RX_RPT)
+ *------------------------------------------------------------------------------
+ */
+#define CONNAC2X_RXV_FROM_RX_RPT(_prAdapter)	\
+	((_prAdapter)->chip_info->get_rxv_from_rxrpt)
+
+/*------------------------------------------------------------------------------
  * MACRO for CONNAC2X RXVECTOR Parsing
  *------------------------------------------------------------------------------
  */
@@ -353,6 +360,22 @@
 
 #define CONNAC2X_HAL_RX_VECTOR_GET_RX_VECTOR(_prHwRxVector, _ucIdx) \
 	((_prHwRxVector)->u4RxVector[_ucIdx])
+
+#define CONNAC2X_HAL_RXV_GET_RCPI0_RXRPT(_RxvDw6)	\
+	(((_RxvDw6) & CONNAC2X_RX_VT_RCPI0_MASK) >> CONNAC2X_RX_VT_RCPI0_OFFSET)
+
+#define CONNAC2X_HAL_RXV_GET_RCPI1_RXRPT(_RxvDw6)	\
+	(((_RxvDw6) & CONNAC2X_RX_VT_RCPI1_MASK) >> CONNAC2X_RX_VT_RCPI1_OFFSET)
+
+#define CONNAC2X_HAL_RXV_GET_RCPI2_RXRPT(_RxvDw6)	\
+	(((_RxvDw6) & CONNAC2X_RX_VT_RCPI2_MASK) >> CONNAC2X_RX_VT_RCPI2_OFFSET)
+
+#define CONNAC2X_HAL_RXV_GET_RCPI3_RXRPT(_RxvDw6)	\
+	(((_RxvDw6) & CONNAC2X_RX_VT_RCPI3_MASK) >> CONNAC2X_RX_VT_RCPI3_OFFSET)
+
+#define CONNAC2X_HAL_RXV_GET_NUM_RX_RXRPT(_RxvDw2)	\
+	(((_RxvDw2) & CONNAC2X_RX_VT_NUM_RX_MASK) >>	\
+	CONNAC2X_RX_VT_NUM_RX_OFFSET)
 
 
 #if defined(_HIF_PCIE) || defined(_HIF_AXI)

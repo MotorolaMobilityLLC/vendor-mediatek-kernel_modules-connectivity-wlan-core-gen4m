@@ -602,6 +602,9 @@ struct CHIP_DBG_OPS mt7961DebugOps = {
 	.show_rx_rate_info = connac2x_show_rx_rate_info,
 	.show_rx_rssi_info = connac2x_show_rx_rssi_info,
 	.show_stat_info = connac2x_show_stat_info,
+#ifdef CFG_SUPPORT_LINK_QUALITY_MONITOR
+	.get_rx_rate_info = connac2x_get_rx_rate_info
+#endif
 };
 
 /* Litien code refine to support multi chip */
