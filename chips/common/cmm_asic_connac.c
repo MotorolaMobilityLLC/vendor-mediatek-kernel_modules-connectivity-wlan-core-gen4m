@@ -334,7 +334,7 @@ void fillNicTxDescAppendWithCR4(IN struct ADAPTER
 			   prTxDescBuffer;
 	kalMemZero(prHwTxDescAppend, prChipInfo->txd_append_size);
 	prHwTxDescAppend->CR4_APPEND.u2PktFlags =
-		HIT_PKT_FLAGS_CT_WITH_TXD;
+		HIF_PKT_FLAGS_CT_INFO_APPLY_TXD;
 	prHwTxDescAppend->CR4_APPEND.ucBssIndex =
 		prMsduInfo->ucBssIndex;
 }
@@ -416,7 +416,7 @@ void fillTxDescAppendByCR4(IN struct ADAPTER *prAdapter,
 
 void fillTxDescTxByteCount(IN struct ADAPTER *prAdapter,
 			   IN struct MSDU_INFO *prMsduInfo,
-			   struct HW_MAC_TX_DESC *prTxDesc)
+			   void *prTxDesc)
 {
 	struct mt66xx_chip_info *prChipInfo;
 	uint32_t u4TxByteCount = NIC_TX_DESC_LONG_FORMAT_LENGTH;
@@ -432,12 +432,13 @@ void fillTxDescTxByteCount(IN struct ADAPTER *prAdapter,
 		u4TxByteCount += prChipInfo->u4ExtraTxByteCount;
 
 	/* Calculate Tx byte count */
-	HAL_MAC_TX_DESC_SET_TX_BYTE_COUNT(prTxDesc, u4TxByteCount);
+	HAL_MAC_TX_DESC_SET_TX_BYTE_COUNT(
+		(struct HW_MAC_TX_DESC *)prTxDesc, u4TxByteCount);
 }
 
 void fillTxDescTxByteCountWithCR4(IN struct ADAPTER
 				  *prAdapter, IN struct MSDU_INFO *prMsduInfo,
-				  struct HW_MAC_TX_DESC *prTxDesc)
+				  void *prTxDesc)
 {
 	struct mt66xx_chip_info *prChipInfo;
 	uint32_t u4TxByteCount = NIC_TX_DESC_LONG_FORMAT_LENGTH;
@@ -453,7 +454,8 @@ void fillTxDescTxByteCountWithCR4(IN struct ADAPTER
 		u4TxByteCount += prChipInfo->txd_append_size;
 
 	/* Calculate Tx byte count */
-	HAL_MAC_TX_DESC_SET_TX_BYTE_COUNT(prTxDesc, u4TxByteCount);
+	HAL_MAC_TX_DESC_SET_TX_BYTE_COUNT(
+		(struct HW_MAC_TX_DESC *)prTxDesc, u4TxByteCount);
 }
 
 #if defined(_HIF_PCIE) || defined(_HIF_AXI)
@@ -1076,7 +1078,7 @@ u_int8_t asicUsbSuspend(IN struct ADAPTER *prAdapter,
 	ret = usb_control_msg(prGlueInfo->rHifInfo.udev,
 			      usb_sndctrlpipe(prGlueInfo->rHifInfo.udev, 0),
 			      VND_REQ_FEATURE_SET,
-			      DEVICE_VENDOR_REQUEST_OUT,
+			      prBusInfo->u4device_vender_request_out,
 			      FEATURE_SET_WVALUE_SUSPEND, 0,
 			      NULL, 0,
 			      VENDOR_TIMEOUT_MS);
@@ -1099,6 +1101,7 @@ uint8_t asicUsbEventEpDetected(IN struct ADAPTER *prAdapter)
 {
 	struct GL_HIF_INFO *prHifInfo = NULL;
 	struct GLUE_INFO *prGlueInfo = NULL;
+	struct BUS_INFO *prBusInfo = NULL;
 	int32_t ret = 0;
 	uint8_t ucRetryCount = 0;
 	u_int8_t ucEp5Disable = FALSE;
@@ -1106,12 +1109,13 @@ uint8_t asicUsbEventEpDetected(IN struct ADAPTER *prAdapter)
 	ASSERT(FALSE == 0);
 	prGlueInfo = prAdapter->prGlueInfo;
 	prHifInfo = &prGlueInfo->rHifInfo;
+	prBusInfo = prGlueInfo->prAdapter->chip_info->bus_info;
 
 	if (prHifInfo->fgEventEpDetected == FALSE) {
 		prHifInfo->fgEventEpDetected = TRUE;
 		do {
 			ret = mtk_usb_vendor_request(prGlueInfo, 0,
-						     DEVICE_VENDOR_REQUEST_IN,
+					prBusInfo->u4device_vender_request_in,
 						     VND_REQ_EP5_IN_INFO,
 						     0, 0, &ucEp5Disable,
 						     sizeof(ucEp5Disable));

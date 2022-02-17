@@ -114,6 +114,7 @@
 
 /* Dependency:  mac.h (MAC_ADDR_LEN) */
 #include "nic_cmd_event.h"
+#include "nic_ext_cmd_event.h"
 
 /* Dependency:  nic_cmd_event.h (P_EVENT_CONNECTION_STATUS) */
 #include "nic.h"
@@ -123,9 +124,12 @@
 #include "hif_rx.h"
 #include "hif_tx.h"
 
+#include "nic_connac2x_tx.h"
 #include "nic_tx.h"
 #include "nic_txd_v1.h"
+#include "nic_txd_v2.h"
 
+#include "nic_connac2x_rx.h"
 /* Dependency:  hif_rx.h (P_HIF_RX_HEADER_T) */
 #include "nic_rx.h"
 
@@ -169,6 +173,7 @@
 #include "connac_reg.h"
 #include "connac_dmashdl.h"
 #include "cmm_asic_connac.h"
+#include "cmm_asic_connac2x.h"
 
 #include "rlm.h"
 #include "rlm_domain.h"
