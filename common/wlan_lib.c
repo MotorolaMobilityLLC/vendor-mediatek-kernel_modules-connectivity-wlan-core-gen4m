@@ -6470,7 +6470,7 @@ VOID wlanSetNicResourceParameters(IN P_ADAPTER_T prAdapter)
 
 /*----------------------------------------------------------------------------*/
 /*!
-* @brief This function is to query Nic resource information
+* @brief This function is to re-assign tx resource based on firmware's report
 *
 * @param prAdapter      Pointer of Adapter Data Structure
 *
@@ -6488,14 +6488,17 @@ VOID wlanUpdateNicResourceInformation(IN P_ADAPTER_T prAdapter)
 		return;
 
 	/* 3 2. Setup resource parameters */
-	wlanSetNicResourceParameters(prAdapter);
+	if (prAdapter->nicTxReousrce.txResourceInit)
+		prAdapter->nicTxReousrce.txResourceInit(prAdapter);
+	else
+		wlanSetNicResourceParameters(prAdapter);/* 6632, 7668 ways*/
 
 	/* 3 3. Reset Tx resource */
 	nicTxResetResource(prAdapter);
 
 #if QM_ADAPTIVE_TC_RESOURCE_CTRL
 	/* 3 4. Reset QM resource */
-	qmResetTcControlResource(prAdapter);
+	qmResetTcControlResource(prAdapter); /*CHIAHSUAN, TBD, NO PLE YET*/
 #endif
 
 	halTxResourceResetHwTQCounter(prAdapter);
@@ -6792,7 +6795,6 @@ VOID wlanInitFeatureOption(IN P_ADAPTER_T prAdapter)
 	prWifiVar->au4TcPageCount[TC2_INDEX] = (UINT_32) wlanCfgGetUint32(prAdapter, "Tc2Page", NIC_TX_PAGE_COUNT_TC2);
 	prWifiVar->au4TcPageCount[TC3_INDEX] = (UINT_32) wlanCfgGetUint32(prAdapter, "Tc3Page", NIC_TX_PAGE_COUNT_TC3);
 	prWifiVar->au4TcPageCount[TC4_INDEX] = (UINT_32) wlanCfgGetUint32(prAdapter, "Tc4Page", NIC_TX_PAGE_COUNT_TC4);
-	prWifiVar->au4TcPageCount[TC5_INDEX] = (UINT_32) wlanCfgGetUint32(prAdapter, "Tc5Page", NIC_TX_PAGE_COUNT_TC5);
 
 #if QM_ADAPTIVE_TC_RESOURCE_CTRL
 	prQM->au4MinReservedTcResource[TC0_INDEX] =
@@ -6805,8 +6807,6 @@ VOID wlanInitFeatureOption(IN P_ADAPTER_T prAdapter)
 	    (UINT_32) wlanCfgGetUint32(prAdapter, "Tc3MinRsv", QM_MIN_RESERVED_TC3_RESOURCE);
 	prQM->au4MinReservedTcResource[TC4_INDEX] =
 	    (UINT_32) wlanCfgGetUint32(prAdapter, "Tc4MinRsv", QM_MIN_RESERVED_TC4_RESOURCE);
-	prQM->au4MinReservedTcResource[TC5_INDEX] =
-	    (UINT_32) wlanCfgGetUint32(prAdapter, "Tc5MinRsv", QM_MIN_RESERVED_TC5_RESOURCE);
 
 	prQM->au4GuaranteedTcResource[TC0_INDEX] =
 	    (UINT_32) wlanCfgGetUint32(prAdapter, "Tc0Grt", QM_GUARANTEED_TC0_RESOURCE);
@@ -6818,8 +6818,6 @@ VOID wlanInitFeatureOption(IN P_ADAPTER_T prAdapter)
 	    (UINT_32) wlanCfgGetUint32(prAdapter, "Tc3Grt", QM_GUARANTEED_TC3_RESOURCE);
 	prQM->au4GuaranteedTcResource[TC4_INDEX] =
 	    (UINT_32) wlanCfgGetUint32(prAdapter, "Tc4Grt", QM_GUARANTEED_TC4_RESOURCE);
-	prQM->au4GuaranteedTcResource[TC5_INDEX] =
-	    (UINT_32) wlanCfgGetUint32(prAdapter, "Tc5Grt", QM_GUARANTEED_TC5_RESOURCE);
 
 	prQM->u4TimeToAdjustTcResource =
 	    (UINT_32) wlanCfgGetUint32(prAdapter, "TcAdjustTime", QM_INIT_TIME_TO_ADJUST_TC_RSC);

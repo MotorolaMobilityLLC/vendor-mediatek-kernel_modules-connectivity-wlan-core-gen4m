@@ -466,20 +466,18 @@ typedef enum _ENUM_MCU_Q_INDEX_T {
 /* Tc Resource index */
 typedef enum _ENUM_TRAFFIC_CLASS_INDEX_T {
 	/*First HW queue */
-	TC0_INDEX = 0,		/* HIF TX: AC0 packets */
+	TC0_INDEX = 0,	/* HIF TX: AC0 packets */
 	TC1_INDEX,		/* HIF TX: AC1 packets */
 	TC2_INDEX,		/* HIF TX: AC2 packets */
 	TC3_INDEX,		/* HIF TX: AC3 packets */
 	TC4_INDEX,		/* HIF TX: CPU packets */
-	TC5_INDEX,		/* HIF TX: AC4 packets */
 
-	/* Second HW queue */
 #if NIC_TX_ENABLE_SECOND_HW_QUEUE
-	TC6_INDEX,		/* HIF TX: AC10 packets */
-	TC7_INDEX,		/* HIF TX: AC11 packets */
-	TC8_INDEX,		/* HIF TX: AC12 packets */
-	TC9_INDEX,		/* HIF TX: AC13 packets */
-	TC10_INDEX,		/* HIF TX: AC14 packets */
+	/* Second HW queue */
+	TC5_INDEX,		/* HIF TX: AC10 packets */
+	TC6_INDEX,		/* HIF TX: AC11 packets */
+	TC7_INDEX,		/* HIF TX: AC12 packets */
+	TC8_INDEX,		/* HIF TX: AC13 packets */
 #endif
 
 	TC_NUM			/* Maximum number of Traffic Classes. */
@@ -638,6 +636,7 @@ typedef struct _TX_CTRL_T {
 
 	UINT_32 u4TotalPageNum;
 
+	UINT_32 u4TotalPageNumPle;
 	UINT_32 u4TotalTxRsvPageNum;
 
 /* Elements below is classified according to TC (Traffic Class) value. */
@@ -897,6 +896,26 @@ typedef struct _TX_TC_TRAFFIC_SETTING_T {
 } TX_TC_TRAFFIC_SETTING_T, P_TX_TC_TRAFFIC_SETTING_T;
 
 typedef void (*PFN_TX_DATA_DONE_CB) (IN P_GLUE_INFO_T prGlueInfo, IN P_QUE_T prQue);
+
+struct tx_resource_info {
+	/* PSE */
+	UINT_32 u4CmdTotalResource;  /* the total usable resource for MCU port */
+	UINT_32 u4CmdResourceUnit;   /* the unit of a MCU resource */
+	UINT_32 u4DataTotalResource; /* the total usable resource for LMAC port */
+	UINT_32 u4DataResourceUnit;  /* the unit of a LMAC resource */
+
+	/* PLE */
+	UINT_32 u4CmdTotalResourcePle;  /* the total usable resource for MCU port */
+	UINT_32 u4CmdResourceUnitPle;   /* the unit of a MCU resource */
+	UINT_32 u4DataTotalResourcePle; /* the total usable resource for LMAC port */
+	UINT_32 u4DataResourceUnitPle;  /* the unit of a LMAC resource */
+
+	/* Packet Processor 0x8206C000[15:8] * 4. Extra PSE resource is needed for HW.*/
+	UINT_8  ucPpTxAddCnt;/* in unit of byte */
+
+	/* update resource callback */
+	VOID(*txResourceInit)(IN P_ADAPTER_T prAdapter);
+};
 
 /*******************************************************************************
 *                            P U B L I C   D A T A
@@ -1589,6 +1608,7 @@ WLAN_STATUS nicTxDirectStartXmit(struct sk_buff *prSkb, P_GLUE_INFO_T prGlueInfo
 
 UINT_32 nicTxResourceGetPleFreeCount(IN P_ADAPTER_T prAdapter, IN UINT_8 ucTC);
 BOOLEAN nicTxResourceIsPleCtrlNeeded(IN P_ADAPTER_T prAdapter, IN UINT_8 ucTC);
+VOID nicTxResourceUpdate_v1(IN P_ADAPTER_T prAdapter);
 /*******************************************************************************
 *                              F U N C T I O N S
 ********************************************************************************

@@ -405,7 +405,7 @@ typedef struct _QUE_MGT_T {	/* Queue Management Control Info */
 
 #if QM_ADAPTIVE_TC_RESOURCE_CTRL
 	UINT_32 au4AverageQueLen[TC_NUM];
-	UINT_32 au4CurrentTcResource[TC_NUM];
+	UINT_32 au4CurrentTcResource[TC_NUM]; /* unit: frame */
 	UINT_32 au4MinReservedTcResource[TC_NUM];	/* The minimum amount of resource no matter busy or idle */
 	UINT_32 au4GuaranteedTcResource[TC_NUM];	/* The minimum amount of resource when extremely busy */
 
@@ -979,6 +979,7 @@ VOID mqmHandleBaActionFrame(P_ADAPTER_T prAdapter, P_SW_RFB_T prSwRfb);
 #endif
 
 VOID qmResetTcControlResource(IN P_ADAPTER_T prAdapter);
+VOID qmAdjustTcQuotaPle(IN P_ADAPTER_T prAdapter, OUT P_TX_TCQ_ADJUST_T prTcqAdjust, IN P_TX_TCQ_STATUS_T prTcqStatus);
 /*******************************************************************************
  *                              F U N C T I O N S
  ********************************************************************************
