@@ -60,7 +60,7 @@ struct mddp_drv_handle_t gMddpFunc = {
 	.change_state = mddpChangeState,
 };
 
-#define MD_OFF_TIMEOUT 1000
+#define MD_ON_OFF_TIMEOUT 1000
 #ifdef SOC3_0
 #define MD_STATUS_SYNC_CR 0x180600F4
 #else
@@ -68,6 +68,7 @@ struct mddp_drv_handle_t gMddpFunc = {
 #endif
 #define MD_SUPPORT_MDDP_STATUS_SYNC_CR_BIT BIT(0)
 #define MD_STATUS_OFF_SYNC_BIT BIT(1)
+#define MD_STATUS_ON_SYNC_BIT BIT(2)
 
 /*******************************************************************************
 *                           P R I V A T E   D A T A
@@ -93,9 +94,10 @@ uint8_t txd[0];
 ********************************************************************************
 */
 
-static bool md_support_status_sync_cr(void);
+static void clear_md_wifi_off_bit(void);
+static void clear_md_wifi_on_bit(void);
 static bool wait_for_md_off_complete(void);
-static void set_md_off_completion_flag(void);
+static bool wait_for_md_on_complete(void);
 
 int32_t mddpRegisterCb(IN struct ADAPTER *prAdapter)
 {
@@ -359,7 +361,7 @@ int32_t mddpNotifyDrvMac(IN struct ADAPTER *prAdapter)
 	struct mddpw_drv_info_t *prDrvInfo;
 	uint32_t u32BufSize = 0;
 	uint8_t *buff = NULL;
-	struct BSS_INFO *prP2pBssInfo = (struct BSS_INFO *) NULL;
+	struct BSS_INFO *prAisBssInfo = (struct BSS_INFO *) NULL;
 
 	if (gMddpWFunc.notify_drv_info) {
 		int32_t ret;
@@ -375,14 +377,14 @@ int32_t mddpNotifyDrvMac(IN struct ADAPTER *prAdapter)
 		prNotifyInfo = (struct mddpw_drv_notify_info_t *) buff;
 		prNotifyInfo->version = 0;
 		/* (3= version+buf_len+info_num) */
-		prNotifyInfo->buf_len = (u32BufSize-3);
+		prNotifyInfo->buf_len = (u32BufSize - 3);
 		prNotifyInfo->info_num = 1;
 		prDrvInfo = (struct mddpw_drv_info_t *) &(prNotifyInfo->buf[0]);
 		prDrvInfo->info_id = MDDPW_DRV_INFO_DEVICE_MAC;
 		prDrvInfo->info_len = MAC_ADDR_LEN;
     /*SY MCIF TBC 0916*/
-		prP2pBssInfo = prAdapter->prAisBssInfo[0];
-		COPY_MAC_ADDR(prDrvInfo->info, prP2pBssInfo->aucOwnMacAddr);
+		prAisBssInfo = prAdapter->prAisBssInfo[0];
+		COPY_MAC_ADDR(prDrvInfo->info, prAisBssInfo->aucOwnMacAddr);
 
 		ret = gMddpWFunc.notify_drv_info(prNotifyInfo);
 		DBGLOG(INIT, INFO, "ret: %d.\n", ret);
@@ -441,17 +443,21 @@ void mddpNotifyWifiOnStart(void)
 
 void mddpNotifyWifiOnEnd(void)
 {
-	mddpNotifyWifiStatus(MDDPW_DRV_INFO_WLAN_ON_END);
+	int32_t ret;
+
+	clear_md_wifi_on_bit();
+	ret = mddpNotifyWifiStatus(MDDPW_DRV_INFO_WLAN_ON_END);
+	if (ret == 0)
+		wait_for_md_on_complete();
 }
 
 void mddpNotifyWifiOffStart(void)
 {
-	bool status_sync_support = md_support_status_sync_cr();
+	int32_t ret;
 
-	if (status_sync_support)
-		set_md_off_completion_flag();
-	mddpNotifyWifiStatus(MDDPW_DRV_INFO_WLAN_OFF_START);
-	if (status_sync_support)
+	clear_md_wifi_off_bit();
+	ret = mddpNotifyWifiStatus(MDDPW_DRV_INFO_WLAN_OFF_START);
+	if (ret == 0)
 		wait_for_md_off_complete();
 }
 
@@ -492,6 +498,7 @@ int32_t mddpMdNotifyInfo(struct mddpw_md_notify_info_t *prMdInfo)
 			mddpNotifyWifiOnEnd();
 			mddpNotifyDrvMac(prAdapter);
 		}
+
 		/* Notify STA's TXD to MD */
 		for (i = 0; i < KAL_AIS_NUM; i++) {
 			struct BSS_INFO *prAisBssInfo = aisGetAisBssInfo(
@@ -575,12 +582,23 @@ int32_t mddpChangeState(enum mddp_state_e event, void *buf, uint32_t *buf_len)
 
 }
 
-static bool md_support_status_sync_cr(void)
+static void clear_md_wifi_off_bit(void)
+{
+	uint32_t u4Value = 0;
+
+	DBGLOG(INIT, INFO, "md off start.\n");
+	wf_ioremap_read(MD_STATUS_SYNC_CR, &u4Value);
+	u4Value |= MD_STATUS_OFF_SYNC_BIT;
+	wf_ioremap_write(MD_STATUS_SYNC_CR, u4Value);
+}
+
+static void clear_md_wifi_on_bit(void)
 {
 	uint32_t u4Value = 0;
 
 	wf_ioremap_read(MD_STATUS_SYNC_CR, &u4Value);
-	return u4Value & MD_SUPPORT_MDDP_STATUS_SYNC_CR_BIT;
+	u4Value &= ~MD_STATUS_ON_SYNC_BIT;
+	wf_ioremap_write(MD_STATUS_SYNC_CR, u4Value);
 }
 
 static bool wait_for_md_off_complete(void)
@@ -601,7 +619,7 @@ static bool wait_for_md_off_complete(void)
 
 		u4CurTime = kalGetTimeTick();
 		if (CHECK_FOR_TIMEOUT(u4CurTime, u4StartTime,
-				MD_OFF_TIMEOUT)) {
+				MD_ON_OFF_TIMEOUT)) {
 			DBGLOG(INIT, ERROR, "wait for md off timeout\n");
 			fgTimeout = true;
 			break;
@@ -613,14 +631,34 @@ static bool wait_for_md_off_complete(void)
 	return !fgTimeout;
 }
 
-static void set_md_off_completion_flag(void)
+static bool wait_for_md_on_complete(void)
 {
 	uint32_t u4Value = 0;
+	uint32_t u4StartTime, u4CurTime;
+	bool fgTimeout = false;
 
-	DBGLOG(INIT, INFO, "md off start.\n");
-	wf_ioremap_read(MD_STATUS_SYNC_CR, &u4Value);
-	u4Value |= MD_STATUS_OFF_SYNC_BIT;
-	wf_ioremap_write(MD_STATUS_SYNC_CR, u4Value);
+	u4StartTime = kalGetTimeTick();
+
+	do {
+		wf_ioremap_read(MD_STATUS_SYNC_CR, &u4Value);
+
+		if ((u4Value & MD_STATUS_ON_SYNC_BIT) > 0) {
+			DBGLOG(INIT, INFO, "md on end.\n");
+			break;
+		}
+
+		u4CurTime = kalGetTimeTick();
+		if (CHECK_FOR_TIMEOUT(u4CurTime, u4StartTime,
+				MD_ON_OFF_TIMEOUT)) {
+			DBGLOG(INIT, ERROR, "wait for md on timeout\n");
+			fgTimeout = true;
+			break;
+		}
+
+		kalMsleep(CFG_RESPONSE_POLLING_DELAY);
+	} while (TRUE);
+
+	return !fgTimeout;
 }
 
 #endif
