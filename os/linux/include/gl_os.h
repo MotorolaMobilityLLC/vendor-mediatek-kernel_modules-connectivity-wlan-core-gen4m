@@ -1200,8 +1200,11 @@ void p2pSetMulticastListWorkQueueWrapper(struct GLUE_INFO
 #endif
 
 struct GLUE_INFO *wlanGetGlueInfo(void);
-
-#if KERNEL_VERSION(3, 14, 0) <= LINUX_VERSION_CODE
+#if KERNEL_VERSION(4, 19, 0) <= CFG80211_VERSION_CODE
+u16 wlanSelectQueue(struct net_device *dev,
+		struct sk_buff *skb,
+		struct net_device *sb_dev, select_queue_fallback_t fallback);
+#elif KERNEL_VERSION(3, 14, 0) <= CFG80211_VERSION_CODE
 u16 wlanSelectQueue(struct net_device *dev,
 		    struct sk_buff *skb,
 		    void *accel_priv, select_queue_fallback_t fallback);
