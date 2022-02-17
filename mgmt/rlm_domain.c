@@ -3723,7 +3723,7 @@ uint32_t txPwrArbitrator(enum ENUM_TX_POWER_CTRL_TYPE eCtrlType,
 {
 	struct CMD_CHANNEL_POWER_LIMIT *prPwrLimit;
 	struct CMD_CHANNEL_POWER_LIMIT_HE *prPwrLimitHE;
-	uint8_t rateIdx;
+	uint8_t rateIdxHe, rateIdx;
 	int8_t *prRateOfs;
 
 
@@ -3732,12 +3732,12 @@ uint32_t txPwrArbitrator(enum ENUM_TX_POWER_CTRL_TYPE eCtrlType,
 		prPwrLimitHE = (struct CMD_CHANNEL_POWER_LIMIT_HE *) pvBuf;
 		prRateOfs = &prPwrLimitHE->cPwrLimitRU26L;
 
-		for (rateIdx = PWR_LIMIT_RU26_L;
-			rateIdx < PWR_LIMIT_HE_NUM ; rateIdx++) {
-			if (prChlSetting->opHE[rateIdx]
+		for (rateIdxHe = PWR_LIMIT_RU26_L;
+			rateIdxHe < PWR_LIMIT_HE_NUM ; rateIdxHe++) {
+			if (prChlSetting->opHE[rateIdxHe]
 				!= PWR_CTRL_TYPE_NO_ACTION) {
-				txPwrOperate(eCtrlType, prRateOfs + rateIdx,
-				&prChlSetting->i8PwrLimitHE[rateIdx]);
+				txPwrOperate(eCtrlType, prRateOfs + rateIdxHe,
+				&prChlSetting->i8PwrLimitHE[rateIdxHe]);
 			}
 		}
 
@@ -4761,7 +4761,7 @@ void rlmDomainShowPwrLimitPerCh(char *message,
 	/* for print usage */
 	struct CMD_CHANNEL_POWER_LIMIT_HE *prPwrLmtHE = NULL;
 	enum ENUM_PWR_LIMIT_TYPE eType;
-	uint8_t i, j;
+	uint8_t i, j, k;
 	char msgLimit[PWR_BUF_LEN];
 	int msgOfs = 0;
 	int8_t *prcRatePwr;
@@ -4815,11 +4815,11 @@ void rlmDomainShowPwrLimitPerCh(char *message,
 				prPwrLmt->ucCentralCh);
 
 			/*message body*/
-			for (j = PWR_LIMIT_CCK; j < PWR_LIMIT_NUM ; j++)
+			for (k = PWR_LIMIT_CCK; k < PWR_LIMIT_NUM ; k++)
 				msgOfs += snprintf(msgLimit + msgOfs,
 					PWR_BUF_LEN - msgOfs,
 					"%d,",
-					*(prcRatePwr + j));
+					*(prcRatePwr + k));
 
 			/*message tail*/
 			if (msgOfs > 0)
