@@ -155,12 +155,6 @@ static PUINT_8 apucCr4FwName[] = {
 	NULL
 };
 
-static PUINT_8 apucPatchName[] = {
-	(PUINT_8) "mt6632_patch_e1_hdr.bin",
-	(PUINT_8) "mt7666_patch_e1_hdr.bin",
-	NULL
-};
-
 static PPUINT_8 appucFwNameTable[] = {
 	apucFwName
 };
@@ -387,7 +381,6 @@ kalFirmwareImageMapping(IN P_GLUE_INFO_T prGlueInfo,
 			break;
 
 		case IMG_DL_IDX_PATCH:
-			apucNameTable = apucPatchName;
 			break;
 
 		default:
@@ -410,7 +403,10 @@ kalFirmwareImageMapping(IN P_GLUE_INFO_T prGlueInfo,
 			/* construct the file name for patch */
 
 			/* mtxxxx_patch_ex_hdr.bin*/
-			snprintf(apucName[idx], FILE_NAME_MAX, "mt%x_patch_e%x_hdr.bin",
+			if (prChipInfo->fw_dl_ops->constructPatchName)
+				prChipInfo->fw_dl_ops->constructPatchName(prGlueInfo, apucName, &idx);
+			else
+				snprintf(apucName[idx], FILE_NAME_MAX, "mt%x_patch_e%x_hdr.bin",
 					chip_id, wlanGetEcoVersion(prGlueInfo->prAdapter));
 			idx += 1;
 		} else {
