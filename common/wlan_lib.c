@@ -7488,7 +7488,7 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 	prWifiVar->ucLowLatencyModeReOrder = (uint32_t) wlanCfgGetUint32(
 			prAdapter, "LowLatencyModeReOrder", FEATURE_ENABLED);
 	prWifiVar->ucLowLatencyModePower = (uint32_t) wlanCfgGetUint32(
-			prAdapter, "LowLatencyModePower", FEATURE_ENABLED);
+			prAdapter, "LowLatencyModePower", FEATURE_DISABLED);
 	prWifiVar->ucLowLatencyPacketPriority = (uint32_t) wlanCfgGetUint32(
 			prAdapter, "LowLatencyPacketPriority", BITS(0, 1));
 	prWifiVar->ucLowLatencyCmdData = (uint8_t) wlanCfgGetUint32(
@@ -10936,6 +10936,12 @@ uint32_t wlanSetLowLatencyMode(
 
 	}
 
+	DBGLOG(OID, INFO,
+		"LowLatency(gaming) fgEnMode=[%d]\n", fgEnMode);
+
+	/* Force RTS to protect game packet */
+	wlanSetForceRTS(prAdapter, fgEnMode);
+
 	/* Tx Duplicate Detect management:
 	 *
 	 * Disable/enable tx duplicate detect
@@ -11699,3 +11705,37 @@ void wlanCustomMonitorFunction(struct ADAPTER *prAdapter,
 }
 #endif
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief This routine is called to set enable/disable force RTS mode to FW
+ *
+ * \param[in]  prAdapter       A pointer to the Adapter structure.
+ *
+ * \retval WLAN_STATUS_SUCCESS
+ */
+/*----------------------------------------------------------------------------*/
+uint32_t wlanSetForceRTS(
+	IN struct ADAPTER *prAdapter,
+	IN u_int8_t fgEnForceRTS)
+{
+	struct CMD_SET_FORCE_RTS rForceRts;
+
+	rForceRts.ucForceRtsEn = fgEnForceRTS;
+	rForceRts.ucRtsPktNum = 0;
+	DBGLOG(REQ, INFO, "fgEnForceRTS = %d\n",
+			fgEnForceRTS);
+	wlanSendSetQueryCmd(prAdapter,	/* prAdapter */
+			    CMD_ID_SET_FORCE_RTS,	/* ucCID */
+			    TRUE,	/* fgSetQuery */
+			    FALSE,	/* fgNeedResp */
+			    FALSE,	/* fgIsOid */
+			    NULL,	/* pfCmdDoneHandler */
+			    NULL,	/* pfCmdTimeoutHandler */
+			    sizeof(struct CMD_SET_FORCE_RTS),
+			    (uint8_t *)&rForceRts,	/* pucInfoBuffer */
+			    NULL,	/* pvSetQueryBuffer */
+			    0	/* u4SetQueryBufferLen */
+	);
+
+	return WLAN_STATUS_SUCCESS;
+}
