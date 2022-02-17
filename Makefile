@@ -430,6 +430,11 @@ MGMT_OBJS += $(MGMT_DIR)stats.o
 
 
 CHIPS_OBJS += $(CHIPS_CMM)cmm_asic_connac.o
+CHIPS_OBJS +=  $(CHIPS_CMM)dbg_connac.o
+ifeq ($(CONFIG_MTK_WIFI_CONNAC2X), y)
+CHIPS_OBJS +=  $(CHIPS_CMM)dbg_connac2x.o
+endif
+
 ifeq ($(CONFIG_MTK_WIFI_CONNAC2X), y)
 CHIPS_OBJS += $(CHIPS_CMM)cmm_asic_connac2x.o
 NIC_OBJS += $(NIC_DIR)nic_ext_cmd_event.o \
@@ -455,6 +460,7 @@ CHIPS_OBJS += $(CHIPS)connac2x2/connac2x2.o
 endif
 ifneq ($(findstring MT7915,$(MTK_COMBO_CHIP)),)
 CHIPS_OBJS += $(CHIPS)mt7915/mt7915.o
+CHIPS_OBJS +=  $(CHIPS)mt7915/dbg_mt7915.o
 endif
 ifneq ($(findstring 3_0,$(MTK_COMBO_CHIP)),)
 CHIPS_OBJS += $(CHIPS)soc3_0/soc3_0.o

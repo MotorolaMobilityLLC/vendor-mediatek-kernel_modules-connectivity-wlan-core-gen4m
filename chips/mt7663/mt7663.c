@@ -253,17 +253,16 @@ struct ATE_OPS_T mt7663AteOps = {
 struct CHIP_DBG_OPS mt7663_debug_ops = {
 #if defined(_HIF_PCIE) || defined(_HIF_AXI)
 	.showPdmaInfo = halShowPdmaInfo,
-	.showPseInfo = halShowPseInfo,
-	.showPleInfo = halShowPleInfo,
 	.showCsrInfo = halShowHostCsrInfo,
-	.showDmaschInfo = halShowDmaschInfo,
 #else
 	.showPdmaInfo = NULL,
-	.showPseInfo = NULL,
-	.showPleInfo = NULL,
 	.showCsrInfo = NULL,
-	.showDmaschInfo = NULL,
 #endif
+	.showPseInfo = halShowPseInfo,
+	.showPleInfo = halShowPleInfo,
+	.showTxdInfo = halShowTxdInfo,
+	.showDmaschInfo = halShowDmaschInfo,
+	.showWtblInfo = NULL,
 	.showHifInfo = NULL,
 	.printHifDbgInfo = halPrintHifDbgInfo,
 };
