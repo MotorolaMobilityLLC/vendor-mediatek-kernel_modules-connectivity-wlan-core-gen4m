@@ -982,6 +982,8 @@ struct WIFI_VAR {
 
 	uint32_t u4NetifStopTh;
 	uint32_t u4NetifStartTh;
+	uint32_t u4NetifStopThBackup;
+	uint32_t u4NetifStartThBackup;
 	struct PARAM_GET_CHN_INFO rChnLoadInfo;
 
 #if CFG_SUPPORT_MTK_SYNERGY
