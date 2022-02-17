@@ -2329,7 +2329,6 @@ struct PARAM_CUSTOM_MONITOR_SET_STRUCT {
 };
 #endif
 
-#if CFG_AUTO_CHANNEL_SEL_SUPPORT
 /*--------------------------------------------------------------*/
 /*! \brief MTK Auto Channel Selection related Container         */
 /*--------------------------------------------------------------*/
@@ -2353,20 +2352,18 @@ struct PARAM_CHN_RANK_INFO {
 };
 
 struct PARAM_GET_CHN_INFO {
+	uint8_t ucRoleIndex;
 	struct LTE_SAFE_CHN_INFO rLteSafeChnList;
 	struct PARAM_CHN_LOAD_INFO rEachChnLoad[MAX_CHN_NUM];
-	u_int8_t fgDataReadyBit;
 	struct PARAM_CHN_RANK_INFO rChnRankList[MAX_CHN_NUM];
 	uint8_t aucReserved[3];
 };
 
 struct PARAM_PREFER_CHN_INFO {
 	uint8_t ucChannel;
-	uint16_t u2APNumScore;
-	uint8_t ucReserved;
+	uint8_t aucReserved[3];
+	uint32_t u4Dirtiness;
 };
-#endif
-
 
 struct UMAC_STAT2_GET {
 	uint16_t	u2PleRevPgHif0Group0;
@@ -3643,29 +3640,6 @@ wlanoidQuerySetRadarDetectMode(IN struct ADAPTER *prAdapter,
 			       IN void *pvSetBuffer,
 			       IN uint32_t u4SetBufferLen,
 			       OUT uint32_t *pu4SetInfoLen);
-#endif
-
-#if CFG_AUTO_CHANNEL_SEL_SUPPORT
-uint32_t
-wlanoidQueryLteSafeChannel(IN struct ADAPTER *prAdapter,
-			   IN void *pvQueryBuffer,
-			   IN uint32_t u4QueryBufferLen,
-			   OUT uint32_t *pu4QueryInfoLen);
-uint32_t
-wlanCalculateAllChannelDirtiness(IN struct ADAPTER *prAdapter);
-
-void
-wlanInitChnLoadInfoChannelList(IN struct ADAPTER *prAdapter);
-
-uint8_t
-wlanGetChannelIndex(IN uint8_t channel);
-
-uint8_t
-wlanGetChannelNumFromIndex(IN uint8_t ucIdx);
-
-void
-wlanSortChannel(IN struct ADAPTER *prAdapter);
-
 #endif
 
 uint32_t

@@ -120,6 +120,9 @@
 
 #define P2P_SAA_RETRY_COUNT     5
 
+#define AP_DEFAULT_CHANNEL_2G     6
+#define AP_DEFAULT_CHANNEL_5G     36
+
 /******************************************************************************
  *                                 M A C R O S
  ******************************************************************************
@@ -217,6 +220,14 @@ struct P2P_SSID_STRUCT {
 	uint8_t ucSsidLen;
 };
 
+enum ENUM_SCAN_REASON {
+	SCAN_REASON_UNKNOWN = 0,
+	SCAN_REASON_CONNECT,
+	SCAN_REASON_STARTAP,
+	SCAN_REASON_ACS,
+	SCAN_REASON_NUM,
+};
+
 struct P2P_SCAN_REQ_INFO {
 	enum ENUM_SCAN_TYPE eScanType;
 	enum ENUM_SCAN_CHANNEL eChannelSet;
@@ -230,8 +241,36 @@ struct P2P_SCAN_REQ_INFO {
 	uint32_t u4BufLength;
 	uint8_t aucIEBuf[MAX_IE_LENGTH];
 	uint8_t ucSsidNum;
+	enum ENUM_SCAN_REASON eScanReason;
 	/* Currently we can only take one SSID scan request */
 	struct P2P_SSID_STRUCT arSsidStruct[SCN_SSID_MAX_NUM];
+};
+
+enum P2P_VENDOR_ACS_HW_MODE {
+	P2P_VENDOR_ACS_HW_MODE_11B,
+	P2P_VENDOR_ACS_HW_MODE_11G,
+	P2P_VENDOR_ACS_HW_MODE_11A,
+	P2P_VENDOR_ACS_HW_MODE_11AD,
+	P2P_VENDOR_ACS_HW_MODE_11ANY
+};
+
+struct P2P_ACS_REQ_INFO {
+	uint8_t ucRoleIdx;
+	u_int8_t fgIsProcessing;
+	u_int8_t fgIsHtEnable;
+	u_int8_t fgIsHt40Enable;
+	u_int8_t fgIsVhtEnable;
+	enum ENUM_MAX_BANDWIDTH_SETTING eChnlBw;
+	enum P2P_VENDOR_ACS_HW_MODE eHwMode;
+	uint32_t u4LteSafeChnMask_2G;
+	uint32_t u4LteSafeChnMask_5G_1;
+	uint32_t u4LteSafeChnMask_5G_2;
+
+	/* output only */
+	uint8_t ucPrimaryCh;
+	uint8_t ucSecondCh;
+	uint8_t ucCenterFreqS1;
+	uint8_t ucCenterFreqS2;
 };
 
 struct P2P_CHNL_REQ_INFO {

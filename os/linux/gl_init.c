@@ -649,6 +649,27 @@ static const struct wiphy_vendor_command
 		.doit = mtk_cfg80211_vendor_get_preferred_freq_list
 	},
 #endif /* CFG_SUPPORT_P2P_PREFERRED_FREQ_LIST */
+#if CFG_AUTO_CHANNEL_SEL_SUPPORT
+	{
+		{
+			.vendor_id = OUI_QCA,
+			.subcmd = NL80211_VENDOR_SUBCMD_ACS
+		},
+		.flags = WIPHY_VENDOR_CMD_NEED_WDEV
+				| WIPHY_VENDOR_CMD_NEED_NETDEV
+				| WIPHY_VENDOR_CMD_NEED_RUNNING,
+		.doit = mtk_cfg80211_vendor_acs
+	},
+#endif
+	{
+		{
+			.vendor_id = OUI_QCA,
+			.subcmd = NL80211_VENDOR_SUBCMD_GET_FEATURES
+		},
+		.flags = WIPHY_VENDOR_CMD_NEED_WDEV
+				| WIPHY_VENDOR_CMD_NEED_NETDEV,
+		.doit = mtk_cfg80211_vendor_get_features
+	},
 };
 
 static const struct nl80211_vendor_cmd_info
@@ -685,6 +706,12 @@ static const struct nl80211_vendor_cmd_info
 		.vendor_id = GOOGLE_OUI,
 		.subcmd = WIFI_EVENT_RSSI_MONITOR
 	},
+#if CFG_AUTO_CHANNEL_SEL_SUPPORT
+	{
+		.vendor_id = OUI_QCA,
+		.subcmd = NL80211_VENDOR_SUBCMD_ACS
+	},
+#endif
 };
 #endif
 
@@ -1515,12 +1542,10 @@ static int wlanStop(struct net_device *prDev)
 	}
 	GLUE_RELEASE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
 
-#if CFG_AUTO_CHANNEL_SEL_SUPPORT
 	/* zero clear old acs information */
 	kalMemZero(&(prGlueInfo->prAdapter->rWifiVar.rChnLoadInfo),
 		sizeof(prGlueInfo->prAdapter->rWifiVar.rChnLoadInfo));
 	wlanInitChnLoadInfoChannelList(prGlueInfo->prAdapter);
-#endif
 
 	netif_tx_stop_all_queues(prDev);
 
