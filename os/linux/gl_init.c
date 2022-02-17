@@ -4792,6 +4792,8 @@ static int32_t wlanProbe(void *pvData, void *pvDriverData)
 	kalMetInit(prGlueInfo);
 #endif
 
+		kalWlanUeventInit();
+
 #if CFG_ENABLE_BT_OVER_WIFI
 	prGlueInfo->rBowInfo.fgIsNetRegistered = FALSE;
 	prGlueInfo->rBowInfo.fgIsRegistered = FALSE;
@@ -5101,6 +5103,8 @@ static void wlanRemove(void)
 #if (CFG_MET_PACKET_TRACE_SUPPORT == 1)
 	kalMetRemoveProcfs();
 #endif
+
+	kalWlanUeventDeinit();
 
 #if CFG_MET_TAG_SUPPORT
 	if (GL_MET_TAG_UNINIT() != 0)
