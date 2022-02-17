@@ -12294,7 +12294,7 @@ void
 wlanResoreEmCfgSetting(IN struct ADAPTER *
 	prAdapter)
 {
-	uint8_t i;
+	uint32_t i;
 
 	for (i = 0; i < WLAN_CFG_ENTRY_NUM_MAX; i++) {
 
@@ -12319,7 +12319,7 @@ void
 wlanBackupEmCfgSetting(IN struct ADAPTER *
 	prAdapter)
 {
-	uint8_t i;
+	uint32_t i;
 	struct WLAN_CFG_ENTRY *prWlanCfgEntry = NULL;
 
 	kalMemZero(&g_rEmCfgBk, sizeof(g_rEmCfgBk));
@@ -12358,7 +12358,7 @@ void
 wlanCleanAllEmCfgSetting(IN struct ADAPTER *
 	prAdapter)
 {
-	uint8_t i;
+	uint32_t i;
 	struct WLAN_CFG_ENTRY *prWlanCfgEntry = NULL;
 
 	for (i = 0; i < WLAN_CFG_ENTRY_NUM_MAX; i++) {
