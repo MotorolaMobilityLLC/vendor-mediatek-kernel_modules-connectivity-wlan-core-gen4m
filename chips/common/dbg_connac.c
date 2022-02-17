@@ -879,7 +879,7 @@ int32_t halDumpRegToBuffer(struct ADAPTER *prAdapter,
 #define __DUMP_STR__ "0x%08x:0x%08x "
 #define DUMP_STR_LEN 23
 	int len = 0;
-	uint32_t value;
+	uint32_t value = 0;
 
 	if (pos + DUMP_STR_LEN < bufSize) {
 		HAL_MCR_RD(prAdapter, reg, &value);
@@ -1931,7 +1931,7 @@ int32_t halShowStatInfo(struct ADAPTER *prAdapter,
 			pcCommand + i4BytesWritten,
 			i4TotalLen - i4BytesWritten,
 			"%s%s%s", "------ ",
-			(eRangeType) ? (
+			(eRangeType != 0) ? (
 				(eRangeType == ENUM_AGG_RANGE_TYPE_TRX) ?
 				("TRX") : ("RX")) : ("TX"),
 				" AGG (Group 0x40) -----\n");
