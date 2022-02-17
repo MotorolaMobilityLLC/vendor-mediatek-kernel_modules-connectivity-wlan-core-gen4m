@@ -8211,6 +8211,16 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 		prAdapter, "EnableOnlyScan6g", FEATURE_DISABLED);
 #endif /* CFG_SUPPORT_LIMITED_PKT_PID */
 
+#if (CFG_SUPPORT_DYNAMIC_EDCCA == 1)
+	prWifiVar->i4Ed2GNonEU = (int32_t) wlanCfgGetInt32(prAdapter,
+		"Ed2GNonEU", ED_CCA_BW20_2G_DEFAULT);
+	prWifiVar->i4Ed5GNonEU = (int32_t) wlanCfgGetInt32(prAdapter,
+		"Ed5GNonEU", ED_CCA_BW20_5G_DEFAULT);
+	prWifiVar->i4Ed2GEU = (int32_t) wlanCfgGetInt32(prAdapter,
+		"Ed2GEU", ED_CCA_BW20_2G_DEFAULT);
+	prWifiVar->i4Ed5GEU = (int32_t) wlanCfgGetInt32(prAdapter,
+		"Ed5GEU", ED_CCA_BW20_5G_DEFAULT);
+#endif
 }
 
 void wlanCfgSetSwCtrl(IN struct ADAPTER *prAdapter)
@@ -13835,3 +13845,23 @@ uint32_t wlanSendFwLogControlCmd(IN struct ADAPTER *prAdapter,
 
 	return status;
 }
+
+#if (CFG_SUPPORT_DYNAMIC_EDCCA == 1)
+uint32_t wlanSetEd(IN struct ADAPTER *prAdapter, int32_t i4EdVal2G,
+	int32_t i4EdVal5G, uint32_t u4Sel)
+{
+	uint32_t u4BufLen = 0;
+	struct GLUE_INFO *prGlueInfo = prAdapter->prGlueInfo;
+	struct PARAM_CUSTOM_SW_CTRL_STRUCT rSwCtrlInfo;
+
+	rSwCtrlInfo.u4Id = CMD_SW_DBGCTL_ADVCTL_SET_ID + CMD_ADVCTL_ED_ID;
+	rSwCtrlInfo.u4Data = ((i4EdVal2G & 0xFF) |
+		((i4EdVal5G & 0xFF)<<16) | (u4Sel << 31));
+
+	DBGLOG(REQ, INFO, "rSwCtrlInfo.u4Data=0x%x,\n", rSwCtrlInfo.u4Data);
+
+	return kalIoctl(prGlueInfo, wlanoidSetSwCtrlWrite, &rSwCtrlInfo,
+		sizeof(rSwCtrlInfo), FALSE, FALSE, TRUE, &u4BufLen);
+}
+#endif
+

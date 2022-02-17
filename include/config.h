@@ -1883,6 +1883,10 @@
 #define CFG_SUPPORT_HIDDEN_SW_AP	0
 #endif
 
+#ifndef CFG_SUPPORT_DYNAMIC_EDCCA
+#define CFG_SUPPORT_DYNAMIC_EDCCA 0
+#endif
+
 /*------------------------------------------------------------------------------
 * Driver supports TX resource ctrl for Per-BSS mode
 * Note1:
