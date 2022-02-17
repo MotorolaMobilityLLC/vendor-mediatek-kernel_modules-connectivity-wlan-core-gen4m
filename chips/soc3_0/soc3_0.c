@@ -692,6 +692,7 @@ struct mt66xx_chip_info mt66xx_chip_info_soc3_0 = {
 #endif
 #if (CFG_SUPPORT_PRE_ON_PHY_ACTION == 1)
 	.getCalResult = soc3_0_wlanGetCalResult,
+	.resetCalResult = soc3_0_wlanResetCalResult,
 #endif
 	.checkbushang = soc3_0_CheckBusHang,
 };
@@ -3063,14 +3064,14 @@ uint32_t soc3_0_wlanPhyAction(IN struct ADAPTER *prAdapter)
 {
 	uint32_t u4Status = WLAN_STATUS_SUCCESS;
 
-    /* Setup calibration data from backup file */
+	/* Setup calibration data from backup file */
 	if (soc3_0_wlanAccessCalibrationEMI(NULL, FALSE) ==
 		WLAN_STATUS_SUCCESS)
 		u4Status = soc3_0_wlanSendPhyAction(prAdapter,
-					HAL_PHY_ACTION_CAL_USE_BACKUP_REQ);
+			HAL_PHY_ACTION_CAL_USE_BACKUP_REQ);
 	else
 		u4Status = soc3_0_wlanSendPhyAction(prAdapter,
-					HAL_PHY_ACTION_CAL_FORCE_CAL_REQ);
+			HAL_PHY_ACTION_CAL_FORCE_CAL_REQ);
 
 	return u4Status;
 }
@@ -3402,6 +3403,20 @@ uint8_t *soc3_0_wlanGetCalResult(uint32_t *prCalSize)
 
 	return gEmiCalResult;
 }
+
+void soc3_0_wlanResetCalResult(void)
+{
+	DBGLOG(RFTEST, INFO, "%s: gEmiCalResult = 0x%x\n",
+			__func__, gEmiCalResult);
+
+	if (gEmiCalResult != NULL) {
+		kalMemFree(gEmiCalResult,
+			VIR_MEM_TYPE,
+			gEmiCalSize);
+		gEmiCalResult = NULL;
+	}
+}
+
 #endif /* (CFG_SUPPORT_PRE_ON_PHY_ACTION == 1) */
 
 #endif				/* soc3_0 */
