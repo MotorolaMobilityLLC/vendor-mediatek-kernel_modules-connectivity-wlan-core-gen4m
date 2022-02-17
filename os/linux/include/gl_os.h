@@ -872,6 +872,11 @@ struct GLUE_INFO {
 #if CFG_CHIP_RESET_SUPPORT && !CFG_WMT_RESET_API_SUPPORT
 	struct work_struct rWfsysResetWork;    /* work for Wfsys L0.5 reset  */
 #endif
+
+#if (CFG_CE_ASSERT_DUMP == 1)
+	wait_queue_head_t waitq_coredump;
+	struct sk_buff_head rCoreDumpSkbQueue;
+#endif
 };
 
 typedef irqreturn_t(*PFN_WLANISR) (int irq, void *dev_id,

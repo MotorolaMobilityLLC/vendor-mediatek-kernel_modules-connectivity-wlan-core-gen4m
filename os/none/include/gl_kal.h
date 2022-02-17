@@ -1625,6 +1625,16 @@ void kalSchedScanStopped(IN struct GLUE_INFO *prGlueInfo,
 
 void kalSetFwOwnEvent2Hif(struct GLUE_INFO *pr);
 #endif
+
+#if (CFG_CE_ASSERT_DUMP == 1)
+#ifdef CFG_REMIND_IMPLEMENT
+#define kalEnqCoreDumpLog(_prAdapter, _pucBuffer, _u2Size, _queue) \
+		KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
+#else
+uint32_t kalEnqCoreDumpLog(struct ADAPTER *prAdapter, uint8_t *pucBuffer,
+			     uint16_t u2Size, struct sk_buff_head *queue)
+#endif
+#endif
 /*******************************************************************************
  *                              F U N C T I O N S
  *******************************************************************************

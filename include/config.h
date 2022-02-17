@@ -742,6 +742,11 @@
 #define CFG_SUPPORT_STATISTICS			1
 
 #define CFG_SUPPORT_TRACE_TC4			0
+
+#ifndef CFG_CE_ASSERT_DUMP
+#define CFG_CE_ASSERT_DUMP                         0
+#endif
+
 /*------------------------------------------------------------------------------
  * Flags of Firmware Download Option.
  *------------------------------------------------------------------------------

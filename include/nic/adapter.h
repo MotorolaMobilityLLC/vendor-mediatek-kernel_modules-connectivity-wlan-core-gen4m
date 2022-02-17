@@ -1720,6 +1720,11 @@ struct ADAPTER {
 	struct TIMER rMqmIdleRxBaDetectionTimer;
 	uint32_t u4FlagBitmap;
 #endif
+#if (CFG_CE_ASSERT_DUMP == 1)
+	struct TIMER rN9CorDumpTimer;
+	u_int8_t fgN9AssertDumpOngoing;
+	u_int8_t fgKeepPrintCoreDump;
+#endif
 	/* Tx resource information */
 	u_int8_t fgIsNicTxReousrceValid;
 	struct tx_resource_info nicTxReousrce;
