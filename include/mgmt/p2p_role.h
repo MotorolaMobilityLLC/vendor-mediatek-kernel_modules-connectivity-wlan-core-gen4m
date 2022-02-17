@@ -498,7 +498,4 @@ void p2pRoleFsmRunEventTxCancelWait(IN struct ADAPTER *prAdapter,
 void p2pRoleFsmRunEventAcs(IN struct ADAPTER *prAdapter,
 		IN struct MSG_HDR *prMsgHdr);
 
-u_int8_t p2pRoleFsmIsAcsProcessing(IN struct ADAPTER *prAdapter,
-		uint8_t ucRoleIdx);
-
 #endif
