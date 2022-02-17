@@ -7315,6 +7315,14 @@ p2pFunNotifyChnlSwitch(IN struct ADAPTER *prAdapter,
 		prAdapter->rWifiVar.ucNewChannelNumber =
 			prNewChannelInfo->ucChannelNum;
 		prAdapter->rWifiVar.ucChannelSwitchCount = 5;
+		prAdapter->rWifiVar.ucSecondaryOffset =
+			rlmGetScoByChnInfo(prAdapter, prNewChannelInfo);
+		prAdapter->rWifiVar.ucNewChannelWidth =
+			rlmGetVhtOpBwByBssOpBw(prNewChannelInfo->ucChnlBw);
+		prAdapter->rWifiVar.ucNewChannelS1 =
+			nicFreq2ChannelNum(
+				prNewChannelInfo->u4CenterFreq1 * 1000);
+		prAdapter->rWifiVar.ucNewChannelS2 = 0;
 
 		/* Send Action Frame */
 		rlmSendChannelSwitchFrame(prAdapter, prBssInfo->ucBssIndex);

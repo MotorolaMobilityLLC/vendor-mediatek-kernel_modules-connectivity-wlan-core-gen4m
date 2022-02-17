@@ -132,6 +132,9 @@ enum ENUM_CHNL_EXT rlmDecideScoForAP(struct ADAPTER *prAdapter,
 enum ENUM_CHNL_EXT rlmGetScoForAP(struct ADAPTER *prAdapter,
 		struct BSS_INFO *prBssInfo);
 
+enum ENUM_CHNL_EXT rlmGetScoByChnInfo(struct ADAPTER *prAdapter,
+		struct RF_CHANNEL_INFO *prChannelInfo);
+
 uint8_t rlmGetVhtS1ForAP(struct ADAPTER *prAdapter,
 		struct BSS_INFO *prBssInfo);
 

@@ -1051,6 +1051,10 @@ struct WIFI_VAR {
 	uint8_t ucChannelSwitchMode;
 	uint8_t ucNewChannelNumber;
 	uint8_t ucChannelSwitchCount;
+	uint8_t ucSecondaryOffset;
+	uint8_t ucNewChannelWidth;
+	uint8_t ucNewChannelS1;
+	uint8_t ucNewChannelS2;
 
 	uint32_t u4HifIstLoopCount;
 	uint32_t u4Rx2OsLoopCount;
