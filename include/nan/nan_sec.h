@@ -8,15 +8,15 @@
 #define _NAN_SEC_H_
 
 /*******************************************************************************
-*                         C O M P I L E R   F L A G S
-********************************************************************************
-*/
+ *                         C O M P I L E R   F L A G S
+ *******************************************************************************
+ */
 #if CFG_SUPPORT_NAN
 
 /*******************************************************************************
-*                    E X T E R N A L   R E F E R E N C E S
-********************************************************************************
-*/
+ *                    E X T E R N A L   R E F E R E N C E S
+ *******************************************************************************
+ */
 #include "nan/nan_base.h"
 #include "wpa_supp/src/utils/common.h"
 
@@ -32,9 +32,9 @@ extern void PKCS5_PBKDF2_HMAC(unsigned char *password, size_t plen,
 			      unsigned char *output);
 
 /*******************************************************************************
-*                              C O N S T A N T S
-********************************************************************************
-*/
+ *                              C O N S T A N T S
+ *******************************************************************************
+ */
 #define MAX_NDP_NUM 8 /* May integrate with NDP */
 #define NAN_MAX_KEY_ID 3
 #define NAN_SHA384_MAC_LEN 48
@@ -55,9 +55,9 @@ enum NAN_SEC_MIC_CAL_STATE {
 };
 
 /*******************************************************************************
-*                             D A T A   T Y P E S
-********************************************************************************
-*/
+ *                             D A T A   T Y P E S
+ *******************************************************************************
+ */
 struct _NAN_NDP_SUDO {
 	uint8_t u1Role;
 	uint8_t u1WtblIdx;
@@ -88,7 +88,7 @@ struct _NAN_SEC_SCID_ATTR_HDR {
 } __packed;
 
 struct _NAN_SEC_SCID_ATTR_ENTRY {
-	/*QUE_ENTRY_T rQueEntry;*/
+	/* QUE_ENTRY_T rQueEntry; */
 	uint16_t u2ScidLen;
 	uint8_t u1ScidType;
 	uint8_t u1PublishId;
@@ -109,28 +109,29 @@ struct wpa_sm;
 
 struct _NAN_NDP_INSTANCE_T;
 /*******************************************************************************
-*                            P U B L I C   D A T A
-********************************************************************************
-*/
+ *                            P U B L I C   D A T A
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                           P R I V A T E   D A T A
-********************************************************************************
-*/
+ *                           P R I V A T E   D A T A
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                                 M A C R O S
-********************************************************************************
-*/
+ *                                 M A C R O S
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                   F U N C T I O N   D E C L A R A T I O N S
-********************************************************************************
-*/
+ *                   F U N C T I O N   D E C L A R A T I O N S
+ *******************************************************************************
+ */
 
 /************************************************
-*               Export API Related              *
-*************************************************/
+ *               Export API Related
+ ************************************************
+ */
 uint32_t nanSecGetCsidAttr(OUT uint32_t *pu4CsidAttrLen,
 			   OUT uint8_t **ppu1CsidAttrBuf);
 uint32_t nanSecGetNdpScidAttr(IN struct _NAN_NDP_INSTANCE_T *prNdp,
@@ -181,8 +182,9 @@ nanSecCompareSA(IN struct ADAPTER *prAdapter,
 		IN struct _NAN_NDP_INSTANCE_T *prNdp2);
 
 /************************************************
-*               NDP Sudo Related                *
-*************************************************/
+ *               NDP Sudo Related
+ ************************************************
+ */
 uint32_t nanNdpNotifySecAttrRdy(IN uint8_t u1NdpIdx);
 
 uint32_t nanNdpGetNdiAddr(uint8_t u1NdpIdx,
@@ -194,8 +196,9 @@ uint32_t nanNdpNotifySecStatus(uint8_t u1NdpIdx, uint8_t u1Status,
 uint8_t nanNdpGetWlanIdx(uint8_t u1NdpIdx);
 
 /************************************************
-*               Self-Use API Related            *
-*************************************************/
+ *               Self-Use API Related
+ ************************************************
+ */
 uint8_t nanSecSelPtkKeyId(struct _NAN_NDP_INSTANCE_T *prNdp,
 			 uint8_t *pu1PeerAddr);
 uint32_t nanSecUpdatePmk(struct _NAN_NDP_INSTANCE_T *prNdp);
@@ -204,8 +207,9 @@ void nanSecUpdateAttrCmd(IN struct ADAPTER *prAdapter, uint8_t aucAttrId,
 			 uint8_t *aucAttrBuf, uint16_t aucAttrLen);
 
 /************************************************
-*               Tx Related                      *
-*************************************************/
+ *               Tx Related
+ ************************************************
+ */
 int nan_sec_wpa_eapol_key_mic(const u8 *key, size_t key_len, u32 cipher,
 			      const u8 *buf, size_t len, u8 *mic);
 int nan_sec_wpa_supplicant_send_2_of_4(struct wpa_sm *sm,
@@ -226,8 +230,9 @@ int nan_sec_wpa_send_eapol(
 	int force_version);
 
 /************************************************
-*               MIC Related                     *
-*************************************************/
+ *               MIC Related
+ ************************************************
+ */
 uint32_t nanSecMicCalStaSmStep(struct wpa_sm *sm);
 uint32_t nanSecMicCalApSmStep(struct wpa_state_machine *sm);
 
@@ -243,15 +248,16 @@ uint32_t nanSecGenM3MicMaterial(IN uint8_t *pu1AuthTokenBuf,
 				OUT uint32_t *pu4M3MicMaterialLen);
 
 /************************************************
-*               UT Related                      *
-*************************************************/
+ *               UT Related
+ ************************************************
+ */
 uint32_t nanSecUtMain(void);
 void nanSecDumpEapolKey(struct wpa_eapol_key *key);
 
 /*******************************************************************************
-*                              F U N C T I O N S
-********************************************************************************
-*/
+ *                              F U N C T I O N S
+ *******************************************************************************
+ */
 
 #endif
-#endif /*_NAN_SEC_H_ */
+#endif /* _NAN_SEC_H_ */
