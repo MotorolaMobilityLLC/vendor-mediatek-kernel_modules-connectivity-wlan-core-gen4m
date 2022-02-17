@@ -581,9 +581,9 @@ struct mt66xx_hif_driver_data mt66xx_driver_data_soc5_0 = {
 
 void soc5_0_icapRiseVcoreClockRate(void)
 {
-	int value = 0;
 
 #if (CFG_SUPPORT_VCODE_VDFS == 1)
+	int value = 0;
 	/* Enable VCore to 0.725 */
 
 	/* init */
@@ -617,9 +617,9 @@ void soc5_0_icapRiseVcoreClockRate(void)
 
 void soc5_0_icapDownVcoreClockRate(void)
 {
-	int value = 0;
 
 #if (CFG_SUPPORT_VCODE_VDFS == 1)
+	int value = 0;
 
 	/*init*/
 	if (!pm_qos_request_active(&wifi_req))
