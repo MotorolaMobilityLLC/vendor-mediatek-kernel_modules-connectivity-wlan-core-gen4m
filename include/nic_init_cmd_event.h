@@ -130,6 +130,7 @@
 #endif
 
 enum ENUM_INIT_CMD_ID {
+	/* 0 means firmware download */
 	INIT_CMD_ID_DOWNLOAD_CONFIG = 1,
 	INIT_CMD_ID_WIFI_START,
 	INIT_CMD_ID_ACCESS_REG,
@@ -141,6 +142,8 @@ enum ENUM_INIT_CMD_ID {
 	INIT_CMD_ID_LOG_TIME_SYNC,
 
 	INIT_CMD_ID_PATCH_SEMAPHORE_CONTROL = 0x10,
+	INIT_CMD_ID_BT_PATCH_SEMAPHORE_CONTROL = 0x11,
+	INIT_CMD_ID_ZB_PATCH_SEMAPHORE_CONTROL = 0x12,
 	INIT_CMD_ID_HIF_LOOPBACK = 0x20,
 
 #if (CFG_DOWNLOAD_DYN_MEMORY_MAP == 1)
@@ -159,7 +162,9 @@ enum ENUM_INIT_EVENT_ID {
 	INIT_EVENT_ID_ACCESS_REG,
 	INIT_EVENT_ID_PENDING_ERROR,
 	INIT_EVENT_ID_PATCH_SEMA_CTRL,
-	INIT_EVENT_ID_PHY_ACTION
+	INIT_EVENT_ID_PHY_ACTION,
+	INIT_EVENT_ID_BT_PATCH_SEMA_CTRL = 6,
+	INIT_EVENT_ID_ZB_PATCH_SEMA_CTRL = 7
 };
 
 enum ENUM_INIT_PATCH_STATUS {
@@ -167,6 +172,13 @@ enum ENUM_INIT_PATCH_STATUS {
 	PATCH_STATUS_NO_NEED_TO_PATCH,	/* patch is DL & ready */
 	PATCH_STATUS_GET_SEMA_NEED_PATCH,	/* get SEMA, need patch */
 	PATCH_STATUS_RELEASE_SEMA	/* release SEMA */
+};
+
+enum _PATCH_FNSH_TYPE {
+	PATCH_FNSH_TYPE_WF = 0,
+	PATCH_FNSH_TYPE_BT = 1,
+	PATCH_FNSH_TYPE_WF_MD = 2, /* flowwing is BT PATCH download flow */
+	PATCH_FNSH_TYPE_ZB = 3
 };
 
 /*******************************************************************************
@@ -195,6 +207,14 @@ struct INIT_CMD_DOWNLOAD_CONFIG {
 #define START_WORKING_PDA_OPTION        BIT(2)
 #define START_CRC_CHECK                 BIT(3)
 #define CHANGE_DECOMPRESSION_TMP_ADDRESS    BIT(4)
+
+#define WIFI_FW_DOWNLOAD_SUCCESS            0
+#define WIFI_FW_DOWNLOAD_INVALID_PARAM      1
+#define WIFI_FW_DOWNLOAD_INVALID_CRC        2
+#define WIFI_FW_DOWNLOAD_DECRYPTION_FAIL    3
+#define WIFI_FW_DOWNLOAD_UNKNOWN_CMD        4
+#define WIFI_FW_DOWNLOAD_TIMEOUT            5
+#define WIFI_FW_DOWNLOAD_SEC_BOOT_CHK_FAIL  6
 
 #if CFG_SUPPORT_COMPRESSION_FW_OPTION
 #define WIFI_FW_DECOMPRESSION_FAILED        0xFF
@@ -226,8 +246,32 @@ struct INIT_CMD_PATCH_SEMA_CONTROL {
 
 struct INIT_CMD_PATCH_FINISH {
 	uint8_t ucCheckCrc;
+#if CFG_SUPPORT_WIFI_DL_BT_PATCH || CFG_SUPPORT_WIFI_DL_ZB_PATCH
+	uint8_t ucType;
+	uint8_t aucReserved[2];
+#else
 	uint8_t aucReserved[3];
+#endif
 };
+
+#if CFG_SUPPORT_WIFI_DL_BT_PATCH
+struct INIT_CMD_BT_PATCH_SEMA_CTRL {
+	uint8_t ucGetSemaphore;
+	uint8_t aucReserved[3];
+	uint32_t u4Addr;
+	uint8_t aucReserved1[4];
+};
+
+#endif /* CFG_SUPPORT_WIFI_DL_BT_PATCH */
+
+#if CFG_SUPPORT_WIFI_DL_ZB_PATCH
+struct INIT_CMD_ZB_PATCH_SEMA_CTRL {
+	uint8_t ucGetSemaphore;
+	uint8_t aucReserved[3];
+	uint32_t u4Addr;
+	uint32_t u4SecInfo; /* Only this field is different to BT's */
+};
+#endif /* CFG_SUPPORT_WIFI_DL_ZB_PATCH */
 
 struct INIT_CMD_ACCESS_REG {
 	uint8_t ucSetQuery;

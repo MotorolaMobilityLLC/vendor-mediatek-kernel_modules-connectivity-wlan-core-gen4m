@@ -109,6 +109,41 @@ uint32_t wlanGetDataMode(IN struct ADAPTER *prAdapter,
 	return u4DataMode;
 }
 
+uint32_t wlanGetPatchDataModeV2(IN struct ADAPTER *prAdapter,
+	IN uint32_t u4SecInfo)
+{
+	uint32_t u4DataMode = 0;
+
+#if CFG_ENABLE_FW_DOWNLOAD_ACK
+	u4DataMode = DOWNLOAD_CONFIG_ACK_OPTION;	/* ACK needed */
+#endif
+
+	if (u4SecInfo == PATCH_SECINFO_NOT_SUPPORT)
+		return u4DataMode;
+
+	switch ((u4SecInfo & PATCH_SECINFO_ENC_TYPE_MASK) >>
+		PATCH_SECINFO_ENC_TYPE_SHFT) {
+	case PATCH_SECINFO_ENC_TYPE_PLAIN:
+		break;
+	case PATCH_SECINFO_ENC_TYPE_AES:
+		u4DataMode |= DOWNLOAD_CONFIG_ENCRYPTION_MODE;
+		u4DataMode |= ((u4SecInfo & PATCH_SECINFO_ENC_AES_KEY_MASK)
+				 << DOWNLOAD_CONFIG_KEY_INDEX_SHFT) &
+				DOWNLOAD_CONFIG_KEY_INDEX_MASK;
+		u4DataMode |= DOWNLOAD_CONFIG_RESET_OPTION;
+		break;
+	case PATCH_SECINFO_ENC_TYPE_SCRAMBLE:
+		u4DataMode |= DOWNLOAD_CONFIG_ENCRYPTION_MODE;
+		u4DataMode |= DOWNLOAD_CONFIG_ENCRY_MODE_SEL;
+		u4DataMode |= DOWNLOAD_CONFIG_RESET_OPTION;
+		break;
+	default:
+		DBGLOG(INIT, ERROR, "Encryption type not support!\n");
+	}
+
+	return u4DataMode;
+}
+
 void wlanGetHarvardFwInfo(IN struct ADAPTER *prAdapter,
 	IN uint8_t u4SecIdx, IN enum ENUM_IMG_DL_IDX_T eDlIdx,
 	OUT uint32_t *pu4Addr, OUT uint32_t *pu4Len,
@@ -337,32 +372,7 @@ void wlanImageSectionGetPatchInfoV2(IN struct ADAPTER
 		}
 	}
 
-#if CFG_ENABLE_FW_DOWNLOAD_ACK
-	*pu4DataMode = DOWNLOAD_CONFIG_ACK_OPTION;	/* ACK needed */
-#endif
-
-	if (sec_info == PATCH_SECINFO_NOT_SUPPORT)
-		return;
-
-	switch ((sec_info & PATCH_SECINFO_ENC_TYPE_MASK) >>
-		PATCH_SECINFO_ENC_TYPE_SHFT) {
-	case PATCH_SECINFO_ENC_TYPE_PLAIN:
-		break;
-	case PATCH_SECINFO_ENC_TYPE_AES:
-		*pu4DataMode |= DOWNLOAD_CONFIG_ENCRYPTION_MODE;
-		*pu4DataMode |= ((sec_info & PATCH_SECINFO_ENC_AES_KEY_MASK)
-				 << DOWNLOAD_CONFIG_KEY_INDEX_SHFT) &
-				DOWNLOAD_CONFIG_KEY_INDEX_MASK;
-		*pu4DataMode |= DOWNLOAD_CONFIG_RESET_OPTION;
-		break;
-	case PATCH_SECINFO_ENC_TYPE_SCRAMBLE:
-		*pu4DataMode |= DOWNLOAD_CONFIG_ENCRYPTION_MODE;
-		*pu4DataMode |= DOWNLOAD_CONFIG_ENCRY_MODE_SEL;
-		*pu4DataMode |= DOWNLOAD_CONFIG_RESET_OPTION;
-		break;
-	default:
-		DBGLOG(INIT, ERROR, "Encryption type not support!\n");
-	}
+	*pu4DataMode = wlanGetPatchDataModeV2(prAdapter, sec_info);
 }
 
 uint32_t wlanDownloadSection(IN struct ADAPTER *prAdapter,
@@ -930,13 +940,24 @@ u_int8_t wlanPatchIsDownloaded(IN struct ADAPTER *prAdapter)
 		}
 	}
 
-	if (ucPatchStatus == PATCH_STATUS_NO_NEED_TO_PATCH)
+	if (ucPatchStatus == PATCH_STATUS_NO_NEED_TO_PATCH) {
+#if CFG_SUPPORT_WIFI_DL_BT_PATCH || CFG_SUPPORT_WIFI_DL_ZB_PATCH
+		prAdapter->fgIsNeedDlPatch = FALSE;
+#endif
 		return TRUE;
-	else
+	} else {
+#if CFG_SUPPORT_WIFI_DL_BT_PATCH || CFG_SUPPORT_WIFI_DL_ZB_PATCH
+		prAdapter->fgIsNeedDlPatch = TRUE;
+#endif
 		return FALSE;
+	}
 }
 
-uint32_t wlanPatchSendComplete(IN struct ADAPTER *prAdapter)
+uint32_t wlanPatchSendComplete(IN struct ADAPTER *prAdapter
+#if CFG_SUPPORT_WIFI_DL_BT_PATCH || CFG_SUPPORT_WIFI_DL_ZB_PATCH
+			       , IN uint8_t ucPatchType
+#endif
+				)
 {
 	struct CMD_INFO *prCmdInfo;
 	uint8_t ucTC, ucCmdSeqNum;
@@ -987,6 +1008,9 @@ uint32_t wlanPatchSendComplete(IN struct ADAPTER *prAdapter)
 		(void **)&prPatchFinish, TRUE, 0, S2D_INDEX_CMD_H2N);
 
 	prPatchFinish->ucCheckCrc = 0;
+#if CFG_SUPPORT_WIFI_DL_BT_PATCH || CFG_SUPPORT_WIFI_DL_ZB_PATCH
+	prPatchFinish->ucType = ucPatchType;
+#endif
 
 	/* 5. Seend WIFI start command */
 	while (1) {
@@ -1021,6 +1045,12 @@ uint32_t wlanPatchSendComplete(IN struct ADAPTER *prAdapter)
 	       "PATCH FINISH CMD send, waiting for RSP\n");
 
 	/* kalMdelay(10000); */
+#if CFG_SUPPORT_WIFI_DL_BT_PATCH || CFG_SUPPORT_WIFI_DL_ZB_PATCH
+	/* BT always response with ucCmdSeqNum=0 */
+	if ((ucPatchType != PATCH_FNSH_TYPE_WF) &&
+	    (ucPatchType != PATCH_FNSH_TYPE_WF_MD))
+		ucCmdSeqNum = 0;
+#endif
 
 	u4Status = wlanConfigWifiFuncStatus(prAdapter, ucCmdSeqNum);
 
@@ -1198,28 +1228,31 @@ uint32_t wlanImageSectionConfig(
 	ucTC = TC0_INDEX;
 #endif
 
-	if (eDlIdx == IMG_DL_IDX_PATCH) {
-		NIC_FILL_CMD_TX_HDR(prAdapter,
-			prCmdInfo->pucInfoBuffer,
-			prCmdInfo->u2InfoBufLen,
-			INIT_CMD_ID_PATCH_START,
-			INIT_CMD_PACKET_TYPE_ID,
-			&ucCmdSeqNum,
-			FALSE,
-			(void **)&prInitCmdDownloadConfig,
-			TRUE, 0, S2D_INDEX_CMD_H2N);
-	} else {
-		NIC_FILL_CMD_TX_HDR(
-			prAdapter,
-			prCmdInfo->pucInfoBuffer,
-			prCmdInfo->u2InfoBufLen,
-			INIT_CMD_ID_DOWNLOAD_CONFIG,
-			INIT_CMD_PACKET_TYPE_ID,
-			&ucCmdSeqNum,
-			FALSE,
-			(void **)&prInitCmdDownloadConfig,
-			TRUE, 0, S2D_INDEX_CMD_H2N);
+	switch (eDlIdx) {
+#if CFG_SUPPORT_WIFI_DL_BT_PATCH
+	case IMG_DL_IDX_BT_PATCH:
+		kal_fallthrough;
+#endif
+#if CFG_SUPPORT_WIFI_DL_ZB_PATCH
+	case IMG_DL_IDX_ZB_PATCH:
+		kal_fallthrough;
+#endif
+	case IMG_DL_IDX_PATCH:
+		prCmdInfo->ucCID = INIT_CMD_ID_PATCH_START;
+		break;
+	default:
+		prCmdInfo->ucCID = INIT_CMD_ID_DOWNLOAD_CONFIG;
+		break;
 	}
+	NIC_FILL_CMD_TX_HDR(prAdapter,
+		prCmdInfo->pucInfoBuffer,
+		prCmdInfo->u2InfoBufLen,
+		prCmdInfo->ucCID,
+		INIT_CMD_PACKET_TYPE_ID,
+		&ucCmdSeqNum,
+		FALSE,
+		(void **)&prInitCmdDownloadConfig,
+		TRUE, 0, S2D_INDEX_CMD_H2N);
 
 	prInitCmdDownloadConfig->u4Address = u4DestAddr;
 	prInitCmdDownloadConfig->u4Length = u4ImgSecSize;
@@ -2349,6 +2382,33 @@ uint32_t wlanDownloadFW(IN struct ADAPTER *prAdapter)
 	if (prFwDlOps->downloadPatch)
 		prFwDlOps->downloadPatch(prAdapter);
 
+#if CFG_SUPPORT_WIFI_DL_ZB_PATCH
+	if (prFwDlOps->downloadZbPatch && prAdapter->fgIsNeedDlPatch == TRUE) {
+		if (prFwDlOps->downloadZbPatch(prAdapter)
+			!= WLAN_STATUS_SUCCESS)
+			DBGLOG(INIT, ERROR, "ZB Patch Download fail\n");
+	}
+#endif
+
+#if CFG_SUPPORT_WIFI_DL_BT_PATCH
+	/*  Add a condition for check if need to help bt dl patch,
+	 *   because if it don't need to dl patch, it only have two case.
+	 *   1. Ins BT driver -> Ins WIFI driver(BT help wifi dl patch).
+	 *   2. Re-insert driver without power off(patch still exist,
+	 *   so not need to dl again).
+	 *   Add this is prevent if wifi use ccif to query BT status,
+	 *   but BT have some error, so wifi not get any response
+	 *   and timeout, but wifi didn't have any error,
+	 *   so it shouldn't probe fail with this case.
+	 */
+	if (prFwDlOps->downloadBtPatch && prAdapter->fgIsNeedDlPatch == TRUE) {
+		if (prFwDlOps->downloadBtPatch(prAdapter)
+			!= WLAN_STATUS_SUCCESS)
+			DBGLOG(INIT, ERROR, "BT Patch Download fail\n");
+	}
+#endif
+
+
 	if (prChipInfo->chip_capability & BIT(CHIP_CAPA_FW_LOG_TIME_SYNC)) {
 		ktime_get_real_ts64(&time);
 #if KERNEL_VERSION(5, 4, 0) <= LINUX_VERSION_CODE
@@ -2466,7 +2526,16 @@ uint32_t wlanDownloadPatch(IN struct ADAPTER *prAdapter)
 		else if (u4Status == WLAN_STATUS_NOT_ACCEPTED)
 			u4Status = WLAN_STATUS_SUCCESS; /* already download*/
 #else
+#if CFG_SUPPORT_WIFI_DL_BT_PATCH || CFG_SUPPORT_WIFI_DL_ZB_PATCH
+		/*
+		 * PATCH_FNSH_TYPE_WF_MD:
+		 * Download flow expects that the BT patch download is coming.
+		 * The cal won't start after WF patch download finish.
+		 */
+		wlanPatchSendComplete(prAdapter, PATCH_FNSH_TYPE_WF_MD);
+#else
 		wlanPatchSendComplete(prAdapter);
+#endif
 #endif
 /* Dynamic memory map::End */
 
@@ -2514,7 +2583,7 @@ uint32_t fwDlGetFwdlInfo(struct ADAPTER *prAdapter,
 	struct WIFI_VER_INFO *prVerInfo = &prAdapter->rVerInfo;
 	struct FWDL_OPS_T *prFwDlOps;
 	uint32_t u4Offset = 0;
-	uint8_t aucBuf[32], aucDate[32];
+	uint8_t aucBuf[32] = {0}, aucDate[32] = {0};
 	struct mt66xx_chip_info *prChipInfo = prAdapter->chip_info;
 
 	prFwDlOps = prAdapter->chip_info->fw_dl_ops;
