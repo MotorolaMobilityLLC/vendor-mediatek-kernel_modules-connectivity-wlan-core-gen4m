@@ -4985,19 +4985,6 @@ p2pFuncProcessP2pProbeRspAction(IN struct ADAPTER *prAdapter,
 	uint16_t u2SubTypeVersion = 0;
 
 	switch (ucElemIdType) {
-	case ELEM_ID_SSID:
-		{
-			*prP2pBssInfo =
-				GET_BSS_INFO_BY_INDEX(
-					prAdapter,
-					prAdapter->ucP2PDevBssIdx);
-			COPY_SSID(
-				(*prP2pBssInfo)->aucSSID,
-				(*prP2pBssInfo)->ucSSIDLen,
-				SSID_IE(pucIEBuf)->aucSSID,
-				SSID_IE(pucIEBuf)->ucLength);
-		}
-		break;
 	case ELEM_ID_VENDOR:
 		if (rsnParseCheckForWFAInfoElem(prAdapter,
 			pucIEBuf, &ucOuiType, &u2SubTypeVersion)) {
