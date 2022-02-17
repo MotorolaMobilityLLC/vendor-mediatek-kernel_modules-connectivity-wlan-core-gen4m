@@ -87,6 +87,10 @@ enum _ENUM_TWT_REQUESTER_STATE_T {
 	TWT_REQ_STATE_TEARING_DOWN_BTWT,
 	TWT_REQ_STATE_RX_TEARDOWN_BTWT,
 #endif
+#if (CFG_SUPPORT_802_11BE_ML_TWT == 1)
+	TWT_REQ_STATE_REQTX_ML_TWT_ALL_LINKS,
+	TWT_REQ_STATE_REQTX_ML_TWT_ONE_BY_ONE,
+#endif
 	TWT_REQ_STATE_NUM
 };
 
@@ -161,7 +165,15 @@ void btwtReqFsmRunEventTeardown(
 	struct MSG_HDR *prMsgHdr);
 #endif
 
+#if (CFG_SUPPORT_802_11BE_ML_TWT == 1)
+void mltwtReqFsmRunEventStartAllLinks(
+	struct ADAPTER *prAdapter,
+	struct MSG_HDR *prMsgHdr);
 
+void mltwtReqFsmRunEventStart(
+	struct ADAPTER *prAdapter,
+	struct MSG_HDR *prMsgHdr);
+#endif
 /*******************************************************************************
 *                              F U N C T I O N S
 ********************************************************************************

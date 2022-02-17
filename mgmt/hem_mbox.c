@@ -347,6 +347,10 @@ static struct MSG_HNDL_ENTRY arMsgMapTable[] = {
 	{MID_BTWT_REQ_IND_TEARDOWN_DONE, btwtPlannerTeardownDone},
 #endif
 
+#if (CFG_SUPPORT_802_11BE_ML_TWT == 1)
+	{MID_ML_TWT_REQ_FSM_START_ALL_LINKS, mltwtReqFsmRunEventStartAllLinks},
+	{MID_ML_TWT_REQ_FSM_START_ONE_BY_ONE, mltwtReqFsmRunEventStart},
+#endif
 };
 
 /*******************************************************************************

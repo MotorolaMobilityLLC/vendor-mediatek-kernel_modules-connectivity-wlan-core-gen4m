@@ -2519,7 +2519,9 @@ uint32_t nicUniCmdTwtArgtUpdate(struct ADAPTER *ad,
 	tag->ucGrpMemberCnt = cmd->ucGrpMemberCnt;
 	tag->ucReserved_c = cmd->ucReserved_c;
 	tag->u2Reserved_d = cmd->u2Reserved_d;
+#if 0  /* No need for STA*/
 	kalMemCopy(tag->au2StaList, cmd->au2StaList, sizeof(tag->au2StaList));
+#endif
 
 	LINK_INSERT_TAIL(&info->rUniCmdList, &entry->rLinkEntry);
 

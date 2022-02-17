@@ -1198,4 +1198,41 @@ void mldStarecUninit(struct ADAPTER *prAdapter)
 	DBGLOG(INIT, INFO, "\n");
 }
 
+struct BSS_INFO *mldGetBssInfoByLinkID(
+		struct ADAPTER *prAdapter,
+		struct MLD_BSS_INFO *prMldBssInfo,
+		uint8_t ucLinkIndex,
+		uint8_t fgPeerSta
+		)
+{
+	struct BSS_INFO *prCurrBssInfo = NULL;
+	struct LINK *prBssList = NULL;
+	struct STA_RECORD *prStaRecOfAP = NULL;
+
+	if ((!prAdapter) || (!prMldBssInfo))
+		return NULL;
+
+	prBssList = &prMldBssInfo->rBssList;
+
+	LINK_FOR_EACH_ENTRY(prCurrBssInfo, prBssList,
+			rLinkEntryMld,
+			struct BSS_INFO) {
+
+		if (fgPeerSta == TRUE) {
+			/* Match with peer STA(AP)'s link ID */
+			prStaRecOfAP = prCurrBssInfo->prStaRecOfAP;
+
+			if ((prStaRecOfAP) &&
+				(prStaRecOfAP->ucLinkIndex == ucLinkIndex))
+				 return prCurrBssInfo;
+		} else {
+			/* Match with local STA(SAP)'s link ID */
+			if (prCurrBssInfo->ucLinkIndex == ucLinkIndex)
+				  return prCurrBssInfo;
+		}
+	}
+
+	return NULL;
+}
+
 #endif /* CFG_SUPPORT_802_11BE_MLO == 1 */
