@@ -1586,7 +1586,11 @@ struct CMD_SMART_GEAR_PARAM {
 	uint8_t ucSGEnable;/*0: disable, 1: Enable, 2: Action for ucSGSpcCmd*/
 	uint8_t ucSGSpcCmd;/* 1: Force 1x1, 2: Force 2x2, 0: Automatic*/
 	uint8_t ucNSSCap; /*NSS Capbility*/
-	uint8_t ucSGCfg;/* DON'T SET, IT IS USED FOR WIFI.CFG WIFI*/
+	uint8_t ucSGCfg; /* DON'T SET, IT IS USED FOR WIFI.CFG WIFI*/
+	/* DON'T SET, IT IS USED FOR WIFI.CFG WIFI 2.4G Favor ANT path*/
+	uint8_t ucSG24GFavorANT;
+	/* DON'T SET, IT IS USED FOR WIFI.CFG WIFI 5G Favor ANT path*/
+	uint8_t ucSG5GFavorANT;
 };
 
 struct EVENT_SMART_GEAT_STATE {
