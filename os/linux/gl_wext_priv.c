@@ -12118,10 +12118,12 @@ int priv_driver_set_trx_ba_size(IN struct net_device *prNetDev,
 
 			u2BaSize = (uint16_t) u4Parse;
 
-			if ((i4Type == WLAN_TYPE_LEGACY
-				&& u2BaSize <= WLAN_LEGACY_MAX_BA_SIZE)
-			    || (i4Type == WLAN_TYPE_HE
-				&& u2BaSize <= WLAN_HE_MAX_BA_SIZE)) {
+			if (i4Type == WLAN_TYPE_LEGACY &&
+			    u2BaSize <= WLAN_LEGACY_MAX_BA_SIZE ||
+			    i4Type == WLAN_TYPE_HE &&
+			    u2BaSize <= WLAN_HE_MAX_BA_SIZE ||
+			    i4Type == WLAN_TYPE_EHT &&
+			    u2BaSize <= WLAN_EHT_MAX_BA_SIZE) {
 				/* only with valid ba size enter here */
 				if (fgIsTx == 0)
 					wlanSetRxBaSize(prGlueInfo,
