@@ -646,7 +646,7 @@ static void mt6639ConfigIntMask(struct GLUE_INFO *prGlueInfo,
 		   WF_WFDMA_HOST_DMA0_HOST_INT_ENA_ADDR, &u4Val);
 
 	DBGLOG(HAL, TRACE,
-	       "HOST_INT_STA(0x%08x):0x%08x, En:%u, Word:0x%08x\n",
+	       "HOST_INT_ENA(0x%08x):0x%08x, En:%u, Word:0x%08x\n",
 	       WF_WFDMA_HOST_DMA0_HOST_INT_ENA_ADDR,
 	       u4Val,
 	       enable,
