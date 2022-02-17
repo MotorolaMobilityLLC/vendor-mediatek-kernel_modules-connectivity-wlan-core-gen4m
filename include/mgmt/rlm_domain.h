@@ -624,6 +624,15 @@
 #define PWR_CTRL_CHNL_TYPE_KEY_5G_BAND3		"5GBAND3"
 #define PWR_CTRL_CHNL_TYPE_KEY_5G_BAND4		"5GBAND4"
 
+#define PWR_CFG_PRAM_NUM_ALL_RATE	1
+
+#define PWR_CFG_PRAM_NUM_AX		   18
+#if (CFG_SUPPORT_DYNA_TX_PWR_CTRL_OFDM_SETTING == 1)
+#define	PWR_CFG_PRAM_NUM_AC			11
+#else
+#define	PWR_CFG_PRAM_NUM_AC			9
+#endif /* CFG_SUPPORT_DYNA_TX_PWR_CTRL_OFDM_SETTING */
+
 enum ENUM_TX_POWER_CTRL_LIST_TYPE {
 	PWR_CTRL_TYPE_DEFAULT_LIST = 0,
 	PWR_CTRL_TYPE_DYNAMIC_LIST,
@@ -668,40 +677,57 @@ enum ENUM_TX_POWER_CTRL_CHANNEL_TYPE {
 };
 
 enum ENUM_POWER_LIMIT {
-	PWR_LIMIT_CCK = 0,
-	PWR_LIMIT_20M_L = 1,
-	PWR_LIMIT_20M_H = 2,
-	PWR_LIMIT_40M_L = 3,
-	PWR_LIMIT_40M_H = 4,
-	PWR_LIMIT_80M_L = 5,
-	PWR_LIMIT_80M_H = 6,
-	PWR_LIMIT_160M_L = 7,
-	PWR_LIMIT_160M_H = 8,
+	PWR_LIMIT_CCK,
+#if (CFG_SUPPORT_DYNA_TX_PWR_CTRL_OFDM_SETTING == 1)
+	PWR_LIMIT_OFDM_L,
+	PWR_LIMIT_OFDM_H,
+#endif /* CFG_SUPPORT_DYNA_TX_PWR_CTRL_OFDM_SETTING */
+	PWR_LIMIT_20M_L,
+	PWR_LIMIT_20M_H,
+	PWR_LIMIT_40M_L,
+	PWR_LIMIT_40M_H,
+	PWR_LIMIT_80M_L,
+	PWR_LIMIT_80M_H,
+	PWR_LIMIT_160M_L,
+	PWR_LIMIT_160M_H,
 	PWR_LIMIT_NUM
 };
+enum ENUM_POWER_LIMIT_HE {
+	PWR_LIMIT_RU26_L, /* MCS0~4 */
+	PWR_LIMIT_RU26_H, /* MCS5~9 */
+	PWR_LIMIT_RU26_U, /* MCS10~11 */
 
-enum ENUM_POWER_LIMIT_V2 {
-	PWR_LIMIT_V2_CCK = 0,
-#ifdef CFG_SUPPORT_DYNA_TX_PWR_CTRL_OFDM_SETTING
-	PWR_LIMIT_V2_OFDM_L,
-	PWR_LIMIT_V2_OFDM_H,
-#endif /* CFG_SUPPORT_DYNA_TX_PWR_CTRL_OFDM_SETTING */
-	PWR_LIMIT_V2_20M_L,
-	PWR_LIMIT_V2_20M_H,
-	PWR_LIMIT_V2_40M_L,
-	PWR_LIMIT_V2_40M_H,
-	PWR_LIMIT_V2_80M_L,
-	PWR_LIMIT_V2_80M_H,
-	PWR_LIMIT_V2_160M_L,
-	PWR_LIMIT_V2_160M_H,
-	PWR_LIMIT_V2_NUM
+	PWR_LIMIT_RU52_L, /* MCS0~4 */
+	PWR_LIMIT_RU52_H, /* MCS5~9 */
+	PWR_LIMIT_RU52_U, /* MCS10~11 */
+
+	PWR_LIMIT_RU106_L, /* MCS0~4 */
+	PWR_LIMIT_RU106_H, /* MCS5~9 */
+	PWR_LIMIT_RU106_U, /* MCS10~11 */
+
+	PWR_LIMIT_RU242_L, /* MCS0~4 */
+	PWR_LIMIT_RU242_H, /* MCS5~9 */
+	PWR_LIMIT_RU242_U, /* MCS10~11 */
+
+	PWR_LIMIT_RU484_L, /* MCS0~4 */
+	PWR_LIMIT_RU484_H, /* MCS5~9 */
+	PWR_LIMIT_RU484_U, /* MCS10~11 */
+
+	PWR_LIMIT_RU996_L, /* MCS0~4 */
+	PWR_LIMIT_RU996_H, /* MCS5~9 */
+	PWR_LIMIT_RU996_U, /* MCS10~11 */
+	PWR_LIMIT_HE_NUM
 };
 
 struct TX_PWR_CTRL_CHANNEL_SETTING {
 	enum ENUM_TX_POWER_CTRL_CHANNEL_TYPE eChnlType;
 	uint8_t channelParam[2];
-	enum ENUM_TX_POWER_CTRL_VALUE_SIGN op[PWR_LIMIT_V2_NUM];
-	int8_t i8PwrLimit[PWR_LIMIT_V2_NUM];
+
+	enum ENUM_TX_POWER_CTRL_VALUE_SIGN op[PWR_LIMIT_NUM];
+	int8_t i8PwrLimit[PWR_LIMIT_NUM];
+
+	enum ENUM_TX_POWER_CTRL_VALUE_SIGN opHE[PWR_LIMIT_HE_NUM];
+	int8_t i8PwrLimitHE[PWR_LIMIT_HE_NUM];
 };
 
 struct TX_PWR_CTRL_ELEMENT {
@@ -875,44 +901,6 @@ struct tx_pwr_section {
 };
 #endif /*#if (CFG_SUPPORT_SINGLE_SKU == 1)*/
 
-/* [TODO] To modify the following definition before using:
- *        set power limit with high/low rate
- */
-#if 1
-/* CMD_SET_PWR_LIMIT_TABLE */
-struct CHANNEL_POWER_LIMIT {
-	uint8_t ucCentralCh;
-	int8_t cPwrLimitCCK;
-	int8_t cPwrLimit20;
-	int8_t cPwrLimit40;
-	int8_t cPwrLimit80;
-	int8_t cPwrLimit160;
-	uint8_t ucFlag;
-	uint8_t aucReserved[1];
-};
-
-struct COUNTRY_CHANNEL_POWER_LIMIT {
-	uint8_t aucCountryCode[2];
-	uint8_t ucCountryFlag;
-	uint8_t ucChannelNum;
-	uint8_t aucReserved[4];
-	struct CHANNEL_POWER_LIMIT rChannelPowerLimit[80];
-};
-
-#define CHANNEL_PWR_LIMIT(_channel, _pwrLimit_cck, _pwrLimit_bw20,	\
-	_pwrLimit_bw40, _pwrLimit_bw80, _pwrLimit_bw160, _ucFlag)	\
-	{     \
-	.ucCentralCh  = (_channel),      \
-	.cPwrLimitCCK = (_pwrLimit_cck), \
-	.cPwrLimit20  = (_pwrLimit_bw20),         \
-	.cPwrLimit40  = (_pwrLimit_bw40),         \
-	.cPwrLimit80  = (_pwrLimit_bw80),         \
-	.cPwrLimit160 = (_pwrLimit_bw160),        \
-	.ucFlag       = (_ucFlag),       \
-	.aucReserved  = {0}     \
-}
-#endif
-
 struct COUNTRY_POWER_LIMIT_TABLE_DEFAULT {
 	uint8_t aucCountryCode[2];
 	/* 0: ch 1 ~14
@@ -933,6 +921,13 @@ struct COUNTRY_POWER_LIMIT_TABLE_CONFIGURATION {
 	/* Note: this array doesn't include cPwrLimitOFDM_L & cPwrLimitOFDM_H */
 	int8_t aucPwrLimit[PWR_LIMIT_NUM];
 };
+
+struct COUNTRY_POWER_LIMIT_TABLE_CONFIGURATION_HE {
+	uint8_t aucCountryCode[2];
+	uint8_t ucCentralCh;
+	int8_t aucPwrLimit[PWR_LIMIT_HE_NUM];
+};
+
 
 struct SUBBAND_CHANNEL {
 	uint8_t ucStartCh;
