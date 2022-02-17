@@ -626,6 +626,16 @@ static const struct wiphy_vendor_command
 				WIPHY_VENDOR_CMD_NEED_NETDEV,
 		.doit = mtk_cfg80211_vendor_get_version
 	},
+	/* Get Supported Feature Set */
+	{
+		{
+			.vendor_id = GOOGLE_OUI,
+			.subcmd = WIFI_SUBCMD_GET_FEATURE_SET
+		},
+		.flags = WIPHY_VENDOR_CMD_NEED_WDEV |
+				WIPHY_VENDOR_CMD_NEED_NETDEV,
+		.doit = mtk_cfg80211_vendor_get_supported_feature_set
+	},
 #if CFG_SUPPORT_P2P_PREFERRED_FREQ_LIST
 	/* P2P get preferred freq list */
 	{
@@ -3744,8 +3754,9 @@ static int32_t wlanProbe(void *pvData, void *pvDriverData)
 
 	if (i4Status == 0) {
 		wlanOnWhenProbeSuccess(prGlueInfo, prAdapter, FALSE);
-
-		DBGLOG(INIT, INFO, "wlanProbe: probe success\n");
+		DBGLOG(INIT, INFO,
+		       "wlanProbe: probe success, feature set: 0x%x\n",
+		       wlanGetSupportedFeatureSet(prGlueInfo));
 	} else {
 		DBGLOG(INIT, ERROR, "wlanProbe: probe failed, reason:%d\n",
 		       eFailReason);
