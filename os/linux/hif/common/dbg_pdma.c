@@ -187,7 +187,8 @@ static void halDumpTxHangLog(struct ADAPTER *prAdapter, uint32_t u4TokenId)
 			prDbgOps->dumpMacInfo(prAdapter);
 
 		if (u4DebugLevel & DBG_CLASS_TRACE)
-			haldumpPhyInfo(prAdapter);
+			if (prDbgOps && prDbgOps->dumpPhyInfo)
+				prDbgOps->dumpPhyInfo(prAdapter);
 
 		if (prDbgOps && prDbgOps->setFwDebug) {
 			/* clr drv print log sync flag */
