@@ -1589,11 +1589,16 @@ int Set_BssInfoUpdate(struct net_device *prNetDev,
 		for (i = 0; i < MAC_ADDR_LEN; i++)
 			aucBssId[i] = au4BssId[i];
 
+#ifdef CFG_SUPPORT_UNIFIED_COMMAND
+		i4Status = BssInfoUpdateUnify(prNetDev, u4OwnMacIdx, u4BssIdx,
+					 g_rBandIdx, aucBssId);
+#else
 		i4Status = BssInfoConnectOwnDev(prNetDev, u4OwnMacIdx, u4BssIdx,
 					 g_rBandIdx);
 
 		i4Status = BssInfoUpdate(prNetDev, u4OwnMacIdx, u4BssIdx,
 					 aucBssId);
+#endif
 	} else
 		return -EINVAL;
 

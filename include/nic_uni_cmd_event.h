@@ -4430,6 +4430,8 @@ uint32_t nicUniCmdSerAction(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
 uint32_t nicUniCmdGetTsf(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
+uint32_t nicUniUpdateDevInfo(struct ADAPTER *ad,
+		struct WIFI_UNI_SETQUERY_INFO *info);
 uint32_t nicUniCmdUpdateEdcaSet(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
 uint32_t nicUniCmdAccessReg(struct ADAPTER *ad,
