@@ -3487,12 +3487,49 @@ static void soc5_0_DumpOtherCr(struct ADAPTER *prAdapter)
 	DBGLOG(HAL, ERROR, "0x18060200=[0x%08x]\n", u4Val);
 }
 
+/* need to dump AXI Master related CR 0x1802750C ~ 0x18027530*/
+static void soc5_0_DumpAXIMasterDebugCr(struct ADAPTER *prAdapter)
+{
+#define AXI_MASTER_DUMP_CR_START 0x1802750C
+#define	AXI_MASTER_DUMP_CR_NUM 9
+
+	uint32_t ReadRegValue = 0;
+	uint32_t u4Value[AXI_MASTER_DUMP_CR_NUM] = {0};
+	uint32_t i;
+
+	ReadRegValue = AXI_MASTER_DUMP_CR_START;
+	for (i = 0 ; i < AXI_MASTER_DUMP_CR_NUM; i++) {
+		ReadRegValue += 4;
+		connac2x_DbgCrRead(prAdapter, ReadRegValue, &u4Value[i]);
+	}
+
+	connac2x_dump_format_memory32(u4Value,
+		AXI_MASTER_DUMP_CR_NUM,
+		"HW AXI BUS debug CR start[0x1802750C]");
+
+} /* soc5_0_DumpAXIMasterDebugCr */
+
+/* Dump Flow :
+ *	1) dump WFDMA / AXI Master CR
+ */
+void soc5_0_DumpWFDMACr(struct ADAPTER *prAdapter)
+{
+	/* Dump Host side WFDMACR */
+	if (prAdapter == NULL)
+		return;
+
+	connac2x_show_wfdma_info_by_type(prAdapter, WFDMA_TYPE_HOST);
+	connac2x_show_wfdma_dbg_flag_log(prAdapter, WFDMA_TYPE_HOST);
+	soc5_0_DumpAXIMasterDebugCr(prAdapter);
+} /* soc5_0_DumpWFDMAHostCr */
+
 static void soc5_0_DumpHostCr(struct ADAPTER *prAdapter)
 {
 	connac2x_DumpWfsyscpupcr(prAdapter);	/* first dump */
 	soc5_0_DumpPcLrLog(prAdapter);
 	soc5_0_DumpN10CoreReg(prAdapter);
 	soc5_0_DumpOtherCr(prAdapter);
+	soc5_0_DumpWFDMACr(prAdapter);
 }
 
 static void soc5_0_DumpBusHangCr(struct ADAPTER *prAdapter)

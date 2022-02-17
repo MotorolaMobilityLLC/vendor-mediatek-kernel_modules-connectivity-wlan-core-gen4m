@@ -3094,7 +3094,7 @@ void connac2x_show_wfdma_desc(IN struct ADAPTER *prAdapter)
 	}
 }
 
-static void dumpPPDebugCr(struct ADAPTER *prAdapter)
+static void connac2xDumpPPDebugCr(struct ADAPTER *prAdapter)
 {
 	uint32_t ReadRegValue[4];
 	uint32_t u4Value[4] = {0};
@@ -3123,54 +3123,115 @@ static void dumpPPDebugCr(struct ADAPTER *prAdapter)
 		ReadRegValue[3], u4Value[3]);
 }
 
+static void connac2x_dump_wfdma_dbg_value(
+	struct ADAPTER *prAdapter,
+	enum _ENUM_WFDMA_TYPE_T enum_wfdma_type,
+	uint32_t wfdma_idx)
+{
+#define BUF_SIZE 1024
+
+	uint32_t pdma_base_cr;
+	uint32_t set_debug_flag_value;
+	char *buf;
+	uint32_t pos = 0;
+	uint32_t set_debug_cr, get_debug_cr, get_debug_value = 0;
+
+	if (enum_wfdma_type == WFDMA_TYPE_HOST) {
+		if (wfdma_idx == 0)
+			pdma_base_cr = CONNAC2X_HOST_WPDMA_0_BASE;
+		else
+			pdma_base_cr = CONNAC2X_HOST_WPDMA_1_BASE;
+	} else {
+		if (wfdma_idx == 0)
+			pdma_base_cr = CONNAC2X_MCU_WPDMA_0_BASE;
+		else
+			pdma_base_cr = CONNAC2X_MCU_WPDMA_1_BASE;
+	}
+
+	buf = (char *) kalMemAlloc(BUF_SIZE, VIR_MEM_TYPE);
+	if (!buf) {
+		DBGLOG(HAL, ERROR, "Mem allocation failed.\n");
+		return;
+	}
+	set_debug_cr = pdma_base_cr + 0x124;
+	get_debug_cr = pdma_base_cr + 0x128;
+	kalMemZero(buf, BUF_SIZE);
+	pos += kalSnprintf(buf + pos, 50,
+			"set_debug_cr:0x%08x get_debug_cr:0x%08x; ",
+			set_debug_cr, get_debug_cr);
+	for (set_debug_flag_value = 0x100; set_debug_flag_value <= 0x112;
+			set_debug_flag_value++) {
+		HAL_MCR_WR(prAdapter, set_debug_cr, set_debug_flag_value);
+		HAL_MCR_RD(prAdapter, get_debug_cr, &get_debug_value);
+		pos += kalSnprintf(buf + pos, 40, "Set:0x%03x, result=0x%08x%s",
+			set_debug_flag_value,
+			get_debug_value,
+			set_debug_flag_value == 0x112 ? "\n" : "; ");
+	}
+	DBGLOG(HAL, INFO, "%s", buf);
+	kalMemFree(buf, VIR_MEM_TYPE, BUF_SIZE);
+}
+
+void connac2x_show_wfdma_dbg_flag_log(
+	struct ADAPTER *prAdapter,
+	enum _ENUM_WFDMA_TYPE_T enum_wfdma_type)
+{
+	struct mt66xx_chip_info *prChipInfo;
+
+	prChipInfo = prAdapter->chip_info;
+
+	connac2x_dump_wfdma_dbg_value(prAdapter, enum_wfdma_type, 0);
+	if (prChipInfo->is_support_wfdma1)
+		connac2x_dump_wfdma_dbg_value(prAdapter, enum_wfdma_type, 1);
+}
+
+void connac2x_show_wfdma_info_by_type(
+	struct ADAPTER *prAdapter,
+	enum _ENUM_WFDMA_TYPE_T enum_wfdma_type)
+{
+	struct CHIP_DBG_OPS *prDbgOps;
+
+	prDbgOps = prAdapter->chip_info->prDebugOps;
+
+	/* Dump WFMDA info */
+	DBGLOG(HAL, INFO, "==============================\n");
+	DBGLOG(HAL, INFO, "%s WFMDA Configuration:\n",
+	       enum_wfdma_type == WFDMA_TYPE_HOST ? "HOST" : "WM");
+	DBGLOG(HAL, INFO, "==============================\n");
+	connac2x_show_wfdma_interrupt_info(prAdapter, enum_wfdma_type);
+	connac2x_show_wfdma_glo_info(prAdapter, enum_wfdma_type);
+	connac2x_show_wfdma_ring_info(prAdapter, enum_wfdma_type);
+	if (prDbgOps && prDbgOps->show_wfdma_dbg_probe_info)
+		prDbgOps->show_wfdma_dbg_probe_info(prAdapter,
+			enum_wfdma_type);
+	connac2x_show_wfdma_axi_debug_log(prAdapter, WFDMA_TYPE_HOST);
+	if (prDbgOps && prDbgOps->show_wfdma_wrapper_info)
+		prDbgOps->show_wfdma_wrapper_info(prAdapter,
+			enum_wfdma_type);
+}
+
 void connac2x_show_wfdma_info(IN struct ADAPTER *prAdapter)
 {
 	struct BUS_INFO *prBusInfo;
-	struct CHIP_DBG_OPS *prDbgOps;
 	struct SW_WFDMA_INFO *prSwWfdmaInfo;
 
 	prBusInfo = prAdapter->chip_info->bus_info;
-	prDbgOps = prAdapter->chip_info->prDebugOps;
 	prSwWfdmaInfo = &prBusInfo->rSwWfdmaInfo;
 
 	if (prSwWfdmaInfo->rOps.dumpDebugLog)
 		prSwWfdmaInfo->rOps.dumpDebugLog(prAdapter->prGlueInfo);
 
-	/* Dump Host WFMDA info */
-	DBGLOG(HAL, INFO, "==============================\n");
-	DBGLOG(HAL, INFO, "HOST WFMDA Configuration:\n");
-	DBGLOG(HAL, INFO, "==============================\n");
-	connac2x_show_wfdma_interrupt_info(prAdapter, WFDMA_TYPE_HOST);
-	connac2x_show_wfdma_glo_info(prAdapter, WFDMA_TYPE_HOST);
-	connac2x_show_wfdma_ring_info(prAdapter, WFDMA_TYPE_HOST);
-	if (prDbgOps && prDbgOps->show_wfdma_dbg_probe_info)
-		prDbgOps->show_wfdma_dbg_probe_info(prAdapter,
-			WFDMA_TYPE_HOST);
-	connac2x_show_wfdma_axi_debug_log(prAdapter, WFDMA_TYPE_HOST);
-	if (prDbgOps && prDbgOps->show_wfdma_wrapper_info)
-		prDbgOps->show_wfdma_wrapper_info(prAdapter,
-			WFDMA_TYPE_HOST);
+	connac2x_show_wfdma_info_by_type(prAdapter, WFDMA_TYPE_HOST);
+	connac2x_show_wfdma_dbg_flag_log(prAdapter, WFDMA_TYPE_HOST);
 
 	if (prBusInfo->wfmda_wm_tx_group && prBusInfo->wfmda_wm_rx_group) {
-		/* Dump FW WFDMA info */
-		DBGLOG(HAL, INFO, "==============================\n");
-		DBGLOG(HAL, INFO, "WM WFMDA Configuration:\n");
-		DBGLOG(HAL, INFO, "==============================\n");
-		connac2x_show_wfdma_interrupt_info(prAdapter, WFDMA_TYPE_WM);
-		connac2x_show_wfdma_glo_info(prAdapter, WFDMA_TYPE_WM);
-		connac2x_show_wfdma_ring_info(prAdapter, WFDMA_TYPE_WM);
-		if (prDbgOps && prDbgOps->show_wfdma_dbg_probe_info)
-			prDbgOps->show_wfdma_dbg_probe_info(prAdapter,
-				WFDMA_TYPE_WM);
-		connac2x_show_wfdma_axi_debug_log(prAdapter, WFDMA_TYPE_WM);
-		if (prDbgOps && prDbgOps->show_wfdma_wrapper_info)
-			prDbgOps->show_wfdma_wrapper_info(prAdapter,
-				WFDMA_TYPE_WM);
+		connac2x_show_wfdma_info_by_type(prAdapter, WFDMA_TYPE_WM);
+		connac2x_show_wfdma_dbg_flag_log(prAdapter, WFDMA_TYPE_WM);
 	}
 
 	connac2x_show_wfdma_desc(prAdapter);
 
-	dumpPPDebugCr(prAdapter);
+	connac2xDumpPPDebugCr(prAdapter);
 }
 
 void connac2x_show_dmashdl_info(IN struct ADAPTER *prAdapter)
