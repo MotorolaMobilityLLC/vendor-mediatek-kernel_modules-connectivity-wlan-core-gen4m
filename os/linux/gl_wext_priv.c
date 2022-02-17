@@ -2943,6 +2943,8 @@ reqExtSetAcpiDevicePowerState(IN struct GLUE_INFO
 #define CMD_SET_FIXED_FALLBACK	"FIXEDRATEFALLBACK"
 #define CMD_GET_STA_IDX         "GET_STA_IDX"
 #define CMD_GET_TX_POWER_INFO   "TxPowerInfo"
+#define CMD_TX_POWER_MANUAL_SET "TxPwrManualSet"
+
 
 /* neptune doens't support "show" entry, use "driver" to handle
  * MU GET request, and MURX_PKTCNT comes from RX_STATS,
@@ -5416,7 +5418,7 @@ static int32_t priv_driver_get_txpower_info(IN struct net_device *prNetDev,
 	if (!prTxPowerInfo)
 		return -1;
 
-	if (u4ParamNum == TXPOWER_INPUT_ARG_NUM) {
+	if (u4ParamNum == TXPOWER_INFO_INPUT_ARG_NUM) {
 		prTxPowerInfo->ucTxPowerCategory = ucParam;
 		prTxPowerInfo->ucBandIdx = ucBandIdx;
 
@@ -5444,6 +5446,82 @@ static int32_t priv_driver_get_txpower_info(IN struct net_device *prNetDev,
 	return i4BytesWritten;
 }
 #endif
+static int32_t priv_driver_txpower_man_set(IN struct net_device *prNetDev,
+					IN char *pcCommand, IN int i4TotalLen)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct ADAPTER *prAdapter = NULL;
+	uint32_t rStatus = WLAN_STATUS_SUCCESS;
+	uint32_t u4BufLen = 0, u4Size = 0;
+	int32_t i4BytesWritten = 0;
+	int32_t i4Argc = 0;
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
+	int8_t *this_char = NULL;
+	uint32_t u4ParamNum = 0;
+	uint8_t ucPhyMode = 0;
+	uint8_t ucTxRate = 0;
+	uint8_t ucBw = 0;
+	int8_t iTargetPwr = 0;
+	struct PARAM_TXPOWER_BY_RATE_SET_T *prPwrCtl = NULL;
+
+	ASSERT(prNetDev);
+	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
+		return -1;
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+	prAdapter = prGlueInfo->prAdapter;
+
+	DBGLOG(REQ, INFO, "command is %s\n", pcCommand);
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+	DBGLOG(REQ, INFO, "argc is %d, apcArgv[0] = %s\n\n", i4Argc, *apcArgv);
+
+	this_char = kalStrStr(*apcArgv, "=");
+	if (!this_char)
+		return -1;
+	this_char++;
+
+	DBGLOG(REQ, INFO, "string = %s\n", this_char);
+
+	u4ParamNum = sscanf(this_char, "%d:%d:%d:%d", &ucPhyMode, &ucTxRate,
+		&ucBw, &iTargetPwr);
+
+	DBGLOG(REQ, INFO, "ParamNum=%d,PhyMod=%d,Rate=%d,Bw=%d,Pwr=%d\n",
+		u4ParamNum, ucPhyMode, ucTxRate, ucBw, iTargetPwr);
+
+	u4Size = sizeof(struct PARAM_TXPOWER_BY_RATE_SET_T);
+
+	prPwrCtl =
+		(struct PARAM_TXPOWER_BY_RATE_SET_T *)kalMemAlloc(
+							u4Size, VIR_MEM_TYPE);
+	if (!prPwrCtl)
+		return -1;
+
+	if (u4ParamNum == TXPOWER_MAN_SET_INPUT_ARG_NUM) {
+		prPwrCtl->u1PhyMode = ucPhyMode;
+		prPwrCtl->u1TxRate = ucTxRate;
+		prPwrCtl->u1BW = ucBw;
+		prPwrCtl->i1TxPower = iTargetPwr;
+
+		rStatus = kalIoctl(prGlueInfo, wlanoidSetTxPowerByRateManual,
+			prPwrCtl,
+			sizeof(struct PARAM_TXPOWER_BY_RATE_SET_T),
+			FALSE, FALSE, TRUE, &u4BufLen);
+
+		if (rStatus != WLAN_STATUS_SUCCESS) {
+			kalMemFree(prPwrCtl, VIR_MEM_TYPE,
+			    sizeof(struct PARAM_TXPOWER_BY_RATE_SET_T));
+			return -1;
+		}
+
+	} else {
+		DBGLOG(INIT, ERROR,
+			"[Error]iwpriv wlanXX driver TxPwrManualSet=PhyMode:Rate:Bw:Pwr\n");
+	}
+
+	kalMemFree(prPwrCtl, VIR_MEM_TYPE,
+		   sizeof(struct PARAM_TXPOWER_BY_RATE_SET_T));
+
+	return i4BytesWritten;
+}
 
 static int priv_driver_get_sta_stat(IN struct net_device *prNetDev,
 				    IN char *pcCommand, IN int i4TotalLen)
@@ -13158,6 +13236,7 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers[] = {
 #if (CFG_SUPPORT_TXPOWER_INFO == 1)
 	{CMD_GET_TX_POWER_INFO, priv_driver_get_txpower_info},
 #endif
+	{CMD_TX_POWER_MANUAL_SET, priv_driver_txpower_man_set},
 	{CMD_SET_FIXED_RATE, priv_driver_set_fixed_rate},
 	{CMD_GET_SW_CTRL, priv_driver_get_sw_ctrl},
 	{CMD_SET_MCR, priv_driver_set_mcr},
