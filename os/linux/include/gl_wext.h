@@ -342,7 +342,8 @@ wext_set_rate(IN struct net_device *prNetDev,
 void
 wext_indicate_wext_event(IN struct GLUE_INFO *prGlueInfo,
 			 IN unsigned int u4Cmd, IN unsigned char *pucData,
-			 IN unsigned int u4DataLen);
+			 IN unsigned int u4DataLen,
+			 IN uint8_t ucBssIndex);
 
 struct iw_statistics *wext_get_wireless_stats(
 	struct net_device *prDev);

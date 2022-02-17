@@ -116,7 +116,7 @@ struct CMD_ROAMING_TRANSIT {
 	uint16_t	u2Data;
 	uint16_t	u2RcpiLowThreshold;
 	uint8_t	ucIsSupport11B;
-	uint8_t	aucReserved[1];
+	uint8_t	ucBssidx;
 	enum ENUM_ROAMING_REASON	eReason;
 	uint32_t	u4RoamingTriggerTime; /*sec in mcu*/
 	uint8_t aucReserved2[8];
@@ -184,43 +184,44 @@ enum ROAM_TYPE {
  *******************************************************************************
  */
 
-#if CFG_SUPPORT_ROAMING
-#define IS_ROAMING_ACTIVE(prAdapter) \
-	(prAdapter->rWifiVar.rRoamingInfo.eCurrentState == ROAMING_STATE_ROAM)
-#else
-#define IS_ROAMING_ACTIVE(prAdapter) FALSE
-#endif /* CFG_SUPPORT_ROAMING */
 
 /*******************************************************************************
  *                  F U N C T I O N   D E C L A R A T I O N S
  *******************************************************************************
  */
-void roamingFsmInit(IN struct ADAPTER *prAdapter);
+void roamingFsmInit(IN struct ADAPTER *prAdapter,
+	IN uint8_t ucBssIndex);
 
-void roamingFsmUninit(IN struct ADAPTER *prAdapter);
+void roamingFsmUninit(IN struct ADAPTER *prAdapter,
+	IN uint8_t ucBssIndex);
 
 void roamingFsmSendCmd(IN struct ADAPTER *prAdapter,
-				IN struct CMD_ROAMING_TRANSIT *prTransit);
+	IN struct CMD_ROAMING_TRANSIT *prTransit);
 
-void roamingFsmScanResultsUpdate(IN struct ADAPTER *prAdapter);
+void roamingFsmScanResultsUpdate(IN struct ADAPTER *prAdapter,
+	IN uint8_t ucBssIndex);
 
 void roamingFsmSteps(IN struct ADAPTER *prAdapter,
-				IN enum ENUM_ROAMING_STATE eNextState);
+	IN enum ENUM_ROAMING_STATE eNextState,
+	IN uint8_t ucBssIndex);
 
-void roamingFsmRunEventStart(IN struct ADAPTER *prAdapter);
+void roamingFsmRunEventStart(IN struct ADAPTER *prAdapter,
+	IN uint8_t ucBssIndex);
 
 void roamingFsmRunEventDiscovery(IN struct ADAPTER *prAdapter,
-				IN struct CMD_ROAMING_TRANSIT *prTransit);
+	IN struct CMD_ROAMING_TRANSIT *prTransit);
 
-void roamingFsmRunEventRoam(IN struct ADAPTER *prAdapter);
+void roamingFsmRunEventRoam(IN struct ADAPTER *prAdapter,
+	IN uint8_t ucBssIndex);
 
 void roamingFsmRunEventFail(IN struct ADAPTER *prAdapter,
-				IN uint32_t u4Reason);
+	IN uint32_t u4Reason,
+	IN uint8_t ucBssIndex);
 
-void roamingFsmRunEventAbort(IN struct ADAPTER *prAdapter);
+void roamingFsmRunEventAbort(IN struct ADAPTER *prAdapter,
+	IN uint8_t ucBssIndex);
 
 uint32_t roamingFsmProcessEvent(IN struct ADAPTER *prAdapter,
-				IN struct CMD_ROAMING_TRANSIT *prTransit);
-
+	IN struct CMD_ROAMING_TRANSIT *prTransit);
 
 #endif /* _ROAMING_FSM_H */

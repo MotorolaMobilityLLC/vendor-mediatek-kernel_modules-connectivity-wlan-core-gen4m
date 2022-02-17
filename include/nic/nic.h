@@ -350,7 +350,7 @@ nicConfigPowerSaveProfile(IN struct ADAPTER *prAdapter,
 
 uint32_t
 nicConfigProcSetCamCfgWrite(IN struct ADAPTER *prAdapter,
-		IN u_int8_t enabled);
+		IN u_int8_t enabled, IN uint8_t ucBssIndex);
 
 uint32_t nicEnterCtiaMode(IN struct ADAPTER *prAdapter,
 		u_int8_t fgEnterCtia, u_int8_t fgEnCmdEvent);
@@ -419,12 +419,6 @@ nicRlmArUpdateParms(IN struct ADAPTER *prAdapter,
 		    IN uint32_t u4ArSysParam0,
 		    IN uint32_t u4ArSysParam1, IN uint32_t u4ArSysParam2,
 		    IN uint32_t u4ArSysParam3);
-
-/*----------------------------------------------------------------------------*/
-/* Enable/Disable Roaming                                                     */
-/*----------------------------------------------------------------------------*/
-uint32_t nicRoamingUpdateParams(IN struct ADAPTER
-				*prAdapter, IN uint32_t u4EnableRoaming);
 
 /*----------------------------------------------------------------------------*/
 /* Link Quality Updating                                                      */

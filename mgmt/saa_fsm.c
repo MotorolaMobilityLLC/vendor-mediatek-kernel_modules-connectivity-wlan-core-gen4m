@@ -173,18 +173,21 @@ saaFsmSteps(IN struct ADAPTER *prAdapter,
 				.eStatusType =
 				ENUM_STATUS_TYPE_FT_AUTH_STATUS};
 				struct cfg80211_ft_event_params *prFtEvent =
-					&prAdapter->prGlueInfo->rFtEventParam;
+				aisGetFtEventParam(prAdapter,
+				prStaRec->ucBssIndex);
 
 				prFtEvent->target_ap = prStaRec->aucMacAddr;
 				/* now, we don't support RIC first */
 				prFtEvent->ric_ies = NULL;
 				prFtEvent->ric_ies_len = 0;
 				DBGLOG(SAA, INFO,
-				       "FT: notify supplicant to update FT IEs\n");
+					"[%d] FT: notify supplicant to update FT IEs\n",
+					prStaRec->ucBssIndex);
 				kalIndicateStatusAndComplete(
 					prAdapter->prGlueInfo,
 					WLAN_STATUS_MEDIA_SPECIFIC_INDICATION,
-					&rStatus, sizeof(rStatus));
+					&rStatus, sizeof(rStatus),
+					prStaRec->ucBssIndex);
 				break;
 				/* wait supplicant update ft ies and then
 				 * continue to send assoc 1
@@ -452,12 +455,7 @@ saaFsmSendEventJoinComplete(IN struct ADAPTER *prAdapter,
 	}
 #endif /* CFG_ENABLE_WIFI_DIRECT */
 
-	if (!prAdapter->prAisBssInfo) {
-		DBGLOG(SAA, ERROR, "prAdapter->prAisBssInfo is NULL\n");
-		return WLAN_STATUS_INVALID_PACKET;
-	}
-
-	if (prStaRec->ucBssIndex == prAdapter->prAisBssInfo->ucBssIndex) {
+	if (IS_STA_IN_AIS(prStaRec)) {
 		struct MSG_SAA_FSM_COMP *prSaaFsmCompMsg;
 
 		prSaaFsmCompMsg = cnmMemAlloc(prAdapter, RAM_TYPE_MSG,
@@ -1228,16 +1226,21 @@ uint32_t saaFsmRunEventRxDeauth(IN struct ADAPTER *prAdapter,
 
 		if (IS_STA_IN_AIS(prStaRec)) {
 			struct BSS_INFO *prAisBssInfo;
+			uint8_t ucBssIndex = 0;
 
 			if (!IS_AP_STA(prStaRec))
 				break;
 
+			ucBssIndex = prStaRec->ucBssIndex;
+
+			prAisBssInfo = aisGetAisBssInfo(prAdapter,
+				ucBssIndex);
+
 			/* if state != CONNECTED, don't do disconnect again */
-			if (prAdapter->prGlueInfo->eParamMediaStateIndicated !=
+			if (kalGetMediaStateIndicated(prAdapter->prGlueInfo,
+				ucBssIndex) !=
 				MEDIA_STATE_CONNECTED)
 				break;
-
-			prAisBssInfo = prAdapter->prAisBssInfo;
 
 			if (prStaRec->ucStaState > STA_STATE_1) {
 
@@ -1254,8 +1257,8 @@ uint32_t saaFsmRunEventRxDeauth(IN struct ADAPTER *prAdapter,
 							*prAisSpecBssInfo;
 
 					prAisSpecBssInfo =
-						&(prAdapter->rWifiVar.
-							rAisSpecificBssInfo);
+						aisGetAisSpecBssInfo(prAdapter,
+						ucBssIndex);
 
 					DBGLOG(RSN, INFO,
 					       "QM RX MGT: Deauth frame, P=%d Sec=%d CM=%d BC=%d fc=%02x\n",
@@ -1331,9 +1334,11 @@ void saaChkDeauthfrmParamHandler(IN struct ADAPTER *prAdapter,
 		if (!IS_BMCAST_MAC_ADDR(prDeauthFrame->aucDestAddr) &&
 		    (prStaRec->u2ReasonCode == REASON_CODE_CLASS_2_ERR
 		     || prStaRec->u2ReasonCode == REASON_CODE_CLASS_3_ERR)) {
-			DBGLOG(RSN, INFO, "QM RX MGT: rsnStartSaQuery\n");
+			DBGLOG(RSN, INFO,
+				"[%d] QM RX MGT: rsnStartSaQuery\n",
+				prStaRec->ucBssIndex);
 			/* MFP test plan 5.3.3.5 */
-			rsnStartSaQuery(prAdapter);
+			rsnStartSaQuery(prAdapter, prStaRec->ucBssIndex);
 		} else {
 			DBGLOG(RSN, INFO, "RXM: Drop unprotected Mgmt frame\n");
 			DBGLOG(RSN, INFO,
@@ -1384,6 +1389,8 @@ saaSendDisconnectMsgHandler(IN struct ADAPTER *prAdapter,
 			prAisAbortMsg->ucReasonOfDisconnect =
 				DISCONNECT_REASON_CODE_DEAUTHENTICATED;
 			prAisAbortMsg->fgDelayIndication = FALSE;
+			prAisAbortMsg->ucBssIndex =
+				prStaRec->ucBssIndex;
 			mboxSendMsg(prAdapter, MBOX_ID_0,
 				    (struct MSG_HDR *) prAisAbortMsg,
 				    MSG_SEND_METHOD_BUF);
@@ -1413,6 +1420,8 @@ saaSendDisconnectMsgHandler(IN struct ADAPTER *prAdapter,
 			prAisAbortMsg->ucReasonOfDisconnect =
 				DISCONNECT_REASON_CODE_DISASSOCIATED;
 			prAisAbortMsg->fgDelayIndication = FALSE;
+			prAisAbortMsg->ucBssIndex =
+				prStaRec->ucBssIndex;
 			mboxSendMsg(prAdapter, MBOX_ID_0,
 				    (struct MSG_HDR *) prAisAbortMsg,
 				    MSG_SEND_METHOD_BUF);
@@ -1464,11 +1473,15 @@ uint32_t saaFsmRunEventRxDisassoc(IN struct ADAPTER *prAdapter,
 
 		if (IS_STA_IN_AIS(prStaRec)) {
 			struct BSS_INFO *prAisBssInfo;
+			uint8_t ucBssIndex = 0;
 
 			if (!IS_AP_STA(prStaRec))
 				break;
 
-			prAisBssInfo = prAdapter->prAisBssInfo;
+			ucBssIndex = prStaRec->ucBssIndex;
+
+			prAisBssInfo = aisGetAisBssInfo(prAdapter,
+				ucBssIndex);
 
 			if (prStaRec->ucStaState > STA_STATE_1) {
 
@@ -1484,8 +1497,8 @@ uint32_t saaFsmRunEventRxDisassoc(IN struct ADAPTER *prAdapter,
 							*prAisSpecBssInfo;
 
 					prAisSpecBssInfo =
-						&(prAdapter->rWifiVar.
-							rAisSpecificBssInfo);
+						aisGetAisSpecBssInfo(prAdapter,
+						ucBssIndex);
 
 					DBGLOG(RSN, INFO,
 					       "QM RX MGT: Disassoc frame, P=%d Sec=%d CM=%d BC=%d fc=%02x\n",
@@ -1567,8 +1580,10 @@ saaChkDisassocfrmParamHandler(IN struct ADAPTER *prAdapter,
 	    (prStaRec->u2ReasonCode == REASON_CODE_CLASS_2_ERR ||
 	     prStaRec->u2ReasonCode == REASON_CODE_CLASS_3_ERR)) {
 		/* MFP test plan 5.3.3.5 */
-		DBGLOG(RSN, INFO, "QM RX MGT: rsnStartSaQuery\n");
-		rsnStartSaQuery(prAdapter);
+		DBGLOG(RSN, INFO,
+			"[%d] QM RX MGT: rsnStartSaQuery\n",
+			prStaRec->ucBssIndex);
+		rsnStartSaQuery(prAdapter, prStaRec->ucBssIndex);
 	} else {
 		DBGLOG(RSN, INFO, "RXM: Drop unprotected Mgmt frame\n");
 		DBGLOG(RSN, INFO,

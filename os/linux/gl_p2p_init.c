@@ -238,7 +238,7 @@ u_int8_t p2pRemove(struct GLUE_INFO *prGlueInfo)
 		if (gprP2pRoleWdev[idx] == NULL)
 			continue;
 #if CFG_ENABLE_UNIFY_WIPHY
-		if (gprP2pRoleWdev[idx] == gprWdev) {
+		if (wlanIsAisDev(gprP2pRoleWdev[idx]->netdev)) {
 			/* This is AIS/AP Interface */
 			gprP2pRoleWdev[idx] = NULL;
 			continue;
