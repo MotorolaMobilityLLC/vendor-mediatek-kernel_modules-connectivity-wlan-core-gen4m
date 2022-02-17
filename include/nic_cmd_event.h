@@ -3684,6 +3684,11 @@ uint32_t nicCfgChipPseRxQuota(IN struct ADAPTER *prAdapter,
 				IN uint8_t *pucEventBuf);
 #endif
 
+#if CFG_SUPPORT_BAR_DELAY_INDICATION
+void nicEventHandleDelayBar(IN struct ADAPTER *prAdapter,
+		      IN struct WIFI_EVENT *prEvent);
+#endif /* CFG_SUPPORT_BAR_DELAY_INDICATION */
+
 /*******************************************************************************
  *                              F U N C T I O N S
  *******************************************************************************

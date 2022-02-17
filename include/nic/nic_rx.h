@@ -1480,6 +1480,9 @@ void nicRxPerfIndProcessRXV(IN struct ADAPTER *prAdapter,
 	IN uint8_t ucBssIndex);
 #endif
 
+void nicRxIndicatePackets(IN struct ADAPTER *prAdapter,
+	IN struct SW_RFB *prSwRfbListHead);
+
 void nicRxProcessDataPacket(IN struct ADAPTER *prAdapter,
 	IN OUT struct SW_RFB *prSwRfb);
 
