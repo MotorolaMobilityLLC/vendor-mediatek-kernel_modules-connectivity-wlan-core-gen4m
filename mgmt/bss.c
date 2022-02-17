@@ -2471,6 +2471,13 @@ uint32_t bssGetIotApAction(IN struct ADAPTER *prAdapter,
 		DBGLOG(BSS, INFO, "GetIotApAction Param Error!\n");
 		return -EINVAL;
 	}
+	/*To make sure one Bss only parse once*/
+	if (prBssDesc->fgIotApActionValid)
+		return prBssDesc->ucIotApAct;
+
+
+	prBssDesc->fgIotApActionValid = TRUE;
+	prBssDesc->ucIotApAct = WLAN_IOT_AP_VOID;
 
 	pucIes = &prBssDesc->aucIEBuf[0];
 	for (ucCnt = 0; ucCnt < CFG_IOT_AP_RULE_MAX_CNT; ucCnt++) {
@@ -2558,14 +2565,9 @@ uint32_t bssGetIotApAction(IN struct ADAPTER *prAdapter,
 				continue;
 			/*Matched, Fall through*/
 		}
-
-		/*All MATCH*/
-		DBGLOG(BSS, INFO, MACSTR" is IOTAP:%d Act:%d\n",
-			prBssDesc->aucBSSID, ucCnt, prIotApRule->ucAction);
-		return prIotApRule->ucAction;
+		/*All match, set the actions*/
+		prBssDesc->ucIotApAct = prIotApRule->ucAction;
 	}
-	DBGLOG(BSS, TRACE, MACSTR" is NOT IOTAP\n",
-		prBssDesc->aucBSSID);
-	return WLAN_IOT_AP_VOID;
+	return prBssDesc->ucIotApAct;
 }
 #endif
