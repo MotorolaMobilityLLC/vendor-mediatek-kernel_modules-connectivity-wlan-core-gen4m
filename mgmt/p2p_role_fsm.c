@@ -255,15 +255,6 @@ uint8_t p2pRoleFsmInit(IN struct ADAPTER *prAdapter,
 #if (CFG_SUPPORT_DFS_MASTER == 1)
 		p2pFuncRadarInfoInit();
 #endif
-
-		/* SET_NET_PWR_STATE_IDLE(prAdapter,
-		 * prP2pBssInfo->ucBssIndex);
-		 */
-
-		p2pRoleFsmStateTransition(prAdapter,
-			prP2pRoleFsmInfo,
-			P2P_ROLE_STATE_IDLE);
-
 	} while (FALSE);
 
 	if (prP2pBssInfo)
@@ -4133,3 +4124,30 @@ p2pRoleFsmAbortCurrentAcsReq(IN struct ADAPTER *prAdapter,
 	}
 }
 
+void p2pRoleFsmRunEventScanAbort(IN struct ADAPTER *prAdapter,
+		IN uint8_t ucBssIdx)
+{
+	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo = NULL;
+	struct BSS_INFO *prP2pBssInfo = NULL;
+
+	do {
+		ASSERT_BREAK(prAdapter != NULL);
+
+		DBGLOG(P2P, TRACE, "p2pRoleFsmRunEventScanAbort\n");
+
+		prP2pBssInfo = prAdapter->aprBssInfo[ucBssIdx];
+		prP2pRoleFsmInfo = P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prAdapter,
+			prP2pBssInfo->u4PrivateData);
+
+		if (prP2pRoleFsmInfo->eCurrentState == P2P_ROLE_STATE_SCAN) {
+			struct P2P_SCAN_REQ_INFO *prScanReqInfo =
+				&(prP2pRoleFsmInfo->rScanReqInfo);
+
+			prScanReqInfo->fgIsAbort = TRUE;
+
+			p2pRoleFsmStateTransition(prAdapter,
+				prP2pRoleFsmInfo,
+				P2P_ROLE_STATE_IDLE);
+		}
+	} while (FALSE);
+}
