@@ -465,6 +465,9 @@ u_int8_t halSetDriverOwn(IN struct ADAPTER *prAdapter)
 	uint32_t i, u4CurrTick;
 	u_int8_t fgTimeout;
 	u_int8_t fgResult;
+#if CFG_SUPPORT_PCIE_ASPM
+	struct GL_HIF_INFO *prHifInfo;
+#endif
 
 	KAL_TIME_INTERVAL_DECLARATION();
 
@@ -472,6 +475,10 @@ u_int8_t halSetDriverOwn(IN struct ADAPTER *prAdapter)
 
 	prChipInfo = prAdapter->chip_info;
 	prBusInfo = prChipInfo->bus_info;
+#if CFG_SUPPORT_PCIE_ASPM
+	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
+#endif
+
 	/* if direct trx,  set drv/fw own will be called
 	*  in softirq/tasklet/thread context,
 	*  if normal trx, set drv/fw own will only
@@ -538,6 +545,10 @@ u_int8_t halSetDriverOwn(IN struct ADAPTER *prAdapter)
 				LP_OWN_BACK_LOOP_DELAY_MAX_US);
 		i++;
 	}
+#if CFG_SUPPORT_PCIE_ASPM
+	glBusConfigASPM(prHifInfo->pdev,
+					DISABLE_ASPM_L1);
+#endif
 
 	/* For Low power Test */
 	/* 1. Driver need to polling until CR4 ready,
@@ -626,6 +637,13 @@ void halSetFWOwn(IN struct ADAPTER *prAdapter, IN u_int8_t fgEnableGlobalInt)
 		/* Write sleep mode magic num to dummy reg */
 		if (prBusInfo->setDummyReg)
 			prBusInfo->setDummyReg(prAdapter->prGlueInfo);
+#if CFG_SUPPORT_PCIE_ASPM
+		glBusConfigASPML1SS(prHifInfo->pdev,
+			PCI_L1PM_CTR1_ASPM_L12_EN |
+			PCI_L1PM_CTR1_ASPM_L11_EN);
+		glBusConfigASPM(prHifInfo->pdev,
+			ENABLE_ASPM_L1);
+#endif
 
 		HAL_LP_OWN_SET(prAdapter, &fgResult);
 
