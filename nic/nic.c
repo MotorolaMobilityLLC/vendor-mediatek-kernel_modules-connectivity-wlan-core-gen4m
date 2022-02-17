@@ -1489,6 +1489,34 @@ uint32_t nicGetS1Freq(IN enum ENUM_BAND eBand,
 	return nicChannelNum2Freq(ucS1, eBand) / 1000;
 }
 
+uint8_t nicGetS2(IN enum ENUM_BAND eBand,
+		IN uint8_t ucPrimaryChannel,
+		IN uint8_t ucBandwidth,
+		IN uint8_t ucS1)
+{
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	if (eBand == BAND_6G)
+		return nicGetHe6gS2(ucPrimaryChannel, ucBandwidth, ucS1);
+#endif
+	return 0;
+}
+
+#if (CFG_SUPPORT_WIFI_6G == 1)
+uint8_t nicGetHe6gS2(IN uint8_t ucPrimaryChannel,
+		IN uint8_t ucBandwidth,
+		IN uint8_t ucS1)
+{
+	if (ucBandwidth == CW_160MHZ) {
+		if (ucPrimaryChannel > ucS1)
+			return ucS1 + 8;
+		else if (ucPrimaryChannel < ucS1)
+			return ucS1 - 8;
+	}
+
+	return 0;
+}
+#endif
+
 uint8_t nicGetS1(IN enum ENUM_BAND eBand,
 	IN uint8_t ucPrimaryChannel,
 	IN uint8_t ucBandwidth)
