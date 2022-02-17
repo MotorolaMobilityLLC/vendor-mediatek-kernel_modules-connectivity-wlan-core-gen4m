@@ -1674,6 +1674,16 @@ VOID halDeAggRxPktWorker(struct work_struct *work)
 
 }
 
+VOID halRxTasklet(unsigned long data)
+{
+
+}
+
+VOID halTxCompleteTasklet(unsigned long data)
+{
+
+}
+
 /* Hif power off wifi */
 WLAN_STATUS halHifPowerOffWifi(IN P_ADAPTER_T prAdapter)
 {

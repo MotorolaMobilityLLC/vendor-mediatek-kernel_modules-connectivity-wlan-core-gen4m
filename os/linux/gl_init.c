@@ -2216,6 +2216,9 @@ static INT_32 wlanProbe(PVOID pvData, PVOID pvDriverData)
 		prRegInfo->fgEnArpFilter = TRUE;
 #endif
 
+		tasklet_init(&prGlueInfo->rRxTask, halRxTasklet, (unsigned long)prGlueInfo);
+		tasklet_init(&prGlueInfo->rTxCompleteTask, halTxCompleteTasklet, (unsigned long)prGlueInfo);
+
 		if (wlanAdapterStart(prAdapter, prRegInfo) != WLAN_STATUS_SUCCESS)
 			i4Status = -EIO;
 
@@ -2601,6 +2604,9 @@ static VOID wlanRemove(VOID)
 	/* 4 <7> Destroy the device */
 	wlanNetDestroy(prDev->ieee80211_ptr);
 	prDev = NULL;
+
+	tasklet_kill(&prGlueInfo->rTxCompleteTask);
+	tasklet_kill(&prGlueInfo->rRxTask);
 
 	/* 4 <8> Unregister early suspend callback */
 #if CFG_ENABLE_EARLY_SUSPEND

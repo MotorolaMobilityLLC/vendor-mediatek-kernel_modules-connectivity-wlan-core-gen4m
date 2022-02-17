@@ -142,9 +142,9 @@ typedef enum _ENUM_USB_END_POINT_T {
 #define USB_REQ_RX_DATA_CNT             (32)
 #endif
 
-#define USB_RX_AGGREGTAION_LIMIT        (15)	/* Unit: K-bytes */
+#define USB_RX_AGGREGTAION_LIMIT        (32)	/* Unit: K-bytes */
 #define USB_RX_AGGREGTAION_TIMEOUT      (100)	/* Unit: us */
-#define USB_RX_AGGREGTAION_PKT_LIMIT    (10)
+#define USB_RX_AGGREGTAION_PKT_LIMIT    (30)
 
 #define USB_TX_CMD_BUF_SIZE             (1600)
 #if CFG_USB_TX_AGG
@@ -154,9 +154,10 @@ typedef enum _ENUM_USB_END_POINT_T {
 					 NIC_TX_MAX_SIZE_PER_FRAME + LEN_USB_UDMA_TX_TERMINATOR)
 #endif
 #define USB_RX_EVENT_BUF_SIZE           (CFG_RX_MAX_PKT_SIZE + 3 + LEN_USB_RX_PADDING_CSO + 4)
-#define USB_RX_DATA_BUF_SIZE            max(USB_RX_AGGREGTAION_LIMIT * 1024, \
-					    USB_RX_AGGREGTAION_PKT_LIMIT * \
-						(CFG_RX_MAX_PKT_SIZE + 3 + LEN_USB_RX_PADDING_CSO) + 4)
+#define USB_RX_DATA_BUF_SIZE            (CFG_RX_MAX_PKT_SIZE + \
+					min(USB_RX_AGGREGTAION_LIMIT * 1024, \
+					    (USB_RX_AGGREGTAION_PKT_LIMIT * \
+					     (CFG_RX_MAX_PKT_SIZE + 3 + LEN_USB_RX_PADDING_CSO) + 4)))
 
 #define LEN_USB_UDMA_TX_TERMINATOR      (4)	/*HW design spec */
 #define LEN_USB_RX_PADDING_CSO          (4)	/*HW design spec */
@@ -169,7 +170,8 @@ typedef enum _ENUM_USB_END_POINT_T {
 #define VENDOR_TIMEOUT_MS               (1000)
 #define BULK_TIMEOUT_MS                 (1500)
 #define INTERRUPT_TIMEOUT_MS            (1000)
-#define SW_RFB_TIMEOUT_MS				(3000)
+#define SW_RFB_RECHECK_MS               (10)
+#define SW_RFB_LOG_LIMIT_MS             (5000)
 
 /* Vendor Request */
 #define VND_REQ_POWER_ON_WIFI           (0x4)
@@ -228,32 +230,40 @@ typedef struct _GL_HIF_INFO_T {
 	P_GLUE_INFO_T prGlueInfo;
 	enum usb_state state;
 
-	spinlock_t rQLock;
+	spinlock_t rTxDataQLock;
+	spinlock_t rTxCmdQLock;
+	spinlock_t rRxEventQLock;
+	spinlock_t rRxDataQLock;
+
 	PVOID prTxCmdReqHead;
 	PVOID arTxDataReqHead[USB_TC_NUM];
 	PVOID prRxEventReqHead;
 	PVOID prRxDataReqHead;
 	struct list_head rTxCmdFreeQ;
+	spinlock_t rTxCmdFreeQLock;
 	struct list_head rTxCmdSendingQ;
+	spinlock_t rTxCmdSendingQLock;
 #if CFG_USB_TX_AGG
+	UINT_32 u4AggRsvSize;
 	struct list_head rTxDataFreeQ[USB_TC_NUM];
-	struct list_head rTxDataSendingQ[USB_TC_NUM];
+	struct usb_anchor rTxDataAnchor[USB_TC_NUM];
 #else
 	struct list_head rTxDataFreeQ;
-	struct list_head rTxDataSendingQ;
+	struct usb_anchor rTxDataAnchor;
 #endif
+	spinlock_t rTxDataFreeQLock;
 	struct list_head rRxEventFreeQ;
-	struct list_head rRxEventRunningQ;
+	spinlock_t rRxEventFreeQLock;
+	struct usb_anchor rRxEventAnchor;
 	struct list_head rRxDataFreeQ;
-	struct list_head rRxDataRunningQ;
-#if CFG_USB_RX_HANDLE_IN_HIF_THREAD
+	spinlock_t rRxDataFreeQLock;
+	struct usb_anchor rRxDataAnchor;
 	struct list_head rRxEventCompleteQ;
+	spinlock_t rRxEventCompleteQLock;
 	struct list_head rRxDataCompleteQ;
-#endif
-#if CFG_USB_TX_HANDLE_IN_HIF_THREAD
+	spinlock_t rRxDataCompleteQLock;
 	struct list_head rTxCmdCompleteQ;
 	struct list_head rTxDataCompleteQ;
-#endif
 
 	BUF_CTRL_T rTxCmdBufCtrl[USB_REQ_TX_CMD_CNT];
 #if CFG_USB_TX_AGG
@@ -333,8 +343,9 @@ BOOL mtk_usb_vendor_request(IN P_GLUE_INFO_T prGlueInfo, IN UCHAR uEndpointAddre
 			    IN UCHAR Request, IN UINT_16 Value, IN UINT_16 Index, IN PVOID TransferBuffer,
 			    IN UINT_32 TransferBufferLength);
 
-VOID glUsbEnqueueReq(P_GL_HIF_INFO_T prHifInfo, struct list_head *prHead, P_USB_REQ_T prUsbReq, BOOLEAN fgHead);
-P_USB_REQ_T glUsbDequeueReq(P_GL_HIF_INFO_T prHifInfo, struct list_head *prHead);
+VOID glUsbEnqueueReq(P_GL_HIF_INFO_T prHifInfo, struct list_head *prHead, P_USB_REQ_T prUsbReq,
+		     spinlock_t *prLock, BOOLEAN fgHead);
+P_USB_REQ_T glUsbDequeueReq(P_GL_HIF_INFO_T prHifInfo, struct list_head *prHead, spinlock_t *prLock);
 
 WLAN_STATUS halTxUSBSendCmd(IN P_GLUE_INFO_T prGlueInfo, IN UINT_8 ucTc, IN P_CMD_INFO_T prCmdInfo);
 VOID halTxUSBSendCmdComplete(struct urb *urb);
@@ -352,6 +363,8 @@ WLAN_STATUS halRxUSBReceiveEvent(IN P_ADAPTER_T prAdapter, IN BOOLEAN fgFillUrb)
 VOID halRxUSBReceiveEventComplete(struct urb *urb);
 WLAN_STATUS halRxUSBReceiveData(IN P_ADAPTER_T prAdapter);
 VOID halRxUSBReceiveDataComplete(struct urb *urb);
+VOID halRxUSBProcessEventDataComplete(IN P_ADAPTER_T prAdapter,
+	struct list_head *prCompleteQ, struct list_head *prFreeQ, UINT_32 u4MinRfbCnt);
 
 VOID halUSBPreSuspendCmd(IN P_ADAPTER_T prAdapter);
 VOID halUSBPreSuspendDone(IN P_ADAPTER_T prAdapter, IN P_CMD_INFO_T prCmdInfo, IN PUINT_8 pucEventBuf);

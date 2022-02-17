@@ -50,12 +50,12 @@
  *
  *****************************************************************************/
 /******************************************************************************
-*[File]             sdio.c
+*[File]             usb.c
 *[Version]          v1.0
 *[Revision Date]    2010-03-01
 *[Author]
 *[Description]
-*    The program provides SDIO HIF driver
+*    The program provides USB HIF driver
 *[Copyright]
 *    Copyright (C) 2010 MediaTek Incorporation. All Rights Reserved.
 ******************************************************************************/
@@ -201,36 +201,6 @@ static int mtk_usb_probe(struct usb_interface *intf, const struct usb_device_id 
 	dev = interface_to_usbdev(intf);
 	dev = usb_get_dev(dev);
 
-	/* printk(KERN_INFO DRV_NAME "Basic struct size checking...\n"); */
-	/* printk(KERN_INFO DRV_NAME "sizeof(struct device) = %d\n", sizeof(struct device)); */
-	/* printk(KERN_INFO DRV_NAME "sizeof(struct mmc_host) = %d\n", sizeof(struct mmc_host)); */
-	/* printk(KERN_INFO DRV_NAME "sizeof(struct mmc_card) = %d\n", sizeof(struct mmc_card)); */
-	/* printk(KERN_INFO DRV_NAME "sizeof(struct mmc_driver) = %d\n", sizeof(struct mmc_driver)); */
-	/* printk(KERN_INFO DRV_NAME "sizeof(struct mmc_data) = %d\n", sizeof(struct mmc_data)); */
-	/* printk(KERN_INFO DRV_NAME "sizeof(struct mmc_command) = %d\n", sizeof(struct mmc_command)); */
-	/* printk(KERN_INFO DRV_NAME "sizeof(struct mmc_request) = %d\n", sizeof(struct mmc_request)); */
-	/* printk(KERN_INFO DRV_NAME "sizeof(struct sdio_func) = %d\n", sizeof(struct sdio_func)); */
-
-	/* printk(KERN_INFO DRV_NAME "Card information checking...\n"); */
-	/* printk(KERN_INFO DRV_NAME "intf = 0x%p\n", intf); */
-	/* printk(KERN_INFO DRV_NAME "Number of info = %d:\n", intf->card->num_info); */
-
-#if 0
-	for (i = 0; i < intf->card->num_info; i++)
-		/* printk(KERN_INFO DRV_NAME "info[%d]: %s\n", i, intf->card->info[i]); */
-
-	sdio_claim_host(intf);
-	ret = sdio_enable_func(intf);
-	sdio_release_host(intf);
-
-	if (ret) {
-		/* printk(KERN_INFO DRV_NAME"sdio_enable_func failed!\n"); */
-		goto out;
-	}
-	/* printk(KERN_INFO DRV_NAME"sdio_enable_func done!\n"); */
-#endif
-
-#if 1
 	DBGLOG(HAL, EVENT, "wlan_probe()\n");
 	if (pfWlanProbe((PVOID) intf, (PVOID) id->driver_info) != WLAN_STATUS_SUCCESS) {
 		/* printk(KERN_WARNING DRV_NAME"pfWlanProbe fail!call pfWlanRemove()\n"); */
@@ -240,7 +210,6 @@ static int mtk_usb_probe(struct usb_interface *intf, const struct usb_device_id 
 	} else {
 		g_fgDriverProbed = TRUE;
 	}
-#endif
 
 	return ret;
 }
@@ -544,12 +513,12 @@ static int mtk_usb_bulk_out_msg(IN P_GL_HIF_INFO_T prHifInfo, IN UINT_32 len, IN
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief This function will register sdio bus to the os
+* \brief This function will register USB bus to the os
 *
 * \param[in] pfProbe    Function pointer to detect card
 * \param[in] pfRemove   Function pointer to remove card
 *
-* \return The result of registering sdio bus
+* \return The result of registering USB bus
 */
 /*----------------------------------------------------------------------------*/
 WLAN_STATUS glRegisterBus(probe_card pfProbe, remove_card pfRemove)
@@ -576,7 +545,7 @@ WLAN_STATUS glRegisterBus(probe_card pfProbe, remove_card pfRemove)
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief This function will unregister sdio bus to the os
+* \brief This function will unregister USB bus to the os
 *
 * \param[in] pfRemove   Function pointer to remove card
 *
@@ -675,31 +644,32 @@ void glUsbUnInitQ(struct list_head *prHead)
 	}
 }
 
-VOID glUsbEnqueueReq(P_GL_HIF_INFO_T prHifInfo, struct list_head *prHead, P_USB_REQ_T prUsbReq, BOOLEAN fgHead)
+VOID glUsbEnqueueReq(P_GL_HIF_INFO_T prHifInfo, struct list_head *prHead, P_USB_REQ_T prUsbReq, spinlock_t *prLock,
+		     BOOLEAN fgHead)
 {
 	unsigned long flags;
 
-	spin_lock_irqsave(&prHifInfo->rQLock, flags);
+	spin_lock_irqsave(prLock, flags);
 	if (fgHead)
 		list_add(&prUsbReq->list, prHead);
 	else
 		list_add_tail(&prUsbReq->list, prHead);
-	spin_unlock_irqrestore(&prHifInfo->rQLock, flags);
+	spin_unlock_irqrestore(prLock, flags);
 }
 
-P_USB_REQ_T glUsbDequeueReq(P_GL_HIF_INFO_T prHifInfo, struct list_head *prHead)
+P_USB_REQ_T glUsbDequeueReq(P_GL_HIF_INFO_T prHifInfo, struct list_head *prHead, spinlock_t *prLock)
 {
 	P_USB_REQ_T prUsbReq;
 	unsigned long flags;
 
-	spin_lock_irqsave(&prHifInfo->rQLock, flags);
+	spin_lock_irqsave(prLock, flags);
 	if (list_empty(prHead)) {
-		spin_unlock_irqrestore(&prHifInfo->rQLock, flags);
+		spin_unlock_irqrestore(prLock, flags);
 		return NULL;
 	}
 	prUsbReq = list_entry(prHead->next, struct _USB_REQ_T, list);
 	list_del_init(prHead->next);
-	spin_unlock_irqrestore(&prHifInfo->rQLock, flags);
+	spin_unlock_irqrestore(prLock, flags);
 
 	return prUsbReq;
 }
@@ -761,26 +731,42 @@ VOID glSetHifInfo(P_GLUE_INFO_T prGlueInfo, ULONG ulCookie)
 
 	SET_NETDEV_DEV(prGlueInfo->prDevHandler, &prHifInfo->udev->dev);
 
+	spin_lock_init(&prHifInfo->rTxCmdQLock);
+	spin_lock_init(&prHifInfo->rTxDataQLock);
+	spin_lock_init(&prHifInfo->rTxDataFreeQLock);
+	spin_lock_init(&prHifInfo->rRxEventQLock);
+	spin_lock_init(&prHifInfo->rRxDataQLock);
+
 	mutex_init(&prHifInfo->vendor_req_sem);
+
+#if CFG_USB_TX_AGG
+	prHifInfo->u4AggRsvSize = 0;
+
+	for (ucTc = 0; ucTc < USB_TC_NUM; ++ucTc)
+		init_usb_anchor(&prHifInfo->rTxDataAnchor[ucTc]);
+#else
+	init_usb_anchor(&prHifInfo->rTxDataAnchor);
+#endif
+	init_usb_anchor(&prHifInfo->rRxDataAnchor);
+	init_usb_anchor(&prHifInfo->rRxEventAnchor);
 
 	/* TX CMD */
 	prHifInfo->prTxCmdReqHead = glUsbInitQ(prHifInfo, &prHifInfo->rTxCmdFreeQ, USB_REQ_TX_CMD_CNT);
 	prUsbReq = list_entry(prHifInfo->rTxCmdFreeQ.next, struct _USB_REQ_T, list);
 	i = 0;
 	list_for_each_entry_safe(prUsbReq, prUsbReqNext, &prHifInfo->rTxCmdFreeQ, list) {
+		prUsbReq->prBufCtrl = &prHifInfo->rTxCmdBufCtrl[i];
 #if CFG_USB_CONSISTENT_DMA
-		prHifInfo->rTxCmdBufCtrl[i].pucBuf =
-		    usb_alloc_coherent(prHifInfo->udev, USB_TX_CMD_BUF_SIZE, GFP_ATOMIC,
-				       &prUsbReq->prUrb->transfer_dma);
+		prUsbReq->prBufCtrl->pucBuf = usb_alloc_coherent(prHifInfo->udev, USB_TX_CMD_BUF_SIZE, GFP_ATOMIC,
+								 &prUsbReq->prUrb->transfer_dma);
 #else
-		prHifInfo->rTxCmdBufCtrl[i].pucBuf = kmalloc(USB_TX_CMD_BUF_SIZE, GFP_ATOMIC);
+		prUsbReq->prBufCtrl->pucBuf = kmalloc(USB_TX_CMD_BUF_SIZE, GFP_ATOMIC | GFP_DMA);
 #endif
-		prHifInfo->rTxCmdBufCtrl[i].u4BufSize = USB_TX_CMD_BUF_SIZE;
-		if (prHifInfo->rTxCmdBufCtrl[i].pucBuf == NULL) {
+		if (prUsbReq->prBufCtrl->pucBuf == NULL) {
 			DBGLOG(HAL, ERROR, "kmalloc() reports error\n");
 			goto error;
 		}
-		prUsbReq->prBufCtrl = &prHifInfo->rTxCmdBufCtrl[i];
+		prUsbReq->prBufCtrl->u4BufSize = USB_TX_CMD_BUF_SIZE;
 		++i;
 	}
 
@@ -796,23 +782,25 @@ VOID glSetHifInfo(P_GLUE_INFO_T prGlueInfo, ULONG ulCookie)
 			QUEUE_INITIALIZE(&prUsbReq->rSendingDataMsduInfoList);
 			/* TODO: every endpoint should has an unique and only TC */
 			*((PUINT_8)&prUsbReq->prPriv) = ucTc;
+			prUsbReq->prBufCtrl = &prHifInfo->rTxDataBufCtrl[ucTc][i];
 #if CFG_USB_CONSISTENT_DMA
-			prHifInfo->rTxDataBufCtrl[ucTc][i].pucBuf =
+			prUsbReq->prBufCtrl->pucBuf =
 			    usb_alloc_coherent(prHifInfo->udev, USB_TX_DATA_BUFF_SIZE, GFP_ATOMIC,
 					       &prUsbReq->prUrb->transfer_dma);
 #else
-			prHifInfo->rTxDataBufCtrl[ucTc][i].pucBuf = kmalloc(USB_TX_DATA_BUFF_SIZE, GFP_ATOMIC);
+			prUsbReq->prBufCtrl->pucBuf = kmalloc(USB_TX_DATA_BUFF_SIZE, GFP_ATOMIC | GFP_DMA);
 #endif
-			prHifInfo->rTxDataBufCtrl[ucTc][i].u4BufSize = USB_TX_DATA_BUFF_SIZE;
-			prHifInfo->rTxDataBufCtrl[ucTc][i].u4WrIdx = 0;
-			prUsbReq->prBufCtrl = &prHifInfo->rTxDataBufCtrl[ucTc][i];
+			if (prUsbReq->prBufCtrl->pucBuf == NULL) {
+				DBGLOG(HAL, ERROR, "kmalloc() reports error\n");
+				goto error;
+			}
+			prUsbReq->prBufCtrl->u4BufSize = USB_TX_DATA_BUFF_SIZE;
+			prUsbReq->prBufCtrl->u4WrIdx = 0;
 			++i;
 		}
 
 		DBGLOG(INIT, INFO, "USB Tx URB INIT Tc[%u] cnt[%u] len[%u]\n", ucTc, i,
 		       prHifInfo->rTxDataBufCtrl[ucTc][0].u4BufSize);
-
-		glUsbInitQ(prHifInfo, &prHifInfo->rTxDataSendingQ[ucTc], 0);
 	}
 #else
 	glUsbInitQ(prHifInfo, &prHifInfo->rTxDataFreeQ, USB_REQ_TX_DATA_CNT);
@@ -820,64 +808,58 @@ VOID glSetHifInfo(P_GLUE_INFO_T prGlueInfo, ULONG ulCookie)
 	i = 0;
 	list_for_each_entry_safe(prUsbReq, prUsbReqNext, &prHifInfo->rTxDataFreeQ, list) {
 		QUEUE_INITIALIZE(&prUsbReq->rSendingDataMsduInfoList);
+		prUsbReq->prBufCtrl = &prHifInfo->rTxDataBufCtrl[i];
 #if CFG_USB_CONSISTENT_DMA
-		prHifInfo->rTxDataBufCtrl[i].pucBuf =
+		prUsbReq->prBufCtrl->pucBuf =
 		    usb_alloc_coherent(prHifInfo->udev, USB_TX_DATA_BUF_SIZE, GFP_ATOMIC,
 				       &prUsbReq->prUrb->transfer_dma);
 #else
-		prHifInfo->rTxDataBufCtrl[i].pucBuf = kmalloc(USB_TX_DATA_BUF_SIZE, GFP_ATOMIC);
+		prUsbReq->prBufCtrl->pucBuf = kmalloc(USB_TX_DATA_BUF_SIZE, GFP_ATOMIC | GFP_DMA);
 #endif
-		prHifInfo->rTxDataBufCtrl[i].u4BufSize = USB_TX_DATA_BUF_SIZE;
-		if (prHifInfo->rTxDataBufCtrl[i].pucBuf == NULL) {
+		if (prUsbReq->prBufCtrl->pucBuf == NULL) {
 			DBGLOG(HAL, ERROR, "kmalloc() reports error\n");
 			goto error;
 		}
-		prUsbReq->prBufCtrl = &prHifInfo->rTxDataBufCtrl[i];
+		prUsbReq->prBufCtrl->u4BufSize = USB_TX_DATA_BUF_SIZE;
 		++i;
 	}
 #endif
 
-#if CFG_USB_TX_HANDLE_IN_HIF_THREAD
 	glUsbInitQ(prHifInfo, &prHifInfo->rTxCmdCompleteQ, 0);
 	glUsbInitQ(prHifInfo, &prHifInfo->rTxDataCompleteQ, 0);
-#endif
 
 	/* RX EVENT */
 	prHifInfo->prRxEventReqHead = glUsbInitQ(prHifInfo, &prHifInfo->rRxEventFreeQ, USB_REQ_RX_EVENT_CNT);
 	i = 0;
 	list_for_each_entry_safe(prUsbReq, prUsbReqNext, &prHifInfo->rRxEventFreeQ, list) {
-		prHifInfo->rRxEventBufCtrl[i].pucBuf = kmalloc(USB_RX_EVENT_BUF_SIZE, GFP_ATOMIC);
-		prHifInfo->rRxEventBufCtrl[i].u4BufSize = USB_RX_EVENT_BUF_SIZE;
-		if (prHifInfo->rRxEventBufCtrl[i].pucBuf == NULL) {
+		prUsbReq->prBufCtrl = &prHifInfo->rRxEventBufCtrl[i];
+		prUsbReq->prBufCtrl->pucBuf = kmalloc(USB_RX_EVENT_BUF_SIZE, GFP_ATOMIC | GFP_DMA);
+		if (prUsbReq->prBufCtrl->pucBuf == NULL) {
 			DBGLOG(HAL, ERROR, "kmalloc() reports error\n");
 			goto error;
 		}
-		prUsbReq->prBufCtrl = &prHifInfo->rRxEventBufCtrl[i];
+		prUsbReq->prBufCtrl->u4BufSize = USB_RX_EVENT_BUF_SIZE;
+		prUsbReq->prBufCtrl->u4ReadSize = 0;
 		++i;
 	}
-
-	glUsbInitQ(prHifInfo, &prHifInfo->rRxEventRunningQ, 0);
 
 	/* RX Data */
 	prHifInfo->prRxDataReqHead = glUsbInitQ(prHifInfo, &prHifInfo->rRxDataFreeQ, USB_REQ_RX_DATA_CNT);
 	i = 0;
 	list_for_each_entry_safe(prUsbReq, prUsbReqNext, &prHifInfo->rRxDataFreeQ, list) {
-		prHifInfo->rRxDataBufCtrl[i].pucBuf = kmalloc(USB_RX_DATA_BUF_SIZE, GFP_ATOMIC);
-		prHifInfo->rRxDataBufCtrl[i].u4BufSize = USB_RX_DATA_BUF_SIZE;
-		if (prHifInfo->rRxDataBufCtrl[i].pucBuf == NULL) {
+		prUsbReq->prBufCtrl = &prHifInfo->rRxDataBufCtrl[i];
+		prUsbReq->prBufCtrl->pucBuf = kmalloc(USB_RX_DATA_BUF_SIZE, GFP_ATOMIC);
+		if (prUsbReq->prBufCtrl->pucBuf == NULL) {
 			DBGLOG(HAL, ERROR, "kmalloc() reports error\n");
 			goto error;
 		}
-		prUsbReq->prBufCtrl = &prHifInfo->rRxDataBufCtrl[i];
+		prUsbReq->prBufCtrl->u4BufSize = USB_RX_DATA_BUF_SIZE;
+		prUsbReq->prBufCtrl->u4ReadSize = 0;
 		++i;
 	}
 
-	glUsbInitQ(prHifInfo, &prHifInfo->rRxDataRunningQ, 0);
-
-#if CFG_USB_RX_HANDLE_IN_HIF_THREAD
 	glUsbInitQ(prHifInfo, &prHifInfo->rRxEventCompleteQ, 0);
 	glUsbInitQ(prHifInfo, &prHifInfo->rRxDataCompleteQ, 0);
-#endif
 
 	prHifInfo->state = USB_STATE_LINK_UP;
 	prGlueInfo->u4InfType = MT_DEV_INF_USB;
@@ -943,7 +925,6 @@ VOID glClearHifInfo(P_GLUE_INFO_T prGlueInfo)
 		usb_free_urb(prUsbReq->prUrb);
 	}
 
-#if CFG_USB_TX_HANDLE_IN_HIF_THREAD
 	list_for_each_entry_safe(prUsbReq, prUsbReqNext, &prHifInfo->rTxCmdCompleteQ, list) {
 #if CFG_USB_CONSISTENT_DMA
 		usb_free_coherent(prHifInfo->udev, USB_TX_CMD_BUF_SIZE,
@@ -963,7 +944,6 @@ VOID glClearHifInfo(P_GLUE_INFO_T prGlueInfo)
 #endif
 		usb_free_urb(prUsbReq->prUrb);
 	}
-#endif
 
 	list_for_each_entry_safe(prUsbReq, prUsbReqNext, &prHifInfo->rRxDataFreeQ, list) {
 		kfree(prUsbReq->prBufCtrl->pucBuf);
@@ -975,7 +955,6 @@ VOID glClearHifInfo(P_GLUE_INFO_T prGlueInfo)
 		usb_free_urb(prUsbReq->prUrb);
 	}
 
-#if CFG_USB_RX_HANDLE_IN_HIF_THREAD
 	list_for_each_entry_safe(prUsbReq, prUsbReqNext, &prHifInfo->rRxDataCompleteQ, list) {
 		kfree(prUsbReq->prBufCtrl->pucBuf);
 		usb_free_urb(prUsbReq->prUrb);
@@ -985,11 +964,12 @@ VOID glClearHifInfo(P_GLUE_INFO_T prGlueInfo)
 		kfree(prUsbReq->prBufCtrl->pucBuf);
 		usb_free_urb(prUsbReq->prUrb);
 	}
-#endif
 
 	kfree(prHifInfo->prTxCmdReqHead);
 	kfree(prHifInfo->prRxEventReqHead);
 	kfree(prHifInfo->prRxDataReqHead);
+
+	mutex_destroy(&prHifInfo->vendor_req_sem);
 }				/* end of glClearHifInfo() */
 
 /*----------------------------------------------------------------------------*/
