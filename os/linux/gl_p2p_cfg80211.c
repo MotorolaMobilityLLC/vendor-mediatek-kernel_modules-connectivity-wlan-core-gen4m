@@ -1980,7 +1980,6 @@ int mtk_p2p_cfg80211_channel_switch(struct wiphy *wiphy,
 		 * reported once in the beacon.
 		 */
 		prGlueInfo->prAdapter->rWifiVar.fgCsaInProgress = TRUE;
-		prGlueInfo->prAdapter->rWifiVar.fgCsaInBeacon = FALSE;
 
 		/* Set new channel parameters */
 		prP2pSetNewChannelMsg = (struct MSG_P2P_SET_NEW_CHANNEL *)

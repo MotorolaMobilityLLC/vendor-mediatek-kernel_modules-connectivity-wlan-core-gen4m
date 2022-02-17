@@ -1141,7 +1141,15 @@ void cnmCsaDoneEvent(IN struct ADAPTER *prAdapter,
 		return;
 	}
 
+	/* Clean up CSA variable */
 	prAdapter->rWifiVar.fgCsaInProgress = FALSE;
+	prAdapter->rWifiVar.ucChannelSwitchMode = 0;
+	prAdapter->rWifiVar.ucNewChannelNumber = 0;
+	prAdapter->rWifiVar.ucChannelSwitchCount = 0;
+	prAdapter->rWifiVar.ucSecondaryOffset = 0;
+	prAdapter->rWifiVar.ucNewChannelWidth = 0;
+	prAdapter->rWifiVar.ucNewChannelS1 = 0;
+	prAdapter->rWifiVar.ucNewChannelS2 = 0;
 
 	p2pFunChnlSwitchNotifyDone(prAdapter);
 }
