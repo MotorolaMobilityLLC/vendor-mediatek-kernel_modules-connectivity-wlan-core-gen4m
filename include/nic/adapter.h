@@ -957,6 +957,7 @@ struct WIFI_VAR {
 	uint32_t u4WakeLockRxTimeout;
 	uint32_t u4WakeLockThreadWakeup;
 	uint32_t u4RegP2pIfAtProbe; /* register p2p interface during probe */
+	uint8_t ucRegP2pMode;
 	/* p2p group interface use the same mac addr as p2p device interface */
 	uint8_t ucP2pShareMacAddr;
 	uint8_t ucSmartRTS;

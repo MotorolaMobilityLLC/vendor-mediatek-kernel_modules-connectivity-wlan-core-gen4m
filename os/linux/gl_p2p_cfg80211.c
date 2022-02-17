@@ -418,8 +418,9 @@ struct wireless_dev *mtk_p2p_cfg80211_add_iface(struct wiphy *wiphy,
 		kalMemCopy(prNewNetDevice->perm_addr, rMacAddr, ETH_ALEN);
 
 		DBGLOG(P2P, INFO,
-			"mtk_p2p_cfg80211_add_iface ucBssIdx=%d\n",
-			prNetDevPriv->ucBssIdx);
+			"mtk_p2p_cfg80211_add_iface ucBssIdx=%d, " MACSTR "\n",
+			prNetDevPriv->ucBssIdx,
+			MAC2STR(rMacAddr));
 
 		/* Switch OP MOde. */
 		prSwitchModeMsg->rMsgHdr.eMsgId = MID_MNY_P2P_FUN_SWITCH;
