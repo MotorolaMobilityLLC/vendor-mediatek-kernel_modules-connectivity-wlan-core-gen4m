@@ -466,10 +466,13 @@ static uint8_t bellwetherSetRxRingHwAddr(struct RTMP_RX_RING *prRxRing,
 	uint32_t offset = 0;
 
 	/*
-	 * RX_RING_DATA_IDX_0   (RX_Ring0) - Band0 Rx Data
-	 * RX_RING_DATA1_IDX_2 (RX_Ring1) - Band1 Rx Data
-	 * RX_RING_EVT_IDX_1    (RX_Ring2) - Band0 Tx Free Done Event / Rx Event
-	 * RX_RING_TXDONE0_IDX_3 (RX_Ring3) - Band1 Tx Free Done Event
+	 * RX_RING_EVT_IDX_1           (RX_Ring0) - WM Event
+	 * RX_RING_DATA_IDX_0          (RX_Ring4) - Band0 Rx Data
+	 * RX_RING_DATA1_IDX_2         (RX_Ring5) - Band1 Rx Data
+	 * RX_RING_TXDONE0_IDX_3       (RX_Ring6) - Band0 Tx Free Done Event
+	 * RX_RING_TXDONE1_IDX_4       (RX_Ring7) - Band1 Tx Free Done Event
+	 * RX_RING_DATA2_IDX_5         (RX_Ring8) - Band2 Rx Data
+	 * RX_RING_TXDONE2_IDX_6       (RX_Ring9) - Band2 Tx Free Done Event
 	*/
 	switch (u4SwRingIdx) {
 	case RX_RING_EVT_IDX_1:
@@ -531,7 +534,7 @@ static bool bellwetherWfdmaAllocRxRing(struct GLUE_INFO *prGlueInfo,
 	if (!halWpdmaAllocRxRing(prGlueInfo,
 			RX_RING_TXDONE1_IDX_4, RX_RING1_SIZE,
 			RXD_SIZE, RX_BUFFER_AGGRESIZE, fgAllocMem)) {
-		DBGLOG(HAL, ERROR, "AllocRxRing[2] fail\n");
+		DBGLOG(HAL, ERROR, "AllocRxRing[4] fail\n");
 		return false;
 	}
 	if (!halWpdmaAllocRxRing(prGlueInfo,
@@ -606,11 +609,11 @@ static void bellwetherProcessRxInterrupt(
 		halRxReceiveRFBs(prAdapter, RX_RING_TXDONE0_IDX_3, FALSE);
 
 	if (rIntrStatus.field_conn3x.wfdma0_rx_done_7 ||
-	    (prAdapter->u4NoMoreRfb & BIT(RX_RING_TXDONE0_IDX_3)))
+	    (prAdapter->u4NoMoreRfb & BIT(RX_RING_TXDONE1_IDX_4)))
 		halRxReceiveRFBs(prAdapter, RX_RING_TXDONE1_IDX_4, FALSE);
 
-	if (rIntrStatus.field_conn3x.wfdma0_rx_done_8 ||
-	    (prAdapter->u4NoMoreRfb & BIT(RX_RING_TXDONE0_IDX_3)))
+	if (rIntrStatus.field_conn3x.wfdma0_rx_done_9 ||
+	    (prAdapter->u4NoMoreRfb & BIT(RX_RING_TXDONE2_IDX_6)))
 		halRxReceiveRFBs(prAdapter, RX_RING_TXDONE2_IDX_6, FALSE);
 }
 
