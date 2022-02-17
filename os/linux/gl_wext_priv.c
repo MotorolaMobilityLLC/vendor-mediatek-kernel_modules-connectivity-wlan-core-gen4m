@@ -5319,11 +5319,12 @@ static INT_32 priv_driver_get_txpower_info(IN struct net_device *prNetDev, IN ch
 	if (u4Ret == 0) {
 		prTxPowerInfo->ucTxPowerCategory = ucParam;
 
-		if (prGlueInfo->prAdapter->prAisBssInfo->prStaRecOfAP)
-			prTxPowerInfo->ucBandIdx = prGlueInfo->prAdapter->prAisBssInfo->eDBDCBand;
-		else
-			prTxPowerInfo->ucBandIdx = ENUM_BAND_0;
-
+		/*
+		 * FIX ME: Mobile driver can't get correct band,
+		 * so assigned Band_0 as temp solution.
+		 * Remember to fix it when needed to use this command on Band_1.
+		 */
+		prTxPowerInfo->ucBandIdx = ENUM_BAND_0;
 		rStatus = kalIoctl(prGlueInfo,
 				   wlanoidQueryTxPowerInfo,
 				   prTxPowerInfo,
