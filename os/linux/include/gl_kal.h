@@ -1023,29 +1023,8 @@ do { \
 	dma_mapping_error(_dev, _addr)
 #endif
 
-#if defined(_HIF_AXI)
-#define KAL_ARCH_SETUP_DMA_OPS(_dev, _base, _size, _iommu, _coherent) \
-	connectivity_arch_setup_dma_ops(_dev, _base, _size, _iommu, _coherent)
-#else
-#define KAL_ARCH_SETUP_DMA_OPS(_dev, _base, _size, _iommu, _coherent)
-#endif
-
 #if CFG_SUPPORT_DATA_STALL
 #define KAL_REPORT_ERROR_EVENT			kalIndicateDriverEvent
-#endif
-
-/*----------------------------------------------------------------------------*/
-/* Macros of show stack operations for using in Driver Layer                  */
-/*----------------------------------------------------------------------------*/
-#ifdef CONFIG_X86
-#define kal_show_stack(_adapter, _task, _sp)
-#else
-#define kal_show_stack(_adapter, _task, _sp) \
-{ \
-	if (_adapter->chip_info->showTaskStack) { \
-		_adapter->chip_info->showTaskStack(_task, _sp); \
-	} \
-}
 #endif
 
 /*******************************************************************************

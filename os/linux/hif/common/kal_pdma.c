@@ -921,10 +921,6 @@ bool kalDevReadData(struct GLUE_INFO *prGlueInfo, uint16_t u2Port,
 
 	prDmaBuf = &pRxCell->DmaBuf;
 
-	if (prMemOps->flushCache)
-		prMemOps->flushCache(prHifInfo, prDmaBuf->AllocVa,
-				     pRxD->SDLen0);
-
 	if (prMemOps->copyRxData &&
 	    !prMemOps->copyRxData(prHifInfo, pRxCell, prDmaBuf, prSwRfb))
 		return FALSE;

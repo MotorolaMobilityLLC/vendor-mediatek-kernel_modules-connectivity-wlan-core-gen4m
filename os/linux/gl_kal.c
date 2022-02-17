@@ -6956,7 +6956,6 @@ void kalFreeTxMsdu(struct ADAPTER *prAdapter,
 int32_t kalHaltLock(uint32_t waitMs)
 {
 	int32_t i4Ret = 0;
-	struct GLUE_INFO *prGlueInfo = NULL;
 	if (waitMs) {
 		i4Ret = down_timeout(&rHaltCtrl.lock,
 				     MSEC_TO_JIFFIES(waitMs));
@@ -6965,22 +6964,15 @@ int32_t kalHaltLock(uint32_t waitMs)
 		if (i4Ret != -ETIME)
 			return i4Ret;
 
-		prGlueInfo = wlanGetGlueInfo();
 		if (rHaltCtrl.fgHeldByKalIoctl) {
 			DBGLOG(INIT, ERROR,
 			       "kalIoctl was executed longer than %u ms, show backtrace of tx_thread!\n",
 			       kalGetTimeTick() - rHaltCtrl.u4HoldStart);
-			if (prGlueInfo)
-				kal_show_stack(prGlueInfo->prAdapter,
-					prGlueInfo->main_thread, NULL);
 		} else {
 			DBGLOG(INIT, ERROR,
 			       "halt lock held by %s pid %d longer than %u ms!\n",
 			       rHaltCtrl.owner->comm, rHaltCtrl.owner->pid,
 			       kalGetTimeTick() - rHaltCtrl.u4HoldStart);
-			if (prGlueInfo)
-				kal_show_stack(prGlueInfo->prAdapter,
-					rHaltCtrl.owner, NULL);
 		}
 		return i4Ret;
 	}

@@ -2196,10 +2196,6 @@ static bool halFlushToken(struct GLUE_INFO *prGlueInfo,
 			return false;
 	}
 
-	if (prMemOps->flushCache)
-		prMemOps->flushCache(prHifInfo, prToken->prPacket,
-				     prToken->u4DmaLength);
-
 	return true;
 }
 
