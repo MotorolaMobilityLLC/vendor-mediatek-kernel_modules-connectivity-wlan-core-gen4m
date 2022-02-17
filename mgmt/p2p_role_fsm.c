@@ -504,6 +504,20 @@ p2pRoleFsmDeauhComplete(IN P_ADAPTER_T prAdapter, IN P_STA_RECORD_T prStaRec)
 	eOriMediaStatus = prP2pBssInfo->eConnectionState;
 	prP2pRoleFsmInfo = P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prAdapter, prP2pBssInfo->u4PrivateData);
 
+	/*
+	 * After EAP exchange, GO/GC will disconnect and re-connect in short time.
+	 * GC's new station record will be removed unexpectedly at GO's side if new
+	 * GC's connection happens when previous GO's disconnection flow is
+	 * processing. 4-way handshake will NOT be triggered.
+	 */
+	if ((prStaRec->eAuthAssocState == AAA_STATE_SEND_AUTH2 ||
+			prStaRec->eAuthAssocState == AAA_STATE_SEND_ASSOC2) &&
+		(prP2pBssInfo->eCurrentOPMode == OP_MODE_ACCESS_POINT) &&
+		(p2pFuncIsAPMode(prAdapter->rWifiVar.prP2PConnSettings[prP2pBssInfo->u4PrivateData]) == FALSE)) {
+		DBGLOG(P2P, WARN, "Skip deauth tx done since AAA fsm is in progress.\n");
+		return;
+	}
+
 	ASSERT_BREAK(prP2pRoleFsmInfo != NULL);
 
 	/* Change station state. */
