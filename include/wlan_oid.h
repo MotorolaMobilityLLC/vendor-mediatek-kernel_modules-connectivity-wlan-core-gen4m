@@ -2200,15 +2200,6 @@ struct PARAM_CUSTOM_MONITOR_SET_STRUCT {
 };
 #endif
 
-/*--------------------------------------------------------------*/
-/*! \brief PSCN Scan Request Container            */
-/*--------------------------------------------------------------*/
-
-enum ENUM_PSCAN_ACT {
-	PSCAN_ACT_DISABLE = 0,
-	PSCAN_ACT_ENABLE,
-};
-
 #if CFG_AUTO_CHANNEL_SEL_SUPPORT
 /*--------------------------------------------------------------*/
 /*! \brief MTK Auto Channel Selection related Container         */

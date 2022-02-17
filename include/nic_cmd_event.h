@@ -512,8 +512,8 @@ enum ENUM_CMD_ID {
 	CMD_ID_SET_PF_CAPABILITY = 0x59,	/* 0x59 (Set) */
 #endif
 	CMD_ID_GET_PSCAN_CAPABILITY = 0x60,     /* 0x60 (Get) deprecated */
-	CMD_ID_SET_PSCAN_ENABLE,                /* 0x61 (Set) */
-	CMD_ID_SET_PSCAN_PARAM,                 /* 0x62 (Set) */
+	CMD_ID_SET_SCHED_SCAN_ENABLE,           /* 0x61 (Set) */
+	CMD_ID_SET_SCHED_SCAN_REQ,              /* 0x62 (Set) */
 	CMD_ID_SET_GSCAN_ADD_HOTLIST_BSSID,     /* 0x63 (Set) deprecated */
 	CMD_ID_SET_GSCAN_ADD_SWC_BSSID,         /* 0x64 (Set) deprecated */
 	CMD_ID_SET_GSCAN_MAC_ADDR,              /* 0x65 (Set) deprecated */
@@ -625,7 +625,7 @@ enum ENUM_EVENT_ID {
 	EVENT_ID_DUMP_MEM = 0x20,	/* 0x20 (Query - CMD_ID_DUMP_MEM) */
 	EVENT_ID_STA_STATISTICS,	/* 0x21 (Query ) */
 	EVENT_ID_STA_STATISTICS_UPDATE,	/* 0x22 (Unsolicited) */
-	EVENT_ID_NLO_DONE,	/* 0x23 (Unsoiicited) */
+	EVENT_ID_SCHED_SCAN_DONE,	/* 0x23 (Unsoiicited) */
 	EVENT_ID_ADD_PKEY_DONE,	/* 0x24 (Unsoiicited) */
 	EVENT_ID_ICAP_DONE,	/* 0x25 (Unsoiicited) */
 	/* 0x26 (Query - CMD_ID_RESOURCE_CONFIG) */
@@ -975,10 +975,10 @@ struct CMD_RX_PACKET_FILTER {
 #define EXT_EVENT_ID_TX_POWER_FEATURE_CTRL  0x58
 #endif
 
-#define NLO_CHANNEL_TYPE_SPECIFIED      (0)
-#define NLO_CHANNEL_TYPE_DUAL_BAND      (1)
-#define NLO_CHANNEL_TYPE_2G4_ONLY       (2)
-#define NLO_CHANNEL_TYPE_5G_ONLY        (3)
+#define SCHED_SCAN_CHANNEL_TYPE_SPECIFIED      (0)
+#define SCHED_SCAN_CHANNEL_TYPE_DUAL_BAND      (1)
+#define SCHED_SCAN_CHANNEL_TYPE_2G4_ONLY       (2)
+#define SCHED_SCAN_CHANNEL_TYPE_5G_ONLY        (3)
 
 /*******************************************************************************
  *                             D A T A   T Y P E S
@@ -3009,86 +3009,36 @@ struct CMD_SET_TXPWR_CTRL {
 	int8_t acReserved2[2];	/* Must be zero */
 };
 
-enum ENUM_NLO_CIPHER_ALGORITHM {
-	NLO_CIPHER_ALGO_NONE = 0x00,
-	NLO_CIPHER_ALGO_WEP40 = 0x01,
-	NLO_CIPHER_ALGO_TKIP = 0x02,
-	NLO_CIPHER_ALGO_CCMP = 0x04,
-	NLO_CIPHER_ALGO_WEP104 = 0x05,
-	NLO_CIPHER_ALGO_WPA_USE_GROUP = 0x100,
-	NLO_CIPHER_ALGO_RSN_USE_GROUP = 0x100,
-	NLO_CIPHER_ALGO_WEP = 0x101,
+struct SSID_MATCH_SETS {
+	int32_t i4RssiThresold;
+	uint8_t aucSsid[32];
+	uint8_t ucSsidLen;
+	uint8_t aucPadding_1[3];
 };
 
-enum ENUM_NLO_AUTH_ALGORITHM {
-	NLO_AUTH_ALGO_80211_OPEN = 1,
-	NLO_AUTH_ALGO_80211_SHARED_KEY = 2,
-	NLO_AUTH_ALGO_WPA = 3,
-	NLO_AUTH_ALGO_WPA_PSK = 4,
-	NLO_AUTH_ALGO_WPA_NONE = 5,
-	NLO_AUTH_ALGO_RSNA = 6,
-	NLO_AUTH_ALGO_RSNA_PSK = 7,
-};
-
-struct NLO_SSID_MATCH_SETS {
-	int8_t cRssiThresold;
-	uint8_t ucSSIDLength;
-	uint8_t aucSSID[32];
-};
-
-struct NLO_NETWORK {
-	/* 0: specific channel; 1: dual band; 2: 2.4G; 3: 5G; 3*/
+struct CMD_SCHED_SCAN_REQ {
+	uint8_t ucVersion;
+	uint8_t ucSeqNum;
+	uint8_t fgStopAfterIndication;
+	uint8_t ucSsidNum;
+	uint8_t ucMatchSsidNum;
+	uint8_t aucPadding_0;
+	uint16_t u2IELen;
+	struct PARAM_SSID auSsid[10];
+	struct SSID_MATCH_SETS auMatchSsid[16];
 	uint8_t ucChannelType;
 	uint8_t ucChnlNum;
-	uint8_t aucChannel[94];
-	struct NLO_SSID_MATCH_SETS arMatchSets[16];
-};
-
-#if CFG_SUPPORT_SCHED_SCAN_IE
-struct CMD_NLO_REQ {
-	uint8_t ucSeqNum;
-	uint8_t ucBssIndex;
-	uint8_t fgStopAfterIndication;
-	uint8_t ucFastScanIteration;  /* deprecated */
-	uint16_t u2FastScanPeriod;    /* deprecated */
-	uint16_t u2SlowScanPeriod;    /* deprecated */
-	uint8_t ucEntryNum;           /* BIT(7) new NLO_NETWORK structure */
-	uint8_t ucFlag;		     /* BIT(0) Check cipher */
-	uint16_t u2IELen;
-	struct NLO_NETWORK rNLONetwork;
-	/* Multiple scan plan param */
-	u_int8_t fgNLOMspEnable;  /* Flag for NLO/PNO MSP enable indicator */
-	uint8_t ucNLOMspEntryNum; /* indicates the entry num of MSP List */
-	uint16_t au2NLOMspList[10];
+	uint8_t ucMspEntryNum;
+	uint8_t aucPadding_2;
+	struct CHANNEL_INFO aucChannel[64];
+	uint16_t au2MspList[10];
+	uint8_t aucPadding_3[64];
 
 	/* keep last */
 	uint8_t aucIE[0];             /* MUST be the last for IE content */
 };
-#else
-struct CMD_NLO_REQ {
-	uint8_t ucSeqNum;
-	uint8_t ucBssIndex;
-	uint8_t fgStopAfterIndication;
-	uint8_t ucFastScanIteration;  /* deprecated */
-	uint16_t u2FastScanPeriod;    /* deprecated */
-	uint16_t u2SlowScanPeriod;    /* deprecated */
-	uint8_t ucEntryNum;           /* BIT(7) new NLO_NETWORK structure */
-	uint8_t ucFlag;		     /* BIT(0) Check cipher */
-	uint16_t u2IELen;             /* always 0 */
-	struct NLO_NETWORK rNLONetwork;
 
-	/* keep last */
-	uint8_t aucIE[0];             /* MUST be last for IE content */
-};
-#endif /* CFG_SUPPORT_SCHED_SCAN_IE */
-
-struct CMD_NLO_CANCEL {
-	uint8_t ucSeqNum;
-	uint8_t ucBssIndex;
-	uint8_t aucReserved[2];
-};
-
-struct EVENT_NLO_DONE {
+struct EVENT_SCHED_SCAN_DONE {
 	uint8_t ucSeqNum;
 	uint8_t ucStatus;
 	uint8_t aucReserved[2];
@@ -3401,60 +3351,9 @@ struct EXT_EVENT_TXPOWER_ALL_RATE_POWER_INFO_T {
 };
 #endif
 
-/* PScan structure */
-#if CFG_SUPPORT_SCHED_SCAN_IE
-struct CMD_SET_PSCAN_PARAM {
-	uint8_t ucVersion;
-	struct CMD_BATCH_REQ rCmdBatchReq;    /* deprecated */
-	struct CMD_GSCN_REQ rCmdGscnReq; /* deprecated */
-	u_int8_t fgNLOScnEnable;
-	u_int8_t fgBatchScnEnable;        /* deprecated */
-	u_int8_t fgGScnEnable;            /* deprecated */
-	uint32_t u4BasePeriod;            /* deprecated */
-
-	/* keep last */
-	struct CMD_NLO_REQ
-		rCmdNloReq; /* MUST be the last for IE content */
-};
-#else
-struct CMD_SET_PSCAN_PARAM {
-	uint8_t ucVersion;
-	struct CMD_NLO_REQ rCmdNloReq;
-	struct CMD_BATCH_REQ rCmdBatchReq;    /* deprecated */
-	struct CMD_GSCN_REQ rCmdGscnReq; /* deprecated */
-	u_int8_t fgNLOScnEnable;
-	u_int8_t fgBatchScnEnable;        /* deprecated */
-	u_int8_t fgGScnEnable;            /* deprecated */
-	uint32_t u4BasePeriod;            /* deprecated */
-};
-#endif /* CFG_SUPPORT_SCHED_SCAN_IE */
-
-struct CMD_SET_PSCAN_ENABLE {
-	uint8_t ucPscanAct;
+struct CMD_SET_SCHED_SCAN_ENABLE {
+	uint8_t ucSchedScanAct;
 	uint8_t aucReserved[3];
-};
-
-/* deprecated */
-struct CMD_SET_PSCAN_ADD_HOTLIST_BSSID {
-	uint8_t aucMacAddr[6];
-	uint8_t ucFlags;
-	uint8_t aucReserved[5];
-};
-
-/* deprecated */
-struct CMD_SET_PSCAN_ADD_SWC_BSSID {
-	int32_t i4RssiLowThreshold;
-	int32_t i4RssiHighThreshold;
-	uint8_t aucMacAddr[6];
-	uint8_t aucReserved[6];
-};
-
-/* deprecated */
-struct CMD_SET_PSCAN_MAC_ADDR {
-	uint8_t ucVersion;
-	uint8_t ucFlags;
-	uint8_t aucMacAddr[6];
-	uint8_t aucReserved[8];
 };
 
 struct CMD_EVENT_LOG_UI_INFO {
@@ -3715,8 +3614,8 @@ void nicEventMicErrorInfo(IN struct ADAPTER *prAdapter,
 			  IN struct WIFI_EVENT *prEvent);
 void nicEventScanDone(IN struct ADAPTER *prAdapter,
 		      IN struct WIFI_EVENT *prEvent);
-void nicEventNloDone(IN struct ADAPTER *prAdapter,
-		     IN struct WIFI_EVENT *prEvent);
+void nicEventSchedScanDone(IN struct ADAPTER *prAdapter,
+			IN struct WIFI_EVENT *prEvent);
 void nicEventSleepyNotify(IN struct ADAPTER *prAdapter,
 			  IN struct WIFI_EVENT *prEvent);
 void nicEventBtOverWifi(IN struct ADAPTER *prAdapter,

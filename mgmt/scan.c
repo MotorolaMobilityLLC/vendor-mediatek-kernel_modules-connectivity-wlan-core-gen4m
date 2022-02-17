@@ -141,8 +141,9 @@ void scnInit(IN struct ADAPTER *prAdapter)
 	/* reset freest channel information */
 	prScanInfo->fgIsSparseChannelValid = FALSE;
 
-	/* reset NLO state */
-	prScanInfo->fgNloScanning = FALSE;
+	/* reset Sched scan state */
+	prScanInfo->fgSchedScanning = FALSE;
+
 	/*Support AP Selection */
 	prScanInfo->u4ScanUpdateIdx = 0;
 }	/* end of scnInit() */
@@ -2283,12 +2284,13 @@ uint32_t scanAddScanResult(IN struct ADAPTER *prAdapter,
 		prBssDesc->ucChannelNum, prBssDesc->ucRCPI);
 
 	scanAddEssResult(prAdapter, prBssDesc);
-	if (prAdapter->rWifiVar.rScanInfo.fgNloScanning &&
+	if (prAdapter->rWifiVar.rScanInfo.fgSchedScanning &&
 		test_bit(SUSPEND_FLAG_CLEAR_WHEN_RESUME,
 			&prAdapter->ulSuspendFlag)) {
 		uint8_t i = 0;
 		struct BSS_DESC **pprPendBssDesc
-			= &prScanInfo->rNloParam.aprPendingBssDescToInd[0];
+			= &prScanInfo->rSchedScanParam.
+				aprPendingBssDescToInd[0];
 
 		for (; i < SCN_SSID_MATCH_MAX_NUM; i++) {
 			if (pprPendBssDesc[i])
@@ -2559,7 +2561,7 @@ uint32_t scanProcessBeaconAndProbeResp(IN struct ADAPTER *prAdapter,
 			/* for AIS, send to host */
 			prAdapter->rWlanInfo.u4ScanDbgTimes3++;
 			if (prConnSettings->fgIsScanReqIssued
-				|| prScanInfo->fgNloScanning) {
+				|| prScanInfo->fgSchedScanning) {
 				u_int8_t fgAddToScanResult;
 
 				fgAddToScanResult
