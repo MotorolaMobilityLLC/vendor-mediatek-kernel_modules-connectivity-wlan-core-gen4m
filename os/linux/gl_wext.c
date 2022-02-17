@@ -4606,23 +4606,30 @@ struct iw_statistics *wext_get_wireless_stats(
 	uint32_t rStatus = WLAN_STATUS_FAILURE;
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct iw_statistics *pStats = NULL;
-	int32_t i4Rssi;
+	struct PARAM_LINK_SPEED_EX rLinkSpeed;
 	uint32_t bufLen = 0;
+	uint8_t ucBssIndex = AIS_DEFAULT_INDEX;
 
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prDev));
 	ASSERT(prGlueInfo);
 	if (!prGlueInfo)
 		goto stat_out;
 
-	pStats = (struct iw_statistics *)(&(prGlueInfo->rIwStats));
+	ucBssIndex = wlanGetBssIdx(prDev);
+	if (IS_BSS_INDEX_VALID(ucBssIndex))
+		pStats = (struct iw_statistics *)
+			(&(prGlueInfo->rIwStats[ucBssIndex]));
 
 	if (!prDev || !netif_carrier_ok(prDev)) {
 		/* network not connected */
 		goto stat_out;
 	}
 
-	rStatus = kalIoctl(prGlueInfo, wlanoidQueryRssi, &i4Rssi,
-			   sizeof(i4Rssi), TRUE, TRUE, TRUE, &bufLen);
+	rStatus = kalIoctlByBssIdx(prGlueInfo,
+				   wlanoidQueryRssi,
+				   &rLinkSpeed, sizeof(rLinkSpeed),
+				   TRUE, TRUE, TRUE,
+				   &bufLen, ucBssIndex);
 
 stat_out:
 	return pStats;
