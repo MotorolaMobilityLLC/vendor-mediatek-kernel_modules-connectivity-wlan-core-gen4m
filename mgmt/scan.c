@@ -1634,7 +1634,7 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 		(uint8_t *) prWlanBeaconFrame->aucSrcAddr,
 		fgIsValidSsid, fgIsValidSsid == TRUE ? &rSsid : NULL);
 
-	log_dbg(SCN, LOUD, "Receive type %u in chnl %u %u %u (" MACSTR
+	log_dbg(SCN, TRACE, "Receive type %u in chnl %u %u %u (" MACSTR
 		") valid(%u) found(%u)\n",
 		ucSubtype, ucIeDsChannelNum, ucIeHtChannelNum,
 		HAL_RX_STATUS_GET_CHNL_NUM(prSwRfb->prRxStatus),
