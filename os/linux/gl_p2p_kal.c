@@ -1150,7 +1150,7 @@ kalP2PIndicateRxMgmtFrame(IN P_GLUE_INFO_T prGlueInfo,
 #if (KERNEL_VERSION(3, 18, 0) <= CFG80211_VERSION_CODE)
 		cfg80211_rx_mgmt(prNetdevice->ieee80211_ptr,	/* struct net_device * dev, */
 				 i4Freq,
-				 RCPI_TO_dBm(nicRxGetRcpiValueFromRxv(RCPI_MODE_WF0, prSwRfb)),
+				 RCPI_TO_dBm(nicRxGetRcpiValueFromRxv(RCPI_MODE_MAX, prSwRfb)),
 				 prSwRfb->pvHeader,
 				 prSwRfb->u2PacketLen,
 				 NL80211_RXMGMT_FLAG_ANSWERED);
