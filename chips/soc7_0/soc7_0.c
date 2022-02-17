@@ -418,6 +418,7 @@ struct mt66xx_chip_info mt66xx_chip_info_soc7_0 = {
 	.group5_size = sizeof(struct HW_MAC_RX_STS_GROUP_5),
 	.u4LmacWtblDUAddr = CONNAC2X_WIFI_LWTBL_BASE,
 	.u4UmacWtblDUAddr = CONNAC2X_WIFI_UWTBL_BASE,
+	.isSupportMddpAOR = true,
 };
 
 struct mt66xx_hif_driver_data mt66xx_driver_data_soc7_0 = {

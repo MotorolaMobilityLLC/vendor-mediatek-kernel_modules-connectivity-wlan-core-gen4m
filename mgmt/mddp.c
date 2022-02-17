@@ -24,7 +24,7 @@
 */
 #include "precomp.h"
 
-#ifdef CONFIG_MTK_MDDP_SUPPORT
+#if IS_ENABLED(CONFIG_MTK_MDDP_SUPPORT)
 
 #include "gl_os.h"
 #include "mddp_export.h"
@@ -67,6 +67,12 @@ struct mddp_drv_handle_t gMddpFunc = {
 #define MD_SUPPORT_MDDP_STATUS_SYNC_CR_BIT BIT(0)
 #define MD_STATUS_OFF_SYNC_BIT BIT(1)
 #define MD_STATUS_ON_SYNC_BIT BIT(2)
+
+#define MD_AOR_CR_ADDR 0x10001BF4
+#define MD_AOR_MD_INIT_BIT BIT(8)
+#define MD_AOR_MD_OFF_BIT BIT(9)
+#define MD_AOR_MD_RDY_BIT BIT(10)
+#define MD_AOR_WIFI_ON_BIT BIT(11)
 
 #if (CFG_SUPPORT_CONNAC2X == 0)
 /* Use SER dummy register for mddp support flag */
@@ -120,6 +126,7 @@ enum BOOTMODE {
 
 enum BOOTMODE g_wifi_boot_mode = NORMAL_BOOT;
 u_int8_t g_fgMddpEnabled = TRUE;
+bool g_fgIsSupportAOR;
 
 struct mddpw_net_stat_ext_t stats;
 
@@ -507,9 +514,16 @@ void mddpNotifyWifiOnStart(void)
 int32_t mddpNotifyWifiOnEnd(void)
 {
 	int32_t ret = 0;
+	uint32_t u4Value = 0;
 
 	if (!mddpIsSupportMcifWifi())
 		return ret;
+
+	if (g_fgIsSupportAOR) {
+		wf_ioremap_read(MD_AOR_CR_ADDR, &u4Value);
+		u4Value |= MD_AOR_WIFI_ON_BIT;
+		wf_ioremap_write(MD_AOR_CR_ADDR, u4Value);
+	}
 
 	clear_md_wifi_on_bit();
 	ret = mddpNotifyWifiStatus(MDDPW_DRV_INFO_WLAN_ON_END);
@@ -523,9 +537,16 @@ int32_t mddpNotifyWifiOnEnd(void)
 void mddpNotifyWifiOffStart(void)
 {
 	int32_t ret;
+	uint32_t u4Value = 0;
 
 	if (!mddpIsSupportMcifWifi())
 		return;
+
+	if (g_fgIsSupportAOR) {
+		wf_ioremap_read(MD_AOR_CR_ADDR, &u4Value);
+		u4Value &= ~(MD_AOR_WIFI_ON_BIT | MD_AOR_MD_INIT_BIT);
+		wf_ioremap_write(MD_AOR_CR_ADDR, u4Value);
+	}
 
 	mddpSetMDFwOwn();
 
@@ -542,6 +563,20 @@ void mddpNotifyWifiOffEnd(void)
 		return;
 
 	mddpNotifyWifiStatus(MDDPW_DRV_INFO_WLAN_OFF_END);
+}
+
+void mddpNotifyWifiReset(void)
+{
+	uint32_t u4Value = 0;
+
+	if (!mddpIsSupportMcifWifi())
+		return;
+
+	if (g_fgIsSupportAOR) {
+		wf_ioremap_read(MD_AOR_CR_ADDR, &u4Value);
+		u4Value &= ~MD_AOR_WIFI_ON_BIT;
+		wf_ioremap_write(MD_AOR_CR_ADDR, u4Value);
+	}
 }
 
 int32_t mddpMdNotifyInfo(struct mddpw_md_notify_info_t *prMdInfo)
@@ -744,9 +779,15 @@ static bool wait_for_md_on_complete(void)
 
 void setMddpSupportRegister(IN struct ADAPTER *prAdapter)
 {
+	struct mt66xx_chip_info *prChipInfo;
 #if (CFG_SUPPORT_CONNAC2X == 0)
 	uint32_t u4Val = 0;
+#endif
 
+	prChipInfo = prAdapter->chip_info;
+	g_fgIsSupportAOR = prChipInfo->isSupportMddpAOR;
+
+#if (CFG_SUPPORT_CONNAC2X == 0)
 	HAL_MCR_RD(prAdapter, MDDP_SUPPORT_CR, &u4Val);
 	if (g_fgMddpEnabled)
 		u4Val |= MDDP_SUPPORT_CR_BIT;
