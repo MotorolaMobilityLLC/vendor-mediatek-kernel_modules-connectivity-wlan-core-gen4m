@@ -214,6 +214,9 @@ extern struct delayed_work sched_workq;
 #define TRAFFIC_RHRESHOLD	150
 #endif
 
+#define WIFI_LOG_MSG_MAX	(512)
+#define WIFI_LOG_MSG_BUFFER	(WIFI_LOG_MSG_MAX * 2)
+
 /*******************************************************************************
  *                             D A T A   T Y P E S
  *******************************************************************************
@@ -979,8 +982,8 @@ int8_t atoi(uint8_t ch);
 #define kalGetTimeTick()                jiffies_to_msecs(jiffies)
 
 #define WLAN_TAG                        "[wlan]"
-#define kalPrint(_Fmt...)               pr_info(WLAN_TAG _Fmt)
-#define kalPrintLimited(_Fmt...)        pr_info_ratelimited(WLAN_TAG _Fmt)
+#define kalPrint               kalPrintLog
+#define kalPrintLimited        kalPrintLogLimited
 
 #define kalBreakPoint() \
 do { \
@@ -1860,6 +1863,10 @@ void kalSyncTimeToFWByIoctl(void);
 
 void kalUpdateCompHdlrRec(IN struct ADAPTER *prAdapter,
 	IN PFN_OID_HANDLER_FUNC pfnOidHandler, IN struct CMD_INFO *prCmdInfo);
+
+extern uint32_t get_wifi_standalone_log_mode(void);
+void kalPrintLog(const char *fmt, ...);
+void kalPrintLogLimited(const char *fmt, ...);
 
 #endif /* _GL_KAL_H */
 

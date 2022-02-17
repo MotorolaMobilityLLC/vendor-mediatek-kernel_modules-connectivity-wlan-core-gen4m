@@ -1172,7 +1172,7 @@ u_int8_t rsnPerformPolicySelection(
 	       "Selected AKM suite: 0x%x\n", SWAP32(u4AkmSuite));
 
 #if CFG_SUPPORT_802_11W
-	DBGLOG(RSN, TRACE, "[MFP] MFP setting = %d\n ",
+	DBGLOG(RSN, TRACE, "[MFP] MFP setting = %d\n",
 	       kalGetMfpSetting(prAdapter->prGlueInfo, ucBssIndex));
 
 	if (kalGetMfpSetting(prAdapter->prGlueInfo,
