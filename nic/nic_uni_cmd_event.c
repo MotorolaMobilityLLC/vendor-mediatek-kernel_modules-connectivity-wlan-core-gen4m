@@ -2316,8 +2316,10 @@ struct UNI_CMD_BSSINFO_TAG_HANDLE arSetBssInfoTable[] = {
 	{sizeof(struct UNI_CMD_BSSINFO_11V_MBSSID), nicUniCmdBssInfoTagMBSSID},
 	{sizeof(struct UNI_CMD_BSSINFO_WAPI), nicUniCmdBssInfoTagWapi},
 	{sizeof(struct UNI_CMD_BSSINFO_MLD), nicUniCmdBssInfoTagMld},
+#if (CFG_SUPPORT_BSS_MAX_IDLE_PERIOD == 1)
 	{sizeof(struct UNI_CMD_BSSINFO_MAX_IDLE_PERIOD),
 					nicUniCmdBssInfoTagMaxIdlePeriod}
+#endif
 };
 
 uint32_t nicUniCmdSetBssInfo(struct ADAPTER *ad,

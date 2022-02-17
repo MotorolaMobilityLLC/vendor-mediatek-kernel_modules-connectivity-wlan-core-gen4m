@@ -1615,6 +1615,11 @@ enum BEACON_REPORT_DETAIL {
 #define ELEM_MAX_LEN_TPE \
 	(8 - ELEM_HDR_LEN)	/* sizeof(IE_VHT_TPE)-2 */
 
+#define ELEM_MAX_LEN_BSS_MAX_IDLE \
+	(5 - ELEM_HDR_LEN)
+
+#define BSS_MAX_IDLE_PERIOD_VALUE	30
+
 /*8.4.2.160.3 VHT Supported MCS Set field*/
 
 /*8.4.2.160.2 VHT Capabilities Info field*/
