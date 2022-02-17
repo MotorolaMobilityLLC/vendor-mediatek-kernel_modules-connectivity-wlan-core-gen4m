@@ -728,42 +728,6 @@ struct MSDU_INFO* assocComposeReAssocReqFrame(IN struct ADAPTER *prAdapter,
 	assoc_build_nonwfa_vend_ie(prAdapter, prMsduInfo);
 #endif
 
-	if (IS_STA_IN_AIS(prStaRec)) {
-		struct WLAN_ASSOC_REQ_FRAME *prAssocFrame;
-
-		prAssocFrame =
-		    (struct WLAN_ASSOC_REQ_FRAME
-		     *)((unsigned long)(prMsduInfo->prPacket) +
-			MAC_TX_RESERVED_FIELD);
-
-		kalUpdateReAssocReqInfo(prAdapter->prGlueInfo,
-					(uint8_t *) &prAssocFrame->u2CapInfo,
-					prMsduInfo->u2FrameLength -
-					offsetof(struct WLAN_ASSOC_REQ_FRAME,
-						 u2CapInfo), fgIsReAssoc,
-					prStaRec->ucBssIndex);
-	}
-#if CFG_ENABLE_WIFI_DIRECT
-	if ((prAdapter->fgIsP2PRegistered) && (IS_STA_IN_P2P(prStaRec))) {
-		struct WLAN_ASSOC_REQ_FRAME *prAssocFrame;
-
-		prAssocFrame =
-		    (struct WLAN_ASSOC_REQ_FRAME
-		     *)((unsigned long)(prMsduInfo->prPacket) +
-			MAC_TX_RESERVED_FIELD);
-
-		kalP2PUpdateAssocInfo(prAdapter->prGlueInfo,
-				      (uint8_t *) &prAssocFrame->u2CapInfo,
-				      prMsduInfo->u2FrameLength -
-				      offsetof(struct WLAN_ASSOC_REQ_FRAME,
-					       u2CapInfo), fgIsReAssoc,
-				      prStaRec->ucBssIndex);
-	}
-#endif
-
-	/* TODO(Kevin): Also release the unused tail room of the composed MMPDU
-	 */
-
 	nicTxConfigPktControlFlag(prMsduInfo, MSDU_CONTROL_FLAG_FORCE_TX, TRUE);
 
 	sortMgmtFrameIE(prAdapter, prMsduInfo);
@@ -793,6 +757,39 @@ uint32_t assocSendReAssocReqFrame(IN struct ADAPTER *prAdapter,
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	beGenerateAssocMldIE(prAdapter, prStaRec, prMsduInfo,
 		assocComposeReAssocReqFrame);
+#endif
+
+	if (IS_STA_IN_AIS(prStaRec)) {
+		struct WLAN_ASSOC_REQ_FRAME *prAssocFrame;
+
+		prAssocFrame =
+		    (struct WLAN_ASSOC_REQ_FRAME
+		     *)((unsigned long)(prMsduInfo->prPacket) +
+			MAC_TX_RESERVED_FIELD);
+
+		kalUpdateReAssocReqInfo(prAdapter->prGlueInfo,
+					(uint8_t *) &prAssocFrame->u2CapInfo,
+					prMsduInfo->u2FrameLength -
+					offsetof(struct WLAN_ASSOC_REQ_FRAME,
+					u2CapInfo), prStaRec->fgIsReAssoc,
+					prStaRec->ucBssIndex);
+	}
+#if CFG_ENABLE_WIFI_DIRECT
+	if ((prAdapter->fgIsP2PRegistered) && (IS_STA_IN_P2P(prStaRec))) {
+		struct WLAN_ASSOC_REQ_FRAME *prAssocFrame;
+
+		prAssocFrame =
+		    (struct WLAN_ASSOC_REQ_FRAME
+		     *)((unsigned long)(prMsduInfo->prPacket) +
+			MAC_TX_RESERVED_FIELD);
+
+		kalP2PUpdateAssocInfo(prAdapter->prGlueInfo,
+				      (uint8_t *) &prAssocFrame->u2CapInfo,
+				      prMsduInfo->u2FrameLength -
+				      offsetof(struct WLAN_ASSOC_REQ_FRAME,
+				      u2CapInfo), prStaRec->fgIsReAssoc,
+				      prStaRec->ucBssIndex);
+	}
 #endif
 
 	/* Enqueue the frame to send this (Re)Association request frame. */
