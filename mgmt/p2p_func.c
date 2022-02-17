@@ -1779,16 +1779,21 @@ void p2pFuncStartRdd(IN struct ADAPTER *prAdapter, IN uint8_t ucBssIdx)
 	prCmdRddOnOffCtrl->ucRddIdx = ENUM_BAND_0;
 
 #if (CFG_SUPPORT_SINGLE_SKU == 1)
-	if (rlmDomainGetDfsRegion() == NL80211_DFS_JP) {
-		if (ucReqChnlNum >= 52 && ucReqChnlNum <= 64)
-			prCmdRddOnOffCtrl->ucSetVal = REG_JP_53;
-		else if (ucReqChnlNum >= 100 && ucReqChnlNum <= 140)
-			prCmdRddOnOffCtrl->ucSetVal = REG_JP_56;
-	} else {
-		prCmdRddOnOffCtrl->ucSetVal = REG_DEFAULT;
+	switch (rlmDomainGetDfsRegion()) {
+	case NL80211_DFS_FCC:
+		prCmdRddOnOffCtrl->ucSetVal = ENUM_RDM_FCC;
+		break;
+	case NL80211_DFS_ETSI:
+		prCmdRddOnOffCtrl->ucSetVal = ENUM_RDM_CE;
+		break;
+	case NL80211_DFS_JP:
+		prCmdRddOnOffCtrl->ucSetVal = ENUM_RDM_JAP;
+		break;
+	default:
+		DBGLOG(P2P, ERROR,
+			"rlmDomainGetDfsRegion is NL80211_DFS_UNSET!\n");
+		break;
 	}
-#else
-	prCmdRddOnOffCtrl->ucSetVal = REG_DEFAULT;
 #endif
 
 	if (prCmdRddOnOffCtrl->ucRddIdx)
@@ -2060,174 +2065,9 @@ void p2pFuncRadarInfoInit(void)
 	kalMemZero(&g_rP2pRadarInfo, sizeof(g_rP2pRadarInfo));
 }
 
-void p2pFuncShowRadarInfo(IN struct ADAPTER *prAdapter, IN uint8_t ucBssIdx)
-{
-	uint8_t ucCnt = 0;
-	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo =
-		(struct P2P_ROLE_FSM_INFO *) NULL;
-	uint8_t ucReqChnlNum;
-
-	if (g_rP2pRadarInfo.ucRadarReportMode == 1) {
-
-		prP2pRoleFsmInfo = P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prAdapter,
-				prAdapter->aprBssInfo[ucBssIdx]->u4PrivateData);
-
-		ucReqChnlNum = prP2pRoleFsmInfo->rChnlReqInfo.ucReqChnlNum;
-
-		DBGLOG(P2P, INFO, "-----Radar Detected Event-----\n");
-		DBGLOG(P2P, INFO,
-			"Radar detected in DBDC band%d\n",
-				g_rP2pRadarInfo.ucRddIdx);
-
-#if (CFG_SUPPORT_SINGLE_SKU == 1)
-		switch (rlmDomainGetDfsRegion()) {
-		case NL80211_DFS_FCC:
-			DBGLOG(P2P, INFO, "Regulation domain: FCC\n");
-			break;
-		case NL80211_DFS_ETSI:
-			DBGLOG(P2P, INFO, "Regulation domain: ETSI\n");
-			break;
-		case NL80211_DFS_JP:
-			DBGLOG(P2P, INFO, "Regulation domain: JP\n");
-
-			if (ucReqChnlNum >= 52 && ucReqChnlNum <= 64)
-				DBGLOG(P2P, INFO,
-					"Radar type: W53 - %s\n",
-					p2pFuncJpW53RadarType());
-			else if (ucReqChnlNum >= 100 && ucReqChnlNum <= 140)
-				DBGLOG(P2P, INFO,
-					"Radar type: W56 - %s\n",
-					p2pFuncJpW56RadarType());
-			break;
-		default:
-			break;
-		}
-#endif
-
-		DBGLOG(P2P, INFO, "Radar Content:\n");
-
-		DBGLOG(P2P, INFO, "start time    pulse width    PRI\n");
-
-		if (g_rP2pRadarInfo.ucPeriodicDetected) {
-			DBGLOG(P2P, INFO, "%-10d    %-11d    -\n"
-				, g_rP2pRadarInfo.arPpbContent
-					[ucCnt].u4PeriodicStartTime
-				, g_rP2pRadarInfo.arPpbContent
-					[ucCnt].u2PeriodicPulseWidth);
-
-			for (ucCnt = 1;
-				ucCnt < g_rP2pRadarInfo.ucPPBNum; ucCnt++) {
-				DBGLOG(P2P, INFO, "%-10d    %-11d    %d\n"
-					, g_rP2pRadarInfo.arPpbContent
-						[ucCnt].u4PeriodicStartTime
-					, g_rP2pRadarInfo.arPpbContent
-						[ucCnt].u2PeriodicPulseWidth
-					, (g_rP2pRadarInfo.arPpbContent
-						[ucCnt].u4PeriodicStartTime
-					- g_rP2pRadarInfo.arPpbContent
-						[ucCnt-1].u4PeriodicStartTime)
-						* 2 / 5);
-			}
-		} else if (g_rP2pRadarInfo.ucLongDetected) {
-			DBGLOG(P2P, INFO, "%-10d    %-11d    -\n"
-				, g_rP2pRadarInfo.arLpbContent
-					[ucCnt].u4LongStartTime
-				, g_rP2pRadarInfo.arLpbContent
-					[ucCnt].u2LongPulseWidth);
-
-			for (ucCnt = 1;
-				ucCnt < g_rP2pRadarInfo.ucLPBNum; ucCnt++) {
-				DBGLOG(P2P, INFO, "%-10d    %-11d    %d\n"
-					, g_rP2pRadarInfo.arLpbContent
-						[ucCnt].u4LongStartTime
-					, g_rP2pRadarInfo.arLpbContent
-						[ucCnt].u2LongPulseWidth
-					, (g_rP2pRadarInfo.arLpbContent
-						[ucCnt].u4LongStartTime
-					- g_rP2pRadarInfo.arLpbContent
-						[ucCnt-1].u4LongStartTime)
-						* 2 / 5);
-			}
-		}
-	}
-}
-
 void p2pFuncGetRadarInfo(IN struct P2P_RADAR_INFO *prP2pRadarInfo)
 {
 	kalMemCopy(prP2pRadarInfo, &g_rP2pRadarInfo, sizeof(*prP2pRadarInfo));
-}
-
-uint8_t *p2pFuncJpW53RadarType(void)
-{
-	uint32_t u4Type1Diff;
-	uint32_t u4Type2Diff;
-
-	if (g_rP2pRadarInfo.u4PRI1stUs >= 1428)
-		u4Type1Diff = g_rP2pRadarInfo.u4PRI1stUs - 1428;
-	else
-		u4Type1Diff = 1428 - g_rP2pRadarInfo.u4PRI1stUs;
-
-	if (g_rP2pRadarInfo.u4PRI1stUs >= 3846)
-		u4Type2Diff = g_rP2pRadarInfo.u4PRI1stUs - 3846;
-	else
-		u4Type2Diff = 3846 - g_rP2pRadarInfo.u4PRI1stUs;
-
-	if (u4Type1Diff < u4Type2Diff)
-		return apucW53RadarType[1];
-	else
-		return apucW53RadarType[2];
-}
-
-uint8_t *p2pFuncJpW56RadarType(void)
-{
-	uint32_t u4Type1Diff;
-	uint32_t u4Type2Diff;
-
-	if (g_rP2pRadarInfo.ucLongDetected)
-		return apucW56RadarType[7];
-
-	if (g_rP2pRadarInfo.u4PRI1stUs >= 3980
-		&& g_rP2pRadarInfo.u4PRI1stUs <= 4020)
-		return apucW56RadarType[3];
-
-	if (g_rP2pRadarInfo.u4PRI1stUs >= 1368
-		&& g_rP2pRadarInfo.u4PRI1stUs <= 1448) {
-
-		if (g_rP2pRadarInfo.u4PRI1stUs >= 1388)
-			u4Type1Diff = g_rP2pRadarInfo.u4PRI1stUs - 1388;
-		else
-			u4Type1Diff = 1388 - g_rP2pRadarInfo.u4PRI1stUs;
-
-		if (g_rP2pRadarInfo.u4PRI1stUs >= 1428)
-			u4Type2Diff = g_rP2pRadarInfo.u4PRI1stUs - 1428;
-		else
-			u4Type2Diff = 1428 - g_rP2pRadarInfo.u4PRI1stUs;
-
-		if (u4Type1Diff < u4Type2Diff)
-			return apucW56RadarType[1];
-		else
-			return apucW56RadarType[2];
-
-	}
-
-	if (g_rP2pRadarInfo.u4PRI1stUs >= 130
-		&& g_rP2pRadarInfo.u4PRI1stUs < 200)
-		return apucW56RadarType[4];
-
-	if (g_rP2pRadarInfo.u4PRI1stUs >= 200
-		&& g_rP2pRadarInfo.u4PRI1stUs <= 520) {
-
-		if (g_rP2pRadarInfo.u4PRI1stUs <= 230)
-		return apucW56RadarType[9];
-
-		if (g_rP2pRadarInfo.u4PRI1stUs >= 323
-			&& g_rP2pRadarInfo.u4PRI1stUs <= 343)
-			return apucW56RadarType[10];
-
-		return apucW56RadarType[11];
-	}
-
-	return apucW56RadarType[0];
 }
 
 void p2pFuncSetRadarDetectMode(IN uint8_t ucRadarDetectMode)

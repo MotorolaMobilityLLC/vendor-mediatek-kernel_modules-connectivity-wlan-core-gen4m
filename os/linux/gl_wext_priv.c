@@ -8874,102 +8874,6 @@ int priv_driver_show_dfs_state(IN struct net_device *prNetDev,
 	return	i4BytesWritten;
 }
 
-int priv_driver_show_dfs_radar_param(IN struct net_device *prNetDev,
-				     IN char *pcCommand, IN int i4TotalLen)
-{
-	struct GLUE_INFO *prGlueInfo = NULL;
-	int32_t i4Argc = 0;
-	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
-	int32_t i4BytesWritten = 0;
-	uint8_t ucCnt = 0;
-	struct P2P_RADAR_INFO *prP2pRadarInfo = (struct P2P_RADAR_INFO *) NULL;
-
-	ASSERT(prNetDev);
-	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
-		return -1;
-	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
-
-	prP2pRadarInfo = (struct P2P_RADAR_INFO *) cnmMemAlloc(
-		prGlueInfo->prAdapter, RAM_TYPE_MSG, sizeof(*prP2pRadarInfo));
-	if (prP2pRadarInfo == NULL)
-		return -1;
-
-	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
-	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
-	DBGLOG(REQ, LOUD, "argc is %i\n", i4Argc);
-
-	p2pFuncGetRadarInfo(prP2pRadarInfo);
-
-	LOGBUF(pcCommand, i4TotalLen, i4BytesWritten, "\nRDD idx: %d\n",
-	       prP2pRadarInfo->ucRddIdx);
-	LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
-	       "\nLong Pulse detected: %d\n", prP2pRadarInfo->ucLongDetected);
-	LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
-	       "\nPeriodic Pulse detected: %d\n",
-	       prP2pRadarInfo->ucPeriodicDetected);
-	LOGBUF(pcCommand, i4TotalLen, i4BytesWritten, "\nLPB Num: %d\n",
-	       prP2pRadarInfo->ucLPBNum);
-	LOGBUF(pcCommand, i4TotalLen, i4BytesWritten, "\nPPB Num: %d\n",
-	       prP2pRadarInfo->ucPPBNum);
-
-	LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
-	       "\n===========================");
-	LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
-	       "\nLong Pulse Buffer Contents:\n");
-	LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
-	       "\npulse_time    pulse_width    PRI\n");
-	LOGBUF(pcCommand, i4TotalLen, i4BytesWritten, "\n%-10d    %-11d    -\n"
-		, prP2pRadarInfo->arLpbContent[ucCnt].u4LongStartTime
-		, prP2pRadarInfo->arLpbContent[ucCnt].u2LongPulseWidth);
-	for (ucCnt = 1; ucCnt < prP2pRadarInfo->ucLPBNum; ucCnt++) {
-		LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
-		       "\n%-10d    %-11d    %d\n",
-		       prP2pRadarInfo->arLpbContent[ucCnt].u4LongStartTime,
-		       prP2pRadarInfo->arLpbContent[ucCnt].u2LongPulseWidth,
-		       (prP2pRadarInfo->arLpbContent[ucCnt].u4LongStartTime
-		       - prP2pRadarInfo->arLpbContent[ucCnt-1]
-						.u4LongStartTime) * 2 / 5);
-	}
-	LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
-	       "\nLPB Period Valid: %d", prP2pRadarInfo->ucLPBPeriodValid);
-	LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
-	       "\nLPB Period Valid: %d\n", prP2pRadarInfo->ucLPBWidthValid);
-
-	ucCnt = 0;
-	LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
-	       "\n===========================");
-	LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
-	       "\nPeriod Pulse Buffer Contents:\n");
-	LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
-	       "\npulse_time    pulse_width    PRI\n");
-	LOGBUF(pcCommand, i4TotalLen, i4BytesWritten, "\n%-10d    %-11d    -\n"
-		, prP2pRadarInfo->arPpbContent[ucCnt].u4PeriodicStartTime
-		, prP2pRadarInfo->arPpbContent[ucCnt].u2PeriodicPulseWidth);
-	for (ucCnt = 1; ucCnt < prP2pRadarInfo->ucPPBNum; ucCnt++) {
-		LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
-		       "\n%-10d    %-11d    %d\n"
-		       , prP2pRadarInfo->arPpbContent[ucCnt].u4PeriodicStartTime
-		       , prP2pRadarInfo->arPpbContent[ucCnt]
-						.u2PeriodicPulseWidth
-		       , (prP2pRadarInfo->arPpbContent[ucCnt]
-						.u4PeriodicStartTime
-		       - prP2pRadarInfo->arPpbContent[ucCnt-1]
-						.u4PeriodicStartTime) * 2 / 5);
-	}
-	LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
-	       "\nPRI Count M1 TH: %d; PRI Count M1: %d",
-	       prP2pRadarInfo->ucPRICountM1TH, prP2pRadarInfo->ucPRICountM1);
-	LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
-	       "\nPRI Count M2 TH: %d; PRI Count M2: %d",
-	       prP2pRadarInfo->ucPRICountM2TH,
-	       prP2pRadarInfo->ucPRICountM2);
-
-
-	cnmMemFree(prGlueInfo->prAdapter, prP2pRadarInfo);
-
-	return	i4BytesWritten;
-}
-
 int priv_driver_show_dfs_help(IN struct net_device *prNetDev,
 			      IN char *pcCommand, IN int i4TotalLen)
 {
@@ -14159,7 +14063,6 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers[] = {
 #if (CFG_SUPPORT_DFS_MASTER == 1)
 	{CMD_SET_DFS_CHN_AVAILABLE, priv_driver_set_dfs_channel_available},
 	{CMD_SHOW_DFS_STATE, priv_driver_show_dfs_state},
-	{CMD_SHOW_DFS_RADAR_PARAM, priv_driver_show_dfs_radar_param},
 	{CMD_SHOW_DFS_HELP, priv_driver_show_dfs_help},
 	{CMD_SHOW_DFS_CAC_TIME, priv_driver_show_dfs_cac_time},
 #endif
