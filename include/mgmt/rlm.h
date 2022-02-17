@@ -469,8 +469,12 @@ uint32_t
 rlmSendSmPowerSaveFrame(struct ADAPTER *prAdapter,
 			struct STA_RECORD *prStaRec, uint8_t ucNss);
 
-void rlmSendChannelSwitchFrame(struct ADAPTER *prAdapter,
-	uint8_t ucBssIndex);
+void
+rlmSendChannelSwitchFrame(struct ADAPTER *prAdapter,
+			uint8_t ucBssIndex);
+
+uint16_t
+rlmOpClassToBandwidth(uint8_t ucOpClass);
 
 uint32_t
 rlmNotifyVhtOpModeTxDone(struct ADAPTER *prAdapter,

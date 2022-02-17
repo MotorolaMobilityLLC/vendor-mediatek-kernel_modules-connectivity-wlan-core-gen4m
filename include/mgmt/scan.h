@@ -144,6 +144,11 @@
 /* dwell time setting for OCE certification */
 #define SCAN_CHANNEL_DWELL_TIME_OCE         (42 + 28)
 
+#define MLD_LINK_MAX				3
+#define ML_ELEMENT_TYPE_BASIC			0
+#define ML_ELEMENT_TYPE_PROBE_REQ		1
+#define SUB_IE_MLD_PER_STA_PROFILE		0
+#define MAX_LEN_OF_MLIE				255
 
 /*----------------------------------------------------------------------------*/
 /* MSG_SCN_SCAN_REQ                                                           */
@@ -191,6 +196,33 @@
  *                             D A T A   T Y P E S
  *******************************************************************************
  */
+struct IE_ML_PER_STA_PROFILE_INFO {
+	uint16_t u2StaCtrl;
+	/* Include STA info and STA profile */
+	uint8_t aucMultiLinkVarIe[0];
+};
+
+struct IE_MULTI_LINK_INFO {
+	uint16_t u2MlCtrl;
+	/* Include Common info and Link info */
+	uint8_t aucMultiLinkVarIe[0];
+};
+
+struct STA_PROFILE {
+	uint8_t ucLinkId;
+	uint8_t aucLinkAddr[MAC_ADDR_LEN];
+	struct RF_CHANNEL_INFO rChnlInfo;
+	uint8_t ucChangeSeq;
+	uint8_t ucValid;
+	uint8_t aucIEbuf[256];
+};
+
+struct MULTI_LINK_INFO {
+	uint8_t aucMldAddr[MAC_ADDR_LEN];
+	uint8_t ucLinkNum;
+	struct STA_PROFILE rStaProfiles[MLD_LINK_MAX];
+};
+
 enum ENUM_SCAN_TYPE {
 	SCAN_TYPE_PASSIVE_SCAN = 0,
 	SCAN_TYPE_ACTIVE_SCAN,
@@ -290,6 +322,12 @@ struct BSS_DESC {
 
 	/* For IBSS, the SrcAddr is different from BSSID */
 	uint8_t aucSrcAddr[MAC_ADDR_LEN];
+
+	/* For MLO, the MldAddr is to save common MLD MAC address */
+	uint8_t aucMldAddr[MAC_ADDR_LEN];
+
+	/* For MLO, the Link ID used for connection */
+	uint8_t ucMlLinkId;
 
 	/* If we are going to connect to this BSS (JOIN or ROAMING to another
 	 * BSS), don't remove this record from BSS List.
