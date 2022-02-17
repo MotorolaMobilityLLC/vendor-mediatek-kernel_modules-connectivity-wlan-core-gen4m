@@ -12054,6 +12054,7 @@ uint32_t wlanLinkQualityMonitor(struct GLUE_INFO *prGlueInfo, bool bFgIsOid)
 			prAdapter->u4LastLinkQuality);
 
 	kalMemZero(arBssid, MAC_ADDR_LEN);
+	SET_IOCTL_BSSIDX(prGlueInfo->prAdapter, ucBssIndex);
 	wlanQueryInformation(prAdapter, wlanoidQueryBssid,
 			     &arBssid[0], sizeof(arBssid), &u4BufLen);
 
