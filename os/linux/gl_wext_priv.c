@@ -5372,7 +5372,7 @@ static int priv_driver_set_fw_log(IN struct net_device *prNetDev,
 	if (!prFwLog2HostCtrl)
 		return -1;
 
-	if (i4Argc == 3) {
+	if (i4Argc == 3 || i4Argc == 4) {
 		u4Ret = kalkStrtou32(apcArgv[1], 0, &u4McuDest);
 		if (u4Ret)
 			DBGLOG(REQ, LOUD, "parse u4McuDest error u4Ret=%d\n",
@@ -5401,7 +5401,7 @@ static int priv_driver_set_fw_log(IN struct net_device *prNetDev,
 			return -1;
 		}
 	} else {
-		DBGLOG(REQ, ERROR, "argc %i is not equal to 3\n", i4Argc);
+		DBGLOG(REQ, ERROR, "argc %i is not equal to 3 or 4\n", i4Argc);
 		i4BytesWritten = -1;
 	}
 
