@@ -1595,6 +1595,9 @@
  */
 #define CFG_SUPPORT_TPENHANCE_MODE          0
 
+#ifndef CFG_MTK_FPGA_PLATFORM
+#define CFG_MTK_FPGA_PLATFORM			0
+#endif
 
 /*******************************************************************************
  *                             D A T A   T Y P E S
