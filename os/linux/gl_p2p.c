@@ -2202,22 +2202,32 @@ int p2pSetMACAddress(IN struct net_device *prDev, void *addr)
 		return -EINVAL;
 	}
 
+	sa = (struct sockaddr *)addr;
+
 	if (mtk_Netdev_To_RoleIdx(prGlueInfo, prDev, &ucRoleIdx) != 0) {
 		DBGLOG(INIT, ERROR, "can't find the matched dev");
-		return -EINVAL;
+		goto skip_role;
 	}
 
 	if (p2pFuncRoleToBssIdx(prGlueInfo->prAdapter,
 		ucRoleIdx, &ucBssIdx) != WLAN_STATUS_SUCCESS) {
 		DBGLOG(INIT, ERROR, "can't find the matched bss");
-		return -EINVAL;
+		goto skip_role;
 	}
 
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIdx);
 	if (!prBssInfo) {
 		DBGLOG(INIT, ERROR, "bss is not active\n");
-		return -EINVAL;
+		goto skip_role;
+	} else {
+		COPY_MAC_ADDR(prBssInfo->aucOwnMacAddr,
+			sa->sa_data);
+		COPY_MAC_ADDR(
+			prAdapter->rWifiVar.aucInterfaceAddress[ucRoleIdx],
+			sa->sa_data);
 	}
+
+skip_role:
 
 	prDevBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
 		prAdapter->ucP2PDevBssIdx);
@@ -2232,12 +2242,7 @@ int p2pSetMACAddress(IN struct net_device *prDev, void *addr)
 		return -EINVAL;
 	}
 
-	sa = (struct sockaddr *)addr;
-
-	COPY_MAC_ADDR(prBssInfo->aucOwnMacAddr, sa->sa_data);
 	COPY_MAC_ADDR(prDev->dev_addr, sa->sa_data);
-	COPY_MAC_ADDR(prAdapter->rWifiVar.aucInterfaceAddress[ucRoleIdx],
-			sa->sa_data);
 
 	if ((prP2pInfo->prDevHandler == prDev)
 		&& mtk_IsP2PNetDevice(prGlueInfo, prDev)) {
@@ -2249,7 +2254,7 @@ int p2pSetMACAddress(IN struct net_device *prDev, void *addr)
 			ucBssIdx,
 			prDevBssInfo->ucBssIndex,
 			MAC2STR(prDevBssInfo->aucOwnMacAddr));
-	} else {
+	} else if (prBssInfo) {
 		DBGLOG(INIT, INFO,
 			"[%d] Set random macaddr to " MACSTR ".\n",
 			ucBssIdx,
