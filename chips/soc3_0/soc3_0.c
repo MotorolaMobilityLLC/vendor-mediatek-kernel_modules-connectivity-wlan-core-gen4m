@@ -3999,6 +3999,8 @@ int soc3_0_wlanPreCal(void)
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct ADAPTER *prAdapter = NULL;
 	struct mt66xx_chip_info *prChipInfo;
+	uint32_t u4Value = 0;
+	uint32_t u4WaitCount = 0;
 
 	if (g_u4WlanInitFlag == 0) {
 		DBGLOG(INIT, WARN,
@@ -4243,9 +4245,23 @@ int soc3_0_wlanPreCal(void)
 	wf_ioremap_write(CONN_HOST_CSR_TOP_BASE_ADDR + 0x0010,
 		PCIE_LPCR_HOST_SET_OWN);
 
+	/* polling check 0x180602C8 [21] */
+	while (u4WaitCount < 10)  {
+		wf_ioremap_read(CONN_HOST_CSR_TOP_BASE_ADDR + 0x02C8,
+			&u4Value);
+
+		if ((u4Value&BIT(21)) != BIT(21))
+			break;
+
+		u4WaitCount++;
+		mdelay(1);
+	}
+
 	wf_pwr_off_consys_mcu();
 
-	DBGLOG(INIT, INFO, "PreCal end (%d)\n", eFailReason);
+	DBGLOG(INIT, INFO, "PreCal end(%d) OffWaitCount(%d)\n",
+		eFailReason,
+		u4WaitCount);
 
 	if (eFailReason == POWER_ON_INIT_DONE)
 		return CONNINFRA_CB_RET_CAL_PASS_POWER_OFF;
