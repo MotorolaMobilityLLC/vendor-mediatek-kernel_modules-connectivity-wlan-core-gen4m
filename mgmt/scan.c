@@ -2193,9 +2193,9 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 					prBssDesc->ucPhyTypeSet
 						|= PHY_TYPE_BIT_HR_DSSS;
 			}
+		} else {
+			prBssDesc->ucPhyTypeSet |= PHY_TYPE_BIT_OFDM;
 		}
-	} else {
-		prBssDesc->ucPhyTypeSet |= PHY_TYPE_BIT_OFDM;
 	}
 
 	/* Support AP Selection */
