@@ -699,8 +699,8 @@ void wnmRecvBTMRequest(IN struct ADAPTER *prAdapter, IN struct SW_RFB *prSwRfb)
 	}
 
 	/* if BTM Request is for broadcast, don't send BTM Response */
-	fgNeedResponse = kalMemCmp(prRxFrame->aucDestAddr,
-		"\xff\xff\xff\xff\xff\xff", MAC_ADDR_LEN);
+	fgNeedResponse = !!(kalMemCmp(prRxFrame->aucDestAddr,
+		"\xff\xff\xff\xff\xff\xff", MAC_ADDR_LEN));
 	prBtmParam->ucDialogToken = prRxFrame->ucDialogToken;
 	prBtmParam->ucRequestMode = prRxFrame->ucRequestMode;
 	prBtmParam->u2DisassocTimer = prRxFrame->u2DisassocTimer;
