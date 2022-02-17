@@ -740,6 +740,18 @@ static s_int32 hqa_get_antswap_capability(
 	s_int32 ret = SERV_STATUS_SUCCESS;
 	u_int32 antswap_support = 0;
 
+#if (CFG_SUPPORT_CONNAC3X == 1)
+	u_char *data = hqa_frame->data;
+	u_int32 band_idx = 0;
+
+	get_param_and_shift_buf(TRUE, sizeof(band_idx),
+				&data, (u_char *)&band_idx);
+
+	/* Set parameters */
+	SERV_SET_PARAM(serv_test, ctrl_band_idx, (u_char)band_idx);
+
+#endif /* (CFG_SUPPORT_CONNAC3X == 1) */
+
 	SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_ERROR, ("%s\n", __func__));
 
 	ret = mt_serv_get_antswap_capability(serv_test, &antswap_support);
@@ -2347,6 +2359,47 @@ static s_int32 hqa_get_capability(
 	return ret;
 }
 
+#if (CFG_SUPPORT_CONNAC3X == 1)
+
+static s_int32 hqa_get_rf_type_capability(
+	struct service_test *serv_test, struct hqa_frame *hqa_frame)
+{
+	s_int32 ret = SERV_STATUS_SUCCESS;
+	u_char *data = hqa_frame->data;
+	u_int32 band_idx, convert;
+	struct test_capability capability;
+
+	SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_TRACE, ("%s\n", __func__));
+
+	get_param_and_shift_buf(TRUE, sizeof(band_idx),
+				&data, (u_char *)&band_idx);
+
+	SERV_SET_PARAM(serv_test, ctrl_band_idx, (u_char)band_idx);
+
+	/* get content */
+	ret = mt_serv_get_capability(serv_test, &capability);
+
+	SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_ERROR,
+		(" capability.ph_cap.ant_num = %x\n",
+		capability.ph_cap.ant_num));
+
+	convert = SERV_OS_HTONL(capability.ph_cap.ant_num);
+
+	/* TX */
+	sys_ad_move_mem(hqa_frame->data + 2, &convert,
+		sizeof(convert));
+
+	/* RX */
+	sys_ad_move_mem(hqa_frame->data + 6, &convert,
+		sizeof(convert));
+
+	update_hqa_frame(hqa_frame, 10, ret);
+
+	return ret;
+}
+
+#endif /* (CFG_SUPPORT_CONNAC3X == 1) */
+
 static s_int32 hqa_calibration_test_mode(
 	struct service_test *serv_test, struct hqa_frame *hqa_frame)
 {
@@ -3906,6 +3959,9 @@ static struct hqa_cmd_entry CMD_SET5[] = {
 	{0x1a,	hqa_mps_stop},
 	{0x1c,	hqa_get_rx_statistics_all},
 	{0x1d,	hqa_get_capability},
+#if (CFG_SUPPORT_CONNAC3X == 1)
+	{0x1e,	hqa_get_rf_type_capability},
+#endif /*(CFG_SUPPORT_CONNAC3X == 1)*/
 	{0x21,	legacy_function},
 	{0x22,	hqa_check_efuse_mode_type},
 	{0x23,	hqa_check_efuse_nativemode_type},

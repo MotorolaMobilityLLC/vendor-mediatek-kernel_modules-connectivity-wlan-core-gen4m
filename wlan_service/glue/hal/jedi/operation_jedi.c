@@ -328,6 +328,9 @@ s_int32 mt_op_set_rx_filter_pkt_len(
 
 s_int32 mt_op_get_antswap_capability(
 	struct test_wlan_info *winfos,
+#if (CFG_SUPPORT_CONNAC3X == 1)
+	u_char band_idx,
+#endif /* (CFG_SUPPORT_CONNAC3X == 1) */
 	u_int32 *antswap_support)
 {
 	s_int32 ret = SERV_STATUS_SUCCESS;
