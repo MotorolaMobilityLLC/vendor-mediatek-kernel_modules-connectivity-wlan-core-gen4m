@@ -473,6 +473,7 @@ struct FWDL_OPS_T soc5_0_fw_dl_ops = {
 #else
 	.phyAction = NULL,
 #endif
+	.downloadEMI = wlanDownloadEMISection,
 };
 #endif /* CFG_ENABLE_FW_DOWNLOAD */
 
@@ -1981,9 +1982,11 @@ uint32_t soc5_0_wlanImageSectionDownloadStage(
 /* For dynamic memory map::End */
 #if (CFG_SUPPORT_CONNINFRA == 1)
 		/* Set datecode to EMI */
-		wlanDownloadEMISection(prAdapter,
+		prFwDlOps->downloadEMI(prAdapter,
 			WMMCU_ROM_PATCH_DATE_ADDR,
-			DATE_CODE_SIZE, prPatchHeader->aucBuildDate);
+			0,
+			prPatchHeader->aucBuildDate,
+			DATE_CODE_SIZE);
 #endif
 
 	} else if ((eDlIdx == IMG_DL_IDX_MCU_ROM_EMI) ||
@@ -2002,19 +2005,25 @@ uint32_t soc5_0_wlanImageSectionDownloadStage(
 
 		u4Offset = sizeof(struct ROM_EMI_HEADER);
 
-		u4Status = wlanDownloadEMISection(prAdapter,
-					u4Addr, u4Len,
-					pvFwImageMapFile + u4Offset);
+		u4Status = prFwDlOps->downloadEMI(prAdapter,
+				u4Addr,
+				0,
+				pvFwImageMapFile + u4Offset,
+				u4Len);
 #if (CFG_SUPPORT_CONNINFRA == 1)
 		/* Set datecode to EMI */
 		if (eDlIdx == IMG_DL_IDX_MCU_ROM_EMI)
-			wlanDownloadEMISection(prAdapter,
+			prFwDlOps->downloadEMI(prAdapter,
 				WMMCU_MCU_ROM_EMI_DATE_ADDR,
-				DATE_CODE_SIZE, prRomEmiHeader->ucDateTime);
+				0,
+				prRomEmiHeader->ucDateTime,
+				DATE_CODE_SIZE);
 		else
-			wlanDownloadEMISection(prAdapter,
+			prFwDlOps->downloadEMI(prAdapter,
 				WMMCU_WIFI_ROM_EMI_DATE_ADDR,
-				DATE_CODE_SIZE, prRomEmiHeader->ucDateTime);
+				0,
+				prRomEmiHeader->ucDateTime,
+				DATE_CODE_SIZE);
 #endif
 	} else {
 		for (u4SecIdx = 0; u4SecIdx < ucSectionNumber;
@@ -2031,9 +2040,11 @@ uint32_t soc5_0_wlanImageSectionDownloadStage(
 			if (fgIsNotDownload)
 				continue;
 			else if (fgIsEMIDownload)
-				u4Status = wlanDownloadEMISection(prAdapter,
-					u4Addr, u4Len,
-					pvFwImageMapFile + u4Offset);
+				u4Status = prFwDlOps->downloadEMI(prAdapter,
+					u4Addr,
+					0,
+					pvFwImageMapFile + u4Offset,
+					u4Len);
 /* For dynamic memory map:: Begin */
 #if (CFG_DOWNLOAD_DYN_MEMORY_MAP == 1)
 			else if ((u4DataMode &
