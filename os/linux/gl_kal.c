@@ -4188,6 +4188,9 @@ int main_thread(void *data)
 #if defined(CONFIG_ANDROID) && (CFG_ENABLE_WAKE_LOCK)
 	KAL_WAKE_LOCK_T *prTxThreadWakeLock;
 #endif
+#if (CFG_SUPPORT_CONNINFRA == 1)
+	struct timespec64 time;
+#endif
 
 #if CFG_SUPPORT_MULTITHREAD
 	prGlueInfo->u4TxThreadPid = KAL_GET_CURRENT_THREAD_ID();
@@ -4207,6 +4210,10 @@ int main_thread(void *data)
 
 	DBGLOG(INIT, INFO, "%s:%u starts running...\n",
 	       KAL_GET_CURRENT_THREAD_NAME(), KAL_GET_CURRENT_THREAD_ID());
+
+#if (CFG_SUPPORT_CONNINFRA == 1)
+	prGlueInfo->prAdapter->u4FWLastUpdateTime = 0;
+#endif
 
 	while (TRUE) {
 #ifdef UT_TEST_MODE
@@ -4480,6 +4487,24 @@ int main_thread(void *data)
 			&prGlueInfo->ulFlag))
 			GL_RESET_TRIGGER(prGlueInfo->prAdapter,
 				RST_FLAG_DO_CORE_DUMP);
+
+		ktime_get_real_ts64(&time);
+		if (TIME_BEFORE(
+			(prGlueInfo->prAdapter->u4FWLastUpdateTime + 7200),
+			(unsigned int)time.tv_sec)) {
+			uint32_t rStatus = WLAN_STATUS_SUCCESS;
+
+			rStatus = kalSyncTimeToFW(prGlueInfo->prAdapter,
+				(unsigned int)time.tv_sec,
+				(unsigned int)NSEC_TO_USEC(time.tv_nsec));
+			if (rStatus == WLAN_STATUS_FAILURE)
+				DBGLOG(INIT, WARN,
+					"Failed to sync kernel time to FW.");
+			else {
+				prGlueInfo->prAdapter->u4FWLastUpdateTime =
+					(unsigned int)time.tv_sec;
+			}
+		}
 #endif
 		kalTraceEnd(); /* main_thread */
 	}
@@ -8935,6 +8960,120 @@ uint32_t kalSetSuspendFlagToEMI(IN struct ADAPTER
 #endif /* CFG_MTK_ANDROID_EMI */
 	return WLAN_STATUS_SUCCESS;
 }
+
+#if (CFG_SUPPORT_CONNINFRA == 1)
+void setupTimeParameter(
+		struct PARAM_CUSTOM_CHIP_CONFIG_STRUCT *prChipConfigInfo,
+		int chipConfigInfoSize, unsigned int second,
+		unsigned int usecond)
+{
+	int8_t aucKey[WLAN_CFG_VALUE_LEN_MAX];
+	int8_t aucValue[WLAN_CFG_VALUE_LEN_MAX];
+
+	kalMemZero(aucValue, sizeof(aucValue));
+	kalMemZero(aucKey, sizeof(aucKey));
+	kalSnprintf(aucKey, sizeof(aucKey), "SetChip");
+	kalSnprintf(aucValue, sizeof(aucValue),
+		"SyncTime %u %u", second, usecond);
+
+	kalMemZero(prChipConfigInfo, chipConfigInfoSize);
+
+	prChipConfigInfo->ucType = CHIP_CONFIG_TYPE_WO_RESPONSE;
+	prChipConfigInfo->u2MsgSize = kalStrnLen(aucValue,
+						   WLAN_CFG_VALUE_LEN_MAX);
+	kalStrnCpy(prChipConfigInfo->aucCmd, aucValue,
+		   CHIP_CONFIG_RESP_SIZE);
+}
+
+uint32_t
+kalSyncTimeToFW(IN struct ADAPTER *prAdapter,
+		unsigned int second, unsigned int usecond)
+{
+	uint32_t u4SetBufferLen = 0;
+	uint32_t rStatus = WLAN_STATUS_SUCCESS;
+	struct PARAM_CUSTOM_CHIP_CONFIG_STRUCT rChipConfigInfo;
+	struct CMD_CHIP_CONFIG rCmdChipConfig;
+
+	DEBUGFUNC("kalSyncTimeToFW");
+
+	ASSERT(prAdapter);
+
+	setupTimeParameter(&rChipConfigInfo, sizeof(rChipConfigInfo),
+			second, usecond);
+
+	DBGLOG(INIT, INFO,
+		"Sync kernel time %u %u", second, usecond);
+
+	u4SetBufferLen = sizeof(rChipConfigInfo);
+
+	kalMemZero(&rCmdChipConfig, sizeof(rCmdChipConfig));
+
+	rCmdChipConfig.u2Id = rChipConfigInfo.u2Id;
+	rCmdChipConfig.ucType = rChipConfigInfo.ucType;
+	rCmdChipConfig.ucRespType = rChipConfigInfo.ucRespType;
+	rCmdChipConfig.u2MsgSize = rChipConfigInfo.u2MsgSize;
+	if (rCmdChipConfig.u2MsgSize > CHIP_CONFIG_RESP_SIZE) {
+		DBGLOG(REQ, INFO,
+			   "Chip config Msg Size %u is not valid (set)\n",
+			   rCmdChipConfig.u2MsgSize);
+		rCmdChipConfig.u2MsgSize = CHIP_CONFIG_RESP_SIZE;
+	}
+	kalMemCopy(rCmdChipConfig.aucCmd, rChipConfigInfo.aucCmd,
+		   rCmdChipConfig.u2MsgSize);
+
+	rStatus = wlanSendSetQueryCmd(prAdapter,
+					  CMD_ID_CHIP_CONFIG,
+					  TRUE,
+					  FALSE,
+					  FALSE,
+					  nicCmdEventSetCommon,
+					  nicCmdTimeoutCommon,
+					  sizeof(struct CMD_CHIP_CONFIG),
+					  (uint8_t *) &rCmdChipConfig,
+					  &rChipConfigInfo, u4SetBufferLen);
+
+	return rStatus;
+}
+
+void
+kalSyncTimeToFWByIoctl(void)
+{
+#ifdef CONFIG_MTK_CONNSYS_DEDICATED_LOG_PATH
+	struct GLUE_INFO *prGlueInfo;
+
+	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wlanGetWiphy());
+
+	DEBUGFUNC("kalSyncTimeToFWByIoctl");
+
+	if (getFWLogOnOff() == 1 &&
+		((prGlueInfo) && (prGlueInfo->prAdapter))) {
+		uint32_t u4BufLen = 0;
+		uint32_t rStatus = WLAN_STATUS_SUCCESS;
+		struct PARAM_CUSTOM_CHIP_CONFIG_STRUCT rChipConfigInfo;
+		struct timespec64 time;
+		unsigned int second, usecond;
+
+		ktime_get_real_ts64(&time);
+		second = (unsigned int)time.tv_sec;
+		usecond = (unsigned int)NSEC_TO_USEC(time.tv_nsec);
+
+		setupTimeParameter(&rChipConfigInfo, sizeof(rChipConfigInfo),
+				second, usecond);
+
+		DBGLOG(INIT, INFO,
+				"Sync kernel time %u %u", second, usecond);
+
+		rStatus = kalIoctl(prGlueInfo, wlanoidSetChipConfig,
+				   &rChipConfigInfo, sizeof(rChipConfigInfo),
+				   FALSE, FALSE, TRUE, &u4BufLen);
+		if (rStatus == WLAN_STATUS_FAILURE)
+			DBGLOG(INIT, WARN, "Failed to sync kernel time to FW.");
+		else
+			prGlueInfo->prAdapter->u4FWLastUpdateTime = second;
+	}
+#endif
+}
+#endif /* (CFG_SUPPORT_CONNINFRA == 1) */
 
 #if KERNEL_VERSION(5, 4, 0) <= CFG80211_VERSION_CODE
 MODULE_IMPORT_NS(VFS_internal_I_am_really_a_filesystem_and_am_NOT_a_driver);

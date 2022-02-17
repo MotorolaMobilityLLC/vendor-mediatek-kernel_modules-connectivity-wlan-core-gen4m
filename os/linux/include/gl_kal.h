@@ -1840,5 +1840,17 @@ void tracing_mark_write(const char *fmt, ...);
 uint32_t kalSetSuspendFlagToEMI(IN struct ADAPTER
 	*prAdapter, IN u_int8_t fgSuspend);
 
+#if (CFG_SUPPORT_CONNINFRA == 1)
+#ifdef CONFIG_MTK_CONNSYS_DEDICATED_LOG_PATH
+extern uint32_t getFWLogOnOff(void);
+#endif
+void setupTimeParameter(
+	struct PARAM_CUSTOM_CHIP_CONFIG_STRUCT *prChipConfigInfo,
+	int chipConfigInfoSize, unsigned int second, unsigned int usecond);
+uint32_t kalSyncTimeToFW(IN struct ADAPTER *prAdapter,
+	unsigned int second, unsigned int usecond);
+void kalSyncTimeToFWByIoctl(void);
+#endif /* CFG_SUPPORT_CONNINFRA == 1*/
+
 #endif /* _GL_KAL_H */
 
