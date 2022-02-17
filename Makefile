@@ -311,6 +311,7 @@ CONFIG_MTK_WIFI_11BE_ML_TWT_SUPPORT=y
 CONFIG_MLD_LINK_MAX=2
 CONFIG_DBDC_MODE=1
 CONFIG_MTK_WIFI_6G_SUPPORT=y
+CONFIG_MTK_HOST_OFFLOAD_SUPPORT=y
 ifneq ($(TARGET_BUILD_VARIANT),user)
 CONFIG_MTK_WIFI_NAN=y
 endif
@@ -472,6 +473,12 @@ else
     ccflags-y += -DCFG_TWT_SMART_STA=0
     ccflags-y += -DCFG_SUPPORT_BTWT=0
     ccflags-y += -DCFG_SUPPORT_802_11BE_ML_TWT=0
+endif
+
+ifeq ($(CONFIG_MTK_HOST_OFFLOAD_SUPPORT), y)
+        ccflags-y += -DCFG_SUPPORT_HOST_OFFLOAD=1
+else
+        ccflags-y += -DCFG_SUPPORT_HOST_OFFLOAD=0
 endif
 
 ifneq ($(CONFIG_NUM_OF_WFDMA_TX_RING),)
@@ -1173,6 +1180,10 @@ HIF_OBJS :=  $(HIF_DIR)ut.o \
              $(HIF_DIR)hal_api.o
 else ifeq ($(CONFIG_MTK_COMBO_WIFI_HIF), none)
 HIF_OBJS :=  $(HIF_DIR)none.o
+endif
+
+ifeq ($(CONFIG_MTK_HOST_OFFLOAD_SUPPORT), y)
+HIF_OBJS +=  $(HIF_COMMON_DIR)hal_mawd.o
 endif
 # ---------------------------------------------------
 # Platform Objects List

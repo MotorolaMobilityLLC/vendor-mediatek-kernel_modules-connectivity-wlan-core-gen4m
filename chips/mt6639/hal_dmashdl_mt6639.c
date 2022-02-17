@@ -288,7 +288,8 @@ struct DMASHDL_CFG rMt6639DmashdlCfg = {
 
 void mt6639DmashdlInit(struct ADAPTER *prAdapter)
 {
-	uint32_t idx;
+	struct mt66xx_chip_info *prChipInfo = prAdapter->chip_info;
+	uint32_t idx, u4Val = 0;
 
 	asicConnac3xDmashdlSetPlePktMaxPage(prAdapter,
 					 rMt6639DmashdlCfg.u2PktPleMaxPage);
@@ -326,6 +327,16 @@ void mt6639DmashdlInit(struct ADAPTER *prAdapter)
 	asicConnac3xDmashdlSetOptionalControl(prAdapter,
 		rMt6639DmashdlCfg.u2HifAckCntTh,
 		rMt6639DmashdlCfg.u2HifGupActMap);
+
+#if (CFG_SUPPORT_HOST_OFFLOAD == 1)
+	if (prChipInfo->is_support_sdo) {
+		HAL_MCR_RD(prAdapter,
+			   WF_HIF_DMASHDL_TOP_CONTROL_SIGNAL_ADDR, &u4Val);
+		u4Val &= ~BIT(18);
+		HAL_MCR_WR(prAdapter,
+			   WF_HIF_DMASHDL_TOP_CONTROL_SIGNAL_ADDR, u4Val);
+	}
+#endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
 }
 
 #endif /* defined(_HIF_PCIE) || defined(_HIF_AXI) */

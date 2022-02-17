@@ -1425,7 +1425,14 @@ struct mt66xx_chip_info {
 	const unsigned int patch_addr;	/* patch download start address */
 	const unsigned int is_support_cr4;	/* support CR4 */
 	const unsigned int is_support_wacpu;	/* support WA-CPU */
-	const unsigned int txd_append_size;	/* hw mac txd append */
+#if (CFG_SUPPORT_HOST_OFFLOAD == 1)
+	const unsigned int is_support_mawd_tx;	/* support MAWD Tx */
+	const unsigned int is_support_sdo;	/* support SDO */
+	const unsigned int is_support_rro;	/* support RRO */
+	const unsigned int is_en_rro_int;	/* Enable RRO Interrupt to AP */
+#endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
+	unsigned int txd_append_size;	/* hw mac txd append */
+	const unsigned int hif_txd_append_size; /* hif txd append size */
 	const unsigned int rxd_size;	        /* hw mac rxd size */
 	const unsigned int init_evt_rxd_size;	/* init event rxd size */
 	const unsigned int pse_header_length;	/* NIC_TX_PSE_HEADER_LENGTH */

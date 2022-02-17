@@ -346,7 +346,8 @@ static void pcieUnmapRxBuf(struct GL_HIF_INFO *prHifInfo,
 static void pcieFreeDesc(struct GL_HIF_INFO *prHifInfo,
 			 struct RTMP_DMABUF *prDescRing);
 static void pcieFreeBuf(void *pucSrc, uint32_t u4Len);
-static void pcieFreePacket(void *pvPacket);
+static void pcieFreePacket(struct GL_HIF_INFO *prHifInfo,
+			   void *pvPacket, uint32_t u4Num);
 static void pcieDumpTx(struct GL_HIF_INFO *prHifInfo,
 		       struct RTMP_TX_RING *prTxRing,
 		       uint32_t u4Idx, uint32_t u4DumpLen);
@@ -358,6 +359,16 @@ static void pcieFreeMcuEmiMem(struct GL_HIF_INFO *prHifInfo);
 
 static void halPciePreSuspendCmd(struct ADAPTER *prAdapter);
 static void halPcieResumeCmd(struct ADAPTER *prAdapter);
+
+#if (CFG_SUPPORT_HOST_OFFLOAD == 1)
+static void *pcieAllocRxBlkBuf(struct GL_HIF_INFO *prHifInfo,
+			       struct RTMP_DMABUF *prDmaBuf,
+			       uint32_t u4Num, uint32_t u4Idx);
+static void pcieUnmapRxBlkBuf(struct GL_HIF_INFO *prHifInfo,
+			      phys_addr_t rDmaAddr, uint32_t u4Len);
+static void pcieReleaseRxBlkBuf(struct GL_HIF_INFO *prHifInfo,
+				void *pvPacket, uint32_t u4Num);
+#endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
 
 /*******************************************************************************
  *                              F U N C T I O N S
@@ -1037,7 +1048,8 @@ void glUnregisterBus(remove_card pfRemove)
 	platform_driver_unregister(&mtk_axi_driver);
 }
 
-static void glPopulateMemOps(struct HIF_MEM_OPS *prMemOps)
+static void glPopulateMemOps(struct mt66xx_chip_info *prChipInfo,
+			     struct HIF_MEM_OPS *prMemOps)
 {
 	prMemOps->allocTxDesc = pcieAllocDesc;
 	prMemOps->allocRxDesc = pcieAllocDesc;
@@ -1061,7 +1073,7 @@ static void glPopulateMemOps(struct HIF_MEM_OPS *prMemOps)
 	prMemOps->dumpRx = pcieDumpRx;
 #endif
 #ifdef MT6639
-	prMemOps->allocMcuEmiMem= pcieAllocMcuEmiMem;
+	prMemOps->allocMcuEmiMem = pcieAllocMcuEmiMem;
 	prMemOps->freeMcuEmiMem = pcieFreeMcuEmiMem;
 #endif
 
@@ -1089,6 +1101,14 @@ static void glPopulateMemOps(struct HIF_MEM_OPS *prMemOps)
 		prMemOps->dumpRx = axiDumpRx;
 	}
 #endif
+
+#if (CFG_SUPPORT_HOST_OFFLOAD == 1)
+	if (prChipInfo->is_support_rro) {
+		prMemOps->allocRxBuf = pcieAllocRxBlkBuf;
+		prMemOps->unmapRxBuf = pcieUnmapRxBlkBuf;
+		prMemOps->freePacket = pcieReleaseRxBlkBuf;
+	}
+#endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1103,6 +1123,7 @@ static void glPopulateMemOps(struct HIF_MEM_OPS *prMemOps)
 /*----------------------------------------------------------------------------*/
 void glSetHifInfo(struct GLUE_INFO *prGlueInfo, unsigned long ulCookie)
 {
+	struct mt66xx_chip_info *prChipInfo = NULL;
 	struct GL_HIF_INFO *prHif = NULL;
 	struct HIF_MEM_OPS *prMemOps;
 
@@ -1115,12 +1136,13 @@ void glSetHifInfo(struct GLUE_INFO *prGlueInfo, unsigned long ulCookie)
 	g_prGlueInfo = prGlueInfo;
 
 	prHif->CSRBaseAddress = CSRBaseAddress;
+	glGetChipInfo((void **)&prChipInfo);
 
 	SET_NETDEV_DEV(prGlueInfo->prDevHandler, &prHif->pdev->dev);
 
 	prGlueInfo->u4InfType = MT_DEV_INF_PCIE;
 
-	glPopulateMemOps(prMemOps);
+	glPopulateMemOps(prChipInfo, prMemOps);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1510,7 +1532,8 @@ static void pcieFreeBuf(void *pucSrc, uint32_t u4Len)
 	kalMemFree(pucSrc, PHY_MEM_TYPE, u4Len);
 }
 
-static void pcieFreePacket(void *pvPacket)
+static void pcieFreePacket(struct GL_HIF_INFO *prHifInfo,
+			   void *pvPacket, uint32_t u4Num)
 {
 	kalPacketFree(NULL, pvPacket);
 }
@@ -1889,3 +1912,62 @@ void glBusFunOff(void)
 	pci_unregister_driver(&mtk_pci_driver);
 	g_fgDriverProbed = FALSE;
 }
+
+#if (CFG_SUPPORT_HOST_OFFLOAD == 1)
+static void *pcieAllocRxBlkBuf(struct GL_HIF_INFO *prHifInfo,
+			       struct RTMP_DMABUF *prDmaBuf,
+			       uint32_t u4Num, uint32_t u4Idx)
+{
+	struct sk_buff *prSkb;
+	struct RX_CTRL_BLK *prRcb;
+	dma_addr_t rAddr;
+
+	if (u4Num != RX_RING_DATA_IDX_0 && u4Num != RX_RING_DATA1_IDX_2)
+		return pcieAllocRxBuf(prHifInfo, prDmaBuf, u4Num, u4Idx);
+
+	prRcb = halMawdGetFreeRcbBlk(prHifInfo);
+	if (!prRcb) {
+		DBGLOG(HAL, ERROR, "no rcb resource\n",
+		       prDmaBuf->AllocSize);
+		prDmaBuf->AllocPa = 0;
+		prDmaBuf->AllocVa = NULL;
+		return NULL;
+	}
+	prSkb = prRcb->prSkb;
+
+	prDmaBuf->AllocVa = (void *)prSkb->data;
+	memset(prDmaBuf->AllocVa, 0, prDmaBuf->AllocSize);
+
+	rAddr = KAL_DMA_MAP_SINGLE(prHifInfo->prDmaDev, prDmaBuf->AllocVa,
+				   prDmaBuf->AllocSize, KAL_DMA_FROM_DEVICE);
+	if (KAL_DMA_MAPPING_ERROR(prHifInfo->prDmaDev, rAddr)) {
+		DBGLOG(HAL, ERROR, "sk_buff dma mapping error!\n");
+		return NULL;
+	}
+
+	prDmaBuf->AllocPa = (phys_addr_t)rAddr;
+
+	halMawdHashAdd(prHifInfo, (uint64_t)rAddr, prSkb, prRcb);
+
+	return (void *)prSkb;
+}
+
+static void pcieUnmapRxBlkBuf(struct GL_HIF_INFO *prHifInfo,
+			      phys_addr_t rDmaAddr, uint32_t u4Len)
+{
+	KAL_DMA_UNMAP_SINGLE(prHifInfo->prDmaDev,
+			     (dma_addr_t)rDmaAddr,
+			     u4Len, KAL_DMA_FROM_DEVICE);
+
+	halMawdHashDel(prHifInfo, (uint64_t)rDmaAddr);
+}
+
+static void pcieReleaseRxBlkBuf(struct GL_HIF_INFO *prHifInfo,
+				void *pvPacket, uint32_t u4Num)
+{
+	if (u4Num == RX_RING_DATA_IDX_0 || u4Num == RX_RING_DATA1_IDX_2)
+		return;
+
+	pcieFreePacket(prHifInfo, pvPacket, u4Num);
+}
+#endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */

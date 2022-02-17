@@ -140,7 +140,8 @@ struct HIF_MEM_OPS {
 	void (*freeDesc)(struct GL_HIF_INFO *prHifInfo,
 			 struct RTMP_DMABUF *prDescRing);
 	void (*freeBuf)(void *pucSrc, uint32_t u4Len);
-	void (*freePacket)(void *pvPacket);
+	void (*freePacket)(struct GL_HIF_INFO *prHifInfo,
+			   void *pvPacket, uint32_t u4Num);
 	void (*dumpTx)(struct GL_HIF_INFO *prHifInfo,
 		       struct RTMP_TX_RING *prTxRing,
 		       uint32_t u4Idx, uint32_t u4DumpLen);
@@ -186,6 +187,28 @@ struct GL_HIF_INFO {
 	/* Shared memory for RX descriptors */
 	struct RTMP_DMABUF RxDescRing[NUM_OF_RX_RING];
 	struct RTMP_RX_RING RxRing[NUM_OF_RX_RING];
+
+#if (CFG_SUPPORT_HOST_OFFLOAD == 1)
+	/* MAWD */
+	struct RTMP_DMABUF HifTxDescRing[NUM_OF_TX_RING];
+	struct RTMP_TX_RING MawdTxRing[NUM_OF_TX_RING];
+	struct RTMP_DMABUF ErrRptRing;
+	uint32_t u4MawdL2TblCnt;
+
+	/* RRO */
+	struct RTMP_DMABUF RxBlkDescRing;
+	struct RTMP_RX_RING RxBlkRing;
+	struct RTMP_DMABUF BaBitmapCache;
+	struct RTMP_DMABUF AddrArray;
+	struct RTMP_DMABUF IndCmdRing;
+	struct RTMP_DMABUF AckSnCmdRing;
+	struct list_head rRcbUsedList;
+	struct list_head rRcbFreeList;
+	struct hlist_head arRcbHTbl[RRO_PREALLOC_RX_BUF_NUM];
+	uint32_t u4RroMagicCnt;
+	uint32_t u4IndCmdLastDmaIdx;
+	uint32_t u4MawdIntStatus;
+#endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
 
 	u_int8_t fgIntReadClear;
 	u_int8_t fgMbxReadClear;
@@ -272,6 +295,33 @@ struct BUS_INFO {
 	/* rx wfdma_1 ring ext control base address */
 	const uint32_t host_wfdma1_rx_ring_ext_ctrl_base;
 #endif /* CFG_SUPPORT_CONNAC2X == 1 */
+
+#if (CFG_SUPPORT_HOST_OFFLOAD == 1)
+	/* MAWD */
+	const uint32_t mawd_array_base_l;
+	const uint32_t mawd_array_base_m;
+	const uint32_t mawd_rx_blk_ctrl0;
+	const uint32_t mawd_rx_blk_ctrl1;
+	const uint32_t mawd_rx_blk_ctrl2;
+	const uint32_t mawd_ring_ctrl0;
+	const uint32_t mawd_ring_ctrl1;
+	const uint32_t mawd_ring_ctrl2;
+	const uint32_t mawd_ring_ctrl3;
+	const uint32_t mawd_ring_ctrl4;
+	const uint32_t mawd_hif_txd_ctrl0;
+	const uint32_t mawd_hif_txd_ctrl1;
+	const uint32_t mawd_hif_txd_ctrl2;
+	const uint32_t mawd_err_rpt_ctrl0;
+	const uint32_t mawd_err_rpt_ctrl1;
+	const uint32_t mawd_err_rpt_ctrl2;
+	const uint32_t mawd_settings0;
+	const uint32_t mawd_settings1;
+	const uint32_t mawd_settings2;
+	const uint32_t mawd_settings3;
+	const uint32_t mawd_settings4;
+	const uint32_t mawd_settings5;
+	const uint32_t mawd_settings6;
+#endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
 
 	struct wfdma_group_info *wfmda_host_tx_group;
 	const uint32_t wfmda_host_tx_group_len;

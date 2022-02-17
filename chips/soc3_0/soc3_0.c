@@ -427,6 +427,12 @@ static uint8_t soc3_0SetRxRingHwAddr(struct RTMP_RX_RING *prRxRing,
 		prRxRing->hw_cnt_addr =
 			prBusInfo->host_rx_ring_cnt_addr + offset;
 	}
+	prRxRing->hw_cidx_mask = BITS(0, 12);
+	prRxRing->hw_cidx_shift = 0;
+	prRxRing->hw_didx_mask = BITS(0, 12);
+	prRxRing->hw_didx_shift = 0;
+	prRxRing->hw_cnt_mask = BITS(0, 12);
+	prRxRing->hw_cnt_shift = 0;
 
 	return TRUE;
 }
