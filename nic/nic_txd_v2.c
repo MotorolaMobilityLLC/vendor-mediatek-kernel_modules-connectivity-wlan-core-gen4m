@@ -302,7 +302,7 @@ void nic_txd_v2_compose(
 	struct BSS_INFO *prBssInfo;
 	u_int8_t ucEtherTypeOffsetInWord;
 	u_int32_t u4TxDescAndPaddingLength;
-	u_int8_t ucTarQueue, ucTarPort;
+	u_int8_t ucWmmQueSet, ucTarQueue, ucTarPort;
 #if ((CFG_SISO_SW_DEVELOP == 1) || (CFG_SUPPORT_SPE_IDX_CONTROL == 1))
 	enum ENUM_WF_PATH_FAVOR_T eWfPathFavor;
 #endif
@@ -339,10 +339,20 @@ void nic_txd_v2_compose(
 	} else
 #endif
 	{
+		ucWmmQueSet = prBssInfo->ucWmmQueSet;
+		if (fgIsTemplate != TRUE
+			&& prMsduInfo->ucPacketType == TX_PACKET_TYPE_DATA
+			&& ucWmmQueSet != prMsduInfo->ucWmmQueSet) {
+			DBGLOG(RSN, ERROR,
+				"ucStaRecIndex:%x ucWmmQueSet mismatch[%d,%d]\n",
+				prMsduInfo->ucStaRecIndex,
+				ucWmmQueSet, prMsduInfo->ucWmmQueSet);
+		}
+
 		ucTarQueue = nicTxGetTxDestQIdxByTc(prMsduInfo->ucTC);
 		if (ucTarPort == PORT_INDEX_LMAC)
 			ucTarQueue +=
-				(prBssInfo->ucWmmQueSet * WMM_AC_INDEX_NUM);
+				(ucWmmQueSet * WMM_AC_INDEX_NUM);
 	}
 
 #if (CFG_SUPPORT_DMASHDL_SYSDVT)
