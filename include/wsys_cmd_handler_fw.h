@@ -1216,7 +1216,8 @@ struct CMD_SCAN_REQ_V2 {
 	uint8_t		 ucBssidMatchSsidInd[CFG_SCAN_OOB_MAX_NUM];
 	uint8_t		 aucPadding_1[3];
 	uint32_t	 u4ScnFuncMaskExtend;
-	uint8_t		 aucPadding_3[24];
+	uint8_t          ucScnSourceMask;
+	uint8_t		 aucPadding_3[23];
 };
 
 /* TLV for CMD_ID_SCAN_REQ_V2*/

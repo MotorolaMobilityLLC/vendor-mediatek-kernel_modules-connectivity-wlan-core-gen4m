@@ -921,7 +921,8 @@ void scanReportBss2Cfg80211(IN struct ADAPTER *prAdapter,
 			    IN struct BSS_DESC *SpecificprBssDesc);
 
 bool scnEnableSplitScan(struct ADAPTER *prAdapter,
-				uint8_t ucBssIndex);
+				uint8_t ucBssIndex,
+				struct CMD_SCAN_REQ_V2 *prCmdScanReq);
 
 /*----------------------------------------------------------------------------*/
 /* Routines in scan_fsm.c                                                     */
