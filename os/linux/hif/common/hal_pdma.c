@@ -2280,38 +2280,86 @@ bool halWpdmaWriteMsdu(struct GLUE_INFO *prGlueInfo,
 	uint8_t *pucSrc;
 	uint32_t u4TotalLen;
 
+	uint32_t u4TxDescAppendSize;
+
 	ASSERT(prGlueInfo);
 	ASSERT(prMsduInfo);
 
 	prHifInfo = &prGlueInfo->rHifInfo;
 	prMemOps = &prHifInfo->rMemOps;
 	prSkb = (struct sk_buff *)prMsduInfo->prPacket;
-	pucSrc = prSkb->data;
-	u4TotalLen = prSkb->len;
 
-	/* Acquire MSDU token */
-	prToken = halAcquireMsduToken(prGlueInfo->prAdapter);
-	if (!prToken) {
-		DBGLOG(HAL, ERROR, "Write MSDU acquire token fail\n");
+	if (prSkb == NULL || prSkb->data == NULL) {
+		DBGLOG(HAL, ERROR, "prSkb is 0x%p\n", prSkb);
+
+		if (prCurList) {
+			list_del(prCurList);
+			prHifInfo->u4TxDataQLen--;
+		}
+		halWpdamFreeMsdu(prGlueInfo, prMsduInfo, true);
+
 		return false;
 	}
 
-	/* Use MsduInfo to select TxRing */
-	prToken->prMsduInfo = prMsduInfo;
+	pucSrc = prSkb->data;
+
+	u4TotalLen = prSkb->len;
+
+	if (prGlueInfo->prAdapter != NULL &&
+		prGlueInfo->prAdapter->chip_info != NULL) {
+
+		u4TxDescAppendSize =
+			prGlueInfo->prAdapter->chip_info->txd_append_size;
+	} else {
+		DBGLOG(HAL, ERROR, "prGlueInfo->prAdapter is null\n");
+
+		if (prCurList) {
+			list_del(prCurList);
+			prHifInfo->u4TxDataQLen--;
+		}
+		halWpdamFreeMsdu(prGlueInfo, prMsduInfo, true);
+
+		return false;
+	}
+
+	if (u4TotalLen <= (AXI_TX_MAX_SIZE_PER_FRAME + u4TxDescAppendSize)) {
+
+		/* Acquire MSDU token */
+		prToken = halAcquireMsduToken(prGlueInfo->prAdapter);
+		if (!prToken) {
+			DBGLOG(HAL, ERROR, "Write MSDU acquire token fail\n");
+			return false;
+		}
+
+		/* Use MsduInfo to select TxRing */
+		prToken->prMsduInfo = prMsduInfo;
 
 #if HIF_TX_PREALLOC_DATA_BUFFER
-	if (prMemOps->copyTxData)
-		prMemOps->copyTxData(prToken, pucSrc, u4TotalLen);
+		if (prMemOps->copyTxData)
+			prMemOps->copyTxData(prToken, pucSrc, u4TotalLen);
 #else
-	prToken->prPacket = pucSrc;
-	prToken->u4DmaLength = u4TotalLen;
-	prMsduInfo->prToken = prToken;
+		prToken->prPacket = pucSrc;
+		prToken->u4DmaLength = u4TotalLen;
+		prMsduInfo->prToken = prToken;
 #endif
 
-	if (!halWpdmaWriteData(prGlueInfo, prMsduInfo, prToken,
-			       prToken, 0, 1)) {
-		halReturnMsduToken(prGlueInfo->prAdapter, prToken->u4Token);
-		return false;
+		if (!halWpdmaWriteData(prGlueInfo, prMsduInfo, prToken,
+			prToken, 0, 1)) {
+			halReturnMsduToken(prGlueInfo->prAdapter,
+				prToken->u4Token);
+			return false;
+		}
+
+	} else {
+		DBGLOG(HAL, ERROR, "u4Len=%u, 0x%p, txd_append_size=%d\n",
+			u4TotalLen, prSkb,
+			prGlueInfo->prAdapter->chip_info->txd_append_size);
+
+		DBGLOG(HAL, ERROR, "%u,%u,%u,%u,%u,%u,%u,%u\n",
+			prMsduInfo->eSrc, prMsduInfo->ucUserPriority,
+			prMsduInfo->ucTC, prMsduInfo->ucPacketType,
+			prMsduInfo->ucStaRecIndex, prMsduInfo->ucBssIndex,
+			prMsduInfo->ucWlanIndex, prMsduInfo->ucPacketFormat);
 	}
 
 	if (prCurList) {
