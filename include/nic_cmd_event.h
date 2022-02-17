@@ -1649,6 +1649,7 @@ enum ENUM_PWR_LIMIT_TYPE {
 	PWR_LIMIT_TYPE_COMP_11AC = 0,
 	PWR_LIMIT_TYPE_COMP_11AG_11N = 1,
 	PWR_LIMIT_TYPE_COMP_11AX = 2,
+	PWR_LIMIT_TYPE_COMP_ANT = 3,
 	PWR_LIMIT_TYPE_COMP_NUM,
 };
 
@@ -1705,6 +1706,20 @@ struct CMD_CHANNEL_POWER_LIMIT_HE { /*HE SU design*/
 
 };
 
+#if CFG_SUPPORT_DYNAMIC_PWR_LIMIT_ANT_TAG
+
+#define POWER_LIMIT_ANT_CONFIG_NUM 60
+
+struct CMD_CHANNEL_POWER_LIMIT_ANT {
+
+	int8_t cTagIdx;  /* -1 means end */
+	int8_t cBandIdx;
+	int8_t cAntIdx;
+	int8_t cValue;
+};
+
+#endif
+
 struct CMD_SET_COUNTRY_CHANNEL_POWER_LIMIT {
     /* D-WORD 0 */
 	uint16_t u2CountryCode;
@@ -1716,7 +1731,8 @@ struct CMD_SET_COUNTRY_CHANNEL_POWER_LIMIT {
 	uint8_t ucBandIdx;
 	/* u1LimitType: enum ENUM_COUNTRY_CHANNEL_TXPOWER_LIMIT_FORMAT */
 	uint8_t ucLimitType;
-	uint8_t au1Reserved[1];
+	uint8_t ucVersion;
+
 	union {
 		/*Channel power limit entries to be set*/
 		struct CMD_CHANNEL_POWER_LIMIT
@@ -1724,6 +1740,10 @@ struct CMD_SET_COUNTRY_CHANNEL_POWER_LIMIT {
 		/*Channel HE power limit entries to be set*/
 		struct CMD_CHANNEL_POWER_LIMIT_HE
 			rChPwrLimtHE[MAX_CMD_SUPPORT_CHANNEL_NUM];
+#if CFG_SUPPORT_DYNAMIC_PWR_LIMIT_ANT_TAG
+		struct CMD_CHANNEL_POWER_LIMIT_ANT
+			rChPwrLimtAnt[POWER_LIMIT_ANT_CONFIG_NUM];
+#endif
 	} u;
 
 };

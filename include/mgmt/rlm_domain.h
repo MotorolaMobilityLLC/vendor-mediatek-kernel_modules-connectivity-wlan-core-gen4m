@@ -627,6 +627,9 @@
 #define	PWR_CFG_PRAM_NUM_AC			9
 #endif /* CFG_SUPPORT_DYNA_TX_PWR_CTRL_OFDM_SETTING */
 
+#define PWR_CFG_BACKOFF_MIN		-64
+#define PWR_CFG_BACKOFF_MAX		64
+
 enum ENUM_TX_POWER_CTRL_LIST_TYPE {
 	PWR_CTRL_TYPE_DEFAULT_LIST = 0,
 	PWR_CTRL_TYPE_DYNAMIC_LIST,
@@ -713,6 +716,32 @@ enum ENUM_POWER_LIMIT_HE {
 	PWR_LIMIT_HE_NUM
 };
 
+
+#if CFG_SUPPORT_DYNAMIC_PWR_LIMIT_ANT_TAG
+
+/* Revise channel power limit by scenario with parameter
+ * (WF05G, WF02G4, WF15G, WF12G4)
+ */
+enum ENUM_POWER_ANT_TAG {
+	POWER_ANT_ALL_T = 0,
+	POWER_ANT_MIMO_1T,
+	POWER_ANT_MIMO_2T,
+	POWER_ANT_TAG_NUM
+};
+
+enum ENUM_POWER_ANT_BAND {
+	POWER_ANT_2G4_BAND = 0,
+	POWER_ANT_5G_BAND,
+	POWER_ANT_BAND_NUM
+};
+
+enum ENUM_POWER_ANT_PARA {
+	POWER_ANT_WF0 = 0,
+	POWER_ANT_WF1,
+	POWER_ANT_NUM
+};
+#endif
+
 struct TX_PWR_CTRL_CHANNEL_SETTING {
 	enum ENUM_TX_POWER_CTRL_CHANNEL_TYPE eChnlType;
 	uint8_t channelParam[2];
@@ -724,6 +753,14 @@ struct TX_PWR_CTRL_CHANNEL_SETTING {
 	int8_t i8PwrLimitHE[PWR_LIMIT_HE_NUM];
 };
 
+
+#if CFG_SUPPORT_DYNAMIC_PWR_LIMIT_ANT_TAG
+struct TX_PWR_CTRL_ANT_SETTING {
+	int8_t aiPwrAnt2G4[POWER_ANT_NUM];
+	int8_t aiPwrAnt5G[POWER_ANT_NUM];
+};
+#endif
+
 struct TX_PWR_CTRL_ELEMENT {
 	struct LINK_ENTRY node;
 	u_int8_t fgApplied;
@@ -731,7 +768,13 @@ struct TX_PWR_CTRL_ELEMENT {
 	uint8_t index; /* scenario index */
 	enum ENUM_TX_POWER_CTRL_TYPE eCtrlType;
 	uint8_t settingCount;
+	/* channel setting count. [.....] means one channel setting */
+
+#if CFG_SUPPORT_DYNAMIC_PWR_LIMIT_ANT_TAG
+	struct TX_PWR_CTRL_ANT_SETTING aiPwrAnt[POWER_ANT_TAG_NUM];
+#endif
 	struct TX_PWR_CTRL_CHANNEL_SETTING rChlSettingList[1];
+	/* always keep it the last one. */
 };
 
 struct PARAM_TX_PWR_CTRL_IOCTL {
@@ -740,7 +783,6 @@ struct PARAM_TX_PWR_CTRL_IOCTL {
 	uint8_t index;
 	uint8_t *newSetting;
 };
-
 #endif
 
 enum ENUM_POWER_LIMIT_SUBBAND {
@@ -1142,6 +1184,19 @@ struct TX_PWR_CTRL_ELEMENT *txPwrCtrlFindElement(
 				enum ENUM_TX_POWER_CTRL_LIST_TYPE eListType);
 void txPwrCtrlAddElement(struct ADAPTER *prAdapter,
 				struct TX_PWR_CTRL_ELEMENT *prElement);
+
+#if CFG_SUPPORT_DYNAMIC_PWR_LIMIT_ANT_TAG
+int32_t txPwrParseTagMimo1T(
+	char *pStart, char *pEnd, uint8_t cTagParaNum,
+	struct TX_PWR_CTRL_ELEMENT *pRecord);
+int32_t txPwrParseTagMimo2T(
+	char *pStart, char *pEnd, uint8_t cTagParaNum,
+	struct TX_PWR_CTRL_ELEMENT *pRecord);
+int32_t txPwrParseTagAllT(
+	char *pStart, char *pEnd, uint8_t cTagParaNum,
+	struct TX_PWR_CTRL_ELEMENT *pRecord);
+#endif
+
 #endif
 /*******************************************************************************
  *   F U N C T I O N S
