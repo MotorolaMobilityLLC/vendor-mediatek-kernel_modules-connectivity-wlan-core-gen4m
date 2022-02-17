@@ -7517,6 +7517,8 @@ int priv_driver_set_chip_config(IN struct net_device *prNetDev,
 			uint32_t idx = kalStrLen("set_chip FrdHeTrig2Host ");
 
 			prAdapter->fgEnShowHETrigger = pcCommand[idx] - 0x30;
+			DBGLOG(REQ, STATE, "set flag fgEnShowHETrigger:%x\n",
+			prAdapter->fgEnShowHETrigger);
 		}
 #endif /* CFG_SUPPORT_802_11AX  == 1 */
 
