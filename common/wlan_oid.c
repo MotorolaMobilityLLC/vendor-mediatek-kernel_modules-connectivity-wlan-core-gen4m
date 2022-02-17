@@ -1417,6 +1417,29 @@ wlanoidSetConnect(IN struct ADAPTER *prAdapter,
 		}
 	}
 
+	/* Check former assocIE to prevent memory leakage in situations like
+	* upper layer requests connection without disconnecting first, ...
+	*/
+	if (prConnSettings->assocIeLen > 0) {
+		kalMemFree(prConnSettings->pucAssocIEs, VIR_MEM_TYPE,
+			prConnSettings->assocIeLen);
+		prConnSettings->assocIeLen = 0;
+	}
+
+	if (pParamConn->u4IesLen > 0) {
+		prConnSettings->assocIeLen = pParamConn->u4IesLen;
+		prConnSettings->pucAssocIEs =
+			kalMemAlloc(prConnSettings->assocIeLen, VIR_MEM_TYPE);
+		if (prConnSettings->pucAssocIEs) {
+			kalMemCopy(prConnSettings->pucAssocIEs,
+				pParamConn->pucIEs, prConnSettings->assocIeLen);
+		} else {
+			DBGLOG(INIT, INFO,
+				"allocate memory for prConnSettings->pucAssocIEs failed!\n");
+				prConnSettings->assocIeLen = 0;
+		}
+	}
+
 	if (fgEqualSsid || fgEqualBssid)
 		prAisAbortMsg->fgDelayIndication = TRUE;
 	else
