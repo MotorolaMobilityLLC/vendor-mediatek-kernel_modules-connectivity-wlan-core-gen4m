@@ -770,7 +770,9 @@ void scanRemoveBssDescsByPolicy(IN struct ADAPTER *prAdapter,
 
 			if (CHECK_FOR_TIMEOUT(rCurrentTime,
 				prBssDesc->rUpdateTime,
-				SEC_TO_SYSTIME(SCN_BSS_DESC_STALE_SEC))) {
+				SEC_TO_SYSTIME(wlanWfdEnabled(prAdapter) ?
+					SCN_BSS_DESC_STALE_SEC_WFD :
+					SCN_BSS_DESC_STALE_SEC))) {
 
 #if 0 /* TODO: Remove this */
 				log_dbg(SCN, TRACE, "Remove TIMEOUT BSS DESC(%#x):MAC: "
@@ -1945,6 +1947,7 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 				}
 			}
 #endif
+			scanCheckAdaptive11rIE(pucIE, prBssDesc);
 			break;
 		}
 #if (CFG_SUPPORT_802_11AX == 1)
@@ -3459,7 +3462,7 @@ SCN_BSS_JOIN_FAIL_RESET_STEP
 				 * than us.
 				 */
 #if CFG_SUPPORT_NCHO
-				if (prAdapter->rNchoInfo.fgECHOEnabled
+				if (prAdapter->rNchoInfo.fgNCHOEnabled
 					== TRUE) {
 					ucRCPIStep = 2 * prAdapter
 						->rNchoInfo.i4RoamDelta;
@@ -4004,9 +4007,6 @@ void scanRemoveBssDescFromList(IN struct LINK *prBSSDescList,
 		/* Support AP Selection */
 		if (!prBssDesc->prBlack)
 			aisQueryBlackList(prAdapter, prBssDesc);
-		if (prBssDesc->prBlack)
-			prBssDesc->prBlack->u4DisapperTime =
-				(uint32_t)kalGetBootTime();
 
 		/* Remove this BSS Desc from the Ess Desc List */
 		for (j = 0; j < KAL_AIS_NUM; j++) {
@@ -4198,3 +4198,43 @@ void scanParseVHTOpIE(IN uint8_t *pucIE, IN struct BSS_DESC *prBssDesc)
 			   &prBssDesc->ucCenterFreqS2,
 			   (uint8_t *)&prBssDesc->eChannelWidth);
 }
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * @brief Check if Adaptive 11r  IE exists in Vendor Cisco IE.
+ *
+ * @param[in] pucBuf     Pointer to the Vendor IE.
+ * @param[in] prBssDesc  Pointer to the BSS_DESC structure.
+ *
+ * @return (none)
+ */
+/*----------------------------------------------------------------------------*/
+void scanCheckAdaptive11rIE(IN uint8_t *pucBuf, IN struct BSS_DESC *prBssDesc)
+{
+	uint32_t oui;
+	struct IE_VENDOR_ADAPTIVE_11R_IE *ie;
+	uint8_t data;
+	uint16_t len;
+
+	if (pucBuf == NULL || prBssDesc == NULL) {
+		DBGLOG(SCN, WARN, "adp11r pucBuf %p, prBssDesc %p, skip!\n",
+			pucBuf, prBssDesc);
+		return;
+	}
+
+	ie = (struct IE_VENDOR_ADAPTIVE_11R_IE *) pucBuf;
+	len = ie->ucLength;
+	if (len < 5 || len > 8)
+		return;
+
+	WLAN_GET_FIELD_BE24(ie->aucOui, &oui);
+	if (oui != VENDOR_IE_CISCO_OUI ||
+	    *(ie->aucVendorType) != VENDOR_IE_CISCO_TYPE)
+		return;
+
+	data = *(ie->pucData);
+	prBssDesc->ucIsAdaptive11r = data & BIT(0);
+	DBGLOG(SCN, TRACE, "BSSDesc [" MACSTR "] adaptive11r = %d\n",
+		MAC2STR(prBssDesc->aucBSSID), prBssDesc->ucIsAdaptive11r);
+}
+

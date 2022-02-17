@@ -1401,7 +1401,8 @@ saaSendDisconnectMsgHandler(IN struct ADAPTER *prAdapter,
 				MID_SAA_AIS_FSM_ABORT;
 			prAisAbortMsg->ucReasonOfDisconnect =
 				DISCONNECT_REASON_CODE_DEAUTHENTICATED;
-			prAisAbortMsg->fgDelayIndication = FALSE;
+			prAisAbortMsg->fgDelayIndication =
+				!cnmP2pIsActive(prAdapter);
 			prAisAbortMsg->ucBssIndex =
 				prStaRec->ucBssIndex;
 			mboxSendMsg(prAdapter, MBOX_ID_0,
@@ -1432,7 +1433,8 @@ saaSendDisconnectMsgHandler(IN struct ADAPTER *prAdapter,
 				MID_SAA_AIS_FSM_ABORT;
 			prAisAbortMsg->ucReasonOfDisconnect =
 				DISCONNECT_REASON_CODE_DISASSOCIATED;
-			prAisAbortMsg->fgDelayIndication = FALSE;
+			prAisAbortMsg->fgDelayIndication =
+				!cnmP2pIsActive(prAdapter);
 			prAisAbortMsg->ucBssIndex =
 				prStaRec->ucBssIndex;
 			mboxSendMsg(prAdapter, MBOX_ID_0,

@@ -495,6 +495,9 @@ void rlmReviseMaxBw(
 void rlmSetMaxTxPwrLimit(IN struct ADAPTER *prAdapter, int8_t cLimit,
 			 uint8_t ucEnable);
 
+void rlmSyncExtCapIEwithSupplicant(uint8_t *aucCapabilities,
+	const uint8_t *supExtCapIEs, size_t IElen);
+
 /*******************************************************************************
  *                              F U N C T I O N S
  *******************************************************************************

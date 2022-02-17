@@ -4134,19 +4134,13 @@ uint32_t nicRxProcessActionFrame(IN struct ADAPTER *
 		}
 #endif
 #if CFG_SUPPORT_NCHO
-		{
-			struct BSS_INFO *prBssInfo;
-
-			prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
-				prSwRfb->prStaRec->ucBssIndex);
-			if (prBssInfo->eNetworkType == NETWORK_TYPE_AIS) {
-				if (prAdapter->rNchoInfo.fgECHOEnabled == TRUE
-				    && prAdapter->rNchoInfo.u4WesMode == TRUE) {
-					aisFuncValidateRxActionFrame(prAdapter,
-						prSwRfb);
-					DBGLOG(INIT, INFO,
-					       "NCHO CATEGORY_VENDOR_SPECIFIC_ACTION\n");
-				}
+		if (prBssInfo && prBssInfo->eNetworkType == NETWORK_TYPE_AIS) {
+			if (prAdapter->rNchoInfo.fgNCHOEnabled == TRUE
+			    && prAdapter->rNchoInfo.u4WesMode == TRUE) {
+				aisFuncValidateRxActionFrame(prAdapter,
+					prSwRfb);
+				DBGLOG(INIT, INFO,
+				       "NCHO CATEGORY_VENDOR_SPECIFIC_ACTION\n");
 			}
 		}
 #endif

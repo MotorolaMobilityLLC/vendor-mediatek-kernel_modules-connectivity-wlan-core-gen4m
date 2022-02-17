@@ -522,6 +522,7 @@ void scnFsmMsgAbort(IN struct ADAPTER *prAdapter, IN struct MSG_HDR *prMsgHdr)
 			else
 				eStatus = SCAN_STATUS_DONE;
 			scnFsmGenerateScanDoneMsg(prAdapter,
+				prScanParam->eMsgId,
 				prScanParam->ucSeqNum,
 				prScanParam->ucBssIndex,
 				eStatus);
@@ -613,12 +614,7 @@ void scnFsmHandleScanMsg(IN struct ADAPTER *prAdapter,
 	prScanParam->u2ChannelDwellTime = prScanReqMsg->u2ChannelDwellTime;
 	prScanParam->u2TimeoutValue = prScanReqMsg->u2TimeoutValue;
 	prScanParam->ucSeqNum = prScanReqMsg->ucSeqNum;
-
-	if (prScanReqMsg->rMsgHdr.eMsgId == MID_RLM_SCN_SCAN_REQ)
-		prScanParam->fgIsObssScan = TRUE;
-	else
-		prScanParam->fgIsObssScan = FALSE;
-
+	prScanParam->eMsgId = prScanReqMsg->rMsgHdr.eMsgId;
 	prScanParam->fgIsScanV2 = FALSE;
 }
 
@@ -704,12 +700,7 @@ void scnFsmHandleScanMsgV2(IN struct ADAPTER *prAdapter,
 		prScanReqMsg->u2ChannelMinDwellTime;
 	prScanParam->u2TimeoutValue = prScanReqMsg->u2TimeoutValue;
 	prScanParam->ucSeqNum = prScanReqMsg->ucSeqNum;
-
-	if (prScanReqMsg->rMsgHdr.eMsgId == MID_RLM_SCN_SCAN_REQ_V2)
-		prScanParam->fgIsObssScan = TRUE;
-	else
-		prScanParam->fgIsObssScan = FALSE;
-
+	prScanParam->eMsgId = prScanReqMsg->rMsgHdr.eMsgId;
 	prScanParam->fgIsScanV2 = TRUE;
 }
 
@@ -780,7 +771,8 @@ void scnFsmRemovePendingMsg(IN struct ADAPTER *prAdapter, IN uint8_t ucSeqNum,
 		if (prRemoveLinkEntry) {
 			if (fgIsRemovingScan == TRUE) {
 				/* generate scan-done event for caller */
-				scnFsmGenerateScanDoneMsg(prAdapter, ucSeqNum,
+				scnFsmGenerateScanDoneMsg(prAdapter,
+					prPendingMsgHdr->eMsgId, ucSeqNum,
 					ucBssIndex, SCAN_STATUS_CANCELLED);
 			}
 
@@ -871,8 +863,8 @@ void scnEventScanDone(IN struct ADAPTER *prAdapter,
 		} while (0)
 
 		print_info(SCN, INFO, "Channel  : %s\n", aucChannelNum);
-		print_info(SCN, LOUD, "IdleTime : %s\n", au2ChannelIdleTime);
-		print_info(SCN, LOUD, "MdrdyCnt : %s\n", aucChannelMDRDYCnt);
+		print_info(SCN, INFO, "IdleTime : %s\n", au2ChannelIdleTime);
+		print_info(SCN, INFO, "MdrdyCnt : %s\n", aucChannelMDRDYCnt);
 		print_info(SCN, INFO, "BAndPCnt : %s\n", aucChannelBAndPCnt);
 		if (prScanDone->ucScanDoneVersion >= 4)
 			print_info(SCN, LOUD,
@@ -903,7 +895,8 @@ void scnEventScanDone(IN struct ADAPTER *prAdapter,
 		       SCN_RM_POLICY_EXCLUDE_CONNECTED | SCN_RM_POLICY_TIMEOUT);
 
 		/* generate scan-done event for caller */
-		scnFsmGenerateScanDoneMsg(prAdapter, prScanParam->ucSeqNum,
+		scnFsmGenerateScanDoneMsg(prAdapter,
+			prScanParam->eMsgId, prScanParam->ucSeqNum,
 			prScanParam->ucBssIndex, SCAN_STATUS_DONE);
 
 		/* switch to next pending scan */
@@ -926,7 +919,7 @@ void scnEventScanDone(IN struct ADAPTER *prAdapter,
 /*----------------------------------------------------------------------------*/
 void
 scnFsmGenerateScanDoneMsg(IN struct ADAPTER *prAdapter,
-	IN uint8_t ucSeqNum, IN uint8_t ucBssIndex,
+	IN enum ENUM_MSG_ID eMsgId, IN uint8_t ucSeqNum, IN uint8_t ucBssIndex,
 	IN enum ENUM_SCAN_STATUS eScanStatus)
 {
 	struct SCAN_INFO *prScanInfo;
@@ -945,31 +938,27 @@ scnFsmGenerateScanDoneMsg(IN struct ADAPTER *prAdapter,
 		return;
 	}
 
-	if (prScanParam->fgIsObssScan == TRUE) {
+	switch (eMsgId) {
+	case MID_AIS_SCN_SCAN_REQ:
+	case MID_AIS_SCN_SCAN_REQ_V2:
+		prScanDoneMsg->rMsgHdr.eMsgId = MID_SCN_AIS_SCAN_DONE;
+		break;
+	case MID_P2P_SCN_SCAN_REQ:
+	case MID_P2P_SCN_SCAN_REQ_V2:
+		prScanDoneMsg->rMsgHdr.eMsgId = MID_SCN_P2P_SCAN_DONE;
+		break;
+	case MID_BOW_SCN_SCAN_REQ:
+	case MID_BOW_SCN_SCAN_REQ_V2:
+		prScanDoneMsg->rMsgHdr.eMsgId = MID_SCN_BOW_SCAN_DONE;
+		break;
+	case MID_RLM_SCN_SCAN_REQ:
+	case MID_RLM_SCN_SCAN_REQ_V2:
 		prScanDoneMsg->rMsgHdr.eMsgId = MID_SCN_RLM_SCAN_DONE;
-	} else {
-		switch (GET_BSS_INFO_BY_INDEX(
-			prAdapter, ucBssIndex)->eNetworkType) {
-		case NETWORK_TYPE_AIS:
-			prScanDoneMsg->rMsgHdr.eMsgId = MID_SCN_AIS_SCAN_DONE;
-			break;
-
-		case NETWORK_TYPE_P2P:
-			prScanDoneMsg->rMsgHdr.eMsgId = MID_SCN_P2P_SCAN_DONE;
-			break;
-
-		case NETWORK_TYPE_BOW:
-			prScanDoneMsg->rMsgHdr.eMsgId = MID_SCN_BOW_SCAN_DONE;
-			break;
-
-		default:
-			log_dbg(SCN, LOUD,
-				"Unexpected Network Type: %d\n",
-				GET_BSS_INFO_BY_INDEX(
-					prAdapter, ucBssIndex)->eNetworkType);
-			ASSERT(0);
-			break;
-		}
+		break;
+	default:
+		log_dbg(SCN, ERROR, "Unexpected Network Type: %d\n");
+		cnmMemFree(prAdapter, prScanDoneMsg);
+		return;
 	}
 
 	prScanDoneMsg->ucSeqNum = ucSeqNum;

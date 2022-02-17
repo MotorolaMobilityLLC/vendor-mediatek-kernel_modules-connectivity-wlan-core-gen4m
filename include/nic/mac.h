@@ -1751,6 +1751,10 @@ enum BEACON_REPORT_DETAIL {
 #define VENDOR_IE_EPIGRAM_VHTTYPE2                  0x0408
 #define VENDOR_IE_EPIGRAM_VHTTYPE3                  0x0418
 
+/* Cisco IE */
+#define VENDOR_IE_CISCO_OUI                        0x004096
+#define VENDOR_IE_CISCO_TYPE                       0x2C
+
 #if CFG_SUPPORT_PASSPOINT
 #define VENDOR_OUI_TYPE_HS20                        16
 #endif /* CFG_SUPPORT_PASSPOINT */
@@ -2629,6 +2633,14 @@ struct IE_VENDOR_EPIGRAM_IE {
 	uint8_t ucLength;
 	uint8_t aucOui[3];
 	uint8_t aucVendorType[2];
+	uint8_t pucData[1];
+} __KAL_ATTRIB_PACKED__;
+
+struct IE_VENDOR_ADAPTIVE_11R_IE {
+	uint8_t ucId;
+	uint8_t ucLength;
+	uint8_t aucOui[3];
+	uint8_t aucVendorType[1];
 	uint8_t pucData[1];
 } __KAL_ATTRIB_PACKED__;
 

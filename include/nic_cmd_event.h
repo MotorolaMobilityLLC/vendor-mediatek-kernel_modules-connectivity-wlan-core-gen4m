@@ -2924,6 +2924,9 @@ struct EVENT_LOW_LATENCY_INFO {
 void nicCmdEventQueryMcrRead(IN struct ADAPTER *prAdapter,
 	IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf);
 
+void nicCmdEventQueryCfgRead(IN struct ADAPTER *prAdapter,
+	IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf);
+
 #if CFG_SUPPORT_QA_TOOL
 void nicCmdEventQueryRxStatistics(IN struct ADAPTER
 				  *prAdapter, IN struct CMD_INFO *prCmdInfo,

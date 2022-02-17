@@ -3846,6 +3846,12 @@ wlanoidSetNchoRoamScnChnl(IN struct ADAPTER *prAdapter,
 			  OUT uint32_t *pu4SetInfoLen);
 
 uint32_t
+wlanoidAddNchoRoamScnChnl(IN struct ADAPTER *prAdapter,
+			  IN void *pvSetBuffer,
+			  IN uint32_t u4SetBufferLen,
+			  OUT uint32_t *pu4SetInfoLen);
+
+uint32_t
 wlanoidQueryNchoRoamScnChnl(IN struct ADAPTER *prAdapter,
 			    OUT void *pvQueryBuffer,
 			    IN uint32_t u4QueryBufferLen,
@@ -3979,6 +3985,12 @@ wlanoidQueryNchoEnable(IN struct ADAPTER *prAdapter,
 		       OUT uint32_t *pu4QueryInfoLen);
 
 #endif /* CFG_SUPPORT_NCHO */
+
+uint32_t
+wlanoidAddRoamScnChnl(IN struct ADAPTER *prAdapter,
+		     IN void *pvSetBuffer,
+		     IN uint32_t u4SetBufferLen,
+		     OUT uint32_t *pu4SetInfoLen);
 
 uint32_t
 wlanoidAbortScan(IN struct ADAPTER *prAdapter,

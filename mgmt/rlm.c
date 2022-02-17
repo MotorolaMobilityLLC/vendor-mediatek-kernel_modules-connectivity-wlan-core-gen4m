@@ -903,11 +903,23 @@ static void rlmFillExtCapIE(struct ADAPTER *prAdapter,
 #endif
 	u_int8_t fg40mAllowed, fgAppendVhtCap;
 	struct STA_RECORD *prStaRec;
+	struct CONNECTION_SETTINGS *prConnSettings;
+	const uint8_t *extCapConn;
+	uint32_t extCapIeLen = 0;
 
 	ASSERT(prAdapter);
 	ASSERT(prMsduInfo);
 
 	fg40mAllowed = prBssInfo->fgAssoc40mBwAllowed;
+	prConnSettings = aisGetConnSettings(prAdapter, prBssInfo->ucBssIndex);
+	extCapConn = kalFindIeMatchMask(ELEM_ID_EXTENDED_CAP,
+				       prConnSettings->pucAssocIEs,
+				       prConnSettings->assocIeLen,
+				       NULL, 0, 0, NULL);
+	if (extCapConn) {
+		extCapIeLen = ELEM_HDR_LEN + RSN_IE(extCapConn)->ucLength;
+		DBGLOG_MEM8(SAA, INFO, extCapConn, extCapIeLen);
+	}
 
 #if CFG_SUPPORT_PASSPOINT
 	prHS20Info = aisGetHS20Info(prAdapter,
@@ -925,8 +937,7 @@ static void rlmFillExtCapIE(struct ADAPTER *prAdapter,
 	else
 		prHsExtCap->ucLength = 3 - ELEM_HDR_LEN;
 
-	kalMemZero(prHsExtCap->aucCapabilities,
-		   sizeof(prHsExtCap->aucCapabilities));
+	kalMemZero(prHsExtCap->aucCapabilities, ELEM_MAX_LEN_EXT_CAP);
 
 	prHsExtCap->aucCapabilities[0] = ELEM_EXT_CAP_DEFAULT_VAL;
 
@@ -994,6 +1005,11 @@ static void rlmFillExtCapIE(struct ADAPTER *prAdapter,
 		    ELEM_EXT_CAP_MBSSID_BIT);
 #endif
 
+	if ((extCapIeLen - ELEM_HDR_LEN) > prHsExtCap->ucLength)
+		prHsExtCap->ucLength = ELEM_MAX_LEN_EXT_CAP;
+	rlmSyncExtCapIEwithSupplicant(prHsExtCap->aucCapabilities,
+		extCapConn, extCapIeLen);
+
 	ASSERT(IE_SIZE(prHsExtCap) <= (ELEM_HDR_LEN + ELEM_MAX_LEN_EXT_CAP));
 
 	prMsduInfo->u2FrameLength += IE_SIZE(prHsExtCap);
@@ -1006,8 +1022,7 @@ static void rlmFillExtCapIE(struct ADAPTER *prAdapter,
 	prExtCap->ucId = ELEM_ID_EXTENDED_CAP;
 
 	prExtCap->ucLength = 3 - ELEM_HDR_LEN;
-	kalMemZero(prExtCap->aucCapabilities,
-		   sizeof(prExtCap->aucCapabilities));
+	kalMemZero(prExtCap->aucCapabilities, ELEM_MAX_LEN_EXT_CAP);
 
 	prExtCap->aucCapabilities[0] = ELEM_EXT_CAP_DEFAULT_VAL;
 
@@ -1067,10 +1082,27 @@ static void rlmFillExtCapIE(struct ADAPTER *prAdapter,
 				ELEM_EXT_CAP_MBSSID_BIT);
 #endif
 
+	if ((extCapIeLen - ELEM_HDR_LEN) > prExtCap->ucLength)
+		prExtCap->ucLength = ELEM_MAX_LEN_EXT_CAP;
+	rlmSyncExtCapIEwithSupplicant(prExtCap->aucCapabilities,
+		extCapConn, extCapIeLen);
+
 	ASSERT(IE_SIZE(prExtCap) <= (ELEM_HDR_LEN + ELEM_MAX_LEN_EXT_CAP));
 
 	prMsduInfo->u2FrameLength += IE_SIZE(prExtCap);
 #endif
+}
+
+void rlmSyncExtCapIEwithSupplicant(uint8_t *aucCapabilities,
+			const uint8_t *supExtCapIEs, size_t IElen) {
+	uint32_t i;
+
+	for (i = ELEM_HDR_LEN * 8; i < IElen * 8; i++) {
+		if (supExtCapIEs[i / 8] & BIT(i % 8)) {
+			SET_EXT_CAP(aucCapabilities, ELEM_MAX_LEN_EXT_CAP,
+			    i-ELEM_HDR_LEN*8);
+		}
+	}
 }
 
 /*----------------------------------------------------------------------------*/
