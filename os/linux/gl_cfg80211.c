@@ -5117,6 +5117,84 @@ int mtk_uninit_ap_role(struct GLUE_INFO *prGlueInfo,
 	return 0;
 }
 
+#if (CFG_SUPPORT_DFS_MASTER == 1)
+#if KERNEL_VERSION(3, 15, 0) <= CFG80211_VERSION_CODE
+int mtk_cfg_start_radar_detection(struct wiphy *wiphy,
+				  struct net_device *dev,
+				  struct cfg80211_chan_def *chandef,
+				  unsigned int cac_time_ms)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+
+	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wiphy);
+
+	if ((!prGlueInfo) || (prGlueInfo->u4ReadyFlag == 0)) {
+		DBGLOG(REQ, WARN, "driver is not ready\n");
+		return -EFAULT;
+	}
+
+	if (mtk_IsP2PNetDevice(prGlueInfo, dev) <= 0) {
+		DBGLOG(REQ, WARN, "STA doesn't support this function\n");
+		return -EFAULT;
+	}
+
+	return mtk_p2p_cfg80211_start_radar_detection(wiphy,
+						      dev,
+						      chandef,
+						      cac_time_ms);
+
+}
+#else
+int mtk_cfg_start_radar_detection(struct wiphy *wiphy,
+				  struct net_device *dev,
+				  struct cfg80211_chan_def *chandef)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+
+	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wiphy);
+
+	if ((!prGlueInfo) || (prGlueInfo->u4ReadyFlag == 0)) {
+		DBGLOG(REQ, WARN, "driver is not ready\n");
+		return -EFAULT;
+	}
+
+	if (mtk_IsP2PNetDevice(prGlueInfo, dev) <= 0) {
+		DBGLOG(REQ, WARN, "STA doesn't support this function\n");
+		return -EFAULT;
+	}
+
+	return mtk_p2p_cfg80211_start_radar_detection(wiphy, dev, chandef);
+
+}
+
+#endif
+
+
+#if KERNEL_VERSION(3, 13, 0) <= CFG80211_VERSION_CODE
+int mtk_cfg_channel_switch(struct wiphy *wiphy,
+			   struct net_device *dev,
+			   struct cfg80211_csa_settings *params)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+
+	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wiphy);
+
+	if ((!prGlueInfo) || (prGlueInfo->u4ReadyFlag == 0)) {
+		DBGLOG(REQ, WARN, "driver is not ready\n");
+		return -EFAULT;
+	}
+
+	if (mtk_IsP2PNetDevice(prGlueInfo, dev) <= 0) {
+		DBGLOG(REQ, WARN, "STA doesn't support this function\n");
+		return -EFAULT;
+	}
+
+	return mtk_p2p_cfg80211_channel_switch(wiphy, dev, params);
+
+}
+#endif
+#endif
+
 #if KERNEL_VERSION(4, 1, 0) <= CFG80211_VERSION_CODE
 struct wireless_dev *mtk_cfg_add_iface(struct wiphy *wiphy,
 				       const char *name,

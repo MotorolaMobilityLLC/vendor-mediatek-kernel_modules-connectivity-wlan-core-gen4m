@@ -659,6 +659,27 @@ int mtk_cfg_testmode_cmd(struct wiphy *wiphy, void *data,
 #endif
 #endif	/* CONFIG_NL80211_TESTMODE */
 
+#if (CFG_SUPPORT_DFS_MASTER == 1)
+#if KERNEL_VERSION(3, 15, 0) <= CFG80211_VERSION_CODE
+int mtk_cfg_start_radar_detection(struct wiphy *wiphy,
+				  struct net_device *dev,
+				  struct cfg80211_chan_def *chandef,
+				  unsigned int cac_time_ms);
+#else
+int mtk_cfg_start_radar_detection(struct wiphy *wiphy,
+				  struct net_device *dev,
+				  struct cfg80211_chan_def *chandef);
+#endif
+
+
+#if KERNEL_VERSION(3, 13, 0) <= CFG80211_VERSION_CODE
+int mtk_cfg_channel_switch(struct wiphy *wiphy,
+			   struct net_device *dev,
+			   struct cfg80211_csa_settings *params);
+#endif
+#endif
+
+
 #if (CFG_ENABLE_WIFI_DIRECT_CFG_80211 != 0)
 int mtk_cfg_change_bss(struct wiphy *wiphy,
 		       struct net_device *dev,
