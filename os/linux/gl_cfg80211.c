@@ -900,6 +900,8 @@ int mtk_cfg80211_scan(struct wiphy *wiphy,
 	}
 #endif
 
+	kalScanReqLog(request);
+
 	/* check if there is any pending scan/sched_scan not yet finished */
 	if (prGlueInfo->prScanRequest != NULL) {
 		DBGLOG(REQ, ERROR, "prGlueInfo->prScanRequest != NULL\n");
@@ -1071,7 +1073,7 @@ void mtk_cfg80211_abort_scan(struct wiphy *wiphy,
 	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wiphy);
 	ASSERT(prGlueInfo);
 
-	DBGLOG(REQ, INFO, "mtk_cfg80211_abort_scan\n");
+	scanlog_dbg(LOG_SCAN_ABORT_REQ_K2D, INFO, "mtk_cfg80211_abort_scan\n");
 
 	rStatus = kalIoctl(prGlueInfo,
 			   wlanoidAbortScan,
@@ -3272,7 +3274,7 @@ int mtk_cfg80211_sched_scan_start(IN struct wiphy *wiphy,
 	uint32_t num = 0;
 
 	if (likely(request)) {
-		DBGLOG(REQ, INFO, "ssid(%d)match(%d)ch(%u)f(%u)rssi(%d)\n",
+		scanlog_dbg(LOG_SCHED_SCAN_REQ_START_K2D, INFO, "ssid(%d)match(%d)ch(%u)f(%u)rssi(%d)\n",
 		       request->n_ssids, request->n_match_sets,
 		       request->n_channels, request->flags,
 #if KERNEL_VERSION(3, 15, 0) <= CFG80211_VERSION_CODE
@@ -3281,7 +3283,8 @@ int mtk_cfg80211_sched_scan_start(IN struct wiphy *wiphy,
 		       request->rssi_thold);
 #endif
 	} else
-		DBGLOG(REQ, INFO, "--> %s()\n", __func__);
+		scanlog_dbg(LOG_SCHED_SCAN_REQ_START_K2D, INFO, "--> %s()\n",
+			__func__);
 
 	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wiphy);
 	ASSERT(prGlueInfo);
@@ -3470,7 +3473,7 @@ int mtk_cfg80211_sched_scan_stop(IN struct wiphy *wiphy,
 	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wiphy);
 	ASSERT(prGlueInfo);
 
-	DBGLOG(REQ, INFO, "--> %s()\n", __func__);
+	scanlog_dbg(LOG_SCHED_SCAN_REQ_STOP_K2D, INFO, "--> %s()\n", __func__);
 
 	/* check if there is any pending scan/sched_scan not yet finished */
 	if (prGlueInfo->prSchedScanRequest == NULL)
