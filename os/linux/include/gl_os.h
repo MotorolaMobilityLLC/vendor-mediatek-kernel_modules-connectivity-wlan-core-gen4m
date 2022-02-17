@@ -1236,8 +1236,10 @@ extern char *gprifnamep2p;
 extern char *gprifnamesta;
 #endif /* CFG_DRIVER_INF_NAME_CHANGE */
 
-extern void wlanRegisterNotifier(void);
-extern void wlanUnregisterNotifier(void);
+void wlanRegisterInetAddrNotifier(void);
+void wlanUnregisterInetAddrNotifier(void);
+void wlanRegisterNetdevNotifier(void);
+void wlanUnregisterNetdevNotifier(void);
 #if CFG_MTK_ANDROID_WMT
 typedef int (*set_p2p_mode) (struct net_device *netdev,
 			     struct PARAM_CUSTOM_P2P_SET_STRUCT p2pmode);
