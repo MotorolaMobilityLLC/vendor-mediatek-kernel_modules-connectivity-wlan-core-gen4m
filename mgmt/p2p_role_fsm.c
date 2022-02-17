@@ -617,7 +617,7 @@ void p2pRoleFsmRunEventTimeout(IN struct ADAPTER *prAdapter,
 }				/* p2pRoleFsmRunEventTimeout */
 
 static void
-p2pRoleFsmDeauhComplete(IN struct ADAPTER *prAdapter,
+p2pRoleFsmDeauthComplete(IN struct ADAPTER *prAdapter,
 		IN struct STA_RECORD *prStaRec)
 {
 	struct BSS_INFO *prP2pBssInfo = (struct BSS_INFO *) NULL;
@@ -726,7 +726,7 @@ void p2pRoleFsmDeauthTimeout(IN struct ADAPTER *prAdapter,
 {
 	struct STA_RECORD *prStaRec = (struct STA_RECORD *) ulParamPtr;
 
-	p2pRoleFsmDeauhComplete(prAdapter, prStaRec);
+	p2pRoleFsmDeauthComplete(prAdapter, prStaRec);
 }				/* p2pRoleFsmRunEventTimeout */
 
 void p2pRoleFsmRunEventAbort(IN struct ADAPTER *prAdapter,
@@ -775,7 +775,7 @@ p2pRoleFsmRunEventDeauthTxDone(IN struct ADAPTER *prAdapter,
 			break;
 		}
 
-		p2pRoleFsmDeauhComplete(prAdapter, prStaRec);
+		p2pRoleFsmDeauthComplete(prAdapter, prStaRec);
 		/* Avoid re-entry */
 		cnmTimerStopTimer(prAdapter, &(prStaRec->rDeauthTxDoneTimer));
 
@@ -1466,23 +1466,22 @@ void p2pRoleFsmRunEventStopAP(IN struct ADAPTER *prAdapter,
 		IN struct MSG_HDR *prMsgHdr)
 {
 	struct BSS_INFO *prP2pBssInfo = (struct BSS_INFO *) NULL;
-	struct MSG_P2P_SWITCH_OP_MODE *prP2pSwitchMode =
-		(struct MSG_P2P_SWITCH_OP_MODE *) NULL;
+	struct MSG_P2P_STOP_AP *prP2pStopApMsg;
 	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo =
 		(struct P2P_ROLE_FSM_INFO *) NULL;
 	struct STA_RECORD *prCurrStaRec;
 	struct LINK *prClientList;
 
-	prP2pSwitchMode = (struct MSG_P2P_SWITCH_OP_MODE *) prMsgHdr;
+	prP2pStopApMsg = (struct MSG_P2P_STOP_AP *) prMsgHdr;
 
 	prP2pRoleFsmInfo =
 		P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prAdapter,
-		prP2pSwitchMode->ucRoleIdx);
+		prP2pStopApMsg->ucRoleIdx);
 
 	if (!prP2pRoleFsmInfo) {
 		DBGLOG(P2P, ERROR,
 		       "p2pRoleFsmRunEventStopAP: Corresponding P2P Role FSM empty: %d.\n",
-		       prP2pSwitchMode->ucRoleIdx);
+		       prP2pStopApMsg->ucRoleIdx);
 		goto error;
 	}
 
@@ -1889,7 +1888,7 @@ void p2pRoleFsmRunEventConnectionRequest(IN struct ADAPTER *prAdapter,
 			cnmTimerStopTimer(prAdapter,
 				&(prStaRec->rDeauthTxDoneTimer));
 			/* Force to stop */
-			p2pRoleFsmDeauhComplete(prAdapter, prStaRec);
+			p2pRoleFsmDeauthComplete(prAdapter, prStaRec);
 		}
 	}
 	/* Make sure the state is in IDLE state. */
