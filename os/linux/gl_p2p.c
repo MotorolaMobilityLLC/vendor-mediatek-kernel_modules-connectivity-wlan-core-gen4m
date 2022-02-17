@@ -2096,8 +2096,12 @@ int p2pSetMACAddress(IN struct net_device *prDev, void *addr)
 {
 	struct ADAPTER *prAdapter = NULL;
 	struct GLUE_INFO *prGlueInfo = NULL;
-
-	ASSERT(prDev);
+	struct sockaddr *sa = NULL;
+	struct wireless_dev *wdev = NULL;
+	struct BSS_INFO *prBssInfo = NULL;
+	struct BSS_INFO *prDevBssInfo = NULL;
+	uint8_t ucRoleIdx = 0, ucBssIdx = 0;
+	struct GL_P2P_INFO *prP2pInfo = NULL;
 
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prDev));
 	ASSERT(prGlueInfo);
@@ -2105,7 +2109,71 @@ int p2pSetMACAddress(IN struct net_device *prDev, void *addr)
 	prAdapter = prGlueInfo->prAdapter;
 	ASSERT(prAdapter);
 
-	/* @FIXME */
-	return eth_mac_addr(prDev, addr);
+	if (!prDev || !addr) {
+		DBGLOG(INIT, ERROR, "Set macaddr with ndev(%d) and addr(%d)\n",
+		       (prDev == NULL) ? 0 : 1, (addr == NULL) ? 0 : 1);
+		return WLAN_STATUS_INVALID_DATA;
+	}
+
+	wdev = prDev->ieee80211_ptr;
+	if (wdev->ssid_len > 0 || (wdev->current_bss)) {
+		DBGLOG(INIT, ERROR,
+		       "Reject macaddr change due to ssid_len(%d) & bss(%d)\n",
+		       wdev->ssid_len, wdev->current_bss);
+		return WLAN_STATUS_NOT_ACCEPTED;
+	}
+
+	if (mtk_Netdev_To_RoleIdx(prGlueInfo, prDev, &ucRoleIdx) != 0) {
+		DBGLOG(INIT, ERROR, "can't find the matched dev");
+		return WLAN_STATUS_INVALID_DATA;
+	}
+
+	if (p2pFuncRoleToBssIdx(prGlueInfo->prAdapter,
+		ucRoleIdx, &ucBssIdx) != WLAN_STATUS_SUCCESS) {
+		DBGLOG(INIT, ERROR, "can't find the matched bss");
+		return WLAN_STATUS_INVALID_DATA;
+	}
+
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIdx);
+	if (!prBssInfo) {
+		DBGLOG(INIT, ERROR, "bss is not active\n");
+		return WLAN_STATUS_INVALID_DATA;
+	}
+
+	prDevBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
+		prAdapter->ucP2PDevBssIdx);
+	if (!prDevBssInfo) {
+		DBGLOG(INIT, ERROR, "dev bss is not active\n");
+		return WLAN_STATUS_INVALID_DATA;
+	}
+
+	prP2pInfo = prGlueInfo->prP2PInfo[ucRoleIdx];
+	if (!prP2pInfo) {
+		DBGLOG(INIT, ERROR, "p2p info is null\n");
+		return WLAN_STATUS_INVALID_DATA;
+	}
+
+	sa = (struct sockaddr *)addr;
+
+	COPY_MAC_ADDR(prBssInfo->aucOwnMacAddr, sa->sa_data);
+	COPY_MAC_ADDR(prDev->dev_addr, sa->sa_data);
+
+	if (prP2pInfo->prDevHandler == prDev) {
+		COPY_MAC_ADDR(prAdapter->rWifiVar.aucDeviceAddress,
+			sa->sa_data);
+		COPY_MAC_ADDR(prDevBssInfo->aucOwnMacAddr, sa->sa_data);
+		DBGLOG(INIT, INFO,
+			"[%d][%d] Set random macaddr to " MACSTR ".\n",
+			ucBssIdx,
+			prDevBssInfo->ucBssIndex,
+			MAC2STR(prDevBssInfo->aucOwnMacAddr));
+	} else {
+		DBGLOG(INIT, INFO,
+			"[%d] Set random macaddr to " MACSTR ".\n",
+			ucBssIdx,
+			MAC2STR(prBssInfo->aucOwnMacAddr));
+	}
+
+	return WLAN_STATUS_SUCCESS;
 }
 
