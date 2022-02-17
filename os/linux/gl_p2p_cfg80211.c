@@ -3680,9 +3680,9 @@ int mtk_p2p_cfg80211_testmode_p2p_sigma_pre_cmd(IN struct wiphy *wiphy,
 		memcpy(&rParams, data, len);
 
 	DBGLOG(P2P, TRACE,
-		"NL80211_ATTR_TESTDATA, idx_mode=%d idx=%d value=%lu\n",
-		(int16_t) rParams.idx_mode,
-		(int16_t) rParams.idx,
+		"NL80211_ATTR_TESTDATA, idx_mode=%d idx=%d value=%u\n",
+		rParams.idx_mode,
+		rParams.idx,
 		rParams.value);
 
 	index_mode = rParams.idx_mode;
@@ -3829,12 +3829,16 @@ int mtk_p2p_cfg80211_testmode_p2p_sigma_cmd(IN struct wiphy *wiphy,
 
 	if (data && len)
 		prParams = (struct NL80211_DRIVER_P2P_SIGMA_PARAMS *) data;
+	else {
+		DBGLOG(P2P, ERROR, "data is NULL\n");
+		return -EINVAL;
+	}
 
 	index = (int32_t) prParams->idx;
 	value = (int32_t) prParams->value;
 
-	DBGLOG(P2P, INFO, "NL80211_ATTR_TESTDATA, idx=%lu value=%lu\n",
-	       (int32_t) prParams->idx, (int32_t) prParams->value);
+	DBGLOG(P2P, INFO, "NL80211_ATTR_TESTDATA, idx=%u value=%u\n",
+		prParams->idx, prParams->value);
 
 	/* 3 FIX ME: Add p2p role index selection */
 	if (p2pFuncRoleToBssIdx(
@@ -4106,6 +4110,8 @@ int mtk_p2p_cfg80211_testmode_hotspot_block_list_cmd(IN struct wiphy *wiphy,
 
 	if (data && len)
 		prParams = (struct NL80211_DRIVER_hotspot_block_PARAMS *) data;
+	else
+		return fgIsValid;
 
 	DBGLOG(P2P, INFO,
 		"%s" MACSTR "\n",
