@@ -251,6 +251,18 @@ struct SUB_ELEMENT_LIST {
 	struct SUB_ELEMENT rSubIE;
 };
 
+#if CFG_SUPPORT_DFS
+struct SWITCH_CH_AND_BAND_PARAMS {
+	uint8_t ucCsaNewCh;
+	uint8_t ucCsaCount;
+	uint8_t ucVhtS1;
+	uint8_t ucVhtS2;
+	uint8_t ucVhtBw;
+	enum ENUM_CHNL_EXT eSco;
+	uint8_t ucBssIndex;
+};
+#endif
+
 /*******************************************************************************
  *                            P U B L I C   D A T A
  *******************************************************************************
@@ -289,6 +301,19 @@ struct SUB_ELEMENT_LIST {
 #if (CFG_SUPPORT_802_11AX == 1)
 #define RLM_NET_IS_11AX(_prBssInfo) \
 	((_prBssInfo)->ucPhyTypeSet & PHY_TYPE_SET_802_11AX)
+#endif
+
+#if CFG_SUPPORT_DFS
+#define MAX_CSA_COUNT 255
+#define HAS_CH_SWITCH_PARAMS(prCSAParams) (prCSAParams->ucCsaNewCh > 0)
+#define HAS_SCO_PARAMS(prCSAParams) (prCSAParams->eSco > 0)
+#define HAS_WIDE_BAND_PARAMS(prCSAParams) \
+	(prCSAParams->ucVhtBw > 0 || \
+	 prCSAParams->ucVhtS1 > 0 || \
+	 prCSAParams->ucVhtS2 > 0)
+#define SHOULD_CH_SWITCH(current, prCSAParams) \
+	(HAS_CH_SWITCH_PARAMS(prCSAParams) && \
+	 (current < prCSAParams->ucCsaCount))
 #endif
 
 /*******************************************************************************
@@ -416,6 +441,11 @@ void rlmGenerateCountryIE(struct ADAPTER *prAdapter,
 #if CFG_SUPPORT_DFS
 void rlmProcessSpecMgtAction(struct ADAPTER *prAdapter,
 			     struct SW_RFB *prSwRfb);
+
+void rlmResetCSAParams(struct BSS_INFO *prBssInfo);
+
+void rlmCsaTimeout(IN struct ADAPTER *prAdapter,
+				unsigned long ulParamPtr);
 #endif
 
 uint32_t
@@ -516,6 +546,10 @@ void rlmReviseMaxBw(
 uint8_t rlmReviseChFreqS1(IN struct BSS_INFO *prBssInfo,
 	IN uint8_t ucPrimaryCh, IN uint8_t ucOriginS1,
 	IN uint8_t ucMaxBandwidth);
+
+void rlmRevisePreferBandwidthNss(struct ADAPTER *prAdapter,
+					uint8_t ucBssIndex,
+					struct STA_RECORD *prStaRec);
 
 void rlmSetMaxTxPwrLimit(IN struct ADAPTER *prAdapter, int8_t cLimit,
 			 uint8_t ucEnable);
