@@ -1247,7 +1247,8 @@ int mtk_p2p_cfg80211_start_ap(struct wiphy *wiphy, struct net_device *dev, struc
 }				/* mtk_p2p_cfg80211_start_ap */
 
 #if (CFG_SUPPORT_DFS_MASTER == 1)
-int mtk_p2p_cfg80211_start_radar_detection(struct wiphy *wiphy, struct net_device *dev,
+
+static int mtk_p2p_cfg80211_start_radar_detection_impl(struct wiphy *wiphy, struct net_device *dev,
 					struct cfg80211_chan_def *chandef, unsigned int cac_time_ms)
 {
 	P_GLUE_INFO_T prGlueInfo = (P_GLUE_INFO_T) NULL;
@@ -1337,6 +1338,22 @@ int mtk_p2p_cfg80211_start_radar_detection(struct wiphy *wiphy, struct net_devic
 
 	return i4Rslt;
 }
+
+#if KERNEL_VERSION(3, 15, 0) <= LINUX_VERSION_CODE
+int mtk_p2p_cfg80211_start_radar_detection(struct wiphy *wiphy, struct net_device *dev,
+					struct cfg80211_chan_def *chandef, unsigned int cac_time_ms)
+{
+	return mtk_p2p_cfg80211_start_radar_detection_impl(
+			wiphy, dev, chandef, cac_time_ms);
+}
+#else
+int mtk_p2p_cfg80211_start_radar_detection(struct wiphy *wiphy, struct net_device *dev,
+					struct cfg80211_chan_def *chandef)
+{
+	return mtk_p2p_cfg80211_start_radar_detection_impl(
+			wiphy, dev, chandef, IEEE80211_DFS_MIN_CAC_TIME_MS);
+}
+#endif
 
 int mtk_p2p_cfg80211_channel_switch(struct wiphy *wiphy, struct net_device *dev, struct cfg80211_csa_settings *params)
 {
