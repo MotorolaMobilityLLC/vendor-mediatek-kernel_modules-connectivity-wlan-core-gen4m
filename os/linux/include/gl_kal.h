@@ -445,7 +445,13 @@ struct PWR_LEVEL_HANDLER_ELEMENT {
 #define KAL_BAND_2GHZ NL80211_BAND_2GHZ
 #define KAL_BAND_5GHZ NL80211_BAND_5GHZ
 #if (CFG_SUPPORT_WIFI_6G == 1)
+#if KERNEL_VERSION(5, 4, 0) <= CFG80211_VERSION_CODE
 #define KAL_BAND_6GHZ NL80211_BAND_6GHZ
+#else
+#pragma message("WARNING!! Kernel version " \
+	STR(CFG80211_VERSION_CODE) " is too old to support 6GHZ.")
+#define KAL_BAND_6GHZ NL80211_BAND_60GHZ /* for build pass only */
+#endif
 #endif
 #define KAL_NUM_BANDS NUM_NL80211_BANDS
 #else
