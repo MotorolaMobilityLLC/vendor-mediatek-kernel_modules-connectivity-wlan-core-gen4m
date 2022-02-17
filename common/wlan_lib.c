@@ -7626,6 +7626,10 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 	prWifiVar->fgReuseRSNIE = (uint32_t) wlanCfgGetUint32(
 			prAdapter, "ReuseRSNIE",
 			FEATURE_DISABLED);
+
+#if CFG_MTK_MCIF_WIFI_SUPPORT
+	wlanCfgSetUint32(prAdapter, "MddpSupport", FEATURE_ENABLED);
+#endif
 }
 
 void wlanCfgSetSwCtrl(IN struct ADAPTER *prAdapter)
