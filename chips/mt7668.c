@@ -201,6 +201,34 @@ VOID mt7668CapInit(IN P_ADAPTER_T prAdapter)
 	}
 }
 
+#if defined(_HIF_PCIE)
+VOID mt7668LowPowerOwnRead(IN P_ADAPTER_T prAdapter, OUT PBOOLEAN pfgResult)
+{
+	UINT_32 u4RegValue;
+
+	HAL_MCR_RD(prAdapter, WPDMA_INT_STA, &u4RegValue);
+	*pfgResult = ((u4RegValue & WPDMA_FW_CLR_OWN_INT) ? TRUE : FALSE);
+}
+
+VOID mt7668LowPowerOwnSet(IN P_ADAPTER_T prAdapter, OUT PBOOLEAN pfgResult)
+{
+	UINT_32 u4RegValue;
+
+	HAL_MCR_WR(prAdapter, CFG_PCIE_LPCR_HOST, PCIE_LPCR_HOST_SET_OWN);
+	HAL_MCR_RD(prAdapter, CFG_PCIE_LPCR_HOST, &u4RegValue);
+	*pfgResult = (u4RegValue == 0);
+}
+
+VOID mt7668LowPowerOwnClear(IN P_ADAPTER_T prAdapter, OUT PBOOLEAN pfgResult)
+{
+	UINT_32 u4RegValue;
+
+	HAL_MCR_WR(prAdapter, CFG_PCIE_LPCR_HOST, PCIE_LPCR_HOST_CLR_OWN);
+	HAL_MCR_RD(prAdapter, CFG_PCIE_LPCR_HOST, &u4RegValue);
+	*pfgResult = (u4RegValue == 0);
+}
+#endif /* _HIF_PCIE */
+
 BUS_INFO mt7668_bus_info = {
 #if defined(_HIF_PCIE)
 	.top_cfg_base = MT7668_TOP_CFG_BASE,
@@ -210,6 +238,9 @@ BUS_INFO mt7668_bus_info = {
 	.tx_ring_data_idx = 0,
 
 	.pdmaSetup = halEnhancedWpdmaConfig,
+	.lowPowerOwnRead = mt7668LowPowerOwnRead,
+	.lowPowerOwnSet = mt7668LowPowerOwnSet,
+	.lowPowerOwnClear = mt7668LowPowerOwnClear,
 #endif /* _HIF_PCIE */
 #if defined(_HIF_USB)
 	.u4UdmaWlCfg_0_Addr = UDMA_WLCFG_0,

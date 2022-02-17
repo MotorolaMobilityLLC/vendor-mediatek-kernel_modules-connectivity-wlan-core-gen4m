@@ -157,10 +157,13 @@ BUS_INFO mt7663_bus_info = {
 	.top_cfg_base = MT7663_TOP_CFG_BASE,
 	.bus2chip = mt7663_bus2chip_cr_mapping,
 	.tx_ring_fwdl_idx = 3,
-	.tx_ring_cmd_idx = 2,
+	.tx_ring_cmd_idx = 15,
 	.tx_ring_data_idx = 0,
 
 	.pdmaSetup = halConnacWpdmaConfig,
+	.lowPowerOwnRead = asicLowPowerOwnRead,
+	.lowPowerOwnSet = asicLowPowerOwnSet,
+	.lowPowerOwnClear = asicLowPowerOwnClear,
 #endif /* _HIF_PCIE */
 #if defined(_HIF_USB)
 	.u4UdmaWlCfg_0_Addr = CONNAC_UDMA_WLCFG_0,
