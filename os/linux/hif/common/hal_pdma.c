@@ -1121,8 +1121,12 @@ void halRxReceiveRFBs(IN struct ADAPTER *prAdapter, uint32_t u4Port)
 
 		if (!prSwRfb) {
 			DBGLOG(RX, WARN, "No More RFB for P[%u]\n", u4Port);
+			prAdapter->u4NoMoreRfb |= BIT(u4Port);
 			break;
 		}
+
+		/* unset no more rfb port bit */
+		prAdapter->u4NoMoreRfb &= ~BIT(u4Port);
 
 		if (u4Port == RX_RING_DATA_IDX_0) {
 			fgStatus = kalDevReadData(prAdapter->prGlueInfo,
@@ -1196,10 +1200,12 @@ void halProcessRxInterrupt(IN struct ADAPTER *prAdapter)
 	rIntrStatus = (union WPDMA_INT_STA_STRUCT)prHifInfo->u4IntStatus;
 	prAdapter->prGlueInfo->u8HifIntTime = sched_clock();
 
-	if (rIntrStatus.field.rx_done_1)
+	if (rIntrStatus.field.rx_done_1 ||
+	    (prAdapter->u4NoMoreRfb & BIT(RX_RING_EVT_IDX_1)))
 		halRxReceiveRFBs(prAdapter, RX_RING_EVT_IDX_1);
 
-	if (rIntrStatus.field.rx_done_0)
+	if (rIntrStatus.field.rx_done_0 ||
+	    (prAdapter->u4NoMoreRfb & BIT(RX_RING_DATA_IDX_0)))
 		halRxReceiveRFBs(prAdapter, RX_RING_DATA_IDX_0);
 }
 
