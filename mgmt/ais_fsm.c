@@ -372,11 +372,20 @@ void aisInitBssInfo(IN struct ADAPTER *prAdapter,
 
 	/* 4 <2> Initiate BSS_INFO_T - common part */
 	BSS_INFO_INIT(prAdapter, prAisBssInfo);
-	/* update MAC address */
-	nicApplyLinkAddress(prAdapter,
-		prAdapter->rWifiVar.aucMacAddress[prAisFsmInfo->ucAisIndex],
-		prAisBssInfo->aucOwnMacAddr,
-		ucLinkIdx);
+
+	if (!prAdapter->rWifiVar.ucMacAddrOverride) {
+		/* update MAC address */
+		nicApplyLinkAddress(prAdapter,
+		    prAdapter->rWifiVar.aucMacAddress[prAisFsmInfo->ucAisIndex],
+		    prAisBssInfo->aucOwnMacAddr, ucLinkIdx);
+	} else if (ucLinkIdx * 18 + 17 < WLAN_CFG_VALUE_LEN_MAX) {
+		/*    link1 addr        link2 addr        link3 addr    */
+		/*aa:bb:cc:dd:ee:ff 11:22:33:44:55:66 11:22:33:44:55:77 */
+		wlanHwAddrToBin(prAdapter->rWifiVar.aucMacAddrStr +
+			ucLinkIdx * 18, prAisBssInfo->aucOwnMacAddr);
+		DBGLOG(AIS, INFO, "ucLinkIdx: %d, mac: " MACSTR "\n",
+			ucLinkIdx, MAC2STR(prAisBssInfo->aucOwnMacAddr));
+	}
 
 	/* 4 <3> Initiate BSS_INFO_T - private part */
 	/* TODO */

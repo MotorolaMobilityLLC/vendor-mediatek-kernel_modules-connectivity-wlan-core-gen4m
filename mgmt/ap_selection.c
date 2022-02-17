@@ -1230,6 +1230,8 @@ void scanFillSecondaryLink(struct ADAPTER *prAdapter,
 	struct BSS_DESC_SET *prBssDescSet, enum ENUM_ROAMING_REASON eRoamReason,
 	uint8_t ucBssIndex)
 {
+	struct CONNECTION_SETTINGS *prConnSettings = NULL;
+	enum ENUM_PARAM_CONNECTION_POLICY policy;
 	struct BSS_DESC *prBssDesc = NULL;
 	struct BSS_DESC *prMainBssDesc = prBssDescSet->prMainBssDesc;
 	struct AIS_SPECIFIC_BSS_INFO *prAisSpecificBssInfo = NULL;
@@ -1240,10 +1242,12 @@ void scanFillSecondaryLink(struct ADAPTER *prAdapter,
 	if (!prMainBssDesc || !prMainBssDesc->rMlInfo.fgValid)
 		return;
 
+	prConnSettings = aisGetConnSettings(prAdapter, ucBssIndex);
+	policy = prConnSettings->eConnectionPolicy;
 	prAisSpecificBssInfo = aisGetAisSpecBssInfo(prAdapter, ucBssIndex);
 	prEssLink = &prAisSpecificBssInfo->rCurEssLink;
 
-	for (i = 1; i < MLD_LINK_MAX; ++i) {
+	for (i = 1; i < prAdapter->rWifiVar.ucMldLinkMax; ++i) {
 		uint16_t u2ScoreTotal = 0;
 		uint16_t u2CandBssScore = 0;
 		struct BSS_DESC *prCandBssDesc = NULL;
@@ -1275,16 +1279,16 @@ void scanFillSecondaryLink(struct ADAPTER *prAdapter,
 	}
 
 	/* prefer bssid mld addr */
-	for (i = 0; i < prBssDescSet->ucLinkNum; i++) {
-		prBssDesc = prBssDescSet->aprBssDesc[i];
-		if (EQUAL_SSID(prBssDesc->aucSSID, prBssDesc->ucSSIDLen,
-			prMainBssDesc->aucSSID, prMainBssDesc->ucSSIDLen) &&
-		    EQUAL_MAC_ADDR(prBssDesc->aucBSSID,
-			prMainBssDesc->rMlInfo.aucMldAddr)) {
-			prBssDescSet->aprBssDesc[i] =
-				prBssDescSet->aprBssDesc[0];
-			prBssDescSet->aprBssDesc[0] = prBssDesc;
-			break;
+	if (policy != CONNECT_BY_BSSID) {
+		for (i = 0; i < prBssDescSet->ucLinkNum; i++) {
+			prBssDesc = prBssDescSet->aprBssDesc[i];
+			if (EQUAL_MAC_ADDR(prBssDesc->aucBSSID,
+				prMainBssDesc->rMlInfo.aucMldAddr)) {
+				prBssDescSet->aprBssDesc[i] =
+					prBssDescSet->aprBssDesc[0];
+				prBssDescSet->aprBssDesc[0] = prBssDesc;
+				break;
+			}
 		}
 	}
 
