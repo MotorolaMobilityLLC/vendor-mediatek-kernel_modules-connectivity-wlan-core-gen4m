@@ -85,11 +85,76 @@
 ********************************************************************************
 */
 #if CFG_SUPPORT_DBDC
-typedef enum _ENUM_CNM_DBDC_DECISION_TIMER_T {
-	DBDC_DECISION_TIMER_SWITCH_GUARD_TIME,
-	DBDC_DECISION_TIMER_DISABLE_COUNT_DOWN,
-	DBDC_DECISION_STATE_NUM
-} ENUM_CNM_DBDC_DECISION_TIMER_T, *P_ENUM_CNM_DBDC_DECISION_TIMER_T;
+enum ENUM_DBDC_GUARD_TIMER_T {
+	ENUM_DBDC_GUARD_TIMER_NONE,
+	ENUM_DBDC_GUARD_TIMER_SWITCH_GUARD_TIME,    /* Prevent switch too quick*/
+	ENUM_DBDC_GUARD_TIMER_DISABLE_COUNT_DOWN,   /* Prevent continuously trigger by reconnection  */
+	ENUM_DBDC_GUARD_TIMER_NUM
+};
+
+enum ENUM_DBDC_FSM_STATE_T {
+	ENUM_DBDC_FSM_STATE_DISABLE_IDLE,
+	ENUM_DBDC_FSM_STATE_WAIT_PROTOCOL_ENABLE,
+	ENUM_DBDC_FSM_STATE_WAIT_HW_ENABLE,
+	ENUM_DBDC_FSM_STATE_ENABLE_GUARD,
+	ENUM_DBDC_FSM_STATE_ENABLE_IDLE,
+	ENUM_DBDC_FSM_STATE_WAIT_HW_DISABLE,
+	ENUM_DBDC_FSM_STATE_DISABLE_GUARD,
+	ENUM_DBDC_FSM_STATE_WAIT_PROTOCOL_DISABLE,
+	ENUM_DBDC_FSM_STATE_NUM
+};
+
+enum ENUM_OPMODE_STATE_T {
+	ENUM_OPMODE_STATE_DONE,
+	ENUM_OPMODE_STATE_FAIL,
+	ENUM_OPMODE_STATE_WAIT,
+	ENUM_OPMODE_STATE_NUM
+};
+
+struct DBDC_INFO_T {
+	enum ENUM_DBDC_FSM_STATE_T       eDbdcFsmCurrState;
+	enum ENUM_DBDC_FSM_STATE_T       eDbdcFsmPrevState;
+	enum ENUM_DBDC_FSM_STATE_T       eDbdcFsmNextState;
+
+	TIMER_T                          rDbdcGuardTimer;
+	enum ENUM_DBDC_GUARD_TIMER_T     eDdbcGuardTimerType;
+
+	BOOLEAN                          fgReqPrivelegeLock;
+	LINK_T                           rPendingMsgList;
+
+	BOOLEAN                          fgDbdcDisableOpmodeChangeDone;
+	enum ENUM_OPMODE_STATE_T         eBssOpModeState[BSSID_NUM];
+};
+
+enum ENUM_DBDC_FSM_EVENT_T {
+	DBDC_FSM_EVENT_BSS_DISCONNECT_LEAVE_AG,
+	DBDC_FSM_EVENT_BSS_CONNECTING_ENTER_AG,
+	DBDC_FSM_EVENT_SWITCH_GUARD_TIME_TO,
+	DBDC_FSM_EVENT_DISABLE_COUNT_DOWN_TO,
+	DBDC_FSM_EVENT_ACTION_FRAME_ALL_SUCCESS,
+	DBDC_FSM_EVENT_ACTION_FRAME_SOME_FAIL,
+	DBDC_FSM_EVENT_DBDC_HW_SWITCH_DONE,
+	DBDC_FSM_EVENT_ERR,
+	DBDC_FSM_EVENT_NUM
+};
+
+enum ENUM_DBDC_PROTOCOL_STATUS_T {
+	ENUM_DBDC_PROTOCOL_STATUS_DONE_SUCCESS = 0,
+	ENUM_DBDC_PROTOCOL_STATUS_DONE_FAIL,
+	ENUM_DBDC_PROTOCOL_STATUS_WAIT,
+	ENUM_DBDC_PROTOCOL_STATUS_NUM
+};
+
+typedef VOID (*DBDC_ENTRY_FUNC)(P_ADAPTER_T);
+typedef VOID (*DBDC_EVENT_HNDL_FUNC)(P_ADAPTER_T, enum ENUM_DBDC_FSM_EVENT_T);
+typedef VOID (*DBDC_EXIT_FUNC)(P_ADAPTER_T);
+
+struct DBDC_FSM_T {
+	DBDC_ENTRY_FUNC               pfEntryFunc;
+	DBDC_EVENT_HNDL_FUNC          pfEventHandlerFunc;
+	DBDC_EXIT_FUNC                pfExitFunc;
+};
+
 #endif /*CFG_SUPPORT_DBDC*/
 
 /*******************************************************************************
@@ -101,16 +166,208 @@ typedef enum _ENUM_CNM_DBDC_DECISION_TIMER_T {
 *                           P R I V A T E   D A T A
 ********************************************************************************
 */
+#if CFG_SUPPORT_DBDC
+static struct DBDC_INFO_T g_rDbdcInfo;
+#endif
 
 /*******************************************************************************
 *                                 M A C R O S
 ********************************************************************************
 */
 
+#if CFG_SUPPORT_DBDC
+#define DBDC_IS_BSS_ALIVE(_prBssInfo) \
+	(_prBssInfo->fgIsInUse && \
+	_prBssInfo->fgIsNetActive && \
+	(_prBssInfo->eConnectionState == PARAM_MEDIA_STATE_CONNECTED || \
+	_prBssInfo->eCurrentOPMode == OP_MODE_ACCESS_POINT))
+
+#define DBDC_IS_BSS_NOT_ALIVE(_prBssInfo) \
+	(!_prBssInfo->fgIsInUse || \
+	!_prBssInfo->fgIsNetActive || \
+	(_prBssInfo->eConnectionState != PARAM_MEDIA_STATE_CONNECTED && \
+	_prBssInfo->eCurrentOPMode != OP_MODE_ACCESS_POINT))
+
+#define DBDC_SET_GUARD_TIME(_prAdapter) { \
+	cnmTimerStartTimer(_prAdapter, \
+						&g_rDbdcInfo.rDbdcGuardTimer, \
+						DBDC_SWITCH_GUARD_TIME); \
+	g_rDbdcInfo.eDdbcGuardTimerType = \
+						ENUM_DBDC_GUARD_TIMER_SWITCH_GUARD_TIME; \
+	}
+
+#define DBDC_SET_DISABLE_COUNTDOWN(_prAdapter) { \
+	cnmTimerStartTimer(_prAdapter, \
+						&g_rDbdcInfo.rDbdcGuardTimer, \
+						DBDC_DISABLE_COUNTDOWN_TIME); \
+	g_rDbdcInfo.eDdbcGuardTimerType = \
+						ENUM_DBDC_GUARD_TIMER_DISABLE_COUNT_DOWN; \
+	}
+
+#define DBDC_FSM_MSG_WRONG_EVT(_eEvent) \
+	DBGLOG(CNM, WARN, "[DBDC] Should not reveice evt %u during state %u\n", \
+				_eEvent, \
+				g_rDbdcInfo.eDbdcFsmCurrState)
+
+#define DBDC_FSM_MSG_ERROR_EVT(_eEvent) \
+	DBGLOG(CNM, ERROR, "[DBDC] Reveice evt %u during state %u\n", \
+				_eEvent, \
+				g_rDbdcInfo.eDbdcFsmCurrState) \
+
+#define USE_DBDC_CAPABILITY() \
+	((g_rDbdcInfo.eDbdcFsmCurrState == ENUM_DBDC_FSM_STATE_WAIT_PROTOCOL_ENABLE || \
+	g_rDbdcInfo.eDbdcFsmCurrState == ENUM_DBDC_FSM_STATE_WAIT_HW_ENABLE || \
+	g_rDbdcInfo.eDbdcFsmCurrState == ENUM_DBDC_FSM_STATE_ENABLE_GUARD || \
+	g_rDbdcInfo.eDbdcFsmCurrState == ENUM_DBDC_FSM_STATE_ENABLE_IDLE)?TRUE:FALSE)
+
+#endif
+
 /*******************************************************************************
 *                   F U N C T I O N   D E C L A R A T I O N S
 ********************************************************************************
 */
+static BOOLEAN
+cnmDBDCIsReqPeivilegeLock(
+	VOID
+	);
+
+static VOID
+cnmDbdcFsmEntryFunc_DISABLE_IDLE(
+	IN P_ADAPTER_T	prAdapter
+	);
+
+static VOID
+cnmDbdcFsmEntryFunc_WAIT_PROTOCOL_ENABLE(
+	IN P_ADAPTER_T	prAdapter
+	);
+
+static VOID
+cnmDbdcFsmEntryFunc_WAIT_HW_ENABLE(
+	IN P_ADAPTER_T	prAdapter
+	);
+
+static VOID
+cnmDbdcFsmEntryFunc_ENABLE_GUARD(
+	IN P_ADAPTER_T	prAdapter
+	);
+
+static VOID
+cnmDbdcFsmEntryFunc_WAIT_HW_DISABLE(
+	IN P_ADAPTER_T	prAdapter
+	);
+
+static VOID
+cnmDbdcFsmEntryFunc_DISABLE_GUARD(
+	IN P_ADAPTER_T	prAdapter
+	);
+
+static VOID
+cnmDbdcFsmEventHandler_DISABLE_IDLE(
+	IN P_ADAPTER_T	prAdapter,
+	IN enum ENUM_DBDC_FSM_EVENT_T	eEvent
+	);
+
+static VOID
+cnmDbdcFsmEventHandler_WAIT_PROTOCOL_ENABLE(
+	IN P_ADAPTER_T	prAdapter,
+	IN enum ENUM_DBDC_FSM_EVENT_T	eEvent
+	);
+
+static VOID
+cnmDbdcFsmEventHandler_WAIT_HW_ENABLE(
+	IN P_ADAPTER_T	prAdapter,
+	IN enum ENUM_DBDC_FSM_EVENT_T	eEvent
+	);
+
+static VOID
+cnmDbdcFsmEventHandler_ENABLE_GUARD(
+	IN P_ADAPTER_T                  prAdapter,
+	IN enum ENUM_DBDC_FSM_EVENT_T   eEvent
+	);
+
+static VOID
+cnmDbdcFsmEventHandler_ENABLE_IDLE(
+	IN P_ADAPTER_T                  prAdapter,
+	IN enum ENUM_DBDC_FSM_EVENT_T   eEvent
+	);
+
+static VOID
+cnmDbdcFsmEventHandler_WAIT_HW_DISABLE(
+	IN P_ADAPTER_T                  prAdapter,
+	IN enum ENUM_DBDC_FSM_EVENT_T   eEvent
+	);
+
+static VOID
+cnmDbdcFsmEventHandler_DISABLE_GUARD(
+	IN P_ADAPTER_T                  prAdapter,
+	IN enum ENUM_DBDC_FSM_EVENT_T   eEvent
+	);
+
+static VOID
+cnmDbdcFsmEventHandler_WAIT_PROTOCOL_DISABLE(
+	IN P_ADAPTER_T                  prAdapter,
+	IN enum ENUM_DBDC_FSM_EVENT_T   eEvent
+	);
+
+static VOID
+cnmDbdcFsmExitFunc_WAIT_HW_ENABLE(
+	IN P_ADAPTER_T	prAdapter
+	);
+
+/*******************************************************************************
+*                           P R I V A T E   D A T A 2
+********************************************************************************
+*/
+
+static struct DBDC_FSM_T arDdbcFsmActionTable[] = {
+	/* ENUM_DBDC_FSM_STATE_DISABLE_IDLE */
+	{cnmDbdcFsmEntryFunc_DISABLE_IDLE,
+	cnmDbdcFsmEventHandler_DISABLE_IDLE,
+	NULL},
+
+	/* ENUM_DBDC_FSM_STATE_WAIT_PROTOCOL_ENABLE */
+	{cnmDbdcFsmEntryFunc_WAIT_PROTOCOL_ENABLE,
+	cnmDbdcFsmEventHandler_WAIT_PROTOCOL_ENABLE,
+	NULL},
+
+	/* ENUM_DBDC_FSM_STATE_WAIT_HW_ENABLE */
+	{cnmDbdcFsmEntryFunc_WAIT_HW_ENABLE,
+	cnmDbdcFsmEventHandler_WAIT_HW_ENABLE,
+	cnmDbdcFsmExitFunc_WAIT_HW_ENABLE},
+
+	/* ENUM_DBDC_FSM_STATE_ENABLE_GUARD */
+	{cnmDbdcFsmEntryFunc_ENABLE_GUARD,
+	cnmDbdcFsmEventHandler_ENABLE_GUARD,
+	NULL},
+
+	/* ENUM_DBDC_FSM_STATE_ENABLE_IDLE */
+	{NULL,
+	cnmDbdcFsmEventHandler_ENABLE_IDLE,
+	NULL},
+
+	/* ENUM_DBDC_FSM_STATE_WAIT_HW_DISABLE */
+	{cnmDbdcFsmEntryFunc_WAIT_HW_DISABLE,
+	cnmDbdcFsmEventHandler_WAIT_HW_DISABLE,
+	NULL},
+
+	/* ENUM_DBDC_FSM_STATE_DISABLE_GUARD */
+	{cnmDbdcFsmEntryFunc_DISABLE_GUARD,
+	cnmDbdcFsmEventHandler_DISABLE_GUARD,
+	NULL},
+
+	/* ENUM_DBDC_FSM_STATE_WAIT_PROTOCOL_DISABLE */
+	{NULL,
+	cnmDbdcFsmEventHandler_WAIT_PROTOCOL_DISABLE,
+	NULL},
+};
+
+/*******************************************************************************
+*                                 M A C R O S 2
+********************************************************************************
+*/
+#define DBDC_FSM_EVENT_HANDLER(_prAdapter, _event) { \
+		arDdbcFsmActionTable[g_rDbdcInfo.eDbdcFsmCurrState].pfEventHandlerFunc(_prAdapter, _event); \
+	}
 
 /*******************************************************************************
 *                              F U N C T I O N S
@@ -134,17 +391,6 @@ VOID cnmInit(P_ADAPTER_T prAdapter)
 
 	prCnmInfo = &prAdapter->rCnmInfo;
 	prCnmInfo->fgChGranted = FALSE;
-#if CFG_SUPPORT_DBDC
-	cnmTimerInitTimer(prAdapter,
-					&prAdapter->rWifiVar.rDBDCSwitchGuardTimer,
-					(PFN_MGMT_TIMEOUT_FUNC)cnmDbdcDecision,
-					(ULONG)DBDC_DECISION_TIMER_SWITCH_GUARD_TIME);
-
-	cnmTimerInitTimer(prAdapter,
-					&prAdapter->rWifiVar.rDBDCDisableCountdownTimer,
-					(PFN_MGMT_TIMEOUT_FUNC)cnmDbdcDecision,
-					(ULONG)DBDC_DECISION_TIMER_DISABLE_COUNT_DOWN);
-#endif /*CFG_SUPPORT_DBDC*/
 }				/* end of cnmInit()*/
 
 /*----------------------------------------------------------------------------*/
@@ -158,6 +404,7 @@ VOID cnmInit(P_ADAPTER_T prAdapter)
 /*----------------------------------------------------------------------------*/
 VOID cnmUninit(P_ADAPTER_T prAdapter)
 {
+	cnmTimerStopTimer(prAdapter, &g_rDbdcInfo.rDbdcGuardTimer);
 }				/* end of cnmUninit()*/
 
 /*----------------------------------------------------------------------------*/
@@ -180,6 +427,15 @@ VOID cnmChMngrRequestPrivilege(P_ADAPTER_T prAdapter, P_MSG_HDR_T prMsgHdr)
 	ASSERT(prMsgHdr);
 
 	prMsgChReq = (P_MSG_CH_REQ_T)prMsgHdr;
+
+#if CFG_SUPPORT_DBDC
+	if (cnmDBDCIsReqPeivilegeLock()) {
+		LINK_INSERT_TAIL(&g_rDbdcInfo.rPendingMsgList, &prMsgHdr->rLinkEntry);
+		DBGLOG(CNM, INFO, "[DBDC] ChReq: queued BSS %u Token %u REQ\n",
+		       prMsgChReq->ucBssIndex, prMsgChReq->ucTokenID);
+		return;
+	}
+#endif
 
 	prCmdBody = (P_CMD_CH_PRIVILEGE_T)
 	    cnmMemAlloc(prAdapter, RAM_TYPE_BUF, sizeof(CMD_CH_PRIVILEGE_T));
@@ -264,11 +520,40 @@ VOID cnmChMngrAbortPrivilege(P_ADAPTER_T prAdapter, P_MSG_HDR_T prMsgHdr)
 #if CFG_SISO_SW_DEVELOP
 	P_BSS_INFO_T prBssInfo;
 #endif
+#if CFG_SUPPORT_DBDC
+	P_LINK_ENTRY_T prLinkEntry_pendingMsg;
+	P_MSG_CH_REQ_T prPendingMsg;
+#endif
 
 	ASSERT(prAdapter);
 	ASSERT(prMsgHdr);
 
 	prMsgChAbort = (P_MSG_CH_ABORT_T)prMsgHdr;
+
+#if CFG_SUPPORT_DBDC
+	if (cnmDBDCIsReqPeivilegeLock()) {
+		LINK_FOR_EACH(prLinkEntry_pendingMsg, &g_rDbdcInfo.rPendingMsgList) {
+			prPendingMsg = (P_MSG_CH_REQ_T)
+							LINK_ENTRY(prLinkEntry_pendingMsg, MSG_HDR_T, rLinkEntry);
+
+			/* Find matched request and check if it is being served. */
+			if (prPendingMsg->ucBssIndex == prMsgChAbort->ucBssIndex &&
+				prPendingMsg->ucTokenID == prMsgChAbort->ucTokenID) {
+
+				LINK_REMOVE_KNOWN_ENTRY(&g_rDbdcInfo.rPendingMsgList,
+									&prPendingMsg->rMsgHdr.rLinkEntry);
+
+				DBGLOG(CNM, INFO, "[DBDC] ChAbort: remove BSS %u Token %u REQ)\n",
+								prPendingMsg->ucBssIndex, prPendingMsg->ucTokenID);
+
+				cnmMemFree(prAdapter, prPendingMsg);
+				cnmMemFree(prAdapter, prMsgHdr);
+
+				return;
+		    }
+		}
+	}
+#endif
 
 	/* Check if being granted channel privilege is aborted */
 	prCnmInfo = &prAdapter->rCnmInfo;
@@ -1034,7 +1319,7 @@ P_BSS_INFO_T cnmGetBssInfoAndInit(P_ADAPTER_T prAdapter, ENUM_NETWORK_TYPE_T eNe
 	} while (++ucOwnMacIdx < prAdapter->ucHwBssIdNum);
 
 
-	/*should not dispatch P2P_DEV_BSS_INDEX (HW_BSSID_NUM)to general bss,
+	/*should not dispatch P2P_DEV_BSS_INDEX (prAdapter->ucHwBssIdNum)to general bss,
 	*It means total BSS_INFO_NUM BSS are created,
 	*no more reseve for MBSS
 	*/
@@ -1101,41 +1386,253 @@ VOID cnmFreeBssInfo(P_ADAPTER_T prAdapter, P_BSS_INFO_T prBssInfo)
 }
 
 #if CFG_SUPPORT_DBDC
+/*----------------------------------------------------------------------------*/
+/*!
+* @brief    Init DBDC
+*
+* @param (none)
+*
+* @return (none)
+*/
+/*----------------------------------------------------------------------------*/
 VOID cnmInitDbdcSetting(IN P_ADAPTER_T prAdapter)
 {
+	UINT_8			ucBssLoopIndex;
+
 	/* Parameter decision */
-	switch (prAdapter->rWifiVar.ucDbdcMode) {
-	case DBDC_MODE_DISABLED:
-	case DBDC_MODE_DYNAMIC:
+	switch (prAdapter->rWifiVar.eDbdcMode) {
+	case ENUM_DBDC_MODE_DISABLED:
 		cnmUpdateDbdcSetting(prAdapter, FALSE);
 		break;
 
-	case DBDC_MODE_STATIC:
+	case ENUM_DBDC_MODE_DYNAMIC:
+		g_rDbdcInfo.eDbdcFsmCurrState = ENUM_DBDC_FSM_STATE_DISABLE_IDLE;
+		g_rDbdcInfo.eDbdcFsmPrevState = ENUM_DBDC_FSM_STATE_DISABLE_IDLE;
+		g_rDbdcInfo.eDbdcFsmNextState = ENUM_DBDC_FSM_STATE_DISABLE_IDLE;
+
+		cnmTimerInitTimer(prAdapter,
+						&g_rDbdcInfo.rDbdcGuardTimer,
+						(PFN_MGMT_TIMEOUT_FUNC)cnmDbdcGuardTimerCallback,
+						(ULONG) NULL);
+
+		g_rDbdcInfo.eDdbcGuardTimerType = ENUM_DBDC_GUARD_TIMER_NONE;
+		g_rDbdcInfo.fgReqPrivelegeLock = FALSE;
+		LINK_INITIALIZE(&g_rDbdcInfo.rPendingMsgList);
+		g_rDbdcInfo.fgDbdcDisableOpmodeChangeDone = TRUE;
+
+		for (ucBssLoopIndex = 0; ucBssLoopIndex < prAdapter->ucHwBssIdNum; ucBssLoopIndex++)
+			g_rDbdcInfo.eBssOpModeState[ucBssLoopIndex] = ENUM_OPMODE_STATE_DONE;
+
+		cnmUpdateDbdcSetting(prAdapter, FALSE);
+		break;
+
+	case ENUM_DBDC_MODE_STATIC:
 		cnmUpdateDbdcSetting(prAdapter, TRUE);
 		break;
 
 	default:
+		DBGLOG(CNM, ERROR, "[DBDC]Incorrect DBDC mode %u\n", prAdapter->rWifiVar.eDbdcMode);
 		break;
 	}
 }
 
-VOID cnmUpdateDbdcSetting(IN P_ADAPTER_T prAdapter, IN BOOLEAN fgDbdcEn)
+/*----------------------------------------------------------------------------*/
+/*!
+* @brief    Check A+G Condition
+*
+* @param (none)
+*
+* @return TRUE: A+G, FALSE: NOT A+G
+*/
+/*----------------------------------------------------------------------------*/
+static BOOLEAN cnmDbdcIsAGConcurrent(
+	IN P_ADAPTER_T	prAdapter,
+	IN ENUM_BAND_T	eRfBand_Connecting
+	)
 {
-	UINT_8 ucWmmSetBitmap = 0;
-	CMD_DBDC_SETTING_T rDbdcSetting;
-	P_CMD_DBDC_SETTING_T prCmdBody;
-	WLAN_STATUS rStatus = WLAN_STATUS_SUCCESS;
-	UINT_8 ucBssIndex;
-	P_BSS_INFO_T prBssInfo;
-	UINT_8 ucMaxBw;
+	P_BSS_INFO_T	prBssInfo;
+	UINT_8			ucBssIndex;
+	ENUM_BAND_T		eBandCompare = eRfBand_Connecting;
+	BOOLEAN			fgAGConcurrent = FALSE;
+	ENUM_BAND_T		eBssBand[BSSID_NUM] = {BAND_NULL};
 
-	ASSERT(prAdapter);
+	for (ucBssIndex = 0; ucBssIndex < prAdapter->ucHwBssIdNum; ucBssIndex++) {
 
-	DBGLOG(CNM, INFO, "DBDC %s\n", fgDbdcEn?"Enable":"Disable");
+		prBssInfo = prAdapter->aprBssInfo[ucBssIndex];
 
-	/* Parameter decision */
+		if (DBDC_IS_BSS_NOT_ALIVE(prBssInfo))
+			continue;
+
+		if (prBssInfo->eBand != BAND_2G4 && prBssInfo->eBand != BAND_5G)
+			continue;
+
+		eBssBand[ucBssIndex] = prBssInfo->eBand;
+
+		if (eBandCompare != BAND_2G4 && eBandCompare != BAND_5G)
+			eBandCompare = prBssInfo->eBand;
+
+		if (eBandCompare != prBssInfo->eBand)
+			fgAGConcurrent = TRUE;	/*A+G*/
+	}
+
+	DBGLOG(CNM, INFO, "[DBDC] BSS AG[%u.%u.%u.%u][%u]\n",
+							eBssBand[BSSID_0],
+							eBssBand[BSSID_1],
+							eBssBand[BSSID_2],
+							eBssBand[BSSID_3],
+							eRfBand_Connecting);
+
+	return fgAGConcurrent;	/*NOT A+G*/
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+* @brief    MT6632 HW capability will change between BW160+NSS2 and BW80+NSS1
+*
+* @param (none)
+*
+* @return TRUE: WAIT/WAIT FAIL/Done Success/Done Fail
+*/
+/*----------------------------------------------------------------------------*/
+static enum ENUM_DBDC_PROTOCOL_STATUS_T cnmDbdcOpmodeChangeAndWait(
+	IN P_ADAPTER_T	prAdapter,
+	IN BOOLEAN		fgDbdcEn
+	)
+{
+	UINT_8			ucBssIndex;
+	UINT_8			ucWmmSetBitmap = 0;
+	UINT_8			ucOpBw;
+	UINT_8			ucNss;
+	P_BSS_INFO_T	prBssInfo;
+	enum ENUM_OP_CHANGE_STATUS_T eBssOpmodeChange;
+	enum ENUM_DBDC_PROTOCOL_STATUS_T eRetVar = ENUM_DBDC_PROTOCOL_STATUS_DONE_SUCCESS;
+
+#define IS_BSS_CLIENT(_prBssInfo) (_prBssInfo->eCurrentOPMode == OP_MODE_INFRASTRUCTURE)
+
 	if (fgDbdcEn)
 		ucWmmSetBitmap |= BIT(DBDC_2G_WMM_INDEX);
+
+	for (ucBssIndex = 0; ucBssIndex <= prAdapter->ucHwBssIdNum; ucBssIndex++) {
+		prBssInfo = prAdapter->aprBssInfo[ucBssIndex];
+		if (DBDC_IS_BSS_ALIVE(prBssInfo)) {
+
+			ucOpBw = rlmGetBssOpBwByVhtAndHtOpInfo(prBssInfo);
+			if (fgDbdcEn && ucOpBw > MAX_BW_80MHZ)
+				ucOpBw = MAX_BW_80MHZ;
+
+			ucNss = fgDbdcEn?1:wlanGetSupportNss(prAdapter, ucBssIndex);
+
+			eBssOpmodeChange = rlmChangeOperationMode(prAdapter,
+				ucBssIndex,
+				ucOpBw,
+				ucNss,
+				IS_BSS_CLIENT(prBssInfo)?cnmDbdcOpModeChangeDoneCallback:NULL);
+
+			DBGLOG(CNM, INFO, "[DBDC] BSS index[%u] to BW %u NSS %u Mode:%s, status %u\n",
+							ucBssIndex,
+							ucOpBw,
+							ucNss,
+							IS_BSS_CLIENT(prBssInfo)?"Client":"Master",
+							eBssOpmodeChange);
+
+			switch (eBssOpmodeChange) {
+			case OP_CHANGE_STATUS_VALID_CHANGE_CALLBACK_WAIT:
+				g_rDbdcInfo.fgDbdcDisableOpmodeChangeDone = FALSE;
+				g_rDbdcInfo.eBssOpModeState[ucBssIndex] = ENUM_OPMODE_STATE_WAIT;
+				eRetVar = ENUM_DBDC_PROTOCOL_STATUS_WAIT;
+
+				break;
+
+			case OP_CHANGE_STATUS_VALID_CHANGE_CALLBACK_DONE:
+			case OP_CHANGE_STATUS_VALID_NO_CHANGE:
+				g_rDbdcInfo.eBssOpModeState[ucBssIndex] = ENUM_OPMODE_STATE_DONE;
+				break;
+
+			case OP_CHANGE_STATUS_INVALID:
+				g_rDbdcInfo.eBssOpModeState[ucBssIndex] = ENUM_OPMODE_STATE_FAIL;
+
+				if (eRetVar == ENUM_DBDC_PROTOCOL_STATUS_DONE_SUCCESS)
+					eRetVar = ENUM_DBDC_PROTOCOL_STATUS_DONE_FAIL;
+				else if (eRetVar == ENUM_DBDC_PROTOCOL_STATUS_WAIT)
+					eRetVar = ENUM_DBDC_PROTOCOL_STATUS_WAIT;
+
+				break;
+
+			default:
+				ASSERT(0);
+				break;
+			}
+		} else {
+			g_rDbdcInfo.eBssOpModeState[ucBssIndex] = ENUM_OPMODE_STATE_DONE;
+		}
+	}
+
+	return eRetVar;
+}
+
+
+VOID cnmDbdcOpModeChangeDoneCallback(
+	IN P_ADAPTER_T	prAdapter,
+	IN UINT_8		ucBssIndex,
+	IN BOOLEAN		fgSuccess)
+{
+	UINT_8			ucBssLoopIndex;
+	BOOLEAN			fgIsAllActionFrameSuccess = TRUE;
+
+	if (fgSuccess)
+		g_rDbdcInfo.eBssOpModeState[ucBssIndex] = ENUM_OPMODE_STATE_DONE;
+	else
+		g_rDbdcInfo.eBssOpModeState[ucBssIndex] = ENUM_OPMODE_STATE_FAIL;
+
+	DBGLOG(CNM, INFO, "[DBDC] OPMODE STATE [%u/%u/%u/%u]\n",
+		g_rDbdcInfo.eBssOpModeState[BSSID_0],
+		g_rDbdcInfo.eBssOpModeState[BSSID_1],
+		g_rDbdcInfo.eBssOpModeState[BSSID_2],
+		g_rDbdcInfo.eBssOpModeState[BSSID_3]);
+
+	for (ucBssLoopIndex = 0; ucBssLoopIndex <= prAdapter->ucHwBssIdNum; ucBssLoopIndex++) {
+
+		if (g_rDbdcInfo.eBssOpModeState[ucBssIndex] == ENUM_OPMODE_STATE_WAIT)
+			return;
+
+		if (g_rDbdcInfo.eBssOpModeState[ucBssIndex] == ENUM_OPMODE_STATE_FAIL &&
+			fgIsAllActionFrameSuccess == TRUE) {
+			/* Some OP mode change FAIL */
+			fgIsAllActionFrameSuccess = FALSE;
+		}
+	}
+
+	if (!g_rDbdcInfo.fgDbdcDisableOpmodeChangeDone) {
+		if (fgIsAllActionFrameSuccess) {
+			/* CODING_STYLE_WORKAROUND
+			* Gerrit wish no {} for "one line if statement", but build command as } before else
+			*/
+			DBDC_FSM_EVENT_HANDLER(prAdapter, DBDC_FSM_EVENT_ACTION_FRAME_ALL_SUCCESS);
+		} else
+			DBDC_FSM_EVENT_HANDLER(prAdapter, DBDC_FSM_EVENT_ACTION_FRAME_SOME_FAIL);
+
+		g_rDbdcInfo.fgDbdcDisableOpmodeChangeDone = TRUE;
+	}
+
+	return;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+* @brief    Send DBDC Enable/Disable command to FW
+*
+* @param (none)
+*
+* @return (none)
+*/
+/*----------------------------------------------------------------------------*/
+VOID cnmUpdateDbdcSetting(IN P_ADAPTER_T prAdapter, IN BOOLEAN fgDbdcEn)
+{
+	CMD_DBDC_SETTING_T		rDbdcSetting;
+	P_CMD_DBDC_SETTING_T	prCmdBody;
+	WLAN_STATUS				rStatus = WLAN_STATUS_SUCCESS;
+
+	DBGLOG(CNM, INFO, "[DBDC] %s\n", fgDbdcEn?"Enable":"Disable");
 
 	/* Send event to FW */
 	prCmdBody = (P_CMD_DBDC_SETTING_T)&rDbdcSetting;
@@ -1143,104 +1640,551 @@ VOID cnmUpdateDbdcSetting(IN P_ADAPTER_T prAdapter, IN BOOLEAN fgDbdcEn)
 	kalMemZero(prCmdBody, sizeof(CMD_DBDC_SETTING_T));
 
 	prCmdBody->ucDbdcEn = fgDbdcEn;
-	prCmdBody->ucWmmBandBitmap = ucWmmSetBitmap;
 
-	if (!fgDbdcEn) {
-		rStatus = wlanSendSetQueryCmd(prAdapter,	/* prAdapter */
-						  CMD_ID_SET_DBDC_PARMS,	/* ucCID */
-						  TRUE, /* fgSetQuery */
-						  FALSE,	/* fgNeedResp */
-						  FALSE,	/* fgIsOid */
-						  NULL, /* pfCmdDoneHandler */
-						  NULL, /* pfCmdTimeoutHandler */
-						  sizeof(CMD_DBDC_SETTING_T),	/* u4SetQueryInfoLen */
-						  (PUINT_8)prCmdBody,	/* pucInfoBuffer */
-						  NULL, /* pvSetQueryBuffer */
-						  0 /* u4SetQueryBufferLen */);
+	if (fgDbdcEn)
+		prCmdBody->ucWmmBandBitmap |= BIT(DBDC_2G_WMM_INDEX);
+
+	rStatus = wlanSendSetQueryCmd(prAdapter,	/* prAdapter */
+				  CMD_ID_SET_DBDC_PARMS,	/* ucCID */
+				  TRUE, /* fgSetQuery */
+				  FALSE,	/* fgNeedResp */
+				  FALSE,	/* fgIsOid */
+				  NULL, /* pfCmdDoneHandler */
+				  NULL, /* pfCmdTimeoutHandler */
+				  sizeof(CMD_DBDC_SETTING_T),	/* u4SetQueryInfoLen */
+				  (PUINT_8)prCmdBody,	/* pucInfoBuffer */
+				  NULL, /* pvSetQueryBuffer */
+				  0 /* u4SetQueryBufferLen */);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+* \brief DBDC FSM Entry
+*
+* \param[in]
+*
+* \return none
+*/
+/*----------------------------------------------------------------------------*/
+static VOID
+cnmDbdcFsmSteps(
+	IN P_ADAPTER_T                  prAdapter,
+	IN enum ENUM_DBDC_FSM_STATE_T   eNextState,
+	IN enum ENUM_DBDC_FSM_EVENT_T   eEvent
+	)
+{
+	/* Do entering Next State and do its initial function. */
+	g_rDbdcInfo.eDbdcFsmPrevState = g_rDbdcInfo.eDbdcFsmCurrState;
+	g_rDbdcInfo.eDbdcFsmCurrState = eNextState;
+	g_rDbdcInfo.eDbdcFsmNextState = eNextState;
+
+	DBGLOG(CNM, INFO, "[DBDC] event %d state %d->%d\n",
+			eEvent,
+			g_rDbdcInfo.eDbdcFsmPrevState,
+			g_rDbdcInfo.eDbdcFsmCurrState);
+
+	if (g_rDbdcInfo.eDbdcFsmPrevState != g_rDbdcInfo.eDbdcFsmCurrState) {
+		/* state change, call exit function of previous state */
+		if (arDdbcFsmActionTable[g_rDbdcInfo.eDbdcFsmPrevState].pfExitFunc)
+			arDdbcFsmActionTable[g_rDbdcInfo.eDbdcFsmPrevState].pfExitFunc(prAdapter);
+
+		/* state change, call entry function of current state */
+		if (arDdbcFsmActionTable[g_rDbdcInfo.eDbdcFsmCurrState].pfEntryFunc)
+			arDdbcFsmActionTable[g_rDbdcInfo.eDbdcFsmCurrState].pfEntryFunc(prAdapter);
 	}
+}
 
-	for (ucBssIndex = 0; ucBssIndex <= prAdapter->ucHwBssIdNum; ucBssIndex++) {
-		prBssInfo = prAdapter->aprBssInfo[ucBssIndex];
-		if (prBssInfo->fgIsInUse &&
-			prBssInfo->fgIsNetActive &&
-			(prBssInfo->eConnectionState == PARAM_MEDIA_STATE_CONNECTED ||
-			prBssInfo->eCurrentOPMode == OP_MODE_ACCESS_POINT)) {
+static BOOLEAN
+cnmDBDCIsReqPeivilegeLock(
+	VOID
+	)
+{
+	return g_rDbdcInfo.fgReqPrivelegeLock;
+}
 
-			switch (prBssInfo->ucVhtChannelWidth) {
-			case VHT_OP_CHANNEL_WIDTH_80P80:
-				ucMaxBw = MAX_BW_160MHZ;
-				break;
+static VOID
+cnmDBDCFsmActionReqPeivilegeLock(
+	VOID
+	)
+{
+	g_rDbdcInfo.fgReqPrivelegeLock = TRUE;
+	DBGLOG(CNM, INFO, "[DBDC] ReqPrivelege Lock!!\n");
+}
 
-			case VHT_OP_CHANNEL_WIDTH_160:
-				ucMaxBw = MAX_BW_160MHZ;
-				break;
+static VOID
+cnmDBDCFsmActionReqPeivilegeUnLock(
+	IN P_ADAPTER_T	prAdapter
+	)
+{
+	P_MSG_CH_REQ_T prPendingMsg;
+	P_MSG_HDR_T prMsgHdr;
 
-			case VHT_OP_CHANNEL_WIDTH_80:
-				ucMaxBw = MAX_BW_80MHZ;
-				break;
+	g_rDbdcInfo.fgReqPrivelegeLock = FALSE;
+	DBGLOG(CNM, INFO, "[DBDC] ReqPrivelege Unlock!!\n");
 
-			case VHT_OP_CHANNEL_WIDTH_20_40:
-			default:
-				{
-					ucMaxBw = MAX_BW_20MHZ;
+	while (!LINK_IS_EMPTY(&g_rDbdcInfo.rPendingMsgList)) {
 
-					if (prBssInfo->eBssSCO != CHNL_EXT_SCN)
-						ucMaxBw = MAX_BW_40MHZ;
-				}
-				break;
-			}
+		LINK_REMOVE_HEAD(&g_rDbdcInfo.rPendingMsgList, prMsgHdr, P_MSG_HDR_T);
 
-			if (fgDbdcEn) {
-				DBGLOG(CNM, INFO, "BSS index[%u] to 1SS\n", ucBssIndex);
-				rlmChangeOperationMode(prAdapter,
-							ucBssIndex,
-							ucMaxBw,
-							1);
-			} else {
-				DBGLOG(CNM, INFO, "BSS index[%u] to %uSS\n",
-					ucBssIndex, wlanGetSupportNss(prAdapter, ucBssIndex));
-				rlmChangeOperationMode(prAdapter,
-							ucBssIndex,
-							ucMaxBw,
-							wlanGetSupportNss(prAdapter, ucBssIndex));
-			}
-		}
-	}
+		if (prMsgHdr) {
+			prPendingMsg = (P_MSG_CH_REQ_T)prMsgHdr;
 
-	if (fgDbdcEn) {
-		rStatus = wlanSendSetQueryCmd(prAdapter,	/* prAdapter */
-					      CMD_ID_SET_DBDC_PARMS,	/* ucCID */
-					      TRUE,	/* fgSetQuery */
-					      FALSE,	/* fgNeedResp */
-					      FALSE,	/* fgIsOid */
-					      NULL,	/* pfCmdDoneHandler */
-					      NULL,	/* pfCmdTimeoutHandler */
-					      sizeof(CMD_DBDC_SETTING_T),	/* u4SetQueryInfoLen */
-					      (PUINT_8)prCmdBody,	/* pucInfoBuffer */
-					      NULL,	/* pvSetQueryBuffer */
-					      0	/* u4SetQueryBufferLen */);
-	}
+			DBGLOG(CNM, INFO, "[DBDC] ChReq: send queued REQ of BSS %u Token %u\n",
+						prPendingMsg->ucBssIndex, prPendingMsg->ucTokenID);
 
-	/*DBGLOG(CNM, INFO, "DBDC CMD status %u\n", rStatus);*/
-
-	if (rStatus == WLAN_STATUS_SUCCESS || rStatus == WLAN_STATUS_PENDING) {
-		prAdapter->rWifiVar.fgDbDcModeEn = fgDbdcEn;
-
-		for (ucBssIndex = 0; ucBssIndex <= prAdapter->ucHwBssIdNum; ucBssIndex++) {
-			prBssInfo = prAdapter->aprBssInfo[ucBssIndex];
-
-			if (prBssInfo->eBand == BAND_2G4) {
-				if (fgDbdcEn)
-					prBssInfo->eDBDCBand = ENUM_BAND_1;
-				else
-					prBssInfo->eDBDCBand = ENUM_BAND_0;
-			}
+			cnmChMngrRequestPrivilege(prAdapter, &prPendingMsg->rMsgHdr);
+		} else {
+			ASSERT(0);
 		}
 	}
 }
 
-VOID cnmGetDbdcCapability(IN P_ADAPTER_T prAdapter, IN UINT_8 ucBssIndex, IN ENUM_BAND_T eRfBand,
-			  IN UINT_8 ucPrimaryChannel, IN UINT_8 ucNss, OUT P_CNM_DBDC_CAP_T prDbdcCap)
+static VOID
+cnmDbdcFsmEntryFunc_DISABLE_IDLE(
+	IN P_ADAPTER_T	prAdapter
+	)
+{
+	cnmDBDCFsmActionReqPeivilegeUnLock(prAdapter);
+}
+
+static VOID
+cnmDbdcFsmEntryFunc_WAIT_PROTOCOL_ENABLE(
+	IN P_ADAPTER_T	prAdapter
+	)
+{
+	cnmDBDCFsmActionReqPeivilegeLock();
+}
+
+static VOID
+cnmDbdcFsmEntryFunc_WAIT_HW_ENABLE(
+	IN P_ADAPTER_T	prAdapter
+	)
+{
+	if (!cnmDBDCIsReqPeivilegeLock())
+		cnmDBDCFsmActionReqPeivilegeLock();
+
+	cnmUpdateDbdcSetting(prAdapter, TRUE);
+}
+
+static VOID
+cnmDbdcFsmEntryFunc_ENABLE_GUARD(
+	IN P_ADAPTER_T	prAdapter
+	)
+{
+	if (timerPendingTimer(&g_rDbdcInfo.rDbdcGuardTimer)) {
+		DBGLOG(CNM, WARN, "[DBDC] Guard Timer type %u should not exist, stop it\n",
+			g_rDbdcInfo.eDdbcGuardTimerType);
+		cnmTimerStopTimer(prAdapter, &g_rDbdcInfo.rDbdcGuardTimer);
+		g_rDbdcInfo.eDdbcGuardTimerType =
+						ENUM_DBDC_GUARD_TIMER_NONE;
+	}
+	DBDC_SET_GUARD_TIME(prAdapter);
+}
+
+static VOID
+cnmDbdcFsmEntryFunc_WAIT_HW_DISABLE(
+	IN P_ADAPTER_T	prAdapter
+	)
+{
+	cnmUpdateDbdcSetting(prAdapter, FALSE);
+}
+
+static VOID
+cnmDbdcFsmEntryFunc_DISABLE_GUARD(
+	IN P_ADAPTER_T	prAdapter
+	)
+{
+	if (timerPendingTimer(&g_rDbdcInfo.rDbdcGuardTimer)) {
+		DBGLOG(CNM, WARN, "[DBDC] Guard Timer type %u should not exist, stop it\n",
+			g_rDbdcInfo.eDdbcGuardTimerType);
+		cnmTimerStopTimer(prAdapter, &g_rDbdcInfo.rDbdcGuardTimer);
+		g_rDbdcInfo.eDdbcGuardTimerType =
+						ENUM_DBDC_GUARD_TIMER_NONE;
+	}
+	DBDC_SET_GUARD_TIME(prAdapter);
+
+	cnmDbdcOpmodeChangeAndWait(prAdapter, FALSE);
+}
+
+static VOID
+cnmDbdcFsmEventHandler_DISABLE_IDLE(
+	IN P_ADAPTER_T	prAdapter,
+	IN enum ENUM_DBDC_FSM_EVENT_T	eEvent
+	)
+{
+	switch (eEvent) {
+	case DBDC_FSM_EVENT_BSS_DISCONNECT_LEAVE_AG:
+		/* Do Nothing */
+		break;
+
+	case DBDC_FSM_EVENT_BSS_CONNECTING_ENTER_AG:
+		/* Enable DBDC */
+		switch (cnmDbdcOpmodeChangeAndWait(prAdapter, TRUE)) {
+		case ENUM_DBDC_PROTOCOL_STATUS_WAIT:
+			g_rDbdcInfo.eDbdcFsmNextState = ENUM_DBDC_FSM_STATE_WAIT_PROTOCOL_ENABLE;
+			break;
+
+		case ENUM_DBDC_PROTOCOL_STATUS_DONE_SUCCESS:
+			g_rDbdcInfo.eDbdcFsmNextState = ENUM_DBDC_FSM_STATE_WAIT_HW_ENABLE;
+			break;
+
+		case ENUM_DBDC_PROTOCOL_STATUS_DONE_FAIL:
+			/* Should NOT FAIL, not recover anything now. Stop enable DBDC */
+			break;
+		default:
+			break;
+		}
+		break;
+
+	case DBDC_FSM_EVENT_SWITCH_GUARD_TIME_TO:
+	case DBDC_FSM_EVENT_DISABLE_COUNT_DOWN_TO:
+	case DBDC_FSM_EVENT_ACTION_FRAME_ALL_SUCCESS:
+	case DBDC_FSM_EVENT_ACTION_FRAME_SOME_FAIL:
+	case DBDC_FSM_EVENT_DBDC_HW_SWITCH_DONE:
+		/* ABNORMAL CASE*/
+		DBDC_FSM_MSG_WRONG_EVT(eEvent);
+		break;
+	default:
+		/* WRONG EVENT */
+		DBDC_FSM_MSG_ERROR_EVT(eEvent);
+		break;
+	}
+
+	cnmDbdcFsmSteps(prAdapter, g_rDbdcInfo.eDbdcFsmNextState, eEvent);
+}
+
+static VOID
+cnmDbdcFsmEventHandler_WAIT_PROTOCOL_ENABLE(
+	IN P_ADAPTER_T                  prAdapter,
+	IN enum ENUM_DBDC_FSM_EVENT_T   eEvent
+	)
+{
+	switch (eEvent) {
+	case DBDC_FSM_EVENT_BSS_DISCONNECT_LEAVE_AG:
+	case DBDC_FSM_EVENT_BSS_CONNECTING_ENTER_AG:
+		/* IGNORE */
+		break;
+
+	case DBDC_FSM_EVENT_SWITCH_GUARD_TIME_TO:
+	case DBDC_FSM_EVENT_DISABLE_COUNT_DOWN_TO:
+		/* ABNORMAL CASE*/
+		DBDC_FSM_MSG_WRONG_EVT(eEvent);
+		break;
+
+	case DBDC_FSM_EVENT_ACTION_FRAME_ALL_SUCCESS:
+		g_rDbdcInfo.eDbdcFsmNextState = ENUM_DBDC_FSM_STATE_WAIT_HW_ENABLE;
+		break;
+
+	case DBDC_FSM_EVENT_ACTION_FRAME_SOME_FAIL:
+		/* Not recover anything. Stop Enable DBDC */
+		g_rDbdcInfo.eDbdcFsmNextState = ENUM_DBDC_FSM_STATE_DISABLE_IDLE;
+		break;
+
+	case DBDC_FSM_EVENT_DBDC_HW_SWITCH_DONE:
+		/* ABNORMAL CASE*/
+		DBDC_FSM_MSG_WRONG_EVT(eEvent);
+		break;
+
+	default:
+		/* WRONG EVENT */
+		DBDC_FSM_MSG_ERROR_EVT(eEvent);
+		break;
+	}
+
+	cnmDbdcFsmSteps(prAdapter, g_rDbdcInfo.eDbdcFsmNextState, eEvent);
+}
+
+static VOID
+cnmDbdcFsmEventHandler_WAIT_HW_ENABLE(
+	IN P_ADAPTER_T                  prAdapter,
+	IN enum ENUM_DBDC_FSM_EVENT_T   eEvent
+	)
+{
+	/* Prepare to Enable DBDC */
+
+	switch (eEvent) {
+	case DBDC_FSM_EVENT_BSS_DISCONNECT_LEAVE_AG:
+	case DBDC_FSM_EVENT_BSS_CONNECTING_ENTER_AG:
+		/* IGNORE */
+		break;
+
+	case DBDC_FSM_EVENT_SWITCH_GUARD_TIME_TO:
+	case DBDC_FSM_EVENT_DISABLE_COUNT_DOWN_TO:
+	case DBDC_FSM_EVENT_ACTION_FRAME_ALL_SUCCESS:
+	case DBDC_FSM_EVENT_ACTION_FRAME_SOME_FAIL:
+		/* ABNORMAL CASE*/
+		DBDC_FSM_MSG_WRONG_EVT(eEvent);
+		break;
+
+	case DBDC_FSM_EVENT_DBDC_HW_SWITCH_DONE:
+		g_rDbdcInfo.eDbdcFsmNextState = ENUM_DBDC_FSM_STATE_ENABLE_GUARD;
+		break;
+
+	default:
+		/* WRONG EVENT */
+		DBDC_FSM_MSG_ERROR_EVT(eEvent);
+		break;
+	}
+
+	cnmDbdcFsmSteps(prAdapter, g_rDbdcInfo.eDbdcFsmNextState, eEvent);
+}
+
+
+static VOID
+cnmDbdcFsmEventHandler_ENABLE_GUARD(
+	IN P_ADAPTER_T                  prAdapter,
+	IN enum ENUM_DBDC_FSM_EVENT_T   eEvent
+	)
+{
+	switch (eEvent) {
+	case DBDC_FSM_EVENT_BSS_DISCONNECT_LEAVE_AG:
+	case DBDC_FSM_EVENT_BSS_CONNECTING_ENTER_AG:
+		/* IGNORE */
+		break;
+
+	case DBDC_FSM_EVENT_SWITCH_GUARD_TIME_TO:
+		if (cnmDbdcIsAGConcurrent(prAdapter, BAND_NULL)) {
+			/* CODEING_STYLE_WORKAROUND
+			* Gerrit wish no {} for "one line if statement", but build command as } before else
+			*/
+			g_rDbdcInfo.eDbdcFsmNextState = ENUM_DBDC_FSM_STATE_ENABLE_IDLE;
+		} else
+			g_rDbdcInfo.eDbdcFsmNextState = ENUM_DBDC_FSM_STATE_WAIT_HW_DISABLE;
+		break;
+
+	case DBDC_FSM_EVENT_DISABLE_COUNT_DOWN_TO:
+	case DBDC_FSM_EVENT_ACTION_FRAME_ALL_SUCCESS:
+	case DBDC_FSM_EVENT_ACTION_FRAME_SOME_FAIL:
+	case DBDC_FSM_EVENT_DBDC_HW_SWITCH_DONE:
+		/* ABNORMAL CASE*/
+		DBDC_FSM_MSG_WRONG_EVT(eEvent);
+		break;
+
+	default:
+		/* WRONG EVENT */
+		DBDC_FSM_MSG_ERROR_EVT(eEvent);
+		break;
+	}
+
+	cnmDbdcFsmSteps(prAdapter, g_rDbdcInfo.eDbdcFsmNextState, eEvent);
+}
+
+static VOID
+cnmDbdcFsmEventHandler_ENABLE_IDLE(
+	IN P_ADAPTER_T                  prAdapter,
+	IN enum ENUM_DBDC_FSM_EVENT_T   eEvent
+	)
+{
+	switch (eEvent) {
+	case DBDC_FSM_EVENT_BSS_DISCONNECT_LEAVE_AG:
+		/* start DBDC disable countdown timer */
+		if (timerPendingTimer(&g_rDbdcInfo.rDbdcGuardTimer)) {
+			DBGLOG(CNM, WARN, "[DBDC] Guard Timer type %u should not exist, stop it\n",
+				g_rDbdcInfo.eDdbcGuardTimerType);
+			cnmTimerStopTimer(prAdapter, &g_rDbdcInfo.rDbdcGuardTimer);
+			g_rDbdcInfo.eDdbcGuardTimerType =
+							ENUM_DBDC_GUARD_TIMER_NONE;
+		}
+		DBDC_SET_DISABLE_COUNTDOWN(prAdapter);
+		break;
+
+	case DBDC_FSM_EVENT_BSS_CONNECTING_ENTER_AG:
+		/* cancel DBDC disable countdown if exist */
+		if (timerPendingTimer(&g_rDbdcInfo.rDbdcGuardTimer) &&
+			g_rDbdcInfo.eDdbcGuardTimerType == ENUM_DBDC_GUARD_TIMER_DISABLE_COUNT_DOWN) {
+			cnmTimerStopTimer(prAdapter, &g_rDbdcInfo.rDbdcGuardTimer);
+		}
+		break;
+
+	case DBDC_FSM_EVENT_SWITCH_GUARD_TIME_TO:
+		/* ABNORMAL CASE*/
+		DBDC_FSM_MSG_WRONG_EVT(eEvent);
+		break;
+
+	case DBDC_FSM_EVENT_DISABLE_COUNT_DOWN_TO:
+		if (!cnmDbdcIsAGConcurrent(prAdapter, BAND_NULL))
+			g_rDbdcInfo.eDbdcFsmNextState = ENUM_DBDC_FSM_STATE_WAIT_HW_DISABLE;
+		break;
+
+	case DBDC_FSM_EVENT_ACTION_FRAME_ALL_SUCCESS:
+	case DBDC_FSM_EVENT_ACTION_FRAME_SOME_FAIL:
+	case DBDC_FSM_EVENT_DBDC_HW_SWITCH_DONE:
+		/* ABNORMAL CASE*/
+		DBDC_FSM_MSG_WRONG_EVT(eEvent);
+		break;
+
+	default:
+		/* WRONG EVENT */
+		DBDC_FSM_MSG_ERROR_EVT(eEvent);
+		break;
+	}
+
+	cnmDbdcFsmSteps(prAdapter, g_rDbdcInfo.eDbdcFsmNextState, eEvent);
+}
+
+static VOID
+cnmDbdcFsmEventHandler_WAIT_HW_DISABLE(
+	IN P_ADAPTER_T                  prAdapter,
+	IN enum ENUM_DBDC_FSM_EVENT_T   eEvent
+	)
+{
+	switch (eEvent) {
+	case DBDC_FSM_EVENT_BSS_DISCONNECT_LEAVE_AG:
+	case DBDC_FSM_EVENT_BSS_CONNECTING_ENTER_AG:
+		/* IGNORE */
+		break;
+
+	case DBDC_FSM_EVENT_SWITCH_GUARD_TIME_TO:
+	case DBDC_FSM_EVENT_DISABLE_COUNT_DOWN_TO:
+	case DBDC_FSM_EVENT_ACTION_FRAME_ALL_SUCCESS:
+	case DBDC_FSM_EVENT_ACTION_FRAME_SOME_FAIL:
+		/* ABNORMAL CASE*/
+		DBDC_FSM_MSG_WRONG_EVT(eEvent);
+		break;
+
+	case DBDC_FSM_EVENT_DBDC_HW_SWITCH_DONE:
+		g_rDbdcInfo.eDbdcFsmNextState = ENUM_DBDC_FSM_STATE_DISABLE_GUARD;
+		break;
+
+	default:
+		/* WRONG EVENT */
+		DBDC_FSM_MSG_ERROR_EVT(eEvent);
+		break;
+	}
+
+	cnmDbdcFsmSteps(prAdapter, g_rDbdcInfo.eDbdcFsmNextState, eEvent);
+}
+
+static VOID
+cnmDbdcFsmEventHandler_DISABLE_GUARD(
+	IN P_ADAPTER_T                  prAdapter,
+	IN enum ENUM_DBDC_FSM_EVENT_T   eEvent
+	)
+{
+	switch (eEvent) {
+	case DBDC_FSM_EVENT_BSS_DISCONNECT_LEAVE_AG:
+	case DBDC_FSM_EVENT_BSS_CONNECTING_ENTER_AG:
+		/* IGNORE */
+		break;
+
+	case DBDC_FSM_EVENT_SWITCH_GUARD_TIME_TO:
+		if (g_rDbdcInfo.fgDbdcDisableOpmodeChangeDone) {
+			if (cnmDbdcIsAGConcurrent(prAdapter, BAND_NULL)) {
+				switch (cnmDbdcOpmodeChangeAndWait(prAdapter, TRUE)) {
+				case ENUM_DBDC_PROTOCOL_STATUS_WAIT:
+					g_rDbdcInfo.eDbdcFsmNextState = ENUM_DBDC_FSM_STATE_WAIT_PROTOCOL_ENABLE;
+					break;
+				case ENUM_DBDC_PROTOCOL_STATUS_DONE_SUCCESS:
+					g_rDbdcInfo.eDbdcFsmNextState = ENUM_DBDC_FSM_STATE_WAIT_HW_ENABLE;
+					break;
+				case ENUM_DBDC_PROTOCOL_STATUS_DONE_FAIL:
+					if (cnmDbdcOpmodeChangeAndWait(prAdapter, FALSE) ==
+						ENUM_DBDC_PROTOCOL_STATUS_WAIT)
+						g_rDbdcInfo.eDbdcFsmNextState =
+							ENUM_DBDC_FSM_STATE_WAIT_PROTOCOL_DISABLE;
+					else
+						g_rDbdcInfo.eDbdcFsmNextState = ENUM_DBDC_FSM_STATE_DISABLE_IDLE;
+					break;
+				default:
+					break;
+				}
+			} else {
+				g_rDbdcInfo.eDbdcFsmNextState = ENUM_DBDC_FSM_STATE_DISABLE_IDLE;
+			}
+		} else {
+			g_rDbdcInfo.eDbdcFsmNextState = ENUM_DBDC_FSM_STATE_WAIT_PROTOCOL_DISABLE;
+		}
+
+		break;
+
+	case DBDC_FSM_EVENT_DISABLE_COUNT_DOWN_TO:
+		/* ABNORMAL CASE */
+		DBDC_FSM_MSG_WRONG_EVT(eEvent);
+		break;
+
+	case DBDC_FSM_EVENT_ACTION_FRAME_ALL_SUCCESS:
+	case DBDC_FSM_EVENT_ACTION_FRAME_SOME_FAIL:
+		/* Do nothing */
+		break;
+
+	case DBDC_FSM_EVENT_DBDC_HW_SWITCH_DONE:
+		/* ABNORMAL CASE */
+		DBDC_FSM_MSG_WRONG_EVT(eEvent);
+		break;
+
+	default:
+		/* WRONG EVENT */
+		DBDC_FSM_MSG_ERROR_EVT(eEvent);
+		break;
+	}
+
+	cnmDbdcFsmSteps(prAdapter, g_rDbdcInfo.eDbdcFsmNextState, eEvent);
+}
+
+static VOID
+cnmDbdcFsmEventHandler_WAIT_PROTOCOL_DISABLE(
+	IN P_ADAPTER_T                  prAdapter,
+	IN enum ENUM_DBDC_FSM_EVENT_T   eEvent
+	)
+{
+	/* Prepare to Enable DBDC */
+
+	switch (eEvent) {
+	case DBDC_FSM_EVENT_BSS_DISCONNECT_LEAVE_AG:
+	case DBDC_FSM_EVENT_BSS_CONNECTING_ENTER_AG:
+		/* IGNORE */
+		break;
+
+	case DBDC_FSM_EVENT_SWITCH_GUARD_TIME_TO:
+	case DBDC_FSM_EVENT_DISABLE_COUNT_DOWN_TO:
+		/* ABNORMAL CASE*/
+		DBDC_FSM_MSG_WRONG_EVT(eEvent);
+		break;
+
+	case DBDC_FSM_EVENT_ACTION_FRAME_ALL_SUCCESS:
+	case DBDC_FSM_EVENT_ACTION_FRAME_SOME_FAIL:
+		g_rDbdcInfo.eDbdcFsmNextState = ENUM_DBDC_FSM_STATE_DISABLE_IDLE;
+		break;
+
+	case DBDC_FSM_EVENT_DBDC_HW_SWITCH_DONE:
+		/* ABNORMAL CASE*/
+		DBDC_FSM_MSG_WRONG_EVT(eEvent);
+		break;
+
+	default:
+		/* WRONG EVENT */
+		DBDC_FSM_MSG_ERROR_EVT(eEvent);
+		break;
+	}
+
+	cnmDbdcFsmSteps(prAdapter, g_rDbdcInfo.eDbdcFsmNextState, eEvent);
+}
+
+static VOID
+cnmDbdcFsmExitFunc_WAIT_HW_ENABLE(
+	IN P_ADAPTER_T	prAdapter
+	)
+{
+	cnmDBDCFsmActionReqPeivilegeUnLock(prAdapter);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+* @brief    Get the connection capability.
+*
+* @param (none)
+*
+* @return (none)
+*/
+/*----------------------------------------------------------------------------*/
+VOID cnmGetDbdcCapability(
+	IN P_ADAPTER_T			prAdapter,
+	IN UINT_8				ucBssIndex,
+	IN ENUM_BAND_T			eRfBand,
+	IN UINT_8				ucPrimaryChannel,
+	IN UINT_8				ucNss,
+	OUT P_CNM_DBDC_CAP_T	prDbdcCap
+)
 {
 	if (!prDbdcCap)
 		return;
@@ -1253,11 +2197,12 @@ VOID cnmGetDbdcCapability(IN P_ADAPTER_T prAdapter, IN UINT_8 ucBssIndex, IN ENU
 		prDbdcCap->ucWmmSetIndex = DBDC_5G_WMM_INDEX;
 	else
 		prDbdcCap->ucWmmSetIndex =
-			(prAdapter->rWifiVar.ucDbdcMode == DBDC_MODE_DISABLED) ? DBDC_5G_WMM_INDEX : DBDC_2G_WMM_INDEX;
+			(prAdapter->rWifiVar.eDbdcMode == ENUM_DBDC_MODE_DISABLED) ?
+			DBDC_5G_WMM_INDEX : DBDC_2G_WMM_INDEX;
 
 	/* Nss & band 0/1 */
-	switch (prAdapter->rWifiVar.ucDbdcMode) {
-	case DBDC_MODE_DISABLED:
+	switch (prAdapter->rWifiVar.eDbdcMode) {
+	case ENUM_DBDC_MODE_DISABLED:
 		/* DBDC is disabled, all BSS run on band 0 */
 		if (wlanGetSupportNss(prAdapter, ucBssIndex) < ucNss)
 			prDbdcCap->ucNss = wlanGetSupportNss(prAdapter, ucBssIndex);
@@ -1266,7 +2211,7 @@ VOID cnmGetDbdcCapability(IN P_ADAPTER_T prAdapter, IN UINT_8 ucBssIndex, IN ENU
 		prDbdcCap->ucDbdcBandIndex = ENUM_BAND_0;
 		break;
 
-	case DBDC_MODE_STATIC:
+	case ENUM_DBDC_MODE_STATIC:
 		/* Static DBDC mode, 1SS only */
 		prDbdcCap->ucNss = 1;
 		if (eRfBand == BAND_5G)
@@ -1275,10 +2220,13 @@ VOID cnmGetDbdcCapability(IN P_ADAPTER_T prAdapter, IN UINT_8 ucBssIndex, IN ENU
 			prDbdcCap->ucDbdcBandIndex = ENUM_BAND_1;
 		break;
 
-	case DBDC_MODE_DYNAMIC:
-		if (prAdapter->rWifiVar.fgDbDcModeEn)
+	case ENUM_DBDC_MODE_DYNAMIC:
+		if (USE_DBDC_CAPABILITY()) {
+			/* CODEING_STYLE_WORKAROUND
+			* Gerrit wish no {} for "one line if statement", but build command as } before else
+			*/
 			prDbdcCap->ucNss = 1;
-		else
+		} else
 			prDbdcCap->ucNss = wlanGetSupportNss(prAdapter, ucBssIndex);
 		prDbdcCap->ucDbdcBandIndex = ENUM_BAND_AUTO;
 		break;
@@ -1286,203 +2234,232 @@ VOID cnmGetDbdcCapability(IN P_ADAPTER_T prAdapter, IN UINT_8 ucBssIndex, IN ENU
 	default:
 		break;
 	}
+
+	DBGLOG(CNM, INFO, "[DBDC] BSS%u RF%u CH%u Nss%u get Wmm%u Nss%u\n",
+						ucBssIndex,
+						eRfBand,
+						ucPrimaryChannel,
+						ucNss,
+						prDbdcCap->ucWmmSetIndex,
+						prDbdcCap->ucNss
+						);
 }
 
-VOID cnmDbdcEnableDecision(IN P_ADAPTER_T prAdapter, IN UINT_8 ucChangedBssIndex, IN ENUM_BAND_T eRfBand)
+/*----------------------------------------------------------------------------*/
+/*!
+* @brief Get maximum bandwidth capability with considering DBDC mode
+*
+* @param (none)
+*
+* @return
+*/
+/*----------------------------------------------------------------------------*/
+UINT_8 cnmGetDbdcBwCapability(IN P_ADAPTER_T prAdapter, IN UINT_8 ucBssIndex)
 {
-	P_BSS_INFO_T prBssInfo;
-	UINT_8 ucBssIndex;
+	UINT_8 ucMaxBw = MAX_BW_20MHZ;
 
-	ASSERT(prAdapter);
+	ucMaxBw = cnmGetBssMaxBw(prAdapter, ucBssIndex);
 
-	if (prAdapter->rWifiVar.ucDbdcMode != DBDC_MODE_DYNAMIC)
+	/* Can't use BW160 when DBDC enabled */
+	if (USE_DBDC_CAPABILITY() && (ucMaxBw >= MAX_BW_160MHZ))
+		ucMaxBw = MAX_BW_80MHZ;
+
+	/* TODO: BW80+80 support */
+	if (ucMaxBw == MAX_BW_80_80_MHZ)
+		ucMaxBw = MAX_BW_80MHZ; /* VHT should default support BW80 */
+
+	return ucMaxBw;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+* @brief    Run-time check if DBDC Need enable or update guard time.
+*
+* @param (none)
+*
+* @return (none)
+*/
+/*----------------------------------------------------------------------------*/
+VOID cnmDbdcEnableDecision(
+	IN P_ADAPTER_T	prAdapter,
+	IN UINT_8		ucChangedBssIndex,
+	IN ENUM_BAND_T	eRfBand
+)
+{
+	DBGLOG(CNM, INFO, "[DBDC] BSS %u Rf %u", ucChangedBssIndex, eRfBand);
+
+	if (prAdapter->rWifiVar.eDbdcMode != ENUM_DBDC_MODE_DYNAMIC) {
+		DBGLOG(CNM, INFO, "[DBDC Debug] DBDC Mode %u Return", prAdapter->rWifiVar.eDbdcMode);
 		return;
+	}
 
 	if (prAdapter->rWifiVar.fgDbDcModeEn) {
-		if (timerPendingTimer(&prAdapter->rWifiVar.rDBDCSwitchGuardTimer)) {
+		if (timerPendingTimer(&g_rDbdcInfo.rDbdcGuardTimer) &&
+			g_rDbdcInfo.eDdbcGuardTimerType == ENUM_DBDC_GUARD_TIMER_SWITCH_GUARD_TIME) {
 			/* update timer for connection retry */
-			DBGLOG(CNM, INFO, "DBDC guard time extend\n");
+			DBGLOG(CNM, INFO, "[DBDC] DBDC guard time extend\n");
 			cnmTimerStopTimer(prAdapter,
-								&prAdapter->rWifiVar.rDBDCSwitchGuardTimer);
+								&g_rDbdcInfo.rDbdcGuardTimer);
 			cnmTimerStartTimer(prAdapter,
-								&prAdapter->rWifiVar.rDBDCSwitchGuardTimer,
+								&g_rDbdcInfo.rDbdcGuardTimer,
 								DBDC_SWITCH_GUARD_TIME);
 		}
 		return;
 	}
 
-	if (timerPendingTimer(&prAdapter->rWifiVar.rDBDCSwitchGuardTimer))
+	if (timerPendingTimer(&g_rDbdcInfo.rDbdcGuardTimer) &&
+		g_rDbdcInfo.eDdbcGuardTimerType == ENUM_DBDC_GUARD_TIMER_SWITCH_GUARD_TIME) {
+		DBGLOG(CNM, INFO, "[DBDC Debug] Guard Time Return");
 		return;
-
-	if (eRfBand != BAND_2G4 && eRfBand != BAND_5G)
-		return;
-
-	for (ucBssIndex = 0; ucBssIndex < prAdapter->ucHwBssIdNum; ucBssIndex++) {
-
-		if (ucBssIndex == ucChangedBssIndex)
-			continue;
-
-		prBssInfo = prAdapter->aprBssInfo[ucBssIndex];
-
-		if (!prBssInfo->fgIsInUse ||
-			!prBssInfo->fgIsNetActive ||
-			(prBssInfo->eConnectionState != PARAM_MEDIA_STATE_CONNECTED &&
-			prBssInfo->eCurrentOPMode != OP_MODE_ACCESS_POINT))
-			continue;
-
-		if (prBssInfo->eBand != BAND_2G4 && prBssInfo->eBand != BAND_5G)
-			continue;
-
-		if (prBssInfo->eBand != eRfBand) {
-			/* Enable DBDC */
-
-			/* if disable timer exist, close it*/
-			if (timerPendingTimer(&prAdapter->rWifiVar.rDBDCDisableCountdownTimer)) {
-				cnmTimerStopTimer(prAdapter,
-						&prAdapter->rWifiVar.rDBDCDisableCountdownTimer);
-			}
-
-			cnmUpdateDbdcSetting(prAdapter, TRUE);
-
-			/* Start Switch Guard Time */
-			cnmTimerStartTimer(prAdapter,
-							&prAdapter->rWifiVar.rDBDCSwitchGuardTimer,
-							DBDC_SWITCH_GUARD_TIME);
-			return;
-		}
 	}
+
+	if (eRfBand != BAND_2G4 && eRfBand != BAND_5G) {
+		DBGLOG(CNM, INFO, "[DBDC Debug] Wrong RF band Return");
+		return;
+	}
+
+	if (cnmDbdcIsAGConcurrent(prAdapter, eRfBand))
+		DBDC_FSM_EVENT_HANDLER(prAdapter, DBDC_FSM_EVENT_BSS_CONNECTING_ENTER_AG);
 }
 
-VOID cnmDbdcDisableDecision(IN P_ADAPTER_T prAdapter, IN UINT_8 ucChangedBssIndex)
+/*----------------------------------------------------------------------------*/
+/*!
+* @brief    Run-time check if DBDC Need disable or update guard time.
+*
+* @param (none)
+*
+* @return (none)
+*/
+/*----------------------------------------------------------------------------*/
+VOID cnmDbdcDisableDecision(IN P_ADAPTER_T prAdapter,	IN UINT_8 ucChangedBssIndex)
 {
-	P_BSS_INFO_T prBssInfo;
-	UINT_8 ucBssIndex;
-	ENUM_BAND_T eBandCompare;
+	DBGLOG(CNM, INFO, "[DBDC Debug] BSS %u", ucChangedBssIndex);
 
-	ASSERT(prAdapter);
-
-	if (prAdapter->rWifiVar.ucDbdcMode != DBDC_MODE_DYNAMIC)
+	if (prAdapter->rWifiVar.eDbdcMode != ENUM_DBDC_MODE_DYNAMIC) {
+		DBGLOG(CNM, INFO, "[DBDC Debug] DBDC Mode %u Return", prAdapter->rWifiVar.eDbdcMode);
 		return;
+	}
 
 	if (!prAdapter->rWifiVar.fgDbDcModeEn) {
-		if (timerPendingTimer(&prAdapter->rWifiVar.rDBDCSwitchGuardTimer)) {
+		if (timerPendingTimer(&g_rDbdcInfo.rDbdcGuardTimer) &&
+			g_rDbdcInfo.eDdbcGuardTimerType == ENUM_DBDC_GUARD_TIMER_SWITCH_GUARD_TIME) {
 			/* update timer for connection retry */
-			DBGLOG(CNM, INFO, "DBDC guard time extend\n");
+			DBGLOG(CNM, INFO, "[DBDC] DBDC guard time extend\n");
 			cnmTimerStopTimer(prAdapter,
-								&prAdapter->rWifiVar.rDBDCSwitchGuardTimer);
+								&g_rDbdcInfo.rDbdcGuardTimer);
 			cnmTimerStartTimer(prAdapter,
-								&prAdapter->rWifiVar.rDBDCSwitchGuardTimer,
+								&g_rDbdcInfo.rDbdcGuardTimer,
 								DBDC_SWITCH_GUARD_TIME);
 		}
 		return;
 	}
 
-	if (timerPendingTimer(&prAdapter->rWifiVar.rDBDCDisableCountdownTimer))
+	if (timerPendingTimer(&g_rDbdcInfo.rDbdcGuardTimer) &&
+		g_rDbdcInfo.eDdbcGuardTimerType == ENUM_DBDC_GUARD_TIMER_DISABLE_COUNT_DOWN) {
+		DBGLOG(CNM, INFO, "[DBDC Debug] Disable Countdown Return");
 		return;
-
-	if (timerPendingTimer(&prAdapter->rWifiVar.rDBDCSwitchGuardTimer))
-		return;
-
-	eBandCompare = BAND_NULL;
-	for (ucBssIndex = 0; ucBssIndex < prAdapter->ucHwBssIdNum; ucBssIndex++) {
-
-		if (ucBssIndex == ucChangedBssIndex)
-			continue;
-
-		prBssInfo = prAdapter->aprBssInfo[ucBssIndex];
-
-		if (!prBssInfo->fgIsInUse ||
-			!prBssInfo->fgIsNetActive ||
-			(prBssInfo->eConnectionState != PARAM_MEDIA_STATE_CONNECTED &&
-			prBssInfo->eCurrentOPMode != OP_MODE_ACCESS_POINT))
-			continue;
-
-		if (prBssInfo->eBand != BAND_2G4 && prBssInfo->eBand != BAND_5G)
-			continue;
-
-		if (eBandCompare == BAND_NULL) {
-			eBandCompare = prBssInfo->eBand;
-			continue;
-		}
-
-		if (prBssInfo->eBand != eBandCompare) {
-			/*no need to disable DBDC*/
-			return;
-		}
 	}
 
-	/* start DBDC disable countdown timer */
-	cnmTimerStartTimer(prAdapter,
-						&prAdapter->rWifiVar.rDBDCDisableCountdownTimer,
-						DBDC_DISABLE_COUNTDOWN_TIME);
+	if (timerPendingTimer(&g_rDbdcInfo.rDbdcGuardTimer) &&
+		g_rDbdcInfo.eDdbcGuardTimerType == ENUM_DBDC_GUARD_TIMER_SWITCH_GUARD_TIME) {
+		DBGLOG(CNM, INFO, "[DBDC Debug] Guard Time Return");
+		return;
+	}
+
+	if (!cnmDbdcIsAGConcurrent(prAdapter, BAND_NULL))
+		DBDC_FSM_EVENT_HANDLER(prAdapter, DBDC_FSM_EVENT_BSS_DISCONNECT_LEAVE_AG);
 }
 
-
-VOID cnmDbdcDecision(IN P_ADAPTER_T prAdapter, IN ULONG plParamPtr)
+/*----------------------------------------------------------------------------*/
+/*!
+* @brief    DBDC Guard Time/Countdown Callback
+*
+* @param (none)
+*
+* @return (none)
+*/
+/*----------------------------------------------------------------------------*/
+VOID cnmDbdcGuardTimerCallback(IN P_ADAPTER_T prAdapter, IN ULONG plParamPtr)
 {
-	P_BSS_INFO_T prBssInfo;
-	UINT_8 ucBssIndex;
-	ENUM_BAND_T eBandCompare;
+	DBGLOG(CNM, INFO, "[DBDC Debug] Timer %u", g_rDbdcInfo.eDdbcGuardTimerType);
 
-	ASSERT(prAdapter);
-
-	if (prAdapter->rWifiVar.ucDbdcMode != DBDC_MODE_DYNAMIC)
+	if (prAdapter->rWifiVar.eDbdcMode != ENUM_DBDC_MODE_DYNAMIC) {
+		DBGLOG(CNM, INFO, "[DBDC Debug] DBDC Mode %u Return", prAdapter->rWifiVar.eDbdcMode);
 		return;
+	}
 
-	/*	MTK coding style limitation of "(A=B)?:"
-	*	1. one line is too long
-	*	2. cut in ?/: will encounter
-	*		a. ?/: need to add one space after symbol
-	*		b. line end could not have space
-	*	so duplicated the code...
-	*/
-	if (plParamPtr == DBDC_DECISION_TIMER_SWITCH_GUARD_TIME)
-		DBGLOG(CNM, INFO, "DBDC timer timeout : switch guard time end\n");
-	else
-		DBGLOG(CNM, INFO, "DBDC timer timeout : disable countdown finish\n");
+	if (g_rDbdcInfo.eDdbcGuardTimerType == ENUM_DBDC_GUARD_TIMER_SWITCH_GUARD_TIME) {
 
-	eBandCompare = BAND_NULL;
-	for (ucBssIndex = 0; ucBssIndex < prAdapter->ucHwBssIdNum; ucBssIndex++) {
+		g_rDbdcInfo.eDdbcGuardTimerType = ENUM_DBDC_GUARD_TIMER_NONE;
+		DBDC_FSM_EVENT_HANDLER(prAdapter, DBDC_FSM_EVENT_SWITCH_GUARD_TIME_TO);
 
+	} else if (g_rDbdcInfo.eDdbcGuardTimerType == ENUM_DBDC_GUARD_TIMER_DISABLE_COUNT_DOWN) {
+
+		g_rDbdcInfo.eDdbcGuardTimerType = ENUM_DBDC_GUARD_TIMER_NONE;
+		DBDC_FSM_EVENT_HANDLER(prAdapter, DBDC_FSM_EVENT_DISABLE_COUNT_DOWN_TO);
+
+	} else
+		DBGLOG(CNM, ERROR, "[DBDC] WRONG DBDC TO TYPE %u\n", g_rDbdcInfo.eDdbcGuardTimerType);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+* @brief    DBDC HW Switch done event
+*
+* @param (none)
+*
+* @return (none)
+*/
+/*----------------------------------------------------------------------------*/
+VOID cnmDbdcEventHwSwitchDone(IN P_ADAPTER_T prAdapter, IN P_WIFI_EVENT_T prEvent)
+{
+	P_CMD_INFO_T prCmdInfo;
+	UINT_8 ucBssIndex;
+	P_BSS_INFO_T prBssInfo;
+	BOOLEAN fgDbdcEn;
+
+	/* command response handling */
+	prCmdInfo = nicGetPendingCmdInfo(prAdapter, prEvent->ucSeqNum);
+
+	if (prCmdInfo != NULL) {
+		if (prCmdInfo->pfCmdDoneHandler)
+			prCmdInfo->pfCmdDoneHandler(prAdapter, prCmdInfo, prEvent->aucBuffer);
+		else if (prCmdInfo->fgIsOid)
+			kalOidComplete(prAdapter->prGlueInfo, prCmdInfo->fgSetQuery, 0, WLAN_STATUS_SUCCESS);
+		/* return prCmdInfo */
+		cmdBufFreeCmdInfo(prAdapter, prCmdInfo);
+	}
+
+	/* Check DBDC state by FSM */
+	if (g_rDbdcInfo.eDbdcFsmCurrState == ENUM_DBDC_FSM_STATE_WAIT_HW_ENABLE) {
+		fgDbdcEn = TRUE;
+	} else if (g_rDbdcInfo.eDbdcFsmCurrState == ENUM_DBDC_FSM_STATE_WAIT_HW_DISABLE) {
+		fgDbdcEn = FALSE;
+	} else {
+		DBGLOG(CNM, ERROR, "[DBDC] switch event happen in state %u\n", g_rDbdcInfo.eDbdcFsmCurrState);
+		return;
+	}
+
+	/* Change DBDC state */
+	prAdapter->rWifiVar.fgDbDcModeEn = fgDbdcEn;
+	for (ucBssIndex = 0; ucBssIndex <= prAdapter->ucHwBssIdNum; ucBssIndex++) {
 		prBssInfo = prAdapter->aprBssInfo[ucBssIndex];
 
-		if (!prBssInfo->fgIsInUse ||
-			!prBssInfo->fgIsNetActive ||
-			(prBssInfo->eConnectionState != PARAM_MEDIA_STATE_CONNECTED &&
-			prBssInfo->eCurrentOPMode != OP_MODE_ACCESS_POINT))
-			continue;
-
-		if (prBssInfo->eBand != BAND_2G4 && prBssInfo->eBand != BAND_5G)
-			continue;
-
-		if (eBandCompare == BAND_NULL) {
-			eBandCompare = prBssInfo->eBand;
-			continue;
-		}
-
-		if (prBssInfo->eBand != eBandCompare) {
-			if (!prAdapter->rWifiVar.fgDbDcModeEn) {
-				/* DBDC Enable */
-				cnmUpdateDbdcSetting(prAdapter, TRUE);
-				cnmTimerStartTimer(prAdapter,
-								&prAdapter->rWifiVar.rDBDCSwitchGuardTimer,
-								DBDC_SWITCH_GUARD_TIME);
-			}
-			return;
+		if (prBssInfo->eBand == BAND_2G4) {
+			if (fgDbdcEn)
+				prBssInfo->eDBDCBand = ENUM_BAND_1;
+			else
+				prBssInfo->eDBDCBand = ENUM_BAND_0;
 		}
 	}
 
-	if (prAdapter->rWifiVar.fgDbDcModeEn) {
-		/* DBDC Disable */
-		cnmUpdateDbdcSetting(prAdapter, FALSE);
-		cnmTimerStartTimer(prAdapter, &prAdapter->rWifiVar.rDBDCSwitchGuardTimer, DBDC_SWITCH_GUARD_TIME);
-		return;
-	}
+	DBDC_FSM_EVENT_HANDLER(prAdapter, DBDC_FSM_EVENT_DBDC_HW_SWITCH_DONE);
 }
 
 #endif /*CFG_SUPPORT_DBDC*/
 
-UINT_8 cnmGetBssNetworkType(P_BSS_INFO_T prBssInfo)
+
+enum ENUM_CNM_NETWORK_TYPE_T cnmGetBssNetworkType(P_BSS_INFO_T prBssInfo)
 {
 	if (prBssInfo->eNetworkType == NETWORK_TYPE_AIS)
 		return ENUM_CNM_NETWORK_TYPE_AIS;

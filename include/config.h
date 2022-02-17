@@ -765,8 +765,8 @@
  */
 #define CFG_ENABLE_READ_EXTRA_4_BYTES       1
 
-/* Temp workaround for 11ac certification */
-#define CFG_WORKAROUND_OPMODE_CONFLICT_OPINFO	1
+/* Handle IOT issue for 11ac certification */
+#define CFG_OPMODE_CONFLICT_OPINFO	1
 
 
 /*------------------------------------------------------------------------------
