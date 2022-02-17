@@ -521,7 +521,7 @@ static struct DBDC_INFO_T g_rDbdcInfo;
 OS_SYSTIME g_rLastCsaSysTime;
 #endif
 
-static struct CNM_OPMODE_BSS_CONTROL_T g_arBssOpControl[BSS_DEFAULT_NUM];
+static struct CNM_OPMODE_BSS_CONTROL_T g_arBssOpControl[BSS_DEFAULT_NUM] = {0};
 static uint8_t *apucCnmOpModeReq[CNM_OPMODE_REQ_MAX_CAP+1] = {
 	(uint8_t *) DISP_STRING("DBDC"),
 	(uint8_t *) DISP_STRING("DBDC Scan"),
@@ -541,7 +541,8 @@ static uint8_t *apucCnmOpModeReqStatus[CNM_OPMODE_REQ_STATUS_NUM+1] = {
 	(uint8_t *) DISP_STRING("N/A")
 };
 
-static struct CNM_WMM_QUOTA_CONTROL_T g_arWmmQuotaControl[BSS_DEFAULT_NUM];
+static struct CNM_WMM_QUOTA_CONTROL_T g_arWmmQuotaControl[BSS_DEFAULT_NUM]
+	= {0};
 static uint8_t *apucCnmWmmQuotaReq[CNM_WMM_REQ_DEFAULT+1] = {
 	(uint8_t *) DISP_STRING("DBDC"),
 	(uint8_t *) DISP_STRING("N/A"),
