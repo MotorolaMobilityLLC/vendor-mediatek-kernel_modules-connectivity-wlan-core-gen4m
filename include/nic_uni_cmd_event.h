@@ -263,6 +263,7 @@ enum ENUM_UNI_CMD_ID {
 	UNI_CMD_ID_MQM_UPDATE_MU_EDCA_PARMS = 0x43, /* MU */
 	UNI_CMD_ID_PERF_IND		= 0x44, /* Performance indicate*/
 	UNI_CMD_ID_FRM_IND_FROM_HOST 	= 0x45, /* Host connect indicate*/
+	UNI_CMD_ID_TESTMODE_CTRL	= 0x46, /* testmode RF  */
 };
 
 struct UNI_CMD_DEVINFO {
@@ -2760,6 +2761,100 @@ struct UNI_CMD_FRM_IND_FROM_HOST_PARM {
     uint8_t  aucPadding4[64];
 } __KAL_ATTRIB_PACKED__;
 
+struct UNI_CMD_TESTMODE_CTRL {
+    /* fix field*/
+    uint8_t aucPadding[4];
+
+    /* tlv */
+    uint8_t aucTlvBuffer[0];/**< the TLVs included in this field:
+	*
+	*   TAG                            | ID  | structure
+	*   -------------------------------|-----|--------------
+	*   UNI_CMD_TESTMODE_TAG_RF_CTRL           | 0x0 | UNI_CMD_TESTMODE_RF_CTRL
+	*/
+} __KAL_ATTRIB_PACKED__;
+
+/** testmode RF test command TLV List */
+enum ENUM_UNI_CMD_TESTMODE_CTRL_TAG {
+    UNI_CMD_TESTMODE_TAG_RF_CTRL = 0,
+    UNI_CMD_TESTMODE_TAG_NUM
+};
+
+/** @addtogroup UNI_CMD_ID_TESTMODE_CTRL
+ * @{
+ */
+/**
+ * This structure is used for UNI_CMD_TESTMODE_TAG_RF_CTRL(0x00) of UNI_CMD_ID_TESTMODE_CTRL command (0x46)
+ * to set testmode RF parameter.
+ * @version Supported from ver:1.0.0.0
+ *
+ * @param[in] u2Tag         should be 0x00
+ * @param[in] u2Length      the length of this TLV, should be 8
+ * @param[in] ucAction      set action of testmode
+ * @param[in] aucReserved   Reserved
+ * @param[in] ucIcapLen     Icap data length
+ * @param[in] aucReserved   Reserved
+ * @param[in] u4OpMode      Operation mode
+ * @param[in] u4ChannelFreq Frequency of channel
+ * @param[in] rRfATInfo     RF information
+ */
+/* Set testmode RF parameter cmd struct (Tag 0x00) */
+struct UNI_CMD_TESTMODE_RF_CTRL {
+    uint16_t u2Tag;
+    uint16_t u2Length;
+
+	uint8_t ucAction;
+	uint8_t aucReserved[3];
+	union {
+		uint32_t u4OpMode;
+		uint32_t u4ChannelFreq;
+		struct PARAM_MTK_WIFI_TEST_STRUCT rRfATInfo;
+	}u;
+}__KAL_ATTRIB_PACKED__;
+
+struct UNI_CMD_TESTMODE_RX_STAT {
+    /* fix field*/
+    uint8_t aucPadding[4];
+
+    /* tlv */
+    uint8_t aucTlvBuffer[0];/**< the TLVs included in this field:
+            *
+            *   TAG                                | ID  | structure
+            *   -----------------------------------|-----|--------------
+            *   UNI_CMD_TESTMODE_RX_TAG_GET_STAT_ALL | 0x8 | UNI_CMD_TESTMODE_RX_GET_STAT_ALL_T
+            */
+}__KAL_ATTRIB_PACKED__; 
+
+/** @} */
+
+/** testmode rx statistic command TLV List */
+enum ENUM_UNI_CMD_TESTMODE_RX_TAG {
+	UNI_CMD_TESTMODE_RX_TAG_GET_STAT_ALL = 0x8,
+	UNI_CMD_TESTMODE_RX_TAG_NUM,
+};
+
+/** @addtogroup UNI_CMD_ID_TESTMODE_RX_STAT
+ * @{
+ */
+/**
+ * This structure is used for UNI_CMD_TESTMODE_RX_TAG_GET_STAT_ALL(0x08) of UNI_CMD_ID_TESTMODE_RX_STAT command (0x32)
+ * to set user of band.
+ * @version Supported from ver:1.0.0.0
+ *
+ * @param[in] u2Tag         should be 0x08
+ * @param[in] u2Length      the length of this TLV, should be 8
+ * @param[in] u1DbdcIdx     choose band
+ * @param[in] aucReserved   Reserved
+ */
+/* Get rx info all cmd struct (Tag 0x08) */
+struct UNI_CMD_TESTMODE_RX_GET_STAT_ALL {
+    uint16_t u2Tag;
+    uint16_t u2Length;
+    uint8_t u1DbdcIdx;
+    uint8_t aucReserved[3];
+}__KAL_ATTRIB_PACKED__;
+/** @} */
+
 /*******************************************************************************
  *                                 Event
  *******************************************************************************
@@ -3819,6 +3914,122 @@ struct UNI_EVENT_UPDATE_COEX_PHYRATE
 	uint32_t au4PhyRateLimit[UNI_BSS_INFO_NUM];
 } __KAL_ATTRIB_PACKED__;
 
+/** @addtogroup UNI_EVENT_ID_TESTMODE_CTRL
+ * @{
+ *  @page
+ *     <br/>
+ *     This event is for testmode RF test. <br/>
+ */
+/**
+ * This structure is used for UNI_EVENT_ID_TESTMODE_CTRL event (0x46) for testmode RF test
+ * @version Supported from ver:1.0.0.0
+ *
+ * @param[in] ucReserved       Reserved
+ * @param[in] aucTlvBuffer     TLVs
+ *
+ */
+struct UNI_EVENT_TESTMODE_CTRL
+{
+    /*fix field*/
+    uint8_t au1Reserved[4];
+
+    /*tlv */
+    uint8_t aucTlvBuffer[0];/**< the TLVs included in this field:
+        *
+        *   TAG                          | ID  | structure
+        *   -----------------------------|-----|--------------
+        *   UNI_EVENT_RF_TEST_RESULT_TAG     | 0x0 | UNI_EVENT_TESTMODE_CTRL
+        */
+} __KAL_ATTRIB_PACKED__;
+/** @} */
+
+/* testmode RF test event tag */
+enum UNI_EVENT_TESTMODE_CTRL_TAG
+{
+    UNI_EVENT_RF_TEST_RESULT_TAG,
+    UNI_EVENT_TESTMODE_CTRL_NUM
+};
+
+/** @addtogroup UNI_EVENT_ID_TESTMODE_CTRL
+ * @{
+ */
+/**
+ * This structure is used for UNI_EVENT_RF_TEST_RESULT tag(0x0) of UNI_EVENT_ID_TESTMODE_CTRL event (0x46)
+ * to report testmode RF status.
+ * @version Supported from ver:1.0.0.0
+ *
+ * @param[in] u2Tag                should be 0x00
+ * @param[in] u2Length             the length of this TLV
+ * @param[in] aucBuffer            Icap , recal event
+ */
+/* Testmode RF status (Tag0) */
+struct UNI_EVENT_RF_TEST_RESULT
+{
+    uint16_t u2Tag;
+    uint16_t u2Length;
+
+    uint8_t  aucBuffer[0];
+
+} __KAL_ATTRIB_PACKED__;
+/** @} */
+
+/** @addtogroup UNI_EVENT_ID_TESTMODE_RX_STAT_INFO
+ * @{
+ *  @page
+ *     <br/>
+ *     This event is for testmode rx statistic related operation. <br/>
+ */
+/**
+ * This structure is used for UNI_EVENT_ID_TESTMODE_RX_STAT_INFO event (0x32) for testmode rx statistic related operation
+ * @version Supported from ver:1.0.0.0
+ *
+ * @param[in] ucReserved       Reserved
+ * @param[in] aucTlvBuffer     TLVs
+ *
+ */
+struct UNI_EVENT_TESTMODE_RX_STAT
+{
+    /* fix field */
+    uint8_t au1Reserved[4];
+
+    /* tlv */
+    uint8_t aucTlvBuffer[0];/**< the TLVs included in this field:
+        *
+        *   TAG                                     | ID  | structure
+        *   ----------------------------------------|-----|--------------
+        *   UNI_EVENT_TESTMODE_RX_STAT_TAG_GET_ALL  | 0x6 | UNI_EVENT_TESTMODE_RX_STAT_ALL
+        */
+} __KAL_ATTRIB_PACKED__;
+/** @} */
+
+/* testmode rx statistic event tag */
+enum UNI_EVENT_TESTMODE_RX_STAT_TAG {
+	UNI_EVENT_TESTMODE_RX_STAT_TAG_GET_ALL = 0x6,
+    UNI_EVENT_TESTMODE_RX_STAT_TAG_NUM
+};
+
+/** @addtogroup UNI_EVENT_ID_TESTMODE_RX_STAT_ALL
+ * @{
+ */
+/**
+ * This structure is used for UNI_EVENT_TESTMODE_RX_STAT_TAG_GET_ALL(0x06) of UNI_EVENT_ID_TESTMODE_RX_STAT_INFO command (0x32)
+ * to update common part of testmode rx statistic related information.
+ * @version Supported from ver:1.0.0.0
+ *
+ * @param[in] u2Tag         should be 0x06
+ * @param[in] u2Length      the length of this TLV
+ * @param[in] pu4Buffer     pointer of rx statistic all
+ */
+/* Update rx statistic all event struct (Tag 0x06) */
+
+#define UNI_EVENT_TESTMODE_RX_STAT_ALL_ITEM	76
+
+struct UNI_EVENT_TESTMODE_STAT_ALL {
+    uint16_t u2Tag;
+    uint16_t u2Length;   
+    uint32_t u4Buffer[UNI_EVENT_TESTMODE_RX_STAT_ALL_ITEM];
+} __KAL_ATTRIB_PACKED__;
+
 /*******************************************************************************
  *                            P U B L I C   D A T A
  *******************************************************************************
@@ -4074,6 +4285,10 @@ uint32_t nicUniCmdSetCountryPwrLimitPerRate(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
 uint32_t nicUniCmdSetNvramSettings(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
+uint32_t nicUniCmdTestmodeCtrl(struct ADAPTER *ad,
+		struct WIFI_UNI_SETQUERY_INFO *info);
+uint32_t nicUniCmdTestmodeRxStat(struct ADAPTER *ad,
+		struct WIFI_UNI_SETQUERY_INFO *info);
 
 /*******************************************************************************
  *                   Event
@@ -4118,6 +4333,10 @@ void nicUniEventQueryCnmInfo(IN struct ADAPTER
 void nicUniEventStaStatistics(IN struct ADAPTER
 	*prAdapter, IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf);
 void nicUniEventLinkQuality(IN struct ADAPTER
+	*prAdapter, IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf);
+void nicUniEventQueryRfTestATInfo(IN struct ADAPTER
+	*prAdapter, IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf);
+void nicUniEventQueryRxStatAll(IN struct ADAPTER
 	*prAdapter, IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf);
 
 /*******************************************************************************

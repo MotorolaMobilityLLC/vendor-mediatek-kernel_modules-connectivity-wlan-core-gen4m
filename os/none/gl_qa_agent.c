@@ -91,7 +91,7 @@
  */
 /* export to other common part file */
 struct PARAM_RX_STAT g_HqaRxStat;
-uint32_t u4RxStatSeqNum;
+uint16_t u2RxStatSeqNum;
 /*****************************************************************************
  *                           P R I V A T E   D A T A
  *****************************************************************************

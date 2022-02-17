@@ -83,7 +83,7 @@
  */
 
 struct PARAM_RX_STAT g_HqaRxStat;
-uint32_t u4RxStatSeqNum;
+uint16_t u2RxStatSeqNum;
 u_int8_t g_DBDCEnable = FALSE;
 /* For SA Buffer Mode Temp Solution */
 u_int8_t	g_BufferDownload = FALSE;
@@ -3983,12 +3983,11 @@ static int32_t HQA_GetRxStatisticsAll(struct net_device
 	uint32_t u4BufLen = 0;
 	struct PARAM_CUSTOM_ACCESS_RX_STAT rRxStatisticsTest;
 
-	/* memset(&g_HqaRxStat, 0, sizeof(PARAM_RX_STAT_T)); */
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 
 	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_GetRxStatisticsAll\n");
 
-	rRxStatisticsTest.u4SeqNum = u4RxStatSeqNum;
+	rRxStatisticsTest.u2SeqNum = u2RxStatSeqNum;
 	rRxStatisticsTest.u4TotalNum = HQA_RX_STATISTIC_NUM + 6;
 
 	i4Ret = kalIoctl(prGlueInfo,
@@ -3996,9 +3995,7 @@ static int32_t HQA_GetRxStatisticsAll(struct net_device
 			 &rRxStatisticsTest, sizeof(rRxStatisticsTest),
 			 TRUE, TRUE, TRUE, &u4BufLen);
 
-	/* ASSERT(rRxStatisticsTest.u4SeqNum == u4RxStatSeqNum); */
-
-	u4RxStatSeqNum++;
+	u2RxStatSeqNum++;
 
 	memcpy(HqaCmdFrame->Data + 2, &(g_HqaRxStat),
 	       sizeof(struct PARAM_RX_STAT));
@@ -5113,7 +5110,7 @@ int32_t hqa_getRxStatisticsByType(
 	uint32_t u4BufLen = 0;
 	struct PARAM_CUSTOM_ACCESS_RX_STAT rx_stat_test;
 
-	rx_stat_test.u4SeqNum = 0;
+	rx_stat_test.u2SeqNum = 0;
 	rx_stat_test.u4TotalNum = 72;
 
 	/* only TEST_RX_STAT_BAND send query command to FW. */
@@ -8906,7 +8903,7 @@ static int32_t hqa_start_rx_ext(struct net_device *prNetDev,
 	DBGLOG(RFTEST, INFO,
 	       "QA_AGENT hqa_start_rx_ext rx_path : 0x%x\n", u4Rx_path);
 
-	u4RxStatSeqNum = 0;
+	u2RxStatSeqNum = 0;
 
 	MT_ATESetDBDCBandIndex(prNetDev, u4Band_idx);
 
