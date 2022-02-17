@@ -5313,8 +5313,7 @@ int testmode_add_roam_scn_chnl(
 	prRoamScnChnl = kalMemAlloc(sizeof(struct CFG_SCAN_CHNL), VIR_MEM_TYPE);
 	if (prRoamScnChnl == NULL) {
 		DBGLOG(REQ, ERROR, "alloc roaming scan channel fail\n");
-		return -1;
-
+		return WLAN_STATUS_RESOURCES;
 	}
 	kalMemZero(prRoamScnChnl, sizeof(struct CFG_SCAN_CHNL));
 
@@ -5325,7 +5324,8 @@ int testmode_add_roam_scn_chnl(
 		if (i4Ret) {
 			DBGLOG(REQ, ERROR, "parse u4Param error %d\n",
 			       i4Ret);
-			return WLAN_STATUS_INVALID_DATA;
+			rStatus = WLAN_STATUS_INVALID_DATA;
+			goto label_exit;
 		}
 
 		prRoamScnChnl->ucChannelListNum = u4ChnlInfo;
@@ -5333,7 +5333,9 @@ int testmode_add_roam_scn_chnl(
 		if (i4Argc != u4ChnlInfo + 2) {
 			DBGLOG(REQ, ERROR, "param mismatch %d\n",
 			       u4ChnlInfo);
-			return WLAN_STATUS_INVALID_DATA;
+			rStatus = WLAN_STATUS_INVALID_DATA;
+			goto label_exit;
+
 		}
 		for (i = 2; i < i4Argc; i++) {
 			i4Ret = kalkStrtou32(apcArgv[i], 0, &u4ChnlInfo);
@@ -5345,7 +5347,8 @@ int testmode_add_roam_scn_chnl(
 				}
 				DBGLOG(REQ, ERROR,
 				       "parse chnl num error %d\n", i4Ret);
-				return -1;
+				rStatus = WLAN_STATUS_FAILURE;
+				goto label_exit;
 			}
 			if (u4ChnlInfo != 0) {
 				DBGLOG(INIT, TRACE,
@@ -5369,9 +5372,6 @@ int testmode_add_roam_scn_chnl(
 			prRoamScnChnl, sizeof(struct CFG_SCAN_CHNL),
 			FALSE, FALSE, TRUE, &u4SetInfoLen);
 
-		kalMemFree(prRoamScnChnl,
-			sizeof(struct CFG_SCAN_CHNL), VIR_MEM_TYPE);
-
 		if (rStatus != WLAN_STATUS_SUCCESS)
 			DBGLOG(INIT, ERROR,
 			       "add roam scan channel fail 0x%x\n",
@@ -5379,10 +5379,15 @@ int testmode_add_roam_scn_chnl(
 		else
 			DBGLOG(INIT, TRACE,
 			       "add roam scan channel successed\n");
+		goto label_exit;
 	} else {
 		DBGLOG(REQ, ERROR, "add failed\n");
 		rStatus = WLAN_STATUS_INVALID_DATA;
+		goto label_exit;
 	}
+
+label_exit:
+	kalMemFree(prRoamScnChnl, sizeof(struct CFG_SCAN_CHNL), VIR_MEM_TYPE);
 	return rStatus;
 }
 
