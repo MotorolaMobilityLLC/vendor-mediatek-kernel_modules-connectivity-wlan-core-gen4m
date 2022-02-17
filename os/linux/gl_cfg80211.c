@@ -3509,19 +3509,18 @@ int mtk_cfg80211_sched_scan_start(IN struct wiphy *wiphy,
 			   sizeof(struct PARAM_SCHED_SCAN_REQUEST),
 			   FALSE, FALSE, TRUE, &u4BufLen);
 
-	kalMemFree(prSchedScanRequest->pucChannels,
-		   VIR_MEM_TYPE, request->n_channels);
-	kalMemFree(prSchedScanRequest->pucIE,
-		   VIR_MEM_TYPE, request->ie_len);
-	kalMemFree(prSchedScanRequest,
-		   VIR_MEM_TYPE, sizeof(struct PARAM_SCHED_SCAN_REQUEST));
-
 	if (rStatus != WLAN_STATUS_SUCCESS) {
 		DBGLOG(REQ, WARN, "scheduled scan error:%x\n", rStatus);
+		kalMemFree(prSchedScanRequest->pucChannels,
+			VIR_MEM_TYPE, request->n_channels);
+		kalMemFree(prSchedScanRequest->pucIE,
+			VIR_MEM_TYPE, request->ie_len);
+		kalMemFree(prSchedScanRequest,
+			VIR_MEM_TYPE, sizeof(struct PARAM_SCHED_SCAN_REQUEST));
 		return -EINVAL;
 	}
 
-	prGlueInfo->prSchedScanRequest = request;
+	/* prSchedScanRequest is owned by oid now, don't free it */
 
 	return 0;
 }
@@ -3556,7 +3555,6 @@ int mtk_cfg80211_sched_scan_stop(IN struct wiphy *wiphy,
 		DBGLOG(REQ, WARN, "scheduled scan error:%x\n", rStatus);
 		return -EINVAL;
 	}
-	prGlueInfo->prSchedScanRequest = NULL;
 
 	return 0;
 }
@@ -6003,7 +6001,7 @@ int mtk_cfg_suspend(struct wiphy *wiphy,
 
 	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wiphy);
 
-	if ((!prGlueInfo) || (prGlueInfo->u4ReadyFlag == 0)) {
+	if (!wlanIsDriverReady(prGlueInfo)) {
 		DBGLOG(REQ, WARN, "driver is not ready\n");
 		return 0;
 	}
@@ -6018,7 +6016,7 @@ int mtk_cfg_resume(struct wiphy *wiphy)
 
 	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wiphy);
 
-	if ((!prGlueInfo) || (prGlueInfo->u4ReadyFlag == 0)) {
+	if (!wlanIsDriverReady(prGlueInfo)) {
 		DBGLOG(REQ, WARN, "driver is not ready\n");
 		return 0;
 	}

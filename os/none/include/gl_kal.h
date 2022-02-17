@@ -1862,6 +1862,14 @@ void kalScanLogCacheFlushBSS(struct ADAPTER *prAdapter,
 #define kalChannelFormatSwitch(_prChannel_def, _prChannel \
 		, _prRfChnlInfo) \
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
+
+#define kalRemoveBss(_prGlueInfo, \
+	_aucBSSID, _ucChannelNum, \
+	_eBand) \
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
+
+#define kalIsResetting(_void) \
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
 #else
 int kalMaskMemCmp(const void *cs, const void *ct,
 	const void *mask, size_t count);
@@ -1874,6 +1882,14 @@ u_int8_t
 kalChannelFormatSwitch(IN struct cfg80211_chan_def *channel_def,
 		IN struct ieee80211_channel *channel,
 		IN struct RF_CHANNEL_INFO *prRfChnlInfo);
+
+void kalRemoveBss(struct GLUE_INFO *prGlueInfo,
+	uint8_t aucBSSID[],
+	uint8_t ucChannelNum,
+	enum ENUM_BAND eBand);
+
+u_int8_t kalIsResetting(void);
 #endif
+
 #endif /* _GL_KAL_H */
 

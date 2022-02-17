@@ -1197,6 +1197,8 @@ void scanRemoveBssDescByBssid(IN struct ADAPTER *prAdapter,
 	struct LINK *prFreeBSSDescList;
 	struct BSS_DESC *prBssDesc = (struct BSS_DESC *) NULL;
 	struct BSS_DESC *prBSSDescNext;
+	uint8_t ucTargetChNum = 0;
+	enum ENUM_BAND eTargetBand = BAND_NULL;
 
 	ASSERT(prAdapter);
 	ASSERT(aucBSSID);
@@ -1210,6 +1212,13 @@ void scanRemoveBssDescByBssid(IN struct ADAPTER *prAdapter,
 		rLinkEntry, struct BSS_DESC) {
 
 		if (EQUAL_MAC_ADDR(prBssDesc->aucBSSID, aucBSSID)) {
+			/* Because BSS descriptor will be cleared in next step,
+			 * so we need to keep them temporarily.
+			 */
+			ucTargetChNum = prBssDesc->ucChannelNum;
+			eTargetBand = prBssDesc->eBand;
+
+			/* Clear BSS descriptor */
 			scanRemoveBssDescFromList(prBSSDescList,
 				prBssDesc,
 				prAdapter);
@@ -1218,6 +1227,13 @@ void scanRemoveBssDescByBssid(IN struct ADAPTER *prAdapter,
 			scanInsertBssDescToList(prFreeBSSDescList,
 				prBssDesc,
 				FALSE);
+
+			/* We should notify kernel to unlink BSS */
+			kalRemoveBss(
+				prAdapter->prGlueInfo,
+				aucBSSID,
+				ucTargetChNum,
+				eTargetBand);
 
 			/* BSSID is not unique, so need to traverse
 			 * whols link-list
@@ -2995,12 +3011,12 @@ uint32_t scanProcessBeaconAndProbeResp(IN struct ADAPTER *prAdapter,
 		/* 4 <3> Send SW_RFB_T to HIF when we perform SCAN for HOST */
 		if (prBssDesc->eBSSType == BSS_TYPE_INFRASTRUCTURE
 			|| prBssDesc->eBSSType == BSS_TYPE_IBSS) {
-			u_int8_t fgAddToScanResult = FALSE;
-
 			/* for AIS, send to host */
 			prAdapter->rWlanInfo.u4ScanDbgTimes3++;
 			if (prScanInfo->eCurrentState == SCAN_STATE_SCANNING
 				|| prScanInfo->fgSchedScanning) {
+				u_int8_t fgAddToScanResult = FALSE;
+
 				fgAddToScanResult
 					= scanCheckBssIsLegal(prAdapter,
 						prBssDesc);
@@ -3010,11 +3026,6 @@ uint32_t scanProcessBeaconAndProbeResp(IN struct ADAPTER *prAdapter,
 					rStatus = scanAddScanResult(prAdapter,
 						prBssDesc, prSwRfb);
 				}
-			}
-			if (fgAddToScanResult == FALSE) {
-				kalMemZero(prBssDesc->aucRawBuf,
-					CFG_RAW_BUFFER_SIZE);
-				prBssDesc->u2RawLength = 0;
 			}
 		}
 #if CFG_ENABLE_WIFI_DIRECT

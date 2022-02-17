@@ -474,10 +474,12 @@ u_int8_t halSetDriverOwn(IN struct ADAPTER *prAdapter)
 			prAdapter->u4OwnFailedCount = 0;
 			prAdapter->u4OwnFailedLogCount = 0;
 			break;
+		} else if (wlanIsChipNoAck(prAdapter)) {
+			fgStatus = FALSE;
+			break;
 		} else if ((i > LP_OWN_BACK_FAILED_RETRY_CNT) &&
 			   (kalIsCardRemoved(prAdapter->prGlueInfo) ||
-			    fgIsBusAccessFailed || fgTimeout ||
-			    wlanIsChipNoAck(prAdapter))) {
+			    fgIsBusAccessFailed || fgTimeout)) {
 			halDriverOwnTimeout(prAdapter, u4CurrTick, fgTimeout);
 			fgStatus = FALSE;
 			break;

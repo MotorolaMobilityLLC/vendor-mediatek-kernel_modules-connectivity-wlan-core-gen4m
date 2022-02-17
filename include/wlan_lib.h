@@ -77,7 +77,6 @@
 #include "nic_init_cmd_event.h"
 #include "fw_dl.h"
 
-
 /*******************************************************************************
  *                              C O N S T A N T S
  *******************************************************************************
@@ -1279,7 +1278,7 @@ wlanSetInformation(IN struct ADAPTER *prAdapter,
 
 uint32_t wlanAdapterStart(IN struct ADAPTER *prAdapter,
 			  IN struct REG_INFO *prRegInfo,
-				IN const u_int8_t bAtResetFlow);
+			  IN const u_int8_t bAtResetFlow);
 
 uint32_t wlanAdapterStop(IN struct ADAPTER *prAdapter);
 
@@ -1717,6 +1716,10 @@ int wlanGetRxRate(IN struct GLUE_INFO *prGlueInfo,
 uint32_t wlanLinkQualityMonitor(struct GLUE_INFO *prGlueInfo, bool bFgIsOid);
 void wlanFinishCollectingLinkQuality(struct GLUE_INFO *prGlueInfo);
 #endif /* CFG_SUPPORT_LINK_QUALITY_MONITOR */
+u_int8_t wlanIsDriverReady(IN struct GLUE_INFO *prGlueInfo);
+void wlanOffUninitNicModule(IN struct ADAPTER *prAdapter,
+				IN const u_int8_t bAtResetFlow);
+void wlanOffClearAllQueues(IN struct ADAPTER *prAdapter);
 
 uint8_t wlanGetBssIdx(struct net_device *ndev);
 

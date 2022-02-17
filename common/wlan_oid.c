@@ -8110,6 +8110,7 @@ wlanoidSetDisassociate(IN struct ADAPTER *prAdapter,
 		       IN void *pvSetBuffer, IN uint32_t u4SetBufferLen,
 		       OUT uint32_t *pu4SetInfoLen) {
 	struct MSG_AIS_ABORT *prAisAbortMsg;
+	uint32_t u4DisconnectReason;
 
 	DEBUGFUNC("wlanoidSetDisassociate");
 
@@ -8140,8 +8141,14 @@ wlanoidSetDisassociate(IN struct ADAPTER *prAdapter,
 	}
 
 	prAisAbortMsg->rMsgHdr.eMsgId = MID_OID_AIS_FSM_JOIN_REQ;
-	prAisAbortMsg->ucReasonOfDisconnect =
-		DISCONNECT_REASON_CODE_NEW_CONNECTION;
+	if (pvSetBuffer == NULL)
+		prAisAbortMsg->ucReasonOfDisconnect =
+			DISCONNECT_REASON_CODE_NEW_CONNECTION;
+	else {
+		u4DisconnectReason = *((uint32_t *)pvSetBuffer);
+		prAisAbortMsg->ucReasonOfDisconnect =
+			u4DisconnectReason;
+	}
 	prAisAbortMsg->fgDelayIndication = FALSE;
 
 	mboxSendMsg(prAdapter, MBOX_ID_0,
@@ -9637,6 +9644,11 @@ wlanSendSetQueryCmd(IN struct ADAPTER *prAdapter,
 	uint8_t *pucCmfBuf;
 	struct mt66xx_chip_info *prChipInfo;
 	uint16_t cmd_size;
+
+	if (kalIsResetting()) {
+		DBGLOG(INIT, WARN, "Chip resetting, skip\n");
+		return WLAN_STATUS_FAILURE;
+	}
 
 	prGlueInfo = prAdapter->prGlueInfo;
 	prChipInfo = prAdapter->chip_info;
@@ -12044,8 +12056,10 @@ wlanoidSetGtkRekeyData(IN struct ADAPTER *prAdapter,
 uint32_t
 wlanoidSetStartSchedScan(IN struct ADAPTER *prAdapter,
 			 IN void *pvSetBuffer, IN uint32_t u4SetBufferLen,
-			 OUT uint32_t *pu4SetInfoLen) {
-	struct PARAM_SCHED_SCAN_REQUEST *prSchedScanRequest;
+			 OUT uint32_t *pu4SetInfoLen)
+{
+	struct PARAM_SCHED_SCAN_REQUEST *prSchedScanRequest =
+		(struct PARAM_SCHED_SCAN_REQUEST *) pvSetBuffer;
 
 	DEBUGFUNC("wlanoidSetStartSchedScan()");
 
@@ -12073,17 +12087,17 @@ wlanoidSetStartSchedScan(IN struct ADAPTER *prAdapter,
 		DBGLOG(REQ, WARN,
 		       "Return from BSSID list scan! (radio off). ACPI=D%d, Radio=%d\n",
 		       prAdapter->rAcpiState, prAdapter->fgIsRadioOff);
-		return WLAN_STATUS_SUCCESS;
+		goto success;
 	}
 
-	prSchedScanRequest = (struct PARAM_SCHED_SCAN_REQUEST *)
-			     pvSetBuffer;
-
-	if (scnFsmSchedScanRequest(prAdapter,
-				   prSchedScanRequest) == TRUE)
-		return WLAN_STATUS_SUCCESS;
-	else
+	if (!scnFsmSchedScanRequest(prAdapter, prSchedScanRequest)) {
+		DBGLOG(REQ, WARN, "scnFsmSchedScanRequest failure !!\n");
 		return WLAN_STATUS_FAILURE;
+	}
+
+success:
+	prAdapter->prGlueInfo->prSchedScanRequest = prSchedScanRequest;
+	return WLAN_STATUS_SUCCESS;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -12111,13 +12125,24 @@ wlanoidSetStopSchedScan(IN struct ADAPTER *prAdapter,
 			IN void *pvSetBuffer, IN uint32_t u4SetBufferLen,
 			OUT uint32_t *pu4SetInfoLen) {
 	uint32_t ret;
+	struct PARAM_SCHED_SCAN_REQUEST *prSchedScanRequest =
+		prAdapter->prGlueInfo->prSchedScanRequest;
 
 	ASSERT(prAdapter);
 
 	/* ask SCN module to stop scan request */
-	if (scnFsmSchedScanStopRequest(prAdapter) == TRUE)
+	if (scnFsmSchedScanStopRequest(prAdapter) == TRUE) {
+		kalMemFree(prSchedScanRequest->pucChannels,
+			   VIR_MEM_TYPE, prSchedScanRequest->ucChnlNum);
+		kalMemFree(prSchedScanRequest->pucIE,
+			   VIR_MEM_TYPE,
+			   prGlueInfo->prSchedScanRequest->u4IELength);
+		kalMemFree(prSchedScanRequest,
+			   VIR_MEM_TYPE,
+			   sizeof(struct PARAM_SCHED_SCAN_REQUEST));
+		prAdapter->prGlueInfo->prSchedScanRequest = NULL;
 		ret = WLAN_STATUS_SUCCESS;
-	else {
+	} else {
 		DBGLOG(REQ, WARN, "scnFsmSchedScanStopRequest failed.\n");
 		ret = WLAN_STATUS_FAILURE;
 	}
