@@ -3327,7 +3327,7 @@ static s_int32 hqa_icap_ctrl(
 		sys_ad_zero_mem(icap_data_cnt, sizeof(s_int32));
 
 		ret = mt_serv_get_icap_max_data_len(serv_test, &max_data_len);
-		if (ret) {
+		if (ret || (max_data_len == 0)) {
 			SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_ERROR,
 			("%s : mt_serv_get_icap_max_data_len is failed!!\n"
 			, __func__));
@@ -4683,7 +4683,7 @@ s_int32 mt_agent_hqa_cmd_string_parser(
 					ret = kstrtou16(apc_argv[j], 0,
 					&tmp_value2);
 					set_param_and_shift_buf(TRUE, parasize,
-					(u_char *)&tmp_value, &data);
+					(u_char *)&tmp_value2, &data);
 				} else {
 					ret = kstrtou8(apc_argv[j], 0,
 					(u_int8 *)&tmp_value);
