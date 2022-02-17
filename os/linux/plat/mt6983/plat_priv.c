@@ -12,7 +12,7 @@
 #include <linux/pm_qos.h>
 #include "precomp.h"
 
-#ifdef CONFIG_MTK_EMI
+#ifdef CONFIG_WLAN_MTK_EMI
 #if KERNEL_VERSION(5, 4, 0) <= CFG80211_VERSION_CODE
 #include <soc/mediatek/emi.h>
 #else
@@ -308,7 +308,7 @@ void kalSetEmiMetOffset(uint32_t newEmiMetOffset)
 	u4EmiMetOffset = newEmiMetOffset;
 }
 
-#ifdef CONFIG_MTK_EMI
+#ifdef CONFIG_WLAN_MTK_EMI
 void kalSetEmiMpuProtection(phys_addr_t emiPhyBase, bool enable)
 {
 }
