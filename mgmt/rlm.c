@@ -6036,7 +6036,7 @@ rlmChangeOperationMode(
 
 #if CFG_SUPPORT_SMART_GEAR
 		/*CNM_OPMODE_REQ_SMARTGEAR_1T2R*/
-		if (eNewReq != 0x05) {
+		if (eNewReq != 0x04) {
 #endif		/* <5.2> Send operating mode notification frame (STA mode)
 		 * No action frame is needed if we only changed OpTxNss.
 		 */
