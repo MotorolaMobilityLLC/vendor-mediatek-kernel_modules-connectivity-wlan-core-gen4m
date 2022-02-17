@@ -121,7 +121,12 @@ scanP2pProcessBeaconAndProbeResp(IN struct ADAPTER *prAdapter,
 	u_int8_t fgIsBeacon = FALSE;
 	u_int8_t fgIsSkipThisBeacon = FALSE;
 
-	if (prBssDesc->fgIsP2PPresent == FALSE)
+	/* Indicate network to kernel for P2P interface when:
+	 *  1. This is P2P network
+	 *  2. Driver is configured to report all bss networks
+	 */
+	if (!prBssDesc->fgIsP2PPresent &&
+		!prAdapter->p2p_scan_report_all_bss)
 		return;
 
 	fgIsBeacon = (prWlanBeaconFrame->u2FrameCtrl & MASK_FRAME_TYPE) ==
