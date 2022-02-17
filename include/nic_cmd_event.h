@@ -3090,6 +3090,15 @@ struct EVENT_MIB_INFO {
 };
 #endif
 
+#if (CFG_WIFI_GET_DPD_CACHE == 1)
+struct EVENT_GET_DPD_CACHE {
+	uint8_t		ucDpdCacheNum;
+	uint8_t		ucReserved[3];
+	uint32_t	u4DpdCacheCh[PER_CH_CAL_CACHE_NUM];
+	uint8_t		ucDpdCachePath[PER_CH_CAL_CACHE_NUM];
+};
+#endif
+
 /*#if (CFG_EEPROM_PAGE_ACCESS == 1)*/
 struct EVENT_ACCESS_EFUSE {
 
@@ -4024,6 +4033,12 @@ void nicEventHandleAddBa(IN struct ADAPTER *prAdapter,
 void nicCmdEventQueryCoexIso(IN struct ADAPTER *prAdapter,
 		IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf);
 #endif
+
+#if (CFG_WIFI_GET_DPD_CACHE == 1)
+void nicCmdEventQueryDpdCache(IN struct ADAPTER *prAdapter,
+	IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf);
+#endif
+
 /*******************************************************************************
  *                              F U N C T I O N S
  *******************************************************************************
