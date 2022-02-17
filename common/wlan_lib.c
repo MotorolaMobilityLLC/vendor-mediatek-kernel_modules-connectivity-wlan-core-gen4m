@@ -1040,6 +1040,9 @@ void wlanOffClearAllQueues(IN struct ADAPTER *prAdapter)
 	/* Release all CMD/MGMT/SEC frame in command queue */
 	kalClearCommandQueue(prAdapter->prGlueInfo);
 
+	/* Release all CMD in pending command queue */
+	wlanClearPendingCommandQueue(prAdapter);
+
 #if CFG_SUPPORT_MULTITHREAD
 
 	/* Flush all items in queues for multi-thread */
@@ -2101,6 +2104,50 @@ void wlanClearRxToOsQueue(IN struct ADAPTER *prAdapter)
 
 }
 #endif
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief This routine is used to clear all commands in pending command queue
+ * \param prAdapter  Pointer of Adapter Data Structure
+ *
+ * \retval none
+ */
+/*----------------------------------------------------------------------------*/
+void wlanClearPendingCommandQueue(IN struct ADAPTER *prAdapter)
+{
+	struct QUE rTempCmdQue;
+	struct QUE *prTempCmdQue = &rTempCmdQue;
+	struct QUE_ENTRY *prQueueEntry = (struct QUE_ENTRY *) NULL;
+	struct CMD_INFO *prCmdInfo = (struct CMD_INFO *) NULL;
+
+	KAL_SPIN_LOCK_DECLARATION();
+	QUEUE_INITIALIZE(prTempCmdQue);
+
+	ASSERT(prAdapter);
+
+	KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_CMD_PENDING);
+	QUEUE_MOVE_ALL(prTempCmdQue, &prAdapter->rPendingCmdQueue);
+	KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_CMD_PENDING);
+
+	QUEUE_REMOVE_HEAD(prTempCmdQue, prQueueEntry,
+			  struct QUE_ENTRY *);
+	while (prQueueEntry) {
+		prCmdInfo = (struct CMD_INFO *) prQueueEntry;
+
+		if (prCmdInfo->pfCmdTimeoutHandler)
+			prCmdInfo->pfCmdTimeoutHandler(prAdapter, prCmdInfo);
+		else
+			wlanReleaseCommand(prAdapter, prCmdInfo,
+					   TX_RESULT_QUEUE_CLEARANCE);
+
+		nicTxCancelSendingCmd(prAdapter, prCmdInfo);
+
+		cmdBufFreeCmdInfo(prAdapter, prCmdInfo);
+
+		QUEUE_REMOVE_HEAD(prTempCmdQue, prQueueEntry,
+				  struct QUE_ENTRY *);
+	}
+}
 
 /*----------------------------------------------------------------------------*/
 /*!
