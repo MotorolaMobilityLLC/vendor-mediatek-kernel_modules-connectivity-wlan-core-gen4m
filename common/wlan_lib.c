@@ -7161,6 +7161,8 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 		"HeVcoreBoostEnable", FEATURE_DISABLED);
 	prWifiVar->ucMaxAmpduLenExp = (uint8_t) wlanCfgGetUint32(prAdapter,
 		"MaxAmpduLenExt", HE_CAP_MAX_AMPDU_LEN_EXP);
+	prWifiVar->fgEnableSR = (uint8_t) wlanCfgGetUint32(prAdapter,
+		"SREnable", FEATURE_DISABLED);
 	}
 #endif
 

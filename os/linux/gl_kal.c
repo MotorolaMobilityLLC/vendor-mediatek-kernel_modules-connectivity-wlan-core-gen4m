@@ -1804,7 +1804,10 @@ kalIndicateStatusAndComplete(IN struct GLUE_INFO
 			p2pFuncSwitchSapChannel(prGlueInfo->prAdapter);
 
 		}
-
+#if (CFG_SUPPORT_802_11AX == 1)
+		if (IS_FEATURE_ENABLED(prAdapter->rWifiVar.fgEnableSR))
+			rlmSetSrControl(prAdapter, TRUE);
+#endif
 		break;
 
 	case WLAN_STATUS_MEDIA_DISCONNECT:

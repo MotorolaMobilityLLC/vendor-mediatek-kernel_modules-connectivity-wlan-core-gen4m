@@ -609,6 +609,10 @@ int32_t rlmGetOpClassForChannel(
 	int32_t channel,
 	enum ENUM_BAND band);
 
+#if (CFG_SUPPORT_802_11AX == 1)
+void rlmSetSrControl(IN struct ADAPTER *prAdapter, bool fgIsEnableSr);
+#endif
+
 /*******************************************************************************
  *                              F U N C T I O N S
  *******************************************************************************

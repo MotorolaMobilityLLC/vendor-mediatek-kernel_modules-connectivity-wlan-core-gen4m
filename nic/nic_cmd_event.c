@@ -3600,6 +3600,104 @@ void nicEventLayer0ExtMagic(IN struct ADAPTER *prAdapter,
 		break;
 	}
 #endif	/* CFG_SUPPORT_WIFI_SYSDVT */
+
+#if (CFG_SUPPORT_802_11AX == 1)
+	case EXT_EVENT_ID_SR_INFO:
+	{
+		struct _SR_EVENT_T *prEventSr;
+
+		prEventSr = (struct _SR_EVENT_T *) (
+						prEvent->aucBuffer);
+		prCmdInfo = nicGetPendingCmdInfo(prAdapter,
+						 prEvent->ucSeqNum);
+
+		switch (prEventSr->u1EventSubId) {
+		case SR_EVENT_GET_SR_CAP_ALL_INFO:
+		{
+			struct _SR_EVENT_SR_CAP_T *prEventSrCap;
+
+			u4QueryInfoLen = sizeof(struct _SR_EVENT_SR_CAP_T);
+			prEventSrCap = (struct _SR_EVENT_SR_CAP_T *) (
+							prEvent->aucBuffer);
+
+			DBGLOG(NIC, STATE, "========== SR CAP ==========\n");
+			DBGLOG(NIC, STATE, "fgSrEn = %d \t"
+				"fgSrgEn = %d\n",
+				prEventSrCap->rSrCap.fgSrEn,
+				prEventSrCap->rSrCap.fgSrgEn);
+
+			DBGLOG(NIC, STATE, "fgNonSrgEn = %d \t"
+				"fgSingleMdpuRtsctsEn = %d\n",
+				prEventSrCap->rSrCap.fgNonSrgEn,
+				prEventSrCap->rSrCap.fgSingleMdpuRtsctsEn);
+
+			DBGLOG(NIC, STATE, "fgHdrDurEn = %d \t"
+				"fgTxopDurEn = %d\n",
+				prEventSrCap->rSrCap.fgHdrDurEn,
+				prEventSrCap->rSrCap.fgTxopDurEn);
+
+			DBGLOG(NIC, STATE, "fgNonSrgInterPpduPresv = %d \t"
+				"fgSrgInterPpduPresv = %d\n",
+				prEventSrCap->rSrCap.fgNonSrgInterPpduPresv,
+				prEventSrCap->rSrCap.fgSrgInterPpduPresv);
+
+			DBGLOG(NIC, STATE, "fgSrRemTimeEn = %d \t"
+				"fgProtInSrWinDis = %d\n",
+				prEventSrCap->rSrCap.fgSrRemTimeEn,
+				prEventSrCap->rSrCap.fgProtInSrWinDis);
+
+			DBGLOG(NIC, STATE, "fgTxCmdDlRateSelEn = %d \t"
+				"fgAmpduTxCntEn = %d\n",
+				prEventSrCap->rSrCap.fgTxCmdDlRateSelEn,
+				prEventSrCap->rSrCap.fgAmpduTxCntEn);
+			DBGLOG(NIC, STATE, "============================\n");
+			break;
+		}
+
+		case SR_EVENT_GET_SR_IND_ALL_INFO:
+		{
+			struct _SR_EVENT_SR_IND_T *prEventSrInd;
+
+			u4QueryInfoLen = sizeof(struct _SR_EVENT_SR_IND_T);
+			prEventSrInd = (struct _SR_EVENT_SR_IND_T *) (
+							prEvent->aucBuffer);
+
+			DBGLOG(NIC, STATE, "======== SR INDICATOR ========\n");
+			DBGLOG(NIC, STATE, "NonSrgInterPpduRcpi = %x \t"
+				"SrgInterPpduRcpi = %x\n",
+				prEventSrInd->rSrInd.u1NonSrgInterPpduRcpi,
+				prEventSrInd->rSrInd.u1SrgInterPpduRcpi);
+
+			DBGLOG(NIC, STATE, "NonSrgVldCnt = %x \t"
+				"SrgVldCnt = %x\n",
+				prEventSrInd->rSrInd.u2NonSrgVldCnt,
+				prEventSrInd->rSrInd.u2SrgVldCnt);
+
+			DBGLOG(NIC, STATE, "IntraBssPpduCnt = %x \t"
+				"InterBssPpduCnt = %x\n",
+				prEventSrInd->rSrInd.u2IntraBssPpduCnt,
+				prEventSrInd->rSrInd.u2InterBssPpduCnt);
+
+			DBGLOG(NIC, STATE, "NonSrgPpduVldCnt = %x \t"
+				"SrgPpduVldCnt = %x\n",
+				prEventSrInd->rSrInd.u2NonSrgPpduVldCnt,
+				prEventSrInd->rSrInd.u2SrgPpduVldCnt);
+
+			DBGLOG(NIC, STATE, "SrAmpduMpduCnt = %x \t"
+				"SrAmpduMpduAckedCnt = %x\n",
+				prEventSrInd->rSrInd.u4SrAmpduMpduCnt,
+				prEventSrInd->rSrInd.u4SrAmpduMpduAckedCnt);
+			DBGLOG(NIC, STATE, "==========================\n");
+			break;
+		}
+
+		default:
+			break;
+		}
+		break;
+	}
+#endif
+
 	default:
 		break;
 	}
