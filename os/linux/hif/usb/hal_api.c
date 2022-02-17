@@ -1231,11 +1231,14 @@ void halRxUSBProcessEventDataComplete(IN struct ADAPTER *prAdapter,
 		if (prUrb->status != 0) {
 			DBGLOG(RX, ERROR, "[%s] receive EVENT/DATA fail (status = %d)\n", __func__, prUrb->status);
 
-			glUsbEnqueueReq(prHifInfo, prFreeQ, prUsbReq, prLock,
-					FALSE);
-			prUsbReq = glUsbDequeueReq(prHifInfo, prCompleteQ,
-						prLock);
-			continue;
+			goto next_urb;
+		}
+
+		if (prAdapter->fgIsWfsysReset) {
+			DBGLOG(RX, ERROR,
+			       "skip rx urb process due to L0.5 reset\n");
+
+			goto next_urb;
 		}
 
 		pucBufAddr = prBufCtrl->pucBuf + prBufCtrl->u4ReadSize;
@@ -1269,6 +1272,7 @@ void halRxUSBProcessEventDataComplete(IN struct ADAPTER *prAdapter,
 		if (unlikely(s_fgOutOfSwRfb == TRUE))
 			s_fgOutOfSwRfb = FALSE;
 
+next_urb:
 		glUsbEnqueueReq(prHifInfo, prFreeQ, prUsbReq, prLock, FALSE);
 		prUsbReq = glUsbDequeueReq(prHifInfo, prCompleteQ, prLock);
 	}
