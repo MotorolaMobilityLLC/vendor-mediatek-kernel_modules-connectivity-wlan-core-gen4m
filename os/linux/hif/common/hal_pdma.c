@@ -991,12 +991,12 @@ bool halHifSwInfoInit(IN struct ADAPTER *prAdapter)
 	prHifInfo->rErrRecoveryCtl.u4Status = 0;
 
 #if (KERNEL_VERSION(4, 15, 0) <= CFG80211_VERSION_CODE)
-	timer_setup(&prHif->rSerTimer, halHwRecoveryTimeout, 0);
-	prHif->rSerTimerData = (unsigned long)prGlueInfo;
+	timer_setup(&prHifInfo->rSerTimer, halHwRecoveryTimeout, 0);
+	prHifInfo->rSerTimerData = (unsigned long)prAdapter->prGlueInfo;
 #else
-	init_timer(&prHif->rSerTimer);
-	prHif->rSerTimer.function = halHwRecoveryTimeout;
-	prHif->rSerTimer.data = (unsigned long)prGlueInfo;
+	init_timer(&prHifInfo->rSerTimer);
+	prHifInfo->rSerTimer.function = halHwRecoveryTimeout;
+	prHifInfo->rSerTimer.data = (unsigned long)prAdapter->prGlueInfo;
 #endif
 	prHifInfo->rSerTimer.expires =
 		jiffies + HIF_SER_TIMEOUT * HZ / MSEC_PER_SEC;
