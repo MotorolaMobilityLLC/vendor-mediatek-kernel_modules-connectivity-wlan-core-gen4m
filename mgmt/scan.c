@@ -1455,6 +1455,12 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 			break;
 
 		case ELEM_ID_HT_OP:
+#if (CFG_SUPPORT_WIFI_6G == 1)
+			if (eHwBand == BAND_6G) {
+				DBGLOG(SCN, WARN, "Ignore HT OP IE at 6G\n");
+				break;
+			}
+#endif
 			if (IE_LEN(pucIE) == (sizeof(struct IE_HT_OP) - 2))
 				ucIeHtChannelNum = ((struct IE_HT_OP *) pucIE)
 					->ucPrimaryChannel;
@@ -1868,6 +1874,13 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 			uint8_t ucSpatial = 0;
 			uint8_t i = 0;
 			/* end Support AP Selection */
+
+#if (CFG_SUPPORT_WIFI_6G == 1)
+			if (eHwBand == BAND_6G) {
+				DBGLOG(SCN, WARN, "Ignore HT CAP IE at 6G\n");
+				break;
+			}
+#endif
 			if (IE_LEN(pucIE) != (sizeof(struct IE_HT_CAP) - 2)) {
 				DBGLOG(SCN, WARN,
 					"HT_CAP wrong length(%d)->(%d)\n",
@@ -1894,6 +1907,12 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 			break;
 		}
 		case ELEM_ID_HT_OP:
+#if (CFG_SUPPORT_WIFI_6G == 1)
+			if (eHwBand == BAND_6G) {
+				DBGLOG(SCN, WARN, "Ignore HT OP IE at 6G\n");
+				break;
+			}
+#endif
 			if (IE_LEN(pucIE) != (sizeof(struct IE_HT_OP) - 2))
 				break;
 
@@ -1905,10 +1924,22 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 			}
 			break;
 		case ELEM_ID_VHT_CAP:
+#if (CFG_SUPPORT_WIFI_6G == 1)
+			if (eHwBand == BAND_6G) {
+				DBGLOG(SCN, WARN, "Ignore VHT CAP IE at 6G\n");
+				break;
+			}
+#endif
 			scanParseVHTCapIE(pucIE, prBssDesc);
 			break;
 
 		case ELEM_ID_VHT_OP:
+#if (CFG_SUPPORT_WIFI_6G == 1)
+			if (eHwBand == BAND_6G) {
+				DBGLOG(SCN, WARN, "Ignore VHT OP IE at 6G\n");
+				break;
+			}
+#endif
 			scanParseVHTOpIE(pucIE, prBssDesc);
 			break;
 
@@ -2050,7 +2081,13 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 #else
 				if (IE_ID_EXT(pucIE) == ELEM_EXT_ID_HE_CAP)
 					prBssDesc->fgIsHEPresent = TRUE;
-#endif
+
+#if (CFG_SUPPORT_WIFI_6G == 1)
+				if (IE_ID_EXT(pucIE) == ELEM_EXT_ID_HE_OP)
+					scanParseHEOpIE(pucIE,
+						prBssDesc, eHwBand);
+#endif /* CFG_SUPPORT_WIFI_6G == 1 */
+#endif /* CFG_SUPPORT_HE_ER == 1 */
 			}
 
 #if CFG_SUPPORT_MBO
@@ -2075,7 +2112,7 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 
 #endif
 			break;
-#endif
+#endif /* CFG_SUPPORT_802_11AX == 1 */
 		case ELEM_ID_PWR_CONSTRAINT:
 		{
 			struct IE_POWER_CONSTRAINT *prPwrConstraint =
@@ -2162,6 +2199,8 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 			get_ch_num,
 			prRxStatus);
 
+		nicRxdChNumTranslate(eHwBand, &ucHwChannelNum);
+
 		ASSERT(prSwRfb->prRxStatusGroup3);
 		ucRxRCPI = nicRxGetRcpiValueFromRxv(prAdapter,
 			RCPI_MODE_MAX, prSwRfb);
@@ -2196,7 +2235,7 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 			}
 		}
 		/* 5G Band */
-		else {
+		else if (prBssDesc->eBand == BAND_5G) {
 			if (ucIeHtChannelNum >= 1 && ucIeHtChannelNum < 200) {
 				/* Receive Beacon/ProbeResp frame
 				 * from adjacent channel.
@@ -2213,6 +2252,14 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 				prBssDesc->ucChannelNum = ucHwChannelNum;
 			}
 		}
+#if (CFG_SUPPORT_WIFI_6G == 1)
+		else if (prBssDesc->eBand == BAND_6G) {
+			if (prBssDesc->ucChannelNum != ucHwChannelNum)
+				log_dbg(SCN, INFO,
+				"IE_PriCh:%d mismatch with RXD_ChNum:%d\n",
+				prBssDesc->ucChannelNum, ucHwChannelNum);
+		}
+#endif
 	}
 
 	/* 4 <5> Check IE information corret or not */
@@ -2322,6 +2369,12 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 		if (prBssDesc->fgIsHEPresent)
 			prBssDesc->ucPhyTypeSet |= PHY_TYPE_BIT_HE;
 	}
+
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	if (prBssDesc->fgIsHE6GPresent)
+		prBssDesc->ucPhyTypeSet |=
+			(PHY_TYPE_BIT_HE | PHY_TYPE_BIT_OFDM);
+#endif
 #endif
 
 	/* if not 11n only */
@@ -2500,7 +2553,7 @@ uint32_t scanAddScanResult(IN struct ADAPTER *prAdapter,
 	struct WLAN_BEACON_FRAME *prWlanBeaconFrame;
 	uint8_t rMacAddr[PARAM_MAC_ADDR_LEN];
 	struct PARAM_SSID rSsid;
-	enum ENUM_PARAM_NETWORK_TYPE eNetworkType;
+	enum ENUM_PARAM_NETWORK_TYPE eNetworkType = PARAM_NETWORK_TYPE_NUM;
 	struct PARAM_802_11_CONFIG rConfiguration;
 	enum ENUM_PARAM_OP_MODE eOpMode;
 	uint8_t ucRateLen = 0;
@@ -2518,8 +2571,8 @@ uint32_t scanAddScanResult(IN struct ADAPTER *prAdapter,
 		} else {
 			eNetworkType = PARAM_NETWORK_TYPE_DS;
 		}
-	} else {
-		ASSERT(prBssDesc->eBand == BAND_5G);
+	} else if (prBssDesc->eBand == BAND_5G) {
+		/*ASSERT(prBssDesc->eBand == BAND_5G);*/
 		eNetworkType = PARAM_NETWORK_TYPE_OFDM5;
 	}
 
@@ -2538,7 +2591,8 @@ uint32_t scanAddScanResult(IN struct ADAPTER *prAdapter,
 	rConfiguration.u4BeaconPeriod
 		= (uint32_t) prWlanBeaconFrame->u2BeaconInterval;
 	rConfiguration.u4ATIMWindow = prBssDesc->u2ATIMWindow;
-	rConfiguration.u4DSConfig = nicChannelNum2Freq(prBssDesc->ucChannelNum);
+	rConfiguration.u4DSConfig = nicChannelNum2Freq(
+		prBssDesc->ucChannelNum, prBssDesc->eBand);
 	rConfiguration.rFHConfig.u4Length
 		= sizeof(struct PARAM_802_11_CONFIG_FH);
 
@@ -4404,3 +4458,52 @@ void scanHandleOceIE(IN struct SCAN_PARAM *prScanParam,
 	DBGLOG(SCN, INFO, "After OCE IE, length = %d\n", prScanParam->u2IELen);
 	dumpMemory8(pucBuf, prScanParam->u2IELen);
 }
+
+#if (CFG_SUPPORT_WIFI_6G == 1)
+void scanParseHEOpIE(IN uint8_t *pucIE, IN struct BSS_DESC *prBssDesc,
+	IN enum ENUM_BAND eHwBand)
+{
+	struct _IE_HE_OP_T *prHeOp = (struct _IE_HE_OP_T *) pucIE;
+	uint32_t u4Offset = OFFSET_OF(struct _IE_HE_OP_T, aucVarInfo[0]);
+	struct _6G_OPER_INFOR_T *pr6gOperInfor = NULL;
+
+	if (HE_IS_VHT_OP_INFO_PRESENT(prHeOp->ucHeOpParams) &&
+		(eHwBand == BAND_6G))
+		return;
+
+	if (HE_IS_CO_HOSTED_BSS(prHeOp->ucHeOpParams))
+		prBssDesc->fgIsCoHostedBssPresent = TRUE;
+	else
+		prBssDesc->fgIsCoHostedBssPresent = FALSE;
+
+	if (HE_IS_6G_OP_INFOR_PRESENT(prHeOp->ucHeOpParams)) {
+		prBssDesc->fgIsHE6GPresent = TRUE;
+
+		if (prBssDesc->fgIsCoHostedBssPresent)
+			u4Offset += sizeof(uint8_t);
+
+		pr6gOperInfor = (struct _6G_OPER_INFOR_T *)
+			(((uint8_t *) pucIE) + u4Offset);
+
+		prBssDesc->ucChannelNum =
+			pr6gOperInfor->ucPrimaryChannel;
+
+		prBssDesc->ucCenterFreqS1 =
+			pr6gOperInfor->ucChannelCenterFreqSeg0;
+
+		prBssDesc->ucCenterFreqS2 =
+			pr6gOperInfor->ucChannelCenterFreqSeg1;
+
+		prBssDesc->eSco = CHNL_EXT_SCN;
+
+		rlmTransferHe6gOpInfor(prBssDesc->ucChannelNum,
+			(uint8_t)pr6gOperInfor->rControl.bits.ChannelWidth,
+			&prBssDesc->eChannelWidth,
+			&prBssDesc->ucCenterFreqS1,
+			&prBssDesc->ucCenterFreqS2,
+			&prBssDesc->eSco);
+	} else
+		prBssDesc->fgIsHE6GPresent = FALSE;
+}
+#endif
+

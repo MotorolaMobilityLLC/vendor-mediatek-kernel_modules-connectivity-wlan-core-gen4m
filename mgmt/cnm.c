@@ -1260,7 +1260,8 @@ uint8_t cnmIdcCsaReq(IN struct ADAPTER *prAdapter,
 		rRfChnlInfo.ucChnlBw =
 			rlmGetBssOpBwByVhtAndHtOpInfo(prBssInfo);
 		rRfChnlInfo.u2PriChnlFreq =
-			nicChannelNum2Freq(ch_num) / 1000;
+			nicChannelNum2Freq(
+				ch_num, prBssInfo->eBand) / 1000;
 		rRfChnlInfo.u4CenterFreq1 =
 			rRfChnlInfo.u2PriChnlFreq;
 		rRfChnlInfo.u4CenterFreq2 = 0;

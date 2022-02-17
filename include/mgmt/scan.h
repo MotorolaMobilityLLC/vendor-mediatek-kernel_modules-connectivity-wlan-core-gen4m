@@ -219,10 +219,14 @@ enum ENUM_FW_SCAN_STATE {
 
 enum ENUM_SCAN_CHANNEL {
 	SCAN_CHANNEL_FULL = 0,
-	SCAN_CHANNEL_2G4,
-	SCAN_CHANNEL_5G,
-	SCAN_CHANNEL_P2P_SOCIAL,
-	SCAN_CHANNEL_SPECIFIED,
+	SCAN_CHANNEL_2G4 = 1,
+	SCAN_CHANNEL_5G = 2,
+	SCAN_CHANNEL_P2P_SOCIAL = 3,
+	SCAN_CHANNEL_SPECIFIED = 4,
+	SCAN_CHANNEL_5G_NO_DFS = 5,
+	SCAN_CHANNEL_5G_DFS_ONLY = 6,
+	SCAN_CHANNEL_FULL_NO_DFS = 7,
+	SCAN_CHANNEL_6G = 8,
 	SCAN_CHANNEL_NUM
 };
 
@@ -321,6 +325,10 @@ struct BSS_DESC {
 	u_int8_t fgIsVHTPresent;
 #if (CFG_SUPPORT_802_11AX == 1)
 	u_int8_t fgIsHEPresent;
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	u_int8_t fgIsHE6GPresent;
+	u_int8_t fgIsCoHostedBssPresent;
+#endif
 #endif
 
 #if (CFG_SUPPORT_802_11V_MBSSID == 1)
@@ -346,7 +354,7 @@ struct BSS_DESC {
 	 */
 	enum ENUM_CHNL_EXT eSco;
 
-	enum ENUM_CHANNEL_WIDTH eChannelWidth;	/* VHT operation ie */
+	enum ENUM_CHANNEL_WIDTH eChannelWidth;	/* VHT, HE operation ie */
 	uint8_t ucCenterFreqS1;
 	uint8_t ucCenterFreqS2;
 	enum ENUM_BAND eBand;
@@ -973,5 +981,10 @@ void scanHandleOceIE(IN struct SCAN_PARAM *prScanParam,
 
 void scnFsmDumpScanDoneInfo(IN struct ADAPTER *prAdapter,
 	IN struct EVENT_SCAN_DONE *prScanDone);
+
+#if (CFG_SUPPORT_WIFI_6G == 1)
+void scanParseHEOpIE(IN uint8_t *pucIE, IN struct BSS_DESC *prBssDesc,
+	IN enum ENUM_BAND eHwBand);
+#endif
 
 #endif /* _SCAN_H */

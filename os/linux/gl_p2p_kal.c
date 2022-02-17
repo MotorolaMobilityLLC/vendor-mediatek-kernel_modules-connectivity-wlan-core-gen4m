@@ -1347,7 +1347,8 @@ void kalP2PIndicateMgmtTxStatus(IN struct GLUE_INFO *prGlueInfo,
 }				/* kalP2PIndicateMgmtTxStatus */
 
 void
-kalP2PIndicateRxMgmtFrame(IN struct GLUE_INFO *prGlueInfo,
+kalP2PIndicateRxMgmtFrame(IN struct ADAPTER *prAdapter,
+		IN struct GLUE_INFO *prGlueInfo,
 		IN struct SW_RFB *prSwRfb,
 		IN u_int8_t fgIsDevInterface,
 		IN uint8_t ucRoleIdx)
@@ -1360,6 +1361,8 @@ kalP2PIndicateRxMgmtFrame(IN struct GLUE_INFO *prGlueInfo,
 	struct WLAN_MAC_HEADER *prWlanHeader = (struct WLAN_MAC_HEADER *) NULL;
 #endif
 	struct net_device *prNetdevice = (struct net_device *)NULL;
+	struct RX_DESC_OPS_T *prRxDescOps;
+	enum ENUM_BAND eBand;
 
 	do {
 		if ((prGlueInfo == NULL) || (prSwRfb == NULL)) {
@@ -1372,8 +1375,17 @@ kalP2PIndicateRxMgmtFrame(IN struct GLUE_INFO *prGlueInfo,
 		/* ToDo[6630]: Get the following by channel freq */
 		/* HAL_RX_STATUS_GET_CHAN_FREQ( prSwRfb->prRxStatus) */
 		/* ucChnlNum = prSwRfb->prHifRxHdr->ucHwChannelNum; */
-
 		ucChnlNum = prSwRfb->ucChnlNum;
+
+		prRxDescOps = prAdapter->chip_info->prRxDescOps;
+
+		RX_STATUS_GET(
+			prRxDescOps,
+			eBand,
+			get_rf_band,
+			prSwRfb->prRxStatus);
+
+		nicRxdChNumTranslate(eBand, &ucChnlNum);
 
 #if DBG_P2P_MGMT_FRAME_INDICATION
 
@@ -1402,7 +1414,7 @@ kalP2PIndicateRxMgmtFrame(IN struct GLUE_INFO *prGlueInfo,
 			break;
 		}
 #endif
-		i4Freq = nicChannelNum2Freq(ucChnlNum) / 1000;
+		i4Freq = nicChannelNum2Freq(ucChnlNum, eBand) / 1000;
 
 		if (fgIsDevInterface)
 			prNetdevice = prGlueP2pInfo->prDevHandler;
@@ -2307,9 +2319,11 @@ void kalP2pIndicateChnlSwitch(IN struct ADAPTER *prAdapter,
 			return;
 		}
 
-		chan = ieee80211_get_channel(prP2PInfo->prWdev->wiphy,
+		chan = ieee80211_get_channel(
+				prP2PInfo->prWdev->wiphy,
 				nicChannelNum2Freq(
-					prBssInfo->ucPrimaryChannel) / 1000);
+					prBssInfo->ucPrimaryChannel,
+					prBssInfo->eBand) / 1000);
 		if (!chan) {
 			DBGLOG(P2P, WARN,
 				"get channel fail\n");
@@ -2334,7 +2348,8 @@ void kalP2pIndicateChnlSwitch(IN struct ADAPTER *prAdapter,
 			break;
 		}
 		prP2PInfo->chandef->chan->center_freq = nicChannelNum2Freq(
-				prBssInfo->ucPrimaryChannel) / 1000;
+				prBssInfo->ucPrimaryChannel,
+				prBssInfo->eBand) / 1000;
 
 		prP2PInfo->chandef->chan->dfs_state = chan->dfs_state;
 
@@ -2344,30 +2359,36 @@ void kalP2pIndicateChnlSwitch(IN struct ADAPTER *prAdapter,
 				= NL80211_CHAN_WIDTH_80P80;
 			prP2PInfo->chandef->center_freq1
 				= nicChannelNum2Freq(
-				prBssInfo->ucVhtChannelFrequencyS1) / 1000;
+				prBssInfo->ucVhtChannelFrequencyS1,
+				prBssInfo->eBand) / 1000;
 			prP2PInfo->chandef->center_freq2
 				= nicChannelNum2Freq(
-				prBssInfo->ucVhtChannelFrequencyS2) / 1000;
+				prBssInfo->ucVhtChannelFrequencyS2,
+				prBssInfo->eBand) / 1000;
 			break;
 		case VHT_OP_CHANNEL_WIDTH_160:
 			prP2PInfo->chandef->width
 				= NL80211_CHAN_WIDTH_160;
 			prP2PInfo->chandef->center_freq1
 				= nicChannelNum2Freq(
-				prBssInfo->ucVhtChannelFrequencyS1) / 1000;
+				prBssInfo->ucVhtChannelFrequencyS1,
+				prBssInfo->eBand) / 1000;
 			prP2PInfo->chandef->center_freq2
 				= nicChannelNum2Freq(
-				prBssInfo->ucVhtChannelFrequencyS2) / 1000;
+				prBssInfo->ucVhtChannelFrequencyS2,
+				prBssInfo->eBand) / 1000;
 			break;
 		case VHT_OP_CHANNEL_WIDTH_80:
 			prP2PInfo->chandef->width
 				= NL80211_CHAN_WIDTH_80;
 			prP2PInfo->chandef->center_freq1
 				= nicChannelNum2Freq(
-				prBssInfo->ucVhtChannelFrequencyS1) / 1000;
+				prBssInfo->ucVhtChannelFrequencyS1,
+				prBssInfo->eBand) / 1000;
 			prP2PInfo->chandef->center_freq2
 				= nicChannelNum2Freq(
-				prBssInfo->ucVhtChannelFrequencyS2) / 1000;
+				prBssInfo->ucVhtChannelFrequencyS2,
+				prBssInfo->eBand) / 1000;
 			break;
 		case VHT_OP_CHANNEL_WIDTH_20_40:
 			prP2PInfo->chandef->center_freq1

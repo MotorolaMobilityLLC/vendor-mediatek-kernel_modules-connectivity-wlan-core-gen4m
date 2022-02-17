@@ -485,7 +485,7 @@ bow_proc:
 
 		if (prBssInfo->u4RsnSelectedAKMSuite ==
 			RSN_AKM_SUITE_SAE) {
-			kalP2PIndicateRxMgmtFrame(
+			kalP2PIndicateRxMgmtFrame(prAdapter,
 				prAdapter->prGlueInfo,
 				prSwRfb,
 				FALSE,
