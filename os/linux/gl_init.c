@@ -2033,7 +2033,7 @@ void wlanUpdateChannelTable(struct GLUE_INFO *prGlueInfo)
 						~IEEE80211_CHAN_DISABLED;
 					mtk_5ghz_channels[j].dfs_state =
 					    (aucChannelList[i].eDFS
-						== NL80211_DFS_UNAVAILABLE) ?
+						!= NL80211_DFS_USABLE) ?
 					     NL80211_DFS_USABLE :
 					     NL80211_DFS_UNAVAILABLE;
 					if (mtk_5ghz_channels[j].dfs_state ==
