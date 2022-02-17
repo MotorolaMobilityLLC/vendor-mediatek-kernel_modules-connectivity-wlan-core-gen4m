@@ -150,6 +150,9 @@ static PROCESS_RX_UNI_EVENT_FUNCTION arUniEventTable[UNI_EVENT_ID_NUM] = {
 	[UNI_EVENT_ID_BEACON_TIMEOUT] = nicUniEventBeaconTimeout,
 	[UNI_EVENT_ID_UPDATE_COEX_PHYRATE] = nicUniEventUpdateCoex,
 	[UNI_EVENT_ID_IDC] = nicUniEventIdc,
+	[UNI_EVENT_ID_BSS_IS_ABSENCE] = nicUniEventBssIsAbsence,
+	[UNI_EVENT_ID_PS_SYNC] = nicUniEventPsSync,
+	[UNI_EVENT_ID_SAP] = nicUniEventSap,
 };
 
 /*******************************************************************************
@@ -3692,3 +3695,121 @@ void nicUniEventIdc(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 		}
 	}
 }
+
+void nicUniEventBssIsAbsence(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
+{
+	int32_t tags_len;
+	uint8_t *tag;
+	uint16_t offset = 0;
+	uint32_t fixed_len = sizeof(struct UNI_EVENT_BSS_IS_ABSENCE);
+	uint32_t data_len = GET_UNI_EVENT_DATA_LEN(evt);
+	uint8_t *data = GET_UNI_EVENT_DATA(evt);
+	uint32_t fail_cnt = 0;
+	struct UNI_EVENT_BSS_IS_ABSENCE *absence;
+
+	absence = (struct UNI_EVENT_BSS_IS_ABSENCE *) data;
+
+	tags_len = data_len - fixed_len;
+	tag = data + fixed_len;
+	TAG_FOR_EACH(tag, tags_len, offset) {
+		DBGLOG(NIC, TRACE, "Tag(%d, %d)\n", TAG_ID(tag), TAG_LEN(tag));
+
+		switch (TAG_ID(tag)) {
+		case UNI_EVENT_BSS_IS_ABSENCE_TAG_INFO: {
+			struct UNI_EVENT_BSS_IS_ABSENCE_INFO *info=
+				(struct UNI_EVENT_BSS_IS_ABSENCE_INFO *) tag;
+			struct EVENT_BSS_ABSENCE_PRESENCE legacy;
+
+			legacy.ucBssIndex = absence->ucBssIndex;
+			legacy.ucIsAbsent = info->ucIsAbsent;
+			legacy.ucBssFreeQuota = info->ucBssFreeQuota;
+
+			qmHandleEventBssAbsencePresence(ad, &legacy);
+		}
+			break;
+		default:
+			fail_cnt++;
+			ASSERT(fail_cnt < MAX_UNI_EVENT_FAIL_TAG_COUNT)
+			DBGLOG(NIC, WARN, "invalid tag = %d\n", TAG_ID(tag));
+			break;
+		}
+	}
+}
+
+void nicUniEventPsSync(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
+{
+	int32_t tags_len;
+	uint8_t *tag;
+	uint16_t offset = 0;
+	uint32_t fixed_len = sizeof(struct UNI_EVENT_PS_SYNC);
+	uint32_t data_len = GET_UNI_EVENT_DATA_LEN(evt);
+	uint8_t *data = GET_UNI_EVENT_DATA(evt);
+	uint32_t fail_cnt = 0;
+
+	tags_len = data_len - fixed_len;
+	tag = data + fixed_len;
+	TAG_FOR_EACH(tag, tags_len, offset) {
+		DBGLOG(NIC, TRACE, "Tag(%d, %d)\n", TAG_ID(tag), TAG_LEN(tag));
+
+		switch (TAG_ID(tag)) {
+		case UNI_EVENT_PS_SYNC_TAG_CLIENT_PS_INFO: {
+			struct UNI_EVENT_CLIENT_PS_INFO *ps =
+				(struct UNI_EVENT_CLIENT_PS_INFO *) tag;
+			struct EVENT_STA_CHANGE_PS_MODE legacy;
+
+			legacy.ucStaRecIdx = ps->ucWtblIndex;
+			legacy.ucIsInPs = ps->ucPsBit;
+			legacy.ucFreeQuota = ps->ucBufferSize;
+
+			qmHandleEventStaChangePsMode(ad, &legacy);
+		}
+			break;
+		default:
+			fail_cnt++;
+			ASSERT(fail_cnt < MAX_UNI_EVENT_FAIL_TAG_COUNT)
+			DBGLOG(NIC, WARN, "invalid tag = %d\n", TAG_ID(tag));
+			break;
+		}
+	}
+}
+
+void nicUniEventSap(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
+{
+	int32_t tags_len;
+	uint8_t *tag;
+	uint16_t offset = 0;
+	uint32_t fixed_len = sizeof(struct UNI_EVENT_SAP);
+	uint32_t data_len = GET_UNI_EVENT_DATA_LEN(evt);
+	uint8_t *data = GET_UNI_EVENT_DATA(evt);
+	uint32_t fail_cnt = 0;
+
+	tags_len = data_len - fixed_len;
+	tag = data + fixed_len;
+	TAG_FOR_EACH(tag, tags_len, offset) {
+		DBGLOG(NIC, TRACE, "Tag(%d, %d)\n", TAG_ID(tag), TAG_LEN(tag));
+
+		switch (TAG_ID(tag)) {
+		case UNI_EVENT_SAP_TAG_AGING_TIMEOUT:
+			// TODO: uni cmd
+			break;
+		case UNI_EVENT_SAP_TAG_UPDATE_STA_FREE_QUOTA: {
+			struct UNI_EVENT_UPDATE_STA_FREE_QUOTA *quota =
+				(struct UNI_EVENT_UPDATE_STA_FREE_QUOTA *) tag;
+			struct EVENT_STA_UPDATE_FREE_QUOTA legacy;
+
+			legacy.ucStaRecIdx = quota->u2StaRecIdx;
+			legacy.ucUpdateMode = quota->ucUpdateMode;
+			legacy.ucFreeQuota = quota->ucFreeQuota;
+
+			qmHandleEventStaUpdateFreeQuota(ad, &legacy);
+		}
+			break;
+		default:
+			fail_cnt++;
+			ASSERT(fail_cnt < MAX_UNI_EVENT_FAIL_TAG_COUNT)
+			DBGLOG(NIC, WARN, "invalid tag = %d\n", TAG_ID(tag));
+			break;
+		}
+	}
+}
+
