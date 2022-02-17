@@ -1,4 +1,4 @@
-/******************************************************************************
+/*******************************************************************************
  *
  * This file is provided under a dual license.  When you use or
  * distribute this software, you may choose to be licensed under
@@ -48,34 +48,35 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *****************************************************************************/
+ ******************************************************************************/
 /*
-** Id: //Department/DaVinci/BRANCHES/MT6620_WIFI_DRIVER_V2_3/include/wlan_oid.h#4
-*/
+ ** Id: //Department/DaVinci/BRANCHES/MT6620_WIFI_DRIVER_V2_3/include
+ *      /wlan_oid.h#4
+ */
 
 /*! \file   "wlan_oid.h"
-*    \brief This file contains the declairation file of the WLAN OID processing routines
-*	   of Windows driver for MediaTek Inc. 802.11 Wireless LAN Adapters.
-*/
-
+ *    \brief This file contains the declairation file of the WLAN OID processing
+ *         routines of Windows driver for MediaTek Inc.
+ *         802.11 Wireless LAN Adapters.
+ */
 
 #ifndef _WLAN_OID_H
 #define _WLAN_OID_H
 
 /*******************************************************************************
-*                         C O M P I L E R   F L A G S
-********************************************************************************
-*/
+ *                         C O M P I L E R   F L A G S
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                    E X T E R N A L   R E F E R E N C E S
-********************************************************************************
-*/
+ *                    E X T E R N A L   R E F E R E N C E S
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                              C O N S T A N T S
-********************************************************************************
-*/
+ *                              C O N S T A N T S
+ *******************************************************************************
+ */
 
 #define PARAM_MAX_LEN_SSID                      32
 
@@ -115,9 +116,9 @@
 #define PARAM_PACKET_FILTER_PROMISCUOUS         0x00000020
 #define PARAM_PACKET_FILTER_ALL_LOCAL           0x00000080
 #if CFG_ENABLE_WIFI_DIRECT_CFG_80211
-#define PARAM_PACKET_FILTER_P2P_MASK             0xC0000000
-#define PARAM_PACKET_FILTER_PROBE_REQ           0x80000000
-#define PARAM_PACKET_FILTER_ACTION_FRAME      0x40000000
+#define PARAM_PACKET_FILTER_P2P_MASK		0xC0000000
+#define PARAM_PACKET_FILTER_PROBE_REQ		0x80000000
+#define PARAM_PACKET_FILTER_ACTION_FRAME	0x40000000
 #endif
 
 #if CFG_SLT_SUPPORT
@@ -136,34 +137,38 @@
 
 #if CFG_SUPPORT_CAL_RESULT_BACKUP_TO_HOST
 #define PARAM_CAL_DATA_DUMP_MAX_SIZE	1200
-#define PARAM_CAL_DATA_DUMP_MAX_NUM		300
+#define PARAM_CAL_DATA_DUMP_MAX_NUM	300
 #endif
 
-#define BT_PROFILE_PARAM_LEN        8
+#define BT_PROFILE_PARAM_LEN		8
 
-#define EFUSE_ADDR_MAX  0x3BF	/* Based on EEPROM layout 20160120 */
+/* Based on EEPROM layout 20160120 */
+#define EFUSE_ADDR_MAX			0x3BF
 #if CFG_SUPPORT_BUFFER_MODE
 
 /* For MT7668 */
-#define EFUSE_CONTENT_BUFFER_START        0x03A
-#define EFUSE_CONTENT_BUFFER_END          0x1D9
-#define EFUSE_CONTENT_BUFFER_SIZE		  (EFUSE_CONTENT_BUFFER_END - EFUSE_CONTENT_BUFFER_START + 1)
+#define EFUSE_CONTENT_BUFFER_START	0x03A
+#define EFUSE_CONTENT_BUFFER_END	0x1D9
+#define EFUSE_CONTENT_BUFFER_SIZE	(EFUSE_CONTENT_BUFFER_END - \
+					 EFUSE_CONTENT_BUFFER_START + 1)
 
 /* For MT6632 */
-#define EFUSE_CONTENT_SIZE			16
+#define EFUSE_CONTENT_SIZE		16
 
-#define EFUSE_BLOCK_SIZE 16
-#define EEPROM_SIZE 1184
-#define MAX_EEPROM_BUFFER_SIZE	1450
+#define EFUSE_BLOCK_SIZE		16
+#define EEPROM_SIZE			1184
+#define MAX_EEPROM_BUFFER_SIZE		1450
 #endif /* CFG_SUPPORT_BUFFER_MODE */
 
 #if CFG_SUPPORT_TX_BF
-#define TXBF_CMD_NEED_TO_RESPONSE(u4TxBfCmdId) (u4TxBfCmdId == BF_PFMU_TAG_READ || \
-						u4TxBfCmdId == BF_PROFILE_READ)
+#define TXBF_CMD_NEED_TO_RESPONSE(u4TxBfCmdId)	\
+					(u4TxBfCmdId == BF_PFMU_TAG_READ || \
+					 u4TxBfCmdId == BF_PROFILE_READ)
 #endif /* CFG_SUPPORT_TX_BF */
-#define MU_CMD_NEED_TO_RESPONSE(u4MuCmdId) (u4MuCmdId == MU_GET_CALC_INIT_MCS || \
-					    u4MuCmdId == MU_HQA_GET_QD || \
-					    u4MuCmdId == MU_HQA_GET_CALC_LQ)
+#define MU_CMD_NEED_TO_RESPONSE(u4MuCmdId)	\
+					(u4MuCmdId == MU_GET_CALC_INIT_MCS || \
+					 u4MuCmdId == MU_HQA_GET_QD || \
+					 u4MuCmdId == MU_HQA_GET_CALC_LQ)
 #if CFG_SUPPORT_MU_MIMO
 /* @NITESH: MACROS For Init MCS calculation (MU Metric Table) */
 #define NUM_MUT_FEC             2
@@ -216,7 +221,9 @@
 #define SER_USER_CMD_ENABLE_MASK_L3_BFRECOVER_ONLY  (206)
 #define SER_USER_CMD_ENABLE_MASK_RECOVER_ALL        (207)
 
-#define SER_USER_CMD_L1_RECOVER          995 /* Use a magic number to prevent human mistake */
+/* Use a magic number to prevent human mistake */
+#define SER_USER_CMD_L1_RECOVER          995
+
 #define SER_USER_CMD_L2_RECOVER          (302)
 #define SER_USER_CMD_L3_RX_ABORT         (303)
 #define SER_USER_CMD_L3_TX0_ABORT        (304)
@@ -226,8 +233,12 @@
 #define SER_USER_CMD_L3_BF_RECOVER       (308)
 
 #if (CFG_SUPPORT_TXPOWER_INFO == 1)
-#define MODULATION_SYSTEM_CCK_NUM       4       /* 1M, 2M, 5.5M, 11M */
-#define MODULATION_SYSTEM_OFDM_NUM      8       /* 6M, 9M, 12M, 18M, 24M, 36M, 48M, 54M */
+/* 1M, 2M, 5.5M, 11M */
+#define MODULATION_SYSTEM_CCK_NUM       4
+
+/* 6M, 9M, 12M, 18M, 24M, 36M, 48M, 54M */
+#define MODULATION_SYSTEM_OFDM_NUM      8
+
 #define MODULATION_SYSTEM_HT20_NUM      8       /* MCS0~7 */
 #define MODULATION_SYSTEM_HT40_NUM      9       /* MCS0~7, MCS32 */
 #define MODULATION_SYSTEM_VHT20_NUM     10      /* MCS0~9 */
@@ -236,14 +247,22 @@
 #define MODULATION_SYSTEM_VHT160_NUM    MODULATION_SYSTEM_VHT20_NUM
 
 #define TXPOWER_RATE_CCK_OFFSET         (0)
-#define TXPOWER_RATE_OFDM_OFFSET        (TXPOWER_RATE_CCK_OFFSET  + MODULATION_SYSTEM_CCK_NUM)
-#define TXPOWER_RATE_HT20_OFFSET        (TXPOWER_RATE_OFDM_OFFSET + MODULATION_SYSTEM_OFDM_NUM)
-#define TXPOWER_RATE_HT40_OFFSET        (TXPOWER_RATE_HT20_OFFSET + MODULATION_SYSTEM_HT20_NUM)
-#define TXPOWER_RATE_VHT20_OFFSET       (TXPOWER_RATE_HT40_OFFSET + MODULATION_SYSTEM_HT40_NUM)
-#define TXPOWER_RATE_VHT40_OFFSET       (TXPOWER_RATE_VHT20_OFFSET + MODULATION_SYSTEM_VHT20_NUM)
-#define TXPOWER_RATE_VHT80_OFFSET       (TXPOWER_RATE_VHT40_OFFSET + MODULATION_SYSTEM_VHT40_NUM)
-#define TXPOWER_RATE_VHT160_OFFSET      (TXPOWER_RATE_VHT80_OFFSET + MODULATION_SYSTEM_VHT80_NUM)
-#define TXPOWER_RATE_NUM                (TXPOWER_RATE_VHT160_OFFSET + MODULATION_SYSTEM_VHT160_NUM)
+#define TXPOWER_RATE_OFDM_OFFSET        (TXPOWER_RATE_CCK_OFFSET  + \
+					 MODULATION_SYSTEM_CCK_NUM)
+#define TXPOWER_RATE_HT20_OFFSET        (TXPOWER_RATE_OFDM_OFFSET + \
+					 MODULATION_SYSTEM_OFDM_NUM)
+#define TXPOWER_RATE_HT40_OFFSET        (TXPOWER_RATE_HT20_OFFSET + \
+					 MODULATION_SYSTEM_HT20_NUM)
+#define TXPOWER_RATE_VHT20_OFFSET       (TXPOWER_RATE_HT40_OFFSET + \
+					 MODULATION_SYSTEM_HT40_NUM)
+#define TXPOWER_RATE_VHT40_OFFSET       (TXPOWER_RATE_VHT20_OFFSET + \
+					 MODULATION_SYSTEM_VHT20_NUM)
+#define TXPOWER_RATE_VHT80_OFFSET       (TXPOWER_RATE_VHT40_OFFSET + \
+					 MODULATION_SYSTEM_VHT40_NUM)
+#define TXPOWER_RATE_VHT160_OFFSET      (TXPOWER_RATE_VHT80_OFFSET + \
+					 MODULATION_SYSTEM_VHT80_NUM)
+#define TXPOWER_RATE_NUM                (TXPOWER_RATE_VHT160_OFFSET + \
+					 MODULATION_SYSTEM_VHT160_NUM)
 #endif
 
 #if CFG_SUPPORT_LOWLATENCY_MODE
@@ -253,15 +272,15 @@
 #endif /* CFG_SUPPORT_LOWLATENCY_MODE */
 
 /*******************************************************************************
-*                             D A T A   T Y P E S
-********************************************************************************
-*/
+ *                             D A T A   T Y P E S
+ *******************************************************************************
+ */
 /*----------------------------------------------------------------------------*/
 /* Parameters of User Configuration which match to NDIS5.1                    */
 /*----------------------------------------------------------------------------*/
 /* NDIS_802_11_AUTHENTICATION_MODE */
 enum ENUM_PARAM_AUTH_MODE {
-	AUTH_MODE_NON_RSN_FT, /* Fast Bss Transition in a Non FT */
+	AUTH_MODE_NON_RSN_FT,	/* Fast Bss Transition in a Non FT */
 	AUTH_MODE_OPEN,		/*!< Open system */
 	AUTH_MODE_SHARED,	/*!< Shared key */
 	AUTH_MODE_AUTO_SWITCH,	/*!< Either open system or shared key */
@@ -270,8 +289,8 @@ enum ENUM_PARAM_AUTH_MODE {
 	AUTH_MODE_WPA_NONE,	/*!< For Ad hoc */
 	AUTH_MODE_WPA2,
 	AUTH_MODE_WPA2_PSK,
-	AUTH_MODE_WPA2_FT, /* Fast Bss Transition for 802.1x */
-	AUTH_MODE_WPA2_FT_PSK, /* Fast Bss Transition for WPA2 PSK */
+	AUTH_MODE_WPA2_FT,	/* Fast Bss Transition for 802.1x */
+	AUTH_MODE_WPA2_FT_PSK,	/* Fast Bss Transition for WPA2 PSK */
 	AUTH_MODE_WPA_OSEN,
 	AUTH_MODE_NUM		/*!< Upper bound, not real case */
 };
@@ -292,46 +311,56 @@ enum ENUM_WEP_STATUS {
 	ENUM_ENCRYPTION3_KEY_ABSENT
 };
 
-
-
-
-
 enum ENUM_PARAM_PHY_TYPE {
 	PHY_TYPE_802_11ABG = 0,	/*!< Can associated with 802.11abg AP,
-				* Scan dual band.
-				*/
+				 * Scan dual band.
+				 */
 	PHY_TYPE_802_11BG,	/*!< Can associated with 802_11bg AP,
-				*  Scan single band and not report 802_11a BSSs.
-				*/
+				 * Scan single band and not report 802_11a
+				 * BSSs.
+				 */
 	PHY_TYPE_802_11G,	/*!< Can associated with 802_11g only AP,
-				* Scan single band and not report 802_11ab BSSs.
-				*/
+				 * Scan single band and not report 802_11ab
+				 * BSSs.
+				 */
 	PHY_TYPE_802_11A,	/*!< Can associated with 802_11a only AP,
-				* Scan single band and not report 802_11bg BSSs.
-				*/
+				 * Scan single band and not report 802_11bg
+				 * BSSs.
+				 */
 	PHY_TYPE_802_11B,	/*!< Can associated with 802_11b only AP
-				* Scan single band and not report 802_11ag BSSs.
-				*/
+				 * Scan single band and not report 802_11ag
+				 * BSSs.
+				 */
 	PHY_TYPE_NUM		/* 5 */
 };
 
 enum ENUM_PARAM_OP_MODE {
-	NET_TYPE_IBSS = 0,	/*!< Try to merge/establish an AdHoc, do periodic SCAN for merging. */
-	NET_TYPE_INFRA,		/*!< Try to join an Infrastructure, do periodic SCAN for joining. */
-	NET_TYPE_AUTO_SWITCH,	/*!< Try to join an Infrastructure, if fail then try to merge or */
-				/*  establish an AdHoc, do periodic SCAN for joining or merging. */
-	NET_TYPE_DEDICATED_IBSS,	/*!< Try to merge an AdHoc first, */
-					/* if fail then establish AdHoc permanently, no more SCAN. */
+	NET_TYPE_IBSS = 0,	/*!< Try to merge/establish an AdHoc,
+				 * do periodic SCAN for merging.
+				 */
+	NET_TYPE_INFRA,		/*!< Try to join an Infrastructure,
+				 * do periodic SCAN for joining.
+				 */
+	NET_TYPE_AUTO_SWITCH,	/*!< Try to join an Infrastructure,
+				 * if fail then try to merge or
+				 */
+	/*  establish an AdHoc, do periodic SCAN for joining or merging. */
+	NET_TYPE_DEDICATED_IBSS,/*!< Try to merge an AdHoc first, */
+	/* if fail then establish AdHoc permanently, no more SCAN. */
 	NET_TYPE_NUM		/* 4 */
 };
 
 struct PARAM_SSID {
-	uint32_t u4SsidLen;	/*!< SSID length in bytes. Zero length is broadcast(any) SSID */
+	uint32_t u4SsidLen;	/*!< SSID length in bytes.
+				 * Zero length is broadcast(any) SSID
+				 */
 	uint8_t aucSsid[PARAM_MAX_LEN_SSID];
 };
 
 struct PARAM_CONNECT {
-	uint32_t u4SsidLen;	/*!< SSID length in bytes. Zero length is broadcast(any) SSID */
+	uint32_t u4SsidLen;	/*!< SSID length in bytes.
+				 * Zero length is broadcast(any) SSID
+				 */
 	uint8_t *pucSsid;
 	uint8_t *pucBssid;
 	uint32_t u4CenterFreq;
@@ -339,17 +368,27 @@ struct PARAM_CONNECT {
 
 /* This is enum defined for user to select an AdHoc Mode */
 enum ENUM_PARAM_AD_HOC_MODE {
-	AD_HOC_MODE_11B = 0,	/*!< Create 11b IBSS if we support 802.11abg/802.11bg. */
-	AD_HOC_MODE_MIXED_11BG,	/*!< Create 11bg mixed IBSS if we support 802.11abg/802.11bg/802.11g. */
-	AD_HOC_MODE_11G,	/*!< Create 11g only IBSS if we support 802.11abg/802.11bg/802.11g. */
-	AD_HOC_MODE_11A,	/*!< Create 11a only IBSS if we support 802.11abg. */
+	AD_HOC_MODE_11B = 0,	/*!< Create 11b IBSS if we support
+				 * 802.11abg/802.11bg.
+				 */
+	AD_HOC_MODE_MIXED_11BG,	/*!< Create 11bg mixed IBSS if we support
+				 * 802.11abg/802.11bg/802.11g.
+				 */
+	AD_HOC_MODE_11G,	/*!< Create 11g only IBSS if we support
+				 * 802.11abg/802.11bg/802.11g.
+				 */
+	AD_HOC_MODE_11A,	/*!< Create 11a only IBSS if we support
+				 * 802.11abg.
+				 */
 	AD_HOC_MODE_NUM		/* 4 */
 };
 
 enum ENUM_PARAM_MEDIA_STATE {
 	PARAM_MEDIA_STATE_CONNECTED,
 	PARAM_MEDIA_STATE_DISCONNECTED,
-	PARAM_MEDIA_STATE_TO_BE_INDICATED	/* for following MSDN re-association behavior */
+
+	/* for following MSDN re-association behavior */
+	PARAM_MEDIA_STATE_TO_BE_INDICATED
 };
 
 enum ENUM_PARAM_NETWORK_TYPE {
@@ -401,7 +440,7 @@ enum ENUM_TP_TEST_MODE {
 };
 
 /*--------------------------------------------------------------*/
-/*! \brief Struct definition to indicate specific event.                */
+/*! \brief Struct definition to indicate specific event.        */
 /*--------------------------------------------------------------*/
 enum ENUM_STATUS_TYPE {
 	ENUM_STATUS_TYPE_AUTHENTICATION,
@@ -559,12 +598,12 @@ struct COUNTRY_STRING_ENTRY {
 };
 
 /* Power management related definition and enumerations */
-#define UAPSD_NONE                              0
-#define UAPSD_AC0                               (BIT(0) | BIT(4))
-#define UAPSD_AC1                               (BIT(1) | BIT(5))
-#define UAPSD_AC2                               (BIT(2) | BIT(6))
-#define UAPSD_AC3                               (BIT(3) | BIT(7))
-#define UAPSD_ALL                               (UAPSD_AC0 | UAPSD_AC1 | UAPSD_AC2 | UAPSD_AC3)
+#define UAPSD_NONE	0
+#define UAPSD_AC0	(BIT(0) | BIT(4))
+#define UAPSD_AC1	(BIT(1) | BIT(5))
+#define UAPSD_AC2	(BIT(2) | BIT(6))
+#define UAPSD_AC3	(BIT(3) | BIT(7))
+#define UAPSD_ALL	(UAPSD_AC0 | UAPSD_AC1 | UAPSD_AC2 | UAPSD_AC3)
 
 enum ENUM_POWER_SAVE_PROFILE {
 	ENUM_PSP_CONTINUOUS_ACTIVE = 0,
@@ -598,9 +637,9 @@ struct PARAM_CAPABILITY {
 	uint32_t u4Version;
 	uint32_t u4NoOfPMKIDs;
 	uint32_t u4NoOfAuthEncryptPairsSupported;
-	struct PARAM_AUTH_ENCRYPTION arAuthenticationEncryptionSupported[1];
+	struct PARAM_AUTH_ENCRYPTION
+		arAuthenticationEncryptionSupported[1];
 };
-
 
 struct PARAM_BSSID_INFO {
 	uint8_t arBSSID[PARAM_MAC_ADDR_LEN];
@@ -729,12 +768,10 @@ struct PARAM_CUSTOM_ACCESS_EFUSE {
 	uint8_t aucData[16];
 };
 
-
 struct PARAM_CUSTOM_EFUSE_FREE_BLOCK {
 	uint8_t  ucGetFreeBlock;
 	uint8_t  aucReserved[3];
 };
-
 
 struct PARAM_CUSTOM_GET_TX_POWER {
 	uint8_t ucTxPwrType;
@@ -744,15 +781,14 @@ struct PARAM_CUSTOM_GET_TX_POWER {
 	uint8_t ucReserved[4];
 };
 
-
 /*#endif*/
 
 #endif /* CFG_SUPPORT_BUFFER_MODE */
 
 struct PARAM_CUSTOM_SET_TX_TARGET_POWER {
-	int8_t cTxPwr2G4Cck;       /* signed, in unit of 0.5dBm */
-	int8_t cTxPwr2G4Dsss;      /* signed, in unit of 0.5dBm */
-	uint8_t ucTxTargetPwr;		/* Tx target power base for all*/
+	int8_t cTxPwr2G4Cck;	/* signed, in unit of 0.5dBm */
+	int8_t cTxPwr2G4Dsss;	/* signed, in unit of 0.5dBm */
+	uint8_t ucTxTargetPwr;	/* Tx target power base for all*/
 	uint8_t ucReserved;
 
 	int8_t cTxPwr2G4OFDM_BPSK;
@@ -804,7 +840,8 @@ struct PARAM_CUSTOM_SET_RDD_REPORT {
 };
 
 struct PARAM_CUSTOM_SET_RADAR_DETECT_MODE {
-	uint8_t ucRadarDetectMode; /* 0:Switch channel, 1: Don't switch channel */
+	/* 0:Switch channel, 1: Don't switch channel */
+	uint8_t ucRadarDetectMode;
 };
 #endif
 
@@ -877,82 +914,139 @@ enum {
 
 union PFMU_PROFILE_TAG1 {
 	struct {
-		uint32_t ucProfileID:7;	/* [6:0] : 0 ~ 63 */
-		uint32_t ucTxBf:1;	/* [7] : 0: iBF, 1: eBF */
-		uint32_t ucDBW:2;	/* [9:8] : 0/1/2/3: DW20/40/80/160NC */
-		uint32_t ucSU_MU:1;	/* [10] : 0:SU, 1: MU */
-		uint32_t ucInvalidProf:1;	/* [11] : 0:default, 1: This profile number is invalid by SW */
-		uint32_t ucRMSD:3;	/* [14:12] : RMSD value from CE */
-		uint32_t ucMemAddr1ColIdx:3;	/* [17 : 15] : column index : 0 ~ 5 */
-		uint32_t ucMemAddr1RowIdx:6;	/* [23 : 18] : row index : 0 ~ 63 */
-		uint32_t ucMemAddr2ColIdx:3;	/* [26 : 24] : column index : 0 ~ 5 */
-		uint32_t ucMemAddr2RowIdx:5;	/* [31 : 27] : row index : 0 ~ 63 */
-		uint32_t ucMemAddr2RowIdxMsb:1;	/* [32] : MSB of row index */
-		uint32_t ucMemAddr3ColIdx:3;	/* [35 : 33] : column index : 0 ~ 5 */
-		uint32_t ucMemAddr3RowIdx:6;	/* [41 : 36] : row index : 0 ~ 63 */
-		uint32_t ucMemAddr4ColIdx:3;	/* [44 : 42] : column index : 0 ~ 5 */
-		uint32_t ucMemAddr4RowIdx:6;	/* [50 : 45] : row index : 0 ~ 63 */
-		uint32_t ucReserved:1;	/* [51] : Reserved */
-		uint32_t ucNrow:2;	/* [53 : 52] : Nrow */
-		uint32_t ucNcol:2;	/* [55 : 54] : Ncol */
-		uint32_t ucNgroup:2;	/* [57 : 56] : Ngroup */
-		uint32_t ucLM:2;	/* [59 : 58] : 0/1/2 */
-		uint32_t ucCodeBook:2;	/* [61:60] : Code book */
-		uint32_t ucHtcExist:1;	/* [62] : HtcExist */
-		uint32_t ucReserved1:1;	/* [63] : Reserved */
-		uint32_t ucSNR_STS0:8;	/* [71:64] : SNR_STS0 */
-		uint32_t ucSNR_STS1:8;	/* [79:72] : SNR_STS1 */
-		uint32_t ucSNR_STS2:8;	/* [87:80] : SNR_STS2 */
-		uint32_t ucSNR_STS3:8;	/* [95:88] : SNR_STS3 */
-		uint32_t ucIBfLnaIdx:8;	/* [103:96] : iBF LNA index */
+		/* [6:0] : 0 ~ 63 */
+		uint32_t ucProfileID: 7;
+
+		/* [7] : 0: iBF, 1: eBF */
+		uint32_t ucTxBf: 1;
+
+		/* [9:8] : 0/1/2/3: DW20/40/80/160NC */
+		uint32_t ucDBW: 2;
+
+		/* [10] : 0:SU, 1: MU */
+		uint32_t ucSU_MU: 1;
+
+		/* [11] : 0: default, 1: This profile number is invalid by SW */
+		uint32_t ucInvalidProf:	1;
+
+		/* [14:12] : RMSD value from CE */
+		uint32_t ucRMSD: 3;
+
+		/* [17 : 15] : column index : 0 ~ 5 */
+		uint32_t ucMemAddr1ColIdx: 3;
+
+		/* [23 : 18] : row index : 0 ~ 63 */
+		uint32_t ucMemAddr1RowIdx: 6;
+
+		/* [26 : 24] : column index : 0 ~ 5 */
+		uint32_t ucMemAddr2ColIdx: 3;
+
+		/* [31 : 27] : row index : 0 ~ 63 */
+		uint32_t ucMemAddr2RowIdx: 5;
+
+		/* [32] : MSB of row index */
+		uint32_t ucMemAddr2RowIdxMsb: 1;
+
+		/* [35 : 33] : column index : 0 ~ 5 */
+		uint32_t ucMemAddr3ColIdx: 3;
+
+		/* [41 : 36] : row index : 0 ~ 63 */
+		uint32_t ucMemAddr3RowIdx: 6;
+
+		/* [44 : 42] : column index : 0 ~ 5 */
+		uint32_t ucMemAddr4ColIdx: 3;
+
+		/* [50 : 45] : row index : 0 ~ 63 */
+		uint32_t ucMemAddr4RowIdx: 6;
+
+		/* [51] : Reserved */
+		uint32_t ucReserved: 1;
+
+		/* [53 : 52] : Nrow */
+		uint32_t ucNrow: 2;
+
+		/* [55 : 54] : Ncol */
+		uint32_t ucNcol: 2;
+
+		/* [57 : 56] : Ngroup */
+		uint32_t ucNgroup: 2;
+
+		/* [59 : 58] : 0/1/2 */
+		uint32_t ucLM: 2;
+
+		/* [61:60] : Code book */
+		uint32_t ucCodeBook: 2;
+
+		/* [62] : HtcExist */
+		uint32_t ucHtcExist: 1;
+
+		/* [63] : Reserved */
+		uint32_t ucReserved1: 1;
+
+		/* [71:64] : SNR_STS0 */
+		uint32_t ucSNR_STS0: 8;
+
+		/* [79:72] : SNR_STS1 */
+		uint32_t ucSNR_STS1: 8;
+
+		/* [87:80] : SNR_STS2 */
+		uint32_t ucSNR_STS2: 8;
+
+		/* [95:88] : SNR_STS3 */
+		uint32_t ucSNR_STS3: 8;
+
+		/* [103:96] : iBF LNA index */
+		uint32_t ucIBfLnaIdx: 8;
 	} rField;
 	uint32_t au4RawData[4];
 };
 
 union PFMU_PROFILE_TAG2 {
 	struct {
-		uint32_t u2SmartAnt:12;	/* [11:0] : Smart Ant config */
-		uint32_t ucReserved0:3;	/* [14:12] : Reserved */
-		uint32_t ucSEIdx:5;	/* [19:15] : SE index */
-		uint32_t ucRMSDThd:3;	/* [22:20] : RMSD Threshold */
-		uint32_t ucReserved1:1;	/* [23] : Reserved */
-		uint32_t ucMCSThL1SS:4;	/* [27:24] : MCS TH long 1SS */
-		uint32_t ucMCSThS1SS:4;	/* [31:28] : MCS TH short 1SS */
-		uint32_t ucMCSThL2SS:4;	/* [35:32] : MCS TH long 2SS */
-		uint32_t ucMCSThS2SS:4;	/* [39:36] : MCS TH short 2SS */
-		uint32_t ucMCSThL3SS:4;	/* [43:40] : MCS TH long 3SS */
-		uint32_t ucMCSThS3SS:4;	/* [47:44] : MCS TH short 3SS */
-		uint32_t uciBfTimeOut:8;	/* [55:48] : iBF timeout limit */
-		uint32_t ucReserved2:8;	/* [63:56] : Reserved */
-		uint32_t ucReserved3:8;	/* [71:64] : Reserved */
-		uint32_t ucReserved4:8;	/* [79:72] : Reserved */
-		uint32_t uciBfDBW:2;	/* [81:80] : iBF desired DBW 0/1/2/3 : BW20/40/80/160NC */
-		uint32_t uciBfNcol:2;	/* [83:82] : iBF desired Ncol = 1 ~ 3 */
-		uint32_t uciBfNrow:2;	/* [85:84] : iBF desired Nrow = 1 ~ 4 */
-		uint32_t u2Reserved5:10;	/* [95:86] : Reserved */
+		uint32_t u2SmartAnt: 12;/* [11:0] : Smart Ant config */
+		uint32_t ucReserved0: 3;/* [14:12] : Reserved */
+		uint32_t ucSEIdx: 5;	/* [19:15] : SE index */
+		uint32_t ucRMSDThd: 3;	/* [22:20] : RMSD Threshold */
+		uint32_t ucReserved1: 1;/* [23] : Reserved */
+		uint32_t ucMCSThL1SS: 4;/* [27:24] : MCS TH long 1SS */
+		uint32_t ucMCSThS1SS: 4;/* [31:28] : MCS TH short 1SS */
+		uint32_t ucMCSThL2SS: 4;/* [35:32] : MCS TH long 2SS */
+		uint32_t ucMCSThS2SS: 4;/* [39:36] : MCS TH short 2SS */
+		uint32_t ucMCSThL3SS: 4;/* [43:40] : MCS TH long 3SS */
+		uint32_t ucMCSThS3SS: 4;/* [47:44] : MCS TH short 3SS */
+		uint32_t uciBfTimeOut: 8;/* [55:48] : iBF timeout limit */
+		uint32_t ucReserved2: 8;/* [63:56] : Reserved */
+		uint32_t ucReserved3: 8;/* [71:64] : Reserved */
+		uint32_t ucReserved4: 8;/* [79:72] : Reserved */
+		uint32_t uciBfDBW: 2;	/* [81:80] : iBF desired DBW 0/1/2/3 :
+					 *           BW20/40/80/160NC
+					 */
+		uint32_t uciBfNcol: 2;	/* [83:82] : iBF desired Ncol = 1 ~ 3 */
+		uint32_t uciBfNrow: 2;	/* [85:84] : iBF desired Nrow = 1 ~ 4 */
+		uint32_t u2Reserved5: 10;/* [95:86] : Reserved */
 	} rField;
 	uint32_t au4RawData[3];
 };
 
 union PFMU_DATA {
 	struct {
-		uint32_t u2Phi11:9;
-		uint32_t ucPsi21:7;
-		uint32_t u2Phi21:9;
-		uint32_t ucPsi31:7;
-		uint32_t u2Phi31:9;
-		uint32_t ucPsi41:7;
-		uint32_t u2Phi22:9;
-		uint32_t ucPsi32:7;
-		uint32_t u2Phi32:9;
-		uint32_t ucPsi42:7;
-		uint32_t u2Phi33:9;
-		uint32_t ucPsi43:7;
-		uint32_t u2dSNR00:4;
-		uint32_t u2dSNR01:4;
-		uint32_t u2dSNR02:4;
-		uint32_t u2dSNR03:4;
-		uint32_t u2Reserved:16;
+		uint32_t u2Phi11: 9;
+		uint32_t ucPsi21: 7;
+		uint32_t u2Phi21: 9;
+		uint32_t ucPsi31: 7;
+		uint32_t u2Phi31: 9;
+		uint32_t ucPsi41: 7;
+		uint32_t u2Phi22: 9;
+		uint32_t ucPsi32: 7;
+		uint32_t u2Phi32: 9;
+		uint32_t ucPsi42: 7;
+		uint32_t u2Phi33: 9;
+		uint32_t ucPsi43: 7;
+		uint32_t u2dSNR00: 4;
+		uint32_t u2dSNR01: 4;
+		uint32_t u2dSNR02: 4;
+		uint32_t u2dSNR03: 4;
+		uint32_t u2Reserved: 16;
 	} rField;
 	uint32_t au4RawData[5];
 };
@@ -1043,7 +1137,9 @@ struct BSSINFO_BASIC {
 	uint8_t aucBSSID[6];
 	uint8_t ucWmmIdx;
 	uint8_t ucDtimPeriod;
-	uint8_t ucBcMcWlanidx;	/* indicate which wlan-idx used for MC/BC transmission. */
+	uint8_t ucBcMcWlanidx;	/* indicate which wlan-idx used for MC/BC
+				 * transmission.
+				 */
 	uint8_t ucCipherSuit;
 	uint8_t acuReserve[6];
 };
@@ -1107,12 +1203,12 @@ struct CMD_STAREC_BF {
 
 /* QA tool: maunal assoc */
 struct CMD_MANUAL_ASSOC_STRUCT {
-/*
-*	UINT_8              ucBssIndex;
-*	UINT_8              ucWlanIdx;
-*	UINT_16             u2TotalElementNum;
-*	UINT_32             u4Reserve;
-*/
+	/*
+	 *	UINT_8              ucBssIndex;
+	 *	UINT_8              ucWlanIdx;
+	 *	UINT_16             u2TotalElementNum;
+	 *	UINT_32             u4Reserve;
+	 */
 	/* extension */
 	uint16_t u2Tag;		/* Tag = 0x05 */
 	uint16_t u2Length;
@@ -1131,8 +1227,10 @@ struct CMD_MANUAL_ASSOC_STRUCT {
 
 struct TX_BF_SOUNDING_START {
 	union {
-		struct EXT_CMD_ETXBf_SND_PERIODIC_TRIGGER_CTRL rExtCmdExtBfSndPeriodicTriggerCtrl;
-		struct EXT_CMD_ETXBf_MU_SND_PERIODIC_TRIGGER_CTRL rExtCmdExtBfMuSndPeriodicTriggerCtrl;
+		struct EXT_CMD_ETXBf_SND_PERIODIC_TRIGGER_CTRL
+			rExtCmdExtBfSndPeriodicTriggerCtrl;
+		struct EXT_CMD_ETXBf_MU_SND_PERIODIC_TRIGGER_CTRL
+			rExtCmdExtBfMuSndPeriodicTriggerCtrl;
 	} rTxBfSounding;
 };
 
@@ -1229,10 +1327,10 @@ struct PARAM_CUSTOM_PFMU_TAG_READ_STRUCT {
 struct PARAM_CUSTOM_SHOW_GROUP_TBL_ENTRY_STRUCT {
 	uint32_t u4EventId;
 	uint8_t index;
-	uint8_t numUser:2;
-	uint8_t BW:2;
-	uint8_t NS0:2;
-	uint8_t NS1:2;
+	uint8_t numUser: 2;
+	uint8_t BW: 2;
+	uint8_t NS0: 2;
+	uint8_t NS1: 2;
 	/* UINT_8       NS2:1; */
 	/* UINT_8       NS3:1; */
 	uint8_t PFIDUser0;
@@ -1242,12 +1340,12 @@ struct PARAM_CUSTOM_SHOW_GROUP_TBL_ENTRY_STRUCT {
 	u_int8_t fgIsShortGI;
 	u_int8_t fgIsUsed;
 	u_int8_t fgIsDisable;
-	uint8_t initMcsUser0:4;
-	uint8_t initMcsUser1:4;
+	uint8_t initMcsUser0: 4;
+	uint8_t initMcsUser1: 4;
 	/* UINT_8       initMcsUser2:4; */
 	/* UINT_8       initMcsUser3:4; */
-	uint8_t dMcsUser0:4;
-	uint8_t dMcsUser1:4;
+	uint8_t dMcsUser0: 4;
+	uint8_t dMcsUser1: 4;
 	/* UINT_8       dMcsUser2:4; */
 	/* UINT_8       dMcsUser3:4; */
 };
@@ -1272,27 +1370,47 @@ struct MU_GET_CALC_INIT_MCS {
 };
 
 struct MU_SET_INIT_MCS {
-	uint8_t ucNumOfUser;	/* zero-base : 0~3: means 1~2 users */
-	uint8_t ucBandwidth;	/* zero-base : 0:20 hz 1:40 hz 2: 80 hz 3: 160 */
-	uint8_t ucNssOfUser0;	/* zero-base : 0~1 means uesr0 use 1~2 ss , if no use keep 0 */
-	uint8_t ucNssOfUser1;	/* zero-base : 0~1 means uesr0 use 1~2 ss , if no use keep 0 */
-	uint8_t ucPfMuIdOfUser0;	/* zero-base : for now, uesr0 use pf mu id 0 */
-	uint8_t ucPfMuIdOfUser1;	/* zero-base : for now, uesr1 use pf mu id 1 */
-	uint8_t ucNumOfTxer;	/* 0~3: mean use 1~4 anntain, for now, should fix 3 */
-	uint8_t ucSpeIndex;	/*add new field to fill"special extension index" which replace reserve */
-	uint32_t u4GroupIndex;	/* 0~ :the index of group table entry for calculation */
+	uint8_t ucNumOfUser;	/* zero-base: 0~3: means 1~2 users */
+	uint8_t ucBandwidth;	/* zero-base: 0:20 hz 1:40 hz 2: 80 hz 3: 160 */
+	uint8_t ucNssOfUser0;	/* zero-base: 0~1 means uesr0 use 1~2 ss,
+				 *            if no use keep 0
+				 */
+	uint8_t ucNssOfUser1;	/* zero-base: 0~1 means uesr0 use 1~2 ss,
+				 *            if no use keep 0
+				 */
+	uint8_t ucPfMuIdOfUser0;/* zero-base: for now, uesr0 use pf mu id 0 */
+	uint8_t ucPfMuIdOfUser1;/* zero-base: for now, uesr1 use pf mu id 1 */
+	uint8_t ucNumOfTxer;	/* 0~3: mean use 1~4 anntain, for now,
+				 *      should fix 3
+				 */
+	uint8_t ucSpeIndex;	/* add new field to fill"special extension
+				 * index" which replace reserve
+				 */
+	uint32_t u4GroupIndex;	/* 0~ :the index of group table entry for
+				 *     calculation
+				 */
 };
 
 struct MU_SET_CALC_LQ {
-	uint8_t ucNumOfUser;	/* zero-base : 0~3: means 1~2 users */
-	uint8_t ucBandwidth;	/* zero-base : 0:20 hz 1:40 hz 2: 80 hz 3: 160 */
-	uint8_t ucNssOfUser0;	/* zero-base : 0~1 means uesr0 use 1~2 ss , if no use keep 0 */
-	uint8_t ucNssOfUser1;	/* zero-base : 0~1 means uesr0 use 1~2 ss , if no use keep 0 */
-	uint8_t ucPfMuIdOfUser0;	/* zero-base : for now, uesr0 use pf mu id 0 */
-	uint8_t ucPfMuIdOfUser1;	/* zero-base : for now, uesr1 use pf mu id 1 */
-	uint8_t ucNumOfTxer;	/* 0~3: mean use 1~4 anntain, for now, should fix 3 */
-	uint8_t ucSpeIndex;	/*add new field to fill"special extension index" which replace reserve */
-	uint32_t u4GroupIndex;	/* 0~ :the index of group table entry for calculation */
+	uint8_t ucNumOfUser;	/* zero-base: 0~3: means 1~2 users */
+	uint8_t ucBandwidth;	/* zero-base: 0:20 hz 1:40 hz 2: 80 hz 3: 160 */
+	uint8_t ucNssOfUser0;	/* zero-base: 0~1 means uesr0 use 1~2 ss,
+				 *            if no use keep 0
+				 */
+	uint8_t ucNssOfUser1;	/* zero-base: 0~1 means uesr0 use 1~2 ss,
+				 *            if no use keep 0
+				 */
+	uint8_t ucPfMuIdOfUser0;/* zero-base: for now, uesr0 use pf mu id 0 */
+	uint8_t ucPfMuIdOfUser1;/* zero-base: for now, uesr1 use pf mu id 1 */
+	uint8_t ucNumOfTxer;	/* 0~3: mean use 1~4 anntain, for now,
+				 *      should fix 3
+				 */
+	uint8_t ucSpeIndex;	/* add new field to fill"special extension
+				 * index" which replace reserve
+				 */
+	uint32_t u4GroupIndex;	/* 0~ : the index of group table entry for
+				 *      calculation
+				 */
 };
 
 struct MU_GET_LQ {
@@ -1317,7 +1435,8 @@ struct MU_SPEED_UP_LQ {
 struct MU_SET_MU_TABLE {
 	/* UINT_16  u2Type; */
 	/* UINT_32  u4Length; */
-	uint8_t aucMetricTable[NUM_MUT_NR_NUM * NUM_MUT_FEC * NUM_MUT_MCS * NUM_MUT_INDEX];
+	uint8_t aucMetricTable[NUM_MUT_NR_NUM * NUM_MUT_FEC *
+			       NUM_MUT_MCS * NUM_MUT_INDEX];
 };
 
 struct MU_SET_GROUP {
@@ -1357,12 +1476,16 @@ struct MU_SET_GID_UP {
 };
 
 struct MU_TRIGGER_MU_TX {
-	uint8_t  fgIsRandomPattern; /* is random pattern or not */
-	uint32_t u4MsduPayloadLength0; /* payload length of the MSDU for user 0 */
-	uint32_t u4MsduPayloadLength1; /* payload length of the MSDU for user 1 */
-	uint32_t u4MuPacketCount; /* MU TX count */
-	uint32_t u4NumOfSTAs; /* number of user in the MU TX */
-	uint8_t   aucMacAddrs[2][6]; /* MAC address of users*/
+	uint8_t  fgIsRandomPattern;	/* is random pattern or not */
+	uint32_t u4MsduPayloadLength0;	/* payload length of the MSDU for
+					 * user 0
+					 */
+	uint32_t u4MsduPayloadLength1;	/* payload length of the MSDU for
+					 * user 1
+					 */
+	uint32_t u4MuPacketCount;	/* MU TX count */
+	uint32_t u4NumOfSTAs;		/* number of user in the MU TX */
+	uint8_t   aucMacAddrs[2][6];	/* MAC address of users*/
 };
 
 struct PARAM_CUSTOM_MUMIMO_ACTION_STRUCT {
@@ -1425,9 +1548,15 @@ struct PARAM_CUSTOM_EEPROM_RW_STRUCT {
 };
 
 struct PARAM_CUSTOM_WMM_PS_TEST_STRUCT {
-	uint8_t bmfgApsdEnAc;	/* b0~3: trigger-en AC0~3. b4~7: delivery-en AC0~3 */
-	uint8_t ucIsEnterPsAtOnce;	/* enter PS immediately without 5 second guard after connected */
-	uint8_t ucIsDisableUcTrigger;	/* not to trigger UC on beacon TIM is matched (under U-APSD) */
+	uint8_t bmfgApsdEnAc;		/* b0~3: trigger-en AC0~3.
+					 * b4~7: delivery-en AC0~3
+					 */
+	uint8_t ucIsEnterPsAtOnce;	/* enter PS immediately without 5 second
+					 * guard after connected
+					 */
+	uint8_t ucIsDisableUcTrigger;	/* not to trigger UC on beacon TIM is
+					 * matched (under U-APSD)
+					 */
 	uint8_t reserved;
 };
 
@@ -1493,7 +1622,9 @@ enum ENUM_EEPROM_TYPE {
 };
 
 struct PARAM_QOS_TSINFO {
-	uint8_t ucTrafficType;	/* Traffic Type: 1 for isochronous 0 for asynchronous */
+	uint8_t ucTrafficType;	/* Traffic Type: 1 for isochronous 0 for
+				 *               asynchronous
+				 */
 	uint8_t ucTid;		/* TSID: must be between 8 ~ 15 */
 	uint8_t ucDirection;	/* direction */
 	uint8_t ucAccessPolicy;	/* access policy */
@@ -1587,8 +1718,10 @@ struct ICAP_INFO_T {
 
 	/* for MT7663/Connad FW parser mode */
 	uint32_t u4IQArrayIndex;
-	uint32_t u4ICapEventCnt;		/* Count of packet getting from FW */
-	uint32_t au4ICapDumpIndex[4][2];	/* Count of packet sent to QA Tool, 4 WF * 2 I/Q */
+	uint32_t u4ICapEventCnt;	/* Count of packet getting from FW */
+	uint32_t au4ICapDumpIndex[4][2];/* Count of packet sent to QA Tool,
+					 * 4 WF * 2 I/Q
+					 */
 	struct _RBIST_IQ_DATA_T *prIQArray;
 #endif
 };
@@ -1764,18 +1897,25 @@ struct PARAM_NETWORK_ADDRESS_IP {
 };
 
 struct PARAM_NETWORK_ADDRESS {
-	uint16_t u2AddressLength;	/* length in bytes of Address[] in this */
-	uint16_t u2AddressType;	/* type of this address (PARAM_PROTOCOL_ID_XXX above) */
+	uint16_t u2AddressLength;/* length in bytes of Address[] in this */
+	uint16_t u2AddressType;	/* type of this address
+				 * (PARAM_PROTOCOL_ID_XXX above)
+				 */
 	uint8_t aucAddress[1];	/* actually AddressLength bytes long */
 };
 
-/* The following is used with OID_GEN_NETWORK_LAYER_ADDRESSES to set network layer addresses on an interface */
+/* The following is used with OID_GEN_NETWORK_LAYER_ADDRESSES to set network
+ * layer addresses on an interface
+ */
 
 struct PARAM_NETWORK_ADDRESS_LIST {
 	uint8_t ucBssIdx;
-	uint32_t u4AddressCount;	/* number of addresses following */
-	uint16_t u2AddressType;	/* type of this address (NDIS_PROTOCOL_ID_XXX above) */
-	struct PARAM_NETWORK_ADDRESS arAddress[1];	/* actually AddressCount elements long */
+	uint32_t u4AddressCount;/* number of addresses following */
+	uint16_t u2AddressType;	/* type of this address
+				 * (NDIS_PROTOCOL_ID_XXX above)
+				 */
+	struct PARAM_NETWORK_ADDRESS
+		arAddress[1];	/* actually AddressCount elements long */
 };
 
 #if CFG_SLT_SUPPORT
@@ -1808,7 +1948,8 @@ struct PARAM_MTK_SLT_LP_TEST_STRUCT {
 };
 
 struct PARAM_MTK_SLT_TR_TEST_STRUCT {
-	enum ENUM_PARAM_NETWORK_TYPE rNetworkType;	/* Network Type OFDM5G or OFDM2.4G */
+	enum ENUM_PARAM_NETWORK_TYPE
+	rNetworkType;	/* Network Type OFDM5G or OFDM2.4G */
 	uint32_t u4FixedRate;	/* Fixed Rate including BW */
 };
 
@@ -1820,9 +1961,9 @@ struct PARAM_MTK_SLT_INITIAL_STRUCT {
 struct PARAM_MTK_SLT_TEST_STRUCT {
 	enum ENUM_MTK_SLT_FUNC_IDX rSltFuncIdx;
 	uint32_t u4Length;	/* Length of structure, */
-				/* including myself */
+	/* including myself */
 	uint32_t u4FuncInfoLen;	/* Include following content */
-				/* field and myself */
+	/* field and myself */
 	union {
 		struct PARAM_MTK_SLT_INITIAL_STRUCT rMtkInitTest;
 		struct PARAM_MTK_SLT_LP_TEST_STRUCT rMtkLpTest;
@@ -2120,13 +2261,14 @@ struct PTA_PROFILE {
 	union {
 		uint8_t aucBTPParams[BT_PROFILE_PARAM_LEN];
 		/*  0: sco reserved slot time,
-		*  1: sco idle slot time,
-		*  2: acl throughput,
-		*   3: bt tx power,
-		*   4: bt rssi
-		*   5: VoIP interval
-		*   6: BIT(0) Use this field, BIT(1) 0 apply single/ 1 dual PTA setting.
-		*/
+		 *  1: sco idle slot time,
+		 *  2: acl throughput,
+		 *  3: bt tx power,
+		 *  4: bt rssi
+		 *  5: VoIP interval
+		 *  6: BIT(0) Use this field, BIT(1) 0 apply single/ 1 dual PTA
+		 *     setting.
+		 */
 		uint32_t au4Btcr[4];
 	} u;
 };
@@ -2156,7 +2298,8 @@ struct PARAM_SCAN_REQUEST_ADV {
 	uint32_t u4IELength;
 	uint8_t *pucIE;
 	uint32_t u4ChannelNum;
-	struct RF_CHANNEL_INFO arChannel[MAXIMUM_OPERATION_CHANNEL_LIST];
+	struct RF_CHANNEL_INFO
+		arChannel[MAXIMUM_OPERATION_CHANNEL_LIST];
 };
 
 /*--------------------------------------------------------------*/
@@ -2205,7 +2348,8 @@ struct PARAM_CUSTOM_MONITOR_SET_STRUCT {
 /*! \brief MTK Auto Channel Selection related Container         */
 /*--------------------------------------------------------------*/
 struct LTE_SAFE_CHN_INFO {
-	uint32_t au4SafeChannelBitmask[5]; /* NL80211_TESTMODE_AVAILABLE_CHAN_ATTR_MAX */
+	/* NL80211_TESTMODE_AVAILABLE_CHAN_ATTR_MAX */
+	uint32_t au4SafeChannelBitmask[5];
 };
 
 struct PARAM_CHN_LOAD_INFO {
@@ -2293,7 +2437,8 @@ struct HAL_FRAME_POWER_SET_T {
 };
 
 struct FRAME_POWER_CONFIG_INFO_T {
-	struct HAL_FRAME_POWER_SET_T aicFramePowerConfig[TXPOWER_RATE_NUM];
+	struct HAL_FRAME_POWER_SET_T
+		aicFramePowerConfig[TXPOWER_RATE_NUM];
 };
 
 struct PARAM_TXPOWER_ALL_RATE_POWER_INFO_T {
@@ -2369,152 +2514,221 @@ enum ENUM_WIFI_LOG_LEVEL_SUPPORT_T {
 };
 
 /*******************************************************************************
-*                            P U B L I C   D A T A
-********************************************************************************
-*/
+ *                            P U B L I C   D A T A
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                           P R I V A T E   D A T A
-********************************************************************************
-*/
+ *                           P R I V A T E   D A T A
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                                 M A C R O S
-********************************************************************************
-*/
+ *                                 M A C R O S
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                   F U N C T I O N   D E C L A R A T I O N S
-********************************************************************************
-*/
+ *                   F U N C T I O N   D E C L A R A T I O N S
+ *******************************************************************************
+ */
 /*--------------------------------------------------------------*/
 /* Routines to set parameters or query information.             */
 /*--------------------------------------------------------------*/
 /***** Routines in wlan_oid.c *****/
 uint32_t
 wlanoidQueryNetworkTypesSupported(IN struct ADAPTER *prAdapter,
-				  OUT void *pvQueryBuffer, IN uint32_t u4QueryBufferLen, OUT uint32_t *pu4QueryInfoLen);
+				  OUT void *pvQueryBuffer,
+				  IN uint32_t u4QueryBufferLen,
+				  OUT uint32_t *pu4QueryInfoLen);
 
 uint32_t
 wlanoidQueryNetworkTypeInUse(IN struct ADAPTER *prAdapter,
-			     OUT void *pvQueryBuffer, IN uint32_t u4QueryBufferLen, OUT uint32_t *pu4QueryInfoLen);
+			     OUT void *pvQueryBuffer,
+			     IN uint32_t u4QueryBufferLen,
+			     OUT uint32_t *pu4QueryInfoLen);
 
 uint32_t
 wlanoidSetNetworkTypeInUse(IN struct ADAPTER *prAdapter,
-			   IN void *pvSetBuffer, IN uint32_t u4SetBufferLen, OUT uint32_t *pu4SetInfoLen);
+			   IN void *pvSetBuffer,
+			   IN uint32_t u4SetBufferLen,
+			   OUT uint32_t *pu4SetInfoLen);
 
 uint32_t
 wlanoidQueryBssid(IN struct ADAPTER *prAdapter,
-		  OUT void *pvQueryBuffer, IN uint32_t u4QueryBufferLen, OUT uint32_t *pu4QueryInfoLen);
+		  OUT void *pvQueryBuffer,
+		  IN uint32_t u4QueryBufferLen,
+		  OUT uint32_t *pu4QueryInfoLen);
 
 uint32_t
 wlanoidSetBssidListScan(IN struct ADAPTER *prAdapter,
-			IN void *pvSetBuffer, IN uint32_t u4SetBufferLen, OUT uint32_t *pu4SetInfoLen);
+			IN void *pvSetBuffer,
+			IN uint32_t u4SetBufferLen,
+			OUT uint32_t *pu4SetInfoLen);
 
 uint32_t
 wlanoidSetBssidListScanExt(IN struct ADAPTER *prAdapter,
-			   IN void *pvSetBuffer, IN uint32_t u4SetBufferLen, OUT uint32_t *pu4SetInfoLen);
+			   IN void *pvSetBuffer,
+			   IN uint32_t u4SetBufferLen,
+			   OUT uint32_t *pu4SetInfoLen);
 
 uint32_t
 wlanoidSetBssidListScanAdv(IN struct ADAPTER *prAdapter,
-			   IN void *pvSetBuffer, IN uint32_t u4SetBufferLen, OUT uint32_t *pu4SetInfoLen);
+			   IN void *pvSetBuffer,
+			   IN uint32_t u4SetBufferLen,
+			   OUT uint32_t *pu4SetInfoLen);
 
 uint32_t
 wlanoidQueryBssidList(IN struct ADAPTER *prAdapter,
-		      OUT void *pvQueryBuffer, IN uint32_t u4QueryBufferLen, OUT uint32_t *pu4QueryInfoLen);
+		      OUT void *pvQueryBuffer,
+		      IN uint32_t u4QueryBufferLen,
+		      OUT uint32_t *pu4QueryInfoLen);
 
 uint32_t
-wlanoidSetBssid(IN struct ADAPTER *prAdapter, IN void *pvSetBuffer, IN uint32_t u4SetBufferLen, OUT uint32_t *pu4SetInfoLen);
+wlanoidSetBssid(IN struct ADAPTER *prAdapter,
+		IN void *pvSetBuffer,
+		IN uint32_t u4SetBufferLen,
+		OUT uint32_t *pu4SetInfoLen);
 
 uint32_t
 wlanoidSetConnect(IN struct ADAPTER *prAdapter,
-		  IN void *pvSetBuffer, IN uint32_t u4SetBufferLen, OUT uint32_t *pu4SetInfoLen);
+		  IN void *pvSetBuffer,
+		  IN uint32_t u4SetBufferLen,
+		  OUT uint32_t *pu4SetInfoLen);
 
 uint32_t
-wlanoidSetSsid(IN struct ADAPTER *prAdapter, IN void *pvSetBuffer, IN uint32_t u4SetBufferLen, OUT uint32_t *pu4SetInfoLen);
+wlanoidSetSsid(IN struct ADAPTER *prAdapter,
+	       IN void *pvSetBuffer,
+	       IN uint32_t u4SetBufferLen,
+	       OUT uint32_t *pu4SetInfoLen);
 
 uint32_t
 wlanoidQuerySsid(IN struct ADAPTER *prAdapter,
-		 OUT void *pvQueryBuffer, IN uint32_t u4QueryBufferLen, OUT uint32_t *pu4QueryInfoLen);
+		 OUT void *pvQueryBuffer,
+		 IN uint32_t u4QueryBufferLen,
+		 OUT uint32_t *pu4QueryInfoLen);
 
 uint32_t
 wlanoidQueryInfrastructureMode(IN struct ADAPTER *prAdapter,
-			       OUT void *pvQueryBuffer, IN uint32_t u4QueryBufferLen, OUT uint32_t *pu4QueryInfoLen);
+			       OUT void *pvQueryBuffer,
+			       IN uint32_t u4QueryBufferLen,
+			       OUT uint32_t *pu4QueryInfoLen);
 
 uint32_t
 wlanoidSetInfrastructureMode(IN struct ADAPTER *prAdapter,
-			     IN void *pvSetBuffer, IN uint32_t u4SetBufferLen, OUT uint32_t *pu4SetInfoLen);
+			     IN void *pvSetBuffer,
+			     IN uint32_t u4SetBufferLen,
+			     OUT uint32_t *pu4SetInfoLen);
 
 uint32_t
 wlanoidQueryAuthMode(IN struct ADAPTER *prAdapter,
-		     OUT void *pvQueryBuffer, IN uint32_t u4QueryBufferLen, OUT uint32_t *pu4QueryInfoLen);
+		     OUT void *pvQueryBuffer,
+		     IN uint32_t u4QueryBufferLen,
+		     OUT uint32_t *pu4QueryInfoLen);
 
 uint32_t
 wlanoidSetAuthMode(IN struct ADAPTER *prAdapter,
-		   IN void *pvSetBuffer, IN uint32_t u4SetBufferLen, OUT uint32_t *pu4SetInfoLen);
+		   IN void *pvSetBuffer,
+		   IN uint32_t u4SetBufferLen,
+		   OUT uint32_t *pu4SetInfoLen);
 
 #if 0
 uint32_t
 wlanoidQueryPrivacyFilter(IN struct ADAPTER *prAdapter,
-			  OUT void *pvQueryBuffer, IN uint32_t u4QueryBufferLen, OUT uint32_t *pu4QueryInfoLen);
+			  OUT void *pvQueryBuffer,
+			  IN uint32_t u4QueryBufferLen,
+			  OUT uint32_t *pu4QueryInfoLen);
 
 uint32_t
 wlanoidSetPrivacyFilter(IN struct ADAPTER *prAdapter,
-			IN void *pvSetBuffer, IN uint32_t u4SetBufferLen, OUT uint32_t *pu4SetInfoLen);
+			IN void *pvSetBuffer,
+			IN uint32_t u4SetBufferLen,
+			OUT uint32_t *pu4SetInfoLen);
 #endif
 
 uint32_t
 wlanoidSetEncryptionStatus(IN struct ADAPTER *prAdapter,
-			   IN void *pvSetBuffer, IN uint32_t u4SetBufferLen, OUT uint32_t *pu4SetInfoLen);
+			   IN void *pvSetBuffer,
+			   IN uint32_t u4SetBufferLen,
+			   OUT uint32_t *pu4SetInfoLen);
 
 uint32_t
 wlanoidQueryEncryptionStatus(IN struct ADAPTER *prAdapter,
-			     IN void *pvQueryBuffer, IN uint32_t u4QueryBufferLen, OUT uint32_t *pu4QueryInfoLen);
+			     IN void *pvQueryBuffer,
+			     IN uint32_t u4QueryBufferLen,
+			     OUT uint32_t *pu4QueryInfoLen);
 
 uint32_t
-wlanoidSetAddWep(IN struct ADAPTER *prAdapter, IN void *pvSetBuffer, IN uint32_t u4SetBufferLen, OUT uint32_t *pu4SetInfoLen);
+wlanoidSetAddWep(IN struct ADAPTER *prAdapter,
+		 IN void *pvSetBuffer,
+		 IN uint32_t u4SetBufferLen,
+		 OUT uint32_t *pu4SetInfoLen);
 
 uint32_t
 wlanoidSetRemoveWep(IN struct ADAPTER *prAdapter,
-		    IN void *pvSetBuffer, IN uint32_t u4SetBufferLen, OUT uint32_t *pu4SetInfoLen);
+		    IN void *pvSetBuffer,
+		    IN uint32_t u4SetBufferLen,
+		    OUT uint32_t *pu4SetInfoLen);
 
 uint32_t
-wlanoidSetAddKey(IN struct ADAPTER *prAdapter, IN void *pvSetBuffer, IN uint32_t u4SetBufferLen, OUT uint32_t *pu4SetInfoLen);
+wlanoidSetAddKey(IN struct ADAPTER *prAdapter,
+		 IN void *pvSetBuffer,
+		 IN uint32_t u4SetBufferLen,
+		 OUT uint32_t *pu4SetInfoLen);
 
 uint32_t
 wlanoidSetRemoveKey(IN struct ADAPTER *prAdapter,
-		    IN void *pvSetBuffer, IN uint32_t u4SetBufferLen, OUT uint32_t *pu4SetInfoLen);
+		    IN void *pvSetBuffer,
+		    IN uint32_t u4SetBufferLen,
+		    OUT uint32_t *pu4SetInfoLen);
 
 uint32_t
 wlanoidSetReloadDefaults(IN struct ADAPTER *prAdapter,
-			 IN void *pvSetBuffer, IN uint32_t u4SetBufferLen, OUT uint32_t *pu4SetInfoLen);
+			 IN void *pvSetBuffer,
+			 IN uint32_t u4SetBufferLen,
+			 OUT uint32_t *pu4SetInfoLen);
 
 uint32_t
-wlanoidSetTest(IN struct ADAPTER *prAdapter, IN void *pvSetBuffer, IN uint32_t u4SetBufferLen, OUT uint32_t *pu4SetInfoLen);
+wlanoidSetTest(IN struct ADAPTER *prAdapter,
+	       IN void *pvSetBuffer,
+	       IN uint32_t u4SetBufferLen,
+	       OUT uint32_t *pu4SetInfoLen);
 
 uint32_t
 wlanoidQueryCapability(IN struct ADAPTER *prAdapter,
-		       OUT void *pvQueryBuffer, IN uint32_t u4QueryBufferLen, OUT uint32_t *pu4QueryInfoLen);
+		       OUT void *pvQueryBuffer,
+		       IN uint32_t u4QueryBufferLen,
+		       OUT uint32_t *pu4QueryInfoLen);
 
 uint32_t
 wlanoidQueryFrequency(IN struct ADAPTER *prAdapter,
-		      OUT void *pvQueryBuffer, IN uint32_t u4QueryBufferLen, OUT uint32_t *pu4QueryInfoLen);
+		      OUT void *pvQueryBuffer,
+		      IN uint32_t u4QueryBufferLen,
+		      OUT uint32_t *pu4QueryInfoLen);
 
 uint32_t
 wlanoidSetFrequency(IN struct ADAPTER *prAdapter,
-		    IN void *pvSetBuffer, IN uint32_t u4SetBufferLen, OUT uint32_t *pu4SetInfoLen);
+		    IN void *pvSetBuffer,
+		    IN uint32_t u4SetBufferLen,
+		    OUT uint32_t *pu4SetInfoLen);
 
 uint32_t
 wlanoidQueryAtimWindow(IN struct ADAPTER *prAdapter,
-		       OUT void *pvQueryBuffer, IN uint32_t u4QueryBufferLen, OUT uint32_t *pu4QueryInfoLen);
+		       OUT void *pvQueryBuffer,
+		       IN uint32_t u4QueryBufferLen,
+		       OUT uint32_t *pu4QueryInfoLen);
 
 uint32_t
 wlanoidSetAtimWindow(IN struct ADAPTER *prAdapter,
-		     IN void *pvSetBuffer, IN uint32_t u4SetBufferLen, OUT uint32_t *pu4SetInfoLen);
+		     IN void *pvSetBuffer,
+		     IN uint32_t u4SetBufferLen,
+		     OUT uint32_t *pu4SetInfoLen);
 
 uint32_t
 wlanoidSetChannel(IN struct ADAPTER *prAdapter,
-		  IN void *pvSetBuffer, IN uint32_t u4SetBufferLen, OUT uint32_t *pu4SetInfoLen);
+		  IN void *pvSetBuffer,
+		  IN uint32_t u4SetBufferLen,
+		  OUT uint32_t *pu4SetInfoLen);
 
 uint32_t
 wlanoidRssiMonitor(IN struct ADAPTER *prAdapter,
@@ -2524,590 +2738,867 @@ wlanoidRssiMonitor(IN struct ADAPTER *prAdapter,
 
 uint32_t
 wlanoidQueryRssi(IN struct ADAPTER *prAdapter,
-		 OUT void *pvQueryBuffer, IN uint32_t u4QueryBufferLen, OUT uint32_t *pu4QueryInfoLen);
+		 OUT void *pvQueryBuffer,
+		 IN uint32_t u4QueryBufferLen,
+		 OUT uint32_t *pu4QueryInfoLen);
 
 uint32_t
 wlanoidQueryRssiTrigger(IN struct ADAPTER *prAdapter,
-			OUT void *pvQueryBuffer, IN uint32_t u4QueryBufferLen, OUT uint32_t *pu4QueryInfoLen);
+			OUT void *pvQueryBuffer,
+			IN uint32_t u4QueryBufferLen,
+			OUT uint32_t *pu4QueryInfoLen);
 
 uint32_t
 wlanoidSetRssiTrigger(IN struct ADAPTER *prAdapter,
-		      IN void *pvSetBuffer, IN uint32_t u4SetBufferLen, OUT uint32_t *pu4SetInfoLen);
+		      IN void *pvSetBuffer,
+		      IN uint32_t u4SetBufferLen,
+		      OUT uint32_t *pu4SetInfoLen);
 
 uint32_t
 wlanoidQueryRtsThreshold(IN struct ADAPTER *prAdapter,
-			 OUT void *pvQueryBuffer, IN uint32_t u4QueryBufferLen, OUT uint32_t *pu4QueryInfoLen);
+			 OUT void *pvQueryBuffer,
+			 IN uint32_t u4QueryBufferLen,
+			 OUT uint32_t *pu4QueryInfoLen);
 
 uint32_t
 wlanoidSetRtsThreshold(IN struct ADAPTER *prAdapter,
-		       IN void *pvSetBuffer, IN uint32_t u4SetBufferLen, OUT uint32_t *pu4SetInfoLen);
+		       IN void *pvSetBuffer,
+		       IN uint32_t u4SetBufferLen,
+		       OUT uint32_t *pu4SetInfoLen);
 
 uint32_t
-wlanoidQuery802dot11PowerSaveProfile(IN struct ADAPTER *prAdapter,
-				     IN void *pvQueryBuffer, IN uint32_t u4QueryBufferLen, OUT uint32_t *pu4QueryInfoLen);
+wlanoidQuery802dot11PowerSaveProfile(IN struct ADAPTER
+				     *prAdapter,
+				     IN void *pvQueryBuffer,
+				     IN uint32_t u4QueryBufferLen,
+				     OUT uint32_t *pu4QueryInfoLen);
 
 uint32_t
-wlanoidSet802dot11PowerSaveProfile(IN struct ADAPTER *prAdapter,
-				   IN void *prSetBuffer, IN uint32_t u4SetBufferLen, OUT uint32_t *pu4SetInfoLen);
+wlanoidSet802dot11PowerSaveProfile(IN struct ADAPTER
+				   *prAdapter,
+				   IN void *prSetBuffer,
+				   IN uint32_t u4SetBufferLen,
+				   OUT uint32_t *pu4SetInfoLen);
 
 uint32_t
 wlanoidQueryPmkid(IN struct ADAPTER *prAdapter,
-		  OUT void *pvQueryBuffer, IN uint32_t u4QueryBufferLen, OUT uint32_t *pu4QueryInfoLen);
+		  OUT void *pvQueryBuffer,
+		  IN uint32_t u4QueryBufferLen,
+		  OUT uint32_t *pu4QueryInfoLen);
 
 uint32_t
-wlanoidSetPmkid(IN struct ADAPTER *prAdapter, IN void *pvSetBuffer, IN uint32_t u4SetBufferLen, OUT uint32_t *pu4SetInfoLen);
+wlanoidSetPmkid(IN struct ADAPTER *prAdapter,
+		IN void *pvSetBuffer,
+		IN uint32_t u4SetBufferLen,
+		OUT uint32_t *pu4SetInfoLen);
 
 uint32_t
 wlanoidQuerySupportedRates(IN struct ADAPTER *prAdapter,
-			   OUT void *pvQueryBuffer, IN uint32_t u4QueryBufferLen, OUT uint32_t *pu4QueryInfoLen);
+			   OUT void *pvQueryBuffer,
+			   IN uint32_t u4QueryBufferLen,
+			   OUT uint32_t *pu4QueryInfoLen);
 
 uint32_t
 wlanoidQueryDesiredRates(IN struct ADAPTER *prAdapter,
-			 OUT void *pvQueryBuffer, IN uint32_t u4QueryBufferLen, OUT uint32_t *pu4QueryInfoLen);
+			 OUT void *pvQueryBuffer,
+			 IN uint32_t u4QueryBufferLen,
+			 OUT uint32_t *pu4QueryInfoLen);
 
 uint32_t
 wlanoidSetDesiredRates(IN struct ADAPTER *prAdapter,
-		       IN void *pvSetBuffer, IN uint32_t u4SetBufferLen, OUT uint32_t *pu4SetInfoLen);
+		       IN void *pvSetBuffer,
+		       IN uint32_t u4SetBufferLen,
+		       OUT uint32_t *pu4SetInfoLen);
 
 uint32_t
 wlanoidQueryPermanentAddr(IN struct ADAPTER *prAdapter,
-			  IN void *pvQueryBuf, IN uint32_t u4QueryBufLen, OUT uint32_t *pu4QueryInfoLen);
+			  IN void *pvQueryBuf,
+			  IN uint32_t u4QueryBufLen,
+			  OUT uint32_t *pu4QueryInfoLen);
 
 uint32_t
 wlanoidQueryCurrentAddr(IN struct ADAPTER *prAdapter,
-			IN void *pvQueryBuf, IN uint32_t u4QueryBufLen, OUT uint32_t *pu4QueryInfoLen);
+			IN void *pvQueryBuf,
+			IN uint32_t u4QueryBufLen,
+			OUT uint32_t *pu4QueryInfoLen);
 
 uint32_t
 wlanoidQueryPermanentAddr(IN struct ADAPTER *prAdapter,
-			  IN void *pvQueryBuf, IN uint32_t u4QueryBufLen, OUT uint32_t *pu4QueryInfoLen);
+			  IN void *pvQueryBuf,
+			  IN uint32_t u4QueryBufLen,
+			  OUT uint32_t *pu4QueryInfoLen);
 
 uint32_t
 wlanoidQueryLinkSpeed(IN struct ADAPTER *prAdapter,
-		      IN void *pvQueryBuffer, IN uint32_t u4QueryBufferLen, OUT uint32_t *pu4QueryInfoLen);
+		      IN void *pvQueryBuffer,
+		      IN uint32_t u4QueryBufferLen,
+		      OUT uint32_t *pu4QueryInfoLen);
 
 #if CFG_SUPPORT_QA_TOOL
 #if CFG_SUPPORT_BUFFER_MODE
-uint32_t wlanoidSetEfusBufferMode(IN struct ADAPTER *prAdapter,
-				     IN void *pvSetBuffer, IN uint32_t u4SetBufferLen, OUT uint32_t *pu4SetInfoLen);
+uint32_t wlanoidSetEfusBufferMode(IN struct ADAPTER
+				  *prAdapter,
+				  IN void *pvSetBuffer,
+				  IN uint32_t u4SetBufferLen,
+				  OUT uint32_t *pu4SetInfoLen);
 
-uint32_t wlanoidConnacSetEfusBufferMode(IN struct ADAPTER *prAdapter,
-				     IN void *pvSetBuffer, IN uint32_t u4SetBufferLen, OUT uint32_t *pu4SetInfoLen);
+uint32_t wlanoidConnacSetEfusBufferMode(IN struct ADAPTER
+					*prAdapter,
+					IN void *pvSetBuffer,
+					IN uint32_t u4SetBufferLen,
+					OUT uint32_t *pu4SetInfoLen);
 
-/*#if (CFG_EEPROM_PAGE_ACCESS == 1)*/
+/* #if (CFG_EEPROM_PAGE_ACCESS == 1) */
 uint32_t
-wlanoidQueryProcessAccessEfuseRead(IN struct ADAPTER *prAdapter,
-					IN void *pvSetBuffer, IN uint32_t u4SetBufferLen, OUT uint32_t *pu4SetInfoLen);
+wlanoidQueryProcessAccessEfuseRead(IN struct ADAPTER
+				   *prAdapter,
+				   IN void *pvSetBuffer,
+				   IN uint32_t u4SetBufferLen,
+				   OUT uint32_t *pu4SetInfoLen);
 
 uint32_t
-wlanoidQueryProcessAccessEfuseWrite(IN struct ADAPTER *prAdapter,
-					IN void *pvSetBuffer, IN uint32_t u4SetBufferLen, OUT uint32_t *pu4SetInfoLen);
+wlanoidQueryProcessAccessEfuseWrite(IN struct ADAPTER
+				    *prAdapter,
+				    IN void *pvSetBuffer,
+				    IN uint32_t u4SetBufferLen,
+				    OUT uint32_t *pu4SetInfoLen);
 
 uint32_t
 wlanoidQueryEfuseFreeBlock(IN struct ADAPTER *prAdapter,
-					IN void *pvSetBuffer, IN uint32_t u4SetBufferLen, OUT uint32_t *pu4SetInfoLen);
+			   IN void *pvSetBuffer,
+			   IN uint32_t u4SetBufferLen,
+			   OUT uint32_t *pu4SetInfoLen);
 
 uint32_t
 wlanoidQueryGetTxPower(IN struct ADAPTER *prAdapter,
-					IN void *pvSetBuffer, IN uint32_t u4SetBufferLen, OUT uint32_t *pu4SetInfoLen);
+		       IN void *pvSetBuffer,
+		       IN uint32_t u4SetBufferLen,
+		       OUT uint32_t *pu4SetInfoLen);
 /*#endif*/
 
 #endif /* CFG_SUPPORT_BUFFER_MODE */
 uint32_t
 wlanoidQueryRxStatistics(IN struct ADAPTER *prAdapter,
-			 IN void *pvQueryBuffer, IN uint32_t u4QueryBufferLen, OUT uint32_t *pu4QueryInfoLen);
+			 IN void *pvQueryBuffer,
+			 IN uint32_t u4QueryBufferLen,
+			 OUT uint32_t *pu4QueryInfoLen);
 
 uint32_t
 wlanoidBssInfoBasic(IN struct ADAPTER *prAdapter,
-		    IN void *pvSetBuffer, IN uint32_t u4SetBufferLen, OUT uint32_t *pu4SetInfoLen);
+		    IN void *pvSetBuffer,
+		    IN uint32_t u4SetBufferLen,
+		    OUT uint32_t *pu4SetInfoLen);
 
 uint32_t
 wlanoidDevInfoActive(IN struct ADAPTER *prAdapter,
-		     IN void *pvSetBuffer, IN uint32_t u4SetBufferLen, OUT uint32_t *pu4SetInfoLen);
+		     IN void *pvSetBuffer,
+		     IN uint32_t u4SetBufferLen,
+		     OUT uint32_t *pu4SetInfoLen);
 
 uint32_t
 wlanoidManualAssoc(IN struct ADAPTER *prAdapter,
-		   IN void *pvSetBuffer, IN uint32_t u4SetBufferLen, OUT uint32_t *pu4SetInfoLen);
+		   IN void *pvSetBuffer,
+		   IN uint32_t u4SetBufferLen,
+		   OUT uint32_t *pu4SetInfoLen);
 
 #if CFG_SUPPORT_TX_BF
 uint32_t
-wlanoidTxBfAction(IN struct ADAPTER *prAdapter, IN void *pvSetBuffer, IN uint32_t u4SetBufferLen,
+wlanoidTxBfAction(IN struct ADAPTER *prAdapter,
+		  IN void *pvSetBuffer,
+		  IN uint32_t u4SetBufferLen,
 		  OUT uint32_t *pu4SetInfoLen);
-uint32_t wlanoidMuMimoAction(IN struct ADAPTER *prAdapter, IN void *pvSetBuffer, IN uint32_t u4SetBufferLen,
-				OUT uint32_t *pu4SetInfoLen);
-uint32_t wlanoidStaRecUpdate(IN struct ADAPTER *prAdapter, IN void *pvSetBuffer, IN uint32_t u4SetBufferLen,
-				OUT uint32_t *pu4SetInfoLen);
-uint32_t wlanoidStaRecBFUpdate(IN struct ADAPTER *prAdapter, IN void *pvSetBuffer, IN uint32_t u4SetBufferLen,
-				  OUT uint32_t *pu4SetInfoLen);
+
+uint32_t wlanoidMuMimoAction(IN struct ADAPTER *prAdapter,
+			     IN void *pvSetBuffer,
+			     IN uint32_t u4SetBufferLen,
+			     OUT uint32_t *pu4SetInfoLen);
+
+uint32_t wlanoidStaRecUpdate(IN struct ADAPTER *prAdapter,
+			     IN void *pvSetBuffer,
+			     IN uint32_t u4SetBufferLen,
+			     OUT uint32_t *pu4SetInfoLen);
+
+uint32_t wlanoidStaRecBFUpdate(IN struct ADAPTER *prAdapter,
+			       IN void *pvSetBuffer,
+			       IN uint32_t u4SetBufferLen,
+			       OUT uint32_t *pu4SetInfoLen);
 #endif /* CFG_SUPPORT_TX_BF */
 #endif /* CFG_SUPPORT_QA_TOOL */
 
 #if CFG_SUPPORT_CAL_RESULT_BACKUP_TO_HOST
 uint32_t
-wlanoidSendCalBackupV2Cmd(IN struct ADAPTER *prAdapter, IN void *pvQueryBuffer, IN uint32_t u4QueryBufferLen);
+wlanoidSendCalBackupV2Cmd(IN struct ADAPTER *prAdapter,
+			  IN void *pvQueryBuffer,
+			  IN uint32_t u4QueryBufferLen);
 
 uint32_t
 wlanoidSetCalBackup(IN struct ADAPTER *prAdapter,
-		   IN void *pvSetBuffer, IN uint32_t u4SetBufferLen, OUT uint32_t *pu4SetInfoLen);
+		    IN void *pvSetBuffer,
+		    IN uint32_t u4SetBufferLen,
+		    OUT uint32_t *pu4SetInfoLen);
 
 uint32_t
 wlanoidQueryCalBackupV2(IN struct ADAPTER *prAdapter,
-		    IN void *pvQueryBuffer, IN uint32_t u4QueryBufferLen, OUT uint32_t *pu4QueryInfoLen);
+			IN void *pvQueryBuffer,
+			IN uint32_t u4QueryBufferLen,
+			OUT uint32_t *pu4QueryInfoLen);
 #endif
 
 uint32_t
 wlanoidQueryMcrRead(IN struct ADAPTER *prAdapter,
-		    IN void *pvQueryBuffer, IN uint32_t u4QueryBufferLen, OUT uint32_t *pu4QueryInfoLen);
+		    IN void *pvQueryBuffer,
+		    IN uint32_t u4QueryBufferLen,
+		    OUT uint32_t *pu4QueryInfoLen);
 
 uint32_t
 wlanoidQueryMemDump(IN struct ADAPTER *prAdapter,
-		    IN void *pvQueryBuffer, IN uint32_t u4QueryBufferLen, OUT uint32_t *pu4QueryInfoLen);
+		    IN void *pvQueryBuffer,
+		    IN uint32_t u4QueryBufferLen,
+		    OUT uint32_t *pu4QueryInfoLen);
 
 uint32_t
 wlanoidSetMcrWrite(IN struct ADAPTER *prAdapter,
-		   IN void *pvSetBuffer, IN uint32_t u4SetBufferLen, OUT uint32_t *pu4SetInfoLen);
+		   IN void *pvSetBuffer,
+		   IN uint32_t u4SetBufferLen,
+		   OUT uint32_t *pu4SetInfoLen);
 
 uint32_t
 wlanoidQueryDrvMcrRead(IN struct ADAPTER *prAdapter,
-		       IN void *pvQueryBuffer, IN uint32_t u4QueryBufferLen, OUT uint32_t *pu4QueryInfoLen);
+		       IN void *pvQueryBuffer,
+		       IN uint32_t u4QueryBufferLen,
+		       OUT uint32_t *pu4QueryInfoLen);
 
 uint32_t
 wlanoidSetDrvMcrWrite(IN struct ADAPTER *prAdapter,
-		      IN void *pvSetBuffer, IN uint32_t u4SetBufferLen, OUT uint32_t *pu4SetInfoLen);
+		      IN void *pvSetBuffer,
+		      IN uint32_t u4SetBufferLen,
+		      OUT uint32_t *pu4SetInfoLen);
 
 uint32_t
 wlanoidQuerySwCtrlRead(IN struct ADAPTER *prAdapter,
-		       IN void *pvQueryBuffer, IN uint32_t u4QueryBufferLen, OUT uint32_t *pu4QueryInfoLen);
+		       IN void *pvQueryBuffer,
+		       IN uint32_t u4QueryBufferLen,
+		       OUT uint32_t *pu4QueryInfoLen);
 
 uint32_t
 wlanoidSetSwCtrlWrite(IN struct ADAPTER *prAdapter,
-		      IN void *pvSetBuffer, IN uint32_t u4SetBufferLen, OUT uint32_t *pu4SetInfoLen);
+		      IN void *pvSetBuffer,
+		      IN uint32_t u4SetBufferLen,
+		      OUT uint32_t *pu4SetInfoLen);
 
 uint32_t
 wlanoidSetChipConfig(IN struct ADAPTER *prAdapter,
-		     IN void *pvSetBuffer, IN uint32_t u4SetBufferLen, OUT uint32_t *pu4SetInfoLen);
+		     IN void *pvSetBuffer,
+		     IN uint32_t u4SetBufferLen,
+		     OUT uint32_t *pu4SetInfoLen);
 
 uint32_t
 wlanoidQueryChipConfig(IN struct ADAPTER *prAdapter,
-		       IN void *pvQueryBuffer, IN uint32_t u4QueryBufferLen, OUT uint32_t *pu4QueryInfoLen);
+		       IN void *pvQueryBuffer,
+		       IN uint32_t u4QueryBufferLen,
+		       OUT uint32_t *pu4QueryInfoLen);
 
 uint32_t
-wlanoidSetKeyCfg(IN struct ADAPTER *prAdapter, IN void *pvSetBuffer, IN uint32_t u4SetBufferLen, OUT uint32_t *pu4SetInfoLen);
+wlanoidSetKeyCfg(IN struct ADAPTER *prAdapter,
+		 IN void *pvSetBuffer,
+		 IN uint32_t u4SetBufferLen,
+		 OUT uint32_t *pu4SetInfoLen);
 
 uint32_t
 wlanoidQueryEepromRead(IN struct ADAPTER *prAdapter,
-		       IN void *pvQueryBuffer, IN uint32_t u4QueryBufferLen, OUT uint32_t *pu4QueryInfoLen);
+		       IN void *pvQueryBuffer,
+		       IN uint32_t u4QueryBufferLen,
+		       OUT uint32_t *pu4QueryInfoLen);
 
 uint32_t
 wlanoidSetEepromWrite(IN struct ADAPTER *prAdapter,
-		      IN void *pvSetBuffer, IN uint32_t u4SetBufferLen, OUT uint32_t *pu4SetInfoLen);
+		      IN void *pvSetBuffer,
+		      IN uint32_t u4SetBufferLen,
+		      OUT uint32_t *pu4SetInfoLen);
 
 uint32_t
 wlanoidQueryRfTestRxStatus(IN struct ADAPTER *prAdapter,
-			   IN void *pvQueryBuffer, IN uint32_t u4QueryBufferLen, OUT uint32_t *pu4QueryInfoLen);
+			   IN void *pvQueryBuffer,
+			   IN uint32_t u4QueryBufferLen,
+			   OUT uint32_t *pu4QueryInfoLen);
 
 uint32_t
 wlanoidQueryRfTestTxStatus(IN struct ADAPTER *prAdapter,
-			   IN void *pvQueryBuffer, IN uint32_t u4QueryBufferLen, OUT uint32_t *pu4QueryInfoLen);
+			   IN void *pvQueryBuffer,
+			   IN uint32_t u4QueryBufferLen,
+			   OUT uint32_t *pu4QueryInfoLen);
 
 uint32_t
-wlanoidQueryOidInterfaceVersion(IN struct ADAPTER *prAdapter,
-				IN void *pvQueryBuffer, IN uint32_t u4QueryBufferLen, OUT uint32_t *pu4QueryInfoLen);
+wlanoidQueryOidInterfaceVersion(IN struct ADAPTER
+				*prAdapter,
+				IN void *pvQueryBuffer,
+				IN uint32_t u4QueryBufferLen,
+				OUT uint32_t *pu4QueryInfoLen);
 
 uint32_t
 wlanoidQueryVendorId(IN struct ADAPTER *prAdapter,
-		     OUT void *pvQueryBuffer, IN uint32_t u4QueryBufferLen, OUT uint32_t *pu4QueryInfoLen);
+		     OUT void *pvQueryBuffer,
+		     IN uint32_t u4QueryBufferLen,
+		     OUT uint32_t *pu4QueryInfoLen);
 
 uint32_t
 wlanoidQueryMulticastList(IN struct ADAPTER *prAdapter,
-			  OUT void *pvQueryBuffer, IN uint32_t u4QueryBufferLen, OUT uint32_t *pu4QueryInfoLen);
+			  OUT void *pvQueryBuffer,
+			  IN uint32_t u4QueryBufferLen,
+			  OUT uint32_t *pu4QueryInfoLen);
 
 uint32_t
 wlanoidSetMulticastList(IN struct ADAPTER *prAdapter,
-			IN void *pvSetBuffer, IN uint32_t u4SetBufferLen, OUT uint32_t *pu4SetInfoLen);
+			IN void *pvSetBuffer,
+			IN uint32_t u4SetBufferLen,
+			OUT uint32_t *pu4SetInfoLen);
 
 uint32_t
 wlanoidQueryRcvError(IN struct ADAPTER *prAdapter,
-		     IN void *pvQueryBuffer, IN uint32_t u4QueryBufferLen, OUT uint32_t *pu4QueryInfoLen);
+		     IN void *pvQueryBuffer,
+		     IN uint32_t u4QueryBufferLen,
+		     OUT uint32_t *pu4QueryInfoLen);
 
 uint32_t
 wlanoidQueryRcvNoBuffer(IN struct ADAPTER *prAdapter,
-			IN void *pvQueryBuffer, IN uint32_t u4QueryBufferLen, OUT uint32_t *pu4QueryInfoLen);
+			IN void *pvQueryBuffer,
+			IN uint32_t u4QueryBufferLen,
+			OUT uint32_t *pu4QueryInfoLen);
 
 uint32_t
 wlanoidQueryRcvCrcError(IN struct ADAPTER *prAdapter,
-			IN void *pvQueryBuffer, IN uint32_t u4QueryBufferLen, OUT uint32_t *pu4QueryInfoLen);
+			IN void *pvQueryBuffer,
+			IN uint32_t u4QueryBufferLen,
+			OUT uint32_t *pu4QueryInfoLen);
 
 uint32_t
 wlanoidQueryStatistics(IN struct ADAPTER *prAdapter,
-		       IN void *pvQueryBuffer, IN uint32_t u4QueryBufferLen, OUT uint32_t *pu4QueryInfoLen);
+		       IN void *pvQueryBuffer,
+		       IN uint32_t u4QueryBufferLen,
+		       OUT uint32_t *pu4QueryInfoLen);
 
 uint32_t
 wlanoidQueryBugReport(IN struct ADAPTER *prAdapter,
-			IN void *pvQueryBuffer, IN uint32_t u4QueryBufferLen, OUT uint32_t *pu4QueryInfoLen);
+		      IN void *pvQueryBuffer,
+		      IN uint32_t u4QueryBufferLen,
+		      OUT uint32_t *pu4QueryInfoLen);
 
 #ifdef LINUX
 
 uint32_t
 wlanoidQueryStatisticsForLinux(IN struct ADAPTER *prAdapter,
-			       IN void *pvQueryBuffer, IN uint32_t u4QueryBufferLen, OUT uint32_t *pu4QueryInfoLen);
+			       IN void *pvQueryBuffer,
+			       IN uint32_t u4QueryBufferLen,
+			       OUT uint32_t *pu4QueryInfoLen);
 
 #endif
 
 uint32_t
 wlanoidQueryMediaStreamMode(IN struct ADAPTER *prAdapter,
-			    IN void *pvQueryBuffer, IN uint32_t u4QueryBufferLen, OUT uint32_t *pu4QueryInfoLen);
+			    IN void *pvQueryBuffer,
+			    IN uint32_t u4QueryBufferLen,
+			    OUT uint32_t *pu4QueryInfoLen);
 
 uint32_t
 wlanoidSetMediaStreamMode(IN struct ADAPTER *prAdapter,
-			  IN void *pvSetBuffer, IN uint32_t u4SetBufferLen, OUT uint32_t *pu4SetInfoLen);
+			  IN void *pvSetBuffer,
+			  IN uint32_t u4SetBufferLen,
+			  OUT uint32_t *pu4SetInfoLen);
 
 uint32_t
 wlanoidQueryRcvOk(IN struct ADAPTER *prAdapter,
-		  IN void *pvQueryBuffer, IN uint32_t u4QueryBufferLen, OUT uint32_t *pu4QueryInfoLen);
+		  IN void *pvQueryBuffer,
+		  IN uint32_t u4QueryBufferLen,
+		  OUT uint32_t *pu4QueryInfoLen);
 
 uint32_t
 wlanoidQueryXmitOk(IN struct ADAPTER *prAdapter,
-		   IN void *pvQueryBuffer, IN uint32_t u4QueryBufferLen, OUT uint32_t *pu4QueryInfoLen);
+		   IN void *pvQueryBuffer,
+		   IN uint32_t u4QueryBufferLen,
+		   OUT uint32_t *pu4QueryInfoLen);
 
 uint32_t
 wlanoidQueryXmitError(IN struct ADAPTER *prAdapter,
-		      IN void *pvQueryBuffer, IN uint32_t u4QueryBufferLen, OUT uint32_t *pu4QueryInfoLen);
+		      IN void *pvQueryBuffer,
+		      IN uint32_t u4QueryBufferLen,
+		      OUT uint32_t *pu4QueryInfoLen);
 
 uint32_t
 wlanoidQueryXmitOneCollision(IN struct ADAPTER *prAdapter,
-			     IN void *pvQueryBuffer, IN uint32_t u4QueryBufferLen, OUT uint32_t *pu4QueryInfoLen);
+			     IN void *pvQueryBuffer,
+			     IN uint32_t u4QueryBufferLen,
+			     OUT uint32_t *pu4QueryInfoLen);
 
 uint32_t
 wlanoidQueryXmitMoreCollisions(IN struct ADAPTER *prAdapter,
-			       IN void *pvQueryBuffer, IN uint32_t u4QueryBufferLen, OUT uint32_t *pu4QueryInfoLen);
+			       IN void *pvQueryBuffer,
+			       IN uint32_t u4QueryBufferLen,
+			       OUT uint32_t *pu4QueryInfoLen);
 
 uint32_t
 wlanoidQueryXmitMaxCollisions(IN struct ADAPTER *prAdapter,
-			      IN void *pvQueryBuffer, IN uint32_t u4QueryBufferLen, OUT uint32_t *pu4QueryInfoLen);
+			      IN void *pvQueryBuffer,
+			      IN uint32_t u4QueryBufferLen,
+			      OUT uint32_t *pu4QueryInfoLen);
 
 uint32_t
 wlanoidSetCurrentPacketFilter(IN struct ADAPTER *prAdapter,
-			      IN void *pvSetBuffer, IN uint32_t u4SetBufferLen, OUT uint32_t *pu4SetInfoLen);
+			      IN void *pvSetBuffer,
+			      IN uint32_t u4SetBufferLen,
+			      OUT uint32_t *pu4SetInfoLen);
 
-uint32_t wlanoidSetPacketFilter(struct ADAPTER *prAdapter, void *pvPacketFiltr,
-				u_int8_t fgIsOid, void *pvSetBuffer, uint32_t u4SetBufferLen);
+uint32_t wlanoidSetPacketFilter(struct ADAPTER *prAdapter,
+				void *pvPacketFiltr,
+				u_int8_t fgIsOid,
+				void *pvSetBuffer,
+				uint32_t u4SetBufferLen);
 
 uint32_t
-wlanoidQueryCurrentPacketFilter(IN struct ADAPTER *prAdapter,
-				IN void *pvQueryBuffer, IN uint32_t u4QueryBufferLen, OUT uint32_t *pu4QueryInfoLen);
+wlanoidQueryCurrentPacketFilter(IN struct ADAPTER
+				*prAdapter,
+				IN void *pvQueryBuffer,
+				IN uint32_t u4QueryBufferLen,
+				OUT uint32_t *pu4QueryInfoLen);
 
 uint32_t
 wlanoidSetAcpiDevicePowerState(IN struct ADAPTER *prAdapter,
-			       IN void *pvSetBuffer, IN uint32_t u4SetBufferLen, OUT uint32_t *pu4SetInfoLen);
+			       IN void *pvSetBuffer,
+			       IN uint32_t u4SetBufferLen,
+			       OUT uint32_t *pu4SetInfoLen);
 
 uint32_t
-wlanoidQueryAcpiDevicePowerState(IN struct ADAPTER *prAdapter,
-				 IN void *pvQueryBuffer, IN uint32_t u4QueryBufferLen, OUT uint32_t *pu4QueryInfoLen);
+wlanoidQueryAcpiDevicePowerState(IN struct ADAPTER
+				 *prAdapter,
+				 IN void *pvQueryBuffer,
+				 IN uint32_t u4QueryBufferLen,
+				 OUT uint32_t *pu4QueryInfoLen);
 
 uint32_t
 wlanoidSetDisassociate(IN struct ADAPTER *prAdapter,
-		       IN void *pvSetBuffer, IN uint32_t u4SetBufferLen, OUT uint32_t *pu4SetInfoLen);
+		       IN void *pvSetBuffer,
+		       IN uint32_t u4SetBufferLen,
+		       OUT uint32_t *pu4SetInfoLen);
 
 uint32_t
 wlanoidQueryFragThreshold(IN struct ADAPTER *prAdapter,
-			  OUT void *pvQueryBuffer, IN uint32_t u4QueryBufferLen, OUT uint32_t *pu4QueryInfoLen);
+			  OUT void *pvQueryBuffer,
+			  IN uint32_t u4QueryBufferLen,
+			  OUT uint32_t *pu4QueryInfoLen);
 
 uint32_t
 wlanoidSetFragThreshold(IN struct ADAPTER *prAdapter,
-			IN void *pvSetBuffer, IN uint32_t u4SetBufferLen, OUT uint32_t *pu4SetInfoLen);
+			IN void *pvSetBuffer,
+			IN uint32_t u4SetBufferLen,
+			OUT uint32_t *pu4SetInfoLen);
 
 uint32_t
 wlanoidQueryAdHocMode(IN struct ADAPTER *prAdapter,
-		      OUT void *pvQueryBuffer, IN uint32_t u4QueryBufferLen, OUT uint32_t *pu4QueryInfoLen);
+		      OUT void *pvQueryBuffer,
+		      IN uint32_t u4QueryBufferLen,
+		      OUT uint32_t *pu4QueryInfoLen);
 
 uint32_t
 wlanoidSetAdHocMode(IN struct ADAPTER *prAdapter,
-		    IN void *pvSetBuffer, IN uint32_t u4SetBufferLen, OUT uint32_t *pu4SetInfoLen);
+		    IN void *pvSetBuffer,
+		    IN uint32_t u4SetBufferLen,
+		    OUT uint32_t *pu4SetInfoLen);
 
 uint32_t
 wlanoidQueryBeaconInterval(IN struct ADAPTER *prAdapter,
-			   OUT void *pvQueryBuffer, IN uint32_t u4QueryBufferLen, OUT uint32_t *pu4QueryInfoLen);
+			   OUT void *pvQueryBuffer,
+			   IN uint32_t u4QueryBufferLen,
+			   OUT uint32_t *pu4QueryInfoLen);
 
 uint32_t
 wlanoidSetBeaconInterval(IN struct ADAPTER *prAdapter,
-			 IN void *pvSetBuffer, IN uint32_t u4SetBufferLen, OUT uint32_t *pu4SetInfoLen);
+			 IN void *pvSetBuffer,
+			 IN uint32_t u4SetBufferLen,
+			 OUT uint32_t *pu4SetInfoLen);
 
 uint32_t
 wlanoidSetCurrentAddr(IN struct ADAPTER *prAdapter,
-		      IN void *pvSetBuffer, IN uint32_t u4SetBufferLen, OUT uint32_t *pu4SetInfoLen);
+		      IN void *pvSetBuffer,
+		      IN uint32_t u4SetBufferLen,
+		      OUT uint32_t *pu4SetInfoLen);
 
 #if CFG_TCP_IP_CHKSUM_OFFLOAD
 uint32_t
 wlanoidSetCSUMOffload(IN struct ADAPTER *prAdapter,
-		      IN void *pvSetBuffer, IN uint32_t u4SetBufferLen, OUT uint32_t *pu4SetInfoLen);
+		      IN void *pvSetBuffer,
+		      IN uint32_t u4SetBufferLen,
+		      OUT uint32_t *pu4SetInfoLen);
 #endif /* CFG_TCP_IP_CHKSUM_OFFLOAD */
 
 uint32_t
 wlanoidSetNetworkAddress(IN struct ADAPTER *prAdapter,
-			 IN void *pvSetBuffer, IN uint32_t u4SetBufferLen, OUT uint32_t *pu4SetInfoLen);
+			 IN void *pvSetBuffer,
+			 IN uint32_t u4SetBufferLen,
+			 OUT uint32_t *pu4SetInfoLen);
 
 uint32_t
 wlanoidQueryMaxFrameSize(IN struct ADAPTER *prAdapter,
-			 OUT void *pvQueryBuffer, IN uint32_t u4QueryBufferLen, OUT uint32_t *pu4QueryInfoLen);
+			 OUT void *pvQueryBuffer,
+			 IN uint32_t u4QueryBufferLen,
+			 OUT uint32_t *pu4QueryInfoLen);
 
 uint32_t
 wlanoidQueryMaxTotalSize(IN struct ADAPTER *prAdapter,
-			 OUT void *pvQueryBuffer, IN uint32_t u4QueryBufferLen, OUT uint32_t *pu4QueryInfoLen);
+			 OUT void *pvQueryBuffer,
+			 IN uint32_t u4QueryBufferLen,
+			 OUT uint32_t *pu4QueryInfoLen);
 
 uint32_t
 wlanoidSetCurrentLookahead(IN struct ADAPTER *prAdapter,
-			   IN void *pvSetBuffer, IN uint32_t u4SetBufferLen, OUT uint32_t *pu4SetInfoLen);
+			   IN void *pvSetBuffer,
+			   IN uint32_t u4SetBufferLen,
+			   OUT uint32_t *pu4SetInfoLen);
 
 /* RF Test related APIs */
 uint32_t
 wlanoidRftestSetTestMode(IN struct ADAPTER *prAdapter,
-			 IN void *pvSetBuffer, IN uint32_t u4SetBufferLen, OUT uint32_t *pu4SetInfoLen);
+			 IN void *pvSetBuffer,
+			 IN uint32_t u4SetBufferLen,
+			 OUT uint32_t *pu4SetInfoLen);
 
 uint32_t
 wlanoidRftestSetTestIcapMode(IN struct ADAPTER *prAdapter,
-			     IN void *pvSetBuffer, IN uint32_t u4SetBufferLen, OUT uint32_t *pu4SetInfoLen);
+			     IN void *pvSetBuffer,
+			     IN uint32_t u4SetBufferLen,
+			     OUT uint32_t *pu4SetInfoLen);
 
 uint32_t
 wlanoidRftestSetAbortTestMode(IN struct ADAPTER *prAdapter,
-			      IN void *pvSetBuffer, IN uint32_t u4SetBufferLen, OUT uint32_t *pu4SetInfoLen);
+			      IN void *pvSetBuffer,
+			      IN uint32_t u4SetBufferLen,
+			      OUT uint32_t *pu4SetInfoLen);
 
 uint32_t
 wlanoidRftestQueryAutoTest(IN struct ADAPTER *prAdapter,
-			   OUT void *pvQueryBuffer, IN uint32_t u4QueryBufferLen, OUT uint32_t *pu4QueryInfoLen);
+			   OUT void *pvQueryBuffer,
+			   IN uint32_t u4QueryBufferLen,
+			   OUT uint32_t *pu4QueryInfoLen);
 
 uint32_t
 wlanoidRftestSetAutoTest(IN struct ADAPTER *prAdapter,
-			 OUT void *pvSetBuffer, IN uint32_t u4SetBufferLen, OUT uint32_t *pu4SetInfoLen);
+			 OUT void *pvSetBuffer,
+			 IN uint32_t u4SetBufferLen,
+			 OUT uint32_t *pu4SetInfoLen);
 uint32_t
-wlanoidExtRfTestICapStart(IN struct ADAPTER *prAdapter, IN void *pvSetBuffer,
-			  IN uint32_t u4SetBufferLen, OUT uint32_t *pu4SetInfoLen);
+wlanoidExtRfTestICapStart(IN struct ADAPTER *prAdapter,
+			  IN void *pvSetBuffer,
+			  IN uint32_t u4SetBufferLen,
+			  OUT uint32_t *pu4SetInfoLen);
 uint32_t
-wlanoidExtRfTestICapStatus(IN struct ADAPTER *prAdapter, IN void *pvSetBuffer,
-			   IN uint32_t u4SetBufferLen, OUT uint32_t *pu4SetInfoLen);
+wlanoidExtRfTestICapStatus(IN struct ADAPTER *prAdapter,
+			   IN void *pvSetBuffer,
+			   IN uint32_t u4SetBufferLen,
+			   OUT uint32_t *pu4SetInfoLen);
 
-void wlanoidRfTestICapRawDataProc(IN struct ADAPTER *prAdapter, uint32_t u4CapStartAddr, uint32_t u4TotalBufferSize);
+void wlanoidRfTestICapRawDataProc(IN struct ADAPTER *prAdapter,
+				  uint32_t u4CapStartAddr,
+				  uint32_t u4TotalBufferSize);
 
 #if CFG_SUPPORT_WAPI
 uint32_t
 wlanoidSetWapiMode(IN struct ADAPTER *prAdapter,
-		   IN void *pvSetBuffer, IN uint32_t u4SetBufferLen, OUT uint32_t *pu4SetInfoLen);
+		   IN void *pvSetBuffer,
+		   IN uint32_t u4SetBufferLen,
+		   OUT uint32_t *pu4SetInfoLen);
 
 uint32_t
 wlanoidSetWapiAssocInfo(IN struct ADAPTER *prAdapter,
-			IN void *pvSetBuffer, IN uint32_t u4SetBufferLen, OUT uint32_t *pu4SetInfoLen);
+			IN void *pvSetBuffer,
+			IN uint32_t u4SetBufferLen,
+			OUT uint32_t *pu4SetInfoLen);
 
 uint32_t
 wlanoidSetWapiKey(IN struct ADAPTER *prAdapter,
-		  IN void *pvSetBuffer, IN uint32_t u4SetBufferLen, OUT uint32_t *pu4SetInfoLen);
+		  IN void *pvSetBuffer,
+		  IN uint32_t u4SetBufferLen,
+		  OUT uint32_t *pu4SetInfoLen);
 #endif
 
 #if CFG_SUPPORT_WPS2
 uint32_t
 wlanoidSetWSCAssocInfo(IN struct ADAPTER *prAdapter,
-		       IN void *pvSetBuffer, IN uint32_t u4SetBufferLen, OUT uint32_t *pu4SetInfoLen);
+		       IN void *pvSetBuffer,
+		       IN uint32_t u4SetBufferLen,
+		       OUT uint32_t *pu4SetInfoLen);
 #endif
 
 #if CFG_ENABLE_WAKEUP_ON_LAN
 uint32_t
 wlanoidSetAddWakeupPattern(IN struct ADAPTER *prAdapter,
-			   IN void *pvSetBuffer, IN uint32_t u4SetBufferLen, OUT uint32_t *pu4SetInfoLen);
+			   IN void *pvSetBuffer,
+			   IN uint32_t u4SetBufferLen,
+			   OUT uint32_t *pu4SetInfoLen);
 
 uint32_t
 wlanoidSetRemoveWakeupPattern(IN struct ADAPTER *prAdapter,
-			      IN void *pvSetBuffer, IN uint32_t u4SetBufferLen, OUT uint32_t *pu4SetInfoLen);
+			      IN void *pvSetBuffer,
+			      IN uint32_t u4SetBufferLen,
+			      OUT uint32_t *pu4SetInfoLen);
 
 uint32_t
 wlanoidQueryEnableWakeup(IN struct ADAPTER *prAdapter,
-			 OUT void *pvQueryBuffer, IN uint32_t u4QueryBufferLen, OUT uint32_t *u4QueryInfoLen);
+			 OUT void *pvQueryBuffer,
+			 IN uint32_t u4QueryBufferLen,
+			 OUT uint32_t *u4QueryInfoLen);
 
 uint32_t
 wlanoidSetEnableWakeup(IN struct ADAPTER *prAdapter,
-		       IN void *pvSetBuffer, IN uint32_t u4SetBufferLen, OUT uint32_t *pu4SetInfoLen);
+		       IN void *pvSetBuffer,
+		       IN uint32_t u4SetBufferLen,
+		       OUT uint32_t *pu4SetInfoLen);
 #endif
 
 uint32_t
 wlanoidSetWiFiWmmPsTest(IN struct ADAPTER *prAdapter,
-			IN void *pvSetBuffer, IN uint32_t u4SetBufferLen, OUT uint32_t *pu4SetInfoLen);
+			IN void *pvSetBuffer,
+			IN uint32_t u4SetBufferLen,
+			OUT uint32_t *pu4SetInfoLen);
 
 uint32_t
 wlanoidSetTxAmpdu(IN struct ADAPTER *prAdapter,
-		  IN void *pvSetBuffer, IN uint32_t u4SetBufferLen, OUT uint32_t *pu4SetInfoLen);
+		  IN void *pvSetBuffer,
+		  IN uint32_t u4SetBufferLen,
+		  OUT uint32_t *pu4SetInfoLen);
 
 uint32_t
 wlanoidSetAddbaReject(IN struct ADAPTER *prAdapter,
-		      IN void *pvSetBuffer, IN uint32_t u4SetBufferLen, OUT uint32_t *pu4SetInfoLen);
+		      IN void *pvSetBuffer,
+		      IN uint32_t u4SetBufferLen,
+		      OUT uint32_t *pu4SetInfoLen);
 
 uint32_t
 wlanoidQueryNvramRead(IN struct ADAPTER *prAdapter,
-		      OUT void *pvQueryBuffer, IN uint32_t u4QueryBufferLen, OUT uint32_t *pu4QueryInfoLen);
+		      OUT void *pvQueryBuffer,
+		      IN uint32_t u4QueryBufferLen,
+		      OUT uint32_t *pu4QueryInfoLen);
 
 uint32_t
 wlanoidSetNvramWrite(IN struct ADAPTER *prAdapter,
-		     IN void *pvSetBuffer, IN uint32_t u4SetBufferLen, OUT uint32_t *pu4SetInfoLen);
+		     IN void *pvSetBuffer,
+		     IN uint32_t u4SetBufferLen,
+		     OUT uint32_t *pu4SetInfoLen);
 
 uint32_t
 wlanoidQueryCfgSrcType(IN struct ADAPTER *prAdapter,
-		       OUT void *pvQueryBuffer, IN uint32_t u4QueryBufferLen, OUT uint32_t *pu4QueryInfoLen);
+		       OUT void *pvQueryBuffer,
+		       IN uint32_t u4QueryBufferLen,
+		       OUT uint32_t *pu4QueryInfoLen);
 
 uint32_t
 wlanoidQueryEepromType(IN struct ADAPTER *prAdapter,
-		       OUT void *pvQueryBuffer, IN uint32_t u4QueryBufferLen, OUT uint32_t *pu4QueryInfoLen);
+		       OUT void *pvQueryBuffer,
+		       IN uint32_t u4QueryBufferLen,
+		       OUT uint32_t *pu4QueryInfoLen);
 
 uint32_t
 wlanoidSetCountryCode(IN struct ADAPTER *prAdapter,
-		      IN void *pvSetBuffer, IN uint32_t u4SetBufferLen, OUT uint32_t *pu4SetInfoLen);
+		      IN void *pvSetBuffer,
+		      IN uint32_t u4SetBufferLen,
+		      OUT uint32_t *pu4SetInfoLen);
 
-uint32_t wlanSendMemDumpCmd(IN struct ADAPTER *prAdapter, IN void *pvQueryBuffer, IN uint32_t u4QueryBufferLen);
+uint32_t wlanSendMemDumpCmd(IN struct ADAPTER *prAdapter,
+			    IN void *pvQueryBuffer,
+			    IN uint32_t u4QueryBufferLen);
 
 #if CFG_SLT_SUPPORT
 
 uint32_t
 wlanoidQuerySLTStatus(IN struct ADAPTER *prAdapter,
-		      OUT void *pvQueryBuffer, IN uint32_t u4QueryBufferLen, OUT uint32_t *pu4QueryInfoLen);
+		      OUT void *pvQueryBuffer,
+		      IN uint32_t u4QueryBufferLen,
+		      OUT uint32_t *pu4QueryInfoLen);
 
 uint32_t
 wlanoidUpdateSLTMode(IN struct ADAPTER *prAdapter,
-		     IN void *pvSetBuffer, IN uint32_t u4SetBufferLen, OUT uint32_t *pu4SetInfoLen);
+		     IN void *pvSetBuffer,
+		     IN uint32_t u4SetBufferLen,
+		     OUT uint32_t *pu4SetInfoLen);
 
 #endif
 
 uint32_t
 wlanoidQueryWlanInfo(IN struct ADAPTER *prAdapter,
-	OUT void *pvQueryBuffer, IN uint32_t u4QueryBufferLen, OUT uint32_t *pu4QueryInfoLen);
+		     OUT void *pvQueryBuffer,
+		     IN uint32_t u4QueryBufferLen,
+		     OUT uint32_t *pu4QueryInfoLen);
 
 uint32_t
 wlanoidQueryMibInfo(IN struct ADAPTER *prAdapter,
-	OUT void *pvQueryBuffer, IN uint32_t u4QueryBufferLen, OUT uint32_t *pu4QueryInfoLen);
+		    OUT void *pvQueryBuffer,
+		    IN uint32_t u4QueryBufferLen,
+		    OUT uint32_t *pu4QueryInfoLen);
 
 uint32_t
-wlanoidSetFwLog2Host(
-	IN struct ADAPTER *prAdapter,
-	IN void *pvSetBuffer,
-	IN uint32_t u4SetBufferLen,
-	OUT uint32_t *pu4SetInfoLen);
+wlanoidSetFwLog2Host(IN struct ADAPTER *prAdapter,
+		     IN void *pvSetBuffer,
+		     IN uint32_t u4SetBufferLen,
+		     OUT uint32_t *pu4SetInfoLen);
 
 #if 0
 uint32_t
 wlanoidSetNoaParam(IN struct ADAPTER *prAdapter,
-		   IN void *pvSetBuffer, IN uint32_t u4SetBufferLen, OUT uint32_t *pu4SetInfoLen);
+		   IN void *pvSetBuffer,
+		   IN uint32_t u4SetBufferLen,
+		   OUT uint32_t *pu4SetInfoLen);
 
 uint32_t
 wlanoidSetOppPsParam(IN struct ADAPTER *prAdapter,
-		     IN void *pvSetBuffer, IN uint32_t u4SetBufferLen, OUT uint32_t *pu4SetInfoLen);
+		     IN void *pvSetBuffer,
+		     IN uint32_t u4SetBufferLen,
+		     OUT uint32_t *pu4SetInfoLen);
 
 uint32_t
 wlanoidSetUApsdParam(IN struct ADAPTER *prAdapter,
-		     IN void *pvSetBuffer, IN uint32_t u4SetBufferLen, OUT uint32_t *pu4SetInfoLen);
+		     IN void *pvSetBuffer,
+		     IN uint32_t u4SetBufferLen,
+		     OUT uint32_t *pu4SetInfoLen);
 #endif
 
 /*----------------------------------------------------------------------------*/
 uint32_t
-wlanoidSetBT(IN struct ADAPTER *prAdapter, IN void *pvSetBuffer, IN uint32_t u4SetBufferLen, OUT uint32_t *pu4SetInfoLen);
+wlanoidSetBT(IN struct ADAPTER *prAdapter,
+	     IN void *pvSetBuffer,
+	     IN uint32_t u4SetBufferLen,
+	     OUT uint32_t *pu4SetInfoLen);
 
 uint32_t
 wlanoidQueryBT(IN struct ADAPTER *prAdapter,
-	       OUT void *pvQueryBuffer, IN uint32_t u4QueryBufferLen, OUT uint32_t *pu4QueryInfoLen);
+	       OUT void *pvQueryBuffer,
+	       IN uint32_t u4QueryBufferLen,
+	       OUT uint32_t *pu4QueryInfoLen);
 
 uint32_t
 wlanoidSetTxPower(IN struct ADAPTER *prAdapter,
-		  IN void *pvSetBuffer, IN uint32_t u4SetBufferLen, OUT uint32_t *pu4SetInfoLen);
+		  IN void *pvSetBuffer,
+		  IN uint32_t u4SetBufferLen,
+		  OUT uint32_t *pu4SetInfoLen);
 
 #if 0
 uint32_t
 wlanoidQueryBtSingleAntenna(
 	IN  struct ADAPTER *prAdapter,
 	OUT void *pvQueryBuffer,
-	IN  uint32_t     u4QueryBufferLen,
+	IN  uint32_t u4QueryBufferLen,
 	OUT uint32_t *pu4QueryInfoLen);
 
 uint32_t
 wlanoidSetBtSingleAntenna(
 	IN  struct ADAPTER *prAdapter,
 	IN  void *pvSetBuffer,
-	IN  uint32_t     u4SetBufferLen,
+	IN  uint32_t u4SetBufferLen,
 	OUT uint32_t *pu4SetInfoLen);
 
 uint32_t
 wlanoidSetPta(
 	IN  struct ADAPTER *prAdapter,
 	IN  void *pvSetBuffer,
-	IN  uint32_t     u4SetBufferLen,
+	IN  uint32_t u4SetBufferLen,
 	OUT uint32_t *pu4SetInfoLen);
 
 uint32_t
 wlanoidQueryPta(
 	IN  struct ADAPTER *prAdapter,
 	OUT void *pvQueryBuffer,
-	IN  uint32_t     u4QueryBufferLen,
+	IN  uint32_t u4QueryBufferLen,
 	OUT uint32_t *pu4QueryInfoLen);
 #endif
 
 #if CFG_ENABLE_WIFI_DIRECT
 uint32_t
 wlanoidSetP2pMode(IN struct ADAPTER *prAdapter,
-		  IN void *pvSetBuffer, IN uint32_t u4SetBufferLen, OUT uint32_t *pu4SetInfoLen);
+		  IN void *pvSetBuffer,
+		  IN uint32_t u4SetBufferLen,
+		  OUT uint32_t *pu4SetInfoLen);
 #endif
 
 uint32_t
 wlanoidSetDefaultKey(IN struct ADAPTER *prAdapter,
-		     IN void *pvSetBuffer, IN uint32_t u4SetBufferLen, OUT uint32_t *pu4SetInfoLen);
+		     IN void *pvSetBuffer,
+		     IN uint32_t u4SetBufferLen,
+		     OUT uint32_t *pu4SetInfoLen);
 
 uint32_t
 wlanoidSetGtkRekeyData(IN struct ADAPTER *prAdapter,
-		       IN void *pvSetBuffer, IN uint32_t u4SetBufferLen, OUT uint32_t *pu4SetInfoLen);
+		       IN void *pvSetBuffer,
+		       IN uint32_t u4SetBufferLen,
+		       OUT uint32_t *pu4SetInfoLen);
 
 #if CFG_SUPPORT_SCHED_SCAN
 uint32_t
 wlanoidSetStartSchedScan(IN struct ADAPTER *prAdapter,
-			 IN void *pvSetBuffer, IN uint32_t u4SetBufferLen, OUT uint32_t *pu4SetInfoLen);
+			 IN void *pvSetBuffer,
+			 IN uint32_t u4SetBufferLen,
+			 OUT uint32_t *pu4SetInfoLen);
 
 uint32_t
 wlanoidSetStopSchedScan(IN struct ADAPTER *prAdapter,
-			IN void *pvSetBuffer, IN uint32_t u4SetBufferLen, OUT uint32_t *pu4SetInfoLen);
+			IN void *pvSetBuffer,
+			IN uint32_t u4SetBufferLen,
+			OUT uint32_t *pu4SetInfoLen);
 #endif /* CFG_SUPPORT_SCHED_SCAN */
 
 #if CFG_M0VE_BA_TO_DRIVER
-uint32_t wlanoidResetBAScoreboard(IN struct ADAPTER *prAdapter, IN void *pvSetBuffer, IN uint32_t u4SetBufferLen);
+uint32_t wlanoidResetBAScoreboard(IN struct ADAPTER *prAdapter,
+				  IN void *pvSetBuffer,
+				  IN uint32_t u4SetBufferLen);
 #endif
 
 #if CFG_SUPPORT_BATCH_SCAN
 uint32_t
 wlanoidSetBatchScanReq(IN struct ADAPTER *prAdapter,
-		       IN void *pvSetBuffer, IN uint32_t u4SetBufferLen, OUT uint32_t *pu4SetInfoLen);
+		       IN void *pvSetBuffer,
+		       IN uint32_t u4SetBufferLen,
+		       OUT uint32_t *pu4SetInfoLen);
 
 uint32_t
 wlanoidQueryBatchScanResult(IN struct ADAPTER *prAdapter,
-			    OUT void *pvQueryBuffer, IN uint32_t u4QueryBufferLen, OUT uint32_t *pu4QueryInfoLen);
+			    OUT void *pvQueryBuffer,
+			    IN uint32_t u4QueryBufferLen,
+			    OUT uint32_t *pu4QueryInfoLen);
 #endif
 
 #if CFG_SUPPORT_PASSPOINT
 uint32_t
 wlanoidSetHS20Info(IN struct ADAPTER *prAdapter,
-		   IN void *pvSetBuffer, IN uint32_t u4SetBufferLen, OUT uint32_t *pu4SetInfoLen);
+		   IN void *pvSetBuffer,
+		   IN uint32_t u4SetBufferLen,
+		   OUT uint32_t *pu4SetInfoLen);
 
 uint32_t
 wlanoidSetInterworkingInfo(IN struct ADAPTER *prAdapter,
-			   IN void *pvSetBuffer, IN uint32_t u4SetBufferLen, OUT uint32_t *pu4SetInfoLen);
+			   IN void *pvSetBuffer,
+			   IN uint32_t u4SetBufferLen,
+			   OUT uint32_t *pu4SetInfoLen);
 
 uint32_t
 wlanoidSetRoamingConsortiumIEInfo(IN struct ADAPTER *prAdapter,
-				  IN void *pvSetBuffer, IN uint32_t u4SetBufferLen, OUT uint32_t *pu4SetInfoLen);
+				  IN void *pvSetBuffer,
+				  IN uint32_t u4SetBufferLen,
+				  OUT uint32_t *pu4SetInfoLen);
 
 uint32_t
 wlanoidSetHS20BssidPool(IN struct ADAPTER *prAdapter,
-			IN void *pvSetBuffer, IN uint32_t u4SetBufferLen, OUT uint32_t *pu4SetInfoLen);
+			IN void *pvSetBuffer,
+			IN uint32_t u4SetBufferLen,
+			OUT uint32_t *pu4SetInfoLen);
 #endif /* CFG_SUPPORT_PASSPOINT */
 
 #if CFG_SUPPORT_SNIFFER
 uint32_t wlanoidSetMonitor(IN struct ADAPTER *prAdapter,
-			      IN void *pvSetBuffer, IN uint32_t u4SetBufferLen, OUT uint32_t *pu4SetInfoLen);
+			   IN void *pvSetBuffer,
+			   IN uint32_t u4SetBufferLen,
+			   OUT uint32_t *pu4SetInfoLen);
 #endif
 
 uint32_t
 wlanoidNotifyFwSuspend(IN struct ADAPTER *prAdapter,
-				IN void *pvSetBuffer,
-				IN uint32_t u4SetBufferLen,
-				OUT uint32_t *pu4SetInfoLen);
+		       IN void *pvSetBuffer,
+		       IN uint32_t u4SetBufferLen,
+		       OUT uint32_t *pu4SetInfoLen);
 
 uint32_t
 wlanoidQueryCnm(
@@ -3118,224 +3609,314 @@ wlanoidQueryCnm(
 
 uint32_t
 wlanoidPacketKeepAlive(IN struct ADAPTER *prAdapter,
-	IN void *pvSetBuffer, IN uint32_t u4SetBufferLen,
-	OUT uint32_t *pu4SetInfoLen);
+		       IN void *pvSetBuffer,
+		       IN uint32_t u4SetBufferLen,
+		       OUT uint32_t *pu4SetInfoLen);
 
 #if CFG_SUPPORT_DBDC
 uint32_t
-wlanoidSetDbdcEnable(
-		IN struct ADAPTER *prAdapter,
-		IN void *pvSetBuffer,
-		IN uint32_t u4SetBufferLen,
-		OUT uint32_t *pu4SetInfoLen);
+wlanoidSetDbdcEnable(IN struct ADAPTER *prAdapter,
+		     IN void *pvSetBuffer,
+		     IN uint32_t u4SetBufferLen,
+		     OUT uint32_t *pu4SetInfoLen);
 #endif /*#if CFG_SUPPORT_DBDC*/
 
 uint32_t
 wlanoidQuerySetTxTargetPower(IN struct ADAPTER *prAdapter,
-			IN void *pvSetBuffer, IN uint32_t u4SetBufferLen, OUT uint32_t *pu4SetInfoLen);
+			     IN void *pvSetBuffer,
+			     IN uint32_t u4SetBufferLen,
+			     OUT uint32_t *pu4SetInfoLen);
 
 #if (CFG_SUPPORT_DFS_MASTER == 1)
 uint32_t
 wlanoidQuerySetRddReport(IN struct ADAPTER *prAdapter,
-			IN void *pvSetBuffer, IN uint32_t u4SetBufferLen, OUT uint32_t *pu4SetInfoLen);
+			 IN void *pvSetBuffer,
+			 IN uint32_t u4SetBufferLen,
+			 OUT uint32_t *pu4SetInfoLen);
 
 uint32_t
 wlanoidQuerySetRadarDetectMode(IN struct ADAPTER *prAdapter,
-			IN void *pvSetBuffer, IN uint32_t u4SetBufferLen, OUT uint32_t *pu4SetInfoLen);
+			       IN void *pvSetBuffer,
+			       IN uint32_t u4SetBufferLen,
+			       OUT uint32_t *pu4SetInfoLen);
 #endif
 
 #if CFG_AUTO_CHANNEL_SEL_SUPPORT
 uint32_t
 wlanoidQueryLteSafeChannel(IN struct ADAPTER *prAdapter,
-			   IN void *pvQueryBuffer, IN uint32_t u4QueryBufferLen, OUT uint32_t *pu4QueryInfoLen);
+			   IN void *pvQueryBuffer,
+			   IN uint32_t u4QueryBufferLen,
+			   OUT uint32_t *pu4QueryInfoLen);
 uint32_t
 wlanCalculateAllChannelDirtiness(IN struct ADAPTER *prAdapter);
+
 void
 wlanInitChnLoadInfoChannelList(IN struct ADAPTER *prAdapter);
+
 uint8_t
 wlanGetChannelIndex(IN uint8_t channel);
+
 uint8_t
 wlanGetChannelNumFromIndex(IN uint8_t ucIdx);
+
 void
 wlanSortChannel(IN struct ADAPTER *prAdapter);
+
 #endif
 
 uint32_t
 wlanoidLinkDown(IN struct ADAPTER *prAdapter,
-		       IN void *pvSetBuffer, IN uint32_t u4SetBufferLen, OUT uint32_t *pu4SetInfoLen);
+		IN void *pvSetBuffer,
+		IN uint32_t u4SetBufferLen,
+		OUT uint32_t *pu4SetInfoLen);
 
 uint32_t
 wlanoidDisableTdlsPs(IN struct ADAPTER *prAdapter,
-			 IN void *pvSetBuffer, IN uint32_t u4SetBufferLen, OUT uint32_t *pu4SetInfoLen);
-uint32_t wlanoidSetSer(IN struct ADAPTER *prAdapter, IN void *pvSetBuffer,
-			  IN uint32_t u4SetBufferLen, OUT uint32_t *pu4SetInfoLen);
-uint32_t wlanoidSerExtCmd(IN struct ADAPTER *prAdapter, uint8_t ucAction, uint8_t ucSerSet);
+		     IN void *pvSetBuffer,
+		     IN uint32_t u4SetBufferLen,
+		     OUT uint32_t *pu4SetInfoLen);
+
+uint32_t wlanoidSetSer(IN struct ADAPTER *prAdapter,
+		       IN void *pvSetBuffer,
+		       IN uint32_t u4SetBufferLen,
+		       OUT uint32_t *pu4SetInfoLen);
+
+uint32_t wlanoidSerExtCmd(IN struct ADAPTER *prAdapter,
+			  uint8_t ucAction,
+			  uint8_t ucSerSet);
 
 #if CFG_SUPPORT_NCHO
 #define NCHO_CMD_MAX_LENGTH	128
 
 uint32_t
 wlanoidSetNchoRoamTrigger(IN struct ADAPTER *prAdapter,
-			IN void *pvSetBuffer, IN uint32_t u4SetBufferLen, OUT uint32_t *pu4SetInfoLen);
+			  IN void *pvSetBuffer,
+			  IN uint32_t u4SetBufferLen,
+			  OUT uint32_t *pu4SetInfoLen);
 
 uint32_t
 wlanoidQueryNchoRoamTrigger(IN struct ADAPTER *prAdapter,
-			OUT void *pvQueryBuffer, IN uint32_t u4QueryBufferLen, OUT uint32_t *pu4QueryInfoLen);
+			    OUT void *pvQueryBuffer,
+			    IN uint32_t u4QueryBufferLen,
+			    OUT uint32_t *pu4QueryInfoLen);
 
 uint32_t
 wlanoidSetNchoRoamDelta(IN struct ADAPTER *prAdapter,
-			IN void *pvSetBuffer, IN uint32_t u4SetBufferLen, OUT uint32_t *pu4SetInfoLen);
+			IN void *pvSetBuffer,
+			IN uint32_t u4SetBufferLen,
+			OUT uint32_t *pu4SetInfoLen);
 
 uint32_t
 wlanoidQueryNchoRoamDelta(IN struct ADAPTER *prAdapter,
-			OUT void *pvQueryBuffer, IN uint32_t u4QueryBufferLen, OUT uint32_t *pu4QueryInfoLen);
+			  OUT void *pvQueryBuffer,
+			  IN uint32_t u4QueryBufferLen,
+			  OUT uint32_t *pu4QueryInfoLen);
 
 uint32_t
 wlanoidSetNchoRoamScnPeriod(IN struct ADAPTER *prAdapter,
-			IN void *pvSetBuffer, IN uint32_t u4SetBufferLen, OUT uint32_t *pu4SetInfoLen);
+			    IN void *pvSetBuffer,
+			    IN uint32_t u4SetBufferLen,
+			    OUT uint32_t *pu4SetInfoLen);
 
 uint32_t
 wlanoidQueryNchoRoamScnPeriod(IN struct ADAPTER *prAdapter,
-			OUT void *pvQueryBuffer, IN uint32_t u4QueryBufferLen, OUT uint32_t *pu4QueryInfoLen);
+			      OUT void *pvQueryBuffer,
+			      IN uint32_t u4QueryBufferLen,
+			      OUT uint32_t *pu4QueryInfoLen);
 
 uint32_t
 wlanoidSetNchoRoamScnChnl(IN struct ADAPTER *prAdapter,
-			IN void *pvSetBuffer, IN uint32_t u4SetBufferLen, OUT uint32_t *pu4SetInfoLen);
+			  IN void *pvSetBuffer,
+			  IN uint32_t u4SetBufferLen,
+			  OUT uint32_t *pu4SetInfoLen);
 
 uint32_t
 wlanoidQueryNchoRoamScnChnl(IN struct ADAPTER *prAdapter,
-			OUT void *pvQueryBuffer, IN uint32_t u4QueryBufferLen, OUT uint32_t *pu4QueryInfoLen);
+			    OUT void *pvQueryBuffer,
+			    IN uint32_t u4QueryBufferLen,
+			    OUT uint32_t *pu4QueryInfoLen);
 
 uint32_t
 wlanoidSetNchoRoamScnCtrl(IN struct ADAPTER *prAdapter,
-			IN void *pvSetBuffer, IN uint32_t u4SetBufferLen, OUT uint32_t *pu4SetInfoLen);
+			  IN void *pvSetBuffer,
+			  IN uint32_t u4SetBufferLen,
+			  OUT uint32_t *pu4SetInfoLen);
 
 uint32_t
 wlanoidQueryNchoRoamScnCtrl(IN struct ADAPTER *prAdapter,
-			OUT void *pvQueryBuffer, IN uint32_t u4QueryBufferLen, OUT uint32_t *pu4QueryInfoLen);
+			    OUT void *pvQueryBuffer,
+			    IN uint32_t u4QueryBufferLen,
+			    OUT uint32_t *pu4QueryInfoLen);
 
 uint32_t
 wlanoidSetNchoScnChnlTime(IN struct ADAPTER *prAdapter,
-			IN void *pvSetBuffer, IN uint32_t u4SetBufferLen, OUT uint32_t *pu4SetInfoLen);
+			  IN void *pvSetBuffer,
+			  IN uint32_t u4SetBufferLen,
+			  OUT uint32_t *pu4SetInfoLen);
 
 uint32_t
 wlanoidQueryNchoScnChnlTime(IN struct ADAPTER *prAdapter,
-			OUT void *pvQueryBuffer, IN uint32_t u4QueryBufferLen, OUT uint32_t *pu4QueryInfoLen);
+			    OUT void *pvQueryBuffer,
+			    IN uint32_t u4QueryBufferLen,
+			    OUT uint32_t *pu4QueryInfoLen);
 
 uint32_t
 wlanoidSetNchoScnHomeTime(IN struct ADAPTER *prAdapter,
-			IN void *pvSetBuffer, IN uint32_t u4SetBufferLen, OUT uint32_t *pu4SetInfoLen);
+			  IN void *pvSetBuffer,
+			  IN uint32_t u4SetBufferLen,
+			  OUT uint32_t *pu4SetInfoLen);
 
 uint32_t
 wlanoidQueryNchoScnHomeTime(IN struct ADAPTER *prAdapter,
-			OUT void *pvQueryBuffer, IN uint32_t u4QueryBufferLen, OUT uint32_t *pu4QueryInfoLen);
+			    OUT void *pvQueryBuffer,
+			    IN uint32_t u4QueryBufferLen,
+			    OUT uint32_t *pu4QueryInfoLen);
 
 uint32_t
 wlanoidSetNchoScnHomeAwayTime(IN struct ADAPTER *prAdapter,
-			IN void *pvSetBuffer, IN uint32_t u4SetBufferLen, OUT uint32_t *pu4SetInfoLen);
+			      IN void *pvSetBuffer,
+			      IN uint32_t u4SetBufferLen,
+			      OUT uint32_t *pu4SetInfoLen);
 
 uint32_t
-wlanoidQueryNchoScnHomeAwayTime(IN struct ADAPTER *prAdapter,
-			OUT void *pvQueryBuffer, IN uint32_t u4QueryBufferLen, OUT uint32_t *pu4QueryInfoLen);
+wlanoidQueryNchoScnHomeAwayTime(IN struct ADAPTER
+				*prAdapter,
+				OUT void *pvQueryBuffer,
+				IN uint32_t u4QueryBufferLen,
+				OUT uint32_t *pu4QueryInfoLen);
 
 uint32_t
 wlanoidSetNchoScnNprobes(IN struct ADAPTER *prAdapter,
-			IN void *pvSetBuffer, IN uint32_t u4SetBufferLen, OUT uint32_t *pu4SetInfoLen);
+			 IN void *pvSetBuffer,
+			 IN uint32_t u4SetBufferLen,
+			 OUT uint32_t *pu4SetInfoLen);
 
 uint32_t
 wlanoidQueryNchoScnNprobes(IN struct ADAPTER *prAdapter,
-			OUT void *pvQueryBuffer, IN uint32_t u4QueryBufferLen, OUT uint32_t *pu4QueryInfoLen);
+			   OUT void *pvQueryBuffer,
+			   IN uint32_t u4QueryBufferLen,
+			   OUT uint32_t *pu4QueryInfoLen);
 
 uint32_t
 wlanoidGetNchoReassocInfo(IN struct ADAPTER *prAdapter,
-			OUT void *pvQueryBuffer, IN uint32_t u4QueryBufferLen, OUT uint32_t *pu4QueryInfoLen);
+			  OUT void *pvQueryBuffer,
+			  IN uint32_t u4QueryBufferLen,
+			  OUT uint32_t *pu4QueryInfoLen);
 
 uint32_t
 wlanoidSendNchoActionFrameStart(IN struct ADAPTER *prAdapter,
-			IN void *pvSetBuffer, IN uint32_t u4SetBufferLen, OUT uint32_t *pu4SetInfoLen);
+				IN void *pvSetBuffer,
+				IN uint32_t u4SetBufferLen,
+				OUT uint32_t *pu4SetInfoLen);
 
 uint32_t
 wlanoidSendNchoActionFrameEnd(IN struct ADAPTER *prAdapter,
-			IN void *pvSetBuffer, IN uint32_t u4SetBufferLen, OUT uint32_t *pu4SetInfoLen);
+			      IN void *pvSetBuffer,
+			      IN uint32_t u4SetBufferLen,
+			      OUT uint32_t *pu4SetInfoLen);
 
 uint32_t
 wlanoidSetNchoWesMode(IN struct ADAPTER *prAdapter,
-			IN void *pvSetBuffer, IN uint32_t u4SetBufferLen, OUT uint32_t *pu4SetInfoLen);
+		      IN void *pvSetBuffer,
+		      IN uint32_t u4SetBufferLen,
+		      OUT uint32_t *pu4SetInfoLen);
 
 uint32_t
 wlanoidQueryNchoWesMode(IN struct ADAPTER *prAdapter,
-			OUT void *pvQueryBuffer, IN uint32_t u4QueryBufferLen, OUT uint32_t *pu4QueryInfoLen);
+			OUT void *pvQueryBuffer,
+			IN uint32_t u4QueryBufferLen,
+			OUT uint32_t *pu4QueryInfoLen);
 
 uint32_t
 wlanoidSetNchoBand(IN struct ADAPTER *prAdapter,
-			IN void *pvSetBuffer, IN uint32_t u4SetBufferLen, OUT uint32_t *pu4SetInfoLen);
+		   IN void *pvSetBuffer,
+		   IN uint32_t u4SetBufferLen,
+		   OUT uint32_t *pu4SetInfoLen);
 
 uint32_t
 wlanoidQueryNchoBand(IN struct ADAPTER *prAdapter,
-			OUT void *pvQueryBuffer, IN uint32_t u4QueryBufferLen, OUT uint32_t *pu4QueryInfoLen);
+		     OUT void *pvQueryBuffer,
+		     IN uint32_t u4QueryBufferLen,
+		     OUT uint32_t *pu4QueryInfoLen);
 
 uint32_t
 wlanoidSetNchoDfsScnMode(IN struct ADAPTER *prAdapter,
-			IN void *pvSetBuffer, IN uint32_t u4SetBufferLen, OUT uint32_t *pu4SetInfoLen);
+			 IN void *pvSetBuffer,
+			 IN uint32_t u4SetBufferLen,
+			 OUT uint32_t *pu4SetInfoLen);
 
 uint32_t
 wlanoidQueryNchoDfsScnMode(IN struct ADAPTER *prAdapter,
-			OUT void *pvQueryBuffer, IN uint32_t u4QueryBufferLen, OUT uint32_t *pu4QueryInfoLen);
+			   OUT void *pvQueryBuffer,
+			   IN uint32_t u4QueryBufferLen,
+			   OUT uint32_t *pu4QueryInfoLen);
 
 uint32_t
 wlanoidSetNchoEnable(IN struct ADAPTER *prAdapter,
-			IN void *pvSetBuffer, IN uint32_t u4SetBufferLen, OUT uint32_t *pu4SetInfoLen);
+		     IN void *pvSetBuffer,
+		     IN uint32_t u4SetBufferLen,
+		     OUT uint32_t *pu4SetInfoLen);
 
 uint32_t
 wlanoidQueryNchoEnable(IN struct ADAPTER *prAdapter,
-			OUT void *pvQueryBuffer, IN uint32_t u4QueryBufferLen, OUT uint32_t *pu4QueryInfoLen);
+		       OUT void *pvQueryBuffer,
+		       IN uint32_t u4QueryBufferLen,
+		       OUT uint32_t *pu4QueryInfoLen);
 
 #endif /* CFG_SUPPORT_NCHO */
 
 uint32_t
 wlanoidAbortScan(IN struct ADAPTER *prAdapter,
-			OUT void *pvQueryBuffer, IN uint32_t u4QueryBufferLen,
-			OUT uint32_t *pu4QueryInfoLen);
+		 OUT void *pvQueryBuffer,
+		 IN uint32_t u4QueryBufferLen,
+		 OUT uint32_t *pu4QueryInfoLen);
 
 #if (CFG_SUPPORT_TXPOWER_INFO == 1)
 uint32_t
-wlanoidQueryTxPowerInfo(IN struct ADAPTER *prAdapter, IN void *pvSetBuffer, IN uint32_t u4SetBufferLen,
-				OUT uint32_t *pu4SetInfoLen);
+wlanoidQueryTxPowerInfo(IN struct ADAPTER *prAdapter,
+			IN void *pvSetBuffer,
+			IN uint32_t u4SetBufferLen,
+			OUT uint32_t *pu4SetInfoLen);
 #endif
 
-uint32_t wlanoidSetDrvRoamingPolicy(IN struct ADAPTER *prAdapter,
-			IN void *pvSetBuffer, IN uint32_t u4SetBufferLen, OUT uint32_t *pu4SetInfoLen);
+uint32_t wlanoidSetDrvRoamingPolicy(IN struct ADAPTER
+				    *prAdapter,
+				    IN void *pvSetBuffer,
+				    IN uint32_t u4SetBufferLen,
+				    OUT uint32_t *pu4SetInfoLen);
 
 #if CFG_SUPPORT_OSHARE
 uint32_t
 wlanoidSetOshareMode(IN struct ADAPTER *prAdapter,
-		IN void *pvSetBuffer,
-		IN uint32_t u4SetBufferLen,
-		OUT uint32_t *pu4SetInfoLen);
+		     IN void *pvSetBuffer,
+		     IN uint32_t u4SetBufferLen,
+		     OUT uint32_t *pu4SetInfoLen);
 #endif
 
 uint32_t
 wlanoidQueryWifiLogLevelSupport(IN struct ADAPTER *prAdapter,
-		IN void *pvQueryBuffer,
-		IN uint32_t u4QueryBufferLen,
-		OUT uint32_t *pu4QueryInfoLen);
+				IN void *pvQueryBuffer,
+				IN uint32_t u4QueryBufferLen,
+				OUT uint32_t *pu4QueryInfoLen);
 
 uint32_t
 wlanoidQueryWifiLogLevel(IN struct ADAPTER *prAdapter,
-		IN void *pvQueryBuffer,
-		IN uint32_t u4QueryBufferLen,
-		OUT uint32_t *pu4QueryInfoLen);
+			 IN void *pvQueryBuffer,
+			 IN uint32_t u4QueryBufferLen,
+			 OUT uint32_t *pu4QueryInfoLen);
 
 uint32_t
 wlanoidSetWifiLogLevel(IN struct ADAPTER *prAdapter,
-		IN void *pvSetBuffer,
-		IN uint32_t u4SetBufferLen,
-		OUT uint32_t *pu4SetInfoLen);
+		       IN void *pvSetBuffer,
+		       IN uint32_t u4SetBufferLen,
+		       OUT uint32_t *pu4SetInfoLen);
 
 #if CFG_SUPPORT_LOWLATENCY_MODE
 uint32_t
-wlanoidSetLowLatencyMode(IN struct ADAPTER *prAdapter, IN void *pvSetBuffer,
-		IN uint32_t u4SetBufferLen, OUT uint32_t *pu4SetInfoLen);
+wlanoidSetLowLatencyMode(IN struct ADAPTER *prAdapter,
+			 IN void *pvSetBuffer,
+			 IN uint32_t u4SetBufferLen,
+			 OUT uint32_t *pu4SetInfoLen);
 #endif /* CFG_SUPPORT_LOWLATENCY_MODE */
 
 #endif /* _WLAN_OID_H */
