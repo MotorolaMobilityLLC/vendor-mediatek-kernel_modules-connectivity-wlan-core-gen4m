@@ -60,8 +60,8 @@
 
 #include "hif_pdma.h"
 
-#if defined(_HIF_PCIE)
-#define HIF_NAME "PCIE"
+#if defined(_HIF_AXI)
+#define HIF_NAME "AXI"
 #else
 #error "No HIF defined!"
 #endif
@@ -75,11 +75,18 @@
 *                    E X T E R N A L   R E F E R E N C E S
 ********************************************************************************
 */
+#if CFG_MTK_ANDROID_WMT
+struct MTK_WCN_WMT_WLAN_CB_INFO;
+extern phys_addr_t gConEmiPhyBase;
+extern int mtk_wcn_wmt_wlan_reg(struct MTK_WCN_WMT_WLAN_CB_INFO *pWmtWlanCbInfo);
+#endif
 
 /*******************************************************************************
 *                              C O N S T A N T S
 ********************************************************************************
 */
+
+#define AXI_WLAN_IRQ_NUMBER    16
 
 /*******************************************************************************
 *                             D A T A   T Y P E S
@@ -90,10 +97,11 @@
 ** layer info structure.
  */
 struct GL_HIF_INFO {
-	struct pci_dev *pdev;
-	struct pci_dev *prDmaDev;
+	struct platform_device *pdev;
+	struct device *prDmaDev;
+	uint32_t u4IrqId;
 
-	uint8_t *CSRBaseAddress;	/* PCI MMIO Base Address, all access will use */
+	uint8_t *CSRBaseAddress;	/* AXI MMIO Base Address, all access will use */
 
 	/* Shared memory of all 1st pre-allocated
 	 * TxBuf associated with each TXD
@@ -143,6 +151,14 @@ struct BUS_INFO {
 	void (*getMailboxStatus)(struct ADAPTER *prAdapter, uint32_t *pu4Val);
 };
 
+#if CFG_MTK_ANDROID_WMT
+struct MTK_WCN_WMT_WLAN_CB_INFO {
+	int (*wlan_probe_cb)(void);
+	int (*wlan_remove_cb)(void);
+	int (*wlan_bus_cnt_get_cb)(void);
+	int (*wlan_bus_cnt_clr_cb)(void);
+};
+#endif
 
 /*******************************************************************************
 *                            P U B L I C   D A T A
@@ -158,6 +174,12 @@ struct BUS_INFO {
 *                                 M A C R O S
 ********************************************************************************
 */
+
+#define axi_enable_device(d)      (0)
+#define axi_disable_device(d)
+#define axi_resource_start(d, v)  (0x18000000)
+#define axi_resource_len(d, v)    (0x100000)
+#define axi_name(d)               ("AXI-BUS")
 
 /*******************************************************************************
 *                   F U N C T I O N   D E C L A R A T I O N S

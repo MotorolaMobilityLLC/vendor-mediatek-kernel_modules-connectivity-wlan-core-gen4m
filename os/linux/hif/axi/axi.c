@@ -78,49 +78,33 @@
 #include "precomp.h"
 
 #include <linux/mm.h>
+#include <linux/platform_device.h>
+#include <linux/ioport.h>
+#include <linux/interrupt.h>
 #ifndef CONFIG_X86
 #include <asm/memory.h>
 #endif
 
 #include "mt66xx_reg.h"
 
+#include <linux/of_irq.h>
+#include <linux/of_address.h>
+#include <linux/of.h>
+
 /*******************************************************************************
 *                              C O N S T A N T S
 ********************************************************************************
 */
 
-#define MTK_PCI_VENDOR_ID	0x14C3
-#define NIC6632_PCIe_DEVICE_ID	0x6632
-#define NIC7668_PCIe_DEVICE_ID	0x7668
-#define MT7663_PCI_PFGA2_VENDOR_ID	0x0E8D
-#define NIC7663_PCIe_DEVICE_ID	0x7663
-#define CONNAC_PCI_VENDOR_ID	0x0E8D
-#define CONNAC_PCIe_DEVICE_ID	0x3280
-
-static const struct pci_device_id mtk_pci_ids[] = {
-#ifdef MT6632
-	{	PCI_DEVICE(MTK_PCI_VENDOR_ID, NIC6632_PCIe_DEVICE_ID),
-		.driver_data = (kernel_ulong_t)&mt66xx_driver_data_mt6632},
-#endif /* MT6632 */
-#ifdef MT7668
-	{	PCI_DEVICE(MTK_PCI_VENDOR_ID, NIC7668_PCIe_DEVICE_ID),
-		.driver_data = (kernel_ulong_t)&mt66xx_driver_data_mt7668},
-#endif /* MT7668 */
-#ifdef MT7663
-	{	PCI_DEVICE(MTK_PCI_VENDOR_ID, NIC7663_PCIe_DEVICE_ID),
-		.driver_data = (kernel_ulong_t)&mt66xx_driver_data_mt7663},
-	/* For FPGA2 temparay */
-	{	PCI_DEVICE(MT7663_PCI_PFGA2_VENDOR_ID, NIC7663_PCIe_DEVICE_ID),
-		.driver_data = (kernel_ulong_t)&mt66xx_driver_data_mt7663},
-#endif /* MT7663 */
+static const struct platform_device_id mtk_axi_ids[] = {
 #ifdef CONNAC
-	{	PCI_DEVICE(CONNAC_PCI_VENDOR_ID, CONNAC_PCIe_DEVICE_ID),
+	{	.name = "CONNAC",
 		.driver_data = (kernel_ulong_t)&mt66xx_driver_data_connac},
 #endif /* CONNAC */
 	{ /* end: all zeroes */ },
 };
 
-MODULE_DEVICE_TABLE(pci, mtk_pci_ids);
+MODULE_DEVICE_TABLE(axi, mtk_axi_ids);
 
 /*******************************************************************************
 *                             D A T A   T Y P E S
@@ -136,18 +120,24 @@ MODULE_DEVICE_TABLE(pci, mtk_pci_ids);
 *                           P R I V A T E   D A T A
 ********************************************************************************
 */
+static struct platform_device *prPlatDev;
 static probe_card pfWlanProbe;
 static remove_card pfWlanRemove;
 
-static struct pci_driver mtk_pci_driver = {
-	.name = "wlan",
-	.id_table = mtk_pci_ids,
+static struct platform_driver mtk_axi_driver = {
+	.driver = {
+		.name = "wlan",
+		.owner = THIS_MODULE,
+	},
+	.id_table = mtk_axi_ids,
 	.probe = NULL,
 	.remove = NULL,
 };
 
+static uint8_t *CSRBaseAddress;
 static u_int8_t g_fgDriverProbed = FALSE;
 static uint32_t g_u4DmaMask = 32;
+
 /*******************************************************************************
 *                                 M A C R O S
 ********************************************************************************
@@ -163,25 +153,77 @@ static uint32_t g_u4DmaMask = 32;
 ********************************************************************************
 */
 
+static int hifAxiProbe(void)
+{
+	struct mt66xx_chip_info *prChipInfo;
+	int ret = 0;
+
+	ASSERT(prPlatDev);
+
+	ret = axi_enable_device(prPlatDev);
+	if (ret) {
+		DBGLOG(INIT, INFO, "axi_enable_device failed!\n");
+		goto out;
+	}
+
+	DBGLOG(INIT, INFO, "axi_enable_device done!\n");
+
+	DBGLOG(INIT, INFO, "driver.name = %s\n", prPlatDev->id_entry->name);
+
+	if (pfWlanProbe((void *)prPlatDev,
+			(void *)prPlatDev->id_entry->driver_data) != WLAN_STATUS_SUCCESS) {
+		DBGLOG(INIT, INFO, "pfWlanProbe fail!call pfWlanRemove()\n");
+		pfWlanRemove();
+		ret = -1;
+		goto out;
+	}
+
+	prChipInfo = ((struct mt66xx_hif_driver_data *)mtk_axi_ids[0].driver_data)->chip_info;
+	g_fgDriverProbed = TRUE;
+	g_u4DmaMask = prChipInfo->bus_info->u4DmaMask;
+out:
+	DBGLOG(INIT, INFO, "hifAxiProbe() done(%d)\n", ret);
+
+	return ret;
+}
+
+static int hifAxiRemove(void)
+{
+	ASSERT(prPlatDev);
+
+	if (g_fgDriverProbed)
+		pfWlanRemove();
+	DBGLOG(INIT, INFO, "pfWlanRemove done\n");
+
+	/* Unmap CSR base address */
+	iounmap(CSRBaseAddress);
+
+	/* release memory region */
+	release_mem_region(axi_resource_start(prPlatDev, 0),
+			   axi_resource_len(prPlatDev, 0));
+
+	axi_disable_device(prPlatDev);
+	DBGLOG(INIT, INFO, "hifAxiRemove() done\n");
+	return 0;
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief This function is a PCIE interrupt callback function
+* \brief This function is a AXI interrupt callback function
 *
-* \param[in] func  pointer to PCIE handle
+* \param[in] func  pointer to AXI handle
 *
 * \return void
 */
 /*----------------------------------------------------------------------------*/
-static uint8_t *CSRBaseAddress;
-
-static irqreturn_t mtk_pci_interrupt(int irq, void *dev_instance)
+static irqreturn_t mtk_axi_interrupt(int irq, void *dev_instance)
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
 	uint32_t u4RegValue;
 
-	prGlueInfo = (struct GLUE_INFO *) dev_instance;
+	prGlueInfo = (struct GLUE_INFO *)dev_instance;
 	if (!prGlueInfo) {
-		DBGLOG(HAL, INFO, "No glue info in mtk_pci_interrupt()\n");
+		DBGLOG(HAL, INFO, "No glue info in mtk_axi_interrupt()\n");
 		return IRQ_NONE;
 	}
 
@@ -196,7 +238,7 @@ static irqreturn_t mtk_pci_interrupt(int irq, void *dev_instance)
 		return IRQ_NONE;
 	}
 
-	DBGLOG(HAL, TRACE, "%s INT[0x%08x]\n", __func__, u4RegValue);
+	DBGLOG(HAL, INFO, "%s INT[0x%08x]\n", __func__, u4RegValue);
 
 	kalSetIntEvent(prGlueInfo);
 
@@ -205,71 +247,44 @@ static irqreturn_t mtk_pci_interrupt(int irq, void *dev_instance)
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief This function is a PCIE probe function
+* \brief This function is a AXI probe function
 *
-* \param[in] func   pointer to PCIE handle
-* \param[in] id     pointer to PCIE device id table
+* \param[in] func   pointer to AXI handle
+* \param[in] id     pointer to AXI device id table
 *
 * \return void
 */
 /*----------------------------------------------------------------------------*/
-static int mtk_pci_probe(struct pci_dev *pdev, const struct pci_device_id *id)
+static int mtk_axi_probe(IN struct platform_device *pdev)
 {
-	int ret = 0;
+#if CFG_MTK_ANDROID_WMT
+	struct MTK_WCN_WMT_WLAN_CB_INFO rWmtCb;
 
-	ASSERT(pdev);
-	ASSERT(id);
+	rWmtCb.wlan_probe_cb = hifAxiProbe;
+	rWmtCb.wlan_remove_cb = hifAxiRemove;
+	mtk_wcn_wmt_wlan_reg(&rWmtCb);
+#else
+	hifAxiProbe();
+#endif
+	DBGLOG(INIT, INFO, "mtk_axi_probe() done\n");
 
-	ret = pci_enable_device(pdev);
-
-	if (ret) {
-		DBGLOG(INIT, INFO, "pci_enable_device failed!\n");
-		goto out;
-	}
-
-	DBGLOG(INIT, INFO, "pci_enable_device done!\n");
-
-	if (pfWlanProbe((void *) pdev, (void *) id->driver_data) != WLAN_STATUS_SUCCESS) {
-		DBGLOG(INIT, INFO, "pfWlanProbe fail!call pfWlanRemove()\n");
-		pfWlanRemove();
-		ret = -1;
-	} else {
-		struct mt66xx_chip_info *prChipInfo;
-
-		prChipInfo = ((struct mt66xx_hif_driver_data *)id->driver_data)->chip_info;
-		g_fgDriverProbed = TRUE;
-		g_u4DmaMask = prChipInfo->bus_info->u4DmaMask;
-	}
-out:
-	DBGLOG(INIT, INFO, "mtk_pci_probe() done(%d)\n", ret);
-
-	return ret;
+	return 0;
 }
 
-static void mtk_pci_remove(struct pci_dev *pdev)
+static int mtk_axi_remove(IN struct platform_device *pdev)
 {
-	ASSERT(pdev);
-
-	if (g_fgDriverProbed)
-		pfWlanRemove();
-	DBGLOG(INIT, INFO, "pfWlanRemove done\n");
-
-	/* Unmap CSR base address */
-	iounmap(CSRBaseAddress);
-
-	/* release memory region */
-	pci_release_regions(pdev);
-
-	pci_disable_device(pdev);
-	DBGLOG(INIT, INFO, "mtk_pci_remove() done\n");
+#if !CFG_MTK_ANDROID_WMT
+	hifAxiRemove();
+#endif
+	return 0;
 }
 
-static int mtk_pci_suspend(struct pci_dev *pdev, pm_message_t state)
+static int mtk_axi_suspend(IN struct platform_device *pdev, IN pm_message_t state)
 {
 	return 0;
 }
 
-int mtk_pci_resume(struct pci_dev *pdev)
+int mtk_axi_resume(IN struct platform_device *pdev)
 {
 	return 0;
 }
@@ -294,14 +309,22 @@ uint32_t glRegisterBus(probe_card pfProbe, remove_card pfRemove)
 	pfWlanProbe = pfProbe;
 	pfWlanRemove = pfRemove;
 
-	mtk_pci_driver.probe = mtk_pci_probe;
-	mtk_pci_driver.remove = mtk_pci_remove;
+	mtk_axi_driver.probe = mtk_axi_probe;
+	mtk_axi_driver.remove = mtk_axi_remove;
 
-	mtk_pci_driver.suspend = mtk_pci_suspend;
-	mtk_pci_driver.resume = mtk_pci_resume;
+	mtk_axi_driver.suspend = mtk_axi_suspend;
+	mtk_axi_driver.resume = mtk_axi_resume;
 
-	ret = (pci_register_driver(&mtk_pci_driver) == 0) ? WLAN_STATUS_SUCCESS : WLAN_STATUS_FAILURE;
+	ret = (platform_driver_register(&mtk_axi_driver) == 0) ? WLAN_STATUS_SUCCESS : WLAN_STATUS_FAILURE;
+	DBGLOG(INIT, INFO, "platform_driver_register ret = %d\n", ret);
+	DBGLOG(INIT, INFO, "bus_type = %s\n", mtk_axi_driver.driver.bus->name);
+	if (!ret)
+		ret = ((prPlatDev = platform_device_alloc("CONNAC", -1)) != NULL)
+			? WLAN_STATUS_SUCCESS : WLAN_STATUS_FAILURE;
 
+	DBGLOG(INIT, INFO, "platform_device_alloc ret = %d\n", ret);
+	ret = (platform_device_add(prPlatDev) == 0) ? WLAN_STATUS_SUCCESS : WLAN_STATUS_FAILURE;
+	DBGLOG(INIT, INFO, "platform_device_add ret = %d\n", ret);
 	return ret;
 }
 
@@ -320,7 +343,9 @@ void glUnregisterBus(remove_card pfRemove)
 		pfRemove();
 		g_fgDriverProbed = FALSE;
 	}
-	pci_unregister_driver(&mtk_pci_driver);
+	if (prPlatDev)
+		platform_device_del(prPlatDev);
+	platform_driver_unregister(&mtk_axi_driver);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -339,18 +364,18 @@ void glSetHifInfo(struct GLUE_INFO *prGlueInfo, unsigned long ulCookie)
 
 	prHif = &prGlueInfo->rHifInfo;
 
-	prHif->pdev = (struct pci_dev *)ulCookie;
-	prHif->prDmaDev = prHif->pdev;
+	prHif->pdev = (struct platform_device *)ulCookie;
+	prHif->prDmaDev = &prHif->pdev->dev;
 
 	prHif->CSRBaseAddress = CSRBaseAddress;
 
-	pci_set_drvdata(prHif->pdev, prGlueInfo);
+	platform_set_drvdata(prHif->pdev, prGlueInfo);
 
 	SET_NETDEV_DEV(prGlueInfo->prDevHandler, &prHif->pdev->dev);
 
 	spin_lock_init(&prHif->rDynMapRegLock);
 
-	prGlueInfo->u4InfType = MT_DEV_INF_PCIE;
+	prGlueInfo->u4InfType = MT_DEV_INF_AXI;
 
 	prHif->rErrRecoveryCtl.eErrRecovState = ERR_RECOV_STOP_IDLE;
 	prHif->rErrRecoveryCtl.u4Status = 0;
@@ -409,43 +434,44 @@ void glClearHifInfo(struct GLUE_INFO *prGlueInfo)
 /*----------------------------------------------------------------------------*/
 u_int8_t glBusInit(void *pvData)
 {
+	struct platform_device *pdev = NULL;
+	u64 required_mask;
+	u64 dma_mask = DMA_BIT_MASK(g_u4DmaMask);
 	int ret = 0;
-	struct pci_dev *pdev = NULL;
 
 	ASSERT(pvData);
 
-	pdev = (struct pci_dev *)pvData;
+	pdev = (struct platform_device *)pvData;
+	required_mask = dma_get_required_mask(&pdev->dev);
+	DBGLOG(INIT, INFO, "pdev = %x, name = %s, required_mask = %ld, sizeof(dma_addr_t) = %d\n",
+	       pdev, pdev->id_entry->name, required_mask, sizeof(dma_addr_t));
+	pdev->dev.dma_mask = &dma_mask;
 
-	ret = pci_set_dma_mask(pdev, DMA_BIT_MASK(g_u4DmaMask));
-	if (ret != 0) {
+	ret = dma_set_mask(&pdev->dev, dma_mask);
+	if (ret != 0)
 		DBGLOG(INIT, INFO, "set DMA mask failed!errno=%d\n", ret);
-		return FALSE;
-	}
 
-	ret = pci_request_regions(pdev, pci_name(pdev));
-	if (ret != 0) {
-		DBGLOG(INIT, INFO, "Request PCI resource failed, errno=%d!\n", ret);
-	}
+	request_mem_region(axi_resource_start(pdev, 0), axi_resource_len(pdev, 0), axi_name(pdev));
 
 	/* map physical address to virtual address for accessing register */
-	CSRBaseAddress = (uint8_t *) ioremap(pci_resource_start(pdev, 0), pci_resource_len(pdev, 0));
+	CSRBaseAddress = (uint8_t *)ioremap_nocache(axi_resource_start(pdev, 0), axi_resource_len(pdev, 0));
+	DBGLOG(INIT, INFO, "CSRBaseAddress:0x%lX\n", CSRBaseAddress);
 	DBGLOG(INIT, INFO, "ioremap for device %s, region 0x%lX @ 0x%lX\n",
-		pci_name(pdev), (unsigned long) pci_resource_len(pdev, 0), (unsigned long) pci_resource_start(pdev, 0));
+		axi_name(pdev), (unsigned long)axi_resource_len(pdev, 0),
+	       (unsigned long)axi_resource_start(pdev, 0));
 	if (!CSRBaseAddress) {
 		DBGLOG(INIT, INFO, "ioremap failed for device %s, region 0x%lX @ 0x%lX\n",
-			pci_name(pdev), (unsigned long) pci_resource_len(pdev, 0), (unsigned long) pci_resource_start(pdev, 0));
+			axi_name(pdev), (unsigned long)axi_resource_len(pdev, 0),
+		       (unsigned long)axi_resource_start(pdev, 0));
 		goto err_out_free_res;
 	}
-
-	/* Set DMA master */
-	pci_set_master(pdev);
 
 	return TRUE;
 
 err_out_free_res:
-	pci_release_regions(pdev);
+	release_mem_region(axi_resource_start(pdev, 0), axi_resource_len(pdev, 0));
 
-	pci_disable_device(pdev);
+	axi_disable_device(pdev);
 
 	return FALSE;
 }
@@ -475,13 +501,14 @@ void glBusRelease(void *pvData)
 *         NEGATIVE_VALUE   if fail
 */
 /*----------------------------------------------------------------------------*/
+
 int32_t glBusSetIrq(void *pvData, void *pfnIsr, void *pvCookie)
 {
-	struct BUS_INFO *prBusInfo;
+	struct device_node *node = NULL;
 	struct net_device *prNetDevice = NULL;
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct GL_HIF_INFO *prHifInfo = NULL;
-	struct pci_dev *pdev = NULL;
+	struct platform_device *pdev = NULL;
 	int ret = 0;
 
 	ASSERT(pvData);
@@ -494,16 +521,23 @@ int32_t glBusSetIrq(void *pvData, void *pfnIsr, void *pvCookie)
 	if (!prGlueInfo)
 		return -1;
 
-	prBusInfo = prGlueInfo->prAdapter->chip_info->bus_info;
-
 	prHifInfo = &prGlueInfo->rHifInfo;
 	pdev = prHifInfo->pdev;
 
-	ret = request_irq(pdev->irq, mtk_pci_interrupt, IRQF_SHARED, prNetDevice->name, prGlueInfo);
+	DBGLOG(INIT, INFO, "glBusSetIrq: request_irq  STATUS(%d)\n", ret);
+	node = of_find_compatible_node(NULL, NULL, "mediatek,wifi");
+	if (node) {
+		prHifInfo->u4IrqId = irq_of_parse_and_map(node, 0);
+		DBGLOG(INIT, INFO, "WIFI-OF: get wifi irq(%d)\n", prHifInfo->u4IrqId);
+	} else {
+		prHifInfo->u4IrqId = AXI_WLAN_IRQ_NUMBER;
+		DBGLOG(INIT, ERROR, "WIFI-OF: get wifi device node fail\n");
+	}
+
+	ret = request_irq(prHifInfo->u4IrqId, mtk_axi_interrupt, IRQF_SHARED, prNetDevice->name, prGlueInfo);
+	DBGLOG(INIT, INFO, "glBusSetIrq: request_irq  STATUS(%d)\n", ret);
 	if (ret != 0)
 		DBGLOG(INIT, INFO, "glBusSetIrq: request_irq  ERROR(%d)\n", ret);
-	else if (prBusInfo->fgInitPCIeInt)
-		HAL_MCR_WR(prGlueInfo->prAdapter, MT_PCIE_IRQ_ENABLE, 1);
 
 	return ret;
 }
@@ -523,7 +557,7 @@ void glBusFreeIrq(void *pvData, void *pvCookie)
 	struct net_device *prNetDevice = NULL;
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct GL_HIF_INFO *prHifInfo = NULL;
-	struct pci_dev *pdev = NULL;
+	struct platform_device *pdev = NULL;
 
 	ASSERT(pvData);
 	if (!pvData) {
@@ -541,8 +575,8 @@ void glBusFreeIrq(void *pvData, void *pvCookie)
 	prHifInfo = &prGlueInfo->rHifInfo;
 	pdev = prHifInfo->pdev;
 
-	synchronize_irq(pdev->irq);
-	free_irq(pdev->irq, prGlueInfo);
+	synchronize_irq(prHifInfo->u4IrqId);
+	free_irq(prHifInfo->u4IrqId, prGlueInfo);
 }
 
 u_int8_t glIsReadClearReg(uint32_t u4Address)
@@ -556,7 +590,7 @@ void glSetPowerState(IN struct GLUE_INFO *prGlueInfo, IN uint32_t ePowerMode)
 
 void glGetDev(void *ctx, struct device **dev)
 {
-	*dev = &((struct pci_dev *)ctx)->dev;
+	*dev = &((struct platform_device *)ctx)->dev;
 }
 
 void glGetHifDev(struct GL_HIF_INFO *prHif, struct device **dev)

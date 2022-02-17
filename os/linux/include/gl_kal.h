@@ -841,6 +841,28 @@ do { \
 		(_Interval) += KAL_GET_TIME_INTERVAL(); \
 	}
 
+#if defined(_HIF_PCIE)
+#define KAL_DMA_TO_DEVICE	PCI_DMA_TODEVICE
+#define KAL_DMA_FROM_DEVICE	PCI_DMA_FROMDEVICE
+
+#define KAL_DMA_ALLOC_COHERENT(_dev, _size, _handle)           pci_alloc_consistent(_dev, _size, _handle)
+#define KAL_DMA_FREE_COHERENT(_dev, _size, _addr, _handle)     pci_free_consistent(_dev, _size, _addr, _handle)
+#define KAL_DMA_MAP_SINGLE(_dev, _ptr, _size, _dir)            pci_map_single(_dev, _ptr, _size, _dir)
+#define KAL_DMA_UNMAP_SINGLE(_dev, _addr, _size, _dir)         pci_unmap_single(_dev, _addr, _size, _dir)
+#define KAL_DMA_MAPPING_ERROR(_dev, _addr)                     pci_dma_mapping_error(_dev, _addr)
+#else
+#define KAL_DMA_TO_DEVICE	DMA_TO_DEVICE
+#define KAL_DMA_FROM_DEVICE	DMA_FROM_DEVICE
+
+#define KAL_DMA_ALLOC_COHERENT(_dev, _size, _handle)           dma_alloc_coherent(_dev, _size, _handle, GFP_ATOMIC)
+#define KAL_DMA_FREE_COHERENT(_dev, _size, _addr, _handle)     dma_free_coherent(_dev, _size, _addr, _handle)
+#define KAL_DMA_MAP_SINGLE(_dev, _ptr, _size, _dir)            dma_map_single(_dev, _ptr, _size, _dir)
+#define KAL_DMA_UNMAP_SINGLE(_dev, _addr, _size, _dir)         dma_unmap_single(_dev, _addr, _size, _dir)
+#define KAL_DMA_MAPPING_ERROR(_dev, _addr)                     dma_mapping_error(_dev, _addr)
+#endif
+
+#define KAL_FLUSH_DCACHE                     connectivity_inner_flush_dcache_all
+
 /*----------------------------------------------------------------------------*/
 /* Macros of show stack operations for using in Driver Layer                  */
 /*----------------------------------------------------------------------------*/
