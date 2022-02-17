@@ -1517,27 +1517,22 @@ void cnmDumpStaRec(IN struct ADAPTER *prAdapter, IN uint8_t ucStaRecIdx)
 		prStaRec->aucRxMcsBitmask[1]);
 
 #if (CFG_SUPPORT_802_11AX == 1)
-	log_dbg(SW4, INFO, "[HeMacCap]\n");
-	DBGLOG_MEM8(SW4, INFO, prStaRec->ucHeMacCapInfo,
-		sizeof(prStaRec->ucHeMacCapInfo));
-	log_dbg(SW4, INFO, "[HePhyCap]\n");
-	DBGLOG_MEM8(SW4, INFO, prStaRec->ucHePhyCapInfo,
-		sizeof(prStaRec->ucHePhyCapInfo));
+	log_dbg(SW4, INFO, "[HeMacCap][0x%012llx],[HePhyCap][0x%06x%016llx]\n",
+		(*(uint64_t *)(prStaRec->ucHeMacCapInfo)) & BITS(0, 48),
+		(*(uint32_t *)(prStaRec->ucHePhyCapInfo + 8)) & BITS(0, 24),
+		(*(uint64_t *)(prStaRec->ucHePhyCapInfo)));
 #endif
 #if (CFG_SUPPORT_802_11BE == 1)
-	log_dbg(SW4, INFO, "[EhtMacCap]\n");
-	DBGLOG_MEM8(SW4, INFO, prStaRec->ucEhtMacCapInfo,
-		sizeof(prStaRec->ucEhtMacCapInfo));
-	log_dbg(SW4, INFO, "[EhtPhyCap]\n");
-	DBGLOG_MEM8(SW4, INFO, prStaRec->ucEhtPhyCapInfo,
-		sizeof(prStaRec->ucEhtPhyCapInfo));
-#endif
+	log_dbg(SW4, INFO, "[EhtMacCap][0x%04x],[EhtPhyCap][0x%016llx]\n",
+		(*(uint16_t *)(prStaRec->ucEhtMacCapInfo)),
+		(*(uint64_t *)(prStaRec->ucEhtPhyCapInfo)));
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	log_dbg(SW4, INFO, "[MldStaIndex][%u], [LinkIndex][%u], [TidBitmap][%u], [MldAddr][" MACSTR "]\n",
 		prStaRec->ucMldStaIndex,
 		prStaRec->ucLinkIndex,
 		prStaRec->ucTidBitmap,
 		MAC2STR(prStaRec->aucMldAddr));
+#endif
 #endif
 
 	for (i = 0; i < CFG_RX_MAX_BA_TID_NUM; i++) {

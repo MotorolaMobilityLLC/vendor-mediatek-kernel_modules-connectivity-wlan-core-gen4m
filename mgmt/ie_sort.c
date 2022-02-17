@@ -1095,8 +1095,10 @@ void sortIE(IN struct ADAPTER *prAdapter,
 	pucBuf = (uint8_t *)prMsduInfo->prPacket + offset;
 	u2IEsBufLen = prMsduInfo->u2FrameLength - offset;
 
-	DBGLOG(TX, INFO, "%s IE, length = %d\n", pucIeDesc, u2IEsBufLen);
+#if DBG
+	DBGLOG(TX, LOUD, "%s IE, length = %d\n", pucIeDesc, u2IEsBufLen);
 	dumpMemory8(pucBuf, u2IEsBufLen);
+#endif
 
 	/* prepare ie info table */
 	IE_FOR_EACH(pucBuf, u2IEsBufLen, u2Offset) {
@@ -1118,7 +1120,7 @@ void sortIE(IN struct ADAPTER *prAdapter,
 	/* compose IE by sorted ie table */
 	pucBuf = pucDst = (uint8_t *) prMsduInfoInOrder->prPacket;
 	for (i = 0; i < num; i++) {
-		DBGLOG(TX, INFO, "#%d: IE(%d, %d) size=%d\n",
+		DBGLOG(TX, TRACE, "#%d: IE(%d, %d) size=%d\n",
 			apu2OrderTable[info[i].eid + info[i].extid],
 			info[i].eid, info[i].extid, info[i].size);
 
@@ -1132,8 +1134,10 @@ void sortIE(IN struct ADAPTER *prAdapter,
 
 	ASSERT(pucBuf - pucDst == u2IEsBufLen);
 
+#if DBG
 	DBGLOG(TX, INFO, "Sorted %s IE, length = %d\n", pucIeDesc, u2IEsBufLen);
 	dumpMemory8(pucDst, u2IEsBufLen);
+#endif
 
 	/* copy ordered frame back to prMsduInfo */
 	kalMemCopy((uint8_t *) prMsduInfo->prPacket + offset,
