@@ -6819,6 +6819,11 @@ u_int8_t kalParseRandomMac(const struct net_device *ndev,
 		return TRUE;
 	}
 
+	if (pucMacAddr)
+		COPY_MAC_ADDR(ucMacAddr, pucMacAddr);
+	else
+		eth_zero_addr(ucMacAddr);
+
 	if (prBssInfo->fgIsScanOuiSet) {
 		kalMemCopy(ucMacAddr, prBssInfo->ucScanOui, MAC_OUI_LEN);
 		kalMemSet(pucMacAddrMask, 0xFF, MAC_OUI_LEN);
