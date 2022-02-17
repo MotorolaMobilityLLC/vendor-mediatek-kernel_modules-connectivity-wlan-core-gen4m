@@ -9695,6 +9695,10 @@ int priv_driver_set_country(IN struct net_device *prNetDev,
 	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
 	DBGLOG(REQ, LOUD, "argc is %i\n", i4Argc);
 
+#define MIN_ARGC_OF_SET_COUNTRY_CMD 2
+	if (i4Argc < MIN_ARGC_OF_SET_COUNTRY_CMD)
+		return -1;
+
 	if (regd_is_single_sku_en()) {
 		uint8_t aucCountry_code[4] = {0, 0, 0, 0};
 		uint8_t i, count;
@@ -9706,29 +9710,26 @@ int priv_driver_set_country(IN struct net_device *prNetDev,
 		for (i = 0; i < count; i++)
 			aucCountry_code[i] = apcArgv[1][i];
 
-
 		rStatus = kalIoctl(prGlueInfo, wlanoidSetCountryCode,
-				   &aucCountry_code[0], count,
-				   FALSE, FALSE, TRUE, &u4BufLen);
+				 &aucCountry_code[0], count,
+				 FALSE, FALSE, TRUE, &u4BufLen);
 		if (rStatus != WLAN_STATUS_SUCCESS)
 			return -1;
 
 		return 0;
 	}
 
+	/* command like "COUNTRY US", "COUNTRY EU" and "COUNTRY JP" */
+	aucCountry[0] = apcArgv[1][0];
+	aucCountry[1] = apcArgv[1][1];
 
-	if (i4Argc >= 2) {
-		/* command like "COUNTRY US", "COUNTRY EU" and "COUNTRY JP" */
-		aucCountry[0] = apcArgv[1][0];
-		aucCountry[1] = apcArgv[1][1];
+	rStatus = kalIoctl(prGlueInfo, wlanoidSetCountryCode,
+			   &aucCountry[0], 2, FALSE, FALSE, TRUE,
+			   &u4BufLen);
 
-		rStatus = kalIoctl(prGlueInfo, wlanoidSetCountryCode,
-				   &aucCountry[0], 2, FALSE, FALSE, TRUE,
-				   &u4BufLen);
+	if (rStatus != WLAN_STATUS_SUCCESS)
+		return -1;
 
-		if (rStatus != WLAN_STATUS_SUCCESS)
-			return -1;
-	}
 	return 0;
 }
 
