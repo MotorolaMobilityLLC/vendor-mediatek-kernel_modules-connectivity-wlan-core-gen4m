@@ -7217,6 +7217,8 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 		prWifiVar->ucStaHeSuBfer = (uint8_t) wlanCfgGetUint32(prAdapter,
 					"StaHESUBfer", FEATURE_DISABLED);
 	}
+	prWifiVar->ucHeOMCtrl = (uint8_t) wlanCfgGetUint32(prAdapter,
+					"HeOMCtrl", FEATURE_ENABLED);
 #endif
 
 	/* 0: disabled
