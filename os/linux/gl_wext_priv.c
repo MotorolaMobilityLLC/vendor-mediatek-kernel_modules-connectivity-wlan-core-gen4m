@@ -8269,7 +8269,7 @@ static int priv_driver_sniffer(IN struct net_device *prNetDev,
 	kalMemZero(&rSniffer,
 		sizeof(struct PARAM_CUSTOM_ICS_SNIFFER_INFO_STRUCT));
 	i4Recv = sscanf(this_char,
-		"%d-%d-%d-%d-%x-%d-%d-%d-%d-%d",
+		"%hhu-%hhu-%hhu-%hhu-%hx-%hd-%hd-%hd-%hd-%hd",
 		&(rSniffer.ucModule),
 		&(rSniffer.ucAction),
 		&(rSniffer.ucFilter),
