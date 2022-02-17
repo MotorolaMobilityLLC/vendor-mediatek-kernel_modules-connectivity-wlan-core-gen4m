@@ -4093,18 +4093,7 @@ uint32_t nicRxProcessActionFrame(IN struct ADAPTER *
 		break;
 #endif
 	case CATEGORY_PUBLIC_ACTION:
-#if 0				/* CFG_SUPPORT_802_11W */
-		/* Sigma */
-#else
-		if (prBssInfo &&
-		    IS_BSS_AIS(prBssInfo)) {
-			aisFuncValidateRxActionFrame(prAdapter, prSwRfb);
-		}
-#endif
-
-		if (prBssInfo &&
-		    IS_BSS_AIS(prBssInfo))
-			aisFuncValidateRxActionFrame(prAdapter, prSwRfb);
+		aisFuncValidateRxActionFrame(prAdapter, prSwRfb);
 #if CFG_ENABLE_WIFI_DIRECT
 		if (prAdapter->fgIsP2PRegistered) {
 			rlmProcessPublicAction(prAdapter, prSwRfb);
