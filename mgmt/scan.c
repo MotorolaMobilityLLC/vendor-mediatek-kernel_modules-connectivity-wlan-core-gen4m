@@ -577,6 +577,11 @@ VOID scanSearchBssDescOfRoamSsid(IN P_ADAPTER_T prAdapter)
 	UINT_32	u4SameSSIDCount = 0;
 
 	prAisBssInfo = prAdapter->prAisBssInfo;
+
+	/* XXX: wlan0(AP mode) + p2p0 occurs exception. */
+	if (prAisBssInfo == NULL)
+		return;
+
 	prScanInfo = &(prAdapter->rWifiVar.rScanInfo);
 	prBSSDescList = &prScanInfo->rBSSDescList;
 
@@ -1909,7 +1914,9 @@ WLAN_STATUS scanProcessBeaconAndProbeResp(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_
 	if (prBssDesc) {
 #if CFG_SUPPORT_BEACON_CHANGE_DETECTION
 		/* 4 <1.1> Beacon Change Detection for Connected BSS */
-		if (prAisBssInfo->eConnectionState == PARAM_MEDIA_STATE_CONNECTED &&
+		if ((prAisBssInfo != NULL) &&
+		    (prAisBssInfo->eConnectionState ==
+		     PARAM_MEDIA_STATE_CONNECTED) &&
 		    ((prBssDesc->eBSSType == BSS_TYPE_INFRASTRUCTURE && prConnSettings->eOPMode != NET_TYPE_IBSS)
 		     || (prBssDesc->eBSSType == BSS_TYPE_IBSS && prConnSettings->eOPMode != NET_TYPE_INFRA))
 		    && EQUAL_MAC_ADDR(prBssDesc->aucBSSID, prAisBssInfo->aucBSSID)
@@ -1927,7 +1934,9 @@ WLAN_STATUS scanProcessBeaconAndProbeResp(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_
 		}
 #endif
 		/* 4 <1.1> Update AIS_BSS_INFO */
-		if (((prBssDesc->eBSSType == BSS_TYPE_INFRASTRUCTURE && prConnSettings->eOPMode != NET_TYPE_IBSS)
+		if ((prAisBssInfo != NULL) &&
+		    (((prBssDesc->eBSSType == BSS_TYPE_INFRASTRUCTURE) &&
+		      (prConnSettings->eOPMode != NET_TYPE_IBSS))
 		     || (prBssDesc->eBSSType == BSS_TYPE_IBSS && prConnSettings->eOPMode != NET_TYPE_INFRA))) {
 			if (prAisBssInfo->eConnectionState == PARAM_MEDIA_STATE_CONNECTED) {
 

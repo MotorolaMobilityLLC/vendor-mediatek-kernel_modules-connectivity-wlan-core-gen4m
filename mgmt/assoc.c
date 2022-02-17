@@ -1550,7 +1550,11 @@ WLAN_STATUS assocSendReAssocRespFrame(IN P_ADAPTER_T prAdapter, IN P_STA_RECORD_
 		return WLAN_STATUS_RESOURCES;
 	}
 	/* 4 <2> Compose (Re)Association Request frame header and fixed fields in MSDU_INfO_T. */
-	ASSERT(prStaRec->ucBssIndex != prAdapter->prAisBssInfo->ucBssIndex);
+	if (prAdapter->prAisBssInfo != NULL) {
+		ASSERT(prStaRec->ucBssIndex !=
+				prAdapter->prAisBssInfo->ucBssIndex);
+	}
+
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prStaRec->ucBssIndex);
 
 	/* Compose Header and Fixed Field */
