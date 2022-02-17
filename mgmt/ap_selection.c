@@ -515,7 +515,8 @@ static u_int8_t scanSanityCheckBssDesc(struct ADAPTER *prAdapter,
 	for (i = 0; i < disallow->u4NumBssDisallowed; ++i) {
 		uint32_t index = i * MAC_ADDR_LEN;
 
-		if (EQUAL_MAC_ADDR(prBssDesc->aucBSSID, &disallow[index])) {
+		if (EQUAL_MAC_ADDR(prBssDesc->aucBSSID,
+				&disallow->aucList[index])) {
 			log_dbg(SCN, WARN, MACSTR" disallowed list\n",
 				MAC2STR(prBssDesc->aucBSSID));
 			return FALSE;
