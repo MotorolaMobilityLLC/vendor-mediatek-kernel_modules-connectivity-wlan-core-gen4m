@@ -162,6 +162,18 @@ void kal_virt_get_int_status(struct ADAPTER *ad, uint32_t *status)
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
 }
 
+void kal_virt_uhw_rd(struct ADAPTER *ad, uint32_t u4Offset, uint32_t *pu4Value,
+		     u_int8_t *pfgSts)
+{
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
+}
+
+void kal_virt_uhw_wr(struct ADAPTER *ad, uint32_t u4Offset, uint32_t u4Value,
+		     u_int8_t *pfgSts)
+{
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
+}
+
 /* the following functions are defined in include/nic/hal.h
  * need to be implemented directly in os/hif
  */

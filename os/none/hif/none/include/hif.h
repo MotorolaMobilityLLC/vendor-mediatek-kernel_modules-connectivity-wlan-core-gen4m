@@ -261,4 +261,28 @@ void kal_virt_enable_fwdl(struct ADAPTER *ad, bool enable);
  * not: implementation for different HIF may refer to nic/hal.h
  */
 void kal_virt_get_int_status(struct ADAPTER *ad, uint32_t *status);
+
+/*
+ * kal_virt_uhw_rd: read chip CR via USB UHW.
+ * @ad: structure for adapter private data
+ * @u4Offset: CR address
+ * @pu4Value: return CR value
+ * @pfgSts: return TRUE if IO operation is successful; otherwise, return FALSE
+ *
+ * note: implementation for different HIF may refer to nic/hal.h
+ */
+void kal_virt_uhw_rd(struct ADAPTER *ad, uint32_t u4Offset, uint32_t *pu4Value,
+		     u_int8_t *pfgSts);
+
+/*
+ * kal_virt_uhw_wr: write chip CR via USB UHW.
+ * @ad: structure for adapter private data
+ * @u4Offset: CR address
+ * @u4Value: CR value
+ * @pfgSts: return TRUE if IO operation is successful; otherwise, return FALSE
+ *
+ * note: implementation for different HIF may refer to nic/hal.h
+ */
+void kal_virt_uhw_wr(struct ADAPTER *ad, uint32_t u4Offset, uint32_t u4Value,
+		     u_int8_t *pfgSts);
 #endif /* _HIF_H */

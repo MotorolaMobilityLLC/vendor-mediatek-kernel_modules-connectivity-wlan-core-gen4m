@@ -449,7 +449,8 @@ int32_t mtk_usb_vendor_request(IN struct GLUE_INFO *prGlueInfo,
 
 	mutex_lock(&prHifInfo->vendor_req_sem);
 
-	if (RequestType == prBusInfo->u4device_vender_request_out) {
+	if (RequestType == prBusInfo->u4device_vender_request_out ||
+	    RequestType == DEVICE_VENDOR_REQUEST_UHW_OUT) {
 		if (xfer_buf)
 			memcpy(xfer_buf, TransferBuffer, TransferBufferLength);
 		ret = usb_control_msg(prHifInfo->udev,
@@ -458,7 +459,8 @@ int32_t mtk_usb_vendor_request(IN struct GLUE_INFO *prGlueInfo,
 				      Request, RequestType, Value, Index,
 				      xfer_buf, TransferBufferLength,
 				      VENDOR_TIMEOUT_MS);
-	} else if (RequestType == prBusInfo->u4device_vender_request_in) {
+	} else if (RequestType == prBusInfo->u4device_vender_request_in ||
+		   RequestType == DEVICE_VENDOR_REQUEST_UHW_IN) {
 		ret = usb_control_msg(prHifInfo->udev,
 				      usb_rcvctrlpipe(prHifInfo->udev,
 				      uEndpointAddress),
@@ -1457,6 +1459,123 @@ u_int8_t kalDevRegWrite(IN struct GLUE_INFO *prGlueInfo, IN uint32_t u4Register,
 
 	return (ret) ? FALSE : TRUE;
 }				/* end of kalDevRegWrite() */
+
+/*----------------------------------------------------------------------------*/
+/*!
+* \brief Read a 32-bit device register through UHW
+*
+* \param[in] prGlueInfo Pointer to the GLUE_INFO_T structure.
+* \param[in] u4Register Register offset
+* \param[in] pu4Value   Pointer to variable used to store read value
+*
+* \retval TRUE          operation success
+* \retval FALSE         operation fail
+*/
+/*----------------------------------------------------------------------------*/
+u_int8_t kalDevUhwRegRead(IN struct GLUE_INFO *prGlueInfo,
+			  IN uint32_t u4Register, OUT uint32_t *pu4Value)
+{
+	struct BUS_INFO *prBusInfo = NULL;
+	int ret = 0;
+	uint8_t ucRetryCount = 0;
+
+	ASSERT(prGlueInfo);
+	ASSERT(pu4Value);
+
+	prBusInfo = prGlueInfo->prAdapter->chip_info->bus_info;
+	*pu4Value = 0xFFFFFFFF;
+
+	DBGLOG(HAL, ERROR, "u4Register=0x%X\n", u4Register);
+
+	do {
+		ret = mtk_usb_vendor_request(prGlueInfo,
+			0,
+			DEVICE_VENDOR_REQUEST_UHW_IN,
+			VND_REQ_UHW_READ,
+			(u4Register & 0xffff0000) >> 16,
+			(u4Register & 0x0000ffff), pu4Value,
+				       sizeof(*pu4Value));
+
+		if (ret || ucRetryCount)
+			DBGLOG(HAL, ERROR,
+				"usb_control_msg() status: %d retry: %u\n",
+				ret, ucRetryCount);
+
+
+		ucRetryCount++;
+		if (ucRetryCount > HIF_USB_ACCESS_RETRY_LIMIT)
+			break;
+	} while (ret);
+
+	if (ret) {
+		kalSendAeeWarning(HIF_USB_ERR_TITLE_STR, HIF_USB_ERR_DESC_STR
+				  "USB() reports error: %x retry: %u", ret,
+				  ucRetryCount);
+		DBGLOG(HAL, ERROR, "usb_readl() reports error: %x retry: %u\n",
+		       ret, ucRetryCount);
+	} else {
+		DBGLOG(HAL, TRACE, "Get CR[0x%08x] value[0x%08x]\n",
+			u4Register, *pu4Value);
+	}
+
+	return (ret) ? FALSE : TRUE;
+}				/* end of kalDevUhwRegRead() */
+
+/*----------------------------------------------------------------------------*/
+/*!
+* \brief Write a 32-bit device register through UHW
+*
+* \param[in] prGlueInfo Pointer to the GLUE_INFO_T structure.
+* \param[in] u4Register Register offset
+* \param[in] u4Value    Value to be written
+*
+* \retval TRUE          operation success
+* \retval FALSE         operation fail
+*/
+/*----------------------------------------------------------------------------*/
+u_int8_t kalDevUhwRegWrite(IN struct GLUE_INFO *prGlueInfo,
+			   IN uint32_t u4Register, IN uint32_t u4Value)
+{
+	int ret = 0;
+	uint8_t ucRetryCount = 0;
+	struct BUS_INFO *prBusInfo = NULL;
+
+	ASSERT(prGlueInfo);
+	prBusInfo = prGlueInfo->prAdapter->chip_info->bus_info;
+	do {
+		ret = mtk_usb_vendor_request(prGlueInfo,
+			0,
+			DEVICE_VENDOR_REQUEST_UHW_OUT,
+			VND_REQ_UHW_WRITE,
+			(u4Register & 0xffff0000) >> 16,
+			(u4Register & 0x0000ffff),
+			&u4Value,
+				       sizeof(u4Value));
+
+		if (ret || ucRetryCount)
+			DBGLOG(HAL, ERROR,
+				"usb_control_msg() status: %d retry: %u\n",
+				ret, ucRetryCount);
+
+		ucRetryCount++;
+		if (ucRetryCount > HIF_USB_ACCESS_RETRY_LIMIT)
+			break;
+
+	} while (ret);
+
+	if (ret) {
+		kalSendAeeWarning(HIF_USB_ERR_TITLE_STR, HIF_USB_ERR_DESC_STR
+				  "uhw_writel() reports error: %x retry: %u",
+				  ret, ucRetryCount);
+		DBGLOG(HAL, ERROR, "uhw_writel() reports error: %x retry: %u\n",
+		       ret, ucRetryCount);
+	} else {
+		DBGLOG(HAL, INFO, "Set CR[0x%08x] value[0x%08x]\n", u4Register,
+		       u4Value);
+	}
+
+	return (ret) ? FALSE : TRUE;
+}				/* end of kalDevUhwRegWrite() */
 
 /*----------------------------------------------------------------------------*/
 /*!
