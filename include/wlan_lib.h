@@ -1912,6 +1912,7 @@ wlanSortChannel(IN struct ADAPTER *prAdapter,
 
 void wlanSuspendPmHandle(struct GLUE_INFO *prGlueInfo);
 void wlanResumePmHandle(struct GLUE_INFO *prGlueInfo);
+uint32_t wlanWakeUpWiFi(IN struct ADAPTER *prAdapter);
 
 #if CFG_REPORT_MAX_TX_RATE
 int wlanGetMaxTxRate(IN struct ADAPTER *prAdapter,

@@ -1421,6 +1421,7 @@ void halSetFWOwn(IN struct ADAPTER *prAdapter, IN u_int8_t fgEnableGlobalInt)
 
 void halWakeUpWiFi(IN struct ADAPTER *prAdapter)
 {
+	struct GL_HIF_INFO *prHifInfo;
 	u_int8_t fgResult = FALSE;
 	uint8_t ucCount = 0;
 
@@ -1432,6 +1433,8 @@ void halWakeUpWiFi(IN struct ADAPTER *prAdapter)
 	*  insert, so it need issue this cmd always when wifi is
 	*  insert.
 	*/
+
+	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
 
 	while (!fgResult) {
 		HAL_WIFI_FUNC_POWER_ON(prAdapter);
@@ -1445,6 +1448,10 @@ void halWakeUpWiFi(IN struct ADAPTER *prAdapter)
 			break;
 		}
 	}
+
+	if (prHifInfo->state == USB_STATE_WIFI_OFF && fgResult)
+		glUsbSetState(prHifInfo,
+			USB_STATE_LINK_UP);
 
 	prAdapter->fgIsFwOwn = FALSE;
 }

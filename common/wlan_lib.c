@@ -1202,8 +1202,6 @@ uint32_t wlanAdapterStart(IN struct ADAPTER *prAdapter,
 		/* set FALSE after wifi init flow or reset (not reinit WFDMA) */
 		prAdapter->fgIsFwDownloaded = FALSE;
 
-		nicpmWakeUpWiFi(prAdapter);
-
 		DBGLOG(INIT, INFO,
 		       "wlanAdapterStart(): Acquiring LP-OWN\n");
 		ACQUIRE_POWER_CONTROL_FROM_PM(prAdapter);
@@ -1214,6 +1212,7 @@ uint32_t wlanAdapterStart(IN struct ADAPTER *prAdapter,
 		nicpmSetDriverOwn(prAdapter);
 #endif
 
+#if !defined(_HIF_USB)
 		if (prAdapter->fgIsFwOwn == TRUE) {
 			DBGLOG(INIT, ERROR, "nicpmSetDriverOwn() failed!\n");
 			u4Status = WLAN_STATUS_FAILURE;
@@ -1222,11 +1221,11 @@ uint32_t wlanAdapterStart(IN struct ADAPTER *prAdapter,
 						 RST_WIFI_ON_DRV_OWN_FAIL);
 			break;
 		}
+#endif
 
 #if CFG_MTK_MDDP_SUPPORT
 		setMddpSupportRegister(prAdapter);
 #endif
-
 		if (!bAtResetFlow) {
 			/* 4 <1> Initialize the Adapter */
 			u4Status = nicInitializeAdapter(prAdapter);
@@ -1248,6 +1247,12 @@ uint32_t wlanAdapterStart(IN struct ADAPTER *prAdapter,
 					prAdapter->prGlueInfo, false);
 		}
 #endif
+		u4Status = wlanWakeUpWiFi(prAdapter);
+		if (u4Status != WLAN_STATUS_SUCCESS) {
+			DBGLOG(INIT, ERROR, "wlanWakeUpWiFi failed!\n");
+			u4Status = WLAN_STATUS_FAILURE;
+			break;
+		}
 
 		/* 4 <5> HIF SW info initialize */
 		if (!halHifSwInfoInit(prAdapter)) {
@@ -12362,6 +12367,41 @@ void wlanResumePmHandle(struct GLUE_INFO *prGlueInfo)
 		}
 	}
 #endif
+}
+
+
+/*----------------------------------------------------------------------------*/
+/*!
+* @brief This function is to wake up WiFi
+*
+* @param prAdapter      Pointer to the Adapter structure.
+*
+* @return WLAN_STATUS_SUCCESS
+*         WLAN_STATUS_FAILURE
+*/
+/*----------------------------------------------------------------------------*/
+uint32_t wlanWakeUpWiFi(IN struct ADAPTER *prAdapter)
+{
+	u_int8_t fgReady;
+
+	if (!prAdapter)
+		return WLAN_STATUS_FAILURE;
+
+	HAL_WIFI_FUNC_READY_CHECK(prAdapter, prChipInfo->sw_ready_bits,
+			&fgReady);
+
+	if (fgReady) {
+		DBGLOG(INIT, INFO,
+			"Wi-Fi is already ON!, turn off before FW DL!\n");
+		if (wlanPowerOffWifi(prAdapter) != WLAN_STATUS_SUCCESS)
+			return WLAN_STATUS_FAILURE;
+
+	}
+
+	nicpmWakeUpWiFi(prAdapter);
+	HAL_HIF_INIT(prAdapter);
+
+	return WLAN_STATUS_SUCCESS;
 }
 
 static uint32_t wlanHwRateOfdmNum(uint16_t ofdm_idx)
