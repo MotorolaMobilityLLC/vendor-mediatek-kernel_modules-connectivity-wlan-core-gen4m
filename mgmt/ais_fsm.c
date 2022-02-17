@@ -296,7 +296,13 @@ void aisInitializeConnectionSettings(IN struct ADAPTER *prAdapter,
 
 	prConnSettings->fgIsAdHocQoSEnable = FALSE;
 
-#if CFG_SUPPORT_802_11AC
+#if (CFG_SUPPORT_802_11BE == 1)
+	prAdapter->rWifiVar.eDesiredPhyConfig
+		= PHY_CONFIG_802_11ABGNACAXBE;
+#elif (CFG_SUPPORT_802_11AX == 1)
+	prAdapter->rWifiVar.eDesiredPhyConfig
+		= PHY_CONFIG_802_11ABGNACAX;
+#elif CFG_SUPPORT_802_11AC
 	prAdapter->rWifiVar.eDesiredPhyConfig
 		= PHY_CONFIG_802_11ABGNAC;
 #else
@@ -305,15 +311,12 @@ void aisInitializeConnectionSettings(IN struct ADAPTER *prAdapter,
 #endif
 
 #if (CFG_SUPPORT_802_11AX == 1)
-	if (fgEfuseCtrlAxOn == 1) {
-		prAdapter->rWifiVar.eDesiredPhyConfig
-			= PHY_CONFIG_802_11ABGNACAX;
-	}
+	if (fgEfuseCtrlAxOn == 0)
+		prAdapter->rWifiVar.eDesiredPhyConfig = PHY_CONFIG_802_11ABGNAC;
 #endif
-#if (CFG_SUPPORT_802_11BE == 1)
-	prAdapter->rWifiVar.eDesiredPhyConfig
-		= PHY_CONFIG_802_11ABGNACAXBE;
-#endif
+
+	if (prAdapter->rWifiVar.ucHwNotSupportAC)
+		prAdapter->rWifiVar.eDesiredPhyConfig = PHY_CONFIG_802_11ABGN;
 
 	/* Set default bandwidth modes */
 	prAdapter->rWifiVar.uc2G4BandwidthMode =

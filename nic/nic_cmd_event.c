@@ -2040,7 +2040,7 @@ void nicCmdEventQueryStaStatistics(IN struct ADAPTER
 		prStaStatistics->u4AggRangeCtrl_1 =
 			prEvent->u4AggRangeCtrl_1;
 		prStaStatistics->ucRangeType = prEvent->ucRangeType;
-#if (CFG_SUPPORT_CONNAC2X == 1)
+#if ((CFG_SUPPORT_CONNAC2X == 1) || (CFG_SUPPORT_CONNAC3X == 1))
 		prStaStatistics->u4AggRangeCtrl_2 =
 			prEvent->u4AggRangeCtrl_2;
 		prStaStatistics->u4AggRangeCtrl_3 =
@@ -2673,7 +2673,20 @@ uint32_t nicCfgChipCapPhyCap(IN struct ADAPTER *prAdapter,
 	}
 	/* Overwirte driver default setting here */
 	prAdapter->rWifiFemCfg.u2WifiPath = prPhyCap->ucWifiPath;
+	prAdapter->rWifiVar.ucHwNotSupportAC = (prPhyCap->ucVht) ? FALSE:TRUE;
 
+	if (!prPhyCap->ucVht) {
+#if CFG_SUPPORT_MTK_SYNERGY
+		prAdapter->rWifiVar.ucGbandProbe256QAM = FEATURE_DISABLED;
+		wlanCfgSetUint32(prAdapter, "Probe256QAM",
+			prAdapter->rWifiVar.ucGbandProbe256QAM);
+#endif
+#if CFG_SUPPORT_VHT_IE_IN_2G
+		prAdapter->rWifiVar.ucVhtIeIn2g = FEATURE_DISABLED;
+		wlanCfgSetUint32(prAdapter, "VhtIeIn2G",
+			prAdapter->rWifiVar.ucVhtIeIn2g);
+#endif
+	}
 
 #if (CFG_SUPPORT_802_11AX == 1)
 	prAdapter->rWifiVar.ucStaHe &= prPhyCap->ucHe;

@@ -1143,7 +1143,6 @@ struct mt66xx_chip_info mt66xx_chip_info_soc3_0 = {
 	.is_support_hw_amsdu = TRUE,
 	.is_support_asic_lp = TRUE,
 	.is_support_wfdma1 = TRUE,
-	.get_rxv_from_rxrpt = TRUE,
 	.is_support_nvram_fragment = TRUE,
 	.asicWfdmaReInit = asicConnac2xWfdmaReInit,
 	.asicWfdmaReInit_handshakeInit = asicConnac2xWfdmaDummyCrWrite,
