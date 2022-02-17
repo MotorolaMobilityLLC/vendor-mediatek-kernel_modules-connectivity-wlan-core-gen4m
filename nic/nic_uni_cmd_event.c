@@ -539,16 +539,30 @@ uint32_t nicUniCmdScanTagBssid(struct ADAPTER *ad, uint8_t *buf,
 	struct CMD_SCAN_REQ_V2 *cmd)
 {
 	struct UNI_CMD_SCAN_BSSID *tag = (struct UNI_CMD_SCAN_BSSID *)buf;
+	uint8_t i;
 
-	tag->u2Tag = UNI_CMD_SCAN_TAG_SCAN_BSSID;
-	tag->u2Length = sizeof(*tag);
-	kalMemCopy(tag->aucBssid, cmd->aucBSSID, MAC_ADDR_LEN);
+	if (cmd->ucScnFuncMask & ENUM_SCN_USE_PADDING_AS_BSSID) {
+		for (i = 0; i < CFG_SCAN_SSID_MAX_NUM; i++) {
+			tag->u2Tag = UNI_CMD_SCAN_TAG_SCAN_BSSID;
+			tag->u2Length = sizeof(*tag);
+			kalMemCopy(tag->aucBssid,
+				cmd->aucExtBSSID[i], MAC_ADDR_LEN);
 
-	// TODO: uni cmd
-	tag->ucBssidMatchCh = 0;
-	tag->ucBssidMatchSsidInd = 0;
+			tag->ucBssidMatchCh = cmd->ucBssidMatchCh[i];
+			tag->ucBssidMatchSsidInd = cmd->ucBssidMatchSsidInd[i];
+			tag++;
+		}
+		return ((uint8_t *)tag) - buf;
+	} else {
+		tag->u2Tag = UNI_CMD_SCAN_TAG_SCAN_BSSID;
+		tag->u2Length = sizeof(*tag);
+		kalMemCopy(tag->aucBssid, cmd->aucBSSID, MAC_ADDR_LEN);
 
-	return tag->u2Length;
+		tag->ucBssidMatchCh = 0;
+		tag->ucBssidMatchSsidInd = CFG_SCAN_SSID_MAX_NUM;
+
+		return tag->u2Length;
+	}
 }
 
 uint32_t nicUniCmdScanTagChnlInfo(struct ADAPTER *ad, uint8_t *buf,
@@ -608,8 +622,7 @@ uint32_t nicUniCmdScanTagMisc(struct ADAPTER *ad, uint8_t *buf,
 	tag->u2Length = sizeof(*tag);
 	kalMemCopy(tag->aucRandomMac, cmd->aucRandomMac, MAC_ADDR_LEN);
 
-	// TODO: uni cmd
-	tag->ucShortSSIDNum = 0;
+	tag->ucShortSSIDNum = cmd->ucShortSSIDNum;
 
 	return tag->u2Length;
 }
@@ -618,7 +631,8 @@ struct UNI_CMD_SCAN_TAG_HANDLE arSetScanReqTable[] = {
 	{sizeof(struct UNI_CMD_SCAN_REQ), nicUniCmdScanTagReq},
 	{sizeof(struct UNI_CMD_SCAN_SSID) + sizeof(struct PARAM_SSID) * 10,
 	 nicUniCmdScanTagSsid},
-	{sizeof(struct UNI_CMD_SCAN_BSSID), nicUniCmdScanTagBssid},
+	{sizeof(struct UNI_CMD_SCAN_BSSID) * CFG_SCAN_SSID_MAX_NUM,
+	 nicUniCmdScanTagBssid},
 	{sizeof(struct UNI_CMD_SCAN_CHANNEL_INFO) +
 	 sizeof(struct CHANNEL_INFO) * 64,
 	 nicUniCmdScanTagChnlInfo},
