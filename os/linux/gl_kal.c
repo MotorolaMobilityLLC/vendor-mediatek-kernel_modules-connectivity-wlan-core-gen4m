@@ -3851,6 +3851,7 @@ int hif_thread(void *data)
 					 netdev_priv(dev));
 	struct ADAPTER *prAdapter = prGlueInfo->prAdapter;
 	int ret = 0;
+	bool fgEnInt;
 #if defined(CONFIG_ANDROID) && (CFG_ENABLE_WAKE_LOCK)
 	KAL_WAKE_LOCK_T *prHifThreadWakeLock;
 
@@ -3911,7 +3912,10 @@ int hif_thread(void *data)
 		wlanAcquirePowerControl(prAdapter);
 
 		/* Handle Interrupt */
+		fgEnInt = (prGlueInfo->ulFlag | GLUE_FLAG_INT_BIT) != 0;
 		if (test_and_clear_bit(GLUE_FLAG_INT_BIT,
+				       &prGlueInfo->ulFlag) ||
+		    test_and_clear_bit(GLUE_FLAG_DRV_INT_BIT,
 				       &prGlueInfo->ulFlag)) {
 			kalTraceBegin("INT");
 			/* the Wi-Fi interrupt is already disabled in mmc
@@ -3928,7 +3932,7 @@ int hif_thread(void *data)
 			} else {
 				/* DBGLOG(INIT, INFO, ("HIF Interrupt!\n")); */
 				prGlueInfo->TaskIsrCnt++;
-				wlanIST(prAdapter);
+				wlanIST(prAdapter, fgEnInt);
 			}
 			kalTraceEnd();
 		}
@@ -4318,7 +4322,7 @@ int main_thread(void *data)
 					"ignore pending interrupt\n");
 			} else {
 				prGlueInfo->TaskIsrCnt++;
-				wlanIST(prGlueInfo->prAdapter);
+				wlanIST(prGlueInfo->prAdapter, true);
 			}
 			kalTraceEnd();
 		}
@@ -5053,6 +5057,20 @@ void kalSetIntEvent(struct GLUE_INFO *pr)
 	KAL_WAKE_LOCK(pr->prAdapter, pr->rIntrWakeLock);
 
 	set_bit(GLUE_FLAG_INT_BIT, &pr->ulFlag);
+
+	/* when we got interrupt, we wake up servie thread */
+#if CFG_SUPPORT_MULTITHREAD
+	wake_up_interruptible(&pr->waitq_hif);
+#else
+	wake_up_interruptible(&pr->waitq);
+#endif
+}
+
+void kalSetDrvIntEvent(struct GLUE_INFO *pr)
+{
+	KAL_WAKE_LOCK(pr->prAdapter, pr->rIntrWakeLock);
+
+	set_bit(GLUE_FLAG_DRV_INT_BIT, &pr->ulFlag);
 
 	/* when we got interrupt, we wake up servie thread */
 #if CFG_SUPPORT_MULTITHREAD
