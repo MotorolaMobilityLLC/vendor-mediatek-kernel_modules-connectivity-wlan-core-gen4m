@@ -591,11 +591,11 @@
 #define UNII5_LOWER_BOUND    1
 #define UNII5_UPPER_BOUND    93
 #define UNII6_LOWER_BOUND    97
-#define UNII6_UPPER_BOUND    117
-#define UNII7_LOWER_BOUND    121
+#define UNII6_UPPER_BOUND    113
+#define UNII7_LOWER_BOUND    117
 #define UNII7_UPPER_BOUND    185
 #define UNII8_LOWER_BOUND    189
-#define UNII8_UPPER_BOUND    253
+#define UNII8_UPPER_BOUND    233
 
 #if CFG_SUPPORT_PWR_LIMIT_COUNTRY
 #define POWER_LIMIT_TABLE_NULL			0xFFFF
@@ -986,6 +986,7 @@ struct COUNTRY_POWER_LIMIT_TABLE_CONFIGURATION_HE {
 
 
 struct SUBBAND_CHANNEL {
+	enum ENUM_BAND eBand;
 	uint8_t ucStartCh;
 	uint8_t ucEndCh;
 	uint8_t ucInterval;
@@ -1097,7 +1098,7 @@ void rlmDomainSendPassiveScanInfoCmd(struct ADAPTER
 uint32_t rlmDomainSupOperatingClassIeFill(uint8_t *pBuf);
 
 u_int8_t rlmDomainCheckChannelEntryValid(struct ADAPTER
-		*prAdapter, uint8_t ucCentralCh);
+		*prAdapter, enum ENUM_BAND eBand, uint8_t ucCentralCh);
 
 uint8_t rlmDomainGetCenterChannel(enum ENUM_BAND eBand,
 				  uint8_t ucPriChannel,
