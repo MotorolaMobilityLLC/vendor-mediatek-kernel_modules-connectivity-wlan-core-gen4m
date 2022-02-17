@@ -105,7 +105,7 @@ unsigned long g_ulFlag;/* GLUE_FLAG_XXX */
 struct completion g_RstOffComp;
 struct completion g_RstOnComp;
 struct completion g_triggerComp;
-KAL_WAKE_LOCK_T g_IntrWakeLock;
+KAL_WAKE_LOCK_T *g_IntrWakeLock;
 struct task_struct *wlan_reset_thread;
 static int g_rst_data;
 u_int8_t g_IsWholeChipRst = FALSE;
@@ -244,7 +244,7 @@ void glResetInit(struct GLUE_INFO *prGlueInfo)
 	fw_log_connsys_coredump_init();
 #endif
 	update_driver_reset_status(fgIsResetting);
-	KAL_WAKE_LOCK_INIT(NULL, &g_IntrWakeLock, "WLAN Reset");
+	KAL_WAKE_LOCK_INIT(NULL, g_IntrWakeLock, "WLAN Reset");
 	init_waitqueue_head(&g_waitq_rst);
 	init_completion(&g_RstOffComp);
 	init_completion(&g_RstOnComp);
@@ -629,7 +629,7 @@ void glRstWholeChipRstParamInit(void)
 }
 void glRstSetRstEndEvent(void)
 {
-	KAL_WAKE_LOCK(NULL, &g_IntrWakeLock);
+	KAL_WAKE_LOCK(NULL, g_IntrWakeLock);
 
 	set_bit(GLUE_FLAG_RST_END_BIT, &g_ulFlag);
 
@@ -918,8 +918,8 @@ int wlan_reset_thread_main(void *data)
 #endif
 		if (test_and_clear_bit(GLUE_FLAG_RST_START_BIT, &g_ulFlag) &&
 			 ((prGlueInfo) && (prGlueInfo->u4ReadyFlag))) {
-			if (KAL_WAKE_LOCK_ACTIVE(NULL, &g_IntrWakeLock))
-				KAL_WAKE_UNLOCK(NULL, &g_IntrWakeLock);
+			if (KAL_WAKE_LOCK_ACTIVE(NULL, g_IntrWakeLock))
+				KAL_WAKE_UNLOCK(NULL, g_IntrWakeLock);
 
 			if (g_IsWholeChipRst) {
 #if (CFG_ANDORID_CONNINFRA_COREDUMP_SUPPORT == 1)
@@ -952,8 +952,8 @@ int wlan_reset_thread_main(void *data)
 				g_SubsysRstTotalCnt);
 		}
 		if (test_and_clear_bit(GLUE_FLAG_RST_END_BIT, &g_ulFlag)) {
-			if (KAL_WAKE_LOCK_ACTIVE(NULL, &g_IntrWakeLock))
-				KAL_WAKE_UNLOCK(NULL, &g_IntrWakeLock);
+			if (KAL_WAKE_LOCK_ACTIVE(NULL, g_IntrWakeLock))
+				KAL_WAKE_UNLOCK(NULL, g_IntrWakeLock);
 			DBGLOG(INIT, INFO, "Whole chip reset end start\n");
 			glResetMsgHandler(WMTMSG_TYPE_RESET,
 				WMTRSTMSG_RESET_END);

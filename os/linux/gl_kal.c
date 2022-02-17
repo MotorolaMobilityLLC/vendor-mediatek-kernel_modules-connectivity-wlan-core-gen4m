@@ -947,7 +947,7 @@ uint32_t kalRxIndicatePkts(IN struct GLUE_INFO *prGlueInfo,
 		kalRxIndicateOnePkt(prGlueInfo, apvPkts[ucIdx]);
 
 	KAL_WAKE_LOCK_TIMEOUT(prGlueInfo->prAdapter,
-		&prGlueInfo->rTimeoutWakeLock, MSEC_TO_JIFFIES(
+		prGlueInfo->rTimeoutWakeLock, MSEC_TO_JIFFIES(
 		prGlueInfo->prAdapter->rWifiVar.u4WakeLockRxTimeout));
 
 	return WLAN_STATUS_SUCCESS;
@@ -3111,7 +3111,7 @@ kalIoctlByBssIdx(IN struct GLUE_INFO *prGlueInfo,
 
 	/* <7.1> Hold wakelock to ensure OS won't be suspended */
 	KAL_WAKE_LOCK_TIMEOUT(prGlueInfo->prAdapter,
-		&prGlueInfo->rTimeoutWakeLock, MSEC_TO_JIFFIES(
+		prGlueInfo->rTimeoutWakeLock, MSEC_TO_JIFFIES(
 		prGlueInfo->prAdapter->rWifiVar.u4WakeLockThreadWakeup));
 
 	/* <8> Wake up main thread to handle kick start the I/O request.
@@ -3752,14 +3752,6 @@ int hif_thread(void *data)
 #if defined(CONFIG_ANDROID) && (CFG_ENABLE_WAKE_LOCK)
 	KAL_WAKE_LOCK_T *prHifThreadWakeLock;
 
-	prHifThreadWakeLock = kalMemAlloc(sizeof(KAL_WAKE_LOCK_T),
-		VIR_MEM_TYPE);
-	if (!prHifThreadWakeLock) {
-		DBGLOG(INIT, ERROR, "%s MemAlloc Fail\n",
-			KAL_GET_CURRENT_THREAD_NAME());
-		return 0;
-	}
-
 	KAL_WAKE_LOCK_INIT(prGlueInfo->prAdapter,
 			   prHifThreadWakeLock, "WLAN hif_thread");
 	KAL_WAKE_LOCK(prGlueInfo->prAdapter, prHifThreadWakeLock);
@@ -3874,8 +3866,6 @@ int hif_thread(void *data)
 		KAL_WAKE_UNLOCK(prGlueInfo->prAdapter, prHifThreadWakeLock);
 	KAL_WAKE_LOCK_DESTROY(prGlueInfo->prAdapter,
 			      prHifThreadWakeLock);
-	kalMemFree(prHifThreadWakeLock, VIR_MEM_TYPE,
-		sizeof(KAL_WAKE_LOCK_T));
 #endif
 
 	DBGLOG(INIT, TRACE, "%s:%u stopped!\n",
@@ -3911,14 +3901,6 @@ int rx_thread(void *data)
 	KAL_SPIN_LOCK_DECLARATION();
 
 #if defined(CONFIG_ANDROID) && (CFG_ENABLE_WAKE_LOCK)
-	prRxThreadWakeLock = kalMemAlloc(sizeof(KAL_WAKE_LOCK_T),
-		VIR_MEM_TYPE);
-	if (!prRxThreadWakeLock) {
-		DBGLOG(INIT, ERROR, "%s MemAlloc Fail\n",
-			KAL_GET_CURRENT_THREAD_NAME());
-		return 0;
-	}
-
 	KAL_WAKE_LOCK_INIT(prGlueInfo->prAdapter,
 			   prRxThreadWakeLock, "WLAN rx_thread");
 	KAL_WAKE_LOCK(prGlueInfo->prAdapter, prRxThreadWakeLock);
@@ -3990,7 +3972,7 @@ int rx_thread(void *data)
 					}
 
 				    KAL_WAKE_LOCK_TIMEOUT(prGlueInfo->prAdapter,
-					&prGlueInfo->rTimeoutWakeLock,
+					prGlueInfo->rTimeoutWakeLock,
 					MSEC_TO_JIFFIES(prGlueInfo->prAdapter
 					->rWifiVar.u4WakeLockRxTimeout));
 				}
@@ -4005,8 +3987,6 @@ int rx_thread(void *data)
 		KAL_WAKE_UNLOCK(prGlueInfo->prAdapter, prRxThreadWakeLock);
 	KAL_WAKE_LOCK_DESTROY(prGlueInfo->prAdapter,
 			      prRxThreadWakeLock);
-	kalMemFree(prRxThreadWakeLock, VIR_MEM_TYPE,
-		sizeof(KAL_WAKE_LOCK_T));
 #endif
 
 	DBGLOG(INIT, TRACE, "%s:%u stopped!\n",
@@ -4059,14 +4039,6 @@ int main_thread(void *data)
 		      prGlueInfo->prAdapter->rWifiVar.cThreadNice);
 
 #if defined(CONFIG_ANDROID) && (CFG_ENABLE_WAKE_LOCK)
-	prTxThreadWakeLock = kalMemAlloc(sizeof(KAL_WAKE_LOCK_T),
-		VIR_MEM_TYPE);
-	if (!prTxThreadWakeLock) {
-		DBGLOG(INIT, ERROR, "%s MemAlloc Fail\n",
-			KAL_GET_CURRENT_THREAD_NAME());
-		return FALSE;
-	}
-
 	KAL_WAKE_LOCK_INIT(prGlueInfo->prAdapter,
 			   prTxThreadWakeLock, "WLAN main_thread");
 	KAL_WAKE_LOCK(prGlueInfo->prAdapter, prTxThreadWakeLock);
@@ -4356,8 +4328,6 @@ int main_thread(void *data)
 		KAL_WAKE_UNLOCK(prGlueInfo->prAdapter, prTxThreadWakeLock);
 	KAL_WAKE_LOCK_DESTROY(prGlueInfo->prAdapter,
 			      prTxThreadWakeLock);
-	kalMemFree(prTxThreadWakeLock, VIR_MEM_TYPE,
-		sizeof(KAL_WAKE_LOCK_T));
 #endif
 
 	DBGLOG(INIT, TRACE, "%s:%u stopped!\n",
@@ -4736,9 +4706,13 @@ void kalOsTimerInitialize(IN struct GLUE_INFO *prGlueInfo,
 
 	ASSERT(prGlueInfo);
 
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 15, 0))
+	timer_setup(&(prGlueInfo->tickfn), prTimerHandler, 0);
+#else
 	init_timer(&(prGlueInfo->tickfn));
 	prGlueInfo->tickfn.function = prTimerHandler;
 	prGlueInfo->tickfn.data = (unsigned long)prGlueInfo;
+#endif
 }
 
 /* Todo */
@@ -4900,10 +4874,19 @@ uint32_t kalRandomNumber(void)
  * \retval (none)
  */
 /*----------------------------------------------------------------------------*/
+#if KERNEL_VERSION(4, 15, 0) <= LINUX_VERSION_CODE
+void kalTimeoutHandler(struct timer_list *timer)
+#else
 void kalTimeoutHandler(unsigned long arg)
+#endif
 {
 
-	struct GLUE_INFO *prGlueInfo = (struct GLUE_INFO *) arg;
+#if KERNEL_VERSION(4, 15, 0) <= LINUX_VERSION_CODE
+	struct GLUE_INFO *prGlueInfo =
+		from_timer(prGlueInfo, timer, tickfn);
+#else
+	struct GLUE_INFO *prGlueInfo = (struct GLUE_INFO *)arg;
+#endif
 
 	ASSERT(prGlueInfo);
 
@@ -4927,7 +4910,7 @@ void kalSetSerTimeoutEvent(struct GLUE_INFO *pr)
 
 void kalSetIntEvent(struct GLUE_INFO *pr)
 {
-	KAL_WAKE_LOCK(pr->prAdapter, &pr->rIntrWakeLock);
+	KAL_WAKE_LOCK(pr->prAdapter, pr->rIntrWakeLock);
 
 	set_bit(GLUE_FLAG_INT_BIT, &pr->ulFlag);
 
@@ -4961,7 +4944,7 @@ void kalSetTxEvent2Hif(struct GLUE_INFO *pr)
 	if (!pr->hif_thread)
 		return;
 
-	KAL_WAKE_LOCK_TIMEOUT(pr->prAdapter, &pr->rTimeoutWakeLock,
+	KAL_WAKE_LOCK_TIMEOUT(pr->prAdapter, pr->rTimeoutWakeLock,
 			      MSEC_TO_JIFFIES(
 			      pr->prAdapter->rWifiVar.u4WakeLockThreadWakeup));
 
@@ -4974,7 +4957,7 @@ void kalSetFwOwnEvent2Hif(struct GLUE_INFO *pr)
 	if (!pr->hif_thread)
 		return;
 
-	KAL_WAKE_LOCK_TIMEOUT(pr->prAdapter, &pr->rTimeoutWakeLock,
+	KAL_WAKE_LOCK_TIMEOUT(pr->prAdapter, pr->rTimeoutWakeLock,
 			      MSEC_TO_JIFFIES(
 			      pr->prAdapter->rWifiVar.u4WakeLockThreadWakeup));
 
@@ -4987,7 +4970,7 @@ void kalSetTxEvent2Rx(struct GLUE_INFO *pr)
 	if (!pr->rx_thread)
 		return;
 
-	KAL_WAKE_LOCK_TIMEOUT(pr->prAdapter, &pr->rTimeoutWakeLock,
+	KAL_WAKE_LOCK_TIMEOUT(pr->prAdapter, pr->rTimeoutWakeLock,
 			      MSEC_TO_JIFFIES(
 			      pr->prAdapter->rWifiVar.u4WakeLockThreadWakeup));
 
@@ -5000,7 +4983,7 @@ void kalSetTxCmdEvent2Hif(struct GLUE_INFO *pr)
 	if (!pr->hif_thread)
 		return;
 
-	KAL_WAKE_LOCK_TIMEOUT(pr->prAdapter, &pr->rTimeoutWakeLock,
+	KAL_WAKE_LOCK_TIMEOUT(pr->prAdapter, pr->rTimeoutWakeLock,
 			      MSEC_TO_JIFFIES(
 			      pr->prAdapter->rWifiVar.u4WakeLockThreadWakeup));
 

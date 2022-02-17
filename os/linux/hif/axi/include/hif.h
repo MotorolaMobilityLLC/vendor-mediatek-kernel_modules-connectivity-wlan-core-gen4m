@@ -95,7 +95,7 @@ extern unsigned long long gWifiRsvMemSize;
 #if (CFG_SUPPORT_CONNINFRA == 1)
 extern wait_queue_head_t g_waitq_rst;
 extern unsigned long g_ulFlag;
-extern KAL_WAKE_LOCK_T g_IntrWakeLock;
+extern KAL_WAKE_LOCK_T *g_IntrWakeLock;
 #endif
 /*******************************************************************************
  *                              C O N S T A N T S
@@ -212,6 +212,7 @@ struct GL_HIF_INFO {
 	struct ERR_RECOVERY_CTRL_T rErrRecoveryCtl;
 	u_int8_t fgIsErrRecovery;
 	struct timer_list rSerTimer;
+	u_int64_t rSerTimerData;
 	struct list_head rTxCmdQ;
 	struct list_head rTxDataQ;
 	uint32_t u4TxDataQLen;

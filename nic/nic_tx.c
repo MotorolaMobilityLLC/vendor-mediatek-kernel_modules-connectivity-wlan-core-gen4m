@@ -4858,11 +4858,21 @@ static uint32_t nicTxDirectStartXmitMain(struct sk_buff
  * \retval none
  */
 /*----------------------------------------------------------------------------*/
+#if KERNEL_VERSION(4, 15, 0) <= LINUX_VERSION_CODE
+void nicTxDirectTimerCheckSkbQ(struct timer_list *timer)
+#else
 void nicTxDirectTimerCheckSkbQ(unsigned long data)
+#endif
+
 {
+#if KERNEL_VERSION(4, 15, 0) <= LINUX_VERSION_CODE
+	struct ADAPTER *prAdapter =
+		from_timer(prAdapter, timer, rTxDirectSkbTimer);
+	struct GLUE_INFO *prGlueInfo = prAdapter->prGlueInfo;
+#else
 	struct GLUE_INFO *prGlueInfo = (struct GLUE_INFO *)data;
 	struct ADAPTER *prAdapter = prGlueInfo->prAdapter;
-
+#endif
 	if (skb_queue_len(&prAdapter->rTxDirectSkbQueue))
 		nicTxDirectStartXmit(NULL, prGlueInfo);
 	else
@@ -4880,10 +4890,20 @@ void nicTxDirectTimerCheckSkbQ(unsigned long data)
  * \retval none
  */
 /*----------------------------------------------------------------------------*/
+#if KERNEL_VERSION(4, 15, 0) <= LINUX_VERSION_CODE
+void nicTxDirectTimerCheckHifQ(struct timer_list *timer)
+#else
 void nicTxDirectTimerCheckHifQ(unsigned long data)
+#endif
 {
+#if KERNEL_VERSION(4, 15, 0) <= LINUX_VERSION_CODE
+	struct ADAPTER *prAdapter =
+		from_timer(prAdapter, timer, rTxDirectHifTimer);
+	struct GLUE_INFO *prGlueInfo = prAdapter->prGlueInfo;
+#else
 	struct GLUE_INFO *prGlueInfo = (struct GLUE_INFO *)data;
 	struct ADAPTER *prAdapter = prGlueInfo->prAdapter;
+#endif
 	uint8_t ucHifTc = 0;
 	uint32_t u4StaPsBitmap, u4BssAbsentBitmap;
 	uint8_t ucStaRecIndex, ucBssIndex;
