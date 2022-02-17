@@ -2640,6 +2640,10 @@ cnmDbdcFsmEntryFunc_WAIT_HW_DISABLE(IN struct ADAPTER *prAdapter)
 static void
 cnmDbdcFsmEntryFunc_DISABLE_GUARD(IN struct ADAPTER *prAdapter)
 {
+	/* Do nothing if we will enter A+G immediately */
+	if (g_rDbdcInfo.fgPostpondEnterAG)
+		return;
+
 	if (timerPendingTimer(&g_rDbdcInfo.rDbdcGuardTimer)) {
 		log_dbg(CNM, WARN,
 		       "[DBDC] Guard Timer type %u should not exist, stop it\n",
@@ -3187,7 +3191,9 @@ static void
 cnmDbdcFsmExitFunc_WAIT_HW_DISABLE(
 	IN struct ADAPTER *prAdapter)
 {
-	cnmDBDCFsmActionReqPeivilegeUnLock(prAdapter);
+	/* Do not release privilege lock if we will enter A+G immediately */
+	if (!g_rDbdcInfo.fgPostpondEnterAG)
+		cnmDBDCFsmActionReqPeivilegeUnLock(prAdapter);
 }
 
 
