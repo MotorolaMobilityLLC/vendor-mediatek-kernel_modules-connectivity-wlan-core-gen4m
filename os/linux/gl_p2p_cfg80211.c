@@ -2399,7 +2399,7 @@ int mtk_p2p_cfg80211_cancel_remain_on_channel(struct wiphy *wiphy,
 		(struct MSG_P2P_CHNL_ABORT *) NULL;
 
 	do {
-		if ((wiphy == NULL) /* || (dev == NULL) */)
+		if (wiphy == NULL /* || (dev == NULL) */)
 			break;
 
 		P2P_WIPHY_PRIV(wiphy, prGlueInfo);
