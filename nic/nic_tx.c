@@ -2779,17 +2779,6 @@ uint32_t nicTxCmd(IN struct ADAPTER *prAdapter,
 		prCmdInfo->pucTxp = prMsduInfo->prPacket;
 		prCmdInfo->u4TxpLen = prMsduInfo->u2FrameLength;
 
-		HAL_WRITE_TX_CMD(prAdapter, prCmdInfo, ucTC);
-		/* <4> Management Frame Post-Processing */
-		GLUE_DEC_REF_CNT(prTxCtrl->i4TxMgmtPendingNum);
-
-		DBGLOG(INIT, TRACE,
-		       "TX MGMT Frame: BSS[%u] WIDX:PID[%u:%u] SEQ[%u] STA[%u] RSP[%u]\n",
-		       prMsduInfo->ucBssIndex, prMsduInfo->ucWlanIndex,
-		       prMsduInfo->ucPID,
-		       prMsduInfo->ucTxSeqNum, prMsduInfo->ucStaRecIndex,
-		       prMsduInfo->pfTxDoneHandler ? TRUE : FALSE);
-
 		if (prMsduInfo->pfTxDoneHandler) {
 			KAL_ACQUIRE_SPIN_LOCK(prAdapter,
 				SPIN_LOCK_TXING_MGMT_LIST);
@@ -2797,9 +2786,24 @@ uint32_t nicTxCmd(IN struct ADAPTER *prAdapter,
 					  (struct QUE_ENTRY *) prMsduInfo);
 			KAL_RELEASE_SPIN_LOCK(prAdapter,
 				SPIN_LOCK_TXING_MGMT_LIST);
-		} else {
-			cnmMgtPktFree(prAdapter, prMsduInfo);
+			DBGLOG(TX, INFO, "Insert msdu WIDX:PID[%u:%u]\n",
+				prMsduInfo->ucWlanIndex, prMsduInfo->ucPID);
 		}
+
+		DBGLOG(INIT, TRACE,
+			"TX MGMT Frame: BSS[%u] WIDX:PID[%u:%u] SEQ[%u] STA[%u] RSP[%u]\n",
+			prMsduInfo->ucBssIndex, prMsduInfo->ucWlanIndex,
+			prMsduInfo->ucPID,
+			prMsduInfo->ucTxSeqNum, prMsduInfo->ucStaRecIndex,
+			prMsduInfo->pfTxDoneHandler ? TRUE : FALSE);
+
+		HAL_WRITE_TX_CMD(prAdapter, prCmdInfo, ucTC);
+		/* <4> Management Frame Post-Processing */
+		GLUE_DEC_REF_CNT(prTxCtrl->i4TxMgmtPendingNum);
+
+		if (prMsduInfo->pfTxDoneHandler == NULL)
+			cnmMgtPktFree(prAdapter, prMsduInfo);
+
 
 	} else {
 		prCmdInfo->pucTxd = prCmdInfo->pucInfoBuffer;
