@@ -802,10 +802,13 @@ int wlanPreCalPwrOn(void)
 	struct timespec64 time;
 	uint32_t rStatus = 0;
 
-	update_wr_mtx_down_up_status(0);
+	while (update_wr_mtx_down_up_status(0, 0)) {
+		if (get_wifi_process_status())
+			return CONNINFRA_CB_RET_CAL_FAIL_POWER_OFF;
+		kalMsleep(50);
+	}
 
-	if (get_wifi_process_status() ||
-		get_wifi_powered_status())
+	if (get_wifi_powered_status())
 		return CONNINFRA_CB_RET_CAL_FAIL_POWER_OFF;
 
 	prChipInfo = prDriverData->chip_info;
@@ -823,7 +826,7 @@ int wlanPreCalPwrOn(void)
 
 		if (retryCount > MAX_PRE_ON_COUNT) {
 			update_pre_cal_status(0);
-			update_wr_mtx_down_up_status(1);
+			update_wr_mtx_down_up_status(1, 0);
 			return CONNINFRA_CB_RET_CAL_FAIL_POWER_OFF;
 		}
 	}
@@ -831,7 +834,7 @@ int wlanPreCalPwrOn(void)
 	/* wf driver power on */
 	if (asicConnac2xPwrOnWmMcu(prChipInfo) != 0) {
 		update_pre_cal_status(0);
-		update_wr_mtx_down_up_status(1);
+		update_wr_mtx_down_up_status(1, 0);
 		return CONNINFRA_CB_RET_CAL_FAIL_POWER_OFF;
 	}
 
@@ -849,7 +852,7 @@ int wlanPreCalPwrOn(void)
 
 			if (retryCount > MAX_PRE_ON_COUNT) {
 				update_pre_cal_status(0);
-				update_wr_mtx_down_up_status(1);
+				update_wr_mtx_down_up_status(1, 0);
 				return CONNINFRA_CB_RET_CAL_FAIL_POWER_OFF;
 			}
 		}
@@ -1017,7 +1020,7 @@ int wlanPreCalPwrOn(void)
 
 		HAL_LP_OWN_SET(prAdapter, &fgResult);
 		update_pre_cal_status(0);
-		update_wr_mtx_down_up_status(1);
+		update_wr_mtx_down_up_status(1, 0);
 	}
 
 	switch (eFailReason) {
@@ -1123,7 +1126,7 @@ int wlanPreCal(void)
 			g_u4WlanInitFlag);
 
 		update_pre_cal_status(0);
-		update_wr_mtx_down_up_status(1);
+		update_wr_mtx_down_up_status(1, 0);
 		return CONNINFRA_CB_RET_CAL_FAIL_POWER_OFF;
 	}
 
@@ -1168,7 +1171,7 @@ int wlanPreCal(void)
 	DBGLOG(INIT, INFO, "PreCal end\n");
 
 	update_pre_cal_status(0);
-	update_wr_mtx_down_up_status(1);
+	update_wr_mtx_down_up_status(1, 0);
 
 	return CONNINFRA_CB_RET_CAL_PASS_POWER_OFF;
 }
