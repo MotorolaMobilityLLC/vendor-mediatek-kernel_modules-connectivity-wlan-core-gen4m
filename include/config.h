@@ -1679,6 +1679,12 @@
 #define CFG_SUPPORT_POWER_THROTTLING 0
 #endif
 
+/*
+*   Add callback for DC off low power settings for MTK DTV
+*/
+#ifndef CFG_DC_USB_WOW_CALLBACK
+#define CFG_DC_USB_WOW_CALLBACK 0
+#endif
 /*------------------------------------------------------------------------------
  * Flag used for packet offload support.
  * Value 0: Do not enable packet offload.

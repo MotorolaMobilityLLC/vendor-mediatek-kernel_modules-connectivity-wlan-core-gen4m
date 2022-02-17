@@ -213,6 +213,129 @@ EXPORT_SYMBOL(gConEmiSize);
 phys_addr_t gConEmiPhyBaseFinal;
 unsigned long long gConEmiSizeFinal;
 #endif
+/*  For DTV Ref project -> Default enable */
+#if CFG_DC_USB_WOW_CALLBACK || CFG_POWER_OFF_CTRL_SUPPORT
+/* Register  DC  wow callback */
+int kalDcSetWow(void)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct BUS_INFO *prBusInfo = NULL;
+	struct WIFI_VAR *prWifiVar = NULL;
+	uint32_t count = 0;
+	int ret = 0;
+#if !CFG_ENABLE_WAKE_LOCK
+	uint32_t rStatus = WLAN_STATUS_SUCCESS;
+	uint32_t u4BufLen;
+
+	GLUE_SPIN_LOCK_DECLARATION();
+#endif
+
+	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wlanGetWiphy());
+
+	if (!prGlueInfo) {
+		DBGLOG(INIT, ERROR, "prGlueInfo == NULL\n");
+		return -ENODEV;
+	}
+
+	if (!prGlueInfo->prAdapter) {
+		DBGLOG(INIT, ERROR, "prGlueInfo->prAdapter == NULL\n");
+		return -ENODEV;
+	}
+
+	if (prGlueInfo && prGlueInfo->prAdapter) {
+		prWifiVar = &prGlueInfo->prAdapter->rWifiVar;
+
+#if !CFG_ENABLE_WAKE_LOCK
+		if (IS_FEATURE_ENABLED(prWifiVar->ucWow)) {
+			GLUE_ACQUIRE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
+			if (prGlueInfo->prScanRequest) {
+				kalCfg80211ScanDone(prGlueInfo->prScanRequest,
+					TRUE);
+				prGlueInfo->prScanRequest = NULL;
+			}
+			GLUE_RELEASE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
+
+			/* AIS flow: disassociation if wow_en=0 */
+			DBGLOG(REQ, INFO, "Enter AIS pre-suspend\n");
+			rStatus = kalIoctl(prGlueInfo,
+						wlanoidAisPreSuspend,
+						NULL,
+						0,
+						TRUE,
+						FALSE,
+						TRUE,
+						&u4BufLen);
+
+			/* TODO: p2pProcessPreSuspendFlow
+			 * In current design, only support AIS connection
+			 * during suspend only.
+			 * It need to add flow to deactive P2P (GC/GO)
+			 * link during suspend flow.
+			 * Otherwise, MT7668 would fail to enter deep sleep.
+			 */
+		}
+#endif
+
+		set_bit(SUSPEND_FLAG_FOR_WAKEUP_REASON,
+			&prGlueInfo->prAdapter->ulSuspendFlag);
+		set_bit(SUSPEND_FLAG_CLEAR_WHEN_RESUME,
+			&prGlueInfo->prAdapter->ulSuspendFlag);
+	}
+
+	prGlueInfo->fgIsInSuspendMode = TRUE;
+
+	/* Stop upper layers calling the device hard_start_xmit routine. */
+	netif_tx_stop_all_queues(prGlueInfo->prDevHandler);
+
+	/* wait wiphy device do cfg80211 suspend done, then start hif suspend */
+	if (IS_FEATURE_ENABLED(prGlueInfo->prAdapter->rWifiVar.ucWow))
+		wlanWaitCfg80211SuspendDone(prGlueInfo);
+
+	/* change to pre-Suspend state & block cfg80211 ops */
+	glUsbSetState(&prGlueInfo->rHifInfo, USB_STATE_PRE_SUSPEND);
+
+#if CFG_CHIP_RESET_SUPPORT
+	if (prGlueInfo->prAdapter->chip_info->fgIsSupportL0p5Reset)
+		cancel_work_sync(&prGlueInfo->rWfsysResetWork);
+#endif
+
+	wlanSuspendPmHandle(prGlueInfo);
+
+	prBusInfo = prGlueInfo->prAdapter->chip_info->bus_info;
+	if (prBusInfo->asicUsbSuspend) {
+		if (prBusInfo->asicUsbSuspend(prGlueInfo->prAdapter,
+			prGlueInfo))
+			return 0;
+		else
+			return -1;
+	}
+
+	halUSBPreSuspendCmd(prGlueInfo->prAdapter);
+
+	while (prGlueInfo->rHifInfo.state != USB_STATE_SUSPEND) {
+		if (count > 250) {
+			DBGLOG(HAL, ERROR, "pre_suspend timeout\n");
+			ret = -EFAULT;
+			break;
+		}
+		mdelay(2);
+		count++;
+	}
+
+	halDisableInterrupt(prGlueInfo->prAdapter);
+	halTxCancelAllSending(prGlueInfo->prAdapter);
+
+	/* pending cmd will be kept in queue
+	 * and no one to handle it after HIF resume.
+	 * In STR, it will result in cmd buf full and then cmd buf alloc fail .
+	 */
+	if (IS_FEATURE_ENABLED(prGlueInfo->prAdapter->rWifiVar.ucWow))
+		wlanReleaseAllTxCmdQueue(prGlueInfo->prAdapter);
+
+	DBGLOG(HAL, STATE, "mtk_usb_suspend() done!\n");
+	return ret;
+}
+#endif
 
 int CFG80211_Suspend(struct wiphy *wiphy,
 		     struct cfg80211_wowlan *wow)
@@ -6566,6 +6689,34 @@ static int initWlan(void)
 
 	gPrDev = NULL;
 
+#if CFG_DC_USB_WOW_CALLBACK
+	/* register system DC wow enable/disable callback function */
+	do {
+		typedef void (*func_ptr) (int (*f) (void));
+		char *func_name = "WifiRegisterPdwncCallback";
+		func_ptr pFunc =
+			(func_ptr)GLUE_SYMBOL_GET(func_name);
+		char *func_name2 = "RegisterPdwncCallbackWifi";
+		func_ptr pFunc2 =
+			(func_ptr)GLUE_SYMBOL_GET(func_name2);
+
+		if (pFunc) {
+			DBGLOG(INIT, ERROR,
+			"Register Wow callback1 success\n");
+				pFunc(&kalDcSetWow);
+			GLUE_SYMBOL_PUT(func_name);
+		} else if (pFunc2) {
+			DBGLOG(INIT, ERROR,
+			"Register Wow callback2 success\n");
+			pFunc2(&kalDcSetWow);
+			GLUE_SYMBOL_PUT(func_name2);
+		} else
+			DBGLOG(INIT, ERROR,
+			"No Exported Func Found:%s\n",
+			func_name);
+	} while (0);
+#endif
+
 	ret = ((glRegisterBus(wlanProbe,
 			      wlanRemove) == WLAN_STATUS_SUCCESS) ? 0 : -EIO);
 	if (ret == -EIO) {
@@ -6696,6 +6847,34 @@ static void exitWlan(void)
 	wlanFreeNetDev();
 #endif
 
+#if CFG_DC_USB_WOW_CALLBACK
+	/*Unregister system DC wow enable/disable callback function */
+	do {
+		typedef void (*func_ptr) (int (*f) (void));
+		char *func_name = "WifiRegisterPdwncCallback";
+		func_ptr pFunc =
+			(func_ptr)GLUE_SYMBOL_GET(func_name);
+		char *func_name2 = "RegisterPdwncCallbackWifi";
+		func_ptr pFunc2 =
+			(func_ptr)GLUE_SYMBOL_GET(func_name2);
+
+		if (pFunc) {
+			DBGLOG(INIT, STATE,
+			"Unregister Wow callback1 success\n");
+			pFunc(NULL);
+			GLUE_SYMBOL_PUT(func_name);
+		} else if (pFunc2) {
+			DBGLOG(INIT, STATE,
+			"Unregister Wow callback2 success\n");
+			pFunc2(NULL);
+			GLUE_SYMBOL_PUT(func_name2);
+		} else
+			DBGLOG(INIT, ERROR,
+			"No Exported Func Found:%s\n",
+			func_name);
+		} while (0);
+#endif
+
 	/* free pre-allocated memory */
 	kalUninitIOBuffer();
 
@@ -6824,6 +7003,11 @@ static int wf_pdwnc_notify(struct notifier_block *nb,
 		g_u4WlanInitFlag = 0;
 
 		DBGLOG(HAL, STATE, "wf_pdwnc_notify() done\n");
+	}
+
+	if (event == SYS_POWER_OFF || event == SYS_HALT) {
+		DBGLOG(HAL, STATE, "DC Set WoW\n");
+		kalDcSetWow();
 	}
 	return 0;
 }
