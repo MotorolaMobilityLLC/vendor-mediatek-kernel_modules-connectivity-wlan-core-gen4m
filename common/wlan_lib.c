@@ -3503,11 +3503,11 @@ uint32_t wlanAccessRegister(IN struct ADAPTER *prAdapter,
 	 */
 	ucTC = TC0_INDEX;
 #endif
-
+	prCmdInfo->ucCID = INIT_CMD_ID_ACCESS_REG;
 	NIC_FILL_CMD_TX_HDR(prAdapter,
 			prCmdInfo->pucInfoBuffer,
 			prCmdInfo->u2InfoBufLen,
-			INIT_CMD_ID_ACCESS_REG,
+			prCmdInfo->ucCID,
 			INIT_CMD_PACKET_TYPE_ID,
 			&ucCmdSeqNum,
 			FALSE,

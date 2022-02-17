@@ -66,6 +66,7 @@
 #if MTK_WCN_HIF_SDIO
 #include "hif_sdio.h"
 #endif
+#include "mt66xx_reg.h"
 
 /*******************************************************************************
 *                         C O M P I L E R   F L A G S
@@ -96,6 +97,8 @@
 /* Enable driver timing profiling */
 #define CFG_SDIO_TIMING_PROFILING       0
 
+#define CFG_SDIO_CONTEXT_DEBUG		0
+
 #define CFG_SDIO_INT_LOG_CNT            8
 
 #define SDIO_X86_WORKAROUND_WRITE_MCR   0x00C4
@@ -108,7 +111,7 @@
 
 #define HIF_TX_MAX_AGG_LENGTH           (511 * 512) /* 511 blocks x 512 */
 
-#define HIF_RX_MAX_AGG_NUM              16
+#define HIF_RX_MAX_AGG_NUM              SDIO_RX1_AGG_NUM
 /*!< Setting the maximum RX aggregation number 0: no limited (16) */
 
 #define HIF_TX_BUFF_COUNT_TC0           8
@@ -184,6 +187,24 @@ enum HIF_TX_COUNT_IDX_T {
 	HIF_TXC_IDX_13,
 	HIF_TXC_IDX_14,
 	HIF_TXC_IDX_15,
+#if (CFG_SDIO_INTR_ENHANCE_FORMAT == 2)
+	HIF_TXC_IDX_16,
+	HIF_TXC_IDX_17,
+	HIF_TXC_IDX_18,
+	HIF_TXC_IDX_19,
+	HIF_TXC_IDX_20,
+	HIF_TXC_IDX_21,
+	HIF_TXC_IDX_22,
+	HIF_TXC_IDX_23,
+	HIF_TXC_IDX_24,
+	HIF_TXC_IDX_25,
+	HIF_TXC_IDX_26,
+	HIF_TXC_IDX_27,
+	HIF_TXC_IDX_28,
+	HIF_TXC_IDX_29,
+	HIF_TXC_IDX_30,
+	HIF_TXC_IDX_31,
+#endif
 	HIF_TXC_IDX_NUM
 };
 

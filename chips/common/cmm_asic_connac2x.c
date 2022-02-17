@@ -205,6 +205,15 @@ void asicConnac2xCapInit(
 #endif /* CFG_ENABLE_FW_DOWNLOAD == 1 */
 		break;
 #endif /* _HIF_USB */
+#if defined(_HIF_SDIO)
+	case MT_DEV_INF_SDIO:
+		prChipInfo->u2HifTxdSize = SDIO_HIF_TXD_LEN;
+		prChipInfo->fillHifTxDesc = fillSdioHifTxDesc;
+		prChipInfo->u4ExtraTxByteCount =
+				EXTRA_TXD_SIZE_FOR_TX_BYTE_COUNT;
+		prChipInfo->ucPacketFormat = TXD_PKT_FORMAT_TXD_PAYLOAD;
+		break;
+#endif /* _HIF_SDIO */
 	default:
 		break;
 	}
@@ -1665,6 +1674,28 @@ uint16_t asicConnac2xUsbRxByteCount(
 }
 
 #endif /* _HIF_USB */
+
+#if defined(_HIF_SDIO)
+void fillSdioHifTxDesc(IN uint8_t **pDest, IN uint16_t *pInfoBufLen,
+	IN uint8_t ucPacketType)
+{
+	/* SDIO TX Descriptor (4 bytes)*/
+
+	/* BIT[15:00] - TX Bytes Count
+	 * BIT[17:16] - Packet Type
+	 * BIT[31:18] - Reserved
+	 */
+	struct SDIO_HIF_TX_HEADER sdio_hif_header = {0};
+
+	sdio_hif_header.InfoBufLen = (*pInfoBufLen + SDIO_HIF_TXD_LEN);
+	sdio_hif_header.Type =
+		(ucPacketType & SDIO_HIF_TXD_PKG_TYPE_MASK)
+				<< SDIO_HIF_TXD_PKG_TYPE_SHIFT;
+
+	kalMemZero((void *)*pDest, SDIO_HIF_TXD_LEN);
+	kalMemCopy((void *)*pDest, &sdio_hif_header, SDIO_HIF_TXD_LEN);
+}
+#endif /* _HIF_SDIO */
 
 void fillConnac2xTxDescTxByteCount(
 	struct ADAPTER *prAdapter,

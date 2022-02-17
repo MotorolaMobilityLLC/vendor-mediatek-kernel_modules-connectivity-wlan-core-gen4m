@@ -286,7 +286,9 @@ uint32_t halTxUSBSendCmd(IN struct GLUE_INFO *prGlueInfo, IN uint8_t ucTc, IN st
 
 	prChipInfo = prGlueInfo->prAdapter->chip_info;
 	prTxDescOps = prChipInfo->prTxDescOps;
-	HAL_WRITE_HIF_TXD(prChipInfo, prBufCtrl->pucBuf, (prCmdInfo->u4TxdLen + prCmdInfo->u4TxpLen));
+	HAL_WRITE_HIF_TXD(prChipInfo, prBufCtrl->pucBuf,
+			(prCmdInfo->u4TxdLen + prCmdInfo->u4TxpLen),
+				TXD_PKT_FORMAT_COMMAND);
 	u2OverallBufferLength += prChipInfo->u2HifTxdSize;
 
 	if (prCmdInfo->u4TxdLen) {
@@ -625,7 +627,8 @@ uint32_t halTxUSBSendData(IN struct GLUE_INFO *prGlueInfo, IN struct MSDU_INFO *
 		prBufCtrl = prUsbReq->prBufCtrl;
 	}
 
-	HAL_WRITE_HIF_TXD(prChipInfo, prBufCtrl->pucBuf + prBufCtrl->u4WrIdx, u4Length);
+	HAL_WRITE_HIF_TXD(prChipInfo, prBufCtrl->pucBuf + prBufCtrl->u4WrIdx,
+				u4Length, TXD_PKT_FORMAT_TXD_PAYLOAD);
 	prBufCtrl->u4WrIdx += prChipInfo->u2HifTxdSize;
 	memcpy(prBufCtrl->pucBuf + prBufCtrl->u4WrIdx, pucBuf, u4Length);
 	prBufCtrl->u4WrIdx += u4Length;
@@ -655,7 +658,8 @@ uint32_t halTxUSBSendData(IN struct GLUE_INFO *prGlueInfo, IN struct MSDU_INFO *
 	prBufCtrl = prUsbReq->prBufCtrl;
 	prBufCtrl->u4WrIdx = 0;
 
-	HAL_WRITE_HIF_TXD(prChipInfo, prBufCtrl->pucBuf, u4Length);
+	HAL_WRITE_HIF_TXD(prChipInfo, prBufCtrl->pucBuf, u4Length,
+			TXD_PKT_FORMAT_TXD_PAYLOAD);
 	prBufCtrl->u4WrIdx += prChipInfo->u2HifTxdSize;
 
 	memcpy(prBufCtrl->pucBuf + prChipInfo->u2HifTxdSize, pucBuf, u4Length);

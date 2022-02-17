@@ -842,7 +842,7 @@ do { \
 #define HAL_CFG_MAX_HIF_RX_LEN_NUM(_prAdapter, _ucNumOfRxLen) \
 { \
 	uint32_t u4Value = 0, ucNum; \
-	ucNum = ((_ucNumOfRxLen >= 16) ? 0 : _ucNumOfRxLen); \
+	ucNum = ((_ucNumOfRxLen >= HIF_RX_MAX_AGG_NUM) ? 0 : _ucNumOfRxLen); \
 	HAL_MCR_RD(_prAdapter, \
 		MCR_WHCR, \
 		&u4Value); \

@@ -1098,42 +1098,47 @@ union DELAY_INT_CFG_STRUCT {
 #define MCR_SWPCDBGR				0x0154
 
 /* #if CFG_SDIO_INTR_ENHANCE */
+#if defined(_HIF_SDIO)
+
+#if (CFG_SDIO_INTR_ENHANCE_FORMAT == 1)
+#define SDIO_TX_RESOURCE_NUM		16
+#define SDIO_TX_RESOURCE_REG_NUM	8	/* SDIO_TX_RESOURCE_NUM >> 1 */
+#define SDIO_RX0_AGG_NUM		16
+#define SDIO_RX1_AGG_NUM		16
+
+/* (SDIO_RX0_AGG_NUM + SDIO_RX1_AGG_NUM + 2) >> 1 */
+#define SDIO_RX_STATUS_REPORT_LEN	17
+
+#elif (CFG_SDIO_INTR_ENHANCE_FORMAT == 2)
+#define SDIO_TX_RESOURCE_NUM		32
+#define SDIO_TX_RESOURCE_REG_NUM	16	/* SDIO_TX_RESOURCE_NUM >> 1 */
+#define SDIO_RX0_AGG_NUM		16
+#define SDIO_RX1_AGG_NUM		128
+
+/* (SDIO_RX0_AGG_NUM + SDIO_RX1_AGG_NUM + 2) >> 1 */
+#define SDIO_RX_STATUS_REPORT_LEN	73
+#endif
+
+
 struct ENHANCE_MODE_DATA_STRUCT {
 	uint32_t u4WHISR;
 	union {
-		struct {
-			uint16_t u2TQ0Cnt;
-			uint16_t u2TQ1Cnt;
-			uint16_t u2TQ2Cnt;
-			uint16_t u2TQ3Cnt;
-			uint16_t u2TQ4Cnt;
-			uint16_t u2TQ5Cnt;
-			uint16_t u2TQ6Cnt;
-			uint16_t u2TQ7Cnt;
-			uint16_t u2TQ8Cnt;
-			uint16_t u2TQ9Cnt;
-			uint16_t u2TQ10Cnt;
-			uint16_t u2TQ11Cnt;
-			uint16_t u2TQ12Cnt;
-			uint16_t u2TQ13Cnt;
-			uint16_t u2TQ14Cnt;
-			uint16_t u2TQ15Cnt;
-		} u;
-		uint32_t au4WTSR[8];
+		uint16_t auTQCnt[SDIO_TX_RESOURCE_NUM];
+		uint32_t au4WTSR[SDIO_TX_RESOURCE_REG_NUM];
 	} rTxInfo;
 	union {
 		struct {
 			uint16_t u2NumValidRx0Len;
 			uint16_t u2NumValidRx1Len;
-			uint16_t au2Rx0Len[16];
-			uint16_t au2Rx1Len[16];
+			uint16_t au2Rx0Len[SDIO_RX0_AGG_NUM];
+			uint16_t au2Rx1Len[SDIO_RX1_AGG_NUM];
 		} u;
-		uint32_t au4RxStatusRaw[17];
+		uint32_t au4RxStatusRaw[SDIO_RX_STATUS_REPORT_LEN];
 	} rRxInfo;
 	uint32_t u4RcvMailbox0;
 	uint32_t u4RcvMailbox1;
 };
-/* #endif *//* ENHANCE_MODE_DATA_STRUCT_T */
+#endif
 
 /* 2 Definition in each register */
 /* 3 WCIR 0x0000 */
@@ -1476,7 +1481,8 @@ struct mt66xx_chip_info {
 #endif
 
 	uint32_t (*asicGetChipID)(IN struct ADAPTER *prAdapter);
-	void (*fillHifTxDesc)(IN uint8_t **pDest, IN uint16_t *pInfoBufLen);
+	void (*fillHifTxDesc)(OUT uint8_t **pDest, IN uint16_t *pInfoBufLen,
+		IN uint8_t ucPacketType);
 	uint32_t (*downloadBufferBin)(IN struct ADAPTER *prAdapter);
 	uint32_t (*constructBufferBinFileName)(IN struct ADAPTER *prAdapter,
 		OUT uint8_t *aucEeprom);
