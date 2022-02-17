@@ -984,7 +984,7 @@
  * Flags of SCHEDULE SCAN SUPPORT
  *------------------------------------------------------------------------------
  */
-#define CFG_SUPPORT_SCHED_SCAN             (0)
+#define CFG_SUPPORT_SCHED_SCAN             (1)
 #define SCHED_SCAN_CMD_VERSION             (1)
 
 /* this value should be aligned to auSsid in struct CMD_SCHED_SCAN_REQ */
