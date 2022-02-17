@@ -4515,6 +4515,10 @@ uint32_t ServiceWlanOid(void *winfos,
 		if (prAdapter->rWifiVar.ucStaHe)
 			capability->ph_cap.protocol |= BIT(3);
 #endif /* (CFG_SUPPORT_802_11AX == 1) */
+#if (CFG_SUPPORT_802_11BE == 1)
+		if (prAdapter->rWifiVar.ucStaEht)
+			capability->ph_cap.protocol |= BIT(4);
+#endif /* (CFG_SUPPORT_802_11BE == 1) */
 
 		/* ph_cap.ant_num */
 		capability->ph_cap.ant_num = prAdapter->rWifiVar.ucNSS;

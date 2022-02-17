@@ -216,6 +216,8 @@ else
     ccflags-y += -DCFG_SUPPORT_802_11AX=0
 endif
 
+ccflags-y += -DCFG_SUPPORT_802_11BE=0
+
 ifeq ($(CONFIG_MTK_WIFI_11AX_SUPPORT), y)
     ifeq ($(CONFIG_MTK_WIFI_6G_SUPPORT), y)
         ccflags-y += -DCFG_SUPPORT_WIFI_6G=1
@@ -776,6 +778,10 @@ COMMON_OBJS += $(COMMON_DIR)wlan_he.o
 ifeq ($(CONFIG_MTK_WIFI_11AX_SUPPORT), y)
 MGMT_OBJS += $(MGMT_DIR)he_ie.o \
              $(MGMT_DIR)he_rlm.o
+endif
+
+ifeq ($(CONFIG_MTK_WIFI_11BE_SUPPORT), y)
+MGMT_OBJS += $(MGMT_DIR)eht_rlm.o
 endif
 
 ifeq ($(CONFIG_MTK_WIFI_TWT_SUPPORT), y)

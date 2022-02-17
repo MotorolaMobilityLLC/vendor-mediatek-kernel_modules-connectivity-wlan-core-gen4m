@@ -77,6 +77,9 @@
 #if (CFG_SUPPORT_802_11AX == 1)
 #include "he_ie.h"
 #endif
+#if (CFG_SUPPORT_802_11BE == 1)
+#include "eht_ie.h"
+#endif
 
 #include "wsys_cmd_handler_fw.h"
 

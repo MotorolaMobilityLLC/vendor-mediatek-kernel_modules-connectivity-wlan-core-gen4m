@@ -2436,6 +2436,11 @@ void rlmFillVhtOpInfoByBssOpBw(struct BSS_INFO *prBssInfo, uint8_t ucBssOpBw)
 			prBssInfo->eBand,
 			prBssInfo->ucPrimaryChannel, VHT_OP_CHANNEL_WIDTH_160);
 		prBssInfo->ucVhtChannelFrequencyS2 = 0;
+	} else if (ucBssOpBw == MAX_BW_320MHZ) {
+		prBssInfo->ucVhtChannelWidth = VHT_OP_CHANNEL_WIDTH_320;
+		prBssInfo->ucVhtChannelFrequencyS1 = nicGetVhtS1(
+			prBssInfo->ucPrimaryChannel, VHT_OP_CHANNEL_WIDTH_320);
+		prBssInfo->ucVhtChannelFrequencyS2 = 0;
 	} else {
 		/* 4 TODO: / BW80+80 support */
 		DBGLOG(RLM, INFO, "Unsupport BW setting, back to VHT20_40\n");
@@ -3071,6 +3076,13 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 					prHe6gBandCap->u2CapInfo;
 			}
 #endif /* CFG_SUPPORT_WIFI_6G */
+#if (CFG_SUPPORT_802_11BE == 1)
+			if (IE_ID_EXT(pucIE) == EID_EXT_EHT_CAPS)
+				ehtRlmRecCapInfo(prAdapter, prStaRec, pucIE);
+			else if (IE_ID_EXT(pucIE) == EID_EXT_EHT_OP)
+				ehtRlmRecOperation(prAdapter,
+					prBssInfo, pucIE);
+#endif
 			break;
 #endif /* CFG_SUPPORT_802_11AX */
 		default:
@@ -3426,6 +3438,9 @@ static void rlmRecAssocRespIeInfoForClient(struct ADAPTER *prAdapter,
 #if (CFG_SUPPORT_802_11AX == 1)
 	u_int8_t fgIsHasHeCap = FALSE;
 #endif
+#if (CFG_SUPPORT_802_11BE == 1)
+	u_int8_t fgIsHasEhtCap = FALSE;
+#endif
 	struct BSS_DESC *prBssDesc;
 	struct PARAM_SSID rSsid;
 
@@ -3471,16 +3486,22 @@ static void rlmRecAssocRespIeInfoForClient(struct ADAPTER *prAdapter,
 			fgIsHasVhtCap = TRUE;
 			break;
 #endif
-#if (CFG_SUPPORT_802_11AX == 1)
 		case ELEM_ID_RESERVED:
+#if (CFG_SUPPORT_802_11AX == 1)
+
 			if (fgEfuseCtrlAxOn == 1) {
-			if (IE_ID_EXT(pucIE) != ELEM_EXT_ID_HE_CAP ||
-			    !RLM_NET_IS_11AX(prBssInfo))
-				break;
-			fgIsHasHeCap = TRUE;
+			if (IE_ID_EXT(pucIE) == ELEM_EXT_ID_HE_CAP &&
+			    RLM_NET_IS_11AX(prBssInfo))
+				fgIsHasHeCap = TRUE;
 			}
-			break;
 #endif
+#if (CFG_SUPPORT_802_11BE == 1)
+			if (IE_ID_EXT(pucIE) == EID_EXT_EHT_CAPS &&
+				RLM_NET_IS_11BE(prBssInfo))
+				fgIsHasEhtCap = TRUE;
+#endif
+			break;
+
 
 		default:
 			break;
@@ -3520,6 +3541,17 @@ static void rlmRecAssocRespIeInfoForClient(struct ADAPTER *prAdapter,
 			}
 		}
 	}
+	}
+#endif
+#if (CFG_SUPPORT_802_11BE == 1)
+	if (!fgIsHasEhtCap) {
+		prStaRec->ucDesiredPhyTypeSet &= ~PHY_TYPE_BIT_EHT;
+		if (prBssDesc) {
+			if (prBssDesc->ucPhyTypeSet & PHY_TYPE_BIT_EHT) {
+				DBGLOG(RLM, WARN, "PhyTypeSet are unsync. ");
+				DBGLOG(RLM, WARN, "Disable EHT per assoc.\n");
+			}
+		}
 	}
 #endif
 }
@@ -3881,6 +3913,9 @@ void rlmProcessBcn(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb,
 						prSwRfb, pucIE, u2IELength);
 					}
 #endif
+#if (CFG_SUPPORT_802_11BE == 1)
+					/* TODO */
+#endif
 				} else {
 					fgNewParameter =
 						rlmRecBcnFromNeighborForClient(
@@ -3921,6 +3956,9 @@ void rlmProcessBcn(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb,
 					fgNewSRParam = FALSE;
 				}
 			}
+#endif
+#if (CFG_SUPPORT_802_11BE == 1)
+			/* TODO */
 #endif
 
 		} /* end of IS_BSS_ACTIVE() */
@@ -4005,6 +4043,9 @@ void rlmProcessAssocRsp(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb,
 		/* ASSERT(fgNewSRParam); */
 		nicRlmUpdateSRParams(prAdapter, prBssInfo->ucBssIndex);
 	}
+#endif
+#if (CFG_SUPPORT_802_11BE == 1)
+		/* TODO */
 #endif
 
 	/* Note: Update its capabilities to WTBL by cnmStaRecChangeState(),
@@ -4501,12 +4542,17 @@ void rlmProcessAssocReq(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb,
 			prStaRec->ucAselCap = prHtCap->ucAselCap;
 			break;
 
-#if (CFG_SUPPORT_802_11AX == 1)
 		case ELEM_ID_RESERVED:
+#if (CFG_SUPPORT_802_11AX == 1)
 			if (IE_ID_EXT(pucIE) == ELEM_EXT_ID_HE_CAP)
 				heRlmRecHeCapInfo(prAdapter, prStaRec, pucIE);
-			break;
 #endif
+#if (CFG_SUPPORT_802_11BE == 1)
+			if (IE_ID_EXT(pucIE) == EID_EXT_EHT_CAPS)
+				ehtRlmRecCapInfo(prAdapter, prStaRec, pucIE);
+#endif
+			break;
+
 
 #if CFG_SUPPORT_802_11AC
 		case ELEM_ID_VHT_CAP:
@@ -4760,6 +4806,10 @@ static void rlmBssReset(struct ADAPTER *prAdapter, struct BSS_INFO *prBssInfo)
 		prBssInfo->ucBssColorInfo = 0;
 		prBssInfo->u2HeBasicMcsSet = 0;
 	}
+#endif
+#if (CFG_SUPPORT_802_11BE == 1)
+	memset(prBssInfo->ucEhtOpParams, 0, EHT_OP_BYTE_NUM);
+	/*TODO */
 #endif
 }
 
@@ -6442,6 +6492,10 @@ uint8_t rlmGetBssOpBwByVhtAndHtOpInfo(struct BSS_INFO *prBssInfo)
 	ASSERT(prBssInfo);
 
 	switch (prBssInfo->ucVhtChannelWidth) {
+	case VHT_OP_CHANNEL_WIDTH_320:
+		ucBssOpBw = MAX_BW_320MHZ;
+		break;
+
 	case VHT_OP_CHANNEL_WIDTH_80P80:
 		ucBssOpBw = MAX_BW_80_80_MHZ;
 		break;
@@ -6504,6 +6558,11 @@ uint8_t rlmGetVhtOpBwByBssOpBw(uint8_t ucBssOpBw)
 	case MAX_BW_80_80_MHZ:
 		ucVhtOpBw = VHT_OP_CHANNEL_WIDTH_80P80;
 		break;
+
+	case MAX_BW_320MHZ:
+		ucVhtOpBw = VHT_OP_CHANNEL_WIDTH_320;
+		break;
+
 	default:
 		DBGLOG(RLM, WARN, "%s: unexpected Bss OP BW: %d\n", __func__,
 		       ucBssOpBw);

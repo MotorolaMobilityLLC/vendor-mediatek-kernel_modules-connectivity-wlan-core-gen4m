@@ -290,6 +290,10 @@ void aisInitializeConnectionSettings(IN struct ADAPTER *prAdapter,
 			= PHY_CONFIG_802_11ABGNACAX;
 	}
 #endif
+#if (CFG_SUPPORT_802_11BE == 1)
+	prAdapter->rWifiVar.eDesiredPhyConfig
+		= PHY_CONFIG_802_11ABGNACAXBE;
+#endif
 
 	/* Set default bandwidth modes */
 	prAdapter->rWifiVar.uc2G4BandwidthMode =
