@@ -602,7 +602,6 @@ void asicPdmaLoopBackConfig(struct GLUE_INFO *prGlueInfo, u_int8_t fgEnable)
 	kalDevRegWrite(prGlueInfo, WPDMA_GLO_CFG, GloCfg.word);
 }
 
-#if CFG_MTK_MCIF_WIFI_SUPPORT
 static void configPdmaRxRingThreshold(struct GLUE_INFO *prGlueInfo)
 {
 	uint32_t u4OldVal = 0, u4NewVal = 0;
@@ -627,7 +626,6 @@ static void configPdmaRxRingThreshold(struct GLUE_INFO *prGlueInfo)
 	DBGLOG(HAL, TRACE, "RX_RING[2, 3] TH(0x%x) from 0x%x to 0x%x\n",
 			WPDMA_PAUSE_RX_Q_TH32, u4OldVal, u4NewVal);
 }
-#endif
 
 void asicPdmaIntMaskConfig(struct GLUE_INFO *prGlueInfo,
 		u_int8_t fgEnable)
@@ -703,20 +701,16 @@ void asicPdmaConfig(struct GLUE_INFO *prGlueInfo, u_int8_t fgEnable,
 
 	if (fgEnable) {
 		kalDevRegWrite(prGlueInfo, WPDMA_PAUSE_TX_Q, 0);
-#if CFG_MTK_MCIF_WIFI_SUPPORT
 		configPdmaRxRingThreshold(prGlueInfo);
-#endif
 	} else {
 		halWpdmaWaitIdle(prGlueInfo, 100, 1000);
 		/* Reset DMA Index */
 		kalDevRegWrite(prGlueInfo, WPDMA_RST_PTR, 0xFFFFFFFF);
-#if CFG_MTK_MCIF_WIFI_SUPPORT
 		if (fgResetHif) {
 			halEnableSlpProt(prGlueInfo);
 			halHifRst(prGlueInfo);
 			halDisableSlpProt(prGlueInfo);
 		}
-#endif
 	}
 }
 

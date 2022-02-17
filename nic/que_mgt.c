@@ -69,9 +69,7 @@
  */
 #include "precomp.h"
 #include "queue.h"
-#if CFG_MTK_MCIF_WIFI_SUPPORT
 #include "mddp.h"
-#endif
 /*******************************************************************************
  *                              C O N S T A N T S
  *******************************************************************************
@@ -590,8 +588,9 @@ void qmActivateStaRec(IN struct ADAPTER *prAdapter,
 		(prStaRec->aprRxReorderParamRefTbl)[i] = NULL;
 #endif
 
-#if CFG_MTK_MCIF_WIFI_SUPPORT
-	mddpNotifyDrvTxd(prAdapter, prStaRec, TRUE);
+#ifdef CONFIG_MTK_MDDP_SUPPORT
+	if (mddpIsSupportMcifWifi())
+		mddpNotifyDrvTxd(prAdapter, prStaRec, TRUE);
 #endif
 
 	DBGLOG(QM, INFO, "QM: +STA[%d]\n", prStaRec->ucIndex);
@@ -655,8 +654,9 @@ void qmDeactivateStaRec(IN struct ADAPTER *prAdapter,
 
 	qmUpdateStaRec(prAdapter, prStaRec);
 
-#if CFG_MTK_MCIF_WIFI_SUPPORT
-	mddpNotifyDrvTxd(prAdapter, prStaRec, FALSE);
+#ifdef CONFIG_MTK_MDDP_SUPPORT
+	if (mddpIsSupportMcifWifi())
+		mddpNotifyDrvTxd(prAdapter, prStaRec, FALSE);
 #endif
 
 	DBGLOG(QM, INFO, "QM: -STA[%u]\n", prStaRec->ucIndex);
@@ -4839,8 +4839,9 @@ void qmHandleEventTxAddBa(IN struct ADAPTER *prAdapter,
 	prStaRec->u4MaxMpduLen = prEventTxAddBa->u4MaxMpduLen;
 	prStaRec->u4MinMpduLen = prEventTxAddBa->u4MinMpduLen;
 
-#if CFG_MTK_MCIF_WIFI_SUPPORT
-	mddpNotifyDrvTxd(prAdapter, prStaRec, TRUE);
+#ifdef CONFIG_MTK_MDDP_SUPPORT
+	if (mddpIsSupportMcifWifi())
+		mddpNotifyDrvTxd(prAdapter, prStaRec, TRUE);
 #endif
 
 	DBGLOG(QM, INFO,
@@ -8545,10 +8546,10 @@ qmIsNoDropPacket(IN struct ADAPTER *prAdapter, IN struct SW_RFB *prSwRfb)
 		fgCheckDrop = TRUE;
 #endif
 
-#if CFG_MTK_MDDP_WH_SUPPORT
-	if (!fgCheckDrop && prAdapter->fgMddpActivated &&
-			prBssInfo &&
-			prBssInfo->eNetworkType == NETWORK_TYPE_P2P) {
+#ifdef CONFIG_MTK_MDDP_SUPPORT
+	if (!fgCheckDrop && mddpIsSupportMddpWh() &&
+	    prAdapter->fgMddpActivated &&
+	    prBssInfo && prBssInfo->eNetworkType == NETWORK_TYPE_P2P) {
 		struct WIFI_VAR *prWifiVar = NULL;
 		struct P2P_CONNECTION_SETTINGS *prP2PConnSettings = NULL;
 
