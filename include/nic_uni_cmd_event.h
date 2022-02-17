@@ -1812,6 +1812,38 @@ struct UNI_CMD_SCAN_SSID_MATCH_SETS {
 	uint8_t  aucMatchSsidBuffer[0]; // SCAN_SCHED_SSID_MATCH_SETS_T
 } __KAL_ATTRIB_PACKED__;
 
+/* Get mac info command (0x1A) */
+struct UNI_CMD_GET_MAC_INFO
+{
+	/* fixed field */
+	uint8_t ucReserved[4];
+
+	/* tlv */
+	uint8_t aucTlvBuffer[0];/**< the TLVs included in this field:
+        *
+        *   TAG                      | ID  | structure
+        *   -------------------------|-----|--------------
+        *   UNI_CMD_MAC_INFO_TSF     | 0x0 | UNI_CMD_MAC_INFO_TSF_T
+        */
+} __KAL_ATTRIB_PACKED__;
+
+/* Get mac info command TLV List */
+enum ENUM_UNI_CMD_MAC_INFO_TAG
+{
+    UNI_CMD_MAC_INFO_TAG_TSF = 0,
+    UNI_CMD_MAC_INFO_TAG_NUM
+};
+
+/* Get tsf time (Tag0) */
+struct UNI_CMD_MAC_INFO_TSF
+{
+	uint16_t u2Tag;
+	uint16_t u2Length;
+	uint8_t ucDbdcIdx;
+	uint8_t ucHwBssidIndex;
+	uint8_t aucPadding[2];
+} __KAL_ATTRIB_PACKED__;
+
 struct UNI_CMD_PKT_DROP
 {
 	/* fixed field */
@@ -2506,6 +2538,34 @@ struct UNI_EVENT_MD_SAFE_CHN
 	uint32_t u4SafeChannelBitmask[UNI_WIFI_CH_MASK_IDX_NUM]; /* WIFI_CH_MASK_IDX_NUM = 4 */
 } __KAL_ATTRIB_PACKED__;
 
+struct UNI_EVENT_MAC_IFNO
+{
+	/* fixed field */
+	uint8_t aucReserved[4];
+
+	/* tlv */
+	uint8_t aucTlvBuffer[0];
+} __KAL_ATTRIB_PACKED__;
+
+/* Mac info event Tag */
+enum ENUM_UNI_EVENT_MAC_INFO_TAG
+{
+	UNI_EVENT_MAC_INFO_TAG_TSF  = 0,
+	UNI_EVENT_MAC_INFO_TAG_NUM
+};
+
+/* Beacon timeout reason (Tag0) */
+struct UNI_EVENT_MAC_INFO_TSF
+{
+	uint16_t   u2Tag;    // Tag = 0x00
+	uint16_t   u2Length;
+	uint8_t    ucDbdcIdx;
+	uint8_t    ucHwBssidIndex;
+	uint8_t    aucPadding[2];
+	uint32_t   u4TsfBit0_31;
+	uint32_t   u4TsfBit63_32;
+} __KAL_ATTRIB_PACKED__;
+
 struct UNI_EVENT_CNM {
 	/* fixed field */
 	uint8_t aucPadding[4];
@@ -3032,6 +3092,8 @@ uint32_t nicUniCmdBFAction(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
 uint32_t nicUniCmdSerAction(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
+uint32_t nicUniCmdGetTsf(struct ADAPTER *ad,
+		struct WIFI_UNI_SETQUERY_INFO *info);
 uint32_t nicUniCmdUpdateEdcaSet(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
 uint32_t nicUniCmdAccessReg(struct ADAPTER *ad,
@@ -3073,6 +3135,8 @@ void nicUniEventQueryIdcChnl(IN struct ADAPTER *prAdapter,
 void nicUniEventBFStaRec(IN struct ADAPTER *prAdapter,
 	IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf);
 void nicUniCmdEventQueryMcrRead(IN struct ADAPTER *prAdapter,
+	IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf);
+void nicUniCmdEventGetTsfDone(IN struct ADAPTER *prAdapter,
 	IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf);
 
 /*******************************************************************************
