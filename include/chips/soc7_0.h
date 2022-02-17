@@ -177,7 +177,7 @@ void soc7_0_show_wfdma_dbg_probe_info(IN struct ADAPTER *prAdapter,
 void soc7_0_show_wfdma_wrapper_info(IN struct ADAPTER *prAdapter,
 	IN enum _ENUM_WFDMA_TYPE_T enum_wfdma_type);
 int soc7_0_Trigger_fw_assert(void);
-#ifdef CFG_SUPPORT_LINK_QUALITY_MONITOR
+#if CFG_SUPPORT_LINK_QUALITY_MONITOR
 int soc7_0_get_rx_rate_info(IN struct ADAPTER *prAdapter,
 		OUT uint32_t *pu4Rate, OUT uint32_t *pu4Nss,
 		OUT uint32_t *pu4RxMode, OUT uint32_t *pu4FrMode,

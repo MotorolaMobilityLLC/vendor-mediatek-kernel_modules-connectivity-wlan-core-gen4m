@@ -154,7 +154,7 @@ static uint32_t last_rx_packets, latest_rx_packets;
  *                                 M A C R O S
  *******************************************************************************
  */
-#ifdef CFG_SUPPORT_LINK_QUALITY_MONITOR
+#if CFG_SUPPORT_LINK_QUALITY_MONITOR
 #define LINK_QUALITY_COUNT_DUP(prAdapter, prSwRfb) \
 do { \
 	struct BSS_INFO *prBssInfo = NULL; \

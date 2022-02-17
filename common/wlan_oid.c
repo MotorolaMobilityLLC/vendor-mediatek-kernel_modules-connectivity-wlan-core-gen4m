@@ -16996,7 +16996,7 @@ uint32_t wlanoidGetWifiType(IN struct ADAPTER *prAdapter,
 	return WLAN_STATUS_SUCCESS;
 }
 
-#ifdef CFG_SUPPORT_LINK_QUALITY_MONITOR
+#if CFG_SUPPORT_LINK_QUALITY_MONITOR
 uint32_t wlanoidGetLinkQualityInfo(IN struct ADAPTER *prAdapter,
 				   IN void *pvSetBuffer,
 				   IN uint32_t u4SetBufferLen,

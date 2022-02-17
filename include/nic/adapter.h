@@ -1841,7 +1841,7 @@ struct ADAPTER {
 	struct WLAN_IOT_AP_RULE_T rIotApRule[CFG_IOT_AP_RULE_MAX_CNT];
 #endif
 
-#ifdef CFG_SUPPORT_LINK_QUALITY_MONITOR
+#if CFG_SUPPORT_LINK_QUALITY_MONITOR
 	uint32_t u4LastLinkQuality;
 	uint32_t u4LinkQualityCounter;
 	struct WIFI_LINK_QUALITY_INFO rLinkQualityInfo;

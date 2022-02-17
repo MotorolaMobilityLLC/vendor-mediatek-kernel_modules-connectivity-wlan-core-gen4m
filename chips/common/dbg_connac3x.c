@@ -2916,7 +2916,7 @@ void connac3x_show_pse_info(struct ADAPTER *prAdapter)
 	}
 }
 
-#ifdef CFG_SUPPORT_LINK_QUALITY_MONITOR
+#if CFG_SUPPORT_LINK_QUALITY_MONITOR
 int connac3x_get_rx_rate_info(IN struct ADAPTER *prAdapter,
 		OUT uint32_t *pu4Rate, OUT uint32_t *pu4Nss,
 		OUT uint32_t *pu4RxMode, OUT uint32_t *pu4FrMode,

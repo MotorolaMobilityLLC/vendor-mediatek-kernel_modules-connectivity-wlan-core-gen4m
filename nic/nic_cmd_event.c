@@ -987,7 +987,7 @@ void nicCmdEventQueryStatistics(IN struct ADAPTER
 	struct EVENT_STATISTICS *prEventStatistics;
 	struct GLUE_INFO *prGlueInfo;
 	uint32_t u4QueryInfoLen;
-#ifdef CFG_SUPPORT_LINK_QUALITY_MONITOR
+#if CFG_SUPPORT_LINK_QUALITY_MONITOR
 	struct WIFI_LINK_QUALITY_INFO *prLinkQualityInfo;
 	struct SCAN_INFO *prScanInfo;
 #endif
@@ -1027,7 +1027,7 @@ void nicCmdEventQueryStatistics(IN struct ADAPTER
 		prEventStatistics->rMulticastReceivedFrameCount;
 	prStatistics->rFCSErrorCount =
 		prEventStatistics->rFCSErrorCount;
-#ifdef CFG_SUPPORT_LINK_QUALITY_MONITOR
+#if CFG_SUPPORT_LINK_QUALITY_MONITOR
 	prScanInfo = &(prAdapter->rWifiVar.rScanInfo);
 	prStatistics->rMdrdyCnt = prEventStatistics->rMdrdyCnt;
 	prStatistics->rChnlIdleCnt = prEventStatistics->rChnlIdleCnt;
@@ -1982,7 +1982,7 @@ void nicCmdEventQueryStaStatistics(IN struct ADAPTER
 	enum ENUM_WMM_ACI eAci;
 	struct STA_RECORD *prStaRec;
 	uint8_t ucDbdcIdx, ucIdx;
-#ifdef CFG_SUPPORT_LINK_QUALITY_MONITOR
+#if CFG_SUPPORT_LINK_QUALITY_MONITOR
 	struct WIFI_LINK_QUALITY_INFO *prLinkQualityInfo;
 #endif
 
@@ -2226,7 +2226,7 @@ void nicCmdEventQueryStaStatistics(IN struct ADAPTER
 		}
 #endif
 #endif
-#ifdef CFG_SUPPORT_LINK_QUALITY_MONITOR
+#if CFG_SUPPORT_LINK_QUALITY_MONITOR
 		prLinkQualityInfo = &(prAdapter->rLinkQualityInfo);
 		prLinkQualityInfo->u4CurTxRate = prEvent->u2LinkSpeed * 5;
 #endif

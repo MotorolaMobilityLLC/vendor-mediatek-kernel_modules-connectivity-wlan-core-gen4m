@@ -1260,7 +1260,7 @@ struct PARAM_GET_CNM_T {
 	uint8_t	au4Reserved[65]; /*Total 160 byte*/
 };
 
-#ifdef CFG_SUPPORT_LINK_QUALITY_MONITOR
+#if CFG_SUPPORT_LINK_QUALITY_MONITOR
 struct WIFI_LINK_QUALITY_INFO {
 	uint32_t u4CurTxRate;		/* current tx link speed */
 	uint64_t u8TxTotalCount;	/* tx total accumulated count */
@@ -1914,7 +1914,7 @@ int wlanGetMaxTxRate(IN struct ADAPTER *prAdapter,
 		 OUT uint32_t *pu4CurRate, OUT uint32_t *pu4MaxRate);
 #endif /* CFG_REPORT_MAX_TX_RATE */
 
-#ifdef CFG_SUPPORT_LINK_QUALITY_MONITOR
+#if CFG_SUPPORT_LINK_QUALITY_MONITOR
 int wlanGetRxRate(IN struct GLUE_INFO *prGlueInfo,
 		IN uint8_t ucBssIdx, OUT uint32_t *pu4CurRate,
 		OUT uint32_t *pu4MaxRate, OUT uint32_t *pu4CurBw);

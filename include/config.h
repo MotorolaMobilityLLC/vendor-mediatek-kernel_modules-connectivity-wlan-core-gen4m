@@ -1499,9 +1499,14 @@
  * CFG_LQ_MONITOR_FREQUENCY base on PERF_MON_UPDATE_INTERVAL
  *------------------------------------------------------------------------------
  */
-#define CFG_SUPPORT_LINK_QUALITY_MONITOR
-#ifdef CFG_SUPPORT_LINK_QUALITY_MONITOR
-#define CFG_LQ_MONITOR_FREQUENCY 1
+#ifndef CFG_SUPPORT_LINK_QUALITY_MONITOR
+#define CFG_SUPPORT_LINK_QUALITY_MONITOR  1
+#endif /* CFG_SUPPORT_LINK_QUALITY_MONITOR */
+
+#if (CFG_SUPPORT_LINK_QUALITY_MONITOR == 1)
+#define CFG_LQ_MONITOR_FREQUENCY  1
+#else
+#define CFG_LQ_MONITOR_FREQUENCY  0
 #endif /* CFG_SUPPORT_LINK_QUALITY_MONITOR */
 
 /*------------------------------------------------------------------------------

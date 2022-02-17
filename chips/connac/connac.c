@@ -337,7 +337,7 @@ struct CHIP_DBG_OPS connac_debug_ops = {
 	.showHifInfo = NULL,
 	.printHifDbgInfo = halPrintHifDbgInfo,
 	.show_stat_info = halShowStatInfo,
-#ifdef CFG_SUPPORT_LINK_QUALITY_MONITOR
+#if CFG_SUPPORT_LINK_QUALITY_MONITOR
 	.get_rx_rate_info = connac_get_rx_rate_info,
 #endif
 	.dumpPhyInfo = haldumpPhyInfo
