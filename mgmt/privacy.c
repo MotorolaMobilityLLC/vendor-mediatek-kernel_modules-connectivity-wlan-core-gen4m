@@ -905,7 +905,7 @@ void secPrivacyFreeSta(IN struct ADAPTER *prAdapter,
 		    EQUAL_MAC_ADDR(prStaRec->aucMacAddr,
 				   prWtbl[entry].aucMacAddr) && prWtbl[entry].ucPairwise) {
 #if 1				/* DBG */
-			DBGLOG(RSN, INFO, "Free STA entry (%lu)!\n", entry);
+			DBGLOG(RSN, INFO, "Free STA entry (%d)!\n", entry);
 #endif
 			secPrivacyFreeForEntry(prAdapter, entry);
 			prStaRec->ucWlanIndex = WTBL_RESERVED_ENTRY;
