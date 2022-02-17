@@ -991,8 +991,61 @@ struct TX_DESC_OPS_T {
 
 	/* TXD Handle APIs */
 	uint8_t (*nic_txd_long_format_op)(
-		IN void *prTxDesc,
-		IN uint8_t fgSet);
+		void *prTxDesc,
+		uint8_t fgSet);
+	uint8_t (*nic_txd_tid_op)(
+		void *prTxDesc,
+		uint8_t ucTid,
+		uint8_t fgSet);
+	uint8_t (*nic_txd_queue_idx_op)(
+		void *prTxDesc,
+		uint8_t ucQueIdx,
+		uint8_t fgSet);
+#if (CFG_TCP_IP_CHKSUM_OFFLOAD == 1)
+	void (*nic_txd_chksum_op)(
+		void *prTxDesc,
+		uint8_t ucChksumFlag);
+#endif /* CFG_TCP_IP_CHKSUM_OFFLOAD == 1 */
+	void (*nic_txd_header_format_op)(
+		void *prTxDesc,
+		struct MSDU_INFO *prMsduInfo);
+	void (*nic_txd_fill_by_pkt_option)(
+		struct MSDU_INFO *prMsduInfo,
+		void *prTxD);
+	void (*nic_txd_compose)(
+		struct ADAPTER *prAdapter,
+		struct MSDU_INFO *prMsduInfo,
+		u_int32_t u4TxDescLength,
+		u_int8_t fgIsTemplate,
+		u_int8_t *prTxDescBuffer);
+	void (*nic_txd_compose_security_frame)(
+		struct ADAPTER *prAdapter,
+		struct CMD_INFO *prCmdInfo,
+		uint8_t *prTxDescBuffer,
+		uint8_t *pucTxDescLength);
+	void (*nic_txd_set_pkt_fixed_rate_option_full)(
+		struct MSDU_INFO *prMsduInfo,
+		uint16_t u2RateCode,
+		uint8_t ucBandwidth,
+		u_int8_t fgShortGI,
+		u_int8_t fgLDPC,
+		u_int8_t fgDynamicBwRts, u_int8_t fgBeamforming,
+		uint8_t ucAntennaIndex);
+	void (*nic_txd_set_pkt_fixed_rate_option)(
+		struct MSDU_INFO *prMsduInfo,
+		uint16_t u2RateCode,
+		uint8_t ucBandwidth,
+		u_int8_t fgShortGI,
+		u_int8_t fgDynamicBwRts);
+	void (*nic_txd_set_hw_amsdu_template)(
+		struct ADAPTER *prAdapter,
+		struct STA_RECORD *prStaRec,
+		uint8_t ucTid,
+		u_int8_t fgSet);
+	void (*nic_txd_change_data_port_by_ac)(
+		struct STA_RECORD *prStaRec,
+		uint8_t ucAci,
+		u_int8_t fgToMcu);
 };
 
 /*******************************************************************************
@@ -1709,7 +1762,10 @@ uint32_t nicTxMsduInfoList(IN struct ADAPTER *prAdapter,
 	IN struct MSDU_INFO *prMsduInfoListHead);
 
 uint8_t nicTxGetTxQByTc(IN struct ADAPTER *prAdapter, IN uint8_t ucTc);
-
+uint8_t nicTxGetTxDestPortIdxByTc(IN uint8_t ucTc);
+uint8_t nicTxGetTxDestQIdxByTc(IN uint8_t ucTc);
+uint32_t nicTxGetRemainingTxTimeByTc(IN uint8_t ucTc);
+uint8_t nicTxGetTxCountLimitByTc(IN uint8_t ucTc);
 #if CFG_SUPPORT_MULTITHREAD
 uint32_t nicTxMsduInfoListMthread(IN struct ADAPTER *prAdapter,
 	IN struct MSDU_INFO *prMsduInfoListHead);
@@ -1805,14 +1861,16 @@ void nicTxSetDataPacket(IN struct ADAPTER *prAdapter,
 	IN enum ENUM_TX_PACKET_SRC eSrc, IN uint8_t ucTID,
 	IN u_int8_t fgIs802_11Frame, IN u_int8_t fgIs1xFrame);
 
-void nicTxFillDescByPktOption(IN struct MSDU_INFO *prMsduInfo,
-	IN struct HW_MAC_TX_DESC *prTxDesc);
+void nicTxFillDescByPktOption(
+	IN struct ADAPTER *prAdapter,
+	IN struct MSDU_INFO *prMsduInfo,
+	IN void *prTxDesc);
 
 void nicTxConfigPktOption(IN struct MSDU_INFO *prMsduInfo,
 	IN uint32_t u4OptionMask, IN u_int8_t fgSetOption);
 
 void nicTxFillDescByPktControl(struct MSDU_INFO *prMsduInfo,
-	struct HW_MAC_TX_DESC *prTxDesc);
+	void *prTxDesc);
 
 void nicTxConfigPktControlFlag(IN struct MSDU_INFO *prMsduInfo,
 	IN uint8_t ucControlFlagMask, IN u_int8_t fgSetFlag);
@@ -1832,15 +1890,24 @@ void nicTxSetPktSequenceNumber(IN struct MSDU_INFO *prMsduInfo,
 void nicTxSetPktMacTxQue(IN struct MSDU_INFO *prMsduInfo,
 	IN uint8_t ucMacTxQue);
 
-void nicTxSetPktFixedRateOptionFull(struct MSDU_INFO *prMsduInfo,
-	uint16_t u2RateCode, uint8_t ucBandwidth, u_int8_t fgShortGI,
-	u_int8_t fgLDPC, u_int8_t fgDynamicBwRts, u_int8_t fgBeamforming,
+void nicTxSetPktFixedRateOptionFull(
+	struct ADAPTER *prAdapter,
+	struct MSDU_INFO *prMsduInfo,
+	uint16_t u2RateCode,
+	uint8_t ucBandwidth,
+	u_int8_t fgShortGI,
+	u_int8_t fgLDPC,
+	u_int8_t fgDynamicBwRts,
+	u_int8_t fgBeamforming,
 	uint8_t ucAntennaIndex);
 
-void nicTxSetPktFixedRateOption(IN struct MSDU_INFO *prMsduInfo,
-	IN uint16_t u2RateCode, IN uint8_t ucBandwidth,
-	IN u_int8_t fgShortGI,
-	IN u_int8_t fgDynamicBwRts);
+void nicTxSetPktFixedRateOption(
+	struct ADAPTER *prAdapter,
+	struct MSDU_INFO *prMsduInfo,
+	uint16_t u2RateCode,
+	uint8_t ucBandwidth,
+	u_int8_t fgShortGI,
+	u_int8_t fgDynamicBwRts);
 
 void nicTxSetPktLowestFixedRate(IN struct ADAPTER *prAdapter,
 	IN struct MSDU_INFO *prMsduInfo);
@@ -1870,7 +1937,10 @@ void nicTxPrintMetRTP(IN struct ADAPTER *prAdapter,
 void nicTxProcessTxDoneEvent(IN struct ADAPTER *prAdapter,
 	IN struct WIFI_EVENT *prEvent);
 
-void nicTxChangeDataPortByAc(struct STA_RECORD *prStaRec, uint8_t ucAci,
+void nicTxChangeDataPortByAc(
+	struct ADAPTER *prAdapter,
+	struct STA_RECORD *prStaRec,
+	uint8_t ucAci,
 			     u_int8_t fgToMcu);
 
 void nicTxHandleRoamingDone(struct ADAPTER *prAdapter,

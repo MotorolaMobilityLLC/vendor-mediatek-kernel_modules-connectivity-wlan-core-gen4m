@@ -297,6 +297,7 @@ COMMON_OBJS := 	$(COMMON_DIR)dump.o \
 NIC_OBJS := 	$(NIC_DIR)nic.o \
 		$(NIC_DIR)nic_tx.o \
 		$(NIC_DIR)nic_txd_v1.o \
+		$(NIC_DIR)nic_rxd_v1.o \
 		$(NIC_DIR)nic_rx.o \
 		$(NIC_DIR)nic_pwr_mgt.o \
 		$(NIC_DIR)nic_rate.o \
@@ -360,7 +361,9 @@ MGMT_OBJS += $(MGMT_DIR)stats.o
 CHIPS_OBJS += $(CHIPS_CMM)cmm_asic_connac.o
 ifeq ($(CONFIG_MTK_WIFI_CONNAC2X), y)
 CHIPS_OBJS += $(CHIPS_CMM)cmm_asic_connac2x.o
-CHIPS_OBJS += $(NIC_DIR)nic_ext_cmd_event.o
+NIC_OBJS += $(NIC_DIR)nic_ext_cmd_event.o \
+			$(NIC_DIR)nic_txd_v2.o \
+			$(NIC_DIR)nic_rxd_v2.o
 endif
 CHIPS_OBJS += $(CHIPS_CMM)fw_dl.o
 
