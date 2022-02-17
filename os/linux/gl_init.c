@@ -1627,6 +1627,10 @@ static int wlanOpen(struct net_device *prDev)
 
 	netif_tx_start_all_queues(prDev);
 
+#ifdef CONFIG_WIRELESS_EXT
+	prDev->wireless_handlers = &wext_handler_def;
+#endif
+
 	return 0;		/* success */
 }				/* end of wlanOpen() */
 
@@ -1664,6 +1668,10 @@ static int wlanStop(struct net_device *prDev)
 	wlanInitChnLoadInfoChannelList(prGlueInfo->prAdapter);
 
 	netif_tx_stop_all_queues(prDev);
+
+#ifdef CONFIG_WIRELESS_EXT
+	prDev->wireless_handlers = NULL;
+#endif
 
 	return 0;		/* success */
 }				/* end of wlanStop() */
@@ -2661,10 +2669,6 @@ struct wireless_dev *wlanNetCreate(void *pvData,
 			NIC_TX_DESC_AND_PADDING_LENGTH +
 			prChipInfo->txd_append_size;
 		prDevHandler->netdev_ops = &wlan_netdev_ops;
-#ifdef CONFIG_WIRELESS_EXT
-		prDevHandler->wireless_handlers =
-			&wext_handler_def;
-#endif
 		netif_carrier_off(prDevHandler);
 		netif_tx_stop_all_queues(prDevHandler);
 		kalResetStats(prDevHandler);
