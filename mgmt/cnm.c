@@ -536,6 +536,7 @@ static uint8_t *apucCnmOpModeReq[CNM_OPMODE_REQ_MAX_CAP+1] = {
 	(uint8_t *) DISP_STRING("DBDC Scan"),
 	(uint8_t *) DISP_STRING("COEX"),
 	(uint8_t *) DISP_STRING("SmartGear"),
+	(uint8_t *) DISP_STRING("User"),
 	(uint8_t *) DISP_STRING("SmartGear_1T2R"),
 	(uint8_t *) DISP_STRING("ANT Ctrl_1T2R"),
 	(uint8_t *) DISP_STRING("CoAnt"),
@@ -4395,6 +4396,9 @@ cnmOpModeMapEvtReason(
 		break;
 	case EVENT_OPMODE_CHANGE_REASON_ANT_CTRL_1T2R:
 		eReqIdx = CNM_OPMODE_REQ_ANT_CTRL_1T2R;
+		break;
+	case EVENT_OPMODE_CHANGE_REASON_USER_CONFIG:
+		eReqIdx = CNM_OPMODE_REQ_USER_CONFIG;
 		break;
 	default:
 		eReqIdx = CNM_OPMODE_REQ_NUM;
