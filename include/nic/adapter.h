@@ -761,6 +761,9 @@ struct WIFI_VAR {
 	uint8_t ucP2pGcHt;
 	uint8_t ucP2pGcVht;
 
+	/* NIC capability from FW event*/
+	uint8_t ucHwNotSupportAC;
+
 	uint8_t ucAmpduTx;
 	uint8_t ucAmpduRx;
 	uint8_t ucAmsduInAmpduTx;
