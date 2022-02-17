@@ -2076,8 +2076,8 @@ uint32_t nicTxGenerateDescTemplate(IN struct ADAPTER
 			for (ucTid = 0; ucTid < TX_DESC_TID_NUM; ucTid++) {
 				prStaRec->aprTxDescTemplate[ucTid] = prTxDesc;
 				DBGLOG(QM, TRACE,
-					"TXD template: TID[%u] Ptr[0x%x]\n",
-				  ucTid, (unsigned long) prTxDesc);
+					"TXD template: TID[%u] Ptr[0x%p]\n",
+				  ucTid, prTxDesc);
 			}
 		} while (FALSE);
 	}
