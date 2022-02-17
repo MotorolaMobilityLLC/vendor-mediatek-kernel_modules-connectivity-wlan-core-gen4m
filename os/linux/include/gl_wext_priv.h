@@ -171,6 +171,10 @@
 
 #define PRIV_CMD_SET_SER                37
 
+/* Get FW manifest version */
+#define  PRIV_CMD_GET_FW_VERSION        38
+
+
 /* dynamic tx power control */
 #define PRIV_CMD_SET_PWR_CTRL		40
 
