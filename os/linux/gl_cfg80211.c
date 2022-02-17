@@ -1689,6 +1689,13 @@ int mtk_cfg80211_connect(struct wiphy *wiphy,
 				eAuthMode = AUTH_MODE_WPA3_OWE;
 				u4AkmSuite = RSN_AKM_SUITE_OWE;
 				break;
+
+#if CFG_SUPPORT_DPP
+			case WLAN_AKM_SUITE_DPP:
+				eAuthMode = AUTH_MODE_WPA2_PSK;
+				u4AkmSuite = RSN_AKM_SUITE_DPP;
+			break;
+#endif
 			default:
 				DBGLOG(REQ, WARN, "invalid Akm Suite (%d)\n",
 				       sme->crypto.akm_suites[0]);
