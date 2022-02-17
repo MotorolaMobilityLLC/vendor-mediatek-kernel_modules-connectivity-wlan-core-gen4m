@@ -155,6 +155,9 @@
 #define DMA_HIGHER_4BITS_MASK   0x0000000F
 #define DMA_BITS_OFFSET		32
 
+#define DMA_DONE_WAITING_TIME   10
+#define DMA_DONE_WAITING_COUNT  100
+
 #define MT_TX_RING_BASE_EXT WPDMA_TX_RING0_BASE_PTR_EXT
 #define MT_RX_RING_BASE_EXT WPDMA_RX_RING0_BASE_PTR_EXT
 
@@ -314,7 +317,7 @@ struct RTMP_RX_RING {
 	u_int8_t fgRxSegPkt;
 
 	uint32_t hw_desc_base;
-	uint32_t	hw_desc_base_ext;
+	uint32_t hw_desc_base_ext;
 	uint32_t hw_cidx_addr;
 	uint32_t hw_didx_addr;
 	uint32_t hw_cnt_addr;

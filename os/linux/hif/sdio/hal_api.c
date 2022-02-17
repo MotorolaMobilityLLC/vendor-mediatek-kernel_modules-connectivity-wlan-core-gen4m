@@ -1528,9 +1528,9 @@ void halProcessRxInterrupt(IN struct ADAPTER *prAdapter)
 #endif /* CFG_SDIO_INTR_ENHANCE */
 }
 
-void halHifSwInfoInit(IN struct ADAPTER *prAdapter)
+bool halHifSwInfoInit(IN struct ADAPTER *prAdapter)
 {
-
+	return true;
 }
 
 void halRxProcessMsduReport(IN struct ADAPTER *prAdapter, IN OUT struct SW_RFB *prSwRfb)
