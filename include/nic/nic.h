@@ -98,6 +98,7 @@ typedef struct _ECO_INFO_T {
 	UINT_8 ucHwVer;
 	UINT_8 ucRomVer;
 	UINT_8 ucFactoryVer;
+	UINT_8 ucEcoVer;
 } ECO_INFO_T, *P_ECO_INFO_T;
 
 enum ENUM_INT_EVENT_T {
