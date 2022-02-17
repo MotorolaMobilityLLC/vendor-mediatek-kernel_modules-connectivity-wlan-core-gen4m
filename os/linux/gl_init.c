@@ -1792,19 +1792,84 @@ void wlanUpdateChannelTable(struct GLUE_INFO *prGlueInfo)
 }
 
 #if CFG_SUPPORT_SAP_DFS_CHANNEL
-void wlanUpdateDfsChannelTable(struct GLUE_INFO *prGlueInfo, uint8_t ucChannel)
+static u_int8_t wlanIsAdjacentChnl(struct GL_P2P_INFO *prGlueP2pInfo,
+		uint32_t u4CenterFreq, uint8_t ucBandWidth,
+		enum ENUM_CHNL_EXT eBssSCO, uint8_t ucAdjacentChannel)
 {
+	uint32_t u4AdjacentFreq = 0;
+	uint32_t u4BandWidth = 20;
+	uint32_t u4StartFreq, u4EndFreq;
+	struct ieee80211_channel *chnl = NULL;
+
+	u4AdjacentFreq = nicChannelNum2Freq(ucAdjacentChannel) / 1000;
+
+	DBGLOG(INIT, TRACE,
+		"p2p: %p, center_freq: %d, bw: %d, sco: %d, ad_freq: %d",
+		prGlueP2pInfo, u4CenterFreq, ucBandWidth, eBssSCO,
+		u4AdjacentFreq);
+
+	if (!prGlueP2pInfo)
+		return FALSE;
+
+	if (ucBandWidth == VHT_OP_CHANNEL_WIDTH_20_40 &&
+			eBssSCO == CHNL_EXT_SCN)
+		return FALSE;
+
+	if (!u4CenterFreq)
+		return FALSE;
+
+	if (!u4AdjacentFreq)
+		return FALSE;
+
+	switch (ucBandWidth) {
+	case VHT_OP_CHANNEL_WIDTH_20_40:
+		u4BandWidth = 40;
+		break;
+	case VHT_OP_CHANNEL_WIDTH_80:
+		u4BandWidth = 80;
+		break;
+	default:
+		DBGLOG(INIT, WARN, "unsupported bandwidth: %d", ucBandWidth);
+		return FALSE;
+	}
+	u4StartFreq = u4CenterFreq - u4BandWidth / 2 + 10;
+	u4EndFreq = u4CenterFreq + u4BandWidth / 2 - 10;
+	DBGLOG(INIT, TRACE, "bw: %d, s_freq: %d, e_freq: %d",
+			u4BandWidth, u4StartFreq, u4EndFreq);
+	if (u4AdjacentFreq < u4StartFreq || u4AdjacentFreq > u4EndFreq)
+		return FALSE;
+
+	/* check valid channel */
+	chnl = ieee80211_get_channel(prGlueP2pInfo->prWdev->wiphy,
+			u4AdjacentFreq);
+	if (!chnl) {
+		DBGLOG(INIT, WARN, "invalid channel for freq: %d",
+				u4AdjacentFreq);
+		return FALSE;
+	}
+	return TRUE;
+}
+
+void wlanUpdateDfsChannelTable(struct GLUE_INFO *prGlueInfo,
+		uint8_t ucRoleIdx, uint8_t ucChannel, uint8_t ucBandWidth,
+		enum ENUM_CHNL_EXT eBssSCO, uint32_t u4CenterFreq)
+{
+	struct GL_P2P_INFO *prGlueP2pInfo = NULL;
 	uint8_t i, j;
 	uint8_t ucNumOfChannel;
-	struct RF_CHANNEL_INFO aucChannelList[
-		ARRAY_SIZE(mtk_5ghz_channels)];
+	struct RF_CHANNEL_INFO aucChannelList[ARRAY_SIZE(mtk_5ghz_channels)];
 
-	DBGLOG(INIT, TRACE, "ucChannel %u.\n", ucChannel);
+	DBGLOG(INIT, INFO, "r: %d, chnl %u, b: %d, s: %d, freq: %d\n",
+			ucRoleIdx, ucChannel, ucBandWidth, eBssSCO,
+			u4CenterFreq);
 
 	/* 1. Get current domain DFS channel list */
 	rlmDomainGetDfsChnls(prGlueInfo->prAdapter,
 		ARRAY_SIZE(mtk_5ghz_channels),
 		&ucNumOfChannel, aucChannelList);
+
+	if (ucRoleIdx >= 0 && ucRoleIdx < KAL_P2P_NUM)
+		prGlueP2pInfo = prGlueInfo->prP2PInfo[ucRoleIdx];
 
 	/* 2. Enable specific channel based on domain channel list */
 	for (i = 0; i < ucNumOfChannel; i++) {
@@ -1813,8 +1878,12 @@ void wlanUpdateDfsChannelTable(struct GLUE_INFO *prGlueInfo, uint8_t ucChannel)
 				mtk_5ghz_channels[j].hw_value)
 				continue;
 
-			if (aucChannelList[i].ucChannelNum
-				== ucChannel) {
+			if ((aucChannelList[i].ucChannelNum == ucChannel) ||
+				wlanIsAdjacentChnl(prGlueP2pInfo,
+					u4CenterFreq,
+					ucBandWidth,
+					eBssSCO,
+					aucChannelList[i].ucChannelNum)) {
 				mtk_5ghz_channels[j].dfs_state
 					= NL80211_DFS_AVAILABLE;
 				mtk_5ghz_channels[j].flags &=
@@ -1823,7 +1892,7 @@ void wlanUpdateDfsChannelTable(struct GLUE_INFO *prGlueInfo, uint8_t ucChannel)
 					~IEEE80211_CHAN_RADAR;
 				DBGLOG(INIT, INFO,
 					"ch (%d), force NL80211_DFS_AVAILABLE.\n",
-					ucChannel);
+					aucChannelList[i].ucChannelNum);
 			} else {
 				mtk_5ghz_channels[j].dfs_state
 					= NL80211_DFS_USABLE;
