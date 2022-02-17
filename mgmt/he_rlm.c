@@ -461,9 +461,9 @@ static void heRlmFillHeCapIE(
 		prWifiVar->ucTrigMacPadDur);
 
 	/* Check HTC blacklist */
-	if (IS_BSS_AIS(prBssInfo)) {
-		if (prAisFsmInfo != NULL)
-			prBssDesc = prAisFsmInfo->prTargetBssDesc;
+	if (IS_BSS_AIS(prBssInfo) && prAisFsmInfo != NULL) {
+		prBssDesc = aisGetTargetBssDesc(prAdapter,
+				prBssInfo->ucBssIndex);
 		if (prBssDesc != NULL &&
 			queryAxBlacklist(prAdapter, prBssDesc->aucBSSID,
 			    prBssInfo->ucBssIndex, BLACKLIST_DIS_HE_HTC)) {
@@ -534,7 +534,8 @@ static void heRlmFillHeCapIE(
 #if CFG_SUPPORT_CONDITIONAL_BFEE
 	if ((prAdapter->rWifiVar.u4SwTestMode != ENUM_SW_TEST_MODE_SIGMA_AX) &&
 		(IS_BSS_AIS(prBssInfo) && prAisFsmInfo != NULL)) {
-		prBssDesc = prAisFsmInfo->prTargetBssDesc;
+		prBssDesc = aisGetTargetBssDesc(prAdapter,
+			prBssInfo->ucBssIndex);
 		if (prBssDesc != NULL && (bssGetRxNss(prAdapter, prBssDesc) ==
 			wlanGetSupportNss(prAdapter, prBssInfo->ucBssIndex))) {
 			fgBfEn = FALSE;

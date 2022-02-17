@@ -2002,8 +2002,8 @@ uint8_t cnmGetBssMaxBwToChnlBW(struct ADAPTER
  */
 /*----------------------------------------------------------------------------*/
 struct BSS_INFO *cnmGetBssInfoAndInit(struct ADAPTER *prAdapter,
-				      enum ENUM_NETWORK_TYPE eNetworkType,
-				      u_int8_t fgIsP2pDevice)
+			      enum ENUM_NETWORK_TYPE eNetworkType,
+			      uint8_t ucWdevIndex, u_int8_t fgIsP2pDevice)
 {
 	struct BSS_INFO *prBssInfo;
 	uint8_t i, ucBssIndex, ucOwnMacIdx;
@@ -2115,6 +2115,7 @@ struct BSS_INFO *cnmGetBssInfoAndInit(struct ADAPTER *prAdapter,
 			prBssInfo->ucBMCWlanIndexS[i] = WTBL_RESERVED_ENTRY;
 			prBssInfo->wepkeyUsed[i] = FALSE;
 		}
+		prBssInfo->ucWdevIndex = ucWdevIndex;
 	}
 
 #if CFG_SUPPORT_DFS
@@ -4638,24 +4639,33 @@ void cnmPowerControlErrorHandling(
 void cnmStopPendingJoinTimerForSuspend(IN struct ADAPTER *prAdapter)
 {
 	struct AIS_FSM_INFO *prAisFsmInfo;
+	uint8_t i;
 
 	if (prAdapter == NULL)
 		return;
 
-	/* Timer 1: rJoinTimeoutTimer
-	 * Driver couldn't get any CH_GRANT event of CH_REQ after resume
-	 * Because pending AIS join timer should do CH_ABORT to FW.
-	 * Without CH_ABORT cmd, FW CNM's FSM would keep in GRANT stage.
-	 * FW's CNM couldn't service any other CH_REQ in GRANT stage.
-	 * As a result, checking the timer in suspend flow.
-	 */
-	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, AIS_DEFAULT_INDEX);
-	if (timerPendingTimer(&prAisFsmInfo->rJoinTimeoutTimer)) {
-		DBGLOG(CNM, STATE, "[AIS] pending rJoinTimeoutTimer\n");
-		cnmTimerStopTimer(prAdapter,
-			&prAisFsmInfo->rJoinTimeoutTimer);
-		/* Release Channel */
-		aisFsmReleaseCh(prAdapter, AIS_DEFAULT_INDEX);
+
+	for (i = 0; i < KAL_AIS_NUM; i++) {
+		prAisFsmInfo = &prAdapter->rWifiVar.rAisFsmInfo[i];
+
+
+		/* Timer 1: rJoinTimeoutTimer
+		 * Driver couldn't get any CH_GRANT event of CH_REQ after resume
+		 * Because pending AIS join timer should do CH_ABORT to FW.
+		 * Without CH_ABORT cmd, FW CNM's FSM would keep in GRANT stage.
+		 * FW's CNM couldn't service any other CH_REQ in GRANT stage.
+		 * As a result, checking the timer in suspend flow.
+		 */
+		if (timerPendingTimer(&prAisFsmInfo->rJoinTimeoutTimer)) {
+			DBGLOG(CNM, STATE, "[AIS] pending rJoinTimeoutTimer\n");
+			cnmTimerStopTimer(prAdapter,
+				&prAisFsmInfo->rJoinTimeoutTimer);
+			/* Release Channel */
+			aisFsmReleaseCh(prAdapter,
+			       aisGetMainLinkBssInfo(prAisFsmInfo)->ucBssIndex);
+		}
+
+
 	}
 }
 #endif

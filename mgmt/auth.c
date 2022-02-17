@@ -1093,21 +1093,17 @@ authSendDeauthFrame(IN struct ADAPTER *prAdapter,
 #if CFG_SUPPORT_802_11W
 	/* AP PMF */
 	if (rsnCheckBipKeyInstalled(prAdapter, prStaRec)) {
+		uint8_t ucBssIndex = prStaRec->ucBssIndex;
+		struct BSS_INFO *prBssInfo =
+			GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
+
 		/* PMF certification 4.3.3.1, 4.3.3.2 send unprotected
 		 * deauth reason 6/7
 		 * if (AP mode & not for PMF reply case) OR (STA PMF)
 		 */
-		if (((GET_BSS_INFO_BY_INDEX
-		      (prAdapter,
-		       prStaRec->ucBssIndex)->eCurrentOPMode ==
-		      OP_MODE_ACCESS_POINT)
-		     && (prStaRec->rPmfCfg.fgRxDeauthResp != TRUE))
-		    ||
-		    (GET_BSS_INFO_BY_INDEX
-		     (prAdapter,
-		      prStaRec->ucBssIndex)->eNetworkType ==
-		     (uint8_t) NETWORK_TYPE_AIS)) {
-
+		if (((prBssInfo->eCurrentOPMode == OP_MODE_ACCESS_POINT)
+		     && (prStaRec->rPmfCfg.fgRxDeauthResp != TRUE)) ||
+		    (prBssInfo->eNetworkType == NETWORK_TYPE_AIS)) {
 			struct WLAN_DEAUTH_FRAME *prDeauthFrame;
 
 			prDeauthFrame = (struct WLAN_DEAUTH_FRAME *)(uint8_t *)
@@ -1115,13 +1111,9 @@ authSendDeauthFrame(IN struct ADAPTER *prAdapter,
 			     + MAC_TX_RESERVED_FIELD);
 
 			prDeauthFrame->u2FrameCtrl |= MASK_FC_PROTECTED_FRAME;
-			if (GET_BSS_INFO_BY_INDEX(prAdapter,
-				prStaRec->ucBssIndex)->eNetworkType ==
-				(uint8_t) NETWORK_TYPE_AIS) {
-				GET_BSS_INFO_BY_INDEX(prAdapter,
-					prStaRec->ucBssIndex)
-					->encryptedDeauthIsInProcess
-						= TRUE;
+			if (prBssInfo->eNetworkType == NETWORK_TYPE_AIS) {
+				aisGetAisFsmInfo(prAdapter, ucBssIndex)
+					->encryptedDeauthIsInProcess = TRUE;
 			}
 			DBGLOG(SAA, INFO,
 			       "Reason=%d, DestAddr=" MACSTR

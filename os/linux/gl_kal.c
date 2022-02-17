@@ -3239,7 +3239,7 @@ int32_t kalThreadSchedUnmark(struct task_struct *pThread,
 uint8_t GET_IOCTL_BSSIDX(
 	IN struct ADAPTER *prAdapter)
 {
-	uint8_t ucBssIndex = AIS_DEFAULT_INDEX;
+	uint8_t ucBssIndex = aisGetDefaultLinkBssIndex(prAdapter);
 
 	if (prAdapter) {
 		struct GL_IO_REQ *prIoReq = NULL;
@@ -3286,7 +3286,7 @@ kalIoctl(IN struct GLUE_INFO *prGlueInfo,
 		fgWaitResp,
 		fgCmd,
 		pu4QryInfoLen,
-		AIS_DEFAULT_INDEX);
+		aisGetDefaultLinkBssIndex(prGlueInfo->prAdapter));
 }
 
 uint32_t
@@ -4899,7 +4899,8 @@ enum ENUM_PARAM_MEDIA_STATE kalGetMediaStateIndicated(
 {
 	ASSERT(prGlueInfo);
 
-	return prGlueInfo->eParamMediaStateIndicated[ucBssIndex];
+	return aisGetAisFsmInfo(prGlueInfo->prAdapter, ucBssIndex)
+			->eParamMediaStateIndicated;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -4918,8 +4919,8 @@ void kalSetMediaStateIndicated(IN struct GLUE_INFO
 {
 	ASSERT(prGlueInfo);
 	ASSERT(ucBssIndex >= 0 && ucBssIndex < KAL_AIS_NUM)
-	prGlueInfo->eParamMediaStateIndicated[ucBssIndex] =
-		eParamMediaStateIndicate;
+	aisGetAisFsmInfo(prGlueInfo->prAdapter, ucBssIndex)
+			->eParamMediaStateIndicated = eParamMediaStateIndicate;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -7225,6 +7226,11 @@ void kalWowProcess(IN struct GLUE_INFO *prGlueInfo,
 	struct BSS_INFO *prAisBssInfo = NULL;
 	uint8_t fgWake = TRUE;
 
+	prAisBssInfo = aisGetConnectedBssInfo(prGlueInfo->prAdapter);
+
+	if (!prAisBssInfo)
+		return;
+
 	kalMemZero(&rCmdWowlanParam,
 		   sizeof(struct CMD_WOWLAN_PARAM));
 
@@ -7237,15 +7243,10 @@ void kalWowProcess(IN struct GLUE_INFO *prGlueInfo,
 		&& prGlueInfo->prAdapter->rWowCtrl.fgWowEnable == 0)
 		fgWake = FALSE;
 
-	prAisBssInfo = aisGetConnectedBssInfo(
-		prGlueInfo->prAdapter);
-
-	if (prAisBssInfo)
-		DBGLOG(PF, INFO,
+	DBGLOG(PF, INFO,
 	       "PF, pAd ucBssIndex=%d, ucOwnMacIndex=%d\n",
 	       prAisBssInfo->ucBssIndex,
 	       prAisBssInfo->ucOwnMacIndex);
-
 	DBGLOG(PF, INFO, "profile wow=%d, GpioInterval=%d\n",
 	       prGlueInfo->prAdapter->rWifiVar.ucWow,
 	       prGlueInfo->prAdapter->rWowCtrl.astWakeHif[0].u4GpioInterval);
@@ -8952,7 +8953,7 @@ int kalExternalAuthRequest(IN struct ADAPTER *prAdapter,
 		return WLAN_STATUS_INVALID_DATA;
 	}
 
-	prBssDesc = prAisFsmInfo->prTargetBssDesc;
+	prBssDesc = aisGetTargetBssDesc(prAdapter, uBssIndex);
 	if (!prBssDesc) {
 		DBGLOG(SAA, WARN,
 		       "SAE auth failed without prTargetBssDesc\n");

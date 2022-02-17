@@ -413,14 +413,17 @@ int mtk_cfg80211_del_key(struct wiphy *wiphy,
 		ucBssIndex);
 #if CFG_SUPPORT_802_11W
 	/* if encrypted deauth frame is in process, pending remove key */
-	if (IS_BSS_INDEX_AIS(prGlueInfo->prAdapter, ucBssIndex)
-		&& prBssInfo->encryptedDeauthIsInProcess == TRUE) {
+	if (IS_BSS_INDEX_AIS(prGlueInfo->prAdapter, ucBssIndex) &&
+	    aisGetAisFsmInfo(prGlueInfo->prAdapter, ucBssIndex)
+				->encryptedDeauthIsInProcess == TRUE) {
 		waitRet = wait_for_completion_timeout(
-				&prBssInfo->rDeauthComp,
-				MSEC_TO_JIFFIES(1000));
+			&aisGetAisFsmInfo(prGlueInfo->prAdapter, ucBssIndex)
+								->rDeauthComp,
+			MSEC_TO_JIFFIES(1000));
 		if (!waitRet) {
 			DBGLOG(RSN, WARN, "timeout\n");
-			prBssInfo->encryptedDeauthIsInProcess = FALSE;
+			aisGetAisFsmInfo(prGlueInfo->prAdapter, ucBssIndex)
+					->encryptedDeauthIsInProcess = FALSE;
 		} else
 			DBGLOG(RSN, INFO, "complete\n");
 	}
@@ -6116,7 +6119,8 @@ int mtk_init_sta_role(struct ADAPTER *prAdapter,
 		return -1;
 
 	/* init AIS FSM */
-	aisFsmInit(prAdapter, ucBssIndex);
+	// TODO: mlo
+	//aisFsmInit(prAdapter, ucBssIndex);
 
 #if CFG_SUPPORT_ROAMING
 	/* Roaming Module - intiailization */

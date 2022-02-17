@@ -2023,18 +2023,6 @@ struct PARAM_MTK_WIFI_TEST_STRUCT_EXT_T {
 	} Data;
 };
 
-/* 802.11 Media stream constraints */
-enum ENUM_MEDIA_STREAM_MODE {
-	ENUM_MEDIA_STREAM_OFF,
-	ENUM_MEDIA_STREAM_ON
-};
-
-/* for NDIS 5.1 Media Streaming Change */
-struct PARAM_MEDIA_STREAMING_INDICATION {
-	struct PARAM_STATUS_INDICATION rStatus;
-	enum ENUM_MEDIA_STREAM_MODE eMediaStreamMode;
-};
-
 #define PARAM_PROTOCOL_ID_DEFAULT       0x00
 #define PARAM_PROTOCOL_ID_TCP_IP        0x02
 #define PARAM_PROTOCOL_ID_IPX           0x06
@@ -3046,18 +3034,6 @@ wlanoidQuerySupportedRates(IN struct ADAPTER *prAdapter,
 			   OUT uint32_t *pu4QueryInfoLen);
 
 uint32_t
-wlanoidQueryDesiredRates(IN struct ADAPTER *prAdapter,
-			 OUT void *pvQueryBuffer,
-			 IN uint32_t u4QueryBufferLen,
-			 OUT uint32_t *pu4QueryInfoLen);
-
-uint32_t
-wlanoidSetDesiredRates(IN struct ADAPTER *prAdapter,
-		       IN void *pvSetBuffer,
-		       IN uint32_t u4SetBufferLen,
-		       OUT uint32_t *pu4SetInfoLen);
-
-uint32_t
 wlanoidQueryPermanentAddr(IN struct ADAPTER *prAdapter,
 			  IN void *pvQueryBuf,
 			  IN uint32_t u4QueryBufLen,
@@ -3406,18 +3382,6 @@ wlanoidQueryStatisticsForLinux(IN struct ADAPTER *prAdapter,
 			       OUT uint32_t *pu4QueryInfoLen);
 
 #endif
-
-uint32_t
-wlanoidQueryMediaStreamMode(IN struct ADAPTER *prAdapter,
-			    IN void *pvQueryBuffer,
-			    IN uint32_t u4QueryBufferLen,
-			    OUT uint32_t *pu4QueryInfoLen);
-
-uint32_t
-wlanoidSetMediaStreamMode(IN struct ADAPTER *prAdapter,
-			  IN void *pvSetBuffer,
-			  IN uint32_t u4SetBufferLen,
-			  OUT uint32_t *pu4SetInfoLen);
 
 uint32_t
 wlanoidQueryRcvOk(IN struct ADAPTER *prAdapter,

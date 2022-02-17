@@ -186,6 +186,8 @@ extern int g_u4WlanInitFlag;
 #define PERF_MON_UPDATE_INTERVAL (1000)
 #define PERF_MON_TP_MAX_THRESHOLD (10)
 
+#define KAL_TRACE __builtin_return_address(0)
+
 /*******************************************************************************
  *                             D A T A   T Y P E S
  *******************************************************************************

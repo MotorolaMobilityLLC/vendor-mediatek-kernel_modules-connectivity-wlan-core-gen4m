@@ -556,7 +556,6 @@ static u_int8_t scanSanityCheckBssDesc(struct ADAPTER *prAdapter,
 {
 	struct BSS_INFO *prAisBssInfo;
 	struct BSS_DESC *target;
-
 #if CFG_SUPPORT_MBO
 	struct PARAM_BSS_DISALLOWED_LIST *disallow;
 	uint32_t i = 0;
@@ -596,6 +595,12 @@ static u_int8_t scanSanityCheckBssDesc(struct ADAPTER *prAdapter,
 		return FALSE;
 	}
 #endif
+
+	if (prBssDesc->eBSSType != BSS_TYPE_INFRASTRUCTURE) {
+		log_dbg(SCN, WARN, MACSTR" is not infrastructure\n",
+			MAC2STR(prBssDesc->aucBSSID));
+		return FALSE;
+	}
 
 	prAisBssInfo = aisGetAisBssInfo(prAdapter, ucBssIndex);
 	target = aisGetTargetBssDesc(prAdapter, ucBssIndex);
@@ -643,9 +648,9 @@ static u_int8_t scanSanityCheckBssDesc(struct ADAPTER *prAdapter,
 		}
 	}
 
-	if (ucBssIndex != AIS_DEFAULT_INDEX) {
+	if (ucBssIndex != aisGetDefaultLinkBssIndex(prAdapter)) {
 		struct BSS_DESC *target =
-			aisGetTargetBssDesc(prAdapter, AIS_DEFAULT_INDEX);
+			aisGetDefaultLink(prAdapter)->prTargetBssDesc;
 
 		if (target && prBssDesc->eBand == target->eBand) {
 			log_dbg(SCN, WARN,
@@ -1101,6 +1106,41 @@ uint16_t scanCalculateTotalScore(struct ADAPTER *prAdapter,
 
 	return u2ScoreTotal;
 }
+
+#if (CFG_SUPPORT_802_11BE == 1)
+void scanFillSecondayLink(struct ADAPTER *prAdapter,
+	struct BSS_DESC_SET *prBssDescSet)
+{
+	struct LINK *prBSSDescList =
+		&prAdapter->rWifiVar.rScanInfo.rBSSDescList;
+	struct BSS_DESC *prBssDesc = NULL;
+	struct BSS_DESC *prMainBssDesc = prBssDescSet->prMainBssDesc;
+
+	if (!prMainBssDesc || !prMainBssDesc->rMlInfo.fgValid)
+		return;
+
+	/* setup secondary link */
+	LINK_FOR_EACH_ENTRY(prBssDesc, prBSSDescList, rLinkEntry,
+		struct BSS_DESC) {
+
+		/* break if reach the limit num of links */
+		if (prBssDescSet->ucLinkNum >= MLD_LINK_MAX)
+			break;
+
+		if (!prBssDesc->rMlInfo.fgValid ||
+		    EQUAL_MAC_ADDR(prMainBssDesc->aucBSSID,
+				 prBssDesc->aucBSSID) ||
+		    !EQUAL_MAC_ADDR(prMainBssDesc->rMlInfo.aucMldAddr,
+				 prBssDesc->rMlInfo.aucMldAddr))
+			continue;
+
+		/* Record same Mld list */
+		prBssDescSet->aprBssDesc[prBssDescSet->ucLinkNum] = prBssDesc;
+		prBssDescSet->ucLinkNum++;
+	}
+}
+#endif
+
 /*
  * Bss Characteristics to be taken into account when calculate Score:
  * Channel Loading Group:
@@ -1123,7 +1163,8 @@ uint16_t scanCalculateTotalScore(struct ADAPTER *prAdapter,
  * 3. STBC and Multi Anttena.
  */
 struct BSS_DESC *scanSearchBssDescByScoreForAis(struct ADAPTER *prAdapter,
-	enum ENUM_ROAMING_REASON eRoamReason, uint8_t ucBssIndex)
+	enum ENUM_ROAMING_REASON eRoamReason, uint8_t ucBssIndex,
+	struct BSS_DESC_SET *prBssDescSet)
 {
 	struct AIS_SPECIFIC_BSS_INFO *prAisSpecificBssInfo = NULL;
 	struct ROAMING_INFO *prRoamingFsmInfo = NULL;
@@ -1132,10 +1173,8 @@ struct BSS_DESC *scanSearchBssDescByScoreForAis(struct ADAPTER *prAdapter,
 	struct CONNECTION_SETTINGS *prConnSettings = NULL;
 	struct BSS_DESC *prBssDesc = NULL;
 	struct BSS_DESC *prCandBssDesc = NULL;
-	struct BSS_DESC *prCandBssDescForLowRssi = NULL;
 	uint16_t u2ScoreTotal = 0;
 	uint16_t u2CandBssScore = 0;
-	uint16_t u2CandBssScoreForLowRssi = 0;
 	u_int8_t fgSearchBlackList = FALSE;
 	u_int8_t fgIsFixedChnl = FALSE;
 	enum ENUM_BAND eBand = BAND_2G4;
@@ -1309,16 +1348,7 @@ try_again:
 				MAC2STR(prConnSettings->aucBSSID),
 				prEssLink->u4NumElem, ucChannel);
 
-		return prCandBssDesc;
-	} else if (prCandBssDescForLowRssi) {
-		log_dbg(SCN, INFO, "Selected " MACSTR
-			", Score %d when find %s, " MACSTR
-			" in %d BSSes, fix channel %d.\n",
-			MAC2STR(prCandBssDescForLowRssi->aucBSSID),
-			u2CandBssScoreForLowRssi, prConnSettings->aucSSID,
-			MAC2STR(prConnSettings->aucBSSID), prEssLink->u4NumElem,
-			ucChannel);
-		return prCandBssDescForLowRssi;
+		goto done;
 	}
 
 	/* if No Candidate BSS is found, try BSSes which are in blacklist */
@@ -1331,7 +1361,25 @@ try_again:
 		" in %d BSSes, fix channel %d.\n",
 		prConnSettings->aucSSID, MAC2STR(prConnSettings->aucBSSID),
 		prEssLink->u4NumElem, ucChannel);
-	return NULL;
+
+done:
+	if (prBssDescSet) {
+		if (prCandBssDesc) {
+			/* setup primary link */
+			prBssDescSet->ucLinkNum = 1;
+			prBssDescSet->aprBssDesc[0] = prCandBssDesc;
+			prBssDescSet->prMainBssDesc = prCandBssDesc;
+
+#if (CFG_SUPPORT_802_11BE == 1)
+			scanFillSecondayLink(prAdapter, prBssDescSet);
+#endif
+		} else {
+			prBssDescSet->ucLinkNum = 0;
+			prBssDescSet->prMainBssDesc = NULL;
+		}
+	}
+
+	return prCandBssDesc;
 }
 
 uint8_t scanUpdateChannelList(uint8_t channel,
@@ -1427,7 +1475,8 @@ void scanGetCurrentEssChnlList(struct ADAPTER *prAdapter,
 				prBssDesc->ucChnlUtilization;
 		if (!EQUAL_SSID(prConnSettings->aucSSID,
 			prConnSettings->ucSSIDLen,
-			prBssDesc->aucSSID, prBssDesc->ucSSIDLen))
+			prBssDesc->aucSSID, prBssDesc->ucSSIDLen) ||
+			prBssDesc->eBSSType != BSS_TYPE_INFRASTRUCTURE)
 			continue;
 		/* Record same BSS list */
 		LINK_INSERT_HEAD(prCurEssLink,
@@ -1560,7 +1609,7 @@ uint8_t scanCheckNeedDriverRoaming(
 		target = aisGetTargetBssDesc(prAdapter, ucBssIndex);
 
 		bss = scanSearchBssDescByScoreForAis(prAdapter,
-			ROAMING_REASON_INACTIVE, ucBssIndex);
+			ROAMING_REASON_INACTIVE, ucBssIndex, NULL);
 
 		if (bss == NULL)
 			return FALSE;
@@ -1614,7 +1663,7 @@ uint8_t scanBeaconTimeoutFilterPolicyForAis(struct ADAPTER *prAdapter,
 		/* Good rssi but beacon timeout happened => PER */
 		target = aisGetTargetBssDesc(prAdapter, ucBssIndex);
 		bss = scanSearchBssDescByScoreForAis(prAdapter,
-			ROAMING_REASON_TX_ERR, ucBssIndex);
+			ROAMING_REASON_TX_ERR, ucBssIndex, NULL);
 		if (bss && UNEQUAL_MAC_ADDR(bss->aucBSSID, target->aucBSSID)) {
 			log_dbg(SCN, INFO, "Better AP for beacon timeout");
 			return TRUE;

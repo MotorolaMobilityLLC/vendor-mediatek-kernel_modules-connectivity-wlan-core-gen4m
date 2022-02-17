@@ -130,6 +130,8 @@
  */
 #define STA_REC_EXCLUDE_NONE		CFG_STA_REC_NUM
 
+#define MLD_LINK_INDEX_NOT_FOUND	0xFF
+
 /*******************************************************************************
  *                             D A T A   T Y P E S
  *******************************************************************************
@@ -259,6 +261,13 @@ struct STA_PMF_CFG {
 };
 #endif
 
+struct MLD_STAREC {
+	uint16_t ucMldStaIndex;
+	uint8_t aucMldAddr[MAC_ADDR_LEN];
+	uint32_t u4ValidStaNum;
+	uint8_t ucStaIndex[MLD_LINK_MAX];
+};
+
 /* Define STA record structure */
 struct STA_RECORD {
 	struct LINK_ENTRY rLinkEntry;
@@ -285,6 +294,11 @@ struct STA_RECORD {
 	enum ENUM_STA_TYPE eStaType;
 
 	uint8_t ucBssIndex;	/* BSS_INFO_I index */
+
+#if (CFG_SUPPORT_802_11BE == 1)
+	uint8_t ucMldStaIndex;	/* MLD_STAREC index */
+	uint8_t ucLinkIndex;
+#endif
 
 	uint8_t ucStaState;	/* STATE_1,2,3 */
 

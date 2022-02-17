@@ -1323,7 +1323,7 @@ uint32_t saaFsmRunEventRxDeauth(IN struct ADAPTER *prAdapter,
 
 			prAisBssInfo = aisGetAisBssInfo(prAdapter, ucBssIndex);
 			prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
-			prBssDesc = prAisFsmInfo->prTargetBssDesc;
+			prBssDesc = aisGetTargetBssDesc(prAdapter, ucBssIndex);
 
 			if (prBssDesc && UNEQUAL_MAC_ADDR(prBssDesc->aucBSSID,
 				prDeauthFrame->aucSrcAddr)) {
@@ -1564,7 +1564,7 @@ uint32_t saaFsmRunEventRxDisassoc(IN struct ADAPTER *prAdapter,
 
 			prAisBssInfo = aisGetAisBssInfo(prAdapter, ucBssIndex);
 			prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
-			prBssDesc = prAisFsmInfo->prTargetBssDesc;
+			prBssDesc = aisGetTargetBssDesc(prAdapter, ucBssIndex);
 
 			if (prBssDesc && UNEQUAL_MAC_ADDR(prBssDesc->aucBSSID,
 				prDisassocFrame->aucSrcAddr)) {

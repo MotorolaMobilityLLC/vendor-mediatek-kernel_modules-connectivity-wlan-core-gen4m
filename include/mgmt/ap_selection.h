@@ -65,8 +65,15 @@ enum ROAM_TYPE {
 	ROAM_TYPE_NUM
 };
 
+struct BSS_DESC_SET {
+	struct BSS_DESC *prMainBssDesc;
+	uint8_t ucLinkNum; /* must smaller than MLD_LINK_MAX */
+	struct BSS_DESC *aprBssDesc[MLD_LINK_MAX];
+};
+
 struct BSS_DESC *scanSearchBssDescByScoreForAis(struct ADAPTER *prAdapter,
-	enum ENUM_ROAMING_REASON eRoamReason, uint8_t ucBssIndex);
+	enum ENUM_ROAMING_REASON eRoamReason,
+	uint8_t ucBssIndex, struct BSS_DESC_SET *prBssDescSet);
 void scanGetCurrentEssChnlList(struct ADAPTER *prAdapter, uint8_t ucBssIndex);
 uint8_t scanCheckNeedDriverRoaming(
 	struct ADAPTER *prAdapter, uint8_t ucBssIndex);

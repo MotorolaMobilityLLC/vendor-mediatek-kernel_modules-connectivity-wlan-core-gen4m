@@ -1354,36 +1354,6 @@ void nicCmdEventQueryEepromRead(IN struct ADAPTER
 
 }
 
-void nicCmdEventSetMediaStreamMode(IN struct ADAPTER
-				   *prAdapter, IN struct CMD_INFO *prCmdInfo,
-				   IN uint8_t *pucEventBuf)
-{
-	struct PARAM_MEDIA_STREAMING_INDICATION
-		rParamMediaStreamIndication;
-
-	ASSERT(prAdapter);
-	ASSERT(prCmdInfo);
-
-	if (prCmdInfo->fgIsOid) {
-		/* Update Set Information Length */
-		kalOidComplete(prAdapter->prGlueInfo,
-			       prCmdInfo, prCmdInfo->u4SetInfoLen,
-			       WLAN_STATUS_SUCCESS);
-	}
-
-	rParamMediaStreamIndication.rStatus.eStatusType =
-		ENUM_STATUS_TYPE_MEDIA_STREAM_MODE;
-	rParamMediaStreamIndication.eMediaStreamMode =
-		prAdapter->rWlanInfo.eLinkAttr.ucMediaStreamMode == 0 ?
-		ENUM_MEDIA_STREAM_OFF : ENUM_MEDIA_STREAM_ON;
-
-	kalIndicateStatusAndComplete(prAdapter->prGlueInfo,
-		WLAN_STATUS_MEDIA_SPECIFIC_INDICATION,
-		(void *)&rParamMediaStreamIndication,
-		sizeof(struct PARAM_MEDIA_STREAMING_INDICATION),
-		AIS_DEFAULT_INDEX);
-}
-
 void nicCmdEventSetStopSchedScan(IN struct ADAPTER
 				 *prAdapter, IN struct CMD_INFO *prCmdInfo,
 				 IN uint8_t *pucEventBuf)
@@ -2849,7 +2819,7 @@ void nicEventLinkQuality(IN struct ADAPTER *prAdapter,
 {
 	struct mt66xx_chip_info *prChipInfo = NULL;
 	struct CMD_INFO *prCmdInfo;
-	uint8_t ucBssIndex = AIS_DEFAULT_INDEX;
+	uint8_t ucBssIndex;
 
 	ASSERT(prAdapter);
 	prChipInfo = prAdapter->chip_info;
@@ -2913,35 +2883,6 @@ void nicEventLinkQuality(IN struct ADAPTER *prAdapter,
 		/* return prCmdInfo */
 		cmdBufFreeCmdInfo(prAdapter, prCmdInfo);
 	}
-#ifndef LINUX
-	if (prAdapter->rWlanInfo.eRssiTriggerType ==
-	    ENUM_RSSI_TRIGGER_GREATER &&
-	    prAdapter->rWlanInfo.rRssiTriggerValue >= (int32_t) (
-		    prAdapter->rLinkQuality.rLq[ucBssIndex].cRssi)) {
-
-		prAdapter->rWlanInfo.eRssiTriggerType =
-			ENUM_RSSI_TRIGGER_TRIGGERED;
-
-		kalIndicateStatusAndComplete(prAdapter->prGlueInfo,
-			WLAN_STATUS_MEDIA_SPECIFIC_INDICATION,
-			(void *) &(prAdapter->rWlanInfo.rRssiTriggerValue),
-			sizeof(int32_t),
-			ucBssIndex);
-	} else if (prAdapter->rWlanInfo.eRssiTriggerType ==
-		   ENUM_RSSI_TRIGGER_LESS &&
-		   prAdapter->rWlanInfo.rRssiTriggerValue <= (int32_t) (
-			   prAdapter->rLinkQuality.rLq[ucBssIndex].cRssi)) {
-
-		prAdapter->rWlanInfo.eRssiTriggerType =
-			ENUM_RSSI_TRIGGER_TRIGGERED;
-
-		kalIndicateStatusAndComplete(prAdapter->prGlueInfo,
-			WLAN_STATUS_MEDIA_SPECIFIC_INDICATION,
-			(void *) &(prAdapter->rWlanInfo.rRssiTriggerValue),
-			sizeof(int32_t),
-			ucBssIndex);
-	}
-#endif
 }
 
 void nicExtEventReCalData(IN struct ADAPTER *prAdapter, IN uint8_t *pucEventBuf)
@@ -3380,21 +3321,15 @@ void nicEventLayer0ExtMagic(IN struct ADAPTER *prAdapter,
 void nicEventMicErrorInfo(IN struct ADAPTER *prAdapter,
 			  IN struct WIFI_EVENT *prEvent)
 {
-	uint8_t ucBssIndex = AIS_DEFAULT_INDEX;
 	struct EVENT_MIC_ERR_INFO *prMicError;
 	/* P_PARAM_AUTH_EVENT_T prAuthEvent; */
 	struct STA_RECORD *prStaRec;
-	struct PARAM_BSSID_EX *prCurrBssid =
-		aisGetCurrBssId(prAdapter,
-		ucBssIndex);
 
 	DBGLOG(RSN, EVENT, "EVENT_ID_MIC_ERR_INFO\n");
 
 	prMicError = (struct EVENT_MIC_ERR_INFO *) (
 			     prEvent->aucBuffer);
-	prStaRec = cnmGetStaRecByAddress(prAdapter,
-			 ucBssIndex,
-			 prCurrBssid->arMacAddress);
+	prStaRec = aisGetDefaultStaRecOfAP(prAdapter);
 	ASSERT(prStaRec);
 
 	if (prStaRec)
@@ -3887,17 +3822,7 @@ void nicEventRoamingStatus(IN struct ADAPTER *prAdapter,
 #if CFG_SUPPORT_ROAMING
 	struct CMD_ROAMING_TRANSIT *prTransit;
 
-	prTransit = (struct CMD_ROAMING_TRANSIT *) (
-			    prEvent->aucBuffer);
-
-	/* Default path */
-	if (!IS_BSS_INDEX_AIS(prAdapter, prTransit->ucBssidx)) {
-		DBGLOG(NIC, LOUD,
-			"Use default, invalid index = %d\n",
-			prTransit->ucBssidx);
-		prTransit->ucBssidx = AIS_DEFAULT_INDEX;
-	}
-
+	prTransit = (struct CMD_ROAMING_TRANSIT *) (prEvent->aucBuffer);
 	roamingFsmProcessEvent(prAdapter, prTransit);
 #endif /* CFG_SUPPORT_ROAMING */
 }
@@ -3944,22 +3869,7 @@ void nicEventUpdateRddStatus(IN struct ADAPTER *prAdapter,
 void nicEventUpdateBwcsStatus(IN struct ADAPTER *prAdapter,
 			      IN struct WIFI_EVENT *prEvent)
 {
-	struct PTA_IPC *prEventBwcsStatus;
-
-	prEventBwcsStatus = (struct PTA_IPC *) (prEvent->aucBuffer);
-
-#if CFG_SUPPORT_BCM_BWCS_DEBUG
-	DBGLOG(RSN, EVENT, "BCM BWCS Event: %02x%02x%02x%02x\n",
-	       prEventBwcsStatus->u.aucBTPParams[0],
-	       prEventBwcsStatus->u.aucBTPParams[1],
-	       prEventBwcsStatus->u.aucBTPParams[2],
-	       prEventBwcsStatus->u.aucBTPParams[3]);
-#endif
-
-	kalIndicateStatusAndComplete(prAdapter->prGlueInfo,
-		WLAN_STATUS_BWCS_UPDATE,
-		(void *) prEventBwcsStatus, sizeof(struct PTA_IPC),
-		AIS_DEFAULT_INDEX);
+	DBGLOG(RSN, EVENT, "not support");
 }
 
 void nicEventUpdateBcmDebug(IN struct ADAPTER *prAdapter,
@@ -4163,7 +4073,7 @@ void nicEventRssiMonitor(IN struct ADAPTER *prAdapter,
 	DBGLOG(RX, TRACE, "EVENT_ID_RSSI_MONITOR value=%d\n", rssi);
 #if KERNEL_VERSION(3, 16, 0) <= LINUX_VERSION_CODE
 	dev = wlanGetNetDev(prAdapter->prGlueInfo,
-			AIS_DEFAULT_INDEX);
+			aisGetDefaultLinkBssIndex(prAdapter));
 	if (dev != NULL) {
 		mtk_cfg80211_vendor_event_rssi_beyond_range(wiphy,
 			dev->ieee80211_ptr, rssi);
@@ -4260,7 +4170,7 @@ void nicEventUpdateCoexStatus(IN struct ADAPTER *prAdapter,
 
 	enum ENUM_COEX_MODE eCoexMode = COEX_NONE_BT;
 	uint32_t rStatus = WLAN_STATUS_SUCCESS;
-	uint8_t ucBssIndex = AIS_DEFAULT_INDEX;
+	uint8_t ucBssIndex;
 	bool fgIsBAND2G4Coex = FALSE;
 	bool fgHitBlackList = FALSE;
 
@@ -4280,7 +4190,7 @@ void nicEventUpdateCoexStatus(IN struct ADAPTER *prAdapter,
 	       prEventCoexStatus->ucCoexMode,
 	       prEventCoexStatus->fgIsBAND2G4Coex);
 	/*AIS only feature*/
-	for (; ucBssIndex < KAL_AIS_NUM; ucBssIndex++) {
+	for (ucBssIndex = 0; ucBssIndex < KAL_AIS_NUM; ucBssIndex++) {
 		prBssInfo = aisGetAisBssInfo(prAdapter, ucBssIndex);
 		prBssDesc = aisGetTargetBssDesc(prAdapter, ucBssIndex);
 		prStaRec = aisGetStaRecOfAP(prAdapter, ucBssIndex);

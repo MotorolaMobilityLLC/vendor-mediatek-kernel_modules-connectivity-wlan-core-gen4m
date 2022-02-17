@@ -221,6 +221,8 @@ extern struct delayed_work sched_workq;
 #define WIFI_LOG_MSG_MAX	(512)
 #define WIFI_LOG_MSG_BUFFER	(WIFI_LOG_MSG_MAX * 2)
 
+#define KAL_TRACE __builtin_return_address(0)
+
 /*******************************************************************************
  *                             D A T A   T Y P E S
  *******************************************************************************
