@@ -196,6 +196,8 @@ struct _NAN_PEER_SCHEDULE_RECORD_T {
 	uint32_t u4FinalQosMaxLatency;
 
 	int32_t i4InNegoContext;
+	enum ENUM_BAND eBand;
+
 };
 
 enum _ENUM_NAN_CRB_NEGO_STATE_T {
@@ -1341,28 +1343,6 @@ nanSchedInit(struct ADAPTER *prAdapter) {
 }
 
 uint32_t
-nanUtilCalAttributeCrc(struct _NAN_ATTR_HDR_T *prNanAttr) {
-	uint8_t *message;
-	uint32_t byte, crc, mask, len;
-	int32_t j;
-
-	message = prNanAttr->aucAttrBody;
-	len = prNanAttr->u2Length;
-
-	crc = 0xFFFFFFFF;
-	while (len) {
-		byte = *message;
-		message++;
-		crc = crc ^ byte;
-		for (j = 7; j >= 0; j--) {
-			mask = -(crc & 1);
-			crc = (crc >> 1) ^ (0xEDB88320 & mask);
-		}
-	}
-	return ~crc;
-}
-
-uint32_t
 nanUtilCalAttributeToken(struct _NAN_ATTR_HDR_T *prNanAttr) {
 	uint8_t *pucPayload;
 	uint32_t u4Token, u4Len;
@@ -1648,6 +1628,8 @@ nanParserGenChnlEntryField(struct ADAPTER *prAdapter,
 		prChnlEntry->ucPrimaryChnlBitmap =
 			(1 << ((ucPrimaryChnl - ucChnlLowerBound) / 4));
 		prChnlEntry->u2AuxChannelBitmap = 0;
+		nanRegGetChannelBitmap(ucOperatingClass, ucCenterChnl,
+				       &prChnlEntry->u2ChannelBitmap);
 	}
 
 	return WLAN_STATUS_SUCCESS;
@@ -3005,8 +2987,6 @@ nanSchedPeerChkQos(struct ADAPTER *prAdapter,
 	uint32_t u4QosMaxLatency;
 	uint32_t u4EmptySlots;
 	uint32_t i4Latency;
-	uint32_t i4LatencyStart;
-	uint32_t i4LatencyEnd;
 	uint32_t u4Idx1;
 
 	if (!prPeerSchDesc->fgUsed)
@@ -3043,24 +3023,15 @@ nanSchedPeerChkQos(struct ADAPTER *prAdapter,
 
 			u4EmptySlots = ~(prTimeline->au4AvailMap[u4DwIdx]);
 			i4Latency = 0;
-			i4LatencyStart = i4LatencyEnd = -1;
 
 			for (u4Idx1 = 0; u4Idx1 < 32; u4Idx1++) {
 				if (u4EmptySlots & BIT(u4Idx1)) {
-					if (i4Latency == 0) {
-						i4Latency++;
-						i4LatencyStart = i4LatencyEnd =
-							u4Idx1;
-					} else {
-						i4Latency++;
-						i4LatencyEnd = u4Idx1;
-					}
+					i4Latency++;
 					/* Qos max latency validation fail */
 					if (i4Latency > u4QosMaxLatency)
 						return WLAN_STATUS_FAILURE;
 				} else {
 					i4Latency = 0;
-					i4LatencyStart = i4LatencyEnd = -1;
 				}
 			}
 		}
@@ -3966,6 +3937,7 @@ nanSchedPeerUpdateCommonFAW(struct ADAPTER *prAdapter, uint32_t u4SchIdx) {
 	union _NAN_BAND_CHNL_CTRL rLocalChnlInfo;
 	union _NAN_BAND_CHNL_CTRL rRmtChnlInfo;
 	struct _NAN_SCHEDULER_T *prScheduler;
+	enum ENUM_BAND eBand;
 
 	prScheduler = nanGetScheduler(prAdapter);
 
@@ -4014,6 +3986,22 @@ nanSchedPeerUpdateCommonFAW(struct ADAPTER *prAdapter, uint32_t u4SchIdx) {
 				DBGLOG(NAN, LOUD, "co-channel check pass\n");
 				NAN_TIMELINE_SET(prTimeline->au4AvailMap,
 						 u4SlotIdx);
+
+				/* Update used band to peer schedule record */
+				eBand =
+				(rLocalChnlInfo.rChannel.u4PrimaryChnl < 36)
+						? BAND_2G4 : BAND_5G;
+
+				if (prPeerSchRecord->eBand == BAND_NULL) {
+					prPeerSchRecord->eBand = eBand;
+					DBGLOG(NAN, INFO,
+					"Peer %d use band %d\n",
+					u4SchIdx, prPeerSchRecord->eBand);
+				} else if (prPeerSchRecord->eBand != eBand) {
+					DBGLOG(NAN, ERROR,
+					"Band conflict %d != %d\n",
+						prPeerSchRecord->eBand, eBand);
+				}
 				break;
 			}
 		}
@@ -8199,7 +8187,8 @@ nanSchedCmdUpdatePeerCapability(struct ADAPTER *prAdapter, uint32_t u4SchIdx) {
 
 	ucSupportedBands = BIT(NAN_SUPPORTED_BAND_ID_2P4G);
 	prDevCapList = prPeerSchRecord->prPeerSchDesc->arDevCapability;
-	for (u4Idx = 0; u4Idx < (NAN_NUM_AVAIL_DB + 1); u4Idx++) {
+	for (u4Idx = 0; u4Idx < (NAN_NUM_AVAIL_DB + 1);
+		u4Idx++, prDevCapList++) {
 		if (prDevCapList->fgValid)
 			ucSupportedBands |= prDevCapList->ucSupportedBand;
 	}
@@ -8352,7 +8341,7 @@ nanSchedCmdUpdateAvailabilityDb(struct ADAPTER *prAdapter,
 
 	cnmMemFree(prAdapter, prCmdBuffer);
 
-	return WLAN_STATUS_SUCCESS;
+	return rStatus;
 }
 
 uint32_t
@@ -8454,7 +8443,7 @@ nanSchedCmdUpdateAvailability(IN struct ADAPTER *prAdapter) {
 				&(prScheduler->rAvailAttrCtrlResetTimer),
 				CFG_NAN_AVAIL_CTRL_RESET_TIMEOUT);
 
-			rStatus = nanSchedCmdUpdateAvailabilityCtrl(prAdapter);
+			nanSchedCmdUpdateAvailabilityCtrl(prAdapter);
 		}
 
 		rStatus = nanSchedCmdUpdateAvailabilityDb(prAdapter, FALSE);
@@ -9344,4 +9333,15 @@ nanSchedSwDbg4(struct ADAPTER *prAdapter, uint32_t u4Data) /* 0x7426000d */
 	}
 
 	return u4Ret;
+}
+
+enum ENUM_BAND
+nanSchedGetSchRecBandByMac(struct ADAPTER *prAdapter, uint8_t *pucNmiAddr) {
+	struct _NAN_PEER_SCHEDULE_RECORD_T *prPeerSchRec;
+
+	prPeerSchRec = nanSchedLookupPeerSchRecord(prAdapter, pucNmiAddr);
+	if (prPeerSchRec)
+		return prPeerSchRec->eBand;
+	else
+		return BAND_NULL;
 }
