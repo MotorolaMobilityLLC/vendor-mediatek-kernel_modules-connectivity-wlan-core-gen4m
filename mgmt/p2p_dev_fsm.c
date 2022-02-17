@@ -99,7 +99,6 @@ uint8_t p2pDevFsmInit(IN struct ADAPTER *prAdapter)
 			COPY_MAC_ADDR(prP2pBssInfo->aucOwnMacAddr,
 					prAdapter->rWifiVar.aucDeviceAddress);
 			DBGLOG(INIT, INFO, "Set p2p dev mac to " MACSTR "\n",
-					prP2pBssInfo->ucBssIndex,
 					MAC2STR(prP2pBssInfo->aucOwnMacAddr));
 
 			prP2pDevFsmInfo->ucBssIndex = prP2pBssInfo->ucBssIndex;
