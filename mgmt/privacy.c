@@ -772,7 +772,7 @@ VOID secPrivacyFreeForEntry(IN P_ADAPTER_T prAdapter, IN UINT_8 ucEntry)
 	if (prWtbl[ucEntry].ucUsed) {
 		prWtbl[ucEntry].ucUsed = FALSE;
 		prWtbl[ucEntry].ucKeyId = 0xff;
-		prWtbl[ucEntry].ucBssIndex = MAX_BSS_INDEX + 1;
+		prWtbl[ucEntry].ucBssIndex = prAdapter->ucHwBssIdNum + 1;
 		prWtbl[ucEntry].ucPairwise = 0;
 		kalMemZero(prWtbl[ucEntry].aucMacAddr, MAC_ADDR_LEN);
 		prWtbl[ucEntry].ucStaIndex = STA_REC_INDEX_NOT_FOUND;

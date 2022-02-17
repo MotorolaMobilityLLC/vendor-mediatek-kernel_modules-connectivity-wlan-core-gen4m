@@ -181,7 +181,7 @@ UINT_8 p2pRoleFsmInit(IN P_ADAPTER_T prAdapter, IN UINT_8 ucRoleIdx)
 	if (prP2pBssInfo)
 		return prP2pBssInfo->ucBssIndex;
 	else
-		return P2P_DEV_BSS_INDEX;
+		return prAdapter->ucP2PDevBssIdx;
 }				/* p2pFsmInit */
 
 VOID p2pRoleFsmUninit(IN P_ADAPTER_T prAdapter, IN UINT_8 ucRoleIdx)
@@ -1381,7 +1381,7 @@ VOID p2pRoleFsmRunEventJoinComplete(IN P_ADAPTER_T prAdapter, IN P_MSG_HDR_T prM
 		if (prStaRec == NULL) {
 			ASSERT(FALSE);
 			break;
-		} else if (prStaRec->ucBssIndex >= P2P_DEV_BSS_INDEX) {
+		} else if (prStaRec->ucBssIndex >= prAdapter->ucP2PDevBssIdx) {
 			ASSERT(FALSE);
 			break;
 		}
@@ -1803,8 +1803,11 @@ VOID p2pRoleUpdateACLEntry(IN P_ADAPTER_T prAdapter, IN UINT_8 ucBssIdx)
 	P_STA_RECORD_T prCurrStaRec, prNextStaRec;
 	P_BSS_INFO_T prP2pBssInfo;
 
-	if ((!prAdapter) || (ucBssIdx > HW_BSSID_NUM))
+	ASSERT(prAdapter);
+
+	if ((!prAdapter) || (ucBssIdx > prAdapter->ucHwBssIdNum))
 		return;
+
 	DBGLOG(P2P, TRACE, "Update ACL Entry ucBssIdx = %d\n", ucBssIdx);
 	prP2pBssInfo = prAdapter->aprBssInfo[ucBssIdx];
 
@@ -1855,7 +1858,9 @@ BOOL p2pRoleProcessACLInspection(IN P_ADAPTER_T prAdapter, IN PUCHAR pMacAddr, I
 	INT_32 i = 0;
 	P_BSS_INFO_T prP2pBssInfo;
 
-	if ((!prAdapter) || (!pMacAddr) || (ucBssIdx > HW_BSSID_NUM))
+	ASSERT(prAdapter);
+
+	if ((!prAdapter) || (!pMacAddr) || (ucBssIdx > prAdapter->ucHwBssIdNum))
 		return FALSE;
 
 	prP2pBssInfo = prAdapter->aprBssInfo[ucBssIdx];
@@ -1957,7 +1962,7 @@ p2pRoleFsmRunEventAAASuccess(IN P_ADAPTER_T prAdapter, IN P_STA_RECORD_T prStaRe
 			break;
 		}
 
-		ASSERT(prP2pBssInfo->ucBssIndex < P2P_DEV_BSS_INDEX);
+		ASSERT(prP2pBssInfo->ucBssIndex < prAdapter->ucP2PDevBssIdx);
 
 		prP2pRoleFsmInfo = P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prAdapter, prP2pBssInfo->u4PrivateData);
 
@@ -2007,7 +2012,7 @@ VOID p2pRoleFsmRunEventSwitchOPMode(IN P_ADAPTER_T prAdapter, IN P_MSG_HDR_T prM
 
 		prP2pRoleFsmInfo = prAdapter->rWifiVar.aprP2pRoleFsmInfo[prSwitchOpMode->ucRoleIdx];
 
-		ASSERT(prP2pRoleFsmInfo->ucBssIndex < P2P_DEV_BSS_INDEX);
+		ASSERT(prP2pRoleFsmInfo->ucBssIndex < prAdapter->ucP2PDevBssIdx);
 
 		prP2pBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prP2pRoleFsmInfo->ucBssIndex);
 

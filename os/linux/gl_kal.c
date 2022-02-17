@@ -1598,7 +1598,7 @@ VOID kalSendCompleteAndAwakeQueue(IN P_GLUE_INFO_T prGlueInfo, IN PVOID pvPacket
 		DBGLOG(INIT, INFO, "TxPendingFrameNum[%u] CurFrameId[%u]\n", prGlueInfo->i4TxPendingFrameNum,
 		       GLUE_GET_PKT_ARRIVAL_TIME(pvPacket));
 
-		for (ucBssIdx = 0; ucBssIdx < HW_BSSID_NUM; ucBssIdx++) {
+		for (ucBssIdx = 0; ucBssIdx < prAdapter->ucHwBssIdNum; ucBssIdx++) {
 			for (u2QIdx = 0; u2QIdx < CFG_MAX_TXQ_NUM; u2QIdx++) {
 				DBGLOG(INIT, INFO, "BSS[%u] Q[%u] TxPendingFrameNum[%u]\n",
 				       ucBssIdx, u2QIdx, prGlueInfo->ai4TxPendingFrameNumPerQueue[ucBssIdx][u2QIdx]);

@@ -220,10 +220,10 @@ VOID cnmChMngrRequestPrivilege(P_ADAPTER_T prAdapter, P_MSG_HDR_T prMsgHdr)
 	prCmdBody->aucReserved2[6] = 0;
 	prCmdBody->aucReserved2[7] = 0;
 
-	ASSERT(prCmdBody->ucBssIndex <= MAX_BSS_INDEX);
+	ASSERT(prCmdBody->ucBssIndex <= prAdapter->ucHwBssIdNum);
 
 	/* For monkey testing 20110901 */
-	if (prCmdBody->ucBssIndex > MAX_BSS_INDEX)
+	if (prCmdBody->ucBssIndex > prAdapter->ucHwBssIdNum)
 		DBGLOG(CNM, ERROR, "CNM: ChReq with wrong netIdx=%d\n\n", prCmdBody->ucBssIndex);
 
 	rStatus = wlanSendSetQueryCmd(prAdapter,	/* prAdapter */
@@ -299,10 +299,10 @@ VOID cnmChMngrAbortPrivilege(P_ADAPTER_T prAdapter, P_MSG_HDR_T prMsgHdr)
 	DBGLOG(CNM, INFO, "ChAbort net=%d token=%d dbdc=%u\n",
 		prCmdBody->ucBssIndex, prCmdBody->ucTokenID, prCmdBody->ucDBDCBand);
 
-	ASSERT(prCmdBody->ucBssIndex <= MAX_BSS_INDEX);
+	ASSERT(prCmdBody->ucBssIndex <= prAdapter->ucHwBssIdNum);
 
 	/* For monkey testing 20110901 */
-	if (prCmdBody->ucBssIndex > MAX_BSS_INDEX)
+	if (prCmdBody->ucBssIndex > prAdapter->ucHwBssIdNum)
 		DBGLOG(CNM, ERROR, "CNM: ChAbort with wrong netIdx=%d\n\n", prCmdBody->ucBssIndex);
 
 	rStatus = wlanSendSetQueryCmd(prAdapter,	/* prAdapter */
@@ -367,7 +367,7 @@ VOID cnmChMngrHandleChEvent(P_ADAPTER_T prAdapter, P_WIFI_EVENT_T prEvent)
 	DBGLOG(CNM, INFO, "ChGrant net=%d token=%d ch=%d sco=%d\n",
 	       prEventBody->ucBssIndex, prEventBody->ucTokenID, prEventBody->ucPrimaryChannel, prEventBody->ucRfSco);
 
-	ASSERT(prEventBody->ucBssIndex <= MAX_BSS_INDEX);
+	ASSERT(prEventBody->ucBssIndex <= prAdapter->ucHwBssIdNum);
 	ASSERT(prEventBody->ucStatus == EVENT_CH_STATUS_GRANT);
 
 	prBssInfo = prAdapter->aprBssInfo[prEventBody->ucBssIndex];
@@ -430,7 +430,7 @@ cnmPreferredChannel(P_ADAPTER_T prAdapter, P_ENUM_BAND_T prBand, PUINT_8 pucPrim
 	ASSERT(pucPrimaryChannel);
 	ASSERT(prBssSCO);
 
-	for (i = 0; i < BSS_INFO_NUM; i++) {
+	for (i = 0; i < prAdapter->ucHwBssIdNum; i++) {
 		prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, i);
 
 		if (prBssInfo) {
@@ -461,16 +461,18 @@ BOOLEAN cnmAisInfraChannelFixed(P_ADAPTER_T prAdapter, P_ENUM_BAND_T prBand, PUI
 {
 	P_BSS_INFO_T prBssInfo;
 	UINT_8 i;
-	P_WIFI_VAR_T prWifiVar = &prAdapter->rWifiVar;
+	P_WIFI_VAR_T prWifiVar;
 
 	ASSERT(prAdapter);
+
+	prWifiVar = &prAdapter->rWifiVar;
 
 	if (prWifiVar->u4ScanCtrl & SCN_CTRL_DEFAULT_SCAN_CTRL) {
 		/*DBGLOG(CNM, INFO, "cnmAisInfraChannelFixed: ByPass AIS channel Fix check\n");*/
 		return FALSE;
 	}
 
-	for (i = 0; i < BSS_INFO_NUM; i++) {
+	for (i = 0; i < prAdapter->ucHwBssIdNum; i++) {
 		prBssInfo = prAdapter->aprBssInfo[i];
 
 #if 0
@@ -516,8 +518,11 @@ BOOLEAN cnmAisDetectP2PChannel(P_ADAPTER_T prAdapter, P_ENUM_BAND_T prBand, PUIN
 {
 	UINT_8 i = 0;
 	P_BSS_INFO_T prBssInfo;
+
+	ASSERT(prAdapter);
+
 #if CFG_ENABLE_WIFI_DIRECT
-	for (; i < BSS_INFO_NUM; i++) {
+	for (; i < prAdapter->ucHwBssIdNum; i++) {
 		prBssInfo = prAdapter->aprBssInfo[i];
 		if (prBssInfo->eNetworkType != NETWORK_TYPE_P2P)
 			continue;
@@ -553,7 +558,7 @@ VOID cnmAisInfraConnectNotify(P_ADAPTER_T prAdapter)
 	prAisBssInfo = NULL;
 	prBowBssInfo = NULL;
 
-	for (i = 0; i < BSS_INFO_NUM; i++) {
+	for (i = 0; i < prAdapter->ucHwBssIdNum; i++) {
 		prBssInfo = prAdapter->aprBssInfo[i];
 
 		if (prBssInfo && IS_BSS_ACTIVE(prBssInfo)) {
@@ -593,7 +598,7 @@ BOOLEAN cnmAisIbssIsPermitted(P_ADAPTER_T prAdapter)
 	ASSERT(prAdapter);
 
 	/* P2P device network shall be included */
-	for (i = 0; i <= BSS_INFO_NUM; i++) {
+	for (i = 0; i <= prAdapter->ucHwBssIdNum; i++) {
 		prBssInfo = prAdapter->aprBssInfo[i];
 
 		if (prBssInfo && IS_BSS_ACTIVE(prBssInfo) && !IS_BSS_AIS(prBssInfo))
@@ -623,7 +628,7 @@ BOOLEAN cnmP2PIsPermitted(P_ADAPTER_T prAdapter)
 
 	fgBowIsActive = FALSE;
 
-	for (i = 0; i < BSS_INFO_NUM; i++) {
+	for (i = 0; i < prAdapter->ucHwBssIdNum; i++) {
 		prBssInfo = prAdapter->aprBssInfo[i];
 
 		if (prBssInfo && IS_BSS_ACTIVE(prBssInfo)) {
@@ -662,7 +667,7 @@ BOOLEAN cnmBowIsPermitted(P_ADAPTER_T prAdapter)
 	ASSERT(prAdapter);
 
 	/* P2P device network shall be included */
-	for (i = 0; i <= BSS_INFO_NUM; i++) {
+	for (i = 0; i <= prAdapter->ucHwBssIdNum; i++) {
 		prBssInfo = prAdapter->aprBssInfo[i];
 
 		if (prBssInfo && IS_BSS_ACTIVE(prBssInfo) &&
@@ -761,7 +766,7 @@ BOOLEAN cnmBss40mBwPermitted(P_ADAPTER_T prAdapter, UINT_8 ucBssIndex)
 		return FALSE;
 #if 0
 	/* Decide max by other BSS */
-	for (i = 0; i < BSS_INFO_NUM; i++) {
+	for (i = 0; i < prAdapter->ucHwBssIdNum; i++) {
 		if (i != ucBssIndex) {
 			prBssInfo = prAdapter->aprBssInfo[i];
 
@@ -887,12 +892,12 @@ P_BSS_INFO_T cnmGetBssInfoAndInit(P_ADAPTER_T prAdapter, ENUM_NETWORK_TYPE_T eNe
 
 	/*specific case for p2p device scan*/
 	if (eNetworkType == NETWORK_TYPE_P2P && fgIsP2pDevice) {
-		prBssInfo = prAdapter->aprBssInfo[P2P_DEV_BSS_INDEX];
+		prBssInfo = prAdapter->aprBssInfo[prAdapter->ucP2PDevBssIdx];
 
 		prBssInfo->fgIsInUse = TRUE;
-		prBssInfo->ucBssIndex = P2P_DEV_BSS_INDEX;
+		prBssInfo->ucBssIndex = prAdapter->ucP2PDevBssIdx;
 		prBssInfo->eNetworkType = eNetworkType;
-		prBssInfo->ucOwnMacIndex = HW_BSSID_NUM;
+		prBssInfo->ucOwnMacIndex = prAdapter->ucHwBssIdNum;
 #if CFG_SUPPORT_PNO
 		prBssInfo->fgIsPNOEnable = FALSE;
 		prBssInfo->fgIsNetRequestInActive = FALSE;
@@ -905,27 +910,27 @@ P_BSS_INFO_T cnmGetBssInfoAndInit(P_ADAPTER_T prAdapter, ENUM_NETWORK_TYPE_T eNe
 
 	/* Find available HW set  with the order 1,2,..*/
 	do {
-		for (ucBssIndex = 0; ucBssIndex < BSS_INFO_NUM; ucBssIndex++) {
+		for (ucBssIndex = 0; ucBssIndex < prAdapter->ucHwBssIdNum; ucBssIndex++) {
 			prBssInfo = prAdapter->aprBssInfo[ucBssIndex];
 
 			if (prBssInfo && prBssInfo->fgIsInUse && ucOwnMacIdx == prBssInfo->ucOwnMacIndex)
 				break;
 		}
 
-		if (ucBssIndex >= BSS_INFO_NUM) {
+		if (ucBssIndex >= prAdapter->ucHwBssIdNum) {
 			/* No hit  the ucOwnMacIndex could be assigned to this new bss */
 			break;
 		}
-	} while (++ucOwnMacIdx < HW_BSSID_NUM);
+	} while (++ucOwnMacIdx < prAdapter->ucHwBssIdNum);
 
 
 	/*should not dispatch P2P_DEV_BSS_INDEX (HW_BSSID_NUM)to general bss,
 	*It means total BSS_INFO_NUM BSS are created,
 	*no more reseve for MBSS
 	*/
-	if (ucOwnMacIdx == HW_BSSID_NUM) {
+	if (ucOwnMacIdx == prAdapter->ucHwBssIdNum) {
 
-		for (ucBssIndex = 0; ucBssIndex < BSS_INFO_NUM; ucBssIndex++) {
+		for (ucBssIndex = 0; ucBssIndex < prAdapter->ucHwBssIdNum; ucBssIndex++) {
 			prBssInfo = prAdapter->aprBssInfo[ucBssIndex];
 
 			/*If the Bss was alredy assigned, and in use*/
@@ -933,7 +938,7 @@ P_BSS_INFO_T cnmGetBssInfoAndInit(P_ADAPTER_T prAdapter, ENUM_NETWORK_TYPE_T eNe
 				break;
 		}
 
-		if (ucBssIndex >= BSS_INFO_NUM) {
+		if (ucBssIndex >= prAdapter->ucHwBssIdNum) {
 			/*there is no NETWORK_TYPE_MBSS used before */
 			DBGLOG(INIT, WARN,
 				"[Warning] too much Bss in use, take reserve OwnMac(%d)for usage!\n",
@@ -944,7 +949,7 @@ P_BSS_INFO_T cnmGetBssInfoAndInit(P_ADAPTER_T prAdapter, ENUM_NETWORK_TYPE_T eNe
 	}
 
 	/* Find available BSS_INFO */
-	for (ucBssIndex = 0; ucBssIndex < BSS_INFO_NUM; ucBssIndex++) {
+	for (ucBssIndex = 0; ucBssIndex < prAdapter->ucHwBssIdNum; ucBssIndex++) {
 		prBssInfo = prAdapter->aprBssInfo[ucBssIndex];
 
 		if (prBssInfo && !prBssInfo->fgIsInUse) {
@@ -956,7 +961,7 @@ P_BSS_INFO_T cnmGetBssInfoAndInit(P_ADAPTER_T prAdapter, ENUM_NETWORK_TYPE_T eNe
 		}
 	}
 
-	if (ucOwnMacIdx >= HW_BSSID_NUM || ucBssIndex >= BSS_INFO_NUM)
+	if (ucOwnMacIdx >= prAdapter->ucHwBssIdNum || ucBssIndex >= prAdapter->ucHwBssIdNum)
 		prBssInfo = NULL;
 #if CFG_SUPPORT_PNO
 	if (prBssInfo) {
@@ -1006,13 +1011,15 @@ VOID cnmInitDbdcSetting(IN P_ADAPTER_T prAdapter)
 
 VOID cnmUpdateDbdcSetting(IN P_ADAPTER_T prAdapter, IN BOOLEAN fgDbdcEn)
 {
-	UINT_8					ucWmmSetBitmap = 0;
-	CMD_DBDC_SETTING_T		rDbdcSetting;
-	P_CMD_DBDC_SETTING_T	prCmdBody;
-	WLAN_STATUS				rStatus = WLAN_STATUS_SUCCESS;
-	UINT_8					ucBssIndex;
-	P_BSS_INFO_T			prBssInfo;
-	UINT_8					ucMaxBw;
+	UINT_8 ucWmmSetBitmap = 0;
+	CMD_DBDC_SETTING_T rDbdcSetting;
+	P_CMD_DBDC_SETTING_T prCmdBody;
+	WLAN_STATUS rStatus = WLAN_STATUS_SUCCESS;
+	UINT_8 ucBssIndex;
+	P_BSS_INFO_T prBssInfo;
+	UINT_8 ucMaxBw;
+
+	ASSERT(prAdapter);
 
 	DBGLOG(CNM, INFO, "DBDC %s\n", fgDbdcEn?"Enable":"Disable");
 
@@ -1042,7 +1049,7 @@ VOID cnmUpdateDbdcSetting(IN P_ADAPTER_T prAdapter, IN BOOLEAN fgDbdcEn)
 						  0 /* u4SetQueryBufferLen */);
 	}
 
-	for (ucBssIndex = 0; ucBssIndex <= HW_BSSID_NUM; ucBssIndex++) {
+	for (ucBssIndex = 0; ucBssIndex <= prAdapter->ucHwBssIdNum; ucBssIndex++) {
 		prBssInfo = prAdapter->aprBssInfo[ucBssIndex];
 		if (prBssInfo->fgIsInUse &&
 			prBssInfo->fgIsNetActive &&
@@ -1109,7 +1116,7 @@ VOID cnmUpdateDbdcSetting(IN P_ADAPTER_T prAdapter, IN BOOLEAN fgDbdcEn)
 	if (rStatus == WLAN_STATUS_SUCCESS || rStatus == WLAN_STATUS_PENDING) {
 		prAdapter->rWifiVar.fgDbDcModeEn = fgDbdcEn;
 
-		for (ucBssIndex = 0; ucBssIndex <= HW_BSSID_NUM; ucBssIndex++) {
+		for (ucBssIndex = 0; ucBssIndex <= prAdapter->ucHwBssIdNum; ucBssIndex++) {
 			prBssInfo = prAdapter->aprBssInfo[ucBssIndex];
 
 			if (prBssInfo->eBand == BAND_2G4) {
@@ -1122,14 +1129,8 @@ VOID cnmUpdateDbdcSetting(IN P_ADAPTER_T prAdapter, IN BOOLEAN fgDbdcEn)
 	}
 }
 
-VOID cnmGetDbdcCapability(
-	IN P_ADAPTER_T			prAdapter,
-	IN UINT_8				ucBssIndex,
-	IN ENUM_BAND_T			eRfBand,
-	IN UINT_8				ucPrimaryChannel,
-	IN UINT_8				ucNss,
-	OUT P_CNM_DBDC_CAP_T	prDbdcCap
-)
+VOID cnmGetDbdcCapability(IN P_ADAPTER_T prAdapter, IN UINT_8 ucBssIndex, IN ENUM_BAND_T eRfBand,
+			  IN UINT_8 ucPrimaryChannel, IN UINT_8 ucNss, OUT P_CNM_DBDC_CAP_T prDbdcCap)
 {
 	if (!prDbdcCap)
 		return;
@@ -1177,14 +1178,12 @@ VOID cnmGetDbdcCapability(
 	}
 }
 
-VOID cnmDbdcEnableDecision(
-	IN P_ADAPTER_T	prAdapter,
-	IN UINT_8		ucChangedBssIndex,
-	IN ENUM_BAND_T	eRfBand
-)
+VOID cnmDbdcEnableDecision(IN P_ADAPTER_T prAdapter, IN UINT_8 ucChangedBssIndex, IN ENUM_BAND_T eRfBand)
 {
-	P_BSS_INFO_T	prBssInfo;
-	UINT_8			ucBssIndex;
+	P_BSS_INFO_T prBssInfo;
+	UINT_8 ucBssIndex;
+
+	ASSERT(prAdapter);
 
 	if (prAdapter->rWifiVar.ucDbdcMode != DBDC_MODE_DYNAMIC)
 		return;
@@ -1208,7 +1207,7 @@ VOID cnmDbdcEnableDecision(
 	if (eRfBand != BAND_2G4 && eRfBand != BAND_5G)
 		return;
 
-	for (ucBssIndex = 0; ucBssIndex < HW_BSSID_NUM; ucBssIndex++) {
+	for (ucBssIndex = 0; ucBssIndex < prAdapter->ucHwBssIdNum; ucBssIndex++) {
 
 		if (ucBssIndex == ucChangedBssIndex)
 			continue;
@@ -1244,11 +1243,13 @@ VOID cnmDbdcEnableDecision(
 	}
 }
 
-VOID cnmDbdcDisableDecision(IN P_ADAPTER_T prAdapter,	IN UINT_8 ucChangedBssIndex)
+VOID cnmDbdcDisableDecision(IN P_ADAPTER_T prAdapter, IN UINT_8 ucChangedBssIndex)
 {
-	P_BSS_INFO_T	prBssInfo;
-	UINT_8			ucBssIndex;
-	ENUM_BAND_T		eBandCompare;
+	P_BSS_INFO_T prBssInfo;
+	UINT_8 ucBssIndex;
+	ENUM_BAND_T eBandCompare;
+
+	ASSERT(prAdapter);
 
 	if (prAdapter->rWifiVar.ucDbdcMode != DBDC_MODE_DYNAMIC)
 		return;
@@ -1273,7 +1274,7 @@ VOID cnmDbdcDisableDecision(IN P_ADAPTER_T prAdapter,	IN UINT_8 ucChangedBssInde
 		return;
 
 	eBandCompare = BAND_NULL;
-	for (ucBssIndex = 0; ucBssIndex < HW_BSSID_NUM; ucBssIndex++) {
+	for (ucBssIndex = 0; ucBssIndex < prAdapter->ucHwBssIdNum; ucBssIndex++) {
 
 		if (ucBssIndex == ucChangedBssIndex)
 			continue;
@@ -1309,9 +1310,11 @@ VOID cnmDbdcDisableDecision(IN P_ADAPTER_T prAdapter,	IN UINT_8 ucChangedBssInde
 
 VOID cnmDbdcDecision(IN P_ADAPTER_T prAdapter, IN ULONG plParamPtr)
 {
-	P_BSS_INFO_T	prBssInfo;
-	UINT_8			ucBssIndex;
-	ENUM_BAND_T		eBandCompare;
+	P_BSS_INFO_T prBssInfo;
+	UINT_8 ucBssIndex;
+	ENUM_BAND_T eBandCompare;
+
+	ASSERT(prAdapter);
 
 	if (prAdapter->rWifiVar.ucDbdcMode != DBDC_MODE_DYNAMIC)
 		return;
@@ -1329,7 +1332,7 @@ VOID cnmDbdcDecision(IN P_ADAPTER_T prAdapter, IN ULONG plParamPtr)
 		DBGLOG(CNM, INFO, "DBDC timer timeout : disable countdown finish\n");
 
 	eBandCompare = BAND_NULL;
-	for (ucBssIndex = 0; ucBssIndex < HW_BSSID_NUM; ucBssIndex++) {
+	for (ucBssIndex = 0; ucBssIndex < prAdapter->ucHwBssIdNum; ucBssIndex++) {
 
 		prBssInfo = prAdapter->aprBssInfo[ucBssIndex];
 

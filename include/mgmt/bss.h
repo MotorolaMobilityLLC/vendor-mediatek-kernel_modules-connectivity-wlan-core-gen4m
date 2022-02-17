@@ -79,17 +79,12 @@ extern const PUINT_8 apucNetworkType[NETWORK_TYPE_NUM];
 *                              C O N S T A N T S
 ********************************************************************************
 */
-/* Fixed value=4 for MT6630.
- * It is the biggest index of this pointer array prAdapter->aprBssInfo[].
- */
-#define MAX_BSS_INDEX           HW_BSSID_NUM
-#define P2P_DEV_BSS_INDEX       MAX_BSS_INDEX
+#define BSS_DEFAULT_NUM         KAL_BSS_NUM
 
 /* Define how many concurrent operation networks. */
-#define BSS_INFO_NUM            KAL_BSS_NUM
 #define BSS_P2P_NUM             KAL_P2P_NUM
 
-#if (KAL_BSS_NUM > HW_BSSID_NUM) || (KAL_P2P_NUM > KAL_BSS_NUM)
+#if (BSS_P2P_NUM > MAX_BSSID_NUM)
 #error Exceed HW capability (KAL_BSS_NUM or KAL_P2P_NUM)!!
 #endif
 
@@ -121,8 +116,6 @@ extern const PUINT_8 apucNetworkType[NETWORK_TYPE_NUM];
 *                                 M A C R O S
 ********************************************************************************
 */
-#define IS_BSS_INDEX_VALID(_ucBssIndex)     ((_ucBssIndex) <= P2P_DEV_BSS_INDEX)
-
 #define GET_BSS_INFO_BY_INDEX(_prAdapter, _ucBssIndex) \
 	((_prAdapter)->aprBssInfo[(_ucBssIndex)])
 

@@ -7391,20 +7391,20 @@ int priv_driver_set_dbdc(IN struct net_device *prNetDev, IN char *pcCommand, IN 
 	INT_32 i4BytesWritten = 0;
 	INT_32 i4Argc = 0;
 	PCHAR apcArgv[WLAN_CFG_ARGV_MAX] = {0};
-
 	UINT_32 u4Ret, u4Parse;
-
 	UINT_8 ucDBDCEnable;
 	/*UINT_8 ucBssIndex;*/
 	/*P_BSS_INFO_T prBssInfo;*/
 
 
 	ASSERT(prNetDev);
+
 	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
 		return -1;
+
 	prGlueInfo = *((P_GLUE_INFO_T *) netdev_priv(prNetDev));
 #if 0
-	for (ucBssIndex = 0; ucBssIndex < (HW_BSSID_NUM+1); ucBssIndex++) {
+	for (ucBssIndex = 0; ucBssIndex < (prAdapter->ucHwBssIdNum + 1); ucBssIndex++) {
 		prBssInfo = prGlueInfo->prAdapter->aprBssInfo[ucBssIndex];
 		pr_info("****BSS %u inUse %u active %u Mode %u priCh %u state %u rfBand %u\n",
 			ucBssIndex,

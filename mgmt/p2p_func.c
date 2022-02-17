@@ -604,7 +604,7 @@ p2pFuncStartGO(IN P_ADAPTER_T prAdapter,
 	do {
 		ASSERT_BREAK((prAdapter != NULL) && (prBssInfo != NULL));
 
-		if (prBssInfo->ucBssIndex >= MAX_BSS_INDEX) {
+		if (prBssInfo->ucBssIndex >= prAdapter->ucHwBssIdNum) {
 			DBGLOG(P2P, ERROR, "P2P BSS exceed the number of P2P interface number.");
 			ASSERT(FALSE);
 			break;
@@ -1382,7 +1382,7 @@ p2pFuncDisconnect(IN P_ADAPTER_T prAdapter,
 
 		ASSERT_BREAK(prP2pBssInfo->eNetworkType == NETWORK_TYPE_P2P);
 
-		ASSERT_BREAK(prP2pBssInfo->ucBssIndex < P2P_DEV_BSS_INDEX);
+		ASSERT_BREAK(prP2pBssInfo->ucBssIndex < prAdapter->ucP2PDevBssIdx);
 
 		eOriMediaStatus = prP2pBssInfo->eConnectionState;
 
@@ -1523,7 +1523,7 @@ P_BSS_INFO_T p2pFuncBSSIDFindBssInfo(IN P_ADAPTER_T prAdapter, IN PUINT_8 pucBSS
 	do {
 		ASSERT_BREAK((prAdapter != NULL) && (pucBSSID != NULL));
 
-		for (ucBssIdx = 0; ucBssIdx < BSS_INFO_NUM; ucBssIdx++) {
+		for (ucBssIdx = 0; ucBssIdx < prAdapter->ucHwBssIdNum; ucBssIdx++) {
 			if (!IS_NET_ACTIVE(prAdapter, ucBssIdx))
 				continue;
 
@@ -2831,7 +2831,7 @@ p2pFuncProcessP2pProbeRspAction(IN P_ADAPTER_T prAdapter,
 	case ELEM_ID_SSID:
 		{
 			if (SSID_IE(pucIEBuf)->ucLength > 7) {
-				for ((*ucBssIdx) = 0; (*ucBssIdx) < MAX_BSS_INDEX; (*ucBssIdx)++) {
+				for ((*ucBssIdx) = 0; (*ucBssIdx) < prAdapter->ucHwBssIdNum; (*ucBssIdx)++) {
 					*prP2pBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, *ucBssIdx);
 					if (!(*prP2pBssInfo))
 						continue;
@@ -2841,10 +2841,10 @@ p2pFuncProcessP2pProbeRspAction(IN P_ADAPTER_T prAdapter,
 						break;
 					}
 				}
-				if ((*ucBssIdx) == P2P_DEV_BSS_INDEX)
+				if ((*ucBssIdx) == prAdapter->ucP2PDevBssIdx)
 					*prP2pBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, *ucBssIdx);
 			} else {
-				*prP2pBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, P2P_DEV_BSS_INDEX);
+				*prP2pBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prAdapter->ucP2PDevBssIdx);
 				COPY_SSID((*prP2pBssInfo)->aucSSID,
 					  (*prP2pBssInfo)->ucSSIDLen,
 					  SSID_IE(pucIEBuf)->aucSSID, SSID_IE(pucIEBuf)->ucLength);
@@ -2949,7 +2949,7 @@ UINT_32 p2pFuncCalculateP2p_IELenForBeacon(IN P_ADAPTER_T prAdapter, IN UINT_8 u
 	P_BSS_INFO_T prBssInfo;
 
 	do {
-		ASSERT_BREAK((prAdapter != NULL) && (ucBssIdx < BSS_INFO_NUM));
+		ASSERT_BREAK((prAdapter != NULL) && (ucBssIdx < prAdapter->ucHwBssIdNum));
 
 		prBssInfo = prAdapter->aprBssInfo[ucBssIdx];
 

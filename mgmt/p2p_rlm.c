@@ -435,7 +435,7 @@ VOID rlmHandleObssStatusEventPkt(P_ADAPTER_T prAdapter, P_EVENT_AP_OBSS_STATUS_T
 
 	ASSERT(prAdapter);
 	ASSERT(prObssStatus);
-	ASSERT(prObssStatus->ucBssIndex < MAX_BSS_INDEX);
+	ASSERT(prObssStatus->ucBssIndex < prAdapter->ucHwBssIdNum);
 
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prObssStatus->ucBssIndex);
 
