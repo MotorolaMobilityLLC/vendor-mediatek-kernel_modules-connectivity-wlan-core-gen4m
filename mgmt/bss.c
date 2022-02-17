@@ -1084,6 +1084,14 @@ bssComposeBeaconProbeRespFrameHeaderAndFF(IN uint8_t *pucBuffer,
 	/* NOTE(Kevin): Optimized for ARM */
 }		/* end of bssComposeBeaconProbeRespFrameHeaderAndFF() */
 
+uint32_t bssUpdateBeaconContent(IN struct ADAPTER
+				*prAdapter, IN uint8_t uBssIndex)
+{
+	return bssUpdateBeaconContentEx(prAdapter,
+		uBssIndex,
+		IE_UPD_METHOD_UPDATE_ALL);
+}
+
 /*---------------------------------------------------------------------------*/
 /*!
  * @brief Update the Beacon Frame Template to FW for AIS AdHoc and P2P GO.
@@ -1094,13 +1102,14 @@ bssComposeBeaconProbeRespFrameHeaderAndFF(IN uint8_t *pucBuffer,
  * @retval WLAN_STATUS_SUCCESS   Success.
  */
 /*---------------------------------------------------------------------------*/
-uint32_t bssUpdateBeaconContent(IN struct ADAPTER *prAdapter,
-				IN uint8_t ucBssIndex)
+uint32_t bssUpdateBeaconContentEx(IN struct ADAPTER *prAdapter,
+				IN uint8_t ucBssIndex,
+				enum ENUM_IE_UPD_METHOD eMethod)
 {
 	struct BSS_INFO *prBssInfo;
 	struct MSDU_INFO *prMsduInfo;
 	struct WLAN_BEACON_FRAME *prBcnFrame;
-	uint32_t i;
+	uint32_t i, result;
 
 	DEBUGFUNC("bssUpdateBeaconContent");
 	DBGLOG(INIT, LOUD, "\n");
@@ -1158,15 +1167,30 @@ uint32_t bssUpdateBeaconContent(IN struct ADAPTER *prAdapter,
 			(uint32_t) prMsduInfo->u2FrameLength);
 	}
 
-	return nicUpdateBeaconIETemplate(prAdapter,
-					 IE_UPD_METHOD_UPDATE_ALL,
+	result = nicUpdateBeaconIETemplate(prAdapter,
+				 IE_UPD_METHOD_UPDATE_ALL,
+				 ucBssIndex,
+				 prBssInfo->u2CapInfo,
+				 (uint8_t *) prBcnFrame->aucInfoElem,
+				 prMsduInfo->u2FrameLength -
+				 OFFSET_OF(struct WLAN_BEACON_FRAME,
+					   aucInfoElem));
+
+	if (eMethod == IE_UPD_METHOD_UNSOL_PROBE_RSP) {
+		DBGLOG(P2P, TRACE, "Dump unsolicited probe response to FW\n");
+
+		/* Update unsolicited probe response as beacon content */
+		result = nicUpdateBeaconIETemplate(prAdapter,
+					 IE_UPD_METHOD_UNSOL_PROBE_RSP,
 					 ucBssIndex,
 					 prBssInfo->u2CapInfo,
 					 (uint8_t *) prBcnFrame->aucInfoElem,
 					 prMsduInfo->u2FrameLength -
 					 OFFSET_OF(struct WLAN_BEACON_FRAME,
 						   aucInfoElem));
+	}
 
+	return result;
 }				/* end of bssUpdateBeaconContent() */
 
 /*----------------------------------------------------------------------------*/

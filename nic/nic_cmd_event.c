@@ -2558,9 +2558,9 @@ uint32_t nicCfgChipP2PCap(IN struct ADAPTER *prAdapter,
 	prAdapter->rWifiVar.ucStaVht &= prPhyCap->ucVht;
 #endif
 	wlanCfgSetUint32(prAdapter, "P2pGoACSEnable",
-	prAdapter->rWifiVar.ucP2pGoACS);
+		prAdapter->rWifiVar.ucP2pGoACS);
 	DBGLOG(INIT, INFO, "P2pGoACSEnable:ACS Enable[%d]\n",
-			prAdapter->rWifiVar.ucP2pGoACS);
+		prAdapter->rWifiVar.ucP2pGoACS);
 	return WLAN_STATUS_SUCCESS;
 	}
 #endif
