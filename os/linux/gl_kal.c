@@ -7416,7 +7416,7 @@ inline int32_t kalPerMonInit(IN struct GLUE_INFO
 				TIMER_WAKELOCK_NONE);
 
 	/* sync data with netdev */
-	GET_CURRENT_SYSTIME(&prPerMonitor->rLastUpdateTime);
+	GET_BOOT_SYSTIME(&prPerMonitor->rLastUpdateTime);
 	for (i = 0; i < BSS_DEFAULT_NUM; i++) {
 		prDevHandler = wlanGetNetDev(prGlueInfo, i);
 		if (prDevHandler) {
@@ -7581,7 +7581,7 @@ static uint32_t kalPerMonUpdate(IN struct ADAPTER *prAdapter)
 	char *pos = NULL, *end = NULL;
 	uint32_t slen;
 
-	GET_CURRENT_SYSTIME(&now);
+	GET_BOOT_SYSTIME(&now);
 	last = perf->rLastUpdateTime;
 
 	if (!KAL_TEST_BIT(PERF_MON_INIT_BIT, perf->ulPerfMonFlag) ||
