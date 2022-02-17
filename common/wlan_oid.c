@@ -7156,7 +7156,7 @@ wlanoidSetSwCtrlWrite(IN struct ADAPTER *prAdapter,
 	uint32_t rWlanStatus = WLAN_STATUS_SUCCESS;
 	uint16_t u2Id, u2SubId;
 	uint32_t u4Data;
-	uint8_t ucNss;
+	uint8_t ucOpRxNss, ucOpTxNss;
 	uint8_t ucChannelWidth;
 	uint8_t ucBssIndex;
 
@@ -7194,27 +7194,36 @@ wlanoidSetSwCtrlWrite(IN struct ADAPTER *prAdapter,
 #endif /* CFG_SUPPORT_SWCR */
 
 	case 0x2222:
-		ucNss = (uint8_t)(u4Data & BITS(0, 3));
-		ucChannelWidth = (uint8_t)((u4Data & BITS(4, 7)) >> 4);
+		ucOpRxNss = (uint8_t)(u4Data & BITS(0, 3));
+		ucOpTxNss = (uint8_t)((u4Data & BITS(4, 7)) >> 4);
+		ucChannelWidth = (uint8_t)((u4Data & BITS(8, 11)) >> 8);
 		ucBssIndex = (uint8_t) u2SubId;
 
 		if ((u2SubId & BITS(8, 15)) != 0) { /* Debug OP change
 						     * parameters
 						     */
 			DBGLOG(RLM, INFO,
-			       "[UT_OP] BSS[%d] IsBwChange[%d] BW[%d] IsNssChange[%d] Nss[%d]\n",
+			       "[UT_OP] BSS[%d] IsBwChange[%d] BW[%d] IsRxNssChange[%d] RxNss[%d]",
 			       ucBssIndex,
 			       prAdapter->aprBssInfo[ucBssIndex]->
 			       fgIsOpChangeChannelWidth,
 			       prAdapter->aprBssInfo[ucBssIndex]->
 			       ucOpChangeChannelWidth,
 			       prAdapter->aprBssInfo[ucBssIndex]->
-			       fgIsOpChangeNss,
+			       fgIsOpChangeRxNss,
 			       prAdapter->aprBssInfo[ucBssIndex]->
-			       ucOpChangeNss);
+			       ucOpChangeRxNss
+			       );
+			DBGLOG(RLM, INFO,
+			       " IsTxNssChange[%d] TxNss[%d]\n",
+			       prAdapter->aprBssInfo[ucBssIndex]->
+			       fgIsOpChangeTxNss,
+			       prAdapter->aprBssInfo[ucBssIndex]->
+			       ucOpChangeTxNss
+			       );
 
 			DBGLOG(RLM, INFO,
-			       "[UT_OP] current OP mode: w[%d] s1[%d] s2[%d] sco[%d] Nss[%d]\n",
+			       "[UT_OP] current OP mode: w[%d] s1[%d] s2[%d] sco[%d] RxNss[%d] TxNss[%d]\n",
 			       prAdapter->aprBssInfo[ucBssIndex]->
 			       ucVhtChannelWidth,
 			       prAdapter->aprBssInfo[ucBssIndex]->
@@ -7224,16 +7233,21 @@ wlanoidSetSwCtrlWrite(IN struct ADAPTER *prAdapter,
 			       prAdapter->aprBssInfo[ucBssIndex]->
 			       eBssSCO,
 			       prAdapter->aprBssInfo[ucBssIndex]->
-			       ucNss);
+			       ucOpRxNss,
+			       prAdapter->aprBssInfo[ucBssIndex]->
+			       ucOpTxNss);
 		} else {
 			/* ucChannelWidth 0:20MHz, 1:40MHz, 2:80MHz, 3:160MHz
 			 *                4:80+80MHz
 			 */
 			DBGLOG(RLM, INFO,
-			       "[UT_OP] Change BSS[%d] OpMode to BW[%d] Nss[%d]\n",
-			       ucBssIndex, ucChannelWidth, ucNss);
-			rlmChangeOperationMode(prAdapter, ucBssIndex,
-				ucChannelWidth, ucNss, rlmDummyChangeOpHandler);
+				"[UT_OP] Change BSS[%d] OpMode to BW[%d] RxNss[%d] TxNss[%d]\n",
+				ucBssIndex, ucChannelWidth,
+				ucOpRxNss, ucOpTxNss);
+			rlmChangeOperationMode(
+				prAdapter, ucBssIndex, ucChannelWidth,
+				ucOpRxNss, ucOpTxNss,
+				rlmDummyChangeOpHandler);
 		}
 		break;
 

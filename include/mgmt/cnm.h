@@ -181,12 +181,6 @@ struct DEVICE_TYPE {
 #endif
 
 #if CFG_SUPPORT_DBDC
-struct CNM_DBDC_CAP {
-	uint8_t ucBssIndex;
-	uint8_t ucNss;
-	uint8_t ucWmmSetIndex;
-};
-
 enum ENUM_CNM_DBDC_MODE {
 	/* A/G traffic separate by WMM, but both
 	 * TRX on band 0, CANNOT enable DBDC
@@ -225,6 +219,12 @@ enum ENUM_CNM_NETWORK_TYPE_T {
 	ENUM_CNM_NETWORK_TYPE_NUM
 };
 
+enum ENUM_BSS_OPTRX_BW_CHANGE_SOURCE_T {
+	BSS_OPTRX_BW_CHANGE_BY_DBDC = 0,
+	BSS_OPTRX_BW_CHANGE_BY_COANT = 1,
+	BSS_OPTRX_BW_CHANGE_NUM
+};
+
 /*******************************************************************************
  *                            P U B L I C   D A T A
  *******************************************************************************
@@ -243,10 +243,12 @@ enum ENUM_CNM_NETWORK_TYPE_T {
 	((_prAdapter)->rCnmInfo.fgChGranted && \
 	 (_prAdapter)->rCnmInfo.ucBssIndex == (_ucBssIndex))
 
+/* True if our TxNss > 1 && peer support 2ss rate && peer no Rx limit. */
 #define IS_CONNECTION_NSS2(prBssInfo, prStaRec) \
-	((((prBssInfo)->ucNss > 1) && ((prStaRec)->aucRxMcsBitmask[1] != 0x00) \
+	((((prBssInfo)->ucOpTxNss > 1) && \
+	((prStaRec)->aucRxMcsBitmask[1] != 0x00) \
 	&& (((prStaRec)->u2HtCapInfo & HT_CAP_INFO_SM_POWER_SAVE) != 0)) || \
-	(((prBssInfo)->ucNss > 1) && ((((prStaRec)->u2VhtRxMcsMap \
+	(((prBssInfo)->ucOpTxNss > 1) && ((((prStaRec)->u2VhtRxMcsMap \
 	& BITS(2, 3)) >> 2) != BITS(0, 1)) && ((((prStaRec)->ucVhtOpMode \
 	& VHT_OP_MODE_RX_NSS) >> VHT_OP_MODE_RX_NSS_OFFSET) > 0)))
 
@@ -333,15 +335,6 @@ void cnmDbdcOpModeChangeDoneCallback(
 
 void cnmUpdateDbdcSetting(IN struct ADAPTER *prAdapter, IN u_int8_t fgDbdcEn);
 
-void cnmGetDbdcCapability(
-	IN struct ADAPTER *prAdapter,
-	IN uint8_t ucBssIndex,
-	IN enum ENUM_BAND eRfBand,
-	IN uint8_t ucPrimaryChannel,
-	IN uint8_t ucNss,
-	OUT struct CNM_DBDC_CAP *prDbdcCap
-);
-
 uint8_t cnmGetDbdcBwCapability(
 	struct ADAPTER *prAdapter,
 	uint8_t ucBssIndex
@@ -370,6 +363,23 @@ u_int8_t cnmSapIsActive(IN struct ADAPTER *prAdapter);
 u_int8_t cnmSapIsConcurrent(IN struct ADAPTER *prAdapter);
 
 struct BSS_INFO *cnmGetSapBssInfo(IN struct ADAPTER *prAdapter);
+
+enum ENUM_OP_CHANGE_STATUS_T cnmSetOpTRxNssBw(
+	IN struct ADAPTER *prAdapter,
+	IN uint8_t ucBssIndex,
+	IN enum ENUM_BSS_OPTRX_BW_CHANGE_SOURCE_T eSource,
+	IN bool fgEnable,
+	IN uint8_t ucOpRxNss,
+	IN uint8_t ucOpTxNss,
+	IN PFN_OPMODE_NOTIFY_DONE_FUNC pfnCallback
+);
+
+void cnmGetOpTRxNss(
+	IN struct ADAPTER *prAdapter,
+	IN uint8_t ucBssIndex,
+	OUT uint8_t *pucOpRxNss,
+	OUT uint8_t *pucOpTxNss
+);
 
 /*******************************************************************************
  *                              F U N C T I O N S
