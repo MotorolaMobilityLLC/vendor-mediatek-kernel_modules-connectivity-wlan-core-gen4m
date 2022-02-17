@@ -1144,8 +1144,11 @@ int Set_TxBfProfilePnWrite(struct net_device *prNetDev, uint8_t *prInBuf)
 	if (rv == 14) {
 		DBGLOG(RFTEST, ERROR,
 			"TxBfProfilePnWrite prInBuf = %s, ucProfileIdx = %d, u2bw = %dau2XSTS[0]:%d, au2XSTS[1]:%d, au2XSTS[2]:%d, au2XSTS[3]:%d, au2XSTS[4]:%d, au2XSTS[5]:%d, au2XSTS[6]:%d, au2XSTS[7]:%d, au2XSTS[8]:%d, au2XSTS[9]:%d, au2XSTS[10]:%d, au2XSTS[11]:%d\n",
-		       u4ProfileIdx, u2bw, au2XSTS[0], au2XSTS[1], au2XSTS[2], au2XSTS[3], au2XSTS[4], au2XSTS[5],
-		       au2XSTS[6], au2XSTS[7], au2XSTS[8], au2XSTS[9], au2XSTS[10], au2XSTS[11]);
+			prInBuf, u4ProfileIdx, u2bw, au2XSTS[0],
+			au2XSTS[1], au2XSTS[2], au2XSTS[3], au2XSTS[4],
+			au2XSTS[5], au2XSTS[6], au2XSTS[7], au2XSTS[8],
+			au2XSTS[9], au2XSTS[10], au2XSTS[11]);
+
 		i4Status = TxBfProfilePnWrite(prNetDev, u4ProfileIdx, u2bw, au2XSTS);
 	} else
 		return -EINVAL;
