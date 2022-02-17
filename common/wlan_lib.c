@@ -3025,12 +3025,12 @@ void wlanReturnPacketDelaySetupTimeout(IN struct ADAPTER
 	}
 
 	if (status != WLAN_STATUS_SUCCESS) {
-		DBGLOG(RX, WARN, "Restart ReturnIndicatedRfb Timer (%u)\n",
-		       RX_RETURN_INDICATED_RFB_TIMEOUT_SEC);
+		DBGLOG(RX, WARN, "Restart ReturnIndicatedRfb Timer (%ums)\n",
+		       RX_RETURN_INDICATED_RFB_TIMEOUT_MSEC);
 		/* restart timer */
 		cnmTimerStartTimer(prAdapter,
 			&prAdapter->rPacketDelaySetupTimer,
-			SEC_TO_MSEC(RX_RETURN_INDICATED_RFB_TIMEOUT_SEC));
+			RX_RETURN_INDICATED_RFB_TIMEOUT_MSEC);
 	}
 }
 
@@ -3086,11 +3086,11 @@ void wlanReturnPacket(IN struct ADAPTER *prAdapter,
 		if (!timerPendingTimer(
 		    &prAdapter->rPacketDelaySetupTimer)) {
 			DBGLOG(RX, WARN,
-			       "Start ReturnIndicatedRfb Timer (%u)\n",
-			       RX_RETURN_INDICATED_RFB_TIMEOUT_SEC);
+			       "Start ReturnIndicatedRfb Timer (%ums)\n",
+			       RX_RETURN_INDICATED_RFB_TIMEOUT_MSEC);
 			cnmTimerStartTimer(prAdapter,
 			    &prAdapter->rPacketDelaySetupTimer,
-			    SEC_TO_MSEC(RX_RETURN_INDICATED_RFB_TIMEOUT_SEC));
+			    RX_RETURN_INDICATED_RFB_TIMEOUT_MSEC);
 		}
 	}
 	nicRxReturnRFB(prAdapter, prSwRfb);

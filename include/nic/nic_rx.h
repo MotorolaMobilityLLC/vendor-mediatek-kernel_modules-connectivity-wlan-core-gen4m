@@ -96,7 +96,7 @@
 #define RX_RFB_LEN_FIELD_LEN        4
 #define RX_HEADER_OFFSET            2
 
-#define RX_RETURN_INDICATED_RFB_TIMEOUT_SEC     3
+#define RX_RETURN_INDICATED_RFB_TIMEOUT_MSEC     1
 
 #define RX_PROCESS_TIMEOUT           1000
 
