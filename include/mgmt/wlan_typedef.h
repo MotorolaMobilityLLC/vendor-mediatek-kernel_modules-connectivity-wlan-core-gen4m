@@ -105,10 +105,6 @@ struct WFD_CFG_SETTINGS;	/* declare WFD_CFG_SETTINGS_T */
  */
 struct BSS_DESC;	/* declare BSS_DESC */
 
-#if CFG_SUPPORT_ROAMING_SKIP_ONE_AP
-struct ROAM_BSS_DESC;	/* declare ROAM_BSS_DESC_T */
-#endif
-
 #if CFG_SUPPORT_PASSPOINT
 struct HS20_INFO;	/* declare HS20_INFO_T */
 #endif /* CFG_SUPPORT_PASSPOINT */

@@ -594,12 +594,6 @@ struct BSS_INFO {
 
 	uint32_t u4CoexPhyRateLimit;
 
-#if CFG_SUPPORT_ROAMING_SKIP_ONE_AP
-	uint8_t	ucRoamSkipTimes;
-	u_int8_t fgGoodRcpiArea;
-	u_int8_t fgPoorRcpiArea;
-#endif
-
 	u_int8_t fgIsGranted;
 	enum ENUM_BAND eBandGranted;
 	uint8_t ucPrimaryChannelGranted;
@@ -696,6 +690,11 @@ struct AIS_SPECIFIC_BSS_INFO {
 	uint8_t ucKeyAlgorithmId;
 
 	/* Support AP Selection */
+#if CFG_SUPPORT_ROAMING_SKIP_ONE_AP
+	uint8_t	ucRoamSkipTimes;
+	u_int8_t fgGoodRcpiArea;
+	u_int8_t fgPoorRcpiArea;
+#endif
 	struct ESS_CHNL_INFO arCurEssChnlInfo[CFG_MAX_NUM_OF_CHNL_INFO];
 	uint8_t ucCurEssChnlInfoNum;
 	struct LINK rCurEssLink;
