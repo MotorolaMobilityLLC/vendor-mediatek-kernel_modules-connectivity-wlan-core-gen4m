@@ -1452,6 +1452,7 @@ uint32_t
 qmDequeueTxPacketsFromPerStaQueues(IN struct ADAPTER *prAdapter,
 	OUT struct QUE *prQue, IN uint8_t ucTC,
 	IN uint32_t u4CurrentQuota,
+	IN uint32_t *prPleCurrentQuota,
 	IN uint32_t u4TotalQuota)
 {
 	uint32_t ucLoop;		/* Loop for */
@@ -1474,7 +1475,6 @@ qmDequeueTxPacketsFromPerStaQueues(IN struct ADAPTER *prAdapter,
 	uint32_t u4MaxForwardFrameCountLimit;
 	uint32_t u4AvaliableResource;	/* The TX resource amount */
 	uint32_t u4MaxResourceLimit;
-	uint32_t u4AvailableResourcePLE;
 
 	u_int8_t fgEndThisRound;
 	struct QUE_MGT *prQM = &prAdapter->rQM;
@@ -1495,9 +1495,7 @@ qmDequeueTxPacketsFromPerStaQueues(IN struct ADAPTER *prAdapter,
 		return u4CurrentQuota;
 	}
 	/* Check PLE resource */
-	u4AvailableResourcePLE = nicTxResourceGetPleFreeCount(
-		prAdapter, ucTC);
-	if (!u4AvailableResourcePLE)
+	if (!(*prPleCurrentQuota))
 		return u4CurrentQuota;
 	/* 4 <1> Assign init value */
 	u4AvaliableResource = u4CurrentQuota;
@@ -1617,7 +1615,7 @@ qmDequeueTxPacketsFromPerStaQueues(IN struct ADAPTER *prAdapter,
 						ucAlwaysResetUsedRes & BIT(0)))
 						fgEndThisRound = TRUE;
 					break;
-				} else if (u4AvailableResourcePLE <
+				} else if ((*prPleCurrentQuota) <
 					   NIX_TX_PLE_PAGE_CNT_PER_FRAME) {
 					if (!(prAdapter->rWifiVar.
 						ucAlwaysResetUsedRes & BIT(0)))
@@ -1669,7 +1667,7 @@ qmDequeueTxPacketsFromPerStaQueues(IN struct ADAPTER *prAdapter,
 				u4CurStaUsedResource +=
 					prDequeuedPkt->u4PageCount;
 				u4CurStaForwardFrameCount++;
-				u4AvailableResourcePLE -=
+				(*prPleCurrentQuota) -=
 					NIX_TX_PLE_PAGE_CNT_PER_FRAME;
 			}
 #if CFG_SUPPORT_SOFT_ACM
@@ -1741,6 +1739,7 @@ void
 qmDequeueTxPacketsFromPerTypeQueues(IN struct ADAPTER *prAdapter,
 	OUT struct QUE *prQue, IN uint8_t ucTC,
 	IN uint32_t u4CurrentQuota,
+	IN uint32_t *prPleCurrentQuota,
 	IN uint32_t u4TotalQuota)
 {
 	uint32_t u4AvaliableResource, u4LeftResource;
@@ -1750,7 +1749,6 @@ qmDequeueTxPacketsFromPerTypeQueues(IN struct ADAPTER *prAdapter,
 	PFN_DEQUEUE_FUNCTION pfnDeQFunc[2];
 	u_int8_t fgChangeDeQFunc = TRUE;
 	u_int8_t fgGlobalQueFirst = TRUE;
-	uint32_t u4AvailableResourcePLE;
 
 	DBGLOG(QM, TEMP, "Enter %s (TC = %d, quota = %u)\n",
 		__func__, ucTC, u4CurrentQuota);
@@ -1759,9 +1757,7 @@ qmDequeueTxPacketsFromPerTypeQueues(IN struct ADAPTER *prAdapter,
 	if (u4CurrentQuota == 0)
 		return;
 	/* Check PLE resource */
-	u4AvailableResourcePLE = nicTxResourceGetPleFreeCount(
-		prAdapter, ucTC);
-	if (!u4AvailableResourcePLE)
+	if (!(*prPleCurrentQuota))
 		return;
 
 	prQM = &prAdapter->rQM;
@@ -1785,6 +1781,7 @@ qmDequeueTxPacketsFromPerTypeQueues(IN struct ADAPTER *prAdapter,
 	/* 1st dequeue function */
 	u4LeftResource = pfnDeQFunc[0](prAdapter, prQue, ucTC,
 		u4AvaliableResource,
+		prPleCurrentQuota,
 		(u4MaxResourceLimit - u4TotalUsedResource));
 
 	/* dequeue function comsumes no resource, change */
@@ -1807,7 +1804,7 @@ qmDequeueTxPacketsFromPerTypeQueues(IN struct ADAPTER *prAdapter,
 
 	/* 2nd dequeue function */
 	u4LeftResource = pfnDeQFunc[1](prAdapter, prQue, ucTC,
-		u4LeftResource, u4MaxResourceLimit);
+		u4LeftResource, prPleCurrentQuota, u4MaxResourceLimit);
 
 #if QM_FORWARDING_FAIRNESS
 	prQM->fgGlobalQFirst = fgGlobalQueFirst;
@@ -1831,6 +1828,7 @@ uint32_t
 qmDequeueTxPacketsFromGlobalQueue(IN struct ADAPTER *prAdapter,
 	OUT struct QUE *prQue,
 	IN uint8_t ucTC, IN uint32_t u4CurrentQuota,
+	IN uint32_t *prPleCurrentQuota,
 	IN uint32_t u4TotalQuota)
 {
 	struct BSS_INFO *prBssInfo;
@@ -1841,7 +1839,6 @@ qmDequeueTxPacketsFromGlobalQueue(IN struct ADAPTER *prAdapter,
 	struct QUE rMergeQue;
 	struct QUE *prMergeQue;
 	struct QUE_MGT *prQM;
-	uint32_t u4AvailableResourcePLE;
 
 	DBGLOG(QM, TEMP, "Enter %s (TC = %d, quota = %u)\n",
 		__func__, ucTC, u4CurrentQuota);
@@ -1850,9 +1847,7 @@ qmDequeueTxPacketsFromGlobalQueue(IN struct ADAPTER *prAdapter,
 	if (u4CurrentQuota == 0)
 		return u4CurrentQuota;
 	/* Check PLE resource */
-	u4AvailableResourcePLE = nicTxResourceGetPleFreeCount(
-		prAdapter, ucTC);
-	if (!u4AvailableResourcePLE)
+	if (!(*prPleCurrentQuota))
 		return u4CurrentQuota;
 
 	prQM = &prAdapter->rQM;
@@ -1872,7 +1867,7 @@ qmDequeueTxPacketsFromGlobalQueue(IN struct ADAPTER *prAdapter,
 					prCurrQueue);
 		if (prDequeuedPkt->u4PageCount > u4AvaliableResource)
 			break;
-		if (u4AvailableResourcePLE < NIX_TX_PLE_PAGE_CNT_PER_FRAME)
+		if ((*prPleCurrentQuota) < NIX_TX_PLE_PAGE_CNT_PER_FRAME)
 			break;
 
 		QUEUE_REMOVE_HEAD(prCurrQueue, prDequeuedPkt,
@@ -1893,7 +1888,7 @@ qmDequeueTxPacketsFromGlobalQueue(IN struct ADAPTER *prAdapter,
 				prQM->u4DequeueCounter++;
 				u4AvaliableResource -=
 					prDequeuedPkt->u4PageCount;
-				u4AvailableResourcePLE -=
+				(*prPleCurrentQuota) -=
 					NIX_TX_PLE_PAGE_CNT_PER_FRAME;
 				QM_DBG_CNT_INC(prQM, QM_DBG_CNT_26);
 			} else {
@@ -1933,6 +1928,7 @@ struct MSDU_INFO *qmDequeueTxPackets(IN struct ADAPTER *prAdapter,
 	struct MSDU_INFO *prReturnedPacketListHead;
 	struct QUE rReturnedQue;
 	uint32_t u4MaxQuotaLimit;
+	uint32_t u4AvailableResourcePLE;
 
 	DBGLOG(QM, TEMP, "Enter qmDequeueTxPackets\n");
 
@@ -1955,16 +1951,21 @@ struct MSDU_INFO *qmDequeueTxPackets(IN struct ADAPTER *prAdapter,
 			u4MaxQuotaLimit =
 				(uint32_t) prTcqStatus->au4MaxNumOfPage[i];
 
+		u4AvailableResourcePLE = nicTxResourceGetPleFreeCount(
+			prAdapter, i);
+
 		if (i == BMC_TC_INDEX)
 			qmDequeueTxPacketsFromPerTypeQueues(prAdapter,
 				&rReturnedQue, (uint8_t)i,
 				prTcqStatus->au4FreePageCount[i],
+				&u4AvailableResourcePLE,
 				u4MaxQuotaLimit);
 		else
 			qmDequeueTxPacketsFromPerStaQueues(prAdapter,
 				&rReturnedQue,
 				(uint8_t)i,
 				prTcqStatus->au4FreePageCount[i],
+				&u4AvailableResourcePLE,
 				u4MaxQuotaLimit);
 
 		/* The aggregate number of dequeued packets */
@@ -6440,6 +6441,33 @@ uint32_t qmDumpQueueStatus(IN struct ADAPTER *prAdapter,
 		u4TotalPageCount += prTxCtrl->rTc.au4MaxNumOfPage[i];
 		u4CurBufferCount += prTxCtrl->rTc.au4FreeBufferCount[i];
 		u4CurPageCount += prTxCtrl->rTc.au4FreePageCount[i];
+	}
+
+	LOGBUF(pucBuf, u4Max, u4Len,
+		"ToT ResCount: Max[%02u/%03u] Free[%02u/%03u]\n",
+		u4TotalBufferCount, u4TotalPageCount, u4CurBufferCount,
+		u4CurPageCount);
+
+	u4TotalBufferCount = 0;
+	u4TotalPageCount = 0;
+	u4CurBufferCount = 0;
+	u4CurPageCount = 0;
+	LOGBUF(pucBuf, u4Max, u4Len,
+		"------<Dump PLE QUEUE Status>------\n");
+
+	for (i = TC0_INDEX; i < TC_NUM; i++) {
+		LOGBUF(pucBuf, u4Max, u4Len,
+			"TC%u ResCount: Max[%02u/%03u] Free[%02u/%03u] PreUsed[%03u]\n",
+			i, prTxCtrl->rTc.au4MaxNumOfBuffer_PLE[i],
+			prTxCtrl->rTc.au4MaxNumOfPage_PLE[i],
+			prTxCtrl->rTc.au4FreeBufferCount_PLE[i],
+			prTxCtrl->rTc.au4FreePageCount_PLE[i],
+			prTxCtrl->rTc.au4PreUsedPageCount[i]);
+
+		u4TotalBufferCount += prTxCtrl->rTc.au4MaxNumOfBuffer_PLE[i];
+		u4TotalPageCount += prTxCtrl->rTc.au4MaxNumOfPage_PLE[i];
+		u4CurBufferCount += prTxCtrl->rTc.au4FreeBufferCount_PLE[i];
+		u4CurPageCount += prTxCtrl->rTc.au4FreePageCount_PLE[i];
 	}
 
 	LOGBUF(pucBuf, u4Max, u4Len,
