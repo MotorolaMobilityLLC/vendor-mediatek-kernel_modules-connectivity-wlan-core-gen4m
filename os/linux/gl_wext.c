@@ -4035,21 +4035,33 @@ int wext_support_ioctl(IN struct net_device *prDev,
 			ret = wext_set_scan(prDev, NULL, NULL, NULL);
 #if WIRELESS_EXT > 17
 		else if (iwr->u.data.length == sizeof(struct iw_scan_req)) {
+			struct iw_scan_req iw;
+
+			if (copy_from_user(&iw,
+			    (struct iw_scan_req *)(iwr->u.data.pointer),
+			    sizeof(struct iw_scan_req))) {
+				ret = -EFAULT;
+				break;
+			}
+
+			if (iw.essid_len > MAX_SSID_LEN) {
+				ret = -EFAULT;
+				break;
+			}
+
 			prExtraBuf = kalMemAlloc(MAX_SSID_LEN, VIR_MEM_TYPE);
 			if (!prExtraBuf) {
 				ret = -ENOMEM;
 				break;
 			}
-			if (copy_from_user
-			    (prExtraBuf, ((struct iw_scan_req *)(
-			    iwr->u.data.pointer))->essid,
-			    ((struct iw_scan_req *)(iwr->u.data.pointer))
-			    ->essid_len)) {
+
+			if (copy_from_user(prExtraBuf, &iw.essid,
+			    iw.essid_len)) {
 				ret = -EFAULT;
 			} else {
 				ret = wext_set_scan(prDev, NULL,
-						    (union iwreq_data *)
-						    &(iwr->u.data), prExtraBuf);
+					(union iwreq_data *)&(iwr->u.data),
+					prExtraBuf);
 			}
 
 			kalMemFree(prExtraBuf, VIR_MEM_TYPE, MAX_SSID_LEN);
