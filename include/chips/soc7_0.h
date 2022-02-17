@@ -137,4 +137,7 @@ uint32_t soc7_0_wlanPowerOnDownload(
 int32_t soc7_0_wlanPowerOnInit(void);
 #endif
 
+void soc7_0_icapRiseVcoreClockRate(void);
+void soc7_0_icapDownVcoreClockRate(void);
+
 #endif  /* soc7_0 */

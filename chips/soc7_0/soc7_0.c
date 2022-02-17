@@ -529,11 +529,20 @@ void soc7_0_icapRiseVcoreClockRate(void)
 
 #if (CFG_SUPPORT_VCODE_VDFS == 1)
 	int value = 0;
-	/* Enable VCore to 0.725 */
 
 #if (KERNEL_VERSION(5, 4, 0) <= CFG80211_VERSION_CODE)
 	/* Implementation for kernel-5.4 */
+	struct mt66xx_hif_driver_data *prDriverData =
+		get_platform_driver_data();
+	struct mt66xx_chip_info *prChipInfo;
+	void *pdev;
+
+	prChipInfo = ((struct mt66xx_hif_driver_data *)prDriverData)
+		->chip_info;
+	pdev = (void *)prChipInfo->pdev;
+
 	dvfsrc_vcore_power = regulator_get(&pdev->dev, "dvfsrc-vcore");
+	/* Enable VCore to 0.725 */
 	regulator_set_voltage(dvfsrc_vcore_power, 725000, INT_MAX);
 #else
 	/* init */
@@ -558,7 +567,7 @@ void soc7_0_icapRiseVcoreClockRate(void)
 
 	/* 0x1801_2050[0]=1'b1 */
 	wf_ioremap_read(WF_CONN_INFA_BUS_CLOCK_RATE, &value);
-	value |= 0x0;
+	value |= 0x1;
 	wf_ioremap_write(WF_CONN_INFA_BUS_CLOCK_RATE, value);
 
 #else
@@ -574,8 +583,17 @@ void soc7_0_icapDownVcoreClockRate(void)
 
 #if (KERNEL_VERSION(5, 4, 0) <= CFG80211_VERSION_CODE)
 	/* Implementation for kernel-5.4 */
+	struct mt66xx_chip_info *prChipInfo;
+	struct mt66xx_hif_driver_data *prDriverData =
+		get_platform_driver_data();
+	void *pdev;
+
+	prChipInfo = ((struct mt66xx_hif_driver_data *)prDriverData)
+		->chip_info;
+	pdev = (void *)prChipInfo->pdev;
+
 	dvfsrc_vcore_power = regulator_get(&pdev->dev, "dvfsrc-vcore");
-	/* ToDo: Need to confirm default Vcore value */
+	/* resume to default Vcore value */
 	regulator_set_voltage(dvfsrc_vcore_power, 575000, INT_MAX);
 #else
 	/*init*/
@@ -602,7 +620,7 @@ void soc7_0_icapDownVcoreClockRate(void)
 
 	/* 0x1801_2050[0]=1'b0 */
 	wf_ioremap_read(WF_CONN_INFA_BUS_CLOCK_RATE, &value);
-	value &= ~(0x0);
+	value &= ~(0x1);
 	wf_ioremap_write(WF_CONN_INFA_BUS_CLOCK_RATE, value);
 
 #else
