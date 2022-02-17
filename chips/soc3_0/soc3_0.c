@@ -1508,6 +1508,7 @@ static int IsWsysBusHang(struct ADAPTER *prAdapter)
 	return u4Value;
 } /* soc3_0_IsWsysBusHang */
 
+#if 0
 /* PP CR: 0x820CCXXX remap to Base + 0x40e000  */
 static void DumpPPDebugCr(struct ADAPTER *prAdapter)
 {
@@ -1566,8 +1567,8 @@ static void DumpPPDebugCr_without_adapter(void)
 		ReadRegValue[1], u4Value[1],
 		ReadRegValue[2], u4Value[2],
 		ReadRegValue[3], u4Value[3]);
-
 }
+#endif
 
 /* need to dump AXI Master related CR 0x1802750C ~ 0x18027530*/
 static void DumpAXIMasterDebugCr(struct ADAPTER *prAdapter)
@@ -1610,6 +1611,7 @@ void soc3_0_DumpWFDMACr(struct ADAPTER *prAdapter)
 
 	ret = IsWsysBusHang(prAdapter);
 	/* ret =0 is readable, wsys not bus hang */
+	#if 0 /* TODO */
 	if (ret == 0) {
 		bShowWFDMA_type = TRUE;
 		if (prAdapter == NULL) {
@@ -1627,6 +1629,7 @@ void soc3_0_DumpWFDMACr(struct ADAPTER *prAdapter)
 		DBGLOG(HAL, INFO,
 		"Wifi bus hang(0x%08x), can't dump wsys CR\n", ret);
 	}
+	#endif
 
 } /* soc3_0_DumpWFDMAHostCr */
 
