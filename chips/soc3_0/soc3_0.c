@@ -3149,7 +3149,8 @@ uint32_t soc3_0_wlanPowerOnDownload(
 		return WLAN_STATUS_FAILURE;
 
 
-	DBGLOG(INIT, INFO, "Power on download start(%d)\n", ucDownloadItem);
+	DBGLOG_LIMITED(INIT, INFO,
+		"Power on download start(%d)\n", ucDownloadItem);
 
 	switch (ucDownloadItem) {
 	case ENUM_WLAN_POWER_ON_DOWNLOAD_EMI:
@@ -3164,7 +3165,7 @@ uint32_t soc3_0_wlanPowerOnDownload(
 		kalFirmwareImageUnmapping(
 			prAdapter->prGlueInfo, NULL, prFwBuffer);
 
-		DBGLOG(INIT, INFO, "Power on download mcu ROM EMI %s\n",
+		DBGLOG_LIMITED(INIT, INFO, "Power on download mcu ROM EMI %s\n",
 			(u4Status == WLAN_STATUS_SUCCESS) ? "pass" : "failed");
 
 		/* Download WiFi ROM EMI*/
@@ -3180,7 +3181,7 @@ uint32_t soc3_0_wlanPowerOnDownload(
 			kalFirmwareImageUnmapping(
 				prAdapter->prGlueInfo, NULL, prFwBuffer);
 
-			DBGLOG(INIT, INFO,
+			DBGLOG_LIMITED(INIT, INFO,
 				"Power on download WiFi ROM EMI %s\n",
 				(u4Status == WLAN_STATUS_SUCCESS)
 					? "pass" : "failed");
@@ -3205,7 +3206,8 @@ uint32_t soc3_0_wlanPowerOnDownload(
 		if (wlanPatchIsDownloaded(prAdapter)) {
 			kalFirmwareImageUnmapping(prAdapter->prGlueInfo, NULL,
 						  prFwBuffer);
-			DBGLOG(INIT, INFO, "No need to download patch\n");
+			DBGLOG_LIMITED(INIT, INFO,
+				"No need to download patch\n");
 			return WLAN_STATUS_SUCCESS;
 		}
 #else
@@ -3244,7 +3246,7 @@ uint32_t soc3_0_wlanPowerOnDownload(
 		return WLAN_STATUS_NOT_SUPPORTED;
 	}
 
-	DBGLOG(INIT, INFO, "Power on download end[%d].\n", u4Status);
+	DBGLOG_LIMITED(INIT, INFO, "Power on download end[%d].\n", u4Status);
 
 	return u4Status;
 }
