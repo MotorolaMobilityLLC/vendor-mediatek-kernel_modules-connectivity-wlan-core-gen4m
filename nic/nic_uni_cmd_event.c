@@ -133,6 +133,7 @@ static PROCESS_LEGACY_TO_UNI_FUNCTION arUniExtCmdTable[EXT_CMD_ID_END] = {
 	[EXT_CMD_ID_TWT_AGRT_UPDATE] = nicUniCmdTwtArgtUpdate,
 	[EXT_CMD_ID_STAREC_UPDATE] = nicUniCmdStaRecUpdateExt,
 	[EXT_CMD_ID_BF_ACTION] = nicUniCmdBFAction,
+	[EXT_CMD_ID_SER] = nicUniCmdSerAction,
 };
 
 static PROCESS_RX_UNI_EVENT_FUNCTION arUniEventTable[UNI_EVENT_ID_NUM] = {
@@ -2095,6 +2096,87 @@ uint32_t nicUniCmdBFAction(struct ADAPTER *ad,
 	for (i = 0; i < 4; i++)
 		tag->u2WlanId[i] = cmd->rTxBfSoundingStart.ucWlanId[i];
 	tag->u4SndIntv = cmd->rTxBfSoundingStart.u4SoundingInterval;
+
+	LINK_INSERT_TAIL(&info->rUniCmdList, &entry->rLinkEntry);
+
+	return WLAN_STATUS_SUCCESS;
+}
+
+uint32_t nicUniCmdSerAction(struct ADAPTER *ad,
+		struct WIFI_UNI_SETQUERY_INFO *info)
+{
+	struct EXT_CMD_SER_T *cmd;
+	struct UNI_CMD_SER *uni_cmd;
+	struct WIFI_UNI_CMD_ENTRY *entry;
+	uint32_t max_cmd_len = sizeof(struct UNI_CMD_SER);
+
+	if (info->ucCID != CMD_ID_LAYER_0_EXT_MAGIC_NUM ||
+	    info->ucExtCID != EXT_CMD_ID_SER)
+		return WLAN_STATUS_NOT_ACCEPTED;
+
+	cmd = (struct EXT_CMD_SER_T *) info->pucInfoBuffer;
+	switch (cmd->ucAction) {
+	case SER_ACTION_QUERY:
+		max_cmd_len += sizeof(struct UNI_CMD_SER_QUERY);
+		break;
+	case SER_ACTION_SET:
+		max_cmd_len += sizeof(struct UNI_CMD_SER_ENABLE);
+		break;
+	case SER_ACTION_SET_ENABLE_MASK:
+		max_cmd_len += sizeof(struct UNI_CMD_SER_SET);
+		break;
+	case SER_ACTION_RECOVER:
+		max_cmd_len += sizeof(struct UNI_CMD_SER_TRIGGER);
+		break;
+	default:
+		DBGLOG(NIC, ERROR, "unknown action %d\n", cmd->ucAction);
+		return WLAN_STATUS_NOT_ACCEPTED;
+	}
+
+	entry = nicUniCmdAllocEntry(ad, UNI_CMD_ID_SER, max_cmd_len,
+			NULL, nicUniCmdTimeoutCommon);
+	if (!entry)
+		return WLAN_STATUS_RESOURCES;
+
+	uni_cmd = (struct UNI_CMD_SER *) entry->pucInfoBuffer;
+	switch (cmd->ucAction) {
+	case SER_ACTION_QUERY: {
+		struct UNI_CMD_SER_QUERY *tag =
+			(struct UNI_CMD_SER_QUERY *)uni_cmd->aucTlvBuffer;
+
+		tag->u2Tag = UNI_CMD_SER_TAG_QUERY;
+		tag->u2Length = sizeof(*tag);
+	}
+		break;
+	case SER_ACTION_SET: {
+		struct UNI_CMD_SER_ENABLE *tag =
+			(struct UNI_CMD_SER_ENABLE *)uni_cmd->aucTlvBuffer;
+
+		tag->u2Tag = UNI_CMD_SER_TAG_ENABLE;
+		tag->u2Length = sizeof(*tag);
+		tag->fgEnable = cmd->ucSerSet;
+	}
+		break;
+	case SER_ACTION_SET_ENABLE_MASK: {
+		struct UNI_CMD_SER_SET *tag =
+			(struct UNI_CMD_SER_SET *)uni_cmd->aucTlvBuffer;
+
+		tag->u2Tag = UNI_CMD_SER_TAG_SET;
+		tag->u2Length = sizeof(*tag);
+		tag->u4EnableMask = cmd->ucSerSet;
+	}
+		break;
+	case SER_ACTION_RECOVER: {
+		struct UNI_CMD_SER_TRIGGER *tag =
+			(struct UNI_CMD_SER_TRIGGER *)uni_cmd->aucTlvBuffer;
+
+		tag->u2Tag = UNI_CMD_SER_TAG_TRIGGER;
+		tag->u2Length = sizeof(*tag);
+		tag->ucTriggerMethod = cmd->ucSerSet;
+		tag->ucDbdcIdx = cmd->ucDbdcIdx;
+	}
+		break;
+	}
 
 	LINK_INSERT_TAIL(&info->rUniCmdList, &entry->rLinkEntry);
 
